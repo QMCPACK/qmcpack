@@ -42,6 +42,7 @@ SET(QMCSRCS
   QMCDriver.cpp
   VMC.cpp
   VMCParticleByParticle.cpp
+  DMCParticleByParticle.cpp
   VMC_OPT.cpp
   MolecuDMC.cpp
   ReptationMC.cpp
