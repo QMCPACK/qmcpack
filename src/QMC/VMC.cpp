@@ -234,23 +234,30 @@ namespace ohmmsqmc {
  
       // deltaR = W.R - (*it)->R - (*it)->Drift;
       //  RealType forwardGF = exp(-oneover2tau*Dot(deltaR,deltaR));
-      RealType forwardGF = exp(-0.5*Dot(deltaR,deltaR));
+      //RealType forwardGF = exp(-0.5*Dot(deltaR,deltaR));
+      RealType logGf = -0.5*Dot(deltaR,deltaR);
       
       //converting gradients to drifts, D = tau*G (reuse G)
       //W.G *= Tau;//original implementation with bare drift
       ValueType vsq = Dot(W.G,W.G);
       ValueType scale = ((-1.0+sqrt(1.0+2.0*Tau*vsq))/vsq);
       drift = scale*W.G;
-      //   W.G *= scale;
       
       deltaR = (*it)->R - W.R - drift;
-      RealType backwardGF = exp(-oneover2tau*Dot(deltaR,deltaR));
+      //RealType backwardGF = exp(-oneover2tau*Dot(deltaR,deltaR));
+      RealType logGb = -oneover2tau*Dot(deltaR,deltaR);
       
       //forwardGF/backwardGF*Properties(PSISQ)/(*it)->Properties(PSISQ)
       //RealType prob   = min(Properties(PSISQ)/(*it)->Properties(PSISQ),1.0);
       //cout << "forward/backward " << forwardGF << " " << backwardGF << endl;
+      // if(Random() > 
+      // backwardGF/forwardGF*Properties(PSISQ)/(*it)->Properties(PSISQ)) {
+      //(*it)->Properties(AGE)++;     
+      //++nReject; 
+      //} else {
+
       if(Random() > 
-	 backwardGF/forwardGF*Properties(PSISQ)/(*it)->Properties(PSISQ)) {
+	 exp(logGb-logGf)*Properties(PSISQ)/(*it)->Properties(PSISQ)) {
 	(*it)->Properties(AGE)++;     
 	++nReject; 
       } else {
