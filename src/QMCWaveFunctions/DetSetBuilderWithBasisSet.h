@@ -70,6 +70,8 @@ namespace ohmmsqmc {
       ///pointer to the basis set
       BasisSetType *basisSet =NULL;
       
+      //std::map<std::string,SPOSetType*> spoSet;
+
       int nvar(wfs_ref.VarList.size());
       int is=0, first=0;
       int norbs = 0;
@@ -92,8 +94,37 @@ namespace ohmmsqmc {
 	    if(tname == param_tag) {
 	      putContent(sdet_coeff[is],tcur);
 	    } else if(tname == det_tag) {
-	      SPOSetType* psi = new SPOSetType(basisSet,norbs);
-	      psi->put(tcur);
+              SPOSetType* psi=0;
+              string detname("det");
+              const xmlChar* a=xmlGetProp(tcur,(const xmlChar*)"id");
+              if(a) {
+                detname = (const char*)a;
+              } else {
+                ostringstream idassigned(detname);
+                idassigned << is;
+              }
+
+              a=xmlGetProp(tcur,(const xmlChar*)"ref");
+              if(a) {
+                string detref((const char*)a);
+                if(wfs_ref.hasSPOSet(detref)) {
+                  psi = dynamic_cast<SPOSetType*>(wfs_ref.getSPOSet(detref));
+                }
+                //std::map<std::string,SPOSetType*>::iterator dit(spoSet.find(detref));
+                //if(dit == spoSet.end()) {
+                //  ERRORMSG(detref << " has not be added. Using the first determinant")
+                //  psi=(*(spoSet.begin())).second;
+                //} else {
+                //  XMLReport(detname << " uses " << detref << " determinant.")
+                //  psi=(*dit).second;
+                //}
+              } else {
+ 	        psi = new SPOSetType(basisSet,norbs);
+	        psi->put(tcur);
+                psi->setName(detname);
+                wfs_ref.addSPOSet(psi);
+                //spoSet[detname]=psi;
+              }
 	      Det_t *adet = new Det_t(*psi,first);
 	      adet->set(first,psi->numOrbitals());
 	      XMLReport("Add a determinant to the SlaterDeterminant for particles: " 
