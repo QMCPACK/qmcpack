@@ -25,7 +25,7 @@ using std::vector;
 
 #ifdef HAVE_LIBBOOST
 #include "Utilities/BoostRandom.h"
-typedef BoostRandom RandomGenerator_t;
+typedef BoostRandom<OHMMS_PRECISION> RandomGenerator_t;
 #else
 #ifdef USE_SPRNG
 #include "Utilities/SprngRandom.h"
