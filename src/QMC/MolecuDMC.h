@@ -58,6 +58,7 @@ namespace ohmmsqmc {
     ///pointer to WOSPotential
     WOSPotential *wos_ref;
 
+    RealType Tau_var;
   };
 }
 #endif

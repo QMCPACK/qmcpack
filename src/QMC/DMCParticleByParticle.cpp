@@ -58,11 +58,13 @@ namespace ohmmsqmc {
 	E_TIndex = Estimators.addColumn("E_T");
 	Estimators.reportHeader();
 	
-	for(MCWalkerConfiguration::iterator it = W.begin(); 
-	    it != W.end(); ++it) {
-		(*it)->Properties(WEIGHT) = 1.0;
-		(*it)->Properties(MULTIPLICITY) = 1.0;
-	    }
+	MCWalkerConfiguration::iterator it(W.begin()); 
+	MCWalkerConfiguration::iterator it_end(W.end()); 
+        while(it!=it_end) {
+          (*it)->Properties(WEIGHT) = 1.0;
+	  (*it)->Properties(MULTIPLICITY) = 1.0;
+          ++it;
+        }
 	
 	MolecuFixedNodeBranch<RealType> brancher(Tau,W.getActiveWalkers());
 	//initialize parameters for fixed-node branching
@@ -72,22 +74,23 @@ namespace ohmmsqmc {
 	  use the average value of the energy estimator for
 	  the reference energy of the brancher*/
 	if(Counter) {
-	    RealType e_ref = W.getLocalEnergy();
-	    LOGMSG("Overwriting the reference energy by the local energy " << e_ref)  
-		brancher.setEguess(e_ref);
+	  RealType e_ref = W.getLocalEnergy();
+	  LOGMSG("Overwriting the reference energy by the local energy " << e_ref)  
+   	  brancher.setEguess(e_ref);
 	}
 
 
       //going to add routines to calculate how much we need
       bool require_register =  W.createAuxDataSet();
       int iwalker=0;
-      MCWalkerConfiguration::iterator it = W.begin();
+      it = W.begin();
+      it_end = W.end();
       if(require_register) {
-        while(it != W.end()) {
+        while(it != it_end) {
 	  W.DataSet[iwalker]->rewind();
   	  W.registerData(**it,*(W.DataSet[iwalker]));
   	  Psi.registerData(W,*(W.DataSet[iwalker]));
-	  it++;iwalker++;
+	  ++it;++iwalker;
         } 
       }      
 
@@ -125,38 +128,41 @@ namespace ohmmsqmc {
 	IndexType nAllRejected = 0;
 	do {
 	  Population = W.getActiveWalkers();
+
 	  it = W.begin();	 
+          it_end = W.end();
+
 	  iwalker=0; 
-	  while(it != W.end()) {
+	  while(it != it_end) {
 
 	    MCWalkerConfiguration::WalkerData_t& w_buffer = *(W.DataSet[iwalker]);
 
 	    (*it)->Properties(WEIGHT) = 1.0;
 	    (*it)->Properties(MULTIPLICITY) = 1.0;
 	    //save old local energy
-	    ValueType eold = (*it)->Properties(LOCALENERGY);
-	    ValueType emixed = eold;  
+	    ValueType eold((*it)->Properties(LOCALENERGY));
+	    ValueType emixed(eold);
 
 	    W.R = (*it)->R;
 	    w_buffer.rewind();
 	    W.copyFromBuffer(w_buffer);
 	    Psi.copyFromBuffer(W,w_buffer);
 
-            ValueType psi_old = (*it)->Properties(PSI);
-	    ValueType psi = psi_old;
+            ValueType psi_old((*it)->Properties(PSI));
+	    ValueType psi(psi_old);
 
 	    //create a 3N-Dimensional Gaussian with variance=1
 	    makeGaussRandom(deltaR);
-	    bool notcrossed = true;
-            int nAcceptTemp=0;
-            int nRejectTemp=0;
+	    bool notcrossed(true);
+            int nAcceptTemp(0);
+            int nRejectTemp(0);
 
             int iat=0;
             while(notcrossed && iat<nat){
 
-	      PosType dr = g*deltaR[iat]+(*it)->Drift[iat];
-	      PosType newpos = W.makeMove(iat,dr);
-	      RealType ratio = Psi.ratio(W,iat,dG,dL);
+	      PosType dr(g*deltaR[iat]+(*it)->Drift[iat]);
+	      PosType newpos(W.makeMove(iat,dr));
+	      RealType ratio(Psi.ratio(W,iat,dG,dL));
 
 	      if(ratio < 0.0) {//node is crossed, stop here
 		notcrossed = false;
@@ -184,8 +190,8 @@ namespace ohmmsqmc {
 		  ++nRejectTemp; 
 		  Psi.restore(iat);
 		}
-	      } // node crossing 
-              iat++;
+	      } 
+              ++iat;
 	    }
 
 	    if(notcrossed) {
@@ -196,7 +202,7 @@ namespace ohmmsqmc {
 		
 		(*it)->R = W.R;
 		(*it)->Properties(AGE) = 0;
-		(*it)->Properties(PSISQ) = psi*psi;
+		(*it)->Properties(LOGPSI) = log(fabs(psi));
 		(*it)->Properties(PSI) = psi;
 		(*it)->Properties(LOCALENERGY) = H.evaluate(W);
 		H.copy((*it)->getEnergyBase());
@@ -205,15 +211,15 @@ namespace ohmmsqmc {
 	      } else {
 		WARNMSG("All the particle moves are rejected.")
 	        (*it)->Properties(AGE)++;
-		nAllRejected++;
+		++nAllRejected;
 		emixed += eold;
 	      }
 	      
 	      ValueType M = brancher.branchGF(Tau,emixed*0.5,0.0);
 	      // if((*it)->Properties(AGE) > 3.0) M = min(0.5,M);
 	      //persistent configurations
-	      if((*it)->Properties(AGE) > 1.9) M = min(0.5,M);
-	      if((*it)->Properties(AGE) > 0.9) M = min(1.0,M);
+	      if((*it)->Properties(AGE) > 1.9) M = std::min(0.5,M);
+	      if((*it)->Properties(AGE) > 0.9) M = std::min(1.0,M);
 	      (*it)->Properties(WEIGHT) = M; 
 	      (*it)->Properties(MULTIPLICITY) = M + Random();
 	      nAccept += nAcceptTemp;
@@ -224,10 +230,10 @@ namespace ohmmsqmc {
 	      nReject += W.getTotalNum();//not make sense
 	    }
 
-	    it++; iwalker++;
+	    ++it; ++iwalker;
 	  }
 
-	  step++;accstep++;
+	  ++step;++accstep;
 	  Estimators.accumulate(W);
 	  E_T = brancher.update(Population,Eest);
 	  brancher.branch(accstep,W);
@@ -268,7 +274,6 @@ namespace ohmmsqmc {
       return false;
     }
   }
-
 
   bool 
   DMCParticleByParticle::put(xmlNodePtr q){

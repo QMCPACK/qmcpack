@@ -266,7 +266,8 @@ namespace ohmmsqmc {
     RealType g = sqrt(Tau);
     LOGMSG("Moving " << NumCuts << " for each reptation step")
     MCWalkerConfiguration::iterator it=W.begin();
-    while(it != W.end()) {
+    MCWalkerConfiguration::iterator it_end=W.end();
+    while(it != it_end) {
       (*it)->Properties(WEIGHT)=1.0;     
       PolymerChain* achain = new PolymerChain((*it),PolymerLength,NumCuts);
       Polymers.push_back(achain);it++;
@@ -300,6 +301,7 @@ namespace ohmmsqmc {
 	  cur->Drift = W.G;
 	}
       }
+      ++it;
     }
   }
 
@@ -344,10 +346,11 @@ namespace ohmmsqmc {
 	  step++; accstep++;
 
 	  MCWalkerConfiguration::iterator it=W.begin();
+	  MCWalkerConfiguration::iterator it_end=W.end();
 	  int ilink=0;
-	  while(it != W.end()) {
+	  while(it != it_end) {
 	    Polymers[ilink]->average(**it);
-	    ilink++; it++;
+	    ++ilink; ++it;
 	  }
 
 	  Estimators.accumulate(W);

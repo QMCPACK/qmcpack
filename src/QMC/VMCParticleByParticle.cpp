@@ -54,13 +54,14 @@ namespace ohmmsqmc {
       //going to add routines to calculate how much we need
       bool require_register =  W.createAuxDataSet();
       int iwalker=0;
-      MCWalkerConfiguration::iterator it = W.begin();
+      MCWalkerConfiguration::iterator it(W.begin());
+      MCWalkerConfiguration::iterator it_end(W.end());
       if(require_register) {
-        while(it != W.end()) {
+        while(it != it_end) {
 	  W.DataSet[iwalker]->rewind();
   	  W.registerData(**it,*(W.DataSet[iwalker]));
   	  Psi.registerData(W,*(W.DataSet[iwalker]));
-	  it++;iwalker++;
+	  ++it;++iwalker;
         } 
       }      
 
@@ -94,8 +95,9 @@ namespace ohmmsqmc {
 	IndexType nAllRejected = 0;
 	do {
 	  it = W.begin();	 
+	  it_end = W.end();	 
 	  iwalker=0; 
-	  while(it != W.end()) {
+	  while(it != it_end) {
 
 	    MCWalkerConfiguration::WalkerData_t& w_buffer = *(W.DataSet[iwalker]);
 	    W.R = (*it)->R;
@@ -131,7 +133,8 @@ namespace ohmmsqmc {
 
 	      RealType logGb = -oneover2tau*dot(dr,dr);
 
-	      RealType prob = std::min(1.0,pow(ratio,2)*exp(logGb-logGf));
+	      //RealType prob = std::min(1.0,pow(ratio,2)*exp(logGb-logGf));
+	      RealType prob = std::min(1.0,exp(logGb-logGf+2.0*log(abs(ratio))));
 	      //alternatively
 	      if(Random() < prob) { 
 		moved = true;
@@ -158,7 +161,8 @@ namespace ohmmsqmc {
 	      psi = Psi.evaluate(W,w_buffer);
 
 	      (*it)->R = W.R;
-	      (*it)->Properties(PSISQ) = psi*psi;
+	      //(*it)->Properties(LOGPSI) = log(fabs(psi));
+	      //(*it)->Properties(PSISQ) = psi*psi;
 	      (*it)->Properties(PSI) = psi;
 	      (*it)->Properties(LOCALENERGY) = H.evaluate(W);
 	      H.copy((*it)->getEnergyBase());
@@ -209,11 +213,11 @@ namespace ohmmsqmc {
 	    //	    } 
 	    else {
 	      //WARNMSG("All the particle moves are rejected.")
-	      nAllRejected++;
+	      ++nAllRejected;
 	    }
-	    it++; iwalker++;
+	    ++it; ++iwalker;
 	  }
-	  step++;accstep++;
+	  ++step;++accstep;
 	  Estimators.accumulate(W);
 	} while(step<nSteps);
 	
@@ -230,7 +234,7 @@ namespace ohmmsqmc {
 			    << static_cast<double>(nAllRejected)/static_cast<double>(step*W.getActiveWalkers()) << endl;
 	if(pStride) WO.get(W);
 	nAccept = 0; nReject = 0;
-	block++;
+	++block;
       } while(block<nBlocks);
 
       LogOut->getStream() 

@@ -69,6 +69,8 @@ namespace ohmmsqmc {
       ERRORMSG("Failed to initialize the Hamitonians. Exit now.")
 	return false;
     }
+
+    setMCWalkers(m_root);
     
     /*If there is no configuration file manually assign 
       the walker conigurations.  For the ith particle
@@ -76,7 +78,6 @@ namespace ohmmsqmc {
       Initially all the walkers have the same configuration, but 
       in the function QMCDriver::addWalkers loop over all the walkers
       and add a gaussian -> R[i] = R[i] + g\chi.
-     */
     if(!setMCWalkers(m_root)) {
       int nup = el.last(0);
       int nions = ion.getTotalNum();
@@ -90,7 +91,7 @@ namespace ohmmsqmc {
 					 r*sin(phi)*sintheta,r*costheta);
       }
     }
-
+     */
     cout << "Ionic configuration : " << ion.getName() << endl;
     ion.get(cout);
 
@@ -194,7 +195,7 @@ namespace ohmmsqmc {
       //      cout << "stype " << stype << endl;
       H.add(new CoulombPotentialAA(el), "ElecElec");
       H.add(new LocalPPotential(ion,el), "PseudoPot");
-      H.add(new GeCorePolPotential(ion,el,stype), "GeCPP");
+      //H.add(new GeCorePolPotential(ion,el,stype), "GeCPP");
       if(ion.getTotalNum()>1) 
 	H.add(new IonIonPotential(ion),"IonIon");
     } else if(ptype == "polarization"){

@@ -276,7 +276,7 @@ namespace ohmmsqmc {
 	  // save old sample
 	  //ValueType psi2old = (*it)->Properties(PSISQ);
 	  //ValueType vold = (*it)->Properties(LOCALPOTENTIAL);
-          ValueType logpsi0(LogPsiSq[iconf]);
+          ValueType logpsi0(LogPsi[iconf]);
           ValueType vold(VlocOld[iconf]);
 	  W.R = (*it)->R;
 	
@@ -285,7 +285,7 @@ namespace ohmmsqmc {
       
 	  //evaluate wave function
 	  ValueType psi = Psi.evaluate(W);
-          ValueType weight = exp(log(psi*psi)-logpsi0);
+          ValueType weight = exp(2.0*(log(abs(psi))-logpsi0));
 	  // accumulate the effective number of walkers
 	  nw_effect[0] += weight;
 	  nw_effect[1] += weight*weight;
@@ -301,6 +301,7 @@ namespace ohmmsqmc {
 	  //(*it)->Properties = Properties;
           /////////////////////////////////
           ++it;
+          ++iconf;
 	}
 	Estimators.accumulate(W);
       }
@@ -315,7 +316,7 @@ namespace ohmmsqmc {
   void 
   VMC_OPT::checkConfigurations() {
     getReady();
-    LogPsiSq.reserve(ConfigFile.size()*500);
+    LogPsi.reserve(ConfigFile.size()*500);
     VlocOld.reserve(ConfigFile.size()*500);
     NumSamples=0;
     for(int i=0; i<ConfigFile.size(); i++) {
@@ -332,7 +333,7 @@ namespace ohmmsqmc {
 	  //evaluate wave function
           ValueType psi(Psi.evaluate(W));
           H.evaluate(W);
-	  LogPsiSq.push_back(log(psi*psi));
+	  LogPsi.push_back(log(abs(psi)));
           VlocOld.push_back(H.getLocalPotential());
           ++it;
         }

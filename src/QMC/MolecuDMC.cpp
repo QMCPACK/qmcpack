@@ -37,7 +37,7 @@ namespace ohmmsqmc {
 		       TrialWaveFunction& psi, 
 		       QMCHamiltonian& h, 
 		       xmlNodePtr q): 
-    QMCDriver(w,psi,h,q),wos_ref(0) { 
+    QMCDriver(w,psi,h,q),wos_ref(0),Tau_var(0.0) { 
     RootName = "dmc";
     QMCType ="dmc";
   }
@@ -80,8 +80,10 @@ namespace ohmmsqmc {
          wos_ref->set_mrun(wos_ref->dmc_runs);
          cout << "Using " << wos_ref->m_runs << " runners/walker for DMC" << endl;
          H.setTau(Tau);
+	 Tau_var = Tau;
       } else {
          H.setTau(0.0);
+	 Tau_var = 0.0;
       }
 
       //set the data members to start a new run
@@ -92,11 +94,12 @@ namespace ohmmsqmc {
       PopIndex = Estimators.addColumn("Population");
       E_TIndex = Estimators.addColumn("E_T");
       Estimators.reportHeader();
-      
-      for(MCWalkerConfiguration::iterator it = W.begin(); 
-	  it != W.end(); ++it) {
+      MCWalkerConfiguration::iterator it = W.begin(); 
+      MCWalkerConfiguration::iterator it_end = W.end(); 
+      while(it != it_end) {
 	(*it)->Properties(WEIGHT) = 1.0;
 	(*it)->Properties(MULTIPLICITY) = 1.0;
+        ++it;
       }
       
       MolecuFixedNodeBranch<RealType> brancher(Tau,W.getActiveWalkers());
@@ -263,8 +266,9 @@ namespace ohmmsqmc {
     //WOSPotential* wos = dynamic_cast<WOSPotential*>(H.getHamiltonian("wos"));
 
 
-    for (MCWalkerConfiguration::iterator it = W.begin();
-	 it != W.end(); ++it) {
+    MCWalkerConfiguration::iterator it = W.begin(); 
+    MCWalkerConfiguration::iterator it_end = W.end(); 
+    while(it != it_end) {
       
       (*it)->Properties(WEIGHT) = 1.0;
       (*it)->Properties(MULTIPLICITY) = 1.0;
@@ -287,7 +291,7 @@ namespace ohmmsqmc {
 	DistanceTable::update(W);
 	ValueType psi = Psi.evaluate(W);
 	eold = H.evaluate(W);
-	emixed += 0.5*W.Properties(WOSVAR)*Tau;
+	emixed += 0.5*W.Properties(WOSVAR)*Tau_var;
       }
       //ValueType emixed = eold + 0.5*W.Properties(WOSVAR)*Tau;  
 
@@ -303,9 +307,10 @@ namespace ohmmsqmc {
       ValueType psi = Psi.evaluate(W);
       //update the properties
       W.Properties(LOCALENERGY) = H.evaluate(W);
-      W.Properties(PSISQ) = psi*psi;
+      W.Properties(LOGPSI) =log(fabs(psi));
       W.Properties(PSI) = psi;
-      
+      bool accepted=false; 
+
       //deltaR = W.R - (*it)->R - (*it)->Drift;
       //RealType forwardGF = exp(-oneover2tau*Dot(deltaR,deltaR));
       //RealType forwardGF = exp(-0.5*Dot(deltaR,deltaR));
@@ -324,9 +329,9 @@ namespace ohmmsqmc {
       
       //set acceptance probability
       //RealType prob= std::min(backwardGF/forwardGF*W.Properties(PSISQ)/(*it)->Properties(PSISQ),1.0);
-      RealType prob= std::min(exp(logGb-logGf)*W.Properties(PSISQ)/(*it)->Properties(PSISQ),1.0);
+      //RealType prob= std::min(exp(logGb-logGf)*W.Properties(PSISQ)/(*it)->Properties(PSISQ),1.0);
+      RealType prob= std::min(exp(logGb-logGf +2.0*(W.Properties(LOGPSI)-(*it)->Properties(LOGPSI))),1.0);
       
-      bool accepted=false; 
       if(Random() > prob){
 	(*it)->Properties(AGE)++;
 	emixed += emixed;
@@ -336,10 +341,8 @@ namespace ohmmsqmc {
 	(*it)->R = W.R;
 	(*it)->Drift = drift;
 	(*it)->Properties = W.Properties;
-        // H.update(W.Energy[(*it)->ID]);
-	//H.get((*it)->E);
 	H.copy((*it)->getEnergyBase());
-	emixed += W.Properties(LOCALENERGY) + 0.5*W.Properties(WOSVAR)*Tau;
+	emixed += W.Properties(LOCALENERGY) + 0.5*W.Properties(WOSVAR)*Tau_var;
       }
       
       //calculate the weight and multiplicity
@@ -355,12 +358,55 @@ namespace ohmmsqmc {
 	(*it)->Properties(WEIGHT) = 0.0; 
 	(*it)->Properties(MULTIPLICITY) = 0.0;
       }
+
+      /*      
+      if(Branch(W.Properties(PSI),(*it)->Properties(PSI))) {
+	accepted=false;     
+	(*it)->Properties(WEIGHT) = 0.0; 
+	(*it)->Properties(MULTIPLICITY) = 0.0;
+      } else {
+
+	RealType logGf = -0.5*Dot(deltaR,deltaR);
+
+	ValueType vsq = Dot(W.G,W.G);
+	ValueType scale = ((-1.0+sqrt(1.0+2.0*Tau*vsq))/vsq);
+	drift = scale*W.G;
+	deltaR = (*it)->R - W.R - drift;
+	RealType logGb = -oneover2tau*Dot(deltaR,deltaR);
       
+	RealType prob
+	  = std::min(exp(logGb-logGf)*W.Properties(PSISQ)/(*it)->Properties(PSISQ),1.0);
+      
+	if(Random() > prob){
+	  (*it)->Properties(AGE)++;
+	  emixed += emixed;
+	} else {
+	  accepted=true;  
+	  W.Properties(AGE) = 0;
+	  (*it)->R = W.R;
+	  (*it)->Drift = drift;
+	  (*it)->Properties = W.Properties;
+	  // H.update(W.Energy[(*it)->ID]);
+	  //H.get((*it)->E);
+	  H.copy((*it)->getEnergyBase());
+	  emixed += W.Properties(LOCALENERGY) + 0.5*W.Properties(WOSVAR)*Tau_var;
+	}
+	
+	//calculate the weight and multiplicity
+	ValueType M = Branch.branchGF(Tau,emixed*0.5,1.0-prob);
+	if((*it)->Properties(AGE) > 3.0) M = min(0.5,M);
+	if((*it)->Properties(AGE) > 0.9) M = min(1.0,M);
+	(*it)->Properties(WEIGHT) = M; 
+	(*it)->Properties(MULTIPLICITY) = M + Random();
+      }
+      */
+
       if(accepted) 
-	nAccept++;
+	++nAccept;
       else 
-	nReject++;
+	++nReject;
       
+      ++it;
     }
   }
 
@@ -420,16 +466,18 @@ namespace ohmmsqmc {
 	
 	for(int iat=0; iat<nptcl; iat++)
 	  deltaR(iat) = Wref.R(iw,iat) - (*it)->R(iat) - (*it)->Drift(iat);
-	RealType forwardGF = exp(-oneover2tau*Dot(deltaR,deltaR));
+	//RealType forwardGF = exp(-oneover2tau*Dot(deltaR,deltaR));
+	RealType logforwardGF = -oneover2tau*Dot(deltaR,deltaR);
 	
 	for(int iat=0; iat<nptcl; iat++)
 	  deltaR(iat) = (*it)->R(iat) - Wref.R(iw,iat) - Wref.G(iw,iat);
 	
-	RealType backwardGF = exp(-oneover2tau*Dot(deltaR,deltaR));
+	//RealType backwardGF = exp(-oneover2tau*Dot(deltaR,deltaR));
+	RealType logbackwardGF = -oneover2tau*Dot(deltaR,deltaR);
 	
-	ValueType psisq = psi(iw)*psi(iw);
-	
-	prob = min(backwardGF/forwardGF*psisq/(*it)->Properties(PSISQ),1.0);
+	ValueType logpsi(log(abs(psi(iw))));
+	prob = min(exp(logbackwardGF-forwardGF+2,0*(logpsi-(*it)->Properties(LOGPSI))),1.0);
+	//prob = min(backwardGF/forwardGF*psisq/(*it)->Properties(PSISQ),1.0);
 	if(Random() > prob) { 
 	  ++nReject; 
 	  (*it)->Properties(AGE) += 1;
@@ -438,7 +486,7 @@ namespace ohmmsqmc {
 	  for(int iat=0; iat<nptcl; iat++) (*it)->R(iat) = Wref.R(iw,iat);
 	  for(int iat=0; iat<nptcl; iat++) (*it)->Drift(iat) = Wref.G(iw,iat);
 	  (*it)->Properties(PSI) = psi(iw);
-	  (*it)->Properties(PSISQ) = psisq;
+	  (*it)->Properties(LOGPSI) = logpsi;
 	  (*it)->Properties(LOCALENERGY) = energy(iw);
 	  ++nAccept;
 	}

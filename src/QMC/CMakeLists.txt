@@ -17,7 +17,6 @@ IF(QMCAPPS MATCHES "MolecuApps")
     ../QMCWaveFunctions/MolecularOrbitals/NumericalRGFBuilder.cpp
     ../QMCWaveFunctions/MolecularOrbitals/GridMolecularOrbitals.cpp
     ../QMCWaveFunctions/MolecularOrbitals/MolecularOrbitalBuilder.cpp
-    ../QMCHamiltonians/GeCorePolPotential.cpp
     ../QMCHamiltonians/LocalPPotential.cpp
     ../QMCHamiltonians/WOS/Device.cpp
     ../QMCHamiltonians/WOS/WOSPotential.cpp
@@ -25,6 +24,7 @@ IF(QMCAPPS MATCHES "MolecuApps")
   SET(APPSRC MolecuApps.cpp)
 ENDIF(QMCAPPS MATCHES "MolecuApps")
 
+#    ../QMCHamiltonians/GeCorePolPotential.cpp
 #choose classes for QDApps
 IF(QMCAPPS MATCHES "QDApps")
   SET(WAVEFUNCTIONS

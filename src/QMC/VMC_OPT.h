@@ -81,7 +81,7 @@ namespace ohmmsqmc {
     ///list of files storing configurations  
     vector<string> ConfigFile;
     ///save the wave function
-    vector<ValueType> LogPsiSq;
+    vector<ValueType> LogPsi;
     ///save the local potential
     vector<RealType> VlocOld;
     ///method for optimization, default conjugate gradient
