@@ -22,7 +22,8 @@
 #include "QMC/QMCDriver.h" 
 namespace ohmmsqmc {
 
-  /** Implements the VMC algorithm. */
+  /** Implements the VMC algorithm. 
+   */
   class VMC: public QMCDriver {
   public:
     /// Constructor.
@@ -41,6 +42,13 @@ namespace ohmmsqmc {
     VMC(const VMC& a): QMCDriver(a) { }
     /// Copy operator (disabled).
     VMC& operator=(const VMC&) { return *this;}
+
+    ///temporary storage for drift
+    ParticleSet::ParticlePos_t drift;
+
+    ///temporary storage for random displacement
+    ParticleSet::ParticlePos_t deltaR;
+
   };
 }
 

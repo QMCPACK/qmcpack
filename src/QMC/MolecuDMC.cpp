@@ -68,6 +68,8 @@ namespace ohmmsqmc {
 
     //create a distance table for one walker
     DistanceTable::create(1);
+    deltaR.resize(W.getTotalNum());
+    drift.resize(W.getTotalNum());
     
     if(put(qmc_node)){
       
@@ -243,8 +245,6 @@ namespace ohmmsqmc {
     RealType g = sqrt(Tau);
     
     MCWalkerConfiguration::PropertyContainer_t Properties;
-    static ParticleSet::ParticlePos_t deltaR(W.getTotalNum());
-    static ParticleSet::ParticlePos_t drift(W.getTotalNum());
     int nh = H.size()+1;
     
     for (MCWalkerConfiguration::iterator it = W.begin();

@@ -46,6 +46,12 @@ namespace ohmmsqmc {
     MolecuDMC(const MolecuDMC& a): QMCDriver(a) { }
     /// Copy operator (disabled).
     MolecuDMC& operator=(const MolecuDMC&) { return *this;}
+
+     ///temporary storage for drift
+    ParticleSet::ParticlePos_t drift;
+
+    ///temporary storage for random displacement
+    ParticleSet::ParticlePos_t deltaR;
   };
 }
 #endif

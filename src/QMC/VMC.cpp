@@ -86,6 +86,9 @@ namespace ohmmsqmc {
 	  it != W.end(); ++it) {
 	(*it)->Properties(Weight) = 1.0;
       }
+
+      deltaR.resize(W.getTotalNum());
+      drift.resize(W.getTotalNum());
       
       Estimators.reset();
 
@@ -203,8 +206,6 @@ namespace ohmmsqmc {
     RealType g = sqrt(Tau);
     
     MCWalkerConfiguration::PropertyContainer_t Properties;
-    static ParticleSet::ParticlePos_t deltaR(W.getTotalNum());
-    static ParticleSet::ParticlePos_t drift(W.getTotalNum());
     int nh = H.size()+1;
     
     for (MCWalkerConfiguration::iterator it = W.begin();
@@ -269,8 +270,7 @@ namespace ohmmsqmc {
   
   void VMC::advanceAllWalkers() {
     
-    static ParticleSet::ParticlePos_t deltaR(W.getTotalNum());
-    
+    deltaR.resize(W.getTotalNum());
     WalkerSetRef Wref(W);
     Wref.resize(W.getActiveWalkers(),W.getTotalNum());
     
