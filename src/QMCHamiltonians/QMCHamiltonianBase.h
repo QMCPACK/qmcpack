@@ -88,16 +88,8 @@ namespace ohmmsqmc {
     ///return the number of Hamiltonians
     inline int size() const { return H.size();}
 
-    ///assign the Hamiltonian values to a vector a
-    template<class V>
-    inline void get(V& a) const {
-      std::copy(Hvalue.begin(), Hvalue.end(), a.begin());
-    }
-
-    ///assign the Hamiltonian values to a memory
-    inline void update(RealType* a) const {
-      std::copy(Hvalue.begin(), Hvalue.end(), a);
-    }
+    template<class IT>
+    inline void copy(IT first) { std::copy(Hvalue.begin(), Hvalue.end(), first);}
 
     QMCHamiltonianBase* getHamiltonian(const string& aname);
     
