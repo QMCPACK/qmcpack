@@ -29,7 +29,7 @@
 
 namespace ohmmsqmc {
 
-  RadialPotentialSet::~RadialPotentialSet() {
+  LocalPPotential::RadialPotentialSet::~RadialPotentialSet() {
     for(int ig=0; ig<grid_m.size(); ig++) delete grid_m[ig];
     for(int ip=0; ip<lpp_m.size(); ip++) delete lpp_m[ip];
   }

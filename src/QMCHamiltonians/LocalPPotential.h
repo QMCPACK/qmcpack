@@ -28,6 +28,14 @@
 
 namespace ohmmsqmc {
 
+
+  /**
+   * \brief Evaluate the local potentials (either pseudo or full
+   core) around each ion.
+   */
+
+  struct LocalPPotential: public QMCHamiltonianBase {
+
   /**
    *\brief Contains a set of radial grid potentials around a 
    center.  
@@ -75,19 +83,12 @@ namespace ohmmsqmc {
     }
   };
 
-  /**
-   * \brief Evaluate the local potentials (either pseudo or full
-   core) around each ion.
-   */
-
-  struct LocalPPotential: public QMCHamiltonianBase {
-
     ///the distance table containing electron-nuclei distances  
     DistanceTableData* d_table;
     ///the set of local-potentials (one for each ion)
     vector<RadialPotentialSet*> PP;
     ///unique index for each ion
-    ParticleSet::ParticleIndex_t Centers;
+    const ParticleSet::ParticleIndex_t& Centers;
 
     typedef RadialPotentialSet::GridType GridType;
     typedef RadialPotentialSet::LocalPotentialType LocalPotentialType;
