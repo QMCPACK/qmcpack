@@ -214,6 +214,7 @@ namespace ohmmsqmc {
       
 	ERRORMSG("Number of Effective Walkers is too small " << nw_effect)
 	ERRORMSG("Going to stop now.")
+        OHMMS::Controller->abort();
 	//int index = 0;
 	//scalar costmin = costList[index];
 	//int i=1;
