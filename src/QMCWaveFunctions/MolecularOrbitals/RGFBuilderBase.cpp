@@ -21,6 +21,7 @@
 #include "Numerics/HDFNumericAttrib.h"
 #include "QMCWaveFunctions/MolecularOrbitals/GridMolecularOrbitals.h"
 #include "QMCWaveFunctions/MolecularOrbitals/RGFBuilderBase.h"
+#include "OhmmsData/AttributeSet.h"
 using namespace std;
 namespace ohmmsqmc {
 
@@ -28,10 +29,14 @@ namespace ohmmsqmc {
   */
   RGFBuilderBase::~RGFBuilderBase() {
     //clean up
-    H5Gclose(m_group_id);   
-    H5Fclose(m_file_id);   
+    if(m_group_id>-1) H5Gclose(m_group_id);   
+    if(m_file_id>-1) H5Fclose(m_file_id);   
   }
 
+  /** printout for debug
+   * @param aroot filename
+   * @oaram omode mode, 0=check cubic spline quality, 1=ascii and 2=hdf5
+   */
   void RGFBuilderBase::print(const string& aroot, int omode) {
 
     enum {DEBUG_OUTPUT=0, ASCII_OUTPUT, HDF_OUTPUT};
@@ -85,9 +90,23 @@ namespace ohmmsqmc {
     }
   }
 
-  /** Default function to add a radial grid to the list of radial grids.
+  /** Add a radial grid to the list of radial grids.
    * \param cur the current xmlNode to be processed
    * \return true if succeeds
+   *
+   * The default grid is LogGrid and  grid/@npts = 1001.
+   * Valid radial grids instantiated by the attributes
+   * - LogGrid 
+   *  -- <grid type="log" ri="first-grid-value" rf="final-grid-value" npts="grid-points"/>
+   *  -- \f$r(i) = ri\times(rf/ri)^{i/(npts-1)}\f$ for i=[0,npts).
+   *  -- Default values : ri=1e-5, rf=100
+   * - LogGridZero  
+   *  -- <grid type="log" scale="scale-value" step="step-value" first="1" npts="grid-points"/>
+   *  -- \f$r(i) = scale\times(\exp{step*i}-1.0)\f$ for i=[0,npts). 
+   *  -- Follows Pseudopotential xml schema (fsatom-pp)
+   *  -- All the attributes should be provided.first attribute is ignored.
+   * - LinearGrid 
+   *  -- <grid type="linear" ri="first-grid-value" rf="final-grid-value" npts="grid-points"/>
    */
   bool 
   RGFBuilderBase::addGrid(xmlNodePtr cur) {
@@ -97,21 +116,37 @@ namespace ohmmsqmc {
     }
 
     XMLReport("Converting analytic orbitals to radial grid functions")
+
+    GridType *agrid=0;
     RealType ri = 1e-5;
     RealType rf = 100.0;
+    RealType ascale = -1.0e0;
+    RealType astep = 1.25e-2;
     IndexType npts = 1001;
-    const xmlChar* ri_ptr = xmlGetProp(cur,(const xmlChar *)"ri");
-    const xmlChar* rf_ptr = xmlGetProp(cur,(const xmlChar *)"rf");
-    const xmlChar* n_ptr = xmlGetProp(cur,(const xmlChar *)"npts");
+    string gridType("log");
 
-    if(ri_ptr) ri = atof((const char*)ri_ptr);
-    if(rf_ptr) rf = atof((const char*)rf_ptr);
-    if(n_ptr) npts = atoi((const char*)n_ptr);
-    LOGMSG("Using log grid with default values: ri = " << ri << " rf = " << rf << " npts = " << npts)
+    OhmmsAttributeSet radAttrib;
+    radAttrib.add(gridType,"type"); 
+    radAttrib.add(npts,"npts"); 
+    radAttrib.add(ri,"ri"); radAttrib.add(rf,"rf");
+    radAttrib.add(ascale,"ascale"); radAttrib.add(astep,"astep");
 
-    GridType *agrid = new LogGrid<RealType>;
-    agrid->set(ri,rf,npts);
-
+    if(cur) radAttrib.put(cur);
+    if(gridType == "log") {
+      if(ascale>0.0) {
+        LOGMSG("Using log grid with default values: scale = " << ascale << " step = " << astep << " npts = " << npts)
+        agrid = new LogGridZero<RealType>;
+        agrid->set(astep,ascale,npts);
+      } else {
+        LOGMSG("Using log grid with default values: ri = " << ri << " rf = " << rf << " npts = " << npts)
+        agrid = new LogGrid<RealType>;
+        agrid->set(ri,rf,npts);
+      }
+    } else if(gridType == "linear") {
+      LOGMSG("Using linear grid with default values: ri = " << ri << " rf = " << rf << " npts = " << npts)
+      agrid = new LinearGrid<RealType>;
+      agrid->set(ri,rf,npts);
+    }
     m_orbitals->Grids.push_back(agrid);
     return true;
   }
