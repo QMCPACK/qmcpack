@@ -84,7 +84,7 @@ namespace ohmmsqmc {
     vector<QuantumNumberType> RnlID;
 
     ///the constructor
-    SphericalOrbitalSet(int lmax, bool addsignforM=false): Ylm(lmax,addsignforM){ }
+    explicit SphericalOrbitalSet(int lmax, bool addsignforM=false): Ylm(lmax,addsignforM){ }
     ~SphericalOrbitalSet() {
       myTable = NULL;
       //for(int i=0; i<Rnl.size(); i++) delete Rnl[i];
