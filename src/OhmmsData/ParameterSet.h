@@ -31,6 +31,14 @@ struct ParameterSet {
    */
   std::map<std::string,OhmmsElementBase*>  thisSet;
 
+  bool get(std::ostream& os) {
+    std::map<std::string,OhmmsElementBase*>::iterator it = thisSet.begin();
+    while(it != thisSet.end()) {
+      (*it).second->get(os);it++;
+    }
+    return true;
+  }
+
   /** add a new parameter corresponding to an xmlNode <parameter/>
    *@param aparam reference the object which this parameter is assigned to.
    *@param aname the value of the name attribute
