@@ -62,6 +62,33 @@ namespace ohmmsqmc {
     
     inline void resizeByWalkers(int nw) { }
     
+    /** @ingroup particlebyparticle
+     *@brief evalaute the single-particle-orbital values
+     *
+     *HeSTOClementiRottie class should not be used with particle-by-particle update
+     */
+    template<class VV, class GV>
+    inline 
+    void 
+    evaluate(const ParticleSet& P, int iat, VV& phi, GV& dphi, VV& d2phi ) {
+      RealType r = myTable->Temp[0].r1;
+      RealType rinv = myTable->Temp[0].rinv1;
+      PosType dr = myTable->Temp[0].dr1;
+      RealType chi = 0.0, d2chi = 0.0;
+      PosType dchi;
+      for(int i=0; i<C.size(); i++) {
+	RealType u = C[i]*exp(-Z[i]*r);
+	RealType du = -u*Z[i]*rinv; // 1/r du/dr 
+	RealType d2u = u*ZZ[i]; // d2u/dr2
+	chi += u;
+	dchi += du*dr;
+	d2chi += (d2u+2.0*du); 
+      }
+      phi[0]=chi;
+      dphi[0] = dchi;
+      d2phi[0]=d2chi;
+    }
+     
     /**
      *@param P input configuration containing N particles
      *@param first index of the first particle
@@ -90,7 +117,6 @@ namespace ohmmsqmc {
     evaluate(const ParticleSet& P, int first, int last,
 	     VM& logdet, GM& dlogdet, VM& d2logdet) {
       RealType r = myTable->r(first);
-      
       RealType rinv = myTable->rinv(first);
       PosType dr = myTable->dr(first);
       RealType rinv2 = rinv*rinv;

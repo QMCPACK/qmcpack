@@ -124,6 +124,21 @@ namespace ohmmsqmc {
     
     inline int size() const { return Orbital.size();}
     
+    // evaluate the single-particle orbital value of iat-th el
+    template<class VV, class GV>
+    inline void evaluate(const ParticleSet& P, int iat, VV& phi, GV& dphi, VV& d2phi ) {
+      RealType r = myTable->Temp[0].r1;
+      RealType rinv = myTable->Temp[0].rinv1;
+      PosType dr = myTable->Temp[0].dr1;
+      Ylm.evaluate(dr);
+      for(int nl=0; nl<RnlPool.size(); nl++)  {
+	RnlPool[nl]->evaluate(r,rinv);
+      }
+      for(int j=0; j<Orbital.size(); j++)  {
+	phi[j] = (*Orbital[j])(r,rinv,dr,dphi[j],d2phi[j]);
+      }
+    }
+
     template<class VM, class GM>
     inline void 
     evaluate(const ParticleSet& P, int first, int last,
@@ -143,6 +158,7 @@ namespace ohmmsqmc {
 	}
       }
     }
+
 
     template<class VM, class GM>
     inline void 
