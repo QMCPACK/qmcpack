@@ -21,7 +21,12 @@
 
 #include <vector>
 using std::vector;
+#include "ohmms-config.h"
 
+#ifdef HAVE_LIBBOOST
+#include "Utilities/BoostRandom.h"
+typedef BoostRandom RandomGenerator_t;
+#else
 #ifdef USE_SPRNG
 #include "Utilities/SprngRandom.h"
 typedef SprngRandom<0> RandomGenerator_t;
@@ -29,7 +34,7 @@ typedef SprngRandom<0> RandomGenerator_t;
 #include "Utilities/RandRandom.h"
 typedef RandRandom RandomGenerator_t;
 #endif
-
+#endif
 extern RandomGenerator_t Random;
 
 #endif
