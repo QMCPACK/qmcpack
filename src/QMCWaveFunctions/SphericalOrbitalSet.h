@@ -80,9 +80,11 @@ namespace ohmmsqmc {
     vector<GT*> Grids;
     ///container for the radial orbitals
     vector<ROT*> Rnl;
+    ///container for the quantum-numbers
+    vector<QuantumNumberType> RnlID;
 
     ///the constructor
-    SphericalOrbitalSet(int lmax): Ylm(lmax){ }
+    SphericalOrbitalSet(int lmax, bool addsignforM=false): Ylm(lmax,addsignforM){ }
     ~SphericalOrbitalSet() {
       myTable = NULL;
       //for(int i=0; i<Rnl.size(); i++) delete Rnl[i];
