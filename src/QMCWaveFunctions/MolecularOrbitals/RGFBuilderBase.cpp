@@ -107,11 +107,11 @@ namespace ohmmsqmc {
     if(ri_ptr) ri = atof((const char*)ri_ptr);
     if(rf_ptr) rf = atof((const char*)rf_ptr);
     if(n_ptr) npts = atoi((const char*)n_ptr);
+    LOGMSG("Using log grid with default values: ri = " << ri << " rf = " << rf << " npts = " << npts)
 
     GridType *agrid = new LogGrid<RealType>;
     agrid->set(ri,rf,npts);
 
-    LOGMSG("Using log grid with default values: ri = " << ri << " rf = " << rf << " npts = " << npts)
     m_orbitals->Grids.push_back(agrid);
     return true;
   }

@@ -16,7 +16,7 @@
 #ifndef OHMMS_QMC_NUMERICALRADIALGRIDFUNCTOR_H
 #define OHMMS_QMC_NUMERICALRADIALGRIDFUNCTOR_H
 
-#include "QMCWaveFunctions/MolecularOrbitals/RadialGridFunctorBuilder.h"
+#include "QMCWaveFunctions/MolecularOrbitals/RGFBuilderBase.h"
 
 namespace ohmmsqmc {
 

@@ -35,11 +35,7 @@ namespace ohmmsqmc {
     inline BasicGaussian(T sig, T c) { 
       reset(sig,c);
     } 
-    inline void reset(T sig, T c) {
-      Sigma = sig; Coeff = c;
-      CoeffP = -2.0*Sigma*Coeff;
-    }
-
+    void reset(T sig, T c);
     inline void setgrid(T r) { }
     inline T f(T r2) {
       return Coeff*exp(-Sigma*r2);
@@ -52,12 +48,15 @@ namespace ohmmsqmc {
   template<class T>
   struct GaussianCombo {
     typedef T value_type;
+    ///Boolean
+    bool Normalized;
+
     T L;
     T NormL;
     T NormPow;
     std::vector<xmlNodePtr> InParam;
     std::vector<BasicGaussian<T>* > gset;
-    GaussianCombo(int l=0);
+    explicit GaussianCombo(int l, bool normalized);
     void reset();
     inline value_type f(value_type r) {
       value_type res=0;
@@ -82,10 +81,14 @@ namespace ohmmsqmc {
    *   - any number of radial orbitals 
    */
   struct GTO2GridBuilder: public RGFBuilderBase {
+    ///Boolean
+    bool Normalized;
     ///constructor
-    GTO2GridBuilder(){}
+    GTO2GridBuilder(bool normalized=false):Normalized(normalized){}
     //bool addGrid(xmlNodePtr cur);
     bool addRadialOrbital(xmlNodePtr cur, const QuantumNumberType& nlms);
+
+    bool addGrid(xmlNodePtr cur);
   };
 }
 #endif

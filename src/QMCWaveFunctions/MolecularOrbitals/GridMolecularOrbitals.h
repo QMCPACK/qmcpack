@@ -14,15 +14,14 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_QMC_RADIALGRID_MOLECULARORBITALS_H
-#define OHMMS_QMC_RADIALGRID_MOLECULARORBITALS_H
+#ifndef OHMMS_QMC_CONVERT2_RADIALGRID_H
+#define OHMMS_QMC_CONVERT2_RADIALGRID_H
 
-#include <vector>
 #include "Numerics/OneDimGridFunctor.h"
 #include "QMCWaveFunctions/SphericalOrbitalSet.h"
-#include "QMCWaveFunctions/MolecularOrbitals/MolecularOrbitalBasis.h"
-#include "QMCWaveFunctions/LCOrbitals.h"
 #include "QMCWaveFunctions/OrbitalBuilderBase.h"
+#include "QMCWaveFunctions/MolecularOrbitals/MolecularOrbitalBasis.h"
+#include "QMCWaveFunctions/MolecularOrbitals/RGFBuilderBase.h"
 
 namespace ohmmsqmc {
 
@@ -67,15 +66,27 @@ namespace ohmmsqmc {
 
   private:
 
+    enum {DONOT_EXPAND=0, GAUSSIAN_EXPAND=1, NATURAL_EXPAND};
+
     ///pointer to the BasisSet built by GridMolecularOrbitals
     BasisSetType*      BasisSet;
 
     ///distance table pointer
     DistanceTableData* d_table;
+
+    ///Current RadiaaGridFunctorBuilder
+    RGFBuilderBase* rbuilder; 
     ///map for the radial orbitals
     map<string,int>    RnlID;
     ///map for the centers
     map<string,int>    CenterID;
+
+    ///map for (n,l,m,s) to its quantum number index
+    map<string,int> nlms_id;
+
+    ///append Ylm channels
+    int expandYlm(const string& rnl, const QuantumNumberType& nlms, int num, 
+                  CenteredOrbitalType* aos, xmlNodePtr cur1, int expandlm=DONOT_EXPAND);
 
   };
 }

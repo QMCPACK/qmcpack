@@ -208,7 +208,7 @@ namespace ohmmsqmc {
       } else if(grid_type[0] == LOG_GRID_ZERO){
         agrid = new LogGridZero<RealType>;
         LOGMSG("Using a log zero grid.")
-          RealType a = grid_params(0);
+        RealType a = grid_params(0);
         RealType b = grid_params(1);
         IndexType npts = static_cast<int>(grid_params(2));
         agrid->set(a,b,npts);

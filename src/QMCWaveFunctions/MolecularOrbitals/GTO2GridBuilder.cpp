@@ -19,7 +19,6 @@
 #include "Numerics/OneDimCubicSpline.h"
 #include "Numerics/HDFNumericAttrib.h"
 #include "QMCWaveFunctions/MolecularOrbitals/GridMolecularOrbitals.h"
-#include "QMCWaveFunctions/MolecularOrbitals/RadialGridFunctorBuilder.h"
 #include "QMCWaveFunctions/MolecularOrbitals/GTO2GridBuilder.h"
 
 namespace ohmmsqmc {
@@ -32,7 +31,17 @@ namespace ohmmsqmc {
   }
 
   template<class T>
-  GaussianCombo<T>::GaussianCombo(int l){
+  inline void BasicGaussian<T>::reset(T sig, T c) {
+      Sigma = sig; Coeff = c;
+      CoeffP = -2.0*Sigma*Coeff;
+      DEBUGMSG("Gassuian " << Sigma << " " << Coeff)
+    }
+
+
+  template<class T>
+  GaussianCombo<T>::GaussianCombo(int l, bool normalized): 
+    Normalized(normalized)
+  {
     L = static_cast<T>(l);
     //Everything related to L goes to NormL and NormPow
     NormL = pow(2,L+1)*sqrt(2.0/static_cast<T>(DFactorial(2*l+1)))*pow(2.0/M_PI,0.25);
@@ -57,11 +66,11 @@ namespace ohmmsqmc {
       if(aptr == 0 || cptr == 0) continue;
       T alpha = atof((const char*)aptr);
       T c = atof((const char*)cptr);
-      T norm = c*NormL*pow(alpha,NormPow); //get the normalization factor
-      gset[i]->reset(alpha,norm);
+      //get the normalization factor
+      if(!Normalized) c *= NormL*pow(alpha,NormPow); 
+      gset[i]->reset(alpha,c);
     }
   }
-
 
   bool
   GTO2GridBuilder::addRadialOrbital(xmlNodePtr cur, 
@@ -72,7 +81,7 @@ namespace ohmmsqmc {
     int n=nlms[0];
     int l=nlms[1];
 
-    GaussianCombo<ValueType> gaussian(l);
+    GaussianCombo<ValueType> gaussian(l,Normalized);
  
     xmlNodePtr s = cur->xmlChildrenNode;
     while(s != NULL) {
@@ -97,6 +106,37 @@ namespace ohmmsqmc {
     m_orbitals->Rnl.push_back(radorb);
     m_orbitals->RnlID.push_back(nlms);
 
+    return true;
+  }
+  /** Default function to add a radial grid to the list of radial grids.
+   * \param cur the current xmlNode to be processed
+   * \return true if succeeds
+   */
+  bool 
+  GTO2GridBuilder::addGrid(xmlNodePtr cur) {
+
+    if(!m_orbitals) {
+      ERRORMSG("m_orbitals, SphericalOrbitals<ROT,GT>*, is not initialized")
+      return false;
+    }
+
+    XMLReport("Converting analytic orbitals to radial grid functions. Modify to use zero-based grid.")
+    RealType ri = 1e-6;
+    RealType rf = 100.0;
+    IndexType npts = 1001;
+    const xmlChar* ri_ptr = xmlGetProp(cur,(const xmlChar *)"ri");
+    const xmlChar* rf_ptr = xmlGetProp(cur,(const xmlChar *)"rf");
+    const xmlChar* n_ptr = xmlGetProp(cur,(const xmlChar *)"npts");
+
+    if(ri_ptr) ri = atof((const char*)ri_ptr);
+    if(rf_ptr) rf = atof((const char*)rf_ptr);
+    if(n_ptr) npts = atoi((const char*)n_ptr);
+    LOGMSG("Using log grid with default values: ri = " << ri << " rf = " << rf << " npts = " << npts)
+
+    GridType *agrid = new LogGrid<RealType>;
+    agrid->set(ri,rf,npts);
+
+    m_orbitals->Grids.push_back(agrid);
     return true;
   }
 }
