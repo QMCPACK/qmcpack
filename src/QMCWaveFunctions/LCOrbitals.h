@@ -92,6 +92,27 @@ namespace ohmmsqmc {
       BasisSet->resizeByWalkers(nw);
     }
 
+    /**@ingroup particlebyparticle */
+    template<class VV, class GV>
+    inline void 
+    evaluate(const ParticleSet& P, int iat, VV& psi, GV& dpsi, VV& d2psi) {
+      BasisSet->evaluate(P,iat);
+      if(Identity) {
+        for(int j=0 ; j<NumPtcls; j++) {
+	  psi[j] = BasisSet->Y(0,j);
+	  dpsi[j] = BasisSet->dY(0,j);
+          d2psi[j] = BasisSet->d2Y(0,j);
+        }
+      } else {
+	int nb = BasisSet->TotalBasis;
+	for(int j=0 ; j<NumPtcls; j++) {
+	  psi[j]   = dot(&C(j,0),BasisSet->y(0),nb);
+	  dpsi[j]  = dot(&C(j,0),BasisSet->dy(0),nb);
+	  d2psi[j] = dot(&C(j,0),BasisSet->d2y(0),nb);
+        }
+      }
+    }
+
     /** complete the values of the single-particle orbitals and their gradients and laplacians
        @param P input configuration containing N particles
        @param first index of the first particle
@@ -107,11 +128,11 @@ namespace ohmmsqmc {
       if(!(ID || first)) {
 	BasisSet->evaluate(P);
       }
-      int nptcl = last-first;
+      NumPtcls=last-first;
       //check if identity matrix
       if(Identity) {
-	for(int i=0; i<nptcl; i++,first++){
-	  for(int j=0 ; j<nptcl; j++) {
+	for(int i=0; i<NumPtcls; i++,first++){
+	  for(int j=0 ; j<NumPtcls; j++) {
 	    logdet(j,i) = BasisSet->Y(first,j);
 	    dlogdet(i,j) = BasisSet->dY(first,j);
 	    d2logdet(i,j) = BasisSet->d2Y(first,j);
@@ -120,8 +141,8 @@ namespace ohmmsqmc {
       } else {
 	int nb = BasisSet->TotalBasis;
 	//iat is an index offset for the particle number
-	for(int i=0, iat=first; i<nptcl; i++,iat++){
-	  for(int j=0 ; j<nptcl; j++) {
+	for(int i=0, iat=first; i<NumPtcls; i++,iat++){
+	  for(int j=0 ; j<NumPtcls; j++) {
 	    //logdet(j,i) = \f$\sum_k^{nb} C(j,k) Y(i+first,k)\f$
 	    logdet(j,i) = dot(&C(j,0),BasisSet->y(iat),nb);
 	    dlogdet(i,j) = dot(&C(j,0),BasisSet->dy(iat),nb);

@@ -45,8 +45,6 @@ namespace ohmmsqmc {
    *<li> dpsiM(i,j) \f$= \nabla_i \psi_j({\bf r}_i)\f$
    *<li> d2psiM(i,j) \f$= \nabla_i^2 \psi_j({\bf r}_i)\f$
    *</ul>
-   *Example of SPOSet is LCOrbitals
-   *
    *Very important to note that psiM is a transpose of a matrix defined as
    *\f$D_{ij} =  \psi_j({\bf r}_i)\f$. Upon inversion, other operations
    *to update and evaluate \f$ \nabla_i \ln{\rm D} \f$ and 
@@ -63,7 +61,7 @@ namespace ohmmsqmc {
    *<li> The minor \f$ M_{ij} \f$ for the element \f$ D_{ij} \f$ 
    *is the determinant of an \f$ (N-1) \times (N-1) \f$ matrix obtained 
    *by removing all the elements of row \f$ i \f$ and column \f$ j \f$.  
-   *<li>The cofactor matrix \f$ C_{ij} \f$ is constructed on an element by 
+   *<li>The cofactor matrix \f$ C \f$ is constructed on an element by 
    *element basis from the minor using the simple relation: 
    *\f[ C_{ij} = (-1)^{i+j}M_{ij} \f]
    *<li>The inverse of a matrix is related to the transpose of the 
@@ -78,11 +76,12 @@ namespace ohmmsqmc {
    \f]
    *
    *To calculate the local energy \f$E_L\f$ it is necessary to evaluate
-   *the gradient and laplacian of the logarithm of the DiracDeterminant
+   *the gradient and laplacian of the logarithm of the Diracdeterminant
    \f[ 
-   \nabla_i \ln |D({\bf R})| = \frac{\nabla_i|D({\bf R})|}{|D({\bf R})|} 
-   \f] \f[
-   \nabla^2_i \ln |D({\bf R})| = \frac{\nabla_i^2|D({\bf R})|}{|D({\bf R})|}
+   \nabla_i |D({\bf R})| = \frac{\nabla_i|D({\bf R})|}{|D({\bf R})|} 
+   \f]
+   \f[
+   \nabla^2_i |D({\bf R})| = \frac{\nabla_i^2|D({\bf R})|}{|D({\bf R})|}
    -\left(\frac{\nabla_i|D({\bf R})|}{|D({\bf R})|}\right)^2.
    \f]
    *We have already shown how to evaluate the determinant in terms of its
@@ -95,7 +94,8 @@ namespace ohmmsqmc {
    *except \f${\bf r_i}\f$.  This leads to the result
    \f[
    \frac{\nabla_i|D|}{|D|} = \sum_{j=1}^N (\nabla_i D_{ij})(D^{-1})_{ji}.
-   \f] \f[
+   \f]
+   \f[
    \frac{\nabla^2_i|D|}{|D|} = \sum_{j=1}^N (\nabla^2_i D_{ij})(D^{-1})_{ji}.
    \f]
    *
@@ -103,14 +103,7 @@ namespace ohmmsqmc {
 
    */
   template<class SPOSet>
-  class DiracDeterminant {
-
-  public:
-
-    typedef typename SPOSet::RealType  RealType;
-    typedef typename SPOSet::ValueType ValueType;
-    typedef typename SPOSet::PosType   PosType;
-    typedef typename SPOSet::GradType  GradType;
+  struct DiracDeterminant: public OrbitalBase {
 
 #if defined(USE_BLITZ)
     typedef blitz::Array<ValueType,2> Determinant_t;
@@ -128,7 +121,7 @@ namespace ohmmsqmc {
      *@brief constructor
     */
     DiracDeterminant(SPOSet& spos, int first=0): 
-      Phi(spos), FirstIndex(first) {}
+      NP(0), Phi(spos), FirstIndex(first) {}
 
     ///default destructor
     ~DiracDeterminant() {}
@@ -136,11 +129,12 @@ namespace ohmmsqmc {
     /**copy constructor
      *@brief copy constructor, only resize and assign orbitals
      */
-    DiracDeterminant(const DiracDeterminant<SPOSet>& s): Phi(s.Phi){
+    DiracDeterminant(const DiracDeterminant<SPOSet>& s): Phi(s.Phi),NP(0){
       resize(s.rows(), s.cols());
     }
 
-    DiracDeterminant<SPOSet>& operator=(const DiracDeterminant<SPOSet>& s)  {
+    DiracDeterminant<SPOSet>& operator=(const DiracDeterminant<SPOSet>& s) {
+      NP=0;
       resize(s.rows(), s.cols());
       return *this;
     }
@@ -166,9 +160,109 @@ namespace ohmmsqmc {
       psiM.resize(nel,norb);
       dpsiM.resize(nel,norb);
       d2psiM.resize(nel,norb);
-      //    work.resize(norb);
-      //   pivot.resize(norb);
       LastIndex = FirstIndex + nel;
+    }
+
+    void registerData(ParticleSet& P, PooledData<RealType>& buf) {
+      if(!NP) {//first time, allocate once
+	int norb = cols();
+	psiMinv.resize(rows(),cols());
+	psiV.resize(norb);
+	dpsiV.resize(norb);
+	d2psiV.resize(norb);
+	workV1.resize(norb);
+	workV2.resize(norb);
+	NP=P.getTotalNum();
+	myG.resize(NP);
+	myL.resize(NP);
+	FirstAddressOfG = &myG[0][0];
+	LastAddressOfG = FirstAddressOfG + NP*DIM;
+	FirstAddressOfdV = &((*dpsiM.begin())[0]);
+	LastAddressOfdV = FirstAddressOfdV + rows()*cols()*DIM;
+      }
+
+      //allocate once but each walker calls this
+      myG=0.0;
+      myL=0.0;
+
+      ValueType x=evaluate(P,myG,myL); 
+
+      //add the data: determinant, inverse, gradient and laplacians
+      buf.add(CurrentDet);
+      buf.add(psiM.begin(),psiM.end());
+      buf.add(FirstAddressOfdV,LastAddressOfdV);
+      buf.add(d2psiM.begin(),d2psiM.end());
+      buf.add(myL.begin(), myL.end());
+      buf.add(FirstAddressOfG,LastAddressOfG);
+    }
+
+
+    void putData(ParticleSet& P, PooledData<RealType>& buf) {
+      cumRatio=1.0;
+      buf.get(CurrentDet);
+      buf.get(psiM.begin(),psiM.end());
+      buf.get(FirstAddressOfdV,LastAddressOfdV);
+      buf.get(d2psiM.begin(),d2psiM.end());
+      buf.get(myL.begin(), myL.end());
+      buf.get(FirstAddressOfG,LastAddressOfG);
+
+      P.G += myG;
+      P.L += myL;
+    }
+
+    ValueType ratio(ParticleSet& P, int iat) {
+      Phi.evaluate(P, iat, psiV, dpsiV, d2psiV);
+      WorkingPtcl = iat-FirstIndex;
+      return curRatio = DetRatio(psiM, psiV.begin(),WorkingPtcl);
+    }
+
+    void update(ParticleSet& P, 
+		ParticleSet::ParticleGradient_t& G, 
+		ParticleSet::ParticleLaplacian_t& L,
+		int iat) {
+
+      DetUpdate(psiM,psiV,workV1,workV2,WorkingPtcl);
+
+      for(int j=0; j<cols(); j++) {
+	dpsiM(WorkingPtcl,j)=dpsiV[j];
+	d2psiM(WorkingPtcl,j)=d2psiV[j];
+      }
+
+      int kat=FirstIndex;
+      for(int i=0; i<rows(); i++,kat++) {
+	PosType rv =psiM(i,0)*dpsiM(i,0);
+	ValueType lap=psiM(i,0)*d2psiM(i,0);
+	for(int j=1; j<cols(); j++) {
+	  rv += psiM(i,j)*dpsiM(i,j);
+	  lap += psiM(i,j)*d2psiM(i,j);
+	}
+	lap -= dot(rv,rv);
+	G[kat] += rv - myG[kat]; myG[kat]=rv;
+	L[kat] += lap -myL[kat]; myL[kat]=lap;
+      }
+
+      cumRatio *= curRatio;
+    }
+
+    ValueType evaluate(ParticleSet& P, PooledData<RealType>& buf) {
+      CurrentDet *= cumRatio;
+
+      buf.put(CurrentDet);
+      buf.put(psiM.begin(),psiM.end());
+      buf.put(FirstAddressOfdV,LastAddressOfdV);
+      buf.put(d2psiM.begin(),d2psiM.end());
+      buf.put(myL.begin(), myL.end());
+      buf.put(FirstAddressOfG,LastAddressOfG);
+
+      /*
+      cout << "Current determinant by PTP " << CurrentDet << endl;
+      for(int i=0; i<rows(); i++){
+   	for(int j=0; j<cols(); j++)
+	  cout << psiM(i,j) << " ";
+	cout << endl;
+      }
+      */
+      return CurrentDet;
     }
 
     void resizeByWalkers(int nw);
@@ -180,24 +274,29 @@ namespace ohmmsqmc {
     inline int cols() const { return psiM.cols();}
 
     ///evaluate for a particle set
-    template<class GradVec, class LapVec>
-    ValueType evaluate(ParticleSet& P, GradVec& G, LapVec& L);
+    ValueType
+    evaluate(ParticleSet& P, 
+	     ParticleSet::ParticleGradient_t& G, 
+	     ParticleSet::ParticleLaplacian_t& L);
 
     ///evaluate for walkers
-    template<class WfsVec, class GradMat, class LapMat> 
-    void evaluate(WalkerSetRef& W, WfsVec& psi, GradMat& G, LapMat& L);
+    void 
+    evaluate(WalkerSetRef& W, 
+	     ValueVectorType& psi,
+	     WalkerSetRef::WalkerGradient_t& G,
+	     WalkerSetRef::WalkerLaplacian_t& L);
 
-  private:
-
-    /*a set of single-particle orbitals used to fill in the 
-      values of the matrix */
-    SPOSet& Phi;
+    ///The number of particles
+    int NP;
 
     ///index of the first particle with respect to the particle set
     int FirstIndex;
 
     ///index of the last particle with respect to the particle set
     int LastIndex;
+
+    ///a set of single-particle orbitals used to fill in the  values of the matrix 
+    SPOSet& Phi;
 
     ///index of the particle (or row) 
     int WorkingPtcl;      
@@ -207,54 +306,56 @@ namespace ohmmsqmc {
 
     /// psiM(j,i) \f$= \psi_j({\bf r}_i)\f$
     Determinant_t psiM;
+
+    Determinant_t psiMinv;
     /// dpsiM(i,j) \f$= \nabla_i \psi_j({\bf r}_i)\f$
     Gradient_t    dpsiM;
     /// d2psiM(i,j) \f$= \nabla_i^2 \psi_j({\bf r}_i)\f$
     Laplacian_t   d2psiM;
+
+    /// value of single-particle orbital for particle-by-particle update
+    std::vector<ValueType> psiV;
+    std::vector<GradType> dpsiV;
+    std::vector<ValueType> d2psiV;
+    std::vector<ValueType> workV1, workV2;
 
     ///storages to process many walkers once
     vector<Determinant_t> psiM_v; 
     vector<Gradient_t>    dpsiM_v; 
     vector<Laplacian_t>   d2psiM_v; 
 
-    //TempMinv(i,j) \f$= |Det(\{R^{'}\})|_{i,j}^{-1}\f$ with before update
-    //ValueMatrix_t tDetInv;
+    ValueType curRatio,cumRatio;
+    ValueType *FirstAddressOfG;
+    ValueType *LastAddressOfG;
+    ValueType *FirstAddressOfdV;
+    ValueType *LastAddressOfdV;
+
+    ParticleSet::ParticleGradient_t myG;
+    ParticleSet::ParticleLaplacian_t myL;
   };
 
-  /**
+  /** Calculate the value of the Dirac determinant for particles
    *@param P input configuration containing N particles
    *@param G a vector containing N gradients
    *@param L a vector containing N laplacians
    *@return the value of the determinant
-   *@brief Calculate the value of the Dirac determinant for particles
-   *\f$ (first,first+nel). \f$ 
    *
-   *Add the gradient and laplacian contribution of the determinant 
-   *to G(radient) and L(aplacian) for local energy calculations.
+   *\f$ (first,first+nel). \f$  Add the gradient and laplacian 
+   *contribution of the determinant to G(radient) and L(aplacian)
+   *for local energy calculations.
    */
   template<class SPOSet>
-  template<class GradVec, class LapVec>
   inline 
   typename DiracDeterminant<SPOSet>::ValueType 
   DiracDeterminant<SPOSet>::evaluate(ParticleSet& P, 
-				     GradVec& G, 
-				     LapVec&  L) {
+				     ParticleSet::ParticleGradient_t& G, 
+				     ParticleSet::ParticleLaplacian_t& L) {
 
     int nrows = rows();
     int ncols = cols();
 
     Phi.evaluate(P, FirstIndex, LastIndex, psiM,dpsiM, d2psiM);
     CurrentDet = Invert(psiM.data(),nrows,ncols);
-    //evaluate the values of single-particle orbtials: M and dM
-    //     if(nrows == 1) {
-    //       CurrentDet = psiM(0,0);
-    //       psiM(0,0) = 1.0/psiM(0,0);
-    //     } else {
-    //     LUFactorization(nrows, ncols, psiM.data(), nrows, &pivot[0]);
-    //     CurrentDet = psiM(0,0);
-    //     for (int i=1; i<ncols; ++i) CurrentDet *= psiM(i,i);
-    //     InvertLU(nrows, psiM.data(), nrows, &pivot[0], &work[0], nrows);
-    //     }
 
     int iat = FirstIndex; //the index of the particle with respect to P
     for(int i=0; i<nrows; i++, iat++) {
@@ -268,20 +369,46 @@ namespace ohmmsqmc {
       L(iat) += lap - dot(rv,rv);
     }
 
-    //complete the gradient and laplacian terms and add to the gradient
-    //     const ValueType* logdet = psiM.data();
-    //     const ValueType* d2logdet = d2psiM.data();
-    //     const PosType* dlogdet = dpsiM.data();
-    //     int iat = FirstIndex; //the index of the particle with respect to P
-    //     for(int i=0; i<nrows; 
-    // 	i++, iat++,logdet+=ncols,dlogdet+=ncols,d2logdet+=ncols) {
-    //       PosType rv = dot(logdet,dlogdet, ncols);
-    //       G(iat) += rv;
-    //       L(iat) += dot(logdet,d2logdet,ncols) - dot(rv,rv);
-    //     }
+    /*
+    cout << "Current determinant by inversion " << CurrentDet << endl;
+      for(int i=0; i<rows(); i++){
+	for(int j=0; j<cols(); j++)
+	  cout << psiM(i,j) << " ";
+	cout << endl;
+      }
+    */
+
     return CurrentDet;
   }
 
+
+//   template<class SPOSet>
+//   inline 
+//   void 
+//   DiracDeterminant<SPOSet>::registerData(ParticleSet& P, PooledData<RealType>& buf) {
+
+//     if(!NP) {//first time, allocate once
+//       int norb = cols();
+//       psiV.resize(norb);
+//       dpsiV.resize(norb);
+//       d2psiV.resize(norb);
+//       workV1.resize(norb);
+//       workV2.resize(norb);
+//       NP=P.getTotalNum();
+//       myG.resize(NP);
+//       myL.resize(NP);
+//       FirstAddressOfG = &myG[0][0];
+//       LastAddressOfG = FirstAddressOfG + NP*DIM;
+//     }
+
+//     ValueType x=evaluate(P,myG,myL); 
+
+//     //add the data: determinant, inverse, gradient and laplacians
+//     buf.add(CurrentDet);
+//     buf.add(psiM.begin(),psiM.end());
+//     buf.add(myL.begin(), myL.end());
+//     buf.add(FirstAddressOfG,LastAddressOfG);
+//   }
 
   /**void evaluate(WalkerSetRef& W,  WfsVec& psi, GradMat& G, LapMat& L)
    *@param W Walkers, set of input configurations, Nw is the number of walkers
@@ -295,12 +422,11 @@ namespace ohmmsqmc {
    *to G and L for local energy calculations.
    */
   template<class SPOSet>
-  template<class WfsVec, class GradMat, class LapMat>
   inline void 
-  DiracDeterminant<SPOSet>::evaluate(WalkerSetRef& W,  
-				     WfsVec& psi, 
-				     GradMat& G, 
-				     LapMat& L) {
+  DiracDeterminant<SPOSet>::evaluate(WalkerSetRef& W, 
+				     ValueVectorType& psi,
+				     WalkerSetRef::WalkerGradient_t& G,
+				     WalkerSetRef::WalkerLaplacian_t& L) {
 
     int nw = W.walkers();
 

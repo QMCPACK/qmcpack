@@ -72,16 +72,13 @@ public:
 
   void initParameters() { }
 
-  /**
-   *@param P input configuration containing N particles
-   *@param G a vector containing N gradients
-   *@param L a vector containing N laplacians
-   *@return SlaterDeterminant value
-   *@brief While calculating the Multi-Slater determinant value for 
-   *the set of particles, add the gradient and laplacian 
-   *contribution of the determinant to G(radient) and L(aplacian)
-   *for local energy calculations.
-   */
+  inline ValueType
+  ratio(ParticleSet& P, int iat) { 
+    std::cerr << "MultiSlaterDeterminant should not be used by Particle-By-Particle update"
+              << std::endl;
+    return 1.0;
+  }
+
   inline ValueType
   evaluate(ParticleSet& P, //const DistanceTableData* dtable,
 	   ParticleSet::ParticleGradient_t& G,
@@ -93,7 +90,6 @@ public:
 
     ValueType psi = 0.0;
     for(int i=0; i<SDets.size(); i++){
-      //ValueType cdet = C[i]*Dets[i]->evaluate(P,dtable,g,l);
       ValueType cdet = C[i]*SDets[i]->evaluate(P,g,l);
       psi += cdet;
       gt += cdet*g;
@@ -106,6 +102,7 @@ public:
     L += lt*psiinv;
     return psi;
   }
+
   /// returns the dimension of the j-th determinant 
   inline int size(int i, int j) const {return Dets[i]->size(j);}
 
@@ -117,7 +114,25 @@ public:
     for(int i=0; i<SDets.size(); i++) SDets[i]->evaluate(W,psi,G,L);
       //Dets[i]->evaluate(W,dtable,psi,G,L);
   }
-
+  
+  void registerData(ParticleSet& P, PooledData<RealType>& buf){
+    std::cerr << "MultiSlaterDeterminant::registerData is empty" << std::endl;
+  }
+  
+  void putData(ParticleSet& P, PooledData<RealType>& buf) {
+    std::cerr << "MultiSlaterDeterminant::putData is empty" << std::endl;
+  }
+  
+  void update(ParticleSet& P, 
+	      ParticleSet::ParticleGradient_t& G, 
+	      ParticleSet::ParticleLaplacian_t& L,
+	      int iat) {
+    std::cerr << "MultiSlaterDeterminant::update is empty" << std::endl;
+  }
+  
+  ValueType evaluate(ParticleSet& P, PooledData<RealType>& buf) {
+    std::cerr << "MultiSlaterDeterminant::evaluate is empty" << std::endl;
+  }
 
 private:
   vector<DeterminantSet_t*> SDets;

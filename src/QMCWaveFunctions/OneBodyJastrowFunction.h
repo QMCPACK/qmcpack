@@ -20,9 +20,10 @@
 #include "QMCWaveFunctions/OrbitalBase.h"
 
 namespace ohmmsqmc {
-
-  /**class generic implementation of OneBodyJastrow<FT,SharedFunction>
-   *\brief  The One-Body Jastrow has the form  
+  
+  /** generic implementation of OneBodyJastrow<FT,SharedFunction>
+   *
+   *The One-Body Jastrow has the form  
    \f[ J_{e}({\bf R}) = \sum_{I=1}^{N_I} 
    \sum_{i=1}^{N_e} u(r_{iI}) \f]
    where \f[ r_{iI} = |{\bf r}_i - {\bf R}_I| \f]
@@ -67,11 +68,16 @@ namespace ohmmsqmc {
    *@todo The second template parameter boolean will be removed, after
    *the efficieny of different vectorized schemes is evaluated.
    */
-  
   template<class FT>
   class OneBodyJastrow: public OrbitalBase {
 
     const DistanceTableData* d_table;
+
+    ValueType curVal, curLap;
+    GradType curGrad;
+    ValueVectorType U,d2U;
+    GradVectorType dU;
+    ValueType *FirstAddressOfdU, *LastAddressOfdU;
 
   public:
 
@@ -80,12 +86,15 @@ namespace ohmmsqmc {
     vector<FT*> F;
 
     ///constructor
-    OneBodyJastrow(DistanceTableData* dtable):d_table(dtable){ }
+    OneBodyJastrow(DistanceTableData* dtable)
+      : d_table(dtable), FirstAddressOfdU(NULL), LastAddressOfdU(NULL){ 
+
+    }
 
     ~OneBodyJastrow(){
       DEBUGMSG("OneBodyJastrow::~OneBodyJastrow")
 	//for(int i=0; i<F.size(); i++) delete F[i];
-	}
+    }
 
     void reset() { 
       for(int i=0; i<F.size(); i++) F[i]->reset();
@@ -95,10 +104,11 @@ namespace ohmmsqmc {
      *@param P input configuration containing N particles
      *@param G a vector containing N gradients
      *@param L a vector containing N laplacians
-     *@param G returns the gradient \f$G[i]={\bf \nabla}_i J({\bf R})\f$
-     *@param L returns the laplacian \f$L[i]=\nabla^2_i J({\bf R})\f$
-     *@return \f$exp(-J({\bf R}))\f$
-     *@brief While evaluating the value of the Jastrow for a set of
+     *@return The wavefunction value  \f$exp(-J({\bf R}))\f$
+     *
+     *Upon exit, the gradient \f$G[i]={\bf \nabla}_i J({\bf R})\f$
+     *and the laplacian \f$L[i]=\nabla^2_i J({\bf R})\f$ are accumulated.
+     *While evaluating the value of the Jastrow for a set of
      *particles add the gradient and laplacian contribution of the
      *Jastrow to G(radient) and L(aplacian) for local energy calculations
      *such that \f[ G[i]+={\bf \nabla}_i J({\bf R}) \f] 
@@ -118,6 +128,78 @@ namespace ohmmsqmc {
 	  L[j] -= d2udr2+2.0*dudr;
 	}
       }
+      return exp(-sumu);
+    }
+
+    ValueType ratio(ParticleSet& P, int iat) {
+      int n=d_table->size(VisitorIndex);
+      curVal=0.0;
+      curLap=0.0;
+      curGrad = 0.0;
+      ValueType dudr, d2udr2;
+      for(int i=0, nn=iat; i<d_table->size(SourceIndex); i++,nn+= n) {
+	int ij=d_table->PairID[nn];
+	curVal += F[ij]->evaluate(d_table->Temp[i].r1,dudr,d2udr2);
+	dudr *= d_table->Temp[i].rinv1;
+	curGrad -= dudr*d_table->Temp[i].dr1;
+	curLap  -= d2udr2+2.0*dudr;
+      }
+      return exp(U[iat]-curVal);
+    } 	  
+
+    void update(ParticleSet& P, 
+		ParticleSet::ParticleGradient_t& G, 
+		ParticleSet::ParticleLaplacian_t& L,
+		int iat) {
+      G[iat] += curGrad-dU[iat]; dU[iat]=curGrad;
+      L[iat] += curLap-d2U[iat]; d2U[iat]=curLap;
+      U[iat] = curVal;
+    }
+
+    /** equivalent to evalaute with additional data management */
+    void registerData(ParticleSet& P, PooledData<RealType>& buf){
+
+      U.resize(d_table->size(VisitorIndex));
+      d2U.resize(d_table->size(VisitorIndex));
+      dU.resize(d_table->size(VisitorIndex));
+
+      ValueType sumu = 0.0;
+      ValueType dudr, d2udr2;
+      for(int i=0; i<d_table->size(SourceIndex); i++) {
+	for(int nn=d_table->M[i]; nn<d_table->M[i+1]; nn++) {
+	  int j = d_table->J[nn];
+	  //U[j] += F[d_table->PairID[nn]]->evaluate(d_table->r(nn));
+	  //Grad/Lap are not calculated here
+	  U[j] += F[d_table->PairID[nn]]->evaluate(d_table->r(nn), dudr, d2udr2);
+	  dudr *= d_table->rinv(nn);
+	  dU[j] -= dudr*d_table->dr(nn);
+	  d2U[j] -= d2udr2+2.0*dudr;
+	}
+      }
+
+      buf.add(U.begin(), U.end());
+      buf.add(d2U.begin(), d2U.end());
+      FirstAddressOfdU = &(dU[0][0]);
+      LastAddressOfdU = FirstAddressOfdU + dU.size()*DIM;
+      buf.add(FirstAddressOfdU,LastAddressOfdU);
+    }
+
+    void putData(ParticleSet& P, PooledData<RealType>& buf) {
+      buf.get(U.begin(), U.end());
+      buf.get(d2U.begin(), d2U.end());
+      buf.get(FirstAddressOfdU,LastAddressOfdU);
+
+      P.G += dU;
+      P.L += d2U;
+    }
+
+    ///return the current value
+    inline ValueType evaluate(ParticleSet& P, PooledData<RealType>& buf) {
+      ValueType sumu = 0.0;
+      for(int i=0; i<U.size(); i++) sumu+=U[i];
+      buf.put(U.begin(), U.end());
+      buf.put(d2U.begin(), d2U.end());
+      buf.put(FirstAddressOfdU,LastAddressOfdU);
       return exp(-sumu);
     }
 

@@ -76,6 +76,32 @@ namespace ohmmsqmc {
                   WalkerSetRef::WalkerLaplacian_t& L) {
     }
 #endif
+
+    ValueType ratio(ParticleSet& P, int iat) {
+      std::cerr << "PolarizedJastrow::ratio for particle-by-particle is empty " << std::endl;
+      return 1.0;
+    }
+
+    //@todo implement the virutal functions for particle-by-particle move
+    void update(ParticleSet& P, 
+		ParticleSet::ParticleGradient_t& G, 
+		ParticleSet::ParticleLaplacian_t& L,
+		int iat) {
+      std::cerr << "PolarizedJastrow::update for particle-by-particle is empty " << std::endl;
+    }
+
+    ValueType evaluate(ParticleSet& P,PooledData<RealType>& buf) {
+      std::cerr << "PolarizedJastrow::evaluate for particle-by-particle is empty " << std::endl;
+    }
+
+    void registerData(ParticleSet& P, PooledData<RealType>& buf){
+      std::cerr << "PolarizedJastrow::registerData for particle-by-particle is empty " << std::endl;
+    }
+
+    void putData(ParticleSet& P, PooledData<RealType>& buf) {
+      std::cerr << "PolarizedJastrow::putData for particle-by-particle is empty " << std::endl;
+    }
+
   };
 
 }
