@@ -54,7 +54,7 @@
  *Specifically, the source functor should implement
  - value_type ST::setCusp(int i, value_type& z0, value_type& z1)
  - int ST::first() the first valid index for the grid
- - value_type ST::ke(i)
+ - value_type ST::k2(i)
  - value_type ST::convert(value_type Z(x), x)
  * 
  */
@@ -116,7 +116,7 @@ public:
     TurningPoint = 0;
     Y.reset(e);
     int i=Target.size()-2;
-    while(i > 1 && Y.ke(i)<0) {
+    while(i > 1 && Y.k2(i)<0) {
       i--;
     }  
     TurningPoint = i;
@@ -168,8 +168,8 @@ int Numerov<TransForm,FT>::evaluate(value_type e) {
 
   value_type r0 = Target.r(first);
   value_type r1 = Target.r(second);
-  value_type ke_m2 = Y.ke(first); 
-  value_type ke_m  = Y.ke(second);
+  value_type k2_m2 = Y.k2(first); 
+  value_type k2_m  = Y.k2(second);
 
   value_type y_m2  = Z[first];
   value_type y_m   = Z[second];
@@ -193,10 +193,10 @@ int Numerov<TransForm,FT>::evaluate(value_type e) {
     r0 = Target.r(i);
 
     //get k^2
-    value_type ke = Y.ke(i); 
+    value_type k2 = Y.k2(i); 
     value_type y = 
-      ((2.0-tentwelfth*ke_m)*y_m - 
-       (1.0+onetwelfth*ke_m2)*y_m2)/(1.0+onetwelfth*ke);
+      ((2.0-tentwelfth*k2_m)*y_m - 
+       (1.0+onetwelfth*k2_m2)*y_m2)/(1.0+onetwelfth*k2);
    
     Z[i] = y;
 
@@ -218,8 +218,8 @@ int Numerov<TransForm,FT>::evaluate(value_type e) {
       }
     }
 
-    ke_m2 = ke_m;
-    ke_m = ke;
+    k2_m2 = k2_m;
+    k2_m = k2;
     
     y_m2 = y_m;
     y_m = y;
@@ -236,10 +236,10 @@ int Numerov<TransForm,FT>::evaluate(value_type e) {
 
       r0 = Target.r(i);
       //get k^2
-      value_type ke = Y.ke(i);
+      value_type k2 = Y.k2(i);
       value_type y 
-	= ((2.0-tentwelfth*ke_m)*y_m - (1.0+onetwelfth*ke_m2)*y_m2)
-	/(1.0+onetwelfth*ke);
+	= ((2.0-tentwelfth*k2_m)*y_m - (1.0+onetwelfth*k2_m2)*y_m2)
+	/(1.0+onetwelfth*k2);
       
       Z[i] = y;
 
@@ -262,8 +262,8 @@ int Numerov<TransForm,FT>::evaluate(value_type e) {
       }      
 
       //assign numerov value to the real function
-      ke_m2 = ke_m;
-      ke_m = ke;
+      k2_m2 = k2_m;
+      k2_m = k2;
       
       y_m2 = y_m;
       y_m = y;
