@@ -62,6 +62,29 @@ struct RadialSTO {
   }
 };
 
+template<class T>
+struct STONorm {
+
+  std::vector<T> Factorial;
+
+  explicit STONorm(int nmax=1) {
+    set(nmax);
+  }
+
+  inline void set(int nmax) {
+    int n = 2*nmax+2;
+    Factorial.resize(n+1);
+    Factorial[0] = 1.0;
+    for (int i=1;i<n+1;i++) Factorial[i] = Factorial[i-1]*static_cast<T>(i);
+  }
+
+  inline T operator()(int n, T screen) {
+    return 
+      1.0/sqrt(Factorial[2*n+2]*4.0*(4.0*atan(1.0))/pow(2.0*screen,2*n+3));
+  } 
+
+};
+
 
 /** Generic Slater-Type Orbital
  *
@@ -139,28 +162,6 @@ struct GenericSTO: public RadialOrbitalBase<T> {
 
 };
 
-template<class T>
-struct STONorm {
-
-  std::vector<T> Factorial;
-
-  explicit STONorm(int nmax=1) {
-    set(nmax);
-  }
-
-  inline void set(int nmax) {
-    int n = 2*nmax+2;
-    Factorial.resize(n+1);
-    Factorial[0] = 1.0;
-    for (int i=1;i<n+1;i++) Factorial[i] = Factorial[i-1]*static_cast<T>(i);
-  }
-
-  inline T operator()(int n, T screen) {
-    return 
-      1.0/sqrt(Factorial[2*n+2]*4.0*(4.0*atan(1.0))/pow(2.0*screen,2*n+3));
-  } 
-
-};
 
 #endif
 /***************************************************************************
