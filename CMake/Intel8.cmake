@@ -10,7 +10,8 @@ ADD_DEFINITIONS(-DADD_)
 #SET(CMAKE_CC_FLAGS "-restrict -unroll -fno-alias -g -ansi")
 #SET(CMAKE_CXX_FLAGS "-restrict -unroll -fno-alias -O3 -cxxlib-icc")
 #SET(CMAKE_CXX_FLAGS "-restrict -unroll -fno-alias -O3 -ansi -fno-fnalias -ivdep_parallel -Ob=2")
-SET(CMAKE_CXX_FLAGS "-restrict -unroll -fno-alias -O3 -ivdep_parallel -Ob=2")
+#SET(CMAKE_CXX_FLAGS "-restrict -unroll -fno-alias -O3 -ivdep_parallel -Ob=2")
+SET(CMAKE_CXX_FLAGS "-restrict -unroll -fno-alias -O3 -Ob=2")
 SET(CMAKE_CC_FLAGS "-restrict -unroll -fno-alias -O3")
 
 IF(OHMMS_OMP)
@@ -19,8 +20,9 @@ IF(OHMMS_OMP)
 #-pch_dir ${ohmms_BINARY_DIR}/lib")
 ENDIF(OHMMS_OMP)
 
+
 #check if ia64 or ia32 and add the appropriate flags 
-SET(IA32 i686)
+#SET(IA32 i686)
 #EXEC_PROGRAM(/bin/arch OUTPUT_VARIABLE IA32)# RETURN_VALUE IA32)
 #IF(IA32 MATCHES ia64)
 #  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -ftz")
@@ -36,6 +38,10 @@ IF(BITS MATCHES 64)
 ELSE(BITS MATCHES 64)
   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -xW")
 ENDIF(BITS MATCHES 64)
+
+IF($ENV{CXX} MATCHES cmpi)
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ccl icpc")
+ENDIF($ENV{CXX} MATCHES cmpi)
 
 #ifc -> ifort
 SET(FORTRAN_LIBS " -lifcore -lifport")
