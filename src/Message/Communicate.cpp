@@ -19,6 +19,7 @@
 
 #include "Message/Communicate.h"
 #include "Message/TagMaker.h"
+#include <cstdlib>
 
 //static data of TagMaker::CurrentTag is initialized.
 int TagMaker::CurrentTag = 1000;
@@ -84,6 +85,10 @@ void Communicate::finalize(){
   MPI_Finalize();
 }
 
+void Communicate::abort(){ 
+  MPI_Abort(MPI_COMM_WORLD,-1);
+}
+
 void Communicate::cleanupMessage(void*) { }
 
 #else //HAVE_MPI
@@ -91,6 +96,9 @@ void Communicate::cleanupMessage(void*) { }
 Communicate::~Communicate(){}
 void Communicate::initialize(int argc, char **argv){ }
 void Communicate::finalize(){ }
+void Communicate::abort(){ 
+  exit(1);
+}
 void Communicate::barrier(){ }
 void Communicate::cleanupMessage(void*) { }
 

@@ -51,10 +51,10 @@ public:
 
   void initialize(int argc, char **argv);
   void finalize();
+  void abort();
 
   ///return the Communicator ID (typically MPI_WORLD_COMM)
   inline int getID() const { return CommID;}
-
 
   ///return the rank of this node
   inline int getNodeID() const { return d_mycontext;}
