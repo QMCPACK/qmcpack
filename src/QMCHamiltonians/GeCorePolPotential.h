@@ -73,13 +73,12 @@ namespace ohmmsqmc {
     ///CoreCoef(C) = 1.0 if C=Ge, 0.0 for all other ions
     vector<bool> CoreCoef;
     ///CoreCoreDipole(C,C') \f$= \frac{Z_{C'} {\bf R_{CC'}}}{R_{CC'}^3}\f$
-    Matrix<PosType> CoreCoreDipole;
+    vector<PosType> CoreCoreDipole;
     ///ElCoreDipole(C,i) \f$= \frac{{\bf r_{Ci}}f({\bar{r_{bCi}}}{r_{Ci}^3}\f$
-    Matrix<PosType> ElCoreDipole;
+    Matrix<PosType> CoreElDipole;
 
     ///constructor
-    GeCorePolPotential(ParticleSet& ions, ParticleSet& els, 
-		       const string species);
+    GeCorePolPotential(ParticleSet& ions, ParticleSet& els);
 
     ~GeCorePolPotential();
 
