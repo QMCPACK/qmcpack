@@ -27,9 +27,9 @@
 namespace ohmmshf {
 
   /**
-     @param pot the potential
-     @param psi the wavefunction
-     @brief The contructor.
+   *@param pot the potential
+   *@param psi the wavefunction
+   *@brief The contructor.
   */
 
   PseudoGen::PseudoGen(RadialPotentialSet& pot, 
@@ -48,8 +48,8 @@ namespace ohmmshf {
   }
 
   /**
-     @param aroot the root for all output files
-     @brief Sets the root for all output files.
+   *@param aroot the root for all output files
+   *@brief Sets the root for all output files.
   */
 
   void PseudoGen::setRoot(const string& aroot) {
@@ -65,9 +65,6 @@ namespace ohmmshf {
     CG.StepSize = cg_stepsize;
     CG.epsilon = cg_epsilon;
     CG.Minimize(*this);
-    plot_ascii();
-    plot_siesta_grid();
-    Cost();
     plot_ascii();
     plot_siesta_grid();
     return true;
@@ -137,8 +134,8 @@ namespace ohmmshf {
 
     getOptParams();
 
-    double TotE = 0.0;
     int norb = Psi.size();
+    double TotE = 0.0;
     if(GridType == "linear"){
       RegularLinearTransform<RadialOrbital_t> *afake=NULL;
       TotE = runHF(afake,norb);
@@ -147,10 +144,8 @@ namespace ohmmshf {
       TotE = runHF(afake,norb);
     }
 
-   
     double cost = 0.0;
     string label("spdf"); 
-    //  std::ofstream cout(LogFileName.c_str());
     cout.precision(8); 
 
     cout << "Iteration = " << NumCostCalls++ 
@@ -160,10 +155,10 @@ namespace ohmmshf {
     value_type sum_eig = 0.0;
     cout << "orb" << '\t' << "PPeigVal" 
 	       << '\t' << "AEeigVal" << endl;
-    for(int ob=0; ob < norb; ob++){
-      cout << Psi.N[ob]<< label[Psi.L[ob]] << '\t' 
-		 << PPeigVal[ob] << '\t' << AEeigVal[ob] 
-		 << endl;
+    cout.precision(15);
+    for(int ob=0; ob<norb; ob++){
+      cout << Psi.N[ob]<< label[Psi.L[ob]] << '\t' << PPeigVal[ob] 
+	   << '\t' << AEeigVal[ob]  << endl;
       RadialOrbital_t psi_norm(Psi(ob));
       RadialOrbital_t psi_sq(Psi(ob));
       for(int j=0; j<Psi(ob).size(); j++)
@@ -207,7 +202,6 @@ namespace ohmmshf {
     
   /**
      @param fake Transformation object
-     @param norb the number of eigen vectors to be obtained
      @brief Perform self-consistent Hartree-Fock calculations.
      *
      *The first argument is used to tell the compiler which transform
@@ -222,21 +216,19 @@ namespace ohmmshf {
     value_type Vtotal,KEnew, KEold,E; 
     value_type lowerbound, upperbound;
     vector<value_type> energy(Pot.size());
-    Pot.reset(Psi);
+    Pot.reset();
+    Psi.reset();
     int iter = 0;
     Vtotal = Pot.evaluate(Psi,energy,norb);
     Pot.mix(0.0);
     KEnew = Pot.calcKE(Psi,0,norb);
-
     string label("spdf");  
-    //   std::ofstream cout(LogFileName.c_str());
-    // cout.precision(8);
-      
+
     do {
       KEold = KEnew;
       value_type eigsum = 0.0;
       //loop over the orbitals
-      for(int ob=0; ob < norb; ob++){ 
+      for(int ob=0; ob<norb; ob++){ 
 
         //set the number of nodes of the eigen vector 
         Pot.V[ob].setNumOfNodes(Pot.getNumOfNodes(Psi.N[ob],Psi.L[ob]));
@@ -255,9 +247,11 @@ namespace ohmmshf {
 	eigsum += (PPeigVal[ob] = 
 		   numerov.solve(lowerbound, upperbound, eig_tol));
 
-	//	LOGMSG(Psi.N[ob]<< label[Psi.L[ob]] << '\t' << PPeigVal[ob]);
+	//	cout << Psi.N[ob] << label[Psi.L[ob]] << '\t' 
+	//<< PPeigVal[ob] << endl;
       }
-	
+      //cout << endl;	
+
       //normalize the orbitals
       Psi.normalize(norb);
       //restrict the orbitals
