@@ -69,7 +69,7 @@ namespace ohmmsqmc {
     /** functions to handle particle-by-particle update */
     ValueType ratio(ParticleSet& P, int iat);
     void registerData(ParticleSet& P, PooledData<RealType>& buf);
-    void putData(ParticleSet& P, PooledData<RealType>& buf);
+    void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf);
     void update(ParticleSet& P, int iat);
     ValueType evaluate(ParticleSet& P, PooledData<RealType>& buf);
 
@@ -78,6 +78,10 @@ namespace ohmmsqmc {
 
   private:
 
+    ///the size of gradient component (QMCTraits::DIM)*the number of particles 
+    int TotalDim;
+
+    int WorkingPtcl;
     ///cannot use copy constructor
     TrialWaveFunction(const TrialWaveFunction&) {}
     

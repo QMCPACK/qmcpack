@@ -148,13 +148,14 @@ namespace ohmmsqmc {
     } 	  
 
     void update(ParticleSet& P, 
-		ParticleSet::ParticleGradient_t& G, 
-		ParticleSet::ParticleLaplacian_t& L,
+		ParticleSet::ParticleGradient_t& dG, 
+		ParticleSet::ParticleLaplacian_t& dL,
 		int iat) {
-      G[iat] += curGrad-dU[iat]; dU[iat]=curGrad;
-      L[iat] += curLap-d2U[iat]; d2U[iat]=curLap;
+      dG[iat] += curGrad-dU[iat]; dU[iat]=curGrad;
+      dL[iat] += curLap-d2U[iat]; d2U[iat]=curLap;
       U[iat] = curVal;
     }
+
 
     /** equivalent to evalaute with additional data management */
     void registerData(ParticleSet& P, PooledData<RealType>& buf){
@@ -174,32 +175,46 @@ namespace ohmmsqmc {
 	  dudr *= d_table->rinv(nn);
 	  dU[j] -= dudr*d_table->dr(nn);
 	  d2U[j] -= d2udr2+2.0*dudr;
+
+	  //add gradient and laplacian contribution
+	  P.G[j] -= dudr*d_table->dr(nn);
+	  P.L[j] -= d2udr2+2.0*dudr;
 	}
       }
 
-      buf.add(U.begin(), U.end());
-      buf.add(d2U.begin(), d2U.end());
       FirstAddressOfdU = &(dU[0][0]);
       LastAddressOfdU = FirstAddressOfdU + dU.size()*DIM;
+
+      //add U, d2U and dU. Keep the order!!!
+      buf.add(U.begin(), U.end());
+      buf.add(d2U.begin(), d2U.end());
       buf.add(FirstAddressOfdU,LastAddressOfdU);
     }
 
-    void putData(ParticleSet& P, PooledData<RealType>& buf) {
+    /** copy the current data from a buffer
+     *@param P the ParticleSet to operate on
+     *@param buf PooledData which stores the data for each walker
+     *
+     *copyFromBuffer uses the data stored by registerData or evaluate(P,buf)
+     */
+    void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf) {
       buf.get(U.begin(), U.end());
       buf.get(d2U.begin(), d2U.end());
       buf.get(FirstAddressOfdU,LastAddressOfdU);
-
-      P.G += dU;
-      P.L += d2U;
     }
 
-    ///return the current value
+    /** return the current value and copy the current data to a buffer
+     *@param P the ParticleSet to operate on
+     *@param buf PooledData which stores the data for each walker
+     */
     inline ValueType evaluate(ParticleSet& P, PooledData<RealType>& buf) {
       ValueType sumu = 0.0;
       for(int i=0; i<U.size(); i++) sumu+=U[i];
+
       buf.put(U.begin(), U.end());
       buf.put(d2U.begin(), d2U.end());
       buf.put(FirstAddressOfdU,LastAddressOfdU);
+
       return exp(-sumu);
     }
 

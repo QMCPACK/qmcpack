@@ -160,13 +160,14 @@ namespace ohmmsqmc {
       psiM.resize(nel,norb);
       dpsiM.resize(nel,norb);
       d2psiM.resize(nel,norb);
+      psiMinv.resize(nel,norb);
       LastIndex = FirstIndex + nel;
     }
 
     void registerData(ParticleSet& P, PooledData<RealType>& buf) {
-      if(!NP) {//first time, allocate once
+
+      if(NP == 0) {//first time, allocate once
 	int norb = cols();
-	psiMinv.resize(rows(),cols());
 	psiV.resize(norb);
 	dpsiV.resize(norb);
 	d2psiV.resize(norb);
@@ -177,7 +178,7 @@ namespace ohmmsqmc {
 	myL.resize(NP);
 	FirstAddressOfG = &myG[0][0];
 	LastAddressOfG = FirstAddressOfG + NP*DIM;
-	FirstAddressOfdV = &((*dpsiM.begin())[0]);
+	FirstAddressOfdV = &(dpsiM(0,0)[0]); //(*dpsiM.begin())[0]);
 	LastAddressOfdV = FirstAddressOfdV + rows()*cols()*DIM;
       }
 
@@ -187,45 +188,45 @@ namespace ohmmsqmc {
 
       ValueType x=evaluate(P,myG,myL); 
 
+      P.G += myG;
+      P.L += myL;
+
       //add the data: determinant, inverse, gradient and laplacians
-      buf.add(CurrentDet);
       buf.add(psiM.begin(),psiM.end());
       buf.add(FirstAddressOfdV,LastAddressOfdV);
       buf.add(d2psiM.begin(),d2psiM.end());
       buf.add(myL.begin(), myL.end());
       buf.add(FirstAddressOfG,LastAddressOfG);
+      buf.add(CurrentDet);
     }
 
 
-    void putData(ParticleSet& P, PooledData<RealType>& buf) {
-      cumRatio=1.0;
-      buf.get(CurrentDet);
+    void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf) {
+
       buf.get(psiM.begin(),psiM.end());
       buf.get(FirstAddressOfdV,LastAddressOfdV);
       buf.get(d2psiM.begin(),d2psiM.end());
       buf.get(myL.begin(), myL.end());
       buf.get(FirstAddressOfG,LastAddressOfG);
-
-      P.G += myG;
-      P.L += myL;
+      buf.get(CurrentDet);
     }
 
     ValueType ratio(ParticleSet& P, int iat) {
       Phi.evaluate(P, iat, psiV, dpsiV, d2psiV);
-      WorkingPtcl = iat-FirstIndex;
-      return curRatio = DetRatio(psiM, psiV.begin(),WorkingPtcl);
+      WorkingIndex = iat-FirstIndex;
+      curRatio= DetRatio(psiM, psiV.begin(),WorkingIndex);
+      return curRatio;
     }
-
+    
     void update(ParticleSet& P, 
-		ParticleSet::ParticleGradient_t& G, 
-		ParticleSet::ParticleLaplacian_t& L,
+		ParticleSet::ParticleGradient_t& dG, 
+		ParticleSet::ParticleLaplacian_t& dL,
 		int iat) {
 
-      DetUpdate(psiM,psiV,workV1,workV2,WorkingPtcl);
-
+      DetUpdate(psiM,psiV,workV1,workV2,WorkingIndex,curRatio);
       for(int j=0; j<cols(); j++) {
-	dpsiM(WorkingPtcl,j)=dpsiV[j];
-	d2psiM(WorkingPtcl,j)=d2psiV[j];
+	dpsiM(WorkingIndex,j)=dpsiV[j];
+	d2psiM(WorkingIndex,j)=d2psiV[j];
       }
 
       int kat=FirstIndex;
@@ -237,31 +238,23 @@ namespace ohmmsqmc {
 	  lap += psiM(i,j)*d2psiM(i,j);
 	}
 	lap -= dot(rv,rv);
-	G[kat] += rv - myG[kat]; myG[kat]=rv;
-	L[kat] += lap -myL[kat]; myL[kat]=lap;
+	dG[kat] += rv - myG[kat]; myG[kat]=rv;
+	dL[kat] += lap -myL[kat]; myL[kat]=lap;
       }
 
-      cumRatio *= curRatio;
+      //not very useful
+      CurrentDet *= curRatio;
     }
 
     ValueType evaluate(ParticleSet& P, PooledData<RealType>& buf) {
-      CurrentDet *= cumRatio;
 
-      buf.put(CurrentDet);
       buf.put(psiM.begin(),psiM.end());
       buf.put(FirstAddressOfdV,LastAddressOfdV);
       buf.put(d2psiM.begin(),d2psiM.end());
       buf.put(myL.begin(), myL.end());
       buf.put(FirstAddressOfG,LastAddressOfG);
+      buf.put(CurrentDet);
 
-      /*
-      cout << "Current determinant by PTP " << CurrentDet << endl;
-      for(int i=0; i<rows(); i++){
-   	for(int j=0; j<cols(); j++)
-	  cout << psiM(i,j) << " ";
-	cout << endl;
-      }
-      */
       return CurrentDet;
     }
 
@@ -299,7 +292,7 @@ namespace ohmmsqmc {
     SPOSet& Phi;
 
     ///index of the particle (or row) 
-    int WorkingPtcl;      
+    int WorkingIndex;      
 
     ///Current determinant value
     ValueType CurrentDet;
@@ -307,9 +300,12 @@ namespace ohmmsqmc {
     /// psiM(j,i) \f$= \psi_j({\bf r}_i)\f$
     Determinant_t psiM;
 
+    /// temporary container for testing
     Determinant_t psiMinv;
+
     /// dpsiM(i,j) \f$= \nabla_i \psi_j({\bf r}_i)\f$
     Gradient_t    dpsiM;
+
     /// d2psiM(i,j) \f$= \nabla_i^2 \psi_j({\bf r}_i)\f$
     Laplacian_t   d2psiM;
 
@@ -356,7 +352,6 @@ namespace ohmmsqmc {
 
     Phi.evaluate(P, FirstIndex, LastIndex, psiM,dpsiM, d2psiM);
     CurrentDet = Invert(psiM.data(),nrows,ncols);
-
     int iat = FirstIndex; //the index of the particle with respect to P
     for(int i=0; i<nrows; i++, iat++) {
       PosType rv = psiM(i,0)*dpsiM(i,0);
@@ -368,47 +363,9 @@ namespace ohmmsqmc {
       G(iat) += rv;
       L(iat) += lap - dot(rv,rv);
     }
-
-    /*
-    cout << "Current determinant by inversion " << CurrentDet << endl;
-      for(int i=0; i<rows(); i++){
-	for(int j=0; j<cols(); j++)
-	  cout << psiM(i,j) << " ";
-	cout << endl;
-      }
-    */
-
     return CurrentDet;
   }
 
-
-//   template<class SPOSet>
-//   inline 
-//   void 
-//   DiracDeterminant<SPOSet>::registerData(ParticleSet& P, PooledData<RealType>& buf) {
-
-//     if(!NP) {//first time, allocate once
-//       int norb = cols();
-//       psiV.resize(norb);
-//       dpsiV.resize(norb);
-//       d2psiV.resize(norb);
-//       workV1.resize(norb);
-//       workV2.resize(norb);
-//       NP=P.getTotalNum();
-//       myG.resize(NP);
-//       myL.resize(NP);
-//       FirstAddressOfG = &myG[0][0];
-//       LastAddressOfG = FirstAddressOfG + NP*DIM;
-//     }
-
-//     ValueType x=evaluate(P,myG,myL); 
-
-//     //add the data: determinant, inverse, gradient and laplacians
-//     buf.add(CurrentDet);
-//     buf.add(psiM.begin(),psiM.end());
-//     buf.add(myL.begin(), myL.end());
-//     buf.add(FirstAddressOfG,LastAddressOfG);
-//   }
 
   /**void evaluate(WalkerSetRef& W,  WfsVec& psi, GradMat& G, LapMat& L)
    *@param W Walkers, set of input configurations, Nw is the number of walkers

@@ -119,7 +119,7 @@ public:
     std::cerr << "MultiSlaterDeterminant::registerData is empty" << std::endl;
   }
   
-  void putData(ParticleSet& P, PooledData<RealType>& buf) {
+  void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf) {
     std::cerr << "MultiSlaterDeterminant::putData is empty" << std::endl;
   }
   
@@ -132,6 +132,7 @@ public:
   
   ValueType evaluate(ParticleSet& P, PooledData<RealType>& buf) {
     std::cerr << "MultiSlaterDeterminant::evaluate is empty" << std::endl;
+    return 1.0;
   }
 
 private:

@@ -92,14 +92,15 @@ namespace ohmmsqmc {
 
     ValueType evaluate(ParticleSet& P,PooledData<RealType>& buf) {
       std::cerr << "PolarizedJastrow::evaluate for particle-by-particle is empty " << std::endl;
+      return 1.0;
     }
 
     void registerData(ParticleSet& P, PooledData<RealType>& buf){
       std::cerr << "PolarizedJastrow::registerData for particle-by-particle is empty " << std::endl;
     }
 
-    void putData(ParticleSet& P, PooledData<RealType>& buf) {
-      std::cerr << "PolarizedJastrow::putData for particle-by-particle is empty " << std::endl;
+    void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf) {
+      std::cerr << "PolarizedJastrow::copyFromBuffer for particle-by-particle is empty " << std::endl;
     }
 
   };

@@ -80,7 +80,6 @@ namespace ohmmsqmc {
   TrialWaveFunction::ratio(ParticleSet& P,int iat) {
     RealType r=1.0;
     for(int i=0; i<Z.size(); i++) r *= Z[i]->ratio(P,iat);
-    cout << "TrialWaveFunction::ratio " << r << endl;
     return r;
   }
   
@@ -89,7 +88,6 @@ namespace ohmmsqmc {
     //ready to collect "changes" in the gradients and laplacians by the move
     delta_G=0.0; delta_L=0.0;
     for(int i=0; i<Z.size(); i++) Z[i]->update(P,delta_G,delta_L,iat);
-
     P.G += delta_G;
     P.L += delta_L;
   }
@@ -105,18 +103,48 @@ namespace ohmmsqmc {
   void TrialWaveFunction::registerData(ParticleSet& P, PooledData<RealType>& buf) {
     delta_G.resize(P.getTotalNum());
     delta_L.resize(P.getTotalNum());
+    P.G = 0.0;
+    P.L = 0.0;
+
     for(int i=0; i<Z.size(); i++) Z[i]->registerData(P,buf);
+
+    //append current gradients and laplacians to the buffer
+    TotalDim = OHMMS_DIM*P.getTotalNum();
+    buf.add(&(P.G[0][0]), &(P.G[0][0])+TotalDim);
+    buf.add(P.L.begin(), P.L.end());
+
+//     cout << "Registering gradients and laplacians " << endl;
+//     for(int i=0; i<P.getLocalNum(); i++) {
+//       cout << P.G[i] << " " << P.L[i] << endl;
+//     }
   }
 
-  void TrialWaveFunction::putData(ParticleSet& P, PooledData<RealType>& buf) {
-    P.G=0.0; P.L=0.0;
-    for(int i=0; i<Z.size(); i++) Z[i]->putData(P,buf);
+  void TrialWaveFunction::copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf) {
+
+    for(int i=0; i<Z.size(); i++) Z[i]->copyFromBuffer(P,buf);
+
+    //get the gradients and laplacians from the buffer
+    buf.get(&(P.G[0][0]), &(P.G[0][0])+TotalDim);
+    buf.get(P.L.begin(), P.L.end());
+
+//     cout << "Checking out gradients and laplacians " << endl;
+//     for(int i=0; i<P.getLocalNum(); i++) {
+//       cout << P.G[i] << " " << P.L[i] << endl;
+//     }
   }
 
   TrialWaveFunction::ValueType
   TrialWaveFunction::evaluate(ParticleSet& P, PooledData<RealType>& buf) {
+
     ValueType psi = 1.0;
     for(int i=0; i<Z.size(); i++) psi *= Z[i]->evaluate(P,buf);
+    buf.put(&(P.G[0][0]), &(P.G[0][0])+TotalDim);
+    buf.put(P.L.begin(), P.L.end());
+
+//     cout << "Checking in gradients and laplacians " << endl;
+//     for(int i=0; i<P.getLocalNum(); i++) {
+//       cout << P.G[i] << " " << P.L[i] << endl;
+//     }
     return psi;
   }
 }

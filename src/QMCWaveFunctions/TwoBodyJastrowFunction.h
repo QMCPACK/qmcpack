@@ -237,27 +237,28 @@ namespace ohmmsqmc {
 	  U[ij]=u; U[ji]=u;
 	  dU[ij] = gr; dU[ji] = -1.0*gr;
 	  d2U[ij] = -lap; d2U[ji] = -lap;
+
+	  //add gradient and laplacian contribution
+	  P.G[i] += gr;
+	  P.G[j] -= gr;
+	  P.L[i] -= lap; 
+	  P.L[j] -= lap; 
 	}
       }
 
       //get the sign right here
       U[NN]= -sumu;
-      buf.add(U.begin(), U.end());
-      buf.add(d2U.begin(), d2U.end());
       FirstAddressOfdU = &(dU[0][0]);
       LastAddressOfdU = FirstAddressOfdU + dU.size()*DIM;
+      buf.add(U.begin(), U.end());
+      buf.add(d2U.begin(), d2U.end());
       buf.add(FirstAddressOfdU,LastAddressOfdU);
     }
     
-    inline void putData(ParticleSet& P, PooledData<RealType>& buf) {
+    inline void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf) {
       buf.get(U.begin(), U.end());
       buf.get(d2U.begin(), d2U.end());
       buf.get(FirstAddressOfdU,LastAddressOfdU);
-      for(int iat=0, ij=0; iat<N; iat++) 
-	for(int jat=0; jat<N; jat++,ij++) P.G[iat] += dU[ij];
-      for(int iat=0, ij=0; iat<N; iat++) 
-	for(int jat=0; jat<N; jat++,ij++) P.L[iat] += d2U[ij];
-      //ready to accumulate the differences when a move is acepted
       DiffValSum=0.0;
     }
 
@@ -266,6 +267,7 @@ namespace ohmmsqmc {
       buf.put(U.begin(), U.end());
       buf.put(d2U.begin(), d2U.end());
       buf.put(FirstAddressOfdU,LastAddressOfdU);
+      buf.add(U.begin(), U.end());
       return exp(x); 
     }
 

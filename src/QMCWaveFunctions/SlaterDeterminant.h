@@ -109,24 +109,8 @@ namespace ohmmsqmc {
       for(int i=0; i<Dets.size(); i++) 	Dets[i]->registerData(P,buf);
     }
     
-    void putData(ParticleSet& P, PooledData<RealType>& buf) {
-      for(int i=0; i<Dets.size(); i++) 	Dets[i]->putData(P,buf);
-    }
-
-    ValueType
-    ratio(ParticleSet& P, int iat) {
-      int i=1;
-      while(iat>=M[i++]) {}
-      return Dets[i-2]->ratio(P,iat);
-    } 	  
-
-    void update(ParticleSet& P, 
-		ParticleSet::ParticleGradient_t& G, 
-		ParticleSet::ParticleLaplacian_t& L,
-		int iat) {
-      int i=1;
-      while(iat>=M[i++]) {}
-      Dets[i-2]->update(P,G,L,iat);
+    void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf) {
+      for(int i=0; i<Dets.size(); i++) 	Dets[i]->copyFromBuffer(P,buf);
     }
 
     ValueType evaluate(ParticleSet& P, PooledData<RealType>& buf) {
@@ -134,6 +118,23 @@ namespace ohmmsqmc {
       for(int i=0; i<Dets.size(); i++) 	r *= Dets[i]->evaluate(P,buf);
       return r;
     }
+
+    ValueType
+    ratio(ParticleSet& P, int iat) {
+      int i=1;
+      while(iat>=M[i]) {i++;}
+      return Dets[i-1]->ratio(P,iat);
+    } 	  
+
+    void update(ParticleSet& P, 
+		ParticleSet::ParticleGradient_t& dG, 
+		ParticleSet::ParticleLaplacian_t& dL,
+		int iat) {
+      int i=1;
+      while(iat>=M[i]) {i++;}
+      Dets[i-1]->update(P,dG,dL,iat);
+    }
+
 
   private:
     vector<int> M;
