@@ -35,12 +35,13 @@ namespace ohmmsqmc {
     hid_t h_file;
     ///id for HDF5 main group 
     hid_t h_config;
-
   public:
 
     HDFWalkerOutput(const string& fname, bool append=true);
     ~HDFWalkerOutput();
     bool get(MCWalkerConfiguration&);
+
+    hid_t getGroupID() { return h_config;}
 
   };
 

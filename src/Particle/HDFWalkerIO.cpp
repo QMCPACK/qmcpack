@@ -35,7 +35,7 @@ using namespace ohmmsqmc;
 HDFWalkerOutput::HDFWalkerOutput(const string& aroot, bool append):
   Counter(0), AppendMode(append) {
 
-  string h5file = aroot;
+  string h5file(aroot);
   h5file.append(".config.h5");
   h_file = H5Fcreate(h5file.c_str(),H5F_ACC_TRUNC,H5P_DEFAULT,H5P_DEFAULT);
   h_config = H5Gcreate(h_file,"config_collection",0);
@@ -45,7 +45,16 @@ HDFWalkerOutput::HDFWalkerOutput(const string& aroot, bool append):
 
 HDFWalkerOutput::~HDFWalkerOutput() {
 
-  if(AppendMode)  H5Gclose(h_config);
+  hsize_t dim = 1;
+  hid_t dataspace  = H5Screate_simple(1, &dim, NULL);
+  hid_t dataset= H5Dcreate(h_config, "NumOfConfigurations", H5T_NATIVE_INT, dataspace, H5P_DEFAULT);
+  hid_t ret = 
+    H5Dwrite(dataset, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT,&Counter);
+  H5Dclose(dataset);
+  H5Sclose(dataspace);
+
+  //if(AppendMode)  H5Gclose(h_config);
+  H5Gclose(h_config);
   H5Fclose(h_file);
 }
 
@@ -125,10 +134,17 @@ HDFWalkerInput::HDFWalkerInput(const string& aroot):
   h5file.append(".config.h5");
   h_file =  H5Fopen(h5file.c_str(),H5F_ACC_RDWR,H5P_DEFAULT);
   h_config = H5Gopen(h_file,"config_collection");
-  H5Gget_num_objs(h_config,&NumSets);
+  
+  hid_t h1=H5Dopen(h_config,"NumOfConfigurations");
+  if(h1>-1) {
+    H5Dread(h1, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT,&(NumSets));
+    //LOGMSG("Found NumOfConfigurations " << NumSets)
+  }
+
   if(!NumSets) {
-    ERRORMSG("File does not contain walkers!")
-   }
+    H5Gget_num_objs(h_config,&NumSets);
+    if(!NumSets) ERRORMSG("File does not contain walkers!")
+  }
 }
 
 /** Destructor closes the HDF5 file and main group. */

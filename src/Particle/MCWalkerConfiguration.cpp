@@ -18,6 +18,7 @@
 #include "Particle/MCWalkerConfiguration.h"
 #include "Particle/DistanceTableData.h"
 #include "Particle/DistanceTable.h"
+#include "Message/Communicate.h"
 using namespace ohmmsqmc;
 #include "ParticleBase/RandomSeqGenerator.h"
 
@@ -206,7 +207,7 @@ int MCWalkerConfiguration::branch(int maxcopy, int Nmax, int Nmin) {
     int nadd_target = static_cast<int>(Nmin*1.1)-num_walkers;
     if(nadd_target>good.size()) {
       cerr << "Too few walkers to copy! Abort." << endl;
-      exit(-1);
+      OHMMS::Controller->abort();
     } else {
       int i=0;
       while(i<ncopy.size() && nadd<nadd_target) {
@@ -297,7 +298,7 @@ int MCWalkerConfiguration::branch2(int maxcopy, int Nmax, int Nmin) {
     int nadd_target = static_cast<int>(Nmin*1.1)-num_walkers;
     if(nadd_target>good.size()) {
       cerr << "Too few walkers to copy! Abort." << endl;
-      exit(-1);
+      OHMMS::Controller->abort();
     } else {
       int i=0;
       while(i<ncopy.size() && nadd<nadd_target) {
