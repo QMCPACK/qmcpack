@@ -115,9 +115,11 @@ WOSPotential::method1(ParticleSet& P){
 
 }
 
+
 /// correlated sampling
 QMCHamiltonian::ValueType 
 WOSPotential::method2(ParticleSet& P){
+
 
   double V0 = 0;
 
@@ -126,7 +128,6 @@ WOSPotential::method2(ParticleSet& P){
 
   Domain domain;   /// create domain;
 
-  double branch = 0.0; double tau = 0.01; double v0 = -8.709;
   double pe = 0.0; double dpe = 0.0; 
   for(int irun = 0; irun < m_runs; irun++){
 
@@ -148,19 +149,99 @@ WOSPotential::method2(ParticleSet& P){
     vol *= WP->qwt;   /// the half has been included
     double vrun = vol + vbare + vD0;
     pe += vrun; dpe += vrun * vrun; 
-    //branch += exp(-(vrun-v0)*tau);
-    //    cout << vrun << '\t' << v0 << '\t' << branch << endl;
   }
   pe *= m_norm;
-  //  branch *= m_norm;
+
   dpe *= m_norm;  
-  //  double var = dpe - pe * pe; 
-  dpe = sqrt(m_norm * fabs ( dpe - pe * pe ));
-  //  cout << "correlated: " << pe << '\t' << dpe << '\t' << var << '\t' 
-  //       << branch << '\t' << branch*exp(-0.5*var*tau*tau) << endl;
-  //  exit(-1);
+  dpe = ( dpe - pe * pe )/static_cast<double>(m_runs-1); 
+
+  /// CHANGE FOR DMC, WARNING Tau is zero for VMC WOS 
+  pe += dpe * Tau; // sigma^2 * Tau
+  //  cout << "VWOS: "<< pe << '\t' << Tau << endl;
+  P.Properties(WOSVAR) = -dpe;
+
+  //P.Properties(WOSVAR) = dpe;
 
   return pe;
+
+
+}
+
+
+
+/// correlated sampling
+QMCHamiltonian::ValueType 
+WOSPotential::method6(ParticleSet& P){
+
+  double V0 = 0;
+
+  /// intialise the particles in WP;
+  WP->setP(P);
+
+  Domain domain;   /// create domain;
+
+  double pe = 0.0; double dpe = 0.0; 
+  for(int irun = 0; irun < m_runs; irun++){
+
+    domain.runner = WP->R0;                /// initialise runner
+    domain.in_device = true;               /// runner is inside device
+    device->MaximumSphere(domain);         /// calc d_{0}
+    domain.WalkOnSphere();
+    double vD0 = device->OC_contrib0(domain.radius,domain.runner,WP);
+    double vbare = device->OC_passage(V0,domain,WP);
+    WP->calcwt();
+
+    double vol = 0.0;
+    while(domain.in_device){
+      device->MaximumSphere(domain);
+      vol += device->contribk(domain,WP);
+      domain.WalkOnSphere();
+      vbare += device->OC_passage(V0,domain,WP);
+    }
+    vol *= WP->qwt;   /// the half has been included
+    double vrun = vol + vbare + vD0;
+    pe += vrun; dpe += vrun * vrun; 
+  }
+  pe *= m_norm;
+
+  dpe *= m_norm;  
+  dpe = ( dpe - pe * pe )/static_cast<double>(m_runs-1); 
+
+  double stsq = dpe * Tau * Tau;
+  double correction = 1.0 + stsq * (0.25 + stsq / 
+				    static_cast<double>(3*(m_runs+3))
+				    ) / static_cast<double>(2*(m_runs+1));
+
+  /// CHANGE FOR DMC, WARNING Tau is zero for VMC WOS 
+  //  pe += dpe * Tau; // sigma^2 * Tau 
+
+  double pe1 = 0.0; double dpe1 = 0.0; 
+  for(int irun = 0; irun < 1; irun++){
+
+    domain.runner = WP->R0;                /// initialise runner
+    domain.in_device = true;               /// runner is inside device
+    device->MaximumSphere(domain);         /// calc d_{0}
+    domain.WalkOnSphere();
+    double vD0 = device->OC_contrib0(domain.radius,domain.runner,WP);
+    double vbare = device->OC_passage(V0,domain,WP);
+    WP->calcwt();
+
+    double vol = 0.0;
+    while(domain.in_device){
+      device->MaximumSphere(domain);
+      vol += device->contribk(domain,WP);
+      domain.WalkOnSphere();
+      vbare += device->OC_passage(V0,domain,WP);
+    }
+    vol *= WP->qwt;   /// the half has been included
+    double vrun = vol + vbare + vD0;
+    pe1 += vrun; dpe1 += vrun * vrun; 
+  }
+  //pe1 *= m_norm;
+
+  P.Properties(WOSVAR) = 2*(pe - pe1)/Tau + dpe;// * correction;
+
+  return pe1;
 
 
 }

@@ -67,7 +67,8 @@ double Device::OC_passage(const double V0,
     /// wieghted (different eps) and sampled potential 
     for(int i = 0; i < WP->m_qpts; i++)
       vapp += WP->Q[i]*(WP->wt[i]-1.0);
-    vapp *= Vapp[domain.edge]; vapp += V0;
+    vapp *= Vapp[domain.edge]; 
+    vapp += V0; //(*sumQ) shouldn't this sum to zero for charge neutral system?
 
     domain.in_device = false;/// runner now on surface
 
@@ -123,7 +124,7 @@ double Device::OC_contrib0( double d0,
     vimg = -0.5 * WP->Q[i] * d0 / ( drsq + 1.e-20 );
 
     /// interparticle Goc 
-    double Goc = 0.0;
+    double Goc = 0.0; 
     for(int j = 0; j < i; j++){
       posvec_t vec1 = WP->R[i] - WP->R[j];
       posvec_t vec2 = WP->R[j] - (d0 * d0 / risq ) * WP->R[i];

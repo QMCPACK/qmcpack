@@ -18,6 +18,7 @@ namespace ohmmsqmc{
     //    typedef double RealType;
     int Mode;
     int m_runs;
+    int dmc_runs;
     double m_norm;
     Device* device;
     WOSParticles* WP;
@@ -25,6 +26,7 @@ namespace ohmmsqmc{
     /// constructor
     WOSPotential(int mode,
 		 int mruns, 
+		 int Druns, 
 		 Device* adevice, 
 		 ParticleSet& ions,
 		 ParticleSet& elcs){
@@ -34,6 +36,7 @@ namespace ohmmsqmc{
       device = adevice;
       set_mrun(mruns);
       Mode = mode;
+      dmc_runs = Druns;
 
     }
 
@@ -65,6 +68,9 @@ namespace ohmmsqmc{
       case 5:
 	return method5(P);
 	break;
+      case 6:
+	return method6(P);
+	break;
       default:
 	return method0(P);
       }
@@ -81,6 +87,7 @@ namespace ohmmsqmc{
     ValueType method3(ParticleSet&);
     ValueType method4(ParticleSet&);
     ValueType method5(ParticleSet&);
+    ValueType method6(ParticleSet&);
 
 
 #ifdef USE_FASTWALKER
