@@ -101,7 +101,8 @@ namespace ohmmsqmc {
 	    cur1 = cur1->next;
 	  }
 
-	  XMLReport("Adding a center " << abasis << " centerid " << CenterID[abasis])
+	  XMLReport("Adding a center " << abasis << " centerid " 
+		    << CenterID[abasis])
           XMLReport("Maximum angular momentum    = " << Lmax)
           XMLReport("Number of centered orbitals = " << num)
 
@@ -133,8 +134,9 @@ namespace ohmmsqmc {
 		att = att->next;
 	      }
 
-	      XMLReport("A sherical orbital (n,l,m,s) " << nlms[0] << " " << nlms[1] 
-			<< " " << nlms[2] << " " << nlms[3])
+	      XMLReport("")
+	      XMLReport("A spherical orbital (n,l,m,s) " << nlms[0] 
+			<< " " << nlms[1] << " " << nlms[2] << " " << nlms[3])
 	      if(expandlm) {//add -l ..l
 		map<string,int>::iterator rnl_it = RnlID.find(rnl);
 		if(rnl_it == RnlID.end()) {
@@ -163,7 +165,9 @@ namespace ohmmsqmc {
 		  }
 		} else {
 		  //assign the index for radial orbital with (n,l) if repeated
+		  XMLReport("Already added radial function for id: " << rnl)
 		  aos->NL[num] = (*rnl_it).second;
+
 		}
 		//increment number of basis functions
 		num++;
