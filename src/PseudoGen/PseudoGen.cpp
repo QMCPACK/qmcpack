@@ -73,6 +73,8 @@ namespace ohmmshf {
  bool PseudoGen::run() {
    putOptParams();
    Cost();
+   plot_ascii();
+   plot_siesta_grid();
    return true;
  }
 
@@ -145,7 +147,8 @@ namespace ohmmshf {
     }
 
     double cost = 0.0;
-    string label("spdf"); 
+    string llabel("spdf"); 
+    string slabel("d0u");
     cout.precision(8); 
 
     cout << "Iteration = " << NumCostCalls++ 
@@ -153,35 +156,32 @@ namespace ohmmshf {
 
     value_type sum_norm = 0.0;
     value_type sum_eig = 0.0;
-    cout << "orb" << '\t' << "PPeigVal" 
-	       << '\t' << "AEeigVal" << endl;
+
     cout.precision(15);
     for(int ob=0; ob<norb; ob++){
-      cout << Psi.N[ob]<< label[Psi.L[ob]] << '\t' << PPeigVal[ob] 
-	   << '\t' << AEeigVal[ob]  << endl;
+      cout << "Orbital " <<  Psi.N[ob] << llabel[Psi.L[ob]] 
+	   << slabel[Psi.S[ob]+1] << endl;
+      double diff_eig = fabs(1.0-PPeigVal[ob]/AEeigVal[ob]);
+      cout << setw(25) << "PPeigVal" << setw(25) << "AEeigVal" 
+	   << setw(25) << "error" << endl;
+      cout << setw(25) << PPeigVal[ob] << setw(25) 
+	   << AEeigVal[ob] << setw(25) << diff_eig << endl;
       RadialOrbital_t psi_norm(Psi(ob));
       RadialOrbital_t psi_sq(Psi(ob));
       for(int j=0; j<Psi(ob).size(); j++)
 	psi_sq(j) = Psi(ob,j)*Psi(ob,j);
       integrate_RK2_forward(psi_sq,psi_norm);
 
-      //	AEorbitals[ob].setgrid(rpn);
-      //	AEorbitals_norm[ob].setgrid(rpn);
-
-      //	psi_norm.setgrid(rpn);
-      //	value_type rpninv = 1.0/rpn;
-      //	AEorbitals[ob].evaluate(rpn,rpninv);
-      //	AEorbitals_norm[ob].evaluate(rpn,rpninv);
-      //	Psi(ob).evaluate(rpn,rpninv);
-      //	psi_norm.evaluate(rpn,rpninv);
-
-      //	cout << "Log derivatives = "
-      //             << rpn*AEorbitals[ob].dY/AEorbitals[ob].Y - 1.0 
-      // << " " << rpn*Psi(ob).dY/Psi(ob).Y - 1.0 <<  " " << endl;
-
+      //grid index of the matching radius
       int x = Psi.m_grid->index(rmatch);
-      sum_norm += fabs(1.0-psi_norm(x)/AEorbitals_norm[ob](x));
-      sum_eig += fabs(1.0-PPeigVal[ob]/AEeigVal[ob]);
+      double diff_norm = fabs(1.0-psi_norm(x)/AEorbitals_norm[ob](x));
+      cout << setw(25) << "PPpnorm" << setw(25) << "AEpnorm" 
+	   << setw(25) << "error" << endl; 
+      cout << setw(25) << psi_norm(x) << setw(25) 
+	   << AEorbitals_norm[ob](x) << setw(25) << diff_norm << endl;
+      cout << endl;
+      sum_norm += diff_norm;
+      sum_eig += diff_eig;
     }
     sum_norm /= static_cast<value_type>(norb);
     sum_eig /= static_cast<value_type>(norb);
@@ -247,11 +247,8 @@ namespace ohmmshf {
 	eigsum += (PPeigVal[ob] = 
 		   numerov.solve(lowerbound, upperbound, eig_tol));
 
-	//	cout << Psi.N[ob] << label[Psi.L[ob]] << '\t' 
-	//<< PPeigVal[ob] << endl;
       }
-      //cout << endl;	
-
+   
       //normalize the orbitals
       Psi.normalize(norb);
       //restrict the orbitals
