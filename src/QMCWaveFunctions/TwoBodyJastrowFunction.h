@@ -110,7 +110,8 @@ namespace ohmmsqmc {
     ValueVectorType U,d2U,curLap,curVal;
     GradVectorType dU,curGrad;
     ValueType *FirstAddressOfdU, *LastAddressOfdU;
-
+    Matrix<int> PairID;
+    
   public:
 
     typedef FT FuncType;
@@ -124,7 +125,7 @@ namespace ohmmsqmc {
     ~TwoBodyJastrow(){
       DEBUGMSG("TwoBodyJastrow::~TwoBodyJastrow")
 	//for(int i=0; i<F.size(); i++) delete F[i];
-	}
+    }
 
     ///reset the value of all the Two-Body Jastrow functions
     void reset() { 
@@ -177,6 +178,7 @@ namespace ohmmsqmc {
     ValueType ratio(ParticleSet& P, int iat,
 		    ParticleSet::ParticleGradient_t& dG,
 		    ParticleSet::ParticleLaplacian_t& dL)  {
+
       ValueType v=ratio(P,iat);    
       GradType sumg,dg;
       ValueType suml=0.0,dl;
@@ -207,11 +209,12 @@ namespace ohmmsqmc {
       register ValueType dudr, d2udr2,u;
       register PosType gr;
       DiffVal = 0.0;      
-      for(int jat=0, nn=iat, ij=iat*N; jat<N; jat++,ij++,nn+=N) {
+      const int* pairid = PairID[iat];
+      for(int jat=0, ij=iat*N; jat<N; jat++,ij++) {
 	if(jat==iat) {
 	  curVal[jat] = 0.0;curGrad[jat]=0.0; curLap[jat]=0.0;
 	} else {
-	  curVal[jat] = F[d_table->PairID[nn]]->evaluate(d_table->Temp[jat].r1, dudr, d2udr2);
+	  curVal[jat] = F[pairid[jat]]->evaluate(d_table->Temp[jat].r1, dudr, d2udr2);
 	  dudr *= d_table->Temp[jat].rinv1;
 	  curGrad[jat] = -dudr*d_table->Temp[jat].dr1;
 	  curLap[jat] = -(d2udr2+2.0*dudr);
@@ -220,6 +223,8 @@ namespace ohmmsqmc {
       }
       return exp(DiffVal);
     } 	  
+
+
     inline void update(ParticleSet& P, 		
 		       ParticleSet::ParticleGradient_t& G, 
 		       ParticleSet::ParticleLaplacian_t& L,
@@ -252,6 +257,12 @@ namespace ohmmsqmc {
       curVal.resize(N);
       ValueType dudr, d2udr2,u,sumu=0.0;
       PosType gr;
+      PairID.resize(d_table->size(SourceIndex),d_table->size(SourceIndex));
+      int nsp=P.groups();
+      for(int i=0; i<d_table->size(SourceIndex); i++)
+	for(int j=0; j<d_table->size(SourceIndex); j++) 
+	  PairID(i,j) = P.GroupID[i]*nsp+P.GroupID[j];
+
       for(int i=0; i<d_table->size(SourceIndex); i++) {
 	for(int nn=d_table->M[i]; nn<d_table->M[i+1]; nn++) {
 	  int j = d_table->J[nn];
@@ -276,11 +287,12 @@ namespace ohmmsqmc {
 
       //get the sign right here
       U[NN]= -sumu;
-      FirstAddressOfdU = &(dU[0][0]);
-      LastAddressOfdU = FirstAddressOfdU + dU.size()*DIM;
       buf.add(U.begin(), U.end());
       buf.add(d2U.begin(), d2U.end());
+      FirstAddressOfdU = &(dU[0][0]);
+      LastAddressOfdU = FirstAddressOfdU + dU.size()*DIM;
       buf.add(FirstAddressOfdU,LastAddressOfdU);
+
     }
     
     inline void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf) {
