@@ -23,6 +23,7 @@
 #include "Particle/HDFWalkerIO.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "QMC/VMC.h"
+#include "QMC/VMCParticleByParticle.h"
 #include "QMC/VMC_OPT.h"
 #include "QMC/MolecuDMC.h"
 #include "QMC/WaveFunctionTester.h"
@@ -158,6 +159,13 @@ namespace ohmmsqmc {
 	    XMLReport("Checking the conserved quantity")
 	    H.add(new ConservedEnergy,"Flux");
 	    VMC vmc(el,Psi,H,cur);
+	    vmc.setFileRoot(myProject.CurrentRoot());
+	    vmc.run();
+	  } else if(methodname == "vmc-ptcl"){
+	    //always check the conserved quantity for vmc
+	    XMLReport("Checking the conserved quantity")
+	    H.add(new ConservedEnergy,"Flux");
+	    VMCParticleByParticle vmc(el,Psi,H,cur);
 	    vmc.setFileRoot(myProject.CurrentRoot());
 	    vmc.run();
 	  } else if(methodname == "dmc"){

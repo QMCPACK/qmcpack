@@ -14,6 +14,8 @@ IF(QMCAPPS MATCHES "MolecuApps")
     ../QMCWaveFunctions/MolecularOrbitals/STOMolecularOrbitals.cpp
     ../QMCWaveFunctions/MolecularOrbitals/GridMolecularOrbitals.cpp
     ../QMCWaveFunctions/MolecularOrbitals/MolecularOrbitalBuilder.cpp
+    ../QMCHamiltonians/CorePolPotential.cpp
+    ../QMCHamiltonians/LocalPPotential.cpp
     ../QMCHamiltonians/WOS/Device.cpp
     ../QMCHamiltonians/WOS/WOSPotential.cpp
   )
@@ -39,6 +41,7 @@ ENDIF(QMCAPPS MATCHES "QDApps")
 SET(QMCSRCS 
   QMCDriver.cpp
   VMC.cpp
+  VMCParticleByParticle.cpp
   VMC_OPT.cpp
   MolecuDMC.cpp
   WaveFunctionTester.cpp

@@ -23,7 +23,10 @@
 #include "QMCWaveFunctions/OrbitalBuilderBase.h"
 
 namespace ohmmsqmc {
-
+  /** A convenient function to evaluate the electron configuration
+   *@param el the electron configuration
+   *@param acontext xpath context
+   */
   inline  
   bool 
   determineNumOfElectrons(ParticleSet& el, xmlXPathContextPtr acontext){
@@ -33,13 +36,12 @@ namespace ohmmsqmc {
     vector<int> N;
     string sdname("//");
     sdname.append(OrbitalBuilderBase::sd_tag);
-    cout << "***** The xpath for to find SlaterDeterminant " << sdname << endl;
     xmlXPathObjectPtr result
       = xmlXPathEvalExpression((const xmlChar*)(sdname.c_str()),acontext);
     
     bool found_el=false;
     int nsd= result->nodesetval->nodeNr;
-    XMLReport("Found " << nsd << " SlaterDeterminant")
+    XMLReport("Found " << nsd << " SlaterDeterminant.")
     if(nsd) {
       vector<xmlNodePtr> dset;
       xmlNodePtr cur=result->nodesetval->nodeTab[0]->children;
@@ -73,16 +75,44 @@ namespace ohmmsqmc {
     }
     xmlXPathFreeObject(result);
     
-    if(!found_el) {
-      //if reached here, need to create the 2-electron system with a error message
-      ERRORMSG("Cannot determine the number of electrons: assume 2-electron system")
-      N.resize(2);
-      N[0] = 1; N[1] = 1;
-      el.create(N);    
+    if(N.empty()) {
+      result = xmlXPathEvalExpression((const xmlChar*)"//particleset",acontext);
+      int n= result->nodesetval->nodeNr;
+      int pset=0;
+      while(!found_el && pset<n) {
+	xmlChar* s= xmlGetProp(result->nodesetval->nodeTab[pset],(const xmlChar*)"name");
+	if(s) { 
+	  if(s[0] == 'e') {
+	    xmlNodePtr cur = result->nodesetval->nodeTab[pset]->children;
+	    found_el=true;
+	    while(cur != NULL) {
+	      string cname((const char*)(cur->name));
+	      if(cname == "group") {
+		xmlChar* g= xmlGetProp(cur,(const xmlChar*)"size");
+		if(s) {
+		  N.push_back(atoi((const char*)g));
+		}
+	      }
+	      cur = cur->next;
+	    }
+	  }
+	}
+	pset++;
+      }
+      xmlXPathFreeObject(result);
     }
+
+    if(N.empty()) {
+      ERRORMSG("Could not determine the number of electrons. Assuming He(1,1)")
+      N.resize(2); N[0]=1; N[1]=1;
+    } else {
+      XMLReport("The electron configured by //slaterdeterminant or //particle/group/@name=\'e\'")
+    }
+    el.create(N);
     return true;
   }
 }
+
 
 #endif
 /***************************************************************************

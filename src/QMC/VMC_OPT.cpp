@@ -304,7 +304,7 @@ namespace ohmmsqmc {
 
     nw_effect[2] = static_cast<RealType>(NumSamples);
     gsum(nw_effect,0);
-    NumSamples = nw_effect[2];
+    NumSamples = static_cast<IndexType>(nw_effect[2]);
     return (nw_effect[0]*nw_effect[0]/nw_effect[1]);
   }
 
