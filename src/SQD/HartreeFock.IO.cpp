@@ -341,15 +341,15 @@ namespace ohmmshf {
       }
       XMLReport("Potential Paramter: Z = " << Z)
 	// determine maximum angular momentum
-	int lmax = 0;
-      for(int i=0; i<Psi.L.size(); i++)
+	int lmax = 0;  int norb = Psi.size();
+      for(int i=0; i<norb; i++)
 	if(Psi.L[i] > lmax) lmax = Psi.L[i]; 
       XMLReport("Maximum Angular Momentum = " << lmax)
 	CG_coeff = new Clebsch_Gordan(lmax);
 
       Pot.add(new ZOverRPotential(Z), true);
-      Pot.add(new HartreePotential(CG_coeff));
-      Pot.add(new ExchangePotential(CG_coeff));
+      Pot.add(new HartreePotential(CG_coeff,norb));
+      Pot.add(new ExchangePotential(CG_coeff,norb));
       Psi.CuspParam = Z;
     } // if Nuclear
     else if(PotType == "nuclear_scalar_rel"){
@@ -372,15 +372,15 @@ namespace ohmmshf {
 	cur = cur->next;
       }
       XMLReport("Potential Paramter: Z = " << Z)
-	int lmax = 0;
-      for(int i=0; i<Psi.L.size(); i++)
+	int lmax = 0;  int norb = Psi.size();
+      for(int i=0; i<norb; i++)
 	if(Psi.L[i] > lmax) lmax = Psi.L[i]; 
       XMLReport("Maximum Angular Momentum = " << lmax)
 	CG_coeff = new Clebsch_Gordan(lmax);
       
       Pot.add(new ZOverRPotential(Z),true);
-      Pot.add(new HartreePotential(CG_coeff));
-      Pot.add(new ExchangePotential(CG_coeff));
+      Pot.add(new HartreePotential(CG_coeff,norb));
+      Pot.add(new ExchangePotential(CG_coeff,norb));
       Psi.CuspParam = Z;
     } // if Nuclear Scalar Relativistic
     else if(PotType == "harmonic"){
@@ -404,23 +404,23 @@ namespace ohmmshf {
       }
       XMLReport("Potential Parameter: Omega = " << Omega)
 	//determine maximum angular momentum
-	int lmax = 0;
-      for(int i=0; i<Psi.L.size(); i++)
+	int lmax = 0;  int norb = Psi.size();
+      for(int i=0; i<norb; i++)
 	if(Psi.L[i] > lmax) lmax = Psi.L[i]; 
       lmax++; // increment by 1
       XMLReport("Maximum Angular Momentum = " << lmax)
 	CG_coeff = new Clebsch_Gordan(lmax);
 
       Pot.add(new HarmonicPotential(Omega),true);
-      Pot.add(new HartreePotential(CG_coeff));
-      Pot.add(new ExchangePotential(CG_coeff));
+      Pot.add(new HartreePotential(CG_coeff,norb));
+      Pot.add(new ExchangePotential(CG_coeff,norb));
       Psi.CuspParam = 0.0;
     } // if Harmonic
     else if(PotType == "step"){
       XMLReport("Creating a Step-Function Potential.")
 	//determine maximum angular momentum
-	int lmax = 0;
-      for(int i=0; i<Psi.L.size(); i++)
+	int lmax = 0;  int norb = Psi.size();
+      for(int i=0; i<norb; i++)
 	if(Psi.L[i] > lmax) lmax = Psi.L[i];
       lmax++; // increment by 1
       XMLReport("Maximum Angular Momentum = " << lmax)
@@ -429,8 +429,8 @@ namespace ohmmshf {
       StepPotential* apot = new StepPotential;
       apot->put(pot_ptr);
       Pot.add(apot,true);
-      Pot.add(new HartreePotential(CG_coeff));
-      Pot.add(new ExchangePotential(CG_coeff));
+      Pot.add(new HartreePotential(CG_coeff,norb));
+      Pot.add(new ExchangePotential(CG_coeff,norb));
       Psi.CuspParam = 0.0;
     } // if Step
     else if(PotType == "pseudo"){
@@ -460,16 +460,16 @@ namespace ohmmshf {
 	XMLReport("Potential Parameter: Core Radius = " << rc)
 	XMLReport("Potential Parameter: Lambda = " << lambda)
 	// determine maximum angular momentum
-	int lmax = 0;
-      for(int i=0; i<Psi.L.size(); i++)
+	int lmax = 0;  int norb = Psi.size();
+      for(int i=0; i<norb; i++)
 	if(Psi.L[i] > lmax) lmax = Psi.L[i]; 
       lmax++; // increment by 1
       XMLReport("Maximum Angular Momentum = " << lmax)
 	CG_coeff = new Clebsch_Gordan(lmax);
 
       Pot.add(new SJPseudoPotential(Zeff,rc,lambda));
-      Pot.add(new HartreePotential(CG_coeff));
-      Pot.add(new ExchangePotential(CG_coeff));
+      Pot.add(new HartreePotential(CG_coeff,norb));
+      Pot.add(new ExchangePotential(CG_coeff,norb));
       Psi.CuspParam = 0.0;
     } // if Pseudo
     else {
@@ -543,6 +543,7 @@ namespace ohmmshf {
     }
     Psi.print_HDF5(RootFileName,GridType,eigVal);
     Psi.print_basis(AtomName,RootFileName,GridType);
+    Pot.getStorage(Psi,RootFileName);
     return max_rad_all;
   }
 }
