@@ -29,7 +29,7 @@
 
 namespace ohmmshf {
 
-  /**
+  /** Solve a HF eigen problem for a spherically-symmetric external potential.
      @param fake Transformation object
      @param norb the number of eigen vectors to be obtained
      @brief Perform self-consistent Hartree-Fock calculations.
@@ -116,11 +116,8 @@ namespace ohmmshf {
 
   }
 
-  /**
-     @brief Instantiate a Transformation function based on the potential
-     and grid type and call run.
-     *
-     */
+  /** Instantiate a Transformation function based on the potential and grid type and call run.
+   */
   bool HartreeFock::solve() {
     int norb = Psi.size();
     if(PotType == "harmonic" || PotType == "step" || PotType == "pseudo"){
@@ -159,6 +156,3 @@ namespace ohmmshf {
  * $Revision$   $Date$
  * $Id$ 
  ***************************************************************************/
-
-  
-  

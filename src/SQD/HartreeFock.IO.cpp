@@ -25,12 +25,10 @@
 
 namespace ohmmshf {
 
-  /**
-     @param pot the potential
-     @param psi the wavefunction
-     @brief The contructor.
-  */
-
+  /** The contructor.
+   *@param pot the potential
+   * @param psi the wavefunction
+   */
   HartreeFock::HartreeFock(RadialPotentialSet& pot, 
 			   SphericalOrbitalTraits::BasisSetType& psi):
     Pot(pot), Psi(psi), 
@@ -41,21 +39,18 @@ namespace ohmmshf {
     grid_ptr(NULL), orb_ptr(NULL), 
     pot_ptr(NULL), myGrid(NULL) { }
 
-  /**
-     @param aroot the root for all output files
-     @brief Sets the root for all output files.
-  */
+  /** Sets the root for all output files.
+   *@param aroot the root for all output files
+   */
 
   void HartreeFock::setRoot(const string& aroot) {
     RootFileName = aroot;
     LogFileName = RootFileName + ".log";
   }
 
-  /**
-     @param q the current xml node which contains the parameter definitions
-     *for the eigen solver
-     @return true if successful
-     @brief Set the parameters for the eigen solver
+  /** Set the parameters for the eigen solver
+   *@param q the current xml node which contains the parameter definitions for the eigen solver
+   *@return true if successful
      *
      *Available parameters
      <ul>
@@ -102,11 +97,11 @@ namespace ohmmshf {
 	  grid_ptr = cur1;
 	} else if(cname1 == "orbitalset") {
 	  orb_ptr = cur1;
-	} else if(cname1 == "potential") {
+	} else if(cname1 == "hamiltonian") {
 	  pot_ptr = cur1;
 	  if(xmlHasProp(cur1,(const xmlChar*)"type")) {
 	    PotType = (const char*)(xmlGetProp(cur1, (const xmlChar *) "type"));
-	    XMLReport("The type of potential " << PotType)
+	    XMLReport("The type of hamiltonian " << PotType)
 	      } else {
 		ERRORMSG("Potential type is undefined. Exit")
 		  return false;
@@ -187,8 +182,7 @@ namespace ohmmshf {
     return true;
   }
 
-  /**
-     @brief Initialize the radial grid.
+  /** Initialize the radial grid.
      *
      *Available parameters
      <ul>
@@ -261,23 +255,22 @@ namespace ohmmshf {
       return myGrid != NULL;
   }
 
-  /**
-     @brief Initialize the wavefunction.
-     *
-     *Available parameters
+  /** Initialize the wavefunction.
+   *
+   *Available parameters
      <ul>
      <li> rest_type: the restriction type (spin, spin_space, none)
      </ul>
-  */
+   */
 
   bool HartreeFock::initOrbitalSet() {
 
     //find the restriction type
     xmlNodePtr cur = orb_ptr;
-    if(xmlHasProp(cur,(const xmlChar*)"rest_type")) {
-      Psi.Restriction = (const char*)(xmlGetProp(cur, (const xmlChar *) "rest_type"));
+    if(xmlHasProp(cur,(const xmlChar*)"condition")) {
+      Psi.Restriction = (const char*)(xmlGetProp(cur, (const xmlChar *) "condition"));
       XMLReport("Orbital restriction type = " << Psi.Restriction)
-	}
+    }
 
     //fill the closed shells (shell filling depends of potential)
     if(num_closed_shells) {
@@ -302,10 +295,9 @@ namespace ohmmshf {
     return Psi.size() != 0;
   }
 
-  /**
-     @brief Initialize the Hamiltonian.
-     *
-     *Available Hamiltonians
+  /** Initialize the Hamiltonian.
+   *
+   *Available Hamiltonians
      <ul>
      <li> Nuclear
      <li> Harmonic
@@ -314,7 +306,6 @@ namespace ohmmshf {
      <li> Nuclear Scalar Relativistic
      </ul>
   */
-
   bool HartreeFock::initHamiltonian() {
 
     //class to generate Clebsh Gordan coeff.
@@ -499,13 +490,11 @@ namespace ohmmshf {
     return true;
   }
 
-  /**
-     @return the maximum radius of the orbital set
-     @brief Print the orbitals and their corresponding eigenvalues
-     to a file "AtomName.orb.dat".  The orbitals can easily be
-     plotted by using gnuplot or xmgrace.
-  */
-
+  /** Print the orbitals and their corresponding eigenvalues to a file "AtomName.orb.dat". 
+   *@return the maximum radius of the orbital set
+   *   
+   *The orbitals can easily be plotted by using gnuplot or xmgrace.
+   */
   int HartreeFock::report() {
 
     string fileforplot(RootFileName);

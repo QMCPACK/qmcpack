@@ -58,8 +58,8 @@ namespace ohmmshf {
     bool initGrid();
     bool initHamiltonian();
     bool initOrbitalSet();
-
     template<class Transform_t> void run(Transform_t* fake, int norb);
+
   };
 
 }
