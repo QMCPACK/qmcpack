@@ -23,7 +23,7 @@
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCHamiltonians/QMCHamiltonianBase.h"
-#include "Message/CommCreate.h"
+#include "Message/Communicate.h"
 #include "Utilities/Clock.h"
 #include "QMC/WaveFunctionTester.h"
 #include "Utilities/OhmmsInform.h"

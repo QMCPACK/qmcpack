@@ -24,7 +24,7 @@
 #include "QMCHamiltonians/HartreePotential.h"
 #include "QMCHamiltonians/CoulombPotential.h"
 #include "QMCHamiltonians/BareKineticEnergy.h"
-#include "Message/CommCreate.h"
+#include "Message/Communicate.h"
 #include "Utilities/Clock.h"
 #include "QMCBase/RandomSeqGenerator.h"
 #include "QMC/VMC.h"

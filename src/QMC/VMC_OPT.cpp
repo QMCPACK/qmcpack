@@ -27,7 +27,7 @@
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCHamiltonians/QMCHamiltonianBase.h"
 #include "QMC/VMC.h"
-#include "Message/CommCreate.h"
+#include "Message/Communicate.h"
 #include "Utilities/Clock.h"
 #include "Optimize/Minimize.h"
 #include <algorithm>
@@ -371,10 +371,16 @@ namespace ohmmsqmc {
 
     vector<xmlNodePtr> wset,oset,cset;
     xmlNodePtr cur=qsave->children;
+    int pid=OHMMS::Controller->mycontext();
     while(cur != NULL) {
       string cname((const char*)(cur->name));
       if(cname == "mcwalkerset") {
-	wset.push_back(cur);
+        int pid_target=pid;
+        xmlChar* anode=xmlGetProp(mc_ptr,(const xmlChar*)"node");
+        if(anode) {
+          pid_target = atoi((const char*)anode);
+        }
+        if(pid_target == pid) wset.push_back(cur);
       } else if(cname == "optimize") {
 	oset.push_back(cur);
       } else if(cname == "const") {

@@ -1,4 +1,4 @@
-//////////////////////////////////////////////////////////////////
+
 // (c) Copyright 2003- by Jeongnim Kim
 //////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////
@@ -26,7 +26,7 @@
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCHamiltonians/QMCHamiltonianBase.h"
-#include "Message/CommCreate.h"
+#include "Message/Commnicate.h"
 #include "Utilities/Clock.h"
 
 namespace ohmmsqmc { 

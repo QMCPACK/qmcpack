@@ -27,7 +27,7 @@
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCHamiltonians/QMCHamiltonianBase.h"
 #include "QMC/MolecuFixedNodeBranch.h"
-#include "Message/CommCreate.h"
+#include "Message/Communiate.h"
 #include "Utilities/Clock.h"
 
 namespace ohmmsqmc {
