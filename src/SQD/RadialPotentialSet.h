@@ -135,7 +135,7 @@ namespace ohmmshf {
     }
 
     ///reset the grid potentials to zero
-    void reset(BasisSetType& psi) {
+    void reset() {
       for(int i=0; i<V.size(); i++){
 	V[i].m_Y = 0.0; 
 	Vsave[i].m_Y = 0.0;
