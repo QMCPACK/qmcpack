@@ -79,13 +79,14 @@ namespace ohmmsqmc {
       
       MCWalkerConfiguration::PropertyContainer_t Properties;
       ParticleSet::ParticlePos_t deltaR(W.getTotalNum());
+      ParticleSet::ParticlePos_t drift(W.getTotalNum());
       ParticleSet::ParticleGradient_t G(W.getTotalNum()), dG(W.getTotalNum());
       ParticleSet::ParticleLaplacian_t L(W.getTotalNum()), dL(W.getTotalNum());
 
       IndexType accstep=0;
       IndexType nAcceptTot = 0;
       IndexType nRejectTot = 0;
-      ofstream fout("test.txt");
+    //  ofstream fout("test.txt");
       do {
 	IndexType step = 0;
 	timer.start();
@@ -122,13 +123,18 @@ namespace ohmmsqmc {
 	      //dr = (*it)->R[iat]-newpos-Tau*G[iat]; 
 	      //RealType backwardGF = exp(-oneover2tau*dot(dr,dr));
 	      RealType logGf = -0.5*dot(deltaR[iat],deltaR[iat]);
-	      dr = (*it)->R[iat]-newpos-Tau*G[iat]; 
+
+	      ValueType vsq = Dot(G,G);
+	      ValueType scale = ((-1.0+sqrt(1.0+2.0*Tau*vsq))/vsq);
+              drift = scale*G;
+              dr = (*it)->R[iat]-newpos-drift[iat];
+
+	      //  dr = (*it)->R[iat]-newpos-Tau*G[iat]; 
 	      RealType logGb = -oneover2tau*dot(dr,dr);
 
-	      //RealType ratio2 = pow(ratio,2)
 	      RealType prob = std::min(1.0,pow(ratio,2)*exp(logGb-logGf));
 	      //alternatively
-	      if(Random() < prob) { //if(Random() < ratio2) {
+	      if(Random() < prob) { 
 		moved = true;
 		++nAccept;
 		W.acceptMove(iat);
@@ -136,7 +142,8 @@ namespace ohmmsqmc {
 		Psi.update2(W,iat);
 		W.G = G;
 		W.L += dL;
-		(*it)->Drift = Tau*G;
+		//(*it)->Drift = Tau*G;
+                (*it)->Drift = drift;
 	      } else {
 		++nReject; 
 		Psi.restore(iat);
