@@ -106,6 +106,7 @@ bool XMLParticleParser::put(const string& fname_in,
 
   //free local objects
   xmlXPathFreeObject(result);
+  xmlXPathFreeContext(context);
   xmlFreeDoc(doc);
 
   return true;
