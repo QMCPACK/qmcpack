@@ -19,10 +19,17 @@
 #ifndef OHMMS_COMMUNICATE_H
 #define OHMMS_COMMUNICATE_H
 
-/**@class Communicate
+#ifdef HAVE_CONFIG_H
+#include "ohmms-config.h"
+#endif
+
+#ifdef HAVE_MPI
+#include <mpi.h>
+#endif
+
+/** Communicate class that wraps information on parallelism.
  * @ingroup Message
- * @brief 
- *  Wrapping information on parallelism.
+ *
  *  Very limited in functions. Currently, only single-mode or mpi-mode 
  *  is available (mutually exclusive).
  * @todo Possibly, make it a general manager class for mpi+openmp, mpi+mpi
@@ -37,6 +44,7 @@ public:
   Communicate(int argc, char **argv);
 
   /**destructor
+   *
    * Call proper finalization of Communication library
    */
   virtual ~Communicate();
@@ -72,8 +80,7 @@ protected:
 
 
 namespace OHMMS {
-  /** Global Communicator for a process 
-   */
+  /** Global Communicator for a process */
   extern Communicate* Controller;
 }
 #endif // OHMMS_COMMUNICATE_H

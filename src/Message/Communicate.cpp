@@ -17,9 +17,6 @@
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 
-#ifdef HAVE_CONFIG_H
-#include "ohmms-config.h"
-#endif
 #include "Message/Communicate.h"
 #include "Message/TagMaker.h"
 
@@ -67,7 +64,6 @@ void Communicate::cleanupMessage(void*) { }
 //================================================================
 // Implements Communicate with standard MPI library
 //================================================================
-#include <mpi.h>
 Communicate::~Communicate(){ }
 
 void Communicate::initialize(int argc, char **argv){
