@@ -70,6 +70,12 @@ struct VarRegistry {
     }
     return -1;
   }
+
+  void print(ostream& os) {
+    os << "Optimizable variable list " << std::endl;
+    for(int i=0; i<Names.size(); i++)
+      os << Names[i] << " " << *(Pointers[i]) << std::endl;
+  }
 };
 #endif
 /***************************************************************************
