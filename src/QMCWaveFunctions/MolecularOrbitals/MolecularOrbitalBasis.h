@@ -97,20 +97,27 @@ namespace ohmmsqmc {
       d2Y.resize(n,TotalBasis);
     }
 
-    /**
+    /** Evalaute the values of  basis functions
        @param P input configuration containing N particles
-       @brief For each center, evaluate all the Atomic Orbitals
-       belonging to that center.  Fill in the matrices:
-       \f[ Y[i,j] =  \phi_j(r_i-R_I) \f]
-       \f[ dY[i,j] = {\bf \nabla}_i \phi_j(r_i-R_I) \f]
-       \f[ d2Y[i,j] = \nabla^2_i \phi_j(r_i-R_I), \f]
-       where \f$ {\bf R_I} \f$ is the correct center for the 
-       basis function \f$ \phi_j \f$
+       @brief For each center, evaluate all the Atomic Orbitals belonging to that center.  
+      *
+      The data members contain
+      - \f[ Y[i,j] =  \phi_j(r_i-R_I) \f]
+      - \f[ dY[i,j] = {\bf \nabla}_i \phi_j(r_i-R_I) \f]
+      - \f[ d2Y[i,j] = \nabla^2_i \phi_j(r_i-R_I), \f]
+      where \f$ {\bf R_I} \f$ is the correct center for the basis function \f$ \phi_j \f$
     */
     inline void 
     evaluate(const ParticleSet& P) {
       for(int c=0; c<I.size();c++) {
 	AOs[I[c]]->evaluate(c,0,P.getTotalNum(),Basis[c],Y,dY,d2Y);
+      }
+    }
+
+    inline void 
+    evaluate(const ParticleSet& P, int iat)  {
+      for(int c=0; c<I.size();c++) {
+	AOs[I[c]]->evaluate(c,iat,Basis[c],Y,dY,d2Y);
       }
     }
 
