@@ -46,7 +46,7 @@ namespace ohmmsqmc {
     
     typedef Walker<RealType,ParticlePos_t> Walker_t;
     typedef Walker_t::PropertyContainer_t  PropertyContainer_t;
-    typedef list<Walker_t*>              WalkerList_t;
+    typedef vector<Walker_t*>              WalkerList_t;
     typedef WalkerList_t::iterator         iterator;
     typedef WalkerList_t::const_iterator   const_iterator;
 

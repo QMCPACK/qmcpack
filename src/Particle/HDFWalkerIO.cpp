@@ -85,7 +85,7 @@ bool HDFWalkerOutput::get(MCWalkerConfiguration& W) {
   for (MCWalkerConfiguration::iterator it = W.begin(); 
        it != W.end(); ++it, ++nw) {
     sample_1(nw) = (*it)->Properties(PSISQ);
-    sample_2(nw) = (*it)->Properties(LOCALENERGY);
+    sample_2(nw) = (*it)->Properties(LOCALPOTENTIAL);
     for(int np=0; np < W.getParticleNum(); ++np)
       Pos(nw,np) = (*it)->R(np);    
   }
@@ -100,7 +100,7 @@ bool HDFWalkerOutput::get(MCWalkerConfiguration& W) {
   HDFAttribIO<Vector_t> sample_out(sample_1);
   sample_out.write(group_id,"psisq");
   HDFAttribIO<Vector_t> sample_out2(sample_2);
-  sample_out2.write(group_id,"localenergy");
+  sample_out2.write(group_id,"localpotential");
 
   H5Gclose(group_id);
 
@@ -126,7 +126,7 @@ HDFWalkerInput::HDFWalkerInput(const string& aroot):
   H5Gget_num_objs(h_config,&NumSets);
   if(!NumSets) {
     ERRORMSG("File does not contain walkers!")
-      }
+   }
 }
 
 /** Destructor closes the HDF5 file and main group. */
@@ -162,9 +162,8 @@ HDFWalkerInput::put(MCWalkerConfiguration& W, int ic){
 
   int selected = ic;
   if(ic<0) {
-    XMLReport("Will use the last set from "
-	      << NumSets << " of configurations.")
-      selected = NumSets-1;
+    XMLReport("Will use the last set from " << NumSets << " of configurations.")
+    selected = NumSets-1;
   }
 
   typedef MCWalkerConfiguration::PosType PosType;
@@ -190,16 +189,13 @@ HDFWalkerInput::put(MCWalkerConfiguration& W, int ic){
   //read the dataset
   Pos_in.read(group_id,"coord");
   sample1.read(group_id,"psisq");
-  sample2.read(group_id,"localenergy");
-      
-  bool withenergy=(localene_in.size()>0);
+  sample2.read(group_id,"localpotential");
   //close the group
   H5Gclose(group_id);
-  /*check to see if the number of walkers and particles is 
-    consistent with W */
+
+  /*check to see if the number of walkers and particles is  consistent with W */
   int nptcl = Pos_temp.extent(1);
   nwt = Pos_temp.extent(0);
-  //int nptcl = npt/nwt;
   if(nwt != W.getActiveWalkers() || nptcl != W.getParticleNum()) {
     W.resize(nwt,nptcl); 
   }
@@ -214,13 +210,13 @@ HDFWalkerInput::put(MCWalkerConfiguration& W, int ic){
     }
   }
 
-  if(withenergy) {
+  if(localene_in.size()>0) {
     iw=0;
     for(MCWalkerConfiguration::iterator it = W.begin(); it != W.end(); 
 	++it, iw++) 
-      (*it)->Properties(LOCALENERGY) = localene_in[iw];
+      (*it)->Properties(LOCALPOTENTIAL) = localene_in[iw];
   }
-  //XMLReport("Read in " << W.getActiveWalkers() << " Walkers from file")
+  //XMLReport("Read in " << W.getActiveWalkers() << " Walkers from file" << GrpName)
   return true;
 }
 

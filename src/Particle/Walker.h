@@ -23,12 +23,14 @@ namespace ohmmsqmc {
   /** an enum denoting index of physical properties */
   enum {WEIGHT=0,     /*!< weight */
 	LOCALENERGY,  /*!< local energy, the sum of all the components */
+	LOCALPOTENTIAL, /*!< local potential energy = local energy - kinetic energy */
 	MULTIPLICITY, /*!< multiplicity, used by DMC for branching */
 	PSISQ,        /*!< square of the many-body wavefunction \f$|\Psi|^2\f$ */
 	PSI,          /*!< value of the many-body wavefunction \f$\Psi(\{R\})\f$ */
 	AGE,          /*!< the age of the walker. set to zero when the walker is updated */
 	SCALED,       /*!< scaling factor for the drift */
-	NUMPROPERTIES /*!< the number of properties */
+	NUMPROPERTIES, /*!< the number of properties */
+	CAPACITY=15
        };
   
   /**
@@ -42,7 +44,8 @@ namespace ohmmsqmc {
   template<class T, class PA>
   struct Walker {
 
-    typedef TinyVector<T,NUMPROPERTIES> PropertyContainer_t;
+    typedef TinyVector<T,CAPACITY> PropertyContainer_t;
+    //typedef std::vector<T> PropertyContainer_t;
 
     ///scalar properties of a walker
     PropertyContainer_t  Properties;
@@ -54,25 +57,22 @@ namespace ohmmsqmc {
     ///drift of the walker \f$ Drift({\bf R}) = \tau v_{drift}({\bf R}) \f$
     PA Drift;
 
-    ///vector to store the constituents of the local energy
-    std::vector<T> E;
-
     ///container for any data that are accessed by FIFO get/put functions
     PooledData<T> Data;
 
     ///create a walker for n-particles
-    inline explicit Walker(int n) {  
-      Properties(WEIGHT) = 1.0;
-      Properties(MULTIPLICITY) = 1.0;
-      Properties(PSI) = 1.0;
+    inline explicit Walker(int n) : Properties(0.0) {  
+      Properties[WEIGHT] = 1.0;
+      Properties[MULTIPLICITY] = 1.0;
+      Properties[PSI] = 1.0;
       resize(n);
     }
     
     ///constructor
-    inline Walker(): Properties(0.0) {
-      Properties(WEIGHT) = 1.0;
-      Properties(MULTIPLICITY) = 1.0;
-      Properties(PSI) = 1.0;
+    inline Walker() : Properties(0.0) {
+      Properties[WEIGHT] = 1.0;
+      Properties[MULTIPLICITY] = 1.0;
+      Properties[PSI] = 1.0;
     }
 
     ///copy constructor
@@ -86,13 +86,25 @@ namespace ohmmsqmc {
       return *this;
     }
 
+    ///return the number of particles per walker
+    inline int size() const { return R.size(); }
+
     inline void makeCopy(const Walker& a) {    
       resize(a.R.size());
       R = a.R;
       Drift = a.Drift;
       Properties = a.Properties;
       Data = a.Data;
-      E = a.E;
+    }
+
+    //return the address of the values of Hamiltonian terms
+    inline T* restrict getEnergyBase() {
+      return Properties.begin()+NUMPROPERTIES;
+    }
+
+    //return the address of the values of Hamiltonian terms
+    inline const T* restrict getEnergyBase() const {
+      return Properties.begin()+NUMPROPERTIES;
     }
 
     /** reset the property of a walker
@@ -108,6 +120,14 @@ namespace ohmmsqmc {
       Properties(LOCALENERGY) = ene;
       Properties(PSISQ)=psi*psi;
       Properties(PSI)=psi;
+    }
+
+
+    /** reset the walker weight, multiplicity and age */
+    inline void reset() {
+      Properties(WEIGHT)=1.0;
+      Properties(MULTIPLICITY)=1.0;
+      Properties(AGE)=0.0;
     }
 
     ///resize for n-particles

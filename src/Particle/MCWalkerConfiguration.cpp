@@ -31,7 +31,7 @@ MCWalkerConfiguration::~MCWalkerConfiguration(){
   destroyWalker(WalkerList.begin(), WalkerList.end());
   DEBUGMSG("MCWalkerConfiguration::~MCWalkerConfiguration")
 
-    //WalkerList.clear();
+ //WalkerList.clear();
 }
 
 void MCWalkerConfiguration::createWalkers(int n) {
@@ -111,7 +111,7 @@ void MCWalkerConfiguration::copy(iterator first, iterator last){
 
 void MCWalkerConfiguration::reset() {
   iterator it=WalkerList.begin();
-  while(it != WalkerList.end()) {(*it)->Properties(WEIGHT) = 1.0;it++;}
+  while(it != WalkerList.end()) {(*it)->reset();it++;}
 }
 
 int MCWalkerConfiguration::branch(int maxcopy, int Nmax, int Nmin) {
@@ -121,19 +121,21 @@ int MCWalkerConfiguration::branch(int maxcopy, int Nmax, int Nmin) {
 
   vector<Walker_t*> good, bad;
   vector<int> ncopy;
-  vector<RealType> energy;
   ncopy.reserve(nw);
-  energy.reserve(Energy.size());
 
-  int ncols = Energy.cols();
+  //Temporary for vectorization: any line with energy or Energy is commented out
+  //since the performance is not improved by using the vectroized container.
+  // vector<RealType> energy;
+  // energy.reserve(Energy.size());
+  // int ncols = Energy.cols();
   int num_walkers=0;
   while(it != WalkerList.end()) {
-    int nc = min(static_cast<int>((*it)->Properties(MULTIPLICITY)),maxcopy);
+    int nc = std::min(static_cast<int>((*it)->Properties(MULTIPLICITY)),maxcopy);
     if(nc) {
       num_walkers += nc;
       good.push_back(*it);
       ncopy.push_back(nc-1);
-      energy.insert(energy.end(), Energy[iw], Energy[iw]+ncols);
+      //  energy.insert(energy.end(), Energy[iw], Energy[iw]+ncols);
     } else {
       bad.push_back(*it);
     }
@@ -169,56 +171,31 @@ int MCWalkerConfiguration::branch(int maxcopy, int Nmax, int Nmin) {
     num_walkers +=  nadd;
   }
 
-  //clear the walker list to populate them
+  //clear the WalkerList to populate them with the good walkers
   WalkerList.clear();
+  WalkerList.insert(WalkerList.begin(), good.begin(), good.end());
 
-  Energy.resize(num_walkers,ncols);
-  std::copy(energy.begin(), energy.end(), Energy.data());
-  for(int i=0; i<good.size(); i++) {
-    WalkerList.push_back(good[i]);
-  }
-
-  vector<RealType>::iterator ie=energy.begin();
-  RealType *e_start = Energy.data()+energy.size();
-  for(int i=0; i<good.size(); i++,ie+=ncols) {
-    for(int j=0; j<ncopy[i]; j++) {
+  //  Energy.resize(num_walkers,ncols);
+  //  std::copy(energy.begin(), energy.end(), Energy.data());
+  //  vector<RealType>::iterator ie=energy.begin();
+  //  RealType *e_start = Energy.data()+energy.size();
+  int cur_walker = good.size();
+  for(int i=0; i<good.size(); i++) { //,ie+=ncols) {
+    for(int j=0; j<ncopy[i]; j++, cur_walker++) {
       WalkerList.push_back(new Walker_t(*(good[i])));
-      std::copy(ie,ie+ncols,e_start);
-      e_start += ncols;
+      //std::copy(ie,ie+ncols,e_start);
+      //e_start += ncols;
     }
   }
 
   iw=0;
   it=WalkerList.begin();
   while(it != WalkerList.end()) {
-    (*it)->ID = iw++;
     (*it)->Properties(WEIGHT) = 1.0;
     (*it)->Properties(MULTIPLICITY) = 1.0;
     it++;
   }
-//   int nwalkers = WalkerList.size();
-//   if (nwalkers > Nmax){
-//     /*if too many walkers, kill until the population is 90%  of Nmax*/
-//     int nsubtract =  nwalkers-static_cast<int>(0.9*Nmax);
-//     iterator itend = WalkerList.begin();
-//     for(int i=0; i < nsubtract; i++) itend++;
-//     destroyWalker(WalkerList.begin(), itend);
-//   } else if(nwalkers < Nmin) {
-//     /*if too few walkers, copy until the population is 10%  more than Nmin*/
-//     it = WalkerList.begin();
-//     int nadd = static_cast<int>(Nmin*1.1)-nwalkers;
-//     if(nadd < nwalkers){
-//       int i=0;
-//       while(i<nadd){
-// 	//ERRORMSG("Too few walkers at step " << iter)
-// 	copyWalker(it,1);
-// 	it++; i++;
-//       }
-//     } else {
-//       cerr << "Too few walkers to copy!" << endl;
-//       exit(-1);
-//     }
-//   }
+
   return iw;
 }
 
