@@ -67,8 +67,8 @@
  \frac{d^2\Psi_{nl}(y)}{dy^2} + k'^2(r)\Psi_{nl}(y) = 0, 
  \f] where 
  \f[ 
- k'^2(r) =  r^2 \left[ \frac{(l+\frac{1}{2})^2}{r^2} 
- + 2M(V-\varepsilon')+\frac{\alpha^2}{2Mr}\frac{dV}{dr} 
+ k'^2(r) =  r^2 \left[ 2M(V-\varepsilon')
+ + \frac{(l+\frac{1}{2})^2}{r^2} + \frac{\alpha^2}{2Mr}\frac{dV}{dr} 
  + \frac{3\alpha^4}{16M^2} \left( \frac{dV}{dr} \right)^2 
  + \frac{\alpha^2}{4M}\frac{d^2V}{dr^2} \right]
  \f]
@@ -195,15 +195,19 @@ struct NuclearRelLogTransform {
   ///returns the number of nodes
   inline int nodes() const { return NumNodes;}
 
-  /*!\fn value_type ke(int i)
-   *\param i the grid index of the source function on the log grid
-   *\return \f$ k'^2(r) = \left[ \frac{(l+\frac{1}{2})^2}{r^2} 
-   + 2M(V-\varepsilon')+\frac{\alpha^2}{2Mr}\frac{dV}{dr}
-   + \frac{3\alpha^4}{16M^2} \left( \frac{dV}{dr} \right)^2 
-   + \frac{\alpha^2}{4M}\frac{d^2V}{dr^2}\right]r^2 \f$
+
+  /**
+   *@brief return \f$ k'^2(r_i) \f$
    *
-   */
-  inline value_type ke(int i) {
+   \f[ = r_i^2 \left[ 2M(r_i)(V-\varepsilon')
+   + \frac{(l+\frac{1}{2})^2}{r_i^2} 
+   + \left. \frac{\alpha^2}{2M(r_i)r_i}\frac{dV}{dr} \right|_{r=r_i}
+   + \frac{3\alpha^4}{16M(r_i)^2} 
+   \left. \left( \frac{dV}{dr} \right)^2 \right|_{r=r_i}
+   + \frac{\alpha^2}{4M(r_i)}\left. \frac{d^2V}{dr^2} \right|_{r=r_i}
+   \right] \f]
+  */
+  inline value_type k2(int i) {
     value_type r0 = V.r(i);
     value_type rinv = 1.0/r0;
     value_type rsq = pow(r0,2.0);

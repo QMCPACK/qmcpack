@@ -40,7 +40,7 @@ namespace ohmmshf {
    *@return The Hartree energy
    \f[
    E_{Hartree} = 
-   \sum_{ij} \sum_{k=0}^{\min(2l_i,2l_j)} (-1)^{-m_i-m_j}
+   \frac{1}{2} \sum_{ij} \sum_{k=0}^{\min(2l_i,2l_j)} (-1)^{-m_i-m_j}
    \frac{(2l_j+1)(2l_i+1)}{(2k+1)^2} \\
    \langle l_j m_j l_j (-m_j)| k 0 \rangle \langle l_j 0 l_j 0| k 0 \rangle
    \langle l_i m_i l_i (-m_i)| k 0 \rangle \langle l_i 0 l_i 0| k 0 \rangle

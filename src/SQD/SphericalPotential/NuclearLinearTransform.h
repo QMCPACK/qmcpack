@@ -117,11 +117,8 @@ struct NuclearLinearTransform {
   ///returns the number of nodes
   inline int nodes() const { return NumNodes;}
 
-  /*!\fn value_type ke(int i)
-   *\param i the grid index of the source function on the linear grid
-   *\return \f$k^2(r)=2[\varepsilon-\frac{L(L+1)}{2r^2}-V(r)]\f$
-   */
-  inline value_type ke(int i) {
+  ///return \f$k^2(r_i)=2[\varepsilon-L(L+1)/2r_i^2-V(r_i)]\f$
+  inline value_type k2(int i) {
     value_type rinv = 1.0/V.r(i);
     return 2.0*(E-LL*rinv*rinv-V(i));
   }

@@ -113,12 +113,10 @@ struct RegularLogTransform {
   ///returns the number of nodes
   inline int nodes() const { return NumNodes;}
 
-  /*!\fn value_type ke(int i)
-   *\param i the grid index of the source function on the log grid
-   *\return \f$ k'^2(r) =
-   * 2r^2[\varepsilon -\frac{(L+\frac{1}{2})^2}{2r^2}-V(r)] \f$
-   */
-  inline value_type ke(int i) {
+  /*return \f$ k'^2(r_i) = 2r_i^2[\varepsilon 
+    -(L+\frac{1}{2})^2/2r_i^2-V(r_i)] \f$
+  */
+  inline value_type k2(int i) {
     value_type rsq = pow(V.r(i),2.0); 
     return 2.0*(rsq*(E-V(i))-LL); //2.0*rsq*(E-LL/rsq-V(i));
   }
