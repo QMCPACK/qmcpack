@@ -91,7 +91,8 @@ void SphericalTensor<T,Point_t>::evaluate(const Point_t& p) {
  value_type cphi,sphi,ctheta;
  value_type r2xy=x*x+y*y;
  value_type r=sqrt(r2xy+z*z);  
- if (r2xy == 0.0) {
+ //@todo use tolerance
+ if (r2xy<1e-16) {
     cphi = 0.0;
     sphi = 1.0;
     ctheta = (z<0)?-1.0:1.0;

@@ -136,9 +136,23 @@ inline
 void
 DetUpdate(MatA& Minv, 
 	  VecT& newrow, 
-	  VecT& rvec, VecT& rvecinv, int rowchanged) {
+	  VecT& rvec, 
+	  VecT& rvecinv, 
+	  int rowchanged,
+	  typename MatA::value_type c_ratio) {
 
   int ncols=Minv.cols();
+  typename MatA::value_type ratio_inv=1.0/c_ratio;
+  for(int j=0; j<ncols; j++) {
+    if(j == rowchanged) continue;
+    typename MatA::value_type temp = 0.0;
+    for(int k=0; k<ncols; k++) temp += newrow[k]*Minv(j,k);
+    temp *= -ratio_inv;
+    for(int k=0; k<ncols; k++) Minv(j,k) += temp*Minv(rowchanged,k);
+  }
+  for(int k=0; k<ncols; k++) Minv(rowchanged,k) *= ratio_inv;
+
+	/*
   for(int j=0; j<ncols; j++) {
     rvec[j] = DetRatio(Minv,newrow.begin(),j);
     rvecinv[j] = 1.0/rvec[j];
@@ -158,6 +172,7 @@ DetUpdate(MatA& Minv,
       Minv(i,j) -= Minv(rowchanged,j)*rvec[i];
     }
   }
+  */
 }
 
 template<class T, unsigned D>
