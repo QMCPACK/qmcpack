@@ -264,6 +264,19 @@ namespace ohmmshf {
       }
     }
 
+    /**
+     *@param psi the wavefunction
+     *@param RootFileName the name of file root
+     *@brief Loop over all the SCFs to output the internal
+     *storage.
+     *@note Only applies for the Hartree and Exchange potentials.
+     */
+    void getStorage(const BasisSetType& psi, 
+		    const std::string& RootFileName){
+      for(int ip=0; ip<SCF.size(); ip++)
+	SCF[ip]->getStorage(psi,RootFileName);
+    }
+
   };
 
 }
