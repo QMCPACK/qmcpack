@@ -1,0 +1,266 @@
+//////////////////////////////////////////////////////////////////
+// (c) Copyright 2003  by Jeongnim Kim
+//////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////
+//   National Center for Supercomputing Applications &
+//   Materials Computation Center
+//   University of Illinois, Urbana-Champaign
+//   Urbana, IL 61801
+//   e-mail: jnkim@ncsa.uiuc.edu
+//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
+//
+// Supported by 
+//   National Center for Supercomputing Applications, UIUC
+//   Materials Computation Center, UIUC
+//////////////////////////////////////////////////////////////////
+// -*- C++ -*-
+#ifndef OHMMS_QMC_GENERIC_TWOBODYJASTROW_SHARED_H
+#define OHMMS_QMC_GENERIC_TWOBODYJASTROW_SHARED_H
+#include "OhmmsPETE/OhmmsMatrix.h"
+#include <numeric>
+namespace ohmmsqmc {
+  /** specialized TwoBodyJastrow<FT,true>
+   *
+   *Identical function \f$u(r_{ij})\f$ for all the pair types 
+   *For electrons, a single pair correlation function is used for 
+   *spins up-up/down-down/up-down/down-up.
+   */ 
+  template<class FT>
+  class TwoBodyJastrow<FT,true>: public OrbitalBase {
+
+    const DistanceTableData* d_table;
+
+    int N,NN;
+    ValueType DiffVal, DiffValSum;
+    ValueVectorType U,d2U,curLap,curVal;
+    GradVectorType dU,curGrad;
+    ValueType *FirstAddressOfdU, *LastAddressOfdU;
+
+  public:
+
+    typedef FT FuncType;
+    FT F;
+
+    ///constructor
+    TwoBodyJastrow(DistanceTableData* dtable): d_table(dtable) { }
+
+    ~TwoBodyJastrow(){
+      DEBUGMSG("TwoBodyJastrow::~TwoBodyJastrow")
+    }
+
+
+    ///reset the value of the Two-Body Jastrow functions
+    void reset() { 
+      F.reset();
+    }
+
+    /** implements the virtual functions of OrbitalBase
+	@param P the particle set
+	@param G returns the gradient \f$G[i]={\bf \nabla}_i J({\bf R})\f$
+	@param L returns the laplacian \f$L[i]=\nabla^2_i J({\bf R})\f$
+	@return \f$exp(-J({\bf R}))\f$
+	@note The DistanceTableData contains only distinct pairs of the 
+	particles belonging to one set, e.g., SymmetricDTD.
+    */
+    inline ValueType evaluate(ParticleSet& P,
+			      ParticleSet::ParticleGradient_t& G, 
+			      ParticleSet::ParticleLaplacian_t& L) {
+
+      ValueType sumu = 0.0;
+      ValueType dudr, d2udr2;
+      PosType gr;
+      for(int i=0; i<d_table->size(SourceIndex); i++) {
+	for(int nn=d_table->M[i]; nn<d_table->M[i+1]; nn++) {
+	  int j = d_table->J[nn];
+	  sumu += F.evaluate(d_table->r(nn), dudr, d2udr2);
+	  //multiply 1/r
+	  dudr *= d_table->rinv(nn);
+	  gr = dudr*d_table->dr(nn);
+	  //(d^2 u \over dr^2) + (2.0\over r)(du\over\dr)\f$
+	  ValueType lap = d2udr2+2.0*dudr;
+
+	  //multiply -1
+	  G[i] += gr;
+	  G[j] -= gr;
+	  L[i] -= lap; 
+	  L[j] -= lap; 
+	}
+      }
+      return exp(-sumu);
+    }
+
+    /** evalaute ratio
+     *@param P the active particle set
+     *@param iat the index of the particle that is moved
+     *
+     *@note
+     *DiffVal=\f$\sum_{j}(\phi(r_{ij}^0) - \phi(r_{ij}))\f$
+     *The negative sign is taken into account in the expression.
+     *JK tried to remove negations as much as possible (probably waste of time). 
+     *This leads to a rather messy +/- convetions.
+     */
+    ValueType ratio(ParticleSet& P, int iat) {
+      register ValueType dudr, d2udr2,u;
+      register PosType gr;
+      DiffVal = 0.0;      
+      for(int jat=0, ij=iat*N; jat<N; jat++,ij++) {
+	if(jat==iat) {
+	  curVal[jat] = 0.0;curGrad[jat]=0.0; curLap[jat]=0.0;
+	} else {
+	  curVal[jat] = F.evaluate(d_table->Temp[jat].r1, dudr, d2udr2);
+	  dudr *= d_table->Temp[jat].rinv1;
+	  curGrad[jat] = -dudr*d_table->Temp[jat].dr1;
+	  curLap[jat] = -(d2udr2+2.0*dudr);
+	  DiffVal += (U[ij]-curVal[jat]);
+	}
+      }
+      return exp(DiffVal);
+    } 	  
+
+    void update(ParticleSet& P, 
+		ParticleSet::ParticleGradient_t& G, 
+		ParticleSet::ParticleLaplacian_t& L,
+		int iat) {
+      DiffValSum += DiffVal;
+      GradType sumg,dg;
+      ValueType suml=0.0,dl;
+      for(int jat=0,ij=iat*N,ji=iat; jat<N; jat++,ij++,ji+=N) {
+	sumg += (dg=curGrad[jat]-dU[ij]);
+	suml += (dl=curLap[jat]-d2U[ij]);
+	dU[ij]=curGrad[jat]; 
+	dU[ji]=-1.0*curGrad[jat];
+	d2U[ij]=d2U[ji] = curLap[jat];
+	U[ij] =  U[ji] = curVal[jat];
+        G[jat] -= dg;
+	L[jat] += dl;
+      }
+      G[iat] += sumg;
+      L[iat] += suml;     
+    }
+
+    /** equivalent to evalaute but the main function is to store data */
+    void registerData(ParticleSet& P, PooledData<RealType>& buf){
+      N=d_table->size(VisitorIndex);
+      NN=N*N;
+      U.resize(NN+1);
+      d2U.resize(NN);
+      dU.resize(NN);
+      curGrad.resize(N);
+      curLap.resize(N);
+      curVal.resize(N);
+      ValueType dudr, d2udr2,u,sumu=0.0;
+      PosType gr;
+      for(int i=0; i<d_table->size(SourceIndex); i++) {
+	for(int nn=d_table->M[i]; nn<d_table->M[i+1]; nn++) {
+	  int j = d_table->J[nn];
+	  //ValueType sumu = F.evaluate(d_table->r(nn));
+	  sumu +=(u = F.evaluate(d_table->r(nn), dudr, d2udr2));
+	  dudr *= d_table->rinv(nn);
+	  gr = dudr*d_table->dr(nn);
+	  //(d^2 u \over dr^2) + (2.0\over r)(du\over\dr)\f$
+	  ValueType lap = d2udr2+2.0*dudr;
+	  int ij = i*N+j, ji=j*N+i;
+	  U[ij]=u; U[ji]=u;
+	  dU[ij] = gr; dU[ji] = -1.0*gr;
+	  d2U[ij] = -lap; d2U[ji] = -lap;
+	}
+      }
+
+      //get the sign right here
+      U[NN]= -sumu;
+      buf.add(U.begin(), U.end());
+      buf.add(d2U.begin(), d2U.end());
+      FirstAddressOfdU = &(dU[0][0]);
+      LastAddressOfdU = FirstAddressOfdU + dU.size()*DIM;
+      buf.add(FirstAddressOfdU,LastAddressOfdU);
+    }
+
+    void putData(ParticleSet& P, PooledData<RealType>& buf) {
+      buf.get(U.begin(), U.end());
+      buf.get(d2U.begin(), d2U.end());
+      buf.get(FirstAddressOfdU,LastAddressOfdU);
+      for(int iat=0, ij=0; iat<N; iat++) 
+	for(int jat=0; jat<N; jat++,ij++) P.G[iat] += dU[ij];
+      for(int iat=0, ij=0; iat<N; iat++) 
+	for(int jat=0; jat<N; jat++,ij++) P.L[iat] += d2U[ij];
+      //ready to accumulate the differences when a move is acepted
+      DiffValSum=0.0;
+    }
+    
+    inline ValueType evaluate(ParticleSet& P, PooledData<RealType>& buf) {
+      ValueType x = (U[NN] += DiffValSum);
+      buf.put(U.begin(), U.end());
+      buf.put(d2U.begin(), d2U.end());
+      buf.put(FirstAddressOfdU,LastAddressOfdU);
+      return exp(x); 
+    }
+
+#ifdef USE_FASTWALKER
+    inline void evaluate(WalkerSetRef& W,
+			 ValueVectorType& psi,
+			 WalkerSetRef::WalkerGradient_t& G,
+			 WalkerSetRef::WalkerLaplacian_t& L) {
+      
+      ValueType dudr, d2udr2;
+      int nw = W.walkers();
+      const DistanceTableData::IndexVectorType& M = d_table->M;
+      const DistanceTableData::IndexVectorType& J = d_table->J;
+      const DistanceTableData::IndexVectorType& PairID = d_table->PairID;
+      for(int iw=0; iw<nw; iw++) {
+        ValueType sumu = 0.0;
+	for(int i=0; i<d_table->size(SourceIndex); i++) {
+	  for(int nn=M[i]; nn<M[i+1]; nn++) {
+	    int j = J[nn];
+	    sumu += F.evaluate(d_table->r(iw,nn), dudr, d2udr2);
+	    dudr *= d_table->rinv(iw,nn);
+	    PosType gr = dudr*d_table->dr(iw,nn);
+	    ValueType lap = d2udr2+2.0*dudr;
+	    G(iw,i) += gr;
+	    G(iw,j) -= gr;
+	    L(iw,i) -= lap; 
+	    L(iw,j) -= lap; 
+	  }
+	}
+	psi[iw]*= exp(-sumu);
+      }
+    }
+#else
+    inline void evaluate(WalkerSetRef& W,
+			 ValueVectorType& psi,
+			 WalkerSetRef::WalkerGradient_t& G,
+			 WalkerSetRef::WalkerLaplacian_t& L) {
+      
+      ValueType dudr, d2udr2;
+      int nw = W.walkers();
+      const DistanceTableData::IndexVectorType& M = d_table->M;
+      const DistanceTableData::IndexVectorType& J = d_table->J;
+      const DistanceTableData::IndexVectorType& PairID = d_table->PairID;
+      vector<ValueType> sumu(nw,0.0);
+      for(int i=0; i<d_table->size(SourceIndex); i++) {
+	for(int nn=M[i]; nn<M[i+1]; nn++) {
+	  int j = J[nn];
+	  for(int iw=0; iw<nw; iw++) {
+	    sumu[iw] += F.evaluate(d_table->r(iw,nn), dudr, d2udr2);
+	    dudr *= d_table->rinv(iw,nn);
+	    PosType gr = dudr*d_table->dr(iw,nn);
+	    ValueType lap = d2udr2+2.0*dudr;
+	    G(iw,i) += gr;
+	    G(iw,j) -= gr;
+	    L(iw,i) -= lap; 
+	    L(iw,j) -= lap; 
+	  }
+	}
+      }
+      for(int iw=0; iw<nw; iw++) psi[iw]*= exp(-sumu[iw]);
+    }
+#endif
+    
+  };
+}
+#endif
+/***************************************************************************
+ * $RCSfile$   $Author$
+ * $Revision$   $Date$
+ * $Id$ 
+ ***************************************************************************/
+
