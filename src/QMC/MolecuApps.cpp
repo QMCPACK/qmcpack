@@ -17,6 +17,7 @@
 //   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
+#include "Numerics/Spline3D/Config.h"
 #include "QMC/MolecuApps.h"
 #include "Utilities/OhmmsInfo.h"
 #include "Particle/HDFWalkerIO.h"
@@ -25,6 +26,9 @@
 #include "Particle/DistanceTable.h"
 #include "ParticleIO/XMLParticleIO.h"
 #include "QMCHamiltonians/CoulombPotential.h"
+#include "QMCHamiltonians/PolarizationPotential.h"
+#include "QMCHamiltonians/WOS/WOSPotential.h"
+#include "QMCHamiltonians/WOS/Device.h"
 #include "QMCHamiltonians/IonIonPotential.h"
 #include "QMCHamiltonians/LocalPPotential.h"
 #include "QMCHamiltonians/HarmonicPotential.h"
@@ -148,17 +152,23 @@ namespace ohmmsqmc {
   bool MolecuApps::setHamiltonian(xmlNodePtr aroot){
 
     string ptype("molecule");
+    string mtype("analytic");
+    double Efield = 0.0;
     xmlXPathObjectPtr result
       = xmlXPathEvalExpression((const xmlChar*)"//hamiltonian",m_context);
 
+    xmlNodePtr pol=NULL;
     if(xmlXPathNodeSetIsEmpty(result->nodesetval)) {
       return false;
     } else {
-      xmlChar* att= xmlGetProp(result->nodesetval->nodeTab[0],(const xmlChar*)"type");
+      xmlNodePtr cur = result->nodesetval->nodeTab[0];
+      xmlChar* att= xmlGetProp(cur,(const xmlChar*)"type");
       if(att) {
 	ptype = (const char*)att;
+	if(ptype=="polarization"){ pol=cur;}
       }
     }
+
     xmlXPathFreeObject(result);
 
     XMLReport("Found Potential of type " << ptype)
@@ -180,9 +190,48 @@ namespace ohmmsqmc {
     } else if(ptype == "cpp") {
       H.add(new CoulombPotentialAA(el), "ElecElec");
       H.add(new LocalPPotential(ion,el), "PseudoPot");
+      //WARNING: GeCPP is HARD CODED!!!!!!
       H.add(new CorePolPotential(ion,el), "GeCPP");
       if(ion.getTotalNum()>1) 
 	H.add(new IonIonPotential(ion),"IonIon");
+    } else if(ptype == "polarization"){
+      xmlChar* att2=xmlGetProp(pol,(const xmlChar*)"method");
+      mtype = (const char*)att2;
+      if(mtype == "wos") {
+	xmlNodePtr cur1 = pol->children;
+	while(cur1 != NULL) {
+	  string cname((const char*)(cur1->name));
+	  if(cname=="wos"){
+	    int nruns = atoi((char*)xmlGetProp(cur1,(const xmlChar*)"nruns"));
+	    int mode = atoi((char*)xmlGetProp(cur1,(const xmlChar*)"mode"));
+	    double dz = atof((char*)xmlGetProp(cur1,(const xmlChar*)"dz"));
+	    double dv = atof((char*)xmlGetProp(cur1,(const xmlChar*)"dv"));
+	    double dr = atof((char*)xmlGetProp(cur1,(const xmlChar*)"dr"));
+	    double L = 10000;
+	    posvec_t rmin(-L,-L,-dz);
+	    posvec_t rmax( L, L, dz);
+	    double eps = 1.0; double rho = 0.0;
+	    std::vector<double> Vapp(6,0.0); Vapp[4] = -dv; Vapp[5] = dv;
+	    Device* device = new Device(dr,eps,rho,Vapp,rmin,rmax);
+	    H.add(new WOSPotential(mode,nruns,device,ion,el),"wos");
+	  }
+	  cur1=cur1->next;
+	} 
+      } else if(mtype == "analytic"){
+	H.add(new CoulombPotentialAA(el),"ElecElec");
+	H.add(new CoulombPotentialAB(ion,el),"Coulomb");
+
+	xmlNodePtr cur1 = pol->children;
+	while(cur1 != NULL ){
+	  string cname((const char*)(cur1->name));
+	  if(cname=="analytic"){
+	    double Ez = atof((char*)xmlGetProp(cur1,(const xmlChar*)"Ez"));
+	    cout << "Adding Electric field " << Ez << endl;
+	    H.add(new PolarizationPotential(Ez),"Polarization");
+	  }
+	  cur1= cur1->next;
+	}
+      }
     } else {
       ERRORMSG(ptype << " is not supported.")
 	return false;
