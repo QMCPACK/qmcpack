@@ -65,9 +65,9 @@ namespace ohmmshf {
     }    
     
     /**
-       @param a RadialPotentialBase
-       @param vect if tree, set a to Vext 
-       @brief add a new Self Consistent Field to the list
+     *@param a RadialPotentialBase
+     *@param vect if tree, set a to Vext 
+     *@brief add a new Self Consistent Field to the list
     */
     void add(RadialPotentialBase* a, bool vext=false) { 
       SCF.push_back(a);
@@ -75,22 +75,22 @@ namespace ohmmshf {
     }
 
     /**
-       @param n the principal quantum number
-       @param l the angular quantum number
-       @return the number of radial nodes
-       @brief The external potential evalue the properties of a radial orbital. 
-       *
-       *Vext is also responsible to calculate the lower and upper bounds
-       *for eigen values.
-       */
+     *@param n the principal quantum number
+     *@param l the angular quantum number
+     *@return the number of radial nodes
+     *@brief The external potential evalue the properties of a radial orbital. 
+     *
+     *Vext is also responsible to calculate the lower and upper bounds
+     *for eigen values.
+     */
     inline int getNumOfNodes(int n, int l) { 
       if(!Vext) Vext = SCF[0];
       return Vext->getNumOfNodes(n,l);
     }
 
     /**
-       @param lower the lower bound of the eigen values
-       @param upper the upper bound of the eigen values
+     *@param lower the lower bound of the eigen values
+     *@param upper the upper bound of the eigen values
     */
     inline 
     void EnergyBound(value_type& lower, value_type& upper) const {
@@ -99,8 +99,8 @@ namespace ohmmshf {
     }
 
     /**
-       @param m the mass of the quantum particle in AU
-       @brief Set the effective mass
+     *@param m the mass of the quantum particle in AU
+     *@brief Set the effective mass
     */
     inline void setMass(value_type m) {
       EffectiveMass = m;
@@ -108,15 +108,15 @@ namespace ohmmshf {
 
 
     /**
-       @return the effective mass of the quantum particle
+     *@return the effective mass of the quantum particle
     */
     inline value_type getMass() const {
       return EffectiveMass;
     }
 
     /**
-       @param ig the grid index
-       @return the value of the external potential
+     *@param ig the grid index
+     *@return the value of the external potential
     */
     inline
     value_type getV(int ig) const { 
@@ -142,16 +142,14 @@ namespace ohmmshf {
       }
     }
 
-    /*! \fn inline value_type evaluate(BasisSetType& psi, 
-      vector<value_type>& Energy, 
-      int norb)
-      * \param psi the wavefunction
-      * \param Energy vector to store the sum of each SCF of
-      the SCF matrix elements
-      * \param norb number of orbitals
-      * \brief Loop over all the SCFs to generate a new potential for each orbital.
-      */
-
+    /**
+     *@param psi the wavefunction
+     *@param Energy vector to store the sum of each SCF of
+     the SCF matrix elements
+     *@param norb number of orbitals
+     *@brief Loop over all the SCFs to generate a new potential 
+     *for each orbital.
+     */
     inline value_type evaluate(BasisSetType& psi, 
 			       vector<value_type>& Energy, 
 			       int norb) {
@@ -163,10 +161,11 @@ namespace ohmmshf {
       return sum;
     }
 
-    /*! \fn inline void mix(value_type x)
-     * \param x the mixing ratio
-     * \brief Mix the old potential with the new
-     potential: \f[ V_{New}(r) = (1-x)V_{New}(r) +
+    /**
+     *@param x the mixing ratio
+     *@brief Mix the old potential with the new potential.
+     *
+     \f[ V_{New}(r) = (1-x)V_{New}(r) +
      x V_{Old}(r). \f]  This is for convergence purposes, so
      that the convergence is "smoother" and decreases the 
      possibility of having dramatic changes in the potential.
@@ -179,14 +178,13 @@ namespace ohmmshf {
       }
     }
 
-    /*! \fn inline value_type calcKE(BasisSetType& psi, 
-      value_type eigsum, 
-      int norb)
-      * \param psi the wavefunction
-      * \param eigsum the sum of the eigenvalues
-      * \param norb the number of orbitals
-      * \return the total kinetic energy
-      * \brief Calculates the total kinetic energy:
+    /**
+      *@param psi the wavefunction
+      *@param eigsum the sum of the eigenvalues
+      *@param norb the number of orbitals
+      *@return the total kinetic energy
+      *@brief Calculates the total kinetic energy.
+      *
       \f[ KE = \sum_i^{Norb} \left\{ \epsilon_i - \int_0^{\infty}
       dr \psi_i V(r) \psi_i \right\}. \f]  This is true because
       \f[ 
@@ -209,14 +207,15 @@ namespace ohmmshf {
       return eigsum-sum;
     }
 
-    /*! \fn void applyRestriction(BasisSetType& psi)
-     * \param psi the wavefunction
-     * \brief Restrict the potential.  Normally each orbital 
-     \f$ \psi_i \f$ of the wavefunction has its own unique 
-     potential, but we want to restrict the potential to be
-     the same for orbitals with the same quantum numbers, 
-     such as \f$ (n,l) \f$.  What this function does is 
-     assign the average potential to all the orbitals that
+    /**
+     *@param psi the wavefunction
+     *@brief Restrict the potential. 
+     *
+     Normally each orbital \f$ \psi_i \f$ of the wavefunction
+     has its own unique potential, but we want to restrict
+     the potential to be the same for orbitals with the same 
+     quantum numbers, such as \f$ (n,l) \f$.  What this function 
+     does is assign the average potential to all the orbitals that
      are restricted to be the same. 
     */
 

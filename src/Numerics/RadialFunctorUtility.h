@@ -11,17 +11,29 @@
    @note  The original Prim was written in F90 by Tim Wilkens.
  */
 
-/*!\fn
- * \param g \f$Y_k(n_al_a;n_bl_b/r)\f$
- * \param a \f$psi_a\f$
- * \param b \f$\psi_b\f$
- * \param prefactor The scaling constant (simple multiplication factor)
- * \return double The result of the calculation after integration
+/**
+ *@param g \f$ Y_k(n_al_a;n_bl_b/r) \f$
+ *@param a \f$ u_a(r) \f$
+ *@param b \f$ u_b(r) \f$
+ *@param prefactor scaling constant (simple multiplication factor)
+ *@return \f$ prefactor R^k(ab,ab) or  R^k(ab,ba) \f$
  *
- * \brief Calculates \f$\int_0^{\infty} dr \psi_a(r) \psi_b(r)
- Y_k(n_al_a,n_bl_b/r) \psi_b(r) \f$ with appropriate scaling.
- */
+ *@brief Calculates the function \f$ R_k(ij,rt) \f$
+ On Page 311 of "Quantum Theory of Atomic Structure" Vol. 1 by J.C. Slater. 
+ *
+ This function is used extensively to calculate the Coulomb and Exchange
+ energies.  The general equation is:
+ \f[
+ R^k(ab,xy) = \int_0^{\infty} dr u_{n_al_a}(r) u_{n_xl_x}(r)
+ \frac{Y_k(n_bl_b,n_yl_y/r)}{r} 
+ \f]
+ *
+ *For the Hartree energy use \f$ R_k(ab,ab), \f$
+ while for the Exchange energy \f$ R_k(ab,ba). \f$
 
+ *@note Here we use \f$ u(r) = rR(r). \f$ 
+
+ */
 template<class T, class GF>
 inline T Phisq_x_Yk(const GF& g, const GF& a, 
 		    const GF& b, T prefactor) {
@@ -34,22 +46,18 @@ inline T Phisq_x_Yk(const GF& g, const GF& a,
 }
 
 
-/*! \fn
- * \param g return 
- * \param a \f$psi_a\f$
- * \param b \f$\psi_b\f$
- * \param k the integer parameter.
+/**
+ *@param g return \f$ {\cal Y}_k(n_a l_a; n_b l_b/r) /r \f$
+ *@param a \f$ u_a(r) \f$
+ *@param b \f$ u_b(r) \f$
+ *@param k integer parameter
  *
- * \brief Calculates the function: 
- \f[
- \frac{{\cal Y}_k(n_a l_a; n_b l_b/r)}{r} 
- \f]
+ *@brief Calculates the function: 
+ \f$ {\cal Y}_k(n_a l_a; n_b l_b/r) /r \f$
+ On Page 17 of "Quantum Theory of Atomic Structure" Vol. 2 by J.C. Slater. 
  *
- On Page 17 of "Quantum Theory of Atomic
- Structure" Vol 2 by JC Slater.  Note: (here we use \f$ u(r) \f$ not \f$ R(r) \f$,
- where the relation is \f$ u(r) = rR(r) \f$) this function is used extensively
- to calculate the Coulomb and Exchange potentials.  The actual
- equation is:
+ This function is used extensively to calculate the Coulomb and Exchange
+ potentials.  The actual equation is:
  \f[ 
  \frac{{\cal Y}_k(n_al_a;n_bl_b/r)}{r} = 
  \frac{1}{r^{k+1}}
@@ -57,6 +65,7 @@ inline T Phisq_x_Yk(const GF& g, const GF& a,
  + r^{k} \int_{r}^{\infty}dr' \:
  r'^{-k-1} u_{n_a l_a}(r') u_{n_b l_b}(r')
  \f]
+ *@note Here we use \f$ u(r) = rR(r). \f$
  */
 template<class GF>
 inline void
@@ -79,7 +88,7 @@ Ykofr(GF& g, const GF& a, const GF& b, int k) {
     r_to_k[i] = t;
     r_to_minus_k_plus_one[i] = 1.0/(t*r0); // 1/r0^(k+1)
     value_type ab = a(i)*b(i);
-    first_integrand(i) = r_to_k[i]*ab;
+    first_integrand(i) = r_to_k[i]*ab; 
     second_integrand(i) = r_to_minus_k_plus_one[i]*ab;
   }
 
@@ -97,14 +106,14 @@ Ykofr(GF& g, const GF& a, const GF& b, int k) {
   }
 }
 
-/*! \fn 
- * \param g the grid function to be returned
- * \param y the grid function to be transformed
- * \param a \f$\psi_a\f$
- * \param b \f$\psi_b\f$
- * \param coeff a coefficient
+/**
+ *@param g the grid function to be returned
+ *@param y the grid function to be transformed
+ *@param a \f$ u_a(r) \f$
+ *@param b \f$ u_b(r) \f$
+ *@param coeff the coefficient
  *
- * \brief Makes \f$V_{Exchange}\f$ a local function.  
+ *@brief Makes \f$V_{Exchange}\f$ a local function.  
  *
  \f$ V_{Exchange} \f$ is a non-local operator: 
  \f[
@@ -113,7 +122,7 @@ Ykofr(GF& g, const GF& a, const GF& b, int k) {
  \frac{\psi_b^*(r')\psi_a(r')}{|r-r'|}\psi_b(r),
  \f]
  It is possible to transform this into a local operator by multiplying 
- and dividing by $\psi_a(r)$: 
+ and dividing by \f$ \psi_a(r) \f$: 
  \f[
  -\sum_b \delta_{\sigma_a,\sigma_b}\int dr'
  \frac{\psi_b^* (r')\psi_a(r')\psi_b(r')\psi_b(r)}{\psi_a(r)|r-r'|} \psi_a(r) 
@@ -141,7 +150,6 @@ Make_Loc_Pot(GF& g, const GF& y, const GF& a, const GF& b,
   }
 }
 
-//}
 #endif
 /***************************************************************************
  * $RCSfile$   $Author$

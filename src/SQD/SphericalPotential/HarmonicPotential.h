@@ -34,6 +34,7 @@ namespace ohmmshf {
     HarmonicPotential(value_type omega);
     value_type evaluate(const BasisSetType& psi, 
 			RadialOrbitalSet_t& V, int norb);
+    ///return \f$ n \f$
     int getNumOfNodes(int n, int l);
   };
 }

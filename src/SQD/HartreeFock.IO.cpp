@@ -101,7 +101,7 @@ namespace ohmmshf {
 	  pot_ptr = cur1;
 	  if(xmlHasProp(cur1,(const xmlChar*)"type")) {
 	    PotType = (const char*)(xmlGetProp(cur1, (const xmlChar *) "type"));
-	    XMLReport("The type of hamiltonian " << PotType)
+	    XMLReport("The type of external potential " << PotType)
 	      } else {
 		ERRORMSG("Potential type is undefined. Exit")
 		  return false;
@@ -111,7 +111,7 @@ namespace ohmmshf {
       }
     }
     if(orb_ptr == NULL || pot_ptr == NULL || grid_ptr == NULL) {
-      ERRORMSG("Missing one of nodes: <grid/>, <orbitalset/> or <potential/>. Exit")
+      ERRORMSG("Missing one of nodes: <grid/>, <orbitalset/> or <hamiltonian/>. Exit")
 	return false;
     }
     xmlXPathFreeObject(result);
@@ -137,7 +137,7 @@ namespace ohmmshf {
     //initialize the Hamiltonian
     success = initHamiltonian();
     if(!success) {
-      ERRORMSG("Failed to create/initialiaze potential")
+      ERRORMSG("Failed to create/initialiaze hamiltonian")
 	return false;
     }
    

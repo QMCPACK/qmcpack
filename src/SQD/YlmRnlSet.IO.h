@@ -43,10 +43,10 @@ bool YlmRnlSet<GT>::get(std::ostream& os) {
 }
 
 /**
- *\param cur the current xmlNode which contains definitions 
+ *@param cur the current xmlNode which contains definitions 
  *for the orbital set
- *\return true if succeeds
- *\brief Parses the xml file to add any new orbitals to the
+ *@return true if succeeds
+ *@brief Parses the xml file to add any new orbitals to the
  *set of orbitals.
  *
  *Each orbital must have the quantum numbers \f$ (n,l,m,s,c) \f$,
@@ -120,11 +120,11 @@ bool YlmRnlSet<GT>::put(xmlNodePtr cur){
 }  
 
 /** 
- *\param RootName name of the element
- *\param GridType the type of grid
- *\param eigVal the eigenvalues
- *\return true if succeeds
- *\brief Prints the grid and orbital information to an HDF5
+ *@param RootName name of the element
+ *@param GridType the type of grid
+ *@param eigVal the eigenvalues
+ *@return true if succeeds
+ *@brief Prints the grid and orbital information to an HDF5
  *file named "RootName.h5".  
  */
 template<class GT>
@@ -213,11 +213,11 @@ bool YlmRnlSet<GT>::print_HDF5(const std::string& RootName,
 }
 
 /** 
- *\param elementName name of the element
- *\param RootName name of the element
- *\param GridType the type of grid
- *\return true if succeeds
- *\brief Prints the basis information to an xml file named
+ *@param elementName name of the element
+ *@param RootName name of the element
+ *@param GridType the type of grid
+ *@return true if succeeds
+ *@brief Prints the basis information to an xml file named
  *"RootName.basis.xml" for use in qmcPlusPlus.
  */
 template<class GT>

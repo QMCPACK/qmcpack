@@ -40,7 +40,7 @@ namespace ohmmshf {
     SJPseudoPotential(value_type,value_type,value_type);
     value_type evaluate(const BasisSetType& psi,
 			RadialOrbitalSet_t&V, int norb);
-    /**warning needs to check the number of nodes **/
+    ///must always return 1
     inline int getNumOfNodes(int n, int l);
   };
 }

@@ -34,6 +34,7 @@ namespace ohmmshf {
     StepPotential();
     value_type evaluate(const BasisSetType& psi, 
 			RadialOrbitalSet_t& V, int norb);
+    ///return \f$ n \f$
     int getNumOfNodes(int n, int l);
 
     bool put(xmlNodePtr cur);

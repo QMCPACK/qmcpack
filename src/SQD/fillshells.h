@@ -2,8 +2,40 @@
 #define ATOMICHF_FILLSHELLS_H
 #include "SQD/HFConfiguration.h"
 
+ /**@file fillshells.h
+   @brief Fill the closed shells for the nuclear and harmonic potentials
+   @authors Jeongnim Kim, Jordan Vincent
+   @note  The original Prim was written in F90 by Tim Wilkens.
+  */
+
 namespace ohmmshf {
 
+  /**
+   *@param mo the  
+   *@param nmax the number of closed shells
+   *@brief Fill the closed shells for the \f$ -Z/r \f$ potential.
+   *
+   *It is convenient to automatically fill the closed shell system
+   for the closest noble-gas configuration, all that is required at
+   the input level is to add the valence electrons.  For the post-
+   transition elements it is necessary to add the d-states.
+   *
+   The noble-gas corresponding to the closed shell:
+   *
+   shell   atom    #electrons
+   *
+   1       He             2
+   *
+   2       Ne            10
+   *
+   3       Ar            18 
+   *
+   4       Kr            32 
+   *
+   5       Xe            54
+   *  
+   6       Rn            86
+  */
   inline 
     void FillShellsNucPot(SphericalOrbitalTraits::BasisSetType& mo, 
 			  int nmax) { 

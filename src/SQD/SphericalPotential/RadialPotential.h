@@ -25,8 +25,9 @@ class Clebsch_Gordan;
  *@defgroup RadialPotential
  *@brief Classes to define potentials on a radial grid.
  *
- *A radial potential is defined on a radial grid, OneDimGridBase<T> and RadialPotentialSet
- *is used to represent the LHS of Radial Schrodinger Equation.
+ *A radial potential is defined on a radial grid, 
+ *OneDimGridBase<T> and RadialPotentialSet are used to represent 
+ *the LHS of Radial Schrodinger Equation.
  */
 namespace ohmmshf {
 
@@ -95,8 +96,8 @@ namespace ohmmshf {
 			    const std::string& RootFileName) { return; }
 
     /**
-       @param ig the grid index
-       @return the value of the external potential
+     *@param ig the grid index
+     *@return the value of the external potential
     */
     inline
     value_type getV(int ig) const {
@@ -123,20 +124,13 @@ namespace ohmmshf {
   /**
    *@ingroup RadialPotential
    *@class HartreePotential
-   *@brief implements the Hartree potential
-   *
-   \f[ V_{Hartree}(r) =
-   \sum_j\sum_{k=0}^{max(2l_i,2l_j)} (-1)^{m_i+m_j}
-   \frac{(2l_i+1)(2l_j+1)}{(2k+1)^2}c_g(l_i,l_j,k,0,0)
-   c_g(l_j,l_j,k,0,0)c_g(l_i,l_i,k,-m_i,m_i)
-   c_g(l ///the Clebsch Gordan coefficient matrix_i,l_i,k,-m_j,m_j)\frac{ Y_k(n_jl_j,n_jl_j/r)}{r} 
-   \f]
+   *@brief Implements the Hartree potential.
   */
   struct HartreePotential: public RadialPotentialBase {
     ///the Clebsch Gordan coefficient matrix
     Clebsch_Gordan *CG_coeff;
     /**store the matrix elements 
-       \f$\langle \psi_i \psi_j |V| \psi_i \psi_j \rangle */
+       \f$\langle \psi_i \psi_j |V| \psi_i \psi_j \rangle \f$ */
     Vector<value_type> storage;
     HartreePotential(Clebsch_Gordan* cg, int norb);
     value_type evaluate(const BasisSetType& psi, 
@@ -149,21 +143,13 @@ namespace ohmmshf {
   /**
    *@ingroup RadialPotential
    *@class ExchangePotential
-   *@brief implements the exchange potential
-   *
-   \f[ V_{exchange}(r) =
-   \sum_j\delta(s_i,s_j)\sum_{k=|l_i-l_j|}^{l_i+l_j}
-   \frac{(2l_i+1)(2l_j+1)}{(2k+1)^2}c_g(l_i,l_j,k,0,0)^2
-   c_g(l_i,l_j,k,-m_i,m_j)^2\frac{ Y_k(n_il_i,n_jl_j/r)}{r} 
-   \f].
-   *Exchange potential is non-local.
-   *
+   *@brief Implements the exchange potential
    */
   struct ExchangePotential: public RadialPotentialBase {
     ///the Clebsch Gordan coefficient matrix
     Clebsch_Gordan *CG_coeff;
     /**store the matrix elements 
-       \f$\langle \psi_i \psi_j |V| \psi_j \psi_i \rangle */
+       \f$\langle \psi_i \psi_j |V| \psi_j \psi_i \rangle \f$ */
     Vector<value_type> storage;
     ExchangePotential(Clebsch_Gordan* cg, int norb);
     value_type evaluate(const BasisSetType& psi, 

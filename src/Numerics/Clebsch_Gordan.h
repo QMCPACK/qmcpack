@@ -19,23 +19,22 @@ class Clebsch_Gordan {
   ///vector to store the Clebsch-Gordan coefficients
   std::vector<double> CG_coeff;
 
-  ///return \f$ \langle l_1 m_1 l_2 m_2 | l_3 (m_1+m_2) \rangle \f$
-  inline double operator()(int l1, int l2, int l3, int m1, int m2) const {
-    return CG_coeff[l1+l2*L1max+l3*L1max*L1max+(m1+Lmax)*L1max*L1max*L2max+(m2+Lmax)*L1max*L1max*L2max*L2max];
-  }
-
   /**
-   *@brief return \f$ \langle l_1 m_1 l_2 m_2 | l_3 (m_1+m_2) \rangle \f$
-   *@note  Lmax is internally added to m1 and m2 to offset the index
+   *@brief return \f$ index = l_1 + l_2 L1max + l_3 L1max^2 
+   + m_1 L1max^2 L2max + m_2 L1max^2 L2max^2 \f$ 
+   *@note Lmax is internally added to m1 and m2 to offset the index
    */
-  inline double cg(int l1, int l2, int l3, int m1, int m2) const {
-    return CG_coeff[l1+l2*L1max+l3*L1max*L1max+(m1+Lmax)*L1max*L1max*L2max+(m2+Lmax)*L1max*L1max*L2max*L2max];
+  inline int index(int l1, int l2, int l3, int m1, int m2) const {
+    return l1+l2*L1max+l3*L1max*L1max
+      +(m1+Lmax)*L1max*L1max*L2max+(m2+Lmax)*L1max*L1max*L2max*L2max;
   }
 
-  //  int rlmax(){ return Lmax;}
+  ///return \f$ \langle l_1 m_1 l_2 m_2 | l_3 (m_1+m_2) \rangle \f$
+  inline double cg(int l1, int l2, int l3, int m1, int m2) const {
+    return CG_coeff[index(l1,l2,l3,m1,m2)];
+  }
 
-
-private: 
+ private: 
 
   ///maximum angular momentum	
   int Lmax;

@@ -34,6 +34,7 @@ namespace ohmmshf {
     ZOverRPotential(value_type z);
     value_type evaluate(const BasisSetType& psi, 
 			RadialOrbitalSet_t& V, int norb);
+    ///return \f$ n-l-1 \f$
     int getNumOfNodes(int n, int l);
   };
 }

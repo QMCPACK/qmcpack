@@ -1,9 +1,4 @@
 // -*- C++ -*-
-/*! \author Jordan Vincent
- *  \author Curry Taylor
- *  \note  The original Prim was written in F90 by Tim Wilkens.
- */
-
 #include <math.h>
 #include <stdlib.h>
 #include <iostream>
@@ -77,20 +72,11 @@ Clebsch_Gordan::Clebsch_Gordan(const int lmax):
 		/ fa[l3-l1+l2-i] / fa[l3+m3-i] / fa[i+l1-l2-m3];
 	    }
 
-	    // CG_coeff(l1,l2,l3,m1+Lmax,m2+Lmax) = prefactor*sum;
-	    // CG_coeff(l2,l1,l3,m2+Lmax,m1+Lmax) = si[l1+l2+l3]*prefactor*sum;
 	    /* apply the relationship
 	       \langle l_1 m_1 l_2 m_2 | l_3 m_3 \rangle
 	       = (-1)^{l_1+l_2+l_3} \langle l_2 m_2 l_1 m_1 | l_3 m_3 */
-	    
-	    index1 = l1 + l2*L1max + l3*L1max*L1max + 
-	      (m1+Lmax)*L1max*L1max*L2max + (m2+Lmax)*L1max*L1max*L2max*L2max;
-	    index2 = l2 + l1*L1max + l3*L1max*L1max + 
-	      (m2+Lmax)*L1max*L1max*L2max + (m1+Lmax)*L1max*L1max*L2max*L2max;
-
-	    CG_coeff[index1] = prefactor*sum;
-	    CG_coeff[index2] = si[l1+l2+l3]*prefactor*sum;	    
-
+	    CG_coeff[index(l1,l2,l3,m1,m2)] = prefactor*sum;
+	    CG_coeff[index(l2,l1,l3,m2,m1)] = si[l1+l2+l3]*prefactor*sum;
 	  }
 	}
       }
@@ -105,4 +91,3 @@ Clebsch_Gordan::Clebsch_Gordan(const int lmax):
  * $Revision$   $Date$
  * $Id$ 
  ***************************************************************************/
-

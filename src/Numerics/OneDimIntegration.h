@@ -1,17 +1,20 @@
 #ifndef ONEDIMINTEGRATION_H
 #define ONEDIMINTEGRATION_H
 
-/*! \fn template<class GF>
-  inline 
-  typename GF::value_type 
-  integrate_RK2(const GF& f, GF& g)
-  * \param f the integrand
-  * \param g the integral of f
-  * \return the numerical integral of f
-  * \brief Performs the second order Runge-Kutta 
-  algorithm to evaluate the integral of a radial 
-  grid function 
-  \f$ f(r) \f$: \f[ g(r) = \int_a^r dr' f(r') \f]
+/**@file OneDimIntegration.h
+   @brief Functions to perform integration in one-dimension
+   @authors Jeongnim Kim, Jordan Vincent
+   @note  The original Prim was written in F90 by Tim Wilkens.
+*/
+
+/**
+ *@param f the integrand
+ *@param g the integral of f
+ *@return the numerical integral of f
+ *@brief Performs the second order Runge-Kutta 
+ algorithm to evaluate the integral of a radial 
+ grid function 
+ \f$ f(r) \f$: \f[ g(r) = \int_a^r dr' f(r') \f]
 */
 
 template<class GF>
@@ -20,32 +23,29 @@ typename GF::value_type
 integrate_RK2(const GF& f, GF& g){
 
   typedef typename GF::value_type value_type;
-  // value_type ysum = 0.0;
+  //value_type ysum = 0.0;
   value_type yold=0.0;
   value_type ynew=0.0;
   g(0) = 0.0;  
   for(int i=0; i < f.size()-1; i++){
-    // ysum += 0.5*f.dr(i)*(f(i)+f(i+1));
+    //ysum += 0.5*f.dr(i)*(f(i)+f(i+1));
     ynew=yold+0.5*f.dr(i)*(f(i)+f(i+1));
-    //  g(i+1) = ysum;
+    //g(i+1) = ysum;
     g(i+1) = ynew;
     yold = ynew;
   }
-  // return ysum;
+  //return ysum;
   return yold;
 }
 
-/*! \fn template<class GF>
-  inline 
-  typename GF::value_type 
-  integrate_RK2_forward(const GF& f, GF& g)
-  * \param f the integrand
-  * \param g the integral of f
-  * \return the numerical integral of f
-  * \brief Performs the second order Runge-Kutta 
-  algorithm to evaluate the integral (in the 
-  forward direction) of a radial grid function 
-  \f$ f(r) \f$: \f[ g(r) = \int_a^r dr' f(r') \f]
+/**
+ *@param f the integrand
+ *@param g the integral of f
+ *@return the numerical integral of f
+ *@brief Performs the second order Runge-Kutta 
+ algorithm to evaluate the integral (in the 
+ forward direction) of a radial grid function 
+ \f$ f(r) \f$: \f[ g(r) = \int_a^r dr' f(r') \f]
 */
 
 template<class GF>
@@ -55,17 +55,15 @@ integrate_RK2_forward(const GF& f, GF& g){
   return integrate_RK2(f,g);
 }
 
-/*! \fn template<class GF>
-  inline 
-  typename GF::value_type 
-  integrate_RK2_backward(const GF& f, GF& g)
-  * \param f the integrand
-  * \param g the integral of f
-  * \return the numerical integral of f
-  * \brief Performs the Runge-Kutta algorithm to 
-  evaluate the integral (in the backwards direction)
-  of a radial grid function 
-  \f$ f(r) \f$: \f[ g(x) = \int_x^b dx' f(x') \f]
+/**
+ *@param f the integrand
+ *@param g the integral of f
+ *@return the numerical integral of f
+ *@brief Performs the Runge-Kutta algorithm to 
+ evaluate the integral (in the backwards direction)
+ of a radial grid function 
+ \f$ f(r) \f$: \f[ g(x) = \int_x^b dx' f(x'), \f]
+ where \f$ b \f$ is the upper limit of \f$ x. \f$
 */
 
 template<class GF>
@@ -74,15 +72,15 @@ typename GF::value_type
 integrate_RK2_backward(const GF& f, GF& g){
 
   // typedef typename GF::value_type value_type;
-//   int last = min(f.size(),g.size())-1;
-//   value_type ysum=0.0;
-//   g(last) = 0.0;  
-//   for(int i=last; i > 0; i--){
-//     ysum += 0.5*f.dr(i)*(f(i)+f(i-1));
-//     g(i)=ysum;
-//   }
-//   return ysum;
- typedef typename GF::value_type value_type;
+  //   int last = min(f.size(),g.size())-1;
+  //   value_type ysum=0.0;
+  //   g(last) = 0.0;  
+  //   for(int i=last; i > 0; i--){
+  //     ysum += 0.5*f.dr(i)*(f(i)+f(i-1));
+  //     g(i)=ysum;
+  //   }
+  //   return ysum;
+  typedef typename GF::value_type value_type;
   int last = min(f.size(),g.size())-1;
   value_type yold = 0.0;
   value_type ynew = 0.0;
@@ -95,16 +93,15 @@ integrate_RK2_backward(const GF& f, GF& g){
   return yold;
 }
 
-/*! \fn template<class GF>
-  inline 
-  typename GF::value_type 
-  integrate_RK2(const GF& f)
-  * \param f the integrand
-  * \return the numerical integral of f
-  * \brief Performs the second order Runge-Kutta 
-  algorithm to evaluate the integral of a radial 
-  grid function 
-  \f$ f(r) \f$: \f[ y = \int_a^b dr' f(r') \f]
+/**
+ *@param f the integrand
+ *@return the numerical integral of f
+ *@brief Performs the second order Runge-Kutta 
+ algorithm to evaluate the integral of a radial 
+ grid function 
+ \f$ f(r) \f$: \f[ y = \int_a^b dr' f(r'), \f]
+ where \f$ (a,b) \f$ are the lower and upper 
+ limits of \f$ x.\f$
 */
 
 template<class GF>
@@ -120,13 +117,13 @@ integrate_RK2(const GF& f){
   return 0.5*sum;
 }
 
-/*! \fn template<class GF>
-  inline 
-  void normalize_RK2(GF& f)
-  * \param f the integrand
-  * \brief Normalizes the function \f$ f(r) \f$:
-  \f[ f(r) = \frac{1}{\sqrt{C}} f(r) \f] where
-  \f[ C = \int_a^b dr f^2(r) \f]
+/**
+ *@param f the integrand
+ *@brief Normalizes the function \f$ f(r) \f$:
+ \f[ f(r) = \frac{1}{\sqrt{C}} f(r) \f] where
+ \f[ C = \int_a^b dr f^2(r), \f]
+ where \f$ (a,b) \f$ are the lower and upper 
+ limits of \f$ x.\f$
 */
 
 template<class GF>
@@ -142,15 +139,27 @@ void normalize_RK2(GF& f){
   for(int i=0; i < f.size(); i++) f(i) *= norm;
 }
 
+/**
+ *@param grid the radial grid
+ *@param f the integrand
+ *@return the numerical integral of f
+ *@brief Performs the second order Runge-Kutta 
+ algorithm to evaluate the integral of a radial 
+ grid function 
+ \f$ f(r) \f$: \f[ y = \int_a^b dr' f(r'), \f]
+ where \f$ (a,b) \f$ are the lower and upper 
+ limits of \f$ x.\f$
+*/
+
 template<class GT, class Fn>
 inline 
 typename Fn::value_type 
-integrate_RK2(const GT& grid, const Fn& a){
+integrate_RK2(const GT& grid, const Fn& f){
 
   typedef typename GT::value_type value_type;
   value_type sum = 0.0;
   for(int i=0; i < f.size()-1; i++){
-    sum += grid.dr(i)*(a(grid.r(i)) + a(grid.r(i+1)));
+    sum += grid.dr(i)*(f(grid.r(i)) + f(grid.r(i+1)));
   }
   return 0.5*sum;
 }
@@ -169,26 +178,26 @@ integrate(const GF& f) {
   int NumIntervals = f.size() - 1;
   int rem = NumIntervals % 4;
 
-  ///f.func(int i) return dr(i)*f(i)
+  //f.func(int i) return dr(i)*f(i)
   switch ( rem ) {
-    case 0:
-      sum += 0.0;
-      break;
-    case 1:
-      sum += 0.5 * (f.func(0)+ f.func(1));
-      break;
-    case 2:
-      sum += one_third * (f.func(0)+  4.0 * f.func(1) + f.func(2)); 
-      break;
-    case 3:
-      sum += three_eighths * (f.func(0)+3.0*f.func(1) 
-			      + 3.0*f.func(2) + f.func(3));
-      break;
+  case 0:
+    sum += 0.0;
+    break;
+  case 1:
+    sum += 0.5 * (f.func(0)+ f.func(1));
+    break;
+  case 2:
+    sum += one_third * (f.func(0)+  4.0 * f.func(1) + f.func(2)); 
+    break;
+  case 3:
+    sum += three_eighths * (f.func(0)+3.0*f.func(1) 
+			    + 3.0*f.func(2) + f.func(3));
+    break;
   }
  
   for(int i = 0; i < f.size()-1; i+=4) {
 
-    //    std::cout << i << '\n';
+    //std::cout << i << '\n';
     int pt0=(i+0);
     int pt1=(i+1);
     int pt2=(i+2);
@@ -196,10 +205,10 @@ integrate(const GF& f) {
     int pt4=(i+4);
   
     sum +=  7.0 * f.func(pt0)  +
-           32.0 * f.func(pt1) +
-           12.0 * f.func(pt2) +
-           32.0 * f.func(pt3) +
-            7.0 * f.func(pt4);
+      32.0 * f.func(pt1) +
+      12.0 * f.func(pt2) +
+      32.0 * f.func(pt3) +
+      7.0 * f.func(pt4);
   }
 
   return BODES_FACTOR * sum;
