@@ -37,7 +37,7 @@ namespace ohmmsqmc {
 		       xmlNodePtr q):
     nAccept(0),  nReject(0), nTargetWalkers(0),
     Estimators(h), W(w), Psi(psi), H(h),
-    Tau(0.01), FirstStep(0.2), nBlocks(100), nSteps(1000), 
+    Tau(0.001), FirstStep(0.2), nBlocks(100), nSteps(1000), 
     pStride(false), qmc_node(q), LogOut(NULL),
     QMCType("invalid") { 
     
@@ -196,6 +196,8 @@ namespace ohmmsqmc {
     
     int defaultw = 100;
     int targetw = 0;
+     
+    m_param.get(cout);
     
     //  nTargetWalkers=0;
     if(cur) {
@@ -212,11 +214,6 @@ namespace ohmmsqmc {
       xmlNodePtr tcur=cur->children;
       //initialize the parameter set
       m_param.put(cur);
-      LogOut->getStream() << "timestep = " << Tau << endl;
-      LogOut->getStream() << "blocks = " << nBlocks << endl;
-      LogOut->getStream() << "steps = " << nSteps << endl;
-      LogOut->getStream() << "FirstStep = " << FirstStep << endl;
-      LogOut->getStream() << "walkers = " << W.getActiveWalkers() << endl;
       //determine how often to print walkers to hdf5 file
       while(tcur != NULL) {
 	string cname((const char*)(tcur->name));
@@ -239,6 +236,13 @@ namespace ohmmsqmc {
       }
     }
     
+      LogOut->getStream() << "timestep = " << Tau << endl;
+      LogOut->getStream() << "blocks = " << nBlocks << endl;
+      LogOut->getStream() << "steps = " << nSteps << endl;
+      LogOut->getStream() << "FirstStep = " << FirstStep << endl;
+      LogOut->getStream() << "walkers = " << W.getActiveWalkers() << endl;
+    m_param.get(cout);
+
     //set the stride for the scalar estimators 
     Estimators.setStride(nSteps);
     /*check to see if the target population is different 
