@@ -65,6 +65,9 @@ struct OneDimGridFunctor//: public FunctorBase<Td,1> {
     return *this;
   }
 
+  ///reset the values: do nothing
+  virtual void reset() { }
+
   ///set the number of nodes
   inline void setNumOfNodes(int n) { NumNodes = n;}
 

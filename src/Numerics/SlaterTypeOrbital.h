@@ -19,7 +19,8 @@
 // -*- C++ -*-
 #ifndef OHMMS_SLATERTYPEORBITAL_H
 #define OHMMS_SLATERTYPEORBITAL_H
-#include <math.h>
+#include "Numerics/RadialOrbitalBase.h"
+#include <cmath>
 
 /**class for Slater-type orbitals
  *@f[
@@ -75,50 +76,67 @@ struct RadialSTO {
  /f]
 */
 template<class T>
-struct GenericSTO {
+struct GenericSTO: public RadialOrbitalBase<T> {
 
   typedef T value_type;
 
   int ID;
+  ///Principal number
   int N;
+  ///N-l-1
+  int Power;
   T Z;
   T Norm;
   T Y, dY, d2Y;
 
-  GenericSTO(): N(-1), Z(1.0), Norm(1.0) { } 
-  GenericSTO(int n, double z, double norm=1.0):  N(n), Z(z),Norm(norm) { } 
+  GenericSTO(): N(-1), Power(-1), Z(1.0), Norm(1.0) { } 
+
+  ///This should be removed
+  explicit GenericSTO(int n, T z, T norm=1.0):  
+    Power(n), Z(z), Norm(norm) { } 
+
+  explicit GenericSTO(int n, int l, T z) : N(n), Power(n-l-1), Z(z) {
+    reset();
+  }
+
+  inline void reset() {
+    STONorm<T> anorm(N);
+    Norm = anorm(N-1,Z);
+  }
 
   inline void setgrid(T r) { }
 
   inline T f(T r) const {
-    return exp(-Z*r)*Norm*pow(r,N);
+    return exp(-Z*r)*Norm*pow(r,Power);
   }
 
   inline T df(T r) const {
     T rnl = exp(-Z*r)*Norm;
-    if(N == 0) {
+    if(Power == 0) {
       return  -Z*rnl;
     } else {
-      return rnl*pow(r,N)*(N/r-Z);
+      return rnl*pow(r,Power)*(Power/r-Z);
     }
   }
 
   inline void evaluate(T r, T rinv) {
     Y = evaluate(r,rinv,dY,d2Y);
   }
+
   inline T evaluate(T r, T rinv, T& drnl, T& d2rnl) {
-    T rnl = exp(-Z*r)*Norm;
+    T rnl = Norm*exp(-Z*r);
     if(N == 0) {
       drnl = -Z*rnl;
       d2rnl = rnl*Z*Z;
     } else {
-      rnl *= pow(r,N);
-      T x = N*rinv-Z;
+      rnl *= pow(r,Power);
+      T x = Power*rinv-Z;
       drnl = rnl*x;
-      d2rnl = rnl*(x*x-N*rinv*rinv);
+      d2rnl = rnl*(x*x-Power*rinv*rinv);
     }
     return rnl;
   }
+
 };
 
 template<class T>
@@ -130,7 +148,7 @@ struct STONorm {
     set(nmax);
   }
 
-  void set(int nmax) {
+  inline void set(int nmax) {
     int n = 2*nmax+2;
     Factorial.resize(n+1);
     Factorial[0] = 1.0;
