@@ -126,9 +126,38 @@ inline
 typename MatA::value_type 
 DetRatio(const MatA& Minv, Iter newrow, int rowchanged) {
   typename MatA::value_type res = 0.0;
-  for(int j=0; j<Minv.cols(); j++,newrow++)
+  for(int j=0; j<Minv.cols(); j++, newrow++)
     res += Minv(rowchanged,j)*(*newrow);
   return res;
+}
+
+template<class MatA, class VecT>
+inline
+void
+DetUpdate(MatA& Minv, 
+	  VecT& newrow, 
+	  VecT& rvec, VecT& rvecinv, int rowchanged) {
+
+  int ncols=Minv.cols();
+  for(int j=0; j<ncols; j++) {
+    rvec[j] = DetRatio(Minv,newrow.begin(),j);
+    rvecinv[j] = 1.0/rvec[j];
+  }
+
+  for(int j=0; j<ncols; j++) {
+    Minv(rowchanged, j) *= rvecinv[rowchanged];
+  }
+
+  for(int i=0; i<rowchanged; i++) {
+    for(int j=0; j<ncols; j++) {
+      Minv(i,j) -= Minv(rowchanged,j)*rvec[i];
+    }
+  }
+  for(int i=rowchanged+1; i<Minv.rows(); i++) {
+    for(int j=0; j<ncols; j++) {
+      Minv(i,j) -= Minv(rowchanged,j)*rvec[i];
+    }
+  }
 }
 
 template<class T, unsigned D>
