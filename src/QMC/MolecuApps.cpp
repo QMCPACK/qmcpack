@@ -28,6 +28,7 @@
 #include "QMCHamiltonians/IonIonPotential.h"
 #include "QMCHamiltonians/LocalPPotential.h"
 #include "QMCHamiltonians/HarmonicPotential.h"
+#include "QMCHamiltonians/newCorePolPotential.h"
 #include "QMCHamiltonians/BareKineticEnergy.h"
 #include "QMCWaveFunctions/AtomicOrbitals/HFAtomicSTOSetBuilder.h"
 #include "QMCWaveFunctions/AtomicOrbitals/HeSTOClementiRottie.h"
@@ -171,7 +172,7 @@ namespace ohmmsqmc {
     } else if(ptype == "cpp") {
       H.add(new CoulombPotentialAA(el), "ElecElec");
       H.add(new LocalPPotential(ion,el), "PseudoPot");
-      //     H.add(new CPPelel(ion,el), "CPPelel");
+      H.add(new CorePolPotential(ion,el), "GeCPP");
       if(ion.getTotalNum()>1) 
 	H.add(new IonIonPotential(ion),"IonIon");
     } else {
