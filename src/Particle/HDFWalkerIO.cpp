@@ -48,10 +48,9 @@ HDFWalkerOutput::~HDFWalkerOutput() {
   hsize_t dim = 1;
   hid_t dataspace  = H5Screate_simple(1, &dim, NULL);
   hid_t dataset= H5Dcreate(h_config, "NumOfConfigurations", H5T_NATIVE_INT, dataspace, H5P_DEFAULT);
-  hid_t ret = 
-    H5Dwrite(dataset, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT,&Counter);
-  H5Dclose(dataset);
+  hid_t ret = H5Dwrite(dataset, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT,&Counter);
   H5Sclose(dataspace);
+  H5Dclose(dataset);
 
   //if(AppendMode)  H5Gclose(h_config);
   H5Gclose(h_config);
@@ -138,6 +137,7 @@ HDFWalkerInput::HDFWalkerInput(const string& aroot):
   hid_t h1=H5Dopen(h_config,"NumOfConfigurations");
   if(h1>-1) {
     H5Dread(h1, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT,&(NumSets));
+    H5Dclose(h1);
     //LOGMSG("Found NumOfConfigurations " << NumSets)
   }
 
