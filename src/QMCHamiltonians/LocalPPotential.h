@@ -36,6 +36,9 @@ namespace ohmmsqmc {
 
   struct LocalPPotential: public QMCHamiltonianBase {
 
+    typedef OneDimGridBase<ValueType> GridType;
+    typedef OneDimGridFunctor<ValueType> LocalPotentialType;
+
   /**
    *\brief Contains a set of radial grid potentials around a 
    center.  
@@ -43,11 +46,7 @@ namespace ohmmsqmc {
    Evaluates the grid potential given the electron-
    ion distances.
   */
-  struct RadialPotentialSet: public QMCTraits {
-
-    typedef OneDimGridBase<ValueType> GridType;
-    typedef OneDimGridFunctor<ValueType> LocalPotentialType;
-
+  struct RadialPotentialSet {
     ///the radial potentials
     vector<LocalPotentialType*> lpp_m;
     ///the radial grids
@@ -55,7 +54,6 @@ namespace ohmmsqmc {
 
     ///destructor
     ~RadialPotentialSet();
-
 
     ///add a new grid and radial grid potential
     void add(GridType* agrid, LocalPotentialType* pp) {
@@ -89,9 +87,6 @@ namespace ohmmsqmc {
     vector<RadialPotentialSet*> PP;
     ///unique index for each ion
     const ParticleSet::ParticleIndex_t& Centers;
-
-    typedef RadialPotentialSet::GridType GridType;
-    typedef RadialPotentialSet::LocalPotentialType LocalPotentialType;
 
     LocalPPotential(ParticleSet& ions, ParticleSet& els);
     
