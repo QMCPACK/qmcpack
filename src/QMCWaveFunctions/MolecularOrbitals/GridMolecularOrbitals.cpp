@@ -21,6 +21,7 @@
 #include "QMCWaveFunctions/MolecularOrbitals/RGFBuilderBase.h"
 #include "QMCWaveFunctions/MolecularOrbitals/STO2GridBuilder.h"
 #include "QMCWaveFunctions/MolecularOrbitals/GTO2GridBuilder.h"
+#include "QMCWaveFunctions/MolecularOrbitals/Any2GridBuilder.h"
 #include "QMCWaveFunctions/MolecularOrbitals/NumericalRGFBuilder.h"
 
 namespace ohmmsqmc {
@@ -46,8 +47,6 @@ namespace ohmmsqmc {
 
     if(!BasisSet) BasisSet = new BasisSetType;
 
-    //map for quantum numbers
-    //map<string,int> nlms_id;
     QuantumNumberType nlms;
     string rnl;
 
@@ -62,18 +61,20 @@ namespace ohmmsqmc {
 
     while(cur!=NULL) {
       string cname((const char*)(cur->name));
-      if(cname == basis_tag) {
+      if(cname == basis_tag || cname == "atomicBasisSet") {
         string abasis("#"), btype("NG");
         int expandlm = DONOT_EXPAND;
         xmlAttrPtr att = cur->properties;
 	while(att != NULL) {
 	  string aname((const char*)(att->name));
-	  if(aname == "species") {
+	  if(aname == "species" || aname == "elementType") {
 	    abasis = (const char*)(att->children->content);
 	  } else if(aname == "type") {
 	    btype = (const char*)(att->children->content);
+          } else if(aname == "angular") {
+            addsignforM = xmlStrEqual(att->children->content,(const xmlChar*)"spherical");
           } else if(aname == "expM") {
-            addsignforM = atoi((const char*)(att->children->content));
+            addsignforM = atoi((const char*)att->children->content);
           } else if(aname == "expandYlm") {
             string expandtype((const char*)(att->children->content));
             if(expandtype == "gaussian") {
@@ -86,38 +87,51 @@ namespace ohmmsqmc {
         }
 
         if(abasis == "#") {
-	  ERRORMSG("//basisSet/basis does not have name. Failed to initialize.")         
+	  ERRORMSG("//basisset/basis or //basisset/atomicBasisSet does not have name. Failed to initialize.")         
 	  return NULL;
         }     
 
+        if(addsignforM) 
+          LOGMSG("Spherical Harmonics contain (-1)^m factor")
+        else
+          LOGMSG("Spherical Harmonics  DO NOT contain (-1)^m factor")
+
 	map<string,int>::iterator it = CenterID.find(abasis); //search the species name
 	if(it == CenterID.end()) {//add the name to the map CenterID
-          if(btype == "STO") {//SlaterTypeOrbital
-            rbuilder = new STO2GridBuilder;
-          } if(btype == "GTO") {//GaussianTypeOrbital
-            rbuilder = new GTO2GridBuilder;
+          if(btype == "Mixed" || btype ==  "Gaussian") {
+            rbuilder = new Any2GridBuilder(cur);
             expandlm = GAUSSIAN_EXPAND;
+          } else if(btype == "STO") {//SlaterTypeOrbital
+            rbuilder = new STO2GridBuilder;
+          //} else if(btype == "GTO") {//GaussianTypeOrbital
+          //  rbuilder = new GTO2GridBuilder;
+          //  expandlm = GAUSSIAN_EXPAND;
           } else {//Numerical Radial Grid (default) 
             rbuilder = new NumericalRGFBuilder;
           } 
 
 	  CenterID[abasis] = activeCenter = ncenters++;
-	  int Lmax = 0; //maxmimum angular momentum of this center
-          int num=0;//the number of localized basis functions of this center
+	  int Lmax(0); //maxmimum angular momentum of this center
+          int num(0);//the number of localized basis functions of this center
 
 	  //process the basic property: maximun angular momentum, the number of basis functions to be added
+          vector<xmlNodePtr> radGroup;
 	  xmlNodePtr cur1 = cur->xmlChildrenNode;
+          xmlNodePtr gptr=0;
 	  while(cur1 != NULL) {
 	    string cname1((const char*)(cur1->name));
-	    if(cname1 == basisfunc_tag) {
+	    if(cname1 == basisfunc_tag || cname1 == "basisGroup") {
+              radGroup.push_back(cur1);
     	      int l=atoi((const char*)(xmlGetProp(cur1, (const xmlChar *)"l")));
 	      Lmax = max(Lmax,l);
 	      //expect that only Rnl is given
 	      if(expandlm) 
-		num += 2*l+1;
-	      else		
-		num++;
-	    }
+                num += 2*l+1;
+	      else
+                num++;
+	    } else if(cname1 == "grid") {
+              gptr = cur1;
+            }
 	    cur1 = cur1->next;
 	  }
 	  XMLReport("Adding a center " << abasis << " centerid "<< CenterID[abasis])
@@ -131,36 +145,41 @@ namespace ohmmsqmc {
 	  aos->NL.resize(num);
 
           //Now, add distinct Radial Orbitals and (l,m) channels
-	  cur1 = cur->xmlChildrenNode;
 	  num=0;
 	  rbuilder->setOrbitalSet(aos,abasis); //assign radial orbitals for the new center
-          rbuilder->addGrid(cur); //assign a radial grid for the new center
-	  while(cur1 != NULL) {
-	    string cname1((const char*)(cur1->name));
-	    if(cname1 == basisfunc_tag) { //check the attributes: id, n, l, m, s
-	      xmlAttrPtr att = cur1->properties;
-	      while(att != NULL) {
-		string aname((const char*)(att->name));
-		if(aname == "rid") {
-		  rnl = (const char*)(att->children->content);
-		} else {
-		  map<string,int>::iterator iit = nlms_id.find(aname);
-		  if(iit != nlms_id.end()) {
-		    nlms[(*iit).second] = atoi((const char*)(att->children->content));
-		  } 
-		}
-		att = att->next;
-	      }
-	      XMLReport("\n(n,l,m,s) " << nlms[0] << " " << nlms[1] << " " << nlms[2] << " " << nlms[3])
+          rbuilder->addGrid(gptr); //assign a radial grid for the new center
 
-              //add Ylm channels
-              num = expandYlm(rnl,nlms,num,aos,cur1,expandlm);
+          vector<xmlNodePtr>::iterator it(radGroup.begin());
+          vector<xmlNodePtr>::iterator it_end(radGroup.end());
+          while(it != it_end) {
+            cur1 = (*it);
+	    xmlAttrPtr att = cur1->properties;
+	    while(att != NULL) {
+	      string aname((const char*)(att->name));
+	      if(aname == "rid") {
+	        rnl = (const char*)(att->children->content);
+	      } else {
+	        map<string,int>::iterator iit = nlms_id.find(aname);
+	        if(iit != nlms_id.end()) {
+	          nlms[(*iit).second] = atoi((const char*)(att->children->content));
+	        } 
+	      }
+	      att = att->next;
 	    }
-	    cur1 = cur1->next;
-	  }
+	    XMLReport("\n(n,l,m,s) " << nlms[0] << " " << nlms[1] << " " << nlms[2] << " " << nlms[3])
+
+            //add Ylm channels
+            num = expandYlm(rnl,nlms,num,aos,cur1,expandlm);
+            ++it;
+          }
+
+          cout << "Checking the order of angular momentum " << endl;
+          std::copy(aos->LM.begin(), aos->LM.end(), ostream_iterator<int>(cout," "));
+          cout << endl;
 	  //add the new atomic basis to the basis set
 	  BasisSet->add(aos);
-          if(rbuilder) {delete rbuilder; rbuilder=NULL;}
+          //if(rbuilder) {rbuilder->print(abasis,1); delete rbuilder; rbuilder=NULL;}
+          if(rbuilder) {delete rbuilder; rbuilder=0;}
 	}else {
 	  WARNMSG("Species " << abasis << " is already initialized. Ignore the input.")
 	}
@@ -202,16 +221,16 @@ namespace ohmmsqmc {
         if(rbuilder->addRadialOrbital(cur1,nlms)) {
           RnlID[rnl] = nl;
           int l = nlms[q_l];
-          XMLReport("Adding " << 2*l+1 << " spherical orbitals")
+          XMLReport("Adding " << 2*l+1 << " spherical orbitals for l= " << l)
           switch (l) 
           {
             case(0):
             aos->LM[num] = aos->Ylm.index(0,0);  aos->NL[num] = nl; num++;
             break;
             case(1)://px(1),py(-1),pz(0)            
-            aos->LM[num] = aos->Ylm.index(l,1);  aos->NL[num] = nl; num++;
-            aos->LM[num] = aos->Ylm.index(l,-1); aos->NL[num] = nl; num++;
-            aos->LM[num] = aos->Ylm.index(l,0);  aos->NL[num] = nl; num++;
+            aos->LM[num] = aos->Ylm.index(1,1);  aos->NL[num] = nl; num++;
+            aos->LM[num] = aos->Ylm.index(1,-1); aos->NL[num] = nl; num++;
+            aos->LM[num] = aos->Ylm.index(1,0);  aos->NL[num] = nl; num++;
             break; 
             default://0,1,-1,2,-2,...,l,-l
             aos->LM[num] = aos->Ylm.index(l,0);  aos->NL[num] = nl; num++;
