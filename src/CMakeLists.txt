@@ -35,14 +35,14 @@ SET(MESSAGE
   Message/Communicate.cpp 
 )
 
+SET(HAMILTONIAN
+  QMCHamiltonians/QMCHamiltonianBase.cpp
+)
+
+
 SET(OPTIMIZE
     Optimize/Minimize.cpp
     )
-
-SET(HAMILTONIAN
-  QMCHamiltonians/QMCHamiltonianBase.cpp 
-  QMCHamiltonians/LocalPPotential.cpp
-)
 
 SET(WFSBASE
   QMCWaveFunctions/JastrowBuilder.cpp
