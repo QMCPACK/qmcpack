@@ -17,6 +17,9 @@
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 
+#ifdef HAVE_CONFIG_H
+#include "ohmms-config.h"
+#endif
 #include "Message/Communicate.h"
 #include "Message/TagMaker.h"
 
@@ -34,7 +37,7 @@ Communicate::Communicate(int argc, char **argv){
 }
 
 //exclusive:  OOMPI, MPI or Serial
-#ifdef USE_OOMPI
+#ifdef HAVE_OOMPI
 
 //================================================================
 // Implements Communicate with OOMPI library
@@ -48,6 +51,7 @@ void Communicate::initialize(int argc, char **argv){
   d_mycontext = OOMPI_COMM_WORLD.Rank();
   d_ncontexts = OOMPI_COMM_WORLD.Size();
   CommID = OOMPI_COMM_WORLD.Get_mpi();
+  //LOGMSG("Initializating MPI/OOMPI communicator")
 }
 
 void Communicate::finalize() {
@@ -58,7 +62,7 @@ void Communicate::cleanupMessage(void*) { }
 
 #else
 
-#ifdef USE_MPI
+#ifdef HAVE_MPI
 
 //================================================================
 // Implements Communicate with standard MPI library
@@ -83,16 +87,16 @@ void Communicate::finalize(){
 
 void Communicate::cleanupMessage(void*) { }
 
-#else //USE_MPI
+#else //HAVE_MPI
 
 Communicate::~Communicate(){}
 void Communicate::initialize(int argc, char **argv){ }
 void Communicate::finalize(){ }
 void Communicate::cleanupMessage(void*) { }
 
-#endif // !USE_MPI
+#endif // !HAVE_MPI
 
-#endif // !USE_OOMPI
+#endif // !HAVE_OOMPI
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$
