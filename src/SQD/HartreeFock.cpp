@@ -110,6 +110,10 @@ namespace ohmmshf {
       //continue the loop until the kinetic energy converges
     }while(fabs(KEnew-KEold)>scf_tol && iter<maxiter);
 
+    log_stream << "V_External = " << energy[0] << endl;
+    log_stream << "V_Hartree = "  << energy[1] << endl;
+    log_stream << "V_Exchange = " << energy[2] << endl;
+
   }
 
   /**
