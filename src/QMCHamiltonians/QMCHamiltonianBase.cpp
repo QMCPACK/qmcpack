@@ -49,22 +49,26 @@ QMCHamiltonian::add(QMCHamiltonianBase* h, const string& aname) {
  */
 bool 
 QMCHamiltonian::remove(const string& aname) {
-
   map<string,int>::iterator it = Hmap.find(aname);
   if(it != Hmap.end()) {
     int n = (*it).second;
-    it++;
-    while(it != Hmap.end()) {
-      (*it).second--; it++;
-    }
+//     int n = (*it).second;
+//     it++;
+//     while(it != Hmap.end()) {
+//       (*it).second--; it++;
+//     }
     Hmap.erase(aname); 
+    map<string,int>::iterator jt = Hmap.begin();
+    while(jt != Hmap.end()) {
+      if((*jt).second > n) (*jt).second -= 1;
+      jt++;
+    }
     delete H[n];
     for(int i=n+1; i<H.size(); i++) H[i-1]=H[i];
     H.pop_back();
     Hvalue.resize(H.size()+1,RealType());
     return true;
   }
-
   return false;
 }
 
