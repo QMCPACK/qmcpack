@@ -471,7 +471,8 @@ namespace ohmmsqmc {
 
     LogOut->getStream() << "#" << optmethod << " values: tolerance = "
 			<< cg_tolerance << " stepsize = " << cg_stepsize 
-			<< " epsilon = " << cg_epsilon << endl;
+			<< " epsilon = " << cg_epsilon << " Tau = " 
+			<< Tau << endl;
     putOptParams();
 
     LogOut->getStream() 
