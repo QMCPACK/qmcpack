@@ -303,7 +303,7 @@ bool YlmRnlSet<GT>::print_basis(const std::string& elementName,
   osXML << "</basis>" << endl;
   osXML << "</basisset>" << endl;
   osXML << "<slaterdeterminant>" << endl;
-  osXML << "<determinant spin=\"1cu\" orbitals=\"" << Mup.rows() 
+  osXML << "<determinant spin=\"1\" orbitals=\"" << Mup.rows() 
 	<< "\">" << endl;
   osXML << "<parameter id=\"1cu\" type=\"Array\">" << endl;
   osXML << Mup;
