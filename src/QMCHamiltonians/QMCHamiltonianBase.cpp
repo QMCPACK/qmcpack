@@ -52,11 +52,6 @@ QMCHamiltonian::remove(const string& aname) {
   map<string,int>::iterator it = Hmap.find(aname);
   if(it != Hmap.end()) {
     int n = (*it).second;
-//     int n = (*it).second;
-//     it++;
-//     while(it != Hmap.end()) {
-//       (*it).second--; it++;
-//     }
     Hmap.erase(aname); 
     map<string,int>::iterator jt = Hmap.begin();
     while(jt != Hmap.end()) {
