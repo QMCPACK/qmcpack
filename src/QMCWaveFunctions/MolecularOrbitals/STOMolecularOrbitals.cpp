@@ -83,7 +83,16 @@ namespace ohmmsqmc {
     	    int n=atoi((const char*)(xmlGetProp(cur1, (const xmlChar *)"n")));
     	    int l=atoi((const char*)(xmlGetProp(cur1, (const xmlChar *)"l")));
     	    int m=atoi((const char*)(xmlGetProp(cur1, (const xmlChar *)"m")));
-	    string rnl((const char*)(xmlGetProp(cur1, (const xmlChar *)"id")));
+            const xmlChar* id_ptr = xmlGetProp(cur1,(const xmlChar *)"rid");
+            if(id_ptr == NULL) {
+              id_ptr = xmlGetProp(cur1,(const xmlChar *)"id");
+            }
+	    string rnl("invalid");
+            if(id_ptr) {
+              rnl = (const char*)id_ptr;
+            } else {
+              ERRORMSG("No rid is given for this STO function")
+            }
 
     	    //assign the index for (l,m)
 	    aos->LM[num] = aos->Ylm.index(l,m);

@@ -24,10 +24,7 @@
 namespace ohmmsqmc {
 
   int DFactorial(int l) {
-    if(l == 1) 
-      return 1;
-    else 
-      return DFactorial(l-2);
+    return (l==1)? 1: DFactorial(l-2);
   }
 
   template<class T>
@@ -109,6 +106,7 @@ namespace ohmmsqmc {
 
     return true;
   }
+
   /** Default function to add a radial grid to the list of radial grids.
    * \param cur the current xmlNode to be processed
    * \return true if succeeds
