@@ -30,7 +30,6 @@
 #include "QMC/ReptationMC.h"
 #include "QMC/WaveFunctionTester.h"
 #include "QMCHamiltonians/ConservedEnergy.h"
-#include "QMCHamiltonians/WOS/WOSPotential.h"
 
 namespace ohmmsqmc {
 
@@ -171,11 +170,7 @@ namespace ohmmsqmc {
 	    vmc.setFileRoot(myProject.CurrentRoot());
 	    vmc.run();
 	  } else if(methodname == "dmc"){
-	    H.remove("Flux");
-	    //change WOS potential
-	    WOSPotential* wos=
-	      dynamic_cast<WOSPotential*>(H.getHamiltonian("wos")); 
-	    if(wos) { wos->Mode = 1; }
+	    //H.remove("Flux");
 	    MolecuDMC dmc(el,Psi,H,cur);
 	    dmc.setFileRoot(myProject.CurrentRoot());
 	    dmc.run();
