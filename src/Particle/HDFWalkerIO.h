@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////
-// (c) Copyright 2004- by Jeongnim Kim
+// (c) Copyright 2004- by Jeongnim Kim and Jordan Vincent
 //////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////
 //   Jeongnim Kim
@@ -24,10 +24,7 @@
 
 namespace ohmmsqmc {
 
-  /**class HDFWalkerOutput
-   * \brief writes a set of walker configurations
-   to an HDF5 file
-  */
+  /** Writes a set of walker configurations to an HDF5 file. */
 
   class HDFWalkerOutput {
 
@@ -47,16 +44,13 @@ namespace ohmmsqmc {
 
   };
 
-  /**class HDFWalkerInput
-   * \brief reads a set of walker configurations
-   from an HDF5 file
-  */
+  /** Reads a set of walker configurations from an HDF5 file. */
 
   class HDFWalkerInput {
 
     ///number of times file has been accesed
     int Counter;
-    ///number of set of walker configurations
+    ///number of sets of walker configurations
     hsize_t NumSets;
     ///id for HDF5 file 
     hid_t h_file;

@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////
-// (c) Copyright 2004- by Jeongnim Kim
+// (c) Copyright 2004- by Jeongnim Kim and Jordan Vincent
 //////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////
 //   Jeongnim Kim
@@ -26,11 +26,11 @@
 #include <blitz/array.h>
 using namespace ohmmsqmc;
 
-/*! 
- *\param aroot the root file name
- *\brief Create the HDF5 file "aroot.config.h5" for output. 
- *\note The main group is "/config_collection"
-*/
+/**
+ *@param aroot the root file name
+ *@brief Create the HDF5 file "aroot.config.h5" for output. 
+ *@note The main group is "/config_collection"
+ */
 
 HDFWalkerOutput::HDFWalkerOutput(const string& aroot, bool append):
   Counter(0), AppendMode(append) {
@@ -41,9 +41,7 @@ HDFWalkerOutput::HDFWalkerOutput(const string& aroot, bool append):
   h_config = H5Gcreate(h_file,"config_collection",0);
 }
 
-/*!
- *\brief Destructor closes the HDF5 file and main group. 
-*/
+/** Destructor closes the HDF5 file and main group. */
 
 HDFWalkerOutput::~HDFWalkerOutput() {
 
@@ -52,9 +50,9 @@ HDFWalkerOutput::~HDFWalkerOutput() {
 }
 
 
-/*!
- * \param W set of walker configurations
- * \brief Write the set of walker configurations to the
+/**
+ *@param W set of walker configurations
+ *@brief Write the set of walker configurations to the
  HDF5 file.  
 */
 
@@ -65,9 +63,9 @@ bool HDFWalkerOutput::get(MCWalkerConfiguration& W) {
   typedef MCWalkerConfiguration::PropertyContainer_t PropertyContainer_t;
 
   typedef blitz::Array<PosType,2> Array_t;
-  typedef Vector<RealType> Vector_t;
+  typedef Vector<RealType>        Vector_t;
 
-  ///OverWrite -> create a new group, close it later
+  //OverWrite -> create a new group, close it later
   //if(!AppendMode)  {
   //  cout << "Create a new group " << endl;
   // h_config = H5Gcreate(h_file,"config_collection",0);
@@ -106,45 +104,41 @@ bool HDFWalkerOutput::get(MCWalkerConfiguration& W) {
 
   H5Gclose(group_id);
 
-  ///closing h_config if overwriting
+  //closing h_config if overwriting
   //if(!AppendMode)  H5Gclose(h_config);
   //XMLReport("Printing " << W.getActiveWalkers() << " Walkers to file")
   
   return true;
 }
 
-/*! 
- *\param aroot the root file name
- *\brief Open the HDF5 file "aroot.config.h5" for reading. 
- *\note The main group is "/config_collection"
-*/
+/**
+ *@param aroot the root file name
+ *@brief Open the HDF5 file "aroot.config.h5" for reading. 
+ *@note The main group is "/config_collection"
+ */
 
 HDFWalkerInput::HDFWalkerInput(const string& aroot):
-  Counter(0), 
-  NumSets(0)
-{
+  Counter(0), NumSets(0) {
   string h5file = aroot;
   h5file.append(".config.h5");
   h_file =  H5Fopen(h5file.c_str(),H5F_ACC_RDWR,H5P_DEFAULT);
   h_config = H5Gopen(h_file,"config_collection");
   H5Gget_num_objs(h_config,&NumSets);
   if(!NumSets) {
-    ERRORMSG("File does not contain walkers")
-  }
+    ERRORMSG("File does not contain walkers!")
+      }
 }
 
-/*!
- *\brief Destructor closes the HDF5 file and main group.
-*/
+/** Destructor closes the HDF5 file and main group. */
 
 HDFWalkerInput::~HDFWalkerInput() {
   H5Gclose(h_config);
   H5Fclose(h_file);
 }
 
-/*!
- * \param W set of walker configurations
- * \brief Write the set of walker configurations to the
+/**
+ *@param W set of walker configurations
+ *@brief Write the set of walker configurations to the
  HDF5 file.  
 */
 
@@ -156,10 +150,10 @@ bool HDFWalkerInput::put(MCWalkerConfiguration& W){
   return put(W,ic);
 }
 
-/*!
- *\param W set of walker configurations
- *\param ic 
- * \brief Write the set of walker configurations to the
+/**
+ *@param W set of walker configurations
+ *@param ic  
+ *@brief Write the set of walker configurations to the
  HDF5 file.  
 */
 
@@ -168,16 +162,17 @@ HDFWalkerInput::put(MCWalkerConfiguration& W, int ic){
 
   int selected = ic;
   if(ic<0) {
-    XMLReport("Will use the last from " << NumSets << " configurations")
-    selected = NumSets-1;
+    XMLReport("Will use the last set from "
+	      << NumSets << " of configurations.")
+      selected = NumSets-1;
   }
 
   typedef MCWalkerConfiguration::PosType PosType;
   typedef MCWalkerConfiguration::RealType RealType;
   typedef MCWalkerConfiguration::PropertyContainer_t ProtertyContainer_t;
 
-  typedef blitz::Array<PosType,2>   Array_t;
-  typedef Vector<RealType> Vector_t;
+  typedef blitz::Array<PosType,2> Array_t;
+  typedef Vector<RealType>        Vector_t;
 
   int nwt = 0;
   int npt = 0;
@@ -200,13 +195,13 @@ HDFWalkerInput::put(MCWalkerConfiguration& W, int ic){
   bool withenergy=(localene_in.size()>0);
   //close the group
   H5Gclose(group_id);
-  //check to see if the number of walkers and particles is 
-  //consistent with W
+  /*check to see if the number of walkers and particles is 
+    consistent with W */
   int nptcl = Pos_temp.extent(1);
   nwt = Pos_temp.extent(0);
   //int nptcl = npt/nwt;
   if(nwt != W.getActiveWalkers() || nptcl != W.getParticleNum()) {
-    W.resize(nwt,nptcl); //npt/nwt);
+    W.resize(nwt,nptcl); 
   }
 
   //assign configurations to W
@@ -221,8 +216,9 @@ HDFWalkerInput::put(MCWalkerConfiguration& W, int ic){
 
   if(withenergy) {
     iw=0;
-    for(MCWalkerConfiguration::iterator it = W.begin(); it != W.end(); ++it, iw++) 
-    (*it)->Properties(LocalPotential) = localene_in[iw];
+    for(MCWalkerConfiguration::iterator it = W.begin(); it != W.end(); 
+	++it, iw++) 
+      (*it)->Properties(LocalPotential) = localene_in[iw];
   }
   //XMLReport("Read in " << W.getActiveWalkers() << " Walkers from file")
   return true;
@@ -233,5 +229,3 @@ HDFWalkerInput::put(MCWalkerConfiguration& W, int ic){
  * $Revision$   $Date$
  * $Id$ 
  ***************************************************************************/
-
-
