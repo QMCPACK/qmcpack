@@ -97,10 +97,50 @@ namespace ohmmsqmc {
     }
 
 
-    /**
-       @brief For the center with index (source), evaluate
-       all the basis functions beginning with index (offset). 
-       *
+    /**@ingroup particlebyparticle
+     */
+    template<class VM, class GM>
+    inline void 
+    evaluate(int source, int iat,  int offset, VM& y, GM& dy, VM& d2y) {
+
+      RealType r = myTable->Temp[source].r1;
+      RealType rinv = myTable->Temp[source].rinv1;
+      PosType dr = myTable->Temp[source].dr1;
+
+      Ylm.evaluate(dr);
+	
+      //find the indices for distinct grids
+      for(int ir=0; ir<Grids.size(); ir++) {
+	Grids[ir]->index(r);
+      }
+      
+      //spline them
+      for(int nl=0; nl<Rnl.size(); nl++) {
+	Rnl[nl]->evaluate(r,rinv);
+      }
+      
+      for(int ib=0; ib<NL.size(); ib++, offset++) {
+	int nl = NL[ib];
+	int lm = LM[ib];
+	RealType drnloverr = rinv*Rnl[nl]->dY;
+	ValueType ang = Ylm.getYlm(lm);
+	PosType gr_rad = drnloverr*dr;
+	PosType gr_ang = Ylm.getGradYlm(lm);
+	y(0,offset)= ang*Rnl[nl]->Y;
+	dy(0,offset) = ang*gr_rad+Rnl[nl]->Y*gr_ang;
+	d2y(0,offset)= ang*(2.0*drnloverr+Rnl[nl]->d2Y) + 2.0*dot(gr_rad,gr_ang);
+      }
+    }
+
+    /**@brief For the center with index (source), evaluate all the basis functions beginning with index (offset). 
+    @param source index of the center \f$ I \f$
+    @param first index of the first particle
+    @param nptcl number of particles
+    @param offset index of the first basis function
+    @param y return vector \f$ y[i,j] = \phi_j({\bf r_i-R_I}) \f$
+    @param dy return vector \f$ dy[i,j] =  {bf \nabla}_i \phi_j({\bf r_i-R_I}) \f$
+    @param d2y return vector \f$ d2y[i,j] = \nabla^2_i \phi_j({\bf r_i-R_I}) \f$  
+    *
        The results are stored in the matrices:
        \f[ y[i,k] = \phi_k(r_{ic}) \f]
        \f[ dy[i,k] = {\bf \nabla}_i \phi_k(r_{ic}) \f]
@@ -143,7 +183,6 @@ namespace ohmmsqmc {
        @param d2y return vector \f$ d2y[i,j] = 
        \nabla^2_i \phi_j({\bf r_i-R_I}) \f$  
     */ 
-
     template<class VM, class GM>
     inline void 
     evaluate(int source, int first, int nptcl, int offset, 
