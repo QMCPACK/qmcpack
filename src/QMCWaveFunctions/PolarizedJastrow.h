@@ -1,0 +1,88 @@
+//////////////////////////////////////////////////////////////////
+// (c) Copyright 2003-  by Jeongnim Kim
+//////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////
+//   National Center for Supercomputing Applications &
+//   Materials Computation Center
+//   University of Illinois, Urbana-Champaign
+//   Urbana, IL 61801
+//   e-mail: jnkim@ncsa.uiuc.edu
+//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
+//
+// Supported by 
+//   National Center for Supercomputing Applications, UIUC
+//   Materials Computation Center, UIUC
+//////////////////////////////////////////////////////////////////
+// -*- C++ -*-
+#ifndef OHMMS_QMC_POLARIZED_ONEBODYJASTROW_H
+#define OHMMS_QMC_POLARIZED_ONEBODYJASTROW_H
+#include "Configuration.h"
+#include "QMCWaveFunctions/OrbitalBase.h"
+#include "OhmmsData/ParameterSet.h"
+//#include "OhmmsData/libxmldefs.h"
+//#include <libxml++/libxml++.h>
+
+namespace ohmmsqmc {
+
+  //  class OneBodyJastrow: public OrbitalBase {
+  class PolarizedJastrow: public OrbitalBase {
+
+  public:
+
+    ParameterSet m_param;
+    RealType alpha;
+
+    ///constructor
+    PolarizedJastrow():alpha(0.0){ 
+      m_param.add(alpha,"alpha","none");
+    }
+
+    ~PolarizedJastrow(){
+      DEBUGMSG("PolarizedJastrow::~PolarizedJastrow")
+      //for(int i=0; i<F.size(); i++) delete F[i];
+    }
+
+    void reset() {  }
+
+    void put(xmlNodePtr cur, VarRegistry<RealType>& vlist){
+      m_param.put(cur);
+      vlist.add("C_alpha",&alpha,1);
+    }
+
+    ValueType evaluate(ParticleSet& P,
+		       ParticleSet::ParticleGradient_t& G, 
+		       ParticleSet::ParticleLaplacian_t& L) {
+      double sumu=0.0;
+      for(int i=0; i<P.getTotalNum(); i++) {
+	double p = 1.0+alpha*P.R[i][2];
+	sumu+=log(p);
+	p=alpha/p;
+	G[i][2] += p;
+	L[i] -= p*p;
+      }
+      return exp(sumu);
+    }
+
+#ifdef USE_FASTWALKER
+    void evaluate(WalkerSetRef& W, 
+		  ValueVectorType& psi,
+		  WalkerSetRef::WalkerGradient_t& G,
+		  WalkerSetRef::WalkerLaplacian_t& L) {
+    }
+#else
+    void evaluate(WalkerSetRef& W,
+                  ValueVectorType& psi,
+                  WalkerSetRef::WalkerGradient_t& G,
+                  WalkerSetRef::WalkerLaplacian_t& L) {
+    }
+#endif
+  };
+
+}
+#endif
+/***************************************************************************
+ * $RCSfile$   $Author$
+ * $Revision$   $Date$
+ * $Id$ 
+ ***************************************************************************/
+

@@ -21,6 +21,7 @@
 #include "QMCWaveFunctions/PadeJastrow.h"
 #include "QMCWaveFunctions/NoCuspJastrow.h"
 #include "QMCWaveFunctions/OneBodyJastrowFunction.h"
+#include "QMCWaveFunctions/PolarizedJastrow.h"
 #include "QMCWaveFunctions/TwoBodyJastrowFunction.h"
 
 namespace ohmmsqmc {
@@ -289,11 +290,10 @@ namespace ohmmsqmc {
     } else if(jasttype == "Two-Body") {
       TwoBodyJastrow<PadeJastrow<ValueType>,true> *J2 = NULL;
       return createTwoBodyNoSpin(cur,J2);
-    }
+    } else if(jasttype == "One-Body") {
     /*For One-Body Jastrow default is Pade function, also implements
       the nocusp function a/(1+br^2)
     */
-      else if(jasttype == "One-Body") {
       if(jastfunction == "nocusp") {
 	LOGMSG("Jastrow Function: nucusp.")
 	OneBodyJastrow<NoCuspJastrow<ValueType> > *J1 = NULL;
@@ -303,6 +303,10 @@ namespace ohmmsqmc {
 	OneBodyJastrow<PadeJastrow<ValueType> > *J1 = NULL;
 	return createOneBody(cur,J1);
       }
+    } else if(jasttype == "Polarization") {
+      PolarizedJastrow *jp=new PolarizedJastrow;
+      jp->put(cur,wfs_ref.VarList);
+      wfs_ref.add(jp);
     }
     return false;
   } 
