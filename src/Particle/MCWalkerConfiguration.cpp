@@ -162,7 +162,7 @@ void MCWalkerConfiguration::copyFromBuffer(PooledData<RealType>& buf) {
 
 
 int MCWalkerConfiguration::branch(int maxcopy, int Nmax, int Nmin) {
-
+    if(DataSet.empty()) {
   iterator it = WalkerList.begin();
   int iw=0, nw = WalkerList.size();
 
@@ -244,6 +244,97 @@ int MCWalkerConfiguration::branch(int maxcopy, int Nmax, int Nmin) {
   }
 
   return iw;
+    } else {
+	return branch2(maxcopy, Nmax, Nmin);
+    }
+}
+
+int MCWalkerConfiguration::branch2(int maxcopy, int Nmax, int Nmin) {
+    
+      iterator it = WalkerList.begin();
+      // int iwalker=0;
+    int iw=0, nw = WalkerList.size();
+
+    vector<Walker_t*> good, bad;
+    vector<WalkerData_t*> good_data, bad_data;
+    vector<int> ncopy;
+    
+  ncopy.reserve(nw);
+  
+  int num_walkers=0;
+  while(it != WalkerList.end()) {
+      int nc = std::min(static_cast<int>((*it)->Properties(MULTIPLICITY)),maxcopy);
+    if(nc) {
+	num_walkers += nc;
+	good.push_back(*it);
+	good_data.push_back(DataSet[iw]);	
+	ncopy.push_back(nc-1);
+	
+    } else {
+	bad.push_back(*it);
+	bad_data.push_back(DataSet[iw]);
+    }
+    iw++;it++;
+  }
+
+
+  //remove bad walkers
+  for(int i=0; i<bad.size(); i++){
+      delete bad[i];
+      delete bad_data[i];
+  }
+
+  //check if the projected number of walkers is too small or too large
+  if(num_walkers>Nmax) {
+    int nsub=0;
+    int nsub_target=num_walkers-static_cast<int>(0.9*Nmax);
+    int i=0;
+    while(i<ncopy.size() && nsub<nsub_target) {
+      if(ncopy[i]) {ncopy[i]--; nsub++;}
+      i++;
+    }
+    num_walkers -= nsub;
+  } else  if(num_walkers < Nmin) {
+    int nadd=0;
+    int nadd_target = static_cast<int>(Nmin*1.1)-num_walkers;
+    if(nadd_target>good.size()) {
+      cerr << "Too few walkers to copy! Abort." << endl;
+      exit(-1);
+    } else {
+      int i=0;
+      while(i<ncopy.size() && nadd<nadd_target) {
+	ncopy[i]++; nadd++;i++;
+      }
+    }
+    num_walkers +=  nadd;
+  }
+
+  //clear the WalkerList to populate them with the good walkers
+  WalkerList.clear();
+  WalkerList.insert(WalkerList.begin(), good.begin(), good.end());
+
+  DataSet.clear();
+  DataSet.insert(DataSet.begin(), good_data.begin(), good_data.end());
+
+
+  int cur_walker = good.size();
+  for(int i=0; i<good.size(); i++) { //,ie+=ncols) {
+    for(int j=0; j<ncopy[i]; j++, cur_walker++) {
+      WalkerList.push_back(new Walker_t(*(good[i])));
+      DataSet.push_back(new WalkerData_t(*good_data[i]));
+    }
+  }
+
+  iw=0;
+  it=WalkerList.begin();
+  while(it != WalkerList.end()) {
+    (*it)->Properties(WEIGHT) = 1.0;
+    (*it)->Properties(MULTIPLICITY) = 1.0;
+    it++;
+  }
+
+  return iw;
+
 }
 
 void MCWalkerConfiguration::setUpdateMode(int updatemode) { 
