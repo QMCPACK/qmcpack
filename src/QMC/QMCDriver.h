@@ -23,6 +23,7 @@
 #include "Configuration.h"
 #include "OhmmsData/ParameterSet.h"
 #include "Estimators/ScalarEstimatorManager.h"
+#include "Utilities/PooledData.h"
 #include <strstream>
 class OhmmsInform;
 
