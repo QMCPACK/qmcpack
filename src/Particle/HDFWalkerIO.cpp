@@ -197,7 +197,7 @@ HDFWalkerInput::put(MCWalkerConfiguration& W, int ic){
   sample1.read(group_id,"psisq");
   sample2.read(group_id,"localenergy");
       
-  bool withenergy=(sample2.extent(0)>0);
+  bool withenergy=(localene_in.size()>0);
   //close the group
   H5Gclose(group_id);
   //check to see if the number of walkers and particles is 
