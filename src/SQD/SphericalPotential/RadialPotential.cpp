@@ -1,0 +1,221 @@
+//////////////////////////////////////////////////////////////////
+// (c) Copyright 2003  by Jeongnim Kim and Jordan Vincent
+//////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////
+//   National Center for Supercomputing Applications &
+//   Materials Computation Center
+//   University of Illinois, Urbana-Champaign
+//   Urbana, IL 61801
+//   e-mail: jnkim@ncsa.uiuc.edu
+//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
+//
+// Supported by 
+//   National Center for Supercomputing Applications, UIUC
+//   Materials Computation Center, UIUC
+//////////////////////////////////////////////////////////////////
+// -*- C++ -*-
+#include <math.h>
+#include "SQD/SphericalPotential/RadialPotential.h"
+#include "Numerics/Clebsch_Gordan.h"
+#include "Numerics/RadialFunctorUtility.h"
+namespace ohmmshf {
+
+/*!
+ * \fn HartreePotential::HartreePotential(Clebsch_Gordan* cg)
+ * \param cg The Clebsch-Gordan matrix elements
+ * \brief The Constructor for the HartreePotential
+ *
+ */
+
+HartreePotential::HartreePotential(Clebsch_Gordan* cg):
+  CG_coeff(cg) { }
+
+/*!
+ * \param psi the wavefunction
+ * \param V increment the potential
+ * \parma norb the number of orbitals
+ * \return The Hartree energy
+ \f[
+ E_{Hartree} = 
+ \sum_{ij} \sum_{k=0}^{\min(2l_i,2l_j)} (-1)^{-m_i-m_j}
+ \frac{(2l_j+1)(2l_i+1)}{(2k+1)^2} \\
+ \langle l_j m_j l_j (-m_j)| k 0 \rangle \langle l_j 0 l_j 0| k 0 \rangle
+ \langle l_i m_i l_i (-m_i)| k 0 \rangle \langle l_i 0 l_i 0| k 0 \rangle
+ {\cal R}^k(ij;ij) 
+ \f]
+ *
+ * \brief Calculates and the Hartree potential for each orbital.  
+ *
+ The Hartree potential for the \textit{ith} orbital
+ \f[
+ \hat{V}_{Hartree} u_{n_i l_i}(r) =  
+ \sum_j \sum_{k=0}^{\min(2l_i,2l_j)} (-1)^{-m_i-m_j}
+ \frac{(2l_j+1)(2l_i+1)}{(2k+1)^2} \langle l_j m_j l_j (-m_j)| k 0 \rangle 
+ \langle l_j 0 l_j 0| k 0 \rangle 
+ \langle l_i m_i l_i (-m_i)| k 0 \rangle \langle l_i 0 l_i 0| k 0 \rangle 
+ \frac{{\cal Y}_k(n_jl_j;n_jl_j/r)}{r} u_{n_i l_i}(r)
+ \f]
+ *
+ * \note The sumnation over the orbitals {ij} includes \f$ i=j. \f$
+  */
+
+RadialPotentialBase::value_type
+HartreePotential::evaluate(const BasisSetType& psi, 
+			   RadialOrbitalSet_t& V, int norb) {
+  
+  int kmax, k;
+  int pt;
+  value_type coeff, ith_orb_coeff, jth_orb_coeff, energy_coeff = 0;
+  value_type Ehartree=0;
+  
+  RadialOrbital_t Ykii_r(psi(0));
+  RadialOrbital_t Ykjj_r(psi(0));
+  RadialOrbital_t Psisq_x_Yk(psi(0));
+  int npts = psi.m_grid->size();
+  for(int i=0; i < norb; i++) {
+
+    int mi = psi.M[i];
+    int li = psi.L[i];
+    int two_li_plus_one = 2*li + 1;
+    
+    for(int j=i; j < norb; j++) {
+      
+      int mj = psi.M[j];
+      int lj = psi.L[j];
+      int two_lj_plus_one = 2*lj + 1;
+      
+      int kmax = (li > lj) ? 2*lj : 2*li;
+
+      for(int k=kmax; k >= 0; k -= 2) {
+	int two_k_plus_one = 2*k+1;
+
+	int lmax = CG_coeff->Lmax;
+	coeff = static_cast<value_type>(two_li_plus_one*two_lj_plus_one)/
+	  static_cast<value_type>(two_k_plus_one)/static_cast<value_type>(two_k_plus_one)
+	  * CG_coeff->cg(li,li,k,0+lmax,0+lmax) * CG_coeff->cg(lj,lj,k,0+lmax,0+lmax)
+	  * CG_coeff->cg(li,li,k,mi+lmax,-mi+lmax) * CG_coeff->cg(lj,lj,k,mj+lmax,-mj+lmax)
+	  * pow(-1.0, mi+mj);
+	
+	if(i == j) coeff /= 2.0; //double counting
+
+	ith_orb_coeff = psi.Occ[i] * coeff;
+	jth_orb_coeff = psi.Occ[j] * coeff;
+	energy_coeff = psi.Occ[j] * psi.Occ[i] * coeff;
+
+	Ykofr(Ykii_r, psi(i), psi(i), k);
+	Ykofr(Ykjj_r, psi(j), psi(j), k);
+	for(int gp=0; gp<npts; gp++){
+	  V[i](gp) += jth_orb_coeff*Ykjj_r(gp);
+	  V[j](gp) += ith_orb_coeff*Ykii_r(gp);
+	}
+
+	Ehartree += Phisq_x_Yk(Ykjj_r, psi(i), psi(i), 0.5*energy_coeff);
+	Ehartree += Phisq_x_Yk(Ykii_r, psi(j), psi(j), 0.5*energy_coeff);
+      }
+    }
+  }
+
+  return Ehartree;
+
+}
+
+/*!
+ * \fn ExchangePotential::ExchangePotential(Clebsch_Gordan* cg)
+ * \param cg The Clebsch-Gordan matrix elements
+ * \brief The Constructor for the ExchangePotential
+ */
+ 
+ExchangePotential::ExchangePotential(Clebsch_Gordan* cg):
+  CG_coeff(cg) { }
+
+/*!
+ * \param psi the wavefunction
+ * \param V increment the potential
+ * \parma norb the number of orbitals
+ * \return The Exchange energy
+ \f[
+ E_{Exchange} =
+ -\sum_j \delta_{\sigma_i,\sigma_j} \sum_{k=|l_j-l_i|}^{l_i+l_j}
+ \frac{(2l_i+1)(2l_j+1)}{(2k+1)^2}
+ \langle l_i (-m_i) l_j m_j| k (m_i-m_j) \rangle^2 
+ \langle l_i 0 l_j 0| k 0 \rangle^2 {\cal R}^k(ij;ji)
+ \f]
+ *
+ * \brief Calculates and the Exchange potential for each orbital.  
+ *
+ The Exchange potential for the \textit{ith} orbital
+ \f[
+ \hat{V}_{Exchange} u_{n_j l_j}(r) =  
+ -\sum_j \delta_{\sigma_i,\sigma_j} \sum_{k=|l_j-l_i|}^{l_i+l_j} 
+ \frac{(2l_i+1)(2l_j+1)}{(2k+1)^2} 
+ \langle l_i (-m_i) l_j m_j| k (m_i-m_j) \rangle^2 
+ \langle l_i 0 l_j 0| k 0 \rangle^2 
+ \frac{{\cal Y}_k(n_jl_j;n_il_i/r)}{r} u_{n_j l_j}(r)
+ \f]
+ *
+ * \note The sumnation over the orbitals {ij} includes \f$ i=j. \f$
+  */
+
+RadialPotentialBase::value_type
+ExchangePotential::evaluate(const BasisSetType& psi, 
+			    RadialOrbitalSet_t& V, int norb) {
+    
+  value_type ith_orb_coeff, jth_orb_coeff, coeff;
+  value_type energy_coeff=0;
+  value_type Eexchange=0;  
+  //zero_all_orbitals(); V is reset before entering
+  RadialOrbital_t Ykij_r(psi(0));
+
+  //Loop over all pairs of electrons once
+  for(int i=0; i < norb; i++) {
+    int si = psi.S[i];
+    int mi = psi.M[i];
+    int li = psi.L[i];
+    int two_li_plus_one = 2*li + 1;
+
+    for(int j=i; j < norb; j++) {
+      int sj = psi.S[j];
+      int mj = psi.M[j];
+      int lj = psi.L[j];
+      int two_lj_plus_one = 2*lj + 1;
+
+      int kmax = li + lj;
+      int kmin = abs(li - lj);
+
+      if( si == sj ) {
+       	for(int k=kmax; k >= kmin; k-=2) {
+          int two_k_plus_one = 2*k + 1;
+
+	  int lmax = CG_coeff->Lmax;
+	  coeff = static_cast<value_type>(two_li_plus_one * two_lj_plus_one) / 
+ 	    static_cast<value_type>(two_k_plus_one*two_k_plus_one)
+ 	    * CG_coeff->cg(li,lj,k,0+lmax,0+lmax) * CG_coeff->cg(li,lj,k,-mi+lmax,mj+lmax) 
+ 	    * CG_coeff->cg(li,lj,k,0+lmax,0+lmax) * CG_coeff->cg(li,lj,k,-mi+lmax,mj+lmax);
+	  
+          if(i == j) coeff /= 2.0; //double counting
+
+          ith_orb_coeff = psi.Occ[i] * coeff;
+          jth_orb_coeff = psi.Occ[j] * coeff;
+          energy_coeff = psi.Occ[j] * psi.Occ[i] * coeff;
+
+          Ykofr(Ykij_r, psi(i), psi(j), k); // Ykofr_phi1_phi2
+
+	  Make_Loc_Pot(V[i], Ykij_r, psi(i), psi(j),jth_orb_coeff);           
+	  Make_Loc_Pot(V[j], Ykij_r, psi(j), psi(i),ith_orb_coeff);           
+      
+	  Eexchange -= Phisq_x_Yk(Ykij_r, psi(i), psi(j), energy_coeff);
+	}
+      }
+    }
+  }
+  
+  return Eexchange;
+}
+
+}
+/***************************************************************************
+ * $RCSfile$   $Author$
+ * $Revision$   $Date$
+ * $Id$ 
+ ***************************************************************************/
+
