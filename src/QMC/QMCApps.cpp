@@ -18,6 +18,7 @@
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 #include "QMC/QMCApps.h"
+#include "Message/Communicate.h"
 #include "Utilities/OhmmsInfo.h"
 #include "Particle/HDFWalkerIO.h"
 #include "ParticleBase/RandomSeqGenerator.h"
@@ -30,7 +31,7 @@
 namespace ohmmsqmc {
 
   QMCApps::QMCApps(int argc, char** argv): 
-    m_doc(NULL),m_root(NULL),m_context(NULL),m_walkerset(NULL) 
+    m_doc(NULL),m_root(NULL),m_context(NULL)
   {
   }
 
@@ -49,22 +50,34 @@ namespace ohmmsqmc {
       = xmlXPathEvalExpression((const xmlChar*)"/simulation/mcwalkerset",m_context);
 
     if(xmlXPathNodeSetIsEmpty(result->nodesetval)) {
-      m_walkerset=xmlNewNode(NULL,(const xmlChar*)"mcwalkerset");
-      xmlNewProp(m_walkerset,(const xmlChar*)"file", (const xmlChar*)"nothing");
-      xmlAddChild(m_root,m_walkerset);
+      if(m_walkerset.empty()) {
+	xmlNodePtr newnode_ptr = xmlNewNode(NULL,(const xmlChar*)"mcwalkerset");
+	xmlNewProp(newnode_ptr,(const xmlChar*)"file", (const xmlChar*)"nothing");
+	xmlAddChild(m_root,newnode_ptr);
+	m_walkerset.push_back(newnode_ptr);
+      }
     } else {
-      m_walkerset=result->nodesetval->nodeTab[0];
-      xmlChar* att=xmlGetProp(m_walkerset,(const xmlChar*)"file");
-      if(att) {
-	string cfile((const char*)att);
-	XMLReport("Using previous configuration from " << cfile)
+      int pid=OHMMS::Controller->mycontext(); 
+      for(int iconf=0; iconf<result->nodesetval->nodeNr; iconf++) {
+	int pid_target=pid;
+	xmlNodePtr mc_ptr = result->nodesetval->nodeTab[iconf];
+	m_walkerset.push_back(mc_ptr);
+	xmlChar* att=xmlGetProp(mc_ptr,(const xmlChar*)"file");
+	xmlChar* anode=xmlGetProp(mc_ptr,(const xmlChar*)"node");
+	if(anode) {
+	  pid_target = atoi((const char*)anode);
+	}
+	if(pid_target == pid && att) {
+	  string cfile((const char*)att);
+	  XMLReport("Using previous configuration from " << cfile)
 
-        HDFWalkerInput WO(cfile); 
-	//read only the last ensemble of walkers
-	WO.put(el,-1);
+          HDFWalkerInput WO(cfile); 
+	  //read only the last ensemble of walkers
+	  WO.put(el,-1);
 
-	PrevConfigFile = cfile;
-	foundconfig=true;
+	  PrevConfigFile = cfile;
+	  foundconfig=true;
+	}
       }
     }
     xmlXPathFreeObject(result);
@@ -164,7 +177,9 @@ namespace ohmmsqmc {
           //keeps track of the configuration file
           PrevConfigFile = myProject.CurrentRoot();
 	  //change the content of mcwalkerset/@file attribute
-	  xmlSetProp(m_walkerset,(const xmlChar*)"file", (const xmlChar*)myProject.CurrentRoot());
+	  for(int i=0; i<m_walkerset.size(); i++) {
+	    xmlSetProp(m_walkerset[i],(const xmlChar*)"file", (const xmlChar*)myProject.CurrentRoot());
+	  }
 
 	  myProject.advance();
 	  //remove this node

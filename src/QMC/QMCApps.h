@@ -49,7 +49,7 @@ namespace ohmmsqmc {
     xmlDocPtr m_doc;
     xmlNodePtr m_root;
     xmlXPathContextPtr m_context;
-    xmlNodePtr m_walkerset;
+    vector<xmlNodePtr> m_walkerset;
 
     ///project description
     OHMMS::ProjectData myProject;
