@@ -70,12 +70,13 @@ namespace ohmmsqmc {
       ///pointer to the basis set
       BasisSetType *basisSet =NULL;
       
+      int nvar(wfs_ref.VarList.size());
       int is=0, first=0;
       int norbs = 0;
       cur = cur->xmlChildrenNode;
       while(cur != NULL) {
 	string cname((const char*)(cur->name));
-	if(cname == basisset_tag) {
+	if(cname == basisset_tag || cname == "atomicBasisSet") {
 	  //call the BasisSet builder
 	  basisSet = builder_ref.addBasisSet(cur);
 	  if(!basisSet) return 0;
@@ -109,20 +110,28 @@ namespace ohmmsqmc {
 	cur = cur->next;
       }
       
+      bool optimizeit=(wfs_ref.VarList.size()>nvar);
+      if(optimizeit) {
+        WARNMSG("Slater determinants will be optimized")
+      }
       if(slaterdets.size() > 1) {
 	XMLReport("Creating a multi-determinant wavefunction")
 	MultiSlaterDeterminant<SPOSetType>
 	  *multidet= new MultiSlaterDeterminant<SPOSetType>;
 	for(int i=0; i<slaterdets.size(); i++) {
 	  XMLReport("Coefficient for a SlaterDeterminant " << sdet_coeff[i])
+          slaterdets[i]->setOptimizable(optimizeit);
 	  multidet->add(slaterdets[i],sdet_coeff[i]);
 	}
+        multidet->setOptimizable(optimizeit);
 	//add a MultiDeterminant to the trial wavefuntion
 	wfs_ref.add(multidet);
       } else {
 	XMLReport("Creating a SlaterDeterminant wavefunction")
-	  //add a SlaterDeterminant to the trial wavefuntion
-	  wfs_ref.add(slaterdets[0]);
+	//add a SlaterDeterminant to the trial wavefuntion
+	wfs_ref.add(slaterdets[0]);
+        if(wfs_ref.VarList.size()>nvar) slaterdets[0]->setOptimizable(true);
+	//add a MultiDeterminant to the trial wavefuntion
       }
       NumPtcl=first; 
       return (NumPtcl> 0);
