@@ -268,17 +268,19 @@ void MCWalkerConfiguration::loadWalker(Walker_t& awalker) {
 
 /** move a particle iat
  *@param iat the index of the particle to be moved
- *@param newpos the new position
- *
+ *@param displ the displacement of the iath-particle position
+ *@return the proposed position
  *Update activePtcl index and activePos position for the proposed move.
  *Evaluate the related distance table data DistanceTableData::Temp.
  */
-void MCWalkerConfiguration::makeMove(int iat, const SingleParticlePos_t& newpos) {
+MCWalkerConfiguration::SingleParticlePos_t 
+MCWalkerConfiguration::makeMove(int iat, const SingleParticlePos_t& displ) {
   activePtcl=iat;
-  activePos=R[iat]+newpos;
+  activePos=R[iat]+displ;
   for(int i=0; i< DistTables.size(); i++) {
     DistTables[i]->move(*this,activePos,iat);
   }
+  return activePos;
 }
 
 /** update the particle attribute by the proposed move

@@ -136,7 +136,7 @@ namespace ohmmsqmc {
      *@param iat the index of the particle to be moved
      *@param newpos new position of the iat-th particle
      */
-    void makeMove(int iat, const SingleParticlePos_t& newpos);
+    SingleParticlePos_t makeMove(int iat, const SingleParticlePos_t& displ);
 
     /**accept the move
      *@param iat the index of the particle whose position and other attributes to be updated
