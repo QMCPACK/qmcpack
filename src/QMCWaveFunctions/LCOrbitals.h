@@ -78,7 +78,7 @@ namespace ohmmsqmc {
     ///return the number of basis functions
     inline int numBasis() const { return BasisSet->TotalBasis;}
 
-    inline void reset() { }
+    inline void reset() { BasisSet->reset();}
 
     ///resize the internal storage of BasisSet by the number of particles
     inline void resize(int nptcl) {

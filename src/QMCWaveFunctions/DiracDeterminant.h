@@ -273,9 +273,7 @@ namespace ohmmsqmc {
 
     ValueType ratio(ParticleSet& P, int iat) {
       Phi.evaluate(P, iat, psiV, dpsiV, d2psiV);
-      WorkingIndex = iat-FirstIndex;
-      curRatio= DetRatio(psiM, psiV.begin(),WorkingIndex);
-      return curRatio;
+      return curRatio= DetRatio(psiM, psiV.begin(),iat-FirstIndex);
     }
     
     void update(ParticleSet& P, 

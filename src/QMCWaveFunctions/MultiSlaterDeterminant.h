@@ -56,6 +56,7 @@ public:
 
   ///constructor
   MultiSlaterDeterminant() { Optimizable=false;}
+
   ///destructor
   ~MultiSlaterDeterminant() { }
 
@@ -68,7 +69,9 @@ public:
     C.push_back(c);
   }
 
-  void reset() {  }
+  void reset() {  
+    if(Optimizable) for(int i=0; i<SDets.size(); i++) SDets[i]->reset();
+  }
 
   void initParameters() { }
 

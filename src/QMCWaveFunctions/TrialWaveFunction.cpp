@@ -160,7 +160,9 @@ namespace ohmmsqmc {
   TrialWaveFunction::ValueType
   TrialWaveFunction::ratio(ParticleSet& P,int iat) {
     RealType r=1.0;
-    for(int i=0; i<Z.size(); i++) r *= Z[i]->ratio(P,iat);
+    for(int i=0; i<Z.size(); i++) {
+      r *= Z[i]->ratio(P,iat);
+    }
     return r;
   }
   void   

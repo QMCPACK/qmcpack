@@ -66,6 +66,7 @@ namespace ohmmsqmc {
 
     ///reset all the Dirac determinants
     void reset() {  
+      if(Optimizable)
       for(int i=0; i<Dets.size(); i++) Dets[i]->reset();
     }
 
