@@ -19,7 +19,6 @@ ELSE(Blitzpp_INCLUDE_DIRS)
     /usr/include
     /opt/include
     /usr/local/include
-    /u/ncsa/jnkim/shared/include
     $ENV{BLITZ_HOME}
   )
 

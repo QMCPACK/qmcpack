@@ -16,7 +16,7 @@ SET(HAVE_LIBSPRNG 0)
 SET(HAVE_LIBBLITZ 0)
 SET(HAVE_LIBGSL 0)
 
-OPTION(QMC_SPRNG "Enable SPRNG random number generation library" OFF)
+OPTION(QMC_SPRNG "Enable SPRNG random number generation library" ON)
 OPTION(QMC_BLITZ "Enable blitz++ library" ON)
 
 ######################################################################
@@ -44,9 +44,9 @@ SET (PROJECT_CMAKE ${qmcPlusPlus_SOURCE_DIR}/CMake)
 #COMPILER choose one of the cmake files to customize the compiler options
 #If nothing is chosen, default settings by cmake will  be used.
 ######################################################
-#INCLUDE(${PROJECT_CMAKE}/Intel8.cmake)
+INCLUDE(${PROJECT_CMAKE}/Intel8.cmake)
 #INCLUDE(${PROJECT_CMAKE}/Intel7.cmake)
-INCLUDE(${PROJECT_CMAKE}/GNUCompilers.cmake)
+#INCLUDE(${PROJECT_CMAKE}/GNUCompilers.cmake)
 #INCLUDE(${PROJECT_CMAKE}/IBMCompilers.cmake)
 #INCLUDE(${PROJECT_CMAKE}/KCCCompilers.cmake)
 #INCLUDE(${PROJECT_CMAKE}/Compilers.cmake)
@@ -60,18 +60,17 @@ INCLUDE(${PROJECT_CMAKE}/FindLapack.cmake)
 INCLUDE(${PROJECT_CMAKE}/FindHDF5.cmake)
 INCLUDE(${PROJECT_CMAKE}/FindGSL.cmake)
 INCLUDE(${PROJECT_CMAKE}/FindBlitz++.cmake)
+INCLUDE(${PROJECT_CMAKE}/FindSprng.cmake)
  
+IF(QMC_MPI)
+  INCLUDE(${PROJECT_SOURCE_DIR}/CMake/addMPI.cmake)
+ENDIF(QMC_MPI)
+
 IF(FOUND_LIBXML2)
   INCLUDE_DIRECTORIES(${LIBXML2_INCLUDE_DIR})
   LINK_LIBRARIES(${LIBXML2_LIBRARY})
   SET(HAVE_LIBXML2 1)
 ENDIF(FOUND_LIBXML2)
-
-#IF(FOUND_LIBXMLPP)
-#  INCLUDE_DIRECTORIES(${LIBXMLPP_INCLUDE_DIR})
-#  LINK_LIBRARIES(${LIBXMLPP_LIBRARY})
-#  SET(HAVE_LIBXMLPP 1)
-#ENDIF(FOUND_LIBXMLPP)
 
 IF(FOUND_HDF5)
   SET(HAVE_LIBHDF5 1)
@@ -90,17 +89,11 @@ IF(FOUND_BLITZ)
   INCLUDE_DIRECTORIES(${BLITZ_INCLUDE_DIR})
   SET(HAVE_LIBBLITZ 1)
 ENDIF(FOUND_BLITZ)
-#IF(QMC_BLITZ)
-#ENDIF(QMC_BLITZ)
- 
-IF(QMC_MPI)
-  INCLUDE(${PROJECT_SOURCE_DIR}/CMake/addMPI.cmake)
-ENDIF(QMC_MPI)
  
 IF(FOUND_SPRNG)
-  SET(HAVE_LIBSPRNG 1)
   INCLUDE_DIRECTORIES(${SPRNG_INCLUDE_DIR})
   LINK_LIBRARIES(${SPRNG_LIBRARY} -lgmp)
+  SET(HAVE_LIBSPRNG 1)
 ENDIF(FOUND_SPRNG)
  
 INCLUDE_DIRECTORIES(
