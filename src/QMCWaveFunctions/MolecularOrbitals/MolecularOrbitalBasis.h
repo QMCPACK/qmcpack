@@ -76,6 +76,10 @@ namespace ohmmsqmc {
       TotalBasis = Basis[I.size()];
     }
 
+    void reset() {
+      for(int i=0; i<AOs.size(); i++) AOs[i]->reset();
+    }
+
     /**
        @param nptcl number of particles
        @brief resize the containers for data 
