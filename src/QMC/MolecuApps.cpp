@@ -188,6 +188,7 @@ namespace ohmmsqmc {
       H.add(new LocalPPotential(ion,el), "PseudoPot");
       if(ion.getTotalNum()>1) 
 	H.add(new IonIonPotential(ion),"IonIon");
+/*
     } else if(ptype == "cpp") {
       xmlChar* att2=xmlGetProp(cpp,(const xmlChar*)"species");
       string stype = (const char*)att2;
@@ -198,6 +199,7 @@ namespace ohmmsqmc {
       H.add(new GeCorePolPotential(ion,el,stype), "GeCPP");
       if(ion.getTotalNum()>1) 
 	H.add(new IonIonPotential(ion),"IonIon");
+*/
     } else if(ptype == "polarization"){
       xmlChar* att2=xmlGetProp(pol,(const xmlChar*)"method");
       mtype = (const char*)att2;
@@ -206,7 +208,8 @@ namespace ohmmsqmc {
 	while(cur1 != NULL) {
 	  string cname((const char*)(cur1->name));
 	  if(cname=="wos"){
-	    int nruns = atoi((char*)xmlGetProp(cur1,(const xmlChar*)"nruns"));
+	    int nruns = atoi((char*)xmlGetProp(cur1,(const xmlChar*)"Vruns"));
+	    int mruns = atoi((char*)xmlGetProp(cur1,(const xmlChar*)"Druns"));
 	    int mode = atoi((char*)xmlGetProp(cur1,(const xmlChar*)"mode"));
 	    double dz = atof((char*)xmlGetProp(cur1,(const xmlChar*)"dz"));
 	    double dv = atof((char*)xmlGetProp(cur1,(const xmlChar*)"dv"));
@@ -217,7 +220,7 @@ namespace ohmmsqmc {
 	    double eps = 1.0; double rho = 0.0;
 	    std::vector<double> Vapp(6,0.0); Vapp[4] = -dv; Vapp[5] = dv;
 	    Device* device = new Device(dr,eps,rho,Vapp,rmin,rmax);
-	    H.add(new WOSPotential(mode,nruns,device,ion,el),"wos");
+	    H.add(new WOSPotential(mode,nruns,mruns,device,ion,el),"wos");
 	  }
 	  cur1=cur1->next;
 	} 
