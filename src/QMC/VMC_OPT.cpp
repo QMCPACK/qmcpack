@@ -263,7 +263,7 @@ namespace ohmmsqmc {
 	  (*it)->E.resize(H.size()+1,0.0);
 
 	  // save old sample
-	  ValueType psi2old = (*it)->Properties(PsiSq);
+	  ValueType psi2old = (*it)->Properties(PSISQ);
 	
 	  W.R = (*it)->R;
 	
@@ -279,10 +279,10 @@ namespace ohmmsqmc {
 	  nw_effect_b += weight*weight;
 
 	  //update the properties
-	  Properties(Weight) = weight;
-	  Properties(PsiSq) = psisq;
-	  Properties(Sign) = psi;
-	  Properties(LocalEnergy) = H.evaluate(W);
+	  Properties(WEIGHT) = weight;
+	  Properties(PSISQ) = psisq;
+	  Properties(PSI) = psi;
+	  Properties(LOCALENERGY) = H.evaluate(W);
 	  H.get((*it)->E);
 	  (*it)->Properties = Properties;
 	}

@@ -139,31 +139,32 @@ namespace ohmmsqmc {
 
     //calculate local energies and wave functions:
     //can be redundant but the overhead is small
-    LOGMSG("Evaluate all the walkers before starting")
+    W.Energy.resize(W.getActiveWalkers(),H.size()+1);
 
+    LOGMSG("Evaluate all the walkers before starting")
     MCWalkerConfiguration::iterator it = W.begin();
+    int iwalker=0;
     while(it != W.end()) {
+
       W.R = (*it)->R;
-      //evaluate the distance table
       DistanceTable::update(W);
-      //evaluate the wavefunction
+
       ValueType psi = Psi.evaluate(W);
-      RealType psi2 = psi*psi;
-      //update the properties
-      (*it)->Properties(PsiSq) = psi2;
-      (*it)->Properties(Sign) = psi;
-      (*it)->Properties(Weight) = 1.0;
-      (*it)->Properties(Multiplicity) = 1.0;
-      //evaluate the Hamiltonian
-      (*it)->Properties(LocalEnergy) = H.evaluate(W);
-      (*it)->E.resize(H.size()+1,0.0);
-      //copy the data from the Hamiltonian to the walker
-      H.get((*it)->E);
       ValueType vsq = Dot(W.G,W.G);
       ValueType scale = ((-1.0+sqrt(1.0+2.0*Tau*vsq))/vsq);
       (*it)->Drift = scale*W.G;
-      //(*it)->Drift = Tau*W.G;
-      it++;
+
+      RealType ene = H.evaluate(W);
+      (*it)->resetProperty(iwalker,psi,ene);
+      /** @deprecated
+       * Use a matrix to store energy-related properties 
+       */
+      //H.update(W.Energy[iwalker]);
+      //evaluate the Hamiltonian
+      (*it)->E.resize(H.size()+1,0.0);
+      //copy the data from the Hamiltonian to the walker
+      H.get((*it)->E);
+      it++;iwalker++;
     }
   }
   

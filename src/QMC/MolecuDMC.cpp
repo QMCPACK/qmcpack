@@ -84,8 +84,8 @@ namespace ohmmsqmc {
       
       for(MCWalkerConfiguration::iterator it = W.begin(); 
 	  it != W.end(); ++it) {
-	(*it)->Properties(Weight) = 1.0;
-	(*it)->Properties(Multiplicity) = 1.0;
+	(*it)->Properties(WEIGHT) = 1.0;
+	(*it)->Properties(MULTIPLICITY) = 1.0;
       }
       
       MolecuFixedNodeBranch<RealType> brancher(Tau,W.getActiveWalkers());
@@ -97,7 +97,7 @@ namespace ohmmsqmc {
 	the reference energy of the brancher*/
       if(Counter) {
 	RealType e_ref = W.getLocalEnergy();
-	LOGMSG("Overwriting the reference energy by the local energy " << e_ref)    
+	LOGMSG("Overwriting the reference energy by the local energy " << e_ref)  
 	brancher.setEguess(e_ref);
       }
       
@@ -249,14 +249,14 @@ namespace ohmmsqmc {
     for (MCWalkerConfiguration::iterator it = W.begin();
 	 it != W.end(); ++it) {
       
-      (*it)->Properties(Weight) = 1.0;
-      (*it)->Properties(Multiplicity) = 1.0;
+      (*it)->Properties(WEIGHT) = 1.0;
+      (*it)->Properties(MULTIPLICITY) = 1.0;
       
       //copy the properties of the working walker
       Properties = (*it)->Properties;
       
       //save old local energy
-      ValueType eold = Properties(LocalEnergy);
+      ValueType eold = Properties(LOCALENERGY);
       ValueType emixed = eold;  
       
       //create a 3N-Dimensional Gaussian with variance=1
@@ -270,9 +270,9 @@ namespace ohmmsqmc {
       //evaluate wave function
       ValueType psi = Psi.evaluate(W);
       //update the properties
-      Properties(PsiSq) = psi*psi;
-      Properties(Sign) = psi;
-      Properties(LocalEnergy) = H.evaluate(W);
+      Properties(LOCALENERGY) = H.evaluate(W);
+      Properties(PSISQ) = psi*psi;
+      Properties(PSI) = psi;
       
       //deltaR = W.R - (*it)->R - (*it)->Drift;
       //RealType forwardGF = exp(-oneover2tau*Dot(deltaR,deltaR));
@@ -289,34 +289,35 @@ namespace ohmmsqmc {
       RealType backwardGF = exp(-oneover2tau*Dot(deltaR,deltaR));
       
       //set acceptance probability
-      RealType prob= min(backwardGF/forwardGF*Properties(PsiSq)/(*it)->Properties(PsiSq),1.0);
+      RealType prob= min(backwardGF/forwardGF*Properties(PSISQ)/(*it)->Properties(PSISQ),1.0);
       
       bool accepted=false; 
       if(Random() > prob){
-	(*it)->Properties(Age)++;
+	(*it)->Properties(AGE)++;
 	emixed += eold;
       } else {
 	accepted=true;  
-	Properties(Age) = 0;
+	Properties(AGE) = 0;
 	(*it)->R = W.R;
 	(*it)->Drift = drift;
 	(*it)->Properties = Properties;
-	H.get((*it)->E);
-	emixed += Properties(LocalEnergy);
+        H.update(W.Energy[(*it)->ID]);
+	//H.get((*it)->E);
+	emixed += Properties(LOCALENERGY);
       }
       
       //calculate the weight and multiplicity
       ValueType M = Branch.branchGF(Tau,emixed*0.5,1.0-prob);
-      if((*it)->Properties(Age) > 3.0) M = min(0.5,M);
-      if((*it)->Properties(Age) > 0.9) M = min(1.0,M);
-      (*it)->Properties(Weight) = M; 
-      (*it)->Properties(Multiplicity) = M + Random();
+      if((*it)->Properties(AGE) > 3.0) M = min(0.5,M);
+      if((*it)->Properties(AGE) > 0.9) M = min(1.0,M);
+      (*it)->Properties(WEIGHT) = M; 
+      (*it)->Properties(MULTIPLICITY) = M + Random();
       
       //node-crossing: kill it for the time being
-      if(Branch(Properties(Sign),(*it)->Properties(Sign))) {
+      if(Branch(Properties(PSI),(*it)->Properties(PSI))) {
 	accepted=false;     
-	(*it)->Properties(Weight) = 0.0; 
-	(*it)->Properties(Multiplicity) = 0.0;
+	(*it)->Properties(WEIGHT) = 0.0; 
+	(*it)->Properties(MULTIPLICITY) = 0.0;
       }
       
       if(accepted) 
@@ -375,11 +376,11 @@ namespace ohmmsqmc {
     iw = 0;
     it = W.begin();
     while(it !=  W.end()) {
-      if(Branch(psi(iw),(*it)->Properties(Sign))) {
+      if(Branch(psi(iw),(*it)->Properties(PSI))) {
 	++nReject;
       } else {
 	
-	ValueType eold = Properties(LocalEnergy);
+	ValueType eold = Properties(LOCALENERGY);
 	
 	for(int iat=0; iat<nptcl; iat++)
 	  deltaR(iat) = Wref.R(iw,iat) - (*it)->R(iat) - (*it)->Drift(iat);
@@ -392,23 +393,23 @@ namespace ohmmsqmc {
 	
 	ValueType psisq = psi(iw)*psi(iw);
 	
-	prob = min(backwardGF/forwardGF*psisq/(*it)->Properties(PsiSq),1.0);
+	prob = min(backwardGF/forwardGF*psisq/(*it)->Properties(PSISQ),1.0);
 	if(Random() > prob) { 
 	  ++nReject; 
-	  (*it)->Properties(Age) += 1;
+	  (*it)->Properties(AGE) += 1;
 	} else {
-	  (*it)->Properties(Age) = 0;
+	  (*it)->Properties(AGE) = 0;
 	  for(int iat=0; iat<nptcl; iat++) (*it)->R(iat) = Wref.R(iw,iat);
 	  for(int iat=0; iat<nptcl; iat++) (*it)->Drift(iat) = Wref.G(iw,iat);
-	  (*it)->Properties(Sign) = psi(iw);
-	  (*it)->Properties(PsiSq) = psisq;
-	  (*it)->Properties(LocalEnergy) = energy(iw);
+	  (*it)->Properties(PSI) = psi(iw);
+	  (*it)->Properties(PSISQ) = psisq;
+	  (*it)->Properties(LOCALENERGY) = energy(iw);
 	  ++nAccept;
 	}
 	
-	RealType m = Branch.ratio(Tau,(*it)->Properties(LocalEnergy),eold,1.0-prob);
-	(*it)->Properties(Multiplicity) *= m;
-	(*it)->Properties(Weight) *= m;
+	RealType m = Branch.ratio(Tau,(*it)->Properties(LOCALENERGY),eold,1.0-prob);
+	(*it)->Properties(WEIGHT) *= m;
+	(*it)->Properties(MULTIPLICITY) *= m;
       }
       iw++;it++;
     }

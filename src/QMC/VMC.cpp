@@ -84,7 +84,7 @@ namespace ohmmsqmc {
       //probably unnecessary
       for(MCWalkerConfiguration::iterator it = W.begin(); 
 	  it != W.end(); ++it) {
-	(*it)->Properties(Weight) = 1.0;
+	(*it)->Properties(WEIGHT) = 1.0;
       }
 
       deltaR.resize(W.getTotalNum());
@@ -213,9 +213,8 @@ namespace ohmmsqmc {
       
       //copy the properties of the working walker
       Properties = (*it)->Properties;
-      
       //save old local energy
-      ValueType eold = Properties(LocalEnergy);
+      ValueType eold = Properties(LOCALENERGY);
       
       //create a 3N-Dimensional Gaussian with variance=1
       makeGaussRandom(deltaR);
@@ -228,9 +227,9 @@ namespace ohmmsqmc {
       //evaluate wave function
       ValueType psi = Psi.evaluate(W);
       //update the properties
-      Properties(PsiSq) = psi*psi;
-      Properties(Sign) = psi;
-      Properties(LocalEnergy) = H.evaluate(W);
+      Properties(PSISQ) = psi*psi;
+      Properties(PSI) = psi;
+      Properties(LOCALENERGY) = H.evaluate(W);
       
       // deltaR = W.R - (*it)->R - (*it)->Drift;
       //  RealType forwardGF = exp(-oneover2tau*Dot(deltaR,deltaR));
@@ -246,19 +245,19 @@ namespace ohmmsqmc {
       deltaR = (*it)->R - W.R - drift;
       RealType backwardGF = exp(-oneover2tau*Dot(deltaR,deltaR));
       
-      //forwardGF/backwardGF*Properties(PsiSq)/(*it)->Properties(PsiSq)
-      //RealType prob   = min(Properties(PsiSq)/(*it)->Properties(PsiSq),1.0);
+      //forwardGF/backwardGF*Properties(PSISQ)/(*it)->Properties(PSISQ)
+      //RealType prob   = min(Properties(PSISQ)/(*it)->Properties(PSISQ),1.0);
       //cout << "forward/backward " << forwardGF << " " << backwardGF << endl;
       if(Random() > 
-	 backwardGF/forwardGF*Properties(PsiSq)/(*it)->Properties(PsiSq)) {
-	(*it)->Properties(Age)++;     
+	 backwardGF/forwardGF*Properties(PSISQ)/(*it)->Properties(PSISQ)) {
+	(*it)->Properties(AGE)++;     
 	++nReject; 
       } else {
-	Properties(Age) = 0;
+	Properties(AGE) = 0;
 	(*it)->R = W.R;
 	(*it)->Drift = drift;
 	(*it)->Properties = Properties;
-	H.get((*it)->E);
+	H.update(W.Energy[(*it)->ID]);
 	++nAccept;
       }
       
@@ -310,7 +309,7 @@ namespace ohmmsqmc {
     it = W.begin();
     while(it !=  W.end()) {
       
-      ValueType eold = Properties(LocalEnergy);
+      ValueType eold = Properties(LOCALENERGY);
       
       for(int iat=0; iat<nptcl; iat++)
 	deltaR(iat) = Wref.R(iw,iat) - (*it)->R(iat) - (*it)->Drift(iat);
@@ -323,16 +322,16 @@ namespace ohmmsqmc {
       
       ValueType psisq = psi(iw)*psi(iw);
       if(Random() > 
-	 backwardGF/forwardGF*psisq/(*it)->Properties(PsiSq)) {
+	 backwardGF/forwardGF*psisq/(*it)->Properties(PSISQ)) {
 	++nReject; 
-	(*it)->Properties(Age) += 1;
+	(*it)->Properties(AGE) += 1;
       } else {
-	(*it)->Properties(Age) = 0;
+	(*it)->Properties(AGE) = 0;
 	for(int iat=0; iat<nptcl; iat++) (*it)->R(iat) = Wref.R(iw,iat);
 	for(int iat=0; iat<nptcl; iat++) (*it)->Drift(iat) = Wref.G(iw,iat);
-	(*it)->Properties(Sign) = psi(iw);
-	(*it)->Properties(PsiSq) = psisq;
-	(*it)->Properties(LocalEnergy) = energy(iw);
+	(*it)->Properties(PSI) = psi(iw);
+	(*it)->Properties(PSISQ) = psisq;
+	(*it)->Properties(LOCALENERGY) = energy(iw);
 	++nAccept;
       }
       iw++;it++;

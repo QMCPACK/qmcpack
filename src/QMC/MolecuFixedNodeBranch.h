@@ -129,9 +129,9 @@ namespace ohmmsqmc {
 
 // 	//limit maximun number of copies to 10
 // 	//all copies are added at the end of the list
-// 	int ncopy = min(static_cast<int>((*it)->Properties(Multiplicity)),10);
-// 	(*it)->Properties(Weight) = 1.0;
-// 	(*it)->Properties(Multiplicity) = 1.0;
+// 	int ncopy = min(static_cast<int>((*it)->Properties(MULTIPLICITY)),10);
+// 	(*it)->Properties(WEIGHT) = 1.0;
+// 	(*it)->Properties(MULTIPLICITY) = 1.0;
 // 	if(ncopy == 0) {
 // 	  it = w.destroyWalker(it);
 // 	} else {
