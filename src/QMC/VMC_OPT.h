@@ -44,6 +44,9 @@ namespace ohmmsqmc {
 	    QMCHamiltonian& h, 
 	    xmlNodePtr q);
     
+    ///Destructor
+    ~VMC_OPT();
+
     ///Run the Optimization algorithm.
     bool run();
     bool put(xmlNodePtr cur);
@@ -69,6 +72,9 @@ namespace ohmmsqmc {
     bool putOptParams();  
 
     RealType evalCost();
+    struct WalkerData;
+
+    vector<WalkerData*> RefConf;
 
     ///boolean to turn on/off the psi^2/psi^2_old for correlated sampling
     bool UseWeight;
@@ -82,10 +88,10 @@ namespace ohmmsqmc {
     vector<string> IDtag;  
     ///list of files storing configurations  
     vector<string> ConfigFile;
-    ///save the wave function
-    vector<ValueType> LogPsi;
-    ///save the local potential
-    vector<RealType> VlocOld;
+    /////save the wave function
+    //vector<ValueType> LogPsi;
+    /////save the local potential
+    //vector<RealType> VlocOld;
     ///method for optimization, default conjugate gradient
     string optmethod;
     ///number of times cost function evaluated

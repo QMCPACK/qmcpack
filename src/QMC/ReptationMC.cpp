@@ -275,7 +275,7 @@ namespace ohmmsqmc {
       Walker_t* cur=(*achain)[0];
       W.R = cur->R;
       DistanceTable::update(W);
-      ValueType psi = Psi.evaluate(W);
+      ValueType logpsi(Psi.evaluateLog(W));
       cur->Properties(LOCALENERGY) = H.evaluate(W);
       H.copy(cur->getEnergyBase());
       cur->Properties(LOCALPOTENTIAL) = H.getLocalPotential();
@@ -292,7 +292,7 @@ namespace ohmmsqmc {
 	  DistanceTable::update(W);
 	  
 	  //evaluate wave function
-	  ValueType psi = Psi.evaluate(W);
+	  ValueType logpsic(Psi.evaluateLog(W));
 	  cur = (*achain)[i+1];	  
 	  cur->Properties(LOCALENERGY) = H.evaluate(W);
 	  H.copy(cur->getEnergyBase());
@@ -450,7 +450,7 @@ namespace ohmmsqmc {
 	DistanceTable::update(W);
 
 	//evaluate wave function
-	ValueType psi = Psi.evaluate(W);
+	ValueType logpsi(Psi.evaluateLog(W));
 	
 	//update the properties of the front chain
 	RealType eloc_yp = head->Properties(LOCALENERGY) = H.evaluate(W);

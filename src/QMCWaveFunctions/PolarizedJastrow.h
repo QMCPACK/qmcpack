@@ -49,18 +49,23 @@ namespace ohmmsqmc {
       vlist.add("C_alpha",&alpha,1);
     }
 
-    ValueType evaluate(ParticleSet& P,
-		       ParticleSet::ParticleGradient_t& G, 
-		       ParticleSet::ParticleLaplacian_t& L) {
-      double sumu=0.0;
+    ValueType evaluateLog(ParticleSet& P,
+		         ParticleSet::ParticleGradient_t& G, 
+		         ParticleSet::ParticleLaplacian_t& L) {
+      LogValue=0.0;
       for(int i=0; i<P.getTotalNum(); i++) {
-	double p = 1.0+alpha*P.R[i][2];
-	sumu+=log(p);
+	RealType p = 1.0+alpha*P.R[i][2];
+	LogValue+=log(p);
 	p=alpha/p;
 	G[i][2] += p;
 	L[i] -= p*p;
       }
-      return exp(sumu);
+      return LogValue;
+    }
+    ValueType evaluate(ParticleSet& P,
+		       ParticleSet::ParticleGradient_t& G, 
+		       ParticleSet::ParticleLaplacian_t& L) {
+      return exp(evaluateLog(P,G,L));
     }
 
 #ifdef USE_FASTWALKER

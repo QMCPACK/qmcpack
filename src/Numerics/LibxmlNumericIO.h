@@ -36,7 +36,8 @@ putContent(Vector<T>& a, xmlNodePtr cur){
     stream((const char*)
 	   (xmlNodeListGetString(cur->doc, cur->xmlChildrenNode, 1)));
   int i=0;
-  while(!stream.eof()){ stream >> a(i++);}
+  int n(a.size());
+  while(!stream.eof() && i<n ){ stream >> a(i++);}
   return true;
 }
 
@@ -47,7 +48,8 @@ putContent(Matrix<T>& a, xmlNodePtr cur){
     stream((const char*)
 	   (xmlNodeListGetString(cur->doc, cur->xmlChildrenNode, 1)));
   int i=0;
-  while(!stream.eof()){ stream >> a(i++);}
+  int n(a.size());
+  while(!stream.eof()&&i<n){ stream >> a(i++);}
   return true;
 }
 #endif

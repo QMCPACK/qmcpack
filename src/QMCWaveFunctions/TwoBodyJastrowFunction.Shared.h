@@ -62,17 +62,16 @@ namespace ohmmsqmc {
 	@note The DistanceTableData contains only distinct pairs of the 
 	particles belonging to one set, e.g., SymmetricDTD.
     */
-    inline ValueType evaluate(ParticleSet& P,
-			      ParticleSet::ParticleGradient_t& G, 
-			      ParticleSet::ParticleLaplacian_t& L) {
-
-      ValueType sumu = 0.0;
+    inline ValueType evaluateLog(ParticleSet& P,
+			         ParticleSet::ParticleGradient_t& G, 
+			         ParticleSet::ParticleLaplacian_t& L) {
+      LogValue=0.0;
       ValueType dudr, d2udr2;
       PosType gr;
       for(int i=0; i<d_table->size(SourceIndex); i++) {
 	for(int nn=d_table->M[i]; nn<d_table->M[i+1]; nn++) {
 	  int j = d_table->J[nn];
-	  sumu += F.evaluate(d_table->r(nn), dudr, d2udr2);
+	  LogValue -= F.evaluate(d_table->r(nn), dudr, d2udr2);
 	  //multiply 1/r
 	  dudr *= d_table->rinv(nn);
 	  gr = dudr*d_table->dr(nn);
@@ -86,7 +85,13 @@ namespace ohmmsqmc {
 	  L[j] -= lap; 
 	}
       }
-      return exp(-sumu);
+      return LogValue;
+    }
+
+    inline ValueType evaluate(ParticleSet& P,
+			      ParticleSet::ParticleGradient_t& G, 
+			      ParticleSet::ParticleLaplacian_t& L) {
+      return exp(evaluateLog(P,G,L));
     }
 
     /** later merge the loop */

@@ -51,8 +51,8 @@ namespace ohmmsqmc {
 
     typedef DiracDeterminant<SPOSet> Determinant_t;
 
-    ///constructor
-    SlaterDeterminant() {  M.resize(3,0);}
+    /// constructor
+    SlaterDeterminant() {M.resize(3,0);Optimizable=false;}
 
     ///destructor
     ~SlaterDeterminant() { }
@@ -85,6 +85,17 @@ namespace ohmmsqmc {
       ValueType psi = 1.0;
       for(int i=0; i<Dets.size(); i++) psi *= Dets[i]->evaluate(P,G,L);
       return psi;
+    }
+
+    inline ValueType 
+    evaluateLog(ParticleSet& P, 
+	        ParticleSet::ParticleGradient_t& G, 
+	        ParticleSet::ParticleLaplacian_t& L) {
+      ValueType psi = 1.0;
+      for(int i=0; i<Dets.size(); i++) psi *= Dets[i]->evaluate(P,G,L);
+      SignValue = (psi<0.0)?-1.0:1.0;
+      LogValue = log(abs(psi));
+      return LogValue;
     }
 
     virtual void resizeByWalkers(int nwalkers) {

@@ -326,6 +326,15 @@ namespace ohmmsqmc {
     ///return the number of coloumns  (or the number of orbitals)
     inline int cols() const { return psiM.cols();}
 
+    ///evaluate log of determinant for a particle set: should not be called 
+    ValueType
+    evaluateLog(ParticleSet& P, 
+	        ParticleSet::ParticleGradient_t& G, 
+	        ParticleSet::ParticleLaplacian_t& L) {
+      std::cerr << "DiracDeterminant::evaluateLog should never be called directly" << std::endl;
+      return 0.0;
+    }
+
     ///evaluate for a particle set
     ValueType
     evaluate(ParticleSet& P, 

@@ -105,7 +105,7 @@ namespace ohmmsqmc {
 	    W.copyFromBuffer(w_buffer);
 	    Psi.copyFromBuffer(W,w_buffer);
 
-            ValueType psi_old = (*it)->Properties(PSI);
+            ValueType psi_old = (*it)->Properties(SIGN);
 	    ValueType psi = psi_old;
 	    //create a 3N-Dimensional Gaussian with variance=1
 	    makeGaussRandom(deltaR);
@@ -163,7 +163,7 @@ namespace ohmmsqmc {
 	      (*it)->R = W.R;
 	      //(*it)->Properties(LOGPSI) = log(fabs(psi));
 	      //(*it)->Properties(PSISQ) = psi*psi;
-	      (*it)->Properties(PSI) = psi;
+	      (*it)->Properties(SIGN) = psi;
 	      (*it)->Properties(LOCALENERGY) = H.evaluate(W);
 	      H.copy((*it)->getEnergyBase());
 	      (*it)->Properties(LOCALPOTENTIAL) = H.getLocalPotential();

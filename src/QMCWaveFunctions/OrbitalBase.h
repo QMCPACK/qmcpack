@@ -27,11 +27,17 @@ namespace ohmmsqmc {
     typedef ParticleAttrib<ValueType>    ValueVectorType;
     typedef ParticleAttrib<GradType>     GradVectorType;
 
+    bool Optimizable;
+    ValueType LogValue;
+    ValueType SignValue;
+
     ///default constructor
-    inline OrbitalBase(){ }
+    inline OrbitalBase(): Optimizable(true),LogValue(1.0),SignValue(1.0){ }
 
     ///default destructor
     virtual ~OrbitalBase() { }
+
+    inline void setOptimizable(bool optimizeit) { Optimizable = optimizeit;}
 
     /**reset the Orbital
      *
@@ -60,6 +66,9 @@ namespace ohmmsqmc {
     evaluate(ParticleSet& P, 
 	     ParticleSet::ParticleGradient_t& G, 
 	     ParticleSet::ParticleLaplacian_t& L) = 0;
+
+    virtual ValueType
+    evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L) = 0;
 
     /** evaluate the orbital values of for all the walkers
      *@param W a collection of walkers

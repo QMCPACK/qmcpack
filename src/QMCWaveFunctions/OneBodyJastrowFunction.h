@@ -114,21 +114,27 @@ namespace ohmmsqmc {
      *such that \f[ G[i]+={\bf \nabla}_i J({\bf R}) \f] 
      *and \f[ L[i]+=\nabla^2_i J({\bf R}). \f]
      */
-    ValueType evaluate(ParticleSet& P,
-		       ParticleSet::ParticleGradient_t& G, 
-		       ParticleSet::ParticleLaplacian_t& L) {
-      ValueType sumu = 0.0;
+    ValueType evaluateLog(ParticleSet& P,
+		          ParticleSet::ParticleGradient_t& G, 
+		          ParticleSet::ParticleLaplacian_t& L) {
+      LogValue=0.0;
       ValueType dudr, d2udr2;
       for(int i=0; i<d_table->size(SourceIndex); i++) {
 	for(int nn=d_table->M[i]; nn<d_table->M[i+1]; nn++) {
 	  int j = d_table->J[nn];
-	  sumu += F[d_table->PairID[nn]]->evaluate(d_table->r(nn), dudr, d2udr2);
+          LogValue -= F[d_table->PairID[nn]]->evaluate(d_table->r(nn), dudr, d2udr2);
 	  dudr *= d_table->rinv(nn);
 	  G[j] -= dudr*d_table->dr(nn);
 	  L[j] -= d2udr2+2.0*dudr;
 	}
       }
-      return exp(-sumu);
+      return LogValue;
+    }
+
+    ValueType evaluate(ParticleSet& P,
+		       ParticleSet::ParticleGradient_t& G, 
+		       ParticleSet::ParticleLaplacian_t& L) {
+      return exp(evaluateLog(P,G,L));
     }
 
 

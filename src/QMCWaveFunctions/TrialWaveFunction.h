@@ -58,6 +58,9 @@ namespace ohmmsqmc {
 
     ~TrialWaveFunction();
 
+    inline RealType getSign() const { return SignValue;}
+    inline ValueType getLogPsi() const { return LogValue;}
+
     /** manage the data */
     void add(OrbitalBase* aterm);
     void reset();
@@ -66,6 +69,15 @@ namespace ohmmsqmc {
     /** evalaute the values of the wavefunction, gradient and laplacian  for a walkers */
     ValueType evaluate(ParticleSet& P);
 
+    /** evalaute the log of the trial wave function */
+    ValueType evaluateLog(ParticleSet& P);
+    ValueType evaluateLog(ParticleSet& P, bool all);
+
+    /** evalaute the log of the trial wave function */
+    ValueType evaluateLog(ParticleSet& P, 
+        ParticleSet::ParticleGradient_t& fixedG,
+        ParticleSet::ParticleLaplacian_t& fixedL);
+
     /** functions to handle particle-by-particle update */
     ValueType ratio(ParticleSet& P, int iat);
     void update(ParticleSet& P, int iat);
@@ -73,6 +85,7 @@ namespace ohmmsqmc {
     ValueType ratio(ParticleSet& P, int iat, 
 		    ParticleSet::ParticleGradient_t& dG,
 		    ParticleSet::ParticleLaplacian_t& dL);
+
     void restore(int iat);
     void update2(ParticleSet& P, int iat);
 
@@ -89,6 +102,10 @@ namespace ohmmsqmc {
     int TotalDim;
 
     int WorkingPtcl;
+
+    RealType SignValue;
+    ValueType LogValue;
+
     ///cannot use copy constructor
     TrialWaveFunction(const TrialWaveFunction&) {}
     

@@ -18,7 +18,9 @@
 #define OHMMS_QMC_LINEARCOMIBINATIONORBITALS_H
 
 #include "OhmmsPETE/OhmmsMatrix.h"
-#include "OhmmsPETE/OhmmsVector.h"
+//#include "OhmmsPETE/OhmmsVector.h"
+//#include <boost/numeric/ublas/matrix.hpp>
+//#include <boost/numeric/ublas/vector.hpp>
 #include "Numerics/DeterminantOperators.h"
 #include <limits>
 
@@ -200,8 +202,8 @@ namespace ohmmsqmc {
 
       int norb=atoi((const char*)(xmlGetProp(cur, (const xmlChar *)"orbitals")));
 
-      vector<double> occupation(norb,1);
-      vector<double> Ctemp;
+      vector<RealType> occupation(norb,1);
+      vector<ValueType> Ctemp;
 
       int nocc(0),total(norb);
       cur = cur->xmlChildrenNode;
@@ -238,7 +240,7 @@ namespace ohmmsqmc {
       } else {
 	int n=0,i=0,nb(numBasis());
 	while(i<norb){
-	  if(occupation[n]>numeric_limits<double>::epsilon()){
+	  if(occupation[n]>numeric_limits<RealType>::epsilon()){
             int offset=n*nb;
 	    for(int j=0; j<nb; j++) C(i,j) = Ctemp[offset++];
 	    i++;
@@ -247,10 +249,9 @@ namespace ohmmsqmc {
 	}
       }
 
-      XMLReport("The Molecular Orbital Coefficients:")
-      XMLReport(C)
+      //XMLReport("The Molecular Orbital Coefficients:")
+      //XMLReport(C)
       return true;
-
     }
 
   };

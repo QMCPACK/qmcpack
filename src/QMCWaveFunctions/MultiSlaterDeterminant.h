@@ -55,7 +55,7 @@ public:
   typedef SlaterDeterminant<SPOSet> DeterminantSet_t;
 
   ///constructor
-  MultiSlaterDeterminant() { }
+  MultiSlaterDeterminant() { Optimizable=false;}
   ///destructor
   ~MultiSlaterDeterminant() { }
 
@@ -94,6 +94,16 @@ public:
     G += gt*psiinv;
     L += lt*psiinv;
     return psi;
+  }
+
+  inline ValueType
+  evaluateLog(ParticleSet& P, //const DistanceTableData* dtable,
+	      ParticleSet::ParticleGradient_t& G,
+	      ParticleSet::ParticleLaplacian_t& L){
+    ValueType psi = evaluate(P,G,L);
+    SignValue = (psi<0.0)?-1.0:1.0;
+    LogValue = log(abs(psi));
+    return LogValue;
   }
 
   /// returns the dimension of the j-th determinant 

@@ -149,14 +149,15 @@ namespace ohmmsqmc {
       W.R = (*it)->R;
       DistanceTable::update(W);
 
-      ValueType psi = Psi.evaluate(W);
+      //ValueType psi = Psi.evaluate(W);
+      ValueType logpsi(Psi.evaluateLog(W));
       ValueType vsq = Dot(W.G,W.G);
       ValueType scale = ((-1.0+sqrt(1.0+2.0*Tau*vsq))/vsq);
       (*it)->Drift = scale*W.G;
 
       RealType ene = H.evaluate(W);
       (*it)->Properties(LOCALPOTENTIAL) = H.getLocalPotential();
-      (*it)->resetProperty(psi,ene);
+      (*it)->resetProperty(logpsi,Psi.getSign(),ene);
       /** @deprecated
        * Use a matrix to store energy-related properties 
        */

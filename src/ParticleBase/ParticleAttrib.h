@@ -84,7 +84,7 @@ public:
   }
 
   /**@brief n-element without type and object names **/
-  inline ParticleAttrib(unsigned n):InUnit(0), nLocal(0), nGhosts(0){  
+  explicit inline ParticleAttrib(unsigned n):InUnit(0), nLocal(0), nGhosts(0){  
     resize(n);
     for(int i=0; i<n; i++) X[i]=T();
     //assign(*this, T());

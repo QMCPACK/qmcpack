@@ -33,15 +33,18 @@ struct VarRegistry {
   vector<T*> Pointers;
   ///vector containing the sizes of the sets of optimizable variables 
   vector<int> Sizes;
+ 
 
-  /*!
+  /** return the current size of variables */
+  inline int size() const { 
+    return Names.size();
+  }
+
+  /** Add a new optimizable variable set to the list of sets.
    * \param aname name of the optimizable set
    * \param ptr pointer to the set
    * \param size size of the set 
-   * \brief Add a new optimizable variable set to the list
-   of sets.
-  */
-
+   */
   void add(const string& aname, T* ptr, int size=1) {
     vector<string>::iterator it = Names.begin();
     while(it != Names.end()) {

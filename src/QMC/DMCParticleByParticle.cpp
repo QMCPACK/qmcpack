@@ -148,7 +148,7 @@ namespace ohmmsqmc {
 	    W.copyFromBuffer(w_buffer);
 	    Psi.copyFromBuffer(W,w_buffer);
 
-            ValueType psi_old((*it)->Properties(PSI));
+            ValueType psi_old((*it)->Properties(SIGN));
 	    ValueType psi(psi_old);
 
 	    //create a 3N-Dimensional Gaussian with variance=1
@@ -199,11 +199,11 @@ namespace ohmmsqmc {
 		w_buffer.rewind();
 		W.copyToBuffer(w_buffer);
 		psi = Psi.evaluate(W,w_buffer);
-		
 		(*it)->R = W.R;
 		(*it)->Properties(AGE) = 0;
+                //This is not so useful: allow overflow/underflow
 		(*it)->Properties(LOGPSI) = log(fabs(psi));
-		(*it)->Properties(PSI) = psi;
+		(*it)->Properties(SIGN) = psi;
 		(*it)->Properties(LOCALENERGY) = H.evaluate(W);
 		H.copy((*it)->getEnergyBase());
 		(*it)->Properties(LOCALPOTENTIAL) = H.getLocalPotential();

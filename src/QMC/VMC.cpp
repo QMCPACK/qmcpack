@@ -230,10 +230,13 @@ namespace ohmmsqmc {
       DistanceTable::update(W);
       
       //evaluate wave function
-      ValueType psi = Psi.evaluate(W);
-      //update the properties
-      Properties(LOGPSI) =log(fabs(psi));
-      Properties(PSI) = psi;
+      //ValueType psi = Psi.evaluate(W);
+      //Properties(LOGPSI) =log(fabs(psi));
+      //Properties(PSI) = psi;
+      //update the properties: note that we are getting \f$\sum_i \ln(|psi_i|)\f$ and catching the sign separately
+      ValueType logpsi(Psi.evaluateLog(W));
+      Properties(LOGPSI) =logpsi;
+      Properties(SIGN) = Psi.getSign();
       Properties(LOCALENERGY) = H.evaluate(W);
       Properties(LOCALPOTENTIAL) = H.getLocalPotential();
  
@@ -281,80 +284,80 @@ namespace ohmmsqmc {
   }
   
   /**  Advance all the walkers simultaneously. 
+   * Broken and does not help us at all
    */
-  
   void VMC::advanceAllWalkers() {
-    
-    deltaR.resize(W.getTotalNum());
-    WalkerSetRef Wref(W);
-    Wref.resize(W.getActiveWalkers(),W.getTotalNum());
-    
-    //Pooma::Clock timer;
-    RealType oneovertau = 1.0/Tau;
-    RealType oneover2tau = 0.5*oneovertau;
-    RealType g = sqrt(Tau);
-    
-    MCWalkerConfiguration::PropertyContainer_t Properties;
-    makeGaussRandom(Wref.R);
-    
-    Wref.R *= g;
-    
-    int nptcl = W.getTotalNum();
-    int iw = 0;
-    MCWalkerConfiguration::iterator it = W.begin();
-    while(it !=  W.end()) {
-      const ParticleSet::ParticlePos_t& r = (*it)->R;
-      for(int jat=0; jat<nptcl; jat++) {
-	Wref.R(iw,jat) += r(jat) + (*it)->Drift(jat);
-      }
-      iw++; it++;
-    }
-    
-    DistanceTable::update(Wref);
-    
-    OrbitalBase::ValueVectorType   psi(iw), energy(iw);
-    
-    Psi.evaluate(Wref,psi);
-    
-    H.evaluate(Wref,energy);
-    
-    //multiply tau to convert gradient to drift term
-    Wref.G *= Tau;
-    
-    iw = 0;
-    it = W.begin();
-    while(it !=  W.end()) {
-      
-      ValueType eold = Properties(LOCALENERGY);
-      
-      for(int iat=0; iat<nptcl; iat++)
-	deltaR(iat) = Wref.R(iw,iat) - (*it)->R(iat) - (*it)->Drift(iat);
-      //RealType forwardGF = exp(-oneover2tau*Dot(deltaR,deltaR));
-      RealType logforwardGF = -oneover2tau*Dot(deltaR,deltaR);
-      
-      for(int iat=0; iat<nptcl; iat++)
-	deltaR(iat) = (*it)->R(iat) - Wref.R(iw,iat) - Wref.G(iw,iat);
-      
-      ////RealType backwardGF = exp(-oneover2tau*Dot(deltaR,deltaR));
-      RealType logbackwardGF = -oneover2tau*Dot(deltaR,deltaR);
-      
-      RealType logpsi=log(fabs(psi(iw)));
-      RealType g=exp(logbackwardGF-logforwardGF+2.0*(logpsi-(*it)->Properties(LOGPSI)));
-      //ValueType psisq = psi(iw)*psi(iw);
-      if(Random() > g) {
-	++nReject; 
-	(*it)->Properties(AGE) += 1;
-      } else {
-	(*it)->Properties(AGE) = 0;
-	for(int iat=0; iat<nptcl; iat++) (*it)->R(iat) = Wref.R(iw,iat);
-	for(int iat=0; iat<nptcl; iat++) (*it)->Drift(iat) = Wref.G(iw,iat);
-	(*it)->Properties(PSI) = psi(iw);
-	(*it)->Properties(LOGPSI) = logpsi;//log(fabs(psi));
-	(*it)->Properties(LOCALENERGY) = energy(iw);
-	++nAccept;
-      }
-      iw++;it++;
-    }
+   // deltaR.resize(W.getTotalNum());
+   // WalkerSetRef Wref(W);
+   // Wref.resize(W.getActiveWalkers(),W.getTotalNum());
+   // 
+   // //Pooma::Clock timer;
+   // RealType oneovertau = 1.0/Tau;
+   // RealType oneover2tau = 0.5*oneovertau;
+   // RealType g = sqrt(Tau);
+   // 
+   // MCWalkerConfiguration::PropertyContainer_t Properties;
+   // makeGaussRandom(Wref.R);
+   // 
+   // Wref.R *= g;
+   // 
+   // int nptcl = W.getTotalNum();
+   // int iw = 0;
+   // MCWalkerConfiguration::iterator it = W.begin();
+   // while(it !=  W.end()) {
+   //   const ParticleSet::ParticlePos_t& r = (*it)->R;
+   //   for(int jat=0; jat<nptcl; jat++) {
+   //     Wref.R(iw,jat) += r(jat) + (*it)->Drift(jat);
+   //   }
+   //   iw++; it++;
+   // }
+   // 
+   // DistanceTable::update(Wref);
+   // 
+   // OrbitalBase::ValueVectorType   logpsi(iw), energy(iw);
+   // 
+   // //THIS IS TOTALLY BROKEN
+   // Psi.evaluate(Wref,logpsi);
+   // 
+   // H.evaluate(Wref,energy);
+   // 
+   // //multiply tau to convert gradient to drift term
+   // Wref.G *= Tau;
+   // 
+   // iw = 0;
+   // it = W.begin();
+   // while(it !=  W.end()) {
+   //   
+   //   ValueType eold = Properties(LOCALENERGY);
+   //   
+   //   for(int iat=0; iat<nptcl; iat++)
+   //     deltaR(iat) = Wref.R(iw,iat) - (*it)->R(iat) - (*it)->Drift(iat);
+   //   //RealType forwardGF = exp(-oneover2tau*Dot(deltaR,deltaR));
+   //   RealType logforwardGF = -oneover2tau*Dot(deltaR,deltaR);
+   //   
+   //   for(int iat=0; iat<nptcl; iat++)
+   //     deltaR(iat) = (*it)->R(iat) - Wref.R(iw,iat) - Wref.G(iw,iat);
+   //   
+   //   ////RealType backwardGF = exp(-oneover2tau*Dot(deltaR,deltaR));
+   //   RealType logbackwardGF = -oneover2tau*Dot(deltaR,deltaR);
+   //   
+   //   RealType logpsi=psi(iw);
+   //   RealType g=exp(logbackwardGF-logforwardGF+2.0*(logpsi-(*it)->Properties(LOGPSI)));
+   //   //ValueType psisq = psi(iw)*psi(iw);
+   //   if(Random() > g) {
+   //     ++nReject; 
+   //     (*it)->Properties(AGE) += 1;
+   //   } else {
+   //     (*it)->Properties(AGE) = 0;
+   //     for(int iat=0; iat<nptcl; iat++) (*it)->R(iat) = Wref.R(iw,iat);
+   //     for(int iat=0; iat<nptcl; iat++) (*it)->Drift(iat) = Wref.G(iw,iat);
+   //     (*it)->Properties(PSI) = psi(iw);
+   //     (*it)->Properties(LOGPSI) = logpsi;//log(fabs(psi));
+   //     (*it)->Properties(LOCALENERGY) = energy(iw);
+   //     ++nAccept;
+   //   }
+   //   iw++;it++;
+   // }
   }
 }
 

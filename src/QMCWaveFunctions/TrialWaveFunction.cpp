@@ -21,7 +21,7 @@
 
 namespace ohmmsqmc {
 
-  TrialWaveFunction::TrialWaveFunction(){ }
+  TrialWaveFunction::TrialWaveFunction():SignValue(1.0),LogValue(0.0){ }
 
   /**@warning Have not decided whether Z is cleaned up by TrialWaveFunction 
    *  or not. It will depend on I/O implementation.
@@ -37,6 +37,88 @@ namespace ohmmsqmc {
     Z.push_back(aterm);
   }
   
+  /** evaluate the log value of a many-body wave function
+   *@param P input configuration containing N particles
+   *@param all select the wave functions
+   *@return the value of log( PI_i psi_i)  many-body wave function
+   *
+   * @if all == true
+   *  all the wave functions evaluate the log value
+   * @else
+   *  only the wave functions whose Optimizable is set to zero.
+   *
+   * Upon return, the gradient and laplacian operators are added by the components.
+   * Each OrbitalBase evaluates SignValue and LogValue = log(abs(psi_i))
+   * Jastrow functions always have SignValue=1.
+   */
+  TrialWaveFunction::ValueType 
+  TrialWaveFunction::evaluateLog(ParticleSet& P, bool all) {
+    P.G = 0.0;
+    P.L = 0.0;
+    //ValueType logpsi=0.0;
+    LogValue=0.0;
+    SignValue=1.0;
+    vector<OrbitalBase*>::iterator it(Z.begin());
+    vector<OrbitalBase*>::iterator it_end(Z.end());
+    while(it != it_end) {
+      if(all || (*it)->Optimizable) {
+        LogValue += (*it)->evaluateLog(P, P.G, P.L); 
+        SignValue *= (*it)->SignValue;
+      }
+      ++it;
+    }
+    return LogValue;
+  }
+
+  TrialWaveFunction::ValueType 
+  TrialWaveFunction::evaluateLog(ParticleSet& P) {
+    P.G = 0.0;
+    P.L = 0.0;
+    //ValueType logpsi=0.0;
+    LogValue=0.0;
+    SignValue=1.0;
+    vector<OrbitalBase*>::iterator it(Z.begin());
+    vector<OrbitalBase*>::iterator it_end(Z.end());
+    while(it != it_end) {
+      LogValue += (*it)->evaluateLog(P, P.G, P.L); 
+      SignValue *= (*it)->SignValue;
+      ++it;
+    }
+    return LogValue;
+  }
+  /** evalaute the sum of log value of optimizable many-body wavefunctions
+   * @param P  input configuration containing N particles
+   * @param fixedG gradients of log(psi) of the fixed wave functions
+   * @param fixedL laplacians of log(psi) of the fixed wave functions
+   *
+   * This function is introduced for optimization only.
+   * fixedG and fixedL save the terms coming from the wave functions
+   * that are invarient during optimizations.
+   * It is expected that evaluateLog(P,false) is called later
+   * and the external object adds the varying G and L and the fixed terms.
+   */
+  TrialWaveFunction::ValueType 
+  TrialWaveFunction::evaluateLog(ParticleSet& P,
+        ParticleSet::ParticleGradient_t& fixedG,
+        ParticleSet::ParticleLaplacian_t& fixedL) {
+    P.G = 0.0;
+    P.L = 0.0;
+    fixedG = 0.0;
+    fixedL = 0.0;
+    ValueType logpsi(0.0),t(0.0);
+    vector<OrbitalBase*>::iterator it(Z.begin());
+    vector<OrbitalBase*>::iterator it_end(Z.end());
+    while(it != it_end) {
+      if((*it)->Optimizable) 
+        logpsi += (*it)->evaluateLog(P, P.G, P.L); 
+      else
+        t += (*it)->evaluateLog(P, fixedG, fixedL); 
+      ++it;
+    }
+    P.G += fixedG; P.L += fixedL;
+    return logpsi;
+  }
+  
   /** evaluate the value of a many-body wave function
    *@param P input configuration containing N particles
    *@return the value of many-body wave function
@@ -49,13 +131,12 @@ namespace ohmmsqmc {
     P.L = 0.0;
     ValueType psi = 1.0;
     for(int i=0; i<Z.size(); i++) {
-      psi *= Z[i]->evaluate(P,P.G,P.L);
+      psi *= Z[i]->evaluate(P, P.G, P.L);
     }
     //for(int iat=0; iat<P.getTotalNum(); iat++)
     // cout << P.G[iat] << " " << P.L[iat] << endl;
     return psi;
   }
-  
   
   /**
      @param W the input set of walkers
@@ -168,6 +249,7 @@ namespace ohmmsqmc {
 //     }
     return psi;
   }
+
 }
 /***************************************************************************
  * $RCSfile$   $Author$

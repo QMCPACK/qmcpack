@@ -60,6 +60,8 @@ namespace ohmmsqmc {
     /**\typedef The type of a simple function,e.g., PadeJastrow<double> */
     typedef typename JeeType::FuncType FuncType;
 
+    int cur_var = wfs_ref.VarList.size();
+
     vector<FuncType*> jastrow;
     DistanceTableData* d_table = NULL;
     cur = cur->xmlChildrenNode;
@@ -121,6 +123,11 @@ namespace ohmmsqmc {
       }
     }
 
+    //set this jastrow function to be not optimizable
+    if(wfs_ref.VarList.size() == cur_var) {
+      J2->setOptimizable(false);
+    }
+
     wfs_ref.add(J2);
     XMLReport("Added a Two-Body Jastrow Function")
     return true;
@@ -144,6 +151,8 @@ namespace ohmmsqmc {
 
     /**\typedef The type of a simple function,e.g., PadeJastrow<double> */
     typedef typename JeeType::FuncType FuncType;
+
+    int cur_var = wfs_ref.VarList.size();
 
     DistanceTableData* d_table = NULL;
     cur = cur->xmlChildrenNode;
@@ -179,6 +188,10 @@ namespace ohmmsqmc {
     }
 
     if(J2) {
+      //set this jastrow function to be not optimizable
+      if(wfs_ref.VarList.size() == cur_var) {
+        J2->setOptimizable(false);
+      }
       wfs_ref.add(J2);
       XMLReport("Added a Two-Body Jastrow Function")
       return true;
@@ -202,6 +215,7 @@ namespace ohmmsqmc {
   JastrowBuilder::createOneBody(xmlNodePtr cur, JneType* J1){
 
     typedef typename JneType::FuncType FuncType;
+    int cur_var = wfs_ref.VarList.size();
 
     vector<FuncType*> jastrow;
     DistanceTableData* d_table = NULL;
@@ -263,6 +277,10 @@ namespace ohmmsqmc {
       }
     }
 
+    //set this jastrow function to be not optimizable
+    if(wfs_ref.VarList.size() == cur_var) {
+      J1->setOptimizable(false);
+    }
     wfs_ref.add(J1);
     XMLReport("Added a One-Body Jastrow Function")
     return true;
@@ -286,9 +304,9 @@ namespace ohmmsqmc {
     LOGMSG("")
     LOGMSG("Jastrow Factor: Name = "<< jastname <<" Type = "<<jasttype)
 
-      /*Currently for Two-Body Jastrow only Pade function: ar/(1+br) form 
-	is implemted
-      */
+    /*Currently for Two-Body Jastrow only Pade function: ar/(1+br) form 
+is implemted
+    */
     if(jasttype == "Two-Body-Spin") {
       TwoBodyJastrow<PadeJastrow<ValueType>,false> *J2 = NULL;
       return createTwoBodySpin(cur,J2);
@@ -312,7 +330,12 @@ namespace ohmmsqmc {
     } else if(jasttype == "Polarization") {
       PolarizedJastrow *jp=new PolarizedJastrow;
       if(jp) {
+        //compare the size of VarList before/after reading in
+        int cur_var = wfs_ref.VarList.size();
         jp->put(cur,wfs_ref.VarList);
+        if(wfs_ref.VarList.size() == cur_var) {
+          jp->setOptimizable(false);
+        }
         wfs_ref.add(jp);
         return true;
       } else {

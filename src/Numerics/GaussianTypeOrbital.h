@@ -32,13 +32,14 @@ struct RadialGaussian {
   T Sigma;
   T Norm;
   RadialGaussian(): L(0), Sigma(1.0), Norm(1.0) { } 
-  RadialGaussian(int l, double sig, double norm=1.0): L(l), Sigma(sig),Norm(norm) { } 
+  RadialGaussian(int l, T sig, T norm=1.0): L(l), Sigma(sig),Norm(norm) { } 
 
   inline void setgrid(T r) { }
 
-  inline void evaluate(T r, T rinv) {
-    Y = evaluate(r,rinv,dY,d2Y);
-  }
+  //inline void evaluate(T r, T rinv) {
+  //  //Y = evaluate(r,rinv,dY,d2Y);
+  //}
+
   inline T evaluate(T r, T rinv, T& drnl, T& d2rnl) {
     if(L) {	
       T oneoverrl = pow(rinv,L);
@@ -56,6 +57,7 @@ struct RadialGaussian {
     }
   }
 };
+
 #endif
 /***************************************************************************
  * $RCSfile$   $Author$

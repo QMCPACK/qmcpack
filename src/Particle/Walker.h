@@ -25,7 +25,7 @@ namespace ohmmsqmc {
 	LOCALPOTENTIAL, /*!< local potential energy = local energy - kinetic energy */
 	MULTIPLICITY, /*!< multiplicity, used by DMC for branching */
 	LOGPSI,        /*!< log(fabs(psi)) instead of square of the many-body wavefunction \f$|\Psi|^2\f$ */
-	PSI,          /*!< value of the many-body wavefunction \f$\Psi(\{R\})\f$ */
+	SIGN,          /*!< value of the many-body wavefunction \f$\Psi(\{R\})\f$ */
 	AGE,          /*!< the age of the walker. set to zero when the walker is updated */
 	SCALED,       /*!< scaling factor for the drift */
 	WOSVAR,       /*!< Variance of WOS potential */
@@ -64,7 +64,7 @@ namespace ohmmsqmc {
     inline explicit Walker(int n) : Properties(0.0) {  
       Properties[WEIGHT] = 1.0;
       Properties[MULTIPLICITY] = 1.0;
-      Properties[PSI] = 1.0;
+      Properties[SIGN] = 1.0;
       resize(n);
     }
     
@@ -72,7 +72,7 @@ namespace ohmmsqmc {
     inline Walker() : Properties(0.0) {
       Properties[WEIGHT] = 1.0;
       Properties[MULTIPLICITY] = 1.0;
-      Properties[PSI] = 1.0;
+      Properties[SIGN] = 1.0;
     }
 
     ///copy constructor
@@ -113,12 +113,12 @@ namespace ohmmsqmc {
      *
      *Assign the values and reset the weight and multiplicity to one to start a run
      */
-    inline void resetProperty(T psi, T ene) {
+    inline void resetProperty(T logpsi, T sigN, T ene) {
       Properties(WEIGHT) = 1.0;
       Properties(MULTIPLICITY) = 1.0;
       Properties(LOCALENERGY) = ene;
-      Properties(LOGPSI)=log(fabs(psi));
-      Properties(PSI)=psi;
+      Properties(LOGPSI)=logpsi;
+      Properties(SIGN)=sigN;
     }
 
 

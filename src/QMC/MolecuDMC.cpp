@@ -289,7 +289,7 @@ namespace ohmmsqmc {
       if(wos_ref) {
 	W.R = (*it)->R;
 	DistanceTable::update(W);
-	ValueType psi = Psi.evaluate(W);
+	ValueType psi(Psi.evaluateLog(W));//not used anyway
 	eold = H.evaluate(W);
 	emixed += 0.5*W.Properties(WOSVAR)*Tau_var;
       }
@@ -304,11 +304,11 @@ namespace ohmmsqmc {
       DistanceTable::update(W);
       
       //evaluate wave function
-      ValueType psi = Psi.evaluate(W);
+      ValueType logpsi(Psi.evaluateLog(W));
       //update the properties
       W.Properties(LOCALENERGY) = H.evaluate(W);
-      W.Properties(LOGPSI) =log(fabs(psi));
-      W.Properties(PSI) = psi;
+      W.Properties(LOGPSI) =logpsi;
+      W.Properties(SIGN) = Psi.getSign();
       bool accepted=false; 
 
       //deltaR = W.R - (*it)->R - (*it)->Drift;
@@ -353,12 +353,11 @@ namespace ohmmsqmc {
       (*it)->Properties(MULTIPLICITY) = M + Random();
       
       //node-crossing: kill it for the time being
-      if(Branch(W.Properties(PSI),(*it)->Properties(PSI))) {
+      if(Branch(W.Properties(SIGN),(*it)->Properties(SIGN))) {
 	accepted=false;     
 	(*it)->Properties(WEIGHT) = 0.0; 
 	(*it)->Properties(MULTIPLICITY) = 0.0;
       }
-
       /*      
       if(Branch(W.Properties(PSI),(*it)->Properties(PSI))) {
 	accepted=false;     
@@ -400,103 +399,102 @@ namespace ohmmsqmc {
 	(*it)->Properties(MULTIPLICITY) = M + Random();
       }
       */
-
       if(accepted) 
-	++nAccept;
+        ++nAccept;
       else 
-	++nReject;
-      
+        ++nReject;
       ++it;
     }
   }
 
   /**  Advance all the walkers simultaneously. 
    * \param Branch a class to perform branching    
+   * Broken and does not help us anyway.
    */
   template<class BRANCHER>
   void MolecuDMC::advanceAllWalkers(BRANCHER& Branch) {
-    //WARNING: This function hasn't been tested recently
-    static ParticleSet::ParticlePos_t deltaR(W.getTotalNum());
-    
-    WalkerSetRef Wref(W);
-    Wref.resize(W.getActiveWalkers(),W.getTotalNum());
-    
-    //Pooma::Clock timer;
-    RealType oneovertau = 1.0/Tau;
-    RealType oneover2tau = 0.5*oneovertau;
-    RealType g = sqrt(Tau);
-    
-    MCWalkerConfiguration::PropertyContainer_t Properties;
-    makeGaussRandom(Wref.R);
-    
-    Wref.R *= g;
-    
-    int nptcl = W.getTotalNum();
-    int iw = 0;
-    MCWalkerConfiguration::iterator it = W.begin();
-    while(it !=  W.end()) {
-      const ParticleSet::ParticlePos_t& r = (*it)->R;
-      for(int jat=0; jat<nptcl; jat++) {
-	Wref.R(iw,jat) += r(jat) + (*it)->Drift(jat);
-      }
-      iw++; it++;
-    }
-    
-    //set acceptance probability
-    RealType prob = 0.0;
-    DistanceTable::update(Wref);
-    
-    OrbitalBase::ValueVectorType psi(iw), energy(iw);
-    
-    Psi.evaluate(Wref,psi);
-    
-    H.evaluate(Wref,energy);
-    
-    //multiply tau to convert gradient to drift term
-    Wref.G *= Tau;
-    
-    iw = 0;
-    it = W.begin();
-    while(it !=  W.end()) {
-      if(Branch(psi(iw),(*it)->Properties(PSI))) {
-	++nReject;
-      } else {
-	
-	ValueType eold = Properties(LOCALENERGY);
-	
-	for(int iat=0; iat<nptcl; iat++)
-	  deltaR(iat) = Wref.R(iw,iat) - (*it)->R(iat) - (*it)->Drift(iat);
-	//RealType forwardGF = exp(-oneover2tau*Dot(deltaR,deltaR));
-	RealType logforwardGF = -oneover2tau*Dot(deltaR,deltaR);
-	
-	for(int iat=0; iat<nptcl; iat++)
-	  deltaR(iat) = (*it)->R(iat) - Wref.R(iw,iat) - Wref.G(iw,iat);
-	
-	//RealType backwardGF = exp(-oneover2tau*Dot(deltaR,deltaR));
-	RealType logbackwardGF = -oneover2tau*Dot(deltaR,deltaR);
-	
-	ValueType logpsi(log(abs(psi(iw))));
-	prob = min(exp(logbackwardGF-forwardGF+2,0*(logpsi-(*it)->Properties(LOGPSI))),1.0);
-	//prob = min(backwardGF/forwardGF*psisq/(*it)->Properties(PSISQ),1.0);
-	if(Random() > prob) { 
-	  ++nReject; 
-	  (*it)->Properties(AGE) += 1;
-	} else {
-	  (*it)->Properties(AGE) = 0;
-	  for(int iat=0; iat<nptcl; iat++) (*it)->R(iat) = Wref.R(iw,iat);
-	  for(int iat=0; iat<nptcl; iat++) (*it)->Drift(iat) = Wref.G(iw,iat);
-	  (*it)->Properties(PSI) = psi(iw);
-	  (*it)->Properties(LOGPSI) = logpsi;
-	  (*it)->Properties(LOCALENERGY) = energy(iw);
-	  ++nAccept;
-	}
-	
-	RealType m = Branch.ratio(Tau,(*it)->Properties(LOCALENERGY),eold,1.0-prob);
-	(*it)->Properties(WEIGHT) *= m;
-	(*it)->Properties(MULTIPLICITY) *= m;
-      }
-      iw++;it++;
-    }
+  //  //WARNING: This function hasn't been tested recently
+  //  static ParticleSet::ParticlePos_t deltaR(W.getTotalNum());
+  //  
+  //  WalkerSetRef Wref(W);
+  //  Wref.resize(W.getActiveWalkers(),W.getTotalNum());
+  //  
+  //  //Pooma::Clock timer;
+  //  RealType oneovertau = 1.0/Tau;
+  //  RealType oneover2tau = 0.5*oneovertau;
+  //  RealType g = sqrt(Tau);
+  //  
+  //  MCWalkerConfiguration::PropertyContainer_t Properties;
+  //  makeGaussRandom(Wref.R);
+  //  
+  //  Wref.R *= g;
+  //  
+  //  int nptcl = W.getTotalNum();
+  //  int iw = 0;
+  //  MCWalkerConfiguration::iterator it = W.begin();
+  //  while(it !=  W.end()) {
+  //    const ParticleSet::ParticlePos_t& r = (*it)->R;
+  //    for(int jat=0; jat<nptcl; jat++) {
+  //      Wref.R(iw,jat) += r(jat) + (*it)->Drift(jat);
+  //    }
+  //    iw++; it++;
+  //  }
+  //  
+  //  //set acceptance probability
+  //  RealType prob = 0.0;
+  //  DistanceTable::update(Wref);
+  //  
+  //  OrbitalBase::ValueVectorType psi(iw), energy(iw);
+  //  
+  //  Psi.evaluate(Wref,psi);
+  //  
+  //  H.evaluate(Wref,energy);
+  //  
+  //  //multiply tau to convert gradient to drift term
+  //  Wref.G *= Tau;
+  //  
+  //  iw = 0;
+  //  it = W.begin();
+  //  while(it !=  W.end()) {
+  //    if(Branch(psi(iw),(*it)->Properties(SIGN))) {
+  //      ++nReject;
+  //    } else {
+  //      
+  //      ValueType eold = Properties(LOCALENERGY);
+  //      
+  //      for(int iat=0; iat<nptcl; iat++)
+  //        deltaR(iat) = Wref.R(iw,iat) - (*it)->R(iat) - (*it)->Drift(iat);
+  //      //RealType forwardGF = exp(-oneover2tau*Dot(deltaR,deltaR));
+  //      RealType logforwardGF = -oneover2tau*Dot(deltaR,deltaR);
+  //      
+  //      for(int iat=0; iat<nptcl; iat++)
+  //        deltaR(iat) = (*it)->R(iat) - Wref.R(iw,iat) - Wref.G(iw,iat);
+  //      
+  //      //RealType backwardGF = exp(-oneover2tau*Dot(deltaR,deltaR));
+  //      RealType logbackwardGF = -oneover2tau*Dot(deltaR,deltaR);
+  //      
+  //      ValueType logpsi(log(abs(psi(iw))));
+  //      prob = min(exp(logbackwardGF-forwardGF+2,0*(logpsi-(*it)->Properties(LOGPSI))),1.0);
+  //      //prob = min(backwardGF/forwardGF*psisq/(*it)->Properties(PSISQ),1.0);
+  //      if(Random() > prob) { 
+  //        ++nReject; 
+  //        (*it)->Properties(AGE) += 1;
+  //      } else {
+  //        (*it)->Properties(AGE) = 0;
+  //        for(int iat=0; iat<nptcl; iat++) (*it)->R(iat) = Wref.R(iw,iat);
+  //        for(int iat=0; iat<nptcl; iat++) (*it)->Drift(iat) = Wref.G(iw,iat);
+  //        (*it)->Properties(PSI) = psi(iw);
+  //        (*it)->Properties(LOGPSI) = logpsi;
+  //        (*it)->Properties(LOCALENERGY) = energy(iw);
+  //        ++nAccept;
+  //      }
+  //      
+  //      RealType m = Branch.ratio(Tau,(*it)->Properties(LOCALENERGY),eold,1.0-prob);
+  //      (*it)->Properties(WEIGHT) *= m;
+  //      (*it)->Properties(MULTIPLICITY) *= m;
+  //    }
+  //    iw++;it++;
+  //  }
   }
 }
 /***************************************************************************
