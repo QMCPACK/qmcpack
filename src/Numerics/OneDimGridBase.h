@@ -159,8 +159,7 @@ struct LogGridZero: public OneDimGridBase<T,CT> {
     OneOverA = 1.0/a;
     OneOverB = 1.0/b;
     X.resize(n);
-    for(int i=0; i<n; i++)
-      X[i] = b*exp(a*i)-b;
+    for(int i=0; i<n; i++) X[i] = b*(exp(a*i)-1.0);
 
     Delta = 0.0;
   }

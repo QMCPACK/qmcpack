@@ -103,7 +103,8 @@ GaussianCombo<T>::GaussianCombo(int l, bool normalized,
 {
   L = static_cast<T>(l);
   //Everything related to L goes to NormL and NormPow
-  NormL = pow(2,L+1)*sqrt(2.0/static_cast<T>(DFactorial(2*l+1)))*pow(2.0/M_PI,0.25);
+  const T pi = 4.0*atan(1.0);
+  NormL = pow(2,L+1)*sqrt(2.0/static_cast<T>(DFactorial(2*l+1)))*pow(2.0/pi,0.25);
   NormPow = 0.5*(L+1.0)+0.25;
 }
 
@@ -128,7 +129,6 @@ void GaussianCombo<T>::reset() {
 
   for(int i=0; i<InParam.size(); i++) {
     radAttrib.put(InParam[i]);
-    LOGMSG(" Gaussian Component = " << alpha << " " << c)
     //const xmlChar* aptr = xmlGetProp(InParam[i],(const xmlChar *)expName.c_str());
     //const xmlChar* cptr = xmlGetProp(InParam[i],(const xmlChar *)coeffName.c_str());
     //if(aptr == 0) {
@@ -140,6 +140,7 @@ void GaussianCombo<T>::reset() {
     //if(cptr) c = atof((const char*)cptr);
     //get the normalization factor
     if(!Normalized) c *= NormL*pow(alpha,NormPow); 
+    LOGMSG(" Gaussian exponent = " << alpha << " contraction=" << c)
     gset[i].reset(alpha,c);
   }
 }

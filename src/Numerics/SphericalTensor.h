@@ -88,11 +88,10 @@ SphericalTensor<T, Point_t>::SphericalTensor(const int lmax, bool addsign) : Lma
   const value_type sqrt2 = sqrt(2.0);
   if(addsign) {
     for (int l=0; l<=Lmax; l++) {
-      T p = -1.0*sqrt2;
+      NormFactor[index(l,0)]=1.0;
       for (int m=1; m<=l; m++) {
-        NormFactor[index(l,m)]=p;
-        NormFactor[index(l,-m)]=p;
-        p*=-1.0;
+        NormFactor[index(l,m)]=pow(-1.0e0,m)*sqrt2;
+        NormFactor[index(l,-m)]=pow(-1.0e0,-m)*sqrt2;
      }
     }
   } else {

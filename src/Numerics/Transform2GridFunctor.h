@@ -59,7 +59,6 @@ struct Transform2GridFunctor:
    values to the grid points and performs the 1D-Cubic Spline 
    for interpolation.
   */
-
   void generate(point_type ri, point_type rf, int ng, int np=0) {
 
     //reference to the output functions grid
@@ -87,6 +86,24 @@ struct Transform2GridFunctor:
     //spline the output function
     out_.spline(0,deriv,grid.size()-1,0.0);
   }
+
+  inline void generate(point_type rf) {
+
+    //reference to the output functions grid
+    typename FnOut::grid_type& grid = out_.grid();
+
+    int npts = grid.index(rf)+1;
+    out_.resize(grid.size());
+
+    for(int i=0; i<npts; i++) out_(i) = in_.f(grid(i));
+
+    //boundary conditions
+    result_t deriv= in_.df(grid(0));
+
+    //spline the output function
+    out_.spline(0,deriv,npts-1,0.0);
+  }
+
 
  /*! \fn void generate(int np=0)
    * \param np the inverse power
