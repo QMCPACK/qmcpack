@@ -42,10 +42,11 @@ public:
     return *this;
   }
 
-  ///set the Current to zero 
-  inline void ready() { Current = 0;}
+  ///set the Current to zero
+  inline void rewind() { Current = 0;}
 
   inline void add(T x) { push_back(x);}
+
   template<class _InputIterator>
   inline void add(_InputIterator first, _InputIterator last) {
     while(first != last) {
