@@ -103,39 +103,37 @@ namespace ohmmsqmc {
       for(int nl=0; nl<Rnl.size(); nl++) Rnl[nl]->reset();
     }
 
-
     /**@ingroup particlebyparticle
      */
     template<class VM, class GM>
     inline void 
     evaluate(int source, int iat,  int offset, VM& y, GM& dy, VM& d2y) {
 
-      RealType r = myTable->Temp[source].r1;
-      RealType rinv = myTable->Temp[source].rinv1;
-      PosType dr = myTable->Temp[source].dr1;
+      RealType r(myTable->Temp[source].r1);
+      RealType rinv(myTable->Temp[source].rinv1);
+      PosType  dr(myTable->Temp[source].dr1);
 
       Ylm.evaluate(dr);
 	
-      //find the indices for distinct grids
-      for(int ir=0; ir<Grids.size(); ir++) {
-	Grids[ir]->index(r);
-      }
+      typename vector<GT*>::iterator git(Grids.begin()),git_end(Grids.end());
+      while(git != git_end) {(*git)->index(r); ++git;}
       
-      //spline them
-      for(int nl=0; nl<Rnl.size(); nl++) {
-	Rnl[nl]->evaluate(r,rinv);
-      }
+      typename vector<ROT*>::iterator rit(Rnl.begin()), rit_end(Rnl.end());
+      while(rit != rit_end) {(*rit)->evaluate(r,rinv); ++rit;}
       
-      for(int ib=0; ib<NL.size(); ib++, offset++) {
-	int nl = NL[ib];
-	int lm = LM[ib];
-	RealType drnloverr = rinv*Rnl[nl]->dY;
-	ValueType ang = Ylm.getYlm(lm);
-	PosType gr_rad = drnloverr*dr;
-	PosType gr_ang = Ylm.getGradYlm(lm);
-	y(0,offset)= ang*Rnl[nl]->Y;
-	dy(0,offset) = ang*gr_rad+Rnl[nl]->Y*gr_ang;
-	d2y(0,offset)= ang*(2.0*drnloverr+Rnl[nl]->d2Y) + 2.0*dot(gr_rad,gr_ang);
+      vector<int>::iterator nlit(NL.begin()),nlit_end(NL.end()),lmit(LM.begin()); 
+      while(nlit != nlit_end) { //for(int ib=0; ib<NL.size(); ib++, offset++) {
+	int nl(*nlit);//NL[ib];
+	int lm(*lmit);//LM[ib];
+        const ROT& rnl(*Rnl[nl]);
+	RealType drnloverr(rinv*rnl.dY);
+	ValueType ang(Ylm.getYlm(lm));
+	PosType gr_rad(drnloverr*dr);
+	PosType gr_ang(Ylm.getGradYlm(lm));
+	y(0,offset)= ang*rnl.Y;
+	dy(0,offset) = ang*gr_rad+rnl.Y*gr_ang;
+	d2y(0,offset)= ang*(2.0*drnloverr+rnl.d2Y) + 2.0*dot(gr_rad,gr_ang);
+        ++nlit; ++lmit;++offset;
       }
     }
 
