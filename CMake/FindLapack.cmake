@@ -10,6 +10,7 @@
 # 5) give up
 # 
 SET(MKL_PATHS "")
+#SET(BLAS_EXTRA_LIBRARY "")
 
 #use environment variables
 #use environment variables: e.g, module at OSC uses MKL
@@ -29,6 +30,7 @@ IF($ENV{MKL} MATCHES "mkl")
 	/usr/local/intel/mkl/lib/32 
 	/opt/intel/mkl/lib/32
   ) 
+
   MESSAGE(STATUS "Looking for intel/mkl library in ${MKL_PATHS}")
 
   IF(NOT LAPACK_LIBRARY_INIT)
@@ -40,14 +42,15 @@ IF($ENV{MKL} MATCHES "mkl")
       NAMES mkl mkl_itp
       PATHS ${MKL_PATHS}
     )
-    FIND_LIBRARY(BLAS_EXTRA_LIBRARY
-      NAMES guide
-      PATHS ${MKL_PATHS}
-    )
+  FIND_LIBRARY(BLAS_EXTRA_LIBRARY
+    NAMES guide
+    PATHS ${MKL_PATHS}
+  )
     IF(LAPACK_LIBRARY MATCHES "mkl")
       MESSAGE(STATUS "Found intel/mkl library")
       SET(LAPACK_LIBRARY_INIT 1 CACHE BOOL "lapack is initialized")
       SET(BLAS_LIBRARY_INIT 1 CACHE BOOL "blas is initialized")
+      SET(BLAS_LIBRARY ${BLAS_LIBRARY} ${BLAS_EXTRA_LIBRARY})
     ENDIF(LAPACK_LIBRARY MATCHES "mkl")
 ENDIF(NOT LAPACK_LIBRARY_INIT)
 

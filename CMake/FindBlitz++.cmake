@@ -7,9 +7,9 @@
 # May want to define this but seldom required
 # BLITZ_LIBRARY = where blitz library can be found (reserved)
 #
-IF(EXISTS ${PROJECT_CMAKE}/BlitzppConfig.cmake)
-  INCLUDE(${PROJECT_CMAKE}/BlitzppConfig.cmake)
-ENDIF(EXISTS ${PROJECT_CMAKE}/BlitzppConfig.cmake)
+#IF(EXISTS ${PROJECT_CMAKE}/BlitzppConfig.cmake)
+#  INCLUDE(${PROJECT_CMAKE}/BlitzppConfig.cmake)
+#ENDIF(EXISTS ${PROJECT_CMAKE}/BlitzppConfig.cmake)
 
 IF(Blitzpp_INCLUDE_DIRS)
   FIND_PATH(BLITZ_INCLUDE_DIR blitz/blitz.h  ${Blitzpp_INCLUDE_DIRS})

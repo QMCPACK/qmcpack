@@ -19,20 +19,20 @@ IF(Gsl_INCLUDE_DIRS)
 ELSE(Gsl_INCLUDE_DIRS)
 
   SET(TRIAL_LIBRARY_PATHS
+    $ENV{GSL_HOME}/lib
     /usr/lib 
     /usr/local/lib
     /opt/lib
     /sw/lib
-    $ENV{GSL_HOME}/lib
-    )
+   )
 
   SET(TRIAL_INCLUDE_PATHS
+    $ENV{GSL_HOME}/include
     /usr/include
     /opt/include
     /usr/local/include
     /sw/include
-    $ENV{GSL_HOME}/include
-    )
+  )
 
   FIND_LIBRARY(GSL_LIBRARY gsl ${TRIAL_LIBRARY_PATHS})
   FIND_PATH(GSL_INCLUDE_DIR gsl/gsl_version.h ${TRIAL_INCLUDE_PATHS} )
