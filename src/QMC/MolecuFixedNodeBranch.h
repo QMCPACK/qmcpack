@@ -204,8 +204,9 @@ namespace ohmmsqmc {
      \f$ feed = \frac{1}{N_G \tau} \f$ 
      <\ul>
     */
-    bool put(xmlNodePtr cur){
+    bool put(xmlNodePtr cur, OhmmsInform *LogOut){
       cur=cur->children;
+      int n;
       while(cur != NULL) {
 	string cname((const char*)(cur->name));
 	if(cname == "parameter") {
@@ -218,7 +219,6 @@ namespace ohmmsqmc {
 	      for(int i=0; i<Eg.size(); i++) Eg[i] = eg;
 	      E_T = eg;
 	    } else if(pname == "num_gen") {
-	      int n;
 	      putContent(n,cur);
 	      feed = 1.0/(static_cast<T>(n)*Tau);
 	    }
@@ -227,8 +227,11 @@ namespace ohmmsqmc {
 	cur=cur->next;
       }
       XMLReport("Branching: Referece energy = " << Eg[0])
-      // XMLReport("Branching: Branch every = " << Stride << " steps.")
       XMLReport("Branching: Feedback parameter = " << feed)
+      XMLReport("Branching: Number of generations = " << n)
+	LogOut->getStream() << "reference energy = " << Eg[0] << endl;
+	LogOut->getStream() << "feedback = " << feed << endl;
+	LogOut->getStream() << "number of generations = " << n << endl;
       return true;
     }
 
