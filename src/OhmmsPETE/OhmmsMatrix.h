@@ -102,13 +102,12 @@ public:
 
   // returns a const pointer of i-th row 
   inline const Type_t* operator[](unsigned int i) const { 
-    return X.begin() + i*D2;
+    return &(X[0]) + i*D2;
   }
 
-  // returns a pointer of i-th row 
+  /// returns a pointer of i-th row, g++ iterator problem
   inline Type_t* operator[](unsigned int i) { 
-    //return X.begin() + i*D2;
-    return &(X[0])+ i*D2;
+    return &(X[0]) + i*D2;
   }
 
   inline Type_t& operator()(unsigned int i) { 
@@ -210,7 +209,7 @@ ostream& operator<<(ostream& out, const Matrix<T,C>& rhs)
 
 
 template<class T, class C>
-istream& operator>>(istream& is, Matrix<T,C>& rhs)
+std::istream& operator>>(std::istream& is, Matrix<T,C>& rhs)
 {
   int ii=0;
   for(int i=0; i<rhs.size(); i++) {is >> rhs(i++);}
