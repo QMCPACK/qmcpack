@@ -59,14 +59,22 @@ namespace ohmmsqmc {
     ///default constructor
     MCWalkerConfiguration();
 
+    ///default constructor: create 2 null walkers
+    MCWalkerConfiguration(const MCWalkerConfiguration& mcw, int nw=2);
+
     ///default destructor
     ~MCWalkerConfiguration();
 
     void createWalkers(int n);
-
     iterator destroyWalker(iterator walkerit);
     iterator destroyWalker(iterator itstart, iterator itend);
     void copyWalker(iterator walkerit, int n);
+
+    /** copy the pointers to the Walkers to WalkerList */
+    void copyEndWalkers(Walker_t* first, Walker_t* last) {
+      WalkerList[0]=first;
+      WalkerList[1]=last;
+    }
 
     void addWalkers(vector<int>& Copies,
 		    vector<Walker_t*>& InactiveList);

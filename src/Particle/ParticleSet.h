@@ -55,6 +55,9 @@ namespace ohmmsqmc {
     
     ///default constructor
     ParticleSet();
+
+    ///default constructor
+    ParticleSet(const ParticleSet& p);
     
     ///default destructor
     virtual ~ParticleSet();
@@ -86,6 +89,8 @@ namespace ohmmsqmc {
     static int PtclObjectCounter;
     ///distance tables that need to be updated by moving this ParticleSet
     vector<DistanceTableData*> DistTables;
+
+    void initParticleSet();
   };
 }
 #endif

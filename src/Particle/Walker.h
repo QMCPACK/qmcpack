@@ -42,9 +42,12 @@ namespace ohmmsqmc {
    */
   template<class T, class PA>
   struct Walker {
+    
 
     typedef TinyVector<T,CAPACITY> PropertyContainer_t;
     //typedef std::vector<T> PropertyContainer_t;
+
+    int ID;
 
     ///scalar properties of a walker
     PropertyContainer_t  Properties;

@@ -27,6 +27,13 @@ UpdateMode(Update_Walker) {
 }
 
 
+MCWalkerConfiguration::MCWalkerConfiguration(const MCWalkerConfiguration& mcw, int nw):
+  ParticleSet(mcw)
+{
+  cout << "The number of particles " << getLocalNum() << endl;
+  for(int i=0; i<nw; i++) WalkerList.push_back(0);
+}
+
 ///default destructor
 MCWalkerConfiguration::~MCWalkerConfiguration(){
 

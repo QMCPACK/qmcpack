@@ -23,6 +23,18 @@ namespace ohmmsqmc {
   int  ParticleSet::PtclObjectCounter = 0;
 
   ParticleSet::ParticleSet() {
+    initParticleSet();
+  }
+
+  ParticleSet::ParticleSet(const ParticleSet& p) {
+    initBase();
+    initParticleSet();
+    assign(p);
+  }
+
+  ParticleSet::~ParticleSet() {}
+
+  void ParticleSet::initParticleSet() {
     ObjectTag = PtclObjectCounter;
     PtclObjectCounter++;
     G.setTypeName(ParticleTags::postype_tag);
@@ -32,8 +44,6 @@ namespace ohmmsqmc {
     addAttribute(G);
     addAttribute(L);
   }
-
-  ParticleSet::~ParticleSet() {}
 
   ///write to a ostream
   bool ParticleSet::get(ostream& os) const {
