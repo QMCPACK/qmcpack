@@ -184,9 +184,6 @@ namespace ohmmshf {
 
       xmlXPathFreeContext(m_context);
 
-    //  LogFileName = AtomName;
-    //     LogFileName.append(".log");
-
     return true;
   }
 
@@ -300,7 +297,7 @@ namespace ohmmshf {
     //     }
     //    LOGMSG("ID | IDcount");
     LOGMSG("(Orbital index, Number of Orbitals)")
-      for(int j=0; j < Psi.NumUniqueOrb; j++){
+      for(int j=0; j < Psi.size(); j++){
 	int id = Psi.ID[j];
 	LOGMSG("(" << id << ", " << Psi.IDcount[id] << ")");
       }
