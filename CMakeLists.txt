@@ -5,6 +5,7 @@ SET (LIBRARY_OUTPUT_PATH ${qmcPlusPlus_BINARY_DIR}/lib CACHE PATH "Single output
 SET (EXECUTABLE_OUTPUT_PATH ${qmcPlusPlus_BINARY_DIR}/bin CACHE PATH "Single output directory for building all executables.")
 
 #list of options to determine libraries. First, try to use libraries available
+SET(BITS 32)
 SET(INTEL_COMPILER 0)
 SET(ENABLE_OPENMP 0)
 SET(HAVE_MPI 0)
