@@ -45,8 +45,8 @@ struct OneDimGridBase {
   ///return a value
   inline T operator()(int i) const { return X[i];}
 
-  inline const T* restrict data() const { return &(X[0]);}
-  inline T* restrict data() { return &(X[0]);}
+  inline const T* data() const { return &(X[0]);}
+  inline T* data() { return &(X[0]);}
 
   ///return the differential spacing of the grid
   inline T dh() const { return Delta;}
