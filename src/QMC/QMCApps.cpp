@@ -24,6 +24,7 @@
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "QMC/VMC.h"
 #include "QMC/VMCParticleByParticle.h"
+#include "QMC/DMCParticleByParticle.h"
 #include "QMC/VMC_OPT.h"
 #include "QMC/MolecuDMC.h"
 #include "QMC/ReptationMC.h"
@@ -176,6 +177,10 @@ namespace ohmmsqmc {
 	      dynamic_cast<WOSPotential*>(H.getHamiltonian("wos")); 
 	    if(wos) { wos->Mode = 1; }
 	    MolecuDMC dmc(el,Psi,H,cur);
+	    dmc.setFileRoot(myProject.CurrentRoot());
+	    dmc.run();
+	  } else if(methodname == "dmc-ptcl"){
+	    DMCParticleByParticle dmc(el,Psi,H,cur);
 	    dmc.setFileRoot(myProject.CurrentRoot());
 	    dmc.run();
 	  } else if(methodname == "optimize"){

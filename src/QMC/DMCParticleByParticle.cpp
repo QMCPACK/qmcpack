@@ -115,6 +115,8 @@ namespace ohmmsqmc {
       IndexType accstep=0;
       IndexType nAcceptTot = 0;
       IndexType nRejectTot = 0;
+
+      int ncross = 0;
       //     ofstream fout("test.txt");
       do {
 	IndexType step = 0;
@@ -154,7 +156,6 @@ namespace ohmmsqmc {
 	      PosType dr = g*deltaR[iat]+(*it)->Drift[iat];
 	      PosType newpos = W.makeMove(iat,dr);
 
-	      //RealType ratio = Psi.ratio(W,iat);
 	      RealType ratio = Psi.ratio(W,iat,dG,dL);
 	      if(ratio < 0.0) crossed = true;
 
@@ -170,7 +171,7 @@ namespace ohmmsqmc {
 	      //RealType ratio2 = pow(ratio,2)
 	      RealType prob = std::min(1.0,pow(ratio,2)*exp(logGb-logGf));
 	      //alternatively
-	      if(Random() < prob) { //if(Random() < ratio2) {
+	      if(Random() < prob) { 
 		moved = true;
 //		++nAccept;
 		++nAcceptTemp;
@@ -221,7 +222,11 @@ namespace ohmmsqmc {
 	    
 	    //node-crossing: kill it for the time being
 	    if(crossed) {
-		WARNMSG("Node crossing.")
+		WARNMSG("Node crossing << " << ncross++)
+		    (*it)->Properties(WEIGHT) = 0.0; 
+		(*it)->Properties(MULTIPLICITY) = 0.0;
+		nAcceptTemp = 0;
+		nRejectTemp = W.getTotalNum();
 	    }
 
 	    nAccept += nAcceptTemp;
