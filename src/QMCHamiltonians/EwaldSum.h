@@ -201,12 +201,10 @@ EwaldSum<PL_t,PosArray_t,ScalarArray_t>::energy(const PL_t& lat,
   }
 
   Scalar_t vol = lat.Volume;
-  /*!\latex {
-    reciprocal term:
-    ${2\pi\over V} {1\over 4\eps} V_G= {\pi\over 2 V \eps}V_G$
-    direct term:${\sqrt{\eps}\over 2} V_R$ 
-    }
-  unit = (au)^2/A
+  /** reciprocal term:
+    \f$ 2\frac{\pi}{V} \frac{1}{4\epsilon} V_G= \frac{\pi}{2 V \epsilon}V_G\f$
+    direct term:\f$\frac{\sqrt{\epsilon}}{2} V_R\f$ 
+    unit = (au)^2/A
   */
   //Scalar_t esum =  pi/(2.0*vol*Eps)*gamrec + sqeps/2.0*gamdir 
   //  - sqeps/spi*s3 - pi/(2.0*vol*Eps)*s4*s4;
