@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////
-// (c) Copyright 2003- by Jeongnim Kim
+// (c) Copyright 2003- by Jeongnim Kim and Jordan Vincent
 //////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////
 //   Jeongnim Kim
@@ -37,13 +37,13 @@ namespace ohmmsqmc {
   public:
     enum {ENERGY, ENERGYSQ};
 
-    /// Constructor.
+    ///Constructor.
     VMC_OPT(MCWalkerConfiguration& w, 
 	    TrialWaveFunction& psi, 
 	    QMCHamiltonian& h, 
 	    xmlNodePtr q);
     
-    /// Run the Optimization algorithm.
+    ///Run the Optimization algorithm.
     bool run();
     bool put(xmlNodePtr cur);
     void run_vmc();
@@ -69,33 +69,33 @@ namespace ohmmsqmc {
 
     RealType evalCost();
 
-    /// storage for previous values of the cost function
+    ///storage for previous values of the cost function
     std::deque<scalar> costList;
-    /// storage for previous sets of parameters
+    ///storage for previous sets of parameters
     std::deque<vector<scalar> > paramList;
-    /// parameters to be optimized
+    ///parameters to be optimized
     vector<scalar> OptParams;
-    /// ID tag for each optimizable parameter
+    ///ID tag for each optimizable parameter
     vector<string> IDtag;  
-    /// list of files storing configurations  
+    ///list of files storing configurations  
     vector<string> ConfigFile;
-    /// method for optimization, default conjugate gradient
+    ///method for optimization, default conjugate gradient
     string optmethod;
-    /// number of times cost function evaluated
+    ///number of times cost function evaluated
     int NumCostCalls;
-    /// total number of samples to use in correlated sampling
+    ///total number of samples to use in correlated sampling
     int NumSamples;
-    /// conjugate gradient tolerance
+    ///conjugate gradient tolerance
     RealType cg_tolerance;
-    /// conjugate gradient stepsize
+    ///conjugate gradient stepsize
     RealType cg_stepsize;
-    /// conjugate gradient epsilon
+    ///conjugate gradient epsilon
     RealType cg_epsilon;
-    /// weights for energy and variance in the cost function
+    ///weights for energy and variance in the cost function
     RealType w_en, w_var;
-    /// value of the cost function
+    ///value of the cost function
     RealType CostValue;
-    /// Copy Constructor (disabled).
+    ///Copy Constructor (disabled).
     VMC_OPT(const VMC_OPT& a): QMCDriver(a) { }  
     ///Copy operator (disabled).
     VMC_OPT& operator=(const VMC_OPT&) { return *this;}

@@ -84,14 +84,15 @@ namespace ohmmsqmc {
     return foundconfig;
   }
 
-  /**  Run a series of qmc simulations in succession
+  /**Run a series of qmc simulations in succession
    *@param aroot the root xmlNode of an input file
    *@return true if successful
    *
    *A XPathContext object is created with the input document.
-   *Before running a sequence of qmc runs, the basic objects are initialized.
-   *Expecting mistakes by users, we use xpath to process the basic objects instead of 
-   *recursive processing as desired.
+   *Before running a sequence of qmc runs, the basic objects 
+   *are initialized.
+   *Expecting mistakes by users, we use xpath to process the
+   *basic objects instead of recursive processing as desired.
    *
    *The initialization steps process these elements sequentially.
    *- project : set the name and sequence number of the run
@@ -101,15 +102,16 @@ namespace ohmmsqmc {
    *- hamiltonian    : initialization of Hamiltonian
    *- mcwalkerset    : read the walker configuration from a previous run 
    *
-   *When the elements above are missing, default values are assigned if possible.
-   *Fatal errors occur when wavefunction is missing or empty because a requested
-   *wavefunction is not available.
+   *When the elements above are missing, default values are assigned 
+   *if possible.
+   *Fatal errors occur when wavefunction is missing or empty because 
+   *a requested wavefunction is not available.
    *
-   *Once the basic objects are properly initialized, this functon process the qmc elements
-   *sequentially.
+   *Once the basic objects are properly initialized, this functon process 
+   *the qmc elements sequentially.
    *A run can have a mixture of any number of vmc, opt(itmization) and dmc.
-   *After each qmc element, the sequence of the project is incremented and the file rootname
-   *will be set to reflect the change.
+   *After each qmc element, the sequence of the project is incremented and 
+   *the file rootname will be set to reflect the change.
    */
   bool QMCApps::run(xmlNodePtr aroot) {
     if(aroot) {
