@@ -383,7 +383,7 @@ namespace ohmmsqmc {
         if(pid_target == pid) wset.push_back(cur);
       } else if(cname == "optimize") {
 	oset.push_back(cur);
-      } else if(cname == "const") {
+      } else if(cname == "cost") {
 	cset.push_back(cur);
       }
       cur=cur->next;
