@@ -114,6 +114,56 @@ void MCWalkerConfiguration::reset() {
   while(it != WalkerList.end()) {(*it)->Properties(Weight) = 1.0;it++;}
 }
 
+int MCWalkerConfiguration::branch(int maxcopy, int Nmax, int Nmin) {
+
+  iterator it = WalkerList.begin();
+  int iw=0, nw = WalkerList.size();
+
+  while(iw < nw && it != WalkerList.end()) {
+
+    //limit maximun number of copies to 10
+    //all copies are added at the end of the list
+    int ncopy = min(static_cast<int>((*it)->Properties(Multiplicity)),maxcopy);
+    (*it)->Properties(Weight) = 1.0;
+    (*it)->Properties(Multiplicity) = 1.0;
+    if(ncopy == 0) {
+      it = destroyWalker(it);
+    } else {
+      if(ncopy>1) {
+	copyWalker(it,ncopy-1);
+      }
+      it++;
+    }
+    iw++;
+  }
+
+  int nwalkers = WalkerList.size();
+  if (nwalkers > Nmax){
+    /*if too many walkers, kill until the population is 90%  of Nmax*/
+    int nsubtract =  nwalkers-static_cast<int>(0.9*Nmax);
+    iterator itend = WalkerList.begin();
+    for(int i=0; i < nsubtract; i++) itend++;
+    destroyWalker(WalkerList.begin(), itend);
+  } else if(nwalkers < Nmin) {
+    /*if too few walkers, copy until the population is 10%  more than Nmin*/
+    it = WalkerList.begin();
+    int nadd = static_cast<int>(Nmin*1.1)-nwalkers;
+    if(nadd < nwalkers){
+      int i=0;
+      while(i<nadd){
+	//ERRORMSG("Too few walkers at step " << iter)
+	copyWalker(it,1);
+	it++; i++;
+      }
+    } else {
+      cerr << "Too few walkers to copy!" << endl;
+      exit(-1);
+    }
+  }
+
+  return WalkerList.size();
+
+}
 
 /***************************************************************************
  * $RCSfile$   $Author$

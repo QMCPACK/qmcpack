@@ -103,6 +103,8 @@ namespace ohmmsqmc {
     inline void setLocalEnergy(RealType e) { LocalEnergy = e;}
     inline RealType getLocalEnergy() const {return LocalEnergy;}
 
+    int branch(int maxcopy, int Nmax, int Nmin);
+
     void clear();
 
     void copy(iterator first, iterator last);
