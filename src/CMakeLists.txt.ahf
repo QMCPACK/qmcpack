@@ -1,28 +1,25 @@
 CONFIGURE_FILE(${qmcPlusPlus_SOURCE_DIR}/src/ohmms-config.h.cmake.in
                ${qmcPlusPlus_BINARY_DIR}/src/ohmms-config.h)
 
-SET(UTILITIES
-  Utilities/RandRandom.cpp 
-  Utilities/RandomGenerator.cpp 
-  Utilities/OhmmsObject.cpp 
-  Utilities/SpeciesSet.cpp 
-  Utilities/SimpleParser.cpp 
-  Utilities/OhmmsInform.cpp 
-  Utilities/OhmmsInfo.cpp 
+SET(BASEDIR
   OhmmsApp/ProjectData.cpp
-  OhmmsApp/RandomNumberControl.cpp
   Platforms/sysutil.cpp
-)
-
-SET(MESSAGE
   Message/Communicate.cpp 
 )
+ADD_LIBRARY(qmcbase ${BASEDIR})
 
-#Only basic packages common for both AtomicHF and QMC
-SET(BASEDIR
-   ${UTILITIES}
-   ${MESSAGE}
+SET(HFSRCS 
+  Numerics/Clebsch_Gordan.cpp
+  SQD/SphericalPotential/RadialPotential.cpp
+  SQD/SphericalPotential/ZOverRPotential.cpp
+  SQD/SphericalPotential/HarmonicPotential.cpp
+  SQD/SphericalPotential/StepPotential.cpp
+  SQD/SphericalPotential/SJPseudoPotential.cpp
+  SQD/HartreeFock.cpp
+  SQD/HartreeFock.IO.cpp
+  SQD/SQDFrame.cpp
+  SQD/HFApp.cpp
 )
 
-ADD_LIBRARY(qmcbase ${BASEDIR})
-SUBDIRS(SQD)
+ADD_EXECUTABLE(sqd ${HFSRCS})
+TARGET_LINK_LIBRARIES(sqd qmcbase)
