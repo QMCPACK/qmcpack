@@ -14,13 +14,16 @@ ENDIF(EXISTS ${PROJECT_CMAKE}/BlitzppConfig.cmake)
 IF(Blitzpp_INCLUDE_DIRS)
   FIND_PATH(BLITZ_INCLUDE_DIR blitz/blitz.h  ${Blitzpp_INCLUDE_DIRS})
 ELSE(Blitzpp_INCLUDE_DIRS)
-  FIND_PATH(BLITZ_INCLUDE_DIR blitz/blitz.h
+  SET(TRIAL_PATHS
     /usr/apps/include
     /usr/include
     /opt/include
     /usr/local/include
     /u/ncsa/jnkim/shared/include
+    $ENV{BLITZ_HOME}
   )
+
+  FIND_PATH(BLITZ_INCLUDE_DIR blitz/blitz.h ${TRIAL_PATHS})
 ENDIF(Blitzpp_INCLUDE_DIRS)
 
 IF(BLITZ_INCLUDE_DIR)

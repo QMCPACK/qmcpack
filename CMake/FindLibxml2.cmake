@@ -17,17 +17,22 @@ IF(Libxml2_INCLUDE_DIRS)
 
 ELSE(Libxml2_INCLUDE_DIRS)
 
-  FIND_LIBRARY(LIBXML2_LIBRARY xml2 
-    /usr/lib 
+  SET(TRIAL_LIBRARY_PATHS
+    /usr/lib
     /usr/local/lib
     /sw/lib
-    )
-
-  FIND_PATH(LIBXML2_INCLUDE_DIR libxml/xpath.h 
+    $ENV{LIBXML2_HOME}/lib
+  ) 
+  SET(TRIAL_INCLUDE_PATHS
     /usr/include/libxml2
     /usr/local/include/libxml2
     /sw/include/libxml2
-    )
+    $ENV{LIBXML2_HOME}/include/libxml2
+  ) 
+
+  FIND_LIBRARY(LIBXML2_LIBRARY xml2 ${TRIAL_LIBRARY_PATHS})
+  FIND_PATH(LIBXML2_INCLUDE_DIR libxml/xpath.h ${TRIAL_INCLUDE_PATHS})
+
 ENDIF(Libxml2_INCLUDE_DIRS)
 
 IF(LIBXML2_INCLUDE_DIR AND LIBXML2_LIBRARY)
