@@ -1,0 +1,49 @@
+/* src/ohmms-config.h.in.  Generated from configure.in by autoheader.  */
+// -*- c++  -*-
+//
+//Ohmms Configuration Header. Automatically Generated
+//
+//See the LICENSE file in the top-level directory for copyright notices
+//
+#ifndef OHMMS_QMC_CONFIGURATION_H
+#define OHMMS_QMC_CONFIGURATION_H
+
+/* Enable OpenMP parallelization. */
+#cmakedefine ENABLE_OPENMP @ENABLE_OPENMP@
+
+/* Define to 1 if you have the `hdf5' library (-lhdf5). */
+#cmakedefine HAVE_LIBHDF5 @HAVE_LIBHDF5@
+
+/* Define to 1 if you have the `sprng' library (-lsprng). */
+#cmakedefine HAVE_LIBSPRNG @HAVE_LIBSPRNG@
+
+/* Define to 1 if you have the `blitz' library */
+#cmakedefine HAVE_LIBBLITZ @HAVE_LIBBLITZ@
+
+/* Define to 1 if you have libxml2 */
+#cmakedefine HAVE_LIBXML2 @HAVE_LIBXML2@
+
+/* Define to 1 if you have libxml++ */
+#cmakedefine HAVE_LIBXMLPP @HAVE_LIBXMLPP@
+
+/* Define to 1 if you have gsl */
+#cmakedefine HAVE_LIBGSL @HAVE_LIBGSL@
+
+/* Define to 1 if you have MPI library */
+#cmakedefine HAVE_MPI @HAVE_MPI@
+
+/* Define to 1 if you have OOMPI library */
+#cmakedefine HAVE_OOMPI @HAVE_OOMPI@
+
+/* Define the physical dimension of appliation. */
+#cmakedefine OHMMS_DIM @OHMMS_DIM@
+
+/* Define the index type: int, long */
+#cmakedefine OHMMS_INDEXTYPE @OHMMS_INDEXTYPE@
+
+/* Define the base precision: float, double */
+#cmakedefine OHMMS_PRECISION @OHMMS_PRECISION@
+
+#cmakedefine QMC_FASTWALKER @QMC_FASTWALKER@
+
+#endif // OHMMS_QMC_CONFIGURATION_H

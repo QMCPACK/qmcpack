@@ -1,0 +1,12 @@
+Wed Sep  3 20:47:26 CDT 2003
+
+Creating app to compile the main application qmc using cmake
+
+Creating Data for input/output examples
+
+Adding files for cmake (usage: cmake; make)
+
+CMake directory contains modules to handle libraries.
+i)   FindBlitz++.cmake
+ii)  FindHDF5.cmake
+iii) FindLibxml.cmake
