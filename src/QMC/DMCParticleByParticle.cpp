@@ -109,13 +109,13 @@ namespace ohmmsqmc {
       
       MCWalkerConfiguration::PropertyContainer_t Properties;
       ParticleSet::ParticlePos_t deltaR(W.getTotalNum());
-      ParticleSet::ParticlePos_t drift(W.getTotalNum());
       ParticleSet::ParticleGradient_t G(W.getTotalNum()), dG(W.getTotalNum());
       ParticleSet::ParticleLaplacian_t L(W.getTotalNum()), dL(W.getTotalNum());
 
       IndexType accstep=0;
       IndexType nAcceptTot = 0;
       IndexType nRejectTot = 0;
+      IndexType nat = W.getTotalNum();
 
       int ncross = 0;
       //     ofstream fout("test.txt");
@@ -125,7 +125,7 @@ namespace ohmmsqmc {
 	nAccept = 0; nReject=0;
 	IndexType nAllRejected = 0;
 	do {
-	    Population = W.getActiveWalkers();
+	  Population = W.getActiveWalkers();
 	  it = W.begin();	 
 	  iwalker=0; 
 	  while(it != W.end()) {
@@ -145,99 +145,86 @@ namespace ohmmsqmc {
 
             ValueType psi_old = (*it)->Properties(PSI);
 	    ValueType psi = psi_old;
+
 	    //create a 3N-Dimensional Gaussian with variance=1
 	    makeGaussRandom(deltaR);
-	    bool moved = false;
-	    bool crossed = false;
-	    int nAcceptTemp = 0;
-	    int nRejectTemp = 0;
+	    bool notcrossed = true;
+            int nAcceptTemp=0;
+            int nRejectTemp=0;
 
-	    for(int iat=0; iat<W.getTotalNum(); iat++) {
+            int iat=0;
+            while(notcrossed && iat<nat){
 
 	      PosType dr = g*deltaR[iat]+(*it)->Drift[iat];
 	      PosType newpos = W.makeMove(iat,dr);
-
 	      RealType ratio = Psi.ratio(W,iat,dG,dL);
-	      if(ratio < 0.0) crossed = true;
 
-	      G = W.G+dG;
-
-	      //RealType forwardGF = exp(-0.5*dot(deltaR[iat],deltaR[iat]));
-	      //dr = (*it)->R[iat]-newpos-Tau*G[iat]; 
-	      //RealType backwardGF = exp(-oneover2tau*dot(dr,dr));
-	      RealType logGf = -0.5*dot(deltaR[iat],deltaR[iat]);
-
-	      ValueType vsq = Dot(G,G);
-	      ValueType scale = ((-1.0+sqrt(1.0+2.0*Tau*vsq))/vsq);
-              drift = scale*G;
-              dr = (*it)->R[iat]-newpos-drift[iat];
-	      // dr = (*it)->R[iat]-newpos-Tau*G[iat]; 
-	      RealType logGb = -oneover2tau*dot(dr,dr);
-
-	      RealType prob = std::min(1.0,pow(ratio,2)*exp(logGb-logGf));
-	      //alternatively
-	      if(Random() < prob) { 
-		moved = true;
-//		++nAccept;
-		++nAcceptTemp;
-		W.acceptMove(iat);
-		//Psi.update(W,iat);
-		Psi.update2(W,iat);
-		W.G = G;
-		W.L += dL;
-		(*it)->Drift = Tau*G;
+	      if(ratio < 0.0) {//node is crossed, stop here
+		notcrossed = false;
 	      } else {
-//		++nReject; 
-		++nRejectTemp; 
-		Psi.restore(iat);
+		G = W.G+dG;
+		RealType logGf = -0.5*dot(deltaR[iat],deltaR[iat]);
+		
+		//ValueType vsq = Dot(G,G);
+		//ValueType scale = ((-1.0+sqrt(1.0+2.0*Tau*vsq))/vsq);
+		//dr = (*it)->R[iat]-newpos-scale*G[iat]; 
+		dr = (*it)->R[iat]-newpos-Tau*G[iat]; 
+		RealType logGb = -oneover2tau*dot(dr,dr);
+		
+		//RealType ratio2 = pow(ratio,2)
+		RealType prob = std::min(1.0,pow(ratio,2)*exp(logGb-logGf));
+		if(Random() < prob) { 
+		  ++nAcceptTemp;
+		  W.acceptMove(iat);
+		  Psi.update2(W,iat);
+		  W.G = G;
+		  W.L += dL;
+		  (*it)->Drift = Tau*G;
+		} else {
+		  ++nRejectTemp; 
+		  Psi.restore(iat);
+		}
 	      }
+              iat++;
 	    }
 
-	    if(moved) {
- 	      //(*it)->Data.rewind();
-	      //W.copyToBuffer((*it)->Data);
- 	      //psi = Psi.evaluate(W,(*it)->Data);
-	      w_buffer.rewind();
-	      W.copyToBuffer(w_buffer);
-	      psi = Psi.evaluate(W,w_buffer);
-
-	      (*it)->R = W.R;
-	      (*it)->Properties(AGE) = 0;
-	      (*it)->Properties(PSISQ) = psi*psi;
-	      (*it)->Properties(PSI) = psi;
-	      (*it)->Properties(LOCALENERGY) = H.evaluate(W);
-	      H.copy((*it)->getEnergyBase());
-	      (*it)->Properties(LOCALPOTENTIAL) = H.getLocalPotential();
-	      emixed += (*it)->Properties(LOCALENERGY);
-	    }
-	    else {
-	      WARNMSG("All the particle moves are rejected.")
-		  (*it)->Properties(AGE)++;
-	      nAllRejected++;
-	      emixed += eold;
-	    }
-
-	    ValueType M = brancher.branchGF(Tau,emixed*0.5,0.0);
-	    if((*it)->Properties(AGE) > 3.0) M = min(0.5,M);
-	    if((*it)->Properties(AGE) > 0.9) M = min(1.0,M);
-	    (*it)->Properties(WEIGHT) = M; 
-	    (*it)->Properties(MULTIPLICITY) = M + Random();
-//	    (*it)->Properties(WEIGHT) = 1.0; 
-//	    (*it)->Properties(MULTIPLICITY) = 1.0;
-	    
-	    //node-crossing: kill it for the time being
-	    if(crossed) {
-		WARNMSG("Node crossing << " << ncross++)
-		    (*it)->Properties(WEIGHT) = 0.0; 
-		(*it)->Properties(MULTIPLICITY) = 0.0;
-		nAcceptTemp = 0;
-		nRejectTemp = W.getTotalNum();
+	    if(notcrossed) {
+	      if(nAcceptTemp) {//need to overwrite the walker properties
+		w_buffer.rewind();
+		W.copyToBuffer(w_buffer);
+		psi = Psi.evaluate(W,w_buffer);
+		
+		(*it)->R = W.R;
+		(*it)->Properties(AGE) = 0;
+		(*it)->Properties(PSISQ) = psi*psi;
+		(*it)->Properties(PSI) = psi;
+		(*it)->Properties(LOCALENERGY) = H.evaluate(W);
+		H.copy((*it)->getEnergyBase());
+		(*it)->Properties(LOCALPOTENTIAL) = H.getLocalPotential();
+		emixed += (*it)->Properties(LOCALENERGY);
+	      } else {
+		WARNMSG("All the particle moves are rejected.")
+	        (*it)->Properties(AGE)++;
+		nAllRejected++;
+		emixed += eold;
+	      }
+	      
+	      ValueType M = brancher.branchGF(Tau,emixed*0.5,0.0);
+	      if((*it)->Properties(AGE) > 3.0) M = min(0.5,M);
+	      if((*it)->Properties(AGE) > 0.9) M = min(1.0,M);
+	      (*it)->Properties(WEIGHT) = M; 
+	      (*it)->Properties(MULTIPLICITY) = M + Random();
+	      nAccept += nAcceptTemp;
+	      nReject += nRejectTemp;
+	    } else {//set the weight and multiplicity to zero
+	      (*it)->Properties(WEIGHT) = 0.0; 
+	      (*it)->Properties(MULTIPLICITY) = 0.0;
+	      nReject+= W.getTotalNum();//not make sense
 	    }
 
-	    nAccept += nAcceptTemp;
-	    nReject += nRejectTemp;
 	    it++; iwalker++;
 	  }
+
 	  step++;accstep++;
 	  Estimators.accumulate(W);
 	  E_T = brancher.update(Population,Eest);
