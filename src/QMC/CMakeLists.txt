@@ -10,8 +10,11 @@ IF(QMCAPPS MATCHES "MolecuApps")
     ../QMCWaveFunctions/AtomicOrbitals/HFAtomicSTOSet.cpp 
     ../QMCWaveFunctions/AtomicOrbitals/HFAtomicSTOSetBuilder.cpp 
     ../QMCWaveFunctions/AtomicOrbitals/HeSTOClementiRottie.cpp
-    ../QMCWaveFunctions/MolecularOrbitals/RadialGridFunctorBuilder.cpp
     ../QMCWaveFunctions/MolecularOrbitals/STOMolecularOrbitals.cpp
+    ../QMCWaveFunctions/MolecularOrbitals/RGFBuilderBase.cpp
+    ../QMCWaveFunctions/MolecularOrbitals/STO2GridBuilder.cpp
+    ../QMCWaveFunctions/MolecularOrbitals/GTO2GridBuilder.cpp
+    ../QMCWaveFunctions/MolecularOrbitals/NumericalRGFBuilder.cpp
     ../QMCWaveFunctions/MolecularOrbitals/GridMolecularOrbitals.cpp
     ../QMCWaveFunctions/MolecularOrbitals/MolecularOrbitalBuilder.cpp
     ../QMCHamiltonians/CorePolPotential.cpp
