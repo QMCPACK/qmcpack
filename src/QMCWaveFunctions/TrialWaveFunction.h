@@ -42,31 +42,39 @@ namespace ohmmsqmc {
 
   public:
 
-    typedef OrbitalBase::RealType  RealType;
-    typedef OrbitalBase::ValueType ValueType;
-    typedef OrbitalBase::PosType   PosType;
-    typedef OrbitalBase::GradType  GradType;
+    typedef OrbitalBase::RealType   RealType;
+    typedef OrbitalBase::ValueType  ValueType;
+    typedef OrbitalBase::PosType    PosType;
+    typedef OrbitalBase::GradType   GradType;
+
+    /**a list of real variables to be optimized
+     *
+     * Each builder for a trial wavefuncion is responsible for registering
+     * the variables to be optimized.
+     */
+    VarRegistry<RealType> VarList;
 
     TrialWaveFunction();
 
     ~TrialWaveFunction();
 
-    ValueType evaluate(ParticleSet& P);
-
-    void evaluate(WalkerSetRef& W, OrbitalBase::ValueVectorType& psi);
-
+    /** manage the data */
     void add(OrbitalBase* aterm);
-
     void reset();
-
-    ///resize the internal storage with number of walkers if necessary
     void resizeByWalkers(int nwalkers);
 
-    /**a list of real variables to be optimized
-     * Each builder for a trial wavefuncion is responsible for registering
-     * the variables to be optimized.
-     */
-    VarRegistry<RealType> VarList;
+    /** evalaute the values of the wavefunction, gradient and laplacian  for a walkers */
+    ValueType evaluate(ParticleSet& P);
+
+    /** functions to handle particle-by-particle update */
+    ValueType ratio(ParticleSet& P, int iat);
+    void registerData(ParticleSet& P, PooledData<RealType>& buf);
+    void putData(ParticleSet& P, PooledData<RealType>& buf);
+    void update(ParticleSet& P, int iat);
+    ValueType evaluate(ParticleSet& P, PooledData<RealType>& buf);
+
+    /** evalaute the values of the wavefunction, gradient and laplacian  for all the walkers */
+    void evaluate(WalkerSetRef& W, OrbitalBase::ValueVectorType& psi);
 
   private:
 
@@ -75,6 +83,8 @@ namespace ohmmsqmc {
     
     ///a list of OrbitalBases constituting many-body wave functions
     vector<OrbitalBase*> Z;
+    ParticleSet::ParticleGradient_t delta_G;
+    ParticleSet::ParticleLaplacian_t delta_L;
   };
 }
 #endif
