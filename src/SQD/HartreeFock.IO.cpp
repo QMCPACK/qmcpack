@@ -508,19 +508,20 @@ namespace ohmmshf {
 
   int HartreeFock::report() {
 
-    string fileforplot(AtomName);
+    string fileforplot(RootFileName);
     fileforplot.append(".orb.dat");
     ofstream fout(fileforplot.c_str());
 
-    fout << "#Results for " << AtomName << " with " << PotType << " potential on " 
-	 << GridType << " grid." <<endl;
+    fout << "#Results for " << AtomName << " with " << PotType 
+	 << " potential on " << GridType << " grid." <<endl;
     fout << "#Eigen values " << endl;
     for(int orb=0; orb<eigVal.size(); orb++) {
-      fout << "# n=" << Psi.N[orb] << " " <<  " l=" << Psi.L[orb] << setw(15) 
-	   << eigVal[orb] << " " << endl;
+      fout << "# n=" << Psi.N[orb] << " " <<  " l=" << Psi.L[orb] 
+	   << setw(15) << eigVal[orb] << " " << endl;
     }
 
-    fout << "#The number of unique radial orbitals " << Psi.NumUniqueOrb << endl;
+    fout << "#The number of unique radial orbitals " << Psi.NumUniqueOrb 
+	 << endl;
     //find the maximum radius for the orbital set
     int max_rad_all = 0;
     int orbindex = 0;
