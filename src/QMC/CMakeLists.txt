@@ -17,7 +17,7 @@ IF(QMCAPPS MATCHES "MolecuApps")
     ../QMCWaveFunctions/MolecularOrbitals/NumericalRGFBuilder.cpp
     ../QMCWaveFunctions/MolecularOrbitals/GridMolecularOrbitals.cpp
     ../QMCWaveFunctions/MolecularOrbitals/MolecularOrbitalBuilder.cpp
-    ../QMCHamiltonians/CorePolPotential.cpp
+    ../QMCHamiltonians/GeCorePolPotential.cpp
     ../QMCHamiltonians/LocalPPotential.cpp
     ../QMCHamiltonians/WOS/Device.cpp
     ../QMCHamiltonians/WOS/WOSPotential.cpp
