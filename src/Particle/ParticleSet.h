@@ -20,6 +20,7 @@
 #include "Configuration.h"
 #include "Utilities/OhmmsObject.h"
 #include "Utilities/SpeciesSet.h"
+#include "Particle/Walker.h"
 
 namespace ohmmsqmc {
 
@@ -44,6 +45,8 @@ namespace ohmmsqmc {
     typedef ParticleAttrib<GradType>  ParticleGradient_t;
     typedef ParticleAttrib<ValueType> ParticleLaplacian_t;
     
+    Walker<RealType,ParticlePos_t>::PropertyContainer_t  Properties;
+
     ///gradients of the particles
     ParticleGradient_t G;
     
