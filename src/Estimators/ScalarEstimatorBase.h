@@ -46,7 +46,7 @@ namespace ohmmsqmc {
     T b_average;
     T b_variance;
 
-    ScalarEstimatorBase():CollectSum(false), b_average(T()), b_variance(T()){}
+    ScalarEstimatorBase(): CollectSum(false), b_average(T()), b_variance(T()){}
 
     inline T average() const { return b_average;}
     inline T variance() const { return b_variance;}

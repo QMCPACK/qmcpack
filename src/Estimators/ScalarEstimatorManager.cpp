@@ -58,9 +58,6 @@ ScalarEstimatorManager::reset() {
   WeightSum = 0.0;
   for(int i=0; i< Estimators.size(); i++) Estimators[i]->reset();
 
-  if(OHMMS::Controller->ncontexts()>1) {
-    for(int i=0; i< Estimators.size(); i++) Estimators[i]->CollectSum = true;
-  }
 }
 
 /**
@@ -88,6 +85,10 @@ void ScalarEstimatorManager::flush(){
 
   BlockAverages[WeightIndex] = WeightSum;
   WeightSum = 0.0;
+}
+
+void ScalarEstimatorManager::setCollectionMode(bool collect) {
+  for(int i=0; i< Estimators.size(); i++) Estimators[i]->CollectSum = collect;
 }
 
 /**

@@ -133,6 +133,9 @@ namespace ohmmsqmc {
     //set the data members to start a new run
     getReady();
 
+    //estimator has to collect the data over mpi nodes
+    Estimators.setCollectionMode(OHMMS::Controller->ncontexts()>1);
+
     correlatedSampling();
 
     //   log_buffer << "0 ";

@@ -93,6 +93,7 @@ namespace ohmmsqmc {
       WeightSum = w;
     }
 
+    void setCollectionMode(bool collect);
   private:
 
     string RootName;
