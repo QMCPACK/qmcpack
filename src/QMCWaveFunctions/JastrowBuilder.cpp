@@ -277,7 +277,6 @@ namespace ohmmsqmc {
 
     string jasttype((const char*)(xmlGetProp(cur, (const xmlChar *)"type")));
     string jastname((const char*)(xmlGetProp(cur, (const xmlChar *)"name")));
-    //string jastfunction((const char*)(xmlGetProp(cur, (const xmlChar *)"function")));
     string jastfunction;
     xmlChar *ftype = xmlGetProp(cur, (const xmlChar *)"function");
     if(ftype) jastfunction = (const char*) ftype;
@@ -305,7 +304,6 @@ namespace ohmmsqmc {
 	return createOneBody(cur,J1);
       }
     } else if(jasttype == "Polarization") {
-cout << "Polarizaton jastrow to be created." << endl;
       PolarizedJastrow *jp=new PolarizedJastrow;
       if(jp) {
         jp->put(cur,wfs_ref.VarList);
