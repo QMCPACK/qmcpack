@@ -160,15 +160,18 @@ namespace ohmmsqmc {
 	    vmc.setFileRoot(myProject.CurrentRoot());
 	    vmc.run();
 	  } else if(methodname == "dmc"){
+	    H.remove("Flux");
 	    MolecuDMC dmc(el,Psi,H,cur);
 	    dmc.setFileRoot(myProject.CurrentRoot());
 	    dmc.run();
 	  } else if(methodname == "optimize"){
+	    H.remove("Flux");
 	    VMC_OPT vmc(el,Psi,H,cur);
 	    vmc.addConfiguration(PrevConfigFile);
 	    vmc.setFileRoot(myProject.CurrentRoot());
 	    vmc.run();
 	  } else if(methodname == "test"){
+	    H.remove("Flux");
 	    WaveFunctionTester wftest(el,Psi,H,cur);
 	    wftest.setFileRoot(myProject.CurrentRoot());
 	    wftest.run();
@@ -180,7 +183,8 @@ namespace ohmmsqmc {
           PrevConfigFile = myProject.CurrentRoot();
 	  //change the content of mcwalkerset/@file attribute
 	  for(int i=0; i<m_walkerset.size(); i++) {
-	    xmlSetProp(m_walkerset[i],(const xmlChar*)"file", (const xmlChar*)myProject.CurrentRoot());
+	    xmlSetProp(m_walkerset[i],(const xmlChar*)"file", 
+                       (const xmlChar*)myProject.CurrentRoot());
 	  }
 
 	  myProject.advance();
