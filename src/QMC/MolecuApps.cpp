@@ -191,11 +191,12 @@ namespace ohmmsqmc {
 	H.add(new IonIonPotential(ion),"IonIon");
     } else if(ptype == "cpp") {
       xmlChar* att2=xmlGetProp(cpp,(const xmlChar*)"species");
-      string stype = (const char*)att2;
+      string stype("Ge");
+      if(att2) stype = (const char*)att2;
       //      cout << "stype " << stype << endl;
       H.add(new CoulombPotentialAA(el), "ElecElec");
       H.add(new LocalPPotential(ion,el), "PseudoPot");
-      //H.add(new GeCorePolPotential(ion,el,stype), "GeCPP");
+      H.add(new GeCorePolPotential(ion,el,stype), "GeCPP");
       if(ion.getTotalNum()>1) 
 	H.add(new IonIonPotential(ion),"IonIon");
     } else if(ptype == "polarization"){

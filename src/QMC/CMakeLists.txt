@@ -20,11 +20,11 @@ IF(QMCAPPS MATCHES "MolecuApps")
     ../QMCHamiltonians/LocalPPotential.cpp
     ../QMCHamiltonians/WOS/Device.cpp
     ../QMCHamiltonians/WOS/WOSPotential.cpp
+    ../QMCHamiltonians/GeCorePolPotential.cpp
   )
   SET(APPSRC MolecuApps.cpp)
 ENDIF(QMCAPPS MATCHES "MolecuApps")
 
-#    ../QMCHamiltonians/GeCorePolPotential.cpp
 #choose classes for QDApps
 IF(QMCAPPS MATCHES "QDApps")
   SET(WAVEFUNCTIONS
