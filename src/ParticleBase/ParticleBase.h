@@ -87,7 +87,9 @@ public:
 
   //!< Default constructor
   ParticleBase();
-  ParticleBase(const ParticleBase<PT>& P) {
+
+  ParticleBase(const ParticleBase<PT>& P): Counter(0), LocalNum(0), GlobalNum(0) {
+    initBase();
     assign(P);
   }
 
@@ -130,12 +132,16 @@ public:
   void clear();
 
   virtual void assign(const ParticleBase<PT>& ptclin) {
-    create(ptclin.getLocalNum());
+    resize(ptclin.getLocalNum());
     Lattice = ptclin.Lattice;
     R.InUnit = ptclin.R.InUnit;
     R = ptclin.R;
     ID = ptclin.ID;
     GroupID = ptclin.GroupID;
+    if(ptclin.SubPtcl.size()) {
+      SubPtcl.resize(ptclin.SubPtcl.size());
+      SubPtcl =ptclin.SubPtcl;
+    }
   }
 
   inline int getLocalNum() const { return LocalNum;}
@@ -160,6 +166,8 @@ public:
   inline void setCounter(int i = 0) { Counter = i;}
 
 protected:
+
+  void initBase();
   
   //!< Internal counter  
   int Counter;

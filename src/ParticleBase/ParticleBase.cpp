@@ -24,6 +24,12 @@
 template<class PL>
 ParticleBase<PL>::ParticleBase():Counter(0), LocalNum(0), GlobalNum(0)
 { 
+  initBase();
+}
+
+template<class PL>
+void ParticleBase<PL>::initBase() {
+
   R.setTypeName(ParticleTags::postype_tag);
   R.setObjName(ParticleTags::position_tag);
   ID.setTypeName(ParticleTags::indextype_tag);
@@ -45,7 +51,7 @@ ParticleBase<PL>::ParticleBase():Counter(0), LocalNum(0), GlobalNum(0)
 
   ///curR is always in unit
   curR.setUnit(PosUnit::LatticeUnit);
-} 
+}
   
 template<class PL>
 ParticleBase<PL>::~ParticleBase() 
@@ -263,18 +269,18 @@ ParticleBase<PL>::getTensorAttrib(const std::string& aname) {
 template<class PL>
 void ParticleBase<PL>::create(unsigned m) {
 
-  DEBUGMSG("Number of particle before creating = " << LocalNum);
-  DEBUGMSG("==================================================");
+  DEBUGMSG("Number of particle before creating = " << LocalNum)
+  DEBUGMSG("==================================================")
   for(int i=0; i< INDEX.size(); i++) INDEX[i]->create(m);
   for(int i=0; i< VAL.size(); i++)   VAL[i]->create(m);
   for(int i=0; i< POS.size(); i++)   POS[i]->create(m);
   for(int i=0; i< TENZOR.size(); i++) TENZOR[i]->create(m);
   curR.create(m);
-  DEBUGMSG("==================================================");
+  DEBUGMSG("==================================================")
   LocalNum += m;
   GlobalNum += m;
   
-  DEBUGMSG("Number of particle after creating = " << LocalNum);
+  DEBUGMSG("Number of particle after creating = " << LocalNum)
 }
 
 template<class PL>
