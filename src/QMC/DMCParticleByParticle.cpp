@@ -184,7 +184,7 @@ namespace ohmmsqmc {
 		  ++nRejectTemp; 
 		  Psi.restore(iat);
 		}
-	      } 
+	      } // node crossing 
               iat++;
 	    }
 
@@ -210,7 +210,9 @@ namespace ohmmsqmc {
 	      }
 	      
 	      ValueType M = brancher.branchGF(Tau,emixed*0.5,0.0);
-	      if((*it)->Properties(AGE) > 3.0) M = min(0.5,M);
+	      // if((*it)->Properties(AGE) > 3.0) M = min(0.5,M);
+	      //persistent configurations
+	      if((*it)->Properties(AGE) > 1.9) M = min(0.5,M);
 	      if((*it)->Properties(AGE) > 0.9) M = min(1.0,M);
 	      (*it)->Properties(WEIGHT) = M; 
 	      (*it)->Properties(MULTIPLICITY) = M + Random();
@@ -219,7 +221,7 @@ namespace ohmmsqmc {
 	    } else {//set the weight and multiplicity to zero
 	      (*it)->Properties(WEIGHT) = 0.0; 
 	      (*it)->Properties(MULTIPLICITY) = 0.0;
-	      nReject+= W.getTotalNum();//not make sense
+	      nReject += W.getTotalNum();//not make sense
 	    }
 
 	    it++; iwalker++;
