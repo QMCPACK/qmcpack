@@ -41,10 +41,12 @@ namespace ohmmsqmc {
   struct ScalarEstimatorBase {
 
     typedef typename MCWalkerConfiguration::Walker_t Walker_t;
+    bool CollectSum;
+
     T b_average;
     T b_variance;
 
-    ScalarEstimatorBase():b_average(T()), b_variance(T()){}
+    ScalarEstimatorBase():CollectSum(false), b_average(T()), b_variance(T()){}
 
     inline T average() const { return b_average;}
     inline T variance() const { return b_variance;}
@@ -61,7 +63,6 @@ namespace ohmmsqmc {
      *\param wgt the weight
      */
     virtual void accumulate(const Walker_t& awalker, T wgt) = 0;
-
 
     /** a virtual function to report the scalar estimator
      *@param record 

@@ -86,6 +86,13 @@ namespace ohmmsqmc {
       return Estimators[i]->variance();
     }
   
+    /** set the total weight
+     *@param w the weight
+     */
+    inline void setWeight(RealType w) {
+      WeightSum = w;
+    }
+
   private:
 
     string RootName;

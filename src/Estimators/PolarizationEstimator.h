@@ -29,14 +29,16 @@ namespace ohmmsqmc {
   class PolarizationEstimator: public ScalarEstimatorBase<T> {
 
     ///local data
-    T z_sum, z_sq_sum;
+    //T z_sum, z_sq_sum;
+    std::vector<T> z_sum;
     int pindex_0, pindex_1;
   public:
 
     typedef typename ScalarEstimatorBase<T>::Walker_t Walker_t;
   
-    PolarizationEstimator():z_sum(0.0), 
-			    z_sq_sum(0.0) { }
+    PolarizationEstimator() { 
+      z_sum.resize(2,0.0);
+    }
 
     void add2Record(RecordNamedProperty<T>& record) {
       pindex_0 = record.add("Pol-z");
@@ -46,22 +48,25 @@ namespace ohmmsqmc {
     inline void accumulate(const Walker_t& awalker, T wgt) {
       for(int i=0; i<awalker.size(); i++) {
 	T z = awalker.R[i][2];
-	z_sum += wgt*z;
-	z_sq_sum += wgt*z*z;
+	z_sum[0] += wgt*z;
+	z_sum[1] += wgt*z*z;
       }
     }
 
     ///reset all the cumulative sums to zero
     inline void reset() { 
-      z_sum=T();z_sq_sum=T();
+      z_sum[0]=T();z_sum[1]=T();
     }
 
     inline void report(RecordNamedProperty<T>& record, T wgtinv) {
-      b_average =  z_sum*wgtinv;
-      b_variance = z_sq_sum*wgtinv-b_average*b_average;
+#ifdef HAVE_MPI
+      if(CollectSum) gsum(z_sum,0);
+#endif
+      b_average =  z_sum[0]*wgtinv;
+      b_variance = z_sum[1]*wgtinv-b_average*b_average;
       record[pindex_0]=b_average;
       record[pindex_1]=b_variance;
-      z_sum = T(); z_sq_sum = T(); 
+      reset();
     }
   };
 }

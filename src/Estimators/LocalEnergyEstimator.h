@@ -53,13 +53,15 @@ namespace ohmmsqmc {
   template<class T>
   class LocalEnergyEstimator: public ScalarEstimatorBase<T> {
 
+    enum {ENERGY_INDEX, ENERGY_SQ_INDEX};
+
     ///locator of the first data this object handles
     int LocalEnergyIndex;
+    int SizeOfHamiltonians;
 
-    ///local data
-    T energy_sum, energy_sq_sum;
     ///vector to contain the names of all the constituents of the local energy
     std::vector<string> elocal_name;
+
     ///vector to contain all the constituents of the local energy
     std::vector<T>  elocal;
 
@@ -67,15 +69,15 @@ namespace ohmmsqmc {
 
     typedef typename ScalarEstimatorBase<T>::Walker_t Walker_t;
   
-    LocalEnergyEstimator(QMCHamiltonian& h):energy_sum(0.0), 
-					    energy_sq_sum(0.0) { 
-      int nterms=h.size();
-      elocal.resize(nterms);
-      elocal_name.resize(nterms+2);
-      elocal_name[0] = "LocalEnergy";
-      elocal_name[1] = "Variance";
+    LocalEnergyEstimator(QMCHamiltonian& h) { 
+      //int nterms=h.size();
+      SizeOfHamiltonians = h.size();
+      elocal.resize(SizeOfHamiltonians+2);
+      elocal_name.resize(SizeOfHamiltonians+2);
+      elocal_name[ENERGY_INDEX] = "LocalEnergy";
+      elocal_name[ENERGY_SQ_INDEX] = "Variance";
       int ii=2;
-      for(int i=0; i < nterms; i++, ii++) elocal_name[ii] = h.getName(i);
+      for(int i=0; i < SizeOfHamiltonians; i++, ii++) elocal_name[ii] = h.getName(i);
     }
 
     /**
@@ -90,16 +92,18 @@ namespace ohmmsqmc {
     }
 
     inline void accumulate(const Walker_t& awalker, T wgt) {
-      T e = awalker.Properties(LocalEnergy);
-      energy_sum += wgt*e; energy_sq_sum += wgt*e*e;
-      for(int i=0, ii=0; i<elocal.size(); i++) {
-	elocal[i] += wgt*(awalker.E[i]);
+      T e = awalker.Properties(LOCALENERGY);
+      const T* restrict e_ptr = awalker.getEnergyBase();
+      //energy_sum += wgt*e; energy_sq_sum += wgt*e*e;
+      elocal[ENERGY_INDEX] += wgt*e;
+      elocal[ENERGY_SQ_INDEX] += wgt*e*e;
+      for(int ii=2, i=0; i<SizeOfHamiltonians; ii++,i++) {
+	elocal[ii] += wgt*e_ptr[i]; //wgt*(awalker.E[i]);
       }
     }
 
     ///reset all the cumulative sums to zero
     inline void reset() { 
-      energy_sum = T(); energy_sq_sum = T(); 
       for(int i=0; i<elocal.size(); i++) {
 	elocal[i] = T();
       }
@@ -111,17 +115,22 @@ namespace ohmmsqmc {
      *\brief calculate the averages and reset to zero
      */
     inline void report(RecordNamedProperty<T>& record, T wgtinv) {
-      b_average =  energy_sum*wgtinv;
-      b_variance = energy_sq_sum*wgtinv-b_average*b_average;
+      //b_average =  energy_sum*wgtinv;
+      //b_variance = energy_sq_sum*wgtinv-b_average*b_average;
+#ifdef HAVE_MPI
+      if(CollectSum) gsum(elocal,0);
+#endif
       register int ir=LocalEnergyIndex;
+      b_average =  elocal[ENERGY_INDEX]*wgtinv;
+      b_variance = elocal[ENERGY_SQ_INDEX]*wgtinv-b_average*b_average;
       record[ir++] = b_average;
       record[ir++] = b_variance;
-      for(int i=0; i<elocal.size(); i++) {
-	record[ir++] = elocal[i]*wgtinv;
-	elocal[i] = T();
+      for(int i=0, ii=2; i<SizeOfHamiltonians; i++,ii++) {
+	record[ir++] = elocal[ii]*wgtinv;
       }
-      energy_sum = T(); energy_sq_sum = T(); 
+      reset();
     }
+
   };
 
   //   template<class T>

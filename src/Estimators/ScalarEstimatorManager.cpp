@@ -18,8 +18,10 @@
 #include "Particle/MCWalkerConfiguration.h"
 #include "QMCHamiltonians/QMCHamiltonianBase.h"
 #include "Estimators/ScalarEstimatorManager.h"
-#include "Estimators/LocalEnergyEstimator.h"
 #include "Message/Communicate.h"
+#include "Message/CommOperators.h"
+#include "Estimators/LocalEnergyEstimator.h"
+#include "Estimators/PolarizationEstimator.h"
 
 using namespace ohmmsqmc;
 
@@ -55,6 +57,10 @@ void
 ScalarEstimatorManager::reset() {
   WeightSum = 0.0;
   for(int i=0; i< Estimators.size(); i++) Estimators[i]->reset();
+
+  if(OHMMS::Controller->ncontexts()>1) {
+    for(int i=0; i< Estimators.size(); i++) Estimators[i]->CollectSum = true;
+  }
 }
 
 /**
@@ -65,7 +71,7 @@ ScalarEstimatorManager::accumulate(const MCWalkerConfiguration& W) {
 
   for(MCWalkerConfiguration::const_iterator it = W.begin(); 
       it != W.end(); it++){    
-    RealType wgt = (*it)->Properties(Weight);
+    RealType wgt = (*it)->Properties(WEIGHT);
     WeightSum += wgt;
     for(int i=0; i< Estimators.size(); i++) 
       Estimators[i]->accumulate(**it,wgt);
@@ -101,33 +107,16 @@ void ScalarEstimatorManager::report(int iter){
 */
 void ScalarEstimatorManager::flushreport(int iter){
 
+  gsum(WeightSum,0);
   RealType wgtinv = 1.0/WeightSum;
-  for(int i=0; i<Estimators.size(); i++) 
-    Estimators[i]->report(BlockAverages,wgtinv);
+  for(int i=0; i<Estimators.size(); i++)  Estimators[i]->report(BlockAverages,wgtinv);
   
   BlockAverages[WeightIndex] = WeightSum;
   WeightSum = 0.0;
 
-#ifdef HAVE_MPI
-
-  int nproc = OHMMS::Controller->ncontexts();
-  vector<double> temp(nproc,0.0);
-  double invproc = 1.0/static_cast<double>(nproc);
-  MPI_Allreduce(&(BlockAverages.Values[0]),&(temp[0]),BlockAverages.size(),MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
   (*OutStream) << setw(10) << iter;
-  for(int i=0; i<BlockAverages.size();i++)
-    (*OutStream) << setw(16) << temp[i]*invproc;
-    (*OutStream) << endl;
-
-#else
-
-  (*OutStream) << setw(10) << iter;
-  for(int i=0; i<BlockAverages.size();i++)
-    (*OutStream) << setw(16) << BlockAverages[i];
-    (*OutStream) << endl;
-
-#endif
-  
+  for(int i=0; i<BlockAverages.size();i++) (*OutStream) << setw(16) << BlockAverages[i];
+  (*OutStream) << endl;
 }
 
 void 
@@ -139,8 +128,7 @@ ScalarEstimatorManager::resetReportSettings(const string& aname) {
   } 
 
   //update the weight index
-  for(int i=0; i<Estimators.size(); i++) 
-    Estimators[i]->add2Record(BlockAverages);
+  for(int i=0; i<Estimators.size(); i++) Estimators[i]->add2Record(BlockAverages);
   WeightIndex = BlockAverages.add("WeightSum");
   if(aname != RootName) {
     RootName = aname;
@@ -152,8 +140,7 @@ ScalarEstimatorManager::resetReportSettings(const string& aname) {
     OutStream->setf(ios::left,ios::adjustfield);
   }
 
-  for(int i=0; i<BlockAverages.size();i++)  BlockAverages[i] = 0.0;
-
+  BlockAverages.setValues(0.0);
 }
 
 /**
@@ -198,9 +185,25 @@ ScalarEstimatorManager::getEstimator(const string& a) {
 
 bool ScalarEstimatorManager::put(xmlNodePtr cur) {
 
-  //if(Estimators.empty()) {
-  //  add(new LocalEnergyEstimator<RealType>(H),"elocal");
-  //} 
+  if(Estimators.empty()) {
+    add(new LocalEnergyEstimator<RealType>(H),"elocal");
+  } 
+
+  cur = cur->children;
+  while(cur != NULL) {
+    string cname((const char*)(cur->name));
+    if(cname == "estimator") {
+      xmlChar* att=xmlGetProp(cur,(const xmlChar*)"name");
+      if(att) {
+	string aname((const char*)att);
+	if(aname == "Polarization"){
+	  add(new PolarizationEstimator<RealType>(),aname);
+	}
+      }
+    }
+    cur = cur->next;
+  }
+
   return true;
 }
 
