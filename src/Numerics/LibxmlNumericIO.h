@@ -28,6 +28,18 @@
  *\param cur current node to which a content is copied
  *\return ture if successful
  */
+
+template<class T>
+inline bool 
+putContent(Vector<T>& a, xmlNodePtr cur){
+  std::istringstream 
+    stream((const char*)
+	   (xmlNodeListGetString(cur->doc, cur->xmlChildrenNode, 1)));
+  int i=0;
+  while(!stream.eof()){ stream >> a(i++);}
+  return true;
+}
+
 template<class T>
 inline bool 
 putContent(Matrix<T>& a, xmlNodePtr cur){
