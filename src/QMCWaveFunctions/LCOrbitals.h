@@ -240,13 +240,14 @@ namespace ohmmsqmc {
       }
  
       if(!OccupyAll && !Identity){
-	for(int i=0; i<C.rows(); i++){
-	  for(int j=0; j<C.cols(); j++){
-	    if(occupation[i]>numeric_limits<double>::epsilon())
-	      C(i,j) = Ctemp(i,j);
-	    else 
-	      C(i,j) = 0.0;
+	int n=0; int i=0;  
+	while(i<C.rows()){
+	  if(occupation[n]>numeric_limits<double>::epsilon()){
+	    for(int j=0; j<C.cols(); j++)
+	      C(i,j) = Ctemp(n,j);
+	    i++;
 	  }
+	  n++;
 	}
       } else {
 	C = Ctemp;
