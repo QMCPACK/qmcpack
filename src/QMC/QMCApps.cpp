@@ -27,6 +27,7 @@
 #include "QMC/MolecuDMC.h"
 #include "QMC/WaveFunctionTester.h"
 #include "QMCHamiltonians/ConservedEnergy.h"
+#include "QMCHamiltonians/WOS/WOSPotential.h"
 
 namespace ohmmsqmc {
 
@@ -161,11 +162,16 @@ namespace ohmmsqmc {
 	    vmc.run();
 	  } else if(methodname == "dmc"){
 	    H.remove("Flux");
+	    //change WOS potential
+	    WOSPotential* wos=
+	      dynamic_cast<WOSPotential*>(H.getHamiltonian("wos")); 
+	    if(wos) { wos->Mode = 1; }
 	    MolecuDMC dmc(el,Psi,H,cur);
 	    dmc.setFileRoot(myProject.CurrentRoot());
 	    dmc.run();
 	  } else if(methodname == "optimize"){
-	    H.remove("Flux");
+	    //Something wrong this! Check this out.
+	    //H.remove("Flux");
 	    VMC_OPT vmc(el,Psi,H,cur);
 	    vmc.addConfiguration(PrevConfigFile);
 	    vmc.setFileRoot(myProject.CurrentRoot());

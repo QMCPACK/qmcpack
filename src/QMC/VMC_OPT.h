@@ -24,6 +24,7 @@
 #include "Configuration.h"
 #include "QMC/QMCDriver.h" 
 #include "Optimize/Minimize.h"
+#include "QMCHamiltonians/QMCHamiltonianBase.h"
 
 namespace ohmmsqmc {
 
@@ -95,6 +96,8 @@ namespace ohmmsqmc {
     RealType w_en, w_var;
     ///value of the cost function
     RealType CostValue;
+    ///Hamiltonians that depend on the optimization: KE
+    QMCHamiltonian H_KE;
     ///Copy Constructor (disabled).
     VMC_OPT(const VMC_OPT& a): QMCDriver(a) { }  
     ///Copy operator (disabled).

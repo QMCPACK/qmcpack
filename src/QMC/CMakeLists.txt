@@ -14,6 +14,8 @@ IF(QMCAPPS MATCHES "MolecuApps")
     ../QMCWaveFunctions/MolecularOrbitals/STOMolecularOrbitals.cpp
     ../QMCWaveFunctions/MolecularOrbitals/GridMolecularOrbitals.cpp
     ../QMCWaveFunctions/MolecularOrbitals/MolecularOrbitalBuilder.cpp
+    ../QMCHamiltonians/WOS/Device.cpp
+    ../QMCHamiltonians/WOS/WOSPotential.cpp
   )
   SET(APPSRC MolecuApps.cpp)
 ENDIF(QMCAPPS MATCHES "MolecuApps")

@@ -139,7 +139,7 @@ namespace ohmmsqmc {
 
     //calculate local energies and wave functions:
     //can be redundant but the overhead is small
-    W.Energy.resize(W.getActiveWalkers(),H.size()+1);
+    //W.Energy.resize(W.getActiveWalkers(),H.size()+1);
 
     LOGMSG("Evaluate all the walkers before starting")
     MCWalkerConfiguration::iterator it = W.begin();
@@ -155,15 +155,16 @@ namespace ohmmsqmc {
       (*it)->Drift = scale*W.G;
 
       RealType ene = H.evaluate(W);
-      (*it)->resetProperty(iwalker,psi,ene);
+      (*it)->resetProperty(psi,ene);
       /** @deprecated
        * Use a matrix to store energy-related properties 
        */
       //H.update(W.Energy[iwalker]);
       //evaluate the Hamiltonian
-      (*it)->E.resize(H.size()+1,0.0);
       //copy the data from the Hamiltonian to the walker
-      H.get((*it)->E);
+      //(*it)->E.resize(H.size()+1,0.0);
+      //H.get((*it)->E);
+      H.copy((*it)->getEnergyBase());
       it++;iwalker++;
     }
   }

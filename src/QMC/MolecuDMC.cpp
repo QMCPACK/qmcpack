@@ -301,8 +301,9 @@ namespace ohmmsqmc {
 	(*it)->R = W.R;
 	(*it)->Drift = drift;
 	(*it)->Properties = Properties;
-        H.update(W.Energy[(*it)->ID]);
+        // H.update(W.Energy[(*it)->ID]);
 	//H.get((*it)->E);
+	H.copy((*it)->getEnergyBase());
 	emixed += Properties(LOCALENERGY);
       }
       

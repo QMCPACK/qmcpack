@@ -28,6 +28,7 @@
 #include "QMCHamiltonians/QMCHamiltonianBase.h"
 #include "QMC/VMC.h"
 #include "Message/Communicate.h"
+#include "Message/CommOperators.h"
 #include "Utilities/Clock.h"
 #include "Optimize/Minimize.h"
 #include <algorithm>
@@ -57,6 +58,9 @@ namespace ohmmsqmc {
     m_param.add(cg_tolerance,"tolerance","none");
     m_param.add(cg_stepsize,"stepsize","none");
     m_param.add(cg_epsilon,"epsilon","none");
+
+    H_KE.add(H.getHamiltonian("Kinetic"),"Kinetic");
+    //cout << "Size of H_KE " << H_KE.size() << " total " << H.size() << endl;
   }
 
 
@@ -103,6 +107,13 @@ namespace ohmmsqmc {
     RealType evar = Estimators.variance(0);
     RealType cost= w_en*eav+w_var*0.5*Tau*evar;
 
+
+    if(NumCostCalls == 0) {
+      log_buffer << NumCostCalls << " ";
+      std::copy(OptParams.begin(),OptParams.end(), ostream_iterator<RealType>(log_buffer," "));
+      log_buffer << " " << NumSamples;
+    }
+    
     log_buffer << " " << eav << " " << evar << " " << cost;
     LogOut->getStream() << log_buffer.rdbuf() << endl;
     log_buffer.clear();
@@ -175,8 +186,7 @@ namespace ohmmsqmc {
       ValueType nw_effect = correlatedSampling();
 
       log_buffer << NumCostCalls << " ";
-      std::copy(OptParams.begin(),OptParams.end(),
-		ostream_iterator<RealType>(log_buffer," "));
+      std::copy(OptParams.begin(),OptParams.end(), ostream_iterator<RealType>(log_buffer," "));
       log_buffer << " " << nw_effect;
 
       RealType cost = evalCost();
@@ -238,12 +248,14 @@ namespace ohmmsqmc {
   VMC_OPT::correlatedSampling() {
 
     // numerator and denominator for number of effective walkers
-    ValueType nw_effect_t = 0.0;
-    ValueType nw_effect_b = 0.0;
+    //ValueType nw_effect_t = 0.0;
+    //ValueType nw_effect_b = 0.0;
 
     // flush estimators
     Estimators.reset();
     NumSamples = 0;
+    //TinyVector<RealType,3> nw_effect(0.0);
+    std::vector<RealType> nw_effect(3,0.0);
 
     for(int i=0; i<ConfigFile.size(); i++) {
 
@@ -253,18 +265,14 @@ namespace ohmmsqmc {
 
 	//accumulate the number of samples      
 	NumSamples += W.getActiveWalkers();
-
 	MCWalkerConfiguration::PropertyContainer_t Properties;
       
-	for (MCWalkerConfiguration::iterator it = W.begin(); 
-	     it != W.end(); ++it) {
-
-	  //resize the energy container
-	  (*it)->E.resize(H.size()+1,0.0);
+	for (MCWalkerConfiguration::iterator it = W.begin(); it != W.end(); ++it) {
 
 	  // save old sample
 	  ValueType psi2old = (*it)->Properties(PSISQ);
-	
+	  ValueType vold = (*it)->Properties(LOCALPOTENTIAL);
+
 	  W.R = (*it)->R;
 	
 	  //update the distance table associated with W
@@ -275,22 +283,26 @@ namespace ohmmsqmc {
 	  ValueType psisq = psi*psi;
 	  ValueType weight = psisq/psi2old;
 	  // accumulate the effective number of walkers
-	  nw_effect_t += weight;
-	  nw_effect_b += weight*weight;
+	  nw_effect[0] += weight;
+	  nw_effect[1] += weight*weight;
 
 	  //update the properties
 	  Properties(WEIGHT) = weight;
 	  Properties(PSISQ) = psisq;
 	  Properties(PSI) = psi;
-	  Properties(LOCALENERGY) = H.evaluate(W);
-	  H.get((*it)->E);
+	  //Properties(LOCALENERGY) = H.evaluate(W);
+	  Properties(LOCALENERGY) = H_KE.evaluate(W)+vold;
 	  (*it)->Properties = Properties;
+	  //H.copy((*it)->getEnergyBase());
 	}
-
 	Estimators.accumulate(W);
       }
     }
-    return (nw_effect_t*nw_effect_t/nw_effect_b);
+
+    nw_effect[2] = static_cast<RealType>(NumSamples);
+    gsum(nw_effect,0);
+    NumSamples = nw_effect[2];
+    return (nw_effect[0]*nw_effect[0]/nw_effect[1]);
   }
 
   /**
@@ -406,12 +418,10 @@ namespace ohmmsqmc {
 	xmlChar* att= xmlGetProp(oset[i],(const xmlChar*)"method");
 	if(att) {
 	  optmethod = (const char*)att;
-	  LogOut->getStream() << "#Optimization: using " << optmethod
-			      << " method." << endl;
+	  LogOut->getStream() << "#Optimization: using " << optmethod << " method." << endl;
 	} else {
 	  optmethod = "cg";
-	  LogOut->getStream() << "#Optimization: using " << optmethod 
-			      << " method." << endl;
+	  LogOut->getStream() << "#Optimization: using " << optmethod << " method." << endl;
 	}
 	vector<string> idtag;
 	putContent(idtag,oset[i]);
@@ -423,8 +433,7 @@ namespace ohmmsqmc {
 	}
 	std::copy(IDtag.begin(),IDtag.end(), 
 		  ostream_iterator<string>(log_buffer," "));
-	LogOut->getStream() << "#Optimiziable variables " 
-			    << log_buffer.rdbuf() << endl;
+	LogOut->getStream() << "#Optimiziable variables " << log_buffer.rdbuf() << endl;
 	log_buffer.clear();
       }
     }
@@ -506,14 +515,12 @@ namespace ohmmsqmc {
     }
 
     log_buffer << "#Inital Variables ";
-    std::copy(OptParams.begin(),OptParams.end(),
-	      ostream_iterator<RealType>(log_buffer," "));
+    std::copy(OptParams.begin(),OptParams.end(), ostream_iterator<RealType>(log_buffer," "));
     LogOut->getStream() << log_buffer.rdbuf() << endl << endl;
     log_buffer.clear();
 
     log_buffer << "#Results: index ";
-    std::copy(IDtag.begin(),IDtag.end(), 
-	      ostream_iterator<string>(log_buffer," "));
+    std::copy(IDtag.begin(),IDtag.end(), ostream_iterator<string>(log_buffer," "));
     log_buffer << " effective-walkers  cost-values ";
     LogOut->getStream() << log_buffer.rdbuf() << endl;
     log_buffer.clear();

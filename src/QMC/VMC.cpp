@@ -230,7 +230,8 @@ namespace ohmmsqmc {
       Properties(PSISQ) = psi*psi;
       Properties(PSI) = psi;
       Properties(LOCALENERGY) = H.evaluate(W);
-      
+      Properties(LOCALPOTENTIAL) = H.getLocalPotential();
+ 
       // deltaR = W.R - (*it)->R - (*it)->Drift;
       //  RealType forwardGF = exp(-oneover2tau*Dot(deltaR,deltaR));
       RealType forwardGF = exp(-0.5*Dot(deltaR,deltaR));
@@ -257,7 +258,9 @@ namespace ohmmsqmc {
 	(*it)->R = W.R;
 	(*it)->Drift = drift;
 	(*it)->Properties = Properties;
-	H.update(W.Energy[(*it)->ID]);
+	H.copy((*it)->getEnergyBase());
+        //H.get((*it)->E);
+	//H.update(W.Energy[(*it)->ID]);
 	++nAccept;
       }
       
