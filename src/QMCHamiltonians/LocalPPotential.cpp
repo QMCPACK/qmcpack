@@ -63,7 +63,7 @@ namespace ohmmsqmc {
 	ERRORMSG("Could not open file " << fname)
 	  exit(-1);
       }      
-      XMLReport("Reading a file for the PseodoPotential for species " << species)
+      XMLReport("Reading a file for the PseudoPotential for species " << species)
       double r, f1;
       while(fin >> r >> f1){
 	grid_temp.push_back(r);
