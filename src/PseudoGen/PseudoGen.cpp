@@ -55,7 +55,6 @@ namespace ohmmshf {
   void PseudoGen::setRoot(const string& aroot) {
     RootFileName = aroot;
     LogFileName = RootFileName + ".log";
-    log_stream.open(LogFileName.c_str());
   }
 
 
@@ -151,18 +150,18 @@ namespace ohmmshf {
    
     double cost = 0.0;
     string label("spdf"); 
-    //  std::ofstream log_stream(LogFileName.c_str());
-    log_stream.precision(8); 
+    //  std::ofstream cout(LogFileName.c_str());
+    cout.precision(8); 
 
-    log_stream << "Iteration = " << NumCostCalls++ 
+    cout << "Iteration = " << NumCostCalls++ 
 	       << " and Total Energy = " << TotE << endl;
 
     value_type sum_norm = 0.0;
     value_type sum_eig = 0.0;
-    log_stream << "orb" << '\t' << "PPeigVal" 
+    cout << "orb" << '\t' << "PPeigVal" 
 	       << '\t' << "AEeigVal" << endl;
     for(int ob=0; ob < norb; ob++){
-      log_stream << Psi.N[ob]<< label[Psi.L[ob]] << '\t' 
+      cout << Psi.N[ob]<< label[Psi.L[ob]] << '\t' 
 		 << PPeigVal[ob] << '\t' << AEeigVal[ob] 
 		 << endl;
       RadialOrbital_t psi_norm(Psi(ob));
@@ -193,10 +192,10 @@ namespace ohmmshf {
     sum_eig /= static_cast<value_type>(norb);
     cost = (sum_norm*weight_norm+sum_eig*weight_eig);
 
-    log_stream << "Differential in eigenvalues:   " << sum_eig << endl;
-    log_stream << "Differential in partial norms: " << sum_norm << endl;
-    log_stream << "Cost = " << cost << endl;
-    log_stream << endl;
+    cout << "Differential in eigenvalues:   " << sum_eig << endl;
+    cout << "Differential in partial norms: " << sum_norm << endl;
+    cout << "Cost = " << cost << endl;
+    cout << endl;
 
     if(cost > 100.0) return 100;
     
@@ -230,8 +229,8 @@ namespace ohmmshf {
     KEnew = Pot.calcKE(Psi,0,norb);
 
     string label("spdf");  
-    //   std::ofstream log_stream(LogFileName.c_str());
-    // log_stream.precision(8);
+    //   std::ofstream cout(LogFileName.c_str());
+    // cout.precision(8);
       
     do {
       KEold = KEnew;
@@ -283,17 +282,17 @@ namespace ohmmshf {
       iter++;
       //continue the loop until the kinetic energy converges
     }while(fabs(KEnew-KEold)>scf_tol && iter<maxiter);
-    log_stream.precision(10);
-    log_stream << "Total Hartree-Fock iterations = " << iter << endl;
-    log_stream << "KE    = " << setw(15) << KEnew 
+    cout.precision(10);
+    cout << "Total Hartree-Fock iterations = " << iter << endl;
+    cout << "KE    = " << setw(15) << KEnew 
 	 << "  PE     = " << setw(15) << Vtotal << endl; 
-    log_stream << "PE/KE = " << setw(15) << Vtotal/KEnew 
+    cout << "PE/KE = " << setw(15) << Vtotal/KEnew 
 	 << "  Energy = " << setw(15) << E << endl;
-    log_stream << endl;
-    log_stream << "V_External = " << energy[0] << endl;
-    log_stream << "V_Hartree = "  << energy[1] << endl;
-    log_stream << "V_Exchange = " << energy[2] << endl;
-    log_stream << endl;
+    cout << endl;
+    cout << "V_External = " << energy[0] << endl;
+    cout << "V_Hartree = "  << energy[1] << endl;
+    cout << "V_Exchange = " << energy[2] << endl;
+    cout << endl;
 
     return E;
 

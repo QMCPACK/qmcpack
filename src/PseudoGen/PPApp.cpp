@@ -16,7 +16,6 @@
 // -*- C++ -*-
 #include <iostream>
 #include "PseudoGen/SQDFrame.h"
-#include "OhmmsApp/ProjectData.h"
 
 #ifdef HAVE_QT
 #include <qapplication.h>
@@ -95,20 +94,6 @@ SQDFrame::solve(const char* fname) {
     return false;
   }
 
-  //project description, assign id and series
-  OHMMS::ProjectData myProject;
-  
-  xmlXPathObjectPtr result
-    = xmlXPathEvalExpression((const xmlChar*)"//project",m_context);
-  if(xmlXPathNodeSetIsEmpty(result->nodesetval)) {
-    WARNMSG("Project is not defined")
-      myProject.reset();
-  } else {
-    myProject.put(result->nodesetval->nodeTab[0]);
-  }
-  xmlXPathFreeObject(result);
-
-
   using namespace ohmmshf;
 
   PPSolver = new PseudoGen(Pot,Psi);
@@ -119,7 +104,6 @@ SQDFrame::solve(const char* fname) {
     return false;
   }
 
-  PPSolver->setRoot(myProject.CurrentRoot());
   success = PPSolver->run();
   xmlFreeDoc(m_doc);
   xmlCleanupParser();

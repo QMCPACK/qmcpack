@@ -60,7 +60,6 @@ namespace ohmmshf {
     string RootFileName;
     ///name of the log file
     string LogFileName;
-    std::ofstream log_stream;
     string AtomName, PotType, GridType;
 
     xmlNodePtr grid_ptr;

@@ -167,6 +167,9 @@ namespace ohmmshf {
 
       xmlXPathFreeContext(m_context);
 
+    //set the root file name
+    setRoot(AtomName);
+
     return true;
   }
 
@@ -356,6 +359,10 @@ namespace ohmmshf {
 	XMLReport("Adding Pseudo Orbital (" << n << "," << l << "," 
 		  << m << "," << s << ")")
 	  Psi.add(n,l,m,s,occ);
+
+	if(s == 1) Psi.Nup++;
+	else Psi.Ndown++;
+
 	initAEOrbital(grpname,index);
 	index++;
 

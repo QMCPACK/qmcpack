@@ -2,7 +2,6 @@
 PROJECT(ppg)
                                                           
 SET(PPSRCS 
-  ../OhmmsApp/ProjectData.cpp
   ../Optimize/Minimize.cpp
   ../Numerics/Clebsch_Gordan.cpp
   ../SQD/SphericalPotential/RadialPotential.cpp
