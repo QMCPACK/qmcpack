@@ -24,7 +24,7 @@ namespace ohmmsqmc {
 	LOCALENERGY,  /*!< local energy, the sum of all the components */
 	LOCALPOTENTIAL, /*!< local potential energy = local energy - kinetic energy */
 	MULTIPLICITY, /*!< multiplicity, used by DMC for branching */
-	PSISQ,        /*!< square of the many-body wavefunction \f$|\Psi|^2\f$ */
+	LOGPSI,        /*!< log(fabs(psi)) instead of square of the many-body wavefunction \f$|\Psi|^2\f$ */
 	PSI,          /*!< value of the many-body wavefunction \f$\Psi(\{R\})\f$ */
 	AGE,          /*!< the age of the walker. set to zero when the walker is updated */
 	SCALED,       /*!< scaling factor for the drift */
@@ -117,7 +117,7 @@ namespace ohmmsqmc {
       Properties(WEIGHT) = 1.0;
       Properties(MULTIPLICITY) = 1.0;
       Properties(LOCALENERGY) = ene;
-      Properties(PSISQ)=psi*psi;
+      Properties(LOGPSI)=log(fabs(psi));
       Properties(PSI)=psi;
     }
 
