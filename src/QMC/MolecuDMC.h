@@ -24,6 +24,8 @@
 
 namespace ohmmsqmc {
 
+  class WOSPotential;
+
   /** Implements the DMC algorithm. */
   class MolecuDMC: public QMCDriver {
 
@@ -52,6 +54,10 @@ namespace ohmmsqmc {
 
     ///temporary storage for random displacement
     ParticleSet::ParticlePos_t deltaR;
+
+    ///pointer to WOSPotential
+    WOSPotential *wos_ref;
+
   };
 }
 #endif

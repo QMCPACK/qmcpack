@@ -26,6 +26,7 @@
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCHamiltonians/QMCHamiltonianBase.h"
+#include "QMCHamiltonians/WOS/WOSPotential.h"
 #include "QMC/MolecuFixedNodeBranch.h"
 #include "Message/Communicate.h"
 #include "Utilities/Clock.h"
@@ -36,7 +37,7 @@ namespace ohmmsqmc {
 		       TrialWaveFunction& psi, 
 		       QMCHamiltonian& h, 
 		       xmlNodePtr q): 
-    QMCDriver(w,psi,h,q) { 
+    QMCDriver(w,psi,h,q),wos_ref(0) { 
     RootName = "dmc";
     QMCType ="dmc";
   }
@@ -65,14 +66,21 @@ namespace ohmmsqmc {
    * at the end of the run.
    */
   bool MolecuDMC::run() { 
-
-    //create a distance table for one walker
+    
+   //create a distance table for one walker
     DistanceTable::create(1);
     deltaR.resize(W.getTotalNum());
     drift.resize(W.getTotalNum());
-    
+
     if(put(qmc_node)){
       
+      /// set the Tau for calculation in WOS
+      H.setTau(Tau);
+
+      // extract the WOS potential
+      wos_ref = dynamic_cast<WOSPotential*>(H.getHamiltonian("wos"));
+
+
       //set the data members to start a new run
       //    getReady();
       int PopIndex, E_TIndex;
@@ -238,14 +246,20 @@ namespace ohmmsqmc {
   void 
   MolecuDMC::advanceWalkerByWalker(BRANCHER& Branch) {
     
+
     //Pooma::Clock timer;
     RealType oneovertau = 1.0/Tau;
     RealType oneover2tau = 0.5*oneovertau;
     RealType g = sqrt(Tau);
-    
-    MCWalkerConfiguration::PropertyContainer_t Properties;
+    RealType vwos;
+
+    //MCWalkerConfiguration::PropertyContainer_t Properties;
     int nh = H.size()+1;
     
+    // extract the WOS potential
+    //WOSPotential* wos = dynamic_cast<WOSPotential*>(H.getHamiltonian("wos"));
+
+
     for (MCWalkerConfiguration::iterator it = W.begin();
 	 it != W.end(); ++it) {
       
@@ -253,12 +267,27 @@ namespace ohmmsqmc {
       (*it)->Properties(MULTIPLICITY) = 1.0;
       
       //copy the properties of the working walker
-      Properties = (*it)->Properties;
-      
+      W.Properties = (*it)->Properties;
+
       //save old local energy
-      ValueType eold = Properties(LOCALENERGY);
-      ValueType emixed = eold;  
-      
+      ValueType eold = W.Properties(LOCALENERGY);
+
+      /*
+	If doing WOS then we have to redo the old calculation for ROld to
+	calculate G(Rold,Rnew). So we extract wos from the Hamiltonian and
+	re-evaluate it.
+      */
+      ValueType emixed = eold;
+
+      if(wos_ref) {
+	W.R = (*it)->R;
+	DistanceTable::update(W);
+	ValueType psi = Psi.evaluate(W);
+	eold = H.evaluate(W);
+	emixed += 0.5*W.Properties(WOSVAR)*Tau;
+      }
+      //ValueType emixed = eold + 0.5*W.Properties(WOSVAR)*Tau;  
+
       //create a 3N-Dimensional Gaussian with variance=1
       makeGaussRandom(deltaR);
       
@@ -270,13 +299,14 @@ namespace ohmmsqmc {
       //evaluate wave function
       ValueType psi = Psi.evaluate(W);
       //update the properties
-      Properties(LOCALENERGY) = H.evaluate(W);
-      Properties(PSISQ) = psi*psi;
-      Properties(PSI) = psi;
+      W.Properties(LOCALENERGY) = H.evaluate(W);
+      W.Properties(PSISQ) = psi*psi;
+      W.Properties(PSI) = psi;
       
       //deltaR = W.R - (*it)->R - (*it)->Drift;
       //RealType forwardGF = exp(-oneover2tau*Dot(deltaR,deltaR));
-      RealType forwardGF = exp(-0.5*Dot(deltaR,deltaR));
+      //RealType forwardGF = exp(-0.5*Dot(deltaR,deltaR));
+      RealType logGf = -0.5*Dot(deltaR,deltaR);
       
       //scale the drift term to prevent persistent cofigurations
       ValueType vsq = Dot(W.G,W.G);
@@ -286,25 +316,27 @@ namespace ohmmsqmc {
       ValueType scale = ((-1.0+sqrt(1.0+2.0*Tau*vsq))/vsq);
       drift = scale*W.G;
       deltaR = (*it)->R - W.R - drift;
-      RealType backwardGF = exp(-oneover2tau*Dot(deltaR,deltaR));
+      //RealType backwardGF = exp(-oneover2tau*Dot(deltaR,deltaR));
+      RealType logGb = -oneover2tau*Dot(deltaR,deltaR);
       
       //set acceptance probability
-      RealType prob= min(backwardGF/forwardGF*Properties(PSISQ)/(*it)->Properties(PSISQ),1.0);
+      //RealType prob= std::min(backwardGF/forwardGF*W.Properties(PSISQ)/(*it)->Properties(PSISQ),1.0);
+      RealType prob= std::min(exp(logGb-logGf)*W.Properties(PSISQ)/(*it)->Properties(PSISQ),1.0);
       
       bool accepted=false; 
       if(Random() > prob){
 	(*it)->Properties(AGE)++;
-	emixed += eold;
+	emixed += emixed;
       } else {
 	accepted=true;  
-	Properties(AGE) = 0;
+	W.Properties(AGE) = 0;
 	(*it)->R = W.R;
 	(*it)->Drift = drift;
-	(*it)->Properties = Properties;
+	(*it)->Properties = W.Properties;
         // H.update(W.Energy[(*it)->ID]);
 	//H.get((*it)->E);
 	H.copy((*it)->getEnergyBase());
-	emixed += Properties(LOCALENERGY);
+	emixed += W.Properties(LOCALENERGY) + 0.5*W.Properties(WOSVAR)*Tau;
       }
       
       //calculate the weight and multiplicity
@@ -315,7 +347,7 @@ namespace ohmmsqmc {
       (*it)->Properties(MULTIPLICITY) = M + Random();
       
       //node-crossing: kill it for the time being
-      if(Branch(Properties(PSI),(*it)->Properties(PSI))) {
+      if(Branch(W.Properties(PSI),(*it)->Properties(PSI))) {
 	accepted=false;     
 	(*it)->Properties(WEIGHT) = 0.0; 
 	(*it)->Properties(MULTIPLICITY) = 0.0;
