@@ -42,6 +42,8 @@ public:
     return *this;
   }
 
+  inline int current() const { return Current;}
+
   ///set the Current to zero
   inline void rewind() { Current = 0;}
 
@@ -55,6 +57,7 @@ public:
   }
 
   inline void get(T& x) { x = operator[](Current++);}
+
   template<class _OutputIterator>
   inline void get(_OutputIterator first, _OutputIterator last) {
     while(first != last) {
@@ -63,6 +66,7 @@ public:
   }
   
   inline void put(T x) { operator[](Current++) = x;}
+
   template<class _InputIterator>
   inline void put(_InputIterator first, _InputIterator last){
     while(first != last) {
