@@ -53,10 +53,11 @@ namespace ohmmsqmc {
   template<class T>
   class LocalEnergyEstimator: public ScalarEstimatorBase<T> {
 
-    enum {ENERGY_INDEX, ENERGY_SQ_INDEX};
+    enum {ENERGY_INDEX, ENERGY_SQ_INDEX, POTENTIAL_INDEX, LE_MAX};
 
     ///locator of the first data this object handles
     int LocalEnergyIndex;
+    int LocalPotentialIndex;
     int SizeOfHamiltonians;
 
     ///vector to contain the names of all the constituents of the local energy
@@ -72,12 +73,12 @@ namespace ohmmsqmc {
     LocalEnergyEstimator(QMCHamiltonian& h) { 
       //int nterms=h.size();
       SizeOfHamiltonians = h.size();
-      elocal.resize(SizeOfHamiltonians+2);
-      elocal_name.resize(SizeOfHamiltonians+2);
+      elocal.resize(SizeOfHamiltonians+LE_MAX);
+      elocal_name.resize(SizeOfHamiltonians+LE_MAX);
       elocal_name[ENERGY_INDEX] = "LocalEnergy";
       elocal_name[ENERGY_SQ_INDEX] = "Variance";
-      int ii=2;
-      for(int i=0; i < SizeOfHamiltonians; i++, ii++) elocal_name[ii] = h.getName(i);
+      elocal_name[POTENTIAL_INDEX] = "LocalPotential";
+      for(int i=0,ii=LE_MAX; i < SizeOfHamiltonians; i++, ii++) elocal_name[ii] = h.getName(i);
     }
 
     /**
@@ -86,7 +87,7 @@ namespace ohmmsqmc {
        of the local energy to the scalar record container
     */
     void add2Record(RecordNamedProperty<T>& record) {
-      LocalEnergyIndex = record.add(elocal_name[0].c_str());
+      LocalEnergyIndex = record.add(elocal_name[ENERGY_INDEX].c_str());
       for(int i=1; i<elocal_name.size(); i++)
 	record.add(elocal_name[i].c_str());
     }
@@ -97,7 +98,8 @@ namespace ohmmsqmc {
       //energy_sum += wgt*e; energy_sq_sum += wgt*e*e;
       elocal[ENERGY_INDEX] += wgt*e;
       elocal[ENERGY_SQ_INDEX] += wgt*e*e;
-      for(int ii=2, i=0; i<SizeOfHamiltonians; ii++,i++) {
+      elocal[POTENTIAL_INDEX] += wgt*awalker.Properties(LOCALPOTENTIAL);
+      for(int ii=LE_MAX, i=0; i<SizeOfHamiltonians; ii++,i++) {
 	elocal[ii] += wgt*e_ptr[i]; //wgt*(awalker.E[i]);
       }
     }
@@ -125,7 +127,8 @@ namespace ohmmsqmc {
       b_variance = elocal[ENERGY_SQ_INDEX]*wgtinv-b_average*b_average;
       record[ir++] = b_average;
       record[ir++] = b_variance;
-      for(int i=0, ii=2; i<SizeOfHamiltonians; i++,ii++) {
+      record[ir++] = elocal[POTENTIAL_INDEX]*wgtinv;
+      for(int i=0, ii=LE_MAX; i<SizeOfHamiltonians; i++,ii++) {
 	record[ir++] = elocal[ii]*wgtinv;
       }
       reset();
