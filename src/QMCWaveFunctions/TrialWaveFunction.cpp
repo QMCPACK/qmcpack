@@ -15,6 +15,7 @@
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 #include "QMCWaveFunctions/TrialWaveFunction.h"
+#include "OhmmsData/OhmmsElementBase.h"
 #include "Particle/Walker.h"
 #include "Particle/WalkerSetRef.h"
 #include "Utilities/OhmmsInfo.h"
@@ -28,7 +29,8 @@ namespace ohmmsqmc {
    */
   TrialWaveFunction::~TrialWaveFunction(){
     DEBUGMSG("TrialWaveFunction::~TrialWaveFunction")
-      for(int i=0; i<Z.size(); i++) delete Z[i];
+    for(int i=0; i<Z.size(); i++) delete Z[i];
+    for(int i=0; i<SPOSet.size(); i++) delete SPOSet[i];
   }
   
   /**@param aterm a many-body wavefunction */
@@ -252,6 +254,32 @@ namespace ohmmsqmc {
     return psi;
   }
 
+  bool TrialWaveFunction::hasSPOSet(const string& aname) {
+    bool notfoundit=true;
+    vector<OhmmsElementBase*>::iterator it(SPOSet.begin());
+    vector<OhmmsElementBase*>::iterator it_end(SPOSet.end());
+    while(notfoundit && it != it_end) {
+      if((*it)->getName() == aname) notfoundit=false;
+      ++it;
+    }
+    return !notfoundit;
+  }
+
+  OhmmsElementBase* 
+  TrialWaveFunction::getSPOSet(const string& aname) {
+    bool notfoundit=true;
+    vector<OhmmsElementBase*>::iterator it(SPOSet.begin());
+    vector<OhmmsElementBase*>::iterator it_end(SPOSet.end());
+    while(notfoundit && it != it_end) {
+      if((*it)->getName() == aname) return *it;
+      ++it;
+    }
+    return 0;
+  }
+
+  void TrialWaveFunction::addSPOSet(OhmmsElementBase* spo) {
+    SPOSet.push_back(spo);
+  }
 }
 /***************************************************************************
  * $RCSfile$   $Author$

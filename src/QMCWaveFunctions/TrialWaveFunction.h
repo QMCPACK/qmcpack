@@ -61,10 +61,23 @@ namespace ohmmsqmc {
     inline RealType getSign() const { return SignValue;}
     inline ValueType getLogPsi() const { return LogValue;}
 
-    /** manage the data */
+    ///Add an OrbitalBase 
     void add(OrbitalBase* aterm);
+    ///reset OrbitalBase s during optimization
     void reset();
+    /**resize the internal storage
+     * @param nwalkers number of walkers 
+     *
+     * Not used anymore
+     */
     void resizeByWalkers(int nwalkers);
+
+    ///Check if aname-ed Single-Particle-Orbital set exists
+    bool hasSPOSet(const string& aname);
+    ///add a Single-Particle-Orbital set
+    void addSPOSet(OhmmsElementBase* spo);
+    ///return the aname-ed Single-Particle-Orbital set. 
+    OhmmsElementBase* getSPOSet(const string& aname);
 
     /** evalaute the values of the wavefunction, gradient and laplacian  for a walkers */
     ValueType evaluate(ParticleSet& P);
@@ -101,18 +114,30 @@ namespace ohmmsqmc {
     ///the size of gradient component (QMCTraits::DIM)*the number of particles 
     int TotalDim;
 
+    ///index of the active particle
     int WorkingPtcl;
 
+    ///sign of the trial wave function
     RealType SignValue;
+
+    ///log of the trial wave function
     ValueType LogValue;
+
+    ///a list of OrbitalBases constituting many-body wave functions
+    vector<OrbitalBase*> Z;
+
+    ///a list of single-particle-orbital set
+    vector<OhmmsElementBase*> SPOSet;
+
+    ///differential gradients
+    ParticleSet::ParticleGradient_t delta_G;
+
+    ///differential laplacians
+    ParticleSet::ParticleLaplacian_t delta_L;
 
     ///cannot use copy constructor
     TrialWaveFunction(const TrialWaveFunction&) {}
     
-    ///a list of OrbitalBases constituting many-body wave functions
-    vector<OrbitalBase*> Z;
-    ParticleSet::ParticleGradient_t delta_G;
-    ParticleSet::ParticleLaplacian_t delta_L;
   };
 }
 #endif
