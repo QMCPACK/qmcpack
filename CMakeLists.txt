@@ -16,8 +16,8 @@ SET(HAVE_LIBSPRNG 0)
 SET(HAVE_LIBBLITZ 0)
 SET(HAVE_LIBGSL 0)
 
-OPTION(QMC_SPRNG "Eanble SPRNG random number generation library" OFF)
-OPTION(QMC_BLITZ "Eanble blitz++ library" ON)
+OPTION(QMC_SPRNG "Enable SPRNG random number generation library" OFF)
+OPTION(QMC_BLITZ "Enable blitz++ library" ON)
 
 ######################################################################
 #important settings for QMC simulations to instantiate template classes
@@ -85,7 +85,7 @@ IF(FOUND_GSL)
   LINK_LIBRARIES(${GSL_LIBRARY})
 ENDIF(FOUND_GSL)
 
-#check optional external libraries: enable only when the libraroes are found
+#check optional external libraries: enable only when the libraries are found
 IF(FOUND_BLITZ)
   INCLUDE_DIRECTORIES(${BLITZ_INCLUDE_DIR})
   SET(HAVE_LIBBLITZ 1)
