@@ -24,12 +24,12 @@ namespace ohmmsqmc {
   enum {Weight=0,
 	Multiplicity,
 	LocalEnergy, 
+	LocalPotential, 
 	PsiSq, 
 	Sign, 
 	Age,
 	ScaleD, 
 	NumProperties};
-  
   
   /**
    *\brief A container class to represent a walker.

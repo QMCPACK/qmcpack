@@ -79,13 +79,14 @@ bool HDFWalkerOutput::get(MCWalkerConfiguration& W) {
   Vector_t sample;
 
   Pos.resize(W.getActiveWalkers(),W.R.size());
-  sample.resize(W.getActiveWalkers());
+  sample.resize(2*W.getActiveWalkers());
 
   //store walkers in a temporary array
   int nw = 0; int item=0;
   for (MCWalkerConfiguration::iterator it = W.begin(); 
        it != W.end(); ++it, ++nw) {
     sample(item++) = (*it)->Properties(PsiSq);
+    sample(item++) = (*it)->Properties(LocalPotential);
     for(int np=0; np < W.getParticleNum(); ++np)
       Pos(nw,np) = (*it)->R(np);    
   }
@@ -213,12 +214,13 @@ HDFWalkerInput::put(MCWalkerConfiguration& W, int ic){
   if(nwt != W.getActiveWalkers() || nptcl != W.getParticleNum()) {
     W.resize(nwt,npt/nwt);
   }
+
   //assign configurations to W
-  int nw = 0;
   int id = 0;
-  for (MCWalkerConfiguration::iterator it = W.begin(); 
-       it != W.end(); ++it, ++nw) {
-    (*it)->Properties(PsiSq) = sample[nw];
+  int is=0;
+  for (MCWalkerConfiguration::iterator it = W.begin(); it != W.end(); ++it) {
+    (*it)->Properties(PsiSq) = sample[is++];
+    (*it)->Properties(LocalPotential) = sample[is++];
     for(int np=0; np < W.getParticleNum(); ++np, ++id){
       (*it)->R(np) = Pos[id];    
     }
