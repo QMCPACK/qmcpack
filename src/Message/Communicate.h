@@ -70,6 +70,8 @@ public:
   inline void setNodeID(int i) { d_mycontext = i;}
   inline void setCommID(int i) { CommID = i;}
 
+  void barrier();
+
 protected:
 
   int CommID; 

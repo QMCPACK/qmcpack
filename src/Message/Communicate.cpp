@@ -77,6 +77,9 @@ void Communicate::initialize(int argc, char **argv){
   }
 }
 
+void Communicate::barrier(){ 
+  MPI_Barrier(MPI_COMM_WORLD);
+}
 void Communicate::finalize(){
   MPI_Finalize();
 }
@@ -88,6 +91,7 @@ void Communicate::cleanupMessage(void*) { }
 Communicate::~Communicate(){}
 void Communicate::initialize(int argc, char **argv){ }
 void Communicate::finalize(){ }
+void Communicate::barrier(){ }
 void Communicate::cleanupMessage(void*) { }
 
 #endif // !HAVE_MPI

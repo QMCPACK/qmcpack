@@ -119,6 +119,10 @@ struct RecordNamedProperty: public RecordProperty {
 
   inline int size() const { return Name.size();}
 
+  inline void setValues(T v) {
+    for(int i=0; i<Values.size(); i++) Values[i] = v;
+  }
+
   inline void resize(int n) {
     std::vector<T> a = Values;
     std::vector<std::string> b = Name;

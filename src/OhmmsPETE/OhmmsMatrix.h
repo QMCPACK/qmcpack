@@ -57,6 +57,7 @@ public:
 
   inline unsigned size() const { return X.size();}
   inline unsigned size(int i) const { return (i == 0)? D1: D2;}
+  inline unsigned extent(int i) const { return (i == 0)? D1: D2;}
   inline unsigned rows() const { return D1;}
   inline unsigned cols() const { return D2;}
 

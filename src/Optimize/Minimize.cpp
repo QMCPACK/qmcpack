@@ -38,11 +38,8 @@ void MGradCost(const gsl_vector *v, void *params, gsl_vector *df)
       gradient(i) = (CostPlus-CostMinus)/(2.0*epsilon);
       gsl_vector_set(df, i, (CostPlus-CostMinus)/(2.0*epsilon));
     }
-  //  fprintf (stderr, "Gradient = \n");
   cout << "Gradient = " << endl;
-  for (int i=0;i<MF.NumParams(); i++)
-    // fprintf (stderr, "%1.14e\n", gradient(i));
-    cout << setw(14) << gradient(i) << endl;
+  for (int i=0;i<MF.NumParams(); i++) cout << setw(14) << gradient(i) << endl;
 }
 
 void MBoth (const gsl_vector *v, void *params, double *f,
@@ -110,7 +107,7 @@ ConjugateGradient::Minimize(MinimizeFunction &MinimFunc)
 	MinimFunc.Params(i) = gsl_vector_get(Minimizer->x,i);
       MinimFunc.WriteStuff();
     }
-  while (status == GSL_CONTINUE && iter < 100);
+  while (status == GSL_CONTINUE && iter < 100); // JNKIM reduces this number from 100
 
   for (int i=0; i<MinimFunc.NumParams(); i++)
     MinimFunc.Params(i) = gsl_vector_get(Minimizer->x,i);
