@@ -88,8 +88,10 @@ ConjugateGradient::Minimize(MinimizeFunction &MinimFunc)
       iter++;
       status = gsl_multimin_fdfminimizer_iterate(Minimizer);
       
-      if (status)
+      if (status) {
+	cout << "CG: Problem with iteration. " << endl;
 	break;
+      }
       
       status = gsl_multimin_test_gradient (Minimizer->gradient,
 					   Tolerance);
@@ -98,9 +100,9 @@ ConjugateGradient::Minimize(MinimizeFunction &MinimFunc)
 	cout << "Minimum found at:" << endl;
 
       //    fprintf (stderr, "%5d ", iter);
-      cout << iter;
+      cout << "CG: " << iter << endl;
       for (int i=0; i<MinimFunc.NumParams(); i++)
-	cout << setw(15) <<  gsl_vector_get(Minimizer->x, i);
+	cout << "CG: " << setw(15) <<  gsl_vector_get(Minimizer->x, i);
       cout << endl;
 	//	fprintf (stderr, "%15.12e ", gsl_vector_get(Minimizer->x, i));
       //  fprintf (stderr, "\n");
