@@ -84,7 +84,8 @@ class OhmmsParameter: public OhmmsElementBase {
 
 
   ///read from istream
-  inline bool put(std::istream& ) { 
+  inline bool put(std::istream& is) { 
+    is >> ref_;
     return true;
   }
 
@@ -162,7 +163,13 @@ class OhmmsParameter<bool>: public OhmmsElementBase {
   }
 
   ///read from istream
-  inline bool put(std::istream& ) { 
+  inline bool put(std::istream& is) { 
+    string yes;
+    is >> yes;
+    if(yes == "yes" || yes == "true" || yes == "1") 
+      ref_=true;
+    else
+      ref_ = false;
     return true;
   }
 

@@ -14,8 +14,8 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_OHMMSPARAMETERSET_H
-#define OHMMS_OHMMSPARAMETERSET_H
+#ifndef OHMMS_XMLATTRIBUTESET_H
+#define OHMMS_XMLATTRIBUTESET_H
 
 #include <map>
 #include <string>
@@ -25,20 +25,20 @@
  *
  *This may become an inherited class from OhmmsElementBase.
  */
-struct ParameterSet: public OhmmsElementBase,
-  public std::map<std::string, OhmmsElementBase*> {
+struct OhmmsAttributeSet: public std::map<std::string, OhmmsElementBase*> 
+{
 
-  ParameterSet(const char* aname="parameter"):
-    OhmmsElementBase(aname) {
-  }
+  xmlNodePtr myNode;
 
-  ~ParameterSet() {
+  inline OhmmsAttributeSet(): myNode(0) {}
+
+  ~OhmmsAttributeSet() {
     iterator it = begin();
     iterator it_end = end();
-    while(it!=it_end) { delete (*it).second; ++it;}
+    while(it!=it_end) {delete (*it).second; ++it;}
   }
 
-  inline bool get(std::ostream& os) const {
+  bool get(std::ostream& os) const {
     const_iterator it = begin();
     const_iterator it_end = end();
     while(it != it_end) {
@@ -46,37 +46,6 @@ struct ParameterSet: public OhmmsElementBase,
     }
     return true;
   }
-
-  inline bool put(std::istream& is) {
-    return true;
-  }
-
-  /** assign parameters to the set 
-   *@param cur the xml node to work on
-   *@return true, if any valid parameter is processed.
-   */
-  inline bool put(xmlNodePtr cur) {
-    cur = cur->xmlChildrenNode;
-    bool something = false;
-    while(cur != NULL) {
-      string cname((const char*)(cur->name));
-      if(cname == myName) {
-        const xmlChar* aptr= xmlGetProp(cur, (const xmlChar *) "name");
-        if(aptr) {
-	  //string aname = (const char*)(xmlGetProp(cur, (const xmlChar *) "name"));
-	  iterator it = find((const char*)aptr);
-	  if(it != end()) {
-            something =true;
-	    (*it).second->put(cur);
-	  } 
-        }
-      }
-      cur=cur->next;
-    }
-    return something;
-  }
-
-  inline void reset() { }
 
   /** add a new parameter corresponding to an xmlNode <parameter/>
    *@param aparam reference the object which this parameter is assigned to.
@@ -89,21 +58,30 @@ struct ParameterSet: public OhmmsElementBase,
    *The condition will be used to convert the external unit to the internal unit.
    */
   template<class PDT>
-  inline void add(PDT& aparam, const char* aname, const char* uname) {
+  inline void add(PDT& aparam, const string& aname) {
     iterator it = find(aname);
     if(it == end()) {
-      operator[](aname) = new OhmmsParameter<PDT>(aparam,aname,uname);
+      operator[](aname) = new OhmmsParameter<PDT>(aparam,aname.c_str(),"none");
     }
   }
 
-  template<class PDT>
-  inline void setValue(const string& aname, PDT aval){
-    iterator it = find(aname);
-    if(it != end()) {
-       (dynamic_cast<OhmmsParameter<PDT>*>((*it).second))->setValue(aval);
+  /** assign parameters to the set 
+   *@param cur the xml node to work on
+   *@return true, if any valid parameter is processed.
+   */
+  inline bool put(xmlNodePtr cur) {
+    xmlAttrPtr att = cur->properties;
+    while(att != NULL) {
+      string aname((const char*)(att->name));
+      iterator it = find(aname);
+      if(it != end()) {
+        std::istringstream stream((const char*)(att->children->content));
+        (*it).second->put(stream);
+      } 
+      att=att->next;
     }
+    return true;
   }
-
 }; 
 #endif /*OHMMS_OHMMSPARAMETERSET_H*/
 /***************************************************************************
