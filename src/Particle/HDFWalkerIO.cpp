@@ -76,17 +76,18 @@ bool HDFWalkerOutput::get(MCWalkerConfiguration& W) {
   PropertyContainer_t Properties;
   //2D array of PosTypes (x,y,z) indexed by (walker,particle)
   Array_t Pos;
-  Vector_t sample;
+  Vector_t sample_1, sample_2;
 
   Pos.resize(W.getActiveWalkers(),W.R.size());
-  sample.resize(2*W.getActiveWalkers());
+  sample_1.resize(W.getActiveWalkers());
+  sample_2.resize(W.getActiveWalkers());
 
   //store walkers in a temporary array
   int nw = 0; int item=0;
   for (MCWalkerConfiguration::iterator it = W.begin(); 
        it != W.end(); ++it, ++nw) {
-    sample(item++) = (*it)->Properties(PsiSq);
-    sample(item++) = (*it)->Properties(LocalPotential);
+    sample_1(nw) = (*it)->Properties(PsiSq);
+    sample_2(nw) = (*it)->Properties(LocalPotential);
     for(int np=0; np < W.getParticleNum(); ++np)
       Pos(nw,np) = (*it)->R(np);    
   }
@@ -94,17 +95,19 @@ bool HDFWalkerOutput::get(MCWalkerConfiguration& W) {
   char GrpName[128];
   sprintf(GrpName,"config%04d",Counter++);
   hid_t group_id = H5Gcreate(h_config,GrpName,0);
+
   //write the dataset
   HDFAttribIO<Array_t> Pos_out(Pos);
   Pos_out.write(group_id,"coord");
-  HDFAttribIO<Vector_t> sample_out(sample);
+  HDFAttribIO<Vector_t> sample_out(sample_1);
   sample_out.write(group_id,"psisq");
+  HDFAttribIO<Vector_t> sample_out2(sample_2);
+  sample_out2.write(group_id,"localenergy");
 
   H5Gclose(group_id);
 
   ///closing h_config if overwriting
   //if(!AppendMode)  H5Gclose(h_config);
-
   //XMLReport("Printing " << W.getActiveWalkers() << " Walkers to file")
   
   return true;
@@ -125,7 +128,6 @@ HDFWalkerInput::HDFWalkerInput(const string& aroot):
   h_file =  H5Fopen(h5file.c_str(),H5F_ACC_RDWR,H5P_DEFAULT);
   h_config = H5Gopen(h_file,"config_collection");
   H5Gget_num_objs(h_config,&NumSets);
-  //XMLReport("Found " << NumSets << " configurations.")
   if(!NumSets) {
     ERRORMSG("File does not contain walkers")
   }
@@ -177,53 +179,50 @@ HDFWalkerInput::put(MCWalkerConfiguration& W, int ic){
   typedef blitz::Array<PosType,2>   Array_t;
   typedef Vector<RealType> Vector_t;
 
-  vector<PosType> Pos;
-  vector<RealType> sample;
-
   int nwt = 0;
   int npt = 0;
   //2D array of PosTypes (x,y,z) indexed by (walker,particle)
   Array_t Pos_temp;
-  Vector_t sample_temp;
+  Vector_t psisq_in, localene_in;
+
   //open the group
   char GrpName[128];
   sprintf(GrpName,"config%04d",selected);
   hid_t group_id = H5Gopen(h_config,GrpName);
     
   HDFAttribIO<Array_t> Pos_in(Pos_temp);
-  HDFAttribIO<Vector_t> sample_in(sample_temp);
+  HDFAttribIO<Vector_t> sample1(psisq_in), sample2(localene_in);
   //read the dataset
   Pos_in.read(group_id,"coord");
-  sample_in.read(group_id,"psisq");
+  sample1.read(group_id,"psisq");
+  sample2.read(group_id,"localenergy");
       
-  //store walkers in a temporary array
-  for(int j=0; j<Pos_temp.extent(0); j++){
-    for(int k=0; k<Pos_temp.extent(1); k++){
-      Pos.push_back(Pos_temp(j,k));
-      npt++;
-    }
-    sample.push_back(sample_temp(j));
-    nwt++;
-  }
-
+  bool withenergy=(sample2.extent(0)>0);
   //close the group
   H5Gclose(group_id);
   //check to see if the number of walkers and particles is 
   //consistent with W
-  int nptcl = npt/nwt;
+  int nptcl = Pos_temp.extent(1);
+  nwt = Pos_temp.extent(0);
+  //int nptcl = npt/nwt;
   if(nwt != W.getActiveWalkers() || nptcl != W.getParticleNum()) {
-    W.resize(nwt,npt/nwt);
+    W.resize(nwt,nptcl); //npt/nwt);
   }
 
   //assign configurations to W
-  int id = 0;
-  int is=0;
-  for (MCWalkerConfiguration::iterator it = W.begin(); it != W.end(); ++it) {
-    (*it)->Properties(PsiSq) = sample[is++];
-    (*it)->Properties(LocalPotential) = sample[is++];
-    for(int np=0; np < W.getParticleNum(); ++np, ++id){
-      (*it)->R(np) = Pos[id];    
+  int iw=0;
+  for(MCWalkerConfiguration::iterator it = W.begin(); it != W.end(); 
+      ++it, iw++) {
+    (*it)->Properties(PsiSq) = psisq_in[iw];
+    for(int np=0; np < W.getParticleNum(); ++np){
+      (*it)->R(np) = Pos_temp(iw,np);
     }
+  }
+
+  if(withenergy) {
+    iw=0;
+    for(MCWalkerConfiguration::iterator it = W.begin(); it != W.end(); ++it, iw++) 
+    (*it)->Properties(LocalPotential) = localene_in[iw];
   }
   //XMLReport("Read in " << W.getActiveWalkers() << " Walkers from file")
   return true;
