@@ -25,6 +25,7 @@
 
 #include <ctime>        
 #include <boost/random.hpp>
+#include "Message/Communicate.h"
 
 template<class T>
 class BoostRandom {
@@ -36,27 +37,22 @@ public:
   typedef boost::mt19937     generator_type;
   typedef boost::variate_generator<generator_type,boost::uniform_real<T> > uniform_generator_type;
 
-  BoostRandom(): baseSeed(1239863), unit_dist(0,1), uni(generator,unit_dist) { }
+  BoostRandom(): baseSeed(0), unit_dist(0,1), uni(generator,unit_dist) { 
+    init(OHMMS::Controller->mycontext(),OHMMS::Controller->ncontexts(),-1);
+  }
 
   BoostRandom(int iseed): 
     baseSeed(iseed), unit_dist(0,1), uni(generator,unit_dist)
   {
-    init(iseed); 
+    init(OHMMS::Controller->mycontext(),OHMMS::Controller->ncontexts(),iseed);
   }
  
-  void init(int iseed) {
-    if(iseed<0) {
-      base_generator.seed(static_cast<unsigned int>(std::time(0)));
-    } else {
-      base_generator.seed(iseed);
-    }
-    generator.seed(base_generator);
-  }
-
   void init(int i, int nstr, int iseed) {
     if(iseed<0) {
-      base_generator.seed(static_cast<unsigned int>(std::time(0))+i*nstr+i);
-    }
+      iseed=static_cast<unsigned int>(std::time(0))%16081+(i+1)*nstr+i;
+    } 
+    baseSeed=iseed;
+    base_generator.seed(iseed);
     generator.seed(base_generator);
   }
 
