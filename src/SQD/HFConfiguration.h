@@ -6,18 +6,17 @@
  *
  *\section intro_sec Introduction
  *
- *Pakage to solve Hartree-Fock equations for a spherical system 
- *using Numerov algorithm, B. Numerov, Publ. de l'observ. astrophsique 
- *central de Russie, vol. 2, p 188, 1933.
+ *Package to solve the Hartree-Fock equations for a centered (atomic-like)
+ *spherically symmetric potential using the Numerov algorithm.
  *
  *\section main_sec Schrodinger Equation
  *
- The single-particle Schrodinger Eqution involing the mass 
- \f$m\f$ and an external potential \f$V\f$,
+ *The single-particle Schrodinger Equation involving the mass 
+ \f$m\f$ and an external potential \f$V(\bf r)\f$,
  \f[
  \left[-\frac{1}{2m}\nabla^2 + V(\bf r)\right]\Psi(\bf r) = E \Psi(\bf r),
  \f]
- is reduced to a Radial Schrodinger Equation
+ *is reduced to a Radial Schrodinger Equation
  \f[
  \left\{
  \frac{1}{2m}\frac{d^{2}}{dr^{2}}
@@ -26,25 +25,28 @@
  \right]
  \right\} u_{l}(r)=0,
  \f]
- for a spherically symmetric potential \f$V(r)\f$ and the wave functions are
+ *for a spherically symmetric potentials \f$V(r)\f$ and the wave functions are
  \f[
- \Psi({\bf r}) 
- = \sum_{l=0}^{\infty}\sum_{m=-l}^{l} A_{lm}\frac{u_{l}(r)}{r}Y_{l}^{m}(\theta,\phi).
+ \Psi({\bf r}) = \sum_{l=0}^{\infty}\sum_{m=-l}^{l} A_{lm}
+ \frac{u_{l}(r)}{r}Y_{l}^{m}(\theta,\phi).
  \f]
- *AtomicHF uses Numerov algorithm to solve Radial Schrodinger Equation. Several external radial
- *potentials are implemented and they are defined in \ref RadialPotential.
+ *AtomicHF uses the Numerov algorithm to solve the Radial Schrodinger Equation.
+ *Several external radial potentials are implemented which are defined 
+ *in \ref RadialPotential.
  *
- *Within Hartree-Fock approximation, the Schrodinger Equation is generalized to include 
- *electron-electron Coulomb and exchange interactions (Hartree and exchange terms). 
- *Hatree and exchange terms are implemented in HartreePotential and ExchangePotential, 
- *while the external potential and kinetic energy terms are handled by ZOverRPotential, 
+ *Within Hartree-Fock approximation, the Schrodinger Equation is generalized 
+ *to include electron-electron Coulomb and exchange interactions (Hartree 
+ *and exchange terms). Hartree and Exchange terms are implemented in 
+ *HartreePotential and ExchangePotential, while the external potential and 
+ *kinetic energy terms are handled by ZOverRPotential, 
  *HarmonicPotential, SJPseudopotential specific for the physical model.
  *
  *\section numerov_sec Numemov algorithm
  *
- *Numerov algorithm is based on a two-step, fifth oder 
- predictor-corrector method for a second-order ordinary different equation
- of type \f[\frac{d^2y}{dx^2} + k^2(x)y = S(x).\f]
+ *Numerov algorithm (B. Numerov, Publ. de l'observ. astrophsique 
+ *central de Russie, vol. 2, p 188, 1933.) is based on a two-step, fifth order 
+ *predictor-corrector method for a second-order ordinary different equation
+ *of type \f[\frac{d^2y}{dx^2} + k^2(x)y = S(x).\f]
  *Utilizing Taylor expansions for \f$x\f$, the solution is obtained by
  *recursively integrating forward in x as
  \f[
@@ -58,8 +60,8 @@
  - cusp conditions or boundary conditions
  - range of the eigen values
  *
- *Any grid type can be used as far as the source functor can transform the original 
- *grid variable to a uniform grid on \f$x\f$.
+ *Any grid type can be used as far as the source functor can transform 
+ *the original grid variable to a uniform grid on \f$x\f$.
  *
  *\section hf_sec Hartree-Fock method
  *
