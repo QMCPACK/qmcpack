@@ -18,6 +18,7 @@ IF(Hdf5_INCLUDE_DIRS)
 ELSE(Hdf5_INCLUDE_DIRS)
 
   SET(TRIAL_LIBRARY_PATHS
+    /usr/apps/hdf5/lib
     /usr/apps/lib
     /usr/lib 
     /usr/local/lib
@@ -26,6 +27,7 @@ ELSE(Hdf5_INCLUDE_DIRS)
     )
 
   SET(TRIAL_INCLUDE_PATHS
+    /usr/apps/hdf5/include
     /usr/apps/include
     /usr/include
     /opt/include

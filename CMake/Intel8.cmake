@@ -4,8 +4,10 @@ ADD_DEFINITIONS(-DADD_)
 
 #enable Interprocedural (IP) Optimizations
 #-ipo_obj force generation of real object files (requires -ipo)
-SET(CMAKE_CXX_FLAGS "-restrict -unroll -fno-alias -O3 -Ob=1 -ansi -ipo -ipo_obj")
-SET(CMAKE_CC_FLAGS "-restrict -unroll -fno-alias -O3 -Ob=1 -ansi -ipo -ipo_obj")
+#SET(CMAKE_CXX_FLAGS "-restrict -unroll -fno-alias -O3 -Ob=1 -ansi -ipo -ipo_obj")
+#SET(CMAKE_CC_FLAGS "-restrict -unroll -fno-alias -O3 -Ob=1 -ansi -ipo -ipo_obj")
+SET(CMAKE_CXX_FLAGS "-restrict -unroll -fno-alias -O3 -Ob=1 -ansi")
+SET(CMAKE_CC_FLAGS "-restrict -unroll -fno-alias -O3 -Ob=1 -ansi")
 
 #IF(BITS MATCHES 64)
 #  SET(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} " -ftz")
@@ -28,9 +30,7 @@ ELSE(IA32 MATCHES ia64)
 ENDIF(IA32 MATCHES ia64)
 
 #ifc -> ifort
-SET(FORTRAN_LIBS " -lifcore")
+SET(FORTRAN_LIBS " -lifcore -lguide")
 SET(F77 ifort)
 SET(F77OPTFLAGS  -fpp2 -O3)
 SET(F77FLAGS ${F77OPTFLAGS})
-
-

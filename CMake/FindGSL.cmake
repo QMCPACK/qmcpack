@@ -23,6 +23,7 @@ ELSE(Gsl_INCLUDE_DIRS)
     /usr/local/lib
     /opt/lib
     /sw/lib
+   /usr/apps/math/gsl/gsl-1.4/intel/lib
     )
 
   SET(TRIAL_INCLUDE_PATHS
@@ -30,6 +31,7 @@ ELSE(Gsl_INCLUDE_DIRS)
     /opt/include
     /usr/local/include
     /sw/include
+   /usr/apps/math/gsl/gsl-1.4/intel/include
     )
 
   FIND_LIBRARY(GSL_LIBRARY gsl ${TRIAL_LIBRARY_PATHS})
