@@ -291,17 +291,12 @@ namespace ohmmshf {
     Psi.put(cur);
 
     LOGMSG("Total number of orbitals = " << Psi.size()); 
-    //    LOGMSG("Orbital | Orbital ID");
-    //     for(int j=0; j < Psi.size(); j++){
-    //       LOGMSG(j << " " << Psi.ID[j]);
-    //     }
-    //    LOGMSG("ID | IDcount");
+
     LOGMSG("(Orbital index, Number of Orbitals)")
       for(int j=0; j < Psi.size(); j++){
 	int id = Psi.ID[j];
 	LOGMSG("(" << id << ", " << Psi.IDcount[id] << ")");
       }
-
 
     //return false if there is no wave functions
     return Psi.size() != 0;

@@ -30,9 +30,15 @@ namespace ohmmshf {
     int maxiter;
     ///number of closed shells
     int num_closed_shells;
-    value_type eig_tol, scf_tol, ratio;
-    ///
+    ///tolerance for the eigen solver
+    value_type eig_tol;
+    ///tolerance for the self-consistent field solver
+    value_type scf_tol;
+    ///mixing ratio of self-consistent field
+    value_type ratio;
+    ///root of all the output files
     string RootFileName;
+    ///name of the log file
     string LogFileName;
     string AtomName, PotType, GridType;
 

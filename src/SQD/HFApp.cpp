@@ -95,9 +95,7 @@ SQDFrame::solve(const char* fname) {
     return false;
   }
 
-  //assign the project id
-
-  //project description
+  //project description, assign id and series
   OHMMS::ProjectData myProject;
   
   xmlXPathObjectPtr result
@@ -110,8 +108,6 @@ SQDFrame::solve(const char* fname) {
   }
   xmlXPathFreeObject(result);
 
-
-
   using namespace ohmmshf;
 
   HFSolver = new HartreeFock(Pot,Psi);
@@ -123,7 +119,6 @@ SQDFrame::solve(const char* fname) {
   }
 
   HFSolver->setRoot(myProject.CurrentRoot());
-
   success = HFSolver->solve();
   xmlFreeDoc(m_doc);
   xmlCleanupParser();
