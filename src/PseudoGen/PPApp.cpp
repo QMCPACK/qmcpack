@@ -120,7 +120,7 @@ SQDFrame::solve(const char* fname) {
   }
 
   PPSolver->setRoot(myProject.CurrentRoot());
-  success = PPSolver->optimize();
+  success = PPSolver->run();
   xmlFreeDoc(m_doc);
   xmlCleanupParser();
   return success;

@@ -167,9 +167,6 @@ namespace ohmmshf {
 
       xmlXPathFreeContext(m_context);
 
-    LogFileName = AtomName;
-    LogFileName.append(".log");
-
     return true;
   }
 
@@ -299,8 +296,7 @@ namespace ohmmshf {
 
       AEeigVal.resize(norb);
     PPeigVal.resize(norb);
-    rmatch.resize(norb);
-
+ 
     for(int ob=0; ob<norb; ob++){
       AEorbitals.push_back(RadialOrbital_t(Psi.m_grid));
       AEorbitals_norm.push_back(RadialOrbital_t(Psi.m_grid));
@@ -337,11 +333,6 @@ namespace ohmmshf {
 	  ERRORMSG( "Invalid value for occupation");
 	  return false;
 	}
-	rm = atof((const char*)xmlGetProp(cur, (const xmlChar *) "rm"));
-	if(rm < 0.0){
-	  ERRORMSG( "Invalid value of matching radius");
-	  return false;
-	}
 
 	//check to see if orbital with same quantum numbers has
 	//already been added
@@ -363,12 +354,9 @@ namespace ohmmshf {
 
 
 	XMLReport("Adding Pseudo Orbital (" << n << "," << l << "," 
-		  << m << "," << s << "), with matching radius = "
-		  << rm)
+		  << m << "," << s << ")")
 	  Psi.add(n,l,m,s,occ);
 	initAEOrbital(grpname,index);
-	rmatch[index] = rm;
-	//	cout << "index = " << index << endl;
 	index++;
 
       }
@@ -539,6 +527,8 @@ namespace ohmmshf {
 	      putContent(weight_eig,cur); 
 	    } else if(vname == "cg_stepsize"){
 	      putContent(cg_stepsize,cur);
+	    } else if(vname == "r_match"){
+	      putContent(rmatch,cur);
 	    }
 	  }
 	  att = att->next;
@@ -552,6 +542,7 @@ namespace ohmmshf {
       XMLReport("Conjugate Gradient Step Size = " << cg_stepsize) 
       XMLReport("Weight for eigenvalues = " << weight_eig) 
       XMLReport("Weight for normalization = " << weight_norm) 
+      XMLReport("Matching radius = " << rmatch) 
     
       return true; 
   }
@@ -566,7 +557,7 @@ namespace ohmmshf {
 
   int PseudoGen::report() {
 
-    string fileforplot(AtomName);
+    string fileforplot(RootFileName);
     fileforplot.append(".orb.dat");
     ofstream fout(fileforplot.c_str());
 

@@ -60,6 +60,7 @@ namespace ohmmshf {
     string RootFileName;
     ///name of the log file
     string LogFileName;
+    std::ofstream log_stream;
     string AtomName, PotType, GridType;
 
     xmlNodePtr grid_ptr;
@@ -96,7 +97,7 @@ namespace ohmmshf {
     bool initAEOrbital(const std::string& grpname,const int& index);
 
     ///matching radius for evaluating partial norms
-    vector<value_type> rmatch;
+    value_type rmatch;
     ///weights for eigenvalues and partial norms in the cost function
     value_type weight_eig, weight_norm;
     ///number of times cost function evaluated

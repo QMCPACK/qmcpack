@@ -36,15 +36,15 @@ namespace ohmmshf {
 		       SphericalOrbitalTraits::BasisSetType& psi):
     Pot(pot), Psi(psi), num_closed_shells(0), maxiter(1000), 
     eig_tol(1e-12), scf_tol(1e-8), ratio(0.35), 
-    GridType("none"), cg_stepsize(0.01), 
+    GridType("none"), rmatch(1.0), cg_stepsize(0.01), 
     cg_tolerance(1.0e-12), cg_epsilon(1.0e-6), weight_eig(0.5), 
     weight_norm(0.5), grid_ptr(NULL), orb_ptr(NULL), 
-    pot_ptr(NULL), opt_ptr(NULL), myGrid(NULL) , NumCostCalls(0){ 
+    pot_ptr(NULL), opt_ptr(NULL), myGrid(NULL), NumCostCalls(0){ 
 
     IDtag.resize(2);
- 
     IDtag[0] = "SJ_lambda";
     IDtag[1] = "r_core";
+
   }
 
   /**
@@ -55,6 +55,7 @@ namespace ohmmshf {
   void PseudoGen::setRoot(const string& aroot) {
     RootFileName = aroot;
     LogFileName = RootFileName + ".log";
+    log_stream.open(LogFileName.c_str());
   }
 
 
@@ -67,7 +68,6 @@ namespace ohmmshf {
     CG.Minimize(*this);
     plot_ascii();
     plot_siesta_grid();
-    putOptParams();
     Cost();
     plot_ascii();
     plot_siesta_grid();
@@ -75,6 +75,7 @@ namespace ohmmshf {
   }
 
  bool PseudoGen::run() {
+   putOptParams();
    Cost();
    return true;
  }
@@ -149,14 +150,21 @@ namespace ohmmshf {
 
    
     double cost = 0.0;
-    string label("spdf");  
+    string label("spdf"); 
+    //  std::ofstream log_stream(LogFileName.c_str());
+    log_stream.precision(8); 
 
-    cout << "Iteration = " << NumCostCalls++ << " and Energy = " << TotE << endl;
+    log_stream << "Iteration = " << NumCostCalls++ 
+	       << " and Total Energy = " << TotE << endl;
 
     value_type sum_norm = 0.0;
     value_type sum_eig = 0.0;
+    log_stream << "orb" << '\t' << "PPeigVal" 
+	       << '\t' << "AEeigVal" << endl;
     for(int ob=0; ob < norb; ob++){
-      cout << Psi.N[ob]<< label[Psi.L[ob]] << '\t' << PPeigVal[ob] << endl;
+      log_stream << Psi.N[ob]<< label[Psi.L[ob]] << '\t' 
+		 << PPeigVal[ob] << '\t' << AEeigVal[ob] 
+		 << endl;
       RadialOrbital_t psi_norm(Psi(ob));
       RadialOrbital_t psi_sq(Psi(ob));
       for(int j=0; j<Psi(ob).size(); j++)
@@ -177,23 +185,25 @@ namespace ohmmshf {
       //             << rpn*AEorbitals[ob].dY/AEorbitals[ob].Y - 1.0 
       // << " " << rpn*Psi(ob).dY/Psi(ob).Y - 1.0 <<  " " << endl;
 
-      int x = Psi.m_grid->index(rmatch[ob]);
+      int x = Psi.m_grid->index(rmatch);
       sum_norm += fabs(1.0-psi_norm(x)/AEorbitals_norm[ob](x));
       sum_eig += fabs(1.0-PPeigVal[ob]/AEeigVal[ob]);
     }
-    cost = (sum_norm*weight_norm+sum_eig*weight_eig)/static_cast<value_type>(norb);
-    cout << endl;
-    cout << "Differential in eigenvalues:   " << sum_eig << endl;
-    cout << "Differential in partial norms: " << sum_norm << endl;
-    cout << "Cost = " << cost << endl;
+    sum_norm /= static_cast<value_type>(norb);
+    sum_eig /= static_cast<value_type>(norb);
+    cost = (sum_norm*weight_norm+sum_eig*weight_eig);
+
+    log_stream << "Differential in eigenvalues:   " << sum_eig << endl;
+    log_stream << "Differential in partial norms: " << sum_norm << endl;
+    log_stream << "Cost = " << cost << endl;
+    log_stream << endl;
 
     if(cost > 100.0) return 100;
     
-   //  if (Params(0) < 0.0) return 100;
-   //     else if (Params(1) > rmatch[) return 100;
-   // 	     else return cost;
-    return cost;
-    
+    if (Params(0) < 0.0) return 100;
+    else if (Params(1) > rmatch) return 100;
+    else return cost;
+      
   }
     
   /**
@@ -220,8 +230,8 @@ namespace ohmmshf {
     KEnew = Pot.calcKE(Psi,0,norb);
 
     string label("spdf");  
-    std::ofstream log_stream(LogFileName.c_str());
-    log_stream.precision(8);
+    //   std::ofstream log_stream(LogFileName.c_str());
+    // log_stream.precision(8);
       
     do {
       KEold = KEnew;
@@ -246,11 +256,9 @@ namespace ohmmshf {
 	eigsum += (PPeigVal[ob] = 
 		   numerov.solve(lowerbound, upperbound, eig_tol));
 
-	log_stream << Psi.N[ob]<< label[Psi.L[ob]] << '\t' 
-		   << PPeigVal[ob] << endl;
+	//	LOGMSG(Psi.N[ob]<< label[Psi.L[ob]] << '\t' << PPeigVal[ob]);
       }
-      log_stream << endl;
-      
+	
       //normalize the orbitals
       Psi.normalize(norb);
       //restrict the orbitals
@@ -275,13 +283,18 @@ namespace ohmmshf {
       iter++;
       //continue the loop until the kinetic energy converges
     }while(fabs(KEnew-KEold)>scf_tol && iter<maxiter);
-    cout.precision(10);
-    cout << "Total Hartree-Fock iterations = " << iter << endl;
-    cout << "KE    = " << setw(15) << KEnew 
+    log_stream.precision(10);
+    log_stream << "Total Hartree-Fock iterations = " << iter << endl;
+    log_stream << "KE    = " << setw(15) << KEnew 
 	 << "  PE     = " << setw(15) << Vtotal << endl; 
-    cout << "PE/KE = " << setw(15) << Vtotal/KEnew 
+    log_stream << "PE/KE = " << setw(15) << Vtotal/KEnew 
 	 << "  Energy = " << setw(15) << E << endl;
-    cout << endl;
+    log_stream << endl;
+    log_stream << "V_External = " << energy[0] << endl;
+    log_stream << "V_Hartree = "  << energy[1] << endl;
+    log_stream << "V_Exchange = " << energy[2] << endl;
+    log_stream << endl;
+
     return E;
 
   }
