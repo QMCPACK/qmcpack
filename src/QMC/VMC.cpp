@@ -77,6 +77,8 @@ namespace ohmmsqmc {
 #endif
 
     if(put(qmc_node)){
+
+      H.setTau(0.0);
       
       //set the data members to start a new run
       getReady();
@@ -256,8 +258,7 @@ namespace ohmmsqmc {
       //++nReject; 
       //} else {
 
-      if(Random() > 
-	 exp(logGb-logGf)*Properties(PSISQ)/(*it)->Properties(PSISQ)) {
+      if(Random() > exp(logGb-logGf)*Properties(PSISQ)/(*it)->Properties(PSISQ)) {
 	(*it)->Properties(AGE)++;     
 	++nReject; 
       } else {
