@@ -45,7 +45,7 @@
  *
  *Numerov algorithm (B. Numerov, Publ. de l'observ. astrophsique 
  *central de Russie, vol. 2, p 188, 1933.) is based on a two-step, fifth order 
- *predictor-corrector method for a second-order ordinary different equation
+ *predictor-corrector method for a second-order ordinary differential equation
  *of type \f[\frac{d^2y}{dx^2} + k^2(x)y = S(x).\f]
  *Utilizing Taylor expansions for \f$x\f$, the solution is obtained by
  *recursively integrating forward in x as

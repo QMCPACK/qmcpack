@@ -11,13 +11,15 @@ namespace ohmmshf {
   void PseudoGen::plot_ascii(){
     char* fname = "Ge.pp.ASCII";
     ofstream gplot(fname);
+    gplot.precision(10);
+    gplot.setf(ios::scientific,ios::floatfield);
     cout << "Writing Pseudopotential to file " << fname << endl;     
   
     for(int i=0; i<Psi.m_grid->size(); i++){
       value_type r =  Psi.m_grid->r(i);
       value_type SJ_num = 1.0-exp(-Params(0)*r);
       value_type SJ_den = 1.0+exp(-Params(0)*(r-Params(1)));
-      gplot << setw(15) << r << setw(15) <<  (-1.0*4.0/r)*(SJ_num/SJ_den) << endl;
+      gplot << setw(20) << r << setw(20) <<  (-1.0*4.0/r)*(SJ_num/SJ_den) << endl;
     }
     gplot.close();
   }
