@@ -18,7 +18,9 @@
 #define OHMMS_QMC_LINEARCOMIBINATIONORBITALS_H
 
 #include "OhmmsPETE/OhmmsMatrix.h"
+#include "OhmmsPETE/OhmmsVector.h"
 #include "Numerics/DeterminantOperators.h"
+#include <limits>
 
 namespace ohmmsqmc {
 
@@ -114,13 +116,13 @@ namespace ohmmsqmc {
     }
 
     /** complete the values of the single-particle orbitals and their gradients and laplacians
-       @param P input configuration containing N particles
-       @param first index of the first particle
-       @param last index of the last particle
-       @param logdet matrix \f$ logdet[j,i] = \sum_I \sum_k C_{ikI} \phi_{ikI}({\bf r}_j-{\bf R}_I) \f$
-       @param dlogdet vector matrix \f$ dlogdet[i,j] = \sum_I \sum_k C_{ikI} \nabla_i \phi_{ikI}({\bf r}_j-{\bf R}_I) \f$
-       @param d2logdet matrix \f$ d2logdet[i,j] = \sum_I \sum_k C_{ikI} \nabla^2_i \phi_{ikI}({\bf r}_j-{\bf R}_I) \f$
-     */
+	@param P input configuration containing N particles
+	@param first index of the first particle
+	@param last index of the last particle
+	@param logdet matrix \f$ logdet[j,i] = \sum_I \sum_k C_{ikI} \phi_{ikI}({\bf r}_j-{\bf R}_I) \f$
+	@param dlogdet vector matrix \f$ dlogdet[i,j] = \sum_I \sum_k C_{ikI} \nabla_i \phi_{ikI}({\bf r}_j-{\bf R}_I) \f$
+	@param d2logdet matrix \f$ d2logdet[i,j] = \sum_I \sum_k C_{ikI} \nabla^2_i \phi_{ikI}({\bf r}_j-{\bf R}_I) \f$
+    */
     template<class VM, class GM>
     inline void 
     evaluate(const ParticleSet& P, int first, int last,
@@ -195,22 +197,66 @@ namespace ohmmsqmc {
      *@param cur the current xmlNode
      */
     bool put(xmlNodePtr cur) {
-      int nptcl=atoi((const char*)(xmlGetProp(cur, (const xmlChar *)"orbitals")));
+      int norb=atoi((const char*)(xmlGetProp(cur, (const xmlChar *)"orbitals")));
+
+      Vector<double> occupation;
+      Matrix<double> Ctemp;
+
+      bool OccupyAll = true;
+      int total;
+
       cur = cur->xmlChildrenNode;
       Identity = true;
-      C.resize(nptcl,numBasis());
-      XMLReport("The number of orbitals for a Dirac Determinant " << nptcl)
-      XMLReport("The number of basis functions " << numBasis())
-      while(cur != NULL) {
-	string cname((const char*)(cur->name));
-	if(cname == "parameter" || cname == "Var") {
-	  putContent(C,cur);
-	  Identity = false;
-	  return true;
+
+      XMLReport("The number of orbitals for a Dirac Determinant " << norb)
+	XMLReport("The number of basis functions " << numBasis())
+	while(cur != NULL) {
+	  string cname((const char*)(cur->name));
+	  if(cname == "occupation") {
+	    total = atoi((const char*)(xmlGetProp(cur, (const xmlChar *)"size")));
+	    occupation.resize(total);	
+	    putContent(occupation,cur);
+	    OccupyAll = false;
+	  } else if(cname == "coefficient" || cname == "parameter" || cname == "Var") {
+	    if(xmlHasProp(cur, (const xmlChar*)"size")){
+	      total = atoi((const char*)(xmlGetProp(cur, (const xmlChar *)"size")));
+	    } else {
+	      total = norb;
+	    }
+	    Ctemp.resize(total,numBasis());
+	    putContent(Ctemp,cur);
+	    Identity = false;
+	  }
+	  cur = cur->next;
 	}
-	cur = cur->next;
+
+      C.resize(norb,numBasis());
+
+      if(!OccupyAll){
+	XMLReport("The orbital occupation:")
+	  XMLReport(occupation);
+	  //	  for(int i=0; i<occupation.size(); i++)
+	    //	    XMLReport(occupation[i]);
       }
+ 
+      if(!OccupyAll && !Identity){
+	for(int i=0; i<C.rows(); i++){
+	  for(int j=0; j<C.cols(); j++){
+	    if(occupation[i]>numeric_limits<double>::epsilon())
+	      C(i,j) = Ctemp(i,j);
+	    else 
+	      C(i,j) = 0.0;
+	  }
+	}
+      } else {
+	C = Ctemp;
+      }
+
+       XMLReport("The Molecular Orbital Coefficients:")
+      	XMLReport(C)
+
       return true;
+
     }
 
   };
