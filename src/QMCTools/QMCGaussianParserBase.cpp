@@ -1,6 +1,7 @@
 #include "QMCTools/QMCGaussianParserBase.h"
 #include <iterator>
 #include <algorithm>
+#include <numeric>
 #include <set>
 #include <map>
 using namespace std;
@@ -9,6 +10,20 @@ using namespace std;
 std::vector<std::string> QMCGaussianParserBase::IonName;
 std::vector<std::string> QMCGaussianParserBase::gShellType;
 std::vector<int> QMCGaussianParserBase::gShellID;
+
+QMCGaussianParserBase::QMCGaussianParserBase(): 
+  Title("sample"),basisType("Gaussian"),basisName("generic"),
+  Normalized("no"),gridPtr(0)
+{
+}
+
+QMCGaussianParserBase::QMCGaussianParserBase(int argc, char** argv):
+  Title("sample"),basisType("Gaussian"),basisName("generic"),  
+  Normalized("no"),gridPtr(0)
+{
+
+  createGridNode(argc,argv);
+}
 
 void QMCGaussianParserBase::init() {
   IonName.resize(24);
@@ -32,7 +47,10 @@ xmlNodePtr QMCGaussianParserBase::createBasisSet() {
 
   xmlNodePtr bset = xmlNewNode(NULL,(const xmlChar*)"basisset");
   xmlNewProp(bset,(const xmlChar*)"ref",(const xmlChar*)"i");
-  xmlNodePtr cur=0;
+
+  xmlNodePtr cur = xmlAddChild(bset,xmlNewNode(NULL,(const xmlChar*)"distancetable"));
+  xmlNewProp(cur,(const xmlChar*)"source",(const xmlChar*)"i");
+  xmlNewProp(cur,(const xmlChar*)"target",(const xmlChar*)"e");
 
   std::map<int,int> species;
   int gtot = 0;
@@ -45,11 +63,12 @@ xmlNodePtr QMCGaussianParserBase::createBasisSet() {
         ng += gNumber[ig];
       }
       species[itype] = ng;
-      xmlNodePtr abasis = createCenter(iat,gtot);
-      if(cur)
-        cur = xmlAddSibling(cur,abasis);
-      else
-        cur = xmlAddChild(bset,abasis);
+      cur = xmlAddSibling(cur,createCenter(iat,gtot));
+      //xmlNodePtr abasis = createCenter(iat,gtot);
+      //if(cur)
+      //  cur = xmlAddSibling(cur,abasis);
+      //else
+      //  cur = xmlAddChild(bset,abasis);
     } else {
       ng = (*it).second;
     }
@@ -57,17 +76,17 @@ xmlNodePtr QMCGaussianParserBase::createBasisSet() {
   }
 
   return bset;
-  //xmlAddChild(wf_root,bset);
-  //return wf_root;
 }
 
-xmlNodePtr QMCGaussianParserBase::createDeterminantSet() {
+xmlNodePtr 
+QMCGaussianParserBase::createDeterminantSet() {
+
   xmlNodePtr slaterdet = xmlNewNode(NULL,(const xmlChar*)"slaterdeterminant");
 
   //check spin-dependent properties
   int nup = NumberOfEls/2;
   int ndown = NumberOfEls-nup;
-  std::ostringstream up_size, down_size, b_size;
+  std::ostringstream up_size, down_size, b_size, occ;
   up_size <<nup; down_size << ndown; b_size<<SizeOfBasisSet;
 
   //create a determinant Up
@@ -75,9 +94,21 @@ xmlNodePtr QMCGaussianParserBase::createDeterminantSet() {
   xmlNewProp(adet,(const xmlChar*)"id",(const xmlChar*)"updet");
   xmlNewProp(adet,(const xmlChar*)"orbitals",(const xmlChar*)up_size.str().c_str());
 
-  //std::ostreagstream up_occ, down_occ;
-  //for(int i=0; i<nup; i++) up_occ << "1 ";
-  //for(int i=0; i<down; i++) up_occ << "1 ";
+  vector<int> iocc(SizeOfBasisSet,0);
+  for(int j=0;j<nup; j++) iocc[j]=1;
+
+  occ<<"\n";
+  vector<int>::iterator it(iocc.begin()); 
+  int i=0;
+  while(i<SizeOfBasisSet) {
+    int n = (i+10<SizeOfBasisSet)? 10 : SizeOfBasisSet-i;
+    std::copy(it, it+n, ostream_iterator<int>(occ," "));
+    occ << "\n"; it += 10; i+=10;
+  }
+
+  xmlNodePtr occ_data 
+    = xmlNewTextChild(adet,NULL,(const xmlChar*)"occupation",(const xmlChar*)occ.str().c_str());
+  xmlNewProp(occ_data,(const xmlChar*)"size",(const xmlChar*)b_size.str().c_str());
 
   xmlNodePtr det_data 
     = xmlNewTextChild(adet,NULL,(const xmlChar*)"coefficient",(const xmlChar*)EigVecU.c_str());
@@ -92,70 +123,79 @@ xmlNodePtr QMCGaussianParserBase::createDeterminantSet() {
 
   return slaterdet;
 }
-xmlNodePtr QMCGaussianParserBase::createCenter(int iat, int _off) {
 
-  std::string aname(IonName[GroupID[iat]]);
-  xmlNodePtr abasis = xmlNewNode(NULL,(const xmlChar*)"basis");
-  xmlNewProp(abasis,(const xmlChar*)"type",(const xmlChar*)"GTO");
-  xmlNewProp(abasis,(const xmlChar*)"species",(const xmlChar*)aname.c_str());
+xmlNodePtr QMCGaussianParserBase::createCenter(int iat, int off_) {
 
-  xmlNodePtr agrid = xmlNewNode(NULL,(const xmlChar*)"grid");
-  xmlNewProp(agrid,(const xmlChar*)"ri",    (const xmlChar*)"1.e-6");
-  xmlNewProp(agrid,(const xmlChar*)"rf",    (const xmlChar*)"10.0");
-  xmlNewProp(agrid,(const xmlChar*)"npts",    (const xmlChar*)"1001");
-  xmlNodePtr cur = xmlAddChild(abasis,agrid);
-
-  for(int ig=gBound[iat], n=0; ig<gBound[iat+1]; ig++,n++) {
-
-    int gid = gShell[ig];
-    xmlNodePtr ag=createShell(_off,gNumber[ig],gC0);
-
-    //Add attributes for (n,l)
-    std::ostringstream id_assigned,n_name,l_name;
-    n_name << n; l_name << gShellID[gid];
-    id_assigned << aname << n << "_"<<gid;
-    xmlNewProp(ag,(const xmlChar*)"id",    (const xmlChar*)(id_assigned.str().c_str()));
-    xmlNewProp(ag,(const xmlChar*)"symbol",(const xmlChar*)(gShellType[gid].c_str()));
-    xmlNewProp(ag,(const xmlChar*)"n",     (const xmlChar*)(n_name.str().c_str()));
-    xmlNewProp(ag,(const xmlChar*)"l",     (const xmlChar*)(l_name.str().c_str()));
-    cur = xmlAddSibling(cur,ag);
-
-    if(gid == 2) {//special case for 2 (sp) need to add P
-      ag=createShell(_off,gNumber[ig],gC1);
-      id_assigned << "1";
-      xmlChar pname[]={"1"};
-      xmlNewProp(ag,(const xmlChar*)"id",    (const xmlChar*)(id_assigned.str().c_str()));
-      xmlNewProp(ag,(const xmlChar*)"symbol",(const xmlChar*)(gShellType[gid].c_str()));
-      xmlNewProp(ag,(const xmlChar*)"n",     (const xmlChar*)(n_name.str().c_str()));
-      xmlNewProp(ag,(const xmlChar*)"l",     pname);
-      cur = xmlAddSibling(cur,ag);
-    }
-    _off += gNumber[ig];
+  CurrentCenter = IonName[GroupID[iat]];
+  xmlNodePtr abasis = xmlNewNode(NULL,(const xmlChar*)"atomicBasisSet");
+  xmlNewProp(abasis,(const xmlChar*)"name",(const xmlChar*)basisName.c_str());
+  xmlNewProp(abasis,(const xmlChar*)"angular",(const xmlChar*)"spherical");
+  xmlNewProp(abasis,(const xmlChar*)"type",(const xmlChar*)basisType.c_str());
+  xmlNewProp(abasis,(const xmlChar*)"elementType",(const xmlChar*)CurrentCenter.c_str());
+  xmlNewProp(abasis,(const xmlChar*)"normalized",(const xmlChar*)Normalized.c_str());
+  //xmlNodePtr grid_ptr = xmlCopyNode(gridPtr,1);
+  xmlAddChild(abasis,xmlCopyNode(gridPtr,1));
+  //std::string hdf = CurrentCenter+"-"+basisName+".h5";
+  //xmlNewProp(abasis,(const xmlChar*)"src", (const xmlChar*)(hdf.c_str()));
+  for(int ig=gBound[iat], n=0; ig< gBound[iat+1]; ig++,n++) {
+    createShell(n, ig, off_,abasis);
+    off_ += gNumber[ig];
   }
 
-  //std::cout << "Create the orbitals " << std::endl;
-  //map2GridFunctors(abasis);
   return abasis;
 }
 
-xmlNodePtr 
-QMCGaussianParserBase::createShell(int _off, int ng, const std::vector<double>& coeff) {
+void
+QMCGaussianParserBase::createShell(int n, int ig, int off_, xmlNodePtr abasis) {
 
-  xmlNodePtr ag = xmlNewNode(NULL,(const xmlChar*)"phi");
-  for(int ig=0; ig<ng; ig++, _off++) {
-    std::ostringstream a,b;
-    a.setf(std::ios::scientific, std::ios::floatfield);
-    a.precision(12);
-    b.setf(std::ios::scientific, std::ios::floatfield);
-    b.precision(12);
-    xmlNodePtr aR = xmlNewNode(NULL,(const xmlChar*)"Rnl");
-    a << gExp[_off]; b<< coeff[_off];
-    xmlNewProp(aR,(const xmlChar*)"alpha",(const xmlChar*)a.str().c_str());
-    xmlNewProp(aR,(const xmlChar*)"c",(const xmlChar*)b.str().c_str());
-    xmlAddChild(ag,aR);
+  int gid(gShell[ig]);
+  int ng(gNumber[ig]);
+
+
+  xmlNodePtr ag = xmlNewNode(NULL,(const xmlChar*)"basisGroup");
+  xmlNodePtr ag1 = 0;
+
+  char l_name,n_name,a_name[8];
+  sprintf(a_name,"%s%d%d",CurrentCenter.c_str(),n,gShellID[gid]);
+  sprintf(&l_name,"%d",gShellID[gid]);
+  sprintf(&n_name,"%d",n);
+  xmlNewProp(ag,(const xmlChar*)"rid", (const xmlChar*)a_name);
+  xmlNewProp(ag,(const xmlChar*)"n", (const xmlChar*)&n_name);
+  xmlNewProp(ag,(const xmlChar*)"l", (const xmlChar*)&l_name);
+  xmlNewProp(ag,(const xmlChar*)"type", (const xmlChar*)"Gaussian");
+  if(gid == 2) {
+    sprintf(a_name,"%s%d1",CurrentCenter.c_str(),n);
+    ag1 = xmlNewNode(NULL,(const xmlChar*)"basisGroup");
+    xmlNewProp(ag1,(const xmlChar*)"rid", (const xmlChar*)a_name);
+    xmlNewProp(ag1,(const xmlChar*)"n", (const xmlChar*)&n_name);
+    xmlNewProp(ag1,(const xmlChar*)"l", (const xmlChar*)"1");
+    xmlNewProp(ag1,(const xmlChar*)"type", (const xmlChar*)"Gaussian");
   }
 
-  return ag;
+  for(int ig=0, i=off_; ig<ng; ig++, i++) {
+    std::ostringstream a,b,c;
+    a.setf(std::ios::scientific, std::ios::floatfield);
+    b.setf(std::ios::scientific, std::ios::floatfield);
+    a.precision(12);
+    b.precision(12);
+    a<<gExp[i]; b<<gC0[i];
+    xmlNodePtr anode = xmlNewNode(NULL,(const xmlChar*)"radfunc");
+    xmlNewProp(anode,(const xmlChar*)"exponent", (const xmlChar*)a.str().c_str());
+    xmlNewProp(anode,(const xmlChar*)"contraction", (const xmlChar*)b.str().c_str());
+    xmlAddChild(ag,anode);
+    if(gid ==2) {
+      c.setf(std::ios::scientific, std::ios::floatfield);
+      c.precision(12);
+      c <<gC1[i];
+      anode = xmlNewNode(NULL,(const xmlChar*)"radfunc");
+      xmlNewProp(anode,(const xmlChar*)"exponent", (const xmlChar*)a.str().c_str());
+      xmlNewProp(anode,(const xmlChar*)"contraction", (const xmlChar*)c.str().c_str());
+      xmlAddChild(ag1,anode);
+    }
+  }
+
+  xmlAddChild(abasis,ag);
+  if(gid == 2) xmlAddChild(abasis,ag1);
 }
 
 void QMCGaussianParserBase::map2GridFunctors(xmlNodePtr cur) {
@@ -163,7 +203,7 @@ void QMCGaussianParserBase::map2GridFunctors(xmlNodePtr cur) {
   using namespace ohmmsqmc;
 
   xmlNodePtr anchor = cur;
-  xmlNodePtr grid_ptr = 0;
+  //xmlNodePtr grid_ptr = 0;
 
   vector<xmlNodePtr> phi_ptr;
   vector<QuantumNumberType> nlms;
@@ -172,49 +212,75 @@ void QMCGaussianParserBase::map2GridFunctors(xmlNodePtr cur) {
   int current = 0;
   std::string acenter("none");
 
-  const xmlChar* aptr = xmlGetProp(cur,(const xmlChar*)"species");
+  const xmlChar* aptr = xmlGetProp(cur,(const xmlChar*)"elementType");
   if(aptr) acenter = (const char*)aptr;
 
-  cout << "Building basis set for " << acenter << endl;
+  xmlNodePtr grid_ptr=0;
 
   cur = anchor->children;
   while(cur != NULL) {
     string cname((const char*)(cur->name));
     if(cname == "grid") 
       grid_ptr = cur;
-    else if(cname == "phi") {
+    else if(cname == "basisGroup") {
+      int n=1,l=0,m=0;
+      const xmlChar* aptr = xmlGetProp(cur,(const xmlChar*)"n");
+      if(aptr) n = atoi((const char*)aptr);
+      aptr = xmlGetProp(cur,(const xmlChar*)"l");
+      if(aptr) l = atoi((const char*)aptr);
+
+      Lmax = std::max(l,Lmax);
       phi_ptr.push_back(cur);
       nlms.push_back(QuantumNumberType());
-      int n=1,l=0,m=0;
-      const xmlChar* lptr = xmlGetProp(cur,(const xmlChar*)"l");
-      if(lptr) l = atoi((const char*)lptr);
-      const xmlChar* nptr = xmlGetProp(cur,(const xmlChar*)"n");
-      if(nptr) n = atoi((const char*)nptr);
-      const xmlChar* mptr = xmlGetProp(cur,(const xmlChar*)"m");
-      if(mptr) m = atoi((const char*)mptr);
-      Lmax = std::max(l,Lmax);
       nlms[current][0]=n;
       nlms[current][1]=l;
       nlms[current][2]=m;
-      current++;
+      ++current;
     }
     cur = cur->next;
   }
 
   if(grid_ptr == 0) {
-    std::cout << "Grid is not defined" << std::endl;
-    return;
+    std::cout << "Grid is not defined: using default" << std::endl;
+    //xmlAddChild(anchor,gridPtr);
+    grid_ptr = xmlCopyNode(gridPtr,1);
+    xmlAddChild(anchor,grid_ptr);
   }
 
   RGFBuilderBase::CenteredOrbitalType aos(Lmax);
-
-  RGFBuilderBase* rbuilder = new GTO2GridBuilder(true);
+  bool normalized(Normalized=="yes");
+  RGFBuilderBase* rbuilder = new GTO2GridBuilder(normalized);
   rbuilder->setOrbitalSet(&aos,acenter);
   rbuilder->addGrid(grid_ptr);
   for(int i=0; i<nlms.size(); i++) {
     rbuilder->addRadialOrbital(phi_ptr[i],nlms[i]);
   }
   rbuilder->print(acenter,1);
-
 }
 
+void QMCGaussianParserBase::createGridNode(int argc, char** argv) {
+
+  gridPtr = xmlNewNode(NULL,(const xmlChar*)"grid");
+  string gridType("log");
+  string gridFirst("1.e-6");
+  string gridLast("1.e2");
+  string gridSize("1001");
+  int iargc=0;
+  while(iargc<argc) {
+    string a(argv[iargc]);
+    if(a == "-gridtype") {
+      gridType=argv[++iargc];
+    } else if(a == "-frst") {
+      gridFirst=argv[++iargc];
+    } else if(a == "-last") {
+      gridLast=argv[++iargc];
+    } else if(a == "-size") {
+      gridSize=argv[++iargc];
+    }
+    ++iargc;
+  }
+  xmlNewProp(gridPtr,(const xmlChar*)"type",(const xmlChar*)gridType.c_str());
+  xmlNewProp(gridPtr,(const xmlChar*)"ri",(const xmlChar*)gridFirst.c_str());
+  xmlNewProp(gridPtr,(const xmlChar*)"rf",(const xmlChar*)gridLast.c_str());
+  xmlNewProp(gridPtr,(const xmlChar*)"npts",(const xmlChar*)gridSize.c_str());
+}

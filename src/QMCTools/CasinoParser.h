@@ -13,6 +13,10 @@ class CasinoParser: public QMCGaussianParserBase,
 
 public:
 
+  CasinoParser();
+
+  CasinoParser(int argc, char** argv);
+
   void parse(const std::string& fname);
 
   void getGeometry(std::istream& is);

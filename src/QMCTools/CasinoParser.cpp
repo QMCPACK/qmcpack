@@ -7,11 +7,28 @@
 
 using namespace std;
 
+CasinoParser::CasinoParser() {
+  basisName = "casino-G2";
+  Normalized = "yes";
+}
+
+CasinoParser::CasinoParser(int argc, char** argv): 
+  QMCGaussianParserBase(argc,argv) {
+  basisName = "casino-G2";
+  Normalized = "yes";
+}
+
 void CasinoParser::parse(const std::string& fname) {
 
   std::ifstream fin(fname.c_str());
 
+  //Grep the first word of the first line to assign a file name
+  fin.getline(dbuffer,sizeof(dbuffer));
+  std::istringstream a(dbuffer);
+  a>>Title;
+
   std::string spin_unrestricted;
+  cout << "Looking for Spin " << endl;
   search(fin,"Spin");
   getValue(fin,spin_unrestricted);
   if(spin_unrestricted.find("false")<spin_unrestricted.size()) {
@@ -20,12 +37,15 @@ void CasinoParser::parse(const std::string& fname) {
     SpinRestricted=false;
   }
 
+  cout << "Looking for electrons " << endl;
   search(fin,"electrons");
   getValue(fin,NumberOfEls);
 
+  cout << "Looking for GEOMETRY " << endl;
   search(fin, "GEOMETRY");
   getGeometry(fin);
 
+  cout << "Looking for BASIS " << endl;
   search(fin, "BASIS");
   getGaussianCenters(fin);
 
@@ -102,7 +122,7 @@ void CasinoParser::getGaussianCenters(std::istream& is) {
   search(is, "Exponents");
   getValues(is,gExp.begin(), gExp.end());
 
-  search(is, "Correctly");
+  search(is, "contraction");
   getValues(is,gC0.begin(), gC0.end());
 
   search(is, "2nd");

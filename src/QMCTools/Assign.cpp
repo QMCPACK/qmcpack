@@ -127,7 +127,7 @@ int main(int argc, char **argv) {
   d_ii->create(1);
   d_ii->evaluate(ion);
 
-  vector<double> Cut;
+  vector<double> Cut, Core;
   int Centers = ion.getTotalNum();
   //attribute id for cut
   int icut = ion.Species.addAttribute("cut");
@@ -136,30 +136,48 @@ int main(int argc, char **argv) {
   for(int iat=0; iat<Centers; iat++) {
     int id = ion.GroupID[iat];
     Cut[iat] = ion.Species(icut,id);
-    //   cout << "cut = " << Cut[iat] << endl;
   }
  
+  int icore = ion.Species.addAttribute("core");
+  //store the max distance from atom
+  Core.resize(Centers);
+  for(int iat=0; iat<Centers; iat++) {
+    Core[iat]=ion.Species(icore,ion.GroupID[iat]);
+  }
+
   //3N-dimensional Gaussian
   ParticleSet::ParticlePos_t chi(el.getTotalNum());
   makeGaussRandom(chi);
-  int nn = 0; int iat = 0; int ipart = 0; int isum = 0;
-  int isave_iat = iat;  
+
   //determine if odd or even number of particles
   int irem = el.getTotalNum()%2;
-  int imax = el.getTotalNum()-irem;
-  int ihalf = imax/2;
+  int ihalf = el.getTotalNum()/2;
  
-  for(iat=0; iat<Centers; iat++) {
-    for(nn=d_ii->M[iat]; nn<d_ii->M[iat+1]; nn++){
+  //assign the core
+  int ncore(0);
+  for(int iat=0; iat<Centers; iat++) {
+    double sep=0.8*Cut[iat];
+    for(int iel=0; iel<Core[iat]/2; iel++,ncore++) {
+      el.R[ncore]=ion.R[iat]+sep*chi[ncore];
+      el.R[ncore+ihalf]=ion.R[iat]+sep*chi[ncore+ihalf];
+    }
+  }
+
+  int ipart = ncore;
+  int isave_iat=0;
+
+  for(int iat=0; iat<Centers; iat++) {
+    for(int nn=d_ii->M[iat]; nn<d_ii->M[iat+1]; nn++){
       double bondlength = d_ii->r(nn);
+      int jat = d_ii->J[nn];
       //only assign if the half bond-length < cutoff
-      if(0.5*bondlength < Cut[iat]){
+      if(bondlength < Cut[iat]+Cut[jat]){
 	if(ipart < ihalf){
 	  XMLReport("Assigning particles = " << ipart << " and " << ipart+ihalf)
 	  /*place 2 electrons (an up and a down) at half 
 	    the bond-length plus a random number multiplied 
 	    by 10% of the bond-length*/    
-	    el.R[ipart] = ion.R[iat]+0.5*d_ii->dr(nn)+0.1*bondlength*chi[ipart];
+	  el.R[ipart] = ion.R[iat]+0.5*d_ii->dr(nn)+0.1*bondlength*chi[ipart];
 	  el.R[ipart+ihalf] = ion.R[iat]+0.5*d_ii->dr(nn)+0.1*bondlength*chi[ipart+ihalf];
 	  ipart++; isave_iat = iat; 
 	}
@@ -172,12 +190,12 @@ int main(int argc, char **argv) {
   ipart = el.getTotalNum()-1;
   if(irem){ 
     XMLReport("Assigning last particle.")
-    for(iat = isave_iat+1; iat<Centers; iat++) {
-      for(nn=d_ii->M[iat]; nn<d_ii->M[iat+1]; nn++){ 
+    for(int iat = isave_iat+1; iat<Centers; iat++) {
+      for(int nn=d_ii->M[iat]; nn<d_ii->M[iat+1]; nn++){ 
 	double bondlength = d_ii->r(nn); 
 	if((0.5*bondlength < Cut[iat]) && flag){
 	  XMLReport("Assigning particle = " << ipart)
-	    el.R[ipart] = ion.R[iat]+0.5*d_ii->dr(nn)+0.1*bondlength*chi[ipart]; 
+	  el.R[ipart] = ion.R[iat]+0.5*d_ii->dr(nn)+0.1*bondlength*chi[ipart]; 
 	  flag = 0;
 	}
       }

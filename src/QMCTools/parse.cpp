@@ -5,7 +5,8 @@
 int main(int argc, char **argv) {
 
   if(argc<2) {
-    std::cout << "Usage: casinon <filename> " << std::endl;
+    std::cout << "Usage: casinon <filename> [-gridtype log|log0|linear -first ri -last rf -size npts]" << std::endl;
+    std::cout << "Defaults : -gridtype log -first 1e-6 -last 100 -size 1001" << std::endl;
     return 1;
   }
 
@@ -19,7 +20,7 @@ int main(int argc, char **argv) {
 
   QMCGaussianParserBase::init();
 
-  CasinoParser parser;
+  CasinoParser parser(argc,argv);
   parser.parse(argv[1]);
 
   //parser.search(fin, "GEOMETRY");
@@ -32,6 +33,7 @@ int main(int argc, char **argv) {
   xmlDocPtr doc = xmlNewDoc((const xmlChar*)"1.0");
   xmlNodePtr wf_root = xmlNewNode(NULL, BAD_CAST "determinantset");
   xmlNewProp(wf_root,(const xmlChar*)"type",(const xmlChar*)"MolecularOrbital");
+  xmlNewProp(wf_root,(const xmlChar*)"usegrid",(const xmlChar*)"yes");
 
   xmlNodePtr bset = parser.createBasisSet();
   xmlAddChild(wf_root,bset);
@@ -43,7 +45,7 @@ int main(int argc, char **argv) {
 
   xmlXPathContextPtr m_context = xmlXPathNewContext(doc);
   xmlXPathObjectPtr result
-    = xmlXPathEvalExpression((const xmlChar*)"//basis",m_context);
+    = xmlXPathEvalExpression((const xmlChar*)"//atomicBasisSet",m_context);
   if(!xmlXPathNodeSetIsEmpty(result->nodesetval)) {
     for(int ic=0; ic<result->nodesetval->nodeNr; ic++) {
       xmlNodePtr cur = result->nodesetval->nodeTab[ic];
@@ -52,7 +54,8 @@ int main(int argc, char **argv) {
   }
   xmlXPathFreeObject(result);
 
-  xmlSaveFormatFile("test.xml",doc,1);
+  std::string fname = parser.Title+"."+parser.basisName+".xml";
+  xmlSaveFormatFile(fname.c_str(),doc,1);
   xmlFreeDoc(doc);
   return 0;
 }

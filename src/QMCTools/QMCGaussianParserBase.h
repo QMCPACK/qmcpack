@@ -43,10 +43,15 @@ struct QMCGaussianParserBase {
 
   typedef double value_type;
 
+  bool SpinRestricted;
   int NumberOfAtoms;
   int NumberOfEls;
   int SizeOfBasisSet;
-  bool SpinRestricted;
+  std::string Title;
+  std::string basisType;
+  std::string basisName;
+  std::string Normalized;
+  std::string CurrentCenter;
   std::vector<TinyVector<value_type,3> > R;
   std::vector<int> GroupID;
   std::vector<int> gShell, gNumber, gBound;
@@ -54,10 +59,16 @@ struct QMCGaussianParserBase {
   std::vector<value_type> gExp, gC0, gC1;
   //std::vector<GaussianCombo<value_type> > gExp, gC0, gC1;
   std::string EigVecU, EigVecD;
+  xmlNodePtr gridPtr;
+
+  QMCGaussianParserBase();
+
+  QMCGaussianParserBase(int argc, char** argv);
+  void createGridNode(int argc, char** argv);
 
   xmlNodePtr createBasisSet();
   xmlNodePtr createCenter(int iat, int _off);
-  xmlNodePtr createShell(int _off,int ng,const std::vector<value_type>& coeff);
+  void createShell(int n, int ig, int off_, xmlNodePtr abasis);
   xmlNodePtr createDeterminantSet();
 
   void map2GridFunctors(xmlNodePtr cur);
