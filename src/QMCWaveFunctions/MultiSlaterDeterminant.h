@@ -73,13 +73,6 @@ public:
   void initParameters() { }
 
   inline ValueType
-  ratio(ParticleSet& P, int iat) { 
-    std::cerr << "MultiSlaterDeterminant should not be used by Particle-By-Particle update"
-              << std::endl;
-    return 1.0;
-  }
-
-  inline ValueType
   evaluate(ParticleSet& P, //const DistanceTableData* dtable,
 	   ParticleSet::ParticleGradient_t& G,
 	   ParticleSet::ParticleLaplacian_t& L){
@@ -123,6 +116,28 @@ public:
     std::cerr << "MultiSlaterDeterminant::putData is empty" << std::endl;
   }
   
+  inline ValueType
+  ratio(ParticleSet& P, int iat, 
+	ParticleSet::ParticleGradient_t& G, 
+	ParticleSet::ParticleLaplacian_t& L) { 
+    std::cerr << "MultiSlaterDeterminant should not be used by Particle-By-Particle update"
+              << std::endl;
+    return 1.0;
+  }
+
+  inline void restore(int iat) { }
+
+  void update(ParticleSet& P, int iat) {
+    std::cerr << "MultiSlaterDeterminant::update is empty" << std::endl;
+  }
+
+  inline ValueType
+  ratio(ParticleSet& P, int iat) { 
+    std::cerr << "MultiSlaterDeterminant should not be used by Particle-By-Particle update"
+              << std::endl;
+    return 1.0;
+  }
+
   void update(ParticleSet& P, 
 	      ParticleSet::ParticleGradient_t& G, 
 	      ParticleSet::ParticleLaplacian_t& L,

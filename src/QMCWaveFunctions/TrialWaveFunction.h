@@ -68,9 +68,16 @@ namespace ohmmsqmc {
 
     /** functions to handle particle-by-particle update */
     ValueType ratio(ParticleSet& P, int iat);
+    void update(ParticleSet& P, int iat);
+
+    ValueType ratio(ParticleSet& P, int iat, 
+		    ParticleSet::ParticleGradient_t& dG,
+		    ParticleSet::ParticleLaplacian_t& dL);
+    void restore(int iat);
+    void update2(ParticleSet& P, int iat);
+
     void registerData(ParticleSet& P, PooledData<RealType>& buf);
     void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf);
-    void update(ParticleSet& P, int iat);
     ValueType evaluate(ParticleSet& P, PooledData<RealType>& buf);
 
     /** evalaute the values of the wavefunction, gradient and laplacian  for all the walkers */

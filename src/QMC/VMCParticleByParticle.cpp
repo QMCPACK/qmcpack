@@ -50,7 +50,6 @@ namespace ohmmsqmc {
       
       //set the data members to start a new run
       getReady();
-      
 
       //going to add routines to calculate how much we need
       bool require_register =  W.createAuxDataSet();
@@ -80,8 +79,8 @@ namespace ohmmsqmc {
       
       MCWalkerConfiguration::PropertyContainer_t Properties;
       ParticleSet::ParticlePos_t deltaR(W.getTotalNum());
-      ParticleSet::ParticleGradient_t G(W.getTotalNum());
-      ParticleSet::ParticleLaplacian_t L(W.getTotalNum());
+      ParticleSet::ParticleGradient_t G(W.getTotalNum()), dG(W.getTotalNum());
+      ParticleSet::ParticleLaplacian_t L(W.getTotalNum()), dL(W.getTotalNum());
 
       IndexType accstep=0;
       IndexType nAcceptTot = 0;
@@ -108,19 +107,48 @@ namespace ohmmsqmc {
 	    //create a 3N-Dimensional Gaussian with variance=1
 	    makeGaussRandom(deltaR);
 	    bool moved = false;
+
 	    for(int iat=0; iat<W.getTotalNum(); iat++) {
+
 	      //PosType dr = g*deltaR[iat]+(*it)->Drift[iat];
 	      PosType dr = g*deltaR[iat];
 	      W.makeMove(iat,dr);
-	      RealType ratio = Psi.ratio(W,iat);
+
+	      //RealType ratio = Psi.ratio(W,iat);
+	      RealType ratio = Psi.ratio(W,iat,dG,dL);
+
+	      G = W.G+dG;
+
+	      /* green function
+	      deltaR = -scale*G; 
+	      dletaR[iat] -= dr; //subtract dr = (*it)->R(iat) - W.R(iat)
+	      RealType backwardGF = exp(-oneover2tau*Dot(deltaR,deltaR));
+	      //a better way to do this
+	      RealType forwardGF = exp(-0.5*dot(dr,dr));
+	      ValueType vsq = Dot(G,G);
+	      ValueType scale = ((-1.0+sqrt(1.0+2.0*Tau*vsq))/vsq);
+	      ValueType scale2 = scale*scale;
+	      RealType dist = scale2*vsq+2.0*scale*dot(dr,G(iat))+dot(dr,dr);
+	      RealType backwardGF = exp(-oneover2tau*dist);
+	      */
+
 	      RealType ratio2 = pow(ratio,2);
+
+	      //alternatively
+	      //if(Random() > backwardGF/forwardGF*ratio2) {
 	      if(Random() < ratio2) {
 		moved = true;
 		++nAccept;
 		W.acceptMove(iat);
-		Psi.update(W,iat);
+		//Psi.update(W,iat);
+		Psi.update2(W,iat);
+		W.G = G;
+		W.L += dL;
+		//Need to change the drift
+		//(*it)->Drift = scale*G;
 	      } else {
 		++nReject; 
+		Psi.restore(iat);
 	      }
 	    }
 
@@ -137,10 +165,7 @@ namespace ohmmsqmc {
 	      (*it)->Properties(PSI) = psi;
 	      (*it)->Properties(LOCALENERGY) = H.evaluate(W);
 	      H.copy((*it)->getEnergyBase());
-	      //GreenFunction is not used here
-	      //ValueType vsq = Dot(W.G,W.G);
-	      //ValueType scale = ((-1.0+sqrt(1.0+2.0*Tau*vsq))/vsq);
-	      //(*it)->Drift = scale*W.G;
+	      (*it)->Properties(LOCALPOTENTIAL) = H.getLocalPotential();
 	    }
 	    //Keep until everything is tested: debug routine
 	    // 	    if(moved) {

@@ -82,7 +82,6 @@ namespace ohmmsqmc {
     for(int i=0; i<Z.size(); i++) r *= Z[i]->ratio(P,iat);
     return r;
   }
-  
   void   
   TrialWaveFunction::update(ParticleSet& P,int iat) {
     //ready to collect "changes" in the gradients and laplacians by the move
@@ -90,6 +89,28 @@ namespace ohmmsqmc {
     for(int i=0; i<Z.size(); i++) Z[i]->update(P,delta_G,delta_L,iat);
     P.G += delta_G;
     P.L += delta_L;
+  }
+
+  
+  TrialWaveFunction::ValueType 
+  TrialWaveFunction::ratio(ParticleSet& P, int iat, 
+			   ParticleSet::ParticleGradient_t& dG,
+			   ParticleSet::ParticleLaplacian_t& dL) {
+    dG = 0.0;
+    dL = 0.0;
+    RealType r=1.0;
+    for(int i=0; i<Z.size(); i++) r *= Z[i]->ratio(P,iat,dG,dL);
+    return r;
+  }
+
+  void 
+  TrialWaveFunction::restore(int iat) {
+    for(int i=0; i<Z.size(); i++) Z[i]->restore(iat);
+  }
+
+  void   
+  TrialWaveFunction::update2(ParticleSet& P,int iat) {
+    for(int i=0; i<Z.size(); i++) Z[i]->update(P,iat);
   }
 
   void TrialWaveFunction::resizeByWalkers(int nwalkers){

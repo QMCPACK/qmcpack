@@ -119,6 +119,26 @@ namespace ohmmsqmc {
       return r;
     }
 
+    inline ValueType ratio(ParticleSet& P, int iat,
+			   ParticleSet::ParticleGradient_t& dG, 
+			   ParticleSet::ParticleLaplacian_t& dL) { 
+      int i=1;
+      while(iat>=M[i]) {i++;}
+      return  Dets[i-1]->ratio(P,iat, dG, dL);
+    }
+    
+    inline void restore(int iat) {
+      int i=1;
+      while(iat>=M[i]) {i++;}
+      Dets[i-1]->restore(iat);
+    }
+
+    inline void update(ParticleSet& P, int iat) {
+      int i=1;
+      while(iat>=M[i]) {i++;}
+      Dets[i-1]->update(P,iat);
+    }
+
     ValueType
     ratio(ParticleSet& P, int iat) {
       int i=1;

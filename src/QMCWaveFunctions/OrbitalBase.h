@@ -77,6 +77,23 @@ namespace ohmmsqmc {
 	     WalkerSetRef::WalkerLaplacian_t& L) = 0;
 
 
+    /** evaluate the ratio of the new to old orbital value
+     *@param P the active ParticleSet
+     *@param iat the index of a particle
+     *@param dG the differential gradient
+     *@param dL the differential laplacian
+     *@return \f$\phi(\{\bf R}^{'}\})/\phi(\{\bf R}^{'}\})\f$.
+     *
+     *Paired with update(ParticleSet& P, int iat).
+     */
+    virtual ValueType ratio(ParticleSet& P, int iat,
+			    ParticleSet::ParticleGradient_t& dG,
+			    ParticleSet::ParticleLaplacian_t& dL) = 0;
+
+    virtual void update(ParticleSet& P, int iat) =0;
+
+    virtual void restore(int iat) = 0;
+
     /** evalaute the ratio of the new to old orbital value
      *@param P the active ParticleSet
      *@param iat the index of a particle
@@ -100,6 +117,7 @@ namespace ohmmsqmc {
 			ParticleSet::ParticleGradient_t& dG, 
 			ParticleSet::ParticleLaplacian_t& dL,
 			int iat) =0;
+
 
     /** equivalent to evaluate(P,G,L) with write-back function */
     virtual ValueType evaluate(ParticleSet& P,PooledData<RealType>& buf)=0;

@@ -77,6 +77,20 @@ namespace ohmmsqmc {
     }
 #endif
 
+    ValueType ratio(ParticleSet& P, int iat,
+		    ParticleSet::ParticleGradient_t& G, 
+		    ParticleSet::ParticleLaplacian_t& L) {
+      std::cerr << "PolarizedJastrow::ratio for particle-by-particle is empty " << std::endl;
+      return 1.0;
+    }
+
+    inline void restore(int iat) { }
+
+    //@todo implement the virutal functions for particle-by-particle move
+    void update(ParticleSet& P, int iat) {
+      std::cerr << "PolarizedJastrow::update for particle-by-particle is empty " << std::endl;
+    }
+
     ValueType ratio(ParticleSet& P, int iat) {
       std::cerr << "PolarizedJastrow::ratio for particle-by-particle is empty " << std::endl;
       return 1.0;
@@ -89,6 +103,7 @@ namespace ohmmsqmc {
 		int iat) {
       std::cerr << "PolarizedJastrow::update for particle-by-particle is empty " << std::endl;
     }
+
 
     ValueType evaluate(ParticleSet& P,PooledData<RealType>& buf) {
       std::cerr << "PolarizedJastrow::evaluate for particle-by-particle is empty " << std::endl;

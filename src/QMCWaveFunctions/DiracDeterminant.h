@@ -160,6 +160,9 @@ namespace ohmmsqmc {
       psiM.resize(nel,norb);
       dpsiM.resize(nel,norb);
       d2psiM.resize(nel,norb);
+      psiM_temp.resize(nel,norb);
+      dpsiM_temp.resize(nel,norb);
+      d2psiM_temp.resize(nel,norb);
       psiMinv.resize(nel,norb);
       LastIndex = FirstIndex + nel;
     }
@@ -176,6 +179,8 @@ namespace ohmmsqmc {
 	NP=P.getTotalNum();
 	myG.resize(NP);
 	myL.resize(NP);
+	myG_temp.resize(NP);
+	myL_temp.resize(NP);
 	FirstAddressOfG = &myG[0][0];
 	LastAddressOfG = FirstAddressOfG + NP*DIM;
 	FirstAddressOfdV = &(dpsiM(0,0)[0]); //(*dpsiM.begin())[0]);
@@ -209,6 +214,61 @@ namespace ohmmsqmc {
       buf.get(myL.begin(), myL.end());
       buf.get(FirstAddressOfG,LastAddressOfG);
       buf.get(CurrentDet);
+
+      //need extra copy for gradient/laplacian calculations without updating it
+      psiM_temp = psiM;
+      dpsiM_temp = dpsiM;
+      d2psiM_temp = d2psiM;
+    }
+
+    ValueType ratio(ParticleSet& P, int iat,
+		    ParticleSet::ParticleGradient_t& dG, 
+		    ParticleSet::ParticleLaplacian_t& dL) {
+
+      Phi.evaluate(P, iat, psiV, dpsiV, d2psiV);
+      WorkingIndex = iat-FirstIndex;
+
+      curRatio= DetRatio(psiM_temp, psiV.begin(),WorkingIndex);
+
+      DetUpdate(psiM_temp,psiV,workV1,workV2,WorkingIndex,curRatio);
+
+      for(int j=0; j<cols(); j++) {
+	dpsiM_temp(WorkingIndex,j)=dpsiV[j];
+	d2psiM_temp(WorkingIndex,j)=d2psiV[j];
+      }
+
+      int kat=FirstIndex;
+      for(int i=0; i<rows(); i++,kat++) {
+	PosType rv =psiM_temp(i,0)*dpsiM_temp(i,0);
+	ValueType lap=psiM_temp(i,0)*d2psiM_temp(i,0);
+	for(int j=1; j<cols(); j++) {
+	  rv += psiM_temp(i,j)*dpsiM_temp(i,j);
+	  lap += psiM_temp(i,j)*d2psiM_temp(i,j);
+	}
+	lap -= dot(rv,rv);
+	dG[kat] += rv - myG[kat];  myG_temp[kat]=rv;
+	dL[kat] += lap -myL[kat];  myL_temp[kat]=lap;
+      }
+      return curRatio;
+    }
+
+    void update(ParticleSet& P, int iat) {
+      CurrentDet *= curRatio;
+      myG = myG_temp;
+      myL = myL_temp;
+      psiM = psiM_temp;
+      for(int j=0; j<cols(); j++) {
+	dpsiM(WorkingIndex,j)=dpsiV[j];
+	d2psiM(WorkingIndex,j)=d2psiV[j];
+      }
+    }
+
+    void restore(int iat) {
+      psiM_temp = psiM;
+      for(int j=0; j<cols(); j++) {
+	dpsiM_temp(WorkingIndex,j)=dpsiM(WorkingIndex,j);
+	d2psiM_temp(WorkingIndex,j)=d2psiM(WorkingIndex,j);
+      }
     }
 
     ValueType ratio(ParticleSet& P, int iat) {
@@ -298,16 +358,16 @@ namespace ohmmsqmc {
     ValueType CurrentDet;
 
     /// psiM(j,i) \f$= \psi_j({\bf r}_i)\f$
-    Determinant_t psiM;
+    Determinant_t psiM, psiM_temp;
 
     /// temporary container for testing
     Determinant_t psiMinv;
 
     /// dpsiM(i,j) \f$= \nabla_i \psi_j({\bf r}_i)\f$
-    Gradient_t    dpsiM;
+    Gradient_t    dpsiM, dpsiM_temp;
 
     /// d2psiM(i,j) \f$= \nabla_i^2 \psi_j({\bf r}_i)\f$
-    Laplacian_t   d2psiM;
+    Laplacian_t   d2psiM, d2psiM_temp;
 
     /// value of single-particle orbital for particle-by-particle update
     std::vector<ValueType> psiV;
@@ -326,8 +386,8 @@ namespace ohmmsqmc {
     ValueType *FirstAddressOfdV;
     ValueType *LastAddressOfdV;
 
-    ParticleSet::ParticleGradient_t myG;
-    ParticleSet::ParticleLaplacian_t myL;
+    ParticleSet::ParticleGradient_t myG, myG_temp;
+    ParticleSet::ParticleLaplacian_t myL, myL_temp;
   };
 
   /** Calculate the value of the Dirac determinant for particles

@@ -131,6 +131,25 @@ namespace ohmmsqmc {
       return exp(-sumu);
     }
 
+
+    ValueType ratio(ParticleSet& P, int iat,
+		    ParticleSet::ParticleGradient_t& dG,
+		    ParticleSet::ParticleLaplacian_t& dL)  {
+      ValueType v=ratio(P,iat);    
+      dG[iat] += curGrad-dU[iat];
+      dL[iat] += curLap-d2U[iat]; 
+      return v;
+    }
+
+    inline void restore(int iat) {}
+
+    void update(ParticleSet& P, int iat) {
+      U[iat] = curVal;
+      dU[iat]=curGrad;
+      d2U[iat]=curLap;
+    }
+    
+
     ValueType ratio(ParticleSet& P, int iat) {
       int n=d_table->size(VisitorIndex);
       curVal=0.0;

@@ -173,6 +173,36 @@ namespace ohmmsqmc {
       return exp(-sumu);
     }
 
+    /** later merge the loop */
+    ValueType ratio(ParticleSet& P, int iat,
+		    ParticleSet::ParticleGradient_t& dG,
+		    ParticleSet::ParticleLaplacian_t& dL)  {
+      ValueType v=ratio(P,iat);    
+      GradType sumg,dg;
+      ValueType suml=0.0,dl;
+      for(int jat=0,ij=iat*N,ji=iat; jat<N; jat++,ij++,ji+=N) {
+	sumg += (dg=curGrad[jat]-dU[ij]);
+	suml += (dl=curLap[jat]-d2U[ij]);
+        dG[jat] -= dg;
+	dL[jat] += dl;
+      }
+      dG[iat] += sumg;
+      dL[iat] += suml;     
+      return v;
+    }
+
+    inline void restore(int iat) {}
+
+    void update(ParticleSet& P, int iat) { 
+      DiffValSum += DiffVal;
+      for(int jat=0,ij=iat*N,ji=iat; jat<N; jat++,ij++,ji+=N) {
+	dU[ij]=curGrad[jat]; 
+	dU[ji]=-1.0*curGrad[jat];
+	d2U[ij]=d2U[ji] = curLap[jat];
+	U[ij] =  U[ji] = curVal[jat];
+      }
+    }
+
     ValueType ratio(ParticleSet& P, int iat) {
       register ValueType dudr, d2udr2,u;
       register PosType gr;
@@ -190,8 +220,6 @@ namespace ohmmsqmc {
       }
       return exp(DiffVal);
     } 	  
-
-
     inline void update(ParticleSet& P, 		
 		       ParticleSet::ParticleGradient_t& G, 
 		       ParticleSet::ParticleLaplacian_t& L,
