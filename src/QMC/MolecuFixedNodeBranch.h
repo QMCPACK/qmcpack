@@ -144,6 +144,7 @@ namespace ohmmsqmc {
       //average over the last half of the simulation
       //for(int i=0; i<limit; i++) Esum = Eg[i];
       E_T = Esum/static_cast<T>(mlimit)-Feed*log(static_cast<T>(pop_now))+logN;
+      //cout << "update trial energy = " << Eg.front()<< " " << Eg.back() <<  " " << E_T << endl;
       return E_T;
     }
 
@@ -184,16 +185,17 @@ namespace ohmmsqmc {
       XMLReport("MaxCopy for branching = " << MaxCopy)
       XMLReport("Branching: Number of generations = " << InFeed)
       XMLReport("Branching: Feedback parameter = " << Feed)
+      //for(int i=0; i<EgBufferSize; i++) {log() << Eg[i] << " "; if(i%5 == 4) log() << endl;}
     }
 
     void write(hid_t grp) {
       hsize_t dim = static_cast<hsize_t>(EgBufferSize);
-      //vector<T> etrial(Eg.begin(),Eg.end());
+      vector<T> etrial(Eg.begin(),Eg.end());
       hid_t dataspace  = H5Screate_simple(1, &dim, NULL);
       hid_t dataset =  
         H5Dcreate(grp, "TrialEnergies", H5T_NATIVE_DOUBLE, dataspace, H5P_DEFAULT);
       hid_t ret = 
-        H5Dwrite(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT,&Eg[0]);
+        H5Dwrite(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT,&etrial[0]);
       H5Dclose(dataset);
       H5Sclose(dataspace);
       //make a char array which contains the species names separated by space
@@ -213,11 +215,15 @@ namespace ohmmsqmc {
       h5file.append(".config.h5");
       hid_t h_file =  H5Fopen(h5file.c_str(),H5F_ACC_RDWR,H5P_DEFAULT);
       hid_t h_config = H5Gopen(h_file,"config_collection");
-      hsize_t dataset = H5Dopen(h_config, "TrialEnergies");
-      if(dataset) {
-        hsize_t ret = H5Dread(dataset, H5T_NATIVE_DOUBLE, 
-            H5S_ALL, H5S_ALL, H5P_DEFAULT, &Eg[0]);
+      hid_t dataset = H5Dopen(h_config, "TrialEnergies");
+      if(dataset<0) {
+        Counter=0;
+        reset();
+      } else {
+        vector<T> etrial(EgBufferSize);
+        hsize_t ret = H5Dread(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, &etrial[0]);
         H5Dclose(dataset);
+        std::copy(etrial.begin(),etrial.end(),Eg.begin());
         char temp[256];
         dataset = H5Dopen(h_config, "BranchParameters");
         ret = H5Dread(dataset, H5T_NATIVE_CHAR, H5S_ALL, H5S_ALL, H5P_DEFAULT, temp);
@@ -226,10 +232,9 @@ namespace ohmmsqmc {
         s >> Nideal>>InFeed >>Counter >> E_T;
         reset();
         Counter = std::min(Counter,EgBufferSize);
-      }
+      } 
       H5Gclose(h_config);
       H5Fclose(h_file);
-
     }
 
   private:

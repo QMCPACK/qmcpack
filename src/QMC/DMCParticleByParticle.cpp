@@ -60,16 +60,16 @@ namespace ohmmsqmc {
       brancher.put(qmc_node,LogOut);
 
       if(BranchInfo != "default")  brancher.read(BranchInfo);
-      //else {
-      //  /*if VMC/DMC directly preceded DMC (Counter > 0) then
-      //    use the average value of the energy estimator for
-      //    the reference energy of the brancher*/
-      //  if(Counter) {
-      //    RealType e_ref = W.getLocalEnergy();
-      //    LOGMSG("Overwriting the reference energy by the local energy " << e_ref)  
-      //    brancher.setEguess(e_ref);
-      //  }
-      //}
+      else {
+        /*if VMC/DMC directly preceded DMC (Counter > 0) then
+          use the average value of the energy estimator for
+          the reference energy of the brancher*/
+        if(Counter) {
+          RealType e_ref = W.getLocalEnergy();
+          LOGMSG("Overwriting the reference energy by the local energy " << e_ref)  
+          brancher.setEguess(e_ref);
+        }
+      }
       
       int PopIndex, E_TIndex;
       Estimators.resetReportSettings(RootName);
@@ -85,8 +85,6 @@ namespace ohmmsqmc {
         (*it)->Properties(MULTIPLICITY) = 1.0;
         ++it;
       }
-      
-      
 
       //going to add routines to calculate how much we need
       bool require_register =  W.createAuxDataSet();
@@ -110,6 +108,7 @@ namespace ohmmsqmc {
       int Population = W.getActiveWalkers();
       int tPopulation = W.getActiveWalkers();
       RealType Eest = brancher.E_T;
+      RealType E_T = Eest;
       RealType oneovertau = 1.0/Tau;
       RealType oneover2tau = 0.5*oneovertau;
       RealType g = sqrt(Tau);
@@ -239,7 +238,8 @@ namespace ohmmsqmc {
 
 	  ++step;++accstep;
 	  Estimators.accumulate(W);
-	  Eest = brancher.update(Population,Eest); //E_T = brancher.update(Population,Eest);
+	  Eest = brancher.update(Population,Eest); 
+          //E_T = brancher.update(Population,Eest);
 	  brancher.branch(accstep,W);
 	} while(step<nSteps);
 	
