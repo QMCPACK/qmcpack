@@ -295,7 +295,6 @@ namespace ohmmsqmc {
       buf.put(U.begin(), U.end());
       buf.put(d2U.begin(), d2U.end());
       buf.put(FirstAddressOfdU,LastAddressOfdU);
-      buf.add(U.begin(), U.end());
       return exp(x); 
     }
 
