@@ -64,9 +64,7 @@ namespace ohmmsqmc {
   }
 
 
-  /**
-   *@brief Minimize the cost function with respect to a set of
-   parameters.  
+  /** Minimize the cost function with respect to a set of parameters.  
    *
    The choice of the cost function depends on the application.  
    The local energy
@@ -131,7 +129,7 @@ namespace ohmmsqmc {
     put(qmc_node);
 
     //set the data members to start a new run
-    getReady();
+    checkConfigurations();
 
     //estimator has to collect the data over mpi nodes
     Estimators.setCollectionMode(OHMMS::Controller->ncontexts()>1);
@@ -260,6 +258,7 @@ namespace ohmmsqmc {
     //TinyVector<RealType,3> nw_effect(0.0);
     std::vector<RealType> nw_effect(3,0.0);
 
+    int iconf(0);
     for(int i=0; i<ConfigFile.size(); i++) {
 
       HDFWalkerInput wReader(ConfigFile[i]);
@@ -270,12 +269,15 @@ namespace ohmmsqmc {
 	NumSamples += W.getActiveWalkers();
 	MCWalkerConfiguration::PropertyContainer_t Properties;
       
-	for (MCWalkerConfiguration::iterator it = W.begin(); it != W.end(); ++it) {
+	MCWalkerConfiguration::iterator it = W.begin(); 
+	MCWalkerConfiguration::iterator it_end = W.end(); 
+        while(it != it_end) {
 
 	  // save old sample
-	  ValueType psi2old = (*it)->Properties(PSISQ);
-	  ValueType vold = (*it)->Properties(LOCALPOTENTIAL);
-
+	  //ValueType psi2old = (*it)->Properties(PSISQ);
+	  //ValueType vold = (*it)->Properties(LOCALPOTENTIAL);
+          ValueType logpsi0(LogPsiSq[iconf]);
+          ValueType vold(VlocOld[iconf]);
 	  W.R = (*it)->R;
 	
 	  //update the distance table associated with W
@@ -283,20 +285,22 @@ namespace ohmmsqmc {
       
 	  //evaluate wave function
 	  ValueType psi = Psi.evaluate(W);
-	  ValueType psisq = psi*psi;
-	  ValueType weight = psisq/psi2old;
+          ValueType weight = exp(log(psi*psi)-logpsi0);
 	  // accumulate the effective number of walkers
 	  nw_effect[0] += weight;
 	  nw_effect[1] += weight*weight;
 
+          /////////////////////////////////
+          //Why are we even writing this????
 	  //update the properties
-	  Properties(WEIGHT) = weight;
-	  Properties(PSISQ) = psisq;
-	  Properties(PSI) = psi;
-	  //Properties(LOCALENERGY) = H.evaluate(W);
-	  Properties(LOCALENERGY) = H_KE.evaluate(W)+vold;
-	  (*it)->Properties = Properties;
-	  //H.copy((*it)->getEnergyBase());
+	  //Properties(WEIGHT) = weight;
+	  //Properties(PSISQ) = psisq;
+	  //Properties(PSI) = psi;
+	  ////Properties(LOCALENERGY) = H.evaluate(W);
+	  //Properties(LOCALENERGY) = H_KE.evaluate(W)+vold;
+	  //(*it)->Properties = Properties;
+          /////////////////////////////////
+          ++it;
 	}
 	Estimators.accumulate(W);
       }
@@ -308,6 +312,33 @@ namespace ohmmsqmc {
     return (nw_effect[0]*nw_effect[0]/nw_effect[1]);
   }
 
+  void 
+  VMC_OPT::checkConfigurations() {
+    getReady();
+    LogPsiSq.reserve(ConfigFile.size()*500);
+    VlocOld.reserve(ConfigFile.size()*500);
+    NumSamples=0;
+    for(int i=0; i<ConfigFile.size(); i++) {
+      HDFWalkerInput wReader(ConfigFile[i]);
+      while(wReader.put(W)) {
+	//accumulate the number of samples      
+	NumSamples += W.getActiveWalkers();
+	MCWalkerConfiguration::iterator it(W.begin()); 
+	MCWalkerConfiguration::iterator it_end(W.end()); 
+        while(it != it_end) {
+	  W.R = (*it)->R;
+	  //update the distance table associated with W
+	  DistanceTable::update(W);
+	  //evaluate wave function
+          ValueType psi(Psi.evaluate(W));
+          H.evaluate(W);
+	  LogPsiSq.push_back(log(psi*psi));
+          VlocOld.push_back(H.getLocalPotential());
+          ++it;
+        }
+      }
+    }
+  }
   /**
    *@brief Reset the Wavefunction \f$ \Psi({\bf R},{{\bf \alpha_i}}). \f$
    *
@@ -375,7 +406,6 @@ namespace ohmmsqmc {
    <li> stepsize: for conjugate gradient, default 0.01
    <li> epsilon: for conjugate gradient, default 1e-6
    </ul>
-   *
    */
 
   bool

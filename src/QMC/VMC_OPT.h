@@ -80,6 +80,10 @@ namespace ohmmsqmc {
     vector<string> IDtag;  
     ///list of files storing configurations  
     vector<string> ConfigFile;
+    ///save the wave function
+    vector<ValueType> LogPsiSq;
+    ///save the local potential
+    vector<RealType> VlocOld;
     ///method for optimization, default conjugate gradient
     string optmethod;
     ///number of times cost function evaluated
@@ -98,6 +102,9 @@ namespace ohmmsqmc {
     RealType CostValue;
     ///Hamiltonians that depend on the optimization: KE
     QMCHamiltonian H_KE;
+
+    void checkConfigurations();
+
     ///Copy Constructor (disabled).
     VMC_OPT(const VMC_OPT& a): QMCDriver(a) { }  
     ///Copy operator (disabled).
