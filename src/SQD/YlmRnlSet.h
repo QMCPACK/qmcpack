@@ -222,8 +222,10 @@ struct YlmRnlSet  {
 
   bool put(xmlNodePtr cur);
   bool get(std::ostream& os);
+
   bool print_HDF5(const std::string&, const std::string&,
 		  const std::vector<value_type>&);
+
   bool print_basis(const std::string&, const std::string&,
 		   const std::string&); 
 		  

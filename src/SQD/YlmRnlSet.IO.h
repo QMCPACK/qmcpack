@@ -19,7 +19,12 @@
 #ifndef OHMMS_YLMRNLSET_ONGRID_IO_H
 #define OHMMS_YLMRNLSET_ONGRID_IO_H
 
+#ifdef HAVE_LIBHDF5
 #include "Numerics/HDFNumericAttrib.h"
+#else
+#include <string>
+#include "OhmmsPETE/OhmmsMatrix.h"
+#endif
 #include "Numerics/Transform2GridFunctor.h"
 
 /**@brief Print  \f$ r R_{nl}(r)\f$ */
@@ -122,12 +127,11 @@ bool YlmRnlSet<GT>::put(xmlNodePtr cur){
  *\brief Prints the grid and orbital information to an HDF5
  *file named "RootName.h5".  
  */
-
 template<class GT>
 bool YlmRnlSet<GT>::print_HDF5(const std::string& RootName,
 			       const std::string& GridType,
 			       const std::vector<value_type>& eigVal){
-
+#ifdef HAVE_LIBHDF5
   //print to file fname
   string HDFfname = RootName + ".h5";
   hid_t afile = H5Fcreate(HDFfname.c_str(),H5F_ACC_TRUNC,
@@ -203,7 +207,7 @@ bool YlmRnlSet<GT>::print_HDF5(const std::string& RootName,
 
   H5Gclose(group_id);
   H5Fclose(afile); 
-
+#endif
   return true;
 
 }
@@ -216,7 +220,6 @@ bool YlmRnlSet<GT>::print_HDF5(const std::string& RootName,
  *\brief Prints the basis information to an xml file named
  *"RootName.basis.xml" for use in qmcPlusPlus.
  */
-
 template<class GT>
 bool YlmRnlSet<GT>::print_basis(const std::string& elementName,
 				const std::string& RootName,
