@@ -21,8 +21,8 @@
 #include "QMCWaveFunctions/PadeJastrow.h"
 #include "QMCWaveFunctions/NoCuspJastrow.h"
 #include "QMCWaveFunctions/OneBodyJastrowFunction.h"
-#include "QMCWaveFunctions/PolarizedJastrow.h"
 #include "QMCWaveFunctions/TwoBodyJastrowFunction.h"
+#include "QMCWaveFunctions/PolarizedJastrow.h"
 
 namespace ohmmsqmc {
 
@@ -277,7 +277,10 @@ namespace ohmmsqmc {
 
     string jasttype((const char*)(xmlGetProp(cur, (const xmlChar *)"type")));
     string jastname((const char*)(xmlGetProp(cur, (const xmlChar *)"name")));
-    string jastfunction((const char*)(xmlGetProp(cur, (const xmlChar *)"function")));
+    //string jastfunction((const char*)(xmlGetProp(cur, (const xmlChar *)"function")));
+    string jastfunction;
+    xmlChar *ftype = xmlGetProp(cur, (const xmlChar *)"function");
+    if(ftype) jastfunction = (const char*) ftype;
 
     LOGMSG("Jastrow Factor: Name = "<< jastname <<" Type = "<<jasttype)
 
@@ -291,10 +294,8 @@ namespace ohmmsqmc {
       TwoBodyJastrow<PadeJastrow<ValueType>,true> *J2 = NULL;
       return createTwoBodyNoSpin(cur,J2);
     } else if(jasttype == "One-Body") {
-    /*For One-Body Jastrow default is Pade function, also implements
-      the nocusp function a/(1+br^2)
-    */
       if(jastfunction == "nocusp") {
+        //For One-Body Jastrow default is Pade function, also implements the nocusp function a/(1+br^2)
 	LOGMSG("Jastrow Function: nucusp.")
 	OneBodyJastrow<NoCuspJastrow<ValueType> > *J1 = NULL;
 	return createOneBody(cur,J1);
@@ -304,9 +305,15 @@ namespace ohmmsqmc {
 	return createOneBody(cur,J1);
       }
     } else if(jasttype == "Polarization") {
+cout << "Polarizaton jastrow to be created." << endl;
       PolarizedJastrow *jp=new PolarizedJastrow;
-      jp->put(cur,wfs_ref.VarList);
-      wfs_ref.add(jp);
+      if(jp) {
+        jp->put(cur,wfs_ref.VarList);
+        wfs_ref.add(jp);
+        return true;
+      } else {
+        return false;
+      }
     }
     return false;
   } 
