@@ -87,7 +87,7 @@ namespace ohmmsqmc {
     ///the set of local-potentials (one for each ion)
     vector<RadialPotentialSet*> PP;
     ///unique index for each ion
-    const ParticleSet::ParticleIndex_t& Centers;
+    ParticleSet::ParticleIndex_t Centers;
 
     typedef RadialPotentialSet::GridType GridType;
     typedef RadialPotentialSet::LocalPotentialType LocalPotentialType;

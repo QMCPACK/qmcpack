@@ -15,7 +15,7 @@ OHMMS_UTILITIES = \
 	Utilities/RandRandom.cpp \
 	Utilities/RandRandom.h \
 	Utilities/RandomGenerator.cpp \
-	Utilities/RandomGenerator.h
+	Utilities/RandomGenerator.h \
 	OhmmsApp/ProjectData.cpp \
 	OhmmsApp/ProjectData.h \
         OhmmsApp/RandomNumberControl.cpp \
@@ -40,12 +40,17 @@ OHMMS_PARTICLE = \
         Particle/DistanceTable.h \
         Particle/HDFWalkerIO.cpp \
         Particle/HDFWalkerIO.h \
-        ParticleIO/ParticleLayoutIO.cpp \
+        ParticleIO/XMLParticleIO.cpp \
         ParticleIO/XMLParticleIO.h \
         ParticleIO/ParticleLayoutIO.cpp \
         ParticleIO/ParticleLayoutIO.h \
         ParticleIO/HDFParticleIO.cpp \
         ParticleIO/HDFParticleIO.h
+
+QMC_BASE = \
+	QMCHamiltonians/QMCHamiltonianBase.cpp\
+	QMCWaveFunctions/JastrowBuilder.cpp\
+	QMCWaveFunctions/TrialWaveFunction.cpp
 
 # build the base library used by any application
 lib_LIBRARIES = libqmcbase.a
@@ -53,7 +58,8 @@ lib_LIBRARIES = libqmcbase.a
 libqmcbase_a_SOURCES = \
 	$(OHMMS_UTILITIES) \
 	$(OHMMS_MESSAGE) \
-	$(OHMMS_PARTICLE) 
+	$(OHMMS_PARTICLE) \
+	$(QMC_BASE)
 
 #important: build order,
 #  i) current directory for the base libraries

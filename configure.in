@@ -66,6 +66,7 @@ sinclude(config/acx_lapack.m4)
 sinclude(config/acx_sprng.m4)
 sinclude(config/acx_hdf5.m4)
 sinclude(config/acx_blitz.m4)
+sinclude(config/acx_boost.m4)
 sinclude(config/acx_restrict.m4)
 sinclude(config/ac_cxx_bz_compiler.m4)
 
@@ -439,6 +440,8 @@ AC_CXX_HAVE_COMPLEX_MATH1([],
 AC_CXX_HAVE_COMPLEX_MATH2
 ACX_C_RESTRICT
 
+AC_CHECK_LIB(gslcblas,main)
+AC_CHECK_LIB(gsl,main)
 #
 #checking blas/lapack
 # i) --with-mkl=DIR or --with-mkl using ENV{$MKL}
@@ -666,6 +669,8 @@ ACX_HDF5([], [AC_MSG_WARN([Could not find hdf5. Disabled.])])
 ACX_SPRNG([], [AC_MSG_WARN([Could not find sprng. Disabled.])])
 
 ACX_BLITZ([], [AC_MSG_WARN([Could not find blitz. Disabled.])])
+
+ACX_BOOST([], [AC_MSG_WARN([Could not find boost. Disabled.])])
 
 #CXXFLAGS="$CXXFLAGS $CFLAGS"
 ##################################################################

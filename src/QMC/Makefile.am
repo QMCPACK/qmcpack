@@ -1,21 +1,32 @@
-QMC_COMMON_SRCS =  QMCDriver.cpp\
-VMC.cpp\
-VMC_OPT.cpp\
-MolecuDMC.cpp\
-WaveFunctionTester.cpp\
-../Estimators/ScalarEstimatorManager.cpp \
-QMCApps.cpp
+QMC_COMMON_SRCS = \
+  QMCDriver.cpp\
+  VMC.cpp \
+  VMCParticleByParticle.cpp\
+  DMCParticleByParticle.cpp\
+  VMC_OPT.cpp\
+  MolecuDMC.cpp\
+  ReptationMC.cpp\
+  WaveFunctionTester.cpp\
+  ../Estimators/ScalarEstimatorManager.cpp\
+  QMCApps.cpp
 
 if USE_MOLECUAPPS
 QMC_MOLECU =\
-    ../QMCWaveFunctions/OrbitalBuilderBase.cpp \
+    ../QMCWaveFunctions/OrbitalBuilderBase.cpp\
     ../QMCWaveFunctions/AtomicOrbitals/HFAtomicSTOSet.cpp \
-    ../QMCWaveFunctions/AtomicOrbitals/HFAtomicSTOSetBuilder.cpp\
+    ../QMCWaveFunctions/AtomicOrbitals/HFAtomicSTOSetBuilder.cpp \
     ../QMCWaveFunctions/AtomicOrbitals/HeSTOClementiRottie.cpp\
-    ../QMCWaveFunctions/MolecularOrbitals/RadialGridFunctorBuilder.cpp\
     ../QMCWaveFunctions/MolecularOrbitals/STOMolecularOrbitals.cpp\
+    ../QMCWaveFunctions/MolecularOrbitals/RGFBuilderBase.cpp\
+    ../QMCWaveFunctions/MolecularOrbitals/STO2GridBuilder.cpp\
+    ../QMCWaveFunctions/MolecularOrbitals/GTO2GridBuilder.cpp\
+    ../QMCWaveFunctions/MolecularOrbitals/NumericalRGFBuilder.cpp\
     ../QMCWaveFunctions/MolecularOrbitals/GridMolecularOrbitals.cpp\
     ../QMCWaveFunctions/MolecularOrbitals/MolecularOrbitalBuilder.cpp\
+    ../QMCHamiltonians/LocalPPotential.cpp\
+    ../QMCHamiltonians/WOS/Device.cpp\
+    ../QMCHamiltonians/WOS/WOSPotential.cpp\
+    ../QMCHamiltonians/GeCorePolPotential.cpp\
     MolecuApps.cpp
 endif
 
@@ -44,4 +55,3 @@ INCLUDES = -I$(top_srcdir)/src
 qmcapp_LDADD = @QMCBASE_LIBS@ 
 qmcapp_LDFLAGS = @LDFLAGS@ 
 qmcapp_DEPENDENCIES = ${top_builddir}/src/libqmcbase.a
-

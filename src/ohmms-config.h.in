@@ -13,9 +13,12 @@
 /* Enable OpenMP parallelization. */
 #undef ENABLE_OPENMP
 
-/* Define to dummy `main' function (if any) required to link to the Fortran 77
+/* Define to dummy `main' function (if any) required to link to the Fortran
    libraries. */
 #undef F77_DUMMY_MAIN
+
+/* Define if F77 and FC dummy `main' functions are identical. */
+#undef FC_DUMMY_MAIN_EQ_F77
 
 /* Define to 1 if you have the `atexit' function. */
 #undef HAVE_ATEXIT
@@ -49,6 +52,15 @@
 
 /* Define if you have BLITZ library. */
 #undef HAVE_LIBBLITZ
+
+/* Define if you have BOOST library. */
+#undef HAVE_LIBBOOST
+
+/* Define to 1 if you have the `gsl' library (-lgsl). */
+#undef HAVE_LIBGSL
+
+/* Define to 1 if you have the `gslcblas' library (-lgslcblas). */
+#undef HAVE_LIBGSLCBLAS
 
 /* Define if you have HDF5 library. */
 #undef HAVE_LIBHDF5
