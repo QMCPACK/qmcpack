@@ -20,7 +20,7 @@
 #include "Utilities/PooledData.h"
 
 /**@file QMCHamiltonianBase.h
- *@brief declaration of QMCHamiltonianBase and QMCHamiltonian
+ *@brief Declaration of QMCHamiltonianBase and QMCHamiltonian
  */
 namespace ohmmsqmc {
 
@@ -28,8 +28,8 @@ namespace ohmmsqmc {
   class WalkerSetRef;
   class DistanceTableData;
 
-  /*** An abstract class for Local Energy operators
-   */
+  /** An abstract class for Local Energy operators */
+
   struct QMCHamiltonianBase: public QMCTraits {
 
     typedef ParticleAttrib<ValueType>  ValueVectorType;
@@ -40,13 +40,13 @@ namespace ohmmsqmc {
     ///virtual destructor
     virtual ~QMCHamiltonianBase() { }
 
-    /**  Evaluate the local energies of an N-particle configuration
+    /** Evaluate the local energies of an N-particle configuration
      *@param P input configuration containing N particles
      *@return the value of the Hamiltonian
      */
     virtual ValueType evaluate(ParticleSet& P) = 0; 
 
-    /**  Evaluate the local energies of an N-particle configuration
+    /** Evaluate the local energies of an N-particle configuration
      *@param P input configuration containing N particles
      *@param x the sum of local energies
      *@return the value the Local Energy
@@ -61,8 +61,8 @@ namespace ohmmsqmc {
     void evaluate(WalkerSetRef& W, ValueVectorType& LE) = 0;
   };
 
-  /***  Collection of Local Energy Operators
-   */
+  /**  Collection of Local Energy Operators */
+
   class QMCHamiltonian {
 
   public:
@@ -76,12 +76,6 @@ namespace ohmmsqmc {
     ///destructor
     ~QMCHamiltonian();
 
-    /** Add a local energy operator to the list
-     *@param h a QMCHamiltonianBase to be added
-     *@param aname the name of h
-     *
-     *If the input operator with the same name does not exist, add the operator to H
-     */
     void add(QMCHamiltonianBase* h, const string& aname);
 
     ///return the name of ith Hamiltonian 
@@ -99,20 +93,12 @@ namespace ohmmsqmc {
       std::copy(Hvalue.begin(), Hvalue.end(), a.begin());
     }
 
-    /** evalaute the local energies of a configuration
-     *@param P a N-particle configuration whose local energies to be evaluated.
-     *@return the sum of local energies
-     *
-     * Sum over the local energy operators H.
-     */
+    QMCHamiltonianBase* getHamiltonian(const string& aname);
+    
+    RealType getLocalPotential();
+    
     ValueType evaluate(ParticleSet& P);
 
-    /** Evaluate the local energies of the entire walkers
-     *@param W a set of walkers (N-particle configurations)
-     *@param LE return a vector containing the value
-     *
-     * Sum over the local energy operators H.
-     */
     void evaluate(WalkerSetRef& W, ValueVectorType& LE);
 
    private:
