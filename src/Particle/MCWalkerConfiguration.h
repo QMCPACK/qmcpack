@@ -18,13 +18,14 @@
 #define OHMMS_QMC_MCWALKERCONFIGURATION_H
 #include "Particle/ParticleSet.h"
 #include "Particle/Walker.h"
+#include "OhmmsPETE/OhmmsMatrix.h"
 #include <list>
-
 namespace ohmmsqmc {
 
-  /** Class for a set of walkers that are to be advanced by Metropolis
-   *Monte Carlo.  @brief Each walker is represented by
-   *Walker<PosVector_t> and MCWalkerConfiguration contains a list of
+  /** A set of walkers that are to be advanced by Metropolis Monte Carlo.  
+   *
+   *Each walker is represented by Walker<PosVector_t> and 
+   *MCWalkerConfiguration contains a list of
    *the walkers.  This class enables two possible moves: 
    *<ul>
    *<li> move the entire active walkers, similarly to molecu. Suitable for
@@ -45,9 +46,11 @@ namespace ohmmsqmc {
     
     typedef Walker<RealType,ParticlePos_t> Walker_t;
     typedef Walker_t::PropertyContainer_t  PropertyContainer_t;
-    typedef list<Walker_t*>                WalkerList_t;
+    typedef list<Walker_t*>              WalkerList_t;
     typedef WalkerList_t::iterator         iterator;
     typedef WalkerList_t::const_iterator   const_iterator;
+
+    Matrix<ValueType> Energy;
 
     ///default constructor
     MCWalkerConfiguration();
@@ -99,6 +102,7 @@ namespace ohmmsqmc {
     /**@}*/
 
     void setUpdateMode(int updatemode) { UpdateMode = updatemode;}
+
 
     inline void setLocalEnergy(RealType e) { LocalEnergy = e;}
     inline RealType getLocalEnergy() const {return LocalEnergy;}

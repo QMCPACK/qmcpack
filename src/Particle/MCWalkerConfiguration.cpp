@@ -111,7 +111,7 @@ void MCWalkerConfiguration::copy(iterator first, iterator last){
 
 void MCWalkerConfiguration::reset() {
   iterator it=WalkerList.begin();
-  while(it != WalkerList.end()) {(*it)->Properties(Weight) = 1.0;it++;}
+  while(it != WalkerList.end()) {(*it)->Properties(WEIGHT) = 1.0;it++;}
 }
 
 int MCWalkerConfiguration::branch(int maxcopy, int Nmax, int Nmin) {
@@ -119,50 +119,107 @@ int MCWalkerConfiguration::branch(int maxcopy, int Nmax, int Nmin) {
   iterator it = WalkerList.begin();
   int iw=0, nw = WalkerList.size();
 
-  while(iw < nw && it != WalkerList.end()) {
+  vector<Walker_t*> good, bad;
+  vector<int> ncopy;
+  vector<RealType> energy;
+  ncopy.reserve(nw);
+  energy.reserve(Energy.size());
 
-    //limit maximun number of copies to 10
-    //all copies are added at the end of the list
-    int ncopy = min(static_cast<int>((*it)->Properties(Multiplicity)),maxcopy);
-    (*it)->Properties(Weight) = 1.0;
-    (*it)->Properties(Multiplicity) = 1.0;
-    if(ncopy == 0) {
-      it = destroyWalker(it);
+  int ncols = Energy.cols();
+  int num_walkers=0;
+  while(it != WalkerList.end()) {
+    int nc = min(static_cast<int>((*it)->Properties(MULTIPLICITY)),maxcopy);
+    if(nc) {
+      num_walkers += nc;
+      good.push_back(*it);
+      ncopy.push_back(nc-1);
+      energy.insert(energy.end(), Energy[iw], Energy[iw]+ncols);
     } else {
-      if(ncopy>1) {
-	copyWalker(it,ncopy-1);
-      }
-      it++;
+      bad.push_back(*it);
     }
-    iw++;
+    iw++;it++;
   }
 
-  int nwalkers = WalkerList.size();
-  if (nwalkers > Nmax){
-    /*if too many walkers, kill until the population is 90%  of Nmax*/
-    int nsubtract =  nwalkers-static_cast<int>(0.9*Nmax);
-    iterator itend = WalkerList.begin();
-    for(int i=0; i < nsubtract; i++) itend++;
-    destroyWalker(WalkerList.begin(), itend);
-  } else if(nwalkers < Nmin) {
-    /*if too few walkers, copy until the population is 10%  more than Nmin*/
-    it = WalkerList.begin();
-    int nadd = static_cast<int>(Nmin*1.1)-nwalkers;
-    if(nadd < nwalkers){
-      int i=0;
-      while(i<nadd){
-	//ERRORMSG("Too few walkers at step " << iter)
-	copyWalker(it,1);
-	it++; i++;
-      }
-    } else {
-      cerr << "Too few walkers to copy!" << endl;
+
+  //remove bad walkers
+  for(int i=0; i<bad.size(); i++) delete bad[i];
+
+  //check if the projected number of walkers is too small or too large
+  if(num_walkers>Nmax) {
+    int nsub=0;
+    int nsub_target=num_walkers-static_cast<int>(0.9*Nmax);
+    int i=0;
+    while(i<ncopy.size() && nsub<nsub_target) {
+      if(ncopy[i]) {ncopy[i]--; nsub++;}
+      i++;
+    }
+    num_walkers -= nsub;
+  } else  if(num_walkers < Nmin) {
+    int nadd=0;
+    int nadd_target = static_cast<int>(Nmin*1.1)-num_walkers;
+    if(nadd_target>good.size()) {
+      cerr << "Too few walkers to copy! Abort." << endl;
       exit(-1);
+    } else {
+      int i=0;
+      while(i<ncopy.size() && nadd<nadd_target) {
+	ncopy[i]++; nadd++;i++;
+      }
+    }
+    num_walkers +=  nadd;
+  }
+
+  //clear the walker list to populate them
+  WalkerList.clear();
+
+  Energy.resize(num_walkers,ncols);
+  std::copy(energy.begin(), energy.end(), Energy.data());
+  for(int i=0; i<good.size(); i++) {
+    WalkerList.push_back(good[i]);
+  }
+
+  vector<RealType>::iterator ie=energy.begin();
+  RealType *e_start = Energy.data()+energy.size();
+  for(int i=0; i<good.size(); i++,ie+=ncols) {
+    for(int j=0; j<ncopy[i]; j++) {
+      WalkerList.push_back(new Walker_t(*(good[i])));
+      std::copy(ie,ie+ncols,e_start);
+      e_start += ncols;
     }
   }
 
-  return WalkerList.size();
-
+  iw=0;
+  it=WalkerList.begin();
+  while(it != WalkerList.end()) {
+    (*it)->ID = iw++;
+    (*it)->Properties(WEIGHT) = 1.0;
+    (*it)->Properties(MULTIPLICITY) = 1.0;
+    it++;
+  }
+//   int nwalkers = WalkerList.size();
+//   if (nwalkers > Nmax){
+//     /*if too many walkers, kill until the population is 90%  of Nmax*/
+//     int nsubtract =  nwalkers-static_cast<int>(0.9*Nmax);
+//     iterator itend = WalkerList.begin();
+//     for(int i=0; i < nsubtract; i++) itend++;
+//     destroyWalker(WalkerList.begin(), itend);
+//   } else if(nwalkers < Nmin) {
+//     /*if too few walkers, copy until the population is 10%  more than Nmin*/
+//     it = WalkerList.begin();
+//     int nadd = static_cast<int>(Nmin*1.1)-nwalkers;
+//     if(nadd < nwalkers){
+//       int i=0;
+//       while(i<nadd){
+// 	//ERRORMSG("Too few walkers at step " << iter)
+// 	copyWalker(it,1);
+// 	it++; i++;
+//       }
+//     } else {
+//       cerr << "Too few walkers to copy!" << endl;
+//       exit(-1);
+//     }
+//   }
+  return iw;
 }
 
 /***************************************************************************

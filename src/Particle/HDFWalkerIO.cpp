@@ -84,8 +84,8 @@ bool HDFWalkerOutput::get(MCWalkerConfiguration& W) {
   int nw = 0; int item=0;
   for (MCWalkerConfiguration::iterator it = W.begin(); 
        it != W.end(); ++it, ++nw) {
-    sample_1(nw) = (*it)->Properties(PsiSq);
-    sample_2(nw) = (*it)->Properties(LocalPotential);
+    sample_1(nw) = (*it)->Properties(PSISQ);
+    sample_2(nw) = (*it)->Properties(LOCALENERGY);
     for(int np=0; np < W.getParticleNum(); ++np)
       Pos(nw,np) = (*it)->R(np);    
   }
@@ -208,7 +208,7 @@ HDFWalkerInput::put(MCWalkerConfiguration& W, int ic){
   int iw=0;
   for(MCWalkerConfiguration::iterator it = W.begin(); it != W.end(); 
       ++it, iw++) {
-    (*it)->Properties(PsiSq) = psisq_in[iw];
+    (*it)->Properties(PSISQ) = psisq_in[iw];
     for(int np=0; np < W.getParticleNum(); ++np){
       (*it)->R(np) = Pos_temp(iw,np);
     }
@@ -218,7 +218,7 @@ HDFWalkerInput::put(MCWalkerConfiguration& W, int ic){
     iw=0;
     for(MCWalkerConfiguration::iterator it = W.begin(); it != W.end(); 
 	++it, iw++) 
-      (*it)->Properties(LocalPotential) = localene_in[iw];
+      (*it)->Properties(LOCALENERGY) = localene_in[iw];
   }
   //XMLReport("Read in " << W.getActiveWalkers() << " Walkers from file")
   return true;

@@ -21,15 +21,15 @@
 namespace ohmmsqmc {
 
   /** an enum denoting index of physical properties */
-  enum {Weight=0,
-	Multiplicity,
-	LocalEnergy, 
-	LocalPotential, 
-	PsiSq, 
-	Sign, 
-	Age,
-	ScaleD, 
-	NumProperties};
+  enum {WEIGHT=0,     /*!< weight */
+	LOCALENERGY,  /*!< local energy, the sum of all the components */
+	MULTIPLICITY, /*!< multiplicity, used by DMC for branching */
+	PSISQ,        /*!< square of the many-body wavefunction \f$|\Psi|^2\f$ */
+	PSI,          /*!< value of the many-body wavefunction \f$\Psi(\{R\})\f$ */
+	AGE,          /*!< the age of the walker. set to zero when the walker is updated */
+	SCALED,       /*!< scaling factor for the drift */
+	NUMPROPERTIES /*!< the number of properties */
+       };
   
   /**
    *\brief A container class to represent a walker.
@@ -42,7 +42,7 @@ namespace ohmmsqmc {
   template<class T, class PA>
   struct Walker {
 
-    typedef TinyVector<T,NumProperties> PropertyContainer_t;
+    typedef TinyVector<T,NUMPROPERTIES> PropertyContainer_t;
 
     ///scalar properties of a walker
     PropertyContainer_t  Properties;
@@ -62,33 +62,54 @@ namespace ohmmsqmc {
 
     ///create a walker for n-particles
     inline explicit Walker(int n) {  
+      Properties(WEIGHT) = 1.0;
+      Properties(MULTIPLICITY) = 1.0;
+      Properties(PSI) = 1.0;
       resize(n);
     }
     
     ///constructor
     inline Walker(): Properties(0.0) {
-      Properties(Weight) = 1.0;
-      Properties(Multiplicity) = 1.0;
-      Properties(Sign) = 1.0;
+      Properties(WEIGHT) = 1.0;
+      Properties(MULTIPLICITY) = 1.0;
+      Properties(PSI) = 1.0;
     }
 
     ///copy constructor
-    inline Walker(const Walker& a): R(a.R), Drift(a.Drift),
-                                    Properties(a.Properties),
-				    E(a.E),
-				    Data(a.Data)
-    { }
+    inline Walker(const Walker& a){
+      makeCopy(a);
+    }
     
     ///assignment operator
     inline Walker& operator=(const Walker& a) {
+      makeCopy(a);
+      return *this;
+    }
+
+    inline void makeCopy(const Walker& a) {    
+      resize(a.R.size());
       R = a.R;
       Drift = a.Drift;
       Properties = a.Properties;
       Data = a.Data;
       E = a.E;
-      return *this;
     }
-    
+
+    /** reset the property of a walker
+     *@param iw the id of this walker
+     *@param psi the wavefunction value
+     *@param ene the local energy
+     *
+     *Assign the values and reset the weight and multiplicity to one to start a run
+     */
+    inline void resetProperty(T psi, T ene) {
+      Properties(WEIGHT) = 1.0;
+      Properties(MULTIPLICITY) = 1.0;
+      Properties(LOCALENERGY) = ene;
+      Properties(PSISQ)=psi*psi;
+      Properties(PSI)=psi;
+    }
+
     ///resize for n-particles
     inline void resize(int n) {
       R.resize(n);
