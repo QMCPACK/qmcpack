@@ -133,7 +133,8 @@ namespace ohmmsqmc {
 	it++;iw++;
       }
     } else {
-      LOGMSG("Using the existing walkers. Numer of walkers =" << W.getActiveWalkers())
+      LOGMSG("Using the existing walkers. Number of walkers = " 
+	     << W.getActiveWalkers())
     }
 
     //calculate local energies and wave functions:
@@ -193,7 +194,7 @@ namespace ohmmsqmc {
     int defaultw = 100;
     int targetw = 0;
     
-    nTargetWalkers=0;
+    //  nTargetWalkers=0;
     if(cur) {
 
       xmlAttrPtr att = cur->properties;
@@ -206,7 +207,14 @@ namespace ohmmsqmc {
       }
       
       xmlNodePtr tcur=cur->children;
+      //initialize the parameter set
       m_param.put(cur);
+      LogOut->getStream() << "timestep = " << Tau << endl;
+      LogOut->getStream() << "blocks = " << nBlocks << endl;
+      LogOut->getStream() << "steps = " << nSteps << endl;
+      LogOut->getStream() << "FirstStep = " << FirstStep << endl;
+      LogOut->getStream() << "walkers = " << W.getActiveWalkers() << endl;
+      //determine how often to print walkers to hdf5 file
       while(tcur != NULL) {
 	string cname((const char*)(tcur->name));
 	if(cname == "record") {
@@ -217,9 +225,12 @@ namespace ohmmsqmc {
 	    if(aname == "stride") stemp=atoi((const char*)(att->children->content));
 	    att=att->next;
 	  }
-	  LogOut->getStream() << 
-	    "Simulation: print walker ensemble every block." << endl;
-	  if(stemp >= 0) pStride = true;
+	  if(stemp >= 0){
+	    pStride = true;
+	    LogOut->getStream() << "print walker ensemble every block." << endl;
+	  } else {
+	    LogOut->getStream() << "print walker ensemble after last block." << endl;
+	  }
 	}
 	tcur=tcur->next;
       }
@@ -227,7 +238,8 @@ namespace ohmmsqmc {
     
     //set the stride for the scalar estimators 
     Estimators.setStride(nSteps);
-    
+    /*check to see if the target population is different 
+      from the current population.*/ 
     int nw  = W.getActiveWalkers();
     int ndiff = 0;
     if(nw) {

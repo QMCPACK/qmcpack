@@ -87,7 +87,8 @@ namespace ohmmsqmc {
       }
       
       MolecuFixedNodeBranch<RealType> brancher(Tau,W.getActiveWalkers());
-      brancher.put(qmc_node);
+      //initialize parameters for fixed-node branching
+      brancher.put(qmc_node,LogOut);
       
       /*if VMC/DMC directly preceded DMC (Counter > 0) then
 	use the average value of the energy estimator for
