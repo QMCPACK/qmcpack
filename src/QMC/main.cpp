@@ -17,6 +17,7 @@
 //   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
+#include "Message/Communicate.h"
 #include "Utilities/OhmmsInfo.h"
 #include "QMC/MolecuApps.h"
 
@@ -29,7 +30,9 @@
  */
 int main(int argc, char **argv) {
 
-  OhmmsInfo welcome(argc,argv);
+  OHMMS::Controller->initialize(argc,argv);
+
+  OhmmsInfo welcome(argc,argv,OHMMS::Controller->mycontext());
 
   ohmmsqmc::MolecuApps qmc(argc,argv);
 
@@ -54,6 +57,7 @@ int main(int argc, char **argv) {
     qmc.run(NULL);
   }
   LOGMSG("Bye")
+  OHMMS::Controller->finalize();
   return 0;
 }
 /***************************************************************************
