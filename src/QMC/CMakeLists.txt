@@ -43,7 +43,6 @@ ENDIF(QMCAPPS MATCHES "QDApps")
 
 SET(QMCSRCS 
   QMCDriver.cpp
-QMCApps.cpp
   VMC.cpp
   VMCParticleByParticle.cpp
   DMCParticleByParticle.cpp
