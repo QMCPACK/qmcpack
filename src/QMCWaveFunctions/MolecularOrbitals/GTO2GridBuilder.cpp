@@ -51,6 +51,7 @@ namespace ohmmsqmc {
   template<class T>
   bool GaussianCombo<T>::put(xmlNodePtr cur) {
     InParam.push_back(cur);
+    return true;
   }
 
   template<class T>
