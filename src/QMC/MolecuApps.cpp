@@ -77,7 +77,6 @@ namespace ohmmsqmc {
       in the function QMCDriver::addWalkers loop over all the walkers
       and add a gaussian -> R[i] = R[i] + g\chi.
      */
-
     if(!setMCWalkers(m_root)) {
       int nup = el.last(0);
       int nions = ion.getTotalNum();
@@ -158,6 +157,7 @@ namespace ohmmsqmc {
       = xmlXPathEvalExpression((const xmlChar*)"//hamiltonian",m_context);
 
     xmlNodePtr pol=NULL;
+    xmlNodePtr cpp=NULL;
     if(xmlXPathNodeSetIsEmpty(result->nodesetval)) {
       return false;
     } else {
@@ -166,6 +166,7 @@ namespace ohmmsqmc {
       if(att) {
 	ptype = (const char*)att;
 	if(ptype=="polarization"){ pol=cur;}
+	if(ptype=="cpp"){ cpp=cur;}
       }
     }
 
@@ -188,10 +189,13 @@ namespace ohmmsqmc {
       if(ion.getTotalNum()>1) 
 	H.add(new IonIonPotential(ion),"IonIon");
     } else if(ptype == "cpp") {
+      xmlChar* att2=xmlGetProp(cpp,(const xmlChar*)"species");
+      string stype = (const char*)att2;
+      cout << "stype " << stype << endl;
       H.add(new CoulombPotentialAA(el), "ElecElec");
       H.add(new LocalPPotential(ion,el), "PseudoPot");
       //WARNING: GeCPP is HARD CODED!!!!!!
-      H.add(new GeCorePolPotential(ion,el), "GeCPP");
+      H.add(new GeCorePolPotential(ion,el,stype), "GeCPP");
       if(ion.getTotalNum()>1) 
 	H.add(new IonIonPotential(ion),"IonIon");
     } else if(ptype == "polarization"){
