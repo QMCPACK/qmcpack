@@ -8,6 +8,8 @@ ADD_DEFINITIONS(-DADD_)
 #SET(CMAKE_CC_FLAGS "-restrict -unroll -fno-alias -O3 -Ob=1 -ansi -ipo -ipo_obj")
 SET(CMAKE_CXX_FLAGS "-restrict -unroll -fno-alias -O3")
 SET(CMAKE_CC_FLAGS "-restrict -unroll -fno-alias -O3")
+#SET(CMAKE_CXX_FLAGS "-restrict -unroll -fno-alias -O2 -g")
+#SET(CMAKE_CC_FLAGS "-restrict -unroll -fno-alias -O2 -g")
 
 #IF(BITS MATCHES 64)
 #  SET(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} " -ftz")

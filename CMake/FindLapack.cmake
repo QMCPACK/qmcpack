@@ -12,9 +12,8 @@
 SET(MKL_PATHS "")
 
 #use environment variables
-IF(INTEL_COMPILER)
-  #use environment variables: e.g, module at OSC uses MKL
-  IF($ENV{MKL} MATCHES "mkl")
+#use environment variables: e.g, module at OSC uses MKL
+IF($ENV{MKL} MATCHES "mkl")
 
     MESSAGE(STATUS "Using intel/mkl library: $ENV{MKL}")
 
@@ -25,19 +24,12 @@ IF(INTEL_COMPILER)
   ENDIF($ENV{MKL} MATCHES "mkl")
 
   SET(MKL_PATHS ${MKL_PATHS} 
-        $ENV{MKL_HOME}
+        $ENV{MKL_HOME}/lib/${BITS}
 	/usr/local/intel/mkl60/mkl60/lib/64
 	/usr/local/intel/mkl/lib/32 
 	/opt/intel/mkl/lib/32
   ) 
   MESSAGE(STATUS "Looking for intel/mkl library in ${MKL_PATHS}")
-
-#  IF($ENV{MKL}) MATCHES "mkl")
-#    MESSAGE(STATUS "Using intel/mkl library: $ENV{MKL}")
-#    SET(LAPACK_LIBRARY $ENV{MKL})
-#    SET(BLAS_LIBRARY " ")
-#    SET(LAPACK_LIBRARY_INIT 1)
-#  ENDIF($ENV{MKL}) MATCHES "mkl")
 
   IF(NOT LAPACK_LIBRARY_INIT)
     FIND_LIBRARY(LAPACK_LIBRARY 
@@ -57,8 +49,7 @@ IF(INTEL_COMPILER)
       SET(LAPACK_LIBRARY_INIT 1 CACHE BOOL "lapack is initialized")
       SET(BLAS_LIBRARY_INIT 1 CACHE BOOL "blas is initialized")
     ENDIF(LAPACK_LIBRARY MATCHES "mkl")
-  ENDIF(NOT LAPACK_LIBRARY_INIT)
-ENDIF(INTEL_COMPILER)
+ENDIF(NOT LAPACK_LIBRARY_INIT)
 
 IF($ENV{ATLAS} MATCHES "atlas")
   IF($ENV{ATLAS} MATCHES "lapack") 

@@ -18,7 +18,7 @@ IF(Hdf5_INCLUDE_DIRS)
 ELSE(Hdf5_INCLUDE_DIRS)
 
   SET(TRIAL_LIBRARY_PATHS
-    /usr/apps/hdf5/lib
+    $ENV{HDF5_HOME}/lib
     /usr/apps/lib
     /usr/lib 
     /usr/local/lib
@@ -27,18 +27,13 @@ ELSE(Hdf5_INCLUDE_DIRS)
     )
 
   SET(TRIAL_INCLUDE_PATHS
-    /usr/apps/hdf5/include
+    $ENV{HDF5_HOME}/include
     /usr/apps/include
     /usr/include
     /opt/include
     /usr/local/include
     /sw/include
     )
-
-  IF(CMAKE_COMPILER_IS_GNUCXX)
-    SET(TRIAL_LIBRARY_PATHS /usr/apps/hdf5/gcc3/lib ${TRIAL_LIBRARY_PATHS} )
-    SET(TRIAL_INCLUDE_PATHS /usr/apps/hdf5/gcc3/include ${TRIAL_INCLUDE_PATHS} )
-  ENDIF(CMAKE_COMPILER_IS_GNUCXX)
 
   IF($ENV{HDF5_DIR} MATCHES "hdf")
     MESSAGE(STATUS "Using environment variable HDF5_DIR.")
@@ -61,4 +56,4 @@ MARK_AS_ADVANCED(
   HDF5_INCLUDE_DIR 
   HDF5_LIBRARY 
   FOUND_HDF5
-  )
+)
