@@ -14,6 +14,9 @@
 /* Define to 1 if you have the `hdf5' library (-lhdf5). */
 #cmakedefine HAVE_LIBHDF5 @HAVE_LIBHDF5@
 
+/* Define to 1 if you have the `boost' library */
+#cmakedefine HAVE_LIBBOOST @HAVE_LIBBOOST@
+
 /* Define to 1 if you have the `sprng' library (-lsprng). */
 #cmakedefine HAVE_LIBSPRNG @HAVE_LIBSPRNG@
 
