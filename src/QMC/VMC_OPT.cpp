@@ -506,6 +506,15 @@ namespace ohmmsqmc {
 			<< cg_tolerance << " stepsize = " << cg_stepsize 
 			<< " epsilon = " << cg_epsilon << " Tau = " 
 			<< Tau << endl;
+
+    if(!UseWeight){
+      LogOut->getStream() << "#All weights set to 1.0" << endl;
+      w_en = 0.0;
+      w_var = 2.0/Tau;
+      LogOut->getStream() << "#Cost Function: Cost = " << w_en << "*<E> + " 
+			  << w_var << "*0.5 Tau <Var>" << endl;
+    }
+
     putOptParams();
 
     LogOut->getStream() 
