@@ -99,7 +99,7 @@ struct RegularLinearTransform {
    *\return the derivate of the target function before transformation
    *\brief Assign the first and second values using the cusp condition.
    *
-   In the limit \f$r\rightarrow 0 \f$ \f[u(r) \approx r^(l+1).\f]
+   In the limit \f$r\rightarrow 0 \f$ \f[u(r) \approx r^{(l+1)}.\f]
    */
   value_type setCusp(int i, value_type& z0, value_type& z1) {
     value_type deriv;

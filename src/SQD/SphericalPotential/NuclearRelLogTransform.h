@@ -44,7 +44,7 @@
  *
  To convert this equation to a form that is compatable with the Numerov
  algoritm the following change of variables is necessary:
- \f[ Z_{nl}(r)=u_{nl}(r)/\sqrt{M} \f], this leads to
+ \f[ Z_{nl}(r)=u_{nl}(r)/\sqrt{M}, \f] this leads to
  \f[
  \frac{d^2Z_{nl}}{dr^2}=\left[ \frac{l(l+1)}{r^2} 
  + 2M(V-\varepsilon')+\frac{\alpha^2}{2Mr}\frac{dV}{dr}
