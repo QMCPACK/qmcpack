@@ -65,6 +65,48 @@ public :
 
 };
 
+template<class T, class Point_t>
+SphericalTensor<T, Point_t>::SphericalTensor(const int lmax, bool addsign) : Lmax(lmax){ 
+  int ntot = (lmax+1)*(lmax+1);
+  Ylm.resize(ntot);
+  gradYlm.resize(ntot);
+  gradYlm[0] = 0.0;
+
+  NormFactor.resize(ntot,1);
+  const value_type sqrt2 = sqrt(2.0);
+  if(addsign) {
+    for (int l=0; l<=Lmax; l++) {
+      T p = -1.0*sqrt2;
+      for (int m=1; m<=l; m++) {
+        NormFactor[index(l,m)]=p;
+        NormFactor[index(l,-m)]=p;
+        p*=-1.0;
+     }
+    }
+  } else {
+    for (int l=0; l<=Lmax; l++) {
+      for (int m=1; m<=l; m++) {
+       NormFactor[index(l,m)]=sqrt2;
+       NormFactor[index(l,-m)]=sqrt2;
+     }
+    }
+  }
+
+  FactorL.resize(lmax+1);
+  const value_type omega = 1.0/sqrt(16.0*atan(1.0));
+  for(int l=1; l<=lmax; l++) FactorL[l] = sqrt(static_cast<T>(2*l+1))*omega;
+
+  Factor2L.resize(lmax+1);
+  for(int l=1; l<=lmax; l++) Factor2L[l] = static_cast<T>(2*l+1)/static_cast<T>(2*l-1);
+
+  FactorLM.resize(ntot);
+  for(int l=1; l<=lmax; l++) 
+    for(int m=1; m<=l; m++) {
+      T fac2 = 1.0/sqrt(static_cast<T>((l+m)*(l+1-m)));
+      FactorLM[index(l,m)]=fac2;
+      FactorLM[index(l,-m)]=fac2;
+    }
+}
 
 template<class T, class Point_t>
 void SphericalTensor<T,Point_t>::evaluate(const Point_t& p) {
@@ -216,7 +258,6 @@ void SphericalTensor<T,Point_t>::evaluate(const Point_t& p) {
   for (int i=0; i<Ylm.size(); i++) Ylm[i]*= NormFactor[i];
  //for (int i=0; i<Ylm.size(); i++) gradYlm[i]*= NormFactor[i];
 }
-
 //These template functions are slower than the recursive one above
 template<class SCT, unsigned L> 
 struct SCTFunctor { 
@@ -282,49 +323,6 @@ struct SCTFunctor<SCT,3> {
   }
 };
 
-
-template<class T, class Point_t>
-SphericalTensor<T, Point_t>::SphericalTensor(const int lmax, bool addsign) : Lmax(lmax){ 
-  int ntot = (lmax+1)*(lmax+1);
-  Ylm.resize(ntot);
-  gradYlm.resize(ntot);
-  gradYlm[0] = 0.0;
-
-  NormFactor.resize(ntot,1);
-  const value_type sqrt2 = sqrt(2.0);
-  if(addsign) {
-    for (int l=0; l<=Lmax; l++) {
-      T p = -1.0*sqrt2;
-      for (int m=1; m<=l; m++) {
-        NormFactor[index(l,m)]=p;
-        NormFactor[index(l,-m)]=p;
-        p*=-1.0;
-     }
-    }
-  } else {
-    for (int l=0; l<=Lmax; l++) {
-      for (int m=1; m<=l; m++) {
-       NormFactor[index(l,m)]=sqrt2;
-       NormFactor[index(l,-m)]=sqrt2;
-     }
-    }
-  }
-
-  FactorL.resize(lmax+1);
-  const value_type omega = 1.0/sqrt(16.0*atan(1.0));
-  for(int l=1; l<=lmax; l++) FactorL[l] = sqrt(static_cast<T>(2*l+1))*omega;
-
-  Factor2L.resize(lmax+1);
-  for(int l=1; l<=lmax; l++) Factor2L[l] = static_cast<T>(2*l+1)/(2*l-1);
-
-  FactorLM.resize(ntot);
-  for(int l=1; l<=lmax; l++) 
-    for(int m=1; m<=l; m++) {
-      T fac2 = 1.0/sqrt(static_cast<T>((l+m)*(l+1-m)));
-      FactorLM[index(l,m)]=fac2;
-      FactorLM[index(l,-m)]=fac2;
-    }
-}
 
 template<class T, class Point_t>
 void SphericalTensor<T,Point_t>::evaluateTest(const Point_t& p) {
