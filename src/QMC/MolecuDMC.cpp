@@ -73,13 +73,16 @@ namespace ohmmsqmc {
     drift.resize(W.getTotalNum());
 
     if(put(qmc_node)){
-      
-      /// set the Tau for calculation in WOS
-      H.setTau(Tau);
-
-      // extract the WOS potential
+      // extract the WOS potential and reset the parameters for DMC
       wos_ref = dynamic_cast<WOSPotential*>(H.getHamiltonian("wos"));
-
+      if(wos_ref) {
+         cout << wos_ref->m_runs << '\t' << wos_ref->m_norm << endl;
+         wos_ref->set_mrun(wos_ref->dmc_runs);
+         cout << "Using " << wos_ref->m_runs << " runners/walker for DMC" << endl;
+         H.setTau(Tau);
+      } else {
+         H.setTau(0.0);
+      }
 
       //set the data members to start a new run
       //    getReady();
