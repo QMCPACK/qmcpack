@@ -84,6 +84,7 @@ QMCHamiltonian::evaluate(ParticleSet& P) {
   return Hvalue[i]=esum;
 }
 
+
 /**
  *@param aname the name of Hamiltonian
  *@return the pointer to the named term.

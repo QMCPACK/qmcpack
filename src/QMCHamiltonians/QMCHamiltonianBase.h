@@ -102,6 +102,7 @@ namespace ohmmsqmc {
    private:
     ///vector of Hamiltonians
     std::vector<QMCHamiltonianBase*> H;
+
     ///map the name to an index
     std::map<string,int> Hmap;
     ///vector containing the names of the Hamiltonians
