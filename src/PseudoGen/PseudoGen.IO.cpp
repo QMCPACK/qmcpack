@@ -478,16 +478,16 @@ namespace ohmmshf {
       cur = cur->next;
     }
     // determine maximum angular momentum
-    int lmax = 0;
-    for(int i=0; i<Psi.L.size(); i++)
+    int lmax = 0;  int norb = Psi.size();
+    for(int i=0; i<norb; i++)
       if(Psi.L[i] > lmax) lmax = Psi.L[i]; 
     lmax++; // increment by 1
     XMLReport("Maximum Angular Momentum = " << lmax)
       CG_coeff = new Clebsch_Gordan(lmax);
 
     Pot.add(new SJPseudoPotential(vreg,Zeff,rc,lambda));
-    Pot.add(new HartreePotential(CG_coeff));
-    Pot.add(new ExchangePotential(CG_coeff));
+    Pot.add(new HartreePotential(CG_coeff,norb));
+    Pot.add(new ExchangePotential(CG_coeff,norb));
     Psi.CuspParam = 0.0;
 
     xmlNodePtr cur_sub = pot_ptr->xmlChildrenNode;
