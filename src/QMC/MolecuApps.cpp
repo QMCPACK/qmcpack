@@ -28,7 +28,7 @@
 #include "QMCHamiltonians/IonIonPotential.h"
 #include "QMCHamiltonians/LocalPPotential.h"
 #include "QMCHamiltonians/HarmonicPotential.h"
-#include "QMCHamiltonians/newCorePolPotential.h"
+#include "QMCHamiltonians/CorePolPotential.h"
 #include "QMCHamiltonians/BareKineticEnergy.h"
 #include "QMCWaveFunctions/AtomicOrbitals/HFAtomicSTOSetBuilder.h"
 #include "QMCWaveFunctions/AtomicOrbitals/HeSTOClementiRottie.h"
@@ -66,6 +66,14 @@ namespace ohmmsqmc {
 	return false;
     }
     
+    /*If there is no configuration file manually assign 
+      the walker conigurations.  For the ith particle
+      R[i] = (rcos(phi)sin(theta),rsin(phi)sin(theta),rcos(theta).
+      Initially all the walkers have the same configuration, but 
+      in the function QMCDriver::addWalkers loop over all the walkers
+      and add a gaussian -> R[i] = R[i] + g\chi.
+     */
+
     if(!setMCWalkers(m_root)) {
       int nup = el.last(0);
       int nions = ion.getTotalNum();
