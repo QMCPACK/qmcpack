@@ -197,65 +197,58 @@ namespace ohmmsqmc {
      *@param cur the current xmlNode
      */
     bool put(xmlNodePtr cur) {
+
       int norb=atoi((const char*)(xmlGetProp(cur, (const xmlChar *)"orbitals")));
 
-      Vector<double> occupation;
-      Matrix<double> Ctemp;
+      vector<double> occupation(norb,1);
+      vector<double> Ctemp;
 
-      bool OccupyAll = true;
-      int total;
-
+      int nocc(0),total(norb);
       cur = cur->xmlChildrenNode;
       Identity = true;
 
       XMLReport("The number of orbitals for a Dirac Determinant " << norb)
-	XMLReport("The number of basis functions " << numBasis())
-	while(cur != NULL) {
-	  string cname((const char*)(cur->name));
-	  if(cname == "occupation") {
+      XMLReport("The number of basis functions " << numBasis())
+      while(cur != NULL) {
+	string cname((const char*)(cur->name));
+	if(cname == "occupation") {
+	  nocc = atoi((const char*)(xmlGetProp(cur, (const xmlChar *)"size")));
+	  occupation.resize(total);	
+	  putContent(occupation,cur);
+	} else if(cname == "coefficient" || cname == "parameter" || cname == "Var") {
+	  if(xmlHasProp(cur, (const xmlChar*)"size")){
 	    total = atoi((const char*)(xmlGetProp(cur, (const xmlChar *)"size")));
-	    occupation.resize(total);	
-	    putContent(occupation,cur);
-	    OccupyAll = false;
-	  } else if(cname == "coefficient" || cname == "parameter" || cname == "Var") {
-	    if(xmlHasProp(cur, (const xmlChar*)"size")){
-	      total = atoi((const char*)(xmlGetProp(cur, (const xmlChar *)"size")));
-	    } else {
-	      total = norb;
-	    }
-	    Ctemp.resize(total,numBasis());
-	    putContent(Ctemp,cur);
-	    Identity = false;
-	  }
-	  cur = cur->next;
+	  } 
+	  Ctemp.resize(total*numBasis());
+	  putContent(Ctemp,cur);
+	  Identity = false;
 	}
+	cur = cur->next;
+      }
+
+      if(nocc && nocc != total) {
+        ERRORMSG("Inconsistent input for the occupation and size of the coefficients")
+        Identity=true;
+      }
 
       C.resize(norb,numBasis());
-
-      if(!OccupyAll){
-	XMLReport("The orbital occupation:")
-	  XMLReport(occupation);
-	  //	  for(int i=0; i<occupation.size(); i++)
-	    //	    XMLReport(occupation[i]);
-      }
- 
-      if(!OccupyAll && !Identity){
-	int n=0; int i=0;  
-	while(i<C.rows()){
+      if(Identity) {
+        C=0.0;
+        for(int i=0; i<norb; i++) C(i,i)=1.0;
+      } else {
+	int n=0,i=0,nb(numBasis());
+	while(i<norb){
 	  if(occupation[n]>numeric_limits<double>::epsilon()){
-	    for(int j=0; j<C.cols(); j++)
-	      C(i,j) = Ctemp(n,j);
+            int offset=n*nb;
+	    for(int j=0; j<nb; j++) C(i,j) = Ctemp[offset++];
 	    i++;
 	  }
 	  n++;
 	}
-      } else {
-	C = Ctemp;
       }
 
-       XMLReport("The Molecular Orbital Coefficients:")
-      	XMLReport(C)
-
+      XMLReport("The Molecular Orbital Coefficients:")
+      XMLReport(C)
       return true;
 
     }
