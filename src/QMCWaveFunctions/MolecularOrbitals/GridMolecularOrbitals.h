@@ -34,11 +34,14 @@ namespace ohmmsqmc {
 
   public:
 
+    //@typedef radial grid type
     typedef OneDimGridBase<ValueType>                       GridType;
+    //@typedef \f$R_{nl}\f$ radial functor type defined on a grid
     typedef OneDimGridFunctor<ValueType>                    RadialOrbitalType;
+    //@typedef centered orbital type which represents a set of \f$R_{nl}Y_{lm}\f$  for a center
     typedef SphericalOrbitalSet<RadialOrbitalType,GridType> CenteredOrbitalType;
+    //@typedef molecuar orbital basis composed of multiple CenteredOrbitalType s
     typedef MolecularOrbitalBasis<CenteredOrbitalType>      BasisSetType;
-
 
     /** constructor
      * \param wfs reference to the wavefunction
