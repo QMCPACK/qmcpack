@@ -44,6 +44,7 @@ SET(QMCSRCS
   VMCParticleByParticle.cpp
   VMC_OPT.cpp
   MolecuDMC.cpp
+  ReptationMC.cpp
   WaveFunctionTester.cpp
   ../Estimators/ScalarEstimatorManager.cpp
   QMCApps.cpp

@@ -24,7 +24,10 @@
 #include <deque>
 namespace ohmmsqmc {
 
-  /** Implements the DMC algorithm. */
+
+  class PolymerChain;
+
+  /** Implements the RMC algorithm. */
   class ReptationMC: public QMCDriver {
 
   public:
@@ -35,25 +38,49 @@ namespace ohmmsqmc {
 	       QMCHamiltonian& h, 
 	       xmlNodePtr q);
 
+    /// Destructor
+    ~ReptationMC();
+
     bool run();
     bool put(xmlNodePtr q);
 
   protected:
 
-    ///boolean for the direction. true, if head is moving
-    bool MoveHead;
+    typedef MCWalkerConfiguration::Walker_t Walker_t;
 
     ///boolean for using bounce algorithm. true, if bounce algorithm of D. Ceperley
     bool UseBounce;
 
+    /** boolean for initialization
+     *
+     *\if true,
+     *use clones for a chain.
+     *\else
+     *use drift-diffusion to form a chain
+     *\endif
+     */
+    bool ClonePolymer;
+
+    ///The length of polymers
+    int PolymerLength;
+
     ///the number of the beads that will be cut
-    int  NumBeads;
+    int  NumCuts;
 
-    ///paths
-    std::deque<MCWalkerConfiguration::Walker_t*> Polymer;
+    ///the number of turns per block
+    int NumTurns;
 
-    std::vector<MCWalkerConfiguration::Walker_t*> WalkerRepository;
+    ///temporary storage for random displacement
+    ParticleSet::ParticlePos_t deltaR;
 
+    ///array of PolymerChains
+    std::vector<PolymerChain*> Polymers;
+
+    ///move polymers
+    void movePolymers();
+
+    ///initialize polymers
+    void initPolymers();
   private:
 
     /// Copy Constructor (disabled)
@@ -61,6 +88,8 @@ namespace ohmmsqmc {
 
     /// Copy operator (disabled).
     ReptationMC& operator=(const ReptationMC&) { return *this;}
+
+
   };
 }
 #endif

@@ -155,6 +155,7 @@ namespace ohmmsqmc {
       (*it)->Drift = scale*W.G;
 
       RealType ene = H.evaluate(W);
+      (*it)->Properties(LOCALPOTENTIAL) = H.getLocalPotential();
       (*it)->resetProperty(psi,ene);
       /** @deprecated
        * Use a matrix to store energy-related properties 

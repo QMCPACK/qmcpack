@@ -26,6 +26,7 @@
 #include "QMC/VMCParticleByParticle.h"
 #include "QMC/VMC_OPT.h"
 #include "QMC/MolecuDMC.h"
+#include "QMC/ReptationMC.h"
 #include "QMC/WaveFunctionTester.h"
 #include "QMCHamiltonians/ConservedEnergy.h"
 #include "QMCHamiltonians/WOS/WOSPotential.h"
@@ -184,6 +185,11 @@ namespace ohmmsqmc {
 	    vmc.addConfiguration(PrevConfigFile);
 	    vmc.setFileRoot(myProject.CurrentRoot());
 	    vmc.run();
+	  } else if(methodname == "rmc") {
+	    XMLReport("Running ReptationMC")
+	    ReptationMC rmc(el,Psi,H,cur);
+	    rmc.setFileRoot(myProject.CurrentRoot());
+	    rmc.run();
 	  } else if(methodname == "test"){
 	    H.remove("Flux");
 	    WaveFunctionTester wftest(el,Psi,H,cur);
