@@ -39,7 +39,7 @@ namespace ohmmsqmc {
    \f[ Weight =  G_{branch} \f]
    \f[ Mulitplicity =  G_{branch} + \nu \f]
    and to update the energy offset
-   \f[ E_T = <E_G> - feed \log \(\frac{P(t)}{P_0}\) \f]
+   \f[ E_T = <E_G> - feed \log \left(\frac{P(t)}{P_0}\right) \f]
    where \f$P(t)\f$ is the current population, \f$P_0\f$ is the 
    ideal population, and \f$<E_G>\f$ is an estimate of the
    local energy. 
@@ -101,7 +101,7 @@ namespace ohmmsqmc {
      *@brief Calculates the Branching Green's function
      \f[G_{branch} = \exp(-\tau \left[(E_L(R)+E_L(R'))/2-E_T\right])\f]
      *@note Use the rejection probability \f$q\f$ to limit \f$G_{branch}\f$
-     \f[ G_{branch} = \min\(\frac{1}{2q},G_{branch}\). \f]
+     \f[ G_{branch} = \min \left(\frac{1}{2q},G_{branch}\right). \f]
    */
     inline T branchGF(T tau, T emixed, T reject) const { 
       return exp(-tau*(emixed-E_T));
