@@ -126,10 +126,9 @@ namespace ohmmsqmc {
 
 	      ValueType vsq = Dot(G,G);
 	      ValueType scale = ((-1.0+sqrt(1.0+2.0*Tau*vsq))/vsq);
-              drift = scale*G;
-              dr = (*it)->R[iat]-newpos-drift[iat];
+	      dr = (*it)->R[iat]-newpos-scale*G[iat];
+	      //dr = (*it)->R[iat]-newpos-Tau*G[iat]; 
 
-	      //  dr = (*it)->R[iat]-newpos-Tau*G[iat]; 
 	      RealType logGb = -oneover2tau*dot(dr,dr);
 
 	      RealType prob = std::min(1.0,pow(ratio,2)*exp(logGb-logGf));
@@ -143,7 +142,7 @@ namespace ohmmsqmc {
 		W.G = G;
 		W.L += dL;
 		//(*it)->Drift = Tau*G;
-                (*it)->Drift = drift;
+                (*it)->Drift = scale*G;
 	      } else {
 		++nReject; 
 		Psi.restore(iat);
