@@ -16,6 +16,7 @@
 // -*- C++ -*-
 #include <iostream>
 #include "PseudoGen/SQDFrame.h"
+#include "OhmmsApp/ProjectData.h"
 
 #ifdef HAVE_QT
 #include <qapplication.h>
@@ -77,6 +78,9 @@ SQDFrame::solve(const char* fname) {
   m_doc = xmlParseFile(fname);
   if (m_doc == NULL) return false;
   
+  //using XPath instead of recursive search
+  xmlXPathContextPtr m_context = xmlXPathNewContext(m_doc);
+
   // Check the document is of the right kind
   xmlNodePtr cur = xmlDocGetRootElement(m_doc);
   if (cur == NULL) {
@@ -85,11 +89,25 @@ SQDFrame::solve(const char* fname) {
     return false;
   }
 
-  if (xmlStrcmp(cur->name, (const xmlChar *) "Main")) {
-    fprintf(stderr,"document of the wrong type, root node != Main\n");
+  if (xmlStrcmp(cur->name, (const xmlChar *) "simulation")) {
+    fprintf(stderr,"document of the wrong type, root node != simulation\n");
     xmlFreeDoc(m_doc);
     return false;
   }
+
+  //project description, assign id and series
+  OHMMS::ProjectData myProject;
+  
+  xmlXPathObjectPtr result
+    = xmlXPathEvalExpression((const xmlChar*)"//project",m_context);
+  if(xmlXPathNodeSetIsEmpty(result->nodesetval)) {
+    WARNMSG("Project is not defined")
+      myProject.reset();
+  } else {
+    myProject.put(result->nodesetval->nodeTab[0]);
+  }
+  xmlXPathFreeObject(result);
+
 
   using namespace ohmmshf;
 
@@ -101,8 +119,8 @@ SQDFrame::solve(const char* fname) {
     return false;
   }
 
-  //HFSolver->setRoot(fname);
-  success = PPSolver->run();
+  PPSolver->setRoot(myProject.CurrentRoot());
+  success = PPSolver->optimize();
   xmlFreeDoc(m_doc);
   xmlCleanupParser();
   return success;

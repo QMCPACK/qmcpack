@@ -380,7 +380,16 @@ namespace ohmmshf {
 
     XMLReport("Closing external file")
 
-      return true;
+      LOGMSG("Total number of orbitals = " << Psi.size()); 
+
+    LOGMSG("(Orbital index, Number of Orbitals)")
+      for(int j=0; j < Psi.size(); j++){
+	int id = Psi.ID[j];
+	LOGMSG("(" << id << ", " << Psi.IDcount[id] << ")");
+      }
+
+    //return false if there is no wave functions
+    return Psi.size() != 0;
 
   }
 
@@ -388,7 +397,7 @@ namespace ohmmshf {
 				const int& index) {
 
     //open the group containing the proper orbital
-    // char grpname[128];
+    //char grpname[128];
     //sprintf(grpname,"orbital%04d",grpid);
     hid_t group_id_orb = H5Gopen(group_id,grpname.c_str());
     XMLReport("Opening group " << grpname)
@@ -524,8 +533,6 @@ namespace ohmmshf {
 	      putContent(cg_tolerance,cur);
 	    } else if(vname == "cg_epsilon"){
 	      putContent(cg_epsilon,cur);
-	      //	    } else if(vname == "r_match"){
-	      //	      putContent(rmatch,cur);
 	    } else if(vname == "weight_norm"){
 	      putContent(weight_norm,cur);
 	    } else if(vname == "weight_eig"){
@@ -545,7 +552,6 @@ namespace ohmmshf {
       XMLReport("Conjugate Gradient Step Size = " << cg_stepsize) 
       XMLReport("Weight for eigenvalues = " << weight_eig) 
       XMLReport("Weight for normalization = " << weight_norm) 
-      //      XMLReport("Matching Radius = " << rmatch) 
     
       return true; 
   }
@@ -593,8 +599,8 @@ namespace ohmmshf {
       }
       fout << endl;
     }
-    Psi.print_HDF5(AtomName,GridType,PPeigVal);
-    Psi.print_basis(AtomName,GridType);
+    Psi.print_HDF5(RootFileName,GridType,PPeigVal);
+    Psi.print_basis(AtomName,RootFileName,GridType);
     return max_rad_all;
   }
 }

@@ -1,17 +1,19 @@
-PROJECT(pp)
 
-#CONFIGURE_FILE(${hf_SOURCE_DIR}/../Configuration.h.in
-#              ${hf_SOURCE_DIR}/../Configuration.h)
-
+PROJECT(ppg)
+                                                          
 SET(PPSRCS 
-  ../Utilities/OhmmsInform.cpp 
-  ../OhmmsApp/ProjectData.cpp 
-  ../Platforms/sysutil.cpp
-  ../AtomicHF/Clebsch_Gordan.cpp
-  ../AtomicHF/RadialPotential.cpp
-  ../PseudoGen/PseudoGen.cpp
+  ../OhmmsApp/ProjectData.cpp
+  ../Optimize/Minimize.cpp
+  ../Numerics/Clebsch_Gordan.cpp
+  ../SQD/SphericalPotential/RadialPotential.cpp
+  ../SQD/SphericalPotential/SJPseudoPotential.cpp
+  PseudoGen.cpp
+  PseudoGen.IO.cpp
+  PlotPP.cpp
+  PPApp.cpp
 )
 
-LINK_LIBRARIES(${FORTRAN_LIBS})
-ADD_EXECUTABLE(pp ${PPSRCS})
-TARGET_LINK_LIBRARIES(pp qmcbase)
+SET(PPSRCS ${PPSRCS})
+ADD_EXECUTABLE(ppg ${PPSRCS} SQDFrame.cpp)
+TARGET_LINK_LIBRARIES(ppg qmcbase)
+
