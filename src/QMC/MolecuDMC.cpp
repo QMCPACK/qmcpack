@@ -108,7 +108,6 @@ namespace ohmmsqmc {
       int tPopulation = W.getActiveWalkers();
       RealType E_T = brancher.E_T;
       RealType Eest = E_T;
-      RealType feed = brancher.feed;
       IndexType accstep=0;
       IndexType nAcceptTot = 0;
       IndexType nRejectTot = 0;

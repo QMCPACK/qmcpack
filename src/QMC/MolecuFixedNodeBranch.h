@@ -22,6 +22,8 @@
 
 #include <deque>
 #include <algorithm>
+#include "OhmmsData/ParameterSet.h"
+
 namespace ohmmsqmc {
 
   /** For use in Fixed-Node Diffusion Monte Carlo. 
@@ -49,7 +51,7 @@ namespace ohmmsqmc {
     ///the timestep
     T Tau;
     ///feedback parameter to control the population
-    T feed;
+    T Feed;
     ///energy offset to control branching
     T E_T;
     ///ideal population
@@ -58,6 +60,10 @@ namespace ohmmsqmc {
     int Nmax;
     ///minumum population
     int Nmin;
+
+    ///maximum copies of a walker
+    int MaxCopy;
+
     //determines when to branch
     //int Stride;
     ///container to store old values of e_ref
@@ -67,16 +73,21 @@ namespace ohmmsqmc {
     ///counts the number of times update has been called
     int Counter;
 
+    ParameterSet m_param;
+
     ///Constructor
     MolecuFixedNodeBranch(T tau, int nideal): 
       Tau(tau), E_T(0.0), Nideal(nideal), 
-      size(100), Counter(0) {
-      feed = 1.0/(50.0*tau); 
+      size(100), Counter(0), MaxCopy(10) {
+      //feed = 1.0/(50.0*tau); 
+      Feed = 50.0;
       Nmax = 2*nideal;
       Nmin = static_cast<int>(0.5*nideal);
       Eg.resize(size);
       for(int i=0; i<Eg.size(); i++) Eg[i] = 0.0; 
-
+      m_param.add(E_T,"en_ref","AU");
+      m_param.add(Feed,"num_gen","none");
+      m_param.add(MaxCopy,"max_copy","none");
     }
     
     ///return true if the nodal surface is crossed
@@ -104,68 +115,62 @@ namespace ohmmsqmc {
     } 
 
 
-    /**
+    /** call MCWalkerConfiguration::branch
      *@param iter the iteration
      *@param w the walker ensemble
      *@return the number of walkers after branching
-     *@brief For each walker place /f$ncopy = /min(Multiplicity)/f$ 
-     *copies back into the ensemble for the next iteration. 
-     *If /f$ncopy=0,/f$ then remove the walker from the ensemble.
-     *@note If the size of the population is greater than \f$Nmax,\f$
-     *delete the extra walkers.  Copy walkers if the population is
-     *less than \f$Nmin.\f$
-    */
+     */
     inline int branch(int iter, MCWalkerConfiguration& w) {
+      return w.branch(10,Nmax,Nmin);
+//       MCWalkerConfiguration::iterator it = w.begin();
+//       int iw=0, nw = w.getActiveWalkers();
 
-      MCWalkerConfiguration::iterator it = w.begin();
-      int iw=0, nw = w.getActiveWalkers();
+//       while(iw < nw && it != w.end()) {
 
-      while(iw < nw && it != w.end()) {
+// 	//limit maximun number of copies to 10
+// 	//all copies are added at the end of the list
+// 	int ncopy = min(static_cast<int>((*it)->Properties(Multiplicity)),10);
+// 	(*it)->Properties(Weight) = 1.0;
+// 	(*it)->Properties(Multiplicity) = 1.0;
+// 	if(ncopy == 0) {
+// 	  it = w.destroyWalker(it);
+// 	} else {
+// 	  if(ncopy>1) {
+// 	    w.copyWalker(it,ncopy-1);
+// 	  }
+// 	  it++;
+// 	}
+// 	iw++;
+//       }
 
-	//limit maximun number of copies to 10
-	//all copies are added at the end of the list
-	int ncopy = min(static_cast<int>((*it)->Properties(Multiplicity)),10);
-	(*it)->Properties(Weight) = 1.0;
-	(*it)->Properties(Multiplicity) = 1.0;
-	if(ncopy == 0) {
-	  it = w.destroyWalker(it);
-	} else {
-	  if(ncopy>1) {
-	    w.copyWalker(it,ncopy-1);
-	  }
-	  it++;
-	}
-	iw++;
-      }
+//       int nwalkers = w.getActiveWalkers();
+//       if (nwalkers > Nmax){
+// 	/*if too many walkers, kill until the population is 90%
+// 	  of Nmax*/
+// 	//ERRORMSG("Too many walkers at step " << iter)
+// 	int nsubtract =  nwalkers-static_cast<int>(0.9*Nmax);
+// 	MCWalkerConfiguration::iterator itend = w.begin();
+// 	for(int i=0; i < nsubtract; i++) itend++;
+// 	w.destroyWalker(w.begin(), itend);
+//       } else if(nwalkers < Nmin) {
+// 	/*if too few walkers, copy until the population is 10%
+// 	  more than Nmin*/
+// 	it = w.begin();
+// 	int nadd = static_cast<int>(Nmin*1.1)-nwalkers;
+// 	if(nadd < nwalkers){
+// 	  int i=0;
+// 	  while(i<nadd){
+// 	    //ERRORMSG("Too few walkers at step " << iter)
+// 	    w.copyWalker(it,1);
+// 	    it++; i++;
+// 	  }
+// 	} else {
+// 	  cerr << "Too few walkers to copy!" << endl;
+// 	  exit(-1);
+// 	}
+//       }
 
-      int nwalkers = w.getActiveWalkers();
-      if (nwalkers > Nmax){
-	/*if too many walkers, kill until the population is 90%
-	  of Nmax*/
-	//ERRORMSG("Too many walkers at step " << iter)
-	int nsubtract =  nwalkers-static_cast<int>(0.9*Nmax);
-	MCWalkerConfiguration::iterator itend = w.begin();
-	for(int i=0; i < nsubtract; i++) itend++;
-	w.destroyWalker(w.begin(), itend);
-      } else if(nwalkers < Nmin) {
-	/*if too few walkers, copy until the population is 10%
-	  more than Nmin*/
-	it = w.begin();
-	int nadd = static_cast<int>(Nmin*1.1)-nwalkers;
-	if(nadd < nwalkers){
-	  int i=0;
-	  while(i<nadd){
-	    //ERRORMSG("Too few walkers at step " << iter)
-	    w.copyWalker(it,1);
-	    it++; i++;
-	  }
-	} else {
-	  cerr << "Too few walkers to copy!" << endl;
-	  exit(-1);
-	}
-      }
-
-      return w.getActiveWalkers();
+//       return w.getActiveWalkers();
 
     }
 
@@ -188,7 +193,7 @@ namespace ohmmsqmc {
       int limit = min(Counter/2+1,size);
       for(int i=0; i<limit; i++) Esum += Eg[i];
       T egavg = Esum/static_cast<T>(limit);
-      E_T = egavg - feed*log(static_cast<T>(pop)/static_cast<T>(Nideal));
+      E_T = egavg - Feed*log(static_cast<T>(pop)/static_cast<T>(Nideal));
       // return egavg;
       return E_T;
     }
@@ -205,33 +210,38 @@ namespace ohmmsqmc {
      <\ul>
     */
     bool put(xmlNodePtr cur, OhmmsInform *LogOut){
-      cur=cur->children;
-      int n;
-      while(cur != NULL) {
-	string cname((const char*)(cur->name));
-	if(cname == "parameter") {
-	  xmlChar* att= xmlGetProp(cur,(const xmlChar*)"name");
-	  if(att) {
-	    string pname((const char*)att);
-	    if(pname == "en_ref") {
-	      T eg;
-	      putContent(eg,cur);
-	      for(int i=0; i<Eg.size(); i++) Eg[i] = eg;
-	      E_T = eg;
-	    } else if(pname == "num_gen") {
-	      putContent(n,cur);
-	      feed = 1.0/(static_cast<T>(n)*Tau);
-	    }
-	  }
-	}
-	cur=cur->next;
-      }
+//       cur=cur->children;
+//       int n;
+//       while(cur != NULL) {
+// 	string cname((const char*)(cur->name));
+// 	if(cname == "parameter") {
+// 	  xmlChar* att= xmlGetProp(cur,(const xmlChar*)"name");
+// 	  if(att) {
+// 	    string pname((const char*)att);
+// 	    if(pname == "en_ref") {
+// 	      T eg;
+// 	      putContent(eg,cur);
+// 	      for(int i=0; i<Eg.size(); i++) Eg[i] = eg;
+// 	      E_T = eg;
+// 	    } else if(pname == "num_gen") {
+// 	      putContent(n,cur);
+// 	      feed = 1.0/(static_cast<T>(n)*Tau);
+// 	    }
+// 	  }
+// 	}
+// 	cur=cur->next;
+//       }
+      m_param.put(cur);
+      for(int i=0; i<Eg.size(); i++) Eg[i] = E_T;
+
       XMLReport("Branching: Referece energy = " << Eg[0])
-      XMLReport("Branching: Feedback parameter = " << feed)
-      XMLReport("Branching: Number of generations = " << n)
-	LogOut->getStream() << "reference energy = " << Eg[0] << endl;
-	LogOut->getStream() << "feedback = " << feed << endl;
-	LogOut->getStream() << "number of generations = " << n << endl;
+      XMLReport("MaxCopy for branching = " << MaxCopy)
+      LogOut->getStream() << "reference energy = " << Eg[0] << endl;
+      XMLReport("Branching: Number of generations = " << Feed)
+      LogOut->getStream() << "number of generations = " << Feed << endl;
+      Feed = 1.0/(Feed*Tau);
+      XMLReport("Branching: Feedback parameter = " << Feed)
+      LogOut->getStream() << "feedback = " << Feed << endl;
       return true;
     }
 
