@@ -43,7 +43,7 @@ namespace ohmmsqmc {
    *An example of template class (B)asis(S)et is MolecularOrbitalBasis. 
    */
   template<class BS>
-  class LCOrbitals {
+  class LCOrbitals: public OhmmsElementBase {
 
   public:
 
@@ -54,6 +54,7 @@ namespace ohmmsqmc {
 
     ///true if the coefficient matrix is the identity matrix
     bool Identity;
+    ///id of this object, if ID == 0, the object is responsble for the BasisSet
     int ID;
     ///number of particles
     int NumPtcls;
@@ -86,8 +87,7 @@ namespace ohmmsqmc {
       BasisSet->resize(nptcl);
     }
 
-    /**
-     *@brief resize the internal storage of BasisSet by the number of walkers
+    /** resize the internal storage of BasisSet by the number of walkers
      *
      *@todo This works only with MolecularOrbitalBasis at this point.
      *To be generalized for any basis function
@@ -96,7 +96,32 @@ namespace ohmmsqmc {
       BasisSet->resizeByWalkers(nw);
     }
 
-    /**@ingroup particlebyparticle */
+    /** evaluate the values of the single-particle orbitals 
+     *@param P input configuration containing N particles
+     *@param iat particle index
+     *@param psi values of the single-particle orbitals
+     *
+     * This function is introduced to function evaluations.
+     */
+    template<class VV>
+    inline void 
+    evaluate(const ParticleSet& P, int iat, VV& psi) {
+      BasisSet->evaluate(P,iat);
+      int nb(BasisSet->TotalBasis);
+      for(int j=0 ; j<NumPtcls; j++) psi[j] = dot(&C(j,0),BasisSet->y(0),nb);
+    }
+
+    /**@ingroup particlebyparticle 
+     *@brief evaluate the values of the single-particle orbitals for the iat-th particle
+     *@param P input configuration containing N particles
+     *@param iat particle index
+     *@param psi values of the single-particle orbitals
+     *@param dpsi gradients of the single-particle orbitals
+     *@param d2psi laplacians of the single-particle orbitals
+     *
+     * This function completes a row of a Dirac Deterimant to perform ratio/update.
+     * The particle index identifies the particle whose position is updated.
+     */
     template<class VV, class GV>
     inline void 
     evaluate(const ParticleSet& P, int iat, VV& psi, GV& dpsi, VV& d2psi) {
@@ -118,20 +143,18 @@ namespace ohmmsqmc {
     }
 
     /** complete the values of the single-particle orbitals and their gradients and laplacians
-	@param P input configuration containing N particles
-	@param first index of the first particle
-	@param last index of the last particle
-	@param logdet matrix \f$ logdet[j,i] = \sum_I \sum_k C_{ikI} \phi_{ikI}({\bf r}_j-{\bf R}_I) \f$
-	@param dlogdet vector matrix \f$ dlogdet[i,j] = \sum_I \sum_k C_{ikI} \nabla_i \phi_{ikI}({\bf r}_j-{\bf R}_I) \f$
-	@param d2logdet matrix \f$ d2logdet[i,j] = \sum_I \sum_k C_{ikI} \nabla^2_i \phi_{ikI}({\bf r}_j-{\bf R}_I) \f$
-    */
+     *@param P input configuration containing N particles
+     *@param first index of the first particle
+     *@param last index of the last particle
+     *@param logdet matrix \f$ logdet[j,i] = \sum_I \sum_k C_{ikI} \phi_{ikI}({\bf r}_j-{\bf R}_I) \f$
+     *@param dlogdet vector matrix \f$ dlogdet[i,j] = \sum_I \sum_k C_{ikI} \nabla_i \phi_{ikI}({\bf r}_j-{\bf R}_I) \f$
+     *@param d2logdet matrix \f$ d2logdet[i,j] = \sum_I \sum_k C_{ikI} \nabla^2_i \phi_{ikI}({\bf r}_j-{\bf R}_I) \f$
+     */
     template<class VM, class GM>
     inline void 
     evaluate(const ParticleSet& P, int first, int last,
 	     VM& logdet, GM& dlogdet, VM& d2logdet) {
-      if(!(ID || first)) {
-	BasisSet->evaluate(P);
-      }
+      if(!(ID || first)) BasisSet->evaluate(P);
       NumPtcls=last-first;
       //check if identity matrix
       if(Identity) {
@@ -158,13 +181,9 @@ namespace ohmmsqmc {
 
     template<class VM, class GM>
     inline void 
-    evaluate(const WalkerSetRef& W, 
-	     int first, int last,
-	     vector<VM>& logdet, 
-	     vector<GM>& dlogdet, 
-	     vector<VM>& d2logdet) {
-
-      ///calculate everything
+    evaluate(const WalkerSetRef& W, int first, int last,
+	     vector<VM>& logdet, vector<GM>& dlogdet, vector<VM>& d2logdet) {
+      //calculate everything
       if(!(ID || first)) {
 	BasisSet->evaluate(W);
       }
@@ -202,7 +221,7 @@ namespace ohmmsqmc {
 
       int norb=atoi((const char*)(xmlGetProp(cur, (const xmlChar *)"orbitals")));
 
-      vector<RealType> occupation(norb,1);
+      vector<RealType> occupation(norb,1.0);
       vector<ValueType> Ctemp;
 
       int nocc(0),total(norb);
@@ -232,6 +251,9 @@ namespace ohmmsqmc {
         ERRORMSG("Inconsistent input for the occupation and size of the coefficients")
         Identity=true;
       }
+      cout.setf(ios::scientific, ios::floatfield);
+      cout.setf(ios::right,ios::adjustfield);
+      cout.precision(12);
 
       C.resize(norb,numBasis());
       if(Identity) {
@@ -239,13 +261,13 @@ namespace ohmmsqmc {
         for(int i=0; i<norb; i++) C(i,i)=1.0;
       } else {
 	int n=0,i=0,nb(numBasis());
+        vector<ValueType>::iterator cit(Ctemp.begin());
 	while(i<norb){
 	  if(occupation[n]>numeric_limits<RealType>::epsilon()){
-            int offset=n*nb;
-	    for(int j=0; j<nb; j++) C(i,j) = Ctemp[offset++];
-	    i++;
+            std::copy(cit,cit+nb,C[i]);
+	    i++; 
 	  }
-	  n++;
+	  n++;cit+=nb;
 	}
       }
 
@@ -253,6 +275,12 @@ namespace ohmmsqmc {
       //XMLReport(C)
       return true;
     }
+
+    ///write to a ostream
+    bool get(std::ostream& ) const { return true;}
+
+    ///read from istream
+    bool put(std::istream& ) { return true;}
 
   };
 }
