@@ -107,7 +107,8 @@ public:
 
   // returns a pointer of i-th row 
   inline Type_t* operator[](unsigned int i) { 
-    return X.begin() + i*D2;
+    //return X.begin() + i*D2;
+    return &(X[0])+ i*D2;
   }
 
   inline Type_t& operator()(unsigned int i) { 
