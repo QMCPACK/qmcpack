@@ -29,8 +29,9 @@ namespace ohmmsqmc {
    *@param a the wavefunction
    *@param psets a vector containing the particle
    * 
-   *Jastrow wavefunctions chose the needed distance tables and the DistanceTableData
-   *objects are initialized based on the source and target particle sets.
+   *Jastrow wavefunctions chose the needed distance tables and the 
+   *DistanceTableData objects are initialized based on the source 
+   *and target particle sets.
    */
   JastrowBuilder::JastrowBuilder(TrialWaveFunction& a, 
 				 vector<ParticleSet*>& psets): 
@@ -275,9 +276,13 @@ namespace ohmmsqmc {
 
     string jasttype((const char*)(xmlGetProp(cur, (const xmlChar *)"type")));
     string jastname((const char*)(xmlGetProp(cur, (const xmlChar *)"name")));
+    string jastfunction((const char*)(xmlGetProp(cur, (const xmlChar *)"function")));
 
     LOGMSG("Jastrow Factor: Name = "<< jastname <<" Type = "<<jasttype)
 
+      /*Currently for Two-Body Jastrow only Pade function: ar/(1+br) form 
+	is implemted
+      */
     if(jasttype == "Two-Body-Spin") {
       TwoBodyJastrow<PadeJastrow<ValueType>,false> *J2 = NULL;
       return createTwoBodySpin(cur,J2);
@@ -285,11 +290,16 @@ namespace ohmmsqmc {
       TwoBodyJastrow<PadeJastrow<ValueType>,true> *J2 = NULL;
       return createTwoBodyNoSpin(cur,J2);
     }
+    /*For One-Body Jastrow default is Pade function, also implements
+      the nocusp function a/(1+br^2)
+    */
       else if(jasttype == "One-Body") {
-      if(jastname == "nocusp") {
+      if(jastfunction == "nocusp") {
+	LOGMSG("Jastrow Function: nucusp.")
 	OneBodyJastrow<NoCuspJastrow<ValueType> > *J1 = NULL;
 	return createOneBody(cur,J1);
       } else {
+	LOGMSG("Jastrow Function: pade.")
 	OneBodyJastrow<PadeJastrow<ValueType> > *J1 = NULL;
 	return createOneBody(cur,J1);
       }
