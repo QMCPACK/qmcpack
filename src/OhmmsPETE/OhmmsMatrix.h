@@ -67,9 +67,9 @@ public:
 //   inline T* end()   { return X.end();}
 
   inline typename Container_t::iterator begin() { return X.begin();}
-  inline typename Container_t::iterator end() { return X.begin();}
+  inline typename Container_t::iterator end() { return X.end();}
   inline typename Container_t::const_iterator begin() const { return X.begin();}
-  inline typename Container_t::const_iterator end() const { return X.begin();}
+  inline typename Container_t::const_iterator end() const { return X.end();}
 
   void resize(unsigned n, unsigned m); // resize to n x m
   void add(unsigned n); // you can add rows: adding columns are forbidden
