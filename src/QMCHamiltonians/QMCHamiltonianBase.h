@@ -77,6 +77,7 @@ namespace ohmmsqmc {
     ~QMCHamiltonian();
 
     void add(QMCHamiltonianBase* h, const string& aname);
+    bool remove(const string& aname);
 
     ///return the name of ith Hamiltonian 
     inline string getName(int i) const { return Hname[i];}
@@ -91,6 +92,11 @@ namespace ohmmsqmc {
     template<class V>
     inline void get(V& a) const {
       std::copy(Hvalue.begin(), Hvalue.end(), a.begin());
+    }
+
+    ///assign the Hamiltonian values to a memory
+    inline void update(RealType* a) const {
+      std::copy(Hvalue.begin(), Hvalue.end(), a);
     }
 
     QMCHamiltonianBase* getHamiltonian(const string& aname);

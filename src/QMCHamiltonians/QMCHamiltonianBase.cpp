@@ -27,10 +27,9 @@ QMCHamiltonian::~QMCHamiltonian() {
     
     }
 
-/**
+/** add a new Hamiltonian the the list of Hamiltonians.
  *@param h the Hamiltonian
  *@param aname the name of the Hamiltonian
- *@brief add a new Hamiltonian the the list of Hamiltonians.
  */
 void 
 QMCHamiltonian::add(QMCHamiltonianBase* h, const string& aname) {
@@ -42,6 +41,31 @@ QMCHamiltonian::add(QMCHamiltonianBase* h, const string& aname) {
     H.push_back(h);
   }
   Hvalue.resize(H.size()+1,RealType());
+}
+
+/** remove a named Hamiltonian from the list
+ *@param aname the name of the Hamiltonian
+ *@param return true, if the request hamiltonian exists and is removed.
+ */
+bool 
+QMCHamiltonian::remove(const string& aname) {
+
+  map<string,int>::iterator it = Hmap.find(aname);
+  if(it != Hmap.end()) {
+    int n = (*it).second;
+    it++;
+    while(it != Hmap.end()) {
+      (*it).second--; it++;
+    }
+    Hmap.erase(aname); 
+    delete H[n];
+    for(int i=n+1; i<H.size(); i++) H[i-1]=H[i];
+    H.pop_back();
+    Hvalue.resize(H.size()+1,RealType());
+    return true;
+  }
+
+  return false;
 }
 
 /**
