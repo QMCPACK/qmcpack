@@ -9,65 +9,42 @@
 #include <iostream>
 #include "Numerics/Clebsch_Gordan.h"
 
-/*!\fn Clebsch_Gordan::Clebsch_Gordan(const int lmax)
- * \param lmax the maximum angular momentum
- * \brief Constructs all the Clebsch-Gordan coefficients
+/**
+ *@param lmax the maximum angular momentum
+ *@brief Constructs all the Clebsch-Gordan coefficients
  for \f$ 0 \le l_1 \le l_{max}, 0 \le l_2 \le l_1 \f$. 
+ *
  This routine was adopted from a FORTRAN 77 algorithm taken 
  from  Rose's 'Elementary Theory of Angular Momentum', p. 39, 
- Wigner's formula. The coefficients listed are only those 
- for which \f$ l_1 \ge l_2 \f$, otherwise the relationship
- \f[ \langle l_1 m_1 l_2 m_2 | l_3 m_3 \rangle
- = (-1)^{l_1+l_2+l_3} \langle l_2 m_2 l_1 m_1 | l_3 m_3 
- \rangle \f] applies.
+ Wigner's formula. 
  Coeffienents known to be zero (because of either the
  L or M selection rules) are not computed, and these should not
  be sought. 
- * \note The indexing of the array is as follows:
- \f[ cg(l1,l2,l3,m1+Lmax,m2+Lmax) \f]
- this is due to the need to index arrays from 0 to N-1 
- in C++.  
- * \note As the main routine is statically defined (hard-coded),
- \f$ l \f$ values greater than 6 are not allowed and will cause 
- error.
+ *@note The indexing of the vector is as follows:
+ \f[ index = i + jI + kIJ + lIJK + mIJKL \f]
+ where \f$ (I,J,K,L,M) \f$ are the maximum extent
+ of the Clebsch-Gordon coefficients.
+ *@note States with \f$ l > 6 \f$ are not allowed and will 
+ result in an error.
  *
  */
 
-Clebsch_Gordan::Clebsch_Gordan(const int lmax):Lmax(lmax){
- 
-  int l1 = Lmax+1;
-  int l2 = 2*Lmax+1;
+Clebsch_Gordan::Clebsch_Gordan(const int lmax): 
+  Lmax(lmax), L1max(lmax+1), L2max(2*lmax+1) {
+  
+  CG_coeff.resize(L1max*L1max*L2max*L2max*L2max);
 
-  cg.resize(l1,l1,l2,l2,l2);
-
-  // std::cout << cg.shape() << std::endl;
-
-  cg = 0.0;
-
-  build_coefficients();
-}
-
-Clebsch_Gordan::~Clebsch_Gordan() { cg.free(); }
-
-/*!
- * \fn void Clebsch_Gordan::build_coefficients()
- *
- * \brief Calculates the Clebsch-Gordan coefficients and stores 
- them in a 5-dimensional Blitz++ array.
- *
- */
-
-void Clebsch_Gordan::build_coefficients() {
+  for(int i=0; i<CG_coeff.size(); i++) CG_coeff[i] = 0.0;
 
   double si[33], fa[33], sum, prefactor;
   int lmin, i, l1, l2, l3, m1, m2, m3, nmin, nmax;
-
+  
   si[0] = 1.0;
   fa[0] = 1.0;
 
   for(i=1; i<=32; i++) {
     si[i] = -si[i-1];
-    fa[i] = (double)i * fa[i-1];
+    fa[i] = static_cast<double>(i) * fa[i-1];
   }
 
   for(l1=0; l1<=Lmax; l1++) {
@@ -100,14 +77,27 @@ void Clebsch_Gordan::build_coefficients() {
 		/ fa[l3-l1+l2-i] / fa[l3+m3-i] / fa[i+l1-l2-m3];
 	    }
 
-            cg(l1,l2,l3,m1+Lmax,m2+Lmax) = prefactor*sum;
-	    cg(l2,l1,l3,m2+Lmax,m1+Lmax) = si[l1+l2+l3]*prefactor*sum;
+	    // CG_coeff(l1,l2,l3,m1+Lmax,m2+Lmax) = prefactor*sum;
+	    // CG_coeff(l2,l1,l3,m2+Lmax,m1+Lmax) = si[l1+l2+l3]*prefactor*sum;
+	    /* apply the relationship
+	       \langle l_1 m_1 l_2 m_2 | l_3 m_3 \rangle
+	       = (-1)^{l_1+l_2+l_3} \langle l_2 m_2 l_1 m_1 | l_3 m_3 */
+	    
+	    index1 = l1 + l2*L1max + l3*L1max*L1max + 
+	      (m1+Lmax)*L1max*L1max*L2max + (m2+Lmax)*L1max*L1max*L2max*L2max;
+	    index2 = l2 + l1*L1max + l3*L1max*L1max + 
+	      (m2+Lmax)*L1max*L1max*L2max + (m1+Lmax)*L1max*L1max*L2max*L2max;
+
+	    CG_coeff[index1] = prefactor*sum;
+	    CG_coeff[index2] = si[l1+l2+l3]*prefactor*sum;	    
+
 	  }
 	}
       }
     }
   }
 }
+
 
 
 /***************************************************************************
