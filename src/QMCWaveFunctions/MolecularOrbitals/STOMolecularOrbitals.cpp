@@ -115,6 +115,11 @@ namespace ohmmsqmc {
 	    if(rnl_it == RnlID.end()) {
 	      int nl = aos->Rnl.size();
 	      aos->Rnl.push_back(new RadialOrbitalType(n-l-1,zeta,anorm(n-1,zeta)));
+              //This should be used later to enable optimization of Zeta of Slater orbitals
+              //RadialOrbitalType *ro = new RadialOrbitalType(n,l,zeta);
+              //const xmlChar* stag=xmlGetProp(s,(const xmlChar*)"id");
+              //if(stag) wfs_ref.VarList.add((const char*)stag,&(ro->Z),1);
+	      //aos->Rnl.push_back(ro);
 	      aos->NL[num] = nl;
 	      RnlID[rnl] = nl;
 	    } else {
