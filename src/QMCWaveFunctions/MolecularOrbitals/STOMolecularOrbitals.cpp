@@ -107,9 +107,9 @@ namespace ohmmsqmc {
 	      s=s->next;
 	    }
 
-	    XMLReport("A spherical orbital with (n,l,m,zeta) = (" << n << ", " << l << ", " << m << ", " << zeta << ")")
 
 	    STONorm<RealType> anorm(n);
+	    XMLReport("A spherical orbital with (n,l,m,zeta,c) = (" << n << ", " << l << ", " << m << ", " << zeta << " " << anorm(n-1,zeta) << ")")
 	    //radial orbitals: add only distinct orbitals
 	    map<string,int>::iterator rnl_it = RnlID.find(rnl);
 	    if(rnl_it == RnlID.end()) {
