@@ -15,21 +15,24 @@
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 #include <math.h>
+#include <fstream>
 #include "SQD/SphericalPotential/RadialPotential.h"
 #include "Numerics/Clebsch_Gordan.h"
 #include "Numerics/RadialFunctorUtility.h"
 namespace ohmmshf {
 
-/*!
- * \fn HartreePotential::HartreePotential(Clebsch_Gordan* cg)
- * \param cg The Clebsch-Gordan matrix elements
- * \brief The Constructor for the HartreePotential
- *
- */
-
-HartreePotential::HartreePotential(Clebsch_Gordan* cg):
-  CG_coeff(cg) { }
-
+  /**
+   *@param cg The Clebsch-Gordan matrix elements
+   *@param norb the number of orbitals
+   *@brief The Constructor for the HartreePotential
+   */
+  
+  HartreePotential::HartreePotential(Clebsch_Gordan* cg, int norb):
+  CG_coeff(cg) { 
+    storage.resize(norb*(norb+1)/2); 
+    for(int nn=0; nn<storage.size(); nn++) storage[nn] = 0.0;
+  }
+  
 /*!
  * \param psi the wavefunction
  * \param V increment the potential
@@ -72,13 +75,15 @@ HartreePotential::evaluate(const BasisSetType& psi,
   RadialOrbital_t Ykjj_r(psi(0));
   RadialOrbital_t Psisq_x_Yk(psi(0));
   int npts = psi.m_grid->size();
+  int nn=0;
+
   for(int i=0; i < norb; i++) {
 
     int mi = psi.M[i];
     int li = psi.L[i];
     int two_li_plus_one = 2*li + 1;
     
-    for(int j=i; j < norb; j++) {
+    for(int j=i; j < norb; j++, nn++) {
       
       int mj = psi.M[j];
       int lj = psi.L[j];
@@ -108,9 +113,13 @@ HartreePotential::evaluate(const BasisSetType& psi,
 	  V[i](gp) += jth_orb_coeff*Ykjj_r(gp);
 	  V[j](gp) += ith_orb_coeff*Ykii_r(gp);
 	}
-
-	Ehartree += Phisq_x_Yk(Ykjj_r, psi(i), psi(i), 0.5*energy_coeff);
-	Ehartree += Phisq_x_Yk(Ykii_r, psi(j), psi(j), 0.5*energy_coeff);
+	
+	storage[nn] = 0.0;
+	  storage[nn] += Phisq_x_Yk(Ykjj_r, psi(i), psi(i), 0.5*energy_coeff);
+	  storage[nn] += Phisq_x_Yk(Ykii_r, psi(j), psi(j), 0.5*energy_coeff);
+	  Ehartree += storage[nn];
+	//Ehartree += Phisq_x_Yk(Ykjj_r, psi(i), psi(i), 0.5*energy_coeff);
+	//Ehartree += Phisq_x_Yk(Ykii_r, psi(j), psi(j), 0.5*energy_coeff);
       }
     }
   }
@@ -119,15 +128,41 @@ HartreePotential::evaluate(const BasisSetType& psi,
 
 }
 
-/*!
- * \fn ExchangePotential::ExchangePotential(Clebsch_Gordan* cg)
- * \param cg The Clebsch-Gordan matrix elements
- * \brief The Constructor for the ExchangePotential
+  void HartreePotential::getStorage(const BasisSetType& psi,
+				    const std::string& RootFileName){
+    
+    string fileforoutput = RootFileName + ".hartree";
+    ofstream fout(fileforoutput.c_str());
+    string llabel("spdf");
+    string slabel("d0u");  
+    int norb = psi.size();
+    int nn=0;
+    value_type temp;
+    fout << "orb#1" << '\t' << "orb#2" << '\t' << "Hartree" << endl;
+    fout.precision(8);
+    for(int i=0; i<norb; i++) {
+      for(int j=i; j<norb; j++, nn++) {
+	temp = storage[nn];
+	if(fabs(temp) < 1e-12) temp = 0.0;
+	fout << psi.N[i] << llabel[psi.L[i]] << slabel[psi.S[i]+1]
+	     << '\t' << psi.N[j] << llabel[psi.L[j]] << slabel[psi.S[j]+1]
+	     << '\t' << temp << endl;
+      }
+    }
+  }
+
+  /**
+ *@param cg The Clebsch-Gordan matrix elements
+ *@param norb the number of orbitals
+ *@brief The Constructor for the ExchangePotential
  */
  
-ExchangePotential::ExchangePotential(Clebsch_Gordan* cg):
-  CG_coeff(cg) { }
-
+ExchangePotential::ExchangePotential(Clebsch_Gordan* cg, int norb):
+  CG_coeff(cg) {
+  storage.resize(norb*(norb+1)/2); 
+  for(int nn=0; nn<storage.size(); nn++) storage[nn] = 0.0; 
+}
+  
 /*!
  * \param psi the wavefunction
  * \param V increment the potential
@@ -165,6 +200,7 @@ ExchangePotential::evaluate(const BasisSetType& psi,
   value_type Eexchange=0;  
   //zero_all_orbitals(); V is reset before entering
   RadialOrbital_t Ykij_r(psi(0));
+  int nn=0;
 
   //Loop over all pairs of electrons once
   for(int i=0; i < norb; i++) {
@@ -173,7 +209,7 @@ ExchangePotential::evaluate(const BasisSetType& psi,
     int li = psi.L[i];
     int two_li_plus_one = 2*li + 1;
 
-    for(int j=i; j < norb; j++) {
+    for(int j=i; j < norb; j++, nn++) {
       int sj = psi.S[j];
       int mj = psi.M[j];
       int lj = psi.L[j];
@@ -203,7 +239,9 @@ ExchangePotential::evaluate(const BasisSetType& psi,
 	  Make_Loc_Pot(V[i], Ykij_r, psi(i), psi(j),jth_orb_coeff);           
 	  Make_Loc_Pot(V[j], Ykij_r, psi(j), psi(i),ith_orb_coeff);           
       
-	  Eexchange -= Phisq_x_Yk(Ykij_r, psi(i), psi(j), energy_coeff);
+	  //  Eexchange -= Phisq_x_Yk(Ykij_r, psi(i), psi(j), energy_coeff);
+	  storage[nn] = -1.0*Phisq_x_Yk(Ykij_r, psi(i), psi(j), energy_coeff);
+	  Eexchange += storage[nn];
 	}
       }
     }
@@ -212,6 +250,28 @@ ExchangePotential::evaluate(const BasisSetType& psi,
   return Eexchange;
 }
 
+ void ExchangePotential::getStorage(const BasisSetType& psi,
+				     const std::string& RootFileName){
+    
+    string fileforoutput = RootFileName + ".exchange";
+    ofstream fout(fileforoutput.c_str());
+    string llabel("spdf");  
+    string slabel("d0u");
+    int norb = psi.size();
+    int nn=0;
+    value_type temp;
+    fout << "orb#1" << '\t' << "orb#2" << '\t' << "Exchange" << endl;
+    fout.precision(8);
+    for(int i=0; i<norb; i++) {
+      for(int j=i; j<norb; j++, nn++) {
+	temp = storage[nn];
+	if(fabs(temp) < 1e-12) temp = 0.0;
+	fout << psi.N[i] << llabel[psi.L[i]] << slabel[psi.S[i]+1]
+	     << '\t' << psi.N[j] << llabel[psi.L[j]] << slabel[psi.S[j]+1]
+	     << '\t' << temp << endl;
+      }
+    }
+  }
 }
 /***************************************************************************
  * $RCSfile$   $Author$

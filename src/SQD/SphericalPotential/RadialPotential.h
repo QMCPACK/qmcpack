@@ -22,22 +22,22 @@
 
 class Clebsch_Gordan;
 /**
-   @defgroup RadialPotential
-   *@brief Classes to define potentials on a radial grid.
-   *
-   *A radial potential is defined on a radial grid, OneDimGridBase<T> and RadialPotentialSet
-   *is used to represent the LHS of Radial Schrodinger Equation.
-   */
+ *@defgroup RadialPotential
+ *@brief Classes to define potentials on a radial grid.
+ *
+ *A radial potential is defined on a radial grid, OneDimGridBase<T> and RadialPotentialSet
+ *is used to represent the LHS of Radial Schrodinger Equation.
+ */
 namespace ohmmshf {
 
   /**
-     @ingroup RadialPotential
-     @class RadialPotentialBase
-     @brief An abstract base class for a Radial Potential.
-     *
-     *Inherited classes implement the member function evaluate 
-     *to calculate matrix elements for a Hamiltonian term.
-     */
+   *@ingroup RadialPotential
+   *@class RadialPotentialBase
+   *@brief An abstract base class for a Radial Potential.
+   *
+   *Inherited classes implement the member function evaluate 
+   *to calculate matrix elements for a Hamiltonian term.
+   */
   struct RadialPotentialBase {
 
     typedef SphericalOrbitalTraits::BasisSetType       BasisSetType;
@@ -62,29 +62,37 @@ namespace ohmmshf {
     virtual ~RadialPotentialBase() { }
 
     /**
-      \param psi the wavefunction
-      \param V the potential
-      \param norb the number of orbitals
-      \return The sum of the matrix elements of a Radial Potential \f$V(r)\f$
-      \brief Calculates and assigns the values of a Randial Potential for
-      *each orbital.
-      *
-      \f[
-      \sum_{k=0}^{N_{orb}} \langle k|V(r)|k \rangle = \sum_{k=0}^{N_{orb}}
-      \int_0^{\infty} dr \: \psi_k^*(r)V(r)\psi_k(r) 
-      \f]
-      */
+     *@param psi the wavefunction
+     *@param V the potential
+     *@param norb the number of orbitals
+     *@return The sum of the matrix elements of a Radial Potential \f$V(r)\f$
+     *@brief Calculates and assigns the values of a Randial Potential for
+     *each orbital.
+     *
+     \f[
+     \sum_{k=0}^{N_{orb}} \langle k|V(r)|k \rangle = \sum_{k=0}^{N_{orb}}
+     \int_0^{\infty} dr \: \psi_k^*(r)V(r)\psi_k(r) 
+     \f]
+    */
     virtual 
     value_type evaluate(const BasisSetType& psi, 
 			RadialOrbitalSet_t& V, 
 			int norb) = 0; 
 
-   /**\param n the principal quantum number
-      \param l the angular quantum number
-      \return the number of radial nodes 
+    /**
+     *@param n the principal quantum number
+     *@param l the angular quantum number
+     *@return the number of radial nodes 
      */
     virtual int getNumOfNodes(int n, int l)=0;
 
+    /**
+     *@param RootFileName the name of file root
+     *@brief Output the internal storage of the potential.
+     *@note Only applies for the Hartree and Exchange potentials.
+     */
+    virtual void getStorage(const BasisSetType& psi, 
+			    const std::string& RootFileName) { return; }
 
     /**
        @param ig the grid index
@@ -105,51 +113,63 @@ namespace ohmmshf {
     }
 
     /**
-       @param cur the current xml node to process
-       @return true if the input is valid
-    */
+     *@param cur the current xml node to process
+     *@return true if the input is valid
+     */
     virtual bool put(xmlNodePtr cur) { return true;}
 
   };
 
   /**
-     @ingroup RadialPotential
-     @class HartreePotential
-     @brief implements the Hartree potential
-     *
+   *@ingroup RadialPotential
+   *@class HartreePotential
+   *@brief implements the Hartree potential
+   *
    \f[ V_{Hartree}(r) =
    \sum_j\sum_{k=0}^{max(2l_i,2l_j)} (-1)^{m_i+m_j}
    \frac{(2l_i+1)(2l_j+1)}{(2k+1)^2}c_g(l_i,l_j,k,0,0)
    c_g(l_j,l_j,k,0,0)c_g(l_i,l_i,k,-m_i,m_i)
-   c_g(l_i,l_i,k,-m_j,m_j)\frac{ Y_k(n_jl_j,n_jl_j/r)}{r} 
+   c_g(l ///the Clebsch Gordan coefficient matrix_i,l_i,k,-m_j,m_j)\frac{ Y_k(n_jl_j,n_jl_j/r)}{r} 
    \f]
-   */
+  */
   struct HartreePotential: public RadialPotentialBase {
+    ///the Clebsch Gordan coefficient matrix
     Clebsch_Gordan *CG_coeff;
-    HartreePotential(Clebsch_Gordan*);
+    /**store the matrix elements 
+       \f$\langle \psi_i \psi_j |V| \psi_i \psi_j \rangle */
+    Vector<value_type> storage;
+    HartreePotential(Clebsch_Gordan* cg, int norb);
     value_type evaluate(const BasisSetType& psi, 
 			RadialOrbitalSet_t& V, int norb);
+    void getStorage(const BasisSetType& psi, 
+		    const std::string& RootFileName);
     int getNumOfNodes(int n, int l) {return 0;}
   };
 
- /**
-    @ingroup RadialPotential
-    @class ExchangePotential
-    @brief implements the exchange potential
+  /**
+   *@ingroup RadialPotential
+   *@class ExchangePotential
+   *@brief implements the exchange potential
    *
    \f[ V_{exchange}(r) =
    \sum_j\delta(s_i,s_j)\sum_{k=|l_i-l_j|}^{l_i+l_j}
    \frac{(2l_i+1)(2l_j+1)}{(2k+1)^2}c_g(l_i,l_j,k,0,0)^2
    c_g(l_i,l_j,k,-m_i,m_j)^2\frac{ Y_k(n_il_i,n_jl_j/r)}{r} 
    \f].
-   *Exchange potential  is  non-local.
+   *Exchange potential is non-local.
    *
    */
   struct ExchangePotential: public RadialPotentialBase {
+    ///the Clebsch Gordan coefficient matrix
     Clebsch_Gordan *CG_coeff;
-    ExchangePotential(Clebsch_Gordan*);
+    /**store the matrix elements 
+       \f$\langle \psi_i \psi_j |V| \psi_j \psi_i \rangle */
+    Vector<value_type> storage;
+    ExchangePotential(Clebsch_Gordan* cg, int norb);
     value_type evaluate(const BasisSetType& psi, 
 			RadialOrbitalSet_t& V, int norb);
+    void getStorage(const BasisSetType& psi, 
+		    const std::string& RootFileName);
     int getNumOfNodes(int n, int l) {return 0;}
   };
 }
