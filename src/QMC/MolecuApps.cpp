@@ -92,13 +92,14 @@ namespace ohmmsqmc {
       }
     }
      */
-    LOGMSG("Ionic configuration : " << ion.getName())
-    ion.get(log());
-
-    LOGMSG("Electronic configuration : " << el.getName())
-    el.get(log());
-
-    Psi.VarList.print(log());
+    string fname(myProject.CurrentRoot());
+    fname.append(".debug");
+    ofstream fout(fname.c_str());
+    fout << "Ionic configuration : " << ion.getName() << endl;
+    ion.get(fout);
+    fout << "Electronic configuration : " << el.getName() << endl;
+    el.get(fout);
+    Psi.VarList.print(fout);
     return true;    
   }   
 
