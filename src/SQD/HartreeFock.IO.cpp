@@ -322,7 +322,7 @@ namespace ohmmshf {
 
     if(PotType == "nuclear"){
       XMLReport("Creating a Nuclear Potential.")
-	double Z = Psi.NumOrb;
+	double Z = Psi.size();
 
       xmlNodePtr cur = pot_ptr->children;
       while(cur != NULL) {
@@ -354,7 +354,7 @@ namespace ohmmshf {
     } // if Nuclear
     else if(PotType == "nuclear_scalar_rel"){
       XMLReport("Creating a Nuclear Scalar Relativistic Potential.")
-	double Z = Psi.NumOrb;
+	double Z = Psi.size();
 
       xmlNodePtr cur = pot_ptr->children;
       while(cur != NULL) {

@@ -117,9 +117,9 @@ struct YlmRnlSet  {
   typedef std::map<NLMSIndex,int,equal_nlms<4> >  NLMS_Map_t;
 
   ///constructor  
-  YlmRnlSet(): m_grid(NULL), NumOrb(0), 
-	       NumUniqueOrb(0), Restriction("none"), CuspParam(0.0),
-	       MinEigenValue(0.0), MaxEigenValue(0.0), Nup(0), Ndown(0) { }
+  YlmRnlSet(): m_grid(NULL), NumUniqueOrb(0), Restriction("none"),
+	       CuspParam(0.0), MinEigenValue(0.0), MaxEigenValue(0.0),
+	       Nup(0), Ndown(0) { }
   
   bool add(int n, int l, int m, int s, value_type occ);
 
@@ -170,9 +170,6 @@ struct YlmRnlSet  {
   
   ///restriction type;
   string Restriction;
-
-  ///number of orbitals 
-  int NumOrb;
 
   ///number of unique orbitals
   int NumUniqueOrb;
