@@ -118,7 +118,6 @@ namespace ohmmsqmc {
       IndexType nat = W.getTotalNum();
 
       int ncross = 0;
-      //     ofstream fout("test.txt");
       do {
 	IndexType step = 0;
 	timer.start();
@@ -165,10 +164,10 @@ namespace ohmmsqmc {
 		G = W.G+dG;
 		RealType logGf = -0.5*dot(deltaR[iat],deltaR[iat]);
 		
-		//ValueType vsq = Dot(G,G);
-		//ValueType scale = ((-1.0+sqrt(1.0+2.0*Tau*vsq))/vsq);
-		//dr = (*it)->R[iat]-newpos-scale*G[iat]; 
-		dr = (*it)->R[iat]-newpos-Tau*G[iat]; 
+		ValueType vsq = Dot(G,G);
+		ValueType scale = ((-1.0+sqrt(1.0+2.0*Tau*vsq))/vsq);
+		dr = (*it)->R[iat]-newpos-scale*G[iat]; 
+		//dr = (*it)->R[iat]-newpos-Tau*G[iat]; 
 		RealType logGb = -oneover2tau*dot(dr,dr);
 		
 		//RealType ratio2 = pow(ratio,2)
@@ -179,12 +178,13 @@ namespace ohmmsqmc {
 		  Psi.update2(W,iat);
 		  W.G = G;
 		  W.L += dL;
-		  (*it)->Drift = Tau*G;
+		  //  (*it)->Drift = Tau*G;
+		  (*it)->Drift = scale*G;
 		} else {
 		  ++nRejectTemp; 
 		  Psi.restore(iat);
 		}
-	      }
+	      } 
               iat++;
 	    }
 
