@@ -39,6 +39,7 @@ namespace ohmmsqmc {
 		   QMCHamiltonian& h, 
 		   xmlNodePtr q): 
     QMCDriver(w,psi,h,q), 
+    UseWeight(true),
     NumCostCalls(0),
     NumSamples(0),
     cg_tolerance(1.0e-8),
@@ -55,6 +56,7 @@ namespace ohmmsqmc {
     RootName = "vmc";
     QMCType ="opt";
 
+    m_param.add(UseWeight,"useweight","none");
     m_param.add(cg_tolerance,"tolerance","none");
     m_param.add(cg_stepsize,"stepsize","none");
     m_param.add(cg_epsilon,"epsilon","none");
@@ -286,16 +288,19 @@ namespace ohmmsqmc {
 	  //evaluate wave function
 	  ValueType psi = Psi.evaluate(W);
           ValueType logpsi(log(abs(psi)));
-          ValueType weight = exp(2.0*(logpsi-logpsi0));
-	  // accumulate the effective number of walkers
-	  nw_effect[0] += weight;
-	  nw_effect[1] += weight*weight;
-
-	  //update the properties
-	  Properties(WEIGHT) = weight;
 	  Properties(LOCALENERGY) = H_KE.evaluate(W)+vold;
-	  Properties(LOGPSI) = logpsi;
-	  Properties(PSI) = psi;
+          if(UseWeight) {
+            ValueType weight = exp(2.0*(logpsi-logpsi0));
+	    // accumulate the effective number of walkers
+	    nw_effect[0] += weight;
+	    nw_effect[1] += weight*weight;
+	    Properties(WEIGHT) = weight;
+	    Properties(LOGPSI) = logpsi;
+	    Properties(PSI) = psi;
+          } else {
+	    Properties(WEIGHT) = 1.0;
+          }
+	  //update the properties
 	  ////Properties(LOCALENERGY) = H.evaluate(W);
 	  //(*it)->Properties = Properties;
           ++it;

@@ -70,6 +70,8 @@ namespace ohmmsqmc {
 
     RealType evalCost();
 
+    ///boolean to turn on/off the psi^2/psi^2_old for correlated sampling
+    bool UseWeight;
     ///storage for previous values of the cost function
     std::deque<scalar> costList;
     ///storage for previous sets of parameters
