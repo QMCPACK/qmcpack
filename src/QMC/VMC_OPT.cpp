@@ -267,12 +267,12 @@ namespace ohmmsqmc {
 
 	//accumulate the number of samples      
 	NumSamples += W.getActiveWalkers();
-	MCWalkerConfiguration::PropertyContainer_t Properties;
       
 	MCWalkerConfiguration::iterator it = W.begin(); 
 	MCWalkerConfiguration::iterator it_end = W.end(); 
         while(it != it_end) {
 
+	  MCWalkerConfiguration::PropertyContainer_t& Properties = (*it)->Properties;
 	  // save old sample
 	  //ValueType psi2old = (*it)->Properties(PSISQ);
 	  //ValueType vold = (*it)->Properties(LOCALPOTENTIAL);
@@ -285,21 +285,19 @@ namespace ohmmsqmc {
       
 	  //evaluate wave function
 	  ValueType psi = Psi.evaluate(W);
-          ValueType weight = exp(2.0*(log(abs(psi))-logpsi0));
+          ValueType logpsi(log(abs(psi)));
+          ValueType weight = exp(2.0*(logpsi-logpsi0));
 	  // accumulate the effective number of walkers
 	  nw_effect[0] += weight;
 	  nw_effect[1] += weight*weight;
 
-          /////////////////////////////////
-          //Why are we even writing this????
 	  //update the properties
-	  //Properties(WEIGHT) = weight;
-	  //Properties(PSISQ) = psisq;
-	  //Properties(PSI) = psi;
+	  Properties(WEIGHT) = weight;
+	  Properties(LOCALENERGY) = H_KE.evaluate(W)+vold;
+	  Properties(LOGPSI) = logpsi;
+	  Properties(PSI) = psi;
 	  ////Properties(LOCALENERGY) = H.evaluate(W);
-	  //Properties(LOCALENERGY) = H_KE.evaluate(W)+vold;
 	  //(*it)->Properties = Properties;
-          /////////////////////////////////
           ++it;
           ++iconf;
 	}
