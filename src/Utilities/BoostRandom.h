@@ -37,38 +37,48 @@ public:
   typedef boost::mt19937     generator_type;
   typedef boost::variate_generator<generator_type,boost::uniform_real<T> > uniform_generator_type;
 
-  BoostRandom(): baseSeed(0), unit_dist(0,1), uni(generator,unit_dist) { 
-    init(OHMMS::Controller->mycontext(),OHMMS::Controller->ncontexts(),-1);
+  BoostRandom(): baseSeed(0), unit_dist(0,1), generator(0), uni(0) { 
+    //init(OHMMS::Controller->mycontext(),OHMMS::Controller->ncontexts(),-1);
   }
 
   BoostRandom(int iseed): 
-    baseSeed(iseed), unit_dist(0,1), uni(generator,unit_dist)
+    baseSeed(iseed), unit_dist(0,1), generator(0), uni(0)
   {
-    init(OHMMS::Controller->mycontext(),OHMMS::Controller->ncontexts(),iseed);
+    //init(OHMMS::Controller->mycontext(),OHMMS::Controller->ncontexts(),iseed);
   }
  
+  ~BoostRandom() {
+    if(uni) delete uni;
+    if(generator) delete generator;
+  }
+
   void init(int i, int nstr, int iseed) {
     if(iseed<0) {
       iseed=static_cast<unsigned int>(std::time(0))%16081+(i+1)*nstr+i;
     } 
     baseSeed=iseed;
     base_generator.seed(iseed);
-    generator.seed(base_generator);
+    if(generator == 0) {
+      generator = new generator_type(base_generator);
+      uni = new uniform_generator_type(*generator,unit_dist);
+    }
+    //generator.seed(base_generator);
+    std::cout << "Node " << i << " seed " << iseed << std::endl;
   }
 
-  inline uniform_generator_type& getGenerator() { return uni;}
+  inline uniform_generator_type& getGenerator() { return *uni;}
 
   //!< return [0,1)
-  inline T getRandom() { return uni(); }
+  inline T getRandom() { return (*uni)(); }
 
-  inline Return_t operator()() { return uni();} 
+  inline Return_t operator()() { return (*uni)();} 
   inline int irand() { return 1;}
 
   inline void bivariate(Return_t& g1, Return_t &g2) {
     Return_t v1, v2, r;
     do {
-    v1 = 2.0e0*uni() - 1.0e0;
-    v2 = 2.0e0*uni() - 1.0e0;
+    v1 = 2.0e0*((*uni)()) - 1.0e0;
+    v2 = 2.0e0*((*uni)()) - 1.0e0;
     r = v1*v1+v2*v2;
     } while(r > 1.0e0);
     Return_t fac = sqrt(-2.0e0*log(r)/r);
@@ -79,9 +89,9 @@ public:
 private:
   unsigned int baseSeed;
   base_generator_type    base_generator;
-  generator_type         generator;
   boost::uniform_real<T> unit_dist;
-  uniform_generator_type uni;
+  generator_type         *generator;
+  uniform_generator_type *uni;
 };
 #endif
 
