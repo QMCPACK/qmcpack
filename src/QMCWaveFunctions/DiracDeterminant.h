@@ -74,30 +74,27 @@ namespace ohmmsqmc {
    \f[
    |D| = \sum_{j=1}^N D_{ij}C_{ij}\;\;\longrightarrow \mbox{along row i}
    \f]
-   *or
-   \f[
-   |D| = \sum_{i=1}^N D_{ij}C_{ij}\;\;\longrightarrow \mbox{along column j}.
-   \f]
    *
    *To calculate the local energy \f$E_L\f$ it is necessary to evaluate
    *the gradient and laplacian of the logarithm of the Diracdeterminant
    \f[ 
-   \frac{\nabla_i|D({\bf R})|}{|D({\bf R})|} \;\;\;\;\;\;\;\;\;\;\;\;\;
-   \mbox{and}\;\;\;\;\;\;\;\;\;\;\;\;\; 
-   \frac{\nabla_i^2|D({\bf R})|}{|D({\bf R})|}.
+   \nabla_i |D({\bf R})| = \frac{\nabla_i|D({\bf R})|}{|D({\bf R})|} 
+   \f]
+   \f[
+   \nabla^2_i |D({\bf R})| = \frac{\nabla_i^2|D({\bf R})|}{|D({\bf R})|}
+   -\left(\frac{\nabla_i|D({\bf R})|}{|D({\bf R})|}\right)^2.
    \f]
    *We have already shown how to evaluate the determinant in terms of its
-   *cofactors, taking the gradient follows from this relation  
+   *cofactors, taking the derivatives follows from this  
    \f[
    \nabla_i|D| = |D|\sum_{j=1}^N (\nabla_i D_{ij})(D^{-1})_{ji},
    \f]
    *where \f$ D_{ij} \f$ is a function of \f${\bf r_i}\f$ and 
-   *\f$ |D|(D^{-1})_{ji} \f$ is a function of all of the other coordinates 
+   *\f$ (D^{-1})_{ji} \f$ is a function of all of the other coordinates 
    *except \f${\bf r_i}\f$.  This leads to the result
    \f[
    \frac{\nabla_i|D|}{|D|} = \sum_{j=1}^N (\nabla_i D_{ij})(D^{-1})_{ji}.
    \f]
-   *The laplacian easily follows
    \f[
    \frac{\nabla^2_i|D|}{|D|} = \sum_{j=1}^N (\nabla^2_i D_{ij})(D^{-1})_{ji}.
    \f]
@@ -208,9 +205,11 @@ namespace ohmmsqmc {
     ///Current determinant value
     ValueType CurrentDet;
 
-    /// psiM(i,j) \f$= |Det(\{R\})|_{i,j}^{-1}\f$
+    /// psiM(j,i) \f$= \psi_j({\bf r}_i)\f$
     Determinant_t psiM;
+    /// dpsiM(i,j) \f$= \nabla_i \psi_j({\bf r}_i)\f$
     Gradient_t    dpsiM;
+    /// d2psiM(i,j) \f$= \nabla_i^2 \psi_j({\bf r}_i)\f$
     Laplacian_t   d2psiM;
 
     ///storages to process many walkers once
