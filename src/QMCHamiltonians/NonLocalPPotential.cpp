@@ -38,6 +38,65 @@ namespace ohmmsqmc {
     for(int ip=0; ip<nlpp_m.size(); ip++)   delete nlpp_m[ip];
   }
 
+  NonLocalPPotential::ValueType 
+  NonLocalPPotential::RadialPotentialSet::evaluate(
+      ParticleSet& W, DistanceTableData* d_table, int iat, 
+      TrialWaveFunction& Psi){
+
+    RealType esum=0.0;
+    const RealType oneoverfourpi=0.0795774715;
+
+    int nchannel=nlpp_m.size();
+    int nknot=sgridxyz_m.size();
+    int iel=0;
+
+    randomize_grid();
+
+    for(int nn=d_table->M[iat]; nn<d_table->M[iat+1]; nn++){
+
+      if(d_table->r(nn)>Rmax) continue;
+
+      register RealType r(d_table->r(nn));
+      register RealType rinv(d_table->rinv(nn));
+      register PosType  dr(d_table->dr(nn));
+      // Compute ratio of wave functions
+      for (int j=0; j < nknot ; j++){ 
+	PosType deltar(dr-r*sgridxyz_m[j]);
+	W.makeMove(iel,deltar);
+	psiratio[j]=Psi.ratio(W,iel)*sgridweight_m[j];
+      }
+      // Compute radial potential
+      for(int ip=0;ip< nchannel; ip++){
+	nlgrid_m[ip]->index(r);
+	vrad[ip]=nlpp_m[ip]->evaluate(r,rinv)*(2.0*angpp_m[ip]+1.0);
+      }
+      // Compute spherical harmonics on grid
+      for (int j=0; j<nknot ; j++){ 
+	RealType zz=dot(dr,sgridxyz_m[j]);
+	lpol[0]=1.0;
+	RealType lpolprev=0.0;
+	// Forming the Legendre polynomial
+	for (int l=0 ; l< lmax ; l++){
+	  lpol[l+1]=(2*l+1)*zz*lpol[l]-l*lpolprev;
+	  lpol[l+1]/=(l+1);
+	  lpolprev=lpol[l];
+	}
+	for (int l=0; l < nchannel; l++)
+	  Amat[l*nknot+j] = lpol[ angpp_m[l] ];
+      } 
+
+      const char TRANS('T');
+      const int ione=1;
+      const RealType one=1.0;
+      const RealType zero=0.0;
+      dgemv(TRANS,nknot,nchannel,one,&Amat[0],nknot,&psiratio[0],ione,zero,
+	  &wvec[0],ione);
+      esum += ddot(nchannel,&vrad[0],ione,&wvec[0],ione)*oneoverfourpi;
+      
+      iel++;
+    }   /* end loop over electron */
+    return esum;
+  }
   /*!
    *\param ions the positions of the ions
    *\param els the positions of the electrons
@@ -56,9 +115,8 @@ namespace ohmmsqmc {
 
     d_table = DistanceTable::getTable(DistanceTable::add(ions,els));
 
-    maxsgridpts=0, maxnonloc=0; maxangmom=0;
     for(int i=0; i<ions.Species.getTotalNum();i++) {
-      vector<ValueType> grid_temp, pp_temp;
+      vector<RealType> grid_temp, pp_temp;
       string species = ions.Species.speciesName[i];
       string fname = species+".psf";
       ifstream fin(fname.c_str(),ios_base::in);
@@ -69,14 +127,14 @@ namespace ohmmsqmc {
       XMLReport("Reading a file for the PseudoPotential for species " << species);
       // Add a new center to the list.
       PP.push_back(new RadialPotentialSet);
-      // Read Number of channels for this atom
+      // Read Number of potentials (local and non) for this atom
       int npotentials;
       fin >> npotentials;
-      ValueType r, f1;
-      int angmom,npoints;
-      int numnonloc=0;
+      RealType r, f1;
+      int numnonloc=0, lmax=-1;
       RealType rmax(0.0);
       for (int ij=0; ij<npotentials; ij++){
+	int angmom,npoints;
 	fin >> npoints >> angmom;
 	for (int j=0; j<npoints; j++){
 	  fin >> r ; grid_temp.push_back(r);
@@ -93,11 +151,10 @@ namespace ohmmsqmc {
 	  PP[i]->add(angmom,agrid,app);
 	  numnonloc++;
 	}
+	lmax=std::max(lmax,angmom);
 	rmax=std::max(rmax,agrid->rmax());
-	//PP[i]->Rmax=agrid->rmax();
       }
-      PP[i]->Rmax=rmax;
-      if(numnonloc>maxnonloc)maxnonloc=numnonloc;
+      PP[i]->lmax=lmax; PP[i]->Rmax=rmax;
       fin.close();
       int numsgridpts=0;
       // if NonLocal look for file containing the spherical grid
@@ -112,131 +169,30 @@ namespace ohmmsqmc {
 	ValueType weight;
 	while(fin >> xyz >> weight){
 	  PP[i]->addknot(xyz,weight);
-	  numnonloc++;
+	  numsgridpts++;
 	}
-	if(numsgridpts>maxsgridpts) maxsgridpts=numsgridpts;
       }
-      else 
-	PP[i]->lmax=-1;
-      if(PP[i]->lmax > maxangmom) maxangmom=PP[i]->lmax;
+
+      PP[i]->resize_warrays(numsgridpts,numnonloc,lmax);
     }//centers
-    // If there are NonLocal components => allocate working arrays
-    if(maxnonloc>0){
-      psiratio = new ValueType[maxsgridpts];
-      vrad = new ValueType[maxnonloc];
-      wvec = new ValueType[maxnonloc];
-      Amat = new ValueType[maxnonloc*maxsgridpts];
-      lpol = new ValueType[maxangmom];
-    }
   }
 
   ///destructor
   NonLocalPPotential::~NonLocalPPotential() { 
     for(int pp=0; pp<PP.size(); pp++) delete PP[pp];
-    if(maxnonloc>0){
-      delete [] psiratio ;
-      delete [] vrad ;
-      delete [] wvec ;
-      delete [] Amat ;
-      delete [] lpol ;
-    }
   }
-
-  NonLocalPPotential::ValueType 
-  NonLocalPPotential::evaluate(ParticleSet& W) {
-
-    MCWalkerConfiguration& Wref=dynamic_cast<MCWalkerConfiguration&>(W);
-
-    const ValueType oneoverfourpi=0.0795774715;
-    PosType knot,deltar;
-    RealType esum=0.0;
-    int iel;
-    //loop over all the ions
-    for(int iat=0; iat<Centers.size(); iat++) {
-      int ispecies = Centers[iat];
-      // evaluate the local parts
-      RadialPotentialSet *pp=PP[ispecies];
-
-      esum += pp->evaluate(d_table,iat);
-      int nchannel = pp->nlpp_m.size();
-      if(nchannel==0) continue;
-      int nknot = pp->sgridxyz_m.size();
-      iel=0;
-      pp->randomize_grid();
-
-      register RealType rcut(pp->Rmax);
-
-      for(int nn=d_table->M[iat]; nn<d_table->M[iat+1]; nn++){
-
-	if(d_table->r(nn)>rcut) continue;
-
-	register RealType r(d_table->r(nn));
-	register RealType rinv(d_table->rinv(nn));
-	register PosType dr(d_table->dr(nn));
-
-	// Compute ratio of wave functions
-	for (int j=0; j < nknot ; j++){ 
-	  knot = pp->getknot(j);
-	  deltar = dr - r * knot;
-	  Wref.makeMove(iel,deltar);
-	  psiratio[j]=Psi.ratio(Wref,iel) * pp->sgridweight_m[j];
-	}
-	// Compute radial potential
-	for(int ig=0; ig< nchannel; ig++)
-	  pp->nlgrid_m[ig]->index(r);
-	for(int ip=0;ip< nchannel; ip++){
-	  vrad[ip]=pp->nlpp_m[ip]->evaluate(r,rinv);
-	  vrad[ip]*=(2*pp->angpp_m[ip]+1);
-	}
-	// Compute spherical harmonics on grid
-	for (int j=0; j<nknot ; j++){ 
-	  RealType zz= dot(dr, pp->getknot(j));
-	  lpol[0]=1.0;
-	  lpol[1]=zz;
-	  // Forming the Legendre polynomial
-	  for (int l=1 ; l< pp->lmax ; l++){
-	    lpol[l+1]=(2*l+1)*zz*lpol[l]-l*lpol[l-1];
-	    lpol[l+1]/=(l+1);
-	  }
-	  for (int l=0; l < nchannel; l++)
-	    Amat[l*nknot+j] = lpol[ pp->angpp_m[l] ];
-	} 
-	const char TRANS('T');
-	const int ione=1;
-	const RealType one=1.0;
-	const RealType zero=0.0;
-        dgemv(TRANS,nknot,nchannel,one,Amat,nknot,psiratio,ione,zero,
-	    wvec,ione);
-	esum += ddot(nchannel,vrad,ione,wvec,ione)*oneoverfourpi;
-	iel++;
-      }   /* end loop over electron */
-    }
-    return esum;
-  }
-
 
   void NonLocalPPotential::RadialPotentialSet::randomize_grid(){
-    const double twopi=6.28318531;
-    double phi,psi,sph,cph,sth,cth,sps,cps;
-    Tensor<double,3> rmat;
-    /* Rotation matrix with Euler angles defined as: 
-       1) counterclockwise rotation around z (phi)
-       2) clockwise rotation around y (theta)
-       3) counterclockwise rotation around z (psi) */
-    phi=twopi*Random(); sph=sin(phi); cph=cos(phi);
-    psi=twopi*Random(); sps=sin(psi); cps=cos(psi);
-    cth=2*(Random()-0.5); sth=sqrt(1-cth*cth);
-    rmat(0,0)= cph*cth*cps-sph*sps;
-    rmat(0,1)= sph*cth*cps+cph*sps;
-    rmat(0,2)=-sth*cps;
-    rmat(1,0)=-cph*cth*sps-sph*cps;
-    rmat(1,1)=-sph*cth*sps+cph*cps;
-    rmat(1,2)= sth*sps;
-    rmat(2,0)= cph*sth;
-    rmat(2,1)= sph*sth;
-    rmat(2,2)= cth;
-    for (vector<PosType>::iterator it=sgridxyz_m.begin(); 
-	it != sgridxyz_m.end(); ++it) *it=dot(rmat,*it);
+    const RealType twopi(6.28318531);
+    RealType phi(twopi*Random()),psi(twopi*Random()),cth(Random()-0.5),
+	     sph(sin(phi)),cph(cos(phi)),sth(sqrt(1-cth*cth)),sps(sin(psi)),
+	     cps(cos(psi));
+    Tensor<double,3> rmat( cph*cth*cps-sph*sps, sph*cth*cps+cph*sps,-sth*cps,
+                          -cph*cth*sps-sph*cps,-sph*cth*sps+cph*cps, sth*sps,
+			   cph*sth,             sph*sth,             cth     );
+    vector<PosType>::iterator it(sgridxyz_m.begin());
+    vector<PosType>::iterator it_end(sgridxyz_m.end());
+    while(it != it_end) {*it = dot(rmat,*it); ++it;}
   }
 }
 /***************************************************************************
