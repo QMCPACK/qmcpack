@@ -275,7 +275,7 @@ bool YlmRnlSet<GT>::print_basis(const std::string& elementName,
 	sprintf(idname,"R%03d",ID[orb]);
 	osXML << "<phi id=\"" << idname << "\" n=\"" << N[orb] 
 	      << "\" l=\"" << L[orb] << "\" m=\"" << M[orb] 
-	      << "\" s=\"1\" << zeta=\"1\"/>" << endl;
+	      << "\" s=\"1\" zeta=\"1\"/>" << endl;
 	nbasis++;
       }
     }

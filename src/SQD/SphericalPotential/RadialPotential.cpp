@@ -139,7 +139,8 @@ HartreePotential::evaluate(const BasisSetType& psi,
     int nn=0;
     value_type temp;
     fout << "orb#1" << '\t' << "orb#2" << '\t' << "Hartree" << endl;
-    fout.precision(8);
+    fout.precision(12);
+    fout.setf(ios::scientific,ios::floatfield);
     for(int i=0; i<norb; i++) {
       for(int j=i; j<norb; j++, nn++) {
 	temp = storage[nn];
@@ -261,7 +262,8 @@ ExchangePotential::evaluate(const BasisSetType& psi,
     int nn=0;
     value_type temp;
     fout << "orb#1" << '\t' << "orb#2" << '\t' << "Exchange" << endl;
-    fout.precision(8);
+    fout.precision(12);
+    fout.setf(ios::scientific,ios::floatfield);
     for(int i=0; i<norb; i++) {
       for(int j=i; j<norb; j++, nn++) {
 	temp = storage[nn];
