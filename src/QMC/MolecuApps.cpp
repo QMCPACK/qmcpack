@@ -32,7 +32,7 @@
 #include "QMCHamiltonians/IonIonPotential.h"
 #include "QMCHamiltonians/LocalPPotential.h"
 #include "QMCHamiltonians/HarmonicPotential.h"
-#include "QMCHamiltonians/CorePolPotential.h"
+#include "QMCHamiltonians/GeCorePolPotential.h"
 #include "QMCHamiltonians/BareKineticEnergy.h"
 #include "QMCWaveFunctions/AtomicOrbitals/HFAtomicSTOSetBuilder.h"
 #include "QMCWaveFunctions/AtomicOrbitals/HeSTOClementiRottie.h"
@@ -188,18 +188,15 @@ namespace ohmmsqmc {
       H.add(new LocalPPotential(ion,el), "PseudoPot");
       if(ion.getTotalNum()>1) 
 	H.add(new IonIonPotential(ion),"IonIon");
-/*
     } else if(ptype == "cpp") {
       xmlChar* att2=xmlGetProp(cpp,(const xmlChar*)"species");
       string stype = (const char*)att2;
-      cout << "stype " << stype << endl;
+      //      cout << "stype " << stype << endl;
       H.add(new CoulombPotentialAA(el), "ElecElec");
       H.add(new LocalPPotential(ion,el), "PseudoPot");
-      //WARNING: GeCPP is HARD CODED!!!!!!
       H.add(new GeCorePolPotential(ion,el,stype), "GeCPP");
       if(ion.getTotalNum()>1) 
 	H.add(new IonIonPotential(ion),"IonIon");
-*/
     } else if(ptype == "polarization"){
       xmlChar* att2=xmlGetProp(pol,(const xmlChar*)"method");
       mtype = (const char*)att2;
