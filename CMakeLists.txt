@@ -45,9 +45,9 @@ SET (PROJECT_CMAKE ${qmcPlusPlus_SOURCE_DIR}/CMake)
 #COMPILER choose one of the cmake files to customize the compiler options
 #If nothing is chosen, default settings by cmake will  be used.
 ######################################################
-INCLUDE(${PROJECT_CMAKE}/Intel8.cmake)
+#INCLUDE(${PROJECT_CMAKE}/Intel8.cmake)
 #INCLUDE(${PROJECT_CMAKE}/Intel7.cmake)
-#INCLUDE(${PROJECT_CMAKE}/GNUCompilers.cmake)
+INCLUDE(${PROJECT_CMAKE}/GNUCompilers.cmake)
 #INCLUDE(${PROJECT_CMAKE}/IBMCompilers.cmake)
 #INCLUDE(${PROJECT_CMAKE}/KCCCompilers.cmake)
 #INCLUDE(${PROJECT_CMAKE}/Compilers.cmake)
@@ -62,6 +62,7 @@ INCLUDE(${PROJECT_CMAKE}/FindHDF5.cmake)
 INCLUDE(${PROJECT_CMAKE}/FindGSL.cmake)
 INCLUDE(${PROJECT_CMAKE}/FindBlitz++.cmake)
 INCLUDE(${PROJECT_CMAKE}/FindSprng.cmake)
+INCLUDE(${PROJECT_CMAKE}/FindBoost.cmake)
  
 IF(QMC_MPI)
   INCLUDE(${PROJECT_SOURCE_DIR}/CMake/addMPI.cmake)
@@ -72,6 +73,11 @@ IF(FOUND_LIBXML2)
   LINK_LIBRARIES(${LIBXML2_LIBRARY})
   SET(HAVE_LIBXML2 1)
 ENDIF(FOUND_LIBXML2)
+
+IF(FOUND_BOOST)
+  SET(HAVE_LIBBOOST 1)
+  INCLUDE_DIRECTORIES(${BOOST_INCLUDE_DIR})
+ENDIF(FOUND_BOOST)
 
 IF(FOUND_HDF5)
   SET(HAVE_LIBHDF5 1)
