@@ -32,7 +32,7 @@ namespace ohmmsqmc {
     BasisSet(NULL),
     rbuilder(NULL)
   { 
-    int d_ie = DistanceTable::add(ions,els);
+    //int d_ie = DistanceTable::add(ions,els);
     d_table = DistanceTable::getTable(DistanceTable::add(ions,els));
 
     nlms_id["n"] = q_n;
