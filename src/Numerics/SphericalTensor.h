@@ -3,15 +3,27 @@
 
 /** SphericalTensor
  * @author Jeongnim Kim, John Shumway and J. Vincent
- * @brief evaluates the Real Spherical Harmonics for Gaussian Orbitals
- \f[
- r^l \Re (Y_l^m(\theta,\phi)). 
- \f]
+ * @brief evaluates the Real Spherical Harmonics 
+ \f[ r^l (S_l^m(x,y,z). \f]
  *
+ Here we use the default convention (for addsign=false):
+ \f[ r^l S_l^m = \sqrt{2}\Re(r^l Y_l^{|m|}), m > 0 \f] 
+ *
+ \f[ r^l S_l^m = r^l Y_l^0, m = 0 \f] 
+ *
+ \f[ r^l S_l^m = \sqrt{2}\Im(r^l Y_l^{|m|}), m < 0 \f] 
+ 
+ For (addsign=true):
+ \f[ r^l S_l^m = (-1)^m\sqrt{2}\Re(r^l Y_l^{|m|}), m > 0 \f] 
+ *
+ \f[ r^l S_l^m =  r^l Y_l^0, m = 0 \f] 
+ *
+ \f[ r^l  S_l^m = (-1)^m\sqrt{2}\Im(r^l Y_l^{|m|}), m < 0 \f] 
+ 
  The template parameter T is the value_type, e.g. double, and the 
  template parameter Point_t is a vector type which must have the
  operator[] defined.
- */
+*/
 template<class T, class Point_t>
 class SphericalTensor {
 public : 
@@ -23,27 +35,27 @@ public :
   ///constructor
   explicit SphericalTensor(const int lmax, bool addsign=false);
 
-  ///makes a table of \f$ r^{l} \Re (Y_l^m) \f$ and their gradients up to lmax.
+  ///makes a table of \f$ r^l S_l^m \f$ and their gradients up to lmax.
   void evaluate(const Point_t& p);     
 
-  ///makes a table of \f$ r^{l} \Re (Y_l^m) \f$ and their gradients up to lmax.
+  ///makes a table of \f$ r^l S_l^m \f$ and their gradients up to lmax.
   void evaluateTest(const Point_t& p);     
 
   ///returns the index \f$ l(l+1)+m \f$
   inline int index(int l, int m) const {return (l*(l+1))+m;}
 
-  ///returns the value of \f$ r^{l} \Re (Y_l^m) \f$ given l,m
+  ///returns the value of \f$ r^l S_l^m \f$ given \f$ (l,m) \f$
   inline value_type getYlm(int l, int m) const
    {return Ylm[index(l,m)];}
 
-  ///returns the gradient of \f$ r^{l} \Re (Y_l^m) \f$ given l,m
+  ///returns the gradient of \f$ r^l S_l^m \f$ given \f$ (l,m) \f$
   inline Point_t getGradYlm(int l, int m) const
   {return gradYlm[index(l,m)];}
 
-  ///returns the value of \f$ r^{l} \Re (Y_l^m) \f$ given index lm
+  ///returns the value of \f$ r^l S_l^m \f$ given \f$ (l,m) \f$
   inline value_type getYlm(int lm) const {return Ylm[lm];}
 
-  ///returns the gradient of \f$ r^{l} \Re (Y_l^m) \f$ given index lm
+  ///returns the gradient of \f$ r^l S_l^m \f$ given \f$ (l,m) \f$
   inline Point_t getGradYlm(int lm) const {return gradYlm[lm];}
 
   inline int size() const { return Ylm.size();}
