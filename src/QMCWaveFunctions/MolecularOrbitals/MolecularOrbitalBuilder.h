@@ -50,6 +50,8 @@ namespace ohmmsqmc {
       OrbitalBuilderBase(a), Ions(ions), Els(els){ }
   
     bool put(xmlNodePtr cur);
+    bool putSpecial(xmlNodePtr cur);
+    bool putOpen(const string& fname_in);
   };
 
 
