@@ -73,9 +73,11 @@ namespace ohmmsqmc {
       }
     }
 
-    //ofstream fout("CoreCoreDipole.dat");
-    //fout << CoreCoreDipole << endl;
-    //fout.close();
+    RealType corecore(0.0);
+    for(int iat=0; iat<nCenters; iat++) {
+      if(CoreCoef[iat]) corecore+=dot(CoreCoreDipole[iat],CoreCoreDipole[iat]);
+    }
+    LOGMSG("Core-Core Dipole = " << C*corecore);
   }
     
   GeCorePolPotential::~GeCorePolPotential() { }
