@@ -1,11 +1,10 @@
-#include "Optimize/Minimize.h"
 #include <stdio.h>
 #include <gsl/gsl_multimin.h>
 #include <gsl/gsl_vector.h>
 #include <vector>
 #include <iostream>
-
-using namespace std;
+#include "Optimize/Minimize.h"
+//using namespace std;
 
 double MCost (const gsl_vector *v, void *params)
 {

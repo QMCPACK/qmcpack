@@ -2,6 +2,7 @@
 #define MINIMIZE_H
 
 //#include "../Blitz.h"
+using namespace std;
 #include <blitz/array.h>
 class MinimizeFunction
 {
