@@ -98,6 +98,11 @@ namespace ohmmsqmc {
       myTable = atable;
     }
 
+    ///reset the internal values
+    inline void reset() { 
+      for(int nl=0; nl<Rnl.size(); nl++) Rnl[nl]->reset();
+    }
+
 
     /**@ingroup particlebyparticle
      */
