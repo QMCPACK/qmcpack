@@ -190,8 +190,8 @@ namespace ohmmsqmc {
     } else if(ptype == "cpp") {
       H.add(new CoulombPotentialAA(el), "ElecElec");
       H.add(new LocalPPotential(ion,el), "PseudoPot");
+      H.add(new GeCorePolPotential(ion,el), "GeCPP");
       //WARNING: GeCPP is HARD CODED!!!!!!
-      H.add(new CorePolPotential(ion,el), "GeCPP");
       if(ion.getTotalNum()>1) 
 	H.add(new IonIonPotential(ion),"IonIon");
     } else if(ptype == "polarization"){
