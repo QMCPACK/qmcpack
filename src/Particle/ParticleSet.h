@@ -1,4 +1,4 @@
-//////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
 // (c) Copyright 2003  by Jeongnim Kim
 //////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////
@@ -20,9 +20,13 @@
 #include "Configuration.h"
 #include "Utilities/OhmmsObject.h"
 #include "Utilities/SpeciesSet.h"
+#include "Particle/Walker.h"
 
 namespace ohmmsqmc {
-  
+
+  ///forward declaration of DistanceTableData
+  class DistanceTableData;  
+
   /** Specialized paritlce class for atomistic simulations
    *
    *Derived from QMCTraits, ParticleBase<PtclOnLatticeTraits> and OhmmsElementBase.
@@ -36,62 +40,81 @@ namespace ohmmsqmc {
     public ParticleBase<PtclOnLatticeTraits>
   {
    
- public:
-   
-   typedef ParticleAttrib<GradType>  ParticleGradient_t;
-   typedef ParticleAttrib<ValueType> ParticleLaplacian_t;
+  public:
+    
+    typedef ParticleAttrib<GradType>  ParticleGradient_t;
+    typedef ParticleAttrib<ValueType> ParticleLaplacian_t;
+    typedef Walker<RealType,ParticlePos_t> Walker_t;
+    typedef Walker_t::PropertyContainer_t  PropertyContainer_t;
+    
+    ///the position of the active particle for particle-by-particle moves
+    SingleParticlePos_t activePos;
 
-   ///gradients of the particles
-   ParticleGradient_t G;
-   
-   ///laplacians of the particles
-   ParticleLaplacian_t L;
-   
-   ///SpeciesSet of particles
-   SpeciesSet Species;
-   
-   ///default constructor
-   ParticleSet();
-   
-   ///default destructor
-   virtual ~ParticleSet();
+    ///the indexp of the active particle for particle-by-particle moves
+    Index_t             activePtcl;
 
-//    /**function to create N-particle system 
-//      *@param n an integer array containing the number of particles belonging
-//      *to each subgroup.
-//      *@brief Allocate the ParticleAttributes, such as R, G, L. 
-//      *The size of n is the number of distinct subgroups. SubPtcl class
-//      *is used to efficient evaluate the subgroup properties.
-//      */
-//    template<class IV>
-//     void create(IV n) {
-//       SubPtcl.resize(n.size()+1);
-//       SubPtcl[0] = 0;
-//       for(int is=0; is<n.size(); is++) SubPtcl[is+1] = SubPtcl[is]+n[is];
-//       makeGroups();
-//     }
+    ///gradients of the particles
+    ParticleGradient_t G;
+    
+    ///laplacians of the particles
+    ParticleLaplacian_t L;
    
-   ///write to a ostream
-   bool get(ostream& ) const;
-   
-   ///read from istream
-   bool put(istream& );
-   
-   ///reset member data
-   void reset();
-   
-   ///initialize ParticleSet from xmlNode
-   bool put(xmlNodePtr cur);
+    ///SpeciesSet of particles
+    SpeciesSet Species;
+    
+    ///default constructor
+    ParticleSet();
+    
+    ///default destructor
+    virtual ~ParticleSet();
+    
+    ///write to a ostream
+    bool get(ostream& ) const;
+    
+    ///read from istream
+    bool put(istream& );
+    
+    ///reset member data
+    void reset();
+    
+    ///initialize ParticleSet from xmlNode
+    bool put(xmlNodePtr cur);
+    
+    /**update the internal data
+     *@param iflag index for the update mode
+     */
+    void update(int iflag=0);
 
-   void update(int i=0);
+    /**load a Walker_t to the current ParticleSet
+     *@param awalker the reference to the walker to be loaded
+     */
+    void loadWalker(Walker_t& awalker);
 
-  ///return the id
-  inline int tag() const { return ObjectTag;}
+    /**move a particle
+     *@param iat the index of the particle to be moved
+     *@param newpos new position of the iat-th particle
+     */
+    void makeMove(int iat, const SingleParticlePos_t& newpos);
 
- protected:
+    /**accept the move
+     *@param iat the index of the particle whose position and other attributes to be updated
+     */
+    void acceptMove(int iat);
 
-   int ObjectTag;
-   static int PtclObjectCounter;
+    ///return the id
+    inline int tag() const { return ObjectTag;}
+
+    void registerData(Walker_t& awalker, PooledData<RealType>& buf);
+    void getData(PooledData<RealType>& buf);
+    void putData(PooledData<RealType>& buf);
+    
+  protected:
+    ///id of this object    
+    int ObjectTag;
+    ///the number of particle objects
+    static int PtclObjectCounter;
+    ///distance tables that need to be updated by moving this ParticleSet
+    vector<DistanceTableData*> DistTables;
   };
 }
 #endif

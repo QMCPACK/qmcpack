@@ -27,7 +27,6 @@ namespace ohmmsqmc {
   struct SymmetricDTD: public DistanceTableData{
  
     //blitz::Array<IndexType,2> IJ;
-    std::vector<IndexType> IJ;
     ///constructor using source and target arrays
     SymmetricDTD(const ParticleSet& source, const ParticleSet& target):
       DistanceTableData(source,target){ }
@@ -111,45 +110,48 @@ namespace ohmmsqmc {
       }
     }
 
-//     inline void select(const ParticleSet& P, IndexType iat) {    
-//     }
-//     inline void update(int iat) {
-//       for(int j=0; j<iat; j++) {
-// 	int ij = IJ(iat,j);
-// 	dr(0,ij) = -drat(j);
-// 	r(0,ij) = rat(j);
-// 	rinv(0,ij) = ratinv(j);
-//       }
-//       for(int j=iat+1, ij=M[iat]; j<rat.size(); j++,ij++) {
-// 	dr(0,ij) = drat(j);
-// 	r(0,ij) = rat(j);
-// 	rinv(0,ij) = ratinv(j);
-//       }
-//     }
-
-    inline void update(const ParticleSet& P, IndexType iat) {
-
-      PosType Rnew = P.R[iat];
-      int nn = 0;
-      for(int i=0; i<iat; i++) {
-	for(int j=i+1; j<N[VisitorIndex]; j++, nn++) {
-	  if(j == iat) {
-	    PosType drij = Rnew-P.R[i];
-	    //value_type sep = sqrt(dot(drij,drij));
-	    RealType sep = sqrt(BC::apply(Origin.Lattice,drij));
-	    r_m[nn] = sep;
-	    rinv_m[nn] = 1.0/sep;      
-	    dr_m[nn] = drij;
-	  }
-	}
-      }
-      for(int nn=M[iat]; nn<M[iat+1]; nn++) {
-	PosType drij = P.R[J[nn]]-Rnew;
-	//value_type sep = sqrt(dot(drij,drij));
+    ///evaluate the temporary pair relations
+    inline void move(const ParticleSet& P, const PosType& rnew, IndexType jat) {
+      activePtcl=jat;
+      Temp[jat].reset();
+      for(int iat=0; iat<jat; iat++) {
+	int loc = IJ[iat*N[SourceIndex]+jat];
+	PosType drij = rnew - P.R[iat];
 	RealType sep = sqrt(BC::apply(Origin.Lattice,drij));
-	r_m[nn] = sep;
-	rinv_m[nn] = 1.0/sep;      
-	dr_m[nn] = drij;
+	Temp[iat].r1=sep;
+	Temp[iat].rinv1=1.0/sep;
+	Temp[iat].dr1=drij;
+	Temp[iat].r0=r_m[loc];
+	Temp[iat].rinv0=rinv_m[loc];
+	Temp[iat].dr0=dr_m[loc];
+      }
+      for(int iat=jat+1,nn=jat; iat< N[SourceIndex]; iat++) {
+	int loc = IJ[iat*N[SourceIndex]+jat];
+	PosType drij = rnew - P.R[iat];
+	RealType sep = sqrt(BC::apply(Origin.Lattice,drij));
+	Temp[iat].r1=sep;
+	Temp[iat].rinv1=1.0/sep;
+	Temp[iat].dr1=drij;
+	Temp[iat].r0=r_m[loc];
+	Temp[iat].rinv0=rinv_m[loc];
+	Temp[iat].dr0=-1.0*dr_m[loc];
+      }
+    }
+
+    ///update the stripe for jat-th particle
+    inline void update(IndexType jat) {
+      int nn=jat;
+      for(int iat=0;iat<jat; iat++,nn+=N[SourceIndex]) {
+	int loc =IJ[nn];
+	r_m[loc] = Temp[iat].r1;
+	rinv_m[loc]= Temp[iat].rinv1;
+	dr_m[loc]= Temp[iat].dr1;
+      }
+      for(int iat=jat+1; iat< N[SourceIndex]; iat++) {
+	int loc =IJ[(nn+=N[SourceIndex])];
+	r_m[loc] = Temp[iat].r1;
+	rinv_m[loc]= Temp[iat].rinv1;
+        dr_m[loc]= -1.0*Temp[iat].dr1;
       }
     }
   };

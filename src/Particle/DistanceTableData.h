@@ -24,6 +24,15 @@
 
 namespace ohmmsqmc {
 
+  template<class T, unsigned N>
+  struct TempDisplacement {
+    T r0,r1,rinv0,rinv1;
+    TinyVector<T,N> dr0, dr1;
+    inline TempDisplacement() {}
+    inline void reset() {r0=T();r1=T();}
+  };
+
+
   /** Class to store pair data between two ParticleSets.
    * @author Jeongnim Kim 
    * @brief DistanceTableData is determined by Source and Target.
@@ -31,7 +40,6 @@ namespace ohmmsqmc {
   class DistanceTableData: public QMCTraits {
 
   public:
-
     
     /**enum for index ordering and storage. 
      *@brief Equivalent to using three-dimensional array with (i,j,k)
@@ -41,10 +49,13 @@ namespace ohmmsqmc {
      */
     enum {WalkerIndex=0, SourceIndex, VisitorIndex};
 
-    typedef std::vector<IndexType>  IndexVectorType;
+    typedef std::vector<IndexType>       IndexVectorType;
+    typedef TempDisplacement<RealType,3> TempDistType;
 
     ///size of indicies
     TinyVector<IndexType,3> N;
+
+    IndexType activePtcl;
 
     /**@defgroup 
      * an auxiliary array to handle connections or nearest neighbors
@@ -60,13 +71,17 @@ namespace ohmmsqmc {
      */ 
     IndexVectorType J;
 
-
     /*@brief PairID.size() = M[N[SourceIndex]]
      * PairID[nn] = the index of the connected point for the i-th point 
      * satisfying  \f$PairIDM[i] <= nn < PairID[i+i]\f$
      */ 
     IndexVectorType PairID;
     /** @}*/
+
+    /*@brief Locator of the pair  */
+    std::vector<IndexType> IJ;
+
+    std::vector<TempDistType> Temp;
 
     ///constructor using source and target ParticleSet
     DistanceTableData(const ParticleSet& source, const ParticleSet& target)
@@ -118,12 +133,13 @@ namespace ohmmsqmc {
     ///evaluate the Distance Table using only with position array
     virtual void evaluate(const ParticleSet& P) = 0;
 
-    virtual void update(const ParticleSet& P, IndexType iat) = 0;
+    ///evaluate the temporary pair relations
+    virtual void move(const ParticleSet& P, const PosType& rnew, IndexType jat) =0;
+
+    ///update the distance table by the pair relations
+    virtual void update(IndexType jat) = 0;
 
     virtual void create(int walkers) = 0;
-
-    //     virtual void select(int iat) =0;
-    //     virtual void update(int iat) =0;
 
     inline void registerData(PooledData<RealType>& buf) {
       RealType* first = &(dr_m[0][0]);
@@ -183,6 +199,7 @@ namespace ohmmsqmc {
 	dr_m.resize(npairs);
 	r_m.resize(npairs);
 	rinv_m.resize(npairs);
+	Temp.resize(N[SourceIndex]);
       } else {
 #ifdef USE_FASTWALKER
 	dr2_m.resize(npairs,nw);
@@ -195,7 +212,6 @@ namespace ohmmsqmc {
 #endif
       }
     }
-
 
   private:
     

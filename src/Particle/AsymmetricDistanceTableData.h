@@ -113,18 +113,28 @@ namespace ohmmsqmc {
       }
     }
 
-
-    inline void update(const ParticleSet& P, IndexType iat) {
-      IndexType nn = iat;
-      for(int i=0; i<N[SourceIndex]; i++, nn+=N[VisitorIndex]) {
-	PosType drij = P.R[iat]-Origin.R[i];
+    ///evaluate the temporary pair relations
+    inline void move(const ParticleSet& P, const PosType& rnew, IndexType jat) {
+      activePtcl=jat;
+      for(int iat=0, loc=jat; iat<N[SourceIndex]; iat++,loc+=N[VisitorIndex]) {
+	PosType drij = rnew-Origin.R[iat];
 	RealType sep = sqrt(BC::apply(Origin.Lattice,drij));
-	r_m[nn]    = sep;
-	rinv_m[nn] = 1.0/sep;
-	dr_m[nn]  = drij;
+	Temp[iat].r1=sep;
+	Temp[iat].rinv1=1.0/sep;
+	Temp[iat].dr1=drij;
+	Temp[iat].r0=r_m[loc];
+	Temp[iat].rinv0=rinv_m[loc];
+	Temp[iat].dr0=dr_m[loc];
       }
     }
 
+    inline void update(IndexType jat) {
+      for(int iat=0,loc=jat; iat<N[SourceIndex]; iat++, loc += N[VisitorIndex]) {
+	r_m[loc]=Temp[iat].r1;
+	rinv_m[loc]=Temp[iat].rinv1;
+	dr_m[loc]=Temp[iat].dr1;
+      }
+    }
   };
 
 }

@@ -110,6 +110,14 @@ DistanceTable::add(const ParticleSet& s, const ParticleSet& t,
   }
 }
 
+void 
+DistanceTable::getTables(int ptag, vector<DistanceTableData*>&  tables) {
+  ///add the table if ptag matches to the source or visitor
+  for(int i=0; i<TableList.size(); i++) 
+    if(ptag == VisitorID[i] || ptag ==  TableList[i]->origin().tag()) 
+      tables.push_back(TableList[i]);
+}
+
 void DistanceTable::create(int walkers) {
   for(int i=0; i<TableList.size(); i++) TableList[i]->create(walkers);
 }
@@ -118,12 +126,10 @@ void DistanceTable::reset() {
   for(int i=0; i<Updated.size(); i++) Updated[i] = false;
 }
 
-
 void DistanceTable::update(ParticleSet& t) {
   for(int i=0; i< TableList.size(); i++) 
     if(t.tag() == VisitorID[i]) TableList[i]->evaluate(t);
 }
-
 
 void DistanceTable::update(WalkerSetRef& w) {
   int id = w.tag();

@@ -17,7 +17,7 @@
 #include <numeric>
 #include <iomanip>
 #include "Particle/ParticleSet.h"
-
+#include "Particle/DistanceTableData.h"
 namespace ohmmsqmc {
 
   int  ParticleSet::PtclObjectCounter = 0;
@@ -60,9 +60,68 @@ namespace ohmmsqmc {
     return true;
   }
 
-  void ParticleSet::update(int iflag) {
-
+  void ParticleSet::update(int iflag) { 
+    for(int i=0; i< DistTables.size(); i++) DistTables[i]->evaluate(*this);
   }  
+
+  void ParticleSet::loadWalker(Walker_t& awalker) {
+    R = awalker.R;
+    for(int i=0; i< DistTables.size(); i++) {
+      DistTables[i]->evaluate(*this);
+    }
+  }
+
+  void ParticleSet::registerData(Walker_t& awalker, PooledData<RealType>& buf) {
+
+    R = awalker.R;
+    for(int i=0; i< DistTables.size(); i++) {
+      DistTables[i]->evaluate(*this);
+      DistTables[i]->registerData(buf);
+    }
+  }
+  
+  void ParticleSet::getData(PooledData<RealType>& buf) {
+    for(int i=0; i< DistTables.size(); i++) {
+      DistTables[i]->getData(buf);
+    }
+  }
+  
+  void ParticleSet::putData(PooledData<RealType>& buf) {
+    for(int i=0; i< DistTables.size(); i++) {
+      DistTables[i]->putData(buf);
+    }
+  }
+
+  /** move a particle iat
+   *@param iat the index of the particle to be moved
+   *@param newpos the new position
+   *
+   *Update activePtcl index and activePos position for the proposed move.
+   *Evaluate the related distance table data DistanceTableData::Temp.
+   */
+  void ParticleSet::makeMove(int iat, const SingleParticlePos_t& newpos) {
+    activePtcl=iat;
+    activePos=newpos;
+    for(int i=0; i< DistTables.size(); i++) {
+      DistTables[i]->move(*this,newpos,iat);
+    }
+  }
+
+  /** update the particle attribute by the proposed move
+   *@param iat the particle index
+   *
+   *When the activePtcl is equal to iat, overwrite the position and update the
+   *content of the distance tables.
+   */
+  void ParticleSet::acceptMove(int iat) {
+    if(iat == activePtcl) {
+      R[iat]=activePos; 
+      for(int i=0; i< DistTables.size(); i++) {
+	DistTables[i]->update(iat);
+      }
+    }
+  }
+
 }
 
 /***************************************************************************

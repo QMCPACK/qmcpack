@@ -41,6 +41,7 @@ namespace ohmmsqmc {
     
     ///derive the real type from ParticleSet::Scalar_t
     typedef ParticleSet::Scalar_t RealType;
+    typedef ParticleSet::SingleParticlePos_t PosType;
 
     ///add a named DistanceTableData_t of Symmectric type
     static int add(const ParticleSet& s, const char* aname = NULL);
@@ -68,6 +69,12 @@ namespace ohmmsqmc {
       else 
         return TableList[(*it).second];
     }
+
+    /** select DistanceTableData objects whose visitor tag matches ptag
+     *@param ptag the tag of a ParticleSet
+     *@param tables The objects related to the particle set
+     */
+    static void getTables(int ptag, vector<DistanceTableData*>& tables);
 
     ///reset the internal values, mainly Updated flags to prepare new series
     static void reset();

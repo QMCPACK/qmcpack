@@ -17,7 +17,6 @@
 #ifndef OHMMS_QMC_MCWALKERCONFIGURATION_H
 #define OHMMS_QMC_MCWALKERCONFIGURATION_H
 #include "Particle/ParticleSet.h"
-#include "Particle/Walker.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include <list>
 namespace ohmmsqmc {
@@ -44,8 +43,8 @@ namespace ohmmsqmc {
 	  Update_Particle ///move a particle by particle
     };
     
-    typedef Walker<RealType,ParticlePos_t> Walker_t;
-    typedef Walker_t::PropertyContainer_t  PropertyContainer_t;
+    //typedef Walker<RealType,ParticlePos_t> Walker_t;
+    //typedef Walker_t::PropertyContainer_t  PropertyContainer_t;
     typedef vector<Walker_t*>              WalkerList_t;
     typedef WalkerList_t::iterator         iterator;
     typedef WalkerList_t::const_iterator   const_iterator;
@@ -101,8 +100,7 @@ namespace ohmmsqmc {
     inline const_iterator theWalker() const { return WorkingWalker;}
     /**@}*/
 
-    void setUpdateMode(int updatemode) { UpdateMode = updatemode;}
-
+    void setUpdateMode(int updatemode);
 
     inline void setLocalEnergy(RealType e) { LocalEnergy = e;}
     inline RealType getLocalEnergy() const {return LocalEnergy;}

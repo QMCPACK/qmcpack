@@ -16,6 +16,7 @@
 // -*- C++ -*-
 #include "Utilities/OhmmsInfo.h"
 #include "Particle/MCWalkerConfiguration.h"
+#include "Particle/DistanceTable.h"
 using namespace ohmmsqmc;
 #include "ParticleBase/RandomSeqGenerator.h"
 
@@ -198,6 +199,20 @@ int MCWalkerConfiguration::branch(int maxcopy, int Nmax, int Nmin) {
 
   return iw;
 }
+
+void MCWalkerConfiguration::setUpdateMode(int updatemode) { 
+
+  ///get the tables for which this particle set is the visitor or source
+  if(DistTables.empty())  DistanceTable::getTables(ObjectTag,DistTables);
+
+  UpdateMode = updatemode;
+  if(UpdateMode == Update_All) {
+    DistanceTable::create(WalkerList.size());
+  } else {
+    DistanceTable::create(1);
+  }
+}
+
 
 /***************************************************************************
  * $RCSfile$   $Author$
