@@ -16,8 +16,8 @@
  all the orbitals with the same \f$ (n,l) \f$ are grouped together.
  Each orbital is assigned an id, with the possibility of several
  orbitals sharing the same id if they are restricted. 
- *If a new orbital is not found, adds the orbital to the list and completes the internal
- *maps.
+ *If a new orbital is not found, adds the orbital to the list and 
+ completes the internal maps.
  */
 template<class GT>
 bool YlmRnlSet<GT>::add(int n, int l, int m, int s, value_type occ) {
@@ -43,15 +43,15 @@ bool YlmRnlSet<GT>::add(int n, int l, int m, int s, value_type occ) {
       S.push_back(s);
       Occ.push_back(occ);
     } else {
-      //if an orbital of the same restriction type has already
-      //been added, add the orbital such that all the 
-      //orbitals with the same restriction type are grouped 
-      //together
+      /*if an orbital of the same restriction type has already
+	been added, add the orbital such that all the 
+	orbitals with the same restriction type are grouped 
+	together */
       //increment the id counter 
       IDcount[(*it).second]++;
 
-      //locate the position in the array where the orbital 
-      //will be added
+      /*locate the position in the array where the orbital 
+	will be added */
       vector<int> IDmap(IDcount.size());
       IDmap[0] = 0;
       int sum = 0;
@@ -120,12 +120,14 @@ bool YlmRnlSet<GT>::add(int n, int l, int m, int s, value_type occ) {
 }
 
 /**
- * \param norb the number of orbitals
- * \brief Restrict the wavefunction such that orbitals 
- with the same quantum numbers, such as \f$ (n,l), \f$ 
- are idential.  What this function does is assign the 
- average value to all the orbitals that are restricted 
- to be the same. 
+ *@brief Restrict the wavefunction. 
+ *
+ Normally each orbital \f$ \psi_i \f$ of the wavefunction
+ has its own unique potential, but we want to restrict
+ the potential to be the same for orbitals with the same 
+ quantum numbers, such as \f$ (n,l) \f$.  What this function 
+ does is assign the average potential to all the orbitals that
+ are restricted to be the same. 
 */
 
 template<class GT>
