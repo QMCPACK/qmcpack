@@ -329,7 +329,6 @@ namespace ohmmsqmc {
 	MCWalkerConfiguration::iterator it(W.begin()); 
 	MCWalkerConfiguration::iterator it_end(W.end()); 
         int nat = W.getTotalNum();
-        cout << "Reading " << nat << " particles " << endl;
         while(it != it_end) {
 	  W.R = (*it)->R;
           WalkerData* awalker=new WalkerData(nat);

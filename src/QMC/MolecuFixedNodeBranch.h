@@ -22,6 +22,7 @@
 
 #include <deque>
 #include <algorithm>
+#include <numeric>
 #include "OhmmsData/ParameterSet.h"
 
 namespace ohmmsqmc {
@@ -48,12 +49,17 @@ namespace ohmmsqmc {
   class MolecuFixedNodeBranch {
 
   public:
+
     ///the timestep
     T Tau;
     ///feedback parameter to control the population
     T Feed;
     ///energy offset to control branching
     T E_T;
+
+    ///Feed*log(N)
+    T logN;
+
     ///ideal population
     int Nideal;
     ///maximum population
@@ -64,30 +70,25 @@ namespace ohmmsqmc {
     ///maximum copies of a walker
     int MaxCopy;
 
-    //determines when to branch
-    //int Stride;
-    ///container to store old values of e_ref
-    std::deque<T> Eg;
     ///size of container Eg
-    int size;
+    int EgBufferSize;
+
     ///counts the number of times update has been called
     int Counter;
 
-    ParameterSet m_param;
+    int InFeed;
+
+    ///container to store old values of e_ref
+    std::deque<T> Eg;
 
     ///Constructor
     MolecuFixedNodeBranch(T tau, int nideal): 
       Tau(tau), E_T(0.0), Nideal(nideal), 
-      size(100), Counter(0), MaxCopy(10) {
+      EgBufferSize(100), Counter(0), MaxCopy(10) {
       //feed = 1.0/(50.0*tau); 
-      Feed = 50.0;
-      Nmax = 2*nideal;
-      Nmin = static_cast<int>(0.5*nideal);
-      Eg.resize(size);
-      for(int i=0; i<Eg.size(); i++) Eg[i] = 0.0; 
-      m_param.add(E_T,"en_ref","AU");
-      m_param.add(Feed,"num_gen","none");
-      m_param.add(MaxCopy,"max_copy","none");
+      InFeed = 50;
+      Eg.resize(EgBufferSize);
+      for(int i=0; i<EgBufferSize; i++) Eg[i] = 0.0; 
     }
     
     ///return true if the nodal surface is crossed
@@ -102,7 +103,7 @@ namespace ohmmsqmc {
      \f[G_{branch} = \exp(-\tau \left[(E_L(R)+E_L(R'))/2-E_T\right])\f]
      *@note Use the rejection probability \f$q\f$ to limit \f$G_{branch}\f$
      \f[ G_{branch} = \min \left(\frac{1}{2q},G_{branch}\right). \f]
-   */
+     */
     inline T branchGF(T tau, T emixed, T reject) const { 
       return exp(-tau*(emixed-E_T));
       //return min(0.5/(reject+1e-12),exp(-tau*(emix-E_T)));
@@ -111,7 +112,7 @@ namespace ohmmsqmc {
     ///set \f$ <E_G> = eg \f$
     inline void setEguess(T eg){
       E_T = eg;
-      for(int i=0; i<Eg.size(); i++) Eg[i] = eg;
+      for(int i=0; i<EgBufferSize; i++) Eg[i] = eg;
     } 
 
 
@@ -122,56 +123,6 @@ namespace ohmmsqmc {
      */
     inline int branch(int iter, MCWalkerConfiguration& w) {
       return w.branch(10,Nmax,Nmin);
-//       MCWalkerConfiguration::iterator it = w.begin();
-//       int iw=0, nw = w.getActiveWalkers();
-
-//       while(iw < nw && it != w.end()) {
-
-// 	//limit maximun number of copies to 10
-// 	//all copies are added at the end of the list
-// 	int ncopy = min(static_cast<int>((*it)->Properties(MULTIPLICITY)),10);
-// 	(*it)->Properties(WEIGHT) = 1.0;
-// 	(*it)->Properties(MULTIPLICITY) = 1.0;
-// 	if(ncopy == 0) {
-// 	  it = w.destroyWalker(it);
-// 	} else {
-// 	  if(ncopy>1) {
-// 	    w.copyWalker(it,ncopy-1);
-// 	  }
-// 	  it++;
-// 	}
-// 	iw++;
-//       }
-
-//       int nwalkers = w.getActiveWalkers();
-//       if (nwalkers > Nmax){
-// 	/*if too many walkers, kill until the population is 90%
-// 	  of Nmax*/
-// 	//ERRORMSG("Too many walkers at step " << iter)
-// 	int nsubtract =  nwalkers-static_cast<int>(0.9*Nmax);
-// 	MCWalkerConfiguration::iterator itend = w.begin();
-// 	for(int i=0; i < nsubtract; i++) itend++;
-// 	w.destroyWalker(w.begin(), itend);
-//       } else if(nwalkers < Nmin) {
-// 	/*if too few walkers, copy until the population is 10%
-// 	  more than Nmin*/
-// 	it = w.begin();
-// 	int nadd = static_cast<int>(Nmin*1.1)-nwalkers;
-// 	if(nadd < nwalkers){
-// 	  int i=0;
-// 	  while(i<nadd){
-// 	    //ERRORMSG("Too few walkers at step " << iter)
-// 	    w.copyWalker(it,1);
-// 	    it++; i++;
-// 	  }
-// 	} else {
-// 	  cerr << "Too few walkers to copy!" << endl;
-// 	  exit(-1);
-// 	}
-//       }
-
-//       return w.getActiveWalkers();
-
     }
 
     /**
@@ -181,20 +132,18 @@ namespace ohmmsqmc {
      *@brief Update the energy offset
      \f[ E_T = <E_G> - feed \log \(\frac{P(t)}{P_0}\) \f]
     */
-    inline T update(T pop, T eavg) {
+    inline T update(T pop_now, T eavg) {
       Counter++;
       //pop off the last value of Eg
       Eg.pop_back();
       //insert a new value at the beggining of the deque
       Eg.push_front(eavg);
-      T Esum = 0.0;
+      int mlimit = std::min(Counter/2+1,EgBufferSize);
+      T Esum = std::accumulate(Eg.begin(),Eg.begin()+mlimit,T());
       //calculate the average
       //average over the last half of the simulation
-      int limit = min(Counter/2+1,size);
-      for(int i=0; i<limit; i++) Esum += Eg[i];
-      T egavg = Esum/static_cast<T>(limit);
-      E_T = egavg - Feed*log(static_cast<T>(pop)/static_cast<T>(Nideal));
-      // return egavg;
+      //for(int i=0; i<limit; i++) Esum = Eg[i];
+      E_T = Esum/static_cast<T>(mlimit)-Feed*log(static_cast<T>(pop_now))+logN;
       return E_T;
     }
 
@@ -210,39 +159,77 @@ namespace ohmmsqmc {
      <\ul>
     */
     bool put(xmlNodePtr cur, OhmmsInform *LogOut){
-//       cur=cur->children;
-//       int n;
-//       while(cur != NULL) {
-// 	string cname((const char*)(cur->name));
-// 	if(cname == "parameter") {
-// 	  xmlChar* att= xmlGetProp(cur,(const xmlChar*)"name");
-// 	  if(att) {
-// 	    string pname((const char*)att);
-// 	    if(pname == "en_ref") {
-// 	      T eg;
-// 	      putContent(eg,cur);
-// 	      for(int i=0; i<Eg.size(); i++) Eg[i] = eg;
-// 	      E_T = eg;
-// 	    } else if(pname == "num_gen") {
-// 	      putContent(n,cur);
-// 	      feed = 1.0/(static_cast<T>(n)*Tau);
-// 	    }
-// 	  }
-// 	}
-// 	cur=cur->next;
-//       }
+      ParameterSet m_param;
+      m_param.add(E_T,"en_ref","AU");
+      m_param.add(InFeed,"num_gen","int");
+      m_param.add(MaxCopy,"max_copy","int");
+      m_param.add(Nideal,"target_walkers","int");
       m_param.put(cur);
-      for(int i=0; i<Eg.size(); i++) Eg[i] = E_T;
-
-      XMLReport("Branching: Referece energy = " << Eg[0])
-      XMLReport("MaxCopy for branching = " << MaxCopy)
+      for(int i=0; i<EgBufferSize; i++) Eg[i] = E_T;
+      reset();
       LogOut->getStream() << "reference energy = " << Eg[0] << endl;
-      XMLReport("Branching: Number of generations = " << Feed)
       LogOut->getStream() << "number of generations = " << Feed << endl;
-      Feed = 1.0/(Feed*Tau);
-      XMLReport("Branching: Feedback parameter = " << Feed)
       LogOut->getStream() << "feedback = " << Feed << endl;
       return true;
+    }
+
+    void reset() {
+      Nmax = 2*Nideal;
+      Nmin = static_cast<int>(Nideal/2);
+      Feed = 1.0/(static_cast<T>(InFeed)*Tau);
+      logN = Feed*log(static_cast<T>(Nideal));
+
+      XMLReport("Target walkers = " << Nideal)
+      XMLReport("Branching: Referece energy = " << Eg[0])
+      XMLReport("MaxCopy for branching = " << MaxCopy)
+      XMLReport("Branching: Number of generations = " << InFeed)
+      XMLReport("Branching: Feedback parameter = " << Feed)
+    }
+
+    void write(hid_t grp) {
+      hsize_t dim = static_cast<hsize_t>(EgBufferSize);
+      //vector<T> etrial(Eg.begin(),Eg.end());
+      hid_t dataspace  = H5Screate_simple(1, &dim, NULL);
+      hid_t dataset =  
+        H5Dcreate(grp, "TrialEnergies", H5T_NATIVE_DOUBLE, dataspace, H5P_DEFAULT);
+      hid_t ret = 
+        H5Dwrite(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT,&Eg[0]);
+      H5Dclose(dataset);
+      H5Sclose(dataspace);
+      //make a char array which contains the species names separated by space
+      std::stringstream s;
+      s << Nideal<< ' ' << InFeed << ' ' << Counter << ' ' << E_T << '\0';
+      dim = s.str().size();
+      dataspace = H5Screate_simple(1, &dim, NULL);
+      dataset = H5Dcreate(grp, "BranchParameters", H5T_NATIVE_CHAR, dataspace, H5P_DEFAULT);
+      ret =  H5Dwrite(dataset, H5T_NATIVE_CHAR, H5S_ALL, H5S_ALL, H5P_DEFAULT,s.str().c_str());
+      H5Dclose(dataset);
+      H5Sclose(dataspace);
+
+    }
+
+    void read(const string& aroot) {
+      string h5file(aroot);
+      h5file.append(".config.h5");
+      hid_t h_file =  H5Fopen(h5file.c_str(),H5F_ACC_RDWR,H5P_DEFAULT);
+      hid_t h_config = H5Gopen(h_file,"config_collection");
+      hsize_t dataset = H5Dopen(h_config, "TrialEnergies");
+      if(dataset) {
+        hsize_t ret = H5Dread(dataset, H5T_NATIVE_DOUBLE, 
+            H5S_ALL, H5S_ALL, H5P_DEFAULT, &Eg[0]);
+        H5Dclose(dataset);
+        char temp[256];
+        dataset = H5Dopen(h_config, "BranchParameters");
+        ret = H5Dread(dataset, H5T_NATIVE_CHAR, H5S_ALL, H5S_ALL, H5P_DEFAULT, temp);
+        H5Dclose(dataset);
+        std::istringstream s(temp);
+        s >> Nideal>>InFeed >>Counter >> E_T;
+        reset();
+        Counter = std::min(Counter,EgBufferSize);
+      }
+      H5Gclose(h_config);
+      H5Fclose(h_file);
+
     }
 
   private:

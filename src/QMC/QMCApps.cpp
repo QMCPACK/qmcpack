@@ -172,10 +172,12 @@ namespace ohmmsqmc {
 	  } else if(methodname == "dmc"){
 	    //H.remove("Flux");
 	    MolecuDMC dmc(el,Psi,H,cur);
+	    dmc.setBranchInfo(PrevConfigFile);
 	    dmc.setFileRoot(myProject.CurrentRoot());
 	    dmc.run();
 	  } else if(methodname == "dmc-ptcl"){
 	    DMCParticleByParticle dmc(el,Psi,H,cur);
+	    dmc.setBranchInfo(PrevConfigFile);
 	    dmc.setFileRoot(myProject.CurrentRoot());
 	    dmc.run();
 	  } else if(methodname == "optimize"){

@@ -37,11 +37,14 @@ namespace ohmmsqmc {
 					       TrialWaveFunction& psi, 
 					       QMCHamiltonian& h, 
 					       xmlNodePtr q): 
-    QMCDriver(w,psi,h,q) { 
+    QMCDriver(w,psi,h,q),BranchInfo("default") { 
     RootName = "dmc";
     QMCType ="dmc";
   }
   
+  void DMCParticleByParticle::setBranchInfo(const string& aname) {
+    BranchInfo = aname;
+  }
   bool DMCParticleByParticle::run() { 
 
     W.setUpdateMode(MCWalkerConfiguration::Update_Particle);
@@ -49,36 +52,41 @@ namespace ohmmsqmc {
 
     if(put(qmc_node)){
       
-	//set the data members to start a new run
-	// getReady();
-	int PopIndex, E_TIndex;
-	Estimators.resetReportSettings(RootName);
-	AcceptIndex = Estimators.addColumn("AcceptRatio");
-	PopIndex = Estimators.addColumn("Population");
-	E_TIndex = Estimators.addColumn("E_T");
-	Estimators.reportHeader();
-	
-	MCWalkerConfiguration::iterator it(W.begin()); 
-	MCWalkerConfiguration::iterator it_end(W.end()); 
-        while(it!=it_end) {
-          (*it)->Properties(WEIGHT) = 1.0;
-	  (*it)->Properties(MULTIPLICITY) = 1.0;
-          ++it;
-        }
-	
-	MolecuFixedNodeBranch<RealType> brancher(Tau,W.getActiveWalkers());
-	//initialize parameters for fixed-node branching
-	brancher.put(qmc_node,LogOut);
-	
-	/*if VMC/DMC directly preceded DMC (Counter > 0) then
-	  use the average value of the energy estimator for
-	  the reference energy of the brancher*/
-	if(Counter) {
-	  RealType e_ref = W.getLocalEnergy();
-	  LOGMSG("Overwriting the reference energy by the local energy " << e_ref)  
-   	  brancher.setEguess(e_ref);
-	}
+      //set the data members to start a new run
+      // getReady();
+      MolecuFixedNodeBranch<RealType> brancher(Tau,W.getActiveWalkers());
 
+      //initialize parameters for fixed-node branching
+      brancher.put(qmc_node,LogOut);
+
+      if(BranchInfo != "default")  brancher.read(BranchInfo);
+      //else {
+      //  /*if VMC/DMC directly preceded DMC (Counter > 0) then
+      //    use the average value of the energy estimator for
+      //    the reference energy of the brancher*/
+      //  if(Counter) {
+      //    RealType e_ref = W.getLocalEnergy();
+      //    LOGMSG("Overwriting the reference energy by the local energy " << e_ref)  
+      //    brancher.setEguess(e_ref);
+      //  }
+      //}
+      
+      int PopIndex, E_TIndex;
+      Estimators.resetReportSettings(RootName);
+      AcceptIndex = Estimators.addColumn("AcceptRatio");
+      PopIndex = Estimators.addColumn("Population");
+      E_TIndex = Estimators.addColumn("E_T");
+      Estimators.reportHeader();
+      
+      MCWalkerConfiguration::iterator it(W.begin()); 
+      MCWalkerConfiguration::iterator it_end(W.end()); 
+      while(it!=it_end) {
+        (*it)->Properties(WEIGHT) = 1.0;
+        (*it)->Properties(MULTIPLICITY) = 1.0;
+        ++it;
+      }
+      
+      
 
       //going to add routines to calculate how much we need
       bool require_register =  W.createAuxDataSet();
@@ -95,17 +103,13 @@ namespace ohmmsqmc {
       }      
 
       Estimators.reset();
-
-      //create an output engine
-      HDFWalkerOutput WO(RootName);
       
       IndexType block = 0;
       
       Pooma::Clock timer;
       int Population = W.getActiveWalkers();
       int tPopulation = W.getActiveWalkers();
-      RealType E_T = brancher.E_T;
-      RealType Eest = E_T;
+      RealType Eest = brancher.E_T;
       RealType oneovertau = 1.0/Tau;
       RealType oneover2tau = 0.5*oneovertau;
       RealType g = sqrt(Tau);
@@ -209,7 +213,7 @@ namespace ohmmsqmc {
 		(*it)->Properties(LOCALPOTENTIAL) = H.getLocalPotential();
 		emixed += (*it)->Properties(LOCALENERGY);
 	      } else {
-		WARNMSG("All the particle moves are rejected.")
+		//WARNMSG("All the particle moves are rejected.")
 	        (*it)->Properties(AGE)++;
 		++nAllRejected;
 		emixed += eold;
@@ -235,26 +239,32 @@ namespace ohmmsqmc {
 
 	  ++step;++accstep;
 	  Estimators.accumulate(W);
-	  E_T = brancher.update(Population,Eest);
+	  Eest = brancher.update(Population,Eest); //E_T = brancher.update(Population,Eest);
 	  brancher.branch(accstep,W);
 	} while(step<nSteps);
 	
+        //WARNMSG("The number of a complete rejectoin " << nAllRejected)
 	timer.stop();
 	nAcceptTot += nAccept;
 	nRejectTot += nReject;
 	
 	Estimators.flush();
-	Eest = Estimators.average(0);
 	
 	Estimators.setColumn(PopIndex,static_cast<double>(Population));
-	Estimators.setColumn(E_TIndex,E_T);
+	Estimators.setColumn(E_TIndex,Eest); //E_T);
 	Estimators.setColumn(AcceptIndex,
 			     static_cast<double>(nAccept)/static_cast<double>(nAccept+nReject));
 	Estimators.report(accstep);
 	
+	Eest = Estimators.average(0);
 	LogOut->getStream() << "Block " << block << " " << timer.cpu_time() << " Fixed_configs " 
 			    << static_cast<double>(nAllRejected)/static_cast<double>(step*W.getActiveWalkers()) << endl;
-	if(pStride) WO.get(W);
+	if(pStride) {
+          //create an output engine
+	  HDFWalkerOutput WO(RootName);
+          WO.get(W); 
+          brancher.write(WO.getGroupID());
+        }
 	nAccept = 0; nReject = 0;
 	block++;
       } while(block<nBlocks);
@@ -264,7 +274,12 @@ namespace ohmmsqmc {
 	<< static_cast<double>(nAcceptTot)/static_cast<double>(nAcceptTot+nRejectTot)
 	<< endl;
       
-      if(!pStride) WO.get(W);
+      if(!pStride) {
+        //create an output engine
+        HDFWalkerOutput WO(RootName);
+        WO.get(W); 
+        brancher.write(WO.getGroupID());
+      }
       
       Estimators.finalize();
       

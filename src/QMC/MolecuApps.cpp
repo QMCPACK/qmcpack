@@ -92,12 +92,13 @@ namespace ohmmsqmc {
       }
     }
      */
-    cout << "Ionic configuration : " << ion.getName() << endl;
-    ion.get(cout);
+    LOGMSG("Ionic configuration : " << ion.getName())
+    ion.get(log());
 
-    cout << "Electronic configuration : " << el.getName() << endl;
-    el.get(cout);
+    LOGMSG("Electronic configuration : " << el.getName())
+    el.get(log());
 
+    Psi.VarList.print(log());
     return true;    
   }   
 
@@ -179,6 +180,7 @@ namespace ohmmsqmc {
     if(ptype == "molecule"){
       H.add(new CoulombPotentialAA(el),"ElecElec");
       H.add(new CoulombPotentialAB(ion,el),"Coulomb");
+      //H.add(new NonLocalPPotential(ion,els,Psi),"NonLocal");
       if(ion.getTotalNum()>1) 
 	H.add(new IonIonPotential(ion),"IonIon");
     } else if(ptype == "harmonic") {

@@ -37,9 +37,13 @@ namespace ohmmsqmc {
 		       TrialWaveFunction& psi, 
 		       QMCHamiltonian& h, 
 		       xmlNodePtr q): 
-    QMCDriver(w,psi,h,q),wos_ref(0),Tau_var(0.0) { 
+    QMCDriver(w,psi,h,q),Tau_var(0.0),wos_ref(0),BranchInfo("default"){ 
     RootName = "dmc";
     QMCType ="dmc";
+  }
+
+  void MolecuDMC::setBranchInfo(const string& afile) {
+    BranchInfo=afile;
   }
   
   /** Advance the walkers nblocks*nsteps timesteps. 
@@ -86,6 +90,11 @@ namespace ohmmsqmc {
 	 Tau_var = 0.0;
       }
 
+      MolecuFixedNodeBranch<RealType> brancher(Tau,W.getActiveWalkers());
+      brancher.put(qmc_node,LogOut);
+
+      if(BranchInfo != "default")  brancher.read(BranchInfo);
+
       //set the data members to start a new run
       //    getReady();
       int PopIndex, E_TIndex;
@@ -102,9 +111,6 @@ namespace ohmmsqmc {
         ++it;
       }
       
-      MolecuFixedNodeBranch<RealType> brancher(Tau,W.getActiveWalkers());
-      //initialize parameters for fixed-node branching
-      brancher.put(qmc_node,LogOut);
       
       /*if VMC/DMC directly preceded DMC (Counter > 0) then
 	use the average value of the energy estimator for
@@ -120,8 +126,7 @@ namespace ohmmsqmc {
       Pooma::Clock timer;
       int Population = W.getActiveWalkers();
       int tPopulation = W.getActiveWalkers();
-      RealType E_T = brancher.E_T;
-      RealType Eest = E_T;
+      RealType Eest = brancher.E_T;
       IndexType accstep=0;
       IndexType nAcceptTot = 0;
       IndexType nRejectTot = 0;
@@ -134,7 +139,8 @@ namespace ohmmsqmc {
 	  advanceWalkerByWalker(brancher);
 	  step++; accstep++;
 	  Estimators.accumulate(W);
-	  E_T = brancher.update(Population,Eest);
+	  //E_T = brancher.update(Population,Eest);
+	  Eest = brancher.update(Population,Eest);
 	  brancher.branch(accstep,W);
 	} while(step<nSteps);
 	timer.stop();
@@ -142,15 +148,15 @@ namespace ohmmsqmc {
 	nAcceptTot += nAccept;
 	nRejectTot += nReject;
 	Estimators.flush();
-	Eest = Estimators.average(0);
 	
 	Estimators.setColumn(PopIndex,static_cast<double>(Population));
-	Estimators.setColumn(E_TIndex,E_T);
+	Estimators.setColumn(E_TIndex,Eest);
 	Estimators.setColumn(AcceptIndex,
 			     static_cast<double>(nAccept)/static_cast<double>(nAccept+nReject));
 	Estimators.report(accstep);
 	LogOut->getStream() << "Block " << block << " " << timer.cpu_time()
 			    << " " << Population << endl;
+	Eest = Estimators.average(0);
 	
 	nAccept = 0; nReject = 0;
 	block++;
@@ -158,6 +164,7 @@ namespace ohmmsqmc {
 	  //create an output engine: could accumulate the configurations
 	  HDFWalkerOutput WO(RootName);
 	  WO.get(W);
+          brancher.write(WO.getGroupID());
 	}
 	W.reset();
       } while(block<nBlocks);
@@ -170,6 +177,7 @@ namespace ohmmsqmc {
 	//create an output engine: could accumulate the configurations
 	HDFWalkerOutput WO(RootName);
 	WO.get(W);
+        brancher.write(WO.getGroupID());
       }
       Estimators.finalize();
       return true;

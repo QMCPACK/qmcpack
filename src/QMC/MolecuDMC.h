@@ -43,11 +43,22 @@ namespace ohmmsqmc {
     bool run();
     bool put(xmlNodePtr q);
 
+    void setBranchInfo(const string& fname);
+
   private:
     /// Copy Constructor (disabled)
     MolecuDMC(const MolecuDMC& a): QMCDriver(a) { }
     /// Copy operator (disabled).
     MolecuDMC& operator=(const MolecuDMC&) { return *this;}
+
+    /// Time step to work with WOS
+    RealType Tau_var;
+
+    ///pointer to WOSPotential
+    WOSPotential *wos_ref;
+
+    ///hdf5 file name for Branch conditions
+    std::string BranchInfo;
 
      ///temporary storage for drift
     ParticleSet::ParticlePos_t drift;
@@ -55,10 +66,6 @@ namespace ohmmsqmc {
     ///temporary storage for random displacement
     ParticleSet::ParticlePos_t deltaR;
 
-    ///pointer to WOSPotential
-    WOSPotential *wos_ref;
-
-    RealType Tau_var;
   };
 }
 #endif

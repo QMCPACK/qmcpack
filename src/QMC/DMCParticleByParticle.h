@@ -33,7 +33,10 @@ namespace ohmmsqmc {
     bool run();
     bool put(xmlNodePtr cur);
  
+    void setBranchInfo(const string& aname);
   private:
+    string BranchInfo;
+
     /// Copy Constructor (disabled)
     DMCParticleByParticle(const DMCParticleByParticle& a): QMCDriver(a) { }
     /// Copy operator (disabled).
