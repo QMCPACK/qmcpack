@@ -16,11 +16,10 @@
 // -*- C++ -*-
 #ifndef OHMMS_QMC_GE_COREPOLPOTENTIAL_H
 #define OHMMS_QMC_GE_COREPOLPOTENTIAL_H
-#include <algo.h>
 #include "Particle/ParticleSet.h"
 #include "Particle/WalkerSetRef.h"
-#include "Particle/DistanceTableData.h"
 #include "QMCHamiltonians/QMCHamiltonianBase.h"
+#include "OhmmsPETE/OhmmsMatrix.h"
 
 namespace ohmmsqmc {
 
@@ -69,73 +68,21 @@ namespace ohmmsqmc {
     RealType C;
     ///the ion-electron DistanceTable
     DistanceTableData* d_ie;
+    ///the ion-ion DistanceTable
+    DistanceTableData* d_ii;
     ///CoreCoef(C) = 1.0 if C=Ge, 0.0 for all other ions
     vector<bool> CoreCoef;
+    ///CoreCoreDipole(C,C') \f$= \frac{Z_{C'} {\bf R_{CC'}}}{R_{CC'}^3}\f$
+    Matrix<PosType> CoreCoreDipole;
     ///ElCoreDipole(C,i) \f$= \frac{{\bf r_{Ci}}f({\bar{r_{bCi}}}{r_{Ci}^3}\f$
     Matrix<PosType> ElCoreDipole;
 
     ///constructor
-    GeCorePolPotential(ParticleSet& ions, ParticleSet& els): 
-      d_ie(NULL), alpha(0.3558), r_b(0.7048), eCoreCore(0.0) { 
-      
-      //set the distance tables
-      d_ie = DistanceTable::getTable(DistanceTable::add(ions,els));
-      nCenters = ions.getTotalNum();
-      nParticles = els.getTotalNum();
-      C = -0.5*alpha;
-      r_binv = 1.0/r_b;
+    GeCorePolPotential(ParticleSet& ions, ParticleSet& els);
 
-      CoreCoef.resize(nCenters);
-      ElCoreDipole.resize(nCenters,d_ie->getTotNadj());
+    ~GeCorePolPotential();
 
-      ElCoreDipole = 0.0;
-
-      //only calculate the cpp for Ge atoms
-      int GeCounter = 0;
-      for(int iat=0; iat<nCenters; iat++){
-	string sname = ions.Species.speciesName[ions.GroupID[iat]];
-	if(sname == "Ge"){
-	  LOGMSG("Adding a core-electron potential for " << sname << " #" << GeCounter++)
-	  CoreCoef[iat] = true;
-	}
-	else CoreCoef[iat] = false;
-      }
-
-    }
-    
-    ~GeCorePolPotential() { }
-
-    inline ValueType evaluate(ParticleSet& P) {
-      RealType esum=0.0;
-
-      //calculate the Electron-Core Dipole matrix
-      int nn=0;
-      for(int iat=0; iat<nCenters; iat++) {
-	if(CoreCoef[iat]){
-	  for(int nn=d_ie->M[iat]; nn<d_ie->M[iat+1]; nn++){
-	    RealType rinv3 = pow(d_ie->rinv(nn),3);//(1/r^3)
-	    PosType dipole = rinv3*d_ie->dr(nn);//(\vec{r}/r^3)
-	    ElCoreDipole(iat,nn) = dipole*fcpp(d_ie->r(nn)*r_binv);
-	  }
-	}
-      }
-
-      //now loop over the ions
-      for(int iat=0; iat<nCenters; iat++) {
-	//loop over the electrons
-	for(int nn=d_ie->M[iat]; nn<d_ie->M[iat+1]; nn++)
-	  esum += dot(ElCoreDipole(iat,nn),ElCoreDipole(iat,nn));
-	
-	//loop over distinct pairs of electrons
-	for(int nnj=d_ie->M[iat]; nnj<d_ie->M[iat+1]; nnj++){
-	  for(int nnk=nnj+1; nnk<d_ie->M[iat+1]; nnk++)
-	    esum += 2.0*dot(ElCoreDipole(iat,nnj),ElCoreDipole(iat,nnk));
-	}
-	
-      }//iat
-      return C*esum;
-    }
-
+    ValueType evaluate(ParticleSet& P);
 
     inline ValueType 
     evaluate(ParticleSet& P, RealType& x) {
@@ -143,7 +90,7 @@ namespace ohmmsqmc {
     }
 
     inline RealType fcpp(RealType z) {
-      return pow((1.0-exp(-1.0*z*z)),2.0);
+      return pow((1.0-exp(-1.0*z*z)),2);
     }
 
     void evaluate(WalkerSetRef& W, ValueVectorType& LE){ }
