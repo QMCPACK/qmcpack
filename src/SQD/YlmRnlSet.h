@@ -237,7 +237,8 @@ struct YlmRnlSet  {
   bool get(std::ostream& os);
   bool print_HDF5(const std::string&, const std::string&,
 		  const std::vector<value_type>&);
-  bool print_basis(const std::string&, const std::string&); 
+  bool print_basis(const std::string&, const std::string&,
+		   const std::string&); 
 		  
 };
 #include "SQD/YlmRnlSet.cpp"

@@ -16,6 +16,7 @@
 // -*- C++ -*-
 #include <iostream>
 #include "SQD/SQDFrame.h"
+#include "OhmmsApp/ProjectData.h"
 
 #ifdef HAVE_QT
 #include <qapplication.h>
@@ -76,6 +77,9 @@ SQDFrame::solve(const char* fname) {
   // build an XML tree from a the file;
   m_doc = xmlParseFile(fname);
   if (m_doc == NULL) return false;
+
+  //using XPath instead of recursive search
+  xmlXPathContextPtr m_context = xmlXPathNewContext(m_doc);
   
   // Check the document is of the right kind
   xmlNodePtr cur = xmlDocGetRootElement(m_doc);
@@ -91,6 +95,23 @@ SQDFrame::solve(const char* fname) {
     return false;
   }
 
+  //assign the project id
+
+  //project description
+  OHMMS::ProjectData myProject;
+  
+  xmlXPathObjectPtr result
+    = xmlXPathEvalExpression((const xmlChar*)"//project",m_context);
+  if(xmlXPathNodeSetIsEmpty(result->nodesetval)) {
+    WARNMSG("Project is not defined")
+      myProject.reset();
+  } else {
+    myProject.put(result->nodesetval->nodeTab[0]);
+  }
+  xmlXPathFreeObject(result);
+
+
+
   using namespace ohmmshf;
 
   HFSolver = new HartreeFock(Pot,Psi);
@@ -98,10 +119,11 @@ SQDFrame::solve(const char* fname) {
 
   if(!success) {
     ERRORMSG("The input file does not confirm. Exit")
-    return false;
+      return false;
   }
 
-  //HFSolver->setRoot(fname);
+  HFSolver->setRoot(myProject.CurrentRoot());
+
   success = HFSolver->solve();
   xmlFreeDoc(m_doc);
   xmlCleanupParser();

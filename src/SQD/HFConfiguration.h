@@ -71,7 +71,7 @@
 #include <iostream>
 
 #if !defined(LOGMSG)
-#define LOGMSG(msg) {std::cout<< "QMC " << msg << std::endl;}
+#define LOGMSG(msg) {std::cout<< "HF " << msg << std::endl;}
 #endif
 
 #if !defined(WARNMSG)

@@ -19,6 +19,7 @@ LINK_LIBRARIES(${QWT_LIBRARY} ${QT_LIBRARIES} ${OPENGL_LIBRARIES})
 ENDIF(QT_FOUND) 
 
 SET(HFSRCS 
+  ../OhmmsApp/ProjectData.cpp
   ../Numerics/Clebsch_Gordan.cpp
   ../SQD/SphericalPotential/RadialPotential.cpp
   ../SQD/SphericalPotential/ZOverRPotential.cpp

@@ -47,8 +47,8 @@ namespace ohmmshf {
   */
 
   void HartreeFock::setRoot(const string& aroot) {
-    LogFileName = aroot;
-    LogFileName.append(".log");
+    RootFileName = aroot;
+    LogFileName = RootFileName + ".log";
   }
 
   /**
@@ -73,6 +73,7 @@ namespace ohmmshf {
     //using XPath instead of recursive search
     xmlXPathContextPtr m_context = xmlXPathNewContext(d_root->doc);
 
+
     xmlXPathObjectPtr result = xmlXPathEvalExpression((const xmlChar*)"//atom",m_context);
     if(xmlXPathNodeSetIsEmpty(result->nodesetval)) {
       ERRORMSG("Missing Atom information. Exit")
@@ -93,8 +94,8 @@ namespace ohmmshf {
 
       XMLReport("Atom name = " << AtomName)
 	XMLReport("Number of closed shells = " << num_closed_shells)
-      //initialize xmlNode pointers for the grid, wavefunction and potential
-      xmlNodePtr cur1 = cur->xmlChildrenNode;
+	//initialize xmlNode pointers for the grid, wavefunction and potential
+	xmlNodePtr cur1 = cur->xmlChildrenNode;
       while(cur1 != NULL) {
 	string cname1((const char*)(cur1->name));
 	if(cname1 == "grid") {
@@ -183,8 +184,8 @@ namespace ohmmshf {
 
       xmlXPathFreeContext(m_context);
 
-    LogFileName = AtomName;
-    LogFileName.append(".log");
+    //  LogFileName = AtomName;
+    //     LogFileName.append(".log");
 
     return true;
   }
@@ -293,16 +294,16 @@ namespace ohmmshf {
     Psi.put(cur);
 
     LOGMSG("Total number of orbitals = " << Psi.size()); 
- //    LOGMSG("Orbital | Orbital ID");
-//     for(int j=0; j < Psi.size(); j++){
-//       LOGMSG(j << " " << Psi.ID[j]);
-//     }
-//    LOGMSG("ID | IDcount");
+    //    LOGMSG("Orbital | Orbital ID");
+    //     for(int j=0; j < Psi.size(); j++){
+    //       LOGMSG(j << " " << Psi.ID[j]);
+    //     }
+    //    LOGMSG("ID | IDcount");
     LOGMSG("(Orbital index, Number of Orbitals)")
-    for(int j=0; j < Psi.NumUniqueOrb; j++){
-      int id = Psi.ID[j];
-      LOGMSG("(" << id << ", " << Psi.IDcount[id] << ")");
-    }
+      for(int j=0; j < Psi.NumUniqueOrb; j++){
+	int id = Psi.ID[j];
+	LOGMSG("(" << id << ", " << Psi.IDcount[id] << ")");
+      }
 
 
     //return false if there is no wave functions
@@ -548,8 +549,8 @@ namespace ohmmshf {
       }
       fout << endl;
     }
-    Psi.print_HDF5(AtomName,GridType,eigVal);
-    Psi.print_basis(AtomName,GridType);
+    Psi.print_HDF5(RootFileName,GridType,eigVal);
+    Psi.print_basis(AtomName,RootFileName,GridType);
     return max_rad_all;
   }
 }

@@ -60,7 +60,7 @@ bool YlmRnlSet<GT>::put(xmlNodePtr cur){
   cur = cur->xmlChildrenNode;
   while(cur != NULL) {
     if (!(xmlStrcmp(cur->name, (const xmlChar *) "orbital"))) {
-      LOGMSG("Found Orbital");
+      XMLReport("Found Orbital");
       n = atoi((const char*)xmlGetProp(cur, (const xmlChar *) "n"));
       if(n < 0) {
 	ERRORMSG("Invalid value for n");
@@ -95,7 +95,7 @@ bool YlmRnlSet<GT>::put(xmlNodePtr cur){
       NLMS_Map_t::iterator it = OccNo.find(nlms);
       if(it == OccNo.end()) {
 	add(n,l,m,s,occ);
-	LOGMSG("Adding Orbital: n=" << n << ", l=" << l <<
+	XMLReport("Adding Orbital: n=" << n << ", l=" << l <<
 	       ", m=" << m << ", s=" << s << ", occ=" << occ);
 	//OccNo[nlmn] = Num-1;
 	OccNo[nlms] = 1;
@@ -112,21 +112,21 @@ bool YlmRnlSet<GT>::put(xmlNodePtr cur){
 }  
 
 /** 
- *\param elementName name of the element
+ *\param RootName name of the element
  *\param GridType the type of grid
  *\param eigVal the eigenvalues
  *\return true if succeeds
  *\brief Prints the grid and orbital information to an HDF5
- *file named "elementName.h5".  
+ *file named "RootName.h5".  
  */
 
 template<class GT>
-bool YlmRnlSet<GT>::print_HDF5(const std::string& elementName,
+bool YlmRnlSet<GT>::print_HDF5(const std::string& RootName,
 			       const std::string& GridType,
 			       const std::vector<value_type>& eigVal){
 
   //print to file fname
-  string HDFfname = elementName + ".h5";
+  string HDFfname = RootName + ".h5";
   hid_t afile = H5Fcreate(HDFfname.c_str(),H5F_ACC_TRUNC,
 			  H5P_DEFAULT,H5P_DEFAULT);
  
@@ -207,14 +207,16 @@ bool YlmRnlSet<GT>::print_HDF5(const std::string& elementName,
 
 /** 
  *\param elementName name of the element
+ *\param RootName name of the element
  *\param GridType the type of grid
  *\return true if succeeds
  *\brief Prints the basis information to an xml file named
- *"elementName.basis.xml" for use in qmcPlusPlus.
+ *"RootName.basis.xml" for use in qmcPlusPlus.
  */
 
 template<class GT>
 bool YlmRnlSet<GT>::print_basis(const std::string& elementName,
+				const std::string& RootName,
 				const std::string& GridType){
    
   int nup = 0;
@@ -236,13 +238,13 @@ bool YlmRnlSet<GT>::print_basis(const std::string& elementName,
   
   Mup = 0.0;  Mdown = 0.0;
 
-  string fnameXML = elementName + ".basis.xml";
-  string fnameHDF5 = elementName + ".h5";
+  string fnameXML = RootName + ".basis.xml";
+  string fnameHDF5 = RootName + ".h5";
 
   ofstream osXML(fnameXML.c_str());
-  osXML << "<DeterminantSet type=\"MolecularOrbital\">" << endl;
-  osXML << "<BasisSet>" << endl;
-  osXML << "<Basis type=\"HFNG\" species=\"" << elementName 
+  osXML << "<determinantset type=\"MolecularOrbital\">" << endl;
+  osXML << "<basisset>" << endl;
+  osXML << "<basis type=\"HFNG\" species=\"" << elementName 
 	 << "\" file=\"" << fnameHDF5 << "\">" << endl;
 
   if(Restriction == "none"){
@@ -272,23 +274,23 @@ bool YlmRnlSet<GT>::print_basis(const std::string& elementName,
     }
   }
  
-  osXML << "</Basis>" << endl;
-  osXML << "</BasisSet>" << endl;
-  osXML << "<SlaterDeterminant>" << endl;
-  osXML << "<Determinant spin=\"1\" orbitals=\"" << Mup.rows() 
+  osXML << "</basis>" << endl;
+  osXML << "</basisset>" << endl;
+  osXML << "<slaterdeterminant>" << endl;
+  osXML << "<determinant spin=\"1cu\" orbitals=\"" << Mup.rows() 
 	<< "\">" << endl;
-  osXML << "<Var type=\"Array\">" << endl;
+  osXML << "<parameter id=\"1cu\" type=\"Array\">" << endl;
   osXML << Mup;
-  osXML << "</Var>" << endl;
-  osXML << "</Determinant>" << endl;
-  osXML << "<Determinant spin=\"-1\" orbitals=\"" << Mdown.rows() 
+  osXML << "</parameter>" << endl;
+  osXML << "</determinant>" << endl;
+  osXML << "<determinant spin=\"-1\" orbitals=\"" << Mdown.rows() 
 	<< "\">" << endl;
-  osXML << "<Var type=\"Array\">" << endl;
+  osXML << "<parameter id=\"1cd\" type=\"Array\">" << endl;
   osXML << Mdown;
-  osXML << "</Var>" << endl;
-  osXML << "</Determinant>" << endl;
-  osXML << "</SlaterDeterminant>" << endl;
-  osXML << "</DeterminantSet>" << endl;
+  osXML << "</parameter>" << endl;
+  osXML << "</determinant>" << endl;
+  osXML << "</slaterdeterminant>" << endl;
+  osXML << "</determinantset>" << endl;
 
   osXML.close(); 
 

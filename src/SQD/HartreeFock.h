@@ -31,8 +31,11 @@ namespace ohmmshf {
     ///number of closed shells
     int num_closed_shells;
     value_type eig_tol, scf_tol, ratio;
+    ///
+    string RootFileName;
     string LogFileName;
     string AtomName, PotType, GridType;
+
 
     xmlNodePtr grid_ptr;
     xmlNodePtr pot_ptr;

@@ -142,7 +142,7 @@ namespace ohmmshf {
       }
     } else {
       ERRORMSG("The potential and grid do not have proper transformation for numerov")
-      return false;
+	return false;
     }
     return true;
   }  
