@@ -136,7 +136,8 @@ bool MCWalkerConfiguration::createAuxDataSet(int nfield) {
   return true;
 }
 
-void MCWalkerConfiguration::registerData(Walker_t& awalker, PooledData<RealType>& buf) {
+void 
+MCWalkerConfiguration::registerData(Walker_t& awalker, PooledData<RealType>& buf) {
   R = awalker.R;
   for(int i=0; i< DistTables.size(); i++) {
     DistTables[i]->evaluate(*this);
@@ -144,19 +145,17 @@ void MCWalkerConfiguration::registerData(Walker_t& awalker, PooledData<RealType>
   }
 }
   
-void MCWalkerConfiguration::copyToBuffer(PooledData<RealType>& buf) {
-  //cout << "ParticleSet::copyToBuffer " << endl;
+void 
+MCWalkerConfiguration::copyToBuffer(PooledData<RealType>& buf) {
   for(int i=0; i< DistTables.size(); i++) {
     DistTables[i]->copyToBuffer(buf);
-    //DistTables[i]->print(cout);
   }
 }
 
-void MCWalkerConfiguration::copyFromBuffer(PooledData<RealType>& buf) {
-  //cout << "ParticleSet::copyFromBuffer " << endl;
+void 
+MCWalkerConfiguration::copyFromBuffer(PooledData<RealType>& buf) {
   for(int i=0; i< DistTables.size(); i++) {
     DistTables[i]->copyFromBuffer(buf);
-    //DistTables[i]->print(cout);
   }
 }
 
@@ -188,7 +187,6 @@ int MCWalkerConfiguration::branch(int maxcopy, int Nmax, int Nmin) {
     }
     iw++;it++;
   }
-
 
   //remove bad walkers
   for(int i=0; i<bad.size(); i++) delete bad[i];
@@ -357,37 +355,6 @@ void MCWalkerConfiguration::loadWalker(Walker_t& awalker) {
   }
 }
 
-/** move a particle iat
- *@param iat the index of the particle to be moved
- *@param displ the displacement of the iath-particle position
- *@return the proposed position
- *Update activePtcl index and activePos position for the proposed move.
- *Evaluate the related distance table data DistanceTableData::Temp.
- */
-MCWalkerConfiguration::SingleParticlePos_t 
-MCWalkerConfiguration::makeMove(int iat, const SingleParticlePos_t& displ) {
-  activePtcl=iat;
-  activePos=R[iat]+displ;
-  for(int i=0; i< DistTables.size(); i++) {
-    DistTables[i]->move(*this,activePos,iat);
-  }
-  return activePos;
-}
-
-/** update the particle attribute by the proposed move
- *@param iat the particle index
- *
- *When the activePtcl is equal to iat, overwrite the position and update the
- *content of the distance tables.
- */
-void MCWalkerConfiguration::acceptMove(int iat) {
-  if(iat == activePtcl) {
-    R[iat]=activePos; 
-    for(int i=0; i< DistTables.size(); i++) {
-      DistTables[i]->update(iat);
-    }
-  }
-}
 
 /***************************************************************************
  * $RCSfile$   $Author$

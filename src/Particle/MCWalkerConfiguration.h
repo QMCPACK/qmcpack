@@ -127,23 +127,10 @@ namespace ohmmsqmc {
 
     void reset();
 
-
     /**load a Walker_t to the current ParticleSet
      *@param awalker the reference to the walker to be loaded
      */
     void loadWalker(Walker_t& awalker);
-
-    /**move a particle
-     *@param iat the index of the particle to be moved
-     *@param newpos new position of the iat-th particle
-     */
-    SingleParticlePos_t makeMove(int iat, const SingleParticlePos_t& displ);
-
-    /**accept the move
-     *@param iat the index of the particle whose position and other attributes to be updated
-     */
-    void acceptMove(int iat);
-
     bool createAuxDataSet(int nfield=256);
     void registerData(Walker_t& awalker, PooledData<RealType>& buf);
     void copyToBuffer(PooledData<RealType>& buf);
@@ -152,12 +139,6 @@ namespace ohmmsqmc {
   protected:
 
     RealType LocalEnergy;
-
-    ///the position of the active particle for particle-by-particle moves
-    SingleParticlePos_t activePos;
-
-    ///the indexp of the active particle for particle-by-particle moves
-    Index_t             activePtcl;
 
     int UpdateMode;
 

@@ -85,11 +85,30 @@ namespace ohmmsqmc {
     ///return the id
     inline int tag() const { return ObjectTag;}
 
+    /**move a particle
+     *@param iat the index of the particle to be moved
+     *@param newpos new position of the iat-th particle
+     */
+    SingleParticlePos_t makeMove(Index_t iat, const SingleParticlePos_t& displ);
+
+    /**accept the move
+     *@param iat the index of the particle whose position and other attributes to be updated
+     */
+    void acceptMove(Index_t iat);
+
   protected:
-    ///id of this object    
-    int ObjectTag;
     ///the number of particle objects
-    static int PtclObjectCounter;
+    static Index_t PtclObjectCounter;
+
+    ///id of this object    
+    Index_t ObjectTag;
+
+    ///the indexp of the active particle for particle-by-particle moves
+    Index_t activePtcl;
+
+    ///the position of the active particle for particle-by-particle moves
+    SingleParticlePos_t activePos;
+
     ///distance tables that need to be updated by moving this ParticleSet
     vector<DistanceTableData*> DistTables;
 

@@ -74,6 +74,37 @@ namespace ohmmsqmc {
     for(int i=0; i< DistTables.size(); i++) DistTables[i]->evaluate(*this);
   }  
 
+  /** move a particle iat
+   *@param iat the index of the particle to be moved
+   *@param displ the displacement of the iath-particle position
+   *@return the proposed position
+   *Update activePtcl index and activePos position for the proposed move.
+   *Evaluate the related distance table data DistanceTableData::Temp.
+   */
+  ParticleSet::SingleParticlePos_t 
+  ParticleSet::makeMove(Index_t iat, const SingleParticlePos_t& displ) {
+    activePtcl=iat;
+    activePos=R[iat]+displ;
+    for(int i=0; i< DistTables.size(); i++) {
+      DistTables[i]->move(*this,activePos,iat);
+    }
+    return activePos;
+  }
+  
+  /** update the particle attribute by the proposed move
+   *@param iat the particle index
+   *
+   *When the activePtcl is equal to iat, overwrite the position and update the
+   *content of the distance tables.
+   */
+  void ParticleSet::acceptMove(Index_t iat) {
+    if(iat == activePtcl) {
+      R[iat]=activePos; 
+      for(int i=0; i< DistTables.size(); i++) {
+        DistTables[i]->update(iat);
+      }
+    }
+  }
 
 }
 
