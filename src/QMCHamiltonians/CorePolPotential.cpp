@@ -109,6 +109,14 @@ namespace ohmmsqmc {
       }
     
       //loop over ions and electrons 
+      /*
+      for(int jat=0; jat<nCenters; jat++) {
+        if(iat == jat) continue;
+	int nnj = d_ie->M[jat];
+	for(int k=0; k<nParticles; k++, nnj++)
+	  esum -= 2.0*dot(CoreCoreDipole(jat,iat),ElCoreDipole(jat,nni));
+      }
+      */
       for(int jat=iat+1; jat<nCenters; jat++) {
 	int nni = d_ie->M[iat];
 	int nnj = d_ie->M[jat];
@@ -127,5 +135,3 @@ namespace ohmmsqmc {
    * $Revision$   $Date$
    * $Id$ 
    ***************************************************************************/
-
-  
