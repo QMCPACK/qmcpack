@@ -112,6 +112,7 @@ namespace ohmmsqmc {
 
     ///evaluate the temporary pair relations
     inline void move(const ParticleSet& P, const PosType& rnew, IndexType jat) {
+
       activePtcl=jat;
       Temp[jat].reset();
       for(int iat=0; iat<jat; iat++) {
@@ -123,7 +124,7 @@ namespace ohmmsqmc {
 	Temp[iat].dr1=drij;
 	Temp[iat].r0=r_m[loc];
 	Temp[iat].rinv0=rinv_m[loc];
-	Temp[iat].dr0=dr_m[loc];
+	Temp[iat].dr0=-1.0*dr_m[loc];
       }
       for(int iat=jat+1,nn=jat; iat< N[SourceIndex]; iat++) {
 	int loc = IJ[iat*N[SourceIndex]+jat];
@@ -134,24 +135,26 @@ namespace ohmmsqmc {
 	Temp[iat].dr1=drij;
 	Temp[iat].r0=r_m[loc];
 	Temp[iat].rinv0=rinv_m[loc];
-	Temp[iat].dr0=-1.0*dr_m[loc];
+	Temp[iat].dr0=dr_m[loc];
       }
     }
 
     ///update the stripe for jat-th particle
     inline void update(IndexType jat) {
+
       int nn=jat;
       for(int iat=0;iat<jat; iat++,nn+=N[SourceIndex]) {
 	int loc =IJ[nn];
 	r_m[loc] = Temp[iat].r1;
 	rinv_m[loc]= Temp[iat].rinv1;
-	dr_m[loc]= Temp[iat].dr1;
+	dr_m[loc]= -1.0*Temp[iat].dr1;
       }
-      for(int iat=jat+1; iat< N[SourceIndex]; iat++) {
-	int loc =IJ[(nn+=N[SourceIndex])];
-	r_m[loc] = Temp[iat].r1;
-	rinv_m[loc]= Temp[iat].rinv1;
-        dr_m[loc]= -1.0*Temp[iat].dr1;
+
+      for(int nn=M[jat]; nn<M[jat+1]; nn++) {
+	int iat = J[nn];
+	r_m[nn] = Temp[iat].r1;
+	rinv_m[nn]= Temp[iat].rinv1;
+        dr_m[nn]= Temp[iat].dr1;
       }
     }
   };

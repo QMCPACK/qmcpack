@@ -148,18 +148,25 @@ namespace ohmmsqmc {
       buf.add(rinv_m.begin(), rinv_m.end());
     }
 
-    inline void getData(PooledData<RealType>& buf) {
+    inline void copyToBuffer(PooledData<RealType>& buf) {
+      RealType* first = &(dr_m[0][0]);
+      buf.put(first,first+npairs_m*DIM);
+      buf.put(r_m.begin(), r_m.end());
+      buf.put(rinv_m.begin(), rinv_m.end());
+    }
+
+    inline void copyFromBuffer(PooledData<RealType>& buf) {
       RealType* first = &(dr_m[0][0]);
       buf.get(first,first+npairs_m*DIM);
       buf.get(r_m.begin(), r_m.end());
       buf.get(rinv_m.begin(), rinv_m.end());
     }
 
-    inline void putData(PooledData<RealType>& buf) {
-      RealType* first = &(dr_m[0][0]);
-      buf.put(first,first+npairs_m*DIM);
-      buf.put(r_m.begin(), r_m.end());
-      buf.put(rinv_m.begin(), rinv_m.end());
+    inline void print(std::ostream& os) {
+      os << "Table " << Origin.getName() << endl; 
+      for(int i=0; i<r_m.size(); i++)
+	os << r_m[i] << " ";
+      os << endl;
     }
 
   protected:

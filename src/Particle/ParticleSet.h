@@ -20,7 +20,6 @@
 #include "Configuration.h"
 #include "Utilities/OhmmsObject.h"
 #include "Utilities/SpeciesSet.h"
-#include "Particle/Walker.h"
 
 namespace ohmmsqmc {
 
@@ -44,15 +43,7 @@ namespace ohmmsqmc {
     
     typedef ParticleAttrib<GradType>  ParticleGradient_t;
     typedef ParticleAttrib<ValueType> ParticleLaplacian_t;
-    typedef Walker<RealType,ParticlePos_t> Walker_t;
-    typedef Walker_t::PropertyContainer_t  PropertyContainer_t;
     
-    ///the position of the active particle for particle-by-particle moves
-    SingleParticlePos_t activePos;
-
-    ///the indexp of the active particle for particle-by-particle moves
-    Index_t             activePtcl;
-
     ///gradients of the particles
     ParticleGradient_t G;
     
@@ -85,29 +76,9 @@ namespace ohmmsqmc {
      */
     void update(int iflag=0);
 
-    /**load a Walker_t to the current ParticleSet
-     *@param awalker the reference to the walker to be loaded
-     */
-    void loadWalker(Walker_t& awalker);
-
-    /**move a particle
-     *@param iat the index of the particle to be moved
-     *@param newpos new position of the iat-th particle
-     */
-    void makeMove(int iat, const SingleParticlePos_t& newpos);
-
-    /**accept the move
-     *@param iat the index of the particle whose position and other attributes to be updated
-     */
-    void acceptMove(int iat);
-
     ///return the id
     inline int tag() const { return ObjectTag;}
 
-    void registerData(Walker_t& awalker, PooledData<RealType>& buf);
-    void getData(PooledData<RealType>& buf);
-    void putData(PooledData<RealType>& buf);
-    
   protected:
     ///id of this object    
     int ObjectTag;

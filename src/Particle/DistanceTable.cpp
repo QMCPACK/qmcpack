@@ -141,12 +141,12 @@ void DistanceTable::registerData(PooledData<RealType>& buf) {
   for(int i=0; i<TableList.size(); i++) TableList[i]->registerData(buf);
 }
 
-void DistanceTable::getData(PooledData<RealType>& buf) {
-  for(int i=0; i<TableList.size(); i++) TableList[i]->getData(buf);
+void DistanceTable::copyToBuffer(PooledData<RealType>& buf) {
+  for(int i=0; i<TableList.size(); i++) TableList[i]->copyToBuffer(buf);
 }
 
-void DistanceTable::putData(PooledData<RealType>& buf) {
-  for(int i=0; i<TableList.size(); i++) TableList[i]->putData(buf);
+void DistanceTable::copyFromBuffer(PooledData<RealType>& buf) {
+  for(int i=0; i<TableList.size(); i++) TableList[i]->copyFromBuffer(buf);
 }
 
 //May need to make it singleton

@@ -18,7 +18,10 @@
 #define OHMMS_QMC_MCWALKERCONFIGURATION_H
 #include "Particle/ParticleSet.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
+#include "Utilities/PooledData.h"
+#include "Particle/Walker.h"
 #include <list>
+
 namespace ohmmsqmc {
 
   /** A set of walkers that are to be advanced by Metropolis Monte Carlo.  
@@ -43,12 +46,14 @@ namespace ohmmsqmc {
 	  Update_Particle ///move a particle by particle
     };
     
-    //typedef Walker<RealType,ParticlePos_t> Walker_t;
-    //typedef Walker_t::PropertyContainer_t  PropertyContainer_t;
+    typedef Walker<RealType,ParticlePos_t> Walker_t;
+    typedef Walker_t::PropertyContainer_t  PropertyContainer_t;
     typedef vector<Walker_t*>              WalkerList_t;
     typedef WalkerList_t::iterator         iterator;
     typedef WalkerList_t::const_iterator   const_iterator;
+    typedef PooledData<RealType>           WalkerData_t;
 
+    std::vector<WalkerData_t*> DataSet;
     Matrix<ValueType> Energy;
 
     ///default constructor
@@ -113,9 +118,37 @@ namespace ohmmsqmc {
 
     void reset();
 
+
+    /**load a Walker_t to the current ParticleSet
+     *@param awalker the reference to the walker to be loaded
+     */
+    void loadWalker(Walker_t& awalker);
+
+    /**move a particle
+     *@param iat the index of the particle to be moved
+     *@param newpos new position of the iat-th particle
+     */
+    void makeMove(int iat, const SingleParticlePos_t& newpos);
+
+    /**accept the move
+     *@param iat the index of the particle whose position and other attributes to be updated
+     */
+    void acceptMove(int iat);
+
+    bool createAuxDataSet(int nfield=256);
+    void registerData(Walker_t& awalker, PooledData<RealType>& buf);
+    void copyToBuffer(PooledData<RealType>& buf);
+    void copyFromBuffer(PooledData<RealType>& buf);
+
   protected:
 
     RealType LocalEnergy;
+
+    ///the position of the active particle for particle-by-particle moves
+    SingleParticlePos_t activePos;
+
+    ///the indexp of the active particle for particle-by-particle moves
+    Index_t             activePtcl;
 
     int UpdateMode;
 

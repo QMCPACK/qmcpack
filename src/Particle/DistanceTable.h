@@ -90,9 +90,9 @@ namespace ohmmsqmc {
 
     static void registerData(PooledData<RealType>& buf);
 
-    static void getData(PooledData<RealType>& buf);
+    static void copyFromBuffer(PooledData<RealType>& buf);
 
-    static void putData(PooledData<RealType>& buf);
+    static void copyToBuffer(PooledData<RealType>& buf);
 
   private:
     

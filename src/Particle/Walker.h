@@ -16,7 +16,6 @@
 // -*- C++ -*-
 #ifndef OHMMS_QMC_WALKER_H
 #define OHMMS_QMC_WALKER_H
-#include "Utilities/PooledData.h"
 
 namespace ohmmsqmc {
 
@@ -57,9 +56,6 @@ namespace ohmmsqmc {
     ///drift of the walker \f$ Drift({\bf R}) = \tau v_{drift}({\bf R}) \f$
     PA Drift;
 
-    ///container for any data that are accessed by FIFO get/put functions
-    PooledData<T> Data;
-
     ///create a walker for n-particles
     inline explicit Walker(int n) : Properties(0.0) {  
       Properties[WEIGHT] = 1.0;
@@ -94,7 +90,6 @@ namespace ohmmsqmc {
       R = a.R;
       Drift = a.Drift;
       Properties = a.Properties;
-      Data = a.Data;
     }
 
     //return the address of the values of Hamiltonian terms

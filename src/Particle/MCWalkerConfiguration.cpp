@@ -16,6 +16,7 @@
 // -*- C++ -*-
 #include "Utilities/OhmmsInfo.h"
 #include "Particle/MCWalkerConfiguration.h"
+#include "Particle/DistanceTableData.h"
 #include "Particle/DistanceTable.h"
 using namespace ohmmsqmc;
 #include "ParticleBase/RandomSeqGenerator.h"
@@ -30,8 +31,9 @@ UpdateMode(Update_Walker) {
 MCWalkerConfiguration::~MCWalkerConfiguration(){
 
   destroyWalker(WalkerList.begin(), WalkerList.end());
-  DEBUGMSG("MCWalkerConfiguration::~MCWalkerConfiguration")
+  for(int iw=0; iw<DataSet.size(); iw++) delete DataSet[iw];
 
+  DEBUGMSG("MCWalkerConfiguration::~MCWalkerConfiguration")
  //WalkerList.clear();
 }
 
@@ -114,6 +116,43 @@ void MCWalkerConfiguration::reset() {
   iterator it=WalkerList.begin();
   while(it != WalkerList.end()) {(*it)->reset();it++;}
 }
+
+bool MCWalkerConfiguration::createAuxDataSet(int nfield) {
+
+  if(DataSet.size()) return false;
+
+  for(int iw=0; iw<WalkerList.size(); iw++) {
+    DataSet.push_back(new WalkerData_t);
+    DataSet[iw]->reserve(nfield);
+  }
+
+  return true;
+}
+
+void MCWalkerConfiguration::registerData(Walker_t& awalker, PooledData<RealType>& buf) {
+  R = awalker.R;
+  for(int i=0; i< DistTables.size(); i++) {
+    DistTables[i]->evaluate(*this);
+    DistTables[i]->registerData(buf);
+  }
+}
+  
+void MCWalkerConfiguration::copyToBuffer(PooledData<RealType>& buf) {
+  //cout << "ParticleSet::copyToBuffer " << endl;
+  for(int i=0; i< DistTables.size(); i++) {
+    DistTables[i]->copyToBuffer(buf);
+    //DistTables[i]->print(cout);
+  }
+}
+
+void MCWalkerConfiguration::copyFromBuffer(PooledData<RealType>& buf) {
+  //cout << "ParticleSet::copyFromBuffer " << endl;
+  for(int i=0; i< DistTables.size(); i++) {
+    DistTables[i]->copyFromBuffer(buf);
+    //DistTables[i]->print(cout);
+  }
+}
+
 
 int MCWalkerConfiguration::branch(int maxcopy, int Nmax, int Nmin) {
 
@@ -213,6 +252,42 @@ void MCWalkerConfiguration::setUpdateMode(int updatemode) {
   }
 }
 
+void MCWalkerConfiguration::loadWalker(Walker_t& awalker) {
+  R = awalker.R;
+  for(int i=0; i< DistTables.size(); i++) {
+    DistTables[i]->evaluate(*this);
+  }
+}
+
+/** move a particle iat
+ *@param iat the index of the particle to be moved
+ *@param newpos the new position
+ *
+ *Update activePtcl index and activePos position for the proposed move.
+ *Evaluate the related distance table data DistanceTableData::Temp.
+ */
+void MCWalkerConfiguration::makeMove(int iat, const SingleParticlePos_t& newpos) {
+  activePtcl=iat;
+  activePos=R[iat]+newpos;
+  for(int i=0; i< DistTables.size(); i++) {
+    DistTables[i]->move(*this,activePos,iat);
+  }
+}
+
+/** update the particle attribute by the proposed move
+ *@param iat the particle index
+ *
+ *When the activePtcl is equal to iat, overwrite the position and update the
+ *content of the distance tables.
+ */
+void MCWalkerConfiguration::acceptMove(int iat) {
+  if(iat == activePtcl) {
+    R[iat]=activePos; 
+    for(int i=0; i< DistTables.size(); i++) {
+      DistTables[i]->update(iat);
+    }
+  }
+}
 
 /***************************************************************************
  * $RCSfile$   $Author$
