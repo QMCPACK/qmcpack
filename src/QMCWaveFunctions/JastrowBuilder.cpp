@@ -300,6 +300,10 @@ namespace ohmmsqmc {
 	LOGMSG("Jastrow Function: nucusp")
 	OneBodyJastrow<NoCuspJastrow<ValueType> > *J1 = NULL;
 	return createOneBody(cur,J1);
+      } else if(jastfunction == "pade2") {
+	LOGMSG("Jastrow Function: pade form (a*r+c^2)/(1+br).")
+	OneBodyJastrow<PadeJastrow2<ValueType> > *J1 = NULL;
+	return createOneBody(cur,J1);
       } else {
 	LOGMSG("Jastrow Function: pade.")
 	OneBodyJastrow<PadeJastrow<ValueType> > *J1 = NULL;
