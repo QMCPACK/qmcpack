@@ -31,6 +31,7 @@
 #include "QMCHamiltonians/WOS/Device.h"
 #include "QMCHamiltonians/IonIonPotential.h"
 #include "QMCHamiltonians/LocalPPotential.h"
+#include "QMCHamiltonians/NonLocalPPotential.h"
 #include "QMCHamiltonians/HarmonicPotential.h"
 #include "QMCHamiltonians/GeCorePolPotential.h"
 #include "QMCHamiltonians/BareKineticEnergy.h"
@@ -127,14 +128,15 @@ namespace ohmmsqmc {
       XMLReport("The configuration for electrons is already determined by the wave function")
       donotresize = true;
     } 
-    if(el_ptr) {
-      XMLParticleParser pread(el,donotresize);
-      pread.put(el_ptr);
-    }
 
     if(ion_ptr) {
       XMLParticleParser pread(ion);
       pread.put(ion_ptr);
+    }
+
+    if(el_ptr) {
+      XMLParticleParser pread(el,donotresize);
+      pread.put(el_ptr);
     }
 
     xmlXPathFreeObject(result);
@@ -178,25 +180,23 @@ namespace ohmmsqmc {
     XMLReport("Found Potential of type " << ptype)
     //always add kinetic energy first
     H.add(new BareKineticEnergy, "Kinetic");
-    if(ptype == "molecule"){
-      H.add(new CoulombPotentialAA(el),"ElecElec");
+    H.add(new CoulombPotentialAA(el),"ElecElec");
+
+    if(ptype == "molecule" || ptype=="coulomb"){
       H.add(new CoulombPotentialAB(ion,el),"Coulomb");
-      //H.add(new NonLocalPPotential(ion,els,Psi),"NonLocal");
       if(ion.getTotalNum()>1) 
 	H.add(new IonIonPotential(ion),"IonIon");
     } else if(ptype == "harmonic") {
-      H.add(new CoulombPotentialAA(el),"ElecElec");
       H.add(new HarmonicPotential(ion,el),"Coulomb");
-    } else if(ptype == "siesta") {
-      H.add(new CoulombPotentialAA(el), "ElecElec");
-      H.add(new LocalPPotential(ion,el), "PseudoPot");
+    } else if(ptype == "siesta" || ptype=="pseudo") {
+      H.add(new NonLocalPPotential(ion,el,Psi),"NonLocal");
+      //H.add(new LocalPPotential(ion,el), "PseudoPot");
       if(ion.getTotalNum()>1) 
 	H.add(new IonIonPotential(ion),"IonIon");
     } else if(ptype == "cpp") {
       xmlChar* att2=xmlGetProp(cpp,(const xmlChar*)"species");
       string stype("Ge");
       if(att2) stype = (const char*)att2;
-      H.add(new CoulombPotentialAA(el), "ElecElec");
       H.add(new LocalPPotential(ion,el), "PseudoPot");
       H.add(new GeCorePolPotential(ion,el), "GeCPP");
       if(ion.getTotalNum()>1) 

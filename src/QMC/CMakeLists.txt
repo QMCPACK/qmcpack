@@ -14,6 +14,7 @@ IF(QMCAPPS MATCHES "MolecuApps")
     ../QMCWaveFunctions/MolecularOrbitals/RGFBuilderBase.cpp
     ../QMCWaveFunctions/MolecularOrbitals/STO2GridBuilder.cpp
     ../QMCWaveFunctions/MolecularOrbitals/GTO2GridBuilder.cpp
+    ../QMCWaveFunctions/MolecularOrbitals/Any2GridBuilder.cpp
     ../QMCWaveFunctions/MolecularOrbitals/NumericalRGFBuilder.cpp
     ../QMCWaveFunctions/MolecularOrbitals/GridMolecularOrbitals.cpp
     ../QMCWaveFunctions/MolecularOrbitals/MolecularOrbitalBuilder.cpp
