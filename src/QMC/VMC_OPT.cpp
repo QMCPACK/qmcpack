@@ -376,7 +376,7 @@ namespace ohmmsqmc {
       string cname((const char*)(cur->name));
       if(cname == "mcwalkerset") {
         int pid_target=pid;
-        xmlChar* anode=xmlGetProp(mc_ptr,(const xmlChar*)"node");
+        xmlChar* anode=xmlGetProp(cur,(const xmlChar*)"node");
         if(anode) {
           pid_target = atoi((const char*)anode);
         }

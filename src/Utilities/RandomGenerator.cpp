@@ -18,7 +18,6 @@
 
 #include "Utilities/RandomGenerator.h"
 #include "Message/Communicate.h"
-#include "Message/CommCreate.h"
 
 //RandomGenerator_t 
 //Random(CommCreate::get()->getNodeID(), CommCreate::get()->getNumNodes());

@@ -26,7 +26,7 @@
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCHamiltonians/QMCHamiltonianBase.h"
-#include "Message/Commnicate.h"
+#include "Message/Communicate.h"
 #include "Utilities/Clock.h"
 
 namespace ohmmsqmc { 

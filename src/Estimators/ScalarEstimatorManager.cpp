@@ -107,6 +107,8 @@ void ScalarEstimatorManager::flushreport(int iter){
       Estimators[i]->report(BlockAverages,wgtinv);
     
     BlockAverages[WeightIndex] = WeightSum;
+
+    //global: collect BlockAverages
     WeightSum = 0.0;
     (*OutStream) << setw(10) << iter;
     for(int i=0; i<BlockAverages.size();i++)
