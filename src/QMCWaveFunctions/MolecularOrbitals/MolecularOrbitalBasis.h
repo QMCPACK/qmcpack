@@ -25,7 +25,7 @@ namespace ohmmsqmc {
 
   class DistanceTableData;
 
-  /** class for molecular orbital basis
+  /** Class for a molecular orbital basis
    *
    *The molecular orbital \f$ \psi_i \f$ can be written as a linear
    *combination of basis functions \f$ \{\phi\} \f$ such that
@@ -36,6 +36,13 @@ namespace ohmmsqmc {
    *derivatives for each of the N-particles in a configuration.  All that 
    *is required to generate the actual molecular orbitals is to multiply
    *by the coefficient matrix.
+   *
+   *The template (C)entered(O)rbital(T)ype should provide the fuctions
+   <ul>
+   <li> evaluate(int source, int first, int nptcl, int offset, 
+   VM& y, GM& dy, VM& d2y) {
+   </ul>
+   *An example being SphericalOrbitalSet
    */
   template<class COT>
   class MolecularOrbitalBasis: public QMCTraits {

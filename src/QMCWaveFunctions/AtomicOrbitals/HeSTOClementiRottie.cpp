@@ -23,29 +23,47 @@
 
 namespace ohmmsqmc {
 
-
+  /**
+   *@param wfs_ref a trial wavefuntion to which determinant terms are added
+   *@param ions the ion particleset
+   *@param els the electron particleset
+   *
+   *@note A DiracDeterminant is a single determinant, a SlaterDeterminant is 
+   *the product of DiracDeterminants while a MultiDeterminant is a linear
+   *combination of SlaterDeterminants
+   *
+   *@brief The Constructor.
+   */
   HePresetHFBuilder::HePresetHFBuilder(TrialWaveFunction& wfs,
 				       ParticleSet& ions,
 				       ParticleSet& els):
     OrbitalBuilderBase(wfs) 
   {   
-
+    //the electron-ion distancetable
     DistanceTableData* d_ei = DistanceTable::getTable(DistanceTable::add(ions,els));
-
+    
     typedef DiracDeterminant<HePresetHF> Det_t;
+    //pointer to the Helium single particle orbitals
     HePresetHF* heorb = new HePresetHF;
+    //set the distance table
     heorb->setTable(d_ei);
-    
+
+    //determinant for up-electron
     Det_t *DetU = new Det_t(*heorb,0);
+    //determinant for particle 0 and size 1
     DetU->set(0,1);
+    ///determinant for down-electron
     Det_t* DetD = new Det_t(*heorb,1);
+    //determinant for particle 1 and size 1
     DetD->set(1,1);
-    
+
+    //add a SlaterDeterminant
     SlaterDeterminant<HePresetHF> *asymmpsi=new SlaterDeterminant<HePresetHF>;
-    
+
+    //add the DiracDeterminants to the SlaterDeterminant
     asymmpsi->add(DetU);
     asymmpsi->add(DetD);
-
+    //add the SlaterDeterminant to the trial wavefuntion
     wfs_ref.add(asymmpsi);
   }
 

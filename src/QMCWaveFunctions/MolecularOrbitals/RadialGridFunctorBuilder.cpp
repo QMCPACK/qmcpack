@@ -29,24 +29,25 @@ namespace ohmmsqmc {
   * \param nlms a vector containing the quantum numbers \f$(n,l,m,s)\f$
   * \return true is succeeds
   * \brief Add a new Slater Type Orbital with quantum numbers 
-  \f$(n,l,m,s)\f$ to the list of radial orbitals.  This function 
-  puts the STO on a logarithmic grid and calculates the boundary 
+  \f$(n,l,m,s)\f$ to the list of radial orbitals.  
+  *
+  This function puts the STO on a logarithmic grid and calculates the boundary 
   conditions for the 1D Cubic Spline.  The derivates at the endpoint 
   are assumed to be all zero.  Note: for the radial orbital we use
-  /f[ f(r) = \frac{R(r)}{r^l}, \f] where \f$ R(r) \f$ is the usual
+  \f[ f(r) = \frac{R(r)}{r^l}, \f] where \f$ R(r) \f$ is the usual
   radial orbital and \f$ l \f$ is the angular momentum.
  */
   bool
   STO2GridBuilder::addRadialOrbital(xmlNodePtr cur, 
-				    const QuantumNumberType& nmls) {
+				    const QuantumNumberType& nlms) {
     if(!m_orbitals) {
       ERRORMSG("m_orbitals, SphericalOrbitals<ROT,GT>*, is not initialized")
       return false;
     }
 
     RadialOrbitalType *radorb =  NULL;
-    int n=nmls[0];
-    int l=nmls[1];
+    int n=nlms[0];
+    int l=nlms[1];
     ValueType zeta = 1.0;
     xmlNodePtr s = cur->xmlChildrenNode;
     while(s != NULL) {
@@ -62,11 +63,14 @@ namespace ohmmsqmc {
     GenericSTO<RealType> sto(n-l-1,zeta,anorm(n-1,zeta));
     XMLReport("Calculating 1D-Cubic spline.")
 
+      //pointer to the grid
     GridType* agrid = m_orbitals->Grids[0];
 
     radorb = new OneDimCubicSpline<ValueType>(agrid);
+    //spline the slater type orbital
     Transform2GridFunctor<GenericSTO<RealType>,RadialOrbitalType> transform(sto, *radorb);
     transform.generate(agrid->rmin(), agrid->rmax(),agrid->size());
+    //add the radial orbital to the list
     m_orbitals->Rnl.push_back(radorb);
 
 #ifdef PRINT_DEBUG
@@ -92,8 +96,10 @@ namespace ohmmsqmc {
     * \param cur the current xmlNode to be processed
     * \return true if succeeds
     * \brief Add a radial grid to the list of radial grids.
+    *
     The Slater Type Orbitals are automatically placed on a 
-    logarithmic grid and interpolated.
+    logarithmic grid and interpolated.  The log grid parameters 
+    being \f$r_i = 1e-5, r_f=100.0 \mbox{ and } N=1001.\f$
   */
 
   bool 
@@ -131,7 +137,8 @@ namespace ohmmsqmc {
   * \param nlms a vector containing the quantum numbers \f$(n,l,m,s)\f$
   * \return true is succeeds
   * \brief Add a new radial orbital with quantum numbers 
-  \f$(n,l,m,s)\f$to the list of radial orbitals.
+  \f$(n,l,m,s)\f$ to the list of radial orbitals.
+  *
   This function finds the location of the corresponding data for 
   the radial orbital in the HDF5 file, reads in the data into a new
   RadialOrbitalType and calculates the boundary conditions for the 
@@ -171,8 +178,8 @@ namespace ohmmsqmc {
     sprintf(grpname,"orbital%04d",Counter++);
     hid_t group_id_orb = H5Gopen(m_group_id,grpname);
 
-    //find the correct power such that:
-    //R(r)/r^l = rad_orb(r)/r^{power} 
+    /*find the correct power such that:
+      R(r)/r^l = rad_orb(r)/r^{power}*/
     Vector<int> power;
     HDFAttribIO<Vector<int> > PowerHDFIn(power);
     PowerHDFIn.read(group_id_orb,"power");
@@ -246,6 +253,7 @@ namespace ohmmsqmc {
     * \param cur the current xmlNode to be processed
     * \return true if succeeds
     * \brief Add a radial grid to the list of radial grids.
+    *
     This function opens the HDF5 file named in the input file, 
     finds the location of the radial grid data and creates the 
     grid.  The possible grid types are:

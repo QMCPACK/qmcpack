@@ -42,7 +42,8 @@ namespace ohmmsqmc {
 
   }
   
-  /** Create a two-body spin-dependent Jatrow function with a template class JeeType.
+  /** Create a two-body spin-dependent Jatrow function with a template 
+   *class JeeType.
    *@param cur the current xmlNode 
    *@param J2 a two-body jastrow function to be created.
    *
@@ -126,7 +127,8 @@ namespace ohmmsqmc {
   }
 
 
-  /** Create a two-body spin-independent Jatrow function with a template class JeeType.
+  /** Create a two-body spin-independent Jatrow function with a template
+   *class JeeType.
    *@param cur the current xmlNode 
    *@param J2 a two-body jastrow function to be created.
    *
@@ -281,6 +283,7 @@ namespace ohmmsqmc {
     xmlChar *ftype = xmlGetProp(cur, (const xmlChar *)"function");
     if(ftype) jastfunction = (const char*) ftype;
 
+    LOGMSG("")
     LOGMSG("Jastrow Factor: Name = "<< jastname <<" Type = "<<jasttype)
 
       /*Currently for Two-Body Jastrow only Pade function: ar/(1+br) form 
@@ -294,8 +297,7 @@ namespace ohmmsqmc {
       return createTwoBodyNoSpin(cur,J2);
     } else if(jasttype == "One-Body") {
       if(jastfunction == "nocusp") {
-        //For One-Body Jastrow default is Pade function, also implements the nocusp function a/(1+br^2)
-	LOGMSG("Jastrow Function: nucusp.")
+	LOGMSG("Jastrow Function: nucusp")
 	OneBodyJastrow<NoCuspJastrow<ValueType> > *J1 = NULL;
 	return createOneBody(cur,J1);
       } else {

@@ -29,7 +29,8 @@ namespace ohmmsqmc {
   typedef TinyVector<int,4> QuantumNumberType;
   enum {q_n=0,q_l,q_m, q_s};
 
-  /**class to represent a set of spherical orbitals centered at a common origin origin.
+  /**Class to represent a set of spherical orbitals centered at a 
+   *common origin origin.
    *
    *Each basis orbital is represented by 
    \f[
@@ -50,10 +51,10 @@ namespace ohmmsqmc {
     <ul>
     <li> index(r)
     </ul>
-    Examples of ROT being GenericSTO<T> and OneDimGridFunctor<T>
+    Examples of ROT being GenericSTO and OneDimGridFunctor
     *
-     Examples of GT being LogGrid<T>, LinearGrid<T>, LogZeroGrid<T>
-     and NumericalGrid<T>
+    Examples of GT being LogGrid, LinearGrid, LogGridZero
+    and NumericalGrid
   */
   template<class ROT, class GT=DummyGrid>
   struct SphericalOrbitalSet {
@@ -72,8 +73,8 @@ namespace ohmmsqmc {
     ///index of the corresponding real Spherical Harmonic with quantum 
     ///numbers \f$ (l,m) \f$
     vector<int> LM;
-    ///index of the corresponding radial orbital with quantum 
-    ///numbers \f$ (n,l) \f$
+    /**index of the corresponding radial orbital with quantum 
+      numbers \f$ (n,l) \f$ */
     vector<int> NL;
     ///container for the radial grid
     vector<GT*> Grids;
@@ -102,8 +103,8 @@ namespace ohmmsqmc {
        *
        The results are stored in the matrices:
        \f[ y[i,k] = \phi_k(r_{ic}) \f]
-       \f[ dy[i,k] = {\bf \nabla} \phi_k(r_{ic}) \f]
-       \f[ d2y[i,k] = \nabla^2 \phi_k(r_{ic}) \f]
+       \f[ dy[i,k] = {\bf \nabla}_i \phi_k(r_{ic}) \f]
+       \f[ d2y[i,k] = \nabla_i^2 \phi_k(r_{ic}) \f]
        *
        The basis functions can be written in the form
        \f[ \phi({\bf R}) = F(r)G(r,\theta,\phi), \f]
@@ -111,6 +112,9 @@ namespace ohmmsqmc {
        and \f$ G(r,\theta,\phi) = r^lS_l^m(\theta,\phi) \f$ is related to 
        the real spherical harmonic.  Evaluating the gradient and Laplacian
        leads to 
+       \f[  {\bf \nabla} \phi({\bf R}) = 
+       ({\bf \nabla } F(r)) G(r,\theta,\phi) + 
+       F(r) ({\bf \nabla} G(r,\theta,\phi))  \f]
        \f[
        {\bf \nabla} \phi({\bf R}) = 
        \frac{dF(r)}{dr} G(r,\theta,\phi)\:{\bf \hat{r}} + 
@@ -121,11 +125,14 @@ namespace ohmmsqmc {
        \nabla^2 \phi({\bf R}) = (\nabla^2 F) G +2 \nabla F \cdot \nabla G
        + F (\nabla^2 G) \f]
        where 
-       \f[ 
-       \nabla^2 G(r) = \frac{2}{r}\frac{dG(r)}{dr} + \frac{d^2G(r)}{dr^2} 
+       \f[ \nabla^2 F(r) = \frac{2}{r}\frac{dF(r)}{dr} + \frac{d^2F(r)}{dr^2}
+       \mbox{,     } \nabla F(r) = \frac{dF(r)}{dr}\:{\bf \hat{r}}
        \f]
        and 
-       \f[ \nabla^2 G(r,\theta,\phi) = 0. \f]
+       \f[  \nabla^2 G(r,\theta,\phi) = \frac{1}{r^2}\frac{\partial}
+       {\partial r} \left( r^2 \frac{\partial G}{\partial r}\right)
+       - \frac{l(l+1)G}{r^2} = 0.
+       \f]
        @param source index of the center \f$ I \f$
        @param first index of the first particle
        @param nptcl number of particles
@@ -169,7 +176,8 @@ namespace ohmmsqmc {
 	  PosType gr_ang = Ylm.getGradYlm(lm);
 	  y(iat,bindex)= ang*Rnl[nl]->Y;
 	  dy(iat,bindex) = ang*gr_rad+Rnl[nl]->Y*gr_ang;
-	  d2y(iat,bindex)= ang*(2.0*drnloverr+Rnl[nl]->d2Y) + 2.0*dot(gr_rad,gr_ang);
+	  d2y(iat,bindex)= ang*(2.0*drnloverr+Rnl[nl]->d2Y) + 
+	    2.0*dot(gr_rad,gr_ang);
 	}
       }
     }
@@ -182,8 +190,10 @@ namespace ohmmsqmc {
        @param nptcl the number of particles to be evaluate [first, first+npcl)
        @param offset the basis offset of the source
        @param nw the number of walkers
-       @param nstride the number that makes up a composite index for (walker,particle)
-       @param y function values, y((walker,particle),basis), basis includes the offset
+       @param nstride the number that makes up a composite index 
+       for (walker,particle)
+       @param y function values, y((walker,particle),basis), basis 
+       includes the offset
        @param dy gradients, dy((walker,particle),basis)
        @param d2y laplacians, d2y((walker,particle),basis)
        *

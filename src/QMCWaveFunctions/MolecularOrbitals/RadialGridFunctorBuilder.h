@@ -45,8 +45,10 @@ namespace ohmmsqmc {
       m_species = acenter;
     }
 
+    ///add a radial grid
     virtual bool addGrid(xmlNodePtr cur) = 0;
-    virtual bool addRadialOrbital(xmlNodePtr cur, const QuantumNumberType& nmls) = 0;
+    ///add a radial orbital with quantum numbers nlms
+    virtual bool addRadialOrbital(xmlNodePtr cur, const QuantumNumberType& nlms) = 0;
   };
   
 
@@ -61,7 +63,7 @@ namespace ohmmsqmc {
     ///constructor
     STO2GridBuilder(){}
     bool addGrid(xmlNodePtr cur);
-    bool addRadialOrbital(xmlNodePtr cur, const QuantumNumberType& nmls);
+    bool addRadialOrbital(xmlNodePtr cur, const QuantumNumberType& nlms);
   };
 
   /**Class to create a set of radial orbitals on a grid (e.g., AtomHF/Siesta)

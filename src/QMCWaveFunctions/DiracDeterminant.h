@@ -45,6 +45,8 @@ namespace ohmmsqmc {
    *<li> dpsiM(i,j) \f$= \nabla_i \psi_j({\bf r}_i)\f$
    *<li> d2psiM(i,j) \f$= \nabla_i^2 \psi_j({\bf r}_i)\f$
    *</ul>
+   *Example of SPOSet is LCOrbitals
+   *
    *Very important to note that psiM is a transpose of a matrix defined as
    *\f$D_{ij} =  \psi_j({\bf r}_i)\f$. Upon inversion, other operations
    *to update and evaluate \f$ \nabla_i \ln{\rm D} \f$ and 
@@ -61,7 +63,7 @@ namespace ohmmsqmc {
    *<li> The minor \f$ M_{ij} \f$ for the element \f$ D_{ij} \f$ 
    *is the determinant of an \f$ (N-1) \times (N-1) \f$ matrix obtained 
    *by removing all the elements of row \f$ i \f$ and column \f$ j \f$.  
-   *<li>The cofactor matrix \f$ C \f$ is constructed on an element by 
+   *<li>The cofactor matrix \f$ C_{ij} \f$ is constructed on an element by 
    *element basis from the minor using the simple relation: 
    *\f[ C_{ij} = (-1)^{i+j}M_{ij} \f]
    *<li>The inverse of a matrix is related to the transpose of the 
@@ -76,12 +78,11 @@ namespace ohmmsqmc {
    \f]
    *
    *To calculate the local energy \f$E_L\f$ it is necessary to evaluate
-   *the gradient and laplacian of the logarithm of the Diracdeterminant
+   *the gradient and laplacian of the logarithm of the DiracDeterminant
    \f[ 
-   \nabla_i |D({\bf R})| = \frac{\nabla_i|D({\bf R})|}{|D({\bf R})|} 
-   \f]
-   \f[
-   \nabla^2_i |D({\bf R})| = \frac{\nabla_i^2|D({\bf R})|}{|D({\bf R})|}
+   \nabla_i \ln |D({\bf R})| = \frac{\nabla_i|D({\bf R})|}{|D({\bf R})|} 
+   \f] \f[
+   \nabla^2_i \ln |D({\bf R})| = \frac{\nabla_i^2|D({\bf R})|}{|D({\bf R})|}
    -\left(\frac{\nabla_i|D({\bf R})|}{|D({\bf R})|}\right)^2.
    \f]
    *We have already shown how to evaluate the determinant in terms of its
@@ -94,8 +95,7 @@ namespace ohmmsqmc {
    *except \f${\bf r_i}\f$.  This leads to the result
    \f[
    \frac{\nabla_i|D|}{|D|} = \sum_{j=1}^N (\nabla_i D_{ij})(D^{-1})_{ji}.
-   \f]
-   \f[
+   \f] \f[
    \frac{\nabla^2_i|D|}{|D|} = \sum_{j=1}^N (\nabla^2_i D_{ij})(D^{-1})_{ji}.
    \f]
    *
@@ -227,9 +227,10 @@ namespace ohmmsqmc {
    *@param L a vector containing N laplacians
    *@return the value of the determinant
    *@brief Calculate the value of the Dirac determinant for particles
-   *\f$ (first,first+nel). \f$  Add the gradient and laplacian 
-   *contribution of the determinant to G(radient) and L(aplacian)
-   *for local energy calculations.
+   *\f$ (first,first+nel). \f$ 
+   *
+   *Add the gradient and laplacian contribution of the determinant 
+   *to G(radient) and L(aplacian) for local energy calculations.
    */
   template<class SPOSet>
   template<class GradVec, class LapVec>
