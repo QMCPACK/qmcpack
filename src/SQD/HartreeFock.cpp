@@ -92,9 +92,11 @@ namespace ohmmshf {
       //calculate the new kinetic energy	
       KEnew = Pot.calcKE(Psi,eigsum,norb);
       //the total energy
-      E = KEnew + Vtotal;
+      //  E = KEnew + Vtotal;
       //for the new orbitals Psi, calculate the new SCF potentials
       Vtotal = Pot.evaluate(Psi,energy,norb);
+      //calculate the total energy
+      E = KEnew + Vtotal;
       //restrict the potential
       Pot.applyRestriction(Psi);
       //mix the new SCF potential with the old
