@@ -21,11 +21,17 @@
 
 namespace ohmmsqmc {
  
-  GeCorePolPotential::GeCorePolPotential(ParticleSet& ions, ParticleSet& els): 
-    d_ie(NULL), alpha(0.3558), r_b(0.7048), eCoreCore(0.0) { 
-  
+  GeCorePolPotential::GeCorePolPotential(ParticleSet& ions, ParticleSet& els,
+					 const string species): 
+    d_ie(NULL), d_ii(NULL), alpha(0.3558), r_b(0.7048), eCoreCore(0.0) { 
+    
     //set the distance tables
     d_ie = DistanceTable::getTable(DistanceTable::add(ions,els));
+    d_ie->create(1);
+    d_ii = DistanceTable::getTable(DistanceTable::add(ions));
+    d_ii->create(1);
+    d_ii->evaluate(ions);
+
     nCenters = ions.getTotalNum();
     nParticles = els.getTotalNum();
     C = -0.5*alpha;
@@ -34,7 +40,6 @@ namespace ohmmsqmc {
     CoreCoef.resize(nCenters);
     CoreCoreDipole.resize(nCenters,nCenters);
     ElCoreDipole.resize(nCenters,d_ie->getTotNadj());
-  
     CoreCoreDipole = 0.0;
     ElCoreDipole = 0.0;
   
@@ -42,7 +47,7 @@ namespace ohmmsqmc {
     int GeCounter = 0;
     for(int iat=0; iat<nCenters; iat++){
       string sname = ions.Species.speciesName[ions.GroupID[iat]];
-      if(sname == "Ge"){
+      if(sname == species){
 	LOGMSG("Adding a core-electron potential for " << sname << " #" << GeCounter++)
 	  CoreCoef[iat] = true;
       }
@@ -55,27 +60,41 @@ namespace ohmmsqmc {
     //calculate the Core-Core Dipole matrix
     int nn=0;
     for(int iat=0; iat<nCenters; iat++) {
-      for(int jat=iat+1;jat<nCenters; jat++, nn++) {
+      for(int jat=iat+1; jat<nCenters; jat++, nn++) {
 	//check to see if both ions are Ge
 	if(CoreCoef[iat]*CoreCoef[jat]){
-	  RealType rinv3 = pow(d_ii->rinv(nn),3);//(1/R^3)
-	  PosType dipole = rinv3*d_ii->dr(nn);//(\vec{R}/R^3)
+	  RealType rinv3 = pow(d_ii->rinv(nn),3);//(1/R_{JI}^3) R_{JI} = R_J-R_I
+	  PosType dipole = rinv3*d_ii->dr(nn);//(\vec{R_{JI}}/R_{JI}^3)
 	  CoreCoreDipole(iat,jat) = dipole*ions.Species(iz,ions.GroupID[jat]);//charge of jat
-	  CoreCoreDipole(jat,iat) = dipole*ions.Species(iz,ions.GroupID[iat]);//charge of iat
+	  CoreCoreDipole(jat,iat) = -1.0*dipole*ions.Species(iz,ions.GroupID[iat]);//charge of iat
 	}
       }
     }
 
     //calculate the core-core term (constant)
+    /* 
+       nn = 0;
+       for(int iat=0; iat<nCenters; iat++) {
+       for(int jat=iat+1;jat<nCenters; jat++, nn++) {
+       eCoreCore += dot(CoreCoreDipole(iat,jat),CoreCoreDipole(iat,jat));
+	eCoreCore += dot(CoreCoreDipole(jat,iat),CoreCoreDipole(jat,iat));
+	}
+	}
+    */
+
+    cout << CoreCoreDipole << endl;
+
     nn = 0;
     for(int iat=0; iat<nCenters; iat++) {
-      for(int jat=iat+1;jat<nCenters; jat++, nn++) {
+      for(int jat=0; jat<nCenters; jat++) {
+        if(iat == jat) continue;
 	eCoreCore += dot(CoreCoreDipole(iat,jat),CoreCoreDipole(iat,jat));
-	eCoreCore += dot(CoreCoreDipole(jat,iat),CoreCoreDipole(jat,iat));
       }
     }
     eCoreCore*=C;
 
+    cout << "eCoreCore = " << eCoreCore << endl;
+    
   }
     
   GeCorePolPotential::~GeCorePolPotential() { }
@@ -109,25 +128,68 @@ namespace ohmmsqmc {
       }
     
       //loop over ions and electrons 
-      /*
       for(int jat=0; jat<nCenters; jat++) {
         if(iat == jat) continue;
 	int nnj = d_ie->M[jat];
 	for(int k=0; k<nParticles; k++, nnj++)
-	  esum -= 2.0*dot(CoreCoreDipole(jat,iat),ElCoreDipole(jat,nni));
-      }
-      */
-      for(int jat=iat+1; jat<nCenters; jat++) {
-	int nni = d_ie->M[iat];
-	int nnj = d_ie->M[jat];
-	for(int k=0; k<nParticles; k++, nni++, nnj++){
-	  esum -= 2.0*dot(CoreCoreDipole(iat,jat),ElCoreDipole(iat,nni));
 	  esum -= 2.0*dot(CoreCoreDipole(jat,iat),ElCoreDipole(jat,nnj));
-	}
       }
+     
+     //  for(int jat=iat+1; jat<nCenters; jat++) {
+// 	int nni = d_ie->M[iat];
+// 	int nnj = d_ie->M[jat];
+// 	for(int k=0; k<nParticles; k++, nni++, nnj++){
+// 	  esum -= 2.0*dot(CoreCoreDipole(iat,jat),ElCoreDipole(iat,nni));
+// 	  esum -= 2.0*dot(CoreCoreDipole(jat,iat),ElCoreDipole(jat,nnj));
+// 	}
+//       }
     }//iat
     return C*esum + eCoreCore;
   }
+
+  /*
+  bool put(xmlNodePtr cur) {
+
+    string* acore;
+
+    xmlNodePtr cur1 = cur->xmlChildrenNode;
+    while(cur1 != NULL) {
+      string cname((const char*)(cur1->name));
+      if(cname == "component") {
+	xmlAttrPtr att = cur1->properties;
+	while(att != NULL) {
+	  string aname((const char*)(att->name));
+	  if(aname == "cpp") {
+	    xmlChar* att1=xmlGetProp(cur, (const xmlChar*)"species");
+	    if(!att1) {
+	      ERRORMSG("No Core species specified!")
+		return false;
+	    } else {
+	      acore = new string((const char*)att1);
+	    }
+     
+	  }
+	  att=att->next;
+	}
+      }	   
+      cur1=cur1->next;
+    }
+
+    
+    //only calculate the cpp for Ge atoms
+    int GeCounter = 0;
+    for(int iat=0; iat<nCenters; iat++){
+      string sname = ions.Species.speciesName[ions.GroupID[iat]];
+      if(sname == acore){
+	  LOGMSG("Adding a core-electron potential for " << sname << " #" << GeCounter++)
+	    CoreCoef[iat] = true;
+      }
+      else CoreCoef[iat] = false;
+    }
+    
+  }
+  */
+
 }
 
   /***************************************************************************

@@ -78,7 +78,8 @@ namespace ohmmsqmc {
     Matrix<PosType> ElCoreDipole;
 
     ///constructor
-    GeCorePolPotential(ParticleSet& ions, ParticleSet& els);
+    GeCorePolPotential(ParticleSet& ions, ParticleSet& els, 
+		       const string species);
 
     ~GeCorePolPotential();
 
