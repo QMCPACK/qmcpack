@@ -32,10 +32,12 @@ namespace ohmmsqmc {
 
   struct QMCHamiltonianBase: public QMCTraits {
 
+    RealType Tau;
+
     typedef ParticleAttrib<ValueType>  ValueVectorType;
 
     ///constructor
-    QMCHamiltonianBase(){}
+    QMCHamiltonianBase():Tau(0.0){}
 
     ///virtual destructor
     virtual ~QMCHamiltonianBase() { }
@@ -59,6 +61,8 @@ namespace ohmmsqmc {
      */
     virtual 
     void evaluate(WalkerSetRef& W, ValueVectorType& LE) = 0;
+
+    inline void setTau(RealType tau) { Tau = tau;}
   };
 
   /**  Collection of Local Energy Operators */
@@ -98,6 +102,10 @@ namespace ohmmsqmc {
     ValueType evaluate(ParticleSet& P);
 
     void evaluate(WalkerSetRef& W, ValueVectorType& LE);
+
+    void setTau(RealType tau){
+      for(int i=0; i < H.size(); ++i) H[i]->setTau(tau);
+    }
 
    private:
     ///vector of Hamiltonians

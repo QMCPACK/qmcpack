@@ -28,6 +28,7 @@ namespace ohmmsqmc {
 	PSI,          /*!< value of the many-body wavefunction \f$\Psi(\{R\})\f$ */
 	AGE,          /*!< the age of the walker. set to zero when the walker is updated */
 	SCALED,       /*!< scaling factor for the drift */
+	WOSVAR,       /*!< Variance of WOS potential */
 	NUMPROPERTIES, /*!< the number of properties */
 	CAPACITY=15
        };
