@@ -15,11 +15,11 @@ IF(Blitzpp_INCLUDE_DIRS)
   FIND_PATH(BLITZ_INCLUDE_DIR blitz/blitz.h  ${Blitzpp_INCLUDE_DIRS})
 ELSE(Blitzpp_INCLUDE_DIRS)
   SET(TRIAL_PATHS
+    $ENV{BLITZ_HOME}
     /usr/apps/include
     /usr/include
     /opt/include
     /usr/local/include
-    $ENV{BLITZ_HOME}
   )
 
   FIND_PATH(BLITZ_INCLUDE_DIR blitz/blitz.h ${TRIAL_PATHS})
