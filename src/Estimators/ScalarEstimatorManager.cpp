@@ -19,6 +19,7 @@
 #include "QMCHamiltonians/QMCHamiltonianBase.h"
 #include "Estimators/ScalarEstimatorManager.h"
 #include "Estimators/LocalEnergyEstimator.h"
+#include "Message/Communicate.h"
 
 using namespace ohmmsqmc;
 
@@ -88,12 +89,10 @@ void ScalarEstimatorManager::flush(){
    @brief print the averages for all the estimators to a file
 */
 void ScalarEstimatorManager::report(int iter){
-  if(iter%Stride == 0) {
-    (*OutStream) << setw(10) << iter;
-    for(int i=0; i<BlockAverages.size();i++)
-      (*OutStream) << setw(16) << BlockAverages[i];
-    (*OutStream) << endl;
-  }
+  (*OutStream) << setw(10) << iter;
+  for(int i=0; i<BlockAverages.size();i++)
+    (*OutStream) << setw(16) << BlockAverages[i];
+  (*OutStream) << endl;
 }
 
 /**
@@ -101,22 +100,35 @@ void ScalarEstimatorManager::report(int iter){
    @brief combines the functionality of flush and report
 */
 void ScalarEstimatorManager::flushreport(int iter){
-  if(iter%Stride == 0) {
-    RealType wgtinv = 1.0/WeightSum;
-    for(int i=0; i<Estimators.size(); i++) 
-      Estimators[i]->report(BlockAverages,wgtinv);
-    
-    BlockAverages[WeightIndex] = WeightSum;
 
-    //global: collect BlockAverages
-    WeightSum = 0.0;
-    (*OutStream) << setw(10) << iter;
-    for(int i=0; i<BlockAverages.size();i++)
-      (*OutStream) << setw(16) << BlockAverages[i];
+  RealType wgtinv = 1.0/WeightSum;
+  for(int i=0; i<Estimators.size(); i++) 
+    Estimators[i]->report(BlockAverages,wgtinv);
+  
+  BlockAverages[WeightIndex] = WeightSum;
+  WeightSum = 0.0;
+
+#ifdef HAVE_MPI
+
+  int nproc = OHMMS::Controller->ncontexts();
+  vector<double> temp(nproc,0.0);
+  double invproc = 1.0/static_cast<double>(nproc);
+  MPI_Allreduce(&(BlockAverages.Values[0]),&(temp[0]),BlockAverages.size(),MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
+  (*OutStream) << setw(10) << iter;
+  for(int i=0; i<BlockAverages.size();i++)
+    (*OutStream) << setw(16) << temp[i]*invproc;
     (*OutStream) << endl;
-  }
-}
 
+#else
+
+  (*OutStream) << setw(10) << iter;
+  for(int i=0; i<BlockAverages.size();i++)
+    (*OutStream) << setw(16) << BlockAverages[i];
+    (*OutStream) << endl;
+
+#endif
+  
+}
 
 void 
 ScalarEstimatorManager::resetReportSettings(const string& aname) {
