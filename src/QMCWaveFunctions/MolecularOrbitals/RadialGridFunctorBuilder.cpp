@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////
-// (c) Copyright 2003  by Jeongnim Kim
+// (c) Copyright 2003 by Jeongnim Kim and Jordan Vincent
 //////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////
 //   National Center for Supercomputing Applications &
@@ -154,6 +154,18 @@ namespace ohmmsqmc {
     int m=nlms[2];
     int s=nlms[3];
 
+    //first valid index for the radial grid
+    int imin = 0;
+    xmlAttrPtr att = cur->properties;
+    while(att != NULL) {
+      string aname((const char*)(att->name));
+      if(aname == "imin"){
+	imin = atoi((const char*)(att->children->content));
+	XMLReport("First valid index for radial grid = " << imin)
+	  }
+      att = att->next;
+    }
+
     //open the group containing the proper orbital
     char grpname[128];
     sprintf(grpname,"orbital%04d",Counter++);
@@ -189,9 +201,10 @@ namespace ohmmsqmc {
     if(rinv_p != 0)
       for(int ig=0; ig<rad_orb.size(); ig++) 
         rad_orb[ig] *= pow(agrid->r(ig),-rinv_p);
+    XMLReport("Multiplying orbital by r^" << -rinv_p)
 
-    //first valid index for the radial grid
-    int imin = 0;
+
+    //last valid index for radial grid
     int imax = rad_orb.size()-1;
     RadialOrbitalType *radorb = new OneDimCubicSpline<ValueType>(agrid,rad_orb);
     //calculate boundary condition, assume derivates at endpoint are 0.0
