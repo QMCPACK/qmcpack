@@ -1,19 +1,21 @@
-PROJECT(external)
+PROJECT(qmctools)
 
-SET(PC
-  ../QMCWaveFunctions/OrbitalBuilderBase.cpp 
-  PC.cpp
-)
-
-SET(ASSIGN 
+SET(QMCTOOLS
   ../QMCWaveFunctions/OrbitalBuilderBase.cpp
-  Assign.cpp
+  ../QMCWaveFunctions/MolecularOrbitals/RGFBuilderBase.cpp
+  ../QMCWaveFunctions/MolecularOrbitals/GTO2GridBuilder.cpp
+  gto2grid.cpp
 )
 
-ADD_EXECUTABLE(pc ${PC})
-TARGET_LINK_LIBRARIES(pc qmc qmcbase)
-ADD_EXECUTABLE(assign ${ASSIGN})
-TARGET_LINK_LIBRARIES(assign qmc qmcbase)
+SET(CASINO
+  ../QMCWaveFunctions/OrbitalBuilderBase.cpp
+  ../QMCWaveFunctions/MolecularOrbitals/RGFBuilderBase.cpp
+  ../QMCWaveFunctions/MolecularOrbitals/GTO2GridBuilder.cpp
+  QMCGaussianParserBase.cpp
+  CasinoParser.cpp
+  parse.cpp
+)
+
 LINK_LIBRARIES(${FORTRAN_LIBS} 
 ${LAPACK_LIBRARY} 
 ${BLAS_LIBRARY} 
@@ -21,4 +23,7 @@ ${BLAS_EXTRA_LIBRARY}
 ${CMAKE_THREAD_LIBS_INIT}
 )
 
-
+ADD_EXECUTABLE(gto2grid ${QMCTOOLS})
+TARGET_LINK_LIBRARIES(gto2grid qmc qmcbase)
+ADD_EXECUTABLE(casino ${CASINO})
+TARGET_LINK_LIBRARIES(casino qmc qmcbase)

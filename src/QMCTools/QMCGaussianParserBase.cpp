@@ -1,4 +1,4 @@
-#include "Tools/QMCGaussianParserBase.h"
+#include "QMCTools/QMCGaussianParserBase.h"
 #include <iterator>
 #include <algorithm>
 #include <set>

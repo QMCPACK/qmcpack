@@ -1,4 +1,4 @@
-#include "Tools/CasinoParser.h"
+#include "QMCTools/CasinoParser.h"
 #include "Message/Communicate.h"
 #include "Utilities/OhmmsInfo.h"
 

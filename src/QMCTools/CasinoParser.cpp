@@ -1,4 +1,4 @@
-#include "Tools/CasinoParser.h"
+#include "QMCTools/CasinoParser.h"
 #include <fstream>
 #include <iterator>
 #include <algorithm>
