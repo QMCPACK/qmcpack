@@ -35,7 +35,7 @@ namespace ohmmsqmc {
     ///the radial orbitals
     CenteredOrbitalType* m_orbitals;
 
-    RGFBuilderBase(): m_orbitals(NULL), Counter(0){ }
+    RGFBuilderBase(): m_orbitals(NULL), Counter(0), m_file_id(-1), m_group_id(-1){ }
 
     virtual ~RGFBuilderBase();
 
