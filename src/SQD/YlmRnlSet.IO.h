@@ -259,9 +259,15 @@ bool YlmRnlSet<GT>::print_basis(const std::string& elementName,
       else Mdown(ndown++,orb) = 1.0;
       char idname[128];
       sprintf(idname,"R%03d",ID[orb]);
+      if(fabs(psi[orb](0)) > 0.0){ 
+	osXML << "<phi id=\"" << idname << "\" n=\"" << N[orb] 
+	      << "\" l=\"" << L[orb] << "\" m=\"" << M[orb] 
+	      << "\" s=\"" << S[orb] << "\" zeta=\"1\"/>" << endl;
+      } else {
       osXML << "<phi id=\"" << idname << "\" n=\"" << N[orb] 
 	    << "\" l=\"" << L[orb] << "\" m=\"" << M[orb] 
-	    << "\" s=\"" << S[orb] << "\" zeta=\"1\"/>" << endl;
+	    << "\" s=\"" << S[orb] << "\" zeta=\"1\" imin=\"1\"/>" << endl;
+      }
     }
   } else {
     /*if there is a restriction then the basis consists of one orbital 
@@ -276,9 +282,15 @@ bool YlmRnlSet<GT>::print_basis(const std::string& elementName,
 	nbasis++;
 	char idname[128];
 	sprintf(idname,"R%03d",ID[orb]);
-	osXML << "<phi id=\"" << idname << "\" n=\"" << N[orb] 
-	      << "\" l=\"" << L[orb] << "\" m=\"" << M[orb] 
-	      << "\" s=\"1\" zeta=\"1\"/>" << endl;
+	if(fabs(psi[orb](0)) > 0.0){ 
+	  osXML << "<phi id=\"" << idname << "\" n=\"" << N[orb] 
+		<< "\" l=\"" << L[orb] << "\" m=\"" << M[orb] 
+		<< "\" s=\"1\" zeta=\"1\"/>" << endl;
+	} else {
+	  osXML << "<phi id=\"" << idname << "\" n=\"" << N[orb] 
+		<< "\" l=\"" << L[orb] << "\" m=\"" << M[orb] 
+		<< "\" s=\"" << S[orb] << "\" zeta=\"1\" imin=\"1\"/>" << endl;
+	}
 	nbasis++;
       }
     }
