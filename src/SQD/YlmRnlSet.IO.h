@@ -96,9 +96,12 @@ bool YlmRnlSet<GT>::put(xmlNodePtr cur){
       if(it == OccNo.end()) {
 	add(n,l,m,s,occ);
 	XMLReport("Adding Orbital: n=" << n << ", l=" << l <<
-	       ", m=" << m << ", s=" << s << ", occ=" << occ);
-	//OccNo[nlmn] = Num-1;
+		  ", m=" << m << ", s=" << s << ", occ=" << occ);
 	OccNo[nlms] = 1;
+	//count number of spin-up and down orbitals
+	if(s == 1) Nup++;
+	else Ndown++;
+
       } else {
 	ERRORMSG( "Error, orbital " << n << l << m << s 
 		  << " already occupied");
@@ -218,22 +221,20 @@ template<class GT>
 bool YlmRnlSet<GT>::print_basis(const std::string& elementName,
 				const std::string& RootName,
 				const std::string& GridType){
-   
-  int nup = 0;
-  int ndown = 0;
-
-  //determine number of spin up and down electrons
-  for(int orb=0; orb < size(); orb++)
-    (S[orb] == 1) ? nup++ : ndown++;
-
+  //matrices for spin-up and down orbitals
   Matrix<double> Mup;
   Matrix<double> Mdown;
   if(Restriction == "none"){
-    Mup.resize(nup,NumUniqueOrb);
-    Mdown.resize(ndown,NumUniqueOrb);
+    Mup.resize(Nup,NumUniqueOrb);
+    Mdown.resize(Ndown,NumUniqueOrb);
   } else {
-    Mup.resize(nup,nup);
-    Mdown.resize(ndown,nup);
+    if(Nup >= Ndown){
+      Mup.resize(Nup,Nup);
+      Mdown.resize(Ndown,Nup);
+    } else {
+      Mup.resize(Nup,Ndown);
+      Mdown.resize(Ndown,Ndown);
+    }
   }
   
   Mup = 0.0;  Mdown = 0.0;
@@ -245,33 +246,43 @@ bool YlmRnlSet<GT>::print_basis(const std::string& elementName,
   osXML << "<determinantset type=\"MolecularOrbital\">" << endl;
   osXML << "<basisset>" << endl;
   osXML << "<basis type=\"HFNG\" species=\"" << elementName 
-	 << "\" file=\"" << fnameHDF5 << "\">" << endl;
+	<< "\" file=\"" << fnameHDF5 << "\">" << endl;
 
+  //if there is no restriction all the orbitals are basis functions
   if(Restriction == "none"){
-    nup = 0; ndown = 0;
+    int nup = 0; int ndown = 0;
     for(int orb=0; orb<size(); orb++){
       if(S[orb] == 1) Mup(nup++,orb) = 1.0;
       else Mdown(ndown++,orb) = 1.0;
       char idname[128];
       sprintf(idname,"R%03d",ID[orb]);
       osXML << "<phi id=\"" << idname << "\" n=\"" << N[orb] 
-	     << "\" l=\"" << L[orb] << "\" m=\"" << M[orb] 
-	     << "\" s=\"" << S[orb] << "\" zeta=\"1\"/>" << endl;
+	    << "\" l=\"" << L[orb] << "\" m=\"" << M[orb] 
+	    << "\" s=\"" << S[orb] << "\" zeta=\"1\"/>" << endl;
     }
   } else {
-    nup = 0; ndown = 0; int nbasis = 0;
+    /*if there is a restriction then the basis consists of one orbital 
+      for each unique (n,l,m), since for a given (n,l,m) spin-up is equal 
+      to spin-down, assign each basis function an up spin*/
+    int nup = 0; int ndown = 0; int nbasis = -1;   
     for(int orb=0; orb<size(); orb++){
-      if(S[orb] == 1){
-	Mup(nup++,nbasis) = 1.0;
+      NLMIndex nlm(N[orb],L[orb],M[orb]);
+      NLM_Map_t::iterator it = NLM.find(nlm); 
+      if(it == NLM.end()) {
+	NLM[nlm] = nbasis;
+	nbasis++;
 	char idname[128];
 	sprintf(idname,"R%03d",ID[orb]);
 	osXML << "<phi id=\"" << idname << "\" n=\"" << N[orb] 
-	       << "\" l=\"" << L[orb] << "\" m=\"" << M[orb] 
-	       << "\" s=\"" << S[orb] << "\" zeta=\"1\"/>" << endl;
+	      << "\" l=\"" << L[orb] << "\" m=\"" << M[orb] 
+	      << "\" s=\"1\" << zeta=\"1\"/>" << endl;
 	nbasis++;
       }
-      else Mdown(ndown++,nbasis) = 1.0;
     }
+
+    for(int i=0; i<Mup.rows(); i++) Mup(i,i) = 1.0;
+    for(int i=0; i<Mdown.rows(); i++) Mdown(i,i) = 1.0;
+
   }
  
   osXML << "</basis>" << endl;

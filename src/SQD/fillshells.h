@@ -7,20 +7,23 @@ namespace ohmmshf {
   inline 
     void FillShellsNucPot(SphericalOrbitalTraits::BasisSetType& mo, 
 			  int nmax) { 
-    //			     vector<int>& cs, 
-    //			     vector<double>& cratio){
+ 
   int up=1;
   int dn=-1;
   
     switch(nmax) {
     case(1):
+      //add 2 orbitals
       mo.add(1,0,0,up,1.0);
       mo.add(1,0,0,dn,1.0);
-      //     cs[1] = 2;
-      //     cratio[1] = 0.3;
+
+      mo.Nup += 1;
+      mo.Ndown += 1;
+ 
       break;
 
     case(2):
+      //add 10 orbitals (Ne)
       mo.add(1,0, 0,up,1.0);
       mo.add(1,0, 0,dn,1.0);
 
@@ -33,13 +36,13 @@ namespace ohmmshf {
       mo.add(2,1, 1,up,1.0);
       mo.add(2,1, 1,dn,1.0);
 
- //      cs[1] = 2;
-//       cratio[1] = 0.3;
-//       cs[2] = 10;
-//       cratio[2] = 0.35;
+      mo.Nup += 5;
+      mo.Ndown += 5;
+
       break;
 
     case(3):
+      //add 18 orbitals (Ar)
       mo.add(1,0, 0,up,1.0);
       mo.add(1,0, 0,dn,1.0);
 
@@ -61,17 +64,13 @@ namespace ohmmshf {
       mo.add(3,1, 1,up,1.0);
       mo.add(3,1, 1,dn,1.0);
 
-  //     cs[1] = 2;
-//       cratio[1] = 0.3;
-//       cs[2] = 10;
-//       cratio[2] = 0.35;
-//       cs[3]=18;
-//       cratio[2] = 0.4;
+      mo.Nup += 9;
+      mo.Ndown += 9;
+
       break;
     
-
-
     case(4):
+      //add 36 orbitals (Kr)
       mo.add(1,0, 0,up,1.0);
       mo.add(1,0, 0,dn,1.0);
 
@@ -112,18 +111,14 @@ namespace ohmmshf {
       mo.add(4,1, 1,up,1.0);
       mo.add(4,1, 1,dn,1.0);
 
-    //   cs[1] = 2;
-//       cratio[1] = 0.3;
-//       cs[2] = 10;
-//       cratio[2] = 0.35;
-//       cs[3]=18;
-//       cratio[2] = 0.4;
-//       cs[4] = 36;
-//       cratio[4] = 0.45;
+      mo.Nup += 18;
+      mo.Ndown += 18;  
+
       break;
     
 
     case(5):
+      //add 54 orbitals (Xe)
       mo.add(1,0, 0,up,1.0);
       mo.add(1,0, 0,dn,1.0);
 
@@ -183,20 +178,13 @@ namespace ohmmshf {
       mo.add(5,1, 1,up,1.0);
       mo.add(5,1, 1,dn,1.0);
 
-  //     cs[1] = 2;
-//       cratio[1] = 0.3;
-//       cs[2] = 10;
-//       cratio[2] = 0.35;
-//       cs[3]=18;
-//       cratio[2] = 0.4;
-//       cs[4] = 36;
-//       cratio[4] = 0.45;
-//       cs[5] = 54;
-//       cratio[5] = 0.5;
+      mo.Nup += 27;
+      mo.Ndown += 27;
+
       break;
 
-
-  case(6):
+    case(6):
+      //add 86 orbitals (Rn)
       mo.add(1,0, 0,up,1.0);
       mo.add(1,0, 0,dn,1.0);
 
@@ -290,18 +278,9 @@ namespace ohmmshf {
       mo.add(6,1, 1,up,1.0);
       mo.add(6,1, 1,dn,1.0);
 
-  //     cs[1] = 2;
-//       cratio[1] = 0.3;
-//       cs[2] = 10;
-//       cratio[2] = 0.35;
-//       cs[3]=18;
-//       cratio[2] = 0.4;
-//       cs[4] = 36;
-//       cratio[4] = 0.45;
-//       cs[5] = 54;
-//       cratio[5] = 0.5;
-//       cs[6] = 86;
-//       cratio[6] = 0.55;
+      mo.Nup += 43;
+      mo.Ndown += 43;
+
       break;
     }
 }
@@ -309,21 +288,23 @@ namespace ohmmshf {
   inline 
   void FillShellsHarmPot(SphericalOrbitalTraits::BasisSetType& mo, 
 			 int nmax) {
-    //			      vector<int>& cs, 
-    //			      vector<double>& cratio){
-    
+     
     int up=1;
     int dn=-1;
     
     switch(nmax) {
     case(1):
+      //add 2 orbitals
       mo.add(0,0,0,up,1.0);
       mo.add(0,0,0,dn,1.0);
-      //cs[1] = 2;
-      //cratio[1] = 0.3;
+      
+      mo.Nup += 1;
+      mo.Ndown += 1;
+
       break;
       
     case(2):
+      //add 8 orbitals
       mo.add(0,0,0,up,1.0);
       mo.add(0,0,0,dn,1.0);
       
@@ -334,13 +315,13 @@ namespace ohmmshf {
       mo.add(0,1, 1,up,1.0);
       mo.add(0,1, 1,dn,1.0);
       
-    //   cs[1] = 2;
-      //       cratio[1] = 0.3;
-      //       cs[2] = 10;
-      //       cratio[2] = 0.35;
+      mo.Nup += 4;
+      mo.Ndown += 4;
+
       break;
 
     case(3):
+      //add 20 orbitals
       mo.add(0,0,0,up,1.0);
       mo.add(0,0,0,dn,1.0);
 
@@ -364,15 +345,13 @@ namespace ohmmshf {
       mo.add(1,0, 0,up,1.0);
       mo.add(1,0, 0,dn,1.0);
      
-    //   cs[1] = 2;
-//       cratio[1] = 0.3;
-//       cs[2] = 10;
-//       cratio[2] = 0.35;
-//       cs[3]=18;
-//       cratio[2] = 0.4;
+      mo.Nup += 10;
+      mo.Ndown+= 10;
+
       break;
     
     case(4):
+      //add 40 orbitals
       mo.add(0,0,0,up,1.0);
       mo.add(0,0,0,dn,1.0);
 
@@ -417,17 +396,13 @@ namespace ohmmshf {
       mo.add(1,1, 1,up,1.0);
       mo.add(1,1, 1,dn,1.0);
 
- //      cs[1] = 2;
-//       cratio[1] = 0.3;
-//       cs[2] = 10;
-//       cratio[2] = 0.35;
-//       cs[3]=18;
-//       cratio[2] = 0.4;
-//       cs[4] = 36;
-//       cratio[4] = 0.45;
+      mo.Nup += 20;
+      mo.Ndown += 20;
+
       break;
     
     case(5):
+      //add 70 orbitals
       mo.add(0,0,0,up,1.0);
       mo.add(0,0,0,dn,1.0);
 
@@ -505,19 +480,12 @@ namespace ohmmshf {
       mo.add(1,2, 2,up,1.0);
       mo.add(1,2, 2,dn,1.0);
 
-  //     cs[1] = 2;
-//       cratio[1] = 0.3;
-//       cs[2] = 10;
-//       cratio[2] = 0.35;
-//       cs[3]=18;
-//       cratio[2] = 0.4;
-//       cs[4] = 36;
-//       cratio[4] = 0.45;
-//       cs[5] = 54;
-//       cratio[5] = 0.5;
+      mo.Nup += 35;
+      mo.Ndown += 35;
       break;
 
     case(6):
+      //add 112 orbitals
       mo.add(0,0,0,up,1.0);
       mo.add(0,0,0,dn,1.0);
 
@@ -640,18 +608,8 @@ namespace ohmmshf {
       mo.add(2,1, 1,up,1.0);
       mo.add(2,1, 1,dn,1.0);
 
-   //    cs[1] = 2;
-//       cratio[1] = 0.3;
-//       cs[2] = 10;
-//       cratio[2] = 0.35;
-//       cs[3]=18;
-//       cratio[2] = 0.4;
-//       cs[4] = 36;
-//       cratio[4] = 0.45;
-//       cs[5] = 54;
-//       cratio[5] = 0.5;
-//       cs[6] = 86;
-//       cratio[6] = 0.55;
+      mo.Nup += 56;
+      mo.Ndown += 56;
       break;
     }
   }

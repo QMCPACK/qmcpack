@@ -119,8 +119,7 @@ struct YlmRnlSet  {
   ///constructor  
   YlmRnlSet(): m_grid(NULL), NumOrb(0), 
 	       NumUniqueOrb(0), Restriction("none"), CuspParam(0.0),
-	       MinEigenValue(0.0),
-               MaxEigenValue(0.0) { }
+	       MinEigenValue(0.0), MaxEigenValue(0.0), Nup(0), Ndown(0) { }
   
   bool add(int n, int l, int m, int s, value_type occ);
 
@@ -181,33 +180,24 @@ struct YlmRnlSet  {
   ///a common grid
   RadialGrid_t* m_grid;
     
-  /**@addtogroup QuantumNumber
-   *@{
-   *@brief Containers for the quantum numbers of a set of spherical orbtials.
-   *
-   *Typically, the i-th orbital is represented by (N[i],L[i],M[i],S[i])
-   */
-  /*! N, Principal quantum number*/
+  ///principal quantum number for each orbital
   vector<int> N;
-  
-  /*! L, angular momentum */
+  ///angular momentum quantum number for each orbital
   vector<int> L;
-  
-  /*! M, z-angular momentum */
+  ///z-angular momentum quantum number for each orbital
   vector<int> M;
-  
-  /*! S,  spin in unit of 1/2 */
+  ///spin for each orbital (up = 1, down = -1)
   vector<int> S;
-  /*@}*/
-  
   ///coefficient for each orbtial (1 if occupied, 0 if not)
   vector<value_type> Occ;
 
+  ///number of spin-up orbitals
+  int Nup;
+  ///number of spin-down orbitals
+  int Ndown;
+
   ///parameter for calculating orbital cusp conditions
   value_type CuspParam;
-
-  ///parameter for eigenvlaue bounds (to be removed)
-  value_type EigenBoundParam;
 
   ///lower-bound for the eigenvalues
   value_type MinEigenValue;
