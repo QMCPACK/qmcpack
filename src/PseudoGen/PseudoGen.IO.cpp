@@ -571,6 +571,8 @@ namespace ohmmshf {
     fout << "#Results for " << AtomName << " with " << PotType 
 	 << " potential on " << GridType << " grid." <<endl;
     fout << "#Eigen values " << endl;
+    fout.precision(10);
+    fout.setf(ios::scientific,ios::floatfield);
     for(int orb=0; orb<PPeigVal.size(); orb++) {
       fout << "# n=" << Psi.N[orb] << " " <<  " l=" << Psi.L[orb] << setw(15) 
 	   << PPeigVal[orb] << " " << endl;
@@ -587,12 +589,12 @@ namespace ohmmshf {
       max_rad_all = std::max(max_rad_all,max_rad);
       orbindex += Psi.IDcount[orb];  
     }
-
+    fout.precision(12);
     for(int ig=0; ig<max_rad_all; ig++) {
-      fout << setw(15) << myGrid->r(ig);
+      fout << setw(22) << myGrid->r(ig);
       orbindex=0;
       for(int orb=0; orb<Psi.NumUniqueOrb; orb++){
-	fout << setw(15) << Psi(orbindex,ig);
+	fout << setw(22) << Psi(orbindex,ig);
 	orbindex += Psi.IDcount[orb];  
       }
       fout << endl;
