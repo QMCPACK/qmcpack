@@ -110,33 +110,25 @@ namespace ohmmsqmc {
 
 	    for(int iat=0; iat<W.getTotalNum(); iat++) {
 
-	      //PosType dr = g*deltaR[iat]+(*it)->Drift[iat];
-	      PosType dr = g*deltaR[iat];
-	      W.makeMove(iat,dr);
+	      PosType dr = g*deltaR[iat]+(*it)->Drift[iat];
+	      PosType newpos = W.makeMove(iat,dr);
 
 	      //RealType ratio = Psi.ratio(W,iat);
 	      RealType ratio = Psi.ratio(W,iat,dG,dL);
 
 	      G = W.G+dG;
 
-	      /* green function
-	      deltaR = -scale*G; 
-	      dletaR[iat] -= dr; //subtract dr = (*it)->R(iat) - W.R(iat)
-	      RealType backwardGF = exp(-oneover2tau*Dot(deltaR,deltaR));
-	      //a better way to do this
-	      RealType forwardGF = exp(-0.5*dot(dr,dr));
-	      ValueType vsq = Dot(G,G);
-	      ValueType scale = ((-1.0+sqrt(1.0+2.0*Tau*vsq))/vsq);
-	      ValueType scale2 = scale*scale;
-	      RealType dist = scale2*vsq+2.0*scale*dot(dr,G(iat))+dot(dr,dr);
-	      RealType backwardGF = exp(-oneover2tau*dist);
-	      */
+	      //RealType forwardGF = exp(-0.5*dot(deltaR[iat],deltaR[iat]));
+	      //dr = (*it)->R[iat]-newpos-Tau*G[iat]; 
+	      //RealType backwardGF = exp(-oneover2tau*dot(dr,dr));
+	      RealType logGf = -0.5*dot(deltaR[iat],deltaR[iat]);
+	      dr = (*it)->R[iat]-newpos-Tau*G[iat]; 
+	      RealType logGb = -oneover2tau*dot(dr,dr);
 
-	      RealType ratio2 = pow(ratio,2);
-
+	      //RealType ratio2 = pow(ratio,2)
+	      RealType prob = std::min(1.0,pow(ratio,2)*exp(logGb-logGf));
 	      //alternatively
-	      //if(Random() > backwardGF/forwardGF*ratio2) {
-	      if(Random() < ratio2) {
+	      if(Random() < prob) { //if(Random() < ratio2) {
 		moved = true;
 		++nAccept;
 		W.acceptMove(iat);
@@ -144,8 +136,7 @@ namespace ohmmsqmc {
 		Psi.update2(W,iat);
 		W.G = G;
 		W.L += dL;
-		//Need to change the drift
-		//(*it)->Drift = scale*G;
+		(*it)->Drift = Tau*G;
 	      } else {
 		++nReject; 
 		Psi.restore(iat);
