@@ -13,9 +13,14 @@ class TriCubicSplineT {
 public: 
 
   typedef XYZCubicGrid<T>               GridType;
+  typedef TriCubicSplineT<T>            ThisType;
   typedef typename GridType::KnotType   KnotType;
   typedef typename GridType::Grid1DType Grid1DType;
   typedef T value_type;
+
+  //Hide these later
+  bool UpToDate; 
+  int nX, nY, nZ;
 
   /// constructor
   TriCubicSplineT(GridType* agrid): 
@@ -47,6 +52,9 @@ public:
     } 
   }
 
+  inline T* data() { return &(F[0][0]); }
+  inline const T* data() const { return &(F[0][0]); }
+
   inline T operator()(int i, int j, int k) const
   {
     return F[index(i,j,k)][0];
@@ -61,6 +69,15 @@ public:
     return k+nZ*(j+nY*i);
   }
 
+  template<class IT>
+  inline void reset(IT first, IT last) {
+    std::vector<KnotType>::iterator it(F.begin());
+    while(first != last) {
+      (*it)[0]=*first++;++it;
+    }
+    reset();
+  }
+
   template<class PV>
   inline void setgrid(const PV& r) {
     m_grid->locate(r[0],r[1],r[2]);
@@ -71,11 +88,11 @@ public:
     if(m_grid->Loc<0) {
       return 1e-20;
     }
-    m_grid->update();
+    //m_grid->update();
     int cur(m_grid->Loc);
-    m_grid->evaluate(F[cur]    , F[cur+n001], F[cur+n010], F[cur+n011],
-                    F[cur+n100], F[cur+n101], F[cur+n110], F[cur+n111]);
-    return m_grid->val;
+    return 
+      m_grid->evaluate(F[cur]    , F[cur+n001], F[cur+n010], F[cur+n011],
+                       F[cur+n100], F[cur+n101], F[cur+n110], F[cur+n111]);
   }
 
   template<class PV>
@@ -85,9 +102,9 @@ public:
       lapf = 1e-40;
       return 1e-20;
     }
-    m_grid->updateAll();
+    //m_grid->updateAll();
     int cur(m_grid->Loc);
-    m_grid->evaluateAll(F[cur]    , F[cur+n001], F[cur+n010], F[cur+n011],
+    m_grid->evaluateAll(F[cur]    ,  F[cur+n001], F[cur+n010], F[cur+n011],
                         F[cur+n100], F[cur+n101], F[cur+n110], F[cur+n111]);
         
     gradf[0]=m_grid->gradfX; gradf[1]=m_grid->gradfY; gradf[2]=m_grid->gradfZ;
@@ -97,8 +114,6 @@ public:
 
 private:
 
-  bool UpToDate; 
-  int nX, nY, nZ;
   int n001,n010,n011,n100,n101,n110,n111;
 
   GridType* m_grid;
@@ -188,4 +203,5 @@ void TriCubicSplineT<T>::UpdateZ(int source, int target, bool periodic){
 
   delete temp;
 }
+
 #endif
