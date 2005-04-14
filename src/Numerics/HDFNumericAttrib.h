@@ -23,7 +23,9 @@
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsPETE/TinyVector.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
+#ifdef HAVE_LIBBLITZ
 #include <blitz/array.h>
+#endif
 
 /** Specialization for hsize_t */
 template<>
@@ -186,6 +188,7 @@ struct HDFAttribIO<Matrix<double> >: public HDFAttribIOBase {
 
 };
 
+#ifdef HAVE_LIBBLITZ
 /** Specialization for blitz::Array<TinyVector<double,D>,2> */
 template<unsigned D>
 struct HDFAttribIO<blitz::Array<TinyVector<double,D>,2> >: public HDFAttribIOBase {
@@ -226,6 +229,7 @@ struct HDFAttribIO<blitz::Array<TinyVector<double,D>,2> >: public HDFAttribIOBas
   }
   
 };
+#endif
 
 /** Specialization for Vector<TinyVector<double,D> > */
 template<unsigned D>
