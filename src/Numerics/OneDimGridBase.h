@@ -24,7 +24,8 @@
 #include <algorithm>
 #include "OhmmsPETE/OhmmsVector.h"
 
-/** An abstract base class to implement a One-Dimensional grid */
+/** An abstract base class to implement a One-Dimensional grid 
+ */
 template <class T, class CT=Vector<T> >
 struct OneDimGridBase {
 
@@ -34,6 +35,9 @@ struct OneDimGridBase {
   int Loc;
   ///differential spacing of the grid
   T Delta;
+  ///temporary data for interpolations
+  T h,p1,p2,q1,q2,dp1,dq1,dq2,d2p1,d2q1,d2q2;
+
   ///array to store the radial grid data
   Array_t X;
   ///assign a value
@@ -60,8 +64,37 @@ struct OneDimGridBase {
   inline T rmin() const { return X[0];}
   ///return the last grid point
   inline T rmax() const { return X[X.size()-1];}
+
+  ///update the variables for interpolations
+  inline void update(T r) {
+    int khi(Loc+1);
+    h=X[khi]-X[Loc]; 
+    //hinv=1.0/h;
+    value_type hinv(1.0e0/h); 
+    value_type t((r-X[Loc])*hinv); 
+    value_type tm(t-1.0);
+    p1=tm*tm*(1.0+2.0*t);
+    p2=t*t*(3.0-2.0*t);
+    q1=t*tm*tm;
+    q2=t*t*tm;
+
+    dp1=6.0*t*tm*hinv;
+    dq1=(1.0-4.0*t+3.0*t*t);
+    dq2=t*(3.0*t-2.0);
+
+    d2p1=(12.0*t-6.0)*hinv*hinv;
+    d2q1=(6.0*t-4.0)*hinv;
+    d2q2=(6.0*t-2.0)*hinv;
+  }
+
   ///assign and return the index for radial point r
   virtual int index(T r) = 0;
+
+  inline T cubicInterpolate(T a, T b, T a1, T b1, T& du, T& d2u) {
+    du = dp1*(a-b)+dq1*a1+dq2*b1;
+    d2u = d2p1*(a-b)+d2q1*a1+d2q2*b1;
+    return p1*a+p2*b+h*(q1*a1+q2*b1);
+  }
   /**
    *@param ri initial grid point
    *@param rf final grid point
@@ -80,6 +113,10 @@ struct OneDimGridBase {
  */
 template <class T, class CT=Vector<T> >
 struct LinearGrid: public OneDimGridBase<T,CT> {
+
+  using OneDimGridBase<T,CT>::X;
+  using OneDimGridBase<T,CT>::Loc;
+  using OneDimGridBase<T,CT>::Delta;
 
   // T Delta;
   T DeltaInv;
@@ -109,6 +146,9 @@ struct LinearGrid: public OneDimGridBase<T,CT> {
 template <class T, class CT=Vector<T> >
 struct LogGrid: public OneDimGridBase<T,CT> {
 
+  using OneDimGridBase<T,CT>::X;
+  using OneDimGridBase<T,CT>::Loc;
+  using OneDimGridBase<T,CT>::Delta;
   // T Delta;
   T OneOverLogDelta; 
   
@@ -148,6 +188,9 @@ struct LogGrid: public OneDimGridBase<T,CT> {
 template <class T, class CT=Vector<T> >
 struct LogGridZero: public OneDimGridBase<T,CT> {
 
+  using OneDimGridBase<T,CT>::X;
+  using OneDimGridBase<T,CT>::Loc;
+  using OneDimGridBase<T,CT>::Delta;
   T OneOverA; 
   T OneOverB;
 
@@ -172,6 +215,10 @@ struct LogGridZero: public OneDimGridBase<T,CT> {
  */
 template <class T, class CT=Vector<T> >
 struct NumericalGrid: public OneDimGridBase<T,CT> {
+
+  using OneDimGridBase<T,CT>::X;
+  using OneDimGridBase<T,CT>::Loc;
+  using OneDimGridBase<T,CT>::Delta;
  
   template<class VA>
   NumericalGrid(const VA& nv) {
@@ -180,10 +227,10 @@ struct NumericalGrid: public OneDimGridBase<T,CT> {
     std::copy(nv.begin(), nv.end(), X.data());
   }
 
-  int index(T r){
+  inline int index(T r){
     int k;
     int klo=0;
-    int khi=size()-1;
+    int khi=this->size()-1;
     while(khi-klo > 1){
       k=(khi+klo) >> 1;
       if(X[k] > r) khi=k;
