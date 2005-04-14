@@ -12,8 +12,8 @@
 template<class T>
 struct XYZCubicGrid {
 
-  typedef typename TinyVector<T,8> KnotType;
-  typedef OneDimGridBase<T>        Grid1DType;
+  typedef TinyVector<T,8>   KnotType;
+  typedef OneDimGridBase<T> Grid1DType;
 
   /// functions which depend on the point where the interpolated value
   /// is required. t = (x - xi)/h
