@@ -21,6 +21,9 @@ public:
   //Hide these later
   bool UpToDate; 
   int nX, nY, nZ;
+  int n001,n010,n011,n100,n101,n110,n111;
+  GridType* m_grid;
+  std::vector<KnotType> F;
 
   /// constructor
   TriCubicSplineT(GridType* agrid): 
@@ -71,7 +74,7 @@ public:
 
   template<class IT>
   inline void reset(IT first, IT last) {
-    std::vector<KnotType>::iterator it(F.begin());
+    typename std::vector<KnotType>::iterator it(F.begin());
     while(first != last) {
       (*it)[0]=*first++;++it;
     }
@@ -114,10 +117,6 @@ public:
 
 private:
 
-  int n001,n010,n011,n100,n101,n110,n111;
-
-  GridType* m_grid;
-  std::vector<KnotType> F;
 
   // dim:     Dimension to calculate derivative w.r.t
   // source:  Function to differentiate
@@ -130,7 +129,7 @@ private:
 template<class T>
 void TriCubicSplineT<T>::UpdateX(int source, int target, bool periodic){
   
-  typename OneDimGridFunctor<T>* temp=0;
+  OneDimGridFunctor<T>* temp=0;
   if(periodic) {
     temp = new OneDimCubicSplinePBC<T>(m_grid->gridX);
   } else {
@@ -157,7 +156,7 @@ void TriCubicSplineT<T>::UpdateX(int source, int target, bool periodic){
 template<class T>
 void TriCubicSplineT<T>::UpdateY(int source, int target, bool periodic){
 
-  typename OneDimGridFunctor<T>* temp=0;
+  OneDimGridFunctor<T>* temp=0;
   if(periodic) {
     temp = new OneDimCubicSplinePBC<T>(m_grid->gridY);
   } else {
@@ -182,7 +181,7 @@ void TriCubicSplineT<T>::UpdateY(int source, int target, bool periodic){
 template<class T>
 void TriCubicSplineT<T>::UpdateZ(int source, int target, bool periodic){
 
-  typename OneDimGridFunctor<T>* temp=0;
+  OneDimGridFunctor<T>* temp=0;
   if(periodic) {
     temp = new OneDimCubicSplinePBC<T>(m_grid->gridZ);
   } else {
