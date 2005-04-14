@@ -99,7 +99,8 @@ bool SlaterCombo<T>::putBasisGroup(xmlNodePtr cur) {
         sset.push_back(Component_t(0,zeta,c));
       } else {
         STONorm<T> anorm(qN);
-        c = anorm(qN-1,zeta);
+        //multiply a normalization factor to the contraction factor
+        c *= anorm(qN-1,zeta);
         sset.push_back(Component_t(qN-L-1,zeta,c));
       }
       LOGMSG(" Slater Component (n,zeta,c)= " << qN << " " << zeta << " " << c)
