@@ -17,6 +17,7 @@
 #define OHMMS_QMC_RADIALGRIDFUNCTOR_GAUSSIANBASISSET_H
 #include "Numerics/RadialOrbitalBase.h"
 #include "OhmmsData/AttributeSet.h"
+#include <cmath>
 
 template<class T>
 struct GaussianCombo: public RadialOrbitalBase<T> {
