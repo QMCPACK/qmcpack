@@ -28,7 +28,7 @@ struct FunctorBase { };
  */
 
 template <class Td, 
-	  class Tg = double, 
+	  class Tg = Td, 
 	  class CTd= Vector<Td>,
 	  class CTg= Vector<Tg>  >
 struct OneDimGridFunctor//: public FunctorBase<Td,1> {
@@ -42,20 +42,24 @@ struct OneDimGridFunctor//: public FunctorBase<Td,1> {
   /**constructor
    *@param gt the radial grid
    */
-  OneDimGridFunctor(grid_type* gt = NULL): m_grid(gt) {
+  OneDimGridFunctor(grid_type* gt = 0): m_grid(gt) {
     if(m_grid) resize(m_grid->size());
+    FirstAddress.resize(3,0);
   }
 
+  inline virtual ~OneDimGridFunctor() { }
+
   ///copy constructor
-  OneDimGridFunctor(const this_type& a): m_grid(a.m_grid) {
+  OneDimGridFunctor(const this_type& a): m_grid(a.m_grid){
     if(m_grid) resize(m_grid->size());
+    FirstAddress.resize(3,0);
   }
 
   ///assignment operator
   const this_type& operator=(const this_type& a) {
     m_grid = a.m_grid;
     m_Y = a.m_Y;
-    m_Y2 = a.m_Y2;
+    //m_Y2 = a.m_Y2;
     return *this;
   }
 
@@ -86,11 +90,18 @@ struct OneDimGridFunctor//: public FunctorBase<Td,1> {
   inline const grid_type& grid() const { return *m_grid;}
   ///assign a radial grid
   inline grid_type& grid() { return *m_grid;}
-  ///set the index of the grid for radius r
-  inline int setgrid(point_type r) {
-    return m_grid->index(r);
-  }
+  virtual int setgrid(point_type r)=0;
+  /////set the index of the grid for radius r
+  //inline int setgrid(point_type r) {
+  //  return m_grid->index(r);
+  //}
 
+  /** return the address of the values
+   * @param i index, i=0 value, i=1 first derivative, i=2 second
+   */
+  inline value_type* data(int i) {
+    return FirstAddress[i];
+  }
   /**return the differntial spacing for the grid
    *@warning only for LinearGrid and LogGrid
   */
@@ -111,7 +122,7 @@ struct OneDimGridFunctor//: public FunctorBase<Td,1> {
    */
   inline value_type f(point_type r) {
     setgrid(r);
-    return splint(r,dY,d2Y);
+    return Y=splint(r,dY,d2Y);
   }
 
   /**
@@ -133,19 +144,31 @@ struct OneDimGridFunctor//: public FunctorBase<Td,1> {
   ///assign a value
   inline value_type& operator()(int i) { return m_Y[i];} 
 
+  /** Evaluate the function value only
+   */
+  inline value_type evaluate(point_type r, point_type rinv) {
+    return Y = splint(r);
+  }
+
   /**Evaluate the function and its derivatives.
    *@note Must first call the function setgrid to
    *determine the interval on the grid which contains r.
    */
-  inline value_type evaluate(point_type r, point_type rinv) {
+  inline value_type evaluateAll(point_type r, point_type rinv) {
     return Y = splint(r,dY,d2Y);
   }
 
   virtual 
   value_type 
   splint(point_type r, value_type& du, value_type& d2u) { return 0.0; }
+
+  virtual 
+  value_type splint(point_type r) { return 0.0; }
    
-  virtual void spline(int imin, value_type yp1, int imax, value_type ypn) {  }
+  virtual 
+  void spline(int imin, value_type yp1, int imax, value_type ypn) {  }
+
+  virtual void spline() {  }
 
   /**
    *@param r radial distance
@@ -172,11 +195,12 @@ struct OneDimGridFunctor//: public FunctorBase<Td,1> {
 
   ///data for the function on the grid
   data_type m_Y;  
-  ///data for the 2nd derivative on the grid
-  data_type m_Y2;
 
   ///the number of nodes
   int NumNodes;
+
+  ///address
+  vector<value_type*> FirstAddress;
 };
 #endif
 /***************************************************************************
