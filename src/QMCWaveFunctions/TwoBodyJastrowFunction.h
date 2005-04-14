@@ -180,6 +180,18 @@ namespace ohmmsqmc {
       return exp(evaluateLog(P,G,L));
     }
 
+    ValueType ratio(ParticleSet& P, int iat) {
+      ValueType d(0.0);
+      const int* pairid(PairID[iat]);
+      for(int jat=0; jat<N; jat++) {
+        if(iat != jat) {
+          FT *func(F[pairid[jat]]);
+          d += func->evaluate(d_table->Temp[jat].r0) -func->evaluate(d_table->Temp[jat].r1);
+	}
+      }
+      return exp(d);
+    }
+
     /** later merge the loop */
     ValueType ratio(ParticleSet& P, int iat,
 		    ParticleSet::ParticleGradient_t& dG,
@@ -223,18 +235,6 @@ namespace ohmmsqmc {
 	U[ij] =  U[ji] = curVal[jat];
       }
     }
-
-    ValueType ratio(ParticleSet& P, int iat) {
-      register ValueType dudr, d2udr2,u;
-      DiffVal = 0.0;      
-      const int* pairid = PairID[iat];
-      for(int jat=0, ij=iat*N; jat<N; jat++,ij++) {
-	if(jat!=iat) {
-	  DiffVal += U[ij]-F[pairid[jat]]->evaluate(d_table->Temp[jat].r1, dudr, d2udr2);
-	}
-      }
-      return exp(DiffVal);
-    } 	  
 
 
     inline void update(ParticleSet& P, 		

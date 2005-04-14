@@ -83,7 +83,7 @@ namespace ohmmsqmc {
         agrid->index(_r);
         dfile << setw(30) << _r;
         for(int i=0; i<norb; i++) {
-          dfile << setw(30) << m_orbitals->Rnl[i]->evaluate(_r,_rinv);
+          dfile << setw(30) << m_orbitals->Rnl[i]->evaluateAll(_r,_rinv);
         }
         dfile << endl;
       }

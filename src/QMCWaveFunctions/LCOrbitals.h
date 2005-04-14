@@ -58,6 +58,8 @@ namespace ohmmsqmc {
     int ID;
     ///number of particles
     int NumPtcls;
+    ///size of basis set
+    int BasisSize;
     ///pointer to the basis set
     BS* BasisSet;
     ///matrix containing the coefficients
@@ -85,6 +87,7 @@ namespace ohmmsqmc {
     inline void resize(int nptcl) {
       NumPtcls = nptcl;
       BasisSet->resize(nptcl);
+      BasisSize=BasisSet->TotalBasis;
     }
 
     /** resize the internal storage of BasisSet by the number of walkers
@@ -107,8 +110,7 @@ namespace ohmmsqmc {
     inline void 
     evaluate(const ParticleSet& P, int iat, VV& psi) {
       BasisSet->evaluate(P,iat);
-      int nb(BasisSet->TotalBasis);
-      for(int j=0 ; j<NumPtcls; j++) psi[j] = dot(&C(j,0),BasisSet->y(0),nb);
+      for(int j=0 ; j<NumPtcls; j++) psi[j] = dot(&C(j,0),BasisSet->y(0),BasisSize);
     }
 
     /**@ingroup particlebyparticle 
@@ -125,7 +127,7 @@ namespace ohmmsqmc {
     template<class VV, class GV>
     inline void 
     evaluate(const ParticleSet& P, int iat, VV& psi, GV& dpsi, VV& d2psi) {
-      BasisSet->evaluate(P,iat);
+      BasisSet->evaluateAll(P,iat);
       if(Identity) {
         for(int j=0 ; j<NumPtcls; j++) {
 	  psi[j] = BasisSet->Y(0,j);
@@ -133,11 +135,11 @@ namespace ohmmsqmc {
           d2psi[j] = BasisSet->d2Y(0,j);
         }
       } else {
-	int nb = BasisSet->TotalBasis;
+	//int nb = BasisSet->TotalBasis;
 	for(int j=0 ; j<NumPtcls; j++) {
-	  psi[j]   = dot(&C(j,0),BasisSet->y(0),nb);
-	  dpsi[j]  = dot(&C(j,0),BasisSet->dy(0),nb);
-	  d2psi[j] = dot(&C(j,0),BasisSet->d2y(0),nb);
+	  psi[j]   = dot(&C(j,0),BasisSet->y(0),BasisSize);
+	  dpsi[j]  = dot(&C(j,0),BasisSet->dy(0),BasisSize);
+	  d2psi[j] = dot(&C(j,0),BasisSet->d2y(0),BasisSize);
         }
       }
     }
@@ -166,14 +168,14 @@ namespace ohmmsqmc {
 	  }
 	}
       } else {
-	int nb = BasisSet->TotalBasis;
+	//int nb = BasisSet->TotalBasis;
 	//iat is an index offset for the particle number
 	for(int i=0, iat=first; i<NumPtcls; i++,iat++){
 	  for(int j=0 ; j<NumPtcls; j++) {
 	    //logdet(j,i) = \f$\sum_k^{nb} C(j,k) Y(i+first,k)\f$
-	    logdet(j,i) = dot(&C(j,0),BasisSet->y(iat),nb);
-	    dlogdet(i,j) = dot(&C(j,0),BasisSet->dy(iat),nb);
-	    d2logdet(i,j) = dot(&C(j,0),BasisSet->d2y(iat),nb);
+	    logdet(j,i) = dot(&C(j,0),BasisSet->y(iat),BasisSize);
+	    dlogdet(i,j) = dot(&C(j,0),BasisSet->dy(iat),BasisSize);
+	    d2logdet(i,j) = dot(&C(j,0),BasisSet->d2y(iat),BasisSize);
 	  }
 	}
       }
@@ -200,14 +202,14 @@ namespace ohmmsqmc {
 	  }
 	}
       } else {
-	int nb = BasisSet->TotalBasis;
+	//int nb = BasisSet->TotalBasis;
 	int ntot = W.particles();
         for(int iw=0; iw<W.walkers(); iw++) {
   	  for(int i=0, iat=first; i<nptcl; i++, iat++){
 	    for(int j=0 ; j<nptcl; j++) {
-	      logdet[iw](j,i) = dot(&C(j,0),BasisSet->y(iw,iat),nb);
-	      dlogdet[iw](i,j) = dot(&C(j,0),BasisSet->dy(iw,iat),nb);
-	      d2logdet[iw](i,j) = dot(&C(j,0),BasisSet->d2y(iw,iat),nb);
+	      logdet[iw](j,i) = dot(&C(j,0),BasisSet->y(iw,iat),BasisSize);
+	      dlogdet[iw](i,j) = dot(&C(j,0),BasisSet->dy(iw,iat),BasisSize);
+	      d2logdet[iw](i,j) = dot(&C(j,0),BasisSet->d2y(iw,iat),BasisSize);
 	    }
 	  }
 	}
@@ -260,14 +262,15 @@ namespace ohmmsqmc {
         C=0.0;
         for(int i=0; i<norb; i++) C(i,i)=1.0;
       } else {
-	int n=0,i=0,nb(numBasis());
-        vector<ValueType>::iterator cit(Ctemp.begin());
+	int n=0,i=0;
+        typename vector<ValueType>::iterator cit(Ctemp.begin());
+        BasisSize=numBasis();
 	while(i<norb){
 	  if(occupation[n]>numeric_limits<RealType>::epsilon()){
-            std::copy(cit,cit+nb,C[i]);
+            std::copy(cit,cit+BasisSize,C[i]);
 	    i++; 
 	  }
-	  n++;cit+=nb;
+	  n++;cit+=BasisSize;
 	}
       }
 

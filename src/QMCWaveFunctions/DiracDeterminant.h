@@ -164,6 +164,7 @@ namespace ohmmsqmc {
       dpsiM_temp.resize(nel,norb);
       d2psiM_temp.resize(nel,norb);
       psiMinv.resize(nel,norb);
+      psiV.resize(norb);
       LastIndex = FirstIndex + nel;
     }
 
@@ -171,7 +172,6 @@ namespace ohmmsqmc {
 
       if(NP == 0) {//first time, allocate once
 	int norb = cols();
-	psiV.resize(norb);
 	dpsiV.resize(norb);
 	d2psiV.resize(norb);
 	workV1.resize(norb);
@@ -219,6 +219,11 @@ namespace ohmmsqmc {
       psiM_temp = psiM;
       dpsiM_temp = dpsiM;
       d2psiM_temp = d2psiM;
+    }
+
+    ValueType ratio(ParticleSet& P, int iat) {
+      Phi.evaluate(P, iat, psiV);
+      return curRatio= DetRatio(psiM, psiV.begin(),iat-FirstIndex);
     }
 
     ValueType ratio(ParticleSet& P, int iat,
@@ -271,10 +276,6 @@ namespace ohmmsqmc {
       }
     }
 
-    ValueType ratio(ParticleSet& P, int iat) {
-      Phi.evaluate(P, iat, psiV, dpsiV, d2psiV);
-      return curRatio= DetRatio(psiM, psiV.begin(),iat-FirstIndex);
-    }
     
     void update(ParticleSet& P, 
 		ParticleSet::ParticleGradient_t& dG, 

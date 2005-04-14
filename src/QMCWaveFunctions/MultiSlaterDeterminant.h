@@ -110,7 +110,7 @@ public:
   }
 
   /// returns the dimension of the j-th determinant 
-  inline int size(int i, int j) const {return Dets[i]->size(j);}
+  inline int size(int i, int j) const {return SDets[i]->size(j);}
 
 
   inline void evaluate(WalkerSetRef& W, //const DistanceTableData* dtable,

@@ -61,6 +61,18 @@ namespace ohmmsqmc {
     inline void reset() { }
     
     inline void resizeByWalkers(int nw) { }
+
+    template<class VV>
+    inline 
+    void 
+    evaluate(const ParticleSet& P, int iat, VV& phi) {
+      RealType r(myTable->Temp[0].r1);
+      RealType chi(0.0);
+      for(int i=0; i<C.size(); i++) {
+        chi += C[i]*exp(-Z[i]*r);
+      }
+      phi[0]=chi;
+    }
     
     /** @ingroup particlebyparticle
      *@brief evalaute the single-particle-orbital values

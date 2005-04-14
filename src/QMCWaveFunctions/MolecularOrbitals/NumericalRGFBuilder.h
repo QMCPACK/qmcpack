@@ -26,9 +26,10 @@ namespace ohmmsqmc {
    */
   struct NumericalRGFBuilder: public RGFBuilderBase {
     ///constructor
-    NumericalRGFBuilder(){}
+    NumericalRGFBuilder(xmlNodePtr cur);
     bool addGrid(xmlNodePtr cur);
     bool addRadialOrbital(xmlNodePtr cur, const QuantumNumberType& nlms);
+
   };
 
 }

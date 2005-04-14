@@ -82,6 +82,7 @@ namespace ohmmsqmc {
     }
 #endif
 
+
     ValueType ratio(ParticleSet& P, int iat,
 		    ParticleSet::ParticleGradient_t& G, 
 		    ParticleSet::ParticleLaplacian_t& L) {

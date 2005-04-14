@@ -121,6 +121,13 @@ namespace ohmmsqmc {
     inline void 
     evaluate(const ParticleSet& P, int iat)  {
       for(int c=0; c<I.size();c++) {
+	AOs[I[c]]->evaluate(c,iat,Basis[c],Y);
+      }
+    }
+
+    inline void 
+    evaluateAll(const ParticleSet& P, int iat)  {
+      for(int c=0; c<I.size();c++) {
 	AOs[I[c]]->evaluate(c,iat,Basis[c],Y,dY,d2Y);
       }
     }

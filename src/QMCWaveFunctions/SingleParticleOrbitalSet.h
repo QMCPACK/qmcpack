@@ -54,19 +54,43 @@ struct SingleParticleOrbitalSet {
 
   inline int size() const { return Phi.size();}
 
+  template<class PTCL, class VV>
+  inline void
+  evaluate(const PTCL& P, int iat, VV& psi) {
+    vector<SPOrbital_t*>::iterator it(Phi.begin()),it_end(Phi.end());
+    int j(0);
+    (*it)->setPoint(P.R[iat]);
+    while(it != it_end) {
+      psi(j)=(*it)->evaluate(P.R[iat]);++it;j++;
+    }
+  }
+
+  template<class PTCL, class VV, class GV>
+  inline void
+  evaluate(const PTCL& P, int iat, VV& psi, GV& dpsi, VV& d2psi) {
+    vector<SPOrbital_t*>::iterator it(Phi.begin()),it_end(Phi.end());
+    int j(0);
+    (*it)->setPoint(P.R[iat]);
+    while(it != it_end) {
+      psi(j)=(*it)->evaluate(P.R[iat],dpsi(j),d2psi(j));++it;j++;
+    }
+  }
+
   template<class PTCL, class VM, class GM>
   inline void evaluate(const PTCL& P, int first, int last,
 		       VM& logdet, GM& dlogdet, VM& d2logdet) {
     int n = last-first;
     int iat = first;
+    vector<SPOrbital_t*>::iterator it_end(Phi.end());
     for(int i=0; i<n; i++,iat++) {
-      Phi[0]->set_point(P.R[iat]);
-      for(int j=0; j<n; j++) {
-	logdet(j,i)= Phi[j]->evaluate(P.R[iat], dlogdet(i,j),d2logdet(i,j));
+      vector<SPOrbital_t*>::iterator it(Phi.begin());
+      int j(0);
+      while(it != it_end) {
+	logdet(j,i)= (*it)->evaluate(P.R[iat], dlogdet(i,j),d2logdet(i,j));
+        ++it;++j;
       }
     }
   }
-
   template<class WREF, class VM, class GM>
   inline void 
   evaluate(const WREF& W, int first, int last,

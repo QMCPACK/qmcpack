@@ -47,6 +47,12 @@ struct PadeJastrow {
   void reset(T a, T b) {
     A=a; B=b; AB=a*b; B2=2.0*b;
   }
+  /**@param r the distance
+     @return \f$ u(r) = a*r/(1+b*r) \f$
+  */
+  inline T evaluate(T r) {
+    return A*r/(1.0+B*r);
+  }
 
   /**@param r the distance
      @param dudr return value  \f$ du/dr = a/(1+br)^2 \f$
@@ -122,6 +128,14 @@ struct PadeJastrow2 {
    */
   void reset(T a, T b, T c) {
     A = a; B=b; C = c; C2 = 2.0*C;
+  }
+
+  /**@param r the distance
+     @return \f$ u(r) = a*r/(1+b*r) \f$
+  */
+  inline T evaluate(T r) {
+    T br(B*r);
+    return (A+br)*r/(1.0+br);
   }
 
   /**@param r the distance

@@ -98,6 +98,7 @@ namespace ohmmsqmc {
 
     void reset() { 
       for(int i=0; i<F.size(); i++) F[i]->reset();
+      U.resize(d_table->size(VisitorIndex));
     }
 
     /** 
@@ -137,8 +138,28 @@ namespace ohmmsqmc {
       return exp(evaluateLog(P,G,L));
     }
 
+    /** evaluate the ratio \f$exp(U(iat)-U_0(iat))\f$
+     * @param P active particle set
+     * @param iat particle that has been moved.
+     */
+    inline ValueType ratio(ParticleSet& P, int iat) {
+      int n=d_table->size(VisitorIndex);
+      ValueType d(0.0);
+      for(int i=0, nn=iat; i<d_table->size(SourceIndex); i++,nn+= n) {
+        FT *func=F[d_table->PairID[nn]];
+        d += func->evaluate(d_table->Temp[i].r0)
+          -func->evaluate(d_table->Temp[i].r1);
+      }
+      return exp(d);
+    }
 
-    ValueType ratio(ParticleSet& P, int iat,
+    /** evaluate the ratio \f$exp(U(iat)-U_0(iat))\f$ and fill-in the differential gradients/laplacians
+     * @param P active particle set
+     * @param iat particle that has been moved.
+     * @param dG partial gradients
+     * @param dL partial laplacians
+     */
+    inline ValueType ratio(ParticleSet& P, int iat,
 		    ParticleSet::ParticleGradient_t& dG,
 		    ParticleSet::ParticleLaplacian_t& dL)  {
       int n=d_table->size(VisitorIndex);
@@ -167,16 +188,6 @@ namespace ohmmsqmc {
     }
     
 
-    ValueType ratio(ParticleSet& P, int iat) {
-      int n=d_table->size(VisitorIndex);
-      curVal=0.0;
-      ValueType dudr, d2udr2;
-      for(int i=0, nn=iat; i<d_table->size(SourceIndex); i++,nn+= n) {
-	curVal += F[d_table->PairID[nn]]->evaluate(d_table->Temp[i].r1,dudr,d2udr2);
-      }
-      return exp(U[iat]-curVal);
-    } 	  
-
     void update(ParticleSet& P, 
 		ParticleSet::ParticleGradient_t& dG, 
 		ParticleSet::ParticleLaplacian_t& dL,
@@ -190,7 +201,7 @@ namespace ohmmsqmc {
     /** equivalent to evalaute with additional data management */
     void registerData(ParticleSet& P, PooledData<RealType>& buf){
 
-      U.resize(d_table->size(VisitorIndex));
+      //U.resize(d_table->size(VisitorIndex));
       d2U.resize(d_table->size(VisitorIndex));
       dU.resize(d_table->size(VisitorIndex));
 

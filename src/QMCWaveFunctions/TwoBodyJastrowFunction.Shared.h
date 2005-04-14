@@ -94,6 +94,20 @@ namespace ohmmsqmc {
       return exp(evaluateLog(P,G,L));
     }
 
+    /** evalaute ratio only
+     *@param P the active particle set
+     *@param iat the index of the particle that is moved
+     */
+    ValueType ratio(ParticleSet& P, int iat) {
+      ValueType d(0.0);
+      for(int jat=0; jat<N; jat++) {
+        if(iat != jat) {
+	  d += F.evaluate(d_table->Temp[jat].r0) -F.evaluate(d_table->Temp[jat].r1);
+	}
+      }
+      return exp(d);
+    }
+
     /** later merge the loop */
     ValueType ratio(ParticleSet& P, int iat,
 		    ParticleSet::ParticleGradient_t& dG,
@@ -146,7 +160,6 @@ namespace ohmmsqmc {
      *The negative sign is taken into account in the expression.
      *JK tried to remove negations as much as possible (probably waste of time). 
      *This leads to a rather messy +/- convetions.
-     */
     ValueType ratio(ParticleSet& P, int iat) {
       register ValueType dudr, d2udr2,u;
       DiffVal = 0.0;      
@@ -157,6 +170,7 @@ namespace ohmmsqmc {
       }
       return exp(DiffVal);
     } 	  
+     */
 
     void update(ParticleSet& P, 
 		ParticleSet::ParticleGradient_t& G, 

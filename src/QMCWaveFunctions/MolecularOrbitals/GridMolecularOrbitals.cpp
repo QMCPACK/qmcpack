@@ -23,6 +23,7 @@
 #include "QMCWaveFunctions/MolecularOrbitals/GTO2GridBuilder.h"
 #include "QMCWaveFunctions/MolecularOrbitals/Any2GridBuilder.h"
 #include "QMCWaveFunctions/MolecularOrbitals/NumericalRGFBuilder.h"
+#include "OhmmsData/AttributeSet.h"
 
 namespace ohmmsqmc {
 
@@ -55,6 +56,8 @@ namespace ohmmsqmc {
     int activeCenter;
     int gridmode = -1;
     bool addsignforM = false;
+    string  sph("default"), Morder("gaussian");
+
     //go thru the tree
     cur = cur->xmlChildrenNode;
     map<string,RGFBuilderBase*> rbuilderlist;
@@ -62,34 +65,51 @@ namespace ohmmsqmc {
     while(cur!=NULL) {
       string cname((const char*)(cur->name));
       if(cname == basis_tag || cname == "atomicBasisSet") {
-        string abasis("#"), btype("NG");
-        int expandlm = DONOT_EXPAND;
-        xmlAttrPtr att = cur->properties;
-	while(att != NULL) {
-	  string aname((const char*)(att->name));
-	  if(aname == "species" || aname == "elementType") {
-	    abasis = (const char*)(att->children->content);
-	  } else if(aname == "type") {
-	    btype = (const char*)(att->children->content);
-          } else if(aname == "angular") {
-            addsignforM = xmlStrEqual(att->children->content,(const xmlChar*)"spherical");
-          } else if(aname == "expM") {
-            addsignforM = atoi((const char*)att->children->content);
-          } else if(aname == "expandYlm") {
-            string expandtype((const char*)(att->children->content));
-            if(expandtype == "gaussian") {
-              expandlm = GAUSSIAN_EXPAND;
-            } else if(expandtype == "natural"){
-              expandlm = NATURAL_EXPAND;
-            }
-          }
-	  att = att->next;
+        int expandlm = GAUSSIAN_EXPAND;
+        string abasis("invalid"), btype("Numerical");
+
+        //Register valid attributes attributes
+        OhmmsAttributeSet aAttrib;
+        aAttrib.add(abasis,"elementType"); aAttrib.add(abasis,"species");
+        aAttrib.add(btype,"type");
+        aAttrib.add(sph,"angular"); aAttrib.add(addsignforM,"expM"); 
+        aAttrib.add(Morder,"expandYlm"); 
+        aAttrib.put(cur);
+
+        if(abasis == "invalid") continue;
+        if(sph == "spherical") addsignforM=1; //include (-1)^m
+        if(Morder == "gaussian") {
+          expandlm = GAUSSIAN_EXPAND;
+        } else if(Morder == "natural"){
+          expandlm = NATURAL_EXPAND;
+        } else if(Morder == "no") {
+          expandlm = DONOT_EXPAND;
         }
 
-        if(abasis == "#") {
-	  ERRORMSG("//basisset/basis or //basisset/atomicBasisSet does not have name. Failed to initialize.")         
-	  return NULL;
-        }     
+        //int expandlm = DONOT_EXPAND;
+        //xmlAttrPtr att = cur->properties;
+	//while(att != NULL) {
+	//  string aname((const char*)(att->name));
+	//  if(aname == "species" || aname == "elementType") {
+	//    abasis = (const char*)(att->children->content);
+	//  } else if(aname == "type") {
+	//    btype = (const char*)(att->children->content);
+        //  } else if(aname == "angular") {
+        //    addsignforM = xmlStrEqual(att->children->content,(const xmlChar*)"spherical");
+        //  } else if(aname == "expM") {
+        //    addsignforM = atoi((const char*)att->children->content);
+        //  } else if(aname == "expandYlm") {
+        //   string expandtype((const char*)(att->children->content));
+        //   if(expandtype == "gaussian") {
+        //     expandlm = GAUSSIAN_EXPAND;
+        //   } else if(expandtype == "natural"){
+        //     expandlm = NATURAL_EXPAND;
+        //   } else if(expandtype == "no") {
+        //     expandlm = DONOT_EXPAND;
+        //   }
+        // }
+	//  att = att->next;
+        //}
 
         if(addsignforM) 
           LOGMSG("Spherical Harmonics contain (-1)^m factor")
@@ -98,17 +118,11 @@ namespace ohmmsqmc {
 
 	map<string,int>::iterator it = CenterID.find(abasis); //search the species name
 	if(it == CenterID.end()) {//add the name to the map CenterID
-          if(btype == "Mixed" || btype ==  "Gaussian") {
+          if(btype == "Numerical" || btype == "NG" || btype == "HFNG") {
+            rbuilder = new NumericalRGFBuilder(cur);
+          } else {
             rbuilder = new Any2GridBuilder(cur);
-            expandlm = GAUSSIAN_EXPAND;
-          } else if(btype == "STO") {//SlaterTypeOrbital
-            rbuilder = new STO2GridBuilder;
-          //} else if(btype == "GTO") {//GaussianTypeOrbital
-          //  rbuilder = new GTO2GridBuilder;
-          //  expandlm = GAUSSIAN_EXPAND;
-          } else {//Numerical Radial Grid (default) 
-            rbuilder = new NumericalRGFBuilder;
-          } 
+          }
 
 	  CenterID[abasis] = activeCenter = ncenters++;
 	  int Lmax(0); //maxmimum angular momentum of this center
@@ -156,11 +170,11 @@ namespace ohmmsqmc {
 	    xmlAttrPtr att = cur1->properties;
 	    while(att != NULL) {
 	      string aname((const char*)(att->name));
-	      if(aname == "rid") {
+	      if(aname == "rid" || aname == "id") { //accept id/rid
 	        rnl = (const char*)(att->children->content);
-	      } else {
+	      } else { 
 	        map<string,int>::iterator iit = nlms_id.find(aname);
-	        if(iit != nlms_id.end()) {
+	        if(iit != nlms_id.end()) { //valid for n,l,m,s
 	          nlms[(*iit).second] = atoi((const char*)(att->children->content));
 	        } 
 	      }

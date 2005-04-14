@@ -18,6 +18,7 @@
 #include "Particle/DistanceTable.h"
 #include "QMCWaveFunctions/MolecularOrbitals/STOMolecularOrbitals.h"
 #include "QMCWaveFunctions/DetSetBuilderWithBasisSet.h"
+#include "OhmmsData/AttributeSet.h"
 
 namespace ohmmsqmc {
 
@@ -42,13 +43,15 @@ namespace ohmmsqmc {
     cur = cur->xmlChildrenNode;
     while(cur!=NULL) {
       string cname((const char*)(cur->name));
-      if(cname == basis_tag) {
-        xmlChar* att=xmlGetProp(cur, (const xmlChar*)"species");
-        if(!att) {
-	  ERRORMSG("//BasisSet/Basis does not have name. Failed to initialize.")         
-	  return NULL;
-        }     
-	string abasis((const char*)att);
+      if(cname == "atomicBasisSet" || cname == basis_tag) {
+        string abasis("invalid");
+        OhmmsAttributeSet cAttrib;
+        cAttrib.add(abasis,"elementType"); cAttrib.add(abasis,"species");
+        cAttrib.put(cur);
+        if(abasis == "invalid") {
+          ERRORMSG("Anonymous atomicBasisSet is illegal")
+          return false;
+        }
 
 	//check, if the named center exists
 	map<string,int>::iterator it = CenterID.find(abasis);
@@ -60,7 +63,7 @@ namespace ohmmsqmc {
           vector<xmlNodePtr> basisfunc_ptr;
 	  while(cur1 != NULL) {
             string cname1((const char*)(cur1->name));
-	    if(cname1 == basisfunc_tag) {
+	    if(cname1 == "basisGroup" || cname1 == basisfunc_tag) {
               basisfunc_ptr.push_back(cur1);
     	      int l=atoi((const char*)(xmlGetProp(cur1, (const xmlChar *)"l")));
 	      Lmax = max(Lmax,l);num++;
@@ -79,19 +82,18 @@ namespace ohmmsqmc {
 	  aos->NL.resize(num);
 	  num=0;
           for(int ib=0; ib<basisfunc_ptr.size(); ib++) {
+
             cur1=basisfunc_ptr[ib];
     	    int n=atoi((const char*)(xmlGetProp(cur1, (const xmlChar *)"n")));
     	    int l=atoi((const char*)(xmlGetProp(cur1, (const xmlChar *)"l")));
     	    int m=atoi((const char*)(xmlGetProp(cur1, (const xmlChar *)"m")));
-            const xmlChar* id_ptr = xmlGetProp(cur1,(const xmlChar *)"rid");
-            if(id_ptr == NULL) {
-              id_ptr = xmlGetProp(cur1,(const xmlChar *)"id");
-            }
+
 	    string rnl("invalid");
-            if(id_ptr) {
-              rnl = (const char*)id_ptr;
-            } else {
-              ERRORMSG("No rid is given for this STO function")
+            OhmmsAttributeSet bAttrib;
+            bAttrib.add(rnl,"id"); bAttrib.add(rnl,"rid");
+            bAttrib.put(cur1);
+            if(rnl == "invalid") {
+              ERRORMSG("No id or rid is given for this STO function")
             }
 
     	    //assign the index for (l,m)
@@ -102,19 +104,20 @@ namespace ohmmsqmc {
               string cname((const char*)(s->name));
               if(cname == param_tag) {
 	        putContent(zeta,s);
-		break;
-	      }
+	      } else if(cname == "radfunc") {
+                zeta = atof((const char*)xmlGetProp(s,(const xmlChar*)"exponent"));
+              }
 	      s=s->next;
 	    }
-
-
-	    STONorm<RealType> anorm(n);
-	    XMLReport("A spherical orbital with (n,l,m,zeta,c) = (" << n << ", " << l << ", " << m << ", " << zeta << " " << anorm(n-1,zeta) << ")")
+	    //STONorm<RealType> anorm(n);
 	    //radial orbitals: add only distinct orbitals
 	    map<string,int>::iterator rnl_it = RnlID.find(rnl);
 	    if(rnl_it == RnlID.end()) {
 	      int nl = aos->Rnl.size();
-	      aos->Rnl.push_back(new RadialOrbitalType(n-l-1,zeta,anorm(n-1,zeta)));
+	      //aos->Rnl.push_back(new RadialOrbitalType(n-l-1,zeta,anorm(n-1,zeta)));
+              RadialOrbitalType *ro = new RadialOrbitalType(n,l,zeta);
+	      XMLReport("A spherical orbital with (n,l,m,zeta,c,power) = (" << n << ", " << l << ", " << m << ", " << zeta << " " << ro->Norm <<  " "<< ro->Power << ")")
+	      aos->Rnl.push_back(ro);
               //This should be used later to enable optimization of Zeta of Slater orbitals
               //RadialOrbitalType *ro = new RadialOrbitalType(n,l,zeta);
               //const xmlChar* stag=xmlGetProp(s,(const xmlChar*)"id");
@@ -131,8 +134,7 @@ namespace ohmmsqmc {
 	  BasisSet->add(aos);
 
 	} else {
-	  WARNMSG("Species " << 
-		  abasis << " is already initialized. Ignore the input.")
+	  WARNMSG("elementType " << abasis << " is already initialized. Ignore the input.")
 	}
       }
       cur = cur->next;

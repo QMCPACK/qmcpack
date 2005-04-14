@@ -48,7 +48,7 @@ namespace ohmmsqmc {
   HFAtomicSTOSetBuilder::getBasis(xmlNodePtr cur) {
 
   typedef TrialWaveFunction::RealType RealType;
-  STONorm<RealType> anorm(4);
+  //STONorm<RealType> anorm(4);
   cur = cur->xmlChildrenNode;
   while(cur!=NULL) {
     string cname((const char*)(cur->name)); 
@@ -58,8 +58,9 @@ namespace ohmmsqmc {
       int l=atoi((const char*)(xmlGetProp(cur, (const xmlChar *)"l")));
       Lmax = max(Lmax,l);
       string newRnl;
-      if(xmlHasProp(cur,(const xmlChar*)"id")) {
-	newRnl = (const char*)(xmlGetProp(cur, (const xmlChar *)"id"));
+      const xmlChar* aptr(xmlGetProp(cur, (const xmlChar *)"id"));
+      if(aptr) {
+	newRnl = (const char*)aptr;
       } else {
         std::ostringstream idstream(newRnl.c_str());
 	idstream << 'R' << RnlID.size();
@@ -78,11 +79,12 @@ namespace ohmmsqmc {
 
       map<string,int>::iterator it = RnlID.find(newRnl);
       if(it == RnlID.end()) {
-	XMLReport("radial function " << n-l << " " << screen << " " << anorm(n-1,screen))
-        ///the ID of the next Radial Function
+        //the ID of the next Radial Function
         int id = Rnl.size();
 	RnlID[newRnl] = id;
-      	Rnl.push_back(new RadialOrbital_t(n-l-1,screen,anorm(n-1,screen)));
+      	Rnl.push_back(new RadialOrbital_t(n,l,screen));
+      	//Rnl.push_back(new RadialOrbital_t(n-l-1,screen,anorm(n-1,screen)));
+	XMLReport("STO function (n,l,screen) " << n << " "  << l << " " << screen)
 	Rnl[id]->ID = id;
       }
     }
@@ -130,8 +132,7 @@ HFAtomicSTOSetBuilder::getOrbital(xmlNodePtr cur) {
 	    int m=atoi((const char*)(xmlGetProp(orb, (const xmlChar *)"m")));
 	    lm = psi->Ylm.index(l,m);
 	  }
-	  SPO_t* aSTO = new SPO_t(lm, psi->Ylm,(*it).second->Rnl,
-				  &((*it).second->C[0]));
+	  SPO_t* aSTO = new SPO_t(lm, psi->Ylm,(*it).second->Rnl, &((*it).second->C[0]));
 	  psi->Orbital.push_back(aSTO);
 	  for(int nl=0; nl<aSTO->Rnl.size(); nl++) 
 	    RnlSet.insert(aSTO->Rnl[nl]->ID);

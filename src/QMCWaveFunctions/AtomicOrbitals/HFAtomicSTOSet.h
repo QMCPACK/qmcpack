@@ -71,7 +71,7 @@ namespace ohmmsqmc {
       T rnl = 0.0;
       d2rnl = 0.0; drnl=0.0;
       for(int nl=0; nl<C.size(); nl++) {
-	Rnl[nl]->evaluate(r,rinv);
+	Rnl[nl]->evaluateAll(r,rinv);
 	rnl += C[nl]*Rnl[nl]->Y; 
 	drnl += C[nl]*Rnl[nl]->dY;  
 	d2rnl += C[nl]*Rnl[nl]->d2Y;
@@ -79,8 +79,16 @@ namespace ohmmsqmc {
       return rnl;
     }
 
-    inline T operator()(T r, T rinv, const POS& dr, POS& dy, T& d2y) 
-    {
+    /** return the value only */
+    inline T evaluate() {
+      T rnl = 0.0;
+      for(int nl=0; nl<C.size(); nl++) {
+	rnl += C[nl]*Rnl[nl]->Y; 
+      }
+      return Ylm.getYlm(LM)*rnl;
+    }
+
+    inline T operator()(T r, T rinv, const POS& dr, POS& dy, T& d2y) {
       T rnl = 0.0, d2rnl = 0.0, drnl=0.0;
       for(int nl=0; nl<C.size(); nl++) {
 	rnl += C[nl]*Rnl[nl]->Y; 
@@ -89,14 +97,14 @@ namespace ohmmsqmc {
       }
       T drnloverr = rinv*drnl;
       T ang = Ylm.getYlm(LM);
-      POS gr_rad = drnloverr*dr;
-      POS gr_ang = Ylm.getGradYlm(LM);
+      POS gr_rad(drnloverr*dr);
+      POS gr_ang(Ylm.getGradYlm(LM));
       dy= ang*gr_rad+rnl*gr_ang;
       d2y = ang*(2.0*drnloverr+d2rnl)+2.0*dot(gr_rad,gr_ang);
       return ang*rnl;
     }
-  };
 
+  };
 
   struct HFAtomicSTOSet: public QMCTraits {
     
@@ -123,16 +131,32 @@ namespace ohmmsqmc {
     inline void resizeByWalkers(int nw) { }
     
     inline int size() const { return Orbital.size();}
+
+    template<class VV>
+    inline void evaluate(const ParticleSet& P, int iat, VV& phi) {
+
+      RealType r(myTable->Temp[0].r1);
+      RealType rinv(myTable->Temp[0].rinv1);
+      PosType dr(myTable->Temp[0].dr1);
+
+      Ylm.evaluate(dr);
+      for(int nl=0; nl<RnlPool.size(); nl++)  {
+        RnlPool[nl]->evaluate(r,rinv);
+      }
+      for(int j=0; j<Orbital.size(); j++)  {
+	phi[j] = Orbital[j]->evaluate();
+      }
+    }
     
     // evaluate the single-particle orbital value of iat-th el
     template<class VV, class GV>
     inline void evaluate(const ParticleSet& P, int iat, VV& phi, GV& dphi, VV& d2phi ) {
-      RealType r = myTable->Temp[0].r1;
-      RealType rinv = myTable->Temp[0].rinv1;
-      PosType dr = myTable->Temp[0].dr1;
-      Ylm.evaluate(dr);
+      RealType r(myTable->Temp[0].r1);
+      RealType rinv(myTable->Temp[0].rinv1);
+      PosType dr(myTable->Temp[0].dr1);
+      Ylm.evaluateAll(dr);
       for(int nl=0; nl<RnlPool.size(); nl++)  {
-	RnlPool[nl]->evaluate(r,rinv);
+        RnlPool[nl]->evaluateAll(r,rinv);
       }
       for(int j=0; j<Orbital.size(); j++)  {
 	phi[j] = (*Orbital[j])(r,rinv,dr,dphi[j],d2phi[j]);
@@ -146,12 +170,12 @@ namespace ohmmsqmc {
       int nptcl = last-first;
       int nn = first;///first pair of the particle subset
       for(int i=0; i<nptcl; i++, nn++) {
-	RealType r = myTable->r(nn);
-	RealType rinv = myTable->rinv(nn);
-	PosType dr = myTable->dr(nn);
-	Ylm.evaluate(dr);
+	RealType r(myTable->r(nn));
+	RealType rinv(myTable->rinv(nn));
+	PosType dr(myTable->dr(nn));
+	Ylm.evaluateAll(dr);
 	for(int nl=0; nl<RnlPool.size(); nl++)  {
-	  RnlPool[nl]->evaluate(r,rinv);
+	  RnlPool[nl]->evaluateAll(r,rinv);
 	}
 	for(int j=0; j<Orbital.size(); j++)  {
 	  logdet(j,i) = (*Orbital[j])(r,rinv,dr,dlogdet(i,j),d2logdet(i,j));
@@ -172,9 +196,8 @@ namespace ohmmsqmc {
           RealType r = myTable->r(iw,nn);
           RealType rinv = myTable->rinv(iw,nn);
           PosType dr = myTable->dr(iw,nn);
-          Ylm.evaluate(dr);
-          for(int nl=0; nl<RnlPool.size(); nl++) 
-            RnlPool[nl]->evaluate(r,rinv);
+          Ylm.evaluateAll(dr);
+          for(int nl=0; nl<RnlPool.size(); nl++) RnlPool[nl]->evaluateAll(r,rinv);
           for(int j=0; j<Orbital.size(); j++)  
             logdet[iw](j,i) = (*Orbital[j])(r,rinv,dr,dlogdet[iw](i,j),d2logdet[iw](i,j));
         }
@@ -187,9 +210,9 @@ namespace ohmmsqmc {
 	  RealType r = myTable->r(iw,nn);
 	  RealType rinv = myTable->rinv(iw,nn);
 	  PosType dr = myTable->dr(iw,nn);
-	  Ylm.evaluate(dr);
+	  Ylm.evaluateAll(dr);
 	  for(int nl=0; nl<RnlPool.size(); nl++)  {
-	    RnlPool[nl]->evaluate(r,rinv);
+	    RnlPool[nl]->evaluateAll(r,rinv);
 	  }
 	  for(int j=0; j<Orbital.size(); j++)  {
 	  logdet[iw](j,i) 

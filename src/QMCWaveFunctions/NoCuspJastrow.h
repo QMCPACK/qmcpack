@@ -47,6 +47,12 @@ struct NoCuspJastrow {
   void reset(T a, T b) {
     A=a; B=b; AB2=2.0*a*b;
   }
+  /**@param r the distance
+     @return \f$ u(r) = a/(1+br^2) \f$
+  */
+  inline T evaluate(T r) {
+    return A/(1.0+B*r*r);
+  }
 
   /**@param r the distance
      @param dudr return value  \f$ du/dr = -2abr/(1+br^2)^2 \f$

@@ -20,6 +20,7 @@
 #include "QMCWaveFunctions/OrbitalBuilderBase.h"
 #include "QMCWaveFunctions/SphericalOrbitalSet.h"
 #include "QMCWaveFunctions/MolecularOrbitals/MolecularOrbitalBasis.h"
+//#include "Numerics/SlaterBasisSet.h"
 #include "Numerics/SlaterTypeOrbital.h"
 
 namespace ohmmsqmc {
@@ -33,6 +34,7 @@ namespace ohmmsqmc {
   public:
 
     typedef GenericSTO<ValueType>                      RadialOrbitalType;
+    //typedef SlaterCombo<RealType>                      RadialOrbitalType;
     typedef SphericalOrbitalSet<RadialOrbitalType>     CenteredOrbitalType;
     typedef MolecularOrbitalBasis<CenteredOrbitalType> BasisSetType;
 
