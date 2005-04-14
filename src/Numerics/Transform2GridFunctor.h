@@ -37,7 +37,8 @@ template<class FnIn, class FnOut>
 struct Transform2GridFunctor:
   public Transform2GridFunctorBase<FnOut> {
 
-  typedef typename FnIn::value_type             result_t;
+  typedef typename FnIn::value_type  result_t;
+  typedef typename FnOut::point_type point_type;
 
   FnIn& in_;
   FnOut& out_;
