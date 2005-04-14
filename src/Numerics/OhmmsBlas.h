@@ -39,9 +39,8 @@
  *  which BLAS routines are actually used.
  *  Note that symv can be call in many ways.
  */
-class BLAS {
+struct BLAS {
 
-public:
   static const int INCX = 1;
   static const int INCY = 1;
   static const char UPLO = 'L';
@@ -65,8 +64,8 @@ public:
   }
 
   inline static 
-  void axpy(int n0, const double* a, double* b){
-    daxpy(n0, done, a, INCX, b, INCY);
+  void axpy(int n, const double* a, double* b){
+    daxpy(n, done, a, INCX, b, INCY);
   }
 
   inline static 
