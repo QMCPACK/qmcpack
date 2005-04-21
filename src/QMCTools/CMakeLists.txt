@@ -12,6 +12,7 @@ SET(CASINO
   ../QMCWaveFunctions/MolecularOrbitals/RGFBuilderBase.cpp
   ../QMCWaveFunctions/MolecularOrbitals/GTO2GridBuilder.cpp
   QMCGaussianParserBase.cpp
+  GaussianFCHKParser.cpp
   CasinoParser.cpp
   parse.cpp
 )
@@ -25,8 +26,8 @@ ${CMAKE_THREAD_LIBS_INIT}
 
 #ADD_EXECUTABLE(gto2grid ${QMCTOOLS})
 #TARGET_LINK_LIBRARIES(gto2grid qmc qmcbase)
-#ADD_EXECUTABLE(casino ${CASINO})
-#TARGET_LINK_LIBRARIES(casino qmc qmcbase)
+ADD_EXECUTABLE(casino ${CASINO})
+TARGET_LINK_LIBRARIES(casino qmc qmcbase)
 #ADD_EXECUTABLE(molinit ../QMCWaveFunctions/OrbitalBuilderBase.cpp Assign.cpp)
 #TARGET_LINK_LIBRARIES(molinit qmc qmcbase)
 ADD_EXECUTABLE(spline spline.cpp)

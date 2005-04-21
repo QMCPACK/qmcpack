@@ -67,7 +67,7 @@ int main(int argc, char** argv) {
       int ng = npts[2]*(iy+ix*npts[1]);
       for(int iz=0; iz<npts[2]-1; iz++) {
          TinyVector<double,3> p(x,y,gridZ(iz));
-         aorb.setgrid(p);
+         //aorb.setgrid(p);
          inData[ng++]=aorb.evaluate(p,grad,lap); 
          //(*it) = aorb.evaluate(p,grad,lap); ++it;
       }

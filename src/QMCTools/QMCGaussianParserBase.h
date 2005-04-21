@@ -4,12 +4,15 @@
 #include <sstream>
 #include <iomanip>
 #include <vector>
+#include <map>
 #include "OhmmsPETE/TinyVector.h"
 #include "OhmmsData/OhmmsElementBase.h"
+#include "Utilities/SimpleParser.h"
 
 struct OhmmsAsciiParser {
 
   char dbuffer[200];
+  vector<string> currentWords;
 
   template<class T>
   inline void getValue(std::istream& is, T& aval) {
@@ -57,8 +60,9 @@ struct QMCGaussianParserBase {
   std::vector<int> gShell, gNumber, gBound;
   std::vector<value_type> Qv;
   std::vector<value_type> gExp, gC0, gC1;
+  std::vector<value_type> EigVec;
   //std::vector<GaussianCombo<value_type> > gExp, gC0, gC1;
-  std::string EigVecU, EigVecD;
+  //std::string EigVecU, EigVecD;
   xmlNodePtr gridPtr;
 
   QMCGaussianParserBase();
@@ -74,7 +78,8 @@ struct QMCGaussianParserBase {
   void map2GridFunctors(xmlNodePtr cur);
   virtual void parse(const std::string& fname) = 0;
 
-  static std::vector<std::string> IonName;
+  //static std::vector<std::string> IonName;
+  static std::map<int,std::string> IonName;
   static std::vector<std::string> gShellType;
   static std::vector<int>         gShellID;
 

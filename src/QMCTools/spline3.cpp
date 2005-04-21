@@ -169,7 +169,7 @@ int main(int argc, char** argv) {
       double y(gridY(iy));
       for(int iz=0; iz<npts[2]-1; iz++, ng++) {
          TinyVector<double,3> p(x,y,gridZ(iz));
-         aorb.setgrid(p);
+         //aorb.setgrid(p);
          //Timing with the ofstream is not correct. 
          //Uncomment the line below and comment out the next two line.
          //double t=aorb.evaluate(p,grad,lap);

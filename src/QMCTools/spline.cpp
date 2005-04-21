@@ -10,7 +10,7 @@
 
 #define FUNCTION(r) cos(r)
 #define DFUNCTION(r) sin(r)
-#define USE_PBC
+//#define USE_PBC
 
 int main(int argc, char** argv) {
 
@@ -52,7 +52,7 @@ int main(int argc, char** argv) {
   for(int ig=agrid.size()/2; ig<agrid.size() ; ig++) {
     _r = agrid(ig)+0.5*agrid.dr(ig)-agrid.rmax();
     _rinv = 1.0/_r;
-    aorb.setgrid(_r);
+    //aorb.setgrid(_r);
     y=aorb.evaluate(_r,_rinv,du,d2u);
     dfile << setw(30) << _r << setw(30) << FUNCTION(twopi*_r) << setw(30) << y << setw(30) << du*c1 << setw(3) << d2u*c2 << endl;
   }
@@ -61,16 +61,17 @@ int main(int argc, char** argv) {
   for(int ig=0; ig<agrid.size()-1; ig++) {
     _r = agrid(ig)+0.5*agrid.dr(ig);
     _rinv = 1.0/_r;
-    aorb.setgrid(_r);
+    //aorb.setgrid(_r);
     y=aorb.evaluate(_r,_rinv,du,d2u);
-    dfile << setw(30) << _r << setw(30) << FUNCTION(twopi*_r) << setw(30) << y << setw(30) << du*c1 << setw(3) << d2u*c2 << endl;
+    dfile << setw(30) << _r << setw(30) << FUNCTION(twopi*_r) << setw(30) << y 
+      << setw(30) << du*c1 << setw(3) << d2u*c2 << endl;
   }
 
 #if defined(USE_PBC)
   for(int ig=0; ig<agrid.size()/2; ig++) {
     _r = agrid(ig)+0.5*agrid.dr(ig)+agrid.rmax();
     _rinv = 1.0/_r;
-    aorb.setgrid(_r);
+    //aorb.setgrid(_r);
     y=aorb.evaluate(_r,_rinv,du,d2u);
     dfile << setw(30) << _r << setw(30) << FUNCTION(twopi*_r) << setw(30) << y << setw(30) << du*c1 << setw(3) << d2u*c2 << endl;
   }

@@ -11,6 +11,8 @@
 class CasinoParser: public QMCGaussianParserBase, 
                     public OhmmsAsciiParser {
 
+  std::vector<double> BasisCorrection;
+
 public:
 
   CasinoParser();
@@ -32,5 +34,8 @@ public:
 
   void getValenceCharges(std::istream& is);
 
+  double contractionCorrection(int shell_id, double alpha);
+
+  void makeCorrections();
 };
 #endif

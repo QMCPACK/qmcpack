@@ -51,16 +51,30 @@ void CasinoParser::parse(const std::string& fname) {
 
   //search(fin, "MULTIDETERMINANT");
   search(fin, "EIGENVECTOR");
-  int nline = (SizeOfBasisSet*SizeOfBasisSet)/4;
-  //skip the line
-  fin.getline( dbuffer, sizeof ( dbuffer ));
-  EigVecU="\n";
-  while(nline) {
-    fin.getline( dbuffer, sizeof ( dbuffer ));
-    EigVecU.append(dbuffer);
-    EigVecU.append("\n");
-    nline--;
+  int nstates=SizeOfBasisSet;
+  if(SpinRestricted)
+    EigVec.resize(SizeOfBasisSet*SizeOfBasisSet);
+  else {
+    nstates*=2;
+    EigVec.resize(2*SizeOfBasisSet*SizeOfBasisSet);
   }
+  getValues(fin,EigVec.begin(), EigVec.end());
+
+  //Need to make correction to the eigen vectors
+  int tot=0;
+  for(int i=0; i<nstates; i++) {
+    for(int j=0; j<SizeOfBasisSet; j++, tot++) EigVec[tot]*=BasisCorrection[j];
+  }
+  //int nline = (SizeOfBasisSet*SizeOfBasisSet)/4;
+  ////skip the line
+  //fin.getline( dbuffer, sizeof ( dbuffer ));
+  //EigVecU="\n";
+  //while(nline) {
+  //  fin.getline( dbuffer, sizeof ( dbuffer ));
+  //  EigVecU.append(dbuffer);
+  //  EigVecU.append("\n");
+  //  nline--;
+  //}
 }
 
 //std::copy(Qv.begin(), Qv.end(),ostream_iterator<double>(cout, ","));
@@ -84,7 +98,7 @@ void CasinoParser::getNumberOfAtoms(std::istream& is) {
   gBound.resize(NumberOfAtoms+1);
 }
 void CasinoParser::getAtomicPositions(std::istream& is) {
-  search(is,"Atomic");
+  search(is,"positions");
   getValues(is,R.begin(),R.end());
 }
 void CasinoParser::getAtomicNumbers(std::istream& is) {
@@ -127,4 +141,78 @@ void CasinoParser::getGaussianCenters(std::istream& is) {
 
   search(is, "2nd");
   getValues(is,gC1.begin(), gC1.end());
+
+  makeCorrections();
+}
+
+double CasinoParser::contractionCorrection(int shell_id, double alpha) {
+  const double pi = 4.0*atan(1.0);
+  const double sqrtpi=sqrt(pi);
+
+  double fac;
+
+  switch(shell_id) {
+    case(1): //s, 1/(2 sqrt(pi))
+      fac = 2.0*sqrtpi; break; 
+    case(2): // sp
+      fac = 2.0*sqrtpi; break;
+    case(3): // p
+      fac = sqrt(4.0/3.0)*sqrtpi; break;
+    case(4): // d
+      fac = sqrt(16.0/15.0)*sqrtpi; break;
+    case(5): // f
+      fac = 1.0e0;
+      //fac *= pow(2.0e0*alpha,2)/sqrt(pi); break;
+    default: // others, return 1 for now
+      fac = 1.0e0; break;
+  }
+
+  return fac;
+}
+
+/** make corrections to gC0 and gC1 and tabulate the corrections to the eigen vectors
+ */
+void CasinoParser::makeCorrections() {
+
+  int n=gC0.size();
+  for(int i=0; i<n; i++) {
+    gC0[i] *= contractionCorrection(gShell[i],gExp[i]);
+    if(gShell[i] == 2) gC1[i] *= contractionCorrection(3,gExp[i]);
+  }
+
+  //s, sp and p do not need any correction
+  BasisCorrection.resize(SizeOfBasisSet,1.0);
+  std::vector<int> offset(10,0);
+  offset[1]=1; //s
+  offset[2]=4; //sp
+  offset[3]=3; //p
+  offset[4]=5; //d
+  offset[5]=7; //f
+
+  const double m40=sqrt(3.0e0);
+  const double m50=sqrt(15.0e0/8.0e0);
+  const double m51=1.5e0*sqrt(5.0e0);
+  const double m52=15.0e0/sqrt(2.0e0);
+  const double m53=15.0e0*sqrt(3.0e0);
+
+  int basisCount=0;
+  for(int i=0; i<n; i++) {
+    if(gShell[i] == 4) {//d-orbital corrections
+      BasisCorrection[basisCount++]=m40;//m=0
+      BasisCorrection[basisCount++]=0.5;//m=1
+      BasisCorrection[basisCount++]=0.5;//m=-1
+      BasisCorrection[basisCount++]=1.0;//m=2
+      BasisCorrection[basisCount++]=0.5;//m=-2
+    } else if(gShell[i] == 5) {//f-orbital corrections
+      BasisCorrection[basisCount++]=m50;//m=0
+      BasisCorrection[basisCount++]=m51;//m=1
+      BasisCorrection[basisCount++]=m51;//m=-1
+      BasisCorrection[basisCount++]=m52;//m=2
+      BasisCorrection[basisCount++]=m52;//m=-2
+      BasisCorrection[basisCount++]=m53;//m=3
+      BasisCorrection[basisCount++]=m53;//m=-3
+    } else {//increase the count
+      basisCount += offset[gShell[i]];
+    }
+  }
 }

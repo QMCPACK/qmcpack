@@ -1,14 +1,16 @@
 #include "QMCTools/CasinoParser.h"
+#include "QMCTools/GaussianFCHKParser.h"
 #include "Message/Communicate.h"
 #include "Utilities/OhmmsInfo.h"
 
 int main(int argc, char **argv) {
 
   if(argc<2) {
-    std::cout << "Usage: casinon <filename> [-gridtype log|log0|linear -first ri -last rf -size npts]" << std::endl;
-    std::cout << "Defaults : -gridtype log -first 1e-6 -last 100 -size 1001" << std::endl;
+    std::cout << "Usage: convert <filename> [-gaussian|-casino -gridtype log|log0|linear -first ri -last rf -size npts]" << std::endl;
+    std::cout << "Defaults : -casino -gridtype log -first 1e-6 -last 100 -size 1001" << std::endl;
     return 1;
   }
+
 
   OHMMS::Controller->initialize(argc,argv);
 
@@ -20,25 +22,30 @@ int main(int argc, char **argv) {
 
   QMCGaussianParserBase::init();
 
-  CasinoParser parser(argc,argv);
-  parser.parse(argv[1]);
+  QMCGaussianParserBase *parser=0;
+  int iargc=0;
+  while(iargc<argc) {
+    std::string a(argv[iargc]);
+    if(a == "-gaussian")
+      parser = new GaussianFCHKParser(argc,argv);
+    ++iargc;
+  }
 
-  //parser.search(fin, "GEOMETRY");
-  //parser.getGeometry(fin);
-  //parser.search(fin, "BASIS");
-  //parser.getGaussianCenters(fin);
-  //parser.search(fin, "MULTIDETERMINANT");
-  //parser.search(fin, "EIGENVECTOR");
+  if(parser == 0) {
+    parser = new CasinoParser(argc,argv);
+  }
+
+  parser->parse(argv[1]);
 
   xmlDocPtr doc = xmlNewDoc((const xmlChar*)"1.0");
   xmlNodePtr wf_root = xmlNewNode(NULL, BAD_CAST "determinantset");
   xmlNewProp(wf_root,(const xmlChar*)"type",(const xmlChar*)"MolecularOrbital");
   xmlNewProp(wf_root,(const xmlChar*)"usegrid",(const xmlChar*)"yes");
 
-  xmlNodePtr bset = parser.createBasisSet();
+  xmlNodePtr bset = parser->createBasisSet();
   xmlAddChild(wf_root,bset);
 
-  xmlNodePtr slaterdet = parser.createDeterminantSet();
+  xmlNodePtr slaterdet = parser->createDeterminantSet();
   xmlAddChild(wf_root,slaterdet);
 
   xmlDocSetRootElement(doc, wf_root);
@@ -49,12 +56,12 @@ int main(int argc, char **argv) {
   if(!xmlXPathNodeSetIsEmpty(result->nodesetval)) {
     for(int ic=0; ic<result->nodesetval->nodeNr; ic++) {
       xmlNodePtr cur = result->nodesetval->nodeTab[ic];
-      parser.map2GridFunctors(cur);
+      parser->map2GridFunctors(cur);
     }
   }
   xmlXPathFreeObject(result);
 
-  std::string fname = parser.Title+"."+parser.basisName+".xml";
+  std::string fname = parser->Title+"."+parser->basisName+".xml";
   xmlSaveFormatFile(fname.c_str(),doc,1);
   xmlFreeDoc(doc);
   return 0;
