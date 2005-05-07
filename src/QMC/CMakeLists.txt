@@ -72,6 +72,5 @@ ENDIF(${BLAS_EXTRA_LIBRARY} MATCHES "guide")
 ADD_EXECUTABLE(qmcapp ${WAVEFUNCTIONS} ${QMCSRCS} main.cpp)
 TARGET_LINK_LIBRARIES(qmcapp qmc qmcbase)
 
-#ADD_EXECUTABLE(mo2grid3d ${WAVEFUNCTIONS} ${QMCSRCS} 
-#MO2Grid3D.cpp mo2grid3d_main.cpp)
-#TARGET_LINK_LIBRARIES(mo2grid3d qmc qmcbase)
+ADD_EXECUTABLE(mo2grid3d ${WAVEFUNCTIONS} ${QMCSRCS} MO2Grid3D.cpp mo2grid3d_main.cpp)
+TARGET_LINK_LIBRARIES(mo2grid3d qmc qmcbase)

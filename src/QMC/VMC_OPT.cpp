@@ -24,8 +24,6 @@
 #include "Particle/HDFWalkerIO.h"
 #include "ParticleBase/ParticleUtility.h"
 #include "ParticleBase/RandomSeqGenerator.h"
-#include "QMCWaveFunctions/TrialWaveFunction.h"
-#include "QMCHamiltonians/QMCHamiltonianBase.h"
 #include "QMC/VMC.h"
 #include "Message/Communicate.h"
 #include "Message/CommOperators.h"

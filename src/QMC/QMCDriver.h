@@ -22,17 +22,16 @@
 
 #include "Configuration.h"
 #include "OhmmsData/ParameterSet.h"
-#include "Estimators/ScalarEstimatorManager.h"
 #include "Utilities/PooledData.h"
+#include "QMCWaveFunctions/TrialWaveFunction.h"
+#include "QMCHamiltonians/QMCHamiltonianBase.h"
+#include "Estimators/ScalarEstimatorManager.h"
 #include <strstream>
 class OhmmsInform;
 
 namespace ohmmsqmc {
 
   class MCWalkerConfiguration;
-  class TrialWaveFunction;
-  class QMCHamiltonian;
-
   /** Base class to perform QMC simulations. */
   class QMCDriver: public QMCTraits {
 
@@ -109,9 +108,9 @@ namespace ohmmsqmc {
     ///Hamiltonian
     QMCHamiltonian& H;
 
-    vector<TrialWaveFuncton*> Psi1;
+    vector<TrialWaveFunction*> Psi1;
 
-    vector<QMCHamiltonian**> H1;
+    vector<QMCHamiltonian*> H1;
 
     ///stream for the log file 
     OhmmsInform *LogOut;
