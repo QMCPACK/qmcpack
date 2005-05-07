@@ -93,7 +93,9 @@ struct Transform2GridFunctor:
     //reference to the output functions grid
     typename FnOut::grid_type& grid = out_.grid();
 
-    int npts = grid.index(rf)+1;
+    grid.locate(rf);
+    int npts(grid.currentIndex()+1);
+    //int npts = grid.index(rf)+1;
     out_.resize(grid.size());
 
     for(int i=0; i<npts; i++) out_(i) = in_.f(grid(i));
