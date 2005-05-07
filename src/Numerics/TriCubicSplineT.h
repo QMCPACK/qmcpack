@@ -7,17 +7,20 @@
  * Adapting TriCubicSpline implemented by K. Esler and D. Das.
  * Use stl containers
  */
-template<class T>
+template<class T, class Tg=T>
 class TriCubicSplineT {
 
 public: 
 
-  typedef XYZCubicGrid<T>               GridType;
-  typedef TriCubicSplineT<T>            ThisType;
+  typedef T                             value_type;
+  typedef Tg                            point_type;
+  typedef XYZCubicGrid<Tg>              GridType;
+  typedef TriCubicSplineT<T,Tg>         ThisType;
   typedef typename GridType::KnotType   KnotType;
   typedef typename GridType::Grid1DType Grid1DType;
-  typedef T value_type;
 
+  //true, if this function evaluates grid-related properties
+  bool GridManager;
   //Hide these later
   bool UpToDate; 
   int nX, nY, nZ;
@@ -27,7 +30,7 @@ public:
 
   /// constructor
   TriCubicSplineT(GridType* agrid): 
-    UpToDate(false), nX(0), nY(0), nZ(0), m_grid(agrid)
+    GridManager(true),UpToDate(false), nX(0), nY(0), nZ(0), m_grid(agrid)
   {
     if(m_grid) {
       nX = m_grid->nX;
@@ -40,16 +43,21 @@ public:
     }
   }
 
-  inline void reset() { 
+  inline void setGridManager(bool willmanage) {
+    GridManager=willmanage;
+  }
+
+  inline void reset(bool periodic=true) { 
     if(m_grid) {
+      m_grid->setBC(periodic);
       if(!UpToDate) {
-        UpdateX(0, 1);  // Do dF/dx
-        UpdateY(0, 2);  // Do dF/dy
-        UpdateZ(0, 3);  // Do dF/dz
-        UpdateY(1, 4);  // Do d2F/dxdy
-        UpdateZ(1, 5);  // Do d2F/dxdz
-        UpdateZ(2, 6);  // Do d2F/dydz
-        UpdateZ(4, 7);  // Do d3F/dxdydz
+        UpdateX(0, 1, periodic);  // Do dF/dx
+        UpdateY(0, 2, periodic);  // Do dF/dy
+        UpdateZ(0, 3, periodic);  // Do dF/dz
+        UpdateY(1, 4, periodic);  // Do d2F/dxdy
+        UpdateZ(1, 5, periodic);  // Do d2F/dxdz
+        UpdateZ(2, 6, periodic);  // Do d2F/dydz
+        UpdateZ(4, 7, periodic);  // Do d3F/dxdydz
         UpToDate=true;
       }
     } 
@@ -57,6 +65,14 @@ public:
 
   inline T* data() { return &(F[0][0]); }
   inline const T* data() const { return &(F[0][0]); }
+
+  inline T operator()(int n) const {
+    return F[n][0];
+  }
+
+  inline T& operator()(int n) {
+    return F[n][0];
+  }
 
   inline T operator()(int i, int j, int k) const
   {
@@ -81,16 +97,21 @@ public:
     reset();
   }
 
-  template<class PV>
-  inline void setgrid(const PV& r) {
-    m_grid->locate(r[0],r[1],r[2]);
-  }
+  //template<class PV>
+  //inline void setgrid(const PV& r) {
+  //  m_grid->locate(r[0],r[1],r[2]);
+  //}
 
   template<class PV>
   inline T evaluate(const PV& r){
-    if(m_grid->Loc<0) {
-      return 1e-20;
+
+    if(GridManager) {
+      m_grid->locate(r[0],r[1],r[2],false);
+      //m_grid->update(false);
     }
+
+    if(m_grid->Loc<0) { return 1e-20; }
+
     //m_grid->update();
     int cur(m_grid->Loc);
     return 
@@ -100,11 +121,18 @@ public:
 
   template<class PV>
   inline T evaluate(const PV& r, PV& gradf, T& lapf){
+
+    if(GridManager) {
+      m_grid->locate(r[0],r[1],r[2],true);
+      //m_grid->update(true);
+    }
+
     if(m_grid->Loc<0){
       gradf[0] = 1e-40; gradf[1] = 1e-40; gradf[2] = 1e-40;
       lapf = 1e-40;
       return 1e-20;
     }
+
     //m_grid->updateAll();
     int cur(m_grid->Loc);
     m_grid->evaluateAll(F[cur]    ,  F[cur+n001], F[cur+n010], F[cur+n011],
@@ -121,19 +149,19 @@ private:
   // dim:     Dimension to calculate derivative w.r.t
   // source:  Function to differentiate
   // dest:    where to put result
-  void UpdateX (int source, int target, bool periodic=true);
-  void UpdateY (int source, int target, bool periodic=true);
-  void UpdateZ (int source, int target, bool periodic=true);
+  void UpdateX (int source, int target, bool periodic);
+  void UpdateY (int source, int target, bool periodic);
+  void UpdateZ (int source, int target, bool periodic);
 };
 
-template<class T>
-void TriCubicSplineT<T>::UpdateX(int source, int target, bool periodic){
+template<class T, class Tg>
+void TriCubicSplineT<T,Tg>::UpdateX(int source, int target, bool periodic){
   
-  OneDimGridFunctor<T>* temp=0;
+  OneDimGridFunctor<T,Tg>* temp=0;
   if(periodic) {
-    temp = new OneDimCubicSplinePBC<T>(m_grid->gridX);
+    temp = new OneDimCubicSplinePBC<T,Tg>(m_grid->gridX);
   } else {
-    temp = new OneDimCubicSplineFirst<T>(m_grid->gridX);
+    temp = new OneDimCubicSplineFirst<T,Tg>(m_grid->gridX);
   }
   int nyz=nY*nZ;
   // Loop over all y and z
@@ -141,10 +169,10 @@ void TriCubicSplineT<T>::UpdateX(int source, int target, bool periodic){
     for(int iz = 0; iz < nZ; iz++){
       int first(index(0,iy,iz));
       T* restrict s = temp->data();
-      for(int ix=0,cur=first; ix< nX; ix++,cur+=nyz,s++) *s = F[cur][source];
+      for(int ix=0,cur=first; ix< nX; ix++,cur+=nyz,s++) 
+        *s = F[cur][source];
 
       temp->spline();
-
       const T* restrict sfit = temp->data(1);
       for(int ix=0,cur=first; ix< nX; ix++,cur+=nyz) F[cur][target] = *sfit++;
     }
@@ -153,14 +181,14 @@ void TriCubicSplineT<T>::UpdateX(int source, int target, bool periodic){
   delete temp;
 }
 
-template<class T>
-void TriCubicSplineT<T>::UpdateY(int source, int target, bool periodic){
+template<class T, class Tg>
+void TriCubicSplineT<T,Tg>::UpdateY(int source, int target, bool periodic){
 
-  OneDimGridFunctor<T>* temp=0;
+  OneDimGridFunctor<T,Tg>* temp=0;
   if(periodic) {
-    temp = new OneDimCubicSplinePBC<T>(m_grid->gridY);
+    temp = new OneDimCubicSplinePBC<T,Tg>(m_grid->gridY);
   } else {
-    temp = new OneDimCubicSplineFirst<T>(m_grid->gridY);
+    temp = new OneDimCubicSplineFirst<T,Tg>(m_grid->gridY);
   }
 
   // Loop over all x and z
@@ -178,14 +206,14 @@ void TriCubicSplineT<T>::UpdateY(int source, int target, bool periodic){
   delete temp;
 }
 
-template<class T>
-void TriCubicSplineT<T>::UpdateZ(int source, int target, bool periodic){
+template<class T, class Tg>
+void TriCubicSplineT<T,Tg>::UpdateZ(int source, int target, bool periodic){
 
-  OneDimGridFunctor<T>* temp=0;
+  OneDimGridFunctor<T,Tg>* temp=0;
   if(periodic) {
-    temp = new OneDimCubicSplinePBC<T>(m_grid->gridZ);
+    temp = new OneDimCubicSplinePBC<T,Tg>(m_grid->gridZ);
   } else {
-    temp = new OneDimCubicSplineFirst<T>(m_grid->gridZ);
+    temp = new OneDimCubicSplineFirst<T,Tg>(m_grid->gridZ);
   }
 
   // Loop over all x and z
@@ -204,3 +232,8 @@ void TriCubicSplineT<T>::UpdateZ(int source, int target, bool periodic){
 }
 
 #endif
+/***************************************************************************
+ * $RCSfile$   $Author$
+ * $Revision$   $Date$
+ * $Id$ 
+ ***************************************************************************/

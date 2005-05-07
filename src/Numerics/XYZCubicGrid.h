@@ -42,9 +42,13 @@ struct XYZCubicGrid {
   inline T d2q2 (T t)
   { return (6.0*t - 2.0); } 
 
+  bool Periodic;
   int Loc;
   int ix, iy, iz;
   int nX, nY, nZ;
+  T x_min, x_max, LengthX;
+  T y_min, y_max, LengthY;
+  T z_min, z_max, LengthZ;
   T h,k,l,hinv,kinv,linv;
   T u,v,w;
   T val, gradfX, gradfY, gradfZ, lapf;
@@ -55,74 +59,123 @@ struct XYZCubicGrid {
   Grid1DType *gridX, *gridY, *gridZ;
 
   XYZCubicGrid():Loc(-1),gridX(0),gridY(0),gridZ(0) {}
-  XYZCubicGrid(Grid1DType *xgrid, Grid1DType *ygrid, Grid1DType *zgrid): 
-    gridX(xgrid), gridY(ygrid), gridZ(zgrid){
-    nX = gridX->size();
-    nY = gridY->size();
-    nZ = gridZ->size();
+  XYZCubicGrid(Grid1DType *xgrid, Grid1DType *ygrid, 
+      Grid1DType *zgrid) {
+    setGridXYZ(xgrid,ygrid,zgrid);
   }
+
+  inline 
+  void 
+  setGridXYZ(Grid1DType *xgrid, Grid1DType *ygrid, Grid1DType *zgrid) {
+    gridX=xgrid; gridY=ygrid; gridZ=zgrid;
+    x_min=gridX->rmin(); x_max=gridX->rmax(); LengthX=x_max-x_min;
+    y_min=gridY->rmin(); y_max=gridY->rmax(); LengthY=y_max-y_min;
+    z_min=gridZ->rmin(); z_max=gridZ->rmax(); LengthZ=z_max-z_min;
+    nX = gridX->size(); nY = gridY->size(); nZ = gridZ->size();
+  }
+
+  inline void setBC(bool pbc) { Periodic=pbc;}
 
   inline int index(int i, int j, int k) const {
     return k+nZ*(j+nY*i);
   }
     
-  inline void locate(T x, T y, T z) {
+  /** locate the grid point (x,y,z) and update the coefficients
+   */
+  inline void locate(T x, T y, T z, bool updateall) {
+    //grid(X,Y,Z)->locate(r) evaluates the factors used by interpolations
     Loc=-1;
-    if(x >= gridX->rmin() && x < gridX->rmax() && 
-       y >= gridY->rmin() && y < gridY->rmax() && 
-       z >= gridZ->rmin() && z < gridZ->rmax()) {
-      ix = gridX->index(x);
-      h = gridX->dr(ix);
-      hinv = 1.0/h;
-      u = (x - gridX->r(ix))*hinv;
+    if(Periodic) {
+      if(x<x_min) x+=LengthX;
+      else if(x>=x_max) x-=LengthX;
+      if(y<y_min) y+=LengthY;
+      else if(y>=y_max) y-=LengthY;
+      if(z<z_min) z+=LengthZ;
+      else if(z>=z_max) z-=LengthZ;
+    }
 
-      iy = gridY->index(y);
-      k = gridY->dr(iy);
-      kinv = 1.0/k;
-      v = (y - gridY->r(iy))*kinv;
+    gridX->locate(x); ix=gridX->currentIndex();
+    if(ix<0||ix>= nX)  return;
+    gridY->locate(y); iy=gridY->currentIndex();
+    if(iy<0||iy>= nY)  return;
+    gridZ->locate(z); iz=gridZ->currentIndex();
+    if(iz<0||iz>= nZ)  return;
 
-      iz = gridZ->index(z);
-      l = gridZ->dr(iz);
-      linv = 1.0/l;
-      w = (z - gridZ->r(iz))*linv;
-      Loc=index(ix,iy,iz);
-      updateAll();
-      //update();
+    h = gridX->dr(ix);
+    hinv = 1.0/h;
+    u = (x - gridX->r(ix))*hinv;
+
+    k = gridY->dr(iy);
+    kinv = 1.0/k;
+    v = (y - gridY->r(iy))*kinv;
+
+    l = gridZ->dr(iz);
+    linv = 1.0/l;
+    w = (z - gridZ->r(iz))*linv;
+    
+    Loc=index(ix,iy,iz);
+
+    a0=p1(u); a1=p2(u); a2=h*q1(u); a3=h*q2(u);
+    b0=p1(v); b1=p2(v); b2=k*q1(v); b3=k*q2(v);
+    c0=p1(w); c1=p2(w); c2=l*q1(w); c3=l*q2(w);
+
+    if(updateall){
+      da0=hinv*dp1(u); da1=hinv*dp2(u); da2=dq1(u); da3=dq2(u);
+      db0=kinv*dp1(v); db1=kinv*dp2(v); db2=dq1(v); db3=dq2(v);
+      dc0=linv*dp1(w); dc1=linv*dp2(w); dc2=dq1(w); dc3=dq2(w);
+
+      d2a0=hinv*hinv*d2p1(u); 
+      d2a1=hinv*hinv*d2p2(u); 
+      d2a2=hinv*d2q1(u); 
+      d2a3=hinv*d2q2(u);
+
+      d2b0=kinv*kinv*d2p1(v);
+      d2b1=kinv*kinv*d2p2(v);
+      d2b2=kinv*d2q1(v);
+      d2b3=kinv*d2q2(v);
+
+      d2c0=linv*linv*d2p1(w);
+      d2c1=linv*linv*d2p2(w);
+      d2c2=linv*d2q1(w);
+      d2c3=linv*d2q2(w);
     }
   } 
 
-  inline int update() {
+  //inline int update() {
+  //  a0=p1(u); a1=p2(u); a2=h*q1(u); a3=h*q2(u);
+  //  b0=p1(v); b1=p2(v); b2=k*q1(v); b3=k*q2(v);
+  //  c0=p1(w); c1=p2(w); c2=l*q1(w); c3=l*q2(w);
+  //  return Loc;
+  //}
+
+  inline void update(bool all) {
+
+    if(Loc<0) return;
+
     a0=p1(u); a1=p2(u); a2=h*q1(u); a3=h*q2(u);
     b0=p1(v); b1=p2(v); b2=k*q1(v); b3=k*q2(v);
     c0=p1(w); c1=p2(w); c2=l*q1(w); c3=l*q2(w);
-    return Loc;
-  }
 
-  inline int updateAll() {
-    a0=p1(u); a1=p2(u); a2=h*q1(u); a3=h*q2(u);
-    b0=p1(v); b1=p2(v); b2=k*q1(v); b3=k*q2(v);
-    c0=p1(w); c1=p2(w); c2=l*q1(w); c3=l*q2(w);
+    if(all){
+      da0=hinv*dp1(u); da1=hinv*dp2(u); da2=dq1(u); da3=dq2(u);
+      db0=kinv*dp1(v); db1=kinv*dp2(v); db2=dq1(v); db3=dq2(v);
+      dc0=linv*dp1(w); dc1=linv*dp2(w); dc2=dq1(w); dc3=dq2(w);
 
-    da0=hinv*dp1(u); da1=hinv*dp2(u); da2=dq1(u); da3=dq2(u);
-    db0=kinv*dp1(v); db1=kinv*dp2(v); db2=dq1(v); db3=dq2(v);
-    dc0=linv*dp1(w); dc1=linv*dp2(w); dc2=dq1(w); dc3=dq2(w);
+      d2a0=hinv*hinv*d2p1(u); 
+      d2a1=hinv*hinv*d2p2(u); 
+      d2a2=hinv*d2q1(u); 
+      d2a3=hinv*d2q2(u);
 
-    d2a0=hinv*hinv*d2p1(u); 
-    d2a1=hinv*hinv*d2p2(u); 
-    d2a2=hinv*d2q1(u); 
-    d2a3=hinv*d2q2(u);
+      d2b0=kinv*kinv*d2p1(v);
+      d2b1=kinv*kinv*d2p2(v);
+      d2b2=kinv*d2q1(v);
+      d2b3=kinv*d2q2(v);
 
-    d2b0=kinv*kinv*d2p1(v);
-    d2b1=kinv*kinv*d2p2(v);
-    d2b2=kinv*d2q1(v);
-    d2b3=kinv*d2q2(v);
-
-    d2c0=linv*linv*d2p1(w);
-    d2c1=linv*linv*d2p2(w);
-    d2c2=linv*d2q1(w);
-    d2c3=linv*d2q2(w);
-
-    return Loc;
+      d2c0=linv*linv*d2p1(w);
+      d2c1=linv*linv*d2p2(w);
+      d2c2=linv*d2q1(w);
+      d2c3=linv*d2q2(w);
+    }
   }
 
   inline T evaluate(const KnotType& f000, const KnotType& f001,
@@ -366,3 +419,8 @@ struct XYZCubicGrid {
   }
 };
 #endif
+/***************************************************************************
+ * $RCSfile$   $Author$
+ * $Revision$   $Date$
+ * $Id$ 
+ ***************************************************************************/
