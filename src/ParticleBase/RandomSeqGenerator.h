@@ -35,18 +35,17 @@ inline void assignUniformRand(T* restrict a, unsigned n) {
   //generate(a,a+n,Random);
 }
 
-#if defined(USE_BLITZ)
+#if defined(HAVE_LIBBLITZ)
 ///specialized functions: stick to overloading
 inline void makeGaussRandom(blitz::Array<TinyVector<double,3>, 2>& a) {
   assignGaussRand(&(a(0,0)[0]), a.size()*3);
 }
+#endif
 
-#else
 ///specialized functions: stick to overloading
 inline void makeGaussRandom(Matrix<TinyVector<double,3> >& a) {
   assignGaussRand(&(a(0,0)[0]), a.size()*3);
 }
-#endif
 
 inline void makeGaussRandom(ParticleAttrib<TinyVector<double,3> >& a) {
   assignGaussRand(&(a[0][0]), a.size()*3);
@@ -63,11 +62,4 @@ inline void makeUniformRandom(ParticleAttrib<TinyVector<double,3> >& a) {
 inline void makeUniformRandom(ParticleAttrib<double>& a) {
   assignUniformRand(&(a[0]), a.size());
 }
-
-#if !defined(USE_BLITZ)
-///specialized functions: stick to overloading
-inline void makeGaussRandom(blitz::Array<TinyVector<double,3>, 2>& a) {
- assignGaussRand(&(a(0,0)[0]), a.size()*3);
-}
-#endif
 #endif
