@@ -139,8 +139,8 @@ namespace ohmmsqmc {
       }
    
       //call virtual function to initialize the physical entities, such as el.
-      init();
-
+      if(!init()) return false;
+    
       //perform a series of QMC runs
       string methodname("invalid");
       result = xmlXPathEvalExpression((const xmlChar*)"//qmc",m_context);
