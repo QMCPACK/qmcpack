@@ -328,3 +328,8 @@ ostream& operator<<(ostream& out, const OneDimGridBase<T>& rhs)
   return out;
 }
 #endif
+/***************************************************************************
+ * $RCSfile$   $Author$
+ * $Revision$   $Date$
+ * $Id$
+ ***************************************************************************/
