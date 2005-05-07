@@ -44,6 +44,7 @@ struct BLAS {
   static const int INCX = 1;
   static const int INCY = 1;
   static const char UPLO = 'L';
+  static const char TRANS = 'N';
   static const float sone;
   static const float szero;
   static const double done;
@@ -97,6 +98,16 @@ struct BLAS {
   inline static 
   void scal(int n, double alpha, double* x) {
     dscal(n,alpha,x,INCX);
+  }
+
+  //inline static 
+  //void gemv(char trans, int n, int m, const double* amat, const double* x, double* y) {
+  //  dgemv(trans, n, m, done, amat, n, x, INCX, dzero, y, INCY);
+  //}
+
+  inline static 
+  void gemv(int n, int m, const double* amat, const double* x, double* y) {
+    dgemv(TRANS, m, n, done, amat, m, x, INCX, dzero, y, INCY);
   }
 
 //   inline static
