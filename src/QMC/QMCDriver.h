@@ -51,6 +51,11 @@ namespace ohmmsqmc {
     
     virtual bool put(xmlNodePtr cur) = 0;
 
+    void add(QMCHamiltonian* h, TrialWaveFunction* psi) {
+      H1.push_back(h);
+      Psi1.push_back(psi);
+    }
+
   protected:
 
     ///counts the number of qmc runs
@@ -103,6 +108,10 @@ namespace ohmmsqmc {
 
     ///Hamiltonian
     QMCHamiltonian& H;
+
+    vector<TrialWaveFuncton*> Psi1;
+
+    vector<QMCHamiltonian**> H1;
 
     ///stream for the log file 
     OhmmsInform *LogOut;
