@@ -38,6 +38,7 @@
 #include "QMCWaveFunctions/AtomicOrbitals/HFAtomicSTOSetBuilder.h"
 #include "QMCWaveFunctions/AtomicOrbitals/HeSTOClementiRottie.h"
 #include "QMCWaveFunctions/MolecularOrbitals/MolecularOrbitalBuilder.h"
+//#include "QMCWaveFunctions/MolecularOrbitals/NumericalMolecularOrbitals.h"
 #include "QMCWaveFunctions/JastrowBuilder.h"
 #include "QMC/QMCUtilities.h"
 
@@ -59,11 +60,27 @@ namespace ohmmsqmc {
 
   bool MolecuApps::init() {
 
+    //xmlXPathObjectPtr result
+    //  = xmlXPathEvalExpression((const xmlChar*)"//include",m_context);
+    //if(xmlXPathNodeSetIsEmpty(result->nodesetval)) {
+    //  if(!setParticleSets(m_root)) {
+    //     ERRORMSG("Failed to initialize the ions and electrons. Exit now.")
+    //     return false;
+    //  }
+    //} else {
+    //  xmlNodePtr cur = result->nodesetval->nodeTab[0];
+    //  const xmlChar* a= xmlGetProp(cur,(const xmlChar*)"href");
+    //  if(a) {
+    //    GamesXmlParser a(ion,el,Psi);
+    //    a.parse((const char*)a);
+    //  }
+    //}
+    //xmlXPathFreeObject(result);
+
     if(!setParticleSets(m_root)) {
        ERRORMSG("Failed to initialize the ions and electrons. Exit now.")
        return false;
     }
-
     setWavefunctions(m_root);
 
     if(!setHamiltonian(m_root)) {
@@ -150,8 +167,7 @@ namespace ohmmsqmc {
     return true;
   }
 
-  /**
-   *@brief Initialize the Hamiltonian
+  /** Initialize the Hamiltonian
    */
   bool MolecuApps::setHamiltonian(xmlNodePtr aroot){
 
@@ -304,7 +320,7 @@ namespace ohmmsqmc {
 	  } else if(orbtype == "MolecularOrbital") {
 	    MolecularOrbitalBuilder a(Psi,ion,el);
 	    a.put(cur);
-	  }
+          }
 	  XMLReport("Done with the initialization of SlaterDeterminant using " << orbtype)
         } // if DeterminantSet    
 	else if (cname ==  OrbitalBuilderBase::jastrow_tag) {
