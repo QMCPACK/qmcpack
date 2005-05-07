@@ -206,10 +206,10 @@ public:
    */
   void printGrid(std::ostream& os) const { 
     const int nw = 15;
-    os << "number of sub regions " << NumGrids << endl;
-    os << "Attribute distribution  = " << endl;
+    os << "number of sub regions " << NumGrids << std::endl;
+    os << "Attribute distribution  = " << std::endl;
     os << "grid spacing = " << setw(nw) << Delta[0] << setw(nw) << Delta[1]
-       << setw(nw) << Delta[2] << endl;
+       << setw(nw) << Delta[2] << std::endl;
 
     TinyVector<T,3> origin;
     for(int ig=0; ig<NP[0]; ig++) {

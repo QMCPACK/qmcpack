@@ -240,7 +240,7 @@ struct CrystalLattice{
   template<class PA> void applyBC(PA& pos, T del=1.e-6) const;
 
   //! Print out CrystalLattice Data
-  void print(ostream& , int level=2) const;
+  void print(std::ostream& , int level=2) const;
 };
 
 //including the definitions of the member functions

@@ -156,18 +156,18 @@ CrystalLattice<T,D>::operator*=(T sc) {
 }
 
 template<class T, unsigned D>
-void CrystalLattice<T,D>::print(ostream& os, int level) const {
+void CrystalLattice<T,D>::print(std::ostream& os, int level) const {
 
   /*\note level == 0: print only the lattice vectors
    *      level == 1: lattice vectors, boundary conditions, grid 
    *      level == 2: + all the internal values
    */
 
-  os << "<lattice>" << endl; 
+  os << "<lattice>" << std::endl; 
   for(int i=0; i<D; i++) {
-    os << Rv[i] << endl;
+    os << Rv[i] << std::endl;
   }
-  os << "</lattice>" << endl; 
+  os << "</lattice>" << std::endl; 
 
   if(level > 0) {
     os << "<bconds> ";
@@ -175,14 +175,14 @@ void CrystalLattice<T,D>::print(ostream& os, int level) const {
       if(BoxBConds[i]) os << " p "; 
       else             os << " n ";
     }
-    os << " </bconds>" << endl;
+    os << " </bconds>" << std::endl;
   }
 
   if(level > 1) {
-    os << "Volume (A^3) = " << Volume << endl;
+    os << "Volume (A^3) = " << Volume << std::endl;
     os << "Reciprocal vectors without 2*pi.\n";
     for(int i=0; i<D; i++) {
-      os << "g_"<< i+1<< " = " << Gv[i] << endl;
+      os << "g_"<< i+1<< " = " << Gv[i] << std::endl;
     }
     os << "Metric tensor in real-space.\n";
     for(int i=0; i<D; i++) {
@@ -190,7 +190,7 @@ void CrystalLattice<T,D>::print(ostream& os, int level) const {
       for(int j=0; j< D; j++) {
         os << M(i,j) << " ";
       }
-      os << endl;
+      os << std::endl;
     }
     os << "Metric tensor in g-space.\n";
     for(int i=0; i<D; i++) {
@@ -198,7 +198,7 @@ void CrystalLattice<T,D>::print(ostream& os, int level) const {
       for(int j=0; j< D; j++) {
         os << Mg(i,j) << " ";
       }
-      os << endl;
+      os << std::endl;
     }
   }
 }

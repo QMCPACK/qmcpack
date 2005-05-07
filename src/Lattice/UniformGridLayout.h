@@ -29,9 +29,7 @@
 
 /** generic UniformGridLayout. Do nothing. 
 */
-template<class T, unsigned D>
-struct UniformGridLayout: public CrystalLattice<T,D>,
-			  public UniformCartesianGrid<T,D>{ };
+template<class T, unsigned D> struct UniformGridLayout{ };
 
 /** specialization of UniformGridLayout<T,3> for 3-Dim layout 
  *
@@ -53,8 +51,7 @@ struct UniformGridLayout: public CrystalLattice<T,D>,
  */
 template<class T>
 class UniformGridLayout<T,3>: public CrystalLattice<T,3>,
-			      public UniformCartesianGrid<T,3>
-{ 
+			      public UniformCartesianGrid<T,3> { 
 
 public:
 
@@ -105,7 +102,76 @@ public:
   inline int ncontexts() const { return c_offset.size()-1;}
     
   /// return the maximum number of connected cells
-  int connectGrid(T rmax);
+  int connectGrid(T rmax) {
+    ///create the spatial grid
+    setGrid(Grid[SPATIAL_GRID]);
+
+    SingleParticlePos_t u0(this->Delta[0],0.0,0.0);
+    SingleParticlePos_t u1(0.0,this->Delta[1],0.0);
+    SingleParticlePos_t u2(0.0,0.0,this->Delta[2]);
+    T RmaxSq = rmax*rmax;
+
+    ///calculate the extend of linked cells
+    int nx = static_cast<int>(sqrt(RmaxSq/Dot(u0,u0)))+1;
+    int ny = static_cast<int>(sqrt(RmaxSq/Dot(u1,u1)))+1;
+    int nz = static_cast<int>(sqrt(RmaxSq/Dot(u2,u2)))+1;
+
+
+    c_offset.resize(this->NumGrids+1);
+    int ntot = this->NumGrids*(2*nx+1)*(2*ny+1)*(2*nz+1);
+    if(c_id.capacity() < ntot) c_id.reserve(ntot);
+    if(c_bc.capacity() < ntot) c_bc.reserve(ntot);
+    if(u_bc.capacity() < ntot) u_bc.reserve(ntot);
+
+    int maxnc = 0, gtot = 0;
+    SingleParticlePos_t dx(this->Delta[0],this->Delta[1],this->Delta[2]),org,d;
+    c_offset[0] = 0;
+    for(int ig=0; ig<this->NP[0]; ig++) {
+      org[0] = (static_cast<T>(ig)+0.5)*dx[0];
+      for(int jg=0; jg<this->NP[1]; jg++) {
+        org[1] = (static_cast<T>(jg)+0.5)*dx[1];
+        for(int kg=0; kg<this->NP[2]; kg++) {
+          org[2] = (static_cast<T>(kg)+0.5)*dx[2];
+          T x,y,z;
+          int nconnected = 0;
+          for(int ix=-nx; ix<=nx; ix++) {
+            d[0] = x = org[0]+T(ix)*dx[0];
+            if(this->BoxBConds[0]) {
+              x = fmod(d[0],1.0);
+              if(x<0.0) x += 1.0;
+            }
+            if(x<0 || x>=1) continue;
+            d[0] -= x;
+            for(int jx=-ny; jx<=ny; jx++) {
+              d[1] = y = org[1]+T(jx)*dx[1];
+              if(this->BoxBConds[1]) {
+                y = fmod(d[1],1.0); if(y<0) y += 1.0;
+              }
+              if(y<0 || y>=1) continue;
+              d[1] -= y;
+              for(int kx=-nz; kx<=nz; kx++) {
+                d[2] = z = org[2]+T(kx)*dx[2];
+                if(this->BoxBConds[2]) {
+          	z = fmod(d[2],1.0); if(z<0) z += 1.0;
+                }
+                if(z<0 || z>=1) continue;
+                d[2] -= z;
+                int iloc = loc(x,y,z);
+                if(iloc == gtot && ix == 0 && jx == 0 && kx == 0) continue;
+                c_id.push_back(iloc);
+                u_bc.push_back(d);
+                c_bc.push_back(toCart(d));
+                nconnected++;
+              }
+            }
+          }
+          c_offset[gtot+1] = c_offset[gtot]+nconnected; gtot++;
+          maxnc = max(maxnc,nconnected);
+        }
+      }
+    }  
+    return maxnc; // return the maxmimum number of connected cells
+  }
     
   template<class GIM>
   inline void makeGrid(const GIM& mgrid) {
@@ -172,83 +238,9 @@ private:
 
 
 template<class T>
-int 
-UniformGridLayout<T,3>::connectGrid(T rmax) {
-
-  ///create the spatial grid
-  setGrid(Grid[SPATIAL_GRID]);
-
-  SingleParticlePos_t u0(Delta[0],0.0,0.0);
-  SingleParticlePos_t u1(0.0,Delta[1],0.0);
-  SingleParticlePos_t u2(0.0,0.0,Delta[2]);
-  T RmaxSq = rmax*rmax;
-
-  ///calculate the extend of linked cells
-  int nx = static_cast<int>(sqrt(RmaxSq/Dot(u0,u0)))+1;
-  int ny = static_cast<int>(sqrt(RmaxSq/Dot(u1,u1)))+1;
-  int nz = static_cast<int>(sqrt(RmaxSq/Dot(u2,u2)))+1;
-
-
-  c_offset.resize(NumGrids+1);
-  int ntot = NumGrids*(2*nx+1)*(2*ny+1)*(2*nz+1);
-  if(c_id.capacity() < ntot) c_id.reserve(ntot);
-  if(c_bc.capacity() < ntot) c_bc.reserve(ntot);
-  if(u_bc.capacity() < ntot) u_bc.reserve(ntot);
-
-  int maxnc = 0, gtot = 0;
-  SingleParticlePos_t dx(Delta[0],Delta[1],Delta[2]),org,d;
-  c_offset[0] = 0;
-  for(int ig=0; ig<NP[0]; ig++) {
-    org[0] = (static_cast<T>(ig)+0.5)*Delta[0];
-    for(int jg=0; jg<NP[1]; jg++) {
-      org[1] = (static_cast<T>(jg)+0.5)*Delta[1];
-      for(int kg=0; kg<NP[2]; kg++) {
-	org[2] = (static_cast<T>(kg)+0.5)*Delta[2];
-	T x,y,z;
-	int nconnected = 0;
-	for(int ix=-nx; ix<=nx; ix++) {
-	  d[0] = x = org[0]+T(ix)*dx[0];
-	  if(BoxBConds[0]) {
-	    x = fmod(d[0],1.0);
-	    if(x<0.0) x += 1.0;
-	  }
-	  if(x<0 || x>=1) continue;
-	  d[0] -= x;
-	  for(int jx=-ny; jx<=ny; jx++) {
-	    d[1] = y = org[1]+T(jx)*dx[1];
-	    if(BoxBConds[1]) {
-	      y = fmod(d[1],1.0); if(y<0) y += 1.0;
-	    }
-	    if(y<0 || y>=1) continue;
-	    d[1] -= y;
-	    for(int kx=-nz; kx<=nz; kx++) {
-	      d[2] = z = org[2]+T(kx)*dx[2];
-	      if(BoxBConds[2]) {
-		z = fmod(d[2],1.0); if(z<0) z += 1.0;
-	      }
-	      if(z<0 || z>=1) continue;
-	      d[2] -= z;
-	      int iloc = loc(x,y,z);
-	      if(iloc == gtot && ix == 0 && jx == 0 && kx == 0) continue;
-	      c_id.push_back(iloc);
-	      u_bc.push_back(d);
-	      c_bc.push_back(toCart(d));
-	      nconnected++;
-	    }
-	  }
-	}
-	c_offset[gtot+1] = c_offset[gtot]+nconnected; gtot++;
-	maxnc = max(maxnc,nconnected);
-      }
-    }
-  }  
-  return maxnc; // return the maxmimum number of connected cells
-}
-
-template<class T>
 void UniformGridLayout<T,3>::print(std::ostream& os) const {
   Base_t::print(os);
-  printGrid(os);
+  Grid_t::printGrid(os);
   for(int ig=0; ig<c_offset.size()-1; ig++) {
     os << ig << " has neighboring cell "  
        << c_offset[ig+1]-c_offset[ig]<< std::endl;
