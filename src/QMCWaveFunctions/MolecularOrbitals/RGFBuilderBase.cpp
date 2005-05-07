@@ -55,7 +55,8 @@ namespace ohmmsqmc {
           RealType dr = ((*agrid)(ig+1)-(*agrid)(ig))/5.0;
           RealType _r =(*agrid)(ig)+dr*0.00131,y,dy,d2y;
           while(_r<(*agrid)(ig+1)) {
-            radorb->setgrid(_r);
+            //setgrid is removed.  The GridManager functor will re-evaluate the grid parameters.
+            //radorb->setgrid(_r);
             y = radorb->evaluate(_r,1.0/_r,dy,d2y);
             dfile << setw(24) << _r << setw(24) << y 
                   << setw(24) << dy << setw(24) << d2y
@@ -80,7 +81,7 @@ namespace ohmmsqmc {
       for(int ig=0; ig<agrid->size()-1; ig++) {
         RealType _r = (*agrid)(ig);
         RealType _rinv = 1.0/_r;
-        agrid->index(_r);
+        agrid->locate(_r);
         dfile << setw(30) << _r;
         for(int i=0; i<norb; i++) {
           dfile << setw(30) << m_orbitals->Rnl[i]->evaluateAll(_r,_rinv);

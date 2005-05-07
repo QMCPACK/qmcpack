@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////
-// (c) Copyright 2003  by Jeongnim Kim
+// (c) Copyright 2003-  by Jeongnim Kim
 //////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////
 //   National Center for Supercomputing Applications &
@@ -187,12 +187,12 @@ namespace ohmmsqmc {
             ++it;
           }
 
-          cout << "Checking the order of angular momentum " << endl;
+          LOGMSG("Checking the order of angular momentum ")
           std::copy(aos->LM.begin(), aos->LM.end(), ostream_iterator<int>(cout," "));
           cout << endl;
+
 	  //add the new atomic basis to the basis set
 	  BasisSet->add(aos);
-          //if(rbuilder) {rbuilder->print(abasis,1); delete rbuilder; rbuilder=NULL;}
           if(rbuilder) {delete rbuilder; rbuilder=0;}
 	}else {
 	  WARNMSG("Species " << abasis << " is already initialized. Ignore the input.")

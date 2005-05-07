@@ -121,6 +121,10 @@ namespace ohmmsqmc {
     yprime_i /= (agrid->r(imin+1)-agrid->r(imin)); 
     //set up 1D-Cubic Spline
     radorb->spline(imin,yprime_i,imax,0.0);
+
+
+    int lastRnl=m_orbitals->Rnl.size();
+
     //add radial orbital to list
     m_orbitals->Rnl.push_back(radorb);
     m_orbitals->RnlID.push_back(nlms);
@@ -135,10 +139,8 @@ namespace ohmmsqmc {
       RealType dr = (radorb->r(ig+1)- radorb->r(ig))/5.0;
       RealType _r = radorb->r(ig),y,dy,d2y;
       while(_r<radorb->r(ig+1)) {
-        //gorb->setgrid(_r);
-	//y = gorb->evaluate(_r,1.0/_r,dy,d2y);
-	radorb->setgrid(_r);
-	//y = aterm->evaluate(_r,1.0/_r,dy,d2y);
+        //Do not need this anymore
+	//radorb->setgrid(_r);
 	y = radorb->evaluate(_r,1.0/_r,dy,d2y);
 	dfile << setw(15) << _r << setw(20) << setprecision(12) << y 
 	      << setw(20) << dy << setw(20) << d2y
@@ -147,6 +149,12 @@ namespace ohmmsqmc {
       }
     }
     //#endif
+    //
+
+    if(lastRnl) {
+      XMLReport("\tSetting the GridManager of " << lastRnl << " radial orbital to false")
+      radorb->setGridManager(false);
+    }
 
     return true;
   }
