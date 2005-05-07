@@ -17,6 +17,7 @@
 #ifndef OHMMS_NUCLEAR_LINEAR_TRANSFORMFUNCTION_H
 #define OHMMS_NUCLEAR_LINEAR_TRANSFORMFUNCTION_H
 
+#include <numeric>
 #include "Numerics/OneDimGridFunctor.h"
 
 /**@ingroup NumerovTransform
@@ -103,7 +104,7 @@ struct NuclearLinearTransform {
     value_type r0 = V.r(i);
     value_type dr = V.dr(i);
     value_type deriv;
-    if(L) {
+    if(L<numeric_limits<value_type>::epsilon()) {
       z0 = pow(r0,L+1);
       deriv = static_cast<value_type>(L+1)*pow(r0,L);
     } else {

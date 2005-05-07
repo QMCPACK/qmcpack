@@ -17,6 +17,7 @@
 #ifndef OHMMS_NUCLEAR_RELATIVISTIC_LOG_TRANSFORMFUNCTION_H
 #define OHMMS_NUCLEAR_RELATIVISTIC_LOG_TRANSFORMFUNCTION_H
 
+#include <numeric>
 #include "Numerics/OneDimGridFunctor.h"
 
 //#define PRINT_DEBUG
@@ -180,7 +181,7 @@ struct NuclearRelLogTransform {
     value_type r0 = V.r(i);
     value_type dr = V.dr(i);
     value_type deriv;
-    if(L){
+    if(L<numeric_limits<value_type>::epsilon()){
       z0 = pow(r0,L+0.5);
       deriv = (L+0.5)*pow(r0,L-0.5);
     } else {

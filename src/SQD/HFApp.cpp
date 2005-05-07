@@ -114,7 +114,7 @@ SQDFrame::solve(const char* fname) {
   bool success = HFSolver->put(cur);
 
   if(!success) {
-    ERRORMSG("The input file does not confirm. Exit")
+    ERRORMSG("The input file does not conform. Exit")
       return false;
   }
 

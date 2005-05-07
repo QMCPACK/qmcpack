@@ -22,10 +22,10 @@
 #ifdef HAVE_LIBHDF5
 #include "Numerics/HDFNumericAttrib.h"
 #else
-#include <string>
 #include "OhmmsPETE/OhmmsMatrix.h"
 #endif
 #include "Numerics/Transform2GridFunctor.h"
+#include <fstream>
 
 /**@brief Print  \f$ r R_{nl}(r)\f$ */
 template<class GT>
@@ -37,7 +37,7 @@ bool YlmRnlSet<GT>::get(std::ostream& os) {
     for(int ob=0; ob < psi.size(); ob++) {
       os << setw(20) << psi[ob](i);
     }
-    os << endl;
+    os << std::endl;
   }
   return true;
 }
@@ -224,6 +224,9 @@ template<class GT>
 bool YlmRnlSet<GT>::print_basis(const std::string& elementName,
 				const std::string& RootName,
 				const std::string& GridType){
+
+  using namespace std;
+
   //matrices for spin-up and down orbitals
   Matrix<double> Mup;
   Matrix<double> Mdown;
@@ -246,10 +249,10 @@ bool YlmRnlSet<GT>::print_basis(const std::string& elementName,
   string fnameHDF5 = RootName + ".h5";
 
   ofstream osXML(fnameXML.c_str());
-  osXML << "<determinantset type=\"MolecularOrbital\">" << endl;
-  osXML << "<basisset>" << endl;
+  osXML << "<determinantset type=\"MolecularOrbital\">" << std::endl;
+  osXML << "<basisset>" << std::endl;
   osXML << "<basis type=\"HFNG\" species=\"" << elementName 
-	<< "\" file=\"" << fnameHDF5 << "\">" << endl;
+	<< "\" file=\"" << fnameHDF5 << "\">" << std::endl;
 
   //if there is no restriction all the orbitals are basis functions
   if(Restriction == "none"){
@@ -262,11 +265,11 @@ bool YlmRnlSet<GT>::print_basis(const std::string& elementName,
       if(fabs(psi[orb](0)) > 0.0){ 
 	osXML << "<phi id=\"" << idname << "\" n=\"" << N[orb] 
 	      << "\" l=\"" << L[orb] << "\" m=\"" << M[orb] 
-	      << "\" s=\"" << S[orb] << "\" zeta=\"1\"/>" << endl;
+	      << "\" s=\"" << S[orb] << "\" zeta=\"1\"/>" << std::endl;
       } else {
       osXML << "<phi id=\"" << idname << "\" n=\"" << N[orb] 
 	    << "\" l=\"" << L[orb] << "\" m=\"" << M[orb] 
-	    << "\" s=\"" << S[orb] << "\" zeta=\"1\" imin=\"1\"/>" << endl;
+	    << "\" s=\"" << S[orb] << "\" zeta=\"1\" imin=\"1\"/>" << std::endl;
       }
     }
   } else {
@@ -285,11 +288,11 @@ bool YlmRnlSet<GT>::print_basis(const std::string& elementName,
 	if(fabs(psi[orb](0)) > 0.0){ 
 	  osXML << "<phi id=\"" << idname << "\" n=\"" << N[orb] 
 		<< "\" l=\"" << L[orb] << "\" m=\"" << M[orb] 
-		<< "\" s=\"1\" zeta=\"1\"/>" << endl;
+		<< "\" s=\"1\" zeta=\"1\"/>" << std::endl;
 	} else {
 	  osXML << "<phi id=\"" << idname << "\" n=\"" << N[orb] 
 		<< "\" l=\"" << L[orb] << "\" m=\"" << M[orb] 
-		<< "\" s=\"" << S[orb] << "\" zeta=\"1\" imin=\"1\"/>" << endl;
+		<< "\" s=\"" << S[orb] << "\" zeta=\"1\" imin=\"1\"/>" << std::endl;
 	}
 	nbasis++;
       }
@@ -300,23 +303,23 @@ bool YlmRnlSet<GT>::print_basis(const std::string& elementName,
 
   }
  
-  osXML << "</basis>" << endl;
-  osXML << "</basisset>" << endl;
-  osXML << "<slaterdeterminant>" << endl;
+  osXML << "</basis>" << std::endl;
+  osXML << "</basisset>" << std::endl;
+  osXML << "<slaterdeterminant>" << std::endl;
   osXML << "<determinant spin=\"1\" orbitals=\"" << Mup.rows() 
-	<< "\">" << endl;
-  osXML << "<parameter id=\"1cu\" type=\"Array\">" << endl;
+	<< "\">" << std::endl;
+  osXML << "<parameter id=\"1cu\" type=\"Array\">" << std::endl;
   osXML << Mup;
-  osXML << "</parameter>" << endl;
-  osXML << "</determinant>" << endl;
+  osXML << "</parameter>" << std::endl;
+  osXML << "</determinant>" << std::endl;
   osXML << "<determinant spin=\"-1\" orbitals=\"" << Mdown.rows() 
-	<< "\">" << endl;
-  osXML << "<parameter id=\"1cd\" type=\"Array\">" << endl;
+	<< "\">" << std::endl;
+  osXML << "<parameter id=\"1cd\" type=\"Array\">" << std::endl;
   osXML << Mdown;
-  osXML << "</parameter>" << endl;
-  osXML << "</determinant>" << endl;
-  osXML << "</slaterdeterminant>" << endl;
-  osXML << "</determinantset>" << endl;
+  osXML << "</parameter>" << std::endl;
+  osXML << "</determinant>" << std::endl;
+  osXML << "</slaterdeterminant>" << std::endl;
+  osXML << "</determinantset>" << std::endl;
 
   osXML.close(); 
 
