@@ -13,6 +13,7 @@ SET(UTILITIES
   Utilities/OhmmsInfo.cpp 
   OhmmsApp/ProjectData.cpp
   OhmmsApp/RandomNumberControl.cpp
+  Numerics/OhmmsBlas.cpp
   Platforms/sysutil.cpp
 )
 
@@ -65,7 +66,7 @@ SET(QMCBASEDIR
    ${WFSBASE}
 )
 
-#SUBDIRS(SQD PseudoGen)
+#SUBDIRS(SQD)
 ADD_LIBRARY(qmc ${QMCBASEDIR})
 SUBDIRS(QMC)
 SUBDIRS(QMCTools)
