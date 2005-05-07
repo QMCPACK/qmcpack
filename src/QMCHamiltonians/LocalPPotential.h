@@ -72,10 +72,19 @@ namespace ohmmsqmc {
     inline ValueType evaluate(DistanceTableData* d_table, int iat) {
       ValueType esum = 0.0;     
       for(int nn=d_table->M[iat]; nn<d_table->M[iat+1]; nn++){
-	for(int ig=0; ig<grid_m.size(); ig++) 
-	  grid_m[ig]->index(d_table->r(nn));
-	for(int ip=0;ip<lpp_m.size(); ip++) 
-	  esum += lpp_m[ip]->evaluate(d_table->r(nn),d_table->rinv(nn));
+        //evaluate takes care of the grid 
+        //vector<GridType*>::iterator gid(grid_m.begin()), gid_end(grid_m.end());
+        //while(gid != gid_end) {
+        //  (*gid)->locate(d_table->r(nn));++gid;
+        //}
+        vector<LocalPotentialType*>::iterator lit(lpp_m.begin()),lit_end(lpp_m.end());
+        while(lit != lit_end) {
+	  esum += (*lit)->evaluate(d_table->r(nn),d_table->rinv(nn)); ++lit;
+        }
+	//for(int ig=0; ig<grid_m.size(); ig++) 
+	//  grid_m[ig]->index(d_table->r(nn));
+	//for(int ip=0;ip<lpp_m.size(); ip++) 
+	//  esum += lpp_m[ip]->evaluate(d_table->r(nn),d_table->rinv(nn));
       }
       return esum;
     }

@@ -14,17 +14,12 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#include "Particle/MCWalkerConfiguration.h"
+//#include "Particle/MCWalkerConfiguration.h"
+#include "QMCHamiltonians/NonLocalPPotential.h"
 #include "Particle/DistanceTableData.h"
 #include "Particle/DistanceTable.h"
-#include "QMCHamiltonians/QMCHamiltonianBase.h"
-#include "QMCHamiltonians/NonLocalPPotential.h"
-#include "Numerics/OneDimGridBase.h"
-#include "Numerics/OneDimGridFunctor.h"
-#include "Numerics/OneDimCubicSpline.h"
-#include "Numerics/Blasf.h"
+#include "Numerics/OhmmsBlas.h"
 #include "Numerics/HDFNumericAttrib.h"
-#include "OhmmsPETE/Tensor.h"
 #include "Utilities/SimpleParser.h"
 #include "Utilities/OhmmsInfo.h"
 #include "Utilities/RandomGenerator.h"
@@ -44,15 +39,14 @@ namespace ohmmsqmc {
       TrialWaveFunction& Psi){
 
     RealType esum=0.0;
-    const RealType oneoverfourpi=0.0795774715;
 
     int nchannel=nlpp_m.size();
     int nknot=sgridxyz_m.size();
-    int iel=0;
 
     randomize_grid();
 
-    for(int nn=d_table->M[iat]; nn<d_table->M[iat+1]; nn++){
+    //int iel=0;
+    for(int nn=d_table->M[iat],iel=0; nn<d_table->M[iat+1]; nn++,iel++){
 
       if(d_table->r(nn)>Rmax) continue;
 
@@ -61,39 +55,42 @@ namespace ohmmsqmc {
       register PosType  dr(d_table->dr(nn));
       // Compute ratio of wave functions
       for (int j=0; j < nknot ; j++){ 
-	PosType deltar(dr-r*sgridxyz_m[j]);
+	PosType deltar(r*rrotsgrid_m[j]-dr);
 	W.makeMove(iel,deltar);
 	psiratio[j]=Psi.ratio(W,iel)*sgridweight_m[j];
       }
       // Compute radial potential
       for(int ip=0;ip< nchannel; ip++){
-	nlgrid_m[ip]->index(r);
-	vrad[ip]=nlpp_m[ip]->evaluate(r,rinv)*(2.0*angpp_m[ip]+1.0);
+	vrad[ip]=nlpp_m[ip]->evaluate(r,rinv)*wgt_angpp_m[ip];
       }
       // Compute spherical harmonics on grid
-      for (int j=0; j<nknot ; j++){ 
-	RealType zz=dot(dr,sgridxyz_m[j]);
+      for (int j=0, jl=0; j<nknot ; j++){ 
+	RealType zz=dot(dr,rrotsgrid_m[j])*rinv;
 	lpol[0]=1.0;
 	RealType lpolprev=0.0;
-	// Forming the Legendre polynomial
+	// Forming the Legendre polynomials
 	for (int l=0 ; l< lmax ; l++){
 	  lpol[l+1]=(2*l+1)*zz*lpol[l]-l*lpolprev;
 	  lpol[l+1]/=(l+1);
 	  lpolprev=lpol[l];
 	}
-	for (int l=0; l < nchannel; l++)
-	  Amat[l*nknot+j] = lpol[ angpp_m[l] ];
+	//for (int l=0; l < nchannel; l++)
+	//  Amat[l*nknot+j] = lpol[ angpp_m[l] ];
+        for(int l=0; l <nchannel; l++,jl++) Amat[jl]=lpol[ angpp_m[l] ];
       } 
 
-      const char TRANS('T');
-      const int ione=1;
-      const RealType one=1.0;
-      const RealType zero=0.0;
-      dgemv(TRANS,nknot,nchannel,one,&Amat[0],nknot,&psiratio[0],ione,zero,
-	  &wvec[0],ione);
-      esum += ddot(nchannel,&vrad[0],ione,&wvec[0],ione)*oneoverfourpi;
-      
-      iel++;
+      BLAS::gemv(nknot, nchannel, &Amat[0], &psiratio[0], &wvec[0]);
+      esum += BLAS::dot(nchannel, &vrad[0], &wvec[0]);
+      ////////////////////////////////////
+      //Original implmentation by S. C.
+      //const char TRANS('T');
+      //const int ione=1;
+      //const RealType one=1.0;
+      //const RealType zero=0.0;
+      //dgemv(TRANS,nknot,nchannel,one,&Amat[0],nknot,&psiratio[0],ione,zero,&wvec[0],ione);
+      //esum += ddot(nchannel,&vrad[0],ione,&wvec[0],ione);
+      ////////////////////////////////////
+      //iel++;
     }   /* end loop over electron */
     return esum;
   }
@@ -135,15 +132,19 @@ namespace ohmmsqmc {
       RealType rmax(0.0);
       for (int ij=0; ij<npotentials; ij++){
 	int angmom,npoints;
-	fin >> npoints >> angmom;
+	fin >> angmom >> npoints;
+        if(grid_temp.size()<npoints) grid_temp.resize(npoints);
+        if(pp_temp.size()<npoints) pp_temp.resize(npoints);
 	for (int j=0; j<npoints; j++){
-	  fin >> r ; grid_temp.push_back(r);
-	  fin >> f1; pp_temp.push_back(f1);
+          fin >> grid_temp[j] >> pp_temp[j];
+	  //fin >> r ; grid_temp.push_back(r);
+	  //fin >> f1; pp_temp.push_back(f1);
 	}
 	GridType *agrid = new NumericalGrid<ValueType>(grid_temp);
 	LocalPotentialType *app = new OneDimCubicSpline<ValueType>(agrid,pp_temp);
-	int imin = 1;
+	int imin = 0;
 	RealType yprime_i = ((*app)(imin+1)-(*app)(imin))/app->dr(imin);
+        LOGMSG("NonPP l=" << angmom << " deriv= " << yprime_i)
 	app->spline(imin,yprime_i,app->size()-1,0.0);
 	if(angmom < 0)
 	  PP[i]->add(agrid,app);
@@ -154,6 +155,7 @@ namespace ohmmsqmc {
 	lmax=std::max(lmax,angmom);
 	rmax=std::max(rmax,agrid->rmax());
       }
+      //cout << npotentials << " potentials read" << endl;
       PP[i]->lmax=lmax; PP[i]->Rmax=rmax;
       fin.close();
       int numsgridpts=0;
@@ -163,7 +165,7 @@ namespace ohmmsqmc {
 	ifstream fin(fname.c_str(),ios_base::in);
 	if(!fin){
 	  ERRORMSG("Could not open file " << fname)
-	    exit(-1);
+	  exit(-1);
 	}
 	PosType xyz;
 	ValueType weight;
@@ -171,6 +173,7 @@ namespace ohmmsqmc {
 	  PP[i]->addknot(xyz,weight);
 	  numsgridpts++;
 	}
+	//cout << "Spherical grid : " << numsgridpts << " points" <<endl;
       }
 
       PP[i]->resize_warrays(numsgridpts,numnonloc,lmax);
@@ -182,8 +185,9 @@ namespace ohmmsqmc {
     for(int pp=0; pp<PP.size(); pp++) delete PP[pp];
   }
 
+  ///random rotation of the spherical grid
   void NonLocalPPotential::RadialPotentialSet::randomize_grid(){
-    const RealType twopi(6.28318531);
+    const RealType twopi(6.28318530718);
     RealType phi(twopi*Random()),psi(twopi*Random()),cth(Random()-0.5),
 	     sph(sin(phi)),cph(cos(phi)),sth(sqrt(1-cth*cth)),sps(sin(psi)),
 	     cps(cos(psi));
@@ -192,7 +196,8 @@ namespace ohmmsqmc {
 			   cph*sth,             sph*sth,             cth     );
     vector<PosType>::iterator it(sgridxyz_m.begin());
     vector<PosType>::iterator it_end(sgridxyz_m.end());
-    while(it != it_end) {*it = dot(rmat,*it); ++it;}
+    vector<PosType>::iterator jt(rrotsgrid_m.begin());
+    while(it != it_end) {*jt = dot(rmat,*it); ++it; ++jt;}
   }
 }
 /***************************************************************************

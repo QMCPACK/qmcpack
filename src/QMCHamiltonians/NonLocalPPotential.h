@@ -16,13 +16,11 @@
 // -*- C++ -*-
 #ifndef OHMMS_QMC_NONLOCALPPOTENTIAL_H
 #define OHMMS_QMC_NONLOCALPPOTENTIAL_H
-#include <fstream>
 #include "QMCHamiltonians/QMCHamiltonianBase.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "Numerics/OneDimGridBase.h"
 #include "Numerics/OneDimGridFunctor.h"
 #include "Numerics/OneDimCubicSpline.h"
-#include "Numerics/HDFNumericAttrib.h"
 
 namespace ohmmsqmc {
 
@@ -58,12 +56,12 @@ namespace ohmmsqmc {
       ///Non Local part: angular momentum, potential and grid
       int lmax;
       RealType Rmax;
-      vector<int> angpp_m;
+      vector<int> angpp_m, wgt_angpp_m;
       vector<LocalPotentialType*> nlpp_m;
       vector<GridType*> nlgrid_m;
 
       ///Spherical Grid
-      SpherGridType sgridxyz_m;
+      SpherGridType sgridxyz_m, rrotsgrid_m;
       vector<ValueType> sgridweight_m;
 
       ///Working arrays
@@ -81,6 +79,7 @@ namespace ohmmsqmc {
       ///add a new Non Local component
       void add(int angmom, GridType* agrid, LocalPotentialType* pp) {
 	angpp_m.push_back(angmom);
+	wgt_angpp_m.push_back(2*angmom+1);
 	nlgrid_m.push_back(agrid);
 	nlpp_m.push_back(pp);
       }
@@ -97,6 +96,7 @@ namespace ohmmsqmc {
 	wvec.resize(m);
 	Amat.resize(n*m);
 	lpol.resize(l+1);
+	rrotsgrid_m.resize(n);
       }
 
       ///Randomly rotate sgrid_m
@@ -117,8 +117,8 @@ namespace ohmmsqmc {
       inline ValueType evaluate(DistanceTableData* d_table, int iat) {
 	ValueType esum = 0.0;     
 	for(int nn=d_table->M[iat]; nn<d_table->M[iat+1]; nn++){
-	  for(int ig=0; ig<lgrid_m.size(); ig++) 
-	    lgrid_m[ig]->index(d_table->r(nn));
+	  //for(int ig=0; ig<lgrid_m.size(); ig++) 
+	  //  lgrid_m[ig]->index(d_table->r(nn));
 	  for(int ip=0;ip<lpp_m.size(); ip++) 
 	    esum += lpp_m[ip]->evaluate(d_table->r(nn),d_table->rinv(nn));
 	}
@@ -163,13 +163,8 @@ namespace ohmmsqmc {
       return x=evaluate(P);
     }
 
-#ifdef WALKERSTORAGE_COLUMNMAJOR
     inline void 
       evaluate(WalkerSetRef& P, ValueVectorType& LE) { }
-#else
-    inline void 
-      evaluate(WalkerSetRef& P, ValueVectorType& LE) { }
-#endif
   };
 }
 #endif
