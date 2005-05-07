@@ -281,7 +281,7 @@ T trace(const Tensor<T,D>& rhs) {
 
 template <class T, unsigned D>
 Tensor<T,D> transpose(const Tensor<T,D>& rhs) {
-  Tensor<T,D> result = Tensor<T,D>::DontInitialize();
+  Tensor<T,D> result; // = Tensor<T,D>::DontInitialize();
   for (int j = 0 ; j < D ; j++ ) 
     for (int i = 0 ; i < D ; i++ )
       result(i,j) = rhs(j,i);
@@ -394,7 +394,7 @@ std::ostream& operator<<(std::ostream& out, const Tensor<T,D>& rhs)
 	out << rhs(i,j) << "  ";
       }
       out << rhs(i,D-1) << " ";
-      if (i < D - 1) out << endl;
+      if (i < D - 1) out << std::endl;
     }
   } else {
     out << " " << rhs(0,0) << " ";

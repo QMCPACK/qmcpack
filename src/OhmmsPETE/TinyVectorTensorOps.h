@@ -407,10 +407,10 @@ struct OTDot< TinyVector<T1,D> , AntiSymTensor<T2,D> >
   apply(const TinyVector<T2,D>& lhs, const AntiSymTensor<T1,D>& rhs) {
     TinyVector<Type_t,D> ret = TinyVector<Type_t,D>::DontInitialize();
     for (unsigned int j=0; j<D; ++j) {
-      double sum = 0;
-      for ( i=0; i<j; i++)
+      Type_t sum = 0;
+      for (int i=0; i<j; i++)
 	sum -= lhs[i]*rhs[((j-1)*j/2)+i];
-      for ( i=j+1; i<D; ++i)
+      for (int i=j+1; i<D; ++i)
 	sum += lhs[i]*rhs[((i-1)*i/2)+j];
       ret[j] = sum;
     }
