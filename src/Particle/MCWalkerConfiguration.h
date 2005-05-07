@@ -19,6 +19,7 @@
 #include "Particle/ParticleSet.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "Utilities/PooledData.h"
+//#include "ParticleBase/RandomSeqGenerator.h"
 #include "Particle/Walker.h"
 #include <list>
 

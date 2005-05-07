@@ -18,8 +18,8 @@
 #define OHMMS_QMC_WALKERSETREF_H
 
 #include "Particle/ParticleSet.h"
-#include <blitz/array.h>
-#include <list>
+#include "OhmmsPETE/OhmmsMatrix.h"
+#include "ParticleBase/RandomSeqGenerator.h"
 
 namespace ohmmsqmc {
 
@@ -39,9 +39,9 @@ namespace ohmmsqmc {
      *<li>N[Walkers] = number of walkers
      */
     TinyVector<int,2> N;
-    typedef blitz::Array<PosType,2>   WalkerPosition_t;
-    typedef blitz::Array<GradType,2>  WalkerGradient_t;
-    typedef blitz::Array<ValueType,2> WalkerLaplacian_t;
+    typedef Matrix<PosType>   WalkerPosition_t;
+    typedef Matrix<GradType>  WalkerGradient_t;
+    typedef Matrix<ValueType> WalkerLaplacian_t;
 
     const ParticleSet& PtclRef;
     WalkerPosition_t  R;
@@ -49,13 +49,7 @@ namespace ohmmsqmc {
     WalkerLaplacian_t L;
 
     ///default constructor
-    WalkerSetRef(const ParticleSet& p): PtclRef(p)
-#ifdef WALKERSTORAGE_COLUMNMAJOR
-					 , R(blitz::ColumnMajorArray<2>()) 
-					 , G(blitz::ColumnMajorArray<2>()) 
-					 , L(blitz::ColumnMajorArray<2>())
-#endif
-    {N = 0;}
+    WalkerSetRef(const ParticleSet& p): PtclRef(p) {N = 0;}
 
     inline int tag() const { return PtclRef.tag();}
     inline int walkers() const { return N[Walkers];}

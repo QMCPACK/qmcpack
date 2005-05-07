@@ -20,7 +20,6 @@
 #include "Particle/DistanceTable.h"
 #include "Message/Communicate.h"
 using namespace ohmmsqmc;
-#include "ParticleBase/RandomSeqGenerator.h"
 
 MCWalkerConfiguration::MCWalkerConfiguration(): 
 UpdateMode(Update_Walker) {
