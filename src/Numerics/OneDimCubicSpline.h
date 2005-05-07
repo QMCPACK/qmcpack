@@ -23,7 +23,8 @@
 
 /** Perform One-Dimensional Cubic Spline Interpolation with fixed first-derivatives at the ends
  *
- * Using m-relationship and the first-order derivaties
+ * Using m-relationship and the first-order derivaties.
+ * Each funtor checks the bounds r_min and r_max.
  */
 template <class Td, 
 	  class Tg = Td, 
@@ -39,11 +40,14 @@ public:
   typedef typename base_type::data_type data_type;
   typedef typename base_type::grid_type grid_type;
 
+  using base_type::GridManager;
   using base_type::m_grid;
   using base_type::Y;
   using base_type::dY;
   using base_type::d2Y;
   using base_type::m_Y;
+  using base_type::FirstAddress;
+
   data_type m_Y1;
   int First,Last;
   point_type r_min, r_max;
@@ -57,14 +61,55 @@ public:
     std::copy(nv.begin(), nv.end(), m_Y.data());
   }
 
-  inline int setgrid(point_type r) {
-    int Loc= m_grid->index(r);
-    m_grid->update(r);
-    return Loc;
+  /** evaluate the value at r
+   * @param r value on a grid
+   * @return value obtained by cubic-spline
+   */
+  inline value_type splint(point_type r) {
+
+    // When GridManager is true (default), this functor call locate
+    // and updateFirstOrder to evaluate necessary coefficients.
+    if(GridManager) {
+      m_grid->locate(r);
+      m_grid->updateFirstOrder(r,false);
+    }
+
+    // return safe values for the grid point outside the domain of this functor
+    if(r<r_min) {
+      return m_Y[0]+m_Y1[0]*(r-r_min);
+    } else if(r>=r_max) {
+      return 1e-20;
+    }
+
+    int Loc(m_grid->Loc);
+    return 
+      m_grid->cubicInterpolateFirst(m_Y[Loc],m_Y[Loc+1],m_Y1[Loc],m_Y1[Loc+1]);
+    //int Loc(m_grid->Loc);
+    //int khi(Loc+1);
+    //value_type h(m_grid->dr(Loc));
+    //value_type hinv(1.0/h);
+    //value_type t((r-m_grid->r(Loc))*hinv); 
+    //value_type tm(t-1.0);
+    //value_type p1(tm*tm*(1.0+2.0*t));
+    //value_type p2(t*t*(3.0-2.0*t));
+    //value_type q1(t*tm*tm);
+    //value_type q2(t*t*tm);
+    //return p1*m_Y[Loc]+p2*m_Y[khi]+h*(q1*m_Y1[Loc]+q2*m_Y1[khi]);
   }
 
+  /** evaluate the value at r
+   * @param r value on a grid
+   * @param du first derivative (assigned)
+   * @param d2u second derivative (assigned)
+   * @return value obtained by cubic-spline
+   */
   inline value_type 
   splint(point_type r, value_type& du, value_type& d2u) {
+
+    if(GridManager) {
+      m_grid->locate(r);
+      m_grid->updateFirstOrder(r,true);
+    }
 
     if(r<r_min) {
       du = m_Y1[0];
@@ -75,32 +120,43 @@ public:
     }
     
     int Loc(m_grid->Loc);
-
-    //m_grid->update(r);
-    //return 
-    //  m_grid->cubicInterpolate(m_Y[Loc],m_Y[Loc+1],m_Y1[Loc],m_Y1[Loc+1],du,d2u);
-
+    return 
+      m_grid->cubicInterpolateFirst(m_Y[Loc],m_Y[Loc+1],m_Y1[Loc],m_Y1[Loc+1],du,d2u);
     //first set Loc for the grid
-    int khi(Loc+1);
-    value_type h(m_grid->dr(Loc));
-    value_type hinv(1.0/h);
-    value_type t((r-m_grid->r(Loc))*hinv); 
-    value_type tm(t-1.0);
-    value_type p1(tm*tm*(1.0+2.0*t));
-    value_type p2(t*t*(3.0-2.0*t));
-    value_type q1(t*tm*tm);
-    value_type q2(t*t*tm);
-    value_type dp1(6.0*t*tm*hinv);
-    value_type dq1((1.0-4.0*t+3.0*t*t));
-    value_type dq2(t*(3.0*t-2.0));
-    value_type d2p1((12.0*t-6.0)*hinv*hinv);
-    value_type d2q1((6.0*t-4.0)*hinv),d2q2((6.0*t-2.0)*hinv);
-    value_type a(m_Y[Loc]),b(m_Y[khi]),a1(m_Y1[Loc]),b1(m_Y1[khi]);
-    du = dp1*(a-b)+dq1*a1+dq2*b1;
-    d2u = d2p1*(a-b)+d2q1*a1+d2q2*b1;
-    return p1*a+p2*b+h*(q1*a1+q2*b1);
+    //value_type h(m_grid->dr(Loc));
+    //value_type hinv(1.0/h);
+    //value_type t((r-m_grid->r(Loc))*hinv); 
+    //value_type tm(t-1.0);
+    //value_type h(m_grid->dL);
+    //value_type hinv(m_grid->dLinv);
+    //value_type t(m_grid->cL);
+    //value_type tm(m_grid->cR);
+
+    //value_type p1(tm*tm*(1.0+2.0*t));
+    //value_type p2(t*t*(3.0-2.0*t));
+    //value_type q1(t*tm*tm);
+    //value_type q2(t*t*tm);
+    //value_type dp1(6.0*t*tm*hinv);
+    //value_type dq1((1.0-4.0*t+3.0*t*t));
+    //value_type dq2(t*(3.0*t-2.0));
+    //value_type d2p1((12.0*t-6.0)*hinv*hinv);
+    //value_type d2q1((6.0*t-4.0)*hinv),d2q2((6.0*t-2.0)*hinv);
+
+    ////int khi(Loc+1);
+    //value_type a(m_Y[Loc]),b(m_Y[Loc+1]),a1(m_Y1[Loc]),b1(m_Y1[Loc+1]);
+    //du = dp1*(a-b)+dq1*a1+dq2*b1;
+    //d2u = d2p1*(a-b)+d2q1*a1+d2q2*b1;
+    //return p1*a+p2*b+h*(q1*a1+q2*b1);
   }
 
+  /** evaluate the spline coefficients 
+   * @param imin index of the first valid grid
+   * @param yp1 first derivative at imin grid point
+   * @param imax index of the last valid grid
+   * @param ypn first derivative at imax grid point
+   *
+   * Use m-relation to evalaute the spline coefficients on [imin,imax] grid points.
+   */
   inline 
   void spline(int imin, value_type yp1, int imax, value_type ypn) {
     int npts(imax-imin+1);
@@ -112,6 +168,7 @@ public:
     r_min=m_grid->r(imin);
     r_max=m_grid->r(imax);
     data_type m_Y2(npts);
+
     NRCubicSplineFirst(m_grid->data()+imin, m_Y.data(), npts, m_Y1.data(), m_Y2.data()); 
 
     FirstAddress[0]=m_Y.data()+imin;
@@ -123,7 +180,7 @@ public:
   }
 };
 
-/** Perform One-Dimensional Cubic Spline Interpolation with PBC. 
+/** Perform One-Dimensional Cubic Spline Interpolation with Periodic Boundary Conditions. 
  *
  * Using m-relationship and the first-order derivaties
  */
@@ -141,12 +198,14 @@ public:
   typedef typename base_type::data_type data_type;
   typedef typename base_type::grid_type grid_type;
 
+  using base_type::GridManager;
   using base_type::m_grid;
   using base_type::Y;
   using base_type::dY;
   using base_type::d2Y;
   using base_type::m_Y;
   using base_type::NumNodes;
+  using base_type::FirstAddress;
 
   data_type m_Y1;
   int First;
@@ -163,26 +222,26 @@ public:
     std::copy(nv.begin(), nv.end(), m_Y.data());
   }
 
-  /** Apply periodic boundary condition */
-  inline int setgrid(point_type r) {
-    int Loc(m_grid->index(r));
-    if(Loc<First) { 
-      Loc += Difference; r += Length;}
-    else if(Loc > Last) { 
-      Loc -= Difference; r -= Length;
-    }
-    m_grid->Loc=Loc;
-    m_grid->update(r);
-    return Loc;
-  }
-
   inline value_type 
-  splint(point_type r, value_type& du, value_type& d2u) {
+  splint(point_type r) {
+    //If this functor manages the grid, apply periodic boundary condition and
+    //update the grid accordingly.
+    if(GridManager) {
+      m_grid->locate(r);
+      int Loc(m_grid->currentIndex());
+      if(Loc<First) { 
+        Loc += Difference; r += Length;}
+      else if(Loc > Last) { 
+        Loc -= Difference; r -= Length;
+      }
+      m_grid->Loc=Loc;
+      m_grid->updateFirstOrder(r,false);
+    }
 
     int Loc(m_grid->Loc);
     return 
-      m_grid->cubicInterpolate(m_Y[Loc],m_Y[Loc+1],m_Y1[Loc],m_Y1[Loc+1],du,d2u);
-    ////first set Loc for the grid
+      m_grid->cubicInterpolateFirst(m_Y[Loc],m_Y[Loc+1],m_Y1[Loc],m_Y1[Loc+1]);
+    //int Loc(m_grid->Loc);
     //int khi(Loc+1);
     //value_type h(m_grid->dr(Loc));
     //value_type hinv(1.0/h);
@@ -192,18 +251,27 @@ public:
     //value_type p2(t*t*(3.0-2.0*t));
     //value_type q1(t*tm*tm);
     //value_type q2(t*t*tm);
+    //return p1*m_Y[Loc]+p2*m_Y[khi]+h*(q1*m_Y1[Loc]+q2*m_Y1[khi]);
+  }
 
-    //value_type dp1(6.0*t*tm*hinv);
-    //value_type dq1((1.0-4.0*t+3.0*t*t));
-    //value_type dq2(t*(3.0*t-2.0));
+  inline value_type 
+  splint(point_type r, value_type& du, value_type& d2u) {
 
-    //value_type d2p1((12.0*t-6.0)*hinv*hinv);
-    //value_type d2q1((6.0*t-4.0)*hinv),d2q2((6.0*t-2.0)*hinv);
+    if(GridManager) {
+      m_grid->locate(r);
+      int Loc(m_grid->currentIndex());
+      if(Loc<First) { 
+        Loc += Difference; r += Length;}
+      else if(Loc > Last) { 
+        Loc -= Difference; r -= Length;
+      }
+      m_grid->Loc=Loc;
+      m_grid->updateFirstOrder(r,true);
+    }
 
-    //value_type a(m_Y[Loc]),b(m_Y[khi]),a1(m_Y1[Loc]),b1(m_Y1[khi]);
-    //du = dp1*(a-b)+dq1*a1+dq2*b1;
-    //d2u = d2p1*(a-b)+d2q1*a1+d2q2*b1;
-    //return p1*a+p2*b+h*(q1*a1+q2*b1);
+    int Loc(m_grid->Loc);
+    return 
+      m_grid->cubicInterpolateFirst(m_Y[Loc],m_Y[Loc+1],m_Y1[Loc],m_Y1[Loc+1],du,d2u);
   }
 
   inline 
@@ -224,9 +292,10 @@ public:
     FirstAddress[0]=m_Y.data();
     FirstAddress[1]=m_Y1.data();
   }
+
 };
 
-/**Perform One-Dimensional Cubic Spline Interpolation. 
+/**Perform One-Dimensional Cubic Spline Interpolation using M-relation. 
  *
  Given a function evaluated on a grid \f$ \{x_i\}, 
  i=1\ldots N, \f$ such that \f$ y_i = y(x_i), \f$ we would like to 
@@ -324,11 +393,13 @@ public:
   typedef typename base_type::data_type data_type;
   typedef typename base_type::grid_type grid_type;
 
+  using base_type::GridManager;
   using base_type::m_grid;
   using base_type::Y;
   using base_type::dY;
   using base_type::d2Y;
   using base_type::m_Y;
+  using base_type::FirstAddress;
 
   data_type m_Y2;
 
@@ -349,83 +420,100 @@ public:
     std::copy(nv.begin(), nv.end(), m_Y.data());
   }
 
-  int setgrid(point_type r) {
-    return m_grid->index(r);
-  }
+  //void setgrid(point_type r) {
+  //  m_grid->locate(r);
+  //}
 
   inline value_type splint(point_type r) {
+    //if(r<r_min) {
+    //  return m_Y[0]+first_deriv*(r-r_min);
+    //}  else if(r>=r_max) {
+    //  return 1e-20;
+    //}
+    //const Td onesixth = 1.0/6.0;
+    ////first set Loc for the grid
+    //m_grid->locate(r);
+    //int klo = m_grid->Loc;
+    //int khi = klo+1;
+    //point_type h = m_grid->dr(klo);
+    //point_type hinv = 1.0/h;
+    ////point_type h6 = h*onesixth;
+    //point_type hh6 = h*h*onesixth;
+    //point_type A = (m_grid->r(khi)-r)*hinv;
+    //point_type B = (r-m_grid->r(klo))*hinv;
+    ////point_type C = A*(A*A-1.0)*hh6;
+    ////point_type D = B*(B*B-1.0)*hh6;
+    ////return A*m_Y[klo]+B*m_Y[khi]+C*m_Y2[klo]+D*m_Y2[khi];
+    //return A*m_Y[klo]+B*m_Y[khi]+
+    //  hh6*(A*(A*A-1.0)*m_Y2[klo]+B*(B*B-1.0)*m_Y2[khi]);
+
+    if(GridManager) {
+      m_grid->updateSecondOrder(r,false);
+    }
+
     if(r<r_min) {
       return m_Y[0]+first_deriv*(r-r_min);
     }  else if(r>=r_max) {
       return 1e-20;
     }
-    const Td onesixth = 1.0/6.0;
-    //first set Loc for the grid
-    int klo = m_grid->Loc;
-    int khi = klo+1;
-    point_type h = m_grid->dr(klo);
-    point_type hinv = 1.0/h;
-    //point_type h6 = h*onesixth;
-    point_type hh6 = h*h*onesixth;
-    point_type A = (m_grid->r(khi)-r)*hinv; 
-    point_type B = (r-m_grid->r(klo))*hinv; 
-    //point_type C = A*(A*A-1.0)*hh6; 
-    //point_type D = B*(B*B-1.0)*hh6; 
-    //return A*m_Y[klo]+B*m_Y[khi]+C*m_Y2[klo]+D*m_Y2[khi];
-    return A*m_Y[klo]+B*m_Y[khi]+
-      hh6*(A*(A*A-1.0)*m_Y2[klo]+B*(B*B-1.0)*m_Y2[khi]);
+
+    int Loc(m_grid->currentIndex());
+    return m_grid->cubicInterpolateSecond(m_Y[Loc],m_Y[Loc+1],m_Y2[Loc],m_Y2[Loc+1]);
   }
-  /**
+
+  /** Interpolation to evaluate the function and itsderivatives.
    *@param r the radial distance
    *@param du return the derivative
    *@param d2u return the 2nd derivative
    *@return the value of the function
-   *@brief Use the formula for the Cubic Spline 
-   *Interpolation to evaluate the function and its
-   *derivatives.
-   *@note Must first call the function setgrid to
-   *determine the interval on the grid which contains r.
   */
   inline value_type 
   splint(point_type r, value_type& du, value_type& d2u) {
 
-    if(r<r_min) {
-      //linear-extrapolation returns y[0]+y'*(r-r[0])
+    if(GridManager) {
+      //m_grid->locate(r);
+      m_grid->updateSecondOrder(r,true);
+    }
+
+    if(r<r_min) { //linear-extrapolation returns y[0]+y'*(r-r[0])
       du = first_deriv; 
       d2u = 0.0; 
       return m_Y[0]+first_deriv*(r-r_min);
     }  else if(r>=r_max) {
-      du = 0.0; d2u = 0.0; return 1e-20;
+      du = 0.0; d2u = 0.0; 
+      return 1e-20;
     }
 
-    const Td onesixth = 1.0/6.0;
-    //first set Loc for the grid
-    int klo = m_grid->Loc;
-    int khi = klo+1;
-    point_type h = m_grid->dr(klo);
-    point_type hinv = 1.0/h;
-    point_type h6 = h*onesixth;
-    point_type hh6 = h6*h;
-    point_type A = (m_grid->r(khi)-r)*hinv; 
-    point_type dA = -hinv;
-    point_type B = (r-m_grid->r(klo))*hinv; 
-    point_type dB = hinv;
-    point_type C = A*(A*A-1.0)*hh6; 
-    point_type dC = -h6*(3*A*A-1.0);
-    point_type D = B*(B*B-1.0)*hh6; 
-    point_type dD = h6*(3*B*B-1.0);
-    du = dA*m_Y[klo]+dB*m_Y[khi]+ dC*m_Y2[klo] + dD*m_Y2[khi];
-    d2u = A*m_Y2[klo] + B*m_Y2[khi];
-    return A*m_Y[klo]+B*m_Y[khi]+C*m_Y2[klo]+D*m_Y2[khi];
+    int Loc(m_grid->currentIndex());
+    return 
+      m_grid->cubicInterpolateSecond(m_Y[Loc],m_Y[Loc+1],m_Y2[Loc],m_Y2[Loc+1],du,d2u);
+
+    //const Td onesixth = 1.0/6.0;
+    ////first set Loc for the grid
+    //int klo = m_grid->Loc;
+    //int khi = klo+1;
+    //point_type h = m_grid->dr(klo);
+    //point_type hinv = 1.0/h;
+    //point_type h6 = h*onesixth;
+    //point_type hh6 = h6*h;
+    //point_type A = (m_grid->r(khi)-r)*hinv; 
+    //point_type B = (r-m_grid->r(klo))*hinv; 
+    //point_type dA = -hinv;
+    //point_type dB = hinv;
+    //point_type C = A*(A*A-1.0)*hh6; 
+    //point_type D = B*(B*B-1.0)*hh6; 
+    //point_type dC = -h6*(3*A*A-1.0);
+    //point_type dD = h6*(3*B*B-1.0);
+    //du = dA*m_Y[klo]+dB*m_Y[khi]+ dC*m_Y2[klo] + dD*m_Y2[khi];
+    //d2u = A*m_Y2[klo] + B*m_Y2[khi];
+    //return A*m_Y[klo]+B*m_Y[khi]+C*m_Y2[klo]+D*m_Y2[khi];
   }
 
-  /**
+  /** Evaluate the 2nd derivate on the grid points
    *\param imin the index of the first valid data point
    *\param yp1 the derivative at the imin-th grid point
    *\param imax the index of the last valid data point
    *\param ypn the derivative at the imax-th grid point
-   *\brief Evaluate the 2nd derivate on the grid points for 
-   *splint given the boundary conditions.
    *
    *In general, a grid is shared by several OneDimCubicSpline objects
    *and each object can have its own range of valid grid points.
