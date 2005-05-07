@@ -17,7 +17,6 @@
 //   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#include "Numerics/Spline3D/Config.h"
 #include "QMC/MO2Grid3D.h"
 #include "Utilities/OhmmsInfo.h"
 #include "Particle/DistanceTableData.h"
