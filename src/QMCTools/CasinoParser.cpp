@@ -1,9 +1,10 @@
 #include "QMCTools/CasinoParser.h"
-#include <fstream>
+#include "Utilities/OhmmsInfo.h"
 #include <iterator>
 #include <algorithm>
 #include <set>
 #include <map>
+#include <cmath>
 
 using namespace std;
 
@@ -28,7 +29,7 @@ void CasinoParser::parse(const std::string& fname) {
   a>>Title;
 
   std::string spin_unrestricted;
-  cout << "Looking for Spin " << endl;
+  LOGMSG("Looking for Spin ")
   search(fin,"Spin");
   getValue(fin,spin_unrestricted);
   if(spin_unrestricted.find("false")<spin_unrestricted.size()) {
@@ -37,44 +38,61 @@ void CasinoParser::parse(const std::string& fname) {
     SpinRestricted=false;
   }
 
-  cout << "Looking for electrons " << endl;
+  LOGMSG("Looking for electrons ")
   search(fin,"electrons");
   getValue(fin,NumberOfEls);
 
-  cout << "Looking for GEOMETRY " << endl;
+  LOGMSG("Looking for GEOMETRY ")
   search(fin, "GEOMETRY");
   getGeometry(fin);
 
-  cout << "Looking for BASIS " << endl;
+  GroupName.resize(GroupID.size());
+  for(int i=0; i<GroupID.size(); i++) GroupName[i]=IonName[GroupID[i]];
+
+  LOGMSG("Looking for BASIS ")
   search(fin, "BASIS");
   getGaussianCenters(fin);
 
   //search(fin, "MULTIDETERMINANT");
+
+  EigVal_alpha.resize(SizeOfBasisSet);
+  EigVal_beta.resize(SizeOfBasisSet);
+  vector<value_type> etemp;
+
+  LOGMSG("Looking for EIGENVECTOR ")
   search(fin, "EIGENVECTOR");
   int nstates=SizeOfBasisSet;
-  if(SpinRestricted)
+  if(SpinRestricted) {
     EigVec.resize(SizeOfBasisSet*SizeOfBasisSet);
-  else {
-    nstates*=2;
+    etemp.resize(SizeOfBasisSet);
+  } else {
     EigVec.resize(2*SizeOfBasisSet*SizeOfBasisSet);
+    etemp.resize(2*SizeOfBasisSet);
   }
   getValues(fin,EigVec.begin(), EigVec.end());
+
+  std::string aline;
+  getline(fin,aline,'\n');
+  getline(fin,aline,'\n');
+  if(aline.find("EIGENVALUES")<aline.size()) {
+    LOGMSG("Looking for EIGENVALUES ")
+    skiplines(fin,2);
+    getValues(fin,etemp.begin(), etemp.end());
+    std::copy(etemp.begin(), etemp.begin()+SizeOfBasisSet, EigVal_alpha.begin());
+    if(SpinRestricted) {
+      EigVal_beta = EigVal_alpha;
+    }else {
+      std::copy(etemp.begin()+SizeOfBasisSet, etemp.end(), EigVal_beta.begin());
+    }
+  } else {
+    WARNMSG("Missing EIGENVALUES. Modify determinant/@orbitals")
+  }
 
   //Need to make correction to the eigen vectors
   int tot=0;
   for(int i=0; i<nstates; i++) {
     for(int j=0; j<SizeOfBasisSet; j++, tot++) EigVec[tot]*=BasisCorrection[j];
   }
-  //int nline = (SizeOfBasisSet*SizeOfBasisSet)/4;
-  ////skip the line
-  //fin.getline( dbuffer, sizeof ( dbuffer ));
-  //EigVecU="\n";
-  //while(nline) {
-  //  fin.getline( dbuffer, sizeof ( dbuffer ));
-  //  EigVecU.append(dbuffer);
-  //  EigVecU.append("\n");
-  //  nline--;
-  //}
 }
 
 //std::copy(Qv.begin(), Qv.end(),ostream_iterator<double>(cout, ","));
@@ -112,33 +130,42 @@ void CasinoParser::getValenceCharges(std::istream& is) {
 
 void CasinoParser::getGaussianCenters(std::istream& is) {
   int n=0;
+  LOGMSG("Checking shells")
   search(is, "shells");
   getValue(is,n);
   gShell.resize(n); gNumber.resize(n);
 
+  LOGMSG("Checking SO")
   search(is, "AO");
   getValue(is,SizeOfBasisSet);
 
+  LOGMSG("Checking Gaussian")
   search(is, "Gaussian");
   getValue(is,n);
   gExp.resize(n); gC0.resize(n); gC1.resize(n);
 
+  LOGMSG("Checking shell types")
   search(is, "Code");
   getValues(is,gShell.begin(), gShell.end());
 
+  LOGMSG("Checking the number of gaussians per shell")
   search(is, "Number");
   getValues(is,gNumber.begin(), gNumber.end());
 
+  LOGMSG("Checking the bound of shells")
   search(is, "Sequence");
   getValues(is,gBound.begin(), gBound.end());
   for(int i=0; i<gBound.size(); i++) gBound[i]-= 1;
 
+  LOGMSG("Checking the gaussian exponents")
   search(is, "Exponents");
   getValues(is,gExp.begin(), gExp.end());
 
+  LOGMSG("Checking the gaussian contractions")
   search(is, "contraction");
   getValues(is,gC0.begin(), gC0.end());
 
+  LOGMSG("Checking the gaussian contractions (sp)")
   search(is, "2nd");
   getValues(is,gC1.begin(), gC1.end());
 

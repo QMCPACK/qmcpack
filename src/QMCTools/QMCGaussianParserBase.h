@@ -11,19 +11,25 @@
 
 struct OhmmsAsciiParser {
 
-  char dbuffer[200];
+  static const int bufferSize=200;
+  char dbuffer[bufferSize];
   vector<string> currentWords;
 
+  inline void skiplines(std::istream& is, int n) {
+    while(n>0) {
+      is.getline( dbuffer, bufferSize);--n;
+    }
+  }
   template<class T>
   inline void getValue(std::istream& is, T& aval) {
-    is.getline( dbuffer, sizeof ( dbuffer ));
+    is.getline( dbuffer,bufferSize);
     std::istringstream a(dbuffer); a>> aval;
   }
 
   template<class IT>
   inline void getValues(std::istream& is, IT first, IT last) {
     while(first != last) {
-      is.getline( dbuffer, sizeof ( dbuffer ));
+      is.getline( dbuffer,bufferSize);
       std::istringstream a(dbuffer);
       while(a >> *first){first++;}
     }
@@ -49,27 +55,32 @@ struct QMCGaussianParserBase {
   bool SpinRestricted;
   int NumberOfAtoms;
   int NumberOfEls;
+  int NumberOfAlpha, NumberOfBeta;
   int SizeOfBasisSet;
   std::string Title;
   std::string basisType;
   std::string basisName;
   std::string Normalized;
   std::string CurrentCenter;
+  std::vector<string> GroupName;
   std::vector<TinyVector<value_type,3> > R;
   std::vector<int> GroupID;
   std::vector<int> gShell, gNumber, gBound;
+  std::vector<int> Occ_alpha, Occ_beta;
   std::vector<value_type> Qv;
   std::vector<value_type> gExp, gC0, gC1;
+  std::vector<value_type> EigVal_alpha, EigVal_beta;
   std::vector<value_type> EigVec;
   //std::vector<GaussianCombo<value_type> > gExp, gC0, gC1;
   //std::string EigVecU, EigVecD;
   xmlNodePtr gridPtr;
 
   QMCGaussianParserBase();
-
   QMCGaussianParserBase(int argc, char** argv);
-  void createGridNode(int argc, char** argv);
 
+  void setOccupationNumbers();
+
+  void createGridNode(int argc, char** argv);
   xmlNodePtr createBasisSet();
   xmlNodePtr createCenter(int iat, int _off);
   void createShell(int n, int ig, int off_, xmlNodePtr abasis);

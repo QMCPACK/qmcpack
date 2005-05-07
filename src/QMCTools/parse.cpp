@@ -1,13 +1,17 @@
 #include "QMCTools/CasinoParser.h"
 #include "QMCTools/GaussianFCHKParser.h"
+#include "QMCTools/GamesXmlParser.h"
 #include "Message/Communicate.h"
 #include "Utilities/OhmmsInfo.h"
+#include "OhmmsData/FileUtility.h"
 
 int main(int argc, char **argv) {
 
   if(argc<2) {
-    std::cout << "Usage: convert <filename> [-gaussian|-casino -gridtype log|log0|linear -first ri -last rf -size npts]" << std::endl;
-    std::cout << "Defaults : -casino -gridtype log -first 1e-6 -last 100 -size 1001" << std::endl;
+    std::cout << "Usage: convert [-gaussian|-casino|-gamesxml] filename -gridtype log|log0|linear -first ri -last rf -size npts]" << std::endl;
+    std::cout << "Defaults : -gridtype log -first 1e-6 -last 100 -size 1001" << std::endl;
+    std::cout << "When the input format is missing, the  extension of filename is used to determine the parser " << std::endl;
+    std::cout << " *.Fchk -> gaussian; *.data -> casino; *.xml -> gamesxml" << std::endl;
     return 1;
   }
 
@@ -24,18 +28,39 @@ int main(int argc, char **argv) {
 
   QMCGaussianParserBase *parser=0;
   int iargc=0;
+  string in_file(argv[1]);
   while(iargc<argc) {
     std::string a(argv[iargc]);
-    if(a == "-gaussian")
+    if(a == "-gaussian") {
       parser = new GaussianFCHKParser(argc,argv);
+      in_file =argv[++iargc];
+    }
+    else if(a == "-gamesxml") {
+      parser = new GamesXmlParser(argc,argv);
+      in_file =argv[++iargc];
+    }
+    else if(a == "-casino") {
+      parser = new CasinoParser(argc,argv);
+      in_file =argv[++iargc];
+    }
     ++iargc;
   }
 
+  //Failed to create a parser. Try with the extension
   if(parser == 0) {
-    parser = new CasinoParser(argc,argv);
+    string ext= getExtension(in_file);
+    if(ext == "data") {
+      WARNMSG("Creating CasinoParser")
+      parser = new CasinoParser(argc,argv);
+    } else if(ext == "Fchk") {
+      WARNMSG("Creating GaussianFCHKParser")
+      parser = new GaussianFCHKParser(argc,argv);
+    } else if(ext == "xml") {
+      WARNMSG("Creating GamesXmlParser")
+      parser = new GamesXmlParser(argc,argv);
+    }
   }
-
-  parser->parse(argv[1]);
+  parser->parse(in_file);
 
   xmlDocPtr doc = xmlNewDoc((const xmlChar*)"1.0");
   xmlNodePtr wf_root = xmlNewNode(NULL, BAD_CAST "determinantset");

@@ -1,4 +1,5 @@
 #include "QMCTools/QMCGaussianParserBase.h"
+#include "Utilities/OhmmsInfo.h"
 #include <iterator>
 #include <algorithm>
 #include <numeric>
@@ -40,11 +41,37 @@ void QMCGaussianParserBase::init() {
   gShellID[1]=0; gShellID[2]=0; gShellID[3]=1; gShellID[4]=2; gShellID[5]=3; gShellID[6]=4;
 }
 
+void QMCGaussianParserBase::setOccupationNumbers() {
+
+  if(SpinRestricted) {
+    NumberOfAlpha = NumberOfEls/2;
+    NumberOfBeta = NumberOfEls-NumberOfAlpha;
+  } else {
+    multimap<value_type,int> e;
+    for(int i=0; i<SizeOfBasisSet; i++) e.insert(pair<value_type,int>(EigVal_alpha[i],0));
+    for(int i=0; i<SizeOfBasisSet; i++) e.insert(pair<value_type,int>(EigVal_beta[i],1));
+    NumberOfAlpha=0; NumberOfBeta=0;
+    int n=0;
+    multimap<value_type,int>::iterator it(e.begin());
+    LOGMSG("Unrestricted HF. Sorted eigen values")
+    while(n<NumberOfEls && it != e.end()) {
+      LOGMSG(n << " " << (*it).first << " " << (*it).second)
+      if((*it).second == 0) {NumberOfAlpha++;}
+      else {NumberOfBeta++;}
+      ++it;++n;
+    }
+  }
+
+  LOGMSG("Number of alpha electrons " << NumberOfAlpha)
+  LOGMSG("Number of beta electrons " << NumberOfBeta)
+
+  Occ_alpha.resize(SizeOfBasisSet,0);
+  Occ_beta.resize(SizeOfBasisSet,0);
+  for(int i=0; i<NumberOfAlpha; i++) Occ_alpha[i]=1;
+  for(int i=0; i<NumberOfBeta; i++) Occ_beta[i]=1;
+}
 
 xmlNodePtr QMCGaussianParserBase::createBasisSet() {
-
-  //xmlNodePtr wf_root = xmlNewNode(NULL, BAD_CAST "determinantset");
-  //xmlNewProp(wf_root,(const xmlChar*)"type",(const xmlChar*)"MolecularOrbital");
 
   xmlNodePtr bset = xmlNewNode(NULL,(const xmlChar*)"basisset");
   xmlNewProp(bset,(const xmlChar*)"ref",(const xmlChar*)"i");
@@ -65,11 +92,6 @@ xmlNodePtr QMCGaussianParserBase::createBasisSet() {
       }
       species[itype] = ng;
       cur = xmlAddSibling(cur,createCenter(iat,gtot));
-      //xmlNodePtr abasis = createCenter(iat,gtot);
-      //if(cur)
-      //  cur = xmlAddSibling(cur,abasis);
-      //else
-      //  cur = xmlAddChild(bset,abasis);
     } else {
       ng = (*it).second;
     }
@@ -78,28 +100,26 @@ xmlNodePtr QMCGaussianParserBase::createBasisSet() {
 
   return bset;
 }
-
 xmlNodePtr 
 QMCGaussianParserBase::createDeterminantSet() {
+
+  setOccupationNumbers();
 
   xmlNodePtr slaterdet = xmlNewNode(NULL,(const xmlChar*)"slaterdeterminant");
 
   //check spin-dependent properties
-  int nup = NumberOfEls/2;
-  int ndown = NumberOfEls-nup;
+  //int nup = NumberOfEls/2;
+  //int ndown = NumberOfEls-nup;
   std::ostringstream up_size, down_size, b_size, occ;
-  up_size <<nup; down_size << ndown; b_size<<SizeOfBasisSet;
+  up_size <<NumberOfAlpha; down_size << NumberOfBeta; b_size<<SizeOfBasisSet;
 
   //create a determinant Up
   xmlNodePtr adet = xmlNewNode(NULL,(const xmlChar*)"determinant");
   xmlNewProp(adet,(const xmlChar*)"id",(const xmlChar*)"updet");
   xmlNewProp(adet,(const xmlChar*)"orbitals",(const xmlChar*)up_size.str().c_str());
 
-  vector<int> iocc(SizeOfBasisSet,0);
-  for(int j=0;j<nup; j++) iocc[j]=1;
-
   occ<<"\n";
-  vector<int>::iterator it(iocc.begin()); 
+  vector<int>::iterator it(Occ_alpha.begin()); 
   int i=0;
   while(i<SizeOfBasisSet) {
     int n = (i+10<SizeOfBasisSet)? 10 : SizeOfBasisSet-i;
@@ -111,63 +131,61 @@ QMCGaussianParserBase::createDeterminantSet() {
     = xmlNewTextChild(adet,NULL,(const xmlChar*)"occupation",(const xmlChar*)occ.str().c_str());
   xmlNewProp(occ_data,(const xmlChar*)"size",(const xmlChar*)b_size.str().c_str());
 
+  int btot=SizeOfBasisSet*SizeOfBasisSet;
+  int n=btot/4, b=0;
+  int dn=btot-n*4;
+
   std::ostringstream eig;
   eig.setf(std::ios::scientific, std::ios::floatfield);
   eig.setf(std::ios::right,std::ios::adjustfield);
   eig.precision(14);
-  int btot=SizeOfBasisSet*SizeOfBasisSet;
-  int n=btot/4, b=0;
-  int dn=btot-n*4;
   eig << "\n";
   for(int k=0; k<n; k++) {
     eig << setw(22) << EigVec[b] << setw(22) << EigVec[b+1] << setw(22) << EigVec[b+2] << setw(22) <<  EigVec[b+3] << "\n";
     b += 4;
   }
-  for(int k=0; k<dn; k++) {
-    eig << setw(22) << EigVec[b];
-  }
+  for(int k=0; k<dn; k++) { eig << setw(22) << EigVec[b++]; }
   if(dn) eig << endl;
   xmlNodePtr det_data 
     = xmlNewTextChild(adet,NULL,(const xmlChar*)"coefficient",(const xmlChar*)eig.str().c_str());
-
-  //xmlNodePtr det_data 
-  //  = xmlNewTextChild(adet,NULL,(const xmlChar*)"coefficient",(const xmlChar*)"\n");//eig.str().c_str());
-
-  //int btot=SizeOfBasisSet*SizeOfBasisSet;
-  //int n=btot/4, b=0;
-  //int dn=btot-n*4;
-  //char v[100];
-  //for(int k=0; k<n; k++) {
-  //  sprintf(v,"%20.12e %20.12e %20.12e %20.12e\n",EigVec[b],EigVec[b+1],EigVec[b+2],EigVec[b+3]);
-  //  b += 4;
-  //  xmlTextConcat(adet,(const xmlChar*)v,100);
-  //}
-  //for(int k=0; k<dn; k++) {
-  //  sprintf(v,"%20.12e\n",EigVec[b++]);
-  //  xmlTextConcat(adet,(const xmlChar*)v,25);
-  //}
-  //xmlNodePtr det_data 
-  //  = xmlNewTextChild(adet,NULL,(const xmlChar*)"coefficient",(const xmlChar*)EigVecU.c_str());
   xmlNewProp(det_data,(const xmlChar*)"size",(const xmlChar*)b_size.str().c_str());
 
   xmlNodePtr cur = xmlAddChild(slaterdet,adet);
   adet = xmlNewNode(NULL,(const xmlChar*)"determinant");
   xmlNewProp(adet,(const xmlChar*)"id",(const xmlChar*)"downdet");
   xmlNewProp(adet,(const xmlChar*)"orbitals",(const xmlChar*)down_size.str().c_str());
-
   if(SpinRestricted)
     xmlNewProp(adet,(const xmlChar*)"ref",(const xmlChar*)"updet");
   else {
-    //std::ostringstream eigD;
-    //eigD.setf(std::ios::scientific, std::ios::floatfield);
-    //eigD.precision(12);
-    //int btot2=2*btot;
-    //for(int k=btot; k<btot2;) {
-    //  eig << setw(20) << EigVec[k++];
-    //  if(k/4 == 0) eig << endl;
-    //}
-    //det_data = xmlNewTextChild(adet,NULL,(const xmlChar*)"coefficient",(const xmlChar*)eigD.str().c_str());
-    //xmlNewProp(det_data,(const xmlChar*)"size",(const xmlChar*)b_size.str().c_str());
+    std::ostringstream occ_beta;
+    occ_beta<<"\n";
+    it=Occ_beta.begin(); 
+    int i=0;
+    while(i<SizeOfBasisSet) {
+      int n = (i+10<SizeOfBasisSet)? 10 : SizeOfBasisSet-i;
+      std::copy(it, it+n, ostream_iterator<int>(occ_beta," "));
+      occ_beta << "\n"; it += 10; i+=10;
+    }
+    occ_data=xmlNewTextChild(adet,NULL,(const xmlChar*)"occupation",(const xmlChar*)occ_beta.str().c_str());
+    xmlNewProp(occ_data,(const xmlChar*)"size",(const xmlChar*)b_size.str().c_str());
+
+    std::ostringstream eigD;
+    eigD.setf(std::ios::scientific, std::ios::floatfield);
+    eigD.setf(std::ios::right,std::ios::adjustfield);
+    eigD.precision(14);
+    eigD << "\n";
+    b=SizeOfBasisSet*SizeOfBasisSet;
+    for(int k=0; k<n; k++) {
+      eigD << setw(22) << EigVec[b] << setw(22) << EigVec[b+1] << setw(22) << EigVec[b+2] << setw(22) <<  EigVec[b+3] << "\n";
+      b += 4;
+    }
+    for(int k=0; k<dn; k++) {
+      eigD << setw(22) << EigVec[b++];
+    }
+    if(dn) eigD << endl;
+    det_data 
+      = xmlNewTextChild(adet,NULL,(const xmlChar*)"coefficient",(const xmlChar*)eigD.str().c_str());
+    xmlNewProp(det_data,(const xmlChar*)"size",(const xmlChar*)b_size.str().c_str());
   }
 
   cur = xmlAddSibling(cur,adet);
@@ -176,17 +194,15 @@ QMCGaussianParserBase::createDeterminantSet() {
 
 xmlNodePtr QMCGaussianParserBase::createCenter(int iat, int off_) {
 
-  CurrentCenter = IonName[GroupID[iat]];
+  //CurrentCenter = IonName[GroupID[iat]];
+  CurrentCenter = GroupName[iat];
   xmlNodePtr abasis = xmlNewNode(NULL,(const xmlChar*)"atomicBasisSet");
   xmlNewProp(abasis,(const xmlChar*)"name",(const xmlChar*)basisName.c_str());
   xmlNewProp(abasis,(const xmlChar*)"angular",(const xmlChar*)"spherical");
   xmlNewProp(abasis,(const xmlChar*)"type",(const xmlChar*)basisType.c_str());
   xmlNewProp(abasis,(const xmlChar*)"elementType",(const xmlChar*)CurrentCenter.c_str());
   xmlNewProp(abasis,(const xmlChar*)"normalized",(const xmlChar*)Normalized.c_str());
-  //xmlNodePtr grid_ptr = xmlCopyNode(gridPtr,1);
   xmlAddChild(abasis,xmlCopyNode(gridPtr,1));
-  //std::string hdf = CurrentCenter+"-"+basisName+".h5";
-  //xmlNewProp(abasis,(const xmlChar*)"src", (const xmlChar*)(hdf.c_str()));
   for(int ig=gBound[iat], n=0; ig< gBound[iat+1]; ig++,n++) {
     createShell(n, ig, off_,abasis);
     off_ += gNumber[ig];
@@ -207,7 +223,6 @@ QMCGaussianParserBase::createShell(int n, int ig, int off_, xmlNodePtr abasis) {
   char l_name[4],n_name[4],a_name[32];
 
   sprintf(a_name,"%s%d%d",CurrentCenter.c_str(),n,gShellID[gid]);
-  cout << "*********** (species,input-gid,l) = " << CurrentCenter << " " << gid << " " << gShellID[gid] << " ^^" << a_name << "^^" << endl;
   sprintf(l_name,"%d",gShellID[gid]);
   sprintf(n_name,"%d",n);
   xmlNewProp(ag,(const xmlChar*)"rid", (const xmlChar*)a_name);
@@ -294,7 +309,7 @@ void QMCGaussianParserBase::map2GridFunctors(xmlNodePtr cur) {
   }
 
   if(grid_ptr == 0) {
-    std::cout << "Grid is not defined: using default" << std::endl;
+    LOGMSG("Grid is not defined: using default")
     //xmlAddChild(anchor,gridPtr);
     grid_ptr = xmlCopyNode(gridPtr,1);
     xmlAddChild(anchor,grid_ptr);

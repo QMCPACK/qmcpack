@@ -55,6 +55,7 @@ void GaussianFCHKParser::parse(const std::string& fname) {
   //allocate everything here
   R.resize(NumberOfAtoms);
   GroupID.resize(NumberOfAtoms);
+  GroupName.resize(NumberOfAtoms);
   Qv.resize(NumberOfAtoms);
 
   gBound.resize(NumberOfAtoms+1);
@@ -70,14 +71,20 @@ void GaussianFCHKParser::parse(const std::string& fname) {
   search(fin, "Shell types");
   getGaussianCenters(fin);
 
-  search(fin, "Alpha MO");
-  int nstates=SizeOfBasisSet;
-  if(SpinRestricted)
+  EigVal_alpha.resize(SizeOfBasisSet);
+  EigVal_beta.resize(SizeOfBasisSet);
+  search(fin, "Alpha"); //search "Alpha Orbital Energies"
+  getValues(fin,EigVal_alpha.begin(), EigVal_alpha.end());
+
+  if(SpinRestricted) {
     EigVec.resize(SizeOfBasisSet*SizeOfBasisSet);
+    EigVal_beta=EigVal_alpha;
+  }
   else {
-    nstates*=2;
     EigVec.resize(2*SizeOfBasisSet*SizeOfBasisSet);
   }
+
+  search(fin, "Alpha MO");
   getValues(fin,EigVec.begin(), EigVec.end());
 }
 
@@ -88,6 +95,7 @@ void GaussianFCHKParser::getGeometry(std::istream& is) {
   getValues(is,Qv.begin(),Qv.end());
   search(is,"coordinates");
   getValues(is,R.begin(),R.end());
+  for(int i=0; i<GroupID.size(); i++) GroupName[i]=IonName[GroupID[i]];
 }
 
 void GaussianFCHKParser::getGaussianCenters(std::istream& is) {
