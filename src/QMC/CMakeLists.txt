@@ -18,6 +18,7 @@ IF(QMCAPPS MATCHES "MolecuApps")
     ../QMCWaveFunctions/MolecularOrbitals/NumericalRGFBuilder.cpp
     ../QMCWaveFunctions/MolecularOrbitals/GridMolecularOrbitals.cpp
     ../QMCWaveFunctions/MolecularOrbitals/MolecularOrbitalBuilder.cpp
+    ../QMCWaveFunctions/MolecularOrbitals/NumericalMolecularOrbitals.cpp
     ../QMCHamiltonians/LocalPPotential.cpp
     ../QMCHamiltonians/NonLocalPPotential.cpp
     ../QMCHamiltonians/GeCorePolPotential.cpp
@@ -55,7 +56,6 @@ SET(QMCSRCS
   ../Estimators/ScalarEstimatorManager.cpp
   QMCApps.cpp
   ${APPSRC}
-  main.cpp
 )
 
 LINK_LIBRARIES(${FORTRAN_LIBS} 
@@ -69,5 +69,9 @@ ELSE(${BLAS_EXTRA_LIBRARY} MATCHES "guide")
   LINK_LIBRARIES(${CMAKE_THREAD_LIBS_INIT})
 ENDIF(${BLAS_EXTRA_LIBRARY} MATCHES "guide")
 
-ADD_EXECUTABLE(qmcapp ${WAVEFUNCTIONS} ${QMCSRCS})
+ADD_EXECUTABLE(qmcapp ${WAVEFUNCTIONS} ${QMCSRCS} main.cpp)
 TARGET_LINK_LIBRARIES(qmcapp qmc qmcbase)
+
+#ADD_EXECUTABLE(mo2grid3d ${WAVEFUNCTIONS} ${QMCSRCS} 
+#MO2Grid3D.cpp mo2grid3d_main.cpp)
+#TARGET_LINK_LIBRARIES(mo2grid3d qmc qmcbase)
