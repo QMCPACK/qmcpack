@@ -78,7 +78,7 @@ namespace ohmmsqmc {
       cur = cur->xmlChildrenNode;
       while(cur != NULL) {
 	string cname((const char*)(cur->name));
-	if(cname == basisset_tag || cname == "atomicBasisSet") {
+	if(cname == basisset_tag) {
 	  //call the BasisSet builder
 	  basisSet = builder_ref.addBasisSet(cur);
 	  if(!basisSet) return 0;

@@ -23,7 +23,7 @@
 namespace ohmmsqmc {
 
   struct DummyGrid {
-    inline int index(double r) {return 0;}
+    inline void locate(double r) {}
   };
 
   typedef TinyVector<int,4> QuantumNumberType;
@@ -114,8 +114,8 @@ namespace ohmmsqmc {
 
       Ylm.evaluate(dr);
 
-      typename vector<GT*>::iterator git(Grids.begin()),git_end(Grids.end());
-      while(git != git_end) {(*git)->index(r); ++git;}
+      //typename vector<GT*>::iterator git(Grids.begin()),git_end(Grids.end());
+      //while(git != git_end) {(*git)->locate(r); ++git;}
 
       typename vector<ROT*>::iterator rit(Rnl.begin()), rit_end(Rnl.end());
       while(rit != rit_end) {(*rit)->evaluate(r,rinv); ++rit;}
@@ -138,8 +138,8 @@ namespace ohmmsqmc {
 
       Ylm.evaluateAll(dr);
 	
-      typename vector<GT*>::iterator git(Grids.begin()),git_end(Grids.end());
-      while(git != git_end) {(*git)->index(r); ++git;}
+      //typename vector<GT*>::iterator git(Grids.begin()),git_end(Grids.end());
+      //while(git != git_end) {(*git)->locate(r); ++git;}
 
       typename vector<ROT*>::iterator rit(Rnl.begin()), rit_end(Rnl.end());
       while(rit != rit_end) {(*rit)->evaluateAll(r,rinv); ++rit;}
@@ -218,33 +218,44 @@ namespace ohmmsqmc {
 
       int nn = myTable->M[source]+first;//first pair of the particle subset
       for(int i=0, iat=first; i<nptcl; i++, iat++, nn++) {
-	RealType r = myTable->r(nn);
-	RealType rinv = myTable->rinv(nn);
-	PosType dr = myTable->dr(nn);
-	Ylm.evaluateAll(dr);
-	
-	//find the indices for distinct grids
-	for(int ir=0; ir<Grids.size(); ir++) {
-	  Grids[ir]->index(r);
-	}
+	RealType r(myTable->r(nn));
+	RealType rinv(myTable->rinv(nn));
+	PosType dr(myTable->dr(nn));
 
-	//spline them
-	for(int nl=0; nl<Rnl.size(); nl++) {
-	  Rnl[nl]->evaluateAll(r,rinv);
-	}
+	Ylm.evaluateAll(dr);
+
+        //typename vector<GT*>::iterator git(Grids.begin()),git_end(Grids.end());
+        //while(git != git_end) {(*git)->locate(r); ++git;}
+
+        typename vector<ROT*>::iterator rit(Rnl.begin()), rit_end(Rnl.end());
+        while(rit != rit_end) {(*rit)->evaluateAll(r,rinv); ++rit;}
 	
-	int bindex = offset;
-	for(int ib=0; ib<NL.size(); ib++, bindex++) {
-	  int nl = NL[ib];
-	  int lm = LM[ib];
-	  RealType drnloverr = rinv*Rnl[nl]->dY;
+	int bindex(offset);
+        vector<int>::iterator nlit(NL.begin()),nlit_end(NL.end()),lmit(LM.begin()); 
+        while(nlit != nlit_end) { //for(int ib=0; ib<NL.size(); ib++, offset++) {
+          int nl(*nlit);//NL[ib];
+          int lm(*lmit);//LM[ib];
+          const ROT& rnl(*Rnl[nl]);
+	  RealType drnloverr = rinv*rnl.dY;
 	  ValueType ang = Ylm.getYlm(lm);
-	  PosType gr_rad = drnloverr*dr;
-	  PosType gr_ang = Ylm.getGradYlm(lm);
-	  y(iat,bindex)= ang*Rnl[nl]->Y;
-	  dy(iat,bindex) = ang*gr_rad+Rnl[nl]->Y*gr_ang;
-	  d2y(iat,bindex)= ang*(2.0*drnloverr+Rnl[nl]->d2Y) + 2.0*dot(gr_rad,gr_ang);
-	}
+	  PosType gr_rad(drnloverr*dr);
+	  PosType gr_ang(Ylm.getGradYlm(lm));
+	  y(iat,bindex)= ang*rnl.Y;
+	  dy(iat,bindex) = ang*gr_rad+rnl.Y*gr_ang;
+	  d2y(iat,bindex)= ang*(2.0*drnloverr+rnl.d2Y) + 2.0*dot(gr_rad,gr_ang);
+          ++nlit; ++lmit;++bindex;
+        }
+	//for(int ib=0; ib<NL.size(); ib++, bindex++) {
+	//  int nl = NL[ib];
+	//  int lm = LM[ib];
+	//  RealType drnloverr = rinv*Rnl[nl]->dY;
+	//  ValueType ang = Ylm.getYlm(lm);
+	//  PosType gr_rad = drnloverr*dr;
+	//  PosType gr_ang = Ylm.getGradYlm(lm);
+	//  y(iat,bindex)= ang*Rnl[nl]->Y;
+	//  dy(iat,bindex) = ang*gr_rad+Rnl[nl]->Y*gr_ang;
+	//  d2y(iat,bindex)= ang*(2.0*drnloverr+Rnl[nl]->d2Y) + 2.0*dot(gr_rad,gr_ang);
+	//}
       }
     }
 
@@ -290,10 +301,10 @@ namespace ohmmsqmc {
 	      PosType dr = myTable->dr(iw,nn);
 	      Ylm.evaluateAll(dr);
 
-	      //find the indices for distinct grids
-	      for(int ir=0; ir<Grids.size(); ir++) {
-		Grids[ir]->index(r);
-	      }
+	      ////find the indices for distinct grids
+	      //for(int ir=0; ir<Grids.size(); ir++) {
+	      //  Grids[ir]->locate(r);
+	      //}
 
 	      //spline them
 	      for(int nl=0; nl<Rnl.size(); nl++) {

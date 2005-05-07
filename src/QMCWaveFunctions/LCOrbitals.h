@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////
-// (c) Copyright 2003  by Jeongnim Kim
+// (c) Copyright 2003-  by Jeongnim Kim
 //////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////
 //   National Center for Supercomputing Applications &
@@ -18,9 +18,6 @@
 #define OHMMS_QMC_LINEARCOMIBINATIONORBITALS_H
 
 #include "OhmmsPETE/OhmmsMatrix.h"
-//#include "OhmmsPETE/OhmmsVector.h"
-//#include <boost/numeric/ublas/matrix.hpp>
-//#include <boost/numeric/ublas/vector.hpp>
 #include "Numerics/DeterminantOperators.h"
 #include <limits>
 
@@ -30,12 +27,12 @@ namespace ohmmsqmc {
 
   /** class to handle linear combinations of basis orbitals used to evaluate the Dirac determinants.
    *
-   *LCOrbitals stands for (L)inear(C)ombination(Orbitals)
-   *Any single-particle orbital \f$ \psi_i \f$ that can be represented by
+   *LCOrbitals stands for (L)inear(C)ombinationOrbitals
+   *Any single-particle orbital \f$ \psi_j \f$ that can be represented by
    \f[
-   \psi_i ({\bf r}_j) = \sum_I \sum_k C_{ikI} \phi_{ikI}({\bf r}_j-{\bf R}_I),
+   \psi_j ({\bf r}_i) = \sum_k C_{jk} \phi_{k}({\bf r}_i),
    \f]
-   *where \f$ \phi_{ikI} \f$ is the kth basis function around center \fI\f$.
+   *where \f$ \phi_{k} \f$ is the kth basis.
    *The initialization and evaluation of \f$ \phi\ f$'s
    *are delagated to the template class BS, but the linear-combination, i.e.,
    *matrix-vector or matrix-matrix multiplications are handedled by LCOrbitals
@@ -56,7 +53,7 @@ namespace ohmmsqmc {
     bool Identity;
     ///id of this object, if ID == 0, the object is responsble for the BasisSet
     int ID;
-    ///number of particles
+    ///number of particles handled by this object
     int NumPtcls;
     ///size of basis set
     int BasisSize;
@@ -101,6 +98,19 @@ namespace ohmmsqmc {
 
     /** evaluate the values of the single-particle orbitals 
      *@param P input configuration containing N particles
+     *@param iat particle index whose position has been modified
+     *@param jorb psi values of the single-particle orbitals
+     *
+     * This function is introduced to function evaluations.
+     */
+    inline ValueType
+    evaluate(const ParticleSet& P, int iat, int jorb) {
+      BasisSet->evaluate(P,iat);
+      return dot(&C(jorb,0),BasisSet->y(0),BasisSize);
+    }
+
+    /** evaluate the values of the single-particle orbitals 
+     *@param P input configuration containing N particles
      *@param iat particle index
      *@param psi values of the single-particle orbitals
      *
@@ -110,7 +120,8 @@ namespace ohmmsqmc {
     inline void 
     evaluate(const ParticleSet& P, int iat, VV& psi) {
       BasisSet->evaluate(P,iat);
-      for(int j=0 ; j<NumPtcls; j++) psi[j] = dot(&C(j,0),BasisSet->y(0),BasisSize);
+      for(int j=0 ; j<NumPtcls; j++) 
+        psi[j] = dot(&C(j,0),BasisSet->y(0),BasisSize);
     }
 
     /**@ingroup particlebyparticle 
@@ -148,9 +159,12 @@ namespace ohmmsqmc {
      *@param P input configuration containing N particles
      *@param first index of the first particle
      *@param last index of the last particle
-     *@param logdet matrix \f$ logdet[j,i] = \sum_I \sum_k C_{ikI} \phi_{ikI}({\bf r}_j-{\bf R}_I) \f$
-     *@param dlogdet vector matrix \f$ dlogdet[i,j] = \sum_I \sum_k C_{ikI} \nabla_i \phi_{ikI}({\bf r}_j-{\bf R}_I) \f$
-     *@param d2logdet matrix \f$ d2logdet[i,j] = \sum_I \sum_k C_{ikI} \nabla^2_i \phi_{ikI}({\bf r}_j-{\bf R}_I) \f$
+     *@param logdet \f$ logdet(j,i) = \sum_k C_{jk} \phi_{k}({\bf r}_i) \f$
+     *@param dlogdet \f$ dlogdet(i,j) =\sum_k C_{jk} \nabla_i \phi_{k}({\bf r}_i) \f$
+     *@param d2logdet \f$ d2logdet(i,j) = \sum_k C_{jk} \nabla^2_i \phi_{k}({\bf r}_i) \f$
+     *
+     *Each object handles [first,last) quantum particles. 
+     *The physical particle index maps to the orbital index of [0,last-first).
      */
     template<class VM, class GM>
     inline void 
