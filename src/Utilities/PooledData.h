@@ -35,9 +35,9 @@ public:
 
   //assignement operator
   PooledData<T>& operator=(const PooledData<T>& a) {
-    clear();
+    this->clear();
     if(a.size()) {
-      insert(begin(), a.begin(), a.end());
+      this->insert(this->begin(), a.begin(), a.end());
     }
     return *this;
   }
@@ -47,36 +47,36 @@ public:
   ///set the Current to zero
   inline void rewind() { Current = 0;}
 
-  inline void add(T x) { push_back(x);}
+  inline void add(T x) { this->push_back(x);}
 
   template<class _InputIterator>
   inline void add(_InputIterator first, _InputIterator last) {
     while(first != last) {
-      push_back(*first++);
+      this->push_back(*first++);
     }
   }
 
-  inline void get(T& x) { x = operator[](Current++);}
+  inline void get(T& x) { x = (*this)[Current++];}
 
   template<class _OutputIterator>
   inline void get(_OutputIterator first, _OutputIterator last) {
     while(first != last) {
-      *first++ = operator[](Current++);
+      *first++ = (*this)[Current++];
     }
   }
   
-  inline void put(T x) { operator[](Current++) = x;}
+  inline void put(T x) { (*this)[Current++] = x;}
 
   template<class _InputIterator>
   inline void put(_InputIterator first, _InputIterator last){
     while(first != last) {
-      operator[](Current++) = *first++;
+      (*this)[Current++] = *first++;
     }
   }
 
 
   inline void print(std::ostream& os) {
-    std::copy(begin(), end(), ostream_iterator<T>(os," "));
+    std::copy(this->begin(), this->end(), ostream_iterator<T>(os," "));
   }
 };
 #endif
