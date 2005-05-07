@@ -60,6 +60,8 @@ namespace ohmmsqmc {
     tptr = xmlGetProp(cur,(const xmlChar*)"rmax");
     if(tptr) m_rcut = atof((const char*)tptr);
 
+    int lastRnl = m_orbitals->Rnl.size();
+
     m_nlms = nlms;
     if(radtype == "Gaussian") {
       addGaussian(cur);
@@ -68,6 +70,12 @@ namespace ohmmsqmc {
     } else if(radtype == "Pade") {
       addPade(cur);
     }
+
+    if(lastRnl && m_orbitals->Rnl.size()> lastRnl) {
+      LOGMSG("\tSetting GridManager of " << lastRnl << " radial orbital to false")
+      m_orbitals->Rnl[lastRnl]->setGridManager(false);
+    }
+
     return true;
   }
 
