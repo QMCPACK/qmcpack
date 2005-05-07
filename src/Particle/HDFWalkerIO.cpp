@@ -23,7 +23,6 @@
 #include "Particle/HDFParticleAttrib.h"
 #include "Numerics/HDFNumericAttrib.h"
 #include "Utilities/OhmmsInfo.h"
-#include <blitz/array.h>
 using namespace ohmmsqmc;
 
 /**
@@ -70,46 +69,36 @@ bool HDFWalkerOutput::get(MCWalkerConfiguration& W) {
   typedef MCWalkerConfiguration::RealType RealType;
   typedef MCWalkerConfiguration::PropertyContainer_t PropertyContainer_t;
 
-  typedef blitz::Array<PosType,2> Array_t;
-  typedef Vector<RealType>        Vector_t;
-
-  //OverWrite -> create a new group, close it later
-  //if(!AppendMode)  {
-  //  cout << "Create a new group " << endl;
-  // h_config = H5Gcreate(h_file,"config_collection",0);
-  //}
+  typedef Matrix<PosType>  PosContainer_t;
+  typedef Vector<RealType> ScalarContainer_t;
 
   PropertyContainer_t Properties;
-  //2D array of PosTypes (x,y,z) indexed by (walker,particle)
-  Array_t Pos;
-  Vector_t sample_1, sample_2;
-
-  Pos.resize(W.getActiveWalkers(),W.R.size());
-  sample_1.resize(W.getActiveWalkers());
-  sample_2.resize(W.getActiveWalkers());
+  PosContainer_t tempPos(W.getActiveWalkers(),W.R.size());
+  ScalarContainer_t sample_1(W.getActiveWalkers()), sample_2(W.getActiveWalkers());
 
   //store walkers in a temporary array
-  int nw = 0; int item=0;
-  MCWalkerConfiguration::iterator it = W.begin(); 
-  MCWalkerConfiguration::iterator it_end = W.end(); 
+  int nw(0),item(0);
+  MCWalkerConfiguration::const_iterator it(W.begin());
+  MCWalkerConfiguration::const_iterator it_end(W.end());
   while(it != it_end) {
     sample_1(nw) = (*it)->Properties(LOGPSI);
     sample_2(nw) = (*it)->Properties(LOCALPOTENTIAL);
-    for(int np=0; np < W.getParticleNum(); ++np)
-      Pos(nw,np) = (*it)->R(np);    
+    for(int np=0; np < W.getParticleNum(); ++np) 
+      tempPos(item++) = (*it)->R(np);    
     ++it; ++nw;
   }
+
   //create the group and increment counter
   char GrpName[128];
   sprintf(GrpName,"config%04d",Counter++);
   hid_t group_id = H5Gcreate(h_config,GrpName,0);
 
   //write the dataset
-  HDFAttribIO<Array_t> Pos_out(Pos);
+  HDFAttribIO<PosContainer_t> Pos_out(tempPos);
   Pos_out.write(group_id,"coord");
-  HDFAttribIO<Vector_t> sample_out(sample_1);
+  HDFAttribIO<ScalarContainer_t> sample_out(sample_1);
   sample_out.write(group_id,"psisq");
-  HDFAttribIO<Vector_t> sample_out2(sample_2);
+  HDFAttribIO<ScalarContainer_t> sample_out2(sample_2);
   sample_out2.write(group_id,"localpotential");
 
   H5Gclose(group_id);
@@ -188,22 +177,22 @@ HDFWalkerInput::put(MCWalkerConfiguration& W, int ic){
   typedef MCWalkerConfiguration::RealType RealType;
   typedef MCWalkerConfiguration::PropertyContainer_t ProtertyContainer_t;
 
-  typedef blitz::Array<PosType,2> Array_t;
-  typedef Vector<RealType>        Vector_t;
+  typedef Matrix<PosType>  PosContainer_t;
+  typedef Vector<RealType> ScalarContainer_t;
 
   int nwt = 0;
   int npt = 0;
   //2D array of PosTypes (x,y,z) indexed by (walker,particle)
-  Array_t Pos_temp;
-  Vector_t psisq_in, localene_in;
+  PosContainer_t Pos_temp;
+  ScalarContainer_t psisq_in, localene_in;
 
   //open the group
   char GrpName[128];
   sprintf(GrpName,"config%04d",selected);
   hid_t group_id = H5Gopen(h_config,GrpName);
     
-  HDFAttribIO<Array_t> Pos_in(Pos_temp);
-  HDFAttribIO<Vector_t> sample1(psisq_in), sample2(localene_in);
+  HDFAttribIO<PosContainer_t> Pos_in(Pos_temp);
+  HDFAttribIO<ScalarContainer_t> sample1(psisq_in), sample2(localene_in);
   //read the dataset
   Pos_in.read(group_id,"coord");
   sample1.read(group_id,"psisq");
@@ -212,8 +201,8 @@ HDFWalkerInput::put(MCWalkerConfiguration& W, int ic){
   H5Gclose(group_id);
 
   /*check to see if the number of walkers and particles is  consistent with W */
-  int nptcl = Pos_temp.extent(1);
-  nwt = Pos_temp.extent(0);
+  int nptcl = Pos_temp.cols();
+  nwt = Pos_temp.rows();
   if(nwt != W.getActiveWalkers() || nptcl != W.getParticleNum()) {
     W.resize(nwt,nptcl); 
   }

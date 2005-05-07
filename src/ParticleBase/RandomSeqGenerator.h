@@ -1,7 +1,9 @@
 #ifndef OHMMS_QMC_RANDOMSEQUENCEGENERATOR_H
 #define OHMMS_QMC_RANDOMSEQUENCEGENERATOR_H
 #include <algorithm>
+#if defined(HAVE_LIBBLITZ)
 #include <blitz/array.h>
+#endif
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "ParticleBase/ParticleAttrib.h"
 #include "Utilities/RandomGenerator.h"

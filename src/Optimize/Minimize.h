@@ -1,12 +1,10 @@
 #ifndef MINIMIZE_H
 #define MINIMIZE_H
 
-//#include "../Blitz.h"
-using namespace std;
-#include <blitz/array.h>
+#include <vector>
+
 class MinimizeFunction
 {
-
 
 public:
   typedef double scalar; 
@@ -73,43 +71,46 @@ public:
 };
 
 
-class VanderbiltAnnealer : public Minimizer
-{
-public:
-  typedef double scalar; 
-  AnnealingSchedule *Schedule;
-  // The Q matrix gives the step for a random uniform vector, u.
-  // \Delta x = Q*u
-
-  //  std::vector<scalar> Q(2);
-  blitz::Array<scalar,2> Q;
-
-  // xMean holds the mean position for the last M steps;
-  blitz::Array<scalar,1> xMean;
-  // Covariance holds the covariance matrix for the last block of steps.
-  blitz::Array<scalar,2> Covariance;
-  // Holds the Minimum vector found
-  blitz::Array<scalar,1> MinParams;
-  // Holds the minimum cost found
-  scalar MinCost;
-
-  scalar GrowthFactor;
-  scalar AcceptRatio;
-  scalar MeanCost;
-  blitz::Array<scalar,2> s;
-  scalar kT;
-  scalar HeatCapacity;
-  MinimizeFunction *MinFunc;
-
-  void Metropolis(int NumSteps);
-
-  void Minimize (MinimizeFunction &MinimFunc);
-  VanderbiltAnnealer(AnnealingSchedule &ASchedule)
-  {    
-    Schedule = &ASchedule;
-  }
-};
-
+//class VanderbiltAnnealer : public Minimizer
+//{
+//public:
+//  typedef double scalar; 
+//  AnnealingSchedule *Schedule;
+//  // The Q matrix gives the step for a random uniform vector, u.
+//  // \Delta x = Q*u
+//
+//  //  std::vector<scalar> Q(2);
+//  std::vector<scalar> Q;
+//
+//  // xMean holds the mean position for the last M steps;
+//  //blitz::Array<scalar,1> xMean;
+//  std::vector<scalar> xMean;
+//  // Covariance holds the covariance matrix for the last block of steps.
+//  //blitz::Array<scalar,2> Covariance;
+//  std::vector<scalar> Covariance;
+//  // Holds the Minimum vector found
+//  std::vector<scalar> MinParams;
+//  // Holds the minimum cost found
+//  scalar MinCost;
+//
+//  scalar GrowthFactor;
+//  scalar AcceptRatio;
+//  scalar MeanCost;
+//  //blitz::Array<scalar,2> s;
+//  std::vector<scalar> s;
+//  scalar kT;
+//  scalar HeatCapacity;
+//  MinimizeFunction *MinFunc;
+//
+//  void Metropolis(int NumSteps);
+//
+//  void Minimize (MinimizeFunction &MinimFunc);
+//  VanderbiltAnnealer(AnnealingSchedule &ASchedule)
+//  {    
+//    Schedule = &ASchedule;
+//  }
+//};
+//
 
 
 #endif

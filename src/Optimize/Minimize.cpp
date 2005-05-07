@@ -1,10 +1,10 @@
 #include <stdio.h>
 #include <gsl/gsl_multimin.h>
 #include <gsl/gsl_vector.h>
-#include <vector>
 #include <iostream>
+#include <iomanip>
 #include "Optimize/Minimize.h"
-//using namespace std;
+using namespace std;
 
 double MCost (const gsl_vector *v, void *params)
 {
@@ -22,7 +22,8 @@ void MGradCost(const gsl_vector *v, void *params, gsl_vector *df)
   ConjugateGradient &CG = *(ConjugateGradient *)params;
   MinimizeFunction &MF = *CG.MinFunc;
   double epsilon = CG.epsilon;  
-  blitz::Array<scalar,1> gradient(MF.NumParams());
+  vector<scalar> gradient(MF.NumParams());
+  //blitz::Array<scalar,1> gradient(MF.NumParams());
   // std::vector<double> gradient;
   //gradient.resize(MF.NumParams());
   for (int i=0; i<MF.NumParams(); i++)
@@ -34,11 +35,11 @@ void MGradCost(const gsl_vector *v, void *params, gsl_vector *df)
       CostPlus = MF.Cost();
       MF.Params(i) = gsl_vector_get(v,i) - epsilon;
       CostMinus = MF.Cost();
-      gradient(i) = (CostPlus-CostMinus)/(2.0*epsilon);
+      gradient[i] = (CostPlus-CostMinus)/(2.0*epsilon);
       gsl_vector_set(df, i, (CostPlus-CostMinus)/(2.0*epsilon));
     }
   cout << "Gradient = " << endl;
-  for (int i=0;i<MF.NumParams(); i++) cout << setw(14) << gradient(i) << endl;
+  for (int i=0;i<MF.NumParams(); i++) cout << setw(14) << gradient[i] << endl;
 }
 
 void MBoth (const gsl_vector *v, void *params, double *f,
@@ -140,22 +141,22 @@ class TestMinim : public MinimizeFunction
 {
 public:
   typedef double scalar;
-  blitz::Array<scalar, 1> x;
+  vector<scalar> x;
   int NumParams()
   {
     return (2);
   }
   scalar &Params(int i)
   {
-    return(x(i));
+    return(x[i]);
   }
   scalar Params(int i) const
   {
-    return (x(i));
+    return (x[i]);
   }
   scalar Cost()
   {
-    return ((x(0)-1.0)*(x(0)-1.0) + (x(1)-2.0)*(x(1)-2.0));
+    return ((x[0]-1.0)*(x[0]-1.0) + (x[1]-2.0)*(x[1]-2.0));
   }
 };
 

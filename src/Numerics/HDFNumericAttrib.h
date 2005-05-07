@@ -160,77 +160,6 @@ struct HDFAttribIO<Vector<int> >: public HDFAttribIOBase {
 
 };
 
-/** Specialization for Matrix<double> */
-template<>
-struct HDFAttribIO<Matrix<double> >: public HDFAttribIOBase {
-
-  typedef Matrix<double> ArrayType_t;
-  ArrayType_t&  ref;
-
-  HDFAttribIO<ArrayType_t>(ArrayType_t& a):ref(a) { }
-
-  inline void write(hid_t grp, const char* name) {
-    hsize_t dim = ref.size();
-    hid_t dataspace  = H5Screate_simple(1, &dim, NULL);
-    hid_t dataset =  
-      H5Dcreate(grp, name, H5T_NATIVE_DOUBLE, dataspace, H5P_DEFAULT);
-    hid_t ret = 
-      H5Dwrite(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT,ref.data());
-    H5Sclose(dataspace);
-    H5Dclose(dataset);
-  }
-
-  inline void read(hid_t grp, const char* name) {
-    hid_t h1 = H5Dopen(grp, name);
-    hid_t ret = H5Dread(h1, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, ref.data());
-    H5Dclose(h1);
-  }
-
-};
-
-#ifdef HAVE_LIBBLITZ
-/** Specialization for blitz::Array<TinyVector<double,D>,2> */
-template<unsigned D>
-struct HDFAttribIO<blitz::Array<TinyVector<double,D>,2> >: public HDFAttribIOBase {
-
-  typedef blitz::Array<TinyVector<double,D>,2> ArrayType_t;
-  ArrayType_t&  ref;
-
-  HDFAttribIO<ArrayType_t>(ArrayType_t& a):ref(a) { }
- 
-  inline void write(hid_t grp, const char* name) {
-    int rank = 3;
-    hsize_t dim[rank];
-    dim[0] = ref.extent(0);
-    dim[1] = ref.extent(1);
-    dim[2] = D;
-    hid_t dataspace  = H5Screate_simple(rank, dim, NULL);
-    hid_t dataset =  
-      H5Dcreate(grp, name, H5T_NATIVE_DOUBLE, dataspace, H5P_DEFAULT);
-    hid_t ret = 
-      H5Dwrite(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT,ref.data());
-    H5Sclose(dataspace);
-    H5Dclose(dataset);
-  }
-
-  inline void read(hid_t grp, const char* name) {
-    hid_t h1 = H5Dopen(grp, name);
-    hid_t dataspace = H5Dget_space(h1);
-    hsize_t dims_out[3];
-    int rank = H5Sget_simple_extent_ndims(dataspace);
-    int status_n = H5Sget_simple_extent_dims(dataspace, dims_out, NULL);
-    if((ref.extent(0) != (unsigned long)dims_out[0]) || (ref.extent(1) != (unsigned long)dims_out[1])){
-      //   cout << "dimensions not equal" << endl;
-      ref.resize(dims_out[0],dims_out[1]);
-    }
-       
-    hid_t ret = H5Dread(h1, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, ref.data());
-    H5Dclose(h1);
-  }
-  
-};
-#endif
-
 /** Specialization for Vector<TinyVector<double,D> > */
 template<unsigned D>
 struct HDFAttribIO<Vector<TinyVector<double,D> > >: public HDFAttribIOBase {
@@ -266,6 +195,75 @@ struct HDFAttribIO<Vector<TinyVector<double,D> > >: public HDFAttribIOBase {
   }
 
 };
+
+
+/** Specialization for Matrix<double> */
+template<>
+struct HDFAttribIO<Matrix<double> >: public HDFAttribIOBase {
+
+  typedef Matrix<double> ArrayType_t;
+  ArrayType_t&  ref;
+
+  HDFAttribIO<ArrayType_t>(ArrayType_t& a):ref(a) { }
+
+  inline void write(hid_t grp, const char* name) {
+    hsize_t dim = ref.size();
+    hid_t dataspace  = H5Screate_simple(1, &dim, NULL);
+    hid_t dataset =  
+      H5Dcreate(grp, name, H5T_NATIVE_DOUBLE, dataspace, H5P_DEFAULT);
+    hid_t ret = 
+      H5Dwrite(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT,ref.data());
+    H5Sclose(dataspace);
+    H5Dclose(dataset);
+  }
+
+  inline void read(hid_t grp, const char* name) {
+    hid_t h1 = H5Dopen(grp, name);
+    hid_t ret = H5Dread(h1, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, ref.data());
+    H5Dclose(h1);
+  }
+
+};
+
+/** Specialization for Matrix<TinyVector<double,D>> */
+template<unsigned D>
+struct HDFAttribIO<Matrix<TinyVector<double,D> > >: public HDFAttribIOBase {
+
+  typedef TinyVector<double,D> Component_t;
+  typedef Matrix<Component_t>  ArrayType_t;
+  ArrayType_t&  ref;
+
+  HDFAttribIO<ArrayType_t>(ArrayType_t& a):ref(a) { }
+
+  inline void write(hid_t grp, const char* name) {
+    int rank = 3;
+    hsize_t dim[rank];
+    dim[0] = ref.rows();
+    dim[1] = ref.cols();
+    dim[2] = D;
+    hid_t dataspace  = H5Screate_simple(rank, dim, NULL);
+    hid_t dataset =  
+      H5Dcreate(grp, name, H5T_NATIVE_DOUBLE, dataspace, H5P_DEFAULT);
+    hid_t ret = 
+      H5Dwrite(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT,ref.data());
+    H5Sclose(dataspace);
+    H5Dclose(dataset);
+  }
+
+  inline void read(hid_t grp, const char* name) {
+    hid_t h1 = H5Dopen(grp, name);
+    hid_t dataspace = H5Dget_space(h1);
+    hsize_t dims_out[3];
+    int rank = H5Sget_simple_extent_ndims(dataspace);
+    int status_n = H5Sget_simple_extent_dims(dataspace, dims_out, NULL);
+    if((ref.rows() != int(dims_out[0])) || (ref.cols() != int(dims_out[1]))){
+      ref.resize(dims_out[0],dims_out[1]);
+    }
+    hid_t ret = H5Dread(h1, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, ref.data());
+    H5Dclose(h1);
+  }
+};
+
 
 /** Specialization for string */
 template<>
@@ -311,6 +309,48 @@ struct HDFAttribIO<string>: public HDFAttribIOBase {
 };
 
 
+#ifdef HAVE_LIBBLITZ
+/** Specialization for blitz::Array<TinyVector<double,D>,2> */
+template<unsigned D>
+struct HDFAttribIO<blitz::Array<TinyVector<double,D>,2> >: public HDFAttribIOBase {
+
+  typedef blitz::Array<TinyVector<double,D>,2> ArrayType_t;
+  ArrayType_t&  ref;
+
+  HDFAttribIO<ArrayType_t>(ArrayType_t& a):ref(a) { }
+ 
+  inline void write(hid_t grp, const char* name) {
+    int rank = 3;
+    hsize_t dim[rank];
+    dim[0] = ref.extent(0);
+    dim[1] = ref.extent(1);
+    dim[2] = D;
+    hid_t dataspace  = H5Screate_simple(rank, dim, NULL);
+    hid_t dataset =  
+      H5Dcreate(grp, name, H5T_NATIVE_DOUBLE, dataspace, H5P_DEFAULT);
+    hid_t ret = 
+      H5Dwrite(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT,ref.data());
+    H5Sclose(dataspace);
+    H5Dclose(dataset);
+  }
+
+  inline void read(hid_t grp, const char* name) {
+    hid_t h1 = H5Dopen(grp, name);
+    hid_t dataspace = H5Dget_space(h1);
+    hsize_t dims_out[3];
+    int rank = H5Sget_simple_extent_ndims(dataspace);
+    int status_n = H5Sget_simple_extent_dims(dataspace, dims_out, NULL);
+    if((ref.extent(0) != (unsigned long)dims_out[0]) || (ref.extent(1) != (unsigned long)dims_out[1])){
+      //   cout << "dimensions not equal" << endl;
+      ref.resize(dims_out[0],dims_out[1]);
+    }
+       
+    hid_t ret = H5Dread(h1, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, ref.data());
+    H5Dclose(h1);
+  }
+  
+};
+#endif
 
 #endif
 /***************************************************************************
