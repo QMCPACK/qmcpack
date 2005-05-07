@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////
-// (c) Copyright 2003  by Jeongnim Kim and Jordan Vincent
+// (c) Copyright 2003-  by Jeongnim Kim and Jordan Vincent
 //////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////
 //   National Center for Supercomputing Applications &
@@ -23,40 +23,55 @@ template<class T, unsigned D>
 struct FunctorBase { };
 
 /** Implement One-Dimensional function on a radial grid. 
- *\brief Store the values of the function for the 
- *cooresponding grid points, \f$ y_i = y(x_i) \f$.  
+ *
+ * template parameters
+ * - Td return type
+ * - Tg grid value type
+ * - CTd container type associated with the values and derivatives
+ * - CTg container type associated with the grid data
+ *
+ * Store the values of the function for the 
+ * cooresponding grid points, \f$ y_i = y(x_i) \f$.  
  */
-
 template <class Td, 
 	  class Tg = Td, 
 	  class CTd= Vector<Td>,
 	  class CTg= Vector<Tg>  >
 struct OneDimGridFunctor//: public FunctorBase<Td,1> {
 {
+
+  /// the type of the value on a grid
   typedef Td  value_type;
+  /// the type of the grid value
   typedef Tg  point_type;
+  /// the type of the containers Y, dY and d2Y
   typedef CTd data_type;
+  /// the grid type
   typedef OneDimGridBase<Tg,CTg> grid_type;
+  /// the type of this class
   typedef OneDimGridFunctor<Td,Tg,CTd,CTg>  this_type;
 
-  /**constructor
-   *@param gt the radial grid
+  /** constructor
+   *@param gt a radial grid
    */
-  OneDimGridFunctor(grid_type* gt = 0): m_grid(gt) {
+  OneDimGridFunctor(grid_type* gt = 0): GridManager(true), m_grid(gt) {
     if(m_grid) resize(m_grid->size());
     FirstAddress.resize(3,0);
   }
 
+  /** virtual destructor */
   inline virtual ~OneDimGridFunctor() { }
 
   ///copy constructor
-  OneDimGridFunctor(const this_type& a): m_grid(a.m_grid){
+  OneDimGridFunctor(const this_type& a): GridManager(true), m_grid(a.m_grid){
     if(m_grid) resize(m_grid->size());
     FirstAddress.resize(3,0);
   }
 
-  ///assignment operator
+  /// assignment operator
   const this_type& operator=(const this_type& a) {
+    //This object does not manage the grid
+    GridManager=false;
     m_grid = a.m_grid;
     m_Y = a.m_Y;
     //m_Y2 = a.m_Y2;
@@ -68,9 +83,6 @@ struct OneDimGridFunctor//: public FunctorBase<Td,1> {
     Y = x;
     return *this;
   }
-
-  ///reset the values: do nothing
-  virtual void reset() { }
 
   ///set the number of nodes
   inline void setNumOfNodes(int n) { NumNodes = n;}
@@ -90,11 +102,22 @@ struct OneDimGridFunctor//: public FunctorBase<Td,1> {
   inline const grid_type& grid() const { return *m_grid;}
   ///assign a radial grid
   inline grid_type& grid() { return *m_grid;}
-  virtual int setgrid(point_type r)=0;
-  /////set the index of the grid for radius r
-  //inline int setgrid(point_type r) {
-  //  return m_grid->index(r);
-  //}
+  ///set the status of GridManager
+  inline void setGridManager(bool willmanage) { 
+    GridManager = willmanage;
+  }
+
+  /**returns a value
+   * @param i grid index
+   * @return the value at i
+   */
+  inline value_type operator()(int i) const { return m_Y[i];}
+
+  /**asign a value at i
+   * @param i grid index
+   * @return the value at i
+   */
+  inline value_type& operator()(int i) { return m_Y[i];} 
 
   /** return the address of the values
    * @param i index, i=0 value, i=1 first derivative, i=2 second
@@ -102,6 +125,7 @@ struct OneDimGridFunctor//: public FunctorBase<Td,1> {
   inline value_type* data(int i) {
     return FirstAddress[i];
   }
+
   /**return the differntial spacing for the grid
    *@warning only for LinearGrid and LogGrid
   */
@@ -112,51 +136,47 @@ struct OneDimGridFunctor//: public FunctorBase<Td,1> {
   ///return \f$r(i+1)-r(i)\f$
   inline point_type dr(int i) const { return m_grid->dr(i);}
  
-  /**
+  /** Evaluate the function and its derivatives, store the derivatives.  
    *@param r radial distance
    *@return the value of the function
-   *@brief Evaluate the function and its derivatives, store the
-   *values of the derivatives.  
-   *@note This should not be called frequently: only for the 
-   *transform function (Transform2GridFunctor)
    */
   inline value_type f(point_type r) {
     setgrid(r);
-    return Y=splint(r,dY,d2Y);
+    return Y=splint(r);
   }
 
-  /**
+  /** Evaluate the function and its derivatives, store the derivatives.  
    *@param r radial distance
    *@return the derivative of the function
-   *@brief Evaluate the function and its derivatives, store the
-   *values of the derivatives.  
-   *@note This should not be called frequently: only for the 
-   *transform function (Transform2GridFunctor)
    */
   inline value_type df(point_type r) {
     setgrid(r);
-    splint(r,dY,d2Y);
+    Y=splint(r,dY,d2Y);
     return dY;
   }
 
-  ///returns a value
-  inline value_type operator()(int i) const { return m_Y[i];}
-  ///assign a value
-  inline value_type& operator()(int i) { return m_Y[i];} 
-
   /** Evaluate the function value only
+   * @param r value on a grid
+   * @param rinv inverse of r
+   * @return value at r
    */
   inline value_type evaluate(point_type r, point_type rinv) {
     return Y = splint(r);
   }
 
-  /**Evaluate the function and its derivatives.
-   *@note Must first call the function setgrid to
-   *determine the interval on the grid which contains r.
+  /** Evaluate the function and its derivatives.
+   * @param r value on a grid
+   * @param rinv inverse of r
+   * @return value at r
+   *
+   * Derivatives are storged.
    */
   inline value_type evaluateAll(point_type r, point_type rinv) {
     return Y = splint(r,dY,d2Y);
   }
+
+  ///reset the values: do nothing
+  virtual void reset() { }
 
   virtual 
   value_type 
@@ -183,6 +203,9 @@ struct OneDimGridFunctor//: public FunctorBase<Td,1> {
     return splint(r,du,d2u);
   }
 
+  ///true, if this object manages the grid
+  bool GridManager;
+
   ///pointer to the radial grid
   grid_type* m_grid;
 
@@ -199,7 +222,7 @@ struct OneDimGridFunctor//: public FunctorBase<Td,1> {
   ///the number of nodes
   int NumNodes;
 
-  ///address
+  ///address of coefficients Y and dY or d2Y
   vector<value_type*> FirstAddress;
 };
 #endif
