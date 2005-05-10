@@ -137,10 +137,10 @@ namespace ohmmsqmc {
       if(rptr) {
         xmlAddChild(m_root,rptr);
       }
-   
+    
       //call virtual function to initialize the physical entities, such as el.
       if(!init()) return false;
-    
+
       //perform a series of QMC runs
       string methodname("invalid");
       result = xmlXPathEvalExpression((const xmlChar*)"//qmc",m_context);
@@ -232,11 +232,14 @@ namespace ohmmsqmc {
     xmlAddChild(aqmc,aparam);
     xmlAddChild(m_root,aqmc);
 
+    saveXml();
+    return true;
+  }
+
+  void QMCApps::saveXml() {
     string newxml(myProject.CurrentRoot());
     newxml.append(".cont.xml");
     xmlSaveFormatFile(newxml.c_str(),m_doc,1);
-
-    return true;
   }
 }
 /***************************************************************************

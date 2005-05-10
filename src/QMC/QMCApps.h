@@ -44,6 +44,8 @@ namespace ohmmsqmc {
     ///run it
     bool run(xmlNodePtr aroot);
 
+    void saveXml();
+
   protected:
 
     xmlDocPtr m_doc;
