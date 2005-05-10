@@ -20,7 +20,9 @@
 #include "Optimize/VarList.h"
 
 /**class RPA Jastrow functional
- *@brief \f[ u(r) = \frac{A}{r}\left[1-\exp(-\frac{r}{F})\right] \f] 
+ *@brief \f[ u(r) = \frac{A}{r}\left[1-\exp(-\frac{r}{F})\right], \f]
+ * where $F$ satisfies the cusp conditions: \f$F_{\uparrow \uparrow} = 
+  \sqrt{2A}\f$ and \f$F_{\uparrow \downarrow} = \sqrt{A} \f$.
  * Prototype of the template parameter of TwoBodyJastrow 
  */
 template<class T>
@@ -30,7 +32,7 @@ struct RPAJastrow {
   T A, A2, B, Finv;
 
   ///constructor
-  RPAJastrow(T a=1.0) {reset(a);}
+  RPAJastrow(T a=1.0, T b=1.0) {reset(a,b);}
 
   /**
    *@brief reset the internal variables.
@@ -43,8 +45,8 @@ struct RPAJastrow {
    *@param a New Jastrow parameter a 
    *@brief reset the internal variables.
    */
-  void reset(T a) {
-    A=a; A2=2.0*A; Finv=1.0/sqrt(A*B);
+  void reset(T a, T b) {
+    A=a; B=b; A2=2.0*A; Finv=1.0/sqrt(A*B);
   }
 
   /**@param r the distance
