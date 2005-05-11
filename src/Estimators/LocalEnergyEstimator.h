@@ -19,7 +19,7 @@
 // -*- C++ -*-
 #ifndef OHMMS_QMC_LOCALENERGYESTIMATOR_H
 #define OHMMS_QMC_LOCALENERGYESTIMATOR_H
-#include <fstream>
+#include <strstream>
 #include "OhmmsData/libxmldefs.h"
 #include "Estimators/ScalarEstimatorBase.h"
 
@@ -73,22 +73,32 @@ namespace ohmmsqmc {
 
     typedef typename ScalarEstimatorBase<T>::Walker_t Walker_t;
   
-    LocalEnergyEstimator(QMCHamiltonian& h) { 
-      //int nterms=h.size();
-      SizeOfHamiltonians = h.size();
+    /** constructor
+     * @param h QMCHamiltonian to define the components
+     * @param hcopy number of copies of QMCHamiltonians
+     */
+    LocalEnergyEstimator(QMCHamiltonian& h, int hcopy=1) { 
+      int hterms(h.size());
+      SizeOfHamiltonians = hcopy*hterms;
       elocal.resize(SizeOfHamiltonians+LE_MAX);
       elocal_name.resize(SizeOfHamiltonians+LE_MAX);
       elocal_name[ENERGY_INDEX] = "LocalEnergy";
       elocal_name[ENERGY_SQ_INDEX] = "Variance";
       elocal_name[POTENTIAL_INDEX] = "LocalPotential";
-      for(int i=0,ii=LE_MAX; i < SizeOfHamiltonians; i++, ii++) elocal_name[ii] = h.getName(i);
+      int ii(LE_MAX);
+      if(hcopy>1) {
+        for(int i=0; i<hcopy; i++)
+          for(int j=0; j<hterms; j++) {
+            stringstream a(elocal_name[ii++]); a<<h.getName(j) << i; 
+          }
+      } else {
+        for(int i=0; i < SizeOfHamiltonians; i++) elocal_name[ii++] = h.getName(i);
+      }
     }
 
-    /**
-       @param record a container class for storing scalar records (name,value)
-       @brief add the local energy, variance and all the constituents 
-       of the local energy to the scalar record container
-    */
+    /**  add the local energy, variance and all the Hamiltonian components to the scalar record container
+     *@param record storage of scalar records (name,value)
+     */
     void add2Record(RecordNamedProperty<T>& record) {
       LocalEnergyIndex = record.add(elocal_name[ENERGY_INDEX].c_str());
       for(int i=1; i<elocal_name.size(); i++)
@@ -114,10 +124,9 @@ namespace ohmmsqmc {
       }
     }
 
-    /*!
+    /** calculate the averages and reset to zero
      *\param record a container class for storing scalar records (name,value)
      *\param wgtinv the inverse weight
-     *\brief calculate the averages and reset to zero
      */
     inline void report(RecordNamedProperty<T>& record, T wgtinv) {
       //b_average =  energy_sum*wgtinv;
@@ -139,81 +148,6 @@ namespace ohmmsqmc {
 
   };
 
-  //   template<class T>
-  //   class LocalEnergyEstimator: public EstimatorBase<T> {
-
-  //     std::string RootName;
-  //     std::ofstream fout;
-  //     std::vector<std::string>  elocal_name;
-  //     std::vector<T>  elocal;
-  //   public:
-
-  //     LocalEnergyEstimator(QMCHamiltonian& h) { 
-  //       int nterms=h.size();
-  //       elocal.resize(nterms);
-  //       elocal_name.resize(nterms+2);
-  //       elocal_name[0] = "LocalEnergy";
-  //       elocal_name[1] = "Variance";
-  //       int ii=2;
-  //       for(int i=0; i < nterms; i++, ii++) elocal_name[ii] = h.getName(i);
-  //     }
-
-  //     inline void resetReportSettings(const string& aname) {
-  //       if(RootName != aname) {
-  //         finalize();
-  //       }
-  //       RootName = aname;
-  //       string fname(aname);
-  //       fname.append(".e.dat");
-  //       fout.open(fname.c_str());
-  //       fout.setf(ios::right,ios::scientific);
-  //       fout << "#      index ";
-  //       for(int i=0; i < elocal_name.size(); i++) 
-  //        fout << setw(14) << elocal_name[i];
-  //       fout << endl;
-  //       fout<<setprecision(8);
-  //     }
-
-  //     inline void finalize() {
-  //       if(fout.is_open()) fout.close();
-  //     }
-
-  //     inline void accumulate(const MCWalkerConfiguration& W) {
-
-  //       for(MCWalkerConfiguration::const_iterator it = W.begin(); 
-  // 	  it != W.end(); it++){
-  // 	T w = (*it)->Properties(Weight);
-  // 	for(int i=0; i<elocal.size(); i++) {
-  // 	  elocal[i] += w*((*it)->E[i]);
-  // 	}
-  // 	add(w,(*it)->Properties(LocalEnergy));
-  //       }
-  //     }
-
-  //     inline void report(int iter){
-  //       if(iter%stride == 0) { 
-  // 	register T winv = 1.0/d_v[WEIGHT];
-  //         register T eavg = d_v[VALUE]*winv;
-  //         register T evar = d_v[VALUE_SQ]*winv-eavg*eavg;
-
-  // 	fout << setw(10) << iter;
-  //         fout << setw(15) << eavg << setw(15) << evar;
-  // 	for(int i=0; i<elocal.size(); i++) {
-  //            fout << setw(15) << elocal[i]*winv; elocal[i]=0.0;
-  //         }
-  //         fout << endl;
-
-  //         d_v =0.0;
-  //         d_v[AVERAGE]=eavg;
-  //         d_v[VARIANCE]=evar;
-  //       }
-  //     }
-
-  //     bool get(ostream& os) const {return true;}
-  //     bool put(istream& is) {return true;}
-  //     bool put(xmlNodePtr cur) {return true;}
-
-  //   };
 }
 #endif
 /***************************************************************************
