@@ -32,8 +32,6 @@ namespace ohmmsqmc {
 	QMCHamiltonian& h, 
 	xmlNodePtr q);
 
-    void advanceWalkerByWalker();
-    void advanceAllWalkers();
     bool run();
     bool put(xmlNodePtr cur);
  
@@ -48,6 +46,8 @@ namespace ohmmsqmc {
 
     ///temporary storage for random displacement
     ParticleSet::ParticlePos_t deltaR;
+
+    void advanceWalkerByWalker();
 
   };
 }

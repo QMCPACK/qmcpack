@@ -29,10 +29,6 @@
 
 namespace ohmmsqmc { 
 
-//This macro is a temporary one to test the efficiency of all-walker moves. So far, not as much
-//as to convince JK to implement it globally.
-#define MOVE_ONE
-
   /// Constructor.
   VMC::VMC(MCWalkerConfiguration& w, 
 	   TrialWaveFunction& psi, 
@@ -67,12 +63,7 @@ namespace ohmmsqmc {
    */
   bool VMC::run() { 
     
-#ifdef MOVE_ONE
     DistanceTable::create(1);
-#else
-    DistanceTable::create(W.getActiveWalkers());
-    Psi.resizeByWalkers(W.getActiveWalkers());
-#endif
 
     if(put(qmc_node)){
 
@@ -110,11 +101,7 @@ namespace ohmmsqmc {
 	timer.start();
 	nAccept = 0; nReject=0;
 	do {
-#ifdef MOVE_ONE
 	  advanceWalkerByWalker();
-#else
-	  advanceAllWalkers();
-#endif
 	  step++;accstep++;
 	  Estimators.accumulate(W);
 	} while(step<nSteps);
@@ -150,15 +137,6 @@ namespace ohmmsqmc {
     }
   }
 
-
-  bool 
-  VMC::put(xmlNodePtr q){
-    xmlNodePtr qsave=q;
-    bool success = putQMCInfo(q);
-    success = Estimators.put(qsave);
-    return success;
-  }
-
   /**  Advance all the walkers one timstep. 
    *
    Propose a move for each walker from its old 
@@ -192,45 +170,39 @@ namespace ohmmsqmc {
    If the move is accepted, update the walker configuration and
    properties.  For rejected moves, do not update except for the
    Age which needs to be incremented by one.
-   *
    */
-
-  /**@ingroup advanceWalkersVMC
-   * \brief Loop through the walkers and advance one at a time.
-   */
-  
   void 
   VMC::advanceWalkerByWalker() {
     
-    //Pooma::Clock timer;
     RealType oneovertau = 1.0/Tau;
     RealType oneover2tau = 0.5*oneovertau;
     RealType g = sqrt(Tau);
     
+    //property container to hold temporary properties, such as a local energy
     MCWalkerConfiguration::PropertyContainer_t Properties;
-    int nh = H.size()+1;
-    
-    MCWalkerConfiguration::iterator it = W.begin(); 
-    MCWalkerConfiguration::iterator it_end = W.end(); 
+
+    MCWalkerConfiguration::iterator it(W.begin()); 
+    MCWalkerConfiguration::iterator it_end(W.end()); 
+
     while(it != it_end) {
-      
-      //copy the properties of the working walker
-      Properties = (*it)->Properties;
+
+      MCWalkerConfiguration::Walker_t& thisWalker(**it);
+
+      //copy the properties of the working walker, thisWalker
+      Properties = thisWalker.Properties;
+
       //save old local energy
       ValueType eold = Properties(LOCALENERGY);
       
       //create a 3N-Dimensional Gaussian with variance=1
       makeGaussRandom(deltaR);
       
-      W.R = g*deltaR + (*it)->R + (*it)->Drift;
+      W.R = g*deltaR + thisWalker.R + thisWalker.Drift;
       
       //update the distance table associated with W
       DistanceTable::update(W);
       
       //evaluate wave function
-      //ValueType psi = Psi.evaluate(W);
-      //Properties(LOGPSI) =log(fabs(psi));
-      //Properties(PSI) = psi;
       //update the properties: note that we are getting \f$\sum_i \ln(|psi_i|)\f$ and catching the sign separately
       ValueType logpsi(Psi.evaluateLog(W));
       Properties(LOGPSI) =logpsi;
@@ -238,125 +210,44 @@ namespace ohmmsqmc {
       Properties(LOCALENERGY) = H.evaluate(W);
       Properties(LOCALPOTENTIAL) = H.getLocalPotential();
  
-      // deltaR = W.R - (*it)->R - (*it)->Drift;
-      //  RealType forwardGF = exp(-oneover2tau*Dot(deltaR,deltaR));
+      //deltaR = W.R - (*it)->R - (*it)->Drift;
+      //RealType forwardGF = exp(-oneover2tau*Dot(deltaR,deltaR));
       //RealType forwardGF = exp(-0.5*Dot(deltaR,deltaR));
       RealType logGf = -0.5*Dot(deltaR,deltaR);
       
-      //converting gradients to drifts, D = tau*G (reuse G)
-      //W.G *= Tau;//original implementation with bare drift
+      //converting gradients W.G to drifts, D = tau*G (reuse G)
       ValueType vsq = Dot(W.G,W.G);
       ValueType scale = ((-1.0+sqrt(1.0+2.0*Tau*vsq))/vsq);
       drift = scale*W.G;
       
-      deltaR = (*it)->R - W.R - drift;
-      //RealType backwardGF = exp(-oneover2tau*Dot(deltaR,deltaR));
+      //backward GreenFunction needs \f$d{\bf R} = {\bf R}_{old} - {\bf R}_{new} - {\bf V}_d\f$
+      deltaR = thisWalker.R - W.R - drift;
       RealType logGb = -oneover2tau*Dot(deltaR,deltaR);
       
-      //forwardGF/backwardGF*Properties(PSISQ)/(*it)->Properties(PSISQ)
-      //RealType prob   = min(Properties(PSISQ)/(*it)->Properties(PSISQ),1.0);
-      //cout << "forward/backward " << forwardGF << " " << backwardGF << endl;
-      // if(Random() > 
-      // backwardGF/forwardGF*Properties(PSISQ)/(*it)->Properties(PSISQ)) {
-      //(*it)->Properties(AGE)++;     
-      //++nReject; 
-      //} else {
-
       RealType g= exp(logGb-logGf+2.0*(Properties(LOGPSI)-(*it)->Properties(LOGPSI)));
-      if(Random() > g) {
-      //if(Random() > exp(logGb-logGf)*Properties(PSISQ)/(*it)->Properties(PSISQ)) {
-	(*it)->Properties(AGE)++;     
+      if(Random() > g) { //if(Random() > exp(logGb-logGf)*Properties(PSISQ)/(*it)->Properties(PSISQ)) {
+	thisWalker.Properties(AGE)++;     
 	++nReject; 
       } else {
 	Properties(AGE) = 0;
-	(*it)->R = W.R;
-	(*it)->Drift = drift;
-	(*it)->Properties = Properties;
-	H.copy((*it)->getEnergyBase());
-        //H.get((*it)->E);
-	//H.update(W.Energy[(*it)->ID]);
+	thisWalker.R = W.R;
+	thisWalker.Drift = drift;
+	thisWalker.Properties = Properties;
+	H.copy(thisWalker.getEnergyBase());
 	++nAccept;
       }
       ++it; 
     }
   }
   
-  /**  Advance all the walkers simultaneously. 
-   * Broken and does not help us at all
-   */
-  void VMC::advanceAllWalkers() {
-   // deltaR.resize(W.getTotalNum());
-   // WalkerSetRef Wref(W);
-   // Wref.resize(W.getActiveWalkers(),W.getTotalNum());
-   // 
-   // //Pooma::Clock timer;
-   // RealType oneovertau = 1.0/Tau;
-   // RealType oneover2tau = 0.5*oneovertau;
-   // RealType g = sqrt(Tau);
-   // 
-   // MCWalkerConfiguration::PropertyContainer_t Properties;
-   // makeGaussRandom(Wref.R);
-   // 
-   // Wref.R *= g;
-   // 
-   // int nptcl = W.getTotalNum();
-   // int iw = 0;
-   // MCWalkerConfiguration::iterator it = W.begin();
-   // while(it !=  W.end()) {
-   //   const ParticleSet::ParticlePos_t& r = (*it)->R;
-   //   for(int jat=0; jat<nptcl; jat++) {
-   //     Wref.R(iw,jat) += r(jat) + (*it)->Drift(jat);
-   //   }
-   //   iw++; it++;
-   // }
-   // 
-   // DistanceTable::update(Wref);
-   // 
-   // OrbitalBase::ValueVectorType   logpsi(iw), energy(iw);
-   // 
-   // //THIS IS TOTALLY BROKEN
-   // Psi.evaluate(Wref,logpsi);
-   // 
-   // H.evaluate(Wref,energy);
-   // 
-   // //multiply tau to convert gradient to drift term
-   // Wref.G *= Tau;
-   // 
-   // iw = 0;
-   // it = W.begin();
-   // while(it !=  W.end()) {
-   //   
-   //   ValueType eold = Properties(LOCALENERGY);
-   //   
-   //   for(int iat=0; iat<nptcl; iat++)
-   //     deltaR(iat) = Wref.R(iw,iat) - (*it)->R(iat) - (*it)->Drift(iat);
-   //   //RealType forwardGF = exp(-oneover2tau*Dot(deltaR,deltaR));
-   //   RealType logforwardGF = -oneover2tau*Dot(deltaR,deltaR);
-   //   
-   //   for(int iat=0; iat<nptcl; iat++)
-   //     deltaR(iat) = (*it)->R(iat) - Wref.R(iw,iat) - Wref.G(iw,iat);
-   //   
-   //   ////RealType backwardGF = exp(-oneover2tau*Dot(deltaR,deltaR));
-   //   RealType logbackwardGF = -oneover2tau*Dot(deltaR,deltaR);
-   //   
-   //   RealType logpsi=psi(iw);
-   //   RealType g=exp(logbackwardGF-logforwardGF+2.0*(logpsi-(*it)->Properties(LOGPSI)));
-   //   //ValueType psisq = psi(iw)*psi(iw);
-   //   if(Random() > g) {
-   //     ++nReject; 
-   //     (*it)->Properties(AGE) += 1;
-   //   } else {
-   //     (*it)->Properties(AGE) = 0;
-   //     for(int iat=0; iat<nptcl; iat++) (*it)->R(iat) = Wref.R(iw,iat);
-   //     for(int iat=0; iat<nptcl; iat++) (*it)->Drift(iat) = Wref.G(iw,iat);
-   //     (*it)->Properties(PSI) = psi(iw);
-   //     (*it)->Properties(LOGPSI) = logpsi;//log(fabs(psi));
-   //     (*it)->Properties(LOCALENERGY) = energy(iw);
-   //     ++nAccept;
-   //   }
-   //   iw++;it++;
-   // }
+  bool 
+  VMC::put(xmlNodePtr q){
+    xmlNodePtr qsave=q;
+    bool success = putQMCInfo(q);
+    success = Estimators.put(qsave);
+    return success;
   }
+
 }
 
 /***************************************************************************

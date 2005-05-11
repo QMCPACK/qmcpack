@@ -21,6 +21,8 @@
 #define OHMMS_QMC_MOLECULARORBITALS2GRID3D_H
 
 #include "QMC/QMCApps.h"
+#include "QMCWaveFunctions/OrbitalBase.h"
+#include "Numerics/TriCubicSplineT.h"
 
 namespace ohmmsqmc {
 
@@ -29,6 +31,10 @@ namespace ohmmsqmc {
   class MO2Grid3D: public QMCApps {
 
   public:
+
+    typedef OrbitalBase::RealType RealType;
+    typedef OrbitalBase::ValueType ValueType;
+    typedef OrbitalBase::PosType PosType;
 
     ///constructor
     MO2Grid3D(int argc, char** argv);
@@ -39,10 +45,16 @@ namespace ohmmsqmc {
     ///initialization with a file
     bool init();
 
+    ///generate a set of numerical orbitals
+    xmlNodePtr generateNumericalOrbitals(xmlNodePtr cur);
+
+    void copyOrbitalSet(map<string,TriCubicSplineT<ValueType>* >& );
   private:
+
     bool setParticleSets(xmlNodePtr aroot);
     bool setWavefunctions(xmlNodePtr aroot);
-    bool generateNumericalOrbitals(xmlNodePtr cur);
+
+    map<string,TriCubicSplineT<ValueType>* > SPOSet;
   };
 }
 #endif
