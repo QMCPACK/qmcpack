@@ -186,10 +186,7 @@ ScalarEstimatorManager::getEstimator(const string& a) {
 
 bool ScalarEstimatorManager::put(xmlNodePtr cur) {
 
-  if(Estimators.empty()) {
-    add(new LocalEnergyEstimator<RealType>(H),"elocal");
-  } 
-
+  vector<string> extra;
   cur = cur->children;
   while(cur != NULL) {
     string cname((const char*)(cur->name));
@@ -197,14 +194,30 @@ bool ScalarEstimatorManager::put(xmlNodePtr cur) {
       xmlChar* att=xmlGetProp(cur,(const xmlChar*)"name");
       if(att) {
 	string aname((const char*)att);
-	if(aname == "Polarization"){
-	  add(new PolarizationEstimator<RealType>(),aname);
+	if(aname == "LocalEnergy") {
+          att=xmlGetProp(cur,(const xmlChar*)"size");
+	  int ncopy(1);
+          if(att) {ncopy=atoi((const char*)att);}
+          add(new LocalEnergyEstimator<RealType>(H,ncopy),"elocal");
+	} else { 
+	  extra.push_back(cname);
 	}
       }
-    }
+    } 
     cur = cur->next;
   }
 
+  if(Estimators.empty()) {
+    add(new LocalEnergyEstimator<RealType>(H),"elocal");
+  } 
+
+  for(int i=0; i<extra.size(); i++) {
+    if(extra[i] == "Polarization"){
+      add(new PolarizationEstimator<RealType>(),extra[i]);
+    }
+  }
+
+  //add extra
   return true;
 }
 
