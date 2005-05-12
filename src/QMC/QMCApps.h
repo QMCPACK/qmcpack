@@ -38,11 +38,17 @@ namespace ohmmsqmc {
     ///destructor
     virtual ~QMCApps();
 
+    /**process input xml file
+     * @param infile input xml file
+     * @return 1 for any failed execution
+     */
+    int parse(const string& infile);
+
     ///initialization with a file
     virtual bool init() = 0;
 
     ///run it
-    bool run(xmlNodePtr aroot);
+    virtual bool run(xmlNodePtr aroot);
 
     void saveXml();
 

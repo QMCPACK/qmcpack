@@ -46,6 +46,33 @@ namespace ohmmsqmc {
     DEBUGMSG("QMCApps::~QMCApps")
   }
 
+  int QMCApp::parse(const string& infile) {
+
+    //already has documentation open. Remove it.
+    if(m_doc != NULL) {
+      xmlXPathFreeContext(m_context);
+      xmlFreeDoc(m_doc);
+    }
+
+    // build an XML tree from a the file;
+    m_doc = xmlParseFile(infile.c_str());
+    if (m_doc == NULL) {
+      ERRORMSG("File " << infile << " is invalid")
+      xmlFreeDoc(m_doc);
+      return 1;
+    }
+
+    // Check the document is of the right kind
+    xmlNodePtr cur = xmlDocGetRootElement(m_doc);
+    if (cur == NULL) {
+      ERRORMSG("Empty document");
+      xmlFreeDoc(m_doc);
+      return 1;
+    }
+
+    return !run(cur);
+  }
+
   bool QMCApps::setMCWalkers(xmlNodePtr aroot) {
 
     bool foundconfig=false;
