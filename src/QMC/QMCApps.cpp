@@ -40,13 +40,15 @@ namespace ohmmsqmc {
 
   QMCApps::~QMCApps() {
 
-    xmlXPathFreeContext(m_context);
-    xmlFreeDoc(m_doc);
+    if(m_doc != NULL) {
+      xmlXPathFreeContext(m_context);
+      xmlFreeDoc(m_doc);
+    }
 
     DEBUGMSG("QMCApps::~QMCApps")
   }
 
-  int QMCApp::parse(const string& infile) {
+  int QMCApps::parse(const string& infile) {
 
     //already has documentation open. Remove it.
     if(m_doc != NULL) {
