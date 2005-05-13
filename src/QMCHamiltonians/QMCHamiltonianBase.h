@@ -28,16 +28,20 @@ namespace ohmmsqmc {
   class WalkerSetRef;
   class DistanceTableData;
 
-  /** An abstract class for Local Energy operators */
-
+  /** An abstract class for Local Energy operators 
+   *
+   * Use of ValueType is questionable. The types should be checked when using
+   * complex wave functions.
+   */ 
   struct QMCHamiltonianBase: public QMCTraits {
 
     RealType Tau;
+    RealType Value;
 
     typedef ParticleAttrib<ValueType>  ValueVectorType;
 
     ///constructor
-    QMCHamiltonianBase():Tau(0.0){}
+    QMCHamiltonianBase():Tau(0.0),Value(0.0){}
 
     ///virtual destructor
     virtual ~QMCHamiltonianBase() { }
@@ -65,9 +69,11 @@ namespace ohmmsqmc {
     inline void setTau(RealType tau) { Tau = tau;}
   };
 
-  /**  Collection of Local Energy Operators */
-
-  class QMCHamiltonian {
+  /**  Collection of Local Energy Operators 
+   *
+   * Note that QMCHamiltonian is not derived from QMCHmailtonianBase.
+   */
+  class QMCHamiltonian  {
 
   public:
 
@@ -92,25 +98,33 @@ namespace ohmmsqmc {
     ///return the number of Hamiltonians
     inline int size() const { return H.size();}
 
+    ///copy the local content to iterator first
     template<class IT>
     inline void copy(IT first) { std::copy(Hvalue.begin(), Hvalue.end(), first);}
 
+    template<class IT>
+    inline void copy(IT first, RealType wgt) { 
+      vector<RealType>::iterator it(Hvalue.begin()),it_end(Hvalue.end());
+      while(it != it_end) {*first++ = wgt*(*it++);}
+      //for(int i=0; i<Hvalue.size(); i++,first++) *first = wgt*Hvalue[i];
+    }
+
     QMCHamiltonianBase* getHamiltonian(const string& aname);
     
-    RealType getLocalPotential();
+    inline RealType getLocalEnergy() { return LocalEnergy;}
+    inline RealType getLocalPotential() { return LocalEnergy-Hvalue[0];}
+
+    inline void setTau(RealType tau) {for(int i=0; i< H.size();++i)H[i]->setTau(tau); }
     
     ValueType evaluate(ParticleSet& P);
 
     void evaluate(WalkerSetRef& W, ValueVectorType& LE);
 
-    void setTau(RealType tau){
-      for(int i=0; i < H.size(); ++i) H[i]->setTau(tau);
-    }
-
    private:
+    ///Current Local Energy
+    RealType LocalEnergy;
     ///vector of Hamiltonians
     std::vector<QMCHamiltonianBase*> H;
-
     ///map the name to an index
     std::map<string,int> Hmap;
     ///vector containing the names of the Hamiltonians

@@ -19,13 +19,13 @@
 #include "Particle/DistanceTableData.h"
 using namespace ohmmsqmc;
 
-QMCHamiltonian::QMCHamiltonian() { }
+QMCHamiltonian::QMCHamiltonian(){ }
 
 QMCHamiltonian::~QMCHamiltonian() {
   
   DEBUGMSG("QMCHamiltonian::~QMCHamiltonian")
     
-    }
+}
 
 /** add a new Hamiltonian the the list of Hamiltonians.
  *@param h the Hamiltonian
@@ -40,7 +40,7 @@ QMCHamiltonian::add(QMCHamiltonianBase* h, const string& aname) {
     Hname.push_back(aname);
     H.push_back(h);
   }
-  Hvalue.resize(H.size()+1,RealType());
+  Hvalue.resize(H.size(),RealType());
 }
 
 /** remove a named Hamiltonian from the list
@@ -61,7 +61,7 @@ QMCHamiltonian::remove(const string& aname) {
     delete H[n];
     for(int i=n+1; i<H.size(); i++) H[i-1]=H[i];
     H.pop_back();
-    Hvalue.resize(H.size()+1,RealType());
+    Hvalue.resize(H.size(),RealType());
     return true;
   }
   return false;
@@ -75,17 +75,13 @@ QMCHamiltonian::remove(const string& aname) {
  */
 QMCHamiltonian::ValueType 
 QMCHamiltonian::evaluate(ParticleSet& P) {
-
-  ValueType esum = 0.0;
-  register int i=0;
-  for(; i<H.size(); i++)  {
-    esum += H[i]->evaluate(P,Hvalue[i]);
+  LocalEnergy = 0.0;
+  vector<QMCHamiltonianBase*>::iterator hit(H.begin()),hit_end(H.end());
+  int i(0);
+  while(hit != hit_end) {
+    LocalEnergy += (*hit)->evaluate(P,Hvalue[i]);++hit;++i;
   }
-  /*
-  cout << "QMCHBase.cpp: WOSVAR = " << P.Properties(WOSVAR) << endl;
-  cout << "QMCHBase.cpp: ELOCAL = " << P.Properties(LOCALENERGY) << endl;
-  */
-  return Hvalue[i]=esum;
+  return LocalEnergy;
 }
 
 
@@ -104,12 +100,6 @@ QMCHamiltonian::getHamiltonian(const string& aname) {
     return NULL;
   else 
     return H[(*it).second];
-}
-
-QMCHamiltonian::RealType 
-QMCHamiltonian::getLocalPotential() {
-  
-  return Hvalue.back()-Hvalue[0];
 }
 
 /**
