@@ -34,10 +34,9 @@ namespace ohmmsqmc {
    *DistanceTableData objects are initialized based on the source 
    *and target particle sets.
    */
-  JastrowBuilder::JastrowBuilder(TrialWaveFunction& a, 
-				 vector<ParticleSet*>& psets): 
-    OrbitalBuilderBase(a), PtclSets(psets),
-    corr_tag("correlation") 
+  JastrowBuilder::JastrowBuilder(ParticleSet& p, TrialWaveFunction& psi, 
+     PtclPoolType& psets):OrbitalBuilderBase(p,psi),
+                          ptclPool(psets), corr_tag("correlation") 
   { 
 
   }
@@ -60,7 +59,7 @@ namespace ohmmsqmc {
     /**\typedef The type of a simple function,e.g., PadeJastrow<double> */
     typedef typename JeeType::FuncType FuncType;
 
-    int cur_var = wfs_ref.VarList.size();
+    int cur_var = targetPsi.VarList.size();
 
     vector<FuncType*> jastrow;
     DistanceTableData* d_table = NULL;
@@ -70,13 +69,10 @@ namespace ohmmsqmc {
       string cname((const char*)(cur->name));
       if(cname == dtable_tag) {
       	string source_name((const char*)(xmlGetProp(cur,(const xmlChar *)"source")));
-	ParticleSet* a = NULL;
-	int iptcl = 0;
-	//check to see that the source particle set already exists
-	while(!a && iptcl<PtclSets.size()) {
-	  if(PtclSets[iptcl]->getName() == source_name) { a = PtclSets[iptcl];}
-	  iptcl++;
-	}
+	//int iptcl = 0;
+        map<string,ParticleSet*>::iterator pit(ptclPool.find(source_name));
+        if(pit == ptclPool.end()) return false;
+	ParticleSet* a = (*pit).second;
       	d_table = DistanceTable::getTable(DistanceTable::add(*a));
       	ng = a->groups();
 	//create a Jastrow function for each pair type
@@ -94,7 +90,7 @@ namespace ohmmsqmc {
 	  //create the new Jastrow function
 	  FuncType *j2 = new FuncType;
 	  //initialize
-	  j2->put(cur,wfs_ref.VarList);
+	  j2->put(cur,targetPsi.VarList);
 	  jastrow[iab]= j2;
 	  if(ia != ib) {//up-down-type pair, treat down-up the same way
 	    jastrow[ib*ng+ia] = j2;
@@ -124,11 +120,11 @@ namespace ohmmsqmc {
     }
 
     //set this jastrow function to be not optimizable
-    if(wfs_ref.VarList.size() == cur_var) {
+    if(targetPsi.VarList.size() == cur_var) {
       J2->setOptimizable(false);
     }
 
-    wfs_ref.add(J2);
+    targetPsi.add(J2);
     XMLReport("Added a Two-Body Jastrow Function")
     return true;
   }
@@ -152,7 +148,7 @@ namespace ohmmsqmc {
     /**\typedef The type of a simple function,e.g., PadeJastrow<double> */
     typedef typename JeeType::FuncType FuncType;
 
-    int cur_var = wfs_ref.VarList.size();
+    int cur_var = targetPsi.VarList.size();
 
     DistanceTableData* d_table = NULL;
     cur = cur->xmlChildrenNode;
@@ -161,20 +157,16 @@ namespace ohmmsqmc {
       string cname((const char*)(cur->name));
       if(cname == dtable_tag) {
       	string source_name((const char*)(xmlGetProp(cur,(const xmlChar *)"source")));
-	ParticleSet* a = NULL;
-	int iptcl = 0;
-	//check to see that the source particle set already exists
-	while(!a && iptcl<PtclSets.size()) {
-	  if(PtclSets[iptcl]->getName() == source_name) { a = PtclSets[iptcl];}
-	  iptcl++;
-	}
+        map<string,ParticleSet*>::iterator pit(ptclPool.find(source_name));
+        if(pit == ptclPool.end()) return false;
+	ParticleSet* a = (*pit).second;
       	d_table = DistanceTable::getTable(DistanceTable::add(*a));
 	if(!J2) {
 	  J2 = new JeeType(d_table);
 	}
       } else if(cname == corr_tag) {
 	if(J2) {
-	  J2->F.put(cur,wfs_ref.VarList); nj++;
+	  J2->F.put(cur,targetPsi.VarList); nj++;
 	} else {
 	  ERRORMSG("No distance table is given for two-body jastrow function")
 	}
@@ -189,10 +181,10 @@ namespace ohmmsqmc {
 
     if(J2) {
       //set this jastrow function to be not optimizable
-      if(wfs_ref.VarList.size() == cur_var) {
+      if(targetPsi.VarList.size() == cur_var) {
         J2->setOptimizable(false);
       }
-      wfs_ref.add(J2);
+      targetPsi.add(J2);
       XMLReport("Added a Two-Body Jastrow Function")
       return true;
     } else {
@@ -215,7 +207,7 @@ namespace ohmmsqmc {
   JastrowBuilder::createOneBody(xmlNodePtr cur, JneType* J1){
 
     typedef typename JneType::FuncType FuncType;
-    int cur_var = wfs_ref.VarList.size();
+    int cur_var = targetPsi.VarList.size();
 
     vector<FuncType*> jastrow;
     DistanceTableData* d_table = NULL;
@@ -226,19 +218,13 @@ namespace ohmmsqmc {
       if(cname == dtable_tag) {
       	string source_name((const char*)(xmlGetProp(cur,(const xmlChar *)"source")));
       	string target_name((const char*)(xmlGetProp(cur,(const xmlChar *)"target")));
-	ParticleSet* a = NULL;
-	ParticleSet* b = NULL;
-	int iptcl = 0;
+        map<string,ParticleSet*>::iterator pa_it(ptclPool.find(source_name));
+        map<string,ParticleSet*>::iterator pb_it(ptclPool.find(target_name));
 
-	while((!a || !b) && iptcl<PtclSets.size()) {
-	  if(PtclSets[iptcl]->getName() == source_name) { 
-	    a = PtclSets[iptcl];
-	  }
-	  if(PtclSets[iptcl]->getName() == target_name) { 
-	    b = PtclSets[iptcl];
-	  }
-	  iptcl++;
-	}
+        if(pa_it == ptclPool.end()  || pb_it == ptclPool.end()) return false;
+
+	ParticleSet* a = (*pa_it).second;
+	ParticleSet* b = (*pb_it).second;
 	d_table = DistanceTable::getTable(DistanceTable::add(*a,*b));
 	ng = a->Species.getTotalNum();
 	XMLReport("Number of sources " << ng)
@@ -249,7 +235,7 @@ namespace ohmmsqmc {
 	int ia = d_table->origin().Species.findSpecies(speciesA);
 	if(!(jastrow[ia])) {
 	  jastrow[ia]= new FuncType;
-	  jastrow[ia]->put(cur,wfs_ref.VarList);
+	  jastrow[ia]->put(cur,targetPsi.VarList);
 	  XMLReport("Added Jastrow Correlation between " << speciesA)
 	}
       }
@@ -278,10 +264,10 @@ namespace ohmmsqmc {
     }
 
     //set this jastrow function to be not optimizable
-    if(wfs_ref.VarList.size() == cur_var) {
+    if(targetPsi.VarList.size() == cur_var) {
       J1->setOptimizable(false);
     }
-    wfs_ref.add(J1);
+    targetPsi.add(J1);
     XMLReport("Added a One-Body Jastrow Function")
     return true;
   }
@@ -331,12 +317,12 @@ is implemted
       PolarizedJastrow *jp=new PolarizedJastrow;
       if(jp) {
         //compare the size of VarList before/after reading in
-        int cur_var = wfs_ref.VarList.size();
-        jp->put(cur,wfs_ref.VarList);
-        if(wfs_ref.VarList.size() == cur_var) {
+        int cur_var = targetPsi.VarList.size();
+        jp->put(cur,targetPsi.VarList);
+        if(targetPsi.VarList.size() == cur_var) {
           jp->setOptimizable(false);
         }
-        wfs_ref.add(jp);
+        targetPsi.add(jp);
         return true;
       } else {
         return false;

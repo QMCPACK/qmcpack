@@ -49,10 +49,7 @@ namespace ohmmsqmc {
 
   public:
 
-    HFAtomicSTOSetBuilder(TrialWaveFunction& wfs,
-			  ParticleSet& ions,
-			  ParticleSet& els);
-
+    HFAtomicSTOSetBuilder(ParticleSet& els, TrialWaveFunction& psi, ParticleSet& ions);
     bool put(xmlNodePtr);
   };
 }

@@ -24,7 +24,7 @@
 namespace ohmmsqmc {
 
   /**
-   *@param wfs_ref a trial wavefuntion to which determinant terms are added
+   *@param targetPsi a trial wavefuntion to which determinant terms are added
    *@param ions the ion particleset
    *@param els the electron particleset
    *
@@ -34,10 +34,8 @@ namespace ohmmsqmc {
    *
    *@brief The Constructor.
    */
-  HePresetHFBuilder::HePresetHFBuilder(TrialWaveFunction& wfs,
-				       ParticleSet& ions,
-				       ParticleSet& els):
-    OrbitalBuilderBase(wfs) 
+  HePresetHFBuilder::HePresetHFBuilder(ParticleSet& els, TrialWaveFunction& wfs, ParticleSet& ions):
+    OrbitalBuilderBase(els,wfs) 
   {   
     //the electron-ion distancetable
     DistanceTableData* d_ei = DistanceTable::getTable(DistanceTable::add(ions,els));
@@ -64,7 +62,7 @@ namespace ohmmsqmc {
     asymmpsi->add(DetU);
     asymmpsi->add(DetD);
     //add the SlaterDeterminant to the trial wavefuntion
-    wfs_ref.add(asymmpsi);
+    targetPsi.add(asymmpsi);
   }
 
   bool 
@@ -96,7 +94,7 @@ namespace ohmmsqmc {
     asymmpsi->add(DetU);
     asymmpsi->add(DetD);
 
-    wfs_ref.add(asymmpsi);
+    targetPsi.add(asymmpsi);
     return true;
   }
 }

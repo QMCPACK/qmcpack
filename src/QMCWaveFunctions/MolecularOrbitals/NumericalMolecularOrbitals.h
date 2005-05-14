@@ -25,7 +25,6 @@ namespace ohmmsqmc {
   class NumericalMolecularOrbitals: public OrbitalBuilderBase {
 
     GridMolecularOrbitals *Original;
-    ParticleSet& elsRef;
 
     public:
 
@@ -34,7 +33,7 @@ namespace ohmmsqmc {
      * \param ions reference to the ions
      * \param els reference to the electrons
      */
-    NumericalMolecularOrbitals(TrialWaveFunction& wfs, ParticleSet& ions, ParticleSet& els);
+    NumericalMolecularOrbitals(ParticleSet& els, TrialWaveFunction& wfs, ParticleSet& ions);
 
     /** initialize the Antisymmetric wave function for electrons
      *@param cur the current xml node

@@ -182,9 +182,7 @@ namespace ohmmsqmc {
 
   struct HePresetHFBuilder: public OrbitalBuilderBase {
 
-    HePresetHFBuilder(TrialWaveFunction& wfs,
-		      ParticleSet& ions,
-		      ParticleSet& els);
+    HePresetHFBuilder(ParticleSet& els, TrialWaveFunction& wfs, ParticleSet& ions);
     bool put(xmlNodePtr cur);
 
   };

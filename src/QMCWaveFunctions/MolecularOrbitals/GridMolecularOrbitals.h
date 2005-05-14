@@ -48,9 +48,7 @@ namespace ohmmsqmc {
      * \param ions reference to the ions
      * \param els reference to the electrons
      */
-    GridMolecularOrbitals(TrialWaveFunction& wfs, 
-			  ParticleSet& ions, 
-			  ParticleSet& els);
+    GridMolecularOrbitals(ParticleSet& els, TrialWaveFunction& psi, ParticleSet& ions);
 
     /** initialize the Antisymmetric wave function for electrons
      *@param cur the current xml node

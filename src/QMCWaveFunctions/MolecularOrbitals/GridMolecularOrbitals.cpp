@@ -27,21 +27,30 @@
 
 namespace ohmmsqmc {
 
-  GridMolecularOrbitals::GridMolecularOrbitals(TrialWaveFunction& wfs, 
-					       ParticleSet& ions, 
-					       ParticleSet& els):
-    OrbitalBuilderBase(wfs), 
-    BasisSet(NULL),
-    rbuilder(NULL)
+  GridMolecularOrbitals::GridMolecularOrbitals(ParticleSet& els, TrialWaveFunction& psi, 
+      ParticleSet& ions):
+    OrbitalBuilderBase(els,psi), BasisSet(0), d_table(0), rbuilder(0)
   { 
     //int d_ie = DistanceTable::add(ions,els);
     d_table = DistanceTable::getTable(DistanceTable::add(ions,els));
-
     nlms_id["n"] = q_n;
     nlms_id["l"] = q_l;
     nlms_id["m"] = q_m;
     nlms_id["s"] = q_s;
   }   
+
+  bool GridMolecularOrbitals::put(xmlNodePtr cur){
+
+    LOGMSG("GridMolecularOrbitals::put")
+    DetSetBuilderWithBasisSet<GridMolecularOrbitals> spobuilder(targetPtcl,targetPsi,*this);
+
+    if(spobuilder.put(cur)) {
+      BasisSet->resize(spobuilder.NumPtcl);
+      return true;
+    } else {
+      return false;
+    }
+  }
 
   GridMolecularOrbitals::BasisSetType* 
   GridMolecularOrbitals::addBasisSet(xmlNodePtr cur) {
@@ -208,17 +217,6 @@ namespace ohmmsqmc {
     } else {
       ERRORMSG("BasisSet is not initialized.")
       return NULL;
-    }
-  }
-
-  bool GridMolecularOrbitals::put(xmlNodePtr cur){
-    LOGMSG("GridMolecularOrbitals::put")
-    DetSetBuilderWithBasisSet<GridMolecularOrbitals> spobuilder(wfs_ref,*this);
-    if(spobuilder.put(cur)) {
-      BasisSet->resize(spobuilder.NumPtcl);
-      return true;
-    } else {
-      return false;
     }
   }
 

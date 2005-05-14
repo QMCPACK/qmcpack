@@ -44,14 +44,12 @@ namespace ohmmsqmc {
     BasisBuilderT& builder_ref;
     int NumPtcl;
 
-    DetSetBuilderWithBasisSet(TrialWaveFunction& awfs, 
-			      BasisBuilderT& abuilder): 
-      OrbitalBuilderBase(awfs),
-      builder_ref(abuilder){
+    DetSetBuilderWithBasisSet(ParticleSet& p, TrialWaveFunction& psi, BasisBuilderT& abuilder): 
+      OrbitalBuilderBase(p,psi), builder_ref(abuilder){
     } 
  
     /** process the current xml node to create single-particle orbital
-     *@param wfs_ref a trial wavefuntion to which determinant terms are added
+     *@param targetPsi a trial wavefuntion to which determinant terms are added
      *@param builder a BasisBuilderT object, provides addBasisSet and typedefs
      *@param cur xmlNodePtr to be processed
      *@return the number of the quantum particles for the determinant terms
@@ -69,10 +67,8 @@ namespace ohmmsqmc {
       std::vector<RealType> sdet_coeff;
       ///pointer to the basis set
       BasisSetType *basisSet =NULL;
-      
-      //std::map<std::string,SPOSetType*> spoSet;
 
-      int nvar(wfs_ref.VarList.size());
+      int nvar(targetPsi.VarList.size());
       int is=0, first=0;
       int norbs = 0;
       cur = cur->xmlChildrenNode;
@@ -107,8 +103,8 @@ namespace ohmmsqmc {
               a=xmlGetProp(tcur,(const xmlChar*)"ref");
               if(a) {
                 string detref((const char*)a);
-                if(wfs_ref.hasSPOSet(detref)) {
-                  psi = dynamic_cast<SPOSetType*>(wfs_ref.getSPOSet(detref));
+                if(targetPsi.hasSPOSet(detref)) {
+                  psi = dynamic_cast<SPOSetType*>(targetPsi.getSPOSet(detref));
                 }
                 //std::map<std::string,SPOSetType*>::iterator dit(spoSet.find(detref));
                 //if(dit == spoSet.end()) {
@@ -122,7 +118,7 @@ namespace ohmmsqmc {
  	        psi = new SPOSetType(basisSet,norbs);
 	        psi->put(tcur);
                 psi->setName(detname);
-                wfs_ref.addSPOSet(psi);
+                targetPsi.addSPOSet(psi);
                 //spoSet[detname]=psi;
               }
 	      Det_t *adet = new Det_t(*psi,first);
@@ -141,7 +137,7 @@ namespace ohmmsqmc {
 	cur = cur->next;
       }
       
-      bool optimizeit=(wfs_ref.VarList.size()>nvar);
+      bool optimizeit=(targetPsi.VarList.size()>nvar);
       if(optimizeit) {
         WARNMSG("Slater determinants will be optimized")
       }
@@ -156,12 +152,12 @@ namespace ohmmsqmc {
 	}
         multidet->setOptimizable(optimizeit);
 	//add a MultiDeterminant to the trial wavefuntion
-	wfs_ref.add(multidet);
+	targetPsi.add(multidet);
       } else {
 	XMLReport("Creating a SlaterDeterminant wavefunction")
 	//add a SlaterDeterminant to the trial wavefuntion
-	wfs_ref.add(slaterdets[0]);
-        if(wfs_ref.VarList.size()>nvar) slaterdets[0]->setOptimizable(true);
+	targetPsi.add(slaterdets[0]);
+        if(targetPsi.VarList.size()>nvar) slaterdets[0]->setOptimizable(true);
 	//add a MultiDeterminant to the trial wavefuntion
       }
       NumPtcl=first; 

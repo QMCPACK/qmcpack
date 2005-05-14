@@ -36,11 +36,8 @@ namespace ohmmsqmc {
     return out;
   }
 
-  HFAtomicSTOSetBuilder::HFAtomicSTOSetBuilder(TrialWaveFunction& wfs,
-					       ParticleSet& ions,
-					       ParticleSet& els): 
-    OrbitalBuilderBase(wfs),
-    Lmax(-1) { 
+  HFAtomicSTOSetBuilder::HFAtomicSTOSetBuilder(ParticleSet& els, TrialWaveFunction& wfs, ParticleSet& ions): 
+    OrbitalBuilderBase(els,wfs), Lmax(-1) { 
     d_table = DistanceTable::getTable(DistanceTable::add(ions,els));
   }
 
@@ -253,9 +250,9 @@ HFAtomicSTOSetBuilder::put(xmlNodePtr cur){
 	    cout << "Multi determinant " << C[i] << endl;
       multidet->add(slaterdets[i],C[i]);
     }
-    wfs_ref.add(multidet);
+    targetPsi.add(multidet);
   } else {
-    wfs_ref.add(slaterdets[0]);
+    targetPsi.add(slaterdets[0]);
   }
   return true;
 }

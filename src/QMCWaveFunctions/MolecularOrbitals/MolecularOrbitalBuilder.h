@@ -36,22 +36,19 @@ namespace ohmmsqmc {
    *Depending upon the input, one can convert the functions on the radial
    *grids or can carry on the calculations using the input functions.
    */
-  class MolecularOrbitalBuilder: public OrbitalBuilderBase {
+  struct MolecularOrbitalBuilder: public OrbitalBuilderBase {
 
-    ///the ion particleset
-    ParticleSet& Ions;
-    ///the electron particleset
-    ParticleSet& Els;
-
-  public:
+    typedef map<string,ParticleSet*> PtclPoolType;
     
-    MolecularOrbitalBuilder(TrialWaveFunction& a, ParticleSet& ions, 
-			    ParticleSet& els):
-      OrbitalBuilderBase(a), Ions(ions), Els(els){ }
+    MolecularOrbitalBuilder(ParticleSet& p, TrialWaveFunction& psi,
+       PtclPoolType& psets):OrbitalBuilderBase(p,psi),ptclPool(psets){ }
   
     bool put(xmlNodePtr cur);
     bool putSpecial(xmlNodePtr cur);
     bool putOpen(const string& fname_in);
+
+    ///need ParticleSetPool
+    PtclPoolType& ptclPool;
   };
 
 

@@ -26,12 +26,11 @@
 
 namespace ohmmsqmc {
 
-  NumericalMolecularOrbitals::NumericalMolecularOrbitals(TrialWaveFunction& wfs, 
-					                 ParticleSet& ions, 
-					                 ParticleSet& els): 
-    OrbitalBuilderBase(wfs), Original(0), elsRef(els)
+  NumericalMolecularOrbitals::NumericalMolecularOrbitals(ParticleSet& els,
+      TrialWaveFunction& wfs, ParticleSet& ions):
+    OrbitalBuilderBase(els,wfs), Original(0)
   { 
-    Original = new GridMolecularOrbitals(wfs,ions,els);
+    Original = new GridMolecularOrbitals(els,wfs,ions);
   }   
 
   bool NumericalMolecularOrbitals::put(xmlNodePtr cur){
@@ -99,7 +98,7 @@ namespace ohmmsqmc {
     basisSet->resize(nels);
 
     DistanceTable::create(1);
-    elsRef.update(1);
+    targetPtcl.update(1);
 
     //Need only one electron to calculate this
     //map<string,SPOSetType*>::iterator oit(InOrbs.begin());
@@ -136,11 +135,11 @@ namespace ohmmsqmc {
     //int lastpsi=0;
 
     //PosType dr(1.1,1.2,1.5);
-    //PosType newpos(elsRef.makeMove(0,dr));
+    //PosType newpos(targetPtcl.makeMove(0,dr));
     ////cout << "p(ix,iy,iz) " << newpos << "(" << ix << "," << iy << "," << iz << ")" << endl;
-    //inorb->evaluate(elsRef,0,phi);
+    //inorb->evaluate(targetPtcl,0,phi);
     //cout << newpos << " " << phi[lastpsi] << endl;
-    PosType pos(elsRef.R[0]);
+    PosType pos(targetPtcl.R[0]);
     int ng=0;
 
     Pooma::Clock timer;
@@ -151,10 +150,10 @@ namespace ohmmsqmc {
         RealType y(gridY(iy));
         for(int iz=0; iz<npts[2]; iz++) {
           PosType dr(x,y,gridZ(iz));
-          PosType newpos(elsRef.makeMove(0,dr-pos));
+          PosType newpos(targetPtcl.makeMove(0,dr-pos));
           //cout << "p(ix,iy,iz) " << newpos << "(" << ix << "," << iy << "," << iz << ")" << endl;
           int item=torb[0]->index(ix,iy,iz);
-          inorb->evaluate(elsRef,0,phi);
+          inorb->evaluate(targetPtcl,0,phi);
           for(int is=0; is<phi.size(); is++) (*torb[is])(item)=phi[is];
           //for(int is=0; is<phi.size(); is++) dat[is]->operator[](offset)=phi[is];
           //torb(ix,iy,iz)=phi[lastpsi];

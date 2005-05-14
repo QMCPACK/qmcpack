@@ -59,7 +59,7 @@ struct SingleParticleOrbitalSet {
   evaluate(const PTCL& P, int iat, VV& psi) {
     vector<SPOrbital_t*>::iterator it(Phi.begin()),it_end(Phi.end());
     int j(0);
-    (*it)->setPoint(P.R[iat]);
+    //(*it)->setPoint(P.R[iat]);
     while(it != it_end) {
       psi(j)=(*it)->evaluate(P.R[iat]);++it;j++;
     }
@@ -70,7 +70,7 @@ struct SingleParticleOrbitalSet {
   evaluate(const PTCL& P, int iat, VV& psi, GV& dpsi, VV& d2psi) {
     vector<SPOrbital_t*>::iterator it(Phi.begin()),it_end(Phi.end());
     int j(0);
-    (*it)->setPoint(P.R[iat]);
+    //(*it)->setPoint(P.R[iat]);
     while(it != it_end) {
       psi(j)=(*it)->evaluate(P.R[iat],dpsi(j),d2psi(j));++it;j++;
     }

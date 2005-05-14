@@ -22,12 +22,10 @@
 
 namespace ohmmsqmc {
 
-  STOMolecularOrbitals::STOMolecularOrbitals(TrialWaveFunction& wfs, 
-					     ParticleSet& ions, 
-					     ParticleSet& els):
-    OrbitalBuilderBase(wfs),  BasisSet(NULL)
+  STOMolecularOrbitals::STOMolecularOrbitals(ParticleSet& els,
+      TrialWaveFunction& wfs, ParticleSet& ions):
+    OrbitalBuilderBase(els,wfs),  BasisSet(NULL)
   { 
-    int d_ie = DistanceTable::add(ions,els);
     d_table = DistanceTable::getTable(DistanceTable::add(ions,els));
   }   
   
@@ -121,7 +119,7 @@ namespace ohmmsqmc {
               //This should be used later to enable optimization of Zeta of Slater orbitals
               //RadialOrbitalType *ro = new RadialOrbitalType(n,l,zeta);
               //const xmlChar* stag=xmlGetProp(s,(const xmlChar*)"id");
-              //if(stag) wfs_ref.VarList.add((const char*)stag,&(ro->Z),1);
+              //if(stag) targetPsi.VarList.add((const char*)stag,&(ro->Z),1);
 	      //aos->Rnl.push_back(ro);
 	      aos->NL[num] = nl;
 	      RnlID[rnl] = nl;
@@ -152,7 +150,7 @@ namespace ohmmsqmc {
 
   bool STOMolecularOrbitals::put(xmlNodePtr cur){
     LOGMSG("STOMolecularOrbitals::put")
-    DetSetBuilderWithBasisSet<STOMolecularOrbitals> spobuilder(wfs_ref,*this);
+    DetSetBuilderWithBasisSet<STOMolecularOrbitals> spobuilder(targetPtcl,targetPsi,*this);
     if(spobuilder.put(cur)) {
       BasisSet->resize(spobuilder.NumPtcl);
       return true;

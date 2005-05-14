@@ -17,6 +17,7 @@
 #ifndef OHMMS_QMC_GENERIC_JASTROW_BUILDER_H
 #define OHMMS_QMC_GENERIC_JASTROW_BUILDER_H
 #include "QMCWaveFunctions/OrbitalBuilderBase.h"
+#include <map>
 
 namespace ohmmsqmc {
 
@@ -29,28 +30,20 @@ namespace ohmmsqmc {
    *
    *A xml node with OrbtialBuilderBase::jastrow_tag is parsed recursively.
    */
-  class JastrowBuilder: public OrbitalBuilderBase {
+  struct JastrowBuilder: public OrbitalBuilderBase {
 
-    /// a vector containing the different particle sets (ions and electrons)
-    vector<ParticleSet*>& PtclSets;
+    typedef map<string,ParticleSet*> PtclPoolType;
 
-    /// the element name for Correlation, "correlation"
-    string corr_tag; 
-
-public:
-
-    JastrowBuilder(TrialWaveFunction& a, vector<ParticleSet*>& psets);
+    JastrowBuilder(ParticleSet& p, TrialWaveFunction& psi, PtclPoolType& psets);
     
     /**@param cur the current xmlNodePtr to be processed by JastrowBuilder
      *@return true if succesful
      */
     bool put(xmlNodePtr cur);
-    
    
     template<class JeeType>
     bool createTwoBodySpin(xmlNodePtr cur, JeeType* j2);
     
-
   
     template<class JeeType>
     bool createTwoBodyNoSpin(xmlNodePtr cur, JeeType* j2);
@@ -58,7 +51,12 @@ public:
   
     template<class JneType>
     bool createOneBody(xmlNodePtr cur, JneType* j1);
-    
+
+    ///need ParticleSetPool
+    PtclPoolType& ptclPool;
+
+    /// the element name for Correlation, "correlation"
+    string corr_tag; 
   };
 }
 #endif

@@ -39,9 +39,7 @@ namespace ohmmsqmc {
     typedef MolecularOrbitalBasis<CenteredOrbitalType> BasisSetType;
 
     ///constructor
-    STOMolecularOrbitals(TrialWaveFunction& wfs, 
-			 ParticleSet& ions, 
-			 ParticleSet& els);
+    STOMolecularOrbitals(ParticleSet& els, TrialWaveFunction& wfs, ParticleSet& ions);
 
     ///implement vritual function
     bool put(xmlNodePtr cur);

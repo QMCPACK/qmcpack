@@ -41,13 +41,37 @@ namespace ohmmsqmc {
       usegrid = !(a == "no" || a == "false" || a == "0");
     }
 
+    ParticleSet* ions=0;
+    xmlNodePtr tcur=cur->children;
+    string s("i");
+    while(ions == 0 && tcur != NULL) {
+      if(xmlStrEqual(tcur->name,(const xmlChar*)"distancetable")) {
+        const xmlChar*  a=xmlGetProp(tcur,(const xmlChar*)"source");
+        if(a) { s = (const char*)a;}
+        PtclPoolType::iterator pit(ptclPool.find(s));
+        if(pit != ptclPool.end()) ions = (*pit).second;
+      }
+      tcur=tcur->next;
+    }
+
+    //missing distancetable
+    if(ions == 0) {
+      PtclPoolType::iterator pit(ptclPool.find("i"));
+      if(pit != ptclPool.end()) ions = (*pit).second;
+    }
+
+    if(ions == 0){
+       ERRORMSG("Any molecular orbital needs an ionic system. Missing " << s)
+       return false;
+    }
+
     if(usegrid) {
       LOGMSG("Using radial grids for molecular orbitals")
-      GridMolecularOrbitals a(wfs_ref,Ions,Els);
+      GridMolecularOrbitals a(targetPtcl,targetPsi,*ions);
       a.put(cur);
     } else {
       LOGMSG("Using STO for molecular orbitals")
-      STOMolecularOrbitals a(wfs_ref,Ions,Els);
+      STOMolecularOrbitals a(targetPtcl,targetPsi,*ions);
       a.put(cur);
     }
 
