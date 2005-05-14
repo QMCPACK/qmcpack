@@ -17,6 +17,8 @@
 #ifndef OHMMS_QMC_WALKER_H
 #define OHMMS_QMC_WALKER_H
 
+#include "OhmmsPETE/OhmmsMatrix.h"
+
 namespace ohmmsqmc {
 
   /** an enum denoting index of physical properties */
@@ -25,12 +27,13 @@ namespace ohmmsqmc {
 	LOCALPOTENTIAL, /*!< local potential energy = local energy - kinetic energy */
 	MULTIPLICITY, /*!< multiplicity, used by DMC for branching */
 	LOGPSI,        /*!< log(fabs(psi)) instead of square of the many-body wavefunction \f$|\Psi|^2\f$ */
+        SUMRATIO,      /*!< sum of wavefunction ratios for multiple H and Psi */
 	SIGN,          /*!< value of the many-body wavefunction \f$\Psi(\{R\})\f$ */
 	AGE,          /*!< the age of the walker. set to zero when the walker is updated */
-	SCALED,       /*!< scaling factor for the drift */
 	WOSVAR,       /*!< Variance of WOS potential */
-	NUMPROPERTIES, /*!< the number of properties */
-	CAPACITY=15
+	NUMPROPERTIES /*!< the number of properties */
+	//SCALED,       /*!< scaling factor for the drift */
+	//CAPACITY=15
        };
   
   /**
@@ -40,14 +43,16 @@ namespace ohmmsqmc {
    * and a property container.
    * The template (P)articleSet(A)ttribute is a generic container
    * of position types.
+   * The template (G)radient(A)ttribute is a generic container
+   * of gradients types.
    */
-  template<class T, class PA>
+  template<class T, class PA, class GA=PA>
   struct Walker {
     
+    ///typedef for the property container, fixed size
+    typedef TinyVector<T,NUMPROPERTIES> PropertyContainer_t;
 
-    typedef TinyVector<T,CAPACITY> PropertyContainer_t;
-    //typedef std::vector<T> PropertyContainer_t;
-
+    ///id reserved for forward walking
     int ID;
 
     ///scalar properties of a walker
@@ -58,7 +63,10 @@ namespace ohmmsqmc {
     PA R;
     
     ///drift of the walker \f$ Drift({\bf R}) = \tau v_{drift}({\bf R}) \f$
-    PA Drift;
+    GA Drift;
+
+    ///dynamic properties in addition to Properties
+    Matrix<T> DynProperty;
 
     ///create a walker for n-particles
     inline explicit Walker(int n) : Properties(0.0) {  
@@ -89,21 +97,36 @@ namespace ohmmsqmc {
     ///return the number of particles per walker
     inline int size() const { return R.size(); }
 
+    ///resize for n-particles
+    inline void resize(int nptcl) {
+      R.resize(nptcl); Drift.resize(nptcl); 
+    }
+
     inline void makeCopy(const Walker& a) {    
       resize(a.R.size());
       R = a.R;
       Drift = a.Drift;
       Properties = a.Properties;
+      DynProperty.copy(a.DynProperty);
     }
 
     //return the address of the values of Hamiltonian terms
     inline T* restrict getEnergyBase() {
-      return Properties.begin()+NUMPROPERTIES;
+      return DynProperty.data();
     }
 
     //return the address of the values of Hamiltonian terms
     inline const T* restrict getEnergyBase() const {
-      return Properties.begin()+NUMPROPERTIES;
+      return DynProperty.data();
+    }
+
+    inline T* restrict getEnergyBase(int i) {
+      return DynProperty[i];
+    }
+
+    //return the address of the values of Hamiltonian terms
+    inline const T* restrict getEnergyBase(int i) const {
+      return DynProperty[i];
     }
 
     /** reset the property of a walker
@@ -121,7 +144,6 @@ namespace ohmmsqmc {
       Properties(SIGN)=sigN;
     }
 
-
     /** reset the walker weight, multiplicity and age */
     inline void reset() {
       Properties(WEIGHT)=1.0;
@@ -129,11 +151,10 @@ namespace ohmmsqmc {
       Properties(AGE)=0.0;
     }
 
-    ///resize for n-particles
-    inline void resize(int n) {
-      R.resize(n);
-      Drift.resize(n);
+    inline void resizeDynProperty(int n, int m) {
+      DynProperty.resize(n,m);
     }
+
   };
 
   template<class T, class PA>
