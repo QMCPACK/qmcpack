@@ -27,11 +27,6 @@ namespace ohmmsqmc {
   /** An abstract class to build a many-body wavefunction */
   class OrbitalBuilderBase {
     
-  protected:
-
-    /// reference to the many-body wavefucntion to which each derived class add a term
-    TrialWaveFunction& wfs_ref;
-
   public:
 
     typedef TrialWaveFunction::RealType  RealType;    
@@ -67,11 +62,26 @@ namespace ohmmsqmc {
     static string basisfunc_tag;
     //@}
 
-    /// constructor
-    OrbitalBuilderBase(TrialWaveFunction& a): wfs_ref(a) { }
+    /** constructor
+     * @param p target particle set
+     * @param psi target many-body wavefunction
+     *
+     * Each builder class adds an object to compose a many-body wavefunction
+     * targetPsi. The position of targetPtcl is related to targetPsi's 
+     * capability to return a value and derivatives \f$\Psi = $[\{R\}]\f$ .
+     */
+    OrbitalBuilderBase(ParticleSet& p, TrialWaveFunction& psi): targetPtcl(p), targetPsi(psi){ }
 
     /// process a xml node at cur
     virtual bool put(xmlNodePtr cur) = 0;
+
+  protected:
+
+    /// reference to the particle set on which targetPsi is defined
+    ParticleSet& targetPtcl;
+
+    /// reference to the many-body wavefucntion to which each derived class add a term
+    TrialWaveFunction& targetPsi;
   };
   
 }
