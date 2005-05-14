@@ -16,8 +16,8 @@
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 #include "Particle/MCWalkerConfiguration.h"
-#include "QMCHamiltonians/QMCHamiltonianBase.h"
 #include "Estimators/ScalarEstimatorManager.h"
+#include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Message/Communicate.h"
 #include "Message/CommOperators.h"
 #include "Estimators/LocalEnergyEstimator.h"
