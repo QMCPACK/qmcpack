@@ -49,13 +49,14 @@ namespace ohmmsqmc {
     
     typedef Walker<RealType,ParticlePos_t> Walker_t;
     typedef Walker_t::PropertyContainer_t  PropertyContainer_t;
-    typedef vector<Walker_t*>              WalkerList_t;
+    typedef std::vector<Walker_t*>         WalkerList_t;
     typedef WalkerList_t::iterator         iterator;
     typedef WalkerList_t::const_iterator   const_iterator;
     typedef PooledData<RealType>           WalkerData_t;
 
+    WalkerList_t WalkerList;
     std::vector<WalkerData_t*> DataSet;
-    Matrix<ValueType> Energy;
+    //Matrix<ValueType> Energy;
 
     ///default constructor
     MCWalkerConfiguration();
@@ -142,9 +143,6 @@ namespace ohmmsqmc {
     RealType LocalEnergy;
 
     int UpdateMode;
-
-    ///list of Walker
-    WalkerList_t WalkerList;
 
     ///save a WorkingWalker
     iterator WorkingWalker;
