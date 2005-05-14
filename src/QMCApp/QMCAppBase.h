@@ -26,10 +26,7 @@
 
 namespace ohmmsqmc {
 
-  /** Main application to perform QMC simulations 
-   *
-   * This is a generalized QMC application which can handle multiple particle sets,
-   * walker configurations, hamiltonians and wavefunctions
+  /** Base class for QMC applications and utilities
    */
   class QMCAppBase {
 
@@ -41,9 +38,21 @@ namespace ohmmsqmc {
     ///destructor
     ~QMCAppBase();
 
+    /** parse an input file
+     * @param infile file to be parsed. 
+     * @return true if the input file is a valid xml file
+     */
     bool parse(const string& infile);
+
+    /** save the xml document
+     *
+     */
     void saveXml();
+
+    /** validate the input file */
     virtual bool validateXML() = 0;
+
+    /** execute the main function */
     virtual bool execute() = 0;
 
   protected:
