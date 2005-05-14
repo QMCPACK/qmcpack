@@ -29,37 +29,39 @@ template<class T, class C = vector<T> >
 class Matrix {
 public:
 
-  typedef T           Type_t;
-  typedef T           value_type;
-  typedef C           Container_t;
-  typedef Matrix<T,C> This_t;
+  typedef T            Type_t;
+  typedef T            value_type;
+  typedef C            Container_t;
+  typedef typename C::size_type size_type;
+  typedef Matrix<T,C>  This_t;
 
   Matrix():D1(0),D2(0){ } // Default Constructor initializes to zero.
 
-  Matrix(unsigned n) { 
+  Matrix(size_type n) { 
     resize(n,n);
     assign(*this, T());
   }
 
-  Matrix(unsigned n, unsigned m) { 
+  Matrix(size_type n, size_type m) { 
     resize(n,m);
     assign(*this, T());
   }
 
   // Copy Constructor 
   Matrix(const Matrix<T,C> &rhs){
-    resize(rhs.D1, rhs.D2);
-    assign(*this, rhs);
+    copy(rhs);
   }
 
   // Destructor 
   ~Matrix() { }
 
-  inline unsigned size() const { return X.size();}
-  inline unsigned size(int i) const { return (i == 0)? D1: D2;}
-  inline unsigned extent(int i) const { return (i == 0)? D1: D2;}
-  inline unsigned rows() const { return D1;}
-  inline unsigned cols() const { return D2;}
+  inline size_type size() const { return X.size();}
+  inline size_type rows() const { return D1;}
+  inline size_type cols() const { return D2;}
+  inline size_type size1() const { return D1;}
+  inline size_type size2() const { return D2;}
+  inline size_type size(int i) const { return (i == 0)? D1: D2;}
+  inline size_type extent(int i) const { return (i == 0)? D1: D2;}
 
 //   inline const T* begin() const { return X.begin();}
 //   inline T* begin() { return X.begin();}
@@ -71,15 +73,30 @@ public:
   inline typename Container_t::const_iterator begin() const { return X.begin();}
   inline typename Container_t::const_iterator end() const { return X.end();}
 
-  void resize(unsigned n, unsigned m); // resize to n x m
-  void add(unsigned n); // you can add rows: adding columns are forbidden
+  inline typename Container_t::iterator begin(int i) { return X.begin()+i*D2;}
+  inline typename Container_t::const_iterator begin(int i) const { return X.begin()+i*D2;}
+
+  inline void resize(size_type n, size_type m) {
+    D1 = n; D2 = m;
+    X.resize(n*m);
+  }
+
+  inline void add(size_type n) { // you can add rows: adding columns are forbidden
+    X.insert(X.end(), n*D2, T());
+    D1 += n;  
+  }
+
+  inline void copy(const Matrix<T,C>& rhs) {
+    resize(rhs.D1, rhs.D2);
+    assign(*this, rhs);
+  }
 
   // Assignment Operators
-  This_t& operator=(const Matrix<T,C> &rhs) {
+  inline This_t& operator=(const Matrix<T,C> &rhs) {
     return assign(*this,rhs);
   }
 
-  const This_t &operator=(const Matrix<T, C> &rhs) const {
+  inline const This_t &operator=(const Matrix<T, C> &rhs) const {
     return assign(*this, rhs);
   }
 
@@ -89,7 +106,6 @@ public:
   }
 
   // Get and Set Operations for assignment operators
-
   // returns a pointer of i-th row 
   inline Type_t* data() { 
     return &(X[0]);
@@ -101,30 +117,30 @@ public:
   }
 
   // returns a const pointer of i-th row 
-  inline const Type_t* operator[](unsigned int i) const { 
+  inline const Type_t* operator[](size_type i) const { 
     return &(X[0]) + i*D2;
   }
 
   /// returns a pointer of i-th row, g++ iterator problem
-  inline Type_t* operator[](unsigned int i) { 
+  inline Type_t* operator[](size_type i) { 
     return &(X[0]) + i*D2;
   }
 
-  inline Type_t& operator()(unsigned int i) { 
+  inline Type_t& operator()(size_type i) { 
     return X[i];
   }
   // returns the i-th value in D1*D2 vector
-  inline Type_t operator()(unsigned int i) const { 
+  inline Type_t operator()(size_type i) const { 
     return X[i];
   }
 
   // returns val(i,j)
-  inline Type_t& operator()(unsigned int i, unsigned int j) { 
+  inline Type_t& operator()(size_type i, size_type j) { 
     return X[i*D2+j];
   }
 
   // returns val(i,j)
-  inline Type_t operator()( unsigned int i, unsigned int j) const { 
+  inline Type_t operator()( size_type i, size_type j) const { 
     return X[i*D2+j];
   }
 
@@ -134,8 +150,7 @@ public:
   //! \param i0  starting row where the copying is done
   //! \param j0  starting column where the copying is done
   template<class T1>
-  inline void add(const T1* sub, unsigned int d1, unsigned d2, 
-                   unsigned int i0, unsigned int j0) {
+  inline void add(const T1* sub, size_type d1, size_type d2, size_type i0, size_type j0) {
     int ii=0;
     for(int i=0; i<d1; i++) {
       int kk = (i0+i)*D2 + j0;
@@ -146,61 +161,48 @@ public:
   }
 
   template<class T1>
-  inline void add(const T1* sub, unsigned int d1, unsigned d2, 
-                  unsigned int i0, unsigned int j0, const T& phi) {
-    int ii=0;
-    for(int i=0; i<d1; i++) {
+  inline void add(const T1* sub, size_type d1, size_type d2, size_type i0, size_type j0, const T& phi) {
+    size_type ii=0;
+    for(size_type i=0; i<d1; i++) {
       int kk = (i0+i)*D2 + j0;
-      for(int j=0; j<d2; j++) {
+      for(size_type j=0; j<d2; j++) {
         X[kk++] += phi*sub[ii++];
       }
     }
   }
   template<class SubMat_t>
   inline void add(const SubMat_t& sub, unsigned int i0, unsigned int j0) {
-    int ii=0;
-    for(int i=0; i<sub.rows(); i++) {
+    size_type ii=0;
+    for(size_type i=0; i<sub.rows(); i++) {
       int kk = (i0+i)*D2 + j0;
-      for(int j=0; j<sub.cols(); j++) {
+      for(size_type j=0; j<sub.cols(); j++) {
         X[kk++] += sub(ii++);
       }
     }
   }
   inline void add(const This_t& sub, unsigned int i0, unsigned int j0) {
-    int ii=0;
-    for(int i=0; i<sub.rows(); i++) {
+    size_type ii=0;
+    for(size_type i=0; i<sub.rows(); i++) {
       int kk = (i0+i)*D2 + j0;
-      for(int j=0; j<sub.cols(); j++) {
+      for(size_type j=0; j<sub.cols(); j++) {
         X[kk++] += sub[ii++];
       }
     }
   }
 
 protected:
-  int D1, D2;
+  size_type D1, D2;
   Container_t X;
 };
-
-template<class T, class C>
-void Matrix<T,C>::resize(unsigned n, unsigned m){
-  D1 = n; D2 = m;
-  X = C(n*m,T());
-}
-
-template<class T, class C>
-void Matrix<T,C>::add(unsigned n){
-  X.insert(X.end(), n*D2, T());
-  D1 += n;  
-}
-
 
 // I/O
 template<class T, class C>
 ostream& operator<<(ostream& out, const Matrix<T,C>& rhs)
 {
-  int ii=0;
-  for(int i=0; i<rhs.rows(); i++) {
-    for(int j=0; j<rhs.cols(); j++)
+  typedef typename Matrix<T,C>::size_type size_type;
+  size_type ii=0;
+  for(size_type i=0; i<rhs.rows(); i++) {
+    for(size_type j=0; j<rhs.cols(); j++)
       out << rhs(ii++) << " ";
     out << endl;
   }
@@ -211,8 +213,9 @@ ostream& operator<<(ostream& out, const Matrix<T,C>& rhs)
 template<class T, class C>
 std::istream& operator>>(std::istream& is, Matrix<T,C>& rhs)
 {
-  int ii=0;
-  for(int i=0; i<rhs.size(); i++) {is >> rhs(i++);}
+  typedef typename Matrix<T,C>::size_type size_type;
+  size_type ii=0;
+  for(size_type i=0; i<rhs.size(); i++) {is >> rhs(i++);}
   return is;
 }
 //-----------------------------------------------------------------------------
@@ -236,18 +239,19 @@ class SizeLeaf2
 {
 public:
 
-  SizeLeaf2(int s, int p) : size_m(s), size_n(p) { }
+  typedef int size_type;
+
+  SizeLeaf2(size_type s, size_type p) : size_m(s), size_n(p) { }
   SizeLeaf2(const SizeLeaf2 &model) 
   : size_m(model.size_m), size_n(model.size_n) { }
 
-  bool operator()(int s, int p) const { 
+  bool operator()(size_type s, size_type p) const { 
     return ((size_m == s) && (size_n ==p)); 
   }
   
 private:
   
-  int size_m, size_n;
-  
+  size_type size_m, size_n;
 };
 
 template<class T>
