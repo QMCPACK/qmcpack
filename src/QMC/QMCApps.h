@@ -23,7 +23,7 @@
 #include "OhmmsApp/RandomNumberControl.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
-#include "QMCHamiltonians/QMCHamiltonianBase.h"
+#include "QMCHamiltonians/QMCHamiltonian.h"
 
 namespace ohmmsqmc {
 

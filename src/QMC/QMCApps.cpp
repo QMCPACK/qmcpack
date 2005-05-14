@@ -22,13 +22,13 @@
 #include "Utilities/OhmmsInfo.h"
 #include "Particle/HDFWalkerIO.h"
 #include "ParticleBase/RandomSeqGenerator.h"
-#include "QMC/VMC.h"
-#include "QMC/VMCParticleByParticle.h"
-#include "QMC/DMCParticleByParticle.h"
-#include "QMC/VMC_OPT.h"
-#include "QMC/MolecuDMC.h"
-#include "QMC/ReptationMC.h"
-#include "QMC/WaveFunctionTester.h"
+#include "QMCDrivers/VMC.h"
+#include "QMCDrivers/VMCParticleByParticle.h"
+#include "QMCDrivers/DMCParticleByParticle.h"
+#include "QMCDrivers/VMC_OPT.h"
+#include "QMCDrivers/MolecuDMC.h"
+#include "QMCDrivers/ReptationMC.h"
+//#include "QMC/WaveFunctionTester.h"
 #include "QMCHamiltonians/ConservedEnergy.h"
 
 namespace ohmmsqmc {
@@ -188,44 +188,55 @@ namespace ohmmsqmc {
 	    //always check the conserved quantity for vmc
 	    XMLReport("Checking the conserved quantity")
 	    H.add(new ConservedEnergy,"Flux");
-	    VMC vmc(el,Psi,H,cur);
+	    VMC vmc(el,Psi,H);
 	    vmc.setFileRoot(myProject.CurrentRoot());
+            vmc.process(cur);
 	    vmc.run();
 	  } else if(methodname == "vmc-ptcl"){
 	    //always check the conserved quantity for vmc
 	    XMLReport("Checking the conserved quantity")
 	    H.add(new ConservedEnergy,"Flux");
-	    VMCParticleByParticle vmc(el,Psi,H,cur);
+	    VMCParticleByParticle vmc(el,Psi,H);
 	    vmc.setFileRoot(myProject.CurrentRoot());
+            vmc.process(cur);
 	    vmc.run();
 	  } else if(methodname == "dmc"){
 	    //H.remove("Flux");
-	    MolecuDMC dmc(el,Psi,H,cur);
+	    MolecuDMC dmc(el,Psi,H);
 	    dmc.setBranchInfo(PrevConfigFile);
 	    dmc.setFileRoot(myProject.CurrentRoot());
+	    dmc.process(cur);
 	    dmc.run();
 	  } else if(methodname == "dmc-ptcl"){
-	    DMCParticleByParticle dmc(el,Psi,H,cur);
+	    DMCParticleByParticle dmc(el,Psi,H);
 	    dmc.setBranchInfo(PrevConfigFile);
 	    dmc.setFileRoot(myProject.CurrentRoot());
+            dmc.process(cur);
 	    dmc.run();
 	  } else if(methodname == "optimize"){
 	    //Something wrong this! Check this out.
 	    //H.remove("Flux");
-	    VMC_OPT vmc(el,Psi,H,cur);
+	    VMC_OPT vmc(el,Psi,H);
 	    vmc.addConfiguration(PrevConfigFile);
 	    vmc.setFileRoot(myProject.CurrentRoot());
+            vmc.process(cur);
 	    vmc.run();
 	  } else if(methodname == "rmc") {
 	    XMLReport("Running ReptationMC")
-	    ReptationMC rmc(el,Psi,H,cur);
+	    ReptationMC rmc(el,Psi,H);
 	    rmc.setFileRoot(myProject.CurrentRoot());
+            rmc.process(cur);
 	    rmc.run();
-	  } else if(methodname == "test"){
-	    H.remove("Flux");
-	    WaveFunctionTester wftest(el,Psi,H,cur);
-	    wftest.setFileRoot(myProject.CurrentRoot());
-	    wftest.run();
+	  //} else if(methodname == "test"){
+	  //  H.remove("Flux");
+	  //  WaveFunctionTester wftest(el,Psi,H,cur);
+	  //  wftest.setFileRoot(myProject.CurrentRoot());
+	  //  wftest.run();
+          //} else if(methodname == "vmc-multi") {
+          //  VMCMulti vmc(el,Psi,H,cur);
+          //  vmc.add(&H, &Psi);
+          //  vmc.add(&H, &Psi);
+	  //  wftest.run();
 	  } else{
 	    ERRORMSG("Options are vmc, dmc or opt")
 	  }
@@ -244,12 +255,13 @@ namespace ohmmsqmc {
 	  xmlFreeNode(cur);
 	}
       }
-    } else {
-      WARNMSG("No QMC parameters are provided. Peform WaveFunctionTest")
-      WaveFunctionTester wftest(el,Psi,H,NULL);
-      wftest.setFileRoot(myProject.CurrentRoot());
-      wftest.run();
-    }
+    } 
+    //else {
+    //  WARNMSG("No QMC parameters are provided. Peform WaveFunctionTest")
+    //  WaveFunctionTester wftest(el,Psi,H,NULL);
+    //  wftest.setFileRoot(myProject.CurrentRoot());
+    //  wftest.run();
+    //}
 
     xmlNodePtr aqmc = xmlNewNode(NULL,(const xmlChar*)"qmc");
     xmlNewProp(aqmc,(const xmlChar*)"method",(const xmlChar*)"dmc");

@@ -40,7 +40,7 @@
 #include "QMCWaveFunctions/MolecularOrbitals/MolecularOrbitalBuilder.h"
 //#include "QMCWaveFunctions/MolecularOrbitals/NumericalMolecularOrbitals.h"
 #include "QMCWaveFunctions/JastrowBuilder.h"
-#include "QMC/QMCUtilities.h"
+#include "QMCTools/QMCUtilities.h"
 
 namespace ohmmsqmc {
 
@@ -296,9 +296,9 @@ namespace ohmmsqmc {
       = xmlXPathEvalExpression((const xmlChar*)"//wavefunction",m_context);
 
     ///make a temporary array to pass over JastrowBuilder
-    vector<ParticleSet*> PtclSets;
-    PtclSets.push_back(&ion);
-    PtclSets.push_back(&el);
+    map<string,ParticleSet*> selected;
+    selected[ion.getName()]=&ion;
+    selected[el.getName()]=&el;
 
     bool foundwfs=true;
     if(xmlXPathNodeSetIsEmpty(result->nodesetval)) {
@@ -312,19 +312,19 @@ namespace ohmmsqmc {
 	  string orbtype=(const char*)(xmlGetProp(cur, (const xmlChar *)"type"));
 	  LOGMSG("Slater-determinant terms using " << orbtype)
 	  if(orbtype == "STO-Clementi-Rottie") {
-            HFAtomicSTOSetBuilder a(Psi,ion,el);
+            HFAtomicSTOSetBuilder a(el,Psi,ion);
 	    a.put(cur);
 	  } else if(orbtype == "STO-He-Optimized") {
-	    HePresetHFBuilder a(Psi,ion,el);
+	    HePresetHFBuilder a(el,Psi,ion);
 	    //a.put(cur);
 	  } else if(orbtype == "MolecularOrbital") {
-	    MolecularOrbitalBuilder a(Psi,ion,el);
+	    MolecularOrbitalBuilder a(el,Psi,selected);
 	    a.put(cur);
           }
 	  XMLReport("Done with the initialization of SlaterDeterminant using " << orbtype)
         } // if DeterminantSet    
 	else if (cname ==  OrbitalBuilderBase::jastrow_tag) {
-	  JastrowBuilder a(Psi,PtclSets);
+	  JastrowBuilder a(el,Psi,selected);
 	  a.put(cur);
 	}
 	cur = cur->next;

@@ -45,14 +45,13 @@ IF(QMCAPPS MATCHES "QDApps")
 ENDIF(QMCAPPS MATCHES "QDApps")
 
 SET(QMCSRCS 
-  QMCDriver.cpp
-  VMC.cpp
-  VMCParticleByParticle.cpp
-  DMCParticleByParticle.cpp
-  VMC_OPT.cpp
-  MolecuDMC.cpp
-  ReptationMC.cpp
-  WaveFunctionTester.cpp
+  ../QMCDrivers/QMCDriver.cpp
+  ../QMCDrivers/VMC.cpp
+  ../QMCDrivers/VMCParticleByParticle.cpp
+  ../QMCDrivers/DMCParticleByParticle.cpp
+  ../QMCDrivers/VMC_OPT.cpp
+  ../QMCDrivers/MolecuDMC.cpp
+  ../QMCDrivers/ReptationMC.cpp
   ../Estimators/ScalarEstimatorManager.cpp
   QMCApps.cpp
   ${APPSRC}
@@ -72,6 +71,3 @@ ENDIF(${BLAS_EXTRA_LIBRARY} MATCHES "guide")
 
 ADD_EXECUTABLE(qmcapp ${WAVEFUNCTIONS} ${QMCSRCS} main.cpp)
 TARGET_LINK_LIBRARIES(qmcapp qmc qmcbase)
-
-ADD_EXECUTABLE(mo2grid3d ${WAVEFUNCTIONS} ${QMCSRCS} MO2Grid3D.cpp mo2grid3d_main.cpp)
-TARGET_LINK_LIBRARIES(mo2grid3d qmc qmcbase)
