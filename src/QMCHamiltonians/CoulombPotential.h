@@ -16,10 +16,10 @@
 // -*- C++ -*-
 #ifndef OHMMS_QMC_COULOMBPOTENTIAL_H
 #define OHMMS_QMC_COULOMBPOTENTIAL_H
-#include <algo.h>
 #include "Particle/ParticleSet.h"
 #include "Particle/WalkerSetRef.h"
 #include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 #include "QMCHamiltonians/QMCHamiltonianBase.h"
 
 namespace ohmmsqmc {

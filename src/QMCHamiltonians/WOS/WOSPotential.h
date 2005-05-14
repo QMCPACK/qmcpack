@@ -1,6 +1,6 @@
 #ifndef OHMMS_QMC_WOSPOTENTIAL_H
 #define OHMMS_QMC_WOSPOTENTIAL_H
-#include <algo.h>
+#include <algorithm>
 #include <vector>
 #include "Particle/ParticleSet.h"
 #include "Particle/WalkerSetRef.h"
@@ -13,7 +13,7 @@
 
 namespace ohmmsqmc{
 
-  struct WOSPotential: public QMCHamiltonianBase{
+  struct WOSPotential: public QMCHamiltonianBase {
 
     //    typedef double RealType;
     int Mode;

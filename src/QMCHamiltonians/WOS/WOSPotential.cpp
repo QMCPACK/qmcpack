@@ -14,7 +14,7 @@ using namespace ohmmsqmc;
 
 */
 
-QMCHamiltonian::ValueType 
+WOSPotential::ValueType 
 WOSPotential::method0(ParticleSet& P){
 
   WP->setP(P);
@@ -57,7 +57,7 @@ WOSPotential::method0(ParticleSet& P){
 }
 
 /// Antithetic variates
-QMCHamiltonian::ValueType 
+WOSPotential::ValueType 
 WOSPotential::method1(ParticleSet& P){
 
   WP->setP(P);
@@ -117,7 +117,7 @@ WOSPotential::method1(ParticleSet& P){
 
 
 /// correlated sampling
-QMCHamiltonian::ValueType 
+WOSPotential::ValueType 
 WOSPotential::method2(ParticleSet& P){
 
 
@@ -170,7 +170,7 @@ WOSPotential::method2(ParticleSet& P){
 
 
 /// correlated sampling
-QMCHamiltonian::ValueType 
+WOSPotential::ValueType 
 WOSPotential::method6(ParticleSet& P){
 
   double V0 = 0;
@@ -247,7 +247,7 @@ WOSPotential::method6(ParticleSet& P){
 }
 
 /// importance sampling
-QMCHamiltonian::ValueType 
+WOSPotential::ValueType 
 WOSPotential::method3(ParticleSet& P){
 
 
@@ -287,7 +287,7 @@ WOSPotential::method3(ParticleSet& P){
 
 }
 
-QMCHamiltonian::ValueType
+WOSPotential::ValueType
 WOSPotential::method4(ParticleSet& P){
 
   double V0 = 0.0;
@@ -348,7 +348,7 @@ WOSPotential::method4(ParticleSet& P){
   return pe;
 }
 
-QMCHamiltonian::ValueType
+WOSPotential::ValueType
 WOSPotential::method5(ParticleSet& P){
 
   static const double V0 = 0;
@@ -393,7 +393,5 @@ WOSPotential::method5(ParticleSet& P){
   exit(-1);
 
   return pe;
-
-
 }
 
