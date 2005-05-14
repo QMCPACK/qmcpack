@@ -1,0 +1,323 @@
+//////////////////////////////////////////////////////////////////
+// (c) Copyright 2003- by Jeongnim Kim
+//////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////
+//   Jeongnim Kim
+//   National Center for Supercomputing Applications &
+//   Materials Computation Center
+//   University of Illinois, Urbana-Champaign
+//   Urbana, IL 61801
+//   e-mail: jnkim@ncsa.uiuc.edu
+//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
+//
+// Supported by 
+//   National Center for Supercomputing Applications, UIUC
+//   Materials Computation Center, UIUC
+//   Department of Physics, Ohio State University
+//   Ohio Supercomputer Center
+//////////////////////////////////////////////////////////////////
+// -*- C++ -*-
+#include "QMCApp/QMCMain.h"
+#include "QMCApp/ParticleSetPool.h"
+#include "QMCApp/WaveFunctionPool.h"
+#include "QMCApp/HamiltonianPool.h"
+#include "QMCWaveFunctions/TrialWaveFunction.h"
+#include "QMCHamiltonians/QMCHamiltonian.h"
+#include "QMCHamiltonians/ConservedEnergy.h"
+#include "QMCDrivers/VMC.h"
+#include "QMCDrivers/VMCParticleByParticle.h"
+#include "QMCDrivers/DMCParticleByParticle.h"
+#include "QMCDrivers/VMC_OPT.h"
+#include "QMCDrivers/MolecuDMC.h"
+#include "QMCDrivers/ReptationMC.h"
+#include "Utilities/OhmmsInfo.h"
+#include "Particle/HDFWalkerIO.h"
+
+using namespace std;
+
+namespace ohmmsqmc {
+
+  QMCMain::QMCMain(int argc, char** argv): QMCAppBase(argc,argv),
+                                           qmcDriver(0),qmcSystem(0){ 
+
+    //create ParticleSetPool
+    ptclPool = new ParticleSetPool;
+
+    //create WaveFunctionPool
+    psiPool = new WaveFunctionPool;
+    psiPool->setParticleSetPool(ptclPool);
+
+    //create HamiltonianPool
+    hamPool = new HamiltonianPool;
+    hamPool->setParticleSetPool(ptclPool);
+    hamPool->setWaveFunctionPool(psiPool);
+  }
+
+  ///destructor
+  QMCMain::~QMCMain() {
+    DEBUGMSG("QMCMain::~QMCMain")
+    delete hamPool;
+    delete psiPool;
+    delete hamPool;
+    xmlFreeDoc(m_doc);
+  }
+
+
+  bool QMCMain::execute() {
+
+    bool success = validateXML();
+
+    if(!success) return false;
+
+    curMethod = string("invalid");
+    xmlNodePtr cur=m_root->children;
+    while(cur != NULL) {
+      string cname((const char*)cur->name);
+      if(cname == "qmc") runQMC(cur);
+      xmlNodePtr tcur= cur;
+      cur=cur->next;
+      xmlUnlinkNode(tcur);
+      xmlFreeNode(tcur);
+    }
+
+    xmlNodePtr aqmc = xmlNewNode(NULL,(const xmlChar*)"qmc");
+    xmlNewProp(aqmc,(const xmlChar*)"method",(const xmlChar*)"dmc");
+    xmlNodePtr aparam = xmlNewNode(NULL,(const xmlChar*)"parameter");
+    xmlNewProp(aparam,(const xmlChar*)"name",(const xmlChar*)"en_ref");
+    char ref_energy[128];
+    sprintf(ref_energy,"%15.5e",qmcSystem->getLocalEnergy());
+    xmlNodeSetContent(aparam,(const xmlChar*)ref_energy);
+    xmlAddChild(aqmc,aparam);
+    xmlAddChild(m_root,aqmc);
+
+    saveXml();
+
+    return true;
+  }
+
+  /** create basic objects
+   * @return false, if any of the basic objects is not properly created.
+   *
+   * Current xml schema is changing. Instead validating the input file,
+   * we use xpath to create necessary objects. The order follows
+   * - project: determine the simulation title and sequence
+   * - random: initialize random number generator
+   * - particleset: create all the particleset
+   * - wavefunction: create wavefunctions
+   * - hamiltonian: create hamiltonians
+   * Finally, if /simulation/mcwalkerset exists, read the configurations
+   * from the external files.
+   */
+  bool QMCMain::validateXML() {
+
+    xmlXPathContextPtr m_context = xmlXPathNewContext(m_doc);
+
+    xmlXPathObjectPtr result
+      = xmlXPathEvalExpression((const xmlChar*)"//project",m_context);
+    if(xmlXPathNodeSetIsEmpty(result->nodesetval)) {
+      WARNMSG("Project is not defined")
+      myProject.reset();
+    } else {
+      myProject.put(result->nodesetval->nodeTab[0]);
+    }
+    xmlXPathFreeObject(result);
+
+    //initialize the random number generator
+    xmlNodePtr rptr = myRandomControl.initialize(m_context);
+    if(rptr) {
+      xmlAddChild(m_root,rptr);
+    }
+
+    //check particleset/wavefunction/hamiltonian of the current document
+    processContext(m_context);
+
+    //check if there are any include
+    xmlNodePtr cur=m_root->children;
+    while(cur != NULL) {
+      string cname((const char*)cur->name);
+
+      if(cname == "include") {//file is provided
+        const xmlChar* a=xmlGetProp(cur,(const xmlChar*)"href");
+        if(a) {
+          //root and document are saved
+          xmlNodePtr root_save=m_root;
+          xmlDocPtr doc_save=m_doc;
+
+          //parse a new file
+          m_doc=NULL;
+          parse((const char*)a);
+          xmlXPathContextPtr context_=xmlXPathNewContext(m_doc);
+          processContext(context_);
+          xmlXPathFreeContext(context_);
+          xmlFreeDoc(m_doc);
+
+          //copy the original root and document
+          m_root = root_save;
+          m_doc = doc_save;
+        }
+      }
+      cur=cur->next;
+    }
+
+    if(ptclPool->empty()) {
+      ERRORMSG("Illegal input. Missing particleset ")
+      return false;
+    }
+    if(psiPool->empty()) {
+
+      ERRORMSG("Illegal input. Missing wavefunction. ")
+      return false;
+    }
+
+    if(hamPool->empty()) {
+      ERRORMSG("Illegal input. Missing hamiltonian. ")
+      return false;
+    }
+
+    setMCWalkers(m_context);
+    xmlXPathFreeContext(m_context);
+    return true;
+  }   
+
+  void QMCMain::processContext(xmlXPathContextPtr context_) {
+
+    xmlXPathObjectPtr result 
+      = xmlXPathEvalExpression((const xmlChar*)"//particleset",context_);
+    for(int i=0; i<result->nodesetval->nodeNr; i++) {
+      ptclPool->put(result->nodesetval->nodeTab[i]);
+    }
+    xmlXPathFreeObject(result);
+
+    result=xmlXPathEvalExpression((const xmlChar*)"//wavefunction",context_);
+    for(int i=0; i<result->nodesetval->nodeNr; i++) {
+      psiPool->put(result->nodesetval->nodeTab[i]);
+    }
+    xmlXPathFreeObject(result);
+
+    result=xmlXPathEvalExpression((const xmlChar*)"//hamiltonian",context_);
+    for(int i=0; i<result->nodesetval->nodeNr; i++) {
+      hamPool->put(result->nodesetval->nodeTab[i]);
+    }
+    xmlXPathFreeObject(result);
+  }
+
+  /** prepare for a QMC run
+   * @param cur qmc element
+   * @return true, if a valid QMCDriver is set.
+   */
+  bool QMCMain::runQMC(xmlNodePtr cur) {
+
+    string what("invalid");
+    xmlChar* att=xmlGetProp(cur,(const xmlChar*)"method");
+    if(att) what = (const char*)att;
+    //if(qmcDriver) {
+    //  if(what == curMethod) {
+    //    return  true;
+    //  } else {
+    //    delete qmcDriver;
+    //    qmcDriver = 0;
+    //  }
+    //}
+    qmcDriver=0;
+    qmcSystem = ptclPool->getWalkerSet("e");
+    TrialWaveFunction* psi= psiPool->getWaveFunction("primary");
+    QMCHamiltonian* h=hamPool->getHamiltonian("primary");
+
+    if (what == "vmc"){
+      h->add(new ConservedEnergy,"Flux");
+      qmcDriver = new VMC(*qmcSystem,*psi,*h);
+    } else if(what == "vmc-ptcl"){
+      h->add(new ConservedEnergy,"Flux");
+      qmcDriver = new VMCParticleByParticle(*qmcSystem,*psi,*h);
+    } else if(what == "dmc"){
+      MolecuDMC *dmc = new MolecuDMC(*qmcSystem,*psi,*h);
+      dmc->setBranchInfo(PrevConfigFile);
+      qmcDriver=dmc;
+    } else if(what == "dmc-ptcl"){
+      DMCParticleByParticle *dmc = new DMCParticleByParticle(*qmcSystem,*psi,*h);
+      dmc->setBranchInfo(PrevConfigFile);
+      qmcDriver=dmc;
+    } else if(what == "optimize"){
+      VMC_OPT *vmc = new VMC_OPT(*qmcSystem,*psi,*h);
+      vmc->addConfiguration(PrevConfigFile);
+      qmcDriver=vmc;
+    } else if(what == "rmc") {
+      qmcDriver = new ReptationMC(*qmcSystem,*psi,*h);
+    //} else if(what == "vmc-multi") {
+    //  qmcDriver = new VMCMultiple(*qmcSystem,*psi,*h);
+    }
+
+    if(qmcDriver) {
+
+      LOGMSG("Starting a QMC simulation " << curMethod)
+      qmcDriver->setFileRoot(myProject.CurrentRoot());
+      qmcDriver->process(cur);
+      qmcDriver->run();
+
+      //keeps track of the configuration file
+      PrevConfigFile = myProject.CurrentRoot();
+
+      //change the content of mcwalkerset/@file attribute
+      for(int i=0; i<m_walkerset.size(); i++) {
+        xmlSetProp(m_walkerset[i],
+            (const xmlChar*)"file", (const xmlChar*)myProject.CurrentRoot());
+      }
+
+      myProject.advance();
+      curMethod = what;
+      
+      //may want to reuse!
+      delete qmcDriver;
+    } else {
+      return false;
+    }
+  }
+
+  bool QMCMain::setMCWalkers(xmlXPathContextPtr context_) {
+
+    xmlXPathObjectPtr result
+      = xmlXPathEvalExpression((const xmlChar*)"/simulation/mcwalkerset",context_);
+
+    if(xmlXPathNodeSetIsEmpty(result->nodesetval)) {
+      if(m_walkerset.empty()) {
+	xmlNodePtr newnode_ptr = xmlNewNode(NULL,(const xmlChar*)"mcwalkerset");
+	xmlNewProp(newnode_ptr,(const xmlChar*)"file", (const xmlChar*)"nothing");
+	xmlAddChild(m_root,newnode_ptr);
+	m_walkerset.push_back(newnode_ptr);
+      }
+    } else {
+      int pid=OHMMS::Controller->mycontext(); 
+      for(int iconf=0; iconf<result->nodesetval->nodeNr; iconf++) {
+	int pid_target=pid;
+	xmlNodePtr mc_ptr = result->nodesetval->nodeTab[iconf];
+	m_walkerset.push_back(mc_ptr);
+	xmlChar* att=xmlGetProp(mc_ptr,(const xmlChar*)"file");
+	xmlChar* anode=xmlGetProp(mc_ptr,(const xmlChar*)"node");
+	if(anode) {
+	  pid_target = atoi((const char*)anode);
+	}
+	if(pid_target == pid && att) {
+	  string cfile((const char*)att);
+          string target("e");
+	  xmlChar* pref=xmlGetProp(mc_ptr,(const xmlChar*)"ref");
+          if(pref) target = (const char*)pref;
+
+          MCWalkerConfiguration* el=ptclPool->getWalkerSet(target);
+	  XMLReport("Using previous configuration from " << cfile)
+          HDFWalkerInput WO(cfile); 
+	  //read only the last ensemble of walkers
+	  WO.put(*el,-1);
+	  PrevConfigFile = cfile;
+	}
+      }
+    }
+    xmlXPathFreeObject(result);
+
+    return true;
+  }
+}
+/***************************************************************************
+ * $RCSfile$   $Author$
+ * $Revision$   $Date$
+ * $Id$ 
+ ***************************************************************************/
