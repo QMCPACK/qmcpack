@@ -169,7 +169,7 @@ bool XMLParticleParser::putSpecial(xmlNodePtr cur) {
 
   //total count of the particles to be created
   int ntot = 0;
-  int ng = 0;
+  int ng = 0, ng_in=0;
   vector<int> nat_group;
 
   vector<xmlNodePtr> atom_ptr;
@@ -184,6 +184,7 @@ bool XMLParticleParser::putSpecial(xmlNodePtr cur) {
       nat_group.push_back(0);
       if(xmlHasProp(cur0, (const xmlChar *) "size")) {
 	nat_group[ng] = atoi((const char*)(xmlGetProp(cur0, (const xmlChar *) "size")));  
+        ng_in += nat_group[ng];
 	ntot += nat_group[ng];
       }
       ng++;
@@ -215,7 +216,11 @@ bool XMLParticleParser::putSpecial(xmlNodePtr cur) {
    
   if(ntot) {
     LOGMSG("\tCreating " << ntot << " particles for " << pname << " set")
-    ref_.create(ntot);
+    if(ng_in) {
+      ref_.create(nat_group);
+    } else {
+      ref_.create(ntot);
+    }
     //assign default ID
     int nloci=nloc;
     for(int iat=0;iat<ntot; iat++,nloci++) ref_.ID[iat]=nloci;
@@ -306,6 +311,9 @@ bool XMLParticleParser::putSpecial(xmlNodePtr cur) {
     ref_.GroupID[nloc] = sid;
   }
 
+  if(nat_group.size()) {
+
+  }
   if(expand) {
     ExpandSuperCell(ref_,uc_grid);
     ref_.Lattice.print(cout);
