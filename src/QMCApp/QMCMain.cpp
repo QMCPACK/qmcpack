@@ -36,6 +36,7 @@
 #include "QMCDrivers/ReptationMC.h"
 #include "Utilities/OhmmsInfo.h"
 #include "Particle/HDFWalkerIO.h"
+#include "QMCApp/InitMolecularSystem.h"
 #include <queue>
 using namespace std;
 
@@ -62,8 +63,9 @@ namespace ohmmsqmc {
     DEBUGMSG("QMCMain::~QMCMain")
     delete hamPool;
     delete psiPool;
-    delete hamPool;
-    xmlFreeDoc(m_doc);
+    delete ptclPool;
+    //Not a good thing.
+    //xmlFreeDoc(m_doc);
   }
 
 
@@ -96,20 +98,22 @@ namespace ohmmsqmc {
       cur=cur->next;
     }
 
-    for(int i=0;i<q.size(); i++) {
-      xmlUnlinkNode(q[i]);
-      xmlFreeNode(q[i]);
-    }
+    if(q.size()) {
+      xmlNodePtr aqmc = xmlNewNode(NULL,(const xmlChar*)"qmc");
+      xmlNewProp(aqmc,(const xmlChar*)"method",(const xmlChar*)"dmc");
+      xmlNodePtr aparam = xmlNewNode(NULL,(const xmlChar*)"parameter");
+      xmlNewProp(aparam,(const xmlChar*)"name",(const xmlChar*)"en_ref");
+      char ref_energy[128];
+      sprintf(ref_energy,"%15.5e",qmcSystem->getLocalEnergy());
+      xmlNodeSetContent(aparam,(const xmlChar*)ref_energy);
+      xmlAddChild(aqmc,aparam);
+      xmlAddChild(m_root,aqmc);
 
-    xmlNodePtr aqmc = xmlNewNode(NULL,(const xmlChar*)"qmc");
-    xmlNewProp(aqmc,(const xmlChar*)"method",(const xmlChar*)"dmc");
-    xmlNodePtr aparam = xmlNewNode(NULL,(const xmlChar*)"parameter");
-    xmlNewProp(aparam,(const xmlChar*)"name",(const xmlChar*)"en_ref");
-    char ref_energy[128];
-    sprintf(ref_energy,"%15.5e",qmcSystem->getLocalEnergy());
-    xmlNodeSetContent(aparam,(const xmlChar*)ref_energy);
-    xmlAddChild(aqmc,aparam);
-    xmlAddChild(m_root,aqmc);
+      for(int i=0;i<q.size(); i++) {
+        xmlUnlinkNode(q[i]);
+        xmlFreeNode(q[i]);
+      }
+    }
 
     saveXml();
     return true;
@@ -181,6 +185,11 @@ namespace ohmmsqmc {
           m_root = root_save;
           m_doc = doc_save;
         }
+      } else if(cname == "qmcsystem") {
+        processPWH(cur);
+      } else if(cname == "init") {
+        InitMolecularSystem moinit(ptclPool);
+        moinit.put(cur);
       }
       cur=cur->next;
     }
@@ -283,6 +292,7 @@ namespace ohmmsqmc {
     QMCHamiltonian* primaryH=0;
     queue<TrialWaveFunction*> targetPsi;//FIFO 
     queue<QMCHamiltonian*> targetH;//FIFO
+
     xmlNodePtr tcur=cur->children;
     while(tcur != NULL) {
        if(xmlStrEqual(tcur->name,(const xmlChar*)"qmcsystem")) {
