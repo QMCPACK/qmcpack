@@ -52,6 +52,9 @@ namespace ohmmsqmc {
     ///reset the value of the Two-Body Jastrow functions
     void reset() { 
       F.reset();
+      N=d_table->size(VisitorIndex);
+      NN=N*N;
+      U.resize(NN+1);
     }
 
     /** implements the virtual functions of OrbitalBase
@@ -71,7 +74,9 @@ namespace ohmmsqmc {
       for(int i=0; i<d_table->size(SourceIndex); i++) {
 	for(int nn=d_table->M[i]; nn<d_table->M[i+1]; nn++) {
 	  int j = d_table->J[nn];
-	  LogValue -= F.evaluate(d_table->r(nn), dudr, d2udr2);
+	  //LogValue -= F.evaluate(d_table->r(nn), dudr, d2udr2);
+          ValueType uij = F.evaluate(d_table->r(nn), dudr, d2udr2);
+          LogValue -= uij; U[i*N+j]=uij; U[j*N+i]=uij;
 	  //multiply 1/r
 	  dudr *= d_table->rinv(nn);
 	  gr = dudr*d_table->dr(nn);
@@ -100,12 +105,18 @@ namespace ohmmsqmc {
      */
     ValueType ratio(ParticleSet& P, int iat) {
       ValueType d(0.0);
-      for(int jat=0; jat<N; jat++) {
+      for(int jat=0, ij=iat*N; jat<N; jat++,ij++) {
         if(iat != jat) {
-	  d += F.evaluate(d_table->Temp[jat].r0) -F.evaluate(d_table->Temp[jat].r1);
-	}
+          d += U[ij]-F.evaluate(d_table->Temp[jat].r1);
+        }
       }
       return exp(d);
+      //for(int jat=0; jat<N; jat++) {
+      //  if(iat != jat) {
+      //    d += F.evaluate(d_table->Temp[jat].r0) -F.evaluate(d_table->Temp[jat].r1);
+      //  }
+      //}
+      //return exp(d);
     }
 
     /** later merge the loop */

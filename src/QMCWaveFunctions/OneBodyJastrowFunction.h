@@ -119,11 +119,15 @@ namespace ohmmsqmc {
 		          ParticleSet::ParticleGradient_t& G, 
 		          ParticleSet::ParticleLaplacian_t& L) {
       LogValue=0.0;
+      //
+      U=0.0;
       ValueType dudr, d2udr2;
       for(int i=0; i<d_table->size(SourceIndex); i++) {
 	for(int nn=d_table->M[i]; nn<d_table->M[i+1]; nn++) {
 	  int j = d_table->J[nn];
-          LogValue -= F[d_table->PairID[nn]]->evaluate(d_table->r(nn), dudr, d2udr2);
+          //LogValue -= F[d_table->PairID[nn]]->evaluate(d_table->r(nn), dudr, d2udr2);
+          ValueType uij= F[d_table->PairID[nn]]->evaluate(d_table->r(nn), dudr, d2udr2);
+          LogValue -= uij; U[j] += uij;
 	  dudr *= d_table->rinv(nn);
 	  G[j] -= dudr*d_table->dr(nn);
 	  L[j] -= d2udr2+2.0*dudr;
@@ -146,11 +150,15 @@ namespace ohmmsqmc {
       int n=d_table->size(VisitorIndex);
       ValueType d(0.0);
       for(int i=0, nn=iat; i<d_table->size(SourceIndex); i++,nn+= n) {
-        FT *func=F[d_table->PairID[nn]];
-        d += func->evaluate(d_table->Temp[i].r0)
-          -func->evaluate(d_table->Temp[i].r1);
+        d += F[d_table->PairID[nn]]->evaluate(d_table->Temp[i].r1);
       }
-      return exp(d);
+      return exp(U[iat]-d);
+      //for(int i=0, nn=iat; i<d_table->size(SourceIndex); i++,nn+= n) {
+      //  FT *func=F[d_table->PairID[nn]];
+      //  d += func->evaluate(d_table->Temp[i].r0)
+      //    -func->evaluate(d_table->Temp[i].r1);
+      //}
+      //return exp(d);
     }
 
     /** evaluate the ratio \f$exp(U(iat)-U_0(iat))\f$ and fill-in the differential gradients/laplacians

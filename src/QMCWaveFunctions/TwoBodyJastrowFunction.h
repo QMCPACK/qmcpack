@@ -130,6 +130,9 @@ namespace ohmmsqmc {
     ///reset the value of all the Two-Body Jastrow functions
     void reset() { 
       for(int i=0; i<F.size(); i++) F[i]->reset();
+      N=d_table->size(VisitorIndex);
+      NN=N*N;
+      U.resize(NN+1);
     }
 
     /** 
@@ -157,7 +160,10 @@ namespace ohmmsqmc {
       for(int i=0; i<d_table->size(SourceIndex); i++) {
 	for(int nn=d_table->M[i]; nn<d_table->M[i+1]; nn++) {
 	  int j = d_table->J[nn];
-	  LogValue -= F[d_table->PairID[nn]]->evaluate(d_table->r(nn), dudr, d2udr2);
+	  //LogValue -= F[d_table->PairID[nn]]->evaluate(d_table->r(nn), dudr, d2udr2);
+	  ValueType uij = F[d_table->PairID[nn]]->evaluate(d_table->r(nn), dudr, d2udr2);
+          LogValue -= uij;
+	  U[i*N+j]=uij; U[j*N+i]=uij; //save for the ratio
 	  //multiply 1/r
 	  dudr *= d_table->rinv(nn);
 	  gr = dudr*d_table->dr(nn);
@@ -183,13 +189,19 @@ namespace ohmmsqmc {
     ValueType ratio(ParticleSet& P, int iat) {
       ValueType d(0.0);
       const int* pairid(PairID[iat]);
-      for(int jat=0; jat<N; jat++) {
+      for(int jat=0, ij=iat*N; jat<N; jat++,ij++) {
         if(iat != jat) {
-          FT *func(F[pairid[jat]]);
-          d += func->evaluate(d_table->Temp[jat].r0) -func->evaluate(d_table->Temp[jat].r1);
-	}
+          d += U[ij]-F[pairid[jat]]->evaluate(d_table->Temp[jat].r1);
+        }
       }
       return exp(d);
+      //for(int jat=0; jat<N; jat++) {
+      //  if(iat != jat) {
+      //    FT *func(F[pairid[jat]]);
+      //    d += func->evaluate(d_table->Temp[jat].r0) -func->evaluate(d_table->Temp[jat].r1);
+      //  }
+      //}
+      //return exp(d);
     }
 
     /** later merge the loop */
