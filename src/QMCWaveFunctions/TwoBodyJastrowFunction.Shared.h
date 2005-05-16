@@ -42,7 +42,11 @@ namespace ohmmsqmc {
     FT F;
 
     ///constructor
-    TwoBodyJastrow(DistanceTableData* dtable): d_table(dtable) { }
+    TwoBodyJastrow(DistanceTableData* dtable): d_table(dtable) { 
+      N=d_table->size(VisitorIndex);
+      NN=N*N;
+      U.resize(NN+1);
+    }
 
     ~TwoBodyJastrow(){
       DEBUGMSG("TwoBodyJastrow::~TwoBodyJastrow")
@@ -52,9 +56,6 @@ namespace ohmmsqmc {
     ///reset the value of the Two-Body Jastrow functions
     void reset() { 
       F.reset();
-      N=d_table->size(VisitorIndex);
-      NN=N*N;
-      U.resize(NN+1);
     }
 
     /** implements the virtual functions of OrbitalBase

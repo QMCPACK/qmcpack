@@ -119,8 +119,11 @@ namespace ohmmsqmc {
     vector<FT*> F;
 
     ///constructor
-    TwoBodyJastrow(DistanceTableData* dtable): d_table(dtable) { }
-
+    TwoBodyJastrow(DistanceTableData* dtable): d_table(dtable) { 
+      N=d_table->size(VisitorIndex);
+      NN=N*N;
+      U.resize(NN+1);
+    }
 
     ~TwoBodyJastrow(){
       DEBUGMSG("TwoBodyJastrow::~TwoBodyJastrow")
@@ -130,9 +133,6 @@ namespace ohmmsqmc {
     ///reset the value of all the Two-Body Jastrow functions
     void reset() { 
       for(int i=0; i<F.size(); i++) F[i]->reset();
-      N=d_table->size(VisitorIndex);
-      NN=N*N;
-      U.resize(NN+1);
     }
 
     /** 

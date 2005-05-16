@@ -88,7 +88,7 @@ namespace ohmmsqmc {
     ///constructor
     OneBodyJastrow(DistanceTableData* dtable)
       : d_table(dtable), FirstAddressOfdU(NULL), LastAddressOfdU(NULL){ 
-
+      U.resize(d_table->size(VisitorIndex));
     }
 
     ~OneBodyJastrow(){
@@ -98,7 +98,6 @@ namespace ohmmsqmc {
 
     void reset() { 
       for(int i=0; i<F.size(); i++) F[i]->reset();
-      U.resize(d_table->size(VisitorIndex));
     }
 
     /** 
