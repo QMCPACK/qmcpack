@@ -17,6 +17,9 @@
 //   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
+/**@file ParticleSetPool.h
+ * @brief Declaration of ParticleSetPool
+ */
 #ifndef OHMMS_QMC_PARTICLESETPOOL_H
 #define OHMMS_QMC_PARTICLESETPOOL_H
 
@@ -25,7 +28,7 @@
 
 namespace ohmmsqmc {
 
-  /* A collection of ParticleSet
+  /* A collection of ParticleSet objects.
    */
   class ParticleSetPool : public OhmmsElementBase {
 
@@ -33,22 +36,42 @@ namespace ohmmsqmc {
 
     typedef map<string,ParticleSet*> PoolType;
 
+    /** constructor
+     * @param aname xml tag
+     */
     ParticleSetPool(const char* aname = "particleset");
 
+    //implements virtual functions of OhmmsElementBase
     bool get(std::ostream& os) const;
     bool put(std::istream& is);
     bool put(xmlNodePtr cur);
     void reset();
+
+    ///return true, if the pool is empty
     inline bool empty() const { return myPool.empty();}
 
+    /** get a named ParticleSet
+     * @param pname name of the ParticleSet
+     * @return a ParticleSet object with pname
+     *
+     * When the named ParticleSet is not in this object, return 0.
+     */
     ParticleSet* getParticleSet(const string& pname) {
       map<string,ParticleSet*>::iterator pit(myPool.find(pname));
-      if(pit == myPool.end()) 
+      if(pit == myPool.end())  {
         return 0;
-      else 
-        (*pit).second;
+      }
+      else  {
+        return (*pit).second;
+      }
     }
 
+    /** get a named MCWalkerConfiguration
+     * @param pname name of the MCWalkerConfiguration
+     * @return a MCWalkerConfiguration object with pname
+     *
+     * When the named MCWalkerConfiguration is not in this object, return 0.
+     */
     MCWalkerConfiguration* getWalkerSet(const string& pname) {
       map<string,ParticleSet*>::iterator pit(myPool.find(pname));
       if(pit == myPool.end()) 
@@ -57,6 +80,8 @@ namespace ohmmsqmc {
         return dynamic_cast<MCWalkerConfiguration*>((*pit).second);
     }
 
+    /** get the Pool object
+     */
     inline PoolType& getPool() { return myPool;}
 
   private:

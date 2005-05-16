@@ -17,6 +17,9 @@
 //   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
+/**@file HamiltonianPool.h
+ * @brief Declaration of HamiltonianPool
+ */
 #ifndef OHMMS_QMC_QMCHAMILTONIANS_H
 #define OHMMS_QMC_QMCHAMILTONIANS_H
 
@@ -30,7 +33,7 @@ namespace ohmmsqmc {
   class ParticleSetPool;
   class WaveFunctionPool;
 
-  /* A collection of ParticleSet
+  /* A collection of QMCHamiltonian objects
    */
   class HamiltonianPool : public OhmmsElementBase {
 
@@ -47,15 +50,32 @@ namespace ohmmsqmc {
 
     inline bool empty() const { return myPool.empty();}
 
-    QMCHamiltonian* getHamiltonian(const std::string& pname) {
+    /** return the pointer to the primary QMCHamiltonian
+     *
+     * The first QMCHamiltonian is assigned to the primaryH.
+     * The last QMCHamiltonian with role="primary" will be the primaryH.
+     */
+    inline QMCHamiltonian* getPrimary() {
+      return primaryH;
+    }
+
+    /** return the pointer to a QMCHamiltonian with the name 
+     * @param pname name of the QMCHamiltonian
+     */
+    inline QMCHamiltonian* getHamiltonian(const std::string& pname) {
       PoolType::iterator hit(myPool.find(pname));
       if(hit == myPool.end()) 
         return 0;
       else 
-        (*hit).second;
+        return (*hit).second;
     }
 
+    /** assign a pointer to a ParticleSetPool
+     */
     inline void setParticleSetPool(ParticleSetPool* pset) { ptclPool=pset;}
+
+    /** assign a pointer to a WaveFunctionPool
+     */
     inline void setWaveFunctionPool(WaveFunctionPool* pset) { psiPool=pset;}
 
     void addCoulombPotential(xmlNodePtr cur, ParticleSet* target);
@@ -63,9 +83,30 @@ namespace ohmmsqmc {
 
   private:
 
+    /** pointer to the primary QMCHamiltonian
+     */
+    QMCHamiltonian* primaryH;
+
+    /** pointer to a current QMCHamiltonian to be built.
+     */
     QMCHamiltonian* curH;
+
+    /** pointer to ParticleSetPool
+     *
+     * QMCHamiltonian needs to know which ParticleSet object
+     * is used as an input object for the evaluations. 
+     * Any number of ParticleSet can be used to describe
+     * a QMCHamiltonian.
+     */
     ParticleSetPool* ptclPool;
+
+    /** pointer to WaveFunctionPool
+     *
+     * For those QMCHamiltonianBase that depends on TrialWaveFunction,
+     * e.g., NonLocalPPotential.
+     */
     WaveFunctionPool* psiPool;
+
     PoolType myPool;
   };
 }

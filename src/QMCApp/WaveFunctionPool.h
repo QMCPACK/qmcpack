@@ -17,6 +17,9 @@
 //   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
+/**@file WaveFunctionPool.h
+ * @brief Declaration of WaveFunctionPool
+ */
 #ifndef OHMMS_QMC_WAVEFUNCTIONPOOL_H
 #define OHMMS_QMC_WAVEFUNCTIONPOOL_H
 
@@ -29,7 +32,7 @@ namespace ohmmsqmc {
   class TrialWaveFunction;
   class ParticleSetPool;
 
-  /* A collection of TrialWaveFunction s
+  /* A collection of TrialWaveFunction objects
    */
   class WaveFunctionPool : public OhmmsElementBase {
 
@@ -44,20 +47,34 @@ namespace ohmmsqmc {
 
     inline bool empty() const { return myPool.empty();}
 
+    TrialWaveFunction* getPrimary() {
+      return primaryPsi;
+    }
+
     TrialWaveFunction* getWaveFunction(const std::string& pname) {
       std::map<std::string,TrialWaveFunction*>::iterator pit(myPool.find(pname));
       if(pit == myPool.end()) 
         return 0;
       else 
-        (*pit).second;
+        return (*pit).second;
     }
 
-    inline void setParticleSetPool(ParticleSetPool* pset) { ptclPool=pset;}
+    /** assign a pointer of ParticleSetPool
+     */
+    inline void 
+    setParticleSetPool(ParticleSetPool* pset) { ptclPool=pset;}
 
   private:
 
-    ParticleSetPool* ptclPool;
+    TrialWaveFunction* primaryPsi;
     std::map<std::string,TrialWaveFunction*> myPool;
+
+    /** pointer to ParticleSetPool
+     *
+     * TrialWaveFunction needs to know which ParticleSet object
+     * is used as an input object for the evaluations.
+     */
+    ParticleSetPool* ptclPool;
   };
 }
 #endif

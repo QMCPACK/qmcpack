@@ -17,6 +17,9 @@
 //   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
+/**@file QMCMain.cpp
+ * @brief Implments QMCMain operators.
+ */
 #include "QMCApp/QMCMain.h"
 #include "QMCApp/ParticleSetPool.h"
 #include "QMCApp/WaveFunctionPool.h"
@@ -32,7 +35,7 @@
 #include "QMCDrivers/ReptationMC.h"
 #include "Utilities/OhmmsInfo.h"
 #include "Particle/HDFWalkerIO.h"
-
+#include <queue>
 using namespace std;
 
 namespace ohmmsqmc {
@@ -67,17 +70,34 @@ namespace ohmmsqmc {
 
     bool success = validateXML();
 
-    if(!success) return false;
+    if(!success) {
+      ERRORMSG("Input document does not contain valid objects")
+      return false;
+    }
 
     curMethod = string("invalid");
+    vector<xmlNodePtr> q;
+
     xmlNodePtr cur=m_root->children;
     while(cur != NULL) {
+
       string cname((const char*)cur->name);
-      if(cname == "qmc") runQMC(cur);
-      xmlNodePtr tcur= cur;
+      if(cname == "qmc") {
+        string target("e");
+        const xmlChar* t=xmlGetProp(cur,(const xmlChar*)"target");
+        if(t) target = (const char*)t;
+        qmcSystem = ptclPool->getWalkerSet(target);
+        runQMC(cur);
+        q.push_back(cur);
+        myProject.advance();
+      }
+
       cur=cur->next;
-      xmlUnlinkNode(tcur);
-      xmlFreeNode(tcur);
+    }
+
+    for(int i=0;i<q.size(); i++) {
+      xmlUnlinkNode(q[i]);
+      xmlFreeNode(q[i]);
     }
 
     xmlNodePtr aqmc = xmlNewNode(NULL,(const xmlChar*)"qmc");
@@ -91,11 +111,10 @@ namespace ohmmsqmc {
     xmlAddChild(m_root,aqmc);
 
     saveXml();
-
     return true;
   }
 
-  /** create basic objects
+  /** validate m_doc
    * @return false, if any of the basic objects is not properly created.
    *
    * Current xml schema is changing. Instead validating the input file,
@@ -131,6 +150,7 @@ namespace ohmmsqmc {
     //check particleset/wavefunction/hamiltonian of the current document
     processContext(m_context);
 
+
     //check if there are any include
     xmlNodePtr cur=m_root->children;
     while(cur != NULL) {
@@ -163,8 +183,8 @@ namespace ohmmsqmc {
       ERRORMSG("Illegal input. Missing particleset ")
       return false;
     }
-    if(psiPool->empty()) {
 
+    if(psiPool->empty()) {
       ERRORMSG("Illegal input. Missing wavefunction. ")
       return false;
     }
@@ -179,6 +199,12 @@ namespace ohmmsqmc {
     return true;
   }   
 
+  /** grep basic objects and add to Pools
+   * @param context_ xmlXPathContextPtr 
+   *
+   * Use xpath to get all the xml elements with particleset, wavefunction and hamiltonian
+   * tags.
+   */
   void QMCMain::processContext(xmlXPathContextPtr context_) {
 
     xmlXPathObjectPtr result 
@@ -219,32 +245,60 @@ namespace ohmmsqmc {
     //  }
     //}
     qmcDriver=0;
-    qmcSystem = ptclPool->getWalkerSet("e");
-    TrialWaveFunction* psi= psiPool->getWaveFunction("primary");
-    QMCHamiltonian* h=hamPool->getHamiltonian("primary");
+
+    ///////////////////////////////////////////////
+    // get primaryPsi and primaryH
+    ///////////////////////////////////////////////
+    TrialWaveFunction* primaryPsi= 0;
+    QMCHamiltonian* primaryH=0;
+    queue<TrialWaveFunction*> targetPsi;//FIFO 
+    queue<QMCHamiltonian*> targetH;//FIFO
+    xmlNodePtr tcur=cur->children;
+    while(tcur != NULL) {
+       if(xmlStrEqual(tcur->name,(const xmlChar*)"qmcsystem")) {
+         const xmlChar* t= xmlGetProp(tcur,(const xmlChar*)"wavefunction");
+         targetPsi.push(psiPool->getWaveFunction((const char*)t));
+         t= xmlGetProp(tcur,(const xmlChar*)"hamiltonian");
+         targetH.push(hamPool->getHamiltonian((const char*)t));
+       }
+       tcur=tcur->next;
+    }
+
+    if(targetH.empty()) {
+      primaryPsi=psiPool->getPrimary();
+      primaryH=hamPool->getPrimary();
+    } else {
+      primaryPsi=targetPsi.front(); targetPsi.pop();
+      primaryH=targetH.front();targetH.pop();
+    }
+    ///////////////////////////////////////////////
 
     if (what == "vmc"){
-      h->add(new ConservedEnergy,"Flux");
-      qmcDriver = new VMC(*qmcSystem,*psi,*h);
+      primaryH->add(new ConservedEnergy,"Flux");
+      qmcDriver = new VMC(*qmcSystem,*primaryPsi,*primaryH);
     } else if(what == "vmc-ptcl"){
-      h->add(new ConservedEnergy,"Flux");
-      qmcDriver = new VMCParticleByParticle(*qmcSystem,*psi,*h);
+      primaryH->add(new ConservedEnergy,"Flux");
+      qmcDriver = new VMCParticleByParticle(*qmcSystem,*primaryPsi,*primaryH);
     } else if(what == "dmc"){
-      MolecuDMC *dmc = new MolecuDMC(*qmcSystem,*psi,*h);
+      MolecuDMC *dmc = new MolecuDMC(*qmcSystem,*primaryPsi,*primaryH);
       dmc->setBranchInfo(PrevConfigFile);
       qmcDriver=dmc;
     } else if(what == "dmc-ptcl"){
-      DMCParticleByParticle *dmc = new DMCParticleByParticle(*qmcSystem,*psi,*h);
+      DMCParticleByParticle *dmc = new DMCParticleByParticle(*qmcSystem,*primaryPsi,*primaryH);
       dmc->setBranchInfo(PrevConfigFile);
       qmcDriver=dmc;
     } else if(what == "optimize"){
-      VMC_OPT *vmc = new VMC_OPT(*qmcSystem,*psi,*h);
+      VMC_OPT *vmc = new VMC_OPT(*qmcSystem,*primaryPsi,*primaryH);
       vmc->addConfiguration(PrevConfigFile);
       qmcDriver=vmc;
     } else if(what == "rmc") {
-      qmcDriver = new ReptationMC(*qmcSystem,*psi,*h);
+      qmcDriver = new ReptationMC(*qmcSystem,*primaryPsi,*primaryH);
     //} else if(what == "vmc-multi") {
-    //  qmcDriver = new VMCMultiple(*qmcSystem,*psi,*h);
+    //  qmcDriver = new VMCMultiple(*qmcSystem,*primaryPsi,*primaryH);
+    //  while(targetH.size()) {
+    //     qmcDriver->add_H_and_Psi(targetPsi.front(),targetH.front());
+    //     targetPsi.pop(); targetH.pop();
+    //  }
     }
 
     if(qmcDriver) {
@@ -263,7 +317,6 @@ namespace ohmmsqmc {
             (const xmlChar*)"file", (const xmlChar*)myProject.CurrentRoot());
       }
 
-      myProject.advance();
       curMethod = what;
       
       //may want to reuse!

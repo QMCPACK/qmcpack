@@ -17,6 +17,9 @@
 //   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
+/**@file WaveFunctionPool.cpp
+ * @brief Implements WaveFunctionPool operators.
+ */
 #include "QMCApp/WaveFunctionPool.h"
 #include "QMCApp/ParticleSetPool.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
@@ -32,27 +35,38 @@ namespace ohmmsqmc {
 
   bool WaveFunctionPool::put(xmlNodePtr cur) {
 
-    string id("primary"), target("e");
+    string id("psi0"), target("e"), role("extra");
     OhmmsAttributeSet pAttrib;
     pAttrib.add(id,"id"); pAttrib.add(id,"name"); 
     pAttrib.add(target,"target"); pAttrib.add(target,"ref"); 
+    pAttrib.add(role,"role");
+    pAttrib.put(cur);
 
-    ParticleSet *p = ptclPool->getParticleSet(target);
-    if(p == 0) {
+    ParticleSet *qp = ptclPool->getParticleSet(target);
+    if(qp == 0) {
       ERRORMSG("Wavefunction cannot be created because of missing particle set " << target)
       return false;
     }
 
     TrialWaveFunction *psi = getWaveFunction(id);
-
     if(psi) {
       WARNMSG("wavefunction with " << id << " is already created. Ignore the input")
       return true;
     }
 
+    qp->setName(target);
+    LOGMSG("Creating " << id << " wavefunction for " )
+    LOGMSG(qp->getName() << " particleset")
+    //Create a new TrialWaveFunction
     psi = new TrialWaveFunction;
+    
+    if(myPool.empty() || role == "primary") {
+      primaryPsi=psi;
+    }
 
-    //add particles associated with this wave function
+    //Add to the pool
+    myPool[id]=psi;
+
     cur = cur->children;
     while(cur != NULL) {
       string cname((const char*)(cur->name));
@@ -60,11 +74,14 @@ namespace ohmmsqmc {
         string orbtype=(const char*)(xmlGetProp(cur, (const xmlChar *)"type"));
         LOGMSG("Slater-determinant terms using " << orbtype)
         if(orbtype == "MolecularOrbital") {
-          MolecularOrbitalBuilder a(*p,*psi,ptclPool->getPool());
+          MolecularOrbitalBuilder a(*qp,*psi,ptclPool->getPool());
           a.put(cur);
+        } else {
+          ERRORMSG(orbtype << " is disabled.")
+          return false;
         }
       } else if (cname ==  OrbitalBuilderBase::jastrow_tag) {
-        JastrowBuilder a(*p,*psi,ptclPool->getPool());
+        JastrowBuilder a(*qp,*psi,ptclPool->getPool());
         a.put(cur);
       }
       cur = cur->next;

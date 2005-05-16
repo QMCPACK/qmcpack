@@ -29,9 +29,10 @@ SET(QMCDRIVERS
   ../QMCDrivers/QMCDriver.cpp
   ../QMCDrivers/VMC.cpp
   ../QMCDrivers/VMCParticleByParticle.cpp
-  ../QMCDrivers/DMCParticleByParticle.cpp
+  ../QMCDrivers/VMCMultiple.cpp
   ../QMCDrivers/VMC_OPT.cpp
   ../QMCDrivers/MolecuDMC.cpp
+  ../QMCDrivers/DMCParticleByParticle.cpp
   ../QMCDrivers/ReptationMC.cpp
   ../Estimators/ScalarEstimatorManager.cpp
 )
