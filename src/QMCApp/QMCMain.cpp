@@ -28,6 +28,7 @@
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "QMCHamiltonians/ConservedEnergy.h"
 #include "QMCDrivers/VMC.h"
+#include "QMCDrivers/VMCMultiple.h"
 #include "QMCDrivers/VMCParticleByParticle.h"
 #include "QMCDrivers/DMCParticleByParticle.h"
 #include "QMCDrivers/VMC_OPT.h"
@@ -148,15 +149,19 @@ namespace ohmmsqmc {
     }
 
     //check particleset/wavefunction/hamiltonian of the current document
-    processContext(m_context);
+    //processContext(m_context);
 
-
-    //check if there are any include
+    //preserve the input order
     xmlNodePtr cur=m_root->children;
     while(cur != NULL) {
       string cname((const char*)cur->name);
-
-      if(cname == "include") {//file is provided
+      if(cname == "particleset") {
+        ptclPool->put(cur);
+      } else if(cname == "wavefunction") {
+        psiPool->put(cur);
+      } else if(cname == "hamiltonian") {
+        hamPool->put(cur);
+      } else if(cname == "include") {//file is provided
         const xmlChar* a=xmlGetProp(cur,(const xmlChar*)"href");
         if(a) {
           //root and document are saved
@@ -166,9 +171,10 @@ namespace ohmmsqmc {
           //parse a new file
           m_doc=NULL;
           parse((const char*)a);
-          xmlXPathContextPtr context_=xmlXPathNewContext(m_doc);
-          processContext(context_);
-          xmlXPathFreeContext(context_);
+          processPWH(xmlDocGetRootElement(m_doc));
+          //xmlXPathContextPtr context_=xmlXPathNewContext(m_doc);
+          //processContext(context_);
+          //xmlXPathFreeContext(context_);
           xmlFreeDoc(m_doc);
 
           //copy the original root and document
@@ -200,32 +206,56 @@ namespace ohmmsqmc {
   }   
 
   /** grep basic objects and add to Pools
+   * @param cur current node 
+   *
+   * Recursive search  all the xml elements with particleset, wavefunction and hamiltonian
+   * tags
+   */
+  void QMCMain::processPWH(xmlNodePtr cur) {
+
+    if(cur == NULL) return;
+
+    cur=cur->children;
+    while(cur != NULL) {
+      string cname((const char*)cur->name);
+      if(cname == "particleset") {
+        ptclPool->put(cur);
+      } else if(cname == "wavefunction") {
+        psiPool->put(cur);
+      } else if(cname == "hamiltonian") {
+        hamPool->put(cur);
+      }
+      cur=cur->next;
+    }
+  }
+
+  /** grep basic objects and add to Pools
    * @param context_ xmlXPathContextPtr 
    *
    * Use xpath to get all the xml elements with particleset, wavefunction and hamiltonian
-   * tags.
+   * tags. 
    */
-  void QMCMain::processContext(xmlXPathContextPtr context_) {
+  //void QMCMain::processContext(xmlXPathContextPtr context_) {
 
-    xmlXPathObjectPtr result 
-      = xmlXPathEvalExpression((const xmlChar*)"//particleset",context_);
-    for(int i=0; i<result->nodesetval->nodeNr; i++) {
-      ptclPool->put(result->nodesetval->nodeTab[i]);
-    }
-    xmlXPathFreeObject(result);
+  //  xmlXPathObjectPtr result 
+  //    = xmlXPathEvalExpression((const xmlChar*)"//particleset",context_);
+  //  for(int i=0; i<result->nodesetval->nodeNr; i++) {
+  //    ptclPool->put(result->nodesetval->nodeTab[i]);
+  //  }
+  //  xmlXPathFreeObject(result);
 
-    result=xmlXPathEvalExpression((const xmlChar*)"//wavefunction",context_);
-    for(int i=0; i<result->nodesetval->nodeNr; i++) {
-      psiPool->put(result->nodesetval->nodeTab[i]);
-    }
-    xmlXPathFreeObject(result);
+  //  result=xmlXPathEvalExpression((const xmlChar*)"//wavefunction",context_);
+  //  for(int i=0; i<result->nodesetval->nodeNr; i++) {
+  //    psiPool->put(result->nodesetval->nodeTab[i]);
+  //  }
+  //  xmlXPathFreeObject(result);
 
-    result=xmlXPathEvalExpression((const xmlChar*)"//hamiltonian",context_);
-    for(int i=0; i<result->nodesetval->nodeNr; i++) {
-      hamPool->put(result->nodesetval->nodeTab[i]);
-    }
-    xmlXPathFreeObject(result);
-  }
+  //  result=xmlXPathEvalExpression((const xmlChar*)"//hamiltonian",context_);
+  //  for(int i=0; i<result->nodesetval->nodeNr; i++) {
+  //    hamPool->put(result->nodesetval->nodeTab[i]);
+  //  }
+  //  xmlXPathFreeObject(result);
+  //}
 
   /** prepare for a QMC run
    * @param cur qmc element
@@ -267,7 +297,7 @@ namespace ohmmsqmc {
     if(targetH.empty()) {
       primaryPsi=psiPool->getPrimary();
       primaryH=hamPool->getPrimary();
-    } else {
+    } else { //mark the first targetPsi and targetH as the primaries
       primaryPsi=targetPsi.front(); targetPsi.pop();
       primaryH=targetH.front();targetH.pop();
     }
@@ -293,12 +323,13 @@ namespace ohmmsqmc {
       qmcDriver=vmc;
     } else if(what == "rmc") {
       qmcDriver = new ReptationMC(*qmcSystem,*primaryPsi,*primaryH);
-    //} else if(what == "vmc-multi") {
-    //  qmcDriver = new VMCMultiple(*qmcSystem,*primaryPsi,*primaryH);
-    //  while(targetH.size()) {
-    //     qmcDriver->add_H_and_Psi(targetPsi.front(),targetH.front());
-    //     targetPsi.pop(); targetH.pop();
-    //  }
+    } else if(what == "vmc-multi") {
+      qmcDriver = new VMCMultiple(*qmcSystem,*primaryPsi,*primaryH);
+      while(targetH.size()) {
+        qmcDriver->add_H_and_Psi(targetH.front(),targetPsi.front());
+        targetH.pop();
+        targetPsi.pop(); 
+      }
     }
 
     if(qmcDriver) {

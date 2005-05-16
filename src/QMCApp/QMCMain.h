@@ -91,7 +91,7 @@ namespace ohmmsqmc {
 
     /** add unique ParticleSet, TrialWaveFunction and QMCHamiltonian elements to Pool objects
      */
-    void processContext(xmlXPathContextPtr context_);
+    void processPWH(xmlNodePtr cur);
   };
 }
 #endif
