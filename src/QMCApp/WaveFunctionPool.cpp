@@ -22,9 +22,10 @@
  */
 #include "QMCApp/WaveFunctionPool.h"
 #include "QMCApp/ParticleSetPool.h"
-#include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCWaveFunctions/JastrowBuilder.h"
 #include "QMCWaveFunctions/MolecularOrbitals/MolecularOrbitalBuilder.h"
+#include "QMCWaveFunctions/AtomicOrbitals/HFAtomicSTOSetBuilder.h"
+#include "QMCWaveFunctions/AtomicOrbitals/HeSTOClementiRottie.h"
 using namespace std;
 #include "OhmmsData/AttributeSet.h"
 #include "Utilities/OhmmsInfo.h"
@@ -65,11 +66,28 @@ namespace ohmmsqmc {
     while(cur != NULL) {
       string cname((const char*)(cur->name));
       if (cname == OrbitalBuilderBase::detset_tag) {
-        string orbtype=(const char*)(xmlGetProp(cur, (const xmlChar *)"type"));
+        string orbtype("MolecularOrbital");
+        string nuclei("i");
+        OhmmsAttributeSet oAttrib;
+        oAttrib.add(orbtype,"type");
+        oAttrib.add(nuclei,"source");
+        oAttrib.put(cur);
+
         LOGMSG("Slater-determinant terms using " << orbtype)
         if(orbtype == "MolecularOrbital") {
           MolecularOrbitalBuilder a(*qp,*psi,ptclPool->getPool());
           a.put(cur);
+        } else if(orbtype == "STO-Clementi-Rottie") {
+          ParticleSet* ion = ptclPool->getParticleSet(nuclei);
+          if(ion) {
+            HFAtomicSTOSetBuilder a(*qp,*psi,*ion);
+	    a.put(cur);
+          }
+        } else if(orbtype == "STO-He-Optimized") {
+          ParticleSet* ion = ptclPool->getParticleSet(nuclei);
+          if(ion) {
+            HePresetHFBuilder a(*qp,*psi,*ion);
+          }
         } else {
           ERRORMSG(orbtype << " is disabled.")
           return false;
