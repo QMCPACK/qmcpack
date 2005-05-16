@@ -53,14 +53,20 @@ namespace ohmmsqmc {
     void finalize();
     void reset();
   
-    /*!\return the index of the named column
-     *\brief add a column with the name
+    /** add a column with the name
+     * @param aname name of the column
+     * @return the column index
+     *
+     * Append a named column. 
      */
     inline int addColumn(const char* aname) {
       return BlockAverages.add(aname);
     }
 
-    ///add the value of the i-th column with a value v
+    /** set the value of the i-th column with a value v
+     * @param i column index
+     * @param v value 
+     */
     inline void setColumn(int i, RealType v) {
       BlockAverages[i] = v;
     }

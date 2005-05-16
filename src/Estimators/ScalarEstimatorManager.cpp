@@ -129,7 +129,8 @@ ScalarEstimatorManager::resetReportSettings(const string& aname) {
   } 
 
   //update the weight index
-  for(int i=0; i<Estimators.size(); i++) Estimators[i]->add2Record(BlockAverages);
+  for(int i=0; i<Estimators.size(); i++) 
+    Estimators[i]->add2Record(BlockAverages);
   WeightIndex = BlockAverages.add("WeightSum");
   if(aname != RootName) {
     RootName = aname;
