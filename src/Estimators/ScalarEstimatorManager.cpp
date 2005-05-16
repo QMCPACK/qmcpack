@@ -189,9 +189,14 @@ bool ScalarEstimatorManager::put(xmlNodePtr cur) {
 
   vector<string> extra;
   cur = cur->children;
+
+  //count the number of Hamiltonian copies
+  int nsystem=0;
   while(cur != NULL) {
     string cname((const char*)(cur->name));
-    if(cname == "estimator") {
+    if(cname == "qmcsystem") {
+      nsystem++;
+    } else if(cname == "estimator") {
       xmlChar* att=xmlGetProp(cur,(const xmlChar*)"name");
       if(att) {
 	string aname((const char*)att);
@@ -209,7 +214,8 @@ bool ScalarEstimatorManager::put(xmlNodePtr cur) {
   }
 
   if(Estimators.empty()) {
-    add(new LocalEnergyEstimator<RealType>(H),"elocal");
+    if(nsystem == 0) nsystem=1;
+    add(new LocalEnergyEstimator<RealType>(H,nsystem),"elocal");
   } 
 
   for(int i=0; i<extra.size(); i++) {
