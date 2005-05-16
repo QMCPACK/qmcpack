@@ -49,23 +49,17 @@ namespace ohmmsqmc {
     }
 
     TrialWaveFunction *psi = getWaveFunction(id);
-    if(psi) {
-      WARNMSG("wavefunction with " << id << " is already created. Ignore the input")
-      return true;
+    if(psi == 0) {
+      //Create a new TrialWaveFunction
+      psi = new TrialWaveFunction;
+      if(myPool.empty() || role == "primary") {
+        primaryPsi=psi;
+      }
+      //Add to the pool
+      myPool[id]=psi;
+    } else {
+      WARNMSG("wavefunction with " << id << " is already created. Add a new component.")
     }
-
-    qp->setName(target);
-    LOGMSG("Creating " << id << " wavefunction for " )
-    LOGMSG(qp->getName() << " particleset")
-    //Create a new TrialWaveFunction
-    psi = new TrialWaveFunction;
-    
-    if(myPool.empty() || role == "primary") {
-      primaryPsi=psi;
-    }
-
-    //Add to the pool
-    myPool[id]=psi;
 
     cur = cur->children;
     while(cur != NULL) {
