@@ -49,7 +49,7 @@ namespace ohmmsqmc {
     
     virtual bool put(xmlNodePtr cur) = 0;
 
-    void add(QMCHamiltonian* h, TrialWaveFunction* psi) {
+    void add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi) {
       H1.push_back(h);
       Psi1.push_back(psi);
     }
@@ -95,9 +95,6 @@ namespace ohmmsqmc {
     ///root of all the output files
     string RootName;
 
-    ///Observables manager
-    ScalarEstimatorManager Estimators;
-
     ///walker ensemble
     MCWalkerConfiguration& W;
 
@@ -106,6 +103,9 @@ namespace ohmmsqmc {
 
     ///Hamiltonian
     QMCHamiltonian& H;
+
+    ///Observables manager
+    ScalarEstimatorManager* Estimators;
 
     vector<TrialWaveFunction*> Psi1;
 
@@ -129,14 +129,13 @@ namespace ohmmsqmc {
     xmlNodePtr qmcNode;
 
     ///Copy Constructor (disabled).
-    QMCDriver(const QMCDriver& a): W(a.W), Psi(a.Psi), H(a.H), 
-                                   Estimators(a.H){}
+    QMCDriver(const QMCDriver& a): W(a.W), Psi(a.Psi), H(a.H), Estimators(0){}
  
     bool putQMCInfo(xmlNodePtr cur);
 
     void addWalkers(int nwalkers);  
 
-    void getReady();
+    //void getReady();
   };
   
 }

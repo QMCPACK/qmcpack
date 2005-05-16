@@ -27,9 +27,7 @@ namespace ohmmsqmc {
   class VMCMultiple: public QMCDriver {
   public:
     /// Constructor.
-    VMCMultiple(MCWalkerConfiguration& w, 
-	TrialWaveFunction& psi, // SIMONE - Is this needed if we 
-	QMCHamiltonian& h);
+    VMCMultiple(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h);
 
     void advanceWalkerByWalker();
     bool run();

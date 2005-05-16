@@ -33,6 +33,12 @@ namespace ohmmsqmc {
  
     void setBranchInfo(const string& aname);
   private:
+
+    ///Column index for Populaton
+    IndexType PopIndex;
+    ///Column index for E_T
+    IndexType EtrialIndex;
+    ///hdf5 file name for Branch conditions
     string BranchInfo;
 
     /// Copy Constructor (disabled)

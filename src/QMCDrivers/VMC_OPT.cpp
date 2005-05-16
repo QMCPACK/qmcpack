@@ -107,11 +107,11 @@ namespace ohmmsqmc {
 
   VMC_OPT::RealType VMC_OPT::evalCost() {
 
-    Estimators.flushreport(1);
+    Estimators->flushreport(1);
 
     //Estimators::accumulate has been called by correlatedSampling
-    RealType eav = Estimators.average(0);
-    RealType evar = Estimators.variance(0);
+    RealType eav = Estimators->average(0);
+    RealType evar = Estimators->variance(0);
     RealType cost= w_en*eav+w_var*0.5*Tau*evar;
 
 
@@ -131,16 +131,13 @@ namespace ohmmsqmc {
   bool
   VMC_OPT::run() {
 
-    //create a distance table for one walker
-    //DistanceTable::create(1);
-    //initialize the parameters for optimization
-    //put(qmc_node);
+    Estimators->reportHeader();
 
     //set the data members to start a new run
     checkConfigurations();
 
     //estimator has to collect the data over mpi nodes
-    Estimators.setCollectionMode(OHMMS::Controller->ncontexts()>1);
+    Estimators->setCollectionMode(OHMMS::Controller->ncontexts()>1);
 
     correlatedSampling();
 
@@ -261,7 +258,7 @@ namespace ohmmsqmc {
     //ValueType nw_effect_b = 0.0;
 
     // flush estimators
-    Estimators.reset();
+    Estimators->reset();
     NumSamples = 0;
     //TinyVector<RealType,3> nw_effect(0.0);
     std::vector<RealType> nw_effect(3,0.0);
@@ -301,7 +298,7 @@ namespace ohmmsqmc {
           //move on to next walker
           ++it;++wit;
 	}
-	Estimators.accumulate(W);
+	Estimators->accumulate(W);
       }
     }
 
@@ -313,7 +310,7 @@ namespace ohmmsqmc {
 
   void 
   VMC_OPT::checkConfigurations() {
-    getReady();
+    //getReady();
     RefConf.reserve(ConfigFile.size()*500);
     NumSamples=0;
     for(int i=0; i<ConfigFile.size(); i++) {
@@ -410,8 +407,7 @@ namespace ohmmsqmc {
   VMC_OPT::put(xmlNodePtr q) {
 
     xmlNodePtr qsave=q;
-    Estimators.put(q);
-
+    //Estimators.put(q);
     vector<xmlNodePtr> wset,oset,cset;
     xmlNodePtr cur=qsave->children;
     int pid=OHMMS::Controller->mycontext();
@@ -495,8 +491,7 @@ namespace ohmmsqmc {
       }
     }  
 
-    m_param.put(qsave);
-
+    //m_param.put(qsave);
     LogOut->getStream() << "#" << optmethod << " values: tolerance = "
 			<< cg_tolerance << " stepsize = " << cg_stepsize 
 			<< " epsilon = " << cg_epsilon << " Tau = " 
@@ -518,15 +513,10 @@ namespace ohmmsqmc {
       LogOut->getStream() << "# " << ConfigFile[i] << endl;
 
     //set the stride of the estimators to be 1, always want to print
-    Estimators.setStride(1);
+    Estimators->setStride(1);
 
     return true;
   }
-
-  /**
-   *@brief 
-
-  */
 
   bool
   VMC_OPT::putOptParams(){

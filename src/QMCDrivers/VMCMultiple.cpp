@@ -17,7 +17,7 @@
 //   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#include "QMC/VMCMultiple.h"
+#include "QMCDrivers/VMCMultiple.h"
 #include "Utilities/OhmmsInfo.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "Particle/DistanceTable.h"
@@ -30,195 +30,126 @@
 namespace ohmmsqmc { 
 
   /// Constructor.
-  VMCMultiple::VMCMultiple(MCWalkerConfiguration& w, 
-	   TrialWaveFunction& psi, 
-	   QMCHamiltonian& h):
+  VMCMultiple::VMCMultiple(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h):
     QMCDriver(w,psi,h) { 
     RootName = "vmc";
     QMCType ="vmc";
+
+    //Add the primary h and psi, extra H and Psi pairs will be added by QMCMain
     add_H_and_Psi(&h,&psi);
   }
-  
-  /** Run the VMCMultiple algorithm.
-   * \param nblocks number of blocks
-   * \param nsteps number of steps
-   * \param tau the timestep
+
+  /** allocate internal data here before run() is called
+   * @author SIMONE
    *
-   * Advance the walkers nblocks*nsteps timesteps. 
-   * For each timestep:
-   * <ul>
-   * <li> Move all the particles of a walker.
-   * <li> Calculate the properties for the new walker configuration.
-   * <li> Accept/reject the new configuration.
-   * <li> Accumulate the estimators.
-   * </ul>
-   * For each block:
-   * <ul>
-   * <li> Flush the estimators and print to file.
-   * <li> (Optional) Print the ensemble of walker configurations.
-   * </ul>
-   *
-   * Default mode: Print the ensemble of walker configurations 
-   * at the end of the run.
+   * See QMCDriver::process
    */
-  bool VMCMultiple::run() { 
-    
-    //DistanceTable::create(1);
+  bool VMCMultiple::put(xmlNodePtr q){
 
-    //if(put(qmc_node)){
+    nPsi=Psi1.size();	
 
-      H.setTau(0.0);
-      
-      //set the data members to start a new run
-      getReady();
-      
-      //probably unnecessary
-      MCWalkerConfiguration::iterator it = W.begin(); 
-      MCWalkerConfiguration::iterator it_end = W.end(); 
-      while(it != it_end) {
-	(*it)->Properties(WEIGHT) = 1.0;
-        ++it;
-      }
+    if(IndexPsi.size() != nPsi) {
+      IndexPsi.resize(nPsi,-1);//set it to -1 so that we add index only once
+    }
 
-      deltaR.resize(W.getTotalNum());
-      drift.resize(W.getTotalNum());
-
-      nPsi=Psi1.size();			//SIMONE
-      IndexPsi.resize(nPsi);		//SIMONE
-      logpsi.resize(nPsi);		//SIMONE
-      dgrad.resize(nPsi);		//SIMONE
-      lap.resize(nPsi);			//SIMONE
-      sumratio.resize(nPsi);		//SIMONE
-      invsumratio.resize(nPsi);		//SIMONE
-      totinvsumratio.resize(nPsi);	//SIMONE
-      
-      Estimators.reset();
-
-      //create an output engine
-      HDFWalkerOutput WO(RootName);
-      
-      IndexType block = 0;
-      
-      Pooma::Clock timer;
-      
-      double wh=0.0;
-      IndexType accstep=0;
-      IndexType nAcceptTot = 0;
-      IndexType nRejectTot = 0;
-      do {
-	IndexType step = 0;
-	timer.start();
-	nAccept = 0; nReject=0;
-	for(int ipsi=0; ipsi< nPsi; ipsi++)			//SIMONE
-	  totinvsumratio[ipsi] = 0.0;					//SIMONE
-	do {
-	  advanceWalkerByWalker();
-	  step++;accstep++;
-	  Estimators.accumulate(W);
-	} while(step<nSteps);
-	
-	timer.stop();
-	nAcceptTot += nAccept;
-	nRejectTot += nReject;
-	double BlockTotal=static_cast<double>(nAccept+nReject);				//SIMONE
-	Estimators.flush();
-	Estimators.setColumn(AcceptIndex,static_cast<double>(nAccept)/BlockTotal);	//SIMONE
-	for(int ipsi=0; ipsi< nPsi; ipsi++)						//SIMONE
-	  Estimators.setColumn(IndexPsi[ipsi],totinvsumratio[ipsi]/BlockTotal);		//SIMONE
-	Estimators.report(accstep);
-	
-	LogOut->getStream() << "Block " << block << " " << timer.cpu_time() << endl;
-	if(pStride) WO.get(W);
-	nAccept = 0; nReject = 0; //SIMONE - Necessary?
-	block++;
-      } while(block<nBlocks);
-      
-      LogOut->getStream() 
-	<< "Ratio = " 
-	<< static_cast<double>(nAcceptTot)/static_cast<double>(nAcceptTot+nRejectTot)
-	<< endl;
-      
-      if(!pStride) WO.get(W);
-      
-      Estimators.finalize();
-      
-      return true;
-    //} else {
-    //  ERRORMSG("Error with Input")
-    //  return false;
-    //}
-  }
-
-
-  bool 
-  VMCMultiple::put(xmlNodePtr q){
-    xmlNodePtr qsave=q;
-    bool success = putQMCInfo(q);
-
-    //check <estimator>'s
-    success = Estimators.put(qsave);
-
+    logpsi.resize(nPsi);
+    dgrad.resize(nPsi);		
+    lap.resize(nPsi);		
+    sumratio.resize(nPsi);	
+    invsumratio.resize(nPsi);	
+    totinvsumratio.resize(nPsi);
     for(int ipsi=0; ipsi< Psi1.size(); ipsi++){
       char cname[6];
       int jpsi=sprintf(cname,"WPsi%d",ipsi);
-      IndexPsi[ipsi]=Estimators.addColumn(cname);
+      if(IndexPsi[ipsi]<0) IndexPsi[ipsi]=Estimators->addColumn(cname);
     }
-    return success;
+
+    return true;
+  }
+  
+  /** Run the VMCMultiple algorithm.
+   *
+   * Similar to VMC::run 
+   */
+  bool VMCMultiple::run() { 
+    
+    Estimators->reportHeader();
+
+    //probably unnecessary
+    MCWalkerConfiguration::iterator it(W.begin()); 
+    MCWalkerConfiguration::iterator it_end(W.end()); 
+    while(it != it_end) {
+      (*it)->Properties(WEIGHT) = 1.0;
+      ++it;
+    }
+    
+    Estimators->reset();
+
+    //create an output engine
+    HDFWalkerOutput WO(RootName);
+    
+    IndexType block = 0;
+    
+    Pooma::Clock timer;
+    
+    double wh=0.0;
+    IndexType accstep=0;
+    IndexType nAcceptTot = 0;
+    IndexType nRejectTot = 0;
+    do {
+      IndexType step = 0;
+      timer.start();
+      nAccept = 0; nReject=0;
+      for(int ipsi=0; ipsi< nPsi; ipsi++)			//SIMONE
+        totinvsumratio[ipsi] = 0.0;					//SIMONE
+      do {
+        advanceWalkerByWalker();
+        step++;accstep++;
+        Estimators->accumulate(W);
+      } while(step<nSteps);
+      
+      timer.stop();
+      nAcceptTot += nAccept;
+      nRejectTot += nReject;
+      RealType BlockTotal=static_cast<RealType>(nAccept+nReject);				//SIMONE
+      Estimators->flush();
+      Estimators->setColumn(AcceptIndex,static_cast<RealType>(nAccept)/BlockTotal);	//SIMONE
+      for(int ipsi=0; ipsi< nPsi; ipsi++)						//SIMONE
+        Estimators->setColumn(IndexPsi[ipsi],totinvsumratio[ipsi]/BlockTotal);		//SIMONE
+      Estimators->report(accstep);
+      
+      LogOut->getStream() << "Block " << block << " " << timer.cpu_time() << endl;
+      if(pStride) WO.get(W);
+      nAccept = 0; nReject = 0; //SIMONE - Necessary?
+      block++;
+    } while(block<nBlocks);
+    
+    LogOut->getStream() 
+      << "Ratio = " 
+      << static_cast<double>(nAcceptTot)/static_cast<double>(nAcceptTot+nRejectTot)
+      << endl;
+    
+    if(!pStride) WO.get(W);
+    
+    Estimators->finalize();
+
+    return true;
   }
 
   /**  Advance all the walkers one timstep. 
-   *
-   Propose a move for each walker from its old 
-   position \f${\bf R'}\f$ to a new position \f${\bf R}\f$
-   \f[ 
-   {\bf R'} + {\bf \chi} + 
-   \tau {\bf v_{drift}}({\bf R'}) =  {\bf R},
-   \f]
-   where \f$ {\bf \chi} \f$ is a 3N-diminsional Gaussian 
-   of mean zero and variance \f$ \tau \f$ and 
-   \f$ {\bf v_{drift}} \f$ is the drift velocity
-   \f[ 
-   {\bf v_{drift}}({\bf R'}) = {\bf \nabla} 
-   \ln |\Psi_T({\bf R'})| = \Psi_T({\bf R'})^{-1} 
-   {\bf \nabla} \Psi_T({\bf R'}). 
-   \f]
-   Metropolis accept/reject with probability
-   \f[
-   P_{accept}(\mathbf{R'}\rightarrow\mathbf{R}) = 
-   \min\left[1,\frac{G(\mathbf{R}\rightarrow\mathbf{R'})
-   \Psi_T(\mathbf{R})^2}{G(\mathbf{R'}\rightarrow\mathbf{R})
-   \Psi_T(\mathbf{R'})^2}\right],
-   \f] 
-   where \f$ G \f$ is the drift-diffusion Green's function 
-   \f[
-   G(\mathbf{R'} \rightarrow 
-   \mathbf{R}) = (2\pi\tau)^{-3/2}\exp \left[ -
-   (\mathbf{R}-\mathbf{R'}-\tau \mathbf{v_{drift}}
-   (\mathbf{R'}))^2/2\tau \right].
-   \f]
-   If the move is accepted, update the walker configuration and
-   properties.  For rejected moves, do not update except for the
-   Age which needs to be incremented by one.
-   *
    */
-
-  /**@ingroup advanceWalkersVMCMultiple
-   * \brief Loop through the walkers and advance one at a time.
-   */
-  
   void 
   VMCMultiple::advanceWalkerByWalker() {
     
-    //Pooma::Clock timer;
     RealType oneovertau = 1.0/Tau;
     RealType oneover2tau = 0.5*oneovertau;
     RealType g = sqrt(Tau);
     
     MCWalkerConfiguration::PropertyContainer_t Properties;
-    int nh = H.size()+1;  //SIMONE - What is this?
     
-    MCWalkerConfiguration::iterator it = W.begin(); 
-    MCWalkerConfiguration::iterator it_end = W.end(); 
+    MCWalkerConfiguration::iterator it(W.begin()); 
+    MCWalkerConfiguration::iterator it_end(W.end()); 
+
     while(it != it_end) {
       
       //copy the properties of the working walker

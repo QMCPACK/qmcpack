@@ -60,75 +60,64 @@ namespace ohmmsqmc {
    */
   bool VMC::run() { 
     
-    //DistanceTable::create(1);
+    Estimators->reportHeader();
 
-    //if(put(qmc_node)){
+    //probably unnecessary
+    MCWalkerConfiguration::iterator it(W.begin()); 
+    MCWalkerConfiguration::iterator it_end(W.end()); 
+    while(it != it_end) {
+      (*it)->Properties(WEIGHT) = 1.0;
+      ++it;
+    }
+    
+    Estimators->reset();
 
-      H.setTau(0.0);
-      
-      //set the data members to start a new run
-      getReady();
-      
-      //probably unnecessary
-      MCWalkerConfiguration::iterator it = W.begin(); 
-      MCWalkerConfiguration::iterator it_end = W.end(); 
-      while(it != it_end) {
-	(*it)->Properties(WEIGHT) = 1.0;
-        ++it;
-      }
-      
-      Estimators.reset();
-
-      //create an output engine
-      HDFWalkerOutput WO(RootName);
-      
-      IndexType block = 0;
-      
-      Pooma::Clock timer;
-      
-      double wh=0.0;
-      IndexType accstep=0;
-      IndexType nAcceptTot = 0;
-      IndexType nRejectTot = 0;
+    //create an output engine
+    HDFWalkerOutput WO(RootName);
+    
+    IndexType block = 0;
+    
+    Pooma::Clock timer;
+    
+    double wh=0.0;
+    IndexType accstep=0;
+    IndexType nAcceptTot = 0;
+    IndexType nRejectTot = 0;
+    do {
+      IndexType step = 0;
+      timer.start();
+      nAccept = 0; nReject=0;
       do {
-	IndexType step = 0;
-	timer.start();
-	nAccept = 0; nReject=0;
-	do {
-	  advanceWalkerByWalker();
-	  step++;accstep++;
-	  Estimators.accumulate(W);
-	} while(step<nSteps);
-	
-	timer.stop();
-	nAcceptTot += nAccept;
-	nRejectTot += nReject;
-	
-	Estimators.flush();
-	Estimators.setColumn(AcceptIndex,
-			     static_cast<double>(nAccept)/static_cast<double>(nAccept+nReject));
-	Estimators.report(accstep);
-	
-	LogOut->getStream() << "Block " << block << " " << timer.cpu_time() << endl;
-	if(pStride) WO.get(W);
-	nAccept = 0; nReject = 0;
-	block++;
-      } while(block<nBlocks);
+        advanceWalkerByWalker();
+        step++;accstep++;
+        Estimators->accumulate(W);
+      } while(step<nSteps);
       
-      LogOut->getStream() 
-	<< "Ratio = " 
-	<< static_cast<double>(nAcceptTot)/static_cast<double>(nAcceptTot+nRejectTot)
-	<< endl;
+      timer.stop();
+      nAcceptTot += nAccept;
+      nRejectTot += nReject;
       
-      if(!pStride) WO.get(W);
+      Estimators->flush();
+      Estimators->setColumn(AcceptIndex,
+      		    static_cast<RealType>(nAccept)/static_cast<RealType>(nAccept+nReject));
+      Estimators->report(accstep);
       
-      Estimators.finalize();
-      
-      return true;
-    //} else {
-    //  ERRORMSG("Error with Input")
-    //  return false;
-    //}
+      LogOut->getStream() << "Block " << block << " " << timer.cpu_time() << endl;
+      if(pStride) WO.get(W);
+      nAccept = 0; nReject = 0;
+      block++;
+    } while(block<nBlocks);
+    
+    LogOut->getStream() 
+      << "Ratio = " 
+      << static_cast<double>(nAcceptTot)/static_cast<double>(nAcceptTot+nRejectTot)
+      << endl;
+    
+    if(!pStride) WO.get(W);
+    
+    Estimators->finalize();
+    
+    return true;
   }
 
   /**  Advance all the walkers one timstep. 
@@ -235,11 +224,9 @@ namespace ohmmsqmc {
   }
   
   bool 
-  VMC::put(xmlNodePtr q){
-    xmlNodePtr qsave=q;
-    bool success = putQMCInfo(q);
-    success = Estimators.put(qsave);
-    return success;
+  VMC::put(xmlNodePtr q){ 
+    //nothing to do
+    return true;
   }
 
 }

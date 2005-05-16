@@ -40,6 +40,10 @@ namespace ohmmsqmc {
     BranchInfo=afile;
   }
   
+  bool MolecuDMC::put(xmlNodePtr q){
+    return true;
+  }
+  
   /** Advance the walkers nblocks*nsteps timesteps. 
    * @param nblocks number of blocks
    * @param nsteps number of steps
@@ -64,116 +68,97 @@ namespace ohmmsqmc {
    * at the end of the run.
    */
   bool MolecuDMC::run() { 
+
+    //add columns
+    IndexType PopIndex = Estimators->addColumn("Population");
+    IndexType EtrialIndex = Estimators->addColumn("E_T");
+    //write the header
+    Estimators->reportHeader();
+
+    MolecuFixedNodeBranch<RealType> brancher(Tau,W.getActiveWalkers());
+    brancher.put(qmcNode,LogOut);
+
+    if(BranchInfo != "default")  brancher.read(BranchInfo);
+
+    MCWalkerConfiguration::iterator it(W.begin()); 
+    MCWalkerConfiguration::iterator it_end(W.end()); 
+    while(it != it_end) {
+      (*it)->Properties(WEIGHT) = 1.0;
+      (*it)->Properties(MULTIPLICITY) = 1.0;
+      ++it;
+    }
     
-   //create a distance table for one walker
-    //DistanceTable::create(1);
-    //deltaR.resize(W.getTotalNum());
-    //drift.resize(W.getTotalNum());
-
-    //if(put(qmc_node)){
-      // extract the WOS potential and reset the parameters for DMC
-
-      MolecuFixedNodeBranch<RealType> brancher(Tau,W.getActiveWalkers());
-      brancher.put(qmcNode,LogOut);
-
-      if(BranchInfo != "default")  brancher.read(BranchInfo);
-
-      //set the data members to start a new run
-      //    getReady();
-      int PopIndex, E_TIndex;
-      Estimators.resetReportSettings(RootName);
-      AcceptIndex = Estimators.addColumn("AcceptRatio");
-      PopIndex = Estimators.addColumn("Population");
-      E_TIndex = Estimators.addColumn("E_T");
-      Estimators.reportHeader();
-      MCWalkerConfiguration::iterator it(W.begin()); 
-      MCWalkerConfiguration::iterator it_end(W.end()); 
-      while(it != it_end) {
-	(*it)->Properties(WEIGHT) = 1.0;
-	(*it)->Properties(MULTIPLICITY) = 1.0;
-        ++it;
-      }
-      
-      /*if VMC/DMC directly preceded DMC (Counter > 0) then
-	use the average value of the energy estimator for
-	the reference energy of the brancher*/
-      if(Counter) {
-	RealType e_ref = W.getLocalEnergy();
-	LOGMSG("Overwriting the reference energy by the local energy " << e_ref)  
-	brancher.setEguess(e_ref);
-      }
-      
-      IndexType block = 0;
-      
-      Pooma::Clock timer;
-      int Population = W.getActiveWalkers();
-      int tPopulation = W.getActiveWalkers();
-      RealType Eest = brancher.E_T;
-      IndexType accstep=0;
-      IndexType nAcceptTot = 0;
-      IndexType nRejectTot = 0;
-      
+    /*if VMC/DMC directly preceded DMC (Counter > 0) then
+      use the average value of the energy estimator for
+      the reference energy of the brancher*/
+    if(Counter) {
+      RealType e_ref = W.getLocalEnergy();
+      LOGMSG("Overwriting the reference energy by the local energy " << e_ref)  
+      brancher.setEguess(e_ref);
+    }
+    
+    IndexType block = 0;
+    
+    Pooma::Clock timer;
+    int Population = W.getActiveWalkers();
+    int tPopulation = W.getActiveWalkers();
+    RealType Eest = brancher.E_T;
+    IndexType accstep=0;
+    IndexType nAcceptTot = 0;
+    IndexType nRejectTot = 0;
+    
+    do {
+      IndexType step = 0;
+      timer.start();
       do {
-	IndexType step = 0;
-	timer.start();
-	do {
-	  Population = W.getActiveWalkers();
-	  advanceWalkerByWalker(brancher);
-	  step++; accstep++;
-	  Estimators.accumulate(W);
-	  Eest = brancher.update(Population,Eest);
-	  brancher.branch(accstep,W);
-	} while(step<nSteps);
-	timer.stop();
-	
-	nAcceptTot += nAccept;
-	nRejectTot += nReject;
-	Estimators.flush();
-	
-	Estimators.setColumn(PopIndex,static_cast<double>(Population));
-	Estimators.setColumn(E_TIndex,Eest);
-	Estimators.setColumn(AcceptIndex,
-			     static_cast<double>(nAccept)/static_cast<double>(nAccept+nReject));
-	Estimators.report(accstep);
-	LogOut->getStream() << "Block " << block << " " << timer.cpu_time()
-			    << " " << Population << endl;
-	Eest = Estimators.average(0);
-	
-	nAccept = 0; nReject = 0;
-	block++;
-	if(pStride) {
-	  //create an output engine: could accumulate the configurations
-	  HDFWalkerOutput WO(RootName);
-	  WO.get(W);
-          brancher.write(WO.getGroupID());
-	}
-	W.reset();
-      } while(block<nBlocks);
+        Population = W.getActiveWalkers();
+        advanceWalkerByWalker(brancher);
+        step++; accstep++;
+        Estimators->accumulate(W);
+        Eest = brancher.update(Population,Eest);
+        brancher.branch(accstep,W);
+      } while(step<nSteps);
+      timer.stop();
       
-      LogOut->getStream() 
-	<< "ratio = " << static_cast<double>(nAcceptTot)/static_cast<double>(nAcceptTot+nRejectTot)
-	<< endl;
+      nAcceptTot += nAccept;
+      nRejectTot += nReject;
+      Estimators->flush();
       
-      if(!pStride) {
-	//create an output engine: could accumulate the configurations
-	HDFWalkerOutput WO(RootName);
-	WO.get(W);
+      Estimators->setColumn(PopIndex,static_cast<RealType>(Population));
+      Estimators->setColumn(EtrialIndex,Eest);
+      Estimators->setColumn(AcceptIndex,
+      	            static_cast<RealType>(nAccept)/static_cast<RealType>(nAccept+nReject));
+      Estimators->report(accstep);
+      LogOut->getStream() << "Block " << block << " " << timer.cpu_time()
+      		    << " " << Population << endl;
+      Eest = Estimators->average(0);
+      
+      nAccept = 0; nReject = 0;
+      block++;
+      if(pStride) {
+        //create an output engine: could accumulate the configurations
+        HDFWalkerOutput WO(RootName);
+        WO.get(W);
         brancher.write(WO.getGroupID());
       }
-      Estimators.finalize();
-      return true;
-    //} else 
-    //  return false;
+      W.reset();
+    } while(block<nBlocks);
+    
+    LogOut->getStream() 
+      << "ratio = " << static_cast<double>(nAcceptTot)/static_cast<double>(nAcceptTot+nRejectTot)
+      << endl;
+    
+    if(!pStride) {
+      //create an output engine: could accumulate the configurations
+      HDFWalkerOutput WO(RootName);
+      WO.get(W);
+      brancher.write(WO.getGroupID());
+    }
+
+    Estimators->finalize();
+    return true;
   }
 
-  bool 
-  MolecuDMC::put(xmlNodePtr q){
-    xmlNodePtr qsave=q;
-    bool success = putQMCInfo(q);
-    success = Estimators.put(qsave);
-    return success;
-  }
-  
   /**  Advance all the walkers one timstep. 
    * 
    Propose a move for each walker from its old 

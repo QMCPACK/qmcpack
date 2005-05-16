@@ -40,14 +40,13 @@ namespace ohmmsqmc {
     void setBranchInfo(const string& fname);
 
   private:
+
+    ///hdf5 file name for Branch conditions
+    std::string BranchInfo;
     /// Copy Constructor (disabled)
     MolecuDMC(const MolecuDMC& a): QMCDriver(a) { }
     /// Copy operator (disabled).
     MolecuDMC& operator=(const MolecuDMC&) { return *this;}
-
-    ///hdf5 file name for Branch conditions
-    std::string BranchInfo;
-
   };
 }
 #endif

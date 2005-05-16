@@ -32,11 +32,14 @@ namespace ohmmsqmc {
   QMCDriver::QMCDriver(MCWalkerConfiguration& w, 
 		       TrialWaveFunction& psi, 
 		       QMCHamiltonian& h):
-    nAccept(0),  nReject(0), nTargetWalkers(0),
-    Estimators(h), W(w), Psi(psi), H(h),
-    Tau(0.001), FirstStep(0.2), nBlocks(100), nSteps(1000), 
-    pStride(false), LogOut(NULL),
-    QMCType("invalid") { 
+    AcceptIndex(-1),
+    Tau(0.001), FirstStep(0.0),
+    nBlocks(100), nSteps(1000), pStride(false), 
+    nAccept(0), nReject(0), nTargetWalkers(0),
+    QMCType("invalid"), 
+    W(w), Psi(psi), H(h), Estimators(0),
+    LogOut(0), qmcNode(NULL)
+  { 
     
     Counter++; 
     m_param.add(nSteps,"steps","int");
@@ -48,23 +51,49 @@ namespace ohmmsqmc {
 
   QMCDriver::~QMCDriver() { 
     
-    if(Estimators.size())
-      W.setLocalEnergy(Estimators.average(0));
+    if(Estimators) {
+      if(Estimators->size()) W.setLocalEnergy(Estimators->average(0));
+      delete Estimators;
+    }
     
     if(LogOut) delete LogOut;
   }
 
+  /** process a <qmc/> element 
+   * @param cur xmlNode with qmc tag
+   *
+   * This function is called before QMCDriver::run and following actions are taken:
+   * - Initialize basic data to execute run function.
+   * -- distance tables
+   * -- resize deltaR and drift with the number of particles
+   * -- assign cur to qmcNode
+   * - process input file
+   *   -- putQMCInfo: <parameter/> s for QMC
+   *   -- put : extra data by derived classes
+   * - initialize Estimators
+   * The virtual function put(xmlNodePtr cur) is where QMC algorithm-dependent
+   * data are registered and initialized.
+   */
   void QMCDriver::process(xmlNodePtr cur) {
 
-    //DistanceTable::create(1);
     W.setUpdateMode(MCWalkerConfiguration::Update_Particle);
 
     deltaR.resize(W.getTotalNum());
     drift.resize(W.getTotalNum());
 
     qmcNode=cur;
-    put(cur);
 
+    //create estimator
+    if(Estimators == 0) {
+      Estimators =new ScalarEstimatorManager(H);
+    }
+
+    putQMCInfo(qmcNode);
+    put(qmcNode);
+    Estimators->put(qmcNode);
+
+    Estimators->resetReportSettings(RootName);
+    AcceptIndex=Estimators->addColumn("AcceptRatio");
   }
 
   /**Sets the root file name for all output files.!
@@ -87,13 +116,13 @@ namespace ohmmsqmc {
     LogOut->getStream() << "Starting a " << QMCType << " run " << endl;
   }
 
-  /** initialize estimators and other internal data */  
-  void QMCDriver::getReady() {
-    
-    Estimators.resetReportSettings(RootName);
-    AcceptIndex = Estimators.addColumn("AcceptRatio");
-    Estimators.reportHeader();
-  }
+  ///** initialize estimators and other internal data */  
+  //void QMCDriver::getReady() {
+  //  
+  //  //Estimators.resetReportSettings(RootName);
+  //  //AcceptIndex = Estimators.addColumn("AcceptRatio");
+  //  //Estimators.reportHeader();
+  //}
   
 
   /** Add walkers to the end of the ensemble of walkers.  
@@ -251,7 +280,7 @@ namespace ohmmsqmc {
     m_param.get(cout);
 
     //set the stride for the scalar estimators 
-    Estimators.setStride(nSteps);
+    Estimators->setStride(nSteps);
     /*check to see if the target population is different 
       from the current population.*/ 
     int nw  = W.getActiveWalkers();

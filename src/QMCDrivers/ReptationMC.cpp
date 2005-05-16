@@ -303,34 +303,22 @@ namespace ohmmsqmc {
 
   bool ReptationMC::run() { 
 
-    ////create a distance table for one walker
-    //DistanceTable::create(1);
-    //
-    //if(put(qmc_node)){
-      
-      //set the data members to start a new run
-      //    getReady();
-      int PopIndex, E_TIndex;
-      Estimators.resetReportSettings(RootName);
-      AcceptIndex = Estimators.addColumn("AcceptRatio");
-      Estimators.reportHeader();
+    Estimators->reportHeader();
 
-      //resize the temporary container
-      deltaR.resize(W.getTotalNum());
+    initPolymers();
 
-      initPolymers();
+    IndexType block = 0;
+    Pooma::Clock timer;
+    IndexType accstep=0;
+    IndexType nAcceptTot = 0;
+    IndexType nRejectTot = 0;
+    
+    LocalPotentialEstimator pe(&Polymers);
+    pe.resetReportSettings(RootName);
 
-      IndexType block = 0;
-      Pooma::Clock timer;
-      IndexType accstep=0;
-      IndexType nAcceptTot = 0;
-      IndexType nRejectTot = 0;
-      
-      LocalPotentialEstimator pe(&Polymers);
-      pe.resetReportSettings(RootName);
+    //accumulate configuration: probably need to reorder
+    HDFWalkerOutput WO(RootName);
 
-      //accumulate configuration: probably need to reorder
-      HDFWalkerOutput WO(RootName);
       do {
 
 	IndexType step = 0;
@@ -349,7 +337,7 @@ namespace ohmmsqmc {
 	    ++ilink; ++it;
 	  }
 
-	  Estimators.accumulate(W);
+	  Estimators->accumulate(W);
 	  pe.accumulate();
 
 // 	  cout << step << " ";
@@ -362,10 +350,10 @@ namespace ohmmsqmc {
 	nAcceptTot += nAccept;
 	nRejectTot += nReject;
 
-        RealType acceptedR = static_cast<double>(nAccept)/static_cast<double>(nAccept+nReject); 
-	Estimators.flush();
-	Estimators.setColumn(AcceptIndex,acceptedR);
-	Estimators.report(accstep);
+        RealType acceptedR = static_cast<RealType>(nAccept)/static_cast<RealType>(nAccept+nReject); 
+	Estimators->flush();
+	Estimators->setColumn(AcceptIndex,acceptedR);
+	Estimators->report(accstep);
 	pe.report(accstep);
 
         //change NumCuts to make accstep ~ 50%
@@ -385,18 +373,14 @@ namespace ohmmsqmc {
 	<< static_cast<double>(nAcceptTot)/static_cast<double>(nAcceptTot+nRejectTot)
 	<< endl;
 
-      Estimators.finalize();
+      Estimators->finalize();
       return true;
-    //} else 
-    //  return false;
   }
 
   bool 
   ReptationMC::put(xmlNodePtr q){
-    xmlNodePtr qsave=q;
-    bool success = putQMCInfo(q);
-    success = Estimators.put(qsave);
-    return success;
+    //nothing to do yet
+    return true;
   }
   
   void 
