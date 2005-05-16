@@ -47,6 +47,7 @@ SET(MAINSRCS
   ParticleSetPool.cpp
   WaveFunctionPool.cpp
   HamiltonianPool.cpp
+  InitMolecularSystem.cpp
   QMCAppBase.cpp
   QMCMain.cpp
   qmcapp.cpp
