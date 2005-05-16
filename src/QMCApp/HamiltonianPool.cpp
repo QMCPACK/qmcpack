@@ -53,15 +53,14 @@ namespace ohmmsqmc {
 
     curH = getHamiltonian(id);
     if(curH) {
-      WARNMSG("hamiltonian with " << id << " is already created. Ignore the input")
-      return true;
+      WARNMSG("hamiltonian with " << id << " is already created. Will add new terms.")
+    } else {
+      curH = new QMCHamiltonian;
+      if(myPool.empty() || role == "primary" ) {
+        primaryH = curH;
+      }
+      myPool[id]=curH;
     }
-
-    curH = new QMCHamiltonian;
-    if(myPool.empty() || role == "primary" ) {
-      primaryH = curH;
-    }
-    myPool[id]=curH;
 
     ParticleSet* qp=ptclPool->getParticleSet(target);
     if(qp == 0) {
@@ -107,23 +106,26 @@ namespace ohmmsqmc {
     //check the child nodes of hamiltonian: pairpot 
     while(cur != NULL) {
       string cname((const char*)cur->name);
-      if(cname == "pairpot") {
-        const xmlChar* t = xmlGetProp(cur,(const xmlChar*)"type");
-        if(t == NULL) continue;
+      const xmlChar* t = xmlGetProp(cur,(const xmlChar*)"type");
+      if(t) { // accept only if it has type
         string pot_type((const char*)t);
-        if(pot_type == "coulomb") {
-          addCoulombPotential(cur,qp);
-        } else if(pot_type == "pseudo") {
-          addPseudoPotential(cur,qp);
-        } else if(pot_type == "ionion") { //ugly!!!
-          t = xmlGetProp(cur,(const xmlChar*)"source");
-          string nuclei("i");
-          if(t) nuclei=(const char*)t;
-          ParticleSet* ion=ptclPool->getParticleSet(nuclei);
-          if(ion) {
-            if(ion->getTotalNum()>1) 
-              curH->add(new IonIonPotential(*ion),"IonIon");
-           }
+        if(cname == "pairpot") {
+          if(pot_type == "coulomb") {
+            addCoulombPotential(cur,qp);
+          } else if(pot_type == "pseudo") {
+            addPseudoPotential(cur,qp);
+          }
+        } else if(cname == "constant") { 
+          if(pot_type == "coulomb") { //ugly!!!
+            t = xmlGetProp(cur,(const xmlChar*)"source");
+            string nuclei("i");
+            if(t) nuclei=(const char*)t;
+            ParticleSet* ion=ptclPool->getParticleSet(nuclei);
+            if(ion) {
+              if(ion->getTotalNum()>1) 
+                curH->add(new IonIonPotential(*ion),"IonIon");
+             }
+          }
         }
       }
       cur = cur->next;
