@@ -41,7 +41,7 @@ namespace ohmmsqmc {
     LogOut(0), qmcNode(NULL)
   { 
     
-    Counter++; 
+    //Counter++; 
     m_param.add(nSteps,"steps","int");
     m_param.add(nBlocks,"blocks","int");
     m_param.add(nTargetWalkers,"walkers","int");
@@ -75,6 +75,8 @@ namespace ohmmsqmc {
    * data are registered and initialized.
    */
   void QMCDriver::process(xmlNodePtr cur) {
+
+    Counter++; 
 
     W.setUpdateMode(MCWalkerConfiguration::Update_Particle);
 
