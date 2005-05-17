@@ -24,7 +24,6 @@
 #include "QMCApp/ParticleSetPool.h"
 #include "QMCWaveFunctions/JastrowBuilder.h"
 #include "QMCWaveFunctions/MolecularOrbitals/MolecularOrbitalBuilder.h"
-#include "QMCWaveFunctions/AtomicOrbitals/HFAtomicSTOSetBuilder.h"
 #include "QMCWaveFunctions/AtomicOrbitals/HeSTOClementiRottie.h"
 using namespace std;
 #include "OhmmsData/AttributeSet.h"
@@ -77,12 +76,6 @@ namespace ohmmsqmc {
         if(orbtype == "MolecularOrbital") {
           MolecularOrbitalBuilder a(*qp,*psi,ptclPool->getPool());
           a.put(cur);
-        } else if(orbtype == "STO-Clementi-Rottie") {
-          ParticleSet* ion = ptclPool->getParticleSet(nuclei);
-          if(ion) {
-            HFAtomicSTOSetBuilder a(*qp,*psi,*ion);
-	    a.put(cur);
-          }
         } else if(orbtype == "STO-He-Optimized") {
           ParticleSet* ion = ptclPool->getParticleSet(nuclei);
           if(ion) {
