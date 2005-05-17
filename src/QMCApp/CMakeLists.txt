@@ -91,5 +91,5 @@ TARGET_LINK_LIBRARIES(mo2grid3d qmc qmcbase)
 ####################################
 #general qmcapp for multiple configurations, hamiltonians and wavefunctions.
 ####################################
-ADD_EXECUTABLE(oops ${MAINSRCS})
-TARGET_LINK_LIBRARIES(oops qmc qmcbase)
+ADD_EXECUTABLE(qmcapp ${MAINSRCS})
+TARGET_LINK_LIBRARIES(qmcapp qmc qmcbase)

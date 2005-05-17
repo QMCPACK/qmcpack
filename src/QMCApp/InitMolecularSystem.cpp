@@ -72,9 +72,10 @@ namespace ohmmsqmc {
     ParticleSet::ParticlePos_t chi(els->getTotalNum());
     makeGaussRandom(chi);
 
+    double q=sqrt(static_cast<double>(els->getTotalNum()))*0.5;
     int nel(els->getTotalNum()), items(0);
     while(nel) {
-      els->R[items]=0.5*chi[items]; 
+      els->R[items]=q*chi[items]; 
       --nel; ++items;
     }
   }

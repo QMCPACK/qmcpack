@@ -119,8 +119,8 @@ namespace ohmmsqmc {
     vector<FT*> F;
 
     ///constructor
-    TwoBodyJastrow(DistanceTableData* dtable): d_table(dtable) { 
-      N=d_table->size(VisitorIndex);
+    TwoBodyJastrow(ParticleSet& p, DistanceTableData* dtable): d_table(dtable) { 
+      N=p.getTotalNum();
       NN=N*N;
       U.resize(NN+1);
     }

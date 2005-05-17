@@ -91,12 +91,14 @@ DistanceTable::add(const ParticleSet& s, const char* aname) {
 
   ///the named pair does not exist, add a new symmetric metrics
   if(it == TableMap.end()) {
+    LOGMSG("Distance table " << newname << " is created.")
     int n = TableList.size();
     TableList.push_back(new SymmetricDTD<NoBConds<double,3> >(s,s));
     TableMap[newname] = n;
     VisitorID.push_back(s.tag());
     return n;
   } else {
+    LOGMSG("Distance table " << newname << " is reused")
     return (*it).second;
   }
 }
@@ -120,18 +122,18 @@ DistanceTable::add(const ParticleSet& s, const ParticleSet& t,
     newname.append(t.getName());
   }
 
-  LOGMSG("Creating a distance table with " << newname)
-
   map<string,int>::iterator it = TableMap.find(newname);
 
   ///the named pair does not exist, add a new asymmetric metrics
   if(it == TableMap.end()) {
+    LOGMSG("Distance table " << newname << " is created.")
     int n = TableList.size();
     TableList.push_back(new AsymmetricDTD<NoBConds<double,3> > (s,t));
     TableMap[newname] = n;
     VisitorID.push_back(t.tag());
     return n;
   } else {
+    LOGMSG("Distance table " << newname << " is reused")
     return (*it).second;
   }
 }

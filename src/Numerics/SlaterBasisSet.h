@@ -34,6 +34,7 @@ struct SlaterCombo: public RadialOrbitalBase<T> {
   std::string  coeffName;
   std::vector<xmlNodePtr> InParam;
   std::vector<Component_t> sset;
+  T Y, dY, d2Y;
 
   explicit 
     SlaterCombo(int l=0, 
@@ -64,6 +65,36 @@ struct SlaterCombo: public RadialOrbitalBase<T> {
       res += (*it).df(r); ++it;
     }
     return res;
+  }
+
+  inline value_type evaluate(T r, T rinv) {
+    Y=0.0;dY=0.0;d2Y=0.0;
+    typename std::vector<Component_t>::iterator it(sset.begin()),it_end(sset.end());
+    while(it != it_end) {
+      Y+=(*it).evaluate(r,rinv); ++it;
+    }
+    return Y;
+  }
+
+  inline void evaluateAll(T r, T rinv) {
+    Y=0.0;dY=0.0;d2Y=0.0;
+    T du, d2u;
+    typename std::vector<Component_t>::iterator it(sset.begin()),it_end(sset.end());
+    while(it != it_end) {
+      Y+=(*it).evaluate(r,rinv,du,d2u); dY+=du; d2Y+=d2u;
+      ++it;
+    }
+  }
+
+  inline value_type evaluate(T r, T rinv, T& drnl, T& d2rnl) {
+    Y=0.0;drnl=0.0;d2rnl=0.0;
+    T du, d2u;
+    typename std::vector<Component_t>::iterator it(sset.begin()),it_end(sset.end());
+    while(it != it_end) {
+      Y+=(*it).evaluate(r,rinv,du,d2u); dY+=du; d2Y+=d2u;
+      ++it;
+    }
+    return Y;
   }
 
   bool putBasisGroup(xmlNodePtr cur);

@@ -39,6 +39,7 @@
 #include "QMCApp/InitMolecularSystem.h"
 #include <queue>
 using namespace std;
+#include "OhmmsData/AttributeSet.h"
 
 namespace ohmmsqmc {
 
@@ -382,27 +383,26 @@ namespace ohmmsqmc {
     } else {
       int pid=OHMMS::Controller->mycontext(); 
       for(int iconf=0; iconf<result->nodesetval->nodeNr; iconf++) {
-	int pid_target=pid;
 	xmlNodePtr mc_ptr = result->nodesetval->nodeTab[iconf];
 	m_walkerset.push_back(mc_ptr);
-	xmlChar* att=xmlGetProp(mc_ptr,(const xmlChar*)"file");
-	xmlChar* anode=xmlGetProp(mc_ptr,(const xmlChar*)"node");
-	if(anode) {
-	  pid_target = atoi((const char*)anode);
-	}
-	if(pid_target == pid && att) {
-	  string cfile((const char*)att);
-          string target("e");
-	  xmlChar* pref=xmlGetProp(mc_ptr,(const xmlChar*)"ref");
-          if(pref) target = (const char*)pref;
+        string cfile("invalid"), target("e"), anode("-1");
+        OhmmsAttributeSet pAttrib;
+        pAttrib.add(cfile,"href"); pAttrib.add(cfile,"file"); 
+        pAttrib.add(target,"target"); pAttrib.add(target,"ref"); 
+        pAttrib.add(anode,"node");
+        pAttrib.put(mc_ptr);
 
+        int pid_target = atoi(anode.c_str());
+        if(pid_target<0) pid_target=pid; //node is not given. 
+
+        if(pid_target == pid && cfile != "invalid") {
           MCWalkerConfiguration* el=ptclPool->getWalkerSet(target);
-	  XMLReport("Using previous configuration from " << cfile)
+	  XMLReport("Using previous configuration of " << target << " from " << cfile)
           HDFWalkerInput WO(cfile); 
 	  //read only the last ensemble of walkers
 	  WO.put(*el,-1);
 	  PrevConfigFile = cfile;
-	}
+        }
       }
     }
     xmlXPathFreeObject(result);

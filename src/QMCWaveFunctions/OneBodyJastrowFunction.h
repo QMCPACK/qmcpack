@@ -86,9 +86,10 @@ namespace ohmmsqmc {
     vector<FT*> F;
 
     ///constructor
-    OneBodyJastrow(DistanceTableData* dtable)
-      : d_table(dtable), FirstAddressOfdU(NULL), LastAddressOfdU(NULL){ 
-      U.resize(d_table->size(VisitorIndex));
+    //OneBodyJastrow(DistanceTableData* dtable)
+    OneBodyJastrow(ParticleSet& els, DistanceTableData* dt)
+      : d_table(dt), FirstAddressOfdU(NULL), LastAddressOfdU(NULL){ 
+      U.resize(els.getTotalNum());
     }
 
     ~OneBodyJastrow(){

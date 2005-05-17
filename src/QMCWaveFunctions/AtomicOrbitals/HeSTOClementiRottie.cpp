@@ -37,12 +37,18 @@ namespace ohmmsqmc {
   HePresetHFBuilder::HePresetHFBuilder(ParticleSet& els, TrialWaveFunction& wfs, ParticleSet& ions):
     OrbitalBuilderBase(els,wfs) 
   {   
+
     //the electron-ion distancetable
     DistanceTableData* d_ei = DistanceTable::getTable(DistanceTable::add(ions,els));
     
     typedef DiracDeterminant<HePresetHF> Det_t;
     //pointer to the Helium single particle orbitals
     HePresetHF* heorb = new HePresetHF;
+
+    for(int i=0; i<heorb->N; i++) {
+      LOGMSG(" Slater Component (n,zeta,c)= 1 " << heorb->Z[i] << " " << heorb->C[i])
+    }
+
     //set the distance table
     heorb->setTable(d_ei);
 

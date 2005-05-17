@@ -37,7 +37,7 @@ SET(MESSAGE
 )
 
 SET(HAMILTONIAN
-  QMCHamiltonians/QMCHamiltonianBase.cpp
+  QMCHamiltonians/QMCHamiltonian.cpp
 )
 
 
@@ -68,5 +68,6 @@ SET(QMCBASEDIR
 
 #SUBDIRS(SQD)
 ADD_LIBRARY(qmc ${QMCBASEDIR})
-SUBDIRS(QMC)
-SUBDIRS(QMCTools)
+#SUBDIRS(QMC)
+SUBDIRS(QMCApp)
+#SUBDIRS(QMCTools)

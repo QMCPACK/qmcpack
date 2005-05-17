@@ -52,8 +52,8 @@ namespace ohmmsqmc {
       Z[0]=1.41714;Z[1]=2.37682;Z[2]=4.39628;Z[3]=6.52699;Z[4]=7.94252;
       const RealType fourpi = 4.0*(4.0*atan(1.0));
       for(int i=0; i<N; i++) {
-	//C[i] *= sqrt(pow(2.0*Z[i],3.0)/(2.0*fourpi));
-	C[i] *= sqrt(pow(2.0*Z[i],3.0)/2)/fourpi;
+	C[i] *= sqrt(pow(2.0*Z[i],3.0)/(2.0*fourpi));
+	//C[i] *= sqrt(pow(2.0*Z[i],3.0)/2)/fourpi;
       }
       for(int i=0; i<N; i++) ZZ[i] = Z[i]*Z[i];
     }

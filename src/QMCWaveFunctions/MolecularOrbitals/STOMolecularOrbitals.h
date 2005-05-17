@@ -20,8 +20,8 @@
 #include "QMCWaveFunctions/OrbitalBuilderBase.h"
 #include "QMCWaveFunctions/SphericalOrbitalSet.h"
 #include "QMCWaveFunctions/MolecularOrbitals/MolecularOrbitalBasis.h"
-//#include "Numerics/SlaterBasisSet.h"
-#include "Numerics/SlaterTypeOrbital.h"
+#include "Numerics/SlaterBasisSet.h"
+//#include "Numerics/SlaterTypeOrbital.h"
 
 namespace ohmmsqmc {
 
@@ -33,8 +33,8 @@ namespace ohmmsqmc {
   class STOMolecularOrbitals: public OrbitalBuilderBase {
   public:
 
-    typedef GenericSTO<ValueType>                      RadialOrbitalType;
-    //typedef SlaterCombo<RealType>                      RadialOrbitalType;
+    //typedef GenericSTO<ValueType>                      RadialOrbitalType;
+    typedef SlaterCombo<RealType>                      RadialOrbitalType;
     typedef SphericalOrbitalSet<RadialOrbitalType>     CenteredOrbitalType;
     typedef MolecularOrbitalBasis<CenteredOrbitalType> BasisSetType;
 
@@ -49,10 +49,17 @@ namespace ohmmsqmc {
 
   private:
 
+    bool Normalized;
     BasisSetType*      BasisSet;
     DistanceTableData* d_table;
     map<string,int>    RnlID;
     map<string,int>    CenterID;
+    ///map for (n,l,m,s) to its quantum number index
+    map<string,int> nlms_id;
+   
+    int expandYlm(const string& rnl, const QuantumNumberType& nlms, 
+                  int num, CenteredOrbitalType* aos, xmlNodePtr cur1,
+                  bool expandlm);
 
   };
 }

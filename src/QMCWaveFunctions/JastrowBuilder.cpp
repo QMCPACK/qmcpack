@@ -1,5 +1,4 @@
-//////////////////////////////////////////////////////////////////
-// (c) Copyright 2003-  by Jeongnim Kim
+////////////////////////////////////////////////////////////////// // (c) Copyright 2003-  by Jeongnim Kim
 //////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////
 //   National Center for Supercomputing Applications &
@@ -61,30 +60,33 @@ namespace ohmmsqmc {
 
     int cur_var = targetPsi.VarList.size();
 
-    vector<FuncType*> jastrow;
-    DistanceTableData* d_table = NULL;
-    cur = cur->xmlChildrenNode;
-    int ng = 0, nj = 0;
+    DistanceTableData* d_table = DistanceTable::getTable(DistanceTable::add(targetPtcl));
+    int	ng = targetPtcl.groups();
+
+    vector<FuncType*> jastrow(ng*ng);
+    for(int i=0; i<ng*ng; i++) jastrow[i]=0;
+    int nj = 0;
+    cur = cur->children;
     while(cur != NULL) {
       string cname((const char*)(cur->name));
-      if(cname == dtable_tag) {
-      	string source_name((const char*)(xmlGetProp(cur,(const xmlChar *)"source")));
-	//int iptcl = 0;
-        map<string,ParticleSet*>::iterator pit(ptclPool.find(source_name));
-        if(pit == ptclPool.end()) return false;
-	ParticleSet* a = (*pit).second;
-      	d_table = DistanceTable::getTable(DistanceTable::add(*a));
-      	ng = a->groups();
-	//create a Jastrow function for each pair type
-	//for spin 1/2 particles (up-up, down-up = up-down,
-	//down-down) 
-      	for(int i=0; i<ng*ng; i++) jastrow.push_back(NULL);
-      } else if(cname ==corr_tag) {
+      //if(cname == dtable_tag) {
+      //	string source_name((const char*)(xmlGetProp(cur,(const xmlChar *)"source")));
+      //  //int iptcl = 0;
+      //  map<string,ParticleSet*>::iterator pit(ptclPool.find(source_name));
+      //  if(pit == ptclPool.end()) return false;
+      //  ParticleSet* a = (*pit).second;
+      //	d_table = DistanceTable::getTable(DistanceTable::add(*a));
+      //	ng = a->groups();
+      //  //create a Jastrow function for each pair type
+      //  //for spin 1/2 particles (up-up, down-up = up-down,
+      //  //down-down) 
+      //	for(int i=0; i<ng*ng; i++) jastrow.push_back(NULL);
+      //} else if(cname ==corr_tag) {
+      if(cname ==corr_tag) {
 	string spA((const char*)(xmlGetProp(cur,(const xmlChar *)"speciesA")));
 	string spB((const char*)(xmlGetProp(cur,(const xmlChar *)"speciesB")));
-
-	int ia = d_table->origin().Species.findSpecies(spA);
-	int ib = d_table->origin().Species.findSpecies(spB);
+	int ia = targetPtcl.Species.findSpecies(spA);
+	int ib = targetPtcl.Species.findSpecies(spB);
 	int iab = ia*ng+ib;
 	if(!(jastrow[iab])) {
 	  //create the new Jastrow function
@@ -111,7 +113,7 @@ namespace ohmmsqmc {
       return false;
     }
 
-    J2 = new JeeType(d_table);
+    J2 = new JeeType(targetPtcl,d_table);
     int ij = 0;    
     for(int i=0; i<ng; i++) {
       for(int j=0; j<ng; j++, ij++) {
@@ -150,21 +152,24 @@ namespace ohmmsqmc {
 
     int cur_var = targetPsi.VarList.size();
 
-    DistanceTableData* d_table = NULL;
-    cur = cur->xmlChildrenNode;
-    int ng = 0, nj = 0;
+    DistanceTableData* d_table = DistanceTable::getTable(DistanceTable::add(targetPtcl));
+    J2 = new JeeType(targetPtcl,d_table);
+    int nj = 0;
+    cur = cur->children;
     while(cur != NULL) {
       string cname((const char*)(cur->name));
-      if(cname == dtable_tag) {
-      	string source_name((const char*)(xmlGetProp(cur,(const xmlChar *)"source")));
-        map<string,ParticleSet*>::iterator pit(ptclPool.find(source_name));
-        if(pit == ptclPool.end()) return false;
-	ParticleSet* a = (*pit).second;
-      	d_table = DistanceTable::getTable(DistanceTable::add(*a));
-	if(!J2) {
-	  J2 = new JeeType(d_table);
-	}
-      } else if(cname == corr_tag) {
+      //if(cname == dtable_tag) {
+      //	string source_name((const char*)(xmlGetProp(cur,(const xmlChar *)"source")));
+      //  map<string,ParticleSet*>::iterator pit(ptclPool.find(source_name));
+      //  if(pit == ptclPool.end()) return false;
+      //  ParticleSet* a = (*pit).second;
+      //	d_table = DistanceTable::getTable(DistanceTable::add(*a));
+      //  if(!J2) {
+      //    LOGMSG("Creating spin-independent two-body Jastrow " << a->getName())
+      //    J2 = new JeeType(targetPtcl,d_table);
+      //  }
+      //} else if(cname == corr_tag) {
+      if(cname == corr_tag) {
 	if(J2) {
 	  J2->F.put(cur,targetPsi.VarList); nj++;
 	} else {
@@ -179,18 +184,13 @@ namespace ohmmsqmc {
       return false;
     }
 
-    if(J2) {
-      //set this jastrow function to be not optimizable
-      if(targetPsi.VarList.size() == cur_var) {
-        J2->setOptimizable(false);
-      }
-      targetPsi.add(J2);
-      XMLReport("Added a Two-Body Jastrow Function")
-      return true;
-    } else {
-      XMLReport("Failed to add a Two-Body Jastrow Function")
-      return false;
+    //set this jastrow function to be not optimizable
+    if(targetPsi.VarList.size() == cur_var) {
+      J2->setOptimizable(false);
     }
+    targetPsi.add(J2);
+    XMLReport("Added a Two-Body Jastrow Function")
+    return true;
   }
 
   /** Create an one-body Jatrow function with a template class JneType.
@@ -242,7 +242,7 @@ namespace ohmmsqmc {
       cur = cur->next;
     } // while cur
     
-    J1 = new JneType(d_table);
+    J1 = new JneType(targetPtcl, d_table);
     FuncType* func_shared = NULL;
     int ig=0;
     while(!func_shared && ig<ng) {

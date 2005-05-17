@@ -19,12 +19,13 @@
 #include "QMCWaveFunctions/MolecularOrbitals/MolecularOrbitalBuilder.h"
 #include "QMCWaveFunctions/MolecularOrbitals/STOMolecularOrbitals.h"
 #include "QMCWaveFunctions/MolecularOrbitals/GridMolecularOrbitals.h"
+#include "OhmmsData/AttributeSet.h"
 
 namespace ohmmsqmc {
 
   bool MolecularOrbitalBuilder::put(xmlNodePtr cur) {
-    if(xmlHasProp(cur, (const xmlChar*)"src")){
-      string fname_in = (const char*)(xmlGetProp(cur, (const xmlChar *)"src"));
+    if(xmlHasProp(cur, (const xmlChar*)"href")){
+      string fname_in = (const char*)(xmlGetProp(cur, (const xmlChar *)"href"));
       LOGMSG("Opening external file " << fname_in)
       putOpen(fname_in);
     } else {
@@ -33,44 +34,62 @@ namespace ohmmsqmc {
     return true;
   }
 
+  /** process cur xml node
+   *
+   * Check attribute list
+   * - transform if yes, using numerical grid
+   * - source    the particle set providing the nuclei default is "i"
+   *\xmlonly
+   *  <determinantset type="MolecularOrbital" source="i" transform="yes"/>
+   *\endxmlonly
+   */
   bool MolecularOrbitalBuilder::putSpecial(xmlNodePtr cur) {
     
     bool usegrid = true;
-    if(xmlHasProp(cur, (const xmlChar*)"usegrid")) {
-      string a((const char*)(xmlGetProp(cur, (const xmlChar *)"usegrid")));
-      usegrid = !(a == "no" || a == "false" || a == "0");
+    string transform("yes"), source("i");
+    OhmmsAttributeSet aAttrib;
+    aAttrib.add(transform,"transform");
+    aAttrib.add(source,"source");
+    aAttrib.put(cur);
+
+    if(transform == "no") 
+      usegrid=false;
+    else 
+      usegrid=true;
+
+    //ionic system for the molecualr orbitals
+    ParticleSet* ions=0;
+
+    //initialize with the source tag
+    PtclPoolType::iterator pit(ptclPool.find(source));
+    if(pit != ptclPool.end()) {
+      LOGMSG("Molecular orbital uses an ionic system " << source)
+      ions=(*pit).second; 
     }
 
-    ParticleSet* ions=0;
+    //check if distance table is used
     xmlNodePtr tcur=cur->children;
-    string s("i");
     while(ions == 0 && tcur != NULL) {
       if(xmlStrEqual(tcur->name,(const xmlChar*)"distancetable")) {
         const xmlChar*  a=xmlGetProp(tcur,(const xmlChar*)"source");
-        if(a) { s = (const char*)a;}
-        PtclPoolType::iterator pit(ptclPool.find(s));
+        if(a) { source = (const char*)a;}
+        pit = ptclPool.find(source);
         if(pit != ptclPool.end()) ions = (*pit).second;
       }
       tcur=tcur->next;
     }
 
-    //missing distancetable
-    if(ions == 0) {
-      PtclPoolType::iterator pit(ptclPool.find("i"));
-      if(pit != ptclPool.end()) ions = (*pit).second;
-    }
-
     if(ions == 0){
-       ERRORMSG("Any molecular orbital needs an ionic system. Missing " << s)
+       ERRORMSG("Any molecular orbital needs an ionic system. Missing " << source)
        return false;
     }
 
     if(usegrid) {
-      LOGMSG("Using radial grids for molecular orbitals")
+      LOGMSG("Using radial grids for molecular orbitals for " << targetPtcl.getName() << " with " << ions->getName())
       GridMolecularOrbitals a(targetPtcl,targetPsi,*ions);
       a.put(cur);
     } else {
-      LOGMSG("Using STO for molecular orbitals")
+      LOGMSG("Using analytic STO molecular orbitals for " << targetPtcl.getName() << " with " << ions->getName())
       STOMolecularOrbitals a(targetPtcl,targetPsi,*ions);
       a.put(cur);
     }
