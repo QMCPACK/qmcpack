@@ -37,6 +37,7 @@
 #include "Utilities/OhmmsInfo.h"
 #include "Particle/HDFWalkerIO.h"
 #include "QMCApp/InitMolecularSystem.h"
+#include "Message/Communicate.h"
 #include <queue>
 using namespace std;
 #include "OhmmsData/AttributeSet.h"
