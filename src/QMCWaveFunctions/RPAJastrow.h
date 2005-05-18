@@ -48,6 +48,12 @@ struct RPAJastrow {
   void reset(T a, T b) {
     A=a; B=b; A2=2.0*A; Finv=1.0/sqrt(A*B);
   }
+  /**@param r the distance
+     @return \f$ u(r) = \frac{A}{r}\left[1-\exp(-\frac{r}{F})\right]\f$
+  */
+  inline T evaluate(T r) {
+    return A/r*(1.0-exp(-r*Finv));
+  }
 
   /**@param r the distance
      @param dudr return value 
@@ -82,6 +88,7 @@ struct RPAJastrow {
   template<class T1>
   void put(xmlNodePtr cur, VarRegistry<T1>& vlist){
     T Atemp;
+    T Btemp = 1.0;
     string ida;
     //jastrow[iab]->put(cur->xmlChildrenNode,wfs_ref.RealVars);
     xmlNodePtr tcur = cur->xmlChildrenNode;
@@ -94,13 +101,15 @@ struct RPAJastrow {
 	if(aname == "A") {
 	  ida = idname;
 	  putContent(Atemp,tcur);
+	} else if(aname == "B") {
+	  putContent(Btemp,tcur);
 	}
       }
       tcur = tcur->next;
     }
-    reset(Atemp);
+    reset(Atemp,Btemp);
     vlist.add(ida,&A,1);
-    XMLReport("Jastrow Parameter = (" << A << ")") 
+    XMLReport("Jastrow A/r[1-exp(-r/F)] = (" << A << "," << sqrt(A*B) << ")") 
       }
 };
 #endif
