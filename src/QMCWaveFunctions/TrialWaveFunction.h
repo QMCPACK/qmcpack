@@ -54,6 +54,12 @@ namespace ohmmsqmc {
      */
     VarRegistry<RealType> VarList;
 
+    ///differential gradients
+    ParticleSet::ParticleGradient_t G;
+
+    ///differential laplacians
+    ParticleSet::ParticleLaplacian_t L;
+
     TrialWaveFunction();
 
     ~TrialWaveFunction();
