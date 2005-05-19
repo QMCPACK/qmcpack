@@ -108,7 +108,7 @@ namespace ohmmsqmc {
     void restore(int iat);
     void update2(ParticleSet& P, int iat);
 
-    void registerData(ParticleSet& P, PooledData<RealType>& buf);
+    ValueType registerData(ParticleSet& P, PooledData<RealType>& buf);
     void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf);
     ValueType evaluate(ParticleSet& P, PooledData<RealType>& buf);
 

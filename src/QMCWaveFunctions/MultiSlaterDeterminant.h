@@ -121,8 +121,9 @@ public:
       //Dets[i]->evaluate(W,dtable,psi,G,L);
   }
   
-  void registerData(ParticleSet& P, PooledData<RealType>& buf){
+  ValueType registerData(ParticleSet& P, PooledData<RealType>& buf){
     std::cerr << "MultiSlaterDeterminant::registerData is empty" << std::endl;
+    return 0.0;
   }
   
   void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf) {

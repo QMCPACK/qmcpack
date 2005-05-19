@@ -117,8 +117,16 @@ namespace ohmmsqmc {
       for(int i=0; i<Dets.size(); i++) 	Dets[i]->evaluate(W,psi,G,L);
     }
 
-    void registerData(ParticleSet& P, PooledData<RealType>& buf){
-      for(int i=0; i<Dets.size(); i++) 	Dets[i]->registerData(P,buf);
+    /** similar to evaluateLog 
+     */
+    ValueType registerData(ParticleSet& P, PooledData<RealType>& buf){
+      //for(int i=0; i<Dets.size(); i++) Dets[i]->registerData(P,buf);
+      ValueType psi = 1.0;
+      for(int i=0; i<Dets.size(); i++) 
+        psi *= Dets[i]->registerData(P,buf);
+      SignValue = (psi<0.0)?-1.0:1.0;
+      LogValue = log(abs(psi));
+      return LogValue;
     }
     
     void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf) {

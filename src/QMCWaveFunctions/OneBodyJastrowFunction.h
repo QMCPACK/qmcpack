@@ -207,20 +207,23 @@ namespace ohmmsqmc {
 
 
     /** equivalent to evalaute with additional data management */
-    void registerData(ParticleSet& P, PooledData<RealType>& buf){
+    ValueType registerData(ParticleSet& P, PooledData<RealType>& buf){
 
       //U.resize(d_table->size(VisitorIndex));
       d2U.resize(d_table->size(VisitorIndex));
       dU.resize(d_table->size(VisitorIndex));
 
-      ValueType sumu = 0.0;
-      ValueType dudr, d2udr2;
+      LogValue = 0.0;
+      ValueType uij, dudr, d2udr2;
       for(int i=0; i<d_table->size(SourceIndex); i++) {
 	for(int nn=d_table->M[i]; nn<d_table->M[i+1]; nn++) {
 	  int j = d_table->J[nn];
 	  //U[j] += F[d_table->PairID[nn]]->evaluate(d_table->r(nn));
 	  //Grad/Lap are not calculated here
-	  U[j] += F[d_table->PairID[nn]]->evaluate(d_table->r(nn), dudr, d2udr2);
+	  //U[j] += F[d_table->PairID[nn]]->evaluate(d_table->r(nn), dudr, d2udr2);
+	  uij = F[d_table->PairID[nn]]->evaluate(d_table->r(nn), dudr, d2udr2);
+          LogValue-=uij;
+          U[j]+=uij; 
 	  dudr *= d_table->rinv(nn);
 	  dU[j] -= dudr*d_table->dr(nn);
 	  d2U[j] -= d2udr2+2.0*dudr;
@@ -238,6 +241,8 @@ namespace ohmmsqmc {
       buf.add(U.begin(), U.end());
       buf.add(d2U.begin(), d2U.end());
       buf.add(FirstAddressOfdU,LastAddressOfdU);
+
+      return LogValue;
     }
 
     /** copy the current data from a buffer

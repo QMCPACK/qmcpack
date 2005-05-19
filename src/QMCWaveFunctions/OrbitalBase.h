@@ -131,8 +131,11 @@ namespace ohmmsqmc {
     /** equivalent to evaluate(P,G,L) with write-back function */
     virtual ValueType evaluate(ParticleSet& P,PooledData<RealType>& buf)=0;
 
-    /** add temporary data reserved for particle-by-particle move.*/
-    virtual void registerData(ParticleSet& P, PooledData<RealType>& buf) =0;
+    /** add temporary data reserved for particle-by-particle move.
+     *
+     * Return the log|phi|  like evalaute evaluateLog
+     */
+    virtual ValueType registerData(ParticleSet& P, PooledData<RealType>& buf) =0;
 
     /** copy the internal data saved for particle-by-particle move.*/
     virtual void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf)=0;

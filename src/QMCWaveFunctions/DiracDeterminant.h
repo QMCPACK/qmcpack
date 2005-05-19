@@ -168,7 +168,7 @@ namespace ohmmsqmc {
       LastIndex = FirstIndex + nel;
     }
 
-    void registerData(ParticleSet& P, PooledData<RealType>& buf) {
+    ValueType registerData(ParticleSet& P, PooledData<RealType>& buf) {
 
       if(NP == 0) {//first time, allocate once
 	int norb = cols();
@@ -203,6 +203,8 @@ namespace ohmmsqmc {
       buf.add(myL.begin(), myL.end());
       buf.add(FirstAddressOfG,LastAddressOfG);
       buf.add(CurrentDet);
+
+      return CurrentDet;
     }
 
 

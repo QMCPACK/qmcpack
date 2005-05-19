@@ -275,7 +275,7 @@ namespace ohmmsqmc {
       L[iat] += suml;     
     }
 
-    inline void registerData(ParticleSet& P, PooledData<RealType>& buf){
+    inline ValueType registerData(ParticleSet& P, PooledData<RealType>& buf){
       N=d_table->size(VisitorIndex);
       NN=N*N;
       U.resize(NN+1);
@@ -284,7 +284,9 @@ namespace ohmmsqmc {
       curGrad.resize(N);
       curLap.resize(N);
       curVal.resize(N);
-      ValueType dudr, d2udr2,u,sumu=0.0;
+      ValueType dudr, d2udr2,u;
+
+      LogValue=0.0;
       PosType gr;
       PairID.resize(d_table->size(SourceIndex),d_table->size(SourceIndex));
       int nsp=P.groups();
@@ -296,7 +298,8 @@ namespace ohmmsqmc {
 	for(int nn=d_table->M[i]; nn<d_table->M[i+1]; nn++) {
 	  int j = d_table->J[nn];
 	  //ValueType sumu = F.evaluate(d_table->r(nn));
-	  sumu +=(u = F[d_table->PairID[nn]]->evaluate(d_table->r(nn), dudr, d2udr2));
+	  u = F[d_table->PairID[nn]]->evaluate(d_table->r(nn), dudr, d2udr2);
+	  LogValue -= u;
 	  dudr *= d_table->rinv(nn);
 	  gr = dudr*d_table->dr(nn);
 	  //(d^2 u \over dr^2) + (2.0\over r)(du\over\dr)\f$
@@ -314,14 +317,14 @@ namespace ohmmsqmc {
 	}
       }
 
-      //get the sign right here
-      U[NN]= -sumu;
+      U[NN]= LogValue;
       buf.add(U.begin(), U.end());
       buf.add(d2U.begin(), d2U.end());
       FirstAddressOfdU = &(dU[0][0]);
       LastAddressOfdU = FirstAddressOfdU + dU.size()*DIM;
       buf.add(FirstAddressOfdU,LastAddressOfdU);
 
+      return LogValue;
     }
     
     inline void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf) {

@@ -206,19 +206,29 @@ namespace ohmmsqmc {
     for(int i=0; i<Z.size(); i++) Z[i]->reset();
   }
   
-  void TrialWaveFunction::registerData(ParticleSet& P, PooledData<RealType>& buf) {
+  TrialWaveFunction::ValueType
+  TrialWaveFunction::registerData(ParticleSet& P, PooledData<RealType>& buf) {
     delta_G.resize(P.getTotalNum());
     delta_L.resize(P.getTotalNum());
     P.G = 0.0;
     P.L = 0.0;
 
-    for(int i=0; i<Z.size(); i++) Z[i]->registerData(P,buf);
+    LogValue=0.0;
+    SignValue=1.0;
+    vector<OrbitalBase*>::iterator it(Z.begin());
+    vector<OrbitalBase*>::iterator it_end(Z.end());
+    while(it != it_end) {
+      LogValue += (*it)->registerData(P,buf);
+      SignValue *= (*it)->SignValue;
+      ++it;
+    }
 
     //append current gradients and laplacians to the buffer
     TotalDim = OHMMS_DIM*P.getTotalNum();
     buf.add(&(P.G[0][0]), &(P.G[0][0])+TotalDim);
     buf.add(P.L.begin(), P.L.end());
 
+    return LogValue;
 //     cout << "Registering gradients and laplacians " << endl;
 //     for(int i=0; i<P.getLocalNum(); i++) {
 //       cout << P.G[i] << " " << P.L[i] << endl;
