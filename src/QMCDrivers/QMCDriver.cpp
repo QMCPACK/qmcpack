@@ -86,13 +86,16 @@ namespace ohmmsqmc {
     qmcNode=cur;
 
     //create estimator
+    putQMCInfo(qmcNode);
+    put(qmcNode);
+
     if(Estimators == 0) {
       Estimators =new ScalarEstimatorManager(H);
     }
 
-    putQMCInfo(qmcNode);
-    put(qmcNode);
     Estimators->put(qmcNode);
+    //set the stride for the scalar estimators 
+    Estimators->setStride(nSteps);
 
     Estimators->resetReportSettings(RootName);
     AcceptIndex=Estimators->addColumn("AcceptRatio");
@@ -281,8 +284,6 @@ namespace ohmmsqmc {
     LogOut->getStream() << "walkers = " << W.getActiveWalkers() << endl;
     m_param.get(cout);
 
-    //set the stride for the scalar estimators 
-    Estimators->setStride(nSteps);
     /*check to see if the target population is different 
       from the current population.*/ 
     int nw  = W.getActiveWalkers();
