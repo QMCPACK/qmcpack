@@ -50,8 +50,8 @@ namespace ohmmsqmc {
     if(require_register) {
       while(it != it_end) {
         W.DataSet[iwalker]->rewind();
-	  W.registerData(**it,*(W.DataSet[iwalker]));
-	  Psi.registerData(W,*(W.DataSet[iwalker]));
+	W.registerData(**it,*(W.DataSet[iwalker]));
+	Psi.registerData(W,*(W.DataSet[iwalker]));
         ++it;++iwalker;
       } 
     }      
@@ -127,18 +127,18 @@ namespace ohmmsqmc {
             RealType prob = std::min(1.0,exp(logGb-logGf+2.0*log(abs(ratio))));
             //alternatively
             if(Random() < prob) { 
-      	moved = true;
-      	++nAccept;
-      	W.acceptMove(iat);
-      	//Psi.update(W,iat);
-      	Psi.update2(W,iat);
-      	W.G = G;
-      	W.L += dL;
-      	//(*it)->Drift = Tau*G;
-              (*it)->Drift = scale*G;
-            } else {
-      	++nReject; 
-      	Psi.restore(iat);
+      	      moved = true;
+      	      ++nAccept;
+      	      W.acceptMove(iat);
+      	      //Psi.update(W,iat);
+      	      Psi.update2(W,iat);
+      	      W.G = G;
+      	      W.L += dL;
+      	      //(*it)->Drift = Tau*G;
+                    (*it)->Drift = scale*G;
+                  } else {
+      	      ++nReject; 
+      	      Psi.restore(iat);
             }
           }
 
