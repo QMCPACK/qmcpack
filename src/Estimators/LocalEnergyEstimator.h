@@ -77,23 +77,16 @@ namespace ohmmsqmc {
      * @param h QMCHamiltonian to define the components
      * @param hcopy number of copies of QMCHamiltonians
      */
-    LocalEnergyEstimator(QMCHamiltonian& h, int hcopy=1) { 
+    LocalEnergyEstimator(QMCHamiltonian& h) { 
       int hterms(h.size());
-      SizeOfHamiltonians = hcopy*hterms;
+      SizeOfHamiltonians = hterms;
       elocal.resize(SizeOfHamiltonians+LE_MAX);
       elocal_name.resize(SizeOfHamiltonians+LE_MAX);
       elocal_name[ENERGY_INDEX] = "LocalEnergy";
       elocal_name[ENERGY_SQ_INDEX] = "Variance";
       elocal_name[POTENTIAL_INDEX] = "LocalPotential";
       int ii(LE_MAX);
-      if(hcopy>1) {
-        for(int i=0; i<hcopy; i++)
-          for(int j=0; j<hterms; j++) {
-            stringstream a(elocal_name[ii++]); a<<h.getName(j) << i; 
-          }
-      } else {
-        for(int i=0; i < SizeOfHamiltonians; i++) elocal_name[ii++] = h.getName(i);
-      }
+      for(int i=0; i < SizeOfHamiltonians; i++) elocal_name[ii++] = h.getName(i);
     }
 
     /**  add the local energy, variance and all the Hamiltonian components to the scalar record container

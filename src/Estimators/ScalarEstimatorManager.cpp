@@ -201,10 +201,11 @@ bool ScalarEstimatorManager::put(xmlNodePtr cur) {
       if(att) {
 	string aname((const char*)att);
 	if(aname == "LocalEnergy") {
-          att=xmlGetProp(cur,(const xmlChar*)"size");
-	  int ncopy(1);
-          if(att) {ncopy=atoi((const char*)att);}
-          add(new LocalEnergyEstimator<RealType>(H,ncopy),"elocal");
+          //att=xmlGetProp(cur,(const xmlChar*)"size");
+	  //int ncopy(1);
+          //if(att) {ncopy=atoi((const char*)att);}
+          //add(new LocalEnergyEstimator<RealType>(H,ncopy),"elocal");
+          add(new LocalEnergyEstimator<RealType>(H),"elocal");
 	} else { 
 	  extra.push_back(cname);
 	}
@@ -214,8 +215,8 @@ bool ScalarEstimatorManager::put(xmlNodePtr cur) {
   }
 
   if(Estimators.empty()) {
-    if(nsystem == 0) nsystem=1;
-    add(new LocalEnergyEstimator<RealType>(H,nsystem),"elocal");
+    //if(nsystem == 0) nsystem=1;
+    add(new LocalEnergyEstimator<RealType>(H),"elocal");
   } 
 
   for(int i=0; i<extra.size(); i++) {
