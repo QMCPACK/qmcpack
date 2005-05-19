@@ -190,8 +190,9 @@ namespace ohmmsqmc {
       ValueType logpsi(Psi.evaluateLog(W));
       Properties(LOGPSI) =logpsi;
       Properties(SIGN) = Psi.getSign();
-      Properties(LOCALENERGY) = H.evaluate(W);
-      Properties(LOCALPOTENTIAL) = H.getLocalPotential();
+      //Only evaluate when the move is accepted: check if this is correct
+      //Properties(LOCALENERGY) = H.evaluate(W);
+      //Properties(LOCALPOTENTIAL) = H.getLocalPotential();
  
       //deltaR = W.R - (*it)->R - (*it)->Drift;
       //RealType forwardGF = exp(-oneover2tau*Dot(deltaR,deltaR));
@@ -208,11 +209,13 @@ namespace ohmmsqmc {
       RealType logGb = -oneover2tau*Dot(deltaR,deltaR);
       
       RealType g= exp(logGb-logGf+2.0*(Properties(LOGPSI)-(*it)->Properties(LOGPSI)));
-      if(Random() > g) { //if(Random() > exp(logGb-logGf)*Properties(PSISQ)/(*it)->Properties(PSISQ)) {
+      if(Random() > g) {
 	thisWalker.Properties(AGE)++;     
 	++nReject; 
       } else {
 	Properties(AGE) = 0;
+        Properties(LOCALENERGY) = H.evaluate(W);
+        Properties(LOCALPOTENTIAL) = H.getLocalPotential();
 	thisWalker.R = W.R;
 	thisWalker.Drift = drift;
 	thisWalker.Properties = Properties;
