@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////
-// (c) Copyright 2003- by Jeongnim Kim
+// (c) Copyright 2003- by Jeongnim Kim and Simone Chiesa
 //////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////
 //   Jeongnim Kim
@@ -17,12 +17,19 @@
 //   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_QMC_VMCMultiple_H
-#define OHMMS_QMC_VMCMultiple_H
+/**@file VMCMultiple.h
+ * @brief Definition of VMCMultiple
+ */
+#ifndef OHMMS_QMC_VMCMULTIPLE_H_PSI_H
+#define OHMMS_QMC_VMCMULTIPLE_H_PSI_H
 #include "QMCDrivers/QMCDriver.h" 
 namespace ohmmsqmc {
 
+  class MultipleEnergyEstimator;
+
   /** Implements the VMCMultiple algorithm. 
+   *
+   * Using umbrella sampling. Consult S. Chiesa's note.
    */
   class VMCMultiple: public QMCDriver {
   public:
@@ -39,21 +46,13 @@ namespace ohmmsqmc {
     /// Copy operator (disabled).
     VMCMultiple& operator=(const VMCMultiple&) { return *this;}
 
-    ///temporary storage for drift
-    //ParticleSet::ParticlePos_t drift;		//SIMONE
-    typedef ParticleSet::ParticlePos_t       ParticlePos_t;	//SIMONE
-    typedef ParticleSet::ParticleGradient_t  ParticleGradient_t;	//SIMONE
-    typedef ParticleSet::ParticleLaplacian_t ParticleLaplacian_t;	//SIMONE
+    MultipleEnergyEstimator *multiEstimator;
 
     ///temporary storage
-    int nPsi;				//SIMONE
-    vector<IndexType>IndexPsi;		//SIMONE
-    vector<RealType> logpsi;		//SIMONE
-    vector<ParticleGradient_t>  dgrad;		//SIMONE
-    vector<RealType> sumratio;		//SIMONE
-    vector<ParticleLaplacian_t> lap;		//SIMONE
-    vector<RealType> invsumratio;	//SIMONE
-    vector<RealType> totinvsumratio;	//SIMONE
+    int nPsi;				
+    vector<RealType> logpsi;		
+    vector<RealType> sumratio;		
+    vector<RealType> invsumratio;	
   };
 }
 
