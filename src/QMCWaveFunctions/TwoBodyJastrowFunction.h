@@ -123,6 +123,11 @@ namespace ohmmsqmc {
       N=p.getTotalNum();
       NN=N*N;
       U.resize(NN+1);
+      PairID.resize(N,N);
+      int nsp=p.groups();
+      for(int i=0; i<N; i++)
+	for(int j=0; j<N; j++) 
+	  PairID(i,j) = p.GroupID[i]*nsp+p.GroupID[j];
     }
 
     ~TwoBodyJastrow(){
