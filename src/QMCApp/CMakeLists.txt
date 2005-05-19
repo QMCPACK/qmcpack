@@ -35,6 +35,7 @@ SET(QMCDRIVERS
   ../QMCDrivers/DMCParticleByParticle.cpp
   ../QMCDrivers/ReptationMC.cpp
   ../Estimators/ScalarEstimatorManager.cpp
+  ../Estimators/MultipleEnergyEstimator.cpp
 )
 
 ####################################
