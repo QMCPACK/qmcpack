@@ -31,7 +31,7 @@ struct OhmmsAsciiParser {
     while(first != last) {
       is.getline( dbuffer,bufferSize);
       std::istringstream a(dbuffer);
-      while(a >> *first){first++;}
+      while(first != last && a >> *first){first++;}
     }
   }
 
