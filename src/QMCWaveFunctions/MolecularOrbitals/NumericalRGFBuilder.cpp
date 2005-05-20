@@ -22,18 +22,25 @@
 #include "QMCWaveFunctions/MolecularOrbitals/GridMolecularOrbitals.h"
 #include "QMCWaveFunctions/MolecularOrbitals/NumericalRGFBuilder.h"
 using namespace std;
+#include "OhmmsData/AttributeSet.h"
+
 namespace ohmmsqmc {
 
   NumericalRGFBuilder::NumericalRGFBuilder(xmlNodePtr cur) {
-    const xmlChar* fptr = xmlGetProp(cur, (const xmlChar *)"file");
-    if(fptr) {
+
+    string afilename("invalid");
+    OhmmsAttributeSet aAttrib;
+    aAttrib.add(afilename,"href"); 
+    aAttrib.add(afilename,"file"); 
+    aAttrib.put(cur);
+
+    if(afilename == "invalid") {
+      ERRORMSG("NumericalRGFBuilder::NumericalRGFBuilder: Missing a file name")
+    } else {
       //open the HDF5 file
-      string afilename((const char*)fptr);
       m_file_id = H5Fopen(afilename.c_str(),H5F_ACC_RDWR,H5P_DEFAULT);
       XMLReport("Opening file: " << afilename)
-    } else {
-      ERRORMSG("NumericalRGFBuilder::NumericalRGFBuilder: Missing a file name")
-    }
+    } 
   }
 
   /**  Add a new numerical radial orbital with quantum numbers \f$(n,l,m,s)\f$ to the list of radial orbitals.
