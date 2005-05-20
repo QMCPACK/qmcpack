@@ -151,10 +151,10 @@ namespace ohmmsqmc {
 
     if(source->getTotalNum()>1)  {
       if(source == target) {
-        LOGMSG("Adding Columb potential " << target->getName())
+        LOGMSG("Adding Coulomb potential " << target->getName())
         curH->add(new CoulombPotentialAA(*target),title);
       } else {
-        LOGMSG("Adding Columb potential " << source->getName() << "-" << target->getName())
+        LOGMSG("Adding Coulomb potential " << source->getName() << "-" << target->getName())
         curH->add(new CoulombPotentialAB(*source,*target),title);
       }
     }
