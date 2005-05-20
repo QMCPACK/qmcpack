@@ -69,6 +69,9 @@ namespace ohmmsqmc {
     int numPtcls(W.getTotalNum());
     UmbrellaEnergy.resize(NumWalkers,NumCopies);
     UmbrellaWeight.resize(NumWalkers,NumCopies);
+    if(require_register) {
+      RatioIJ.resize(NumWalkers,NumCopies*(NumCopies-1)/2);
+    }
 
     MCWalkerConfiguration::iterator it(W.begin()); 
     MCWalkerConfiguration::iterator it_end(W.end()); 
@@ -80,24 +83,24 @@ namespace ohmmsqmc {
 
       Walker_t& thisWalker(**it);
 
-      //if(require_register) {
-      //  W.DataSet[iw]->rewind();
-      //  W.registerData(thisWalker,*(W.DataSet[iw]));
-      //} else {
+      if(require_register) {
+        W.DataSet[iw]->rewind();
+        W.registerData(thisWalker,*(W.DataSet[iw]));
+      } else {
         W.R = thisWalker.R;
         DistanceTable::update(W);
-      //}
+      }
 
       //evalaute the wavefunction and hamiltonian
       for(int ipsi=0; ipsi< NumCopies;ipsi++) {			  
         psi[ipsi]->G.resize(numPtcls);
         psi[ipsi]->L.resize(numPtcls);
         //Need to modify the return value of OrbitalBase::registerData
-        //if(require_register) {
-	//  logpsi[ipsi]=psi[ipsi]->registerData(W,*(W.DataSet[iw]));
-        //} else {
+        if(require_register) {
+	  logpsi[ipsi]=psi[ipsi]->registerData(W,*(W.DataSet[iw]));
+        } else {
 	  logpsi[ipsi]=psi[ipsi]->evaluateLog(W); 		 
-        //}
+        }
         psi[ipsi]->G=W.G;
         eloc[ipsi]=h[ipsi]->evaluate(W);
         h[ipsi]->copy(thisWalker.getEnergyBase(ipsi));
@@ -105,13 +108,26 @@ namespace ohmmsqmc {
      
       //Check SIMONE's note
       //Compute the sum over j of Psi^2[j]/Psi^2[i] for each i
-      for(int ipsi=0; ipsi< NumCopies; ipsi++) {			  
-	for(int jpsi=ipsi+1; jpsi< NumCopies; jpsi++){     		 
-	  RealType ratioij=exp(2.0*(logpsi[jpsi]-logpsi[ipsi])); 
-	  sumratio[ipsi] += ratioij;                            
-	  sumratio[jpsi] += 1.0/ratioij;		
-	}                                              
-      }                                               
+      if(require_register) {
+        int indexij(0);
+        RealType *rPtr=RatioIJ[iw];
+        for(int ipsi=0; ipsi< NumCopies; ipsi++) {			  
+          for(int jpsi=ipsi+1; jpsi< NumCopies; jpsi++){     		 
+            RealType r=exp(2.0*(logpsi[jpsi]-logpsi[ipsi])); 
+            rPtr[indexij++]=r;
+            sumratio[ipsi] += r;                            
+            sumratio[jpsi] += 1.0/r;		
+          }                                              
+        }                                               
+      } else {
+        for(int ipsi=0; ipsi< NumCopies; ipsi++) {			  
+          for(int jpsi=ipsi+1; jpsi< NumCopies; jpsi++){     		 
+            RealType r=exp(2.0*(logpsi[jpsi]-logpsi[ipsi])); 
+            sumratio[ipsi] += r;                            
+            sumratio[jpsi] += 1.0/r;		
+          }                                              
+        }                                               
+      }
 
       //DON't forget DRIFT!!!
       thisWalker.Drift=0.0;

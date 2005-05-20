@@ -71,7 +71,7 @@ namespace ohmmsqmc {
 
     /** local energy data for each walker. 
      */
-    Matrix<RealType> UmbrellaEnergy, UmbrellaWeight;
+    Matrix<RealType> UmbrellaEnergy, UmbrellaWeight, RatioIJ;
 
     ///accumulated total local energies, weights
     Matrix<RealType> esum;
