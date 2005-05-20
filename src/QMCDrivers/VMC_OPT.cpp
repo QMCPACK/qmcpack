@@ -512,9 +512,6 @@ namespace ohmmsqmc {
     for(int i=0; i<ConfigFile.size(); i++) 
       LogOut->getStream() << "# " << ConfigFile[i] << endl;
 
-    //set the stride of the estimators to be 1, always want to print
-    Estimators->setStride(1);
-
     return true;
   }
 
