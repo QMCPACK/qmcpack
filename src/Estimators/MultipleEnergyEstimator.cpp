@@ -65,13 +65,13 @@ namespace ohmmsqmc {
       bool require_register) {
 
     NumWalkers = W.getActiveWalkers();
+
     //allocate UmbrellaEnergy
     int numPtcls(W.getTotalNum());
+
     UmbrellaEnergy.resize(NumWalkers,NumCopies);
     UmbrellaWeight.resize(NumWalkers,NumCopies);
-    if(require_register) {
-      RatioIJ.resize(NumWalkers,NumCopies*(NumCopies-1)/2);
-    }
+    RatioIJ.resize(NumWalkers,NumCopies*(NumCopies-1)/2);
 
     MCWalkerConfiguration::iterator it(W.begin()); 
     MCWalkerConfiguration::iterator it_end(W.end()); 
@@ -108,26 +108,16 @@ namespace ohmmsqmc {
      
       //Check SIMONE's note
       //Compute the sum over j of Psi^2[j]/Psi^2[i] for each i
-      if(require_register) {
-        int indexij(0);
-        RealType *rPtr=RatioIJ[iw];
-        for(int ipsi=0; ipsi< NumCopies; ipsi++) {			  
-          for(int jpsi=ipsi+1; jpsi< NumCopies; jpsi++){     		 
-            RealType r=exp(2.0*(logpsi[jpsi]-logpsi[ipsi])); 
-            rPtr[indexij++]=r;
-            sumratio[ipsi] += r;                            
-            sumratio[jpsi] += 1.0/r;		
-          }                                              
-        }                                               
-      } else {
-        for(int ipsi=0; ipsi< NumCopies; ipsi++) {			  
-          for(int jpsi=ipsi+1; jpsi< NumCopies; jpsi++){     		 
-            RealType r=exp(2.0*(logpsi[jpsi]-logpsi[ipsi])); 
-            sumratio[ipsi] += r;                            
-            sumratio[jpsi] += 1.0/r;		
-          }                                              
-        }                                               
-      }
+      int indexij(0);
+      RealType *rPtr=RatioIJ[iw];
+      for(int ipsi=0; ipsi< NumCopies; ipsi++) {			  
+        for(int jpsi=ipsi+1; jpsi< NumCopies; jpsi++){     		 
+          RealType r=exp(2.0*(logpsi[jpsi]-logpsi[ipsi])); 
+          rPtr[indexij++]=r;
+          sumratio[ipsi] += r;                            
+          sumratio[jpsi] += 1.0/r;		
+        }                                              
+      }                                               
 
       //DON't forget DRIFT!!!
       thisWalker.Drift=0.0;
