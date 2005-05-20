@@ -51,6 +51,11 @@ void GaussianFCHKParser::parse(const std::string& fname) {
   getwords(currentWords,fin); //10 Number of independant functions 
   getwords(currentWords,fin); //11 Number of contracted shells
   int ng=atoi(currentWords.back().c_str());
+  getwords(currentWords,fin); //12 Number of contracted shells
+  getwords(currentWords,fin); //13 Number of contracted shells
+  getwords(currentWords,fin); //14 Number of contracted shells
+  int nx=atoi(currentWords.back().c_str()); //the number of exponents
+
 
   //allocate everything here
   R.resize(NumberOfAtoms);
@@ -61,9 +66,9 @@ void GaussianFCHKParser::parse(const std::string& fname) {
   gBound.resize(NumberOfAtoms+1);
   gShell.resize(ng); 
   gNumber.resize(ng);
-  gExp.resize(ng); 
-  gC0.resize(ng); 
-  gC1.resize(ng);
+  gExp.resize(nx); 
+  gC0.resize(nx); 
+  gC1.resize(nx);
 
   search(fin, "Atomic numbers");//search for Atomic numbers
   getGeometry(fin);
