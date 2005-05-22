@@ -72,8 +72,9 @@ namespace ohmmsqmc {
 
     Estimators->reportHeader();
 
+    bool require_register=false;
     //this is where the first values are evaulated
-    multiEstimator->initialize(W,H1,Psi1,Tau);
+    multiEstimator->initialize(W,H1,Psi1,Tau,require_register);
     
     Estimators->reset();
 
