@@ -342,6 +342,14 @@ namespace ohmmsqmc {
         targetH.pop();
         targetPsi.pop(); 
       }
+    } else if(what == "vmc-ptcl-multi") {
+      qmcDriver = new VMCMultiple(*qmcSystem,*primaryPsi,*primaryH);
+      while(targetH.size()) {
+	qmcDriver->add_H_and_Psi(targetH.front(),targetPsi.front());
+	targetH.pop();
+	targetPsi.pop(); 
+      }
+
     }
 
     if(qmcDriver) {
