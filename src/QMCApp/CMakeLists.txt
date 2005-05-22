@@ -30,6 +30,7 @@ SET(QMCDRIVERS
   ../QMCDrivers/VMC.cpp
   ../QMCDrivers/VMCParticleByParticle.cpp
   ../QMCDrivers/VMCMultiple.cpp
+  ../QMCDrivers/VMCPbyPMultiple.cpp
   ../QMCDrivers/VMC_OPT.cpp
   ../QMCDrivers/MolecuDMC.cpp
   ../QMCDrivers/DMCParticleByParticle.cpp
