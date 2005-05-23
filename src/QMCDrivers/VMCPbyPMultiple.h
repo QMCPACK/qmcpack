@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////
-// (c) Copyright 2003- by Jeongnim Kim
+// (c) Copyright 2003- by Jeongnim Kim and Simone Chiesa
 //////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////
 //   Jeongnim Kim
@@ -17,8 +17,8 @@
 //   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_QMC_VMC_PARTICLEBYPARTCLE_H
-#define OHMMS_QMC_VMC_PARTICLEBYPARTCLE_H
+#ifndef OHMMS_QMC_VMC_PARTICLEBYPARTCLE_MULTIPLE_H
+#define OHMMS_QMC_VMC_PARTICLEBYPARTCLE_MULTIPLE_H
 #include "QMCDrivers/QMCDriver.h" 
 namespace ohmmsqmc {
 
@@ -31,6 +31,8 @@ namespace ohmmsqmc {
     VMCPbyPMultiple(MCWalkerConfiguration& w, 
 			  TrialWaveFunction& psi, 
 			  QMCHamiltonian& h);
+    ~VMCPbyPMultiple();
+
     bool run();
     bool put(xmlNodePtr cur);
  

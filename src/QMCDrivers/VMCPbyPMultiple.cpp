@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////
-// (c) Copyright 2003- by Jeongnim Kim
+// (c) Copyright 2003- by Jeongnim Kim and Simone Chiesa
 //////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////
 //   Jeongnim Kim
@@ -37,6 +37,11 @@ namespace ohmmsqmc {
     QMCDriver(w,psi,h) { 
     RootName = "vmc-ptcl-multi";
     QMCType ="vmc-ptcl-multi";
+  }
+
+  VMCPbyPMultiple::~VMCPbyPMultiple() {
+    for(int i=0; i<G.size(); i++) delete G[i];
+    for(int i=0; i<dL.size(); i++) delete dL[i];
   }
   
   bool VMCPbyPMultiple::run() { 
@@ -149,10 +154,11 @@ namespace ohmmsqmc {
 	    for(int ipsi=0; ipsi< nPsi; ipsi++){
 	      for(int jpsi=ipsi+1; jpsi < nPsi; jpsi++){
 		RealType r=ratio[jpsi]/ratio[ipsi];
-		r = r*r*ratioijPtr[indexij++]; 
+		r = r*r*ratioijPtr[indexij]; 
 		ratioij[indexij]=r;
 		sumratio[ipsi] += r;
 		sumratio[jpsi] += 1.0/r;
+                indexij++;
 	      }
 	    }
 
@@ -187,10 +193,10 @@ namespace ohmmsqmc {
 		// Update G and L in Psi1[i]
 		Psi1[ipsi]->G = *G[ipsi];
 		Psi1[ipsi]->L += *dL[ipsi];
-		// Load G and L in W.
-		W.G = Psi1[ipsi]->G;
-		W.L = Psi1[ipsi]->L;
-		// Update local Psi1[i] buffer 
+		//Load G and L in W: JK does not think it is necessary.
+		//W.G = Psi1[ipsi]->G;
+		//W.L = Psi1[ipsi]->L;
+		//Update local Psi1[i] buffer for the next move
 		Psi1[ipsi]->update2(W,iat);  
 	      }
 	      // Update Drift
@@ -260,16 +266,16 @@ namespace ohmmsqmc {
 
 
   bool 
-    VMCPbyPMultiple::put(xmlNodePtr q){
-      nPsi=Psi1.size();
-      resize(nPsi,W.getTotalNum());
-      if(Estimators == 0) {
-	Estimators = new ScalarEstimatorManager(H);
-	multiEstimator = new MultipleEnergyEstimator(H,nPsi);
-	Estimators->add(multiEstimator,"elocal");
-      }
-      return true;
+  VMCPbyPMultiple::put(xmlNodePtr q){
+    nPsi=Psi1.size();
+    resize(nPsi,W.getTotalNum());
+    if(Estimators == 0) {
+      Estimators = new ScalarEstimatorManager(H);
+      multiEstimator = new MultipleEnergyEstimator(H,nPsi);
+      Estimators->add(multiEstimator,"elocal");
     }
+    return true;
+  }
 }
 
 /***************************************************************************
