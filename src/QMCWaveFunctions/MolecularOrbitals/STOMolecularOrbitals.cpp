@@ -211,6 +211,7 @@ namespace ohmmsqmc {
     } else {
       //assign the index for radial orbital with (n,l) if repeated
       XMLReport("Already added radial function for id: " << rnl)
+      aos->LM[num] = aos->Ylm.index(nlms[q_l],nlms[q_m]);
       aos->NL[num] = (*rnl_it).second;
       num++;
     }
