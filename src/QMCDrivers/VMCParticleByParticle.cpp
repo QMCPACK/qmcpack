@@ -114,17 +114,16 @@ namespace ohmmsqmc {
             //RealType forwardGF = exp(-0.5*dot(deltaR[iat],deltaR[iat]));
             //dr = (*it)->R[iat]-newpos-Tau*G[iat]; 
             //RealType backwardGF = exp(-oneover2tau*dot(dr,dr));
-            RealType logGf = -0.5*dot(deltaR[iat],deltaR[iat]);
+            RealType logGf = -0.5e0*dot(deltaR[iat],deltaR[iat]);
 
             ValueType vsq = Dot(G,G);
-            ValueType scale = ((-1.0+sqrt(1.0+2.0*Tau*vsq))/vsq);
+            ValueType scale = ((-1.0e0+sqrt(1.0e0+2.0e0*Tau*vsq))/vsq);
             dr = (*it)->R[iat]-newpos-scale*G[iat];
             //dr = (*it)->R[iat]-newpos-Tau*G[iat]; 
 
             RealType logGb = -oneover2tau*dot(dr,dr);
 
-            //RealType prob = std::min(1.0,pow(ratio,2)*exp(logGb-logGf));
-            RealType prob = std::min(1.0,exp(logGb-logGf+2.0*log(abs(ratio))));
+            RealType prob = std::min(1.0e0,pow(ratio,2)*exp(logGb-logGf));
             //alternatively
             if(Random() < prob) { 
       	      moved = true;
@@ -135,8 +134,8 @@ namespace ohmmsqmc {
       	      W.G = G;
       	      W.L += dL;
       	      //(*it)->Drift = Tau*G;
-                    (*it)->Drift = scale*G;
-                  } else {
+              (*it)->Drift = scale*G;
+            } else {
       	      ++nReject; 
       	      Psi.restore(iat);
             }
