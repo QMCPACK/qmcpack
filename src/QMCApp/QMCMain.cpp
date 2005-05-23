@@ -30,6 +30,7 @@
 #include "QMCDrivers/VMC.h"
 #include "QMCDrivers/VMCMultiple.h"
 #include "QMCDrivers/VMCParticleByParticle.h"
+#include "QMCDrivers/VMCPbyPMultiple.h"
 #include "QMCDrivers/DMCParticleByParticle.h"
 #include "QMCDrivers/VMC_OPT.h"
 #include "QMCDrivers/MolecuDMC.h"
@@ -343,7 +344,7 @@ namespace ohmmsqmc {
         targetPsi.pop(); 
       }
     } else if(what == "vmc-ptcl-multi") {
-      qmcDriver = new VMCMultiple(*qmcSystem,*primaryPsi,*primaryH);
+      qmcDriver = new VMCPbyPMultiple(*qmcSystem,*primaryPsi,*primaryH);
       while(targetH.size()) {
 	qmcDriver->add_H_and_Psi(targetH.front(),targetPsi.front());
 	targetH.pop();
