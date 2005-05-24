@@ -48,7 +48,7 @@ namespace ohmmsqmc {
     ParticleGradient_t dG;
     vector<ParticleGradient_t*> G;
     vector<ParticleLaplacian_t*> dL;
-    vector<RealType> ratio, ratioij, UmbrellaWeight,sumratio;
+    vector<RealType> ratio, ratioij, UmbrellaWeight,sumratio,invsumratio;
     MultipleEnergyEstimator *multiEstimator;
 
     
@@ -56,6 +56,7 @@ namespace ohmmsqmc {
       int m=n*(n-1); m=m/2;
       ratio.resize(n);
       UmbrellaWeight.resize(n);
+      invsumratio.resize(n);
       sumratio.resize(n);
       ratioij.resize(m);
       for(int i=0; i<n; i++){
