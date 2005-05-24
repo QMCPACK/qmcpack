@@ -35,8 +35,9 @@ namespace ohmmsqmc {
 					       TrialWaveFunction& psi, 
 					       QMCHamiltonian& h):
     QMCDriver(w,psi,h) { 
-    RootName = "vmc-ptcl-multi";
-    QMCType ="vmc-ptcl-multi";
+    RootName = "vmc";
+    QMCType ="vmc";
+    add_H_and_Psi(&h,&psi);
   }
 
   VMCPbyPMultiple::~VMCPbyPMultiple() {
@@ -50,34 +51,7 @@ namespace ohmmsqmc {
       
     //going to add routines to calculate how much we need
     bool require_register =  W.createAuxDataSet();
-    /* ALL THIS SUBSTITUTED BY NEXT UNCOMMENTED LINE
-    int iwalker=0;
-    MCWalkerConfiguration::iterator it(W.begin());
-    MCWalkerConfiguration::iterator it_end(W.end());
-    if(require_register) {
-      while(it != it_end) {
-        W.DataSet[iwalker]->rewind();
-	W.registerData(**it,*(W.DataSet[iwalker]));
-	for(int ipsi=0; ipsi<nPsi; ipsi++)
-	  Psi1[ipsi].registerData(W,*(W.DataSet[iwalker]));
-	++it;++iwalker;
-      } 
-    }      
 
-    // Create initial buffer for the ratio (Psi[j]/Psi[i])^2
-    Matrix<RealType>ratioijBuffer(iwalker,nPsi*(nPsi-1)/2);
-    it=W.begin(); iwalker=0;
-    while(it != it_end) {
-      for(int ipsi=0; ipsi< nPsi; ipsi++)
-	logpsi[ipsi]=Psi1[ipsi]->evaluateLog(W);
-      int indexij=0;
-      for(int ipsi=0; ipsi< nPsi-1; ipsi++){
-	for(int jpsi=ipsi+1; jpsi< nPsi; jpsi++)
-	  ratioijBuffer[iwalker][indexij++]=
-	    exp(2.0*(logpsi[jpsi]-logpsi[ipsi]));
-      }
-      ++it;++iwalker;
-    }*/
     multiEstimator->initialize(W,H1,Psi1,Tau,require_register);
 
     Estimators->reset();
@@ -92,6 +66,7 @@ namespace ohmmsqmc {
     RealType oneovertau = 1.0/Tau;
     RealType oneover2tau = 0.5*oneovertau;
     RealType g = sqrt(Tau);
+    RealType nPsi_minus_one = nPsi-1;
     
     MCWalkerConfiguration::iterator it;
     MCWalkerConfiguration::iterator it_end(W.end());
@@ -103,7 +78,6 @@ namespace ohmmsqmc {
     IndexType nAcceptTot = 0;
     IndexType nRejectTot = 0;
 
-    //  ofstream fout("test.txt");
     do {  //Blocks loop
       IndexType step = 0;
       timer.start();
@@ -151,14 +125,13 @@ namespace ohmmsqmc {
 
 	    // Compute new (Psi[i]/Psi[j])^2 and their sum
 	    int indexij(0);
-	    for(int ipsi=0; ipsi< nPsi; ipsi++){
+	    for(int ipsi=0; ipsi< nPsi_minus_one; ipsi++){
 	      for(int jpsi=ipsi+1; jpsi < nPsi; jpsi++){
-		RealType r=ratio[jpsi]/ratio[ipsi];
-		r = r*r*ratioijPtr[indexij]; 
-		ratioij[indexij]=r;
-		sumratio[ipsi] += r;
-		sumratio[jpsi] += 1.0/r;
-                indexij++;
+		RealType rji=ratio[jpsi]/ratio[ipsi];
+		rji = rji*rji*ratioijPtr[indexij]; 
+		ratioij[indexij++]=rji;
+		sumratio[ipsi] += rji;
+		sumratio[jpsi] += 1.0/rji;
 	      }
 	    }
 
@@ -167,13 +140,15 @@ namespace ohmmsqmc {
 	    drift=0.0;
 	    // Evaluate new Umbrella Weight and new drift
 	    for(int ipsi=0; ipsi< nPsi; ipsi++){
-	      UmbrellaWeight[ipsi]=1.0/sumratio[ipsi];
-	      drift += UmbrellaWeight[ipsi]*(*G[ipsi]);
+	      invsumratio[ipsi]=1.0/sumratio[ipsi];
+	      drift += invsumratio[ipsi]*(*G[ipsi]);
 	    }
 	    drift *= scale;
             dr = (*it)->R[iat]-newpos-drift[iat];
             RealType logGb = -oneover2tau*dot(dr,dr);
-	    RealType td=pow(ratio[0],2)*sumratio[0]/(*it)->Properties(SUMRATIO);
+	    // td = Target Density ratio
+	    RealType td=pow(ratio[0],2)
+	      *sumratio[0]/(*it)->Properties(SUMRATIO);
 	    RealType prob = std::min(1.0,td*exp(logGb-logGf));
 
 	    if(Random() < prob) { 
@@ -187,17 +162,16 @@ namespace ohmmsqmc {
 	      W.acceptMove(iat);
 	      // Update Buffer for (Psi[i]/Psi[j])^2 
 	      std::copy(ratioij.begin(),ratioij.end(),ratioijPtr);
+	      // Update Umbrella weight
+	      UmbrellaWeight=invsumratio;
 	      // Store sumratio for next Accept/Reject step
 	      (*it)->Properties(SUMRATIO)=sumratio[0];
 	      for(int ipsi=0; ipsi< nPsi; ipsi++){
+		////Update local Psi1[i] buffer for the next move
+		Psi1[ipsi]->update2(W,iat);  
 		// Update G and L in Psi1[i]
 		Psi1[ipsi]->G = *G[ipsi];
 		Psi1[ipsi]->L += *dL[ipsi];
-		//Load G and L in W: JK does not think it is necessary.
-		//W.G = Psi1[ipsi]->G;
-		//W.L = Psi1[ipsi]->L;
-		//Update local Psi1[i] buffer for the next move
-		Psi1[ipsi]->update2(W,iat);  
 	      }
 	      // Update Drift
 	      (*it)->Drift = drift;
@@ -215,17 +189,17 @@ namespace ohmmsqmc {
 	       -Drift
 	       -buffered info for each Psi1[i]
 	       Physical properties are updated */
+	    (*it)->R = W.R;
 	    w_buffer.rewind();
 	    W.copyToBuffer(w_buffer);
 	    for(int ipsi=0; ipsi< nPsi; ipsi++){
 	      W.G=Psi1[ipsi]->G;
 	      W.L=Psi1[ipsi]->L;
-	      RealType et = H1[ipsi]->evaluate(W);
-	      multiEstimator->updateSample(iwalker,ipsi,et,UmbrellaWeight[ipsi]);
-	      H1[ipsi]->copy((*it)->getEnergyBase(ipsi));
 	      psi = Psi1[ipsi]->evaluate(W,w_buffer);
+	      RealType et = H1[ipsi]->evaluate(W);
+	      H1[ipsi]->copy((*it)->getEnergyBase(ipsi));
+	      multiEstimator->updateSample(iwalker,ipsi,et,UmbrellaWeight[ipsi]);
 	    }
-	    (*it)->R = W.R;
 	  }
 	  else {
 	    ++nAllRejected;
@@ -246,7 +220,8 @@ namespace ohmmsqmc {
       Estimators->report(accstep);
 
       LogOut->getStream() << "Block " << block << " " << timer.cpu_time() << " Fixed_configs " 
-	<< static_cast<RealType>(nAllRejected)/static_cast<RealType>(step*W.getActiveWalkers()) << endl;
+	<< static_cast<RealType>(nAllRejected)/static_cast<RealType>(step*W.getActiveWalkers()) << 
+	" nPsi " << nPsi << endl;
       if(pStride) WO.get(W);
       nAccept = 0; nReject = 0;
       ++block;
