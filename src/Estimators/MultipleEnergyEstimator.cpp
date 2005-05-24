@@ -104,6 +104,7 @@ namespace ohmmsqmc {
         psi[ipsi]->G=W.G;
         eloc[ipsi]=h[ipsi]->evaluate(W);
         h[ipsi]->copy(thisWalker.getEnergyBase(ipsi));
+	sumratio[ipsi]=1.0;
       } 							
      
       //Check SIMONE's note
