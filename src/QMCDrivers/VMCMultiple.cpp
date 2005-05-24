@@ -139,6 +139,7 @@ namespace ohmmsqmc {
     MCWalkerConfiguration::iterator it(W.begin()); 
     MCWalkerConfiguration::iterator it_end(W.end()); 
     int iwlk(0); 
+    int nPsi_minus_one(nPsi-1);
 
     while(it != it_end) {
 
@@ -173,7 +174,7 @@ namespace ohmmsqmc {
       } 							  
 
       // Compute the sum over j of Psi^2[j]/Psi^2[i] for each i	   
-      for(int ipsi=0; ipsi< nPsi; ipsi++) {			  
+      for(int ipsi=0; ipsi< nPsi_minus_one; ipsi++) {			  
 	for(int jpsi=ipsi+1; jpsi< nPsi; jpsi++){     		  
 	  RealType ratioij=exp(2.0*(logpsi[jpsi]-logpsi[ipsi]));  
 	  sumratio[ipsi] += ratioij;                              
