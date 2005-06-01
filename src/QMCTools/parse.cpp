@@ -4,6 +4,8 @@
 #include "Message/Communicate.h"
 #include "Utilities/OhmmsInfo.h"
 #include "OhmmsData/FileUtility.h"
+#include "Utilities/OhmmsInfo.h"
+#include "Utilities/RandomGenerator.h"
 
 int main(int argc, char **argv) {
 
@@ -19,6 +21,7 @@ int main(int argc, char **argv) {
   OHMMS::Controller->initialize(argc,argv);
 
   OhmmsInfo welcome(argc,argv,OHMMS::Controller->mycontext());
+  Random.init(0,1,-1);
 
   std::cout.setf(std::ios::scientific, std::ios::floatfield);
   std::cout.setf(std::ios::right,std::ios::adjustfield);
@@ -63,17 +66,34 @@ int main(int argc, char **argv) {
   parser->parse(in_file);
 
   xmlDocPtr doc = xmlNewDoc((const xmlChar*)"1.0");
-  xmlNodePtr wf_root = xmlNewNode(NULL, BAD_CAST "determinantset");
-  xmlNewProp(wf_root,(const xmlChar*)"type",(const xmlChar*)"MolecularOrbital");
-  xmlNewProp(wf_root,(const xmlChar*)"usegrid",(const xmlChar*)"yes");
 
-  xmlNodePtr bset = parser->createBasisSet();
-  xmlAddChild(wf_root,bset);
+  xmlNodePtr qm_root = xmlNewNode(NULL, BAD_CAST "qmcsystem"); 
+  {
+    //particleset
+    xmlAddChild(qm_root,parser->createElectronSet());
+    xmlAddChild(qm_root,parser->createIonSet());
 
-  xmlNodePtr slaterdet = parser->createDeterminantSet();
-  xmlAddChild(wf_root,slaterdet);
+    //wavefunction
+    xmlNodePtr wfPtr = xmlNewNode(NULL,(const xmlChar*)"wavefunction");
+    xmlNewProp(wfPtr,(const xmlChar*)"id",(const xmlChar*)"psi0");
+    xmlNewProp(wfPtr,(const xmlChar*)"target",(const xmlChar*)"e");
+    {
+      xmlNodePtr detPtr = xmlNewNode(NULL, (const xmlChar*) "determinantset");
+      xmlNewProp(detPtr,(const xmlChar*)"type",(const xmlChar*)"MolecularOrbital");
+      xmlNewProp(detPtr,(const xmlChar*)"usegrid",(const xmlChar*)"yes");
+      xmlNewProp(detPtr,(const xmlChar*)"source",(const xmlChar*)"i");
+      {
+        xmlNodePtr bsetPtr = parser->createBasisSet();
+        xmlAddChild(detPtr,bsetPtr);
 
-  xmlDocSetRootElement(doc, wf_root);
+        xmlNodePtr slaterdetPtr = parser->createDeterminantSet();
+        xmlAddChild(detPtr,slaterdetPtr);
+      }
+      xmlAddChild(wfPtr,detPtr);
+    }
+    xmlAddChild(qm_root,wfPtr);
+  }
+  xmlDocSetRootElement(doc, qm_root);
 
   xmlXPathContextPtr m_context = xmlXPathNewContext(doc);
   xmlXPathObjectPtr result

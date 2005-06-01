@@ -11,6 +11,7 @@ SET(CASINO
   ../QMCWaveFunctions/OrbitalBuilderBase.cpp
   ../QMCWaveFunctions/MolecularOrbitals/RGFBuilderBase.cpp
   ../QMCWaveFunctions/MolecularOrbitals/GTO2GridBuilder.cpp
+  ../QMCApp/InitMolecularSystem.cpp
   QMCGaussianParserBase.cpp
   GaussianFCHKParser.cpp
   GamesXmlParser.cpp

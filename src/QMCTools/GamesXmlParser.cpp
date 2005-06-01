@@ -17,11 +17,11 @@
 //   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#include "QMCTools/GamesXmlParser.h"
 #include "Utilities/OhmmsInfo.h"
+#include "QMCTools/GamesXmlParser.h"
 #include "QMCHamiltonians/ConservedEnergy.h"
 
-namespace ohmmsqmc {
+//namespace ohmmsqmc {
 
   GamesXmlParser::GamesXmlParser() {
     basisName = "GamesXml";
@@ -50,23 +50,6 @@ namespace ohmmsqmc {
       return;
     }
 
-    xmlXPathContextPtr m_context = xmlXPathNewContext(m_doc);
-    xmlXPathObjectPtr result
-      = xmlXPathEvalExpression((const xmlChar*)"//IN/RUN_TITLE",m_context);
-    string atitle;
-    putContent(atitle,result->nodesetval->nodeTab[0]);
-    string::size_type wh=atitle.find("...");
-    if(wh>0) atitle.erase(wh,atitle.size()-wh);
-    Title = atitle;
-    xmlXPathFreeObject(result);
-
-    result = xmlXPathEvalExpression((const xmlChar*)"//IN/CONTRL/SCFTYP",m_context);
-    putContent(atitle,result->nodesetval->nodeTab[0]);
-    if(atitle == "RHF" || atitle == "ROHF") 
-      SpinRestricted=true;
-    else if(atitle == "URHF") 
-      SpinRestricted=false;
-
     //xmlNodePtr for atoms
     vector<xmlNodePtr> aPtrList;
     //xmlNodePtr for eigvectors
@@ -74,27 +57,60 @@ namespace ohmmsqmc {
     //xmlNodePtr for gaussian basis
     vector<xmlNodePtr> bPtrList;
 
-    result = xmlXPathEvalExpression((const xmlChar*)"//OUT/SYSTEM_STATE",m_context);
-    if(!xmlXPathNodeSetIsEmpty(result->nodesetval)) {
-      //pick the last OUT/SYSTEM_STATE
-      cur=result->nodesetval->nodeTab[result->nodesetval->nodeNr-1];
-      cur = cur->children;
-      while(cur != NULL) {
-        string cname((const char*)cur->name);
-        if(cname == "ATOM") {
-          aPtrList.push_back(cur);
-        } else if(cname == "VEC") {
-          ePtrList.push_back(cur);
-        }
-        cur=cur->next;
-      }
-    }
-    xmlXPathFreeObject(result);
+    cur=cur->children;
+    while(cur != NULL) {
+      string cname((const char*)cur->name);
+      if(cname == "IN") {
+        xmlNodePtr cur1=cur->children;
+        while(cur1 != NULL) {
+          string cname1((const char*)cur1->name);
+          if(cname1 == "RUN_TITLE") {
+            string atitle;
+            putContent(atitle,cur1);
+            string::size_type wh=atitle.find("...");
+            if(wh<atitle.size()) atitle.erase(wh,atitle.size()-wh);
+            Title = atitle;
+          } else if(cname1 == "CONTRL") {
+            getControlParameters(cur1);
+          }
+          cur1=cur1->next;
+        }//everything within IN
+      } else if(cname == "OUT") {
+        xmlNodePtr cur1=cur->children;
+        while(cur1 != NULL) {
+          string cname1((const char*)cur1->name);
+          if(cname1 == "SYSTEM_STATE") {
+            //Unit needs to be generalized!!
+            string unitL((const char*)xmlGetProp(cur1,(const xmlChar*)"UNITS"));
+            if(unitL == "ANGS") BohrUnit=false;
 
-    result = xmlXPathEvalExpression((const xmlChar*)"//OUT/PDATA/PATOMIC_BASIS_SET",m_context);
-    for(int i=0; i<result->nodesetval->nodeNr; i++) 
-      bPtrList.push_back(result->nodesetval->nodeTab[i]);
-    xmlXPathFreeObject(result);
+            xmlNodePtr cur2 = cur1->children;
+            while(cur2 != NULL) {
+              string cname2((const char*)cur2->name);
+              if(cname2 == "ATOM") {
+                aPtrList.push_back(cur2);
+              } else if(cname2 == "VEC") {
+                ePtrList.push_back(cur2);
+              }
+              cur2=cur2->next;
+            }
+          } else if(cname1 == "PDATA") {
+            xmlNodePtr cur2 = cur1->children;
+            while(cur2 != NULL) {
+              string cname2((const char*)cur2->name);
+              if(cname2 == "PATOMIC_BASIS_SET") {
+                bPtrList.push_back(cur2);
+              } 
+              cur2=cur2->next;
+            }
+          }
+          cur1=cur1->next;
+        }//everything within OUT
+      }
+      cur=cur->next;
+    }
+
+    //xmlXPathContextPtr m_context = xmlXPathNewContext(m_doc);
 
     getGeometry(aPtrList);
     getGaussianCenters(bPtrList);
@@ -104,17 +120,35 @@ namespace ohmmsqmc {
     xmlFreeDoc(m_doc);
   }
 
+  void GamesXmlParser::getControlParameters(xmlNodePtr cur){
+    string a;
+    cur=cur->children;
+    while(cur != NULL) {
+      string cname((const char*)cur->name);
+      if(cname == "SCFTYP") {
+        putContent(a,cur);
+        if(a == "RHF" || a == "ROHF") 
+          SpinRestricted=true;
+        else if(a == "URHF") 
+          SpinRestricted=false;
+      } else if(cname == "MULT") {
+        putContent(NumberOfAlpha,cur);
+        NumberOfAlpha--;
+        NumberOfBeta=0;
+      } 
+      cur=cur->next;
+    }
+  }
+
   void GamesXmlParser::getGeometry(vector<xmlNodePtr>& aPtrList) {
 
     NumberOfAtoms = aPtrList.size();
 
-    R.resize(NumberOfAtoms);
-    GroupID.resize(NumberOfAtoms);
+    IonSystem.create(NumberOfAtoms);
+
     GroupName.resize(NumberOfAtoms);
     Qv.resize(NumberOfAtoms);
-    int nSpecies=0;
     double nel=0;
-    map<string,int> unique_atoms;
 
     for(int i=0; i<NumberOfAtoms; i++) {
       xmlNodePtr cur=aPtrList[i]->children;
@@ -123,14 +157,7 @@ namespace ohmmsqmc {
         if(cname == "ATOM_NAME") {
           string aname;
           putContent(aname,cur);
-          map<string,int>::iterator it(unique_atoms.find(aname));
-          if(it == unique_atoms.end()) {
-            unique_atoms[aname]=nSpecies; 
-            GroupID[i]=nSpecies;
-            nSpecies++;
-          } else {
-            GroupID[i]=(*it).second;
-          }
+          IonSystem.GroupID[i]=IonSystem.Species.addSpecies(aname);
           GroupName[i]=aname;
         } else if(cname == "ATOMIC_NUMBER") {
           putContent(Qv[i],cur);
@@ -139,9 +166,11 @@ namespace ohmmsqmc {
           xmlNodePtr tcur=cur->children;
           while(tcur!=NULL) {
             string tname((const char*)tcur->name);
-            if(tname == "XCOORD") putContent(R[i][0],tcur);
-            else if(tname == "YCOORD") putContent(R[i][1],tcur);
-            else if(tname == "ZCOORD") putContent(R[i][2],tcur);
+            double x,y,z;
+            if(tname == "XCOORD") putContent(x,tcur);
+            else if(tname == "YCOORD") putContent(y,tcur);
+            else if(tname == "ZCOORD") putContent(z,tcur);
+            IonSystem.R[i]=SingleParticlePos_t(x,y,z);
             tcur=tcur->next;
           }
         }
@@ -150,10 +179,16 @@ namespace ohmmsqmc {
     }//i
 
     NumberOfEls=static_cast<int>(nel);
+    NumberOfBeta=(NumberOfEls-NumberOfAlpha)/2;
+    NumberOfAlpha=NumberOfEls-NumberOfBeta;
+
     cout << "Number of atoms " << NumberOfAtoms << endl;
     cout << "Number of electrons " << NumberOfEls << endl;
+    cout << "Number of electrons (ALPHA) " << NumberOfAlpha << endl;
+    cout << "Number of electrons (BETA) " << NumberOfBeta << endl;
     cout << "Group ID " << endl;
-    std::copy(GroupID.begin(), GroupID.end(),ostream_iterator<int>(cout, " "));
+    std::copy(IonSystem.GroupID.begin(), IonSystem.GroupID.end(),
+        ostream_iterator<int>(cout, " "));
     cout << endl;
   }
 
@@ -267,7 +302,7 @@ namespace ohmmsqmc {
 
     if(SpinRestricted) EigVal_beta=EigVal_alpha;
   }
-}
+//}
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$

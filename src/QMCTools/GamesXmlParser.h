@@ -16,6 +16,8 @@ class GamesXmlParser: public QMCGaussianParserBase,
   void getGaussianCenters(vector<xmlNodePtr>&);
   void getEigVectors(vector<xmlNodePtr>&);
 
+  void getControlParameters(xmlNodePtr);
+
 public:
 
   GamesXmlParser();

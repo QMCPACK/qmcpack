@@ -26,10 +26,11 @@ void GaussianFCHKParser::parse(const std::string& fname) {
   Title = currentWords[0];
 
   getwords(currentWords,fin);//2  SP RHF Gen
-  if(currentWords[1]=="RHF") {
-    SpinRestricted=true;
-  } else {
+  //if(currentWords[1]=="ROHF" || currentWords[1]=="UHF") {
+  if(currentWords[1]=="UHF") {
     SpinRestricted=false;
+  } else {
+    SpinRestricted=true;
   }
 
   getwords(currentWords,fin);//3  Number of atoms
@@ -46,20 +47,35 @@ void GaussianFCHKParser::parse(const std::string& fname) {
   getwords(currentWords,fin); //8 Number of beta electrons 
   int ndown=atoi(currentWords.back().c_str());
 
+  //NumberOfAlpha=nup-ndown;
+  NumberOfAlpha=nup;
+  NumberOfBeta=ndown;
+
   getwords(currentWords,fin); //9 Number of basis functions
   SizeOfBasisSet=atoi(currentWords.back().c_str());
   getwords(currentWords,fin); //10 Number of independant functions 
-  getwords(currentWords,fin); //11 Number of contracted shells
-  int ng=atoi(currentWords.back().c_str());
+   ///
+  int ng;
+  bool notfound = true;
+  while(notfound) {
+    std::string aline;
+    getwords(currentWords,fin);
+    for(int i=0; i<currentWords.size(); i++){
+      if("contracted" == currentWords[i]){
+	ng=atoi(currentWords.back().c_str());
+	notfound = false;
+      }
+    }
+  }
+  //getwords(currentWords,fin); //11 Number of contracted shells
+  //int ng=atoi(currentWords.back().c_str());
   getwords(currentWords,fin); //12 Number of contracted shells
   getwords(currentWords,fin); //13 Number of contracted shells
   getwords(currentWords,fin); //14 Number of contracted shells
   int nx=atoi(currentWords.back().c_str()); //the number of exponents
 
-
   //allocate everything here
-  R.resize(NumberOfAtoms);
-  GroupID.resize(NumberOfAtoms);
+  IonSystem.create(NumberOfAtoms);
   GroupName.resize(NumberOfAtoms);
   Qv.resize(NumberOfAtoms);
 
@@ -70,8 +86,13 @@ void GaussianFCHKParser::parse(const std::string& fname) {
   gC0.resize(nx); 
   gC1.resize(nx);
 
+
   search(fin, "Atomic numbers");//search for Atomic numbers
   getGeometry(fin);
+
+  std::cout << "Number of gaussians " << ng << std::endl;
+  std::cout << "Number of primitives " << nx << std::endl;
+  std::cout << "Number of atoms " << NumberOfAtoms << std::endl;
 
   search(fin, "Shell types");
   getGaussianCenters(fin);
@@ -95,12 +116,18 @@ void GaussianFCHKParser::parse(const std::string& fname) {
 
 void GaussianFCHKParser::getGeometry(std::istream& is) {
   //atomic numbers
-  getValues(is,GroupID.begin(),GroupID.end());
+  vector<int> q(NumberOfAtoms);
+  getValues(is,q.begin(),q.end());
   search(is,"Nuclear");
   getValues(is,Qv.begin(),Qv.end());
   search(is,"coordinates");
-  getValues(is,R.begin(),R.end());
-  for(int i=0; i<GroupID.size(); i++) GroupName[i]=IonName[GroupID[i]];
+  getValues(is,IonSystem.R.begin(),IonSystem.R.end());
+
+  for(int i=0; i<NumberOfAtoms; i++) {
+    GroupName[i]=IonName[q[i]];
+    IonSystem.GroupID[i]=IonSystem.Species.addSpecies(GroupName[i]);
+  }
+  //for(int i=0; i<GroupID.size(); i++) GroupName[i]=IonName[GroupID[i]];
 }
 
 void GaussianFCHKParser::getGaussianCenters(std::istream& is) {

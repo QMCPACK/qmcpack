@@ -46,8 +46,8 @@ void CasinoParser::parse(const std::string& fname) {
   search(fin, "GEOMETRY");
   getGeometry(fin);
 
-  GroupName.resize(GroupID.size());
-  for(int i=0; i<GroupID.size(); i++) GroupName[i]=IonName[GroupID[i]];
+  for(int i=0; i<NumberOfAtoms; i++) 
+    GroupName[i]=IonName[IonSystem.GroupID[i]];
 
   LOGMSG("Looking for BASIS ")
   search(fin, "BASIS");
@@ -110,18 +110,18 @@ void CasinoParser::getGeometry(std::istream& is) {
 void CasinoParser::getNumberOfAtoms(std::istream& is) {
   search(is,"Number");
   getValue(is,NumberOfAtoms);
-  R.resize(NumberOfAtoms);
-  GroupID.resize(NumberOfAtoms);
+  IonSystem.create(NumberOfAtoms);
+  GroupName.resize(NumberOfAtoms);
   Qv.resize(NumberOfAtoms);
   gBound.resize(NumberOfAtoms+1);
 }
 void CasinoParser::getAtomicPositions(std::istream& is) {
   search(is,"positions");
-  getValues(is,R.begin(),R.end());
+  getValues(is,IonSystem.R.begin(),IonSystem.R.end());
 }
 void CasinoParser::getAtomicNumbers(std::istream& is) {
   search(is,"Atomic");
-  getValues(is,GroupID.begin(),GroupID.end());
+  getValues(is,IonSystem.GroupID.begin(),IonSystem.GroupID.end());
 }
 void CasinoParser::getValenceCharges(std::istream& is) {
   search(is,"Valence");

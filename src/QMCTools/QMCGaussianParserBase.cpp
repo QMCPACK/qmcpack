@@ -1,4 +1,5 @@
 #include "QMCTools/QMCGaussianParserBase.h"
+#include "ParticleIO/XMLParticleIO.h"
 #include "Utilities/OhmmsInfo.h"
 #include <iterator>
 #include <algorithm>
@@ -7,6 +8,7 @@
 #include <map>
 using namespace std;
 #include "QMCWaveFunctions/MolecularOrbitals/GTO2GridBuilder.h"
+#include "QMCApp/InitMolecularSystem.h"
 
 //std::vector<std::string> QMCGaussianParserBase::IonName;
 std::map<int,std::string> QMCGaussianParserBase::IonName;
@@ -20,10 +22,14 @@ QMCGaussianParserBase::QMCGaussianParserBase():
 }
 
 QMCGaussianParserBase::QMCGaussianParserBase(int argc, char** argv):
+  BohrUnit(true),SpinRestricted(false),NumberOfAtoms(0),NumberOfEls(0),
+  NumberOfAlpha(0),NumberOfBeta(0),SizeOfBasisSet(0),
   Title("sample"),basisType("Gaussian"),basisName("generic"),  
   Normalized("no"),gridPtr(0)
 {
-
+  IonSystem.setName("i");
+  IonChargeIndex=IonSystem.Species.addAttribute("charge");
+  cout << "Index of ion charge " << IonChargeIndex << endl;
   createGridNode(argc,argv);
 }
 
@@ -43,22 +49,24 @@ void QMCGaussianParserBase::init() {
 
 void QMCGaussianParserBase::setOccupationNumbers() {
 
-  if(SpinRestricted) {
-    NumberOfAlpha = NumberOfEls/2;
-    NumberOfBeta = NumberOfEls-NumberOfAlpha;
-  } else {
-    multimap<value_type,int> e;
-    for(int i=0; i<SizeOfBasisSet; i++) e.insert(pair<value_type,int>(EigVal_alpha[i],0));
-    for(int i=0; i<SizeOfBasisSet; i++) e.insert(pair<value_type,int>(EigVal_beta[i],1));
-    NumberOfAlpha=0; NumberOfBeta=0;
-    int n=0;
-    multimap<value_type,int>::iterator it(e.begin());
-    LOGMSG("Unrestricted HF. Sorted eigen values")
-    while(n<NumberOfEls && it != e.end()) {
-      LOGMSG(n << " " << (*it).first << " " << (*it).second)
-      if((*it).second == 0) {NumberOfAlpha++;}
-      else {NumberOfBeta++;}
-      ++it;++n;
+  if(NumberOfAlpha==0) {
+    if(SpinRestricted) {
+      NumberOfAlpha = NumberOfEls/2;
+      NumberOfBeta = NumberOfEls-NumberOfAlpha;
+    } else {
+      multimap<value_type,int> e;
+      for(int i=0; i<SizeOfBasisSet; i++) e.insert(pair<value_type,int>(EigVal_alpha[i],0));
+      for(int i=0; i<SizeOfBasisSet; i++) e.insert(pair<value_type,int>(EigVal_beta[i],1));
+      NumberOfAlpha=0; NumberOfBeta=0;
+      int n=0;
+      multimap<value_type,int>::iterator it(e.begin());
+      LOGMSG("Unrestricted HF. Sorted eigen values")
+      while(n<NumberOfEls && it != e.end()) {
+        LOGMSG(n << " " << (*it).first << " " << (*it).second)
+        if((*it).second == 0) {NumberOfAlpha++;}
+        else {NumberOfBeta++;}
+        ++it;++n;
+      }
     }
   }
 
@@ -71,19 +79,64 @@ void QMCGaussianParserBase::setOccupationNumbers() {
   for(int i=0; i<NumberOfBeta; i++) Occ_beta[i]=1;
 }
 
+xmlNodePtr QMCGaussianParserBase::createElectronSet() {
+
+  ParticleSet els;
+  els.setName("e");
+  vector<int> nel(2);
+  nel[0]=NumberOfAlpha;
+  nel[1]=NumberOfBeta;
+  els.create(nel);
+
+  int iu=els.Species.addSpecies("u");
+  int id=els.Species.addSpecies("d");
+  int ic=els.Species.addAttribute("charge");
+  els.Species(ic,iu)=-1;
+  els.Species(ic,id)=-1;
+
+  //Create InitMolecularSystem to assign random electron positions
+  InitMolecularSystem m(0,"test");
+  if(IonSystem.getTotalNum()>1) {
+    //THIS IS BROKEN
+    //Add cut-off and valence els to IonSystem.Species!!!
+    m.initMolecule(&IonSystem,&els);
+  } else {
+    m.initAtom(&els);
+  }
+
+  XMLSaveParticle o(els);
+  return o.createNode();
+}
+xmlNodePtr QMCGaussianParserBase::createIonSet() {
+  const double ang_to_bohr=1.0/0.529177e0;
+  if(!BohrUnit) IonSystem.R *= ang_to_bohr;
+
+  for(int i=0; i<NumberOfAtoms; i++) {
+    IonSystem.Species.addSpecies(GroupName[i]);
+  }
+
+  for(int i=0; i<NumberOfAtoms; i++) {
+    IonSystem.Species(IonChargeIndex,IonSystem.GroupID[i])=Qv[i];
+  }
+
+  XMLSaveParticle o(IonSystem);
+  return o.createNode();
+}
 xmlNodePtr QMCGaussianParserBase::createBasisSet() {
 
   xmlNodePtr bset = xmlNewNode(NULL,(const xmlChar*)"basisset");
+  /*
   xmlNewProp(bset,(const xmlChar*)"ref",(const xmlChar*)"i");
-
   xmlNodePtr cur = xmlAddChild(bset,xmlNewNode(NULL,(const xmlChar*)"distancetable"));
   xmlNewProp(cur,(const xmlChar*)"source",(const xmlChar*)"i");
   xmlNewProp(cur,(const xmlChar*)"target",(const xmlChar*)"e");
+  */
 
+  xmlNodePtr cur=NULL;
   std::map<int,int> species;
   int gtot = 0;
   for(int iat=0; iat<NumberOfAtoms; iat++) {
-    int itype = GroupID[iat];
+    int itype = IonSystem.GroupID[iat];
     int ng = 0;
     std::map<int,int>::iterator it=species.find(itype);
     if(it == species.end()) {
@@ -91,7 +144,11 @@ xmlNodePtr QMCGaussianParserBase::createBasisSet() {
         ng += gNumber[ig];
       }
       species[itype] = ng;
-      cur = xmlAddSibling(cur,createCenter(iat,gtot));
+      if(cur) {
+        cur = xmlAddSibling(cur,createCenter(iat,gtot));
+      } else {
+        cur = xmlAddChild(bset,createCenter(iat,gtot));
+      }
     } else {
       ng = (*it).second;
     }
@@ -195,7 +252,8 @@ QMCGaussianParserBase::createDeterminantSet() {
 xmlNodePtr QMCGaussianParserBase::createCenter(int iat, int off_) {
 
   //CurrentCenter = IonName[GroupID[iat]];
-  CurrentCenter = GroupName[iat];
+  //CurrentCenter = IonSystem.Species.speciesName[iat];
+  CurrentCenter=GroupName[iat];
   xmlNodePtr abasis = xmlNewNode(NULL,(const xmlChar*)"atomicBasisSet");
   xmlNewProp(abasis,(const xmlChar*)"name",(const xmlChar*)basisName.c_str());
   xmlNewProp(abasis,(const xmlChar*)"angular",(const xmlChar*)"spherical");

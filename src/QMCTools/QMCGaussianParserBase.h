@@ -5,9 +5,11 @@
 #include <iomanip>
 #include <vector>
 #include <map>
-#include "OhmmsPETE/TinyVector.h"
 #include "OhmmsData/OhmmsElementBase.h"
 #include "Utilities/SimpleParser.h"
+#include "Particle/ParticleSet.h"
+
+using namespace ohmmsqmc;
 
 struct OhmmsAsciiParser {
 
@@ -51,8 +53,11 @@ struct OhmmsAsciiParser {
 struct QMCGaussianParserBase {
 
   typedef double value_type;
+  typedef ParticleSet::SingleParticlePos_t SingleParticlePos_t;
 
+  bool BohrUnit;
   bool SpinRestricted;
+  int IonChargeIndex;
   int NumberOfAtoms;
   int NumberOfEls;
   int NumberOfAlpha, NumberOfBeta;
@@ -62,9 +67,10 @@ struct QMCGaussianParserBase {
   std::string basisName;
   std::string Normalized;
   std::string CurrentCenter;
+
+  ParticleSet IonSystem;
+
   std::vector<string> GroupName;
-  std::vector<TinyVector<value_type,3> > R;
-  std::vector<int> GroupID;
   std::vector<int> gShell, gNumber, gBound;
   std::vector<int> Occ_alpha, Occ_beta;
   std::vector<value_type> Qv;
@@ -81,6 +87,9 @@ struct QMCGaussianParserBase {
   void setOccupationNumbers();
 
   void createGridNode(int argc, char** argv);
+
+  xmlNodePtr createElectronSet();
+  xmlNodePtr createIonSet();
   xmlNodePtr createBasisSet();
   xmlNodePtr createCenter(int iat, int _off);
   void createShell(int n, int ig, int off_, xmlNodePtr abasis);
