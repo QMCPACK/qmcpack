@@ -86,15 +86,22 @@ namespace ohmmsqmc {
     d_ii->create(1);
     d_ii->evaluate(*ions);
 
-    vector<double> Cut, Core;
     int Centers = ions->getTotalNum();
+    vector<int> Qtot(Centers), Qcore(Centers), Qval(Centers,0);
+    vector<double> Cut(Centers);
+
+    //use charge as the core electrons first
+    int icore = ions->Species.addAttribute("charge");
+    for(int iat=0; iat<Centers; iat++) {
+      Qtot[iat]=static_cast<int>(ions->Species(icore,ions->GroupID[iat]));
+    }
+
 
     int nattrib=ions->Species.numAttributes();
     Cut.resize(Centers);
-
     //attribute id for cut
     int icut = ions->Species.addAttribute("cut");
-    if(icut>nattrib) {
+    if(icut>=nattrib) {
       for(int iat=0; iat<Centers; iat++) { Cut[iat] = 1.0; }
     } else {
       //store the max distance from atom
@@ -103,21 +110,22 @@ namespace ohmmsqmc {
       }
     }
  
-    Core.resize(Centers);
-    //use charge as the core electrons first
-    int icore = ions->Species.addAttribute("charge");
+    vector<int> CoreTable(10);
+    CoreTable[1]=0;CoreTable[2]=2;
+    CoreTable[3]=2;CoreTable[4]=2;
+
     for(int iat=0; iat<Centers; iat++) {
-      Core[iat]=ions->Species(icore,ions->GroupID[iat]);
+      QCore[iat]= CoreTable[ Qtot[ ions->GroupID[iat] ] ];
     }
 
-    nattrib=ions->Species.numAttributes();
-    icore = ions->Species.addAttribute("core");
-    //store the max distance from atom
-    if(icore < nattrib) {
-      for(int iat=0; iat<Centers; iat++) {
-        Core[iat]=ions->Species(icore,ions->GroupID[iat]);
-      }
-    }
+    //nattrib=ions->Species.numAttributes();
+    //icore = ions->Species.addAttribute("core");
+    ////store the max distance from atom
+    //if(icore < nattrib) {
+    //  for(int iat=0; iat<Centers; iat++) {
+    //    Core[iat]=ions->Species(icore,ions->GroupID[iat]);
+    //  }
+    //}
 
     //3N-dimensional Gaussian
     ParticleSet::ParticlePos_t chi(els->getTotalNum());
@@ -130,7 +138,7 @@ namespace ohmmsqmc {
     int ncoreUp(0), items(0);
     for(int iat=0; iat<Centers; iat++) {
       double sep=0.8*Cut[iat];
-      for(int iel=0; iel<Core[iat]/2; iel++) {
+      for(int iel=0; iel<QCore[iat]/2; iel++) {
         els->R[ncoreUp]=ions->R[iat]+sep*chi[items++];
         els->R[ncoreUp+numUp]=ions->R[iat]+sep*chi[items++];
         ++ncoreUp;

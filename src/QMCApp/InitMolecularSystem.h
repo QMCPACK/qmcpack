@@ -44,6 +44,9 @@ namespace ohmmsqmc {
     bool put(xmlNodePtr cur);
     void reset();
 
+    void initAtom(ParticleSet* els);
+    void initMolecule(ParticleSet* ions, ParticleSet* els);
+
   private:
 
     /** pointer to ParticleSetPool
@@ -55,8 +58,6 @@ namespace ohmmsqmc {
      */
     ParticleSetPool* ptclPool;
 
-    void initAtom(ParticleSet* els);
-    void initMolecule(ParticleSet* ions, ParticleSet* els);
   };
 }
 #endif
