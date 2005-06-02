@@ -60,6 +60,7 @@ struct QMCGaussianParserBase {
   int IonChargeIndex;
   int NumberOfAtoms;
   int NumberOfEls;
+  int SpinMultiplicity;
   int NumberOfAlpha, NumberOfBeta;
   int SizeOfBasisSet;
   std::string Title;

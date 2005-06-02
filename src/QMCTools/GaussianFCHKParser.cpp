@@ -38,6 +38,7 @@ void GaussianFCHKParser::parse(const std::string& fname) {
 
   getwords(currentWords,fin); //4 Charge
   getwords(currentWords,fin); //5 Multiplicity
+  SpinMultiplicity=atoi(currentWords.back().c_str());
 
   getwords(currentWords,fin); //6 Number of electrons
   NumberOfEls=atoi(currentWords.back().c_str());

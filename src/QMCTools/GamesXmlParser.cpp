@@ -129,12 +129,10 @@
         putContent(a,cur);
         if(a == "RHF" || a == "ROHF") 
           SpinRestricted=true;
-        else if(a == "URHF") 
+        else if(a == "URHF" || a == "UHF") 
           SpinRestricted=false;
       } else if(cname == "MULT") {
-        putContent(NumberOfAlpha,cur);
-        NumberOfAlpha--;
-        NumberOfBeta=0;
+        putContent(SpinMultiplicity,cur);
       } 
       cur=cur->next;
     }

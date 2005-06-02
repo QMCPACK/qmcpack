@@ -23,7 +23,7 @@ QMCGaussianParserBase::QMCGaussianParserBase():
 
 QMCGaussianParserBase::QMCGaussianParserBase(int argc, char** argv):
   BohrUnit(true),SpinRestricted(false),NumberOfAtoms(0),NumberOfEls(0),
-  NumberOfAlpha(0),NumberOfBeta(0),SizeOfBasisSet(0),
+  SpinMultiplicity(0),NumberOfAlpha(0),NumberOfBeta(0),SizeOfBasisSet(0),
   Title("sample"),basisType("Gaussian"),basisName("generic"),  
   Normalized("no"),gridPtr(0)
 {
@@ -49,26 +49,25 @@ void QMCGaussianParserBase::init() {
 
 void QMCGaussianParserBase::setOccupationNumbers() {
 
-  if(NumberOfAlpha==0) {
-    if(SpinRestricted) {
-      NumberOfAlpha = NumberOfEls/2;
-      NumberOfBeta = NumberOfEls-NumberOfAlpha;
-    } else {
-      multimap<value_type,int> e;
-      for(int i=0; i<SizeOfBasisSet; i++) e.insert(pair<value_type,int>(EigVal_alpha[i],0));
-      for(int i=0; i<SizeOfBasisSet; i++) e.insert(pair<value_type,int>(EigVal_beta[i],1));
-      NumberOfAlpha=0; NumberOfBeta=0;
-      int n=0;
-      multimap<value_type,int>::iterator it(e.begin());
-      LOGMSG("Unrestricted HF. Sorted eigen values")
-      while(n<NumberOfEls && it != e.end()) {
-        LOGMSG(n << " " << (*it).first << " " << (*it).second)
-        if((*it).second == 0) {NumberOfAlpha++;}
-        else {NumberOfBeta++;}
-        ++it;++n;
-      }
+  int ds=SpinMultiplicity-1;
+  NumberOfBeta= (NumberOfEls-ds)/2;
+  NumberOfAlpha= NumberOfEls-NumberOfBeta;
+
+  if(!SpinRestricted) {//UHF
+    multimap<value_type,int> e;
+    for(int i=0; i<SizeOfBasisSet; i++) e.insert(pair<value_type,int>(EigVal_alpha[i],0));
+    for(int i=0; i<SizeOfBasisSet; i++) e.insert(pair<value_type,int>(EigVal_beta[i],1));
+    int n=0;
+    multimap<value_type,int>::iterator it(e.begin());
+    LOGMSG("Unrestricted HF. Sorted eigen values")
+    while(n<NumberOfEls && it != e.end()) {
+      LOGMSG(n << " " << (*it).first << " " << (*it).second)
+      //if((*it).second == 0) {NumberOfAlpha++;}
+      //else {NumberOfBeta++;}
+      ++it;++n;
     }
   }
+  //}
 
   LOGMSG("Number of alpha electrons " << NumberOfAlpha)
   LOGMSG("Number of beta electrons " << NumberOfBeta)
