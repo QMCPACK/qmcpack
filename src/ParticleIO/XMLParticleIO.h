@@ -99,6 +99,8 @@ namespace ohmmsqmc {
 
     void get(ostream& os, int olevel) const;
 
+    xmlNodePtr createNode();
+
   private:
 
   };

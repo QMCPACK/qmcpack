@@ -125,7 +125,7 @@ void GaussianFCHKParser::getGeometry(std::istream& is) {
 
   for(int i=0; i<NumberOfAtoms; i++) {
     GroupName[i]=IonName[q[i]];
-    IonSystem.GroupID[i]=IonSystem.Species.addSpecies(GroupName[i]);
+    IonSystem.GroupID[i]=IonSystem.getSpeciesSet().addSpecies(GroupName[i]);
   }
   //for(int i=0; i<GroupID.size(); i++) GroupName[i]=IonName[GroupID[i]];
 }

@@ -34,11 +34,13 @@ namespace ohmmsqmc {
 
   MO2Grid3D::MO2Grid3D(int argc, char** argv): QMCAppBase(argc,argv) { 
     el.setName("e");
-    int iu = el.Species.addSpecies("u");
-    int id = el.Species.addSpecies("d");
-    int icharge = el.Species.addAttribute("charge");
-    el.Species(icharge,iu) = -1;
-    el.Species(icharge,id) = -1;
+
+    SpeciesSet& Species(el.getSpeciesSet());
+    int iu = Species.addSpecies("u");
+    int id = Species.addSpecies("d");
+    int icharge = Species.addAttribute("charge");
+    Species(icharge,iu) = -1;
+    Species(icharge,id) = -1;
   }
 
   ///destructor

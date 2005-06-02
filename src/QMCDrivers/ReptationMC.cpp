@@ -59,12 +59,13 @@ namespace ohmmsqmc {
 
     RealType g = sqrt(Tau);
     LOGMSG("Moving " << NumCuts << " for each reptation step")
-    MCWalkerConfiguration::iterator it=W.begin();
-    MCWalkerConfiguration::iterator it_end=W.end();
+    MCWalkerConfiguration::iterator it(W.begin());
+    MCWalkerConfiguration::iterator it_end(W.end());
+
     while(it != it_end) {
       (*it)->Properties(WEIGHT)=1.0;     
       PolymerChain* achain = new PolymerChain((*it),PolymerLength,NumCuts);
-      Polymers.push_back(achain);it++;
+      Polymers.push_back(achain);
 
       Walker_t* cur=(*achain)[0];
       W.R = cur->R;
@@ -277,7 +278,7 @@ namespace ohmmsqmc {
 	++nAccept;
       } else {
 	++nReject; 
-	if(UseBounce && Random()>accept) {
+	if(UseBounce) {
 	  NumTurns++;
 	  polymer.flip();
 	}

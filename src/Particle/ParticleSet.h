@@ -54,7 +54,7 @@ namespace ohmmsqmc {
     ParticleLaplacian_t L;
    
     ///SpeciesSet of particles
-    SpeciesSet Species;
+    SpeciesSet mySpecies;
     
     ///default constructor
     ParticleSet();
@@ -81,6 +81,9 @@ namespace ohmmsqmc {
      *@param iflag index for the update mode
      */
     void update(int iflag=0);
+
+    inline SpeciesSet& getSpeciesSet() { return mySpecies;}
+    inline const SpeciesSet& getSpeciesSet() const { return mySpecies;}
 
     ///return the id
     inline int tag() const { return ObjectTag;}

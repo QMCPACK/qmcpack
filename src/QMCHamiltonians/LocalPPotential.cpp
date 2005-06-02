@@ -53,10 +53,11 @@ namespace ohmmsqmc {
 
     vector<string> vlist;
 
-    for(int i=0; i<ions.Species.getTotalNum();i++) {
+    const SpeciesSet& Species(ions.getSpeciesSet());
+    for(int i=0; i< Species.getTotalNum();i++) {
 
       vector<double> grid_temp, pp_temp;
-      string species = ions.Species.speciesName[i];
+      string species(Species.speciesName[i]);
       string fname = species+".psf";
       ifstream fin(fname.c_str(),ios_base::in);
       if(!fin){

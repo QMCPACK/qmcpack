@@ -25,7 +25,6 @@
 using namespace std;
 #include "OhmmsData/FileUtility.h"
 #include "Utilities/OhmmsInfo.h"
-//#include "Utilities/SpeciesCollection.h"
 #include "ParticleIO/ParticleLayoutIO.h"
 #include "ParticleIO/XMLParticleIO.h"
 #include "ParticleIO/HDFParticleIO.h"
@@ -229,7 +228,7 @@ bool XMLParticleParser::putSpecial(xmlNodePtr cur) {
   bool expand = false;
   TinyVector<int,OHMMS_DIM> uc_grid(1);      
   
-  SpeciesSet* tspecies = &(ref_.Species); //SpeciesCollection::getSpecies();
+  SpeciesSet& tspecies(ref_.getSpeciesSet()); //SpeciesCollection::getSpecies();
   cur = cur->xmlChildrenNode;
 
   //reset the group counter
@@ -254,7 +253,7 @@ bool XMLParticleParser::putSpecial(xmlNodePtr cur) {
     } else  if (cname == "group") {
       //adding a group consiting of a number of atoms of the same species
       int sid
-	= tspecies->addSpecies((const char*)
+	= tspecies.addSpecies((const char*)
 			       (xmlGetProp(cur, (const xmlChar *)"name")));
 
       xmlNodePtr tcur = cur->xmlChildrenNode;
@@ -262,10 +261,10 @@ bool XMLParticleParser::putSpecial(xmlNodePtr cur) {
 	string tcname((const char*)tcur->name);
 	if(tcname == "parameter") {
 	  int iproperty 
-	    = tspecies->addAttribute((const char*)(xmlGetProp(tcur,(const xmlChar*)"name")));
+	    = tspecies.addAttribute((const char*)(xmlGetProp(tcur,(const xmlChar*)"name")));
 	  double ap;
 	  putContent(ap,tcur);
-	  tspecies->operator()(iproperty,sid) = ap;
+	  tspecies(iproperty,sid) = ap;
 	} else if(nat_group[ng] && tcname == attrib_tag) { 
 	  cout << "Adding groups " << nat_group[ng] << endl;
 	  getPtclAttrib(tcur,nat_group[ng],nloc);
@@ -283,7 +282,7 @@ bool XMLParticleParser::putSpecial(xmlNodePtr cur) {
   for(int ia=0; ia<atom_ptr.size(); ia++,nloc++) {
     cur = atom_ptr[ia];
     int sid
-      = tspecies->addSpecies((const char*)
+      = tspecies.addSpecies((const char*)
 			      (xmlGetProp(cur, (const xmlChar *)"name")));
     att = cur->properties;
     int inunit = 0; //ref_.R.getUnit();
@@ -350,7 +349,7 @@ void XMLParticleParser::getPtclAttrib(xmlNodePtr cur, int nat, int nloc) {
       string a;   
       for(int iat=0; iat<nat; iat++,nloci++) {
 	stream >> a;
-	ref_.GroupID[nloci] = ref_.Species.addSpecies(a);
+	ref_.GroupID[nloci] = ref_.getSpeciesSet().addSpecies(a);
       }
     } else {
       int nloci = nloc;
@@ -392,7 +391,7 @@ void XMLSaveParticle::reset(const char* fileroot){
   FileRoot = fileroot;
   FileName = fileroot;
   FileName.append(".xml");
-  SpeciesName = ref_.Species.speciesName;
+  SpeciesName = ref_.getSpeciesSet().speciesName;
 }
 
 void XMLSaveParticle::report(int iter) {
@@ -488,6 +487,89 @@ bool XMLSaveParticle::put(xmlNodePtr cur) {
   return true;
 }
 
+xmlNodePtr XMLSaveParticle::createNode() {
+
+  if(SpeciesName.size()!=ref_.getSpeciesSet().getTotalNum()) {
+    SpeciesName = ref_.getSpeciesSet().speciesName;
+  }
+
+  xmlNodePtr cur = xmlNewNode(NULL,(const xmlChar*)"particleset");
+  xmlNewProp(cur,(const xmlChar*)"name",(const xmlChar*)ref_.getName().c_str());
+
+  if(ref_.groups()>1) {
+    const SpeciesSet& mySpecies(ref_.getSpeciesSet());
+    int nitem(mySpecies.numAttributes());
+    int nspecies(mySpecies.getTotalNum());
+    for(int is=0; is<nspecies; is++) {
+      std::ostringstream ng;
+      ng << ref_.last(is)-ref_.first(is);
+      xmlNodePtr g=xmlNewNode(NULL,(const xmlChar*)"group");
+      xmlNewProp(g,(const xmlChar*)"name",(const xmlChar*)SpeciesName[is].c_str());
+      xmlNewProp(g,(const xmlChar*)"size",(const xmlChar*)ng.str().c_str());
+
+      for(int item=0; item<nitem; item++) {
+        std::ostringstream prop;
+        prop<<mySpecies(item,is);
+        xmlNodePtr p=xmlNewTextChild(g,NULL,
+            (const xmlChar*)"parameter", (const xmlChar*)prop.str().c_str());
+        xmlNewProp(p,(const xmlChar*)"name",(const xmlChar*)mySpecies.attribName[item].c_str());
+      }
+      std::ostringstream pos;
+      pos <<"\n";
+      for(int iat=ref_.first(is); iat<ref_.last(is); iat++) {
+        pos << ref_.R[iat] << endl;
+      }
+      xmlNodePtr posPtr=xmlNewTextChild(g,NULL,
+              (const xmlChar*)"attrib", (const xmlChar*)pos.str().c_str());
+      xmlNewProp(posPtr,(const xmlChar*)"name",(const xmlChar*)"position");
+      xmlNewProp(posPtr,(const xmlChar*)"datatype",(const xmlChar*)"posArray");
+
+      xmlAddChild(cur,g);
+    }
+  } else {
+    std::ostringstream nat;
+    nat<<ref_.getTotalNum();
+    xmlNewProp(cur,(const xmlChar*)"size",(const xmlChar*)nat.str().c_str());
+
+    const SpeciesSet& mySpecies(ref_.getSpeciesSet());
+    int nitem(mySpecies.numAttributes());
+    int nspecies(mySpecies.getTotalNum());
+    for(int is=0; is<nspecies; is++) {
+      xmlNodePtr g=xmlNewNode(NULL,(const xmlChar*)"group");
+      xmlNewProp(g,(const xmlChar*)"name",(const xmlChar*)SpeciesName[is].c_str());
+      for(int item=0; item<nitem; item++) {
+        std::ostringstream prop;
+        prop<<mySpecies(item,is);
+        xmlNodePtr p=xmlNewTextChild(g,NULL,
+            (const xmlChar*)"parameter", (const xmlChar*)prop.str().c_str());
+        xmlNewProp(p,(const xmlChar*)"name",(const xmlChar*)mySpecies.attribName[item].c_str());
+      }
+      xmlAddChild(cur,g);
+    }
+
+    std::ostringstream pos,gid;
+    pos <<"\n";
+    for(int iat=0; iat<ref_.getTotalNum(); iat++) {
+      pos << ref_.R[iat] << endl;
+    }
+    xmlNodePtr posPtr=xmlNewTextChild(cur,NULL,
+            (const xmlChar*)"attrib", (const xmlChar*)pos.str().c_str());
+    xmlNewProp(posPtr,(const xmlChar*)"name",(const xmlChar*)"position");
+    xmlNewProp(posPtr,(const xmlChar*)"datatype",(const xmlChar*)"posArray");
+
+    gid <<"\n ";
+    for(int iat=0; iat<ref_.getTotalNum(); iat++) {
+      gid << SpeciesName[ref_.GroupID[iat]] << " ";
+    }
+    gid << endl;
+    xmlNodePtr gPtr=xmlNewTextChild(cur,NULL,
+            (const xmlChar*)"attrib", (const xmlChar*)gid.str().c_str());
+    xmlNewProp(gPtr,(const xmlChar*)"name",(const xmlChar*)"ionid");
+    xmlNewProp(gPtr,(const xmlChar*)"datatype",(const xmlChar*)"stringArray");
+  }
+
+  return cur;
+}
 
 /***************************************************************************
  * $RCSfile$   $Author$

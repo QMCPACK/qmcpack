@@ -47,9 +47,10 @@ namespace ohmmsqmc {
     CoreElDipole = 0.0;
   
     int GeCounter = 0;
+    SpeciesSet& Species(ions.getSpeciesSet());
     for(int iat=0; iat<nCenters; iat++){
       CoreCoef[iat] = false;
-      string sname = ions.Species.speciesName[ions.GroupID[iat]];
+      string sname = Species.speciesName[ions.GroupID[iat]];
       if(sname == "Ge"){
 	LOGMSG("Adding a core-electron potential for " << sname << " #" << GeCounter++)
 	  CoreCoef[iat] = true;
@@ -58,7 +59,7 @@ namespace ohmmsqmc {
     
   
     //index for attribute charge
-    int iz = ions.Species.addAttribute("charge");
+    int iz = Species.addAttribute("charge");
     //calculate the Core-Core Dipole matrix
     for(int iat=0; iat<nCenters; iat++) {
       for(int nn=d_ii->M[iat]; nn<d_ii->M[iat+1]; nn++) { 
@@ -68,8 +69,8 @@ namespace ohmmsqmc {
 	PosType dipole(rinv3*d_ii->dr(nn));//(\vec{R_{JI}}/R_{JI}^3)
 
         //Sign is here.
-	CoreCoreDipole[iat] -= dipole*ions.Species(iz,ions.GroupID[jat]);//charge of jat
-	CoreCoreDipole[jat] += dipole*ions.Species(iz,ions.GroupID[iat]);//charge of iat
+	CoreCoreDipole[iat] -= dipole*Species(iz,ions.GroupID[jat]);//charge of jat
+	CoreCoreDipole[jat] += dipole*Species(iz,ions.GroupID[iat]);//charge of iat
       }
     }
 

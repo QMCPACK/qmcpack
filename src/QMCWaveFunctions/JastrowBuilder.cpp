@@ -85,8 +85,8 @@ namespace ohmmsqmc {
       if(cname ==corr_tag) {
 	string spA((const char*)(xmlGetProp(cur,(const xmlChar *)"speciesA")));
 	string spB((const char*)(xmlGetProp(cur,(const xmlChar *)"speciesB")));
-	int ia = targetPtcl.Species.findSpecies(spA);
-	int ib = targetPtcl.Species.findSpecies(spB);
+	int ia = targetPtcl.getSpeciesSet().findSpecies(spA);
+	int ib = targetPtcl.getSpeciesSet().findSpecies(spB);
 	int iab = ia*ng+ib;
 	if(!(jastrow[iab])) {
 	  //create the new Jastrow function
@@ -226,13 +226,13 @@ namespace ohmmsqmc {
 	ParticleSet* a = (*pa_it).second;
 	ParticleSet* b = (*pb_it).second;
 	d_table = DistanceTable::getTable(DistanceTable::add(*a,*b));
-	ng = a->Species.getTotalNum();
+	ng = a->getSpeciesSet().getTotalNum();
 	XMLReport("Number of sources " << ng)
 	for(int i=0; i<ng; i++) jastrow.push_back(NULL);
       } else if(cname == corr_tag) {
 	string speciesA((const char*)(xmlGetProp(cur,(const xmlChar *)"speciesA")));
 	//string speciesB((const char*)(xmlGetProp(cur,(const xmlChar *)"speciesB")));
-	int ia = d_table->origin().Species.findSpecies(speciesA);
+	int ia = d_table->origin().getSpeciesSet().findSpecies(speciesA);
 	if(!(jastrow[ia])) {
 	  jastrow[ia]= new FuncType;
 	  jastrow[ia]->put(cur,targetPsi.VarList);

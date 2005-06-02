@@ -46,8 +46,11 @@ void CasinoParser::parse(const std::string& fname) {
   search(fin, "GEOMETRY");
   getGeometry(fin);
 
-  for(int i=0; i<NumberOfAtoms; i++) 
+  //GroupID is the atomic number. Have to match the name and the real GroupID
+  for(int i=0; i<NumberOfAtoms; i++) {
     GroupName[i]=IonName[IonSystem.GroupID[i]];
+    IonSystem.GroupID[i]=IonSystem.getSpeciesSet().addSpecies(GroupName[i]);
+  }
 
   LOGMSG("Looking for BASIS ")
   search(fin, "BASIS");

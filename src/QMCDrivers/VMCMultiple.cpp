@@ -101,9 +101,9 @@ namespace ohmmsqmc {
 
       timer.stop();
       nAcceptTot += nAccept; nRejectTot += nReject;
-      RealType TotalConfig=static_cast<RealType>(nAccept+nReject);			//SIMONE
       Estimators->flush();
-      Estimators->setColumn(AcceptIndex,nAccept/TotalConfig);				//siMONE
+      RealType TotalConfig=static_cast<RealType>(nAccept+nReject);		
+      Estimators->setColumn(AcceptIndex,nAccept/TotalConfig);		
 
       Estimators->report(accstep);
       

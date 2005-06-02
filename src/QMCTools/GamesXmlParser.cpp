@@ -157,7 +157,7 @@
         if(cname == "ATOM_NAME") {
           string aname;
           putContent(aname,cur);
-          IonSystem.GroupID[i]=IonSystem.Species.addSpecies(aname);
+          IonSystem.GroupID[i]=IonSystem.getSpeciesSet().addSpecies(aname);
           GroupName[i]=aname;
         } else if(cname == "ATOMIC_NUMBER") {
           putContent(Qv[i],cur);

@@ -177,6 +177,15 @@ namespace ohmmsqmc {
   }
 
   
+  /** evaluate \f$frac{\Psi({\bf R}_i^{'})}{\Psi({\bf R}_i})}\f$
+   * @param P ParticleSet
+   * @param iat index of the particle with a trial move
+   * @param dG total differentcal gradients
+   * @param dL total differential laplacians
+   * @return ratio
+   *
+   * Each OrbitalBase object adds the differential gradients and lapacians.
+   */
   TrialWaveFunction::ValueType 
   TrialWaveFunction::ratio(ParticleSet& P, int iat, 
 			   ParticleSet::ParticleGradient_t& dG,
@@ -188,11 +197,24 @@ namespace ohmmsqmc {
     return r;
   }
 
+  /** restore to the original state
+   * @param iat index of the particle with a trial move
+   *
+   * The proposed move of the iath particle is rejected.
+   * All the temporary data should be restored to the state prior to the move.
+   */
   void 
   TrialWaveFunction::restore(int iat) {
     for(int i=0; i<Z.size(); i++) Z[i]->restore(iat);
   }
 
+  /** update the state with the new data
+   * @param P ParticleSet
+   * @param iat index of the particle with a trial move
+   *
+   * The proposed move of the iath particle is accepted.
+   * All the temporary data should be incorporated so that the next move is valid.
+   */
   void   
   TrialWaveFunction::update2(ParticleSet& P,int iat) {
     for(int i=0; i<Z.size(); i++) Z[i]->update(P,iat);

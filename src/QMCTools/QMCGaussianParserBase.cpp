@@ -28,7 +28,7 @@ QMCGaussianParserBase::QMCGaussianParserBase(int argc, char** argv):
   Normalized("no"),gridPtr(0)
 {
   IonSystem.setName("i");
-  IonChargeIndex=IonSystem.Species.addAttribute("charge");
+  IonChargeIndex=IonSystem.getSpeciesSet().addAttribute("charge");
   cout << "Index of ion charge " << IonChargeIndex << endl;
   createGridNode(argc,argv);
 }
@@ -88,17 +88,15 @@ xmlNodePtr QMCGaussianParserBase::createElectronSet() {
   nel[1]=NumberOfBeta;
   els.create(nel);
 
-  int iu=els.Species.addSpecies("u");
-  int id=els.Species.addSpecies("d");
-  int ic=els.Species.addAttribute("charge");
-  els.Species(ic,iu)=-1;
-  els.Species(ic,id)=-1;
+  int iu=els.getSpeciesSet().addSpecies("u");
+  int id=els.getSpeciesSet().addSpecies("d");
+  int ic=els.getSpeciesSet().addAttribute("charge");
+  els.getSpeciesSet()(ic,iu)=-1;
+  els.getSpeciesSet()(ic,id)=-1;
 
   //Create InitMolecularSystem to assign random electron positions
   InitMolecularSystem m(0,"test");
   if(IonSystem.getTotalNum()>1) {
-    //THIS IS BROKEN
-    //Add cut-off and valence els to IonSystem.Species!!!
     m.initMolecule(&IonSystem,&els);
   } else {
     m.initAtom(&els);
@@ -107,16 +105,18 @@ xmlNodePtr QMCGaussianParserBase::createElectronSet() {
   XMLSaveParticle o(els);
   return o.createNode();
 }
+
 xmlNodePtr QMCGaussianParserBase::createIonSet() {
   const double ang_to_bohr=1.0/0.529177e0;
   if(!BohrUnit) IonSystem.R *= ang_to_bohr;
 
+  SpeciesSet& ionSpecies(IonSystem.getSpeciesSet());
   for(int i=0; i<NumberOfAtoms; i++) {
-    IonSystem.Species.addSpecies(GroupName[i]);
+    ionSpecies.addSpecies(GroupName[i]);
   }
 
   for(int i=0; i<NumberOfAtoms; i++) {
-    IonSystem.Species(IonChargeIndex,IonSystem.GroupID[i])=Qv[i];
+    ionSpecies(IonChargeIndex,IonSystem.GroupID[i])=Qv[i];
   }
 
   XMLSaveParticle o(IonSystem);

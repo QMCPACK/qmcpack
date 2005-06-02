@@ -48,7 +48,7 @@ namespace ohmmsqmc {
   ///write to a ostream
   bool ParticleSet::get(ostream& os) const {
     for(int i=0; i<LocalNum; i++) {
-      os << Species.speciesName[GroupID[i]]  << R[i] << endl;
+      os << mySpecies.speciesName[GroupID[i]]  << R[i] << endl;
     }
     os << "sub-particle " << SubPtcl.size() << endl;
     for(int i=0; i<SubPtcl.size(); i++) os << SubPtcl[i] << " ";

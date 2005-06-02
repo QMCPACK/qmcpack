@@ -373,6 +373,7 @@ namespace ohmmsqmc {
       
       //may want to reuse!
       delete qmcDriver;
+      return true;
     } else {
       return false;
     }

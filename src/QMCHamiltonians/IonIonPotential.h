@@ -43,11 +43,12 @@ namespace ohmmsqmc {
       DistanceTableData* d_ii = DistanceTable::getTable(iii);
       d_ii->create(1);
 
-      int charge = ref.Species.addAttribute("charge");
+      SpeciesSet& tspecies(ref.getSpeciesSet());
+      int charge = tspecies.addAttribute("charge");
       int nat = ref.getTotalNum();
       vector<RealType> Z(nat);
       for(int iat=0; iat<nat;iat++) {
-        Z[iat] = ref.Species(charge,ref.GroupID[iat]);
+        Z[iat] = tspecies(charge,ref.GroupID[iat]);
       }
       d_ii->evaluate(ref);
       d_sum = 0.0;

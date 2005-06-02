@@ -46,13 +46,14 @@ namespace ohmmsqmc {
 
       d_table = DistanceTable::getTable(DistanceTable::add(ions,els));
       //index for attribute charge
-      int iz = ions.Species.addAttribute("charge");
+      SpeciesSet& tspecies(ions.getSpeciesSet());
+      int iz = tspecies.addAttribute("charge");
       Centers = ions.getTotalNum();
       Z.resize(Centers);
       ///@warning need to be generalized by checking visitor.Species.
       RealType C = -1.0; 
       for(int iat=0; iat<Centers;iat++) {
-        Z[iat] = ions.Species(iz,ions.GroupID[iat])*C;
+        Z[iat] = tspecies(iz,ions.GroupID[iat])*C;
       }
     }
     
