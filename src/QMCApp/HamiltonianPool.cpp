@@ -149,15 +149,15 @@ namespace ohmmsqmc {
       return;
     }
 
-    if(source->getTotalNum()>1)  {
       if(source == target) {
-        LOGMSG("Adding Coulomb potential " << target->getName())
-        curH->add(new CoulombPotentialAA(*target),title);
+        if(source->getTotalNum()>1)  {
+          LOGMSG("Adding Coulomb potential " << target->getName())
+          curH->add(new CoulombPotentialAA(*target),title);
+        }
       } else {
         LOGMSG("Adding Coulomb potential " << source->getName() << "-" << target->getName())
         curH->add(new CoulombPotentialAB(*source,*target),title);
       }
-    }
   }
   
   void 
