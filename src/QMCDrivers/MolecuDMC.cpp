@@ -290,6 +290,7 @@ namespace ohmmsqmc {
 	(*it)->R = W.R;
 	(*it)->Drift = drift;
 	(*it)->Properties = W.Properties;
+	(*it)->Properties(LOCALPOTENTIAL) = H.getLocalPotential();
 	H.copy((*it)->getEnergyBase());
 	emixed += W.Properties(LOCALENERGY);
       }
