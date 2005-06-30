@@ -515,9 +515,10 @@ xmlNodePtr XMLSaveParticle::createNode() {
         xmlNewProp(p,(const xmlChar*)"name",(const xmlChar*)mySpecies.attribName[item].c_str());
       }
       std::ostringstream pos;
+      pos.setf(ios_base::scientific);
       pos <<"\n";
       for(int iat=ref_.first(is); iat<ref_.last(is); iat++) {
-        pos << ref_.R[iat] << endl;
+        pos <<  ref_.R[iat] << endl;
       }
       xmlNodePtr posPtr=xmlNewTextChild(g,NULL,
               (const xmlChar*)"attrib", (const xmlChar*)pos.str().c_str());
@@ -548,6 +549,7 @@ xmlNodePtr XMLSaveParticle::createNode() {
     }
 
     std::ostringstream pos,gid;
+    pos.setf(ios_base::scientific);
     pos <<"\n";
     for(int iat=0; iat<ref_.getTotalNum(); iat++) {
       pos << ref_.R[iat] << endl;

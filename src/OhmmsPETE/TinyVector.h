@@ -238,7 +238,7 @@ struct printTinyVector< TinyVector<T,D>  > {
   inline static void 
   print(std::ostream& os, const TinyVector<T,D>& r) {
     for(int d=0; d<D; d++) 
-      os << std::setw(15) << std::setprecision(5) << r[d];
+      os << std::setw(18) << std::setprecision(10) << r[d];
   }
 };
 
@@ -247,8 +247,8 @@ template<class T>
 struct printTinyVector<TinyVector<T,2> > {
   inline static void 
   print(std::ostream& os, const TinyVector<T,2>& r) {
-      os << std::setw(15) << std::setprecision(5) << r[0]
-         << std::setw(15) << std::setprecision(5) << r[1];
+      os << std::setw(18) << std::setprecision(10) << r[0]
+         << std::setw(18) << std::setprecision(10) << r[1];
   }
 };
 
@@ -257,9 +257,9 @@ template<class T>
 struct printTinyVector<TinyVector<T,3> > {
   inline static void 
   print(std::ostream& os, const TinyVector<T,3>& r) {
-      os << std::setw(15) << std::setprecision(5) << r[0]
-         << std::setw(15) << std::setprecision(5) << r[1] 
-         << std::setw(15) << std::setprecision(5) << r[2];
+      os << std::setw(18) << std::setprecision(10) << r[0]
+         << std::setw(18) << std::setprecision(10) << r[1] 
+         << std::setw(18) << std::setprecision(10) << r[2];
   }
 };
 
