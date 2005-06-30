@@ -79,10 +79,11 @@ namespace ohmmsqmc {
       --nel; ++items;
     }
   }
-
+  
   void InitMolecularSystem::initMolecule(ParticleSet* ions, ParticleSet* els) {
-
-    DistanceTableData* d_ii = DistanceTable::getTable(DistanceTable::add(*ions,*ions));
+    
+    DistanceTableData* d_ii = 
+      DistanceTable::getTable(DistanceTable::add(*ions));
     d_ii->create(1);
     d_ii->evaluate(*ions);
 
@@ -90,66 +91,60 @@ namespace ohmmsqmc {
     SpeciesSet& Species(ions->getSpeciesSet());
 
     int Centers = ions->getTotalNum();
+    cout << "Centers = " << Centers << endl;
     vector<int> Qtot(Centers), Qcore(Centers), Qval(Centers,0);
-    vector<double> Cut(Centers);
-
+ 
     //use charge as the core electrons first
     int icharge = Species.addAttribute("charge");
-    for(int iat=0; iat<Centers; iat++) {
-      Qtot[iat]=static_cast<int>(Species(icharge,grID[iat]));
-    }
 
-    //the number of core electrons
-    int CoreTable[] ={0, /* index zero*/
-      0,2,                    /* H He */
-      2,2,2,2,2,2,2,10,       /*Li-Ne*/
-      10,10,10,10,10,10,10,18 /*Na-Ar*/   
-    };
-
+    int iz = Species.addAttribute("atomicnumber");
     //Assign default core charge
-    for(int iat=0; iat<Centers; iat++) Qcore[iat]=CoreTable[Qtot[grID[iat]]];
+    for(int iat=0; iat<Centers; iat++) 
+      Qtot[iat] = static_cast<int>(Species(icharge,grID[iat]));
 
-    //Overwrite the core charge
+    //Overwrite the valence charge
     int nattrib=Species.numAttributes();
-    int icore=Species.addAttribute("CoreCharge");
+    int ival=Species.addAttribute("valence");
     //store the max distance from atom
-    if(icore < nattrib) {
-      for(int iat=0; iat<Centers; iat++) 
-        Qcore[iat]=static_cast<int>(Species(icore,grID[iat]));
-    }
-
-    //Add more: used Atomic Radius in AA
-    //http://ccinfo.ims.ac.jp/periodic/periodic-main.html
-    double CutTable[] = {1.0, /* index zero */
-      0.37,1.5,                        /* H He */
-      1.52,1.5,1.5,1.5,1.5,1.5,1.5,1.6 /* Li-Ne */
-    };
-
-    //search if AtomicRadius is given
-    nattrib=Species.numAttributes();
-    int icut = Species.addAttribute("AtomicRadius");
-    if(icut<nattrib) {//overwrite this
-      for(int iat=0; iat<Centers; iat++) Cut[iat] = Species(icut,grID[iat]);
+    if(ival<nattrib) {
+      for(int iat=0; iat<Centers; iat++) {
+        Qval[iat]=static_cast<int>(Species(ival,grID[iat]));
+	//Probably charge is missing: valence becomes charge
+	if(Qval[iat]>Qtot[iat]) Qtot[iat]=Qval[iat];
+	Qcore[iat]=Qtot[iat]-Qval[iat];
+      }
     } else {
-      //use default
-      for(int iat=0; iat<Centers; iat++) Cut[iat] = CutTable[grID[iat]];
+      for(int iat=0; iat<Centers; iat++) {
+	Qcore[iat] = Qtot[iat];
+	Qval[iat] = 0;
+      }
     }
- 
+    
+    double cutoff = 2.5;
+
+    for(int iat=0; iat<Centers; iat++){
+      cout << "total charge " <<  Qtot[iat] << endl;
+      cout << "core charge " <<  Qcore[iat] << endl;
+      cout << "valance charge " <<  Qval[iat] << endl;
+      cout << "cuttoff " <<  cutoff << endl;
+    }
 
     //3N-dimensional Gaussian
     ParticleSet::ParticlePos_t chi(els->getTotalNum());
     makeGaussRandom(chi);
 
-    int numDown=els->getTotalNum()/2;
-    int numUp= els->getTotalNum()-numDown;
- 
+    int numUp = els->last(0);
+    int numDown = els->last(1)-els->last(0); 
     //assign the core
     int ncoreUp(0), items(0);
     for(int iat=0; iat<Centers; iat++) {
-      double sep=0.8*Cut[iat];
+      double sep=sqrt(static_cast<double>(Qcore[iat]))*0.5;
       for(int iel=0; iel<Qcore[iat]/2; iel++) {
         els->R[ncoreUp]=ions->R[iat]+sep*chi[items++];
         els->R[ncoreUp+numUp]=ions->R[iat]+sep*chi[items++];
+
+	cout << "core indices " << ncoreUp << " , " << ncoreUp+numUp << endl;
+
         ++ncoreUp;
       }
     }
@@ -157,23 +152,39 @@ namespace ohmmsqmc {
     int vup=numUp-ncoreUp;
     int vdown=numDown-ncoreUp;
     int vtot=vup+vdown;
+    int valIndex = ncoreUp;
+
+
+    cout << "up = " << vup << endl;
+    cout << "dn = " << vdown << endl;
+
     int ic=0;
     while(vtot && ic<Centers) {
       for(int nn=d_ii->M[ic]; nn<d_ii->M[ic+1]; nn++){
         double bl = d_ii->r(nn);
+	cout << "bl = " << bl << endl;
         int jc = d_ii->J[nn];
+	cout << "jc = " << jc << endl;
         //only assign if the half bond-length < cutoff
-        if(vtot && bl < Cut[ic]+Cut[jc]){
+        if(vtot && bl < 2.0*cutoff){
           ParticleSet::SingleParticlePos_t displ= ions->R[ic]+0.5*d_ii->dr(nn);
           bl*=0.1;
           if(vup) {
             els->R[ncoreUp] = displ+bl*chi[items];
-            --vup;--vtot;++ncoreUp;++items;
+	    cout << "valance index " << ncoreUp  << endl;         
+	    --vup;--vtot;++items;
+	 
+
           }
           if(vdown) {
             els->R[ncoreUp+numUp]=displ+bl*chi[items];
-            --vdown;--vtot;++ncoreUp;++items;
+	    cout << "valance index " << ncoreUp+numUp << endl;
+            --vdown;--vtot;++items;
+
+
           }
+	  ++ncoreUp;
+
         }
       }
       ++ic;
