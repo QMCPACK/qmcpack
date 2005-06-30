@@ -121,13 +121,15 @@ void GaussianFCHKParser::getGeometry(std::istream& is) {
   search(is, "Atomic numbers");//search for Atomic numbers
   getValues(is,atomic_number.begin(),atomic_number.end());
 
+  streampos pivot= is.tellg();
   //read effective nuclear charges
   search(is, "Nuclear");//search for Nuclear
   getValues(is,q.begin(),q.end());
 
+  is.seekg(pivot);//rewind it
+  search(is,"coordinates");
   vector<double> pos(NumberOfAtoms*OHMMS_DIM);
-  //search(is, "coordinates");//search for coordinates
-  //getValues(is,pos.begin(),pos.end());
+  getValues(is,pos.begin(),pos.end());
 
   SpeciesSet& species(IonSystem.getSpeciesSet());
   for(int i=0, ii=0; i<NumberOfAtoms; i++) {
@@ -140,7 +142,6 @@ void GaussianFCHKParser::getGeometry(std::istream& is) {
     species(AtomicNumberIndex,speciesID)=atomic_number[i];
     species(IonChargeIndex,speciesID)=q[i];
   }
-
 }
 
 void GaussianFCHKParser::getGaussianCenters(std::istream& is) {
