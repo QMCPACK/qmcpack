@@ -30,11 +30,13 @@ struct OhmmsAsciiParser {
 
   template<class IT>
   inline void getValues(std::istream& is, IT first, IT last) {
+ 
     while(first != last) {
       is.getline( dbuffer,bufferSize);
       std::istringstream a(dbuffer);
       while(first != last && a >> *first){first++;}
     }
+
   }
 
   int search(std::istream& is, const std::string& keyword) {
@@ -58,6 +60,8 @@ struct QMCGaussianParserBase {
   bool BohrUnit;
   bool SpinRestricted;
   int IonChargeIndex;
+  int ValenceChargeIndex;
+  int AtomicNumberIndex;
   int NumberOfAtoms;
   int NumberOfEls;
   int SpinMultiplicity;

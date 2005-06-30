@@ -78,7 +78,6 @@ void GaussianFCHKParser::parse(const std::string& fname) {
   //allocate everything here
   IonSystem.create(NumberOfAtoms);
   GroupName.resize(NumberOfAtoms);
-  Qv.resize(NumberOfAtoms);
 
   gBound.resize(NumberOfAtoms+1);
   gShell.resize(ng); 
@@ -88,7 +87,6 @@ void GaussianFCHKParser::parse(const std::string& fname) {
   gC1.resize(nx);
 
 
-  search(fin, "Atomic numbers");//search for Atomic numbers
   getGeometry(fin);
 
   std::cout << "Number of gaussians " << ng << std::endl;
@@ -117,18 +115,32 @@ void GaussianFCHKParser::parse(const std::string& fname) {
 
 void GaussianFCHKParser::getGeometry(std::istream& is) {
   //atomic numbers
-  vector<int> q(NumberOfAtoms);
-  getValues(is,q.begin(),q.end());
-  search(is,"Nuclear");
-  getValues(is,Qv.begin(),Qv.end());
-  search(is,"coordinates");
-  getValues(is,IonSystem.R.begin(),IonSystem.R.end());
+  vector<int> atomic_number(NumberOfAtoms),q(NumberOfAtoms);
 
-  for(int i=0; i<NumberOfAtoms; i++) {
-    GroupName[i]=IonName[q[i]];
-    IonSystem.GroupID[i]=IonSystem.getSpeciesSet().addSpecies(GroupName[i]);
+  //read atomic numbers
+  search(is, "Atomic numbers");//search for Atomic numbers
+  getValues(is,atomic_number.begin(),atomic_number.end());
+
+  //read effective nuclear charges
+  search(is, "Nuclear");//search for Nuclear
+  getValues(is,q.begin(),q.end());
+
+  vector<double> pos(NumberOfAtoms*OHMMS_DIM);
+  //search(is, "coordinates");//search for coordinates
+  //getValues(is,pos.begin(),pos.end());
+
+  SpeciesSet& species(IonSystem.getSpeciesSet());
+  for(int i=0, ii=0; i<NumberOfAtoms; i++) {
+    IonSystem.R[i][0]=pos[ii++]; 
+    IonSystem.R[i][1]=pos[ii++]; 
+    IonSystem.R[i][2]=pos[ii++];
+    GroupName[i]=IonName[atomic_number[i]];
+    int speciesID = species.addSpecies(GroupName[i]);
+    IonSystem.GroupID[i]=speciesID;
+    species(AtomicNumberIndex,speciesID)=atomic_number[i];
+    species(IonChargeIndex,speciesID)=q[i];
   }
-  //for(int i=0; i<GroupID.size(); i++) GroupName[i]=IonName[GroupID[i]];
+
 }
 
 void GaussianFCHKParser::getGaussianCenters(std::istream& is) {

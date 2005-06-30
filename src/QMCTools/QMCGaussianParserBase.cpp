@@ -29,18 +29,35 @@ QMCGaussianParserBase::QMCGaussianParserBase(int argc, char** argv):
 {
   IonSystem.setName("i");
   IonChargeIndex=IonSystem.getSpeciesSet().addAttribute("charge");
+  ValenceChargeIndex=IonSystem.getSpeciesSet().addAttribute("valence");
+  AtomicNumberIndex=IonSystem.getSpeciesSet().addAttribute("atominicbumber");
+
   cout << "Index of ion charge " << IonChargeIndex << endl;
+  cout << "Index of valence charge " << ValenceChargeIndex << endl;
   createGridNode(argc,argv);
 }
 
 void QMCGaussianParserBase::init() {
-  //IonName.resize(24);
   IonName[1] = "H"; IonName[2] = "He"; IonName[3] = "Li";
   IonName[4] = "Be"; IonName[5] = "B"; IonName[6] = "C";
   IonName[7] = "N"; IonName[8] = "O"; IonName[9] = "F";
   IonName[10] = "Ne"; IonName[11] = "Na"; IonName[12] = "Mg";
   IonName[13] = "Al"; IonName[14] = "Si"; IonName[15] = "P";
   IonName[16] = "S"; IonName[17] = "Cl"; IonName[18] = "Ar";
+  IonName[19] = "K"; IonName[20] = "Ca"; IonName[21] = "Sc";
+  IonName[22] = "Ti"; IonName[23] = "V"; IonName[24] = "Cr";
+  IonName[25] = "Mn"; IonName[26] = "Fe"; IonName[27] = "Co"; 
+  IonName[28] = "Ni"; IonName[29] = "Cu";  IonName[30] = "Zn";
+  IonName[31] = "Ga"; IonName[32] = "Ge"; IonName[33] = "As"; 
+  IonName[34] = "Se"; IonName[35] = "Br"; IonName[36] = "Kr"; 
+  IonName[37] = "Rb"; IonName[38] = "Sr"; IonName[39] = "Y";
+  IonName[40] = "Zr"; IonName[41] = "Nb"; IonName[42] = "Mo";
+  IonName[43] = "Tc"; IonName[44] = "Ru"; IonName[45] = "Rh"; 
+  IonName[46] = "Pd"; IonName[47] = "Ag";  IonName[48] = "Cd";
+  IonName[49] = "In"; IonName[50] = "Sn"; IonName[51] = "Sb"; 
+  IonName[52] = "Te"; IonName[53] = "I"; IonName[54] = "Xe"; 
+
+ 
   gShellType.resize(7);
   gShellType[1]="s"; gShellType[2]="sp"; gShellType[3]="p"; gShellType[4]="d"; gShellType[5]="f"; gShellType[6]="g";
   gShellID.resize(7);
@@ -80,6 +97,18 @@ void QMCGaussianParserBase::setOccupationNumbers() {
 
 xmlNodePtr QMCGaussianParserBase::createElectronSet() {
 
+ //  const double ang_to_bohr=1.0/0.529177e0;
+//   if(!BohrUnit) IonSystem.R *= ang_to_bohr;
+  
+//   SpeciesSet& ionSpecies(IonSystem.getSpeciesSet());
+//   for(int i=0; i<NumberOfAtoms; i++) {
+//     ionSpecies.addSpecies(GroupName[i]);
+//   }
+  
+//   for(int i=0; i<NumberOfAtoms; i++) {
+//     ionSpecies(IonChargeIndex,IonSystem.GroupID[i])=Qv[i];
+//   }
+
   ParticleSet els;
   els.setName("e");
   vector<int> nel(2);
@@ -109,18 +138,29 @@ xmlNodePtr QMCGaussianParserBase::createIonSet() {
   const double ang_to_bohr=1.0/0.529177e0;
   if(!BohrUnit) IonSystem.R *= ang_to_bohr;
 
+  double CoreTable[] ={
+    0, /* index zero*/
+    1,2,                           /*H He */
+    2,2,2,2,2,2,2,10,              /*Li-Ne*/
+    10,10,10,10,10,10,10,18,       /*Na-Ar*/ 
+    18,18,18,18,18,18,18,18,18,18, /*N-Zn*/
+    28,28,28,28,28,36,             /*Ga-Kr*/ 
+    36,36,36,36,36,36,36,36,36,36, /*Rb-Cd*/
+    46,46,46,46,46,54              /*In-Xe*/
+  };
+
   SpeciesSet& ionSpecies(IonSystem.getSpeciesSet());
-  for(int i=0; i<NumberOfAtoms; i++) {
-    ionSpecies.addSpecies(GroupName[i]);
+  for(int i=0; i<ionSpecies.getTotalNum(); i++) {
+    int z = static_cast<int>(ionSpecies(AtomicNumberIndex,i));
+    double valence = ionSpecies(IonChargeIndex,i);
+    if(valence>CoreTable[z]) valence-=CoreTable[z];
+    ionSpecies(ValenceChargeIndex,i)=valence;
   }
-
-  for(int i=0; i<NumberOfAtoms; i++) {
-    ionSpecies(IonChargeIndex,IonSystem.GroupID[i])=Qv[i];
-  }
-
+  
   XMLSaveParticle o(IonSystem);
   return o.createNode();
 }
+
 xmlNodePtr QMCGaussianParserBase::createBasisSet() {
 
   xmlNodePtr bset = xmlNewNode(NULL,(const xmlChar*)"basisset");
