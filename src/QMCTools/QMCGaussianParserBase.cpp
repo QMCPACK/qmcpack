@@ -30,7 +30,7 @@ QMCGaussianParserBase::QMCGaussianParserBase(int argc, char** argv):
   IonSystem.setName("i");
   IonChargeIndex=IonSystem.getSpeciesSet().addAttribute("charge");
   ValenceChargeIndex=IonSystem.getSpeciesSet().addAttribute("valence");
-  AtomicNumberIndex=IonSystem.getSpeciesSet().addAttribute("atominicbumber");
+  AtomicNumberIndex=IonSystem.getSpeciesSet().addAttribute("atomicnumber");
 
   cout << "Index of ion charge " << IonChargeIndex << endl;
   cout << "Index of valence charge " << ValenceChargeIndex << endl;
