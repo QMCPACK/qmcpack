@@ -68,12 +68,10 @@ void GaussianFCHKParser::parse(const std::string& fname) {
       }
     }
   }
-  //getwords(currentWords,fin); //11 Number of contracted shells
-  //int ng=atoi(currentWords.back().c_str());
-  getwords(currentWords,fin); //12 Number of contracted shells
-  getwords(currentWords,fin); //13 Number of contracted shells
-  getwords(currentWords,fin); //14 Number of contracted shells
-  int nx=atoi(currentWords.back().c_str()); //the number of exponents
+  getwords(currentWords,fin); //Number of contracted shells
+  getwords(currentWords,fin); //Number of contracted shells
+  getwords(currentWords,fin); //Number of contracted shells
+  int nx=atoi(currentWords.back().c_str()); //Number of exponents
 
   //allocate everything here
   IonSystem.create(NumberOfAtoms);
@@ -85,7 +83,6 @@ void GaussianFCHKParser::parse(const std::string& fname) {
   gExp.resize(nx); 
   gC0.resize(nx); 
   gC1.resize(nx);
-
 
   getGeometry(fin);
 
@@ -115,7 +112,8 @@ void GaussianFCHKParser::parse(const std::string& fname) {
 
 void GaussianFCHKParser::getGeometry(std::istream& is) {
   //atomic numbers
-  vector<int> atomic_number(NumberOfAtoms),q(NumberOfAtoms);
+  vector<int> atomic_number(NumberOfAtoms);
+  vector<double> q(NumberOfAtoms);
 
   //read atomic numbers
   search(is, "Atomic numbers");//search for Atomic numbers
