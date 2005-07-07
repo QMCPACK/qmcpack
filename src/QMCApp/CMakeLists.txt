@@ -27,6 +27,7 @@ SET(WFSRCS
 ####################################
 SET(QMCDRIVERS
   ../QMCDrivers/QMCDriver.cpp
+  ../QMCDrivers/DummyQMC.cpp
   ../QMCDrivers/VMC.cpp
   ../QMCDrivers/VMCParticleByParticle.cpp
   ../QMCDrivers/VMC_OPT.cpp

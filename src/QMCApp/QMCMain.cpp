@@ -27,6 +27,7 @@
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "QMCHamiltonians/ConservedEnergy.h"
+#include "QMCDrivers/DummyQMC.h"
 #include "QMCDrivers/VMC.h"
 #include "QMCDrivers/VMCParticleByParticle.h"
 #include "QMCDrivers/VMCMultiple.h"
@@ -358,6 +359,9 @@ namespace ohmmsqmc {
 	targetH.pop();
 	targetPsi.pop(); 
       }
+    } else {
+      qmcDriver = new DummyQMC(*qmcSystem,*primaryPsi,*primaryH);
+      WARNMSG("Cannot termine what type of qmc to run. Creating DummyQMC for testing")
     }
 
     if(qmcDriver) {
