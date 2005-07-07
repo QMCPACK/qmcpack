@@ -67,8 +67,8 @@ namespace ohmmsqmc {
     ///the number of H/Psi pairs
     int nPsi;
 
-    int ForwardKineticAction;
-    int BackwardKineticAction;
+    int MinusKineticAction;
+    int PlusKineticAction;
 
     ///array of PolymerChains
     PolymerChain* Reptile;
