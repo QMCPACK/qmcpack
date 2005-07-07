@@ -19,6 +19,7 @@ SET(HAVE_LIBGSL 0)
 
 OPTION(QMC_SPRNG "Enable SPRNG random number generation library" ON)
 OPTION(QMC_BLITZ "Enable blitz++ library" ON)
+OPTION(QMC_MPI "Enable MPI library" OFF)
 
 ######################################################################
 #important settings for QMC simulations to instantiate template classes
@@ -26,12 +27,14 @@ OPTION(QMC_BLITZ "Enable blitz++ library" ON)
 #OHMMS_DIM =  dimension of the problem
 #OHMMS_INDEXTYPE = type of index
 #OHMMS_PRECISION  = base precision, float, double etc
+#OHMMS_ORTHO  = 0 for general unit cell, 1 for orthogonal cells
 #QMC_FASTWALKER  = true, when operation is faster for each walker
 #QMC_APPS  =  an application to compile
 ######################################################################
 SET(OHMMS_DIM 3)
 SET(OHMMS_INDEXTYPE int)
 SET(OHMMS_PRECISION double)
+SET(OHMMS_ORTHO 0)
 SET(QMC_FASTWALKER 1)
 SET(QMCAPPS  MolecuApps)
 
@@ -45,18 +48,16 @@ SET (PROJECT_CMAKE ${qmcPlusPlus_SOURCE_DIR}/CMake)
 #COMPILER choose one of the cmake files to customize the compiler options
 #If nothing is chosen, default settings by cmake will  be used.
 ######################################################
-#INCLUDE(${PROJECT_CMAKE}/Intel8.cmake)
-#INCLUDE(${PROJECT_CMAKE}/Intel7.cmake)
 INCLUDE(${PROJECT_CMAKE}/GNUCompilers.cmake)
+#INCLUDE(${PROJECT_CMAKE}/Intel8.cmake)
 #INCLUDE(${PROJECT_CMAKE}/IBMCompilers.cmake)
 #INCLUDE(${PROJECT_CMAKE}/KCCCompilers.cmake)
-#INCLUDE(${PROJECT_CMAKE}/Compilers.cmake)
+#INCLUDE(${PROJECT_CMAKE}/Intel7.cmake)
  
 INCLUDE(${CMAKE_ROOT}/Modules/FindThreads.cmake)
 
 #check external libraries: required
 INCLUDE(${PROJECT_CMAKE}/FindLibxml2.cmake)
-#INCLUDE(${PROJECT_CMAKE}/FindLibxmlpp.cmake)
 INCLUDE(${PROJECT_CMAKE}/FindLapack.cmake)
 INCLUDE(${PROJECT_CMAKE}/FindHDF5.cmake)
 INCLUDE(${PROJECT_CMAKE}/FindGSL.cmake)
