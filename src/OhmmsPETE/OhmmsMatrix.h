@@ -39,12 +39,12 @@ public:
 
   Matrix(size_type n) { 
     resize(n,n);
-    assign(*this, T());
+    //assign(*this, T());
   }
 
   Matrix(size_type n, size_type m) { 
     resize(n,m);
-    assign(*this, T());
+    //assign(*this, T());
   }
 
   // Copy Constructor 
@@ -93,6 +93,7 @@ public:
 
   // Assignment Operators
   inline This_t& operator=(const Matrix<T,C> &rhs) {
+    resize(rhs.D1,rhs.D2);
     return assign(*this,rhs);
   }
 
