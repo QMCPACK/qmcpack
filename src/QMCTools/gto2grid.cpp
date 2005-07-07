@@ -43,7 +43,7 @@ int main(int argc, char** argv) {
 
   xmlXPathContextPtr m_context = xmlXPathNewContext(m_doc);
   xmlXPathObjectPtr result
-    = xmlXPathEvalExpression((const xmlChar*)"//basis",m_context);
+    = xmlXPathEvalExpression((const xmlChar*)"//atomicBasisSet",m_context);
   if(!xmlXPathNodeSetIsEmpty(result->nodesetval)) {
     for(int ic=0; ic<result->nodesetval->nodeNr; ic++) {
       buildBasisSet(result->nodesetval->nodeTab[ic]);
@@ -75,7 +75,7 @@ void buildBasisSet(xmlNodePtr cur) {
     string cname((const char*)(cur->name));
     if(cname == "grid") 
       grid_ptr = cur;
-    else if(cname == "phi") {
+    else if(cname == "basisSet") {
       phi_ptr.push_back(cur);
       nlms.push_back(QuantumNumberType());
       int n=1,l=0,m=0;

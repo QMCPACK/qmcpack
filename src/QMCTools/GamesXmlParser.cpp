@@ -150,16 +150,16 @@
 
     for(int i=0; i<NumberOfAtoms; i++) {
       xmlNodePtr cur=aPtrList[i]->children;
+      string atName;
+      double q;
       while(cur != NULL) {
         string cname((const char*)cur->name);
         if(cname == "ATOM_NAME") {
-          string aname;
-          putContent(aname,cur);
-          IonSystem.GroupID[i]=IonSystem.getSpeciesSet().addSpecies(aname);
-          GroupName[i]=aname;
+          //string aname;
+          putContent(atName,cur);
         } else if(cname == "ATOMIC_NUMBER") {
-          putContent(Qv[i],cur);
-          nel+=Qv[i];
+          putContent(q,cur);
+          Qv[i]=q; nel+=q;
         } else if(cname == "ATOM_POSITION") {
           xmlNodePtr tcur=cur->children;
           while(tcur!=NULL) {
@@ -174,6 +174,12 @@
         }
         cur=cur->next;
       }//loop-cur
+      int atomic_number = static_cast<int>(q);
+      int gid = IonSystem.GroupID[i] 
+        =IonSystem.getSpeciesSet().addSpecies(IonName[atomic_number]);
+      IonSystem.getSpeciesSet()(IonChargeIndex,gid)=q;
+      IonSystem.getSpeciesSet()(AtomicNumberIndex,gid)=q;
+      GroupName[i]=IonName[atomic_number];
     }//i
 
     NumberOfEls=static_cast<int>(nel);
