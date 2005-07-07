@@ -29,13 +29,16 @@ SET(QMCDRIVERS
   ../QMCDrivers/QMCDriver.cpp
   ../QMCDrivers/VMC.cpp
   ../QMCDrivers/VMCParticleByParticle.cpp
-  ../QMCDrivers/VMCMultiple.cpp
-  ../QMCDrivers/VMCPbyPMultiple.cpp
   ../QMCDrivers/VMC_OPT.cpp
   ../QMCDrivers/MolecuDMC.cpp
   ../QMCDrivers/DMCParticleByParticle.cpp
   ../QMCDrivers/ReptationMC.cpp
+  ../QMCDrivers/PolymerEstimator.cpp
   ../Estimators/ScalarEstimatorManager.cpp
+  ../QMCDrivers/VMCMultiple.cpp
+  ../QMCDrivers/VMCPbyPMultiple.cpp
+  ../QMCDrivers/RQMCSymm.cpp
+  ../QMCDrivers/RQMCMultiple.cpp
   ../Estimators/MultipleEnergyEstimator.cpp
 )
 

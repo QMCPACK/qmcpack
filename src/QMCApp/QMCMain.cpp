@@ -28,13 +28,14 @@
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "QMCHamiltonians/ConservedEnergy.h"
 #include "QMCDrivers/VMC.h"
-#include "QMCDrivers/VMCMultiple.h"
 #include "QMCDrivers/VMCParticleByParticle.h"
+#include "QMCDrivers/VMCMultiple.h"
 #include "QMCDrivers/VMCPbyPMultiple.h"
 #include "QMCDrivers/DMCParticleByParticle.h"
 #include "QMCDrivers/VMC_OPT.h"
 #include "QMCDrivers/MolecuDMC.h"
 #include "QMCDrivers/ReptationMC.h"
+#include "QMCDrivers/RQMCMultiple.h"
 #include "Utilities/OhmmsInfo.h"
 #include "Particle/HDFWalkerIO.h"
 #include "QMCApp/InitMolecularSystem.h"
@@ -350,12 +351,18 @@ namespace ohmmsqmc {
 	targetH.pop();
 	targetPsi.pop(); 
       }
-
+    } else if(what == "rmc-multi") {
+      qmcDriver = new RQMCMultiple(*qmcSystem,*primaryPsi,*primaryH);
+      while(targetH.size()) {
+	qmcDriver->add_H_and_Psi(targetH.front(),targetPsi.front());
+	targetH.pop();
+	targetPsi.pop(); 
+      }
     }
 
     if(qmcDriver) {
 
-      LOGMSG("Starting a QMC simulation " << curMethod)
+      LOGMSG("Starting a QMC simulation " << what)
       qmcDriver->setFileRoot(myProject.CurrentRoot());
       qmcDriver->process(cur);
       qmcDriver->run();
