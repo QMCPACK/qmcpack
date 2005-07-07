@@ -37,7 +37,6 @@ SET(QMCDRIVERS
   ../Estimators/ScalarEstimatorManager.cpp
   ../QMCDrivers/VMCMultiple.cpp
   ../QMCDrivers/VMCPbyPMultiple.cpp
-  ../QMCDrivers/RQMCSymm.cpp
   ../QMCDrivers/RQMCMultiple.cpp
   ../Estimators/MultipleEnergyEstimator.cpp
 )
