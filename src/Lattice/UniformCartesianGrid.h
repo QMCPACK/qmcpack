@@ -107,6 +107,11 @@ public:
     Delta[0] =1./InvDelta[0];
     Delta[1] =1./InvDelta[1];
     Delta[2] =1./InvDelta[2];
+//     CellKey.resize(ng[0]*ng[1]*ng[2]);
+//     int ikey=0;
+//     for(int ig=0; ig<ng[0]; ig++)
+//       for(int jg=0; jg<ng[1]; jg++) 
+// 	for(int kg=0; kg<ng[2]; kg++,ikey++) CellKey(ikey)=ikey;
   }
 
   ///return the total number of sub domains/grids
@@ -117,9 +122,11 @@ public:
      @param j the index of the second dimension
      @param k the index of the third dimension
      @return the key for a domain(i,j,k)
+     *
+     *@warning broken. Should fail.
   */
   inline int key(int i, int j, int k) const {
-    return k+NP[2]*(j+NP[1]*i);
+    return CellKey(k+NP[2]*(j+NP[1]*i));
   }
 
   /**get a index of a domain(i,j,k)
@@ -129,6 +136,12 @@ public:
      @return the storage index of a domain(i,j,k)
   */
   inline int loc(int i, int j, int k) const {
+    if(i<0) i+=NP[0];
+    if(i>=NP[0]) i-= NP[0];
+    if(j<0) j+=NP[1];
+    if(j>=NP[1]) j-= NP[1];
+    if(k<0) i+=NP[2];
+    if(k>=NP[2]) k-= NP[2];
     return k+NP[2]*(j+NP[1]*i);
   }
 
@@ -150,6 +163,16 @@ public:
   template<class Pos_t>
   inline 
   int loc(const Pos_t& p) const {
+//     int i=int(p[0]*InvDelta[0]);
+//     int j=int(p[1]*InvDelta[1]);
+//     int k=int(p[2]*InvDelta[2]);
+//     if(i<0) i+=NP[0];
+//     else if(i>=NP[0]) i-= NP[0];
+//     if(j<0) j+=NP[1];
+//     else if(j>=NP[1]) j-= NP[1];
+//     if(k<0) i+=NP[2];
+//     else if(k>=NP[2]) k-= NP[2];
+//     return k+NP[2]*(j+NP[1]*i);
     return 
       int(p[2]*InvDelta[2])
       +NP[2]*(int(p[1]*InvDelta[1])+NP[1]*int(p[0]*InvDelta[0]));
@@ -175,6 +198,18 @@ public:
     return TinyVector<T,3>((static_cast<T>(i)+0.5)*Delta[0],
 			   (static_cast<T>(j)+0.5)*Delta[1],
 			   (static_cast<T>(k)+0.5)*Delta[2]);
+  }
+
+  /**get a center position of a domain(i,j,k)
+     @param i the index of the first dimension
+     @param j the index of the second dimension
+     @param k the index of the third dimension
+     @return the position of the domain(i,j,k)
+   */
+  inline TinyVector<T,3> vertex(int i, int j, int k) const {
+    return TinyVector<T,3>((static_cast<T>(i))*Delta[0],
+			   (static_cast<T>(j))*Delta[1],
+			   (static_cast<T>(k))*Delta[2]);
   }
 
   /**distribute the domains over the processors
@@ -206,10 +241,10 @@ public:
    */
   void printGrid(std::ostream& os) const { 
     const int nw = 15;
-    os << "number of sub regions " << NumGrids << std::endl;
-    os << "Attribute distribution  = " << std::endl;
+    os << "number of sub regions " << NumGrids << endl;
+    os << "Attribute distribution  = " << endl;
     os << "grid spacing = " << setw(nw) << Delta[0] << setw(nw) << Delta[1]
-       << setw(nw) << Delta[2] << std::endl;
+       << setw(nw) << Delta[2] << endl;
 
     TinyVector<T,3> origin;
     for(int ig=0; ig<NP[0]; ig++) {
@@ -247,6 +282,7 @@ public:
   inline int getNumData() const {return I.getNumData();}
   inline int getMaxDataPerGrid() const {return I.capacity();}
   inline int getNumDataSets() const { return I.getNumDataSets();}
+  inline int getNumData(int i) const { return I.size(i);}
   inline int firstData(int i) const { return I.M[i];}
   inline int lastData(int i) const { return I.M[i+1];}
   inline iterator beginData(int i) { return I.begin(i);}
@@ -258,12 +294,11 @@ public:
     I.print(os);
   }
 
-protected:
-
   int NumGrids, NP[3];
   T Delta[3],InvDelta[3];
   DistributedIndex I;
   std::vector<int> PID;
+  std::vector<int> CellKey;
 };
 
 #endif

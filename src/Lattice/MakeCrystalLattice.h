@@ -33,7 +33,7 @@ struct makelattice { };
  */
 template<class T, unsigned D>
 struct makelattice<CrystalLattice<T,D> > {
-  inline static void apply(CrystalLattice<T,D>& , vector<string>& argv) {
+  inline static void apply(CrystalLattice<T,D>& , std::vector<string>& argv) {
   }
 };
 
@@ -43,7 +43,7 @@ struct makelattice<CrystalLattice<T,1> > {
 
   inline static 
   void 
-  apply(CrystalLattice<T,1>& lat, vector<string>& argv) {
+  apply(CrystalLattice<T,1>& lat, std::vector<string>& argv) {
     int i=0; 
     int argc = argv.size();
     while(i<argc) {
@@ -62,7 +62,7 @@ struct makelattice<CrystalLattice<T,2> > {
 
   inline static 
   void 
-  apply(CrystalLattice<T,2>& lat, vector<string>& argv) {
+  apply(CrystalLattice<T,2>& lat, std::vector<string>& argv) {
     T a0 = 1.0e0;
     int i=0; 
     int argc = argv.size();
@@ -104,7 +104,7 @@ struct makelattice<CrystalLattice<T,3> > {
    */
   inline static 
   void 
-  apply(CrystalLattice<T,3>& lat, vector<string>& argv) {
+  apply(CrystalLattice<T,3>& lat, std::vector<string>& argv) {
     T a0 = 1.0e0;
     int i=0; 
     int argc = argv.size();

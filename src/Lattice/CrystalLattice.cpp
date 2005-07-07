@@ -24,8 +24,8 @@
 /*! \fn CrystalLattice::CrystalLattice()
  *  Default constructor. Initialized to a \p 1x1x1 cubic supercell.
  */
-template<class T, unsigned D>
-CrystalLattice<T,D>::CrystalLattice() {
+template<class T, unsigned D,bool ORTHO>
+CrystalLattice<T,D,ORTHO>::CrystalLattice() {
   R.diagonal(1e10);  
   G = R;
   M = R;
@@ -34,9 +34,8 @@ CrystalLattice<T,D>::CrystalLattice() {
   reset();
 }
 
-
-template<class T, unsigned D>
-CrystalLattice<T,D>::CrystalLattice(const CrystalLattice<T,D>& rhs) {
+template<class T, unsigned D,bool ORTHO>
+CrystalLattice<T,D,ORTHO>::CrystalLattice(const CrystalLattice<T,D>& rhs) {
 
   R = rhs.R;
   BConds = rhs.BConds;
@@ -46,28 +45,27 @@ CrystalLattice<T,D>::CrystalLattice(const CrystalLattice<T,D>& rhs) {
   reset();
 }
 
-template<class T, unsigned D>
-void CrystalLattice<T,D>::set(int argc, char **argv) {
-  vector<string> opt;
+template<class T, unsigned D,bool ORTHO>
+void CrystalLattice<T,D,ORTHO>::set(int argc, char **argv) {
+  std::vector<string> opt;
   for(int i=0; i<argc; i++) opt.push_back(argv[i]);
   set(opt);
 }
 
-template<class T, unsigned D>
-void CrystalLattice<T,D>::set(vector<string>& argv) {
-  makelattice<CrystalLattice<T,D> >::apply(*this, argv);
+template<class T, unsigned D,bool ORTHO>
+void CrystalLattice<T,D,ORTHO>::set(vector<string>& argv) {
+  makelattice<CrystalLattice<T,D,ORTHO> >::apply(*this, argv);
 }
 
 
-
-template<class T, unsigned D>
-void CrystalLattice<T,D>::set(const Tensor<T,D>& lat) {
+template<class T, unsigned D,bool ORTHO>
+void CrystalLattice<T,D,ORTHO>::set(const Tensor<T,D>& lat) {
    R = lat;
    reset();
 }
 
-template<class T, unsigned D>
-void CrystalLattice<T,D>::set(T sc, T* lat) {
+template<class T, unsigned D,bool ORTHO>
+void CrystalLattice<T,D,ORTHO>::set(T sc, T* lat) {
   if(lat) {
     int ii=0;   
     for(int i=0; i<D; i++)
@@ -82,9 +80,9 @@ void CrystalLattice<T,D>::set(T sc, T* lat) {
   reset();
 }
 
-template<class T, unsigned D>
+template<class T, unsigned D,bool ORTHO>
 void 
-CrystalLattice<T,D>::set(const CrystalLattice<T,D>& oldlat, int *uc) {
+CrystalLattice<T,D,ORTHO>::set(const CrystalLattice<T,D,ORTHO>& oldlat, int *uc) {
   R = oldlat.R;
   BConds = oldlat.BConds;
   for(int idir=0; idir<D; idir++) {
@@ -97,8 +95,8 @@ CrystalLattice<T,D>::set(const CrystalLattice<T,D>& oldlat, int *uc) {
   reset();
 }
 
-template<class T, unsigned D>
-void CrystalLattice<T,D>::reset() {
+template<class T, unsigned D,bool ORTHO>
+void CrystalLattice<T,D,ORTHO>::reset() {
 
   G = inverse(R); //G = transpose(Inverse(R));
   Volume = fabs(det(R));
@@ -112,6 +110,14 @@ void CrystalLattice<T,D>::reset() {
   for(int i=0; i<D; i++)
     for(int j=0; j<D; j++)
       Gv[i][j] = G(j,i);
+
+  const T rad_to_deg = 180.0/M_PI;
+  T a0=sqrt(dot(Rv[0],Rv[0]));
+  T a1=sqrt(dot(Rv[1],Rv[1]));
+  T a2=sqrt(dot(Rv[2],Rv[2]));
+  ABC[0] = rad_to_deg*acos(dot(Rv[0],Rv[1])*a0*a1);
+  ABC[1] = rad_to_deg*acos(dot(Rv[1],Rv[2])*a1*a2);
+  ABC[2] = rad_to_deg*acos(dot(Rv[2],Rv[0])*a2*a0);
 }
 
 /*! \fn  CrystalLattice<T,D>::operator=(const CrystalLattice<T,D>& rhs)
@@ -119,9 +125,9 @@ void CrystalLattice<T,D>::reset() {
  *  \brief Copy all the properties of the lattice, 
  *   including boundary conditions and grid paritions.
  */
-template<class T, unsigned D>
-CrystalLattice<T,D>& 
-CrystalLattice<T,D>::operator=(const CrystalLattice<T,D>& rhs) {
+template<class T, unsigned D,bool ORTHO>
+CrystalLattice<T,D,ORTHO>& 
+CrystalLattice<T,D,ORTHO>::operator=(const CrystalLattice<T,D,ORTHO>& rhs) {
 
   R = rhs.R;
   BConds = rhs.BConds;
@@ -135,9 +141,9 @@ CrystalLattice<T,D>::operator=(const CrystalLattice<T,D>& rhs) {
 /*! \fn  CrystalLattice<T,D>::operator=(const Tensor<T,D>& rhs)
  *  \param rhs a Tensor to be copied
  */
-template<class T, unsigned D>
-CrystalLattice<T,D>& 
-CrystalLattice<T,D>::operator=(const Tensor<T,D>& rhs) {
+template<class T, unsigned D,bool ORTHO>
+CrystalLattice<T,D,ORTHO>& 
+CrystalLattice<T,D,ORTHO>::operator=(const Tensor<T,D>& rhs) {
   R = rhs;
   reset();
   return *this;
@@ -147,27 +153,27 @@ CrystalLattice<T,D>::operator=(const Tensor<T,D>& rhs) {
  *  \param sc A scaling factor.
  *  \brief Rescale this supercell by a scalar.
  */
-template<class T, unsigned D>
-CrystalLattice<T,D>& 
-CrystalLattice<T,D>::operator*=(T sc) {
+template<class T, unsigned D,bool ORTHO>
+CrystalLattice<T,D,ORTHO>& 
+CrystalLattice<T,D,ORTHO>::operator*=(T sc) {
   R *= sc;
   reset();
   return *this;
 }
 
-template<class T, unsigned D>
-void CrystalLattice<T,D>::print(std::ostream& os, int level) const {
+template<class T, unsigned D,bool ORTHO>
+void CrystalLattice<T,D,ORTHO>::print(ostream& os, int level) const {
 
   /*\note level == 0: print only the lattice vectors
    *      level == 1: lattice vectors, boundary conditions, grid 
    *      level == 2: + all the internal values
    */
 
-  os << "<lattice>" << std::endl; 
+  os << "<lattice>" << endl; 
   for(int i=0; i<D; i++) {
-    os << Rv[i] << std::endl;
+    os << Rv[i] << endl;
   }
-  os << "</lattice>" << std::endl; 
+  os << "</lattice>" << endl; 
 
   if(level > 0) {
     os << "<bconds> ";
@@ -175,14 +181,14 @@ void CrystalLattice<T,D>::print(std::ostream& os, int level) const {
       if(BoxBConds[i]) os << " p "; 
       else             os << " n ";
     }
-    os << " </bconds>" << std::endl;
+    os << " </bconds>" << endl;
   }
 
   if(level > 1) {
-    os << "Volume (A^3) = " << Volume << std::endl;
+    os << "Volume (A^3) = " << Volume << endl;
     os << "Reciprocal vectors without 2*pi.\n";
     for(int i=0; i<D; i++) {
-      os << "g_"<< i+1<< " = " << Gv[i] << std::endl;
+      os << "g_"<< i+1<< " = " << Gv[i] << endl;
     }
     os << "Metric tensor in real-space.\n";
     for(int i=0; i<D; i++) {
@@ -190,7 +196,7 @@ void CrystalLattice<T,D>::print(std::ostream& os, int level) const {
       for(int j=0; j< D; j++) {
         os << M(i,j) << " ";
       }
-      os << std::endl;
+      os << endl;
     }
     os << "Metric tensor in g-space.\n";
     for(int i=0; i<D; i++) {
@@ -198,49 +204,42 @@ void CrystalLattice<T,D>::print(std::ostream& os, int level) const {
       for(int j=0; j< D; j++) {
         os << Mg(i,j) << " ";
       }
-      os << std::endl;
+      os << endl;
     }
   }
 }
 
 
-template<class T, unsigned D>
-inline bool operator==(const CrystalLattice<T,D>& lhs, 
-                       const CrystalLattice<T,D>& rhs) {
-  const double eps = 1e-6;
+template<class T, unsigned D,bool ORTHO>
+inline bool operator==(const CrystalLattice<T,D,ORTHO>& lhs, 
+                       const CrystalLattice<T,D,ORTHO>& rhs) {
   for(int i=0; i<D*D; i++) 
-    if(abs(lhs.R[i]-rhs.R[i]) > eps) return false;
+    if(abs(lhs.R[i]-rhs.R[i]) > numeric_limits<T>::epsilon()) return false;
   return true;
 }
 
-template<class T, unsigned D>
-inline bool operator!=(const CrystalLattice<T,D>& lhs, 
-                       const CrystalLattice<T,D>& rhs) {
+template<class T, unsigned D,bool ORTHO>
+inline bool operator!=(const CrystalLattice<T,D,ORTHO>& lhs, 
+                       const CrystalLattice<T,D,ORTHO>& rhs) {
   return !(lhs == rhs);
 }
 
 
 // free function to check if a CrystalLattice is orthorhombic
-template<class T, unsigned D>
-inline bool orthorombic(const CrystalLattice<T,D>& a) {
-  return true;
+template<class T, unsigned D,bool ORTHO>
+inline bool orthorombic(const CrystalLattice<T,D,ORTHO>& a) {
+  return ORTHO;
 }
 
-//!< Returns true if the off-diagonal elements of Rm are zero.
-template<class T>
-bool orthorombic(const CrystalLattice<T,2>& a, T) {
-  const T eps = 1e-6;
-  return ((a.R(0,1) < eps) && (a.R(1,0) < eps));
-}
-
-//!< Returns true if the off-diagonal elements of Rm are zero.
-template<class T>
-bool orthorombic(const CrystalLattice<T,3>& a, T) {
-  const T eps = 1e-6;
-  return ((a.R(0,1) < eps) && (a.R(0,2) < eps) &&
-          (a.R(1,0) < eps) && (a.R(1,2) < eps) &&
-          (a.R(2,0) < eps) && (a.R(2,1) < eps) );
-}
+//
+////!< Returns true if the off-diagonal elements of Rm are zero.
+//template<class T, unsigned D, bool ORTHO>
+//bool orthorombic(const CrystalLattice<T,3>& a, T) {
+//  const T eps = 1e-6;
+//  return ((a.R(0,1) < eps) && (a.R(0,2) < eps) &&
+//          (a.R(1,0) < eps) && (a.R(1,2) < eps) &&
+//          (a.R(2,0) < eps) && (a.R(2,1) < eps) );
+//}
 
 
 /***************************************************************************
