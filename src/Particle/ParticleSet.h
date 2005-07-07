@@ -101,6 +101,16 @@ namespace ohmmsqmc {
       return PropertyList.add(pname.c_str());
     }
 
+   void convert(const ParticlePos_t& pin, ParticlePos_t& pout);
+   void convert2Unit(const ParticlePos_t& pin, ParticlePos_t& pout);
+   void convert2Cart(const ParticlePos_t& pin, ParticlePos_t& pout);
+   void convert2Unit(ParticlePos_t& pout);
+   void convert2Cart(ParticlePos_t& pout);
+
+   void applyBC(const ParticlePos_t& pin, ParticlePos_t& pout);
+   void applyBC(ParticlePos_t& pos);
+   void applyBC(const ParticlePos_t& pin, ParticlePos_t& pout, int first, int last);
+
   protected:
     ///the number of particle objects
     static Index_t PtclObjectCounter;

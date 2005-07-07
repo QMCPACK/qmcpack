@@ -22,6 +22,9 @@
 #include "Particle/AsymmetricDistanceTableData.h"
 using namespace ohmmsqmc;
 
+//uncomment to test PBC
+//#define TEST_PBC_DIST
+
 //@todo introduce enum to automatically generate the distance table data with BC
 //enum { No=0, PNN, PPN, PPP};
 
@@ -93,7 +96,11 @@ DistanceTable::add(const ParticleSet& s, const char* aname) {
   if(it == TableMap.end()) {
     LOGMSG("Distance table " << newname << " is created.")
     int n = TableList.size();
+#if defined(TEST_PBC_DIST)
+    TableList.push_back(new SymmetricDTD<PeriodicBConds<double,3> >(s,s));
+#else
     TableList.push_back(new SymmetricDTD<NoBConds<double,3> >(s,s));
+#endif
     TableMap[newname] = n;
     VisitorID.push_back(s.tag());
     return n;
@@ -128,7 +135,11 @@ DistanceTable::add(const ParticleSet& s, const ParticleSet& t,
   if(it == TableMap.end()) {
     LOGMSG("Distance table " << newname << " is created.")
     int n = TableList.size();
+#if defined(TEST_PBC_DIST)
+    TableList.push_back(new AsymmetricDTD<PeriodicBConds<double,3> > (s,t));
+#else
     TableList.push_back(new AsymmetricDTD<NoBConds<double,3> > (s,t));
+#endif
     TableMap[newname] = n;
     VisitorID.push_back(t.tag());
     return n;
