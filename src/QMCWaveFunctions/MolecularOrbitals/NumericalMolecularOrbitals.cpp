@@ -199,6 +199,7 @@ namespace ohmmsqmc {
 
     //stop for now
     //OHMMS::Controller->finalize();
+    return true;
   }
 }
 /***************************************************************************

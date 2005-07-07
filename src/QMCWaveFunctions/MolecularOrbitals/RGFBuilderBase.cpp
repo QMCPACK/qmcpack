@@ -73,9 +73,9 @@ namespace ohmmsqmc {
       dfile.setf(ios::scientific, ios::floatfield);
       dfile.setf(ios::left,ios::adjustfield);
       int norb = m_orbitals->Rnl.size();
-      dfile << "#column 0 : Radial grid" << endl;
+      dfile << "# column 0 : Radial grid" << endl;
       for(int i=0; i<norb; i++) {
-        dfile << "#column " << i+1 << " :  " << m_orbitals->RnlID[i] << endl;
+        dfile << "# column " << i+1 << " :  " << m_orbitals->RnlID[i] << endl;
       }
       dfile.precision(15);
       for(int ig=0; ig<agrid->size()-1; ig++) {
@@ -131,7 +131,6 @@ namespace ohmmsqmc {
     radAttrib.add(npts,"npts"); 
     radAttrib.add(ri,"ri"); radAttrib.add(rf,"rf");
     radAttrib.add(ascale,"ascale"); radAttrib.add(astep,"astep");
-
     if(cur) radAttrib.put(cur);
     if(gridType == "log") {
       if(ascale>0.0) {
