@@ -114,14 +114,6 @@ namespace ohmmsqmc {
     inline ValueType evaluate(ParticleSet& P, RealType& x) {
       return x=evaluate(P);
     }
-
-#ifdef WALKERSTORAGE_COLUMNMAJOR
-    inline void 
-    evaluate(WalkerSetRef& P, ValueVectorType& LE) { }
-#else
-    inline void 
-    evaluate(WalkerSetRef& P, ValueVectorType& LE) { }
-#endif
   };
 }
 #endif

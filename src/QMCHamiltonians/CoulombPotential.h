@@ -79,37 +79,37 @@ namespace ohmmsqmc {
       return esum;
     } 
 
-#ifdef USE_FASTWALKER
-    inline void 
-    evaluate(WalkerSetRef& W, ValueVectorType& LE) {
-      register int nw = W.walkers();
-      ValueVectorType e(nw);
-      for(int iat=0; iat<Centers; iat++) {
-        e=0.0;
-        for(int nn=d_table->M[iat]; nn<d_table->M[iat+1]; nn++) {
-          for(int iw=0; iw<nw; iw++) {
-	    e[iw] += d_table->rinv(iw,nn);
-	  }
-	}
-        ValueType z=Z[iat];
-        for(int iw=0; iw<W.walkers(); iw++) { LE[iw] += z*e[iw];} 
-      }
-    }
-#else
-    inline void 
-    evaluate(WalkerSetRef& W, ValueVectorType& LE) {
-      for(int iat=0; iat<Centers; iat++) {
-        RealType z=Z[iat];
-        for(int iw=0; iw<W.walkers(); iw++) {
-	  RealType esub = 0.0;
-	  for(int nn=d_table->M[iat]; nn<d_table->M[iat+1]; nn++) {
-	    esub += d_table->rinv(iw,nn);
-	  }
-	  LE[iw] += z*esub; ///multiply z
-	}
-      }
-    }
-#endif
+    //#ifdef USE_FASTWALKER
+    //    inline void 
+    //    evaluate(WalkerSetRef& W, ValueVectorType& LE) {
+    //      register int nw = W.walkers();
+    //      ValueVectorType e(nw);
+    //      for(int iat=0; iat<Centers; iat++) {
+    //        e=0.0;
+    //        for(int nn=d_table->M[iat]; nn<d_table->M[iat+1]; nn++) {
+    //          for(int iw=0; iw<nw; iw++) {
+    //	    e[iw] += d_table->rinv(iw,nn);
+    //	  }
+    //	}
+    //        ValueType z=Z[iat];
+    //        for(int iw=0; iw<W.walkers(); iw++) { LE[iw] += z*e[iw];} 
+    //      }
+    //    }
+    //#else
+    //    inline void 
+    //    evaluate(WalkerSetRef& W, ValueVectorType& LE) {
+    //      for(int iat=0; iat<Centers; iat++) {
+    //        RealType z=Z[iat];
+    //        for(int iw=0; iw<W.walkers(); iw++) {
+    //	  RealType esub = 0.0;
+    //	  for(int nn=d_table->M[iat]; nn<d_table->M[iat+1]; nn++) {
+    //	    esub += d_table->rinv(iw,nn);
+    //	  }
+    //	  LE[iw] += z*esub; ///multiply z
+    //	}
+    //      }
+    //    }
+    //#endif
   };
 
   /** 
@@ -150,27 +150,27 @@ namespace ohmmsqmc {
       return x=sum*C;
     }
 
-#ifdef USE_FASTWALKER
-    inline void 
-    evaluate(WalkerSetRef& W, ValueVectorType& LE) {
-      std::vector<ValueType> e(W.walkers(),0.0);
-      for(int nn = 0; nn< d_table->getTotNadj(); nn++) {
-	for(int iw=0; iw<W.walkers(); iw++) {
-	  e[iw] += d_table->rinv(iw,nn);
-	}
-      }
-      for(int iw=0; iw<W.walkers(); iw++) { LE[iw] += C*e[iw];} 
-    }
-#else
-    inline void 
-    evaluate(WalkerSetRef& W, ValueVectorType& LE) {
-      for(int iw=0; iw<W.walkers(); iw++) {
-	RealType e =0.0;
-	for(int nn = 0; nn< d_table->getTotNadj(); nn++)  e += d_table->rinv(iw,nn);
-	LE[iw] += C*e; 
-      }
-    }
-#endif
+    //#ifdef USE_FASTWALKER
+    //    inline void 
+    //    evaluate(WalkerSetRef& W, ValueVectorType& LE) {
+    //      std::vector<ValueType> e(W.walkers(),0.0);
+    //      for(int nn = 0; nn< d_table->getTotNadj(); nn++) {
+    //	for(int iw=0; iw<W.walkers(); iw++) {
+    //	  e[iw] += d_table->rinv(iw,nn);
+    //	}
+    //      }
+    //      for(int iw=0; iw<W.walkers(); iw++) { LE[iw] += C*e[iw];} 
+    //    }
+    //#else
+    //    inline void 
+    //    evaluate(WalkerSetRef& W, ValueVectorType& LE) {
+    //      for(int iw=0; iw<W.walkers(); iw++) {
+    //	RealType e =0.0;
+    //	for(int nn = 0; nn< d_table->getTotNadj(); nn++)  e += d_table->rinv(iw,nn);
+    //	LE[iw] += C*e; 
+    //      }
+    //    }
+    //#endif
   };
 }
 #endif

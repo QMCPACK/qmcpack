@@ -17,6 +17,7 @@
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Particle/WalkerSetRef.h"
 #include "Particle/DistanceTableData.h"
+#include "Utilities/OhmmsInfo.h"
 using namespace ohmmsqmc;
 
 QMCHamiltonian::QMCHamiltonian(){ }
@@ -67,11 +68,16 @@ QMCHamiltonian::remove(const string& aname) {
   return false;
 }
 
-/**
+void 
+QMCHamiltonian::add2WalkerProperty(ParticleSet& P) {
+  Hindex.resize(Hname.size());
+  for(int i=0; i<Hname.size(); i++) Hindex[i]=P.addProperty(Hname[i]);
+  LOGMSG("Starting index of Hamiltonian " << Hindex[0])
+}
+
+/** Evaluate all the Hamiltonians for the N-particle  configuration
  *@param P input configuration containing N particles
  *@return the local energy
- *@brief Evaluate all the Hamiltonians for the N-particle
- *configuration
  */
 QMCHamiltonian::ValueType 
 QMCHamiltonian::evaluate(ParticleSet& P) {
@@ -102,17 +108,18 @@ QMCHamiltonian::getHamiltonian(const string& aname) {
     return H[(*it).second];
 }
 
-/**
- *@param W a set of walkers (N-particle configurations)
- *@param LE return a vector containing the local 
- energy for each walker
- *@brief Evaluate all the Hamiltonians for a set of N-particle
- *configurations
- */
-void QMCHamiltonian::evaluate(WalkerSetRef& W, ValueVectorType& LE) {
-  LE = 0.0;
-  for(int i=0; i<H.size(); i++) H[i]->evaluate(W, LE);
-}
+//Meant for vectorized operators. Not so helpful.
+///**
+// *@param W a set of walkers (N-particle configurations)
+// *@param LE return a vector containing the local 
+// energy for each walker
+// *@brief Evaluate all the Hamiltonians for a set of N-particle
+// *configurations
+// */
+//void QMCHamiltonian::evaluate(WalkerSetRef& W, ValueVectorType& LE) {
+//  LE = 0.0;
+//  for(int i=0; i<H.size(); i++) H[i]->evaluate(W, LE);
+//}
 
 /***************************************************************************
  * $RCSfile$   $Author$

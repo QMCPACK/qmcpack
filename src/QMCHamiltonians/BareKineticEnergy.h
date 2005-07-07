@@ -68,15 +68,16 @@ namespace ohmmsqmc {
       return x=evaluate(P);
     }
 
-    void evaluate(WalkerSetRef& W, ValueVectorType& LE) {
-      for(int iw=0; iw< W.walkers(); iw++) {
-	RealType ke = 0.0;
-	for(int iat=0; iat< W.particles(); iat++) {
-	  ke += dot(W.G(iw,iat),W.G(iw,iat)) + W.L(iw,iat);
-	}
-	LE[iw] -= M*ke;
-      }
-    }
+    //Not used anymore
+    //void evaluate(WalkerSetRef& W, ValueVectorType& LE) {
+    //  for(int iw=0; iw< W.walkers(); iw++) {
+    //    RealType ke = 0.0;
+    //    for(int iat=0; iat< W.particles(); iat++) {
+    //      ke += dot(W.G(iw,iat),W.G(iw,iat)) + W.L(iw,iat);
+    //    }
+    //    LE[iw] -= M*ke;
+    //  }
+    //}
   };
 }
 #endif

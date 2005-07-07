@@ -71,10 +71,10 @@ namespace ohmmsqmc {
       return x=d_sum;
     }
     
-    inline void 
-    evaluate(WalkerSetRef& P, ValueVectorType& LE) {
-      LE += d_sum;
-    }
+    //inline void 
+    //evaluate(WalkerSetRef& P, ValueVectorType& LE) {
+    //  LE += d_sum;
+    //}
   };
 }
 #endif

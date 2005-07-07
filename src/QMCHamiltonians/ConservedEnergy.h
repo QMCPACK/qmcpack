@@ -83,8 +83,6 @@ namespace ohmmsqmc {
       return 0.0;
     }
 
-    void evaluate(WalkerSetRef& W, ValueVectorType& LE) {
-    }
   };
 }
 #endif

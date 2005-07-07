@@ -93,8 +93,6 @@ namespace ohmmsqmc {
       return pow((1.0-exp(-1.0*z*z)),2);
     }
 
-    void evaluate(WalkerSetRef& W, ValueVectorType& LE){ }
-
   };
 }
 #endif

@@ -25,7 +25,6 @@
 
 namespace ohmmsqmc {
 
-  class WalkerSetRef;
   class DistanceTableData;
 
   /** An abstract class for Local Energy operators 
@@ -37,8 +36,6 @@ namespace ohmmsqmc {
 
     RealType Tau;
     RealType Value;
-
-    typedef ParticleAttrib<ValueType>  ValueVectorType;
 
     ///constructor
     QMCHamiltonianBase():Tau(0.0),Value(0.0){}
@@ -58,13 +55,6 @@ namespace ohmmsqmc {
      *@return the value the Local Energy
     */
     virtual ValueType evaluate(ParticleSet& P, RealType& x) = 0;
-
-    /** Evaluate the local energies of the entire walkers
-     *@param W a set of walkers (N-particle configurations)
-     *@param LE return a vector containing the value
-     */
-    virtual 
-    void evaluate(WalkerSetRef& W, ValueVectorType& LE) = 0;
 
     inline void setTau(RealType tau) { Tau = tau;}
   };

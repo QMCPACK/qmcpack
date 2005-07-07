@@ -142,7 +142,6 @@ namespace ohmmsqmc {
 
     TrialWaveFunction& Psi;
 
-
     NonLocalPPotential(ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi);
 
     ~NonLocalPPotential();
@@ -163,8 +162,6 @@ namespace ohmmsqmc {
       return x=evaluate(P);
     }
 
-    inline void 
-      evaluate(WalkerSetRef& P, ValueVectorType& LE) { }
   };
 }
 #endif

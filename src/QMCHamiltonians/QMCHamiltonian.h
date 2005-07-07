@@ -31,9 +31,8 @@ namespace ohmmsqmc {
 
   public:
 
-    typedef QMCHamiltonianBase::RealType        RealType;
-    typedef QMCHamiltonianBase::ValueType       ValueType;
-    typedef QMCHamiltonianBase::ValueVectorType ValueVectorType;
+    typedef QMCHamiltonianBase::RealType  RealType;
+    typedef QMCHamiltonianBase::ValueType ValueType;
 
     ///constructor
     QMCHamiltonian();
@@ -42,6 +41,12 @@ namespace ohmmsqmc {
 
     void add(QMCHamiltonianBase* h, const string& aname);
     bool remove(const string& aname);
+
+    ///add each term to the PropertyList for averages
+    void add2WalkerProperty(ParticleSet& P);
+
+    ///retrun the starting index
+    inline int startIndex() const { return Hindex[0];}
 
     ///return the name of ith Hamiltonian 
     inline string getName(int i) const { return Hname[i];}
@@ -52,39 +57,52 @@ namespace ohmmsqmc {
     ///return the number of Hamiltonians
     inline int size() const { return H.size();}
 
-    ///copy the local content to iterator first
+    ///save the values of Hamiltonian elements to the Properties
     template<class IT>
-    inline void copy(IT first) { std::copy(Hvalue.begin(), Hvalue.end(), first);}
-
-    template<class IT>
-    inline void copy(IT first, RealType wgt) { 
-      vector<RealType>::iterator it(Hvalue.begin()),it_end(Hvalue.end());
-      while(it != it_end) {*first++ = wgt*(*it++);}
-      //for(int i=0; i<Hvalue.size(); i++,first++) *first = wgt*Hvalue[i];
+    inline 
+    void saveProperty(IT first) {
+      first[LOCALPOTENTIAL]= LocalEnergy-Hvalue[0];
+      std::copy(Hvalue.begin(),Hvalue.end(),first+Hindex[0]);
     }
 
+    /** returnn QMCHamiltonian with the name aname
+     * @param aname name of a QMCHamiltonian
+     * @return 0 if aname is not found.
+     */
     QMCHamiltonianBase* getHamiltonian(const string& aname);
-    
+    ////return the LocalEnergy \f$=\sum_i H^{qmc}_{i}\f$
     inline RealType getLocalEnergy() { return LocalEnergy;}
+    ////return the LocalPotential \f$=\sum_i H^{qmc}_{i} - KE\f$
     inline RealType getLocalPotential() { return LocalEnergy-Hvalue[0];}
 
-    inline void setTau(RealType tau) {for(int i=0; i< H.size();++i)H[i]->setTau(tau); }
+    /** set Tau for each Hamiltonian
+     */
+    inline void setTau(RealType tau) {
+      for(int i=0; i< H.size();++i)H[i]->setTau(tau); 
+    }
     
+    /** evaluate Local Energy
+     * @param P ParticleSet
+     * @param return the local energy
+     *
+     * P.R, P.G and P.L are used to evaluate the LocalEnergy.
+     */
     ValueType evaluate(ParticleSet& P);
 
-    void evaluate(WalkerSetRef& W, ValueVectorType& LE);
-
    private:
+
     ///Current Local Energy
     RealType LocalEnergy;
     ///vector of Hamiltonians
     std::vector<QMCHamiltonianBase*> H;
-    ///map the name to an index
-    std::map<string,int> Hmap;
-    ///vector containing the names of the Hamiltonians
-    std::vector<string> Hname;
+    ///vector containing the index of the Hamiltonians
+    std::vector<int> Hindex;
     ///vector containing the values of the Hamiltonians
     std::vector<RealType> Hvalue;
+    ///vector containing the names of the Hamiltonians
+    std::vector<string> Hname;
+    ///map the name to an index
+    std::map<string,int> Hmap;
   };
 }
 #endif
