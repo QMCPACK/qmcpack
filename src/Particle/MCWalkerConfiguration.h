@@ -17,11 +17,7 @@
 #ifndef OHMMS_QMC_MCWALKERCONFIGURATION_H
 #define OHMMS_QMC_MCWALKERCONFIGURATION_H
 #include "Particle/ParticleSet.h"
-#include "OhmmsPETE/OhmmsMatrix.h"
-#include "Utilities/PooledData.h"
-//#include "ParticleBase/RandomSeqGenerator.h"
 #include "Particle/Walker.h"
-#include <list>
 
 namespace ohmmsqmc {
 
@@ -47,42 +43,50 @@ namespace ohmmsqmc {
 	  Update_Particle ///move a particle by particle
     };
     
+    ///type of Walker class
     typedef Walker<RealType,ParticlePos_t> Walker_t;
+    ///container type of the Properties of a Walker
     typedef Walker_t::PropertyContainer_t  PropertyContainer_t;
+    ///container type of Walkers
     typedef std::vector<Walker_t*>         WalkerList_t;
+    ///iterator of Walker container
     typedef WalkerList_t::iterator         iterator;
+    ///const_iterator of Walker container
     typedef WalkerList_t::const_iterator   const_iterator;
-    typedef PooledData<RealType>           WalkerData_t;
-
-    WalkerList_t WalkerList;
-    std::vector<WalkerData_t*> DataSet;
-    //Matrix<ValueType> Energy;
 
     ///default constructor
     MCWalkerConfiguration();
 
-    ///default constructor: create 2 null walkers
-    MCWalkerConfiguration(const MCWalkerConfiguration& mcw, int nw=2);
+    ///default constructor: copy only ParticleSet
+    MCWalkerConfiguration(const MCWalkerConfiguration& mcw);
 
     ///default destructor
     ~MCWalkerConfiguration();
 
-    void createWalkers(int n);
-    iterator destroyWalker(iterator walkerit);
-    iterator destroyWalker(iterator itstart, iterator itend);
-    void copyWalker(iterator walkerit, int n);
+    /** create numWalkers Walkers
+     *
+     * Append Walkers to WalkerList.
+     */
+    void createWalkers(int numWalkers);
 
-    /** copy the pointers to the Walkers to WalkerList */
-    void copyEndWalkers(Walker_t* first, Walker_t* last) {
-      WalkerList[0]=first;
-      WalkerList[1]=last;
-    }
+    /** destroy Walkers from itstart to itend
+     *@param first starting iterator of the walkers
+     *@param last ending iterator of the walkers
+     */
+    iterator destroyWalkers(iterator first, iterator last);
 
-    void addWalkers(vector<int>& Copies,
-		    vector<Walker_t*>& InactiveList);
+    /** copy the pointers to the Walkers to WalkerList 
+     * @param head pointer to the head walker
+     * @param tail pointer to the tail walker
+     *
+     * Special function introduced to work with Reptation method.
+     * Clear the current WalkerList and add two walkers, head and tail. 
+     * OwnWalkers are set to false.
+     */
+    void copyWalkerRefs(Walker_t* head, Walker_t* tail);
 
     ///clean up the walker list and make a new list
-    void resize(int nw, int np);
+    void resize(int numWalkers, int numPtcls);
 
     ///make random moves for all the walkers
     //void sample(iterator first, iterator last, value_type tauinv);
@@ -107,26 +111,35 @@ namespace ohmmsqmc {
 
     /// return the last const_iterator  [begin(), end())
     inline const_iterator end() const { return WalkerList.end();}
-
-    /// return the active iterator
-    inline iterator theWalker() { return WorkingWalker;}
-
-    /// return the active const_iterator
-    inline const_iterator theWalker() const { return WorkingWalker;}
     /**@}*/
 
+    /** set the update mode
+     * @param updatemode
+     */
     void setUpdateMode(int updatemode);
 
+    /** set LocalEnergy
+     * @param e current average Local Energy
+     */
     inline void setLocalEnergy(RealType e) { LocalEnergy = e;}
+
+    /** return LocalEnergy
+     */
     inline RealType getLocalEnergy() const {return LocalEnergy;}
 
+    /** destroy/create walkers  using Multiplicity of the Walkers
+     * @param maxcopy maximum number of copies per Walker
+     * @param Nmax maximum number of Walkers 
+     * @param Nmin minimum number of Walkers
+     * @return the current number of Walkers after branching
+     *
+     * Branching algorithm determines Walker_t::Multiplicity and branch
+     * function destroy and copy walkers based on the Multiplicity
+     */
     int branch(int maxcopy, int Nmax, int Nmin);
-    int branch2(int maxcopy, int Nmax, int Nmin);
 
-    void clear();
-
-    void copy(iterator first, iterator last);
-
+    /** reset the Walkers 
+     */
     void reset();
 
     /**load a Walker_t to the current ParticleSet
@@ -138,15 +151,29 @@ namespace ohmmsqmc {
     void copyToBuffer(PooledData<RealType>& buf);
     void copyFromBuffer(PooledData<RealType>& buf);
 
+    void resetWalkerProperty(int ncopy=1);
+
   protected:
 
-    RealType LocalEnergy;
+    bool OwnWalkers;
+
+    bool ReadyForPbyP;
 
     int UpdateMode;
 
-    ///save a WorkingWalker
-    iterator WorkingWalker;
+    RealType LocalEnergy;
 
+    ///a collection of walkers
+    WalkerList_t WalkerList;
+
+   private:
+
+
+    /** initialize the PropertyList
+     *
+     * Add the named values of the default properties
+     */
+    void initPropertyList();
   };
 }
 #endif
