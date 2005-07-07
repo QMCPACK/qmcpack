@@ -68,7 +68,7 @@ ScalarEstimatorManager::accumulate(const MCWalkerConfiguration& W) {
 
   for(MCWalkerConfiguration::const_iterator it = W.begin(); 
       it != W.end(); it++){    
-    RealType wgt = (*it)->Properties(WEIGHT);
+    RealType wgt = (*it)->Weight;
     WeightSum += wgt;
     for(int i=0; i< Estimators.size(); i++) 
       Estimators[i]->accumulate(**it,wgt);

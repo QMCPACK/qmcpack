@@ -61,6 +61,7 @@ namespace ohmmsqmc {
     ///locator of the first data this object handles
     int LocalEnergyIndex;
     int LocalPotentialIndex;
+    int FirstHamiltonian;
     int SizeOfHamiltonians;
 
     ///vector to contain the names of all the constituents of the local energy
@@ -80,6 +81,7 @@ namespace ohmmsqmc {
     LocalEnergyEstimator(QMCHamiltonian& h) { 
       int hterms(h.size());
       SizeOfHamiltonians = hterms;
+      FirstHamiltonian = h.startIndex();
       elocal.resize(SizeOfHamiltonians+LE_MAX);
       elocal_name.resize(SizeOfHamiltonians+LE_MAX);
       elocal_name[ENERGY_INDEX] = "LocalEnergy";
@@ -99,6 +101,16 @@ namespace ohmmsqmc {
     }
 
     inline void accumulate(const Walker_t& awalker, T wgt) {
+      const T* restrict ePtr = awalker.getPropertyBase();
+      T e = ePtr[LOCALENERGY];
+      elocal[ENERGY_INDEX] += wgt*e;
+      elocal[ENERGY_SQ_INDEX] += wgt*e*e;
+      elocal[POTENTIAL_INDEX] += wgt*ePtr[LOCALPOTENTIAL];
+      for(int i=0, target=LE_MAX, source=FirstHamiltonian; i<SizeOfHamiltonians; 
+          i++,target++,source++) {
+	elocal[target] += wgt*ePtr[source];
+      }
+      /*
       T e = awalker.Properties(LOCALENERGY);
       const T* restrict e_ptr = awalker.getEnergyBase();
       //energy_sum += wgt*e; energy_sq_sum += wgt*e*e;
@@ -108,6 +120,7 @@ namespace ohmmsqmc {
       for(int ii=LE_MAX, i=0; i<SizeOfHamiltonians; ii++,i++) {
 	elocal[ii] += wgt*e_ptr[i]; //wgt*(awalker.E[i]);
       }
+      */
     }
 
     ///reset all the cumulative sums to zero

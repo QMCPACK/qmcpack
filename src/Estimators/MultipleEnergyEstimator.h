@@ -41,13 +41,18 @@ namespace ohmmsqmc {
     ///index to keep track how many times accumulate is called
     int CurrentWalker;
 
+    ///total number of walkers
     int NumWalkers;
+    
     ///starting column index of this estimator 
-    int FirstIndex;
+    int FirstColumnIndex;
+
+    ///index of the first Hamiltonian element
+    int FirstHamiltonian;
 
     /** the number of duplicated wavefunctions/hamiltonians
      *
-     * NumCopies is the row size of EnergyContainer_tUmbrellaSamples
+     * NumCopies is the row size of Walker_t::Properties
      */
     int NumCopies;
 
@@ -60,32 +65,44 @@ namespace ohmmsqmc {
     int NumOperators;
 
     ///the index of weight
-    int WeightIndex;
+    //int WeightIndex;
 
     /** the column size of EnergyContaner_t for UmbrellaSamples
      * 
      * NumCols = NumOperators+2
      * 2 is for the local energy and weight
-     */
     int NumCols;
+     */
 
     /** local energy data for each walker. 
      */
-    Matrix<RealType> UmbrellaEnergy, UmbrellaWeight, RatioIJ;
+    //Matrix<RealType> UmbrellaEnergy, UmbrellaWeight, RatioIJ;
+    Matrix<RealType> RatioIJ;
 
-    ///accumulated total local energies, weights
+    /** accumulated total local energies, weights
+     *
+     * The dimension of esum is NumCopies by LE_INDEX
+     */
     Matrix<RealType> esum;
 
-    /** accumulated local energies
+    /** accumulated local operators, e.g., Kinetic energy
      *
-     * The size of eloc is NumCopies by NumOperators.
+     * The dimension of elocal is NumCopies by NumOperators.
      */
     Matrix<RealType> elocal;
 
-    ///the names of esum
+    /** the names of esum
+     *
+     * The dimension of esum_name is LE_INDEX by NumCopies. The columns
+     * of the same field are bunched together.
+     */
     Matrix<string> esum_name;
     
-    ///the names of elocal
+    /** the names of elocal
+     *
+     * The dimension of elocal_name is NumOperators by NumCopies. The columns
+     * of the same field are bunched together.
+     */
     Matrix<string> elocal_name;
 
     /** constructor
@@ -127,11 +144,11 @@ namespace ohmmsqmc {
      * @param ipsi H/Psi index
      * @param e local energy of the iw-th walker for H[ipsi]/Psi[ipsi]
      * @param r umbrella weight
-     */
     inline void updateSample(int iw, int ipsi, RealType e, RealType invr) {
-      UmbrellaEnergy(iw,ipsi)=e;
-      UmbrellaWeight(iw,ipsi)=invr;
+      //UmbrellaEnergy(iw,ipsi)=e;
+      //UmbrellaWeight(iw,ipsi)=invr;
     }
+     */
 
   };
 

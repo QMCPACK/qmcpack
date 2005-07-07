@@ -28,12 +28,11 @@ namespace ohmmsqmc {
    * @param h QMCHamiltonian to define the components
    * @param hcopy number of copies of QMCHamiltonians
    */
-  MultipleEnergyEstimator::MultipleEnergyEstimator(QMCHamiltonian& h, 
-      int hcopy) : CurrentWalker(0) {
+  MultipleEnergyEstimator::MultipleEnergyEstimator(QMCHamiltonian& h, int hcopy) : CurrentWalker(0) {
 
     NumCopies=hcopy;
     NumOperators = h.size();
-    NumCols=2;
+    FirstHamiltonian=h.startIndex();
 
     esum.resize(NumCopies,LE_INDEX);
     esum_name.resize(LE_INDEX,NumCopies);
@@ -69,14 +68,14 @@ namespace ohmmsqmc {
     //allocate UmbrellaEnergy
     int numPtcls(W.getTotalNum());
 
-    UmbrellaEnergy.resize(NumWalkers,NumCopies);
-    UmbrellaWeight.resize(NumWalkers,NumCopies);
+    //UmbrellaEnergy.resize(NumWalkers,NumCopies);
+    //UmbrellaWeight.resize(NumWalkers,NumCopies);
     RatioIJ.resize(NumWalkers,NumCopies*(NumCopies-1)/2);
 
     MCWalkerConfiguration::iterator it(W.begin()); 
     MCWalkerConfiguration::iterator it_end(W.end()); 
 
-    vector<RealType> sumratio(NumCopies), logpsi(NumCopies), eloc(NumCopies);
+    vector<RealType> sumratio(NumCopies), logpsi(NumCopies);
 
     int iw(0);
     while(it != it_end) {
@@ -84,8 +83,10 @@ namespace ohmmsqmc {
       Walker_t& thisWalker(**it);
 
       if(require_register) {
-        W.DataSet[iw]->rewind();
-        W.registerData(thisWalker,*(W.DataSet[iw]));
+        (*it)->DataSet.rewind();
+        W.registerData(thisWalker,(*it)->DataSet);
+        //W.DataSet[iw]->rewind();
+        //W.registerData(thisWalker,*(W.DataSet[iw]));
       } else {
         W.R = thisWalker.R;
         DistanceTable::update(W);
@@ -97,13 +98,14 @@ namespace ohmmsqmc {
         psi[ipsi]->L.resize(numPtcls);
         //Need to modify the return value of OrbitalBase::registerData
         if(require_register) {
-	  logpsi[ipsi]=psi[ipsi]->registerData(W,*(W.DataSet[iw]));
+	  logpsi[ipsi]=psi[ipsi]->registerData(W,(*it)->DataSet);
+	  //logpsi[ipsi]=psi[ipsi]->registerData(W,*(W.DataSet[iw]));
         } else {
 	  logpsi[ipsi]=psi[ipsi]->evaluateLog(W); 		 
         }
         psi[ipsi]->G=W.G;
-        eloc[ipsi]=h[ipsi]->evaluate(W);
-        h[ipsi]->copy(thisWalker.getEnergyBase(ipsi));
+        thisWalker.Properties(ipsi,LOCALENERGY)=h[ipsi]->evaluate(W);
+        h[ipsi]->saveProperty(thisWalker.getPropertyBase(ipsi));
         sumratio[ipsi]=1.0;
       } 							
      
@@ -122,10 +124,13 @@ namespace ohmmsqmc {
 
       //DON't forget DRIFT!!!
       thisWalker.Drift=0.0;
+
+      //Re-use Multiplicity as the sumratio
+      thisWalker.Multiplicity=sumratio[0];
+
       for(int ipsi=0; ipsi< NumCopies; ipsi++) {
         RealType wgt=1.0/sumratio[ipsi];
-        UmbrellaEnergy(iw,ipsi)=eloc[ipsi];
-        UmbrellaWeight(iw,ipsi)=wgt;
+        thisWalker.Properties(ipsi,UMBRELLAWEIGHT)=wgt;
         thisWalker.Drift += wgt*psi[ipsi]->G;
       }
       thisWalker.Drift *= tau;
@@ -138,7 +143,7 @@ namespace ohmmsqmc {
      */
   void 
   MultipleEnergyEstimator::add2Record(RecordNamedProperty<RealType>& record) {
-    FirstIndex = record.add(esum_name(0).c_str());
+    FirstColumnIndex = record.add(esum_name(0).c_str());
     for(int i=1; i<esum_name.size(); i++) record.add(esum_name(i).c_str());
     for(int i=0; i<elocal_name.size(); i++) record.add(elocal_name(i).c_str());
   }
@@ -146,24 +151,30 @@ namespace ohmmsqmc {
   void 
   MultipleEnergyEstimator::accumulate(const Walker_t& awalker, RealType wgt) {
 
-    const RealType* restrict etot=UmbrellaEnergy[CurrentWalker];
-    const RealType* restrict wsum=UmbrellaWeight[CurrentWalker];
+    //const RealType* restrict etot=UmbrellaEnergy[CurrentWalker];
+    //const RealType* restrict wsum=UmbrellaWeight[CurrentWalker];
     RealType* restrict elocPtr = elocal.data();
     RealType *restrict esumPtr = esum.data();
 
     for(int i=0; i<NumCopies; i++) {
       //get the pointer to the i-th row
-      RealType e = *etot++;
-      RealType invr = *wsum++;
+      const RealType* restrict prop=awalker.getPropertyBase(i);
+      RealType invr = prop[UMBRELLAWEIGHT];
+      RealType e = prop[LOCALENERGY];
       *esumPtr++ += invr*e;   //esum(i,ENERGY_INDEX)    += invr*e;
       *esumPtr++ += invr*e*e; //esum(i,ENERGY_SQ_INDEX) += invr*e*e; //how to variance
       *esumPtr++ += invr;     //esum(i,WEIGHT_INDEX)    += invr;
 
-      //accumulate elocal(i,j) with the weight
-      //The content the Walker::DynProperties are NOT weighted.
-      const RealType *t= awalker.getEnergyBase(i);
-      for(int j=0; j<NumOperators; j++) {
-        *elocPtr++ += invr*(*t++);
+      //accumulate elocal(i,j) with the weight,
+      //The content the Walker::DynProperties other than LOCALENERGY are NOT weighted.
+      //const RealType *t= awalker.getEnergyBase(i);
+      //for(int j=0; j<NumOperators; j++) {
+      //  *elocPtr++ += invr*(*t++);
+      //}
+      
+      //const RealType *t= awalker.getPropertyBase(i)+FirstHamiltonian;
+      for(int j=0,h=FirstHamiltonian; j<NumOperators; j++,h++) {
+        *elocPtr++ += invr*prop[h];
       }
     }
     ++CurrentWalker;
@@ -186,27 +197,29 @@ namespace ohmmsqmc {
 
 
 #ifdef HAVE_MPI
-    int esumSize(esum.size());
-    //pack the energy to be summed: v can be either static or data member
-    vector<RealType> v(esumSize+elocal.size());
-    std::copy(esum.begin(),esum.end(),v.begin());
-    std::copy(elocal.begin(),esum.end(),v.begin()+esumSize);
+    if(CollectSum) {
+      int esumSize(esum.size());
+      //pack the energy to be summed: v can be either static or data member
+      vector<RealType> v(esumSize+elocal.size());
+      std::copy(esum.begin(),esum.end(),v.begin());
+      std::copy(elocal.begin(),esum.end(),v.begin()+esumSize);
 
-    if(CollectSum) gsum(v,0);
+      gsum(v,0);
 
-    std::copy(v.begin(),v.begin()+esumSize,esum.begin());
-    std::copy(v.begin()+esumSize,v.end(),elocal.begin());
+      std::copy(v.begin(),v.begin()+esumSize,esum.begin());
+      std::copy(v.begin()+esumSize,v.end(),elocal.begin());
+    }
 #endif
 
     //(localenergy, variance, weight)* 
-    int ir(FirstIndex);
+    int ir(FirstColumnIndex);
 
     for(int i=0; i<NumCopies; i++) {
       RealType r = 1.0/esum(i,WEIGHT_INDEX);
       RealType e = esum(i,ENERGY_INDEX)*r;
       esum(i,ENERGY_INDEX)=e;
       esum(i,ENERGY_SQ_INDEX)=esum(i,ENERGY_SQ_INDEX)*r-e*e;
-      esum(i,WEIGHT_INDEX)*=wgtinv;
+      esum(i,WEIGHT_INDEX)*=wgtinv; 
     }
 
     //swap the row/column indices for (localenergy*, variance*, weight*)
