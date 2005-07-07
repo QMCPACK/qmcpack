@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////
-// (c) Copyright 2003 by Jeongnim Kim
+// (c) Copyright 1998-2002 by Jeongnim Kim
 //
 //   National Center for Supercomputing Applications &
 //   Materials Computation Center
@@ -18,10 +18,17 @@
 
 #ifndef OHMMS_OPENMP_H
 #define OHMMS_OPENMP_H
-#if defined(USE_OPENMP)
+
+#ifdef HAVE_CONFIG_H
+#include "ohmms-config.h"
+#endif
+
+#if defined(ENABLE_OPENMP)
 #include <omp.h>
 #else
-inline int omp_get_thread_num() { return 0;}
+typedef int omp_int_t;
+inline omp_int_t omp_get_thread_num() { return 0;}
+inline omp_int_t omp_get_max_threads() { return 1;}
 #endif
 #endif // OHMMS_COMMUNICATE_H
 /***************************************************************************
