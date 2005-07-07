@@ -18,9 +18,9 @@
 #define OHMMS_QMC_PARTICLESET_H
 
 #include "Configuration.h"
-#include "Utilities/OhmmsObject.h"
 #include "Utilities/SpeciesSet.h"
 #include "Particle/Walker.h"
+#include "OhmmsData/RecordProperty.h"
 
 namespace ohmmsqmc {
 
@@ -45,8 +45,6 @@ namespace ohmmsqmc {
     typedef ParticleAttrib<GradType>  ParticleGradient_t;
     typedef ParticleAttrib<ValueType> ParticleLaplacian_t;
     
-    Walker<RealType,ParticlePos_t>::PropertyContainer_t  Properties;
-
     ///gradients of the particles
     ParticleGradient_t G;
     
@@ -99,6 +97,10 @@ namespace ohmmsqmc {
      */
     void acceptMove(Index_t iat);
 
+    inline int addProperty(const string& pname) {
+      return PropertyList.add(pname.c_str());
+    }
+
   protected:
     ///the number of particle objects
     static Index_t PtclObjectCounter;
@@ -114,6 +116,13 @@ namespace ohmmsqmc {
 
     ///distance tables that need to be updated by moving this ParticleSet
     vector<DistanceTableData*> DistTables;
+
+    /** name-value map of Walker Properties
+     *
+     * PropertyMap is used to keep the name-value mapping of
+     * Walker_t::Properties.
+     */ 
+    RecordNamedProperty<RealType> PropertyList;
 
     void initParticleSet();
   };
