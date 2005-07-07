@@ -18,7 +18,9 @@ SET(UTILITIES
 )
 
 SET(PARTICLE
+  Lattice/Uniform3DGridLayout.cpp 
   Particle/ParticleSet.cpp 
+  Particle/ParticleSet.BC.cpp 
   Particle/MCWalkerConfiguration.cpp 
   Particle/DistanceTable.cpp
   Particle/HDFWalkerIO.cpp

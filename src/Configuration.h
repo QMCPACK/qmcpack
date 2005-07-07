@@ -24,7 +24,7 @@
 #include "OhmmsPETE/TinyVector.h"
 #include "OhmmsPETE/Tensor.h"
 #include "OhmmsData/OhmmsElementBase.h"
-#include "Lattice/UniformGridLayout.h"
+#include "Lattice/Uniform3DGridLayout.h"
 #include "ParticleBase/ParticleAttrib.h"
 #include "ParticleBase/ParticleBase.h"
 
@@ -61,7 +61,8 @@ namespace ohmmsqmc {
    */
   struct PtclOnLatticeTraits {
 
-    typedef UniformGridLayout<OHMMS_PRECISION,OHMMS_DIM> ParticleLayout_t;
+    //typedef UniformGridLayout<OHMMS_PRECISION,OHMMS_DIM> ParticleLayout_t;
+    typedef Uniform3DGridLayout                          ParticleLayout_t;
 
     typedef int                                          Index_t;
     typedef ParticleLayout_t::Scalar_t                   Scalar_t;
