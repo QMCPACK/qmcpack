@@ -18,42 +18,53 @@
 #define OHMMS_QMC_WALKER_H
 
 #include "OhmmsPETE/OhmmsMatrix.h"
+#include "Utilities/PooledData.h"
 
 namespace ohmmsqmc {
 
+
   /** an enum denoting index of physical properties */
-  enum {WEIGHT=0,     /*!< weight */
-	LOCALENERGY,  /*!< local energy, the sum of all the components */
+  enum {LOGPSI=0,       /*!< log(fabs(psi)) instead of square of the many-body wavefunction \f$|\Psi|^2\f$ */
+	SIGN,           /*!< value of the many-body wavefunction \f$\Psi(\{R\})\f$ */
+        UMBRELLAWEIGHT, /*!< sum of wavefunction ratios for multiple H and Psi */
+	LOCALENERGY,    /*!< local energy, the sum of all the components */
 	LOCALPOTENTIAL, /*!< local potential energy = local energy - kinetic energy */
-	MULTIPLICITY, /*!< multiplicity, used by DMC for branching */
-	LOGPSI,        /*!< log(fabs(psi)) instead of square of the many-body wavefunction \f$|\Psi|^2\f$ */
-        SUMRATIO,      /*!< sum of wavefunction ratios for multiple H and Psi */
-	SIGN,          /*!< value of the many-body wavefunction \f$\Psi(\{R\})\f$ */
-	AGE,          /*!< the age of the walker. set to zero when the walker is updated */
-	WOSVAR,       /*!< Variance of WOS potential */
-	NUMPROPERTIES /*!< the number of properties */
-	//SCALED,       /*!< scaling factor for the drift */
-	//CAPACITY=15
+	NUMPROPERTIES   /*!< the number of properties */
        };
   
-  /**
-   *\brief A container class to represent a walker.
+  /** A container class to represent a walker.
    *
-   * A walker stores the particle configurations 
-   * and a property container.
-   * The template (P)articleSet(A)ttribute is a generic container
-   * of position types.
-   * The template (G)radient(A)ttribute is a generic container
-   * of gradients types.
+   * A walker stores the particle configurations {R}  and a property container.
+   * The template (P)articleSet(A)ttribute is a generic container  of position types.
+   * The template (G)radient(A)ttribute is a generic container of gradients types.
+   * Data members for each walker
+   * - ID : identity for a walker. default is 0. 
+   * - Age : generation after a move is accepted.
+   * - Weight : weight to take the ensemble averages
+   * - Multiplicity : multiplicity for branching. Probably can be removed.
+   * - Properties  : 2D container. The first index corresponds to the H/Psi index and second index >=NUMPROPERTIES.
+   * - DataSet : anonymous container. 
    */
   template<class T, class PA, class GA=PA>
   struct Walker {
     
     ///typedef for the property container, fixed size
-    typedef TinyVector<T,NUMPROPERTIES> PropertyContainer_t;
+    typedef Matrix<T>      PropertyContainer_t;
+    typedef PooledData<T>  Buffer_t;
 
     ///id reserved for forward walking
     int ID;
+    ///Age of this walker.
+    int Age;
+
+    ///Weight of the walker
+    T Weight;
+
+    /** Number of copies for branching
+     *
+     * When Multiplicity = 0, this walker will be destroyed.
+     */
+    T Multiplicity;
 
     ///scalar properties of a walker
     PropertyContainer_t  Properties;
@@ -65,28 +76,28 @@ namespace ohmmsqmc {
     ///drift of the walker \f$ Drift({\bf R}) = \tau v_{drift}({\bf R}) \f$
     GA Drift;
 
-    ///dynamic properties in addition to Properties
-    Matrix<T> DynProperty;
+    ///buffer for the data for particle-by-particle update
+    Buffer_t DataSet;
+
+    ///default constructor
+    inline Walker() : Age(0),Weight(1.0e0),Multiplicity(1.0e0) {
+      Properties.resize(1,NUMPROPERTIES);
+      reset();
+    }
 
     ///create a walker for n-particles
-    inline explicit Walker(int n) : Properties(0.0) {  
-      Properties[WEIGHT] = 1.0;
-      Properties[MULTIPLICITY] = 1.0;
-      Properties[SIGN] = 1.0;
-      resize(n);
-    }
-    
-    ///constructor
-    inline Walker() : Properties(0.0) {
-      Properties[WEIGHT] = 1.0;
-      Properties[MULTIPLICITY] = 1.0;
-      Properties[SIGN] = 1.0;
+    inline explicit Walker(int nptcl) : Age(0), Weight(1.0e0),Multiplicity(1.0e0){  
+      Properties.resize(1,NUMPROPERTIES);
+      resize(nptcl);
+      reset();
     }
 
     ///copy constructor
-    inline Walker(const Walker& a){
+    inline Walker(const Walker& a):Age(0),Weight(1.0e0), Multiplicity(1.0e0){
       makeCopy(a);
     }
+
+    inline ~Walker() { }
     
     ///assignment operator
     inline Walker& operator=(const Walker& a) {
@@ -102,31 +113,37 @@ namespace ohmmsqmc {
       R.resize(nptcl); Drift.resize(nptcl); 
     }
 
+    ///copy the content of a walker
     inline void makeCopy(const Walker& a) {    
       resize(a.R.size());
+      Age=a.Age;
+      Multiplicity=a.Multiplicity;
       R = a.R;
       Drift = a.Drift;
-      Properties = a.Properties;
-      DynProperty.copy(a.DynProperty);
+      Properties.copy(a.Properties);
+      if(a.DataSet.size()) {
+        DataSet=a.DataSet;
+      }
     }
 
     //return the address of the values of Hamiltonian terms
-    inline T* restrict getEnergyBase() {
-      return DynProperty.data();
+    inline T* restrict getPropertyBase() {
+      return Properties.data();
     }
 
     //return the address of the values of Hamiltonian terms
-    inline const T* restrict getEnergyBase() const {
-      return DynProperty.data();
+    inline const T* restrict getPropertyBase() const {
+      return Properties.data();
     }
 
-    inline T* restrict getEnergyBase(int i) {
-      return DynProperty[i];
+    ///return the address of the i-th properties
+    inline T* restrict getPropertyBase(int i) {
+      return Properties[i];
     }
 
-    //return the address of the values of Hamiltonian terms
-    inline const T* restrict getEnergyBase(int i) const {
-      return DynProperty[i];
+    ///return the address of the i-th properties
+    inline const T* restrict getPropertyBase(int i) const {
+      return Properties[i];
     }
 
     /** reset the property of a walker
@@ -137,24 +154,32 @@ namespace ohmmsqmc {
      *Assign the values and reset the weight and multiplicity to one to start a run
      */
     inline void resetProperty(T logpsi, T sigN, T ene) {
-      Properties(WEIGHT) = 1.0;
-      Properties(MULTIPLICITY) = 1.0;
-      Properties(LOCALENERGY) = ene;
+      Age=0;
+      Weight=1.0;
       Properties(LOGPSI)=logpsi;
       Properties(SIGN)=sigN;
+      Properties(LOCALENERGY) = ene;
+    }
+
+    /** marked to die
+     *
+     * Multiplicity and weight are set to zero.
+     */
+    inline void willDie() {
+      Multiplicity=0;
+      Weight=0.0;
     }
 
     /** reset the walker weight, multiplicity and age */
     inline void reset() {
-      Properties(WEIGHT)=1.0;
-      Properties(MULTIPLICITY)=1.0;
-      Properties(AGE)=0.0;
+      Age=0;
+      Multiplicity=1.0e0;
+      Weight=1.0e0;
     }
 
-    inline void resizeDynProperty(int n, int m) {
-      DynProperty.resize(n,m);
+    inline void resizeProperty(int n, int m) {
+      Properties.resize(n,m);
     }
-
   };
 
   template<class T, class PA>
