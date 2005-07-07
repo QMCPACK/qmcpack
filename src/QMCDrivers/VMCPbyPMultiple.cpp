@@ -88,9 +88,12 @@ namespace ohmmsqmc {
         int iwalker=0; 
         while(it != it_end) {  //Walkers loop
 
-          MCWalkerConfiguration::WalkerData_t& w_buffer = *(W.DataSet[iwalker]);
-          W.R = (*it)->R;
+          Walker_t& thisWalker(**it);
+          Walker_t::Buffer_t& w_buffer(thisWalker.DataSet);
+
+          W.R = thisWalker.R;
           w_buffer.rewind();
+
 	  // Copy walker info in W
           W.copyFromBuffer(w_buffer);
           for(int ipsi=0; ipsi<nPsi; ipsi++){
@@ -103,15 +106,16 @@ namespace ohmmsqmc {
 	  // Point to the correct walker in the ratioij buffer
 	  RealType *ratioijPtr=multiEstimator->RatioIJ[iwalker];
 
-          ValueType psi_old = (*it)->Properties(SIGN);
-          ValueType psi = psi_old;
+          //This is not used
+          //ValueType psi_old = thisWalker.Properties(SIGN);
+          //ValueType psi = psi_old;
           //create a 3N-Dimensional Gaussian with variance=1
           makeGaussRandom(deltaR);
           bool moved = false;
 
           for(int iat=0; iat<W.getTotalNum(); iat++) {  //Particles loop
 
-            PosType dr = g*deltaR[iat]+(*it)->Drift[iat];
+            PosType dr = g*deltaR[iat]+thisWalker.Drift[iat];
             PosType newpos = W.makeMove(iat,dr);
 
 	    for(int ipsi=0; ipsi<nPsi; ipsi++){
@@ -147,8 +151,8 @@ namespace ohmmsqmc {
             dr = (*it)->R[iat]-newpos-drift[iat];
             RealType logGb = -oneover2tau*dot(dr,dr);
 	    // td = Target Density ratio
-	    RealType td=pow(ratio[0],2)
-	      *sumratio[0]/(*it)->Properties(SUMRATIO);
+	    //RealType td=pow(ratio[0],2)*sumratio[0]/(*it)->Properties(SUMRATIO);
+	    RealType td=pow(ratio[0],2)*sumratio[0]/(*it)->Multiplicity;
 	    RealType prob = std::min(1.0,td*exp(logGb-logGf));
 
 	    if(Random() < prob) { 
@@ -164,8 +168,10 @@ namespace ohmmsqmc {
 	      std::copy(ratioij.begin(),ratioij.end(),ratioijPtr);
 	      // Update Umbrella weight
 	      UmbrellaWeight=invsumratio;
-	      // Store sumratio for next Accept/Reject step
-	      (*it)->Properties(SUMRATIO)=sumratio[0];
+
+	      // Store sumratio for next Accept/Reject step to Multiplicity
+	      //thisWalker.Properties(SUMRATIO)=sumratio[0];
+	      thisWalker.Multiplicity=sumratio[0];
 	      for(int ipsi=0; ipsi< nPsi; ipsi++){
 		////Update local Psi1[i] buffer for the next move
 		Psi1[ipsi]->update2(W,iat);  
@@ -189,16 +195,21 @@ namespace ohmmsqmc {
 	       -Drift
 	       -buffered info for each Psi1[i]
 	       Physical properties are updated */
+            (*it)->Multiplicity=sumratio[0];
 	    (*it)->R = W.R;
 	    w_buffer.rewind();
 	    W.copyToBuffer(w_buffer);
 	    for(int ipsi=0; ipsi< nPsi; ipsi++){
 	      W.G=Psi1[ipsi]->G;
 	      W.L=Psi1[ipsi]->L;
-	      psi = Psi1[ipsi]->evaluate(W,w_buffer);
+	      ValueType psi = Psi1[ipsi]->evaluate(W,w_buffer);
 	      RealType et = H1[ipsi]->evaluate(W);
-	      H1[ipsi]->copy((*it)->getEnergyBase(ipsi));
-	      multiEstimator->updateSample(iwalker,ipsi,et,UmbrellaWeight[ipsi]);
+
+	      //multiEstimator->updateSample(iwalker,ipsi,et,UmbrellaWeight[ipsi]);
+              //Properties is used for UmbrellaWeight and UmbrellaEnergy
+              (*it)->Properties(ipsi,UMBRELLAWEIGHT)=UmbrellaWeight[ipsi];
+              (*it)->Properties(ipsi,LOCALENERGY)=et;
+              H1[ipsi]->saveProperty((*it)->getPropertyBase(ipsi));
 	    }
 	  }
 	  else {
@@ -244,6 +255,10 @@ namespace ohmmsqmc {
   VMCPbyPMultiple::put(xmlNodePtr q){
     nPsi=Psi1.size();
     resize(nPsi,W.getTotalNum());
+
+    for(int ipsi=0; ipsi<nPsi; ipsi++) 
+      H1[ipsi]->add2WalkerProperty(W);
+
     if(Estimators == 0) {
       Estimators = new ScalarEstimatorManager(H);
       multiEstimator = new MultipleEnergyEstimator(H,nPsi);

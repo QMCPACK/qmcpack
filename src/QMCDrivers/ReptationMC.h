@@ -67,14 +67,14 @@ namespace ohmmsqmc {
     ///the number of turns per block
     int NumTurns;
 
-    ///array of PolymerChains
-    std::vector<PolymerChain*> Polymers;
+    ///PolymerChain
+    PolymerChain* Reptile;
 
     ///move polymers
-    void movePolymers();
+    void moveReptile();
 
     ///initialize polymers
-    void initPolymers();
+    void initReptile();
   private:
 
     /// Copy Constructor (disabled)

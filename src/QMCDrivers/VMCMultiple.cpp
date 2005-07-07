@@ -34,7 +34,7 @@ namespace ohmmsqmc {
   VMCMultiple::VMCMultiple(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h):
     QMCDriver(w,psi,h), multiEstimator(0) { 
     RootName = "vmc";
-    QMCType ="vmc";
+    QMCType ="vmc-multi";
 
     //Add the primary h and psi, extra H and Psi pairs will be added by QMCMain
     add_H_and_Psi(&h,&psi);
@@ -47,12 +47,15 @@ namespace ohmmsqmc {
    */
   bool VMCMultiple::put(xmlNodePtr q){
 
+
     nPsi=Psi1.size();	
 
     logpsi.resize(nPsi);
-
     sumratio.resize(nPsi);	
     invsumratio.resize(nPsi);	
+
+    for(int ipsi=0; ipsi<nPsi; ipsi++) 
+      H1[ipsi]->add2WalkerProperty(W);
 
     if(Estimators == 0) {
       Estimators = new ScalarEstimatorManager(H);
@@ -73,6 +76,7 @@ namespace ohmmsqmc {
     Estimators->reportHeader();
 
     bool require_register=false;
+
     //this is where the first values are evaulated
     multiEstimator->initialize(W,H1,Psi1,Tau,require_register);
     
@@ -134,7 +138,7 @@ namespace ohmmsqmc {
     RealType oneover2tau = 0.5*oneovertau;
     RealType g = sqrt(Tau);
     
-    MCWalkerConfiguration::PropertyContainer_t Properties;
+    //MCWalkerConfiguration::PropertyContainer_t Properties;
     
     MCWalkerConfiguration::iterator it(W.begin()); 
     MCWalkerConfiguration::iterator it_end(W.end()); 
@@ -146,12 +150,8 @@ namespace ohmmsqmc {
       MCWalkerConfiguration::Walker_t &thisWalker(**it);
 
       //copy the properties of the working walker
-      Properties = thisWalker.Properties;   
+      //Properties = thisWalker.Properties;   
 
-      //LOCALENERGY does not play any role.
-      //save old local energy
-      //ValueType eold = Properties(LOCALENERGY);
-      
       //create a 3N-Dimensional Gaussian with variance=1
       makeGaussRandom(deltaR);
       
@@ -160,16 +160,12 @@ namespace ohmmsqmc {
       //update the distance table associated with W
       DistanceTable::update(W);
       
-      //evaluate wave function
-      //ValueType psi = Psi.evaluate(W);
-      //Properties(LOGPSI) =log(fabs(psi));
-      //Properties(PSI) = psi;
-      //update the properties: note that we are getting 
+      //Evaluate Psi and graidients and laplacians
       //\f$\sum_i \ln(|psi_i|)\f$ and catching the sign separately
       for(int ipsi=0; ipsi< nPsi;ipsi++) {			  
 	logpsi[ipsi]=Psi1[ipsi]->evaluateLog(W); 		  
-        Psi1[ipsi]->L=W.L; //*lap[ipsi]=W.L;
-        Psi1[ipsi]->G=W.G; //*dgrad[ipsi]=W.G;			         
+        Psi1[ipsi]->L=W.L; 
+        Psi1[ipsi]->G=W.G; 
 	sumratio[ipsi]=1.0;					  
       } 							  
 
@@ -189,8 +185,8 @@ namespace ohmmsqmc {
       // Using the sum of the ratio Psi^2[j]/Psi^2[iwref]	 
       // because these are number of order 1. Potentially	 
       // the sum of Psi^2[j] can get very big			 
-      Properties(LOGPSI) =logpsi[0];		   		 
-      Properties(SUMRATIO) = sumratio[0];			 
+      //Properties(LOGPSI) =logpsi[0];		   		 
+      //Properties(SUMRATIO) = sumratio[0];			 
  
       RealType logGf = -0.5*Dot(deltaR,deltaR);
       ValueType scale = Tau; // ((-1.0+sqrt(1.0+2.0*Tau*vsq))/vsq);	
@@ -205,27 +201,33 @@ namespace ohmmsqmc {
       deltaR = thisWalker.R - W.R - drift;
       RealType logGb = -oneover2tau*Dot(deltaR,deltaR);
       
-      RealType g = Properties(SUMRATIO)/thisWalker.Properties(SUMRATIO)*   		
-	exp(logGb-logGf+2.0*(Properties(LOGPSI)-thisWalker.Properties(LOGPSI)));	
+      //Original
+      //RealType g = Properties(SUMRATIO)/thisWalker.Properties(SUMRATIO)*   		
+      //	exp(logGb-logGf+2.0*(Properties(LOGPSI)-thisWalker.Properties(LOGPSI)));	
+      //Reuse Multiplicity to store the sumratio[0]
+      RealType g = sumratio[0]/thisWalker.Multiplicity*   		
+       	exp(logGb-logGf+2.0*(logpsi[0]-thisWalker.Properties(LOGPSI)));	
 
       if(Random() > g) {
-	thisWalker.Properties(AGE)++;     
+	thisWalker.Age++;     
 	++nReject; 
       } else {
-
-	Properties(AGE) = 0;
+	thisWalker.Age=0;
+        thisWalker.Multiplicity=sumratio[0];
 	thisWalker.R = W.R;
 	thisWalker.Drift = drift;
-
 	for(int ipsi=0; ipsi<nPsi; ipsi++){ 		            
           W.L=Psi1[ipsi]->L; 
           W.G=Psi1[ipsi]->G; 
 	  RealType et = H1[ipsi]->evaluate(W);
-          multiEstimator->updateSample(iwlk,ipsi,et,invsumratio[ipsi]); 
-          H1[ipsi]->copy(thisWalker.getEnergyBase(ipsi));
+          thisWalker.Properties(ipsi,LOGPSI)=logpsi[ipsi];
+          thisWalker.Properties(ipsi,SIGN) =Psi1[ipsi]->getSign();
+          thisWalker.Properties(ipsi,UMBRELLAWEIGHT)=invsumratio[ipsi];
+          thisWalker.Properties(ipsi,LOCALENERGY)=et;
+          //multiEstimator->updateSample(iwlk,ipsi,et,invsumratio[ipsi]); 
+          H1[ipsi]->saveProperty(thisWalker.getPropertyBase(ipsi));
 	}
 
-	thisWalker.Properties = Properties;
 	++nAccept;
       }
       ++it; 

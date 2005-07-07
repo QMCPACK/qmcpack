@@ -17,13 +17,23 @@
 //   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
+#ifndef OHMMS_QMC_POLYMERCHAIN_H
+#define OHMMS_QMC_POLYMERCHAIN_H
 #include "Particle/MCWalkerConfiguration.h"
+#include "OhmmsPETE/OhmmsVector.h"
 #include <deque>
 namespace ohmmsqmc {
+
+  template<class IT>
+  inline void delete_iter(IT first, IT last) {
+    while(first != last) { delete *first; ++first;}
+  }
 
   struct PolymerChain: public std::deque<MCWalkerConfiguration::Walker_t*> {
 
     typedef MCWalkerConfiguration::Walker_t Walker_t;
+    typedef MCWalkerConfiguration::ParticleGradient_t ParticleGradient_t;
+    typedef MCWalkerConfiguration::RealType RealType;
 
     ///Boolean for the direction of a move
     bool MoveHead;
@@ -31,12 +41,23 @@ namespace ohmmsqmc {
     ///The number of beads to be cut
     int  NumCuts;
 
-    double NumMoves;
-    double AcceptedMoves;
-
     ///The index of the middle
     int Middle;    
+
+    ///The index of the Last
     int Last;
+
+    ///The number of H/Psi pairs
+    int nPsi;
+
+    RealType NumMoves;
+    RealType AcceptedMoves;
+
+    RealType SumRatioPrimary;
+    Vector<int> RefSign;
+    Vector<int> TotalSign;
+    Vector<RealType> UmbrellaWeight;
+    Vector<RealType> LogRatioActionIJ;
 
     ///The walkers for the proposed move(s).
     std::vector<Walker_t*> heads; 
@@ -47,13 +68,16 @@ namespace ohmmsqmc {
     ///The walker repository to reuse Walkers.
     std::vector<Walker_t*> repository;
 
+    Matrix<ParticleGradient_t*> Gradients;
+    Matrix<ParticleGradient_t*> HeadGradients;
+
     /** constructor    
      *@param awalker the walker which is cloned to form a chain
      *@param len the number of chains in a polymer
      *@param movables the number of heads and tails that are moved
      */
     PolymerChain(Walker_t* awalker,int len, int movables): 
-      MoveHead(true), NumCuts(movables),NumMoves(0.0),AcceptedMoves(0.0) {
+      MoveHead(true), NumCuts(movables), nPsi(0), NumMoves(0.0),AcceptedMoves(0.0) {
 
       //always add number of beads
       if(len%2 == 0) len++;
@@ -80,8 +104,10 @@ namespace ohmmsqmc {
      * Need to clean up the walkers in the repository and the polymer chain
      */
     ~PolymerChain() {
-      for(int i=0; i<repository.size(); i++) delete repository[i];
-      for(int i=0; i<size(); i++) delete (*this)[i];
+      delete_iter(Gradients.begin(),Gradients.end());
+      delete_iter(HeadGradients.begin(),HeadGradients.end());
+      delete_iter(repository.begin(),repository.end());
+      delete_iter(this->begin(),this->end());
     }
 
     inline size_t getID() const { return (*this)[Middle]->ID;}
@@ -97,6 +123,33 @@ namespace ohmmsqmc {
 	for(int i=heads.size(); i<2*NumCuts; i++) 
 	  repository.push_back(new Walker_t(*(repository[0])));
       }
+    }
+
+    //resize containers for gradients
+    inline void resizeArrays(int npsi=1) {
+      int nptcl=this->front()->R.size();
+      if(Gradients.size1() != this->size() || Gradients.size2() != npsi) {
+        delete_iter(Gradients.begin(),Gradients.end());
+        Gradients.resize(this->size(),npsi);
+        for(int i=0; i<Gradients.size(); i++) 
+          Gradients(i) = new ParticleGradient_t(nptcl);
+      }
+
+      if(HeadGradients.size1()< NumCuts+1 || HeadGradients.size2() != npsi) {
+        delete_iter(HeadGradients.begin(),HeadGradients.end());
+        HeadGradients.resize(NumCuts+1,npsi);
+        for(int i=0; i<HeadGradients.size(); i++) 
+          HeadGradients(i) = new ParticleGradient_t(nptcl);
+      }
+
+      RefSign.resize(npsi);
+      TotalSign.resize(npsi);
+      UmbrellaWeight.resize(npsi);
+      LogRatioActionIJ.resize(npsi*(npsi-1)/2);
+
+      //set the default to one
+      UmbrellaWeight=1.0;
+      nPsi=npsi;
     }
 
     /** make tails and heads to make moves
@@ -115,21 +168,43 @@ namespace ohmmsqmc {
       for(int i=0; i<NumCuts; i++) heads[i]=repository[i];
       Walker_t* anchor = 0;
       if(MoveHead) {
-	anchor=(*this)[0];
+	//anchor=(*this)[0];
+        anchor=this->front();
 	for(int i=0, j=Last; i<NumCuts+1; i++,j--) {
 	  tails[i]=(*this)[j];
 	}
       } else {
-	anchor=(*this)[Last];
+	//anchor=(*this)[Last];
+        anchor=this->back();
 	for(int i=0; i<NumCuts+1; i++) {
 	  tails[i]=(*this)[i];
 	}
       }
+
+      //ID has to be copied
+      for(int i=0; i<NumCuts; i++) heads[i]->ID = tails[i]->ID;
+
+      if(nPsi) { //Copy the gradients of the anchor
+        int curID=anchor->ID;
+        for(int ipsi=0; ipsi<nPsi; ipsi++)
+         *HeadGradients(0,ipsi)=*Gradients(curID,ipsi);
+      }
+
+      //return the anchor
       return anchor;
     }
     
     inline void updateEnds() {
       AcceptedMoves+=1.0;
+
+      if(nPsi) {
+        for(int i=0, iplus=1; i<NumCuts; i++,iplus++) {
+          int targetID=heads[i]->ID;
+          for(int ipsi=0; ipsi<nPsi; ipsi++)
+           *Gradients(targetID,ipsi) = *HeadGradients(iplus,ipsi);
+        }
+      }
+
       if(MoveHead){
 	for(int i=0; i<NumCuts; i++) {
 	  push_front(heads[i]);
@@ -157,73 +232,8 @@ namespace ohmmsqmc {
       MoveHead = !MoveHead; //flip the direction
     }
   };
-
-  class LocalPotentialEstimator {
-
-    int Middle;
-    int Counter;
-    ofstream* fout;
-    std::vector<PolymerChain*>* Polymers;
-    std::vector<double> PEavg;
-    std::vector<double> PE2;
-
-  public:
-  
-    LocalPotentialEstimator(std::vector<PolymerChain*>* polymers):
-      Middle(0), Counter(0), fout(0),Polymers(polymers) {  
-      Middle=(*polymers)[0]->Middle;
-      PEavg.resize(Middle+1,0.0);
-      PE2.resize(Middle+1,0.0);
-    }
-
-    ~LocalPotentialEstimator() {
-      if(fout) {delete fout;}
-    }
-
-    inline void resetReportSettings(const string& aname) {
-      if(fout) {
-	delete fout;
-      }
-      std::string filename(aname);
-      filename.append(".pe.dat");
-      fout = new ofstream(filename.c_str());
-    }
-
-    inline void reset() { 
-      Counter = 0;
-      for(int i=0; i<PEavg.size(); i++) PEavg[i]=0.0;
-      for(int i=0; i<PE2.size(); i++) PE2[i]=0.0;
-    }
-
-    inline void report(int iter) {
-      (*fout) << iter;
-      double wgtinv = 1.0/static_cast<double>(Counter);
-      for(int i=0; i<PEavg.size(); i++) {
-	double eavg = PEavg[i]*wgtinv;
-	(*fout)  <<  setw(15) << eavg;
-      }
-      (*fout) << endl;
-      reset();
-    }
-
-    inline void accumulate() {
-      Counter+=Polymers->size();
-      register double e;
-      for(int i=0; i<Polymers->size(); i++) {
-	PolymerChain& curLink = *((*Polymers)[i]);
-	for(int k=0,j=curLink.size()-1; k<Middle; k++,j--) {
-	  e =0.5*(curLink[k]->Properties(LOCALPOTENTIAL)+curLink[j]->Properties(LOCALPOTENTIAL));
-	  PEavg[k] += e;
-	  PE2[k] += e*e;
-	}
-        e= curLink[Middle]->Properties(LOCALPOTENTIAL);
-	PEavg[Middle] += e;
-	PE2[Middle] += e*e;
-      }
-    }
-  };
-
 }
+#endif
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$

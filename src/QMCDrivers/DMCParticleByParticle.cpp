@@ -72,8 +72,8 @@ namespace ohmmsqmc {
     MCWalkerConfiguration::iterator it(W.begin()); 
     MCWalkerConfiguration::iterator it_end(W.end()); 
     while(it!=it_end) {
-      (*it)->Properties(WEIGHT) = 1.0;
-      (*it)->Properties(MULTIPLICITY) = 1.0;
+      (*it)->Weight= 1.0;
+      (*it)->Multiplicity=1.0;
       ++it;
     }
 
@@ -82,11 +82,16 @@ namespace ohmmsqmc {
     int iwalker=0;
     it = W.begin();
     it_end = W.end();
+    typedef Walker_t::Buffer_t Buffer_t;
+
     if(require_register) {
       while(it != it_end) {
-        W.DataSet[iwalker]->rewind();
-        W.registerData(**it,*(W.DataSet[iwalker]));
-        Psi.registerData(W,*(W.DataSet[iwalker]));
+        (*it)->DataSet.rewind();
+	W.registerData(**it,(*it)->DataSet);
+	Psi.registerData(W,(*it)->DataSet);
+        //W.DataSet[iwalker]->rewind();
+        //W.registerData(**it,*(W.DataSet[iwalker]));
+        //Psi.registerData(W,*(W.DataSet[iwalker]));
         ++it;++iwalker;
       } 
     }      
@@ -129,20 +134,22 @@ namespace ohmmsqmc {
         iwalker=0; 
         while(it != it_end) {
 
-          MCWalkerConfiguration::WalkerData_t& w_buffer = *(W.DataSet[iwalker]);
+          //MCWalkerConfiguration::WalkerData_t& w_buffer = *(W.DataSet[iwalker]);
+          Walker_t& thisWalker(**it);
+          Buffer_t& w_buffer(thisWalker.DataSet);
 
-          (*it)->Properties(WEIGHT) = 1.0;
-          (*it)->Properties(MULTIPLICITY) = 1.0;
+          thisWalker.Weight = 1.0e0;
+          thisWalker.Multiplicity=1.0e0;
           //save old local energy
-          ValueType eold((*it)->Properties(LOCALENERGY));
+          ValueType eold(thisWalker.Properties(LOCALENERGY));
           ValueType emixed(eold);
 
-          W.R = (*it)->R;
+          W.R = thisWalker.R;
           w_buffer.rewind();
           W.copyFromBuffer(w_buffer);
           Psi.copyFromBuffer(W,w_buffer);
 
-          ValueType psi_old((*it)->Properties(SIGN));
+          ValueType psi_old(thisWalker.Properties(SIGN));
           ValueType psi(psi_old);
 
           //create a 3N-Dimensional Gaussian with variance=1
@@ -154,7 +161,7 @@ namespace ohmmsqmc {
           int iat=0;
           while(notcrossed && iat<nat){
 
-            PosType dr(g*deltaR[iat]+(*it)->Drift[iat]);
+            PosType dr(g*deltaR[iat]+thisWalker.Drift[iat]);
             PosType newpos(W.makeMove(iat,dr));
             RealType ratio(Psi.ratio(W,iat,dG,dL));
 
@@ -166,7 +173,7 @@ namespace ohmmsqmc {
       	      
       	      ValueType vsq = Dot(G,G);
       	      ValueType scale = ((-1.0+sqrt(1.0+2.0*Tau*vsq))/vsq);
-      	      dr = (*it)->R[iat]-newpos-scale*G[iat]; 
+      	      dr = thisWalker.R[iat]-newpos-scale*G[iat]; 
       	      //dr = (*it)->R[iat]-newpos-Tau*G[iat]; 
       	      RealType logGb = -oneover2tau*dot(dr,dr);
       	      
@@ -179,7 +186,7 @@ namespace ohmmsqmc {
       	        W.G = G;
       	        W.L += dL;
       	        //  (*it)->Drift = Tau*G;
-      	        (*it)->Drift = scale*G;
+      	        thisWalker.Drift = scale*G;
       	      } else {
       	        ++nRejectTemp; 
       	        Psi.restore(iat);
@@ -193,18 +200,22 @@ namespace ohmmsqmc {
       	      w_buffer.rewind();
       	      W.copyToBuffer(w_buffer);
       	      psi = Psi.evaluate(W,w_buffer);
-      	      (*it)->R = W.R;
-      	      (*it)->Properties(AGE) = 0;
-                    //This is not so useful: allow overflow/underflow
-      	      (*it)->Properties(LOGPSI) = log(fabs(psi));
-      	      (*it)->Properties(SIGN) = psi;
-      	      (*it)->Properties(LOCALENERGY) = H.evaluate(W);
-      	      H.copy((*it)->getEnergyBase());
-      	      (*it)->Properties(LOCALPOTENTIAL) = H.getLocalPotential();
-      	      emixed += (*it)->Properties(LOCALENERGY);
-                  } else {
-      	      //WARNMSG("All the particle moves are rejected.")
-                    (*it)->Properties(AGE)++;
+      	      thisWalker.R = W.R;
+
+              RealType enew= H.evaluate(W);
+              thisWalker.resetProperty(log(abs(psi)),psi,enew);
+              H.saveProperty(thisWalker.getPropertyBase());
+      	      emixed += enew;
+      	      //thisWalker.Age = 0;
+              ////This is not so useful: allow overflow/underflow
+      	      //thisWalker.Properties(LOGPSI) = log(fabs(psi));
+      	      //thisWalker.Properties(SIGN) = psi;
+      	      //thisWalker.Properties(LOCALENERGY) = H.evaluate(W);
+      	      //H.copy(thisWalker.getEnergyBase());
+      	      //thisWalker.Properties(LOCALPOTENTIAL) = H.getLocalPotential();
+      	      //emixed += thisWalker.Properties(LOCALENERGY);
+           } else {
+              thisWalker.Age++;
       	      ++nAllRejected;
       	      emixed += eold;
             }
@@ -212,15 +223,21 @@ namespace ohmmsqmc {
             ValueType M = brancher.branchGF(Tau,emixed*0.5,0.0);
             // if((*it)->Properties(AGE) > 3.0) M = min(0.5,M);
             //persistent configurations
-            if((*it)->Properties(AGE) > 1.9) M = std::min(0.5,M);
-            if((*it)->Properties(AGE) > 0.9) M = std::min(1.0,M);
-            (*it)->Properties(WEIGHT) = M; 
-            (*it)->Properties(MULTIPLICITY) = M + Random();
+           
+            //AGE and MULTIPLICITY is removed
+            //if(thisWalker.Properties(AGE) > 1.9) M = std::min(0.5,M);
+            //if(thisWalker.Properties(AGE) > 0.9) M = std::min(1.0,M);
+            //thisWalker.Properties(WEIGHT) = M; 
+            //thisWalker.Properties(MULTIPLICITY) = M + Random();
+            //if(thisWalker.Age > 1) M = std::min(0.5,M);
+            if(thisWalker.Age > 2) M = std::min(0.5,M);
+            if(thisWalker.Age > 0) M = std::min(1.0,M);
+            thisWalker.Weight = M; 
+            thisWalker.Multiplicity=M + Random();
             nAccept += nAcceptTemp;
             nReject += nRejectTemp;
           } else {//set the weight and multiplicity to zero
-            (*it)->Properties(WEIGHT) = 0.0; 
-            (*it)->Properties(MULTIPLICITY) = 0.0;
+            thisWalker.willDie();
             nReject += W.getTotalNum();//not make sense
           }
 

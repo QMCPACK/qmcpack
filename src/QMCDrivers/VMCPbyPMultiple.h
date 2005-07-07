@@ -52,16 +52,16 @@ namespace ohmmsqmc {
     MultipleEnergyEstimator *multiEstimator;
 
     
-    inline void resize(int n, int N){
-      int m=n*(n-1); m=m/2;
-      ratio.resize(n);
-      UmbrellaWeight.resize(n);
-      invsumratio.resize(n);
-      sumratio.resize(n);
+    inline void resize(int ncopy, int nptcls){
+      int m=ncopy*(ncopy-1)/2; 
+      ratio.resize(ncopy);
+      UmbrellaWeight.resize(ncopy);
+      invsumratio.resize(ncopy);
+      sumratio.resize(ncopy);
       ratioij.resize(m);
-      for(int i=0; i<n; i++){
-	G.push_back(new ParticleGradient_t(N));
-	dL.push_back(new ParticleLaplacian_t(N));
+      for(int i=0; i<ncopy; i++){
+	G.push_back(new ParticleGradient_t(nptcls));
+	dL.push_back(new ParticleLaplacian_t(nptcls));
       }
     }
   };

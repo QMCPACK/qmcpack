@@ -276,23 +276,26 @@ namespace ohmmsqmc {
 	MCWalkerConfiguration::iterator it_end = W.end(); 
 
         while(it != it_end) {
+
+          Walker_t& thisWalker(**it);
+
           ValueType logpsi0((*wit)->LogPsi);
           ValueType vold((*wit)->Vloc);
 
-	  W.R = (*it)->R;
+	  W.R = thisWalker.R;
 	  DistanceTable::update(W);
 
           ValueType logpsi(Psi.evaluateLog(W,false));
           W.G += (*wit)->G;
           W.L += (*wit)->L;
-	  MCWalkerConfiguration::PropertyContainer_t& Properties = (*it)->Properties;
+	  MCWalkerConfiguration::PropertyContainer_t& Properties((*it)->Properties);
           ValueType weight(1.0);
           if(UseWeight) {
             weight = exp(2.0*(logpsi-logpsi0));
 	    Properties(LOGPSI) = logpsi;
           } 
-	  Properties(LOCALENERGY) = H_KE.evaluate(W)+vold;
-	  Properties(WEIGHT) = weight;
+	  thisWalker.Properties(LOCALENERGY) = H_KE.evaluate(W)+vold;
+	  thisWalker.Weight = weight;
 	  nw_effect[0] += weight;
 	  nw_effect[1] += weight*weight;
           //move on to next walker

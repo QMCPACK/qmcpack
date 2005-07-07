@@ -32,21 +32,23 @@ namespace ohmmsqmc {
   QMCDriver::QMCDriver(MCWalkerConfiguration& w, 
 		       TrialWaveFunction& psi, 
 		       QMCHamiltonian& h):
+    pStride(false), 
     AcceptIndex(-1),
-    Tau(0.001), FirstStep(0.0),
-    nBlocks(100), nSteps(1000), pStride(false), 
+    nBlocks(100), nSteps(1000), 
     nAccept(0), nReject(0), nTargetWalkers(0),
+    Tau(0.001), FirstStep(0.0), qmcNode(NULL),
     QMCType("invalid"), 
     W(w), Psi(psi), H(h), Estimators(0),
-    LogOut(0), qmcNode(NULL)
+    LogOut(0)
   { 
-    
-    //Counter++; 
     m_param.add(nSteps,"steps","int");
     m_param.add(nBlocks,"blocks","int");
     m_param.add(nTargetWalkers,"walkers","int");
     m_param.add(Tau,"Tau","AU");
     m_param.add(FirstStep,"FirstStep","AU");
+
+    //add each QMCHamiltonianBase to W.PropertyList so that averages can be taken
+    H.add2WalkerProperty(W);
   }
 
   QMCDriver::~QMCDriver() { 
@@ -71,6 +73,7 @@ namespace ohmmsqmc {
    *   -- putQMCInfo: <parameter/> s for QMC
    *   -- put : extra data by derived classes
    * - initialize Estimators
+   * - initialize Walkers
    * The virtual function put(xmlNodePtr cur) is where QMC algorithm-dependent
    * data are registered and initialized.
    */
@@ -85,13 +88,17 @@ namespace ohmmsqmc {
 
     qmcNode=cur;
 
-    //create estimator
     putQMCInfo(qmcNode);
     put(qmcNode);
 
+    //create estimator if not allocated
     if(Estimators == 0) {
       Estimators =new ScalarEstimatorManager(H);
     }
+
+    //reset the Properties of all the walkers
+    int numCopies= (H1.empty())?1:H1.size();
+    W.resetWalkerProperty(numCopies);
 
     Estimators->put(qmcNode);
     //set the stride for the scalar estimators 
@@ -99,6 +106,9 @@ namespace ohmmsqmc {
 
     Estimators->resetReportSettings(RootName);
     AcceptIndex=Estimators->addColumn("AcceptRatio");
+
+    //initialize the walkers before moving: can be moved to run
+    initialize();
   }
 
   /**Sets the root file name for all output files.!
@@ -110,8 +120,8 @@ namespace ohmmsqmc {
    * is the suffix for the output file. 
    */
   void QMCDriver::setFileRoot(const string& aname) {
+
     RootName = aname;
-    
     char logfile[128];
     sprintf(logfile,"%s.%s",RootName.c_str(),QMCType.c_str());
     
@@ -121,14 +131,34 @@ namespace ohmmsqmc {
     LogOut->getStream() << "Starting a " << QMCType << " run " << endl;
   }
 
-  ///** initialize estimators and other internal data */  
-  //void QMCDriver::getReady() {
-  //  
-  //  //Estimators.resetReportSettings(RootName);
-  //  //AcceptIndex = Estimators.addColumn("AcceptRatio");
-  //  //Estimators.reportHeader();
-  //}
   
+  /** Initialize QMCDriver
+   *
+   * Evaluate the Properties of Walkers when a QMC starts
+   */
+  void QMCDriver::initialize() {
+    //calculate local energies and wave functions:
+    //can be redundant but the overhead is small
+    LOGMSG("Evaluate all the walkers before starting")
+
+    MCWalkerConfiguration::iterator it(W.begin()),it_end(W.end());
+
+    while(it != it_end) {
+
+      W.R = (*it)->R;
+      DistanceTable::update(W);
+
+      ValueType logpsi(Psi.evaluateLog(W));
+      ValueType vsq = Dot(W.G,W.G);
+      ValueType scale = ((-1.0+sqrt(1.0+2.0*Tau*vsq))/vsq);
+      (*it)->Drift = scale*W.G;
+
+      RealType ene = H.evaluate(W);
+      (*it)->resetProperty(logpsi,Psi.getSign(),ene);
+      H.saveProperty((*it)->getPropertyBase());
+      ++it;
+    }
+  }
 
   /** Add walkers to the end of the ensemble of walkers.  
    *@param nwalkers number of walkers to add
@@ -180,36 +210,8 @@ namespace ohmmsqmc {
       LOGMSG("Using the existing " << W.getActiveWalkers() << " walkers")
     }
 
-    //calculate local energies and wave functions:
-    //can be redundant but the overhead is small
-    //W.Energy.resize(W.getActiveWalkers(),H.size()+1);
-    LOGMSG("Evaluate all the walkers before starting")
-    MCWalkerConfiguration::iterator it(W.begin()),it_end(W.end());
-    int iwalker=0;
-
-    int numCopies= (H1.empty())?1:H1.size();
-    int numValues= H.size();
-
-    while(it != it_end) {
-
-      (*it)->resizeDynProperty(numCopies,numValues);
-      W.R = (*it)->R;
-      DistanceTable::update(W);
-
-      //ValueType psi = Psi.evaluate(W);
-      ValueType logpsi(Psi.evaluateLog(W));
-      ValueType vsq = Dot(W.G,W.G);
-      ValueType scale = ((-1.0+sqrt(1.0+2.0*Tau*vsq))/vsq);
-      (*it)->Drift = scale*W.G;
-
-      RealType ene = H.evaluate(W);
-      (*it)->Properties(LOCALPOTENTIAL) = H.getLocalPotential();
-      (*it)->resetProperty(logpsi,Psi.getSign(),ene);
-
-      H.copy((*it)->getEnergyBase());
-      ++it;++iwalker;
-    }
   }
+
   
   /** Parses the xml input file for parameter definitions for a single qmc simulation.
    * \param q the current xmlNode

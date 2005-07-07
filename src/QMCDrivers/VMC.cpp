@@ -63,12 +63,12 @@ namespace ohmmsqmc {
     Estimators->reportHeader();
 
     //probably unnecessary
-    MCWalkerConfiguration::iterator it(W.begin()); 
-    MCWalkerConfiguration::iterator it_end(W.end()); 
-    while(it != it_end) {
-      (*it)->Properties(WEIGHT) = 1.0;
-      ++it;
-    }
+    //MCWalkerConfiguration::iterator it(W.begin()); 
+    //MCWalkerConfiguration::iterator it_end(W.end()); 
+    //while(it != it_end) {
+    //  (*it)->Weight=1.0;
+    //  ++it;
+    //}
     
     Estimators->reset();
 
@@ -162,7 +162,7 @@ namespace ohmmsqmc {
     RealType g = sqrt(Tau);
     
     //property container to hold temporary properties, such as a local energy
-    MCWalkerConfiguration::PropertyContainer_t Properties;
+    //MCWalkerConfiguration::PropertyContainer_t Properties;
 
     MCWalkerConfiguration::iterator it(W.begin()); 
     MCWalkerConfiguration::iterator it_end(W.end()); 
@@ -171,12 +171,6 @@ namespace ohmmsqmc {
 
       MCWalkerConfiguration::Walker_t& thisWalker(**it);
 
-      //copy the properties of the working walker, thisWalker
-      Properties = thisWalker.Properties;
-
-      //save old local energy
-      ValueType eold = Properties(LOCALENERGY);
-      
       //create a 3N-Dimensional Gaussian with variance=1
       makeGaussRandom(deltaR);
       
@@ -188,11 +182,6 @@ namespace ohmmsqmc {
       //evaluate wave function
       //update the properties: note that we are getting \f$\sum_i \ln(|psi_i|)\f$ and catching the sign separately
       ValueType logpsi(Psi.evaluateLog(W));
-      Properties(LOGPSI) =logpsi;
-      Properties(SIGN) = Psi.getSign();
-      //Only evaluate when the move is accepted: check if this is correct
-      //Properties(LOCALENERGY) = H.evaluate(W);
-      //Properties(LOCALPOTENTIAL) = H.getLocalPotential();
  
       //deltaR = W.R - (*it)->R - (*it)->Drift;
       //RealType forwardGF = exp(-oneover2tau*Dot(deltaR,deltaR));
@@ -208,18 +197,20 @@ namespace ohmmsqmc {
       deltaR = thisWalker.R - W.R - drift;
       RealType logGb = -oneover2tau*Dot(deltaR,deltaR);
       
-      RealType g= exp(logGb-logGf+2.0*(Properties(LOGPSI)-(*it)->Properties(LOGPSI)));
+      RealType g= exp(logGb-logGf+2.0*(logpsi-thisWalker.Properties(LOGPSI)));
       if(Random() > g) {
-	thisWalker.Properties(AGE)++;     
+        thisWalker.Age++;
 	++nReject; 
       } else {
-	Properties(AGE) = 0;
-        Properties(LOCALENERGY) = H.evaluate(W);
-        Properties(LOCALPOTENTIAL) = H.getLocalPotential();
+        //thisWalker.Age=0;
+        //Properties(LOCALENERGY) = H.evaluate(W);
+        //Properties(LOCALPOTENTIAL) = H.getLocalPotential();
+        RealType eloc=H.evaluate(W);
 	thisWalker.R = W.R;
 	thisWalker.Drift = drift;
-	thisWalker.Properties = Properties;
-	H.copy(thisWalker.getEnergyBase());
+        thisWalker.resetProperty(logpsi,Psi.getSign(),eloc);
+	H.saveProperty(thisWalker.getPropertyBase());
+	//H.copy(thisWalker.getEnergyBase());
 	++nAccept;
       }
       ++it; 

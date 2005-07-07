@@ -40,6 +40,7 @@ namespace ohmmsqmc {
   
   bool VMCParticleByParticle::run() { 
 
+
     Estimators->reportHeader();
       
     //going to add routines to calculate how much we need
@@ -47,11 +48,16 @@ namespace ohmmsqmc {
     int iwalker=0;
     MCWalkerConfiguration::iterator it(W.begin());
     MCWalkerConfiguration::iterator it_end(W.end());
+
+    typedef Walker_t::Buffer_t Buffer_t;
     if(require_register) {
       while(it != it_end) {
-        W.DataSet[iwalker]->rewind();
-	W.registerData(**it,*(W.DataSet[iwalker]));
-	Psi.registerData(W,*(W.DataSet[iwalker]));
+        (*it)->DataSet.rewind();
+	W.registerData(**it,(*it)->DataSet);
+	Psi.registerData(W,(*it)->DataSet);
+        //W.DataSet[iwalker]->rewind();
+	//W.registerData(**it,*(W.DataSet[iwalker]));
+	//Psi.registerData(W,*(W.DataSet[iwalker]));
         ++it;++iwalker;
       } 
     }      
@@ -89,13 +95,16 @@ namespace ohmmsqmc {
         iwalker=0; 
         while(it != it_end) {
 
-          MCWalkerConfiguration::WalkerData_t& w_buffer = *(W.DataSet[iwalker]);
-          W.R = (*it)->R;
+          //MCWalkerConfiguration::WalkerData_t& w_buffer = *(W.DataSet[iwalker]);
+          Walker_t& thisWalker(**it);
+          Buffer_t& w_buffer(thisWalker.DataSet);
+
+          W.R = thisWalker.R;
           w_buffer.rewind();
           W.copyFromBuffer(w_buffer);
           Psi.copyFromBuffer(W,w_buffer);
 
-          ValueType psi_old = (*it)->Properties(SIGN);
+          ValueType psi_old = thisWalker.Properties(SIGN);
           ValueType psi = psi_old;
           //create a 3N-Dimensional Gaussian with variance=1
           makeGaussRandom(deltaR);
@@ -103,7 +112,7 @@ namespace ohmmsqmc {
 
           for(int iat=0; iat<W.getTotalNum(); iat++) {
 
-            PosType dr = g*deltaR[iat]+(*it)->Drift[iat];
+            PosType dr = g*deltaR[iat]+thisWalker.Drift[iat];
             PosType newpos = W.makeMove(iat,dr);
 
             //RealType ratio = Psi.ratio(W,iat);
@@ -118,7 +127,7 @@ namespace ohmmsqmc {
 
             ValueType vsq = Dot(G,G);
             ValueType scale = ((-1.0e0+sqrt(1.0e0+2.0e0*Tau*vsq))/vsq);
-            dr = (*it)->R[iat]-newpos-scale*G[iat];
+            dr = thisWalker.R[iat]-newpos-scale*G[iat];
             //dr = (*it)->R[iat]-newpos-Tau*G[iat]; 
 
             RealType logGb = -oneover2tau*dot(dr,dr);
@@ -134,7 +143,7 @@ namespace ohmmsqmc {
       	      W.G = G;
       	      W.L += dL;
       	      //(*it)->Drift = Tau*G;
-              (*it)->Drift = scale*G;
+              thisWalker.Drift = scale*G;
             } else {
       	      ++nReject; 
       	      Psi.restore(iat);
@@ -146,11 +155,14 @@ namespace ohmmsqmc {
             W.copyToBuffer(w_buffer);
             psi = Psi.evaluate(W,w_buffer);
 
-            (*it)->R = W.R;
-            (*it)->Properties(SIGN) = psi;
-            (*it)->Properties(LOCALENERGY) = H.evaluate(W);
-            H.copy((*it)->getEnergyBase());
-            (*it)->Properties(LOCALPOTENTIAL) = H.getLocalPotential();
+            thisWalker.R = W.R;
+            RealType eloc=H.evaluate(W);
+            thisWalker.resetProperty(log(abs(psi)),psi,eloc);
+            H.saveProperty(thisWalker.getPropertyBase());
+            //thisWalker.Properties(SIGN) = psi;
+            //thisWalker.Properties(LOCALENERGY) = H.evaluate(W);
+            //H.copy(thisWalker.getEnergyBase());
+            //thisWalker.Properties(LOCALPOTENTIAL) = H.getLocalPotential();
           }
           //Keep until everything is tested: debug routine
           // 	    if(moved) {

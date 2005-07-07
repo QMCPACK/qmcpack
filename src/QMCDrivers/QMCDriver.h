@@ -32,10 +32,14 @@ class OhmmsInform;
 namespace ohmmsqmc {
 
   class MCWalkerConfiguration;
+
   /** Base class to perform QMC simulations. */
   class QMCDriver: public QMCTraits {
 
   public:
+
+    typedef MCWalkerConfiguration::Walker_t Walker_t;
+
     /// Constructor.
     QMCDriver(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h);
 
@@ -43,31 +47,29 @@ namespace ohmmsqmc {
 
     void setFileRoot(const string& aname);
 
+    void add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi) {
+      H1.push_back(h);
+      Psi1.push_back(psi);
+    }
+
+    void initialize();
+
     void process(xmlNodePtr cur);
 
     virtual bool run() = 0;
     
     virtual bool put(xmlNodePtr cur) = 0;
 
-    void add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi) {
-      H1.push_back(h);
-      Psi1.push_back(psi);
-    }
-
   protected:
 
     ///counts the number of qmc runs
     static int Counter;
 
+    ///flag to print walker ensemble
+    bool pStride;
+
+    ///Index of the Acceptance Ratio
     int AcceptIndex;
-
-    ///timestep
-    RealType Tau;
-
-    RealType FirstStep;
-
-    ///reference energy, only used in DMC
-    RealType e_ref;
 
     ///maximum number of blocks
     IndexType nBlocks;
@@ -75,17 +77,26 @@ namespace ohmmsqmc {
     ///maximum number of steps
     IndexType nSteps;
 
-    ///flag to print walker ensemble
-    bool pStride;
-
     ///counter for number of moves accepted
-    int nAccept;
+    IndexType nAccept;
 
     ///counter for number of moves /rejected
-    int nReject; 
+    IndexType nReject; 
 
     ///the number of walkers
-    int nTargetWalkers;
+    IndexType nTargetWalkers;
+
+    ///timestep
+    RealType Tau;
+
+    ///timestep to assign Walker::R at the start. Default = 0.0
+    RealType FirstStep;
+
+    ///reference energy, only used in DMC
+    RealType e_ref;
+
+    ///pointer to qmc node in xml file
+    xmlNodePtr qmcNode;
 
     ParameterSet m_param;
 
@@ -125,8 +136,6 @@ namespace ohmmsqmc {
 
     PooledData<RealType> HamPool;
    
-    ///pointer to qmc node in xml file
-    xmlNodePtr qmcNode;
 
     ///Copy Constructor (disabled).
     QMCDriver(const QMCDriver& a): W(a.W), Psi(a.Psi), H(a.H), Estimators(0){}

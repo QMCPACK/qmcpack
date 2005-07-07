@@ -83,8 +83,8 @@ namespace ohmmsqmc {
     MCWalkerConfiguration::iterator it(W.begin()); 
     MCWalkerConfiguration::iterator it_end(W.end()); 
     while(it != it_end) {
-      (*it)->Properties(WEIGHT) = 1.0;
-      (*it)->Properties(MULTIPLICITY) = 1.0;
+      (*it)->Weight= 1.0;
+      (*it)->Multiplicity=1;
       ++it;
     }
     
@@ -232,37 +232,32 @@ namespace ohmmsqmc {
     RealType oneover2tau = 0.5*oneovertau;
     RealType g = sqrt(Tau);
 
-    //MCWalkerConfiguration::PropertyContainer_t Properties;
     MCWalkerConfiguration::iterator it(W.begin()); 
     MCWalkerConfiguration::iterator it_end(W.end()); 
     while(it != it_end) {
       
-      (*it)->Properties(WEIGHT) = 1.0;
-      (*it)->Properties(MULTIPLICITY) = 1.0;
+      Walker_t& thisWalker(**it);
+      thisWalker.Weight= 1.0;
+      thisWalker.Multiplicity=1;
       
-      //copy the properties of the working walker
-      W.Properties = (*it)->Properties;
-
       //save old local energy
-      RealType eold = W.Properties(LOCALENERGY);
-      RealType emixed = eold;
+      RealType eold    = thisWalker.Properties(LOCALENERGY);
+      RealType signold = thisWalker.Properties(SIGN);
+      RealType emixed  = eold;
 
       //create a 3N-Dimensional Gaussian with variance=1
       makeGaussRandom(deltaR);
       
-      W.R = g*deltaR + (*it)->R + (*it)->Drift;
+      W.R = g*deltaR + thisWalker.R + thisWalker.Drift;
       
       //update the distance table associated with W
       DistanceTable::update(W);
       
       //evaluate wave function
       ValueType logpsi(Psi.evaluateLog(W));
-      //update the properties
-      W.Properties(LOCALENERGY) = H.evaluate(W);
-      W.Properties(LOGPSI) =logpsi;
-      W.Properties(SIGN) = Psi.getSign();
-      bool accepted=false; 
+      RealType enew(H.evaluate(W));
 
+      bool accepted=false; 
       //deltaR = W.R - (*it)->R - (*it)->Drift;
       RealType logGf = -0.5*Dot(deltaR,deltaR);
       
@@ -279,34 +274,33 @@ namespace ohmmsqmc {
       RealType logGb = -oneover2tau*Dot(deltaR,deltaR);
       
       //set acceptance probability
-      RealType prob= std::min(exp(logGb-logGf +2.0*(W.Properties(LOGPSI)-(*it)->Properties(LOGPSI))),1.0);
+      //RealType prob= std::min(exp(logGb-logGf +2.0*(W.Properties(LOGPSI)-thisWalker.Properties(LOGPSI))),1.0);
+      RealType prob= std::min(exp(logGb-logGf +2.0*(logpsi-thisWalker.Properties(LOGPSI))),1.0);
       
       if(Random() > prob){
-	(*it)->Properties(AGE)++;
+        thisWalker.Age++;
 	emixed += emixed;
       } else {
 	accepted=true;  
-	W.Properties(AGE) = 0;
-	(*it)->R = W.R;
-	(*it)->Drift = drift;
-	(*it)->Properties = W.Properties;
-	(*it)->Properties(LOCALPOTENTIAL) = H.getLocalPotential();
-	H.copy((*it)->getEnergyBase());
-	emixed += W.Properties(LOCALENERGY);
+	thisWalker.R = W.R;
+	thisWalker.Drift = drift;
+        thisWalker.resetProperty(logpsi,Psi.getSign(),enew);
+	H.saveProperty(thisWalker.getPropertyBase());
+	emixed += enew;
       }
       
       //calculate the weight and multiplicity
       ValueType M = Branch.branchGF(Tau,emixed*0.5,1.0-prob);
-      if((*it)->Properties(AGE) > 3.0) M = min(0.5,M);
-      if((*it)->Properties(AGE) > 0.9) M = min(1.0,M);
-      (*it)->Properties(WEIGHT) = M; 
-      (*it)->Properties(MULTIPLICITY) = M + Random();
+      if(thisWalker.Age > 3) M = min(0.5,M);
+      if(thisWalker.Age > 0) M = min(1.0,M);
+      thisWalker.Weight = M; 
+      thisWalker.Multiplicity = M + Random();
       
       //node-crossing: kill it for the time being
-      if(Branch(W.Properties(SIGN),(*it)->Properties(SIGN))) {
+      //if(Branch(W.Properties(SIGN),(*it)->Properties(SIGN))) {
+      if(Branch(signold,thisWalker.Properties(SIGN))) {
 	accepted=false;     
-	(*it)->Properties(WEIGHT) = 0.0; 
-	(*it)->Properties(MULTIPLICITY) = 0.0;
+        thisWalker.willDie();
       }
 
       if(accepted) 
