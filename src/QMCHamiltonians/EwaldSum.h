@@ -54,8 +54,16 @@ struct EwaldSumTraits<T,false,false> {
   }
 };
 
+/** class to perform EwalkSum 
+ *
+ * The template parameters
+ * - PT is the trait class for a aprticle
+ *  Usage: EwaldSum<PtclOnLatticeTraits> in a QMCHamiltonianBase
+ * - EVUNIT false, the energy is in hartree
+ * - AAUNIT false, the length unit is AA
+ */
 template<class PT>
-struct EwaldSum: public EwaldSumTraits<typename PT::Scalar_t,true,true> {
+struct EwaldSum: public EwaldSumTraits<typename PT::Scalar_t,false,false> {
 
   typedef ParticleBase<PT> Particle_t;
   typedef typename Particle_t::ParticleLayout_t    ParticleLayout_t;
