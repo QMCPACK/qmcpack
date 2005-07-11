@@ -21,112 +21,233 @@
 #ifndef OHMMS_EWALDSUM_H
 #define OHMMS_EWALDSUM_H
 
-#include <math.h>
-#include <string>
-#include <vector>
-using namespace std;
+#include <map>
+#include "ParticleBase/ParticleBase.h"
+#include "ParticleBase/PtclPairListBase.h"
 
-template<class PL_t, class PosArray_t, class ScalarArray_t>
-class EwaldSum {
+template<class T, bool EVUNIT, bool AAUNIT>
+struct EwaldSumTraits {};
 
-public:
-  typedef typename PL_t::Scalar_t Scalar_t;
-  typedef typename PL_t::SingleParticlePos_t SingleParticlePos_t;
-  typedef typename PL_t::Tensor_t Tensor_t;
+template<class T>
+struct EwaldSumTraits<T,true,true> {
 
-  Scalar_t Eps;   //!< Eps = alpha^2
-  Scalar_t ConvE, ConvF;//!< conversion factors for the energy and force
-  Scalar_t Tr_over_Tg; // !< ratio to determine an optimal eps
-  EwaldSum() { 
-    Eps = -1;
+  T ConvE;
+  T ConvF;
+
+  EwaldSumTraits() {
+    const T bohr = 0.529177e0; // in AA
+    const T rydberg = 13.6058e0; // in eV
     ConvE = rydberg*bohr;     // default energy conversion
     ConvF = rydberg*bohr*bohr;// default force conversion
-    Tr_over_Tg = 1.0/9.0; // PIV with icc, need to be modified on different machines
-    init();
   }
+};
+
+template<class T>
+struct EwaldSumTraits<T,false,false> {
+
+  T ConvE;
+  T ConvF;
+
+  EwaldSumTraits() {
+    ConvE = 1.0;
+    ConvF = 1.0;
+  }
+};
+
+template<class PT>
+struct EwaldSum: public EwaldSumTraits<typename PT::Scalar_t,true,true> {
+
+  typedef ParticleBase<PT> Particle_t;
+  typedef typename Particle_t::ParticleLayout_t    ParticleLayout_t;
+  typedef typename Particle_t::Scalar_t            Scalar_t;
+  typedef typename Particle_t::SingleParticleIndex_t SingleParticleIndex_t;
+  typedef typename Particle_t::SingleParticlePos_t SingleParticlePos_t;
+  typedef typename Particle_t::Tensor_t            Tensor_t;
+
+  typedef typename Particle_t::ParticlePos_t       ParticlePos_t;
+  typedef typename Particle_t::ParticleScalar_t    ParticleScalar_t;
+
+  typedef PtclPairListBase<double,3>  PtclPairList_t;
+
+  EwaldSum() { 
+    Eps = -1;
+    Tr_over_Tg = 10.0/1.0; // PIV with icc, need to be modified on different machines
+  }
+
   ~EwaldSum() { }
 
-  void init();//!< intializing aux values depending on Eps
-  void makecells(const PL_t& lattice);
-  Scalar_t energy(const PL_t& lattice, 
-		  const PosArray_t& r, const ScalarArray_t& q);
+  void init(ParticleLayout_t& lat, const ParticleScalar_t& q);
 
-  Scalar_t forcestress(const PL_t& lattice, const PosArray_t& r, const ScalarArray_t& q,
-		       PosArray_t& f, Tensor_t& stress);
+  void makecells(const ParticleLayout_t& lattice);
+
+  Scalar_t energyG(const ParticleLayout_t& lattice, 
+		   const ParticlePos_t& r, 
+		   const ParticleScalar_t& q);
+
+  Scalar_t energyR(const ParticleLayout_t& lattice, 
+		   const ParticlePos_t& r, 
+		   const ParticleScalar_t& q);
+
+  Scalar_t energyR(const PtclPairList_t& nnlist, 
+		   int first, int last,
+		   const ParticleScalar_t& q);
+
+  Scalar_t forcestress(const ParticleLayout_t& lattice, 
+		       const ParticlePos_t& r, 
+		       const ParticleScalar_t& q,
+		       ParticlePos_t& f, 
+		       Tensor_t& stress);
 
   void print(ostream& os) {
+
+    os.setf(ios::scientific, ios::floatfield);
+
     os << "Eps                 = " << Eps << endl;
     os << "Reciprocal     sum  = " << gamrec << endl;
     os << "Direct         sum  = " << gamdir << endl;
     os << "Point self-senergy  = " << s3 << endl;
     os << "Charged system term = " << s4 << endl;
-    os << "Maximum K components= " << maxg1 << " " << maxg2 << " " << maxg3 << endl;
-    os << "Maximum R components= " << maxx1 << " " << maxx2 << " " << maxx3 << endl;
-
+    os << "Maximum K components= " << maxG <<endl;
+    os << "Maximum R components= " << maxR << endl;
+    os << "Rmax                = " << Rmax << endl;
   }
 
-private:
+  ///Eps = alpha^2
+  Scalar_t Eps;  
 
-  Scalar_t acclog;//!< tolerance
-  Scalar_t g2max; //!< |G_max|^2 for a given Eps
-  Scalar_t x2max; //!< |R_n|^2   for a given Eps
-  Scalar_t sqeps; //!< alpha = sqrt(eps) 
-  Scalar_t gamrec;//!< sum over reciprocal terms
-  Scalar_t gamdir;//!< sum over direct terms
-  Scalar_t s3, s4;//!< point self-energy; charged system term
-  int maxg1, maxg2, maxg3,  maxx1,  maxx2, maxx3;
-  PosArray_t R;//!< cartensian vectors within a supercell
+  /// ratio to determine an optimal eps
+  Scalar_t Tr_over_Tg;
+
+  SingleParticleIndex_t maxG;
+  SingleParticleIndex_t maxR;
+
+  Scalar_t Rmax;
+
+  //!< tolerance
+  Scalar_t acclog;
+  //!< |G_max|^2 for a given Eps
+  Scalar_t g2max;
+  //!< |R_n|^2   for a given Eps
+  Scalar_t x2max; 
+  //!< alpha = sqrt(eps) 
+  Scalar_t sqeps; 
+  //!< sum over reciprocal terms
+  Scalar_t gamrec;
+  //!< sum over direct terms
+  Scalar_t gamdir;
+
+  //!< point self-energy; charged system term
+  Scalar_t s3, s4;
+
+  Scalar_t Volume;
+  Scalar_t E0;
+  Scalar_t Cg;
+  Scalar_t Cr; 
+  std::vector<SingleParticleIndex_t> RShell;
 };
 
 
-template<class PL_t, class PosArray_t, class ScalarArray_t>
+template<class PT>
 void
-EwaldSum<PL_t, PosArray_t, ScalarArray_t>::init(){
+EwaldSum<PT>::init(ParticleLayout_t& lat, const ParticleScalar_t& q){
 
+  int nat = q.size();
   const Scalar_t accur =1.0e-10;
   acclog = log(accur);
+
+  Eps = 
+    M_PI*(pow(static_cast<Scalar_t>(nat)*Tr_over_Tg/(lat.Volume*lat.Volume),1.0/3.0));
   g2max = 4.0*Eps*fabs(acclog);
   x2max = fabs(acclog)/Eps;                                                  
+  Rmax = sqrt(x2max);
+  //Using fixed cutoff
+  //Rmax = 6.1;
+  //x2max = Rmax*Rmax;
+  //Eps = fabs(acclog)/x2max;                                                  
+  //g2max = 4.0*Eps*fabs(acclog);
   sqeps = sqrt(Eps);                                                       
 
-  R.InUnit = false;
-}
+  maxG[0] = static_cast<int>(sqrt( g2max/dot(lat.b(0),lat.b(0)))) + 1;
+  maxG[1] = static_cast<int>(sqrt( g2max/dot(lat.b(1),lat.b(1)))) + 1;
+  maxG[2] = static_cast<int>(sqrt( g2max/dot(lat.b(2),lat.b(2)))) + 1;
 
-//use wrapAroundBox to convert any configuration to cartesian in a supercell
-#include "ParticleBase/ParticleUtility.h"
+  maxR[0] = static_cast<int>(sqrt( x2max/dot(lat.a(0),lat.a(0)))) + 0;
+  maxR[1] = static_cast<int>(sqrt( x2max/dot(lat.a(1),lat.a(1)))) + 0;
+  maxR[2] = static_cast<int>(sqrt( x2max/dot(lat.a(2),lat.a(2)))) + 0;
 
-template<class PL_t, class PosArray_t, class ScalarArray_t>
-typename EwaldSum<PL_t, PosArray_t, ScalarArray_t>::Scalar_t
-EwaldSum<PL_t,PosArray_t,ScalarArray_t>::energy(const PL_t& lat, 
-						const PosArray_t& rin, 
-						const ScalarArray_t& q) {
+//   std::map<int,vector<SingleParticleIndex_t>*> gs;
+//   std::map<int,vector<SingleParticleIndex_t>*> rs;
+//   int ic=0;
+//   for(int ix1=-maxR[0]; ix1<=maxR[0]; ix1++) {
+//     for(int ix2=-maxR[1]; ix2<=maxR[1]; ix2++) {
+//       for(int ix3=-maxR[2]; ix3<=maxR[2]; ix3++) {
+// 	ic++;
+// 	int ih=ix1*ix1+ix2*ix2+ix3*ix3;
+// 	std::map<int,vector<SingleParticleIndex_t>*>::iterator it = rs.find(ih);
+// 	if(it == rs.end()) {
+// 	  vector<SingleParticleIndex_t>* ns = new vector<SingleParticleIndex_t>;
+// 	  ns->push_back(SingleParticleIndex_t(ix1,ix2,ix3));
+//           rs[ih] = ns;
+// 	} else {
+// 	  (*it).second->push_back(SingleParticleIndex_t(ix1,ix2,ix3));
+// 	}
+//       }
+//     }
+//   }
 
-  const Scalar_t pi = M_PI;
-  const Scalar_t twopi = 2*M_PI;
-  const Scalar_t spi = sqrt(M_PI);
-  int nat = rin.size();
-  if(Eps < 0) {
-    Eps = pi*(pow(static_cast<Scalar_t>(nat)*0.5/(lat.Volume*lat.Volume),1.0/3.0));
-    init();
+//   RShell.resize(ic);
+//   int ir=0;
+//   std::map<int,vector<SingleParticleIndex_t>*>::const_iterator cit = rs.begin();
+//   while(cit != rs.end()) {
+//     const vector<SingleParticleIndex_t>& iv = *((*cit).second);
+//     for(int i=0; i<iv.size(); i++) RShell[ir++] = iv[i];
+//     cit++;
+//   }
+
+//   std::map<int,vector<SingleParticleIndex_t>*>::iterator it = rs.begin();
+//   while(it != rs.end()) {
+//     delete (*it).second;it++;
+//   }
+
+  //the third and fourth sums
+  s3 = 0.0;
+  s4 = 0.0;
+  for(int iat=0; iat<nat; iat++) {
+    s3 += q[iat]*q[iat];
+    s4 += q[iat];
   }
 
+  Volume = lat.Volume;
+  Cg = M_PI/(Volume*Eps)*ConvE;
+  Cr = sqeps*ConvE;
+  const Scalar_t spi = sqrt(M_PI);
+  E0 =  - ConvE*2.0*sqeps/spi*s3 - Cg*s4*s4;
 
-  maxg1 = static_cast<int>(sqrt( g2max/dot(lat.b(0),lat.b(0)))) + 1;
-  maxg2 = static_cast<int>(sqrt( g2max/dot(lat.b(1),lat.b(1)))) + 1;
-  maxg3 = static_cast<int>(sqrt( g2max/dot(lat.b(2),lat.b(2)))) + 1;
-  maxx1 = static_cast<int>(sqrt( x2max/dot(lat.a(0),lat.a(0)))) + 1;
-  maxx2 = static_cast<int>(sqrt( x2max/dot(lat.a(1),lat.a(1)))) + 1;
-  maxx3 = static_cast<int>(sqrt( x2max/dot(lat.a(2),lat.a(2)))) + 1;
+  //R.setUnit(PosUnit::CartesianUnit);
+}
 
-  R.resize(nat);//make sure the size is consistent
+/** evaluate the Ewald-Sum
+ *@param lat the lattice
+ *@param R the input Cartesian Position
+ *@param q the input point charge
+ */
+template<class PT>
+typename EwaldSum<PT>::Scalar_t
+EwaldSum<PT>::energyG(const ParticleLayout_t& lat, 
+		      const ParticlePos_t& Rcart, 
+		      const ParticleScalar_t& q) {
+  //  int nat = rin.size();
+  int nat = Rcart.size();
 
+  //R.resize(nat);//make sure the size is consistent
   //convert the current positions to Cartesian coordinates in a super cell
-  wrapAroundBox(lat, rin, R);
+  //wrapAroundBox(lat, rin, R);
+  Scalar_t enorm = 1.0/(4.0*Eps);
 
   gamrec = 0.0;
-  for(int ig1=-maxg1; ig1<= maxg1; ig1++) {    
-    for(int ig2=-maxg2; ig2<=maxg2; ig2++) {
-      for(int ig3=-maxg3; ig3<=maxg3; ig3++) {
+  for(int ig1=-maxG[0]; ig1<= maxG[0]; ig1++) {    
+    for(int ig2=-maxG[1]; ig2<=maxG[1]; ig2++) {
+      for(int ig3=-maxG[2]; ig3<=maxG[2]; ig3++) {
 
 	if(ig1 == 0 && ig2 == 0 && ig3 == 0) continue;	// exclude G = 0;
 
@@ -135,11 +256,11 @@ EwaldSum<PL_t,PosArray_t,ScalarArray_t>::energy(const PL_t& lat,
 	  static_cast<Scalar_t>(ig1)*lat.b(0) +
 	  static_cast<Scalar_t>(ig2)*lat.b(1) + 
 	  static_cast<Scalar_t>(ig3)*lat.b(2);
-	tau *= twopi; // multiply 2*pi
+	tau *= TWOPI; // multiply 2*pi
                                                                               
 	Scalar_t tau2 = dot(tau,tau);
 
-	Scalar_t t2e  = tau2/(4.0*Eps);// |2\pi G|^2/(4*Eps)
+	Scalar_t t2e  = tau2*enorm;// |2\pi G|^2/(4*Eps)
                                                   
 	if ( -t2e < acclog) continue;	//  contribution neglegible 
 	Scalar_t expfac = exp( - t2e)/t2e; // 4\eps correction later
@@ -148,7 +269,7 @@ EwaldSum<PL_t,PosArray_t,ScalarArray_t>::energy(const PL_t& lat,
 	Scalar_t sumr = 0.0;
 	Scalar_t sumi = 0.0;
 	for(int iat=0; iat<nat; iat++) {
-	  Scalar_t kdotr = dot(R[iat], tau);
+	  Scalar_t kdotr = dot(Rcart[iat], tau);
 	  sumr += q[iat]*cos(kdotr);
 	  sumi += q[iat]*sin(kdotr);
 	}
@@ -159,90 +280,99 @@ EwaldSum<PL_t,PosArray_t,ScalarArray_t>::energy(const PL_t& lat,
     }//loop-ig2
   }//loop-ig1
 
+  return Cg*gamrec;
+}
 
+template<class PT>
+typename EwaldSum<PT>::Scalar_t
+EwaldSum<PT>::energyR(const ParticleLayout_t& lat, 
+		      const ParticlePos_t& Rcart, 
+		      const ParticleScalar_t& q) {
   //summation over the direct lattice
+  int nat = q.size();
   gamdir = 0.0;
-  for(int ix1=-maxx1; ix1<=maxx1; ix1++) {
-    for(int ix2=-maxx2; ix2<=maxx2; ix2++) {
-      for(int ix3=-maxx3; ix3<=maxx3; ix3++) {
-	SingleParticlePos_t xlp =
-	  static_cast<Scalar_t>(ix1)*lat.a(0) +
-	  static_cast<Scalar_t>(ix2)*lat.a(1) + 
-	  static_cast<Scalar_t>(ix3)*lat.a(2);
-	for(int iat=0; iat<nat; iat++) {
-	  for(int jat=0; jat<nat; jat++) {
-	    SingleParticlePos_t xxx = R[iat]-R[jat]-xlp;
-	    Scalar_t xxx2 = dot(xxx,xxx);
-	    
-	    // (l-prim,kappa) = (0,kappa0) is excluded
-	    if (xxx2 < 1.0e-8) continue;
-	    Scalar_t arg = sqrt(xxx2) * sqeps;
-                                                 
-	    // neglegible contribution
-	    if ( -arg < acclog) continue;
+  for(int i=0; i<RShell.size(); i++) {
+    SingleParticlePos_t xlp = lat.toCart(RShell[i]);
+    for(int iat=0; iat<nat; iat++) {
+      for(int jat=0; jat<nat; jat++) {
 
-	    // h(x) = erfc(x)/x, sqrt(eps) is corrected later
-	    Scalar_t hx = erfc(arg)/arg; 
+	if(i==0 && iat==jat) continue;
 
-	    //.....gamma-ewald: 
-	    gamdir += q[iat]*q[jat]*hx;
-	  }//jat
-	}//iat
-      }//ix3
-    }//ix2
-  }//ix1
+	SingleParticlePos_t xxx = Rcart[iat]-Rcart[jat]-xlp;
+	Scalar_t xxx2 = dot(xxx,xxx);
+	
+	// (l-prim,kappa) = (0,kappa0) is excluded
+	//if (xxx2 < 1.0e-8) continue;
+	Scalar_t arg = sqrt(xxx2) * sqeps;
+	
+	// neglegible contribution
+	if ( -arg < acclog) continue;
+	
+	// h(x) = erfc(x)/x, sqrt(eps) is corrected later
+	Scalar_t hx = erfc(arg)/arg; 
+	
+	//.....gamma-ewald: 
+	gamdir += q[iat]*q[jat]*hx;
+      }//jat
+    }//iat
+  }
+  return Cr*gamdir;
+}
 
-  //the third and fourth sums
-  s3 = 0.0;
-  s4 = 0.0;
-  for(int iat=0; iat<nat; iat++) {
-    s3 += q[iat]*q[iat];
-    s4 += q[iat];
+template<class PT>
+typename EwaldSum<PT>::Scalar_t
+EwaldSum<PT>::energyR(const PtclPairList_t& nnlist, 
+		      int first, int last, 
+		      const ParticleScalar_t& q) {
+
+  int nnloc = 0;
+  gamdir = 0.0;
+  for(int iat=first, iL = 0; iat<last; iat++, iL++) {
+    for(int nni = 0; nni< nnlist.nadj(iL); nni++, nnloc++) {
+      Scalar_t arg = nnlist.R[nnloc] * sqeps;
+
+      // neglegible contribution
+      if ( -arg < acclog) continue;
+      // h(x) = erfc(x)/x, sqrt(eps) is corrected later
+      Scalar_t hx = erfc(arg)/arg; 
+      gamdir += q[iat]*q[nnlist.iadj(iL,nni)]*hx;
+    }
   }
 
-  Scalar_t vol = lat.Volume;
-  /** reciprocal term:
-    \f$ 2\frac{\pi}{V} \frac{1}{4\epsilon} V_G= \frac{\pi}{2 V \epsilon}V_G\f$
-    direct term:\f$\frac{\sqrt{\epsilon}}{2} V_R\f$ 
-    unit = (au)^2/A
-  */
-  //Scalar_t esum =  pi/(2.0*vol*Eps)*gamrec + sqeps/2.0*gamdir 
-  //  - sqeps/spi*s3 - pi/(2.0*vol*Eps)*s4*s4;
-
-  Scalar_t esum =  pi/(vol*Eps)*gamrec + sqeps*gamdir 
-    - 2.0*sqeps/spi*s3 - pi/(vol*Eps)*s4*s4;
-  return esum*ConvE;
+  return Cr*gamdir;
 }
 
 
-template<class PL_t, class PosArray_t, class ScalarArray_t>
-typename EwaldSum<PL_t, PosArray_t, ScalarArray_t>::Scalar_t
-EwaldSum<PL_t,PosArray_t,ScalarArray_t>
-::forcestress(const PL_t& lat, const PosArray_t& rin, const ScalarArray_t& q,
-	      PosArray_t& f0,  EwaldSum<PL_t,PosArray_t,ScalarArray_t>::Tensor_t& stress) {
-
+template<class PT>
+typename EwaldSum<PT>::Scalar_t
+EwaldSum<PT>::forcestress(const ParticleLayout_t& lat, 
+			  const ParticlePos_t& Rcart, 
+			  const ParticleScalar_t& q,
+			  ParticlePos_t& f0,  
+			  Tensor_t& stress) {
+  
   const Scalar_t pi = M_PI;
   const Scalar_t twopi = 2*M_PI;
   const Scalar_t spi = sqrt(M_PI);
 
-  int nat = rin.size();
-  if(Eps < 0) {
-    // Eps = \pi *(t_R/T_G N/V^2)^{1/3} 
-    // t_R/t_G ~ 1/9 optimal on PIV with icc
-    Eps = pi*(pow(static_cast<Scalar_t>(nat)*Tr_over_Tg/(lat.Volume*lat.Volume),1.0/3.0));
-    init();
-  }
-  maxg1 = static_cast<int>(sqrt( g2max/dot(lat.b(0),lat.b(0)))) + 1;
-  maxg2 = static_cast<int>(sqrt( g2max/dot(lat.b(1),lat.b(1)))) + 1;
-  maxg3 = static_cast<int>(sqrt( g2max/dot(lat.b(2),lat.b(2)))) + 1;
-  maxx1 = static_cast<int>(sqrt( x2max/dot(lat.a(0),lat.a(0)))) + 1;
-  maxx2 = static_cast<int>(sqrt( x2max/dot(lat.a(1),lat.a(1)))) + 1;
-  maxx3 = static_cast<int>(sqrt( x2max/dot(lat.a(2),lat.a(2)))) + 1;
+  int nat = Rcart.size();
+//   if(Eps < 0) {
+//     // Eps = \pi *(t_R/T_G N/V^2)^{1/3} 
+//     // t_R/t_G ~ 1/9 optimal on PIV with icc
+//     Eps = pi*(pow(static_cast<Scalar_t>(nat)*Tr_over_Tg/(lat.Volume*lat.Volume),1.0/3.0));
+//     init();
+//   }
 
-  R.resize(nat);//make sure the size is consistent
+//   maxg1 = static_cast<int>(sqrt( g2max/dot(lat.b(0),lat.b(0)))) + 1;
+//   maxg2 = static_cast<int>(sqrt( g2max/dot(lat.b(1),lat.b(1)))) + 1;
+//   maxg3 = static_cast<int>(sqrt( g2max/dot(lat.b(2),lat.b(2)))) + 1;
+//   maxx1 = static_cast<int>(sqrt( x2max/dot(lat.a(0),lat.a(0)))) + 1;
+//   maxx2 = static_cast<int>(sqrt( x2max/dot(lat.a(1),lat.a(1)))) + 1;
+//   maxx3 = static_cast<int>(sqrt( x2max/dot(lat.a(2),lat.a(2)))) + 1;
 
+  //R.resize(nat);//make sure the size is consistent
   //convert the current positions to Cartesian coordinates in a super cell
-  wrapAroundBox(lat, rin, R);
+  //wrapAroundBox(lat, rin, R);
 
   Scalar_t vol = lat.Volume;
 
@@ -250,12 +380,13 @@ EwaldSum<PL_t,PosArray_t,ScalarArray_t>
   Scalar_t rec_fac = 2.0*ConvF*pi/(vol*Eps);
   Tensor_t stress_rec, stress_dir;//stress for rec and dir terms
 
-  gamrec = 0.0;
-  for(int ig1=-maxg1; ig1<= maxg1; ig1++) {    
-    for(int ig2=-maxg2; ig2<=maxg2; ig2++) {
-      for(int ig3=-maxg3; ig3<=maxg3; ig3++) {
-	if(ig1 == 0 && ig2 == 0 && ig3 == 0) continue;
+  Scalar_t enorm = 1.0/(4.0*Eps);
 
+  gamrec = 0.0;
+  for(int ig1=-maxG[0]; ig1<= maxG[0]; ig1++) {    
+    for(int ig2=-maxG[1]; ig2<=maxG[1]; ig2++) {
+      for(int ig3=-maxG[2]; ig3<=maxG[2]; ig3++) {
+	if(ig1 == 0 && ig2 == 0 && ig3 == 0) continue;
 	// this G
 	SingleParticlePos_t tau = 
 	  static_cast<Scalar_t>(ig1)*lat.b(0) +
@@ -264,7 +395,7 @@ EwaldSum<PL_t,PosArray_t,ScalarArray_t>
 	tau *= twopi; // multiply 2*pi
                                                                                
 	Scalar_t tau2 = dot(tau,tau);   // G^2
-	Scalar_t t2e  = tau2/(4.0*Eps); //G^2/4/Eps
+	Scalar_t t2e  = tau2*enorm; //G^2/4/Eps
 
 	if ( -t2e < acclog) continue;	//contribution neglegible 
 	Scalar_t expfac = exp( - t2e)/t2e;
@@ -273,7 +404,7 @@ EwaldSum<PL_t,PosArray_t,ScalarArray_t>
 	Scalar_t sumr = 0.0;
 	Scalar_t sumi = 0.0;
 	for(int iat=0; iat<nat; iat++) {
-	  Scalar_t kdotr = dot(R[iat], tau);
+	  Scalar_t kdotr = dot(Rcart[iat], tau);
 	  sumr += q[iat]*cos(kdotr);
 	  sumi += q[iat]*sin(kdotr);
 	}
@@ -298,7 +429,7 @@ EwaldSum<PL_t,PosArray_t,ScalarArray_t>
 
 	  // summation over kappa          
 	  for(int jat=0; jat<nat; jat++) {
-	    SingleParticlePos_t dr =R[iat]-R[jat];
+	    SingleParticlePos_t dr =Rcart[iat]-Rcart[jat];
 	    sum += q[jat]*sin(dot(tau,dr));
 	  }
 	  sum *= expfac*rec_fac; 
@@ -310,20 +441,18 @@ EwaldSum<PL_t,PosArray_t,ScalarArray_t>
   }//loop-ig1
 
 
-
-  Scalar_t dir_fac = 2.0*ConvF*Eps;//!< Eps factor for direct force x2
+  // Eps factor for direct force x2
+  Scalar_t dir_fac = 2.0*ConvF*Eps;
   gamdir = 0.0;
+
   //summation over the direct lattice
-  for(int ix1=-maxx1; ix1<=maxx1; ix1++) {
-    for(int ix2=-maxx2; ix2<=maxx2; ix2++) {
-      for(int ix3=-maxx3; ix3<=maxx3; ix3++) {
-	SingleParticlePos_t xlp =
-	  static_cast<Scalar_t>(ix1)*lat.a(0) +
-	  static_cast<Scalar_t>(ix2)*lat.a(1) + 
-	  static_cast<Scalar_t>(ix3)*lat.a(2);
+  for(int i=0; i<RShell.size(); i++) {
+    SingleParticlePos_t xlp = lat.toCart(RShell[i]);
 	for(int iat=0; iat<nat; iat++) {
 	  for(int jat=0; jat<nat; jat++) {
-	    SingleParticlePos_t xxx = R[iat]-R[jat]-xlp;
+	    if(i==0 && iat==jat) continue;
+
+	    SingleParticlePos_t xxx = Rcart[iat]-Rcart[jat]-xlp;
 	    Scalar_t xxx2 = dot(xxx,xxx);
 
 	    // (l-prim,kappa) = (0,kappa0) is excluded
@@ -358,10 +487,7 @@ EwaldSum<PL_t,PosArray_t,ScalarArray_t>
 	    f0[iat] -= factor*xxx; 
 	  }//jat
 	}//iat
-
-      }//ix3
-    }//ix2
-  }//ix1
+  }
 
   //the third and fourth sums
   s3 = 0.0;
@@ -388,7 +514,7 @@ EwaldSum<PL_t,PosArray_t,ScalarArray_t>
     ${2\pi\over V} {1\over 4\eps} V_G= {\pi\over 2 V \eps}V_G$
     direct term:${\sqrt{\eps}\over 2} V_R$ 
     }
-  unit = (au)^2/A
+    unit = (au)^2/A
   */
   return 
     rec_fac*gamrec+dir_fac*gamdir-2.0*ConvE*sqeps/spi*s3 - rec_fac*s4*s4;
