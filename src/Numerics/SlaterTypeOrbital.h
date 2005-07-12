@@ -42,7 +42,9 @@ struct STONorm {
 
   inline T operator()(int n, T screen) {
     return 
-      1.0/sqrt(Factorial[2*n+2]*4.0*(4.0*atan(1.0))/pow(2.0*screen,2*n+3));
+      1.0/sqrt(Factorial[2*n+2]/pow(2.0*screen,2*n+3));
+    //return 
+    //  1.0/sqrt(Factorial[2*n+2]*4.0*(4.0*atan(1.0))/pow(2.0*screen,2*n+3));
   } 
 
 };
@@ -72,7 +74,7 @@ struct GenericSTO: public RadialOrbitalBase<T> {
   T Norm;
   T Y, dY, d2Y;
 
-  GenericSTO(): N(-1), Power(-1), Z(1.0), Norm(1.0) { } 
+  GenericSTO(): N(-1), Power(0), Z(1.0), Norm(1.0) { } 
 
   /** constructor with a known contraction factor 
    */
