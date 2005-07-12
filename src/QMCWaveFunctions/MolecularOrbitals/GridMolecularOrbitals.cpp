@@ -46,6 +46,7 @@ namespace ohmmsqmc {
 
     if(spobuilder.put(cur)) {
       BasisSet->resize(spobuilder.NumPtcl);
+
       return true;
     } else {
       return false;
@@ -202,6 +203,9 @@ namespace ohmmsqmc {
 
 	  //add the new atomic basis to the basis set
 	  BasisSet->add(aos);
+
+          rbuilder->print(abasis,1);
+
           if(rbuilder) {delete rbuilder; rbuilder=0;}
 	}else {
 	  WARNMSG("Species " << abasis << " is already initialized. Ignore the input.")
