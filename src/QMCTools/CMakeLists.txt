@@ -4,7 +4,6 @@ SET(QMCTOOLS
   ../QMCWaveFunctions/OrbitalBuilderBase.cpp
   ../QMCWaveFunctions/MolecularOrbitals/RGFBuilderBase.cpp
   ../QMCWaveFunctions/MolecularOrbitals/GTO2GridBuilder.cpp
-  gto2grid.cpp
 )
 
 SET(CASINO
@@ -26,8 +25,10 @@ ${BLAS_EXTRA_LIBRARY}
 ${CMAKE_THREAD_LIBS_INIT}
 )
 
-#ADD_EXECUTABLE(gto2grid ${QMCTOOLS})
+#ADD_EXECUTABLE(gto2grid gto2grid.cpp ${QMCTOOLS})
 #TARGET_LINK_LIBRARIES(gto2grid qmc qmcbase)
+ADD_EXECUTABLE(gto2slater gto2slater.cpp ${QMCTOOLS})
+TARGET_LINK_LIBRARIES(gto2slater qmcbase)
 ADD_EXECUTABLE(convert4qmc ${CASINO})
 TARGET_LINK_LIBRARIES(convert4qmc qmc qmcbase)
 ADD_EXECUTABLE(spline spline.cpp)
