@@ -14,7 +14,7 @@ class Any2Slater : public MinimizeFunction {
 
     Any2Slater(SourceType& in): Source(in),
                                 cg_tolerance(1e-6),cg_stepsize(0.001),cg_epsilon(1e-6){ 
-      OptParams.resize(2);
+      OptParams.resize(1);
 
       psi_sq.resize(Source.size());
       scalar r2psi2=-10000.0;
@@ -28,6 +28,7 @@ class Any2Slater : public MinimizeFunction {
       //integrate_RK2_forward(psi_sq,psi_norm);
 
       igMax+=2;
+
       Target.N=1;
       Target.Power=0;
       Target.Z=1/Source.r(igMax);
