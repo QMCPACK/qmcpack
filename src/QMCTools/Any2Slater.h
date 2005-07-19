@@ -61,7 +61,8 @@ class Any2Slater : public MinimizeFunction {
         //scalar y= Target.f((*myGrid)(ig))-Source[ig];
         scalar r=Source.r(ig);
         scalar y= Target.f(r);
-        del += r*r*(y*y-psi_sq[ig]);
+        scalar t=r*r*(y*y*-psi_sq[ig]);
+        del += t*t;
       }
       return del;
     }
