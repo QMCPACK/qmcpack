@@ -25,7 +25,9 @@
 
 namespace ohmmsqmc {
 
-  class PolymerChain;
+  class Bead;
+  
+  class MultiChain;
 
   /** Implements the RMC algorithm. */
   class RQMCMultiple: public QMCDriver {
@@ -43,9 +45,6 @@ namespace ohmmsqmc {
 
   protected:
 
-    ///boolean for using bounce algorithm. true, if bounce algorithm of D. Ceperley
-    bool UseBounce;
-
     /** boolean for initialization
      *
      *\if true,
@@ -58,20 +57,24 @@ namespace ohmmsqmc {
     ///The length of polymers
     int ReptileLength;
 
-    ///the number of the beads that will be cut
-    int  NumCuts;
+    ///
+    int MinusDirection,PlusDirection,Directionless;
+    ///
+    int forward,backward,ianchor,itail,inext;
 
     ///the number of turns per block
     int NumTurns;
 
+    int nptcl;
+
     ///the number of H/Psi pairs
     int nPsi;
 
-    int MinusKineticAction;
-    int PlusKineticAction;
+    ///The Reptile: a chain of beads
+    MultiChain* Reptile;
 
-    ///array of PolymerChains
-    PolymerChain* Reptile;
+    ///The new bead
+   Bead *NewBead;
 
     ///move polymers
     void moveReptile();
@@ -81,11 +84,9 @@ namespace ohmmsqmc {
 
     ///Working arrays
     Vector<RealType> SumRatioAction,LogRatioActionIJ,sumratio,WReptile,logpsi;
-    Vector<int> TotalSign,SignWeight,beadSignWeight;
 
-    ParticleSet::ParticlePos_t DiffusionDrift;
-    ParticleSet::ParticleGradient_t LocalDrift;
-
+    Vector<int>NewTotalSign,WeightSign,RefSign;
+    
     void resizeArrays(int n);
 
   private:
@@ -96,6 +97,9 @@ namespace ohmmsqmc {
     /// Copy operator (disabled).
     RQMCMultiple& operator=(const RQMCMultiple&) { return *this;}
 
+    double NewLogRatioAction,NewSumRatio,accept;
+
+    ParticleSet::ParticlePos_t gRand;
 
   };
 }
