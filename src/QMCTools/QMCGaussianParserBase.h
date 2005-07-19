@@ -44,6 +44,10 @@ struct OhmmsAsciiParser {
     while(notfound) {
       std::string aline;
       getline(is,aline,'\n');
+      if(! is){
+	cout << "KEYWORD " << keyword << " : NOT FOUND. " << endl;
+	abort();
+      }
       if(aline.find(keyword) < aline.size()) {
         notfound = false;
       } 
