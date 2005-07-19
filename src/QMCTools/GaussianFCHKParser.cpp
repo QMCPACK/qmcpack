@@ -92,11 +92,13 @@ void GaussianFCHKParser::parse(const std::string& fname) {
 
   search(fin, "Shell types");
   getGaussianCenters(fin);
+  std::cout << " Shell types reading: OK" << endl;
 
   EigVal_alpha.resize(SizeOfBasisSet);
   EigVal_beta.resize(SizeOfBasisSet);
   search(fin, "Alpha"); //search "Alpha Orbital Energies"
   getValues(fin,EigVal_alpha.begin(), EigVal_alpha.end());
+  std::cout << " Orbital energies reading: OK" << endl;
 
   if(SpinRestricted) {
     EigVec.resize(SizeOfBasisSet*SizeOfBasisSet);
@@ -108,6 +110,7 @@ void GaussianFCHKParser::parse(const std::string& fname) {
 
   search(fin, "Alpha MO");
   getValues(fin,EigVec.begin(), EigVec.end());
+  std::cout << " Orbital coefficients reading: OK" << endl;
 }
 
 void GaussianFCHKParser::getGeometry(std::istream& is) {
@@ -153,8 +156,12 @@ void GaussianFCHKParser::getGaussianCenters(std::istream& is) {
 
   vector<int> n(gShell.size()), dn(NumberOfAtoms,0);
 
+  bool SPshell(false);
   getValues(is,n.begin(), n.end());
-  for(int i=0; i<n.size(); i++) gShell[i]=gsMap[n[i]];
+  for(int i=0; i<n.size(); i++){
+    gShell[i]=gsMap[n[i]];
+    if(n[i] == -1)SPshell=true;
+  }
 
   search(is, "Number");
   getValues(is,gNumber.begin(), gNumber.end());
@@ -174,7 +181,9 @@ void GaussianFCHKParser::getGaussianCenters(std::istream& is) {
   search(is, "Contraction");
   getValues(is,gC0.begin(), gC0.end());
 
-  search(is, "P(S=P)");
-  getValues(is,gC1.begin(), gC1.end());
+  if(SPshell){
+    search(is, "P(S=P)");
+    getValues(is,gC1.begin(), gC1.end());
+  }
 }
 
