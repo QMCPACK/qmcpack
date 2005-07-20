@@ -91,8 +91,17 @@ struct GaussianCombo: public RadialOrbitalBase<T> {
 
   bool putBasisGroup(xmlNodePtr cur);
 
-  int DFactorial(int l) {
-    return (l==1)? 1: DFactorial(l-2);
+  /**  double factorial of num
+   * @param num integer to be factored
+   * @return num!!
+   *
+   * \if num == odd,
+   * \f$ num!! = 1\cdot 3\cdot ... \cdot num-2 \cdot num\f$
+   * \else num == even,
+   * \f$ num!! = 2\cdot 4\cdot ... \cdot num-2 \cdot num\f$
+   */
+  int DFactorial(int num) {
+    return (num<2)? 1: num*DFactorial(num-2);
   }
 };
 
