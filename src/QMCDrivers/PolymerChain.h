@@ -21,13 +21,9 @@
 #define OHMMS_QMC_POLYMERCHAIN_H
 #include "Particle/MCWalkerConfiguration.h"
 #include "OhmmsPETE/OhmmsVector.h"
+#include "Utilities/IteratorUtility.h"
 #include <deque>
 namespace ohmmsqmc {
-
-  template<class IT>
-  inline void delete_iter(IT first, IT last) {
-    while(first != last) { delete *first; ++first;}
-  }
 
   struct PolymerChain: public std::deque<MCWalkerConfiguration::Walker_t*> {
 
@@ -166,6 +162,7 @@ namespace ohmmsqmc {
     inline Walker_t* makeEnds() {
       NumMoves+=1.0;
       for(int i=0; i<NumCuts; i++) heads[i]=repository[i];
+
       Walker_t* anchor = 0;
       if(MoveHead) {
 	//anchor=(*this)[0];
