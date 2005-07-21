@@ -133,33 +133,50 @@ void CasinoParser::getValenceCharges(std::istream& is) {
 
 void CasinoParser::getGaussianCenters(std::istream& is) {
   int n=0;
-  LOGMSG("Checking shells")
-  search(is, "shells");
+
+  streampos pivot= is.tellg();
+
+  search(is, "Number of shells");
   getValue(is,n);
   gShell.resize(n); gNumber.resize(n);
+  LOGMSG("Number of shells " << n)
 
-  LOGMSG("Checking SO")
-  search(is, "AO");
+  is.seekg(pivot);//rewind it
+  search(is, "Number of basis functions");
   getValue(is,SizeOfBasisSet);
+  LOGMSG("Number of basis functions " << SizeOfBasisSet);
 
-  LOGMSG("Checking Gaussian")
-  search(is, "Gaussian");
+  is.seekg(pivot);//rewind it
+  search(is, "Number of Gaussian primitives");
   getValue(is,n);
   gExp.resize(n); gC0.resize(n); gC1.resize(n);
+  LOGMSG("Number of Gaussian primitives " << n)
 
-  LOGMSG("Checking shell types")
-  search(is, "Code");
+  is.seekg(pivot);//rewind it
+  search(is, "Code for shell types");
   getValues(is,gShell.begin(), gShell.end());
+  LOGMSG("Checking shell types")
+  std::copy(gShell.begin(), gShell.end(),ostream_iterator<int>(cout, " "));
+  std::cout << std::endl;
+
+  //becomes true, if there is sp shell
+  bool SPshell(false);
+  for(int ig=0; ig<gShell.size(); ig++) {
+    if(gShell[ig] == 2) SPshell=true;
+  }
 
   LOGMSG("Checking the number of gaussians per shell")
-  search(is, "Number");
+  is.seekg(pivot);//rewind it
+  search(is, "Number of primitive Gaussians");
   getValues(is,gNumber.begin(), gNumber.end());
 
   LOGMSG("Checking the bound of shells")
-  search(is, "Sequence");
+  is.seekg(pivot);//rewind it
+  search(is, "Sequence number");
   getValues(is,gBound.begin(), gBound.end());
   for(int i=0; i<gBound.size(); i++) gBound[i]-= 1;
 
+  is.seekg(pivot);//rewind it
   LOGMSG("Checking the gaussian exponents")
   search(is, "Exponents");
   getValues(is,gExp.begin(), gExp.end());
@@ -168,9 +185,13 @@ void CasinoParser::getGaussianCenters(std::istream& is) {
   search(is, "contraction");
   getValues(is,gC0.begin(), gC0.end());
 
-  LOGMSG("Checking the gaussian contractions (sp)")
-  search(is, "2nd");
-  getValues(is,gC1.begin(), gC1.end());
+  if(SPshell) {//only check if there is 2nd
+    LOGMSG("Checking the gaussian contractions (sp)")
+    search(is, "2nd");
+    getValues(is,gC1.begin(), gC1.end());
+  } else {
+    LOGMSG("Input file does not have sp shell")
+  }
 
   makeCorrections();
 }
@@ -226,7 +247,7 @@ void CasinoParser::makeCorrections() {
   const double m53=15.0e0*sqrt(3.0e0);
 
   int basisCount=0;
-  for(int i=0; i<n; i++) {
+  for(int i=0; i<gShell.size(); i++) {
     if(gShell[i] == 4) {//d-orbital corrections
       BasisCorrection[basisCount++]=m40;//m=0
       BasisCorrection[basisCount++]=0.5;//m=1
