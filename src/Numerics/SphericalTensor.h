@@ -1,9 +1,24 @@
+//////////////////////////////////////////////////////////////////
+// (c) Copyright 2003-  by Jeongnim Kim, John Shumway and J. Vincent
+//////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////
+//   National Center for Supercomputing Applications &
+//   Materials Computation Center
+//   University of Illinois, Urbana-Champaign
+//   Urbana, IL 61801
+//   e-mail: jnkim@ncsa.uiuc.edu
+//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
+//
+// Supported by 
+//   National Center for Supercomputing Applications, UIUC
+//   Materials Computation Center, UIUC
+//////////////////////////////////////////////////////////////////
+// -*- C++ -*-
 #ifndef OHMMS_QMC__SPHERICAL_CARTESIAN_TENSOR_H
 #define OHMMS_QMC__SPHERICAL_CARTESIAN_TENSOR_H
 
-/** SphericalTensor
- * @author Jeongnim Kim, John Shumway and J. Vincent
- * @brief evaluates the Real Spherical Harmonics 
+/** SphericalTensor that evalues the Real Spherical Harmonics
+ *
  \f[ r^l (S_l^m(x,y,z). \f]
  *
  Here we use the default convention (for addsign=false):

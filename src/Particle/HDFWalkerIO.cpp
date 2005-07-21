@@ -23,11 +23,11 @@
 #include "Particle/HDFParticleAttrib.h"
 #include "Numerics/HDFNumericAttrib.h"
 #include "Utilities/OhmmsInfo.h"
+#include "OhmmsData/FileUtility.h"
 using namespace ohmmsqmc;
 
-/**
+/** Create the HDF5 file "aroot.config.h5" for output. 
  *@param aroot the root file name
- *@brief Create the HDF5 file "aroot.config.h5" for output. 
  *@note The main group is "/config_collection"
  */
 
@@ -57,12 +57,9 @@ HDFWalkerOutput::~HDFWalkerOutput() {
 }
 
 
-/**
+/** Write the set of walker configurations to the HDF5 file.  
  *@param W set of walker configurations
- *@brief Write the set of walker configurations to the
- HDF5 file.  
-*/
-
+ */
 bool HDFWalkerOutput::get(MCWalkerConfiguration& W) {
 
   typedef MCWalkerConfiguration::PosType PosType;
@@ -74,15 +71,12 @@ bool HDFWalkerOutput::get(MCWalkerConfiguration& W) {
 
   PropertyContainer_t Properties;
   PosContainer_t tempPos(W.getActiveWalkers(),W.R.size());
-  ScalarContainer_t sample_1(W.getActiveWalkers()), sample_2(W.getActiveWalkers());
 
   //store walkers in a temporary array
   int nw(0),item(0);
   MCWalkerConfiguration::const_iterator it(W.begin());
   MCWalkerConfiguration::const_iterator it_end(W.end());
   while(it != it_end) {
-    sample_1(nw) = (*it)->Properties(LOGPSI);
-    sample_2(nw) = (*it)->Properties(LOCALPOTENTIAL);
     for(int np=0; np < W.getParticleNum(); ++np) 
       tempPos(item++) = (*it)->R(np);    
     ++it; ++nw;
@@ -96,30 +90,26 @@ bool HDFWalkerOutput::get(MCWalkerConfiguration& W) {
   //write the dataset
   HDFAttribIO<PosContainer_t> Pos_out(tempPos);
   Pos_out.write(group_id,"coord");
-  HDFAttribIO<ScalarContainer_t> sample_out(sample_1);
-  sample_out.write(group_id,"psisq");
-  HDFAttribIO<ScalarContainer_t> sample_out2(sample_2);
-  sample_out2.write(group_id,"localpotential");
 
   H5Gclose(group_id);
-
-  //closing h_config if overwriting
-  //if(!AppendMode)  H5Gclose(h_config);
-  //XMLReport("Printing " << W.getActiveWalkers() << " Walkers to file")
   
   return true;
 }
 
-/**
+/** Open the HDF5 file "aroot.config.h5" for reading. 
  *@param aroot the root file name
- *@brief Open the HDF5 file "aroot.config.h5" for reading. 
+ *
  *@note The main group is "/config_collection"
  */
-
 HDFWalkerInput::HDFWalkerInput(const string& aroot):
   Counter(0), NumSets(0) {
   string h5file = aroot;
-  h5file.append(".config.h5");
+
+  string ext=getExtension(h5file);
+  if(ext != "h5") { //if the filename does not h5 extension, add the extension
+    h5file.append(".config.h5");
+  }
+
   h_file =  H5Fopen(h5file.c_str(),H5F_ACC_RDWR,H5P_DEFAULT);
   h_config = H5Gopen(h_file,"config_collection");
   
@@ -127,7 +117,6 @@ HDFWalkerInput::HDFWalkerInput(const string& aroot):
   if(h1>-1) {
     H5Dread(h1, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT,&(NumSets));
     H5Dclose(h1);
-    //LOGMSG("Found NumOfConfigurations " << NumSets)
   }
 
   if(!NumSets) {
@@ -137,7 +126,6 @@ HDFWalkerInput::HDFWalkerInput(const string& aroot):
 }
 
 /** Destructor closes the HDF5 file and main group. */
-
 HDFWalkerInput::~HDFWalkerInput() {
   H5Gclose(h_config);
   H5Fclose(h_file);
@@ -157,12 +145,15 @@ bool HDFWalkerInput::put(MCWalkerConfiguration& W){
   return put(W,ic);
 }
 
-/**
+/**  Write the set of walker configurations to the HDF5 file.  
  *@param W set of walker configurations
- *@param ic  
- *@brief Write the set of walker configurations to the
- HDF5 file.  
-*/
+ *@param ic the number of frames
+ *
+ * \if ic==-1
+ *  use only the last frame for a restart
+ * \else if ic>=0
+ *  use ic frames from the file for opitimizations
+ */
 
 bool  
 HDFWalkerInput::put(MCWalkerConfiguration& W, int ic){
@@ -178,13 +169,11 @@ HDFWalkerInput::put(MCWalkerConfiguration& W, int ic){
   typedef MCWalkerConfiguration::PropertyContainer_t ProtertyContainer_t;
 
   typedef Matrix<PosType>  PosContainer_t;
-  typedef Vector<RealType> ScalarContainer_t;
 
   int nwt = 0;
   int npt = 0;
   //2D array of PosTypes (x,y,z) indexed by (walker,particle)
   PosContainer_t Pos_temp;
-  ScalarContainer_t psisq_in, localene_in;
 
   //open the group
   char GrpName[128];
@@ -192,11 +181,8 @@ HDFWalkerInput::put(MCWalkerConfiguration& W, int ic){
   hid_t group_id = H5Gopen(h_config,GrpName);
     
   HDFAttribIO<PosContainer_t> Pos_in(Pos_temp);
-  HDFAttribIO<ScalarContainer_t> sample1(psisq_in), sample2(localene_in);
   //read the dataset
   Pos_in.read(group_id,"coord");
-  sample1.read(group_id,"psisq");
-  sample2.read(group_id,"localpotential");
   //close the group
   H5Gclose(group_id);
 
@@ -212,22 +198,12 @@ HDFWalkerInput::put(MCWalkerConfiguration& W, int ic){
   MCWalkerConfiguration::iterator it = W.begin(); 
   MCWalkerConfiguration::iterator it_end = W.end(); 
   while(it != it_end) {
-    (*it)->Properties(LOGPSI) = psisq_in[iw];
     for(int np=0; np < W.getParticleNum(); ++np){
       (*it)->R(np) = Pos_temp(iw,np);
     }
     ++it;++iw;
   }
 
-  if(localene_in.size()>0) {
-    iw=0;
-    it = W.begin(); 
-    while(it != it_end) {
-      (*it)->Properties(LOCALPOTENTIAL) = localene_in[iw];
-      ++it;++iw;
-    }
-  }
-  //XMLReport("Read in " << W.getActiveWalkers() << " Walkers from file" << GrpName)
   return true;
 }
 

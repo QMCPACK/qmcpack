@@ -100,6 +100,7 @@ bool GTO2Slater::put(xmlNodePtr cur) {
       inAttrib.add(norm,"normalized");
       inAttrib.put(cur);
       if(rtype == "Gaussian" && l == 0) { //pick only S
+        //if Ngto==1, don't do it
         if(norm == "yes") 
           Normalized=true;
         else

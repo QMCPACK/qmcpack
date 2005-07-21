@@ -73,36 +73,6 @@ namespace ohmmsqmc {
 
     //using hamiltonian/@type to populate QMCHamiltonian
     cur=cur->children;
-    if(cur == NULL) { 
-
-      curH->add(new CoulombPotentialAA(*qp),"ElecElec");
-
-      WARNMSG("Using pre-determined hamiltonian for molecular systems.")
-      ParticleSet* ion=ptclPool->getParticleSet(source);
-      if(ion == 0) {
-        ERRORMSG("No ionic system " << source << " exists.")
-        return false;
-      }
-
-      if(htype == "molecule" || htype=="coulomb"){
-        curH->add(new CoulombPotentialAB(*ion,*qp),"Coulomb");
-      } else if(htype == "siesta" || htype=="pseudo") {
-        TrialWaveFunction* psi = psiPool->getPrimary();
-        curH->add(new NonLocalPPotential(*ion,*qp,*psi),"NonLocal");
-      } else if(htype == "cpp") {
-        xmlChar* att2=xmlGetProp(cur,(const xmlChar*)"species");
-        string stype("Ge");
-        if(att2) stype = (const char*)att2;
-        curH->add(new LocalPPotential(*ion,*qp), "PseudoPot");
-        curH->add(new GeCorePolPotential(*ion,*qp), "GeCPP");
-      } else {
-        ERRORMSG(htype << " is diabled")
-      }
-
-      if(ion->getTotalNum()>1) 
-          curH->add(new IonIonPotential(*ion),"IonIon");
-    }
-
     //check the child nodes of hamiltonian: pairpot 
     while(cur != NULL) {
       string cname((const char*)cur->name);
@@ -130,6 +100,36 @@ namespace ohmmsqmc {
       }
       cur = cur->next;
     }
+
+    if(curH->size() == 1) {//no external potential is provided, use type
+
+      WARNMSG("Using pre-determined hamiltonian for molecular systems.")
+      ParticleSet* ion=ptclPool->getParticleSet(source);
+      if(ion == 0) {
+        ERRORMSG("No ionic system " << source << " exists.")
+        return false;
+      }
+
+      curH->add(new CoulombPotentialAA(*qp),"ElecElec");
+      if(htype == "molecule" || htype=="coulomb"){
+        curH->add(new CoulombPotentialAB(*ion,*qp),"Coulomb");
+      } else if(htype == "siesta" || htype=="pseudo") {
+        TrialWaveFunction* psi = psiPool->getPrimary();
+        curH->add(new NonLocalPPotential(*ion,*qp,*psi),"NonLocal");
+      } else if(htype == "cpp") {
+        xmlChar* att2=xmlGetProp(cur,(const xmlChar*)"species");
+        string stype("Ge");
+        if(att2) stype = (const char*)att2;
+        curH->add(new LocalPPotential(*ion,*qp), "PseudoPot");
+        curH->add(new GeCorePolPotential(*ion,*qp), "GeCPP");
+      } else {
+        ERRORMSG(htype << " is diabled")
+      }
+
+      if(ion->getTotalNum()>1) 
+          curH->add(new IonIonPotential(*ion),"IonIon");
+    }
+
 
     return true;
   }

@@ -305,7 +305,7 @@ is implemted
 	OneBodyJastrow<NoCuspJastrow<ValueType> > *J1 = NULL;
 	return createOneBody(cur,J1);
       } else if(jastfunction == "pade2") {
-	LOGMSG("Jastrow Function: pade form (a*r+c^2)/(1+br).")
+	LOGMSG("Jastrow Function: pade form (a*r+c*r^2)/(1+br).")
 	OneBodyJastrow<PadeJastrow2<ValueType> > *J1 = NULL;
 	return createOneBody(cur,J1);
       } else {

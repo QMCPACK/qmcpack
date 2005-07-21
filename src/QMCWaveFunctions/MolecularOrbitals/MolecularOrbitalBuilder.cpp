@@ -49,6 +49,7 @@ namespace ohmmsqmc {
     string transform("yes"), source("i");
     OhmmsAttributeSet aAttrib;
     aAttrib.add(transform,"transform");
+    aAttrib.add(transform,"usegrid");
     aAttrib.add(source,"source");
     aAttrib.put(cur);
 

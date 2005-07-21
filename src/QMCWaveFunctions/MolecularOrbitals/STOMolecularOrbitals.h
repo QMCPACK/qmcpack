@@ -49,6 +49,8 @@ namespace ohmmsqmc {
 
   private:
 
+    enum {DONOT_EXPAND=0, GAUSSIAN_EXPAND=1, NATURAL_EXPAND};
+
     bool Normalized;
     BasisSetType*      BasisSet;
     DistanceTableData* d_table;

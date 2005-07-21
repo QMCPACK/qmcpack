@@ -67,7 +67,7 @@ namespace ohmmsqmc {
     while(cur!=NULL) {
       string cname((const char*)(cur->name));
       if(cname == basis_tag || cname == "atomicBasisSet") {
-        int expandlm = false;
+        int expandlm = DONOT_EXPAND;
         string abasis("invalid"), norm("no");
 
         //Register valid attributes attributes
@@ -84,10 +84,12 @@ namespace ohmmsqmc {
         if(abasis == "invalid") continue;
         if(sph == "spherical") addsignforM=1; //include (-1)^m
 
-        if(Morder == "natural"){
-          expandlm = true;
+        if(Morder == "gaussian") {
+          expandlm = GAUSSIAN_EXPAND;
+        } else if(Morder == "natural"){
+          expandlm = NATURAL_EXPAND;
         } else if(Morder == "no") {
-          expandlm = false;
+          expandlm = DONOT_EXPAND;
         }
 
         if(addsignforM) 
@@ -188,32 +190,70 @@ namespace ohmmsqmc {
       LOGMSG("The slater-type orbitals are Not normalized")
     }
 
-    XMLReport("Expanding Ylm as -l,-l+1,...,l-1,l")
-    map<string,int>::iterator rnl_it = RnlID.find(rnl);
-    if(rnl_it == RnlID.end()) {
-      int nl = aos->Rnl.size();
-      int l = nlms[q_l];
-      RadialOrbitalType *sto = new RadialOrbitalType(l,Normalized);
-      sto->putBasisGroup(cur1);
-      aos->Rnl.push_back(sto);
-      aos->RnlID.push_back(nlms);
-      RnlID[rnl] = nl;
-      if(expandlm) {
+    if(expandlm == GAUSSIAN_EXPAND) {
+      map<string,int>::iterator rnl_it = RnlID.find(rnl);
+      if(rnl_it == RnlID.end()) {
+        int l = nlms[q_l];
+        int nl = aos->Rnl.size();
+        RadialOrbitalType *sto = new RadialOrbitalType(l,Normalized);
+        sto->putBasisGroup(cur1);
+        aos->Rnl.push_back(sto);
+        aos->RnlID.push_back(nlms);
+        RnlID[rnl] = nl;
+
+        XMLReport("Adding a Radial Orbital and Expanding Ylm according to Gaussian98.")
+        XMLReport("Adding " << 2*l+1 << " spherical orbitals for l= " << l)
+        switch (l) 
+        {
+          case(0):
+          aos->LM[num] = aos->Ylm.index(0,0);  aos->NL[num] = nl; num++;
+          break;
+          case(1)://px(1),py(-1),pz(0)            
+          aos->LM[num] = aos->Ylm.index(1,1);  aos->NL[num] = nl; num++;
+          aos->LM[num] = aos->Ylm.index(1,-1); aos->NL[num] = nl; num++;
+          aos->LM[num] = aos->Ylm.index(1,0);  aos->NL[num] = nl; num++;
+          break; 
+          default://0,1,-1,2,-2,...,l,-l
+          aos->LM[num] = aos->Ylm.index(l,0);  aos->NL[num] = nl; num++;
+          for(int tm=1; tm<=l; tm++) {
+            aos->LM[num] = aos->Ylm.index(l,tm);  aos->NL[num] = nl; num++;
+            aos->LM[num] = aos->Ylm.index(l,-tm); aos->NL[num] = nl; num++;
+          }
+          break;
+        }
+      }
+    } else if(expandlm == NATURAL_EXPAND) {
+      map<string,int>::iterator rnl_it = RnlID.find(rnl);
+      if(rnl_it == RnlID.end()) {//only when rid is different
+        XMLReport("Expanding Ylm as -l,-l+1,...,l-1,l")
+        int nl = aos->Rnl.size();
+        int l = nlms[q_l];
+        RadialOrbitalType *sto = new RadialOrbitalType(l,Normalized);
+        sto->putBasisGroup(cur1);
+        aos->Rnl.push_back(sto);
+        aos->RnlID.push_back(nlms);
+        RnlID[rnl] = nl;
         XMLReport("Adding " << 2*l+1 << " spherical orbitals")
         for(int tm=-l; tm<=l; tm++,num++) {
           aos->LM[num] = aos->Ylm.index(l,tm);  aos->NL[num] = nl;
         }
-      } else {
-        aos->LM[num] = aos->Ylm.index(nlms[q_l],nlms[q_m]);
-        aos->NL[num] = nl; 
-        num++;
       }
     } else {
-      //assign the index for radial orbital with (n,l) if repeated
-      XMLReport("Already added radial function for id: " << rnl)
+      XMLReport("Ylm is NOT expanded.")
       aos->LM[num] = aos->Ylm.index(nlms[q_l],nlms[q_m]);
-      aos->NL[num] = (*rnl_it).second;
-      num++;
+      map<string,int>::iterator rnl_it = RnlID.find(rnl);
+      if(rnl_it == RnlID.end()) {
+        int nl = aos->Rnl.size();
+        RadialOrbitalType *sto = new RadialOrbitalType(nlms[q_l],Normalized);
+        sto->putBasisGroup(cur1);
+        aos->Rnl.push_back(sto);
+        aos->RnlID.push_back(nlms);
+        RnlID[rnl] = nl;
+        aos->NL[num] = nl; 
+      } else {
+        aos->NL[num]=(*rnl_it).second;
+      }
+      num++; //increment by 1
     }
     return num;
   }

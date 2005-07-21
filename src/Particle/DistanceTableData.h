@@ -21,6 +21,7 @@
 #include "Particle/WalkerSetRef.h"
 #include "Utilities/PooledData.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
+#include <bitset>
 
 namespace ohmmsqmc {
 
@@ -35,7 +36,8 @@ namespace ohmmsqmc {
 
   /** Class to store pair data between two ParticleSets.
    * @author Jeongnim Kim 
-   * @brief DistanceTableData is determined by Source and Target.
+   * 
+   * DistanceTableData is determined by Source and Target.
    */
   class DistanceTableData: public QMCTraits {
 
@@ -47,45 +49,69 @@ namespace ohmmsqmc {
      *     j = target particle index
      *     k = copies (walkers) index.
      */
-    enum {WalkerIndex=0, SourceIndex, VisitorIndex};
+    enum {WalkerIndex=0, SourceIndex, VisitorIndex, PairIndex};
 
     typedef std::vector<IndexType>       IndexVectorType;
     typedef TempDisplacement<RealType,3> TempDistType;
+    typedef PooledData<RealType>         BufferType;
+
+    /** status of the distance table
+     *
+     * Status[WalkerIndex] Not used
+     * Status[SourceIndex] for the source
+     * Status[VisitorIndex] for the target
+     * Status[PairIndex]  for the pair, not used yet but could be useful
+     */
+    std::bitset<4> Status;
+
+    ///Index of the particle  with a trial move
+    IndexType activePtcl;
 
     ///size of indicies
     TinyVector<IndexType,3> N;
 
-    IndexType activePtcl;
-
-    /**@defgroup 
+    /** @defgroup nnlist neighbor-list data
      * an auxiliary array to handle connections or nearest neighbors
      *@{
-     *@brief M.size() = N[SourceIndex]+1
+     */
+
+    /** @brief M.size() = N[SourceIndex]+1
+     *
      * M[i+i] - M[i] = the number of connected points to the i-th source
      */ 
     IndexVectorType M;
 
-    /*@brief J.size() = M[N[SourceIndex]]
+    /** @brief J.size() = M[N[SourceIndex]]
+     *
      * J[nn] = the index of the connected point for the i-th point 
      * satisfying  \f$M[i] <= nn < M[i+i]\f$
      */ 
     IndexVectorType J;
 
-    /*@brief PairID.size() = M[N[SourceIndex]]
+    /** @brief PairID.size() = M[N[SourceIndex]]
+     *
      * PairID[nn] = the index of the connected point for the i-th point 
      * satisfying  \f$PairIDM[i] <= nn < PairID[i+i]\f$
      */ 
     IndexVectorType PairID;
-    /** @}*/
 
-    /*@brief Locator of the pair  */
+    /** Locator of the pair  */
     std::vector<IndexType> IJ;
 
+    /** @brief A NN relation of all the source particles with respect to an activePtcl
+     *
+     * This data is for particle-by-particle move.
+     * When a MC move is propsed to the activePtcl, the old and new distance relation
+     * is stored in Temp. When the move is accepted, the new data replace the old.
+     * If the move is rejected, nothing is done and new data will be overwritten.
+     */
     std::vector<TempDistType> Temp;
+
+    /** @}*/
 
     ///constructor using source and target ParticleSet
     DistanceTableData(const ParticleSet& source, const ParticleSet& target)
-      :Origin(source)
+      : Origin(source)
     {  }
 
     ///virutal destructor
@@ -139,23 +165,37 @@ namespace ohmmsqmc {
     ///update the distance table by the pair relations
     virtual void update(IndexType jat) = 0;
 
+    ///create storage for nwalkers
     virtual void create(int walkers) = 0;
 
-    inline void registerData(PooledData<RealType>& buf) {
+    /** @brief register nnlist data to buf so that it can copyToBuffer and copyFromBuffer
+     *
+     * This function is used for particle-by-particle MC methods to register distance-table data
+     * to an anonymous buffer.
+     */
+    inline void registerData(BufferType& buf) {
       RealType* first = &(dr_m[0][0]);
       buf.add(first,first+npairs_m*DIM);
       buf.add(r_m.begin(), r_m.end());
       buf.add(rinv_m.begin(), rinv_m.end());
     }
 
-    inline void copyToBuffer(PooledData<RealType>& buf) {
+    /** @brief copy the data to an anonymous buffer
+     *
+     * Any data that will be used by the next iteration will be copied to a buffer.
+     */
+    inline void copyToBuffer(BufferType& buf) {
       RealType* first = &(dr_m[0][0]);
       buf.put(first,first+npairs_m*DIM);
       buf.put(r_m.begin(), r_m.end());
       buf.put(rinv_m.begin(), rinv_m.end());
     }
 
-    inline void copyFromBuffer(PooledData<RealType>& buf) {
+    /** @brief copy the data from an anonymous buffer
+     *
+     * Any data that is used by the previous iteration will be copied from a buffer.
+     */
+    inline void copyFromBuffer(BufferType& buf) {
       RealType* first = &(dr_m[0][0]);
       buf.get(first,first+npairs_m*DIM);
       buf.get(r_m.begin(), r_m.end());
@@ -224,7 +264,6 @@ namespace ohmmsqmc {
     
     ///disable copy constructor of the base class
     DistanceTableData(const DistanceTableData& a):Origin(a.Origin) { }
-
   };
 }
 #endif

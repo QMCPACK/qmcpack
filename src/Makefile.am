@@ -23,7 +23,8 @@ OHMMS_UTILITIES = \
         Platforms/sysutil.cpp\
         Platforms/sysutil.h \
         Optimize/Minimize.cpp\
-        Optimize/Minimize.h
+        Optimize/Minimize.h \
+	Numerics/OhmmsBlas.cpp
 
    
 OHMMS_MESSAGE = \
@@ -32,6 +33,8 @@ OHMMS_MESSAGE = \
 
 OHMMS_PARTICLE = \
 	ParticleTags.cpp \
+        Lattice/Uniform3DGridLayout.cpp \
+        Particle/ParticleSet.BC.cpp \
 	Particle/ParticleSet.cpp \
 	Particle/ParticleSet.h \
 	Particle/MCWalkerConfiguration.cpp \
@@ -48,7 +51,7 @@ OHMMS_PARTICLE = \
         ParticleIO/HDFParticleIO.h
 
 QMC_BASE = \
-	QMCHamiltonians/QMCHamiltonianBase.cpp\
+	QMCHamiltonians/QMCHamiltonian.cpp\
 	QMCWaveFunctions/JastrowBuilder.cpp\
 	QMCWaveFunctions/TrialWaveFunction.cpp
 
@@ -66,4 +69,4 @@ libqmcbase_a_SOURCES = \
 # ii) application-dependent libraries: FortranLib, OOMPI, SlaterKosterTB
 #iii) the main application: OhmmsApp
 # iv) ready to install the header files and libraries
-SUBDIRS = .  QMC 
+SUBDIRS = .  QMCApp

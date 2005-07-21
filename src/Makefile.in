@@ -143,7 +143,8 @@ OHMMS_UTILITIES = \
         Platforms/sysutil.cpp\
         Platforms/sysutil.h \
         Optimize/Minimize.cpp\
-        Optimize/Minimize.h
+        Optimize/Minimize.h \
+	Numerics/OhmmsBlas.cpp
 
 
 OHMMS_MESSAGE = \
@@ -153,6 +154,8 @@ OHMMS_MESSAGE = \
 
 OHMMS_PARTICLE = \
 	ParticleTags.cpp \
+        Lattice/Uniform3DGridLayout.cpp \
+        Particle/ParticleSet.BC.cpp \
 	Particle/ParticleSet.cpp \
 	Particle/ParticleSet.h \
 	Particle/MCWalkerConfiguration.cpp \
@@ -170,7 +173,7 @@ OHMMS_PARTICLE = \
 
 
 QMC_BASE = \
-	QMCHamiltonians/QMCHamiltonianBase.cpp\
+	QMCHamiltonians/QMCHamiltonian.cpp\
 	QMCWaveFunctions/JastrowBuilder.cpp\
 	QMCWaveFunctions/TrialWaveFunction.cpp
 
@@ -190,7 +193,7 @@ libqmcbase_a_SOURCES = \
 # ii) application-dependent libraries: FortranLib, OOMPI, SlaterKosterTB
 #iii) the main application: OhmmsApp
 # iv) ready to install the header files and libraries
-SUBDIRS = .  QMC 
+SUBDIRS = .  QMCApp
 subdir = src
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = ohmms-config.h
@@ -203,13 +206,14 @@ am__objects_1 = OhmmsObject.$(OBJEXT) OhmmsInform.$(OBJEXT) \
 	OhmmsInfo.$(OBJEXT) SimpleParser.$(OBJEXT) SpeciesSet.$(OBJEXT) \
 	RandRandom.$(OBJEXT) RandomGenerator.$(OBJEXT) \
 	ProjectData.$(OBJEXT) RandomNumberControl.$(OBJEXT) \
-	sysutil.$(OBJEXT) Minimize.$(OBJEXT)
+	sysutil.$(OBJEXT) Minimize.$(OBJEXT) OhmmsBlas.$(OBJEXT)
 am__objects_2 = Communicate.$(OBJEXT)
-am__objects_3 = ParticleTags.$(OBJEXT) ParticleSet.$(OBJEXT) \
+am__objects_3 = ParticleTags.$(OBJEXT) Uniform3DGridLayout.$(OBJEXT) \
+	ParticleSet.BC.$(OBJEXT) ParticleSet.$(OBJEXT) \
 	MCWalkerConfiguration.$(OBJEXT) DistanceTable.$(OBJEXT) \
 	HDFWalkerIO.$(OBJEXT) XMLParticleIO.$(OBJEXT) \
 	ParticleLayoutIO.$(OBJEXT) HDFParticleIO.$(OBJEXT)
-am__objects_4 = QMCHamiltonianBase.$(OBJEXT) JastrowBuilder.$(OBJEXT) \
+am__objects_4 = QMCHamiltonian.$(OBJEXT) JastrowBuilder.$(OBJEXT) \
 	TrialWaveFunction.$(OBJEXT)
 am_libqmcbase_a_OBJECTS = $(am__objects_1) $(am__objects_2) \
 	$(am__objects_3) $(am__objects_4)
@@ -227,20 +231,22 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/HDFWalkerIO.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/JastrowBuilder.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/MCWalkerConfiguration.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/Minimize.Po ./$(DEPDIR)/OhmmsInfo.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/OhmmsInform.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/Minimize.Po ./$(DEPDIR)/OhmmsBlas.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/OhmmsInfo.Po ./$(DEPDIR)/OhmmsInform.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/OhmmsObject.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ParticleLayoutIO.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/ParticleSet.BC.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ParticleSet.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ParticleTags.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ProjectData.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/QMCHamiltonianBase.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/QMCHamiltonian.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/RandRandom.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/RandomGenerator.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/RandomNumberControl.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/SimpleParser.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/SpeciesSet.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/TrialWaveFunction.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/Uniform3DGridLayout.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/XMLParticleIO.Po ./$(DEPDIR)/sysutil.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
@@ -339,7 +345,10 @@ ProjectData.$(OBJEXT): OhmmsApp/ProjectData.cpp
 RandomNumberControl.$(OBJEXT): OhmmsApp/RandomNumberControl.cpp
 sysutil.$(OBJEXT): Platforms/sysutil.cpp
 Minimize.$(OBJEXT): Optimize/Minimize.cpp
+OhmmsBlas.$(OBJEXT): Numerics/OhmmsBlas.cpp
 Communicate.$(OBJEXT): Message/Communicate.cpp
+Uniform3DGridLayout.$(OBJEXT): Lattice/Uniform3DGridLayout.cpp
+ParticleSet.BC.$(OBJEXT): Particle/ParticleSet.BC.cpp
 ParticleSet.$(OBJEXT): Particle/ParticleSet.cpp
 MCWalkerConfiguration.$(OBJEXT): Particle/MCWalkerConfiguration.cpp
 DistanceTable.$(OBJEXT): Particle/DistanceTable.cpp
@@ -347,7 +356,7 @@ HDFWalkerIO.$(OBJEXT): Particle/HDFWalkerIO.cpp
 XMLParticleIO.$(OBJEXT): ParticleIO/XMLParticleIO.cpp
 ParticleLayoutIO.$(OBJEXT): ParticleIO/ParticleLayoutIO.cpp
 HDFParticleIO.$(OBJEXT): ParticleIO/HDFParticleIO.cpp
-QMCHamiltonianBase.$(OBJEXT): QMCHamiltonians/QMCHamiltonianBase.cpp
+QMCHamiltonian.$(OBJEXT): QMCHamiltonians/QMCHamiltonian.cpp
 JastrowBuilder.$(OBJEXT): QMCWaveFunctions/JastrowBuilder.cpp
 TrialWaveFunction.$(OBJEXT): QMCWaveFunctions/TrialWaveFunction.cpp
 libqmcbase.a: $(libqmcbase_a_OBJECTS) $(libqmcbase_a_DEPENDENCIES) 
@@ -368,20 +377,23 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/JastrowBuilder.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MCWalkerConfiguration.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Minimize.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/OhmmsBlas.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/OhmmsInfo.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/OhmmsInform.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/OhmmsObject.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ParticleLayoutIO.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ParticleSet.BC.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ParticleSet.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ParticleTags.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ProjectData.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/QMCHamiltonianBase.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/QMCHamiltonian.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RandRandom.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RandomGenerator.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RandomNumberControl.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SimpleParser.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SpeciesSet.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TrialWaveFunction.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Uniform3DGridLayout.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/XMLParticleIO.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sysutil.Po@am__quote@
 
@@ -604,6 +616,24 @@ Minimize.lo: Optimize/Minimize.cpp
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Minimize.lo `test -f 'Optimize/Minimize.cpp' || echo '$(srcdir)/'`Optimize/Minimize.cpp
 
+OhmmsBlas.o: Numerics/OhmmsBlas.cpp
+@AMDEP_TRUE@	source='Numerics/OhmmsBlas.cpp' object='OhmmsBlas.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/OhmmsBlas.Po' tmpdepfile='$(DEPDIR)/OhmmsBlas.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o OhmmsBlas.o `test -f 'Numerics/OhmmsBlas.cpp' || echo '$(srcdir)/'`Numerics/OhmmsBlas.cpp
+
+OhmmsBlas.obj: Numerics/OhmmsBlas.cpp
+@AMDEP_TRUE@	source='Numerics/OhmmsBlas.cpp' object='OhmmsBlas.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/OhmmsBlas.Po' tmpdepfile='$(DEPDIR)/OhmmsBlas.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o OhmmsBlas.obj `cygpath -w Numerics/OhmmsBlas.cpp`
+
+OhmmsBlas.lo: Numerics/OhmmsBlas.cpp
+@AMDEP_TRUE@	source='Numerics/OhmmsBlas.cpp' object='OhmmsBlas.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/OhmmsBlas.Plo' tmpdepfile='$(DEPDIR)/OhmmsBlas.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o OhmmsBlas.lo `test -f 'Numerics/OhmmsBlas.cpp' || echo '$(srcdir)/'`Numerics/OhmmsBlas.cpp
+
 Communicate.o: Message/Communicate.cpp
 @AMDEP_TRUE@	source='Message/Communicate.cpp' object='Communicate.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@	depfile='$(DEPDIR)/Communicate.Po' tmpdepfile='$(DEPDIR)/Communicate.TPo' @AMDEPBACKSLASH@
@@ -621,6 +651,42 @@ Communicate.lo: Message/Communicate.cpp
 @AMDEP_TRUE@	depfile='$(DEPDIR)/Communicate.Plo' tmpdepfile='$(DEPDIR)/Communicate.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Communicate.lo `test -f 'Message/Communicate.cpp' || echo '$(srcdir)/'`Message/Communicate.cpp
+
+Uniform3DGridLayout.o: Lattice/Uniform3DGridLayout.cpp
+@AMDEP_TRUE@	source='Lattice/Uniform3DGridLayout.cpp' object='Uniform3DGridLayout.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Uniform3DGridLayout.Po' tmpdepfile='$(DEPDIR)/Uniform3DGridLayout.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Uniform3DGridLayout.o `test -f 'Lattice/Uniform3DGridLayout.cpp' || echo '$(srcdir)/'`Lattice/Uniform3DGridLayout.cpp
+
+Uniform3DGridLayout.obj: Lattice/Uniform3DGridLayout.cpp
+@AMDEP_TRUE@	source='Lattice/Uniform3DGridLayout.cpp' object='Uniform3DGridLayout.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Uniform3DGridLayout.Po' tmpdepfile='$(DEPDIR)/Uniform3DGridLayout.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Uniform3DGridLayout.obj `cygpath -w Lattice/Uniform3DGridLayout.cpp`
+
+Uniform3DGridLayout.lo: Lattice/Uniform3DGridLayout.cpp
+@AMDEP_TRUE@	source='Lattice/Uniform3DGridLayout.cpp' object='Uniform3DGridLayout.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Uniform3DGridLayout.Plo' tmpdepfile='$(DEPDIR)/Uniform3DGridLayout.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Uniform3DGridLayout.lo `test -f 'Lattice/Uniform3DGridLayout.cpp' || echo '$(srcdir)/'`Lattice/Uniform3DGridLayout.cpp
+
+ParticleSet.BC.o: Particle/ParticleSet.BC.cpp
+@AMDEP_TRUE@	source='Particle/ParticleSet.BC.cpp' object='ParticleSet.BC.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/ParticleSet.BC.Po' tmpdepfile='$(DEPDIR)/ParticleSet.BC.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ParticleSet.BC.o `test -f 'Particle/ParticleSet.BC.cpp' || echo '$(srcdir)/'`Particle/ParticleSet.BC.cpp
+
+ParticleSet.BC.obj: Particle/ParticleSet.BC.cpp
+@AMDEP_TRUE@	source='Particle/ParticleSet.BC.cpp' object='ParticleSet.BC.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/ParticleSet.BC.Po' tmpdepfile='$(DEPDIR)/ParticleSet.BC.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ParticleSet.BC.obj `cygpath -w Particle/ParticleSet.BC.cpp`
+
+ParticleSet.BC.lo: Particle/ParticleSet.BC.cpp
+@AMDEP_TRUE@	source='Particle/ParticleSet.BC.cpp' object='ParticleSet.BC.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/ParticleSet.BC.Plo' tmpdepfile='$(DEPDIR)/ParticleSet.BC.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ParticleSet.BC.lo `test -f 'Particle/ParticleSet.BC.cpp' || echo '$(srcdir)/'`Particle/ParticleSet.BC.cpp
 
 ParticleSet.o: Particle/ParticleSet.cpp
 @AMDEP_TRUE@	source='Particle/ParticleSet.cpp' object='ParticleSet.o' libtool=no @AMDEPBACKSLASH@
@@ -748,23 +814,23 @@ HDFParticleIO.lo: ParticleIO/HDFParticleIO.cpp
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o HDFParticleIO.lo `test -f 'ParticleIO/HDFParticleIO.cpp' || echo '$(srcdir)/'`ParticleIO/HDFParticleIO.cpp
 
-QMCHamiltonianBase.o: QMCHamiltonians/QMCHamiltonianBase.cpp
-@AMDEP_TRUE@	source='QMCHamiltonians/QMCHamiltonianBase.cpp' object='QMCHamiltonianBase.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/QMCHamiltonianBase.Po' tmpdepfile='$(DEPDIR)/QMCHamiltonianBase.TPo' @AMDEPBACKSLASH@
+QMCHamiltonian.o: QMCHamiltonians/QMCHamiltonian.cpp
+@AMDEP_TRUE@	source='QMCHamiltonians/QMCHamiltonian.cpp' object='QMCHamiltonian.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/QMCHamiltonian.Po' tmpdepfile='$(DEPDIR)/QMCHamiltonian.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o QMCHamiltonianBase.o `test -f 'QMCHamiltonians/QMCHamiltonianBase.cpp' || echo '$(srcdir)/'`QMCHamiltonians/QMCHamiltonianBase.cpp
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o QMCHamiltonian.o `test -f 'QMCHamiltonians/QMCHamiltonian.cpp' || echo '$(srcdir)/'`QMCHamiltonians/QMCHamiltonian.cpp
 
-QMCHamiltonianBase.obj: QMCHamiltonians/QMCHamiltonianBase.cpp
-@AMDEP_TRUE@	source='QMCHamiltonians/QMCHamiltonianBase.cpp' object='QMCHamiltonianBase.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/QMCHamiltonianBase.Po' tmpdepfile='$(DEPDIR)/QMCHamiltonianBase.TPo' @AMDEPBACKSLASH@
+QMCHamiltonian.obj: QMCHamiltonians/QMCHamiltonian.cpp
+@AMDEP_TRUE@	source='QMCHamiltonians/QMCHamiltonian.cpp' object='QMCHamiltonian.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/QMCHamiltonian.Po' tmpdepfile='$(DEPDIR)/QMCHamiltonian.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o QMCHamiltonianBase.obj `cygpath -w QMCHamiltonians/QMCHamiltonianBase.cpp`
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o QMCHamiltonian.obj `cygpath -w QMCHamiltonians/QMCHamiltonian.cpp`
 
-QMCHamiltonianBase.lo: QMCHamiltonians/QMCHamiltonianBase.cpp
-@AMDEP_TRUE@	source='QMCHamiltonians/QMCHamiltonianBase.cpp' object='QMCHamiltonianBase.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/QMCHamiltonianBase.Plo' tmpdepfile='$(DEPDIR)/QMCHamiltonianBase.TPlo' @AMDEPBACKSLASH@
+QMCHamiltonian.lo: QMCHamiltonians/QMCHamiltonian.cpp
+@AMDEP_TRUE@	source='QMCHamiltonians/QMCHamiltonian.cpp' object='QMCHamiltonian.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/QMCHamiltonian.Plo' tmpdepfile='$(DEPDIR)/QMCHamiltonian.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o QMCHamiltonianBase.lo `test -f 'QMCHamiltonians/QMCHamiltonianBase.cpp' || echo '$(srcdir)/'`QMCHamiltonians/QMCHamiltonianBase.cpp
+	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o QMCHamiltonian.lo `test -f 'QMCHamiltonians/QMCHamiltonian.cpp' || echo '$(srcdir)/'`QMCHamiltonians/QMCHamiltonian.cpp
 
 JastrowBuilder.o: QMCWaveFunctions/JastrowBuilder.cpp
 @AMDEP_TRUE@	source='QMCWaveFunctions/JastrowBuilder.cpp' object='JastrowBuilder.o' libtool=no @AMDEPBACKSLASH@

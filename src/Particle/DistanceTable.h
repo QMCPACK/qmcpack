@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////
-// (c) Copyright 2003  by Jeongnim Kim
+// (c) Copyright 2003-  by Jeongnim Kim
 //////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////
 //   National Center for Supercomputing Applications &
@@ -27,13 +27,15 @@ namespace ohmmsqmc {
   class DistanceTableData;
 
   /** Class to store tabulated data for particle distances, cosine vectors and inverses.
-   * @author Jeongnim Kim 
-   * @brief There is only one instance of the data memebers of 
+   * 
+   * There is only one instance of the data memebers of 
    * DistanceTable in an application and the data are shared by many objects.
    * Note that static data members and functions are used 
    * (based on singleton and factory patterns).
    *\todo DistanceTable should work as a factory, as well, to instantiate DistanceTableData
-   * subject to different boundary conditions. Lattice/CrystalLattice.h and Lattice/CrystalLattice.cpp can be owned by DistanceTable to generically control the crystalline structure.
+   * subject to different boundary conditions. 
+   * Lattice/CrystalLattice.h and Lattice/CrystalLattice.cpp can be owned by DistanceTable 
+   * to generically control the crystalline structure.
    */
   class DistanceTable {
     
