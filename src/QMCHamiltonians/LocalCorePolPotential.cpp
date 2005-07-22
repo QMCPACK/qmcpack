@@ -57,6 +57,7 @@ namespace ohmmsqmc {
     C = -0.5*alpha;
     one_over_rr = 1.0/r_b/r_b;
     LOGMSG("\talpha = " << alpha << " rb = " << r_b)
+    return true;
   }
   
   /** process xml node for CPP
