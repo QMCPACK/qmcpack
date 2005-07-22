@@ -17,7 +17,7 @@
 #ifndef NUMEROVCLASS_H
 #define NUMEROVCLASS_H
 
-/**@defgroup NumerovTransform
+/**@defgroup NumerovTransform Numerov Transformation
  *@brief Transform functors which provide interfaces to Numerov<ST,FT>.
  *
  *The prototype: "template<class SourceType> ATransformFunctor", 
