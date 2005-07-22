@@ -16,14 +16,14 @@ namespace ohmmsqmc {
 
     ~PolarizationPotential() { }
 
-    inline ValueType 
+    inline Return_t 
     evaluate(ParticleSet& P) {
       RealType sum = 0.0;
       for(int i=0; i < P.getTotalNum(); i++) sum += P.R[i][2];
       return (Efield * sum);
     }
 
-    inline ValueType 
+    inline Return_t 
     evaluate(ParticleSet& P, RealType& x){
       RealType sum = 0.0;
       for(int i=0; i < P.getTotalNum(); i++) sum += P.R[i][2];
@@ -31,15 +31,11 @@ namespace ohmmsqmc {
       return x;
     }
 
-#ifdef USE_FASTWALKER
-    inline void 
-    evaluate(WalkerSetRef& W, ValueVectorType& LE) {
+    /** Do nothing */
+    bool put(xmlNodePtr cur) {
+      return true;
     }
-#else
-    inline void 
-    evaluate(WalkerSetRef& W, ValueVectorType& LE) {
-    }
-#endif
+
   };
 }
 #endif

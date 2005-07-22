@@ -60,53 +60,28 @@ namespace ohmmsqmc {
     ///destructor
     ~HarmonicPotential() { }
 
-    inline ValueType 
+    inline Return_t 
     evaluate(ParticleSet& P) {
       RealType esum=0.0;
       for(int iat=0; iat<Centers; iat++) {
         RealType e = 0.0;
-	for(int nn=d_table->M[iat]; nn<d_table->M[iat+1]; nn++) {
-	  e += pow(d_table->r(0,nn),2);
-	}
+        for(int nn=d_table->M[iat]; nn<d_table->M[iat+1]; nn++) {
+          e += d_table->r(0,nn)*d_table->r(0,nn);
+        }
         esum += Omega[iat]*e;
       }
       return esum;
     }
 
-    inline ValueType evaluate(ParticleSet& P, RealType& x) {
+    inline Return_t evaluate(ParticleSet& P, RealType& x) {
       return x=evaluate(P);
     }
+    
+    /** Do nothing */
+    bool put(xmlNodePtr cur) {
+      return true;
+    }
 
-#ifdef WALKERSTORAGE_COLUMNMAJOR
-    inline void 
-    evaluate(WalkerSetRef& P, ValueVectorType& LE) {
-      ValueVectorType e(P.walkers());
-      for(int iw=0; iw<P.walkers(); iw++) {
-	e=0.0;
-	for(int iat=0; iat<Centers; iat++) {
-	  for(int nn=d_table->M[iat]; nn<d_table->M[iat+1]; nn++) {
-	    e[iw] += pow(d_table->r(iw,nn),2);
-	  }
-	}
-      }
-      for(int iw=0; iw<P.walkers(); iw++) { LE[iw] += e[iw];} 
-    }
-#else
-    inline void 
-    evaluate(WalkerSetRef& P, ValueVectorType& LE) {
-      for(int iw=0; iw<P.walkers(); iw++) {
-	RealType e=0.0;
-	for(int iat=0; iat<Centers; iat++) {
-	  RealType esub = 0.0;
-	  for(int nn=d_table->M[iat]; nn<d_table->M[iat+1]; nn++) {
-	    esub += pow(d_table->r(iw,nn),2);
-	  }
-	  e += esub; ///multiply z
-	}
-	LE[iw] += e;
-      }
-    }
-#endif
   };
 }
 #endif

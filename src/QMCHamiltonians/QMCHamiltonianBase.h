@@ -29,14 +29,18 @@ namespace ohmmsqmc {
 
   /** An abstract class for Local Energy operators 
    *
-   * Use of ValueType is questionable. The types should be checked when using
-   * complex wave functions.
+   * Return_t is defined as RealTye. 
+   * The types should be checked when using complex wave functions.
    */ 
   struct QMCHamiltonianBase: public QMCTraits {
-
+    
+    /**\typedef Return value of the functions
+     */
+    typedef RealType Return_t;
+ 
     RealType Tau;
     RealType Value;
-
+   
     ///constructor
     QMCHamiltonianBase():Tau(0.0),Value(0.0){}
 
@@ -47,15 +51,23 @@ namespace ohmmsqmc {
      *@param P input configuration containing N particles
      *@return the value of the Hamiltonian
      */
-    virtual ValueType evaluate(ParticleSet& P) = 0; 
+    virtual Return_t evaluate(ParticleSet& P) = 0; 
 
     /** Evaluate the local energies of an N-particle configuration
      *@param P input configuration containing N particles
      *@param x the sum of local energies
      *@return the value the Local Energy
     */
-    virtual ValueType evaluate(ParticleSet& P, RealType& x) = 0;
-
+    virtual Return_t evaluate(ParticleSet& P, RealType& x) = 0;
+    
+    /** read the input parameter
+     * @param cur xml node for a QMCHamiltonianBase object
+     */
+    virtual bool put(xmlNodePtr cur)=0;
+    
+    /** set Tau
+     * @param tau time step
+     */
     inline void setTau(RealType tau) { Tau = tau;}
   };
 }

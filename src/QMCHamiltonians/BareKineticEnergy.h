@@ -22,11 +22,9 @@
 
 namespace ohmmsqmc {
 
-  /**
-   *\brief Evaluate the kinetic energy where
-   the effective mass of the electrons is \f$ m^* = 1 \f$.
+  /**Evaluate the kinetic energy with the mass \f$ m^* = 1 \f$ in AU.
    *
-   To evaluate the Bare Kinetic part of the local energy 
+   * To evaluate the Bare Kinetic part of the local energy 
    \f$E_L({\bf R}) = \Psi^{-1}({\bf R})\hat{H}\Psi({\bf R}),\f$
    it is useful to use the following trick
    \f[
@@ -54,18 +52,26 @@ namespace ohmmsqmc {
     ///destructor
     ~BareKineticEnergy() { }
 
-    ValueType 
+    Return_t 
     evaluate(ParticleSet& P) {
       RealType ke = 0.0;
       for(int i=0; i<P.getTotalNum(); i++) {
-	ke += dot(P.G(i),P.G(i)) + P.L(i);
+        ke += dot(P.G(i),P.G(i)) + P.L(i);
       }
       return -M*ke;
     }
 
-    ValueType 
+    Return_t 
     evaluate(ParticleSet& P, RealType& x){
       return x=evaluate(P);
+    }
+    
+    /** implements the virtual function.
+     * 
+     * Nothing is done but should check the mass
+     */
+    bool put(xmlNodePtr) {
+      return true;
     }
 
     //Not used anymore

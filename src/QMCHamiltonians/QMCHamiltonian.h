@@ -30,10 +30,11 @@ namespace ohmmsqmc {
   class QMCHamiltonian  {
 
   public:
-
+  
     typedef QMCHamiltonianBase::RealType  RealType;
     typedef QMCHamiltonianBase::ValueType ValueType;
-
+    typedef QMCHamiltonianBase::Return_t  Return_t;
+    
     ///constructor
     QMCHamiltonian();
     ///destructor
@@ -52,7 +53,7 @@ namespace ohmmsqmc {
     inline string getName(int i) const { return Hname[i];}
 
     ///return the value of Hamiltonian i
-    inline RealType operator[](int i) const { return Hvalue[i];}
+    inline Return_t operator[](int i) const { return Hvalue[i];}
 
     ///return the number of Hamiltonians
     inline int size() const { return H.size();}
@@ -71,9 +72,9 @@ namespace ohmmsqmc {
      */
     QMCHamiltonianBase* getHamiltonian(const string& aname);
     ////return the LocalEnergy \f$=\sum_i H^{qmc}_{i}\f$
-    inline RealType getLocalEnergy() { return LocalEnergy;}
+    inline Return_t getLocalEnergy() { return LocalEnergy;}
     ////return the LocalPotential \f$=\sum_i H^{qmc}_{i} - KE\f$
-    inline RealType getLocalPotential() { return LocalEnergy-Hvalue[0];}
+    inline Return_t getLocalPotential() { return LocalEnergy-Hvalue[0];}
 
     /** set Tau for each Hamiltonian
      */
@@ -87,18 +88,18 @@ namespace ohmmsqmc {
      *
      * P.R, P.G and P.L are used to evaluate the LocalEnergy.
      */
-    ValueType evaluate(ParticleSet& P);
+    Return_t evaluate(ParticleSet& P);
 
    private:
 
     ///Current Local Energy
-    RealType LocalEnergy;
+    Return_t LocalEnergy;
     ///vector of Hamiltonians
     std::vector<QMCHamiltonianBase*> H;
     ///vector containing the index of the Hamiltonians
     std::vector<int> Hindex;
     ///vector containing the values of the Hamiltonians
-    std::vector<RealType> Hvalue;
+    std::vector<Return_t> Hvalue;
     ///vector containing the names of the Hamiltonians
     std::vector<string> Hname;
     ///map the name to an index

@@ -23,11 +23,9 @@
 
 namespace ohmmsqmc {
 
-  /**
-   *\brief A fake Hamiltonian to check the sampling
-   * and numerical evaluation of the trial function.
+  /** A fake Hamiltonian to check the sampling of the trial function.
    * 
-   Integrating the expression
+   * Integrating the expression
    \f[
    {\bf \nabla} \cdot (\Psi_T({\bf R}) {\bf \nabla}
    \Psi_T({\bf R})) = \Psi_T({\bf R}) \nabla^2 
@@ -65,24 +63,28 @@ namespace ohmmsqmc {
     ConservedEnergy(){}
     ~ConservedEnergy() { }
 
-    ValueType 
+    Return_t 
     evaluate(ParticleSet& P) {
       return 0.0;
     }
 
-    inline ValueType 
+    inline Return_t 
     evaluate(ParticleSet& P, RealType& x) {
       RealType gradsq = 0.0;
       RealType lap = 0.0;
       for(int iat=0; iat<P.getTotalNum(); iat++) {
-	gradsq += dot(P.G(iat),P.G(iat));
-	lap += P.L(iat);
+        gradsq += dot(P.G(iat),P.G(iat));
+        lap += P.L(iat);
       }
       //pool.put(lap+2.0*gradsq);
       x = lap+2.0*gradsq;
       return 0.0;
     }
-
+    
+    /** Do nothing */
+    bool put(xmlNodePtr cur) {
+      return true;
+    }
   };
 }
 #endif

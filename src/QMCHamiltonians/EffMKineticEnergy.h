@@ -21,7 +21,12 @@
 #include "Numerics/Spline3D/Grid1D.h"
 
 namespace ohmmsqmc {
-
+  
+  /** Class to evaluate kinectic energy of a heterostructure
+   * 
+   * Spatially varying effective-mass is used to evaluate
+   * the kinetic energy term.
+   */
   struct EffMKineticEnergy: public QMCHamiltonianBase {
 
     RealType M;
@@ -34,7 +39,7 @@ namespace ohmmsqmc {
 		      const std::vector<double>& inveffm,
 		      RealType m=1.0): M(0.5/m){
 
-      /// assign the grid and initialise it 
+      // assign the grid and initialise it 
       inveffm_grid = new MatGrid1D(intvals.size()-1);
       inveffm_grid->init(aGrid1D,intvals,priority,inveffm);
 
@@ -43,48 +48,28 @@ namespace ohmmsqmc {
     /// The destructor
     ~EffMKineticEnergy() { if(inveffm_grid) delete inveffm_grid; }
 
-    ValueType 
+    Return_t 
     evaluate(ParticleSet& P) {
       RealType ke = 0.0;
-      double mterm = 0.7322;   /// gradmeff term // ????? CHANGE later
-			    /// !!! ddas
-
+      double mterm = 0.7322;   // gradmeff term // ????? CHANGE later
       for(int i=0; i<P.getTotalNum(); i++) {
-	double z = P.R[i][2];
-	RealType M = -0.5*inveffm_grid->prop(z);
-	ke += M*(dot(P.G(i),P.G(i)) + P.L(i));
-	if(z >= 1700.748 && z <= 1719.6452) ke += mterm*P.G(i)[2];
+        RealType z = P.R[i][2];
+        RealType M = -0.5*inveffm_grid->prop(z);
+        ke += M*(dot(P.G(i),P.G(i)) + P.L(i));
+        if(z >= 1700.748 && z <= 1719.6452) ke += mterm*P.G(i)[2];
       }
       return ke;
     }
 
-    ValueType
+    Return_t
     evaluate(ParticleSet& P, RealType& x) {
       return x=evaluate(P);
     }
 
-
-#ifdef WALKERSTORAGE_COLUMNMAJOR
-    void evaluate(WalkerSetRef& P, ValueVectorType& LE) {
-      ValueVectorType KE(P.walkers());
-      for(int iat=0; iat< P.particles(); iat++) {
-	for(int iw=0; iw< P.walkers(); iw++) {
-	  KE[iw] -= dot(P.G(iw,iat),P.G(iw,iat)) + P.L(iw,iat);
-	}
-      }
-      LE -= M*KE;
+    /** Do nothing */
+    bool put(xmlNodePtr cur) {
+      return true;
     }
-#else
-    void evaluate(WalkerSetRef& P, ValueVectorType& LE) {
-      for(int iw=0; iw< P.walkers(); iw++) {
-	RealType ke = 0.0;
-	for(int iat=0; iat< P.particles(); iat++) {
-	  ke -= dot(P.G(iw,iat),P.G(iw,iat)) + P.L(iw,iat);
-	}
-	LE[iw] -= M*ke;
-      }
-    }
-#endif
   };
 }
 #endif

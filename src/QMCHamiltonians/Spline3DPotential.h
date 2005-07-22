@@ -36,7 +36,7 @@ namespace ohmmsqmc {
     ~Spline3DPotential(){ }
     
     /// evaluate the potential
-    inline ValueType evaluate(ParticleSet& P){
+    inline Return_t evaluate(ParticleSet& P){
       ValueType e = 0.0;
       for(int i=0; i<P.getTotalNum(); i++) {
 	e+=pot_m->evaluate(P.R[i]);
@@ -44,7 +44,7 @@ namespace ohmmsqmc {
       return e;
     }
 
-    inline ValueType evaluate(ParticleSet& P, RealType& x){
+    inline Return_t evaluate(ParticleSet& P, RealType& x){
       return x=evaluate(P);
     }
 

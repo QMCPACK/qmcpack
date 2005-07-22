@@ -59,26 +59,30 @@ namespace ohmmsqmc {
     
     ~CoulombPotentialAB() { }
 
-    inline ValueType evaluate(ParticleSet& P) {
+    inline Return_t evaluate(ParticleSet& P) {
       RealType esum=0.0;
       for(int iat=0; iat<Centers; iat++) {
         for(int nn=d_table->M[iat]; nn<d_table->M[iat+1]; nn++)
-	  esum+=Z[iat]*d_table->rinv(nn);
+        esum+=Z[iat]*d_table->rinv(nn);
       }
       return esum;
     }
 
-    inline ValueType
+    inline Return_t
     evaluate(ParticleSet& P, RealType& x){
       RealType esum=0.0;
       for(int iat=0; iat<Centers; iat++) {
         for(int nn=d_table->M[iat]; nn<d_table->M[iat+1]; nn++) 
-	  esum+=Z[iat]*d_table->rinv(nn);
+        esum+=Z[iat]*d_table->rinv(nn);
       }
       x=esum;
       return esum;
     } 
-
+    
+    bool put(xmlNodePtr cur) {
+      return true;
+    }
+    
     //#ifdef USE_FASTWALKER
     //    inline void 
     //    evaluate(WalkerSetRef& W, ValueVectorType& LE) {
@@ -133,7 +137,7 @@ namespace ohmmsqmc {
 
     ~CoulombPotentialAA() { }
 
-    inline ValueType 
+    inline Return_t 
     evaluate(ParticleSet& P) {
       RealType sum = 0.0;
       for(int i=0; i<d_table->getTotNadj(); i++) sum += d_table->rinv(i);
@@ -143,13 +147,18 @@ namespace ohmmsqmc {
       //		       0.0);
     }
 
-    inline ValueType 
+    inline Return_t 
     evaluate(ParticleSet& P, RealType& x){
       RealType sum = 0.0;
       for(int i=0; i<d_table->getTotNadj(); i++) sum += d_table->rinv(i);
       return x=sum*C;
     }
 
+    /** Do nothing */
+    bool put(xmlNodePtr cur) {
+      return true;
+    }
+    
     //#ifdef USE_FASTWALKER
     //    inline void 
     //    evaluate(WalkerSetRef& W, ValueVectorType& LE) {
@@ -166,7 +175,8 @@ namespace ohmmsqmc {
     //    evaluate(WalkerSetRef& W, ValueVectorType& LE) {
     //      for(int iw=0; iw<W.walkers(); iw++) {
     //	RealType e =0.0;
-    //	for(int nn = 0; nn< d_table->getTotNadj(); nn++)  e += d_table->rinv(iw,nn);
+    //	for(int nn = 0; nn< d_table->getTotNadj(); nn++)  
+    //      e += d_table->rinv(iw,nn);
     //	LE[iw] += C*e; 
     //      }
     //    }

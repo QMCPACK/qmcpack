@@ -101,7 +101,7 @@ namespace ohmmsqmc {
     
     ~LocalPPotential();
 
-    inline ValueType evaluate(ParticleSet& P) {
+    inline Return_t evaluate(ParticleSet& P) {
       RealType esum=0.0;
       //loop over all the ions
       for(int iat=0; iat<Centers.size(); iat++) {
@@ -111,8 +111,13 @@ namespace ohmmsqmc {
       return esum;
     }
 
-    inline ValueType evaluate(ParticleSet& P, RealType& x) {
+    inline Return_t evaluate(ParticleSet& P, RealType& x) {
       return x=evaluate(P);
+    }
+    
+    /** Do nothing */
+    bool put(xmlNodePtr cur) {
+      return true;
     }
   };
 }

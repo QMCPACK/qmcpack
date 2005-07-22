@@ -146,22 +146,26 @@ namespace ohmmsqmc {
 
     ~NonLocalPPotential();
 
-    inline ValueType evaluate(ParticleSet& W) {
+    inline Return_t evaluate(ParticleSet& W) {
       
       RealType esum=0.0;
       //loop over all the ions
       for(int iat=0; iat<Centers.size(); iat++) {
-	esum += PP[Centers[iat]]->evaluate(d_table,iat);
-	if(PP[Centers[iat]]->nlpp_m.size()==0) continue;
-	esum += PP[Centers[iat]]->evaluate(W,d_table,iat,Psi);
+        esum += PP[Centers[iat]]->evaluate(d_table,iat);
+        if(PP[Centers[iat]]->nlpp_m.size()==0) continue;
+        esum += PP[Centers[iat]]->evaluate(W,d_table,iat,Psi);
       }
       return esum;
     }
 
-    inline ValueType evaluate(ParticleSet& P, RealType& x) {
+    inline Return_t evaluate(ParticleSet& P, RealType& x) {
       return x=evaluate(P);
     }
 
+    /** Do nothing */
+    bool put(xmlNodePtr cur) {
+      return true;
+    }
   };
 }
 #endif

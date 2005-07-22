@@ -34,47 +34,54 @@ namespace ohmmsqmc {
 
   struct IonIonPotential: public QMCHamiltonianBase {
 
+    bool FirstTime;
     ValueType d_sum;
-    IonIonPotential(RealType z=1.0): d_sum(0.0) { }
-
-    IonIonPotential(ParticleSet& ref): d_sum(0.0) { 
-
-      IndexType iii = DistanceTable::add(ref);
-      DistanceTableData* d_ii = DistanceTable::getTable(iii);
-      d_ii->create(1);
+    DistanceTableData* d_ii;
+    ParticleSet& PtclRef;
+    vector<RealType> Z;
+    
+    IonIonPotential(ParticleSet& ref): FirstTime(true), d_sum(0.0),d_ii(0), PtclRef(ref){ 
+      
+      d_ii = DistanceTable::getTable(DistanceTable::add(ref));
 
       SpeciesSet& tspecies(ref.getSpeciesSet());
       int charge = tspecies.addAttribute("charge");
       int nat = ref.getTotalNum();
-      vector<RealType> Z(nat);
+      Z.resize(nat);
       for(int iat=0; iat<nat;iat++) {
         Z[iat] = tspecies(charge,ref.GroupID[iat]);
       }
-      d_ii->evaluate(ref);
-      d_sum = 0.0;
-      for(int iat=0; iat< nat; iat++) {
-        RealType esum = 0.0;
-	for(int nn=d_ii->M[iat], jat=iat+1; nn<d_ii->M[iat+1]; nn++,jat++) {
-          esum += Z[jat]*d_ii->rinv(nn);
-	}
-        d_sum += esum*Z[iat];
-      }
-      LOGMSG("Energy of ion-ion interaction " << d_sum)
+     
     }
     
     ~IonIonPotential() { }
 
-    inline ValueType evaluate(ParticleSet& P) {return d_sum;}
+    inline Return_t evaluate(ParticleSet& P) {  
+      //Later it should check if the d_ii is already updated
+      if(FirstTime) {
+        d_ii->evaluate(PtclRef);
+        d_sum = 0.0;
+        for(int iat=0; iat< Z.size(); iat++) {
+          RealType esum = 0.0;
+          for(int nn=d_ii->M[iat], jat=iat+1; nn<d_ii->M[iat+1]; nn++,jat++) {
+            esum += Z[jat]*d_ii->rinv(nn);
+          }
+          d_sum += esum*Z[iat];
+        }
+        LOGMSG("Energy of ion-ion interaction " << d_sum)
+        FirstTime = false;
+      }
+      return d_sum;
+    }
 
-    inline ValueType evaluate(ParticleSet& P, RealType& x) {
-      //only for consistency
-      return x=d_sum;
+    inline Return_t evaluate(ParticleSet& P, RealType& x) {
+      return x=evaluate(P);
     }
     
-    //inline void 
-    //evaluate(WalkerSetRef& P, ValueVectorType& LE) {
-    //  LE += d_sum;
-    //}
+    /** Do nothing */
+    bool put(xmlNodePtr cur) {
+      return true;
+    }
   };
 }
 #endif

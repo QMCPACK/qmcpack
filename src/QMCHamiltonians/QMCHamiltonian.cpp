@@ -20,8 +20,12 @@
 #include "Utilities/OhmmsInfo.h"
 using namespace ohmmsqmc;
 
+/** constructor
+ */
 QMCHamiltonian::QMCHamiltonian(){ }
 
+/** destructor
+ */
 QMCHamiltonian::~QMCHamiltonian() {
   
   DEBUGMSG("QMCHamiltonian::~QMCHamiltonian")
@@ -68,6 +72,14 @@ QMCHamiltonian::remove(const string& aname) {
   return false;
 }
 
+/** add a number of properties to the ParticleSet
+ * @param P ParticleSet to which multiple columns to be added
+ * 
+ * QMCHamiltonian can add any number of properties to a ParticleSet.
+ * Hindex contains the index map to the ParticleSet::PropertyList.
+ * This enables assigning the properties evaluated by each QMCHamiltonianBase
+ * object to the correct property column.
+ */
 void 
 QMCHamiltonian::add2WalkerProperty(ParticleSet& P) {
   Hindex.resize(Hname.size());
@@ -79,7 +91,7 @@ QMCHamiltonian::add2WalkerProperty(ParticleSet& P) {
  *@param P input configuration containing N particles
  *@return the local energy
  */
-QMCHamiltonian::ValueType 
+QMCHamiltonian::Return_t 
 QMCHamiltonian::evaluate(ParticleSet& P) {
   LocalEnergy = 0.0;
   vector<QMCHamiltonianBase*>::iterator hit(H.begin()),hit_end(H.end());
@@ -91,11 +103,11 @@ QMCHamiltonian::evaluate(ParticleSet& P) {
 }
 
 
-/**
+/** return pointer to the QMCHamtiltonian with the name
  *@param aname the name of Hamiltonian
  *@return the pointer to the named term.
- *@brief Get a QMCHamiltonian with the name.
- *@note If not found, return NULL
+ *
+ * If not found, return 0
  */
 QMCHamiltonianBase* 
 QMCHamiltonian::getHamiltonian(const string& aname) {
@@ -103,7 +115,7 @@ QMCHamiltonian::getHamiltonian(const string& aname) {
   //check if already added, if not add at the end
   map<string,int>::iterator it = Hmap.find(aname);
   if(it == Hmap.end()) 
-    return NULL;
+    return 0;
   else 
     return H[(*it).second];
 }
