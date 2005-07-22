@@ -24,7 +24,9 @@ namespace ohmmsqmc {
 
   TrialWaveFunction::TrialWaveFunction():SignValue(1.0),LogValue(0.0){ }
 
-  /**@warning Have not decided whether Z is cleaned up by TrialWaveFunction 
+  /** Destructor
+   *
+   *@warning Have not decided whether Z is cleaned up by TrialWaveFunction 
    *  or not. It will depend on I/O implementation.
    */
   TrialWaveFunction::~TrialWaveFunction(){
@@ -33,7 +35,9 @@ namespace ohmmsqmc {
     for(int i=0; i<SPOSet.size(); i++) delete SPOSet[i];
   }
   
-  /**@param aterm a many-body wavefunction */
+  /** add an ObritalBase
+   *@param aterm a many-body wavefunction 
+   */
   void 
   TrialWaveFunction::add(OrbitalBase* aterm) {
     Z.push_back(aterm);
@@ -42,7 +46,7 @@ namespace ohmmsqmc {
   /** evaluate the log value of a many-body wave function
    *@param P input configuration containing N particles
    *@param all select the wave functions
-   *@return the value of log( PI_i psi_i)  many-body wave function
+   *@return the value of \f$ \log( \Pi_i \Psi_i) \f$  many-body wave function
    *
    * @if all == true
    *  all the wave functions evaluate the log value
@@ -140,12 +144,10 @@ namespace ohmmsqmc {
     return psi;
   }
   
-  /**
-     @param W the input set of walkers
-     @param psi a array containing Nw wave function values of each walker
-     @brief Upon return, the gradient and laplacian operators are summed 
-     by the components. 
-  */
+  /** Evaluate local energies, the gradient and laplacian operators
+   * @param W the input set of walkers
+   * @param psi a array containing Nw wave function values of each walker
+   */
   void 
   TrialWaveFunction::evaluate(WalkerSetRef& W, 
 			      OrbitalBase::ValueVectorType& psi)
@@ -177,7 +179,7 @@ namespace ohmmsqmc {
   }
 
   
-  /** evaluate \f$frac{\Psi({\bf R}_i^{'})}{\Psi({\bf R}_i})}\f$
+  /** evaluate \f$ frac{\Psi({\bf R}_i^{'})}{\Psi({\bf R}_i)}\f$
    * @param P ParticleSet
    * @param iat index of the particle with a trial move
    * @param dG total differentcal gradients

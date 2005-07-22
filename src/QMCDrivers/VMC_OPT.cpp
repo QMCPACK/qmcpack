@@ -78,19 +78,18 @@ namespace ohmmsqmc {
    The choice of the cost function depends on the application.  
    The local energy
    \f[
-   E_V() = \frac{ \int d{\bf R}\: \Psi^2({\bf R}) w({\bf R}) E_L({\bf R})}
+   E_V = \frac{ \int d{\bf R}\: \Psi^2({\bf R}) w({\bf R}) E_L({\bf R})}
    { \int d{\bf R}\: \Psi^2({\bf R}) w({\bf R})}
    \f]
    where \f$ E_L \f$ is the local energy and \f$ w \f$ is the weight:
-   the subscript of $\Psi$ refers to the \emph{current} parameter set:
+   the subscript of \f$ \Psi \f$ refers to the current parameter set:
    while \f$ \Psi \f$ is a function of the
    \emph{original} parameter set.  In discreet form
    \f[
    E_V() = \frac{\sum_{j=1}^M E_L({\bf R_j}) w({\bf R_j})}
    {\sum_{j=1}^M w({\bf R_j})}
    \f]
-   where the summnation is over the \f$ M \f$ configurations 
-   \f$ {\bf R} \f$ distributed
+   where the summnation is over the M configurations distributed
    according to the probability distribution \f$ P=|\Psi({\bf R})|^2 \f$.  
    Variance of the local energy
    \f[
@@ -100,7 +99,7 @@ namespace ohmmsqmc {
    \f]
    In discreet form
    \f[
-   \sigma^2_E() = \frac{\sum_{j=1}^M \left[ E_L({\bf R_j})-E_V()\right]^2
+   \sigma^2_E() = \frac{\sum_{j=1}^M \left[ E_L({\bf R_j})-E_V\right]^2
    w({\bf R_j})}{\sum_{j=1}^M w({\bf R_j})}
    \f]
   */
@@ -230,8 +229,8 @@ namespace ohmmsqmc {
 
   }
 
-  /** 
-   *@brief Perform the correlated sampling algorthim.
+  /**  Perform the correlated sampling algorthim.
+   *\return the number of effective walkers
    *
    The correlated sampling algorithim begins by reading in a set of
    configurations (walkers) \f$ {{\bf R}} \f$ that are distributed 
@@ -246,7 +245,7 @@ namespace ohmmsqmc {
    \f[ w({\bf R}) = \frac{\Psi({\bf R},\{{\bf \alpha_i}\})^2}
    {\Psi({\bf R},\{{\bf \alpha_0}\})^2}, \f]
    where \f$ \{{\bf \alpha_i}\} \f$ is the current parameter set. 
-   * \return the number of effective walkers \f$ N_{Eff} = 
+   * The number of effective walkers \f$ N_{Eff} = 
    \sum_{i=1}^N w({\bf R_i}) / \sum_{i=1}^{N} w^2({\bf R_i}) \f$
   */
 
@@ -342,10 +341,11 @@ namespace ohmmsqmc {
     }
   }
 
-  /** Reset the Wavefunction \f$ \Psi({\bf R},{{\bf \alpha_i}}). \f$
+  /** Reset the Wavefunction \f$ \Psi({\bf R},{{\bf \alpha_i}}) \f$
+   *@return true always
    *
    * Reset from the old parameter set \f$ {{\bf \alpha_i}} \f$ to the new parameter
-   * set \f$ {{\bf \alpha_{i+1}}}. \f$  
+   * set \f$ {{\bf \alpha_{i+1}}}\f$  
    */
   bool
   VMC_OPT::resetWaveFunctions() {
@@ -442,7 +442,7 @@ namespace ohmmsqmc {
 
     if(oset.empty()) {
       ERRORMSG("No Optimization Variables Set")
-	return false;
+      return false;
     } else {
       for(int i=0; i<oset.size(); i++) {
 	xmlChar* att= xmlGetProp(oset[i],(const xmlChar*)"method");

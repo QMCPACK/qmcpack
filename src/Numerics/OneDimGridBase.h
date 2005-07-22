@@ -64,9 +64,9 @@ struct OneDimGridBase {
 
   ///return the differential spacing of the grid
   inline T dh() const { return Delta;}
-  ///returns \f$r(i)\f$
+  ///returns \f$ r(i)\f$
   inline T r(int i) const {return X[i];}
-  ///returns \f$r(i+1)-r(i)\f$
+  ///returns \f$ r(i+1)-r(i)\f$
   inline T dr(int i) const { return X[i+1]-X[i];}  
   ///returns the size of the grid
   inline int size() const { return X.size();}
@@ -163,19 +163,17 @@ struct OneDimGridBase {
   }
 
 
-  /** return the current index
+  /** evaluate the index of r
    * @param r current position
-   * @return Loc
    *
-   * The grid index satifies \f$ X[Loc] \ge r \lt X[Loc+1]\f$.
+   * The grid index satifies \f$ X[Loc] \ge r < X[Loc+1]\f$.
    */
   virtual void locate(T r)=0;
 
-  /**
+  /** Set the grid given the parameters.
    *@param ri initial grid point
    *@param rf final grid point
    *@param n number of grid points
-   *@brief Set the grid given the parameters.
    */
   virtual void set(T ri, T rf, int n)=0;
   
@@ -183,10 +181,10 @@ struct OneDimGridBase {
 
 /** One-Dimensional linear-grid.
  *
- * The analytic form \f[ r_i = r_0 + 
- * i\left( \frac{r_f - r_0}{N-1} \right), \f]
+ * The analytic form \f$ r_i = r_0 + 
+ * i\left( \frac{r_f - r_0}{N-1} \right), \f$
  * where \f$ N \f$ is the number of points and the index
- * \f$ i \f$ runs from 0 to \f$ N-1 \f$
+ * \f$ i \f$ runs from 0 to \f$ N-1 \f$.
  */
 template <class T, class CT=Vector<T> >
 struct LinearGrid: public OneDimGridBase<T,CT> {
@@ -215,8 +213,8 @@ struct LinearGrid: public OneDimGridBase<T,CT> {
 
 /** One-Dimensional logarithmic-grid.
  *
- * The analytic form \f[ r_i = r_0 
- * \left( \frac{r_f}{r_0} \right) ^{\frac{i}{N-1}}, \f]
+ * The analytic form \f$ r_i = r_0 
+ * \left( \frac{r_f}{r_0} \right) ^{\frac{i}{N-1}}, \f$
  * where \f$ N \f$ is the number of points and the index
  * \f$ i \f$ runs from 0 to \f$ N-1 \f$
  */
@@ -256,8 +254,8 @@ struct LogGrid: public OneDimGridBase<T,CT> {
 
 /**One-Dimensional logarithmic-grid starting at the origin (Used in Siesta).
  *
- * The analytic form \f[ r_i = B 
- * \left[ \exp(Ai)-1 \right] , \f]
+ * The analytic form \f$ r_i = B 
+ * \left[ \exp(Ai)-1 \right] , \f$
  * where the number of points is \f$ N \f$ and the index
  * \f$ i \f$ runs from 0 to \f$ N-1 \f$
  */
