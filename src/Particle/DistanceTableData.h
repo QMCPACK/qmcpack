@@ -216,21 +216,25 @@ namespace ohmmsqmc {
     ///number of pairs
     int npairs_m;
 
-    /**defgroup storage
-     *@{
-     *@brief displacement vectors \f$dr(i,j) = R(j)-R(i)\f$ 
-     *Inverse of Carteisan distances\f$rinv(i,j) = 1/|R(j)-R(i)|\f$
+    /**defgroup storage data for nearest-neighbor relations
      */
+    /*@{*/
+    /** displacement vectors \f$dr(i,j) = R(j)-R(i)\f$  */
     std::vector<PosType> dr_m;
-    std::vector<RealType> r_m, rinv_m;
-    Matrix<PosType> dr2_m;
-    Matrix<RealType> r2_m, rinv2_m;
+    /** Cartesian distance \f$r(i,j) = |R(j)-R(i)|\f$ */
+    std::vector<RealType> r_m;
+    /** Inverse of Carteisan distances\f$rinv(i,j) = 1/|R(j)-R(i)|\f$ */
+    std::vector<RealType> rinv_m;
     /*@}*/
 
+    Matrix<PosType> dr2_m;
+    Matrix<RealType> r2_m, rinv2_m;
+
     /**resize the storage
-     *@param npairs the number of pairs which is evaluated by a derived class
-     *@param nw the number of copies
-     *@brief The data for the pair distances, normalized displacements
+     *@param npairs number of pairs which is evaluated by a derived class
+     *@param nw number of copies
+     *
+     * The data for the pair distances, normalized displacements
      *and the distance inverses are stored in a linear storage.
      * The logical view of these storages is (ipair,iwalker),
      * where 0 <= ipair < M[N[SourceIndex]] and 0 <= iwalker < N[WalkerIndex]
