@@ -118,12 +118,12 @@ namespace ohmmsqmc {
       } else if(htype == "siesta" || htype=="pseudo") {
         TrialWaveFunction* psi = psiPool->getPrimary();
         curH->add(new NonLocalPPotential(*ion,*qp,*psi),"NonLocal");
-      } else if(htype == "cpp") {
-        xmlChar* att2=xmlGetProp(cur,(const xmlChar*)"species");
-        string stype("Ge");
-        if(att2) stype = (const char*)att2;
-        curH->add(new LocalPPotential(*ion,*qp), "PseudoPot");
-        curH->add(new LocalCorePolPotential(*ion,*qp), "GeCPP");
+      //} else if(htype == "cpp") {
+      //  xmlChar* att2=xmlGetProp(cur,(const xmlChar*)"species");
+      //  string stype("Ge");
+      //  if(att2) stype = (const char*)att2;
+      //  curH->add(new LocalPPotential(*ion,*qp), "PseudoPot");
+      //  curH->add(new LocalCorePolPotential(*ion,*qp), "GeCPP");
       } else {
         ERRORMSG(htype << " is diabled")
       }
