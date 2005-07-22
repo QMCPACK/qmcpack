@@ -14,7 +14,7 @@ QMC_COMMON_SRCS = \
   ../QMCWaveFunctions/MolecularOrbitals/NumericalMolecularOrbitals.cpp\
   ../QMCHamiltonians/LocalPPotential.cpp\
   ../QMCHamiltonians/NonLocalPPotential.cpp\
-  ../QMCHamiltonians/GeCorePolPotential.cpp
+  ../QMCHamiltonians/LocalCorePolPotential.cpp
 
 QMC_DRIVERS = \
   ../QMCDrivers/QMCDriver.cpp\

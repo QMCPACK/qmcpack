@@ -32,7 +32,7 @@ using namespace std;
 #include "QMCHamiltonians/IonIonPotential.h"
 #include "QMCHamiltonians/LocalPPotential.h"
 #include "QMCHamiltonians/NonLocalPPotential.h"
-#include "QMCHamiltonians/GeCorePolPotential.h"
+#include "QMCHamiltonians/LocalCorePolPotential.h"
 
 namespace ohmmsqmc {
 
@@ -84,6 +84,8 @@ namespace ohmmsqmc {
             addCoulombPotential(cur,qp);
           } else if(pot_type == "pseudo") {
             addPseudoPotential(cur,qp);
+          } else if(pot_type == "cpp") {
+            addCorePolPotential(cur,qp);
           }
         } else if(cname == "constant") { 
           if(pot_type == "coulomb") { //ugly!!!
@@ -121,7 +123,7 @@ namespace ohmmsqmc {
         string stype("Ge");
         if(att2) stype = (const char*)att2;
         curH->add(new LocalPPotential(*ion,*qp), "PseudoPot");
-        curH->add(new GeCorePolPotential(*ion,*qp), "GeCPP");
+        curH->add(new LocalCorePolPotential(*ion,*qp), "GeCPP");
       } else {
         ERRORMSG(htype << " is diabled")
       }
@@ -186,6 +188,25 @@ namespace ohmmsqmc {
 
     LOGMSG("Creating non-local pseudopotential nuclei = " << src)
     curH->add(new NonLocalPPotential(*ion,*target,*psi), title);
+  }
+
+  void 
+  HamiltonianPool::addCorePolPotential(xmlNodePtr cur, ParticleSet* target) {
+
+    string src("i"),title("CorePol");
+
+    OhmmsAttributeSet pAttrib;
+    pAttrib.add(title,"name");
+    pAttrib.add(src,"source");
+    pAttrib.put(cur);
+
+    ParticleSet* ion=ptclPool->getParticleSet(src);
+    if(ion == 0) return;
+
+    LOGMSG("Creating Core-Polarization potential = " << src)
+    QMCHamiltonianBase* cpp=(new LocalCorePolPotential(*ion,*target));
+    cpp->put(cur); 
+    curH->add(cpp, title);
   }
 
   bool HamiltonianPool::put(std::istream& is) {

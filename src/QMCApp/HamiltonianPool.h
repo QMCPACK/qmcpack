@@ -80,6 +80,7 @@ namespace ohmmsqmc {
 
     void addCoulombPotential(xmlNodePtr cur, ParticleSet* target);
     void addPseudoPotential(xmlNodePtr cur, ParticleSet* target);
+    void addCorePolPotential(xmlNodePtr cur, ParticleSet* target);
 
   private:
 
