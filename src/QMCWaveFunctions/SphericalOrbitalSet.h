@@ -167,7 +167,7 @@ namespace ohmmsqmc {
     @param nptcl number of particles
     @param offset index of the first basis function
     @param y return vector \f$ y[i,j] = \phi_j({\bf r_i-R_I}) \f$
-    @param dy return vector \f$ dy[i,j] =  {bf \nabla}_i \phi_j({\bf r_i-R_I}) \f$
+    @param dy return vector \f$ dy[i,j] =  {\bf \nabla}_i \phi_j({\bf r_i-R_I}) \f$
     @param d2y return vector \f$ d2y[i,j] = \nabla^2_i \phi_j({\bf r_i-R_I}) \f$  
     *
        The results are stored in the matrices:
