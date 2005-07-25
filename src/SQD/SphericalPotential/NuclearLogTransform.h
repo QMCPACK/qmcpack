@@ -108,7 +108,7 @@ struct NuclearLogTransform {
     value_type r0 = V.r(i);
     value_type dr = V.dr(i);
     value_type deriv;
-    if(L<numeric_limits<value_type>::epsilon()) {
+    if(L){
       z0 = pow(r0,L+0.5);
       deriv = (L+0.5)*pow(r0,L-0.5);
     } else {

@@ -148,7 +148,7 @@ struct NuclearRelLogTransform {
     ofstream dfile(fname.c_str());
     for(int ig=imin+1; ig<V.size(); ig++) {
       value_type _r = V.r(ig),y,dy,d2y;
-      V.setgrid(_r);
+      //   V.setgrid(_r);
       y = V.evaluate(_r,1.0/_r,dy,d2y);
       dfile << setw(15) <<  setprecision(12) << _r << setw(20) << V(ig) 
 	    << setw(20) << dV[ig] << setw(20) << dy << setw(20) << d2V[ig]
@@ -181,7 +181,7 @@ struct NuclearRelLogTransform {
     value_type r0 = V.r(i);
     value_type dr = V.dr(i);
     value_type deriv;
-    if(L<numeric_limits<value_type>::epsilon()){
+    if(L){
       z0 = pow(r0,L+0.5);
       deriv = (L+0.5)*pow(r0,L-0.5);
     } else {
@@ -212,7 +212,7 @@ struct NuclearRelLogTransform {
     value_type r0 = V.r(i);
     value_type rinv = 1.0/r0;
     value_type rsq = pow(r0,2.0);
-    V.setgrid(r0);
+    //    V.setgrid(r0);
     V.evaluate(r0,rinv);
     value_type M = 1.0 + 0.5*alpha2*(E-V.Y);
     value_type Minv = 1.0/M;
@@ -229,10 +229,10 @@ struct NuclearRelLogTransform {
    *\return  \f$u_{nl}(r) = \sqrt{rM}\Psi_{nl}\f$
    */
   inline value_type convert(value_type y, value_type r) {
-    int i = V.setgrid(r);
+    //    int i = V.setgrid(r);
     value_type rinv = 1.0/r;
     V.evaluate(r,rinv);
-    return y*sqrt(r)*sqrt(1.0 + 0.5*alpha2*(E-V(i)));
+    return y*sqrt(r)*sqrt(1.0 + 0.5*alpha2*(E-V.Y));
   }
   
   ///reset the reference energy and turning point
