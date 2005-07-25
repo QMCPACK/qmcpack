@@ -17,16 +17,18 @@
 //   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-
 /**@file ParticleTags.h
  *@brief Declaration of the particle-related tags
  */
 #ifndef OHMMS_PARTICLETAGS_H
 #define OHMMS_PARTICLETAGS_H
 
-#include <string>
+/**@defgroup XMLTags Reserved XML tags
+ * @brief Reserved names for xml elements and attributes.
+ */
 
-/** define the tags for the data types and attributes of particle classes
+#include <string>
+/** Define the tags for the data types and attributes of particle classes
  *
  *The tags are grouped into
  *- the data type of an attribute (type name)
@@ -47,11 +49,13 @@ struct ParticleTags {
 	PA_TensorType /*!< tensor type */
   };
 
+  /** @ingroup XMLTags 
+   *@{
+   * @brief type names of particle attributes, e.g., posArray
+   */
   ///the tag for uninitialized datatype and name of attributes
   static std::string null_tag;
 
-  /** @defgroup datatype_tags tags for particle attribute types
-   *@{*/
   ///the datatype tag for the index-type attribute
   static std::string indextype_tag;
 
@@ -71,9 +75,10 @@ struct ParticleTags {
   static std::string xmoltype_tag;
   /*@}*/
 
-  /** @defgroup name_tags tags for particle attribute names
-    *@{
-    */
+  /** @ingroup XMLTags 
+   *@{
+   * @brief names of particle attributes, e.g., position
+   */
   ///the name for position attribute
   static std::string position_tag;
 
@@ -99,9 +104,10 @@ struct ParticleTags {
   static std::string sumbc_tag;
   /*@}*/
 
-  /** @defgroup xml_tags xml tags for particle and its attributes
-    *@{
-    */
+  /** @ingroup XMLTags 
+   *@{
+   * @brief xml element names 
+   */
   ///the name of particle node
   static std::string root_tag;    
   ///the name of particle attribute node

@@ -14,29 +14,32 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
+/**@file TrialWaveFunction.h
+ *@brief Declaration of a TrialWaveFunction 
+ */
 #ifndef OHMMS_QMC_TRIALWAVEFUNCTION_H
 #define OHMMS_QMC_TRIALWAVEFUNCTION_H
 
 #include "QMCWaveFunctions/OrbitalBase.h"
 #include "Optimize/VarList.h"
-
-/**@file TrialWaveFunction.h
- *@brief Declaration of a TrialWaveFunction 
+/**@defgroup MBWfs Many-body wave function group
+ * @brief Classes to handle many-body trial wave functions
  */
+
 namespace ohmmsqmc {
 
-  /** class for many-body trial wave function 
+  /** @ingroup MBWfs
+   * @brief Class to represent a many-body trial wave function 
    *
    *A many-body trial wave function is represented by
    *\f[
-   *\Psi({\bf R}) = \prod_i \Theta_i({\bf R}),
+   *\Psi({\bf R}) = \prod_i \psi_i({\bf R}),
    *\f]
-   *where each function \f$\Theta_i({\bf R})\f$ is an OrbitalBase.
+   *where each function \f$\psi_i({\bf R})\f$ is an OrbitalBase
+   (see OrbitalComponent).
    *A Composite Pattern is used to handle \f$\prod\f$ operations.
    *Each OrbitalBase should provide proper evaluate functions
    *for the value, gradient and laplacian values.
-   *
-   *@todo TrialWaveFunction should be a derived class of VarRegistry<RealType>
    */
   class TrialWaveFunction {
 
@@ -145,6 +148,7 @@ namespace ohmmsqmc {
     TrialWaveFunction(const TrialWaveFunction&) {}
     
   };
+  /**@}*/
 }
 #endif
 /***************************************************************************

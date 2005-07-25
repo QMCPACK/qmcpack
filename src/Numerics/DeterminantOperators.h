@@ -89,9 +89,10 @@ inline double Invert(double* x, int n, int m) {
 //   }
   return detvalue;
 }
-/*!\fn invert_matrix(MatrixA& M, bool getdet)
- * \param MatrixA, a matrix to be inverted
- * \param bool, if true, calculate the determinant
+
+/** invert a matrix
+ * \param M a matrix to be inverted
+ * \param getdet bool, if true, calculate the determinant
  * \return the determinant
  */
 template<class MatrixA>

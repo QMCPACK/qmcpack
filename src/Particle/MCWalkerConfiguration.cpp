@@ -128,12 +128,13 @@ MCWalkerConfiguration::copyWalkerRefs(Walker_t* head, Walker_t* tail) {
 }
 
 
-/**@param first the iterator of the first walker to work on
- *@param last the iterator of the last walker to work on
- *@brief Make Metropolis move to the walkers and save in a temporary array.
+/** Make Metropolis move to the walkers and save in a temporary array.
+ * @param it the iterator of the first walker to work on
+ * @param tauinv  inverse of the time step
+ *
+ * R + D + X
  */
 void MCWalkerConfiguration::sample(iterator it, RealType tauinv) {
-  /// R + D + X
   makeGaussRandom(R);
   R *= tauinv;
   R += (*it)->R + (*it)->Drift;

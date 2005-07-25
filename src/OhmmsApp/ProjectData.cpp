@@ -90,6 +90,11 @@ namespace OHMMS {
     reset();
   }
 
+  void ProjectData::rewind() {
+    m_series--; 
+    reset();
+  }
+
   /**\fn void ProjectData::reset()
    *\brief Construct the root name with m_title and m_series. 
    */

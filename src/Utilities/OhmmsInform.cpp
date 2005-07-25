@@ -15,8 +15,8 @@
 //   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-/*! \class OhmmsInform
- *  \brief Similar to Inform but with very limited functionalities
+/** @file OhmmsInform.cpp
+ * @brief Definition of OhmmsInform class.
  */
 #include "Utilities/OhmmsInform.h"
 

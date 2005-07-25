@@ -27,7 +27,9 @@ namespace ohmmsqmc {
 
   class PolymerChain;
 
-  /** Implements the RMC algorithm. */
+  /** @ingroup QMCDrivers 
+   * @brief Implements the RMC algorithm
+   */
   class ReptationMC: public QMCDriver {
 
   public:

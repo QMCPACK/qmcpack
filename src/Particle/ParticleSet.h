@@ -88,7 +88,9 @@ namespace ohmmsqmc {
 
     /**move a particle
      *@param iat the index of the particle to be moved
-     *@param newpos new position of the iat-th particle
+     *@param displ random displacement of the iat-th particle
+     *
+     * Update activePos  by  R[iat]+displ
      */
     SingleParticlePos_t makeMove(Index_t iat, const SingleParticlePos_t& displ);
 

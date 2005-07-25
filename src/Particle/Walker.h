@@ -147,8 +147,8 @@ namespace ohmmsqmc {
     }
 
     /** reset the property of a walker
-     *@param iw the id of this walker
-     *@param psi the wavefunction value
+     *@param logpsi \f$\log |\Psi|\f$
+     *@param sigN  sign of the trial wavefunction
      *@param ene the local energy
      *
      *Assign the values and reset the weight and multiplicity to one to start a run

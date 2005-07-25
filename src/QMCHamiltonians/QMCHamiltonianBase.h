@@ -25,16 +25,21 @@
 
 namespace ohmmsqmc {
 
+  /**@defgroup hamiltonian Hamiltonian group
+   * @brief QMCHamiltonian and its component, QMCHamiltonianBase
+   */
+
   class DistanceTableData;
 
-  /** An abstract class for Local Energy operators 
+  /** @ingroup hamiltonian
+   * @brief An abstract class for Local Energy operators 
    *
    * Return_t is defined as RealTye. 
    * The types should be checked when using complex wave functions.
    */ 
   struct QMCHamiltonianBase: public QMCTraits {
     
-    /**\typedef Return value of the functions
+    /** type of return value of evaluate
      */
     typedef RealType Return_t;
  

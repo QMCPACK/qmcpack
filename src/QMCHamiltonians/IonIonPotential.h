@@ -24,13 +24,15 @@
 
 namespace ohmmsqmc {
 
-  /**
+  /** @ingroup hamiltonian
    *\brief Calculates the Ion-Ion potential.
    *
    * \f[ H = \sum_{I<J} \frac{Z(I)Z(J)}{R_{IJ}}, \f]
    * where \f$ Z(I) \f$ is the effective charge of 
    * ion I.
-  */
+   * @todo IonIonPotential and CoulombPotentialAA should be 
+   * merged to one.
+   */
 
   struct IonIonPotential: public QMCHamiltonianBase {
 

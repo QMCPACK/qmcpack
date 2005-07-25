@@ -24,9 +24,8 @@ namespace ohmmsqmc {
   //forward declaration
   class ParticleSet;
   
-  /**
-   *A builder class to add a one- or two-body Jastrow function to
-   *a TrialWaveFunction from a xml file.
+  /**@ingroup WFSBuilder
+   *A builder class to add a one- or two-body Jastrow function to a TrialWaveFunction
    *
    *A xml node with OrbtialBuilderBase::jastrow_tag is parsed recursively.
    */

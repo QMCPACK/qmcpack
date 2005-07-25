@@ -66,6 +66,7 @@ namespace ohmmsqmc {
 
     /** a virtual function to report the scalar estimator
      *@param record 
+     *@param wgtinv inverse of the weight
      *
      *Evalaute the block-average and flush the internal data for new averages
      */

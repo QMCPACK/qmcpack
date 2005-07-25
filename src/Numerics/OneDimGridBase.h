@@ -252,7 +252,7 @@ struct LogGrid: public OneDimGridBase<T,CT> {
   }
 };
 
-/**One-Dimensional logarithmic-grid starting at the origin (Used in Siesta).
+/** One-Dimensional logarithmic-grid starting at the origin (Used in Siesta).
  *
  * The analytic form \f$ r_i = B 
  * \left[ \exp(Ai)-1 \right] , \f$
@@ -272,12 +272,16 @@ struct LogGridZero: public OneDimGridBase<T,CT> {
     Loc= static_cast<int>(log(r*OneOverB+1.0)*OneOverA);
   }
 
-  inline void set(T a, T b, int n) {
-    OneOverA = 1.0/a;
-    OneOverB = 1.0/b;
+  /** the meaing of ri/rf are different from the convetions of other classes
+   * @param ri ratio
+   * @param rf norm
+   * @param n number of grid, [0,n)
+   */
+  inline void set(T ri, T rf, int n) {
+    OneOverA = 1.0/ri;
+    OneOverB = 1.0/rf;
     X.resize(n);
-    for(int i=0; i<n; i++) X[i] = b*(exp(a*i)-1.0);
-
+    for(int i=0; i<n; i++) X[i] = rf*(exp(ri*i)-1.0);
     Delta = 0.0;
   }
 };

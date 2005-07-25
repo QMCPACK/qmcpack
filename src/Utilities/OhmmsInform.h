@@ -16,11 +16,8 @@
 //   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-/*! \class OhmmsInfo
- *  \brief Wrapper of ostream
- *
- * Each object can choose a prompt, a mode (only master processor or all the processors),
- * and an ostream.
+/** @file OhmmsInform.h
+ * @brief Declaration of OhmmsInform class.
  */
 #ifndef OHMMSINFORM_H
 #define OHMMSINFORM_H
@@ -35,6 +32,11 @@
 #include <sstream>
 #endif
 
+/**  Wrapper of ostream to provide uniform environments for run-time report
+ *
+ * Each object can choose a prompt, a mode (only master processor or all the processors),
+ * and an ostream.
+ */
 class OhmmsInform {
 
 public:

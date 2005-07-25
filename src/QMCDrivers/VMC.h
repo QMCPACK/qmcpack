@@ -22,7 +22,8 @@
 #include "QMCDrivers/QMCDriver.h" 
 namespace ohmmsqmc {
 
-  /** Implements the VMC algorithm. 
+  /** @ingroup QMCDrivers WalkerByWalker
+   *@brief implements the VMC algorithm. 
    */
   class VMC: public QMCDriver {
   public:

@@ -33,7 +33,11 @@ namespace ohmmsqmc {
   class ParticleSetPool;
   class WaveFunctionPool;
 
-  /* A collection of QMCHamiltonian objects
+  /** @ingroup qmcapp
+   * @brief Manage a collection of QMCHamiltonian objects
+   *
+   * This object handles \<hamiltonian\> elements and
+   * functions as a builder class for QMCHamiltonian objects.
    */
   class HamiltonianPool : public OhmmsElementBase {
 

@@ -50,7 +50,6 @@ struct OhmmsAttributeSet: public std::map<std::string, OhmmsElementBase*>
   /** add a new parameter corresponding to an xmlNode <parameter/>
    *@param aparam reference the object which this parameter is assigned to.
    *@param aname the value of the name attribute
-   *@param uname the value of the condition attribute
    *
    *The attributes of a parameter are
    * - name, the name of the parameter

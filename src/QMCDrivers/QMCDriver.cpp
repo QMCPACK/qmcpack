@@ -214,7 +214,7 @@ namespace ohmmsqmc {
 
   
   /** Parses the xml input file for parameter definitions for a single qmc simulation.
-   * \param q the current xmlNode
+   * \param cur current xmlNode
    *
    Available parameters added to the ParameterSeet
    <ul>

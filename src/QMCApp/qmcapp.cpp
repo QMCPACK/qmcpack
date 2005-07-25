@@ -21,12 +21,14 @@
 #include "Utilities/OhmmsInfo.h"
 #include "QMCApp/QMCMain.h"
 
-/**file main.cpp
+/** @file qmcapp.cpp
  *@brief a main function for QMC simulation. 
+ *
+ * @ingroup qmcapp
+ * @brief main function for qmcapp executable.
+ *
  *Actual works are done by QMCApps and its derived classe.
  *For other simulations, one can derive a class from QMCApps, similarly to MolecuApps.
- *
- *Only requirements are the constructor and init function to initialize.
  */
 int main(int argc, char **argv) {
 

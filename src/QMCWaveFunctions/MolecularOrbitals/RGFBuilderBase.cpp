@@ -35,7 +35,7 @@ namespace ohmmsqmc {
 
   /** printout for debug
    * @param aroot filename
-   * @oaram omode mode, 0=check cubic spline quality, 1=ascii and 2=hdf5
+   * @param omode mode, 0=check cubic spline quality, 1=ascii and 2=hdf5
    */
   void RGFBuilderBase::print(const string& aroot, int omode) {
 
@@ -92,22 +92,22 @@ namespace ohmmsqmc {
   }
 
   /** Add a radial grid to the list of radial grids.
-   * \param cur the current xmlNode to be processed
+   * \param cur current xmlNode to be processed
    * \return true if succeeds
    *
-   * The default grid is LogGrid and  grid/@npts = 1001.
+   * The default grid is LogGrid and  the number of grids is 1001.
    * Valid radial grids instantiated by the attributes
    * - LogGrid 
-   *  -- <grid type="log" ri="first-grid-value" rf="final-grid-value" npts="grid-points"/>
+   *  -- \<grid type="log" ri="first-grid-value" rf="final-grid-value" npts="grid-points"/\>
    *  -- \f$r(i) = ri\times(rf/ri)^{i/(npts-1)}\f$ for i=[0,npts).
    *  -- Default values : ri=1e-5, rf=100
    * - LogGridZero  
-   *  -- <grid type="log" scale="scale-value" step="step-value" first="1" npts="grid-points"/>
+   *  -- \<grid type="log" scale="scale-value" step="step-value" first="1" npts="grid-points"/\>
    *  -- \f$r(i) = scale\times(\exp{step*i}-1.0)\f$ for i=[0,npts). 
    *  -- Follows Pseudopotential xml schema (fsatom-pp)
    *  -- All the attributes should be provided.first attribute is ignored.
    * - LinearGrid 
-   *  -- <grid type="linear" ri="first-grid-value" rf="final-grid-value" npts="grid-points"/>
+   *  -- \<grid type="linear" ri="first-grid-value" rf="final-grid-value" npts="grid-points"/\>
    */
   bool 
   RGFBuilderBase::addGrid(xmlNodePtr cur) {

@@ -29,7 +29,9 @@ namespace ohmmsqmc {
   
   class MultiChain;
 
-  /** Implements the RMC algorithm. */
+  /** @ingroup QMCDrivers MultiplePsi
+   * @brief Implements the RMC algorithm for energy differences
+   */
   class RQMCMultiple: public QMCDriver {
 
   public:

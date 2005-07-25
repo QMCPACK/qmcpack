@@ -84,7 +84,7 @@ namespace ohmmsqmc {
    where \f$ E_L \f$ is the local energy and \f$ w \f$ is the weight:
    the subscript of \f$ \Psi \f$ refers to the current parameter set:
    while \f$ \Psi \f$ is a function of the
-   \emph{original} parameter set.  In discreet form
+   original parameter set.  In discreet form
    \f[
    E_V() = \frac{\sum_{j=1}^M E_L({\bf R_j}) w({\bf R_j})}
    {\sum_{j=1}^M w({\bf R_j})}

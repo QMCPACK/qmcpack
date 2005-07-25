@@ -13,9 +13,18 @@ namespace ohmmsqmc {
 
   class WalkerSetRef;
 
-  /** An abstract class for many-body orbitals
+  /**@defgroup OrbitalComponent Orbital group
+   * @brief Classes which constitute a many-body trial wave function
    *
-   * TrialWaveFunction is a product of  OrbitalBase objects.
+   * A many-body trial wave function is 
+   * \f[
+   * \Psi(\{ {\bf R}\}) = \prod_i \psi_{i}(\{ {\bf R}\}),
+   * \f]
+   * where \f$\psi\f$s are represented by 
+   * the derived classes from OrbtialBase.
+   */
+  /** @ingroup OrbitalComponent
+   * @brief An abstract class for a component of a many-body trial wave function
    */
   struct OrbitalBase: public QMCTraits {
 
@@ -91,7 +100,7 @@ namespace ohmmsqmc {
      *@param iat the index of a particle
      *@param dG the differential gradient
      *@param dL the differential laplacian
-     *@return \f$\phi(\{\bf R}^{'}\})/\phi(\{\bf R}^{'}\})\f$.
+     *@return \f$ \psi( \{ {\bf R}^{'} \} )/ \psi( \{ {\bf R}^{'} \}) \f$
      *
      *Paired with update(ParticleSet& P, int iat).
      */
@@ -106,7 +115,7 @@ namespace ohmmsqmc {
     /** evalaute the ratio of the new to old orbital value
      *@param P the active ParticleSet
      *@param iat the index of a particle
-     *@return \f$\phi(\{\bf R}^{'}\})/\phi(\{\bf R}^{'}\})\f$.
+     *@return \f$ \psi( \{ {\bf R}^{'} \} )/ \psi( \{ {\bf R}^{'}\})\f$
      *
      *Specialized for particle-by-particle move.
      */
@@ -133,7 +142,7 @@ namespace ohmmsqmc {
 
     /** add temporary data reserved for particle-by-particle move.
      *
-     * Return the log|phi|  like evalaute evaluateLog
+     * Return the log|psi|  like evalaute evaluateLog
      */
     virtual ValueType registerData(ParticleSet& P, PooledData<RealType>& buf) =0;
 

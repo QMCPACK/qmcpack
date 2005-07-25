@@ -17,34 +17,16 @@
 //   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
+/**@file ParticleFunctions.h
+ *@brief Utility functions that operate on Particle class
+ */
 #ifndef OHMMS_PARTICLEBASIC_FUNCTIONS_H
 #define OHMMS_PARTICLEBASIC_FUNCTIONS_H
 
 #include "ParticleBase/ParticleUtility.h"
-
-/**@file ParticleFunctions.h
- *@ingroup ptclutil
- * Utility functions that operate on Particle class
- */
-
-/**@fn template<class PL, class GIM> void PartitionGrid(PL& lattice, GIM& grid)
+/** Make three-level partition of the layout.
  *@param lattice Particle Layout class, e.g., CrystalLattice<T,D>
  *@param grid three by D-dimensional index array
- *
- *@brief Make three-level partition of the layout.
- *
- *grid(i,j) for i the level index and j the direction index
- *
- *Requirement for template GIM: access operator [i][j]
- *
- *Recommended template GIM: vector<TinyVector<int,D> > 
- *
- *The levels are:
- *<ul>
- *<il> i=0 for MPI level
- *<il> i=1 for OMP level
- *<il> i=2 for grid level
- *</ul>
  */
 template<class PL, class GIM>
 void PartitionGrid(PL& lattice, GIM& grid) {
@@ -77,36 +59,24 @@ void PartitionGrid(PL& lattice, GIM& grid) {
 }
   
 
-/**@fn template<class PT, class GIV, class GIM> 
- * void ExpandSuperCell(PT& in_, PT& out_, GIV& uc_grid, GIM& grid)
+/** Expand the input Particle object by uc_grid. 
  *@param in_ the original Particle object to be expanded.
  *@param out_ the output Particle object
  *@param uc_grid D-dimensional index array
  *@param grid three by D-dimensional index array
  *
- *@brief Expand the input Particle object by uc_grid. 
  *
- <ul>
- <li>uc_grid[i] for the number of unit cell in the first direction to 
- be duplicated.
+ - uc_grid[i] for the number of unit cell in the first direction to be duplicated.
+ -- Requirement for template GIV: access operator [i]
+ -- Recommended template GIV: TinyVector<int,D>  
+ - grid(i,j) for i the level index and j the direction index
+ -- Requirement for template GIM: access operator [i][j]
+ -- Recommended template GIM: vector<TinyVector<int,D> > 
 
- Requirement for template GIV: access operator [i]
-
- Recommended template GIV: TinyVector<int,D>  
-
- <li> grid(i,j) for i the level index and j the direction index
-
- Requirement for template GIM: access operator [i][j]
-
- Recommended template GIM: vector<TinyVector<int,D> > 
- 
  The levels are:
- <ul>
- <il> i=0 for MPI level
- <il> i=1 for OMP level
- <il> i=2 for grid level
- </ul>
- </ul> 
+ - i=0 for grid level
+ - i=1 for OMP level
+ - i=2 for MPI level
 */
 template<class PT, class GIV, class GIM>
 bool ExpandSuperCell(PT& in_, 
@@ -114,19 +84,18 @@ bool ExpandSuperCell(PT& in_,
 		     GIV& uc_grid,
 		     GIM& grid) {
   
-  ///Prepare lattice
+  //Prepare lattice
   out_.Lattice.set(in_.Lattice,&uc_grid[0]);
   typename PT::ParticleLayout_t& lattice = out_.Lattice;
 
-  ///assign the grid information
+  //assign the grid information
   //for(int i=0; i<grid.size(); i++)  lattice.Grid[i] = grid[i];
 
   lattice.makeGrid(grid);
 
-  ///\todogoing to use selectedset
   int natom = in_.getLocalNum();
   int ntot = uc_grid[0]*uc_grid[1]*uc_grid[2]*natom;
-  ///first convert the input position to unit, if not in unit
+  //first convert the input position to unit, if not in unit
   //in_.Lattice.convert2Unit(in_.R);
   in_.convert2Unit(in_.R);
 
@@ -172,7 +141,6 @@ bool ExpandSuperCellOMP(PT& in_,
 
   lattice.makeGrid(grid);
 
-  ///\todogoing to use selectedset
   int natom = in_.getLocalNum();
   int ntot = uc_grid[0]*uc_grid[1]*uc_grid[2]*natom;
   ///first convert the input position to unit, if not in unit

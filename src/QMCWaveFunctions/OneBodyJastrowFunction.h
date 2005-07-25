@@ -21,14 +21,17 @@
 
 namespace ohmmsqmc {
   
-  /** generic implementation of OneBodyJastrow<FT,SharedFunction>
+  /** @ingroup OrbitalComponent
+   * @brief generic implementation of one-body Jatrow function.
    *
    *The One-Body Jastrow has the form  
-   \f[ J_{e}({\bf R}) = \sum_{I=1}^{N_I} 
+   \f$ \psi = \exp{\left(-J_1\right)} \f$
+   \f[ J_{1}({\bf R}) = \sum_{I=1}^{N_I} 
    \sum_{i=1}^{N_e} u(r_{iI}) \f]
    where \f[ r_{iI} = |{\bf r}_i - {\bf R}_I| \f]
-   and the first summnation \f$ 1..N_I \f$ is over the centers
-   while the second summnation \f$ 1..N_e \f$ is over electrons.
+   and the first summnation \f$ 1..N_I \f$ is over the centers,
+   e.g., nulcei for molecular or solid systems,
+   while the second summnation \f$ 1..N_e \f$ is over quantum particles.
    *
    *The template parameter FT is a functional \f$ u(r_{iI}), \f$ e.g.
    *class PadeJastrow<T> or NoCuspJastrow<T>
@@ -64,9 +67,6 @@ namespace ohmmsqmc {
    *The indices I(sources) and i(targets) are distinct. In general, the source 
    *particles are fixed, e.g., the nuclei, while the target particles are updated
    *by MC methods.
-   *
-   *@todo The second template parameter boolean will be removed, after
-   *the efficieny of different vectorized schemes is evaluated.
    */
   template<class FT>
   class OneBodyJastrow: public OrbitalBase {

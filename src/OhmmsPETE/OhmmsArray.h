@@ -15,16 +15,15 @@
 //   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-/*! \class template<class T, unsigned D> class Array
- *  \brief A D-dimensional Array class based on PETE 
+#ifndef OHMMS_PETE_ARRAY_H
+#define OHMMS_PETE_ARRAY_H
+
+/** A D-dimensional Array class based on PETE
+ *
  *  Equivalent to blitz::Array<T,D>, pooma::Array<D,T>. 
  *  No operators are provided.
  *  \todo PETE
  */
-#ifndef OHMMS_PETE_ARRAY_H
-#define OHMMS_PETE_ARRAY_H
-
-
 #include <vector>
 #include <iostream>
 using namespace std;

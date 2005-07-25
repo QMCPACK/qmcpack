@@ -27,9 +27,11 @@ namespace ohmmsqmc {
 
   class MultipleEnergyEstimator;
 
-  /** Implements the VMCMultiple algorithm. 
+  /** @ingroup QMCDrivers WalkerByWalker MultiplePsi
+   * @brief Implements the VMC algorithm using umbrella sampling. 
    *
-   * Using umbrella sampling. Consult S. Chiesa's note.
+   * Energy difference method with multiple H/Psi.
+   * Consult S. Chiesa's note.
    */
   class VMCMultiple: public QMCDriver {
   public:

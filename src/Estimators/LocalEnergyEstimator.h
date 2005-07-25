@@ -76,7 +76,6 @@ namespace ohmmsqmc {
   
     /** constructor
      * @param h QMCHamiltonian to define the components
-     * @param hcopy number of copies of QMCHamiltonians
      */
     LocalEnergyEstimator(QMCHamiltonian& h) { 
       int hterms(h.size());

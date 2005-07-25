@@ -222,13 +222,16 @@ private:
 ///////////////////////////////////////////////////////////
 // member functions
 ///////////////////////////////////////////////////////////
+/** resize the attribute
+ *
+ *  Although resize exists, there is no reason to use it.
+ * Use, ParticleAttrib<T>::create which add a number of particle attributes.
+ * \warning For reasons I don't understand, KCC/SGI-CC on Origin cannot
+ * resize stl::vector with X.resize(n) with optimization.
+ * KCC on other platforms work perfectly fine.
+ */
 template<class T>
 void ParticleAttrib<T>::resize(unsigned n){
-  //! \note Although resize exists, there is no reason to use it.
-  //! Use, ParticleAttrib<T>::create which add a number of particle attributes.
-  //! \warn For reasons I don't understand, KCC/SGI-CC on Origin cannot
-  //! resize stl::vector with X.resize(n) with optimization.
-  //! KCC on other platforms work perfectly fine.
   if(n) {
     X = Container_t(n);
     nLocal = n;
@@ -236,8 +239,9 @@ void ParticleAttrib<T>::resize(unsigned n){
   }
 }
 
-//! \fn ParticleAttrib<T>::create(unsigned n)
-//! \brief Adding n elements for all the particle attributes added by addAttrubte
+/** Adding n elements for all the particle attributes added by addAttrubte
+ * @param n number of elements to be appended.
+ */
 template<class T>
 void ParticleAttrib<T>::create(unsigned n) {
 
@@ -250,9 +254,11 @@ void ParticleAttrib<T>::create(unsigned n) {
 }
  
 
-/*!\fn template<class T> bool ParticleAttrib<T>::get(std::ostream& os)
- *\return Required (user determines if the data is needed)
- *\brief Specialized to write the unit
+/** Specialized to write the unit
+ *\return true, if the attribute is relative to a unit
+ *
+ * Ad hoc get function to tell users if this attribute is absolute or relative value.
+ * E.g., is Cartesian unit vs Lattice unit.
  */
 template<class T>
 bool ParticleAttrib<T>::get(std::ostream& os) const {
@@ -260,11 +266,10 @@ bool ParticleAttrib<T>::get(std::ostream& os) const {
   return true;
 }
 
-/*!\fn template<class T> bool ParticleAttrib<T>::put(std::istream& is)
- *\brief Specialized to read the unit
+/** Specialized to read the unit
  */
 template<class T>
-bool ParticleAttrib<T>::put(istream& is) {
+bool ParticleAttrib<T>::put(std::istream& is) {
   is >> InUnit;
   return true;
 }

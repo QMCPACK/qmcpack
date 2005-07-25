@@ -23,16 +23,14 @@
 
 namespace ohmmsqmc {
 
-  /**
-   *@param targetPsi a trial wavefuntion to which determinant terms are added
-   *@param ions the ion particleset
+  /** constructor
    *@param els the electron particleset
+   *@param wfs trial wavefuntion to which determinant terms are added
+   *@param ions the ion particleset
    *
    *@note A DiracDeterminant is a single determinant, a SlaterDeterminant is 
    *the product of DiracDeterminants while a MultiDeterminant is a linear
    *combination of SlaterDeterminants
-   *
-   *@brief The Constructor.
    */
   HePresetHFBuilder::HePresetHFBuilder(ParticleSet& els, TrialWaveFunction& wfs, ParticleSet& ions):
     OrbitalBuilderBase(els,wfs) 

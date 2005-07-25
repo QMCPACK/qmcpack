@@ -236,7 +236,7 @@ EwaldSum<PT>::init(ParticleLayout_t& lat, const ParticleScalar_t& q){
 
 /** evaluate the Ewald-Sum
  *@param lat the lattice
- *@param R the input Cartesian Position
+ *@param Rcart the input Cartesian Position
  *@param q the input point charge
  */
 template<class PT>
@@ -517,11 +517,10 @@ EwaldSum<PT>::forcestress(const ParticleLayout_t& lat,
     }
   }
 
-  /*!\latex {
-    reciprocal term:
-    ${2\pi\over V} {1\over 4\eps} V_G= {\pi\over 2 V \eps}V_G$
-    direct term:${\sqrt{\eps}\over 2} V_R$ 
-    }
+  /** reciprocal term:
+    \f$ \frac{2\pi}{V} \frac{1}{4\epsilon} V_G= \frac{\pi}{2 V \epsilon}V_G \f$
+    direct term:
+    \f$\frac{\sqrt{\epsilon}}{2} V_R\f$ 
     unit = (au)^2/A
   */
   return 

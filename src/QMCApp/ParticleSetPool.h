@@ -28,7 +28,11 @@
 
 namespace ohmmsqmc {
 
-  /* A collection of ParticleSet objects.
+  /** @ingroup qmcapp
+   * @brief Manage a collection of ParticleSet objects
+   *
+   * This object handles \<particleset\> elements and
+   * functions as a builder class for ParticleSet objects.
    */
   class ParticleSetPool : public OhmmsElementBase {
 

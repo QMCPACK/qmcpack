@@ -32,7 +32,11 @@ namespace ohmmsqmc {
   class TrialWaveFunction;
   class ParticleSetPool;
 
-  /* A collection of TrialWaveFunction objects
+  /** @ingroup qmcapp
+   * @brief Manage a collection of TrialWaveFunction objects
+   *
+   * This object handles \<wavefunction\> elements and
+   * functions as a builder class for TrialWaveFunction objects.
    */
   class WaveFunctionPool : public OhmmsElementBase {
 

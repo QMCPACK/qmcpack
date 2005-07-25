@@ -50,7 +50,7 @@ QMCHamiltonian::add(QMCHamiltonianBase* h, const string& aname) {
 
 /** remove a named Hamiltonian from the list
  *@param aname the name of the Hamiltonian
- *@param return true, if the request hamiltonian exists and is removed.
+ *@return true, if the request hamiltonian exists and is removed.
  */
 bool 
 QMCHamiltonian::remove(const string& aname) {

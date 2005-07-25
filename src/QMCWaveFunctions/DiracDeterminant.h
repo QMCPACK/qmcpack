@@ -115,11 +115,10 @@ namespace ohmmsqmc {
     typedef Matrix<ValueType> Laplacian_t;
 #endif
 
-    /**
+    /** constructor
      *@param spos the single-particle orbital set
      *@param first index of the first particle
-     *@brief constructor
-    */
+     */
     DiracDeterminant(SPOSet& spos, int first=0): 
       NP(0), Phi(spos), FirstIndex(first) {}
 
@@ -139,12 +138,10 @@ namespace ohmmsqmc {
       return *this;
     }
 
-    /**
+    /** set the index of the first particle in the determinant and reset the size of the determinant
      *@param first index of first particle
      *@param nel number of particles in the determinant
-     *@brief set the index of the first particle in the
-     determinant and reset the size of the determinant
-    */
+     */
     inline void set(int first, int nel) {
       FirstIndex = first;
       resize(nel,nel);
@@ -319,7 +316,7 @@ namespace ohmmsqmc {
       return CurrentDet;
     }
 
-    void resizeByWalkers(int nw);
+    void resizeByWalkers(int nwalkers);
 
     ///return the number of rows (or the number of electrons)
     inline int rows() const { return psiM.rows();}
@@ -483,16 +480,16 @@ namespace ohmmsqmc {
   }
   
   template<class SPOSet>
-  void DiracDeterminant<SPOSet>::resizeByWalkers(int nw) {
-    if(psiM_v.size() < nw) {
-      psiM_v.resize(nw);
-      dpsiM_v.resize(nw);
-      d2psiM_v.resize(nw);
-      for(int iw=0; iw<nw; iw++) psiM_v[iw].resize(rows(),cols());
-      for(int iw=0; iw<nw; iw++) dpsiM_v[iw].resize(rows(),cols());
-      for(int iw=0; iw<nw; iw++) d2psiM_v[iw].resize(rows(),cols());
+  void DiracDeterminant<SPOSet>::resizeByWalkers(int nwalkers) {
+    if(psiM_v.size() < nwalkers) {
+      psiM_v.resize(nwalkers);
+      dpsiM_v.resize(nwalkers);
+      d2psiM_v.resize(nwalkers);
+      for(int iw=0; iw<nwalkers; iw++) psiM_v[iw].resize(rows(),cols());
+      for(int iw=0; iw<nwalkers; iw++) dpsiM_v[iw].resize(rows(),cols());
+      for(int iw=0; iw<nwalkers; iw++) d2psiM_v[iw].resize(rows(),cols());
     }
-    Phi.resizeByWalkers(nw);
+    Phi.resizeByWalkers(nwalkers);
   }
 }
 #endif

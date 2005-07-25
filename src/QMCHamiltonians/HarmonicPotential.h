@@ -24,9 +24,7 @@
 
 namespace ohmmsqmc {
 
-  /**
-   *\brief Evaluates the Harmonic Potential for a set of 
-   * source and target particles.
+  /** Evaluates the Harmonic Potential for a set of source and target particles.
    *
    * \f[ H = \sum_I \frac{1}{2}\omega(I)^2 r^2 \f] 
    * where \f$ \omega(I) \f$ is the frequency of oscillation 
@@ -49,7 +47,6 @@ namespace ohmmsqmc {
       Centers = center.getTotalNum();
       Omega.resize(Centers);
 
-      ///@warning need to be generalized by checking visitor.Species.
       RealType C = 0.5;
       for(int iat=0; iat<Centers;iat++) {
         RealType omega = center.Species(charge,center.GroupID[iat]);

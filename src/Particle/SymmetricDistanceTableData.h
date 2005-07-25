@@ -19,9 +19,14 @@
 
 namespace ohmmsqmc {
 
-  /** A derived classe from DistacneTableData, specialized for dense-symmetric case,
-   * i.e., the source and target sets are identical.
-   *@todo Template with the boundary conditions
+  /**@ingroup nnlist
+   * @brief A derived classe from DistacneTableData, specialized for dense-symmetric case
+   *
+   * SymmetricDTD stands for Symmetric Distance Table Data.
+   * The source and target sets are identical and the sum is over 
+   * distict pairs, i.e., \f$\sum_{i}\sum_{j<i}\f$.
+   * The template parameter BC provides BC::apply member function
+   * to evaluate Cartesian distances.
    */
   template<class BC>
   struct SymmetricDTD: public DistanceTableData{

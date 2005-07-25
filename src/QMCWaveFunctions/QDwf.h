@@ -141,7 +141,7 @@ public:
 
     int nsize = sigx.size();
 
-    /// \Psi_{x} sum of Gaussians
+    /// \f$\Psi_{x}\f$ sum of Gaussians
     double psix = 0.0,gfx=0.0,lfx=0.0;
     for(int i = 0; i < nsize; i++){
       double x = r[0] - X[i];
@@ -153,7 +153,7 @@ public:
       lfx += -2 * sigx[i] * ( 1.0 - 2.0 * sxx ) * phix;
     }
     
-    /// \Psi_{y} single Gaussian
+    /// \f$\Psi_{y}\f$ single Gaussian
     double y = r[1] - Y0;
     double sy = sigy * y;
     double syy = sy * y;
@@ -161,7 +161,7 @@ public:
     double gfy = - 2 * sy * psiy;
     double lfy = - 2 * sigy * ( 1.0 - 2.0 * syy ) * psiy;
 
-    /// \Psi_{z} AiryAi with exponential tail
+    /// \f$\Psi_{z}\f$ AiryAi with exponential tail
     double z = r[2]; double psiz,gfz,lfz;
     if( z <= zB ){
       psiz = psiB * exp ( kappa * ( z - zB ) );

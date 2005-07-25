@@ -14,13 +14,17 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
+/** @file OhmmsParameter.h
+ * @brief Declaration of OhmmsParameter class.
+ */
 #ifndef OHMMS_OHMMSPARAMETER_H
 #define OHMMS_OHMMSPARAMETER_H
 
 #include "OhmmsData/OhmmsElementBase.h"
 
-/*!\class generic class for parameter xmlNode
- *\brief <parameter/> node is used to generically add a named parameter whose
+/** generic class for parameter xmlNode
+ *
+ * <parameter/> node is used to generically add a named parameter whose
  *value is the content of an xmlNode. The definition confirms docbook::parameter
  *\htmlonly
  Usage is:

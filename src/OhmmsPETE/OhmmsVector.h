@@ -15,14 +15,11 @@
 //   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-/*! \class template<class T, class C> class Vector
- *  \brief A one-dimensional vector class based on PETE 
+/** A one-dimensional vector class based on PETE 
+ *
  *  Closely related to PETE STL vector example. 
- *
  *  Equivalent to blitz::Array<T,1>, pooma::Array<1,T>. 
- *  
  *  class C is a container class. Default is vector<T>
- *
  *  \todo Implement openMP compatible container class or evaluate function.
  *  \todo Implement get/put member functions for MPI-like parallelism 
  */

@@ -44,9 +44,9 @@ namespace ohmmsqmc {
     typedef MolecularOrbitalBasis<CenteredOrbitalType>      BasisSetType;
 
     /** constructor
-     * \param wfs reference to the wavefunction
-     * \param ions reference to the ions
      * \param els reference to the electrons
+     * \param psi reference to the wavefunction
+     * \param ions reference to the ions
      */
     GridMolecularOrbitals(ParticleSet& els, TrialWaveFunction& psi, ParticleSet& ions);
 

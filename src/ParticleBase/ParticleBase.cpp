@@ -17,10 +17,10 @@
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 
-// included by Particle/ParticleBase.h
-/*! \fn  ParticleBase<PL>::ParticleBase() 
- *  \breif Default constructor
+/** @file ParticleBase.cpp
+ * @brief Declarations of the template functions of ParticleBase
  */
+/** Default constructor */
 template<class PL>
 ParticleBase<PL>::ParticleBase():Counter(0), LocalNum(0), GlobalNum(0)
 { 
@@ -37,19 +37,19 @@ void ParticleBase<PL>::initBase() {
   GroupID.setTypeName(ParticleTags::indextype_tag);
   GroupID.setObjName(ParticleTags::ionid_tag);
 
-  ///map[type-name] to enum
+  //map[type-name] to enum
   AttribTypeMap[ParticleTags::indextype_tag]  = PA_IndexType;
   AttribTypeMap[ParticleTags::scalartype_tag] = PA_ScalarType;
   AttribTypeMap[ParticleTags::stringtype_tag] = PA_StringType;
   AttribTypeMap[ParticleTags::postype_tag]    = PA_PositionType;
   AttribTypeMap[ParticleTags::tensortype_tag] = PA_TensorType;
 
-  ///add basic attributes
+  //add basic attributes
   addAttribute(R);
   addAttribute(ID);
   addAttribute(GroupID);
 
-  ///curR is always in unit
+  //curR is always in unit
   curR.setUnit(PosUnit::LatticeUnit);
 }
   
@@ -61,8 +61,8 @@ ParticleBase<PL>::~ParticleBase()
   for(int i=0; i<myAttribList.size(); i++) delete myAttribList[i];
 }
 
-/*! \fn bool ParticleBase<PL>::hasAttrib(const char* name)
- *  \param name String for the attribute name
+/** check if named attribute exists
+ *  \param aname String for the attribute name
  *  \return true if the name is found.
  */
 template<class PL>
@@ -70,11 +70,10 @@ bool ParticleBase<PL>::hasAttrib(const std::string& aname) {
   return (Name2Index.find(aname) != Name2Index.end());
 }
 
-/*! \fn int ParticleBase<PL>::addAttrib(const string& tname, const string& oname)
+/** Search the name in VarMap and add the attribute if not found.
  *  \param tname String for the attribute type in ParticleTags
  *  \param oname String for the name of the new attribute
  *  \return the iterator of a new attribute
- *  \brief Search the name in VarMap and add the attribute if not found.
  */
 template<class PL>
 int ParticleBase<PL>::addAttribute(const std::string& tname, 
@@ -116,10 +115,9 @@ int ParticleBase<PL>::addAttribute(const std::string& tname,
   return o_id;
 }
 
-/*@{
- * \fn int ParticleBase<PL>::addAttrib(ParticlePos_t& pa) 
- * \param pa a ParticlePos_t to be added
- * \return true the locator (iterator) of the pa in the vector<ParticlePos_t*>
+/** Add ParticleIndex_t attribute, if not found
+ * \param pa  ParticleIndex_t to be added
+ * \return true the locator (iterator) of the pa in the vector<ParticleIndex_t*>
  */
 template<class PL>
 int
@@ -137,6 +135,10 @@ ParticleBase<PL>::addAttribute(typename ParticleBase<PL>::ParticleIndex_t& pa) {
   return oid;
 }
 
+/** Add ParticleScalar_t attribute, if not found
+ * \param pa  ParticleScalar_t to be added
+ * \return true the locator (iterator) of the pa in the vector<ParticleScalar_t*>
+ */
 template<class PL>
 int
 ParticleBase<PL>::addAttribute(typename ParticleBase<PL>::ParticleScalar_t& pa) {
@@ -152,6 +154,10 @@ ParticleBase<PL>::addAttribute(typename ParticleBase<PL>::ParticleScalar_t& pa) 
   return oid;
 }
 
+/** Add ParticlePos_t attribute, if not found
+ * \param pa  ParticlePos_t to be added
+ * \return true the locator (iterator) of the pa in the vector<ParticlePos_t*>
+ */
 template<class PL>
 int
 ParticleBase<PL>::addAttribute(typename ParticleBase<PL>::ParticlePos_t& pa) {
@@ -168,6 +174,10 @@ ParticleBase<PL>::addAttribute(typename ParticleBase<PL>::ParticlePos_t& pa) {
   return oid;
 }
 
+/** Add ParticleTensor_t attribute, if not found
+ * \param pa  ParticleTensor_t to be added
+ * \return true the locator (iterator) of the pa in the vector<ParticleTensor_t*>
+ */
 template<class PL>
 int
 ParticleBase<PL>::addAttribute(typename ParticleBase<PL>::ParticleTensor_t& pa) {
@@ -183,7 +193,6 @@ ParticleBase<PL>::addAttribute(typename ParticleBase<PL>::ParticleTensor_t& pa) 
   pa.setID(oid);
   return oid;
 }
-/*@}*/
 
 /*@{
  * \fn ParticlePos_t* ParticleBase<PL>::getVectorAttrib(const std::string& aname)

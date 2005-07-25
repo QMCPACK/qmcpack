@@ -21,12 +21,10 @@
 #include "Utilities/OhmmsInfo.h"
 #include "QMCApp/MO2Grid3D.h"
 
-/**file main.cpp
- *@brief a main function for QMC simulation. 
- *Actual works are done by QMCApps and its derived classe.
- *For other simulations, one can derive a class from QMCApps, similarly to MolecuApps.
+/**@file mo2grid3d_main.cpp
+ *@brief a main function to map MolecularOrbitals on 3-D numerical Orbitals
  *
- *Only requirements are the constructor and init function to initialize.
+ * Using MO2Grid3D as the engine to transform MolecularOrbitals
  */
 int main(int argc, char **argv) {
 

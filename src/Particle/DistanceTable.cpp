@@ -28,9 +28,12 @@ using namespace ohmmsqmc;
 //@todo introduce enum to automatically generate the distance table data with BC
 //enum { No=0, PNN, PPN, PPP};
 
-/**class for boundary conditions for distance evaluation
- *@brief use a simple dot product assuming cartesian coordinates
- *@todo implements periodic boundary conditions and factory function
+/**@ingroup nnlist
+ * @brief class to apply No Boundary conditions for distance evaluation
+ *
+ *NoBConds stands for No Boundary Conditions and is intended for
+ finite systems with open or vanishing boundary conditions.
+ Use a simple dot product assuming cartesian coordinates
  */
 template<class T, unsigned D>
 struct NoBConds {
@@ -40,6 +43,13 @@ struct NoBConds {
   }
 };
 
+/**@ingroup nnlist
+ * @brief class to apply Periodic Boundary conditions for distance evaluation
+ *
+ *PeriodicBConds stands for Periodic Boundary Conditions and is intended 
+ for periodic systems. The Cartesian distances are evaluated
+ according to the minimum-image convention.
+ */
 template<class T, unsigned D>
 struct PeriodicBConds {
   inline static T apply(const CrystalLattice<T,D>& lat, 
@@ -110,12 +120,11 @@ DistanceTable::add(const ParticleSet& s, const char* aname) {
   }
 }
 
-/*!\fn int DistanceTable::add(const ParticleSet& s,const ParticleSet& t, const char* aname) 
+/** Adding AsymmetricDTD to the list, e.g., el-nuclei distance table
  *\param s source particle set
- *\param s target particle set
+ *\param t target particle set
  *\param aname of a new DistanceTableData
  *\return index of the distance table with the name
- *\brief Adding AsymmetricDTD to the list, e.g., el-nuclei distance table
  */
 int
 DistanceTable::add(const ParticleSet& s, const ParticleSet& t,  

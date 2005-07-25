@@ -45,13 +45,18 @@ namespace OHMMS {
     ///increment a series number and reset m_projectroot
     void advance();
     
+    ///roll-back a series number and reset m_projectroot by one
+    void rewind();
+
     ///returns the name of the project
     inline const char* CurrentRoot() const { return m_projectroot.c_str();}
 
     ///returns the name of the project
     inline const char* NextRoot() const { return m_nextroot.c_str();}
 
-    ///\param oldroot is composed by the m_title and m_series
+    /** return the root of the previous sequence
+     * @param oldroot is composed by the m_title and m_series
+     */
     bool PreviousRoot(string& oldroot) const;
 
     ///title of the project

@@ -58,6 +58,17 @@ bool putContent(T& a, xmlNodePtr cur) {
   return stream >> a;
 }
 
+template<class IT>
+bool putContent(IT first, IT last, xmlNodePtr cur) {
+  std::istringstream 
+    stream((const char*)(xmlNodeListGetString(cur->doc, cur->xmlChildrenNode, 1)));
+  bool success=true;
+  while(success && first!=last) {
+    success=(stream >> *first++);
+  }
+  return success;
+}
+
 /*!\fn bool getContent(const T& a, xmlNodePtr cur)
  *\brief write a value to a node. 
  *\param a reference to a value to be copied to a node

@@ -21,10 +21,15 @@
 #define OHMMS_QMC_TRIALORBITALBUILDERBASE_H 
 
 #include "QMCWaveFunctions/TrialWaveFunction.h"
+/**@defgroup WFSBuilder Orbital builder group
+ * @brief Builder classes to add OrbitalComponent to a TrialWaveFunction
+ */
 
 namespace ohmmsqmc {
 
-  /** An abstract class to build a many-body wavefunction */
+  /**@ingroup WFSBuilder
+   * @brief An abstract class for wave function builders
+   */
   class OrbitalBuilderBase {
     
   public:
@@ -34,32 +39,32 @@ namespace ohmmsqmc {
     typedef TrialWaveFunction::PosType   PosType;    
     typedef TrialWaveFunction::GradType  GradType;    
 
-    /**
-     *\defgroup WavefunctionTags tags for the elements associated with the many-body wavefunctions
+    /** \ingroup XMLTags 
+     *@{
+     *@brief reserved tags for the elements associated with the many-body wavefunctions
      */
-    //@{
     /// the element name for a wavefunction
-    static string wfs_tag;  
+    static std::string wfs_tag;  
     /// the element name for a parameter
-    static string param_tag;  
+    static std::string param_tag;  
     /// the element name for a distancetable
-    static string dtable_tag;  
+    static std::string dtable_tag;  
     /// the element name for jatrow
-    static string jastrow_tag;
+    static std::string jastrow_tag;
     /// the element name for a set of Slater determinants, contains 1..* Slater determinants
-    static string detset_tag;
+    static std::string detset_tag;
     /// the element name for a Slater determinant, contains 1..* determinants
-    static string sd_tag;
+    static std::string sd_tag;
     /// the element name for a determinant, may contain (0..*) orbital or parameter element
-    static string det_tag;
+    static std::string det_tag;
     /// the element name for single-particle orbital
-    static string spo_tag;
+    static std::string spo_tag;
     /// the element name for the basis set: basis set contains multiple basis elements
-    static string basisset_tag;
+    static std::string basisset_tag;
     /// the element name for a group of basis functions: basis contains multiple basisfunc elements
-    static string basis_tag;
+    static std::string basis_tag;
     /// the element name for a basis function
-    static string basisfunc_tag;
+    static std::string basisfunc_tag;
     //@}
 
     /** constructor

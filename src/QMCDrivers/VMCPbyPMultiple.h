@@ -24,7 +24,9 @@ namespace ohmmsqmc {
 
   class MultipleEnergyEstimator;
   
-  /** Implements the VMC algorithm using particle-by-particle move. */
+  /** @ingroup QMCDrivers MultiplePsi ParticleByParticle
+   * @brief Implements the VMC algorithm
+   */
   class VMCPbyPMultiple: public QMCDriver {
   public:
     /// Constructor.

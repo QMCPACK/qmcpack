@@ -17,7 +17,7 @@
 //   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-/**@file InitMolecuarSystem.cpp
+/**@file InitMolecularSystem.cpp
  * @brief Implements InitMolecuarSystem operators.
  */
 #include "QMCApp/InitMolecularSystem.h"

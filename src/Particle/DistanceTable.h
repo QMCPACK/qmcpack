@@ -26,7 +26,8 @@ namespace ohmmsqmc {
   class WalkerSetRef;
   class DistanceTableData;
 
-  /** Class to store tabulated data for particle distances, cosine vectors and inverses.
+  /**@ingroup nnlist
+   * @brief Class to manage multiple DistanceTableData objects.
    * 
    * There is only one instance of the data memebers of 
    * DistanceTable in an application and the data are shared by many objects.

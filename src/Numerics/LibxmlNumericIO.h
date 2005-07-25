@@ -22,13 +22,11 @@
 #include "OhmmsData/libxmldefs.h"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
-/*!\fn bool putContent(std::Matrix<T>& a, xmlNodePtr cur)
- *\brief assign vector<T> from a node. Create a temporary vector and make assignment.
+/** assign vector<T> from a node. Create a temporary vector and make assignment.
  *\param a reference vector<T> 
  *\param cur current node to which a content is copied
  *\return ture if successful
  */
-
 template<class T>
 inline bool 
 putContent(Vector<T>& a, xmlNodePtr cur){

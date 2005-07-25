@@ -19,11 +19,10 @@
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include <numeric>
 namespace ohmmsqmc {
-  /** specialized TwoBodyJastrow<FT,true>
+  /** @ingroup OrbitalComponent
+   * @brief Specialization for two-body Jastrow function using one functor
    *
-   *Identical function \f$u(r_{ij})\f$ for all the pair types 
-   *For electrons, a single pair correlation function is used for 
-   *spins up-up/down-down/up-down/down-up.
+   *Identical function \f$ u(r_{ij})\f$ for all the pair types.
    */ 
   template<class FT>
   class TwoBodyJastrow<FT,true>: public OrbitalBase {
@@ -163,7 +162,7 @@ namespace ohmmsqmc {
       }
     }
 
-    /** evalaute ratio
+    /* evalaute ratio
      *@param P the active particle set
      *@param iat the index of the particle that is moved
      *
@@ -185,8 +184,8 @@ namespace ohmmsqmc {
      */
 
     void update(ParticleSet& P, 
-		ParticleSet::ParticleGradient_t& G, 
-		ParticleSet::ParticleLaplacian_t& L,
+		ParticleSet::ParticleGradient_t& dG, 
+		ParticleSet::ParticleLaplacian_t& dL,
 		int iat) {
       DiffValSum += DiffVal;
       GradType sumg,dg;
@@ -198,11 +197,11 @@ namespace ohmmsqmc {
 	dU[ji]=-1.0*curGrad[jat];
 	d2U[ij]=d2U[ji] = curLap[jat];
 	U[ij] =  U[ji] = curVal[jat];
-        G[jat] -= dg;
-	L[jat] += dl;
+        dG[jat] -= dg;
+	dL[jat] += dl;
       }
-      G[iat] += sumg;
-      L[iat] += suml;     
+      dG[iat] += sumg;
+      dL[iat] += suml;     
     }
 
     /** equivalent to evalaute but the main function is to store data */

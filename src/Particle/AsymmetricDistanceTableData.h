@@ -19,9 +19,13 @@
 
 namespace ohmmsqmc {
   
-  /** A derived classe from DistacneTableData, specialized for dense-asymmetric case,
-   * i.e., the source and target are distinct.
-   *@todo Template with the boundary conditions
+  /**@ingroup nnlist
+   * @brief A derived classe from DistacneTableData, specialized for dense-asymmetric case
+   *
+   * AsymmetricDTD stands for Asymmetric Distance Table Data with
+   * distinct source and target sets.
+   * The template parameter BC provides BC::apply member function
+   * to evaluate Cartesian distances.
    */
   template<class BC>
   struct AsymmetricDTD: public DistanceTableData {

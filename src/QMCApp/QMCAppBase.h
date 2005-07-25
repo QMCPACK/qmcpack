@@ -23,10 +23,20 @@
 #include "OhmmsData/OhmmsElementBase.h"
 #include "OhmmsApp/ProjectData.h"
 #include "OhmmsApp/RandomNumberControl.h"
+/**@defgroup qmcapp QMC Application Group
+ * @brief Application-level classes to manage QMC simulations.
+ *
+ * The classes in this group are responsble for handling of major xml elements
+ * under \<simulation\>.
+ */
 
 namespace ohmmsqmc {
 
-  /** Base class for QMC applications and utilities
+  /** @ingroup qmcapp
+   * @brief Base class for QMC applications and utilities
+   *
+   * Provide common functions to parse xml documents and write back
+   * a xml document for restarts.
    */
   class QMCAppBase {
 

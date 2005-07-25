@@ -103,21 +103,34 @@ namespace ohmmsqmc {
       cur=cur->next;
     }
 
-    if(q.size()) {
-      xmlNodePtr aqmc = xmlNewNode(NULL,(const xmlChar*)"qmc");
-      xmlNewProp(aqmc,(const xmlChar*)"method",(const xmlChar*)"dmc");
-      xmlNodePtr aparam = xmlNewNode(NULL,(const xmlChar*)"parameter");
-      xmlNewProp(aparam,(const xmlChar*)"name",(const xmlChar*)"en_ref");
-      char ref_energy[128];
-      sprintf(ref_energy,"%15.5e",qmcSystem->getLocalEnergy());
-      xmlNodeSetContent(aparam,(const xmlChar*)ref_energy);
-      xmlAddChild(aqmc,aparam);
-      xmlAddChild(m_root,aqmc);
-
-      for(int i=0;i<q.size(); i++) {
+    if(q.size()) { 
+      if(curRunType != DMC_RUN) {//add en_ref to the last node 
+        xmlNodePtr lastqmc=q.back();
+        xmlNodePtr aparam = xmlNewNode(NULL,(const xmlChar*)"parameter");
+        xmlNewProp(aparam,(const xmlChar*)"name",(const xmlChar*)"en_ref");
+        char ref_energy[128];
+        sprintf(ref_energy,"%15.5e",qmcSystem->getLocalEnergy());
+        xmlNodeSetContent(aparam,(const xmlChar*)ref_energy);
+        xmlAddChild(lastqmc,aparam);
+      }
+      //unlink other qmc node but the last one
+      for(int i=0;i<q.size()-1; i++) {
         xmlUnlinkNode(q[i]);
         xmlFreeNode(q[i]);
       }
+      //xmlNodePtr aqmc = xmlNewNode(NULL,(const xmlChar*)"qmc");
+      //xmlNewProp(aqmc,(const xmlChar*)"method",(const xmlChar*)"dmc");
+      //xmlNodePtr aparam = xmlNewNode(NULL,(const xmlChar*)"parameter");
+      //xmlNewProp(aparam,(const xmlChar*)"name",(const xmlChar*)"en_ref");
+      //char ref_energy[128];
+      //sprintf(ref_energy,"%15.5e",qmcSystem->getLocalEnergy());
+      //xmlNodeSetContent(aparam,(const xmlChar*)ref_energy);
+      //xmlAddChild(aqmc,aparam);
+      //xmlAddChild(m_root,aqmc);
+      //for(int i=0;i<q.size(); i++) {
+      //  xmlUnlinkNode(q[i]);
+      //  xmlFreeNode(q[i]);
+      //}
     }
 
     saveXml();
@@ -321,23 +334,29 @@ namespace ohmmsqmc {
     if (what == "vmc"){
       primaryH->add(new ConservedEnergy,"Flux");
       qmcDriver = new VMC(*qmcSystem,*primaryPsi,*primaryH);
+      curRunType = VMC_RUN;
     } else if(what == "vmc-ptcl"){
       primaryH->add(new ConservedEnergy,"Flux");
       qmcDriver = new VMCParticleByParticle(*qmcSystem,*primaryPsi,*primaryH);
+      curRunType = VMC_RUN;
     } else if(what == "dmc"){
       MolecuDMC *dmc = new MolecuDMC(*qmcSystem,*primaryPsi,*primaryH);
       dmc->setBranchInfo(PrevConfigFile);
       qmcDriver=dmc;
+      curRunType = DMC_RUN;
     } else if(what == "dmc-ptcl"){
       DMCParticleByParticle *dmc = new DMCParticleByParticle(*qmcSystem,*primaryPsi,*primaryH);
       dmc->setBranchInfo(PrevConfigFile);
       qmcDriver=dmc;
+      curRunType = DMC_RUN;
     } else if(what == "optimize"){
       VMC_OPT *vmc = new VMC_OPT(*qmcSystem,*primaryPsi,*primaryH);
       vmc->addConfiguration(PrevConfigFile);
       qmcDriver=vmc;
+      curRunType = OPTIMIZE_RUN;
     } else if(what == "rmc") {
       qmcDriver = new ReptationMC(*qmcSystem,*primaryPsi,*primaryH);
+      curRunType = RMC_RUN;
     } else if(what == "vmc-multi") {
       qmcDriver = new VMCMultiple(*qmcSystem,*primaryPsi,*primaryH);
       while(targetH.size()) {
@@ -345,6 +364,7 @@ namespace ohmmsqmc {
         targetH.pop();
         targetPsi.pop(); 
       }
+      curRunType = VMC_RUN;
     } else if(what == "vmc-ptcl-multi") {
       qmcDriver = new VMCPbyPMultiple(*qmcSystem,*primaryPsi,*primaryH);
       while(targetH.size()) {
@@ -352,6 +372,7 @@ namespace ohmmsqmc {
 	targetH.pop();
 	targetPsi.pop(); 
       }
+      curRunType = VMC_RUN;
     } else if(what == "rmc-multi") {
       qmcDriver = new RQMCMultiple(*qmcSystem,*primaryPsi,*primaryH);
       while(targetH.size()) {
@@ -359,9 +380,11 @@ namespace ohmmsqmc {
 	targetH.pop();
 	targetPsi.pop(); 
       }
+      curRunType = RMC_RUN;
     } else {
       qmcDriver = new DummyQMC(*qmcSystem,*primaryPsi,*primaryH);
       WARNMSG("Cannot termine what type of qmc to run. Creating DummyQMC for testing")
+      curRunType = DUMMY_RUN;
     }
 
     if(qmcDriver) {
@@ -377,7 +400,7 @@ namespace ohmmsqmc {
       //change the content of mcwalkerset/@file attribute
       for(int i=0; i<m_walkerset.size(); i++) {
         xmlSetProp(m_walkerset[i],
-            (const xmlChar*)"file", (const xmlChar*)myProject.CurrentRoot());
+            (const xmlChar*)"href", (const xmlChar*)myProject.CurrentRoot());
       }
 
       curMethod = what;

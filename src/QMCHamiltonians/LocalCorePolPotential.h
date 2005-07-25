@@ -23,7 +23,8 @@
 
 namespace ohmmsqmc {
 
-  /** The effective core polarization
+  /** @ingroup hamiltonian
+   @brief The effective core polarization potential.
 
      \f[
      V_{CPP} = -\frac{1}{2}\sum_{C}\alpha_C {\bf f}_C \cdot {\bf f}_C
@@ -31,8 +32,8 @@ namespace ohmmsqmc {
      Electric field which acts on core \f$C\f$ due to the charges of 
      valence electrons \f$i\f$ and the other cores \f$C'\f$
      \f[
-     {\bf f}_C = \sum_i \frac{{\bf r}_{Ci}}{r_{Ci}^3}C(r_{Ci},\rho_C)
-     -\sum_{C' \ne C} \frac{{\bf R}_{CC'}}{R_{CC'}^3}Z_{C'} = 
+     {\bf f}_C = \sum_i \frac{ {\bf r}_{Ci} }{r_{Ci}^3} C(r_{Ci},\rho_C)
+     -\sum_{C' \ne C} \frac{ {\bf R}_{CC'} }{ R_{CC'}^3 }Z_{C'} = 
      {\bf f}_C^e + {\bf f}_C^n
      \f]
      \f[
@@ -43,7 +44,7 @@ namespace ohmmsqmc {
      \f]
 
      \f$ C(r_{Ci},\rho_C) \f$ is a cut-off function for \f$ {\bf f}_C^e \f$ 
-     with an adjustable parameter \f$ \rho_C. \f$
+     with an adjustable parameter \f$ \rho_C \f$
 
      \f[
      V_{CPP} = -\frac{1}{2}\sum_C \left\{ \:\:\: \sum_i 
@@ -54,7 +55,7 @@ namespace ohmmsqmc {
      \f[ 
      -2 \left. \sum_i \sum_{C' \ne C} \frac{{\bf r}_{Ci} \cdot 
      {\bf R}_{CC'}}{r^3_{Ci}R^3_{CC'}} Z_{C'}C(r_{Ci},\rho_C) 
-     + \left| \sum_{C' \ne C}  \frac{{\bf R}_{CC'}}{R^3_{CC'}} Z_{C'} 
+     + \left| \sum_{C' \ne C}  \frac{ {\bf R}_{CC'} }{ R^3_{CC'} } Z_{C'} 
      \right|^2 \:\:\: \right\}
      \f]
   */
@@ -95,9 +96,9 @@ namespace ohmmsqmc {
 
     ///CoreCoef(C) = 1.0 if C=Ge, 0.0 for all other ions
     vector<bool> CoreCoef;
-    ///CoreCoreDipole(C,C') \f$= \frac{Z_{C'} {\bf R_{CC'}}}{R_{CC'}^3}\f$
+    ///CoreCoreDipole(C,C') \f$ = \frac{ Z_{C'} {\bf R}_{CC'} }{ R_{CC'}^3 }\f$
     vector<PosType> CoreCoreDipole;
-    ///ElCoreDipole(C,i) \f$= \frac{{\bf r_{Ci}}f({\bar{r_{bCi}}}{r_{Ci}^3}\f$
+    ///ElCoreDipole(C,i) \f$ = \frac{ {\bf r}_{Ci} f(\bar{r}_{bCi}) }{r_{Ci}^3}\f$
     Matrix<PosType> CoreElDipole;
 
     ///constructor
@@ -112,7 +113,7 @@ namespace ohmmsqmc {
       return x=evaluate(P);
     }
 
-    bool put(xmlNodePtr);
+    bool put(xmlNodePtr cur);
 
     //inline RealType fcpp(RealType z) {
     //  return pow((1.0-exp(-1.0*z*z)),2);

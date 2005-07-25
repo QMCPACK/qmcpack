@@ -32,8 +32,8 @@ namespace ohmmsqmc {
    \f[
    \psi_j ({\bf r}_i) = \sum_k C_{jk} \phi_{k}({\bf r}_i),
    \f]
-   *where \f$ \phi_{k} \f$ is the kth basis.
-   *The initialization and evaluation of \f$ \phi\ f$'s
+   *where \f$ \phi_{k} \f$ is the k-th basis.
+   *The initialization and evaluation of \f$ \phi \f$ 's
    *are delagated to the template class BS, but the linear-combination, i.e.,
    *matrix-vector or matrix-matrix multiplications are handedled by LCOrbitals
    *

@@ -27,15 +27,14 @@
  *
  *   static data members to facilitate C++/Fortran blas interface
  *   static member functions to use blas functions
+ *   - inline static void axpy
+ *   - inline static double norm2
+ *   - inline static float norm2
+ *   - inline static void symv
+ *   - inline static double dot
+ *   - inline static float dot
  *
- *     inline static void axpy
- *     inline static double norm2
- *     inline static float norm2
- *     inline static void symv
- *     inline static double dot
- *     inline static float dot
- *
- *  Arguments (float/double/complex<float>/complex<double>) determine
+ *  Arguments (float/double/complex\<float\>/complex\<double\>) determine
  *  which BLAS routines are actually used.
  *  Note that symv can be call in many ways.
  */

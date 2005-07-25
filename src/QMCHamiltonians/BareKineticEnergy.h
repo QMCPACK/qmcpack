@@ -22,7 +22,10 @@
 
 namespace ohmmsqmc {
 
-  /**Evaluate the kinetic energy with the mass \f$ m^* = 1 \f$ in AU.
+  /** @ingroup hamiltonian
+   @brief Evaluate the kinetic energy with a single mass
+   
+   The unit of the mass is AU, i.e., the electron mass \f$ m_e = 1 \f$.
    *
    * To evaluate the Bare Kinetic part of the local energy 
    \f$E_L({\bf R}) = \Psi^{-1}({\bf R})\hat{H}\Psi({\bf R}),\f$

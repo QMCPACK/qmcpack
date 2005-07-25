@@ -17,6 +17,10 @@
 //   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
+/**
+ * @file QMCDriver.h
+ * @brief Declaration of QMCDriver
+ */
 #ifndef OHMMS_QMC_QMCDRIVER_H
 #define OHMMS_QMC_QMCDRIVER_H
 
@@ -31,9 +35,30 @@ class OhmmsInform;
 
 namespace ohmmsqmc {
 
-  class MCWalkerConfiguration;
+  /** @defgroup QMCDrivers QMC Driver group
+   * QMC drivers that implement QMC algorithms
+   */
 
-  /** Base class to perform QMC simulations. */
+  /** @defgroup WalkerByWalker QMC Drivers using walker-by-walker update
+   * @brief Move all the particles for each walker
+   */
+
+  /** @defgroup ParticleByParticle QMC Drivers using particle-by-particle update
+   * @brief Move particle by particle
+   */
+
+  /** @defgroup MultiplePsi QMC Drivers for energy differences
+   * @brief Umbrella sampling over multiple H/Psi
+   *
+   * This class of QMC drivers are suitable to evaluate
+   * the energy differences of multiple H-Psi pairs.
+   */
+
+  class MCWalkerConfiguration;
+  /** @ingroup QMCDrivers
+   * @{
+   * @brief abstract base class for QMC engines 
+   */
   class QMCDriver: public QMCTraits {
 
   public:
@@ -146,7 +171,7 @@ namespace ohmmsqmc {
 
     //void getReady();
   };
-  
+  /**@}*/
 }
 
 #endif

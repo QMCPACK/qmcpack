@@ -29,9 +29,8 @@
 namespace ohmmsqmc {
 
 
-  /**
-   * \brief Evaluate the local potentials (either pseudo or full
-   core) around each ion.
+  /** @ingroup hamiltonian
+   * \brief Evaluate the local potentials (either pseudo or full core) around each ion.
    */
 
   struct LocalPPotential: public QMCHamiltonianBase {

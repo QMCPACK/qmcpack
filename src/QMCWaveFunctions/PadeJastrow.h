@@ -19,8 +19,8 @@
 #include "OhmmsData/libxmldefs.h"
 #include "Optimize/VarList.h"
 
-/**class Pade functional
- *@brief \f[ u(r) = \frac{a*r}{1+b*r} \f]
+/** Pade functional of \f[ u(r) = \frac{a*r}{1+b*r} \f]
+ *
  * Prototype of the template parameter of TwoBodyJastrow and OneBodyJastrow
  */
 template<class T>
@@ -101,8 +101,8 @@ struct PadeJastrow {
   }
 };
 
-/**class Pade functional
- *@brief \f[ u(r) = \frac{a*r+c*r^2}{1+b*r} \f]
+/** Pade function of \f[ u(r) = \frac{a*r+c*r^2}{1+b*r} \f]
+ *
  * Prototype of the template parameter of TwoBodyJastrow and OneBodyJastrow
  */
 template<class T>
@@ -121,10 +121,10 @@ struct PadeJastrow2 {
     C2 = 2.0*C;
   }
 
-  /**
+  /** reset the internal variables.
    *@param a Pade Jastrow parameter a 
    *@param b Pade Jastrow parameter b 
-   *@brief reset the internal variables.
+   *@param c Pade Jastrow parameter c 
    */
   void reset(T a, T b, T c) {
     A = a; B=b; C = c; C2 = 2.0*C;
@@ -138,7 +138,8 @@ struct PadeJastrow2 {
     return (A+br)*r/(1.0+br);
   }
 
-  /**@param r the distance
+  /** evaluate the value at r
+   * @param r the distance
      @param dudr return value  \f$ du/dr = a/(1+br)^2 \f$
      @param d2udr2 return value  \f$ d^2u/dr^2 = -2ab/(1+br)^3 \f$
      @return \f$ u(r) = a*r/(1+b*r) \f$
@@ -152,12 +153,13 @@ struct PadeJastrow2 {
     return u*v;
   }
 
-  /**@param cur current xmlNode from which the data members are reset
-   @param vlist VarRegistry<T1> to which the Pade variables A and B
-   are added for optimization
-   @brief T1 is the type of VarRegistry, typically double.  Read 
-   in the Pade parameters from the xml input file.
-  */
+  /** process input xml node
+   * @param cur current xmlNode from which the data members are reset
+   * @param vlist VarRegistry<T1> to which the Pade variables A and B are added for optimization
+   *
+   * T1 is the type of VarRegistry, typically double.  
+   * Read in the Pade parameters from the xml input file.
+   */
   template<class T1>
   void put(xmlNodePtr cur, VarRegistry<T1>& vlist){
     T Atemp,Btemp, Ctemp;

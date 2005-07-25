@@ -42,9 +42,9 @@ struct RPAJastrow {
     AFinv_sq = 0.5*A*Finv*Finv;
   }
 
-  /**
+  /** reset the internal variables.
    *@param a New Jastrow parameter a 
-   *@brief reset the internal variables.
+   *@param b New Jastrow parameter b 
    */
   void reset(T a, T b) {
     A=a; B=b; A2=2.0*A; Finv=pow(fabs(A*B),-0.5);

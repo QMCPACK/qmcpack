@@ -24,15 +24,16 @@
 
 namespace ohmmsqmc {
 
-  /**
-   *\brief CoulombPotential for the different source and 
-   *target particle sets.
+  /** @ingroup hamiltonian
+   *@brief CoulombPotential for the different source and target particle sets.
    *
    * \f[ H = \sum_i \frac{Z(i)q}{r} \f] 
    * where \f$ Z(i) \f$ is the effective charge of the Ith 
    * ion and \f$ q \f$ is the charge of the set of quantum particles.
    * For instance, \f$ q = -1 \f$ for electrons and 
    * \f$ q = 1 \f$ for positrons.
+   *
+   * @warning need to be generalized by checking visitor.Species.
    */
   struct CoulombPotentialAB: public QMCHamiltonianBase {
 
@@ -50,7 +51,6 @@ namespace ohmmsqmc {
       int iz = tspecies.addAttribute("charge");
       Centers = ions.getTotalNum();
       Z.resize(Centers);
-      ///@warning need to be generalized by checking visitor.Species.
       RealType C = -1.0; 
       for(int iat=0; iat<Centers;iat++) {
         Z[iat] = tspecies(iz,ions.GroupID[iat])*C;
@@ -116,9 +116,8 @@ namespace ohmmsqmc {
     //#endif
   };
 
-  /** 
-   *\brief CoulombPotential for the indentical source and 
-   * target particle sets. 
+  /** @ingroup hamiltonian
+   *@brief CoulombPotential for the indentical source and target particle sets. 
    *
    * \f[ H = \sum_i \frac{q^2}{r} \f] 
    * where \f$ q \f$ is the charge of the set of quantum 

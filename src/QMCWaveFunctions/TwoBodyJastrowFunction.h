@@ -21,22 +21,27 @@
 
 namespace ohmmsqmc {
 
-  /**
-     @defgroup TwoBodyJastrow
-     generic implementation of TwoBodyJastrow<FT,SharedFunction>
-     *@brief  The Two-Body Jastrow has the form 
-     \f[ J_{ee}({\bf R}) = \sum_{i<j}^N u(r_{ij}) \f]
+  /** @ingroup OrbitalComponent
+   *  @brief A generic TwoBodyJastrow functions
+   *
+   *  This is a dummy class to enable specializations for ShareFunction=true|false.
+   *The first template parameter FT is a functional \f$ u(r_{ij}) \f$, e.g.
+   *PadeJastrow<T>
+   *Requriement of the template function is 
+   *ValueType evaluate(ValueType r, ValueType& dudr, ValueType& d2udr2).
+   *The second template parameter SharedFunction is a boolean.
+   *SharedFunction=false means that each pair type (ij) has a unique
+   *functions, while SharedFunction=true means that all pair types
+   *share the same functional
+
+    * The Two-Body Jastrow has the form 
+    * \f$ \psi = \exp{\left(-J_2\right)}\f$ where
+     \f[ J_{2}({\bf R}) = \sum_{i<j}^N u(r_{ij}) \f]
      where \f[ r_{ij} = |{\bf r}_i - {\bf r}_j| \f]
-     and the summnation is over all distinct pairs
-     *
-     *The first template parameter FT is a functional \f$ u(r_{ij}), \f$ e.g.
-     *PadeJastrow<T>
-     *Requriement of the template function is 
-     *ValueType evaluate(ValueType r, ValueType& dudr, ValueType& d2udr2).
-     *The second template parameter SharedFunction is a boolean.
-     *SharedFunction=false means that each pair type (ij) has a unique
-     *functions, while SharedFunction=true means that all pair types
-     *share the same functional
+     and the summnation is over all distinct pairs,
+     as indicated by the sum \f$\sum_{i<j}\f$.
+     *TwoBodyJastrow<FT,bool> is specialized for TwoBodyJastrow<FT,true>
+     *and TwoBodyJastrow<FT,false>.
      *
      To calculate the Gradient use the identity
      \f[ 
@@ -78,25 +83,17 @@ namespace ohmmsqmc {
      which can be simplified to
      \f[\nabla^2_k (J_{ee}({\bf R})) = \sum_{i \neq k}^N \left(\frac{2}{r_{ik}}\frac{du}{dr_{ik}}
      + \frac{d^2u}{dr_{ik}^2}\right) \f]
-     *
-     */
-
-  /**
-     @ingroup TwoBodyJastrow
-     @class TwoBodyJastrow
-     @brief A generic TwoBodyJastrow function uses a distance table.
-     *The indices i(sources) and j(targets) are the same, as indicated by the sum
-     *\f$\sum_{i<j}\f$.
-     *
-     *@warning Note that -1 is multiplied globally after summing the pair terms.
-     */
-
+   *
+   *
+   *@warning Note that -1 is multiplied globally after summing the pair terms.
+   */
   template<class FT, bool SharedFunction>
   class TwoBodyJastrow: public OrbitalBase {};
 
-  /**class specialized TwoBodyJastrow<FT,false>
-   *@brief the function \f$u(r_{ij})\f$ depends on the pair type 
+  /** @ingroup OrbitalComponent
+   *  @brief Specialization for two-body Jastrow function using multiple functors
    *
+   *Each pair-type can have distinct function \f$u(r_{ij})\f$.
    *For electrons, distinct pair correlation functions are used 
    *for spins up-up/down-down and up-down/down-up.
    */ 
@@ -255,8 +252,8 @@ namespace ohmmsqmc {
 
 
     inline void update(ParticleSet& P, 		
-		       ParticleSet::ParticleGradient_t& G, 
-		       ParticleSet::ParticleLaplacian_t& L,
+		       ParticleSet::ParticleGradient_t& dG, 
+		       ParticleSet::ParticleLaplacian_t& dL,
 		       int iat) {
       DiffValSum += DiffVal;
       GradType sumg,dg;
@@ -268,11 +265,11 @@ namespace ohmmsqmc {
 	dU[ji]=-1.0*curGrad[jat];
 	d2U[ij]=d2U[ji] = curLap[jat];
 	U[ij] =  U[ji] = curVal[jat];
-        G[jat] -= dg;
-	L[jat] += dl;
+        dG[jat] -= dg;
+	dL[jat] += dl;
       }
-      G[iat] += sumg;
-      L[iat] += suml;     
+      dG[iat] += sumg;
+      dL[iat] += suml;     
     }
 
     inline ValueType registerData(ParticleSet& P, PooledData<RealType>& buf){

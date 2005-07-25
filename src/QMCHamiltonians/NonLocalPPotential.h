@@ -27,11 +27,9 @@ namespace ohmmsqmc {
 
   class WalkerSetRef;
 
-  /**
-   * \brief Evaluate the local potentials (either pseudo or full
-   core) around each ion.
+  /** @ingroup hamiltonian
+   * \brief Evaluate the semi local potentials
    */
-
   struct NonLocalPPotential: public QMCHamiltonianBase {
 
     typedef OneDimGridBase<ValueType> GridType;
@@ -146,14 +144,14 @@ namespace ohmmsqmc {
 
     ~NonLocalPPotential();
 
-    inline Return_t evaluate(ParticleSet& W) {
+    inline Return_t evaluate(ParticleSet& P) {
       
       RealType esum=0.0;
       //loop over all the ions
       for(int iat=0; iat<Centers.size(); iat++) {
         esum += PP[Centers[iat]]->evaluate(d_table,iat);
         if(PP[Centers[iat]]->nlpp_m.size()==0) continue;
-        esum += PP[Centers[iat]]->evaluate(W,d_table,iat,Psi);
+        esum += PP[Centers[iat]]->evaluate(P,d_table,iat,Psi);
       }
       return esum;
     }

@@ -22,7 +22,9 @@
 #include "QMCDrivers/QMCDriver.h" 
 namespace ohmmsqmc {
 
-  /** Implements the DMC algorithm using particle-by-particle move. */
+  /** @ingroup QMCDrivers ParticleByParticle 
+   *@brief Implements the DMC algorithm using particle-by-particle move. 
+   */
   class DMCParticleByParticle: public QMCDriver {
   public:
     /// Constructor.

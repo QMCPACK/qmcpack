@@ -40,9 +40,6 @@ namespace ohmmsqmc {
   }
   
   /** Run the VMCMoveAll algorithm.
-   * \param nblocks number of blocks
-   * \param nsteps number of steps
-   * \param tau the timestep
    *
    * Advance the walkers nblocks*nsteps timesteps. 
    * For each timestep:

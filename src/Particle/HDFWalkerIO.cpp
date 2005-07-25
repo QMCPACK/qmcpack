@@ -28,7 +28,15 @@ using namespace ohmmsqmc;
 
 /** Create the HDF5 file "aroot.config.h5" for output. 
  *@param aroot the root file name
- *@note The main group is "/config_collection"
+ *@param append 
+ *
+ * @if append == true 
+ * the configuration is appended
+ * @else
+ * the configuration is overwritten
+ * The constructor
+ * - opens a hdf5 file
+ * - create the main group "/config_collection"
  */
 
 HDFWalkerOutput::HDFWalkerOutput(const string& aroot, bool append):

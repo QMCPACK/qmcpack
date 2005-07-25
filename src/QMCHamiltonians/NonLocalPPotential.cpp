@@ -94,10 +94,11 @@ namespace ohmmsqmc {
     }   /* end loop over electron */
     return esum;
   }
-  /*!
+
+  /** constructor
    *\param ions the positions of the ions
    *\param els the positions of the electrons
-   *\brief the constructor
+   *\param psi trial wavefunction
    *
    * For each ion-type, an ASCII file "*.psf" must
    be provided.  The "*.psf" must contain two columns, 

@@ -44,15 +44,18 @@ namespace ohmmsqmc {
     BasisBuilderT& builder_ref;
     int NumPtcl;
 
+    /** constructor
+     *@param p particleset whose positions defines the wave function
+     *@param psi trial wavefuntion to which determinant terms are added
+     *@param abuilder a BasisBuilderT object, provides addBasisSet and typedefs
+     */
     DetSetBuilderWithBasisSet(ParticleSet& p, TrialWaveFunction& psi, BasisBuilderT& abuilder): 
       OrbitalBuilderBase(p,psi), builder_ref(abuilder){
     } 
  
     /** process the current xml node to create single-particle orbital
-     *@param targetPsi a trial wavefuntion to which determinant terms are added
-     *@param builder a BasisBuilderT object, provides addBasisSet and typedefs
      *@param cur xmlNodePtr to be processed
-     *@return the number of the quantum particles for the determinant terms
+     *@return true when the size of determinants is positive.
      */
     bool put(xmlNodePtr cur) {
     

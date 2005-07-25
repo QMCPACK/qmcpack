@@ -35,8 +35,6 @@ namespace ohmmsqmc {
 
     /** constructor
      * \param wfs reference to the wavefunction
-     * \param ions reference to the ions
-     * \param els reference to the electrons
      */
     NumericalOrbitalSetBuilder(TrialWaveFunction& wfs);
 
@@ -56,7 +54,10 @@ namespace ohmmsqmc {
      */
     map<string,TriCubicSplineT<ValueType>* > SPOSet;
 
-    bool addSlaterDeterminantSet(cur);
+    bool addSlaterDeterminantSet(xmlNodePtr cur);
+    void initOrbitalSet(xmlNodePtr cur);
+    SPOSetType* createSPOSet(xmlNodePtr cur);
+    SPOType* createSPO(const string& srcfile, int iorb);
   };
 }
 #endif

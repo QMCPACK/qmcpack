@@ -26,8 +26,9 @@
 namespace ohmmsqmc {
 
   /** constructor
-   *@param a the wavefunction
-   *@param psets a vector containing the particle
+   * @param p target ParticleSet whose wave function is to be initialized
+   *@param psi the wavefunction
+   *@param psets a vector containing the ParticleSets
    * 
    *Jastrow wavefunctions chose the needed distance tables and the 
    *DistanceTableData objects are initialized based on the source 

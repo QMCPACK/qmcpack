@@ -32,9 +32,8 @@ using namespace std;
 #ifndef	OHMMS_TENSOR_H
 #include "OhmmsPETE/Tensor.h"
 #endif
-/*! \class PtclPairListBase
- *  \author Jeongnim Kim
- *  \brief Container for nearest-neighbor data. 
+/*  Container for nearest-neighbor data. 
+ *
  *  <ul>
  *  \li M[i] = locator for the first nearest-neighbor ptcl of the i-th ptcl
  *  \li M[i+1] - M[i] = number of nn ptcls of the i-thc ptcl
@@ -78,29 +77,29 @@ public:
   PtclPairListBase();//!< Constructor
   ~PtclPairListBase();//!< Destructor
 
-  inline int getLocalNum() const { return LocalNum; } 
   //!< Number of particles
+  inline int getLocalNum() const { return LocalNum; } 
 
-  inline int getTotNadj() const { return M[LocalNum];}
   //!< Number of pairs
+  inline int getTotNadj() const { return M[LocalNum];}
 
-  inline int getMaxNadj() const { return MaxNN;}
   //!< Maximum number of neighbors per atom for memory management
+  inline int getMaxNadj() const { return MaxNN;}
 
-  inline int nadj(int i) const { return M[i+1]-M[i];}
   //!< Returns a number of neighbors of the i-th ptcl.
+  inline int nadj(int i) const { return M[i+1]-M[i];}
 
-  inline int iadj(int i, int j) const { return J[M[i] +j];}
   //!< Returns the id of j-th neighbor for i-th ptcl
+  inline int iadj(int i, int j) const { return J[M[i] +j];}
 
-  inline int loc(int i, int j) const { return M[i] + j;}
   //!< Location to insert a i-j pair 
+  inline int loc(int i, int j) const { return M[i] + j;}
 
+  //!< Sets the maximum number of neighbors
   inline void setMaxNadj(int nnmax) { 
     //if(nnmax > MaxNN)  MaxNN = nnmax;
     MaxNN = nnmax;
   }
-  //!< Sets the maximum number of neighbors
 
   void resize(unsigned m); // Adds m pairs for each attribute
   void resize(unsigned m, unsigned maxnn) 

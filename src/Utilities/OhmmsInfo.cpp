@@ -16,8 +16,8 @@
 //   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-/*! \class OhmmsInfo
- *  \brief Similar class to PoomaInfo  of Pooma with very limited capabilities
+/** @file OhmmsInfo.cpp
+ * @brief Definition of OhmmsInfo class.
  */
 #include <stdio.h>
 #include "Utilities/OhmmsInfo.h"

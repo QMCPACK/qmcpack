@@ -84,7 +84,7 @@ namespace ohmmsqmc {
     
     /** evaluate Local Energy
      * @param P ParticleSet
-     * @param return the local energy
+     * @return the local energy
      *
      * P.R, P.G and P.L are used to evaluate the LocalEnergy.
      */

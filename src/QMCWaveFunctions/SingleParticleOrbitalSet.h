@@ -17,17 +17,19 @@
 #ifndef OHMMS_SINGLEPARTICLEORBITALSET_H
 #define OHMMS_SINGLEPARTICLEORBITALSET_H
 #include <vector>
-/**class a set of single-particle orbitals. 
- *@brief This class provides necessary interfaces for SlaterDeterminant<SPOSet>
- * and the example can be found in examples/simpledet.cpp
- * The template parameter is any analytic function with a member function
+namespace ohmmsqmc {
+
+/**a set of single-particle orbitals. 
+ *
+ * This class provides necessary interfaces for SlaterDeterminant<SPOSet>
+ * and can be used by any orbital representation that has an one-to-one
+ * mapping between the function evaluations and the column indeices of a
+ * Dirac determinant.
+ * The template parameter is any function with a member function
  * which can provde the value, gradient and laplacian at a point.
  * value_type OT::evaluate(const point_type&, gradient_type&, value_type& ) 
  * Example classes can be found in Numerics/CosineFunction.h
  */
-
-namespace ohmmsqmc {
-
 template<class OT>
 struct SingleParticleOrbitalSet {
 

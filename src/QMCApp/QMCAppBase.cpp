@@ -68,6 +68,7 @@ namespace ohmmsqmc {
   void QMCAppBase::saveXml() {
     string newxml;
     myProject.PreviousRoot(newxml);
+    myProject.rewind();
     newxml.append(".cont.xml");
     xmlSaveFormatFile(newxml.c_str(),m_doc,1);
   }

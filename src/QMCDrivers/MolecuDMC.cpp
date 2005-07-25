@@ -40,26 +40,24 @@ namespace ohmmsqmc {
     BranchInfo=afile;
   }
   
-  bool MolecuDMC::put(xmlNodePtr q){
+  bool MolecuDMC::put(xmlNodePtr cur){
     return true;
   }
   
   /** Advance the walkers nblocks*nsteps timesteps. 
-   * @param nblocks number of blocks
-   * @param nsteps number of steps
-   * @param tau the timestep
    *
-   * For each timestep:
-   * <ul>
-   * <li> Move all the particles of a walker.
-   * <li> Calculate the properties for the new walker configuration.
-   * <li> Accept/reject the new configuration.
-   * <li> Accumulate the estimators.
-   * <li> Update the trial energy \f$ E_T. \f$
-   * <li> Branch the population of walkers (birth/death algorithm).
-   * </ul>
    * For each block:
    * <ul>
+   *  <li> Advance walkers for nsteps
+   *  For each timestep:
+   *   <ul>
+   *   <li> Move all the particles of a walker.
+   *   <li> Calculate the properties for the new walker configuration.
+   *   <li> Accept/reject the new configuration.
+   *   <li> Accumulate the estimators.
+   *   <li> Update the trial energy \f$ E_T \f$
+   *   <li> Branch the population of walkers (birth/death algorithm).
+   *   </ul>
    * <li> Flush the estimators and print to file.
    * <li> Update the estimate of the local energy.
    * <li> (Optional) Print the ensemble of walker configurations.
@@ -76,9 +74,16 @@ namespace ohmmsqmc {
     Estimators->reportHeader();
 
     MolecuFixedNodeBranch<RealType> brancher(Tau,W.getActiveWalkers());
+
+    if(Counter) {
+      RealType e_ref = W.getLocalEnergy();
+      LOGMSG("Overwriting the reference energy by the local energy " << e_ref)  
+      brancher.setEguess(e_ref);
+    }
+
     brancher.put(qmcNode,LogOut);
 
-    if(BranchInfo != "default")  brancher.read(BranchInfo);
+    //if(BranchInfo != "default")  brancher.read(BranchInfo);
 
     MCWalkerConfiguration::iterator it(W.begin()); 
     MCWalkerConfiguration::iterator it_end(W.end()); 
@@ -132,14 +137,13 @@ namespace ohmmsqmc {
       LogOut->getStream() << "Block " << block << " " << timer.cpu_time()
       		    << " " << Population << endl;
       Eest = Estimators->average(0);
-      
+      brancher.updateBranchData();
       nAccept = 0; nReject = 0;
       block++;
       if(pStride) {
         //create an output engine: could accumulate the configurations
         HDFWalkerOutput WO(RootName);
         WO.get(W);
-        brancher.write(WO.getGroupID());
       }
       W.reset();
     } while(block<nBlocks);
@@ -148,11 +152,11 @@ namespace ohmmsqmc {
       << "ratio = " << static_cast<double>(nAcceptTot)/static_cast<double>(nAcceptTot+nRejectTot)
       << endl;
     
+    brancher.updateBranchData();
     if(!pStride) {
       //create an output engine: could accumulate the configurations
       HDFWalkerOutput WO(RootName);
       WO.get(W);
-      brancher.write(WO.getGroupID());
     }
 
     Estimators->finalize();
@@ -160,6 +164,7 @@ namespace ohmmsqmc {
   }
 
   /**  Advance all the walkers one timstep. 
+   * @param Branch class that controls the trial energy and branching
    * 
    Propose a move for each walker from its old 
    position \f${\bf R'}\f$ to a new position \f${\bf R}\f$ 
@@ -210,8 +215,7 @@ namespace ohmmsqmc {
    accept/reject step this can lead to persistent configurations;
    a remedy is to impose a cutoff on the magnitude of the drift
    velocity.  We use the smooth cutoff proposed by Umrigar, 
-   Nightingale and Runge
-   [J. Chem. Phys., {\textbf 99}, 2865, (1993)]
+   Nightingale and Runge [J. Chem. Phys.,  99, 2865, (1993)]
    \f[
    {\bf \bar{v}_{drift}} = \frac{-1+\sqrt{1+2 \tau v^2_{drift}}}
    {\tau v^2_{drift}}{\bf v_{drift}},

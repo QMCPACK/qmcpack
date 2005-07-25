@@ -22,7 +22,8 @@
 #include "QMCDrivers/QMCDriver.h" 
 namespace ohmmsqmc {
 
-  /** Implements the DummyQMC algorithm. 
+  /** @ingroup QMCDrivers 
+   *@brief A dummy QMCDriver for testing
    */
   class DummyQMC: public QMCDriver {
   public:

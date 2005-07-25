@@ -22,7 +22,8 @@
 
 namespace ohmmsqmc {
 
-  /** An AntiSymmetric OrbitalBase composed of DiracDeterminants. 
+  /** @ingroup OrbitalComponent
+   *  @brief An AntiSymmetric OrbitalBase composed of DiracDeterminants. 
    *
    A SlaterDeterminant is a product of DiracDeterminants
    \f[ 

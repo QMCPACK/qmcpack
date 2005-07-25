@@ -53,21 +53,29 @@ namespace ohmmsqmc {
     //write the header
     Estimators->reportHeader();
 
+    //create a Branching engine
     MolecuFixedNodeBranch<RealType> brancher(Tau,W.getActiveWalkers());
+
+    if(Counter) {
+      RealType e_ref = W.getLocalEnergy();
+      LOGMSG("Overwriting the reference energy by the local energy " << e_ref)  
+      brancher.setEguess(e_ref);
+    }
+
     //initialize parameters for fixed-node branching
     brancher.put(qmcNode,LogOut);
 
-    if(BranchInfo != "default")  brancher.read(BranchInfo);
-    else {
-      /*if VMC/DMC directly preceded DMC (Counter > 0) then
-        use the average value of the energy estimator for
-        the reference energy of the brancher*/
-      if(Counter) {
-        RealType e_ref = W.getLocalEnergy();
-        LOGMSG("Overwriting the reference energy by the local energy " << e_ref)  
-        brancher.setEguess(e_ref);
-      }
-    }
+    //if(BranchInfo != "default")  brancher.read(BranchInfo);
+    //else {
+    //  /*if VMC/DMC directly preceded DMC (Counter > 0) then
+    //    use the average value of the energy estimator for
+    //    the reference energy of the brancher*/
+    //  if(Counter) {
+    //    RealType e_ref = W.getLocalEnergy();
+    //    LOGMSG("Overwriting the reference energy by the local energy " << e_ref)  
+    //    brancher.setEguess(e_ref);
+    //  }
+    //}
     
     MCWalkerConfiguration::iterator it(W.begin()); 
     MCWalkerConfiguration::iterator it_end(W.end()); 
@@ -267,11 +275,11 @@ namespace ohmmsqmc {
       Eest = Estimators->average(0);
       LogOut->getStream() << "Block " << block << " " << timer.cpu_time() << " Fixed_configs " 
       		    << static_cast<RealType>(nAllRejected)/static_cast<RealType>(step*W.getActiveWalkers()) << endl;
-      if(pStride) {
-        //create an output engine
+      brancher.updateBranchData();
+
+      if(pStride) { //create an output engine
         HDFWalkerOutput WO(RootName);
         WO.get(W); 
-        brancher.write(WO.getGroupID());
       }
       nAccept = 0; nReject = 0;
       block++;
@@ -282,11 +290,10 @@ namespace ohmmsqmc {
       << static_cast<double>(nAcceptTot)/static_cast<double>(nAcceptTot+nRejectTot)
       << endl;
     
-    if(!pStride) {
-      //create an output engine
+    brancher.updateBranchData();
+    if(!pStride) { //create an output engine
       HDFWalkerOutput WO(RootName);
       WO.get(W); 
-      brancher.write(WO.getGroupID());
     }
     
     Estimators->finalize();

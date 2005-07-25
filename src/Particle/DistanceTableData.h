@@ -25,6 +25,9 @@
 
 namespace ohmmsqmc {
 
+  /** @defgroup nnlist Distance-table group
+   * @brief Classes to manage a set of data for distance relations between ParticleSet objects.
+   */
   template<class T, unsigned N>
   struct TempDisplacement {
     T r0,r1,rinv0,rinv1;
@@ -34,10 +37,10 @@ namespace ohmmsqmc {
   };
 
 
-  /** Class to store pair data between two ParticleSets.
-   * @author Jeongnim Kim 
+  /** @ingroup nnlist
+   * @brief Abstract class to manage pair data between two ParticleSets.
    * 
-   * DistanceTableData is determined by Source and Target.
+   * Each DistanceTableData object is fined by Source and Target of ParticleSet types.
    */
   class DistanceTableData: public QMCTraits {
 
@@ -70,10 +73,6 @@ namespace ohmmsqmc {
     ///size of indicies
     TinyVector<IndexType,3> N;
 
-    /** @defgroup nnlist neighbor-list data
-     * an auxiliary array to handle connections or nearest neighbors
-     *@{
-     */
 
     /** @brief M.size() = N[SourceIndex]+1
      *
@@ -106,8 +105,6 @@ namespace ohmmsqmc {
      * If the move is rejected, nothing is done and new data will be overwritten.
      */
     std::vector<TempDistType> Temp;
-
-    /** @}*/
 
     ///constructor using source and target ParticleSet
     DistanceTableData(const ParticleSet& source, const ParticleSet& target)

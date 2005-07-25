@@ -34,7 +34,8 @@ namespace ohmmsqmc {
   class WaveFunctionPool;
   class HamiltonianPool;
 
-  /** Main application to perform QMC simulations 
+  /** @ingroup qmcapp
+   * @brief Main application to perform QMC simulations 
    *
    * This is a generalized QMC application which can handle multiple ParticleSet,
    * TrialWaveFunction and QMCHamiltonian objects.
@@ -42,6 +43,14 @@ namespace ohmmsqmc {
   class QMCMain: public QMCAppBase {
 
   public:
+
+    /*! enum for QMC Run Type */
+    enum QMCRunType {DUMMY_RUN, /*!< dummy */
+      VMC_RUN, /*!< VMC type: vmc, vmc-ptcl, vmc-multiple, vmc-ptcl-multiple */
+      DMC_RUN, /*!< DMC type: dmc, dmc-ptcl*/
+      RMC_RUN, /*!< RMC type: rmc, rmc-ptcl */
+      OPTIMIZE_RUN /*!< Optimization */
+    };
 
     ///constructor
     QMCMain(int argc, char** argv);
@@ -53,6 +62,9 @@ namespace ohmmsqmc {
     bool execute();
 
   private:
+
+    ///type of 
+    QMCRunType curRunType;
 
     ///name of the current QMCriver
     std::string curMethod;

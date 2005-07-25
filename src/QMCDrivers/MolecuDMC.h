@@ -17,6 +17,9 @@
 //   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
+/**@file MolecuDMC.h
+ * @brief Declaration of MolecuDMC
+ */
 #ifndef OHMMS_QMC_DMC_MOLECU_H
 #define OHMMS_QMC_DMC_MOLECU_H
 
@@ -24,7 +27,9 @@
 
 namespace ohmmsqmc {
 
-  /** Implements the DMC algorithm. */
+  /** @ingroup QMCDrivers  WalkerByWalker
+   *@brief implements the DMC algorithm using walker-by-walker move. 
+   */
   class MolecuDMC: public QMCDriver {
 
   public:

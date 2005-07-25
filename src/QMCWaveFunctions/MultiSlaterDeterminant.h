@@ -22,9 +22,8 @@
 
 namespace ohmmsqmc {
 
- /**
-   *@brief An AntiSymmetric OrbitalBase composed of a linear
-   *combination of SlaterDeterminants. 
+  /** @ingroup OrbitalComponent
+   *  @brief An AntiSymmetric OrbitalBase composed of a linear combination of SlaterDeterminants. 
    *
    *\f[ 
    *MS({\bf R}) = \sum_n c_n S_n({\bf R}) 
@@ -132,8 +131,8 @@ public:
   
   inline ValueType
   ratio(ParticleSet& P, int iat, 
-	ParticleSet::ParticleGradient_t& G, 
-	ParticleSet::ParticleLaplacian_t& L) { 
+	ParticleSet::ParticleGradient_t& dG, 
+	ParticleSet::ParticleLaplacian_t& dL) { 
     std::cerr << "MultiSlaterDeterminant should not be used by Particle-By-Particle update"
               << std::endl;
     return 1.0;
@@ -153,8 +152,8 @@ public:
   }
 
   void update(ParticleSet& P, 
-	      ParticleSet::ParticleGradient_t& G, 
-	      ParticleSet::ParticleLaplacian_t& L,
+	      ParticleSet::ParticleGradient_t& dG, 
+	      ParticleSet::ParticleLaplacian_t& dL,
 	      int iat) {
     std::cerr << "MultiSlaterDeterminant::update is empty" << std::endl;
   }

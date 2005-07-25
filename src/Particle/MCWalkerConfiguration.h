@@ -23,7 +23,12 @@ namespace ohmmsqmc {
 
   /** A set of walkers that are to be advanced by Metropolis Monte Carlo.  
    *
-   *Each walker is represented by Walker<PosVector_t> and 
+   *As a derived class from ParticleSet, MCWalkerConfiguration interacts with
+   *QMCHamiltonian and TrialWaveFunction as a ParticleSet, while QMCDrivers
+   *use it as multiple walkers whose configurations are advanced according
+   to MC algorithms.
+   *
+   Each walker is represented by Walker<PosVector_t> and 
    *MCWalkerConfiguration contains a list of
    *the walkers.  This class enables two possible moves: 
    *<ul>
@@ -99,8 +104,6 @@ namespace ohmmsqmc {
     ///return the number of particles per walker
     inline int getParticleNum() const { return R.size();}
 
-    /**@defgroup iterators to access WalkerList
-     *@{*/
     /// return the first iterator
     inline iterator begin() { return WalkerList.begin();}
     /// return the last iterator, [begin(), end())
