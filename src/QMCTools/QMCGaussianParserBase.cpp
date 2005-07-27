@@ -400,6 +400,7 @@ void QMCGaussianParserBase::map2GridFunctors(xmlNodePtr cur) {
       nlms[current][0]=n;
       nlms[current][1]=l;
       nlms[current][2]=m;
+
       ++current;
     }
     cur = cur->next;
@@ -414,13 +415,14 @@ void QMCGaussianParserBase::map2GridFunctors(xmlNodePtr cur) {
 
   RGFBuilderBase::CenteredOrbitalType aos(Lmax);
   bool normalized(Normalized=="yes");
-  RGFBuilderBase* rbuilder = new GTO2GridBuilder(normalized);
-  rbuilder->setOrbitalSet(&aos,acenter);
-  rbuilder->addGrid(grid_ptr);
+  GTO2GridBuilder rbuilder(normalized);
+  rbuilder.setOrbitalSet(&aos,acenter);
+  rbuilder.addGrid(grid_ptr);
   for(int i=0; i<nlms.size(); i++) {
-    rbuilder->addRadialOrbital(phi_ptr[i],nlms[i]);
+    rbuilder.addRadialOrbital(phi_ptr[i],nlms[i]);
   }
-  rbuilder->print(acenter,1);
+  rbuilder.print(acenter,1);
+
 }
 
 void QMCGaussianParserBase::createGridNode(int argc, char** argv) {
