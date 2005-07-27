@@ -48,6 +48,12 @@ namespace OHMMS {
     ///roll-back a series number and reset m_projectroot by one
     void rewind();
 
+    ///set the title
+    inline void setTitle(const string& atitle) {
+      m_title=atitle;
+      reset();
+    }
+
     ///returns the name of the project
     inline const char* CurrentRoot() const { return m_projectroot.c_str();}
 

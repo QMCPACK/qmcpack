@@ -37,7 +37,8 @@ namespace OHMMS {
     m_user("none"), 
     m_host("none"), 
     m_date("none"),
-    m_series(0){ 
+    m_series(0),
+    m_cur(0){ 
   }
 
   bool ProjectData::get(ostream& os) const
@@ -91,7 +92,7 @@ namespace OHMMS {
   }
 
   void ProjectData::rewind() {
-    m_series--; 
+    if(m_series>0) m_series--; 
     reset();
   }
 
@@ -117,6 +118,7 @@ namespace OHMMS {
 
     std::stringstream s;
     s << m_series+1;
+    if(m_cur)
     xmlSetProp(m_cur, (const xmlChar *) "series", (const xmlChar *)(s.str().c_str()));
   }
 
