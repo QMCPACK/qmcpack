@@ -24,12 +24,22 @@
 
 namespace ohmmsqmc {
 
+  /** Process basisGroup node
+   * @param cur current xml node
+   * @param nlms Quantum Numbers
+   * @return true when successful
+   *
+   * cur is the basisGroup node, basisGroup := (radfunc)+.</BR>
+   * For basisGroup with l=0 and multiple radfunc (contracted S), 
+   * the exponent of a Slater-type orbital is provided as an alternative.
+   */
   bool
   GTO2GridBuilder::addRadialOrbital(xmlNodePtr cur, 
 				    const QuantumNumberType& nlms) {
 
     int n=nlms[0];
     int l=nlms[1];
+    string b_name((const char*)xmlGetProp(cur,(const xmlChar*)"rid"));
 
     //Using default <radfunc exponent="alpha" contraction="c"/>
     GaussianCombo<ValueType> gaussian(l,Normalized);
@@ -47,6 +57,25 @@ namespace ohmmsqmc {
     m_orbitals->Rnl.push_back(radorb);
     m_orbitals->RnlID.push_back(nlms);
 
+    //guess the exponent of a corresponding STO of the contracted S basisGroup
+    if(l ==0 && gaussian.size()>1) {
+      RealType peak(0.0);
+      int gMax=0;
+      for(int ig=1; ig<agrid->size()-1; ig++) {
+        RealType r=(*agrid)(ig);
+        RealType y=(*radorb)(ig);
+        RealType mag=r*r*y*y;
+        if(mag>peak) {
+          peak=mag; gMax=ig;
+        }
+      }
+      std::ostringstream slater;
+      slater<<" Possible substitution "<<b_name <<" by a Slater-type orbital\n";
+      slater<<"  <basisGroup rid=\""<<b_name<<"\" n=\""<<n<<"\" l=\""<<l<<"\" type=\"Slater\">\n";
+      slater<<"    <radfunc exponent=\""<<1.0/(*agrid)(gMax)<<"\" contraction=\"1.0\"/>\n";
+      slater<<"  </basisGroup>\n";
+      xmlAddPrevSibling(cur,xmlNewComment((const xmlChar*)slater.str().c_str()));
+    }
     return true;
   }
 
