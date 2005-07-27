@@ -7,7 +7,7 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
+//   Tel:    217-244-6319 (NCSA) 217-244-4971 (MCC)
 //
 // Supported by
 //   National Center for Supercomputing Applications, UIUC
@@ -17,6 +17,38 @@
 /**\mainpage qmcPlusPlus main page
  * \section intro_sec Introduction
  *
+ * Framework for Quantum Monte Carlo simulations.
+ *
+ * Home Page: http://www.mcc.uiuc.edu/qmc/qmcplusplus/index.html
+ *
+ * Developers' Page: https://mcc1.mcc.uiuc.edu/cgi-bin/cvs/qmc/qmc.cgi/
+ *
+ * \section Major changes
+ *
+ * \htmlonly
+  <ul> 2005-07-25
+   <li> updated doxygen documentations
+   <ul>
+     <li> docs directory is added to cvs repository. 
+     <ul> To generate doxygen documentation on a local host,
+     <li> cd docs; doxygen Doxyfile
+     <li> doxygen/html/index.html is the main page
+     </ul>
+     <li> Introduced groups that follow the directory structure
+     <ul>
+       <li>Orbital group
+       <li>Orbital builder group
+       <li>Many-body wave function group
+       <li>Hamiltonian group
+       <li>QMC Driver group
+       <li>QMC Drivers using walker-by-walker update
+       <li>QMC Drivers using particle-by-particle update
+       <li>QMC Drivers for energy differences
+       <li>QMC Application group
+     </ul>
+    </ul>
+  </ul>
+ \endhtmlonly
  * \section license
  *
  */
