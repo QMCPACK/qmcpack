@@ -60,6 +60,9 @@ namespace ohmmsqmc {
       return false;
     }
 
+    InFileRoot = string(infile,0,infile.size()-4);
+    myProject.setTitle(InFileRoot);
+
     //set the root and create the context map
     m_root = cur;
     return true;
@@ -70,6 +73,7 @@ namespace ohmmsqmc {
     myProject.PreviousRoot(newxml);
     myProject.rewind();
     newxml.append(".cont.xml");
+    LOGMSG("A new xml input file : " << newxml)
     xmlSaveFormatFile(newxml.c_str(),m_doc,1);
   }
 }

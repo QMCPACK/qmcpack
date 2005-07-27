@@ -67,6 +67,7 @@ namespace ohmmsqmc {
 
   protected:
 
+    string InFileRoot;
     xmlDocPtr m_doc;
     xmlNodePtr m_root;
 

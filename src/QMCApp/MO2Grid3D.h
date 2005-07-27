@@ -21,11 +21,13 @@
 #define OHMMS_QMC_MOLECULARORBITALS2GRID3D_H
 
 #include "QMCApp/QMCAppBase.h"
-#include "Particle/MCWalkerConfiguration.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
+#include "Particle/MCWalkerConfiguration.h"
 #include "Numerics/TriCubicSplineT.h"
 
 namespace ohmmsqmc {
+
+  class ParticleSetPool;
 
   /** An application to transform Molecular Orbitals on a regular grid
    */
@@ -65,14 +67,18 @@ namespace ohmmsqmc {
 
   private:
 
-    xmlXPathContextPtr m_context;
-    MCWalkerConfiguration el;
-    ParticleSet ion;
-    TrialWaveFunction Psi;
-    bool setParticleSets(xmlNodePtr aroot);
-
-    bool setWavefunctions(xmlNodePtr aroot);
+    ParticleSetPool* ptclPool;
+    MCWalkerConfiguration* Electrons;
+    ParticleSet* Ions;
+    xmlNodePtr dsetPtr;
+    xmlNodePtr normalPtr;
+    xmlNodePtr corePtr;
     map<string,TriCubicSplineT<ValueType>* > SPOSet;
+
+    bool selectCore(xmlNodePtr cur);
+    void getEigVectors(xmlNodePtr cur, const Matrix<RealType>& A);
+    xmlNodePtr copyDeterminant(xmlNodePtr cur, bool addg);
+    xmlNodePtr copyDeterminantSet(xmlNodePtr cur, xmlNodePtr splinePtr);
   };
 }
 #endif

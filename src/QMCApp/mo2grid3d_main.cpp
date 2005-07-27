@@ -37,7 +37,7 @@ int main(int argc, char **argv) {
   if(argc>1) {
     if(qmc.parse(argv[1])) {
       qmc.execute();
-      qmc.saveXml();
+      //qmc.saveXml();
     }
     //xmlFreeDoc(m_doc);
   } else {

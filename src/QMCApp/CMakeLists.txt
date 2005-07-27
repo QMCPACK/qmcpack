@@ -64,6 +64,7 @@ SET(MAINSRCS
 SET(MOSRCS 
   ${WFSRCS}
   ${QMCDRIVERS}
+  ParticleSetPool.cpp
   QMCAppBase.cpp
   MO2Grid3D.cpp 
   mo2grid3d_main.cpp

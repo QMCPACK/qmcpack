@@ -18,6 +18,7 @@
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 #include "QMCApp/MO2Grid3D.h"
+#include "QMCApp/ParticleSetPool.h"
 #include "Utilities/OhmmsInfo.h"
 #include "Particle/DistanceTableData.h"
 #include "Particle/DistanceTable.h"
@@ -32,15 +33,9 @@
 
 namespace ohmmsqmc {
 
-  MO2Grid3D::MO2Grid3D(int argc, char** argv): QMCAppBase(argc,argv) { 
-    el.setName("e");
-
-    SpeciesSet& Species(el.getSpeciesSet());
-    int iu = Species.addSpecies("u");
-    int id = Species.addSpecies("d");
-    int icharge = Species.addAttribute("charge");
-    Species(icharge,iu) = -1;
-    Species(icharge,id) = -1;
+  MO2Grid3D::MO2Grid3D(int argc, char** argv): QMCAppBase(argc,argv),
+  Electrons(0), Ions(0){ 
+    ptclPool = new ParticleSetPool;
   }
 
   ///destructor
@@ -57,106 +52,378 @@ namespace ohmmsqmc {
   }   
 
   bool MO2Grid3D::execute() {
+    OhmmsAttributeSet pAttrib;
+    pAttrib.add(InFileRoot,"id");
+    pAttrib.add(InFileRoot,"name");
+    pAttrib.put(m_root);
 
-    xmlXPathContextPtr m_context = xmlXPathNewContext(m_doc);
-
-    if(!setParticleSets(m_root)) {
-       ERRORMSG("Failed to initialize the ions and electrons. Exit now.")
-       return false;
+    //preserve the input order
+    xmlNodePtr cur=m_root->children;
+    xmlNodePtr wfsPtr=0;
+    while(cur != NULL) {
+      string cname((const char*)cur->name);
+      if(cname == "particleset") {
+        ptclPool->put(cur);
+      } else if(cname == OrbitalBuilderBase::wfs_tag) {
+        wfsPtr=cur;
+      } 
+      cur=cur->next;
     }
 
-    setWavefunctions(m_root);
-    string fname(myProject.CurrentRoot());
-    fname.append(".debug");
-    ofstream fout(fname.c_str());
-    fout << "Ionic configuration : " << ion.getName() << endl;
-    ion.get(fout);
-    fout << "Electronic configuration : " << el.getName() << endl;
-    el.get(fout);
-    Psi.VarList.print(fout);
+    if(wfsPtr)  {
+      string ename("e");
+      const xmlChar* t=xmlGetProp(wfsPtr,(const xmlChar*)"target");
+      if(t) { ename=(const char*)t; }
+      Electrons=ptclPool->getWalkerSet(ename);
+      if(Electrons == 0) {
+        ERRORMSG("ParticleSet with " << ename << " is not created. Abort")
+        return false;
+      }
+      cur=wfsPtr->children;
+      bool splitted=false;
+      while(cur != NULL) {
+        string cname((const char*)cur->name);
+        if(cname == OrbitalBuilderBase::detset_tag) {
+          dsetPtr=cur; //save determinantset
+          string iname("i");
+          const xmlChar* t=xmlGetProp(cur,(const xmlChar*)"source");
+          if(t) { iname=(const char*)t; }
+          Ions=ptclPool->getParticleSet(iname);
+          if(Ions == 0) {
+            ERRORMSG("ParticleSet with " << iname << " is not created. Abort")
+            return false;
+          }
+          splitted = selectCore(cur);
+          generateNumericalOrbitals(normalPtr);
+        }
+        cur=cur->next;
+      }
+
+      //remove the original determinantset
+      xmlUnlinkNode(dsetPtr);
+      xmlFreeNode(dsetPtr);
+
+      //replace the original determinantset by ceorePtr 
+      xmlSetProp(corePtr,(const xmlChar*)"type",(const xmlChar*)"NumericalOrbital");
+      xmlAddChild(wfsPtr,corePtr);
+
+      string newfile=InFileRoot+".spline.xml";
+      LOGMSG("New xml file " << newfile)
+      xmlSaveFormatFile(newfile.c_str(),m_doc,1);
+    } else {
+      ERRORMSG("The input file does not contain wavefunction. Nothing to do.")
+    }
 
     //return false to stop it
     return false;    
   }
 
-  bool  MO2Grid3D::setParticleSets(xmlNodePtr aroot) {
+  /** temporary data to sort the atomicBasisSet and basisGroup
+   */
+  struct BasisGroupType {
+    bool Excluded;
+    int L;
+    xmlNodePtr curPtr;
+    inline BasisGroupType():Excluded(false),L(0),curPtr(0) { }
+    inline BasisGroupType(xmlNodePtr cur):Excluded(false),L(0),curPtr(0) { 
+      put(cur);
+    }
+    inline bool put(xmlNodePtr cur) {
+      curPtr=cur;
+      string excluded("no");
+      OhmmsAttributeSet pAttrib;
+      pAttrib.add(excluded,"exclude");
+      pAttrib.add(L,"l");
+      pAttrib.put(cur);
+      if(excluded == "yes") Excluded=true;
+      return true;
+    }
+  };
 
-    bool init_els = determineNumOfElectrons(el,m_context);
+  /** select basisGroup marked by excluded="yes"
+   * @param cur determinantset node
+   *
+   * If there is any basisGroup marked by excluded="yes", two determinantset
+   * nodes are created. Upon exit, corePtr contains new xml content 
+   * with type="NumericalOrbital".
+   */
+  bool MO2Grid3D::selectCore(xmlNodePtr  cur) {
 
-    xmlXPathObjectPtr result
-      = xmlXPathEvalExpression((const xmlChar*)"//particleset",m_context);
+    normalPtr=cur;
 
-    xmlNodePtr el_ptr=NULL, ion_ptr=NULL;
-    for(int i=0; i<result->nodesetval->nodeNr; i++) {
-      xmlNodePtr cur=result->nodesetval->nodeTab[i];
-      xmlChar* aname= xmlGetProp(cur,(const xmlChar*)"name");
-      if(aname) {
-	char fc = aname[0];
-	if(fc == 'e') { el_ptr=cur;}
-	else if(fc == 'i') {ion_ptr=cur;}
+    typedef vector<BasisGroupType> AtomicBasisType;
+    typedef map<int,AtomicBasisType* > RGroupType;
+    RGroupType Rgroup;
+    map<int,xmlNodePtr> RgroupPtr;
+
+    SpeciesSet& ionSpecies(Ions->getSpeciesSet());
+
+    xmlNodePtr basissetPtr=0;
+    xmlNodePtr sdetPtr=0;
+    xmlNodePtr splinePtr=0;
+    cur=cur->children;
+    while(cur != NULL) {
+      string cname((const char*)cur->name);
+      if(cname == OrbitalBuilderBase::basisset_tag) {
+        basissetPtr=cur;//save the pointer
+        xmlNodePtr cur1=cur->children;
+        while(cur1 != NULL) {
+          string cname1((const char*)cur1->name);
+          if(cname1 == "atomicBasisSet") {
+            int ionid
+              =ionSpecies.addSpecies((const char*)xmlGetProp(cur1,(const xmlChar*)"elementType"));
+            RGroupType::iterator rit(Rgroup.find(ionid));
+            if(rit == Rgroup.end()) {
+              AtomicBasisType *acenter= new AtomicBasisType;
+              xmlNodePtr cur2=cur1->children;
+              while(cur2 != NULL) {
+                string cname2((const char*)cur2->name);
+                if(cname2 == "basisGroup") {
+                  acenter->push_back(BasisGroupType());
+                  acenter->back().put(cur2);
+                }//basisGroup
+                cur2=cur2->next; 
+              }
+              Rgroup[ionid]=acenter;
+              RgroupPtr[ionid]=cur1;
+            }
+          }//atomicBasisSet
+          cur1=cur1->next;
+        }//cur1
+      }//basisset
+      else if(cname == OrbitalBuilderBase::sd_tag) {
+        sdetPtr=cur;//save slaterdeterminant
+      } else if(cname == "cubicgrid") {
+        splinePtr=cur;
+      }
+      cur=cur->next;
+    }
+
+    if(splinePtr == 0) { //spline is missing, add one
+      std::vector<RealType> ri(3,-5.0);
+      std::vector<RealType> rf(3,5.0);
+      std::vector<int> npts(3,101);
+      splinePtr = xmlNewNode(NULL,(const xmlChar*)"cubicgrid");
+      for(int idir=0; idir<3; idir++) {
+        xmlNodePtr x = xmlNewNode(NULL,(const xmlChar*)"grid");
+        std::ostringstream dir_str, ri_str, rf_str, npts_str;
+        dir_str << idir; ri_str << ri[idir]; rf_str << rf[idir]; npts_str << npts[idir];
+        xmlNewProp(x,(const xmlChar*)"dir", (const xmlChar*)dir_str.str().c_str());
+        xmlNewProp(x,(const xmlChar*)"ri",  (const xmlChar*)ri_str.str().c_str());
+        xmlNewProp(x,(const xmlChar*)"rf",  (const xmlChar*)rf_str.str().c_str());
+        xmlNewProp(x,(const xmlChar*)"npts",(const xmlChar*)npts_str.str().c_str());
+        xmlAddChild(splinePtr,x);
+      }
+      xmlAddPrevSibling(basissetPtr,splinePtr);
+    }
+
+    vector<bool> mask;
+    int offset=0, coreoffset=0;
+    for(int iat=0; iat<Ions->getTotalNum(); iat++) {
+      RGroupType::iterator rit(Rgroup.find(Ions->GroupID[iat]));
+      AtomicBasisType &acenter(*((*rit).second));
+      for(int i=0; i<acenter.size(); i++) {
+        int l=acenter[i].L;
+        bool excludeit=acenter[i].Excluded;
+        for(int m=0; m<2*l+1; m++) mask.push_back(excludeit);
+        if(excludeit) coreoffset+=2*l+1;
+        offset += 2*l+1;
       }
     }
 
-    bool donotresize = false;
-    if(init_els) {
-      el.setName("e");
-      XMLReport("The configuration for electrons is already determined by the wave function")
-      donotresize = true;
+    //nothing to split, everything is on the grid
+    if(coreoffset == 0) {
+      LOGMSG("There is no localized basis set to exclude")
+      corePtr = copyDeterminantSet(dsetPtr, splinePtr);
+      return false;
     } 
+    
+    //create two determinantset. 
+    //normalPtr is parsed by generateNumericalOrbitals
+    //corePtr is used to write a new input file
+    normalPtr = xmlCopyNode(dsetPtr,2);
+    corePtr = xmlCopyNode(dsetPtr,2);
 
-    if(ion_ptr) {
-      XMLParticleParser pread(ion);
-      pread.put(ion_ptr);
+    xmlNodePtr core_1= xmlAddChild(corePtr,xmlCopyNode(splinePtr,1));
+    xmlNodePtr normal_1 = xmlAddChild(normalPtr,xmlCopyNode(splinePtr,1));
+
+    xmlNodePtr core_1_1 = xmlCopyNode(basissetPtr,2);
+    xmlNodePtr normal_1_1 = xmlCopyNode(basissetPtr,2);
+    xmlNewProp(core_1_1,(const xmlChar*)"name",(const xmlChar*)"mo");
+    xmlNewProp(normal_1_1,(const xmlChar*)"name",(const xmlChar*)"cubicgrid");
+
+    RGroupType::iterator rit(Rgroup.begin()),rit_end(Rgroup.end());
+    while(rit != rit_end) {
+      AtomicBasisType &acenter(*((*rit).second));
+      xmlNodePtr core_2=xmlCopyNode(RgroupPtr[(*rit).first],2);
+      xmlNodePtr normal_2=xmlCopyNode(RgroupPtr[(*rit).first],2);
+      for(int i=0; i<acenter.size(); i++) {
+        if(acenter[i].Excluded) {
+          xmlAddChild(core_2,xmlCopyNode(acenter[i].curPtr,1));
+        } else {
+          xmlAddChild(normal_2,xmlCopyNode(acenter[i].curPtr,1));
+        }
+      }
+      xmlAddChild(core_1_1,core_2);
+      xmlAddChild(normal_1_1,normal_2);
+      delete (*rit).second; 
+      ++rit;
     }
 
-    if(el_ptr) {
-      XMLParticleParser pread(el,donotresize);
-      pread.put(el_ptr);
-    }
+    core_1=xmlAddSibling(core_1,core_1_1);
+    normal_1=xmlAddSibling(normal_1,normal_1_1);
 
-    xmlXPathFreeObject(result);
+    core_1 = xmlAddSibling(core_1,xmlCopyNode(sdetPtr,2));
+    normal_1 = xmlAddSibling(normal_1,xmlCopyNode(sdetPtr,2));
 
-    if(!ion.getTotalNum()) {
-      ion.setName("i");
-      ion.create(1);
-      ion.R[0] = 0.0;
+    cur=sdetPtr->children;
+    while(cur != NULL) {
+      string cname((const char*)cur->name);
+      if(cname == OrbitalBuilderBase::det_tag) {
+        //copy determinant
+        xmlNodePtr core_2=xmlCopyNode(cur,2);
+        xmlNodePtr normal_2=xmlCopyNode(cur,2);
+        int norb=atoi((const char*)xmlGetProp(cur,(const char*)"orbitals"));
+
+        vector<RealType> tmpC(offset*offset), occ(offset), C(norb*offset);
+        Matrix<RealType> A(norb,coreoffset), B(norb,offset-coreoffset);
+        bool foundCoeff=false;
+        xmlNodePtr cur1=cur->children;
+        while(cur1!=NULL) {
+          string cname1((const char*)cur1->name);
+          if(cname1 == "occupation") {
+            putContent(occ.begin(), occ.end(),cur1);
+          } else if(cname1 == "coefficient" || cname1 == "parameter") {
+            foundCoeff = true;
+            putContent(tmpC.begin(), tmpC.end(),cur1);
+          }
+          cur1=cur1->next;
+        }
+
+        if(foundCoeff) {
+          int iorb(0),n(0);
+          vector<ValueType>::iterator tit(tmpC.begin());
+          vector<ValueType>::iterator cit(C.begin());
+          while(iorb<norb) {
+            if(occ[n]>numeric_limits<RealType>::epsilon()){
+              std::copy(tit,tit+offset,cit);
+              iorb++; cit+=offset;
+            }
+            ++n; tit+=offset; 
+          }
+          int kk=0;
+          for(iorb=0; iorb<norb; iorb++) {
+            int ka(0), kb(0);
+            for(int k=0; k<offset; k++, kk++) {
+              if(mask[k]) 
+                A(iorb,ka++)=C[kk];
+              else 
+                B(iorb,kb++)=C[kk];
+            }
+          }
+          getEigVectors(core_2,A);
+          getEigVectors(normal_2,B);
+        }
+        //add basisset attribute
+        xmlNewProp(core_2,(const xmlChar*)"basisset",(const xmlChar*)"mo");
+        xmlNewProp(normal_2,(const xmlChar*)"basisset",(const xmlChar*)"cubicgrid");
+        core_2 = xmlAddChild(core_1,core_2);
+        core_2 = xmlAddSibling(core_2,copyDeterminant(cur,true));
+        normal_2 = xmlAddChild(normal_1,normal_2);
+      }//determinant
+      cur=cur->next;
     }
 
     return true;
   }
 
-  bool MO2Grid3D::setWavefunctions(xmlNodePtr aroot) {
-
-    xmlXPathObjectPtr result
-      = xmlXPathEvalExpression((const xmlChar*)"//determinantset",m_context);
-
-    ///make a temporary array to pass over JastrowBuilder
-    vector<ParticleSet*> PtclSets;
-    PtclSets.push_back(&ion);
-    PtclSets.push_back(&el);
-
-    bool foundwfs=true;
-    if(xmlXPathNodeSetIsEmpty(result->nodesetval)) {
-      ERRORMSG("wavefunction/determinantset is missing. Exit." << endl)
-      foundwfs=false;
-    } else {
-      xmlNodePtr cur = result->nodesetval->nodeTab[0];
-      const xmlChar* a=xmlGetProp(cur,(const xmlChar*)"src");
-      if(a) { //need to open an external file
-        xmlDocPtr tdoc = xmlParseFile((const char*)a);
-        if (tdoc == NULL) {
-          xmlFreeDoc(tdoc);
-          foundwfs=false;
-        } else {   
-         foundwfs=setWavefunctions(xmlDocGetRootElement(tdoc));
-        }
-      } else {
-        generateNumericalOrbitals(cur);
+  /** copy determinant node for numerical orbitals
+   * @param cur xmlnode to be copied
+   * @param addg if ture, append _g to the id attribute
+   * @return a new xmlnode for printout
+   *
+   * New attribute basisset="cubicgrid" is added to differentiate a copy from
+   * the original determinant.
+   * The root name of hdf5 files for each orbital is set to src attribute.
+   */
+  xmlNodePtr MO2Grid3D::copyDeterminant(xmlNodePtr cur, bool addg) {
+    xmlNodePtr aptr_hdf5=xmlCopyNode(cur,2);
+    if(addg) {
+      //add g to id 
+      const xmlChar* oldid=xmlGetProp(cur,(const xmlChar*)"id");
+      xmlChar* newid=xmlGetProp(cur,(const xmlChar*)"id");
+      newid=xmlStrcat(newid,(const xmlChar*)"_g");
+      xmlSetProp(aptr_hdf5,(const xmlChar*)"id",newid);
+      xmlChar* oldref=xmlGetProp(cur,(const xmlChar*)"ref");
+      if(oldref == NULL) {
+        xmlNewProp(aptr_hdf5,(const xmlChar*)"ref",oldid);
       }
     }
-    xmlXPathFreeObject(result);
 
-    return foundwfs;
+    xmlNewProp(aptr_hdf5,(const xmlChar*)"basisset",(const xmlChar*)"cubicgrid");
+    char oname[128];
+    const xmlChar* refptr=xmlGetProp(cur,(const xmlChar*)"ref");
+    if(refptr) {
+      sprintf(oname,"%s.%s",InFileRoot.c_str(),(const char*)refptr);
+    } else {
+      refptr=xmlGetProp(cur,(const xmlChar*)"id");
+      sprintf(oname,"%s.%s",InFileRoot.c_str(),(const char*)refptr);
+    }
+    xmlNewProp(aptr_hdf5,(const xmlChar*)"src",(const xmlChar*)oname);
+    return aptr_hdf5;
+  }
+
+  /** copy determinantset node
+   * @param cur original determinantset node
+   * @param splinePtr xml node containing cubicgrid
+   * @return new determinantset node for printout
+   *
+   * This builds a xml node for the new input file containing numerical orbitals.
+   */
+  xmlNodePtr MO2Grid3D::copyDeterminantSet(xmlNodePtr cur, xmlNodePtr splinePtr) {
+
+    xmlNodePtr acopy = xmlCopyNode(cur,2);
+    xmlNodePtr next1 = xmlAddChild(acopy,xmlCopyNode(splinePtr,1));
+    cur=cur->children;
+    while(cur != NULL) {
+      string cname((const char*)cur->name);
+      if(cname == OrbitalBuilderBase::sd_tag) {
+        next1 = xmlAddSibling(next1,xmlCopyNode(cur,2));
+        xmlNodePtr cur1=cur->children;
+        while(cur1 != NULL) {
+          string cname1((const char*)cur1->name);
+          if(cname1 == OrbitalBuilderBase::det_tag) {
+            xmlAddChild(next1,copyDeterminant(cur1,false));
+          }
+          cur1=cur1->next;
+        }
+      }
+      cur=cur->next;
+    }
+    return acopy;
+  }
+
+  void  
+  MO2Grid3D::getEigVectors(xmlNodePtr adet, const Matrix<RealType>& A) {
+    std::ostringstream eig,b_size;
+    b_size << A.rows();
+    eig.setf(std::ios::scientific, std::ios::floatfield);
+    eig.setf(std::ios::right,std::ios::adjustfield);
+    eig.precision(14);
+    eig << "\n";
+    int btot=A.size(),b=0;
+    int n=btot/4;
+    int dn=btot-n*4;
+    for(int k=0; k<n; k++) {
+      eig << setw(22) << A(b) << setw(22) << A(b+1) 
+        << setw(22) << A(b+2) << setw(22) <<  A(b+3) << "\n";
+      b += 4;
+    }
+    for(int k=0; k<dn; k++) { eig << setw(22) << A(b);}
+
+    xmlNodePtr det_data 
+     = xmlNewTextChild(adet,NULL,(const xmlChar*)"coefficient",(const xmlChar*)eig.str().c_str());
+    xmlNewProp(det_data,(const xmlChar*)"size",(const xmlChar*)b_size.str().c_str());
   }
 
   void 
@@ -173,14 +440,10 @@ namespace ohmmsqmc {
   xmlNodePtr MO2Grid3D::generateNumericalOrbitals(xmlNodePtr cur) {
 
     LOGMSG("MO2Grid3D::generateNumericalOrbitals from Molecular Orbitals")
-    xmlNodePtr curRoot=cur;
-    string troot(myProject.m_title);
-    const xmlChar* a=xmlGetProp(cur,(const xmlChar*)"target");
-    if(a) {
-      troot = (const char*)a;
-    } 
 
-    GridMolecularOrbitals Original(el,Psi,ion);
+    TrialWaveFunction Psi;
+
+    GridMolecularOrbitals Original((*Electrons),Psi,(*Ions));
 
     typedef GridMolecularOrbitals::BasisSetType BasisSetType;
     typedef LCOrbitals<BasisSetType>            SPOSetType;
@@ -194,16 +457,19 @@ namespace ohmmsqmc {
     vector<SPOSetType*> InOrbs;
     map<string,int> DetCounter;
     vector<xmlNodePtr> SlaterDetPtr;
-    xmlNodePtr splinePtr=0, firstSlaterDetPtr=0;
+    xmlNodePtr splinePtr=0;
+    xmlNodePtr firstSlaterDetPtr=0;
     BasisSetType *basisSet=0;
+    const xmlChar* a;
     vector<xmlNodePtr> nodeToBeRemoved;
+
+    xmlNodePtr curRoot=cur;
     cur = cur->xmlChildrenNode;
     int idir=0;
-
     //first pass to check if basisset is used
     while(cur != NULL) {
       string cname((const char*)(cur->name));
-      if(cname == "spline") {
+      if(cname == "cubicgrid") {
         splinePtr=cur; // save spline data
         xmlNodePtr tcur = cur->xmlChildrenNode;
         while(tcur != NULL) {
@@ -281,7 +547,7 @@ namespace ohmmsqmc {
             } 
 
             //add src attribute
-            string detsrc=troot+"."+detref;
+            string detsrc=InFileRoot+"."+detref;
             if(xmlHasProp(tcur,(const xmlChar*)"src")) {
               xmlSetProp(tcur,(const xmlChar*)"src",(const xmlChar*)detsrc.c_str());
             } else {
@@ -299,7 +565,7 @@ namespace ohmmsqmc {
     basisSet->resize(nels);
 
     //DistanceTable::create(1);
-    el.setUpdateMode(MCWalkerConfiguration::Update_Particle);
+    Electrons->setUpdateMode(MCWalkerConfiguration::Update_Particle);
 
     //Need only one electron to calculate this
     //map<string,SPOSetType*>::iterator oit(InOrbs.begin());
@@ -323,25 +589,13 @@ namespace ohmmsqmc {
 
     Pooma::Clock timer;
     char oname[128];
-    //sprintf(oname,"%s.wf.xml",troot.c_str());
-    //ofstream oxml(oname);
-    //oxml << "<?xml version=\"1.0\"?>" << endl;
-    //oxml << "<determinantset type=\"spline3d\" src=\"" << troot << "\">" << endl;
-    //oxml << "  <basisset ref=\"i\">" << endl;     
-    //oxml << "  <distancetable source=\"i\" target=\"e\"/>" << endl;
-    //oxml << "  <spline type=\"cubic\">" << endl;
-    //oxml << "    <grid dir=\"0\" ri=\""<<ri[0] << "\" rf=\"" << rf[0] << "\" npts=\"" << npts[0] << "\"/>" << endl;
-    //oxml << "    <grid dir=\"1\" ri=\""<<ri[1] << "\" rf=\"" << rf[1] << "\" npts=\"" << npts[1] << "\"/>" << endl;
-    //oxml << "    <grid dir=\"2\" ri=\""<<ri[2] << "\" rf=\"" << rf[2] << "\" npts=\"" << npts[2] << "\"/>" << endl;
-    //oxml << "  </spline>" << endl;
-    //oxml << "</determinantset>" << endl;
     cout << "XYZCubicGrid " << endl;
     cout << " x " << ri[0] << " " << rf[0] << " " << npts[0] << endl;
     cout << " y " << ri[1] << " " << rf[1] << " " << npts[1] << endl;
     cout << " z " << ri[2] << " " << rf[2] << " " << npts[2] << endl;
 
     std::vector<RealType> lapsed_time(5,0.0);
-    PosType pos(el.R[0]);
+    PosType pos(Electrons->R[0]);
     map<string,int>::iterator dit(DetCounter.begin());
 
     //loop over unique determinant sets
@@ -359,8 +613,8 @@ namespace ohmmsqmc {
             RealType y((*gridY)(iy));
             for(int iz=1; iz<npts[2]-1; iz++) {
               PosType dr(x,y,(*gridZ)(iz));
-              PosType newpos(el.makeMove(0,dr-pos));
-              (*torb)(ix,iy,iz) = inorb->evaluate(el,0,iorb);
+              PosType newpos(Electrons->makeMove(0,dr-pos));
+              (*torb)(ix,iy,iz) = inorb->evaluate(*Electrons,0,iorb);
             }
           }
         }
@@ -390,7 +644,7 @@ namespace ohmmsqmc {
         lapsed_time[2]+= timer.cpu_time();
 
         timer.start();
-        sprintf(oname,"%s.%s.wf%04d.h5",troot.c_str(),detID.c_str(),iorb);
+        sprintf(oname,"%s.%s.wf%04d.h5",InFileRoot.c_str(),detID.c_str(),iorb);
         hid_t h_file = H5Fcreate(oname,H5F_ACC_TRUNC,H5P_DEFAULT,H5P_DEFAULT);
         HDFAttribIO<std::vector<double> > dump(dat,npts);
         dump.write(h_file,"Orbital");
@@ -401,7 +655,7 @@ namespace ohmmsqmc {
         lapsed_time[3]+= timer.cpu_time();
 
         //add to SPOSet
-        sprintf(oname,"%s.%s.wf%04d",troot.c_str(),detID.c_str(),iorb);
+        sprintf(oname,"%s.%s.wf%04d",InFileRoot.c_str(),detID.c_str(),iorb);
         SPOSet[oname]=torb;
       }
       ++dit;
@@ -416,27 +670,27 @@ namespace ohmmsqmc {
     //dump1.write(h_file,"spline0000");
     //
 
-    for(int i=0; i<nodeToBeRemoved.size(); i++) {
-      xmlUnlinkNode(nodeToBeRemoved[i]);
-      xmlFreeNode(nodeToBeRemoved[i]);
-    }
-    xmlSetProp(curRoot,(const xmlChar*)"type",(const xmlChar*)"spline3d");
+    //for(int i=0; i<nodeToBeRemoved.size(); i++) {
+    //  xmlUnlinkNode(nodeToBeRemoved[i]);
+    //  xmlFreeNode(nodeToBeRemoved[i]);
+    //}
+    //xmlSetProp(curRoot,(const xmlChar*)"type",(const xmlChar*)"spline3d");
 
-    //spline is missing
-    if(splinePtr == 0) {
-      splinePtr = xmlNewNode(NULL,(const xmlChar*)"spline");
-      for(int idir=0; idir<3; idir++) {
-        xmlNodePtr x = xmlNewNode(NULL,(const xmlChar*)"grid");
-        std::ostringstream dir_str, ri_str, rf_str, npts_str;
-        dir_str << idir; ri_str << ri[idir]; rf_str << rf[idir]; npts_str << npts[idir];
-        xmlNewProp(x,(const xmlChar*)"dir", (const xmlChar*)dir_str.str().c_str());
-        xmlNewProp(x,(const xmlChar*)"ri",  (const xmlChar*)ri_str.str().c_str());
-        xmlNewProp(x,(const xmlChar*)"rf",  (const xmlChar*)rf_str.str().c_str());
-        xmlNewProp(x,(const xmlChar*)"npts",(const xmlChar*)npts_str.str().c_str());
-        xmlAddChild(splinePtr,x);
-      }
-      xmlAddPrevSibling(firstSlaterDetPtr,splinePtr);
-    }
+    ////spline is missing
+    //if(splinePtr == 0) {
+    //  splinePtr = xmlNewNode(NULL,(const xmlChar*)"cubicgrid");
+    //  for(int idir=0; idir<3; idir++) {
+    //    xmlNodePtr x = xmlNewNode(NULL,(const xmlChar*)"grid");
+    //    std::ostringstream dir_str, ri_str, rf_str, npts_str;
+    //    dir_str << idir; ri_str << ri[idir]; rf_str << rf[idir]; npts_str << npts[idir];
+    //    xmlNewProp(x,(const xmlChar*)"dir", (const xmlChar*)dir_str.str().c_str());
+    //    xmlNewProp(x,(const xmlChar*)"ri",  (const xmlChar*)ri_str.str().c_str());
+    //    xmlNewProp(x,(const xmlChar*)"rf",  (const xmlChar*)rf_str.str().c_str());
+    //    xmlNewProp(x,(const xmlChar*)"npts",(const xmlChar*)npts_str.str().c_str());
+    //    xmlAddChild(splinePtr,x);
+    //  }
+    //  xmlAddPrevSibling(firstSlaterDetPtr,splinePtr);
+    //}
 
     //clean up temporary orbitals
     for(int i=0; i<InOrbs.size(); i++) delete InOrbs[i];
