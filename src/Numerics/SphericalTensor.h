@@ -17,28 +17,20 @@
 #ifndef OHMMS_QMC__SPHERICAL_CARTESIAN_TENSOR_H
 #define OHMMS_QMC__SPHERICAL_CARTESIAN_TENSOR_H
 
-/** SphericalTensor that evalues the Real Spherical Harmonics
+/** SphericalTensor that evaluates the Real Spherical Harmonics
+ * 
+ * The template parameters
+ * - T, the value_type, e.g. double
+ * - Point_t, a vector type to provide xyz coordinate.
+ * Point_t must have the operator[] defined, e.g., TinyVector\<double,3\>. 
  *
- \f[ r^l (S_l^m(x,y,z). \f]
- *
- Here we use the default convention (for addsign=false):
- \f[ r^l S_l^m = \sqrt{2}\Re(r^l Y_l^{|m|}), m > 0 \f] 
- *
- \f[ r^l S_l^m = r^l Y_l^0, m = 0 \f] 
- *
- \f[ r^l S_l^m = \sqrt{2}\Im(r^l Y_l^{|m|}), m < 0 \f] 
- 
- For (addsign=true):
- \f[ r^l S_l^m = (-1)^m\sqrt{2}\Re(r^l Y_l^{|m|}), m > 0 \f] 
- *
- \f[ r^l S_l^m =  r^l Y_l^0, m = 0 \f] 
- *
- \f[ r^l  S_l^m = (-1)^m\sqrt{2}\Im(r^l Y_l^{|m|}), m < 0 \f] 
- 
- The template parameter T is the value_type, e.g. double, and the 
- template parameter Point_t is a vector type which must have the
- operator[] defined.
-*/
+ * Real Spherical Harmonics Ylm\f$=r^l S_l^m(x,y,z) \f$ is stored
+ * in an array ordered as [0,-1 0 1,-2 -1 0 1 2, -Lmax,-Lmax+1,..., Lmax-1,Lmax]
+ * where Lmax is the maximum angular momentum of a center.
+ * All the data members, e.g, Ylm and pre-calculated factors, 
+ * can be accessed by index(l,m) which returns the
+ * locator of the combination for l and m.
+ */
 template<class T, class Point_t>
 class SphericalTensor {
 public : 
@@ -47,19 +39,40 @@ public :
   typedef Point_t pos_type;
   typedef SphericalTensor<T,Point_t> This_t;
 
-  ///constructor
-  explicit SphericalTensor(const int lmax, bool addsign=false);
+  /** constructor
+   * @param l_max maximum angular momentum
+   * @param addsign flag to determine what convention to use
+   *
+   * Evaluate all the constants and prefactors.
+   * The spherical harmonics is defined as
+   * \f[ Y_l^m (\theta,\phi) = \sqrt{\frac{(2l+1)(l-m)!}{4\pi(l+m)!}} P_l^m(\cos\theta)e^{im\phi}\f]
+   * Note that the data member Ylm is a misnomer and should not be confused with "spherical harmonics" 
+   * \f$Y_l^m\f$.
+   - When addsign == true, e.g., Gaussian packages
+   \f{eqnarray*}
+     S_l^m &=& (-1)^m \sqrt{2}\Re(Y_l^{|m|}), \;\;\;m > 0 \\
+     &=& Y_l^0, \;\;\;m = 0 \\
+     &=& (-1)^m \sqrt{2}\Im(Y_l^{|m|}),\;\;\;m < 0
+   \f}
+   - When addsign == false, e.g., SIESTA package,
+   \f{eqnarray*}
+     S_l^m &=& \sqrt{2}\Re(Y_l^{|m|}), \;\;\;m > 0 \\
+     &=& Y_l^0, \;\;\;m = 0 \\
+     &=&\sqrt{2}\Im(Y_l^{|m|}),\;\;\;m < 0
+   \f}
+  */
+  explicit SphericalTensor(const int l_max, bool addsign=false);
 
-  ///makes a table of \f$ r^l S_l^m \f$ and their gradients up to lmax.
+  ///makes a table of \f$ r^l S_l^m \f$ and their gradients up to Lmax.
   void evaluate(const Point_t& p);     
 
-  ///makes a table of \f$ r^l S_l^m \f$ and their gradients up to lmax.
+  ///makes a table of \f$ r^l S_l^m \f$ and their gradients up to Lmax.
   void evaluateAll(const Point_t& p);     
 
-  ///makes a table of \f$ r^l S_l^m \f$ and their gradients up to lmax.
+  ///makes a table of \f$ r^l S_l^m \f$ and their gradients up to Lmax.
   void evaluateTest(const Point_t& p);     
 
-  ///returns the index \f$ l(l+1)+m \f$
+  ///returns the index/locator for (\f$l,m\f$) combo, \f$ l(l+1)+m \f$
   inline int index(int l, int m) const {return (l*(l+1))+m;}
 
   ///returns the value of \f$ r^l S_l^m \f$ given \f$ (l,m) \f$
@@ -80,24 +93,27 @@ public :
 
   inline int lmax() const { return Lmax;}
 
+  ///maximum angular momentum for the center
   int Lmax;
+
+  ///values  Ylm\f$=r^l S_l^m(x,y,z)\f$
   std::vector<value_type> Ylm;
-
-  /// NormFactor[index(l,m)]  \f$(-1)^m\sqrt(2)\f$
+  /// Normalization factors 
   std::vector<value_type> NormFactor;
-
-  ///\f$1/\sqrt{(l+m)*(l+1-m)}\f$, not implemented yet
+  ///pre-evaluated factor \f$1/\sqrt{(l+m)\times(l+1-m)}\f$
   std::vector<value_type> FactorLM;
+  ///pre-evaluated factor \f$\sqrt{(2l+1)/(4\pi)}\f$
   std::vector<value_type> FactorL;
+  ///pre-evaluated factor \f$(2l+1)/(2l-1)\f$
   std::vector<value_type> Factor2L;
-
+  ///gradients gradYlm\f$=\nabla r^l S_l^m(x,y,z)\f$
   std::vector<Point_t> gradYlm;
 
 };
 
 template<class T, class Point_t>
-SphericalTensor<T, Point_t>::SphericalTensor(const int lmax, bool addsign) : Lmax(lmax){ 
-  int ntot = (lmax+1)*(lmax+1);
+SphericalTensor<T, Point_t>::SphericalTensor(const int l_max, bool addsign) : Lmax(l_max){ 
+  int ntot = (Lmax+1)*(Lmax+1);
   Ylm.resize(ntot);
   gradYlm.resize(ntot);
   gradYlm[0] = 0.0;
@@ -121,15 +137,15 @@ SphericalTensor<T, Point_t>::SphericalTensor(const int lmax, bool addsign) : Lma
     }
   }
 
-  FactorL.resize(lmax+1);
+  FactorL.resize(Lmax+1);
   const value_type omega = 1.0/sqrt(16.0*atan(1.0));
-  for(int l=1; l<=lmax; l++) FactorL[l] = sqrt(static_cast<T>(2*l+1))*omega;
+  for(int l=1; l<=Lmax; l++) FactorL[l] = sqrt(static_cast<T>(2*l+1))*omega;
 
-  Factor2L.resize(lmax+1);
-  for(int l=1; l<=lmax; l++) Factor2L[l] = static_cast<T>(2*l+1)/static_cast<T>(2*l-1);
+  Factor2L.resize(Lmax+1);
+  for(int l=1; l<=Lmax; l++) Factor2L[l] = static_cast<T>(2*l+1)/static_cast<T>(2*l-1);
 
   FactorLM.resize(ntot);
-  for(int l=1; l<=lmax; l++) 
+  for(int l=1; l<=Lmax; l++) 
     for(int m=1; m<=l; m++) {
       T fac2 = 1.0/sqrt(static_cast<T>((l+m)*(l+1-m)));
       FactorLM[index(l,m)]=fac2;
@@ -166,7 +182,7 @@ void SphericalTensor<T,Point_t>::evaluate(const Point_t& p) {
   value_type stheta = sqrt(1.0-ctheta*ctheta);
 
   /* Now to calculate the associated legendre functions P_lm from the
-     recursion relation from l=0 to lmax. Conventions of J.D. Jackson, 
+     recursion relation from l=0 to Lmax. Conventions of J.D. Jackson, 
      Classical Electrodynamics are used. */
   
   Ylm[0] = 1.0;
@@ -254,9 +270,8 @@ void SphericalTensor<T,Point_t>::evaluateAll(const Point_t& p) {
   value_type stheta = sqrt(1.0-ctheta*ctheta);
 
   /* Now to calculate the associated legendre functions P_lm from the
-     recursion relation from l=0 to lmax. Conventions of J.D. Jackson, 
+     recursion relation from l=0 to Lmax. Conventions of J.D. Jackson, 
      Classical Electrodynamics are used. */
-  
   Ylm[0] = 1.0;
 
   // calculate P_ll and P_l,l-1
