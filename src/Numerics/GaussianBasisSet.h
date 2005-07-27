@@ -66,6 +66,12 @@ struct GaussianCombo: public RadialOrbitalBase<T> {
 
   void reset();
 
+  /** return the number Gaussians
+   */
+  inline int size() const {
+    return gset.size();
+  }
+
   inline value_type f(value_type r) const {
     value_type res=0;
     value_type r2 = r*r;
