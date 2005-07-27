@@ -43,6 +43,7 @@ namespace ohmmsqmc {
   
     BasisBuilderT& builder_ref;
     int NumPtcl;
+    string BasisName;
 
     /** constructor
      *@param p particleset whose positions defines the wave function
@@ -50,7 +51,7 @@ namespace ohmmsqmc {
      *@param abuilder a BasisBuilderT object, provides addBasisSet and typedefs
      */
     DetSetBuilderWithBasisSet(ParticleSet& p, TrialWaveFunction& psi, BasisBuilderT& abuilder): 
-      OrbitalBuilderBase(p,psi), builder_ref(abuilder){
+      OrbitalBuilderBase(p,psi), builder_ref(abuilder), BasisName("mo"){
     } 
  
     /** process the current xml node to create single-particle orbital
@@ -73,7 +74,7 @@ namespace ohmmsqmc {
 
       int nvar(targetPsi.VarList.size());
       int is=0, first=0;
-      int norbs = 0;
+      int detCounter = 0;
       cur = cur->xmlChildrenNode;
       while(cur != NULL) {
 	string cname((const char*)(cur->name));
@@ -93,45 +94,42 @@ namespace ohmmsqmc {
 	    if(tname == param_tag) {
 	      putContent(sdet_coeff[is],tcur);
 	    } else if(tname == det_tag) {
-              SPOSetType* psi=0;
-              string detname("det");
-              const xmlChar* a=xmlGetProp(tcur,(const xmlChar*)"id");
-              if(a) {
-                detname = (const char*)a;
-              } else {
-                ostringstream idassigned(detname);
-                idassigned << is;
-              }
+              string basisName(BasisName);
+              string detname("invalid"), refname("invalid");
+              OhmmsAttributeSet aAttrib;
+              aAttrib.add(basisName,basisset_tag);
+              aAttrib.add(detname,"id");
+              aAttrib.add(refname,"ref");
+              aAttrib.put(tcur);
 
-              a=xmlGetProp(tcur,(const xmlChar*)"ref");
-              if(a) {
-                string detref((const char*)a);
-                if(targetPsi.hasSPOSet(detref)) {
-                  psi = dynamic_cast<SPOSetType*>(targetPsi.getSPOSet(detref));
+              if(basisName == BasisName) { //only when the basisset matches
+                SPOSetType* psi=0;
+                if(refname == "invalid") { //create one and use detname
+                  if(detname =="invalid") { //no id is given, assign one
+                    detname="det";
+                    ostringstream idassigned(detname);
+                    idassigned << is;
+                  }
+ 	          psi = new SPOSetType(basisSet,detCounter);
+	          psi->put(tcur);
+                  psi->setName(detname);
+                  targetPsi.addSPOSet(psi);
+                } else {
+                  if(targetPsi.hasSPOSet(refname)) {
+                    psi = dynamic_cast<SPOSetType*>(targetPsi.getSPOSet(refname));
+                  }
                 }
-                //std::map<std::string,SPOSetType*>::iterator dit(spoSet.find(detref));
-                //if(dit == spoSet.end()) {
-                //  ERRORMSG(detref << " has not be added. Using the first determinant")
-                //  psi=(*(spoSet.begin())).second;
-                //} else {
-                //  XMLReport(detname << " uses " << detref << " determinant.")
-                //  psi=(*dit).second;
-                //}
-              } else {
- 	        psi = new SPOSetType(basisSet,norbs);
-	        psi->put(tcur);
-                psi->setName(detname);
-                targetPsi.addSPOSet(psi);
-                //spoSet[detname]=psi;
+
+	        Det_t *adet = new Det_t(*psi,first);
+	        adet->set(first,psi->numOrbitals());
+	        XMLReport("Add a determinant to the SlaterDeterminant for particles: " << first << " -> " << first+psi->numOrbitals())
+
+	        //add the DiracDeterminant to the SlaterDeterminant
+	        slaterdets[is]->add(adet);
+	        first += psi->numOrbitals();
+                //increment detCounter so that only one SPOSetType object handles the BasisSet
+	        detCounter++;
               }
-	      Det_t *adet = new Det_t(*psi,first);
-	      adet->set(first,psi->numOrbitals());
-	      XMLReport("Add a determinant to the SlaterDeterminant for particles: " 
-			<< first << " -> " << first+psi->numOrbitals())
-		//add the DiracDeterminant to the SlaterDeterminant
-	      slaterdets[is]->add(adet);
-	      first += psi->numOrbitals();
-	      norbs++;
 	    }
 	    tcur = tcur->next;
 	  }
