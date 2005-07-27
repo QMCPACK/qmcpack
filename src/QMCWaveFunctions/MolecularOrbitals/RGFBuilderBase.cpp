@@ -78,13 +78,15 @@ namespace ohmmsqmc {
         dfile << "# column " << i+1 << " :  " << m_orbitals->RnlID[i] << endl;
       }
       dfile.precision(15);
+
       for(int ig=0; ig<agrid->size()-1; ig++) {
         RealType _r = (*agrid)(ig);
-        RealType _rinv = 1.0/_r;
-        agrid->locate(_r);
+        //RealType _rinv = 1.0/_r;
+        //agrid->locate(_r);
         dfile << setw(30) << _r;
         for(int i=0; i<norb; i++) {
-          dfile << setw(30) << m_orbitals->Rnl[i]->evaluateAll(_r,_rinv);
+          dfile << setw(30) << m_orbitals->Rnl[i]->operator()(ig);
+          //dfile << setw(30) << m_orbitals->Rnl[i]->evaluateAll(_r,_rinv);
         }
         dfile << endl;
       }
