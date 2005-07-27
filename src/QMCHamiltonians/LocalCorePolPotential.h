@@ -31,36 +31,32 @@ namespace ohmmsqmc {
      \f]
      Electric field which acts on core \f$C\f$ due to the charges of 
      valence electrons \f$i\f$ and the other cores \f$C'\f$
-     \f[
-     {\bf f}_C = \sum_i \frac{ {\bf r}_{Ci} }{r_{Ci}^3} C(r_{Ci},\rho_C)
+     \f{eqnarray*}
+     {\bf f}_C &=& \sum_i \frac{ {\bf r}_{Ci} }{r_{Ci}^3} C(r_{Ci},\rho_C)
      -\sum_{C' \ne C} \frac{ {\bf R}_{CC'} }{ R_{CC'}^3 }Z_{C'} = 
-     {\bf f}_C^e + {\bf f}_C^n
-     \f]
-     \f[
-     {\bf r}_{Ci} = {\bf r}_i - {\bf r}_C
-     \f]
-     \f[
-     {\bf R}_{CC'} = {\bf R}_{C'} - {\bf R}_{C}
-     \f]
-
+     {\bf f}_C^e + {\bf f}_C^n \\
+     {\bf r}_{Ci} &=& {\bf r}_i - {\bf r}_C\\
+     {\bf R}_{CC'} &=& {\bf R}_{C'} - {\bf R}_{C}
+     \f}
      \f$ C(r_{Ci},\rho_C) \f$ is a cut-off function for \f$ {\bf f}_C^e \f$ 
-     with an adjustable parameter \f$ \rho_C \f$
+     with an adjustable parameter \f$ \rho_C \f$.
 
-     \f[
-     V_{CPP} = -\frac{1}{2}\sum_C \left\{ \:\:\: \sum_i 
-     \frac{1}{r_{Ci}^4}C^2(r_{Ci},\rho_C) + 
-     \sum_{i \ne j} \frac{{\bf r}_{Ci} \cdot {\bf r}_{Ci}}{r^3_{Ci}r^3_{Ci}}
-     C(r_{Ci},\rho_C) C^2(r_{Cj},\rho_C) \right. 
-     \f]
-     \f[ 
-     -2 \left. \sum_i \sum_{C' \ne C} \frac{{\bf r}_{Ci} \cdot 
+     \f{eqnarray*}
+     V_{CPP} &=& -\frac{1}{2} \sum_C \left\{ 
+     \:\:\: \sum_i \frac{1}{r_{Ci}^4} C^2(r_{Ci},\rho_C) + 
+     \sum_{i \ne j}\frac{ {\bf r}_{Ci} \cdot {\bf r}_{Ci} }{r^3_{Ci}r^3_{Ci}}
+     C(r_{Ci},\rho_C) C^2(r_{Cj},\rho_C) 
+     \right\} \\
+     & & -2 \left\{ \sum_i \sum_{C' \ne C} \frac{{\bf r}_{Ci} \cdot 
      {\bf R}_{CC'}}{r^3_{Ci}R^3_{CC'}} Z_{C'}C(r_{Ci},\rho_C) 
      + \left| \sum_{C' \ne C}  \frac{ {\bf R}_{CC'} }{ R^3_{CC'} } Z_{C'} 
      \right|^2 \:\:\: \right\}
-     \f]
+     \f}
   */
   struct LocalCorePolPotential: public QMCHamiltonianBase {
 
+    /** core-polarization parameters for each species
+     */
     struct CPP_Param {
       RealType alpha, C,
                r_b, one_over_rr;
@@ -77,6 +73,7 @@ namespace ohmmsqmc {
       bool put(xmlNodePtr cur);
     };
 
+    ///boolean to evaluate the constant once
     bool FirstTime;
     ///the number of ions 
     int nCenters;
@@ -92,13 +89,14 @@ namespace ohmmsqmc {
     ///the ion-ion DistanceTable
     DistanceTableData* d_ii;
 
+    ///input CPP_Param whose size is the number of species
+    vector<CPP_Param*> InpCPP;
+    ///CPP_Param for each ion
     vector<CPP_Param*> Centers;
 
-    ///CoreCoef(C) = 1.0 if C=Ge, 0.0 for all other ions
-    vector<bool> CoreCoef;
-    ///CoreCoreDipole(C,C') \f$ = \frac{ Z_{C'} {\bf R}_{CC'} }{ R_{CC'}^3 }\f$
+    ///CoreCoreDipole(C,C') \f$ =  Z_{C'} {\bf R}_{CC'}/ R_{CC'}^3 \f$
     vector<PosType> CoreCoreDipole;
-    ///ElCoreDipole(C,i) \f$ = \frac{ {\bf r}_{Ci} f(\bar{r}_{bCi}) }{r_{Ci}^3}\f$
+    ///ElCoreDipole(C,i) \f$ = {\bf r}_{Ci} f(\bar{r}_{bCi}) /r_{Ci}^3\f$ 
     Matrix<PosType> CoreElDipole;
 
     ///constructor

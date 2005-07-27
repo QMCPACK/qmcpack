@@ -33,17 +33,17 @@ namespace ohmmsqmc {
     nCenters = ions.getTotalNum();
     nParticles = els.getTotalNum();
   
-    Centers.resize(nCenters,0);
-    CoreCoef.resize(nCenters,false);
     CoreCoreDipole.resize(nCenters,0.0);
     CoreElDipole.resize(nCenters,nParticles);
     CoreElDipole = 0.0;
   }
   
+  /** destructor
+   *
+   * Delete InpCPP.
+   */
   LocalCorePolPotential::~LocalCorePolPotential() { 
-    for(int iat=0; iat<nCenters; iat++) { 
-    	if(Centers[iat]) delete Centers[iat];
-    }
+    for(int i=0; i<InpCPP.size(); i++) if(InpCPP[i]) delete InpCPP[i];
   }
   
   /** process xml node for each element
@@ -64,10 +64,13 @@ namespace ohmmsqmc {
    * @param cur xmlnode containing element+
    * 
    * element/@name is used to find the index of the element of the 
-   * IonSys::SpeciesSet.
+   * IonSys::SpeciesSet. The size of InpCPP is the number of species.
+   * The size of Centers is the number of ions.
    */
   bool LocalCorePolPotential::put(xmlNodePtr cur){
     string ename;
+
+    InpCPP.resize(IonSys.getSpeciesSet().getTotalNum(),0);
     cur= cur->children;
     bool success(false);
     while(cur != NULL){
@@ -76,13 +79,19 @@ namespace ohmmsqmc {
       	const xmlChar* e_ptr = xmlGetProp(cur,(const xmlChar*)"name");
       	if(e_ptr){
           int itype = IonSys.getSpeciesSet().addSpecies((const char*)e_ptr);
-          if(Centers[itype]==0) Centers[itype]=new CPP_Param;
+          if(InpCPP[itype]==0) InpCPP[itype] = new CPP_Param;
           LOGMSG("CPP parameters for " << IonSys.getSpeciesSet().speciesName[itype])
-          success &= Centers[itype]->put(cur);
+          success &= InpCPP[itype]->put(cur);
       	}
       }
       cur=cur->next;
-	  }
+    }
+
+    //resize Centers by the number of centers
+    Centers.resize(nCenters,0);
+    for(int iat=0; iat<nCenters; iat++) {
+      Centers[iat]=InpCPP[IonSys.GroupID[iat]];
+    }
     return success;
   }
 
@@ -108,7 +117,7 @@ namespace ohmmsqmc {
       RealType corecore(0.0);
       for(int iat=0; iat<nCenters; iat++) {
         if(Centers[iat]) 
-        corecore+= Centers[iat]->C*dot(CoreCoreDipole[iat],CoreCoreDipole[iat]);
+          corecore+= Centers[iat]->C*dot(CoreCoreDipole[iat],CoreCoreDipole[iat]);
       }
       LOGMSG("Core-Core Dipole = " << corecore);
       FirstTime=false;
