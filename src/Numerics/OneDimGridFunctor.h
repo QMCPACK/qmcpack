@@ -225,6 +225,43 @@ struct OneDimGridFunctor//: public FunctorBase<Td,1> {
   ///address of coefficients Y and dY or d2Y
   vector<value_type*> FirstAddress;
 };
+
+/** One-dimensional grid functor that returns a constant
+ */
+template <class Td, 
+	  class Tg = Td, 
+	  class CTd= Vector<Td>,
+	  class CTg= Vector<Tg> >
+class OneDimConstFunctor: public OneDimGridFunctor<Td,Tg,CTd,CTg> {
+
+public:
+
+  Td ConstValue;
+  typedef OneDimGridFunctor<Td,Tg,CTd,CTg> base_type;
+  typedef typename base_type::value_type  value_type;
+  typedef typename base_type::point_type  point_type;
+  typedef typename base_type::data_type data_type;
+  typedef typename base_type::grid_type grid_type;
+
+
+  OneDimConstFunctor(grid_type* gt = 0): base_type(gt), ConstValue(0.0){ }
+
+  inline value_type splint(point_type r) {
+    return ConstValue;
+  }
+
+  inline value_type 
+  splint(point_type r, value_type& du, value_type& d2u) {
+    du=0.0; d2u=0.0;
+    return ConstValue;
+  }
+
+  inline 
+  void spline(int imin, value_type yp1, int imax, value_type ypn) {
+  }
+
+  inline void spline() { }
+};
 #endif
 /***************************************************************************
  * $RCSfile$   $Author$
