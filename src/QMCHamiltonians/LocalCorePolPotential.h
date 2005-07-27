@@ -43,14 +43,14 @@ namespace ohmmsqmc {
 
      \f{eqnarray*}
      V_{CPP} &=& -\frac{1}{2} \sum_C \left\{ 
-     \:\:\: \sum_i \frac{1}{r_{Ci}^4} C^2(r_{Ci},\rho_C) + 
+     \;\;\; \sum_i \frac{1}{r_{Ci}^4} C^2(r_{Ci},\rho_C) + 
      \sum_{i \ne j}\frac{ {\bf r}_{Ci} \cdot {\bf r}_{Ci} }{r^3_{Ci}r^3_{Ci}}
      C(r_{Ci},\rho_C) C^2(r_{Cj},\rho_C) 
      \right\} \\
      & & -2 \left\{ \sum_i \sum_{C' \ne C} \frac{{\bf r}_{Ci} \cdot 
      {\bf R}_{CC'}}{r^3_{Ci}R^3_{CC'}} Z_{C'}C(r_{Ci},\rho_C) 
      + \left| \sum_{C' \ne C}  \frac{ {\bf R}_{CC'} }{ R^3_{CC'} } Z_{C'} 
-     \right|^2 \:\:\: \right\}
+     \right|^2 \;\;\; \right\}
      \f}
   */
   struct LocalCorePolPotential: public QMCHamiltonianBase {
@@ -67,7 +67,7 @@ namespace ohmmsqmc {
         alpha=a; C=-0.5*a;r_b=r; one_over_rr=1/r/r;
       }
       inline RealType operator()(RealType r) {
-        RealType z=1.0-exp(r*r*one_over_rr);
+        RealType z=1.0-exp(-r*r*one_over_rr);
         return z*z;
       }
       bool put(xmlNodePtr cur);
