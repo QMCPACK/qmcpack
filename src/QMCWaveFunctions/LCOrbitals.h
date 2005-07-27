@@ -51,7 +51,10 @@ namespace ohmmsqmc {
 
     ///true if the coefficient matrix is the identity matrix
     bool Identity;
-    ///id of this object, if ID == 0, the object is responsble for the BasisSet
+    /** Identifier of this object
+     *
+     * If ID == 0, the object is responsble for the BasisSet object.
+     */
     int ID;
     ///number of particles handled by this object
     int NumPtcls;
@@ -62,9 +65,17 @@ namespace ohmmsqmc {
     ///matrix containing the coefficients
     Matrix<ValueType> C;
 
+    /** constructor
+     * @param bs pointer to the BasisSet
+     * @param id identifier of this LCOrbitals
+     */
     inline LCOrbitals(BS* bs, int id): 
       Identity(false),ID(id), NumPtcls(0), BasisSet(bs){ }
 
+    /** destructor
+     *
+     * BasisSet is deleted by the object with ID == 0
+     */
     inline ~LCOrbitals() {if(!ID) delete BasisSet;}
 
     ///set the distance table for all the basis sets

@@ -24,17 +24,16 @@ namespace ohmmsqmc {
 
   class ParticleSet;
 
-  /**
-   *@brief Builder class to create Fermi wavefunctions using MO Basis.
+  /** Builder class to create Fermi wavefunctions using MO Basis.
    *
-   *Any molecular orbital has to use the distance table between the 
-   *ions and electrons.
-   *The traits of MO Basis is that each basis function is
-   *\f$ \phi_{nlm} =  R_{nl} \Re (Y_{lm}) \f$
-   *where \f$ Rnl \f$ is any radial grid function and 
-   *\f$ \Re (Y_{lm}) \f$ is a real spherical harmonic.
-   *Depending upon the input, one can convert the functions on the radial
-   *grids or can carry on the calculations using the input functions.
+   * Any molecular orbital has to use the distance table between the ions and electrons.
+   * The traits of MO Basis is that each basis function is
+   * \f$ \phi_{nlm} =  \frac{R_{nl}}{r^l} r^{l}\Re (Y_{lm}) \f$
+   * where \f$ \frac{R_{nl}}{r^l} \f$ is any radial grid function and 
+   * \f$ \Re (Y_{lm}) \f$ is a real spherical harmonic and \f$ r^l \Re (Y_{lm})\f$ handled by 
+   * SphericalTensor object.
+   * Depending upon the input, one can convert the functions on the radial
+   * grids or can carry on the calculations using the input functions.
    */
   struct MolecularOrbitalBuilder: public OrbitalBuilderBase {
 
