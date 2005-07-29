@@ -14,189 +14,200 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 #include "QMCWaveFunctions/NumericalOrbitalSetBuilder.h"
-#include "QMCWaveFunctions/SingleParticleOrbitalSet.h"
-#include "QMC/MO2Grid3D.h"
+#include "OhmmsData/AttributeSet.h"
+#include "Numerics/HDFTriCubicSpline.h"
 
 namespace ohmmsqmc {
 
-  NumericalOrbitalSetBuilder::NumericalOrbitalSetBuilder(TrialWaveFunction& wfs): 
-    OrbitalBuilderBase(wfs),GridXYZ(0) {
+  NumericalOrbitalSetBuilder::NumericalOrbitalSetBuilder(ParticleSet& p,
+              TrialWaveFunction& psi, PtclPoolType& psets):
+    OrbitalBuilderBase(p,psi), 
+    LocalizedBasisBuilder(0),
+    ptclPool(psets), 
+    GridXYZ(0), MOBasisSet(0) {
+
   }   
 
+  /** add an antisymmetric many-body function to a trial wave function
+   */
   bool NumericalOrbitalSetBuilder::put(xmlNodePtr cur){
 
-    MO2Grid3D converter;
+    string source("i");
+    OhmmsAttributeSet aAttrib;
+    aAttrib.add(source,"source");
+    aAttrib.put(cur);
 
-    //save current node
-    xmlNodePtr curSave=cur;
-
-    //MO2Grid3D returns a modified xml node
-    xmlNodePtr curMod = converter.generateNumericalOrbitals(cur);
-
-    if(curMod) {
-      //copy the orbitals that have been already created
-      converter.copyOrbitalSet(SPOSet);
-      curSave=curMod;
+    //ionic system for the molecualr orbitals
+    ParticleSet* ions=0;
+    //initialize with the source tag
+    PtclPoolType::iterator pit(ptclPool.find(source));
+    if(pit != ptclPool.end()) {
+      LOGMSG("Molecular orbital uses an ionic system " << source)
+      ions=(*pit).second; 
     }
 
-    if(SPOSet.empty()) initOrbitalSet(curSave);
-    return addSlaterDeterminantSet(curSave);
-  }
+    if(LocalizedBasisBuilder == 0) {
+      LocalizedBasisBuilder = new GridMolecularOrbitals(targetPtcl,
+          targetPsi,*ions);
+    }
 
-  void NumericalOrbitalSetBuilder::initOrbitalSet(xmlNodePtr cur){
-
-    std::vector<RealType> ri(3,-5.0);
-    std::vector<RealType> rf(3,5.0);
-    std::vector<int> npts(3,101);
-    xmlNodePtr curSave=cur;
-    cur = cur->xmlChildrenNode;
-    int idir=0;
-
-    //first pass to check if basisset is used
+    xmlNodePtr gridPtr=0;
+    vector<xmlNodePtr> sdetPtr;
+    cur=cur->children;
     while(cur != NULL) {
       string cname((const char*)(cur->name));
-      if(cname == "spline") {
-        splinePtr=cur; // save spline data
-        xmlNodePtr tcur = cur->xmlChildrenNode;
-        while(tcur != NULL) {
-          string tname((const char*)(tcur->name));
-          if(tname == "grid") {
-            a=xmlGetProp(tcur,(const xmlChar*)"dir");
-            if(a) { idir=atoi((const char*)a);}
-            a=xmlGetProp(tcur,(const xmlChar*)"ri");
-            if(a) { ri[idir]=atof((const char*)a);}
-            a=xmlGetProp(tcur,(const xmlChar*)"rf");
-            if(a) { rf[idir]=atof((const char*)a);}
-            a=xmlGetProp(tcur,(const xmlChar*)"npts");
-            if(a) { npts[idir]=atoi((const char*)a);}
-          }
-          tcur = tcur->next;
-        }
+      if(cname == "cubicgrid") {
+        gridPtr=cur;
+      } else if(cname == sd_tag) {
+        sdetPtr.push_back(cur);
+      } else if(cname == basisset_tag) {
+        MOBasisSet = LocalizedBasisBuilder->addBasisSet(cur);
       } 
       cur = cur->next;
     }
 
-    typedef LinearGrid<RealType> GridType;
-    GridType *gridX=new GridType;
-    GridType *gridY=new GridType;
-    GridType *gridZ=new GridType;
+    if(gridPtr == 0) {
+      ERRORMSG("NumericalOrbitalSetBuilder::put failed. cubicgrid is not defined.")
+      return false;
+    }
 
-    gridX->set(ri[0],rf[0],npts[0]);
-    gridY->set(ri[1],rf[1],npts[1]);
-    gridZ->set(ri[2],rf[2],npts[2]);
-    GridXYZ = new XYZCubicGrid<RealType>(gridX,gridY,gridZ);
+    if(GridXYZ == 0) {
+      GridXYZ = new XYZCubicGrid<RealType>;
+      GridXYZ->put(gridPtr);
+    }
 
+    //For now, only one slaterdeterminant is used
+    //add slaterdeterminant to a trial wave function
+    SlaterDeterminant_t* sdet = addSlaterDeterminant(sdetPtr[0]);
+    SlaterDetSet.push_back(sdet);
+
+    targetPsi.add(sdet);
+
+    //BasisSet needs to be resized
+    if(MOBasisSet) MOBasisSet->resize(targetPtcl.getTotalNum());
+
+    XMLReport("Creating a SlaterDeterminant wavefunction")
+    return true;
   }
 
-  bool NumericalOrbitalSetBuilder::addSlaterDeterminantSet(xmlNodePtr cur){
+  /** create a SlaterDeterminant
+   * @param cur xmlnode containing \<slaterdeterminant\>
+   * @return a SlaterDeterminant
+   *
+   * @warning MultiSlaterDeterminant is not working yet.
+   */
+  NumericalOrbitalSetBuilder::SlaterDeterminant_t*
+  NumericalOrbitalSetBuilder::addSlaterDeterminant(xmlNodePtr cur){
 
-    typedef DiracDeterminant<SPOSetType>  Det_t;
-    typedef SlaterDeterminant<SPOSetType> SlaterDeterminant_t;
-    std::vector<SlaterDeterminant_t*> slaterdets;
+    string nogood("invalid");
     int is=0;
+    SlaterDeterminant_t* sdet=new SlaterDeterminant_t;
+
+    int first = 0;
     cur = cur->xmlChildrenNode;
     while(cur != NULL) {
       string cname((const char*)(cur->name));
-      if(cname == OrbitalBuilderBase::sd_tag) {
-	slaterdets.push_back(new SlaterDeterminant_t);
-	sdet_coeff.push_back(1.0);
-	first = 0;
-        xmlNodePtr tcur = cur->xmlChildrenNode;
-        while(tcur != NULL) {
-	  string tname((const char*)(tcur->name));
-	  if(tname == OrbitalBuilderBase::det_tag) {
-            SPOSetType* psi=createSPOSet(tcur);
-	    Det_t *adet = new Det_t(*psi,first);
-	    adet->set(first,psi->size());
-	    slaterdets[is]->add(adet);
-            first+=psi->size();
-	  }
-	  tcur = tcur->next;
-	}
+      if(cname == det_tag) {
+        string id("det"),ref(nogood);
+        int norb(0);
+        OhmmsAttributeSet aAttrib;
+        aAttrib.add(id,"id"); aAttrib.add(ref,"ref"); aAttrib.add(norb,"orbitals");
+        aAttrib.put(cur);
+
+        //when ref is not given, overwrite ref by id
+        if(ref == nogood) ref=id;
+
+        SPOSetType* psi= 0;
+        map<string,SPOSetType*>::iterator sit(SPOSet.find(ref));
+        if(sit == SPOSet.end()) {
+          psi = createSPOSet(cur,ref,norb);
+        } else {
+          psi = (*sit).second;
+        }
+        map<string,Det_t*>::iterator dit(DetSet.find(id));
+
+        //check if determinant's id is valid
+        if(dit != DetSet.end() && SlaterDetSet.empty()) {
+          ostringstream idassigned(id);
+          idassigned << is;
+          ERRORMSG("determinants cannot have same id. id will be assigned to " << id)
+        }
+
+        Det_t *adet =0;
+        dit = DetSet.find(id);
+        if(dit == DetSet.end()) {//need to add a new Determinant
+          adet = new Det_t(*psi,first);
+	  adet->set(first,norb);
+          first+=norb;
+          DetSet[id]=adet;
+        } else {
+          adet=(*dit).second;
+        }
+        //add determinant to slaterdeterminant
+        sdet->add(adet);
       }
       cur = cur->next;
     }
 
-    if(slaterdets.size() > 1) {
-      XMLReport("Creating a multi-determinant wavefunction")
-      MultiSlaterDeterminant<SPOSetType>
-        *multidet= new MultiSlaterDeterminant<SPOSetType>;
-      for(int i=0; i<slaterdets.size(); i++) {
-        XMLReport("Coefficient for a SlaterDeterminant " << sdet_coeff[i])
-        slaterdets[i]->setOptimizable(optimizeit);
-        multidet->add(slaterdets[i],sdet_coeff[i]);
-      }
-      multidet->setOptimizable(optimizeit);
-      //add a MultiDeterminant to the trial wavefuntion
-      wfs_ref.add(multidet);
-    } else {
-      XMLReport("Creating a SlaterDeterminant wavefunction")
-      wfs_ref.add(slaterdets[0]);
-    }
+    return sdet;
   }
 
+  /** create a SingleParticleOrbitalSet containng norb orbitals
+   * @param cur xmlnode to process
+   * @param ref name of SPO set
+   * @param norb number of single-particle orbitals
+   * @return a new MixedSPOSet
+   */
   NumericalOrbitalSetBuilder::SPOSetType*
-  NumericalOrbitalSetBuilder::createSPOSet(xmlNodePtr cur) {
+  NumericalOrbitalSetBuilder::createSPOSet(xmlNodePtr cur, 
+      const string& ref, int norb) {
 
-    //get id attribute
-    string detname("det");
-    a=xmlGetProp(cur,(const xmlChar*)"id");
-    if(a) { detname = (const char*)a; }
+    //int npts=GridXYZ->size();
+    //std::vector<RealType> inData(npts);
 
-    //get ref attribute
-    string detref(detname);
-    a=xmlGetProp(cur,(const xmlChar*)"ref");
-    if(a) { detref=(const char*)a; }
+    int first=LocalizedOrbitals.size();
 
-    //add src attribute
-    string detsrc;
-    a=xmlGetProp(cur,(const xmlChar*)"src");
-    if(a) {detsrc=(const char*)a;}
-
-    //create a new Single-Particle-Orbital Set that will be connected to a DiracDeterminant
-    SPOSetType* psi=new SPOSetType();
-
-    //count the number of orbitals of this DiracDeterminant
-    a=xmlGetProp(cur,(const xmlChar*)"orbitals");
-    int norbs(atoi((const char*)a));
-
-    //first, add the psi's explicitly added
+    SPOSetType* psi= new SPOSetType;
     cur=cur->children;
-    while(cur != NULL && norbs) {
-      string cname((const char*)cur->name);
-      if(cname == "psi") {
-        a=xmlGetProp(cur,(const xmlChar*)"index");
-        if(a) { 
-          SPOType* orb = createSPO(detsrc,atoi(const char*)a);
-          if(orb) { psi->add(orb); --norbs;}
+    while(cur != NULL) {
+      string cname((const char*)(cur->name));
+      if(cname == "coefficient" || cname == "parameter") {
+        LOType *phi=0;
+        map<string,LOType*>::iterator it(LocalizedOrbitals.find(ref));
+        if(it == LocalizedOrbitals.end()) {
+          phi=new LOType(MOBasisSet,first);
+          phi->put(cur->parent);
+          phi->setName(ref);
+          LocalizedOrbitals[ref]=phi;
+        } else {
+          phi = (*it).second;
+        }
+        psi->setLocalizedOrbitals(phi);
+      } else if(cname == "spline") {
+        const char* hroot = (const char*)xmlGetProp(cur,(const xmlChar*)"src");
+        char wfname[128], hfile[128];
+        for(int iorb=0; iorb<norb; iorb++) {
+          sprintf(wfname,"%s.wfs%04d",hroot,iorb);
+          sprintf(hfile,"%s.wfs%04d.h5",hroot,iorb);
+          NumericalOrbitalType* neworb=0;
+          map<string,NumericalOrbitalType*>::iterator it(NumericalOrbitals.find(wfname));
+          if(it == NumericalOrbitals.end()) {
+            neworb=new NumericalOrbitalType(GridXYZ);
+            hid_t h_file = H5Fopen(hfile,H5F_ACC_RDWR,H5P_DEFAULT);
+            HDFAttribIO<NumericalOrbitalType> dummy(*neworb);
+            //Check this
+            dummy.read(h_file,"/Orbital/CubicSpline");
+            H5Fclose(h_file);
+            NumericalOrbitals[wfname]=neworb;
+          } else {
+            neworb = (*it).second;
+          }
+          psi->add(neworb);
         }
       }
       cur=cur->next;
     }
-
-    //second, add the rest from the bottom of the eigen states
-    int iorb(0);
-    while(norbs) {
-      SPOType* orb = createSPO(detsrc,iorb);
-      if(orb) { psi->add(orb); --norbs; ++iorb;}
-    }
-
     return psi;
-  }
-
-  NumericalOrbitalSetBuilder::SPOType*
-  NumericalOrbitalSetBuilder::createSPO(const string& srcfile, int iorb) {
-
-    char oname[128];
-    sprintf(oname,"%s.wf%04d",srcfile.c_str(),iorb);
-    SPOType* orb=0;
-    map<string,TriCubicSplineT<ValueType>* >::iterator sit(SPOSet.find());
-    if(sit != SPOSet.end()) {
-      orb=(*sit).second;
-    } else {
-      //create one
-    }
-    return orb;
   }
 }
 /***************************************************************************

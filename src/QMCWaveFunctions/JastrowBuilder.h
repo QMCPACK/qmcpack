@@ -17,7 +17,6 @@
 #ifndef OHMMS_QMC_GENERIC_JASTROW_BUILDER_H
 #define OHMMS_QMC_GENERIC_JASTROW_BUILDER_H
 #include "QMCWaveFunctions/OrbitalBuilderBase.h"
-#include <map>
 
 namespace ohmmsqmc {
 
@@ -30,8 +29,6 @@ namespace ohmmsqmc {
    *A xml node with OrbtialBuilderBase::jastrow_tag is parsed recursively.
    */
   struct JastrowBuilder: public OrbitalBuilderBase {
-
-    typedef map<string,ParticleSet*> PtclPoolType;
 
     JastrowBuilder(ParticleSet& p, TrialWaveFunction& psi, PtclPoolType& psets);
     

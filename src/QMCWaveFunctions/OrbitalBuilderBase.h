@@ -21,10 +21,10 @@
 #define OHMMS_QMC_TRIALORBITALBUILDERBASE_H 
 
 #include "QMCWaveFunctions/TrialWaveFunction.h"
+#include <map>
 /**@defgroup WFSBuilder Orbital builder group
  * @brief Builder classes to add OrbitalComponent to a TrialWaveFunction
  */
-
 namespace ohmmsqmc {
 
   /**@ingroup WFSBuilder
@@ -38,6 +38,7 @@ namespace ohmmsqmc {
     typedef TrialWaveFunction::ValueType ValueType;    
     typedef TrialWaveFunction::PosType   PosType;    
     typedef TrialWaveFunction::GradType  GradType;    
+    typedef map<string,ParticleSet*> PtclPoolType;
 
     /** \ingroup XMLTags 
      *@{
