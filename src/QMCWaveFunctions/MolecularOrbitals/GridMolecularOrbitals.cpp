@@ -16,6 +16,7 @@
 #include "Utilities/OhmmsInfo.h"
 #include "Particle/DistanceTableData.h"
 #include "Particle/DistanceTable.h"
+#include "OhmmsData/AttributeSet.h"
 #include "QMCWaveFunctions/DetSetBuilderWithBasisSet.h"
 #include "QMCWaveFunctions/MolecularOrbitals/GridMolecularOrbitals.h"
 #include "QMCWaveFunctions/MolecularOrbitals/RGFBuilderBase.h"
@@ -23,7 +24,6 @@
 #include "QMCWaveFunctions/MolecularOrbitals/GTO2GridBuilder.h"
 #include "QMCWaveFunctions/MolecularOrbitals/Any2GridBuilder.h"
 #include "QMCWaveFunctions/MolecularOrbitals/NumericalRGFBuilder.h"
-#include "OhmmsData/AttributeSet.h"
 
 namespace ohmmsqmc {
 
