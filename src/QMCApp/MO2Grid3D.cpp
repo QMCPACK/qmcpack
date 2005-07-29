@@ -281,7 +281,7 @@ namespace ohmmsqmc {
         //copy determinant
         xmlNodePtr core_2=xmlCopyNode(cur,2);
         xmlNodePtr normal_2=xmlCopyNode(cur,2);
-        int norb=atoi((const char*)xmlGetProp(cur,(const char*)"orbitals"));
+        int norb=atoi((const char*)xmlGetProp(cur,(const xmlChar*)"orbitals"));
 
         vector<RealType> tmpC(offset*offset), occ(offset), C(norb*offset);
         Matrix<RealType> A(norb,coreoffset), B(norb,offset-coreoffset);
@@ -632,8 +632,8 @@ namespace ohmmsqmc {
         hid_t h_file = H5Fcreate(oname,H5F_ACC_TRUNC,H5P_DEFAULT,H5P_DEFAULT);
         HDFAttribIO<std::vector<double> > dump(dat,npts);
         dump.write(h_file,"Orbital");
-        HDFAttribIO<TriCubicSplineT<double> > dump1(*torb);
-        dump1.write(h_file,"CubicSpline");
+        //HDFAttribIO<TriCubicSplineT<double> > dump1(*torb);
+        //dump1.write(h_file,"CubicSpline");
         H5Fclose(h_file);
         timer.stop();
         lapsed_time[3]+= timer.cpu_time();
