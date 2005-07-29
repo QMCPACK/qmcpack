@@ -31,6 +31,7 @@ namespace ohmmsqmc {
 
   class TrialWaveFunction;
   class ParticleSetPool;
+  class OrbitalBuilderBase;
 
   /** @ingroup qmcapp
    * @brief Manage a collection of TrialWaveFunction objects
@@ -79,6 +80,10 @@ namespace ohmmsqmc {
      * is used as an input object for the evaluations.
      */
     ParticleSetPool* ptclPool;
+
+    /** save the builder class to clean up at the end
+     */
+    std::vector<OrbitalBuilderBase*> orbitalBuilders;
   };
 }
 #endif
