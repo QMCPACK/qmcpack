@@ -1,6 +1,5 @@
 #ifndef OHMMS_QMC_XYZCUBICGRID_H
 #define OHMMS_QMC_XYZCUBICGRID_H
-
 #include "OhmmsPETE/TinyVector.h"
 #include "Numerics/OneDimGridBase.h"
 
@@ -42,6 +41,7 @@ struct XYZCubicGrid {
   inline T d2q2 (T t)
   { return (6.0*t - 2.0); } 
 
+  bool OwnGrid;
   bool Periodic;
   int Loc;
   int ix, iy, iz;
@@ -58,7 +58,7 @@ struct XYZCubicGrid {
 
   Grid1DType *gridX, *gridY, *gridZ;
 
-  XYZCubicGrid():Loc(-1),gridX(0),gridY(0),gridZ(0) {}
+  XYZCubicGrid(): OwnGrid(false),Loc(-1),gridX(0),gridY(0),gridZ(0) {}
   XYZCubicGrid(Grid1DType *xgrid, Grid1DType *ygrid, 
       Grid1DType *zgrid) {
     setGridXYZ(xgrid,ygrid,zgrid);
@@ -72,6 +72,41 @@ struct XYZCubicGrid {
     y_min=gridY->rmin(); y_max=gridY->rmax(); LengthY=y_max-y_min;
     z_min=gridZ->rmin(); z_max=gridZ->rmax(); LengthZ=z_max-z_min;
     nX = gridX->size(); nY = gridY->size(); nZ = gridZ->size();
+  }
+
+  inline int size() { return nX*nY*nZ;}
+
+  /** process xmlnode to set the grids
+   */
+  bool put(xmlNodePtr cur) {
+    std::vector<T> ri(3,-5.0);
+    std::vector<T> rf(3,5.0);
+    std::vector<int> npts(3,101);
+    cur = cur->xmlChildrenNode;
+    int idir(0);
+    while(cur != NULL) {
+      string cname((const char*)(cur->name));
+      if(cname == "grid") {
+        const xmlChar* a=xmlGetProp(cur,(const xmlChar*)"dir");
+        if(a) { idir=atoi((const char*)a);}
+        a=xmlGetProp(cur,(const xmlChar*)"ri");
+        if(a) { ri[idir]=atof((const char*)a);}
+        a=xmlGetProp(cur,(const xmlChar*)"rf");
+        if(a) { rf[idir]=atof((const char*)a);}
+        a=xmlGetProp(cur,(const xmlChar*)"npts");
+        if(a) { npts[idir]=atoi((const char*)a);}
+      }
+      cur=cur->next;
+    }
+    if(gridX ==0) gridX=new LinearGrid<T>;
+    if(gridY ==0) gridY=new LinearGrid<T>;
+    if(gridZ ==0) gridZ=new LinearGrid<T>;
+    gridX->set(ri[0],rf[0],npts[0]);
+    gridY->set(ri[1],rf[1],npts[1]);
+    gridZ->set(ri[2],rf[2],npts[2]);
+
+    setGridXYZ(gridX,gridY,gridZ);
+    return true;
   }
 
   inline void setBC(bool pbc) { Periodic=pbc;}
