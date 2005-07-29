@@ -61,7 +61,6 @@ namespace ohmmsqmc {
     }
 
     InFileRoot = string(infile,0,infile.size()-4);
-    myProject.setTitle(InFileRoot);
 
     //set the root and create the context map
     m_root = cur;

@@ -118,22 +118,32 @@ namespace ohmmsqmc {
         xmlUnlinkNode(q[i]);
         xmlFreeNode(q[i]);
       }
-      //xmlNodePtr aqmc = xmlNewNode(NULL,(const xmlChar*)"qmc");
-      //xmlNewProp(aqmc,(const xmlChar*)"method",(const xmlChar*)"dmc");
-      //xmlNodePtr aparam = xmlNewNode(NULL,(const xmlChar*)"parameter");
-      //xmlNewProp(aparam,(const xmlChar*)"name",(const xmlChar*)"en_ref");
-      //char ref_energy[128];
-      //sprintf(ref_energy,"%15.5e",qmcSystem->getLocalEnergy());
-      //xmlNodeSetContent(aparam,(const xmlChar*)ref_energy);
-      //xmlAddChild(aqmc,aparam);
-      //xmlAddChild(m_root,aqmc);
-      //for(int i=0;i<q.size(); i++) {
-      //  xmlUnlinkNode(q[i]);
-      //  xmlFreeNode(q[i]);
-      //}
     }
 
-    saveXml();
+    if(OHMMS::Controller->master()) {
+      int nproc=OHMMS::Controller->ncontexts();
+      if(nproc>1) {
+        xmlNodePtr t=m_walkerset.back();
+        xmlSetProp(t, (const xmlChar*)"node",(const xmlChar*)"0");
+        string fname((const char*)xmlGetProp(t,(const xmlChar*)"href"));
+        string::size_type ending=fname.find(".p");
+        string froot;
+        if(ending<fname.size()) 
+          froot = string(fname.begin(),fname.begin()+ending);
+        else
+          froot=fname;
+        char pfile[128];
+        for(int ip=1; ip<nproc; ip++) {
+	  sprintf(pfile,"%s.p%03d",froot.c_str(),ip);
+          std::ostringstream ip_str;
+          ip_str<<ip;
+          t = xmlAddNextSibling(t,xmlCopyNode(t,1));
+          xmlSetProp(t, (const xmlChar*)"node",(const xmlChar*)ip_str.str().c_str());
+          xmlSetProp(t, (const xmlChar*)"href",(const xmlChar*)pfile);
+        }
+      }
+      saveXml();
+    }
     return true;
   }
 
@@ -420,10 +430,15 @@ namespace ohmmsqmc {
 
     if(xmlXPathNodeSetIsEmpty(result->nodesetval)) {
       if(m_walkerset.empty()) {
+        xmlXPathObjectPtr q = xmlXPathEvalExpression((const xmlChar*)"//qmc",context_);
 	xmlNodePtr newnode_ptr = xmlNewNode(NULL,(const xmlChar*)"mcwalkerset");
-	xmlNewProp(newnode_ptr,(const xmlChar*)"file", (const xmlChar*)"nothing");
-	xmlAddChild(m_root,newnode_ptr);
+        if(xmlXPathNodeSetIsEmpty(q->nodesetval)) {
+	  xmlAddChild(m_root,newnode_ptr);
+        } else {
+	  xmlAddPrevSibling(q->nodesetval->nodeTab[0],newnode_ptr);
+        }
 	m_walkerset.push_back(newnode_ptr);
+        xmlXPathFreeObject(q);
       }
     } else {
       int pid=OHMMS::Controller->mycontext(); 
