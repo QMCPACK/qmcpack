@@ -249,8 +249,6 @@ namespace ohmmsqmc {
 
     xmlNodePtr core_1_1 = xmlCopyNode(basissetPtr,2);
     xmlNodePtr normal_1_1 = xmlCopyNode(basissetPtr,2);
-    xmlNewProp(core_1_1,(const xmlChar*)"name",(const xmlChar*)"mo");
-    xmlNewProp(normal_1_1,(const xmlChar*)"name",(const xmlChar*)"cubicgrid");
 
     RGroupType::iterator rit(Rgroup.begin()),rit_end(Rgroup.end());
     while(rit != rit_end) {
@@ -324,11 +322,9 @@ namespace ohmmsqmc {
           getEigVectors(core_2,A);
           getEigVectors(normal_2,B);
         }
-        //add basisset attribute
-        xmlNewProp(core_2,(const xmlChar*)"basisset",(const xmlChar*)"mo");
-        xmlNewProp(normal_2,(const xmlChar*)"basisset",(const xmlChar*)"cubicgrid");
+        //add basis 
+        xmlAddChild(core_2,copyDeterminant(cur,true));
         core_2 = xmlAddChild(core_1,core_2);
-        core_2 = xmlAddSibling(core_2,copyDeterminant(cur,true));
         normal_2 = xmlAddChild(normal_1,normal_2);
       }//determinant
       cur=cur->next;
@@ -342,25 +338,14 @@ namespace ohmmsqmc {
    * @param addg if ture, append _g to the id attribute
    * @return a new xmlnode for printout
    *
-   * New attribute basisset="cubicgrid" is added to differentiate a copy from
-   * the original determinant.
+   * A new node \<spline\> is created to hold the information about the numerical orbitals.
+   * The attribute basis="cubicgrid" is added to point to the cubicgrid this
+   * spline node will use.
    * The root name of hdf5 files for each orbital is set to src attribute.
    */
   xmlNodePtr MO2Grid3D::copyDeterminant(xmlNodePtr cur, bool addg) {
-    xmlNodePtr aptr_hdf5=xmlCopyNode(cur,2);
-    if(addg) {
-      //add g to id 
-      const xmlChar* oldid=xmlGetProp(cur,(const xmlChar*)"id");
-      xmlChar* newid=xmlGetProp(cur,(const xmlChar*)"id");
-      newid=xmlStrcat(newid,(const xmlChar*)"_g");
-      xmlSetProp(aptr_hdf5,(const xmlChar*)"id",newid);
-      xmlChar* oldref=xmlGetProp(cur,(const xmlChar*)"ref");
-      if(oldref == NULL) {
-        xmlNewProp(aptr_hdf5,(const xmlChar*)"ref",oldid);
-      }
-    }
-
-    xmlNewProp(aptr_hdf5,(const xmlChar*)"basisset",(const xmlChar*)"cubicgrid");
+    xmlNodePtr aptr_hdf5 = xmlNewNode(NULL,(const xmlChar*)"spline");
+    xmlNewProp(aptr_hdf5,(const xmlChar*)"basis",(const xmlChar*)"cubicgrid");
     char oname[128];
     const xmlChar* refptr=xmlGetProp(cur,(const xmlChar*)"ref");
     if(refptr) {
@@ -393,7 +378,9 @@ namespace ohmmsqmc {
         while(cur1 != NULL) {
           string cname1((const char*)cur1->name);
           if(cname1 == OrbitalBuilderBase::det_tag) {
-            xmlAddChild(next1,copyDeterminant(cur1,false));
+            xmlNodePtr newdet=xmlCopyNode(cur1,2);
+            xmlAddChild(newdet,copyDeterminant(cur1,false));
+            xmlAddChild(next1,newdet);
           }
           cur1=cur1->next;
         }
@@ -424,6 +411,7 @@ namespace ohmmsqmc {
     xmlNodePtr det_data 
      = xmlNewTextChild(adet,NULL,(const xmlChar*)"coefficient",(const xmlChar*)eig.str().c_str());
     xmlNewProp(det_data,(const xmlChar*)"size",(const xmlChar*)b_size.str().c_str());
+    xmlNewProp(det_data,(const xmlChar*)"basisset",(const xmlChar*)"mo");
   }
 
   void 
@@ -518,10 +506,6 @@ namespace ohmmsqmc {
               if(DetCounter.size()) newset=false;
             }
             string detref(detname);
-            //else {
-            //  ostringstream idassigned(detname);
-            //  idassigned << "dummy";
-            //}
             a=xmlGetProp(tcur,(const xmlChar*)"ref");
             if(a) {
               detref=(const char*)a;
@@ -662,37 +646,11 @@ namespace ohmmsqmc {
     }
     cout << "Timing results in sec" << endl;
     cout << "Function evaluation " << nels << " orbitals = " << lapsed_time[0] << endl;
-    //cout << "Function evaluation " << inorb->numOrbitals() << " orbitals = " << lapsed_time[0] << endl;
     cout << "Spline coefficients = " << lapsed_time[1] << endl;
     cout << "Testing spline      = " << lapsed_time[2] << endl;
     cout << "Writing hdf5 files  = " << lapsed_time[3] << endl;
-    //HDFAttribIO<TriCubicSplineT<double> > dump1(torb);
-    //dump1.write(h_file,"spline0000");
-    //
 
-    //for(int i=0; i<nodeToBeRemoved.size(); i++) {
-    //  xmlUnlinkNode(nodeToBeRemoved[i]);
-    //  xmlFreeNode(nodeToBeRemoved[i]);
-    //}
-    //xmlSetProp(curRoot,(const xmlChar*)"type",(const xmlChar*)"spline3d");
-
-    ////spline is missing
-    //if(splinePtr == 0) {
-    //  splinePtr = xmlNewNode(NULL,(const xmlChar*)"cubicgrid");
-    //  for(int idir=0; idir<3; idir++) {
-    //    xmlNodePtr x = xmlNewNode(NULL,(const xmlChar*)"grid");
-    //    std::ostringstream dir_str, ri_str, rf_str, npts_str;
-    //    dir_str << idir; ri_str << ri[idir]; rf_str << rf[idir]; npts_str << npts[idir];
-    //    xmlNewProp(x,(const xmlChar*)"dir", (const xmlChar*)dir_str.str().c_str());
-    //    xmlNewProp(x,(const xmlChar*)"ri",  (const xmlChar*)ri_str.str().c_str());
-    //    xmlNewProp(x,(const xmlChar*)"rf",  (const xmlChar*)rf_str.str().c_str());
-    //    xmlNewProp(x,(const xmlChar*)"npts",(const xmlChar*)npts_str.str().c_str());
-    //    xmlAddChild(splinePtr,x);
-    //  }
-    //  xmlAddPrevSibling(firstSlaterDetPtr,splinePtr);
-    //}
-
-    //clean up temporary orbitals
+    //clean up temporary orbitals on the radial grid
     for(int i=0; i<InOrbs.size(); i++) delete InOrbs[i];
 
     //return the modified node
