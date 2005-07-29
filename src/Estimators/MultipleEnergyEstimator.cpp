@@ -190,26 +190,26 @@ namespace ohmmsqmc {
   }
 
     /** calculate the averages and reset to zero
-     *\param record a container class for storing scalar records (name,value)
-     *\param wgtinv the inverse weight
+     *@param record a container class for storing scalar records (name,value)
+     *@param wgtinv the inverse weight
+     *
+     * Disable collection. MultipleEnergyEstimator does not need to communiate at all.
      */
   void MultipleEnergyEstimator::report(RecordNamedProperty<RealType>& record, RealType wgtinv) {
-
-
-#ifdef HAVE_MPI
-    if(CollectSum) {
-      int esumSize(esum.size());
-      //pack the energy to be summed: v can be either static or data member
-      vector<RealType> v(esumSize+elocal.size());
-      std::copy(esum.begin(),esum.end(),v.begin());
-      std::copy(elocal.begin(),esum.end(),v.begin()+esumSize);
-
-      gsum(v,0);
-
-      std::copy(v.begin(),v.begin()+esumSize,esum.begin());
-      std::copy(v.begin()+esumSize,v.end(),elocal.begin());
-    }
-#endif
+//#ifdef HAVE_MPI
+//    if(CollectSum) {
+//      int esumSize(esum.size());
+//      //pack the energy to be summed: v can be either static or data member
+//      vector<RealType> v(esumSize+elocal.size());
+//      std::copy(esum.begin(),esum.end(),v.begin());
+//      std::copy(elocal.begin(),esum.end(),v.begin()+esumSize);
+//
+//      gsum(v,0);
+//
+//      std::copy(v.begin(),v.begin()+esumSize,esum.begin());
+//      std::copy(v.begin()+esumSize,v.end(),elocal.begin());
+//    }
+//#endif
 
     //(localenergy, variance, weight)* 
     int ir(FirstColumnIndex);
