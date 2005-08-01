@@ -37,8 +37,7 @@ using namespace ohmmsqmc;
  */
 template<class T, unsigned D>
 struct NoBConds {
-  inline static T apply(const CrystalLattice<T,D>& lat, 
-			const TinyVector<T,D>& a) {
+  inline static T apply(const CrystalLattice<T,D>& lat, TinyVector<T,D>& a) {
     return dot(a,a);
   }
 };
@@ -52,29 +51,15 @@ struct NoBConds {
  */
 template<class T, unsigned D>
 struct PeriodicBConds {
-  inline static T apply(const CrystalLattice<T,D>& lat, 
-			const TinyVector<T,D>& a) {
+  inline static T apply(const CrystalLattice<T,D>& lat, TinyVector<T,D>& a) {
     TinyVector<T,D> ar(lat.toUnit(a));
     for(int idim=0; idim<D; idim++) 
       if(ar[idim]<-0.5) ar[idim]+=1.0; 
       else if(ar[idim]>=0.5) ar[idim]-=1.0;
-    return lat.Dot(ar,ar);
+    a=lat.toCart(ar);
+    return lat.dot(a,a);
   }
 };
-
-template<class T>
-struct PeriodicBConds<T,3>{
-  inline static T apply(const CrystalLattice<T,3>& lat, 
-			const TinyVector<T,3>& a) {
-    TinyVector<T,3> ar(lat.toUnit(a));
-    if(ar[0]<-0.5) ar[0]+=1.0; else if(ar[0]>0.5) ar[0]-=1.0;
-    if(ar[1]<-0.5) ar[1]+=1.0; else if(ar[1]>0.5) ar[1]-=1.0;
-    if(ar[2]<-0.5) ar[2]+=1.0; else if(ar[2]>0.5) ar[2]-=1.0;
-    return ar[0]*ar[0]*lat.M(0)+ar[1]*ar[1]*lat.M(4)+ar[2]*ar[2]*lat.M(8);
-    //return lat.Dot(ar,ar);
-  }
-};
-
 
 /**@{instantiation of static data members*/
 vector<bool>                DistanceTable::Updated;
