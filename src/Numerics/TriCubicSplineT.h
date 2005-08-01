@@ -89,12 +89,12 @@ public:
   }
 
   template<class IT>
-  inline void reset(IT first, IT last) {
+  inline void reset(IT first, IT last, bool periodic=true) {
     typename std::vector<KnotType>::iterator it(F.begin());
     while(first != last) {
       (*it)[0]=*first++;++it;
     }
-    reset();
+    reset(periodic);
   }
 
   //template<class PV>
