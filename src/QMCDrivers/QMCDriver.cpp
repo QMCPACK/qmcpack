@@ -79,7 +79,6 @@ namespace ohmmsqmc {
    */
   void QMCDriver::process(xmlNodePtr cur) {
 
-    Counter++; 
 
     W.setUpdateMode(MCWalkerConfiguration::Update_Particle);
 
@@ -109,6 +108,8 @@ namespace ohmmsqmc {
 
     //initialize the walkers before moving: can be moved to run
     initialize();
+
+    Counter++; 
   }
 
   /**Sets the root file name for all output files.!
