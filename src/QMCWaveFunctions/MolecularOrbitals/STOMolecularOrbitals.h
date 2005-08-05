@@ -61,7 +61,7 @@ namespace ohmmsqmc {
    
     int expandYlm(const string& rnl, const QuantumNumberType& nlms, 
                   int num, CenteredOrbitalType* aos, xmlNodePtr cur1,
-                  bool expandlm);
+                  int expandlm);
 
   };
 }
