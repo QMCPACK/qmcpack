@@ -45,7 +45,7 @@ namespace ohmmsqmc {
   template<class T>
   class MolecuFixedNodeBranch {
 
-  public:
+   public:
 
     ///the timestep
     T Tau;
@@ -114,8 +114,11 @@ namespace ohmmsqmc {
     
     ///set \f$ <E_G> = eg \f$
     inline void setEguess(T eg){
-      E_T = eg;
-      for(int i=0; i<EgBufferSize; i++) Eg[i] = eg;
+      if(Counter==0) {
+        E_T = eg;
+        for(int i=0; i<EgBufferSize; i++) Eg[i] = eg;
+      }
+      LOGMSG("Current Counter = " << Counter << " Trial Energy = " << E_T)
     } 
 
 
@@ -142,9 +145,12 @@ namespace ohmmsqmc {
       Eg.pop_back();
       //insert a new value at the beggining of the deque
       Eg.push_front(eavg);
-      int mlimit = std::min(Counter/2+1,EgBufferSize);
-      T Esum = std::accumulate(Eg.begin(),Eg.begin()+mlimit,T());
-      E_T = Esum/static_cast<T>(mlimit)-Feed*log(static_cast<T>(pop_now))+logN;
+      //int mlimit = std::min(Counter/2+1,EgBufferSize);
+      //T Esum = std::accumulate(Eg.begin(),Eg.begin()+mlimit,T());
+      if(Counter>EgBufferSize)  {
+        T Esum = std::accumulate(Eg.begin(),Eg.end(),T());
+        E_T = Esum/static_cast<T>(EgBufferSize)-Feed*log(static_cast<T>(pop_now))+logN;
+      } 
       return E_T;
     }
 
@@ -239,7 +245,7 @@ namespace ohmmsqmc {
       logN = Feed*log(static_cast<T>(Nideal));
 
       XMLReport("Target walkers = " << Nideal)
-      XMLReport("Branching: Referece energy = " << Eg[0])
+      XMLReport("Branching: Reference energy = " << Eg[0])
       XMLReport("MaxCopy for branching = " << MaxCopy)
       XMLReport("Branching: Number of generations = " << NumGeneration)
       XMLReport("Branching: Feedback parameter = " << Feed)
