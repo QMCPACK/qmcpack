@@ -99,7 +99,7 @@ namespace ohmmsqmc {
 
     void get(ostream& os, int olevel) const;
 
-    xmlNodePtr createNode();
+    xmlNodePtr createNode(bool addlattice);
 
   private:
 

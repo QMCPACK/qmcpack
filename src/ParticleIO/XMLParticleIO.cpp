@@ -487,10 +487,17 @@ bool XMLSaveParticle::put(xmlNodePtr cur) {
   return true;
 }
 
-xmlNodePtr XMLSaveParticle::createNode() {
+/** create particleset node
+ * @param addlattice if true, add unitcell
+ */
+xmlNodePtr XMLSaveParticle::createNode(bool addlattice) {
 
   if(SpeciesName.size()!=ref_.getSpeciesSet().getTotalNum()) {
     SpeciesName = ref_.getSpeciesSet().speciesName;
+  }
+
+  if(addlattice) {
+    ref_.Lattice.print(cout);
   }
 
   xmlNodePtr cur = xmlNewNode(NULL,(const xmlChar*)"particleset");

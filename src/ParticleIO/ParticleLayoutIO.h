@@ -21,14 +21,13 @@
 #define OHMMS_PARTICLELAYOUT_INPUTOUTPUT_UTILITY_H
 
 #include "OhmmsData/OhmmsElementBase.h"
-#include "Particle/ParticleSet.h"
+#include "Configuration.h"
 
 namespace ohmmsqmc {
 
   class LatticeParser {
 
-    //typedef PtclOnLatticeTraits::ParticleLayout_t ParticleLayout_t;
-    typedef ParticleSet::ParticleLayout_t ParticleLayout_t;
+    typedef PtclOnLatticeTraits::ParticleLayout_t ParticleLayout_t;
     ParticleLayout_t& ref_;
 
     public:
@@ -40,14 +39,16 @@ namespace ohmmsqmc {
 
   class LatticeXMLWriter {
 
-    //typedef PtclOnLatticeTraits::ParticleLayout_t ParticleLayout_t;
-    typedef ParticleSet::ParticleLayout_t ParticleLayout_t;
+    typedef PtclOnLatticeTraits::ParticleLayout_t ParticleLayout_t;
     ParticleLayout_t& ref_;
     public:
 
     LatticeXMLWriter(ParticleLayout_t& lat): ref_(lat){ }
     bool get(ostream& ) const;
+    xmlNodePtr createNode();
   };
+
+
 }
 #endif
 
