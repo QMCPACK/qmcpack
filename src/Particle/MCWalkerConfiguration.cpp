@@ -222,6 +222,11 @@ int MCWalkerConfiguration::branch(int maxcopy, int Nmax, int Nmin) {
   //remove bad walkers
   for(int i=0; i<bad.size(); i++) delete bad[i];
 
+  if(good.empty()) {
+    ERRORMSG("All the walkers have died. Abort. ")
+    OHMMS::Controller->abort();
+  }
+
   //check if the projected number of walkers is too small or too large
   if(num_walkers>Nmax) {
     int nsub=0;
@@ -236,13 +241,11 @@ int MCWalkerConfiguration::branch(int maxcopy, int Nmax, int Nmin) {
     int nadd=0;
     int nadd_target = static_cast<int>(Nmin*1.1)-num_walkers;
     if(nadd_target>good.size()) {
-      cerr << "Too few walkers to copy! Abort." << endl;
-      OHMMS::Controller->abort();
-    } else {
-      int i=0;
-      while(i<ncopy.size() && nadd<nadd_target) {
-	ncopy[i]++; nadd++;i++;
-      }
+      WARNMSG("The number of walkers is running low. Requested walkers " << nadd_target << " good walkers = " << good.size())
+    }
+    int i=0;
+    while(i<ncopy.size() && nadd<nadd_target) {
+      ncopy[i]++; nadd++;i++;
     }
     num_walkers +=  nadd;
   }
