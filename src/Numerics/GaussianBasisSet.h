@@ -23,25 +23,39 @@ template<class T>
 struct GaussianCombo: public RadialOrbitalBase<T> {
 
   typedef T value_type;
+  T Y, dY, d2Y;
 
   struct BasicGaussian {
     T Sigma;
+    T MinusSigma;
     T Coeff;
     T CoeffP;
+    T CoeffPP;
     BasicGaussian(): Sigma(1.0), Coeff(1.0) { } 
     inline BasicGaussian(T sig, T c) { 
       reset(sig,c);
     } 
     void reset(T sig, T c){
-      Sigma = sig; Coeff = c;
+      Sigma = sig; 
+      MinusSigma=-sig;
+      Coeff = c;
       CoeffP = -2.0*Sigma*Coeff;
+      CoeffPP = 4.0*Sigma*Sigma*Coeff;
     }
+
     inline void setgrid(T r) { }
-    inline T f(T r2) const {
-      return Coeff*exp(-Sigma*r2);
+
+    inline T f(T rr) const {
+      return Coeff*exp(MinusSigma*rr);
     }
-    inline T df(T r, T r2) const {
-      return CoeffP*r*exp(-Sigma*r2);
+    inline T df(T r, T rr) const {
+      return CoeffP*r*exp(MinusSigma*rr);
+    }
+    inline T evaluate(T r, T rr, T& du, T& d2u) {
+      T v=exp(MinusSigma*rr);
+      du += CoeffP*r*v;
+      d2u += (CoeffP+CoeffPP*rr)*v;
+      return Coeff*v;
     }
   };
 
@@ -92,6 +106,38 @@ struct GaussianCombo: public RadialOrbitalBase<T> {
     }
     return res;
   }
+
+  inline value_type evaluate(T r, T rinv) {
+    Y=0.0;
+    value_type rr = r*r;
+    typename std::vector<BasicGaussian>::iterator it(gset.begin()),it_end(gset.end());
+    while(it != it_end) {
+      Y+=(*it).f(rr); ++it;
+    }
+    return Y;
+  }
+
+  inline void evaluateAll(T r, T rinv) {
+    Y=0.0;dY=0.0;d2Y=0.0;
+    value_type rr = r*r;
+    typename std::vector<BasicGaussian>::iterator it(gset.begin()),it_end(gset.end());
+    while(it != it_end) {
+      Y+=(*it).evaluate(r,rr,dY,d2Y); ++it;
+    }
+  }
+
+  //inline value_type evaluate(T r, T rinv, T& drnl, T& d2rnl) {
+  //  Y=0.0;drnl=0.0;d2rnl=0.0;
+  //  T du, d2u;
+  //  typename std::vector<BasicGaussian>::iterator 
+  //    it(sset.begin()),it_end(sset.end());
+  //  while(it != it_end) {
+  //    Y+=(*it).evaluate(r,rinv,du,d2u); dY+=du; d2Y+=d2u;
+  //    ++it;
+  //  }
+  //  return Y;
+  //}
+
 
   bool put(xmlNodePtr cur);
 
