@@ -86,16 +86,16 @@ struct SlaterCombo: public RadialOrbitalBase<T> {
     }
   }
 
-  inline value_type evaluate(T r, T rinv, T& drnl, T& d2rnl) {
-    Y=0.0;drnl=0.0;d2rnl=0.0;
-    T du, d2u;
-    typename std::vector<Component_t>::iterator it(sset.begin()),it_end(sset.end());
-    while(it != it_end) {
-      Y+=(*it).evaluate(r,rinv,du,d2u); dY+=du; d2Y+=d2u;
-      ++it;
-    }
-    return Y;
-  }
+//  inline value_type evaluate(T r, T rinv, T& drnl, T& d2rnl) {
+//    Y=0.0;drnl=0.0;d2rnl=0.0;
+//    T du, d2u;
+//    typename std::vector<Component_t>::iterator it(sset.begin()),it_end(sset.end());
+//    while(it != it_end) {
+//      Y+=(*it).evaluate(r,rinv,du,d2u); dY+=du; d2Y+=d2u;
+//      ++it;
+//    }
+//    return Y;
+//  }
 
   bool putBasisGroup(xmlNodePtr cur);
 };
