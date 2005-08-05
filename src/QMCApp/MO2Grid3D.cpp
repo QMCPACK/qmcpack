@@ -569,7 +569,7 @@ namespace ohmmsqmc {
 
     int ntot = npts[0]*npts[1]*npts[2];
     //vector<ValueType> phi(inorb->numOrbitals(),0.0);
-    vector<ValueType> dat(ntot);
+    vector<ValueType> dat(ntot,0.0);
 
     Pooma::Clock timer;
     char oname[128];
@@ -584,64 +584,82 @@ namespace ohmmsqmc {
 
     //loop over unique determinant sets
     while(dit != DetCounter.end()) {
-
       SPOSetType* inorb=InOrbs[(*dit).second];
       string detID((*dit).first);
-
       for(int iorb=0; iorb<inorb->numOrbitals(); iorb++) { //evaluate the values on the grid points
-        NOType *torb = new NOType(grid3);
-        timer.start();
         for(int ix=1; ix<npts[0]-1; ix++) {
           RealType x((*gridX)(ix));
           for(int iy=1; iy<npts[1]-1; iy++) {
             RealType y((*gridY)(iy));
-            for(int iz=1; iz<npts[2]-1; iz++) {
+            int ixyz=1+npts[2]*(iy+npts[1]*ix);
+            for(int iz=1; iz<npts[2]-1; iz++, ixyz++) {
               PosType dr(x,y,(*gridZ)(iz));
               PosType newpos(Electrons->makeMove(0,dr-pos));
-              (*torb)(ix,iy,iz) = inorb->evaluate(*Electrons,0,iorb);
+              dat[ixyz] = inorb->evaluate(*Electrons,0,iorb);
             }
           }
         }
-        timer.stop();
-        lapsed_time[0]+= timer.cpu_time();
-
-        //spline
-        timer.start();
-        torb->reset(false);
-        timer.stop();
-        lapsed_time[1]+= timer.cpu_time();
-
-        //test
-        timer.start();
-        for(int ix=0; ix<npts[0]-1; ix++) {
-          double x((*gridX)(ix));
-          for(int iy=0; iy<npts[1]-1; iy++) {
-            double y((*gridY)(iy));
-            int offset=npts[2]*(iy+npts[1]*ix);
-            for(int iz=0; iz<npts[2]-1; iz++,offset++) {
-               TinyVector<double,3> p(x,y,(*gridZ)(iz));
-               dat[offset]=torb->evaluate(p);
-            }
-          }
-        }
-        timer.stop();
-        lapsed_time[2]+= timer.cpu_time();
-
-        timer.start();
         sprintf(oname,"%s.%s.wf%04d.h5",InFileRoot.c_str(),detID.c_str(),iorb);
         hid_t h_file = H5Fcreate(oname,H5F_ACC_TRUNC,H5P_DEFAULT,H5P_DEFAULT);
         HDFAttribIO<std::vector<double> > dump(dat,npts);
         dump.write(h_file,"Orbital");
-        //HDFAttribIO<TriCubicSplineT<double> > dump1(*torb);
-        //dump1.write(h_file,"CubicSpline");
         H5Fclose(h_file);
-        timer.stop();
-        lapsed_time[3]+= timer.cpu_time();
-
-        //add to SPOSet
-        sprintf(oname,"%s.%s.wf%04d",InFileRoot.c_str(),detID.c_str(),iorb);
-        SPOSet[oname]=torb;
       }
+
+//      for(int iorb=0; iorb<inorb->numOrbitals(); iorb++) { //evaluate the values on the grid points
+//        NOType *torb = new NOType(grid3);
+//        timer.start();
+//        for(int ix=1; ix<npts[0]-1; ix++) {
+//          RealType x((*gridX)(ix));
+//          for(int iy=1; iy<npts[1]-1; iy++) {
+//            RealType y((*gridY)(iy));
+//            for(int iz=1; iz<npts[2]-1; iz++) {
+//              PosType dr(x,y,(*gridZ)(iz));
+//              PosType newpos(Electrons->makeMove(0,dr-pos));
+//              (*torb)(ix,iy,iz) = inorb->evaluate(*Electrons,0,iorb);
+//            }
+//          }
+//        }
+//        timer.stop();
+//        lapsed_time[0]+= timer.cpu_time();
+//
+//        //spline
+//        timer.start();
+//        torb->reset(false);
+//        timer.stop();
+//        lapsed_time[1]+= timer.cpu_time();
+//
+//        //test
+//        timer.start();
+//        for(int ix=0; ix<npts[0]-1; ix++) {
+//          double x((*gridX)(ix));
+//          for(int iy=0; iy<npts[1]-1; iy++) {
+//            double y((*gridY)(iy));
+//            int offset=npts[2]*(iy+npts[1]*ix);
+//            for(int iz=0; iz<npts[2]-1; iz++,offset++) {
+//               TinyVector<double,3> p(x,y,(*gridZ)(iz));
+//               dat[offset]=torb->evaluate(p);
+//            }
+//          }
+//        }
+//        timer.stop();
+//        lapsed_time[2]+= timer.cpu_time();
+//
+//        timer.start();
+//        sprintf(oname,"%s.%s.wf%04d.h5",InFileRoot.c_str(),detID.c_str(),iorb);
+//        hid_t h_file = H5Fcreate(oname,H5F_ACC_TRUNC,H5P_DEFAULT,H5P_DEFAULT);
+//        HDFAttribIO<std::vector<double> > dump(dat,npts);
+//        dump.write(h_file,"Orbital");
+//        //HDFAttribIO<TriCubicSplineT<double> > dump1(*torb);
+//        //dump1.write(h_file,"CubicSpline");
+//        H5Fclose(h_file);
+//        timer.stop();
+//        lapsed_time[3]+= timer.cpu_time();
+//
+//        //add to SPOSet
+//        sprintf(oname,"%s.%s.wf%04d",InFileRoot.c_str(),detID.c_str(),iorb);
+//        SPOSet[oname]=torb;
+//      }
       ++dit;
     }
     cout << "Timing results in sec" << endl;

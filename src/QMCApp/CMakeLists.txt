@@ -9,6 +9,7 @@ SET(WFSRCS
   ../QMCWaveFunctions/AtomicOrbitals/HFAtomicSTOSetBuilder.cpp 
   ../QMCWaveFunctions/AtomicOrbitals/HeSTOClementiRottie.cpp
   ../QMCWaveFunctions/MolecularOrbitals/STOMolecularOrbitals.cpp
+  ../QMCWaveFunctions/MolecularOrbitals/GTOMolecularOrbitals.cpp
   ../QMCWaveFunctions/MolecularOrbitals/RGFBuilderBase.cpp
   ../QMCWaveFunctions/MolecularOrbitals/STO2GridBuilder.cpp
   ../QMCWaveFunctions/MolecularOrbitals/GTO2GridBuilder.cpp
@@ -16,7 +17,7 @@ SET(WFSRCS
   ../QMCWaveFunctions/MolecularOrbitals/NumericalRGFBuilder.cpp
   ../QMCWaveFunctions/MolecularOrbitals/GridMolecularOrbitals.cpp
   ../QMCWaveFunctions/MolecularOrbitals/MolecularOrbitalBuilder.cpp
-  ../QMCWaveFunctions/MolecularOrbitals/NumericalMolecularOrbitals.cpp
+  ../QMCWaveFunctions/NumericalOrbitalSetBuilder.cpp
   ../QMCHamiltonians/LocalPPotential.cpp
   ../QMCHamiltonians/NonLocalPPotential.cpp
   ../QMCHamiltonians/LocalCorePolPotential.cpp

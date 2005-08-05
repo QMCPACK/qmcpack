@@ -303,16 +303,17 @@ namespace ohmmsqmc {
     string what("invalid");
     xmlChar* att=xmlGetProp(cur,(const xmlChar*)"method");
     if(att) what = (const char*)att;
-    //if(qmcDriver) {
-    //  if(what == curMethod) {
-    //    return  true;
-    //  } else {
-    //    delete qmcDriver;
-    //    qmcDriver = 0;
-    //  }
-    //}
-    qmcDriver=0;
+    if(qmcDriver) {
+      if(what == curMethod) {
+        LOGMSG("Reuse " << what << " driver")
+      } else {
+        delete qmcDriver;
+        qmcDriver = 0;
+      }
+    }
+    //qmcDriver=0;
 
+    if(qmcDriver == 0) {
     ///////////////////////////////////////////////
     // get primaryPsi and primaryH
     ///////////////////////////////////////////////
@@ -339,6 +340,8 @@ namespace ohmmsqmc {
       primaryPsi=targetPsi.front(); targetPsi.pop();
       primaryH=targetH.front();targetH.pop();
     }
+    //set primaryH->Primary
+    primaryH->setPrimary(true);
     ///////////////////////////////////////////////
 
     if (what == "vmc"){
@@ -351,12 +354,12 @@ namespace ohmmsqmc {
       curRunType = VMC_RUN;
     } else if(what == "dmc"){
       MolecuDMC *dmc = new MolecuDMC(*qmcSystem,*primaryPsi,*primaryH);
-      dmc->setBranchInfo(PrevConfigFile);
+      //dmc->setBranchInfo(PrevConfigFile);
       qmcDriver=dmc;
       curRunType = DMC_RUN;
     } else if(what == "dmc-ptcl"){
       DMCParticleByParticle *dmc = new DMCParticleByParticle(*qmcSystem,*primaryPsi,*primaryH);
-      dmc->setBranchInfo(PrevConfigFile);
+      //dmc->setBranchInfo(PrevConfigFile);
       qmcDriver=dmc;
       curRunType = DMC_RUN;
     } else if(what == "optimize"){
@@ -396,6 +399,7 @@ namespace ohmmsqmc {
       WARNMSG("Cannot termine what type of qmc to run. Creating DummyQMC for testing")
       curRunType = DUMMY_RUN;
     }
+    }
 
     if(qmcDriver) {
 
@@ -416,7 +420,7 @@ namespace ohmmsqmc {
       curMethod = what;
       
       //may want to reuse!
-      delete qmcDriver;
+      //delete qmcDriver;
       return true;
     } else {
       return false;
