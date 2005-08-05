@@ -85,28 +85,29 @@ namespace ohmmsqmc {
 
   GeCorePolPotential::ValueType 
   GeCorePolPotential::evaluate(ParticleSet& P) {
-
-    //calculate the Electron-Core Dipole matrix
-    //CoreElDipole=0.0;
-    RealType e = 0.0;
-    for(int iat=0; iat<nCenters; iat++) {
-      if(CoreCoef[iat]){
-        PosType cc(CoreCoreDipole[iat]);
-	for(int nn=d_ie->M[iat]; nn<d_ie->M[iat+1]; nn++){
-          int eid(d_ie->J[nn]);
-	  RealType rinv3 = pow(d_ie->rinv(nn),3);//(1/r^3)
-	  PosType dipole = rinv3*d_ie->dr(nn);//(\vec{r}/r^3)
-	  cc +=  dipole*fcpp(d_ie->r(nn)*r_binv); //CoreElDipole(iat,eid) = dipole*fcpp(d_ie->r(nn)*r_binv);
-	}
-        //PosType cc(CoreCoreDipole[iat]+core_el);
-        //for(int nn=d_ie->M[iat]; nn<d_ie->M[iat+1]; nn++) { 
-  	//  cc += CoreElDipole(iat,d_ie->J[nn]);
-        //}
-        e += dot(cc,cc);
+    if(Primary) {
+      //calculate the Electron-Core Dipole matrix
+      //CoreElDipole=0.0;
+      RealType e = 0.0;
+      for(int iat=0; iat<nCenters; iat++) {
+        if(CoreCoef[iat]){
+          PosType cc(CoreCoreDipole[iat]);
+          for(int nn=d_ie->M[iat]; nn<d_ie->M[iat+1]; nn++){
+            int eid(d_ie->J[nn]);
+            RealType rinv3 = pow(d_ie->rinv(nn),3);//(1/r^3)
+            PosType dipole = rinv3*d_ie->dr(nn);//(\vec{r}/r^3)
+            cc +=  dipole*fcpp(d_ie->r(nn)*r_binv); //CoreElDipole(iat,eid) = dipole*fcpp(d_ie->r(nn)*r_binv);
+          }
+          //PosType cc(CoreCoreDipole[iat]+core_el);
+          //for(int nn=d_ie->M[iat]; nn<d_ie->M[iat+1]; nn++) { 
+          //  cc += CoreElDipole(iat,d_ie->J[nn]);
+          //}
+          e += dot(cc,cc);
+        }
       }
-    }
-
-    return C*e;
+      Value=C*e;
+    } 
+    return Value;
   }
 
 }

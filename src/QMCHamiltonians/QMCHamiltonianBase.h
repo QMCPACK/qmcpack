@@ -43,11 +43,12 @@ namespace ohmmsqmc {
      */
     typedef RealType Return_t;
  
+    bool Primary;
     RealType Tau;
     RealType Value;
    
     ///constructor
-    QMCHamiltonianBase():Tau(0.0),Value(0.0){}
+    QMCHamiltonianBase():Primary(true),Tau(0.0),Value(0.0){}
 
     ///virtual destructor
     virtual ~QMCHamiltonianBase() { }
@@ -58,13 +59,6 @@ namespace ohmmsqmc {
      */
     virtual Return_t evaluate(ParticleSet& P) = 0; 
 
-    /** Evaluate the local energies of an N-particle configuration
-     *@param P input configuration containing N particles
-     *@param x the sum of local energies
-     *@return the value the Local Energy
-    */
-    virtual Return_t evaluate(ParticleSet& P, RealType& x) = 0;
-    
     /** read the input parameter
      * @param cur xml node for a QMCHamiltonianBase object
      */
@@ -74,6 +68,11 @@ namespace ohmmsqmc {
      * @param tau time step
      */
     inline void setTau(RealType tau) { Tau = tau;}
+
+    /** set Primary
+     * @param primary 
+     */
+    inline void setPrimary(bool primary) {Primary=primary;}
   };
 }
 #endif

@@ -58,12 +58,7 @@ namespace ohmmsqmc {
         ke += M*(dot(P.G(i),P.G(i)) + P.L(i));
         if(z >= 1700.748 && z <= 1719.6452) ke += mterm*P.G(i)[2];
       }
-      return ke;
-    }
-
-    Return_t
-    evaluate(ParticleSet& P, RealType& x) {
-      return x=evaluate(P);
+      return Value=ke;
     }
 
     /** Do nothing */

@@ -106,11 +106,6 @@ namespace ohmmsqmc {
 
     Return_t evaluate(ParticleSet& P);
 
-    inline Return_t 
-    evaluate(ParticleSet& P, RealType& x) {
-      return x=evaluate(P);
-    }
-
     bool put(xmlNodePtr cur);
 
     //inline RealType fcpp(RealType z) {

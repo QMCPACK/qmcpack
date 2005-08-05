@@ -37,12 +37,11 @@ namespace ohmmsqmc {
   struct IonIonPotential: public QMCHamiltonianBase {
 
     bool FirstTime;
-    ValueType d_sum;
     DistanceTableData* d_ii;
     ParticleSet& PtclRef;
     vector<RealType> Z;
     
-    IonIonPotential(ParticleSet& ref): FirstTime(true), d_sum(0.0),d_ii(0), PtclRef(ref){ 
+    IonIonPotential(ParticleSet& ref): FirstTime(true), d_ii(0), PtclRef(ref){ 
       
       d_ii = DistanceTable::getTable(DistanceTable::add(ref));
 
@@ -62,24 +61,20 @@ namespace ohmmsqmc {
       //Later it should check if the d_ii is already updated
       if(FirstTime) {
         d_ii->evaluate(PtclRef);
-        d_sum = 0.0;
+        Value = 0.0;
         for(int iat=0; iat< Z.size(); iat++) {
           RealType esum = 0.0;
           for(int nn=d_ii->M[iat], jat=iat+1; nn<d_ii->M[iat+1]; nn++,jat++) {
             esum += Z[jat]*d_ii->rinv(nn);
           }
-          d_sum += esum*Z[iat];
+          Value += esum*Z[iat];
         }
-        LOGMSG("Energy of ion-ion interaction " << d_sum)
+        LOGMSG("Energy of ion-ion interaction " << Value)
         FirstTime = false;
       }
-      return d_sum;
+      return Value;
     }
 
-    inline Return_t evaluate(ParticleSet& P, RealType& x) {
-      return x=evaluate(P);
-    }
-    
     /** Do nothing */
     bool put(xmlNodePtr cur) {
       return true;

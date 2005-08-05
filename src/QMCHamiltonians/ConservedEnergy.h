@@ -65,22 +65,16 @@ namespace ohmmsqmc {
 
     Return_t 
     evaluate(ParticleSet& P) {
-      return 0.0;
-    }
-
-    inline Return_t 
-    evaluate(ParticleSet& P, RealType& x) {
       RealType gradsq = 0.0;
       RealType lap = 0.0;
       for(int iat=0; iat<P.getTotalNum(); iat++) {
         gradsq += dot(P.G(iat),P.G(iat));
         lap += P.L(iat);
       }
-      //pool.put(lap+2.0*gradsq);
-      x = lap+2.0*gradsq;
+      Value = lap+2.0*gradsq;
       return 0.0;
     }
-    
+
     /** Do nothing */
     bool put(xmlNodePtr cur) {
       return true;

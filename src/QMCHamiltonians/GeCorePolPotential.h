@@ -84,11 +84,6 @@ namespace ohmmsqmc {
 
     ValueType evaluate(ParticleSet& P);
 
-    inline ValueType 
-    evaluate(ParticleSet& P, RealType& x) {
-      return x=evaluate(P);
-    }
-
     inline RealType fcpp(RealType z) {
       return pow((1.0-exp(-1.0*z*z)),2);
     }

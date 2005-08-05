@@ -81,6 +81,12 @@ namespace ohmmsqmc {
     inline void setTau(RealType tau) {
       for(int i=0; i< H.size();++i)H[i]->setTau(tau); 
     }
+
+    /** set Tau for each Hamiltonian
+     */
+    inline void setPrimary(bool primary) {
+      for(int i=0; i< H.size();++i)H[i]->setPrimary(primary); 
+    }
     
     /** evaluate Local Energy
      * @param P ParticleSet

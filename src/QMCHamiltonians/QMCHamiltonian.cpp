@@ -97,7 +97,9 @@ QMCHamiltonian::evaluate(ParticleSet& P) {
   vector<QMCHamiltonianBase*>::iterator hit(H.begin()),hit_end(H.end());
   int i(0);
   while(hit != hit_end) {
-    LocalEnergy += (*hit)->evaluate(P,Hvalue[i]);++hit;++i;
+    LocalEnergy += (*hit)->evaluate(P);
+    Hvalue[i]=(*hit)->Value; 
+    ++hit;++i;
   }
   return LocalEnergy;
 }

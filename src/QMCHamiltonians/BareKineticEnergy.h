@@ -55,18 +55,13 @@ namespace ohmmsqmc {
     ///destructor
     ~BareKineticEnergy() { }
 
-    Return_t 
+    inline Return_t 
     evaluate(ParticleSet& P) {
-      RealType ke = 0.0;
+      Value = 0.0;
       for(int i=0; i<P.getTotalNum(); i++) {
-        ke += dot(P.G(i),P.G(i)) + P.L(i);
+        Value += dot(P.G(i),P.G(i)) + P.L(i);
       }
-      return -M*ke;
-    }
-
-    Return_t 
-    evaluate(ParticleSet& P, RealType& x){
-      return x=evaluate(P);
+      return Value*=-M;
     }
     
     /** implements the virtual function.

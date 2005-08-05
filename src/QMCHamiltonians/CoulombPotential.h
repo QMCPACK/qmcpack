@@ -60,25 +60,16 @@ namespace ohmmsqmc {
     ~CoulombPotentialAB() { }
 
     inline Return_t evaluate(ParticleSet& P) {
-      RealType esum=0.0;
-      for(int iat=0; iat<Centers; iat++) {
-        for(int nn=d_table->M[iat]; nn<d_table->M[iat+1]; nn++)
-        esum+=Z[iat]*d_table->rinv(nn);
+      if(Primary) {
+        Value=0.0;
+        for(int iat=0; iat<Centers; iat++) {
+          for(int nn=d_table->M[iat]; nn<d_table->M[iat+1]; nn++)
+          Value+=Z[iat]*d_table->rinv(nn);
+        }
       }
-      return esum;
+      return Value;
     }
 
-    inline Return_t
-    evaluate(ParticleSet& P, RealType& x){
-      RealType esum=0.0;
-      for(int iat=0; iat<Centers; iat++) {
-        for(int nn=d_table->M[iat]; nn<d_table->M[iat+1]; nn++) 
-        esum+=Z[iat]*d_table->rinv(nn);
-      }
-      x=esum;
-      return esum;
-    } 
-    
     bool put(xmlNodePtr cur) {
       return true;
     }
@@ -138,19 +129,13 @@ namespace ohmmsqmc {
 
     inline Return_t 
     evaluate(ParticleSet& P) {
-      RealType sum = 0.0;
-      for(int i=0; i<d_table->getTotNadj(); i++) sum += d_table->rinv(i);
-      return C*sum;
+      Value = 0.0;
+      for(int i=0; i<d_table->getTotNadj(); i++) Value += d_table->rinv(i);
+      Value*=C;
+      return Value;
       //return C*std::accumulate(d_table->rinv.data(), 
       //	  	       d_table->rinv.data()+d_table->getTotNadj(),
       //		       0.0);
-    }
-
-    inline Return_t 
-    evaluate(ParticleSet& P, RealType& x){
-      RealType sum = 0.0;
-      for(int i=0; i<d_table->getTotNadj(); i++) sum += d_table->rinv(i);
-      return x=sum*C;
     }
 
     /** Do nothing */

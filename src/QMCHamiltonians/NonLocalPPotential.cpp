@@ -18,7 +18,6 @@
 #include "QMCHamiltonians/NonLocalPPotential.h"
 #include "Particle/DistanceTableData.h"
 #include "Particle/DistanceTable.h"
-#include "Numerics/OhmmsBlas.h"
 #include "Numerics/HDFNumericAttrib.h"
 #include "Utilities/SimpleParser.h"
 #include "Utilities/OhmmsInfo.h"
@@ -27,73 +26,98 @@
 namespace ohmmsqmc {
 
   NonLocalPPotential::RadialPotentialSet::~RadialPotentialSet() {
-    for(int ig=0; ig<lgrid_m.size(); ig++)  delete lgrid_m[ig];
-    for(int ip=0; ip<lpp_m.size(); ip++)    delete lpp_m[ip];
-    for(int ig=0; ig<nlgrid_m.size(); ig++) delete nlgrid_m[ig];
+    if(lpp_m) delete lpp_m;
+    if(lgrid_m) delete lgrid_m;
+    //This has to be fixed
+    //for(int ig=0; ig<nlgrid_m.size(); ig++) delete nlgrid_m[ig];
     for(int ip=0; ip<nlpp_m.size(); ip++)   delete nlpp_m[ip];
   }
 
-  NonLocalPPotential::ValueType 
-  NonLocalPPotential::RadialPotentialSet::evaluate(
-      ParticleSet& W, DistanceTableData* d_table, int iat, 
-      TrialWaveFunction& Psi){
-
-    RealType esum=0.0;
-
-    int nchannel=nlpp_m.size();
-    int nknot=sgridxyz_m.size();
-
-    randomize_grid();
-
-    //int iel=0;
-    for(int nn=d_table->M[iat],iel=0; nn<d_table->M[iat+1]; nn++,iel++){
-
-      if(d_table->r(nn)>Rmax) continue;
-
-      register RealType r(d_table->r(nn));
-      register RealType rinv(d_table->rinv(nn));
-      register PosType  dr(d_table->dr(nn));
-      // Compute ratio of wave functions
-      for (int j=0; j < nknot ; j++){ 
-	PosType deltar(r*rrotsgrid_m[j]-dr);
-	W.makeMove(iel,deltar);
-	psiratio[j]=Psi.ratio(W,iel)*sgridweight_m[j];
-      }
-      // Compute radial potential
-      for(int ip=0;ip< nchannel; ip++){
-	vrad[ip]=nlpp_m[ip]->evaluate(r,rinv)*wgt_angpp_m[ip];
-      }
-      // Compute spherical harmonics on grid
-      for (int j=0, jl=0; j<nknot ; j++){ 
-	RealType zz=dot(dr,rrotsgrid_m[j])*rinv;
-	lpol[0]=1.0;
-	RealType lpolprev=0.0;
-	// Forming the Legendre polynomials
-	for (int l=0 ; l< lmax ; l++){
-	  lpol[l+1]=(2*l+1)*zz*lpol[l]-l*lpolprev;
-	  lpol[l+1]/=(l+1);
-	  lpolprev=lpol[l];
-	}
-	//for (int l=0; l < nchannel; l++)
-	//  Amat[l*nknot+j] = lpol[ angpp_m[l] ];
-        for(int l=0; l <nchannel; l++,jl++) Amat[jl]=lpol[ angpp_m[l] ];
-      } 
-
-      BLAS::gemv(nknot, nchannel, &Amat[0], &psiratio[0], &wvec[0]);
-      esum += BLAS::dot(nchannel, &vrad[0], &wvec[0]);
-      ////////////////////////////////////
-      //Original implmentation by S. C.
-      //const char TRANS('T');
-      //const int ione=1;
-      //const RealType one=1.0;
-      //const RealType zero=0.0;
-      //dgemv(TRANS,nknot,nchannel,one,&Amat[0],nknot,&psiratio[0],ione,zero,&wvec[0],ione);
-      //esum += ddot(nchannel,&vrad[0],ione,&wvec[0],ione);
-      ////////////////////////////////////
-      //iel++;
-    }   /* end loop over electron */
-    return esum;
+  void NonLocalPPotential::RadialPotentialSet::resize_warrays(int n,int m,int l){
+     psiratio.resize(n);
+     vrad.resize(m);
+     wvec.resize(m);
+     Amat.resize(n*m);
+     lpol.resize(l+1,1.0);
+     rrotsgrid_m.resize(n);
+     HasNonLocalPP = nlpp_m.size()>1;
+     if(HasNonLocalPP) {
+       LOGMSG(" Found Non-Local Potential ")
+       nchannel=nlpp_m.size();
+       nknot=sgridxyz_m.size();
+       //This is just to check
+       //for(int nl=1; nl<nlpp_m.size(); nl++) nlpp_m[nl]->setGridManager(false);
+       Lfactor1.resize(lmax);
+       Lfactor2.resize(lmax);
+       for(int nl=0; nl<lmax; nl++) {
+         Lfactor1[nl]=static_cast<RealType>(2*nl+1);
+         Lfactor2[nl]=1.0e0/static_cast<RealType>(nl+1);
+       }
+     }
   }
+
+  NonLocalPPotential::ValueType 
+  NonLocalPPotential::RadialPotentialSet::evaluate(ParticleSet& W, 
+      DistanceTableData* d_table, int iat, TrialWaveFunction& Psi, bool randomize) {
+
+        RealType esum=0.0;
+       
+        if(HasNonLocalPP) randomize_grid(*(W.Sphere[iat]),randomize);
+       
+        //int iel=0;
+        for(int nn=d_table->M[iat],iel=0; nn<d_table->M[iat+1]; nn++,iel++){
+
+          register RealType r(d_table->r(nn));
+	  esum += lpp_m->splint(r);
+
+          if(r>Rmax) continue;
+
+          register RealType rinv(d_table->rinv(nn));
+          register PosType  dr(d_table->dr(nn));
+
+          // Compute ratio of wave functions
+          for (int j=0; j < nknot ; j++){ 
+       	    PosType deltar(r*rrotsgrid_m[j]-dr);
+       	    W.makeMove(iel,deltar); 
+       	    psiratio[j]=Psi.ratio(W,iel)*sgridweight_m[j];
+          }
+          
+          // Compute radial potential
+          for(int ip=0;ip< nchannel; ip++){
+            vrad[ip]=nlpp_m[ip]->splint(r)*wgt_angpp_m[ip];
+          }
+          // Compute spherical harmonics on grid
+          for (int j=0, jl=0; j<nknot ; j++){ 
+       	    RealType zz=dot(dr,rrotsgrid_m[j])*rinv;
+       	    // Forming the Legendre polynomials
+       	    lpol[0]=1.0;
+       	    RealType lpolprev=0.0;
+       	    for (int l=0 ; l< lmax ; l++){
+              //Not a big difference
+              //lpol[l+1]=(2*l+1)*zz*lpol[l]-l*lpolprev;
+              //lpol[l+1]/=(l+1);
+       	      lpol[l+1]=Lfactor1[l]*zz*lpol[l]-l*lpolprev; 
+       	      lpol[l+1]*=Lfactor2[l]; 
+       	      lpolprev=lpol[l];
+       	    }
+            for(int l=0; l <nchannel; l++,jl++) Amat[jl]=lpol[ angpp_m[l] ]; 
+          } 
+       
+          BLAS::gemv(nknot, nchannel, &Amat[0], &psiratio[0], &wvec[0]);
+          esum += BLAS::dot(nchannel, &vrad[0], &wvec[0]);
+          ////////////////////////////////////
+          //Original implmentation by S. C.
+          //const char TRANS('T');
+          //const int ione=1;
+          //const RealType one=1.0;
+          //const RealType zero=0.0;
+          //dgemv(TRANS,nknot,nchannel,one,&Amat[0],nknot,&psiratio[0],ione,zero,&wvec[0],ione);
+          //esum += ddot(nchannel,&vrad[0],ione,&wvec[0],ione);
+          ////////////////////////////////////
+          //iel++;
+        }   /* end loop over electron */
+        return esum;
+      }
 
   /** constructor
    *\param ions the positions of the ions
@@ -110,8 +134,9 @@ namespace ohmmsqmc {
       TrialWaveFunction& psi):
     Centers(ions.GroupID), d_table(NULL), Psi(psi)
   { 
-
     d_table = DistanceTable::getTable(DistanceTable::add(ions,els));
+
+    els.resizeSphere(ions.getTotalNum());
 
     const SpeciesSet& Species(ions.getSpeciesSet());
     for(int i=0; i<Species.getTotalNum();i++) {
@@ -132,6 +157,10 @@ namespace ohmmsqmc {
       RealType r, f1;
       int numnonloc=0, lmax=-1;
       RealType rmax(0.0);
+
+      GridType* _nlgrid=0;
+      GridType* _lgrid=0;
+
       for (int ij=0; ij<npotentials; ij++){
 	int angmom,npoints;
 	fin >> angmom >> npoints;
@@ -142,23 +171,25 @@ namespace ohmmsqmc {
 	  //fin >> r ; grid_temp.push_back(r);
 	  //fin >> f1; pp_temp.push_back(f1);
 	}
-	GridType *agrid = new NumericalGrid<ValueType>(grid_temp);
+        GridType *agrid = new NumericalGrid<ValueType>(grid_temp);
 	LocalPotentialType *app = new OneDimCubicSpline<ValueType>(agrid,pp_temp);
 	int imin = 0;
 	RealType yprime_i = ((*app)(imin+1)-(*app)(imin))/app->dr(imin);
-        LOGMSG("NonPP l=" << angmom << " deriv= " << yprime_i)
-	app->spline(imin,yprime_i,app->size()-1,0.0);
-	if(angmom < 0)
+	if(angmom < 0) {
+          LOGMSG("NonPP l=" << angmom << " deriv= " << yprime_i)
+	  app->spline(imin,yprime_i,app->size()-1,0.0);
 	  PP[i]->add(agrid,app);
-	else {
+        } else {
+	  app->spline(imin,0.0,app->size()-1,0.0);
 	  PP[i]->add(angmom,agrid,app);
 	  numnonloc++;
+	  lmax=std::max(lmax,angmom);
+	  rmax=std::max(rmax,agrid->rmax());
 	}
-	lmax=std::max(lmax,angmom);
-	rmax=std::max(rmax,agrid->rmax());
       }
       //cout << npotentials << " potentials read" << endl;
       PP[i]->lmax=lmax; PP[i]->Rmax=rmax;
+      LOGMSG("Maximum cutoff of NonPP " << rmax)
       fin.close();
       int numsgridpts=0;
       // if NonLocal look for file containing the spherical grid
@@ -180,6 +211,11 @@ namespace ohmmsqmc {
 
       PP[i]->resize_warrays(numsgridpts,numnonloc,lmax);
     }//centers
+
+    for(int ic=0; ic<ions.getTotalNum(); ic++) {
+      int nsg=PP[ions.GroupID[ic]]->nknot;
+      if(nsg) els.Sphere[ic]->resize(nsg);
+    }
   }
 
   ///destructor
@@ -187,19 +223,14 @@ namespace ohmmsqmc {
     for(int pp=0; pp<PP.size(); pp++) delete PP[pp];
   }
 
-  ///random rotation of the spherical grid
-  void NonLocalPPotential::RadialPotentialSet::randomize_grid(){
-    const RealType twopi(6.28318530718);
-    RealType phi(twopi*Random()),psi(twopi*Random()),cth(Random()-0.5),
-	     sph(sin(phi)),cph(cos(phi)),sth(sqrt(1-cth*cth)),sps(sin(psi)),
-	     cps(cos(psi));
-    Tensor<double,3> rmat( cph*cth*cps-sph*sps, sph*cth*cps+cph*sps,-sth*cps,
-                          -cph*cth*sps-sph*cps,-sph*cth*sps+cph*cps, sth*sps,
-			   cph*sth,             sph*sth,             cth     );
-    vector<PosType>::iterator it(sgridxyz_m.begin());
-    vector<PosType>::iterator it_end(sgridxyz_m.end());
-    vector<PosType>::iterator jt(rrotsgrid_m.begin());
-    while(it != it_end) {*jt = dot(rmat,*it); ++it; ++jt;}
+  NonLocalPPotential::Return_t
+  NonLocalPPotential::evaluate(ParticleSet& P) { 
+    Value=0.0;
+    //loop over all the ions
+    for(int iat=0; iat<Centers.size(); iat++) {
+      Value += PP[Centers[iat]]->evaluate(P,d_table,iat,Psi,Primary);
+    }
+    return Value;
   }
 }
 /***************************************************************************

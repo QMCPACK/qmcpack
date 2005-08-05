@@ -101,19 +101,15 @@ namespace ohmmsqmc {
     ~LocalPPotential();
 
     inline Return_t evaluate(ParticleSet& P) {
-      RealType esum=0.0;
+      Value=0.0;
       //loop over all the ions
       for(int iat=0; iat<Centers.size(); iat++) {
 	//evaluate the corresponding potential for the ion
-        esum += PP[ Centers[iat] ]->evaluate(d_table,iat);
+        Value += PP[ Centers[iat] ]->evaluate(d_table,iat);
       }
-      return esum;
+      return Value;
     }
 
-    inline Return_t evaluate(ParticleSet& P, RealType& x) {
-      return x=evaluate(P);
-    }
-    
     /** Do nothing */
     bool put(xmlNodePtr cur) {
       return true;

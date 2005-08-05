@@ -139,7 +139,7 @@ namespace ohmmsqmc {
         e += Centers[iat]->C*dot(cc,cc);
       }
     }
-    return e;
+    return Value=e;
   }
 }
 

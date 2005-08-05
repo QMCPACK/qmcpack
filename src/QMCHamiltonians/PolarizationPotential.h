@@ -20,15 +20,7 @@ namespace ohmmsqmc {
     evaluate(ParticleSet& P) {
       RealType sum = 0.0;
       for(int i=0; i < P.getTotalNum(); i++) sum += P.R[i][2];
-      return (Efield * sum);
-    }
-
-    inline Return_t 
-    evaluate(ParticleSet& P, RealType& x){
-      RealType sum = 0.0;
-      for(int i=0; i < P.getTotalNum(); i++) sum += P.R[i][2];
-      x = Efield * sum;
-      return x;
+      return Value=Efield * sum;
     }
 
     /** Do nothing */
