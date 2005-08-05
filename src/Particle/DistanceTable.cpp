@@ -53,11 +53,14 @@ template<class T, unsigned D>
 struct PeriodicBConds {
   inline static T apply(const CrystalLattice<T,D>& lat, TinyVector<T,D>& a) {
     TinyVector<T,D> ar(lat.toUnit(a));
-    for(int idim=0; idim<D; idim++) 
-      if(ar[idim]<-0.5) ar[idim]+=1.0; 
-      else if(ar[idim]>=0.5) ar[idim]-=1.0;
+    for(int idim=0; idim<D; idim++) {
+      if(lat.BoxBConds[idim]) {
+        if(ar[idim]<-0.5) ar[idim]+=1.0; 
+        else if(ar[idim]>=0.5) ar[idim]-=1.0;
+      }
+    }
     a=lat.toCart(ar);
-    return lat.dot(a,a);
+    return dot(a,a);
   }
 };
 
