@@ -19,6 +19,7 @@
 
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "Numerics/DeterminantOperators.h"
+#include "Numerics/OhmmsBlas.h"
 #include <limits>
 
 namespace ohmmsqmc {
@@ -132,7 +133,8 @@ namespace ohmmsqmc {
     evaluate(const ParticleSet& P, int iat, VV& psi) {
       BasisSet->evaluate(P,iat);
       for(int j=0 ; j<NumPtcls; j++) 
-        psi[j] = dot(&C(j,0),BasisSet->y(0),BasisSize);
+        psi[j] = BLAS::dot(BasisSize,&C(j,0),BasisSet->y(0));
+        //psi[j] = dot(&C(j,0),BasisSet->y(0),BasisSize);
     }
 
     /**@ingroup particlebyparticle 
