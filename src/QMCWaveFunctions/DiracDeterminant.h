@@ -20,6 +20,7 @@
 #ifndef OHMMSQMC_DIRACDETERMINANT_H
 #define OHMMSQMC_DIRACDETERMINANT_H
 #include "Numerics/DeterminantOperators.h"
+#include "Numerics/OhmmsBlas.h"
 
 namespace ohmmsqmc {
 
@@ -163,16 +164,18 @@ namespace ohmmsqmc {
       psiMinv.resize(nel,norb);
       psiV.resize(norb);
       LastIndex = FirstIndex + nel;
+      NumPtcls=nel;
+      NumOrbitals=norb;
     }
 
     ValueType registerData(ParticleSet& P, PooledData<RealType>& buf) {
 
       if(NP == 0) {//first time, allocate once
-	int norb = cols();
-	dpsiV.resize(norb);
-	d2psiV.resize(norb);
-	workV1.resize(norb);
-	workV2.resize(norb);
+	//int norb = cols();
+	dpsiV.resize(NumOrbitals);
+	d2psiV.resize(NumOrbitals);
+	workV1.resize(NumOrbitals);
+	workV2.resize(NumOrbitals);
 	NP=P.getTotalNum();
 	myG.resize(NP);
 	myL.resize(NP);
@@ -181,7 +184,7 @@ namespace ohmmsqmc {
 	FirstAddressOfG = &myG[0][0];
 	LastAddressOfG = FirstAddressOfG + NP*DIM;
 	FirstAddressOfdV = &(dpsiM(0,0)[0]); //(*dpsiM.begin())[0]);
-	LastAddressOfdV = FirstAddressOfdV + rows()*cols()*DIM;
+	LastAddressOfdV = FirstAddressOfdV + NumPtcls*NumOrbitals*DIM;
       }
 
       //allocate once but each walker calls this
@@ -223,6 +226,8 @@ namespace ohmmsqmc {
     ValueType ratio(ParticleSet& P, int iat) {
       Phi.evaluate(P, iat, psiV);
       return curRatio= DetRatio(psiM, psiV.begin(),iat-FirstIndex);
+      //return curRatio = BLAS::dot(NumOrbitals,psiM[iat-FirstIndex],&psiV[0]);
+      //return curRatio= detRatio(psiM_temp[iat-FirstIndex], psiV.begin(),NumOrbitals);
     }
 
     ValueType ratio(ParticleSet& P, int iat,
@@ -233,19 +238,21 @@ namespace ohmmsqmc {
       WorkingIndex = iat-FirstIndex;
 
       curRatio= DetRatio(psiM_temp, psiV.begin(),WorkingIndex);
+      //curRatio = BLAS::dot(NumOrbitals,psiM_temp[WorkingIndex],&psiV[0]);
+      //curRatio= detRatio(psiM_temp[WorkingIndex], psiV.begin(), NumOrbitals);
 
       DetUpdate(psiM_temp,psiV,workV1,workV2,WorkingIndex,curRatio);
 
-      for(int j=0; j<cols(); j++) {
+      for(int j=0; j<NumPtcls; j++) {
 	dpsiM_temp(WorkingIndex,j)=dpsiV[j];
 	d2psiM_temp(WorkingIndex,j)=d2psiV[j];
       }
 
       int kat=FirstIndex;
-      for(int i=0; i<rows(); i++,kat++) {
+      for(int i=0; i<NumPtcls; i++,kat++) {
 	PosType rv =psiM_temp(i,0)*dpsiM_temp(i,0);
 	ValueType lap=psiM_temp(i,0)*d2psiM_temp(i,0);
-	for(int j=1; j<cols(); j++) {
+	for(int j=1; j<NumOrbitals; j++) {
 	  rv += psiM_temp(i,j)*dpsiM_temp(i,j);
 	  lap += psiM_temp(i,j)*d2psiM_temp(i,j);
 	}
@@ -261,7 +268,7 @@ namespace ohmmsqmc {
       myG = myG_temp;
       myL = myL_temp;
       psiM = psiM_temp;
-      for(int j=0; j<cols(); j++) {
+      for(int j=0; j<NumOrbitals; j++) {
 	dpsiM(WorkingIndex,j)=dpsiV[j];
 	d2psiM(WorkingIndex,j)=d2psiV[j];
       }
@@ -269,7 +276,7 @@ namespace ohmmsqmc {
 
     void restore(int iat) {
       psiM_temp = psiM;
-      for(int j=0; j<cols(); j++) {
+      for(int j=0; j<NumOrbitals; j++) {
 	dpsiM_temp(WorkingIndex,j)=dpsiM(WorkingIndex,j);
 	d2psiM_temp(WorkingIndex,j)=d2psiM(WorkingIndex,j);
       }
@@ -282,16 +289,16 @@ namespace ohmmsqmc {
 		int iat) {
 
       DetUpdate(psiM,psiV,workV1,workV2,WorkingIndex,curRatio);
-      for(int j=0; j<cols(); j++) {
+      for(int j=0; j<NumOrbitals; j++) {
 	dpsiM(WorkingIndex,j)=dpsiV[j];
 	d2psiM(WorkingIndex,j)=d2psiV[j];
       }
 
       int kat=FirstIndex;
-      for(int i=0; i<rows(); i++,kat++) {
+      for(int i=0; i<NumPtcls; i++,kat++) {
 	PosType rv =psiM(i,0)*dpsiM(i,0);
 	ValueType lap=psiM(i,0)*d2psiM(i,0);
-	for(int j=1; j<cols(); j++) {
+	for(int j=1; j<NumOrbitals; j++) {
 	  rv += psiM(i,j)*dpsiM(i,j);
 	  lap += psiM(i,j)*d2psiM(i,j);
 	}
@@ -319,10 +326,12 @@ namespace ohmmsqmc {
     void resizeByWalkers(int nwalkers);
 
     ///return the number of rows (or the number of electrons)
-    inline int rows() const { return psiM.rows();}
+    inline int rows() const { return NumPtcls;}
+    //inline int rows() const { return psiM.rows();}
 
     ///return the number of coloumns  (or the number of orbitals)
-    inline int cols() const { return psiM.cols();}
+    inline int cols() const { return NumOrbitals;}
+    //inline int cols() const { return psiM.cols();}
 
     ///evaluate log of determinant for a particle set: should not be called 
     ValueType
@@ -348,6 +357,9 @@ namespace ohmmsqmc {
 
     ///The number of particles
     int NP;
+
+    int NumOrbitals;
+    int NumPtcls;
 
     ///index of the first particle with respect to the particle set
     int FirstIndex;
@@ -414,16 +426,16 @@ namespace ohmmsqmc {
 				     ParticleSet::ParticleGradient_t& G, 
 				     ParticleSet::ParticleLaplacian_t& L) {
 
-    int nrows = rows();
-    int ncols = cols();
+    //int nrows = rows();
+    //int ncols = cols();
 
     Phi.evaluate(P, FirstIndex, LastIndex, psiM,dpsiM, d2psiM);
-    CurrentDet = Invert(psiM.data(),nrows,ncols);
+    CurrentDet = Invert(psiM.data(),NumPtcls,NumOrbitals);
     int iat = FirstIndex; //the index of the particle with respect to P
-    for(int i=0; i<nrows; i++, iat++) {
+    for(int i=0; i<NumPtcls; i++, iat++) {
       PosType rv = psiM(i,0)*dpsiM(i,0);
       ValueType lap=psiM(i,0)*d2psiM(i,0);
-      for(int j=1; j<ncols; j++) {
+      for(int j=1; j<NumOrbitals; j++) {
 	rv += psiM(i,j)*dpsiM(i,j);
 	lap += psiM(i,j)*d2psiM(i,j);
       }
@@ -456,20 +468,20 @@ namespace ohmmsqmc {
 
     //evaluate \f$(D_{ij})^t\f$ and other quantities for gradient/laplacians
     Phi.evaluate(W, FirstIndex, LastIndex, psiM_v, dpsiM_v, d2psiM_v);
-    int nrows = rows();
-    int ncols = cols();
+    //int nrows = rows();
+    //int ncols = cols();
     
     for(int iw=0; iw< nw; iw++) {
-      psi[iw] *= Invert(psiM_v[iw].data(),nrows,ncols);
+      psi[iw] *= Invert(psiM_v[iw].data(),NumPtcls,NumOrbitals);
       int iat = FirstIndex; //the index of the particle with respect to P
       const Determinant_t& logdet = psiM_v[iw];
       const Gradient_t& dlogdet = dpsiM_v[iw];
       const Laplacian_t& d2logdet = d2psiM_v[iw];
 
-      for(int i=0; i<nrows; i++, iat++) {
+      for(int i=0; i<NumPtcls; i++, iat++) {
 	PosType rv = logdet(i,0)*dlogdet(i,0);
 	ValueType lap=logdet(i,0)*d2logdet(i,0);
-	for(int j=1; j<ncols; j++) {
+	for(int j=1; j<NumOrbitals; j++) {
 	  rv += logdet(i,j)*dlogdet(i,j);
 	  lap += logdet(i,j)*d2logdet(i,j);
 	}
@@ -485,9 +497,9 @@ namespace ohmmsqmc {
       psiM_v.resize(nwalkers);
       dpsiM_v.resize(nwalkers);
       d2psiM_v.resize(nwalkers);
-      for(int iw=0; iw<nwalkers; iw++) psiM_v[iw].resize(rows(),cols());
-      for(int iw=0; iw<nwalkers; iw++) dpsiM_v[iw].resize(rows(),cols());
-      for(int iw=0; iw<nwalkers; iw++) d2psiM_v[iw].resize(rows(),cols());
+      for(int iw=0; iw<nwalkers; iw++) psiM_v[iw].resize(NumPtcls, NumOrbitals);
+      for(int iw=0; iw<nwalkers; iw++) dpsiM_v[iw].resize(NumPtcls, NumOrbitals);
+      for(int iw=0; iw<nwalkers; iw++) d2psiM_v[iw].resize(NumPtcls, NumOrbitals);
     }
     Phi.resizeByWalkers(nwalkers);
   }
