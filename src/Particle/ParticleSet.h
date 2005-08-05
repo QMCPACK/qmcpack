@@ -54,6 +54,9 @@ namespace ohmmsqmc {
     ///SpeciesSet of particles
     SpeciesSet mySpecies;
     
+    ///spherical-grids for non-local PP
+    vector<ParticlePos_t*> Sphere;
+
     ///default constructor
     ParticleSet();
 
@@ -94,6 +97,8 @@ namespace ohmmsqmc {
      */
     SingleParticlePos_t makeMove(Index_t iat, const SingleParticlePos_t& displ);
 
+    void makeMoveOnSphere(Index_t iat, const SingleParticlePos_t& displ);
+
     /**accept the move
      *@param iat the index of the particle whose position and other attributes to be updated
      */
@@ -102,6 +107,8 @@ namespace ohmmsqmc {
     inline int addProperty(const string& pname) {
       return PropertyList.add(pname.c_str());
     }
+
+   void resizeSphere(int nc);
 
    void convert(const ParticlePos_t& pin, ParticlePos_t& pout);
    void convert2Unit(const ParticlePos_t& pin, ParticlePos_t& pout);

@@ -75,11 +75,12 @@ namespace ohmmsqmc {
   }  
 
   /** move a particle iat
-   *@param iat the index of the particle to be moved
-   *@param displ the displacement of the iath-particle position
-   *@return the proposed position
-   *Update activePtcl index and activePos position for the proposed move.
-   *Evaluate the related distance table data DistanceTableData::Temp.
+   * @param iat the index of the particle to be moved
+   * @param displ the displacement of the iath-particle position
+   * @return the proposed position
+   *
+   * Update activePtcl index and activePos position for the proposed move.
+   * Evaluate the related distance table data DistanceTableData::Temp.
    */
   ParticleSet::SingleParticlePos_t 
   ParticleSet::makeMove(Index_t iat, const SingleParticlePos_t& displ) {
@@ -89,6 +90,13 @@ namespace ohmmsqmc {
       DistTables[i]->move(*this,activePos,iat);
     }
     return activePos;
+  }
+
+  void
+  ParticleSet::makeMoveOnSphere(Index_t iat, const SingleParticlePos_t& displ) {
+    for(int i=0; i< DistTables.size(); i++) {
+      DistTables[i]->moveOnSphere(*this,displ,iat);
+    }
   }
   
   /** update the particle attribute by the proposed move
@@ -103,6 +111,15 @@ namespace ohmmsqmc {
       for(int i=0; i< DistTables.size(); i++) {
         DistTables[i]->update(iat);
       }
+    }
+  }
+
+  /** resize Sphere by the LocalNum
+   * @param nc number of centers to which Spherical grid will be assigned.
+   */
+  void ParticleSet::resizeSphere(int nc) {
+    if(Sphere.size() != nc) {
+      for(int i=0; i<nc; i++) Sphere.push_back(new ParticlePos_t);
     }
   }
 
