@@ -25,12 +25,42 @@
 
 namespace ohmmsqmc {
 
+  /** container for the pair data
+   */
+  template<class T, unsigned D>
+  struct PairDataType {
+    ///distance-related data
+    T   r, rr, rinv;
+    ///displacement vector
+    TinyVector<T,D> dr;
+    ///default constructor
+    inline PairDataType(){}
+    ///copy constructor
+    inline PairDataType(const PairDataType<T,D>& p):r(p.r),rr(p.rr),rinv(p.rinv),dr(p.dr){}
+    ///copy operator
+    inline PairDataType<T,D>& operator=(const PairDataType<T,D>& p) {
+      r=p.r;rr=p.rr;rinv=p.rinv;dr=p.dr;
+      return *this;
+    }
+    ///set the values
+    inline void set(const TinyVector<T,D>& displ, T sep2) {
+      r=sqrt(sep2);
+      rr=sep2;
+      rinv=1.0/r;
+      dr=displ;
+    }
+    ///clear the value
+    inline void reset() {
+      r=0.0;
+    }
+  };
+
   /** @defgroup nnlist Distance-table group
    * @brief Classes to manage a set of data for distance relations between ParticleSet objects.
    */
   template<class T, unsigned N>
   struct TempDisplacement {
-    T r0,r1,rinv0,rinv1;
+    T r1,rinv1,r0,rinv0;
     TinyVector<T,N> dr0, dr1;
     inline TempDisplacement() {}
     inline void reset() {r0=T();r1=T();}
@@ -159,6 +189,9 @@ namespace ohmmsqmc {
     ///evaluate the temporary pair relations
     virtual void move(const ParticleSet& P, const PosType& rnew, IndexType jat) =0;
 
+    ///evaluate the temporary pair relations
+    virtual void moveOnSphere(const ParticleSet& P, const PosType& displ, IndexType jat) =0;
+
     ///update the distance table by the pair relations
     virtual void update(IndexType jat) = 0;
 
@@ -216,12 +249,12 @@ namespace ohmmsqmc {
     /**defgroup storage data for nearest-neighbor relations
      */
     /*@{*/
-    /** displacement vectors \f$dr(i,j) = R(j)-R(i)\f$  */
-    std::vector<PosType> dr_m;
     /** Cartesian distance \f$r(i,j) = |R(j)-R(i)|\f$ */
     std::vector<RealType> r_m;
-    /** Inverse of Carteisan distances\f$rinv(i,j) = 1/|R(j)-R(i)|\f$ */
+    /** Cartesian distance \f$rr(i,j) = |R(j)-R(i)|^2\f$ */
     std::vector<RealType> rinv_m;
+    /** displacement vectors \f$dr(i,j) = R(j)-R(i)\f$  */
+    std::vector<PosType> dr_m;
     /*@}*/
 
     Matrix<PosType> dr2_m;
@@ -246,6 +279,7 @@ namespace ohmmsqmc {
       if(nw==1) {
 	dr_m.resize(npairs);
 	r_m.resize(npairs);
+	//rr_m.resize(npairs);
 	rinv_m.resize(npairs);
 	Temp.resize(N[SourceIndex]);
       } else {

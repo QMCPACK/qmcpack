@@ -106,9 +106,12 @@ namespace ohmmsqmc {
       int ij = 0;
       for(int i=0; i<n; i++) {
 	for(int j=i+1; j<n; j++, ij++) {
-	  PosType drij = P.R[j]-P.R[i];
-	  RealType sep = sqrt(BC::apply(Origin.Lattice,drij));
+	  PosType drij(P.R[j]-P.R[i]);
+	  //RealType sep = sqrt(BC::apply(Origin.Lattice,drij));
+	  RealType sep2(BC::apply(Origin.Lattice,drij));
+	  RealType sep=sqrt(sep2);
 	  r_m[ij] = sep;
+	  //rr_m[ij] = sep2;
 	  rinv_m[ij] = 1.0/sep;      
 	  dr_m[ij] = drij;
 	}
@@ -117,40 +120,67 @@ namespace ohmmsqmc {
 
     ///evaluate the temporary pair relations
     inline void move(const ParticleSet& P, const PosType& rnew, IndexType jat) {
-
       activePtcl=jat;
       Temp[jat].reset();
       for(int iat=0; iat<jat; iat++) {
 	int loc = IJ[iat*N[SourceIndex]+jat];
-	PosType drij = rnew - P.R[iat];
-	RealType sep = sqrt(BC::apply(Origin.Lattice,drij));
+	PosType drij(rnew - P.R[iat]);
+	RealType sep2(BC::apply(Origin.Lattice,drij));
+	RealType sep=sqrt(sep2);
 	Temp[iat].r1=sep;
+	//Temp[iat].rr1=sep2;
 	Temp[iat].rinv1=1.0/sep;
-	Temp[iat].dr1=drij;
 	Temp[iat].r0=r_m[loc];
 	Temp[iat].rinv0=rinv_m[loc];
 	Temp[iat].dr0=-1.0*dr_m[loc];
+	Temp[iat].dr1=drij;
       }
       for(int iat=jat+1,nn=jat; iat< N[SourceIndex]; iat++) {
 	int loc = IJ[iat*N[SourceIndex]+jat];
-	PosType drij = rnew - P.R[iat];
-	RealType sep = sqrt(BC::apply(Origin.Lattice,drij));
+	PosType drij(rnew - P.R[iat]);
+	RealType sep2(BC::apply(Origin.Lattice,drij));
+	RealType sep=sqrt(sep2);
 	Temp[iat].r1=sep;
+	//Temp[iat].rr1=sep2;
 	Temp[iat].rinv1=1.0/sep;
-	Temp[iat].dr1=drij;
 	Temp[iat].r0=r_m[loc];
 	Temp[iat].rinv0=rinv_m[loc];
 	Temp[iat].dr0=dr_m[loc];
+	Temp[iat].dr1=drij;
       }
     }
 
+    ///evaluate the temporary pair relations
+    inline void moveOnSphere(const ParticleSet& P, const PosType& displ, IndexType jat) {
+     // if(activePtcl == jat) {
+     //   for(int iat=0; iat<N[SourceIndex]; iat++) {
+     //     if(iat==jat) continue;
+     //     //PosType drij = rnew - P.R[iat];
+     //     //RealType sep = sqrt(BC::apply(Origin.Lattice,drij));
+     //     PosType drij(displ+Temp[iat].dr0);
+     //     RealType sep2=dot(drij,drij);
+     //     RealType sep=sqrt(sep2);
+     //     Temp[iat].r1=sep;
+     //     //Temp[iat].rr1=sep2;
+     //     Temp[iat].rinv1=1.0/sep;
+     //     Temp[iat].dr1=drij;
+     //   }
+     // } else {
+     //   //PosType rnew(P.R[jat]+displ);
+     //   //move(P,rnew,jat);
+     //   move(P,P.R[jat]+displ,jat);
+     // }
+      move(P,P.R[jat]+displ,jat);
+    }
+
+
     ///update the stripe for jat-th particle
     inline void update(IndexType jat) {
-
       int nn=jat;
       for(int iat=0;iat<jat; iat++,nn+=N[SourceIndex]) {
 	int loc =IJ[nn];
 	r_m[loc] = Temp[iat].r1;
+	//rr_m[loc] = Temp[iat].rr1;
 	rinv_m[loc]= Temp[iat].rinv1;
 	dr_m[loc]= -1.0*Temp[iat].dr1;
       }
@@ -158,6 +188,7 @@ namespace ohmmsqmc {
       for(int nn=M[jat]; nn<M[jat+1]; nn++) {
 	int iat = J[nn];
 	r_m[nn] = Temp[iat].r1;
+	//rr_m[nn] = Temp[iat].rr1;
 	rinv_m[nn]= Temp[iat].rinv1;
         dr_m[nn]= Temp[iat].dr1;
       }

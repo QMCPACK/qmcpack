@@ -106,11 +106,13 @@ namespace ohmmsqmc {
       //reset(Origin.getTotalNum(),P.getTotalNum(),1);
       int nn=0;
       for(int i=0; i<N[SourceIndex]; i++) {
-	PosType r0 = Origin.R[i];
+	PosType r0(Origin.R[i]);
 	for(int j=0; j<N[VisitorIndex]; j++,nn++) {
-	  PosType drij = P.R[j]-r0;
-	  RealType sep = sqrt(BC::apply(Origin.Lattice,drij));
+	  PosType drij(P.R[j]-r0);
+	  RealType sep2(BC::apply(Origin.Lattice,drij));
+	  RealType sep(sqrt(sep2));
 	  r_m[nn]    = sep;
+	  //rr_m[nn]   = sep2;
 	  rinv_m[nn] = 1.0/sep;
 	  dr_m[nn]   = drij;
 	}
@@ -121,9 +123,11 @@ namespace ohmmsqmc {
     inline void move(const ParticleSet& P, const PosType& rnew, IndexType jat) {
       activePtcl=jat;
       for(int iat=0, loc=jat; iat<N[SourceIndex]; iat++,loc+=N[VisitorIndex]) {
-	PosType drij = rnew-Origin.R[iat];
-	RealType sep = sqrt(BC::apply(Origin.Lattice,drij));
+	PosType drij(rnew-Origin.R[iat]);
+	RealType sep2(BC::apply(Origin.Lattice,drij));
+	RealType sep(sqrt(sep2));
 	Temp[iat].r1=sep;
+	//Temp[iat].rr1=sep2;
 	Temp[iat].rinv1=1.0/sep;
 	Temp[iat].dr1=drij;
 	Temp[iat].r0=r_m[loc];
@@ -132,9 +136,30 @@ namespace ohmmsqmc {
       }
     }
 
+    ///evaluate the temporary pair relations
+    inline void moveOnSphere(const ParticleSet& P, const PosType& displ, IndexType jat) {
+      //if(activePtcl == jat) {
+      //  for(int iat=0; iat<N[SourceIndex]; iat++) {
+      //    //PosType drij = rnew-Origin.R[iat];
+      //    //RealType sep = sqrt(BC::apply(Origin.Lattice,drij));
+      //    PosType drij(displ+Temp[iat].dr0);
+      //    RealType sep2 = BC::apply(Origin.Lattice,drij);
+      //    RealType sep = sqrt(sep2);
+      //    Temp[iat].r1=sep;
+      //    //Temp[iat].rr1=sep2;
+      //    Temp[iat].rinv1=1.0/sep;
+      //    Temp[iat].dr1=drij;
+      //  }
+      //} else {
+      //  move(P,P.R[jat]+displ,jat);
+      //}
+      move(P,P.R[jat]+displ,jat);
+    }
+
     inline void update(IndexType jat) {
       for(int iat=0,loc=jat; iat<N[SourceIndex]; iat++, loc += N[VisitorIndex]) {
 	r_m[loc]=Temp[iat].r1;
+	//rr_m[loc]=Temp[iat].rr1;
 	rinv_m[loc]=Temp[iat].rinv1;
 	dr_m[loc]=Temp[iat].dr1;
       }
