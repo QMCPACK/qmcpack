@@ -18,6 +18,7 @@
 #include "Particle/ParticleSet.h"
 #include "QMCWaveFunctions/MolecularOrbitals/MolecularOrbitalBuilder.h"
 #include "QMCWaveFunctions/MolecularOrbitals/STOMolecularOrbitals.h"
+#include "QMCWaveFunctions/MolecularOrbitals/GTOMolecularOrbitals.h"
 #include "QMCWaveFunctions/MolecularOrbitals/GridMolecularOrbitals.h"
 #include "OhmmsData/AttributeSet.h"
 
@@ -46,11 +47,12 @@ namespace ohmmsqmc {
   bool MolecularOrbitalBuilder::putSpecial(xmlNodePtr cur) {
     
     bool usegrid = true;
-    string transform("yes"), source("i");
+    string transform("yes"), source("i"), radtype("sto");
     OhmmsAttributeSet aAttrib;
     aAttrib.add(transform,"transform");
     aAttrib.add(transform,"usegrid");
     aAttrib.add(source,"source");
+    aAttrib.add(radtype,"keyword");
     aAttrib.put(cur);
 
     if(transform == "no") 
@@ -69,15 +71,31 @@ namespace ohmmsqmc {
     }
 
     //check if distance table is used
-    xmlNodePtr tcur=cur->children;
-    while(ions == 0 && tcur != NULL) {
-      if(xmlStrEqual(tcur->name,(const xmlChar*)"distancetable")) {
-        const xmlChar*  a=xmlGetProp(tcur,(const xmlChar*)"source");
-        if(a) { source = (const char*)a;}
-        pit = ptclPool.find(source);
-        if(pit != ptclPool.end()) ions = (*pit).second;
+    xmlNodePtr cur1=cur->children;
+    while(cur1 != NULL) {
+      string cname1((const char*)cur1->name);
+      if(cname1 == "distancetable") {
+        if(ions == 0) {
+          const xmlChar*  a=xmlGetProp(cur1,(const xmlChar*)"source");
+          if(a) { source = (const char*)a;}
+          pit = ptclPool.find(source);
+          if(pit != ptclPool.end()) ions = (*pit).second;
+        }
+      } else if(cname1 == basisset_tag) {
+        xmlNodePtr cur2=cur1->children;
+        while(cur2 != NULL) {
+          if(xmlStrEqual(cur2->name,(const xmlChar*)"atomicBasisSet")) {
+            const xmlChar* a =xmlGetProp(cur2,(const xmlChar*)"name");
+            if(xmlStrEqual(a,(const xmlChar*)"STO")) {
+              radtype="sto";
+            } else {
+              radtype="gto";
+            }
+          }
+          cur2=cur2->next;
+        }//end-of-cur2
       }
-      tcur=tcur->next;
+      cur1=cur1->next;
     }
 
     if(ions == 0){
@@ -90,9 +108,16 @@ namespace ohmmsqmc {
       GridMolecularOrbitals a(targetPtcl,targetPsi,*ions);
       a.put(cur);
     } else {
-      LOGMSG("Using analytic STO molecular orbitals for " << targetPtcl.getName() << " with " << ions->getName())
-      STOMolecularOrbitals a(targetPtcl,targetPsi,*ions);
-      a.put(cur);
+      cout << "Checking the radial orbital type " << radtype << endl;
+      if(radtype == "gto") {
+        LOGMSG("Using analytic GTO molecular orbitals for " << targetPtcl.getName() << " with " << ions->getName())
+        GTOMolecularOrbitals a(targetPtcl,targetPsi,*ions);
+        a.put(cur);
+      } else {
+        LOGMSG("Using analytic STO molecular orbitals for " << targetPtcl.getName() << " with " << ions->getName())
+        STOMolecularOrbitals a(targetPtcl,targetPsi,*ions);
+        a.put(cur);
+      }
     }
 
     return true;
@@ -120,14 +145,12 @@ namespace ohmmsqmc {
     sdname.append(OrbitalBuilderBase::detset_tag);
     xmlXPathObjectPtr result
       = xmlXPathEvalExpression((const xmlChar*)(sdname.c_str()),context);
-    //      result = xmlXPathEvalExpression((const xmlChar*)"//determinantset",context);
-  
+
     if(xmlXPathNodeSetIsEmpty(result->nodesetval)) {
       ERRORMSG(fname_in << " does not contain any Data!")
     } else {
       putSpecial(result->nodesetval->nodeTab[0]);
     }
-
     //free local objects
     xmlXPathFreeObject(result);
     xmlXPathFreeContext(context);
