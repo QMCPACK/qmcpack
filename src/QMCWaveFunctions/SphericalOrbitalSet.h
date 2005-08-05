@@ -29,8 +29,7 @@ namespace ohmmsqmc {
   typedef TinyVector<int,4> QuantumNumberType;
   enum {q_n=0,q_l,q_m, q_s};
 
-  /**Class to represent a set of spherical orbitals centered at a 
-   *common origin origin.
+  /**Class to represent a set of spherical orbitals centered at a common origin origin.
    *
    *Each basis orbital is represented by 
    \f[
@@ -103,7 +102,6 @@ namespace ohmmsqmc {
       for(int nl=0; nl<Rnl.size(); nl++) Rnl[nl]->reset();
     }
 
-    /**@ingroup particlebyparticle */
     template<class VM>
     inline void
     evaluate(int source, int iat,  int offset, VM& y) {
@@ -114,9 +112,6 @@ namespace ohmmsqmc {
 
       Ylm.evaluate(dr);
 
-      //typename vector<GT*>::iterator git(Grids.begin()),git_end(Grids.end());
-      //while(git != git_end) {(*git)->locate(r); ++git;}
-
       typename vector<ROT*>::iterator rit(Rnl.begin()), rit_end(Rnl.end());
       while(rit != rit_end) {(*rit)->evaluate(r,rinv); ++rit;}
       
@@ -126,8 +121,6 @@ namespace ohmmsqmc {
       }
     }
 
-    /**@ingroup particlebyparticle
-     */
     template<class VM, class GM>
     inline void 
     evaluate(int source, int iat,  int offset, VM& y, GM& dy, VM& d2y) {
@@ -161,7 +154,7 @@ namespace ohmmsqmc {
       }
     }
 
-    /**@brief For the center with index (source), evaluate all the basis functions beginning with index (offset). 
+    /** For the center with index (source), evaluate all the basis functions beginning with index (offset). 
     @param source index of the center \f$ I \f$
     @param first index of the first particle
     @param nptcl number of particles
@@ -300,11 +293,6 @@ namespace ohmmsqmc {
 	      RealType rinv = myTable->rinv(iw,nn);
 	      PosType dr = myTable->dr(iw,nn);
 	      Ylm.evaluateAll(dr);
-
-	      ////find the indices for distinct grids
-	      //for(int ir=0; ir<Grids.size(); ir++) {
-	      //  Grids[ir]->locate(r);
-	      //}
 
 	      //spline them
 	      for(int nl=0; nl<Rnl.size(); nl++) {
