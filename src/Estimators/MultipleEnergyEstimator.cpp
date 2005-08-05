@@ -153,7 +153,7 @@ namespace ohmmsqmc {
 
     //const RealType* restrict etot=UmbrellaEnergy[CurrentWalker];
     //const RealType* restrict wsum=UmbrellaWeight[CurrentWalker];
-    RealType* restrict elocPtr = elocal.data();
+    int iloc=0;
     RealType *restrict esumPtr = esum.data();
 
     for(int i=0; i<NumCopies; i++) {
@@ -174,9 +174,10 @@ namespace ohmmsqmc {
       
       //const RealType *t= awalker.getPropertyBase(i)+FirstHamiltonian;
       for(int j=0,h=FirstHamiltonian; j<NumOperators; j++,h++) {
-        *elocPtr++ += invr*prop[h];
+        elocal(iloc++) += invr*prop[h];
       }
     }
+
     ++CurrentWalker;
 
     //reset to zero 
@@ -210,7 +211,7 @@ namespace ohmmsqmc {
 //      std::copy(v.begin()+esumSize,v.end(),elocal.begin());
 //    }
 //#endif
-
+//
     //(localenergy, variance, weight)* 
     int ir(FirstColumnIndex);
 
@@ -229,9 +230,12 @@ namespace ohmmsqmc {
     }
 
     //(each hamiltonian term)*
-    int n(elocal.size());
-    const RealType* restrict eit(elocal.data());
-    while(n) {record[ir++]=wgtinv*(*eit++);--n;}
+    for(int i=0; i<elocal.size(); i++, ir++) {
+      record[ir]=wgtinv*elocal(i);
+    }
+    //int n(elocal.size());
+    //const RealType* restrict eit(elocal.data());
+    //while(n) {record[ir++]=wgtinv*(*eit++);--n;}
 
     //set the ScalarEstimator<T>::b_average and b_variace
     b_average = esum(0,ENERGY_INDEX);
