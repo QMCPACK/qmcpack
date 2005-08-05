@@ -20,6 +20,8 @@
 #ifndef OHMMS_QMC_DMC_PARTICLEBYPARTCLE_H
 #define OHMMS_QMC_DMC_PARTICLEBYPARTCLE_H
 #include "QMCDrivers/QMCDriver.h" 
+#include "Utilities/OhmmsInfo.h"
+#include "QMCDrivers/MolecuFixedNodeBranch.h"
 namespace ohmmsqmc {
 
   /** @ingroup QMCDrivers ParticleByParticle 
@@ -27,14 +29,19 @@ namespace ohmmsqmc {
    */
   class DMCParticleByParticle: public QMCDriver {
   public:
+    typedef MolecuFixedNodeBranch<RealType> BranchEngineType;
     /// Constructor.
     DMCParticleByParticle(MCWalkerConfiguration& w, TrialWaveFunction& psi, 
 			  QMCHamiltonian& h);
+    ///destructor
+    ~DMCParticleByParticle();
+
     bool run();
     bool put(xmlNodePtr cur);
  
-    void setBranchInfo(const string& aname);
+    //void setBranchInfo(const string& aname);
   private:
+
 
     ///Column index for Populaton
     IndexType PopIndex;
@@ -42,7 +49,8 @@ namespace ohmmsqmc {
     IndexType EtrialIndex;
     ///hdf5 file name for Branch conditions
     string BranchInfo;
-
+    ///branch engine
+    BranchEngineType *branchEngine;
     /// Copy Constructor (disabled)
     DMCParticleByParticle(const DMCParticleByParticle& a): QMCDriver(a) { }
     /// Copy operator (disabled).
