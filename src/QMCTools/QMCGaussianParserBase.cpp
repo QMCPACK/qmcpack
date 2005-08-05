@@ -131,7 +131,7 @@ xmlNodePtr QMCGaussianParserBase::createElectronSet() {
   }
 
   XMLSaveParticle o(els);
-  return o.createNode();
+  return o.createNode(false);
 }
 
 xmlNodePtr QMCGaussianParserBase::createIonSet() {
@@ -158,7 +158,7 @@ xmlNodePtr QMCGaussianParserBase::createIonSet() {
   }
   
   XMLSaveParticle o(IonSystem);
-  return o.createNode();
+  return o.createNode(Periodicity);
 }
 
 xmlNodePtr QMCGaussianParserBase::createBasisSet() {

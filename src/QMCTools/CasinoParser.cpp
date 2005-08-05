@@ -28,6 +28,12 @@ void CasinoParser::parse(const std::string& fname) {
   std::istringstream a(dbuffer);
   a>>Title;
 
+  LOGMSG("Looking for Periodicity ")
+  search(fin,"Periodicity");
+  int periodicity;
+  getValue(fin,periodicity);
+  if(periodicity > 0) Periodicity=true;
+
   std::string spin_unrestricted;
   LOGMSG("Looking for Spin ")
   search(fin,"Spin");
@@ -46,10 +52,15 @@ void CasinoParser::parse(const std::string& fname) {
   search(fin, "GEOMETRY");
   getGeometry(fin);
 
+  SpeciesSet& ionSpecies(IonSystem.getSpeciesSet());
   //GroupID is the atomic number. Have to match the name and the real GroupID
   for(int i=0; i<NumberOfAtoms; i++) {
+    if(IonSystem.GroupID[i]>200) IonSystem.GroupID[i]-=200;
+    int atomic_number = IonSystem.GroupID[i];
     GroupName[i]=IonName[IonSystem.GroupID[i]];
-    IonSystem.GroupID[i]=IonSystem.getSpeciesSet().addSpecies(GroupName[i]);
+    int gid=IonSystem.GroupID[i]=IonSystem.getSpeciesSet().addSpecies(GroupName[i]);
+    ionSpecies(AtomicNumberIndex,gid)=atomic_number;
+    ionSpecies(ValenceChargeIndex,gid)=Qv[i];
   }
 
   LOGMSG("Looking for BASIS ")
@@ -62,6 +73,7 @@ void CasinoParser::parse(const std::string& fname) {
   EigVal_beta.resize(SizeOfBasisSet);
   vector<value_type> etemp;
 
+  //////////////
   LOGMSG("Looking for EIGENVECTOR ")
   search(fin, "EIGENVECTOR");
   int nstates=SizeOfBasisSet;
@@ -98,16 +110,28 @@ void CasinoParser::parse(const std::string& fname) {
   }
 }
 
-//std::copy(Qv.begin(), Qv.end(),ostream_iterator<double>(cout, ","));
 void CasinoParser::getGeometry(std::istream& is) {
   //Number of atoms
   getNumberOfAtoms(is);
-  //Atomic positions (au):
-  getAtomicPositions(is);
-  //Atomic numbers for each atom:
-  getAtomicNumbers(is);
-  //Valence charges for each atom:
-  getValenceCharges(is);
+  search(is,"Atomic positions");
+  getValues(is,IonSystem.R.begin(),IonSystem.R.end());
+  search(is,"Atomic numbers");
+  getValues(is,IonSystem.GroupID.begin(),IonSystem.GroupID.end());
+  search(is,"Valence charges");
+  getValues(is,Qv.begin(),Qv.end());
+
+  if(Periodicity) {
+    vector<double> lat(9);
+    search(is,"Primitive lattice");
+    getValues(is,lat.begin(),lat.end());
+    int ij=0;
+    for(int i=0; i<3; i++)
+      for(int j=0; j<3; j++,ij++)
+        IonSystem.Lattice.R(i,j)=lat[ij];
+    IonSystem.Lattice.reset();
+    cout << "Lattice vectors " << endl;
+    IonSystem.Lattice.print(cout);
+  }
 }
 
 void CasinoParser::getNumberOfAtoms(std::istream& is) {
@@ -119,16 +143,11 @@ void CasinoParser::getNumberOfAtoms(std::istream& is) {
   gBound.resize(NumberOfAtoms+1);
 }
 void CasinoParser::getAtomicPositions(std::istream& is) {
-  search(is,"positions");
-  getValues(is,IonSystem.R.begin(),IonSystem.R.end());
 }
 void CasinoParser::getAtomicNumbers(std::istream& is) {
-  search(is,"Atomic");
-  getValues(is,IonSystem.GroupID.begin(),IonSystem.GroupID.end());
 }
 void CasinoParser::getValenceCharges(std::istream& is) {
-  search(is,"Valence");
-  getValues(is,Qv.begin(),Qv.end());
+
 }
 
 void CasinoParser::getGaussianCenters(std::istream& is) {

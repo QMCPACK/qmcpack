@@ -63,6 +63,7 @@ struct QMCGaussianParserBase {
 
   bool BohrUnit;
   bool SpinRestricted;
+  bool Periodicity;
   int IonChargeIndex;
   int ValenceChargeIndex;
   int AtomicNumberIndex;

@@ -5,6 +5,7 @@
 #include <iomanip>
 #include <cmath>
 #include <sstream>
+#include "OhmmsData/OhmmsElementBase.h"
 #include "Numerics/HDFSTLAttrib.h"
 #include "Numerics/TriCubicSplineT.h"
 #include "Numerics/HDFTriCubicSpline.h"
