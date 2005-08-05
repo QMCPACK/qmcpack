@@ -64,6 +64,11 @@ namespace ohmmsqmc {
     }
 
     LOGMSG("Number of H and Psi " << nPsi)
+
+    H1[0]->setPrimary(true);
+    for(int ipsi=1; ipsi<nPsi; ipsi++) {
+      H1[ipsi]->setPrimary(false);
+    }
     return true;
   }
   

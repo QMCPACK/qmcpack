@@ -150,6 +150,7 @@ namespace ohmmsqmc {
 	    drift *= scale;
             dr = (*it)->R[iat]-newpos-drift[iat];
             RealType logGb = -oneover2tau*dot(dr,dr);
+
 	    // td = Target Density ratio
 	    //RealType td=pow(ratio[0],2)*sumratio[0]/(*it)->Properties(SUMRATIO);
 	    RealType td=pow(ratio[0],2)*sumratio[0]/(*it)->Multiplicity;
@@ -195,6 +196,7 @@ namespace ohmmsqmc {
 	       -Drift
 	       -buffered info for each Psi1[i]
 	       Physical properties are updated */
+            (*it)->Age=0;
             (*it)->Multiplicity=sumratio[0];
 	    (*it)->R = W.R;
 	    w_buffer.rewind();
@@ -263,6 +265,11 @@ namespace ohmmsqmc {
       Estimators = new ScalarEstimatorManager(H);
       multiEstimator = new MultipleEnergyEstimator(H,nPsi);
       Estimators->add(multiEstimator,"elocal");
+    }
+
+    H1[0]->setPrimary(true);
+    for(int ipsi=1; ipsi<nPsi; ipsi++) {
+      H1[ipsi]->setPrimary(false);
     }
     return true;
   }

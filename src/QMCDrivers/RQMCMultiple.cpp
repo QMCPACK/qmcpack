@@ -64,6 +64,11 @@ namespace ohmmsqmc {
 
     //resize Walker::Properties to hold everything
     W.resetWalkerProperty(nPsi);
+
+    H1[0]->setPrimary(true);
+    for(int ipsi=1; ipsi<nPsi; ipsi++) {
+      H1[ipsi]->setPrimary(false);
+    }
   }
 
 
