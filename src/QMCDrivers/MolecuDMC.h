@@ -24,6 +24,8 @@
 #define OHMMS_QMC_DMC_MOLECU_H
 
 #include "QMCDrivers/QMCDriver.h" 
+#include "Utilities/OhmmsInfo.h"
+#include "QMCDrivers/MolecuFixedNodeBranch.h"
 
 namespace ohmmsqmc {
 
@@ -33,8 +35,11 @@ namespace ohmmsqmc {
   class MolecuDMC: public QMCDriver {
 
   public:
+    typedef MolecuFixedNodeBranch<RealType> BranchEngineType;
     /// Constructor.
     MolecuDMC(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h);
+    ///destructor
+    ~MolecuDMC();
 
     template<class BRANCHER>
     void advanceWalkerByWalker(BRANCHER& Branch);
@@ -48,6 +53,8 @@ namespace ohmmsqmc {
 
     ///hdf5 file name for Branch conditions
     std::string BranchInfo;
+    ///branch engine
+    BranchEngineType *branchEngine;
     /// Copy Constructor (disabled)
     MolecuDMC(const MolecuDMC& a): QMCDriver(a) { }
     /// Copy operator (disabled).

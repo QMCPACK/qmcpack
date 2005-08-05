@@ -18,22 +18,24 @@
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 #include "QMCDrivers/MolecuDMC.h"
-#include "Utilities/OhmmsInfo.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "Particle/DistanceTable.h"
 #include "Particle/HDFWalkerIO.h"
 #include "ParticleBase/ParticleUtility.h"
 #include "ParticleBase/RandomSeqGenerator.h"
-#include "QMCDrivers/MolecuFixedNodeBranch.h"
 #include "Message/Communicate.h"
 #include "Utilities/Clock.h"
 
 namespace ohmmsqmc {
 
   MolecuDMC::MolecuDMC(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h):
-    QMCDriver(w,psi,h),BranchInfo("default"){ 
+    QMCDriver(w,psi,h),BranchInfo("default"),branchEngine(0){ 
     RootName = "dmc";
     QMCType ="dmc";
+  }
+
+  MolecuDMC::~MolecuDMC() {
+    if(branchEngine) delete branchEngine;
   }
 
   void MolecuDMC::setBranchInfo(const string& afile) {
@@ -73,17 +75,13 @@ namespace ohmmsqmc {
     //write the header
     Estimators->reportHeader();
 
-    MolecuFixedNodeBranch<RealType> brancher(Tau,W.getActiveWalkers());
-
-    if(Counter) {
+    if(branchEngine == 0) {
+      branchEngine=new BranchEngineType(Tau,W.getActiveWalkers());
       RealType e_ref = W.getLocalEnergy();
       LOGMSG("Overwriting the reference energy by the local energy " << e_ref)  
-      brancher.setEguess(e_ref);
+      branchEngine->setEguess(e_ref);
+      branchEngine->put(qmcNode,LogOut);
     }
-
-    brancher.put(qmcNode,LogOut);
-
-    //if(BranchInfo != "default")  brancher.read(BranchInfo);
 
     MCWalkerConfiguration::iterator it(W.begin()); 
     MCWalkerConfiguration::iterator it_end(W.end()); 
@@ -93,21 +91,11 @@ namespace ohmmsqmc {
       ++it;
     }
     
-    /*if VMC/DMC directly preceded DMC (Counter > 0) then
-      use the average value of the energy estimator for
-      the reference energy of the brancher*/
-    if(Counter) {
-      RealType e_ref = W.getLocalEnergy();
-      LOGMSG("Overwriting the reference energy by the local energy " << e_ref)  
-      brancher.setEguess(e_ref);
-    }
-    
     IndexType block = 0;
-    
     Pooma::Clock timer;
     int Population = W.getActiveWalkers();
     int tPopulation = W.getActiveWalkers();
-    RealType Eest = brancher.E_T;
+    RealType Eest = branchEngine->E_T;
     IndexType accstep=0;
     IndexType nAcceptTot = 0;
     IndexType nRejectTot = 0;
@@ -117,11 +105,11 @@ namespace ohmmsqmc {
       timer.start();
       do {
         Population = W.getActiveWalkers();
-        advanceWalkerByWalker(brancher);
+        advanceWalkerByWalker(*branchEngine);
         step++; accstep++;
         Estimators->accumulate(W);
-        Eest = brancher.update(Population,Eest);
-        brancher.branch(accstep,W);
+        Eest = branchEngine->update(Population,Eest);
+        branchEngine->branch(accstep,W);
       } while(step<nSteps);
       timer.stop();
       
@@ -137,7 +125,7 @@ namespace ohmmsqmc {
       LogOut->getStream() << "Block " << block << " " << timer.cpu_time()
       		    << " " << Population << endl;
       Eest = Estimators->average(0);
-      brancher.updateBranchData();
+      branchEngine->updateBranchData();
       nAccept = 0; nReject = 0;
       block++;
       if(pStride) {
@@ -152,7 +140,7 @@ namespace ohmmsqmc {
       << "ratio = " << static_cast<double>(nAcceptTot)/static_cast<double>(nAcceptTot+nRejectTot)
       << endl;
     
-    brancher.updateBranchData();
+    branchEngine->updateBranchData();
     if(!pStride) {
       //create an output engine: could accumulate the configurations
       HDFWalkerOutput WO(RootName);
