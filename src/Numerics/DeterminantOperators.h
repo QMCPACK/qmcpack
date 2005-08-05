@@ -132,6 +132,14 @@ DetRatio(const MatA& Minv, Iter newrow, int rowchanged) {
   return res;
 }
 
+template<class T, class Iter2>
+inline T
+detRatio(T* restrict Minv, Iter2 newrow, int cols) {
+  T res(0.0);
+  for(int j=0; j<cols; j++) res += (*Minv++)*(*newrow++);
+  return res;
+}
+
 template<class MatA, class VecT>
 inline
 void
