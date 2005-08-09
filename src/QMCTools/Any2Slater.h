@@ -5,11 +5,23 @@
 #include "Numerics/OneDimIntegration.h"
 #include "Optimize/Minimize.h"
 
+/** A class to optimize a radial function by a Slater-type orbital
+ *
+ * scalar is typedef (double) inherited from MinimizeFunction
+ * Implements the virtual functions of MinizeFunction for optimization
+ * - int NumParams() ; returns the number of parameters to be optimized
+ * - scalar& Params(int i); assign the i-th value of the optimizable parameters
+ * - scalar Params(int i); returns the i-th value of the optimizable parameters
+ * - scalar Cost(); returns the cost function
+ * - void WriteStuff
+ */
 class Any2Slater : public MinimizeFunction {
   
   public:
 
+    ///typedef of the source function
     typedef OneDimGridFunctor<scalar> SourceType;
+    ///typedef of the grid, using LogGrid
     typedef LogGrid<scalar>           GridType;
 
     Any2Slater(SourceType& in): Source(in),
@@ -52,9 +64,9 @@ class Any2Slater : public MinimizeFunction {
     ///return optimization parameter i
     scalar Params(int i) const { return OptParams[i]; }
 
+    ///use the OptParams modified the optimization library and evaluate the cost function
     scalar Cost() {
       Target.Z=OptParams[0];
-      //Target.Norm=OptParams[1];
       Target.reset();
       scalar del=0.0;
       for(int ig=minIndex; ig<Source.size(); ig++) {
@@ -71,6 +83,8 @@ class Any2Slater : public MinimizeFunction {
       cout << "Slater Z = " << Target.Z <<  "    Norm = " << Target.Norm << endl;
     }
 
+    /** main optimization function using ConjugateGradient method
+     */
     bool optimize() {
       ConjugateGradient CG;
       CG.Tolerance = cg_tolerance;
