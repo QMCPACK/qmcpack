@@ -27,18 +27,27 @@ struct GaussianCombo: public RadialOrbitalBase<T> {
 
   struct BasicGaussian {
     T Sigma;
-    T MinusSigma;
     T Coeff;
+
+    T MinusSigma;
     T CoeffP;
     T CoeffPP;
     BasicGaussian(): Sigma(1.0), Coeff(1.0) { } 
+
     inline BasicGaussian(T sig, T c) { 
       reset(sig,c);
     } 
-    void reset(T sig, T c){
+
+    inline void reset(T sig, T c){
       Sigma = sig; 
       MinusSigma=-sig;
       Coeff = c;
+      CoeffP = -2.0*Sigma*Coeff;
+      CoeffPP = 4.0*Sigma*Sigma*Coeff;
+    }
+
+    inline void reset() {
+      MinusSigma=-Simga;
       CoeffP = -2.0*Sigma*Coeff;
       CoeffPP = 4.0*Sigma*Sigma*Coeff;
     }
@@ -178,32 +187,25 @@ bool GaussianCombo<T>::put(xmlNodePtr cur) {
 
 template<class T>
 void GaussianCombo<T>::reset() {
-  int n=gset.size();
-  while(n<InParam.size()) {
-    gset.push_back(BasicGaussian());
-    n++;
-  }
+  if(InParam.empty()) {
+    for(int i=0; i<gset.size(); i++) gset[i].reset();
+  } else {
+    int n=gset.size();
+    while(n<InParam.size()) {
+      gset.push_back(BasicGaussian());
+      n++;
+    }
+    T alpha(1.0),c(1.0);
+    OhmmsAttributeSet radAttrib;
+    radAttrib.add(alpha,expName); 
+    radAttrib.add(c,coeffName);
 
-  T alpha(1.0),c(1.0);
-  OhmmsAttributeSet radAttrib;
-  radAttrib.add(alpha,expName); 
-  radAttrib.add(c,coeffName);
-
-  for(int i=0; i<InParam.size(); i++) {
-    radAttrib.put(InParam[i]);
-    //const xmlChar* aptr = xmlGetProp(InParam[i],(const xmlChar *)expName.c_str());
-    //const xmlChar* cptr = xmlGetProp(InParam[i],(const xmlChar *)coeffName.c_str());
-    //if(aptr == 0) {
-    //  cout << "Exponent is not found. Skip this" << endl;
-    //  continue;
-    //}
-    //T alpha = atof((const char*)aptr);
-    //T c(1.0);
-    //if(cptr) c = atof((const char*)cptr);
-    //get the normalization factor
-    if(!Normalized) c *= NormL*pow(alpha,NormPow); 
-    LOGMSG(" Gaussian exponent = " << alpha << " contraction=" << c)
-    gset[i].reset(alpha,c);
+    for(int i=0; i<InParam.size(); i++) {
+      radAttrib.put(InParam[i]);
+      if(!Normalized) c *= NormL*pow(alpha,NormPow); 
+      LOGMSG(" Gaussian exponent = " << alpha << " contraction=" << c)
+      gset[i].reset(alpha,c);
+    }
   }
 }
 
@@ -218,36 +220,6 @@ bool GaussianCombo<T>::putBasisGroup(xmlNodePtr cur) {
     cur=cur->next;
   }
   reset();
-//  if(nptr) nprim = atoi((const char*)nptr);
-//
-//  int nprim=1;
-//  const xmlChar* nptr = xmlGetProp(cur,(const xmlChar*)"nprim");
-//  if(nptr) nprim = atoi((const char*)nptr);
-//  T minL(L);
-//  const xmlChar* minLptr = xmlGetProp(cur,(const xmlChar*)"minL");
-//  if(minLptr) minL = atof((const char*)minLptr);
-//  vector<T> alpha(nprim),c(nprim,1.0);
-//  cur = cur->children;
-//  while(cur != NULL) {
-//    string cname((const char*)cur->name);
-//    if(cname == "exponents") {
-//      putContent(alpha,cur);
-//    } else if(cname == "contraction") {
-//      if(minL == L) {
-//        putContent(c,cur);
-//        if(!Normalized) 
-//          for(int i=0; i<nprim; i++) c[i] *= NormL*pow(alpha[i],NormPow); 
-//      }
-//      ++minL;
-//    }
-//    cur = cur->next;
-//  }
-//  int i=0;
-//  while(i<nprim) {
-//    gset.push_back(BasicGaussian());
-//    gset[i].reset(alpha[i],c[i]);
-//    ++i;
-//  }
   return true;
 }
 
