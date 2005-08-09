@@ -120,8 +120,11 @@ bool GTO2Slater::put(xmlNodePtr cur) {
     true;
 }
 
+/** main functio to optimize multiple contracted S orbitals
+ */
   void GTO2Slater::optimize() {
 
+    //construct one-dim grid
     double ri = 1e-5;
     double rf = 10.0;
     int npts = 101;
@@ -135,20 +138,25 @@ bool GTO2Slater::put(xmlNodePtr cur) {
     }
     myGrid.set(ri,rf,npts);
 
+    //create a numerical grid funtor
     typedef OneDimCubicSpline<double> RadialOrbitalType;
     RadialOrbitalType radorb(&myGrid);
 
     int L= 0;
+    //Loop over all the constracted S orbitals
     map<string,xmlNodePtr>::iterator it(sPtr.begin()),it_end(sPtr.end());
     while(it != it_end) {
+
+      //create contracted gaussian
       GTOType gset(L,Normalized); 
+      //read the radfunc's of basisGroup
       gset.putBasisGroup((*it).second);
 
       //convert to a radial functor
       Transform2GridFunctor<GTOType,RadialOrbitalType> transform(gset, radorb);
       transform.generate(myGrid.rmin(),myGrid.rmax(),myGrid.size());
 
-      //optimize it
+      //optimize it with the radial functor
       Any2Slater gto2slater(radorb);
       gto2slater.optimize();
       ++it;
