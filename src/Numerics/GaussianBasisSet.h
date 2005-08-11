@@ -47,7 +47,7 @@ struct GaussianCombo: public RadialOrbitalBase<T> {
     }
 
     inline void reset() {
-      MinusSigma=-Simga;
+      MinusSigma=-Sigma;
       CoeffP = -2.0*Sigma*Coeff;
       CoeffPP = 4.0*Sigma*Sigma*Coeff;
     }
