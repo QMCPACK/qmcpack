@@ -85,7 +85,7 @@ namespace ohmmsqmc {
         xmlNodePtr cur2=cur1->children;
         while(cur2 != NULL) {
           if(xmlStrEqual(cur2->name,(const xmlChar*)"atomicBasisSet")) {
-            const xmlChar* a =xmlGetProp(cur2,(const xmlChar*)"name");
+            const xmlChar* a =xmlGetProp(cur2,(const xmlChar*)"type");
             if(xmlStrEqual(a,(const xmlChar*)"STO")) {
               radtype="sto";
             } else {
