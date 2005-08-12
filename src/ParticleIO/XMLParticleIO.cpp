@@ -310,14 +310,21 @@ bool XMLParticleParser::putSpecial(xmlNodePtr cur) {
     ref_.GroupID[nloc] = sid;
   }
 
-  if(nat_group.size()) {
-
-  }
   if(expand) {
     ExpandSuperCell(ref_,uc_grid);
     ref_.Lattice.print(cout);
   }
   
+  vector<int> numPerGroup(tspecies.getTotalNum(),0);
+  for(int iat=0; iat<ref_.GroupID.size(); iat++) {
+    numPerGroup[ref_.GroupID[iat]]++;
+  }
+
+  int membersize= tspecies.addAttribute("membersize");
+  for(int ig=0; ig<tspecies.getTotalNum(); ig++) {
+    tspecies(membersize,ig)=numPerGroup[ig];
+  }
+
   return true;
 }
 
