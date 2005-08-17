@@ -68,16 +68,15 @@ namespace ohmmsqmc {
     RealType g = sqrt(Tau);
     RealType nPsi_minus_one = nPsi-1;
     
-    MCWalkerConfiguration::iterator it;
-    MCWalkerConfiguration::iterator it_end(W.end());
 
-    MCWalkerConfiguration::PropertyContainer_t Properties;
     ParticleSet::ParticleGradient_t dG(W.getTotalNum());
 
     IndexType accstep=0;
     IndexType nAcceptTot = 0;
     IndexType nRejectTot = 0;
 
+    MCWalkerConfiguration::iterator it;
+    MCWalkerConfiguration::iterator it_end(W.end());
     do {  //Blocks loop
       IndexType step = 0;
       timer.start();
@@ -121,6 +120,7 @@ namespace ohmmsqmc {
 	    for(int ipsi=0; ipsi<nPsi; ipsi++){
 	      // Compute ratios before and after the move
 	      ratio[ipsi] = Psi1[ipsi]->ratio(W,iat,dG,*dL[ipsi]); 
+              logpsi2[ipsi]=log(ratio[ipsi]*ratio[ipsi]);
 	      // Compute Gradient in new position
               *G[ipsi]=Psi1[ipsi]->G + dG;
 	      // Initialize: sumratio[i]=(Psi[i]/Psi[i])^2=1.0
@@ -130,30 +130,33 @@ namespace ohmmsqmc {
 	    // Compute new (Psi[i]/Psi[j])^2 and their sum
 	    int indexij(0);
 	    for(int ipsi=0; ipsi< nPsi_minus_one; ipsi++){
-	      for(int jpsi=ipsi+1; jpsi < nPsi; jpsi++){
-		RealType rji=ratio[jpsi]/ratio[ipsi];
-		rji = rji*rji*ratioijPtr[indexij]; 
-		ratioij[indexij++]=rji;
+	      for(int jpsi=ipsi+1; jpsi < nPsi; jpsi++, indexij++){
+		//RealType rji=ratio[jpsi]/ratio[ipsi];
+		//rji = rji*rji*ratioijPtr[indexij]; 
+                RealType rji=exp(logpsi2[jpsi]-logpsi2[ipsi])*ratioijPtr[indexij];
+		ratioij[indexij]=rji;
 		sumratio[ipsi] += rji;
 		sumratio[jpsi] += 1.0/rji;
 	      }
 	    }
 
             RealType logGf = -0.5*dot(deltaR[iat],deltaR[iat]);
-            ValueType scale = Tau;
 	    drift=0.0;
 	    // Evaluate new Umbrella Weight and new drift
 	    for(int ipsi=0; ipsi< nPsi; ipsi++){
 	      invsumratio[ipsi]=1.0/sumratio[ipsi];
 	      drift += invsumratio[ipsi]*(*G[ipsi]);
 	    }
+            ValueType vsq = Dot(drift,drift);
+            ValueType scale = ((-1.0e0+sqrt(1.0e0+2.0e0*Tau*vsq))/vsq);
+            //ValueType scale=Tau;
 	    drift *= scale;
-            dr = (*it)->R[iat]-newpos-drift[iat];
+            dr = thisWalker.R[iat]-newpos-drift[iat];
             RealType logGb = -oneover2tau*dot(dr,dr);
 
 	    // td = Target Density ratio
 	    //RealType td=pow(ratio[0],2)*sumratio[0]/(*it)->Properties(SUMRATIO);
-	    RealType td=pow(ratio[0],2)*sumratio[0]/(*it)->Multiplicity;
+	    RealType td=ratio[0]*ratio[0]*sumratio[0]/(*it)->Multiplicity;
 	    RealType prob = std::min(1.0,td*exp(logGb-logGf));
 
 	    if(Random() < prob) { 
@@ -179,6 +182,7 @@ namespace ohmmsqmc {
 		// Update G and L in Psi1[i]
 		Psi1[ipsi]->G = *G[ipsi];
 		Psi1[ipsi]->L += *dL[ipsi];
+                thisWalker.Properties(ipsi,LOGPSI)+=log(abs(ratio[ipsi]));
 	      }
 	      // Update Drift
 	      (*it)->Drift = drift;
@@ -197,7 +201,6 @@ namespace ohmmsqmc {
 	       -buffered info for each Psi1[i]
 	       Physical properties are updated */
             (*it)->Age=0;
-            (*it)->Multiplicity=sumratio[0];
 	    (*it)->R = W.R;
 	    w_buffer.rewind();
 	    W.copyToBuffer(w_buffer);
@@ -209,9 +212,9 @@ namespace ohmmsqmc {
 
 	      //multiEstimator->updateSample(iwalker,ipsi,et,UmbrellaWeight[ipsi]);
               //Properties is used for UmbrellaWeight and UmbrellaEnergy
-              (*it)->Properties(ipsi,UMBRELLAWEIGHT)=UmbrellaWeight[ipsi];
-              (*it)->Properties(ipsi,LOCALENERGY)=et;
-              H1[ipsi]->saveProperty((*it)->getPropertyBase(ipsi));
+              thisWalker.Properties(ipsi,UMBRELLAWEIGHT)=UmbrellaWeight[ipsi];
+              thisWalker.Properties(ipsi,LOCALENERGY)=et;
+              H1[ipsi]->saveProperty(thisWalker.getPropertyBase(ipsi));
 	    }
 	  }
 	  else {
@@ -238,6 +241,9 @@ namespace ohmmsqmc {
       if(pStride) WO.get(W);
       nAccept = 0; nReject = 0;
       ++block;
+
+      //re-evaluate the ratio
+      multiEstimator->initialize(W,H1,Psi1,Tau,false);
     } while(block<nBlocks);
 
     LogOut->getStream() 
