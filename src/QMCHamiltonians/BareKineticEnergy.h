@@ -30,28 +30,27 @@ namespace ohmmsqmc {
    * To evaluate the Bare Kinetic part of the local energy 
    \f$E_L({\bf R}) = \Psi^{-1}({\bf R})\hat{H}\Psi({\bf R}),\f$
    it is useful to use the following trick
-   \f[
-   \nabla^2\Psi({\bf R}) = \nabla^2(\exp(\ln \Psi({\bf R})))
-   \f]
-   \f[
-   =\nabla\cdot(\nabla\exp(\ln \Psi({\bf R}))) 
-   \f]
-   \f[ 
-   =\nabla\cdot(\nabla\ln \Psi({\bf R}))\exp(\ln \Psi({\bf R}))
-   \f]
-   \f[ 
-   -\frac{1}{2}\frac{\nabla^2\Psi({\bf R})}{\Psi({\bf R})} = 
+   \f{eqnarray*}
+   \nabla^2\Psi({\bf R}) &=& \nabla^2(\exp(\ln \Psi({\bf R})))\\
+   &=&\nabla\cdot(\nabla\exp(\ln \Psi({\bf R}))) \\
+   &=&\nabla\cdot(\nabla\ln \Psi({\bf R}))\exp(\ln \Psi({\bf R}))\\
+   -\frac{1}{2}\frac{\nabla^2\Psi({\bf R})}{\Psi({\bf R})} &=& 
    -\frac{1}{2}\nabla^2\ln \Psi({\bf R})
    -\frac{1}{2}(\nabla\ln \Psi({\bf R}))^2
-   \f]
+   \f}
   */
   struct BareKineticEnergy: public QMCHamiltonianBase {
 
-    ///\f$ 1/(2m^*) \f$
+    ///\f$ 1/(2 m^*) \f$
     RealType M;
 
-    ///constructor
-    BareKineticEnergy(RealType m=1.0): M(0.5/m) { }
+    /** constructor
+     *
+     * Kinetic operators need to be re-evaluated during optimization.
+     */
+    BareKineticEnergy(RealType m=1.0): M(0.5/m) { 
+      UpdateMode.set(OPTIMIZABLE,1);
+    }
     ///destructor
     ~BareKineticEnergy() { }
 
