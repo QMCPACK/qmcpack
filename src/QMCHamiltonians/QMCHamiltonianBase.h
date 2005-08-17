@@ -22,6 +22,7 @@
 
 #include "Particle/ParticleSet.h"
 #include "Utilities/PooledData.h"
+#include <bitset>
 
 namespace ohmmsqmc {
 
@@ -42,13 +43,17 @@ namespace ohmmsqmc {
     /** type of return value of evaluate
      */
     typedef RealType Return_t;
+
+    enum {PRIMARY, OPTIMIZABLE, RATIOUPDATE};
+    bitset<3> UpdateMode;
  
-    bool Primary;
     RealType Tau;
     RealType Value;
    
     ///constructor
-    QMCHamiltonianBase():Primary(true),Tau(0.0),Value(0.0){}
+    QMCHamiltonianBase():Tau(0.0),Value(0.0){
+      UpdateMode.set(PRIMARY,1);
+    }
 
     ///virtual destructor
     virtual ~QMCHamiltonianBase() { }
@@ -69,10 +74,10 @@ namespace ohmmsqmc {
      */
     inline void setTau(RealType tau) { Tau = tau;}
 
-    /** set Primary
-     * @param primary 
+    /** return the mode i
+     * @param i index among PRIMARY, OPTIMIZABLE, RATIOUPDATE
      */
-    inline void setPrimary(bool primary) {Primary=primary;}
+    inline bool getMode(int i) { return UpdateMode[i];}
   };
 }
 #endif
