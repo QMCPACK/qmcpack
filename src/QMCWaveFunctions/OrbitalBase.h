@@ -35,6 +35,7 @@ namespace ohmmsqmc {
 
     typedef ParticleAttrib<ValueType>    ValueVectorType;
     typedef ParticleAttrib<GradType>     GradVectorType;
+    typedef PooledData<RealType>         BufferType;
 
     bool Optimizable;
     ValueType LogValue;
@@ -63,9 +64,9 @@ namespace ohmmsqmc {
     virtual void resizeByWalkers(int nwalkers) {}
 
     /** evaluate the value of the orbital for a configuration P.R
-     *@param P the active ParticleSet
-     *@param G the Gradients
-     *@param L the Laplacians
+     *@param P  active ParticleSet
+     *@param G  Gradients
+     *@param L  Laplacians
      *@return the value
      *
      *Mainly for walker-by-walker move. The initial stage of particle-by-particle
@@ -76,8 +77,15 @@ namespace ohmmsqmc {
 	     ParticleSet::ParticleGradient_t& G, 
 	     ParticleSet::ParticleLaplacian_t& L) = 0;
 
+    /** evaluate the value of the orbital
+     * @param P active ParticleSet
+     * @param G Gradients, \f$\nabla\ln\Psi\f$
+     * @param L Laplacians, \f$\nabla^2\ln\Psi\f$
+     *
+     */
     virtual ValueType
-    evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L) = 0;
+    evaluateLog(ParticleSet& P, 
+        ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L) = 0;
 
     /** evaluate the orbital values of for all the walkers
      *@param W a collection of walkers
@@ -138,16 +146,28 @@ namespace ohmmsqmc {
 
 
     /** equivalent to evaluate(P,G,L) with write-back function */
-    virtual ValueType evaluate(ParticleSet& P,PooledData<RealType>& buf)=0;
+    virtual ValueType evaluate(ParticleSet& P,BufferType& buf)=0;
 
     /** add temporary data reserved for particle-by-particle move.
      *
      * Return the log|psi|  like evalaute evaluateLog
      */
-    virtual ValueType registerData(ParticleSet& P, PooledData<RealType>& buf) =0;
+    virtual ValueType registerData(ParticleSet& P, BufferType& buf) =0;
 
     /** copy the internal data saved for particle-by-particle move.*/
-    virtual void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf)=0;
+    virtual void copyFromBuffer(ParticleSet& P, BufferType& buf)=0;
+
+    /** dump the internal data to buf for optimizations 
+     *
+     * Implments the default function that does nothing
+     */
+    virtual void dumpToBuffer(ParticleSet& P, BufferType& buf) {}
+
+    /** copy the internal data from buf for optimizations
+     *
+     * Implments the default function that does nothing
+     */
+    virtual void dumpFromBuffer(ParticleSet& P, BufferType& buf){}
   };
 }
 #endif
