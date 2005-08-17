@@ -17,7 +17,7 @@
 //   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#include "Particle/ParticleTraits.h"
+#include "Configuration.h"
 #include "Particle/FastParticleOperators.h"
 namespace OHMMS {
 

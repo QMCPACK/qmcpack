@@ -109,8 +109,8 @@ bool HDFWalkerOutput::get(MCWalkerConfiguration& W) {
  *
  *@note The main group is "/config_collection"
  */
-HDFWalkerInput::HDFWalkerInput(const string& aroot):
-  Counter(0), NumSets(0) {
+HDFWalkerInput::HDFWalkerInput(const string& aroot, int ipart, int nparts):
+Counter(0), NumSets(0) {
   string h5file = aroot;
 
   string ext=getExtension(h5file);
@@ -129,7 +129,15 @@ HDFWalkerInput::HDFWalkerInput(const string& aroot):
 
   if(!NumSets) {
     H5Gget_num_objs(h_config,&NumSets);
-    if(!NumSets) ERRORMSG("File does not contain walkers!")
+  }
+
+  if(NumSets) {
+    int nframe=NumSets/nparts;
+    FirstSet=nframe*ipart;
+    LastSet=nframe*(ipart+1);
+  } else {
+    FirstSet=0; LastSet=0;
+    ERRORMSG("File does not contain walkers!")
   }
 }
 
@@ -139,18 +147,22 @@ HDFWalkerInput::~HDFWalkerInput() {
   H5Fclose(h_file);
 }
 
-/**
+/** Read a configuration from a hdf5 file.
  *@param W set of walker configurations
- *@brief Write the set of walker configurations to the
- HDF5 file.  
-*/
+ */
+int HDFWalkerInput::put(MCWalkerConfiguration& W){
 
-bool HDFWalkerInput::put(MCWalkerConfiguration& W){
+  //no more walker to read
+  if(Counter >= NumSets) return 0;
 
-  if(Counter >= NumSets) return false;
-
+  //current Counter 
   int ic = Counter++;
-  return put(W,ic);
+
+  //This configuration may be skipped
+  if(ic<FirstSet || ic>=LastSet) return 2;
+
+  put(W,ic);
+  return 1;
 }
 
 /**  Write the set of walker configurations to the HDF5 file.  

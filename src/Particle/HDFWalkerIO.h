@@ -49,6 +49,10 @@ namespace ohmmsqmc {
 
   class HDFWalkerInput {
 
+    ///id of the first set
+    int FirstSet;
+    ///id of the last set
+    int LastSet;
     ///number of times file has been accesed
     int Counter;
     ///number of sets of walker configurations
@@ -60,9 +64,9 @@ namespace ohmmsqmc {
 
   public:
 
-    HDFWalkerInput(const string& fname);
+    HDFWalkerInput(const string& fname, int ipart=0, int nparts=1);
     ~HDFWalkerInput();
-    bool put(MCWalkerConfiguration&);
+    int put(MCWalkerConfiguration&);
     bool put(MCWalkerConfiguration&, int ic);
   };
 
