@@ -104,6 +104,7 @@ namespace ohmmsqmc {
 	  logpsi[ipsi]=psi[ipsi]->evaluateLog(W); 		 
         }
         psi[ipsi]->G=W.G;
+        thisWalker.Properties(ipsi,LOGPSI)=logpsi[ipsi];
         thisWalker.Properties(ipsi,LOCALENERGY)=h[ipsi]->evaluate(W);
         h[ipsi]->saveProperty(thisWalker.getPropertyBase(ipsi));
         sumratio[ipsi]=1.0;
@@ -113,7 +114,7 @@ namespace ohmmsqmc {
       //Compute the sum over j of Psi^2[j]/Psi^2[i] for each i
       int indexij(0);
       RealType *rPtr=RatioIJ[iw];
-      for(int ipsi=0; ipsi< NumCopies; ipsi++) {			  
+      for(int ipsi=0; ipsi< NumCopies-1; ipsi++) {			  
         for(int jpsi=ipsi+1; jpsi< NumCopies; jpsi++){     		 
           RealType r=exp(2.0*(logpsi[jpsi]-logpsi[ipsi])); 
           rPtr[indexij++]=r;
@@ -122,11 +123,11 @@ namespace ohmmsqmc {
         }                                              
       }                                               
 
-      //DON't forget DRIFT!!!
-      thisWalker.Drift=0.0;
-
       //Re-use Multiplicity as the sumratio
       thisWalker.Multiplicity=sumratio[0];
+
+      //DON't forget DRIFT!!!
+      thisWalker.Drift=0.0;
 
       for(int ipsi=0; ipsi< NumCopies; ipsi++) {
         RealType wgt=1.0/sumratio[ipsi];

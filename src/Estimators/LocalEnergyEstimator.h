@@ -134,11 +134,7 @@ namespace ohmmsqmc {
      *\param wgtinv the inverse weight
      */
     inline void report(RecordNamedProperty<T>& record, T wgtinv) {
-      //b_average =  energy_sum*wgtinv;
-      //b_variance = energy_sq_sum*wgtinv-b_average*b_average;
-#ifdef HAVE_MPI
       if(CollectSum) gsum(elocal,0);
-#endif
       register int ir=LocalEnergyIndex;
       b_average =  elocal[ENERGY_INDEX]*wgtinv;
       b_variance = elocal[ENERGY_SQ_INDEX]*wgtinv-b_average*b_average;
