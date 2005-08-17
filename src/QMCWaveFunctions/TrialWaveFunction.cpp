@@ -44,14 +44,15 @@ namespace ohmmsqmc {
   }
   
   /** evaluate the log value of a many-body wave function
-   *@param P input configuration containing N particles
-   *@param all select the wave functions
-   *@return the value of \f$ \log( \Pi_i \Psi_i) \f$  many-body wave function
+   * @param P input configuration containing N particles
+   * @param needratio users request ratio evaluation
+   * @param buf anonymous storage for the reusable data
+   * @return the value of \f$ \log( \Pi_i \Psi_i) \f$  many-body wave function
    *
-   * @if all == true
-   *  all the wave functions evaluate the log value
+   * @if needratio == true
+   *  need to update the data from buf, since external objects need to evaluate ratios, e.g., non-local pseudopotentials
    * @else
-   *  only the wave functions whose Optimizable is set to zero.
+   *  evaluate the value only
    *
    * Upon return, the gradient and laplacian operators are added by the components.
    * Each OrbitalBase evaluates SignValue and LogValue = log(abs(psi_i))
@@ -66,15 +67,17 @@ namespace ohmmsqmc {
     SignValue=1.0;
     vector<OrbitalBase*>::iterator it(Z.begin());
     vector<OrbitalBase*>::iterator it_end(Z.end());
+    int thisID=0;
     while(it != it_end) {
-      if(all || (*it)->Optimizable) {
+      if(all ||(*it)->Optimizable) {
         LogValue += (*it)->evaluateLog(P, P.G, P.L); 
         SignValue *= (*it)->SignValue;
       }
-      ++it;
+      ++it; ++thisID;
     }
     return LogValue;
   }
+
 
   TrialWaveFunction::ValueType 
   TrialWaveFunction::evaluateLog(ParticleSet& P) {
@@ -102,6 +105,8 @@ namespace ohmmsqmc {
    * that are invarient during optimizations.
    * It is expected that evaluateLog(P,false) is called later
    * and the external object adds the varying G and L and the fixed terms.
+   * Additionally, dumpToBuffer and dumpFromBuffer is used to manage
+   * necessary data for ratio evaluations.
    */
   TrialWaveFunction::ValueType 
   TrialWaveFunction::evaluateLog(ParticleSet& P,
@@ -271,6 +276,42 @@ namespace ohmmsqmc {
 //     for(int i=0; i<P.getLocalNum(); i++) {
 //       cout << P.G[i] << " " << P.L[i] << endl;
 //     }
+  }
+
+  /** Dump data that are required to evaluate ratios to the buffer
+   * @param P active ParticleSet
+   * @param buf anonymous buffer to which the data will be dumped.
+   * 
+   * This function lets the OrbitalBase objects store the minimal data
+   * that are required to evaluate the ratio, even though the components
+   * are invariant during the optimizations.
+   */
+  void
+  TrialWaveFunction::dumpToBuffer(ParticleSet& P, BufferType& buf) {
+    vector<OrbitalBase*>::iterator it(Z.begin());
+    vector<OrbitalBase*>::iterator it_end(Z.end());
+    while(it != it_end) {
+      (*it)->dumpToBuffer(P,buf);
+      ++it;
+    }
+  }
+
+  /** copy data that are required to evaluate ratios from the buffer
+   * @param P active ParticleSet
+   * @param buf anonymous buffer from which the data will be copied.
+   * 
+   * This function lets the OrbitalBase objects get the minimal data
+   * that are required to evaluate the ratio from the buffer.
+   * Only the data registered by dumToBuffer will be available.
+   */
+  void
+  TrialWaveFunction::dumpFromBuffer(ParticleSet& P, BufferType& buf) {
+    vector<OrbitalBase*>::iterator it(Z.begin());
+    vector<OrbitalBase*>::iterator it_end(Z.end());
+    while(it != it_end) {
+      (*it)->dumpFromBuffer(P,buf);
+      ++it;
+    }
   }
 
   TrialWaveFunction::ValueType

@@ -49,6 +49,7 @@ namespace ohmmsqmc {
     typedef OrbitalBase::ValueType  ValueType;
     typedef OrbitalBase::PosType    PosType;
     typedef OrbitalBase::GradType   GradType;
+    typedef OrbitalBase::BufferType BufferType;
 
     /**a list of real variables to be optimized
      *
@@ -93,9 +94,9 @@ namespace ohmmsqmc {
 
     /** evalaute the log of the trial wave function */
     ValueType evaluateLog(ParticleSet& P);
+
     ValueType evaluateLog(ParticleSet& P, bool all);
 
-    /** evalaute the log of the trial wave function */
     ValueType evaluateLog(ParticleSet& P, 
         ParticleSet::ParticleGradient_t& fixedG,
         ParticleSet::ParticleLaplacian_t& fixedL);
@@ -111,10 +112,12 @@ namespace ohmmsqmc {
     void restore(int iat);
     void update2(ParticleSet& P, int iat);
 
-    ValueType registerData(ParticleSet& P, PooledData<RealType>& buf);
-    void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf);
-    ValueType evaluate(ParticleSet& P, PooledData<RealType>& buf);
+    ValueType registerData(ParticleSet& P, BufferType& buf);
+    void copyFromBuffer(ParticleSet& P, BufferType& buf);
+    ValueType evaluate(ParticleSet& P, BufferType& buf);
 
+    void dumpToBuffer(ParticleSet& P, BufferType& buf);
+    void dumpFromBuffer(ParticleSet& P, BufferType& buf);
     /** evalaute the values of the wavefunction, gradient and laplacian  for all the walkers */
     void evaluate(WalkerSetRef& W, OrbitalBase::ValueVectorType& psi);
 
