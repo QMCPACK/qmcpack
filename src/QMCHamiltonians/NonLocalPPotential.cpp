@@ -128,16 +128,16 @@ namespace ohmmsqmc {
    be provided.  The "*.psf" must contain two columns, 
    the first column being the grid, the second being
    the potential on the grid. 
+   If there is any non-local Pseudo potential term, UpdateMode is
+   set so that the values are re-evaluated during the optimizations.
    */
-
   NonLocalPPotential::NonLocalPPotential(ParticleSet& ions, ParticleSet& els,
       TrialWaveFunction& psi):
     Centers(ions.GroupID), d_table(NULL), Psi(psi)
   { 
+
     d_table = DistanceTable::getTable(DistanceTable::add(ions,els));
-
     els.resizeSphere(ions.getTotalNum());
-
     const SpeciesSet& Species(ions.getSpeciesSet());
     for(int i=0; i<Species.getTotalNum();i++) {
       vector<RealType> grid_temp, pp_temp;
@@ -210,6 +210,12 @@ namespace ohmmsqmc {
       }
 
       PP[i]->resize_warrays(numsgridpts,numnonloc,lmax);
+
+      //Has non-local pseudo potentials.
+      if(numnonloc) {
+        UpdateMode.set(OPTIMIZABLE,1);
+        UpdateMode.set(RATIOUPDATE,1);
+      }
     }//centers
 
     for(int ic=0; ic<ions.getTotalNum(); ic++) {
@@ -228,7 +234,7 @@ namespace ohmmsqmc {
     Value=0.0;
     //loop over all the ions
     for(int iat=0; iat<Centers.size(); iat++) {
-      Value += PP[Centers[iat]]->evaluate(P,d_table,iat,Psi,Primary);
+      Value += PP[Centers[iat]]->evaluate(P,d_table,iat,Psi,UpdateMode[PRIMARY]);
     }
     return Value;
   }
