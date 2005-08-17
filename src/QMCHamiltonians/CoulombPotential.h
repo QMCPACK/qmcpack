@@ -60,12 +60,10 @@ namespace ohmmsqmc {
     ~CoulombPotentialAB() { }
 
     inline Return_t evaluate(ParticleSet& P) {
-      if(Primary) {
-        Value=0.0;
-        for(int iat=0; iat<Centers; iat++) {
-          for(int nn=d_table->M[iat]; nn<d_table->M[iat+1]; nn++)
-          Value+=Z[iat]*d_table->rinv(nn);
-        }
+      Value=0.0;
+      for(int iat=0; iat<Centers; iat++) {
+        for(int nn=d_table->M[iat]; nn<d_table->M[iat+1]; nn++)
+        Value+=Z[iat]*d_table->rinv(nn);
       }
       return Value;
     }
