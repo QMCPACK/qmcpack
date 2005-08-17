@@ -91,6 +91,7 @@ namespace ohmmsqmc {
 
     //create an etimator with H_KE
     if(Estimators == 0) Estimators =new ScalarEstimatorManager(H_KE);
+    H_KE.add2WalkerProperty(W);
 
     //check, if H needs to evaluate ratio
     hamiltonianNeedRatio=H.needRatio();
@@ -295,11 +296,6 @@ namespace ohmmsqmc {
     for(int i=0; i<ConfigFile.size(); i++) {
 
       HDFWalkerInput wReader(ConfigFile[i], PartID, NumParts);
-      //int iparts=1, nparts=1;
-      //parts.replace(parts.find('/'),1,1,' ');
-      //istringstream is(parts);
-      //is>>iparts>>nparts;
-      //cout << "What is the parts " << iparts << " " << nparts << endl;
       int wstatus=1;
       while(wstatus=wReader.put(W) != 0) {
         if(wstatus == 2) continue;
@@ -362,11 +358,6 @@ namespace ohmmsqmc {
 
     for(int i=0; i<ConfigFile.size(); i++) {
       HDFWalkerInput wReader(ConfigFile[i],PartID,NumParts);
-      //int iparts=1, nparts=1;
-      //parts.replace(parts.find('/'),1,1,' ');
-      //istringstream is(parts);
-      //is>>iparts>>nparts;
-      //cout << "What is the parts " << iparts << " " << nparts << endl;
       int wstatus=1;
       while(wstatus=wReader.put(W) != 0) {
         if(wstatus == 2) continue;
@@ -591,7 +582,7 @@ namespace ohmmsqmc {
     LogOut->getStream() 
       << "# list of the configuration files used for optimization" << endl;
     for(int i=0; i<ConfigFile.size(); i++) 
-      LogOut->getStream() << "# " << ConfigFile[i] << endl;
+      LogOut->getStream() << "# " << ConfigFile[i] << " part " << PartID << "/" << NumParts << endl;
 
     return true;
   }
