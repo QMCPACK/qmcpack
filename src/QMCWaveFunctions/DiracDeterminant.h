@@ -223,7 +223,19 @@ namespace ohmmsqmc {
       d2psiM_temp = d2psiM;
     }
 
-    ValueType ratio(ParticleSet& P, int iat) {
+    /** dump the inverse to the buffer
+     */
+    inline void dumpToBuffer(ParticleSet& P, PooledData<RealType>& buf) {
+      buf.add(psiM.begin(),psiM.end());
+    }
+
+    /** copy the inverse from the buffer
+     */
+    inline void dumpFromBuffer(ParticleSet& P, PooledData<RealType>& buf) {
+      buf.get(psiM.begin(),psiM.end());
+    }
+
+    inline ValueType ratio(ParticleSet& P, int iat) {
       Phi.evaluate(P, iat, psiV);
       return curRatio= DetRatio(psiM, psiV.begin(),iat-FirstIndex);
       //return curRatio = BLAS::dot(NumOrbitals,psiM[iat-FirstIndex],&psiV[0]);

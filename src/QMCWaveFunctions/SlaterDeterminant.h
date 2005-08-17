@@ -65,10 +65,9 @@ namespace ohmmsqmc {
       M[last+1]=M[last]+Dets[last]->rows();
     }
 
-    ///reset all the Dirac determinants
+    ///reset all the Dirac determinants, Optimizable is true
     void reset() {  
-      if(Optimizable)
-      for(int i=0; i<Dets.size(); i++) Dets[i]->reset();
+      if(Optimizable) for(int i=0; i<Dets.size(); i++) Dets[i]->reset();
     }
 
     /** Calculate the value of the Slater determinant for the input configuration. 
@@ -114,7 +113,6 @@ namespace ohmmsqmc {
 			 ValueVectorType& psi,
 			 WalkerSetRef::WalkerGradient_t& G,
 			 WalkerSetRef::WalkerLaplacian_t& L) {
-
       for(int i=0; i<Dets.size(); i++) 	Dets[i]->evaluate(W,psi,G,L);
     }
 
@@ -132,6 +130,23 @@ namespace ohmmsqmc {
     
     void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf) {
       for(int i=0; i<Dets.size(); i++) 	Dets[i]->copyFromBuffer(P,buf);
+    }
+
+    /** reimplements the virtual function
+     *
+     * The DiractDeterminants of SlaterDeterminant need to save the inverse
+     * of the determinant matrix to evaluate ratio
+     */
+    void dumpToBuffer(ParticleSet& P, PooledData<RealType>& buf) {
+      for(int i=0; i<Dets.size(); i++) 	Dets[i]->dumpToBuffer(P,buf);
+    }
+
+    /** reimplements the virtual function
+     *
+     * Matching function to dumpToBuffer.
+     */
+    void dumpFromBuffer(ParticleSet& P, PooledData<RealType>& buf) {
+      for(int i=0; i<Dets.size(); i++) 	Dets[i]->dumpFromBuffer(P,buf);
     }
 
     ValueType evaluate(ParticleSet& P, PooledData<RealType>& buf) {
