@@ -19,63 +19,76 @@
 #include "OhmmsData/libxmldefs.h"
 #include "Optimize/VarList.h"
 
-/**class RPA Jastrow functional
- *@brief \f[ u(r) = \frac{A}{r}\left[1-\exp(-\frac{r}{F})\right], \f]
- * where $F$ satisfies the cusp conditions: \f$F_{\uparrow \uparrow} = 
-  \sqrt{2A}\f$ and \f$F_{\uparrow \downarrow} = \sqrt{A} \f$.
+/**RPA Jastrow functional
+ *
+ * \f[ u(r) = \frac{A}{r}\left[1-\exp(-\frac{r}{F})\right], \f]
+ * where $F$ satisfies the cusp conditions: \f$F_{\uparrow \uparrow} = \sqrt{2A}\f$ 
+ * and \f$F_{\uparrow \downarrow} = \sqrt{A} \f$.
  * Prototype of the template parameter of TwoBodyJastrow 
+ * Reformulated by using B=1/F.
  */
 template<class T>
 struct RPAJastrow {
 
-  ///coefficients
-  T A, A2, B, Finv, AFinv_sq;
+  bool SameSpin;
 
-  ///constructor
-  RPAJastrow(T a=1.0, T b=1.0) {reset(a,b);}
+  ///coefficients
+  T A, B, AB, ABB;
+
+  /** constructor
+   * @param a A coefficient
+   * @param samespin boolean to indicate if this function is for parallel spins
+   */
+  RPAJastrow(T a=1.0, bool samespin=true): SameSpin(samespin) {reset(a);}
 
   /**
    *@brief reset the internal variables.
    */
   inline void reset() {
-    A2=2.0*A; Finv=pow(fabs(A*B),-0.5);
-    AFinv_sq = 0.5*A*Finv*Finv;
+    T F=sqrt(abs(a));
+    if(SameSpin) F*=sqrt(2.0);
+    B=1.0/F;
+    AB=A*B;
+    ABB=AB*B;
   }
 
   /** reset the internal variables.
    *@param a New Jastrow parameter a 
-   *@param b New Jastrow parameter b 
    */
-  void reset(T a, T b) {
-    A=a; B=b; A2=2.0*A; Finv=pow(fabs(A*B),-0.5);
-    AFinv_sq = 0.5*A*Finv*Finv;
+  void reset(T a) {
+    A = a;
+    reset();
+    //A=a; B=b; A2=2.0*A; Finv=pow(fabs(A*B),-0.5);
+    //AFinv_sq = 0.5*A*Finv*Finv;
   }
+
   /**@param r the distance
      @return \f$ u(r) = \frac{A}{r}\left[1-\exp(-\frac{r}{F})\right]\f$
   */
   inline T evaluate(T r) {
-    return A/r*(1.0-exp(-r*Finv));
+    return A/r*(1.0-exp(-B*r));
   }
 
   /**@param r the distance
-     @param dudr return value 
-     \f$ du/dr = -\frac{A}{r^2}\left[1-\exp(-\frac{r}{F}) -
-     \frac{r}{F}\exp(-\frac{r}{F})\right]\f$
-     @param d2udr2 return value  \f$ d^2u/dr^2 =
-     \frac{2A}{r^3}\left[1-\exp(-\frac{r}{F}) -
-     \frac{r}{F}\exp(-\frac{r}{F}) -
-     \frac{r^2}{2F^2}\exp(-\frac{r}{F})\right]\f$
-     @return \f$ u(r) = \frac{A}{r}\left[1-\exp(-\frac{r}{F})\right] \f$ 
+     @param dudr first derivative
+     @param d2udr second derivative
+     @return the value
   */
   inline T evaluate(T r, T& dudr, T& d2udr2) {
-    T rinv = 1.0/r;
-    T rinv2 = rinv*rinv;
-    T rFinv = r*Finv;
-    T e_minus_rFinv = exp(-rFinv);
-    T u = 1.0-e_minus_rFinv;//1-exp(-r/F)
-    dudr = -A*rinv2*(u-rFinv*e_minus_rFinv);
-    d2udr2 = -2.0*rinv*(dudr+AFinv_sq*e_minus_rFinv);
-    return A*rinv*u;//multiply by A/r
+    T rinv=1.0/r;
+    T expbr=exp(-B*r);
+    T u = A*rinv(1.0-expbr);
+    dudr=-rinv*(u-AB*expbr);
+    d2udr2=-rinv*(2.0*dudr+ABB*expbr);
+    return u;
+    //T rinv = 1.0/r;
+    //T rinv2 = rinv*rinv;
+    //T rFinv = r*Finv;
+    //T e_minus_rFinv = exp(-rFinv);
+    //T u = 1.0-e_minus_rFinv;//1-exp(-r/F)
+    //dudr = -A*rinv2*(u-rFinv*e_minus_rFinv);
+    //d2udr2 = -2.0*rinv*(dudr+AFinv_sq*e_minus_rFinv);
+    //return A*rinv*u;//multiply by A/r
   }
 
   /**@param cur current xmlNode from which the data members are reset
@@ -86,7 +99,7 @@ struct RPAJastrow {
   */
   template<class T1>
   void put(xmlNodePtr cur, VarRegistry<T1>& vlist){
-    T Atemp; T Btemp = 1.0;
+    T Atemp;
     string ida;
     //jastrow[iab]->put(cur->xmlChildrenNode,wfs_ref.RealVars);
     xmlNodePtr tcur = cur->xmlChildrenNode;
@@ -99,16 +112,14 @@ struct RPAJastrow {
 	if(aname == "A") {
 	  ida = idname;
 	  putContent(Atemp,tcur);
-	} else if(aname == "B") {
-	  putContent(Btemp,tcur);
-	}
+	} 
       }
       tcur = tcur->next;
     }
-    reset(Atemp,Btemp);
+    reset(Atemp);
     vlist.add(ida,&A,1);
-    XMLReport("Jastrow A/r[1-exp(-r/F)] = (" << A << "," << 1.0/Finv << ")") 
-      }
+    XMLReport("Jastrow A/r[1-exp(-r/F)] = (" << A << "," << 1.0/B << ")") 
+  }
 };
 #endif
 /***************************************************************************
