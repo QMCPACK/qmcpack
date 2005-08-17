@@ -132,7 +132,7 @@ namespace ohmmsqmc {
 
             RealType logGb = -oneover2tau*dot(dr,dr);
 
-            RealType prob = std::min(1.0e0,pow(ratio,2)*exp(logGb-logGf));
+            RealType prob = std::min(1.0e0,ratio*ratio*exp(logGb-logGf));
             //alternatively
             if(Random() < prob) { 
       	      moved = true;

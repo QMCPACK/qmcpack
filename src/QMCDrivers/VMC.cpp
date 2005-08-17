@@ -207,7 +207,6 @@ namespace ohmmsqmc {
 	thisWalker.Drift = drift;
         thisWalker.resetProperty(logpsi,Psi.getSign(),eloc);
 	H.saveProperty(thisWalker.getPropertyBase());
-	//H.copy(thisWalker.getEnergyBase());
 	++nAccept;
       }
       ++it; 
