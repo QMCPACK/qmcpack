@@ -66,28 +66,58 @@ namespace ohmmsqmc {
       std::copy(Hvalue.begin(),Hvalue.end(),first+Hindex[0]);
     }
 
-    /** returnn QMCHamiltonian with the name aname
-     * @param aname name of a QMCHamiltonian
+    /** return QMCHamiltonianBase with the name aname
+     * @param aname name of a QMCHamiltonianBase
      * @return 0 if aname is not found.
      */
     QMCHamiltonianBase* getHamiltonian(const string& aname);
+
+    /** return i-th QMCHamiltonianBase
+     * @param i index of the QMCHamiltonianBase
+     * @return H[i]
+     */
+    QMCHamiltonianBase* getHamiltonian(int i) {
+      return H[i];
+    }
+
     ////return the LocalEnergy \f$=\sum_i H^{qmc}_{i}\f$
     inline Return_t getLocalEnergy() { return LocalEnergy;}
     ////return the LocalPotential \f$=\sum_i H^{qmc}_{i} - KE\f$
     inline Return_t getLocalPotential() { return LocalEnergy-Hvalue[0];}
+    ///return the energy that does not depend on variational parameters
+    inline Return_t getInvariantEnergy() const { 
+      Return_t s=0;
+      for(int i=0; i<H.size(); i++) {
+        if(!H[i]->UpdateMode[QMCHamiltonianBase::OPTIMIZABLE]) s+=Hvalue[i];
+      }
+      return s;
+    }
 
     /** set Tau for each Hamiltonian
      */
     inline void setTau(RealType tau) {
-      for(int i=0; i< H.size();++i)H[i]->setTau(tau); 
+      for(int i=0; i< H.size();i++)H[i]->setTau(tau); 
     }
 
     /** set Tau for each Hamiltonian
      */
     inline void setPrimary(bool primary) {
-      for(int i=0; i< H.size();++i)H[i]->setPrimary(primary); 
+      for(int i=0; i< H.size();i++) 
+        H[i]->UpdateMode.set(QMCHamiltonianBase::PRIMARY,1);
     }
     
+    /** return if WaveFunction Ratio needs to be evaluated
+     *
+     * This is added to handle orbital-dependent QMCHamiltonianBase during
+     * orbital optimizations.
+     */
+    inline bool needRatio() {
+      bool dependOnOrbital=false;
+      for(int i=0; i< H.size();i++)  
+        if(H[i]->UpdateMode[QMCHamiltonianBase::RATIOUPDATE]) dependOnOrbital=true;
+      return dependOnOrbital;
+    }
+
     /** evaluate Local Energy
      * @param P ParticleSet
      * @return the local energy
