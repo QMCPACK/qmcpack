@@ -18,31 +18,49 @@
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 #include "QMCDrivers/VMC_OPT.h"
+#include "QMCDrivers/VMC.h"
 #include "Utilities/OhmmsInfo.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "Particle/DistanceTable.h"
 #include "Particle/HDFWalkerIO.h"
 #include "ParticleBase/ParticleUtility.h"
 #include "ParticleBase/RandomSeqGenerator.h"
-#include "QMCDrivers/VMC.h"
 #include "Message/Communicate.h"
 #include "Message/CommOperators.h"
 #include "Utilities/Clock.h"
 #include "Optimize/Minimize.h"
+#include "OhmmsData/AttributeSet.h"
 #include <algorithm>
 namespace ohmmsqmc {
 
+  /** Storage for the fixed data for each walker during the optimization
+   *
+   * For each configuration, WalkerData is added to RefConf.
+   * The invariant quantities are added to the variational quantities
+   * during the minimization.
+   */
   struct VMC_OPT::WalkerData {
-    ValueType LogPsi;
+    ///Invariant Local energy
     RealType Vloc;
+    ///\f$\log\Psi\f of the original wavefunction for correlated samplings
+    ValueType LogPsi;
+    ///Invariant gradients
     ParticleSet::ParticleGradient_t G;
+    ///Invariant laplacians
     ParticleSet::ParticleLaplacian_t L;
+    ///Any temporary data that can be reused, e.g., distance table
+    PooledData<RealType> Buffer;
+    /** constructor
+     * @param n number of particles per walker
+     */
     explicit WalkerData(int n=1):LogPsi(0.0),Vloc(0.0),G(n), L(n){}
   };
 
   VMC_OPT::VMC_OPT(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h):
     QMCDriver(w,psi,h), 
     UseWeight(true),
+    PartID(0),
+    NumParts(1),
     NumCostCalls(0),
     NumSamples(0),
     cg_tolerance(1.0e-8),
@@ -63,7 +81,24 @@ namespace ohmmsqmc {
     m_param.add(cg_stepsize,"stepsize","none");
     m_param.add(cg_epsilon,"epsilon","none");
 
-    H_KE.add(H.getHamiltonian("Kinetic"),"Kinetic");
+    //H_KE.add(H.getHamiltonian("Kinetic"),"Kinetic");
+    for(int i=0; i<H.size(); i++) {
+      QMCHamiltonianBase* qH=H.getHamiltonian(i);
+      if(qH->UpdateMode[QMCHamiltonianBase::OPTIMIZABLE]) {
+        H_KE.add(qH,H.getName(i)); 
+      }
+    }
+
+    //create an etimator with H_KE
+    if(Estimators == 0) Estimators =new ScalarEstimatorManager(H_KE);
+
+    //check, if H needs to evaluate ratio
+    hamiltonianNeedRatio=H.needRatio();
+    if(hamiltonianNeedRatio) {
+      LOGMSG("QMCHamiltonian requires the ratio evaluations. Use buffer.")
+    } else {
+      LOGMSG("QMCHamiltonian does not require the ratio evaluations.")
+    }
   }
 
   /** Clean up the vector */
@@ -113,14 +148,13 @@ namespace ohmmsqmc {
     RealType evar = Estimators->variance(0);
     RealType cost= w_en*eav+w_var*0.5*Tau*evar;
 
-
     if(NumCostCalls == 0) {
       log_buffer << NumCostCalls << " ";
       std::copy(OptParams.begin(),OptParams.end(), ostream_iterator<RealType>(log_buffer," "));
       log_buffer << " " << NumSamples;
     }
     
-    log_buffer << " " << eav << " " << evar << " " << cost;
+    log_buffer << setw(20) << eav << setw(20) << evar << setw(20) << cost;
     LogOut->getStream() << log_buffer.rdbuf() << endl;
     log_buffer.clear();
 
@@ -252,52 +286,59 @@ namespace ohmmsqmc {
   VMC_OPT::ValueType 
   VMC_OPT::correlatedSampling() {
 
-    // numerator and denominator for number of effective walkers
-    //ValueType nw_effect_t = 0.0;
-    //ValueType nw_effect_b = 0.0;
-
     // flush estimators
     Estimators->reset();
     NumSamples = 0;
-    //TinyVector<RealType,3> nw_effect(0.0);
     std::vector<RealType> nw_effect(3,0.0);
     std::vector<WalkerData*>::const_iterator wit(RefConf.begin());
 
     for(int i=0; i<ConfigFile.size(); i++) {
 
-      HDFWalkerInput wReader(ConfigFile[i]);
-
-      while(wReader.put(W)) {
-
+      HDFWalkerInput wReader(ConfigFile[i], PartID, NumParts);
+      //int iparts=1, nparts=1;
+      //parts.replace(parts.find('/'),1,1,' ');
+      //istringstream is(parts);
+      //is>>iparts>>nparts;
+      //cout << "What is the parts " << iparts << " " << nparts << endl;
+      int wstatus=1;
+      while(wstatus=wReader.put(W) != 0) {
+        if(wstatus == 2) continue;
 	//accumulate the number of samples      
 	NumSamples += W.getActiveWalkers();
-	MCWalkerConfiguration::iterator it = W.begin(); 
-	MCWalkerConfiguration::iterator it_end = W.end(); 
+	MCWalkerConfiguration::iterator it(W.begin()); 
+	MCWalkerConfiguration::iterator it_end(W.end()); 
 
         while(it != it_end) {
 
           Walker_t& thisWalker(**it);
+          WalkerData& thisData(**wit);
 
-          ValueType logpsi0((*wit)->LogPsi);
-          ValueType vold((*wit)->Vloc);
+          ValueType logpsi0(thisData.LogPsi);
+          ValueType vold(thisData.Vloc);
 
-	  W.R = thisWalker.R;
-	  DistanceTable::update(W);
+          //Instead of calculating the distance table, read from the buffer
+          if(needBuffering) {
+            thisData.Buffer.rewind();
+            W.copyFromBuffer(thisData.Buffer);
+            if(hamiltonianNeedRatio) Psi.dumpFromBuffer(W, thisData.Buffer);
+          } else {
+	    W.R = thisWalker.R;
+	    DistanceTable::update(W);
+          }
 
           ValueType logpsi(Psi.evaluateLog(W,false));
-          W.G += (*wit)->G;
-          W.L += (*wit)->L;
-	  MCWalkerConfiguration::PropertyContainer_t& Properties((*it)->Properties);
+          W.G += thisData.G;
+          W.L += thisData.L;
           ValueType weight(1.0);
-          if(UseWeight) {
-            weight = exp(2.0*(logpsi-logpsi0));
-	    Properties(LOGPSI) = logpsi;
-          } 
+          if(UseWeight) weight = exp(2.0*(logpsi-logpsi0));
 	  thisWalker.Properties(LOCALENERGY) = H_KE.evaluate(W)+vold;
+	  H_KE.saveProperty(thisWalker.getPropertyBase());
+
 	  thisWalker.Weight = weight;
 	  nw_effect[0] += weight;
 	  nw_effect[1] += weight*weight;
-          //move on to next walker
+
+          //move on to next walker and walkerdata
           ++it;++wit;
 	}
 	Estimators->accumulate(W);
@@ -312,28 +353,50 @@ namespace ohmmsqmc {
 
   void 
   VMC_OPT::checkConfigurations() {
-    //getReady();
+
+    //enable the buffering 
+    needBuffering = hamiltonianNeedRatio || (W.getTotalNum()>100);
+
     RefConf.reserve(ConfigFile.size()*500);
     NumSamples=0;
+
     for(int i=0; i<ConfigFile.size(); i++) {
-      HDFWalkerInput wReader(ConfigFile[i]);
-      while(wReader.put(W)) {
+      HDFWalkerInput wReader(ConfigFile[i],PartID,NumParts);
+      //int iparts=1, nparts=1;
+      //parts.replace(parts.find('/'),1,1,' ');
+      //istringstream is(parts);
+      //is>>iparts>>nparts;
+      //cout << "What is the parts " << iparts << " " << nparts << endl;
+      int wstatus=1;
+      while(wstatus=wReader.put(W) != 0) {
+        if(wstatus == 2) continue;
 	//accumulate the number of samples      
 	NumSamples += W.getActiveWalkers();
 	MCWalkerConfiguration::iterator it(W.begin()); 
 	MCWalkerConfiguration::iterator it_end(W.end()); 
         int nat = W.getTotalNum();
+        
         while(it != it_end) {
-	  W.R = (*it)->R;
           WalkerData* awalker=new WalkerData(nat);
-	  //update the distance table associated with W
-	  DistanceTable::update(W);
+          if(needBuffering) {
+            //rewind the buffer
+            awalker->Buffer.rewind();
+            //evaluate the distance table and store in the buffer
+            W.registerData(**it,awalker->Buffer);
+          } else {
+            W.R = (*it)->R;
+	    DistanceTable::update(W);
+          }
+
 	  //evaluate wave function
-          //ValueType psi(Psi.evaluate(W));
           ValueType logpsi(Psi.evaluateLog(W,awalker->G, awalker->L));
+
+          //only if the Hamiltonian calculates the ratio, e.g., non-local pp
+          if(hamiltonianNeedRatio) Psi.dumpToBuffer(W,awalker->Buffer);
+
           RealType e= H.evaluate(W);
           awalker->LogPsi=logpsi;
-          awalker->Vloc=H.getLocalPotential();
+          awalker->Vloc=H.getInvariantEnergy();
           RefConf.push_back(awalker);
           ++it;
         }
@@ -391,7 +454,7 @@ namespace ohmmsqmc {
   }
 
   /** Parses the xml input file for parameter definitions for the wavefunction optimization.
-   * @param q the current xmlNode 
+   * @param q current xmlNode 
    * @return true if successful
    *
    * Must provide a list of the id's of the variables to be optimized. Other available elements
@@ -417,12 +480,7 @@ namespace ohmmsqmc {
     while(cur != NULL) {
       string cname((const char*)(cur->name));
       if(cname == "mcwalkerset") {
-        int pid_target=pid;
-        xmlChar* anode=xmlGetProp(cur,(const xmlChar*)"node");
-        if(anode) {
-          pid_target = atoi((const char*)anode);
-        }
-        if(pid_target == pid) wset.push_back(cur);
+        wset.push_back(cur);
       } else if(cname == "optimize") {
 	oset.push_back(cur);
       } else if(cname == "cost") {
@@ -434,9 +492,29 @@ namespace ohmmsqmc {
     //erase the existing config files and use new sets
     if(wset.size()) {
       ConfigFile.erase(ConfigFile.begin(),ConfigFile.end());
-      for(int i=0; i<wset.size(); i++) {
-	xmlChar* att= xmlGetProp(wset[i],(const xmlChar*)"file");
-	if(att) ConfigFile.push_back((const char*)att);
+      int nfile=wset.size();
+      int ng=OHMMS::Controller->ncontexts()/nfile;
+      if(ng>=1) {
+        NumParts=ng;
+        PartID=pid%ng;
+        int mygroup=pid/ng;
+        string fname("invalid");
+        OhmmsAttributeSet pAttrib;
+        pAttrib.add(fname,"href"); pAttrib.add(fname,"src"); pAttrib.add(fname,"file");
+        pAttrib.put(wset[mygroup]);
+        if(fname != "invalid") ConfigFile.push_back(fname);
+      } else {//more files than the number of processor
+        for(int ifile=0; ifile<nfile; ifile++) {
+          int pid_target=pid;
+          string fname("invalid");
+          OhmmsAttributeSet pAttrib;
+          pAttrib.add(pid_target,"node"); 
+          pAttrib.add(fname,"href"); pAttrib.add(fname,"src"); pAttrib.add(fname,"file");
+          pAttrib.put(wset[ifile]);
+          if(pid_target == pid && fname != "invalid") {
+            ConfigFile.push_back(fname);
+          }
+        }
       }
     }
 
@@ -469,8 +547,7 @@ namespace ohmmsqmc {
     }
   
     if(cset.empty()){
-      LogOut->getStream() 
-	<< "#Using Default Cost Function: Cost = <E> + 0.5 Tau <Var>" << endl;
+      LogOut->getStream() << "#Using Default Cost Function: Cost = <E> + 0.5 Tau <Var>" << endl;
     } else {
       for(int i=0; i<cset.size(); i++){
 	string pname;
@@ -489,10 +566,11 @@ namespace ohmmsqmc {
 	  w_en = wgt;
 	else if(pname == "variance") 
 	  w_var = wgt;
-	LogOut->getStream() << "#Cost Function: Cost = " << w_en << "*<E> + " 
-			    << w_var << "*0.5 Tau <Var>" << endl;
       }
     }  
+
+    LogOut->getStream() << "#Cost Function: Cost = " << w_en << "*<E> + " 
+  		    << w_var << "*0.5 Tau <Var>" << endl;
 
     //m_param.put(qsave);
     LogOut->getStream() << "#" << optmethod << " values: tolerance = "
@@ -544,6 +622,9 @@ namespace ohmmsqmc {
     for(int i=0; i<paramList.size(); i++) {
       paramList[i] = OptParams;
     }
+
+    log_buffer.setf(ios::scientific, ios::floatfield);
+    log_buffer.precision(10);
 
     log_buffer << "#Inital Variables ";
     std::copy(OptParams.begin(),OptParams.end(), ostream_iterator<RealType>(log_buffer," "));
