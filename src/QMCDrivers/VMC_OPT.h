@@ -67,17 +67,21 @@ namespace ohmmsqmc {
 
   private:
 
-    bool resetWaveFunctions();
-    bool checkParameters();
-    bool putOptParams();  
-
-    RealType evalCost();
+    ///foward declaration of WalkerData
     struct WalkerData;
-
+    ///data stored for reuse during the optimization
     vector<WalkerData*> RefConf;
 
     ///boolean to turn on/off the psi^2/psi^2_old for correlated sampling
     bool UseWeight;
+    ///bollean to turn on/off the use of anonymous buffer
+    bool needBuffering;
+    ///bollean to turn on/off the use of anonymous buffer for the ratio
+    bool hamiltonianNeedRatio;
+    ///index to denote the partition id
+    int PartID;
+    ///total number of partitions that will share a set of configuratons
+    int NumParts;
     ///storage for previous values of the cost function
     std::deque<scalar> costList;
     ///storage for previous sets of parameters
@@ -88,10 +92,6 @@ namespace ohmmsqmc {
     vector<string> IDtag;  
     ///list of files storing configurations  
     vector<string> ConfigFile;
-    /////save the wave function
-    //vector<ValueType> LogPsi;
-    /////save the local potential
-    //vector<RealType> VlocOld;
     ///method for optimization, default conjugate gradient
     string optmethod;
     ///number of times cost function evaluated
@@ -112,6 +112,10 @@ namespace ohmmsqmc {
     QMCHamiltonian H_KE;
 
     void checkConfigurations();
+    bool resetWaveFunctions();
+    bool checkParameters();
+    bool putOptParams();  
+    RealType evalCost();
 
     ///Copy Constructor (disabled).
     VMC_OPT(const VMC_OPT& a): QMCDriver(a) { }  
