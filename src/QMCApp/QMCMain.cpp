@@ -449,16 +449,15 @@ namespace ohmmsqmc {
       for(int iconf=0; iconf<result->nodesetval->nodeNr; iconf++) {
 	xmlNodePtr mc_ptr = result->nodesetval->nodeTab[iconf];
 	m_walkerset.push_back(mc_ptr);
-        string cfile("invalid"), target("e"), anode("-1");
+        string cfile("invalid"), target("e");
+        int anode=-1;
         OhmmsAttributeSet pAttrib;
         pAttrib.add(cfile,"href"); pAttrib.add(cfile,"file"); 
         pAttrib.add(target,"target"); pAttrib.add(target,"ref"); 
         pAttrib.add(anode,"node");
         pAttrib.put(mc_ptr);
 
-        int pid_target = atoi(anode.c_str());
-        if(pid_target<0) pid_target=pid; //node is not given. 
-
+        int pid_target= (anode<0)?pid:anode;
         if(pid_target == pid && cfile != "invalid") {
           MCWalkerConfiguration* el=ptclPool->getWalkerSet(target);
 	  XMLReport("Using previous configuration of " << target << " from " << cfile)
@@ -470,12 +469,11 @@ namespace ohmmsqmc {
       }
     }
     xmlXPathFreeObject(result);
-
     return true;
   }
 }
-/***************************************************************************
- * $RCSfile$   $Author$
+/***********************************************************************
+ * $RCSfilMCMain.cpp,v $   $Author$
  * $Revision$   $Date$
  * $Id$ 
  ***************************************************************************/
