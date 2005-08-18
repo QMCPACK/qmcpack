@@ -239,9 +239,8 @@ namespace ohmmsqmc {
       << endl;
     
     if(!pStride) WO.get(W);
-    
+    W.setLocalEnergy(Estimators->average(0));
     Estimators->finalize();
-    
     return true;
   }
 
