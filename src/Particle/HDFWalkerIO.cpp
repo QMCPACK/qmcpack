@@ -174,7 +174,6 @@ int HDFWalkerInput::put(MCWalkerConfiguration& W){
  * \else if ic>=0
  *  use ic frames from the file for opitimizations
  */
-
 bool  
 HDFWalkerInput::put(MCWalkerConfiguration& W, int ic){
 
@@ -185,7 +184,6 @@ HDFWalkerInput::put(MCWalkerConfiguration& W, int ic){
   }
 
   typedef MCWalkerConfiguration::PosType PosType;
-  typedef MCWalkerConfiguration::RealType RealType;
   typedef MCWalkerConfiguration::PropertyContainer_t ProtertyContainer_t;
 
   typedef Matrix<PosType>  PosContainer_t;
@@ -218,12 +216,60 @@ HDFWalkerInput::put(MCWalkerConfiguration& W, int ic){
   MCWalkerConfiguration::iterator it = W.begin(); 
   MCWalkerConfiguration::iterator it_end = W.end(); 
   while(it != it_end) {
-    for(int np=0; np < W.getParticleNum(); ++np){
-      (*it)->R(np) = Pos_temp(iw,np);
-    }
+    std::copy(Pos_temp[iw],Pos_temp[iw+1], (*it)->R.begin());
+    //for(int np=0; np < W.getParticleNum(); ++np){
+    //  (*it)->R(np) = Pos_temp(iw,np);
+    //}
     ++it;++iw;
   }
 
+  return true;
+}
+
+bool  
+HDFWalkerInput::append(MCWalkerConfiguration& W, int nwalkers){
+
+  if(nwalkers<0) return put(W,-1);
+
+  typedef MCWalkerConfiguration::PosType PosType;
+  typedef Matrix<PosType>  PosContainer_t;
+  PosContainer_t Pos_temp;
+
+  int nw_in=0,curConfig=NumSets-1, numConfigIn=0;
+  while(curConfig>=0 && nw_in<nwalkers){
+    //open the group
+    char GrpName[128];
+    sprintf(GrpName,"config%04d",curConfig);
+    hid_t group_id = H5Gopen(h_config,GrpName);
+    HDFAttribIO<PosContainer_t> Pos_in(Pos_temp);
+    //read the dataset
+    Pos_in.read(group_id,"coord");
+    //close the group
+    H5Gclose(group_id);
+    /*check to see if the number of walkers and particles is  consistent with W */
+    int nptcl = Pos_temp.cols();
+    int nwt = Pos_temp.rows();
+    int curWalker=0;
+    if(nptcl != W.getParticleNum()) {
+      W.resize(nwt,nptcl); 
+    } else {
+      curWalker=W.getActiveWalkers();
+      W.createWalkers(nwt);
+    }
+    MCWalkerConfiguration::iterator it = W.begin()+curWalker; 
+    for(int iw=0; iw<nwt; iw++) {
+      //std::copy(Post_temp[iw],Post_temp[iw+1], (*it)->R.begin());
+      for(int iat=0; iat < nptcl; iat++){
+        (*it)->R(iat) = Pos_temp(iw,iat);
+      }
+      ++it;
+    }
+    nw_in += nwt; 
+    curConfig--;
+    numConfigIn++;
+  }
+
+  LOGMSG("Total " << nw_in << " walkers are loaded using " << numConfigIn << " frames.")
   return true;
 }
 
