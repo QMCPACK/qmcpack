@@ -55,6 +55,7 @@ namespace ohmmsqmc {
 
     enum {ENERGY_INDEX, ENERGY_SQ_INDEX, POTENTIAL_INDEX, LE_MAX};
 
+    using ScalarEstimatorBase<T>::CollectSum;
     using ScalarEstimatorBase<T>::b_average;
     using ScalarEstimatorBase<T>::b_variance;
 
