@@ -176,11 +176,11 @@ namespace ohmmsqmc {
       curGrad = 0.0;
       ValueType dudr, d2udr2;
       for(int i=0, nn=iat; i<d_table->size(SourceIndex); i++,nn+= n) {
-	int ij=d_table->PairID[nn];
-	curVal += F[ij]->evaluate(d_table->Temp[i].r1,dudr,d2udr2);
-	dudr *= d_table->Temp[i].rinv1;
-	curGrad -= dudr*d_table->Temp[i].dr1;
-	curLap  -= d2udr2+2.0*dudr;
+        int ij=d_table->PairID[nn];
+        curVal += F[ij]->evaluate(d_table->Temp[i].r1,dudr,d2udr2);
+        dudr *= d_table->Temp[i].rinv1;
+        curGrad -= dudr*d_table->Temp[i].dr1;
+        curLap  -= d2udr2+2.0*dudr;
       }
       dG[iat] += curGrad-dU[iat];
       dL[iat] += curLap-d2U[iat]; 
@@ -214,6 +214,7 @@ namespace ohmmsqmc {
       dU.resize(d_table->size(VisitorIndex));
 
       LogValue = 0.0;
+      U=0.0; dU=0.0; d2U=0.0;
       ValueType uij, dudr, d2udr2;
       for(int i=0; i<d_table->size(SourceIndex); i++) {
 	for(int nn=d_table->M[i]; nn<d_table->M[i+1]; nn++) {
