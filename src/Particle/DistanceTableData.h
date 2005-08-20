@@ -210,6 +210,18 @@ namespace ohmmsqmc {
       buf.add(rinv_m.begin(), rinv_m.end());
     }
 
+    /** @brief register nnlist data to buf so that it can copyToBuffer and copyFromBuffer
+     *
+     * This function is used for particle-by-particle MC methods to register distance-table data
+     * to an anonymous buffer.
+     */
+    inline void updateBuffer(BufferType& buf) {
+      RealType* first = &(dr_m[0][0]);
+      buf.put(first,first+npairs_m*DIM);
+      buf.put(r_m.begin(), r_m.end());
+      buf.put(rinv_m.begin(), rinv_m.end());
+    }
+
     /** @brief copy the data to an anonymous buffer
      *
      * Any data that will be used by the next iteration will be copied to a buffer.

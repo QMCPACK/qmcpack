@@ -181,6 +181,15 @@ MCWalkerConfiguration::registerData(Walker_t& awalker, PooledData<RealType>& buf
     DistTables[i]->registerData(buf);
   }
 }
+
+void 
+MCWalkerConfiguration::updateBuffer(Walker_t& awalker, PooledData<RealType>& buf) {
+  R = awalker.R;
+  for(int i=0; i< DistTables.size(); i++) {
+    DistTables[i]->evaluate(*this);
+    DistTables[i]->updateBuffer(buf);
+  }
+}
   
 void 
 MCWalkerConfiguration::copyToBuffer(PooledData<RealType>& buf) {

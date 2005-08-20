@@ -151,6 +151,7 @@ namespace ohmmsqmc {
     void loadWalker(Walker_t& awalker);
     bool createAuxDataSet(int nfield=256);
     void registerData(Walker_t& awalker, PooledData<RealType>& buf);
+    void updateBuffer(Walker_t& awalker, PooledData<RealType>& buf);
     void copyToBuffer(PooledData<RealType>& buf);
     void copyFromBuffer(PooledData<RealType>& buf);
 
