@@ -323,6 +323,46 @@ namespace ohmmsqmc {
 
       return LogValue;
     }
+
+    inline ValueType updateBuffer(ParticleSet& P, PooledData<RealType>& buf){
+      ValueType dudr, d2udr2,u;
+      LogValue=0.0;
+      PosType gr;
+      PairID.resize(d_table->size(SourceIndex),d_table->size(SourceIndex));
+      int nsp=P.groups();
+      for(int i=0; i<d_table->size(SourceIndex); i++)
+	for(int j=0; j<d_table->size(SourceIndex); j++) 
+	  PairID(i,j) = P.GroupID[i]*nsp+P.GroupID[j];
+
+      for(int i=0; i<d_table->size(SourceIndex); i++) {
+	for(int nn=d_table->M[i]; nn<d_table->M[i+1]; nn++) {
+	  int j = d_table->J[nn];
+	  //ValueType sumu = F.evaluate(d_table->r(nn));
+	  u = F[d_table->PairID[nn]]->evaluate(d_table->r(nn), dudr, d2udr2);
+	  LogValue -= u;
+	  dudr *= d_table->rinv(nn);
+	  gr = dudr*d_table->dr(nn);
+	  //(d^2 u \over dr^2) + (2.0\over r)(du\over\dr)\f$
+	  ValueType lap = d2udr2+2.0*dudr;
+	  int ij = i*N+j, ji=j*N+i;
+	  U[ij]=u; U[ji]=u;
+	  dU[ij] = gr; dU[ji] = -1.0*gr;
+	  d2U[ij] = -lap; d2U[ji] = -lap;
+
+	  //add gradient and laplacian contribution
+	  P.G[i] += gr;
+	  P.G[j] -= gr;
+	  P.L[i] -= lap; 
+	  P.L[j] -= lap; 
+	}
+      }
+
+      U[NN]= LogValue;
+      buf.put(U.begin(), U.end());
+      buf.put(d2U.begin(), d2U.end());
+      buf.put(FirstAddressOfdU,LastAddressOfdU);
+      return LogValue;
+    }
     
     inline void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf) {
       buf.get(U.begin(), U.end());

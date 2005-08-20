@@ -246,6 +246,36 @@ namespace ohmmsqmc {
       return LogValue;
     }
 
+    ValueType updateBuffer(ParticleSet& P, BufferType& buf)  {
+      LogValue = 0.0;
+      U=0.0; dU=0.0; d2U=0.0;
+      ValueType uij, dudr, d2udr2;
+      for(int i=0; i<d_table->size(SourceIndex); i++) {
+	for(int nn=d_table->M[i]; nn<d_table->M[i+1]; nn++) {
+	  int j = d_table->J[nn];
+	  uij = F[d_table->PairID[nn]]->evaluate(d_table->r(nn), dudr, d2udr2);
+          LogValue-=uij;
+          U[j]+=uij; 
+	  dudr *= d_table->rinv(nn);
+	  dU[j] -= dudr*d_table->dr(nn);
+	  d2U[j] -= d2udr2+2.0*dudr;
+
+	  //add gradient and laplacian contribution
+	  P.G[j] -= dudr*d_table->dr(nn);
+	  P.L[j] -= d2udr2+2.0*dudr;
+	}
+      }
+
+      FirstAddressOfdU = &(dU[0][0]);
+      LastAddressOfdU = FirstAddressOfdU + dU.size()*DIM;
+
+      buf.put(U.begin(), U.end());
+      buf.put(d2U.begin(), d2U.end());
+      buf.put(FirstAddressOfdU,LastAddressOfdU);
+
+      return LogValue;
+    }
+
     /** copy the current data from a buffer
      *@param P the ParticleSet to operate on
      *@param buf PooledData which stores the data for each walker

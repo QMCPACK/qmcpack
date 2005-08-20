@@ -264,6 +264,26 @@ namespace ohmmsqmc {
 //     }
   }
 
+  TrialWaveFunction::ValueType
+  TrialWaveFunction::updateBuffer(ParticleSet& P, PooledData<RealType>& buf) {
+    P.G = 0.0;
+    P.L = 0.0;
+
+    LogValue=0.0;
+    SignValue=1.0;
+    vector<OrbitalBase*>::iterator it(Z.begin());
+    vector<OrbitalBase*>::iterator it_end(Z.end());
+    while(it != it_end) {
+      LogValue += (*it)->updateBuffer(P,buf);
+      SignValue *= (*it)->SignValue;
+      ++it;
+    }
+
+    buf.put(&(P.G[0][0]), &(P.G[0][0])+TotalDim);
+    buf.put(P.L.begin(), P.L.end());
+    return LogValue;
+  }
+
   void TrialWaveFunction::copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf) {
 
     for(int i=0; i<Z.size(); i++) Z[i]->copyFromBuffer(P,buf);

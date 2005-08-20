@@ -250,14 +250,44 @@ namespace ohmmsqmc {
       return LogValue;
     }
 
+    /** equivalent to evalaute but the main function is to store data */
+    ValueType updateBuffer(ParticleSet& P, PooledData<RealType>& buf){
+      ValueType dudr, d2udr2,u;
+      LogValue=0.0;
+      PosType gr;
+      for(int i=0; i<d_table->size(SourceIndex); i++) {
+	for(int nn=d_table->M[i]; nn<d_table->M[i+1]; nn++) {
+	  int j = d_table->J[nn];
+	  //ValueType sumu = F.evaluate(d_table->r(nn));
+	  u = F.evaluate(d_table->r(nn), dudr, d2udr2);
+	  LogValue -= u;
+	  dudr *= d_table->rinv(nn);
+	  gr = dudr*d_table->dr(nn);
+	  //(d^2 u \over dr^2) + (2.0\over r)(du\over\dr)\f$
+	  ValueType lap = d2udr2+2.0*dudr;
+	  int ij = i*N+j, ji=j*N+i;
+	  U[ij]=u; U[ji]=u;
+	  dU[ij] = gr; dU[ji] = -1.0*gr;
+	  d2U[ij] = -lap; d2U[ji] = -lap;
+
+	  //add gradient and laplacian contribution
+	  P.G[i] += gr;
+	  P.G[j] -= gr;
+	  P.L[i] -= lap; 
+	  P.L[j] -= lap; 
+	}
+      }
+      U[NN]= LogValue;
+      buf.put(U.begin(), U.end());
+      buf.put(d2U.begin(), d2U.end());
+      buf.put(FirstAddressOfdU,LastAddressOfdU);
+      return LogValue;
+    }
+
     void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf) {
       buf.get(U.begin(), U.end());
       buf.get(d2U.begin(), d2U.end());
       buf.get(FirstAddressOfdU,LastAddressOfdU);
-//       for(int iat=0, ij=0; iat<N; iat++) 
-// 	for(int jat=0; jat<N; jat++,ij++) P.G[iat] += dU[ij];
-//       for(int iat=0, ij=0; iat<N; iat++) 
-// 	for(int jat=0; jat<N; jat++,ij++) P.L[iat] += d2U[ij];
       //ready to accumulate the differences when a move is acepted
       DiffValSum=0.0;
     }

@@ -15,7 +15,8 @@
 //////////////////////////////////////////////////////////////////
 #include "QMCWaveFunctions/NumericalOrbitalSetBuilder.h"
 #include "OhmmsData/AttributeSet.h"
-#include "Numerics/HDFTriCubicSpline.h"
+#include "Numerics/HDFSTLAttrib.h"
+//#include "Numerics/HDFTriCubicSpline.h"
 
 namespace ohmmsqmc {
 
@@ -118,10 +119,13 @@ namespace ohmmsqmc {
         if(ref == nogood) ref=id;
 
         SPOSetType* psi= 0;
+        //map<string,SPOSetType*>::iterator sit(SPOSet.find(id));
         map<string,SPOSetType*>::iterator sit(SPOSet.find(ref));
         if(sit == SPOSet.end()) {
+          LOGMSG("Adding a single-particle orbital " << id)
           psi = createSPOSet(cur,ref,norb);
         } else {
+          LOGMSG("Reusing an existing single-particle orbital " << id)
           psi = (*sit).second;
         }
         map<string,Det_t*>::iterator dit(DetSet.find(id));
@@ -136,10 +140,12 @@ namespace ohmmsqmc {
         Det_t *adet =0;
         dit = DetSet.find(id);
         if(dit == DetSet.end()) {//need to add a new Determinant
+          cout << "Checking determinant , first, norb " << endl;
           adet = new Det_t(*psi,first);
 	  adet->set(first,norb);
           first+=norb;
           DetSet[id]=adet;
+          LOGMSG("Adding a determinant " << id)
         } else {
           adet=(*dit).second;
         }
@@ -159,11 +165,13 @@ namespace ohmmsqmc {
    * @return a new MixedSPOSet
    */
   NumericalOrbitalSetBuilder::SPOSetType*
-  NumericalOrbitalSetBuilder::createSPOSet(xmlNodePtr cur, 
-      const string& ref, int norb) {
+  NumericalOrbitalSetBuilder::createSPOSet(xmlNodePtr cur, const string& ref, int norb) {
 
-    //int npts=GridXYZ->size();
-    //std::vector<RealType> inData(npts);
+    std::vector<int> npts(3);
+    npts[0]=GridXYZ->nX;
+    npts[1]=GridXYZ->nY;
+    npts[2]=GridXYZ->nZ;
+    std::vector<RealType> inData(npts[0]*npts[1]*npts[2]);
 
     int first=LocalizedOrbitals.size();
 
@@ -187,17 +195,21 @@ namespace ohmmsqmc {
         const char* hroot = (const char*)xmlGetProp(cur,(const xmlChar*)"src");
         char wfname[128], hfile[128];
         for(int iorb=0; iorb<norb; iorb++) {
-          sprintf(wfname,"%s.wfs%04d",hroot,iorb);
-          sprintf(hfile,"%s.wfs%04d.h5",hroot,iorb);
+          sprintf(wfname,"%s.wf%04d",hroot,iorb);
+          sprintf(hfile,"%s.wf%04d.h5",hroot,iorb);
           NumericalOrbitalType* neworb=0;
           map<string,NumericalOrbitalType*>::iterator it(NumericalOrbitals.find(wfname));
           if(it == NumericalOrbitals.end()) {
             neworb=new NumericalOrbitalType(GridXYZ);
             hid_t h_file = H5Fopen(hfile,H5F_ACC_RDWR,H5P_DEFAULT);
-            HDFAttribIO<NumericalOrbitalType> dummy(*neworb);
-            //Check this
-            dummy.read(h_file,"/Orbital/CubicSpline");
+            HDFAttribIO<std::vector<RealType> > dummy(inData,npts);
+            dummy.read(h_file,"/Orbital");
             H5Fclose(h_file);
+            //////////////////////////////
+            //HDFAttribIO<NumericalOrbitalType> dummy(*neworb);
+            //dummy.read(h_file,"CubicSpline");
+            ////////////////////////////
+            neworb->reset(inData.begin(), inData.end(), false);
             NumericalOrbitals[wfname]=neworb;
           } else {
             neworb = (*it).second;

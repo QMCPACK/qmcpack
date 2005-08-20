@@ -207,6 +207,22 @@ namespace ohmmsqmc {
       return CurrentDet;
     }
 
+    ValueType updateBuffer(ParticleSet& P, PooledData<RealType>& buf) {
+
+      myG=0.0;
+      myL=0.0;
+      ValueType x=evaluate(P,myG,myL); 
+      P.G += myG;
+      P.L += myL;
+      buf.put(psiM.begin(),psiM.end());
+      buf.put(FirstAddressOfdV,LastAddressOfdV);
+      buf.put(d2psiM.begin(),d2psiM.end());
+      buf.put(myL.begin(), myL.end());
+      buf.put(FirstAddressOfG,LastAddressOfG);
+      buf.put(CurrentDet);
+
+      return CurrentDet;
+    }
 
     void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf) {
 
@@ -216,6 +232,10 @@ namespace ohmmsqmc {
       buf.get(myL.begin(), myL.end());
       buf.get(FirstAddressOfG,LastAddressOfG);
       buf.get(CurrentDet);
+
+      //re-evaluate it for testing
+      //Phi.evaluate(P, FirstIndex, LastIndex, psiM, dpsiM, d2psiM);
+      //CurrentDet = Invert(psiM.data(),NumPtcls,NumOrbitals);
 
       //need extra copy for gradient/laplacian calculations without updating it
       psiM_temp = psiM;
@@ -235,13 +255,27 @@ namespace ohmmsqmc {
       buf.get(psiM.begin(),psiM.end());
     }
 
+    /** return the ratio only for the  iat-th partcle move
+     * @param P current configuration
+     * @param iat the particle thas is being moved
+     */
     inline ValueType ratio(ParticleSet& P, int iat) {
       Phi.evaluate(P, iat, psiV);
-      return curRatio= DetRatio(psiM, psiV.begin(),iat-FirstIndex);
+      return DetRatio(psiM, psiV.begin(),iat-FirstIndex);
+      //return curRatio= DetRatio(psiM, psiV.begin(),iat-FirstIndex);
       //return curRatio = BLAS::dot(NumOrbitals,psiM[iat-FirstIndex],&psiV[0]);
       //return curRatio= detRatio(psiM_temp[iat-FirstIndex], psiV.begin(),NumOrbitals);
     }
 
+    /** return the ratio
+     * @param P current configuration
+     * @param iat particle whose position is moved
+     * @param dG differential Gradients
+     * @param dL differential Laplacians
+     *
+     * Data member *_temp contain the data assuming that the move is accepted
+     * and are used to evaluate differential Gradients and Laplacians.
+     */
     ValueType ratio(ParticleSet& P, int iat,
 		    ParticleSet::ParticleGradient_t& dG, 
 		    ParticleSet::ParticleLaplacian_t& dL) {
@@ -253,9 +287,11 @@ namespace ohmmsqmc {
       //curRatio = BLAS::dot(NumOrbitals,psiM_temp[WorkingIndex],&psiV[0]);
       //curRatio= detRatio(psiM_temp[WorkingIndex], psiV.begin(), NumOrbitals);
 
+      //update psiM_temp with the row substituted
       DetUpdate(psiM_temp,psiV,workV1,workV2,WorkingIndex,curRatio);
 
-      for(int j=0; j<NumPtcls; j++) {
+      //update dpsiM_temp and d2psiM_temp 
+      for(int j=0; j<NumOrbitals; j++) {
 	dpsiM_temp(WorkingIndex,j)=dpsiV[j];
 	d2psiM_temp(WorkingIndex,j)=d2psiV[j];
       }
@@ -264,7 +300,7 @@ namespace ohmmsqmc {
       for(int i=0; i<NumPtcls; i++,kat++) {
 	PosType rv =psiM_temp(i,0)*dpsiM_temp(i,0);
 	ValueType lap=psiM_temp(i,0)*d2psiM_temp(i,0);
-	for(int j=1; j<NumOrbitals; j++) {
+        for(int j=1; j<NumOrbitals; j++) {
 	  rv += psiM_temp(i,j)*dpsiM_temp(i,j);
 	  lap += psiM_temp(i,j)*d2psiM_temp(i,j);
 	}
@@ -272,9 +308,12 @@ namespace ohmmsqmc {
 	dG[kat] += rv - myG[kat];  myG_temp[kat]=rv;
 	dL[kat] += lap -myL[kat];  myL_temp[kat]=lap;
       }
+
       return curRatio;
     }
 
+    /** move was accepted, update the real container
+     */
     void update(ParticleSet& P, int iat) {
       CurrentDet *= curRatio;
       myG = myG_temp;
@@ -284,14 +323,18 @@ namespace ohmmsqmc {
 	dpsiM(WorkingIndex,j)=dpsiV[j];
 	d2psiM(WorkingIndex,j)=d2psiV[j];
       }
+      curRatio=1.0;
     }
 
+    /** move was rejected. copy the real container to the temporary to move on
+     */
     void restore(int iat) {
       psiM_temp = psiM;
       for(int j=0; j<NumOrbitals; j++) {
 	dpsiM_temp(WorkingIndex,j)=dpsiM(WorkingIndex,j);
 	d2psiM_temp(WorkingIndex,j)=d2psiM(WorkingIndex,j);
       }
+      curRatio=1.0;
     }
 
     
@@ -321,6 +364,7 @@ namespace ohmmsqmc {
 
       //not very useful
       CurrentDet *= curRatio;
+      curRatio=1.0;
     }
 
     ValueType evaluate(ParticleSet& P, PooledData<RealType>& buf) {
@@ -437,9 +481,6 @@ namespace ohmmsqmc {
   DiracDeterminant<SPOSet>::evaluate(ParticleSet& P, 
 				     ParticleSet::ParticleGradient_t& G, 
 				     ParticleSet::ParticleLaplacian_t& L) {
-
-    //int nrows = rows();
-    //int ncols = cols();
 
     Phi.evaluate(P, FirstIndex, LastIndex, psiM,dpsiM, d2psiM);
     CurrentDet = Invert(psiM.data(),NumPtcls,NumOrbitals);

@@ -63,6 +63,7 @@ namespace ohmmsqmc {
       int last=Dets.size();
       Dets.push_back(det);
       M[last+1]=M[last]+Dets[last]->rows();
+      DetID.insert(DetID.end(),det->rows(),last);
     }
 
     ///reset all the Dirac determinants, Optimizable is true
@@ -128,6 +129,14 @@ namespace ohmmsqmc {
       return LogValue;
     }
     
+    ValueType updateBuffer(ParticleSet& P, PooledData<RealType>& buf){
+      ValueType psi = 1.0;
+      for(int i=0; i<Dets.size(); i++) psi *= Dets[i]->updateBuffer(P,buf);
+      SignValue = (psi<0.0)?-1.0:1.0;
+      LogValue = log(abs(psi));
+      return LogValue;
+    }
+
     void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf) {
       for(int i=0; i<Dets.size(); i++) 	Dets[i]->copyFromBuffer(P,buf);
     }
@@ -158,42 +167,48 @@ namespace ohmmsqmc {
     inline ValueType ratio(ParticleSet& P, int iat,
 			   ParticleSet::ParticleGradient_t& dG, 
 			   ParticleSet::ParticleLaplacian_t& dL) { 
-      int i=1;
-      while(iat>=M[i]) {i++;}
-      return  Dets[i-1]->ratio(P,iat, dG, dL);
+      return Dets[DetID[iat]]->ratio(P,iat,dG,dL);
+      //int i=1;
+      //while(iat>=M[i]) {i++;}
+      //return  Dets[i-1]->ratio(P,iat, dG, dL);
     }
     
     inline void restore(int iat) {
-      int i=1;
-      while(iat>=M[i]) {i++;}
-      Dets[i-1]->restore(iat);
+      return Dets[DetID[iat]]->restore(iat);
+      //int i=1;
+      //while(iat>=M[i]) {i++;}
+      //Dets[i-1]->restore(iat);
     }
 
     inline void update(ParticleSet& P, int iat) {
-      int i=1;
-      while(iat>=M[i]) {i++;}
-      Dets[i-1]->update(P,iat);
+      Dets[DetID[iat]]->update(P,iat);
+      //int i=1;
+      //while(iat>=M[i]) {i++;}
+      //Dets[i-1]->update(P,iat);
     }
 
     ValueType
     ratio(ParticleSet& P, int iat) {
-      int i=1;
-      while(iat>=M[i]) {i++;}
-      return Dets[i-1]->ratio(P,iat);
+      return Dets[DetID[iat]]->ratio(P,iat);
+      //int i=1;
+      //while(iat>=M[i]) {i++;}
+      //return Dets[i-1]->ratio(P,iat);
     } 	  
 
     void update(ParticleSet& P, 
 		ParticleSet::ParticleGradient_t& dG, 
 		ParticleSet::ParticleLaplacian_t& dL,
 		int iat) {
-      int i=1;
-      while(iat>=M[i]) {i++;}
-      Dets[i-1]->update(P,dG,dL,iat);
+      return Dets[DetID[iat]]->update(P,dG,dL,iat);
+      //int i=1;
+      //while(iat>=M[i]) {i++;}
+      //Dets[i-1]->update(P,dG,dL,iat);
     }
 
 
   private:
     vector<int> M;
+    vector<int> DetID;
     ///container for the DiracDeterminants
     vector<Determinant_t*>  Dets;
   };

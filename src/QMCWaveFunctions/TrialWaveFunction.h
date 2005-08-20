@@ -113,6 +113,7 @@ namespace ohmmsqmc {
     void update2(ParticleSet& P, int iat);
 
     ValueType registerData(ParticleSet& P, BufferType& buf);
+    ValueType updateBuffer(ParticleSet& P, BufferType& buf);
     void copyFromBuffer(ParticleSet& P, BufferType& buf);
     ValueType evaluate(ParticleSet& P, BufferType& buf);
 

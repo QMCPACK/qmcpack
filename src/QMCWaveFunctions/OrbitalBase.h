@@ -154,6 +154,14 @@ namespace ohmmsqmc {
      */
     virtual ValueType registerData(ParticleSet& P, BufferType& buf) =0;
 
+    /** re-evaluate the content and buffer data
+     * @param P particle set
+     * @param buf Anonymous storage
+     *
+     * This function is introduced to update the data periodically for particle-by-particle move.
+     */
+    virtual ValueType updateBuffer(ParticleSet& P, BufferType& buf) =0;
+
     /** copy the internal data saved for particle-by-particle move.*/
     virtual void copyFromBuffer(ParticleSet& P, BufferType& buf)=0;
 
