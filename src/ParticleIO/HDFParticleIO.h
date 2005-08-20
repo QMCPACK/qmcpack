@@ -56,7 +56,7 @@ namespace ohmmsqmc {
 
     ~HDFSaveParticle();
 
-    void reset(const char* fileroot);
+    void reset(const char* fileroot, bool append=false);
 
     void report(int iter);
 

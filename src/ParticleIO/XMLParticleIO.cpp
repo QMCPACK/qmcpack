@@ -393,7 +393,8 @@ XMLSaveParticle::XMLSaveParticle(Particle_t& pin): ref_(pin){ }
 XMLSaveParticle::~XMLSaveParticle() { 
 }
 
-void XMLSaveParticle::reset(const char* fileroot){
+void XMLSaveParticle::reset(const char* fileroot, bool append){
+  //append is ignored
 
   FileRoot = fileroot;
   FileName = fileroot;

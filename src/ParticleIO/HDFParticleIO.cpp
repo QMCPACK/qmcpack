@@ -141,7 +141,7 @@ HDFParticleParser::put(xmlNodePtr cur) {
 HDFSaveParticle::~HDFSaveParticle() { 
 }
 
-void HDFSaveParticle::reset(const char* fileroot){
+void HDFSaveParticle::reset(const char* fileroot, bool append){
   FileRoot = fileroot;
 }
 
