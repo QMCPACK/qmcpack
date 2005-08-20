@@ -23,6 +23,8 @@
 #include <string>
 #include <fstream>
 
+/** abstract base class to recrod any properties
+ */
 struct RecordProperty {
   
   int stride;
@@ -30,7 +32,7 @@ struct RecordProperty {
   RecordProperty(): stride(-1),FileName("default"){ }
   
   virtual ~RecordProperty() { }
-  virtual void reset(const char* fileroot) = 0;
+  virtual void reset(const char* fileroot, bool append=false) = 0;
   virtual void report(int i) = 0;
   virtual void finalize() = 0;
   virtual bool put(xmlNodePtr cur) =0;
@@ -82,6 +84,10 @@ class RecordPropertyList {
 };
 
 
+/** Vectorized record engine for scalar properties
+ *
+ * A series of values with the name is recorded as a table of multiple columns.
+ */
 template<class T>
 struct RecordNamedProperty: public RecordProperty {
 
@@ -134,17 +140,21 @@ struct RecordNamedProperty: public RecordProperty {
     //std::copy_n(b.begin(), b.size(), Name.begin());
   }
 
-
   ///implement virtual functions
-  inline void reset(const char* fileroot) { 
+  inline void reset(const char* fileroot, bool append=false) { 
     if(OutStream) delete OutStream;
-    OutStream = new std::ofstream(fileroot);
+    if(append) {
+      OutStream = new std::ofstream(fileroot,ios_base::app);
+    } else {
+      OutStream = new std::ofstream(fileroot);
+    }
+    if(!append) {
+      OutStream->setf(std::ios::left,std::ios::adjustfield);
+      *OutStream << "#   ";
+      for(int i=0; i<Name.size(); i++) (*OutStream) << setw(15) << Name[i].c_str();
+      (*OutStream) << endl;
+    }
     OutStream->setf(std::ios::scientific, std::ios::floatfield);
-    OutStream->setf(std::ios::left,std::ios::adjustfield);
-    *OutStream << "#   ";
-    for(int i=0; i<Name.size(); i++) 
-      (*OutStream) << setw(15) << Name[i].c_str();
-    (*OutStream) << endl;
     OutStream->setf(std::ios::right,std::ios::adjustfield);
   }
 
