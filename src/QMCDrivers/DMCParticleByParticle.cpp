@@ -83,7 +83,18 @@ namespace ohmmsqmc {
 	Psi.registerData(W,(*it)->DataSet);
         ++it;++iwalker;
       } 
-    }      
+    } else {
+      while(it != it_end) {
+        Buffer_t& w_buffer((*it)->DataSet);
+      	w_buffer.rewind();
+        W.updateBuffer(**it,w_buffer);
+        ValueType logpsi=Psi.updateBuffer(W,w_buffer);
+        RealType enew= H.evaluate(W);
+        (*it)->resetProperty(logpsi,Psi.getSign(),enew);
+        H.saveProperty((*it)->getPropertyBase());
+        ++it;
+      }
+    }
 
     Estimators->reset();
     
