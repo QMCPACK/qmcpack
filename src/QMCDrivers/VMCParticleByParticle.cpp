@@ -159,10 +159,6 @@ namespace ohmmsqmc {
             RealType eloc=H.evaluate(W);
             thisWalker.resetProperty(log(abs(psi)),psi,eloc);
             H.saveProperty(thisWalker.getPropertyBase());
-            //thisWalker.Properties(SIGN) = psi;
-            //thisWalker.Properties(LOCALENERGY) = H.evaluate(W);
-            //H.copy(thisWalker.getEnergyBase());
-            //thisWalker.Properties(LOCALPOTENTIAL) = H.getLocalPotential();
           }
           //Keep until everything is tested: debug routine
           // 	    if(moved) {

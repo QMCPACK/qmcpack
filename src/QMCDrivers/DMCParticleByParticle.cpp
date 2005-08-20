@@ -44,19 +44,22 @@ namespace ohmmsqmc {
   }
 
   bool DMCParticleByParticle::run() { 
+
     //add columns
     IndexType PopIndex = Estimators->addColumn("Population");
-    IndexType EtrialIndex = Estimators->addColumn("E_T");
+    IndexType EtrialIndex = Estimators->addColumn("Etrial");
     //write the header
     Estimators->reportHeader();
 
     if(branchEngine == 0) {
       branchEngine=new BranchEngineType(Tau,W.getActiveWalkers());
       RealType e_ref = W.getLocalEnergy();
-      LOGMSG("Overwriting the reference energy by the local energy " << e_ref)  
       branchEngine->setEguess(e_ref);
       branchEngine->put(qmcNode,LogOut);
     }
+
+    //this should be controlled by continue="yes/no" of qmc element
+    branchEngine->flush(0);
 
     MCWalkerConfiguration::iterator it(W.begin()); 
     MCWalkerConfiguration::iterator it_end(W.end()); 
@@ -78,9 +81,6 @@ namespace ohmmsqmc {
         (*it)->DataSet.rewind();
 	W.registerData(**it,(*it)->DataSet);
 	Psi.registerData(W,(*it)->DataSet);
-        //W.DataSet[iwalker]->rewind();
-        //W.registerData(**it,*(W.DataSet[iwalker]));
-        //Psi.registerData(W,*(W.DataSet[iwalker]));
         ++it;++iwalker;
       } 
     }      
@@ -93,7 +93,6 @@ namespace ohmmsqmc {
     int Population = W.getActiveWalkers();
     int tPopulation = W.getActiveWalkers();
     RealType Eest = branchEngine->E_T;
-    RealType E_T = Eest;
     RealType oneovertau = 1.0/Tau;
     RealType oneover2tau = 0.5*oneovertau;
     RealType g = sqrt(Tau);
@@ -119,8 +118,6 @@ namespace ohmmsqmc {
 
         it = W.begin();	 
         it_end = W.end();
-        RealType esumT=0.0;
-        int validPop=0;
         iwalker=0; 
         while(it != it_end) {
 
@@ -132,23 +129,79 @@ namespace ohmmsqmc {
           thisWalker.Multiplicity=1.0e0;
           //save old local energy
           ValueType eold(thisWalker.Properties(LOCALENERGY));
-          ValueType emixed(eold);
+          ValueType emixed(eold), enew(eold);
 
           W.R = thisWalker.R;
           w_buffer.rewind();
           W.copyFromBuffer(w_buffer);
           Psi.copyFromBuffer(W,w_buffer);
 
-          ValueType psi_old(thisWalker.Properties(SIGN));
-          ValueType psi(psi_old);
-
           //create a 3N-Dimensional Gaussian with variance=1
           makeGaussRandom(deltaR);
           bool notcrossed(true);
           int nAcceptTemp(0);
           int nRejectTemp(0);
-
           int iat=0;
+         while(iat<nat) {//particle-by-particle move
+           PosType dr(g*deltaR[iat]+thisWalker.Drift[iat]);
+           PosType newpos(W.makeMove(iat,dr));
+
+           RealType ratio=Psi.ratio(W,iat,dG,dL);
+
+           if(ratio < 0.0) {//node is crossed reject the move
+             ++nRejectTemp;
+    	     Psi.restore(iat);
+           } else {
+      	     G = W.G+dG;
+      	     RealType logGf = -0.5*dot(deltaR[iat],deltaR[iat]);
+      	     //ValueType vsq = Dot(G,G);
+      	     //ValueType scale = ((-1.0+sqrt(1.0+2.0*Tau*vsq))/vsq);
+             ValueType scale=Tau;
+      	     dr = thisWalker.R[iat]-newpos-scale*G[iat]; 
+      	     RealType logGb = -oneover2tau*dot(dr,dr);
+      	     RealType prob = std::min(1.0,ratio*ratio*exp(logGb-logGf));
+      	     if(Random() < prob) { 
+      	       ++nAcceptTemp;
+      	       W.acceptMove(iat);
+      	       Psi.update2(W,iat);
+      	       W.G = G;
+      	       W.L += dL;
+      	       thisWalker.Drift = scale*G;
+      	     } else {
+      	       ++nRejectTemp; 
+      	       Psi.restore(iat);
+      	     }
+           } 
+
+           ++iat;
+         }
+
+         if(nAcceptTemp>0) {//need to overwrite the walker properties
+      	   w_buffer.rewind();
+      	   W.copyToBuffer(w_buffer);
+      	   ValueType psi = Psi.evaluate(W,w_buffer);
+      	   thisWalker.R = W.R;
+           enew= H.evaluate(W);
+           thisWalker.resetProperty(log(abs(psi)),psi,enew);
+           H.saveProperty(thisWalker.getPropertyBase());
+      	   emixed = (eold+enew)*0.5e0;
+         } else {
+           thisWalker.Age++;
+           ++nAllRejected;
+         }
+
+         ValueType M = branchEngine->branchGF(Tau,emixed,0.0);
+         if(thisWalker.Age > 3) M = std::min(0.5,M);
+         else if(thisWalker.Age > 0) M = std::min(1.0,M);
+         thisWalker.Weight = M; 
+         thisWalker.Multiplicity=M + Random();
+
+         branchEngine->accumulate(emixed,thisWalker.Weight);//accumulate the energy
+         // cout << "### mixed energy " << emixed << " " << thisWalker.Weight <<  " " << thisWalker.Multiplicity << endl;
+         nAccept += nAcceptTemp;
+         nReject += nRejectTemp;
+        
+         /** killing any walker with a node-crossing mode
           while(notcrossed && iat<nat){
 
             PosType dr(g*deltaR[iat]+thisWalker.Drift[iat]);
@@ -189,9 +242,8 @@ namespace ohmmsqmc {
             if(nAcceptTemp) {//need to overwrite the walker properties
       	      w_buffer.rewind();
       	      W.copyToBuffer(w_buffer);
-      	      psi = Psi.evaluate(W,w_buffer);
+      	      ValueType psi = Psi.evaluate(W,w_buffer);
       	      thisWalker.R = W.R;
-
               RealType enew= H.evaluate(W);
               thisWalker.resetProperty(log(abs(psi)),psi,enew);
               H.saveProperty(thisWalker.getPropertyBase());
@@ -203,36 +255,27 @@ namespace ohmmsqmc {
             }
             
             ValueType M = branchEngine->branchGF(Tau,emixed*0.5,0.0);
-            esumT += emixed;
-            validPop++;
-            // if((*it)->Properties(AGE) > 3.0) M = min(0.5,M);
-            //persistent configurations
-           
-            //AGE and MULTIPLICITY is removed
-            //if(thisWalker.Properties(AGE) > 1.9) M = std::min(0.5,M);
-            //if(thisWalker.Properties(AGE) > 0.9) M = std::min(1.0,M);
-            //thisWalker.Properties(WEIGHT) = M; 
-            //thisWalker.Properties(MULTIPLICITY) = M + Random();
-            //if(thisWalker.Age > 1) M = std::min(0.5,M);
             if(thisWalker.Age > 2) M = std::min(0.5,M);
-            if(thisWalker.Age > 0) M = std::min(1.0,M);
+            else if(thisWalker.Age > 0) M = std::min(1.0,M);
             thisWalker.Weight = M; 
             thisWalker.Multiplicity=M + Random();
+
+            //accumulate the energy
+            branchEngine->accumulate(emixed*0.5,M);
+
             nAccept += nAcceptTemp;
             nReject += nRejectTemp;
           } else {//set the weight and multiplicity to zero
             thisWalker.willDie();
             nReject += W.getTotalNum();//not make sense
           }
-
+          */
           ++it; ++iwalker;
         }
 
         ++step;++accstep;
         Estimators->accumulate(W);
-        //THIS IS THE ORIGINAL
-        Eest = branchEngine->update(Population,Eest); 
-        //Eest = brancher.update(Population,esumT*0.5/static_cast<RealType>(validPop));
+        Eest = branchEngine->update(Population); 
         branchEngine->branch(accstep,W);
       } while(step<nSteps);
       
@@ -254,15 +297,25 @@ namespace ohmmsqmc {
       LogOut->getStream() << "Block " << block << " " << timer.cpu_time() << " Fixed_configs " 
       		    << static_cast<RealType>(nAllRejected)/static_cast<RealType>(step*W.getActiveWalkers()) << endl;
 
-      //branching with the block-average of local energy
-      //Eest = brancher.update(Population,W.getLocalEnergy()); 
-
-      branchEngine->updateBranchData();
-
       if(pStride) { //create an output engine
         HDFWalkerOutput WO(RootName);
         WO.get(W); 
       }
+
+      //re-evaluate the buffer every block
+      it=W.begin(); 
+      it_end=W.end(); 
+      while(it != it_end) {
+        Buffer_t& w_buffer((*it)->DataSet);
+      	w_buffer.rewind();
+        W.updateBuffer(**it,w_buffer);
+        ValueType logpsi=Psi.updateBuffer(W,w_buffer);
+        RealType enew= H.evaluate(W);
+        (*it)->resetProperty(logpsi,Psi.getSign(),enew);
+        H.saveProperty((*it)->getPropertyBase());
+        ++it;
+      }
+
       nAccept = 0; nReject = 0;
       block++;
     } while(block<nBlocks);
@@ -272,7 +325,6 @@ namespace ohmmsqmc {
       << static_cast<double>(nAcceptTot)/static_cast<double>(nAcceptTot+nRejectTot)
       << endl;
     
-    branchEngine->updateBranchData();
     if(!pStride) { //create an output engine
       HDFWalkerOutput WO(RootName);
       WO.get(W); 

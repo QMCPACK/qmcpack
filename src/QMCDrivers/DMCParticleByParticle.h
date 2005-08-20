@@ -21,7 +21,8 @@
 #define OHMMS_QMC_DMC_PARTICLEBYPARTCLE_H
 #include "QMCDrivers/QMCDriver.h" 
 #include "Utilities/OhmmsInfo.h"
-#include "QMCDrivers/MolecuFixedNodeBranch.h"
+//#include "QMCDrivers/MolecuFixedNodeBranch.h"
+#include "QMCDrivers/SimpleFixedNodeBranch.h"
 namespace ohmmsqmc {
 
   /** @ingroup QMCDrivers ParticleByParticle 
@@ -29,7 +30,8 @@ namespace ohmmsqmc {
    */
   class DMCParticleByParticle: public QMCDriver {
   public:
-    typedef MolecuFixedNodeBranch<RealType> BranchEngineType;
+    //typedef MolecuFixedNodeBranch<RealType> BranchEngineType;
+    typedef SimpleFixedNodeBranch<RealType> BranchEngineType;
     /// Constructor.
     DMCParticleByParticle(MCWalkerConfiguration& w, TrialWaveFunction& psi, 
 			  QMCHamiltonian& h);

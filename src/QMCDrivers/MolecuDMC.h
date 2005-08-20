@@ -25,7 +25,8 @@
 
 #include "QMCDrivers/QMCDriver.h" 
 #include "Utilities/OhmmsInfo.h"
-#include "QMCDrivers/MolecuFixedNodeBranch.h"
+#include "QMCDrivers/SimpleFixedNodeBranch.h"
+//#include "QMCDrivers/MolecuFixedNodeBranch.h"
 
 namespace ohmmsqmc {
 
@@ -35,7 +36,8 @@ namespace ohmmsqmc {
   class MolecuDMC: public QMCDriver {
 
   public:
-    typedef MolecuFixedNodeBranch<RealType> BranchEngineType;
+    //typedef MolecuFixedNodeBranch<RealType> BranchEngineType;
+    typedef SimpleFixedNodeBranch<RealType> BranchEngineType;
     /// Constructor.
     MolecuDMC(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h);
     ///destructor

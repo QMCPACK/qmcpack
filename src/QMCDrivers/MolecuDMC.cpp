@@ -71,14 +71,13 @@ namespace ohmmsqmc {
 
     //add columns
     IndexType PopIndex = Estimators->addColumn("Population");
-    IndexType EtrialIndex = Estimators->addColumn("E_T");
+    IndexType EtrialIndex = Estimators->addColumn("Etrial");
     //write the header
     Estimators->reportHeader();
 
     if(branchEngine == 0) {
       branchEngine=new BranchEngineType(Tau,W.getActiveWalkers());
       RealType e_ref = W.getLocalEnergy();
-      LOGMSG("Overwriting the reference energy by the local energy " << e_ref)  
       branchEngine->setEguess(e_ref);
       branchEngine->put(qmcNode,LogOut);
     }
@@ -108,7 +107,7 @@ namespace ohmmsqmc {
         advanceWalkerByWalker(*branchEngine);
         step++; accstep++;
         Estimators->accumulate(W);
-        Eest = branchEngine->update(Population,Eest);
+        Eest = branchEngine->update(Population);
         branchEngine->branch(accstep,W);
       } while(step<nSteps);
       timer.stop();
@@ -125,7 +124,6 @@ namespace ohmmsqmc {
       LogOut->getStream() << "Block " << block << " " << timer.cpu_time()
       		    << " " << Population << endl;
       Eest = Estimators->average(0);
-      branchEngine->updateBranchData();
       nAccept = 0; nReject = 0;
       block++;
       if(pStride) {
@@ -140,7 +138,6 @@ namespace ohmmsqmc {
       << "ratio = " << static_cast<double>(nAcceptTot)/static_cast<double>(nAcceptTot+nRejectTot)
       << endl;
     
-    branchEngine->updateBranchData();
     if(!pStride) {
       //create an output engine: could accumulate the configurations
       HDFWalkerOutput WO(RootName);
@@ -247,15 +244,17 @@ namespace ohmmsqmc {
       
       //evaluate wave function
       ValueType logpsi(Psi.evaluateLog(W));
-      RealType enew(H.evaluate(W));
 
       bool accepted=false; 
+
+      RealType enew(H.evaluate(W));
+
       //deltaR = W.R - (*it)->R - (*it)->Drift;
       RealType logGf = -0.5*Dot(deltaR,deltaR);
-      
+
       //scale the drift term to prevent persistent cofigurations
       ValueType vsq = Dot(W.G,W.G);
-      
+
       //converting gradients to drifts, D = tau*G (reuse G)
       //   W.G *= Tau;//original implementation with bare drift
       ValueType scale = ((-1.0+sqrt(1.0+2.0*Tau*vsq))/vsq);
@@ -264,34 +263,35 @@ namespace ohmmsqmc {
 
       //RealType backwardGF = exp(-oneover2tau*Dot(deltaR,deltaR));
       RealType logGb = -oneover2tau*Dot(deltaR,deltaR);
-      
+
       //set acceptance probability
       //RealType prob= std::min(exp(logGb-logGf +2.0*(W.Properties(LOGPSI)-thisWalker.Properties(LOGPSI))),1.0);
       RealType prob= std::min(exp(logGb-logGf +2.0*(logpsi-thisWalker.Properties(LOGPSI))),1.0);
-      
+
       if(Random() > prob){
         thisWalker.Age++;
-	emixed += emixed;
       } else {
-	accepted=true;  
-	thisWalker.R = W.R;
-	thisWalker.Drift = drift;
+        accepted=true;  
+        thisWalker.R = W.R;
+        thisWalker.Drift = drift;
         thisWalker.resetProperty(logpsi,Psi.getSign(),enew);
-	H.saveProperty(thisWalker.getPropertyBase());
-	emixed += enew;
+        H.saveProperty(thisWalker.getPropertyBase());
+        emixed = (emixed+enew)*0.5;
       }
       
       //calculate the weight and multiplicity
-      ValueType M = Branch.branchGF(Tau,emixed*0.5,1.0-prob);
+      ValueType M = Branch.branchGF(Tau,emixed,0.0); //1.0-prob);
       if(thisWalker.Age > 3) M = min(0.5,M);
-      if(thisWalker.Age > 0) M = min(1.0,M);
+      else if(thisWalker.Age > 0) M = min(1.0,M);
       thisWalker.Weight = M; 
       thisWalker.Multiplicity = M + Random();
       
+      Branch.accumulate(emixed,M);
+
       //node-crossing: kill it for the time being
       //if(Branch(W.Properties(SIGN),(*it)->Properties(SIGN))) {
       if(Branch(signold,thisWalker.Properties(SIGN))) {
-	accepted=false;     
+        accepted=false;     
         thisWalker.willDie();
       }
 
