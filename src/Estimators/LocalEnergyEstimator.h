@@ -58,6 +58,7 @@ namespace ohmmsqmc {
     using ScalarEstimatorBase<T>::CollectSum;
     using ScalarEstimatorBase<T>::b_average;
     using ScalarEstimatorBase<T>::b_variance;
+    using ScalarEstimatorBase<T>::CollectSum;
 
     ///locator of the first data this object handles
     int LocalEnergyIndex;
