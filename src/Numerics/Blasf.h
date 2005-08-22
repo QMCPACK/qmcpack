@@ -47,6 +47,7 @@ using namespace std;
 #define dgetri dgetri_
 #define zgetrf zgetrf_
 #define zgetri zgetri_
+#define dgesvd dgesvd_
 #endif 
 
 // declaring Fortran interfaces
@@ -133,6 +134,11 @@ extern "C" {
 
   void zgetri(const int& n, complex<double>* a, const int& n0, 
 	      int* piv, complex<double>* work, const int&, int& st);
+
+  void dgesvd(char *JOBU, char* JOBVT, int *M, int *N,
+	      double *A, int *LDA, double *S, double *U,
+	      int *LDU, double *VT, int *LDVT, double *work,
+	      int *LWORK, int *INFO);
 }
 #endif
 
