@@ -21,6 +21,9 @@ SET(WFSRCS
   ../QMCHamiltonians/LocalPPotential.cpp
   ../QMCHamiltonians/NonLocalPPotential.cpp
   ../QMCHamiltonians/LocalCorePolPotential.cpp
+  ../LongRange/StructFact.cpp
+  ../LongRange/KContainer.cpp
+  ../LongRange/LPQHIBasis.cpp
 )
 
 ####################################
