@@ -1,6 +1,7 @@
 //Based on code by Ken Esler from PIMC++.
 
 #include "LongRange/LPQHIBasis.h"
+#include <cassert>
 
 using namespace ohmmsqmc;
 

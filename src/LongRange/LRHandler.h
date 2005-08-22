@@ -98,10 +98,9 @@ LRHandler<BreakupBasis>::InitBreakup(ParticleLayout_t& ref,int NumFunctions) {
 
   //Compute RC from box-size - in constructor? 
   //No here...need update if box changes
-  RealType rc(ref.a(0)[0]*0.5);
   int NumKnots(15);
   Basis.set_NumKnots(NumKnots);
-  Basis.set_rc(rc);
+  Basis.set_rc(ref.LR_rc);
 
   //Initialise the breakup - pass in basis.
   LRBreakup<BreakupBasis> breakuphandler(Basis);
