@@ -98,7 +98,6 @@ namespace ohmmsqmc {
     ///set \f$ <E_G> = eg \f$
     inline void setEguess(T eg){
       E_T = eg;
-      LOGMSG("Current Counter = " << Counter << " Trial Energy = " << E_T)
     } 
 
 
@@ -123,14 +122,14 @@ namespace ohmmsqmc {
 
     /** Update the energy offset
      *@param pop_now current population \f$ P(t) \f$
-     *@param eloc local energy
+     *@param ecur local energy
      *@return the energy offset \f$E_T\f$
      *
      * The trial energy is set according to
      *\f[ E_T = <E_G> - feed \log \left( \frac{P(t)}{P_0} \right) \f]
      *<E_G> is a running average over multiple runs.
     */
-    inline T update(T pop_now) {
+    inline T update(T pop_now, T ecur) {
       return E_T = EavgSum/WgtSum-Feed*log(static_cast<T>(pop_now))+logN;
     }
 
@@ -155,6 +154,7 @@ namespace ohmmsqmc {
       m_param.add(WgtSum,"weight_sum","none");
       m_param.put(cur);
       reset();
+      LogOut->getStream() << "target_walkers = " << Nideal << endl;
       LogOut->getStream() << "reference energy = " << E_T << endl;
       LogOut->getStream() << "number of generations = " << NumGeneration << endl;
       LogOut->getStream() << "feedback = " << Feed << endl;
@@ -166,6 +166,7 @@ namespace ohmmsqmc {
       Nmin = static_cast<int>(Nideal/2);
       Feed = 1.0/(static_cast<T>(NumGeneration)*Tau);
       logN = Feed*log(static_cast<T>(Nideal));
+      LOGMSG("Current Counter = " << Counter << " Trial Energy = " << E_T)
     }
 
   private:

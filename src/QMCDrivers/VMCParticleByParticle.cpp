@@ -58,16 +58,7 @@ namespace ohmmsqmc {
         ++it;++iwalker;
       } 
     } else {
-      while(it != it_end) {
-        Buffer_t& w_buffer((*it)->DataSet);
-      	w_buffer.rewind();
-        W.updateBuffer(**it,w_buffer);
-        ValueType logpsi=Psi.updateBuffer(W,w_buffer);
-        RealType enew= H.evaluate(W);
-        (*it)->resetProperty(logpsi,Psi.getSign(),enew);
-        H.saveProperty((*it)->getPropertyBase());
-        ++it;
-      }
+      updateWalkers();
     }
 
     Estimators->reset();
@@ -219,6 +210,7 @@ namespace ohmmsqmc {
         }
         ++step;++accstep;
         Estimators->accumulate(W);
+        if(accstep%100 == 0) updateWalkers();
       } while(step<nSteps);
       
       timer.stop();
@@ -236,19 +228,6 @@ namespace ohmmsqmc {
       nAccept = 0; nReject = 0;
       ++block;
 
-      //re-evaluate the buffer every block
-      it=W.begin(); 
-      it_end=W.end(); 
-      while(it != it_end) {
-        Buffer_t& w_buffer((*it)->DataSet);
-      	w_buffer.rewind();
-        W.updateBuffer(**it,w_buffer);
-        ValueType logpsi=Psi.updateBuffer(W,w_buffer);
-        RealType enew= H.evaluate(W);
-        (*it)->resetProperty(logpsi,Psi.getSign(),enew);
-        H.saveProperty((*it)->getPropertyBase());
-        ++it;
-      }
     } while(block<nBlocks);
 
     LogOut->getStream() 

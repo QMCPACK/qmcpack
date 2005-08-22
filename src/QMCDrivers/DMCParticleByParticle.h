@@ -44,19 +44,41 @@ namespace ohmmsqmc {
     //void setBranchInfo(const string& aname);
   private:
 
-
+    ///Index to determine what to do when node crossing is detected
+    IndexType KillNodeCrossing;
     ///Column index for Populaton
     IndexType PopIndex;
     ///Column index for E_T
     IndexType EtrialIndex;
+    ///Total number of accepted steps per block
+    IndexType nAcceptTot;
+    ///Total number of rejected steps per block
+    IndexType nRejectTot;
+    ///Total number of the steps when all the particle moves are rejected.
+    IndexType nAllRejected;
+    ///Total number of node crossings per block
+    IndexType nNodeCrossing;
+    ///Time-step factor \f$ 1/(2\Tau)\f$
+    RealType oneover2tau;
+    ///Time-step factor \f$ \sqrt{\Tau}\f$
+    RealType sqrttau;
     ///hdf5 file name for Branch conditions
     string BranchInfo;
+    ///input string
+    string KillWalker;
     ///branch engine
     BranchEngineType *branchEngine;
+    ParticleSet::ParticleGradient_t G, dG;
+    ParticleSet::ParticleLaplacian_t L, dL;
+
     /// Copy Constructor (disabled)
     DMCParticleByParticle(const DMCParticleByParticle& a): QMCDriver(a) { }
     /// Copy operator (disabled).
     DMCParticleByParticle& operator=(const DMCParticleByParticle&) { return *this;}
+
+    void advanceRejectNodeCrossing(int nat);
+    void advanceKillNodeCrossing(int nat);
+
   };
 }
 

@@ -82,6 +82,8 @@ namespace ohmmsqmc {
       branchEngine->put(qmcNode,LogOut);
     }
 
+    branchEngine->flush(0);
+
     MCWalkerConfiguration::iterator it(W.begin()); 
     MCWalkerConfiguration::iterator it_end(W.end()); 
     while(it != it_end) {
@@ -98,16 +100,16 @@ namespace ohmmsqmc {
     IndexType accstep=0;
     IndexType nAcceptTot = 0;
     IndexType nRejectTot = 0;
-    
     do {
       IndexType step = 0;
       timer.start();
+      IndexType pop_acc=0.0; 
       do {
-        Population = W.getActiveWalkers();
+        pop_acc += W.getActiveWalkers();
         advanceWalkerByWalker(*branchEngine);
         step++; accstep++;
         Estimators->accumulate(W);
-        Eest = branchEngine->update(Population);
+        Eest = branchEngine->update(W.getActiveWalkers(), Eest);
         branchEngine->branch(accstep,W);
       } while(step<nSteps);
       timer.stop();
@@ -116,7 +118,7 @@ namespace ohmmsqmc {
       nRejectTot += nReject;
       Estimators->flush();
       
-      Estimators->setColumn(PopIndex,static_cast<RealType>(Population));
+      Estimators->setColumn(PopIndex,static_cast<RealType>(pop_acc/static_cast<RealType>(nSteps)));
       Estimators->setColumn(EtrialIndex,Eest);
       Estimators->setColumn(AcceptIndex,
       	            static_cast<RealType>(nAccept)/static_cast<RealType>(nAccept+nReject));
@@ -150,66 +152,6 @@ namespace ohmmsqmc {
 
   /**  Advance all the walkers one timstep. 
    * @param Branch class that controls the trial energy and branching
-   * 
-   Propose a move for each walker from its old 
-   position \f${\bf R'}\f$ to a new position \f${\bf R}\f$ 
-   \f[ 
-   {\bf R'} + {\bf \chi} + 
-   \tau {\bf v_{drift}}({\bf R'}) =  {\bf R},
-   \f]
-   where \f$ {\bf \chi} \f$ is a 3N-diminsional 
-   gaussian of mean zero and variance \f$ \tau \f$
-   and \f$ {\bf v_{drift}} \f$ is the drift velocity
-   \f[
-   {\bf v_{drift}}({\bf R'}) = {\bf \nabla} 
-   \ln |\Psi_T({\bf R'})| = \Psi_T({\bf R'})^{-1} 
-   {\bf \nabla} \Psi_T({\bf R'}). 
-   \f]
-   For DMC it is necessary to check if the walker 
-   crossed the nodal surface, if this is the case 
-   then reject the move, otherwise Metropolis 
-   accept/reject with probability
-   \f[
-   P_{accept}(\mathbf{R'}\rightarrow\mathbf{R}) = 
-   \min\left[1,\frac{G(\mathbf{R}\rightarrow\mathbf{R'})
-   \Psi_T(\mathbf{R})^2}{G(\mathbf{R'}\rightarrow\mathbf{R})
-   \Psi_T(\mathbf{R'})^2}\right],
-   \f] 
-   where \f$ G \f$ is the drift-diffusion Green's function 
-   \f[
-   G(\mathbf{R'} \rightarrow 
-   \mathbf{R}) = (2\pi\tau)^{-3/2}\exp \left[ -
-   (\mathbf{R}-\mathbf{R'}-\tau \mathbf{v_{drift}}
-   (\mathbf{R'}))^2/2\tau \right].
-   \f]
-   If the move is accepted, update the walker configuration and
-   properties.  For rejected moves, do not update except for the
-   Age which needs to be incremented by one.
-   *
-   Assign a weight and multiplicity for each walker
-   \f[ weight = \exp \left[-\tau(E_L(\mathbf{R})+
-   E_L(\mathbf{R})-2E_T)/2 \right]. \f]
-   \f[ multiplicity = \exp \left[-\tau(E_L(\mathbf{R})+
-   E_L(\mathbf{R})-2E_T)/2 \right] + \nu, \f]
-   where \f$ \nu \f$ is a uniform random number.
-   *
-   Due to the fact that the drift velocity diverges on the nodal
-   surface of the trial function \f$ \Psi_T \f$, it is possible
-   for walkers close to the nodes to make excessively large proposed
-   moves \f$ {\bf R'} \longrightarrow {\bf R} \f$.  With the
-   accept/reject step this can lead to persistent configurations;
-   a remedy is to impose a cutoff on the magnitude of the drift
-   velocity.  We use the smooth cutoff proposed by Umrigar, 
-   Nightingale and Runge [J. Chem. Phys.,  99, 2865, (1993)]
-   \f[
-   {\bf \bar{v}_{drift}} = \frac{-1+\sqrt{1+2 \tau v^2_{drift}}}
-   {\tau v^2_{drift}}{\bf v_{drift}},
-   \f]
-   where \f$ {\bf v_{drift}} \f$ is evaluated at 
-   \f$ {\bf R'} \f$ and the magnitude of the drift
-   \f$ \tau {\bf v_{drift}} \f$ is unchanged for small
-   \f$ \tau v^2_{drift} \f$ and is limited to \f$ \sqrt{2\tau} \f$
-   for large \f$ \tau v^2_{drift} \f$. 
    */
   template<class BRANCHER>
   void 
@@ -246,6 +188,45 @@ namespace ohmmsqmc {
       ValueType logpsi(Psi.evaluateLog(W));
 
       bool accepted=false; 
+      if(Branch(Psi.getSign(),thisWalker.Properties(SIGN))) {
+        thisWalker.Age++;
+        thisWalker.willDie();
+      } else {
+        RealType enew(H.evaluate(W));
+        RealType logGf = -0.5*Dot(deltaR,deltaR);
+        ValueType vsq = Dot(W.G,W.G);
+        //converting gradients to drifts, D = tau*G (reuse G)
+        ValueType scale = ((-1.0+sqrt(1.0+2.0*Tau*vsq))/vsq);
+        drift = scale*W.G;
+        deltaR = (*it)->R - W.R - drift;
+        RealType logGb = -oneover2tau*Dot(deltaR,deltaR);
+
+        //set acceptance probability
+        //RealType prob= std::min(exp(logGb-logGf +2.0*(W.Properties(LOGPSI)-thisWalker.Properties(LOGPSI))),1.0);
+        RealType prob= std::min(exp(logGb-logGf +2.0*(logpsi-thisWalker.Properties(LOGPSI))),1.0);
+        if(Random() > prob){
+          thisWalker.Age++;
+          eold=enew;
+        } else {
+          accepted=true;  
+          thisWalker.R = W.R;
+          thisWalker.Drift = drift;
+          thisWalker.resetProperty(logpsi,Psi.getSign(),enew);
+          H.saveProperty(thisWalker.getPropertyBase());
+          emixed = (emixed+enew)*0.5;
+        }
+
+        //calculate the weight and multiplicity
+        ValueType M = Branch.branchGF(Tau,emixed,0.0); //1.0-prob);
+        if(thisWalker.Age > 3) M = min(0.5,M);
+        else if(thisWalker.Age > 0) M = min(1.0,M);
+        thisWalker.Weight = M; 
+        thisWalker.Multiplicity = M + Random();
+      }
+
+      Branch.accumulate(eold,thisWalker.Weight);
+
+      /*
 
       RealType enew(H.evaluate(W));
 
@@ -289,11 +270,11 @@ namespace ohmmsqmc {
       Branch.accumulate(emixed,M);
 
       //node-crossing: kill it for the time being
-      //if(Branch(W.Properties(SIGN),(*it)->Properties(SIGN))) {
       if(Branch(signold,thisWalker.Properties(SIGN))) {
         accepted=false;     
         thisWalker.willDie();
       }
+      */
 
       if(accepted) 
         ++nAccept;

@@ -64,6 +64,7 @@ namespace ohmmsqmc {
   public:
 
     typedef MCWalkerConfiguration::Walker_t Walker_t;
+    typedef Walker_t::Buffer_t              Buffer_t;
 
     /// Constructor.
     QMCDriver(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h);
@@ -168,6 +169,8 @@ namespace ohmmsqmc {
     bool putQMCInfo(xmlNodePtr cur);
 
     void addWalkers(int nwalkers);  
+
+    void updateWalkers();
 
     //void getReady();
   };

@@ -161,6 +161,30 @@ namespace ohmmsqmc {
     }
   }
 
+  /** Update walkers
+   *
+   * Evaluate the properties of all the walkers and update anonyous
+   * uffers. Used by particle-by-particle updates.
+   */
+  void QMCDriver::updateWalkers() {
+
+    MCWalkerConfiguration::iterator it(W.begin()); 
+    MCWalkerConfiguration::iterator it_end(W.end()); 
+    while(it != it_end) {
+      Buffer_t& w_buffer((*it)->DataSet);
+      w_buffer.rewind();
+      W.updateBuffer(**it,w_buffer);
+      ValueType logpsi=Psi.updateBuffer(W,w_buffer);
+      RealType enew= H.evaluate(W);
+      (*it)->resetProperty(logpsi,Psi.getSign(),enew);
+      H.saveProperty((*it)->getPropertyBase());
+      ValueType vsq = Dot(W.G,W.G);
+      ValueType scale = ((-1.0+sqrt(1.0+2.0*Tau*vsq))/vsq);
+      (*it)->Drift = scale*W.G;
+      ++it;
+    }
+  }
+
   /** Add walkers to the end of the ensemble of walkers.  
    *@param nwalkers number of walkers to add
    *@return true, if the walker configuration is not empty.

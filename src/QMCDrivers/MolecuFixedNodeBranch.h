@@ -131,6 +131,13 @@ namespace ohmmsqmc {
       return w.branch(10,Nmax,Nmin);
     }
 
+    inline void flush(int cnt) {
+      Counter=cnt;
+    }
+
+    inline void accumulate(T eloc, T wgt) {
+    }
+
     /** Update the energy offset
      *@param pop_now current population \f$ P(t) \f$
      *@param eavg the average value of the local energy
