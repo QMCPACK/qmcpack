@@ -24,7 +24,18 @@
 #include "Particle/FastParticleOperators.h"
 #include "Utilities/OhmmsInfo.h"
 #include "Message/OpenMP.h"
+#include "LongRange/StructFact.h"
+
 namespace ohmmsqmc {
+
+  void ParticleSet::createSK() {
+    //Creating StructureFactor
+    //Currently testing only 1 component for PBCs.
+    if(Lattice.BoxBConds[0]){
+      Lattice.SetLRCutoffs();
+      SK = new StructFact(*this,Lattice.LR_kc);
+    }
+  }
 
   void ParticleSet::convert(const ParticlePos_t& pin, ParticlePos_t& pout){
 

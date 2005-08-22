@@ -27,6 +27,8 @@ namespace ohmmsqmc {
   ///forward declaration of DistanceTableData
   class DistanceTableData;  
 
+  class StructFact;
+
   /** Specialized paritlce class for atomistic simulations
    *
    *Derived from QMCTraits, ParticleBase<PtclOnLatticeTraits> and OhmmsElementBase.
@@ -53,7 +55,10 @@ namespace ohmmsqmc {
    
     ///SpeciesSet of particles
     SpeciesSet mySpecies;
-    
+
+    ///Structure factor
+    StructFact *SK;    
+
     ///spherical-grids for non-local PP
     vector<ParticlePos_t*> Sphere;
 
@@ -82,6 +87,10 @@ namespace ohmmsqmc {
      *@param iflag index for the update mode
      */
     void update(int iflag=0);
+
+    /** create Structure Factor with PBCs
+     */
+    void createSK();
 
     inline SpeciesSet& getSpeciesSet() { return mySpecies;}
     inline const SpeciesSet& getSpeciesSet() const { return mySpecies;}

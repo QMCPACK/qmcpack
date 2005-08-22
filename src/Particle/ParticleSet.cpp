@@ -18,21 +18,25 @@
 #include <iomanip>
 #include "Particle/ParticleSet.h"
 #include "Particle/DistanceTableData.h"
+#include "LongRange/StructFact.h"
+
 namespace ohmmsqmc {
 
   int  ParticleSet::PtclObjectCounter = 0;
 
-  ParticleSet::ParticleSet() {
+  ParticleSet::ParticleSet(): SK(0) {
     initParticleSet();
   }
 
-  ParticleSet::ParticleSet(const ParticleSet& p) {
+  ParticleSet::ParticleSet(const ParticleSet& p): SK(0) {
     initBase();
     initParticleSet();
     assign(p);
   }
 
-  ParticleSet::~ParticleSet() {}
+  ParticleSet::~ParticleSet() {
+    if(SK) delete SK;
+  }
 
   void ParticleSet::initParticleSet() {
     ObjectTag = PtclObjectCounter;
@@ -72,7 +76,10 @@ namespace ohmmsqmc {
 
   void ParticleSet::update(int iflag) { 
     for(int i=0; i< DistTables.size(); i++) DistTables[i]->evaluate(*this);
+    //Update SK
+    SK->UpdateAllPart();
   }  
+
 
   /** move a particle iat
    * @param iat the index of the particle to be moved
@@ -107,6 +114,9 @@ namespace ohmmsqmc {
    */
   void ParticleSet::acceptMove(Index_t iat) {
     if(iat == activePtcl) {
+      //Update SK with smart moving...
+      SK->Update1Part(R[iat],activePos,GroupID[iat]);
+      //Update position + distance-table
       R[iat]=activePos; 
       for(int i=0; i< DistTables.size(); i++) {
         DistTables[i]->update(iat);
