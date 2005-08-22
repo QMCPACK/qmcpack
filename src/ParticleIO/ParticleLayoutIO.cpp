@@ -62,6 +62,8 @@ namespace ohmmsqmc {
           //ref_.Grid[mpigrid]=grid[mpigrid];
 	} else if(aname == "bconds") {
 	  putContent(bconds,cur);
+	} else if(aname == "LR_dim_cutoff") {
+	  putContent(ref_.LR_dim_cutoff,cur);
 	}
       }
       cur = cur->next;
