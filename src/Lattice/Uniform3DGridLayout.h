@@ -77,7 +77,7 @@ public:
    *Create 1x1x1 cubic view for a supercell assuming that no
    *parallelization is used.
    */
-  inline Uniform3DGridLayout():MaxConnections(0), NCMax(0), Status(0){
+  inline Uniform3DGridLayout():MaxConnections(0), LR_dim_cutoff(10.0), NCMax(0), Status(0){
     for(int i=0; i<GridLevel; i++) Grid[i] = SingleParticleIndex_t(1);
     SuperGrid.reserve(GridLevel);
     for(int i=0; i<GridLevel; i++) SuperGrid.push_back(NULL);
@@ -170,6 +170,14 @@ public:
     for(int i=0; i<u_bc.size(); i++)  c_bc[i]=toCart(u_bc[i]);
   }
 
+  ///Set LR_rc = radius of smallest sphere inside box and kc=dim/rc
+  void SetLRCutoffs() {
+    //Quick hack for RC - only works for cubic cells!
+    LR_rc = a(0)[0]*0.5;
+    //Set KC for structure-factor and LRbreakups.
+    LR_kc = LR_dim_cutoff/LR_rc;
+  }
+
   /** set the lattice vector with a tensor
    *@param lat a tensor representing a supercell
    *
@@ -195,6 +203,11 @@ public:
  
   ///The radius to define a connected cell
   value_type ConnectionRadius;
+
+  ///Dimensionless cutoff radius for G/R breakups
+  value_type LR_dim_cutoff;
+  value_type LR_rc;
+  value_type LR_kc;
 
   SingleParticleIndex_t NCMax;
 
