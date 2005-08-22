@@ -30,6 +30,7 @@ using namespace std;
 #include "QMCHamiltonians/BareKineticEnergy.h"
 #include "QMCHamiltonians/CoulombPotential.h"
 #include "QMCHamiltonians/IonIonPotential.h"
+#include "QMCHamiltonians/CoulombPBC.h"
 #include "QMCHamiltonians/LocalPPotential.h"
 #include "QMCHamiltonians/NonLocalPPotential.h"
 #include "QMCHamiltonians/LocalCorePolPotential.h"
@@ -93,9 +94,14 @@ namespace ohmmsqmc {
             string nuclei("i");
             if(t) nuclei=(const char*)t;
             ParticleSet* ion=ptclPool->getParticleSet(nuclei);
+
+	    //CHECK PBC and create CoulombPBC for ion-ion
             if(ion) {
               if(ion->getTotalNum()>1) 
-                curH->add(new IonIonPotential(*ion),"IonIon");
+		if(ion->Lattice.BoxBConds[0])
+		  curH->add(new CoulombPBC(*ion),"IonIon");
+		else
+		  curH->add(new IonIonPotential(*ion),"IonIon");
              }
           }
         }
@@ -112,7 +118,11 @@ namespace ohmmsqmc {
         return false;
       }
 
-      curH->add(new CoulombPotentialAA(*qp),"ElecElec");
+      if(qp->Lattice.BoxBConds[0])
+	curH->add(new CoulombPBC(*qp),"ElecElec");
+      else
+	curH->add(new CoulombPotentialAA(*qp),"ElecElec");
+
       if(htype == "molecule" || htype=="coulomb"){
         curH->add(new CoulombPotentialAB(*ion,*qp),"Coulomb");
       } else if(htype == "siesta" || htype=="pseudo") {
@@ -129,6 +139,9 @@ namespace ohmmsqmc {
       }
 
       if(ion->getTotalNum()>1) 
+	if(ion->Lattice.BoxBConds[0])
+          curH->add(new CoulombPBC(*ion),"IonIon");
+	else
           curH->add(new IonIonPotential(*ion),"IonIon");
     }
 
@@ -151,15 +164,19 @@ namespace ohmmsqmc {
       return;
     }
 
-      if(source == target) {
-        if(source->getTotalNum()>1)  {
-          LOGMSG("Adding Coulomb potential " << target->getName())
-          curH->add(new CoulombPotentialAA(*target),title);
-        }
-      } else {
-        LOGMSG("Adding Coulomb potential " << source->getName() << "-" << target->getName())
-        curH->add(new CoulombPotentialAB(*source,*target),title);
+    if(source == target) {
+      //CHECK PBC and create CoulombPBC for el-el
+      if(source->getTotalNum()>1)  {
+	LOGMSG("Adding Coulomb potential " << target->getName())
+	  if(target->Lattice.BoxBConds[0])
+	    curH->add(new CoulombPBC(*target),title);
+	  else
+	    curH->add(new CoulombPotentialAA(*target),title);
       }
+    } else {
+      LOGMSG("Adding Coulomb potential " << source->getName() << "-" << target->getName())
+      curH->add(new CoulombPotentialAB(*source,*target),title);
+    }
   }
   
   void 
