@@ -18,6 +18,8 @@ SET(UTILITIES
 )
 
 SET(PARTICLE
+  LongRange/KContainer.cpp
+  LongRange/StructFact.cpp
   Lattice/Uniform3DGridLayout.cpp 
   Particle/ParticleSet.cpp 
   Particle/ParticleSet.BC.cpp 
