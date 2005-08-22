@@ -38,7 +38,7 @@ namespace ohmmsqmc {
     BranchInfo("default"), KillWalker("no"), branchEngine(0){ 
     RootName = "dmc";
     QMCType ="dmc";
-    m_param.add(KillNode,"killnode","string");
+    m_param.add(KillWalker,"killnode","string");
   }
   
   DMCParticleByParticle::~DMCParticleByParticle() {
@@ -47,7 +47,7 @@ namespace ohmmsqmc {
 
   bool DMCParticleByParticle::run() { 
 
-    KillNodeCrossing = (KillNode == "yes");
+    KillNodeCrossing = (KillWalker == "yes");
     if(KillNodeCrossing) {
       LOGMSG("Walkers will be killed if a node crossing is detected.")
     } else {
