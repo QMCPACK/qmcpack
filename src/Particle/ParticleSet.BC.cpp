@@ -28,10 +28,14 @@
 
 namespace ohmmsqmc {
 
+  /** Creating StructureFactor
+   * 
+   * Currently testing only 1 component for PBCs.
+   */
   void ParticleSet::createSK() {
-    //Creating StructureFactor
-    //Currently testing only 1 component for PBCs.
-    if(Lattice.BoxBConds[0]){
+    convert2Cart(R); //make sure that R is in Cartesian coordinates
+    if(Lattice.BoxBConds[0] && SK == 0){
+      LOGMSG("Creating StructFactor for periodic systems.")
       Lattice.SetLRCutoffs();
       SK = new StructFact(*this,Lattice.LR_kc);
     }

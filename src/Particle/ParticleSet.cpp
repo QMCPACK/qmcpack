@@ -77,7 +77,7 @@ namespace ohmmsqmc {
   void ParticleSet::update(int iflag) { 
     for(int i=0; i< DistTables.size(); i++) DistTables[i]->evaluate(*this);
     //Update SK
-    SK->UpdateAllPart();
+    if(SK) SK->UpdateAllPart();
   }  
 
 
@@ -115,7 +115,7 @@ namespace ohmmsqmc {
   void ParticleSet::acceptMove(Index_t iat) {
     if(iat == activePtcl) {
       //Update SK with smart moving...
-      SK->Update1Part(R[iat],activePos,GroupID[iat]);
+      if(SK) SK->Update1Part(R[iat],activePos,GroupID[iat]);
       //Update position + distance-table
       R[iat]=activePos; 
       for(int i=0; i< DistTables.size(); i++) {
