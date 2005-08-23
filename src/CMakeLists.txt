@@ -26,6 +26,8 @@ SET(PARTICLE
   Particle/MCWalkerConfiguration.cpp 
   Particle/DistanceTable.cpp
   Particle/HDFWalkerIO.cpp
+  LongRange/KContainer.cpp
+  LongRange/StructFact.cpp
 )
 
 SET(PARTICLEIO
