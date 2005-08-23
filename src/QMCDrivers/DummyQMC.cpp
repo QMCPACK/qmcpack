@@ -57,14 +57,15 @@ namespace ohmmsqmc {
 
     //apply boundary condition: put everything back to a unit cell
     W.applyBC(W.R);
-    
+
     //update the distance table associated with W
-    DistanceTable::update(W);
-    
+    //DistanceTable::update(W);
+    W.update();
+
     //evaluate wave function
     //update the properties: note that we are getting \f$\sum_i \ln(|psi_i|)\f$ and catching the sign separately
     ValueType logpsi(Psi.evaluateLog(W));
- 
+
     RealType eloc=H.evaluate(W);
 
     return true;
