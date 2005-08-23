@@ -51,13 +51,13 @@ namespace ohmmsqmc {
     void InitBreakup();
 
     //Constructor
-    LRCoulombAB(StructFact& rhoka, ParticleSet& refa,
-		StructFact& rhokb, ParticleSet& refb): 
+    LRCoulombAB(ParticleSet& refa,
+		ParticleSet& refb): 
       //non-default base-class construct. We use 1 function for each species.
       LRHandler<BreakupBasis>(refa.Lattice), 
-      PtclRhoKA(rhoka),
+      PtclRhoKA(*refa.SK),
       PtclRefA(refa),
-      PtclRhoKA(rhokb),
+      PtclRhoKA(*refb.SK),
       PtclRefA(refb),
       tspeciesA(refa.getSpeciesSet()),
       tspeciesB(refb.getSpeciesSet()) { 

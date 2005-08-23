@@ -46,13 +46,20 @@ namespace ohmmsqmc {
     }
 
     inline Return_t evaluate(ParticleSet& P) {  
+
       if(FirstTime || PtclRef.tag() == P.tag()) {
         //d_ii->evaluate(PtclRef);
         Value = 0.0;
+
 	if(FirstTime)
-	  AA = new LRCoulombAA<LPQHIBasis>(*PtclRef.SK,PtclRef);
+	  AA = new LRCoulombAA<LPQHIBasis>(PtclRef);
 
         Value = AA->evalTotal();
+
+	cout << "Finished EvalTotal " << endl;
+
+	cout << Value << endl;
+	exit(0);
 
 	FirstTime = false;
       }

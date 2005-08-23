@@ -41,10 +41,10 @@ namespace ohmmsqmc {
     void InitBreakup();
 
     //Constructor
-    LRCoulombAA(StructFact& rhok, ParticleSet& ref): 
+    LRCoulombAA(ParticleSet& ref): 
       //non-default base-class construct. We use 1 function for each species.
       LRHandler<BreakupBasis>(ref.Lattice), 
-      PtclRhoK(rhok),
+      PtclRhoK(*ref.SK),
       PtclRef(ref),
       tspecies(ref.getSpeciesSet()) { 
 
@@ -156,10 +156,14 @@ LRCoulombAA<BreakupBasis>::evalSR() {
   RealType SR=0.0;
 
   //Update the distance-table
+  cout << "Evaluating Distance Table" << endl;
   d_aa->evaluate(PtclRef);
 
   
+  cout << "Particle loop" << endl;
   for(int ipart=0; ipart<NParticles; ipart++){
+
+    
     RealType esum = 0.0;
     for(int nn=d_aa->M[ipart], jpart=ipart+1; nn<d_aa->M[ipart+1]; nn++,jpart++) {
       //If r>r_c then skip this pair.
