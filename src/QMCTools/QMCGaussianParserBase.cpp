@@ -245,6 +245,7 @@ QMCGaussianParserBase::createDeterminantSet() {
   xmlNodePtr det_data 
     = xmlNewTextChild(adet,NULL,(const xmlChar*)"coefficient",(const xmlChar*)eig.str().c_str());
   xmlNewProp(det_data,(const xmlChar*)"size",(const xmlChar*)b_size.str().c_str());
+  xmlNewProp(det_data,(const xmlChar*)"id",(const xmlChar*)"updetC");
 
   xmlNodePtr cur = xmlAddChild(slaterdet,adet);
   adet = xmlNewNode(NULL,(const xmlChar*)"determinant");
@@ -282,6 +283,7 @@ QMCGaussianParserBase::createDeterminantSet() {
     det_data 
       = xmlNewTextChild(adet,NULL,(const xmlChar*)"coefficient",(const xmlChar*)eigD.str().c_str());
     xmlNewProp(det_data,(const xmlChar*)"size",(const xmlChar*)b_size.str().c_str());
+    xmlNewProp(det_data,(const xmlChar*)"id",(const xmlChar*)"downdetC");
   }
 
   cur = xmlAddSibling(cur,adet);
