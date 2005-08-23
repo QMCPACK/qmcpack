@@ -30,7 +30,8 @@ CrystalLattice<T,D,ORTHO>::CrystalLattice() {
   G = R;
   M = R;
   Volume = 1;
-  for(int i=0; i<D; i++) BoxBConds[i] = 1;
+  //Change the default to Non-periodic
+  for(int i=0; i<D; i++) BoxBConds[i] = 0;
   reset();
 }
 
