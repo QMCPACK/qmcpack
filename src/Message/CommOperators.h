@@ -33,7 +33,7 @@ template<unsigned N>
 inline void gsum(TinyVector<double,N>& g, int gid) {
   //TinyVector<double,N> gt = g;
   //MPI_Allreduce(gt.begin(), g.begin(), N, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-  TinyVector<double,N> gt;
+  TinyVector<double,N> gt(g);
   MPI_Allreduce(g.begin(), gt.begin(), N, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
   gt = g;
 }
