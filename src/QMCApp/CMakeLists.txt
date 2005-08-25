@@ -33,9 +33,8 @@ SET(QMCDRIVERS
   ../QMCDrivers/DummyQMC.cpp
   ../QMCDrivers/VMC.cpp
   ../QMCDrivers/VMCParticleByParticle.cpp
-  ../QMCDrivers/VMC_OPT.cpp
+  ../QMCDrivers/QMCOptimize.cpp
   ../QMCDrivers/MolecuDMC.cpp
-  ../QMCDrivers/DMCParticleByParticle.cpp
   ../QMCDrivers/ReptationMC.cpp
   ../QMCDrivers/PolymerEstimator.cpp
   ../Estimators/ScalarEstimatorManager.cpp
@@ -43,7 +42,13 @@ SET(QMCDRIVERS
   ../QMCDrivers/VMCPbyPMultiple.cpp
   ../QMCDrivers/RQMCMultiple.cpp
   ../Estimators/MultipleEnergyEstimator.cpp
+  ../QMCDrivers/DMCParticleByParticle.cpp
 )
+
+####################################
+# Test code to debug DMCParticleByParticle
+#  ../QMCDrivers/DMCParticleByParticleDebug.cpp
+####################################
 
 ####################################
 #sources for new qmcapp, general QMC code to handle multiple
