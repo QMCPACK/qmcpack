@@ -116,8 +116,7 @@ namespace ohmmsqmc {
     ///copy the content of a walker
     inline void makeCopy(const Walker& a) {    
       resize(a.R.size());
-      Age=0;
-      //Age=a.Age;
+      Age=a.Age;
       Multiplicity=a.Multiplicity;
       R = a.R;
       Drift = a.Drift;
