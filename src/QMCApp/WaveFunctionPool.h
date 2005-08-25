@@ -69,6 +69,13 @@ namespace ohmmsqmc {
     inline void 
     setParticleSetPool(ParticleSetPool* pset) { ptclPool=pset;}
 
+    /** return a xmlNode containing Jastrow
+     * @param id name of the wave function
+     *
+     * If the wavefunction with id does not exist, return 0
+     */
+    xmlNodePtr getWaveFunctionNode(const std::string& id);
+
   private:
 
     TrialWaveFunction* primaryPsi;
@@ -84,6 +91,8 @@ namespace ohmmsqmc {
     /** save the builder class to clean up at the end
      */
     std::vector<OrbitalBuilderBase*> orbitalBuilders;
+
+    std::map<std::string,xmlNodePtr> m_wfsPtr;
   };
 }
 #endif

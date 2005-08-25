@@ -325,7 +325,7 @@ bool XMLParticleParser::putSpecial(xmlNodePtr cur) {
     tspecies(membersize,ig)=numPerGroup[ig];
   }
 
-  //CREATE ParticleSet::SK. Checks PBC first.
+  //Check the unit of ParticleSet::R and PBC
   ref_.createSK();
 
   return true;

@@ -28,8 +28,7 @@ void MGradCost(const gsl_vector *v, void *params, gsl_vector *df)
   //gradient.resize(MF.NumParams());
   for (int i=0; i<MF.NumParams(); i++)
     {
-      for (int j=0; j<MF.NumParams(); j++)
-	MF.Params(j) = gsl_vector_get(v,j);
+      for (int j=0; j<MF.NumParams(); j++) MF.Params(j) = gsl_vector_get(v,j);
       scalar CostPlus, CostMinus;
       MF.Params(i) = gsl_vector_get(v,i) + epsilon;
       CostPlus = MF.Cost();
@@ -77,8 +76,7 @@ ConjugateGradient::Minimize(MinimizeFunction &MinimFunc)
   T = gsl_multimin_fdfminimizer_conjugate_fr;
   Minimizer = gsl_multimin_fdfminimizer_alloc(T,MinimFunc.NumParams());
 
-  gsl_multimin_fdfminimizer_set(Minimizer, &gslMinFunc, StartPoint,
-				StepSize, Tolerance);
+  gsl_multimin_fdfminimizer_set(Minimizer, &gslMinFunc, StartPoint, StepSize, Tolerance);
   
   do
     {
@@ -90,16 +88,15 @@ ConjugateGradient::Minimize(MinimizeFunction &MinimFunc)
 	break;
       }
       
-      status = gsl_multimin_test_gradient (Minimizer->gradient,
-					   Tolerance);
+      status = gsl_multimin_test_gradient (Minimizer->gradient, Tolerance);
 
-      if (status == GSL_SUCCESS)
-	cout << "Minimum found at:" << endl;
+      if (status == GSL_SUCCESS) cout << "Minimum found at:" << endl;
 
       //    fprintf (stderr, "%5d ", iter);
-      cout << "CG: " << iter << endl;
+      cout << " CG: " << iter << endl;
+      cout << " Current Values ";
       for (int i=0; i<MinimFunc.NumParams(); i++)
-	cout << "CG: " << setw(15) <<  gsl_vector_get(Minimizer->x, i);
+	cout << setw(15) <<  gsl_vector_get(Minimizer->x, i);
       cout << endl;
 	//	fprintf (stderr, "%15.12e ", gsl_vector_get(Minimizer->x, i));
       //  fprintf (stderr, "\n");
