@@ -41,6 +41,12 @@ namespace ohmmsqmc {
     ~HDFWalkerOutput();
     bool get(MCWalkerConfiguration&);
 
+    template<class CT>
+    bool write(CT& anything) {
+      anything.write(h_config);
+      return true;
+    }
+
     hid_t getGroupID() { return h_config;}
 
   };
@@ -68,7 +74,16 @@ namespace ohmmsqmc {
     ~HDFWalkerInput();
     int put(MCWalkerConfiguration&);
     bool put(MCWalkerConfiguration&, int ic);
-    bool append(MCWalkerConfiguration&, int nwalkers=-1);
+
+    bool append(MCWalkerConfiguration& w);
+    bool append(MCWalkerConfiguration& w, int nwalkers);
+
+    template<class CT>
+    bool read(CT& anything) {
+      anything.read(h_config);
+      return true;
+    }
+
   };
 
 }
