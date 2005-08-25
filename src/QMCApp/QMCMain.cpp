@@ -33,7 +33,7 @@
 #include "QMCDrivers/VMCMultiple.h"
 #include "QMCDrivers/VMCPbyPMultiple.h"
 #include "QMCDrivers/DMCParticleByParticle.h"
-#include "QMCDrivers/VMC_OPT.h"
+#include "QMCDrivers/QMCOptimize.h"
 #include "QMCDrivers/MolecuDMC.h"
 #include "QMCDrivers/ReptationMC.h"
 #include "QMCDrivers/RQMCMultiple.h"
@@ -104,15 +104,16 @@ namespace ohmmsqmc {
     }
 
     if(q.size()) { 
-      if(curRunType != DMC_RUN) {//add en_ref to the last node 
-        xmlNodePtr lastqmc=q.back();
-        xmlNodePtr aparam = xmlNewNode(NULL,(const xmlChar*)"parameter");
-        xmlNewProp(aparam,(const xmlChar*)"name",(const xmlChar*)"en_ref");
-        char ref_energy[128];
-        sprintf(ref_energy,"%15.5e",qmcSystem->getLocalEnergy());
-        xmlNodeSetContent(aparam,(const xmlChar*)ref_energy);
-        xmlAddChild(lastqmc,aparam);
-      }
+      //hdf5 file should have everything
+      //if(curRunType != DMC_RUN) {//add en_ref to the last node 
+      //  xmlNodePtr lastqmc=q.back();
+      //  xmlNodePtr aparam = xmlNewNode(NULL,(const xmlChar*)"parameter");
+      //  xmlNewProp(aparam,(const xmlChar*)"name",(const xmlChar*)"en_ref");
+      //  char ref_energy[128];
+      //  sprintf(ref_energy,"%15.5e",qmcSystem->getLocalEnergy());
+      //  xmlNodeSetContent(aparam,(const xmlChar*)ref_energy);
+      //  xmlAddChild(lastqmc,aparam);
+      //}
       //unlink other qmc node but the last one
       for(int i=0;i<q.size()-1; i++) {
         xmlUnlinkNode(q[i]);
@@ -266,34 +267,6 @@ namespace ohmmsqmc {
     }
   }
 
-  /** grep basic objects and add to Pools
-   * @param context_ xmlXPathContextPtr 
-   *
-   * Use xpath to get all the xml elements with particleset, wavefunction and hamiltonian
-   * tags. 
-   */
-  //void QMCMain::processContext(xmlXPathContextPtr context_) {
-
-  //  xmlXPathObjectPtr result 
-  //    = xmlXPathEvalExpression((const xmlChar*)"//particleset",context_);
-  //  for(int i=0; i<result->nodesetval->nodeNr; i++) {
-  //    ptclPool->put(result->nodesetval->nodeTab[i]);
-  //  }
-  //  xmlXPathFreeObject(result);
-
-  //  result=xmlXPathEvalExpression((const xmlChar*)"//wavefunction",context_);
-  //  for(int i=0; i<result->nodesetval->nodeNr; i++) {
-  //    psiPool->put(result->nodesetval->nodeTab[i]);
-  //  }
-  //  xmlXPathFreeObject(result);
-
-  //  result=xmlXPathEvalExpression((const xmlChar*)"//hamiltonian",context_);
-  //  for(int i=0; i<result->nodesetval->nodeNr; i++) {
-  //    hamPool->put(result->nodesetval->nodeTab[i]);
-  //  }
-  //  xmlXPathFreeObject(result);
-  //}
-
   /** prepare for a QMC run
    * @param cur qmc element
    * @return true, if a valid QMCDriver is set.
@@ -311,100 +284,99 @@ namespace ohmmsqmc {
         qmcDriver = 0;
       }
     }
-    //qmcDriver=0;
 
     if(qmcDriver == 0) {
-    ///////////////////////////////////////////////
-    // get primaryPsi and primaryH
-    ///////////////////////////////////////////////
-    TrialWaveFunction* primaryPsi= 0;
-    QMCHamiltonian* primaryH=0;
-    queue<TrialWaveFunction*> targetPsi;//FIFO 
-    queue<QMCHamiltonian*> targetH;//FIFO
+      ///////////////////////////////////////////////
+      // get primaryPsi and primaryH
+      ///////////////////////////////////////////////
+      TrialWaveFunction* primaryPsi= 0;
+      QMCHamiltonian* primaryH=0;
+      queue<TrialWaveFunction*> targetPsi;//FIFO 
+      queue<QMCHamiltonian*> targetH;//FIFO
 
-    xmlNodePtr tcur=cur->children;
-    while(tcur != NULL) {
-       if(xmlStrEqual(tcur->name,(const xmlChar*)"qmcsystem")) {
-         const xmlChar* t= xmlGetProp(tcur,(const xmlChar*)"wavefunction");
-         targetPsi.push(psiPool->getWaveFunction((const char*)t));
-         t= xmlGetProp(tcur,(const xmlChar*)"hamiltonian");
-         targetH.push(hamPool->getHamiltonian((const char*)t));
-       }
-       tcur=tcur->next;
-    }
+      xmlNodePtr tcur=cur->children;
+      while(tcur != NULL) {
+        if(xmlStrEqual(tcur->name,(const xmlChar*)"qmcsystem")) {
+          const xmlChar* t= xmlGetProp(tcur,(const xmlChar*)"wavefunction");
+          targetPsi.push(psiPool->getWaveFunction((const char*)t));
+          t= xmlGetProp(tcur,(const xmlChar*)"hamiltonian");
+          targetH.push(hamPool->getHamiltonian((const char*)t));
+        }
+        tcur=tcur->next;
+      }
 
-    if(targetH.empty()) {
-      primaryPsi=psiPool->getPrimary();
-      primaryH=hamPool->getPrimary();
-    } else { //mark the first targetPsi and targetH as the primaries
-      primaryPsi=targetPsi.front(); targetPsi.pop();
-      primaryH=targetH.front();targetH.pop();
-    }
-    //set primaryH->Primary
-    primaryH->setPrimary(true);
-    ///////////////////////////////////////////////
-
-    if (what == "vmc"){
-      primaryH->add(new ConservedEnergy,"Flux");
-      qmcDriver = new VMC(*qmcSystem,*primaryPsi,*primaryH);
-      curRunType = VMC_RUN;
-    } else if(what == "vmc-ptcl"){
-      primaryH->add(new ConservedEnergy,"Flux");
-      qmcDriver = new VMCParticleByParticle(*qmcSystem,*primaryPsi,*primaryH);
-      curRunType = VMC_RUN;
-    } else if(what == "dmc"){
-      MolecuDMC *dmc = new MolecuDMC(*qmcSystem,*primaryPsi,*primaryH);
-      //dmc->setBranchInfo(PrevConfigFile);
-      qmcDriver=dmc;
-      curRunType = DMC_RUN;
-    } else if(what == "dmc-ptcl"){
-      DMCParticleByParticle *dmc = new DMCParticleByParticle(*qmcSystem,*primaryPsi,*primaryH);
-      //dmc->setBranchInfo(PrevConfigFile);
-      qmcDriver=dmc;
-      curRunType = DMC_RUN;
-    } else if(what == "optimize"){
-      VMC_OPT *vmc = new VMC_OPT(*qmcSystem,*primaryPsi,*primaryH);
-      vmc->addConfiguration(PrevConfigFile);
-      qmcDriver=vmc;
-      curRunType = OPTIMIZE_RUN;
-    } else if(what == "rmc") {
-      qmcDriver = new ReptationMC(*qmcSystem,*primaryPsi,*primaryH);
-      curRunType = RMC_RUN;
-    } else if(what == "vmc-multi") {
-      qmcDriver = new VMCMultiple(*qmcSystem,*primaryPsi,*primaryH);
-      while(targetH.size()) {
-        qmcDriver->add_H_and_Psi(targetH.front(),targetPsi.front());
-        targetH.pop();
-        targetPsi.pop(); 
+      if(targetH.empty()) {
+        primaryPsi=psiPool->getPrimary();
+        primaryH=hamPool->getPrimary();
+      } else { //mark the first targetPsi and targetH as the primaries
+        primaryPsi=targetPsi.front(); targetPsi.pop();
+        primaryH=targetH.front();targetH.pop();
       }
-      curRunType = VMC_RUN;
-    } else if(what == "vmc-ptcl-multi") {
-      qmcDriver = new VMCPbyPMultiple(*qmcSystem,*primaryPsi,*primaryH);
-      while(targetH.size()) {
-	qmcDriver->add_H_and_Psi(targetH.front(),targetPsi.front());
-	targetH.pop();
-	targetPsi.pop(); 
+      //set primaryH->Primary
+      primaryH->setPrimary(true);
+      ///////////////////////////////////////////////
+      if (what == "vmc"){
+        primaryH->add(new ConservedEnergy,"Flux");
+        qmcDriver = new VMC(*qmcSystem,*primaryPsi,*primaryH);
+        curRunType = VMC_RUN;
+      } else if(what == "vmc-ptcl"){
+        primaryH->add(new ConservedEnergy,"Flux");
+        qmcDriver = new VMCParticleByParticle(*qmcSystem,*primaryPsi,*primaryH);
+        curRunType = VMC_RUN;
+      } else if(what == "dmc"){
+        MolecuDMC *dmc = new MolecuDMC(*qmcSystem,*primaryPsi,*primaryH);
+        //dmc->setBranchInfo(PrevConfigFile);
+        qmcDriver=dmc;
+        curRunType = DMC_RUN;
+      } else if(what == "dmc-ptcl"){
+        DMCParticleByParticle *dmc = new DMCParticleByParticle(*qmcSystem,*primaryPsi,*primaryH);
+        //dmc->setBranchInfo(PrevConfigFile);
+        qmcDriver=dmc;
+        curRunType = DMC_RUN;
+      } else if(what == "optimize"){
+        QMCOptimize *opt = new QMCOptimize(*qmcSystem,*primaryPsi,*primaryH);
+        opt->addConfiguration(PrevConfigFile);
+        opt->setWaveFunctionNode(psiPool->getWaveFunctionNode("null"));
+        qmcDriver=opt;
+        curRunType = OPTIMIZE_RUN;
+      } else if(what == "rmc") {
+        qmcDriver = new ReptationMC(*qmcSystem,*primaryPsi,*primaryH);
+        curRunType = RMC_RUN;
+      } else if(what == "vmc-multi") {
+        qmcDriver = new VMCMultiple(*qmcSystem,*primaryPsi,*primaryH);
+        while(targetH.size()) {
+          qmcDriver->add_H_and_Psi(targetH.front(),targetPsi.front());
+          targetH.pop();
+          targetPsi.pop(); 
+        }
+        curRunType = VMC_RUN;
+      } else if(what == "vmc-ptcl-multi") {
+        qmcDriver = new VMCPbyPMultiple(*qmcSystem,*primaryPsi,*primaryH);
+        while(targetH.size()) {
+          qmcDriver->add_H_and_Psi(targetH.front(),targetPsi.front());
+          targetH.pop();
+          targetPsi.pop(); 
+        }
+        curRunType = VMC_RUN;
+      } else if(what == "rmc-multi") {
+        qmcDriver = new RQMCMultiple(*qmcSystem,*primaryPsi,*primaryH);
+        while(targetH.size()) {
+          qmcDriver->add_H_and_Psi(targetH.front(),targetPsi.front());
+          targetH.pop();
+          targetPsi.pop(); 
+        }
+        curRunType = RMC_RUN;
+      } else {
+        qmcDriver = new DummyQMC(*qmcSystem,*primaryPsi,*primaryH);
+        WARNMSG("Cannot termine what type of qmc to run. Creating DummyQMC for testing")
+          curRunType = DUMMY_RUN;
       }
-      curRunType = VMC_RUN;
-    } else if(what == "rmc-multi") {
-      qmcDriver = new RQMCMultiple(*qmcSystem,*primaryPsi,*primaryH);
-      while(targetH.size()) {
-	qmcDriver->add_H_and_Psi(targetH.front(),targetPsi.front());
-	targetH.pop();
-	targetPsi.pop(); 
-      }
-      curRunType = RMC_RUN;
-    } else {
-      qmcDriver = new DummyQMC(*qmcSystem,*primaryPsi,*primaryH);
-      WARNMSG("Cannot termine what type of qmc to run. Creating DummyQMC for testing")
-      curRunType = DUMMY_RUN;
-    }
     }
 
     if(qmcDriver) {
 
       LOGMSG("Starting a QMC simulation " << what)
-      qmcDriver->setFileRoot(myProject.CurrentRoot());
+      qmcDriver->setFileNames(myProject.CurrentRoot(),PrevConfigFile);
       qmcDriver->process(cur);
       qmcDriver->run();
 
