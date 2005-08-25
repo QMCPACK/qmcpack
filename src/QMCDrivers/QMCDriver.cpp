@@ -27,7 +27,9 @@
 
 namespace ohmmsqmc {
 
+  //initialize the static data
   int QMCDriver::Counter = -1;
+  QMCDriver::BranchEngineType* QMCDriver::branchEngine=0;
   
   QMCDriver::QMCDriver(MCWalkerConfiguration& w, 
 		       TrialWaveFunction& psi, 
@@ -37,7 +39,7 @@ namespace ohmmsqmc {
     nBlocks(100), nSteps(1000), 
     nAccept(0), nReject(0), nTargetWalkers(0),
     Tau(0.001), FirstStep(0.0), qmcNode(NULL),
-    QMCType("invalid"), 
+    QMCType("invalid"), h5FileRoot("invalid"),
     W(w), Psi(psi), H(h), Estimators(0),
     LogOut(0)
   { 
@@ -72,6 +74,7 @@ namespace ohmmsqmc {
    * - process input file
    *   -- putQMCInfo: <parameter/> s for QMC
    *   -- put : extra data by derived classes
+   * - initialize branchEngine to accumulate energies
    * - initialize Estimators
    * - initialize Walkers
    * The virtual function put(xmlNodePtr cur) is where QMC algorithm-dependent
@@ -79,21 +82,39 @@ namespace ohmmsqmc {
    */
   void QMCDriver::process(xmlNodePtr cur) {
 
-
+    //check if distance tables are connected to the quantum particles W
     W.setUpdateMode(MCWalkerConfiguration::Update_Particle);
 
     deltaR.resize(W.getTotalNum());
     drift.resize(W.getTotalNum());
-
     qmcNode=cur;
-
     putQMCInfo(qmcNode);
     put(qmcNode);
 
-    //create estimator if not allocated
-    if(Estimators == 0) {
-      Estimators =new ScalarEstimatorManager(H);
+
+    bool firstTime = (branchEngine == 0);
+    if(firstTime) {
+      branchEngine = new BranchEngineType(Tau,W.getActiveWalkers());
     }
+
+    bool flush_branch=true;
+    const xmlChar* tocontinue=xmlGetProp(qmcNode,(const xmlChar*)"continue");
+    if(tocontinue) {
+      if(xmlStrEqual(tocontinue, (const xmlChar*)"yes")) flush_branch=false;
+    }
+    //get Branching information
+    branchEngine->put(qmcNode,LogOut);
+
+    if(firstTime && h5FileRoot.size() && h5FileRoot != "invalid") {
+      LOGMSG("Initializing BranchEngine with " << h5FileRoot)
+      HDFWalkerInput wReader(h5FileRoot,0,1);
+      wReader.read(*branchEngine);
+    }
+    
+    if(flush_branch) branchEngine->flush(0);
+
+    //create estimator if not allocated
+    if(Estimators == 0) Estimators =new ScalarEstimatorManager(H);
 
     //reset the Properties of all the walkers
     int numCopies= (H1.empty())?1:H1.size();
@@ -113,14 +134,15 @@ namespace ohmmsqmc {
   }
 
   /**Sets the root file name for all output files.!
-   * \param aname the root file name
+   * @param aname the root file name
+   * @param h5name root name of the master hdf5 file
    *
    * All output files will be of
    * the form "aname.s00X.suffix", where "X" is number
    * of previous QMC runs for the simulation and "suffix"
    * is the suffix for the output file. 
    */
-  void QMCDriver::setFileRoot(const string& aname) {
+  void QMCDriver::setFileNames(const string& aname, const string& h5name) {
 
     RootName = aname;
     char logfile[128];
@@ -129,7 +151,9 @@ namespace ohmmsqmc {
     if(LogOut) delete LogOut;
     LogOut = new OhmmsInform(" ",logfile);
     
-    LogOut->getStream() << "Starting a " << QMCType << " run " << endl;
+    LogOut->getStream() << "#Starting a " << QMCType << " run " << endl;
+
+    h5FileRoot = h5name;
   }
 
   
@@ -138,26 +162,46 @@ namespace ohmmsqmc {
    * Evaluate the Properties of Walkers when a QMC starts
    */
   void QMCDriver::initialize() {
-    //calculate local energies and wave functions:
-    //can be redundant but the overhead is small
-    LOGMSG("Evaluate all the walkers before starting")
+    if(QMCDriverMode[QMC_UPDATE_MODE]) {
+      bool require_register =  W.createAuxDataSet();
+      MCWalkerConfiguration::iterator it(W.begin()),it_end(W.end());
+      if(require_register) {
+        while(it != it_end) {
+          (*it)->DataSet.rewind();
+          W.registerData(**it,(*it)->DataSet);
+          ValueType logpsi=Psi.registerData(W,(*it)->DataSet);
 
-    MCWalkerConfiguration::iterator it(W.begin()),it_end(W.end());
+          RealType vsq = Dot(W.G,W.G);
+          RealType scale = ((-1.0+sqrt(1.0+2.0*Tau*vsq))/vsq);
+          (*it)->Drift = scale*W.G;
 
-    while(it != it_end) {
+          RealType ene = H.evaluate(W);
+          (*it)->resetProperty(logpsi,Psi.getSign(),ene);
+          H.saveProperty((*it)->getPropertyBase());
+          ++it;
+        } 
+      } else {
+        updateWalkers(); // simply re-evaluate the values 
+      }
+    } else {
+      //calculate local energies and wave functions:
+      //can be redundant but the overhead is small
+      LOGMSG("Evaluate all the walkers before starting for walker-by-walker update")
 
-      W.R = (*it)->R;
-      DistanceTable::update(W);
+      MCWalkerConfiguration::iterator it(W.begin()),it_end(W.end());
+      while(it != it_end) {
+        W.R = (*it)->R;
+        DistanceTable::update(W);
 
-      ValueType logpsi(Psi.evaluateLog(W));
-      ValueType vsq = Dot(W.G,W.G);
-      ValueType scale = ((-1.0+sqrt(1.0+2.0*Tau*vsq))/vsq);
-      (*it)->Drift = scale*W.G;
-
-      RealType ene = H.evaluate(W);
-      (*it)->resetProperty(logpsi,Psi.getSign(),ene);
-      H.saveProperty((*it)->getPropertyBase());
-      ++it;
+        ValueType logpsi(Psi.evaluateLog(W));
+        RealType vsq = Dot(W.G,W.G);
+        RealType scale = ((-1.0+sqrt(1.0+2.0*Tau*vsq))/vsq);
+        (*it)->Drift = scale*W.G;
+        RealType ene = H.evaluate(W);
+        (*it)->resetProperty(logpsi,Psi.getSign(),ene);
+        H.saveProperty((*it)->getPropertyBase());
+        ++it;
+      }
     }
   }
 
@@ -304,11 +348,11 @@ namespace ohmmsqmc {
       }
     }
     
-    LogOut->getStream() << "timestep = " << Tau << endl;
-    LogOut->getStream() << "blocks = " << nBlocks << endl;
-    LogOut->getStream() << "steps = " << nSteps << endl;
-    LogOut->getStream() << "FirstStep = " << FirstStep << endl;
-    LogOut->getStream() << "walkers = " << W.getActiveWalkers() << endl;
+    LogOut->getStream() << "#timestep = " << Tau << endl;
+    LogOut->getStream() << "#blocks = " << nBlocks << endl;
+    LogOut->getStream() << "#steps = " << nSteps << endl;
+    LogOut->getStream() << "#FirstStep = " << FirstStep << endl;
+    LogOut->getStream() << "#walkers = " << W.getActiveWalkers() << endl;
     m_param.get(cout);
 
     /*check to see if the target population is different 

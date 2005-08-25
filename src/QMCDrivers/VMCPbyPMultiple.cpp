@@ -37,6 +37,8 @@ namespace ohmmsqmc {
     QMCDriver(w,psi,h) { 
     RootName = "vmc";
     QMCType ="vmc";
+    QMCDriverMode.set(QMC_UPDATE_MODE,1);
+    QMCDriverMode.set(QMC_MULTIPLE,1);
     add_H_and_Psi(&h,&psi);
   }
 
@@ -63,11 +65,9 @@ namespace ohmmsqmc {
     
     Pooma::Clock timer;
 
-    RealType oneovertau = 1.0/Tau;
-    RealType oneover2tau = 0.5*oneovertau;
-    RealType g = sqrt(Tau);
+    m_oneover2tau = 0.5/Tau;
+    m_sqrttau = sqrt(Tau);
     RealType nPsi_minus_one = nPsi-1;
-    
 
     ParticleSet::ParticleGradient_t dG(W.getTotalNum());
 
@@ -114,7 +114,7 @@ namespace ohmmsqmc {
 
           for(int iat=0; iat<W.getTotalNum(); iat++) {  //Particles loop
 
-            PosType dr = g*deltaR[iat]+thisWalker.Drift[iat];
+            PosType dr = m_sqrttau*deltaR[iat]+thisWalker.Drift[iat];
             PosType newpos = W.makeMove(iat,dr);
 
 	    for(int ipsi=0; ipsi<nPsi; ipsi++){
@@ -152,7 +152,7 @@ namespace ohmmsqmc {
             //ValueType scale=Tau;
 	    drift *= scale;
             dr = thisWalker.R[iat]-newpos-drift[iat];
-            RealType logGb = -oneover2tau*dot(dr,dr);
+            RealType logGb = -m_oneover2tau*dot(dr,dr);
 
 	    // td = Target Density ratio
 	    //RealType td=pow(ratio[0],2)*sumratio[0]/(*it)->Properties(SUMRATIO);

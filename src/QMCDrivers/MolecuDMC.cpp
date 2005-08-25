@@ -29,13 +29,14 @@
 namespace ohmmsqmc {
 
   MolecuDMC::MolecuDMC(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h):
-    QMCDriver(w,psi,h),BranchInfo("default"),branchEngine(0){ 
+    QMCDriver(w,psi,h),
+    KillNodeCrossing(0), KillWalker("no"),BranchInfo("default"){ 
     RootName = "dmc";
     QMCType ="dmc";
+    m_param.add(KillWalker,"killnode","string");
   }
 
   MolecuDMC::~MolecuDMC() {
-    if(branchEngine) delete branchEngine;
   }
 
   void MolecuDMC::setBranchInfo(const string& afile) {
@@ -69,20 +70,25 @@ namespace ohmmsqmc {
    */
   bool MolecuDMC::run() { 
 
+    KillNodeCrossing = (KillWalker == "yes");
+    if(KillNodeCrossing) {
+      LOGMSG("Walkers will be killed if a node crossing is detected.")
+    } else {
+      LOGMSG("Walkers will be kept even if a node crossing is detected.")
+    }
+
     //add columns
     IndexType PopIndex = Estimators->addColumn("Population");
     IndexType EtrialIndex = Estimators->addColumn("Etrial");
     //write the header
     Estimators->reportHeader();
 
-    if(branchEngine == 0) {
-      branchEngine=new BranchEngineType(Tau,W.getActiveWalkers());
-      RealType e_ref = W.getLocalEnergy();
-      branchEngine->setEguess(e_ref);
-      branchEngine->put(qmcNode,LogOut);
-    }
-
-    branchEngine->flush(0);
+    //if(branchEngine == 0) {
+    //  branchEngine=new BranchEngineType(Tau,W.getActiveWalkers());
+    //  branchEngine->setEguess(W.getLocalEnergy());
+    //  branchEngine->put(qmcNode,LogOut);
+    //}
+    //branchEngine->flush(0);
 
     MCWalkerConfiguration::iterator it(W.begin()); 
     MCWalkerConfiguration::iterator it_end(W.end()); 
@@ -91,6 +97,9 @@ namespace ohmmsqmc {
       (*it)->Multiplicity=1;
       ++it;
     }
+
+    m_oneover2tau = 0.5/Tau;
+    m_sqrttau = sqrt(Tau);
     
     IndexType block = 0;
     Pooma::Clock timer;
@@ -106,7 +115,10 @@ namespace ohmmsqmc {
       IndexType pop_acc=0.0; 
       do {
         pop_acc += W.getActiveWalkers();
-        advanceWalkerByWalker(*branchEngine);
+        if(KillNodeCrossing) 
+          advanceKillNodeCrossing(*branchEngine);
+        else
+          advanceRejectNodeCrossing(*branchEngine);
         step++; accstep++;
         Estimators->accumulate(W);
         Eest = branchEngine->update(W.getActiveWalkers(), Eest);
@@ -132,6 +144,7 @@ namespace ohmmsqmc {
         //create an output engine: could accumulate the configurations
         HDFWalkerOutput WO(RootName);
         WO.get(W);
+        WO.write(*branchEngine);
       }
       W.reset();
     } while(block<nBlocks);
@@ -144,24 +157,19 @@ namespace ohmmsqmc {
       //create an output engine: could accumulate the configurations
       HDFWalkerOutput WO(RootName);
       WO.get(W);
+      WO.write(*branchEngine);
     }
 
     Estimators->finalize();
     return true;
   }
 
-  /**  Advance all the walkers one timstep. 
+  /**  Advance all the walkers one timstep while killing the walkers when node crossing is detected.
    * @param Branch class that controls the trial energy and branching
    */
   template<class BRANCHER>
   void 
-  MolecuDMC::advanceWalkerByWalker(BRANCHER& Branch) {
-    
-
-    //Pooma::Clock timer;
-    RealType oneovertau = 1.0/Tau;
-    RealType oneover2tau = 0.5*oneovertau;
-    RealType g = sqrt(Tau);
+  MolecuDMC::advanceKillNodeCrossing(BRANCHER& Branch) {
 
     MCWalkerConfiguration::iterator it(W.begin()); 
     MCWalkerConfiguration::iterator it_end(W.end()); 
@@ -179,7 +187,7 @@ namespace ohmmsqmc {
       //create a 3N-Dimensional Gaussian with variance=1
       makeGaussRandom(deltaR);
       
-      W.R = g*deltaR + thisWalker.R + thisWalker.Drift;
+      W.R = m_sqrttau*deltaR + thisWalker.R + thisWalker.Drift;
       
       //update the distance table associated with W
       DistanceTable::update(W);
@@ -199,14 +207,11 @@ namespace ohmmsqmc {
         ValueType scale = ((-1.0+sqrt(1.0+2.0*Tau*vsq))/vsq);
         drift = scale*W.G;
         deltaR = (*it)->R - W.R - drift;
-        RealType logGb = -oneover2tau*Dot(deltaR,deltaR);
+        RealType logGb = -m_oneover2tau*Dot(deltaR,deltaR);
 
-        //set acceptance probability
-        //RealType prob= std::min(exp(logGb-logGf +2.0*(W.Properties(LOGPSI)-thisWalker.Properties(LOGPSI))),1.0);
         RealType prob= std::min(exp(logGb-logGf +2.0*(logpsi-thisWalker.Properties(LOGPSI))),1.0);
         if(Random() > prob){
           thisWalker.Age++;
-          eold=enew;
         } else {
           accepted=true;  
           thisWalker.R = W.R;
@@ -214,6 +219,7 @@ namespace ohmmsqmc {
           thisWalker.resetProperty(logpsi,Psi.getSign(),enew);
           H.saveProperty(thisWalker.getPropertyBase());
           emixed = (emixed+enew)*0.5;
+          eold=enew;
         }
 
         //calculate the weight and multiplicity
@@ -225,57 +231,80 @@ namespace ohmmsqmc {
       }
 
       Branch.accumulate(eold,thisWalker.Weight);
+      if(accepted) 
+        ++nAccept;
+      else 
+        ++nReject;
+      ++it;
+    }
+  }
 
-      /*
+  /**  Advance all the walkers one timstep while killing the walkers when node crossing is detected.
+   * @param Branch class that controls the trial energy and branching
+   */
+  template<class BRANCHER>
+  void 
+  MolecuDMC::advanceRejectNodeCrossing(BRANCHER& Branch) {
 
-      RealType enew(H.evaluate(W));
+    MCWalkerConfiguration::iterator it(W.begin()); 
+    MCWalkerConfiguration::iterator it_end(W.end()); 
+    while(it != it_end) {
+      
+      Walker_t& thisWalker(**it);
+      thisWalker.Weight= 1.0;
+      thisWalker.Multiplicity=1;
+      
+      //save old local energy
+      RealType eold    = thisWalker.Properties(LOCALENERGY);
+      RealType signold = thisWalker.Properties(SIGN);
+      RealType emixed  = eold;
 
-      //deltaR = W.R - (*it)->R - (*it)->Drift;
-      RealType logGf = -0.5*Dot(deltaR,deltaR);
+      //create a 3N-Dimensional Gaussian with variance=1
+      makeGaussRandom(deltaR);
+      
+      W.R = m_sqrttau*deltaR + thisWalker.R + thisWalker.Drift;
+      
+      //update the distance table associated with W
+      DistanceTable::update(W);
+      
+      //evaluate wave function
+      ValueType logpsi(Psi.evaluateLog(W));
 
-      //scale the drift term to prevent persistent cofigurations
-      ValueType vsq = Dot(W.G,W.G);
-
-      //converting gradients to drifts, D = tau*G (reuse G)
-      //   W.G *= Tau;//original implementation with bare drift
-      ValueType scale = ((-1.0+sqrt(1.0+2.0*Tau*vsq))/vsq);
-      drift = scale*W.G;
-      deltaR = (*it)->R - W.R - drift;
-
-      //RealType backwardGF = exp(-oneover2tau*Dot(deltaR,deltaR));
-      RealType logGb = -oneover2tau*Dot(deltaR,deltaR);
-
-      //set acceptance probability
-      //RealType prob= std::min(exp(logGb-logGf +2.0*(W.Properties(LOGPSI)-thisWalker.Properties(LOGPSI))),1.0);
-      RealType prob= std::min(exp(logGb-logGf +2.0*(logpsi-thisWalker.Properties(LOGPSI))),1.0);
-
-      if(Random() > prob){
+      bool accepted=false; 
+      if(Branch(Psi.getSign(),thisWalker.Properties(SIGN))) {
         thisWalker.Age++;
       } else {
-        accepted=true;  
-        thisWalker.R = W.R;
-        thisWalker.Drift = drift;
-        thisWalker.resetProperty(logpsi,Psi.getSign(),enew);
-        H.saveProperty(thisWalker.getPropertyBase());
-        emixed = (emixed+enew)*0.5;
+        RealType enew(H.evaluate(W));
+        RealType logGf = -0.5*Dot(deltaR,deltaR);
+        ValueType vsq = Dot(W.G,W.G);
+        //converting gradients to drifts, D = tau*G (reuse G)
+        ValueType scale = ((-1.0+sqrt(1.0+2.0*Tau*vsq))/vsq);
+        drift = scale*W.G;
+        deltaR = (*it)->R - W.R - drift;
+        RealType logGb = -m_oneover2tau*Dot(deltaR,deltaR);
+
+        RealType prob= std::min(exp(logGb-logGf +2.0*(logpsi-thisWalker.Properties(LOGPSI))),1.0);
+        if(Random() > prob){
+          thisWalker.Age++;
+        } else {
+          accepted=true;  
+          thisWalker.R = W.R;
+          thisWalker.Drift = drift;
+          thisWalker.resetProperty(logpsi,Psi.getSign(),enew);
+          H.saveProperty(thisWalker.getPropertyBase());
+          emixed = (emixed+enew)*0.5;
+          eold=enew;
+        }
       }
-      
+
       //calculate the weight and multiplicity
-      ValueType M = Branch.branchGF(Tau,emixed,0.0); //1.0-prob);
+      ValueType M = Branch.branchGF(Tau,emixed,0.0); 
       if(thisWalker.Age > 3) M = min(0.5,M);
       else if(thisWalker.Age > 0) M = min(1.0,M);
       thisWalker.Weight = M; 
       thisWalker.Multiplicity = M + Random();
-      
-      Branch.accumulate(emixed,M);
 
-      //node-crossing: kill it for the time being
-      if(Branch(signold,thisWalker.Properties(SIGN))) {
-        accepted=false;     
-        thisWalker.willDie();
-      }
-      */
-
+      Branch.accumulate(eold,thisWalker.Weight);
       if(accepted) 
         ++nAccept;
       else 

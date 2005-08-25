@@ -53,18 +53,26 @@ namespace ohmmsqmc {
 
     ///Run the Optimization algorithm.
     bool run();
+    ///process xml node
     bool put(xmlNodePtr cur);
-    RealType correlatedSampling();
     ///assign optimization parameter i
     scalar& Params(int i) { return OptParams[i]; }
     ///return optimization parameter i
     scalar Params(int i) const { return OptParams[i]; }
+    ///return the cost value for CGMinimization
     scalar Cost();
+
+    ///evaluate the local energies of the samples
+    RealType correlatedSampling();
 
     ///return the number of optimizable parameters
     int NumParams() { return OptParams.size(); }
     ///add a configuration file to the list of files
     void addConfiguration(const string& a);
+
+    void setWaveFunctionNode(xmlNodePtr cur) {
+      m_wfPtr=cur;
+    }
 
     void WriteStuff();
 
@@ -80,18 +88,11 @@ namespace ohmmsqmc {
     int PartID;
     ///total number of partitions that will share a set of configuratons
     int NumParts;
-    ///storage for previous values of the cost function
-    std::deque<scalar> costList;
-    ///storage for previous sets of parameters
-    std::deque<vector<scalar> > paramList;
-    ///parameters to be optimized
-    vector<scalar> OptParams;
-    ///ID tag for each optimizable parameter
-    vector<string> IDtag;  
-    ///list of files storing configurations  
-    vector<string> ConfigFile;
-    ///method for optimization, default conjugate gradient
-    string optmethod;
+    /** |E-E_T|^PowerE is used for the cost function
+     *
+     * default PowerE=1
+     */
+    int PowerE;
     ///number of times cost function evaluated
     int NumCostCalls;
     ///total number of samples to use in correlated sampling
@@ -108,6 +109,31 @@ namespace ohmmsqmc {
     RealType CostValue;
     ///target energy
     RealType Etarget;
+    ///real target energy with the Correlation Factor
+    RealType EtargetEff;
+    /** Rescaling factor to correct the target energy Etarget=(1+CorrelationFactor)*Etarget
+     *
+     * default CorrelationFactor=0.0;
+     */
+    RealType CorrelationFactor;
+    ///xml node to be dumped
+    xmlNodePtr m_wfPtr;
+    ///document node to be dumped
+    xmlDocPtr m_doc_out;
+    ///parameters to be updated
+    vector<xmlNodePtr> m_param_out;
+    ///storage for previous values of the cost function
+    std::deque<scalar> costList;
+    ///storage for previous sets of parameters
+    std::deque<vector<scalar> > paramList;
+    ///parameters to be optimized
+    vector<scalar> OptParams;
+    ///ID tag for each optimizable parameter
+    vector<string> IDtag;  
+    ///list of files storing configurations  
+    vector<string> ConfigFile;
+    ///method for optimization, default conjugate gradient
+    string optmethod;
     ///Hamiltonians that depend on the optimization: KE
     QMCHamiltonian H_KE;
 
@@ -129,7 +155,6 @@ namespace ohmmsqmc {
     bool resetWaveFunctions();
     bool checkParameters();
     bool putOptParams();  
-    RealType evalCost();
 
     ///Copy Constructor (disabled).
     QMCOptimize(const QMCOptimize& a): QMCDriver(a) { }  

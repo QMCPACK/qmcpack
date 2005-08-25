@@ -36,6 +36,7 @@ namespace ohmmsqmc {
     RootName = "vmc";
     QMCType ="vmc-multi";
 
+    QMCDriverMode.set(QMC_MULTIPLE,1);
     //Add the primary h and psi, extra H and Psi pairs will be added by QMCMain
     add_H_and_Psi(&h,&psi);
   }
@@ -139,9 +140,8 @@ namespace ohmmsqmc {
   void 
   VMCMultiple::advanceWalkerByWalker() {
     
-    RealType oneovertau = 1.0/Tau;
-    RealType oneover2tau = 0.5*oneovertau;
-    RealType g = sqrt(Tau);
+    m_oneover2tau = 0.5/Tau;
+    m_sqrttau = sqrt(Tau);
     
     //MCWalkerConfiguration::PropertyContainer_t Properties;
     
@@ -154,13 +154,10 @@ namespace ohmmsqmc {
 
       MCWalkerConfiguration::Walker_t &thisWalker(**it);
 
-      //copy the properties of the working walker
-      //Properties = thisWalker.Properties;   
-
       //create a 3N-Dimensional Gaussian with variance=1
       makeGaussRandom(deltaR);
       
-      W.R = g*deltaR + thisWalker.R + thisWalker.Drift;
+      W.R = m_sqrttau*deltaR + thisWalker.R + thisWalker.Drift;
       
       //update the distance table associated with W
       DistanceTable::update(W);
@@ -204,7 +201,7 @@ namespace ohmmsqmc {
       drift *= scale; 						   	
 
       deltaR = thisWalker.R - W.R - drift;
-      RealType logGb = -oneover2tau*Dot(deltaR,deltaR);
+      RealType logGb = -m_oneover2tau*Dot(deltaR,deltaR);
       
       //Original
       //RealType g = Properties(SUMRATIO)/thisWalker.Properties(SUMRATIO)*   		

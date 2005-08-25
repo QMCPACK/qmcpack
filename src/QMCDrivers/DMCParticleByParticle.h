@@ -21,8 +21,6 @@
 #define OHMMS_QMC_DMC_PARTICLEBYPARTCLE_H
 #include "QMCDrivers/QMCDriver.h" 
 #include "Utilities/OhmmsInfo.h"
-//#include "QMCDrivers/MolecuFixedNodeBranch.h"
-#include "QMCDrivers/SimpleFixedNodeBranch.h"
 namespace ohmmsqmc {
 
   /** @ingroup QMCDrivers ParticleByParticle 
@@ -30,8 +28,6 @@ namespace ohmmsqmc {
    */
   class DMCParticleByParticle: public QMCDriver {
   public:
-    //typedef MolecuFixedNodeBranch<RealType> BranchEngineType;
-    typedef SimpleFixedNodeBranch<RealType> BranchEngineType;
     /// Constructor.
     DMCParticleByParticle(MCWalkerConfiguration& w, TrialWaveFunction& psi, 
 			  QMCHamiltonian& h);
@@ -58,16 +54,10 @@ namespace ohmmsqmc {
     IndexType nAllRejected;
     ///Total number of node crossings per block
     IndexType nNodeCrossing;
-    ///Time-step factor \f$ 1/(2\Tau)\f$
-    RealType oneover2tau;
-    ///Time-step factor \f$ \sqrt{\Tau}\f$
-    RealType sqrttau;
     ///hdf5 file name for Branch conditions
     string BranchInfo;
     ///input string
     string KillWalker;
-    ///branch engine
-    BranchEngineType *branchEngine;
     ParticleSet::ParticleGradient_t G, dG;
     ParticleSet::ParticleLaplacian_t L, dL;
 

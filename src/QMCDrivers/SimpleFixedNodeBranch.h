@@ -24,6 +24,7 @@
 #include <algorithm>
 #include <numeric>
 #include "OhmmsData/ParameterSet.h"
+#include "OhmmsData/HDFAttribIO.h"
 
 namespace ohmmsqmc {
 
@@ -75,6 +76,8 @@ namespace ohmmsqmc {
     ///Constructor
     SimpleFixedNodeBranch(T tau, int nideal): Counter(0), Nideal(nideal), NumGeneration(50), MaxCopy(10),
       Tau(tau), E_T(0.0), EavgSum(0.0), WgtSum(0.0) {
+      Feed = 1.0/(static_cast<T>(NumGeneration)*Tau);
+      logN = Feed*log(static_cast<T>(Nideal));
     }
     
     ///return true if the nodal surface is crossed
@@ -95,7 +98,9 @@ namespace ohmmsqmc {
       //return min(0.5/(reject+1e-12),exp(-tau*(emix-E_T)));
     }
     
-    ///set \f$ <E_G> = eg \f$
+    /** set the trial energy \f$ <E_G> = eg \f$
+     * @param eg input trial energy
+     */
     inline void setEguess(T eg){
       E_T = eg;
     } 
@@ -110,8 +115,14 @@ namespace ohmmsqmc {
       return w.branch(10,Nmax,Nmin);
     }
 
+    /** restart averaging
+     * @param counter Counter to determine the cummulative average will be reset.
+     */
     inline void flush(int counter) {
-      if(counter== 0) { EavgSum=0.0; WgtSum=0.0; }
+      if(counter == 0) {
+        EavgSum=0.0;
+        WgtSum=0.0; 
+      }
       Counter=counter;
     }
 
@@ -129,7 +140,7 @@ namespace ohmmsqmc {
      *\f[ E_T = <E_G> - feed \log \left( \frac{P(t)}{P_0} \right) \f]
      *<E_G> is a running average over multiple runs.
     */
-    inline T update(T pop_now, T ecur) {
+    inline T update(int pop_now, T ecur) {
       return E_T = EavgSum/WgtSum-Feed*log(static_cast<T>(pop_now))+logN;
     }
 
@@ -154,10 +165,10 @@ namespace ohmmsqmc {
       m_param.add(WgtSum,"weight_sum","none");
       m_param.put(cur);
       reset();
-      LogOut->getStream() << "target_walkers = " << Nideal << endl;
-      LogOut->getStream() << "reference energy = " << E_T << endl;
-      LogOut->getStream() << "number of generations = " << NumGeneration << endl;
-      LogOut->getStream() << "feedback = " << Feed << endl;
+      LogOut->getStream() << "#target_walkers = " << Nideal << endl;
+      LogOut->getStream() << "#reference energy = " << E_T << endl;
+      LogOut->getStream() << "#number of generations = " << NumGeneration << endl;
+      LogOut->getStream() << "#feedback = " << Feed << endl;
       return true;
     }
 
@@ -169,7 +180,36 @@ namespace ohmmsqmc {
       LOGMSG("Current Counter = " << Counter << " Trial Energy = " << E_T)
     }
 
-  private:
+    void write(hid_t grp) {
+      hsize_t dim=3;
+      vector<T> esave(3);
+      esave[0] = (abs(E_T)<numeric_limits<T>::epsilon())? EavgSum/WgtSum:E_T;
+      esave[1]=EavgSum; esave[2]=WgtSum;
+      hid_t dataspace  = H5Screate_simple(1, &dim, NULL);
+      hid_t dataset =  
+        H5Dcreate(grp, "Summary", H5T_NATIVE_DOUBLE, dataspace, H5P_DEFAULT);
+      hid_t ret = 
+        H5Dwrite(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT,&esave[0]);
+      H5Dclose(dataset);
+      H5Sclose(dataspace);
+    }
+
+    void read(hid_t grp) {
+      herr_t status = H5Eset_auto(NULL, NULL);
+      status = H5Gget_objinfo (grp, "Summary", 0, NULL);
+      if(status == 0) {
+        hid_t dataset = H5Dopen(grp, "Summary");
+        vector<T> esave(3);
+        hsize_t ret = H5Dread(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, &esave[0]);
+        H5Dclose(dataset);
+        E_T=esave[0]; EavgSum=esave[1]; WgtSum=esave[2];
+        LOGMSG("Summary is found \n BranchEngine is initialized  E_T=" << E_T << " EavgSum="<<EavgSum << " WgtSum=" << WgtSum)
+      } else {
+        LOGMSG("Summary is not found. Starting from scratch")
+      }
+    }
+
+   private:
     ///default constructor (disabled)
     SimpleFixedNodeBranch(){}
   };

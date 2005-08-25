@@ -30,8 +30,9 @@
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Estimators/ScalarEstimatorManager.h"
-#include <strstream>
-class OhmmsInform;
+#include "Utilities/OhmmsInfo.h"
+//#include "QMCDrivers/MolecuFixedNodeBranch.h"
+#include "QMCDrivers/SimpleFixedNodeBranch.h"
 
 namespace ohmmsqmc {
 
@@ -63,15 +64,20 @@ namespace ohmmsqmc {
 
   public:
 
+    /** enumeration coupled with QMCMode */
+    enum {QMC_UPDATE_MODE, QMC_MULTIPLE};
+
     typedef MCWalkerConfiguration::Walker_t Walker_t;
     typedef Walker_t::Buffer_t              Buffer_t;
+    typedef SimpleFixedNodeBranch<RealType> BranchEngineType;
+    //typedef MolecuFixedNodeBranch<RealType> BranchEngineType;
 
     /// Constructor.
     QMCDriver(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h);
 
     virtual ~QMCDriver();
 
-    void setFileRoot(const string& aname);
+    void setFileNames(const string& aname, const string& h5name);
 
     void add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi) {
       H1.push_back(h);
@@ -91,11 +97,22 @@ namespace ohmmsqmc {
     ///counts the number of qmc runs
     static int Counter;
 
+    ///branch engine, declared to be static
+    static BranchEngineType *branchEngine;
+
     ///flag to print walker ensemble
     bool pStride;
 
     ///Index of the Acceptance Ratio
     int AcceptIndex;
+
+    /** bits to classify QMCDriver
+     *
+     * - QMCDriverMode[0]? particle-by-particle: walker-by-walker
+     * - QMCDriverMode[1]? multiple H/Psi : single H/Psi
+     * Other bits are unused.
+     */
+    bitset<4> QMCDriverMode;
 
     ///maximum number of blocks
     IndexType nBlocks;
@@ -114,23 +131,29 @@ namespace ohmmsqmc {
 
     ///timestep
     RealType Tau;
+    ///Time-step factor \f$ 1/(2\Tau)\f$
+    RealType m_oneover2tau;
+    ///Time-step factor \f$ \sqrt{\Tau}\f$
+    RealType m_sqrttau;
 
     ///timestep to assign Walker::R at the start. Default = 0.0
     RealType FirstStep;
 
-    ///reference energy, only used in DMC
-    RealType e_ref;
+    ///Observables manager
+    ScalarEstimatorManager* Estimators;
 
     ///pointer to qmc node in xml file
     xmlNodePtr qmcNode;
 
-    ParameterSet m_param;
-
     ///type of qmc: assigned by subclasses
     string QMCType;
-
+    ///the root of h5File
+    string h5FileRoot;
     ///root of all the output files
     string RootName;
+
+    ///store any parameter that has to be read from a file
+    ParameterSet m_param;
 
     ///walker ensemble
     MCWalkerConfiguration& W;
@@ -140,9 +163,6 @@ namespace ohmmsqmc {
 
     ///Hamiltonian
     QMCHamiltonian& H;
-
-    ///Observables manager
-    ScalarEstimatorManager* Estimators;
 
     vector<TrialWaveFunction*> Psi1;
 
@@ -160,8 +180,7 @@ namespace ohmmsqmc {
     ///temporary buffer to accumulate data
     ostrstream log_buffer;
 
-    PooledData<RealType> HamPool;
-   
+    //PooledData<RealType> HamPool;
 
     ///Copy Constructor (disabled).
     QMCDriver(const QMCDriver& a): W(a.W), Psi(a.Psi), H(a.H), Estimators(0){}
@@ -172,7 +191,6 @@ namespace ohmmsqmc {
 
     void updateWalkers();
 
-    //void getReady();
   };
   /**@}*/
 }

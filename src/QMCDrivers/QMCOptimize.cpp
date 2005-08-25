@@ -29,16 +29,14 @@ namespace ohmmsqmc {
   QMCOptimize::QMCOptimize(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h):
     QMCDriver(w,psi,h), 
     UseWeight(false),
-    PartID(0),
-    NumParts(1),
-    NumCostCalls(0),
-    NumSamples(0),
+    PartID(0), NumParts(1), PowerE(1), NumCostCalls(0), NumSamples(0),
     cg_tolerance(1.0e-4),
     cg_stepsize(0.01), 
     cg_epsilon(1.0e-3),
     w_en(0.0),
-    w_var(1.0),
-    w_abs(1.0)
+    w_var(0.0),
+    w_abs(1.0),
+    CorrelationFactor(0.0), m_wfPtr(NULL), m_doc_out(NULL)
   { 
     paramList.resize(10); 
     costList.resize(10,0.0); 
@@ -51,6 +49,8 @@ namespace ohmmsqmc {
     m_param.add(cg_tolerance,"tolerance","none");
     m_param.add(cg_stepsize,"stepsize","none");
     m_param.add(cg_epsilon,"epsilon","none");
+    m_param.add(PowerE,"power","int");
+    m_param.add(CorrelationFactor,"correlation","scalar");
 
     //H_KE.add(H.getHamiltonian("Kinetic"),"Kinetic");
     for(int i=0; i<H.size(); i++) {
@@ -75,13 +75,21 @@ namespace ohmmsqmc {
 
   /** Clean up the vector */
   QMCOptimize::~QMCOptimize() {
+    if(m_doc_out != NULL) xmlFreeDoc(m_doc_out);
   }
 
-  /** Main functio to run a optimization
+  /** Add configuration files for the optimization
+   * @param a root of a hdf5 configuration file
+   */
+  void QMCOptimize::addConfiguration(const string& a) {
+
+    ConfigFile.push_back(a);
+  }
+
+  /** Reimplement QMCDriver::run
    */
   bool
   QMCOptimize::run() {
-
 
     Estimators->reportHeader();
 
@@ -90,22 +98,30 @@ namespace ohmmsqmc {
     //set the data members to start a new run
     checkConfigurations();
 
-    //over-write the Etarget by E_T
-    if(abs(branchEngine->E_T)>numeric_limits<RealType>::epsilon()) {
-      Etarget=branchEngine->E_T;
-      w_abs=0.0; w_var=1.0;
-    }
-
-
     //estimator has to collect the data over mpi nodes
     Estimators->setCollectionMode(OHMMS::Controller->ncontexts()>1);
 
-    correlatedSampling();
+    //overwrite the Etarget by E_T if E_T is zero
+    if(abs(branchEngine->E_T)>numeric_limits<RealType>::epsilon()) {
+      Etarget=branchEngine->E_T;
+      LOGMSG("Etarget (set from previous runs) = " << Etarget)
+    }
 
-    //   log_buffer << "0 ";
-    //   std::copy(OptParams.begin(),OptParams.end(),
-    //             ostream_iterator<RealType>(log_buffer," "));
-    CostValue = evalCost();
+    //evaluate effective target energy
+    EtargetEff=(1.0+CorrelationFactor)*Etarget;
+
+    LOGMSG("Effective Target Energy = " << EtargetEff)
+    LOGMSG("Cost Function = " << w_en << "*<E> + " << w_var << "*<Var> + " << w_abs << "*|E-E_T|^" << PowerE)
+
+    LogOut->getStream() << "#Effective Target Energy = " << EtargetEff << endl;
+    LogOut->getStream() << "#Cost Function = " << w_en << "*<E> + " << w_var << "*<Var> + " << w_abs << "*|E-E_T|^" << PowerE<<endl;
+    log_buffer.setf(ios::left,ios::adjustfield);
+    log_buffer << "# index ";
+    for(int i=0; i<IDtag.size(); i++) log_buffer << setw(16) << IDtag[i];
+    log_buffer << " walkers            eavg/wgt    eavg/walkers      evar/wgt       evar/walkers      evar_abs       cost ";
+    LogOut->getStream() << log_buffer.rdbuf() << endl;
+    log_buffer.clear();
+    log_buffer.setf(ios::right,ios::adjustfield);
 
     ConjugateGradient CG;
     CG.Tolerance = cg_tolerance;
@@ -114,34 +130,6 @@ namespace ohmmsqmc {
     CG.Minimize(*this);
 
     return true;
-  }
-
-
-
-  void QMCOptimize::addConfiguration(const string& a) {
-
-    ConfigFile.push_back(a);
-
-  }
-
-  /** Apply constraints on the optimizables. */
-
-  bool QMCOptimize::checkParameters() {
-
-    bool samesign = true;
-    //Checking sign change and reject if the sign of the 
-    //parameter changes but not seem to do so well.
-    //   int i = 0;
-    //   while(i<OptParams.size() && samesign) {
-    //     if(OptParams[i]*paramList[0][i]<0) samesign = false;
-    //     i++;
-    //   }
-    if(samesign) {  
-      paramList.pop_back();
-      paramList.push_front(OptParams);
-    }
-
-    return samesign;
   }
 
   QMCOptimize::RealType
@@ -157,55 +145,29 @@ namespace ohmmsqmc {
       //evaluate new local energies
       RealType nw_effect=correlatedSampling();
 
-      log_buffer << setw(5) << NumCostCalls << " ";
-      std::copy(OptParams.begin(),OptParams.end(), ostream_iterator<RealType>(log_buffer," "));
-      log_buffer << " " << nw_effect;
+      //Estimators::accumulate has been called by correlatedSampling
+      RealType eavg_w = SumValue[SUM_E_WGT]/SumValue[SUM_WGT];
+      RealType evar_w = SumValue[SUM_ESQ_WGT]/SumValue[SUM_WGT]-eavg_w*eavg_w;
 
-      //evaluate the cost value
-      CostValue = evalCost();
-      //if(nw_effect < NumSamples/10) {
+      RealType wgtinv=1.0/static_cast<RealType>(W.getActiveWalkers());
+      RealType eavg = SumValue[SUM_E_BARE]*wgtinv;
+      RealType evar = SumValue[SUM_ESQ_BARE]*wgtinv-eavg*eavg; 
 
-      //  ERRORMSG("Number of Effective Walkers is too small " << nw_effect)
-      //    ERRORMSG("Going to stop now.")
-      //    OHMMS::Controller->abort();
-      //  cost = 1e6;
-      //} // if nw_effect < NumSamples/5
-      //CostValue = cost;
+      //DIFFERENT COST FUNCTIOn
+      //CostValue = w_en*eavg+w_var*0.5*Tau*evar;
+      //CostValue = w_abs*SumValue[SUM_ABSE_BARE]*wgtinv+w_var*evar;
+      RealType evar_abs = SumValue[SUM_ABSE_WGT]/SumValue[SUM_WGT];
+      CostValue = w_abs*evar_abs+w_var*evar;
+
+
+      if(nw_effect < NumSamples/10) {
+        ERRORMSG("Number of Effective Walkers is too small " << nw_effect)
+        ERRORMSG("Going to stop now.")
+        OHMMS::Controller->abort();
+        CostValue = 1e6;
+      } 
     }
-
     return CostValue;
-
-  }
-
-  /** Minimize the cost function with respect to a set of parameters.  
-  */
-
-  QMCOptimize::RealType QMCOptimize::evalCost() {
-
-    //Estimators::accumulate has been called by correlatedSampling
-    RealType eavg_w = SumValue[SUM_E_WGT]/SumValue[SUM_WGT];
-    RealType evar_w = SumValue[SUM_ESQ_WGT]/SumValue[SUM_WGT]-eavg_w*eavg_w;
-
-    RealType wgtinv=1.0/static_cast<RealType>(W.getActiveWalkers());
-    RealType eavg = SumValue[SUM_E_BARE]*wgtinv;
-    RealType evar = SumValue[SUM_ESQ_BARE]*wgtinv-eavg*eavg; 
-
-    //DIFFERENT COST FUNCTIOn
-    //RealType cost= w_en*eavg+w_var*0.5*Tau*evar;
-    RealType cost = w_abs*SumValue[SUM_ABSE_BARE]*wgtinv+w_var*evar;
-
-    if(NumCostCalls == 0) {
-      log_buffer << setw(5) << NumCostCalls << " ";
-      std::copy(OptParams.begin(),OptParams.end(), ostream_iterator<RealType>(log_buffer," "));
-      log_buffer <<setw(17) << NumSamples;
-    }
-    
-    log_buffer << setw(20) << eavg_w << setw(20) << eavg << setw(20) 
-      << evar_w << setw(20) << evar << setw(20) << cost;
-    LogOut->getStream() << log_buffer.rdbuf() << endl;
-    log_buffer.clear();
-
-    return cost;
   }
 
   /**  Perform the correlated sampling algorthim.
@@ -252,7 +214,7 @@ namespace ohmmsqmc {
       saved[ENERGY_NEW]=eloc_new;
       saved[REWEIGHT]=weight;
 
-      RealType delE=abs(eloc_new-Etarget);
+      RealType delE=pow(abs(eloc_new-EtargetEff),PowerE);
 
       SumValue[SUM_E_BARE] += eloc_new;
       SumValue[SUM_ESQ_BARE] += eloc_new*eloc_new;
@@ -265,6 +227,9 @@ namespace ohmmsqmc {
       ++it;
       ++iw;
     }
+
+    //collect everything
+    gsum(SumValue,0);
 
     return SumValue[SUM_WGT]*SumValue[SUM_WGT]/SumValue[SUM_WGTSQ];
   }
@@ -317,9 +282,16 @@ namespace ohmmsqmc {
       ConfigFile.erase(ConfigFile.begin(),ConfigFile.end());
     }
 
-    Etarget /= static_cast<RealType>(NumSamples);
+    //Need to sum over the processors
+    vector<RealType> etemp(2);
+    etemp[0]=Etarget;
+    etemp[1]=static_cast<RealType>(NumSamples);
+    gsum(etemp,0);
+    Etarget = static_cast<RealType>(etemp[0]/etemp[1]);
+    NumSamples = static_cast<int>(etemp[1]);
 
-    LOGMSG("Total number of walkers " << NumSamples << " Eavg = " << Etarget)
+    LOGMSG("Total number of walkers          = " << NumSamples)
+    LOGMSG("Etarget (guess from the average) = " << Etarget)
   }
 
   /** Reset the Wavefunction \f$ \Psi({\bf R},{{\bf \alpha_i}}) \f$
@@ -357,8 +329,78 @@ namespace ohmmsqmc {
   }
   
   void QMCOptimize::WriteStuff() {
-    //WRITE A XML FILE
+
+    static int writeCounter=0;
+
+    if(OHMMS::Controller->master()) {
+      //dump to a file
+      log_buffer << setw(5) << NumCostCalls << " ";
+      for(int i=0; i<OptParams.size(); i++) log_buffer << setw(16) << OptParams[i];
+      log_buffer << setw(15) << nw_effect;
+      log_buffer << setw(16) << eavg_w << setw(16) << eavg << setw(16) << evar_w << setw(16) << evar << setw(16) << evar_abs << setw(16) << CostValue;
+      LogOut->getStream() << log_buffer.rdbuf() << endl;
+      log_buffer.clear();
+
+      if(m_doc_out == NULL) {
+        m_doc_out = xmlNewDoc((const xmlChar*)"1.0");
+        xmlNodePtr qm_root = xmlNewNode(NULL, BAD_CAST "qmcsystem"); 
+        xmlAddChild(qm_root, m_wfPtr);
+        xmlDocSetRootElement(m_doc_out, qm_root);
+        m_param_out.resize(IDtag.size(),NULL);
+        xmlXPathContextPtr acontext = xmlXPathNewContext(m_doc_out);
+        xmlXPathObjectPtr result = xmlXPathEvalExpression((const xmlChar*)"//parameter",acontext);
+        for(int iparam=0; iparam<result->nodesetval->nodeNr; iparam++) {
+          xmlNodePtr cur= result->nodesetval->nodeTab[iparam];
+          string aname((const char*)xmlGetProp(cur,(const xmlChar*)"id"));
+          vector<string>::iterator it= find(IDtag.begin(), IDtag.end(), aname);
+          if(it != IDtag.end()) {
+            int item=it-IDtag.begin();
+            m_param_out[item]=cur;
+          }
+        }
+        xmlXPathFreeObject(result);
+        xmlXPathFreeContext(acontext);
+      }
+
+      //update parameters
+      for(int item=0; item<m_param_out.size(); item++) {
+        if(m_param_out[item] != NULL) {
+          getContent(OptParams[item],m_param_out[item]);
+        }
+      }
+
+      char newxml[128];
+      sprintf(newxml,"%s.opt.%d.xml", RootName.c_str(),writeCounter);
+      xmlSaveFormatFile(newxml,m_doc_out,1);
+    }
+
+    writeCounter++;
+
+    OHMMS::Controller->barrier();
   }
+
+  /** Apply constraints on the optimizables. 
+   * 
+   * Here is where constraints should go
+   */ 
+  bool QMCOptimize::checkParameters() {
+
+    bool samesign = true;
+    //Checking sign change and reject if the sign of the 
+    //parameter changes but not seem to do so well.
+    //   int i = 0;
+    //   while(i<OptParams.size() && samesign) {
+    //     if(OptParams[i]*paramList[0][i]<0) samesign = false;
+    //     i++;
+    //   }
+    if(samesign) {  
+      paramList.pop_back();
+      paramList.push_front(OptParams);
+    }
+
+    return samesign;
+  }
+
 
   /** Parses the xml input file for parameter definitions for the wavefunction optimization.
    * @param q current xmlNode 
@@ -489,7 +531,6 @@ namespace ohmmsqmc {
       LogOut->getStream() << "#All weights set to 1.0" << endl;
     }
 
-    LogOut->getStream() << "#Cost Function: <E> <Var> |E-E_T| " << w_en << " " << w_var << " " << w_abs << endl;
 
     putOptParams();
 
@@ -529,19 +570,13 @@ namespace ohmmsqmc {
     }
 
     log_buffer.setf(ios::scientific, ios::floatfield);
-    log_buffer.setf(ios::right,ios::adjustfield);
-    log_buffer.precision(10);
+    log_buffer.precision(8);
 
     log_buffer << "#Inital Variables ";
     std::copy(OptParams.begin(),OptParams.end(), ostream_iterator<RealType>(log_buffer," "));
     LogOut->getStream() << log_buffer.rdbuf() << endl << endl;
     log_buffer.clear();
 
-    log_buffer << "#Results: index ";
-    std::copy(IDtag.begin(),IDtag.end(), ostream_iterator<string>(log_buffer," "));
-    log_buffer << " effective-walkers  cost-values ";
-    LogOut->getStream() << log_buffer.rdbuf() << endl;
-    log_buffer.clear();
     Psi.reset();
     return true;
   }

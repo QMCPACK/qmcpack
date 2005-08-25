@@ -98,20 +98,27 @@ namespace ohmmsqmc {
       Estimators->setColumn(AcceptIndex,
       		    static_cast<RealType>(nAccept)/static_cast<RealType>(nAccept+nReject));
       Estimators->report(accstep);
-      
+      //accumulate running average with weight 1
+      branchEngine->accumulate(Estimators->average(0),1.0);
+
       LogOut->getStream() << "Block " << block << " " << timer.cpu_time() << endl;
       if(pStride) WO.get(W);
       nAccept = 0; nReject = 0;
       block++;
     } while(block<nBlocks);
     
+
     LogOut->getStream() 
       << "Ratio = " 
       << static_cast<double>(nAcceptTot)/static_cast<double>(nAcceptTot+nRejectTot)
       << endl;
     
     if(!pStride) WO.get(W);
-    W.setLocalEnergy(Estimators->average(0));
+
+    WO.write(*branchEngine);
+
+    //Evaluate E_T
+    branchEngine->update(W.getActiveWalkers(), Estimators->average(0));
     Estimators->finalize();
     return true;
   }
@@ -153,9 +160,8 @@ namespace ohmmsqmc {
   void 
   VMC::advanceWalkerByWalker() {
     
-    RealType oneovertau = 1.0/Tau;
-    RealType oneover2tau = 0.5*oneovertau;
-    RealType g = sqrt(Tau);
+    m_oneover2tau = 0.5/Tau;
+    m_sqrttau = sqrt(Tau);
     
     //property container to hold temporary properties, such as a local energy
     //MCWalkerConfiguration::PropertyContainer_t Properties;
@@ -170,7 +176,7 @@ namespace ohmmsqmc {
       //create a 3N-Dimensional Gaussian with variance=1
       makeGaussRandom(deltaR);
       
-      W.R = g*deltaR + thisWalker.R + thisWalker.Drift;
+      W.R = m_sqrttau*deltaR + thisWalker.R + thisWalker.Drift;
       
       //update the distance table associated with W
       DistanceTable::update(W);
@@ -191,7 +197,7 @@ namespace ohmmsqmc {
       
       //backward GreenFunction needs \f$d{\bf R} = {\bf R}_{old} - {\bf R}_{new} - {\bf V}_d\f$
       deltaR = thisWalker.R - W.R - drift;
-      RealType logGb = -oneover2tau*Dot(deltaR,deltaR);
+      RealType logGb = -m_oneover2tau*Dot(deltaR,deltaR);
       
       RealType g= exp(logGb-logGf+2.0*(logpsi-thisWalker.Properties(LOGPSI)));
       if(Random() > g) {

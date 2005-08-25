@@ -35,14 +35,15 @@ namespace ohmmsqmc {
     QMCDriver(w,psi,h),
     KillNodeCrossing(0),
     PopIndex(-1), EtrialIndex(-1),
-    BranchInfo("default"), KillWalker("no"), branchEngine(0){ 
+    BranchInfo("default"), KillWalker("no"){ 
     RootName = "dmc";
     QMCType ="dmc";
+    QMCDriverMode.set(QMC_UPDATE_MODE,1);
     m_param.add(KillWalker,"killnode","string");
   }
   
+  /// destructor
   DMCParticleByParticle::~DMCParticleByParticle() {
-    if(branchEngine) delete branchEngine;
   }
 
   bool DMCParticleByParticle::run() { 
@@ -60,19 +61,20 @@ namespace ohmmsqmc {
     //write the header
     Estimators->reportHeader();
 
-    if(branchEngine == 0) {
-      branchEngine=new BranchEngineType(Tau,W.getActiveWalkers());
-      RealType e_ref = W.getLocalEnergy();
-      branchEngine->setEguess(e_ref);
-      branchEngine->put(qmcNode,LogOut);
-    }
-
-    //this should be controlled by continue="yes/no" of qmc element
+    //initialization of branchEngine has moved to QMCDriver
+    //if(branchEngine == 0) {
+    //  branchEngine=new BranchEngineType(Tau,W.getActiveWalkers());
+    //  RealType e_ref = W.getLocalEnergy();
+    //  branchEngine->setEguess(e_ref);
+    //}
+    //branchEngine->put(qmcNode,LogOut);
+    ////this should be controlled by continue="yes/no" of qmc element
     //branchEngine->flush(0);
+    //branchEngine->put(qmcNode,LogOut);
 
+    /* This has moved to QMCDriver::initialize()
     //going to add routines to calculate how much we need
     bool require_register =  W.createAuxDataSet();
-
     //check if buffer is properly initialized
     if(require_register) {
       MCWalkerConfiguration::iterator it(W.begin()); 
@@ -88,6 +90,7 @@ namespace ohmmsqmc {
     } else {
       updateWalkers();
     }
+    */
 
     Estimators->reset();
     
@@ -104,8 +107,8 @@ namespace ohmmsqmc {
     IndexType accstep=0;
     nAcceptTot = 0;
     nRejectTot = 0;
-    oneover2tau = 0.5/Tau;
-    sqrttau = sqrt(Tau);
+    m_oneover2tau = 0.5/Tau;
+    m_sqrttau = sqrt(Tau);
     do {
       IndexType step = 0;
       timer.start();
@@ -113,7 +116,9 @@ namespace ohmmsqmc {
       nReject=0;
       nAllRejected = 0;
       nNodeCrossing=0;
+      IndexType pop_acc=0.0; 
       do {
+        pop_acc += W.getActiveWalkers();
         //default is killing
         if(KillNodeCrossing) 
           advanceKillNodeCrossing(nat);
@@ -121,8 +126,8 @@ namespace ohmmsqmc {
           advanceRejectNodeCrossing(nat);
         ++step; ++accstep;
         Estimators->accumulate(W);
-        Eest = branchEngine->update(W.getActiveWalkers(), Eest); 
         branchEngine->branch(accstep,W);
+        Eest = branchEngine->update(W.getActiveWalkers(), Eest); 
         //every 100 step, we update the walkers
         if(accstep%100 == 0) updateWalkers();
       } while(step<nSteps);
@@ -134,7 +139,7 @@ namespace ohmmsqmc {
       
       //update estimator
       Estimators->flush();
-      Estimators->setColumn(PopIndex,static_cast<RealType>(W.getActiveWalkers()));
+      Estimators->setColumn(PopIndex,static_cast<RealType>(pop_acc/static_cast<RealType>(nSteps)));
       Estimators->setColumn(EtrialIndex,Eest); 
       Estimators->setColumn(AcceptIndex,
       		     static_cast<RealType>(nAccept)/static_cast<RealType>(nAccept+nReject));
@@ -149,6 +154,7 @@ namespace ohmmsqmc {
       if(pStride) { //create an output engine
         HDFWalkerOutput WO(RootName);
         WO.get(W); 
+        WO.write(*branchEngine);
       }
 
       nAccept = 0; nReject = 0;
@@ -163,6 +169,7 @@ namespace ohmmsqmc {
     if(!pStride) { //create an output engine
       HDFWalkerOutput WO(RootName);
       WO.get(W); 
+      WO.write(*branchEngine);
     }
     
     Estimators->finalize();
@@ -207,7 +214,7 @@ namespace ohmmsqmc {
       RealType rr_accepted=0.0;
       while(notcrossed && iat<nat){
 
-        PosType dr(sqrttau*deltaR[iat]+thisWalker.Drift[iat]);
+        PosType dr(m_sqrttau*deltaR[iat]+thisWalker.Drift[iat]);
         PosType newpos(W.makeMove(iat,dr));
         RealType ratio(Psi.ratio(W,iat,dG,dL));
 
@@ -224,7 +231,7 @@ namespace ohmmsqmc {
           //ValueType vsq = dot(G[iat],G[iat]);
           //ValueType scale = ((-1.0+sqrt(1.0+2.0*Tau*vsq))/vsq);
           dr = thisWalker.R[iat]-newpos-scale*G[iat]; 
-          RealType logGb = -oneover2tau*dot(dr,dr);
+          RealType logGb = -m_oneover2tau*dot(dr,dr);
           RealType prob = std::min(1.0,ratio*ratio*exp(logGb-logGf));
           if(Random() < prob) { 
             ++nAcceptTemp;
@@ -314,7 +321,7 @@ namespace ohmmsqmc {
       RealType rr_proposed=0.0;
       RealType rr_accepted=0.0;
       while(iat<nat) {//particle-by-particle move
-        PosType dr(sqrttau*deltaR[iat]+thisWalker.Drift[iat]);
+        PosType dr(m_sqrttau*deltaR[iat]+thisWalker.Drift[iat]);
         PosType newpos(W.makeMove(iat,dr));
 
         RealType ratio=Psi.ratio(W,iat,dG,dL);
@@ -333,7 +340,7 @@ namespace ohmmsqmc {
           //ValueType vsq = Dot(G,G);
           //ValueType scale = ((-1.0+sqrt(1.0+2.0*Tau*vsq))/vsq);
           dr = thisWalker.R[iat]-newpos-scale*G[iat]; 
-          RealType logGb = -oneover2tau*dot(dr,dr);
+          RealType logGb = -m_oneover2tau*dot(dr,dr);
           RealType prob = std::min(1.0,ratio*ratio*exp(logGb-logGf));
           if(Random() < prob) { 
             ++nAcceptTemp;

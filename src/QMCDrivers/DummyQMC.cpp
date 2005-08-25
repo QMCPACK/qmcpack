@@ -38,9 +38,8 @@ namespace ohmmsqmc {
   
   bool DummyQMC::run() { 
     
-    RealType oneovertau = 1.0/Tau;
-    RealType oneover2tau = 0.5*oneovertau;
-    RealType g = sqrt(Tau);
+    m_oneover2tau = 0.5/Tau;
+    m_sqrttau = sqrt(Tau);
     
     cout << "Lattice of ParticleSet " << endl;
     W.Lattice.print(cout);
@@ -53,7 +52,7 @@ namespace ohmmsqmc {
     makeGaussRandom(deltaR);
 
     //new poosition
-    W.R = g*deltaR + thisWalker.R + thisWalker.Drift;
+    W.R = m_sqrttau*deltaR + thisWalker.R + thisWalker.Drift;
 
     //apply boundary condition: put everything back to a unit cell
     W.applyBC(W.R);

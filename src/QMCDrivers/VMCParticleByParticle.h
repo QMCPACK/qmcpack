@@ -35,6 +35,14 @@ namespace ohmmsqmc {
     bool put(xmlNodePtr cur);
  
   private:
+    IndexType nAcceptTot;
+    IndexType nRejectTot;
+    IndexType nAllRejected;
+
+    ParticleSet::ParticleGradient_t G, dG;
+    ParticleSet::ParticleLaplacian_t L, dL;
+
+    void advanceWalkerByWalker();
     /// Copy Constructor (disabled)
     VMCParticleByParticle(const VMCParticleByParticle& a): QMCDriver(a) { }
     /// Copy operator (disabled).

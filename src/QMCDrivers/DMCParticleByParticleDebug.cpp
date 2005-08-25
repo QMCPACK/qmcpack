@@ -80,9 +80,8 @@ namespace ohmmsqmc {
     int Population = W.getActiveWalkers();
     int tPopulation = W.getActiveWalkers();
     RealType Eest = branchEngine->E_T;
-    RealType oneovertau = 1.0/Tau;
-    RealType oneover2tau = 0.5*oneovertau;
-    RealType g = sqrt(Tau);
+    oneover2tau = 0.5/Tau;
+    sqrttau = sqrt(Tau);
     
     MCWalkerConfiguration::PropertyContainer_t Properties;
     ParticleSet::ParticlePos_t deltaR(W.getTotalNum());
@@ -134,7 +133,7 @@ namespace ohmmsqmc {
           int nRejectTemp(0);
           int iat=0;
           while(iat<nat) {//particle-by-particle move
-            PosType dr(g*deltaR[iat]+thisWalker.Drift[iat]);
+            PosType dr(sqrttau*deltaR[iat]+thisWalker.Drift[iat]);
             W.R[iat]+=dr;
             //cout << " New position " << thisWalker.R[iat] << g*deltaR[iat] << thisWalker.Drift[iat] << endl;
             DistanceTable::update(W);

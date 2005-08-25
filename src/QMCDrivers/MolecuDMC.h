@@ -25,8 +25,6 @@
 
 #include "QMCDrivers/QMCDriver.h" 
 #include "Utilities/OhmmsInfo.h"
-//#include "QMCDrivers/SimpleFixedNodeBranch.h"
-#include "QMCDrivers/MolecuFixedNodeBranch.h"
 
 namespace ohmmsqmc {
 
@@ -36,15 +34,13 @@ namespace ohmmsqmc {
   class MolecuDMC: public QMCDriver {
 
   public:
-    typedef MolecuFixedNodeBranch<RealType> BranchEngineType;
-    //typedef SimpleFixedNodeBranch<RealType> BranchEngineType;
     /// Constructor.
     MolecuDMC(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h);
     ///destructor
     ~MolecuDMC();
 
-    template<class BRANCHER>
-    void advanceWalkerByWalker(BRANCHER& Branch);
+    template<class BRANCHER> void advanceKillNodeCrossing(BRANCHER& Branch);
+    template<class BRANCHER> void advanceRejectNodeCrossing(BRANCHER& Branch);
 
     bool run();
     bool put(xmlNodePtr q);
@@ -53,10 +49,10 @@ namespace ohmmsqmc {
 
   private:
 
+    IndexType KillNodeCrossing;
+    string KillWalker;
     ///hdf5 file name for Branch conditions
     std::string BranchInfo;
-    ///branch engine
-    BranchEngineType *branchEngine;
     /// Copy Constructor (disabled)
     MolecuDMC(const MolecuDMC& a): QMCDriver(a) { }
     /// Copy operator (disabled).

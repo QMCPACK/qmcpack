@@ -38,6 +38,7 @@ namespace ohmmsqmc {
     RootName = "rmc-multi";
     QMCType ="rmc-multi";
     m_param.add(ReptileLength,"chains","int");
+    QMCDriverMode.set(QMC_MULTIPLE,1);
     //Add the primary h and psi, extra H and Psi pairs will be added by QMCMain
     add_H_and_Psi(&h,&psi);
   }
@@ -327,8 +328,8 @@ namespace ohmmsqmc {
   void RQMCMultiple::moveReptile(){
 
     //Used several times
-    RealType oneover2tau=0.5/Tau; 
-
+    m_oneover2tau=0.5/Tau; 
+    m_sqrttau=sqrt(Tau);
     Bead *head,*tail,*next;
     int ihead,inext,itail;
     //MultiChain::iterator anchor(Reptile->begin()),tail(Reptile->end()),next(tail-1);
@@ -354,7 +355,8 @@ namespace ohmmsqmc {
     makeGaussRandom(gRand);
 
     //new position,\f$R_{yp} = R_{xp} + \sqrt(2}*\Delta + tau*D_{xp}\f$
-    W.R = head->R + sqrt(Tau)*gRand + Tau*head->Drift;
+    //W.R = head->R + sqrt(Tau)*gRand + Tau*head->Drift;
+    W.R = head->R + m_sqrttau*gRand + Tau*head->Drift;
     //Save position in NewBead
     NewBead->R=W.R; 
     //update the distance table associated with W
@@ -368,7 +370,7 @@ namespace ohmmsqmc {
 
     for(int ipsi=0; ipsi<nPsi; ipsi++) {
       gRand = deltaR-Tau*(*head->Gradients[ipsi]);
-      head->Action(ipsi,forward)=0.5*oneover2tau*Dot(gRand,gRand);
+      head->Action(ipsi,forward)=0.5*m_oneover2tau*Dot(gRand,gRand);
     }
 
     //evaluate all relevant quantities in the new position
@@ -387,7 +389,7 @@ namespace ohmmsqmc {
 
       //Compute the backward part of the Kinetic action
       gRand=deltaR+Tau*W.G;
-      NewBead->Action(ipsi,backward)=0.5*oneover2tau*Dot(gRand,gRand);
+      NewBead->Action(ipsi,backward)=0.5*m_oneover2tau*Dot(gRand,gRand);
 
       NewBead->Action(ipsi,Directionless)=0.5*Tau*eloc;
     }
@@ -409,7 +411,7 @@ namespace ohmmsqmc {
 
     tail=(*Reptile)[itail]; next=(*Reptile)[inext];
     gRand = tail->R - next->R - Tau*next->Drift;
-    RealType LogBackwardProb=-oneover2tau*Dot(gRand,gRand);
+    RealType LogBackwardProb=-m_oneover2tau*Dot(gRand,gRand);
 
     // Evaluate the probability ratio between direct and inverse move
     RealType LogRatioTransProbability = LogBackwardProb-LogForwardProb;

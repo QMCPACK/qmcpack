@@ -63,9 +63,9 @@ namespace ohmmsqmc {
     NumParts(1),
     NumCostCalls(0),
     NumSamples(0),
-    cg_tolerance(1.0e-8),
+    cg_tolerance(1.0e-4),
     cg_stepsize(0.01), 
-    cg_epsilon(1.0e-6),
+    cg_epsilon(1.0e-3),
     w_en(1.0),
     w_var(1.0)
   { 
