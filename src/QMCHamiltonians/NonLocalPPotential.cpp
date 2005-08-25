@@ -211,11 +211,11 @@ namespace ohmmsqmc {
 
       PP[i]->resize_warrays(numsgridpts,numnonloc,lmax);
 
-      //Has non-local pseudo potentials.
-      if(numnonloc) {
-        UpdateMode.set(OPTIMIZABLE,1);
-        UpdateMode.set(RATIOUPDATE,1);
-      }
+      ////Has non-local pseudo potentials.
+      //if(numnonloc) {
+      //  UpdateMode.set(OPTIMIZABLE,1);
+      //  UpdateMode.set(RATIOUPDATE,1);
+      //}
     }//centers
 
     for(int ic=0; ic<ions.getTotalNum(); ic++) {
