@@ -25,12 +25,12 @@
 #include <string>
 #include <iostream>
 #include <iomanip>
-
 #if (__GNUC__ == 2)
 #include <strstream.h>
 #else
 #include <sstream>
 #endif
+#include <strstream>
 
 /**  Wrapper of ostream to provide uniform environments for run-time report
  *
