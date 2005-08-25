@@ -79,26 +79,6 @@ void MCWalkerConfiguration::resize(int numWalkers, int numPtcls) {
   //createWalkers(nw);  
 }
 
-//void MCWalkerConfiguration::addWalkers(vector<int>& Copies,
-//				       vector<Walker_t*>& InactiveList) {
-//  for(int i=0; i<Copies.size(); i++) {
-//    for(int j=0; j<Copies[i]; j++) {
-//      WalkerList.push_back(new Walker_t(*InactiveList[i]));
-//    }
-//  }
-//}
-//void MCWalkerConfiguration::copyWalker(iterator walkerit, int n) {
-//
-//  for(int i=0; i<n; i++)
-//    WalkerList.push_back(new Walker_t(**walkerit));
-//}
-/////returns the next valid iterator
-//MCWalkerConfiguration::iterator 
-//MCWalkerConfiguration::destroyWalker(iterator walkerit) {
-//  delete *walkerit;
-//  return WalkerList.erase(walkerit);
-//}
-
 ///returns the next valid iterator
 MCWalkerConfiguration::iterator 
 MCWalkerConfiguration::destroyWalkers(iterator first, iterator last) {
@@ -127,7 +107,6 @@ MCWalkerConfiguration::copyWalkerRefs(Walker_t* head, Walker_t* tail) {
   WalkerList[1]=tail;
 }
 
-
 /** Make Metropolis move to the walkers and save in a temporary array.
  * @param it the iterator of the first walker to work on
  * @param tauinv  inverse of the time step
@@ -140,14 +119,6 @@ void MCWalkerConfiguration::sample(iterator it, RealType tauinv) {
   R += (*it)->R + (*it)->Drift;
 }
 
-//void MCWalkerConfiguration::clear() {
-//  WalkerList.clear();
-//}
-//void MCWalkerConfiguration::copy(iterator first, iterator last){
-//  while(first != last) {
-//    WalkerList.push_back(*first); first++;
-//  }
-//}
 void MCWalkerConfiguration::reset() {
   iterator it=WalkerList.begin();
   while(it != WalkerList.end()) {(*it)->reset();it++;}
@@ -165,11 +136,6 @@ bool MCWalkerConfiguration::createAuxDataSet(int nfield) {
     (*it)->DataSet.reserve(nfield); ++it;
   }
 
-  //if(DataSet.size()) return false;
-  //for(int iw=0; iw<WalkerList.size(); iw++) {
-  //  DataSet.push_back(new WalkerData_t);
-  //  DataSet[iw]->reserve(nfield);
-  //}
   return true;
 }
 
@@ -283,14 +249,16 @@ int MCWalkerConfiguration::branch(int maxcopy, int Nmax, int Nmin) {
 void MCWalkerConfiguration::setUpdateMode(int updatemode) { 
 
   ///get the tables for which this particle set is the visitor or source
-  if(DistTables.empty())  DistanceTable::getTables(ObjectTag,DistTables);
-
-  LOGMSG("MCWalkerConfiguration::setUpdateMode is called")
-  UpdateMode = updatemode;
-  if(UpdateMode == Update_All) {
-    DistanceTable::create(WalkerList.size());
-  } else {
+  if(DistTables.empty()) { 
+    LOGMSG("MCWalkerConfiguration::setUpdateMode to create distance tables")
+    DistanceTable::getTables(ObjectTag,DistTables);
     DistanceTable::create(1);
+    //We never move all the walkers
+    //if(UpdateMode == Update_All) {
+    //  DistanceTable::create(WalkerList.size());
+    //} else {
+    //  DistanceTable::create(1);
+    //}
   }
 }
 
