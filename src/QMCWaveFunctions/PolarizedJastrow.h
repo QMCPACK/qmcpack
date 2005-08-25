@@ -90,6 +90,13 @@ namespace ohmmsqmc {
       return 1.0;
     }
 
+    ValueType logRatio(ParticleSet& P, int iat,
+		    ParticleSet::ParticleGradient_t& dG, 
+		    ParticleSet::ParticleLaplacian_t& dL) {
+      std::cerr << "PolarizedJastrow::logRatio for particle-by-particle is empty " << std::endl;
+      return 0.0;
+    }
+
     inline void restore(int iat) { }
 
     //@todo implement the virutal functions for particle-by-particle move

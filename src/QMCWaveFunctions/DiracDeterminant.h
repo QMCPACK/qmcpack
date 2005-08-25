@@ -312,6 +312,15 @@ namespace ohmmsqmc {
       return curRatio;
     }
 
+    ValueType logRatio(ParticleSet& P, int iat,
+		    ParticleSet::ParticleGradient_t& dG, 
+		    ParticleSet::ParticleLaplacian_t& dL) {
+      ValueType r=ratio(P,iat,dG,dL);
+      SignValue = (r<0.0)? -1.0: 1.0;
+      return log(abs(r));
+    }
+
+
     /** move was accepted, update the real container
      */
     void update(ParticleSet& P, int iat) {

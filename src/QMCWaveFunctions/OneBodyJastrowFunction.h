@@ -187,6 +187,26 @@ namespace ohmmsqmc {
       return exp(U[iat]-curVal);
     }
 
+    inline ValueType logRatio(ParticleSet& P, int iat,
+		    ParticleSet::ParticleGradient_t& dG,
+		    ParticleSet::ParticleLaplacian_t& dL)  {
+      int n=d_table->size(VisitorIndex);
+      curVal=0.0;
+      curLap=0.0;
+      curGrad = 0.0;
+      ValueType dudr, d2udr2;
+      for(int i=0, nn=iat; i<d_table->size(SourceIndex); i++,nn+= n) {
+        int ij=d_table->PairID[nn];
+        curVal += F[ij]->evaluate(d_table->Temp[i].r1,dudr,d2udr2);
+        dudr *= d_table->Temp[i].rinv1;
+        curGrad -= dudr*d_table->Temp[i].dr1;
+        curLap  -= d2udr2+2.0*dudr;
+      }
+      dG[iat] += curGrad-dU[iat];
+      dL[iat] += curLap-d2U[iat]; 
+      return U[iat]-curVal;
+    }
+
     inline void restore(int iat) {}
 
     void update(ParticleSet& P, int iat) {

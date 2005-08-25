@@ -57,10 +57,12 @@ namespace ohmmsqmc {
      * If ID == 0, the object is responsble for the BasisSet object.
      */
     int ID;
-    ///number of particles handled by this object
-    int NumPtcls;
     ///size of basis set
     int BasisSize;
+    ///number of Single-particle orbtials
+    int NumSPOs;
+    ///number of particles handled by this object
+    int NumPtcls;
     ///pointer to the basis set
     BS* BasisSet;
     ///matrix containing the coefficients
@@ -243,56 +245,47 @@ namespace ohmmsqmc {
       }
     }
 
-    /** Parse the xml file for information on the Dirac determinants.
-     *@param cur the current xmlNode
-     */
-    bool put(xmlNodePtr cur) {
+    bool put(int norb, xmlNodePtr occ_ptr, xmlNodePtr coeff_ptr) {
 
-      int norb=atoi((const char*)(xmlGetProp(cur, (const xmlChar *)"orbitals")));
-
-      vector<RealType> occupation(norb,1.0);
+      NumSPOs=norb;
+      vector<RealType> occupation(NumSPOs,1.0);
       vector<ValueType> Ctemp;
 
-      int nocc(0),total(norb);
-      cur = cur->xmlChildrenNode;
+      int nocc(0),total(NumSPOs);
       Identity = true;
 
-      XMLReport("The number of orbitals for a Dirac Determinant " << norb)
-      XMLReport("The number of basis functions " << numBasis())
-      while(cur != NULL) {
-	string cname((const char*)(cur->name));
-	if(cname == "occupation") {
-	  nocc = atoi((const char*)(xmlGetProp(cur, (const xmlChar *)"size")));
-	  occupation.resize(total);	
-	  putContent(occupation,cur);
-	} else if(cname == "coefficient" || cname == "parameter" || cname == "Var") {
-	  if(xmlHasProp(cur, (const xmlChar*)"size")){
-	    total = atoi((const char*)(xmlGetProp(cur, (const xmlChar *)"size")));
-	  } 
-	  Ctemp.resize(total*numBasis());
-	  putContent(Ctemp,cur);
-	  Identity = false;
-	}
-	cur = cur->next;
+      if(occ_ptr != NULL) {
+        nocc = atoi((const char*)(xmlGetProp(occ_ptr, (const xmlChar *)"size")));
+        putContent(occupation,occ_ptr);
       }
+
+      if(coeff_ptr != NULL){
+	if(xmlHasProp(coeff_ptr, (const xmlChar*)"size")){
+	  total = atoi((const char*)(xmlGetProp(coeff_ptr, (const xmlChar *)"size")));
+	} 
+	Ctemp.resize(total*numBasis());
+	putContent(Ctemp,coeff_ptr);
+	Identity = false;
+      }
+
+      occupation.resize(total);	
+      XMLReport("The number of orbitals for a Dirac Determinant " << NumSPOs)
+      XMLReport("The number of basis functions " << numBasis())
 
       if(nocc && nocc != total) {
         ERRORMSG("Inconsistent input for the occupation and size of the coefficients")
         Identity=true;
       }
-      cout.setf(ios::scientific, ios::floatfield);
-      cout.setf(ios::right,ios::adjustfield);
-      cout.precision(12);
 
-      C.resize(norb,numBasis());
+      C.resize(NumSPOs,numBasis());
       if(Identity) {
         C=0.0;
-        for(int i=0; i<norb; i++) C(i,i)=1.0;
+        for(int i=0; i<NumSPOs; i++) C(i,i)=1.0;
       } else {
 	int n=0,i=0;
         typename vector<ValueType>::iterator cit(Ctemp.begin());
         BasisSize=numBasis();
-	while(i<norb){
+	while(i<NumSPOs){
 	  if(occupation[n]>numeric_limits<RealType>::epsilon()){
             std::copy(cit,cit+BasisSize,C[i]);
 	    i++; 
@@ -300,6 +293,78 @@ namespace ohmmsqmc {
 	  n++;cit+=BasisSize;
 	}
       }
+
+      return true;
+    }
+
+    /** Parse the xml file for information on the Dirac determinants.
+     *@param cur the current xmlNode
+     */
+    bool put(xmlNodePtr cur) {
+      int norb=atoi((const char*)(xmlGetProp(cur, (const xmlChar *)"orbitals")));
+      xmlNodePtr occ_ptr=NULL;
+      xmlNodePtr coeff_ptr=NULL;
+      cur = cur->xmlChildrenNode;
+      while(cur != NULL) {
+        string cname((const char*)(cur->name));
+        if(cname == "occupation") {
+          occ_ptr=cur;
+        } else if(cname == "coefficient" || cname == "parameter" || cname == "Var") {
+          coeff_ptr=cur;
+        }
+        cur=cur->next;
+      }
+      return put(norb, occ_ptr, coeff_ptr);
+
+     // 
+     // vector<RealType> occupation(norb,1.0);
+     // vector<ValueType> Ctemp;
+     // int nocc(0),total(norb);
+     // cur = cur->xmlChildrenNode;
+     // Identity = true;
+     // XMLReport("The number of orbitals for a Dirac Determinant " << norb)
+     // XMLReport("The number of basis functions " << numBasis())
+     // while(cur != NULL) {
+     //   string cname((const char*)(cur->name));
+     //   if(cname == "occupation") {
+     //     nocc = atoi((const char*)(xmlGetProp(cur, (const xmlChar *)"size")));
+     //     occupation.resize(total);	
+     //     putContent(occupation,cur);
+     //   } else if(cname == "coefficient" || cname == "parameter" || cname == "Var") {
+     //     if(xmlHasProp(cur, (const xmlChar*)"size")){
+     //       total = atoi((const char*)(xmlGetProp(cur, (const xmlChar *)"size")));
+     //     } 
+     //     Ctemp.resize(total*numBasis());
+     //     putContent(Ctemp,cur);
+     //     Identity = false;
+     //   }
+     //   cur = cur->next;
+     // }
+
+     // if(nocc && nocc != total) {
+     //   ERRORMSG("Inconsistent input for the occupation and size of the coefficients")
+     //   Identity=true;
+     // }
+     // cout.setf(ios::scientific, ios::floatfield);
+     // cout.setf(ios::right,ios::adjustfield);
+     // cout.precision(12);
+
+     // C.resize(norb,numBasis());
+     // if(Identity) {
+     //   C=0.0;
+     //   for(int i=0; i<norb; i++) C(i,i)=1.0;
+     // } else {
+     //   int n=0,i=0;
+     //   typename vector<ValueType>::iterator cit(Ctemp.begin());
+     //   BasisSize=numBasis();
+     //   while(i<norb){
+     //     if(occupation[n]>numeric_limits<RealType>::epsilon()){
+     //       std::copy(cit,cit+BasisSize,C[i]);
+     //       i++; 
+     //     }
+     //     n++;cit+=BasisSize;
+     //   }
+     // }
 
       //XMLReport("The Molecular Orbital Coefficients:")
       //XMLReport(C)

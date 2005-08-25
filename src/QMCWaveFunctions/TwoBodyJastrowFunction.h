@@ -238,6 +238,38 @@ namespace ohmmsqmc {
       return exp(DiffVal);
     }
 
+    /** later merge the loop */
+    ValueType logRatio(ParticleSet& P, int iat,
+		    ParticleSet::ParticleGradient_t& dG,
+		    ParticleSet::ParticleLaplacian_t& dL)  {
+      register ValueType dudr, d2udr2,u;
+      register PosType gr;
+      DiffVal = 0.0;      
+      const int* pairid = PairID[iat];
+      for(int jat=0, ij=iat*N; jat<N; jat++,ij++) {
+	if(jat==iat) {
+	  curVal[jat] = 0.0;curGrad[jat]=0.0; curLap[jat]=0.0;
+	} else {
+	  curVal[jat] = F[pairid[jat]]->evaluate(d_table->Temp[jat].r1, dudr, d2udr2);
+	  dudr *= d_table->Temp[jat].rinv1;
+	  curGrad[jat] = -dudr*d_table->Temp[jat].dr1;
+	  curLap[jat] = -(d2udr2+2.0*dudr);
+	  DiffVal += (U[ij]-curVal[jat]);
+	}
+      }
+      GradType sumg,dg;
+      ValueType suml=0.0,dl;
+      for(int jat=0,ij=iat*N,ji=iat; jat<N; jat++,ij++,ji+=N) {
+	sumg += (dg=curGrad[jat]-dU[ij]);
+	suml += (dl=curLap[jat]-d2U[ij]);
+        dG[jat] -= dg;
+	dL[jat] += dl;
+      }
+      dG[iat] += sumg;
+      dL[iat] += suml;     
+      return DiffVal;
+    }
+
     inline void restore(int iat) {}
 
     void update(ParticleSet& P, int iat) { 

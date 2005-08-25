@@ -143,6 +143,15 @@ public:
     return 1.0;
   }
 
+  inline ValueType
+  logRatio(ParticleSet& P, int iat, 
+	ParticleSet::ParticleGradient_t& dG, 
+	ParticleSet::ParticleLaplacian_t& dL) { 
+    std::cerr << "MultiSlaterDeterminant should not be used by Particle-By-Particle update"
+              << std::endl;
+    return 0.0;
+  }
+
   inline void restore(int iat) { }
 
   void update(ParticleSet& P, int iat) {

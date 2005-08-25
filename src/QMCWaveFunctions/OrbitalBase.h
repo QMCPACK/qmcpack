@@ -116,6 +116,10 @@ namespace ohmmsqmc {
 			    ParticleSet::ParticleGradient_t& dG,
 			    ParticleSet::ParticleLaplacian_t& dL) = 0;
 
+    virtual ValueType logRatio(ParticleSet& P, int iat,
+			    ParticleSet::ParticleGradient_t& dG,
+			    ParticleSet::ParticleLaplacian_t& dL) = 0;
+
     virtual void update(ParticleSet& P, int iat) =0;
 
     virtual void restore(int iat) = 0;

@@ -168,9 +168,14 @@ namespace ohmmsqmc {
 			   ParticleSet::ParticleGradient_t& dG, 
 			   ParticleSet::ParticleLaplacian_t& dL) { 
       return Dets[DetID[iat]]->ratio(P,iat,dG,dL);
-      //int i=1;
-      //while(iat>=M[i]) {i++;}
-      //return  Dets[i-1]->ratio(P,iat, dG, dL);
+    }
+
+    inline ValueType logRatio(ParticleSet& P, int iat,
+			   ParticleSet::ParticleGradient_t& dG, 
+			   ParticleSet::ParticleLaplacian_t& dL) { 
+      ValueType r = Dets[DetID[iat]]->ratio(P,iat,dG,dL);
+      SignValue = (r<0.0)?-1.0:1.0;
+      return log(abs(r));
     }
     
     inline void restore(int iat) {
