@@ -62,6 +62,15 @@ namespace ohmmsqmc {
       WARNMSG("wavefunction with " << id << " is already created. Add a new component.")
     }
 
+    map<string,xmlNodePtr>::iterator wptr=m_wfsPtr.find(id);
+    xmlNodePtr curWfsPtr=0;
+    if(wptr == m_wfsPtr.end()) {
+      curWfsPtr = xmlCopyNode(cur,2);
+      m_wfsPtr[id]=curWfsPtr;
+    } else {
+      curWfsPtr=(*wptr).second;
+    }
+
     cur = cur->children;
     while(cur != NULL) {
       string cname((const char*)(cur->name));
@@ -90,12 +99,27 @@ namespace ohmmsqmc {
           return false;
         }
       } else if (cname ==  OrbitalBuilderBase::jastrow_tag) {
+        xmlAddChild(curWfsPtr,xmlCopyNode(cur,1));
         JastrowBuilder a(*qp,*psi,ptclPool->getPool());
         a.put(cur);
       }
       cur = cur->next;
     }
     return true;
+  }
+
+  xmlNodePtr WaveFunctionPool::getWaveFunctionNode(const string& id) {
+
+    if(m_wfsPtr.empty()) return 0;
+    if(id == "null") {//return the first
+      return (*(m_wfsPtr.begin())).second;
+    } else {
+      map<string,xmlNodePtr>::iterator wptr=m_wfsPtr.find(id);
+      if(wptr == m_wfsPtr.end())
+        return 0;
+      else
+        return (*wptr).second;
+    }
   }
 
   bool WaveFunctionPool::put(std::istream& is) {
@@ -109,6 +133,7 @@ namespace ohmmsqmc {
   void WaveFunctionPool::reset() {
  
   }
+
 }
 /***************************************************************************
  * $RCSfile$   $Author$
