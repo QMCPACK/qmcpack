@@ -80,6 +80,12 @@ namespace ohmmsqmc {
     if(SK) SK->UpdateAllPart();
   }  
 
+  void ParticleSet::update(const ParticlePos_t& pos) { 
+    R = pos;
+    for(int i=0; i< DistTables.size(); i++) DistTables[i]->evaluate(*this);
+    if(SK) SK->UpdateAllPart();
+  }  
+
 
   /** move a particle iat
    * @param iat the index of the particle to be moved

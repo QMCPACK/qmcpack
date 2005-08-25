@@ -88,6 +88,11 @@ namespace ohmmsqmc {
      */
     void update(int iflag=0);
 
+    /**update the internal data with new position
+     *@param pos position vector assigned to R
+     */
+    void update(const ParticlePos_t& pos);
+
     /** create Structure Factor with PBCs
      */
     void createSK();
@@ -97,7 +102,7 @@ namespace ohmmsqmc {
 
     ///return the id
     inline int tag() const { return ObjectTag;}
-
+    
     /**move a particle
      *@param iat the index of the particle to be moved
      *@param displ random displacement of the iat-th particle
