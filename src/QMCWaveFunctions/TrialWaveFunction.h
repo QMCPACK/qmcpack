@@ -95,9 +95,11 @@ namespace ohmmsqmc {
     /** evalaute the log of the trial wave function */
     ValueType evaluateLog(ParticleSet& P);
 
-    ValueType evaluateLog(ParticleSet& P, bool all);
+    ValueType evaluateDeltaLog(ParticleSet& P);
 
-    ValueType evaluateLog(ParticleSet& P, 
+    void evaluateDeltaLog(ParticleSet& P, 
+        ValueType& logpsi_fixed,
+        ValueType& logpsi_opt,
         ParticleSet::ParticleGradient_t& fixedG,
         ParticleSet::ParticleLaplacian_t& fixedL);
 
@@ -108,6 +110,11 @@ namespace ohmmsqmc {
     ValueType ratio(ParticleSet& P, int iat, 
 		    ParticleSet::ParticleGradient_t& dG,
 		    ParticleSet::ParticleLaplacian_t& dL);
+
+    ValueType logRatio(ParticleSet& P, int iat, 
+		    ParticleSet::ParticleGradient_t& dG,
+		    ParticleSet::ParticleLaplacian_t& dL);
+
 
     void restore(int iat);
     void update2(ParticleSet& P, int iat);

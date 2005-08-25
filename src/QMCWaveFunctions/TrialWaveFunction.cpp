@@ -42,42 +42,6 @@ namespace ohmmsqmc {
   TrialWaveFunction::add(OrbitalBase* aterm) {
     Z.push_back(aterm);
   }
-  
-  /** evaluate the log value of a many-body wave function
-   * @param P input configuration containing N particles
-   * @param needratio users request ratio evaluation
-   * @param buf anonymous storage for the reusable data
-   * @return the value of \f$ \log( \Pi_i \Psi_i) \f$  many-body wave function
-   *
-   * @if needratio == true
-   *  need to update the data from buf, since external objects need to evaluate ratios, e.g., non-local pseudopotentials
-   * @else
-   *  evaluate the value only
-   *
-   * Upon return, the gradient and laplacian operators are added by the components.
-   * Each OrbitalBase evaluates SignValue and LogValue = log(abs(psi_i))
-   * Jastrow functions always have SignValue=1.
-   */
-  TrialWaveFunction::ValueType 
-  TrialWaveFunction::evaluateLog(ParticleSet& P, bool all) {
-    P.G = 0.0;
-    P.L = 0.0;
-    //ValueType logpsi=0.0;
-    LogValue=0.0;
-    SignValue=1.0;
-    vector<OrbitalBase*>::iterator it(Z.begin());
-    vector<OrbitalBase*>::iterator it_end(Z.end());
-    int thisID=0;
-    while(it != it_end) {
-      if(all ||(*it)->Optimizable) {
-        LogValue += (*it)->evaluateLog(P, P.G, P.L); 
-        SignValue *= (*it)->SignValue;
-      }
-      ++it; ++thisID;
-    }
-    return LogValue;
-  }
-
 
   TrialWaveFunction::ValueType 
   TrialWaveFunction::evaluateLog(ParticleSet& P) {
@@ -95,8 +59,46 @@ namespace ohmmsqmc {
     }
     return LogValue;
   }
+  
+  /** evaluate the log value of a many-body wave function
+   * @param P input configuration containing N particles
+   * @param needratio users request ratio evaluation
+   * @param buf anonymous storage for the reusable data
+   * @return the value of \f$ \log( \Pi_i \Psi_i) \f$  many-body wave function
+   *
+   * @if needratio == true
+   *  need to update the data from buf, since external objects need to evaluate ratios, e.g., non-local pseudopotentials
+   * @else
+   *  evaluate the value only
+   *
+   * Upon return, the gradient and laplacian operators are added by the components.
+   * Each OrbitalBase evaluates SignValue and LogValue = log(abs(psi_i))
+   * Jastrow functions always have SignValue=1.
+   */
+  TrialWaveFunction::ValueType 
+  TrialWaveFunction::evaluateDeltaLog(ParticleSet& P) {
+    P.G = 0.0;
+    P.L = 0.0;
+    //ValueType logpsi=0.0;
+    LogValue=0.0;
+    SignValue=1.0;
+    vector<OrbitalBase*>::iterator it(Z.begin());
+    vector<OrbitalBase*>::iterator it_end(Z.end());
+    while(it != it_end) {
+      if((*it)->Optimizable) {
+        LogValue += (*it)->evaluateLog(P, P.G, P.L); 
+        SignValue *= (*it)->SignValue;
+      }
+      ++it;
+    }
+    return LogValue;
+  }
+
+
   /** evalaute the sum of log value of optimizable many-body wavefunctions
    * @param P  input configuration containing N particles
+   * @param logpsi_fixed log(abs(psi)) of the invariant orbitals
+   * @param logpsi_opt log(abs(psi)) of the variable orbitals
    * @param fixedG gradients of log(psi) of the fixed wave functions
    * @param fixedL laplacians of log(psi) of the fixed wave functions
    *
@@ -108,26 +110,29 @@ namespace ohmmsqmc {
    * Additionally, dumpToBuffer and dumpFromBuffer is used to manage
    * necessary data for ratio evaluations.
    */
-  TrialWaveFunction::ValueType 
-  TrialWaveFunction::evaluateLog(ParticleSet& P,
-        ParticleSet::ParticleGradient_t& fixedG,
-        ParticleSet::ParticleLaplacian_t& fixedL) {
+  void
+  TrialWaveFunction::evaluateDeltaLog(ParticleSet& P,
+      ValueType& logpsi_fixed, 
+      ValueType& logpsi_opt,
+      ParticleSet::ParticleGradient_t& fixedG,
+      ParticleSet::ParticleLaplacian_t& fixedL) {
     P.G = 0.0;
     P.L = 0.0;
     fixedG = 0.0;
     fixedL = 0.0;
-    ValueType logpsi(0.0),t(0.0);
+    logpsi_fixed=0.0;
+    logpsi_opt=0.0;
     vector<OrbitalBase*>::iterator it(Z.begin());
     vector<OrbitalBase*>::iterator it_end(Z.end());
     while(it != it_end) {
       if((*it)->Optimizable) 
-        logpsi += (*it)->evaluateLog(P, P.G, P.L); 
+        logpsi_opt += (*it)->evaluateLog(P, P.G, P.L); 
       else
-        t += (*it)->evaluateLog(P, fixedG, fixedL); 
+        logpsi_fixed += (*it)->evaluateLog(P, fixedG, fixedL); 
       ++it;
     }
-    P.G += fixedG; P.L += fixedL;
-    return logpsi;
+    P.G += fixedG; 
+    P.L += fixedL;
   }
   
   /** evaluate the value of a many-body wave function
@@ -202,6 +207,21 @@ namespace ohmmsqmc {
     RealType r=1.0;
     for(int i=0; i<Z.size(); i++) r *= Z[i]->ratio(P,iat,dG,dL);
     return r;
+  }
+
+  TrialWaveFunction::ValueType 
+  TrialWaveFunction::logRatio(ParticleSet& P, int iat, 
+			   ParticleSet::ParticleGradient_t& dG,
+			   ParticleSet::ParticleLaplacian_t& dL) {
+    dG = 0.0;
+    dL = 0.0;
+    RealType logr=0.0;
+    SignValue=1.0;
+    for(int i=0; i<Z.size(); i++) {
+      logr += Z[i]->ratio(P,iat,dG,dL);
+      SignValue *= Z[i]->SignValue;
+    }
+    return logr;
   }
 
   /** restore to the original state
