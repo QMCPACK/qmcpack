@@ -20,6 +20,7 @@
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "Numerics/DeterminantOperators.h"
 #include "Numerics/OhmmsBlas.h"
+#include "Numerics/HDFNumericAttrib.h"
 #include <limits>
 
 namespace ohmmsqmc {
@@ -245,7 +246,34 @@ namespace ohmmsqmc {
       }
     }
 
-    bool put(int norb, xmlNodePtr occ_ptr, xmlNodePtr coeff_ptr) {
+    /** Parse the xml file for information on the Dirac determinants.
+     *@param cur the current xmlNode
+     */
+    bool put(xmlNodePtr cur) {
+      int norb=atoi((const char*)(xmlGetProp(cur, (const xmlChar *)"orbitals")));
+      const xmlChar* h=xmlGetProp(cur, (const xmlChar*)"href");
+      xmlNodePtr occ_ptr=NULL;
+      xmlNodePtr coeff_ptr=NULL;
+      cur = cur->xmlChildrenNode;
+      while(cur != NULL) {
+        string cname((const char*)(cur->name));
+        if(cname == "occupation") {
+          occ_ptr=cur;
+        } else if(cname == "coefficient" || cname == "parameter" || cname == "Var") {
+          coeff_ptr=cur;
+        }
+        cur=cur->next;
+      }
+
+      if(h == NULL) {
+        return putFromXML(norb, occ_ptr, coeff_ptr);
+      } else {
+        return putFromH5(norb, (const char*)h, occ_ptr, coeff_ptr);
+      }
+      return true;
+    }
+
+    bool putFromXML(int norb, xmlNodePtr occ_ptr, xmlNodePtr coeff_ptr) {
 
       NumSPOs=norb;
       vector<RealType> occupation(NumSPOs,1.0);
@@ -294,77 +322,73 @@ namespace ohmmsqmc {
 	}
       }
 
+      //XMLReport("The Molecular Orbital Coefficients:")
+      //XMLReport(C)
+
       return true;
     }
 
-    /** Parse the xml file for information on the Dirac determinants.
-     *@param cur the current xmlNode
+    /** read data from a hdf5 file 
+     * @param norb number of orbitals to be initialized
+     * @param fname hdf5 file name
+     * @param occ_ptr xmlnode for occupation
+     * @param coeff_ptr xmlnode for coefficients
      */
-    bool put(xmlNodePtr cur) {
-      int norb=atoi((const char*)(xmlGetProp(cur, (const xmlChar *)"orbitals")));
-      xmlNodePtr occ_ptr=NULL;
-      xmlNodePtr coeff_ptr=NULL;
-      cur = cur->xmlChildrenNode;
-      while(cur != NULL) {
-        string cname((const char*)(cur->name));
-        if(cname == "occupation") {
-          occ_ptr=cur;
-        } else if(cname == "coefficient" || cname == "parameter" || cname == "Var") {
-          coeff_ptr=cur;
-        }
-        cur=cur->next;
+    bool putFromH5(int norb, const char* fname, xmlNodePtr occ_ptr, xmlNodePtr coeff_ptr) {
+
+      NumSPOs=norb;
+
+      vector<RealType> occupation(numBasis(),0.0);
+      for(int i=0; i<NumSPOs; i++) occupation[i]=1.0;
+      vector<int> occ_in;
+
+      string occ_mode("default");
+      if(occ_ptr != NULL) {
+        const xmlChar* o=xmlGetProp(occ_ptr,(const xmlChar*)"mode");  
+        if(o) occ_mode = (const char*)o;
       }
-      return put(norb, occ_ptr, coeff_ptr);
+      //Do nothing if mode == ground
+      if(occ_mode == "excited") {
+        putContent(occ_in,occ_ptr);
+        for(int k=0; k<occ_in.size(); k++) {
+          if(occ_in[k]<0) //remove this, -1 is to adjust the base
+            occupation[-occ_in[k]-1]=0.0;
+          else
+            occupation[occ_in[k]-1]=1.0;
+        }
+      } else if(occ_mode == "default") {
+        putContent(occupation,occ_ptr);
+      }
 
-     // 
-     // vector<RealType> occupation(norb,1.0);
-     // vector<ValueType> Ctemp;
-     // int nocc(0),total(norb);
-     // cur = cur->xmlChildrenNode;
-     // Identity = true;
-     // XMLReport("The number of orbitals for a Dirac Determinant " << norb)
-     // XMLReport("The number of basis functions " << numBasis())
-     // while(cur != NULL) {
-     //   string cname((const char*)(cur->name));
-     //   if(cname == "occupation") {
-     //     nocc = atoi((const char*)(xmlGetProp(cur, (const xmlChar *)"size")));
-     //     occupation.resize(total);	
-     //     putContent(occupation,cur);
-     //   } else if(cname == "coefficient" || cname == "parameter" || cname == "Var") {
-     //     if(xmlHasProp(cur, (const xmlChar*)"size")){
-     //       total = atoi((const char*)(xmlGetProp(cur, (const xmlChar *)"size")));
-     //     } 
-     //     Ctemp.resize(total*numBasis());
-     //     putContent(Ctemp,cur);
-     //     Identity = false;
-     //   }
-     //   cur = cur->next;
-     // }
+      int neigs=numBasis();
+      string setname("invalid");
+      if(coeff_ptr) {
+         const xmlChar* d=xmlGetProp(coeff_ptr,(const xmlChar*)"dataset");  
+         if(d) setname = (const char*)d;
+         d=xmlGetProp(coeff_ptr,(const xmlChar*)"size");  
+         if(d) neigs=atoi((const char*)d);
+      }
 
-     // if(nocc && nocc != total) {
-     //   ERRORMSG("Inconsistent input for the occupation and size of the coefficients")
-     //   Identity=true;
-     // }
-     // cout.setf(ios::scientific, ios::floatfield);
-     // cout.setf(ios::right,ios::adjustfield);
-     // cout.precision(12);
-
-     // C.resize(norb,numBasis());
-     // if(Identity) {
-     //   C=0.0;
-     //   for(int i=0; i<norb; i++) C(i,i)=1.0;
-     // } else {
-     //   int n=0,i=0;
-     //   typename vector<ValueType>::iterator cit(Ctemp.begin());
-     //   BasisSize=numBasis();
-     //   while(i<norb){
-     //     if(occupation[n]>numeric_limits<RealType>::epsilon()){
-     //       std::copy(cit,cit+BasisSize,C[i]);
-     //       i++; 
-     //     }
-     //     n++;cit+=BasisSize;
-     //   }
-     // }
+      C.resize(NumSPOs,numBasis());
+      if(setname == "invalid") {
+        C=0.0;
+        for(int i=0; i<NumSPOs; i++) C(i,i)=1.0;
+      } else {
+        Matrix<RealType> Ctemp(neigs,numBasis());
+        hid_t h_file=  H5Fopen(fname,H5F_ACC_RDWR,H5P_DEFAULT);
+        HDFAttribIO<Matrix<RealType> > h(Ctemp);
+        h.read(h_file,setname.c_str());
+        H5Fclose(h_file);
+	int n=0,i=0;
+        BasisSize=numBasis();
+	while(i<NumSPOs){
+	  if(occupation[n]>numeric_limits<RealType>::epsilon()){
+            std::copy(Ctemp[n],Ctemp[n+1],C[i]);
+	    i++; 
+	  }
+	  n++;
+	}
+      }
 
       //XMLReport("The Molecular Orbital Coefficients:")
       //XMLReport(C)
