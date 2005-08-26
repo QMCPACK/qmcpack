@@ -159,6 +159,13 @@ namespace ohmmsqmc {
       RealType evar_abs = SumValue[SUM_ABSE_WGT]/SumValue[SUM_WGT];
       CostValue = w_abs*evar_abs+w_var*evar;
 
+      //dump to a file
+      log_buffer << setw(5) << NumCostCalls << " ";
+      for(int i=0; i<OptParams.size(); i++) log_buffer << setw(16) << OptParams[i];
+      log_buffer << setw(15) << nw_effect;
+      log_buffer << setw(16) << eavg_w << setw(16) << eavg << setw(16) << evar_w << setw(16) << evar << setw(16) << evar_abs << setw(16) << CostValue;
+      LogOut->getStream() << log_buffer.rdbuf() << endl;
+      log_buffer.clear();
 
       if(nw_effect < NumSamples/10) {
         ERRORMSG("Number of Effective Walkers is too small " << nw_effect)
@@ -333,13 +340,6 @@ namespace ohmmsqmc {
     static int writeCounter=0;
 
     if(OHMMS::Controller->master()) {
-      //dump to a file
-      log_buffer << setw(5) << NumCostCalls << " ";
-      for(int i=0; i<OptParams.size(); i++) log_buffer << setw(16) << OptParams[i];
-      log_buffer << setw(15) << nw_effect;
-      log_buffer << setw(16) << eavg_w << setw(16) << eavg << setw(16) << evar_w << setw(16) << evar << setw(16) << evar_abs << setw(16) << CostValue;
-      LogOut->getStream() << log_buffer.rdbuf() << endl;
-      log_buffer.clear();
 
       if(m_doc_out == NULL) {
         m_doc_out = xmlNewDoc((const xmlChar*)"1.0");

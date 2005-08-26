@@ -116,7 +116,7 @@ namespace ohmmsqmc {
       nReject=0;
       nAllRejected = 0;
       nNodeCrossing=0;
-      IndexType pop_acc=0.0; 
+      IndexType pop_acc=0; 
       do {
         pop_acc += W.getActiveWalkers();
         //default is killing
@@ -139,7 +139,7 @@ namespace ohmmsqmc {
       
       //update estimator
       Estimators->flush();
-      Estimators->setColumn(PopIndex,static_cast<RealType>(pop_acc/static_cast<RealType>(nSteps)));
+      Estimators->setColumn(PopIndex,static_cast<RealType>(pop_acc)/static_cast<RealType>(nSteps));
       Estimators->setColumn(EtrialIndex,Eest); 
       Estimators->setColumn(AcceptIndex,
       		     static_cast<RealType>(nAccept)/static_cast<RealType>(nAccept+nReject));
