@@ -37,6 +37,11 @@
 class Communicate {
 public:
 
+#ifdef HAVE_MPI
+  typedef MPI_Comm mpi_comm_type;
+#else
+  typedef int mpi_comm_type;
+#endif
   ///constructor
   Communicate();
 
@@ -54,7 +59,7 @@ public:
   void abort();
 
   ///return the Communicator ID (typically MPI_WORLD_COMM)
-  inline int getID() const { return CommID;}
+  inline mpi_comm_type getID() const { return CommID;}
 
   ///return the rank of this node
   inline int getNodeID() const { return d_mycontext;}
@@ -68,16 +73,15 @@ public:
 
   void cleanupMessage(void*);
   inline void setNodeID(int i) { d_mycontext = i;}
-  inline void setCommID(int i) { CommID = i;}
+  inline void setCommID(mpi_comm_type i) { CommID = i;}
 
   void barrier();
 
 protected:
 
-  int CommID; 
+  mpi_comm_type CommID; 
   int d_mycontext; 
   int d_ncontexts;
-
 };
 
 
