@@ -91,8 +91,6 @@ namespace ohmmsqmc {
   bool
   QMCOptimize::run() {
 
-    Estimators->reportHeader();
-
     dL.resize(W.getTotalNum());
 
     //set the data members to start a new run
@@ -178,7 +176,6 @@ namespace ohmmsqmc {
   }
 
   /**  Perform the correlated sampling algorthim.
-   *
    */
   QMCOptimize::RealType QMCOptimize::correlatedSampling() {
 
@@ -242,8 +239,7 @@ namespace ohmmsqmc {
   }
 
   /** evaluate everything before optimization */
-  void 
-  QMCOptimize::checkConfigurations() {
+  void QMCOptimize::checkConfigurations() {
 
     if(ConfigFile.size()) {
       W.destroyWalkers(W.begin(),W.end());
@@ -386,13 +382,6 @@ namespace ohmmsqmc {
   bool QMCOptimize::checkParameters() {
 
     bool samesign = true;
-    //Checking sign change and reject if the sign of the 
-    //parameter changes but not seem to do so well.
-    //   int i = 0;
-    //   while(i<OptParams.size() && samesign) {
-    //     if(OptParams[i]*paramList[0][i]<0) samesign = false;
-    //     i++;
-    //   }
     if(samesign) {  
       paramList.pop_back();
       paramList.push_front(OptParams);
