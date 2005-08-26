@@ -204,7 +204,7 @@ LRCoulombAA<BreakupBasis>::evalConsts() {
   for(int spec=0; spec<NumSpecies; spec++) {
     //  for(int i=0; i<NParticles; i++) {
     RealType Z = tspecies(ChargeAttribIndx,spec);
-    int NofSpecies = tspecies(MemberAttribIndx,spec);
+    RealType NofSpecies = tspecies(MemberAttribIndx,spec);
     Consts += -V0*0.5*Z*Z*NofSpecies;
   }
 
@@ -218,10 +218,11 @@ LRCoulombAA<BreakupBasis>::evalConsts() {
   
   for(int spec=0; spec<NumSpecies; spec++){
     RealType Z = tspecies(ChargeAttribIndx,spec);
-    int NofSpecies = tspecies(MemberAttribIndx,spec);
+    RealType NofSpecies = tspecies(MemberAttribIndx,spec);
     Consts += -V0*Z*Z*0.5*NofSpecies*NofSpecies;
   }
   
   return Consts;
 
 }
+#endif
