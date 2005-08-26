@@ -1,6 +1,7 @@
 #include "QMCTools/QMCGaussianParserBase.h"
 #include "ParticleIO/XMLParticleIO.h"
 #include "Utilities/OhmmsInfo.h"
+#include "Numerics/HDFSTLAttrib.h"
 #include <iterator>
 #include <algorithm>
 #include <numeric>
@@ -196,8 +197,74 @@ xmlNodePtr QMCGaussianParserBase::createBasisSet() {
 
   return bset;
 }
+
+xmlNodePtr
+QMCGaussianParserBase::createDeterminantSetWithHDF5() {
+
+  setOccupationNumbers();
+
+  string h5file(Title);
+  h5file.append(".eig.h5");
+
+  xmlNodePtr slaterdet = xmlNewNode(NULL,(const xmlChar*)"slaterdeterminant");
+  std::ostringstream up_size, down_size, b_size;
+  up_size <<NumberOfAlpha; down_size << NumberOfBeta; b_size<<SizeOfBasisSet;
+  //create a determinant Up
+  xmlNodePtr udet = xmlNewNode(NULL,(const xmlChar*)"determinant");
+  xmlNewProp(udet,(const xmlChar*)"id",(const xmlChar*)"updet");
+  xmlNewProp(udet,(const xmlChar*)"orbitals",(const xmlChar*)up_size.str().c_str());
+  xmlNewProp(udet,(const xmlChar*)"href",(const xmlChar*)h5file.c_str());
+
+  //add occupation
+  xmlNodePtr occ_data = xmlNewNode(NULL,(const xmlChar*)"occupation");
+  xmlNewProp(occ_data,(const xmlChar*)"mode",(const xmlChar*)"ground");
+  xmlAddChild(udet,occ_data);
+
+  //add coefficients
+  xmlNodePtr coeff_data = xmlNewNode(NULL,(const xmlChar*)"coefficient");
+  xmlNewProp(coeff_data,(const xmlChar*)"size",(const xmlChar*)b_size.str().c_str());
+  xmlNewProp(coeff_data,(const xmlChar*)"dataset",(const xmlChar*)"/determinant_0/eigenset_0");
+  xmlAddChild(udet,coeff_data);
+
+  //add udet to slaterdet
+  xmlNodePtr cur = xmlAddChild(slaterdet,udet);
+
+  std::vector<int> dim(2, SizeOfBasisSet);
+  hid_t h_file = H5Fcreate(h5file.c_str(),H5F_ACC_TRUNC,H5P_DEFAULT,H5P_DEFAULT);
+  hid_t det_g = H5Gcreate(h_file,"determinant_0",0);
+
+  HDFAttribIO<std::vector<double> > ah(EigVec,dim);
+  ah.write(det_g,"eigenset_0");
+
+  xmlNodePtr ddet;
+  if(SpinRestricted) {
+    ddet = xmlCopyNode(udet,1);
+    xmlSetProp(ddet,(const xmlChar*)"id",(const xmlChar*)"downdet");
+    xmlSetProp(ddet,(const xmlChar*)"orbitals",(const xmlChar*)down_size.str().c_str());
+  } else {
+    ddet = xmlCopyNode(udet,2);
+    xmlSetProp(ddet,(const xmlChar*)"id",(const xmlChar*)"downdet");
+    xmlSetProp(ddet,(const xmlChar*)"orbitals",(const xmlChar*)down_size.str().c_str());
+    xmlNodePtr o= xmlAddChild(ddet,xmlCopyNode(occ_data,1));
+    xmlNodePtr c= xmlCopyNode(coeff_data,1);
+    xmlSetProp(c,(const xmlChar*)"dataset",(const xmlChar*)"/determinant_0/eigenset_1");
+    o = xmlAddSibling(o,c);
+
+    HDFAttribIO<std::vector<double> > dh(EigVec,dim,SizeOfBasisSet*SizeOfBasisSet);
+    dh.write(det_g,"eigenset_1");
+  }
+
+  cur = xmlAddSibling(cur,ddet);
+  H5Gclose(det_g);
+  H5Fclose(h_file);
+
+  //return slaterdeterminant node
+  return slaterdet;
+}
+
 xmlNodePtr 
 QMCGaussianParserBase::createDeterminantSet() {
+
 
   setOccupationNumbers();
 
@@ -208,7 +275,6 @@ QMCGaussianParserBase::createDeterminantSet() {
   //int ndown = NumberOfEls-nup;
   std::ostringstream up_size, down_size, b_size, occ;
   up_size <<NumberOfAlpha; down_size << NumberOfBeta; b_size<<SizeOfBasisSet;
-
   //create a determinant Up
   xmlNodePtr adet = xmlNewNode(NULL,(const xmlChar*)"determinant");
   xmlNewProp(adet,(const xmlChar*)"id",(const xmlChar*)"updet");

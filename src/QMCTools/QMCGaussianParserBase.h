@@ -104,6 +104,7 @@ struct QMCGaussianParserBase {
   xmlNodePtr createCenter(int iat, int _off);
   void createShell(int n, int ig, int off_, xmlNodePtr abasis);
   xmlNodePtr createDeterminantSet();
+  xmlNodePtr createDeterminantSetWithHDF5();
 
   void map2GridFunctors(xmlNodePtr cur);
   virtual void parse(const std::string& fname) = 0;
