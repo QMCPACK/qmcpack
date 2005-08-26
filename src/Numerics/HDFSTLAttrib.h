@@ -65,13 +65,14 @@ struct HDFAttribIO<std::vector<double> >: public HDFAttribIOBase {
   typedef std::vector<double> ArrayType_t;
   std::vector<hsize_t> Dim;
   ArrayType_t&  ref;
+  int offset_;
 
-  HDFAttribIO<ArrayType_t>(ArrayType_t& a): ref(a) { 
+  HDFAttribIO<ArrayType_t>(ArrayType_t& a): ref(a),offset_(0) { 
     Dim.resize(1,a.size());
   }
 
-  HDFAttribIO<ArrayType_t>(ArrayType_t& a, 
-      std::vector<int>& dim):ref(a) { 
+  HDFAttribIO<ArrayType_t>(ArrayType_t& a, std::vector<int>& dim, int offset=0):
+    ref(a), offset_(offset) { 
     Dim.resize(dim.size());
     for(int i=0; i<dim.size(); i++) 
       Dim[i]=static_cast<hsize_t>(dim[i]);
@@ -85,7 +86,7 @@ struct HDFAttribIO<std::vector<double> >: public HDFAttribIOBase {
     hid_t dataset =  
       H5Dcreate(grp, name, H5T_NATIVE_DOUBLE, dataspace, H5P_DEFAULT);
     hid_t ret = 
-      H5Dwrite(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT,&ref[0]);
+      H5Dwrite(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT,&ref[offset_]);
     H5Sclose(dataspace);
     H5Dclose(dataset);
   }
