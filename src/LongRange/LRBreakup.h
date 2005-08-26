@@ -48,11 +48,6 @@ namespace ohmmsqmc {
       {/*Do Nothing*/}
   };
 
-}
-
-
-using namespace ohmmsqmc;
-
 template<class BreakupBasis>
 void 
 LRBreakup<BreakupBasis>::AddKToList(RealType k, 
@@ -407,6 +402,7 @@ LRBreakup<BreakupBasis>::DoBreakup(RealType *Fk,
     chi2 += KList[ki][1]*Yk*Yk;
   }
   return (chi2);
+}
 }
 
 #endif

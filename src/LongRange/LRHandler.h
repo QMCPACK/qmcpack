@@ -76,11 +76,6 @@ namespace ohmmsqmc {
 
   };
 
-}
-
-
-using namespace ohmmsqmc;
-
 //Template-class Definitions
 template<class BreakupBasis>
 void
@@ -148,5 +143,6 @@ LRHandler<BreakupBasis>::fillFk(KContainer& KList) {
       k=sqrt(k);
       Fk[fn][ki] = evalFk(k,fn); //Call derived fn.
     }
+}
 }
 #endif

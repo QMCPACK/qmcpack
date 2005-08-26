@@ -63,12 +63,6 @@ namespace ohmmsqmc {
     RealType evalXk(RealType k,int FunctionIndex);
 
   };
-}
-
-#endif
-
-using namespace ohmmsqmc;
-
 
 template<class BreakupBasis> 
 void 
@@ -224,5 +218,6 @@ LRCoulombAA<BreakupBasis>::evalConsts() {
   
   return Consts;
 
+}
 }
 #endif
