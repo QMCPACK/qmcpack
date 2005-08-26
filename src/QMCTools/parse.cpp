@@ -86,7 +86,8 @@ int main(int argc, char **argv) {
         xmlNodePtr bsetPtr = parser->createBasisSet();
         xmlAddChild(detPtr,bsetPtr);
 
-        xmlNodePtr slaterdetPtr = parser->createDeterminantSet();
+        xmlNodePtr slaterdetPtr = parser->createDeterminantSetWithHDF5();
+        //xmlNodePtr slaterdetPtr = parser->createDeterminantSet();
         xmlAddChild(detPtr,slaterdetPtr);
       }
       xmlAddChild(wfPtr,detPtr);
