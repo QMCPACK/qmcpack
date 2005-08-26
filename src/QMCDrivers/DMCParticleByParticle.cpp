@@ -55,47 +55,16 @@ namespace ohmmsqmc {
       LOGMSG("Walkers will be kept even if a node crossing is detected.")
     }
 
-    //add columns
+    // initialize the estimator to record data
+    log_buffer.setf(ios::scientific, ios::floatfield);
+    log_buffer.precision(6);
+
     IndexType PopIndex = Estimators->addColumn("Population");
     IndexType EtrialIndex = Estimators->addColumn("Etrial");
-    //write the header
     Estimators->reportHeader();
-
-    //initialization of branchEngine has moved to QMCDriver
-    //if(branchEngine == 0) {
-    //  branchEngine=new BranchEngineType(Tau,W.getActiveWalkers());
-    //  RealType e_ref = W.getLocalEnergy();
-    //  branchEngine->setEguess(e_ref);
-    //}
-    //branchEngine->put(qmcNode,LogOut);
-    ////this should be controlled by continue="yes/no" of qmc element
-    //branchEngine->flush(0);
-    //branchEngine->put(qmcNode,LogOut);
-
-    /* This has moved to QMCDriver::initialize()
-    //going to add routines to calculate how much we need
-    bool require_register =  W.createAuxDataSet();
-    //check if buffer is properly initialized
-    if(require_register) {
-      MCWalkerConfiguration::iterator it(W.begin()); 
-      MCWalkerConfiguration::iterator it_end(W.end()); 
-      while(it != it_end) {
-        (*it)->Weight= 1.0;
-        (*it)->Multiplicity=1.0;
-        (*it)->DataSet.rewind();
-        W.registerData(**it,(*it)->DataSet);
-        Psi.registerData(W,(*it)->DataSet);
-        ++it;
-      } 
-    } else {
-      updateWalkers();
-    }
-    */
-
     Estimators->reset();
-    
+
     IndexType block = 0;
-    
     Pooma::Clock timer;
     RealType Eest = branchEngine->E_T;
     IndexType nat = W.getTotalNum();
@@ -107,8 +76,10 @@ namespace ohmmsqmc {
     IndexType accstep=0;
     nAcceptTot = 0;
     nRejectTot = 0;
-    m_oneover2tau = 0.5/Tau;
+    m_oneover2tau = 1.0/(2.0*Tau);
     m_sqrttau = sqrt(Tau);
+
+    LogOut->getStream() << "Block   Fixed_configs  Node crossing " << endl;
     do {
       IndexType step = 0;
       timer.start();
@@ -128,11 +99,9 @@ namespace ohmmsqmc {
         Estimators->accumulate(W);
         branchEngine->branch(accstep,W);
         Eest = branchEngine->update(W.getActiveWalkers(), Eest); 
-        //every 100 step, we update the walkers
         if(accstep%100 == 0) updateWalkers();
       } while(step<nSteps);
       
-      //WARNMSG("The number of a complete rejectoin " << nAllRejected)
       timer.stop();
       nAcceptTot += nAccept;
       nRejectTot += nReject;
@@ -147,9 +116,10 @@ namespace ohmmsqmc {
       
       Eest = Estimators->average(0);
       RealType totmoves=1.0/static_cast<RealType>(step*W.getActiveWalkers());
-      LogOut->getStream() << "Block " << block << " " << timer.cpu_time() << " Fixed_configs " 
-      		    << static_cast<RealType>(nAllRejected)*totmoves << " Node crossing "
-                    << static_cast<RealType>(nNodeCrossing)*totmoves << endl;
+      LogOut->getStream() << setw(4) << block 
+        << setw(12) << timer.cpu_time() 
+        << setw(20) << static_cast<RealType>(nAllRejected)*totmoves
+        << setw(20) << static_cast<RealType>(nNodeCrossing)*totmoves << endl;
 
       if(pStride) { //create an output engine
         HDFWalkerOutput WO(RootName);
@@ -161,11 +131,6 @@ namespace ohmmsqmc {
       block++;
     } while(block<nBlocks);
 
-    LogOut->getStream() 
-      << "Ratio = " 
-      << static_cast<double>(nAcceptTot)/static_cast<double>(nAcceptTot+nRejectTot)
-      << endl;
-    
     if(!pStride) { //create an output engine
       HDFWalkerOutput WO(RootName);
       WO.get(W); 
