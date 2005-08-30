@@ -29,7 +29,7 @@ namespace ohmmsqmc {
   QMCOptimize::QMCOptimize(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h):
     QMCDriver(w,psi,h), 
     UseWeight(false),
-    PartID(0), NumParts(1), PowerE(1), NumCostCalls(0), NumSamples(0),
+    PartID(0), NumParts(1), PowerE(2), NumCostCalls(0), NumSamples(0),
     cg_tolerance(1.0e-4),
     cg_stepsize(0.01), 
     cg_epsilon(1.0e-3),
