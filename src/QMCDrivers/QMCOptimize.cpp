@@ -31,8 +31,8 @@ namespace ohmmsqmc {
     UseWeight(false),
     PartID(0), NumParts(1), PowerE(2), NumCostCalls(0), NumSamples(0),
     cg_tolerance(1.0e-4),
-    cg_stepsize(0.01), 
-    cg_epsilon(1.0e-3),
+    cg_stepsize(0.002), 
+    cg_epsilon(1.0e-6),
     w_en(0.0),
     w_var(0.0),
     w_abs(1.0),
@@ -485,7 +485,7 @@ namespace ohmmsqmc {
     }
   
     if(cset.empty()){
-      LogOut->getStream() << "#Using Default Cost Function: Cost = <E> + 0.5 Tau <Var>" << endl;
+      LogOut->getStream() << "#Using Default Cost Function: Cost = <|E-E_ff|^2>" << endl;
     } else {
       for(int i=0; i<cset.size(); i++){
 	string pname;
