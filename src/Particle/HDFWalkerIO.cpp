@@ -149,7 +149,6 @@ HDFWalkerInput::~HDFWalkerInput() {
 
 /** Read a configuration from a hdf5 file.
  *@param W set of walker configurations
- */
 int HDFWalkerInput::put(MCWalkerConfiguration& W){
 
   //no more walker to read
@@ -164,6 +163,7 @@ int HDFWalkerInput::put(MCWalkerConfiguration& W){
   put(W,ic);
   return 1;
 }
+ */
 
 /**  Write the set of walker configurations to the HDF5 file.  
  *@param W set of walker configurations
@@ -207,19 +207,21 @@ HDFWalkerInput::put(MCWalkerConfiguration& W, int ic){
   /*check to see if the number of walkers and particles is  consistent with W */
   int nptcl = Pos_temp.cols();
   nwt = Pos_temp.rows();
-  if(nwt != W.getActiveWalkers() || nptcl != W.getParticleNum()) {
+
+  int curWalker = W.getActiveWalkers();
+  if(curWalker) {
+    LOGMSG("Adding " << nwt << " walkers to " << curWalker)
+    W.createWalkers(nwt);
+  } else {
     W.resize(nwt,nptcl); 
   }
 
   //assign configurations to W
   int iw=0;
-  MCWalkerConfiguration::iterator it = W.begin(); 
+  MCWalkerConfiguration::iterator it = W.begin()+curWalker; 
   MCWalkerConfiguration::iterator it_end = W.end(); 
   while(it != it_end) {
     std::copy(Pos_temp[iw],Pos_temp[iw+1], (*it)->R.begin());
-    //for(int np=0; np < W.getParticleNum(); ++np){
-    //  (*it)->R(np) = Pos_temp(iw,np);
-    //}
     ++it;++iw;
   }
 

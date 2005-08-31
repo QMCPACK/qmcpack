@@ -72,7 +72,7 @@ namespace ohmmsqmc {
 
     HDFWalkerInput(const string& fname, int ipart=0, int nparts=1);
     ~HDFWalkerInput();
-    int put(MCWalkerConfiguration&);
+    //int put(MCWalkerConfiguration&);
     bool put(MCWalkerConfiguration&, int ic);
 
     bool append(MCWalkerConfiguration& w);
