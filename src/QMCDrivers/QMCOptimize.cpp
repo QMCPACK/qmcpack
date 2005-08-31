@@ -504,7 +504,7 @@ namespace ohmmsqmc {
 	  w_en = wgt;
 	else if(pname == "variance") 
 	  w_var = wgt;
-        else if(pname == "abs")
+        else if(pname == "delta")
           w_abs = wgt;
       }
     }  
