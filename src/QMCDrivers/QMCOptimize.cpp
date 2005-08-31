@@ -165,11 +165,11 @@ namespace ohmmsqmc {
       LogOut->getStream() << log_buffer.rdbuf() << endl;
       log_buffer.clear();
 
-      if(nw_effect < NumSamples/10) {
+      if(nw_effect < NumSamples*9/10) {
         ERRORMSG("Number of Effective Walkers is too small " << nw_effect)
         ERRORMSG("Going to stop now.")
-        OHMMS::Controller->abort();
         CostValue = 1e6;
+        OHMMS::Controller->abort();
       } 
     }
     return CostValue;
