@@ -52,25 +52,18 @@ namespace ohmmsqmc {
     m_param.add(PowerE,"power","int");
     m_param.add(CorrelationFactor,"correlation","scalar");
 
-    //H_KE.add(H.getHamiltonian("Kinetic"),"Kinetic");
-    for(int i=0; i<H.size(); i++) {
-      QMCHamiltonianBase* qH=H.getHamiltonian(i);
-      if(qH->UpdateMode[QMCHamiltonianBase::OPTIMIZABLE]) {
-        H_KE.add(qH,H.getName(i)); 
-      }
-    }
+    H_KE.add(H.getHamiltonian("Kinetic"),"Kinetic");
+    //for(int i=0; i<H.size(); i++) {
+    //  QMCHamiltonianBase* qH=H.getHamiltonian(i);
+    //  if(qH->UpdateMode[QMCHamiltonianBase::OPTIMIZABLE]) {
+    //    H_KE.add(qH,H.getName(i)); 
+    //  }
+    //}
 
     //create an etimator with H_KE
     if(Estimators == 0) Estimators =new ScalarEstimatorManager(H_KE);
     H_KE.add2WalkerProperty(W);
 
-    //check, if H needs to evaluate ratio
-    hamiltonianNeedRatio=H.needRatio();
-    if(hamiltonianNeedRatio) {
-      LOGMSG("QMCHamiltonian requires the ratio evaluations. Use buffer.")
-    } else {
-      LOGMSG("QMCHamiltonian does not require the ratio evaluations.")
-    }
   }
 
   /** Clean up the vector */
@@ -194,15 +187,11 @@ namespace ohmmsqmc {
       W.copyFromBuffer(thisWalker.DataSet);
 
       ValueType logpsi=0.0;
-      if(hamiltonianNeedRatio) {
-        logpsi=Psi.evaluateLog(W);
-      } else {
-        //copy dL from Buffer
-        thisWalker.DataSet.get(dL.begin(),dL.end());
-        logpsi=Psi.evaluateDeltaLog(W);
-        W.G += thisWalker.Drift;
-        W.L += dL;
-      }
+      //copy dL from Buffer
+      thisWalker.DataSet.get(dL.begin(),dL.end());
+      logpsi=Psi.evaluateDeltaLog(W);
+      W.G += thisWalker.Drift;
+      W.L += dL;
 
       eloc_new=H_KE.evaluate(W)+saved[ENERGY_FIXED];
       RealType weight = exp(2.0*(logpsi-saved[LOGPSI_FREE]));
@@ -219,7 +208,6 @@ namespace ohmmsqmc {
       saved[REWEIGHT]=weight;
 
       RealType delE=pow(abs(eloc_new-EtargetEff),PowerE);
-
       SumValue[SUM_E_BARE] += eloc_new;
       SumValue[SUM_ESQ_BARE] += eloc_new*eloc_new;
       SumValue[SUM_ABSE_BARE] += delE;
@@ -267,14 +255,8 @@ namespace ohmmsqmc {
         W.registerData(thisWalker,thisWalker.DataSet);
 
         ValueType*  saved=Records[iw];
-
-        if(hamiltonianNeedRatio) {
-          saved[LOGPSI_FREE]=Psi.evaluateLog(W);
-        } else {
-          Psi.evaluateDeltaLog(W, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], thisWalker.Drift, dL);
-          thisWalker.DataSet.add(dL.begin(),dL.end());
-        }
-
+        Psi.evaluateDeltaLog(W, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], thisWalker.Drift, dL);
+        thisWalker.DataSet.add(dL.begin(),dL.end());
         Etarget += saved[ENERGY_TOT] = H.evaluate(W);
         saved[ENERGY_FIXED] = H.getInvariantEnergy();
 
@@ -490,22 +472,15 @@ namespace ohmmsqmc {
       for(int i=0; i<cset.size(); i++){
 	string pname;
 	RealType wgt=1.0;
-	xmlAttrPtr att = cset[i]->properties;
-	while(att != NULL) {
-	  string aname((const char*)(att->name));
-	  const char* vname=(const char*)(att->children->content);
-	  if(aname == "name") 
-	    pname=vname;
-	  else if(aname == "weight") 
-	    wgt = atof(vname);
-	  att=att->next;
-	}
+        OhmmsAttributeSet pAttrib;
+        pAttrib.add(pname,"name");
+        pAttrib.put(cset[i]);
 	if(pname == "energy") 
-	  w_en = wgt;
+	  putContent(w_en,cset[i]);
 	else if(pname == "variance") 
-	  w_var = wgt;
+	  putContent(w_var,cset[i]);
         else if(pname == "delta")
-          w_abs = wgt;
+	  putContent(w_abs,cset[i]);
       }
     }  
 
