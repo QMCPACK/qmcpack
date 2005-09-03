@@ -18,16 +18,16 @@ IF(Libxml2_INCLUDE_DIRS)
 ELSE(Libxml2_INCLUDE_DIRS)
 
   SET(TRIAL_LIBRARY_PATHS
+    $ENV{LIBXML2_HOME}/lib
     /usr/lib
     /usr/local/lib
     /sw/lib
-    $ENV{LIBXML2_HOME}/lib
   ) 
   SET(TRIAL_INCLUDE_PATHS
+    $ENV{LIBXML2_HOME}/include/libxml2
     /usr/include/libxml2
     /usr/local/include/libxml2
     /sw/include/libxml2
-    $ENV{LIBXML2_HOME}/include/libxml2
   ) 
 
   FIND_LIBRARY(LIBXML2_LIBRARY xml2 ${TRIAL_LIBRARY_PATHS})
