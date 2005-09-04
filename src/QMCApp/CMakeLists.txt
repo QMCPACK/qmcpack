@@ -21,7 +21,6 @@ SET(WFSRCS
   ../QMCHamiltonians/LocalPPotential.cpp
   ../QMCHamiltonians/NonLocalPPotential.cpp
   ../QMCHamiltonians/LocalCorePolPotential.cpp
-  ../LongRange/KContainer.cpp
   ../LongRange/LPQHIBasis.cpp
 )
 
@@ -90,11 +89,11 @@ LINK_LIBRARIES(
 ####################################
 # adding thread library: e.g., -lguide -lpthread
 ####################################
-IF(${BLAS_EXTRA_LIBRARY} MATCHES "guide")
-  LINK_LIBRARIES(${BLAS_EXTRA_LIBRARY} ${CMAKE_THREAD_LIBS_INIT})
-ELSE(${BLAS_EXTRA_LIBRARY} MATCHES "guide")
+IF(INTEL_MKL)
+  LINK_LIBRARIES(${INTEL_GUIDE_LIBRARY} ${CMAKE_THREAD_LIBS_INIT})
+ELSE(INTEL_MKL)
   LINK_LIBRARIES(${CMAKE_THREAD_LIBS_INIT})
-ENDIF(${BLAS_EXTRA_LIBRARY} MATCHES "guide")
+ENDIF(INTEL_MKL)
 
 ####################################
 # build mo2grid3d executable
