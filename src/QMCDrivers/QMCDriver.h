@@ -65,7 +65,7 @@ namespace ohmmsqmc {
   public:
 
     /** enumeration coupled with QMCMode */
-    enum {QMC_UPDATE_MODE, QMC_MULTIPLE};
+    enum {QMC_UPDATE_MODE, QMC_MULTIPLE, QMC_OPTIMIZE};
 
     typedef MCWalkerConfiguration::Walker_t Walker_t;
     typedef Walker_t::Buffer_t              Buffer_t;
@@ -87,6 +87,8 @@ namespace ohmmsqmc {
     void initialize();
 
     void process(xmlNodePtr cur);
+
+    void putWalkers(vector<xmlNodePtr>& wset);
 
     virtual bool run() = 0;
     
@@ -164,9 +166,14 @@ namespace ohmmsqmc {
     ///Hamiltonian
     QMCHamiltonian& H;
 
+    ///a list of TrialWaveFunctions for multiple method
     vector<TrialWaveFunction*> Psi1;
 
+    ///a list of QMCHamiltonians for multiple method
     vector<QMCHamiltonian*> H1;
+
+    ///a list of mcwalkerset element
+    vector<xmlNodePtr> mcwalkerNodePtr;
 
     ///temporary storage for drift
     ParticleSet::ParticlePos_t drift;

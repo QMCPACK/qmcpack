@@ -41,6 +41,8 @@ namespace ohmmsqmc {
     paramList.resize(10); 
     costList.resize(10,0.0); 
 
+    //set the optimization flag
+    QMCDriverMode.set(QMC_OPTIMIZE,1);
     //read to use vmc output (just in case)
     RootName = "vmc";
     QMCType ="opt";
@@ -53,12 +55,6 @@ namespace ohmmsqmc {
     m_param.add(CorrelationFactor,"correlation","scalar");
 
     H_KE.add(H.getHamiltonian("Kinetic"),"Kinetic");
-    //for(int i=0; i<H.size(); i++) {
-    //  QMCHamiltonianBase* qH=H.getHamiltonian(i);
-    //  if(qH->UpdateMode[QMCHamiltonianBase::OPTIMIZABLE]) {
-    //    H_KE.add(qH,H.getName(i)); 
-    //  }
-    //}
 
     //create an etimator with H_KE
     if(Estimators == 0) Estimators =new ScalarEstimatorManager(H_KE);
@@ -394,13 +390,13 @@ namespace ohmmsqmc {
 
     xmlNodePtr qsave=q;
     //Estimators.put(q);
-    vector<xmlNodePtr> wset,oset,cset;
+    vector<xmlNodePtr> oset,cset;
     xmlNodePtr cur=qsave->children;
     int pid=OHMMS::Controller->mycontext();
     while(cur != NULL) {
       string cname((const char*)(cur->name));
       if(cname == "mcwalkerset") {
-        wset.push_back(cur);
+        mcwalkerNodePtr.push_back(cur);
       } else if(cname == "optimize") {
 	oset.push_back(cur);
       } else if(cname == "cost") {
@@ -409,10 +405,8 @@ namespace ohmmsqmc {
       cur=cur->next;
     }  
 
-    //erase the existing config files and use new sets
-    if(wset.size()) {
-      ConfigFile.erase(ConfigFile.begin(),ConfigFile.end());
-      int nfile=wset.size();
+    int nfile=mcwalkerNodePtr.size();
+    if(nfile) {
       int ng=OHMMS::Controller->ncontexts()/nfile;
       if(ng>=1) {
         NumParts=ng;
@@ -421,7 +415,7 @@ namespace ohmmsqmc {
         string fname("invalid");
         OhmmsAttributeSet pAttrib;
         pAttrib.add(fname,"href"); pAttrib.add(fname,"src"); pAttrib.add(fname,"file");
-        pAttrib.put(wset[mygroup]);
+        pAttrib.put(mcwalkerNodePtr[mygroup]);
         if(fname != "invalid") ConfigFile.push_back(fname);
       } else {//more files than the number of processor
         for(int ifile=0; ifile<nfile; ifile++) {
@@ -430,7 +424,7 @@ namespace ohmmsqmc {
           OhmmsAttributeSet pAttrib;
           pAttrib.add(pid_target,"node"); 
           pAttrib.add(fname,"href"); pAttrib.add(fname,"src"); pAttrib.add(fname,"file");
-          pAttrib.put(wset[ifile]);
+          pAttrib.put(mcwalkerNodePtr[ifile]);
           if(pid_target == pid && fname != "invalid") {
             ConfigFile.push_back(fname);
           }

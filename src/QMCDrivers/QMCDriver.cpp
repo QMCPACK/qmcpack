@@ -24,6 +24,7 @@
 #include "Particle/HDFWalkerIO.h"
 #include "ParticleBase/ParticleUtility.h"
 #include "ParticleBase/RandomSeqGenerator.h"
+#include "OhmmsData/AttributeSet.h"
 
 namespace ohmmsqmc {
 
@@ -157,12 +158,51 @@ namespace ohmmsqmc {
   }
 
   
+  /** Read walker configurations from *.config.h5 files
+   * @param wset list of xml elements containing mcwalkerset
+   */
+  void QMCDriver::putWalkers(vector<xmlNodePtr>& wset) {
+
+    if(wset.empty()) return;
+    int nfile=wset.size();
+
+    if(QMCDriverMode[QMC_OPTIMIZE]) {//for optimization, simply add to ConfigFile
+      for(int ifile=0; ifile<nfile; ifile++) 
+        mcwalkerNodePtr.push_back(wset[ifile]);
+    } else {
+      int pid=OHMMS::Controller->mycontext(); 
+      for(int ifile=0; ifile<nfile; ifile++) {
+        string cfile("invalid"), target("e");
+        int anode=-1, nwalkers=-1;
+        OhmmsAttributeSet pAttrib;
+        pAttrib.add(cfile,"href"); pAttrib.add(cfile,"file"); 
+        pAttrib.add(target,"target"); pAttrib.add(target,"ref"); 
+        pAttrib.add(anode,"node");
+        pAttrib.add(nwalkers,"walkers");
+        pAttrib.put(wset[ifile]);
+        int pid_target= (anode<0)?pid:anode;
+        if(pid_target == pid && cfile != "invalid") {
+          XMLReport("Using previous configuration of " << target << " from " << cfile)
+          HDFWalkerInput WO(cfile); 
+          WO.append(W,nwalkers);
+        }
+      }
+    }
+
+    //clear the walker set
+    wset.clear();
+  }
+
   /** Initialize QMCDriver
    *
    * Evaluate the Properties of Walkers when a QMC starts
    */
   void QMCDriver::initialize() {
-    if(QMCDriverMode[QMC_UPDATE_MODE]) {
+
+    //For optimization, do nothing
+    if(QMCDriverMode[QMC_OPTIMIZE]) return;
+
+    if(QMCDriverMode[QMC_UPDATE_MODE]) { //using particle-by-particle moves
       bool require_register =  W.createAuxDataSet();
       MCWalkerConfiguration::iterator it(W.begin()),it_end(W.end());
       if(require_register) {
@@ -183,9 +223,7 @@ namespace ohmmsqmc {
       } else {
         updateWalkers(); // simply re-evaluate the values 
       }
-    } else {
-      //calculate local energies and wave functions:
-      //can be redundant but the overhead is small
+    } else { // using walker-by-walker moves
       LOGMSG("Evaluate all the walkers before starting for walker-by-walker update")
 
       MCWalkerConfiguration::iterator it(W.begin()),it_end(W.end());

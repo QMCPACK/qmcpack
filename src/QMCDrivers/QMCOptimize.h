@@ -130,10 +130,10 @@ namespace ohmmsqmc {
     vector<scalar> OptParams;
     ///ID tag for each optimizable parameter
     vector<string> IDtag;  
-    ///list of files storing configurations  
-    vector<string> ConfigFile;
     ///method for optimization, default conjugate gradient
     string optmethod;
+    ///list of files storing configurations  
+    vector<string> ConfigFile;
     ///Hamiltonians that depend on the optimization: KE
     QMCHamiltonian H_KE;
 
