@@ -92,8 +92,10 @@ namespace ohmmsqmc {
     ///previous configuration file for next qmc node
     string PrevConfigFile;
 
-    ///name of file that stores configurations (walkers)
+    ///xml mcwalkerset elements for output
     vector<xmlNodePtr> m_walkerset;
+    ///xml mcwalkerset read-in elements 
+    vector<xmlNodePtr> m_walkerset_in;
 
     ///execute <qmc/> element
     bool runQMC(xmlNodePtr cur);

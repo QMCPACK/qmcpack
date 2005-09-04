@@ -375,8 +375,10 @@ namespace ohmmsqmc {
 
     if(qmcDriver) {
 
+
       LOGMSG("Starting a QMC simulation " << what)
       qmcDriver->setFileNames(myProject.CurrentRoot(),PrevConfigFile);
+      qmcDriver->putWalkers(m_walkerset_in);
       qmcDriver->process(cur);
       qmcDriver->run();
 
@@ -391,8 +393,6 @@ namespace ohmmsqmc {
 
       curMethod = what;
       
-      //may want to reuse!
-      //delete qmcDriver;
       return true;
     } else {
       return false;
@@ -417,29 +417,30 @@ namespace ohmmsqmc {
         xmlXPathFreeObject(q);
       }
     } else {
-      int pid=OHMMS::Controller->mycontext(); 
       for(int iconf=0; iconf<result->nodesetval->nodeNr; iconf++) {
 	xmlNodePtr mc_ptr = result->nodesetval->nodeTab[iconf];
-	m_walkerset.push_back(mc_ptr);
-        string cfile("invalid"), target("e");
-        int anode=-1, nwalkers=-1;
-        OhmmsAttributeSet pAttrib;
-        pAttrib.add(cfile,"href"); pAttrib.add(cfile,"file"); 
-        pAttrib.add(target,"target"); pAttrib.add(target,"ref"); 
-        pAttrib.add(anode,"node");
-        pAttrib.add(nwalkers,"walkers");
-        pAttrib.put(mc_ptr);
+        m_walkerset.push_back(mc_ptr);
+        m_walkerset_in.push_back(mc_ptr);
+	//m_walkerset.push_back(mc_ptr);
+        //string cfile("invalid"), target("e");
+        //int anode=-1, nwalkers=-1;
+        //OhmmsAttributeSet pAttrib;
+        //pAttrib.add(cfile,"href"); pAttrib.add(cfile,"file"); 
+        //pAttrib.add(target,"target"); pAttrib.add(target,"ref"); 
+        //pAttrib.add(anode,"node");
+        //pAttrib.add(nwalkers,"walkers");
+        //pAttrib.put(mc_ptr);
 
-        int pid_target= (anode<0)?pid:anode;
-        if(pid_target == pid && cfile != "invalid") {
-          MCWalkerConfiguration* el=ptclPool->getWalkerSet(target);
-	  XMLReport("Using previous configuration of " << target << " from " << cfile)
-          HDFWalkerInput WO(cfile); 
-          WO.append(*el,nwalkers);
-	  //read only the last ensemble of walkers
-	  //WO.put(*el,-1);
-	  PrevConfigFile = cfile;
-        }
+        //int pid_target= (anode<0)?pid:anode;
+        //if(pid_target == pid && cfile != "invalid") {
+        //  MCWalkerConfiguration* el=ptclPool->getWalkerSet(target);
+	//  XMLReport("Using previous configuration of " << target << " from " << cfile)
+        //  HDFWalkerInput WO(cfile); 
+        //  WO.append(*el,nwalkers);
+	//  //read only the last ensemble of walkers
+	//  //WO.put(*el,-1);
+	//  PrevConfigFile = cfile;
+        //}
       }
     }
     xmlXPathFreeObject(result);
