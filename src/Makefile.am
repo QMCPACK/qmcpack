@@ -3,52 +3,37 @@ pkginclude_HEADERS= \
 
 OHMMS_UTILITIES = \
 	Utilities/OhmmsObject.cpp \
-	Utilities/OhmmsObject.h \
 	Utilities/OhmmsInform.cpp \
-	Utilities/OhmmsInform.h \
 	Utilities/OhmmsInfo.cpp \
-	Utilities/OhmmsInfo.h \
 	Utilities/SimpleParser.cpp \
-	Utilities/SimpleParser.h \
 	Utilities/SpeciesSet.cpp \
-	Utilities/SpeciesSet.h \
 	Utilities/RandRandom.cpp \
-	Utilities/RandRandom.h \
 	Utilities/RandomGenerator.cpp \
-	Utilities/RandomGenerator.h \
 	OhmmsApp/ProjectData.cpp \
-	OhmmsApp/ProjectData.h \
         OhmmsApp/RandomNumberControl.cpp \
-        OhmmsApp/RandomNumberControl.h \
         Platforms/sysutil.cpp\
-        Platforms/sysutil.h \
         Optimize/Minimize.cpp\
-        Optimize/Minimize.h \
 	Numerics/OhmmsBlas.cpp
 
    
 OHMMS_MESSAGE = \
-	Message/Communicate.cpp \
-	Message/Communicate.h
+	Message/Communicate.cpp 
 
 OHMMS_PARTICLE = \
 	ParticleTags.cpp \
         Lattice/Uniform3DGridLayout.cpp \
+        LongRange/KContainer.cpp \
+        LongRange/StructFact.cpp \
         Particle/ParticleSet.BC.cpp \
 	Particle/ParticleSet.cpp \
-	Particle/ParticleSet.h \
 	Particle/MCWalkerConfiguration.cpp \
-	Particle/MCWalkerConfiguration.h \
         Particle/DistanceTable.cpp \
-        Particle/DistanceTable.h \
         Particle/HDFWalkerIO.cpp \
-        Particle/HDFWalkerIO.h \
         ParticleIO/XMLParticleIO.cpp \
-        ParticleIO/XMLParticleIO.h \
         ParticleIO/ParticleLayoutIO.cpp \
-        ParticleIO/ParticleLayoutIO.h \
         ParticleIO/HDFParticleIO.cpp \
-        ParticleIO/HDFParticleIO.h
+        LongRange/KContainer.cpp \
+        LongRange/StructFact.cpp 
 
 QMC_BASE = \
 	QMCHamiltonians/QMCHamiltonian.cpp\

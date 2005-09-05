@@ -140,7 +140,7 @@
 /* Define integer for the index type. */
 #undef OHMMS_INDEXTYPE
 
-/* Define orthogonal-cell only. */
+/* Define 1 for orthonormal cells. */
 #undef OHMMS_ORTHO
 
 /* Define double-precision double for the real type. */

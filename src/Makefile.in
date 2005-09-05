@@ -123,53 +123,38 @@ pkginclude_HEADERS = \
 
 OHMMS_UTILITIES = \
 	Utilities/OhmmsObject.cpp \
-	Utilities/OhmmsObject.h \
 	Utilities/OhmmsInform.cpp \
-	Utilities/OhmmsInform.h \
 	Utilities/OhmmsInfo.cpp \
-	Utilities/OhmmsInfo.h \
 	Utilities/SimpleParser.cpp \
-	Utilities/SimpleParser.h \
 	Utilities/SpeciesSet.cpp \
-	Utilities/SpeciesSet.h \
 	Utilities/RandRandom.cpp \
-	Utilities/RandRandom.h \
 	Utilities/RandomGenerator.cpp \
-	Utilities/RandomGenerator.h \
 	OhmmsApp/ProjectData.cpp \
-	OhmmsApp/ProjectData.h \
         OhmmsApp/RandomNumberControl.cpp \
-        OhmmsApp/RandomNumberControl.h \
         Platforms/sysutil.cpp\
-        Platforms/sysutil.h \
         Optimize/Minimize.cpp\
-        Optimize/Minimize.h \
 	Numerics/OhmmsBlas.cpp
 
 
 OHMMS_MESSAGE = \
-	Message/Communicate.cpp \
-	Message/Communicate.h
+	Message/Communicate.cpp 
 
 
 OHMMS_PARTICLE = \
 	ParticleTags.cpp \
         Lattice/Uniform3DGridLayout.cpp \
+        LongRange/KContainer.cpp \
+        LongRange/StructFact.cpp \
         Particle/ParticleSet.BC.cpp \
 	Particle/ParticleSet.cpp \
-	Particle/ParticleSet.h \
 	Particle/MCWalkerConfiguration.cpp \
-	Particle/MCWalkerConfiguration.h \
         Particle/DistanceTable.cpp \
-        Particle/DistanceTable.h \
         Particle/HDFWalkerIO.cpp \
-        Particle/HDFWalkerIO.h \
         ParticleIO/XMLParticleIO.cpp \
-        ParticleIO/XMLParticleIO.h \
         ParticleIO/ParticleLayoutIO.cpp \
-        ParticleIO/ParticleLayoutIO.h \
         ParticleIO/HDFParticleIO.cpp \
-        ParticleIO/HDFParticleIO.h
+        LongRange/KContainer.cpp \
+        LongRange/StructFact.cpp 
 
 
 QMC_BASE = \
@@ -209,10 +194,12 @@ am__objects_1 = OhmmsObject.$(OBJEXT) OhmmsInform.$(OBJEXT) \
 	sysutil.$(OBJEXT) Minimize.$(OBJEXT) OhmmsBlas.$(OBJEXT)
 am__objects_2 = Communicate.$(OBJEXT)
 am__objects_3 = ParticleTags.$(OBJEXT) Uniform3DGridLayout.$(OBJEXT) \
+	KContainer.$(OBJEXT) StructFact.$(OBJEXT) \
 	ParticleSet.BC.$(OBJEXT) ParticleSet.$(OBJEXT) \
 	MCWalkerConfiguration.$(OBJEXT) DistanceTable.$(OBJEXT) \
 	HDFWalkerIO.$(OBJEXT) XMLParticleIO.$(OBJEXT) \
-	ParticleLayoutIO.$(OBJEXT) HDFParticleIO.$(OBJEXT)
+	ParticleLayoutIO.$(OBJEXT) HDFParticleIO.$(OBJEXT) \
+	KContainer.$(OBJEXT) StructFact.$(OBJEXT)
 am__objects_4 = QMCHamiltonian.$(OBJEXT) JastrowBuilder.$(OBJEXT) \
 	TrialWaveFunction.$(OBJEXT)
 am_libqmcbase_a_OBJECTS = $(am__objects_1) $(am__objects_2) \
@@ -230,6 +217,7 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/HDFParticleIO.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/HDFWalkerIO.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/JastrowBuilder.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/KContainer.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/MCWalkerConfiguration.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Minimize.Po ./$(DEPDIR)/OhmmsBlas.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/OhmmsInfo.Po ./$(DEPDIR)/OhmmsInform.Po \
@@ -244,7 +232,7 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/RandomGenerator.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/RandomNumberControl.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/SimpleParser.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/SpeciesSet.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/SpeciesSet.Po ./$(DEPDIR)/StructFact.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/TrialWaveFunction.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Uniform3DGridLayout.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/XMLParticleIO.Po ./$(DEPDIR)/sysutil.Po
@@ -255,14 +243,6 @@ LTCXXCOMPILE = $(LIBTOOL) --mode=compile $(CXX) $(DEFS) \
 	$(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
 CXXLINK = $(LIBTOOL) --mode=link $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) \
-	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-CFLAGS = @CFLAGS@
-COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
-	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
-LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) \
-	$(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
-CCLD = $(CC)
-LINK = $(LIBTOOL) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 DIST_SOURCES = $(libqmcbase_a_SOURCES)
 HEADERS = $(pkginclude_HEADERS)
@@ -348,6 +328,8 @@ Minimize.$(OBJEXT): Optimize/Minimize.cpp
 OhmmsBlas.$(OBJEXT): Numerics/OhmmsBlas.cpp
 Communicate.$(OBJEXT): Message/Communicate.cpp
 Uniform3DGridLayout.$(OBJEXT): Lattice/Uniform3DGridLayout.cpp
+KContainer.$(OBJEXT): LongRange/KContainer.cpp
+StructFact.$(OBJEXT): LongRange/StructFact.cpp
 ParticleSet.BC.$(OBJEXT): Particle/ParticleSet.BC.cpp
 ParticleSet.$(OBJEXT): Particle/ParticleSet.cpp
 MCWalkerConfiguration.$(OBJEXT): Particle/MCWalkerConfiguration.cpp
@@ -375,6 +357,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/HDFParticleIO.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/HDFWalkerIO.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/JastrowBuilder.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KContainer.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MCWalkerConfiguration.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Minimize.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/OhmmsBlas.Po@am__quote@
@@ -392,6 +375,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RandomNumberControl.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SimpleParser.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SpeciesSet.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/StructFact.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TrialWaveFunction.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Uniform3DGridLayout.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/XMLParticleIO.Po@am__quote@
@@ -669,6 +653,42 @@ Uniform3DGridLayout.lo: Lattice/Uniform3DGridLayout.cpp
 @AMDEP_TRUE@	depfile='$(DEPDIR)/Uniform3DGridLayout.Plo' tmpdepfile='$(DEPDIR)/Uniform3DGridLayout.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Uniform3DGridLayout.lo `test -f 'Lattice/Uniform3DGridLayout.cpp' || echo '$(srcdir)/'`Lattice/Uniform3DGridLayout.cpp
+
+KContainer.o: LongRange/KContainer.cpp
+@AMDEP_TRUE@	source='LongRange/KContainer.cpp' object='KContainer.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/KContainer.Po' tmpdepfile='$(DEPDIR)/KContainer.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o KContainer.o `test -f 'LongRange/KContainer.cpp' || echo '$(srcdir)/'`LongRange/KContainer.cpp
+
+KContainer.obj: LongRange/KContainer.cpp
+@AMDEP_TRUE@	source='LongRange/KContainer.cpp' object='KContainer.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/KContainer.Po' tmpdepfile='$(DEPDIR)/KContainer.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o KContainer.obj `cygpath -w LongRange/KContainer.cpp`
+
+KContainer.lo: LongRange/KContainer.cpp
+@AMDEP_TRUE@	source='LongRange/KContainer.cpp' object='KContainer.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/KContainer.Plo' tmpdepfile='$(DEPDIR)/KContainer.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o KContainer.lo `test -f 'LongRange/KContainer.cpp' || echo '$(srcdir)/'`LongRange/KContainer.cpp
+
+StructFact.o: LongRange/StructFact.cpp
+@AMDEP_TRUE@	source='LongRange/StructFact.cpp' object='StructFact.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/StructFact.Po' tmpdepfile='$(DEPDIR)/StructFact.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o StructFact.o `test -f 'LongRange/StructFact.cpp' || echo '$(srcdir)/'`LongRange/StructFact.cpp
+
+StructFact.obj: LongRange/StructFact.cpp
+@AMDEP_TRUE@	source='LongRange/StructFact.cpp' object='StructFact.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/StructFact.Po' tmpdepfile='$(DEPDIR)/StructFact.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o StructFact.obj `cygpath -w LongRange/StructFact.cpp`
+
+StructFact.lo: LongRange/StructFact.cpp
+@AMDEP_TRUE@	source='LongRange/StructFact.cpp' object='StructFact.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/StructFact.Plo' tmpdepfile='$(DEPDIR)/StructFact.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o StructFact.lo `test -f 'LongRange/StructFact.cpp' || echo '$(srcdir)/'`LongRange/StructFact.cpp
 
 ParticleSet.BC.o: Particle/ParticleSet.BC.cpp
 @AMDEP_TRUE@	source='Particle/ParticleSet.BC.cpp' object='ParticleSet.BC.o' libtool=no @AMDEPBACKSLASH@
