@@ -20,6 +20,15 @@ AC_ARG_WITH(boost-libs,
   ],
   [])
 
+if test x"$boost_dir" = x; then
+  boost_dir_env="${BOOST_HOME}"
+  if test x"$boost_dir_env" != x; then
+    boost_dir=$boost_dir_env
+    boost_include="$boost_dir_env"
+    boost_libs="$boost_dir_env"
+  fi
+fi
+
 dnl if test x"$with_boost" != x; then
 if test x"$boost_dir" != x; then
   acx_boost_ok=yes

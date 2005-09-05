@@ -5,11 +5,11 @@
 #     Bad things will happen!!!
 
 AC_PREREQ(2.13)
-AC_INIT(qmcplusplus,0.1.0)
+AC_INIT(qmcplusplus,0.4.0)
 AC_CONFIG_AUX_DIR([config])
 #AC_CONFIG_SRCDIR([src/ohmms-config.h])
 
-AM_INIT_AUTOMAKE([qmcplusplus], [0.1.0])
+AM_INIT_AUTOMAKE([qmcplusplus], [0.0.0])
 AH_TOP([// -*- c++  -*-
 //
 //Ohmms Configuration Header. Automatically Generated
@@ -221,6 +221,20 @@ AC_ARG_WITH(cxx,
        CXX_OPTIMIZE_FLAGS="-O3 -unroll -ipo -ipo_obj"
        CXX_DEBUG_FLAGS="-g -O0 -DPRINT_DEBUG"
      ;;
+     icpc)                # Intel C++ compiler   http://www.intel.com/
+       echo "Configuring for Intel C++. Setting CC and F77 to intel compilers post 8.1"
+       bz_compiler=icpc
+       cxx_native_compiler=false
+       AC_BZ_SET_COMPILER($withval,"icpc","-restrict -DADD_ -fno-alias -ansi -cxxlib-icc")
+       if test x"$CC" = x; then
+         CC="icc"
+       fi
+       if test x"$F77" = x; then
+         F77="ifort"
+       fi
+       CXX_OPTIMIZE_FLAGS="-O3 -unroll -ipo -ipo_obj"
+       CXX_DEBUG_FLAGS="-g -O0 -DPRINT_DEBUG"
+     ;;
      ecc)                # Intel C++ compiler for IA64 http://www.intel.com/
        echo "Configuring for Intel C++. Setting CC and F77 to intel compilers version 6 and 7"
        echo "In order to use intel 8 compiler, use --with-cxx=icc8"
@@ -277,7 +291,8 @@ You will have to rerun this script with one of these options:
   --with-cxx=DECcxx6.3    DEC cxx 6.3 or better (http://www.dec.com/)
   --with-cxx=aCC          HP-UX aCC 3.33 or better (http://www.hp.com/go/c++)
   --with-cxx=icc          Intel icc 5.x, 6.x and 7.x (http://www.intel.com/)
-  --with-cxx=icc8         Intel icc 8.x or higher (http://www.intel.com/)
+  --with-cxx=icc8         Intel icc 8.0.x  (http://www.intel.com/)
+  --with-cxx=icpc         Intel icc 8.1.x or higher (http://www.intel.com/)
   --with-cxx=ecc          Intel ecc 5.x, 6.x and 7.x on IA64 (http://www.intel.com/)
   --with-cxx=pgCC         PGI pgCC 3.0 or better (http://www.pgroup.com/)
   --with-cxx=xlC          IBM xlC 5.0 or better (http://www.ibm.com/)
@@ -413,6 +428,12 @@ case "$target" in
         F90=ifc
         F90_OPTIMIZE_FLAGS="-O2"
       ;;
+      icpc)
+        F77=ifort
+        F77_OPTIMIZE_FLAGS="-w90 -O2"
+        F90=ifort
+        F90_OPTIMIZE_FLAGS="-O2"
+      ;;
       ecc)
         F77=efc
         F77_OPTIMIZE_FLAGS="-ftz -O2"
@@ -457,10 +478,20 @@ AC_ARG_WITH(mkl,
         found_blas_lapack=1
         LAPACK_LIBS="-L$withval -lmkl -lmkl_lapack -lguide -lpthread"
       else
-        mkl_save="${MKL}"
-        if test x"$mkl_save" != x; then
+        mkl_home="${MKL_HOME}"
+        if test x"$mkl_home" = x; then
           found_blas_lapack=1
-          LAPACK_LIBS="$mkl_save"
+          if test "$bz_64bit" = true; then
+            LAPACK_LIBS="-L$mkl_home/64/lib -lmkl -lmkl_lapack -lguide -lpthread"
+          else
+            LAPACK_LIBS="-L$mkl_home/32/lib -lmkl -lmkl_lapack -lguide -lpthread"
+          fi
+        else
+          mkl_save="${MKL}"
+          if test x"$mkl_save" != x; then
+            found_blas_lapack=1
+            LAPACK_LIBS="$mkl_save"
+          fi
         fi
       fi
     fi 
@@ -618,6 +649,9 @@ AC_ARG_ENABLE(dimension,
 AC_DEFINE([OHMMS_INDEXTYPE], int, 
           [Define integer for the index type.])
 
+AC_DEFINE([OHMMS_ORTHO], 0, 
+          [Define 1 for orthonormal cells.])
+
 AC_ARG_WITH(precision,
   AC_HELP_STRING([--with-precision=single|double],
                  [Define precision for real type (default double).]),
@@ -672,63 +706,6 @@ ACX_BLITZ([], [AC_MSG_WARN([Could not find blitz. Disabled.])])
 
 ACX_BOOST([], [AC_MSG_WARN([Could not find boost. Disabled.])])
 
-#CXXFLAGS="$CXXFLAGS $CFLAGS"
-##################################################################
-# create a header file to define enabled features:
-#  potentials, propagators, and applications
-##################################################################
-AC_OUTPUT_COMMANDS([
-  outfile=src/QMC/main.cpp
-  tmpfile=${outfile}
-  dirname="sed s,^.*/,,g"
-
-  echo creating $outfile
-  cat > $tmpfile << _EOF_
-#include "Utilities/OhmmsInfo.h"
-#include "QMC/${qmcapp}.h"
-/**file main.cpp
- *@brief a main function for QMC simulation. 
- *Actual works are done by QMCApps and its derived classe.
- *For other simulations, one can derive a class from QMCApps, similarly to Molec
-uApps.
- *
- *Only requirements are the constructor and init function to initialize.
- */
-int main(int argc, char **argv) {
-
-  OhmmsInfo welcome(argc,argv);
-
-  ohmmsqmc::${qmcapp} qmc(argc,argv);
-
-  if(argc>1) {
-    // build an XML tree from a the file;
-    xmlDocPtr m_doc = xmlParseFile(argv[1]);
-    if (m_doc == NULL) {
-      ERRORMSG("File " << argv[1] << " is invalid")
-      xmlFreeDoc(m_doc);
-      return 1;
-    }    
-    // Check the document is of the right kind
-    xmlNodePtr cur = xmlDocGetRootElement(m_doc);
-    if (cur == NULL) {
-      ERRORMSG("Empty document");
-      xmlFreeDoc(m_doc);
-      return 1;
-    }
-    qmc.run(cur);
-  } else {
-    WARNMSG("No argument is given. Assume that ${qmcapp} does not need an input file")
-    qmc.run(NULL);
-  }
-  LOGMSG("Bye")
-  return 0;
-}
-_EOF_
-  ],
-  [
-    qmcapp=${qmcapp}
-  ])
-
 LIBS="$XML2_LIBS $HDF5_LIBS $LAPACK_LIBS $BLAS_LIBS $SPRNG_LIBS $FLIBS $LIBS"
 
 QMCBASE_LIBS="-L\$(top_builddir)/src -lqmcbase"
@@ -737,5 +714,5 @@ AC_SUBST(QMCBASE_LIBS)
 
 AC_OUTPUT([Makefile
    	   src/Makefile
-	   src/QMC/Makefile
+	   src/QMCApp/Makefile
 ])

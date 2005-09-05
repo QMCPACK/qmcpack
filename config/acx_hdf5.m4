@@ -22,6 +22,15 @@ AC_ARG_WITH(hdf5-libs,
   ],
   [])
 
+if test x"$hdf5_dir" = x; then
+  hdf5_dir_env="${HDF5_HOME}"
+  if test x"$hdf5_dir_env" != x; then
+    hdf5_dir=$hdf5_dir_env
+    hdf5_include="$hdf5_dir_env/include"
+    hdf5_libs="-L$hdf5_dir_env/lib -lhdf5"
+  fi
+fi
+
 dnl if test x"$with_hdf5" != x; then
 if test x"$hdf5_dir" != x; then
   acx_hdf5_ok=yes
