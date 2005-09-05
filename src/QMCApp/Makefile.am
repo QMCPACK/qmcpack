@@ -4,8 +4,8 @@ QMC_COMMON_SRCS = \
   ../QMCWaveFunctions/AtomicOrbitals/HFAtomicSTOSetBuilder.cpp \
   ../QMCWaveFunctions/AtomicOrbitals/HeSTOClementiRottie.cpp\
   ../QMCWaveFunctions/MolecularOrbitals/STOMolecularOrbitals.cpp\
+  ../QMCWaveFunctions/MolecularOrbitals/GTOMolecularOrbitals.cpp\
   ../QMCWaveFunctions/MolecularOrbitals/RGFBuilderBase.cpp\
-  ../QMCWaveFunctions/MolecularOrbitals/STO2GridBuilder.cpp\
   ../QMCWaveFunctions/MolecularOrbitals/GTO2GridBuilder.cpp\
   ../QMCWaveFunctions/MolecularOrbitals/Any2GridBuilder.cpp\
   ../QMCWaveFunctions/MolecularOrbitals/NumericalRGFBuilder.cpp\
@@ -14,14 +14,15 @@ QMC_COMMON_SRCS = \
   ../QMCWaveFunctions/MolecularOrbitals/NumericalMolecularOrbitals.cpp\
   ../QMCHamiltonians/LocalPPotential.cpp\
   ../QMCHamiltonians/NonLocalPPotential.cpp\
-  ../QMCHamiltonians/LocalCorePolPotential.cpp
+  ../QMCHamiltonians/LocalCorePolPotential.cpp \
+  ../LongRange/LPQHIBasis.cpp
 
 QMC_DRIVERS = \
   ../QMCDrivers/QMCDriver.cpp\
   ../QMCDrivers/DummyQMC.cpp\
   ../QMCDrivers/VMC.cpp\
   ../QMCDrivers/VMCParticleByParticle.cpp\
-  ../QMCDrivers/VMC_OPT.cpp\
+  ../QMCDrivers/QMCOptimize.cpp\
   ../QMCDrivers/MolecuDMC.cpp\
   ../QMCDrivers/DMCParticleByParticle.cpp\
   ../QMCDrivers/ReptationMC.cpp\
