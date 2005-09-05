@@ -25,6 +25,7 @@
 #include "ParticleBase/ParticleUtility.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "OhmmsData/AttributeSet.h"
+#include "Message/Communicate.h"
 
 namespace ohmmsqmc {
 
