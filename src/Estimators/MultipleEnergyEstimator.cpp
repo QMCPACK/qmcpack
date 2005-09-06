@@ -53,6 +53,13 @@ namespace ohmmsqmc {
         elocal_name(i,j)=aname;
       }
     }
+
+    int ipair=0;
+    for(int i=0; i<NumCopies-1; i++) {
+      for(int j=i+1; j<NumCopies; j++) {
+        sprintf(aname,"DiffS%iS%i",i,j); ediff_name.push_back(aname);
+      }
+    }
   }
 
   void 
@@ -144,9 +151,14 @@ namespace ohmmsqmc {
      */
   void 
   MultipleEnergyEstimator::add2Record(RecordNamedProperty<RealType>& record) {
-    FirstColumnIndex = record.add(esum_name(0).c_str());
-    for(int i=1; i<esum_name.size(); i++) record.add(esum_name(i).c_str());
+    FirstColumnIndex = record.add(ediff_name[0].c_str());
+    for(int i=1; i<ediff_name.size(); i++) record.add(ediff_name[i].c_str());
+    for(int i=0; i<esum_name.size(); i++) record.add(esum_name(i).c_str());
     for(int i=0; i<elocal_name.size(); i++) record.add(elocal_name(i).c_str());
+    //FirstColumnIndex = record.add(esum_name(0).c_str());
+    //for(int i=1; i<esum_name.size(); i++) record.add(esum_name(i).c_str());
+    //for(int i=0; i<ediff_name.size(); i++) record.add(ediff_name[i].c_str());
+    //for(int i=0; i<elocal_name.size(); i++) record.add(elocal_name(i).c_str());
   }
 
   void 
@@ -165,7 +177,6 @@ namespace ohmmsqmc {
       *esumPtr++ += invr*e;   //esum(i,ENERGY_INDEX)    += invr*e;
       *esumPtr++ += invr*e*e; //esum(i,ENERGY_SQ_INDEX) += invr*e*e; //how to variance
       *esumPtr++ += invr;     //esum(i,WEIGHT_INDEX)    += invr;
-
       //accumulate elocal(i,j) with the weight,
       //The content the Walker::DynProperties other than LOCALENERGY are NOT weighted.
       //const RealType *t= awalker.getEnergyBase(i);
@@ -198,23 +209,7 @@ namespace ohmmsqmc {
      * Disable collection. MultipleEnergyEstimator does not need to communiate at all.
      */
   void MultipleEnergyEstimator::report(RecordNamedProperty<RealType>& record, RealType wgtinv) {
-//#ifdef HAVE_MPI
-//    if(CollectSum) {
-//      int esumSize(esum.size());
-//      //pack the energy to be summed: v can be either static or data member
-//      vector<RealType> v(esumSize+elocal.size());
-//      std::copy(esum.begin(),esum.end(),v.begin());
-//      std::copy(elocal.begin(),esum.end(),v.begin()+esumSize);
-//
-//      gsum(v,0);
-//
-//      std::copy(v.begin(),v.begin()+esumSize,esum.begin());
-//      std::copy(v.begin()+esumSize,v.end(),elocal.begin());
-//    }
-//#endif
-//
-    //(localenergy, variance, weight)* 
-    int ir(FirstColumnIndex);
+
 
     for(int i=0; i<NumCopies; i++) {
       RealType r = 1.0/esum(i,WEIGHT_INDEX);
@@ -224,6 +219,14 @@ namespace ohmmsqmc {
       esum(i,WEIGHT_INDEX)*=wgtinv; 
     }
 
+    //ediff
+    int ir(FirstColumnIndex);
+    for(int i=0; i<NumCopies-1; i++) {
+      for(int j=i+1; j<NumCopies; j++) {
+        record[ir++]=esum(j,ENERGY_INDEX)-esum(i,ENERGY_INDEX);
+      }
+    }
+    //+(localenergy, variance, weight)* 
     //swap the row/column indices for (localenergy*, variance*, weight*)
     for(int l=0; l<LE_INDEX;l++) {
       for(int i=0; i<NumCopies; i++) 

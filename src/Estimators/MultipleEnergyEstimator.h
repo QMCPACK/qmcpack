@@ -105,6 +105,10 @@ namespace ohmmsqmc {
      */
     Matrix<string> elocal_name;
 
+    /** the names of energy differences
+     */
+    vector<string> ediff_name;
+
     /** constructor
      * @param h QMCHamiltonian to define the components
      * @param hcopy number of copies of QMCHamiltonians
