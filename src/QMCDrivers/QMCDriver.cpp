@@ -203,6 +203,9 @@ namespace ohmmsqmc {
     //For optimization, do nothing
     if(QMCDriverMode[QMC_OPTIMIZE]) return;
 
+    //For multiple+particle-by-particle, do nothing
+    if(QMCDriverMode[QMC_MULTIPLE] && QMCDriverMode[QMC_UPDATE_MODE]) return;
+
     if(QMCDriverMode[QMC_UPDATE_MODE]) { //using particle-by-particle moves
       bool require_register =  W.createAuxDataSet();
       MCWalkerConfiguration::iterator it(W.begin()),it_end(W.end());
