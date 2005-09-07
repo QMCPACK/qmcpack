@@ -72,7 +72,7 @@ namespace ohmmsqmc {
    */
   void QMCOptimize::addConfiguration(const string& a) {
 
-    ConfigFile.push_back(a);
+    if(a.size()) ConfigFile.push_back(a);
   }
 
   /** Reimplement QMCDriver::run
@@ -224,6 +224,7 @@ namespace ohmmsqmc {
 
   /** evaluate everything before optimization */
   void QMCOptimize::checkConfigurations() {
+
 
     if(ConfigFile.size()) {
       W.destroyWalkers(W.begin(),W.end());
