@@ -19,7 +19,7 @@
 #include "OhmmsData/libxmldefs.h"
 #include "Optimize/VarList.h"
 
-/**RPA Jastrow functional
+/** RPA Jastrow functional
  *
  * \f[ u(r) = \frac{A}{r}\left[1-\exp(-\frac{r}{F})\right], \f]
  * where $F$ satisfies the cusp conditions: \f$F_{\uparrow \uparrow} = \sqrt{2A}\f$ 
@@ -81,11 +81,9 @@ struct RPAJastrow {
     return u;
   }
 
-  /**@param cur current xmlNode from which the data members are reset
-   @param vlist VarRegistry<T1> to which the variable A will be
-   added for optimization
-   @brief T1 is the type of VarRegistry, typically double.  Read 
-   in the parameter from the xml input file.
+  /** Read in the parameter from the xml input file.
+   @param cur current xmlNode from which the data members are reset
+   @param vlist VarRegistry<T1> to which the variable A will be added for optimization
   */
   template<class T1>
   void put(xmlNodePtr cur, VarRegistry<T1>& vlist){
