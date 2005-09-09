@@ -163,6 +163,8 @@ namespace ohmmsqmc {
       d2psiM_temp.resize(nel,norb);
       psiMinv.resize(nel,norb);
       psiV.resize(norb);
+      WorkSpace.resize(nel);
+      Pivot.resize(nel);
       LastIndex = FirstIndex + nel;
       NumPtcls=nel;
       NumOrbitals=norb;
@@ -236,7 +238,6 @@ namespace ohmmsqmc {
       //re-evaluate it for testing
       //Phi.evaluate(P, FirstIndex, LastIndex, psiM, dpsiM, d2psiM);
       //CurrentDet = Invert(psiM.data(),NumPtcls,NumOrbitals);
-
       //need extra copy for gradient/laplacian calculations without updating it
       psiM_temp = psiM;
       dpsiM_temp = dpsiM;
@@ -261,10 +262,11 @@ namespace ohmmsqmc {
      */
     inline ValueType ratio(ParticleSet& P, int iat) {
       Phi.evaluate(P, iat, psiV);
+#ifdef DIRAC_USE_BLAS
+      return curRatio = BLAS::dot(NumOrbitals,psiM[iat-FirstIndex],&psiV[0]);
+#else
       return DetRatio(psiM, psiV.begin(),iat-FirstIndex);
-      //return curRatio= DetRatio(psiM, psiV.begin(),iat-FirstIndex);
-      //return curRatio = BLAS::dot(NumOrbitals,psiM[iat-FirstIndex],&psiV[0]);
-      //return curRatio= detRatio(psiM_temp[iat-FirstIndex], psiV.begin(),NumOrbitals);
+#endif
     }
 
     /** return the ratio
@@ -283,9 +285,11 @@ namespace ohmmsqmc {
       Phi.evaluate(P, iat, psiV, dpsiV, d2psiV);
       WorkingIndex = iat-FirstIndex;
 
+#ifdef DIRAC_USE_BLAS
+      curRatio = BLAS::dot(NumOrbitals,psiM_temp[WorkingIndex],&psiV[0]);
+#else
       curRatio= DetRatio(psiM_temp, psiV.begin(),WorkingIndex);
-      //curRatio = BLAS::dot(NumOrbitals,psiM_temp[WorkingIndex],&psiV[0]);
-      //curRatio= detRatio(psiM_temp[WorkingIndex], psiV.begin(), NumOrbitals);
+#endif
 
       //update psiM_temp with the row substituted
       DetUpdate(psiM_temp,psiV,workV1,workV2,WorkingIndex,curRatio);
@@ -464,6 +468,9 @@ namespace ohmmsqmc {
     vector<Gradient_t>    dpsiM_v; 
     vector<Laplacian_t>   d2psiM_v; 
 
+    Vector<ValueType> WorkSpace;
+    Vector<IndexType> Pivot;
+
     ValueType curRatio,cumRatio;
     ValueType *FirstAddressOfG;
     ValueType *LastAddressOfG;
@@ -492,28 +499,38 @@ namespace ohmmsqmc {
 				     ParticleSet::ParticleLaplacian_t& L) {
 
     Phi.evaluate(P, FirstIndex, LastIndex, psiM,dpsiM, d2psiM);
-    CurrentDet = Invert(psiM.data(),NumPtcls,NumOrbitals);
-    int iat = FirstIndex; //the index of the particle with respect to P
-    for(int i=0; i<NumPtcls; i++, iat++) {
-      PosType rv = psiM(i,0)*dpsiM(i,0);
-      ValueType lap=psiM(i,0)*d2psiM(i,0);
-      for(int j=1; j<NumOrbitals; j++) {
-	rv += psiM(i,j)*dpsiM(i,j);
-	lap += psiM(i,j)*d2psiM(i,j);
+    if(NumPtcls==1) {
+      CurrentDet=psiM(0,0);
+      ValueType y=1.0/CurrentDet;
+      PosType rv = y*dpsiM(0,0);
+      G(FirstIndex) += rv;
+      L(FirstIndex) += y*d2psiM(0,0) - dot(rv,rv);
+    } else {
+      CurrentDet = Invert(psiM.data(),NumPtcls,NumOrbitals, WorkSpace.data(), Pivot.data());
+      //CurrentDet = Invert(psiM.data(),NumPtcls,NumOrbitals);
+      int iat = FirstIndex; //the index of the particle with respect to P
+      for(int i=0; i<NumPtcls; i++, iat++) {
+        PosType rv = psiM(i,0)*dpsiM(i,0);
+        ValueType lap=psiM(i,0)*d2psiM(i,0);
+        for(int j=1; j<NumOrbitals; j++) {
+          rv += psiM(i,j)*dpsiM(i,j);
+          lap += psiM(i,j)*d2psiM(i,j);
+        }
+        G(iat) += rv;
+        L(iat) += lap - dot(rv,rv);
       }
-      G(iat) += rv;
-      L(iat) += lap - dot(rv,rv);
     }
     return CurrentDet;
   }
 
 
-  /**void evaluate(WalkerSetRef& W,  WfsVec& psi, GradMat& G, LapMat& L)
+  /** evaluate determinants of all particles
    *@param W Walkers, set of input configurations, Nw is the number of walkers
    *@param psi a vector containing Nw determinants
    *@param G a matrix containing Nw x N gradients
    *@param L a matrix containing Nw x N laplacians
-   *@brief N is the number of particles per walker and Nw is the number of walkers.
+   *
+   *N is the number of particles per walker and Nw is the number of walkers.
    *Designed for vectorized move, i.e., all the walkers move simulatenously as
    *in molecu. While calculating the determinant values for a set of walkers,
    *add the gradient and laplacian contribution of the determinant
@@ -530,11 +547,10 @@ namespace ohmmsqmc {
 
     //evaluate \f$(D_{ij})^t\f$ and other quantities for gradient/laplacians
     Phi.evaluate(W, FirstIndex, LastIndex, psiM_v, dpsiM_v, d2psiM_v);
-    //int nrows = rows();
-    //int ncols = cols();
     
     for(int iw=0; iw< nw; iw++) {
-      psi[iw] *= Invert(psiM_v[iw].data(),NumPtcls,NumOrbitals);
+      //psi[iw] *= Invert(psiM_v[iw].data(),NumPtcls,NumOrbitals);
+      psi[iw] *= Invert(psiM_v[iw].data(),NumPtcls,NumOrbitals, WorkSpace.data(), Pivot.data());
       int iat = FirstIndex; //the index of the particle with respect to P
       const Determinant_t& logdet = psiM_v[iw];
       const Gradient_t& dlogdet = dpsiM_v[iw];

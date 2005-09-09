@@ -24,38 +24,55 @@
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "Numerics/Blasf.h"
 
-inline void LUFactorization(const int& n, const int& m, double* a, const int& n0, 
-		     int* piv) {
+inline void 
+LUFactorization(const int& n, const int& m, double* restrict a, const int& n0, 
+     int* restrict piv) {
   int status;
   dgetrf(n,m,a,n0,piv,status);
 }
 
-inline void LUFactorization(const int& n, const int& m, complex<double>* a, const int& n0, 
-		     int* piv) {
+inline void 
+LUFactorization(const int& n, const int& m, complex<double>* restrict a, 
+    const int& n0, int* restrict piv) {
   int status;
   zgetrf(n,m,a,n0,piv,status);
 }
 
-inline void InvertLU(const int& n, double* a, const int& n0, 
-	      int* piv, double* work, const int& n1){
+inline void InvertLU(const int& n, double* restrict a, const int& n0, 
+	      int* restrict piv, double* restrict work, const int& n1){
   int status;
   dgetri(n,a,n0,piv,work,n1,status);
 }
 
-inline double Invert(double* x, int n, int m) {
-  double detvalue;
-  if(n == 1) {
-    detvalue = x[0];
-    x[0]=1.0/detvalue;
-  } else { 
-    vector<double> work(n);
-    vector<int> pivot(n);
-    LUFactorization(n,m,x,n,&pivot[0]);
-    detvalue = x[0];
-    for (int i=1; i<m; ++i) detvalue *= x[i*m+i];
-    InvertLU(n,x, n, &pivot[0], &work[0], n);
+template<class T>
+inline T 
+Invert(T* restrict x, int n, int m, T* restrict work, int* restrict pivot) {
+  T detvalue(1.0);
+  LUFactorization(n,m,x,n,pivot);
+  for(int i=0,ip=1; i<m; i++, ip++) {
+    if(pivot[i]==ip) 
+      detvalue *= x[i*m+i];
+    else 
+      detvalue *= -x[i*m+i];
   }
-    /*
+  InvertLU(n, x, n, pivot, work, n);
+  return detvalue;
+}
+
+template<class T>
+inline T Invert(T* restrict x, int n, int m) {
+  T detvalue(1.0);
+  vector<T> work(n);
+  vector<int> pivot(n);
+  LUFactorization(n,m,x,n,&pivot[0]);
+  for(int i=0,ip=1; i<m; i++, ip++) {
+    if(pivot[i]==ip) 
+      detvalue *= x[i*m+i];
+    else 
+      detvalue *= -x[i*m+i];
+  }
+  InvertLU(n,x, n, &pivot[0], &work[0], n);
+  /*
   switch(n) {
   case(1):
     detvalue = x[0];
