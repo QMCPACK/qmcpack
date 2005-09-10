@@ -88,9 +88,6 @@ namespace ohmmsqmc {
     
     Estimators->reset();
 
-    //create an output engine
-    HDFWalkerOutput WO(RootName);
-    
     IndexType block = 0;
     
     Pooma::Clock timer;
@@ -99,6 +96,7 @@ namespace ohmmsqmc {
     IndexType accstep=0;
     IndexType nAcceptTot = 0;
     IndexType nRejectTot = 0;
+    bool appendwalker=pStride>0;
     do {
       IndexType step = 0;
       timer.start();
@@ -118,17 +116,23 @@ namespace ohmmsqmc {
       Estimators->report(accstep);
       
       LogOut->getStream() << "Block " << block << " " << timer.cpu_time() << endl;
-      if(pStride) WO.get(W);
+
+      HDFWalkerOutput WO(RootName,block&&appendwalker, block);
+      WO.get(W);
+
       nAccept = 0; nReject = 0;
       block++;
     } while(block<nBlocks);
+
     
     LogOut->getStream() 
       << "Ratio = " 
       << static_cast<double>(nAcceptTot)/static_cast<double>(nAcceptTot+nRejectTot)
       << endl;
     
-    if(!pStride) WO.get(W);
+    int nconf= appendwalker ? block:1;
+    HDFWalkerOutput WOextra(RootName,true,nconf);
+    WOextra.write(*branchEngine);
     
     Estimators->finalize();
 

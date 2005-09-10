@@ -58,20 +58,8 @@ namespace ohmmsqmc {
   bool VMC::run() { 
     
     Estimators->reportHeader();
-
-    //probably unnecessary
-    //MCWalkerConfiguration::iterator it(W.begin()); 
-    //MCWalkerConfiguration::iterator it_end(W.end()); 
-    //while(it != it_end) {
-    //  (*it)->Weight=1.0;
-    //  ++it;
-    //}
-    
     Estimators->reset();
 
-    //create an output engine
-    HDFWalkerOutput WO(RootName);
-    
     IndexType block = 0;
     
     Pooma::Clock timer;
@@ -80,6 +68,7 @@ namespace ohmmsqmc {
     IndexType accstep=0;
     IndexType nAcceptTot = 0;
     IndexType nRejectTot = 0;
+    bool appendwalker=pStride>0;
     do {
       IndexType step = 0;
       timer.start();
@@ -102,7 +91,10 @@ namespace ohmmsqmc {
       branchEngine->accumulate(Estimators->average(0),1.0);
 
       LogOut->getStream() << "Block " << block << " " << timer.cpu_time() << endl;
-      if(pStride) WO.get(W);
+
+      HDFWalkerOutput WO(RootName,block&&appendwalker, block);
+      WO.get(W);
+
       nAccept = 0; nReject = 0;
       block++;
     } while(block<nBlocks);
@@ -113,9 +105,9 @@ namespace ohmmsqmc {
       << static_cast<double>(nAcceptTot)/static_cast<double>(nAcceptTot+nRejectTot)
       << endl;
     
-    if(!pStride) WO.get(W);
-
-    WO.write(*branchEngine);
+    int nconf= appendwalker ? block:1;
+    HDFWalkerOutput WOextra(RootName,true,nconf);
+    WOextra.write(*branchEngine);
 
     //Evaluate E_T
     branchEngine->update(W.getActiveWalkers(), Estimators->average(0));

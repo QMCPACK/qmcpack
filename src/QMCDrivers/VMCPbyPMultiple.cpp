@@ -58,9 +58,6 @@ namespace ohmmsqmc {
 
     Estimators->reset();
 
-    //create an output engine
-    HDFWalkerOutput WO(RootName);
-    
     IndexType block = 0;
     
     Pooma::Clock timer;
@@ -77,6 +74,7 @@ namespace ohmmsqmc {
 
     MCWalkerConfiguration::iterator it;
     MCWalkerConfiguration::iterator it_end(W.end());
+    bool appendwalker=pStride>0;
     do {  //Blocks loop
       IndexType step = 0;
       timer.start();
@@ -238,7 +236,10 @@ namespace ohmmsqmc {
       LogOut->getStream() << "Block " << block << " " << timer.cpu_time() << " Fixed_configs " 
 	<< static_cast<RealType>(nAllRejected)/static_cast<RealType>(step*W.getActiveWalkers()) << 
 	" nPsi " << nPsi << endl;
-      if(pStride) WO.get(W);
+
+      HDFWalkerOutput WO(RootName,block&&appendwalker, block);
+      WO.get(W);
+
       nAccept = 0; nReject = 0;
       ++block;
 
@@ -251,7 +252,9 @@ namespace ohmmsqmc {
       << static_cast<RealType>(nAcceptTot)/static_cast<RealType>(nAcceptTot+nRejectTot)
       << endl;
 
-    if(!pStride) WO.get(W);
+    int nconf= appendwalker ? block:1;
+    HDFWalkerOutput WOextra(RootName,true,nconf);
+    WOextra.write(*branchEngine);
 
     Estimators->finalize();
 

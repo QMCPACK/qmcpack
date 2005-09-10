@@ -121,21 +121,14 @@ namespace ohmmsqmc {
         << setw(20) << static_cast<RealType>(nAllRejected)*totmoves
         << setw(20) << static_cast<RealType>(nNodeCrossing)*totmoves << endl;
 
-      if(pStride) { //create an output engine
-        HDFWalkerOutput WO(RootName);
-        WO.get(W); 
-        WO.write(*branchEngine);
-      }
+      HDFWalkerOutput WO(RootName,false,0);
+      WO.get(W); 
+      WO.write(*branchEngine);
 
       nAccept = 0; nReject = 0;
       block++;
     } while(block<nBlocks);
 
-    if(!pStride) { //create an output engine
-      HDFWalkerOutput WO(RootName);
-      WO.get(W); 
-      WO.write(*branchEngine);
-    }
     
     Estimators->finalize();
     

@@ -138,27 +138,20 @@ namespace ohmmsqmc {
       LogOut->getStream() << "Block " << block << " " << timer.cpu_time()
       		    << " " << Population << endl;
       Eest = Estimators->average(0);
+
+      //create an output engine: could accumulate the configurations
+      HDFWalkerOutput WO(RootName,false,0);
+      WO.get(W);
+      WO.write(*branchEngine);
+
       nAccept = 0; nReject = 0;
       block++;
-      if(pStride) {
-        //create an output engine: could accumulate the configurations
-        HDFWalkerOutput WO(RootName);
-        WO.get(W);
-        WO.write(*branchEngine);
-      }
       W.reset();
     } while(block<nBlocks);
     
     LogOut->getStream() 
       << "ratio = " << static_cast<double>(nAcceptTot)/static_cast<double>(nAcceptTot+nRejectTot)
       << endl;
-    
-    if(!pStride) {
-      //create an output engine: could accumulate the configurations
-      HDFWalkerOutput WO(RootName);
-      WO.get(W);
-      WO.write(*branchEngine);
-    }
 
     Estimators->finalize();
     return true;
