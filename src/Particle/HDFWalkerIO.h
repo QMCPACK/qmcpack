@@ -37,7 +37,7 @@ namespace ohmmsqmc {
     hid_t h_config;
   public:
 
-    HDFWalkerOutput(const string& fname, bool append=true);
+    HDFWalkerOutput(const string& fname, bool append=true, int count=0);
     ~HDFWalkerOutput();
     bool get(MCWalkerConfiguration&);
 

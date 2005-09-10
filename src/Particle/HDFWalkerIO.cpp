@@ -39,13 +39,20 @@ using namespace ohmmsqmc;
  * - create the main group "/config_collection"
  */
 
-HDFWalkerOutput::HDFWalkerOutput(const string& aroot, bool append):
-  Counter(0), AppendMode(append) {
+HDFWalkerOutput::HDFWalkerOutput(const string& aroot, bool append, int count):
+  Counter(count), AppendMode(append) {
 
   string h5file(aroot);
   h5file.append(".config.h5");
-  h_file = H5Fcreate(h5file.c_str(),H5F_ACC_TRUNC,H5P_DEFAULT,H5P_DEFAULT);
-  h_config = H5Gcreate(h_file,"config_collection",0);
+  if(AppendMode)  {
+    h_file =  H5Fopen(h5file.c_str(),H5F_ACC_RDWR,H5P_DEFAULT);
+    h_config = H5Gopen(h_file,"config_collection");
+  }
+  else {
+    Counter=0;
+    h_file = H5Fcreate(h5file.c_str(),H5F_ACC_TRUNC,H5P_DEFAULT,H5P_DEFAULT);
+    h_config = H5Gcreate(h_file,"config_collection",0);
+  }
 }
 
 /** Destructor closes the HDF5 file and main group. */
@@ -53,8 +60,14 @@ HDFWalkerOutput::HDFWalkerOutput(const string& aroot, bool append):
 HDFWalkerOutput::~HDFWalkerOutput() {
 
   hsize_t dim = 1;
-  hid_t dataspace  = H5Screate_simple(1, &dim, NULL);
-  hid_t dataset= H5Dcreate(h_config, "NumOfConfigurations", H5T_NATIVE_INT, dataspace, H5P_DEFAULT);
+  hid_t dataspace, dataset;
+
+  dataspace= H5Screate_simple(1, &dim, NULL);
+  if(AppendMode) {
+    dataset= H5Dopen(h_config, "NumOfConfigurations");
+  } else {
+    dataset= H5Dcreate(h_config, "NumOfConfigurations", H5T_NATIVE_INT, dataspace, H5P_DEFAULT);
+  }
   hid_t ret = H5Dwrite(dataset, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT,&Counter);
   H5Sclose(dataspace);
   H5Dclose(dataset);
