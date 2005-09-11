@@ -1,6 +1,7 @@
 //////////////////////////////////////////////////////////////////
-// (c) Copyright 1998-2002 by Jeongnim Kim
-//
+// (c) Copyright 1998-2002,2003- by Jeongnim Kim
+//////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////
 //   National Center for Supercomputing Applications &
 //   Materials Computation Center
 //   University of Illinois, Urbana-Champaign
@@ -18,18 +19,22 @@
 
 #ifndef OHMMS_COMMUNICATE_H
 #define OHMMS_COMMUNICATE_H
-
 #ifdef HAVE_CONFIG_H
 #include "ohmms-config.h"
 #endif
 
-#ifdef HAVE_MPI
-#include <mpi.h>
+#ifdef HAVE_OOMPI
+#include "oompi.h"
+#else
+  #ifdef HAVE_MPI
+  #include <mpi.h>
+  #endif
 #endif
 
-/** Communicate class that wraps information on parallelism.
+/**@class Communicate
  * @ingroup Message
- *
+ * @brief 
+ *  Wrapping information on parallelism.
  *  Very limited in functions. Currently, only single-mode or mpi-mode 
  *  is available (mutually exclusive).
  * @todo Possibly, make it a general manager class for mpi+openmp, mpi+mpi
@@ -38,10 +43,11 @@ class Communicate {
 public:
 
 #ifdef HAVE_MPI
-  typedef MPI_Comm mpi_comm_type;
+   typedef MPI_Comm mpi_comm_type;
 #else
-  typedef int mpi_comm_type;
+   typedef int mpi_comm_type;
 #endif
+
   ///constructor
   Communicate();
 
@@ -49,7 +55,6 @@ public:
   Communicate(int argc, char **argv);
 
   /**destructor
-   *
    * Call proper finalization of Communication library
    */
   virtual ~Communicate();
@@ -60,6 +65,7 @@ public:
 
   ///return the Communicator ID (typically MPI_WORLD_COMM)
   inline mpi_comm_type getID() const { return CommID;}
+
 
   ///return the rank of this node
   inline int getNodeID() const { return d_mycontext;}
@@ -74,7 +80,6 @@ public:
   void cleanupMessage(void*);
   inline void setNodeID(int i) { d_mycontext = i;}
   inline void setCommID(mpi_comm_type i) { CommID = i;}
-
   void barrier();
 
 protected:
@@ -82,11 +87,13 @@ protected:
   mpi_comm_type CommID; 
   int d_mycontext; 
   int d_ncontexts;
+
 };
 
 
 namespace OHMMS {
-  /** Global Communicator for a process */
+  /** Global Communicator for a process 
+   */
   extern Communicate* Controller;
 }
 #endif // OHMMS_COMMUNICATE_H

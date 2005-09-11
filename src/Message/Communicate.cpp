@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////
-// (c) Copyright 1998-2002 by Jeongnim Kim
+// (c) Copyright 1998-2002, 2003- by Jeongnim Kim
 //////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////
 //   National Center for Supercomputing Applications &
@@ -19,7 +19,6 @@
 
 #include "Message/Communicate.h"
 #include "Message/TagMaker.h"
-#include <cstdlib>
 
 //static data of TagMaker::CurrentTag is initialized.
 int TagMaker::CurrentTag = 1000;
@@ -37,11 +36,6 @@ Communicate::Communicate(int argc, char **argv){
 //exclusive:  OOMPI, MPI or Serial
 #ifdef HAVE_OOMPI
 
-//================================================================
-// Implements Communicate with OOMPI library
-//================================================================
-#include "oompi.h"
-
 Communicate::~Communicate(){ }
 
 void Communicate::initialize(int argc, char **argv){
@@ -57,6 +51,12 @@ void Communicate::finalize() {
 }
 
 void Communicate::cleanupMessage(void*) { }
+void Communicate::abort(){
+  OOMPI_COMM_WORLD.Abort();
+}
+void Communicate::barrier(){
+  OOMPI_COMM_WORLD.Barrier();
+}
 
 #else
 
@@ -78,28 +78,27 @@ void Communicate::initialize(int argc, char **argv){
   }
 }
 
-void Communicate::barrier(){ 
-  MPI_Barrier(MPI_COMM_WORLD);
-}
 void Communicate::finalize(){
   MPI_Finalize();
 }
-
-void Communicate::abort(){ 
-  MPI_Abort(MPI_COMM_WORLD,-1);
+void Communicate::abort(){
+    MPI_Abort(MPI_COMM_WORLD,-1);
 }
 
 void Communicate::cleanupMessage(void*) { }
-
+void Communicate::barrier(){
+  MPI_Barrier(MPI_COMM_WORLD);
+}
 #else //HAVE_MPI
 
 Communicate::~Communicate(){}
 void Communicate::initialize(int argc, char **argv){ }
 void Communicate::finalize(){ }
 void Communicate::abort(){ 
-  exit(1);
+  abort();
 }
-void Communicate::barrier(){ }
+void Communicate::barrier(){
+}
 void Communicate::cleanupMessage(void*) { }
 
 #endif // !HAVE_MPI
