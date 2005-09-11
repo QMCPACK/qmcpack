@@ -74,6 +74,13 @@ SET(QMCBASEDIR
 
 #SUBDIRS(SQD)
 ADD_LIBRARY(qmc ${QMCBASEDIR})
+IF(HAVE_OOMPI)
+  CONFIGURE_FILE(${qmcPlusPlus_SOURCE_DIR}/src/oompi-config.h.cmake.in 
+                 ${qmcPlusPlus_BINARY_DIR}/src/oompi-config.h)
+  INCLUDE_DIRECTORIES(${qmcPlusPlus_SOURCE_DIR}/src/OOMPI)
+  SUBDIRS(OOMPI)
+  LINK_LIBRARIES(oompi)
+ENDIF(HAVE_OOMPI)
+
 SUBDIRS(QMCApp)
-#SUBDIRS(QMC)
 SUBDIRS(QMCTools)

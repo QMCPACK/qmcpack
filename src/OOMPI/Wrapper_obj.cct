@@ -1,0 +1,162 @@
+// -*- c++ -*-
+//
+// Copyright (c) 2002-2003 Indiana University.  All rights reserved.
+// Copyright (c) 1996, 1997, 1998, 2000 University of Notre Dame.
+//                         All rights reserved.
+// 
+// This file is part of the OOMPI software package.  For license
+// information, see the LICENSE file in the top level directory of the
+// OOMPI source distribution.
+//
+// $Id$
+//
+// OOMPI Class library
+// Wrapper object
+// 
+
+
+#ifndef _OOMPI_WRAPPER_OBJ_CCT_
+#define _OOMPI_WRAPPER_OBJ_CCT_
+
+#include "Constants.h"
+#include "Error.h"
+
+
+//
+// JMS 16 Feb 1996 NOTES
+//
+// The stored object is referenced by the "data" member.  It is
+// only meaningful if "valid" is true.  "data" is never assigned 
+// a value of 0 or some other definite meaningless value -- this creates
+// type problems because the whole class is templated.  "valid"
+// is the indicater as to whether "data" is valid or not.
+//
+
+template <class TYPE>
+class OOMPI_Wrapper_obj {
+public:
+  //
+  // Default constructor
+  //
+  inline OOMPI_Wrapper_obj() 
+    : count(0), valid(false), callback(0) 
+  {};
+
+
+  //
+  // Initial constructor
+  //
+  // $%%^#$%#$% Sun Workshop 5.0 CC compiler!!!
+  //
+  // If we don't make the first arg const (and then cast it away when
+  // we assign to data), Sun CC (5.0) will fail to compile
+  // src/Message.cc (all other files compile fine -- go figure).
+  // #@%$@#%$@#%$!!!
+  //
+  // Oh -- forgot to mention -- Sun CC (5.0) *will* compile fine if
+  // you include -g (without this fix), but will not compile without
+  // -g.
+  //
+  inline OOMPI_Wrapper_obj(const TYPE& a, int (*fcn)(TYPE* arg))
+    : count(1), valid(true), data((TYPE&) a), callback(fcn) 
+  {};
+
+
+  //
+  // Copy constructor
+  // Should never be called
+  //
+  inline OOMPI_Wrapper_obj(const OOMPI_Wrapper_obj<TYPE>& a) 
+    : count(1), valid(false)
+  { a.do_nothing(); };
+
+
+  //
+  // Assignment operator
+  //
+  inline OOMPI_Wrapper_obj<TYPE>& operator=(const OOMPI_Wrapper_obj<TYPE>& a) 
+  {
+    count = 1;
+    valid = true;
+    data = a.data;
+    
+    return *this;
+  };
+
+
+  //
+  // Destructor.
+  // Should never be deleted explicitly -- only through the
+  // decrement() function.
+  //
+  inline ~OOMPI_Wrapper_obj() {};
+
+
+  //
+  // Access to the data
+  //
+  inline void Set(const TYPE& a, int (*fcn)(TYPE* arg)) 
+  { 
+    if (valid && callback != 0)
+      callback(&data);
+
+    data = a; 
+    callback = fcn; 
+    valid = true;
+
+    if (count == 0)
+      count = 1;
+  };
+  inline TYPE& Get(void) { return data; };
+  
+
+  //
+  // Reset the wrapper to point to nothing
+  //
+  inline void Unset(void) 
+  {
+    if (valid) {
+      valid = false;
+      if (callback != 0)
+	callback(&data);
+    }
+  };
+  
+
+  //
+  // Count maintenance
+  //
+  inline void increment(void) 
+  { if (valid) ++count; };
+  inline void decrement(void) 
+  { 
+    if (valid && --count <= 0) {
+      if (callback != 0) 
+	callback(&data); 
+      delete this; 
+    }
+  };
+  
+private:
+  //
+  // Count and reference to data
+  //
+  int count;
+  bool valid;
+  TYPE data;
+
+  //
+  // Callback function to "destroy" data
+  // Prototype matches MPI MPI_*_free() functions.
+  //
+  int (*callback)(TYPE* arg);
+
+  //
+  // Stupid function to eliminate compiler warnings
+  //
+  inline void do_nothing(void) const {};
+};
+
+#endif
+
+

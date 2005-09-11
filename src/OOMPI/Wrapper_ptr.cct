@@ -1,0 +1,105 @@
+// -*- c++ -*-
+//
+// Copyright (c) 2002-2003 Indiana University.  All rights reserved.
+// Copyright (c) 1996, 1997, 1998, 2000 University of Notre Dame.
+//                         All rights reserved.
+// 
+// This file is part of the OOMPI software package.  For license
+// information, see the LICENSE file in the top level directory of the
+// OOMPI source distribution.
+//
+// $Id$
+//
+// OOMPI Class library
+// Smart wrapper pointer
+//
+
+#ifndef _OOMPI_WRAPPER_PTR_H_
+#define _OOMPI_WRAPPER_PTR_H_
+
+#include "Wrapper_obj.cct"
+
+template <class TYPE>
+class OOMPI_Wrapper_ptr {
+public:
+  //
+  // Default constructor.  Make it a bogus pointer.
+  //
+  inline OOMPI_Wrapper_ptr() 
+    : ptr(new OOMPI_Wrapper_obj<TYPE>)
+  {};
+
+
+  //
+  // Initial constructor: Make new wrapper object
+  //
+  inline OOMPI_Wrapper_ptr(TYPE a, int (*fcn)(TYPE *data)) 
+    : ptr(new OOMPI_Wrapper_obj<TYPE>(a, fcn)) 
+  {};
+
+
+  //
+  // Copy constructor: Copy pointer and increment counter
+  //
+  inline OOMPI_Wrapper_ptr(const OOMPI_Wrapper_ptr<TYPE> &a) 
+    : ptr(a.ptr) 
+  { ptr->increment(); };
+
+
+  //
+  // Assignement operator: Decrement old ptr, increment new pointer
+  //
+  inline OOMPI_Wrapper_ptr<TYPE> &operator=(const OOMPI_Wrapper_ptr<TYPE> &a) 
+  {
+    if (ptr != 0)
+      ptr->decrement();
+    if ((ptr = a.ptr) != 0)
+      ptr->increment();
+    
+    return *this;
+  };
+
+
+  //
+  // Equality operators
+  //
+  inline bool operator==(const OOMPI_Wrapper_ptr<TYPE> &a)
+  { return (bool) (ptr == a.ptr); };
+  inline bool operator!=(const OOMPI_Wrapper_ptr<TYPE> &a)
+  { return (bool) (ptr != a.ptr); };
+
+  
+  //
+  // Destructor: Decrement
+  //
+  inline ~OOMPI_Wrapper_ptr() { if (ptr != 0) ptr->decrement(); };
+
+
+  //
+  // Overridden operators (access straight through this pointer to 
+  // wrapped object)
+  //
+  inline OOMPI_Wrapper_obj<TYPE> *operator()()
+  { 
+    if (ptr == 0)
+      ptr = new OOMPI_Wrapper_obj<TYPE>;
+    
+    return ptr; 
+  };
+  inline OOMPI_Wrapper_obj<TYPE> *operator->() 
+  {
+    if (ptr == 0)
+      ptr = new OOMPI_Wrapper_obj<TYPE>;
+    
+    return ptr; 
+  };
+  inline OOMPI_Wrapper_obj<TYPE> *operator->() const
+  {
+    return ptr;
+  };
+  
+private:
+  OOMPI_Wrapper_obj<TYPE> *ptr;
+};
+
+#endif

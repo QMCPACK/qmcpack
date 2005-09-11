@@ -1,0 +1,121 @@
+/* src/oompi-config.h.in.  Generated from configure.in by autoheader.  */
+
+// -*- c++ -*-
+//
+// OOMPI Class library
+// Configuration header.  Automatically generated.
+//
+// See the LICENSE file in the top-level directory for copyright notices.
+//
+
+#ifndef _OOMPI_CONFIG_H_
+#define _OOMPI_CONFIG_H_
+
+#include <stdlib.h>
+#include <sys/types.h>
+
+
+
+/* Define to 1 if you have the <inttypes.h> header file. */
+#undef HAVE_INTTYPES_H
+
+/* Define to 1 if you have the <memory.h> header file. */
+#undef HAVE_MEMORY_H
+
+/* Define to 1 if you have the <stdint.h> header file. */
+#undef HAVE_STDINT_H
+
+/* Define to 1 if you have the <stdlib.h> header file. */
+#undef HAVE_STDLIB_H
+
+/* Define to 1 if you have the <strings.h> header file. */
+#undef HAVE_STRINGS_H
+
+/* Define to 1 if you have the <string.h> header file. */
+#undef HAVE_STRING_H
+
+/* Define to 1 if you have the <sys/stat.h> header file. */
+#undef HAVE_SYS_STAT_H
+
+/* Define to 1 if you have the <sys/types.h> header file. */
+#undef HAVE_SYS_TYPES_H
+
+/* Define to 1 if you have the <unistd.h> header file. */
+#undef HAVE_UNISTD_H
+
+/* Whether we have MPI_PENDING or MPI_ERR_PENDING */
+#undef LSC_MPI_ERR_PENDING
+
+/* Whether to use BSD-style signal handlers */
+#undef OOMPI_BSD_SIGNAL
+
+/* Currently, we do not support "complex<>" */
+#undef OOMPI_HAVE_ANSI_COMPLEX
+
+/* Whether the compiler supports exceptions or not */
+#undef OOMPI_HAVE_EXCEPTIONS
+
+/* Currently, we do not support "long double" */
+#undef OOMPI_HAVE_LONG_DOUBLE
+
+/* Currently, we do not support "long long int" */
+#undef OOMPI_HAVE_LONG_LONG_INT
+
+/* Whether we have <mpp/rastream.h> or not */
+#undef OOMPI_HAVE_MPP_RASTREAM_H
+
+/* Whether we have pthread support or not -- currently hardwired to "no" */
+#undef OOMPI_HAVE_PTHREADS
+
+/* Obsolete symbol for IBM MPI 2.1.0.14 */
+#undef OOMPI_IBM21014
+
+/* Are MPI constants handles, or no? */
+#undef OOMPI_MPI_CONSTANTS_ARE_HANDLES
+
+/* Whether we need extern "C" for the MPI_User_function type or not */
+#undef OOMPI_MPI_EXTERN_C
+
+/* Whether to use SYSV-style signal handlers */
+#undef OOMPI_SYSV_SIGNAL
+
+/* Define to the address where bug reports for this package should be sent. */
+#undef PACKAGE_BUGREPORT
+
+/* Define to the full name of this package. */
+#undef PACKAGE_NAME
+
+/* Define to the full name and version of this package. */
+#undef PACKAGE_STRING
+
+/* Define to the one symbol short name of this package. */
+#undef PACKAGE_TARNAME
+
+/* Define to the version of this package. */
+#undef PACKAGE_VERSION
+
+/* The size of a `bool', as computed by sizeof. */
+#undef SIZEOF_BOOL
+
+/* The size of a `int', as computed by sizeof. */
+#undef SIZEOF_INT
+
+/* Define to 1 if you have the ANSI C header files. */
+#undef STDC_HEADERS
+
+/* Define to 1 if on AIX 3.
+   System headers sometimes define this.
+   We just want to avoid a redefinition error message.  */
+#ifndef _ALL_SOURCE
+# undef _ALL_SOURCE
+#endif
+
+
+#if SIZEOF_INT != SIZEOF_BOOL
+#define OOMPI_BOOL_NE_INT 1
+#else
+#define OOMPI_BOOL_NE_INT 0
+#endif
+
+#endif // _OOMPI_CONFIG_H_
+

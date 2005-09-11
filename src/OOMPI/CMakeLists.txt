@@ -1,0 +1,23 @@
+SET(OOSRCS
+	Cart_comm.cc 
+	Constants.cc 
+	Comm.cc 
+	Comm_world.cc 
+	Datatype.cc 
+	Environment.cc
+	Error_table.cc
+	Graph_comm.cc
+	Group.cc 
+	Inter_comm.cc 
+	Intra_comm.cc 
+	Linked_list.cc
+	Message.cc 
+	Op.cc 
+	Packed.cc 
+	Port.cc 
+	Request.cc 
+	Status.cc 
+	User_type.cc
+	Util.cc
+   ) 
+ADD_LIBRARY(oompi ${OOSRCS})
