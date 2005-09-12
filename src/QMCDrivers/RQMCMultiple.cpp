@@ -53,12 +53,12 @@ namespace ohmmsqmc {
 
     nPsi = n;
     nptcl=W.G.size();
-    WReptile.resize(n);
-    logpsi.resize(n);
     gRand.resize(nptcl);
-    NewTotalSign.resize(n);
+    NewGlobalAction.resize(n);
+    RatioAct.resize(n);
+    NewGlobalSignWgt.resize(n);
+    DeltaG.resize(n);
     WeightSign.resize(n);
-    RefSign.resize(n); RefSign=1;
 
     //Register properties for each walker
     for(int ipsi=0; ipsi<nPsi; ipsi++) H1[ipsi]->add2WalkerProperty(W);
@@ -78,6 +78,10 @@ namespace ohmmsqmc {
 
     //Resize working arrays
     resizeArrays(Psi1.size());
+
+    //Temporary vector
+    vector<int> SumSign;
+    SumSign.resize(nPsi);
 
     //Initial direction of growth. To be read if calculation is restarted.
     int InitialGrowthDirection(0);
@@ -134,7 +138,7 @@ namespace ohmmsqmc {
 	} 
 
 	//Compute the Total "Sign" of the Reptile
-	Reptile->TotalSign[ipsi] += int(BeadSign);
+	SumSign[ipsi] += int(BeadSign);
 
 	// Save them in curW
 	curW.Action(ipsi,MinusDirection)=0.25/Tau*KinActMinus;
@@ -145,59 +149,102 @@ namespace ohmmsqmc {
       ++bead;
     }// End Loop over beads
 
-    //Loop over Links
+    //Assign Reference Sign as the majority Sign
+    for(int ipsi=0; ipsi<nPsi; ipsi++) {
+      if(SumSign[ipsi]>0)
+       Reptile->RefSign[ipsi]=1;
+      else Reptile->RefSign[ipsi]=-1;
+    }
+
+    //Compute Sign-weight for each bead
     bead=first_bead;
-    //Initialize Reptile weights 
-    for(int ipsi=0; ipsi<nPsi; ipsi++) WReptile[ipsi]=(*bead)->Properties(ipsi,LOGPSI);
-    while(bead != last_bead){
-      //Some the link action for the current link
-      for(int ipsi=0; ipsi<nPsi; ipsi++){
-	WReptile[ipsi]-=( (*bead)->Action(PlusDirection)+(*bead)->Action(Directionless)+
-	    (*(bead+1))->Action(MinusDirection)+(*(bead+1))->Action(Directionless) );
-      } 
-      bead++;
-    }
-    //Finalize Reptile weights 
-    for(int ipsi=0; ipsi<nPsi; ipsi++) WReptile[ipsi]+=(*bead)->Properties(ipsi,LOGPSI);
-
-    //Weight: 1 if all beads have the same sign. 0 otherwise.
-    for(int ipsi=0; ipsi<nPsi; ipsi++){ 
-      //Compute the reference sign. This should be read if restarted.
-      if(Reptile->TotalSign[ipsi]<0)RefSign[ipsi]=-1;
-      WeightSign[ipsi]=std::max(0,RefSign[ipsi]*Reptile->TotalSign[ipsi]-Reptile->Last);
-    }
-
-    // Compute all kinds of Relative Weights 
-    if(nPsi>1){
-      RealType wdiff=WReptile[1]-WReptile[0];
-      Reptile->LogRatioActionIJ=wdiff;
-      Reptile->SumRatio = WeightSign[0]+WeightSign[1]*exp(wdiff);
-      Reptile->UmbrellaWeight[0]=WeightSign[0]/Reptile->SumRatio;
-      Reptile->UmbrellaWeight[1]=WeightSign[1]*(1.0-Reptile->UmbrellaWeight[0]);
-    }else{
-      Reptile->SumRatio = 1.0;
-      Reptile->UmbrellaWeight[0]=1.0;
+    while(bead != bead_end){
+      Bead& curW(**bead);
+      for(int ipsi=0; ipsi<nPsi; ipsi++) {
+        int BeadSign = int(curW.Properties(ipsi,SIGN));
+        curW.BeadSignWgt[ipsi]=abs((BeadSign+Reptile->RefSign[ipsi])/2);
+      }
+      ++bead;
     }
 
     // Compute initial drift for each bead
     bead=first_bead;
     while(bead != bead_end) {
       Bead& curW(**bead);
-      if(nPsi>1){
-	RealType w0(std::max( 0.0,curW.Properties(0,SIGN) ) ),
-		 w1(std::max( 0.0,curW.Properties(1,SIGN) ) );
-	///Compute (Psi1)^2/(Psi0)^2 at the walker position
-	RealType wgtsign=w0+w1*exp(2.0*(curW.Properties(1,LOGPSI)-curW.Properties(0,LOGPSI)));
-	/// Convert to (Psi0)^2/(Psi0^2+Psi1^2)
-	wgtsign=w0/wgtsign;
-	/// Compute Drift as weighted average
-	curW.Drift = wgtsign*(*curW.Gradients[0]) + (1.0-wgtsign)*(*curW.Gradients[1]);
-      }else{
-	/// Drift is just the gradient if only 1 WF
-	curW.Drift = *curW.Gradients[0];
+      curW.Drift=curW.BeadSignWgt[0]*(*curW.Gradients[0]);
+      RealType denom=curW.BeadSignWgt[0];
+      for(int ipsi=1; ipsi<nPsi; ipsi++) {
+        RealType wgtpsi=curW.BeadSignWgt[ipsi]*
+          exp(2.0*(curW.Properties(ipsi,LOGPSI)-curW.Properties(0,LOGPSI)));
+        curW.Drift += (wgtpsi*(*curW.Gradients[ipsi]));
+        denom += wgtpsi;
+      }
+      denom=1.0/denom;
+      curW.Drift = curW.Drift*denom;
+      ++bead;
+    }
+
+    //Compute initial transition Probability within the chain
+    bead=first_bead;
+    while(bead != bead_end) {
+      Bead& curW(**bead);
+      RealType TrProbMinus=0.0;
+      RealType TrProbPlus=0.0;
+      // Compute contribution to the Transition Prob in the MinusDirection
+      if(bead!=first_bead){//forward action
+        Bead& prevW(**(bead-1));
+        deltaR=prevW.R-curW.R - Tau*curW.Drift;
+        TrProbMinus=Dot(deltaR,deltaR);
+      }
+      
+      // Compute contribution to the Transition Prob in the PlusDirection
+      if(bead!=last_bead){//backward action
+        Bead& nextW(**(bead+1));
+        deltaR=nextW.R-curW.R - Tau*curW.Drift;
+        TrProbPlus=Dot(deltaR,deltaR);
+      } 
+      
+      curW.TransProb[MinusDirection]=TrProbMinus*0.5/Tau ;
+      curW.TransProb[PlusDirection]=TrProbPlus*0.5/Tau;
+      ++bead;
+    }
+
+
+
+    //Compute the Global Action
+    bead=first_bead;
+    for(int ipsi=0; ipsi<nPsi; ipsi++) Reptile->GlobalAction[ipsi]=(*bead)->Properties(ipsi,LOGPSI);
+    while(bead != last_bead){
+      for(int ipsi=0; ipsi<nPsi; ipsi++){
+	Reptile->GlobalAction[ipsi]-=( (*bead)->Action(PlusDirection) + (*(bead+1))->Action(MinusDirection)+
+                                       (*bead)->Action(Directionless) + (*(bead+1))->Action(Directionless)   );
+      } 
+      bead++;
+    }
+    for(int ipsi=0; ipsi<nPsi; ipsi++) Reptile->GlobalAction[ipsi]+=(*bead)->Properties(ipsi,LOGPSI);
+
+    //Compute Global Sign weight (need to be initialized somewhere)
+    bead=first_bead;
+    while(bead != bead_end){
+      for(int ipsi=0; ipsi<nPsi; ipsi++){ 
+        Reptile->GlobalSignWgt[ipsi] += (*bead)->BeadSignWgt[ipsi];
       }
       ++bead;
     }
+
+    //Compute Umbrella Weight and Total Weight
+    RealType wgtsign=std::max(0,Reptile->GlobalSignWgt[0]-Reptile->Last);
+    Reptile->GlobalWgt=wgtsign;
+    Reptile->UmbrellaWeight[0]=wgtsign;
+    for(int ipsi=1; ipsi<nPsi; ipsi++){
+      wgtsign=std::max(0,Reptile->GlobalSignWgt[ipsi]-Reptile->Last);
+      RealType RatioGlobAct=wgtsign*exp(Reptile->GlobalAction[ipsi]-Reptile->GlobalAction[0]);
+      Reptile->GlobalWgt += RatioGlobAct;
+      Reptile->UmbrellaWeight[ipsi] = RatioGlobAct;
+    }  
+    RealType invWgt=1.0/Reptile->GlobalWgt;
+    Reptile->UmbrellaWeight=invWgt*Reptile->UmbrellaWeight;
+ 
   } // END OF InitReptile
 
 
@@ -208,7 +255,9 @@ namespace ohmmsqmc {
 
     Estimators->reportHeader();
 
+    cout << "Initializing Reptile ... " ;
     initReptile();
+    cout << "Reptile has been initialized" << endl;
 
     IndexType block = 0;
     Pooma::Clock timer;
@@ -225,6 +274,7 @@ namespace ohmmsqmc {
     filename=RootName+".Eloc.dat";
     ofstream *OutEnergy;
     OutEnergy=new ofstream(filename.c_str());
+    cout << "Energies written on " << filename << endl;
 
     //PolymerEstimator reptileReport(*Reptile,nPsi);
     //reptileReport.resetReportSettings(RootName);
@@ -234,6 +284,7 @@ namespace ohmmsqmc {
 
     RealType oneoversteps=1.0/static_cast<RealType>(nSteps);
 
+    cout << "Start Looping over Blocks " << endl;
     do { //Loop over Blocks
 
       IndexType step = 0;
@@ -269,6 +320,7 @@ namespace ohmmsqmc {
       for(int ipsi=0; ipsi<nPsi; ipsi++){
 	AveEloc[ipsi]/=(AveWeight[ipsi]*Tau);
 	*OutEnergy << AveEloc[ipsi] << " ";
+	*OutEnergy << AveWeight[ipsi]/nSteps << " ";
       }
       if(nPsi>1) *OutEnergy << AveEloc[1]-AveEloc[0];
       *OutEnergy << endl; 
@@ -330,9 +382,7 @@ namespace ohmmsqmc {
     //Used several times
     m_oneover2tau=0.5/Tau; 
     m_sqrttau=sqrt(Tau);
-    Bead *head,*tail,*next;
     int ihead,inext,itail;
-    //MultiChain::iterator anchor(Reptile->begin()),tail(Reptile->end()),next(tail-1);
 
     //Depending on the growth direction initialize growth variables
     if(Reptile->GrowthDirection==MinusDirection){
@@ -350,13 +400,17 @@ namespace ohmmsqmc {
     }
 
     //Point head to the growing end of the reptile
+    Bead *head,*tail,*next;
     head = (*Reptile)[ihead];
+    tail=(*Reptile)[itail]; next=(*Reptile)[inext];
     //create a 3N-Dimensional Gaussian with variance=1
     makeGaussRandom(gRand);
 
     //new position,\f$R_{yp} = R_{xp} + \sqrt(2}*\Delta + tau*D_{xp}\f$
     //W.R = head->R + sqrt(Tau)*gRand + Tau*head->Drift;
     W.R = head->R + m_sqrttau*gRand + Tau*head->Drift;
+    //Save Transition Probability
+    head->TransProb[forward]=0.5*Dot(gRand,gRand);
     //Save position in NewBead
     NewBead->R=W.R; 
     //update the distance table associated with W
@@ -365,9 +419,7 @@ namespace ohmmsqmc {
     //Compute the "diffusion-drift"\f$=(R_{yp}-R{xp})/tau\f$
     deltaR= NewBead->R - head->R;
 
-    //Compute the probability for this move to happen, see DMC for the factors
-    RealType LogForwardProb=-0.5*Dot(gRand,gRand);
-
+    //Compute HEAD action in forward direction
     for(int ipsi=0; ipsi<nPsi; ipsi++) {
       gRand = deltaR-Tau*(*head->Gradients[ipsi]);
       head->Action(ipsi,forward)=0.5*m_oneover2tau*Dot(gRand,gRand);
@@ -379,7 +431,7 @@ namespace ohmmsqmc {
       RealType* restrict NewBeadProp=NewBead->getPropertyBase(ipsi);
 
       //evaluate Psi and H
-      logpsi[ipsi]=NewBeadProp[LOGPSI]=Psi1[ipsi]->evaluateLog(W);
+      NewBeadProp[LOGPSI]=Psi1[ipsi]->evaluateLog(W);
       NewBeadProp[SIGN]=Psi1[ipsi]->getSign();
       RealType eloc=NewBeadProp[LOCALENERGY]= H1[ipsi]->evaluate(W);
 
@@ -392,76 +444,60 @@ namespace ohmmsqmc {
       NewBead->Action(ipsi,backward)=0.5*m_oneover2tau*Dot(gRand,gRand);
 
       NewBead->Action(ipsi,Directionless)=0.5*Tau*eloc;
+      NewBead->BeadSignWgt[ipsi]=abs( ( int(NewBeadProp[SIGN])+Reptile->RefSign[ipsi] )/2 );
     }
 
-    //Compute the Drift in new position (could be done after accepting)
-    if(nPsi>1){
-      RealType w0( std::max(0.0,NewBead->Properties(0,SIGN))),
-	       w1( std::max(0.0,NewBead->Properties(1,SIGN)));
-      ///Compute (Psi1)^2/(Psi0)^2 at the new position
-      double wgtsign=w0+w1*exp(2.0*(logpsi[1]-logpsi[0]));
-      /// Convert to (Psi0)^2/(Psi0^2+Psi1^2)
-      wgtsign=w0/wgtsign;
-      /// Compute Drift as weighted average
-      NewBead->Drift = wgtsign*(*NewBead->Gradients[0])+(1.0-wgtsign)*(*NewBead->Gradients[1]);
-    }else{
-      /// Drift is Gradient if only 1 Psi
-      NewBead->Drift=*NewBead->Gradients[0];
-    }
-
-    tail=(*Reptile)[itail]; next=(*Reptile)[inext];
-    gRand = tail->R - next->R - Tau*next->Drift;
-    RealType LogBackwardProb=-m_oneover2tau*Dot(gRand,gRand);
-
-    // Evaluate the probability ratio between direct and inverse move
-    RealType LogRatioTransProbability = LogBackwardProb-LogForwardProb;
     for(int ipsi=0; ipsi<nPsi; ipsi++) {
 
-      RealType DeltaAction, DeltaEdge;
-      // Initialize with the contribution of the new link
-      DeltaAction = ( head->Action(ipsi,forward)+head->Action(ipsi,Directionless)+
-	  NewBead->Action(ipsi,backward)+NewBead->Action(ipsi,Directionless) );
-      // Subtract the contribution of the old link
-      DeltaAction-= ( tail->Action(ipsi,forward)+tail->Action(ipsi,Directionless)+
-	  next->Action(ipsi,backward)+next->Action(ipsi,Directionless) );
-      /// Initialize with the new Wave funtion contribution at the edges
-      DeltaEdge=NewBead->Properties(ipsi,LOGPSI)+next->Properties(ipsi,LOGPSI);
-      /// Subtract the old wave funtion contribution at the edges
-      DeltaEdge-= ( head->Properties(ipsi,LOGPSI)+tail->Properties(ipsi,LOGPSI) );
-      //Global Weight
-      WReptile[ipsi]= DeltaEdge-DeltaAction;
+      DeltaG[ipsi]= - head->Action(ipsi,forward)       - NewBead->Action(ipsi,backward)
+                    + tail->Action(ipsi,forward)       + next->Action(ipsi,backward)
+                    - head->Action(ipsi,Directionless) - NewBead->Action(ipsi,Directionless)
+                    + tail->Action(ipsi,Directionless) + next->Action(ipsi,Directionless)
+                    - head->Properties(ipsi,LOGPSI)    + NewBead->Properties(ipsi,LOGPSI)
+                    - tail->Properties(ipsi,LOGPSI)    + next->Properties(ipsi,LOGPSI);
+
+      NewGlobalAction[ipsi]=Reptile->GlobalAction[ipsi]+DeltaG[ipsi];
       //Compute the new sign
-      NewTotalSign[ipsi]=Reptile->TotalSign[ipsi]+
-	int(NewBead->Properties(ipsi,SIGN)-tail->Properties(ipsi,SIGN));
+      NewGlobalSignWgt[ipsi]=Reptile->GlobalSignWgt[ipsi]+
+                             NewBead->BeadSignWgt[ipsi]-tail->BeadSignWgt[ipsi];
       //Weight: 1 if all beads have the same sign. 0 otherwise.
-      WeightSign[ipsi]=std::max(0,RefSign[ipsi]*NewTotalSign[ipsi]-Reptile->Last);
+      WeightSign[ipsi]=std::max(0,NewGlobalSignWgt[ipsi]-Reptile->Last);
+    }
+  
+    RealType NewGlobalWgt=RatioAct[0]=WeightSign[0];
+    for(int ipsi=1; ipsi<nPsi; ipsi++) {
+      RatioAct[ipsi]=WeightSign[ipsi]*exp(NewGlobalAction[ipsi]-NewGlobalAction[0]);
+      NewGlobalWgt+=RatioAct[ipsi];
     }
 
+    RealType RatioProb=exp(DeltaG[0])*NewGlobalWgt/Reptile->GlobalWgt;
+    RealType RatioTransProb=exp(head->TransProb[forward]-next->TransProb[backward]);
 
-    //Move is completed. Compute acceptance probability. 
-    if(nPsi>1){
-      NewLogRatioAction=Reptile->LogRatioActionIJ+WReptile[1]-WReptile[0];
-      NewSumRatio=WeightSign[0]+WeightSign[1]*exp(NewLogRatioAction);
-      accept=exp(WReptile[0]+LogRatioTransProbability)*NewSumRatio/Reptile->SumRatio;
-    }else{
-      accept=WeightSign[0]*exp(WReptile[0]+LogRatioTransProbability);
-    }
+    if(Random() < RatioProb*RatioTransProb){
 
-    //Update Reptile information
-    if(Random() < accept){
-
-      if(nPsi>1){
-	Reptile->LogRatioActionIJ=NewLogRatioAction;
-	Reptile->SumRatio=NewSumRatio;
-	Reptile->UmbrellaWeight[0]=WeightSign[0]/Reptile->SumRatio;
-	Reptile->UmbrellaWeight[1]=WeightSign[1]*(1.0-Reptile->UmbrellaWeight[0]);
-	Reptile->TotalSign=NewTotalSign;
-      }else{
-	Reptile->SumRatio = 1.0;
-	Reptile->UmbrellaWeight[0]=1.0;
+      //Update Reptile information
+      Reptile->GlobalWgt=NewGlobalWgt;
+      for(int ipsi=0; ipsi<nPsi; ipsi++) {
+	Reptile->GlobalAction[ipsi]=NewGlobalAction[ipsi];
+        Reptile->GlobalSignWgt[ipsi]=NewGlobalSignWgt[ipsi];
+	Reptile->UmbrellaWeight[ipsi]=RatioAct[ipsi]/NewGlobalWgt;
       }
 
-      //Add the NewBead to the Polymer.
+      //Compute Drift and TransProb in NewBead position
+      NewBead->Drift=NewBead->BeadSignWgt[0]*(*NewBead->Gradients[0]);
+      RealType denom=NewBead->BeadSignWgt[0];
+      for(int ipsi=1; ipsi<nPsi; ipsi++) {
+        RealType wgtpsi=NewBead->BeadSignWgt[ipsi]*
+	  exp(2.0*(NewBead->Properties(ipsi,LOGPSI)-NewBead->Properties(0,LOGPSI)));
+        NewBead->Drift += (wgtpsi*(*NewBead->Gradients[ipsi]));
+        denom += wgtpsi;
+      }
+      denom=1.0/denom;
+      NewBead->Drift = denom*NewBead->Drift;
+      gRand=deltaR+Tau*NewBead->Drift;
+      NewBead->TransProb[backward]=m_oneover2tau*Dot(gRand,gRand);
+
+      //Add NewBead to the Polymer.
       if(Reptile->GrowthDirection==MinusDirection){
 	Reptile->push_front(NewBead);
 	NewBead=tail;
