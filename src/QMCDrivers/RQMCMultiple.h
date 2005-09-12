@@ -62,7 +62,7 @@ namespace ohmmsqmc {
     ///
     int MinusDirection,PlusDirection,Directionless;
     ///
-    int forward,backward,ianchor,itail,inext;
+    int forward,backward,itail,inext;
 
     ///the number of turns per block
     int NumTurns;
@@ -76,7 +76,7 @@ namespace ohmmsqmc {
     MultiChain* Reptile;
 
     ///The new bead
-   Bead *NewBead;
+    Bead *NewBead;
 
     ///move polymers
     void moveReptile();
@@ -85,9 +85,8 @@ namespace ohmmsqmc {
     void initReptile();
 
     ///Working arrays
-    Vector<RealType> SumRatioAction,LogRatioActionIJ,sumratio,WReptile,logpsi;
-
-    Vector<int>NewTotalSign,WeightSign,RefSign;
+    Vector<RealType> NewGlobalAction,RatioAct,DeltaG;
+    Vector<int>NewGlobalSignWgt,WeightSign;
     
     void resizeArrays(int n);
 
@@ -98,8 +97,6 @@ namespace ohmmsqmc {
 
     /// Copy operator (disabled).
     RQMCMultiple& operator=(const RQMCMultiple&) { return *this;}
-
-    double NewLogRatioAction,NewSumRatio,accept;
 
     ParticleSet::ParticlePos_t gRand;
 
