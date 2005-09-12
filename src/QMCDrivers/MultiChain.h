@@ -35,17 +35,24 @@ namespace ohmmsqmc {
     typedef MCWalkerConfiguration::Walker_t Walker_t;
     typedef MCWalkerConfiguration::RealType RealType;
     typedef MCWalkerConfiguration::ParticlePos_t ParticlePos_t;
-    
+ 
+    Vector<int> BeadSignWgt;    
     Vector<ParticlePos_t*> Gradients;
     Matrix<RealType> Action;
+    RealType TransProb[2];
 
-    inline Bead(const Bead& a) : Walker_t(a),Action(a.Action),
-				 Gradients(a.Gradients){}
+    inline Bead(const Bead& a) : 
+    Walker_t(a),Action(a.Action),Gradients(a.Gradients),
+    BeadSignWgt(a.BeadSignWgt){
+        TransProb[0]=a.TransProb[0];
+        TransProb[1]=a.TransProb[1];
+    }
 
     inline Bead(const Walker_t& a){
       makeCopy(a);
       int rows=Properties.rows();
       Resize_Grad_and_Action(rows,R.size());
+      BeadSignWgt.resize(rows);
     }
 
     inline Bead& operator=(const Bead& a) {
@@ -56,8 +63,13 @@ namespace ohmmsqmc {
     inline void makeCopyBead(const Bead& a){
       makeCopy(a);
       Action.copy(a.Action);
-      Gradients.resize(a.Gradients.size());
+      int rows=a.Gradients.size();
+      Gradients.resize(rows);
       Gradients=a.Gradients;
+      BeadSignWgt.resize(rows);
+      BeadSignWgt=a.BeadSignWgt;
+      TransProb[0]=a.TransProb[0];
+      TransProb[1]=a.TransProb[1];
     }
 
     inline void Resize_Grad_and_Action(int n, int m){
@@ -86,10 +98,10 @@ namespace ohmmsqmc {
     ///The number of H/Psi pairs
     int nPsi;
 
-    RealType SumRatio,LogRatioActionIJ;
+    RealType GlobalWgt;
 
-    Vector<RealType> UmbrellaWeight;
-    Vector<int>TotalSign;
+    Vector<RealType> GlobalAction,UmbrellaWeight;
+    Vector<int>      GlobalSignWgt,RefSign;
 
     // constructor    
     MultiChain(Walker_t* awalker,int len, int direction, int npsi): 
@@ -102,10 +114,10 @@ namespace ohmmsqmc {
 	Bead* acopy=new Bead(*awalker);
 	push_back(acopy);
       }
-      UmbrellaWeight.resize(npsi);
-      UmbrellaWeight=1.0;
-      TotalSign.resize(npsi);
-      TotalSign=0;
+      GlobalAction.resize(npsi);   GlobalAction=0.0;
+      UmbrellaWeight.resize(npsi); UmbrellaWeight=1.0;
+      GlobalSignWgt.resize(npsi);  GlobalSignWgt=0;
+      RefSign.resize(npsi); RefSign=0;
     }
     
 
