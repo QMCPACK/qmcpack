@@ -55,7 +55,6 @@ namespace ohmmsqmc {
     nptcl=W.G.size();
     gRand.resize(nptcl);
     NewGlobalAction.resize(n);
-    RatioAct.resize(n);
     NewGlobalSignWgt.resize(n);
     DeltaG.resize(n);
     WeightSign.resize(n);
@@ -232,18 +231,27 @@ namespace ohmmsqmc {
       ++bead;
     }
 
-    //Compute Umbrella Weight and Total Weight
-    RealType wgtsign=std::max(0,Reptile->GlobalSignWgt[0]-Reptile->Last);
-    Reptile->GlobalWgt=wgtsign;
-    Reptile->UmbrellaWeight[0]=wgtsign;
-    for(int ipsi=1; ipsi<nPsi; ipsi++){
-      wgtsign=std::max(0,Reptile->GlobalSignWgt[ipsi]-Reptile->Last);
-      RealType RatioGlobAct=wgtsign*exp(Reptile->GlobalAction[ipsi]-Reptile->GlobalAction[0]);
-      Reptile->GlobalWgt += RatioGlobAct;
-      Reptile->UmbrellaWeight[ipsi] = RatioGlobAct;
-    }  
-    RealType invWgt=1.0/Reptile->GlobalWgt;
-    Reptile->UmbrellaWeight=invWgt*Reptile->UmbrellaWeight;
+    //Compute reference action
+    RealType RefAction(-10.0e20);
+    for(int ipsi=0; ipsi<nPsi; ipsi++){
+      WeightSign[ipsi]=std::max(0,Reptile->GlobalSignWgt[ipsi]-Reptile->Last);
+      if(WeightSign[ipsi])RefAction=max(RefAction,Reptile->GlobalAction[ipsi]);
+    }
+
+    //Compute Total Weight
+    Reptile->GlobalWgt=0.0e0;
+    for(int ipsi=0; ipsi<nPsi; ipsi++){
+      RealType DeltaAction(Reptile->GlobalAction[ipsi]-RefAction);
+      if((WeightSign[ipsi]>0) && (DeltaAction > -30)) Reptile->GlobalWgt += exp(DeltaAction);
+    }
+    Reptile->GlobalWgt=log(Reptile->GlobalWgt)+RefAction;
+
+    //Compute Umbrella Weight 
+    for(int ipsi=0; ipsi<nPsi; ipsi++){
+      RealType DeltaAction(Reptile->GlobalAction[ipsi]-Reptile->GlobalWgt);
+      if((WeightSign[ipsi]>0) && (DeltaAction > -30)) Reptile->UmbrellaWeight[ipsi] = exp(DeltaAction);
+      else Reptile->UmbrellaWeight[ipsi] = 0.0e0;
+    }
  
   } // END OF InitReptile
 
@@ -322,8 +330,7 @@ namespace ohmmsqmc {
 	*OutEnergy << AveEloc[ipsi] << " ";
 	*OutEnergy << AveWeight[ipsi]/nSteps << " ";
       }
-      if(nPsi>1) *OutEnergy << AveEloc[1]-AveEloc[0];
-      *OutEnergy << endl; 
+      *OutEnergy << endl;
       OutEnergy->flush();
 
 
@@ -407,7 +414,6 @@ namespace ohmmsqmc {
     makeGaussRandom(gRand);
 
     //new position,\f$R_{yp} = R_{xp} + \sqrt(2}*\Delta + tau*D_{xp}\f$
-    //W.R = head->R + sqrt(Tau)*gRand + Tau*head->Drift;
     W.R = head->R + m_sqrttau*gRand + Tau*head->Drift;
     //Save Transition Probability
     head->TransProb[forward]=0.5*Dot(gRand,gRand);
@@ -426,6 +432,7 @@ namespace ohmmsqmc {
     }
 
     //evaluate all relevant quantities in the new position
+    int totbeadwgt(0);
     for(int ipsi=0; ipsi<nPsi; ipsi++) {
 
       RealType* restrict NewBeadProp=NewBead->getPropertyBase(ipsi);
@@ -444,43 +451,54 @@ namespace ohmmsqmc {
       NewBead->Action(ipsi,backward)=0.5*m_oneover2tau*Dot(gRand,gRand);
 
       NewBead->Action(ipsi,Directionless)=0.5*Tau*eloc;
-      NewBead->BeadSignWgt[ipsi]=abs( ( int(NewBeadProp[SIGN])+Reptile->RefSign[ipsi] )/2 );
+      int beadwgt=abs( ( int(NewBeadProp[SIGN])+Reptile->RefSign[ipsi] )/2 );
+      NewBead->BeadSignWgt[ipsi]=beadwgt;
+      totbeadwgt+=beadwgt;
     }
 
-    for(int ipsi=0; ipsi<nPsi; ipsi++) {
+    RealType AcceptProb(-1.0),NewGlobalWgt(0.0);
+    RealType RefAction(-10.0e20);
+    if(totbeadwgt!=0){
+      for(int ipsi=0; ipsi<nPsi; ipsi++) {
 
-      DeltaG[ipsi]= - head->Action(ipsi,forward)       - NewBead->Action(ipsi,backward)
-                    + tail->Action(ipsi,forward)       + next->Action(ipsi,backward)
-                    - head->Action(ipsi,Directionless) - NewBead->Action(ipsi,Directionless)
-                    + tail->Action(ipsi,Directionless) + next->Action(ipsi,Directionless)
-                    - head->Properties(ipsi,LOGPSI)    + NewBead->Properties(ipsi,LOGPSI)
-                    - tail->Properties(ipsi,LOGPSI)    + next->Properties(ipsi,LOGPSI);
+        DeltaG[ipsi]= - head->Action(ipsi,forward)       - NewBead->Action(ipsi,backward)
+                      + tail->Action(ipsi,forward)       + next->Action(ipsi,backward)
+                      - head->Action(ipsi,Directionless) - NewBead->Action(ipsi,Directionless)
+                      + tail->Action(ipsi,Directionless) + next->Action(ipsi,Directionless)
+                      - head->Properties(ipsi,LOGPSI)    + NewBead->Properties(ipsi,LOGPSI)
+                      - tail->Properties(ipsi,LOGPSI)    + next->Properties(ipsi,LOGPSI);
 
-      NewGlobalAction[ipsi]=Reptile->GlobalAction[ipsi]+DeltaG[ipsi];
-      //Compute the new sign
-      NewGlobalSignWgt[ipsi]=Reptile->GlobalSignWgt[ipsi]+
-                             NewBead->BeadSignWgt[ipsi]-tail->BeadSignWgt[ipsi];
-      //Weight: 1 if all beads have the same sign. 0 otherwise.
-      WeightSign[ipsi]=std::max(0,NewGlobalSignWgt[ipsi]-Reptile->Last);
-    }
+        NewGlobalAction[ipsi]=Reptile->GlobalAction[ipsi]+DeltaG[ipsi];
+        //Compute the new sign
+        NewGlobalSignWgt[ipsi]=Reptile->GlobalSignWgt[ipsi]+
+                               NewBead->BeadSignWgt[ipsi]-tail->BeadSignWgt[ipsi];
+        //Weight: 1 if all beads have the same sign. 0 otherwise.
+        WeightSign[ipsi]=std::max(0,NewGlobalSignWgt[ipsi]-Reptile->Last);
+        // Assign Reference Action
+        if(WeightSign[ipsi]>0)RefAction=max(RefAction,NewGlobalAction[ipsi]);
+      }
   
-    RealType NewGlobalWgt=RatioAct[0]=WeightSign[0];
-    for(int ipsi=1; ipsi<nPsi; ipsi++) {
-      RatioAct[ipsi]=WeightSign[ipsi]*exp(NewGlobalAction[ipsi]-NewGlobalAction[0]);
-      NewGlobalWgt+=RatioAct[ipsi];
+      //Compute Log of global Wgt
+      for(int ipsi=0; ipsi<nPsi; ipsi++) {
+        RealType DeltaAction(NewGlobalAction[ipsi]-RefAction);
+        if((WeightSign[ipsi]>0) && (DeltaAction > -30.0)) NewGlobalWgt+=exp(DeltaAction);
+      }
+      NewGlobalWgt=log(NewGlobalWgt)+RefAction;
+
+      AcceptProb=exp(NewGlobalWgt - Reptile->GlobalWgt + head->TransProb[forward] - next->TransProb[backward]);
     }
 
-    RealType RatioProb=exp(DeltaG[0])*NewGlobalWgt/Reptile->GlobalWgt;
-    RealType RatioTransProb=exp(head->TransProb[forward]-next->TransProb[backward]);
-
-    if(Random() < RatioProb*RatioTransProb){
+    if(Random() < AcceptProb){
 
       //Update Reptile information
       Reptile->GlobalWgt=NewGlobalWgt;
       for(int ipsi=0; ipsi<nPsi; ipsi++) {
 	Reptile->GlobalAction[ipsi]=NewGlobalAction[ipsi];
         Reptile->GlobalSignWgt[ipsi]=NewGlobalSignWgt[ipsi];
-	Reptile->UmbrellaWeight[ipsi]=RatioAct[ipsi]/NewGlobalWgt;
+        RealType DeltaAction(NewGlobalAction[ipsi]-NewGlobalWgt);
+        if((WeightSign[ipsi]>0) && (DeltaAction > -30.0))
+	  Reptile->UmbrellaWeight[ipsi]=exp(DeltaAction);
+        else Reptile->UmbrellaWeight[ipsi]=0.0e0;
       }
 
       //Compute Drift and TransProb in NewBead position
