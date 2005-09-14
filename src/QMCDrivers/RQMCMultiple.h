@@ -85,7 +85,7 @@ namespace ohmmsqmc {
     void initReptile();
 
     ///Working arrays
-    Vector<RealType> NewGlobalAction,RatioAct,DeltaG;
+    Vector<RealType> NewGlobalAction,DeltaG;
     Vector<int>NewGlobalSignWgt,WeightSign;
     
     void resizeArrays(int n);
