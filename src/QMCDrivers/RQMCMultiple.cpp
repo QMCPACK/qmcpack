@@ -288,7 +288,7 @@ namespace ohmmsqmc {
     //reptileReport.resetReportSettings(RootName);
 
     //accumulate configuration: probably need to reorder
-    HDFWalkerOutput WO(RootName);
+    //HDFWalkerOutput WO(RootName);
 
     RealType oneoversteps=1.0/static_cast<RealType>(nSteps);
 
@@ -324,9 +324,10 @@ namespace ohmmsqmc {
 
       } while(step<nSteps);
 
+      timer.stop();
       *OutEnergy << block << " " ;
       for(int ipsi=0; ipsi<nPsi; ipsi++){
-	AveEloc[ipsi]/=(AveWeight[ipsi]*Tau);
+	AveEloc[ipsi]/=(AveWeight[ipsi]*Tau+numeric_limits<RealType>::epsilon());
 	*OutEnergy << AveEloc[ipsi] << " ";
 	*OutEnergy << AveWeight[ipsi]/nSteps << " ";
       }
@@ -352,7 +353,7 @@ namespace ohmmsqmc {
       nAccept = 0; nReject = 0;
       block++;
 
-      if(pStride) WO.get(W);
+      //if(pStride) WO.get(W);
 
     } while(block<nBlocks);
 
