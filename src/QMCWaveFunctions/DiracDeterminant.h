@@ -502,6 +502,7 @@ namespace ohmmsqmc {
     if(NumPtcls==1) {
       CurrentDet=psiM(0,0);
       ValueType y=1.0/CurrentDet;
+      psiM(0,0)=y;
       PosType rv = y*dpsiM(0,0);
       G(FirstIndex) += rv;
       L(FirstIndex) += y*d2psiM(0,0) - dot(rv,rv);
