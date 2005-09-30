@@ -32,16 +32,16 @@ namespace ohmmsqmc {
    *\brief Calculates the AA Coulomb potential using PBCs
    */
 
-  struct CoulombPBC: public QMCHamiltonianBase {
+  struct CoulombPBCAA: public QMCHamiltonianBase {
 
     bool FirstTime;
     ParticleSet& PtclRef;
     LRCoulombAA<LPQHIBasis>* AA;
     
-    CoulombPBC(ParticleSet& ref): FirstTime(true), PtclRef(ref), 
+    CoulombPBCAA(ParticleSet& ref): FirstTime(true), PtclRef(ref), 
 				  AA(0) {}
     
-    ~CoulombPBC() { 
+    ~CoulombPBCAA() { 
       if(AA) delete AA;
     }
 
@@ -56,10 +56,7 @@ namespace ohmmsqmc {
 
         Value = AA->evalTotal();
 
-	cout << "Finished EvalTotal " << endl;
-
-	cout << Value << endl;
-	exit(0);
+	cout << endl << PtclRef.getName() << " AA->evalTotal = "<< Value << endl << endl;
 
 	FirstTime = false;
       }
