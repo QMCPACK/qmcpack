@@ -71,9 +71,10 @@ namespace ohmmsqmc {
 
     for(int idir=0;idir<OHMMS_DIM; idir++) {
       char b = bconds[idir][0];
-      if(b == 'n' || b == 'N') {
+      if(b == 'n' || b == 'N')
 	ref_.BoxBConds[idir] = false;
-      }
+      else
+	ref_.BoxBConds[idir] = true;
     }
 
     ref_.R *= a0;
