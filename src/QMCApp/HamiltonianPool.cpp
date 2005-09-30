@@ -98,10 +98,14 @@ namespace ohmmsqmc {
 	    //CHECK PBC and create CoulombPBC for ion-ion
             if(ion) {
               if(ion->getTotalNum()>1) 
-		if(ion->Lattice.BoxBConds[0])
-		  curH->add(new CoulombPBC(*ion),"IonIon");
-		else
+		if(ion->Lattice.BoxBConds[0]){
+		  LOGMSG("Adding Periodic Coulomb potential i-i");
+		  curH->add(new CoulombPBCAA(*ion),"IonIon");
+		}
+		else {
+		  LOGMSG("Adding Coulomb potential i-i");
 		  curH->add(new IonIonPotential(*ion),"IonIon");
+		}
              }
           }
         }
@@ -118,10 +122,14 @@ namespace ohmmsqmc {
         return false;
       }
 
-      if(qp->Lattice.BoxBConds[0])
-	curH->add(new CoulombPBC(*qp),"ElecElec");
-      else
+      if(qp->Lattice.BoxBConds[0]){
+	LOGMSG("Adding Periodic Coulomb potential e-e");
+	curH->add(new CoulombPBCAA(*qp),"ElecElec");
+      }
+      else{
+	LOGMSG("Adding Coulomb potential e-e");
 	curH->add(new CoulombPotentialAA(*qp),"ElecElec");
+      }
 
       if(htype == "molecule" || htype=="coulomb"){
         curH->add(new CoulombPotentialAB(*ion,*qp),"Coulomb");
@@ -139,10 +147,14 @@ namespace ohmmsqmc {
       }
 
       if(ion->getTotalNum()>1) 
-	if(ion->Lattice.BoxBConds[0])
-          curH->add(new CoulombPBC(*ion),"IonIon");
-	else
+	if(ion->Lattice.BoxBConds[0]){
+	  LOGMSG("Adding Periodic Coulomb potential i-i");
+          curH->add(new CoulombPBCAA(*ion),"IonIon");
+	}
+	else{
+	  LOGMSG("Adding Coulomb potential i-i");
           curH->add(new IonIonPotential(*ion),"IonIon");
+	}
     }
 
 
@@ -167,11 +179,14 @@ namespace ohmmsqmc {
     if(source == target) {
       //CHECK PBC and create CoulombPBC for el-el
       if(source->getTotalNum()>1)  {
-	LOGMSG("Adding Coulomb potential " << target->getName())
-	  if(target->Lattice.BoxBConds[0])
-	    curH->add(new CoulombPBC(*target),title);
-	  else
+	  if(target->Lattice.BoxBConds[0]) {
+	    LOGMSG("Adding Periodic Coulomb potential " << target->getName())
+	    curH->add(new CoulombPBCAA(*target),title);
+	  }
+	  else {
+	    LOGMSG("Adding Coulomb potential " << target->getName())
 	    curH->add(new CoulombPotentialAA(*target),title);
+	  }
       }
     } else {
       LOGMSG("Adding Coulomb potential " << source->getName() << "-" << target->getName())
