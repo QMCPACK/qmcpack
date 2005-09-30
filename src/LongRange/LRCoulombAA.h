@@ -83,6 +83,10 @@ LRCoulombAA<BreakupBasis>::InitBreakup() {
   //Set up the internal distance-table for the particle pair.
   //This is used in evalSR.
   d_aa = DistanceTable::getTable(DistanceTable::add(PtclRef));
+  //TODO: this is only needed because ee hasn't been added to
+  //DistanceTable:: set before create is called.
+  d_aa->create(1);
+  // DistanceTable::update(PtclRef);
 }
 
 
@@ -150,11 +154,8 @@ LRCoulombAA<BreakupBasis>::evalSR() {
   RealType SR=0.0;
 
   //Update the distance-table
-  cout << "Evaluating Distance Table" << endl;
   d_aa->evaluate(PtclRef);
 
-  
-  cout << "Particle loop" << endl;
   for(int ipart=0; ipart<NParticles; ipart++){
 
     
