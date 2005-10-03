@@ -62,6 +62,12 @@ namespace ohmmsqmc {
       tspeciesA(refa.getSpeciesSet()),
       tspeciesB(refb.getSpeciesSet()) { 
 
+      //Safety check: ensure SK was created.
+      if(!refa.SK || !refb.SK){
+	LOGMSG("Structure factor hasn't been created for LRCoulombAB");
+	OHMMS::Controller->abort();
+      }
+
       //Initialise the breakup. Can be re-called later if lattice changes.
       //Otherwise all subsequent potential evaluations can reuse existing data.
       InitBreakup();

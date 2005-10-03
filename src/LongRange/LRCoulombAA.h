@@ -48,6 +48,12 @@ namespace ohmmsqmc {
       PtclRef(ref),
       tspecies(ref.getSpeciesSet()) { 
 
+      //Safety Check: ensure SK was created. 
+      if(!ref.SK){
+	LOGMSG("Structure factor hasn't been created for LRCoulombAA");
+	OHMMS::Controller->abort();
+      }
+
       //Initialise the breakup. Can be recalled later if lattice changes.
       //Otherwise all subsequent potential evaluations can reuse existing data.
       InitBreakup();
