@@ -180,6 +180,38 @@ namespace ohmmsqmc {
     inline void resizeProperty(int n, int m) {
       Properties.resize(n,m);
     }
+
+
+    /** byte size for a packed message 
+     *
+     * ID, Age, Properties, R, Drift, DataSet is packed
+     */
+    inline int byteSize() {
+      return 2*sizeof(int)+(Properties.size()+OHMMS_DIM*2*R.size()+DataSet.size())*sizeof(T);
+    }
+
+    template<class Msg>
+    inline Msg& putMessage(Msg& m) {
+      int nat=R.size();
+      m << ID << Age;
+      for(int iat=0; iat<nat;iat++) R[iat].putMessage(m);
+      for(int iat=0; iat<nat;iat++) Drift[iat].putMessage(m);
+      Properties.putMessage(m);
+      DataSet.putMessage(m);
+      return m;
+    }
+
+    template<class Msg>
+    inline Msg& getMessage(Msg& m) {
+      int nat=R.size();
+      m >> ID >> Age;
+      for(int iat=0; iat<nat;iat++) R[iat].getMessage(m);
+      for(int iat=0; iat<nat;iat++) Drift[iat].getMessage(m);
+      Properties.getMessage(m);
+      DataSet.getMessage(m);
+      return m;
+    }
+
   };
 
   template<class T, class PA>
