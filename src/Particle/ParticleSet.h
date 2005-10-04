@@ -83,6 +83,11 @@ namespace ohmmsqmc {
     ///initialize ParticleSet from xmlNode
     bool put(xmlNodePtr cur);
     
+    /** set the update mode
+     * @param updatemode
+     */
+    void setUpdateMode(int updatenode);
+
     /**update the internal data
      *@param iflag index for the update mode
      */

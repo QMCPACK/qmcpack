@@ -18,6 +18,7 @@
 #include <iomanip>
 #include "Particle/ParticleSet.h"
 #include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 #include "LongRange/StructFact.h"
 
 namespace ohmmsqmc {
@@ -73,6 +74,16 @@ namespace ohmmsqmc {
   bool ParticleSet::put(xmlNodePtr cur){
     return true;
   }
+
+  void ParticleSet::setUpdateMode(int updatemode) { 
+    if(DistTables.empty()) { 
+      DistanceTable::getTables(ObjectTag,DistTables);
+      DistanceTable::create(1);
+      LOGMSG("ParticleSet::setUpdateMode to create distance tables.")
+      LOGMSG("\t the number of distance tables for " << getName() << " " << DistTables.size())
+    }
+  }
+
 
   void ParticleSet::update(int iflag) { 
     for(int i=0; i< DistTables.size(); i++) DistTables[i]->evaluate(*this);
