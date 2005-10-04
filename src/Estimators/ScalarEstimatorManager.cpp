@@ -26,7 +26,7 @@
 using namespace ohmmsqmc;
 
 ScalarEstimatorManager::ScalarEstimatorManager(QMCHamiltonian& h): 
-  Stride(1000), WeightSum(0.0), H(h), RootName("estimator"), 
+ CollectSum(false),Stride(1000), WeightSum(0.0), H(h), RootName("estimator"), 
   OutStream(NULL) { }
 
 ScalarEstimatorManager::~ScalarEstimatorManager(){ 
@@ -50,9 +50,8 @@ ScalarEstimatorManager::add(EstimatorType* newestimator, const string& aname) {
   }
 }
 
-/**
-   @brief reset the internal data of all the estimators for new averages
-*/
+/** reset the internal data of all the estimators for new averages
+ */
 void 
 ScalarEstimatorManager::reset() {
   WeightSum = 0.0;
@@ -60,9 +59,8 @@ ScalarEstimatorManager::reset() {
 
 }
 
-/**
-   @brief accumulate data for all the estimators
-*/
+/** accumulate data for all the estimators
+ */
 void 
 ScalarEstimatorManager::accumulate(const MCWalkerConfiguration& W) {
 
@@ -75,10 +73,18 @@ ScalarEstimatorManager::accumulate(const MCWalkerConfiguration& W) {
   }
 }
 
-/**
-   @brief compute the averages for all the estimators and reset
-*/
+/** set CollectSum
+ * @param collect if true, global sum is done over the values
+ */
+void ScalarEstimatorManager::setCollectionMode(bool collect) {
+  CollectSum=collect;
+  for(int i=0; i< Estimators.size(); i++) Estimators[i]->CollectSum = collect;
+}
+
+/**  compute the averages for all the estimators and reset
+ */
 void ScalarEstimatorManager::flush(){
+  if(CollectSum) gsum(WeightSum,0);
   RealType wgtinv = 1.0/WeightSum;
   for(int i=0; i<Estimators.size(); i++) 
     Estimators[i]->report(BlockAverages,wgtinv);
@@ -87,14 +93,10 @@ void ScalarEstimatorManager::flush(){
   WeightSum = 0.0;
 }
 
-void ScalarEstimatorManager::setCollectionMode(bool collect) {
-  for(int i=0; i< Estimators.size(); i++) Estimators[i]->CollectSum = collect;
-}
 
-/**
-   @param iter the interval 
-   @brief print the averages for all the estimators to a file
-*/
+/** print the averages for all the estimators to a file
+ * @param iter the interval 
+ */
 void ScalarEstimatorManager::report(int iter){
   (*OutStream) << setw(10) << iter;
   for(int i=0; i<BlockAverages.size();i++)
@@ -102,13 +104,12 @@ void ScalarEstimatorManager::report(int iter){
   (*OutStream) << endl;
 }
 
-/**
-   @param iter the interval
-   @brief combines the functionality of flush and report
-*/
+/** combines the functionality of flush and report
+ * @param iter the interval
+ */
 void ScalarEstimatorManager::flushreport(int iter){
 
-  gsum(WeightSum,0);
+  if(CollectSum) gsum(WeightSum,0);
   RealType wgtinv = 1.0/WeightSum;
   for(int i=0; i<Estimators.size(); i++)  Estimators[i]->report(BlockAverages,wgtinv);
   
@@ -145,9 +146,8 @@ ScalarEstimatorManager::resetReportSettings(const string& aname) {
   BlockAverages.setValues(0.0);
 }
 
-/**
-   @brief print the header to the output file
-*/
+/**  print the header to the output file
+ */
 void 
 ScalarEstimatorManager::reportHeader() {
   *OutStream << "#    index     ";
@@ -157,19 +157,17 @@ ScalarEstimatorManager::reportHeader() {
   OutStream->setf(ios::right,ios::adjustfield);
 }
 
-/**
-   @brief closes the stream to the output file
-*/
+/** closes the stream to the output file
+ */
 void 
 ScalarEstimatorManager::finalize() {
   if(OutStream) delete OutStream;
   OutStream = NULL;
 }
 
-/**
-   @param istride an inverval of reportting/flushing the cummulative quantities
-   @brief set the stride of all the estimators to istride
-*/
+/**  set the stride of all the estimators to istride
+ * @param istride an inverval of reportting/flushing the cummulative quantities
+ */
 void 
 ScalarEstimatorManager::setStride(int istride) {
   Stride = istride;

@@ -103,6 +103,7 @@ namespace ohmmsqmc {
   private:
 
     string RootName;
+    bool CollectSum;
     int Stride;
     int WeightIndex;
     ostream* OutStream;

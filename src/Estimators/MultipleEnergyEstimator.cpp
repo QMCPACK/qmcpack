@@ -96,7 +96,8 @@ namespace ohmmsqmc {
         //W.registerData(thisWalker,*(W.DataSet[iw]));
       } else {
         W.R = thisWalker.R;
-        DistanceTable::update(W);
+        //DistanceTable::update(W);
+        W.update();
       }
 
       //evalaute the wavefunction and hamiltonian
