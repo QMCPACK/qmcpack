@@ -25,6 +25,7 @@
 #include "QMCWaveFunctions/JastrowBuilder.h"
 #include "QMCWaveFunctions/MolecularOrbitals/MolecularOrbitalBuilder.h"
 #include "QMCWaveFunctions/AtomicOrbitals/HeSTOClementiRottie.h"
+#include "QMCWaveFunctions/ElectronGasOrbitalBuilder.h"
 //#include "QMCWaveFunctions/NumericalOrbitalSetBuilder.h"
 using namespace std;
 #include "OhmmsData/AttributeSet.h"
@@ -94,6 +95,9 @@ namespace ohmmsqmc {
         //} else if(orbtype == "NumericalOrbital") {
         //  NumericalOrbitalSetBuilder a(*qp,*psi,ptclPool->getPool());
         //  a.put(cur);
+        } else if(orbtype == "electron-gas") {
+          ElectronGasOrbitalBuilder a(*qp,*psi);
+          a.put(cur);
         } else {
           ERRORMSG(orbtype << " is disabled.")
           return false;

@@ -18,6 +18,7 @@ SET(WFSRCS
   ../QMCWaveFunctions/MolecularOrbitals/GridMolecularOrbitals.cpp
   ../QMCWaveFunctions/MolecularOrbitals/MolecularOrbitalBuilder.cpp
   ../QMCWaveFunctions/NumericalOrbitalSetBuilder.cpp
+  ../QMCWaveFunctions/ElectronGasOrbitalBuilder.cpp
   ../QMCHamiltonians/LocalPPotential.cpp
   ../QMCHamiltonians/NonLocalPPotential.cpp
   ../QMCHamiltonians/LocalCorePolPotential.cpp

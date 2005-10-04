@@ -21,6 +21,7 @@
  * @brief Implements ParticleSetPool operators.
  */
 #include "QMCApp/ParticleSetPool.h"
+#include "Particle/DistanceTable.h"
 #include "OhmmsData/AttributeSet.h"
 #include "ParticleIO/XMLParticleIO.h"
 #include "Utilities/OhmmsInfo.h"
@@ -39,6 +40,8 @@ namespace ohmmsqmc {
    */
   bool ParticleSetPool::put(xmlNodePtr cur) {
 
+    const ParticleSet::ParticleLayout_t* sc=DistanceTable::getSimulationCell();
+
     string id("e"), role("none");
     OhmmsAttributeSet pAttrib;
     pAttrib.add(id,"id"); pAttrib.add(id,"name"); 
@@ -56,6 +59,10 @@ namespace ohmmsqmc {
       //  pTemp = new MCWalkerConfiguration;
       //else 
       //  pTemp = new ParticleSet;
+      if(sc) {
+        LOGMSG("Initializing the lattice of " << id << " by the global supercell")
+        pTemp->Lattice.copy(*sc);
+      }
       myPool[id] = pTemp;
       XMLParticleParser pread(*pTemp);
       bool success = pread.put(cur);
@@ -76,8 +83,22 @@ namespace ohmmsqmc {
     return true;
   }
 
+  /** reset is used to initialize and evaluate the distance tables 
+   */
   void ParticleSetPool::reset() {
- 
+    PoolType::iterator it(myPool.begin()), it_end(myPool.end());
+    while(it != it_end) {
+      ParticleSet* pt((*it).second);
+      pt->setUpdateMode(0);
+      pt->update();
+      ++it;
+    }
+    //DistanceTable::create(1);
+    //PoolType::iterator it(myPool.begin()), it_end(myPool.end());
+    //while(it != it_end) {
+    //  DistanceTable::update(*((*it).second));
+    //  ++it;
+    //}
   }
 }
 /***************************************************************************

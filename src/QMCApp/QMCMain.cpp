@@ -41,6 +41,7 @@
 #include "Particle/HDFWalkerIO.h"
 #include "QMCApp/InitMolecularSystem.h"
 #include "Message/Communicate.h"
+#include "Particle/DistanceTable.h"
 #include <queue>
 using namespace std;
 #include "OhmmsData/AttributeSet.h"
@@ -76,6 +77,7 @@ namespace ohmmsqmc {
 
   bool QMCMain::execute() {
 
+    //validate the input file
     bool success = validateXML();
 
     if(!success) {
@@ -83,12 +85,14 @@ namespace ohmmsqmc {
       return false;
     }
 
+    //initialize all the instances of distance tables and evaluate them 
+    ptclPool->reset();
+
     curMethod = string("invalid");
     vector<xmlNodePtr> q;
 
     xmlNodePtr cur=m_root->children;
     while(cur != NULL) {
-
       string cname((const char*)cur->name);
       if(cname == "qmc") {
         string target("e");
@@ -104,16 +108,6 @@ namespace ohmmsqmc {
     }
 
     if(q.size()) { 
-      //hdf5 file should have everything
-      //if(curRunType != DMC_RUN) {//add en_ref to the last node 
-      //  xmlNodePtr lastqmc=q.back();
-      //  xmlNodePtr aparam = xmlNewNode(NULL,(const xmlChar*)"parameter");
-      //  xmlNewProp(aparam,(const xmlChar*)"name",(const xmlChar*)"en_ref");
-      //  char ref_energy[128];
-      //  sprintf(ref_energy,"%15.5e",qmcSystem->getLocalEnergy());
-      //  xmlNodeSetContent(aparam,(const xmlChar*)ref_energy);
-      //  xmlAddChild(lastqmc,aparam);
-      //}
       //unlink other qmc node but the last one
       for(int i=0;i<q.size()-1; i++) {
         xmlUnlinkNode(q[i]);
@@ -256,7 +250,9 @@ namespace ohmmsqmc {
     cur=cur->children;
     while(cur != NULL) {
       string cname((const char*)cur->name);
-      if(cname == "particleset") {
+      if(cname == "simulationcell") {
+        DistanceTable::createSimulationCell(cur);
+      } else if(cname == "particleset") {
         ptclPool->put(cur);
       } else if(cname == "wavefunction") {
         psiPool->put(cur);
