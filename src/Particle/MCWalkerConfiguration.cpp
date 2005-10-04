@@ -19,6 +19,7 @@
 #include "Particle/DistanceTableData.h"
 #include "Particle/DistanceTable.h"
 #include "Message/Communicate.h"
+#include <map>
 using namespace ohmmsqmc;
 
 MCWalkerConfiguration::MCWalkerConfiguration(): 
@@ -171,7 +172,6 @@ MCWalkerConfiguration::copyFromBuffer(PooledData<RealType>& buf) {
   }
 }
 
-
 int MCWalkerConfiguration::branch(int maxcopy, int Nmax, int Nmin) {
 
   iterator it = WalkerList.begin();
@@ -236,6 +236,11 @@ int MCWalkerConfiguration::branch(int maxcopy, int Nmax, int Nmin) {
     }
   }
 
+  //DMC+MPI: swapWalkers() is disabled
+  //int nw_tot = swapWalkers();
+  int nw_tot = WalkerList.size();
+
+  //set Weight and Multiplicity to default values
   iw=0;
   it=WalkerList.begin();
   while(it != WalkerList.end()) {
@@ -243,23 +248,8 @@ int MCWalkerConfiguration::branch(int maxcopy, int Nmax, int Nmin) {
     (*it)->Multiplicity=1.0;
     it++;
   }
-  return iw;
-}
 
-void MCWalkerConfiguration::setUpdateMode(int updatemode) { 
-
-  ///get the tables for which this particle set is the visitor or source
-  if(DistTables.empty()) { 
-    LOGMSG("MCWalkerConfiguration::setUpdateMode to create distance tables")
-    DistanceTable::getTables(ObjectTag,DistTables);
-    DistanceTable::create(1);
-    //We never move all the walkers
-    //if(UpdateMode == Update_All) {
-    //  DistanceTable::create(WalkerList.size());
-    //} else {
-    //  DistanceTable::create(1);
-    //}
-  }
+  return nw_tot;
 }
 
 void MCWalkerConfiguration::loadWalker(Walker_t& awalker) {
@@ -289,6 +279,106 @@ void MCWalkerConfiguration::initPropertyList() {
   PropertyList.add("LocalPotential");
 }
 
+#if defined(HAVE_MPI)
+
+int MCWalkerConfiguration::swapWalkers() {
+
+  //synchronize the nodes
+  OHMMS::Controller->barrier();
+
+  int mycontext=OHMMS::Controller->mycontext();
+  int nrecv, ncontexts=OHMMS::Controller->ncontexts();
+  vector<int> nsub(ncontexts,0), nsub_g(ncontexts,0);
+  nsub[mycontext]=WalkerList.size();
+
+  //get how many each node has
+  int status=MPI_Allreduce(&nsub[0], &nsub_g[0], ncontexts, 
+      MPI_INT, MPI_SUM,OHMMS::Controller->getID());
+
+  //order it according to the number of particles
+  multimap<int,int> nw_map;
+  int nw_sum=0;
+  for(int i=0; i<ncontexts; i++) {
+    nw_sum+=nsub_g[i];
+    nw_map.insert(pair<int,int>(nsub_g[i],i));
+  }
+
+  multimap<int,int>::iterator it(nw_map.begin());
+  multimap<int,int>::reverse_iterator it_b(nw_map.end());
+  bool notpaired=true;
+  int target_context=-1;
+  int half=ncontexts/2;
+  int item=0;
+  bool minorcontext;
+  while(notpaired &&item<half) {
+    int i=(*it).second;
+    int j=(*it_b).second;
+    if(i == mycontext) {
+      target_context=j;
+      notpaired=false;
+      minorcontext=true;
+    } else if(j == mycontext) {
+      target_context= i;
+      notpaired=false;
+      minorcontext=false;
+    } 
+    ++it; ++it_b; ++item;
+  }
+
+  int nw_tot=nsub_g[mycontext]+nsub_g[target_context];
+  int nw_L=nw_tot/2;
+  int nw_R=nw_tot-nw_L;
+  int dnw(0);
+  if(minorcontext) {
+    dnw=nw_R-nsub_g[mycontext];
+  } else {
+    dnw=nw_R-nsub_g[target_context];
+  }
+
+  //char fname[128];
+  //sprintf(fname,"test.%d",mycontext);
+  //ofstream fout(fname,ios::app);
+
+  //if(minorcontext) 
+  //  fout << mycontext << " recv from " << target_context <<  " " << dnw << endl;
+  //else 
+  //  fout << mycontext << " send to " << target_context << " " << dnw << endl;
+  if(dnw) {//something to swap
+    if(minorcontext) {//open recv buffer
+      Walker_t& wRef(*WalkerList[0]);
+      OOMPI_Packed recvBuffer(dnw*wRef.byteSize(),OOMPI_COMM_WORLD);
+      //To check if irecv is better than recv
+      //OOMPI_COMM_WORLD[target_context].Recv(recvBuffer);
+      OOMPI_Request recvRequest = OOMPI_COMM_WORLD[target_context].Irecv(recvBuffer, MPI_ANY_TAG);
+
+      //create walkers
+      for(int iw=0; iw<dnw; iw++) {
+        WalkerList.push_back(new Walker_t(wRef));
+      }
+      recvRequest.Wait();
+      int last=nsub_g[mycontext];
+      while(dnw) {
+        WalkerList[last++]->getMessage(recvBuffer);
+        --dnw;
+      }
+
+    } else {
+      Walker_t& wRef(*WalkerList[0]);
+      OOMPI_Packed sendBuffer(dnw*wRef.byteSize(),OOMPI_COMM_WORLD);
+      int last=WalkerList.size()-1;
+      while(dnw) {
+        WalkerList[last--]->putMessage(sendBuffer);
+        --dnw; 
+      }
+      OOMPI_COMM_WORLD[target_context].Send(sendBuffer);
+      destroyWalkers(WalkerList.begin()+nsub_g[mycontext], WalkerList.end());
+    }
+  }
+
+  OHMMS::Controller->barrier();
+  return nw_sum;
+}
+#endif
 
 /***************************************************************************
  * $RCSfile$   $Author$

@@ -116,11 +116,6 @@ namespace ohmmsqmc {
     inline const_iterator end() const { return WalkerList.end();}
     /**@}*/
 
-    /** set the update mode
-     * @param updatemode
-     */
-    void setUpdateMode(int updatemode);
-
     /** set LocalEnergy
      * @param e current average Local Energy
      */
@@ -156,6 +151,15 @@ namespace ohmmsqmc {
     void copyFromBuffer(PooledData<RealType>& buf);
 
     void resetWalkerProperty(int ncopy=1);
+
+    /** swap walkers among MPI nodes
+     * @return total number of walkers
+     */
+#if defined(HAVE_MPI)
+    int swapWalkers();
+#else
+    inline int swapWalkers() { return WalkerList.size();}
+#endif
 
   protected:
 
