@@ -54,27 +54,23 @@ namespace ohmmsqmc {
 	  putContent(grid[finegrid],cur);
 	} else if(aname == "ompgrid") {
 	  putContent(ref_.Grid[ompgrid],cur);
-	  //putContent(grid[ompgrid],cur);
-          //ref_.Grid[ompgrid]=grid[ompgrid];
 	} else if(aname == "mpigrid") {
 	  putContent(ref_.Grid[mpigrid],cur);
-	  //putContent(grid[mpigrid],cur);
-          //ref_.Grid[mpigrid]=grid[mpigrid];
 	} else if(aname == "bconds") {
 	  putContent(bconds,cur);
+          for(int idir=0;idir<OHMMS_DIM; idir++) {
+            char b = bconds[idir][0];
+            if(b == 'n' || b == 'N') {
+              ref_.BoxBConds[idir] = false;
+            } else {
+              ref_.BoxBConds[idir] = true;
+            }
+          }
 	} else if(aname == "LR_dim_cutoff") {
 	  putContent(ref_.LR_dim_cutoff,cur);
 	}
       }
       cur = cur->next;
-    }
-
-    for(int idir=0;idir<OHMMS_DIM; idir++) {
-      char b = bconds[idir][0];
-      if(b == 'n' || b == 'N')
-	ref_.BoxBConds[idir] = false;
-      else
-	ref_.BoxBConds[idir] = true;
     }
 
     ref_.R *= a0;
