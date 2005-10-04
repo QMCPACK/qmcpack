@@ -60,7 +60,7 @@ namespace ohmmsqmc {
     inline Return_t evaluate(ParticleSet& P) {  
       //Later it should check if the d_ii is already updated
       if(FirstTime) {
-        d_ii->evaluate(PtclRef);
+        //d_ii->evaluate(PtclRef);
         Value = 0.0;
         for(int iat=0; iat< Z.size(); iat++) {
           RealType esum = 0.0;
