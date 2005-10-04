@@ -109,7 +109,6 @@ namespace ohmmsqmc {
               d2logdet(i,j2)=mK2[ik]*sinkr;
             }
           }
-          cout << "evaluate " << logdet << endl;
         }
     };
 
