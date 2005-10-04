@@ -90,12 +90,11 @@ public:
   } 
 
 
-  /**assign operator
-   *
-   *Only copy the base classes.
+  /** copy function
    */
   inline void copy(const Uniform3DGridLayout& pl){
     MaxConnections=0;
+    LR_dim_cutoff=pl.LR_dim_cutoff;
     Base_t::set(pl);
     Grid_t::makeCopy(pl);
   } 
