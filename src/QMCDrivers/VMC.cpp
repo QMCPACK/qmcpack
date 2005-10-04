@@ -171,7 +171,8 @@ namespace ohmmsqmc {
       W.R = m_sqrttau*deltaR + thisWalker.R + thisWalker.Drift;
       
       //update the distance table associated with W
-      DistanceTable::update(W);
+      //DistanceTable::update(W);
+      W.update();
       
       //evaluate wave function
       //update the properties: note that we are getting \f$\sum_i \ln(|psi_i|)\f$ and catching the sign separately

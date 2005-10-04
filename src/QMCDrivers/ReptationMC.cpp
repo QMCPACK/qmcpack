@@ -22,7 +22,6 @@
 #include "QMCDrivers/PolymerEstimator.h"
 #include "Utilities/OhmmsInfo.h"
 #include "Particle/MCWalkerConfiguration.h"
-#include "Particle/DistanceTable.h"
 #include "Particle/HDFWalkerIO.h"
 #include "ParticleBase/ParticleUtility.h"
 #include "ParticleBase/RandomSeqGenerator.h"
@@ -67,13 +66,15 @@ namespace ohmmsqmc {
       Walker_t* cur(*it);
       cur->Weight=1.0;     
       W.R = cur->R;
-      DistanceTable::update(W);
+      //DistanceTable::update(W);
+      W.update();
       ValueType logpsi(Psi.evaluateLog(W));
       RealType  eloc_cur = H.evaluate(W);
       cur->resetProperty(logpsi,Psi.getSign(),eloc_cur);
       H.saveProperty(cur->getPropertyBase());
       cur->Drift = W.G;
       Reptile  = new PolymerChain(cur,PolymerLength,NumCuts);
+      Reptile->resizeArrays(1);
     }
 
     //If ClonePolyer==false, generate configuration using diffusion
@@ -87,7 +88,8 @@ namespace ohmmsqmc {
         W.R = cur->R + g*deltaR + Tau*cur->Drift;
         
         //update the distance table associated with W
-        DistanceTable::update(W);
+        //DistanceTable::update(W);
+        W.update();
         
         //evaluate wave function
         ValueType logpsic(Psi.evaluateLog(W));
@@ -209,7 +211,8 @@ namespace ohmmsqmc {
       W.R = anchor->R + g*deltaR + Tau* anchor->Drift;
       
       //update the distance table associated with W
-      DistanceTable::update(W);
+      //DistanceTable::update(W);
+      W.update();
       
       //evaluate wave function
       ValueType logpsi(Psi.evaluateLog(W));

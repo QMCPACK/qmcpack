@@ -19,7 +19,6 @@
 // -*- C++ -*-
 #include "QMCDrivers/MolecuDMC.h"
 #include "Particle/MCWalkerConfiguration.h"
-#include "Particle/DistanceTable.h"
 #include "Particle/HDFWalkerIO.h"
 #include "ParticleBase/ParticleUtility.h"
 #include "ParticleBase/RandomSeqGenerator.h"
@@ -183,7 +182,8 @@ namespace ohmmsqmc {
       W.R = m_sqrttau*deltaR + thisWalker.R + thisWalker.Drift;
       
       //update the distance table associated with W
-      DistanceTable::update(W);
+      //DistanceTable::update(W);
+      W.update();
       
       //evaluate wave function
       ValueType logpsi(Psi.evaluateLog(W));
@@ -258,7 +258,8 @@ namespace ohmmsqmc {
       W.R = m_sqrttau*deltaR + thisWalker.R + thisWalker.Drift;
       
       //update the distance table associated with W
-      DistanceTable::update(W);
+      //DistanceTable::update(W);
+      W.update();
       
       //evaluate wave function
       ValueType logpsi(Psi.evaluateLog(W));

@@ -59,6 +59,10 @@ namespace ohmmsqmc {
     log_buffer.setf(ios::scientific, ios::floatfield);
     log_buffer.precision(6);
 
+    //DMC+MPI: disabled
+    //estimator collects data
+    //Estimators->setCollectionMode(OHMMS::Controller->ncontexts()>1);
+
     IndexType PopIndex = Estimators->addColumn("Population");
     IndexType EtrialIndex = Estimators->addColumn("Etrial");
     Estimators->reportHeader();
@@ -97,8 +101,12 @@ namespace ohmmsqmc {
           advanceRejectNodeCrossing(nat);
         ++step; ++accstep;
         Estimators->accumulate(W);
-        branchEngine->branch(accstep,W);
-        Eest = branchEngine->update(W.getActiveWalkers(), Eest); 
+
+        OHMMS::Controller->barrier();
+
+        int cur_pop = branchEngine->branch(accstep,W);
+        Eest = branchEngine->CollectAndUpdate(cur_pop, Eest); 
+
         if(accstep%100 == 0) updateWalkers();
       } while(step<nSteps);
       

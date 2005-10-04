@@ -20,7 +20,6 @@
 #include "QMCDrivers/QMCDriver.h"
 #include "Utilities/OhmmsInfo.h"
 #include "Particle/MCWalkerConfiguration.h"
-#include "Particle/DistanceTable.h"
 #include "Particle/HDFWalkerIO.h"
 #include "ParticleBase/ParticleUtility.h"
 #include "ParticleBase/RandomSeqGenerator.h"
@@ -85,7 +84,7 @@ namespace ohmmsqmc {
   void QMCDriver::process(xmlNodePtr cur) {
 
     //check if distance tables are connected to the quantum particles W
-    W.setUpdateMode(MCWalkerConfiguration::Update_Particle);
+    //W.setUpdateMode(MCWalkerConfiguration::Update_Particle);
 
     deltaR.resize(W.getTotalNum());
     drift.resize(W.getTotalNum());
@@ -233,7 +232,8 @@ namespace ohmmsqmc {
       MCWalkerConfiguration::iterator it(W.begin()),it_end(W.end());
       while(it != it_end) {
         W.R = (*it)->R;
-        DistanceTable::update(W);
+        //DistanceTable::update(W);
+        W.update();
 
         ValueType logpsi(Psi.evaluateLog(W));
         RealType vsq = Dot(W.G,W.G);

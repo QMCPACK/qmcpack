@@ -20,7 +20,6 @@
 #include "QMCDrivers/DummyQMC.h"
 #include "Utilities/OhmmsInfo.h"
 #include "Particle/MCWalkerConfiguration.h"
-#include "Particle/DistanceTable.h"
 #include "Particle/HDFWalkerIO.h"
 #include "ParticleBase/ParticleUtility.h"
 #include "ParticleBase/RandomSeqGenerator.h"
@@ -58,7 +57,6 @@ namespace ohmmsqmc {
     W.applyBC(W.R);
 
     //update the distance table associated with W
-    //DistanceTable::update(W);
     W.update();
 
     //evaluate wave function

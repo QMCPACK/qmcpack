@@ -21,7 +21,6 @@
 #include "QMCDrivers/MultiChain.h"
 #include "Utilities/OhmmsInfo.h"
 #include "Particle/MCWalkerConfiguration.h"
-#include "Particle/DistanceTable.h"
 #include "Particle/HDFWalkerIO.h"
 #include "ParticleBase/ParticleUtility.h"
 #include "ParticleBase/RandomSeqGenerator.h"
@@ -105,7 +104,8 @@ namespace ohmmsqmc {
       W.R=curW.R;
 
       ///Compute Distances
-      DistanceTable::update(W);
+      //DistanceTable::update(W);
+      W.update();
 
       ///loop over WF to compute contribution to the action and WF
       for(int ipsi=0; ipsi<nPsi; ipsi++) {
@@ -421,7 +421,8 @@ namespace ohmmsqmc {
     //Save position in NewBead
     NewBead->R=W.R; 
     //update the distance table associated with W
-    DistanceTable::update(W);
+    //DistanceTable::update(W);
+    W.update();
 
     //Compute the "diffusion-drift"\f$=(R_{yp}-R{xp})/tau\f$
     deltaR= NewBead->R - head->R;

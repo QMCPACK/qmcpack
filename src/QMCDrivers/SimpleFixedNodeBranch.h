@@ -25,6 +25,7 @@
 #include <numeric>
 #include "OhmmsData/ParameterSet.h"
 #include "OhmmsData/HDFAttribIO.h"
+#include "Message/CommOperators.h"
 
 namespace ohmmsqmc {
 
@@ -72,6 +73,9 @@ namespace ohmmsqmc {
     T EavgSum;
     ///Accumulation of the weight
     T WgtSum;
+
+    ///Global energy/weight
+    TinyVector<T,2> gEavgWgt;
 
     ///Constructor
     SimpleFixedNodeBranch(T tau, int nideal): Counter(0), Nideal(nideal), NumGeneration(50), MaxCopy(10),
@@ -141,7 +145,17 @@ namespace ohmmsqmc {
      *<E_G> is a running average over multiple runs.
     */
     inline T update(int pop_now, T ecur) {
+      gEavgWgt[0]=EavgSum;
+      gEavgWgt[1]=WgtSum;
       return E_T = EavgSum/WgtSum-Feed*log(static_cast<T>(pop_now))+logN;
+    }
+
+    inline T CollectAndUpdate(int pop_now, T ecur) {
+      gEavgWgt[0]=EavgSum;
+      gEavgWgt[1]=WgtSum;
+      //DMC+MPI: disabled
+      //gsum(gEavgWgt,0);
+      return E_T = gEavgWgt[0]/gEavgWgt[1]-Feed*log(static_cast<T>(pop_now))+logN;
     }
 
     /**  Parse the xml file for parameters
@@ -173,8 +187,9 @@ namespace ohmmsqmc {
     }
 
     void reset() {
-      Nmax = 2*Nideal;
-      Nmin = static_cast<int>(Nideal/2);
+      int npernode=Nideal/OHMMS::Controller->ncontexts();
+      Nmax = 2*npernode;
+      Nmin = static_cast<int>(npernode/2);
       Feed = 1.0/(static_cast<T>(NumGeneration)*Tau);
       logN = Feed*log(static_cast<T>(Nideal));
       LOGMSG("Current Counter = " << Counter << " Trial Energy = " << E_T)

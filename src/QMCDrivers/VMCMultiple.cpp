@@ -20,7 +20,6 @@
 #include "QMCDrivers/VMCMultiple.h"
 #include "Utilities/OhmmsInfo.h"
 #include "Particle/MCWalkerConfiguration.h"
-#include "Particle/DistanceTable.h"
 #include "Particle/HDFWalkerIO.h"
 #include "ParticleBase/ParticleUtility.h"
 #include "ParticleBase/RandomSeqGenerator.h"
@@ -164,7 +163,8 @@ namespace ohmmsqmc {
       W.R = m_sqrttau*deltaR + thisWalker.R + thisWalker.Drift;
       
       //update the distance table associated with W
-      DistanceTable::update(W);
+      //DistanceTable::update(W);
+      W.update();
       
       //Evaluate Psi and graidients and laplacians
       //\f$\sum_i \ln(|psi_i|)\f$ and catching the sign separately
