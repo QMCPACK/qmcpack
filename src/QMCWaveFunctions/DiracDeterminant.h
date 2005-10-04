@@ -544,30 +544,31 @@ namespace ohmmsqmc {
 				     WalkerSetRef::WalkerGradient_t& G,
 				     WalkerSetRef::WalkerLaplacian_t& L) {
 
-    int nw = W.walkers();
+    //Comment it out since it is not used anymore
+    //int nw = W.walkers();
 
-    //evaluate \f$(D_{ij})^t\f$ and other quantities for gradient/laplacians
-    Phi.evaluate(W, FirstIndex, LastIndex, psiM_v, dpsiM_v, d2psiM_v);
-    
-    for(int iw=0; iw< nw; iw++) {
-      //psi[iw] *= Invert(psiM_v[iw].data(),NumPtcls,NumOrbitals);
-      psi[iw] *= Invert(psiM_v[iw].data(),NumPtcls,NumOrbitals, WorkSpace.data(), Pivot.data());
-      int iat = FirstIndex; //the index of the particle with respect to P
-      const Determinant_t& logdet = psiM_v[iw];
-      const Gradient_t& dlogdet = dpsiM_v[iw];
-      const Laplacian_t& d2logdet = d2psiM_v[iw];
+    ////evaluate \f$(D_{ij})^t\f$ and other quantities for gradient/laplacians
+    //Phi.evaluate(W, FirstIndex, LastIndex, psiM_v, dpsiM_v, d2psiM_v);
+    //
+    //for(int iw=0; iw< nw; iw++) {
+    //  //psi[iw] *= Invert(psiM_v[iw].data(),NumPtcls,NumOrbitals);
+    //  psi[iw] *= Invert(psiM_v[iw].data(),NumPtcls,NumOrbitals, WorkSpace.data(), Pivot.data());
+    //  int iat = FirstIndex; //the index of the particle with respect to P
+    //  const Determinant_t& logdet = psiM_v[iw];
+    //  const Gradient_t& dlogdet = dpsiM_v[iw];
+    //  const Laplacian_t& d2logdet = d2psiM_v[iw];
 
-      for(int i=0; i<NumPtcls; i++, iat++) {
-	PosType rv = logdet(i,0)*dlogdet(i,0);
-	ValueType lap=logdet(i,0)*d2logdet(i,0);
-	for(int j=1; j<NumOrbitals; j++) {
-	  rv += logdet(i,j)*dlogdet(i,j);
-	  lap += logdet(i,j)*d2logdet(i,j);
-	}
-	G(iw,iat) += rv;
-	L(iw,iat) += lap - dot(rv,rv);
-      }
-    }
+    //  for(int i=0; i<NumPtcls; i++, iat++) {
+    //    PosType rv = logdet(i,0)*dlogdet(i,0);
+    //    ValueType lap=logdet(i,0)*d2logdet(i,0);
+    //    for(int j=1; j<NumOrbitals; j++) {
+    //      rv += logdet(i,j)*dlogdet(i,j);
+    //      lap += logdet(i,j)*d2logdet(i,j);
+    //    }
+    //    G(iw,iat) += rv;
+    //    L(iw,iat) += lap - dot(rv,rv);
+    //  }
+    //}
   }
   
   template<class SPOSet>
