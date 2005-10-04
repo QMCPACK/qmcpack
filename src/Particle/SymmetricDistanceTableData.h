@@ -34,7 +34,9 @@ namespace ohmmsqmc {
     //blitz::Array<IndexType,2> IJ;
     ///constructor using source and target arrays
     SymmetricDTD(const ParticleSet& source, const ParticleSet& target):
-      DistanceTableData(source,target){ }
+      DistanceTableData(source,target){ 
+        create(1);
+    }
 
     void create(int walkers){
       int nw = (walkers>0)? walkers:1;

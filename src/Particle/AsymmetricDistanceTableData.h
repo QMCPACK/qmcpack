@@ -35,7 +35,7 @@ namespace ohmmsqmc {
     AsymmetricDTD(const ParticleSet& source, 
 		  const ParticleSet& target): DistanceTableData(source,target),
 					       Target(target){
-
+      create(1);
     }
 
     void create(int walkers){
