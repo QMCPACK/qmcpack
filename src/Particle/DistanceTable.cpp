@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////
-// (c) Copyright 2003  by Jeongnim Kim
+// (c) Copyright 2003-  by Jeongnim Kim
 //////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////
 //   National Center for Supercomputing Applications &
@@ -16,17 +16,66 @@
 // -*- C++ -*-
 #include "Utilities/OhmmsInfo.h"
 #include "Particle/DistanceTable.h"
-#include "Particle/WalkerSetRef.h"
+//#include "Particle/WalkerSetRef.h"
 #include "Particle/DistanceTableData.h"
 #include "Particle/SymmetricDistanceTableData.h"
 #include "Particle/AsymmetricDistanceTableData.h"
+#include "ParticleIO/ParticleLayoutIO.h"
 using namespace ohmmsqmc;
 
-//uncomment to test PBC
-//#define TEST_PBC_DIST
+/**@{instantiation of static data members*/
+vector<bool>                DistanceTable::Updated;
+vector<DistanceTableData*>  DistanceTable::TableList;
+map<string,int>             DistanceTable::TableMap;
+vector<int>                 DistanceTable::VisitorID;
+ParticleSet::ParticleLayout_t* DistanceTable::SimulationCell=0;
+/**@}*/
 
-//@todo introduce enum to automatically generate the distance table data with BC
-//enum { No=0, PNN, PPN, PPP};
+/** dummy class to detemine the supercell type **/
+template<unsigned D>
+struct SuperCellType {};
+
+/** specialization of SuperCellType for 3-dimensional cell
+ */
+template<>
+struct SuperCellType<3> {
+  /** convert box to an integer
+   * @param box 3-dimensional boolean vector
+   *
+   * When all the directions are open, returns 0.
+   * - 7 (1,1,1) bulk system
+   * - 3 (1,1,0) slab system
+   * - 1 (1,0,0) wire system
+   */
+  inline static int apply(const TinyVector<int,3>& box) {
+    return box[0]+2*(box[1]+box[2]*2);
+  }
+};
+
+template<class T, unsigned D, int SC>
+struct DTD_BConds {};
+
+template<class T>
+struct DTD_BConds<T,3,0> {
+  inline static T apply(const CrystalLattice<T,3>& lat, TinyVector<T,3>& a) {
+    return a[0]*a[0]+a[1]*a[1]+a[2]*a[2];
+  }
+};
+
+template<class T>
+struct DTD_BConds<T,3,7> {
+  inline static T apply(const CrystalLattice<T,3>& lat, TinyVector<T,3>& a) {
+    TinyVector<T,3> ar(lat.toUnit(a));
+    if(ar[0]<-0.5) ar[0]+=1.0; 
+    else if(ar[0]>=0.5) ar[0]-=1.0;
+    if(ar[1]<-0.5) ar[1]+=1.0; 
+    else if(ar[1]>=0.5) ar[1]-=1.0;
+    if(ar[2]<-0.5) ar[2]+=1.0; 
+    else if(ar[2]>=0.5) ar[2]-=1.0;
+    a=lat.toCart(ar);
+    return a[0]*a[0]+a[1]*a[1]+a[2]*a[2];
+  }
+};
 
 /**@ingroup nnlist
  * @brief class to apply No Boundary conditions for distance evaluation
@@ -64,18 +113,20 @@ struct PeriodicBConds {
   }
 };
 
-/**@{instantiation of static data members*/
-vector<bool>                DistanceTable::Updated;
-vector<DistanceTableData*>  DistanceTable::TableList;
-map<string,int>             DistanceTable::TableMap;
-vector<int>                 DistanceTable::VisitorID;
-/**@}*/
+void DistanceTable::createSimulationCell(xmlNodePtr cur) {
+  if(cur != NULL) {
+    if(SimulationCell == 0) {
+      SimulationCell = new ParticleLayout_t;
+    }
+    LatticeParser a(*SimulationCell);
+    a.put(cur);
+  }
+}
 
-/*!\fn int DistanceTable::add(const ParticleSet& s, const char* aname) 
+/** Adding SymmetricDTD to the list, e.g., el-el distance table
  *\param s source/target particle set
  *\param aname of a new DistanceTableData
  *\return index of the distance table with the name
- *\brief Adding SymmetricDTD to the list, e.g., el-el distance table
  */
 int
 DistanceTable::add(const ParticleSet& s, const char* aname) {
@@ -90,15 +141,14 @@ DistanceTable::add(const ParticleSet& s, const char* aname) {
 
   map<string,int>::iterator it = TableMap.find(newname);
 
-  ///the named pair does not exist, add a new symmetric metrics
+  //the named pair does not exist, add a new symmetric metrics
   if(it == TableMap.end()) {
     LOGMSG("Distance table " << newname << " is created.")
     int n = TableList.size();
-#if defined(TEST_PBC_DIST)
-    TableList.push_back(new SymmetricDTD<PeriodicBConds<double,3> >(s,s));
-#else
-    TableList.push_back(new SymmetricDTD<NoBConds<double,3> >(s,s));
-#endif
+    if(SuperCellType<OHMMS_DIM>::apply(s.Lattice.BoxBConds) == SUPERCELL_OPEN) 
+      TableList.push_back(new SymmetricDTD<DTD_BConds<OHMMS_PRECISION,OHMMS_DIM,0> >(s,s));
+    else
+      TableList.push_back(new SymmetricDTD<DTD_BConds<OHMMS_PRECISION,OHMMS_DIM,7> >(s,s));
     TableMap[newname] = n;
     VisitorID.push_back(s.tag());
     return n;
@@ -132,11 +182,10 @@ DistanceTable::add(const ParticleSet& s, const ParticleSet& t,
   if(it == TableMap.end()) {
     LOGMSG("Distance table " << newname << " is created.")
     int n = TableList.size();
-#if defined(TEST_PBC_DIST)
-    TableList.push_back(new AsymmetricDTD<PeriodicBConds<double,3> > (s,t));
-#else
-    TableList.push_back(new AsymmetricDTD<NoBConds<double,3> > (s,t));
-#endif
+    if(SuperCellType<OHMMS_DIM>::apply(s.Lattice.BoxBConds) == SUPERCELL_OPEN) 
+      TableList.push_back(new AsymmetricDTD<DTD_BConds<OHMMS_PRECISION,OHMMS_DIM,0> >(s,t));
+    else 
+      TableList.push_back(new AsymmetricDTD<DTD_BConds<OHMMS_PRECISION,OHMMS_DIM,7> >(s,t));
     TableMap[newname] = n;
     VisitorID.push_back(t.tag());
     return n;
@@ -162,16 +211,16 @@ void DistanceTable::reset() {
   for(int i=0; i<Updated.size(); i++) Updated[i] = false;
 }
 
-void DistanceTable::update(ParticleSet& t) {
-  for(int i=0; i< TableList.size(); i++) 
-    if(t.tag() == VisitorID[i]) TableList[i]->evaluate(t);
-}
+//void DistanceTable::update(ParticleSet& t) {
+//  for(int i=0; i< TableList.size(); i++) 
+//    if(t.tag() == VisitorID[i]) TableList[i]->evaluate(t);
+//}
 
-void DistanceTable::update(WalkerSetRef& w) {
-  int id = w.tag();
-  for(int i=0; i< TableList.size(); i++) 
-    if(id == VisitorID[i]) TableList[i]->evaluate(w);
-}
+//void DistanceTable::update(WalkerSetRef& w) {
+//  int id = w.tag();
+//  for(int i=0; i< TableList.size(); i++) 
+//    if(id == VisitorID[i]) TableList[i]->evaluate(w);
+//}
 
 void DistanceTable::registerData(PooledData<RealType>& buf) {
   for(int i=0; i<TableList.size(); i++) TableList[i]->registerData(buf);

@@ -22,8 +22,6 @@
 
 namespace ohmmsqmc {
 
-  class ParticleSet;
-  class WalkerSetRef;
   class DistanceTableData;
 
   /**@ingroup nnlist
@@ -42,9 +40,12 @@ namespace ohmmsqmc {
     
   public:
     
-    ///derive the real type from ParticleSet::Scalar_t
-    typedef ParticleSet::Scalar_t RealType;
+    typedef ParticleSet::ParticleLayout_t    ParticleLayout_t;
+    typedef ParticleSet::Scalar_t            RealType;
     typedef ParticleSet::SingleParticlePos_t PosType;
+
+    enum {SUPERCELL_OPEN=0, SUPERCELL_WIRE=1, 
+      SUPERCELL_SLAB=3, SUPERCELL_BULK=7};
 
     ///add a named DistanceTableData_t of Symmectric type
     static int add(const ParticleSet& s, const char* aname = NULL);
@@ -53,17 +54,15 @@ namespace ohmmsqmc {
     static int add(const ParticleSet& s, const ParticleSet& t, 
 		   const char* aname = NULL);
     
-    /*!\fn DistanceTableData_t* getTable(int i)
-     * \param i index to access TableList
-     * \brief returns a pointer to a DistanceTableData_t
+    /** returns a pointer to a DistanceTableData_t
+     * @param i index to access TableList
      */
     static DistanceTableData* getTable(int i){
       return TableList[i];
     }
 
-    /*!\fn DistanceTableData_t* getTable(const char* atable)
-     * \param atable name of the distance table
-     * \brief returns a pointer to a DistanceTableData_t of the pair
+    /** returns a pointer to a DistanceTableData of the pair
+     *@param atable name of the distance table
      */
     static DistanceTableData* getTable(const char* atable) {
       map<string,int>::iterator it = TableMap.find(atable);
@@ -72,6 +71,17 @@ namespace ohmmsqmc {
       else 
         return TableList[(*it).second];
     }
+
+    /** returns the pointer to SimulationCell
+     */
+    static const ParticleLayout_t* getSimulationCell() {
+      return SimulationCell;
+    }
+
+    /** create a global SimulationCell referenced by ParticleSet objects
+     * @param cur xml node
+     */
+    static void createSimulationCell(xmlNodePtr cur);
 
     /** select DistanceTableData objects whose visitor tag matches ptag
      *@param ptag the tag of a ParticleSet
@@ -87,9 +97,9 @@ namespace ohmmsqmc {
     ///return true if ith table has been updated
     static bool updated(int i) { return Updated[i];}
     
-    static void update(ParticleSet& t);
+    //static void update(ParticleSet& t);
 
-    static void update(WalkerSetRef& t);
+    //static void update(WalkerSetRef& t);
 
     static void registerData(PooledData<RealType>& buf);
 
@@ -110,6 +120,9 @@ namespace ohmmsqmc {
     ///Center_map[name] returns the Table index
     static map<string,int>  TableMap;
     
+    ///Global object to define a simulation cell
+    static ParticleLayout_t* SimulationCell;
+
     /// Default constructor.
     DistanceTable(){ }
   };
