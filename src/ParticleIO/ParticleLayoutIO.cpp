@@ -33,6 +33,8 @@ namespace ohmmsqmc {
 
     double a0 = 1.0;
 
+    double rs=-1.0;
+
     typedef ParticleLayout_t::SingleParticleIndex_t SingleParticleIndex_t;
     vector<SingleParticleIndex_t> grid(3,SingleParticleIndex_t(1));
 
@@ -68,8 +70,18 @@ namespace ohmmsqmc {
           }
 	} else if(aname == "LR_dim_cutoff") {
 	  putContent(ref_.LR_dim_cutoff,cur);
-	}
-      }
+	} else if(aname == "rs") {
+	  putContent(rs,cur);
+          double nrs=14;
+          const xmlChar* n_ptr=xmlGetProp(cur,(const xmlChar*)"condition");
+          if(n_ptr) { nrs = atof((const char*)n_ptr);}
+          double acubic=pow(4.0*nrs/3.0,1.0/3.0)*rs;
+          ref_.R=0.0;
+          ref_.R(0,0)=acubic;
+          ref_.R(1,1)=acubic;
+          ref_.R(2,2)=acubic;
+        }
+      } 
       cur = cur->next;
     }
 
