@@ -80,6 +80,7 @@ namespace ohmmsqmc {
           ref_.R(0,0)=acubic;
           ref_.R(1,1)=acubic;
           ref_.R(2,2)=acubic;
+          a0=1.0;
         }
       } 
       cur = cur->next;
