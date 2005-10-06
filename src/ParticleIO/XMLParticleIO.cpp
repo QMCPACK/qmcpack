@@ -29,6 +29,7 @@ using namespace std;
 #include "ParticleIO/XMLParticleIO.h"
 #include "ParticleIO/HDFParticleIO.h"
 #include "ParticleBase/ParticleFunctions.h"
+#include "ParticleBase/RandomSeqGenerator.h"
 using namespace ohmmsqmc;
 
 
@@ -151,6 +152,7 @@ bool XMLParticleParser::putSpecial(xmlNodePtr cur) {
   //the number of particles that are initialized by <attrib/>
   int nat = 0;
 
+  string randomizeR("no");
   //process attributes of particleset
   xmlAttrPtr att = cur->properties;
   while(att != NULL) {
@@ -159,7 +161,9 @@ bool XMLParticleParser::putSpecial(xmlNodePtr cur) {
       pname = (const char*)(att->children->content);
     } else if(aname == "num" || aname == "size") {
       nat = atoi((const char*)(att->children->content));
-    } 
+    } else if(aname == "random") {
+      randomizeR = (const char*)(att->children->content);
+    }
     att = att->next;
   }
   
@@ -315,6 +319,16 @@ bool XMLParticleParser::putSpecial(xmlNodePtr cur) {
     ref_.Lattice.print(cout);
   }
   
+  if(randomizeR == "yes") {
+    if(ref_.Lattice.BoxBConds[0]) {
+      makeUniformRandom(ref_.R);
+      ref_.R.setUnit(PosUnit::LatticeUnit);
+      ref_.convert2Cart(ref_.R);
+    }  else {
+      ERRORMSG("Not know how to randomize R of an open system")
+    }
+  }
+
   vector<int> numPerGroup(tspecies.getTotalNum(),0);
   for(int iat=0; iat<ref_.GroupID.size(); iat++) {
     numPerGroup[ref_.GroupID[iat]]++;
