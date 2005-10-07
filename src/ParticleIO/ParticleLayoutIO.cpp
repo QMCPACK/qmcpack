@@ -75,7 +75,7 @@ namespace ohmmsqmc {
           double nrs=14;
           const xmlChar* n_ptr=xmlGetProp(cur,(const xmlChar*)"condition");
           if(n_ptr) { nrs = atof((const char*)n_ptr);}
-          double acubic=pow(4.0*nrs/3.0,1.0/3.0)*rs;
+          double acubic=pow(4.0*M_PI*nrs/3.0,1.0/3.0)*rs;
           ref_.R=0.0;
           ref_.R(0,0)=acubic;
           ref_.R(1,1)=acubic;
