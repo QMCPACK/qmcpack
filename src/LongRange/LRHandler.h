@@ -26,6 +26,10 @@ namespace ohmmsqmc {
     //This is how many different functions the derived class will decompose
     int NumFns;
 
+    //m_consts: the breakup has 3 parts: short, long & const. Const doesn't
+    //change unless cell varies => store as member
+    RealType m_consts;
+
   public:
     //Constructor
     LRHandler(ParticleLayout_t& ref) : Basis(ref) //Pass lattice to constructor of Basis.
@@ -46,7 +50,8 @@ namespace ohmmsqmc {
     virtual RealType evalSR() = 0;
     virtual RealType evalConsts() = 0;
     //Override IF needed.
-    virtual RealType evalTotal() { return (evalLR()+evalSR()+evalConsts()); }
+    //Constants are not particle position dependent - compute once only...
+    virtual RealType evalTotal() { return (evalLR()+evalSR()+m_consts); }
 
   protected:
     //Override this to provide Fk or Xk for a |k|. 
@@ -103,7 +108,7 @@ LRHandler<BreakupBasis>::InitBreakup(ParticleLayout_t& ref,int NumFunctions) {
   //Find size of basis from cutoffs
   RealType kc(ref.LR_kc); //User cutoff parameter...
   RealType kcut = max(25.0,kc); //
-  RealType kmax(300.0); //Use 3000/L here...
+  RealType kmax(300.0); //Use 3000/LMax here...
   breakuphandler.SetupKVecs(kc,kcut,kmax);
 
   //Set up x_k
@@ -118,6 +123,11 @@ LRHandler<BreakupBasis>::InitBreakup(ParticleLayout_t& ref,int NumFunctions) {
 
   for(int fn=0; fn<NumFns; fn++)
     breakuphandler.DoBreakup(Fk[fn],coefs[fn]); //Fill array of coefficients.
+
+  //Here we store the constant part of the potential. It only changes
+  //when cell-size or shape changes, in which case this function is 
+  //called again anyway. 
+  m_consts = this->evalConsts();
 }
 
 template<class BreakupBasis>
