@@ -50,6 +50,11 @@ namespace ohmmsqmc {
 
     ///constructor
     MolecularOrbitalBasis(): myTable(NULL){ }
+
+    ///constructor with ncenters
+    explicit MolecularOrbitalBasis(int ncenters): myTable(NULL){ 
+      for(int ic=0; ic<ncenters; ic++) AOs.push_back(0);
+    }
   
     /**
      @param atable the distance table (ion-electron)
@@ -145,12 +150,20 @@ namespace ohmmsqmc {
       }
     }
 
-    /**
+    /** add a new set of Centered Atomic Orbitals
      *@param aos a set of Centered Atomic Orbitals
-     *@brief add a new set of Centered Atomic Orbitals
      */
     inline void add(COT* aos) {
+      cout << "!!!!!! this should not be used !!!!!! " << endl;
       AOs.push_back(aos);
+    }
+
+    /** add a new set of Centered Atomic Orbitals
+     * @param aos a set of Centered Atomic Orbitals
+     * @param icenter the index of the center
+     */
+    inline void add(COT* aos, int icenter) {
+      AOs[icenter]=aos;
     }
 
     void print(std::ostream& os) {
