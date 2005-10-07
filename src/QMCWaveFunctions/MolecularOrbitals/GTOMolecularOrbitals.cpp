@@ -24,7 +24,7 @@ namespace ohmmsqmc {
 
   GTOMolecularOrbitals::GTOMolecularOrbitals(ParticleSet& els, TrialWaveFunction& psi, 
       ParticleSet& ions):
-    OrbitalBuilderBase(els,psi), Normalized(false),BasisSet(0), d_table(0)
+    OrbitalBuilderBase(els,psi), IonSys(ions), Normalized(false),BasisSet(0), d_table(0)
   { 
     //int d_ie = DistanceTable::add(ions,els);
     d_table = DistanceTable::getTable(DistanceTable::add(ions,els));
@@ -50,7 +50,8 @@ namespace ohmmsqmc {
   GTOMolecularOrbitals::BasisSetType* 
   GTOMolecularOrbitals::addBasisSet(xmlNodePtr cur) {
 
-    if(!BasisSet) BasisSet = new BasisSetType;
+    if(!BasisSet) 
+      BasisSet = new BasisSetType(IonSys.getSpeciesSet().getTotalNum());
 
     QuantumNumberType nlms;
     string rnl;
@@ -100,7 +101,8 @@ namespace ohmmsqmc {
 	map<string,int>::iterator it = CenterID.find(abasis); //search the species name
 	if(it == CenterID.end()) {//add the name to the map CenterID
 
-	  CenterID[abasis] = activeCenter = ncenters++;
+	  //CenterID[abasis] = activeCenter = ncenters++;
+          CenterID[abasis]=activeCenter=IonSys.getSpeciesSet().findSpecies(abasis);
 	  int Lmax(0); //maxmimum angular momentum of this center
           int num(0);//the number of localized basis functions of this center
 
@@ -162,7 +164,7 @@ namespace ohmmsqmc {
           cout << endl;
 
 	  //add the new atomic basis to the basis set
-	  BasisSet->add(aos);
+	  BasisSet->add(aos,activeCenter);
 	}else {
 	  WARNMSG("Species " << abasis << " is already initialized. Ignore the input.")
 	}

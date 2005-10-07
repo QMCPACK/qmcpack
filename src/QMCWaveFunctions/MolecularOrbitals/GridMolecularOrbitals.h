@@ -69,6 +69,9 @@ namespace ohmmsqmc {
 
     enum {DONOT_EXPAND=0, GAUSSIAN_EXPAND=1, NATURAL_EXPAND};
 
+    ///reference to the ionic system with which the basis set are associated
+    ParticleSet& IonSys;
+
     ///pointer to the BasisSet built by GridMolecularOrbitals
     BasisSetType*      BasisSet;
 

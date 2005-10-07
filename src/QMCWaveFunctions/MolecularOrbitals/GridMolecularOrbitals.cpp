@@ -29,7 +29,7 @@ namespace ohmmsqmc {
 
   GridMolecularOrbitals::GridMolecularOrbitals(ParticleSet& els, TrialWaveFunction& psi, 
       ParticleSet& ions):
-    OrbitalBuilderBase(els,psi), BasisSet(0), d_table(0), rbuilder(0)
+    OrbitalBuilderBase(els,psi), IonSys(ions), BasisSet(0), d_table(0), rbuilder(0)
   { 
     //int d_ie = DistanceTable::add(ions,els);
     d_table = DistanceTable::getTable(DistanceTable::add(ions,els));
@@ -56,7 +56,8 @@ namespace ohmmsqmc {
   GridMolecularOrbitals::BasisSetType* 
   GridMolecularOrbitals::addBasisSet(xmlNodePtr cur) {
 
-    if(!BasisSet) BasisSet = new BasisSetType;
+    if(!BasisSet) 
+      BasisSet = new BasisSetType(IonSys.getSpeciesSet().getTotalNum());
 
     QuantumNumberType nlms;
     string rnl;
@@ -126,7 +127,8 @@ namespace ohmmsqmc {
         else
           LOGMSG("Spherical Harmonics  DO NOT contain (-1)^m factor")
 
-	map<string,int>::iterator it = CenterID.find(abasis); //search the species name
+        //search the species name
+	map<string,int>::iterator it = CenterID.find(abasis); 
 	if(it == CenterID.end()) {//add the name to the map CenterID
           if(btype == "Numerical" || btype == "NG" || btype == "HFNG") {
             rbuilder = new NumericalRGFBuilder(cur);
@@ -134,7 +136,8 @@ namespace ohmmsqmc {
             rbuilder = new Any2GridBuilder(cur);
           }
 
-	  CenterID[abasis] = activeCenter = ncenters++;
+	  //CenterID[abasis] = activeCenter = ncenters++;
+          CenterID[abasis]=activeCenter=IonSys.getSpeciesSet().findSpecies(abasis);
 	  int Lmax(0); //maxmimum angular momentum of this center
           int num(0);//the number of localized basis functions of this center
 
@@ -202,7 +205,7 @@ namespace ohmmsqmc {
           cout << endl;
 
 	  //add the new atomic basis to the basis set
-	  BasisSet->add(aos);
+	  BasisSet->add(aos,activeCenter);
 
           rbuilder->print(abasis,1);
 
