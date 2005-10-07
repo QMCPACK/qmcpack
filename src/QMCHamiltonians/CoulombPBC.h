@@ -48,15 +48,12 @@ namespace ohmmsqmc {
     inline Return_t evaluate(ParticleSet& P) {  
 
       if(FirstTime || PtclRef.tag() == P.tag()) {
-        //d_ii->evaluate(PtclRef);
         Value = 0.0;
 
-	if(FirstTime)
+	if(FirstTime) //Init the breakup on first call.
 	  AA = new LRCoulombAA<LPQHIBasis>(PtclRef);
 
         Value = AA->evalTotal();
-
-	cout << endl << PtclRef.getName() << " AA->evalTotal = "<< Value << endl << endl;
 
 	FirstTime = false;
       }
