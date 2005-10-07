@@ -37,15 +37,13 @@ namespace ohmmsqmc {
     typedef MCWalkerConfiguration::ParticlePos_t ParticlePos_t;
  
     Vector<int> BeadSignWgt;    
-    Vector<ParticlePos_t*> Gradients;
+    //Vector<ParticlePos_t*> Gradients;
+    vector<ParticlePos_t*> Gradients;
     Matrix<RealType> Action;
     RealType TransProb[2];
 
-    inline Bead(const Bead& a) : 
-    Walker_t(a),Action(a.Action),Gradients(a.Gradients),
-    BeadSignWgt(a.BeadSignWgt){
-        TransProb[0]=a.TransProb[0];
-        TransProb[1]=a.TransProb[1];
+    inline Bead(const Bead& a) {
+      makeCopyBead(a); 
     }
 
     inline Bead(const Walker_t& a){
@@ -62,10 +60,10 @@ namespace ohmmsqmc {
 
     inline void makeCopyBead(const Bead& a){
       makeCopy(a);
-      Action.copy(a.Action);
       int rows=a.Gradients.size();
-      Gradients.resize(rows);
-      Gradients=a.Gradients;
+      Resize_Grad_and_Action(rows,a.size());
+      Action=a.Action;
+      for(int i=0; i<rows; i++) *Gradients[i] = *(a.Gradients[i]);
       BeadSignWgt.resize(rows);
       BeadSignWgt=a.BeadSignWgt;
       TransProb[0]=a.TransProb[0];
@@ -73,11 +71,12 @@ namespace ohmmsqmc {
     }
 
     inline void Resize_Grad_and_Action(int n, int m){
-       Gradients.resize(n);
-       for(int i=0; i<n; i++){
-	 Gradients[i]=new ParticlePos_t(m);
-       }
-       Action.resize(n,3);
+      int curg=Gradients.size();
+      while(curg<n) {
+        Gradients.push_back(new ParticlePos_t(m));
+        ++curg;
+      }
+      Action.resize(n,3);
     }
   };
 
@@ -103,16 +102,21 @@ namespace ohmmsqmc {
     Vector<RealType> GlobalAction,UmbrellaWeight;
     Vector<int>      GlobalSignWgt,RefSign;
 
-    // constructor    
-    MultiChain(Walker_t* awalker,int len, int direction, int npsi): 
+    /**  constructor    
+     * @param abead Bead used to generate len Beads to form a chain
+     * @param len size of the chain
+     * @param direction initial growth direction
+     * @param npsi number of Psi/H pairs
+     */
+    //MultiChain(Walker_t* awalker,int len, int direction, int npsi): 
+    MultiChain(Bead* abead,int len, int direction, int npsi): 
       GrowthDirection(direction), nPsi(npsi){
       //always add number of beads
       if(len%2 == 0) len++;
       Middle = len/2;
       Last = len-1;
       for(int i=0; i<len; i++) {
-	Bead* acopy=new Bead(*awalker);
-	push_back(acopy);
+        push_back(new Bead(*abead));
       }
       GlobalAction.resize(npsi);   GlobalAction=0.0;
       UmbrellaWeight.resize(npsi); UmbrellaWeight=1.0;

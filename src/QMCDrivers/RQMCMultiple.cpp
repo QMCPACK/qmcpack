@@ -84,11 +84,26 @@ namespace ohmmsqmc {
     //Initial direction of growth. To be read if calculation is restarted.
     int InitialGrowthDirection(0);
 
-    //Reptile is made up by replicating the first walker. To be read if restarted.
-    if(Reptile == 0) Reptile=new MultiChain(*W.begin(),ReptileLength,InitialGrowthDirection,nPsi);
+    //Build NewBead. This takes care of a bunch of resizing operation and properties of the starting bead
+    if(NewBead == 0) {
+      NewBead=new Bead(**W.begin());
+      W.R = NewBead->R;
+      W.update();
+      for(int ipsi=0; ipsi<nPsi; ipsi++) {
+        NewBead->Properties(ipsi,LOGPSI) = Psi1[ipsi]->evaluateLog(W);
+        NewBead->Properties(ipsi,SIGN) = Psi1[ipsi]->getSign();
+        RealType eloc= H1[ipsi]->evaluate(W);
+        NewBead->Properties(ipsi,LOCALENERGY)= eloc;
+        H1[ipsi]->saveProperty(NewBead->getPropertyBase(ipsi));
+	*(NewBead->Gradients[ipsi])=W.G;
+      }
+    }
 
-    //Build NewBead. This takes care of a bunch of resizing operation.
-    NewBead=new Bead(**W.begin());
+    //Reptile is made up by replicating the first walker. To be read if restarted.
+    //if(Reptile == 0) Reptile=new MultiChain(*W.begin(),ReptileLength,InitialGrowthDirection,nPsi);
+    if(Reptile == 0) 
+      Reptile=new MultiChain(NewBead,ReptileLength,InitialGrowthDirection,nPsi);
+
 
     ///Assign a bunch of useful pointers
     MultiChain::iterator first_bead(Reptile->begin()), bead_end(Reptile->end());
@@ -100,23 +115,24 @@ namespace ohmmsqmc {
       ///Pointer to the current walker
       Bead& curW(**bead);
 
-      ///Copy to W (ParticleSet) to compute distances, Psi and H
-      W.R=curW.R;
-
-      ///Compute Distances
-      //DistanceTable::update(W);
-      W.update();
+      //Do not re-evaluate the Properties
+      ////Copy to W (ParticleSet) to compute distances, Psi and H
+      //W.R=curW.R;
+      //W.update();
 
       ///loop over WF to compute contribution to the action and WF
       for(int ipsi=0; ipsi<nPsi; ipsi++) {
 
-	///Compute Energy and Psi and save in curW
-	curW.Properties(ipsi,LOGPSI) = Psi1[ipsi]->evaluateLog(W);
-	RealType BeadSign = curW.Properties(ipsi,SIGN) = Psi1[ipsi]->getSign();
-	RealType eloc= H1[ipsi]->evaluate(W);
-	curW.Properties(ipsi,LOCALENERGY)= eloc;
-	H1[ipsi]->saveProperty(curW.getPropertyBase(ipsi));
-	*curW.Gradients[ipsi]=W.G;
+	////Compute Energy and Psi and save in curW
+	//curW.Properties(ipsi,LOGPSI) = Psi1[ipsi]->evaluateLog(W);
+	//RealType BeadSign = curW.Properties(ipsi,SIGN) = Psi1[ipsi]->getSign();
+	//RealType eloc= H1[ipsi]->evaluate(W);
+	//curW.Properties(ipsi,LOCALENERGY)= eloc;
+	//H1[ipsi]->saveProperty(curW.getPropertyBase(ipsi));
+	//*curW.Gradients[ipsi]=W.G;
+        
+	RealType BeadSign = curW.Properties(ipsi,SIGN);
+        RealType eloc=curW.Properties(ipsi,LOCALENERGY);
 
 	///Initialize Kinetic Action
 	RealType KinActMinus=0.0;
