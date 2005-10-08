@@ -191,6 +191,18 @@ public:
     }
   }
 
+  template<class Msg>
+    inline Msg& putMessage(Msg& m) {
+      m.Pack(&X[0],D1*D2);
+      return m;
+    }
+
+  template<class Msg>
+    inline Msg& getMessage(Msg& m) {
+      m.Unpack(&X[0],D1*D2);
+      return m;
+    }
+
 protected:
   size_type D1, D2;
   Container_t X;

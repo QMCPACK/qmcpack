@@ -172,6 +172,16 @@ public:
   //  return m;
   //}
 
+  template<class Msg> inline Msg& putMessage(Msg& m) {
+      m.Pack(X,Size);
+      return m;
+    }
+
+  template<class Msg> inline Msg& getMessage(Msg& m) {
+      m.Unpack(X,Size);
+      return m;
+    }
+
 private:
 
   // Just store D elements of type T.
