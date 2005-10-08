@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////
-// (c) Copyright 2003  by Jeongnim Kim and Jordan Vincent
+// (c) Copyright 2003-  by Jeongnim Kim
 //////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////
 //   National Center for Supercomputing Applications &
@@ -77,6 +77,18 @@ public:
 
   inline void print(std::ostream& os) {
     std::copy(this->begin(), this->end(), ostream_iterator<T>(os," "));
+  }
+
+  template<class Msg>
+  inline Msg& putMessage(Msg& m) {
+    m.Pack(&((*this)[0]),this->size());
+    return m;
+  }
+
+  template<class Msg>
+  inline Msg& getMessage(Msg& m) {
+    m.Unpack(&((*this)[0]),this->size());
+    return m;
   }
 };
 #endif
