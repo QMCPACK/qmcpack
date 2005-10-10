@@ -6,6 +6,7 @@
 #include "LongRange/StructFact.h"
 #include "Particle/DistanceTableData.h"
 #include "Particle/DistanceTable.h"
+#include "Message/Communicate.h"
 
 namespace ohmmsqmc {
 
@@ -164,7 +165,7 @@ LRCoulombAA<BreakupBasis>::evalSR() {
   RealType SR=0.0;
 
   //Update the distance-table
-  d_aa->evaluate(PtclRef);
+  //  d_aa->evaluate(PtclRef);
 
   for(int ipart=0; ipart<NParticles; ipart++){
     RealType esum = 0.0;
