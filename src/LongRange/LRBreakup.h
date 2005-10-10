@@ -5,6 +5,7 @@
 #include "Particle/ParticleSet.h"
 #include "LongRange/KContainer.h"
 #include "Numerics/Blasf.h"
+#include <cassert>
 
 namespace ohmmsqmc {
 
