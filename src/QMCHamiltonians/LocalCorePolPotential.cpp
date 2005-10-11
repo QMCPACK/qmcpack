@@ -46,6 +46,11 @@ namespace ohmmsqmc {
     for(int i=0; i<InpCPP.size(); i++) if(InpCPP[i]) delete InpCPP[i];
   }
   
+
+  void LocalCorePolPotential::resetTargetParticleSet(ParticleSet& P) {
+    d_ie = DistanceTable::getTable(DistanceTable::add(d_ie->origin(),P));
+  }
+
   /** process xml node for each element
    * @param cur xmlnode <element name="string" alpha="double" rb="double"/> 
    */

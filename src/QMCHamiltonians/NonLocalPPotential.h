@@ -153,6 +153,8 @@ namespace ohmmsqmc {
 
     ~NonLocalPPotential();
 
+    void resetTargetParticleSet(ParticleSet& P);
+
     Return_t evaluate(ParticleSet& P);
 
     /** Do nothing */

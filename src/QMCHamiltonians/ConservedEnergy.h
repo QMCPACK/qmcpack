@@ -63,6 +63,8 @@ namespace ohmmsqmc {
     ConservedEnergy(){}
     ~ConservedEnergy() { }
 
+    void resetTargetParticleSet(ParticleSet& P) { }
+
     Return_t 
     evaluate(ParticleSet& P) {
       RealType gradsq = 0.0;

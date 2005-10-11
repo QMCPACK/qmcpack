@@ -57,6 +57,10 @@ namespace ohmmsqmc {
       }
     }
     
+    void resetTargetParticleSet(ParticleSet& P)  {
+      d_table = DistanceTable::getTable(DistanceTable::add(d_table->origin(),P));
+    }
+
     ~CoulombPotentialAB() { }
 
     inline Return_t evaluate(ParticleSet& P) {
@@ -124,6 +128,10 @@ namespace ohmmsqmc {
     }
 
     ~CoulombPotentialAA() { }
+
+    void resetTargetParticleSet(ParticleSet& P)  {
+      d_table = DistanceTable::getTable(DistanceTable::add(P,P));
+    }
 
     inline Return_t 
     evaluate(ParticleSet& P) {

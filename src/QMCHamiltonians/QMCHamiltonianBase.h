@@ -58,6 +58,11 @@ namespace ohmmsqmc {
     ///virtual destructor
     virtual ~QMCHamiltonianBase() { }
 
+    /** reset the data with the target ParticleSet
+     * @param P new target ParticleSet
+     */
+    virtual void resetTargetParticleSet(ParticleSet& P) = 0;
+
     /** Evaluate the local energies of an N-particle configuration
      *@param P input configuration containing N particles
      *@return the value of the Hamiltonian

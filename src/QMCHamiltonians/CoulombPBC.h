@@ -45,6 +45,11 @@ namespace ohmmsqmc {
       if(AA) delete AA;
     }
 
+    void resetTargetParticleSet(ParticleSet& P) {
+      ERRORMSG("CoulombPBCAA::resetTargetParticleSet IS NOT VALID")
+      //AA->resetTargetParticleSet(P);
+    }
+
     inline Return_t evaluate(ParticleSet& P) {  
 
       if(FirstTime || PtclRef.tag() == P.tag()) {

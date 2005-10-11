@@ -126,6 +126,8 @@ namespace ohmmsqmc {
      */
     Return_t evaluate(ParticleSet& P);
 
+    void resetTargetParticleSet(ParticleSet& P);
+
    private:
 
     ///Current Local Energy

@@ -104,6 +104,8 @@ namespace ohmmsqmc {
 
     ~LocalCorePolPotential();
 
+    void resetTargetParticleSet(ParticleSet& P);
+
     Return_t evaluate(ParticleSet& P);
 
     bool put(xmlNodePtr cur);

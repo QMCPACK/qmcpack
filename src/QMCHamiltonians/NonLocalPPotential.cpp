@@ -119,6 +119,10 @@ namespace ohmmsqmc {
         return esum;
       }
 
+  void NonLocalPPotential::resetTargetParticleSet(ParticleSet& P) {
+    d_table = DistanceTable::getTable(DistanceTable::add(d_table->origin(),P));
+  }
+
   /** constructor
    *\param ions the positions of the ions
    *\param els the positions of the electrons

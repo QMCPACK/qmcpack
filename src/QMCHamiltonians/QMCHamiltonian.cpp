@@ -122,6 +122,11 @@ QMCHamiltonian::getHamiltonian(const string& aname) {
     return H[(*it).second];
 }
 
+void
+QMCHamiltonian::resetTargetParticleSet(ParticleSet& P) {
+  for(int i=0; i<H.size(); i++) H[i]->resetTargetParticleSet(P);
+}
+
 //Meant for vectorized operators. Not so helpful.
 ///**
 // *@param W a set of walkers (N-particle configurations)

@@ -54,6 +54,8 @@ namespace ohmmsqmc {
     ///destructor
     ~BareKineticEnergy() { }
 
+    void resetTargetParticleSet(ParticleSet& P) { }
+
     inline Return_t 
     evaluate(ParticleSet& P) {
       Value = 0.0;
