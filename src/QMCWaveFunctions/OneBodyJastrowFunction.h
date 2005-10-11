@@ -97,6 +97,11 @@ namespace ohmmsqmc {
 	//for(int i=0; i<F.size(); i++) delete F[i];
     }
 
+    //evaluate the distance table with P
+    void resetTargetParticleSet(ParticleSet& P) {
+      d_table = DistanceTable::getTable(DistanceTable::add(d_table->origin(),P));
+    }
+
     void reset() { 
       for(int i=0; i<F.size(); i++) F[i]->reset();
     }

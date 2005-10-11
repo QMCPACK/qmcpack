@@ -137,6 +137,11 @@ namespace ohmmsqmc {
       for(int i=0; i<F.size(); i++) F[i]->reset();
     }
 
+    //evaluate the distance table with els
+    void resetTargetParticleSet(ParticleSet& P) {
+      d_table = DistanceTable::getTable(DistanceTable::add(P,P));
+    }
+
     /** 
      *@param P input configuration containing N particles
      *@param G a vector containing N gradients

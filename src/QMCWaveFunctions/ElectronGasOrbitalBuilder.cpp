@@ -121,6 +121,9 @@ namespace ohmmsqmc {
     sdet->add(updet);
     sdet->add(downdet);
 
+    //add a DummyBasisSet
+    sdet->setBasisSet(new DummyBasisSet);
+
     //add Slater determinant to targetPsi
     targetPsi.add(sdet);
 

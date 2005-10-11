@@ -35,6 +35,11 @@ namespace ohmmsqmc {
     for(int i=0; i<SPOSet.size(); i++) delete SPOSet[i];
   }
   
+  void 
+  TrialWaveFunction::resetTargetParticleSet(ParticleSet& P) {
+    for(int i=0; i<Z.size(); i++) Z[i]->resetTargetParticleSet(P);
+  }
+
   /** add an ObritalBase
    *@param aterm a many-body wavefunction 
    */

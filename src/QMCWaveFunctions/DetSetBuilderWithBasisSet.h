@@ -70,7 +70,7 @@ namespace ohmmsqmc {
       ///vector of coefficients of the Slater determinants
       std::vector<RealType> sdet_coeff;
       ///pointer to the basis set
-      BasisSetType *basisSet =NULL;
+      BasisSetType *basisSet =0;
 
       int nvar(targetPsi.VarList.size());
       int is=0, first=0;
@@ -142,6 +142,11 @@ namespace ohmmsqmc {
       if(optimizeit) {
         WARNMSG("Slater determinants will be optimized")
       }
+
+      //set the basis set
+      XMLReport("Assigning BasisSet to the first SlaterDeterminant")
+      slaterdets[0]->setBasisSet(basisSet);
+
       if(slaterdets.size() > 1) {
 	XMLReport("Creating a multi-determinant wavefunction")
 	MultiSlaterDeterminant<SPOSetType>
@@ -159,7 +164,6 @@ namespace ohmmsqmc {
 	//add a SlaterDeterminant to the trial wavefuntion
 	targetPsi.add(slaterdets[0]);
         if(targetPsi.VarList.size()>nvar) slaterdets[0]->setOptimizable(true);
-	//add a MultiDeterminant to the trial wavefuntion
       }
       NumPtcl=first; 
       return (NumPtcl> 0);

@@ -151,6 +151,10 @@ namespace ohmmsqmc {
     ///reset the single-particle orbital set
     inline void reset() { Phi.reset(); }
    
+    void resetTargetParticleSet(ParticleSet& P) { 
+      Phi.resetTargetParticleSet(P);
+    }
+
     ///reset the size: with the number of particles and number of orbtials
     inline void resize(int nel, int morb) {
       int norb=morb;
@@ -396,11 +400,9 @@ namespace ohmmsqmc {
 
     ///return the number of rows (or the number of electrons)
     inline int rows() const { return NumPtcls;}
-    //inline int rows() const { return psiM.rows();}
 
     ///return the number of coloumns  (or the number of orbitals)
     inline int cols() const { return NumOrbitals;}
-    //inline int cols() const { return psiM.cols();}
 
     ///evaluate log of determinant for a particle set: should not be called 
     ValueType
@@ -499,6 +501,7 @@ namespace ohmmsqmc {
 				     ParticleSet::ParticleLaplacian_t& L) {
 
     Phi.evaluate(P, FirstIndex, LastIndex, psiM,dpsiM, d2psiM);
+
     if(NumPtcls==1) {
       CurrentDet=psiM(0,0);
       ValueType y=1.0/CurrentDet;

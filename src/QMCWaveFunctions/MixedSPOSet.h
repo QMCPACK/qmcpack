@@ -19,6 +19,7 @@
 
 #include "Configuration.h"
 #include "Numerics/TriCubicSplineT.h"
+#include "QMCWaveFunctions/DummyBasisSet.h"
 
 namespace ohmmsqmc {
 
@@ -34,6 +35,7 @@ namespace ohmmsqmc {
 
     //@typedef numerical orbitals
     typedef TriCubicSplineT<ValueType,RealType>  NGOType;
+    typedef typename LOType::BasisSet_t          BasisSet_t;
 
     ///the number of Orbitals
     int NumberOfOrbitals;
@@ -73,6 +75,10 @@ namespace ohmmsqmc {
       if(LocalizedOrbitals) LocalizedOrbitals->reset();
       NumberOfOrbitals=GridOrbitals.size();
       //for(int j=0; j<NumberOfOrbitals; j++) GridOrbitals[j]->reset();
+    }
+
+    void resetTargetParticleSet(ParticleSet& P) {
+      if(LocalizedOrbitals) LocalizedOrbitals->resetTargetParticleSet(P);
     }
 
     inline void resizeByWalkers(int nw) {

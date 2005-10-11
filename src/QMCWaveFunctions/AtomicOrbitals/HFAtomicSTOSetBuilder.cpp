@@ -246,12 +246,15 @@ HFAtomicSTOSetBuilder::put(xmlNodePtr cur){
   if(slaterdets.size() > 1) {
     MultiSlaterDeterminant<HFAtomicSTOSet> *multidet=
       new MultiSlaterDeterminant<HFAtomicSTOSet>;
+    HFAtomicSTOSet::BasisSet_t *bs=new HFAtomicSTOSet::BasisSet_t;
     for(int i=0; i<slaterdets.size(); i++) {
-	    cout << "Multi determinant " << C[i] << endl;
+      cout << "Multi determinant " << C[i] << endl;
+      slaterdets[i]->setBasisSet(bs);
       multidet->add(slaterdets[i],C[i]);
     }
     targetPsi.add(multidet);
   } else {
+    slaterdets[0]->setBasisSet(new HFAtomicSTOSet::BasisSet_t);
     targetPsi.add(slaterdets[0]);
   }
   return true;

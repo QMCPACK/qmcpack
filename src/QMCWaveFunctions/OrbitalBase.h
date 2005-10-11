@@ -63,6 +63,11 @@ namespace ohmmsqmc {
      */
     virtual void resizeByWalkers(int nwalkers) {}
 
+    /** reset properties, e.g., distance tables, for a new target ParticleSet
+     * @param P ParticleSet
+     */
+    virtual void resetTargetParticleSet(ParticleSet& P)=0;
+
     /** evaluate the value of the orbital for a configuration P.R
      *@param P  active ParticleSet
      *@param G  Gradients
@@ -116,12 +121,28 @@ namespace ohmmsqmc {
 			    ParticleSet::ParticleGradient_t& dG,
 			    ParticleSet::ParticleLaplacian_t& dL) = 0;
 
+    /** evaluate the log ratio of the new to old orbital value
+     *@param P the active ParticleSet
+     *@param iat the index of a particle
+     *@param dG the differential gradient
+     *@param dL the differential laplacian
+     *@return \f$ \log\[\psi( \{ {\bf R}^{'} \} )/ \psi( \{ {\bf R}^{'} \})\] \f$
+     *
+     *Paired with update(ParticleSet& P, int iat).
+     */
     virtual ValueType logRatio(ParticleSet& P, int iat,
 			    ParticleSet::ParticleGradient_t& dG,
 			    ParticleSet::ParticleLaplacian_t& dL) = 0;
 
+    /** a move for iat-th particle is accepted. Update the content for the next moves
+     * @param P target ParticleSet
+     * @param iat index of the particle whose new position was proposed
+     */
     virtual void update(ParticleSet& P, int iat) =0;
 
+    /** a move for iat-th particle is reject. Restore to the content.
+     * @param iat index of the particle whose new position was proposed
+     */
     virtual void restore(int iat) = 0;
 
     /** evalaute the ratio of the new to old orbital value

@@ -72,6 +72,10 @@ public:
     if(Optimizable) for(int i=0; i<SDets.size(); i++) SDets[i]->reset();
   }
 
+  void resetTargetParticleSet(ParticleSet& P) {
+    for(int i=0; i<SDets.size(); i++) SDets[i]->resetTargetParticleSet(P);
+  }
+
   void initParameters() { }
 
   inline ValueType

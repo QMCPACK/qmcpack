@@ -20,6 +20,7 @@
 #define OHMMS_QMC_MOLECULARORBITALBASIS_H
 
 #include "OhmmsPETE/OhmmsMatrix.h"
+#include "Particle/DistanceTable.h"
 
 namespace ohmmsqmc {
 
@@ -83,6 +84,14 @@ namespace ohmmsqmc {
 
     void reset() {
       for(int i=0; i<AOs.size(); i++) AOs[i]->reset();
+    }
+    
+
+    /** reset the distance table with a new target P
+     */
+    void resetTargetParticleSet(ParticleSet& P) {
+      myTable = DistanceTable::getTable(DistanceTable::add(myTable->origin(),P));
+      for(int i=0; i<AOs.size(); i++) AOs[i]->reset(myTable);
     }
 
     /**

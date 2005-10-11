@@ -18,6 +18,7 @@
 #define OHMMS_QMC_ELECTRONGAS_ORBITALS_H
 
 #include "QMCWaveFunctions/OrbitalBuilderBase.h"
+#include "QMCWaveFunctions/DummyBasisSet.h"
 namespace ohmmsqmc {
 
   /** OrbitalBuilder for Slater determinants of electron-gas 
@@ -32,6 +33,9 @@ namespace ohmmsqmc {
     bool put(xmlNodePtr cur);
 
     struct EGOSet {
+
+      typedef DummyBasisSet BasisSet_t;
+
       int KptMax;
       RealType kdotr;
       vector<PosType> K;
@@ -40,6 +44,7 @@ namespace ohmmsqmc {
       EGOSet(const vector<PosType>& k, const vector<RealType>& k2);
 
       inline void reset() { }
+      inline void resetTargetParticleSet(ParticleSet& P) { }
       inline void resizeByWalkers(int nwalkers) {}
       inline ValueType
       evaluate(const ParticleSet& P, int iat, int jorb) {

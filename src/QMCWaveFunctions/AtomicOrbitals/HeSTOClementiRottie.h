@@ -17,6 +17,8 @@
 #ifndef OHMMS_QMC_HEPRESETHF_H
 #define OHMMS_QMC_HEPRESETHF_H
 #include "QMCWaveFunctions/OrbitalBuilderBase.h"
+#include "QMCWaveFunctions/DummyBasisSet.h"
+#include "Particle/DistanceTable.h"
 
 namespace ohmmsqmc {
 
@@ -41,6 +43,7 @@ namespace ohmmsqmc {
    */
   struct HePresetHF: public QMCTraits {
     
+    typedef DummyBasisSet                     BasisSet_t;
     enum {N=5};
     ///array containing the coefficients
     TinyVector<RealType,N> C;
@@ -60,13 +63,18 @@ namespace ohmmsqmc {
     
     inline void reset() { }
     
+    //evaluate the distance table with P
+    void resetTargetParticleSet(ParticleSet& P) {
+      d_table = DistanceTable::getTable(DistanceTable::add(d_table->origin(),P));
+    }
+
     inline void resizeByWalkers(int nw) { }
 
     template<class VV>
     inline 
     void 
     evaluate(const ParticleSet& P, int iat, VV& phi) {
-      RealType r(myTable->Temp[0].r1);
+      RealType r(d_table->Temp[0].r1);
       RealType chi(0.0);
       for(int i=0; i<C.size(); i++) {
         chi += C[i]*exp(-Z[i]*r);
@@ -83,9 +91,9 @@ namespace ohmmsqmc {
     inline 
     void 
     evaluate(const ParticleSet& P, int iat, VV& phi, GV& dphi, VV& d2phi ) {
-      RealType r = myTable->Temp[0].r1;
-      RealType rinv = myTable->Temp[0].rinv1;
-      PosType dr = myTable->Temp[0].dr1;
+      RealType r = d_table->Temp[0].r1;
+      RealType rinv = d_table->Temp[0].rinv1;
+      PosType dr = d_table->Temp[0].dr1;
       RealType chi = 0.0, d2chi = 0.0;
       PosType dchi;
       for(int i=0; i<C.size(); i++) {
@@ -128,9 +136,9 @@ namespace ohmmsqmc {
     inline void 
     evaluate(const ParticleSet& P, int first, int last,
 	     VM& logdet, GM& dlogdet, VM& d2logdet) {
-      RealType r = myTable->r(first);
-      RealType rinv = myTable->rinv(first);
-      PosType dr = myTable->dr(first);
+      RealType r = d_table->r(first);
+      RealType rinv = d_table->rinv(first);
+      PosType dr = d_table->dr(first);
       RealType rinv2 = rinv*rinv;
       RealType chi = 0.0, d2chi = 0.0;
       PosType dchi;
@@ -155,9 +163,9 @@ namespace ohmmsqmc {
       int nptcl = last-first;
       for(int iw=0; iw<W.walkers(); iw++) {
 	int nn = first;///first pair of the particle subset
-	RealType r = myTable->r(iw,first);
-	RealType rinv = myTable->rinv(iw,first);
-	PosType dr = myTable->dr(iw,first);
+	RealType r = d_table->r(iw,first);
+	RealType rinv = d_table->rinv(iw,first);
+	PosType dr = d_table->dr(iw,first);
 	RealType rinv2 = rinv*rinv;
 	RealType chi = 0.0, d2chi = 0.0;
 	PosType dchi;
@@ -175,8 +183,8 @@ namespace ohmmsqmc {
       }
     }
 ///set the distance table for the single particle orbital
-    void setTable(DistanceTableData* dtable) { myTable = dtable;}
-    DistanceTableData* myTable;
+    void setTable(DistanceTableData* dtable) { d_table = dtable;}
+    DistanceTableData* d_table;
   };
 
 

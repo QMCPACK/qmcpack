@@ -19,6 +19,8 @@
 #include "Configuration.h"
 #include "QMCWaveFunctions/OrbitalBase.h"
 #include "QMCWaveFunctions/DiracDeterminant.h"
+#include "Message/Communicate.h"
+#include "Utilities/OhmmsInfo.h"
 
 namespace ohmmsqmc {
 
@@ -44,6 +46,7 @@ namespace ohmmsqmc {
    *engine which fills in single-particle orbital terms.  
    * 
    *@note MultiSlaterDeterminant is a linear combination of SlaterDeterminants.
+   *@todo Use BasisSet for particle-by-particle update
    */
   template<class SPOSet>
   class SlaterDeterminant: public OrbitalBase {
@@ -51,9 +54,10 @@ namespace ohmmsqmc {
   public:
 
     typedef DiracDeterminant<SPOSet> Determinant_t;
+    typedef typename SPOSet::BasisSet_t BasisSet_t;
 
     /// constructor
-    SlaterDeterminant() {M.resize(3,0);Optimizable=false;}
+    SlaterDeterminant():BasisSet(0) {M.resize(3,0);Optimizable=false;}
 
     ///destructor
     ~SlaterDeterminant() { }
@@ -71,6 +75,14 @@ namespace ohmmsqmc {
       if(Optimizable) for(int i=0; i<Dets.size(); i++) Dets[i]->reset();
     }
 
+    void resetTargetParticleSet(ParticleSet& P) {
+      BasisSet->resetTargetParticleSet(P);
+      for(int i=0; i<Dets.size(); i++) Dets[i]->resetTargetParticleSet(P);
+    }
+
+    void setBasisSet(BasisSet_t* bs) {
+      BasisSet=bs;
+    }
     /** Calculate the value of the Slater determinant for the input configuration. 
      *@param P input configuration containing N particles
      *@param G a vector containing N gradients
@@ -93,6 +105,14 @@ namespace ohmmsqmc {
     evaluateLog(ParticleSet& P, 
 	        ParticleSet::ParticleGradient_t& G, 
 	        ParticleSet::ParticleLaplacian_t& L) {
+      //@attention BasisSet::evaluate is to be called but the due to the bugs, it is commented out.
+      //if(BasisSet == 0) 
+      //{
+      //  ERRORMSG("SlaterDeterminant::BasisSet is not assigned")
+      //  OHMMS::Controller->abort();
+      //}
+      //BasisSet->evaluate(P);
+
       ValueType psi = 1.0;
       for(int i=0; i<Dets.size(); i++) psi *= Dets[i]->evaluate(P,G,L);
       SignValue = (psi<0.0)?-1.0:1.0;
@@ -120,7 +140,9 @@ namespace ohmmsqmc {
     /** similar to evaluateLog 
      */
     ValueType registerData(ParticleSet& P, PooledData<RealType>& buf){
-      //for(int i=0; i<Dets.size(); i++) Dets[i]->registerData(P,buf);
+
+      //BasisSet->evaluate(P);
+
       ValueType psi = 1.0;
       for(int i=0; i<Dets.size(); i++) 
         psi *= Dets[i]->registerData(P,buf);
@@ -159,6 +181,9 @@ namespace ohmmsqmc {
     }
 
     ValueType evaluate(ParticleSet& P, PooledData<RealType>& buf) {
+
+      //BasisSet->evaluate(P);
+
       ValueType r=1.0;
       for(int i=0; i<Dets.size(); i++) 	r *= Dets[i]->evaluate(P,buf);
       return r;
@@ -180,24 +205,15 @@ namespace ohmmsqmc {
     
     inline void restore(int iat) {
       return Dets[DetID[iat]]->restore(iat);
-      //int i=1;
-      //while(iat>=M[i]) {i++;}
-      //Dets[i-1]->restore(iat);
     }
 
     inline void update(ParticleSet& P, int iat) {
       Dets[DetID[iat]]->update(P,iat);
-      //int i=1;
-      //while(iat>=M[i]) {i++;}
-      //Dets[i-1]->update(P,iat);
     }
 
     ValueType
     ratio(ParticleSet& P, int iat) {
       return Dets[DetID[iat]]->ratio(P,iat);
-      //int i=1;
-      //while(iat>=M[i]) {i++;}
-      //return Dets[i-1]->ratio(P,iat);
     } 	  
 
     void update(ParticleSet& P, 
@@ -205,9 +221,6 @@ namespace ohmmsqmc {
 		ParticleSet::ParticleLaplacian_t& dL,
 		int iat) {
       return Dets[DetID[iat]]->update(P,dG,dL,iat);
-      //int i=1;
-      //while(iat>=M[i]) {i++;}
-      //Dets[i-1]->update(P,dG,dL,iat);
     }
 
 
@@ -216,6 +229,7 @@ namespace ohmmsqmc {
     vector<int> DetID;
     ///container for the DiracDeterminants
     vector<Determinant_t*>  Dets;
+    BasisSet_t* BasisSet;
   };
 }
 #endif

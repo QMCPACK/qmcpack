@@ -16,9 +16,10 @@
 // -*- C++ -*-
 #ifndef OHMMS_QMC_ATOMIC_HARTREEFOCK_STO_H
 #define OHMMS_QMC_ATOMIC_HARTREEFOCK_STO_H
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 #include "Numerics/SlaterTypeOrbital.h"
 #include "Numerics/SphericalTensor.h"
+#include "QMCWaveFunctions/DummyBasisSet.h"
 
 namespace ohmmsqmc {
 
@@ -112,9 +113,10 @@ namespace ohmmsqmc {
     typedef GenericSTO<RealType>              RadialOrbital_t;
     typedef ComboSTO<RealType,PosType>        SPO_t;
 
+    typedef DummyBasisSet                     BasisSet_t;
+
     ///unique set of orbitals
     SphericalHarmonics_t Ylm;
-    
     vector<RadialOrbital_t*> RnlPool;
     vector<SPO_t*> Orbital;
     
@@ -124,9 +126,14 @@ namespace ohmmsqmc {
     explicit HFAtomicSTOSet(int lmax): Ylm(lmax) { }
     
     ///reference to a DistanceTableData
-    const DistanceTableData* myTable;
+    const DistanceTableData* d_table;
     
     inline void reset() { }
+
+    //evaluate the distance table with P
+    void resetTargetParticleSet(ParticleSet& P) {
+      d_table = DistanceTable::getTable(DistanceTable::add(d_table->origin(),P));
+    }
     
     inline void resizeByWalkers(int nw) { }
     
@@ -135,9 +142,9 @@ namespace ohmmsqmc {
     template<class VV>
     inline void evaluate(const ParticleSet& P, int iat, VV& phi) {
 
-      RealType r(myTable->Temp[0].r1);
-      RealType rinv(myTable->Temp[0].rinv1);
-      PosType dr(myTable->Temp[0].dr1);
+      RealType r(d_table->Temp[0].r1);
+      RealType rinv(d_table->Temp[0].rinv1);
+      PosType dr(d_table->Temp[0].dr1);
 
       Ylm.evaluate(dr);
       for(int nl=0; nl<RnlPool.size(); nl++)  {
@@ -151,9 +158,9 @@ namespace ohmmsqmc {
     // evaluate the single-particle orbital value of iat-th el
     template<class VV, class GV>
     inline void evaluate(const ParticleSet& P, int iat, VV& phi, GV& dphi, VV& d2phi ) {
-      RealType r(myTable->Temp[0].r1);
-      RealType rinv(myTable->Temp[0].rinv1);
-      PosType dr(myTable->Temp[0].dr1);
+      RealType r(d_table->Temp[0].r1);
+      RealType rinv(d_table->Temp[0].rinv1);
+      PosType dr(d_table->Temp[0].dr1);
       Ylm.evaluateAll(dr);
       for(int nl=0; nl<RnlPool.size(); nl++)  {
         RnlPool[nl]->evaluateAll(r,rinv);
@@ -170,9 +177,9 @@ namespace ohmmsqmc {
       int nptcl = last-first;
       int nn = first;///first pair of the particle subset
       for(int i=0; i<nptcl; i++, nn++) {
-	RealType r(myTable->r(nn));
-	RealType rinv(myTable->rinv(nn));
-	PosType dr(myTable->dr(nn));
+	RealType r(d_table->r(nn));
+	RealType rinv(d_table->rinv(nn));
+	PosType dr(d_table->dr(nn));
 	Ylm.evaluateAll(dr);
 	for(int nl=0; nl<RnlPool.size(); nl++)  {
 	  RnlPool[nl]->evaluateAll(r,rinv);
@@ -193,9 +200,9 @@ namespace ohmmsqmc {
       int nptcl = last-first;
       for(int i=0,nn=first; i<nptcl; i++, nn++) {
         for(int iw=0; iw<W.walkers(); iw++) {
-          RealType r = myTable->r(iw,nn);
-          RealType rinv = myTable->rinv(iw,nn);
-          PosType dr = myTable->dr(iw,nn);
+          RealType r = d_table->r(iw,nn);
+          RealType rinv = d_table->rinv(iw,nn);
+          PosType dr = d_table->dr(iw,nn);
           Ylm.evaluateAll(dr);
           for(int nl=0; nl<RnlPool.size(); nl++) RnlPool[nl]->evaluateAll(r,rinv);
           for(int j=0; j<Orbital.size(); j++)  
@@ -207,9 +214,9 @@ namespace ohmmsqmc {
       for(int iw=0; iw<W.walkers(); iw++) {
 	int nn = first;///first pair of the particle subset
 	for(int i=0; i<nptcl; i++, nn++) {
-	  RealType r = myTable->r(iw,nn);
-	  RealType rinv = myTable->rinv(iw,nn);
-	  PosType dr = myTable->dr(iw,nn);
+	  RealType r = d_table->r(iw,nn);
+	  RealType rinv = d_table->rinv(iw,nn);
+	  PosType dr = d_table->dr(iw,nn);
 	  Ylm.evaluateAll(dr);
 	  for(int nl=0; nl<RnlPool.size(); nl++)  {
 	    RnlPool[nl]->evaluateAll(r,rinv);
@@ -223,7 +230,7 @@ namespace ohmmsqmc {
 #endif
     }
 
-    void setTable(DistanceTableData* dtable) { myTable =dtable;}
+    void setTable(DistanceTableData* dtable) { d_table =dtable;}
 
   };
 }

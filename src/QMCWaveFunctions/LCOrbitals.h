@@ -46,6 +46,7 @@ namespace ohmmsqmc {
 
   public:
 
+    typedef BS                     BasisSet_t;
     typedef typename BS::RealType  RealType;
     typedef typename BS::ValueType ValueType;
     typedef typename BS::PosType   PosType;
@@ -94,6 +95,11 @@ namespace ohmmsqmc {
     inline int numBasis() const { return BasisSet->TotalBasis;}
 
     inline void reset() { BasisSet->reset();}
+
+    void resetTargetParticleSet(ParticleSet& P) {
+      ERRORMSG("LCOrbitals::resetTargetParticleSet is empty")
+      //BasisSet->resetTargetParticleSet(P);
+    }
 
     ///resize the internal storage of BasisSet by the number of particles
     inline void resize(int nptcl) {
@@ -186,6 +192,7 @@ namespace ohmmsqmc {
     inline void 
     evaluate(const ParticleSet& P, int first, int last,
 	     VM& logdet, GM& dlogdet, VM& d2logdet) {
+      //THIS SHOULD BE DONE by SlaterDeterminant::evaluate function but not working
       if(!(ID || first)) BasisSet->evaluate(P);
       NumPtcls=last-first;
       //check if identity matrix
@@ -198,7 +205,6 @@ namespace ohmmsqmc {
 	  }
 	}
       } else {
-	//int nb = BasisSet->TotalBasis;
 	//iat is an index offset for the particle number
 	for(int i=0, iat=first; i<NumPtcls; i++,iat++){
 	  for(int j=0 ; j<NumPtcls; j++) {
@@ -211,14 +217,13 @@ namespace ohmmsqmc {
       }
     }
 
+    /*
     template<class VM, class GM>
     inline void 
     evaluate(const WalkerSetRef& W, int first, int last,
 	     vector<VM>& logdet, vector<GM>& dlogdet, vector<VM>& d2logdet) {
       //calculate everything
-      if(!(ID || first)) {
-	BasisSet->evaluate(W);
-      }
+      if(!(ID || first)) { BasisSet->evaluate(W); }
 
       int nptcl = last-first;
       if(Identity) {
@@ -245,6 +250,7 @@ namespace ohmmsqmc {
 	}
       }
     }
+    */
 
     /** Parse the xml file for information on the Dirac determinants.
      *@param cur the current xmlNode

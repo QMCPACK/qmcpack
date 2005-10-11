@@ -57,6 +57,11 @@ namespace ohmmsqmc {
       F.reset();
     }
 
+    //evaluate the distance table with els
+    void resetTargetParticleSet(ParticleSet& P) {
+      d_table = DistanceTable::getTable(DistanceTable::add(P,P));
+    }
+
     /** implements the virtual functions of OrbitalBase
 	@param P the particle set
 	@param G returns the gradient \f$G[i]={\bf \nabla}_i J({\bf R})\f$

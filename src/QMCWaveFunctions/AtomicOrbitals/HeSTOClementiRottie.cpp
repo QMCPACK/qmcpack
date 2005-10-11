@@ -65,6 +65,9 @@ namespace ohmmsqmc {
     //add the DiracDeterminants to the SlaterDeterminant
     asymmpsi->add(DetU);
     asymmpsi->add(DetD);
+
+    asymmpsi->setBasisSet(new HePresetHF::BasisSet_t);
+
     //add the SlaterDeterminant to the trial wavefuntion
     targetPsi.add(asymmpsi);
   }

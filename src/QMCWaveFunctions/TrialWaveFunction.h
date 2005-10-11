@@ -82,6 +82,8 @@ namespace ohmmsqmc {
      */
     void resizeByWalkers(int nwalkers);
 
+    void resetTargetParticleSet(ParticleSet& P);
+
     ///Check if aname-ed Single-Particle-Orbital set exists
     bool hasSPOSet(const string& aname);
     ///add a Single-Particle-Orbital set

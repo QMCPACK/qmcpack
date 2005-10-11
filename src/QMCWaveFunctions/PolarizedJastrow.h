@@ -44,6 +44,8 @@ namespace ohmmsqmc {
 
     void reset() {  }
 
+    void resetTargetParticleSet(ParticleSet& P) {}
+
     void put(xmlNodePtr cur, VarRegistry<RealType>& vlist){
       m_param.put(cur);
       vlist.add("C_alpha",&alpha,1);
