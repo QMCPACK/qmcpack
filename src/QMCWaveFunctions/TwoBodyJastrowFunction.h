@@ -139,7 +139,7 @@ namespace ohmmsqmc {
 
     //evaluate the distance table with els
     void resetTargetParticleSet(ParticleSet& P) {
-      d_table = DistanceTable::getTable(DistanceTable::add(P,P));
+      d_table = DistanceTable::getTable(DistanceTable::add(P));
     }
 
     /** 

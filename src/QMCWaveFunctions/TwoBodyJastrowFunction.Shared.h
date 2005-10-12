@@ -59,7 +59,8 @@ namespace ohmmsqmc {
 
     //evaluate the distance table with els
     void resetTargetParticleSet(ParticleSet& P) {
-      d_table = DistanceTable::getTable(DistanceTable::add(P,P));
+      LOGMSG("TwoBodyJastrow::targetParticleSet")
+      d_table = DistanceTable::getTable(DistanceTable::add(P));
     }
 
     /** implements the virtual functions of OrbitalBase
