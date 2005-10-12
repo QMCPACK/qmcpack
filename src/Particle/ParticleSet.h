@@ -86,7 +86,10 @@ namespace ohmmsqmc {
     /** set the update mode
      * @param updatemode
      */
-    void setUpdateMode(int updatenode);
+    //void setUpdateMode(int updatenode);
+
+    /** add a distance table */
+    void addTable(DistanceTableData* d_table);
 
     /**update the internal data
      *@param iflag index for the update mode

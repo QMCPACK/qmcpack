@@ -75,15 +75,18 @@ namespace ohmmsqmc {
     return true;
   }
 
-  void ParticleSet::setUpdateMode(int updatemode) { 
-    if(DistTables.empty()) { 
-      DistanceTable::getTables(ObjectTag,DistTables);
-      DistanceTable::create(1);
-      LOGMSG("ParticleSet::setUpdateMode to create distance tables.")
-      LOGMSG("\t the number of distance tables for " << getName() << " " << DistTables.size())
-    }
-  }
+  //void ParticleSet::setUpdateMode(int updatemode) { 
+  //  if(DistTables.empty()) { 
+  //    DistanceTable::getTables(ObjectTag,DistTables);
+  //    DistanceTable::create(1);
+  //    LOGMSG("ParticleSet::setUpdateMode to create distance tables.")
+  //    LOGMSG("\t the number of distance tables for " << getName() << " " << DistTables.size())
+  //  }
+  //}
 
+  void ParticleSet::addTable(DistanceTableData* d_table) {
+    DistTables.push_back(d_table);
+  }
 
   void ParticleSet::update(int iflag) { 
     for(int i=0; i< DistTables.size(); i++) DistTables[i]->evaluate(*this);
