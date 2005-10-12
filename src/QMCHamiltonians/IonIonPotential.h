@@ -58,7 +58,6 @@ namespace ohmmsqmc {
     ~IonIonPotential() { }
 
     void resetTargetParticleSet(ParticleSet& P) {
-      d_ii = DistanceTable::getTable(DistanceTable::add(P));
     }
 
     inline Return_t evaluate(ParticleSet& P) {  

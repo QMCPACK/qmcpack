@@ -130,13 +130,13 @@ namespace ohmmsqmc {
     ~CoulombPotentialAA() { }
 
     void resetTargetParticleSet(ParticleSet& P)  {
-      d_table = DistanceTable::getTable(DistanceTable::add(P,P));
+      d_table = DistanceTable::getTable(DistanceTable::add(P));
     }
 
     inline Return_t 
     evaluate(ParticleSet& P) {
       Value = 0.0;
-      for(int i=0; i<d_table->getTotNadj(); i++) Value += d_table->rinv(i);
+      for(int i=0; i<d_table->getTotNadj(); i++) { Value += d_table->rinv(i); }
       Value*=C;
       return Value;
       //return C*std::accumulate(d_table->rinv.data(), 
