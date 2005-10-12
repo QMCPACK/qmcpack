@@ -97,6 +97,7 @@ namespace ohmmsqmc {
     inline void reset() { BasisSet->reset();}
 
     void resetTargetParticleSet(ParticleSet& P) {
+      LOGMSG("LCOrbitals::resetTargetParticleSet with " << P.getName())
       BasisSet->resetTargetParticleSet(P);
     }
 

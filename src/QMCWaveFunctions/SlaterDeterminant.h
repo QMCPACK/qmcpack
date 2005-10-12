@@ -77,6 +77,7 @@ namespace ohmmsqmc {
 
     void resetTargetParticleSet(ParticleSet& P) {
       //BasisSet->resetTargetParticleSet(P);
+      LOGMSG("\nSlaterDeterminant::resetTargetParticleSet")
       for(int i=0; i<Dets.size(); i++) Dets[i]->resetTargetParticleSet(P);
     }
 
