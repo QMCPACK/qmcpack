@@ -15,98 +15,125 @@
 //   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_SPECIES_SET_H
-#define OHMMS_SPECIES_SET_H
-
+/**@file SpeciesSet
+ * @brief Declaraton of SpeciesSet
+ */
+#ifndef OHMMS_SPECIESBASE_H
+#define OHMMS_SPECIESBASE_H
+#ifdef HAVE_CONFIG_H
+#include "ohmms-config.h"
+#endif
 #include <string>
 #include <vector>
+#include <map>
+#include "OhmmsData/OhmmsElementBase.h"
 
-/*! \class SpeciesSet
- *  \brief A class containing a set of attributes for a set of species.
+/** A class containing species attributes.
 */
-class SpeciesSet {
+class SpeciesSet: public OhmmsElementBase {
 
 public:
 
-  typedef double                     Scalar_t;
-  typedef std::vector<Scalar_t>           SpeciesAttrib_t;
-  typedef std::vector<SpeciesAttrib_t*>   AttribList_t;
+  typedef OHMMS_PRECISION                  Scalar_t;
+  typedef std::size_t                      size_type;
+  typedef std::vector<Scalar_t>            SpeciesAttrib_t;
+  typedef std::vector<SpeciesAttrib_t* >   AttribList_t;
+  typedef std::map<std::string,size_type>  AttribMap_t;
+  ///the number of species
+  size_type        TotalNum;
 
-  //! The number of species
-  unsigned        TotalNum;
+  /// Species Name list
+  std::vector<std::string>  Name;   
 
-  //! Species name list
-  std::vector<std::string> speciesName;
-
-  //! attribute name list
-  std::vector<std::string> attribName;    
-
-  //! List of species attributes
-  AttribList_t    d_attrib;
-
-  //! Constructor
+  /// Constructor
   SpeciesSet();
 
-  //! Destructor
-  virtual ~SpeciesSet();
+  /// Copy constructor, deep copy
+  SpeciesSet(const SpeciesSet& species);
 
-  inline int getTotalNum() const { return TotalNum; }
-  inline void setTotalNum(const unsigned n) { TotalNum = n;}
+  /// Destructor
+  ~SpeciesSet();
 
-  //! return the number of attributes in our list
-  inline int numAttributes() const { return d_attrib.size();}
+  SpeciesSet& operator=(const SpeciesSet& species);
 
-  /** 
-   * @param aname Unique name of the species be added.
-   * @return the index of the species
-   * @brief When a name species does not exist, add a new species
-   */
-  int addSpecies(const std::string& aname);
+  ///return the number of species
+  size_type getTotalNum() const { return TotalNum; }
 
-  /**
-   * @param aname a unique name of an attribute
-   * @return the index of a new attribute
-   * @brief for a new attribute, allocate the data
-   */
-  int addAttribute(const std::string& aname);
+  ///set the number of species
+  void setTotalNum(size_type n) { TotalNum = n; }
 
-  /**
-   * @param i attribute index
-   * @param j species index
-   * @return the value of i-th attribute for the j-th species
-   */
-  inline double operator()(int i, int j) const { 
+  ///return the number of attributes in our list
+  size_type numAttributes() const { return d_attrib.size();}
+
+  /// add a new attribute to the list
+  size_type addAttrib(const char* aname);
+
+  /// return the value of i-th attribute for the j-th species
+  inline double operator()(size_type i, size_type j) const { 
     return d_attrib[i]->operator[](j); 
   }
 
-  /**
-   * assignment operator
-   * @param i attribute index
-   * @param j species index
-   * @return the value of i-th attribute for the j-th species
-   */
-  inline double& operator()(int i, int j) { 
+  ///assign the value of i-th attribute for the j-th species
+  inline double& operator()(size_type i, size_type j) { 
     return d_attrib[i]->operator[](j); 
   }
 
-  /**
-   * @param m the number of species to be added
-   */
-  void create(unsigned m);
+  inline const SpeciesAttrib_t& getAttribute(size_type i) const {
+    return *d_attrib[i];
+  }
 
-  /**
-   * @param name a name of species
-   * @return an ID for the species with name. 
-   * @brief if the input species is not found, add a new species
-   */
-  inline int findSpecies(const std::string& name) const { 
-    int i = 0;
-    while(i< speciesName.size()) {
-      if(speciesName[i] == name) return i; 
-      i++;
+  /// add m species to the list by adding m elements to each attribute.
+  inline void create(size_type m) {
+    if(m > 0) {
+      Name.insert(Name.end(), m, std::string("none"));
+      AttribList_t::iterator dit(d_attrib.begin());      
+      AttribList_t::iterator dit_end(d_attrib.end());      
+      while(dit != dit_end) { 
+        (*dit)->insert((*dit)->end(), m, 0);
+        ++dit;
+      }
+      TotalNum += m;
     }
-    return i;
   }
+
+  /// return an ID for the species with name. 
+  size_type find(const std::string& name) const{
+    size_type i=0;
+    for(; i< TotalNum; i++) {
+      if(Name[i] == name) return i; 
+    }
+    return i;//Not found. Returns TotalNum.
+  }
+
+  /// return the name of the ith species
+  const std::string& getName(size_type i) const { return Name[i]; }
+
+  /// return an ID for the species with name. Add a species if not found
+  inline size_type getSpeciesID(const std::string& name) { 
+    size_type i(find(name)); // check if the name is registered
+    if(i == TotalNum) { // if not found, add a new species
+      create(1);
+      Name[i] = name;
+    }
+    return i; // return an index for a species
+  }
+
+  inline size_type addSpecies(const std::string&  aname) {    
+    return getSpeciesID(aname);
+  }
+
+  bool get(std::ostream& os) const;
+  bool put(std::istream& is);
+  void reset();
+  bool put(xmlNodePtr cur);
+
+private:
+  /// List of species attributes
+  AttribList_t d_attrib;
+
+  ///map for the name of an attribute to the attribute index
+  AttribMap_t attrib_ind;
+
 };
 #endif
 
