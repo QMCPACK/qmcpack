@@ -58,6 +58,7 @@ namespace ohmmsqmc {
     ~IonIonPotential() { }
 
     void resetTargetParticleSet(ParticleSet& P) {
+      //do nothing
     }
 
     inline Return_t evaluate(ParticleSet& P) {  
