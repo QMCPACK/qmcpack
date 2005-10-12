@@ -97,8 +97,7 @@ namespace ohmmsqmc {
     inline void reset() { BasisSet->reset();}
 
     void resetTargetParticleSet(ParticleSet& P) {
-      ERRORMSG("LCOrbitals::resetTargetParticleSet is empty")
-      //BasisSet->resetTargetParticleSet(P);
+      BasisSet->resetTargetParticleSet(P);
     }
 
     ///resize the internal storage of BasisSet by the number of particles
