@@ -66,12 +66,20 @@ template<class T>
 struct DTD_BConds<T,3,7> {
   inline static T apply(const CrystalLattice<T,3>& lat, TinyVector<T,3>& a) {
     TinyVector<T,3> ar(lat.toUnit(a));
+    /*
     if(ar[0]<-0.5) ar[0]+=1.0; 
     else if(ar[0]>=0.5) ar[0]-=1.0;
     if(ar[1]<-0.5) ar[1]+=1.0; 
     else if(ar[1]>=0.5) ar[1]-=1.0;
     if(ar[2]<-0.5) ar[2]+=1.0; 
     else if(ar[2]>=0.5) ar[2]-=1.0;
+    */
+    T x=fmod(ar[0],1.0);
+    T y=fmod(ar[1],1.0);
+    T z=fmod(ar[2],1.0);
+    ar[0]=x-static_cast<int>(x*2.0);
+    ar[1]=y-static_cast<int>(y*2.0);
+    ar[2]=z-static_cast<int>(z*2.0);
     a=lat.toCart(ar);
     return a[0]*a[0]+a[1]*a[1]+a[2]*a[2];
   }
@@ -129,7 +137,7 @@ void DistanceTable::createSimulationCell(xmlNodePtr cur) {
  *\return index of the distance table with the name
  */
 int
-DistanceTable::add(const ParticleSet& s, const char* aname) {
+DistanceTable::add(ParticleSet& s, const char* aname) {
 
   string newname;
 
@@ -145,12 +153,17 @@ DistanceTable::add(const ParticleSet& s, const char* aname) {
   if(it == TableMap.end()) {
     LOGMSG("Distance table " << newname << " is created.")
     int n = TableList.size();
+    DistanceTableData* dt=0;
     if(SuperCellType<OHMMS_DIM>::apply(s.Lattice.BoxBConds) == SUPERCELL_OPEN) 
-      TableList.push_back(new SymmetricDTD<DTD_BConds<OHMMS_PRECISION,OHMMS_DIM,0> >(s,s));
+      dt = new SymmetricDTD<DTD_BConds<OHMMS_PRECISION,OHMMS_DIM,0> >(s,s);
     else
-      TableList.push_back(new SymmetricDTD<DTD_BConds<OHMMS_PRECISION,OHMMS_DIM,7> >(s,s));
+      dt = new SymmetricDTD<DTD_BConds<OHMMS_PRECISION,OHMMS_DIM,7> >(s,s);
+
+    TableList.push_back(dt);
     TableMap[newname] = n;
     VisitorID.push_back(s.tag());
+    s.addTable(dt);
+    //add to the list
     return n;
   } else {
     LOGMSG("Distance table " << newname << " is reused")
@@ -165,8 +178,7 @@ DistanceTable::add(const ParticleSet& s, const char* aname) {
  *\return index of the distance table with the name
  */
 int
-DistanceTable::add(const ParticleSet& s, const ParticleSet& t,  
-		   const char* aname) {
+DistanceTable::add(const ParticleSet& s, ParticleSet& t, const char* aname) {
 
   string newname;
   if(aname) {
@@ -182,10 +194,15 @@ DistanceTable::add(const ParticleSet& s, const ParticleSet& t,
   if(it == TableMap.end()) {
     LOGMSG("Distance table " << newname << " is created.")
     int n = TableList.size();
+    DistanceTableData* dt=0;
     if(SuperCellType<OHMMS_DIM>::apply(s.Lattice.BoxBConds) == SUPERCELL_OPEN) 
-      TableList.push_back(new AsymmetricDTD<DTD_BConds<OHMMS_PRECISION,OHMMS_DIM,0> >(s,t));
+      dt = new AsymmetricDTD<DTD_BConds<OHMMS_PRECISION,OHMMS_DIM,0> >(s,t);
     else 
-      TableList.push_back(new AsymmetricDTD<DTD_BConds<OHMMS_PRECISION,OHMMS_DIM,7> >(s,t));
+      dt = new AsymmetricDTD<DTD_BConds<OHMMS_PRECISION,OHMMS_DIM,7> >(s,t);
+
+    TableList.push_back(dt);
+    t.addTable(dt);
+
     TableMap[newname] = n;
     VisitorID.push_back(t.tag());
     return n;

@@ -48,11 +48,10 @@ namespace ohmmsqmc {
       SUPERCELL_SLAB=3, SUPERCELL_BULK=7};
 
     ///add a named DistanceTableData_t of Symmectric type
-    static int add(const ParticleSet& s, const char* aname = NULL);
+    static int add(ParticleSet& s, const char* aname = NULL);
     
     ///add a named DistanceTableData_t of Asymmectric type
-    static int add(const ParticleSet& s, const ParticleSet& t, 
-		   const char* aname = NULL);
+    static int add(const ParticleSet& s, ParticleSet& t, const char* aname = NULL);
     
     /** returns a pointer to a DistanceTableData_t
      * @param i index to access TableList
