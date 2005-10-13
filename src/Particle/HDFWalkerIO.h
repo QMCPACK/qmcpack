@@ -35,6 +35,8 @@ namespace ohmmsqmc {
     hid_t h_file;
     ///id for HDF5 main group 
     hid_t h_config;
+    ///id for the random number generator
+    hid_t h_random;
   public:
 
     HDFWalkerOutput(const string& fname, bool append=true, int count=0);

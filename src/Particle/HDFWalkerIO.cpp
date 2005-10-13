@@ -23,6 +23,7 @@
 #include "Particle/HDFParticleAttrib.h"
 #include "Numerics/HDFNumericAttrib.h"
 #include "Utilities/OhmmsInfo.h"
+#include "Utilities/RandomGenerator.h"
 #include "OhmmsData/FileUtility.h"
 using namespace ohmmsqmc;
 
@@ -39,19 +40,21 @@ using namespace ohmmsqmc;
  * - create the main group "/config_collection"
  */
 
-HDFWalkerOutput::HDFWalkerOutput(const string& aroot, bool append, int count):
-  Counter(count), AppendMode(append) {
+HDFWalkerOutput::HDFWalkerOutput(const string& aroot, bool append, int count)
+  : Counter(count), AppendMode(append) {
 
   string h5file(aroot);
   h5file.append(".config.h5");
   if(AppendMode)  {
     h_file =  H5Fopen(h5file.c_str(),H5F_ACC_RDWR,H5P_DEFAULT);
     h_config = H5Gopen(h_file,"config_collection");
+    h_random = H5Gopen(h_file,"random_state");
   }
   else {
     Counter=0;
     h_file = H5Fcreate(h5file.c_str(),H5F_ACC_TRUNC,H5P_DEFAULT,H5P_DEFAULT);
     h_config = H5Gcreate(h_file,"config_collection",0);
+    h_random = H5Gcreate(h_file,"random_state",0);
   }
 }
 
@@ -71,9 +74,11 @@ HDFWalkerOutput::~HDFWalkerOutput() {
   hid_t ret = H5Dwrite(dataset, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT,&Counter);
   H5Sclose(dataspace);
   H5Dclose(dataset);
-
-  //if(AppendMode)  H5Gclose(h_config);
   H5Gclose(h_config);
+
+  Random.write(h_random,AppendMode);
+  H5Gclose(h_random);
+
   H5Fclose(h_file);
 }
 
