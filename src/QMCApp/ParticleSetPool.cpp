@@ -89,7 +89,6 @@ namespace ohmmsqmc {
     PoolType::iterator it(myPool.begin()), it_end(myPool.end());
     while(it != it_end) {
       ParticleSet* pt((*it).second);
-      pt->setUpdateMode(0);
       pt->update();
       ++it;
     }

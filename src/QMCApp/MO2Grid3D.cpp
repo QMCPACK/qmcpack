@@ -548,9 +548,6 @@ namespace ohmmsqmc {
     //resize with respect to the number of electrons
     basisSet->resize(nels);
 
-    //DistanceTable::create(1);
-    Electrons->setUpdateMode(MCWalkerConfiguration::Update_Particle);
-
     //Need only one electron to calculate this
     //map<string,SPOSetType*>::iterator oit(InOrbs.begin());
     //Create one-dimensional grids for three orthogonal directions
