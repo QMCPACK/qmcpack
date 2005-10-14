@@ -24,6 +24,7 @@
 #endif
 #include <vector>
 #include <iostream>
+#include "Utilities/OhmmsInfo.h"
 #include "Lattice/CrystalLattice.h"
 #include "Lattice/UniformCartesianGrid.h"
 
@@ -195,6 +196,9 @@ public:
 
     //Set KC for structure-factor and LRbreakups.
     LR_kc = LR_dim_cutoff/LR_rc;
+
+    LOGMSG("\tLong-range breakup parameters:");
+    LOGMSG("\trc*kc = " << LR_dim_cutoff << "; rc = " << LR_rc << "; kc = " << LR_kc);
   }
 
   /** set the lattice vector with a tensor
