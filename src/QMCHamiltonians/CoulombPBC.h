@@ -36,21 +36,12 @@ namespace ohmmsqmc {
   struct CoulombPBCAA: public QMCHamiltonianBase {
 
     bool FirstTime;
-    //TODO : MAKE THIS A POINTER SO IT CAN BE UPDATED WHEN PARTICLESET CHANGES
-    ParticleSet& PtclRef;
+    ParticleSet* PtclRef;
     LRCoulombAA<LPQHIBasis>* AA;
     
-    CoulombPBCAA(ParticleSet& ref): FirstTime(true), PtclRef(ref), 
+    CoulombPBCAA(ParticleSet& ref): FirstTime(true), PtclRef(&ref), 
 				  AA(0) {
-      //Create the distancetable here so that it's added to the auto-update
-      //list. Pointer is retrieved again in LRCoulombAA.
-      /*
-      cout << endl << endl;
-      LOGMSG("REMOVE THESE AFTER CVS UPDATE");
-      cout << endl << endl;
 
-      DistanceTable::add(PtclRef);
-      */
     }
     
     ~CoulombPBCAA() { 
@@ -58,18 +49,20 @@ namespace ohmmsqmc {
     }
 
     void resetTargetParticleSet(ParticleSet& P) {
-      ERRORMSG("CoulombPBCAA::resetTargetParticleSet IS NOT VALID");
-      //AA->resetTargetParticleSet(P);
+      //Update the internal particleref
+      PtclRef = &P;
+      //Update the particleref in AA.
+      if(AA)AA->resetTargetParticleSet(P);
     }
 
     inline Return_t evaluate(ParticleSet& P) {  
 
-      if(FirstTime || PtclRef.tag() == P.tag()) {
+      if(FirstTime || PtclRef->tag() == P.tag()) {
         Value = 0.0;
 
 	if(FirstTime) { //Init the breakup on first call.
 	  LOGMSG("Performing long-range breakup for CoulombAA potential");
-	  AA = new LRCoulombAA<LPQHIBasis>(PtclRef);
+	  AA = new LRCoulombAA<LPQHIBasis>(*PtclRef);
 	}
 
         Value = AA->evalTotal();
@@ -89,27 +82,32 @@ namespace ohmmsqmc {
   struct CoulombPBCAB: public QMCHamiltonianBase {
 
     bool FirstTime;
-    ParticleSet &PtclIons, &PtclElns;
+    ParticleSet *PtclIons, *PtclElns;
     LRCoulombAB<LPQHIBasis>* AB;
     
-    CoulombPBCAB(ParticleSet& ions,ParticleSet& elns): FirstTime(true), PtclIons(ions), PtclElns(elns), AB(0) {
-      //Create the distancetable here so that it's added to the auto-update
-      //list. Pointer is retrieved again in LRCoulombAB.
-      //DistanceTable::add(ions,elns);
+    CoulombPBCAB(ParticleSet& ions,ParticleSet& elns): FirstTime(true), PtclIons(&ions), PtclElns(&elns), AB(0) {
+
     }
     
     ~CoulombPBCAB() { 
       if(AB) delete AB;
     }
 
+    void resetTargetParticleSet(ParticleSet& P) {
+      //update the pointer of the target particleset (electrons) 
+      PtclElns = &P;
+      //Update the particleref in AB.
+      if(AB)AB->resetTargetParticleSet(P);
+    }
+
     inline Return_t evaluate(ParticleSet& P) {  
 
-      if(FirstTime || PtclIons.tag() == P.tag() || PtclElns.tag() == P.tag()) {
+      if(FirstTime || PtclIons->tag() == P.tag() || PtclElns->tag() == P.tag()) {
         Value = 0.0;
 
 	if(FirstTime) {//Init the breakup on first call.
 	  LOGMSG("Performing long-range breakup for CoulombAB potential");
-	  AB = new LRCoulombAB<LPQHIBasis>(PtclIons,PtclElns);
+	  AB = new LRCoulombAB<LPQHIBasis>(*PtclIons,*PtclElns);
 	}
 
         Value = AB->evalTotal();

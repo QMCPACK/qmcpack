@@ -24,8 +24,8 @@ namespace ohmmsqmc {
     using base_type::Fk;
 
     //Private members
-    ParticleSet& Ions;
-    ParticleSet& Elns;
+    ParticleSet* Ions;
+    ParticleSet* Elns;
     StructFact& IonsRhoK;
     StructFact& ElnsRhoK;
     DistanceTableData* d_table;
@@ -53,6 +53,7 @@ namespace ohmmsqmc {
     RealType evalConsts();
 
     void InitBreakup();
+    void resetTargetParticleSet(ParticleSet& ref);
 
     //Constructor
     LRCoulombAB(ParticleSet& ions,
@@ -60,15 +61,15 @@ namespace ohmmsqmc {
       //non-default base-class construct. 
       LRHandler<BreakupBasis>(ions.Lattice), 
       IonsRhoK(*ions.SK),
-      Ions(ions),
+      Ions(&ions),
       ElnsRhoK(*elns.SK),
-      Elns(elns),
+      Elns(&elns),
       tspeciesIons(ions.getSpeciesSet()),
       tspeciesElns(elns.getSpeciesSet()) { 
 
       //Set up the internal distance-table for the particle pair.
       //This is used in evalSR.
-      d_table = DistanceTable::getTable(DistanceTable::add(ions,elns));
+      d_table = DistanceTable::getTable(DistanceTable::add(*Ions,*Elns));
 
       //Safety check: ensure SK was created.
       if(!ions.SK || !elns.SK){
@@ -84,8 +85,8 @@ namespace ohmmsqmc {
       ChargeAttribIndxElns = tspeciesElns.addAttribute("charge");
       MemberAttribIndxElns = tspeciesElns.addAttribute("membersize");
       //Store total number of particles in each set.
-      NIons = Ions.getTotalNum();
-      NElns = Elns.getTotalNum();
+      NIons = Ions->getTotalNum();
+      NElns = Elns->getTotalNum();
       if(NElns != NIons) {
 	LOGMSG("PBCs not yet finished for non-neutral cells");
 	OHMMS::Controller->abort();
@@ -106,13 +107,13 @@ namespace ohmmsqmc {
       for(int spec=0; spec<NumSpeciesElns; spec++)
 	NofSpeciesElns[spec] = static_cast<int>(tspeciesElns(MemberAttribIndxElns,spec));
       for(int iat=0; iat<NIons; iat++)
-	Zat[iat] = Zspec[Ions.GroupID[iat]];
+	Zat[iat] = Zspec[Ions->GroupID[iat]];
 
       //Test if the box sizes are same (=> kcut same for fixed dimcut)
       kcdifferent = false;
-      if(fabs(Ions.Lattice.LR_kc - Elns.Lattice.LR_kc) > 1.e-6){
+      if(fabs(Ions->Lattice.LR_kc - Elns->Lattice.LR_kc) > 1.e-6){
 	kcdifferent = true;
-	minkc = std::min(Ions.Lattice.LR_kc,Elns.Lattice.LR_kc);
+	minkc = std::min(Ions->Lattice.LR_kc,Elns->Lattice.LR_kc);
       }
 
       //Initialise the breakup. Can be re-called later if lattice changes.
@@ -138,11 +139,11 @@ namespace ohmmsqmc {
       //Allows extra periodicity of ions to be exploited.
       StructFact *BreakupRhoK;
       ParticleSet *BreakupPtclSet;
-      if(Ions.Lattice.Volume < Elns.Lattice.Volume){
-        BreakupPtclSet = &Ions;
+      if(Ions->Lattice.Volume < Elns->Lattice.Volume){
+        BreakupPtclSet = Ions;
         BreakupRhoK = &IonsRhoK;
       } else {
-        BreakupPtclSet = &Elns;
+        BreakupPtclSet = Elns;
         BreakupRhoK = &ElnsRhoK;
       }
 
@@ -153,6 +154,18 @@ namespace ohmmsqmc {
       //This fills Fk for all species.
       LRHandler<BreakupBasis>::fillFk(BreakupRhoK->KLists);
     }
+
+  //This function is called when the particleset is swapped with another one
+  //in the Hamiltonian.
+  template<class BreakupBasis> 
+  void
+  LRCoulombAB<BreakupBasis>::resetTargetParticleSet(ParticleSet& newP) {
+    //"Target" particleset is always electrons
+    Elns = &newP;
+    
+    //Update the distancetable pointer to use the new Particleset.
+    d_table = DistanceTable::getTable(DistanceTable::add(*Ions,*Elns));
+  }
 
 
   //Evaluate F(k) using basis+coefs.

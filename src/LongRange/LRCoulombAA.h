@@ -25,7 +25,7 @@ namespace ohmmsqmc {
     using base_type::Fk;
 
     //Private members
-    ParticleSet& PtclRef;
+    ParticleSet* PtclRef;
     StructFact& PtclRhoK;
     DistanceTableData* d_aa;
     SpeciesSet& tspecies;
@@ -43,18 +43,19 @@ namespace ohmmsqmc {
     RealType evalConsts();
 
     void InitBreakup();
+    void resetTargetParticleSet(ParticleSet& ref);
 
     //Constructor
     LRCoulombAA(ParticleSet& ref): 
       //non-default base-class construct. We use 1 function for each species.
       LRHandler<BreakupBasis>(ref.Lattice), 
       PtclRhoK(*ref.SK),
-      PtclRef(ref),
+      PtclRef(&ref),
       tspecies(ref.getSpeciesSet()) { 
 
       //Set up the internal distance-table for the particle pair.
       //This is used in evalSR.
-      d_aa = DistanceTable::getTable(DistanceTable::add(PtclRef));
+      d_aa = DistanceTable::getTable(DistanceTable::add(*PtclRef));
 
       //Safety Check: ensure SK was created. 
       if(!ref.SK){
@@ -65,7 +66,7 @@ namespace ohmmsqmc {
       //Things that don't change with lattice are done here instead of InitBreakup()
       ChargeAttribIndx = tspecies.addAttribute("charge");
       MemberAttribIndx = tspecies.addAttribute("membersize");
-      NParticles = PtclRef.getTotalNum();
+      NParticles = PtclRef->getTotalNum();
       NumSpecies = tspecies.TotalNum;
 
       Zat.resize(NParticles);
@@ -76,7 +77,7 @@ namespace ohmmsqmc {
 	NofSpecies[spec] = static_cast<int>(tspecies(MemberAttribIndx,spec));
       }
       for(int iat=0; iat<NParticles; iat++)
-	Zat[iat] = Zspec[PtclRef.GroupID[iat]];
+	Zat[iat] = Zspec[PtclRef->GroupID[iat]];
 
 
       //Initialise the breakup. Can be recalled later if lattice changes.
@@ -99,7 +100,7 @@ LRCoulombAA<BreakupBasis>::InitBreakup() {
   //In this case, all functionality of the base-class can be reused.
   //We only breakup 1 function: The bare interaction for q1=q2=1. 
   //We put the charges in manually when the potentials are evaluated.
-  LRHandler<BreakupBasis>::InitBreakup(PtclRef.Lattice,1); 
+  LRHandler<BreakupBasis>::InitBreakup(PtclRef->Lattice,1); 
 
   //Additional work:
   //Fill Fk with the FT of V_l(r). This is used in evalLR.
@@ -107,6 +108,17 @@ LRCoulombAA<BreakupBasis>::InitBreakup() {
   //changes - InitBreakup will be called again in that case.
   //GNU C++ needs this-> to access template base-class functions.
   LRHandler<BreakupBasis>::fillFk(PtclRhoK.KLists);
+}
+
+//This function is called when the particleset is swapped with another one
+//in the Hamiltonian.
+template<class BreakupBasis> 
+void
+LRCoulombAA<BreakupBasis>::resetTargetParticleSet(ParticleSet& newP) {
+  PtclRef = &newP;
+
+  //Update the distancetable pointer to use the new Particleset.
+  d_aa = DistanceTable::getTable(DistanceTable::add(*PtclRef));
 }
 
 
@@ -165,9 +177,6 @@ typename LRCoulombAA<BreakupBasis>::RealType
 LRCoulombAA<BreakupBasis>::evalSR() {
   RealType SR=0.0;
 
-  //Update the distance-table
-  //  d_aa->evaluate(PtclRef);
-
   for(int ipart=0; ipart<NParticles; ipart++){
     RealType esum = 0.0;
     for(int nn=d_aa->M[ipart],jpart=ipart+1; nn<d_aa->M[ipart+1]; nn++,jpart++) {
@@ -188,8 +197,6 @@ LRCoulombAA<BreakupBasis>::evalSR() {
       for(int n=0; n<coefs.size(); n++)
 	vspair -= coefs[0][n]*Basis.h(n,sep);
       
-      //Now multiply the species charge for atom j
-      //esum += tspecies(ChargeAttribIndx,PtclRef.GroupID[jpart])*vspair;	      
       esum += Zat[jpart]*vspair;
     }
     //Accumulate pair sums...species charge for atom i.
