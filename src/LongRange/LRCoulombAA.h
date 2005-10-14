@@ -116,7 +116,7 @@ template<class BreakupBasis>
 inline typename LRCoulombAA<BreakupBasis>::RealType 
 LRCoulombAA<BreakupBasis>::evalFk(RealType k,int FunctionIndex) {
   RealType FatK;
-  FatK = 4.0*M_PI/(PtclRef.Lattice.Volume*k*k)*
+  FatK = 4.0*M_PI/(Basis.get_CellVolume()*k*k)*
     cos(k*Basis.get_rc());
   for(int n=0; n<Basis.NumBasisElem(); n++)
     FatK += coefs[0][n]*Basis.c(n,k);
@@ -129,7 +129,7 @@ template<class BreakupBasis>
 inline typename LRCoulombAA<BreakupBasis>::RealType 
 LRCoulombAA<BreakupBasis>::evalXk(RealType k,int FunctionIndex) {
   RealType FatK;
-  FatK = -4.0*M_PI/(PtclRef.Lattice.Volume*k*k)*
+  FatK = -4.0*M_PI/(Basis.get_CellVolume()*k*k)*
     cos(k*Basis.get_rc());
   return (FatK);
 }
@@ -155,6 +155,7 @@ LRCoulombAA<BreakupBasis>::evalLR() {
     } //spec2
   }//spec1
   LR*=0.5;
+
   return LR;
 }
 
@@ -169,9 +170,9 @@ LRCoulombAA<BreakupBasis>::evalSR() {
 
   for(int ipart=0; ipart<NParticles; ipart++){
     RealType esum = 0.0;
-    for(int nn=d_aa->M[ipart], jpart=ipart+1; nn<d_aa->M[ipart+1]; nn++,jpart++) {
+    for(int nn=d_aa->M[ipart],jpart=ipart+1; nn<d_aa->M[ipart+1]; nn++,jpart++) {
       RealType sep=d_aa->r(nn);
-//If r>r_c then skip this pair.
+      //If r>r_c then skip this pair.
       if(sep >= Basis.get_rc())continue;
       if(sep < 1.e-12){
 	LOGMSG("WARNING, excluding AA pair with distance < 1.e-12");
@@ -216,7 +217,7 @@ LRCoulombAA<BreakupBasis>::evalConsts() {
   V0 = Basis.get_rc()*Basis.get_rc()*0.5;
   for(int n=0; n<Basis.NumBasisElem(); n++)
     V0 -= coefs[0][n]*Basis.hintr2(n);
-  V0 *= 2.0*TWOPI/PtclRef.Lattice.Volume; //For charge q1=q2=1
+  V0 *= 2.0*TWOPI/Basis.get_CellVolume(); //For charge q1=q2=1
 
   for(int spec=0; spec<NumSpecies; spec++){
     RealType z = Zspec[spec];
