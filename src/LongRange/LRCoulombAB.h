@@ -24,21 +24,25 @@ namespace ohmmsqmc {
     using base_type::Fk;
 
     //Private members
-    ParticleSet& PtclRefA;
-    ParticleSet& PtclRefB;
-    StructFact& PtclRhoKA;
-    StructFact& PtclRhoKB;
-    DistanceTableData* d_ab;
-    SpeciesSet& tspeciesA;
-    SpeciesSet& tspeciesB;
-    int NumSpeciesA;
-    int NumSpeciesB;
-    int ChargeAttribIndxA;
-    int ChargeAttribIndxB;
-    int MemberAttribIndxA;
-    int MemberAttribIndxB;
-    int NParticlesA;
-    int NParticlesB;
+    ParticleSet& Ions;
+    ParticleSet& Elns;
+    StructFact& IonsRhoK;
+    StructFact& ElnsRhoK;
+    DistanceTableData* d_table;
+    SpeciesSet& tspeciesIons;
+    SpeciesSet& tspeciesElns;
+    int NumSpeciesIons;
+    int NumSpeciesElns;
+    int ChargeAttribIndxIons;
+    int ChargeAttribIndxElns;
+    int MemberAttribIndxIons;
+    int MemberAttribIndxElns;
+    int NIons;
+    int NElns;
+
+    vector<RealType> Zat,Zspec; 
+    vector<int> NofSpeciesIons;
+    vector<int> NofSpeciesElns;
     //This is set to true if the K_c of structure-factors are different
     bool kcdifferent; 
     RealType minkc;
@@ -51,40 +55,69 @@ namespace ohmmsqmc {
     void InitBreakup();
 
     //Constructor
-    LRCoulombAB(ParticleSet& refa,
-		ParticleSet& refb): 
-      //non-default base-class construct. We use 1 function for each species.
-      LRHandler<BreakupBasis>(refa.Lattice), 
-      PtclRhoKA(*refa.SK),
-      PtclRefA(refa),
-      PtclRhoKA(*refb.SK),
-      PtclRefA(refb),
-      tspeciesA(refa.getSpeciesSet()),
-      tspeciesB(refb.getSpeciesSet()) { 
+    LRCoulombAB(ParticleSet& ions,
+		ParticleSet& elns): 
+      //non-default base-class construct. 
+      LRHandler<BreakupBasis>(ions.Lattice), 
+      IonsRhoK(*ions.SK),
+      Ions(ions),
+      ElnsRhoK(*elns.SK),
+      Elns(elns),
+      tspeciesIons(ions.getSpeciesSet()),
+      tspeciesElns(elns.getSpeciesSet()) { 
+
+      //Set up the internal distance-table for the particle pair.
+      //This is used in evalSR.
+      d_table = DistanceTable::getTable(DistanceTable::add(ions,elns));
 
       //Safety check: ensure SK was created.
-      if(!refa.SK || !refb.SK){
+      if(!ions.SK || !elns.SK){
 	LOGMSG("Structure factor hasn't been created for LRCoulombAB");
+	cout << ions.SK << endl;
+	cout << elns.SK << endl;
 	OHMMS::Controller->abort();
+      }
+
+      //Things that don't change with lattice are done here instead of InitBreakup()
+      ChargeAttribIndxIons = tspeciesIons.addAttribute("charge");
+      MemberAttribIndxIons = tspeciesIons.addAttribute("membersize");
+      ChargeAttribIndxElns = tspeciesElns.addAttribute("charge");
+      MemberAttribIndxElns = tspeciesElns.addAttribute("membersize");
+      //Store total number of particles in each set.
+      NIons = Ions.getTotalNum();
+      NElns = Elns.getTotalNum();
+      if(NElns != NIons) {
+	LOGMSG("PBCs not yet finished for non-neutral cells");
+	OHMMS::Controller->abort();
+      }
+
+      //Store the number of unique species in each set.
+      NumSpeciesIons = tspeciesIons.TotalNum;
+      NumSpeciesElns = tspeciesElns.TotalNum;
+
+      //Store information about charges and number of each species
+      Zat.resize(NIons); Zspec.resize(NIons);
+      NofSpeciesIons.resize(NIons);
+      NofSpeciesElns.resize(NElns);
+      for(int spec=0; spec<NumSpeciesIons; spec++) { 
+	Zspec[spec] = tspeciesIons(ChargeAttribIndxIons,spec);
+	NofSpeciesIons[spec] = static_cast<int>(tspeciesIons(MemberAttribIndxIons,spec));
+      }
+      for(int spec=0; spec<NumSpeciesElns; spec++)
+	NofSpeciesElns[spec] = static_cast<int>(tspeciesElns(MemberAttribIndxElns,spec));
+      for(int iat=0; iat<NIons; iat++)
+	Zat[iat] = Zspec[Ions.GroupID[iat]];
+
+      //Test if the box sizes are same (=> kcut same for fixed dimcut)
+      kcdifferent = false;
+      if(fabs(Ions.Lattice.LR_kc - Elns.Lattice.LR_kc) > 1.e-6){
+	kcdifferent = true;
+	minkc = std::min(Ions.Lattice.LR_kc,Elns.Lattice.LR_kc);
       }
 
       //Initialise the breakup. Can be re-called later if lattice changes.
       //Otherwise all subsequent potential evaluations can reuse existing data.
       InitBreakup();
-
-      //Things that don't change with lattice are done here instead of InitBreakup()
-      ChargeAttribIndxA = tspeciesA.addAttribute("charge");
-      MemberAttribIndxA = tspeciesA.addAttribute("membersize");
-      NParticlesA = PtclRefA.getTotalNum();
-      ChargeAttribIndxB = tspeciesB.addAttribute("charge");
-      MemberAttribIndxB = tspeciesB.addAttribute("membersize");
-      NParticlesB = PtclRefB.getTotalNum();
-
-      kcdifferent = false;
-      if(fabs(PtclRhoKA.KLists.kcutoff - PtclRhoKB.KLists.kcutoff) < 1.e-6){
-	kcdifferent = true;
-	minkc = std::min(PtclRhoKA.KLists.kcutoff,PtclRhoKB.KLists.kcutoff);
-      }
     }
       
   private:
@@ -98,21 +131,19 @@ namespace ohmmsqmc {
     LRCoulombAB<BreakupBasis>::InitBreakup() {
 
       //In this case, all functionality of the base-class can be reused.
-      NumSpeciesA = tspeciesA.TotalNum;
-      NumSpeciesB = tspeciesB.TotalNum;
-
       //We only breakup 1 function: The bare interaction for q1=q2=1. 
       //We put the charges in manually when the potentials are evaluated.
+
       //Breakup the potential using the lattice with smallest volume.
       //Allows extra periodicity of ions to be exploited.
       StructFact *BreakupRhoK;
       ParticleSet *BreakupPtclSet;
-      if(PtclRefA.Lattice.Volume < PtclRefB.Lattice.Volume){
-        BreakupPtclSet = &PtclRefA;
-        BreakupRhoK = &PtclRhoKA;
+      if(Ions.Lattice.Volume < Elns.Lattice.Volume){
+        BreakupPtclSet = &Ions;
+        BreakupRhoK = &IonsRhoK;
       } else {
-        BreakupPtclSet = &PtclRefB;
-        BreakupRhoK = &PtclRhoKB;
+        BreakupPtclSet = &Elns;
+        BreakupRhoK = &ElnsRhoK;
       }
 
       LRHandler<BreakupBasis>::InitBreakup(BreakupPtclSet->Lattice,1); 
@@ -121,10 +152,6 @@ namespace ohmmsqmc {
       //Fill Fk with the FT of V_l(r). This is used in evalLR.
       //This fills Fk for all species.
       LRHandler<BreakupBasis>::fillFk(BreakupRhoK->KLists);
-
-      //Set up the internal distance-table for the particle pair.
-      //This is used in evalSR.
-      d_ab = DistanceTable::getTable(DistanceTable::add(PtclRefA,PtclRefB));
     }
 
 
@@ -134,7 +161,7 @@ namespace ohmmsqmc {
     typename LRCoulombAB<BreakupBasis>::RealType 
     LRCoulombAB<BreakupBasis>::evalFk(RealType k,int FunctionIndex) {
       RealType FatK;
-      FatK = 4.0*M_PI/(Basis.Lattice.Volume*k*k)*
+      FatK = 4.0*M_PI/(Basis.get_CellVolume()*k*k)*
         cos(k*Basis.get_rc());
       for(int n=0; n<Basis.NumBasisElem(); n++)
         FatK += coefs[0][n]*Basis.c(n,k);
@@ -147,7 +174,7 @@ namespace ohmmsqmc {
     typename LRCoulombAB<BreakupBasis>::RealType 
     LRCoulombAB<BreakupBasis>::evalXk(RealType k,int FunctionIndex) {
       RealType FatK;
-      FatK = -4.0*M_PI/(Basis.Lattice.Volume*k*k)*
+      FatK = -4.0*M_PI/(Basis.get_CellVolume()*k*k)*
         cos(k*Basis.get_rc());
       return (FatK);
     }
@@ -161,74 +188,67 @@ namespace ohmmsqmc {
       //Set up Fk for the k vectors used in the structure factor.
       //This should only be done once unless Lattice changes...
       //GNU C++ needs this-> to access template base-class functions.
-      LOGMSG("TODO: Which RhoK to use here?");
-      exit(0);
-      this->fillFk(PtclRhoKA.KLists);
-      //Evaluate LR
-
-      LOGMSG("TODO: Deal with case that StructFacts have different Kc or rc");
 
       //Species loop. Species loops are over distinct particle-sets.
       if(kcdifferent){
-        LOGMSG("Not Coded");
+	LOGMSG("LRCoulombAB: Different cell-sizes not yet coded");
+	exit(0);
       }
       else {
-        for(int speca=0; speca<NumSpeciesA; speca++) {
-          RealType Za = tspeciesA(ChargeAttribIndxA,speca);
-          for(int specb=0; specb<NumSpeciesB; specb++) {
-            RealType Zb = tspeciesB(ChargeAttribIndxB,specb);
-
+	for(int specion=0; specion<NumSpeciesIons; specion++) {
+          RealType Zion = Zspec[specion];
+          for(int speceln=0; speceln<NumSpeciesElns; speceln++) {
+            RealType Zeln = -1.0; //All electrons have same charge.
             temp = 0.0;
             //For each k, find -k and add term to LR.
-            for(int ki=0; ki<PtclRhoKA.KLists.kpts_cart.size(); ki++) {
-              int kj=PtclRhoKA.KLists.minusk[ki];
-              temp += (PtclRhoKA.rhok(ki,speca)*PtclRhoKB.rhok(kj,specb)).real()*Fk[0][ki];
+            for(int ki=0; ki<IonsRhoK.KLists.kpts_cart.size(); ki++) {
+              int kj=IonsRhoK.KLists.minusk[ki];
+              temp += (IonsRhoK.rhok(ki,specion)*ElnsRhoK.rhok(kj,speceln)).real()*Fk[0][ki];
             } //ki
-            LR += Za*Zb*temp;
+	    LR += Zion*Zeln*temp;
           } //spec2
         }//spec1
       }
-
-      LR*=0.5;
       return LR;
-    }
+  }
 
 
   template<class BreakupBasis>
     typename LRCoulombAB<BreakupBasis>::RealType
     LRCoulombAB<BreakupBasis>::evalSR() {
+
+
       RealType SR=0.0;
-
-      //Update the distance-table
-      d_ab->evaluate(PtclRefA,PtclRefB);
-
-
-      for(int ipart=0; ipart<NParticlesA; ipart++){
+      //Loop over distinct eln-ion pairs
+      for(int iat=0; iat<NIons; iat++){
         RealType esum = 0.0;
-        for(int nn=d_ab->M[ipart], jpart=ipart+1; nn<d_ab->M[ipart+1]; nn++,jpart++) {
+        for(int nn=d_table->M[iat]; nn<d_table->M[iat+1]; nn++) {
+	  RealType sep = d_table->r(nn);
           //If r>r_c then skip this pair.
-          if(d_ab->r(nn) >= Basis.get_rc())continue;
-          if(abs(d_ab->r(nn)) < 1.e-12){
+          if(sep >= Basis.get_rc())continue;
+          if(sep < 1.e-12){
             LOGMSG("WARNING, excluding AB pair with distance < 1.e-12");
             continue;
           }
 
           //Within cutoff.
           //Now add the short-range pair-wise part.
-          double vspair = 0.0; 
+          RealType vspair = 0.0; 
           //First set equal to the bare-Coulombic interaction with q1=q2=1
-          vspair = d_ab->rinv(nn);
+          vspair = d_table->rinv(nn);
+
           //The subtract off the long-range term (with q1=q2=1):
           for(int n=0; n<coefs.size(); n++)
-            vspair -= coefs[0][n]*Basis.h(n,d_ab->r(nn));
+            vspair -= coefs[0][n]*Basis.h(n,sep);
 
           //Now multiply the species charge for atom j
-          esum += tspeciesB(ChargeAttribIndxB,PtclRefB.GroupID[jpart])*vspair;	      
+	  //Particle is an eln => -1 charge.
+          esum += -1.0*vspair;	      
         }
-        //Accumulate pair sums...species charge for atom i.
-        SR += tspeciesA(ChargeAttribIndxA,PtclRefA.GroupID[ipart])*esum;
-      }
 
+        //Accumulate pair sums...species charge for atom i.
+        SR += Zat[iat]*esum;
+      }
       return SR;
     }
 
@@ -238,27 +258,23 @@ namespace ohmmsqmc {
     LRCoulombAB<BreakupBasis>::evalConsts() {
       RealType Consts=0.0, V0=0.0;
 
-
       V0 = Basis.get_rc()*Basis.get_rc()*0.5;
       for(int n=0; n<Basis.NumBasisElem(); n++)
         V0 -= coefs[0][n]*Basis.hintr2(n);
-      V0 *= 2.0*TWOPI/PtclRefA.Lattice.Volume; //For charge q1=q2=1
-
+      V0 *= 2.0*TWOPI/Basis.get_CellVolume(); //For charge q1=q2=1
 
       //Can simplify this if we know a way to get number of particles with each
       //groupID.
-      for(int speca=0; speca<NumSpeciesA; speca++) {
-        RealType Za = tspeciesA(ChargeAttribIndxA,speca);
-        int Na = tspeciesA(MemberAttribIndxA,speca);
-        for(int specb=0; specb<NumSpeciesB; specb++) {
-          RealType Zb = tspeciesB(ChargeAttribIndxB,specb);
-          int Nb = tspeciesB(MemberAttribIndxB,specb);
-          Consts += -V0*Za*Zb*Na*Nb;
+      for(int specion=0; specion<NumSpeciesIons; specion++) {
+        RealType Zion = Zspec[specion];
+        int Nion = NofSpeciesIons[specion];
+        for(int speceln=0; speceln<NumSpeciesElns; speceln++) {
+          RealType Zeln = -1.0; //All electrons have same charge
+          int Neln = NofSpeciesElns[speceln];
+          Consts += -V0*Zion*Zeln*Nion*Neln;
         }
       }
-
       return Consts;
-
     }
 }
 #endif
