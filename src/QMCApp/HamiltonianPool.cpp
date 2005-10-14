@@ -82,7 +82,7 @@ namespace ohmmsqmc {
         string pot_type((const char*)t);
         if(cname == "pairpot") {
           if(pot_type == "coulomb") {
-            addCoulombPotential(cur,qp);
+	    addCoulombPotential(cur,qp);
           } else if(pot_type == "pseudo") {
             addPseudoPotential(cur,qp);
           } else if(pot_type == "cpp") {
@@ -132,7 +132,13 @@ namespace ohmmsqmc {
       }
 
       if(htype == "molecule" || htype=="coulomb"){
-        curH->add(new CoulombPotentialAB(*ion,*qp),"Coulomb");
+	if(qp->Lattice.BoxBConds[0]){
+	  LOGMSG("Adding Periodic Coulomb potential e-i");
+	  curH->add(new CoulombPBCAB(*ion,*qp),"Coulomb");
+	} else {
+	  LOGMSG("Adding Coulomb potential e-i");
+	  curH->add(new CoulombPotentialAB(*ion,*qp),"Coulomb");
+	}
       } else if(htype == "siesta" || htype=="pseudo") {
         TrialWaveFunction* psi = psiPool->getPrimary();
         curH->add(new NonLocalPPotential(*ion,*qp,*psi),"NonLocal");
@@ -189,8 +195,14 @@ namespace ohmmsqmc {
 	  }
       }
     } else {
-      LOGMSG("Adding Coulomb potential " << source->getName() << "-" << target->getName())
-      curH->add(new CoulombPotentialAB(*source,*target),title);
+      if(target->Lattice.BoxBConds[0]) {
+	LOGMSG("Adding Periodic Coulomb potential " << source->getName() << "-" << target->getName());
+	curH->add(new CoulombPBCAB(*source,*target),title);
+
+      } else {
+	LOGMSG("Adding Coulomb potential " << source->getName() << "-" << target->getName());
+	curH->add(new CoulombPotentialAB(*source,*target),title);
+      }
     }
   }
   
