@@ -35,13 +35,13 @@ namespace ohmmsqmc {
 
   struct CoulombPBCAA: public QMCHamiltonianBase {
 
-    bool FirstTime;
     ParticleSet* PtclRef;
     LRCoulombAA<LPQHIBasis>* AA;
+    bool FirstTime;
     
-    CoulombPBCAA(ParticleSet& ref): FirstTime(true), PtclRef(&ref), 
-				  AA(0) {
-
+    CoulombPBCAA(ParticleSet& ref): FirstTime(true), PtclRef(&ref), AA(0) {
+      LOGMSG("Performing long-range breakup for CoulombAA potential");
+      AA = new LRCoulombAA<LPQHIBasis>(*PtclRef);
     }
     
     ~CoulombPBCAA() { 
@@ -56,17 +56,11 @@ namespace ohmmsqmc {
     }
 
     inline Return_t evaluate(ParticleSet& P) {  
-
-      if(FirstTime || PtclRef->tag() == P.tag()) {
-        Value = 0.0;
-
-	if(FirstTime) { //Init the breakup on first call.
-	  LOGMSG("Performing long-range breakup for CoulombAA potential");
-	  AA = new LRCoulombAA<LPQHIBasis>(*PtclRef);
-	}
-
+      //Ions don't move usually, so P will be electrons.
+      //Then we can avoid repeating i-i potential, and do only once, by
+      //using FirstTime flag.
+      if(FirstTime || PtclRef->tag() == P.tag()){
         Value = AA->evalTotal();
-
 	FirstTime = false;
       }
       return Value;
@@ -79,18 +73,22 @@ namespace ohmmsqmc {
   };
 
 
+  /** @ingroup hamiltonian
+   *\brief Calculates the AB Coulomb potential using PBCs
+   */
+
   struct CoulombPBCAB: public QMCHamiltonianBase {
 
-    bool FirstTime;
     ParticleSet *PtclIons, *PtclElns;
     LRCoulombAB<LPQHIBasis>* AB;
     
-    CoulombPBCAB(ParticleSet& ions,ParticleSet& elns): FirstTime(true), PtclIons(&ions), PtclElns(&elns), AB(0) {
-
+    CoulombPBCAB(ParticleSet& ions,ParticleSet& elns): PtclIons(&ions), PtclElns(&elns), AB(0) {
+      LOGMSG("Performing long-range breakup for CoulombAB potential");
+      AB = new LRCoulombAB<LPQHIBasis>(*PtclIons,*PtclElns);
     }
     
     ~CoulombPBCAB() { 
-      if(AB) delete AB;
+      if(AB)delete AB;
     }
 
     void resetTargetParticleSet(ParticleSet& P) {
@@ -101,19 +99,7 @@ namespace ohmmsqmc {
     }
 
     inline Return_t evaluate(ParticleSet& P) {  
-
-      if(FirstTime || PtclIons->tag() == P.tag() || PtclElns->tag() == P.tag()) {
-        Value = 0.0;
-
-	if(FirstTime) {//Init the breakup on first call.
-	  LOGMSG("Performing long-range breakup for CoulombAB potential");
-	  AB = new LRCoulombAB<LPQHIBasis>(*PtclIons,*PtclElns);
-	}
-
-        Value = AB->evalTotal();
-
-	FirstTime = false;
-      }
+      Value = AB->evalTotal();
       return Value;
     }
 
