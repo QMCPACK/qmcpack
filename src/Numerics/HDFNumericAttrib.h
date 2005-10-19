@@ -54,6 +54,33 @@ struct HDFAttribIO<hsize_t>: public HDFAttribIOBase {
   }
 };
 
+/** Specialization for int */
+template<>
+struct HDFAttribIO<int>: public HDFAttribIOBase {
+
+  int& ref;
+
+  HDFAttribIO<int>(int& a):ref(a) { }
+
+  inline void write(hid_t grp, const char* name) {
+    hsize_t dim = 1;
+    hid_t dataspace  = H5Screate_simple(1, &dim, NULL);
+    hid_t dataset =  
+      H5Dcreate(grp, name, H5T_NATIVE_INT, dataspace, H5P_DEFAULT);
+    hid_t ret = 
+      H5Dwrite(dataset, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT,&ref);
+    H5Sclose(dataspace);
+
+    H5Dclose(dataset);
+  }
+
+  inline void read(hid_t grp, const char* name) {
+    hid_t h1 = H5Dopen(grp, name);
+    hid_t ret = H5Dread(h1, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, &ref);
+    H5Dclose(h1);
+  }
+};
+
 /*
 
 template<unsigned D>
@@ -307,7 +334,6 @@ struct HDFAttribIO<string>: public HDFAttribIOBase {
   }
 
 };
-
 
 #ifdef HAVE_LIBBLITZ
 /** Specialization for blitz::Array<TinyVector<double,D>,2> */
