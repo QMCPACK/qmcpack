@@ -27,6 +27,17 @@ inline void delete_iter(IT first, IT last) {
   while(first != last) { delete *first; ++first;}
 }
 
+
+template<class T, unsigned D>
+inline T* get_first_address(ParticleAttrib<TinyVector<T,D> >& a) {
+  return &(a[0][0]);
+}
+
+template<class T, unsigned D>
+inline T* get_last_address(ParticleAttrib<TinyVector<T,D> >& a) {
+  return &(a[0][0])+D*a.size();
+}
+
 #endif
 /***************************************************************************
  * $RCSfile$   $Author$

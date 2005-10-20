@@ -47,15 +47,25 @@ public:
   ///set the Current to zero
   inline void rewind() { Current = 0;}
 
-  inline void add(T x) { this->push_back(x);}
+  template<class T1>
+  inline void add(T1 x) { Current++; this->push_back(static_cast<T>(x));}
+
+  template<>
+  inline void add(T x) { Current++; this->push_back(x);}
 
   template<class _InputIterator>
   inline void add(_InputIterator first, _InputIterator last) {
     while(first != last) {
-      this->push_back(*first++);
+      Current++; this->push_back(*first++);
     }
   }
 
+  template<class T1>
+  inline void get(T1& x) {
+    x = static_cast<T1>((*this)[Current++]);
+  }
+
+  template<>
   inline void get(T& x) { x = (*this)[Current++];}
 
   template<class _OutputIterator>
@@ -74,6 +84,9 @@ public:
     }
   }
 
+
+  /** return the address of the first element **/
+  inline T* data() { return &((*this)[0]);}
 
   inline void print(std::ostream& os) {
     std::copy(this->begin(), this->end(), ostream_iterator<T>(os," "));
