@@ -27,7 +27,6 @@
 #include "Message/Communicate.h"
 #include "Utilities/Clock.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
-#include "QMCDrivers/MultiChainIO.h"
 namespace ohmmsqmc { 
   RQMCMultiple::RQMCMultiple(MCWalkerConfiguration& w, 
       TrialWaveFunction& psi, QMCHamiltonian& h):
