@@ -27,7 +27,7 @@ using namespace ohmmsqmc;
 
 ScalarEstimatorManager::ScalarEstimatorManager(QMCHamiltonian& h): 
  CollectSum(false),Stride(1000), WeightSum(0.0), H(h), RootName("estimator"), 
-  OutStream(NULL) { }
+  OutStream(0) { }
 
 ScalarEstimatorManager::~ScalarEstimatorManager(){ 
   Estimators.erase(Estimators.begin(), Estimators.end());
@@ -122,7 +122,7 @@ void ScalarEstimatorManager::flushreport(int iter){
 }
 
 void 
-ScalarEstimatorManager::resetReportSettings(const string& aname) {
+ScalarEstimatorManager::resetReportSettings(const string& aname, bool append) {
 
   //at least have local energy
   if(Estimators.empty()) {
@@ -132,16 +132,21 @@ ScalarEstimatorManager::resetReportSettings(const string& aname) {
   //update the weight index
   for(int i=0; i<Estimators.size(); i++) 
     Estimators[i]->add2Record(BlockAverages);
+
   WeightIndex = BlockAverages.add("WeightSum");
-  if(aname != RootName) {
-    RootName = aname;
-    string fname(aname);
-    fname.append(".scalar.dat");
-    if(OutStream) delete OutStream;
+
+  RootName = aname;
+  string fname(aname);
+  fname.append(".scalar.dat");
+  if(OutStream) delete OutStream;
+
+  if(append) 
+    OutStream = new ofstream(fname.c_str(), ios::app);
+  else
     OutStream = new ofstream(fname.c_str());
-    OutStream->setf(ios::scientific, ios::floatfield);
-    OutStream->setf(ios::left,ios::adjustfield);
-  }
+
+  OutStream->setf(ios::scientific, ios::floatfield);
+  OutStream->setf(ios::left,ios::adjustfield);
 
   BlockAverages.setValues(0.0);
 }
@@ -149,11 +154,13 @@ ScalarEstimatorManager::resetReportSettings(const string& aname) {
 /**  print the header to the output file
  */
 void 
-ScalarEstimatorManager::reportHeader() {
-  *OutStream << "#    index     ";
-  for(int i=0; i<BlockAverages.size(); i++) 
-    (*OutStream) << setw(16) << BlockAverages.Name[i];
-  (*OutStream) << endl;
+ScalarEstimatorManager::reportHeader(bool append) {
+  if(!append)  {
+    *OutStream << "#    index     ";
+    for(int i=0; i<BlockAverages.size(); i++) 
+      (*OutStream) << setw(16) << BlockAverages.Name[i];
+    (*OutStream) << endl;
+  }
   OutStream->setf(ios::right,ios::adjustfield);
 }
 
@@ -162,7 +169,7 @@ ScalarEstimatorManager::reportHeader() {
 void 
 ScalarEstimatorManager::finalize() {
   if(OutStream) delete OutStream;
-  OutStream = NULL;
+  OutStream = 0;
 }
 
 /**  set the stride of all the estimators to istride
@@ -177,7 +184,7 @@ ScalarEstimatorManager::EstimatorType*
 ScalarEstimatorManager::getEstimator(const string& a) {
   std::map<string,int>::iterator it = EstimatorMap.find(a);
   if(it == EstimatorMap.end()) {
-    return NULL;
+    return 0;
   } else {
     return Estimators[(*it).second];
   }
