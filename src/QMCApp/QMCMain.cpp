@@ -48,9 +48,8 @@ using namespace std;
 
 namespace ohmmsqmc {
 
-  QMCMain::QMCMain(int argc, char** argv): QMCAppBase(argc,argv),
+  QMCMain::QMCMain(int argc, char** argv): QMCAppBase(argc,argv), FirstQMC(true),
                                            qmcDriver(0),qmcSystem(0){ 
-
     //create ParticleSetPool
     ptclPool = new ParticleSetPool;
 
@@ -99,20 +98,27 @@ namespace ohmmsqmc {
         const xmlChar* t=xmlGetProp(cur,(const xmlChar*)"target");
         if(t) target = (const char*)t;
         qmcSystem = ptclPool->getWalkerSet(target);
-        runQMC(cur);
+        bool good = runQMC(cur);
         q.push_back(cur);
-        myProject.advance();
+
+        //advance is done in runQMC
+        //myProject.advance();
+        //set to false
+        FirstQMC=false;
       }
 
       cur=cur->next;
     }
 
     if(q.size()) { 
+      xmlNodePtr newqmc_ptr=qmcDriver->getQMCNode();
       //unlink other qmc node but the last one
-      for(int i=0;i<q.size()-1; i++) {
+      for(int i=0; i<q.size(); i++) {
         xmlUnlinkNode(q[i]);
         xmlFreeNode(q[i]);
       }
+
+      xmlAddChild(m_root,newqmc_ptr);
     }
 
     if(OHMMS::Controller->master()) {
@@ -171,12 +177,6 @@ namespace ohmmsqmc {
 
     //initialize the random number generator
     xmlNodePtr rptr = myRandomControl.initialize(m_context);
-    if(rptr) {
-      xmlAddChild(m_root,rptr);
-    }
-
-    //check particleset/wavefunction/hamiltonian of the current document
-    //processContext(m_context);
 
     //preserve the input order
     xmlNodePtr cur=m_root->children;
@@ -199,9 +199,6 @@ namespace ohmmsqmc {
           m_doc=NULL;
           parse((const char*)a);
           processPWH(xmlDocGetRootElement(m_doc));
-          //xmlXPathContextPtr context_=xmlXPathNewContext(m_doc);
-          //processContext(context_);
-          //xmlXPathFreeContext(context_);
           xmlFreeDoc(m_doc);
 
           //copy the original root and document
@@ -270,16 +267,26 @@ namespace ohmmsqmc {
   bool QMCMain::runQMC(xmlNodePtr cur) {
 
     string what("invalid");
-    xmlChar* att=xmlGetProp(cur,(const xmlChar*)"method");
-    if(att) what = (const char*)att;
+    string continue_tag("no");
+    OhmmsAttributeSet aAttrib;
+    aAttrib.add(what,"method");
+    aAttrib.add(continue_tag,"continue");
+    aAttrib.put(cur);
+
+    bool continue_run = (continue_tag == "yes");
+
     if(qmcDriver) {
       if(what == curMethod) {
         LOGMSG("Reuse " << what << " driver")
       } else {
         delete qmcDriver;
         qmcDriver = 0;
+        //if the current qmc method is different from the previous one, continue_run is set to false
+        continue_run = false;
       }
     }
+
+    if(myProject.m_series == 0) continue_run = false;
 
     if(qmcDriver == 0) {
       ///////////////////////////////////////////////
@@ -371,9 +378,16 @@ namespace ohmmsqmc {
 
     if(qmcDriver) {
 
+      //advance the project id 
+      //if it is NOT the first qmc node and qmc/@continue!='yes'
+      if(!FirstQMC && !continue_run) myProject.advance();
 
-      LOGMSG("Starting a QMC simulation " << what)
-      qmcDriver->setFileNames(myProject.CurrentRoot(),PrevConfigFile);
+      if(continue_run) {
+        LOGMSG("Continue a QMC simulation " << what << " File Root = " << myProject.CurrentRoot())
+      } else {
+        LOGMSG("Starting a QMC simulation " << what << " File Root = " << myProject.CurrentRoot())
+      }
+      qmcDriver->setStatus(myProject.CurrentRoot(),PrevConfigFile, continue_run);
       qmcDriver->putWalkers(m_walkerset_in);
       qmcDriver->process(cur);
       qmcDriver->run();
@@ -388,7 +402,6 @@ namespace ohmmsqmc {
       }
 
       curMethod = what;
-      
       return true;
     } else {
       return false;
@@ -417,26 +430,6 @@ namespace ohmmsqmc {
 	xmlNodePtr mc_ptr = result->nodesetval->nodeTab[iconf];
         m_walkerset.push_back(mc_ptr);
         m_walkerset_in.push_back(mc_ptr);
-	//m_walkerset.push_back(mc_ptr);
-        //string cfile("invalid"), target("e");
-        //int anode=-1, nwalkers=-1;
-        //OhmmsAttributeSet pAttrib;
-        //pAttrib.add(cfile,"href"); pAttrib.add(cfile,"file"); 
-        //pAttrib.add(target,"target"); pAttrib.add(target,"ref"); 
-        //pAttrib.add(anode,"node");
-        //pAttrib.add(nwalkers,"walkers");
-        //pAttrib.put(mc_ptr);
-
-        //int pid_target= (anode<0)?pid:anode;
-        //if(pid_target == pid && cfile != "invalid") {
-        //  MCWalkerConfiguration* el=ptclPool->getWalkerSet(target);
-	//  XMLReport("Using previous configuration of " << target << " from " << cfile)
-        //  HDFWalkerInput WO(cfile); 
-        //  WO.append(*el,nwalkers);
-	//  //read only the last ensemble of walkers
-	//  //WO.put(*el,-1);
-	//  PrevConfigFile = cfile;
-        //}
       }
     }
     xmlXPathFreeObject(result);

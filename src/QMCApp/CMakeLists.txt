@@ -41,6 +41,7 @@ SET(QMCDRIVERS
   ../QMCDrivers/VMCMultiple.cpp
   ../QMCDrivers/VMCPbyPMultiple.cpp
   ../QMCDrivers/RQMCMultiple.cpp
+  ../QMCDrivers/MultiChain.cpp
   ../Estimators/MultipleEnergyEstimator.cpp
   ../QMCDrivers/DMCParticleByParticle.cpp
 )

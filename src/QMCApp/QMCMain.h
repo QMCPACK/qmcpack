@@ -69,6 +69,9 @@ namespace ohmmsqmc {
     ///name of the current QMCriver
     std::string curMethod;
 
+    ///flag to indicate that a qmc is the first QMC
+    bool FirstQMC;
+
     /** current QMCDriver
      */
     QMCDriver *qmcDriver;
