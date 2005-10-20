@@ -35,7 +35,9 @@ Communicate::Communicate(int argc, char **argv){
 
 //exclusive:  OOMPI, MPI or Serial
 #ifdef HAVE_OOMPI
-
+//================================================================
+// Implements Communicate with OOMPI library
+//================================================================
 Communicate::~Communicate(){ }
 
 void Communicate::initialize(int argc, char **argv){

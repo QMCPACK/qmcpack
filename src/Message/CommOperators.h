@@ -20,7 +20,7 @@
 #define OHMMS_COMMUNICATION_OPERATORS_H
 #include "Message/Communicate.h"
 
-template<class T> void gsum(T&, int) { }
+template<class T> inline void gsum(T&, int) { }
 
 #ifdef HAVE_MPI
 template<>
@@ -35,7 +35,7 @@ inline void gsum(TinyVector<double,N>& g, int gid) {
   //MPI_Allreduce(gt.begin(), g.begin(), N, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
   TinyVector<double,N> gt(g);
   MPI_Allreduce(g.begin(), gt.begin(), N, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-  gt = g;
+  g = gt;
 }
 
 template<>
