@@ -138,7 +138,6 @@ Counter(0), NumSets(0) {
 
   h_file =  H5Fopen(h5file.c_str(),H5F_ACC_RDWR,H5P_DEFAULT);
   h_config = H5Gopen(h_file,"config_collection");
-  
   hid_t h1=H5Dopen(h_config,"NumOfConfigurations");
   if(h1>-1) {
     H5Dread(h1, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT,&(NumSets));
@@ -195,6 +194,8 @@ int HDFWalkerInput::put(MCWalkerConfiguration& W){
 bool  
 HDFWalkerInput::put(MCWalkerConfiguration& W, int ic){
 
+  if(Counter<0) return false;
+
   int selected = ic;
   if(ic<0) {
     XMLReport("Will use the last set from " << NumSets << " of configurations.")
@@ -248,6 +249,8 @@ HDFWalkerInput::put(MCWalkerConfiguration& W, int ic){
 
 bool HDFWalkerInput::append(MCWalkerConfiguration& W){
 
+  if(Counter<0) return false;
+
   typedef MCWalkerConfiguration::PosType PosType;
   typedef Matrix<PosType>  PosContainer_t;
   PosContainer_t Pos_temp;
@@ -289,6 +292,8 @@ bool HDFWalkerInput::append(MCWalkerConfiguration& W){
 
 bool  
 HDFWalkerInput::append(MCWalkerConfiguration& W, int nwalkers){
+
+  if(Counter<0) return false;
 
   if(nwalkers<0) return put(W,-1);
 
@@ -334,6 +339,16 @@ HDFWalkerInput::append(MCWalkerConfiguration& W, int nwalkers){
   return true;
 }
 
+void  HDFWalkerInput::getRandomState(bool restart){
+  if(restart) {
+    hid_t h_random = H5Gopen(h_file,"random_state");
+    if(h_random>-1) {
+      LOGMSG("Reading the state of the random number generator from the configuration file")
+      Random.read(h_random);
+      H5Gclose(h_random);
+    }
+  }
+}
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$

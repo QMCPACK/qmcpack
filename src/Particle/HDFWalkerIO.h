@@ -44,13 +44,15 @@ namespace ohmmsqmc {
     bool get(MCWalkerConfiguration&);
 
     template<class CT>
-    bool write(CT& anything) {
+    void write(CT& anything) {
       anything.write(h_config);
-      return true;
     }
 
-    hid_t getGroupID() { return h_config;}
+    /** return the file ID **/
+    hid_t getFileID() { return h_file;}
 
+    /** return the config_collection file ID **/
+    hid_t getConfigID() { return h_config;}
   };
 
   /** Reads a set of walker configurations from an HDF5 file. */
@@ -81,10 +83,15 @@ namespace ohmmsqmc {
     bool append(MCWalkerConfiguration& w, int nwalkers);
 
     template<class CT>
-    bool read(CT& anything) {
+    void read(CT& anything) {
       anything.read(h_config);
-      return true;
     }
+
+
+    /** read the state of the number generator
+     * @param restart if true, read the state
+     */
+    void getRandomState(bool restart);
 
   };
 
