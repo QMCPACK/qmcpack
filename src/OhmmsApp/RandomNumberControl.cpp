@@ -60,43 +60,48 @@ namespace OHMMS{
     xmlNodePtr random_ptr = NULL;
     
     std::string parallel_random("true");
-    if(xmlXPathNodeSetIsEmpty(rg_request->nodesetval)) {
-      //add <random/>
-      myCur = xmlNewNode(NULL,(const xmlChar*)"random");
-      xmlNewProp(random_ptr,(const xmlChar*)"parallel",
-		 (const xmlChar*)parallel_random.c_str());
-      xmlNewProp(random_ptr,(const xmlChar*)"seed",(const xmlChar*)("-1"));
-      random_ptr = myCur;
-    } else {
+    //When no random node is given, use default
+    //if(xmlXPathNodeSetIsEmpty(rg_request->nodesetval)) {
+    //  add <random/>
+    //  myCur = xmlNewNode(NULL,(const xmlChar*)"random");
+    //  xmlNewProp(random_ptr,(const xmlChar*)"parallel",
+    //    	 (const xmlChar*)parallel_random.c_str());
+    //  xmlNewProp(random_ptr,(const xmlChar*)"seed",(const xmlChar*)("-1"));
+    //  random_ptr = myCur;
+    //} else {
+    //  random_ptr = rg_request->nodesetval->nodeTab[0];
+    //}
+    if(!xmlXPathNodeSetIsEmpty(rg_request->nodesetval)) {
       random_ptr = rg_request->nodesetval->nodeTab[0];
     }
     
-    ///overwrite the <random/> node if ParticleLayout
-    bool use_mpi=false, use_distributed_data=false;
-    xmlXPathObjectPtr result
-      =xmlXPathEvalExpression((const xmlChar*)"//ParticleLayout",acontext);
-    if(!xmlXPathNodeSetIsEmpty(result->nodesetval)) {
-      xmlAttrPtr att = result->nodesetval->nodeTab[0]->properties;
-      while(att != NULL) {
-	std::string aname((const char*)(att->name));
-	std::string vname((const char*)(att->children->content));
-	if(aname == "mpi") 
-	  use_mpi= (vname == "on"|vname == "true");
-	else if(aname =="method") 
-	  use_distributed_data = (vname == "distributed");
-	att = att->next;
-      }
-    }
-    xmlXPathFreeObject(result);
+    //Spatial decomposition is not used
+    //overwrite the <random/> node if ParticleLayout
+    //bool use_mpi=false, use_distributed_data=false;
+    //xmlXPathObjectPtr result
+    //  =xmlXPathEvalExpression((const xmlChar*)"//ParticleLayout",acontext);
+    //if(!xmlXPathNodeSetIsEmpty(result->nodesetval)) {
+    //  xmlAttrPtr att = result->nodesetval->nodeTab[0]->properties;
+    //  while(att != NULL) {
+    //    std::string aname((const char*)(att->name));
+    //    std::string vname((const char*)(att->children->content));
+    //    if(aname == "mpi") 
+    //      use_mpi= (vname == "on"|vname == "true");
+    //    else if(aname =="method") 
+    //      use_distributed_data = (vname == "distributed");
+    //    att = att->next;
+    //  }
+    //}
+    //xmlXPathFreeObject(result);
     
-    if(use_mpi && !use_distributed_data) parallel_random = "false";
-    if(xmlHasProp(random_ptr,(const xmlChar*)"parallel")) {
-      xmlSetProp(random_ptr,(const xmlChar*)"parallel",
-		 (const xmlChar*)parallel_random.c_str());
-    } else {
-      xmlNewProp(random_ptr,(const xmlChar*)"parallel",
-		 (const xmlChar*)parallel_random.c_str());
-    }
+    //if(use_mpi && !use_distributed_data) parallel_random = "false";
+    //if(xmlHasProp(random_ptr,(const xmlChar*)"parallel")) {
+    //  xmlSetProp(random_ptr,(const xmlChar*)"parallel",
+    //    	 (const xmlChar*)parallel_random.c_str());
+    //} else {
+    //  xmlNewProp(random_ptr,(const xmlChar*)"parallel",
+    //    	 (const xmlChar*)parallel_random.c_str());
+    //}
     
     put(random_ptr);
     xmlXPathFreeObject(rg_request);
@@ -109,7 +114,7 @@ namespace OHMMS{
 
       bool init_mpi = true;
       int iseed = -1; // default is to generate by Wall-clock
-      if(cur) {
+      if(cur != NULL) {
         xmlAttrPtr att = cur->properties;
         while(att != NULL) {
   	  std::string aname((const char*)(att->name));
