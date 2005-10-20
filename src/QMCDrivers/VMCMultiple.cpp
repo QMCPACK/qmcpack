@@ -78,7 +78,7 @@ namespace ohmmsqmc {
    */
   bool VMCMultiple::run() { 
 
-    Estimators->reportHeader();
+    Estimators->reportHeader(AppendRun);
 
     bool require_register=false;
 
@@ -92,7 +92,6 @@ namespace ohmmsqmc {
     Pooma::Clock timer;
     
     double wh=0.0;
-    IndexType accstep=0;
     IndexType nAcceptTot = 0;
     IndexType nRejectTot = 0;
     bool appendwalker=pStride>0;
@@ -102,7 +101,7 @@ namespace ohmmsqmc {
       nAccept = 0; nReject=0;
       do {
         advanceWalkerByWalker();
-        step++;accstep++;
+        step++;CurrentStep++;
         Estimators->accumulate(W);
       } while(step<nSteps);
 
@@ -112,10 +111,11 @@ namespace ohmmsqmc {
       RealType TotalConfig=static_cast<RealType>(nAccept+nReject);		
       Estimators->setColumn(AcceptIndex,nAccept/TotalConfig);		
 
-      Estimators->report(accstep);
+      Estimators->report(CurrentStep);
       
       LogOut->getStream() << "Block " << block << " " << timer.cpu_time() << endl;
 
+      branchEngine->accumulate(Estimators->average(0),1.0);
       HDFWalkerOutput WO(RootName,block&&appendwalker, block);
       WO.get(W);
 

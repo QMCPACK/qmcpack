@@ -84,6 +84,9 @@ namespace ohmmsqmc {
     ///initialize polymers
     void initReptile();
 
+    ///for the first run starting with a point, set reference properties (sign)
+    void setRefProperties();
+
     ///Working arrays
     Vector<RealType> NewGlobalAction,DeltaG;
     Vector<int>NewGlobalSignWgt,WeightSign;

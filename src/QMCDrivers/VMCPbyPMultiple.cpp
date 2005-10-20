@@ -48,7 +48,7 @@ namespace ohmmsqmc {
   
   bool VMCPbyPMultiple::run() { 
 
-    Estimators->reportHeader();
+    Estimators->reportHeader(AppendRun);
       
     //going to add routines to calculate how much we need
     bool require_register =  W.createAuxDataSet();
@@ -67,7 +67,6 @@ namespace ohmmsqmc {
 
     ParticleSet::ParticleGradient_t dG(W.getTotalNum());
 
-    IndexType accstep=0;
     IndexType nAcceptTot = 0;
     IndexType nRejectTot = 0;
 
@@ -219,7 +218,7 @@ namespace ohmmsqmc {
 	  }
 	  ++it; ++iwalker;
 	}
-	++step;++accstep;
+	++step;++CurrentStep;
 	Estimators->accumulate(W);
       } while(step<nSteps);
 
@@ -230,7 +229,7 @@ namespace ohmmsqmc {
       Estimators->flush();
       Estimators->setColumn(AcceptIndex,
 	  static_cast<RealType>(nAccept)/static_cast<RealType>(nAccept+nReject));
-      Estimators->report(accstep);
+      Estimators->report(CurrentStep);
 
       LogOut->getStream() << "Block " << block << " " << timer.cpu_time() << " Fixed_configs " 
 	<< static_cast<RealType>(nAllRejected)/static_cast<RealType>(step*W.getActiveWalkers()) << 
@@ -251,6 +250,7 @@ namespace ohmmsqmc {
       << static_cast<RealType>(nAcceptTot)/static_cast<RealType>(nAcceptTot+nRejectTot)
       << endl;
 
+    branchEngine->accumulate(Estimators->average(0),1.0);
     int nconf= appendwalker ? block:1;
     HDFWalkerOutput WOextra(RootName,true,nconf);
     WOextra.write(*branchEngine);

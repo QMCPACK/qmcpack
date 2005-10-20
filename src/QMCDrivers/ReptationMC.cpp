@@ -106,13 +106,12 @@ namespace ohmmsqmc {
 
   bool ReptationMC::run() { 
 
-    Estimators->reportHeader();
+    Estimators->reportHeader(AppendRun);
 
     initReptile();
 
     IndexType block = 0;
     Pooma::Clock timer;
-    IndexType accstep=0;
     IndexType nAcceptTot = 0;
     IndexType nRejectTot = 0;
     
@@ -130,7 +129,7 @@ namespace ohmmsqmc {
       timer.start();
       do {
         moveReptile();
-        step++; accstep++;
+        step++; CurrentStep++;
         W.copyWalkerRefs(Reptile->front(),Reptile->back());
         Estimators->accumulate(W);
         pe.accumulate();
@@ -143,10 +142,9 @@ namespace ohmmsqmc {
       RealType acceptedR = static_cast<RealType>(nAccept)/static_cast<RealType>(nAccept+nReject); 
       Estimators->flush();
       Estimators->setColumn(AcceptIndex,acceptedR);
-      Estimators->report(accstep);
-      pe.report(accstep);
+      Estimators->report(CurrentStep);
+      pe.report(CurrentStep);
       
-      //change NumCuts to make accstep ~ 50%
       LogOut->getStream() 
         << "Block " << block << " " 
         << timer.cpu_time() << " " << NumTurns  << endl;

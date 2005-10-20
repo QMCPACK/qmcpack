@@ -88,7 +88,6 @@ namespace ohmmsqmc {
     ParticleSet::ParticleGradient_t G(W.getTotalNum()), dG(W.getTotalNum());
     ParticleSet::ParticleLaplacian_t L(W.getTotalNum()), dL(W.getTotalNum());
 
-    IndexType accstep=0;
     IndexType nAcceptTot = 0;
     IndexType nRejectTot = 0;
     IndexType nat = W.getTotalNum();
@@ -141,7 +140,7 @@ namespace ohmmsqmc {
             ValueType sign_new(Psi.getSign());
 
             if(sign_new*sign_old < 0.0) {//node is crossed reject the move
-              //cout << accstep << " " << iwalker << " " << iat << " rejection due to node crosssing " << endl;
+              //cout << CurrentStep << " " << iwalker << " " << iat << " rejection due to node crosssing " << endl;
               ++nRejectTemp;
               //restore properties
               W.R[iat]=thisWalker.R[iat];
@@ -156,7 +155,7 @@ namespace ohmmsqmc {
       	      RealType logGb = -oneover2tau*dot(dr,dr);
       	      RealType prob = std::min(1.0,
                   exp(2.0*(psi_new-psi_old)+logGb-logGf));
-              //cout << accstep << " " <<iwalker << " " <<  iat << " " 
+              //cout << CurrentStep << " " <<iwalker << " " <<  iat << " " 
               //  << exp(2.0*(psi_new-psi_old)) << " " << exp(logGb-logGf)
               //  << " " << prob ;
 
@@ -283,10 +282,10 @@ namespace ohmmsqmc {
           ++it; ++iwalker;
         }
 
-        ++step;++accstep;
+        ++step;++CurrentStep;
         Estimators->accumulate(W);
         Eest = branchEngine->update(Population); 
-        branchEngine->branch(accstep,W);
+        branchEngine->branch(CurrentStep,W);
       } while(step<nSteps);
       
       //WARNMSG("The number of a complete rejectoin " << nAllRejected)
@@ -301,7 +300,7 @@ namespace ohmmsqmc {
       Estimators->setColumn(EtrialIndex,Eest); 
       Estimators->setColumn(AcceptIndex,
       		     static_cast<RealType>(nAccept)/static_cast<RealType>(nAccept+nReject));
-      Estimators->report(accstep);
+      Estimators->report(CurrentStep);
       
       Eest = Estimators->average(0);
       LogOut->getStream() << "Block " << block << " " << timer.cpu_time() << " Fixed_configs " 

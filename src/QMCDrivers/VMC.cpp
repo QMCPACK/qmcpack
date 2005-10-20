@@ -57,15 +57,14 @@ namespace ohmmsqmc {
    */
   bool VMC::run() { 
     
-    Estimators->reportHeader();
+    Estimators->reportHeader(AppendRun);
+
     Estimators->reset();
 
     IndexType block = 0;
-    
     Pooma::Clock timer;
     
     double wh=0.0;
-    IndexType accstep=0;
     IndexType nAcceptTot = 0;
     IndexType nRejectTot = 0;
     bool appendwalker=pStride>0;
@@ -75,7 +74,7 @@ namespace ohmmsqmc {
       nAccept = 0; nReject=0;
       do {
         advanceWalkerByWalker();
-        step++;accstep++;
+        step++;CurrentStep++;
         Estimators->accumulate(W);
       } while(step<nSteps);
       
@@ -86,7 +85,7 @@ namespace ohmmsqmc {
       Estimators->flush();
       Estimators->setColumn(AcceptIndex,
       		    static_cast<RealType>(nAccept)/static_cast<RealType>(nAccept+nReject));
-      Estimators->report(accstep);
+      Estimators->report(CurrentStep);
       //accumulate running average with weight 1
       branchEngine->accumulate(Estimators->average(0),1.0);
 

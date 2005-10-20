@@ -79,15 +79,7 @@ namespace ohmmsqmc {
     //add columns
     IndexType PopIndex = Estimators->addColumn("Population");
     IndexType EtrialIndex = Estimators->addColumn("Etrial");
-    //write the header
-    Estimators->reportHeader();
-
-    //if(branchEngine == 0) {
-    //  branchEngine=new BranchEngineType(Tau,W.getActiveWalkers());
-    //  branchEngine->setEguess(W.getLocalEnergy());
-    //  branchEngine->put(qmcNode,LogOut);
-    //}
-    //branchEngine->flush(0);
+    Estimators->reportHeader(AppendRun);
 
     MCWalkerConfiguration::iterator it(W.begin()); 
     MCWalkerConfiguration::iterator it_end(W.end()); 
@@ -105,7 +97,6 @@ namespace ohmmsqmc {
     int Population = W.getActiveWalkers();
     int tPopulation = W.getActiveWalkers();
     RealType Eest = branchEngine->E_T;
-    IndexType accstep=0;
     IndexType nAcceptTot = 0;
     IndexType nRejectTot = 0;
     do {
@@ -118,10 +109,10 @@ namespace ohmmsqmc {
           advanceKillNodeCrossing(*branchEngine);
         else
           advanceRejectNodeCrossing(*branchEngine);
-        step++; accstep++;
+        step++; CurrentStep++;
         Estimators->accumulate(W);
         Eest = branchEngine->update(W.getActiveWalkers(), Eest);
-        branchEngine->branch(accstep,W);
+        branchEngine->branch(CurrentStep,W);
       } while(step<nSteps);
       timer.stop();
       
@@ -133,7 +124,7 @@ namespace ohmmsqmc {
       Estimators->setColumn(EtrialIndex,Eest);
       Estimators->setColumn(AcceptIndex,
       	            static_cast<RealType>(nAccept)/static_cast<RealType>(nAccept+nReject));
-      Estimators->report(accstep);
+      Estimators->report(CurrentStep);
       LogOut->getStream() << "Block " << block << " " << timer.cpu_time()
       		    << " " << Population << endl;
       Eest = Estimators->average(0);

@@ -35,11 +35,10 @@ namespace ohmmsqmc {
   QMCDriver::QMCDriver(MCWalkerConfiguration& w, 
 		       TrialWaveFunction& psi, 
 		       QMCHamiltonian& h):
-    pStride(false), 
-    AcceptIndex(-1),
+    AppendRun(false),pStride(false),CurrentStep(0),
     nBlocks(100), nSteps(1000), 
-    nAccept(0), nReject(0), nTargetWalkers(0),
-    Tau(0.001), FirstStep(0.0), qmcNode(NULL),
+    nAccept(0), nReject(0), nTargetWalkers(0), AcceptIndex(-1),
+    Tau(0.001), qmcNode(NULL),
     QMCType("invalid"), h5FileRoot("invalid"),
     W(w), Psi(psi), H(h), Estimators(0),
     LogOut(0)
@@ -47,8 +46,8 @@ namespace ohmmsqmc {
     m_param.add(nSteps,"steps","int");
     m_param.add(nBlocks,"blocks","int");
     m_param.add(nTargetWalkers,"walkers","int");
+    m_param.add(CurrentStep,"current","int");
     m_param.add(Tau,"Tau","AU");
-    m_param.add(FirstStep,"FirstStep","AU");
 
     //add each QMCHamiltonianBase to W.PropertyList so that averages can be taken
     H.add2WalkerProperty(W);
@@ -62,6 +61,11 @@ namespace ohmmsqmc {
     }
     
     if(LogOut) delete LogOut;
+  }
+
+  void QMCDriver::add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi) {
+    H1.push_back(h);
+    Psi1.push_back(psi);
   }
 
   /** process a <qmc/> element 
@@ -83,27 +87,17 @@ namespace ohmmsqmc {
    */
   void QMCDriver::process(xmlNodePtr cur) {
 
-    //check if distance tables are connected to the quantum particles W
-    //W.setUpdateMode(MCWalkerConfiguration::Update_Particle);
-
     deltaR.resize(W.getTotalNum());
     drift.resize(W.getTotalNum());
     qmcNode=cur;
     putQMCInfo(qmcNode);
     put(qmcNode);
 
-
     bool firstTime = (branchEngine == 0);
     if(firstTime) {
       branchEngine = new BranchEngineType(Tau,W.getActiveWalkers());
     }
 
-    bool flush_branch=true;
-    const xmlChar* tocontinue=xmlGetProp(qmcNode,(const xmlChar*)"continue");
-    if(tocontinue) {
-      if(xmlStrEqual(tocontinue, (const xmlChar*)"yes")) flush_branch=false;
-    }
-    //get Branching information
     branchEngine->put(qmcNode,LogOut);
 
     if(firstTime && h5FileRoot.size() && h5FileRoot != "invalid") {
@@ -112,7 +106,8 @@ namespace ohmmsqmc {
       wReader.read(*branchEngine);
     }
     
-    if(flush_branch) branchEngine->flush(0);
+    //A new run, branchEngine needs to be flushed
+    if(!AppendRun) branchEngine->flush(0);
 
     //create estimator if not allocated
     if(Estimators == 0) Estimators =new ScalarEstimatorManager(H);
@@ -125,7 +120,7 @@ namespace ohmmsqmc {
     //set the stride for the scalar estimators 
     Estimators->setStride(nSteps);
 
-    Estimators->resetReportSettings(RootName);
+    Estimators->resetReportSettings(RootName, AppendRun);
     AcceptIndex=Estimators->addColumn("AcceptRatio");
 
     //initialize the walkers before moving: can be moved to run
@@ -134,16 +129,7 @@ namespace ohmmsqmc {
     Counter++; 
   }
 
-  /**Sets the root file name for all output files.!
-   * @param aname the root file name
-   * @param h5name root name of the master hdf5 file
-   *
-   * All output files will be of
-   * the form "aname.s00X.suffix", where "X" is number
-   * of previous QMC runs for the simulation and "suffix"
-   * is the suffix for the output file. 
-   */
-  void QMCDriver::setFileNames(const string& aname, const string& h5name) {
+  void QMCDriver::setStatus(const string& aname, const string& h5name, bool append) {
 
     RootName = aname;
     char logfile[128];
@@ -154,7 +140,9 @@ namespace ohmmsqmc {
     
     LogOut->getStream() << "#Starting a " << QMCType << " run " << endl;
 
-    h5FileRoot = h5name;
+    if(h5name.size()) h5FileRoot = h5name;
+
+    AppendRun = append;
   }
 
   
@@ -185,6 +173,9 @@ namespace ohmmsqmc {
           XMLReport("Using previous configuration of " << target << " from " << cfile)
           HDFWalkerInput WO(cfile); 
           WO.append(W,nwalkers);
+          //read random state
+          WO.getRandomState(true);
+          h5FileRoot = cfile;
         }
       }
     }
@@ -302,20 +293,10 @@ namespace ohmmsqmc {
       LogOut->getStream() <<"Added " << nwalkers << " walkers" << endl;
       
       ParticleSet::ParticlePos_t rv(W.getTotalNum());
-      RealType g = FirstStep;
-      
-      MCWalkerConfiguration::iterator it(W.begin()), it_end(W.end()),itprev;
-      int iw = 0;
+      MCWalkerConfiguration::iterator it(W.begin()), it_end(W.end());
       while(it != it_end) {
-	if(iw>=nold) {
-	  makeGaussRandom(rv);
-	  if(iw)
-	    (*it)->R = (*itprev)->R+g*rv;
-	  else
-	    (*it)->R = W.R+g*rv;
-	}
-	itprev = it;
-	++it;++iw;
+	(*it)->R=W.R;
+	++it;
       }
     } else {
       LOGMSG("Using the existing " << W.getActiveWalkers() << " walkers")
@@ -351,50 +332,39 @@ namespace ohmmsqmc {
     int defaultw = 100;
     int targetw = 0;
      
-    m_param.get(cout);
-    
-    //  nTargetWalkers=0;
     if(cur) {
-
-      xmlAttrPtr att = cur->properties;
-      while(att != NULL) {
-	string aname((const char*)(att->name));
-	const char* vname=(const char*)(att->children->content);
-	if(aname == "blocks") nBlocks = atoi(vname);
-	else if(aname == "steps") nSteps = atoi(vname);
-	att=att->next;
-      }
-      
-      xmlNodePtr tcur=cur->children;
       //initialize the parameter set
       m_param.put(cur);
+
+      xmlNodePtr tcur=cur->children;
       //determine how often to print walkers to hdf5 file
       while(tcur != NULL) {
 	string cname((const char*)(tcur->name));
 	if(cname == "record") {
-	  int stemp;
-	  att = tcur->properties;
-	  while(att != NULL) {
-	    string aname((const char*)(att->name));
-	    if(aname == "stride") stemp=atoi((const char*)(att->children->content));
-	    att=att->next;
-	  }
+	  int stemp(-1);
+          OhmmsAttributeSet bAttrib;
+          bAttrib.add(stemp,"stride");
+          bAttrib.put(cur);
 	  if(stemp >= 0){
 	    pStride = true;
 	    LogOut->getStream() << "print walker ensemble every block." << endl;
 	  } else {
+	    pStride = false;
 	    LogOut->getStream() << "print walker ensemble after last block." << endl;
 	  }
-	}
+	} 
 	tcur=tcur->next;
       }
     }
     
+    //reset CurrentStep to zero if qmc/@continue='no'
+    if(!AppendRun) CurrentStep=0;
+
     LogOut->getStream() << "#timestep = " << Tau << endl;
     LogOut->getStream() << "#blocks = " << nBlocks << endl;
     LogOut->getStream() << "#steps = " << nSteps << endl;
-    LogOut->getStream() << "#FirstStep = " << FirstStep << endl;
     LogOut->getStream() << "#walkers = " << W.getActiveWalkers() << endl;
+    LogOut->getStream() << "#current = " << CurrentStep << endl;
     m_param.get(cout);
 
     /*check to see if the target population is different 
@@ -412,7 +382,33 @@ namespace ohmmsqmc {
     //always true
     return (W.getActiveWalkers()>0);
   }
+
+  xmlNodePtr QMCDriver::getQMCNode() {
+    xmlNodePtr newqmc = xmlCopyNode(qmcNode,1);
+
+    //update current
+    xmlNodePtr current_ptr=NULL;
+    xmlNodePtr cur=newqmc->children;
+    while(cur != NULL && current_ptr == NULL) {
+      string cname((const char*)(cur->name)); 
+      if(cname == "parameter") {
+        const xmlChar* aptr= xmlGetProp(cur, (const xmlChar *) "name");
+        if(aptr) {
+          if(xmlStrEqual(aptr,(const xmlChar*)"current")) current_ptr=cur;
+        }
+      }
+      cur=cur->next;
+    }
+    if(current_ptr == NULL) {
+      current_ptr = xmlNewTextChild(newqmc,NULL,(const xmlChar*)"parameter",(const xmlChar*)"0");
+      xmlNewProp(current_ptr,(const xmlChar*)"name",(const xmlChar*)"current");
+    } 
+    getContent(CurrentStep,current_ptr);
+    return newqmc;
+  }
 }
+
+
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$

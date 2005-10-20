@@ -41,7 +41,7 @@ namespace ohmmsqmc {
   bool VMCParticleByParticle::run() { 
 
 
-    Estimators->reportHeader();
+    Estimators->reportHeader(AppendRun);
     Estimators->reset();
 
     IndexType block = 0;
@@ -55,12 +55,10 @@ namespace ohmmsqmc {
     L.resize(W.getTotalNum());
     dL.resize(W.getTotalNum());
     
-    IndexType accstep=0;
     nAcceptTot = 0;
     nRejectTot = 0;
 
     bool appendwalker=pStride>0;
-    //  ofstream fout("test.txt");
     do {
       IndexType step = 0;
       timer.start();
@@ -68,9 +66,9 @@ namespace ohmmsqmc {
       nAllRejected = 0;
       do {
         advanceWalkerByWalker();
-        ++step;++accstep;
+        ++step;++CurrentStep;
         Estimators->accumulate(W);
-        if(accstep%100 == 0) updateWalkers();
+        if(CurrentStep%100 == 0) updateWalkers();
       } while(step<nSteps);
       
       timer.stop();
@@ -80,7 +78,7 @@ namespace ohmmsqmc {
       Estimators->flush();
       Estimators->setColumn(AcceptIndex,
       		   static_cast<RealType>(nAccept)/static_cast<RealType>(nAccept+nReject));
-      Estimators->report(accstep);
+      Estimators->report(CurrentStep);
       branchEngine->accumulate(Estimators->average(0),1.0);
       
       LogOut->getStream() << "Block " << block << " " << timer.cpu_time() << " Fixed_configs " 

@@ -91,7 +91,6 @@ namespace ohmmsqmc {
       Pooma::Clock timer;
       
       double wh=0.0;
-      IndexType accstep=0;
       IndexType nAcceptTot = 0;
       IndexType nRejectTot = 0;
       do {
@@ -100,7 +99,7 @@ namespace ohmmsqmc {
 	nAccept = 0; nReject=0;
 	do {
 	  advanceAllWalkers();
-	  step++;accstep++;
+	  step++;CurrentStep++;
 	  Estimators.accumulate(W);
 	} while(step<nSteps);
 	
@@ -111,7 +110,7 @@ namespace ohmmsqmc {
 	Estimators.flush();
 	Estimators.setColumn(AcceptIndex,
 			     static_cast<double>(nAccept)/static_cast<double>(nAccept+nReject));
-	Estimators.report(accstep);
+	Estimators.report(CurrentStep);
 	
 	LogOut->getStream() << "Block " << block << " " << timer.cpu_time() << endl;
 	if(pStride) WO.get(W);

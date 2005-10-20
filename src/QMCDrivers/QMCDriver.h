@@ -77,22 +77,45 @@ namespace ohmmsqmc {
 
     virtual ~QMCDriver();
 
-    void setFileNames(const string& aname, const string& h5name);
+    ///return current step
+    inline int current() const { return CurrentStep;}
 
-    void add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi) {
-      H1.push_back(h);
-      Psi1.push_back(psi);
-    }
+    /** Set the status of the QMCDriver
+     * @param aname the root file name
+     * @param h5name root name of the master hdf5 file containing previous qmcrun
+     * @param append if ture, the run is a continuation of the previous qmc
+     *
+     * All output files will be of
+     * the form "aname.s00X.suffix", where "X" is number
+     * of previous QMC runs for the simulation and "suffix"
+     * is the suffix for the output file. 
+     */
+    void setStatus(const string& aname, const string& h5name, bool append);
 
+    /** add QMCHamiltonian/TrialWaveFunction pair for multiple
+     * @param h QMCHamiltonian
+     * @param psi TrialWaveFunction
+     *
+     * *Multiple* drivers use multiple H/Psi pairs to perform correlated sampling
+     * for energy difference evaluations.
+     */
+    void add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi);
+
+    /** initialize all the walkers
+     */
     void initialize();
 
     void process(xmlNodePtr cur);
+
+    /** return a xmlnode with update **/
+    xmlNodePtr getQMCNode();
 
     void putWalkers(vector<xmlNodePtr>& wset);
 
     virtual bool run() = 0;
     
     virtual bool put(xmlNodePtr cur) = 0;
+
 
   protected:
 
@@ -102,11 +125,11 @@ namespace ohmmsqmc {
     ///branch engine, declared to be static
     static BranchEngineType *branchEngine;
 
+    ///flag to append or restart the run
+    bool AppendRun;
+
     ///flag to print walker ensemble
     bool pStride;
-
-    ///Index of the Acceptance Ratio
-    int AcceptIndex;
 
     /** bits to classify QMCDriver
      *
@@ -115,6 +138,9 @@ namespace ohmmsqmc {
      * Other bits are unused.
      */
     bitset<4> QMCDriverMode;
+
+    ///current step
+    IndexType CurrentStep;
 
     ///maximum number of blocks
     IndexType nBlocks;
@@ -131,15 +157,16 @@ namespace ohmmsqmc {
     ///the number of walkers
     IndexType nTargetWalkers;
 
+    ///Index of the Acceptance Ratio
+    IndexType AcceptIndex;
+
     ///timestep
     RealType Tau;
+
     ///Time-step factor \f$ 1/(2\Tau)\f$
     RealType m_oneover2tau;
     ///Time-step factor \f$ \sqrt{\Tau}\f$
     RealType m_sqrttau;
-
-    ///timestep to assign Walker::R at the start. Default = 0.0
-    RealType FirstStep;
 
     ///Observables manager
     ScalarEstimatorManager* Estimators;

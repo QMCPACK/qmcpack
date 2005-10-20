@@ -121,7 +121,6 @@ namespace ohmmsqmc {
       int Population = W.getActiveWalkers();
       int tPopulation = W.getActiveWalkers();
       RealType Eest = brancher.E_T;
-      IndexType accstep=0;
       IndexType nAcceptTot = 0;
       IndexType nRejectTot = 0;
       
@@ -131,11 +130,11 @@ namespace ohmmsqmc {
 	do {
 	  Population = W.getActiveWalkers();
 	  advanceWalkerByWalker(brancher);
-	  step++; accstep++;
+	  step++; CurrentStep++;
 	  Estimators.accumulate(W);
 	  //E_T = brancher.update(Population,Eest);
 	  Eest = brancher.update(Population,Eest);
-	  brancher.branch(accstep,W);
+	  brancher.branch(CurrentStep,W);
 	} while(step<nSteps);
 	timer.stop();
 	
@@ -147,7 +146,7 @@ namespace ohmmsqmc {
 	Estimators.setColumn(E_TIndex,Eest);
 	Estimators.setColumn(AcceptIndex,
 			     static_cast<double>(nAccept)/static_cast<double>(nAccept+nReject));
-	Estimators.report(accstep);
+	Estimators.report(CurrentStep);
 	LogOut->getStream() << "Block " << block << " " << timer.cpu_time()
 			    << " " << Population << endl;
 	Eest = Estimators.average(0);

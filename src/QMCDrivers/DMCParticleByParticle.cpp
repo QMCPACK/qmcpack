@@ -65,7 +65,7 @@ namespace ohmmsqmc {
 
     IndexType PopIndex = Estimators->addColumn("Population");
     IndexType EtrialIndex = Estimators->addColumn("Etrial");
-    Estimators->reportHeader();
+    Estimators->reportHeader(AppendRun);
     Estimators->reset();
 
     IndexType block = 0;
@@ -77,13 +77,13 @@ namespace ohmmsqmc {
     L.resize(nat);
     dL.resize(nat);
 
-    IndexType accstep=0;
     nAcceptTot = 0;
     nRejectTot = 0;
     m_oneover2tau = 1.0/(2.0*Tau);
     m_sqrttau = sqrt(Tau);
 
-    LogOut->getStream() << "Block   Fixed_configs  Node crossing " << endl;
+    LOGMSG("Current step " << CurrentStep)
+    LogOut->getStream() << "# Block   Fixed_configs  Node crossing " << endl;
     do {
       IndexType step = 0;
       timer.start();
@@ -99,15 +99,15 @@ namespace ohmmsqmc {
           advanceKillNodeCrossing(nat);
         else
           advanceRejectNodeCrossing(nat);
-        ++step; ++accstep;
+        ++step; ++CurrentStep;
         Estimators->accumulate(W);
 
         OHMMS::Controller->barrier();
 
-        int cur_pop = branchEngine->branch(accstep,W);
+        int cur_pop = branchEngine->branch(CurrentStep,W);
         Eest = branchEngine->CollectAndUpdate(cur_pop, Eest); 
 
-        if(accstep%100 == 0) updateWalkers();
+        if(CurrentStep%100 == 0) updateWalkers();
       } while(step<nSteps);
       
       timer.stop();
@@ -120,7 +120,7 @@ namespace ohmmsqmc {
       Estimators->setColumn(EtrialIndex,Eest); 
       Estimators->setColumn(AcceptIndex,
       		     static_cast<RealType>(nAccept)/static_cast<RealType>(nAccept+nReject));
-      Estimators->report(accstep);
+      Estimators->report(CurrentStep);
       
       Eest = Estimators->average(0);
       RealType totmoves=1.0/static_cast<RealType>(step*W.getActiveWalkers());

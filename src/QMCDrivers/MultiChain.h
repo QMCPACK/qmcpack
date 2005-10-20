@@ -22,13 +22,10 @@
 #include "Particle/MCWalkerConfiguration.h"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
+#include "Utilities/IteratorUtility.h"
+#include "Numerics/HDFNumericAttrib.h"
 #include <deque>
 namespace ohmmsqmc {
-
-  template<class IT>
-  inline void delete_iter(IT first, IT last) {
-    while(first != last) { delete *first; ++first;}
-  }
 
   struct Bead: public MCWalkerConfiguration::Walker_t{
 
@@ -37,7 +34,6 @@ namespace ohmmsqmc {
     typedef MCWalkerConfiguration::ParticlePos_t ParticlePos_t;
  
     Vector<int> BeadSignWgt;    
-    //Vector<ParticlePos_t*> Gradients;
     vector<ParticlePos_t*> Gradients;
     Matrix<RealType> Action;
     RealType TransProb[2];
@@ -78,12 +74,64 @@ namespace ohmmsqmc {
       }
       Action.resize(n,3);
     }
+
+    /** copy the restart data to buf 
+     * @param buf buffer to write
+     */
+    inline void registerData(Buffer_t& buf) {
+      buf.add(get_first_address(R),get_last_address(R));
+      buf.add(get_first_address(Drift),get_last_address(Drift)); 
+      vector<ParticlePos_t*>::iterator git(Gradients.begin()), git_end(Gradients.end());
+      while(git != git_end) {
+        buf.add(get_first_address(**git),get_last_address(**git)); ++git;
+      }
+      buf.add(BeadSignWgt.begin(),BeadSignWgt.end());
+      buf.add(TransProb[0]);
+      buf.add(TransProb[1]);
+      buf.add(Action.begin(),Action.end());
+      buf.add(Properties.begin(),Properties.end());
+    }
+
+    /** copy the restart data from buf 
+     * @param buf buffer to read from
+     */
+    inline void copyFromBuffer(Buffer_t& buf) {
+      buf.get(get_first_address(R),get_last_address(R));
+      buf.get(get_first_address(Drift),get_last_address(Drift)); 
+      vector<ParticlePos_t*>::iterator git(Gradients.begin()), git_end(Gradients.end());
+      while(git != git_end) {
+        buf.get(get_first_address(**git),get_last_address(**git)); ++git;
+      }
+      buf.get(BeadSignWgt.begin(),BeadSignWgt.end());
+      buf.get(TransProb[0]);
+      buf.get(TransProb[1]);
+      buf.get(Action.begin(),Action.end());
+      buf.get(Properties.begin(),Properties.end());
+    }
+
+    /** copy the restart data to buf 
+     * @param buf buffer to write
+     */
+    inline void copyToBuffer(Buffer_t& buf) {
+      buf.put(get_first_address(R),get_last_address(R));
+      buf.put(get_first_address(Drift),get_last_address(Drift)); 
+      vector<ParticlePos_t*>::iterator git(Gradients.begin()), git_end(Gradients.end());
+      while(git != git_end) {
+        buf.put(get_first_address(**git),get_last_address(**git)); ++git;
+      }
+      buf.put(BeadSignWgt.begin(),BeadSignWgt.end());
+      buf.put(TransProb[0]);
+      buf.put(TransProb[1]);
+      buf.put(Action.begin(),Action.end());
+      buf.put(Properties.begin(),Properties.end());
+    }
   };
 
   struct MultiChain: public std::deque<Bead*> {
 
     typedef MCWalkerConfiguration::Walker_t Walker_t;
     typedef MCWalkerConfiguration::RealType RealType;
+    typedef Bead::Buffer_t                  Buffer_t;
 
     /// Direction of growth
     int GrowthDirection;
@@ -124,8 +172,6 @@ namespace ohmmsqmc {
       RefSign.resize(npsi); RefSign=0;
     }
     
-
-
     /** destructor
      *
      * Need to clean up the walkers in the repository and the polymer chain
@@ -134,11 +180,67 @@ namespace ohmmsqmc {
       delete_iter(this->begin(),this->end());
     }
 
-
-
     inline void flip(){ 
-     GrowthDirection = abs(GrowthDirection-1); //flip the direction
+      GrowthDirection = abs(GrowthDirection-1); //flip the direction
     }
+
+    /** copy the restart data from buf 
+     * @param buf buffer to read from
+     */
+    inline void copyFromBuffer(Buffer_t& buf) {
+      int n(this->size());
+      buf.get(n);
+      buf.get(GrowthDirection);
+      buf.get(Middle);
+      buf.get(Last);
+      buf.get(nPsi);
+      buf.get(GlobalWgt);
+      buf.get(GlobalAction.begin(),GlobalAction.end());
+      buf.get(UmbrellaWeight.begin(),UmbrellaWeight.end());
+      buf.get(GlobalSignWgt.begin(),GlobalSignWgt.end());
+      buf.get(RefSign.begin(),RefSign.end());
+    }
+
+    /** add the restart data to buf 
+     * @param buf buffer to write
+     *
+     * add takes care of memory allocation and assignment
+     */
+    inline void copyToBuffer(Buffer_t& buf) {
+      double n= static_cast<double>(this->size());
+      buf.add(n);
+      buf.add(GrowthDirection);
+      buf.add(Middle);
+      buf.add(Last);
+      buf.add(nPsi);
+      buf.add(GlobalWgt);
+      buf.add(GlobalAction.begin(),GlobalAction.end());
+      buf.add(UmbrellaWeight.begin(),UmbrellaWeight.end());
+      buf.add(GlobalSignWgt.begin(),GlobalSignWgt.end());
+      buf.add(RefSign.begin(),RefSign.end());
+    }
+
+    /** read multi-chain configuration from a file
+     * @param aroot root name
+     * @return true, if the input file contains valid data
+     */
+    bool read(const string& aroot);
+
+    /** read MultiChain tree a group *
+     * @param grp hdf5 group 
+     * @return true, if the input file contains valid data
+     * 
+     * Typically, grp is the file id
+     */
+    bool read(hid_t grp);
+
+    /** write MultiChain tree to a group
+     * @param grp hdf5 group
+     *
+     * Typically, grp is the file id
+     */
+    void write(hid_t grp);
+
   };
 }
 #endif

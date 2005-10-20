@@ -27,6 +27,7 @@
 #include "Message/Communicate.h"
 #include "Utilities/Clock.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
+#include "QMCDrivers/MultiChainIO.h"
 namespace ohmmsqmc { 
   RQMCMultiple::RQMCMultiple(MCWalkerConfiguration& w, 
       TrialWaveFunction& psi, QMCHamiltonian& h):
@@ -37,7 +38,9 @@ namespace ohmmsqmc {
     RootName = "rmc-multi";
     QMCType ="rmc-multi";
     m_param.add(ReptileLength,"chains","int");
+
     QMCDriverMode.set(QMC_MULTIPLE,1);
+    QMCDriverMode.set(QMC_UPDATE_MODE,1);
     //Add the primary h and psi, extra H and Psi pairs will be added by QMCMain
     add_H_and_Psi(&h,&psi);
   }
@@ -47,39 +50,18 @@ namespace ohmmsqmc {
     delete NewBead;
   }
 
-
-  void RQMCMultiple::resizeArrays(int n) {
-
-    nPsi = n;
-    nptcl=W.G.size();
-    gRand.resize(nptcl);
-    NewGlobalAction.resize(n);
-    NewGlobalSignWgt.resize(n);
-    DeltaG.resize(n);
-    WeightSign.resize(n);
-
-    //Register properties for each walker
-    for(int ipsi=0; ipsi<nPsi; ipsi++) H1[ipsi]->add2WalkerProperty(W);
-
-    //resize Walker::Properties to hold everything
-    W.resetWalkerProperty(nPsi);
-
-    H1[0]->setPrimary(true);
-    for(int ipsi=1; ipsi<nPsi; ipsi++) {
-      H1[ipsi]->setPrimary(false);
-    }
-  }
-
-
-  ///initialize Reptile
+  /** initialize Reptile
+   * 
+   * The actions are
+   * - resize any initernal array
+   * - create Reptile if never initialized
+   *   -- if a previous configuration file is not "invalid", initialize the beads
+   * - set reference properties for the first run
+   */
   void RQMCMultiple::initReptile() {
 
     //Resize working arrays
     resizeArrays(Psi1.size());
-
-    //Temporary vector
-    vector<int> SumSign;
-    SumSign.resize(nPsi);
 
     //Initial direction of growth. To be read if calculation is restarted.
     int InitialGrowthDirection(0);
@@ -101,9 +83,43 @@ namespace ohmmsqmc {
 
     //Reptile is made up by replicating the first walker. To be read if restarted.
     //if(Reptile == 0) Reptile=new MultiChain(*W.begin(),ReptileLength,InitialGrowthDirection,nPsi);
-    if(Reptile == 0) 
+    bool restartmode = false;
+    if(Reptile == 0) {
       Reptile=new MultiChain(NewBead,ReptileLength,InitialGrowthDirection,nPsi);
+      if(h5FileRoot != "invalid") {
+        LOGMSG("Reading the previous multi-chain configurations")
+        restartmode = Reptile->read(h5FileRoot);
+      }
+    }
+    if(!restartmode) setRefProperties();
+  } // END OF InitReptile
 
+  void RQMCMultiple::resizeArrays(int n) {
+    nPsi = n;
+    nptcl=W.G.size();
+    gRand.resize(nptcl);
+    NewGlobalAction.resize(n);
+    NewGlobalSignWgt.resize(n);
+    DeltaG.resize(n);
+    WeightSign.resize(n);
+
+    //Register properties for each walker
+    for(int ipsi=0; ipsi<nPsi; ipsi++) H1[ipsi]->add2WalkerProperty(W);
+
+    //resize Walker::Properties to hold everything
+    W.resetWalkerProperty(nPsi);
+
+    H1[0]->setPrimary(true);
+    for(int ipsi=1; ipsi<nPsi; ipsi++) {
+      H1[ipsi]->setPrimary(false);
+    }
+  }
+
+  void RQMCMultiple::setRefProperties() {
+
+    //Temporary vector
+    vector<int> SumSign;
+    SumSign.resize(nPsi);
 
     ///Assign a bunch of useful pointers
     MultiChain::iterator first_bead(Reptile->begin()), bead_end(Reptile->end());
@@ -123,42 +139,42 @@ namespace ohmmsqmc {
       ///loop over WF to compute contribution to the action and WF
       for(int ipsi=0; ipsi<nPsi; ipsi++) {
 
-	////Compute Energy and Psi and save in curW
-	//curW.Properties(ipsi,LOGPSI) = Psi1[ipsi]->evaluateLog(W);
-	//RealType BeadSign = curW.Properties(ipsi,SIGN) = Psi1[ipsi]->getSign();
-	//RealType eloc= H1[ipsi]->evaluate(W);
-	//curW.Properties(ipsi,LOCALENERGY)= eloc;
-	//H1[ipsi]->saveProperty(curW.getPropertyBase(ipsi));
-	//*curW.Gradients[ipsi]=W.G;
-        
-	RealType BeadSign = curW.Properties(ipsi,SIGN);
+        ////Compute Energy and Psi and save in curW
+        //curW.Properties(ipsi,LOGPSI) = Psi1[ipsi]->evaluateLog(W);
+        //RealType BeadSign = curW.Properties(ipsi,SIGN) = Psi1[ipsi]->getSign();
+        //RealType eloc= H1[ipsi]->evaluate(W);
+        //curW.Properties(ipsi,LOCALENERGY)= eloc;
+        //H1[ipsi]->saveProperty(curW.getPropertyBase(ipsi));
+        //*curW.Gradients[ipsi]=W.G;
+
+        RealType BeadSign = curW.Properties(ipsi,SIGN);
         RealType eloc=curW.Properties(ipsi,LOCALENERGY);
 
-	///Initialize Kinetic Action
-	RealType KinActMinus=0.0;
-	RealType KinActPlus=0.0;
+        ///Initialize Kinetic Action
+        RealType KinActMinus=0.0;
+        RealType KinActPlus=0.0;
 
-	// Compute contribution to the Action in the MinusDirection
-	if(bead!=first_bead){//forward action
-	  Bead& prevW(**(bead-1));
-	  deltaR=prevW.R-curW.R - Tau*W.G;
-	  KinActMinus=Dot(deltaR,deltaR);
-	}
+        // Compute contribution to the Action in the MinusDirection
+        if(bead!=first_bead){//forward action
+          Bead& prevW(**(bead-1));
+          deltaR=prevW.R-curW.R - Tau*W.G;
+          KinActMinus=Dot(deltaR,deltaR);
+        }
 
-	// Compute contribution to the Action in the PlusDirection
-	if(bead!=last_bead){//backward action
-	  Bead& nextW(**(bead+1));
-	  deltaR=nextW.R-curW.R - Tau*W.G;
-	  KinActPlus=Dot(deltaR,deltaR);
-	} 
+        // Compute contribution to the Action in the PlusDirection
+        if(bead!=last_bead){//backward action
+          Bead& nextW(**(bead+1));
+          deltaR=nextW.R-curW.R - Tau*W.G;
+          KinActPlus=Dot(deltaR,deltaR);
+        } 
 
-	//Compute the Total "Sign" of the Reptile
-	SumSign[ipsi] += int(BeadSign);
+        //Compute the Total "Sign" of the Reptile
+        SumSign[ipsi] += int(BeadSign);
 
-	// Save them in curW
-	curW.Action(ipsi,MinusDirection)=0.25/Tau*KinActMinus;
-	curW.Action(ipsi,PlusDirection)=0.25/Tau*KinActPlus;
-	curW.Action(ipsi,Directionless)=0.5*Tau*eloc;
+        // Save them in curW
+        curW.Action(ipsi,MinusDirection)=0.25/Tau*KinActMinus;
+        curW.Action(ipsi,PlusDirection)=0.25/Tau*KinActPlus;
+        curW.Action(ipsi,Directionless)=0.5*Tau*eloc;
       }
 
       ++bead;
@@ -167,7 +183,7 @@ namespace ohmmsqmc {
     //Assign Reference Sign as the majority Sign
     for(int ipsi=0; ipsi<nPsi; ipsi++) {
       if(SumSign[ipsi]>0)
-       Reptile->RefSign[ipsi]=1;
+        Reptile->RefSign[ipsi]=1;
       else Reptile->RefSign[ipsi]=-1;
     }
 
@@ -211,14 +227,14 @@ namespace ohmmsqmc {
         deltaR=prevW.R-curW.R - Tau*curW.Drift;
         TrProbMinus=Dot(deltaR,deltaR);
       }
-      
+
       // Compute contribution to the Transition Prob in the PlusDirection
       if(bead!=last_bead){//backward action
         Bead& nextW(**(bead+1));
         deltaR=nextW.R-curW.R - Tau*curW.Drift;
         TrProbPlus=Dot(deltaR,deltaR);
       } 
-      
+
       curW.TransProb[MinusDirection]=TrProbMinus*0.5/Tau ;
       curW.TransProb[PlusDirection]=TrProbPlus*0.5/Tau;
       ++bead;
@@ -231,8 +247,8 @@ namespace ohmmsqmc {
     for(int ipsi=0; ipsi<nPsi; ipsi++) Reptile->GlobalAction[ipsi]=(*bead)->Properties(ipsi,LOGPSI);
     while(bead != last_bead){
       for(int ipsi=0; ipsi<nPsi; ipsi++){
-	Reptile->GlobalAction[ipsi]-=( (*bead)->Action(PlusDirection) + (*(bead+1))->Action(MinusDirection)+
-                                       (*bead)->Action(Directionless) + (*(bead+1))->Action(Directionless)   );
+        Reptile->GlobalAction[ipsi]-=( (*bead)->Action(PlusDirection) + (*(bead+1))->Action(MinusDirection)+
+            (*bead)->Action(Directionless) + (*(bead+1))->Action(Directionless)   );
       } 
       bead++;
     }
@@ -268,24 +284,16 @@ namespace ohmmsqmc {
       if((WeightSign[ipsi]>0) && (DeltaAction > -30)) Reptile->UmbrellaWeight[ipsi] = exp(DeltaAction);
       else Reptile->UmbrellaWeight[ipsi] = 0.0e0;
     }
- 
-  } // END OF InitReptile
-
-
-
-
+  }
 
   bool RQMCMultiple::run() { 
 
-    Estimators->reportHeader();
+    Estimators->reportHeader(AppendRun);
 
-    cout << "Initializing Reptile ... " ;
     initReptile();
-    cout << "Reptile has been initialized" << endl;
 
     IndexType block = 0;
     Pooma::Clock timer;
-    IndexType accstep=0;
     IndexType nAcceptTot = 0;
     IndexType nRejectTot = 0;
 
@@ -323,7 +331,7 @@ namespace ohmmsqmc {
       do { //Loop over steps
 
 	moveReptile();
-	step++; accstep++;
+	step++; CurrentStep++;
 
 	//Copy the front and back to W to take average report
 	//W.copyWalkerRefs(Reptile->front(),Reptile->back());
@@ -335,9 +343,9 @@ namespace ohmmsqmc {
 	  AveWeight[ipsi]+=Reptile->UmbrellaWeight[ipsi];
 	}
 	Estimators->accumulate(W);
-
+        //use the first energy for the branch
+        branchEngine->accumulate(AveEloc[0],1.0);
 	//reptileReport.accumulate();
-
       } while(step<nSteps);
 
       timer.stop();
@@ -357,11 +365,8 @@ namespace ohmmsqmc {
       RealType acceptedR = static_cast<RealType>(nAccept)/static_cast<RealType>(nAccept+nReject); 
       Estimators->flush();
       Estimators->setColumn(AcceptIndex,acceptedR);
-      Estimators->report(accstep);
+      Estimators->report(CurrentStep);
 
-      //reptileReport.report(accstep);
-
-      //change NumCuts to make accstep ~ 50%
       LogOut->getStream() 
 	<< "Block " << block << " " 
 	<< timer.cpu_time() << " " << NumTurns << endl;
@@ -369,8 +374,11 @@ namespace ohmmsqmc {
       nAccept = 0; nReject = 0;
       block++;
 
-      //if(pStride) WO.get(W);
-
+      //hdf5 file
+      HDFWalkerOutput WOa(RootName,false,0);
+      WOa.get(W);
+      WOa.write(*branchEngine);
+      Reptile->write(WOa.getFileID());
     } while(block<nBlocks);
 
     delete OutEnergy;
@@ -384,10 +392,6 @@ namespace ohmmsqmc {
     return true;
   }
 
-
-
-
-
   bool RQMCMultiple::put(xmlNodePtr q){
     //nothing to do yet
     MinusDirection=0;
@@ -395,11 +399,6 @@ namespace ohmmsqmc {
     Directionless=2;
     return true;
   }
-
-
-
-
-
 
   void RQMCMultiple::moveReptile(){
 
