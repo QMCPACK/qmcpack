@@ -1,7 +1,8 @@
 //////////////////////////////////////////////////////////////////
-// (c) Copyright 2003  by Jeongnim Kim and Jordan Vincent
+// (c) Copyright 2003  by Jeongnim Kim 
 //////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////
+//   Jeongnim Kim
 //   National Center for Supercomputing Applications &
 //   Materials Computation Center
 //   University of Illinois, Urbana-Champaign
@@ -33,7 +34,6 @@ struct VarRegistry {
   vector<T*> Pointers;
   ///vector containing the sizes of the sets of optimizable variables 
   vector<int> Sizes;
- 
 
   /** return the current size of variables */
   inline int size() const { 
