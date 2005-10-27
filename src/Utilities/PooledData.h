@@ -50,7 +50,6 @@ public:
   template<class T1>
   inline void add(T1 x) { Current++; this->push_back(static_cast<T>(x));}
 
-  template<>
   inline void add(T x) { Current++; this->push_back(x);}
 
   template<class _InputIterator>
@@ -65,7 +64,6 @@ public:
     x = static_cast<T1>((*this)[Current++]);
   }
 
-  template<>
   inline void get(T& x) { x = (*this)[Current++];}
 
   template<class _OutputIterator>
