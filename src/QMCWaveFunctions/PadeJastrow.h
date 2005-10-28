@@ -25,40 +25,49 @@
  */
 template<class T>
 struct PadeJastrow {
-
   ///coefficients
   T A, B, AB, B2;
-
+  ///reference to the pade function
+  PadeJastrow<T>* RefFunc;
   ///constructor
-  PadeJastrow(T a=1.0, T b=1.0) {reset(a,b);}
+  PadeJastrow(T a=1.0, T b=1.0): RefFunc(0) {reset(a,b);}
 
-  /**
-   *@brief reset the internal variables.
+  ///constructor with a PadeJastrow
+  PadeJastrow(PadeJastrow<T>* func): RefFunc(func) {
+    reset(RefFunc->A, RefFunc->B);
+  }
+
+  /** reset the internal variables.
+   *
+   * When RefPade is not 0, use RefPade->B to reset the values
    */
   inline void reset() {
+    if(RefFunc) { B = RefFunc->B; }
     AB = A*B; B2=2.0*B;
   }
 
-  /**
+  /** reset the internal variables.
    *@param a Pade Jastrow parameter a 
    *@param b Pade Jastrow parameter b 
-   *@brief reset the internal variables.
    */
   void reset(T a, T b) {
     A=a; B=b; AB=a*b; B2=2.0*b;
   }
-  /**@param r the distance
-     @return \f$ u(r) = a*r/(1+b*r) \f$
-  */
+
+  /** evaluate the value at r
+   * @param r the distance
+   * @return \f$ u(r) = a*r/(1+b*r) \f$
+   */
   inline T evaluate(T r) {
     return A*r/(1.0+B*r);
   }
 
-  /**@param r the distance
-     @param dudr return value  \f$ du/dr = a/(1+br)^2 \f$
-     @param d2udr2 return value  \f$ d^2u/dr^2 = -2ab/(1+br)^3 \f$
-     @return \f$ u(r) = a*r/(1+b*r) \f$
-  */
+  /** evaluate the value, first derivative and second derivative
+   * @param r the distance
+   * @param dudr return value  \f$ du/dr = a/(1+br)^2 \f$
+   * @param d2udr2 return value  \f$ d^2u/dr^2 = -2ab/(1+br)^3 \f$
+   * @return \f$ u(r) = a*r/(1+b*r) \f$ 
+   */
   inline T evaluate(T r, T& dudr, T& d2udr2) {
     T u = 1.0/(1.0+B*r);
     dudr = A*u*u;
@@ -96,7 +105,7 @@ struct PadeJastrow {
     }
     reset(Atemp,Btemp);
     vlist.add(ida,&A,1);
-    vlist.add(idb,&B,1);
+    if(RefFunc == 0) vlist.add(idb,&B,1);
     XMLReport("Jastrow Parameters = (" << A << "," << B << ")") 
   }
 };
@@ -113,6 +122,10 @@ struct PadeJastrow2 {
 
   ///constructor
   PadeJastrow2(T a=1.0, T b=1.0, T c=1.0) {reset(a,b,c);}
+
+  PadeJastrow2(PadeJastrow2<T>* func) {
+    reset(1.0,1.0,1.0);
+  }
 
   /**
    *@brief reset the internal variables.
