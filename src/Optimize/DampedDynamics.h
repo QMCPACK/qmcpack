@@ -17,18 +17,18 @@
 //   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 
-#ifndef QMCPLUSPLUS_CG_OPTIMIZATION_NRC_H
-#define QMCPLUSPLUS_CG_OPTIMIZATION_NRC_H
+#ifndef QMCPLUSPLUS_STEEPESTDESCENT_OPTIMIZATION_H
+#define QMCPLUSPLUS_STEEPESTDESCENT_OPTIMIZATION_H
 
 #include "Optimize/OptimizeBase.h"
-#include "Optimize/NRCOptimization.h"
 #include "OhmmsData/ParameterSet.h"
 
 template<class T>
-class CGOptimization: public MinimizerBase<T>,
-                      private NRCOptimization<T> {
+class DampedDynamics: public MinimizerBase<T> {
+
   public:
 
+  typedef T Return_t;
 
   /** Function to be optimized.  */
   ObjectFuncType* TargetFunc;
@@ -37,11 +37,14 @@ class CGOptimization: public MinimizerBase<T>,
   int NumSteps;
   /** displacement to evaluate the gradients numerically */
   Return_t Displacement;
-
+  /** fictitious time step for the damped dynamics, default=1 */
+  Return_t Dt;
+  /** friction for the damped dynamics, default= 0.5 */
+  Return_t Friction;
+  /** fictitious mass for the damped dynamics, default=10*/
+  Return_t Mass;
   /** tolerance the converged value */
   Return_t CostTol;
-  /** tolerance for the converged gamma = (g*g-g*cg)/g0*g0 */
-  Return_t GammaTol;
   /** tolerance for the converged gradients ||g|| < GradTol */
   Return_t GradTol;
   /** tolerance for the converged gradient component max|g[i]| < GradMaxTol */
@@ -50,10 +53,10 @@ class CGOptimization: public MinimizerBase<T>,
   /** constructor
    * @param atarget target function to optimize
    */
-  CGOptimization(ObjectFuncType* atarget=0);
+  DampedDynamics(ObjectFuncType* atarget=0);
 
   /** destructor */
-  ~CGOptimization() {}
+  ~DampedDynamics() {}
 
   /** set the target function
    * @param fn target function to optimize
@@ -87,15 +90,13 @@ class CGOptimization: public MinimizerBase<T>,
 
  protected:
 
-  bool RestartCG;
   int NumParams;
   int CurStep;
 
-  Return_t gdotg, gdotg0, gdoth, gamma;
   Return_t curCost, prevCost;
 
   std::vector<Return_t> Y;
-  std::vector<Return_t> gY, cgY, gY0;
+  std::vector<Return_t> gY, Y0;
 
   /** evaluate the value for y+dl*cg 
    *
@@ -110,112 +111,72 @@ class CGOptimization: public MinimizerBase<T>,
 };
 
 template<class T>
-inline T 
-dotProduct(const std::vector<T>& a, const std::vector<T>& b) {
-  T res=0.0;
-  for(int i=0; i<a.size(); i++) res += a[i]*b[i];
-  return res;
-}
-
-template<class T>
-CGOptimization<T>::CGOptimization(ObjectFuncType* atarget):
-  TargetFunc(atarget), RestartCG(true),
-  NumSteps(100),Displacement(1e-6),
-  CostTol(1.e-6),GradTol(1.e-6),GammaTol(1.e-4)
+DampedDynamics<T>::DampedDynamics(ObjectFuncType* atarget):
+  TargetFunc(atarget), NumSteps(100),
+  Displacement(1e-6),Dt(1.0),Friction(0.5),Mass(10.),
+  CostTol(1.e-6),GradTol(1.e-6) 
 {
-  prevCost=10e6; //some large number
+  prevCost=1e6; //some large number
 }
 
 template<class T>
-void CGOptimization<T>::setTarget(ObjectFuncType* fn) {
+void DampedDynamics<T>::setTarget(ObjectFuncType* fn) {
   TargetFunc=fn;
   NumParams=TargetFunc->NumParams();
   Y.resize(NumParams);
   gY.resize(NumParams,0);
-  cgY.resize(NumParams,0);
+  Y0.resize(NumParams);
   for(int i=0;i<NumParams; i++) {
     Y[i]=TargetFunc->Params(i);
+    Y0[i]=Y[i];
   }
 }
 
 template<class T>
-bool CGOptimization<T>::optimize() {
+bool DampedDynamics<T>::optimize() {
+
+  //T dt=1.0;
+  //T friction=0.5;
+  T t=Friction*Dt*0.5;
+  T c0=2.0/(1+t);
+  T c1=1-c0;
+  T c2 =Dt*Dt/(1.0+t)/Mass;
 
   CurStep=0;
   do {
-    if(RestartCG) { //first time
-      evaluateGradients(gY);
-      gdotg = dotProduct(gY,gY);
-      gdotg0 = gdotg;
-      gdoth  = gdotg;
-      gamma  = 0.0e0;
-      cgY= gY;
-      gY0=gY;
-      RestartCG=false;
-    }
-
-    bool success = this->lineoptimization();
-    success &= TargetFunc->IsValid;
-    if(success) { //successful lineminimization
-      curCost= Func(this->Lambda);
-      for(int i=0; i<NumParams; i++) Y[i]+=this->Lambda*cgY[i];
-    } else {
-      if(msg_stream) {
-        *msg_stream << "Stop CGOptimization due to the failure of line optimization" << std::endl;
-        *msg_stream << "Total number of steps = " << CurStep << std::endl;
-      }
-      return false;
-    }
 
     evaluateGradients(gY);
+
+    for(int i=0; i<NumParams; i++) {
+      T old=Y0[i];
+      Y0[i]=Y[i];
+      Y[i]=c0*Y0[i]+c1*old+c2*gY[i];
+    }
+
+    curCost = TargetFunc->Cost();
+
     Return_t fx= fabs(*(std::max_element(gY.begin(), gY.end())));
-    gdotg0=gdotg;
-    gdotg=dotProduct(gY,gY);
-    //Do not check the component yet
-    //gdotg=Dot(dY,dY,fx);
-    //if(fx<GradMaxTol) {
     if(fx<GradTol) {
-      if(msg_stream) *msg_stream << " CGOptimization  has reached gradient max|G| = " << fx << endl;
+      if(msg_stream) 
+        *msg_stream << " CGOptimization  has reached gradient max|G| = " << fx << endl;
       return false;
     }
-    //if(gdotg < GradTol) {
-    //  *msg_stream << " CGOptimization::Converged gradients" << endl;
-    //  return false; 
-    //}
 
-    gdoth = dotProduct(gY,gY0);
-    gamma = (gdotg-gdoth)/gdotg0;
-    gY0=gY; //save the current gradient 
-
-    if(fabs(gamma) < GammaTol){
-      if(msg_stream) 
-      *msg_stream << " CGOptimization::Converged conjugate gradients" << endl;
-      return false; 
-    }
-
-    if(gamma > 1.0e2) {
-      if(msg_stream) 
-      *msg_stream << " CGOptimization restart: " << gamma << " is too big." << endl;
-      RestartCG = true;
-    }
 
     Return_t dx=fabs((curCost-prevCost)/curCost);
     if(dx <= CostTol) {
       if(msg_stream) 
-      *msg_stream << " CGOptimization::Converged cost with " << dx << endl;
-      return false; //
+        *msg_stream << " CGOptimization::Converged cost with " << dx << endl;
+      return false; 
     }
-
-    prevCost=curCost;
-    for(int i=0; i<NumParams; i++) cgY[i]=gY[i]+gamma*cgY[i];
-
+   
     CurStep++;
 
     if(TargetFunc->IsValid) {
       TargetFunc->Report();
     } else {
       if(msg_stream)
-        *msg_stream << " CGOptimization stopped due to invalid cost values " << endl;
+        *msg_stream << " DampedDynamics stopped due to invalid cost values " << endl;
       return false;
     }
 
@@ -227,7 +188,7 @@ bool CGOptimization<T>::optimize() {
 
 template<class T>
 void 
-CGOptimization<T>::evaluateGradients(std::vector<Return_t>& grad) {
+DampedDynamics<T>::evaluateGradients(std::vector<Return_t>& grad) {
   Return_t dh=1.0/(2.0*Displacement);
   for(int i=0; i<TargetFunc->NumParams() ; i++) {
     for(int j=0; j<TargetFunc->NumParams(); j++) TargetFunc->Params(j)=Y[j];
@@ -240,43 +201,43 @@ CGOptimization<T>::evaluateGradients(std::vector<Return_t>& grad) {
 }
 
 template<class T>
-typename CGOptimization<T>::Return_t 
-CGOptimization<T>::Func(Return_t dl) {
+typename DampedDynamics<T>::Return_t 
+DampedDynamics<T>::Func(Return_t dl) {
   for(int i=0; i<NumParams; i++) TargetFunc->Params(i)=Y[i]+dl*cgY[i];
   return TargetFunc->Cost();
 }
 
 
 template<class T>
-bool CGOptimization<T>::get(std::ostream& os) const {
+bool DampedDynamics<T>::get(std::ostream& os) const {
   return true;
 }
 
 template<class T>
-bool CGOptimization<T>::put(std::istream& is) {
+bool DampedDynamics<T>::put(std::istream& is) {
   return true;
 }
 
 template<class T>
-void CGOptimization<T>::reset() {
+void DampedDynamics<T>::reset() {
 }
 
 template<class T>
-bool CGOptimization<T>::put(xmlNodePtr cur) {
+bool DampedDynamics<T>::put(xmlNodePtr cur) {
   ParameterSet p;
-  p.add(NumSteps,"min_steps","none");
-  p.add(CostTol,"tolerance","none");
-  p.add(GradTol,"tolerance_g","none");
-  p.add(GammaTol,"tolerance_cg","none");
-  p.add(this->LambdaMax,"stepsize","none");
-  p.add(Displacement,"epsilon","none");
-  p.add(this->ITMAX,"brent_steps","none");
+  p.add(NumSteps,"min_steps","scalar");
+  p.add(CostTol,"tolerance","scalar");
+  p.add(GradTol,"tolerance_g","scalar");
+  p.add(Displacement,"epsilon","scalar");
+  p.add(Dt,"stepsize","scalar");
+  p.add(Friction,"friction","scalar");
+  p.add(Mass,"mass","scalar");
   p.put(cur);
   return true;
 }
+#endif
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$
  * $Id$ 
  ***************************************************************************/
-#endif
