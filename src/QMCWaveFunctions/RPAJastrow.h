@@ -41,8 +41,13 @@ struct RPAJastrow {
    */
   RPAJastrow(T a=1.0, bool samespin=true): SameSpin(samespin) {reset(a);}
 
-  /**
-   *@brief reset the internal variables.
+  /** dummy constructor to handle referenced case
+   */
+  RPAJastrow(RPAJastr<T>* func): SameSpin(true) {
+    reset(1.0);
+  }
+
+  /** reset the internal variables.
    */
   inline void reset() {
     T F=sqrt(abs(a));
@@ -60,9 +65,10 @@ struct RPAJastrow {
     reset();
   }
 
-  /**@param r the distance
-     @return \f$ u(r) = \frac{A}{r}\left[1-\exp(-\frac{r}{F})\right]\f$
-  */
+  /** evaluate the value at r
+   * @param r the distance
+   * @return \f$ u(r) = \frac{A}{r}\left[1-\exp(-\frac{r}{F})\right]\f$
+   */
   inline T evaluate(T r) {
     return A/r*(1.0-exp(-B*r));
   }

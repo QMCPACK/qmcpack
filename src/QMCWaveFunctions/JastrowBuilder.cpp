@@ -64,6 +64,7 @@ namespace ohmmsqmc {
     DistanceTableData* d_table = DistanceTable::getTable(DistanceTable::add(targetPtcl));
     int	ng = targetPtcl.groups();
 
+    map<string,FuncType*> jastrowMap;
     vector<FuncType*> jastrow(ng*ng);
     for(int i=0; i<ng*ng; i++) jastrow[i]=0;
     int nj = 0;
@@ -86,12 +87,31 @@ namespace ohmmsqmc {
       if(cname ==corr_tag) {
 	string spA((const char*)(xmlGetProp(cur,(const xmlChar *)"speciesA")));
 	string spB((const char*)(xmlGetProp(cur,(const xmlChar *)"speciesB")));
+        const xmlChar* refptr=xmlGetProp(cur,(const xmlChar *)"ref");
+        const xmlChar* idptr=xmlGetProp(cur,(const xmlChar *)"id");
 	int ia = targetPtcl.getSpeciesSet().findSpecies(spA);
 	int ib = targetPtcl.getSpeciesSet().findSpecies(spB);
 	int iab = ia*ng+ib;
 	if(!(jastrow[iab])) {
 	  //create the new Jastrow function
-	  FuncType *j2 = new FuncType;
+	  FuncType *j2=NULL;
+          if(refptr == NULL) {
+            j2 = new FuncType;
+          } else {
+            map<string,FuncType*>::iterator it(jastrowMap.find((const char*)refptr));
+            if(it != jastrowMap.end()) {
+              j2 = new FuncType((*it).second);
+            } else { 
+              j2 = new FuncType;
+            }
+          }
+          if(idptr == NULL) {
+            ostringstream idassigned; idassigned << "j2"<<iab;
+            jastrowMap[idassigned.str()]=j2;
+          } else {
+            jastrowMap[(const char*)idptr]=j2;
+          }
+
 	  //initialize
 	  j2->put(cur,targetPsi.VarList);
 	  jastrow[iab]= j2;
