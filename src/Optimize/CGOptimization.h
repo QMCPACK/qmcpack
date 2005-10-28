@@ -29,6 +29,9 @@ class CGOptimization: public MinimizerBase<T>,
                       private NRCOptimization<T> {
   public:
 
+  typedef T Return_t;
+  typedef typename MinimizerBase<T>::ObjectFuncType ObjectFuncType;
+  using MinimizerBase<T>::msg_stream;
 
   /** Function to be optimized.  */
   ObjectFuncType* TargetFunc;

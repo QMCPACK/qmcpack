@@ -29,7 +29,9 @@ class DampedDynamics: public MinimizerBase<T> {
   public:
 
   typedef T Return_t;
-
+  typedef typename MinimizerBase<T>::ObjectFuncType ObjectFuncType;
+  using MinimizerBase<T>::msg_stream;
+ 
   /** Function to be optimized.  */
   ObjectFuncType* TargetFunc;
 
@@ -102,7 +104,7 @@ class DampedDynamics: public MinimizerBase<T> {
    *
    * Lineminimization uses this function to find the minimum along the CG direction
    */
-  Return_t Func(Return_t dl);
+  //Return_t Func(Return_t dl);
 
   /** evaluate the gradients numerically 
    * @param grad container for the gradients
@@ -200,12 +202,12 @@ DampedDynamics<T>::evaluateGradients(std::vector<Return_t>& grad) {
   }
 }
 
-template<class T>
-typename DampedDynamics<T>::Return_t 
-DampedDynamics<T>::Func(Return_t dl) {
-  for(int i=0; i<NumParams; i++) TargetFunc->Params(i)=Y[i]+dl*cgY[i];
-  return TargetFunc->Cost();
-}
+//template<class T>
+//typename DampedDynamics<T>::Return_t 
+//DampedDynamics<T>::Func(Return_t dl) {
+//  for(int i=0; i<NumParams; i++) TargetFunc->Params(i)=Y[i]+dl*cgY[i];
+//  return TargetFunc->Cost();
+//}
 
 
 template<class T>
