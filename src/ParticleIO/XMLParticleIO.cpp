@@ -270,7 +270,6 @@ bool XMLParticleParser::putSpecial(xmlNodePtr cur) {
 	  putContent(ap,tcur);
 	  tspecies(iproperty,sid) = ap;
 	} else if(nat_group[ng] && tcname == attrib_tag) { 
-	  cout << "Adding groups " << nat_group[ng] << endl;
 	  getPtclAttrib(tcur,nat_group[ng],nloc);
 	}
 	tcur = tcur->next;
@@ -316,7 +315,7 @@ bool XMLParticleParser::putSpecial(xmlNodePtr cur) {
 
   if(expand) {
     ExpandSuperCell(ref_,uc_grid);
-    ref_.Lattice.print(cout);
+    //ref_.Lattice.print(cout);
   }
   
   if(randomizeR == "yes") {
@@ -521,9 +520,9 @@ xmlNodePtr XMLSaveParticle::createNode(bool addlattice) {
     SpeciesName = ref_.getSpeciesSet().speciesName;
   }
 
-  if(addlattice) {
-    ref_.Lattice.print(cout);
-  }
+  //if(addlattice) {
+  //  ref_.Lattice.print(cout);
+  //}
 
   xmlNodePtr cur = xmlNewNode(NULL,(const xmlChar*)"particleset");
   xmlNewProp(cur,(const xmlChar*)"name",(const xmlChar*)ref_.getName().c_str());
