@@ -99,11 +99,11 @@ namespace ohmmsqmc {
             if(ion) {
               if(ion->getTotalNum()>1) 
 		if(ion->Lattice.BoxBConds[0]){
-		  LOGMSG("Adding Periodic Coulomb potential i-i");
+	          LOGMSG("Adding Periodic Coulomb potential " << ion->getName() << "-" << ion->getName());
 		  curH->add(new CoulombPBCAA(*ion),"IonIon");
 		}
 		else {
-		  LOGMSG("Adding Coulomb potential i-i");
+	          LOGMSG("Adding Coulomb potential " << ion->getName() << "-" << ion->getName());
 		  curH->add(new IonIonPotential(*ion),"IonIon");
 		}
              }
@@ -154,11 +154,11 @@ namespace ohmmsqmc {
 
       if(ion->getTotalNum()>1) 
 	if(ion->Lattice.BoxBConds[0]){
-	  LOGMSG("Adding Periodic Coulomb potential i-i");
+	  LOGMSG("Adding Periodic Coulomb potential " << ion->getName() << "-" << ion->getName());
           curH->add(new CoulombPBCAA(*ion),"IonIon");
 	}
 	else{
-	  LOGMSG("Adding Coulomb potential i-i");
+	  LOGMSG("Adding Coulomb potential " << ion->getName() << "-" << ion->getName());
           curH->add(new IonIonPotential(*ion),"IonIon");
 	}
     }

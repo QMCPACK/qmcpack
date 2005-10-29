@@ -29,22 +29,38 @@ SET(WFSRCS
 # QMC Drivers which implements various QMC algorithms
 ####################################
 SET(QMCDRIVERS
+  ../QMCDrivers/SimpleFixedNodeBranch.cpp
   ../QMCDrivers/QMCDriver.cpp
   ../QMCDrivers/DummyQMC.cpp
   ../QMCDrivers/VMC.cpp
   ../QMCDrivers/VMCParticleByParticle.cpp
-  ../QMCDrivers/QMCOptimize.cpp
   ../QMCDrivers/MolecuDMC.cpp
   ../QMCDrivers/ReptationMC.cpp
   ../QMCDrivers/PolymerEstimator.cpp
-  ../Estimators/ScalarEstimatorManager.cpp
   ../QMCDrivers/VMCMultiple.cpp
   ../QMCDrivers/VMCPbyPMultiple.cpp
   ../QMCDrivers/RQMCMultiple.cpp
   ../QMCDrivers/MultiChain.cpp
-  ../Estimators/MultipleEnergyEstimator.cpp
   ../QMCDrivers/DMCParticleByParticle.cpp
+  ../QMCDrivers/WalkerControlBase.cpp
+  ../Estimators/ScalarEstimatorManager.cpp
+  ../Estimators/MultipleEnergyEstimator.cpp
+  ../QMCDrivers/QMCOptimize.cpp
+  ../QMCDrivers/QMCCostFunction.cpp
 )
+
+#include GSLOptimize.cpp if libgsl is enabled
+#IF(HAVE_LIBGSL)
+#  SET(QMCDRIVERS ${QMCDRIVERS} ../QMCDrivers/GSLOptimize.cpp)
+#ENDIF(HAVE_LIBGSL)
+
+IF(HAVE_MPI) 
+SET(QMCDRIVERS ${QMCDRIVERS} 
+    ../QMCDrivers/GlobalWalkerControl.cpp
+    ../QMCDrivers/AsyncWalkerControl.cpp
+    )
+ENDIF(HAVE_MPI) 
+
 
 ####################################
 # Test code to debug DMCParticleByParticle
@@ -100,11 +116,14 @@ ENDIF(INTEL_MKL)
 ####################################
 # build mo2grid3d executable
 ####################################
+IF(NOT HAVE_MPI)
 ADD_EXECUTABLE(mo2grid3d ${MOSRCS})
 TARGET_LINK_LIBRARIES(mo2grid3d qmc qmcbase)
+ENDIF(NOT HAVE_MPI)
 
 ####################################
 #general qmcapp for multiple configurations, hamiltonians and wavefunctions.
 ####################################
 ADD_EXECUTABLE(qmcapp ${MAINSRCS})
 TARGET_LINK_LIBRARIES(qmcapp qmc qmcbase)
+
