@@ -69,7 +69,7 @@ namespace ohmmsqmc {
 
     typedef MCWalkerConfiguration::Walker_t Walker_t;
     typedef Walker_t::Buffer_t              Buffer_t;
-    typedef SimpleFixedNodeBranch<RealType> BranchEngineType;
+    typedef SimpleFixedNodeBranch           BranchEngineType;
     //typedef MolecuFixedNodeBranch<RealType> BranchEngineType;
 
     /// Constructor.

@@ -314,7 +314,7 @@ namespace ohmmsqmc {
     return true;
   }
   
-  void GSLOptimize::WriteStuff() {
+  void GSLOptimize::Report() {
 
     static int writeCounter=0;
 

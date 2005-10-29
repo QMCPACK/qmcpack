@@ -1,8 +1,8 @@
 //////////////////////////////////////////////////////////////////
-// (c) Copyright 2003- by Jeongnim Kim and Jordan Vincent
+// (c) Copyright 2005- by Jeongnim Kim
 //////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////
-//   Jeongnim Kim and Jordan Vincent
+//   Jeongnim Kim
 //   National Center for Supercomputing Applications &
 //   Materials Computation Center
 //   University of Illinois, Urbana-Champaign
@@ -13,19 +13,15 @@
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
-//   Department of Physics, Ohio State University
-//   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 #ifndef OHMMS_QMC_SIMPLE_FIXEDNODE_BRANCHER_H
 #define OHMMS_QMC_SIMPLE_FIXEDNODE_BRANCHER_H
 
-#include <deque>
-#include <algorithm>
-#include <numeric>
-#include "OhmmsData/ParameterSet.h"
+#include "Configuration.h"
+#include "Particle/MCWalkerConfiguration.h"
 #include "OhmmsData/HDFAttribIO.h"
-#include "Message/CommOperators.h"
+#include "QMCDrivers/WalkerControlBase.h"
 
 namespace ohmmsqmc {
 
@@ -44,96 +40,101 @@ namespace ohmmsqmc {
    * ideal population, and \f$<E_G>\f$ is an estimate of the
    * local energy. 
    */
-  template<class T>
-  class SimpleFixedNodeBranch {
+  class SimpleFixedNodeBranch: public QMCTraits {
 
    public:
-    ///counts the number of times update has been called
-    int Counter;
-    ///ideal population
-    int Nideal;
-    ///maximum population
-    int Nmax;
-    ///minumum population
-    int Nmin;
-    ///maximum copies of a walker
-    int MaxCopy;
-    ///control population fluctutaions
-    int NumGeneration;
 
-    ///the timestep
-    T Tau;
-    ///feedback parameter to control the population
-    T Feed;
-    ///energy offset to control branching
-    T E_T;
-    ///Feed*log(N)
-    T logN;
-    ///Accumulation of the energy
-    T EavgSum;
-    ///Accumulation of the weight
-    T WgtSum;
-
-    ///Global energy/weight
-    TinyVector<T,2> gEavgWgt;
-
-    ///Constructor
-    SimpleFixedNodeBranch(T tau, int nideal): Counter(0), Nideal(nideal), NumGeneration(50), MaxCopy(10),
-      Tau(tau), E_T(0.0), EavgSum(0.0), WgtSum(0.0) {
-      Feed = 1.0/(static_cast<T>(NumGeneration)*Tau);
-      logN = Feed*log(static_cast<T>(Nideal));
-    }
+     ///boolean to swap walkers among processors
+     int SwapMode;
+     ///counts the number of times update has been called
+     int Counter;
+     ///ideal population
+     int Nideal;
+     ///maximum population
+     int Nmax;
+     ///minumum population
+     int Nmin;
+     ///maximum copies of a walker
+     int MaxCopy;
+     ///control population fluctutaions
+     int NumGeneration;
+     ///the timestep
+     RealType Tau;
+     ///feedback parameter to control the population
+     RealType Feed;
+     ///energy offset to control branching
+     RealType E_T;
+     ///Feed*log(N)
+     RealType logN;
+     ///Accumulation of the energy
+     RealType EavgSum;
+     ///Accumulation of the weight
+     RealType WgtSum;
+     ///tolerance to trigger swapping to control populations per node
+     RealType PopControl;
     
-    ///return true if the nodal surface is crossed
-    inline bool operator()(T psi0, T psi1) const { return psi0*psi1 < 0;}
-    
-    /**  Calculates the Branching Green's function
-     *@param tau effective time step
-     *@param emixed mixed energy \f$(E_L(R)+E_L(R'))/2\f$
-     *@param reject rejection probability
-     *@return \f$G_{branch}\f$
-     *
-     \f[G_{branch} = \exp(-\tau \left[(E_L(R)+E_L(R'))/2-E_T\right])\f]
-     *@note Use the rejection probability \f$q\f$ to limit \f$G_{branch}\f$
-     \f[ G_{branch} = \min \left(\frac{1}{2q},G_{branch}\right). \f]
-     */
-    inline T branchGF(T tau, T emixed, T reject) const { 
-      return exp(-tau*(emixed-E_T));
-      //return min(0.5/(reject+1e-12),exp(-tau*(emix-E_T)));
-    }
-    
-    /** set the trial energy \f$ <E_G> = eg \f$
-     * @param eg input trial energy
-     */
-    inline void setEguess(T eg){
-      E_T = eg;
-    } 
+     WalkerControlBase* WalkerController;
+
+     ///Constructor
+     SimpleFixedNodeBranch(RealType tau, int nideal);
+
+     //inline void setSwapWalkers(bool swap) { SwapWalkers=swap;}
+     //inline bool swapWalkers() { return SwapWalkers;}
+
+     ///return true if the nodal surface is crossed
+     inline bool operator()(RealType psi0, RealType psi1) const { return psi0*psi1 < 0;}
+
+     //inline bool operator()(complex<RealType>& psi0, complex<RealType>& psi1) const { 
+     //  return true;
+     //}
+
+     /**  Calculates the Branching Green's function
+      *@param tau effective time step
+      *@param emixed mixed energy \f$(E_L(R)+E_L(R'))/2\f$
+      *@param reject rejection probability
+      *@return \f$G_{branch}\f$
+      *
+      \f[G_{branch} = \exp(-\tau \left[(E_L(R)+E_L(R'))/2-E_T\right])\f]
+      *@note Use the rejection probability \f$q\f$ to limit \f$G_{branch}\f$
+      \f[ G_{branch} = \min \left(\frac{1}{2q},G_{branch}\right). \f]
+      */
+     inline RealType branchGF(RealType tau, RealType emixed, RealType reject) const { 
+       return exp(-tau*(emixed-E_T));
+       //return min(0.5/(reject+1e-12),exp(-tau*(emix-E_T)));
+     }
+
+     /** set the trial energy \f$ <E_G> = eg \f$
+      * @param eg input trial energy
+      */
+     inline void setEguess(RealType eg){
+       E_T = eg;
+     } 
 
 
-    /** call MCWalkerConfiguration::branch
-     *@param iter the iteration
-     *@param w the walker ensemble
-     *@return the number of walkers after branching
-     */
-    inline int branch(int iter, MCWalkerConfiguration& w) {
-      return w.branch(10,Nmax,Nmin);
-    }
+     /** call MCWalkerConfiguration::branch
+      *@param iter the iteration
+      *@param w the walker ensemble
+      *@return the number of walkers after branching
+      */
+     inline int branch(int iter, MCWalkerConfiguration& w) {
+       return WalkerController->branch(iter,w,PopControl);
+     }
 
-    /** restart averaging
-     * @param counter Counter to determine the cummulative average will be reset.
-     */
-    inline void flush(int counter) {
-      if(counter == 0) {
-        EavgSum=0.0;
-        WgtSum=0.0; 
-      }
-      Counter=counter;
-    }
+     /** restart averaging
+      * @param counter Counter to determine the cummulative average will be reset.
+      */
+     inline void flush(int counter) {
+       if(counter == 0) {
+         EavgSum=0.0;
+         WgtSum=0.0; 
+       }
+       Counter=counter;
+     }
 
-    inline void accumulate(T eloc, T wgt) {
-      Counter++;
-      EavgSum += eloc*wgt; WgtSum += wgt;
-    }
+     inline void accumulate(RealType eloc, RealType wgt) {
+       Counter++;
+       EavgSum += eloc*wgt; WgtSum += wgt;
+     }
 
     /** Update the energy offset
      *@param pop_now current population \f$ P(t) \f$
@@ -144,19 +145,16 @@ namespace ohmmsqmc {
      *\f[ E_T = <E_G> - feed \log \left( \frac{P(t)}{P_0} \right) \f]
      *<E_G> is a running average over multiple runs.
     */
-    inline T update(int pop_now, T ecur) {
-      gEavgWgt[0]=EavgSum;
-      gEavgWgt[1]=WgtSum;
-      return E_T = EavgSum/WgtSum-Feed*log(static_cast<T>(pop_now))+logN;
+    inline RealType update(int pop_now, RealType ecur) {
+      return E_T = EavgSum/WgtSum-Feed*log(static_cast<RealType>(pop_now))+logN;
     }
 
-    inline T CollectAndUpdate(int pop_now, T ecur) {
-      gEavgWgt[0]=EavgSum;
-      gEavgWgt[1]=WgtSum;
-      //DMC+MPI: disabled
-      //gsum(gEavgWgt,0);
-      return E_T = gEavgWgt[0]/gEavgWgt[1]-Feed*log(static_cast<T>(pop_now))+logN;
+    inline RealType CollectAndUpdate(int pop_now, RealType ecur) {
+      return E_T = WalkerController->average(EavgSum,WgtSum)-Feed*log(static_cast<RealType>(pop_now))+logN;
     }
+
+    /** reset the internal parameters */
+    void reset();
 
     /**  Parse the xml file for parameters
      *@param cur current xmlNode 
@@ -169,60 +167,11 @@ namespace ohmmsqmc {
      * \f$ feed = \frac{1}{N_G \tau} \f$ 
      * </ul>
     */
-    bool put(xmlNodePtr cur, OhmmsInform *LogOut){
-      ParameterSet m_param;
-      m_param.add(E_T,"en_ref","AU");
-      m_param.add(NumGeneration,"num_gen","int");
-      m_param.add(MaxCopy,"max_copy","int");
-      m_param.add(Nideal,"target_walkers","int");
-      m_param.add(EavgSum,"energy_sum","AU");
-      m_param.add(WgtSum,"weight_sum","none");
-      m_param.put(cur);
-      reset();
-      LogOut->getStream() << "#target_walkers = " << Nideal << endl;
-      LogOut->getStream() << "#reference energy = " << E_T << endl;
-      LogOut->getStream() << "#number of generations = " << NumGeneration << endl;
-      LogOut->getStream() << "#feedback = " << Feed << endl;
-      return true;
-    }
+    bool put(xmlNodePtr cur, OhmmsInform *LogOut);
 
-    void reset() {
-      int npernode=Nideal/OHMMS::Controller->ncontexts();
-      Nmax = 2*npernode;
-      Nmin = static_cast<int>(npernode/2);
-      Feed = 1.0/(static_cast<T>(NumGeneration)*Tau);
-      logN = Feed*log(static_cast<T>(Nideal));
-      LOGMSG("Current Counter = " << Counter << " Trial Energy = " << E_T)
-    }
+    void write(hid_t grp);
 
-    void write(hid_t grp) {
-      hsize_t dim=3;
-      vector<T> esave(3);
-      esave[0] = (abs(E_T)<numeric_limits<T>::epsilon())? EavgSum/WgtSum:E_T;
-      esave[1]=EavgSum; esave[2]=WgtSum;
-      hid_t dataspace  = H5Screate_simple(1, &dim, NULL);
-      hid_t dataset =  
-        H5Dcreate(grp, "Summary", H5T_NATIVE_DOUBLE, dataspace, H5P_DEFAULT);
-      hid_t ret = 
-        H5Dwrite(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT,&esave[0]);
-      H5Dclose(dataset);
-      H5Sclose(dataspace);
-    }
-
-    void read(hid_t grp) {
-      herr_t status = H5Eset_auto(NULL, NULL);
-      status = H5Gget_objinfo (grp, "Summary", 0, NULL);
-      if(status == 0) {
-        hid_t dataset = H5Dopen(grp, "Summary");
-        vector<T> esave(3);
-        hsize_t ret = H5Dread(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, &esave[0]);
-        H5Dclose(dataset);
-        E_T=esave[0]; EavgSum=esave[1]; WgtSum=esave[2];
-        LOGMSG("Summary is found \n BranchEngine is initialized  E_T=" << E_T << " EavgSum="<<EavgSum << " WgtSum=" << WgtSum)
-      } else {
-        LOGMSG("Summary is not found. Starting from scratch")
-      }
-    }
+    void read(hid_t grp);
 
    private:
     ///default constructor (disabled)

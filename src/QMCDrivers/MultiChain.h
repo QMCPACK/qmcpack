@@ -102,7 +102,8 @@ namespace ohmmsqmc {
       while(git != git_end) {
         buf.get(get_first_address(**git),get_last_address(**git)); ++git;
       }
-      buf.get(BeadSignWgt.begin(),BeadSignWgt.end());
+      //buf.get(BeadSignWgt.begin(),BeadSignWgt.end());
+      for(int i=0; i<BeadSignWgt.size(); i++) buf.get(BeadSignWgt[i]);
       buf.get(TransProb[0]);
       buf.get(TransProb[1]);
       buf.get(Action.begin(),Action.end());
@@ -197,8 +198,10 @@ namespace ohmmsqmc {
       buf.get(GlobalWgt);
       buf.get(GlobalAction.begin(),GlobalAction.end());
       buf.get(UmbrellaWeight.begin(),UmbrellaWeight.end());
-      buf.get(GlobalSignWgt.begin(),GlobalSignWgt.end());
-      buf.get(RefSign.begin(),RefSign.end());
+      for(int i=0; i<GlobalSignWgt.size(); i++) buf.get(GlobalSignWgt[i]);
+      for(int i=0; i<RefSign.size(); i++) buf.get(RefSign[i]);
+      //buf.get(GlobalSignWgt.begin(),GlobalSignWgt.end());
+      //buf.get(RefSign.begin(),RefSign.end());
     }
 
     /** add the restart data to buf 

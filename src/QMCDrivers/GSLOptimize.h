@@ -34,7 +34,7 @@ namespace ohmmsqmc {
    * generated from VMC. Modify VMC_OPT to handle various cost functions.
    * This class is only for internal use but should not be distributed to the public domain.
    */
-  class GSLOptimize: public QMCDriver, public MinimizeFunction 
+  class GSLOptimize: public QMCDriver, public CostFunctionBase<OHMMS_PRECISION> 
   {
   public:
 
@@ -55,11 +55,11 @@ namespace ohmmsqmc {
     ///process xml node
     bool put(xmlNodePtr cur);
     ///assign optimization parameter i
-    scalar& Params(int i) { return OptParams[i]; }
+    Return_t& Params(int i) { return OptParams[i]; }
     ///return optimization parameter i
-    scalar Params(int i) const { return OptParams[i]; }
+    Return_t Params(int i) const { return OptParams[i]; }
     ///return the cost value for CGMinimization
-    scalar Cost();
+    Return_t Cost();
 
     ///evaluate the local energies of the samples
     RealType correlatedSampling();
@@ -73,7 +73,7 @@ namespace ohmmsqmc {
       m_wfPtr=cur;
     }
 
-    void WriteStuff();
+    void Report();
 
   private:
 
@@ -124,11 +124,11 @@ namespace ohmmsqmc {
     ///parameters to be updated
     vector<xmlNodePtr> m_param_out;
     ///storage for previous values of the cost function
-    std::deque<scalar> costList;
+    std::deque<Return_t> costList;
     ///storage for previous sets of parameters
-    std::deque<vector<scalar> > paramList;
+    std::deque<vector<Return_t> > paramList;
     ///parameters to be optimized
-    vector<scalar> OptParams;
+    vector<Return_t> OptParams;
     ///ID tag for each optimizable parameter
     vector<string> IDtag;  
     ///method for optimization, default conjugate gradient

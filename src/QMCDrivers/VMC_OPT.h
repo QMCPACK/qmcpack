@@ -32,7 +32,8 @@ namespace ohmmsqmc {
    * @brief Implements wave-function optimization
    *
    * Optimization by correlated sampling method with configurations 
-   * generated from VMC.
+   * generated from VMC. This class should not be distributed to the public
+   * domain.
    */
 
   class VMC_OPT: public QMCDriver, public MinimizeFunction 

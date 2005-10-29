@@ -56,8 +56,10 @@ namespace ohmmsqmc {
     IndexType nNodeCrossing;
     ///hdf5 file name for Branch conditions
     string BranchInfo;
-    ///input string
+    ///input string to determine kill walkers or not
     string KillWalker;
+    ///input string to determine swap walkers among mpi processors
+    string SwapWalkers;
     ParticleSet::ParticleGradient_t G, dG;
     ParticleSet::ParticleLaplacian_t L, dL;
 

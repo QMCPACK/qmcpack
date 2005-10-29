@@ -13,8 +13,6 @@
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
-//   Department of Physics, Ohio State University
-//   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 #include "QMCDrivers/QMCDriver.h"
@@ -236,6 +234,7 @@ namespace ohmmsqmc {
         ++it;
       }
     }
+
   }
 
   /** Update walkers
@@ -342,15 +341,14 @@ namespace ohmmsqmc {
 	string cname((const char*)(tcur->name));
 	if(cname == "record") {
 	  int stemp(-1);
-          OhmmsAttributeSet bAttrib;
-          bAttrib.add(stemp,"stride");
-          bAttrib.put(cur);
+          const xmlChar* aptr=xmlGetProp(tcur,(const xmlChar*)"stride");
+          if(aptr) stemp = atoi((const char*)aptr);
 	  if(stemp >= 0){
 	    pStride = true;
-	    LogOut->getStream() << "print walker ensemble every block." << endl;
+	    LOGMSG(" Append walker ensemble every block.")
 	  } else {
 	    pStride = false;
-	    LogOut->getStream() << "print walker ensemble after last block." << endl;
+	    LOGMSG(" Overwrite walker ensemble every block.")
 	  }
 	} 
 	tcur=tcur->next;

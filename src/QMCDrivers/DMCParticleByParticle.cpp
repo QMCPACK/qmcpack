@@ -59,9 +59,8 @@ namespace ohmmsqmc {
     log_buffer.setf(ios::scientific, ios::floatfield);
     log_buffer.precision(6);
 
-    //DMC+MPI: disabled
-    //estimator collects data
-    //Estimators->setCollectionMode(OHMMS::Controller->ncontexts()>1);
+    //set the collection mode for the estimator
+    Estimators->setCollectionMode(branchEngine->SwapMode);
 
     IndexType PopIndex = Estimators->addColumn("Population");
     IndexType EtrialIndex = Estimators->addColumn("Etrial");
@@ -93,18 +92,18 @@ namespace ohmmsqmc {
       nNodeCrossing=0;
       IndexType pop_acc=0; 
       do {
-        pop_acc += W.getActiveWalkers();
         //default is killing
         if(KillNodeCrossing) 
           advanceKillNodeCrossing(nat);
         else
           advanceRejectNodeCrossing(nat);
+
         ++step; ++CurrentStep;
         Estimators->accumulate(W);
 
-        OHMMS::Controller->barrier();
-
         int cur_pop = branchEngine->branch(CurrentStep,W);
+
+        pop_acc += cur_pop;
         Eest = branchEngine->CollectAndUpdate(cur_pop, Eest); 
 
         if(CurrentStep%100 == 0) updateWalkers();
@@ -126,6 +125,7 @@ namespace ohmmsqmc {
       RealType totmoves=1.0/static_cast<RealType>(step*W.getActiveWalkers());
       LogOut->getStream() << setw(4) << block 
         << setw(12) << timer.cpu_time() 
+        << setw(12) << timer.value() 
         << setw(20) << static_cast<RealType>(nAllRejected)*totmoves
         << setw(20) << static_cast<RealType>(nNodeCrossing)*totmoves << endl;
 
