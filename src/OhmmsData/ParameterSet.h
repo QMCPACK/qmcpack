@@ -59,7 +59,7 @@ struct ParameterSet: public OhmmsElementBase,
     cur = cur->xmlChildrenNode;
     bool something = false;
     while(cur != NULL) {
-      string cname((const char*)(cur->name));
+      std::string cname((const char*)(cur->name));
       if(cname == myName) {
         const xmlChar* aptr= xmlGetProp(cur, (const xmlChar *) "name");
         if(aptr) {
@@ -97,7 +97,7 @@ struct ParameterSet: public OhmmsElementBase,
   }
 
   template<class PDT>
-  inline void setValue(const string& aname, PDT aval){
+  inline void setValue(const std::string& aname, PDT aval){
     iterator it = find(aname);
     if(it != end()) {
        (dynamic_cast<OhmmsParameter<PDT>*>((*it).second))->setValue(aval);

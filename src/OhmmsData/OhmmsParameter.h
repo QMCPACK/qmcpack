@@ -53,7 +53,7 @@ class OhmmsParameter: public OhmmsElementBase {
   ///reference to a value of type T
   T& ref_;
   ///the unit of this object
-  string unit_;
+  std::string unit_;
   ///pointer to the correponding xmlNode
   xmlNodePtr node_;
   //@}
@@ -73,7 +73,7 @@ class OhmmsParameter: public OhmmsElementBase {
   inline bool get(std::ostream& os) const {
     os << "<parameter name=\""<< myName << "\" condition=\""
        << unit_ << "\">"
-       << ref_ << "</parameter>" << endl;
+       << ref_ << "</parameter>" << std::endl;
     return true;
   }
 
@@ -126,7 +126,7 @@ class OhmmsParameter<bool>: public OhmmsElementBase {
   ///reference to a value of type T
   bool& ref_;
   ///the unit of this object
-  string unit_;
+  std::string unit_;
   ///pointer to the correponding xmlNode
   xmlNodePtr node_;
   //@}
@@ -144,7 +144,7 @@ class OhmmsParameter<bool>: public OhmmsElementBase {
 
   ///print to an ostream
   inline bool get(std::ostream& os) const {
-    os << "<parameter name=\""<< myName << "\">" << ref_ << "</parameter>" << endl;
+    os << "<parameter name=\""<< myName << "\">" << ref_ << "</parameter>" << std::endl;
     return true;
   }
 
@@ -168,7 +168,7 @@ class OhmmsParameter<bool>: public OhmmsElementBase {
 
   ///read from istream
   inline bool put(std::istream& is) { 
-    string yes;
+    std::string yes;
     is >> yes;
     if(yes == "yes" || yes == "true" || yes == "1") 
       ref_=true;
