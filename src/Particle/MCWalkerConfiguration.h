@@ -116,6 +116,45 @@ namespace ohmmsqmc {
     inline const_iterator end() const { return WalkerList.end();}
     /**@}*/
 
+    /** clear the WalkerList without destroying them
+     *
+     * Provide std::vector::clear interface
+     */
+    inline void clear() { WalkerList.clear(); }
+
+    /** insert elements
+     * @param it locator where the inserting begins
+     * @param first starting iterator
+     * @param last ending iterator
+     *
+     * Provide std::vector::insert interface
+     */
+    template<class INPUT_ITER>
+    inline void insert(iterator it, INPUT_ITER first, INPUT_ITER last) {
+      WalkerList.insert(it,first,last);
+    }
+
+    /** add Walker_t* at the end
+     * @param awalker pointer to a walker
+     *
+     * Provide std::vector::push_back interface
+     */
+    inline void push_back(Walker_t* awalker) {
+      WalkerList.push_back(awalker);
+    }
+
+    /** delete the last Walker_t*
+     *
+     * Provide std::vector::pop_back interface
+     */
+    inline void pop_back() {
+      delete WalkerList.back();
+      WalkerList.pop_back();
+    }
+
+    inline Walker_t* operator[](int i) { return WalkerList[i];}
+    inline const Walker_t* operator[](int i) const  { return WalkerList[i];}
+
     /** set LocalEnergy
      * @param e current average Local Energy
      */
@@ -124,17 +163,6 @@ namespace ohmmsqmc {
     /** return LocalEnergy
      */
     inline RealType getLocalEnergy() const {return LocalEnergy;}
-
-    /** destroy/create walkers  using Multiplicity of the Walkers
-     * @param maxcopy maximum number of copies per Walker
-     * @param Nmax maximum number of Walkers 
-     * @param Nmin minimum number of Walkers
-     * @return the current number of Walkers after branching
-     *
-     * Branching algorithm determines Walker_t::Multiplicity and branch
-     * function destroy and copy walkers based on the Multiplicity
-     */
-    int branch(int maxcopy, int Nmax, int Nmin);
 
     /** reset the Walkers 
      */
@@ -151,15 +179,6 @@ namespace ohmmsqmc {
     void copyFromBuffer(PooledData<RealType>& buf);
 
     void resetWalkerProperty(int ncopy=1);
-
-    /** swap walkers among MPI nodes
-     * @return total number of walkers
-     */
-#if defined(HAVE_MPI)
-    int swapWalkers();
-#else
-    inline int swapWalkers() { return WalkerList.size();}
-#endif
 
   protected:
 

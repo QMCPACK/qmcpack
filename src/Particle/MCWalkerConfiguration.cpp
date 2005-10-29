@@ -19,6 +19,7 @@
 #include "Particle/DistanceTableData.h"
 #include "Particle/DistanceTable.h"
 #include "Message/Communicate.h"
+#include "Message/CommOperators.h"
 #include <map>
 using namespace ohmmsqmc;
 
@@ -172,85 +173,6 @@ MCWalkerConfiguration::copyFromBuffer(PooledData<RealType>& buf) {
   }
 }
 
-int MCWalkerConfiguration::branch(int maxcopy, int Nmax, int Nmin) {
-
-  iterator it = WalkerList.begin();
-  int iw=0, nw = WalkerList.size();
-
-  vector<Walker_t*> good, bad;
-  vector<int> ncopy;
-  ncopy.reserve(nw);
-
-  int num_walkers=0;
-  while(it != WalkerList.end()) {
-    int nc = std::min(static_cast<int>((*it)->Multiplicity),maxcopy);
-    if(nc) {
-      num_walkers += nc;
-      good.push_back(*it);
-      ncopy.push_back(nc-1);
-    } else {
-      bad.push_back(*it);
-    }
-    iw++;it++;
-  }
-
-  //remove bad walkers
-  for(int i=0; i<bad.size(); i++) delete bad[i];
-
-  if(good.empty()) {
-    ERRORMSG("All the walkers have died. Abort. ")
-    OHMMS::Controller->abort();
-  }
-
-  //check if the projected number of walkers is too small or too large
-  if(num_walkers>Nmax) {
-    int nsub=0;
-    int nsub_target=num_walkers-static_cast<int>(0.9*Nmax);
-    int i=0;
-    while(i<ncopy.size() && nsub<nsub_target) {
-      if(ncopy[i]) {ncopy[i]--; nsub++;}
-      i++;
-    }
-    num_walkers -= nsub;
-  } else  if(num_walkers < Nmin) {
-    int nadd=0;
-    int nadd_target = static_cast<int>(Nmin*1.1)-num_walkers;
-    if(nadd_target>good.size()) {
-      WARNMSG("The number of walkers is running low. Requested walkers " << nadd_target << " good walkers = " << good.size())
-    }
-    int i=0;
-    while(i<ncopy.size() && nadd<nadd_target) {
-      ncopy[i]++; nadd++;i++;
-    }
-    num_walkers +=  nadd;
-  }
-
-  //clear the WalkerList to populate them with the good walkers
-  WalkerList.clear();
-  WalkerList.insert(WalkerList.begin(), good.begin(), good.end());
-
-  int cur_walker = good.size();
-  for(int i=0; i<good.size(); i++) { //,ie+=ncols) {
-    for(int j=0; j<ncopy[i]; j++, cur_walker++) {
-      WalkerList.push_back(new Walker_t(*(good[i])));
-    }
-  }
-
-  //DMC+MPI: swapWalkers() is disabled
-  //int nw_tot = swapWalkers();
-  int nw_tot = WalkerList.size();
-
-  //set Weight and Multiplicity to default values
-  iw=0;
-  it=WalkerList.begin();
-  while(it != WalkerList.end()) {
-    (*it)->Weight= 1.0;
-    (*it)->Multiplicity=1.0;
-    it++;
-  }
-
-  return nw_tot;
-}
 
 void MCWalkerConfiguration::loadWalker(Walker_t& awalker) {
   R = awalker.R;
@@ -279,106 +201,97 @@ void MCWalkerConfiguration::initPropertyList() {
   PropertyList.add("LocalPotential");
 }
 
-#if defined(HAVE_MPI)
-
-int MCWalkerConfiguration::swapWalkers() {
-
-  //synchronize the nodes
-  OHMMS::Controller->barrier();
-
-  int mycontext=OHMMS::Controller->mycontext();
-  int nrecv, ncontexts=OHMMS::Controller->ncontexts();
-  vector<int> nsub(ncontexts,0), nsub_g(ncontexts,0);
-  nsub[mycontext]=WalkerList.size();
-
-  //get how many each node has
-  int status=MPI_Allreduce(&nsub[0], &nsub_g[0], ncontexts, 
-      MPI_INT, MPI_SUM,OHMMS::Controller->getID());
-
-  //order it according to the number of particles
-  multimap<int,int> nw_map;
-  int nw_sum=0;
-  for(int i=0; i<ncontexts; i++) {
-    nw_sum+=nsub_g[i];
-    nw_map.insert(pair<int,int>(nsub_g[i],i));
-  }
-
-  multimap<int,int>::iterator it(nw_map.begin());
-  multimap<int,int>::reverse_iterator it_b(nw_map.end());
-  bool notpaired=true;
-  int target_context=-1;
-  int half=ncontexts/2;
-  int item=0;
-  bool minorcontext;
-  while(notpaired &&item<half) {
-    int i=(*it).second;
-    int j=(*it_b).second;
-    if(i == mycontext) {
-      target_context=j;
-      notpaired=false;
-      minorcontext=true;
-    } else if(j == mycontext) {
-      target_context= i;
-      notpaired=false;
-      minorcontext=false;
-    } 
-    ++it; ++it_b; ++item;
-  }
-
-  int nw_tot=nsub_g[mycontext]+nsub_g[target_context];
-  int nw_L=nw_tot/2;
-  int nw_R=nw_tot-nw_L;
-  int dnw(0);
-  if(minorcontext) {
-    dnw=nw_R-nsub_g[mycontext];
-  } else {
-    dnw=nw_R-nsub_g[target_context];
-  }
-
-  //char fname[128];
-  //sprintf(fname,"test.%d",mycontext);
-  //ofstream fout(fname,ios::app);
-
-  //if(minorcontext) 
-  //  fout << mycontext << " recv from " << target_context <<  " " << dnw << endl;
-  //else 
-  //  fout << mycontext << " send to " << target_context << " " << dnw << endl;
-  if(dnw) {//something to swap
-    if(minorcontext) {//open recv buffer
-      Walker_t& wRef(*WalkerList[0]);
-      OOMPI_Packed recvBuffer(dnw*wRef.byteSize(),OOMPI_COMM_WORLD);
-      //To check if irecv is better than recv
-      //OOMPI_COMM_WORLD[target_context].Recv(recvBuffer);
-      OOMPI_Request recvRequest = OOMPI_COMM_WORLD[target_context].Irecv(recvBuffer, MPI_ANY_TAG);
-
-      //create walkers
-      for(int iw=0; iw<dnw; iw++) {
-        WalkerList.push_back(new Walker_t(wRef));
-      }
-      recvRequest.Wait();
-      int last=nsub_g[mycontext];
-      while(dnw) {
-        WalkerList[last++]->getMessage(recvBuffer);
-        --dnw;
-      }
-
-    } else {
-      Walker_t& wRef(*WalkerList[0]);
-      OOMPI_Packed sendBuffer(dnw*wRef.byteSize(),OOMPI_COMM_WORLD);
-      int last=WalkerList.size()-1;
-      while(dnw) {
-        WalkerList[last--]->putMessage(sendBuffer);
-        --dnw; 
-      }
-      OOMPI_COMM_WORLD[target_context].Send(sendBuffer);
-      destroyWalkers(WalkerList.begin()+nsub_g[mycontext], WalkerList.end());
-    }
-  }
-
-  OHMMS::Controller->barrier();
-  return nw_sum;
-}
-#endif
+//int 
+//MCWalkerConfiguration::branch(int maxcopy, int Nmax, int Nmin, bool swap) {
+//
+//  iterator it = WalkerList.begin();
+//  int iw=0, nw = WalkerList.size();
+//
+//  vector<Walker_t*> good, bad;
+//  vector<int> ncopy;
+//  ncopy.reserve(nw);
+//
+//  int num_walkers=0;
+//  while(it != WalkerList.end()) {
+//    int nc = std::min(static_cast<int>((*it)->Multiplicity),maxcopy);
+//    if(nc) {
+//      num_walkers += nc;
+//      good.push_back(*it);
+//      ncopy.push_back(nc-1);
+//    } else {
+//      bad.push_back(*it);
+//    }
+//    iw++;it++;
+//  }
+//
+//  //remove bad walkers
+//  for(int i=0; i<bad.size(); i++) delete bad[i];
+//
+//  if(good.empty()) {
+//    ERRORMSG("All the walkers have died. Abort. ")
+//    OHMMS::Controller->abort();
+//  }
+//
+//  //check if the projected number of walkers is too small or too large
+//  if(num_walkers>Nmax) {
+//    int nsub=0;
+//    int nsub_target=num_walkers-static_cast<int>(0.9*Nmax);
+//    int i=0;
+//    while(i<ncopy.size() && nsub<nsub_target) {
+//      if(ncopy[i]) {ncopy[i]--; nsub++;}
+//      i++;
+//    }
+//    num_walkers -= nsub;
+//  } else  if(num_walkers < Nmin) {
+//    int nadd=0;
+//    int nadd_target = static_cast<int>(Nmin*1.1)-num_walkers;
+//    if(nadd_target>good.size()) {
+//      WARNMSG("The number of walkers is running low. Requested walkers " << nadd_target << " good walkers = " << good.size())
+//    }
+//    int i=0;
+//    while(i<ncopy.size() && nadd<nadd_target) {
+//      ncopy[i]++; nadd++;i++;
+//    }
+//    num_walkers +=  nadd;
+//  }
+//
+//  LOGMSG("Projected number of walkers " << num_walkers)
+//
+//  //WalkerControl
+//  //MPI Send to the master, MPI Irecv by the master
+//  //send the total number of walkers to the master
+// 
+//  //clear the WalkerList to populate them with the good walkers
+//  WalkerList.clear();
+//  WalkerList.insert(WalkerList.begin(), good.begin(), good.end());
+//
+//  int cur_walker = good.size();
+//  for(int i=0; i<good.size(); i++) { //,ie+=ncols) {
+//    for(int j=0; j<ncopy[i]; j++, cur_walker++) {
+//      WalkerList.push_back(new Walker_t(*(good[i])));
+//    }
+//  }
+//
+//  int nw_tot = WalkerList.size();
+//  LOGMSG("Real number of walkers " << nw_tot)
+//
+//  //WalkerControl
+//  //Master check if criteria is met and send back 0/1, total walkers, max, min
+//
+//  if(swap) nw_tot= swapWalkers();
+//  //if(swap) gsum(nw_tot,0);
+//
+//  //set Weight and Multiplicity to default values
+//  iw=0;
+//  it=WalkerList.begin();
+//  while(it != WalkerList.end()) {
+//    (*it)->Weight= 1.0;
+//    (*it)->Multiplicity=1.0;
+//    it++;
+//  }
+//
+//  return nw_tot;
+//}
 
 /***************************************************************************
  * $RCSfile$   $Author$
