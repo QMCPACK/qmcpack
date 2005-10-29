@@ -66,7 +66,7 @@ namespace ohmmsqmc {
     ///number of times file has been accesed
     int Counter;
     ///number of sets of walker configurations
-    hsize_t NumSets;
+    int NumSets;
     ///id for HDF5 file 
     hid_t h_file;
     ///id for HDF5 main group 

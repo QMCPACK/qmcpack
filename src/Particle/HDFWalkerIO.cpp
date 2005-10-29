@@ -41,17 +41,23 @@ using namespace ohmmsqmc;
  */
 
 HDFWalkerOutput::HDFWalkerOutput(const string& aroot, bool append, int count)
-  : Counter(count), AppendMode(append) {
+  : Counter(count) {
 
   string h5file(aroot);
   h5file.append(".config.h5");
+
+  AppendMode=append;
   if(AppendMode)  {
     h_file =  H5Fopen(h5file.c_str(),H5F_ACC_RDWR,H5P_DEFAULT);
     h_config = H5Gopen(h_file,"config_collection");
     h_random = H5Gopen(h_file,"random_state");
+    hid_t h1=H5Dopen(h_config,"NumOfConfigurations");
+    if(h1>-1) {
+      H5Dread(h1, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT,&(Counter));
+      H5Dclose(h1);
+    }
   }
   else {
-    Counter=0;
     h_file = H5Fcreate(h5file.c_str(),H5F_ACC_TRUNC,H5P_DEFAULT,H5P_DEFAULT);
     h_config = H5Gcreate(h_file,"config_collection",0);
     h_random = H5Gcreate(h_file,"random_state",0);
@@ -145,7 +151,10 @@ Counter(0), NumSets(0) {
   }
 
   if(!NumSets) {
-    H5Gget_num_objs(h_config,&NumSets);
+    //resolve the integer and long problem with 64bit
+    hsize_t nset;
+    H5Gget_num_objs(h_config,&nset);
+    NumSets=nset;
   }
 
   if(NumSets) {
