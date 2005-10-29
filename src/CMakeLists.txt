@@ -44,10 +44,10 @@ SET(HAMILTONIAN
   QMCHamiltonians/QMCHamiltonian.cpp
 )
 
-
-SET(OPTIMIZE
-    Optimize/Minimize.cpp
-    )
+#gsl library will be optional
+IF(HAVE_LIBGSL)
+  SET(UTILITIES ${UTILITIES} Optimize/GSLMinimize.cpp)
+ENDIF(HAVE_LIBGSL)
 
 SET(WFSBASE
   QMCWaveFunctions/JastrowBuilder.cpp
@@ -58,7 +58,6 @@ SET(WFSBASE
 SET(BASEDIR
    ${UTILITIES}
    ${MESSAGE}
-   ${OPTIMIZE}
 )
 ADD_LIBRARY(qmcbase ${BASEDIR})
 
@@ -70,8 +69,8 @@ SET(QMCBASEDIR
    ${WFSBASE}
 )
 
-#SUBDIRS(SQD)
 ADD_LIBRARY(qmc ${QMCBASEDIR})
+
 IF(HAVE_OOMPI)
   CONFIGURE_FILE(${qmcPlusPlus_SOURCE_DIR}/src/oompi-config.h.cmake.in 
                  ${qmcPlusPlus_BINARY_DIR}/src/oompi-config.h)
@@ -81,4 +80,9 @@ IF(HAVE_OOMPI)
 ENDIF(HAVE_OOMPI)
 
 SUBDIRS(QMCApp)
+
+#do not build qmctools with mpi
+IF(NOT HAVE_MPI)
+  SUBDIRS(QMCTools)
+ENDIF(NOT HAVE_MPI)
 SUBDIRS(QMCTools)
