@@ -58,7 +58,9 @@ namespace ohmmsqmc {
     nAcceptTot = 0;
     nRejectTot = 0;
 
-    bool appendwalker=pStride>0;
+    bool appendWalker=false;
+    int now=0;
+
     do {
       IndexType step = 0;
       timer.start();
@@ -83,8 +85,14 @@ namespace ohmmsqmc {
       
       LogOut->getStream() << "Block " << block << " " << timer.cpu_time() << " Fixed_configs " 
       		    << static_cast<RealType>(nAllRejected)/static_cast<RealType>(step*W.getActiveWalkers()) << endl;
-      HDFWalkerOutput WO(RootName,block&&appendwalker, block);
+
+      if(pStride) {
+        appendWalker=AppendRun || block>0;
+        now=block;
+      } 
+      HDFWalkerOutput WO(RootName,appendWalker, now);
       WO.get(W);
+
       nAccept = 0; nReject = 0;
       ++block;
 
@@ -97,7 +105,7 @@ namespace ohmmsqmc {
       << static_cast<RealType>(nAcceptTot)/static_cast<RealType>(nAcceptTot+nRejectTot)
       << endl;
     
-    int nconf= appendwalker ? block:1;
+    int nconf= pStride ? block:1;
     HDFWalkerOutput WOextra(RootName,true,nconf);
     WOextra.write(*branchEngine);
 
