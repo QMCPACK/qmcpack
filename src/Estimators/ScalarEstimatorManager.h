@@ -1,8 +1,8 @@
 //////////////////////////////////////////////////////////////////
-// (c) Copyright 2003- by Jeongnim Kim and Jordan Vincent
+// (c) Copyright 2003- by Jeongnim Kim
 //////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////
-//   Jeongnim Kim and Jordan Vincent
+//   Jeongnim Kim
 //   National Center for Supercomputing Applications &
 //   Materials Computation Center
 //   University of Illinois, Urbana-Champaign
@@ -17,6 +17,10 @@
 //   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
+/** @file ScalarEstimatorManager.h
+ * @brief Manager class of scalar estimators
+ * @authors J. Kim and J. Vincent
+ */
 #ifndef OHMMS_QMC_SCALAR_ESTIMATORMANAGER_H
 #define OHMMS_QMC_SCALAR_ESTIMATORMANAGER_H
 
@@ -103,6 +107,7 @@ namespace ohmmsqmc {
   private:
 
     string RootName;
+    bool FileManager;
     bool CollectSum;
     int Stride;
     int WeightIndex;

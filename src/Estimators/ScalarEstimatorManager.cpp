@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////
-// (c) Copyright 2003- by Jeongnim Kim  and Jordan Vincent
+// (c) Copyright 2003- by Jeongnim Kim
 //////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////
 //   Jeongnim Kim
@@ -26,7 +26,7 @@
 using namespace ohmmsqmc;
 
 ScalarEstimatorManager::ScalarEstimatorManager(QMCHamiltonian& h): 
- CollectSum(false),Stride(1000), WeightSum(0.0), H(h), RootName("estimator"), 
+ FileManager(true), CollectSum(false),Stride(1000), WeightSum(0.0), H(h), RootName("estimator"), 
   OutStream(0) { }
 
 ScalarEstimatorManager::~ScalarEstimatorManager(){ 
@@ -75,10 +75,15 @@ ScalarEstimatorManager::accumulate(const MCWalkerConfiguration& W) {
 
 /** set CollectSum
  * @param collect if true, global sum is done over the values
+ *
+ * FileManager is set when collect is true so that only the first node writes.
  */
 void ScalarEstimatorManager::setCollectionMode(bool collect) {
   CollectSum=collect;
   for(int i=0; i< Estimators.size(); i++) Estimators[i]->CollectSum = collect;
+  if(collect) {
+    FileManager = OHMMS::Controller->master();
+  }
 }
 
 /**  compute the averages for all the estimators and reset
@@ -98,10 +103,12 @@ void ScalarEstimatorManager::flush(){
  * @param iter the interval 
  */
 void ScalarEstimatorManager::report(int iter){
-  (*OutStream) << setw(10) << iter;
-  for(int i=0; i<BlockAverages.size();i++)
-    (*OutStream) << setw(16) << BlockAverages[i];
-  (*OutStream) << endl;
+  if(FileManager) {
+    (*OutStream) << setw(10) << iter;
+    for(int i=0; i<BlockAverages.size();i++)
+      (*OutStream) << setw(16) << BlockAverages[i];
+    (*OutStream) << endl;
+  }
 }
 
 /** combines the functionality of flush and report
@@ -116,9 +123,11 @@ void ScalarEstimatorManager::flushreport(int iter){
   BlockAverages[WeightIndex] = WeightSum;
   WeightSum = 0.0;
 
-  (*OutStream) << setw(10) << iter;
-  for(int i=0; i<BlockAverages.size();i++) (*OutStream) << setw(16) << BlockAverages[i];
-  (*OutStream) << endl;
+  if(FileManager) {
+    (*OutStream) << setw(10) << iter;
+    for(int i=0; i<BlockAverages.size();i++) (*OutStream) << setw(16) << BlockAverages[i];
+    (*OutStream) << endl;
+  }
 }
 
 void 
@@ -136,17 +145,20 @@ ScalarEstimatorManager::resetReportSettings(const string& aname, bool append) {
   WeightIndex = BlockAverages.add("WeightSum");
 
   RootName = aname;
-  string fname(aname);
-  fname.append(".scalar.dat");
-  if(OutStream) delete OutStream;
 
-  if(append) 
-    OutStream = new ofstream(fname.c_str(), ios::app);
-  else
-    OutStream = new ofstream(fname.c_str());
+  if(FileManager) {
+    string fname(aname);
+    fname.append(".scalar.dat");
+    if(OutStream) {delete OutStream; OutStream=0;}
 
-  OutStream->setf(ios::scientific, ios::floatfield);
-  OutStream->setf(ios::left,ios::adjustfield);
+    if(append) 
+      OutStream = new ofstream(fname.c_str(), ios::app);
+    else
+      OutStream = new ofstream(fname.c_str());
+
+    OutStream->setf(ios::scientific, ios::floatfield);
+    OutStream->setf(ios::left,ios::adjustfield);
+  }
 
   BlockAverages.setValues(0.0);
 }
@@ -155,13 +167,15 @@ ScalarEstimatorManager::resetReportSettings(const string& aname, bool append) {
  */
 void 
 ScalarEstimatorManager::reportHeader(bool append) {
-  if(!append)  {
-    *OutStream << "#    index     ";
-    for(int i=0; i<BlockAverages.size(); i++) 
-      (*OutStream) << setw(16) << BlockAverages.Name[i];
-    (*OutStream) << endl;
+  if(FileManager) {
+    if(!append)  {
+      *OutStream << "#    index     ";
+      for(int i=0; i<BlockAverages.size(); i++) 
+        (*OutStream) << setw(16) << BlockAverages.Name[i];
+      (*OutStream) << endl;
+    }
+    OutStream->setf(ios::right,ios::adjustfield);
   }
-  OutStream->setf(ios::right,ios::adjustfield);
 }
 
 /** closes the stream to the output file
