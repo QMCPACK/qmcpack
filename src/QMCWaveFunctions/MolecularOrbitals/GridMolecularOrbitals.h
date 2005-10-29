@@ -90,7 +90,8 @@ namespace ohmmsqmc {
 
     ///append Ylm channels
     int expandYlm(const string& rnl, const QuantumNumberType& nlms, int num, 
-                  CenteredOrbitalType* aos, xmlNodePtr cur1, int expandlm=DONOT_EXPAND);
+                  CenteredOrbitalType* aos, xmlNodePtr cur1, 
+                  int expandlm=DONOT_EXPAND);
 
   };
 }

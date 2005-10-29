@@ -185,7 +185,7 @@ namespace ohmmsqmc {
   int 
   GTOMolecularOrbitals::expandYlm(const string& rnl, const QuantumNumberType& nlms, 
                                    int num, CenteredOrbitalType* aos, xmlNodePtr cur1,
-                                   bool expandlm) {
+                                   int expandlm) {
     if(Normalized) {
       LOGMSG("The gaussian-type orbitals are normalized")
     } else {
