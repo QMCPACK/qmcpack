@@ -98,7 +98,7 @@ namespace ohmmsqmc {
           if(refptr == NULL) {
             j2 = new FuncType;
           } else {
-            map<string,FuncType*>::iterator it(jastrowMap.find((const char*)refptr));
+            typename map<string,FuncType*>::iterator it(jastrowMap.find((const char*)refptr));
             if(it != jastrowMap.end()) {
               j2 = new FuncType((*it).second);
             } else { 
