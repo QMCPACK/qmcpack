@@ -40,7 +40,7 @@ inline void gsum(TinyVector<double,N>& g, int gid) {
 
 template<>
 inline void gsum(std::vector<int>& g, int gid) {
-  std::vector<int> gt(g.size(), 0.0);
+  std::vector<int> gt(g.size(), 0);
   MPI_Allreduce(&(g[0]),&(gt[0]),g.size(),MPI_INT,MPI_SUM,MPI_COMM_WORLD);
   g = gt;
 }
