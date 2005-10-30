@@ -263,7 +263,7 @@ struct HDFAttribIO<Matrix<TinyVector<double,D> > >: public HDFAttribIOBase {
   HDFAttribIO<ArrayType_t>(ArrayType_t& a):ref(a) { }
 
   inline void write(hid_t grp, const char* name) {
-    int rank = 3;
+    const int rank = 3;
     hsize_t dim[rank];
     dim[0] = ref.rows();
     dim[1] = ref.cols();
