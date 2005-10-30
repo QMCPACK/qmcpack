@@ -28,6 +28,7 @@ namespace ohmmsqmc {
   template<class T>
   class PolarizationEstimator: public ScalarEstimatorBase<T> {
 
+    using ScalarEstimatorBase<T>::CollectSum;
     using ScalarEstimatorBase<T>::b_average;
     using ScalarEstimatorBase<T>::b_variance;
     ///local data
