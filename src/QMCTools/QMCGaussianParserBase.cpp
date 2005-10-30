@@ -12,6 +12,7 @@ using namespace std;
 #include "QMCApp/InitMolecularSystem.h"
 
 //std::vector<std::string> QMCGaussianParserBase::IonName;
+const int OhmmsAsciiParser::bufferSize;
 std::map<int,std::string> QMCGaussianParserBase::IonName;
 std::vector<std::string> QMCGaussianParserBase::gShellType;
 std::vector<int> QMCGaussianParserBase::gShellID;
