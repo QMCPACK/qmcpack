@@ -57,7 +57,6 @@ SET(QMCDRIVERS
 IF(HAVE_MPI) 
 SET(QMCDRIVERS ${QMCDRIVERS} 
     ../QMCDrivers/GlobalWalkerControl.cpp
-    ../QMCDrivers/AsyncWalkerControl.cpp
     )
 ENDIF(HAVE_MPI) 
 

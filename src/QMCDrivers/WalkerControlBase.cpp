@@ -18,7 +18,7 @@
 #include "QMCDrivers/WalkerControlBase.h"
 #if defined(HAVE_MPI)
 #include "QMCDrivers/GlobalWalkerControl.h"
-#include "QMCDrivers/AsyncWalkerControl.h"
+//#include "QMCDrivers/AsyncWalkerControl.h"
 #endif
 namespace ohmmsqmc {
 
