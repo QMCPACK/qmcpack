@@ -22,6 +22,7 @@
  */
 
 #include <algorithm>
+#include <cmath>
 #include "OhmmsPETE/OhmmsVector.h"
 
 /** An abstract base class to implement a One-Dimensional grid 
@@ -228,7 +229,7 @@ struct LogGrid: public OneDimGridBase<T,CT> {
   T OneOverLogDelta; 
   
   inline void locate(T r){
-    Loc = static_cast<int>(log(r/X[0])*OneOverLogDelta);
+    Loc = static_cast<int>(std::log(r/X[0])*OneOverLogDelta);
   }
 
   inline void set(T ri, T rf, int n) {
@@ -238,9 +239,9 @@ struct LogGrid: public OneDimGridBase<T,CT> {
     // where dlog_ratio = (1/(n-1))*log(rf/ri) 
     // dlog_ratio is the differential spacing
     T ratio = rf/ri;
-    T log_ratio = log(ratio);
+    T log_ratio = std::log(ratio);
     T dlog_ratio = log_ratio/static_cast<T>(n-1);
-    T expdr = exp(dlog_ratio);
+    T expdr = std::exp(dlog_ratio);
     X.resize(n);
 
     X[0] = ri;
@@ -269,7 +270,7 @@ struct LogGridZero: public OneDimGridBase<T,CT> {
   T OneOverB;
 
   inline void locate(T r){
-    Loc= static_cast<int>(log(r*OneOverB+1.0)*OneOverA);
+    Loc= static_cast<int>(std::log(r*OneOverB+1.0)*OneOverA);
   }
 
   /** the meaing of ri/rf are different from the convetions of other classes
