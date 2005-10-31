@@ -46,6 +46,7 @@ namespace ohmmsqmc {
       inline void reset() { }
       inline void resetTargetParticleSet(ParticleSet& P) { }
       inline void resizeByWalkers(int nwalkers) {}
+
       inline ValueType
       evaluate(const ParticleSet& P, int iat, int jorb) {
         cout << "EGOSet::this should not be used" << endl;

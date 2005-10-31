@@ -162,7 +162,6 @@ namespace ohmmsqmc {
   /** Evaluate local energies, the gradient and laplacian operators
    * @param W the input set of walkers
    * @param psi a array containing Nw wave function values of each walker
-   */
   void 
   TrialWaveFunction::evaluate(WalkerSetRef& W, 
 			      OrbitalBase::ValueVectorType& psi)
@@ -175,6 +174,7 @@ namespace ohmmsqmc {
     }
     //for(int iw=0; iw<psi.size(); iw++) W.Properties(iw,Sign) = psi[iw];
   }
+   */
   
   TrialWaveFunction::ValueType
   TrialWaveFunction::ratio(ParticleSet& P,int iat) {

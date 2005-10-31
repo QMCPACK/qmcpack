@@ -104,8 +104,8 @@ namespace ohmmsqmc {
 
    */
   template<class SPOSet>
-  struct DiracDeterminant: public OrbitalBase {
-
+  class DiracDeterminant: public OrbitalBase {
+  public:
 #if defined(USE_BLITZ)
     typedef blitz::Array<ValueType,2> Determinant_t;
     typedef blitz::Array<GradType,2>  Gradient_t;
@@ -413,18 +413,48 @@ namespace ohmmsqmc {
       return 0.0;
     }
 
-    ///evaluate for a particle set
+    /** Calculate the value of the Dirac determinant for particles
+     *@param P input configuration containing N particles
+     *@param G a vector containing N gradients
+     *@param L a vector containing N laplacians
+     *@return the value of the determinant
+     *
+     *\f$ (first,first+nel). \f$  Add the gradient and laplacian 
+     *contribution of the determinant to G(radient) and L(aplacian)
+     *for local energy calculations.
+     */ 
     ValueType
     evaluate(ParticleSet& P, 
 	     ParticleSet::ParticleGradient_t& G, 
-	     ParticleSet::ParticleLaplacian_t& L);
+	     ParticleSet::ParticleLaplacian_t& L){
 
-    ///evaluate for walkers
-    void 
-    evaluate(WalkerSetRef& W, 
-	     ValueVectorType& psi,
-	     WalkerSetRef::WalkerGradient_t& G,
-	     WalkerSetRef::WalkerLaplacian_t& L);
+      Phi.evaluate(P, FirstIndex, LastIndex, psiM,dpsiM, d2psiM);
+
+      if(NumPtcls==1) {
+        CurrentDet=psiM(0,0);
+        ValueType y=1.0/CurrentDet;
+        psiM(0,0)=y;
+        PosType rv = y*dpsiM(0,0);
+        G(FirstIndex) += rv;
+        L(FirstIndex) += y*d2psiM(0,0) - dot(rv,rv);
+      } else {
+        CurrentDet = Invert(psiM.data(),NumPtcls,NumOrbitals, WorkSpace.data(), Pivot.data());
+        //CurrentDet = Invert(psiM.data(),NumPtcls,NumOrbitals);
+        int iat = FirstIndex; //the index of the particle with respect to P
+        for(int i=0; i<NumPtcls; i++, iat++) {
+          PosType rv = psiM(i,0)*dpsiM(i,0);
+          ValueType lap=psiM(i,0)*d2psiM(i,0);
+          for(int j=1; j<NumOrbitals; j++) {
+            rv += psiM(i,j)*dpsiM(i,j);
+            lap += psiM(i,j)*d2psiM(i,j);
+          }
+          G(iat) += rv;
+          L(iat) += lap - dot(rv,rv);
+        }
+      }
+      return CurrentDet;
+    }
+
 
     ///The number of particles
     int NP;
@@ -483,96 +513,58 @@ namespace ohmmsqmc {
     ParticleSet::ParticleLaplacian_t myL, myL_temp;
   };
 
-  /** Calculate the value of the Dirac determinant for particles
-   *@param P input configuration containing N particles
-   *@param G a vector containing N gradients
-   *@param L a vector containing N laplacians
-   *@return the value of the determinant
-   *
-   *\f$ (first,first+nel). \f$  Add the gradient and laplacian 
-   *contribution of the determinant to G(radient) and L(aplacian)
-   *for local energy calculations.
-   */
-  template<class SPOSet>
-  inline 
-  typename DiracDeterminant<SPOSet>::ValueType 
-  DiracDeterminant<SPOSet>::evaluate(ParticleSet& P, 
-				     ParticleSet::ParticleGradient_t& G, 
-				     ParticleSet::ParticleLaplacian_t& L) {
 
-    Phi.evaluate(P, FirstIndex, LastIndex, psiM,dpsiM, d2psiM);
-
-    if(NumPtcls==1) {
-      CurrentDet=psiM(0,0);
-      ValueType y=1.0/CurrentDet;
-      psiM(0,0)=y;
-      PosType rv = y*dpsiM(0,0);
-      G(FirstIndex) += rv;
-      L(FirstIndex) += y*d2psiM(0,0) - dot(rv,rv);
-    } else {
-      CurrentDet = Invert(psiM.data(),NumPtcls,NumOrbitals, WorkSpace.data(), Pivot.data());
-      //CurrentDet = Invert(psiM.data(),NumPtcls,NumOrbitals);
-      int iat = FirstIndex; //the index of the particle with respect to P
-      for(int i=0; i<NumPtcls; i++, iat++) {
-        PosType rv = psiM(i,0)*dpsiM(i,0);
-        ValueType lap=psiM(i,0)*d2psiM(i,0);
-        for(int j=1; j<NumOrbitals; j++) {
-          rv += psiM(i,j)*dpsiM(i,j);
-          lap += psiM(i,j)*d2psiM(i,j);
-        }
-        G(iat) += rv;
-        L(iat) += lap - dot(rv,rv);
-      }
-    }
-    return CurrentDet;
-  }
-
-
-  /** evaluate determinants of all particles
-   *@param W Walkers, set of input configurations, Nw is the number of walkers
-   *@param psi a vector containing Nw determinants
-   *@param G a matrix containing Nw x N gradients
-   *@param L a matrix containing Nw x N laplacians
-   *
-   *N is the number of particles per walker and Nw is the number of walkers.
-   *Designed for vectorized move, i.e., all the walkers move simulatenously as
-   *in molecu. While calculating the determinant values for a set of walkers,
-   *add the gradient and laplacian contribution of the determinant
-   *to G and L for local energy calculations.
-   */
-  template<class SPOSet>
-  inline void 
-  DiracDeterminant<SPOSet>::evaluate(WalkerSetRef& W, 
-				     ValueVectorType& psi,
-				     WalkerSetRef::WalkerGradient_t& G,
-				     WalkerSetRef::WalkerLaplacian_t& L) {
-
-    //Comment it out since it is not used anymore
-    //int nw = W.walkers();
-
-    ////evaluate \f$(D_{ij})^t\f$ and other quantities for gradient/laplacians
-    //Phi.evaluate(W, FirstIndex, LastIndex, psiM_v, dpsiM_v, d2psiM_v);
-    //
-    //for(int iw=0; iw< nw; iw++) {
-    //  //psi[iw] *= Invert(psiM_v[iw].data(),NumPtcls,NumOrbitals);
-    //  psi[iw] *= Invert(psiM_v[iw].data(),NumPtcls,NumOrbitals, WorkSpace.data(), Pivot.data());
-    //  int iat = FirstIndex; //the index of the particle with respect to P
-    //  const Determinant_t& logdet = psiM_v[iw];
-    //  const Gradient_t& dlogdet = dpsiM_v[iw];
-    //  const Laplacian_t& d2logdet = d2psiM_v[iw];
-
-    //  for(int i=0; i<NumPtcls; i++, iat++) {
-    //    PosType rv = logdet(i,0)*dlogdet(i,0);
-    //    ValueType lap=logdet(i,0)*d2logdet(i,0);
-    //    for(int j=1; j<NumOrbitals; j++) {
-    //      rv += logdet(i,j)*dlogdet(i,j);
-    //      lap += logdet(i,j)*d2logdet(i,j);
-    //    }
-    //    G(iw,iat) += rv;
-    //    L(iw,iat) += lap - dot(rv,rv);
-    //  }
-    //}
-  }
+//  /** evaluate determinants of all particles
+//   *@param W Walkers, set of input configurations, Nw is the number of walkers
+//   *@param psi a vector containing Nw determinants
+//   *@param G a matrix containing Nw x N gradients
+//   *@param L a matrix containing Nw x N laplacians
+//   *
+//   *N is the number of particles per walker and Nw is the number of walkers.
+//   *Designed for vectorized move, i.e., all the walkers move simulatenously as
+//   *in molecu. While calculating the determinant values for a set of walkers,
+//   *add the gradient and laplacian contribution of the determinant
+//   *to G and L for local energy calculations.
+//   */
+//    ///evaluate for walkers
+//    void 
+//    evaluate(WalkerSetRef& W, 
+//	     ValueVectorType& psi,
+//	     WalkerSetRef::WalkerGradient_t& G,
+//	     WalkerSetRef::WalkerLaplacian_t& L);
+//  template<class SPOSet>
+//  inline void 
+//  DiracDeterminant<SPOSet>::evaluate(WalkerSetRef& W, 
+//				     ValueVectorType& psi,
+//				     WalkerSetRef::WalkerGradient_t& G,
+//				     WalkerSetRef::WalkerLaplacian_t& L) {
+//
+//    //Comment it out since it is not used anymore
+//    //int nw = W.walkers();
+//
+//    ////evaluate \f$(D_{ij})^t\f$ and other quantities for gradient/laplacians
+//    //Phi.evaluate(W, FirstIndex, LastIndex, psiM_v, dpsiM_v, d2psiM_v);
+//    //
+//    //for(int iw=0; iw< nw; iw++) {
+//    //  //psi[iw] *= Invert(psiM_v[iw].data(),NumPtcls,NumOrbitals);
+//    //  psi[iw] *= Invert(psiM_v[iw].data(),NumPtcls,NumOrbitals, WorkSpace.data(), Pivot.data());
+//    //  int iat = FirstIndex; //the index of the particle with respect to P
+//    //  const Determinant_t& logdet = psiM_v[iw];
+//    //  const Gradient_t& dlogdet = dpsiM_v[iw];
+//    //  const Laplacian_t& d2logdet = d2psiM_v[iw];
+//
+//    //  for(int i=0; i<NumPtcls; i++, iat++) {
+//    //    PosType rv = logdet(i,0)*dlogdet(i,0);
+//    //    ValueType lap=logdet(i,0)*d2logdet(i,0);
+//    //    for(int j=1; j<NumOrbitals; j++) {
+//    //      rv += logdet(i,j)*dlogdet(i,j);
+//    //      lap += logdet(i,j)*d2logdet(i,j);
+//    //    }
+//    //    G(iw,iat) += rv;
+//    //    L(iw,iat) += lap - dot(rv,rv);
+//    //  }
+//    //}
+//  }
   
   template<class SPOSet>
   void DiracDeterminant<SPOSet>::resizeByWalkers(int nwalkers) {

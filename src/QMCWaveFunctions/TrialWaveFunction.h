@@ -1,4 +1,4 @@
-//////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
 // (c) Copyright 2003  by Jeongnim Kim
 //////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////
@@ -128,8 +128,9 @@ namespace ohmmsqmc {
 
     void dumpToBuffer(ParticleSet& P, BufferType& buf);
     void dumpFromBuffer(ParticleSet& P, BufferType& buf);
+
     /** evalaute the values of the wavefunction, gradient and laplacian  for all the walkers */
-    void evaluate(WalkerSetRef& W, OrbitalBase::ValueVectorType& psi);
+    //void evaluate(WalkerSetRef& W, OrbitalBase::ValueVectorType& psi);
 
   private:
 

@@ -100,12 +100,12 @@ namespace ohmmsqmc {
      *@return the value
      *
      *Specialized for all-walker move. G and L are two-dimensional arrays.
-     */
     virtual void 
     evaluate(WalkerSetRef& W, 
 	     ValueVectorType& psi,
 	     WalkerSetRef::WalkerGradient_t& G,
 	     WalkerSetRef::WalkerLaplacian_t& L) = 0;
+     */
 
 
     /** evaluate the ratio of the new to old orbital value
