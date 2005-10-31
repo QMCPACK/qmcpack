@@ -38,6 +38,18 @@ int main(int argc, char **argv) {
 
   ohmmsqmc::QMCMain qmc(argc,argv);
 
+#if defined(HAVE_MPI)
+  char fname[128];
+  if(OHMMS::Controller->master()) {
+    sprintf(fname,"%s",argv[1]);
+  }
+
+  //broadcast the input file name to other nodes
+  MPI_Bcast(fname,128,MPI_CHAR,0,OHMMS::Controller->getID());
+  if(qmc.parse(fname)) {
+    qmc.execute();
+  }
+#else
   if(argc>1) {
     if(qmc.parse(argv[1])) {
       qmc.execute();
@@ -47,7 +59,7 @@ int main(int argc, char **argv) {
     ERRORMSG("No input file is given.")
     ERRORMSG("usage: qmcapp input-file")
   }
-
+#endif
   LOGMSG("Bye")
   OHMMS::Controller->finalize();
   return 0;
