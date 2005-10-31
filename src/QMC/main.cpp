@@ -34,7 +34,7 @@ int main(int argc, char **argv) {
 
   OhmmsInfo welcome(argc,argv,OHMMS::Controller->mycontext());
 
-  ohmmsqmc::MolecuApps qmc(argc,argv);
+  qmcplusplus::MolecuApps qmc(argc,argv);
 
   if(argc>1) {
     // build an XML tree from a the file;

@@ -14,12 +14,12 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_QMC_GENERIC_ONEBODYJASTROW_H
-#define OHMMS_QMC_GENERIC_ONEBODYJASTROW_H
+#ifndef QMCPLUSPLUS_GENERIC_ONEBODYJASTROW_H
+#define QMCPLUSPLUS_GENERIC_ONEBODYJASTROW_H
 #include "Configuration.h"
 #include "QMCWaveFunctions/OrbitalBase.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
   
   /** @ingroup OrbitalComponent
    * @brief generic implementation of one-body Jatrow function.

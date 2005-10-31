@@ -3,7 +3,7 @@
 #include "QMCWaveFunctions/SlaterDeterminant.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   bool QDwfBuilder::put(xmlNodePtr cur){
 

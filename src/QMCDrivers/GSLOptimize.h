@@ -15,8 +15,8 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_QMC_GSL_OPTIMIZE_H
-#define OHMMS_QMC_GSL_OPTIMIZE_H
+#ifndef QMCPLUSPLUS_GSL_OPTIMIZE_H
+#define QMCPLUSPLUS_GSL_OPTIMIZE_H
 
 #include <deque>
 #include "Configuration.h"
@@ -24,7 +24,7 @@
 #include "Optimize/Minimize.h"
 #include "QMCHamiltonians/QMCHamiltonianBase.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   /** @ingroup QMCDrivers
    * @brief Implements wave-function optimization

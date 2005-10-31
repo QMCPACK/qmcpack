@@ -6,8 +6,8 @@
 //
 //See the LICENSE file in the top-level directory for copyright notices
 //
-#ifndef OHMMS_QMC_CONFIGURATION_H
-#define OHMMS_QMC_CONFIGURATION_H
+#ifndef QMCPLUSPLUS_CONFIGURATION_H
+#define QMCPLUSPLUS_CONFIGURATION_H
 
 
 /* Enable OpenMP parallelization. */
@@ -196,4 +196,4 @@
    code using `volatile' can become incorrect without. Disable with care. */
 #undef volatile
 
-#endif // OHMMS_QMCCONFIGURATION_H
+#endif // QMCPLUSPLUS_CONFIGURATION_H

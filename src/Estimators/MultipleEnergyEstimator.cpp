@@ -22,7 +22,7 @@
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Particle/DistanceTable.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   /** constructor
    * @param h QMCHamiltonian to define the components

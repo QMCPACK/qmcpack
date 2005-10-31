@@ -21,7 +21,7 @@
 #include "Particle/SymmetricDistanceTableData.h"
 #include "Particle/AsymmetricDistanceTableData.h"
 #include "ParticleIO/ParticleLayoutIO.h"
-using namespace ohmmsqmc;
+using namespace qmcplusplus;
 
 /**@{instantiation of static data members*/
 vector<bool>                DistanceTable::Updated;

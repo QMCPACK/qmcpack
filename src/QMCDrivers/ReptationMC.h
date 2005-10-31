@@ -17,12 +17,12 @@
 //   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_QMC_REPTATION_H
-#define OHMMS_QMC_REPTATION_H
+#ifndef QMCPLUSPLUS_REPTATION_H
+#define QMCPLUSPLUS_REPTATION_H
 
 #include "QMCDrivers/QMCDriver.h" 
 #include <deque>
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
 
   class PolymerChain;

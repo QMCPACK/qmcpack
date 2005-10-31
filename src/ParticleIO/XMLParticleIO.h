@@ -24,7 +24,7 @@
 #include "OhmmsData/RecordProperty.h"
 #include "Particle/ParticleSet.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
 //   struct XMLParticleBase {
 //     static string root_tag;    

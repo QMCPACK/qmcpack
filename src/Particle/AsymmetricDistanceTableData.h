@@ -14,10 +14,10 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_QMC_ASYMMETRICDISTANCETABLEDATAIMPL_H
-#define OHMMS_QMC_ASYMMETROCDISTANCETABLEDATAIMPL_H
+#ifndef QMCPLUSPLUS_ASYMMETRICDISTANCETABLEDATAIMPL_H
+#define QMCPLUSPLUS_ASYMMETROCDISTANCETABLEDATAIMPL_H
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
   
   /**@ingroup nnlist
    * @brief A derived classe from DistacneTableData, specialized for dense-asymmetric case

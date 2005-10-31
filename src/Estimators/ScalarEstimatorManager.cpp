@@ -23,7 +23,7 @@
 #include "Estimators/LocalEnergyEstimator.h"
 #include "Estimators/PolarizationEstimator.h"
 
-using namespace ohmmsqmc;
+using namespace qmcplusplus;
 
 ScalarEstimatorManager::ScalarEstimatorManager(QMCHamiltonian& h): 
  FileManager(true), CollectSum(false),Stride(1000), WeightSum(0.0), H(h), RootName("estimator"), 

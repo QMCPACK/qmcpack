@@ -22,7 +22,7 @@
 #include "QMCWaveFunctions/MolecularOrbitals/GridMolecularOrbitals.h"
 #include "OhmmsData/AttributeSet.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   bool MolecularOrbitalBuilder::put(xmlNodePtr cur) {
     if(xmlHasProp(cur, (const xmlChar*)"href")){

@@ -25,7 +25,7 @@
 #if defined(HAVE_LIBGSL)
 #include "Optimize/GSLMinimize.h"
 #endif
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   QMCOptimize::QMCOptimize(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h):
     QMCDriver(w,psi,h), PartID(0), NumParts(1),optTarget(0),

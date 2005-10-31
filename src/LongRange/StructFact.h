@@ -1,12 +1,12 @@
-#ifndef OHMMS_QMC_STRUCTFACT_H
-#define OHMMS_QMC_STRUCTFACT_H
+#ifndef QMCPLUSPLUS_STRUCTFACT_H
+#define QMCPLUSPLUS_STRUCTFACT_H
 
 #include "Particle/ParticleSet.h"
 #include "Utilities/PooledData.h"
 #include "LongRange/KContainer.h"
 #include <complex>
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   /** @ingroup longrange
    *\brief Calculates the structure-factor for a particle set

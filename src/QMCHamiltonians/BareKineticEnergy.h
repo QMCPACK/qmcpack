@@ -14,13 +14,13 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_QMC_BAREKINETICENERGY_H
-#define OHMMS_QMC_BAREKINETICENERGY_H
+#ifndef QMCPLUSPLUS_BAREKINETICENERGY_H
+#define QMCPLUSPLUS_BAREKINETICENERGY_H
 #include "Particle/ParticleSet.h"
 #include "Particle/WalkerSetRef.h"
 #include "QMCHamiltonians/QMCHamiltonianBase.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   /** @ingroup hamiltonian
    @brief Evaluate the kinetic energy with a single mass

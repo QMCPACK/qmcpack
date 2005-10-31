@@ -1,5 +1,5 @@
-#ifndef OHMMS_QMC_LRBREAKUP_H
-#define OHMMS_QMC_LRBREAKUP_H
+#ifndef QMCPLUSPLUS_LRBREAKUP_H
+#define QMCPLUSPLUS_LRBREAKUP_H
 
 #include "Configuration.h"
 #include "Particle/ParticleSet.h"
@@ -7,7 +7,7 @@
 #include "Numerics/Blasf.h"
 #include <cassert>
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   template<class BreakupBasis>
     class LRBreakup: public QMCTraits {

@@ -14,11 +14,11 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_QMC_NUMERICAL_MOLECULARORBITALS_H
-#define OHMMS_QMC_NUMERICAL_MOLECULARORBITALS_H
+#ifndef QMCPLUSPLUS_NUMERICAL_MOLECULARORBITALS_H
+#define QMCPLUSPLUS_NUMERICAL_MOLECULARORBITALS_H
 #include "QMCWaveFunctions/OrbitalBuilderBase.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   class GridMolecularOrbitals;
 

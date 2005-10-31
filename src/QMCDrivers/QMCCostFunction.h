@@ -15,15 +15,15 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_QMC_COSTFUNCTION_H
-#define OHMMS_QMC_COSTFUNCTION_H
+#ifndef QMCPLUSPLUS_COSTFUNCTION_H
+#define QMCPLUSPLUS_COSTFUNCTION_H
 
 #include <deque>
 #include "Configuration.h"
 #include "Optimize/OptimizeBase.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   class MCWalkerConfiguration;
   class TrialWaveFunction;

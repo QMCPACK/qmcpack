@@ -17,8 +17,8 @@
 //   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_SLATERTYPEORBITAL_H
-#define OHMMS_SLATERTYPEORBITAL_H
+#ifndef QMCPLUSPLUS_SLATERTYPEORBITAL_H
+#define QMCPLUSPLUS_SLATERTYPEORBITAL_H
 #include "Numerics/RadialOrbitalBase.h"
 #include <cmath>
 

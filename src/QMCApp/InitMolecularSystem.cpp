@@ -28,7 +28,7 @@ using namespace std;
 #include "Particle/DistanceTable.h"
 #include "Particle/DistanceTableData.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   InitMolecularSystem::InitMolecularSystem(ParticleSetPool* pset, 
       const char* aname):

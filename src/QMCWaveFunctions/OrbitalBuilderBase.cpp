@@ -22,7 +22,7 @@
   *The main input files for qmcplusplus applications should use the matching
   *tags defined here.
   */
-namespace ohmmsqmc {
+namespace qmcplusplus {
 string OrbitalBuilderBase::wfs_tag="wavefunction";  
 
 string OrbitalBuilderBase::param_tag="parameter";  

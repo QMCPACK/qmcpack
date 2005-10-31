@@ -1,5 +1,5 @@
-#ifndef OHMMS_QMC_LRCOULOMBAA_H
-#define OHMMS_QMC_LRCOULOMBAA_H
+#ifndef QMCPLUSPLUS_LRCOULOMBAA_H
+#define QMCPLUSPLUS_LRCOULOMBAA_H
 
 #include "LongRange/LRHandler.h"
 #include "Particle/ParticleSet.h"
@@ -8,7 +8,7 @@
 #include "Particle/DistanceTable.h"
 #include "Message/Communicate.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   template<class BreakupBasis>
     class LRCoulombAA: public LRHandler<BreakupBasis> {

@@ -22,7 +22,7 @@
 #include "QMCWaveFunctions/MolecularOrbitals/GridMolecularOrbitals.h"
 #include "QMCWaveFunctions/MolecularOrbitals/GTO2GridBuilder.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   /** Process basisGroup node
    * @param cur current xml node

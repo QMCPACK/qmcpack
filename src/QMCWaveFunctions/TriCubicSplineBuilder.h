@@ -1,5 +1,5 @@
-#ifndef OHMMS_QMC_TRICUBICSPLINEDBUILDER_H
-#define OHMMS_QMC_TRICUBICSPLINE3DBUILDER_H
+#ifndef QMCPLUSPLUS_TRICUBICSPLINEDBUILDER_H
+#define QMCPLUSPLUS_TRICUBICSPLINE3DBUILDER_H
 
 #include "OhmmsData/OhmmsElementBase.h"
 #include "QMCWaveFunctions/OrbitalBuilderBase.h"
@@ -8,7 +8,7 @@
 #include "Numerics/Spline3D/TriCubicSpline.h"
 #include "Numerics/Spline3D/TriCubicSplineSet.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   class TriCubicSplineBuilder: public OrbitalBuilderBase {
 

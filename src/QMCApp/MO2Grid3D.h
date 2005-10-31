@@ -17,15 +17,15 @@
 //   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_QMC_MOLECULARORBITALS2GRID3D_H
-#define OHMMS_QMC_MOLECULARORBITALS2GRID3D_H
+#ifndef QMCPLUSPLUS_MOLECULARORBITALS2GRID3D_H
+#define QMCPLUSPLUS_MOLECULARORBITALS2GRID3D_H
 
 #include "QMCApp/QMCAppBase.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "Numerics/TriCubicSplineT.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   class ParticleSetPool;
 

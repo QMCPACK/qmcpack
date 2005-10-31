@@ -13,12 +13,12 @@
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
-#ifndef OHMMS_QMC_ANY2RADIALGRIDFUNCTOR_H
-#define OHMMS_QMC_ANY2RADIALGRIDFUNCTOR_H
+#ifndef QMCPLUSPLUS_ANY2RADIALGRIDFUNCTOR_H
+#define QMCPLUSPLUS_ANY2RADIALGRIDFUNCTOR_H
 
 #include "QMCWaveFunctions/MolecularOrbitals/RGFBuilderBase.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   /**Class to convert SlaterTypeOrbital to a radial orbital on a log grid.
    *

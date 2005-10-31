@@ -28,7 +28,7 @@
 #include "QMC/WaveFunctionTester.h"
 #include "Utilities/OhmmsInform.h"
 #include "math.h"
-using namespace ohmmsqmc;
+using namespace qmcplusplus;
 
 
 WaveFunctionTester::WaveFunctionTester(MCWalkerConfiguration& w, 

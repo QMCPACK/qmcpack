@@ -17,10 +17,10 @@
 //   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_QMC_H2APP_H
-#define OHMMS_QMC_H2APP_H
+#ifndef QMCPLUSPLUS_H2APP_H
+#define QMCPLUSPLUS_H2APP_H
 #include "QMC/QMCApps.h"
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   class H2Apps: public QMCApps {
 

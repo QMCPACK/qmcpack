@@ -17,8 +17,8 @@
 //   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_QMC_VMC_OPT_H
-#define OHMMS_QMC_VMC_OPT_H
+#ifndef QMCPLUSPLUS_VMC_OPT_H
+#define QMCPLUSPLUS_VMC_OPT_H
 
 #include <deque>
 #include "Configuration.h"
@@ -26,7 +26,7 @@
 #include "Optimize/Minimize.h"
 #include "QMCHamiltonians/QMCHamiltonianBase.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   /** @ingroup QMCDrivers
    * @brief Implements wave-function optimization

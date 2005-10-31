@@ -4,7 +4,7 @@
 #include "Numerics/Spline3D/Config.h"
 #include "Particle/ParticleSet.h"
 
-namespace ohmmsqmc{
+namespace qmcplusplus{
 
   struct WOSParticles{
 

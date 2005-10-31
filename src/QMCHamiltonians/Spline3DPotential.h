@@ -1,5 +1,5 @@
-#ifndef OHMMS_QMC_MYSPLINEDDAS_H
-#define OHMMS_QMC_MYSPLINEDDAS_H
+#ifndef QMCPLUSPLUS_MYSPLINEDDAS_H
+#define QMCPLUSPLUS_MYSPLINEDDAS_H
 #include <algo.h>
 #include "Particle/ParticleSet.h"
 #include "Particle/WalkerSetRef.h"
@@ -9,7 +9,7 @@
 #include "QMCHamiltonians/QMCHamiltonianBase.h"
 
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
 
   struct Spline3DPotential: public QMCHamiltonianBase {

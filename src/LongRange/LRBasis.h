@@ -1,10 +1,10 @@
-#ifndef OHMMS_QMC_LRBASIS_H
-#define OHMMS_QMC_LRBASIS_H
+#ifndef QMCPLUSPLUS_LRBASIS_H
+#define QMCPLUSPLUS_LRBASIS_H
 
 #include "Particle/ParticleSet.h"
 #include "Utilities/PooledData.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   /** @ingroup longrange
    *\brief Base-class for long-range breakups. 

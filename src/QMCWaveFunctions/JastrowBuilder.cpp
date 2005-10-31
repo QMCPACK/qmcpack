@@ -23,7 +23,7 @@
 #include "QMCWaveFunctions/TwoBodyJastrowFunction.h"
 #include "QMCWaveFunctions/PolarizedJastrow.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   /** constructor
    * @param p target ParticleSet whose wave function is to be initialized

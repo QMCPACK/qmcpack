@@ -14,8 +14,8 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_QMC_NUMERICALORBITALSETBUILDER_H
-#define OHMMS_QMC_NUMERICALORBITALSETBUILDER_H
+#ifndef QMCPLUSPLUS_NUMERICALORBITALSETBUILDER_H
+#define QMCPLUSPLUS_NUMERICALORBITALSETBUILDER_H
 
 #include "Utilities/OhmmsInfo.h"
 #include "QMCWaveFunctions/OrbitalBuilderBase.h"
@@ -26,7 +26,7 @@
 #include "QMCWaveFunctions/DiracDeterminant.h"
 #include "QMCWaveFunctions/SlaterDeterminant.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   /**@ingroup WFSBuilder
    * A builder class for a set of SlaterDeterminant with mixed orbitals

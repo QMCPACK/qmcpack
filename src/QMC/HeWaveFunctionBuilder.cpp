@@ -24,7 +24,7 @@
 #include "QuantumSystem/CompositeSlaterDeterminant.h"
 #include "QuantumSystem/JastrowFunction.h"
 #include "QuantumSystem/TrialWaveFunction.h"
-using namespace ohmmsqmc;
+using namespace qmcplusplus;
 
 void 
 initialize(TrialWaveFunction& Psi, MCWalkerConfiguration& el, 

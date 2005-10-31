@@ -1,5 +1,5 @@
-#ifndef OHMMS_TOOLS_EXTERNAL_GAUSSIANPARSERBASE_H
-#define OHMMS_TOOLS_EXTERNAL_GAUSSIANPARSERBASE_H
+#ifndef QMCPLUSPLUS_TOOLS_EXTERNAL_GAUSSIANPARSERBASE_H
+#define QMCPLUSPLUS_TOOLS_EXTERNAL_GAUSSIANPARSERBASE_H
 #include <iostream>
 #include <sstream>
 #include <iomanip>
@@ -9,7 +9,7 @@
 #include "Utilities/SimpleParser.h"
 #include "Particle/ParticleSet.h"
 
-using namespace ohmmsqmc;
+using namespace qmcplusplus;
 
 struct OhmmsAsciiParser {
 

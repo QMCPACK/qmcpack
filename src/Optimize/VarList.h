@@ -15,8 +15,8 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_QMC_OPTIMIZE_VARREGISTRY_H
-#define OHMMS_QMC_OPTIMIZE_VARREGISTRY_H
+#ifndef QMCPLUSPLUS_OPTIMIZE_VARREGISTRY_H
+#define QMCPLUSPLUS_OPTIMIZE_VARREGISTRY_H
 
 /**class VarRegistry
  *\brief register variables for optimization. 

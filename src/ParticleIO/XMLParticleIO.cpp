@@ -30,7 +30,7 @@ using namespace std;
 #include "ParticleIO/HDFParticleIO.h"
 #include "ParticleBase/ParticleFunctions.h"
 #include "ParticleBase/RandomSeqGenerator.h"
-using namespace ohmmsqmc;
+using namespace qmcplusplus;
 
 
 XMLParticleParser::XMLParticleParser(Particle_t& aptcl, bool donotresize):

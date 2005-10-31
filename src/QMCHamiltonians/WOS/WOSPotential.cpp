@@ -1,6 +1,6 @@
 #include "QMCHamiltonians/WOS/WOSPotential.h"
 
-using namespace ohmmsqmc;
+using namespace qmcplusplus;
 
 /*
   Here we should have a number of experimental methods to implement

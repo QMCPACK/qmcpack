@@ -27,7 +27,7 @@
 #include "Message/Communicate.h"
 #include "Utilities/Clock.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
-namespace ohmmsqmc { 
+namespace qmcplusplus { 
   RQMCMultiple::RQMCMultiple(MCWalkerConfiguration& w, 
       TrialWaveFunction& psi, QMCHamiltonian& h):
     QMCDriver(w,psi,h), 

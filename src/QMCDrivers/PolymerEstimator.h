@@ -17,12 +17,12 @@
 //   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_QMC_POLYMERESTIMATOR_H
-#define OHMMS_QMC_POLYMERESTIMATOR_H
+#ifndef QMCPLUSPLUS_POLYMERESTIMATOR_H
+#define QMCPLUSPLUS_POLYMERESTIMATOR_H
 #include "QMCDrivers/PolymerChain.h"
 #include "OhmmsPETE/OhmmsVector.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   class PolymerEstimator {
 

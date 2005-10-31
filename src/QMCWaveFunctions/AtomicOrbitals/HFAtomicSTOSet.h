@@ -14,14 +14,14 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_QMC_ATOMIC_HARTREEFOCK_STO_H
-#define OHMMS_QMC_ATOMIC_HARTREEFOCK_STO_H
+#ifndef QMCPLUSPLUS_ATOMIC_HARTREEFOCK_STO_H
+#define QMCPLUSPLUS_ATOMIC_HARTREEFOCK_STO_H
 #include "Particle/DistanceTable.h"
 #include "Numerics/SlaterTypeOrbital.h"
 #include "Numerics/SphericalTensor.h"
 #include "QMCWaveFunctions/DummyBasisSet.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   template<class T, class POS>
   struct ComboSTO {

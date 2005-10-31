@@ -21,7 +21,7 @@
 #include "QMCWaveFunctions/AtomicOrbitals/HeSTOClementiRottie.h"
 #include "Utilities/OhmmsInfo.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   /** constructor
    *@param els the electron particleset

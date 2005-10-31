@@ -20,7 +20,7 @@
 #include "QMCWaveFunctions/DetSetBuilderWithBasisSet.h"
 #include "QMCWaveFunctions/MolecularOrbitals/STOMolecularOrbitals.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   STOMolecularOrbitals::STOMolecularOrbitals(ParticleSet& els, TrialWaveFunction& psi, 
       ParticleSet& ions):

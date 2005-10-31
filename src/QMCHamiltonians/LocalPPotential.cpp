@@ -27,7 +27,7 @@
 #include "Utilities/SimpleParser.h"
 #include "Utilities/OhmmsInfo.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   LocalPPotential::RadialPotentialSet::~RadialPotentialSet() {
     for(int ig=0; ig<grid_m.size(); ig++) delete grid_m[ig];

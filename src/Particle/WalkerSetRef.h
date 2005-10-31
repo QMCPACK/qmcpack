@@ -14,14 +14,14 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_QMC_WALKERSETREF_H
-#define OHMMS_QMC_WALKERSETREF_H
+#ifndef QMCPLUSPLUS_WALKERSETREF_H
+#define QMCPLUSPLUS_WALKERSETREF_H
 
 #include "Particle/ParticleSet.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   /** class to assist vectorized operations on Walkers
    */

@@ -14,12 +14,12 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_QMC_DUMMYBASISSET_H
-#define OHMMS_QMC_DUMMYBASISSET_H
+#ifndef QMCPLUSPLUS_DUMMYBASISSET_H
+#define QMCPLUSPLUS_DUMMYBASISSET_H
 
 #include "Particle/ParticleSet.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
   /** DummyBasisSet class which implements functions
    *
    * Any S(ingle)P(article)O(rbital)Set can contain

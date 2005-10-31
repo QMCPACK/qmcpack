@@ -14,8 +14,8 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_QMC_LINEARCOMIBINATIONORBITALS_H
-#define OHMMS_QMC_LINEARCOMIBINATIONORBITALS_H
+#ifndef QMCPLUSPLUS_LINEARCOMIBINATIONORBITALS_H
+#define QMCPLUSPLUS_LINEARCOMIBINATIONORBITALS_H
 
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "Numerics/DeterminantOperators.h"
@@ -23,7 +23,7 @@
 #include "Numerics/HDFNumericAttrib.h"
 #include <limits>
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   class DistanceTableData;
 

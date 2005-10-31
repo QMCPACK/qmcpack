@@ -25,7 +25,7 @@
 #include "Message/Communicate.h"
 #include "Utilities/Clock.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   MolecuDMC::MolecuDMC(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h):
     QMCDriver(w,psi,h),

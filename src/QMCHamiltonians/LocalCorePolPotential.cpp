@@ -20,7 +20,7 @@
 #include "Utilities/OhmmsInfo.h"
 #include "Utilities/IteratorUtility.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
  
   LocalCorePolPotential::LocalCorePolPotential(ParticleSet& ions, 
 					       ParticleSet& els): 

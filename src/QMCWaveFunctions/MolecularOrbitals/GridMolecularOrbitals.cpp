@@ -25,7 +25,7 @@
 #include "QMCWaveFunctions/MolecularOrbitals/Any2GridBuilder.h"
 #include "QMCWaveFunctions/MolecularOrbitals/NumericalRGFBuilder.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   GridMolecularOrbitals::GridMolecularOrbitals(ParticleSet& els, TrialWaveFunction& psi, 
       ParticleSet& ions):

@@ -14,13 +14,13 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_QMC_HEPRESETHF_H
-#define OHMMS_QMC_HEPRESETHF_H
+#ifndef QMCPLUSPLUS_HEPRESETHF_H
+#define QMCPLUSPLUS_HEPRESETHF_H
 #include "QMCWaveFunctions/OrbitalBuilderBase.h"
 #include "QMCWaveFunctions/DummyBasisSet.h"
 #include "Particle/DistanceTable.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   /**
    *@brief A specialized class that implments Helium Clementi-Roetti

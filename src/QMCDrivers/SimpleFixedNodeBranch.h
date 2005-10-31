@@ -15,15 +15,15 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_QMC_SIMPLE_FIXEDNODE_BRANCHER_H
-#define OHMMS_QMC_SIMPLE_FIXEDNODE_BRANCHER_H
+#ifndef QMCPLUSPLUS_SIMPLE_FIXEDNODE_BRANCHER_H
+#define QMCPLUSPLUS_SIMPLE_FIXEDNODE_BRANCHER_H
 
 #include "Configuration.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "OhmmsData/HDFAttribIO.h"
 #include "QMCDrivers/WalkerControlBase.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   /** Implements branching algorithm for the fixed-node Diffusion Monte Carlo
    *

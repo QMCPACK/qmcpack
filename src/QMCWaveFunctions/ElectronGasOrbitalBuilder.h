@@ -14,12 +14,12 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_QMC_ELECTRONGAS_ORBITALS_H
-#define OHMMS_QMC_ELECTRONGAS_ORBITALS_H
+#ifndef QMCPLUSPLUS_ELECTRONGAS_ORBITALS_H
+#define QMCPLUSPLUS_ELECTRONGAS_ORBITALS_H
 
 #include "QMCWaveFunctions/OrbitalBuilderBase.h"
 #include "QMCWaveFunctions/DummyBasisSet.h"
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   /** OrbitalBuilder for Slater determinants of electron-gas 
   */

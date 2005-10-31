@@ -20,10 +20,10 @@
 /**@file VMCMultiple.h
  * @brief Definition of VMCMultiple
  */
-#ifndef OHMMS_QMC_VMCMULTIPLE_H_PSI_H
-#define OHMMS_QMC_VMCMULTIPLE_H_PSI_H
+#ifndef QMCPLUSPLUS_VMCMULTIPLE_H_PSI_H
+#define QMCPLUSPLUS_VMCMULTIPLE_H_PSI_H
 #include "QMCDrivers/QMCDriver.h" 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   class MultipleEnergyEstimator;
 

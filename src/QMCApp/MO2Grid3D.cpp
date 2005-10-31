@@ -31,7 +31,7 @@
 #include "Utilities/Clock.h"
 #include "QMCTools/QMCUtilities.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   MO2Grid3D::MO2Grid3D(int argc, char** argv): QMCAppBase(argc,argv),
   Electrons(0), Ions(0){ 

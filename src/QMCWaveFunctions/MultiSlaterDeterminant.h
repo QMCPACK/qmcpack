@@ -14,13 +14,13 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_QMC_MULTISLATERDETERMINANT_ORBITAL_H
-#define OHMMS_QMC_MULTISLATERDETERMINANT_ORBITAL_H
+#ifndef QMCPLUSPLUS_MULTISLATERDETERMINANT_ORBITAL_H
+#define QMCPLUSPLUS_MULTISLATERDETERMINANT_ORBITAL_H
 #include "Configuration.h"
 #include "QMCWaveFunctions/OrbitalBase.h"
 #include "QMCWaveFunctions/SlaterDeterminant.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   /** @ingroup OrbitalComponent
    *  @brief An AntiSymmetric OrbitalBase composed of a linear combination of SlaterDeterminants. 

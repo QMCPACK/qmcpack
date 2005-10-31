@@ -23,7 +23,7 @@
 
 #include <iostream>
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   //Spline3DSet Spline3DBuilder::orbitals;   
 

@@ -15,8 +15,8 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_QMC_NONLOCALPPOTENTIAL_H
-#define OHMMS_QMC_NONLOCALPPOTENTIAL_H
+#ifndef QMCPLUSPLUS_NONLOCALPPOTENTIAL_H
+#define QMCPLUSPLUS_NONLOCALPPOTENTIAL_H
 #include "QMCHamiltonians/QMCHamiltonianBase.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "Numerics/OneDimGridBase.h"
@@ -24,7 +24,7 @@
 #include "Numerics/OneDimCubicSpline.h"
 #include "Numerics/OhmmsBlas.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
 
   class WalkerSetRef;

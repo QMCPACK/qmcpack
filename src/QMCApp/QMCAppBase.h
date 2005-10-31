@@ -17,8 +17,8 @@
 //   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_QMC_QMCAPPLICATIONBASE_H
-#define OHMMS_QMC_QMCAPPLICATIONBASE_H
+#ifndef QMCPLUSPLUS_QMCAPPLICATIONBASE_H
+#define QMCPLUSPLUS_QMCAPPLICATIONBASE_H
 
 #include "OhmmsData/OhmmsElementBase.h"
 #include "OhmmsApp/ProjectData.h"
@@ -30,7 +30,7 @@
  * under \<simulation\>.
  */
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   /** @ingroup qmcapp
    * @brief Base class for QMC applications and utilities

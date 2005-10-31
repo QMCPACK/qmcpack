@@ -20,7 +20,7 @@
 #include "QMCApp/QMCAppBase.h"
 #include "Utilities/OhmmsInfo.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   QMCAppBase::QMCAppBase(int argc, char** argv): 
     m_doc(NULL),m_root(NULL)

@@ -5,7 +5,7 @@
 #include "QMCWaveFunctions/SlaterDeterminant.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   bool TriCubicSplineBuilder::put(xmlNodePtr cur) {
 

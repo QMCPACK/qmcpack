@@ -14,8 +14,8 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_QMC_POOLEDDATA_H
-#define OHMMS_QMC_POOLEDDATA_H
+#ifndef QMCPLUSPLUS_POOLEDDATA_H
+#define QMCPLUSPLUS_POOLEDDATA_H
 #include <vector>
 
 /**class PooledData<T>

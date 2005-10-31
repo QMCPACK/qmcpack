@@ -17,10 +17,10 @@
 //   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_QMC_DUMMY_H
-#define OHMMS_QMC_DUMMY_H
+#ifndef QMCPLUSPLUS_DUMMY_H
+#define QMCPLUSPLUS_DUMMY_H
 #include "QMCDrivers/QMCDriver.h" 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   /** @ingroup QMCDrivers 
    *@brief A dummy QMCDriver for testing

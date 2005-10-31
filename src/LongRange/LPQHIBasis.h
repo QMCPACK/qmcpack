@@ -1,10 +1,10 @@
-#ifndef OHMMS_QMC_LPQHIBASIS_H
-#define OHMMS_QMC_LPQHIBASIS_H
+#ifndef QMCPLUSPLUS_LPQHIBASIS_H
+#define QMCPLUSPLUS_LPQHIBASIS_H
 
 #include "LongRange/LRBasis.h"
 #include <complex>
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   /** @ingroup longrange
    *\brief A derivative of LRBasis class to provide the functionality 

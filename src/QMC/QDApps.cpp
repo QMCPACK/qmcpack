@@ -39,7 +39,7 @@
 
 #include <iostream>
 
-namespace ohmmsqmc{
+namespace qmcplusplus{
 
   using namespace xmlpp;
   

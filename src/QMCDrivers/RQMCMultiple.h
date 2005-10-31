@@ -17,13 +17,13 @@
 //   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_QMC_REPMULTIPLE_H
-#define OHMMS_QMC_REPMULTIPLE_H
+#ifndef QMCPLUSPLUS_REPMULTIPLE_H
+#define QMCPLUSPLUS_REPMULTIPLE_H
 
 #include "QMCDrivers/QMCDriver.h" 
 #include "OhmmsPETE/OhmmsVector.h" 
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   class Bead;
   

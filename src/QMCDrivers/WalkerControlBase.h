@@ -15,15 +15,15 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_QMC_WALKER_CONTROL_BASE_H
-#define OHMMS_QMC_WALKER_CONTROL_BASE_H
+#ifndef QMCPLUSPLUS_WALKER_CONTROL_BASE_H
+#define QMCPLUSPLUS_WALKER_CONTROL_BASE_H
 
 #include "Configuration.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "Message/Communicate.h"
 #include "Message/CommOperators.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   /** Class to handle walker controls
    *

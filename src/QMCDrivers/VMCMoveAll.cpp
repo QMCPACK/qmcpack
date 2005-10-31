@@ -27,7 +27,7 @@
 #include "Message/Communicate.h"
 #include "Utilities/Clock.h"
 
-namespace ohmmsqmc { 
+namespace qmcplusplus { 
 
   /// Constructor.
   VMCMoveAll::VMCMoveAll(MCWalkerConfiguration& w, 

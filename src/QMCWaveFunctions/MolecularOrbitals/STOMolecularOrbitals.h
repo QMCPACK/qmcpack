@@ -14,8 +14,8 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_QMC_SLATERTYPEORBITAL_MOLECULARORBITALS_H
-#define OHMMS_QMC_SLATERTYPEORBITAL_MOLECULARORBITALS_H
+#ifndef QMCPLUSPLUS_SLATERTYPEORBITAL_MOLECULARORBITALS_H
+#define QMCPLUSPLUS_SLATERTYPEORBITAL_MOLECULARORBITALS_H
 
 #include "QMCWaveFunctions/OrbitalBuilderBase.h"
 #include "QMCWaveFunctions/SphericalOrbitalSet.h"
@@ -23,7 +23,7 @@
 #include "Numerics/SlaterBasisSet.h"
 //#include "Numerics/SlaterTypeOrbital.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   /**Class to add a set of Slater Type atomic orbital basis functions 
    *to the collection of basis functions.

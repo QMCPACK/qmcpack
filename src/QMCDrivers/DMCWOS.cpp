@@ -29,7 +29,7 @@
 #include "Message/Communicate.h"
 #include "Utilities/Clock.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   DMCWOS::DMCWOS(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h):
     QMCDriver(w,psi,h),Tau_var(0.0),wos_ref(0),BranchInfo("default"){ 

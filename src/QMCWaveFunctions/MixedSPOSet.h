@@ -14,14 +14,14 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_QMC_MIXED_SINGLEPARTICLEBASISSET_H
-#define OHMMS_QMC_MIXED_SINGLEPARTICLEBASISSET_H
+#ifndef QMCPLUSPLUS_MIXED_SINGLEPARTICLEBASISSET_H
+#define QMCPLUSPLUS_MIXED_SINGLEPARTICLEBASISSET_H
 
 #include "Configuration.h"
 #include "Numerics/TriCubicSplineT.h"
 #include "QMCWaveFunctions/DummyBasisSet.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   /** class to handle mixed single-particle orbitals
    *

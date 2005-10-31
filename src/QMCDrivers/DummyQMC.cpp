@@ -26,7 +26,7 @@
 #include "Message/Communicate.h"
 #include "Utilities/Clock.h"
 
-namespace ohmmsqmc { 
+namespace qmcplusplus { 
 
   /// Constructor.
   DummyQMC::DummyQMC(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h): 

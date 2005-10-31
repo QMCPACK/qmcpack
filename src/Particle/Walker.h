@@ -14,13 +14,13 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_QMC_WALKER_H
-#define OHMMS_QMC_WALKER_H
+#ifndef QMCPLUSPLUS_WALKER_H
+#define QMCPLUSPLUS_WALKER_H
 
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "Utilities/PooledData.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
 
   /** an enum denoting index of physical properties */

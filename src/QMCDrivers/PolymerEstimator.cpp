@@ -19,7 +19,7 @@
 // -*- C++ -*-
 #include "QMCDrivers/PolymerEstimator.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   PolymerEstimator::PolymerEstimator(PolymerChain& reptile, int npsi):
     Reptile(reptile),

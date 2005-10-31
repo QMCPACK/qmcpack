@@ -14,15 +14,15 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_QMC_POLARIZED_ONEBODYJASTROW_H
-#define OHMMS_QMC_POLARIZED_ONEBODYJASTROW_H
+#ifndef QMCPLUSPLUS_POLARIZED_ONEBODYJASTROW_H
+#define QMCPLUSPLUS_POLARIZED_ONEBODYJASTROW_H
 #include "Configuration.h"
 #include "QMCWaveFunctions/OrbitalBase.h"
 #include "OhmmsData/ParameterSet.h"
 //#include "OhmmsData/libxmldefs.h"
 //#include <libxml++/libxml++.h>
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   //  class OneBodyJastrow: public OrbitalBase {
   class PolarizedJastrow: public OrbitalBase {

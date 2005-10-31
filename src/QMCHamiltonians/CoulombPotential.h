@@ -14,15 +14,15 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_QMC_COULOMBPOTENTIAL_H
-#define OHMMS_QMC_COULOMBPOTENTIAL_H
+#ifndef QMCPLUSPLUS_COULOMBPOTENTIAL_H
+#define QMCPLUSPLUS_COULOMBPOTENTIAL_H
 #include "Particle/ParticleSet.h"
 #include "Particle/WalkerSetRef.h"
 #include "Particle/DistanceTableData.h"
 #include "Particle/DistanceTable.h"
 #include "QMCHamiltonians/QMCHamiltonianBase.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   /** @ingroup hamiltonian
    *@brief CoulombPotential for the different source and target particle sets.

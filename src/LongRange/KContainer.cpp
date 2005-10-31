@@ -1,7 +1,7 @@
 #include "Message/Communicate.h"
 #include "LongRange/KContainer.h"
 
-using namespace ohmmsqmc;
+using namespace qmcplusplus;
 
 //Constructor
 KContainer::KContainer(ParticleLayout_t& ref): Lattice(ref) { }

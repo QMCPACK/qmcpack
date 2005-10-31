@@ -20,7 +20,7 @@
 #include "Particle/WalkerSetRef.h"
 #include "Utilities/OhmmsInfo.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   TrialWaveFunction::TrialWaveFunction():SignValue(1.0),LogValue(0.0){ }
 

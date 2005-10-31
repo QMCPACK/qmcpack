@@ -21,8 +21,8 @@
  * @file QMCDriver.h
  * @brief Declaration of QMCDriver
  */
-#ifndef OHMMS_QMC_QMCDRIVER_H
-#define OHMMS_QMC_QMCDRIVER_H
+#ifndef QMCPLUSPLUS_QMCDRIVER_H
+#define QMCPLUSPLUS_QMCDRIVER_H
 
 #include "Configuration.h"
 #include "OhmmsData/ParameterSet.h"
@@ -34,7 +34,7 @@
 //#include "QMCDrivers/MolecuFixedNodeBranch.h"
 #include "QMCDrivers/SimpleFixedNodeBranch.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   /** @defgroup QMCDrivers QMC Driver group
    * QMC drivers that implement QMC algorithms

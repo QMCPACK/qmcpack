@@ -18,7 +18,7 @@
 #include "Numerics/HDFSTLAttrib.h"
 //#include "Numerics/HDFTriCubicSpline.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   NumericalOrbitalSetBuilder::NumericalOrbitalSetBuilder(ParticleSet& p,
               TrialWaveFunction& psi, PtclPoolType& psets):

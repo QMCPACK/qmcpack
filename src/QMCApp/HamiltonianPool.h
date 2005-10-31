@@ -20,13 +20,13 @@
 /**@file HamiltonianPool.h
  * @brief Declaration of HamiltonianPool
  */
-#ifndef OHMMS_QMC_QMCHAMILTONIANS_H
-#define OHMMS_QMC_QMCHAMILTONIANS_H
+#ifndef QMCPLUSPLUS_QMCHAMILTONIANS_H
+#define QMCPLUSPLUS_QMCHAMILTONIANS_H
 
 #include "OhmmsData/OhmmsElementBase.h"
 #include <map>
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   class ParticleSet;
   class QMCHamiltonian;

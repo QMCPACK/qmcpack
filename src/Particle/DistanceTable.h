@@ -14,13 +14,13 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_QMC_DISTANCETABLE_H
-#define OHMMS_QMC_DISTANCETABLE_H
+#ifndef QMCPLUSPLUS_DISTANCETABLE_H
+#define QMCPLUSPLUS_DISTANCETABLE_H
 
 #include "Particle/ParticleSet.h"
 #include "Utilities/PooledData.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   class DistanceTableData;
 

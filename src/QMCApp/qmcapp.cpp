@@ -36,7 +36,7 @@ int main(int argc, char **argv) {
 
   OhmmsInfo welcome(argc,argv,OHMMS::Controller->mycontext());
 
-  ohmmsqmc::QMCMain qmc(argc,argv);
+  qmcplusplus::QMCMain qmc(argc,argv);
 
 #if defined(HAVE_MPI)
   char fname[128];

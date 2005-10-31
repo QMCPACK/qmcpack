@@ -1,11 +1,11 @@
-#ifndef OHMMS_QMC_KCONTAINER_H
-#define OHMMS_QMC_KCONTAINER_H
+#ifndef QMCPLUSPLUS_KCONTAINER_H
+#define QMCPLUSPLUS_KCONTAINER_H
 
 #include "Particle/ParticleSet.h"
 #include "Utilities/PooledData.h"
 #include "Utilities/OhmmsInfo.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   /** @ingroup longrange
    *\brief A handler class for generating and storing lists of

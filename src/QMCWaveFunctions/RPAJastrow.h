@@ -14,8 +14,8 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_QMC_RPAFUNCTION_H
-#define OHMMS_QMC_RPAFUNCTION_H
+#ifndef QMCPLUSPLUS_RPAFUNCTION_H
+#define QMCPLUSPLUS_RPAFUNCTION_H
 #include "OhmmsData/libxmldefs.h"
 #include "Optimize/VarList.h"
 

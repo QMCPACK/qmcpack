@@ -17,10 +17,10 @@
 //   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_QMC_VMC_PARTICLEBYPARTCLE_MULTIPLE_H
-#define OHMMS_QMC_VMC_PARTICLEBYPARTCLE_MULTIPLE_H
+#ifndef QMCPLUSPLUS_VMC_PARTICLEBYPARTCLE_MULTIPLE_H
+#define QMCPLUSPLUS_VMC_PARTICLEBYPARTCLE_MULTIPLE_H
 #include "QMCDrivers/QMCDriver.h" 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   class MultipleEnergyEstimator;
   

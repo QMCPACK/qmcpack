@@ -14,8 +14,8 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_QMC_NOCUSPJASTROW_H
-#define OHMMS_QMC_NOCUSPJASTROW_H
+#ifndef QMCPLUSPLUS_NOCUSPJASTROW_H
+#define QMCPLUSPLUS_NOCUSPJASTROW_H
 #include "OhmmsData/libxmldefs.h"
 #include "Optimize/VarList.h"
 

@@ -15,12 +15,12 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_QMC_GLOBAL_WALKER_CONTROL_H
-#define OHMMS_QMC_GLOBAL_WALKER_CONTROL_H
+#ifndef QMCPLUSPLUS_GLOBAL_WALKER_CONTROL_H
+#define QMCPLUSPLUS_GLOBAL_WALKER_CONTROL_H
 
 #include "QMCDrivers/WalkerControlBase.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   /** Class to handle walker controls with simple global sum
    *

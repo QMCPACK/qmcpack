@@ -27,7 +27,7 @@ using namespace std;
 #include "ParticleIO/ParticleLayoutIO.h"
 #include "ParticleIO/HDFParticleIO.h"
 #include "ParticleBase/ParticleUtility.h"
-using namespace ohmmsqmc;
+using namespace qmcplusplus;
 
 #if defined(HAVE_LIBHDF5)
 #include "ParticleIO/HDFParticleAttrib.h"

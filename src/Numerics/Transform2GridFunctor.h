@@ -14,8 +14,8 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_QMC_CREATE_GRID_FUNCTION_H
-#define OHMMS_QMC_CREATE_GRID_FUNCTION_H
+#ifndef QMCPLUSPLUS_CREATE_GRID_FUNCTION_H
+#define QMCPLUSPLUS_CREATE_GRID_FUNCTION_H
 
 /**Abstract class to perform a transformation from a function (analytic or grid)
  * to a grid function

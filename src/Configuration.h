@@ -14,8 +14,8 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_QMC_TRAITS_H
-#define OHMMS_QMC_TRAITS_H
+#ifndef QMCPLUSPLUS_TRAITS_H
+#define QMCPLUSPLUS_TRAITS_H
 
 #include "ohmms-config.h"
 #include <string>
@@ -28,7 +28,7 @@
 #include "ParticleBase/ParticleAttrib.h"
 #include "ParticleBase/ParticleBase.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   /** traits for the common particle attributes
    *

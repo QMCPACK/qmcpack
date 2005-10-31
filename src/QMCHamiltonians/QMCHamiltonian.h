@@ -17,11 +17,11 @@
 /**@file QMCHamiltonian.h
  *@brief Declaration of QMCHamiltonian
  */
-#ifndef OHMMS_QMC_HAMILTONIAN_H
-#define OHMMS_QMC_HAMILTONIAN_H
+#ifndef QMCPLUSPLUS_HAMILTONIAN_H
+#define QMCPLUSPLUS_HAMILTONIAN_H
 #include "QMCHamiltonians/QMCHamiltonianBase.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   /**  Collection of Local Energy Operators 
    *

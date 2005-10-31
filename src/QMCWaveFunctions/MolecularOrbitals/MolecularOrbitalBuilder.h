@@ -14,13 +14,13 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_QMC_GENERIC_MOLECULARORBITALBUILDER_H
-#define OHMMS_QMC_GENERIC_MOLECULARORBITALBUILDER_H
+#ifndef QMCPLUSPLUS_GENERIC_MOLECULARORBITALBUILDER_H
+#define QMCPLUSPLUS_GENERIC_MOLECULARORBITALBUILDER_H
 
 #include "OhmmsData/OhmmsElementBase.h"
 #include "QMCWaveFunctions/OrbitalBuilderBase.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   class ParticleSet;
 

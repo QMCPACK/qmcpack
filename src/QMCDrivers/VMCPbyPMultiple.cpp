@@ -27,7 +27,7 @@
 #include "Utilities/Clock.h"
 #include "Estimators/MultipleEnergyEstimator.h"
 
-namespace ohmmsqmc { 
+namespace qmcplusplus { 
 
   /// Constructor.
   VMCPbyPMultiple::VMCPbyPMultiple(MCWalkerConfiguration& w, 

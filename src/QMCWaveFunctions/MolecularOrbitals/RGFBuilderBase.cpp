@@ -23,7 +23,7 @@
 #include "QMCWaveFunctions/MolecularOrbitals/RGFBuilderBase.h"
 #include "OhmmsData/AttributeSet.h"
 using namespace std;
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   /** the destructor
   */

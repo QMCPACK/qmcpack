@@ -27,7 +27,7 @@ using namespace std;
 #include "Utilities/OhmmsInfo.h"
 #include "ParticleIO/ParticleLayoutIO.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   bool LatticeParser::put(xmlNodePtr cur){
 

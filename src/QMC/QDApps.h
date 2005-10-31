@@ -17,15 +17,15 @@
 //   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_QMC_QDAPP_H
-#define OHMMS_QMC_QDAPP_H
+#ifndef QMCPLUSPLUS_QDAPP_H
+#define QMCPLUSPLUS_QDAPP_H
 #include "QMC/QMCApps.h"
 #include "Numerics/Spline3D/Grid3D.h"
 #include "Numerics/Spline3D/Config.h"
 #include <string>
 #include <vector>
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
 
   class QDApps: public QMCApps {

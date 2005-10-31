@@ -1,5 +1,5 @@
-#ifndef __SphericalTensor_h_
-#define __SphericalTensor_h_
+#ifndef QMCPLUSPLUS_SphericalTensor_h_
+#define QMCPLUSPLUS_SphericalTensor_h_
 
 //#include <valarray>
 //#include "Point.h"

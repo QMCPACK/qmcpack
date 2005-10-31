@@ -25,7 +25,7 @@
 #include "QMCHamiltonians/HarmonicPotential.h"
 #include "QMCHamiltonians/BareKineticEnergy.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   using namespace xmlpp;
 

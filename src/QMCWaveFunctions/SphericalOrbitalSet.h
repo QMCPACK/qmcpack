@@ -14,13 +14,13 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_QMC_SPHERICALORBITALSET_H
-#define OHMMS_QMC_SPHERICALORBITALSET_H
+#ifndef QMCPLUSPLUS_SPHERICALORBITALSET_H
+#define QMCPLUSPLUS_SPHERICALORBITALSET_H
 
 #include "Particle/DistanceTableData.h"
 #include "Numerics/SphericalTensor.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   struct DummyGrid {
     inline void locate(double r) {}

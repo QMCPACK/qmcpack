@@ -1,6 +1,6 @@
 #include "LongRange/StructFact.h"
 
-using namespace ohmmsqmc;
+using namespace qmcplusplus;
 
 //Constructor - pass arguments to KLists' constructor
 StructFact::StructFact(ParticleSet& ref, RealType kc): PtclRef(ref), 

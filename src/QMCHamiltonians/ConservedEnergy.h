@@ -14,14 +14,14 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_QMC_CONSERVEDENERGY_H
-#define OHMMS_QMC_CONSERVEDENERGY_H
+#ifndef QMCPLUSPLUS_CONSERVEDENERGY_H
+#define QMCPLUSPLUS_CONSERVEDENERGY_H
 
 #include "Particle/ParticleSet.h"
 #include "Particle/WalkerSetRef.h"
 #include "QMCHamiltonians/QMCHamiltonianBase.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   /** A fake Hamiltonian to check the sampling of the trial function.
    * 

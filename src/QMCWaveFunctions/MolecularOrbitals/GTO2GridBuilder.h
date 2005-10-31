@@ -13,8 +13,8 @@
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
-#ifndef OHMMS_QMC_RADIALGRIDFUNCTOR_GAUSSIAN_H
-#define OHMMS_QMC_RADIALGRIDFUNCTOR_GAUSSIAN_H
+#ifndef QMCPLUSPLUS_RADIALGRIDFUNCTOR_GAUSSIAN_H
+#define QMCPLUSPLUS_RADIALGRIDFUNCTOR_GAUSSIAN_H
 
 #include "Numerics/OneDimGridBase.h"
 #include "Numerics/OneDimGridFunctor.h"
@@ -24,7 +24,7 @@
 #include "QMCWaveFunctions/MolecularOrbitals/MolecularOrbitalBasis.h"
 #include "QMCWaveFunctions/MolecularOrbitals/RGFBuilderBase.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   /**Class to convert GaussianTypeOrbital to a radial orbital on a log grid.
    *

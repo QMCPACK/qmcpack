@@ -17,12 +17,12 @@
 //   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_QMC_DMC_MOLECU_WOS_H
-#define OHMMS_QMC_DMC_MOLECU_WOS_H
+#ifndef QMCPLUSPLUS_DMC_MOLECU_WOS_H
+#define QMCPLUSPLUS_DMC_MOLECU_WOS_H
 
 #include "QMC/QMCDriver.h" 
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   class WOSPotential;
 

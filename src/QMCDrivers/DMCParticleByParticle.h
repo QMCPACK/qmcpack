@@ -17,11 +17,11 @@
 //   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_QMC_DMC_PARTICLEBYPARTCLE_H
-#define OHMMS_QMC_DMC_PARTICLEBYPARTCLE_H
+#ifndef QMCPLUSPLUS_DMC_PARTICLEBYPARTCLE_H
+#define QMCPLUSPLUS_DMC_PARTICLEBYPARTCLE_H
 #include "QMCDrivers/QMCDriver.h" 
 #include "Utilities/OhmmsInfo.h"
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   /** @ingroup QMCDrivers ParticleByParticle 
    *@brief Implements the DMC algorithm using particle-by-particle move. 

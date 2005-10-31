@@ -23,7 +23,7 @@
 #include "Utilities/OhmmsInfo.h"
 #include "Utilities/RandomGenerator.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   NonLocalPPotential::RadialPotentialSet::~RadialPotentialSet() {
     if(lpp_m) delete lpp_m;

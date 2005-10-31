@@ -17,13 +17,13 @@
 //   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_QMC_LOCALENERGYESTIMATOR_H
-#define OHMMS_QMC_LOCALENERGYESTIMATOR_H
+#ifndef QMCPLUSPLUS_LOCALENERGYESTIMATOR_H
+#define QMCPLUSPLUS_LOCALENERGYESTIMATOR_H
 #include <strstream>
 #include "OhmmsData/libxmldefs.h"
 #include "Estimators/ScalarEstimatorBase.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   /*** A class to evaluate the local energy 
    *

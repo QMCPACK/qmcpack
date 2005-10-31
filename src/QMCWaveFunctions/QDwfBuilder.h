@@ -1,12 +1,12 @@
-#ifndef OHMMS_QMC_QDWFBUILDER_H
-#define OHMMS_QMC_QDWFBUILDER_H
+#ifndef QMCPLUSPLUS_QDWFBUILDER_H
+#define QMCPLUSPLUS_QDWFBUILDER_H
 
 #include "OhmmsData/OhmmsElementBase.h"
 #include "QMCWaveFunctions/OrbitalBuilderBase.h"
 #include "QMCWaveFunctions/SingleParticleOrbitalSet.h"
 #include "QMCWaveFunctions/QDwf.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   class QDwfBuilder: public OrbitalBuilderBase {
 

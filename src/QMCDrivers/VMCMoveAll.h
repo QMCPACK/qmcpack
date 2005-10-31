@@ -17,10 +17,10 @@
 //   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_QMC_VMCMoveAll_H
-#define OHMMS_QMC_VMCMoveAll_H
+#ifndef QMCPLUSPLUS_VMCMoveAll_H
+#define QMCPLUSPLUS_VMCMoveAll_H
 #include "QMC/QMCDriver.h" 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   /** Implements the VMCMoveAll algorithm. 
    *

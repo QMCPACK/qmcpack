@@ -14,8 +14,8 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_QMC_COULOMBPBC_H
-#define OHMMS_QMC_COULOMBPBC_H
+#ifndef QMCPLUSPLUS_COULOMBPBC_H
+#define QMCPLUSPLUS_COULOMBPBC_H
 #if (__GNUC__ == 2)
 #include <algo.h>
 #else
@@ -31,7 +31,7 @@
 #include "LongRange/LRCoulombAB.h"
 #include "LongRange/LPQHIBasis.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   /** @ingroup hamiltonian
    *\brief Calculates the AA Coulomb potential using PBCs

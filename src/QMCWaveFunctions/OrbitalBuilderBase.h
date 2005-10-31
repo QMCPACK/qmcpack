@@ -17,15 +17,15 @@
 /**@file OrbitalBuilderBase.h
  *@brief declaration of the base class for many-body wavefunction.
  */
-#ifndef OHMMS_QMC_TRIALORBITALBUILDERBASE_H
-#define OHMMS_QMC_TRIALORBITALBUILDERBASE_H 
+#ifndef QMCPLUSPLUS_TRIALORBITALBUILDERBASE_H
+#define QMCPLUSPLUS_TRIALORBITALBUILDERBASE_H 
 
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include <map>
 /**@defgroup WFSBuilder Orbital builder group
  * @brief Builder classes to add OrbitalComponent to a TrialWaveFunction
  */
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   /**@ingroup WFSBuilder
    * @brief An abstract class for wave function builders

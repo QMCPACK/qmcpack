@@ -17,14 +17,14 @@
 /**@file QMCHamiltonianBase.h
  *@brief Declaration of QMCHamiltonianBase
  */
-#ifndef OHMMS_QMC_HAMILTONIANBASE_H
-#define OHMMS_QMC_HAMILTONIANBASE_H
+#ifndef QMCPLUSPLUS_HAMILTONIANBASE_H
+#define QMCPLUSPLUS_HAMILTONIANBASE_H
 
 #include "Particle/ParticleSet.h"
 #include "Utilities/PooledData.h"
 #include <bitset>
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   /**@defgroup hamiltonian Hamiltonian group
    * @brief QMCHamiltonian and its component, QMCHamiltonianBase

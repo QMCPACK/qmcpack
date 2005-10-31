@@ -1,8 +1,8 @@
 // -*- C++ -*-
-#ifndef RADIALFUNCTIONUTILITY_H
-#define RADIALFUNCTIONUTILITY_H
+#ifndef QMCPLUSPLUS_RADIALFUNCTIONUTILITY_H
+#define QMCPLUSPLUS_RADIALFUNCTIONUTILITY_H
 
-#ifndef ONEDIMINTEGRATION_H
+#ifndef QMCPLUSPLUS_ONEDIMINTEGRATION_H
 #include "Numerics/OneDimIntegration.h"
 #endif
 /**@file RadialFunctorUtility.h

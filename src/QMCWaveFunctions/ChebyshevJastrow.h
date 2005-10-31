@@ -14,8 +14,8 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_QMC_CHEBYSHEV_JASTROWFUNCTION_H
-#define OHMMS_QMC_CHEBYSHEV_JASTROWFUNCTION_H
+#ifndef QMCPLUSPLUS_CHEBYSHEV_JASTROWFUNCTION_H
+#define QMCPLUSPLUS_CHEBYSHEV_JASTROWFUNCTION_H
 #include "OhmmsData/libxmldefs.h"
 #include "Optimize/VarList.h"
 

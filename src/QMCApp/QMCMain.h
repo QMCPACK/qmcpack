@@ -20,12 +20,12 @@
 /**@file QMCMain.h
  * @brief Declaration of QMCMain class
  */
-#ifndef OHMMS_QMC_MAINAPPLICATIONS_H
-#define OHMMS_QMC_MAINAPPLICATIONS_H
+#ifndef QMCPLUSPLUS_MAINAPPLICATIONS_H
+#define QMCPLUSPLUS_MAINAPPLICATIONS_H
 
 #include "QMCApp/QMCAppBase.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   //forward declaration
   class MCWalkerConfiguration;

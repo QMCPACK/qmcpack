@@ -21,7 +21,7 @@
 #include "Message/Communicate.h"
 #include "Message/CommOperators.h"
 #include <map>
-using namespace ohmmsqmc;
+using namespace qmcplusplus;
 
 MCWalkerConfiguration::MCWalkerConfiguration(): 
 OwnWalkers(true),ReadyForPbyP(false),UpdateMode(Update_Walker) {

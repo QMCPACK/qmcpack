@@ -14,8 +14,8 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_GRID_FUNCTOR_H
-#define OHMMS_GRID_FUNCTOR_H
+#ifndef QMCPLUSPLUS_GRID_FUNCTOR_H
+#define QMCPLUSPLUS_GRID_FUNCTOR_H
 
 #include "Numerics/OneDimGridBase.h"
 

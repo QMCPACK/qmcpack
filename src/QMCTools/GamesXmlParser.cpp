@@ -21,7 +21,7 @@
 #include "QMCTools/GamesXmlParser.h"
 #include "QMCHamiltonians/ConservedEnergy.h"
 
-//namespace ohmmsqmc {
+//namespace qmcplusplus {
 
   GamesXmlParser::GamesXmlParser() {
     basisName = "GamesXml";

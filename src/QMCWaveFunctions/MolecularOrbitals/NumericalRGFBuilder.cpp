@@ -24,7 +24,7 @@
 using namespace std;
 #include "OhmmsData/AttributeSet.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   NumericalRGFBuilder::NumericalRGFBuilder(xmlNodePtr cur) {
 

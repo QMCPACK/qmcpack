@@ -31,7 +31,7 @@ using namespace std;
 #include "OhmmsData/AttributeSet.h"
 #include "Utilities/OhmmsInfo.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
   
   WaveFunctionPool::WaveFunctionPool(const char* aname):OhmmsElementBase(aname){ }
 

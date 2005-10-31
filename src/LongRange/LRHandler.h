@@ -1,5 +1,5 @@
-#ifndef OHMMS_QMC_LRHANDLER_H
-#define OHMMS_QMC_LRHANDLER_H
+#ifndef QMCPLUSPLUS_LRHANDLER_H
+#define QMCPLUSPLUS_LRHANDLER_H
 
 #include "Particle/ParticleSet.h"
 #include "LongRange/KContainer.h"
@@ -8,7 +8,7 @@
 
 //Template-class declaration
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
   
   /** @ingroup longrange
    *\brief Base-class for long-range evaluations of functions.

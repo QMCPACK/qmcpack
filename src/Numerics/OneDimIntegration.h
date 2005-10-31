@@ -1,5 +1,5 @@
-#ifndef ONEDIMINTEGRATION_H
-#define ONEDIMINTEGRATION_H
+#ifndef QMCPLUSPLUS_ONEDIMINTEGRATION_H
+#define QMCPLUSPLUS_ONEDIMINTEGRATION_H
 
 /**@file OneDimIntegration.h
    @brief Functions to perform integration in one-dimension

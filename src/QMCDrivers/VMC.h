@@ -17,10 +17,10 @@
 //   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_QMC_VMC_H
-#define OHMMS_QMC_VMC_H
+#ifndef QMCPLUSPLUS_VMC_H
+#define QMCPLUSPLUS_VMC_H
 #include "QMCDrivers/QMCDriver.h" 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   /** @ingroup QMCDrivers WalkerByWalker
    *@brief implements the VMC algorithm. 

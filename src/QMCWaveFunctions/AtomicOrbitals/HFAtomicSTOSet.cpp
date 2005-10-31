@@ -18,7 +18,7 @@
 #include "Particle/DistanceTable.h"
 #include "QMCWaveFunctions/AtomicOrbitals/HFAtomicSTOSet.h"
 
-ohmmsqmc::HFAtomicSTOSet::HFAtomicSTOSet(): Ylm(0) {
+qmcplusplus::HFAtomicSTOSet::HFAtomicSTOSet(): Ylm(0) {
 
   RealType C[] = {0.76838,0.22346,0.04082,-0.00994,0.00230};
   RealType screen[] = {1.41714, 2.37682, 4.39628, 6.52699, 7.94252};
@@ -32,7 +32,7 @@ ohmmsqmc::HFAtomicSTOSet::HFAtomicSTOSet(): Ylm(0) {
   Orbital.push_back(new SPO_t(Ylm.index(0,0), Ylm, RnlPool,C));
 }
 
-// void ohmmsqmc::PresetHFBuilder(xmlNodePtr cur,TrialWaveFunction& wfs_ref) {
+// void qmcplusplus::PresetHFBuilder(xmlNodePtr cur,TrialWaveFunction& wfs_ref) {
 
 //   LOGMSG("Calling PresetHFBuilder to initialize a trial wave fucntion")
 //   DistanceTableData* d_ei = DistanceTable::getTable(1);

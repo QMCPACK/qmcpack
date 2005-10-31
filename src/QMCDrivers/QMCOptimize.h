@@ -15,13 +15,13 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_QMC_GENERIC_OPTIMIZATION_H
-#define OHMMS_QMC_GENERIC_OPTIMIZATION_H
+#ifndef QMCPLUSPLUS_GENERIC_OPTIMIZATION_H
+#define QMCPLUSPLUS_GENERIC_OPTIMIZATION_H
 
 #include "QMCDrivers/QMCDriver.h" 
 #include "QMCDrivers/QMCCostFunction.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   /** @ingroup QMCDrivers
    * @brief Implements wave-function optimization

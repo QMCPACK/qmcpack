@@ -207,7 +207,7 @@ void HeteroStructure::sample_point(Domain& domain){
 
 double HeteroStructure::Image_Contribution(int ipt,
 					   const Domain& domain,
-					   const ohmmsqmc::ParticleBase& P){
+					   const qmcplusplus::ParticleBase& P){
 
   double Gself = -Gfac/(domain.eps_d*domain.radius + 1e-30);
   double Gee = 0.0;
@@ -229,7 +229,7 @@ double HeteroStructure::Image_Contribution(int ipt,
 }
 
 double HeteroStructure::Domain_Contribution(const Domain& domain,
-					    const ohmmsqmc::ParticleBase& P){
+					    const qmcplusplus::ParticleBase& P){
 
   double d = domain.radius;
   //  rho * asq / 6 eps0

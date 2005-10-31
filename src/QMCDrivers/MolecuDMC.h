@@ -20,13 +20,13 @@
 /**@file MolecuDMC.h
  * @brief Declaration of MolecuDMC
  */
-#ifndef OHMMS_QMC_DMC_MOLECU_H
-#define OHMMS_QMC_DMC_MOLECU_H
+#ifndef QMCPLUSPLUS_DMC_MOLECU_H
+#define QMCPLUSPLUS_DMC_MOLECU_H
 
 #include "QMCDrivers/QMCDriver.h" 
 #include "Utilities/OhmmsInfo.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   /** @ingroup QMCDrivers  WalkerByWalker
    *@brief implements the DMC algorithm using walker-by-walker move. 

@@ -17,12 +17,12 @@
 //   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_QMC_MOLECUAPPS_H
-#define OHMMS_QMC_MOLECUAPPS_H
+#ifndef QMCPLUSPLUS_MOLECUAPPS_H
+#define QMCPLUSPLUS_MOLECUAPPS_H
 
 #include "QMC/QMCApps.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   /**
    @brief An application to perform QMC simulations of molecules.

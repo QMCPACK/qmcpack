@@ -17,7 +17,7 @@
 #include "QMCWaveFunctions/ElectronGasOrbitalBuilder.h"
 #include "QMCWaveFunctions/SlaterDeterminant.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   /** constructor for EGOSet
    * @param norb number of orbitals for the EGOSet

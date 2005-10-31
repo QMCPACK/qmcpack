@@ -1,5 +1,5 @@
-#ifndef OHMMS_QMC_XYZCUBICGRID_H
-#define OHMMS_QMC_XYZCUBICGRID_H
+#ifndef QMCPLUSPLUS_XYZCUBICGRID_H
+#define QMCPLUSPLUS_XYZCUBICGRID_H
 #include "OhmmsPETE/TinyVector.h"
 #include "Numerics/OneDimGridBase.h"
 

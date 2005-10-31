@@ -17,12 +17,12 @@
 //   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_QMC_SIMPLE_UTILITIES_H
-#define OHMMS_QMC_SIMPLE_UTILITIES_H
+#ifndef QMCPLUSPLUS_SIMPLE_UTILITIES_H
+#define QMCPLUSPLUS_SIMPLE_UTILITIES_H
 
 #include "QMCWaveFunctions/OrbitalBuilderBase.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
   /** A convenient function to evaluate the electron configuration
    *@param el the electron configuration
    *@param acontext xpath context

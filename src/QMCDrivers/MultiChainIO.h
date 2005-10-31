@@ -17,13 +17,13 @@
 //   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_QMC_MULTICHAIN_HDF_IO_H
-#define OHMMS_QMC_MULTICHAIN_HDF_IO_H
+#ifndef QMCPLUSPLUS_MULTICHAIN_HDF_IO_H
+#define QMCPLUSPLUS_MULTICHAIN_HDF_IO_H
 
 #include "OhmmsData/HDFAttribIO.h"
 #include "QMCDrivers/MultiChain.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   /** Writes a set of walker configurations to an HDF5 file. */
   class HDFMultiChainOutput {

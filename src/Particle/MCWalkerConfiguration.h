@@ -14,12 +14,12 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_QMC_MCWALKERCONFIGURATION_H
-#define OHMMS_QMC_MCWALKERCONFIGURATION_H
+#ifndef QMCPLUSPLUS_MCWALKERCONFIGURATION_H
+#define QMCPLUSPLUS_MCWALKERCONFIGURATION_H
 #include "Particle/ParticleSet.h"
 #include "Particle/Walker.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   /** A set of walkers that are to be advanced by Metropolis Monte Carlo.  
    *

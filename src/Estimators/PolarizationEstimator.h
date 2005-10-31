@@ -17,13 +17,13 @@
 //   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_QMC_POLARIZATIONESTIMATOR_H
-#define OHMMS_QMC_POLARIZATIONESTIMATOR_H
+#ifndef QMCPLUSPLUS_POLARIZATIONESTIMATOR_H
+#define QMCPLUSPLUS_POLARIZATIONESTIMATOR_H
 #include <fstream>
 #include "OhmmsData/libxmldefs.h"
 #include "Estimators/ScalarEstimatorBase.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   template<class T>
   class PolarizationEstimator: public ScalarEstimatorBase<T> {

@@ -14,8 +14,8 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_GRID_FUNCTOR_CUBIC_SPLINE_H
-#define OHMMS_GRID_FUNCTOR_CUBIC_SPLINE_H
+#ifndef QMCPLUSPLUS_GRID_FUNCTOR_CUBIC_SPLINE_H
+#define QMCPLUSPLUS_GRID_FUNCTOR_CUBIC_SPLINE_H
 
 #include "Numerics/OneDimGridFunctor.h"
 #include "Numerics/NRSplineFunctions.h"

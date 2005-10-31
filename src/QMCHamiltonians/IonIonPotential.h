@@ -14,8 +14,8 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_QMC_IONIONPOTENTIAL_H
-#define OHMMS_QMC_IONIONPOTENTIAL_H
+#ifndef QMCPLUSPLUS_IONIONPOTENTIAL_H
+#define QMCPLUSPLUS_IONIONPOTENTIAL_H
 #if (__GNUC__ == 2)
 #include <algo.h>
 #else
@@ -26,7 +26,7 @@
 #include "Particle/DistanceTableData.h"
 #include "QMCHamiltonians/QMCHamiltonianBase.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   /** @ingroup hamiltonian
    *\brief Calculates the Ion-Ion potential.

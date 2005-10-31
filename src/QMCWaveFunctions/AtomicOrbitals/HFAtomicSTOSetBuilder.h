@@ -14,13 +14,13 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_QMC_ATOMIC_HARTREEFOCK_STO_IOXML_H
-#define OHMMS_QMC_ATOMIC_HARTREEFOCK_STO_IOXML_H
+#ifndef QMCPLUSPLUS_ATOMIC_HARTREEFOCK_STO_IOXML_H
+#define QMCPLUSPLUS_ATOMIC_HARTREEFOCK_STO_IOXML_H
 
 #include "QMCWaveFunctions/OrbitalBuilderBase.h"
 #include "QMCWaveFunctions/AtomicOrbitals/HFAtomicSTOSet.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   /** OrbitalBuilder with HFAtomicSTOSet
    */

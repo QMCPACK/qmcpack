@@ -17,8 +17,8 @@
 /**@file TrialWaveFunction.h
  *@brief Declaration of a TrialWaveFunction 
  */
-#ifndef OHMMS_QMC_TRIALWAVEFUNCTION_H
-#define OHMMS_QMC_TRIALWAVEFUNCTION_H
+#ifndef QMCPLUSPLUS_TRIALWAVEFUNCTION_H
+#define QMCPLUSPLUS_TRIALWAVEFUNCTION_H
 
 #include "QMCWaveFunctions/OrbitalBase.h"
 #include "Optimize/VarList.h"
@@ -26,7 +26,7 @@
  * @brief Classes to handle many-body trial wave functions
  */
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   /** @ingroup MBWfs
    * @brief Class to represent a many-body trial wave function 

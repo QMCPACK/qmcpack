@@ -14,11 +14,11 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_QMC_GENERIC_JASTROW_BUILDER_H
-#define OHMMS_QMC_GENERIC_JASTROW_BUILDER_H
+#ifndef QMCPLUSPLUS_GENERIC_JASTROW_BUILDER_H
+#define QMCPLUSPLUS_GENERIC_JASTROW_BUILDER_H
 #include "QMCWaveFunctions/OrbitalBuilderBase.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   //forward declaration
   class ParticleSet;

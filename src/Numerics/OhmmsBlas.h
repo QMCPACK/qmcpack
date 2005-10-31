@@ -17,8 +17,8 @@
 //   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMSNUMERIC_BLAS_H
-#define OHMMSNUMERIC_BLAS_H
+#ifndef QMCPLUSPLUS_NUMERIC_BLAS_H
+#define QMCPLUSPLUS_NUMERIC_BLAS_H
 
 //generic header for blas routines
 #include "Numerics/Blasf.h"

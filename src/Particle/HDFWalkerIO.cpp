@@ -25,7 +25,7 @@
 #include "Utilities/OhmmsInfo.h"
 #include "Utilities/RandomGenerator.h"
 #include "OhmmsData/FileUtility.h"
-using namespace ohmmsqmc;
+using namespace qmcplusplus;
 
 /** Create the HDF5 file "aroot.config.h5" for output. 
  *@param aroot the root file name

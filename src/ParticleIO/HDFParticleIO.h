@@ -25,7 +25,7 @@
 #include "Particle/ParticleSet.h"
 #include "OhmmsData/HDFAttribIO.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   class HDFParticleParser: public ParticleTags {
 

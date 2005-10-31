@@ -139,10 +139,10 @@ public:
 
   /// collect contribution from charge density + other point charges Gee
   double Image_Contribution( int, 
-			     const Domain&, const ohmmsqmc::ParticleBase& );
+			     const Domain&, const qmcplusplus::ParticleBase& );
 
   /// collect contribution from charge density + other point charges Gee
-  double Domain_Contribution( const Domain&, const ohmmsqmc::ParticleBase& );
+  double Domain_Contribution( const Domain&, const qmcplusplus::ParticleBase& );
 
   /// read in the boundary potential and charge density
   void read_file( int, const char*, std::vector<double>& );

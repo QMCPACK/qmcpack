@@ -12,15 +12,15 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_QMC_EFFMKINETICENERGY_H
-#define OHMMS_QMC_EFFMKINETICENERGY_H
+#ifndef QMCPLUSPLUS_EFFMKINETICENERGY_H
+#define QMCPLUSPLUS_EFFMKINETICENERGY_H
 #include "Particle/ParticleSet.h"
 #include "Particle/WalkerSetRef.h"
 #include "QMCHamiltonians/QMCHamiltonianBase.h"
 #include "Numerics/MatGrid1D.h"
 #include "Numerics/Spline3D/Grid1D.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
   
   /** Class to evaluate kinectic energy of a heterostructure
    * 

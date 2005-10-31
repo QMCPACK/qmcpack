@@ -24,7 +24,7 @@
 #include "Numerics/HDFTriCubicSpline.h"
 #include "Utilities/Clock.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   NumericalMolecularOrbitals::NumericalMolecularOrbitals(ParticleSet& els,
       TrialWaveFunction& wfs, ParticleSet& ions):

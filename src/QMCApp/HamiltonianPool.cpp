@@ -35,7 +35,7 @@ using namespace std;
 #include "QMCHamiltonians/NonLocalPPotential.h"
 #include "QMCHamiltonians/LocalCorePolPotential.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   HamiltonianPool::HamiltonianPool(const char* aname):
     OhmmsElementBase(aname), curH(0), ptclPool(0), psiPool(0){ }

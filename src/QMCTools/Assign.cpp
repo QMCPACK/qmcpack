@@ -16,7 +16,7 @@
 
 int main(int argc, char **argv) {
 
-  using namespace ohmmsqmc;
+  using namespace qmcplusplus;
 
   xmlDocPtr m_doc;
   xmlNodePtr m_root;

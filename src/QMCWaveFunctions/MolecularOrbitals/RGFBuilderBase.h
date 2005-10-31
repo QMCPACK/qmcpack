@@ -13,13 +13,13 @@
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
-#ifndef OHMMS_QMC_RADIALGRIDFUNCTOR_BUILDERBASE_H
-#define OHMMS_QMC_RADIALGRIDFUNCTOR_BUILDERBASE_H
+#ifndef QMCPLUSPLUS_RADIALGRIDFUNCTOR_BUILDERBASE_H
+#define QMCPLUSPLUS_RADIALGRIDFUNCTOR_BUILDERBASE_H
 
 #include "Configuration.h"
 #include "OhmmsData/HDFAttribIO.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   /**An abstract base class to manage the radial grids and orbitals that are associated with a center.
    *

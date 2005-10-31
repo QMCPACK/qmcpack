@@ -13,12 +13,12 @@
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
-#ifndef OHMMS_QMC_NUMERICALRADIALGRIDFUNCTOR_H
-#define OHMMS_QMC_NUMERICALRADIALGRIDFUNCTOR_H
+#ifndef QMCPLUSPLUS_NUMERICALRADIALGRIDFUNCTOR_H
+#define QMCPLUSPLUS_NUMERICALRADIALGRIDFUNCTOR_H
 
 #include "QMCWaveFunctions/MolecularOrbitals/RGFBuilderBase.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   /**Class to create a set of radial orbitals on a grid (e.g., AtomHF/Siesta)
    *

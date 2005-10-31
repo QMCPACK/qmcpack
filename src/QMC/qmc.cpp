@@ -32,12 +32,12 @@
 #include "QMC/EstimatorManager.h"
 #include "OhmmsData/DOMProcessor.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
   extern bool initQuantumParticle(MCWalkerConfiguration& el, DOMProcessor& reader);
   extern bool initTrialWaveFunction(TrialWaveFunction& Psi, DOMProcessor& reader);
 }
 
-using namespace ohmmsqmc;
+using namespace qmcplusplus;
 
 int main(int argc, char **argv) {
 

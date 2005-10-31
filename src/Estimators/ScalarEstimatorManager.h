@@ -21,13 +21,13 @@
  * @brief Manager class of scalar estimators
  * @authors J. Kim and J. Vincent
  */
-#ifndef OHMMS_QMC_SCALAR_ESTIMATORMANAGER_H
-#define OHMMS_QMC_SCALAR_ESTIMATORMANAGER_H
+#ifndef QMCPLUSPLUS_SCALAR_ESTIMATORMANAGER_H
+#define QMCPLUSPLUS_SCALAR_ESTIMATORMANAGER_H
 
 #include "Configuration.h"
 #include "Estimators/ScalarEstimatorBase.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   class MCWalkerConifugration;
   class QMCHamiltonian;

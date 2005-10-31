@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////
-// (c) Copyright 2003  by Jeongnim Kim
+// (c) Copyright 2003-  by Jeongnim Kim
 //////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////
 //   National Center for Supercomputing Applications &
@@ -14,10 +14,10 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_SINGLEPARTICLEORBITALSET_H
-#define OHMMS_SINGLEPARTICLEORBITALSET_H
+#ifndef QMCPLUSPLUS_SINGLEPARTICLEORBITALSET_H
+#define QMCPLUSPLUS_SINGLEPARTICLEORBITALSET_H
 #include <vector>
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
 /**a set of single-particle orbitals. 
  *

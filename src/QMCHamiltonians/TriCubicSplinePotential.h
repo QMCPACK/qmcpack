@@ -1,5 +1,5 @@
-#ifndef OHMMS_QMC_TRICUBICSPLINEPOTENTIAL_H
-#define OHMMS_QMC_TRICUBICSPLINEPOTENTIAL_H
+#ifndef QMCPLUSPLUS_TRICUBICSPLINEPOTENTIAL_H
+#define QMCPLUSPLUS_TRICUBICSPLINEPOTENTIAL_H
 #include <algo.h>
 #include "Particle/ParticleSet.h"
 #include "Particle/WalkerSetRef.h"
@@ -9,7 +9,7 @@
 #include "QMCHamiltonians/QMCHamiltonianBase.h"
 
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
 
   struct TriCubicSplinePotential: public QMCHamiltonianBase {

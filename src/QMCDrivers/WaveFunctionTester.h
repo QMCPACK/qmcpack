@@ -17,11 +17,11 @@
 //   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_QMC_WAVEFUNCTIONTEST_H
-#define OHMMS_QMC_WAVEFUNCTIONTEST_H
+#ifndef QMCPLUSPLUS_WAVEFUNCTIONTEST_H
+#define QMCPLUSPLUS_WAVEFUNCTIONTEST_H
 
 #include "QMC/QMCDriver.h" 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   /** Test the correctness of TrialWaveFunction for the values,
       gradients and laplacians

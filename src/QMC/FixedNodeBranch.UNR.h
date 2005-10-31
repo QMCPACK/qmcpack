@@ -17,14 +17,14 @@
 //   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_QMC_FIXEDNODE_BRANCHER_H
-#define OHMMS_QMC_FIXEDNODE_BRANCHER_H
+#ifndef QMCPLUSPLUS_FIXEDNODE_BRANCHER_H
+#define QMCPLUSPLUS_FIXEDNODE_BRANCHER_H
 #include "OhmmsData/libxmldefs.h"
 #include <deque>
 #include <algorithm>
 #include <libxml++/libxml++.h>
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   /**
      @brief Class to perform branching.

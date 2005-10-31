@@ -434,7 +434,7 @@ QMCGaussianParserBase::createShell(int n, int ig, int off_, xmlNodePtr abasis) {
 
 void QMCGaussianParserBase::map2GridFunctors(xmlNodePtr cur) {
 
-  using namespace ohmmsqmc;
+  using namespace qmcplusplus;
 
   xmlNodePtr anchor = cur;
   //xmlNodePtr grid_ptr = 0;

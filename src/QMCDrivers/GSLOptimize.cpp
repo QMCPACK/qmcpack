@@ -25,7 +25,7 @@
 #include "Message/CommOperators.h"
 #include <algorithm>
 #include <limits>
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   GSLOptimize::GSLOptimize(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h):
     QMCDriver(w,psi,h), 

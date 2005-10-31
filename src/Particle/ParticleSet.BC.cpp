@@ -26,7 +26,7 @@
 #include "Message/OpenMP.h"
 #include "LongRange/StructFact.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   /** Creating StructureFactor
    * 

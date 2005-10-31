@@ -22,7 +22,7 @@
 #include "QMCWaveFunctions/MolecularOrbitals/GridMolecularOrbitals.h"
 #include "QMCWaveFunctions/MolecularOrbitals/STO2GridBuilder.h"
 using namespace std;
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   /** Add a new Slater Type Orbital with quantum numbers \f$(n,l,m,s)\f$ 
    * \param cur  the current xmlNode to be processed

@@ -17,8 +17,8 @@
 /**@file RadialOrbitalBase.h
  * @brief declare/define the base class for RadialOrbital
  */
-#ifndef OHMMS_QMC_RADIALORBITAL_BASE_H
-#define OHMMS_QMC_RADIALORBITAL_BASE_H
+#ifndef QMCPLUSPLUS_RADIALORBITAL_BASE_H
+#define QMCPLUSPLUS_RADIALORBITAL_BASE_H
 
 /** base class for RadialOrbital to facilitate maping between a group of radial functors to a numerical functor
  */

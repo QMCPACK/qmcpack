@@ -18,7 +18,7 @@
 #include "QMCDrivers/SimpleFixedNodeBranch.h"
 #include <numeric>
 #include "OhmmsData/ParameterSet.h"
-using namespace ohmmsqmc;
+using namespace qmcplusplus;
 
 SimpleFixedNodeBranch::SimpleFixedNodeBranch(RealType tau, int nideal): 
 SwapMode(0), Counter(0), Nideal(nideal), NumGeneration(50), 

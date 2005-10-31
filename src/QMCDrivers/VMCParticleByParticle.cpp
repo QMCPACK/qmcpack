@@ -26,7 +26,7 @@
 #include "Message/CommCreate.h"
 #include "Utilities/Clock.h"
 
-namespace ohmmsqmc { 
+namespace qmcplusplus { 
 
   /// Constructor.
   VMCParticleByParticle::VMCParticleByParticle(MCWalkerConfiguration& w, 

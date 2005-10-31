@@ -14,8 +14,8 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_QMC_JASTROWFUNCTIONS_H
-#define OHMMS_QMC_JASTROWFUNCTIONS_H
+#ifndef QMCPLUSPLUS_JASTROWFUNCTIONS_H
+#define QMCPLUSPLUS_JASTROWFUNCTIONS_H
 #include "OhmmsData/libxmldefs.h"
 #include "Optimize/VarList.h"
 

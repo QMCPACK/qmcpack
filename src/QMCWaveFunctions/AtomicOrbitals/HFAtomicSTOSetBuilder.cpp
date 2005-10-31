@@ -24,7 +24,7 @@
 #include <sstream>
 using std::set;
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   template<class T, class POS>
   std::ostream& 

@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////
-// (c) Copyright 1998-2002 by Jeongnim Kim
+// (c) Copyright 1998-2002,2003- by Jeongnim Kim
 //////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////
 //   Jeongnim Kim
@@ -17,12 +17,12 @@
 //   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMSQMC_DIRACDETERMINANT_H
-#define OHMMSQMC_DIRACDETERMINANT_H
+#ifndef QMCPLUSPLUS_DIRACDETERMINANT_H
+#define QMCPLUSPLUS_DIRACDETERMINANT_H
 #include "Numerics/DeterminantOperators.h"
 #include "Numerics/OhmmsBlas.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   class ParticleSet;
   class WalkerSetRef;

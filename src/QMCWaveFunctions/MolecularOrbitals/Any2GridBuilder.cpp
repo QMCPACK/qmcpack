@@ -23,7 +23,7 @@
 #include "QMCWaveFunctions/MolecularOrbitals/GridMolecularOrbitals.h"
 #include "QMCWaveFunctions/MolecularOrbitals/Any2GridBuilder.h"
 using namespace std;
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   Any2GridBuilder::Any2GridBuilder(xmlNodePtr cur): 
     Normalized(true),m_rcut(-1.0){

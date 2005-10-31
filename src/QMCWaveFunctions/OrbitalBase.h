@@ -1,6 +1,6 @@
 // -*- C++ -*-
-#ifndef OHMMS_QMC_ORBITALBASE_H
-#define OHMMS_QMC_ORBITALBASE_H
+#ifndef QMCPLUSPLUS_ORBITALBASE_H
+#define QMCPLUSPLUS_ORBITALBASE_H
 #include "Configuration.h"
 #include "Particle/ParticleSet.h"
 #include "Particle/DistanceTableData.h"
@@ -9,7 +9,7 @@
 /**@file OrbitalBase.h
  *@brief Declaration of OrbitalBase
  */
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   class WalkerSetRef;
 

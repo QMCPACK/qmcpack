@@ -14,15 +14,15 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_QMC_SLATERDETERMINANT_ORBITAL_H
-#define OHMMS_QMC_SLATERDETERMINANT_ORBITAL_H
+#ifndef QMCPLUSPLUS_SLATERDETERMINANT_ORBITAL_H
+#define QMCPLUSPLUS_SLATERDETERMINANT_ORBITAL_H
 #include "Configuration.h"
 #include "QMCWaveFunctions/OrbitalBase.h"
 #include "QMCWaveFunctions/DiracDeterminant.h"
 #include "Message/Communicate.h"
 #include "Utilities/OhmmsInfo.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   /** @ingroup OrbitalComponent
    *  @brief An AntiSymmetric OrbitalBase composed of DiracDeterminants. 

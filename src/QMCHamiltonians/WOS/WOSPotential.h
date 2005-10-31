@@ -11,7 +11,7 @@
 #include "QMCHamiltonians/WOS/Device.h"
 #include "QMCHamiltonians/WOS/WOSParticles.h"
 
-namespace ohmmsqmc{
+namespace qmcplusplus{
 
   struct WOSPotential: public QMCHamiltonianBase {
 

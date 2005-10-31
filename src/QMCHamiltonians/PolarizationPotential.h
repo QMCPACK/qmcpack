@@ -1,12 +1,12 @@
-#ifndef OHMMS_QMC_POLARISATIONPOTENTIAL_H
-#define OHMMS_QMC_POLARISATIONPOTENTIAL_H
+#ifndef QMCPLUSPLUS_POLARISATIONPOTENTIAL_H
+#define QMCPLUSPLUS_POLARISATIONPOTENTIAL_H
 #include <algo.h>
 #include "Particle/ParticleSet.h"
 #include "Particle/WalkerSetRef.h"
 #include "Particle/DistanceTableData.h"
 #include "QMCHamiltonians/QMCHamiltonianBase.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
 
   struct PolarizationPotential: public QMCHamiltonianBase {

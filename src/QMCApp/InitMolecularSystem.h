@@ -20,13 +20,13 @@
 /**@file InitMolecularSystem.h
  * @brief Declaration of InitMolecularSystem
  */
-#ifndef OHMMS_QMC_INITMOLECULARSYSTEM_H
-#define OHMMS_QMC_INITMOLECULARSYSTEM_H
+#ifndef QMCPLUSPLUS_INITMOLECULARSYSTEM_H
+#define QMCPLUSPLUS_INITMOLECULARSYSTEM_H
 
 #include "OhmmsData/OhmmsElementBase.h"
 #include <map>
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   class ParticleSet;
   class ParticleSetPool;

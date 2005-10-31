@@ -16,13 +16,13 @@
 // -*- C++ -*-
 /*! \author Jeongnim Kim
  */
-#ifndef OHMMS_QMC_MOLECULARORBITALBASIS_H
-#define OHMMS_QMC_MOLECULARORBITALBASIS_H
+#ifndef QMCPLUSPLUS_MOLECULARORBITALBASIS_H
+#define QMCPLUSPLUS_MOLECULARORBITALBASIS_H
 
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "Particle/DistanceTable.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   class DistanceTableData;
 

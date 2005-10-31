@@ -18,7 +18,7 @@
 #include "Particle/WalkerSetRef.h"
 #include "Particle/DistanceTableData.h"
 #include "Utilities/OhmmsInfo.h"
-using namespace ohmmsqmc;
+using namespace qmcplusplus;
 
 /** constructor
  */

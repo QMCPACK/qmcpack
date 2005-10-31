@@ -24,7 +24,7 @@
 #include "OhmmsData/AttributeSet.h"
 #include "Message/Communicate.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   //initialize the static data
   int QMCDriver::Counter = -1;

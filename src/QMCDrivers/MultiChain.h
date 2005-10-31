@@ -17,15 +17,15 @@
 //   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_QMC_MULTICHAIN_H
-#define OHMMS_QMC_MULTICHAIN_H
+#ifndef QMCPLUSPLUS_MULTICHAIN_H
+#define QMCPLUSPLUS_MULTICHAIN_H
 #include "Particle/MCWalkerConfiguration.h"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "Utilities/IteratorUtility.h"
 #include "Numerics/HDFNumericAttrib.h"
 #include <deque>
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   struct Bead: public MCWalkerConfiguration::Walker_t{
 

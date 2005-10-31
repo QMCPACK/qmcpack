@@ -17,14 +17,14 @@
 //   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_QMC_SCALAR_ESTIMATORBASE_H
-#define OHMMS_QMC_SCALAR_ESTIMATORBASE_H
+#ifndef QMCPLUSPLUS_SCALAR_ESTIMATORBASE_H
+#define QMCPLUSPLUS_SCALAR_ESTIMATORBASE_H
 #include "Configuration.h"
 #include "OhmmsData/RecordProperty.h"
 #include "OhmmsPETE/TinyVector.h"
 #include "Particle/MCWalkerConfiguration.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   /** Abstract class for an estimator of an operator.
    *

@@ -1,5 +1,5 @@
-#ifndef OHMMS_TOOLS_CASINOPARSER_H
-#define OHMMS_TOOLS_CASINOPARSER_H
+#ifndef QMCPLUSPLUS_TOOLS_CASINOPARSER_H
+#define QMCPLUSPLUS_TOOLS_CASINOPARSER_H
 #include "QMCTools/QMCGaussianParserBase.h"
 #include <iostream>
 #include <sstream>

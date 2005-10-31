@@ -14,12 +14,12 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_QMC_GENERIC_TWOBODYJASTROW_H
-#define OHMMS_QMC_GENERIC_TWOBODYJASTROW_H
+#ifndef QMCPLUSPLUS_GENERIC_TWOBODYJASTROW_H
+#define QMCPLUSPLUS_GENERIC_TWOBODYJASTROW_H
 #include "Configuration.h"
 #include "QMCWaveFunctions/OrbitalBase.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   /** @ingroup OrbitalComponent
    *  @brief A generic TwoBodyJastrow functions

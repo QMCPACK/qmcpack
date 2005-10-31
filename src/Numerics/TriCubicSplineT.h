@@ -1,5 +1,5 @@
-#ifndef OHMMS_QMC_TRICUBICSPLINETEMPLATE_H
-#define OHMMS_QMC_TRICUBICSPLINETEMPLATE_H
+#ifndef QMCPLUSPLUS_TRICUBICSPLINETEMPLATE_H
+#define QMCPLUSPLUS_TRICUBICSPLINETEMPLATE_H
 #include "Numerics/XYZCubicGrid.h"
 #include "Numerics/OneDimCubicSpline.h"
 /** Tri-cubic Splines with periodic boundary conditions and fixed first derivatives.

@@ -5,7 +5,7 @@
 #include "QMCHamiltonians/WOS/Domain.h"
 #include "QMCHamiltonians/WOS/WOSParticles.h"
 
-using namespace ohmmsqmc;
+using namespace qmcplusplus;
 
 class Device {
 

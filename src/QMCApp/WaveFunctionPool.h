@@ -20,14 +20,14 @@
 /**@file WaveFunctionPool.h
  * @brief Declaration of WaveFunctionPool
  */
-#ifndef OHMMS_QMC_WAVEFUNCTIONPOOL_H
-#define OHMMS_QMC_WAVEFUNCTIONPOOL_H
+#ifndef QMCPLUSPLUS_WAVEFUNCTIONPOOL_H
+#define QMCPLUSPLUS_WAVEFUNCTIONPOOL_H
 
 #include "OhmmsData/OhmmsElementBase.h"
 #include <map>
 #include <string>
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   class TrialWaveFunction;
   class ParticleSetPool;

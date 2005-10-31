@@ -14,8 +14,8 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_QMC_SPLINE3DBUILDER_H
-#define OHMMS_QMC_SPLINE3DBUILDER_H
+#ifndef QMCPLUSPLUS_SPLINE3DBUILDER_H
+#define QMCPLUSPLUS_SPLINE3DBUILDER_H
 
 #include "OhmmsData/OhmmsElementBase.h"
 #include "QMCWaveFunctions/OrbitalBuilderBase.h"
@@ -23,7 +23,7 @@
 #include "Numerics/Spline3D/Spline3D.h"
 #include "Numerics/Spline3D/Spline3DSet.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   class Spline3DBuilder: public OrbitalBuilderBase {
 

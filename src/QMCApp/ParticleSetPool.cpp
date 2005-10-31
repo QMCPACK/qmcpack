@@ -26,7 +26,7 @@
 #include "ParticleIO/XMLParticleIO.h"
 #include "Utilities/OhmmsInfo.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
   
   ParticleSetPool::ParticleSetPool(const char* aname):
     OhmmsElementBase(aname){ }

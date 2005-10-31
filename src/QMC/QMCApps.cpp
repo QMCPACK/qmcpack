@@ -31,7 +31,7 @@
 //#include "QMC/WaveFunctionTester.h"
 #include "QMCHamiltonians/ConservedEnergy.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   QMCApps::QMCApps(int argc, char** argv): 
     m_doc(NULL),m_root(NULL),m_context(NULL),PrevConfigFile("default")

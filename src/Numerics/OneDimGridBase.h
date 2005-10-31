@@ -14,8 +14,8 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_ONEDIMGRID_BASE
-#define OHMMS_ONEDIMGRID_BASE
+#ifndef QMCPLUSPLUS_ONEDIMGRID_BASE
+#define QMCPLUSPLUS_ONEDIMGRID_BASE
 
 /**@file OneDimGridBase.h
  *@brief Decalaration of One-Dimesional grids

@@ -18,7 +18,7 @@
 #include "QMCDrivers/GlobalWalkerControl.h"
 #include "Utilities/IteratorUtility.h"
 #include "Utilities/UtilityFunctions.h"
-using namespace ohmmsqmc;
+using namespace qmcplusplus;
 
 /** partition ntot elements among npart
  * @param ntot total number of elements

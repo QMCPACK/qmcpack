@@ -27,7 +27,7 @@
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "Message/Communicate.h"
 #include "Utilities/Clock.h"
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   ReptationMC::ReptationMC(MCWalkerConfiguration& w, 
 			   TrialWaveFunction& psi, 

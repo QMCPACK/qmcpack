@@ -1,5 +1,5 @@
-#ifndef OHMMS_TOOLS_GAUSSIAN_FCHK_H
-#define OHMMS_TOOLS_GAUSSIAN_FCHK_H
+#ifndef QMCPLUSPLUS_TOOLS_GAUSSIAN_FCHK_H
+#define QMCPLUSPLUS_TOOLS_GAUSSIAN_FCHK_H
 #include "QMCTools/QMCGaussianParserBase.h"
 #include <iostream>
 #include <sstream>

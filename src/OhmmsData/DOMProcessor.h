@@ -17,14 +17,14 @@
 //   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_QMC_DOMPROCESSOR_H
-#define OHMMS_QMC_DOMPROCESSOR_H
+#ifndef QMCPLUSPLUS_DOMPROCESSOR_H
+#define QMCPLUSPLUS_DOMPROCESSOR_H
 #if defined(ENABLE_LIBXML2)
 #include <libxml/xmlmemory.h>
 #include <libxml/parser.h>
 #include <libxml/xpath.h>
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   /**\class DOMProcessor 
    *@brief a temporary class to save the Document Pointer

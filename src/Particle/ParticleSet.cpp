@@ -21,7 +21,7 @@
 #include "Particle/DistanceTable.h"
 #include "LongRange/StructFact.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   int  ParticleSet::PtclObjectCounter = 0;
 

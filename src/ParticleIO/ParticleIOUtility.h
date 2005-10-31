@@ -23,7 +23,7 @@
 #include "OhmmsData/OhmmsElementBase.h"
 #include "Particle/ParticleSet.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   class LatticeParser {
     ParticleSet::ParticleLayout_t& ref_;

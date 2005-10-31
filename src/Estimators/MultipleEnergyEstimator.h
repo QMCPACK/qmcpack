@@ -17,12 +17,12 @@
 //   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_QMC_MULTIPLELOCALENERGYESTIMATOR_H
-#define OHMMS_QMC_MULTIPLELOCALENERGYESTIMATOR_H
+#ifndef QMCPLUSPLUS_MULTIPLELOCALENERGYESTIMATOR_H
+#define QMCPLUSPLUS_MULTIPLELOCALENERGYESTIMATOR_H
 
 #include "Estimators/ScalarEstimatorBase.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   class QMCHamiltonian;
   class TrialWaveFunction;

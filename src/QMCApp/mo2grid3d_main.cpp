@@ -32,7 +32,7 @@ int main(int argc, char **argv) {
 
   OhmmsInfo welcome(argc,argv,OHMMS::Controller->mycontext());
 
-  ohmmsqmc::MO2Grid3D qmc(argc,argv);
+  qmcplusplus::MO2Grid3D qmc(argc,argv);
 
   if(argc>1) {
     if(qmc.parse(argv[1])) {

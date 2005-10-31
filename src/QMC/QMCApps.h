@@ -17,15 +17,15 @@
 //   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_QMC_QMCAPPS_H
-#define OHMMS_QMC_QMCAPPS_H
+#ifndef QMCPLUSPLUS_QMCAPPS_H
+#define QMCPLUSPLUS_QMCAPPS_H
 #include "OhmmsApp/ProjectData.h"
 #include "OhmmsApp/RandomNumberControl.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   /** Main class to run the entire process. */
   class QMCApps {

@@ -16,7 +16,7 @@
 // -*- C++ -*-
 #include "Particle/ParticleSet.h"
 #include "Particle/DistanceTableData.h"
-using namespace ohmmsqmc;
+using namespace qmcplusplus;
 
 void SymmetricDTD::reset(int m, int nactive) {
   if(m != N[SourceIndex] || nactive != N[WalkerIndex]) {

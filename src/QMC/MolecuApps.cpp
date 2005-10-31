@@ -42,7 +42,7 @@
 #include "QMCWaveFunctions/JastrowBuilder.h"
 #include "QMCTools/QMCUtilities.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   MolecuApps::MolecuApps(int argc, char** argv): QMCApps(argc,argv) { 
     el.setName("e");

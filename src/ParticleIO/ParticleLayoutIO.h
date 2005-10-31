@@ -23,7 +23,7 @@
 #include "OhmmsData/OhmmsElementBase.h"
 #include "Configuration.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   class LatticeParser {
 

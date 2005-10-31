@@ -24,7 +24,7 @@
 #include "Utilities/OhmmsInfo.h"
 #include "Utilities/RandomGenerator.h"
 #include "OhmmsData/FileUtility.h"
-using namespace ohmmsqmc;
+using namespace qmcplusplus;
 
 /** specialization for PooledData<double>
  */

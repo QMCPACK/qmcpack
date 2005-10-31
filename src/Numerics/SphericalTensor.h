@@ -14,8 +14,8 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_QMC__SPHERICAL_CARTESIAN_TENSOR_H
-#define OHMMS_QMC__SPHERICAL_CARTESIAN_TENSOR_H
+#ifndef QMCPLUSPLUS_SPHERICAL_CARTESIAN_TENSOR_H
+#define QMCPLUSPLUS_SPHERICAL_CARTESIAN_TENSOR_H
 
 /** SphericalTensor that evaluates the Real Spherical Harmonics
  * 

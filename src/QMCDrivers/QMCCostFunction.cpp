@@ -23,7 +23,7 @@
 #include "OhmmsData/AttributeSet.h"
 #include "OhmmsData/ParameterSet.h"
 #include "Message/CommOperators.h"
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   QMCCostFunction::QMCCostFunction(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h):
     W(w),Psi(psi),H(h),

@@ -20,13 +20,13 @@
 /**@file ParticleSetPool.h
  * @brief Declaration of ParticleSetPool
  */
-#ifndef OHMMS_QMC_PARTICLESETPOOL_H
-#define OHMMS_QMC_PARTICLESETPOOL_H
+#ifndef QMCPLUSPLUS_PARTICLESETPOOL_H
+#define QMCPLUSPLUS_PARTICLESETPOOL_H
 
 #include "OhmmsData/OhmmsElementBase.h"
 #include "Particle/MCWalkerConfiguration.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   /** @ingroup qmcapp
    * @brief Manage a collection of ParticleSet objects

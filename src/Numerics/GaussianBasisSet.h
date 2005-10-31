@@ -13,8 +13,8 @@
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
-#ifndef OHMMS_QMC_RADIALGRIDFUNCTOR_GAUSSIANBASISSET_H
-#define OHMMS_QMC_RADIALGRIDFUNCTOR_GAUSSIANBASISSET_H
+#ifndef QMCPLUSPLUS_RADIALGRIDFUNCTOR_GAUSSIANBASISSET_H
+#define QMCPLUSPLUS_RADIALGRIDFUNCTOR_GAUSSIANBASISSET_H
 #include "Numerics/RadialOrbitalBase.h"
 #include "OhmmsData/AttributeSet.h"
 #include <cmath>

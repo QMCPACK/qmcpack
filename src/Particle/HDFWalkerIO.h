@@ -17,12 +17,12 @@
 //   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_QMC_WALKER_IO_H
-#define OHMMS_QMC_WALKER_IO_H
+#ifndef QMCPLUSPLUS_WALKER_IO_H
+#define QMCPLUSPLUS_WALKER_IO_H
 
 #include "OhmmsData/HDFAttribIO.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   /** Writes a set of walker configurations to an HDF5 file. */
 

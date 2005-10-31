@@ -3,7 +3,7 @@
 #include "LongRange/LPQHIBasis.h"
 #include <cassert>
 
-using namespace ohmmsqmc;
+using namespace qmcplusplus;
 
 void 
 LPQHIBasis::set_NumKnots(int n) {

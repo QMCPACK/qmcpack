@@ -14,15 +14,15 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_QMC_PARTICLESET_H
-#define OHMMS_QMC_PARTICLESET_H
+#ifndef QMCPLUSPLUS_PARTICLESET_H
+#define QMCPLUSPLUS_PARTICLESET_H
 
 #include "Configuration.h"
 #include "Utilities/SpeciesSet.h"
 #include "Particle/Walker.h"
 #include "OhmmsData/RecordProperty.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   ///forward declaration of DistanceTableData
   class DistanceTableData;  

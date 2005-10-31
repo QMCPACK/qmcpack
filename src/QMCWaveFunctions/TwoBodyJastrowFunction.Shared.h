@@ -14,11 +14,11 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_QMC_GENERIC_TWOBODYJASTROW_SHARED_H
-#define OHMMS_QMC_GENERIC_TWOBODYJASTROW_SHARED_H
+#ifndef QMCPLUSPLUS_GENERIC_TWOBODYJASTROW_SHARED_H
+#define QMCPLUSPLUS_GENERIC_TWOBODYJASTROW_SHARED_H
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include <numeric>
-namespace ohmmsqmc {
+namespace qmcplusplus {
   /** @ingroup OrbitalComponent
    * @brief Specialization for two-body Jastrow function using one functor
    *

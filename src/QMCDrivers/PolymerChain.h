@@ -17,13 +17,13 @@
 //   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_QMC_POLYMERCHAIN_H
-#define OHMMS_QMC_POLYMERCHAIN_H
+#ifndef QMCPLUSPLUS_POLYMERCHAIN_H
+#define QMCPLUSPLUS_POLYMERCHAIN_H
 #include "Particle/MCWalkerConfiguration.h"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "Utilities/IteratorUtility.h"
 #include <deque>
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   struct PolymerChain: public std::deque<MCWalkerConfiguration::Walker_t*> {
 

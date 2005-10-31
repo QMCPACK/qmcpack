@@ -14,14 +14,14 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_QMC_LOCAL_COREPOLPOTENTIAL_H
-#define OHMMS_QMC_LOCAL_COREPOLPOTENTIAL_H
+#ifndef QMCPLUSPLUS_LOCAL_COREPOLPOTENTIAL_H
+#define QMCPLUSPLUS_LOCAL_COREPOLPOTENTIAL_H
 #include "Particle/ParticleSet.h"
 #include "Particle/WalkerSetRef.h"
 #include "QMCHamiltonians/QMCHamiltonianBase.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   /** @ingroup hamiltonian
    @brief The effective core polarization potential.

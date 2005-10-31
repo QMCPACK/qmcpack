@@ -14,15 +14,15 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_QMC_HARMONICPOTENTIAL_H
-#define OHMMS_QMC_HARMONICPOTENTIAL_H
+#ifndef QMCPLUSPLUS_HARMONICPOTENTIAL_H
+#define QMCPLUSPLUS_HARMONICPOTENTIAL_H
 #include <algo.h>
 #include "Particle/ParticleSet.h"
 #include "Particle/WalkerSetRef.h"
 #include "Particle/DistanceTableData.h"
 #include "QMCHamiltonians/QMCHamiltonianBase.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   /** Evaluates the Harmonic Potential for a set of source and target particles.
    *

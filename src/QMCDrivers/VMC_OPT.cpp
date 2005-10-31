@@ -31,7 +31,7 @@
 #include "Optimize/Minimize.h"
 #include "OhmmsData/AttributeSet.h"
 #include <algorithm>
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   /** Storage for the fixed data for each walker during the optimization
    *

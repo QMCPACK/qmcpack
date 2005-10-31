@@ -20,7 +20,7 @@
 #include "QMCDrivers/GlobalWalkerControl.h"
 //#include "QMCDrivers/AsyncWalkerControl.h"
 #endif
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   int WalkerControlBase::branch(int iter, MCWalkerConfiguration& W, RealType trigger) {
 

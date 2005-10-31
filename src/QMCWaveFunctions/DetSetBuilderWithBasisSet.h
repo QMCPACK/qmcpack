@@ -13,8 +13,8 @@
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
-#ifndef OHMMS_QMC_DETSET_BUILDER_WITH_BASISSET_H
-#define OHMMS_QMC_DETSET_BUILDER_WITH_BASISSET_H
+#ifndef QMCPLUSPLUS_DETSET_BUILDER_WITH_BASISSET_H
+#define QMCPLUSPLUS_DETSET_BUILDER_WITH_BASISSET_H
 
 #include "Numerics/LibxmlNumericIO.h"
 #include "QMCWaveFunctions/OrbitalBuilderBase.h"
@@ -22,7 +22,7 @@
 #include "QMCWaveFunctions/MultiSlaterDeterminant.h"
 #include "QMCWaveFunctions/LCOrbitals.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   /**Class to add SlaterDeterminant/MultiSlaterDeterminant to a TrialWaveFunction.
    *

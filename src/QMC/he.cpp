@@ -25,7 +25,7 @@
 //#include "QuantumSystem/JastrowFunction.h"
 #include "QuantumSystem/TrialWaveFunctionBuilder.h"
 #include "QMCBase/RandomSeqGenerator.h"
-using namespace ohmmsqmc;
+using namespace qmcplusplus;
 
 //extern void 
 //initialize(TrialWaveFunction&, MCWalkerConfiguration&, ParticleSet&);

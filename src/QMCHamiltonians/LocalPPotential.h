@@ -14,8 +14,8 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_QMC_LOCALPPOTENTIAL_H
-#define OHMMS_QMC_LOCALPPOTENTIAL_H
+#ifndef QMCPLUSPLUS_LOCALPPOTENTIAL_H
+#define QMCPLUSPLUS_LOCALPPOTENTIAL_H
 #include <fstream>
 #include "Particle/ParticleSet.h"
 #include "Particle/WalkerSetRef.h"
@@ -26,7 +26,7 @@
 #include "Numerics/OneDimCubicSpline.h"
 #include "Numerics/HDFNumericAttrib.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
 
   /** @ingroup hamiltonian

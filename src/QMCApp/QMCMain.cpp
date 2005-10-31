@@ -46,7 +46,7 @@
 using namespace std;
 #include "OhmmsData/AttributeSet.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   QMCMain::QMCMain(int argc, char** argv): QMCAppBase(argc,argv), FirstQMC(true),
                                            qmcDriver(0),qmcSystem(0){ 

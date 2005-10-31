@@ -14,15 +14,15 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_QMC_GAUSSIANORBITAL_MOLECULARORBITALS_H
-#define OHMMS_QMC_GAUSSIANORBITAL_MOLECULARORBITALS_H
+#ifndef QMCPLUSPLUS_GAUSSIANORBITAL_MOLECULARORBITALS_H
+#define QMCPLUSPLUS_GAUSSIANORBITAL_MOLECULARORBITALS_H
 
 #include "QMCWaveFunctions/OrbitalBuilderBase.h"
 #include "QMCWaveFunctions/SphericalOrbitalSet.h"
 #include "QMCWaveFunctions/MolecularOrbitals/MolecularOrbitalBasis.h"
 #include "Numerics/GaussianBasisSet.h"
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   /**Class to add a set of Gaussian Type atomic orbital basis functions 
    *to the collection of basis functions.

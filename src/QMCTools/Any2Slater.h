@@ -1,5 +1,5 @@
-#ifndef OHMMS_NONLINEAR_FITTING_H
-#define OHMMS_NONLINEAR_FITTING_H
+#ifndef QMCPLUSPLUS_NONLINEAR_FITTING_H
+#define QMCPLUSPLUS_NONLINEAR_FITTING_H
 
 #include "Numerics/SlaterTypeOrbital.h"
 #include "Numerics/OneDimIntegration.h"

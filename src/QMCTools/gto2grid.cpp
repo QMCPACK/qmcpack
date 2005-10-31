@@ -16,7 +16,7 @@
 #include "Message/Communicate.h"
 #include "Utilities/OhmmsInfo.h"
 #include "QMCWaveFunctions/MolecularOrbitals/GTO2GridBuilder.h"
-using namespace ohmmsqmc;
+using namespace qmcplusplus;
 
 void buildBasisSet(xmlNodePtr cur);
 

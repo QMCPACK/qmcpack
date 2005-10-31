@@ -13,8 +13,8 @@
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
-#ifndef OHMMS_QMC_RADIALGRIDFUNCTOR_SLATERBASISSET_H
-#define OHMMS_QMC_RADIALGRIDFUNCTOR_SLATERBASISSET_H
+#ifndef QMCPLUSPLUS_RADIALGRIDFUNCTOR_SLATERBASISSET_H
+#define QMCPLUSPLUS_RADIALGRIDFUNCTOR_SLATERBASISSET_H
 
 #include <cmath>
 #include "Numerics/SlaterTypeOrbital.h"

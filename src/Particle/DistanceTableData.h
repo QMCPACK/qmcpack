@@ -14,8 +14,8 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_QMC_DISTANCETABLEDATAIMPL_H
-#define OHMMS_QMC_DISTANCETABLEDATAIMPL_H
+#ifndef QMCPLUSPLUS_DISTANCETABLEDATAIMPL_H
+#define QMCPLUSPLUS_DISTANCETABLEDATAIMPL_H
 
 #include "Particle/ParticleSet.h"
 #include "Particle/WalkerSetRef.h"
@@ -23,7 +23,7 @@
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include <bitset>
 
-namespace ohmmsqmc {
+namespace qmcplusplus {
 
   /** container for the pair data
    */
