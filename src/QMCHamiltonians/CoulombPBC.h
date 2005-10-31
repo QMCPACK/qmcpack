@@ -16,7 +16,11 @@
 // -*- C++ -*-
 #ifndef OHMMS_QMC_COULOMBPBC_H
 #define OHMMS_QMC_COULOMBPBC_H
+#if (__GNUC__ == 2)
 #include <algo.h>
+#else
+#include <algorithm>
+#endif
 #include "Particle/ParticleSet.h"
 #include "Particle/WalkerSetRef.h"
 #include "Particle/DistanceTableData.h"
