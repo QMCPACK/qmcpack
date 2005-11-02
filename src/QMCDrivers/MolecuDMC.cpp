@@ -129,13 +129,16 @@ namespace qmcplusplus {
       		    << " " << Population << endl;
       Eest = Estimators->average(0);
 
-      //create an output engine: could accumulate the configurations
-      HDFWalkerOutput WO(RootName,false,0);
-      WO.get(W);
-      WO.write(*branchEngine);
-
       nAccept = 0; nReject = 0;
       block++;
+
+      //create an output engine: could accumulate the configurations
+      if(block%Period4CheckPoint == 0) {
+        HDFWalkerOutput WO(RootName,false,0);
+        WO.get(W);
+        WO.write(*branchEngine);
+      }
+
       W.reset();
     } while(block<nBlocks);
     

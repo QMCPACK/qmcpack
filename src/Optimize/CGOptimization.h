@@ -267,13 +267,13 @@ void CGOptimization<T>::reset() {
 template<class T>
 bool CGOptimization<T>::put(xmlNodePtr cur) {
   ParameterSet p;
-  p.add(NumSteps,"min_steps","none");
+  p.add(NumSteps,"max_steps","none");
   p.add(CostTol,"tolerance","none");
   p.add(GradTol,"tolerance_g","none");
   p.add(GammaTol,"tolerance_cg","none");
-  p.add(this->LambdaMax,"stepsize","none");
   p.add(Displacement,"epsilon","none");
-  p.add(this->ITMAX,"brent_steps","none");
+  p.add(this->LambdaMax,"stepsize","none");
+  p.add(this->ITMAX,"max_linemin","none");
   p.put(cur);
   return true;
 }

@@ -152,7 +152,6 @@ namespace qmcplusplus {
       nAccept = 0; nReject = 0;
       block++;
       
-      if(pStride) WO.get(W);
 
     } while(block<nBlocks);
       

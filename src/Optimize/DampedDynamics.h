@@ -227,7 +227,7 @@ void DampedDynamics<T>::reset() {
 template<class T>
 bool DampedDynamics<T>::put(xmlNodePtr cur) {
   ParameterSet p;
-  p.add(NumSteps,"min_steps","scalar");
+  p.add(NumSteps,"max_steps","int");
   p.add(CostTol,"tolerance","scalar");
   p.add(GradTol,"tolerance_g","scalar");
   p.add(Displacement,"epsilon","scalar");

@@ -267,13 +267,13 @@ namespace qmcplusplus {
   bool QMCMain::runQMC(xmlNodePtr cur) {
 
     string what("invalid");
-    string continue_tag("no");
+    string append_tag("no");
     OhmmsAttributeSet aAttrib;
     aAttrib.add(what,"method");
-    aAttrib.add(continue_tag,"continue");
+    aAttrib.add(append_tag,"append");
     aAttrib.put(cur);
 
-    bool continue_run = (continue_tag == "yes");
+    bool append_run = (append_tag == "yes");
 
     if(qmcDriver) {
       if(what == curMethod) {
@@ -281,12 +281,12 @@ namespace qmcplusplus {
       } else {
         delete qmcDriver;
         qmcDriver = 0;
-        //if the current qmc method is different from the previous one, continue_run is set to false
-        continue_run = false;
+        //if the current qmc method is different from the previous one, append_run is set to false
+        append_run = false;
       }
     }
 
-    if(myProject.m_series == 0) continue_run = false;
+    if(myProject.m_series == 0) append_run = false;
 
     if(qmcDriver == 0) {
       ///////////////////////////////////////////////
@@ -380,15 +380,15 @@ namespace qmcplusplus {
     if(qmcDriver) {
 
       //advance the project id 
-      //if it is NOT the first qmc node and qmc/@continue!='yes'
-      if(!FirstQMC && !continue_run) myProject.advance();
+      //if it is NOT the first qmc node and qmc/@append!='yes'
+      if(!FirstQMC && !append_run) myProject.advance();
 
-      if(continue_run) {
+      if(append_run) {
         LOGMSG("Continue a QMC simulation " << what << " File Root = " << myProject.CurrentRoot())
       } else {
         LOGMSG("Starting a QMC simulation " << what << " File Root = " << myProject.CurrentRoot())
       }
-      qmcDriver->setStatus(myProject.CurrentRoot(),PrevConfigFile, continue_run);
+      qmcDriver->setStatus(myProject.CurrentRoot(),PrevConfigFile, append_run);
       qmcDriver->putWalkers(m_walkerset_in);
       qmcDriver->process(cur);
       qmcDriver->run();

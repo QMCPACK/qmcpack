@@ -72,8 +72,9 @@ extern std::ostream& debug();
   { if(OhmmsInfo::Error->open()) OhmmsInfo::Error->getStream() << msg << std::endl;}
 #define WARNMSG(msg) \
  { if(OhmmsInfo::Warn->open()) OhmmsInfo::Warn->getStream() << msg << std::endl;}
-#define XMLReport(msg) \
-{std::cout<< "XML " << msg << std::endl;}
+#define XMLReport(msg)
+//#define XMLReport(msg) \
+//{std::cout<< "XML " << msg << std::endl;}
 
 #ifdef PRINT_DEBUG
 #define DEBUGMSG(msg) { OhmmsInfo::Debug->getStream() << msg << std::endl;}

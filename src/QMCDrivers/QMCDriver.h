@@ -128,8 +128,17 @@ namespace qmcplusplus {
     ///flag to append or restart the run
     bool AppendRun;
 
-    ///flag to print walker ensemble
-    bool pStride;
+    /** period of dumping walker configurations and everything else for restart
+     *
+     * The unit is a block.
+     */
+    int Period4CheckPoint;
+
+    /** period of recording walker configurations
+     *
+     * Default is 0 indicating that only the last configuration will be saved.
+     */
+    int Period4WalkerDump;
 
     /** bits to classify QMCDriver
      *
@@ -224,6 +233,19 @@ namespace qmcplusplus {
     void addWalkers(int nwalkers);  
 
     void updateWalkers();
+
+    /** record the walker configurations
+     * @param block current block
+     */
+    void recordWalkerConfigurations(int block);
+
+    /** finalize a qmc section
+     * @param block current block
+     *
+     * Accumulate energy and weight is written to a hdf5 file.
+     * Finialize the estimators
+     */
+    bool finalize(int block);
 
   };
   /**@}*/

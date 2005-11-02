@@ -6,8 +6,8 @@
 //
 //See the LICENSE file in the top-level directory for copyright notices
 //
-#ifndef QMCPLUSPLUS_CONFIGURATION_H
-#define QMCPLUSPLUS_CONFIGURATION_H
+#ifndef OHMMS_QMC_CONFIGURATION_H
+#define OHMMS_QMC_CONFIGURATION_H
 
 
 /* Enable OpenMP parallelization. */
@@ -55,12 +55,6 @@
 
 /* Define if you have BOOST library. */
 #undef HAVE_LIBBOOST
-
-/* Define to 1 if you have the `gsl' library (-lgsl). */
-#undef HAVE_LIBGSL
-
-/* Define to 1 if you have the `gslcblas' library (-lgslcblas). */
-#undef HAVE_LIBGSLCBLAS
 
 /* Define if you have HDF5 library. */
 #undef HAVE_LIBHDF5
@@ -196,4 +190,4 @@
    code using `volatile' can become incorrect without. Disable with care. */
 #undef volatile
 
-#endif // QMCPLUSPLUS_CONFIGURATION_H
+#endif // OHMMS_QMCCONFIGURATION_H

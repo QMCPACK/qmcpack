@@ -20,7 +20,6 @@
 #include "QMCDrivers/VMCParticleByParticle.h"
 #include "Utilities/OhmmsInfo.h"
 #include "Particle/MCWalkerConfiguration.h"
-#include "Particle/HDFWalkerIO.h"
 #include "ParticleBase/ParticleUtility.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "Message/CommCreate.h"
@@ -58,9 +57,6 @@ namespace qmcplusplus {
     nAcceptTot = 0;
     nRejectTot = 0;
 
-    bool appendWalker=false;
-    int now=0;
-
     do {
       IndexType step = 0;
       timer.start();
@@ -86,31 +82,21 @@ namespace qmcplusplus {
       LogOut->getStream() << "Block " << block << " " << timer.cpu_time() << " Fixed_configs " 
       		    << static_cast<RealType>(nAllRejected)/static_cast<RealType>(step*W.getActiveWalkers()) << endl;
 
-      if(pStride) {
-        appendWalker=AppendRun || block>0;
-        now=block;
-      } 
-      HDFWalkerOutput WO(RootName,appendWalker, now);
-      WO.get(W);
-
       nAccept = 0; nReject = 0;
       ++block;
 
-    } while(block<nBlocks);
+      //record the current configuration
+      recordWalkerConfigurations(block);
 
-    branchEngine->update(W.getActiveWalkers(), Estimators->average(0));
+    } while(block<nBlocks);
 
     LogOut->getStream() 
       << "Ratio = " 
       << static_cast<RealType>(nAcceptTot)/static_cast<RealType>(nAcceptTot+nRejectTot)
       << endl;
     
-    int nconf= pStride ? block:1;
-    HDFWalkerOutput WOextra(RootName,true,nconf);
-    WOextra.write(*branchEngine);
-
-    Estimators->finalize();
-    return true;
+    //finalize a qmc section
+    return finalize(block);
   }
 
   void VMCParticleByParticle::advanceWalkerByWalker() {

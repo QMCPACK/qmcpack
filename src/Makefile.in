@@ -132,7 +132,6 @@ OHMMS_UTILITIES = \
 	OhmmsApp/ProjectData.cpp \
         OhmmsApp/RandomNumberControl.cpp \
         Platforms/sysutil.cpp\
-        Optimize/Minimize.cpp\
 	Numerics/OhmmsBlas.cpp
 
 
@@ -143,8 +142,6 @@ OHMMS_MESSAGE = \
 OHMMS_PARTICLE = \
 	ParticleTags.cpp \
         Lattice/Uniform3DGridLayout.cpp \
-        LongRange/KContainer.cpp \
-        LongRange/StructFact.cpp \
         Particle/ParticleSet.BC.cpp \
 	Particle/ParticleSet.cpp \
 	Particle/MCWalkerConfiguration.cpp \
@@ -191,10 +188,9 @@ am__objects_1 = OhmmsObject.$(OBJEXT) OhmmsInform.$(OBJEXT) \
 	OhmmsInfo.$(OBJEXT) SimpleParser.$(OBJEXT) SpeciesSet.$(OBJEXT) \
 	RandRandom.$(OBJEXT) RandomGenerator.$(OBJEXT) \
 	ProjectData.$(OBJEXT) RandomNumberControl.$(OBJEXT) \
-	sysutil.$(OBJEXT) Minimize.$(OBJEXT) OhmmsBlas.$(OBJEXT)
+	sysutil.$(OBJEXT) OhmmsBlas.$(OBJEXT)
 am__objects_2 = Communicate.$(OBJEXT)
 am__objects_3 = ParticleTags.$(OBJEXT) Uniform3DGridLayout.$(OBJEXT) \
-	KContainer.$(OBJEXT) StructFact.$(OBJEXT) \
 	ParticleSet.BC.$(OBJEXT) ParticleSet.$(OBJEXT) \
 	MCWalkerConfiguration.$(OBJEXT) DistanceTable.$(OBJEXT) \
 	HDFWalkerIO.$(OBJEXT) XMLParticleIO.$(OBJEXT) \
@@ -219,8 +215,8 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/JastrowBuilder.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/KContainer.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/MCWalkerConfiguration.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/Minimize.Po ./$(DEPDIR)/OhmmsBlas.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/OhmmsInfo.Po ./$(DEPDIR)/OhmmsInform.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/OhmmsBlas.Po ./$(DEPDIR)/OhmmsInfo.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/OhmmsInform.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/OhmmsObject.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ParticleLayoutIO.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ParticleSet.BC.Po \
@@ -324,12 +320,9 @@ RandomGenerator.$(OBJEXT): Utilities/RandomGenerator.cpp
 ProjectData.$(OBJEXT): OhmmsApp/ProjectData.cpp
 RandomNumberControl.$(OBJEXT): OhmmsApp/RandomNumberControl.cpp
 sysutil.$(OBJEXT): Platforms/sysutil.cpp
-Minimize.$(OBJEXT): Optimize/Minimize.cpp
 OhmmsBlas.$(OBJEXT): Numerics/OhmmsBlas.cpp
 Communicate.$(OBJEXT): Message/Communicate.cpp
 Uniform3DGridLayout.$(OBJEXT): Lattice/Uniform3DGridLayout.cpp
-KContainer.$(OBJEXT): LongRange/KContainer.cpp
-StructFact.$(OBJEXT): LongRange/StructFact.cpp
 ParticleSet.BC.$(OBJEXT): Particle/ParticleSet.BC.cpp
 ParticleSet.$(OBJEXT): Particle/ParticleSet.cpp
 MCWalkerConfiguration.$(OBJEXT): Particle/MCWalkerConfiguration.cpp
@@ -338,6 +331,8 @@ HDFWalkerIO.$(OBJEXT): Particle/HDFWalkerIO.cpp
 XMLParticleIO.$(OBJEXT): ParticleIO/XMLParticleIO.cpp
 ParticleLayoutIO.$(OBJEXT): ParticleIO/ParticleLayoutIO.cpp
 HDFParticleIO.$(OBJEXT): ParticleIO/HDFParticleIO.cpp
+KContainer.$(OBJEXT): LongRange/KContainer.cpp
+StructFact.$(OBJEXT): LongRange/StructFact.cpp
 QMCHamiltonian.$(OBJEXT): QMCHamiltonians/QMCHamiltonian.cpp
 JastrowBuilder.$(OBJEXT): QMCWaveFunctions/JastrowBuilder.cpp
 TrialWaveFunction.$(OBJEXT): QMCWaveFunctions/TrialWaveFunction.cpp
@@ -359,7 +354,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/JastrowBuilder.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KContainer.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MCWalkerConfiguration.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Minimize.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/OhmmsBlas.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/OhmmsInfo.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/OhmmsInform.Po@am__quote@
@@ -582,24 +576,6 @@ sysutil.lo: Platforms/sysutil.cpp
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o sysutil.lo `test -f 'Platforms/sysutil.cpp' || echo '$(srcdir)/'`Platforms/sysutil.cpp
 
-Minimize.o: Optimize/Minimize.cpp
-@AMDEP_TRUE@	source='Optimize/Minimize.cpp' object='Minimize.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/Minimize.Po' tmpdepfile='$(DEPDIR)/Minimize.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Minimize.o `test -f 'Optimize/Minimize.cpp' || echo '$(srcdir)/'`Optimize/Minimize.cpp
-
-Minimize.obj: Optimize/Minimize.cpp
-@AMDEP_TRUE@	source='Optimize/Minimize.cpp' object='Minimize.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/Minimize.Po' tmpdepfile='$(DEPDIR)/Minimize.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Minimize.obj `cygpath -w Optimize/Minimize.cpp`
-
-Minimize.lo: Optimize/Minimize.cpp
-@AMDEP_TRUE@	source='Optimize/Minimize.cpp' object='Minimize.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/Minimize.Plo' tmpdepfile='$(DEPDIR)/Minimize.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Minimize.lo `test -f 'Optimize/Minimize.cpp' || echo '$(srcdir)/'`Optimize/Minimize.cpp
-
 OhmmsBlas.o: Numerics/OhmmsBlas.cpp
 @AMDEP_TRUE@	source='Numerics/OhmmsBlas.cpp' object='OhmmsBlas.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@	depfile='$(DEPDIR)/OhmmsBlas.Po' tmpdepfile='$(DEPDIR)/OhmmsBlas.TPo' @AMDEPBACKSLASH@
@@ -653,42 +629,6 @@ Uniform3DGridLayout.lo: Lattice/Uniform3DGridLayout.cpp
 @AMDEP_TRUE@	depfile='$(DEPDIR)/Uniform3DGridLayout.Plo' tmpdepfile='$(DEPDIR)/Uniform3DGridLayout.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Uniform3DGridLayout.lo `test -f 'Lattice/Uniform3DGridLayout.cpp' || echo '$(srcdir)/'`Lattice/Uniform3DGridLayout.cpp
-
-KContainer.o: LongRange/KContainer.cpp
-@AMDEP_TRUE@	source='LongRange/KContainer.cpp' object='KContainer.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/KContainer.Po' tmpdepfile='$(DEPDIR)/KContainer.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o KContainer.o `test -f 'LongRange/KContainer.cpp' || echo '$(srcdir)/'`LongRange/KContainer.cpp
-
-KContainer.obj: LongRange/KContainer.cpp
-@AMDEP_TRUE@	source='LongRange/KContainer.cpp' object='KContainer.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/KContainer.Po' tmpdepfile='$(DEPDIR)/KContainer.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o KContainer.obj `cygpath -w LongRange/KContainer.cpp`
-
-KContainer.lo: LongRange/KContainer.cpp
-@AMDEP_TRUE@	source='LongRange/KContainer.cpp' object='KContainer.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/KContainer.Plo' tmpdepfile='$(DEPDIR)/KContainer.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o KContainer.lo `test -f 'LongRange/KContainer.cpp' || echo '$(srcdir)/'`LongRange/KContainer.cpp
-
-StructFact.o: LongRange/StructFact.cpp
-@AMDEP_TRUE@	source='LongRange/StructFact.cpp' object='StructFact.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/StructFact.Po' tmpdepfile='$(DEPDIR)/StructFact.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o StructFact.o `test -f 'LongRange/StructFact.cpp' || echo '$(srcdir)/'`LongRange/StructFact.cpp
-
-StructFact.obj: LongRange/StructFact.cpp
-@AMDEP_TRUE@	source='LongRange/StructFact.cpp' object='StructFact.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/StructFact.Po' tmpdepfile='$(DEPDIR)/StructFact.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o StructFact.obj `cygpath -w LongRange/StructFact.cpp`
-
-StructFact.lo: LongRange/StructFact.cpp
-@AMDEP_TRUE@	source='LongRange/StructFact.cpp' object='StructFact.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/StructFact.Plo' tmpdepfile='$(DEPDIR)/StructFact.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o StructFact.lo `test -f 'LongRange/StructFact.cpp' || echo '$(srcdir)/'`LongRange/StructFact.cpp
 
 ParticleSet.BC.o: Particle/ParticleSet.BC.cpp
 @AMDEP_TRUE@	source='Particle/ParticleSet.BC.cpp' object='ParticleSet.BC.o' libtool=no @AMDEPBACKSLASH@
@@ -833,6 +773,42 @@ HDFParticleIO.lo: ParticleIO/HDFParticleIO.cpp
 @AMDEP_TRUE@	depfile='$(DEPDIR)/HDFParticleIO.Plo' tmpdepfile='$(DEPDIR)/HDFParticleIO.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o HDFParticleIO.lo `test -f 'ParticleIO/HDFParticleIO.cpp' || echo '$(srcdir)/'`ParticleIO/HDFParticleIO.cpp
+
+KContainer.o: LongRange/KContainer.cpp
+@AMDEP_TRUE@	source='LongRange/KContainer.cpp' object='KContainer.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/KContainer.Po' tmpdepfile='$(DEPDIR)/KContainer.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o KContainer.o `test -f 'LongRange/KContainer.cpp' || echo '$(srcdir)/'`LongRange/KContainer.cpp
+
+KContainer.obj: LongRange/KContainer.cpp
+@AMDEP_TRUE@	source='LongRange/KContainer.cpp' object='KContainer.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/KContainer.Po' tmpdepfile='$(DEPDIR)/KContainer.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o KContainer.obj `cygpath -w LongRange/KContainer.cpp`
+
+KContainer.lo: LongRange/KContainer.cpp
+@AMDEP_TRUE@	source='LongRange/KContainer.cpp' object='KContainer.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/KContainer.Plo' tmpdepfile='$(DEPDIR)/KContainer.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o KContainer.lo `test -f 'LongRange/KContainer.cpp' || echo '$(srcdir)/'`LongRange/KContainer.cpp
+
+StructFact.o: LongRange/StructFact.cpp
+@AMDEP_TRUE@	source='LongRange/StructFact.cpp' object='StructFact.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/StructFact.Po' tmpdepfile='$(DEPDIR)/StructFact.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o StructFact.o `test -f 'LongRange/StructFact.cpp' || echo '$(srcdir)/'`LongRange/StructFact.cpp
+
+StructFact.obj: LongRange/StructFact.cpp
+@AMDEP_TRUE@	source='LongRange/StructFact.cpp' object='StructFact.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/StructFact.Po' tmpdepfile='$(DEPDIR)/StructFact.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o StructFact.obj `cygpath -w LongRange/StructFact.cpp`
+
+StructFact.lo: LongRange/StructFact.cpp
+@AMDEP_TRUE@	source='LongRange/StructFact.cpp' object='StructFact.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/StructFact.Plo' tmpdepfile='$(DEPDIR)/StructFact.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o StructFact.lo `test -f 'LongRange/StructFact.cpp' || echo '$(srcdir)/'`LongRange/StructFact.cpp
 
 QMCHamiltonian.o: QMCHamiltonians/QMCHamiltonian.cpp
 @AMDEP_TRUE@	source='QMCHamiltonians/QMCHamiltonian.cpp' object='QMCHamiltonian.o' libtool=no @AMDEPBACKSLASH@

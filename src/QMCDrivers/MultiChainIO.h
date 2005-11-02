@@ -20,7 +20,6 @@
 #ifndef QMCPLUSPLUS_MULTICHAIN_HDF_IO_H
 #define QMCPLUSPLUS_MULTICHAIN_HDF_IO_H
 
-#include "OhmmsData/HDFAttribIO.h"
 #include "QMCDrivers/MultiChain.h"
 
 namespace qmcplusplus {
@@ -43,11 +42,11 @@ namespace qmcplusplus {
 
     bool get(MultiChain&);
 
-    template<class CT>
-    bool write(CT& anything) {
-      anything.write(h_config);
-      return true;
-    }
+    //template<class CT>
+    //bool write(CT& anything) {
+    //  anything.write(h_config);
+    //  return true;
+    //}
 
   };
 

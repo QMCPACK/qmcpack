@@ -53,9 +53,9 @@ void SimpleFixedNodeBranch::reset() {
 bool SimpleFixedNodeBranch::put(xmlNodePtr cur, OhmmsInform *LogOut){
   string toswap("no");
   ParameterSet m_param;
-  m_param.add(E_T,"en_ref","AU");
-  m_param.add(NumGeneration,"num_gen","int");
-  m_param.add(MaxCopy,"max_copy","int");
+  m_param.add(E_T,"ref_energy","AU"); m_param.add(E_T,"en_ref","AU");
+  m_param.add(NumGeneration,"pop_control","int"); m_param.add(NumGeneration,"num_gen","int");
+  m_param.add(MaxCopy,"max_branch","int"); m_param.add(MaxCopy,"max_copy","int");
   m_param.add(Nideal,"target_walkers","int");
   m_param.add(EavgSum,"energy_sum","AU");
   m_param.add(WgtSum,"weight_sum","none");

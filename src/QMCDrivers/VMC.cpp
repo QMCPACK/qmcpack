@@ -21,7 +21,6 @@
 #include "Utilities/OhmmsInfo.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "Particle/DistanceTable.h"
-#include "Particle/HDFWalkerIO.h"
 #include "ParticleBase/ParticleUtility.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "Message/Communicate.h"
@@ -67,9 +66,8 @@ namespace qmcplusplus {
     double wh=0.0;
     IndexType nAcceptTot = 0;
     IndexType nRejectTot = 0;
-    bool appendWalker=false;
-    int now=0;
     do {
+
       IndexType step = 0;
       timer.start();
       nAccept = 0; nReject=0;
@@ -91,15 +89,13 @@ namespace qmcplusplus {
       branchEngine->accumulate(Estimators->average(0),1.0);
 
       LogOut->getStream() << "Block " << block << " " << timer.cpu_time() << endl;
-      if(pStride) {
-        appendWalker=AppendRun || block>0;
-        now=block;
-      } 
-      HDFWalkerOutput WO(RootName,appendWalker, now);
-      WO.get(W);
 
       nAccept = 0; nReject = 0;
       block++;
+
+      //record the current configuration
+      recordWalkerConfigurations(block);
+
     } while(block<nBlocks);
     
 
@@ -108,14 +104,8 @@ namespace qmcplusplus {
       << static_cast<double>(nAcceptTot)/static_cast<double>(nAcceptTot+nRejectTot)
       << endl;
     
-    int nconf= pStride ? block:1;
-    HDFWalkerOutput WOextra(RootName,true,nconf);
-    WOextra.write(*branchEngine);
-
-    //Evaluate E_T
-    branchEngine->update(W.getActiveWalkers(), Estimators->average(0));
-    Estimators->finalize();
-    return true;
+    //finalize a qmc section
+    return finalize(block);
   }
 
   /**  Advance all the walkers one timstep. 

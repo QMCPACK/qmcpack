@@ -451,7 +451,7 @@ namespace qmcplusplus {
 	  putContent(w_en,cset[i]);
 	else if(pname == "variance") 
 	  putContent(w_var,cset[i]);
-        else if(pname == "delta")
+        else if(pname == "difference")
 	  putContent(w_abs,cset[i]);
       }
     }  

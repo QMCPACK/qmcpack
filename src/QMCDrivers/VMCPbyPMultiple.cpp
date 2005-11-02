@@ -72,7 +72,6 @@ namespace qmcplusplus {
 
     MCWalkerConfiguration::iterator it;
     MCWalkerConfiguration::iterator it_end(W.end());
-    bool appendwalker=pStride>0;
     do {  //Blocks loop
       IndexType step = 0;
       timer.start();
@@ -235,11 +234,11 @@ namespace qmcplusplus {
 	<< static_cast<RealType>(nAllRejected)/static_cast<RealType>(step*W.getActiveWalkers()) << 
 	" nPsi " << nPsi << endl;
 
-      HDFWalkerOutput WO(RootName,block&&appendwalker, block);
-      WO.get(W);
-
       nAccept = 0; nReject = 0;
       ++block;
+
+      //record the current configuration
+      recordWalkerConfigurations(block);
 
       //re-evaluate the ratio
       multiEstimator->initialize(W,H1,Psi1,Tau,false);
@@ -251,13 +250,8 @@ namespace qmcplusplus {
       << endl;
 
     branchEngine->accumulate(Estimators->average(0),1.0);
-    int nconf= appendwalker ? block:1;
-    HDFWalkerOutput WOextra(RootName,true,nconf);
-    WOextra.write(*branchEngine);
 
-    Estimators->finalize();
-
-    return true;
+    return finalize(block);
   }
 
 

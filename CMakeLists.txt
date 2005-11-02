@@ -1,4 +1,10 @@
 PROJECT(qmcPlusPlus)
+SET(QMCPLUSPLUS_VERSION_MAJOR 0)
+SET(QMCPLUSPLUS_VERSION_MINOR 2)
+SET(QMCPLUSPLUS_VERSION_PATCH 0)
+SET(QMCPLUSPLUS_VERSION "${QMCPLUSPLUS_VERSION_MAJOR}.${QMCPLUSPLUS_VERSION_MINOR}.$(QMCPLUSPLUS_VERSION_PATH}")
+
+SET(version 0.2)
 
 #define the paths for library and executable for out-of-soruce compilation
 SET (LIBRARY_OUTPUT_PATH ${qmcPlusPlus_BINARY_DIR}/lib CACHE PATH "Single output directory for building all libraries.")
@@ -17,8 +23,6 @@ SET(HAVE_LIBSPRNG 0)
 SET(HAVE_LIBBLITZ 0)
 SET(HAVE_LIBGSL 0)
 
-OPTION(QMC_SPRNG "Enable SPRNG random number generation library" ON)
-OPTION(QMC_BLITZ "Enable blitz++ library" ON)
 OPTION(QMC_MPI "Enable MPI library" OFF)
 
 ######################################################################
@@ -48,8 +52,8 @@ SET (PROJECT_CMAKE ${qmcPlusPlus_SOURCE_DIR}/CMake)
 #COMPILER choose one of the cmake files to customize the compiler options
 #If nothing is chosen, default settings by cmake will  be used.
 ######################################################
-INCLUDE(${PROJECT_CMAKE}/GNUCompilers.cmake)
-#INCLUDE(${PROJECT_CMAKE}/Intel8.cmake)
+#INCLUDE(${PROJECT_CMAKE}/GNUCompilers.cmake)
+INCLUDE(${PROJECT_CMAKE}/Intel8.cmake)
 #INCLUDE(${PROJECT_CMAKE}/IBMCompilers.cmake)
 #INCLUDE(${PROJECT_CMAKE}/KCCCompilers.cmake)
 #INCLUDE(${PROJECT_CMAKE}/Intel7.cmake)
@@ -60,13 +64,8 @@ INCLUDE(${CMAKE_ROOT}/Modules/FindThreads.cmake)
 INCLUDE(${PROJECT_CMAKE}/FindLibxml2.cmake)
 INCLUDE(${PROJECT_CMAKE}/FindLapack.cmake)
 INCLUDE(${PROJECT_CMAKE}/FindHDF5.cmake)
-INCLUDE(${PROJECT_CMAKE}/FindGSL.cmake)
 INCLUDE(${PROJECT_CMAKE}/FindBoost.cmake)
-IF(NOT FOUND_BOOST)
-  INCLUDE(${PROJECT_CMAKE}/FindBlitz++.cmake)
-  INCLUDE(${PROJECT_CMAKE}/FindSprng.cmake)
-ENDIF(NOT FOUND_BOOST)
- 
+
 IF(QMC_MPI)
   INCLUDE(${PROJECT_SOURCE_DIR}/CMake/addMPI.cmake)
 ENDIF(QMC_MPI)
@@ -98,24 +97,6 @@ IF(FOUND_HDF5)
   ENDIF(SZLIB_FOUND)
 ENDIF(FOUND_HDF5)
 
-IF(FOUND_GSL)
-  SET(HAVE_LIBGSL 1)
-  INCLUDE_DIRECTORIES(${GSL_INCLUDE_DIR})
-  LINK_LIBRARIES(${GSL_LIBRARY})
-ENDIF(FOUND_GSL)
-
-#check optional external libraries: enable only when the libraries are found
-IF(FOUND_BLITZ)
-  INCLUDE_DIRECTORIES(${BLITZ_INCLUDE_DIR})
-  SET(HAVE_LIBBLITZ 1)
-ENDIF(FOUND_BLITZ)
- 
-IF(FOUND_SPRNG)
-  INCLUDE_DIRECTORIES(${SPRNG_INCLUDE_DIR})
-  LINK_LIBRARIES(${SPRNG_LIBRARY} -lgmp)
-  SET(HAVE_LIBSPRNG 1)
-ENDIF(FOUND_SPRNG)
- 
 INCLUDE_DIRECTORIES(
   ${qmcPlusPlus_SOURCE_DIR}/src
   ${qmcPlusPlus_BINARY_DIR}/src

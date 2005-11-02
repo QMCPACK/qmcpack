@@ -12,7 +12,6 @@ OHMMS_UTILITIES = \
 	OhmmsApp/ProjectData.cpp \
         OhmmsApp/RandomNumberControl.cpp \
         Platforms/sysutil.cpp\
-        Optimize/Minimize.cpp\
 	Numerics/OhmmsBlas.cpp
 
    
@@ -22,8 +21,6 @@ OHMMS_MESSAGE = \
 OHMMS_PARTICLE = \
 	ParticleTags.cpp \
         Lattice/Uniform3DGridLayout.cpp \
-        LongRange/KContainer.cpp \
-        LongRange/StructFact.cpp \
         Particle/ParticleSet.BC.cpp \
 	Particle/ParticleSet.cpp \
 	Particle/MCWalkerConfiguration.cpp \

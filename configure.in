@@ -461,8 +461,8 @@ AC_CXX_HAVE_COMPLEX_MATH1([],
 AC_CXX_HAVE_COMPLEX_MATH2
 ACX_C_RESTRICT
 
-AC_CHECK_LIB(gslcblas,main)
-AC_CHECK_LIB(gsl,main)
+#AC_CHECK_LIB(gslcblas,main)
+#AC_CHECK_LIB(gsl,main)
 #
 #checking blas/lapack
 # i) --with-mkl=DIR or --with-mkl using ENV{$MKL}

@@ -121,7 +121,7 @@ bool GSLConjugateGradient::put(xmlNodePtr cur) {
   p.add(epsilon,"epsilon","scalar");
   p.add(StepSize,"stepsize","scalar");
   p.add(Tolerance,"tolerance","scalar");
-  p.add(MaxCGStep,"min_steps","int");
+  p.add(MaxCGStep,"max_steps","int");
   p.put(cur);
   return true;
 }

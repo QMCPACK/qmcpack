@@ -33,8 +33,8 @@ namespace qmcplusplus {
   QMCDriver::QMCDriver(MCWalkerConfiguration& w, 
 		       TrialWaveFunction& psi, 
 		       QMCHamiltonian& h):
-    AppendRun(false),pStride(false),CurrentStep(0),
-    nBlocks(100), nSteps(1000), 
+    AppendRun(false),Period4CheckPoint(1), Period4WalkerDump(0),
+    CurrentStep(0), nBlocks(100), nSteps(1000), 
     nAccept(0), nReject(0), nTargetWalkers(0), AcceptIndex(-1),
     Tau(0.001), qmcNode(NULL),
     QMCType("invalid"), h5FileRoot("invalid"),
@@ -46,6 +46,7 @@ namespace qmcplusplus {
     m_param.add(nTargetWalkers,"walkers","int");
     m_param.add(CurrentStep,"current","int");
     m_param.add(Tau,"Tau","AU");
+    m_param.add(Tau,"timestep","AU");
 
     //add each QMCHamiltonianBase to W.PropertyList so that averages can be taken
     H.add2WalkerProperty(W);
@@ -261,6 +262,38 @@ namespace qmcplusplus {
     }
   }
 
+  void QMCDriver::recordWalkerConfigurations(int block) {
+
+    //if Period4WalkerDump>0, record works as the checkpoint
+    if(Period4WalkerDump>0) {
+      if(block%Period4WalkerDump == 0) {
+        int now=block/Period4WalkerDump-1;
+        bool appendWalker= AppendRun || now>0;
+        //HDFWalkerOutput WO(RootName,appendWalker, block-1);
+        HDFWalkerOutput WO(RootName,appendWalker, now);
+        WO.get(W);
+      }
+    } else {
+      if(block%Period4CheckPoint == 0) {
+        HDFWalkerOutput WO(RootName,false,0);
+        WO.get(W);
+      }
+    }
+  }
+
+  bool QMCDriver::finalize(int block) {
+
+    branchEngine->update(W.getActiveWalkers(), Estimators->average(0));
+
+    int nconf= (Period4WalkerDump>0) ? block/Period4WalkerDump:1;
+    HDFWalkerOutput WOextra(RootName,true,nconf);
+    WOextra.write(*branchEngine);
+
+    Estimators->finalize();
+
+    return true;
+  }
+
   /** Add walkers to the end of the ensemble of walkers.  
    *@param nwalkers number of walkers to add
    *@return true, if the walker configuration is not empty.
@@ -330,6 +363,9 @@ namespace qmcplusplus {
     
     int defaultw = 100;
     int targetw = 0;
+
+    Period4WalkerDump=0;
+    Period4CheckPoint=1;
      
     if(cur) {
       //initialize the parameter set
@@ -340,17 +376,14 @@ namespace qmcplusplus {
       while(tcur != NULL) {
 	string cname((const char*)(tcur->name));
 	if(cname == "record") {
-	  int stemp(-1);
           const xmlChar* aptr=xmlGetProp(tcur,(const xmlChar*)"stride");
-          if(aptr) stemp = atoi((const char*)aptr);
-	  if(stemp >= 0){
-	    pStride = true;
-	    LOGMSG(" Append walker ensemble every block.")
-	  } else {
-	    pStride = false;
-	    LOGMSG(" Overwrite walker ensemble every block.")
-	  }
-	} 
+          if(aptr) Period4WalkerDump = atoi((const char*)aptr);
+          aptr=xmlGetProp(tcur,(const xmlChar*)"period");
+          if(aptr) Period4WalkerDump = atoi((const char*)aptr);
+	} else if(cname == "checkpoint") {
+          const xmlChar* aptr=xmlGetProp(tcur,(const xmlChar*)"period");
+          if(aptr) Period4CheckPoint = atoi((const char*)aptr);
+        }
 	tcur=tcur->next;
       }
     }
@@ -382,6 +415,7 @@ namespace qmcplusplus {
   }
 
   xmlNodePtr QMCDriver::getQMCNode() {
+
     xmlNodePtr newqmc = xmlCopyNode(qmcNode,1);
 
     //update current

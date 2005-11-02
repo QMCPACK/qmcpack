@@ -124,14 +124,16 @@ QMC_COMMON_SRCS = \
   ../QMCWaveFunctions/AtomicOrbitals/HFAtomicSTOSetBuilder.cpp \
   ../QMCWaveFunctions/AtomicOrbitals/HeSTOClementiRottie.cpp\
   ../QMCWaveFunctions/MolecularOrbitals/STOMolecularOrbitals.cpp\
-  ../QMCWaveFunctions/MolecularOrbitals/GTOMolecularOrbitals.cpp\
+  ../QMCWaveFunctions/MolecularOrbitals/GTOMolecularOrbitals.cpp \
   ../QMCWaveFunctions/MolecularOrbitals/RGFBuilderBase.cpp\
-  ../QMCWaveFunctions/MolecularOrbitals/GTO2GridBuilder.cpp\
-  ../QMCWaveFunctions/MolecularOrbitals/Any2GridBuilder.cpp\
+  ../QMCWaveFunctions/MolecularOrbitals/STO2GridBuilder.cpp\
+  ../QMCWaveFunctions/MolecularOrbitals/GTO2GridBuilder.cpp \
+  ../QMCWaveFunctions/MolecularOrbitals/Any2GridBuilder.cpp \
   ../QMCWaveFunctions/MolecularOrbitals/NumericalRGFBuilder.cpp\
   ../QMCWaveFunctions/MolecularOrbitals/GridMolecularOrbitals.cpp\
   ../QMCWaveFunctions/MolecularOrbitals/MolecularOrbitalBuilder.cpp\
   ../QMCWaveFunctions/MolecularOrbitals/NumericalMolecularOrbitals.cpp\
+  ../QMCWaveFunctions/ElectronGasOrbitalBuilder.cpp \
   ../QMCHamiltonians/LocalPPotential.cpp\
   ../QMCHamiltonians/NonLocalPPotential.cpp\
   ../QMCHamiltonians/LocalCorePolPotential.cpp \
@@ -139,20 +141,25 @@ QMC_COMMON_SRCS = \
 
 
 QMC_DRIVERS = \
+  ../QMCDrivers/SimpleFixedNodeBranch.cpp\
   ../QMCDrivers/QMCDriver.cpp\
   ../QMCDrivers/DummyQMC.cpp\
   ../QMCDrivers/VMC.cpp\
   ../QMCDrivers/VMCParticleByParticle.cpp\
-  ../QMCDrivers/QMCOptimize.cpp\
   ../QMCDrivers/MolecuDMC.cpp\
   ../QMCDrivers/DMCParticleByParticle.cpp\
-  ../QMCDrivers/ReptationMC.cpp\
-  ../QMCDrivers/PolymerEstimator.cpp\
+  ../QMCDrivers/WalkerControlBase.cpp\
+  ../QMCDrivers/QMCOptimize.cpp\
+  ../QMCDrivers/QMCCostFunction.cpp\
   ../QMCDrivers/VMCMultiple.cpp\
   ../QMCDrivers/VMCPbyPMultiple.cpp\
-  ../QMCDrivers/RQMCMultiple.cpp\
   ../Estimators/ScalarEstimatorManager.cpp\
-  ../Estimators/MultipleEnergyEstimator.cpp
+  ../Estimators/MultipleEnergyEstimator.cpp \
+  ../QMCDrivers/RQMCMultiple.cpp\
+  ../QMCDrivers/MultiChain.cpp\
+  ../QMCDrivers/MultiChainIO.cpp\
+  ../QMCDrivers/PolymerEstimator.cpp\
+  ../QMCDrivers/ReptationMC.cpp
 
 
 QMC_APP = \
@@ -184,20 +191,24 @@ PROGRAMS = $(bin_PROGRAMS)
 am__objects_1 = OrbitalBuilderBase.$(OBJEXT) HFAtomicSTOSet.$(OBJEXT) \
 	HFAtomicSTOSetBuilder.$(OBJEXT) HeSTOClementiRottie.$(OBJEXT) \
 	STOMolecularOrbitals.$(OBJEXT) GTOMolecularOrbitals.$(OBJEXT) \
-	RGFBuilderBase.$(OBJEXT) GTO2GridBuilder.$(OBJEXT) \
-	Any2GridBuilder.$(OBJEXT) NumericalRGFBuilder.$(OBJEXT) \
-	GridMolecularOrbitals.$(OBJEXT) \
+	RGFBuilderBase.$(OBJEXT) STO2GridBuilder.$(OBJEXT) \
+	GTO2GridBuilder.$(OBJEXT) Any2GridBuilder.$(OBJEXT) \
+	NumericalRGFBuilder.$(OBJEXT) GridMolecularOrbitals.$(OBJEXT) \
 	MolecularOrbitalBuilder.$(OBJEXT) \
-	NumericalMolecularOrbitals.$(OBJEXT) LocalPPotential.$(OBJEXT) \
+	NumericalMolecularOrbitals.$(OBJEXT) \
+	ElectronGasOrbitalBuilder.$(OBJEXT) LocalPPotential.$(OBJEXT) \
 	NonLocalPPotential.$(OBJEXT) LocalCorePolPotential.$(OBJEXT) \
 	LPQHIBasis.$(OBJEXT)
-am__objects_2 = QMCDriver.$(OBJEXT) DummyQMC.$(OBJEXT) VMC.$(OBJEXT) \
-	VMCParticleByParticle.$(OBJEXT) QMCOptimize.$(OBJEXT) \
-	MolecuDMC.$(OBJEXT) DMCParticleByParticle.$(OBJEXT) \
-	ReptationMC.$(OBJEXT) PolymerEstimator.$(OBJEXT) \
+am__objects_2 = SimpleFixedNodeBranch.$(OBJEXT) QMCDriver.$(OBJEXT) \
+	DummyQMC.$(OBJEXT) VMC.$(OBJEXT) \
+	VMCParticleByParticle.$(OBJEXT) MolecuDMC.$(OBJEXT) \
+	DMCParticleByParticle.$(OBJEXT) WalkerControlBase.$(OBJEXT) \
+	QMCOptimize.$(OBJEXT) QMCCostFunction.$(OBJEXT) \
 	VMCMultiple.$(OBJEXT) VMCPbyPMultiple.$(OBJEXT) \
-	RQMCMultiple.$(OBJEXT) ScalarEstimatorManager.$(OBJEXT) \
-	MultipleEnergyEstimator.$(OBJEXT)
+	ScalarEstimatorManager.$(OBJEXT) \
+	MultipleEnergyEstimator.$(OBJEXT) RQMCMultiple.$(OBJEXT) \
+	MultiChain.$(OBJEXT) MultiChainIO.$(OBJEXT) \
+	PolymerEstimator.$(OBJEXT) ReptationMC.$(OBJEXT)
 am__objects_3 = ParticleSetPool.$(OBJEXT) WaveFunctionPool.$(OBJEXT) \
 	HamiltonianPool.$(OBJEXT) InitMolecularSystem.$(OBJEXT) \
 	QMCAppBase.$(OBJEXT) QMCMain.$(OBJEXT) qmcapp.$(OBJEXT)
@@ -213,6 +224,7 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/Any2GridBuilder.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/DMCParticleByParticle.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/DummyQMC.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/ElectronGasOrbitalBuilder.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/GTO2GridBuilder.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/GTOMolecularOrbitals.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/GridMolecularOrbitals.Po \
@@ -226,6 +238,8 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/LocalPPotential.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/MolecuDMC.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/MolecularOrbitalBuilder.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/MultiChain.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/MultiChainIO.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/MultipleEnergyEstimator.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/NonLocalPPotential.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/NumericalMolecularOrbitals.Po \
@@ -233,16 +247,21 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/OrbitalBuilderBase.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ParticleSetPool.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/PolymerEstimator.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/QMCAppBase.Po ./$(DEPDIR)/QMCDriver.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/QMCMain.Po ./$(DEPDIR)/QMCOptimize.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/QMCAppBase.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/QMCCostFunction.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/QMCDriver.Po ./$(DEPDIR)/QMCMain.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/QMCOptimize.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/RGFBuilderBase.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/RQMCMultiple.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ReptationMC.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/STO2GridBuilder.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/STOMolecularOrbitals.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ScalarEstimatorManager.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/SimpleFixedNodeBranch.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/VMC.Po ./$(DEPDIR)/VMCMultiple.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/VMCParticleByParticle.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/VMCPbyPMultiple.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/WalkerControlBase.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/WaveFunctionPool.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/qmcapp.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
@@ -308,6 +327,8 @@ GTOMolecularOrbitals.$(OBJEXT): \
 	../QMCWaveFunctions/MolecularOrbitals/GTOMolecularOrbitals.cpp
 RGFBuilderBase.$(OBJEXT): \
 	../QMCWaveFunctions/MolecularOrbitals/RGFBuilderBase.cpp
+STO2GridBuilder.$(OBJEXT): \
+	../QMCWaveFunctions/MolecularOrbitals/STO2GridBuilder.cpp
 GTO2GridBuilder.$(OBJEXT): \
 	../QMCWaveFunctions/MolecularOrbitals/GTO2GridBuilder.cpp
 Any2GridBuilder.$(OBJEXT): \
@@ -320,27 +341,34 @@ MolecularOrbitalBuilder.$(OBJEXT): \
 	../QMCWaveFunctions/MolecularOrbitals/MolecularOrbitalBuilder.cpp
 NumericalMolecularOrbitals.$(OBJEXT): \
 	../QMCWaveFunctions/MolecularOrbitals/NumericalMolecularOrbitals.cpp
+ElectronGasOrbitalBuilder.$(OBJEXT): \
+	../QMCWaveFunctions/ElectronGasOrbitalBuilder.cpp
 LocalPPotential.$(OBJEXT): ../QMCHamiltonians/LocalPPotential.cpp
 NonLocalPPotential.$(OBJEXT): ../QMCHamiltonians/NonLocalPPotential.cpp
 LocalCorePolPotential.$(OBJEXT): \
 	../QMCHamiltonians/LocalCorePolPotential.cpp
 LPQHIBasis.$(OBJEXT): ../LongRange/LPQHIBasis.cpp
+SimpleFixedNodeBranch.$(OBJEXT): ../QMCDrivers/SimpleFixedNodeBranch.cpp
 QMCDriver.$(OBJEXT): ../QMCDrivers/QMCDriver.cpp
 DummyQMC.$(OBJEXT): ../QMCDrivers/DummyQMC.cpp
 VMC.$(OBJEXT): ../QMCDrivers/VMC.cpp
 VMCParticleByParticle.$(OBJEXT): ../QMCDrivers/VMCParticleByParticle.cpp
-QMCOptimize.$(OBJEXT): ../QMCDrivers/QMCOptimize.cpp
 MolecuDMC.$(OBJEXT): ../QMCDrivers/MolecuDMC.cpp
 DMCParticleByParticle.$(OBJEXT): ../QMCDrivers/DMCParticleByParticle.cpp
-ReptationMC.$(OBJEXT): ../QMCDrivers/ReptationMC.cpp
-PolymerEstimator.$(OBJEXT): ../QMCDrivers/PolymerEstimator.cpp
+WalkerControlBase.$(OBJEXT): ../QMCDrivers/WalkerControlBase.cpp
+QMCOptimize.$(OBJEXT): ../QMCDrivers/QMCOptimize.cpp
+QMCCostFunction.$(OBJEXT): ../QMCDrivers/QMCCostFunction.cpp
 VMCMultiple.$(OBJEXT): ../QMCDrivers/VMCMultiple.cpp
 VMCPbyPMultiple.$(OBJEXT): ../QMCDrivers/VMCPbyPMultiple.cpp
-RQMCMultiple.$(OBJEXT): ../QMCDrivers/RQMCMultiple.cpp
 ScalarEstimatorManager.$(OBJEXT): \
 	../Estimators/ScalarEstimatorManager.cpp
 MultipleEnergyEstimator.$(OBJEXT): \
 	../Estimators/MultipleEnergyEstimator.cpp
+RQMCMultiple.$(OBJEXT): ../QMCDrivers/RQMCMultiple.cpp
+MultiChain.$(OBJEXT): ../QMCDrivers/MultiChain.cpp
+MultiChainIO.$(OBJEXT): ../QMCDrivers/MultiChainIO.cpp
+PolymerEstimator.$(OBJEXT): ../QMCDrivers/PolymerEstimator.cpp
+ReptationMC.$(OBJEXT): ../QMCDrivers/ReptationMC.cpp
 qmcapp$(EXEEXT): $(qmcapp_OBJECTS) $(qmcapp_DEPENDENCIES) 
 	@rm -f qmcapp$(EXEEXT)
 	$(CXXLINK) $(qmcapp_LDFLAGS) $(qmcapp_OBJECTS) $(qmcapp_LDADD) $(LIBS)
@@ -354,6 +382,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Any2GridBuilder.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DMCParticleByParticle.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DummyQMC.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ElectronGasOrbitalBuilder.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/GTO2GridBuilder.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/GTOMolecularOrbitals.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/GridMolecularOrbitals.Po@am__quote@
@@ -367,6 +396,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LocalPPotential.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MolecuDMC.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MolecularOrbitalBuilder.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MultiChain.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MultiChainIO.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MultipleEnergyEstimator.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NonLocalPPotential.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NumericalMolecularOrbitals.Po@am__quote@
@@ -375,18 +406,22 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ParticleSetPool.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PolymerEstimator.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/QMCAppBase.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/QMCCostFunction.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/QMCDriver.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/QMCMain.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/QMCOptimize.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RGFBuilderBase.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RQMCMultiple.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ReptationMC.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/STO2GridBuilder.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/STOMolecularOrbitals.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ScalarEstimatorManager.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SimpleFixedNodeBranch.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/VMC.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/VMCMultiple.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/VMCParticleByParticle.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/VMCPbyPMultiple.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/WalkerControlBase.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/WaveFunctionPool.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/qmcapp.Po@am__quote@
 
@@ -537,6 +572,24 @@ RGFBuilderBase.lo: ../QMCWaveFunctions/MolecularOrbitals/RGFBuilderBase.cpp
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o RGFBuilderBase.lo `test -f '../QMCWaveFunctions/MolecularOrbitals/RGFBuilderBase.cpp' || echo '$(srcdir)/'`../QMCWaveFunctions/MolecularOrbitals/RGFBuilderBase.cpp
 
+STO2GridBuilder.o: ../QMCWaveFunctions/MolecularOrbitals/STO2GridBuilder.cpp
+@AMDEP_TRUE@	source='../QMCWaveFunctions/MolecularOrbitals/STO2GridBuilder.cpp' object='STO2GridBuilder.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/STO2GridBuilder.Po' tmpdepfile='$(DEPDIR)/STO2GridBuilder.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o STO2GridBuilder.o `test -f '../QMCWaveFunctions/MolecularOrbitals/STO2GridBuilder.cpp' || echo '$(srcdir)/'`../QMCWaveFunctions/MolecularOrbitals/STO2GridBuilder.cpp
+
+STO2GridBuilder.obj: ../QMCWaveFunctions/MolecularOrbitals/STO2GridBuilder.cpp
+@AMDEP_TRUE@	source='../QMCWaveFunctions/MolecularOrbitals/STO2GridBuilder.cpp' object='STO2GridBuilder.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/STO2GridBuilder.Po' tmpdepfile='$(DEPDIR)/STO2GridBuilder.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o STO2GridBuilder.obj `cygpath -w ../QMCWaveFunctions/MolecularOrbitals/STO2GridBuilder.cpp`
+
+STO2GridBuilder.lo: ../QMCWaveFunctions/MolecularOrbitals/STO2GridBuilder.cpp
+@AMDEP_TRUE@	source='../QMCWaveFunctions/MolecularOrbitals/STO2GridBuilder.cpp' object='STO2GridBuilder.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/STO2GridBuilder.Plo' tmpdepfile='$(DEPDIR)/STO2GridBuilder.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o STO2GridBuilder.lo `test -f '../QMCWaveFunctions/MolecularOrbitals/STO2GridBuilder.cpp' || echo '$(srcdir)/'`../QMCWaveFunctions/MolecularOrbitals/STO2GridBuilder.cpp
+
 GTO2GridBuilder.o: ../QMCWaveFunctions/MolecularOrbitals/GTO2GridBuilder.cpp
 @AMDEP_TRUE@	source='../QMCWaveFunctions/MolecularOrbitals/GTO2GridBuilder.cpp' object='GTO2GridBuilder.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@	depfile='$(DEPDIR)/GTO2GridBuilder.Po' tmpdepfile='$(DEPDIR)/GTO2GridBuilder.TPo' @AMDEPBACKSLASH@
@@ -645,6 +698,24 @@ NumericalMolecularOrbitals.lo: ../QMCWaveFunctions/MolecularOrbitals/NumericalMo
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NumericalMolecularOrbitals.lo `test -f '../QMCWaveFunctions/MolecularOrbitals/NumericalMolecularOrbitals.cpp' || echo '$(srcdir)/'`../QMCWaveFunctions/MolecularOrbitals/NumericalMolecularOrbitals.cpp
 
+ElectronGasOrbitalBuilder.o: ../QMCWaveFunctions/ElectronGasOrbitalBuilder.cpp
+@AMDEP_TRUE@	source='../QMCWaveFunctions/ElectronGasOrbitalBuilder.cpp' object='ElectronGasOrbitalBuilder.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/ElectronGasOrbitalBuilder.Po' tmpdepfile='$(DEPDIR)/ElectronGasOrbitalBuilder.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ElectronGasOrbitalBuilder.o `test -f '../QMCWaveFunctions/ElectronGasOrbitalBuilder.cpp' || echo '$(srcdir)/'`../QMCWaveFunctions/ElectronGasOrbitalBuilder.cpp
+
+ElectronGasOrbitalBuilder.obj: ../QMCWaveFunctions/ElectronGasOrbitalBuilder.cpp
+@AMDEP_TRUE@	source='../QMCWaveFunctions/ElectronGasOrbitalBuilder.cpp' object='ElectronGasOrbitalBuilder.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/ElectronGasOrbitalBuilder.Po' tmpdepfile='$(DEPDIR)/ElectronGasOrbitalBuilder.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ElectronGasOrbitalBuilder.obj `cygpath -w ../QMCWaveFunctions/ElectronGasOrbitalBuilder.cpp`
+
+ElectronGasOrbitalBuilder.lo: ../QMCWaveFunctions/ElectronGasOrbitalBuilder.cpp
+@AMDEP_TRUE@	source='../QMCWaveFunctions/ElectronGasOrbitalBuilder.cpp' object='ElectronGasOrbitalBuilder.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/ElectronGasOrbitalBuilder.Plo' tmpdepfile='$(DEPDIR)/ElectronGasOrbitalBuilder.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ElectronGasOrbitalBuilder.lo `test -f '../QMCWaveFunctions/ElectronGasOrbitalBuilder.cpp' || echo '$(srcdir)/'`../QMCWaveFunctions/ElectronGasOrbitalBuilder.cpp
+
 LocalPPotential.o: ../QMCHamiltonians/LocalPPotential.cpp
 @AMDEP_TRUE@	source='../QMCHamiltonians/LocalPPotential.cpp' object='LocalPPotential.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@	depfile='$(DEPDIR)/LocalPPotential.Po' tmpdepfile='$(DEPDIR)/LocalPPotential.TPo' @AMDEPBACKSLASH@
@@ -716,6 +787,24 @@ LPQHIBasis.lo: ../LongRange/LPQHIBasis.cpp
 @AMDEP_TRUE@	depfile='$(DEPDIR)/LPQHIBasis.Plo' tmpdepfile='$(DEPDIR)/LPQHIBasis.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o LPQHIBasis.lo `test -f '../LongRange/LPQHIBasis.cpp' || echo '$(srcdir)/'`../LongRange/LPQHIBasis.cpp
+
+SimpleFixedNodeBranch.o: ../QMCDrivers/SimpleFixedNodeBranch.cpp
+@AMDEP_TRUE@	source='../QMCDrivers/SimpleFixedNodeBranch.cpp' object='SimpleFixedNodeBranch.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/SimpleFixedNodeBranch.Po' tmpdepfile='$(DEPDIR)/SimpleFixedNodeBranch.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o SimpleFixedNodeBranch.o `test -f '../QMCDrivers/SimpleFixedNodeBranch.cpp' || echo '$(srcdir)/'`../QMCDrivers/SimpleFixedNodeBranch.cpp
+
+SimpleFixedNodeBranch.obj: ../QMCDrivers/SimpleFixedNodeBranch.cpp
+@AMDEP_TRUE@	source='../QMCDrivers/SimpleFixedNodeBranch.cpp' object='SimpleFixedNodeBranch.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/SimpleFixedNodeBranch.Po' tmpdepfile='$(DEPDIR)/SimpleFixedNodeBranch.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o SimpleFixedNodeBranch.obj `cygpath -w ../QMCDrivers/SimpleFixedNodeBranch.cpp`
+
+SimpleFixedNodeBranch.lo: ../QMCDrivers/SimpleFixedNodeBranch.cpp
+@AMDEP_TRUE@	source='../QMCDrivers/SimpleFixedNodeBranch.cpp' object='SimpleFixedNodeBranch.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/SimpleFixedNodeBranch.Plo' tmpdepfile='$(DEPDIR)/SimpleFixedNodeBranch.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o SimpleFixedNodeBranch.lo `test -f '../QMCDrivers/SimpleFixedNodeBranch.cpp' || echo '$(srcdir)/'`../QMCDrivers/SimpleFixedNodeBranch.cpp
 
 QMCDriver.o: ../QMCDrivers/QMCDriver.cpp
 @AMDEP_TRUE@	source='../QMCDrivers/QMCDriver.cpp' object='QMCDriver.o' libtool=no @AMDEPBACKSLASH@
@@ -789,24 +878,6 @@ VMCParticleByParticle.lo: ../QMCDrivers/VMCParticleByParticle.cpp
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o VMCParticleByParticle.lo `test -f '../QMCDrivers/VMCParticleByParticle.cpp' || echo '$(srcdir)/'`../QMCDrivers/VMCParticleByParticle.cpp
 
-QMCOptimize.o: ../QMCDrivers/QMCOptimize.cpp
-@AMDEP_TRUE@	source='../QMCDrivers/QMCOptimize.cpp' object='QMCOptimize.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/QMCOptimize.Po' tmpdepfile='$(DEPDIR)/QMCOptimize.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o QMCOptimize.o `test -f '../QMCDrivers/QMCOptimize.cpp' || echo '$(srcdir)/'`../QMCDrivers/QMCOptimize.cpp
-
-QMCOptimize.obj: ../QMCDrivers/QMCOptimize.cpp
-@AMDEP_TRUE@	source='../QMCDrivers/QMCOptimize.cpp' object='QMCOptimize.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/QMCOptimize.Po' tmpdepfile='$(DEPDIR)/QMCOptimize.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o QMCOptimize.obj `cygpath -w ../QMCDrivers/QMCOptimize.cpp`
-
-QMCOptimize.lo: ../QMCDrivers/QMCOptimize.cpp
-@AMDEP_TRUE@	source='../QMCDrivers/QMCOptimize.cpp' object='QMCOptimize.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/QMCOptimize.Plo' tmpdepfile='$(DEPDIR)/QMCOptimize.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o QMCOptimize.lo `test -f '../QMCDrivers/QMCOptimize.cpp' || echo '$(srcdir)/'`../QMCDrivers/QMCOptimize.cpp
-
 MolecuDMC.o: ../QMCDrivers/MolecuDMC.cpp
 @AMDEP_TRUE@	source='../QMCDrivers/MolecuDMC.cpp' object='MolecuDMC.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@	depfile='$(DEPDIR)/MolecuDMC.Po' tmpdepfile='$(DEPDIR)/MolecuDMC.TPo' @AMDEPBACKSLASH@
@@ -843,41 +914,59 @@ DMCParticleByParticle.lo: ../QMCDrivers/DMCParticleByParticle.cpp
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o DMCParticleByParticle.lo `test -f '../QMCDrivers/DMCParticleByParticle.cpp' || echo '$(srcdir)/'`../QMCDrivers/DMCParticleByParticle.cpp
 
-ReptationMC.o: ../QMCDrivers/ReptationMC.cpp
-@AMDEP_TRUE@	source='../QMCDrivers/ReptationMC.cpp' object='ReptationMC.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/ReptationMC.Po' tmpdepfile='$(DEPDIR)/ReptationMC.TPo' @AMDEPBACKSLASH@
+WalkerControlBase.o: ../QMCDrivers/WalkerControlBase.cpp
+@AMDEP_TRUE@	source='../QMCDrivers/WalkerControlBase.cpp' object='WalkerControlBase.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/WalkerControlBase.Po' tmpdepfile='$(DEPDIR)/WalkerControlBase.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ReptationMC.o `test -f '../QMCDrivers/ReptationMC.cpp' || echo '$(srcdir)/'`../QMCDrivers/ReptationMC.cpp
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o WalkerControlBase.o `test -f '../QMCDrivers/WalkerControlBase.cpp' || echo '$(srcdir)/'`../QMCDrivers/WalkerControlBase.cpp
 
-ReptationMC.obj: ../QMCDrivers/ReptationMC.cpp
-@AMDEP_TRUE@	source='../QMCDrivers/ReptationMC.cpp' object='ReptationMC.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/ReptationMC.Po' tmpdepfile='$(DEPDIR)/ReptationMC.TPo' @AMDEPBACKSLASH@
+WalkerControlBase.obj: ../QMCDrivers/WalkerControlBase.cpp
+@AMDEP_TRUE@	source='../QMCDrivers/WalkerControlBase.cpp' object='WalkerControlBase.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/WalkerControlBase.Po' tmpdepfile='$(DEPDIR)/WalkerControlBase.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ReptationMC.obj `cygpath -w ../QMCDrivers/ReptationMC.cpp`
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o WalkerControlBase.obj `cygpath -w ../QMCDrivers/WalkerControlBase.cpp`
 
-ReptationMC.lo: ../QMCDrivers/ReptationMC.cpp
-@AMDEP_TRUE@	source='../QMCDrivers/ReptationMC.cpp' object='ReptationMC.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/ReptationMC.Plo' tmpdepfile='$(DEPDIR)/ReptationMC.TPlo' @AMDEPBACKSLASH@
+WalkerControlBase.lo: ../QMCDrivers/WalkerControlBase.cpp
+@AMDEP_TRUE@	source='../QMCDrivers/WalkerControlBase.cpp' object='WalkerControlBase.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/WalkerControlBase.Plo' tmpdepfile='$(DEPDIR)/WalkerControlBase.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ReptationMC.lo `test -f '../QMCDrivers/ReptationMC.cpp' || echo '$(srcdir)/'`../QMCDrivers/ReptationMC.cpp
+	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o WalkerControlBase.lo `test -f '../QMCDrivers/WalkerControlBase.cpp' || echo '$(srcdir)/'`../QMCDrivers/WalkerControlBase.cpp
 
-PolymerEstimator.o: ../QMCDrivers/PolymerEstimator.cpp
-@AMDEP_TRUE@	source='../QMCDrivers/PolymerEstimator.cpp' object='PolymerEstimator.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/PolymerEstimator.Po' tmpdepfile='$(DEPDIR)/PolymerEstimator.TPo' @AMDEPBACKSLASH@
+QMCOptimize.o: ../QMCDrivers/QMCOptimize.cpp
+@AMDEP_TRUE@	source='../QMCDrivers/QMCOptimize.cpp' object='QMCOptimize.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/QMCOptimize.Po' tmpdepfile='$(DEPDIR)/QMCOptimize.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o PolymerEstimator.o `test -f '../QMCDrivers/PolymerEstimator.cpp' || echo '$(srcdir)/'`../QMCDrivers/PolymerEstimator.cpp
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o QMCOptimize.o `test -f '../QMCDrivers/QMCOptimize.cpp' || echo '$(srcdir)/'`../QMCDrivers/QMCOptimize.cpp
 
-PolymerEstimator.obj: ../QMCDrivers/PolymerEstimator.cpp
-@AMDEP_TRUE@	source='../QMCDrivers/PolymerEstimator.cpp' object='PolymerEstimator.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/PolymerEstimator.Po' tmpdepfile='$(DEPDIR)/PolymerEstimator.TPo' @AMDEPBACKSLASH@
+QMCOptimize.obj: ../QMCDrivers/QMCOptimize.cpp
+@AMDEP_TRUE@	source='../QMCDrivers/QMCOptimize.cpp' object='QMCOptimize.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/QMCOptimize.Po' tmpdepfile='$(DEPDIR)/QMCOptimize.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o PolymerEstimator.obj `cygpath -w ../QMCDrivers/PolymerEstimator.cpp`
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o QMCOptimize.obj `cygpath -w ../QMCDrivers/QMCOptimize.cpp`
 
-PolymerEstimator.lo: ../QMCDrivers/PolymerEstimator.cpp
-@AMDEP_TRUE@	source='../QMCDrivers/PolymerEstimator.cpp' object='PolymerEstimator.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/PolymerEstimator.Plo' tmpdepfile='$(DEPDIR)/PolymerEstimator.TPlo' @AMDEPBACKSLASH@
+QMCOptimize.lo: ../QMCDrivers/QMCOptimize.cpp
+@AMDEP_TRUE@	source='../QMCDrivers/QMCOptimize.cpp' object='QMCOptimize.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/QMCOptimize.Plo' tmpdepfile='$(DEPDIR)/QMCOptimize.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o PolymerEstimator.lo `test -f '../QMCDrivers/PolymerEstimator.cpp' || echo '$(srcdir)/'`../QMCDrivers/PolymerEstimator.cpp
+	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o QMCOptimize.lo `test -f '../QMCDrivers/QMCOptimize.cpp' || echo '$(srcdir)/'`../QMCDrivers/QMCOptimize.cpp
+
+QMCCostFunction.o: ../QMCDrivers/QMCCostFunction.cpp
+@AMDEP_TRUE@	source='../QMCDrivers/QMCCostFunction.cpp' object='QMCCostFunction.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/QMCCostFunction.Po' tmpdepfile='$(DEPDIR)/QMCCostFunction.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o QMCCostFunction.o `test -f '../QMCDrivers/QMCCostFunction.cpp' || echo '$(srcdir)/'`../QMCDrivers/QMCCostFunction.cpp
+
+QMCCostFunction.obj: ../QMCDrivers/QMCCostFunction.cpp
+@AMDEP_TRUE@	source='../QMCDrivers/QMCCostFunction.cpp' object='QMCCostFunction.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/QMCCostFunction.Po' tmpdepfile='$(DEPDIR)/QMCCostFunction.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o QMCCostFunction.obj `cygpath -w ../QMCDrivers/QMCCostFunction.cpp`
+
+QMCCostFunction.lo: ../QMCDrivers/QMCCostFunction.cpp
+@AMDEP_TRUE@	source='../QMCDrivers/QMCCostFunction.cpp' object='QMCCostFunction.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/QMCCostFunction.Plo' tmpdepfile='$(DEPDIR)/QMCCostFunction.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o QMCCostFunction.lo `test -f '../QMCDrivers/QMCCostFunction.cpp' || echo '$(srcdir)/'`../QMCDrivers/QMCCostFunction.cpp
 
 VMCMultiple.o: ../QMCDrivers/VMCMultiple.cpp
 @AMDEP_TRUE@	source='../QMCDrivers/VMCMultiple.cpp' object='VMCMultiple.o' libtool=no @AMDEPBACKSLASH@
@@ -915,24 +1004,6 @@ VMCPbyPMultiple.lo: ../QMCDrivers/VMCPbyPMultiple.cpp
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o VMCPbyPMultiple.lo `test -f '../QMCDrivers/VMCPbyPMultiple.cpp' || echo '$(srcdir)/'`../QMCDrivers/VMCPbyPMultiple.cpp
 
-RQMCMultiple.o: ../QMCDrivers/RQMCMultiple.cpp
-@AMDEP_TRUE@	source='../QMCDrivers/RQMCMultiple.cpp' object='RQMCMultiple.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/RQMCMultiple.Po' tmpdepfile='$(DEPDIR)/RQMCMultiple.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o RQMCMultiple.o `test -f '../QMCDrivers/RQMCMultiple.cpp' || echo '$(srcdir)/'`../QMCDrivers/RQMCMultiple.cpp
-
-RQMCMultiple.obj: ../QMCDrivers/RQMCMultiple.cpp
-@AMDEP_TRUE@	source='../QMCDrivers/RQMCMultiple.cpp' object='RQMCMultiple.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/RQMCMultiple.Po' tmpdepfile='$(DEPDIR)/RQMCMultiple.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o RQMCMultiple.obj `cygpath -w ../QMCDrivers/RQMCMultiple.cpp`
-
-RQMCMultiple.lo: ../QMCDrivers/RQMCMultiple.cpp
-@AMDEP_TRUE@	source='../QMCDrivers/RQMCMultiple.cpp' object='RQMCMultiple.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/RQMCMultiple.Plo' tmpdepfile='$(DEPDIR)/RQMCMultiple.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o RQMCMultiple.lo `test -f '../QMCDrivers/RQMCMultiple.cpp' || echo '$(srcdir)/'`../QMCDrivers/RQMCMultiple.cpp
-
 ScalarEstimatorManager.o: ../Estimators/ScalarEstimatorManager.cpp
 @AMDEP_TRUE@	source='../Estimators/ScalarEstimatorManager.cpp' object='ScalarEstimatorManager.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@	depfile='$(DEPDIR)/ScalarEstimatorManager.Po' tmpdepfile='$(DEPDIR)/ScalarEstimatorManager.TPo' @AMDEPBACKSLASH@
@@ -968,6 +1039,96 @@ MultipleEnergyEstimator.lo: ../Estimators/MultipleEnergyEstimator.cpp
 @AMDEP_TRUE@	depfile='$(DEPDIR)/MultipleEnergyEstimator.Plo' tmpdepfile='$(DEPDIR)/MultipleEnergyEstimator.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o MultipleEnergyEstimator.lo `test -f '../Estimators/MultipleEnergyEstimator.cpp' || echo '$(srcdir)/'`../Estimators/MultipleEnergyEstimator.cpp
+
+RQMCMultiple.o: ../QMCDrivers/RQMCMultiple.cpp
+@AMDEP_TRUE@	source='../QMCDrivers/RQMCMultiple.cpp' object='RQMCMultiple.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/RQMCMultiple.Po' tmpdepfile='$(DEPDIR)/RQMCMultiple.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o RQMCMultiple.o `test -f '../QMCDrivers/RQMCMultiple.cpp' || echo '$(srcdir)/'`../QMCDrivers/RQMCMultiple.cpp
+
+RQMCMultiple.obj: ../QMCDrivers/RQMCMultiple.cpp
+@AMDEP_TRUE@	source='../QMCDrivers/RQMCMultiple.cpp' object='RQMCMultiple.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/RQMCMultiple.Po' tmpdepfile='$(DEPDIR)/RQMCMultiple.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o RQMCMultiple.obj `cygpath -w ../QMCDrivers/RQMCMultiple.cpp`
+
+RQMCMultiple.lo: ../QMCDrivers/RQMCMultiple.cpp
+@AMDEP_TRUE@	source='../QMCDrivers/RQMCMultiple.cpp' object='RQMCMultiple.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/RQMCMultiple.Plo' tmpdepfile='$(DEPDIR)/RQMCMultiple.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o RQMCMultiple.lo `test -f '../QMCDrivers/RQMCMultiple.cpp' || echo '$(srcdir)/'`../QMCDrivers/RQMCMultiple.cpp
+
+MultiChain.o: ../QMCDrivers/MultiChain.cpp
+@AMDEP_TRUE@	source='../QMCDrivers/MultiChain.cpp' object='MultiChain.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/MultiChain.Po' tmpdepfile='$(DEPDIR)/MultiChain.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o MultiChain.o `test -f '../QMCDrivers/MultiChain.cpp' || echo '$(srcdir)/'`../QMCDrivers/MultiChain.cpp
+
+MultiChain.obj: ../QMCDrivers/MultiChain.cpp
+@AMDEP_TRUE@	source='../QMCDrivers/MultiChain.cpp' object='MultiChain.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/MultiChain.Po' tmpdepfile='$(DEPDIR)/MultiChain.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o MultiChain.obj `cygpath -w ../QMCDrivers/MultiChain.cpp`
+
+MultiChain.lo: ../QMCDrivers/MultiChain.cpp
+@AMDEP_TRUE@	source='../QMCDrivers/MultiChain.cpp' object='MultiChain.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/MultiChain.Plo' tmpdepfile='$(DEPDIR)/MultiChain.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o MultiChain.lo `test -f '../QMCDrivers/MultiChain.cpp' || echo '$(srcdir)/'`../QMCDrivers/MultiChain.cpp
+
+MultiChainIO.o: ../QMCDrivers/MultiChainIO.cpp
+@AMDEP_TRUE@	source='../QMCDrivers/MultiChainIO.cpp' object='MultiChainIO.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/MultiChainIO.Po' tmpdepfile='$(DEPDIR)/MultiChainIO.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o MultiChainIO.o `test -f '../QMCDrivers/MultiChainIO.cpp' || echo '$(srcdir)/'`../QMCDrivers/MultiChainIO.cpp
+
+MultiChainIO.obj: ../QMCDrivers/MultiChainIO.cpp
+@AMDEP_TRUE@	source='../QMCDrivers/MultiChainIO.cpp' object='MultiChainIO.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/MultiChainIO.Po' tmpdepfile='$(DEPDIR)/MultiChainIO.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o MultiChainIO.obj `cygpath -w ../QMCDrivers/MultiChainIO.cpp`
+
+MultiChainIO.lo: ../QMCDrivers/MultiChainIO.cpp
+@AMDEP_TRUE@	source='../QMCDrivers/MultiChainIO.cpp' object='MultiChainIO.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/MultiChainIO.Plo' tmpdepfile='$(DEPDIR)/MultiChainIO.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o MultiChainIO.lo `test -f '../QMCDrivers/MultiChainIO.cpp' || echo '$(srcdir)/'`../QMCDrivers/MultiChainIO.cpp
+
+PolymerEstimator.o: ../QMCDrivers/PolymerEstimator.cpp
+@AMDEP_TRUE@	source='../QMCDrivers/PolymerEstimator.cpp' object='PolymerEstimator.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/PolymerEstimator.Po' tmpdepfile='$(DEPDIR)/PolymerEstimator.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o PolymerEstimator.o `test -f '../QMCDrivers/PolymerEstimator.cpp' || echo '$(srcdir)/'`../QMCDrivers/PolymerEstimator.cpp
+
+PolymerEstimator.obj: ../QMCDrivers/PolymerEstimator.cpp
+@AMDEP_TRUE@	source='../QMCDrivers/PolymerEstimator.cpp' object='PolymerEstimator.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/PolymerEstimator.Po' tmpdepfile='$(DEPDIR)/PolymerEstimator.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o PolymerEstimator.obj `cygpath -w ../QMCDrivers/PolymerEstimator.cpp`
+
+PolymerEstimator.lo: ../QMCDrivers/PolymerEstimator.cpp
+@AMDEP_TRUE@	source='../QMCDrivers/PolymerEstimator.cpp' object='PolymerEstimator.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/PolymerEstimator.Plo' tmpdepfile='$(DEPDIR)/PolymerEstimator.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o PolymerEstimator.lo `test -f '../QMCDrivers/PolymerEstimator.cpp' || echo '$(srcdir)/'`../QMCDrivers/PolymerEstimator.cpp
+
+ReptationMC.o: ../QMCDrivers/ReptationMC.cpp
+@AMDEP_TRUE@	source='../QMCDrivers/ReptationMC.cpp' object='ReptationMC.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/ReptationMC.Po' tmpdepfile='$(DEPDIR)/ReptationMC.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ReptationMC.o `test -f '../QMCDrivers/ReptationMC.cpp' || echo '$(srcdir)/'`../QMCDrivers/ReptationMC.cpp
+
+ReptationMC.obj: ../QMCDrivers/ReptationMC.cpp
+@AMDEP_TRUE@	source='../QMCDrivers/ReptationMC.cpp' object='ReptationMC.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/ReptationMC.Po' tmpdepfile='$(DEPDIR)/ReptationMC.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ReptationMC.obj `cygpath -w ../QMCDrivers/ReptationMC.cpp`
+
+ReptationMC.lo: ../QMCDrivers/ReptationMC.cpp
+@AMDEP_TRUE@	source='../QMCDrivers/ReptationMC.cpp' object='ReptationMC.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/ReptationMC.Plo' tmpdepfile='$(DEPDIR)/ReptationMC.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ReptationMC.lo `test -f '../QMCDrivers/ReptationMC.cpp' || echo '$(srcdir)/'`../QMCDrivers/ReptationMC.cpp
 CXXDEPMODE = @CXXDEPMODE@
 
 mostlyclean-libtool:
@@ -1028,7 +1189,94 @@ distdir: $(DISTFILES)
 	    dir="/$$dir"; \
 	    $(mkinstalldirs) "$(distdir)$$dir"; \
 	  else \
-	    diinstall-exec-am install-info install-info-am \
+	    dir=''; \
+	  fi; \
+	  if test -d $$d/$$file; then \
+	    if test -d $(srcdir)/$$file && test $$d != $(srcdir); then \
+	      cp -pR $(srcdir)/$$file $(distdir)$$dir || exit 1; \
+	    fi; \
+	    cp -pR $$d/$$file $(distdir)$$dir || exit 1; \
+	  else \
+	    test -f $(distdir)/$$file \
+	    || cp -p $$d/$$file $(distdir)/$$file \
+	    || exit 1; \
+	  fi; \
+	done
+check-am: all-am
+check: check-am
+all-am: Makefile $(PROGRAMS)
+
+installdirs:
+	$(mkinstalldirs) $(DESTDIR)$(bindir)
+
+install: install-am
+install-exec: install-exec-am
+install-data: install-data-am
+uninstall: uninstall-am
+
+install-am: all-am
+	@$(MAKE) $(AM_MAKEFLAGS) install-exec-am install-data-am
+
+installcheck: installcheck-am
+install-strip:
+	$(MAKE) $(AM_MAKEFLAGS) INSTALL_PROGRAM="$(INSTALL_STRIP_PROGRAM)" \
+	  INSTALL_STRIP_FLAG=-s \
+	  `test -z '$(STRIP)' || \
+	    echo "INSTALL_PROGRAM_ENV=STRIPPROG='$(STRIP)'"` install
+mostlyclean-generic:
+
+clean-generic:
+
+distclean-generic:
+	-rm -f Makefile $(CONFIG_CLEAN_FILES)
+
+maintainer-clean-generic:
+	@echo "This command is intended for maintainers to use"
+	@echo "it deletes files that may require special tools to rebuild."
+clean: clean-am
+
+clean-am: clean-binPROGRAMS clean-generic clean-libtool mostlyclean-am
+
+distclean: distclean-am
+
+distclean-am: clean-am distclean-compile distclean-depend \
+	distclean-generic distclean-libtool distclean-tags
+
+dvi: dvi-am
+
+dvi-am:
+
+info: info-am
+
+info-am:
+
+install-data-am:
+
+install-exec-am: install-binPROGRAMS
+
+install-info: install-info-am
+
+install-man:
+
+installcheck-am:
+
+maintainer-clean: maintainer-clean-am
+
+maintainer-clean-am: distclean-am maintainer-clean-generic
+
+mostlyclean: mostlyclean-am
+
+mostlyclean-am: mostlyclean-compile mostlyclean-generic \
+	mostlyclean-libtool
+
+uninstall-am: uninstall-binPROGRAMS uninstall-info-am
+
+.PHONY: GTAGS all all-am check check-am clean clean-binPROGRAMS \
+	clean-generic clean-libtool distclean distclean-compile \
+	distclean-depend distclean-generic distclean-libtool \
+	distclean-tags distdir dvi dvi-am info info-am install \
+	install-am install-binPROGRAMS install-data install-data-am \
+	install-exec install-exec-am install-info install-info-am \
 	install-man install-strip installcheck installcheck-am \
 	installdirs maintainer-clean maintainer-clean-generic \
 	mostlyclean mostlyclean-compile mostlyclean-generic \
@@ -1038,4 +1286,3 @@ distdir: $(DISTFILES)
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               
