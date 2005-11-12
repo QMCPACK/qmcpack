@@ -64,8 +64,22 @@ bool SimpleFixedNodeBranch::put(xmlNodePtr cur, OhmmsInform *LogOut){
   m_param.put(cur);
 
   if(toswap == "yes") {
-    LogOut->getStream() << "# Walkers are swapped to balance the load " << endl;
     SwapMode = 1;
+  } else {//check qmc/@collect
+    const xmlChar* t=xmlGetProp(cur,(const xmlChar*)"collect");
+    if(t != NULL) {
+      toswap=(const char*)t;
+      SwapMode = (toswap == "yes");
+    }
+  }
+
+  //overwrite the SwapMode with the number of contexts
+  SwapMode = (SwapMode && (OHMMS::Controller->ncontexts()>1));
+
+  if(SwapMode) {
+    LOGMSG("Collective handling of Average/walkers")
+  } else {
+    LOGMSG("Node-parallel handling of Average/walkers")
   }
 
   reset();

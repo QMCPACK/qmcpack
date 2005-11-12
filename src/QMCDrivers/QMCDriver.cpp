@@ -119,6 +119,8 @@ namespace qmcplusplus {
     //set the stride for the scalar estimators 
     Estimators->setStride(nSteps);
 
+    //set the collection mode
+    Estimators->setCollectionMode(branchEngine->SwapMode);
     Estimators->resetReportSettings(RootName, AppendRun);
     AcceptIndex=Estimators->addColumn("AcceptRatio");
 
