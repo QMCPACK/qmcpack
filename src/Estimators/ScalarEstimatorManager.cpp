@@ -26,8 +26,11 @@
 using namespace qmcplusplus;
 
 ScalarEstimatorManager::ScalarEstimatorManager(QMCHamiltonian& h): 
- FileManager(true), CollectSum(false),Stride(1000), WeightSum(0.0), H(h), RootName("estimator"), 
-  OutStream(0) { }
+ FileManager(true), CollectSum(false),
+ Period(1000), NodeWeight(1.0), H(h), RootName("estimator"), 
+  OutStream(0) { 
+  
+  }
 
 ScalarEstimatorManager::~ScalarEstimatorManager(){ 
   Estimators.erase(Estimators.begin(), Estimators.end());
@@ -54,9 +57,8 @@ ScalarEstimatorManager::add(EstimatorType* newestimator, const string& aname) {
  */
 void 
 ScalarEstimatorManager::reset() {
-  WeightSum = 0.0;
+  MyData=0.0;
   for(int i=0; i< Estimators.size(); i++) Estimators[i]->reset();
-
 }
 
 /** accumulate data for all the estimators
@@ -64,38 +66,33 @@ ScalarEstimatorManager::reset() {
 void 
 ScalarEstimatorManager::accumulate(const MCWalkerConfiguration& W) {
 
-  for(MCWalkerConfiguration::const_iterator it = W.begin(); 
-      it != W.end(); it++){    
+  RealType wgt_sum=0;
+  MCWalkerConfiguration::const_iterator it(W.begin()),it_end(W.end());
+  while(it != it_end) {
     RealType wgt = (*it)->Weight;
-    WeightSum += wgt;
-    for(int i=0; i< Estimators.size(); i++) 
-      Estimators[i]->accumulate(**it,wgt);
+    wgt_sum+= wgt;
+    for(int i=0; i< Estimators.size(); i++) Estimators[i]->accumulate(**it,wgt);
+    ++it;
   }
-}
 
-/** set CollectSum
- * @param collect if true, global sum is done over the values
- *
- * FileManager is set when collect is true so that only the first node writes.
- */
-void ScalarEstimatorManager::setCollectionMode(bool collect) {
-  CollectSum=collect;
-  for(int i=0; i< Estimators.size(); i++) Estimators[i]->CollectSum = collect;
-  if(collect) {
-    FileManager = OHMMS::Controller->master();
-  }
+  MyData[WEIGHT_INDEX]+=wgt_sum;
 }
 
 /**  compute the averages for all the estimators and reset
  */
 void ScalarEstimatorManager::flush(){
-  if(CollectSum) gsum(WeightSum,0);
-  RealType wgtinv = 1.0/WeightSum;
+
+  if(CollectSum) gsum(MyData,0);
+
+  RealType wgtinv = 1.0/MyData[WEIGHT_INDEX];
   for(int i=0; i<Estimators.size(); i++) 
     Estimators[i]->report(BlockAverages,wgtinv);
 
-  BlockAverages[WeightIndex] = WeightSum;
-  WeightSum = 0.0;
+  BlockAverages[MyIndex[WEIGHT_INDEX]]=MyData[WEIGHT_INDEX];
+  BlockAverages[MyIndex[BLOCK_CPU_INDEX]] = MyData[BLOCK_CPU_INDEX]*NodeWeight;
+  BlockAverages[MyIndex[ACCEPT_RATIO_INDEX]] = MyData[ACCEPT_RATIO_INDEX]*NodeWeight;
+
+  MyData=0.0;
 }
 
 
@@ -116,12 +113,14 @@ void ScalarEstimatorManager::report(int iter){
  */
 void ScalarEstimatorManager::flushreport(int iter){
 
-  if(CollectSum) gsum(WeightSum,0);
-  RealType wgtinv = 1.0/WeightSum;
+  if(CollectSum) gsum(MyData,0);
+  RealType wgtinv = 1.0/MyData[WEIGHT_INDEX];
   for(int i=0; i<Estimators.size(); i++)  Estimators[i]->report(BlockAverages,wgtinv);
-  
-  BlockAverages[WeightIndex] = WeightSum;
-  WeightSum = 0.0;
+
+  BlockAverages[MyIndex[WEIGHT_INDEX]]=MyData[WEIGHT_INDEX];
+  BlockAverages[MyIndex[BLOCK_CPU_INDEX]] = MyData[BLOCK_CPU_INDEX]*NodeWeight;
+  BlockAverages[MyIndex[ACCEPT_RATIO_INDEX]] = MyData[ACCEPT_RATIO_INDEX]*NodeWeight;
+  MyData=0.0;
 
   if(FileManager) {
     (*OutStream) << setw(10) << iter;
@@ -129,6 +128,24 @@ void ScalarEstimatorManager::flushreport(int iter){
     (*OutStream) << endl;
   }
 }
+
+/** set CollectSum
+ * @param collect if true, global sum is done over the values
+ *
+ * FileManager is set when collect is true so that only the first node writes.
+ */
+void ScalarEstimatorManager::setCollectionMode(bool collect) {
+  CollectSum=collect;
+  for(int i=0; i< Estimators.size(); i++) Estimators[i]->CollectSum = collect;
+  if(collect) {
+    FileManager = OHMMS::Controller->master();
+    NodeWeight = 1.0/static_cast<RealType>(OHMMS::Controller->ncontexts());
+  } else {
+    FileManager = true;
+    NodeWeight = 1.0;
+  }
+}
+
 
 void 
 ScalarEstimatorManager::resetReportSettings(const string& aname, bool append) {
@@ -142,7 +159,9 @@ ScalarEstimatorManager::resetReportSettings(const string& aname, bool append) {
   for(int i=0; i<Estimators.size(); i++) 
     Estimators[i]->add2Record(BlockAverages);
 
-  WeightIndex = BlockAverages.add("WeightSum");
+  MyIndex[WEIGHT_INDEX] = BlockAverages.add("WeightSum");
+  MyIndex[BLOCK_CPU_INDEX] = BlockAverages.add("BlockCPU");
+  MyIndex[ACCEPT_RATIO_INDEX] = BlockAverages.add("AcceptRatio");
 
   RootName = aname;
 
@@ -186,13 +205,6 @@ ScalarEstimatorManager::finalize() {
   OutStream = 0;
 }
 
-/**  set the stride of all the estimators to istride
- * @param istride an inverval of reportting/flushing the cummulative quantities
- */
-void 
-ScalarEstimatorManager::setStride(int istride) {
-  Stride = istride;
-}
 
 ScalarEstimatorManager::EstimatorType* 
 ScalarEstimatorManager::getEstimator(const string& a) {
@@ -207,6 +219,7 @@ ScalarEstimatorManager::getEstimator(const string& a) {
 bool ScalarEstimatorManager::put(xmlNodePtr cur) {
 
   vector<string> extra;
+
   cur = cur->children;
 
   //count the number of Hamiltonian copies

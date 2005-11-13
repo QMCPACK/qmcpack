@@ -39,13 +39,13 @@ namespace qmcplusplus {
     hid_t h_random;
   public:
 
-    HDFWalkerOutput(const string& fname, bool append=true, int count=0);
+    HDFWalkerOutput(const string& fname, bool append=false, int count=0);
     ~HDFWalkerOutput();
     bool get(MCWalkerConfiguration&);
 
     template<class CT>
     void write(CT& anything) {
-      anything.write(h_config);
+      anything.write(h_config,AppendMode);
     }
 
     /** return the file ID **/

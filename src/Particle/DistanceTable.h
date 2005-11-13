@@ -22,8 +22,6 @@
 
 namespace qmcplusplus {
 
-  class DistanceTableData;
-
   /**@ingroup nnlist
    * @brief Class to manage multiple DistanceTableData objects.
    * 

@@ -24,6 +24,9 @@ using namespace std;
 #include "OhmmsApp/ProjectData.h"
 #include "Message/Communicate.h"
 #include "Platforms/sysutil.h"
+#if defined(HAVE_LIBBOOST)
+#include "boost/date_time/gregorian/gregorian.hpp" 
+#endif
 
 namespace OHMMS {
 
@@ -43,7 +46,20 @@ namespace OHMMS {
 
   bool ProjectData::get(ostream& os) const
   {
-    os << "<Project ID=\""<<m_title << "\" series=\"" << m_series << "/>" << endl;
+    //os << "<Project ID=\""<<m_title << "\" series=\"" << m_series << "/>" << endl;
+    os << "  Project = " << m_title << "\n";
+#if defined(HAVE_LIBBOOST)
+    typedef boost::gregorian::date date_type;
+    typedef boost::gregorian::date_facet date_facet;
+    typedef boost::date_time::day_clock<date_type> day_clock_type;
+
+    date_type today(day_clock_type::local_day());
+    date_facet* facet(new date_facet("%A %B %d, %Y"));
+    os.imbue(std::locale(os.getloc(), facet));
+    os << "  date    = " << today << "\n";
+#endif
+    os << "  host    = " << m_host << "\n";
+    os << "  user    = " << m_user << "\n";
     return true;
   }
 
@@ -120,6 +136,7 @@ namespace OHMMS {
     s << m_series+1;
     if(m_cur)
     xmlSetProp(m_cur, (const xmlChar *) "series", (const xmlChar *)(s.str().c_str()));
+
   }
 
   bool ProjectData::PreviousRoot(string& oldroot) const {
@@ -186,6 +203,7 @@ namespace OHMMS {
                   (const xmlChar*)"user",(const xmlChar*)(m_user.c_str()));
     }
     reset();
+
     return true;
   }
 

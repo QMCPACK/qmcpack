@@ -108,7 +108,6 @@ namespace qmcplusplus {
       GridMolecularOrbitals a(targetPtcl,targetPsi,*ions);
       a.put(cur);
     } else {
-      cout << "Checking the radial orbital type " << radtype << endl;
       if(radtype == "gto") {
         LOGMSG("Using analytic GTO molecular orbitals for " << targetPtcl.getName() << " with " << ions->getName())
         GTOMolecularOrbitals a(targetPtcl,targetPsi,*ions);

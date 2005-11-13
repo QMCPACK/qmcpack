@@ -14,10 +14,9 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#include "QMCHamiltonians/LocalCorePolPotential.h"
 #include "Particle/DistanceTable.h"
 #include "Particle/DistanceTableData.h"
-#include "Utilities/OhmmsInfo.h"
+#include "QMCHamiltonians/LocalCorePolPotential.h"
 #include "Utilities/IteratorUtility.h"
 
 namespace qmcplusplus {
@@ -147,7 +146,6 @@ namespace qmcplusplus {
     return Value=e;
   }
 }
-
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$

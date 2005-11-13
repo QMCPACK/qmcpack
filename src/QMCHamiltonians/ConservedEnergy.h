@@ -81,6 +81,11 @@ namespace qmcplusplus {
     bool put(xmlNodePtr cur) {
       return true;
     }
+
+    bool get(std::ostream& os) const { 
+      os << "ConservedEnergy";
+      return true;
+    }
   };
 }
 #endif

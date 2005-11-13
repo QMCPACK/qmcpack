@@ -164,7 +164,7 @@ namespace qmcplusplus {
      *@param aos a set of Centered Atomic Orbitals
      */
     inline void add(COT* aos) {
-      cout << "!!!!!! this should not be used !!!!!! " << endl;
+      ERRORMSG("!!!!!! this should not be used !!!!!! ")
       AOs.push_back(aos);
     }
 

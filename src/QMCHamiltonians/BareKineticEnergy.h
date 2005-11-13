@@ -73,6 +73,10 @@ namespace qmcplusplus {
       return true;
     }
 
+    bool get(std::ostream& os) const {
+      os << "Kinetic energy";
+      return true;
+    }
     //Not used anymore
     //void evaluate(WalkerSetRef& W, ValueVectorType& LE) {
     //  for(int iw=0; iw< W.walkers(); iw++) {

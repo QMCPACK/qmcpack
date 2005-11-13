@@ -18,6 +18,7 @@
 #include "Particle/MCWalkerConfiguration.h"
 #include "Particle/DistanceTableData.h"
 #include "Particle/DistanceTable.h"
+#include "ParticleBase/RandomSeqGenerator.h"
 #include "Message/Communicate.h"
 #include "Message/CommOperators.h"
 #include <map>
@@ -185,7 +186,7 @@ void MCWalkerConfiguration::loadWalker(Walker_t& awalker) {
  */
 void MCWalkerConfiguration::resetWalkerProperty(int ncopy) {
   int m(PropertyList.size());
-  LOGMSG("Resetting Properties of the walkers " << ncopy << " x " << m)
+  app_log() << "  Resetting Properties of the walkers " << ncopy << " x " << m << endl;
   iterator it(WalkerList.begin()),it_end(WalkerList.end());
   while(it != it_end) {
     (*it)->resizeProperty(ncopy,m); ++it;

@@ -41,9 +41,11 @@ namespace qmcplusplus {
     int Centers;
     ///container for the ion charges
     vector<RealType> Z;
+    ParticleSet *PtclSource, *PtclTarget;
     DistanceTableData* d_table;
 
-    CoulombPotentialAB(ParticleSet& ions, ParticleSet& els): d_table(NULL) { 
+    CoulombPotentialAB(ParticleSet& ions, ParticleSet& els): 
+      PtclSource(&ions), PtclTarget(&els), d_table(NULL) { 
 
       d_table = DistanceTable::getTable(DistanceTable::add(ions,els));
       //index for attribute charge
@@ -58,7 +60,8 @@ namespace qmcplusplus {
     }
     
     void resetTargetParticleSet(ParticleSet& P)  {
-      d_table = DistanceTable::getTable(DistanceTable::add(d_table->origin(),P));
+      d_table = DistanceTable::getTable(DistanceTable::add(*PtclSource,P));
+      PtclTarget=&P;
     }
 
     ~CoulombPotentialAB() { }
@@ -73,6 +76,13 @@ namespace qmcplusplus {
     }
 
     bool put(xmlNodePtr cur) {
+      return true;
+    }
+
+    bool get(std::ostream& os) const {
+      os << "CoulomAB potential: " 
+        << " source = " << PtclSource->getName() 
+        << " target = " << PtclTarget->getName();
       return true;
     }
     
@@ -121,8 +131,9 @@ namespace qmcplusplus {
 
     RealType C;
     DistanceTableData* d_table;
+    ParticleSet* PtclRef;
     //ElecElecPotential(RealType c=1.0): C(c){}
-    CoulombPotentialAA(ParticleSet& P):d_table(NULL) {
+    CoulombPotentialAA(ParticleSet& P):d_table(NULL),PtclRef(&P) {
       d_table = DistanceTable::getTable(DistanceTable::add(P));
       C = 1.0;
     }
@@ -131,6 +142,7 @@ namespace qmcplusplus {
 
     void resetTargetParticleSet(ParticleSet& P)  {
       d_table = DistanceTable::getTable(DistanceTable::add(P));
+      PtclRef=&P;
     }
 
     inline Return_t 
@@ -146,6 +158,11 @@ namespace qmcplusplus {
 
     /** Do nothing */
     bool put(xmlNodePtr cur) {
+      return true;
+    }
+
+    bool get(std::ostream& os) const {
+      os << "CoulomAA potential: " << PtclRef->getName();
       return true;
     }
     

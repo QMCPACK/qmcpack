@@ -16,11 +16,10 @@
 // -*- C++ -*-
 //#include "Particle/MCWalkerConfiguration.h"
 #include "QMCHamiltonians/NonLocalPPotential.h"
+#include "Numerics/HDFNumericAttrib.h"
 #include "Particle/DistanceTableData.h"
 #include "Particle/DistanceTable.h"
-#include "Numerics/HDFNumericAttrib.h"
 #include "Utilities/SimpleParser.h"
-#include "Utilities/OhmmsInfo.h"
 #include "Utilities/RandomGenerator.h"
 
 namespace qmcplusplus {
@@ -248,4 +247,3 @@ namespace qmcplusplus {
  * $Revision$   $Date$
  * $Id$ 
  ***************************************************************************/
-

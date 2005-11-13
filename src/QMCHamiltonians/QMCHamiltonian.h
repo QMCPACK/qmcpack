@@ -43,6 +43,8 @@ namespace qmcplusplus {
     void add(QMCHamiltonianBase* h, const string& aname);
     bool remove(const string& aname);
 
+    ///write the content of this object
+    bool get(std::ostream& os) const;
     ///add each term to the PropertyList for averages
     void add2WalkerProperty(ParticleSet& P);
 

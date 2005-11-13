@@ -73,6 +73,9 @@ namespace qmcplusplus {
      * @param cur xml node for a QMCHamiltonianBase object
      */
     virtual bool put(xmlNodePtr cur)=0;
+
+    /** write about the class */
+    virtual bool get(std::ostream& os) const =0;
     
     /** set Tau
      * @param tau time step

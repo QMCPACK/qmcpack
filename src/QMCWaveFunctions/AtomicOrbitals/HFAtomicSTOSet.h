@@ -191,44 +191,44 @@ namespace qmcplusplus {
     }
 
 
-    template<class VM, class GM>
-    inline void 
-    evaluate(const WalkerSetRef& W, int first, int last,
-	     vector<VM>& logdet, vector<GM>& dlogdet, vector<VM>& d2logdet) {
-
-#ifdef USE_FASTWALKER
-      int nptcl = last-first;
-      for(int i=0,nn=first; i<nptcl; i++, nn++) {
-        for(int iw=0; iw<W.walkers(); iw++) {
-          RealType r = d_table->r(iw,nn);
-          RealType rinv = d_table->rinv(iw,nn);
-          PosType dr = d_table->dr(iw,nn);
-          Ylm.evaluateAll(dr);
-          for(int nl=0; nl<RnlPool.size(); nl++) RnlPool[nl]->evaluateAll(r,rinv);
-          for(int j=0; j<Orbital.size(); j++)  
-            logdet[iw](j,i) = (*Orbital[j])(r,rinv,dr,dlogdet[iw](i,j),d2logdet[iw](i,j));
-        }
-      }
-#else
-      int nptcl = last-first;
-      for(int iw=0; iw<W.walkers(); iw++) {
-	int nn = first;///first pair of the particle subset
-	for(int i=0; i<nptcl; i++, nn++) {
-	  RealType r = d_table->r(iw,nn);
-	  RealType rinv = d_table->rinv(iw,nn);
-	  PosType dr = d_table->dr(iw,nn);
-	  Ylm.evaluateAll(dr);
-	  for(int nl=0; nl<RnlPool.size(); nl++)  {
-	    RnlPool[nl]->evaluateAll(r,rinv);
-	  }
-	  for(int j=0; j<Orbital.size(); j++)  {
-	  logdet[iw](j,i) 
-	    = (*Orbital[j])(r,rinv,dr,dlogdet[iw](i,j),d2logdet[iw](i,j));
-	  }
-	}
-      }
-#endif
-    }
+//    template<class VM, class GM>
+//    inline void 
+//    evaluate(const WalkerSetRef& W, int first, int last,
+//	     vector<VM>& logdet, vector<GM>& dlogdet, vector<VM>& d2logdet) {
+//
+//#ifdef USE_FASTWALKER
+//      int nptcl = last-first;
+//      for(int i=0,nn=first; i<nptcl; i++, nn++) {
+//        for(int iw=0; iw<W.walkers(); iw++) {
+//          RealType r = d_table->r(iw,nn);
+//          RealType rinv = d_table->rinv(iw,nn);
+//          PosType dr = d_table->dr(iw,nn);
+//          Ylm.evaluateAll(dr);
+//          for(int nl=0; nl<RnlPool.size(); nl++) RnlPool[nl]->evaluateAll(r,rinv);
+//          for(int j=0; j<Orbital.size(); j++)  
+//            logdet[iw](j,i) = (*Orbital[j])(r,rinv,dr,dlogdet[iw](i,j),d2logdet[iw](i,j));
+//        }
+//      }
+//#else
+//      int nptcl = last-first;
+//      for(int iw=0; iw<W.walkers(); iw++) {
+//	int nn = first;///first pair of the particle subset
+//	for(int i=0; i<nptcl; i++, nn++) {
+//	  RealType r = d_table->r(iw,nn);
+//	  RealType rinv = d_table->rinv(iw,nn);
+//	  PosType dr = d_table->dr(iw,nn);
+//	  Ylm.evaluateAll(dr);
+//	  for(int nl=0; nl<RnlPool.size(); nl++)  {
+//	    RnlPool[nl]->evaluateAll(r,rinv);
+//	  }
+//	  for(int j=0; j<Orbital.size(); j++)  {
+//	  logdet[iw](j,i) 
+//	    = (*Orbital[j])(r,rinv,dr,dlogdet[iw](i,j),d2logdet[iw](i,j));
+//	  }
+//	}
+//      }
+//#endif
+//    }
 
     void setTable(DistanceTableData* dtable) { d_table =dtable;}
 

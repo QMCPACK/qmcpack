@@ -32,6 +32,12 @@ QMCHamiltonian::~QMCHamiltonian() {
     
 }
 
+bool QMCHamiltonian::get(std::ostream& os) const {
+  for(int i=0; i<H.size(); i++) {
+    os << "    "; H[i]->get(os); os << "\n";
+  }
+}
+
 /** add a new Hamiltonian the the list of Hamiltonians.
  *@param h the Hamiltonian
  *@param aname the name of the Hamiltonian
@@ -84,7 +90,6 @@ void
 QMCHamiltonian::add2WalkerProperty(ParticleSet& P) {
   Hindex.resize(Hname.size());
   for(int i=0; i<Hname.size(); i++) Hindex[i]=P.addProperty(Hname[i]);
-  LOGMSG("Starting index of Hamiltonian " << Hindex[0])
 }
 
 /** Evaluate all the Hamiltonians for the N-particle  configuration

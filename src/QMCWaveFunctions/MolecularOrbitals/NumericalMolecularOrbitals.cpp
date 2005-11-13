@@ -134,11 +134,6 @@ namespace qmcplusplus {
     //int lastpsi=inorb->numOrbitals()-2;
     //int lastpsi=0;
 
-    //PosType dr(1.1,1.2,1.5);
-    //PosType newpos(targetPtcl.makeMove(0,dr));
-    ////cout << "p(ix,iy,iz) " << newpos << "(" << ix << "," << iy << "," << iz << ")" << endl;
-    //inorb->evaluate(targetPtcl,0,phi);
-    //cout << newpos << " " << phi[lastpsi] << endl;
     PosType pos(targetPtcl.R[0]);
     int ng=0;
 
@@ -151,7 +146,6 @@ namespace qmcplusplus {
         for(int iz=0; iz<npts[2]; iz++) {
           PosType dr(x,y,gridZ(iz));
           PosType newpos(targetPtcl.makeMove(0,dr-pos));
-          //cout << "p(ix,iy,iz) " << newpos << "(" << ix << "," << iy << "," << iz << ")" << endl;
           int item=torb[0]->index(ix,iy,iz);
           inorb->evaluate(targetPtcl,0,phi);
           for(int is=0; is<phi.size(); is++) (*torb[is])(item)=phi[is];
@@ -162,12 +156,10 @@ namespace qmcplusplus {
       }
     }
     timer.stop();
-    cout << "Time to evaluate " << torb.size() << " orbitals = " << timer.cpu_time() << endl;
 
     timer.start();
     for(int is=0; is<torb.size(); is++) torb[is]->reset(true);
     timer.stop();
-    cout << "Time to evaluate spline coefficients = " << timer.cpu_time() << endl;
 
     for(int ix=0; ix<npts[0]-1; ix++) {
       double x(gridX(ix));

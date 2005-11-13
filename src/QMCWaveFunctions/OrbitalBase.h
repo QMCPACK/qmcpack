@@ -4,6 +4,7 @@
 #include "Configuration.h"
 #include "Particle/ParticleSet.h"
 #include "Particle/DistanceTableData.h"
+#include "Particle/WalkerSetRef.h"
 #include "OhmmsData/RecordProperty.h"
 
 /**@file OrbitalBase.h
@@ -11,7 +12,6 @@
  */
 namespace qmcplusplus {
 
-  class WalkerSetRef;
 
   /**@defgroup OrbitalComponent Orbital group
    * @brief Classes which constitute a many-body trial wave function

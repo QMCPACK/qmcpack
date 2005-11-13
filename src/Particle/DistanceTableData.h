@@ -18,7 +18,6 @@
 #define QMCPLUSPLUS_DISTANCETABLEDATAIMPL_H
 
 #include "Particle/ParticleSet.h"
-#include "Particle/WalkerSetRef.h"
 #include "Utilities/PooledData.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include <bitset>
@@ -181,7 +180,7 @@ namespace qmcplusplus {
     inline IndexType loc(int i, int j) const { return M[i] + j;}
 
     ///evaluate the Distance Table using ActiveWalkers
-    virtual void evaluate(const WalkerSetRef& W) = 0;
+    //virtual void evaluate(const WalkerSetRef& W) = 0;
 
     ///evaluate the Distance Table using only with position array
     virtual void evaluate(const ParticleSet& P) = 0;

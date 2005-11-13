@@ -74,32 +74,32 @@ namespace qmcplusplus {
     }
 
     ///evaluate the Distance Table using a set of Particle Positions
-    inline void evaluate(const WalkerSetRef& W) {
-      int copies = W.walkers();
-      int visitors = W.particles();
-      int ns = Origin.getTotalNum();
+    //inline void evaluate(const WalkerSetRef& W) {
+    //  int copies = W.walkers();
+    //  int visitors = W.particles();
+    //  int ns = Origin.getTotalNum();
 
-      reset(ns,visitors,copies);
-      for(int iw=0; iw<copies; iw++) {
-	int nn=0;
-	for(int i=0; i<ns; i++) {
-	  PosType r0 = Origin.R(i);
-	  for(int j=0; j<visitors; j++,nn++) {
-	    PosType drij = W.R(iw,j)-r0;
-	    RealType sep = sqrt(BC::apply(Origin.Lattice,drij));
-#ifdef USE_FASTWALKER
-	    r2_m(nn,iw) = sep;
-	    rinv2_m(nn,iw) = 1.0/sep;
-	    dr2_m(nn,iw) = drij;
-#else
-	    r2_m(iw,nn) = sep;
-	    rinv2_m(iw,nn) = 1.0/sep;
-	    dr2_m(iw,nn) = drij;
-#endif
-	  }
-	}
-      }
-    }
+    //  reset(ns,visitors,copies);
+    //  for(int iw=0; iw<copies; iw++) {
+    //    int nn=0;
+    //    for(int i=0; i<ns; i++) {
+    //      PosType r0 = Origin.R(i);
+    //      for(int j=0; j<visitors; j++,nn++) {
+    //        PosType drij = W.R(iw,j)-r0;
+    //        RealType sep = sqrt(BC::apply(Origin.Lattice,drij));
+    //#ifdef USE_FASTWALKER
+    //        r2_m(nn,iw) = sep;
+    //        rinv2_m(nn,iw) = 1.0/sep;
+    //        dr2_m(nn,iw) = drij;
+    //#else
+    //        r2_m(iw,nn) = sep;
+    //        rinv2_m(iw,nn) = 1.0/sep;
+    //        dr2_m(iw,nn) = drij;
+    //#endif
+    //      }
+    //    }
+    //  }
+    //}
 
     ///not so useful inline but who knows
     inline void evaluate(const ParticleSet& P){

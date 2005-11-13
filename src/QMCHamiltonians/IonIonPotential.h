@@ -76,7 +76,6 @@ namespace qmcplusplus {
           }
           Value += esum*Z[iat];
         }
-        LOGMSG("Energy of ion-ion interaction " << Value)
         FirstTime = false;
       }
       return Value;
@@ -84,6 +83,11 @@ namespace qmcplusplus {
 
     /** Do nothing */
     bool put(xmlNodePtr cur) {
+      return true;
+    }
+
+    bool get(std::ostream& os) const {
+      os << "Ion-Ion potential: " << PtclRef.getName();
       return true;
     }
   };

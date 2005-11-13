@@ -27,6 +27,7 @@
 #include "Lattice/Uniform3DGridLayout.h"
 #include "ParticleBase/ParticleAttrib.h"
 #include "ParticleBase/ParticleBase.h"
+#include "Utilities/OhmmsInfo.h"
 
 namespace qmcplusplus {
 
@@ -76,6 +77,10 @@ namespace qmcplusplus {
     typedef ParticleAttrib<Tensor_t>                     ParticleTensor_t;
   };
 
+  inline std::ostream& app_log() { return  OhmmsInfo::Log->getStream(); }
+  inline std::ostream& app_error(){ return OhmmsInfo::Error->getStream();}
+  inline std::ostream& app_warning(){ return OhmmsInfo::Warn->getStream();}
+  inline std::ostream& app_debug(){ return OhmmsInfo::Debug->getStream();}
 }
 
 #endif

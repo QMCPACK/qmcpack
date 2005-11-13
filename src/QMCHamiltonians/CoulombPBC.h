@@ -74,6 +74,11 @@ namespace qmcplusplus {
     bool put(xmlNodePtr cur) {
       return true;
     }
+
+    bool get(std::ostream& os) const {
+      os << "CoulomPBCAA potential: " << PtclRef->getName();
+      return true;
+    }
   };
 
 
@@ -109,6 +114,13 @@ namespace qmcplusplus {
 
     /** Do nothing */
     bool put(xmlNodePtr cur) {
+      return true;
+    }
+
+    bool get(std::ostream& os) const {
+      os << "CoulomPBCAB potential: " 
+        << " source = " << PtclIons->getName() 
+        << " target = " << PtclElns->getName();
       return true;
     }
   };

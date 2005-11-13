@@ -110,6 +110,10 @@ namespace qmcplusplus {
 
     bool put(xmlNodePtr cur);
 
+    bool get(std::ostream& os) const {
+      os << "LocalCorePolPotential: " << IonSys.getName();
+      return true;
+    }
     //inline RealType fcpp(RealType z) {
     //  return pow((1.0-exp(-1.0*z*z)),2);
     //}

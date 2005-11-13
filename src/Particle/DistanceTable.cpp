@@ -151,7 +151,7 @@ DistanceTable::add(ParticleSet& s, const char* aname) {
 
   //the named pair does not exist, add a new symmetric metrics
   if(it == TableMap.end()) {
-    LOGMSG("Distance table " << newname << " is created.")
+    //LOGMSG("Distance table " << newname << " is created.")
     int n = TableList.size();
     DistanceTableData* dt=0;
     if(SuperCellType<OHMMS_DIM>::apply(s.Lattice.BoxBConds) == SUPERCELL_OPEN) 
@@ -166,7 +166,7 @@ DistanceTable::add(ParticleSet& s, const char* aname) {
     //add to the list
     return n;
   } else {
-    LOGMSG("Distance table " << newname << " is reused")
+    //LOGMSG("Distance table " << newname << " is reused")
     return (*it).second;
   }
 }
@@ -192,7 +192,7 @@ DistanceTable::add(const ParticleSet& s, ParticleSet& t, const char* aname) {
 
   ///the named pair does not exist, add a new asymmetric metrics
   if(it == TableMap.end()) {
-    LOGMSG("Distance table " << newname << " is created.")
+    //LOGMSG("Distance table " << newname << " is created.")
     int n = TableList.size();
     DistanceTableData* dt=0;
     if(SuperCellType<OHMMS_DIM>::apply(s.Lattice.BoxBConds) == SUPERCELL_OPEN) 
@@ -207,7 +207,7 @@ DistanceTable::add(const ParticleSet& s, ParticleSet& t, const char* aname) {
     VisitorID.push_back(t.tag());
     return n;
   } else {
-    LOGMSG("Distance table " << newname << " is reused")
+    //LOGMSG("Distance table " << newname << " is reused")
     return (*it).second;
   }
 }

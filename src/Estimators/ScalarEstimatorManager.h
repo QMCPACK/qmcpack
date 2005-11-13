@@ -26,6 +26,7 @@
 
 #include "Configuration.h"
 #include "Estimators/ScalarEstimatorBase.h"
+#include "Utilities/Timer.h"
 
 namespace qmcplusplus {
 
@@ -38,6 +39,7 @@ namespace qmcplusplus {
   public:
 
     typedef ScalarEstimatorBase<RealType> EstimatorType;
+    enum { WEIGHT_INDEX=0, BLOCK_CPU_INDEX, ACCEPT_RATIO_INDEX, TOTAL_INDEX};
 
     ScalarEstimatorManager(QMCHamiltonian& h);
     ~ScalarEstimatorManager();
@@ -81,7 +83,7 @@ namespace qmcplusplus {
     int add(EstimatorType* newestimator, const string& aname);
 
     ///set the stride for all the estimators
-    void setStride(int istride);
+    void setPeriod(int p) { Period=p;}
 
     ///return a pointer to the estimator aname
     EstimatorType* getEstimator(const string& a);
@@ -98,25 +100,54 @@ namespace qmcplusplus {
   
     /** set the total weight
      *@param w the weight
-     */
     inline void setWeight(RealType w) {
-      WeightSum = w;
+      MyData[WEIGHT_INDEX] = w;
+    }
+     */
+
+    /// start the timer
+    inline void startBlock() { MyTimer.restart();}
+    /** stop the timer and set the block cpu time
+     * @param iter current step
+     * @param accept acceptance rate of this block
+     */
+    inline void stopBlock(RealType accept) { 
+      MyData[BLOCK_CPU_INDEX]=MyTimer.elapsed();
+      MyData[ACCEPT_RATIO_INDEX]=accept;
+      flush();
     }
 
     void setCollectionMode(bool collect);
+
   private:
 
+    ///the root file name
     string RootName;
+    ///if yes, this estimator will write the data to a file
     bool FileManager;
+    ///if yes, the averages are collected over mpi nodes
     bool CollectSum;
-    int Stride;
-    int WeightIndex;
+    ///Period to write 
+    IndexType Period;
+    ///Weight for global collection
+    RealType NodeWeight;
+    ///Index map for the data maintained by this object
+    TinyVector<IndexType,TOTAL_INDEX>  MyIndex;
+    ///Data maintained by this object
+    TinyVector<RealType,TOTAL_INDEX>  MyData;
+    ///ostream for the output
     ostream* OutStream;
-    RealType WeightSum;
+    ///ostream for the output
     QMCHamiltonian& H;
+    ///block averages
     RecordNamedProperty<RealType> BlockAverages;
+    ///column map
     std::map<string,int> EstimatorMap;
+    ///estimators
     vector<EstimatorType*> Estimators;
+
+    ///Timer
+    Timer MyTimer;
   };
 }
 #endif

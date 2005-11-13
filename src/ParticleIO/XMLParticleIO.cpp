@@ -218,7 +218,7 @@ bool XMLParticleParser::putSpecial(xmlNodePtr cur) {
   }
    
   if(ntot) {
-    LOGMSG("\tCreating " << ntot << " particles for " << pname << " set")
+    //LOGMSG("\tCreating " << ntot << " particles for " << pname << " set")
     if(ng_in) {
       ref_.create(nat_group);
     } else {

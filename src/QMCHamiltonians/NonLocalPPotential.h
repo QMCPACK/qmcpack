@@ -162,6 +162,11 @@ namespace qmcplusplus {
     bool put(xmlNodePtr cur) {
       return true;
     }
+
+    bool get(std::ostream& os) const {
+      os << "NoLocalPPotential: " << d_table->origin().getName();
+      return true;
+    }
   };
 }
 #endif

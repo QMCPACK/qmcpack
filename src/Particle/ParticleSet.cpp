@@ -52,12 +52,14 @@ namespace qmcplusplus {
 
   ///write to a ostream
   bool ParticleSet::get(ostream& os) const {
-    for(int i=0; i<LocalNum; i++) {
-      os << mySpecies.speciesName[GroupID[i]]  << R[i] << endl;
-    }
-    os << "sub-particle " << SubPtcl.size() << endl;
+
+    os << "  ParticleSet " << getName() << " : ";
     for(int i=0; i<SubPtcl.size(); i++) os << SubPtcl[i] << " ";
-    os << endl;
+    os <<"\n\n    " << LocalNum << "\n\n";
+
+    for(int i=0; i<LocalNum; i++) {
+      os << "    " << mySpecies.speciesName[GroupID[i]]  << R[i] << endl;
+    }
     return true;
   }
     
