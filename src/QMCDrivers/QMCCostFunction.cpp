@@ -56,13 +56,14 @@ namespace qmcplusplus {
   void QMCCostFunction::setTargetEnergy(Return_t et) {
 
     Etarget = et;
-    LOGMSG("Etarget (set from previous runs) = " << Etarget)
+    app_log() << "Etarget (set from previous runs) = " << Etarget << endl;
 
     //evaluate effective target energy
     EtargetEff=(1.0+CorrelationFactor)*Etarget;
 
-    LOGMSG("Effective Target Energy = " << EtargetEff)
-    LOGMSG("Cost Function = " << w_en << "*<E> + " << w_var << "*<Var> + " << w_abs << "*|E-E_T|^" << PowerE)
+    app_log() << "Effective Target Energy = " << EtargetEff << endl;
+    app_log() << "Cost Function = " << w_en << "*<E> + " 
+      << w_var << "*<Var> + " << w_abs << "*|E-E_T|^" << PowerE << endl;
 
     if(msg_stream) {
       *msg_stream << "  Total number of walkers          = " << NumSamples << endl;

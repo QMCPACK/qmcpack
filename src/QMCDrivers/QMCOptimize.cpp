@@ -25,6 +25,7 @@
 #if defined(HAVE_LIBGSL)
 #include "Optimize/GSLMinimize.h"
 #endif
+
 namespace qmcplusplus {
 
   QMCOptimize::QMCOptimize(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h):
@@ -73,22 +74,22 @@ namespace qmcplusplus {
     MinimizerBase<RealType>* solver;
 
     if(optmethod == "cg") {
-      LOGMSG(" Conjugate-gradient optimization using CGOptimization")
+      app_log() << " Conjugate-gradient optimization using CGOptimization"<<endl;
       solver = new CGOptimization<RealType>;
     } 
     else if(optmethod == "anneal") {
-      LOGMSG(" Annealing optimization using DampedDynamics")
+      app_log() << " Annealing optimization using DampedDynamics"<<endl;
       solver = new DampedDynamics<RealType>;
     } 
 #if defined(HAVE_LIBGSL)
     else if(optmethod == "gslcg") {
-      LOGMSG(" Conjugate-gradient optimization using GSLConjugateGradient")
+      app_log() << " Conjugate-gradient optimization using GSLConjugateGradient"<<endl;
       solver = new GSLConjugateGradient;
     }
 #endif
 
     //set the stream
-    solver->setOstream(&log_buffer);
+    solver->setOstream(&app_log());
 
     if(optNode == NULL) 
       solver->put(qmcNode);
@@ -154,15 +155,15 @@ namespace qmcplusplus {
       }
     }
 
-    LogOut->getStream() 
-      << "# list of the configuration files used for optimization" << endl;
+    app_log() 
+      << " list of the configuration files used for optimization" << endl;
     for(int i=0; i<ConfigFile.size(); i++) 
-      LogOut->getStream() << "# " << ConfigFile[i] << " part " << PartID << "/" << NumParts << endl;
+      app_log() << "# " << ConfigFile[i] << " part " << PartID << "/" << NumParts << endl;
 
     if(optTarget == 0) {
       optTarget = new QMCCostFunction(W,Psi,H);
       //THIS IS TEST ONLY
-      optTarget->setStream(&log());
+      optTarget->setStream(&app_log());
     }
     return optTarget->put(q);
   }

@@ -24,7 +24,6 @@
 #include "ParticleBase/ParticleUtility.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "Message/CommCreate.h"
-#include "Utilities/Clock.h"
 #include "Estimators/MultipleEnergyEstimator.h"
 
 namespace qmcplusplus { 
@@ -59,8 +58,6 @@ namespace qmcplusplus {
 
     IndexType block = 0;
     
-    Pooma::Clock timer;
-
     m_oneover2tau = 0.5/Tau;
     m_sqrttau = sqrt(Tau);
     RealType nPsi_minus_one = nPsi-1;
@@ -74,9 +71,10 @@ namespace qmcplusplus {
     MCWalkerConfiguration::iterator it_end(W.end());
     do {  //Blocks loop
       IndexType step = 0;
-      timer.start();
       nAccept = 0; nReject=0;
       IndexType nAllRejected = 0;
+
+      Estimators->startBlock();
       do {  //Steps loop
         it = W.begin();	 
         int iwalker=0; 
@@ -221,30 +219,23 @@ namespace qmcplusplus {
 	Estimators->accumulate(W);
       } while(step<nSteps);
 
-      timer.stop();
+      Estimators->stopBlock(static_cast<RealType>(nAccept)/static_cast<RealType>(nAccept+nReject));
+
       nAcceptTot += nAccept;
       nRejectTot += nReject;
-
-      Estimators->flush();
-      Estimators->setColumn(AcceptIndex,
-	  static_cast<RealType>(nAccept)/static_cast<RealType>(nAccept+nReject));
-      Estimators->report(CurrentStep);
-
-      LogOut->getStream() << "Block " << block << " " << timer.cpu_time() << " Fixed_configs " 
-	<< static_cast<RealType>(nAllRejected)/static_cast<RealType>(step*W.getActiveWalkers()) << 
-	" nPsi " << nPsi << endl;
 
       nAccept = 0; nReject = 0;
       ++block;
 
       //record the current configuration
-      recordWalkerConfigurations(block);
+      recordBlock(block);
 
       //re-evaluate the ratio
       multiEstimator->initialize(W,H1,Psi1,Tau,false);
     } while(block<nBlocks);
 
-    LogOut->getStream() 
+    //Need MPI-IO
+    app_log()
       << "Ratio = " 
       << static_cast<RealType>(nAcceptTot)/static_cast<RealType>(nAcceptTot+nRejectTot)
       << endl;

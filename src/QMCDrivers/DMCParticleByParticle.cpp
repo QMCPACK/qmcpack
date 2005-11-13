@@ -24,7 +24,6 @@
 #include "ParticleBase/ParticleUtility.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "Message/CommCreate.h"
-#include "Utilities/Clock.h"
 
 namespace qmcplusplus { 
 
@@ -50,14 +49,11 @@ namespace qmcplusplus {
 
     KillNodeCrossing = (KillWalker == "yes");
     if(KillNodeCrossing) {
-      LOGMSG("Walkers will be killed if a node crossing is detected.")
+      app_log() << "Walkers will be killed if a node crossing is detected." << endl;
     } else {
-      LOGMSG("Walkers will be kept even if a node crossing is detected.")
+      app_log() << "Walkers will be kept even if a node crossing is detected." << endl;
     }
 
-    // initialize the estimator to record data
-    log_buffer.setf(ios::scientific, ios::floatfield);
-    log_buffer.precision(6);
 
     //set the collection mode for the estimator
     Estimators->setCollectionMode(branchEngine->SwapMode);
@@ -68,7 +64,6 @@ namespace qmcplusplus {
     Estimators->reset();
 
     IndexType block = 0;
-    Pooma::Clock timer;
     RealType Eest = branchEngine->E_T;
     IndexType nat = W.getTotalNum();
     G.resize(nat);
@@ -81,16 +76,18 @@ namespace qmcplusplus {
     m_oneover2tau = 1.0/(2.0*Tau);
     m_sqrttau = sqrt(Tau);
 
-    LOGMSG("Current step " << CurrentStep)
-    LogOut->getStream() << "# Block   Fixed_configs  Node crossing " << endl;
+    app_log() << "Current step " << CurrentStep << endl;
+
     do {
       IndexType step = 0;
-      timer.start();
       nAccept = 0; 
       nReject=0;
       nAllRejected = 0;
       nNodeCrossing=0;
       IndexType pop_acc=0; 
+
+      Estimators->startBlock();
+
       do {
         //default is killing
         if(KillNodeCrossing) 
@@ -109,35 +106,28 @@ namespace qmcplusplus {
         if(CurrentStep%100 == 0) updateWalkers();
       } while(step<nSteps);
       
-      timer.stop();
+      Estimators->stopBlock(static_cast<RealType>(nAccept)/static_cast<RealType>(nAccept+nReject));
+
       nAcceptTot += nAccept;
       nRejectTot += nReject;
       
       //update estimator
-      Estimators->flush();
       Estimators->setColumn(PopIndex,static_cast<RealType>(pop_acc)/static_cast<RealType>(nSteps));
       Estimators->setColumn(EtrialIndex,Eest); 
-      Estimators->setColumn(AcceptIndex,
-      		     static_cast<RealType>(nAccept)/static_cast<RealType>(nAccept+nReject));
-      Estimators->report(CurrentStep);
-      
       Eest = Estimators->average(0);
       RealType totmoves=1.0/static_cast<RealType>(step*W.getActiveWalkers());
-      LogOut->getStream() << setw(4) << block 
-        << setw(12) << timer.cpu_time() 
-        << setw(12) << timer.value() 
-        << setw(20) << static_cast<RealType>(nAllRejected)*totmoves
-        << setw(20) << static_cast<RealType>(nNodeCrossing)*totmoves << endl;
+
+      //Need MPI-IO
+      //app_log() 
+      //  << setw(4) << block 
+      //  << setw(20) << static_cast<RealType>(nAllRejected)*totmoves
+      //  << setw(20) << static_cast<RealType>(nNodeCrossing)*totmoves << endl;
 
       nAccept = 0; nReject = 0;
       block++;
 
-      //create an output engine: could accumulate the configurations
-      if(block%Period4CheckPoint == 0) {
-        HDFWalkerOutput WO(RootName,false,0);
-        WO.get(W);
-        WO.write(*branchEngine);
-      }
+      recordBlock(block);
+
     } while(block<nBlocks);
     
     Estimators->finalize();

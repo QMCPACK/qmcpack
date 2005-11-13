@@ -26,7 +26,6 @@
 #include "ParticleBase/ParticleUtility.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "Message/Communicate.h"
-#include "Utilities/Clock.h"
 namespace qmcplusplus {
 
   ReptationMC::ReptationMC(MCWalkerConfiguration& w, 
@@ -58,7 +57,7 @@ namespace qmcplusplus {
     //overwrite the number of cuts for Bounce algorithm
     if(UseBounce) NumCuts = 1;
 
-    LOGMSG("Moving " << NumCuts << " for each reptation step")
+    app_log() << "Moving " << NumCuts << " for each reptation step" << endl;
 
     //Reptile is NOT allocated. Create one.
     if(Reptile == 0) {
@@ -111,7 +110,6 @@ namespace qmcplusplus {
     initReptile();
 
     IndexType block = 0;
-    Pooma::Clock timer;
     IndexType nAcceptTot = 0;
     IndexType nRejectTot = 0;
     
@@ -126,7 +124,7 @@ namespace qmcplusplus {
       IndexType step = 0;
       NumTurns = 0;
 
-      timer.start();
+      Estimators->startBlock();
       do {
         moveReptile();
         step++; CurrentStep++;
@@ -134,29 +132,22 @@ namespace qmcplusplus {
         Estimators->accumulate(W);
         pe.accumulate();
       } while(step<nSteps);
-      timer.stop();
+
+      Estimators->stopBlock(static_cast<RealType>(nAccept)/static_cast<RealType>(nAccept+nReject));
       
       nAcceptTot += nAccept;
       nRejectTot += nReject;
       
-      RealType acceptedR = static_cast<RealType>(nAccept)/static_cast<RealType>(nAccept+nReject); 
-      Estimators->flush();
-      Estimators->setColumn(AcceptIndex,acceptedR);
       Estimators->report(CurrentStep);
       pe.report(CurrentStep);
       
-      LogOut->getStream() 
-        << "Block " << block << " " 
-        << timer.cpu_time() << " " << NumTurns  << endl;
-      
       nAccept = 0; nReject = 0;
       block++;
-      
 
     } while(block<nBlocks);
       
-    LogOut->getStream() 
-      << "ratio = " 
+    //Need MPI-IO
+    app_log() << "ratio = " 
       << static_cast<double>(nAcceptTot)/static_cast<double>(nAcceptTot+nRejectTot)
       << endl;
 
@@ -173,7 +164,6 @@ namespace qmcplusplus {
   void 
   ReptationMC::moveReptile(){
     
-    //Pooma::Clock timer;
     //RealType oneovertau = 1.0/Tau;
     //RealType oneover2tau = 0.5*oneovertau;
     RealType tauover2 = 0.5*Tau;

@@ -95,24 +95,15 @@ namespace qmcplusplus {
     //overwrite the Etarget by E_T if E_T is zero
     if(abs(branchEngine->E_T)>numeric_limits<RealType>::epsilon()) {
       Etarget=branchEngine->E_T;
-      LOGMSG("Etarget (set from previous runs) = " << Etarget)
+      app_log() << "Etarget (set from previous runs) = " << Etarget << endl;
     }
 
     //evaluate effective target energy
     EtargetEff=(1.0+CorrelationFactor)*Etarget;
 
-    LOGMSG("Effective Target Energy = " << EtargetEff)
-    LOGMSG("Cost Function = " << w_en << "*<E> + " << w_var << "*<Var> + " << w_abs << "*|E-E_T|^" << PowerE)
+    app_log() << "Effective Target Energy = " << EtargetEff << endl;
+    app_log() << "Cost Function = " << w_en << "*<E> + " << w_var << "*<Var> + " << w_abs << "*|E-E_T|^" << PowerE << endl;
 
-    LogOut->getStream() << "#Effective Target Energy = " << EtargetEff << endl;
-    LogOut->getStream() << "#Cost Function = " << w_en << "*<E> + " << w_var << "*<Var> + " << w_abs << "*|E-E_T|^" << PowerE<<endl;
-    log_buffer.setf(ios::left,ios::adjustfield);
-    log_buffer << "# index ";
-    for(int i=0; i<IDtag.size(); i++) log_buffer << setw(16) << IDtag[i];
-    log_buffer << " walkers            eavg/wgt    eavg/walkers      evar/wgt       evar/walkers      evar_abs       cost ";
-    LogOut->getStream() << log_buffer.rdbuf() << endl;
-    log_buffer.clear();
-    log_buffer.setf(ios::right,ios::adjustfield);
 
     ConjugateGradient CG;
     CG.Tolerance = cg_tolerance;
@@ -149,14 +140,6 @@ namespace qmcplusplus {
       //CostValue = w_abs*SumValue[SUM_ABSE_BARE]*wgtinv+w_var*evar;
       RealType evar_abs = SumValue[SUM_ABSE_WGT]/SumValue[SUM_WGT];
       CostValue = w_abs*evar_abs+w_var*evar;
-
-      //dump to a file
-      log_buffer << setw(5) << NumCostCalls << " ";
-      for(int i=0; i<OptParams.size(); i++) log_buffer << setw(16) << OptParams[i];
-      log_buffer << setw(15) << nw_effect;
-      log_buffer << setw(16) << eavg_w << setw(16) << eavg << setw(16) << evar_w << setw(16) << evar << setw(16) << evar_abs << setw(16) << CostValue;
-      LogOut->getStream() << log_buffer.rdbuf() << endl;
-      log_buffer.clear();
 
       if(nw_effect < NumSamples*9/10) {
         ERRORMSG("Number of Effective Walkers is too small " << nw_effect)
@@ -276,8 +259,8 @@ namespace qmcplusplus {
     Etarget = static_cast<RealType>(etemp[0]/etemp[1]);
     NumSamples = static_cast<int>(etemp[1]);
 
-    LOGMSG("Total number of walkers          = " << NumSamples)
-    LOGMSG("Etarget (guess from the average) = " << Etarget)
+    app_log() << "Total number of walkers          = " << NumSamples << endl;
+    app_log() << "Etarget (guess from the average) = " << Etarget << endl;
   }
 
   /** Reset the Wavefunction \f$ \Psi({\bf R},{{\bf \alpha_i}}) \f$

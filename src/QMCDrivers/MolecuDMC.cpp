@@ -23,7 +23,6 @@
 #include "ParticleBase/ParticleUtility.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "Message/Communicate.h"
-#include "Utilities/Clock.h"
 
 namespace qmcplusplus {
 
@@ -71,9 +70,9 @@ namespace qmcplusplus {
 
     KillNodeCrossing = (KillWalker == "yes");
     if(KillNodeCrossing) {
-      LOGMSG("Walkers will be killed if a node crossing is detected.")
+      app_log() << "Walkers will be killed if a node crossing is detected." << endl;
     } else {
-      LOGMSG("Walkers will be kept even if a node crossing is detected.")
+      app_log() << "Walkers will be kept even if a node crossing is detected." << endl;
     }
 
     //add columns
@@ -93,7 +92,6 @@ namespace qmcplusplus {
     m_sqrttau = sqrt(Tau);
     
     IndexType block = 0;
-    Pooma::Clock timer;
     int Population = W.getActiveWalkers();
     int tPopulation = W.getActiveWalkers();
     RealType Eest = branchEngine->E_T;
@@ -101,8 +99,10 @@ namespace qmcplusplus {
     IndexType nRejectTot = 0;
     do {
       IndexType step = 0;
-      timer.start();
       IndexType pop_acc=0; 
+
+      Estimators->startBlock();
+
       do {
         pop_acc += W.getActiveWalkers();
         if(KillNodeCrossing) 
@@ -114,37 +114,35 @@ namespace qmcplusplus {
         Eest = branchEngine->update(W.getActiveWalkers(), Eest);
         branchEngine->branch(CurrentStep,W);
       } while(step<nSteps);
-      timer.stop();
-      
+
+      Estimators->stopBlock(static_cast<RealType>(nAccept)/static_cast<RealType>(nAccept+nReject));
+
       nAcceptTot += nAccept;
       nRejectTot += nReject;
-      Estimators->flush();
       
       Estimators->setColumn(PopIndex,static_cast<RealType>(pop_acc)/static_cast<RealType>(nSteps));
       Estimators->setColumn(EtrialIndex,Eest);
-      Estimators->setColumn(AcceptIndex,
-      	            static_cast<RealType>(nAccept)/static_cast<RealType>(nAccept+nReject));
-      Estimators->report(CurrentStep);
-      LogOut->getStream() << "Block " << block << " " << timer.cpu_time()
-      		    << " " << Population << endl;
+
+
       Eest = Estimators->average(0);
 
       nAccept = 0; nReject = 0;
       block++;
 
+      recordBlock(block);
+
       //create an output engine: could accumulate the configurations
-      if(block%Period4CheckPoint == 0) {
-        HDFWalkerOutput WO(RootName,false,0);
-        WO.get(W);
-        WO.write(*branchEngine);
-      }
+      //if(block%Period4CheckPoint == 0) {
+      //  HDFWalkerOutput WO(RootName,false,0);
+      //  WO.get(W);
+      //  WO.write(*branchEngine);
+      //}
 
       W.reset();
     } while(block<nBlocks);
     
-    LogOut->getStream() 
-      << "ratio = " << static_cast<double>(nAcceptTot)/static_cast<double>(nAcceptTot+nRejectTot)
-      << endl;
+    //Need MPI-IO
+    app_log() << "\t ratio = " << static_cast<double>(nAcceptTot)/static_cast<double>(nAcceptTot+nRejectTot) << endl;
 
     Estimators->finalize();
     return true;

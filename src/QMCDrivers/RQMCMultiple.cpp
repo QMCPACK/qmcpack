@@ -25,7 +25,6 @@
 #include "ParticleBase/ParticleUtility.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "Message/Communicate.h"
-#include "Utilities/Clock.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 namespace qmcplusplus { 
   RQMCMultiple::RQMCMultiple(MCWalkerConfiguration& w, 
@@ -86,7 +85,7 @@ namespace qmcplusplus {
     if(Reptile == 0) {
       Reptile=new MultiChain(NewBead,ReptileLength,InitialGrowthDirection,nPsi);
       if(h5FileRoot != "invalid") {
-        LOGMSG("Reading the previous multi-chain configurations")
+        app_log() << "Reading the previous multi-chain configurations" << endl;
         restartmode = Reptile->read(h5FileRoot);
       }
     }
@@ -292,7 +291,6 @@ namespace qmcplusplus {
     initReptile();
 
     IndexType block = 0;
-    Pooma::Clock timer;
     IndexType nAcceptTot = 0;
     IndexType nRejectTot = 0;
 
@@ -305,22 +303,20 @@ namespace qmcplusplus {
     filename=RootName+".Eloc.dat";
     ofstream *OutEnergy;
     OutEnergy=new ofstream(filename.c_str());
-    cout << "Energies written on " << filename << endl;
 
     //PolymerEstimator reptileReport(*Reptile,nPsi);
     //reptileReport.resetReportSettings(RootName);
-
     //accumulate configuration: probably need to reorder
     //HDFWalkerOutput WO(RootName);
 
     RealType oneoversteps=1.0/static_cast<RealType>(nSteps);
 
-    cout << "Start Looping over Blocks " << endl;
     do { //Loop over Blocks
 
       IndexType step = 0;
-      timer.start();
       NumTurns = 0;
+
+      Estimators->startBlock();
 
       for(int ipsi=0; ipsi<nPsi; ipsi++){
 	AveEloc[ipsi]=0.0;
@@ -347,7 +343,9 @@ namespace qmcplusplus {
 	//reptileReport.accumulate();
       } while(step<nSteps);
 
-      timer.stop();
+      RealType acceptedR = static_cast<RealType>(nAccept)/static_cast<RealType>(nAccept+nReject); 
+      Estimators->stopBlock(acceptedR);
+
       *OutEnergy << block << " " ;
       for(int ipsi=0; ipsi<nPsi; ipsi++){
 	AveEloc[ipsi]/=(AveWeight[ipsi]*Tau+numeric_limits<RealType>::epsilon());
@@ -357,38 +355,34 @@ namespace qmcplusplus {
       *OutEnergy << endl;
       OutEnergy->flush();
 
-
       nAcceptTot += nAccept;
       nRejectTot += nReject;
-
-      RealType acceptedR = static_cast<RealType>(nAccept)/static_cast<RealType>(nAccept+nReject); 
-      Estimators->flush();
-      Estimators->setColumn(AcceptIndex,acceptedR);
-      Estimators->report(CurrentStep);
-
-      LogOut->getStream() 
-	<< "Block " << block << " " 
-	<< timer.cpu_time() << " " << NumTurns << endl;
 
       nAccept = 0; nReject = 0;
       block++;
 
-      //hdf5 file
-      HDFWalkerOutput WOa(RootName,false,0);
-      WOa.get(W);
-      WOa.write(*branchEngine);
-      Reptile->write(WOa.getFileID());
+      recordBlock(block);
+
     } while(block<nBlocks);
 
     delete OutEnergy;
 
-    LogOut->getStream() 
-      << "ratio = " 
+    //Need MPI-IO
+    app_log() << "ratio = " 
       << static_cast<double>(nAcceptTot)/static_cast<double>(nAcceptTot+nRejectTot)
       << endl;
 
     Estimators->finalize();
     return true;
+  }
+
+  void RQMCMultiple::recordBlock(int block) {
+    //Write stuff
+    Estimators->report(CurrentStep);
+    HDFWalkerOutput WO(RootName,false,0);
+    WO.get(W);
+    WO.write(*branchEngine);
+    Reptile->write(WO.getFileID());
   }
 
   bool RQMCMultiple::put(xmlNodePtr q){

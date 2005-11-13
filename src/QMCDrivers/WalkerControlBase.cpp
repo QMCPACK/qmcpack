@@ -62,7 +62,7 @@ namespace qmcplusplus {
     for(int i=0; i<bad.size(); i++) delete bad[i];
 
     if(good_w.empty()) {
-      ERRORMSG("All the walkers have died. Abort. ")
+      app_error() << "All the walkers have died. Abort. " << endl;
       OHMMS::Controller->abort();
     }
 
@@ -82,7 +82,8 @@ namespace qmcplusplus {
       int nadd=0;
       int nadd_target = static_cast<int>(Nmin*1.1)-NumWalkers;
       if(nadd_target> sizeofgood) {
-        WARNMSG("The number of walkers is running low. Requested walkers " << nadd_target << " good walkers = " << sizeofgood)
+        app_warning() << "The number of walkers is running low. Requested walkers " 
+          << nadd_target << " good walkers = " << sizeofgood << endl;
       }
       int i=0;
       while(i< sizeofgood && nadd<nadd_target) {

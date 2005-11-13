@@ -24,7 +24,6 @@
 #include "ParticleBase/ParticleUtility.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "Message/Communicate.h"
-#include "Utilities/Clock.h"
 
 namespace qmcplusplus { 
 

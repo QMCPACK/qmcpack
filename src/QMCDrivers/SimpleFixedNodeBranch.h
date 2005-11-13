@@ -158,7 +158,6 @@ namespace qmcplusplus {
 
     /**  Parse the xml file for parameters
      *@param cur current xmlNode 
-     *@param LogOut ostream to which the run-time report is sent
      *
      * Few important parameters are:
      * <ul>
@@ -167,9 +166,9 @@ namespace qmcplusplus {
      * \f$ feed = \frac{1}{N_G \tau} \f$ 
      * </ul>
     */
-    bool put(xmlNodePtr cur, OhmmsInform *LogOut);
+    bool put(xmlNodePtr cur);
 
-    void write(hid_t grp);
+    void write(hid_t grp, bool append=false);
 
     void read(hid_t grp);
 

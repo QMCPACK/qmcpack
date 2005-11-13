@@ -166,9 +166,6 @@ namespace qmcplusplus {
     ///the number of walkers
     IndexType nTargetWalkers;
 
-    ///Index of the Acceptance Ratio
-    IndexType AcceptIndex;
-
     ///timestep
     RealType Tau;
 
@@ -218,10 +215,10 @@ namespace qmcplusplus {
     ParticleSet::ParticlePos_t deltaR;
 
     ///stream for the log file 
-    OhmmsInform *LogOut;
+    //OhmmsInform *LogOut;
 
     ///temporary buffer to accumulate data
-    ostrstream log_buffer;
+    //ostrstream log_buffer;
 
     //PooledData<RealType> HamPool;
 
@@ -234,10 +231,12 @@ namespace qmcplusplus {
 
     void updateWalkers();
 
-    /** record the walker configurations
+    /** record the state of the block
      * @param block current block
+     *
+     * virtual function with a default implementation
      */
-    void recordWalkerConfigurations(int block);
+    virtual void recordBlock(int block);
 
     /** finalize a qmc section
      * @param block current block

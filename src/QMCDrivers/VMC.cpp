@@ -24,7 +24,6 @@
 #include "ParticleBase/ParticleUtility.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "Message/Communicate.h"
-#include "Utilities/Clock.h"
 
 namespace qmcplusplus { 
 
@@ -61,48 +60,41 @@ namespace qmcplusplus {
     Estimators->reset();
 
     IndexType block = 0;
-    Pooma::Clock timer;
-    
+
     double wh=0.0;
     IndexType nAcceptTot = 0;
     IndexType nRejectTot = 0;
     do {
 
+
       IndexType step = 0;
-      timer.start();
       nAccept = 0; nReject=0;
+
+      //start a block
+      Estimators->startBlock(); 
+
       do {
         advanceWalkerByWalker();
         step++;CurrentStep++;
         Estimators->accumulate(W);
       } while(step<nSteps);
       
-      timer.stop();
+      //stop a block, pass the acceptance rate of this block
+      Estimators->stopBlock(static_cast<RealType>(nAccept)/static_cast<RealType>(nAccept+nReject));
+
       nAcceptTot += nAccept;
       nRejectTot += nReject;
       
-      Estimators->flush();
-      Estimators->setColumn(AcceptIndex,
-      		    static_cast<RealType>(nAccept)/static_cast<RealType>(nAccept+nReject));
-      Estimators->report(CurrentStep);
       //accumulate running average with weight 1
       branchEngine->accumulate(Estimators->average(0),1.0);
-
-      LogOut->getStream() << "Block " << block << " " << timer.cpu_time() << endl;
 
       nAccept = 0; nReject = 0;
       block++;
 
       //record the current configuration
-      recordWalkerConfigurations(block);
+      recordBlock(block);
 
     } while(block<nBlocks);
-    
-
-    LogOut->getStream() 
-      << "Ratio = " 
-      << static_cast<double>(nAcceptTot)/static_cast<double>(nAcceptTot+nRejectTot)
-      << endl;
     
     //finalize a qmc section
     return finalize(block);

@@ -23,7 +23,6 @@
 #include "ParticleBase/ParticleUtility.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "Message/CommCreate.h"
-#include "Utilities/Clock.h"
 
 namespace qmcplusplus { 
 
@@ -45,7 +44,6 @@ namespace qmcplusplus {
 
     IndexType block = 0;
     
-    Pooma::Clock timer;
     m_oneover2tau = 0.5/Tau;
     m_sqrttau = sqrt(Tau);
 
@@ -59,9 +57,11 @@ namespace qmcplusplus {
 
     do {
       IndexType step = 0;
-      timer.start();
       nAccept = 0; nReject=0;
       nAllRejected = 0;
+
+      Estimators->startBlock();
+
       do {
         advanceWalkerByWalker();
         ++step;++CurrentStep;
@@ -69,29 +69,23 @@ namespace qmcplusplus {
         if(CurrentStep%100 == 0) updateWalkers();
       } while(step<nSteps);
       
-      timer.stop();
+      Estimators->stopBlock(static_cast<RealType>(nAccept)/static_cast<RealType>(nAccept+nReject));
+
       nAcceptTot += nAccept;
       nRejectTot += nReject;
       
-      Estimators->flush();
-      Estimators->setColumn(AcceptIndex,
-      		   static_cast<RealType>(nAccept)/static_cast<RealType>(nAccept+nReject));
-      Estimators->report(CurrentStep);
       branchEngine->accumulate(Estimators->average(0),1.0);
       
-      LogOut->getStream() << "Block " << block << " " << timer.cpu_time() << " Fixed_configs " 
-      		    << static_cast<RealType>(nAllRejected)/static_cast<RealType>(step*W.getActiveWalkers()) << endl;
-
       nAccept = 0; nReject = 0;
       ++block;
 
       //record the current configuration
-      recordWalkerConfigurations(block);
+      recordBlock(block);
 
     } while(block<nBlocks);
 
-    LogOut->getStream() 
-      << "Ratio = " 
+    //Need MPI-IO
+    app_log() << "Ratio = " 
       << static_cast<RealType>(nAcceptTot)/static_cast<RealType>(nAcceptTot+nRejectTot)
       << endl;
     
@@ -213,7 +207,6 @@ namespace qmcplusplus {
       // 	      (*it)->R =W.R;
       //	    } 
       else {
-        //WARNMSG("All the particle moves are rejected.")
         ++nAllRejected;
       }
       ++it;

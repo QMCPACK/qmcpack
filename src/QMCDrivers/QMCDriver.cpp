@@ -35,11 +35,10 @@ namespace qmcplusplus {
 		       QMCHamiltonian& h):
     AppendRun(false),Period4CheckPoint(1), Period4WalkerDump(0),
     CurrentStep(0), nBlocks(100), nSteps(1000), 
-    nAccept(0), nReject(0), nTargetWalkers(0), AcceptIndex(-1),
+    nAccept(0), nReject(0), nTargetWalkers(0),
     Tau(0.001), qmcNode(NULL),
     QMCType("invalid"), h5FileRoot("invalid"),
-    W(w), Psi(psi), H(h), Estimators(0),
-    LogOut(0)
+    W(w), Psi(psi), H(h), Estimators(0)
   { 
     m_param.add(nSteps,"steps","int");
     m_param.add(nBlocks,"blocks","int");
@@ -58,8 +57,6 @@ namespace qmcplusplus {
       if(Estimators->size()) W.setLocalEnergy(Estimators->average(0));
       delete Estimators;
     }
-    
-    if(LogOut) delete LogOut;
   }
 
   void QMCDriver::add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi) {
@@ -97,10 +94,11 @@ namespace qmcplusplus {
       branchEngine = new BranchEngineType(Tau,W.getActiveWalkers());
     }
 
-    branchEngine->put(qmcNode,LogOut);
+    branchEngine->put(qmcNode);
+    //branchEngine->put(qmcNode,LogOut);
 
     if(firstTime && h5FileRoot.size() && h5FileRoot != "invalid") {
-      LOGMSG("Initializing BranchEngine with " << h5FileRoot)
+      app_log() << "  Initializing BranchEngine with " << h5FileRoot << endl;
       HDFWalkerInput wReader(h5FileRoot,0,1);
       wReader.read(*branchEngine);
     }
@@ -116,33 +114,33 @@ namespace qmcplusplus {
     W.resetWalkerProperty(numCopies);
 
     Estimators->put(qmcNode);
-    //set the stride for the scalar estimators 
-    Estimators->setStride(nSteps);
 
     //set the collection mode
+    Estimators->setPeriod(nSteps);
     Estimators->setCollectionMode(branchEngine->SwapMode);
     Estimators->resetReportSettings(RootName, AppendRun);
-    AcceptIndex=Estimators->addColumn("AcceptRatio");
 
     //initialize the walkers before moving: can be moved to run
     initialize();
+
+    //flush the ostreams
+    OhmmsInfo::flush();
 
     Counter++; 
   }
 
   void QMCDriver::setStatus(const string& aname, const string& h5name, bool append) {
-
     RootName = aname;
-    char logfile[128];
-    sprintf(logfile,"%s.%s",RootName.c_str(),QMCType.c_str());
-    
-    if(LogOut) delete LogOut;
-    LogOut = new OhmmsInform(" ",logfile);
-    
-    LogOut->getStream() << "#Starting a " << QMCType << " run " << endl;
+    app_log() << "\n=========================================================" 
+              << "\n  Start " << QMCType 
+              << "\n  File Root " << RootName;
+    if(append) 
+      app_log() << " append = yes ";
+    else 
+      app_log() << " append = no ";
+    app_log() << "\n=========================================================" << endl;
 
     if(h5name.size()) h5FileRoot = h5name;
-
     AppendRun = append;
   }
 
@@ -219,7 +217,8 @@ namespace qmcplusplus {
         updateWalkers(); // simply re-evaluate the values 
       }
     } else { // using walker-by-walker moves
-      LOGMSG("Evaluate all the walkers before starting for walker-by-walker update")
+
+      app_log() << "  Evaluate all the walkers before starting for walker-by-walker update" << endl;
 
       MCWalkerConfiguration::iterator it(W.begin()),it_end(W.end());
       while(it != it_end) {
@@ -264,7 +263,10 @@ namespace qmcplusplus {
     }
   }
 
-  void QMCDriver::recordWalkerConfigurations(int block) {
+  void QMCDriver::recordBlock(int block) {
+
+    //estimator writes
+    Estimators->report(CurrentStep);
 
     //if Period4WalkerDump>0, record works as the checkpoint
     if(Period4WalkerDump>0) {
@@ -274,13 +276,18 @@ namespace qmcplusplus {
         //HDFWalkerOutput WO(RootName,appendWalker, block-1);
         HDFWalkerOutput WO(RootName,appendWalker, now);
         WO.get(W);
+        WO.write(*branchEngine);
       }
     } else {
       if(block%Period4CheckPoint == 0) {
         HDFWalkerOutput WO(RootName,false,0);
         WO.get(W);
+        WO.write(*branchEngine);
       }
     }
+
+    //flush the ostream
+    OhmmsInfo::flush();
   }
 
   bool QMCDriver::finalize(int block) {
@@ -292,6 +299,9 @@ namespace qmcplusplus {
     WOextra.write(*branchEngine);
 
     Estimators->finalize();
+
+    //flush the ostream
+    OhmmsInfo::flush();
 
     return true;
   }
@@ -321,10 +331,9 @@ namespace qmcplusplus {
       //add nwalkers walkers to the end of the ensemble
       int nold = W.getActiveWalkers();
 
-      LOGMSG("Adding " << nwalkers << " walkers to " << nold << " existing sets")
+      app_log() << "  Adding " << nwalkers << " walkers to " << nold << " existing sets" << endl;
 
       W.createWalkers(nwalkers);
-      LogOut->getStream() <<"Added " << nwalkers << " walkers" << endl;
       
       ParticleSet::ParticlePos_t rv(W.getTotalNum());
       MCWalkerConfiguration::iterator it(W.begin()), it_end(W.end());
@@ -333,7 +342,7 @@ namespace qmcplusplus {
 	++it;
       }
     } else {
-      LOGMSG("Using the existing " << W.getActiveWalkers() << " walkers")
+      app_log() << "  Using the existing " << W.getActiveWalkers() << " walkers" << endl;
     }
 
   }
@@ -393,12 +402,13 @@ namespace qmcplusplus {
     //reset CurrentStep to zero if qmc/@continue='no'
     if(!AppendRun) CurrentStep=0;
 
-    LogOut->getStream() << "#timestep = " << Tau << endl;
-    LogOut->getStream() << "#blocks = " << nBlocks << endl;
-    LogOut->getStream() << "#steps = " << nSteps << endl;
-    LogOut->getStream() << "#walkers = " << W.getActiveWalkers() << endl;
-    LogOut->getStream() << "#current = " << CurrentStep << endl;
-    m_param.get(cout);
+    app_log() << "  timestep = " << Tau << endl;
+    app_log() << "  blocks = " << nBlocks << endl;
+    app_log() << "  steps = " << nSteps << endl;
+    app_log() << "  current = " << CurrentStep << endl;
+
+    //Need MPI-IO
+    app_log() << "  walkers = " << W.getActiveWalkers() << endl;
 
     /*check to see if the target population is different 
       from the current population.*/ 

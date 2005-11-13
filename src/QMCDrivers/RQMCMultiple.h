@@ -93,6 +93,9 @@ namespace qmcplusplus {
     
     void resizeArrays(int n);
 
+    ///overwrite recordBlock
+    void recordBlock(int block);
+
   private:
 
     /// Copy Constructor (disabled)

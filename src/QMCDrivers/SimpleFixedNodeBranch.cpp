@@ -36,7 +36,8 @@ void SimpleFixedNodeBranch::reset() {
   Nmin=WalkerController->Nmin;
   Feed = 1.0/(static_cast<RealType>(NumGeneration)*Tau);
   logN = Feed*log(static_cast<RealType>(Nideal));
-  LOGMSG("Current Counter = " << Counter << " Trial Energy = " << E_T)
+  
+  app_log() << "  Current Counter = " << Counter << "\n  Trial Energy = " << E_T << endl;
 }
 
 /**  Parse the xml file for parameters
@@ -50,7 +51,7 @@ void SimpleFixedNodeBranch::reset() {
  * \f$ feed = \frac{1}{N_G \tau} \f$ 
  * </ul>
  */
-bool SimpleFixedNodeBranch::put(xmlNodePtr cur, OhmmsInform *LogOut){
+bool SimpleFixedNodeBranch::put(xmlNodePtr cur){
   string toswap("no");
   ParameterSet m_param;
   m_param.add(E_T,"ref_energy","AU"); m_param.add(E_T,"en_ref","AU");
@@ -77,34 +78,41 @@ bool SimpleFixedNodeBranch::put(xmlNodePtr cur, OhmmsInform *LogOut){
   SwapMode = (SwapMode && (OHMMS::Controller->ncontexts()>1));
 
   if(SwapMode) {
-    LOGMSG("Collective handling of Average/walkers")
+    app_log() << "  Collective handling of Average/walkers" << endl;
   } else {
-    LOGMSG("Node-parallel handling of Average/walkers")
+    app_log() << "  Node-parallel handling of Average/walkers" << endl;
   }
 
   reset();
-  LogOut->getStream() << "#target_walkers = " << Nideal << endl;
-  LogOut->getStream() << "#Max and mimum walkers per node= " << Nmax << " " << Nmin << endl;
-  LogOut->getStream() << "#reference energy = " << E_T << endl;
-  LogOut->getStream() << "#number of generations (feedbac) = " << NumGeneration 
-    << " ("<< Feed << ")"<< endl;
+
+  app_log() << "  target_walkers = " << Nideal << endl;
+  app_log() << "  Max and mimum walkers per node= " << Nmax << " " << Nmin << endl;
+  app_log() << "  reference energy = " << E_T << endl;
+  app_log() << "  number of generations (feedbac) = " << NumGeneration << " ("<< Feed << ")"<< endl;
   return true;
 }
 
 
-void SimpleFixedNodeBranch::write(hid_t grp) {
+void SimpleFixedNodeBranch::write(hid_t grp, bool append) {
   hsize_t dim=3;
   vector<RealType> esave(3);
   /** stupid gnu compiler bug */
   esave[0] = (fabs(E_T) < numeric_limits<RealType>::epsilon())? EavgSum/WgtSum:E_T;
   esave[1]=EavgSum; esave[2]=WgtSum;
-  hid_t dataspace  = H5Screate_simple(1, &dim, NULL);
-  hid_t dataset =  
-    H5Dcreate(grp, "Summary", H5T_NATIVE_DOUBLE, dataspace, H5P_DEFAULT);
-  hid_t ret = 
-    H5Dwrite(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT,&esave[0]);
-  H5Dclose(dataset);
-  H5Sclose(dataspace);
+  
+  if(append) {
+    hid_t dataset = H5Dopen(grp,"Summary");
+    hid_t ret = 
+      H5Dwrite(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT,&esave[0]);
+    H5Dclose(dataset);
+  } else {
+    hid_t dataspace  = H5Screate_simple(1, &dim, NULL);
+    hid_t dataset =  H5Dcreate(grp, "Summary", H5T_NATIVE_DOUBLE, dataspace, H5P_DEFAULT);
+    hid_t ret = 
+      H5Dwrite(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT,&esave[0]);
+    H5Dclose(dataset);
+    H5Sclose(dataspace);
+  }
 }
 
 void SimpleFixedNodeBranch::read(hid_t grp) {
@@ -116,9 +124,11 @@ void SimpleFixedNodeBranch::read(hid_t grp) {
     hsize_t ret = H5Dread(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, &esave[0]);
     H5Dclose(dataset);
     E_T=esave[0]; EavgSum=esave[1]; WgtSum=esave[2];
-    LOGMSG("Summary is found \n BranchEngine is initialized  E_T=" << E_T << " EavgSum="<<EavgSum << " WgtSum=" << WgtSum)
+    app_log() 
+      << "Summary is found. BranchEngine is initialized \n    E_T=" << E_T 
+      << "    EavgSum="<<EavgSum << "\n    WgtSum=" << WgtSum << endl;
   } else {
-    LOGMSG("Summary is not found. Starting from scratch")
+    app_log() << "Summary is not found. Starting from scratch" << endl;
   }
 }
 
