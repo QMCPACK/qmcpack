@@ -99,11 +99,9 @@ namespace qmcplusplus {
             if(ion) {
               if(ion->getTotalNum()>1) 
 		if(ion->Lattice.BoxBConds[0]){
-	          LOGMSG("Adding Periodic Coulomb potential " << ion->getName() << "-" << ion->getName());
 		  curH->add(new CoulombPBCAA(*ion),"IonIon");
 		}
 		else {
-	          LOGMSG("Adding Coulomb potential " << ion->getName() << "-" << ion->getName());
 		  curH->add(new IonIonPotential(*ion),"IonIon");
 		}
              }
@@ -123,20 +121,16 @@ namespace qmcplusplus {
       }
 
       if(qp->Lattice.BoxBConds[0]){
-	LOGMSG("Adding Periodic Coulomb potential e-e");
 	curH->add(new CoulombPBCAA(*qp),"ElecElec");
       }
       else{
-	LOGMSG("Adding Coulomb potential e-e");
 	curH->add(new CoulombPotentialAA(*qp),"ElecElec");
       }
 
       if(htype == "molecule" || htype=="coulomb"){
 	if(qp->Lattice.BoxBConds[0]){
-	  LOGMSG("Adding Periodic Coulomb potential e-i");
 	  curH->add(new CoulombPBCAB(*ion,*qp),"Coulomb");
 	} else {
-	  LOGMSG("Adding Coulomb potential e-i");
 	  curH->add(new CoulombPotentialAB(*ion,*qp),"Coulomb");
 	}
       } else if(htype == "siesta" || htype=="pseudo") {
@@ -154,11 +148,9 @@ namespace qmcplusplus {
 
       if(ion->getTotalNum()>1) 
 	if(ion->Lattice.BoxBConds[0]){
-	  LOGMSG("Adding Periodic Coulomb potential " << ion->getName() << "-" << ion->getName());
           curH->add(new CoulombPBCAA(*ion),"IonIon");
 	}
 	else{
-	  LOGMSG("Adding Coulomb potential " << ion->getName() << "-" << ion->getName());
           curH->add(new IonIonPotential(*ion),"IonIon");
 	}
     }
@@ -186,21 +178,17 @@ namespace qmcplusplus {
       //CHECK PBC and create CoulombPBC for el-el
       if(source->getTotalNum()>1)  {
 	  if(target->Lattice.BoxBConds[0]) {
-	    LOGMSG("Adding Periodic Coulomb potential " << target->getName())
 	    curH->add(new CoulombPBCAA(*target),title);
 	  }
 	  else {
-	    LOGMSG("Adding Coulomb potential " << target->getName())
 	    curH->add(new CoulombPotentialAA(*target),title);
 	  }
       }
     } else {
       if(target->Lattice.BoxBConds[0]) {
-	LOGMSG("Adding Periodic Coulomb potential " << source->getName() << "-" << target->getName());
 	curH->add(new CoulombPBCAB(*source,*target),title);
 
       } else {
-	LOGMSG("Adding Coulomb potential " << source->getName() << "-" << target->getName());
 	curH->add(new CoulombPotentialAB(*source,*target),title);
       }
     }
@@ -230,7 +218,6 @@ namespace qmcplusplus {
 
     if(psi == 0) return;
 
-    LOGMSG("Creating non-local pseudopotential nuclei = " << src)
     curH->add(new NonLocalPPotential(*ion,*target,*psi), title);
   }
 
@@ -247,7 +234,6 @@ namespace qmcplusplus {
     ParticleSet* ion=ptclPool->getParticleSet(src);
     if(ion == 0) return;
 
-    LOGMSG("Creating Core-Polarization potential = " << src)
     QMCHamiltonianBase* cpp=(new LocalCorePolPotential(*ion,*target));
     cpp->put(cur); 
     curH->add(cpp, title);
@@ -258,6 +244,13 @@ namespace qmcplusplus {
   }
 
   bool HamiltonianPool::get(std::ostream& os) const {
+
+    PoolType::const_iterator it(myPool.begin()), it_end(myPool.end());
+    while(it != it_end) {
+      os << "\n  Hamiltonian " << (*it).first << endl;;
+      (*it).second->get(os);
+      ++it;
+    }
     return true;
   }
 

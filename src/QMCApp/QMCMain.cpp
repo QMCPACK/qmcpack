@@ -13,8 +13,6 @@
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
-//   Department of Physics, Ohio State University
-//   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 /**@file QMCMain.cpp
@@ -50,6 +48,8 @@ namespace qmcplusplus {
 
   QMCMain::QMCMain(int argc, char** argv): QMCAppBase(argc,argv), FirstQMC(true),
                                            qmcDriver(0),qmcSystem(0){ 
+
+
     //create ParticleSetPool
     ptclPool = new ParticleSetPool;
 
@@ -61,6 +61,11 @@ namespace qmcplusplus {
     hamPool = new HamiltonianPool;
     hamPool->setParticleSetPool(ptclPool);
     hamPool->setWaveFunctionPool(psiPool);
+
+    app_log() << "=========================================================\n";
+    app_log() << "                   qmcplusplus 0.2                       \n";
+    app_log() << "\n  (c) Copyright 2003-  qmcplusplus developers          \n";
+    app_log() << "=========================================================\n";
   }
 
   ///destructor
@@ -69,12 +74,15 @@ namespace qmcplusplus {
     delete hamPool;
     delete psiPool;
     delete ptclPool;
-    //Not a good thing.
-    //xmlFreeDoc(m_doc);
   }
 
 
   bool QMCMain::execute() {
+
+    if(XmlDocStack.empty()) {
+      ERRORMSG("No valid input file exists! Aborting QMCMain::execute")
+      return false;
+    }
 
     //validate the input file
     bool success = validateXML();
@@ -87,10 +95,18 @@ namespace qmcplusplus {
     //initialize all the instances of distance tables and evaluate them 
     ptclPool->reset();
 
+    //write stuff
+    app_log() << "=========================================================\n";
+    app_log() << " Summary of QMC systems \n";
+    app_log() << "=========================================================\n";
+    ptclPool->get(app_log());
+    hamPool->get(app_log());
+
     curMethod = string("invalid");
     vector<xmlNodePtr> q;
 
-    xmlNodePtr cur=m_root->children;
+    //xmlNodePtr cur=m_root->children;
+    xmlNodePtr cur=XmlDocStack.top()->getRoot()->children;
     while(cur != NULL) {
       string cname((const char*)cur->name);
       if(cname == "qmc") {
@@ -117,8 +133,7 @@ namespace qmcplusplus {
         xmlUnlinkNode(q[i]);
         xmlFreeNode(q[i]);
       }
-
-      xmlAddChild(m_root,newqmc_ptr);
+      XmlDocStack.top()->addChild(newqmc_ptr);
     }
 
     if(OHMMS::Controller->master()) {
@@ -148,7 +163,7 @@ namespace qmcplusplus {
     return true;
   }
 
-  /** validate m_doc
+  /** validate the main document
    * @return false, if any of the basic objects is not properly created.
    *
    * Current xml schema is changing. Instead validating the input file,
@@ -163,23 +178,26 @@ namespace qmcplusplus {
    */
   bool QMCMain::validateXML() {
 
-    xmlXPathContextPtr m_context = xmlXPathNewContext(m_doc);
+    xmlXPathContextPtr m_context = XmlDocStack.top()->getXPathContext();
 
-    xmlXPathObjectPtr result
-      = xmlXPathEvalExpression((const xmlChar*)"//project",m_context);
-    if(xmlXPathNodeSetIsEmpty(result->nodesetval)) {
-      WARNMSG("Project is not defined")
+    OhmmsXPathObject result("//project",m_context);
+
+    if(result.empty()) {
+      app_warning() << "Project is not defined" << endl;
       myProject.reset();
     } else {
-      myProject.put(result->nodesetval->nodeTab[0]);
+      myProject.put(result[0]);
     }
-    xmlXPathFreeObject(result);
+
+    app_log() << endl;
+    myProject.get(app_log());
+    app_log() << endl;
 
     //initialize the random number generator
     xmlNodePtr rptr = myRandomControl.initialize(m_context);
 
     //preserve the input order
-    xmlNodePtr cur=m_root->children;
+    xmlNodePtr cur=XmlDocStack.top()->getRoot()->children;
     while(cur != NULL) {
       string cname((const char*)cur->name);
       if(cname == "particleset") {
@@ -191,19 +209,9 @@ namespace qmcplusplus {
       } else if(cname == "include") {//file is provided
         const xmlChar* a=xmlGetProp(cur,(const xmlChar*)"href");
         if(a) {
-          //root and document are saved
-          xmlNodePtr root_save=m_root;
-          xmlDocPtr doc_save=m_doc;
-
-          //parse a new file
-          m_doc=NULL;
-          parse((const char*)a);
-          processPWH(xmlDocGetRootElement(m_doc));
-          xmlFreeDoc(m_doc);
-
-          //copy the original root and document
-          m_root = root_save;
-          m_doc = doc_save;
+          pushDocument((const char*)a);
+          processPWH(XmlDocStack.top()->getRoot());
+          popDocument();
         }
       } else if(cname == "qmcsystem") {
         processPWH(cur);
@@ -230,7 +238,7 @@ namespace qmcplusplus {
     }
 
     setMCWalkers(m_context);
-    xmlXPathFreeContext(m_context);
+
     return true;
   }   
 
@@ -276,9 +284,7 @@ namespace qmcplusplus {
     bool append_run = (append_tag == "yes");
 
     if(qmcDriver) {
-      if(what == curMethod) {
-        LOGMSG("Reuse " << what << " driver")
-      } else {
+      if(what != curMethod) {
         delete qmcDriver;
         qmcDriver = 0;
         //if the current qmc method is different from the previous one, append_run is set to false
@@ -383,11 +389,6 @@ namespace qmcplusplus {
       //if it is NOT the first qmc node and qmc/@append!='yes'
       if(!FirstQMC && !append_run) myProject.advance();
 
-      if(append_run) {
-        LOGMSG("Continue a QMC simulation " << what << " File Root = " << myProject.CurrentRoot())
-      } else {
-        LOGMSG("Starting a QMC simulation " << what << " File Root = " << myProject.CurrentRoot())
-      }
       qmcDriver->setStatus(myProject.CurrentRoot(),PrevConfigFile, append_run);
       qmcDriver->putWalkers(m_walkerset_in);
       qmcDriver->process(cur);
@@ -411,29 +412,25 @@ namespace qmcplusplus {
 
   bool QMCMain::setMCWalkers(xmlXPathContextPtr context_) {
 
-    xmlXPathObjectPtr result
-      = xmlXPathEvalExpression((const xmlChar*)"/simulation/mcwalkerset",context_);
-
-    if(xmlXPathNodeSetIsEmpty(result->nodesetval)) {
+    OhmmsXPathObject result("/simulation/mcwalkerset",context_);
+    if(result.empty()) {
       if(m_walkerset.empty()) {
-        xmlXPathObjectPtr q = xmlXPathEvalExpression((const xmlChar*)"//qmc",context_);
-	xmlNodePtr newnode_ptr = xmlNewNode(NULL,(const xmlChar*)"mcwalkerset");
-        if(xmlXPathNodeSetIsEmpty(q->nodesetval)) {
-	  xmlAddChild(m_root,newnode_ptr);
+        result.put("//qmc",context_);
+        xmlNodePtr newnode_ptr = xmlNewNode(NULL,(const xmlChar*)"mcwalkerset");
+        if(result.empty()){
+          xmlAddChild(XmlDocStack.top()->getRoot(),newnode_ptr);
         } else {
-	  xmlAddPrevSibling(q->nodesetval->nodeTab[0],newnode_ptr);
+          xmlAddPrevSibling(result[0],newnode_ptr);
         }
-	m_walkerset.push_back(newnode_ptr);
-        xmlXPathFreeObject(q);
+        m_walkerset.push_back(newnode_ptr);
       }
     } else {
-      for(int iconf=0; iconf<result->nodesetval->nodeNr; iconf++) {
-	xmlNodePtr mc_ptr = result->nodesetval->nodeTab[iconf];
+      for(int iconf=0; iconf<result.size(); iconf++) {
+        xmlNodePtr mc_ptr = result[iconf];
         m_walkerset.push_back(mc_ptr);
         m_walkerset_in.push_back(mc_ptr);
       }
     }
-    xmlXPathFreeObject(result);
     return true;
   }
 }

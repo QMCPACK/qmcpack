@@ -13,13 +13,13 @@
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
-//   Department of Physics, Ohio State University
-//   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
+#include "Configuration.h"
 #include "Message/Communicate.h"
 #include "Utilities/OhmmsInfo.h"
 #include "QMCApp/QMCMain.h"
+
 
 /** @file qmcapp.cpp
  *@brief a main function for QMC simulation. 
@@ -27,16 +27,17 @@
  * @ingroup qmcapp
  * @brief main function for qmcapp executable.
  *
- *Actual works are done by QMCApps and its derived classe.
+ *Actual works are done by QMCAppBase and its derived classe.
  *For other simulations, one can derive a class from QMCApps, similarly to MolecuApps.
  */
 int main(int argc, char **argv) {
 
   OHMMS::Controller->initialize(argc,argv);
 
-  OhmmsInfo welcome(argc,argv,OHMMS::Controller->mycontext());
+  OhmmsInfo Welcome(argc,argv,OHMMS::Controller->mycontext());
 
   qmcplusplus::QMCMain qmc(argc,argv);
+
 
 #if defined(HAVE_MPI)
   char fname[128];

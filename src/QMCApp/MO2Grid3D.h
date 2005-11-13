@@ -67,6 +67,7 @@ namespace qmcplusplus {
 
   private:
 
+    string InFileRoot;
     ParticleSetPool* ptclPool;
     MCWalkerConfiguration* Electrons;
     ParticleSet* Ions;

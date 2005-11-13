@@ -48,10 +48,15 @@ namespace qmcplusplus {
   }
 
   bool MO2Grid3D::validateXML() {
-     return true;
+    return true;
   }   
 
   bool MO2Grid3D::execute() {
+
+    xmlNodePtr m_root = XmlDocStack.top()->getRoot();
+
+    InFileRoot="generic";
+
     OhmmsAttributeSet pAttrib;
     pAttrib.add(InFileRoot,"id");
     pAttrib.add(InFileRoot,"name");
@@ -109,7 +114,7 @@ namespace qmcplusplus {
 
       string newfile=InFileRoot+".spline.xml";
       LOGMSG("New xml file " << newfile)
-      xmlSaveFormatFile(newfile.c_str(),m_doc,1);
+      XmlDocStack.top()->dump(newfile);
     } else {
       ERRORMSG("The input file does not contain wavefunction. Nothing to do.")
     }

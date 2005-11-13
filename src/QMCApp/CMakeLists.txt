@@ -115,10 +115,10 @@ ENDIF(INTEL_MKL)
 ####################################
 # build mo2grid3d executable
 ####################################
-IF(NOT HAVE_MPI)
-ADD_EXECUTABLE(mo2grid3d ${MOSRCS})
-TARGET_LINK_LIBRARIES(mo2grid3d qmc qmcbase)
-ENDIF(NOT HAVE_MPI)
+#IF(NOT HAVE_MPI)
+#ADD_EXECUTABLE(mo2grid3d ${MOSRCS})
+#TARGET_LINK_LIBRARIES(mo2grid3d qmc qmcbase)
+#ENDIF(NOT HAVE_MPI)
 
 ####################################
 #general qmcapp for multiple configurations, hamiltonians and wavefunctions.

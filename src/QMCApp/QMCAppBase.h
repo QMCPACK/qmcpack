@@ -21,22 +21,20 @@
 #define QMCPLUSPLUS_QMCAPPLICATIONBASE_H
 
 #include "OhmmsData/OhmmsElementBase.h"
+#include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsApp/ProjectData.h"
 #include "OhmmsApp/RandomNumberControl.h"
+#include <stack>
 /**@defgroup qmcapp QMC Application Group
  * @brief Application-level classes to manage QMC simulations.
  *
  * The classes in this group are responsble for handling of major xml elements
  * under \<simulation\>.
  */
-
 namespace qmcplusplus {
 
   /** @ingroup qmcapp
    * @brief Base class for QMC applications and utilities
-   *
-   * Provide common functions to parse xml documents and write back
-   * a xml document for restarts.
    */
   class QMCAppBase {
 
@@ -67,15 +65,19 @@ namespace qmcplusplus {
 
   protected:
 
-    string InFileRoot;
-    xmlDocPtr m_doc;
-    xmlNodePtr m_root;
+    ///stack of xml document
+    std::stack<Libxml2Document*> XmlDocStack;
 
     ///project description
     OHMMS::ProjectData myProject;
 
     ///random number controller
     OHMMS::RandomNumberControl myRandomControl;
+
+    ///open a new document
+    bool pushDocument(const string& infile);
+    ///close the current document
+    void popDocument();
   };
 }
 #endif

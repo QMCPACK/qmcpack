@@ -17,21 +17,38 @@
 //   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
+#include "Configuration.h"
 #include "QMCApp/QMCAppBase.h"
-#include "Utilities/OhmmsInfo.h"
-
 namespace qmcplusplus {
 
-  QMCAppBase::QMCAppBase(int argc, char** argv): 
-    m_doc(NULL),m_root(NULL)
+  QMCAppBase::QMCAppBase(int argc, char** argv)
   {
   }
 
   QMCAppBase::~QMCAppBase() {
-    if(m_doc != NULL) {
-      xmlFreeDoc(m_doc);
-    }
+    while(!XmlDocStack.empty()) { popDocument(); }
     DEBUGMSG("QMCAppBase::~QMCAppBase")
+  }
+
+  bool QMCAppBase::pushDocument(const string& infile) {
+    Libxml2Document* adoc= new Libxml2Document();
+    bool success = adoc->parse(infile);
+
+    if(success) {
+      XmlDocStack.push(adoc);
+    }  else {
+      app_error() << "File " << infile << " is invalid" << endl;
+      delete adoc;
+    }
+    return success;
+  }
+
+  void QMCAppBase::popDocument() {
+    if(!XmlDocStack.empty()) { //Check if the stack is empty
+      Libxml2Document* adoc=XmlDocStack.top();
+      delete adoc;
+      XmlDocStack.pop();
+    }
   }
 
   /** parse an input file
@@ -43,37 +60,19 @@ namespace qmcplusplus {
    */
   bool QMCAppBase::parse(const string& infile) {
 
-    //clear the context and document
-    if(m_doc != NULL) xmlFreeDoc(m_doc);
-
-    // build an XML tree from a the file;
-    m_doc = xmlParseFile(infile.c_str());
-    if (m_doc == NULL) {
-      ERRORMSG("File " << infile << " is invalid")
-      return false;
-    }
-
-    // Check the document is of the right kind
-    xmlNodePtr cur = xmlDocGetRootElement(m_doc);
-    if (cur == NULL) {
-      ERRORMSG("Empty document");
-      return false;
-    }
-
-    InFileRoot = string(infile,0,infile.size()-4);
-
-    //set the root and create the context map
-    m_root = cur;
-    return true;
+    return pushDocument(infile);
   }
 
   void QMCAppBase::saveXml() {
-    string newxml(myProject.CurrentRoot());
-    //myProject.PreviousRoot(newxml);
-    //myProject.rewind();
-    newxml.append(".cont.xml");
-    LOGMSG("A new xml input file : " << newxml)
-    xmlSaveFormatFile(newxml.c_str(),m_doc,1);
+
+    if(!XmlDocStack.empty()) {
+      string newxml(myProject.CurrentRoot());
+      //myProject.PreviousRoot(newxml);
+      //myProject.rewind();
+      newxml.append(".cont.xml");
+      app_log() << "A new xml input file : " << newxml << endl;
+      XmlDocStack.top()->dump(newxml);
+    }
   }
 }
 /***************************************************************************

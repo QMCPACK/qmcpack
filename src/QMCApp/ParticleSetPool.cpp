@@ -53,14 +53,14 @@ namespace qmcplusplus {
 
     ParticleSet* pTemp = getParticleSet(id);
     if(pTemp == 0) {
-      LOGMSG("Creating " << id << " particleset")
+      app_log() << "  Creating " << id << " particleset" << endl;
       pTemp = new MCWalkerConfiguration;
       //if(role == "MC") 
       //  pTemp = new MCWalkerConfiguration;
       //else 
       //  pTemp = new ParticleSet;
       if(sc) {
-        LOGMSG("Initializing the lattice of " << id << " by the global supercell")
+        app_log() << "  Initializing the lattice of " << id << " by the global supercell" << endl;
         pTemp->Lattice.copy(*sc);
       }
       myPool[id] = pTemp;
@@ -69,7 +69,7 @@ namespace qmcplusplus {
       pTemp->setName(id);
       return success;
     } else {
-      WARNMSG("particleset " << id << " is already created. Ignore this")
+      app_warning() << "particleset " << id << " is already created. Ignore this" << endl;
     }
 
     return true;
@@ -80,6 +80,12 @@ namespace qmcplusplus {
   }
 
   bool ParticleSetPool::get(std::ostream& os) const {
+    PoolType::const_iterator it(myPool.begin()), it_end(myPool.end());
+    while(it != it_end) {
+      os << endl;
+      (*it).second->get(os);
+      ++it;
+    }
     return true;
   }
 
