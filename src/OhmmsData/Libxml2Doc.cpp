@@ -20,12 +20,11 @@
 #include "Utilities/Timer.h"
 #include <fstream>
 
-OhmmsXPathObject::OhmmsXPathObject(): 
-  NumObjects(0), result(NULL) {
+OhmmsXPathObject::OhmmsXPathObject(): NumObjects(0), result(NULL) {
 }
 
 OhmmsXPathObject::OhmmsXPathObject(const char* expression, 
-    xmlXPathContextPtr context) {
+    xmlXPathContextPtr context) : NumObjects(0), result(NULL) {
   put(expression, context);
 }
 
@@ -33,8 +32,7 @@ OhmmsXPathObject::~OhmmsXPathObject() {
   if(result != NULL){ xmlXPathFreeObject(result); }
 }
 
-void OhmmsXPathObject::put(const char* expression, 
-    xmlXPathContextPtr context) {
+void OhmmsXPathObject::put(const char* expression, xmlXPathContextPtr context) {
 
   //free the object if it has been used before
   if(result != NULL) xmlXPathFreeObject(result);
