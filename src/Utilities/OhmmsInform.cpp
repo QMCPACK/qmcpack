@@ -25,24 +25,26 @@
 using namespace std;
 
 OhmmsInform::OhmmsInform(bool allcanwrite, bool writenode) 
-:thisStream(NULL), OwnStream(false) 
+:thisStream(0), OwnStream(false) 
 { 
   thisPrompt = string("ohmms>");
   if(allcanwrite || writenode) { 
     thisStream = &cout;
     CanWrite = true;
   } else {
+    thisStream = new ostringstream();
     CanWrite = false;
   }
 }
 
 OhmmsInform::OhmmsInform(const char* prompt, bool allcanwrite, bool writenode)
-:thisStream(NULL), thisPrompt(prompt), OwnStream(false)
+:thisStream(0), thisPrompt(prompt), OwnStream(false)
 { 
   if(allcanwrite || writenode) { 
     thisStream = &cout;
     CanWrite = true;
   } else {
+    thisStream = new ostringstream();
     CanWrite = false;
   }
 }

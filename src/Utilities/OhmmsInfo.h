@@ -32,12 +32,14 @@ class OhmmsInfo {
 
 public:
 
+  static bool Writeable;
   static OhmmsInform *Debug;
   static OhmmsInform *Warn;
   static OhmmsInform *Error;
   static OhmmsInform *Log;
   static void initialize(const char* froot, int master);
   static void die(const char*);
+  static void flush();
   
   OhmmsInfo(int argc, char** argv, int master=-1); 
   ~OhmmsInfo(); 
@@ -45,13 +47,10 @@ public:
 
 };
 
-/**references to run-time streams
- *@warning NOT utilized in real applications
- */
-extern std::ostream& log();
-extern std::ostream& error();
-extern std::ostream& warning();
-extern std::ostream& debug();
+//extern std::ostream& app_log();
+//extern std::ostream& app_debug();
+//extern std::ostream& app_warn();
+//extern std::ostream& app_error();
 
 /**run-time messages
  * - LOGMGS log message
@@ -67,17 +66,17 @@ extern std::ostream& debug();
 #define XMLReport(msg)
 #else
 #define LOGMSG(msg) \
-  { if(OhmmsInfo::Log->open()) OhmmsInfo::Log->getStream() << msg << std::endl;}
+ { OhmmsInfo::Log->getStream() << msg << std::endl;}
 #define ERRORMSG(msg) \
-  { if(OhmmsInfo::Error->open()) OhmmsInfo::Error->getStream() << msg << std::endl;}
+ { OhmmsInfo::Error->getStream() << "ERROR " << msg << std::endl;}
 #define WARNMSG(msg) \
- { if(OhmmsInfo::Warn->open()) OhmmsInfo::Warn->getStream() << msg << std::endl;}
+ { OhmmsInfo::Warn->getStream() << "WARN " << msg << std::endl;}
 #define XMLReport(msg)
 //#define XMLReport(msg) \
 //{std::cout<< "XML " << msg << std::endl;}
 
 #ifdef PRINT_DEBUG
-#define DEBUGMSG(msg) { OhmmsInfo::Debug->getStream() << msg << std::endl;}
+#define DEBUGMSG(msg) { OhmmsInfo::Debug->getStream() << "DEBUG " << msg << std::endl;}
 #else
 #define DEBUGMSG(msg)
 #endif

@@ -19,13 +19,13 @@
 /** @file OhmmsInfo.cpp
  * @brief Definition of OhmmsInfo class.
  */
-#include <stdio.h>
 #include "Utilities/OhmmsInfo.h"
 
-OhmmsInform* OhmmsInfo::Debug = NULL;
-OhmmsInform* OhmmsInfo::Warn = NULL;
-OhmmsInform* OhmmsInfo::Error = NULL;
-OhmmsInform* OhmmsInfo::Log = NULL;
+bool OhmmsInfo::Writeable = false;
+OhmmsInform* OhmmsInfo::Debug = 0;
+OhmmsInform* OhmmsInfo::Warn = 0;
+OhmmsInform* OhmmsInfo::Error = 0;
+OhmmsInform* OhmmsInfo::Log = 0;
 
 OhmmsInfo::OhmmsInfo(int argc, char** argv, int master)
 {
@@ -36,22 +36,27 @@ OhmmsInfo::OhmmsInfo(int argc, char** argv, int master)
   }
 }
 
-OhmmsInfo::~OhmmsInfo()
-{
+OhmmsInfo::~OhmmsInfo() {
 
 }
 
 void OhmmsInfo::initialize(const char* froot, int master){
 
-  bool writeable = true;
-  if(master > 0) writeable = false;
+  if(master > 0) 
+    Writeable = false;
+  else 
+    Writeable = true;
 
-  Warn = new OhmmsInform("WARNING",false,writeable);
-  Error = new OhmmsInform("ERROR",false,writeable);
-  Log = new OhmmsInform("QMC",false,writeable);
+  // initialize the estimator to record data
+  Warn = new OhmmsInform("WARNING",false,Writeable);
+  Error = new OhmmsInform("ERROR",false,Writeable);
+  Log = new OhmmsInform("QMC",false,Writeable);
 #ifdef PRINT_DEBUG
-  Debug = new OhmmsInform("DEBUG",false,writeable);
+  Debug = new OhmmsInform("DEBUG",false,Writeable);
 #endif
+
+  Log->getStream().setf(std::ios::scientific, std::ios::floatfield);
+  Log->getStream().precision(6);
 
 //    bool useone = true; //always share the std
 //    if(useone) 
@@ -86,11 +91,23 @@ void OhmmsInfo::die(const char* msg) {
   exit(1);
 }
 
-std::ostream& log(){ return OhmmsInfo::Log->getStream();}
-std::ostream& error(){ return OhmmsInfo::Error->getStream();}
-std::ostream& warning(){ return OhmmsInfo::Warn->getStream();}
-std::ostream& debug(){ return OhmmsInfo::Debug->getStream();}
+/** flush the buffer
+ */
+void OhmmsInfo::flush() {
 
+  if(!Writeable) {
+    Log->getStream().flush();
+    Error->getStream().flush();
+    Warn->getStream().flush();
+#ifdef PRINT_DEBUG
+    Debug->getStream().flush();
+#endif
+  }
+}
+//std::ostream& app_log(){ return OhmmsInfo::Log->getStream();}
+//std::ostream& app_error(){ return OhmmsInfo::Error->getStream();}
+//std::ostream& app_warning(){ return OhmmsInfo::Warn->getStream();}
+//std::ostream& app_debug(){ return OhmmsInfo::Debug->getStream();}
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$

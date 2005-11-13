@@ -54,7 +54,7 @@ public:
   inline void flush() { thisStream->flush();}
 
   inline std::ostream& getStream() { 
-    *thisStream << thisPrompt.c_str() << " ";
+    *thisStream << thisPrompt << " ";
     return *thisStream;
   }
   inline bool open() const { return CanWrite;}
