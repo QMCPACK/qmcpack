@@ -112,19 +112,25 @@ bool Libxml2Document::parse(const std::string& xmlfile) {
 
   OHMMS::Controller->barrier();
 
-  ////BCast did not work so great
-  if(OHMMS::Controller->master()) {
-    OOMPI_Request_array request;
-    for(int ip=1, node=0; ip<OHMMS::Controller->ncontexts(); ip++,node++) {
-      request[node]=OOMPI_COMM_WORLD[ip].Isend(buffer,length);
-    }
-    OOMPI_Status_array status = request.Waitall();
-  } else {
-    buffer = new char[length+1];
-    OOMPI_Message amsg(buffer,length);
-    OOMPI_Request request = OOMPI_COMM_WORLD[0].Irecv(amsg);
-    OOMPI_Status status = request.Wait();
+  if(!(OHMMS::Controller->master())) {
+    buffer = new char [length+1];
   }
+
+  MPI_Bcast(buffer,length, MPI_CHAR, 0, OHMMS::Controller->getID());
+
+  //////BCast did not work so great
+  //if(OHMMS::Controller->master()) {
+  //  OOMPI_Request_array request;
+  //  for(int ip=1, node=0; ip<OHMMS::Controller->ncontexts(); ip++,node++) {
+  //    request[node]=OOMPI_COMM_WORLD[ip].Isend(buffer,length);
+  //  }
+  //  OOMPI_Status_array status = request.Waitall();
+  //} else {
+  //  buffer = new char[length+1];
+  //  OOMPI_Message amsg(buffer,length);
+  //  OOMPI_Request request = OOMPI_COMM_WORLD[0].Irecv(amsg);
+  //  OOMPI_Status status = request.Wait();
+  //}
 
   m_doc = xmlParseMemory(buffer,length);
   delete [] buffer;

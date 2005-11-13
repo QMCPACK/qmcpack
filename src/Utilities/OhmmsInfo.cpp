@@ -50,7 +50,7 @@ void OhmmsInfo::initialize(const char* froot, int master){
   // initialize the estimator to record data
   Warn = new OhmmsInform("WARNING",false,Writeable);
   Error = new OhmmsInform("ERROR",false,Writeable);
-  Log = new OhmmsInform("QMC",false,Writeable);
+  Log = new OhmmsInform(" ",false,Writeable);
 #ifdef PRINT_DEBUG
   Debug = new OhmmsInform("DEBUG",false,Writeable);
 #endif

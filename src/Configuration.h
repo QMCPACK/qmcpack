@@ -77,10 +77,22 @@ namespace qmcplusplus {
     typedef ParticleAttrib<Tensor_t>                     ParticleTensor_t;
   };
 
-  inline std::ostream& app_log() { return  OhmmsInfo::Log->getStream(); }
-  inline std::ostream& app_error(){ return OhmmsInfo::Error->getStream();}
-  inline std::ostream& app_warning(){ return OhmmsInfo::Warn->getStream();}
-  inline std::ostream& app_debug(){ return OhmmsInfo::Debug->getStream();}
+  inline std::ostream& app_log() { 
+    return  OhmmsInfo::Log->getStream(); 
+  }
+
+  inline std::ostream& app_error(){ 
+    OhmmsInfo::Log->getStream() << "ERROR ";
+    return OhmmsInfo::Error->getStream();
+  }
+  inline std::ostream& app_warning(){ 
+    OhmmsInfo::Log->getStream() << "WARNING ";
+    return OhmmsInfo::Warn->getStream();
+  }
+  inline std::ostream& app_debug(){ 
+    OhmmsInfo::Log->getStream() << "DEBUG ";
+    return OhmmsInfo::Debug->getStream();
+  }
 }
 
 #endif

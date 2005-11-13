@@ -62,10 +62,12 @@ namespace qmcplusplus {
     hamPool->setParticleSetPool(ptclPool);
     hamPool->setWaveFunctionPool(psiPool);
 
-    app_log() << "=========================================================\n";
-    app_log() << "                   qmcplusplus 0.2                       \n";
-    app_log() << "\n  (c) Copyright 2003-  qmcplusplus developers          \n";
-    app_log() << "=========================================================\n";
+    app_log() << "\n=========================================================\n"
+              <<   "                   qmcplusplus 0.2                       \n"
+              << "\n  (c) Copyright 2003-  qmcplusplus developers          \n"
+              <<   "=========================================================\n";
+
+    app_log().flush();
   }
 
   ///destructor
