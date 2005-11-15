@@ -80,6 +80,12 @@ namespace qmcplusplus {
       --nel; ++items;
     }
   }
+
+  struct LoneElectron {
+    int ID;
+    double BondLength;
+    inline LoneElectron(int id, double bl):ID(id),BondLength(bl){}
+  };
   
   void InitMolecularSystem::initMolecule(ParticleSet* ions, ParticleSet* els) {
     
@@ -97,12 +103,54 @@ namespace qmcplusplus {
     //use charge as the core electrons first
     int icharge = Species.addAttribute("charge");
 
-    int iz = Species.addAttribute("atomicnumber");
     //Assign default core charge
     for(int iat=0; iat<Centers; iat++) 
       Qtot[iat] = static_cast<int>(Species(icharge,grID[iat]));
 
+    //cutoff radius (Bohr) this a random choice    
+    double cutoff = 5.0;
+    ParticleSet::ParticlePos_t chi(els->getTotalNum());
+    //makeGaussRandom(chi);
+    makeSphereRandom(chi);
+
+    int numUp =els->last(0);
+    int numDown = els->last(1)-els->first(0);
+    int item = 0;
+
+    int nup_tot=0, ndown_tot=numUp;
+
+    vector<LoneElectron> loneQ;
+
+    for(int iat=0; iat<Centers; iat++) { 
+      double rmin=cutoff; 
+      for(int nn=d_ii->M[iat]; nn<d_ii->M[iat+1]; nn++){
+        rmin = std::min(rmin,d_ii->r(nn));
+      }
+      //use 40% of the minimum bond
+      double sep=rmin*0.4;
+      int v2=Qtot[iat]/2;
+      if(Qtot[iat]>v2*2) {
+        loneQ.push_back(LoneElectron(iat,sep));
+      }
+      for(int k=0; k<v2; k++) {
+        els->R[nup_tot++]=ions->R[iat]+sep*chi[item++];
+        els->R[ndown_tot++]=ions->R[iat]+sep*chi[item++];
+      }
+    }
+
+    vector<LoneElectron>::iterator it(loneQ.begin());
+    vector<LoneElectron>::iterator it_end(loneQ.end());
+    while(nup_tot<numUp && it != it_end) {
+      els->R[nup_tot++]=ions->R[(*it).ID]+(*it).BondLength*chi[item++];
+      ++it;
+    }
+    while(it != it_end) {
+      els->R[ndown_tot++]=ions->R[(*it).ID]+(*it).BondLength*chi[item++];
+      ++it;
+    }
+    /*
     //Overwrite the valence charge
+    int iz = Species.addAttribute("atomicnumber");
     int nattrib=Species.numAttributes();
     int ival=Species.addAttribute("valence");
     //store the max distance from atom
@@ -120,15 +168,7 @@ namespace qmcplusplus {
       }
     }
 
-    //cutoff radius (Bohr)     
-    double cutoff = 2.5;
-
     //3N-dimensional Gaussian
-    ParticleSet::ParticlePos_t chi(els->getTotalNum());
-    makeGaussRandom(chi);
-
-    int numUp = els->last(0);
-    int numDown = els->last(1)-els->last(0); 
     //assign the core
     int ncoreUp(0), items(0);
     for(int iat=0; iat<Centers; iat++) {
@@ -167,6 +207,7 @@ namespace qmcplusplus {
       }
       ++ic;
     }
+    */
   }
 
   bool InitMolecularSystem::put(std::istream& is) {
