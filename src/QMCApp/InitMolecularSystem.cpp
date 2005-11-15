@@ -108,7 +108,7 @@ namespace qmcplusplus {
       Qtot[iat] = static_cast<int>(Species(icharge,grID[iat]));
 
     //cutoff radius (Bohr) this a random choice    
-    double cutoff = 5.0;
+    double cutoff = 4.0;
     ParticleSet::ParticlePos_t chi(els->getTotalNum());
     //makeGaussRandom(chi);
     makeSphereRandom(chi);
