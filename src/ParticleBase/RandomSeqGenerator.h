@@ -64,4 +64,21 @@ inline void makeUniformRandom(ParticleAttrib<TinyVector<double,3> >& a) {
 inline void makeUniformRandom(ParticleAttrib<double>& a) {
   assignUniformRand(&(a[0]), a.size());
 }
+inline void makeSphereRandom(ParticleAttrib<TinyVector<double,3> >& a) {
+  for(int i=0; i<a.size(); i++) {
+    bool failed=true; 
+    while(failed) {
+      double x=1.0-2.0*Random();
+      double y=1.0-2.0*Random();
+      double z=1.0-2.0*Random();
+      double sep=sqrt(x*x+y*y+z*z);
+      if(sep<1) {
+        double rinv=1.0/sep;
+        a[i][0]=x*rinv; a[i][1]=y*rinv; a[i][2]=z*rinv;
+        failed=false;
+      }
+    }
+  }
+}
+
 #endif
