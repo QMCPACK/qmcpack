@@ -78,6 +78,12 @@ struct HDFAttribIO<std::vector<double> >: public HDFAttribIOBase {
       Dim[i]=static_cast<hsize_t>(dim[i]);
   }
 
+  HDFAttribIO<ArrayType_t>(ArrayType_t& a, hsize_t ndim, hsize_t* dim, int offset=0):
+    ref(a), offset_(offset) { 
+    Dim.resize(ndim);
+    for(int i=0; i<ndim; i++) Dim[i]= dim[0];
+  }
+
   inline void write(hid_t grp, const char* name) {
 
     //hsize_t dim = ref.size();
