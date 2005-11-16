@@ -83,7 +83,8 @@ void Libxml2Document::addChild(const std::string& expression,
   }
 }
 
-#if defined(HAVE_MPI)
+#if defined(HAVE_MPI2)
+/** this parse function uses MPI_Bcast but is not used for the moment */
 bool Libxml2Document::parse(const std::string& xmlfile) {
 
   if(m_doc != NULL) xmlFreeDoc(m_doc);
