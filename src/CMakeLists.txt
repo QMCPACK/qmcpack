@@ -24,7 +24,10 @@ SET(PARTICLE
   Particle/ParticleSet.BC.cpp 
   Particle/MCWalkerConfiguration.cpp 
   Particle/DistanceTable.cpp
-  Particle/HDFWalkerIO.cpp
+  Particle/HDFWalkerOutput.cpp
+  Particle/HDFWalkerInput0.cpp
+  Particle/HDFWalkerInputCollect.cpp
+  Particle/HDFWalkerInputManager.cpp
   LongRange/KContainer.cpp
   LongRange/StructFact.cpp
 )
