@@ -86,6 +86,7 @@ public:
   inline Return_t getRandom() { return sprng(thisStream);}//!< return [0,1)
   inline Return_t operator()() { return getRandom();} //!< return [0,1)
   inline int irand() { return isprng(thisStream);} //!< return random integer
+  inline void reset() { }
 
   inline void bivariate(Return_t& g1, Return_t &g2) {
     Return_t v1, v2, r;

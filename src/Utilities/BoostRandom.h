@@ -60,6 +60,8 @@ public:
    */
   void init(int i, int nstr, int iseed_in) {
     baseSeed=iseed_in;
+    myContext=1;
+    nContexts=nstr;
     if(iseed_in<=0) {
       baseSeed=static_cast<uint32_t>(std::time(0))%16081+(i+1)*nstr+i;
     } 
@@ -76,6 +78,15 @@ public:
       state_name="mt19937";
     }
 
+  }
+
+  //randomize again
+  void reset() {
+    delete uni;
+    delete generator;
+    baseSeed=static_cast<uint32_t>(std::time(0))%16081+(myContext+1)*nContexts+myContext;
+    generator = new generator_type(baseSeed);
+    uni = new uniform_generator_type(*generator,unit_dist);
   }
 
   inline uniform_generator_type& getGenerator() { return *uni;}
@@ -141,6 +152,8 @@ public:
 private:
   uint32_t baseSeed;
   char* state_array;
+  int myContext;
+  int nContexts;
   std::string state_name;
   hsize_t state_size;
   base_generator_type    base_generator;
