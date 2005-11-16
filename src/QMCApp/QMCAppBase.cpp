@@ -70,7 +70,9 @@ namespace qmcplusplus {
       //myProject.PreviousRoot(newxml);
       //myProject.rewind();
       newxml.append(".cont.xml");
-      app_log() << "A new xml input file : " << newxml << endl;
+      app_log() << "\n========================================================="
+                << "\n  A new xml input file : " << newxml << endl;
+      myProject.get(app_log());
       XmlDocStack.top()->dump(newxml);
     }
   }
