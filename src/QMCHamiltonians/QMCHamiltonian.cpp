@@ -36,6 +36,7 @@ bool QMCHamiltonian::get(std::ostream& os) const {
   for(int i=0; i<H.size(); i++) {
     os << "    "; H[i]->get(os); os << "\n";
   }
+  return true;
 }
 
 /** add a new Hamiltonian the the list of Hamiltonians.

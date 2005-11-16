@@ -187,7 +187,8 @@ HDFWalkerInputCollect::read(MCWalkerConfiguration& W, int firstConf, int lastCon
 
   char confName[128];
   char coordName[128];
-  hsize_t dimTot[3], dimIn[3], offset[3];
+  hssize_t offset[3];
+  hsize_t dimIn[3],dimTot[3];
   offset[0]=0; offset[1]=0; offset[2]=0;
 
   typedef MCWalkerConfiguration::PosType PosType;
