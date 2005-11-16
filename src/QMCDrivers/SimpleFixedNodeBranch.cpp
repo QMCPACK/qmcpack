@@ -18,6 +18,7 @@
 #include "QMCDrivers/SimpleFixedNodeBranch.h"
 #include <numeric>
 #include "OhmmsData/ParameterSet.h"
+#include "OhmmsData/FileUtility.h"
 using namespace qmcplusplus;
 
 SimpleFixedNodeBranch::SimpleFixedNodeBranch(RealType tau, int nideal): 
@@ -88,7 +89,7 @@ bool SimpleFixedNodeBranch::put(xmlNodePtr cur){
   app_log() << "  target_walkers = " << Nideal << endl;
   app_log() << "  Max and mimum walkers per node= " << Nmax << " " << Nmin << endl;
   app_log() << "  reference energy = " << E_T << endl;
-  app_log() << "  number of generations (feedbac) = " << NumGeneration << " ("<< Feed << ")"<< endl;
+  app_log() << "  number of generations (feedback) = " << NumGeneration << " ("<< Feed << ")"<< endl;
   return true;
 }
 
@@ -124,12 +125,26 @@ void SimpleFixedNodeBranch::read(hid_t grp) {
     hsize_t ret = H5Dread(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, &esave[0]);
     H5Dclose(dataset);
     E_T=esave[0]; EavgSum=esave[1]; WgtSum=esave[2];
-    app_log() 
-      << "Summary is found. BranchEngine is initialized \n    E_T=" << E_T 
-      << "    EavgSum="<<EavgSum << "\n    WgtSum=" << WgtSum << endl;
+    app_log() << "  Summary is found. BranchEngine is initialized"
+      << "\n    E_T     = " << E_T 
+      << "\n    EavgSum = " << EavgSum 
+      << "\n    WgtSum  = " << WgtSum << endl;
   } else {
-    app_log() << "Summary is not found. Starting from scratch" << endl;
+    app_log() << "  Summary is not found. Starting from scratch" << endl;
   }
+}
+
+void SimpleFixedNodeBranch::read(const string& fname) {
+  string h5file = fname;
+  string ext=getExtension(h5file);
+  if(ext != "h5") { //if the filename does not h5 extension, add the extension
+    h5file.append(".config.h5");
+  }
+  hid_t h_file =  H5Fopen(h5file.c_str(),H5F_ACC_RDWR,H5P_DEFAULT);
+  hid_t h_config = H5Gopen(h_file,"config_collection");
+  read(h_config);
+  H5Gclose(h_config);
+  H5Fclose(h_file);
 }
 
   /*

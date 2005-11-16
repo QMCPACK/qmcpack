@@ -33,7 +33,8 @@ namespace qmcplusplus {
   QMCDriver::QMCDriver(MCWalkerConfiguration& w, 
 		       TrialWaveFunction& psi, 
 		       QMCHamiltonian& h):
-    AppendRun(false),Period4CheckPoint(1), Period4WalkerDump(0),
+    ResetRandom(false), AppendRun(false),RollBackBlocks(0),
+    Period4CheckPoint(1), Period4WalkerDump(0),
     CurrentStep(0), nBlocks(100), nSteps(1000), 
     nAccept(0), nReject(0), nTargetWalkers(0),
     Tau(0.001), qmcNode(NULL),
@@ -46,6 +47,7 @@ namespace qmcplusplus {
     m_param.add(CurrentStep,"current","int");
     m_param.add(Tau,"Tau","AU");
     m_param.add(Tau,"timestep","AU");
+    m_param.add(RollBackBlocks,"rewind","int");
 
     //add each QMCHamiltonianBase to W.PropertyList so that averages can be taken
     H.add2WalkerProperty(W);
@@ -89,6 +91,13 @@ namespace qmcplusplus {
     putQMCInfo(qmcNode);
     put(qmcNode);
 
+    if(h5FileRoot.size() && RollBackBlocks>1) {
+      HDFWalkerInputManager W_in(W);
+      W_in.rewind(h5FileRoot,RollBackBlocks);
+      RollBackBlocks=0;
+    }
+
+
     bool firstTime = (branchEngine == 0);
     if(firstTime) {
       branchEngine = new BranchEngineType(Tau,W.getActiveWalkers());
@@ -99,8 +108,7 @@ namespace qmcplusplus {
 
     if(firstTime && h5FileRoot.size() && h5FileRoot != "invalid") {
       app_log() << "  Initializing BranchEngine with " << h5FileRoot << endl;
-      HDFWalkerInput wReader(h5FileRoot,0,1);
-      wReader.read(*branchEngine);
+      branchEngine->read(h5FileRoot);
     }
     
     //A new run, branchEngine needs to be flushed
@@ -122,6 +130,13 @@ namespace qmcplusplus {
 
     //initialize the walkers before moving: can be moved to run
     initialize();
+
+    //use new random seeds
+    if(ResetRandom) {
+      app_log() << "  Regenerate random seeds." << endl;
+      Random.reset();
+      ResetRandom=false;
+    }
 
     //flush the ostreams
     OhmmsInfo::flush();
@@ -157,26 +172,28 @@ namespace qmcplusplus {
       for(int ifile=0; ifile<nfile; ifile++) 
         mcwalkerNodePtr.push_back(wset[ifile]);
     } else {
-      int pid=OHMMS::Controller->mycontext(); 
-      for(int ifile=0; ifile<nfile; ifile++) {
-        string cfile("invalid"), target("e");
-        int anode=-1, nwalkers=-1;
-        OhmmsAttributeSet pAttrib;
-        pAttrib.add(cfile,"href"); pAttrib.add(cfile,"file"); 
-        pAttrib.add(target,"target"); pAttrib.add(target,"ref"); 
-        pAttrib.add(anode,"node");
-        pAttrib.add(nwalkers,"walkers");
-        pAttrib.put(wset[ifile]);
-        int pid_target= (anode<0)?pid:anode;
-        if(pid_target == pid && cfile != "invalid") {
-          XMLReport("Using previous configuration of " << target << " from " << cfile)
-          HDFWalkerInput WO(cfile); 
-          WO.append(W,nwalkers);
-          //read random state
-          WO.getRandomState(true);
-          h5FileRoot = cfile;
-        }
-      }
+      HDFWalkerInputManager W_in(W);
+      if(W_in.put(wset)) h5FileRoot = W_in.getLastFile();
+      //int pid=OHMMS::Controller->mycontext(); 
+      //for(int ifile=0; ifile<nfile; ifile++) {
+      //  string cfile("invalid"), target("e");
+      //  int anode=-1, nwalkers=-1;
+      //  OhmmsAttributeSet pAttrib;
+      //  pAttrib.add(cfile,"href"); pAttrib.add(cfile,"file"); 
+      //  pAttrib.add(target,"target"); pAttrib.add(target,"ref"); 
+      //  pAttrib.add(anode,"node");
+      //  pAttrib.add(nwalkers,"walkers");
+      //  pAttrib.put(wset[ifile]);
+      //  int pid_target= (anode<0)?pid:anode;
+      //  if(pid_target == pid && cfile != "invalid") {
+      //    XMLReport("Using previous configuration of " << target << " from " << cfile)
+      //    HDFWalkerInput WO(cfile); 
+      //    WO.append(W,nwalkers);
+      //    //read random state
+      //    WO.getRandomState(true);
+      //    h5FileRoot = cfile;
+      //  }
+      //}
     }
 
     //clear the walker set
@@ -394,6 +411,8 @@ namespace qmcplusplus {
 	} else if(cname == "checkpoint") {
           const xmlChar* aptr=xmlGetProp(tcur,(const xmlChar*)"period");
           if(aptr) Period4CheckPoint = atoi((const char*)aptr);
+        } else if(cname == "random") {
+          ResetRandom = true;
         }
 	tcur=tcur->next;
       }

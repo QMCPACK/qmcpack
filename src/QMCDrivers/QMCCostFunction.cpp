@@ -18,7 +18,7 @@
 #include "QMCDrivers/QMCCostFunction.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
-#include "Particle/HDFWalkerIO.h"
+#include "Particle/HDFWalkerInputCollect.h"
 #include "Particle/DistanceTable.h"
 #include "OhmmsData/AttributeSet.h"
 #include "OhmmsData/ParameterSet.h"
@@ -194,8 +194,10 @@ namespace qmcplusplus {
     if(ConfigFile.size()) {
       W.destroyWalkers(W.begin(),W.end());
       for(int i=0; i<ConfigFile.size(); i++) {
-        HDFWalkerInput wReader(ConfigFile[i],partid,nparts);
-        wReader.append(W);
+        //JNKIM: needs to change to HDFWalkerInputCollect
+        //HDFWalkerInput0 wReader(ConfigFile[i],partid,nparts);
+        HDFWalkerInputCollect wReader(ConfigFile[i]);
+        wReader.put(W,-1);
       }
 
       NumSamples=W.getActiveWalkers();

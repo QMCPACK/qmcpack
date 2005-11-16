@@ -125,8 +125,13 @@ namespace qmcplusplus {
     ///branch engine, declared to be static
     static BranchEngineType *branchEngine;
 
+    ///randomize it
+    bool ResetRandom;
     ///flag to append or restart the run
     bool AppendRun;
+
+    ///the number of blocks to be rolled back
+    int RollBackBlocks;
 
     /** period of dumping walker configurations and everything else for restart
      *

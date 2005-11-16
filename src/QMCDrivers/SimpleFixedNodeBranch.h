@@ -172,6 +172,8 @@ namespace qmcplusplus {
 
     void read(hid_t grp);
 
+    void read(const string& fname);
+
    private:
     ///default constructor (disabled)
     SimpleFixedNodeBranch(){}
