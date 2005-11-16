@@ -32,7 +32,7 @@ using namespace qmcplusplus;
  *@note The main group is "/config_collection"
  */
 HDFWalkerInputCollect::HDFWalkerInputCollect(const string& aroot): 
- fileID(-1), prevNContexts(1), curNContexts(1) {
+ fileID(-1), prevNContexts(1), curNContexts(1), CollectMode(true), RewindMode(false) {
   open(aroot);
 }
 
@@ -66,33 +66,7 @@ HDFWalkerInputCollect::open(const string& aroot) {
 bool HDFWalkerInputCollect::close() {
 
   if(fileID >-1) {
-    prevNContexts=1;
-    herr_t status = H5Eset_auto(NULL, NULL);
-    hid_t h1=H5Dopen(fileID,"ncontexts");
-    if(h1>-1) {
-      H5Dread(h1, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, &(prevNContexts));
-      H5Dclose(h1);
-      char rname[128];
-      if(prevNContexts == curNContexts) {
-        app_log() << "    Restart with the random states" << endl;
-        sprintf(rname,"context%04d/random_state",OHMMS::Controller->mycontext());
-        hid_t ranIn = H5Gopen(fileID,rname);
-        Random.read(ranIn);
-        H5Gclose(ranIn);
-      } else {
-        app_warning() << "The number of processors has changed.\n"
-          << "New random seeds are generated." << endl;
-      }
-    } else {
-      if(curNContexts == 1) {
-        hid_t h_random = H5Gopen(fileID,"random_state");
-        if(h_random>-1) {
-          app_log() << "Using serial random seed" << endl;
-          Random.read(h_random);
-          H5Gclose(h_random);
-        }
-      }
-    }
+    if(!RewindMode) readRandomState();
     app_log() << "  HDFWalkerInputCollect::close " << endl;
     //read the random seeds
     H5Fclose(fileID);
@@ -101,18 +75,42 @@ bool HDFWalkerInputCollect::close() {
   return true;
 }
 
+void HDFWalkerInputCollect::readRandomState() {
+  prevNContexts=1;
+  herr_t status = H5Eset_auto(NULL, NULL);
+  hid_t h1=H5Dopen(fileID,"ncontexts");
+  if(h1>-1) {
+    H5Dread(h1, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, &(prevNContexts));
+    H5Dclose(h1);
+    char rname[128];
+    if(prevNContexts == curNContexts) {
+      app_log() << "    Restart with the random states" << endl;
+      sprintf(rname,"context%04d/random_state",OHMMS::Controller->mycontext());
+      hid_t ranIn = H5Gopen(fileID,rname);
+      Random.read(ranIn);
+      H5Gclose(ranIn);
+    } else {
+      app_warning() << "The number of processors has changed.\n"
+        << "New random seeds are generated." << endl;
+    }
+  } else {
+    if(curNContexts == 1) {
+      hid_t h_random = H5Gopen(fileID,"random_state");
+      if(h_random>-1) {
+        app_log() << "Using serial random seed" << endl;
+        Random.read(h_random);
+        H5Gclose(h_random);
+      }
+    }
+  }
+}
+
 bool 
 HDFWalkerInputCollect::put(MCWalkerConfiguration& W, int rollback) {
 
-  int myID = OHMMS::Controller->mycontext();
-
   int numConfigs=1;
-  char confName[128];
-  char coordName[128];
-
 
   hid_t mastercf = H5Gopen(fileID,"config_collection");
-  app_log() << "    The number of blocks in the file " << numConfigs << endl;
   hid_t h1=H5Dopen(mastercf,"NumOfConfigurations");
 
   if(h1>-1) {
@@ -120,6 +118,7 @@ HDFWalkerInputCollect::put(MCWalkerConfiguration& W, int rollback) {
     H5Dclose(h1);
   }
 
+  app_log() << "    The number of blocks in the file " << numConfigs << endl;
   int firstConf(0);
   if(rollback>0) {
     if(rollback<numConfigs) 
@@ -128,6 +127,66 @@ HDFWalkerInputCollect::put(MCWalkerConfiguration& W, int rollback) {
       firstConf = 0;
   }
 
+  H5Gclose(mastercf);
+
+  RewindMode=false;
+
+  return read(W,firstConf,numConfigs);
+}
+
+bool
+HDFWalkerInputCollect::rewind(MCWalkerConfiguration& W, int rollback) {
+
+  int numConfigs=1;
+
+  hid_t mastercf = H5Gopen(fileID,"config_collection");
+  herr_t status = H5Eset_auto(NULL, NULL);
+  hid_t h1=H5Dopen(mastercf,"NumOfConfigurations");
+
+  if(h1>-1) {
+    H5Dread(h1, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT,&(numConfigs));
+    H5Dclose(h1);
+  }
+  H5Gclose(mastercf);
+
+  app_log() << "    The number of blocks in the file " << numConfigs << endl;
+  if(numConfigs ==1) {
+    app_warning() << "HDFWalkerInputCollect::rewind fails: not enough configurations" << endl;
+    app_warning() << "The number of walkers is unchanged." << endl;
+    return false;
+  }
+
+  RewindMode=true;
+  int firstConf=std::max(0,numConfigs-rollback);
+
+  //check if the file has ncontexts
+  prevNContexts=1;
+  h1=H5Dopen(fileID,"ncontexts");
+  if(h1>-1) {
+    H5Dread(h1, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, &(prevNContexts));
+    H5Dclose(h1);
+  }
+
+  if(prevNContexts>1)  {
+    app_log() << "  rewind of a shared file" << endl; 
+    CollectMode=true;
+  }
+  else {
+    app_log() << "  rewind of a independent file" << endl; 
+    CollectMode=false;
+  }
+
+  return read(W,firstConf,numConfigs-1);
+}
+
+bool 
+HDFWalkerInputCollect::read(MCWalkerConfiguration& W, int firstConf, int lastConf) {
+
+  int myID = OHMMS::Controller->mycontext();
+  hid_t mastercf = H5Gopen(fileID,"config_collection");
+
+  char confName[128];
+  char coordName[128];
   hsize_t dimTot[3], dimIn[3], offset[3];
   offset[0]=0; offset[1]=0; offset[2]=0;
 
@@ -136,7 +195,7 @@ HDFWalkerInputCollect::put(MCWalkerConfiguration& W, int rollback) {
   vector<PosType> pos;
   int nwRead=0;
 
-  for(int iconf=firstConf; iconf<numConfigs; iconf++) { 
+  for(int iconf=firstConf; iconf<lastConf; iconf++) { 
 
     sprintf(coordName,"config%04d/coord",iconf); 
     hid_t dataset = H5Dopen(mastercf,coordName);
@@ -144,11 +203,15 @@ HDFWalkerInputCollect::put(MCWalkerConfiguration& W, int rollback) {
     int rank = H5Sget_simple_extent_ndims(dataspace);
     int status_n = H5Sget_simple_extent_dims(dataspace, dimTot, NULL);
 
-    distribute(dimTot[0]);
-
-    app_log() << "    Distibution of the walkers: ";
-    std::copy(OffSet.begin(), OffSet.end(), ostream_iterator<hsize_t>(app_log(), " "));
-    app_log() << endl;
+    if(CollectMode) {
+      distribute(dimTot[0]);
+      app_log() << "    Distibution of the walkers: ";
+      std::copy(OffSet.begin(), OffSet.end(), ostream_iterator<hsize_t>(app_log(), " "));
+      app_log() << endl;
+    } else  {
+      OffSet[myID]=0;
+      OffSet[myID+1]=dimTot[0];
+    }
 
     //get the input dimension
     dimIn[0]=OffSet[myID+1]-OffSet[myID];
@@ -191,6 +254,7 @@ HDFWalkerInputCollect::put(MCWalkerConfiguration& W, int rollback) {
 
   return true;
 }
+
 
 void HDFWalkerInputCollect::distribute(hsize_t nw) {
   hsize_t bat=nw/curNContexts;

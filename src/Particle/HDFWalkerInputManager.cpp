@@ -68,6 +68,11 @@ namespace qmcplusplus {
     }
     return true;
   }
+
+  void HDFWalkerInputManager::rewind(const std::string& h5root, int blocks) {
+    HDFWalkerInputCollect WO(h5root);
+    WO.rewind(Wref,blocks);
+  }
 }
 /***************************************************************************
  * $RCSfile$   $Author$

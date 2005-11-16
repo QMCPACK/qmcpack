@@ -30,6 +30,8 @@ namespace qmcplusplus {
     hid_t fileID;
     int prevNContexts;
     int curNContexts;
+    bool CollectMode;
+    bool RewindMode;
 
     vector<hsize_t> OffSet;
 
@@ -52,6 +54,25 @@ namespace qmcplusplus {
      * @return true if successful
      */
     bool put(MCWalkerConfiguration& W, int rollback=1);
+
+    /** read walkers for rollback blocks
+     * @param W walker set to which new walkers will be added
+     * @param rollback number of blocks to read
+     */
+    bool rewind(MCWalkerConfiguration& W, int rollback);
+
+    /** read walkers within the blocks [firstConf,lastConf)
+     * @param W walker set to which new walkers will be added
+     * @param firstConf first block to read
+     * @param lastConf last block to read
+     */
+    bool read(MCWalkerConfiguration& W, int firstConf, int lastConf);
+
+
+    /** read random state when RewindMode=false
+     */
+    void readRandomState();
+
     bool close();
   };
 

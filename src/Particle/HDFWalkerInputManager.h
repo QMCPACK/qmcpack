@@ -36,6 +36,8 @@ namespace qmcplusplus {
       bool put(xmlNodePtr cur);
       bool put(std::vector<xmlNodePtr> mset);
       std::string getLastFile() { return CurrentFileRoot;}
+
+      void rewind(const std::string& h5root, int blocks);
     
   };
 }
