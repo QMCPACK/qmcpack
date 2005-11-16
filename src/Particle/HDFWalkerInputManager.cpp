@@ -47,7 +47,7 @@ namespace qmcplusplus {
       pAttrib.add(target,"target"); pAttrib.add(target,"ref"); 
       pAttrib.add(anode,"node");
       pAttrib.add(nwalkers,"walkers");
-      pAttrib.add(nblocks,"blocks");
+      pAttrib.add(nblocks,"rewind");
       pAttrib.add(collect,"collect");
       pAttrib.put(wset[ifile]);
 
