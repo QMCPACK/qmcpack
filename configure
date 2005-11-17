@@ -462,7 +462,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM AWK SET_MAKE ac_aux_dir CXX_LIBS CXX_OPTIMIZE_FLAGS CXX_DEBUG_FLAGS CXXFFLAGS CXXFLAGS LDFLAGS F77 F90 FFLAGS F77_OPTIMIZE_FLAGS F90_OPTIMIZE_FLAGS AR AR_FLAGS RANLIB INCLUDES MKL_LIBS HDF5_LIBS SPRNG_LIBS CXX CPPFLAGS ac_ct_CXX EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CXXDEPMODE CC CFLAGS ac_ct_CC CCDEPMODE ac_ct_F77 build build_cpu build_vendor build_os host host_cpu host_vendor host_os EGREP LN_S ECHO ac_ct_AR ac_ct_RANLIB CPP CXXCPP LIBTOOL FLIBS BLAS_LIBS LAPACK_LIBS LIBOBJS MPICC MPILIBS USE_QDAPPS_TRUE USE_QDAPPS_FALSE USE_MOLECUAPPS_TRUE USE_MOLECUAPPS_FALSE XML2_CONFIG XML2_CFLAGS XML2_LIBS QMCBASE_LIBS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM AWK SET_MAKE ac_aux_dir CXX_LIBS CXX_OPTIMIZE_FLAGS CXX_DEBUG_FLAGS CXXFFLAGS CXXFLAGS LDFLAGS F77 F90 FFLAGS F77_OPTIMIZE_FLAGS F90_OPTIMIZE_FLAGS AR AR_FLAGS RANLIB INCLUDES MKL_LIBS HDF5_LIBS SPRNG_LIBS CXX CPPFLAGS ac_ct_CXX EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CXXDEPMODE CC CFLAGS ac_ct_CC CCDEPMODE ac_ct_F77 build build_cpu build_vendor build_os host host_cpu host_vendor host_os EGREP LN_S ECHO ac_ct_AR ac_ct_RANLIB CPP CXXCPP LIBTOOL FLIBS BLAS_LIBS LAPACK_LIBS LIBOBJS MPICC MPILIBS XML2_CONFIG XML2_CFLAGS XML2_LIBS QMCBASE_LIBS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -1040,8 +1040,6 @@ Optional Features:
                           optimize for fast installation [default=yes]
   --disable-libtool-lock  avoid locking (might break parallel builds)
   --enable-openmp         enable OPENMP compilation flags (default=yes)
-  --enable-optimize       enable compiler optimization flags (default=yes)
-  --enable-debug          enable compiler debug flags (default=no)
   --enable-dimension      set the physical dimension (default=3)
 
 Optional Packages:
@@ -1061,15 +1059,10 @@ Optional Packages:
   --with-lapack=<lib>     use LAPACK library <lib>
   --with-precision=single|double
                           Define precision for real type (default double).
-  --with-app=MolecuApps|QDApps
-                          Define the main application (default MolecuApps).
   --with-xml2-prefix=PFX       Prefix where xml2 is installed (optional)
   --with-xml2-exec-prefix=PFX Exec prefix where xml2 is installed (optional)
   --with-hdf5=DIR         use hdf5 library in DIR.
   --with-hdf5-libs=<lib>  Use hdf5-related libraries <lib>
-  --with-sprng=DIR        use sprng library in DIR.
-  --with-sprng-libs=<lib> Use sprng-related libraries <lib>
-  --with-blitz=DIR        use blitz library in DIR.
   --with-boost=DIR        use boost library in DIR.
   --with-boost-libs=<lib>
 
@@ -1561,6 +1554,13 @@ ac_config_guess="$SHELL $ac_aux_dir/config.guess"
 ac_config_sub="$SHELL $ac_aux_dir/config.sub"
 ac_configure="$SHELL $ac_aux_dir/configure" # This should be Cygnus configure.
 
+
+
+cat >>confdefs.h <<\_ACEOF
+#define QMCPLUSPLUS_RELEASE 1
+_ACEOF
+
+
 #AC_CONFIG_SRCDIR([src/ohmms-config.h])
 
 am__api_version="1.6"
@@ -1982,8 +1982,6 @@ done
 
 
 
-
-
 # aclocal.m4 generated automatically by aclocal 1.6.2 -*- Autoconf -*-
 
 # Copyright 1996, 1997, 1998, 1999, 2000, 2001, 2002
@@ -2259,7 +2257,7 @@ if test "${with_cxx+set}" = set; then
        CXXFLAGS="-ftemplate-depth-60 -DADD_"
      ;;
    esac
-       CXX_OPTIMIZE_FLAGS="-O3 -funroll-loops -fstrict-aliasing -ffast-math -finline-limit=1000 -fno-gcse"
+       CXX_OPTIMIZE_FLAGS="-O3 -funroll-loops -fstrict-aliasing -ffast-math -finline-limit=1000 -fno-gcse -Wno-deprecated"
        CXX_DEBUG_FLAGS="-g -DPRINT_DEBUG"
      ;;
      aCC)                # HP-UX compiler http://www.hp.com/go/c++
@@ -2445,8 +2443,9 @@ if test "${with_cxx+set}" = set; then
        CXX_DEBUG_FLAGS="-g -DPRINT_DEBUG"
      ;;
      *)
-        { echo "$as_me:$LINENO: WARNING: --with-cxx: invalid option $withval" >&5
-echo "$as_me: WARNING: --with-cxx: invalid option $withval" >&2;}
+        { { echo "$as_me:$LINENO: error: --with-cxx: invalid option $withval" >&5
+echo "$as_me: error: --with-cxx: invalid option $withval" >&2;}
+   { (exit 1); exit 1; }; }
      ;;
    esac
    know_compiler=1
@@ -4248,7 +4247,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:4251:" \
+echo "$as_me:4250:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -4996,7 +4995,7 @@ ia64-*-hpux*)
   ;;
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 4999 "configure"' > conftest.$ac_ext
+  echo '#line 4998 "configure"' > conftest.$ac_ext
   if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -6969,11 +6968,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:6972: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:6971: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:6976: \$? = $ac_status" >&5
+   echo "$as_me:6975: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -7231,11 +7230,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:7234: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:7233: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:7238: \$? = $ac_status" >&5
+   echo "$as_me:7237: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -7293,11 +7292,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:7296: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:7295: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:7300: \$? = $ac_status" >&5
+   echo "$as_me:7299: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -9545,7 +9544,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 9548 "configure"
+#line 9547 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -9643,7 +9642,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 9646 "configure"
+#line 9645 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -11896,11 +11895,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:11899: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:11898: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:11903: \$? = $ac_status" >&5
+   echo "$as_me:11902: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -11958,11 +11957,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:11961: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:11960: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:11965: \$? = $ac_status" >&5
+   echo "$as_me:11964: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -13343,7 +13342,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 13346 "configure"
+#line 13345 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -13441,7 +13440,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 13444 "configure"
+#line 13443 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -14326,11 +14325,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:14329: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:14328: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:14333: \$? = $ac_status" >&5
+   echo "$as_me:14332: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -14388,11 +14387,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:14391: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:14390: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:14395: \$? = $ac_status" >&5
+   echo "$as_me:14394: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -16529,11 +16528,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:16532: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:16531: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:16536: \$? = $ac_status" >&5
+   echo "$as_me:16535: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -16791,11 +16790,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:16794: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:16793: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:16798: \$? = $ac_status" >&5
+   echo "$as_me:16797: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -16853,11 +16852,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:16856: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:16855: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:16860: \$? = $ac_status" >&5
+   echo "$as_me:16859: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -19105,7 +19104,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 19108 "configure"
+#line 19107 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -19203,7 +19202,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 19206 "configure"
+#line 19205 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -20783,7 +20782,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:20786: \"$ac_link\") >&5
+(eval echo $as_me:20785: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -20861,7 +20860,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:20864: \"$ac_link\") >&5
+(eval echo $as_me:20863: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -22882,8 +22881,9 @@ _ACEOF
         :
 else
         acx_blas_ok=no
-        { echo "$as_me:$LINENO: WARNING: Could not find blas. Add it manually." >&5
-echo "$as_me: WARNING: Could not find blas. Add it manually." >&2;}
+        { { echo "$as_me:$LINENO: error: Could not find blas. Add it manually." >&5
+echo "$as_me: error: Could not find blas. Add it manually." >&2;}
+   { (exit 1); exit 1; }; }
 fi
 
 
@@ -23206,8 +23206,9 @@ _ACEOF
         :
 else
         acx_lapack_ok=no
-        { echo "$as_me:$LINENO: WARNING: Could not find lapack. Add it manually" >&5
-echo "$as_me: WARNING: Could not find lapack. Add it manually" >&2;}
+        { { echo "$as_me:$LINENO: error: Could not find lapack. Add it manually" >&5
+echo "$as_me: error: Could not find lapack. Add it manually" >&2;}
+   { (exit 1); exit 1; }; }
 fi
 
 fi
@@ -25525,28 +25526,28 @@ fi;
 
 # Check if the script was called with --enable-optimize
 #
-# Check whether --enable-optimize or --disable-optimize was given.
-if test "${enable_optimize+set}" = set; then
-  enableval="$enable_optimize"
+#AC_ARG_ENABLE(optimize,
+#  AC_HELP_STRING([--enable-optimize],[enable compiler optimization flags (default=yes)]),
+#  [
+#  if test x$enableval != xno; then
+#        echo "Optimization flags enabled"
+#	CXXFLAGS="$CXXFLAGS $CXX_OPTIMIZE_FLAGS"
+#        FFLAGS="$F77_OPTIMIZE_FLAGS $FFLAGS"
+#  fi
+#  ],
+#  [])
+## --enable-debug, and if so modify the compilation flags.
+#AC_ARG_ENABLE(debug,
+#  AC_HELP_STRING([--enable-debug],[enable compiler debug flags (default=no)]),
+#  [if test x"$enableval" = xyes; then
+#     echo "Debugging flags enabled"
+#     CXXFLAGS="$CXXFLAGS $CXX_DEBUG_FLAGS"
+#     FFLAGS="$F77_DEBUG_FLAGS $FFLAGS"
+#   fi],
+#  [])
 
-  if test x$enableval != no; then
-        echo "Optimization flags enabled"
-	CXXFLAGS="$CXXFLAGS $CXX_OPTIMIZE_FLAGS"
-        FFLAGS="$F77_OPTIMIZE_FLAGS $FFLAGS"
-  fi
-
-fi;
-
-# --enable-debug, and if so modify the compilation flags.
-# Check whether --enable-debug or --disable-debug was given.
-if test "${enable_debug+set}" = set; then
-  enableval="$enable_debug"
-  if test x"$enableval" = xyes; then
-     echo "Debugging flags enabled"
-     CXXFLAGS="$CXXFLAGS $CXX_DEBUG_FLAGS"
-     FFLAGS="$F77_DEBUG_FLAGS $FFLAGS"
-   fi
-fi;
+CXXFLAGS="$CXXFLAGS $CXX_OPTIMIZE_FLAGS"
+FFLAGS="$F77_OPTIMIZE_FLAGS $FFLAGS"
 
 #add fortran-related libraries to CXXFLAGS
 CXXFLAGS="$CXXFLAGS $CXXFFLAGS"
@@ -25639,42 +25640,20 @@ _ACEOF
 
 fi;
 
-
-# Check whether --with-app or --without-app was given.
-if test "${with_app+set}" = set; then
-  withval="$with_app"
-
-    if test x"$withval" = x"QDApps"; then
-      qmcapp=$withval
-    fi
-
-else
-
-    { echo "$as_me:$LINENO: WARNING: Using MolecuApps." >&5
-echo "$as_me: WARNING: Using MolecuApps." >&2;}
-
-fi;
-
-
-
-if test "$qmcapp" = "QDApps"; then
-  USE_QDAPPS_TRUE=
-  USE_QDAPPS_FALSE='#'
-else
-  USE_QDAPPS_TRUE='#'
-  USE_QDAPPS_FALSE=
-fi
-
-
-
-if test "$qmcapp" = "MolecuApps"; then
-  USE_MOLECUAPPS_TRUE=
-  USE_MOLECUAPPS_FALSE='#'
-else
-  USE_MOLECUAPPS_TRUE='#'
-  USE_MOLECUAPPS_FALSE=
-fi
-
+#AC_ARG_WITH(app,
+#  AC_HELP_STRING([--with-app=MolecuApps|QDApps],
+#                 [Define the main application (default MolecuApps).]),
+#  [
+#    if test x"$withval" = x"QDApps"; then
+#      qmcapp=$withval
+#    fi
+#  ],
+#  [
+#    AC_MSG_WARN([Using MolecuApps.])
+#  ])
+#
+#AM_CONDITIONAL(USE_QDAPPS,  test "$qmcapp" = "QDApps")
+#AM_CONDITIONAL(USE_MOLECUAPPS, test "$qmcapp" = "MolecuApps")
 
 #
 #check libxml2, if the package is not found, die
@@ -25902,91 +25881,9 @@ fi
 
 
 #use config/acx_sprng.m4 file
+#ACX_SPRNG([], [AC_MSG_WARN([Could not find sprng. Disabled.])])
 
-acx_sprng_ok=no
-
-
-# Check whether --with-sprng or --without-sprng was given.
-if test "${with_sprng+set}" = set; then
-  withval="$with_sprng"
-
-  sprng_dir=$withval
-  sprng_include="$withval/include"
-  sprng_libs="-L$withval/lib -lsprng"
-
-fi;
-
-
-# Check whether --with-sprng-libs or --without-sprng-libs was given.
-if test "${with_sprng_libs+set}" = set; then
-  withval="$with_sprng_libs"
-
-    sprng_libs="$withval"
-
-fi;
-
-if test x"$sprng_dir" != x; then
-  acx_sprng_ok=yes
-  SPRNG_LIBS="$sprng_libs"
-  if test -f "$sprng_include/sprng.h" ; then
-    CPPFLAGS="$CPPFLAGS -I$sprng_include"
-  else
-    acx_sprng_ok=no
-  fi
-fi
-
-# Finally, execute ACTION-IF-FOUND/ACTION-IF-NOT-FOUND:
-if test x"$acx_sprng_ok" = xyes; then
-
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_LIBSPRNG 1
-_ACEOF
-
-        :
-else
-  acx_sprng_ok=no
-  { echo "$as_me:$LINENO: WARNING: Could not find sprng. Disabled." >&5
-echo "$as_me: WARNING: Could not find sprng. Disabled." >&2;}
-fi
-
-
-
-acx_blitz_ok=no
-
-
-# Check whether --with-blitz or --without-blitz was given.
-if test "${with_blitz+set}" = set; then
-  withval="$with_blitz"
-
-  blitz_dir=$withval
-  blitz_include="$withval"
-
-fi;
-
-if test x"$blitz_dir" != x; then
-  acx_blitz_ok=yes
-  if test -f "$blitz_include/blitz/blitz.h" ; then
-    CPPFLAGS="$CPPFLAGS -I$blitz_include"
-  else
-    acx_blitz_ok=no
-  fi
-fi
-
-# Finally, execute ACTION-IF-FOUND/ACTION-IF-NOT-FOUND:
-if test x"$acx_blitz_ok" = xyes; then
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_LIBBLITZ 1
-_ACEOF
-
-        :
-else
-  acx_blitz_ok=no
-  { echo "$as_me:$LINENO: WARNING: Could not find blitz. Disabled." >&5
-echo "$as_me: WARNING: Could not find blitz. Disabled." >&2;}
-fi
-
+#ACX_BLITZ([], [AC_MSG_WARN([Could not find blitz. Disabled.])])
 
 
 acx_boost_ok=no
@@ -26145,20 +26042,6 @@ if test -z "${AMDEP_TRUE}" && test -z "${AMDEP_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"AMDEP\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"AMDEP\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-if test -z "${USE_QDAPPS_TRUE}" && test -z "${USE_QDAPPS_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"USE_QDAPPS\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"USE_QDAPPS\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-if test -z "${USE_MOLECUAPPS_TRUE}" && test -z "${USE_MOLECUAPPS_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"USE_MOLECUAPPS\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"USE_MOLECUAPPS\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -26771,10 +26654,6 @@ s,@LAPACK_LIBS@,$LAPACK_LIBS,;t t
 s,@LIBOBJS@,$LIBOBJS,;t t
 s,@MPICC@,$MPICC,;t t
 s,@MPILIBS@,$MPILIBS,;t t
-s,@USE_QDAPPS_TRUE@,$USE_QDAPPS_TRUE,;t t
-s,@USE_QDAPPS_FALSE@,$USE_QDAPPS_FALSE,;t t
-s,@USE_MOLECUAPPS_TRUE@,$USE_MOLECUAPPS_TRUE,;t t
-s,@USE_MOLECUAPPS_FALSE@,$USE_MOLECUAPPS_FALSE,;t t
 s,@XML2_CONFIG@,$XML2_CONFIG,;t t
 s,@XML2_CFLAGS@,$XML2_CFLAGS,;t t
 s,@XML2_LIBS@,$XML2_LIBS,;t t

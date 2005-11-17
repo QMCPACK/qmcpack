@@ -50,17 +50,11 @@
 /* Define if you have LAPACK library. */
 #undef HAVE_LAPACK
 
-/* Define if you have BLITZ library. */
-#undef HAVE_LIBBLITZ
-
 /* Define if you have BOOST library. */
 #undef HAVE_LIBBOOST
 
 /* Define if you have HDF5 library. */
 #undef HAVE_LIBHDF5
-
-/* Define if you have SPRNG library. */
-#undef HAVE_LIBSPRNG
 
 /* Define to 1 if you have libxml2 */
 #undef HAVE_LIBXML2
@@ -157,6 +151,9 @@
 
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
+
+/* This is a public relase. */
+#undef QMCPLUSPLUS_RELEASE
 
 /* Define as the return type of signal handlers (`int' or `void'). */
 #undef RETSIGTYPE

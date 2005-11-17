@@ -16,8 +16,7 @@ QMC_COMMON_SRCS = \
   ../QMCWaveFunctions/ElectronGasOrbitalBuilder.cpp \
   ../QMCHamiltonians/LocalPPotential.cpp\
   ../QMCHamiltonians/NonLocalPPotential.cpp\
-  ../QMCHamiltonians/LocalCorePolPotential.cpp \
-  ../LongRange/LPQHIBasis.cpp
+  ../QMCHamiltonians/LocalCorePolPotential.cpp 
 
 QMC_DRIVERS = \
   ../QMCDrivers/SimpleFixedNodeBranch.cpp\
@@ -30,15 +29,7 @@ QMC_DRIVERS = \
   ../QMCDrivers/WalkerControlBase.cpp\
   ../QMCDrivers/QMCOptimize.cpp\
   ../QMCDrivers/QMCCostFunction.cpp\
-  ../QMCDrivers/VMCMultiple.cpp\
-  ../QMCDrivers/VMCPbyPMultiple.cpp\
-  ../Estimators/ScalarEstimatorManager.cpp\
-  ../Estimators/MultipleEnergyEstimator.cpp \
-  ../QMCDrivers/RQMCMultiple.cpp\
-  ../QMCDrivers/MultiChain.cpp\
-  ../QMCDrivers/MultiChainIO.cpp\
-  ../QMCDrivers/PolymerEstimator.cpp\
-  ../QMCDrivers/ReptationMC.cpp
+  ../Estimators/ScalarEstimatorManager.cpp
 
 QMC_APP =\
   ParticleSetPool.cpp\

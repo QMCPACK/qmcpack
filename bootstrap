@@ -1,5 +1,4 @@
 set -x
-aclocal
 autoheader
-automake --foreign --add-missing --copy
+/usr/bin/automake-1.6 --foreign --add-missing --copy
 autoconf

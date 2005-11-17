@@ -19,12 +19,12 @@ AUX_DIST_EXTRA    = \
                   $(ac_aux_dir)/acx_lapack.m4 \
                   $(ac_aux_dir)/acx_mpi.m4 \
                   $(ac_aux_dir)/acx_pthread.m4 \
-                  $(ac_aux_dir)/acx_sprng.m4 \
                   $(ac_aux_dir)/acx_hdf5.m4 \
                   $(ac_aux_dir)/acx_restrict.m4
 EXTRA_DIST        = bootstrap
 
-MAINTAINERCLEANFILES = Makefile.in aclocal.m4 configure stamp.h.in $(AUX_DIST)
+#MAINTAINERCLEANFILES = Makefile.in aclocal.m4 configure stamp.h.in $(AUX_DIST)
+MAINTAINERCLEANFILES = Makefile.in configure stamp.h.in $(AUX_DIST)
 
 dist-hook:
 	(cd $(distdir) && mkdir $(ac_aux_dir))

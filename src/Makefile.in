@@ -129,6 +129,7 @@ OHMMS_UTILITIES = \
 	Utilities/SpeciesSet.cpp \
 	Utilities/RandRandom.cpp \
 	Utilities/RandomGenerator.cpp \
+	OhmmsData/Libxml2Doc.cpp \
 	OhmmsApp/ProjectData.cpp \
         OhmmsApp/RandomNumberControl.cpp \
         Platforms/sysutil.cpp\
@@ -146,7 +147,10 @@ OHMMS_PARTICLE = \
 	Particle/ParticleSet.cpp \
 	Particle/MCWalkerConfiguration.cpp \
         Particle/DistanceTable.cpp \
-        Particle/HDFWalkerIO.cpp \
+        Particle/HDFWalkerInput0.cpp \
+        Particle/HDFWalkerInputCollect.cpp \
+        Particle/HDFWalkerInputManager.cpp \
+        Particle/HDFWalkerOutput.cpp \
         ParticleIO/XMLParticleIO.cpp \
         ParticleIO/ParticleLayoutIO.cpp \
         ParticleIO/HDFParticleIO.cpp \
@@ -187,15 +191,18 @@ libqmcbase_a_LIBADD =
 am__objects_1 = OhmmsObject.$(OBJEXT) OhmmsInform.$(OBJEXT) \
 	OhmmsInfo.$(OBJEXT) SimpleParser.$(OBJEXT) SpeciesSet.$(OBJEXT) \
 	RandRandom.$(OBJEXT) RandomGenerator.$(OBJEXT) \
-	ProjectData.$(OBJEXT) RandomNumberControl.$(OBJEXT) \
-	sysutil.$(OBJEXT) OhmmsBlas.$(OBJEXT)
+	Libxml2Doc.$(OBJEXT) ProjectData.$(OBJEXT) \
+	RandomNumberControl.$(OBJEXT) sysutil.$(OBJEXT) \
+	OhmmsBlas.$(OBJEXT)
 am__objects_2 = Communicate.$(OBJEXT)
 am__objects_3 = ParticleTags.$(OBJEXT) Uniform3DGridLayout.$(OBJEXT) \
 	ParticleSet.BC.$(OBJEXT) ParticleSet.$(OBJEXT) \
 	MCWalkerConfiguration.$(OBJEXT) DistanceTable.$(OBJEXT) \
-	HDFWalkerIO.$(OBJEXT) XMLParticleIO.$(OBJEXT) \
-	ParticleLayoutIO.$(OBJEXT) HDFParticleIO.$(OBJEXT) \
-	KContainer.$(OBJEXT) StructFact.$(OBJEXT)
+	HDFWalkerInput0.$(OBJEXT) HDFWalkerInputCollect.$(OBJEXT) \
+	HDFWalkerInputManager.$(OBJEXT) HDFWalkerOutput.$(OBJEXT) \
+	XMLParticleIO.$(OBJEXT) ParticleLayoutIO.$(OBJEXT) \
+	HDFParticleIO.$(OBJEXT) KContainer.$(OBJEXT) \
+	StructFact.$(OBJEXT)
 am__objects_4 = QMCHamiltonian.$(OBJEXT) JastrowBuilder.$(OBJEXT) \
 	TrialWaveFunction.$(OBJEXT)
 am_libqmcbase_a_OBJECTS = $(am__objects_1) $(am__objects_2) \
@@ -211,9 +218,12 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/Communicate.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/DistanceTable.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/HDFParticleIO.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/HDFWalkerIO.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/HDFWalkerInput0.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/HDFWalkerInputCollect.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/HDFWalkerInputManager.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/HDFWalkerOutput.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/JastrowBuilder.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/KContainer.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/KContainer.Po ./$(DEPDIR)/Libxml2Doc.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/MCWalkerConfiguration.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/OhmmsBlas.Po ./$(DEPDIR)/OhmmsInfo.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/OhmmsInform.Po \
@@ -317,6 +327,7 @@ SimpleParser.$(OBJEXT): Utilities/SimpleParser.cpp
 SpeciesSet.$(OBJEXT): Utilities/SpeciesSet.cpp
 RandRandom.$(OBJEXT): Utilities/RandRandom.cpp
 RandomGenerator.$(OBJEXT): Utilities/RandomGenerator.cpp
+Libxml2Doc.$(OBJEXT): OhmmsData/Libxml2Doc.cpp
 ProjectData.$(OBJEXT): OhmmsApp/ProjectData.cpp
 RandomNumberControl.$(OBJEXT): OhmmsApp/RandomNumberControl.cpp
 sysutil.$(OBJEXT): Platforms/sysutil.cpp
@@ -327,7 +338,10 @@ ParticleSet.BC.$(OBJEXT): Particle/ParticleSet.BC.cpp
 ParticleSet.$(OBJEXT): Particle/ParticleSet.cpp
 MCWalkerConfiguration.$(OBJEXT): Particle/MCWalkerConfiguration.cpp
 DistanceTable.$(OBJEXT): Particle/DistanceTable.cpp
-HDFWalkerIO.$(OBJEXT): Particle/HDFWalkerIO.cpp
+HDFWalkerInput0.$(OBJEXT): Particle/HDFWalkerInput0.cpp
+HDFWalkerInputCollect.$(OBJEXT): Particle/HDFWalkerInputCollect.cpp
+HDFWalkerInputManager.$(OBJEXT): Particle/HDFWalkerInputManager.cpp
+HDFWalkerOutput.$(OBJEXT): Particle/HDFWalkerOutput.cpp
 XMLParticleIO.$(OBJEXT): ParticleIO/XMLParticleIO.cpp
 ParticleLayoutIO.$(OBJEXT): ParticleIO/ParticleLayoutIO.cpp
 HDFParticleIO.$(OBJEXT): ParticleIO/HDFParticleIO.cpp
@@ -350,9 +364,13 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Communicate.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DistanceTable.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/HDFParticleIO.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/HDFWalkerIO.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/HDFWalkerInput0.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/HDFWalkerInputCollect.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/HDFWalkerInputManager.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/HDFWalkerOutput.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/JastrowBuilder.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KContainer.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Libxml2Doc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MCWalkerConfiguration.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/OhmmsBlas.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/OhmmsInfo.Po@am__quote@
@@ -521,6 +539,24 @@ RandomGenerator.lo: Utilities/RandomGenerator.cpp
 @AMDEP_TRUE@	depfile='$(DEPDIR)/RandomGenerator.Plo' tmpdepfile='$(DEPDIR)/RandomGenerator.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o RandomGenerator.lo `test -f 'Utilities/RandomGenerator.cpp' || echo '$(srcdir)/'`Utilities/RandomGenerator.cpp
+
+Libxml2Doc.o: OhmmsData/Libxml2Doc.cpp
+@AMDEP_TRUE@	source='OhmmsData/Libxml2Doc.cpp' object='Libxml2Doc.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Libxml2Doc.Po' tmpdepfile='$(DEPDIR)/Libxml2Doc.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Libxml2Doc.o `test -f 'OhmmsData/Libxml2Doc.cpp' || echo '$(srcdir)/'`OhmmsData/Libxml2Doc.cpp
+
+Libxml2Doc.obj: OhmmsData/Libxml2Doc.cpp
+@AMDEP_TRUE@	source='OhmmsData/Libxml2Doc.cpp' object='Libxml2Doc.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Libxml2Doc.Po' tmpdepfile='$(DEPDIR)/Libxml2Doc.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Libxml2Doc.obj `cygpath -w OhmmsData/Libxml2Doc.cpp`
+
+Libxml2Doc.lo: OhmmsData/Libxml2Doc.cpp
+@AMDEP_TRUE@	source='OhmmsData/Libxml2Doc.cpp' object='Libxml2Doc.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Libxml2Doc.Plo' tmpdepfile='$(DEPDIR)/Libxml2Doc.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Libxml2Doc.lo `test -f 'OhmmsData/Libxml2Doc.cpp' || echo '$(srcdir)/'`OhmmsData/Libxml2Doc.cpp
 
 ProjectData.o: OhmmsApp/ProjectData.cpp
 @AMDEP_TRUE@	source='OhmmsApp/ProjectData.cpp' object='ProjectData.o' libtool=no @AMDEPBACKSLASH@
@@ -702,23 +738,77 @@ DistanceTable.lo: Particle/DistanceTable.cpp
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o DistanceTable.lo `test -f 'Particle/DistanceTable.cpp' || echo '$(srcdir)/'`Particle/DistanceTable.cpp
 
-HDFWalkerIO.o: Particle/HDFWalkerIO.cpp
-@AMDEP_TRUE@	source='Particle/HDFWalkerIO.cpp' object='HDFWalkerIO.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/HDFWalkerIO.Po' tmpdepfile='$(DEPDIR)/HDFWalkerIO.TPo' @AMDEPBACKSLASH@
+HDFWalkerInput0.o: Particle/HDFWalkerInput0.cpp
+@AMDEP_TRUE@	source='Particle/HDFWalkerInput0.cpp' object='HDFWalkerInput0.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/HDFWalkerInput0.Po' tmpdepfile='$(DEPDIR)/HDFWalkerInput0.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o HDFWalkerIO.o `test -f 'Particle/HDFWalkerIO.cpp' || echo '$(srcdir)/'`Particle/HDFWalkerIO.cpp
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o HDFWalkerInput0.o `test -f 'Particle/HDFWalkerInput0.cpp' || echo '$(srcdir)/'`Particle/HDFWalkerInput0.cpp
 
-HDFWalkerIO.obj: Particle/HDFWalkerIO.cpp
-@AMDEP_TRUE@	source='Particle/HDFWalkerIO.cpp' object='HDFWalkerIO.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/HDFWalkerIO.Po' tmpdepfile='$(DEPDIR)/HDFWalkerIO.TPo' @AMDEPBACKSLASH@
+HDFWalkerInput0.obj: Particle/HDFWalkerInput0.cpp
+@AMDEP_TRUE@	source='Particle/HDFWalkerInput0.cpp' object='HDFWalkerInput0.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/HDFWalkerInput0.Po' tmpdepfile='$(DEPDIR)/HDFWalkerInput0.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o HDFWalkerIO.obj `cygpath -w Particle/HDFWalkerIO.cpp`
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o HDFWalkerInput0.obj `cygpath -w Particle/HDFWalkerInput0.cpp`
 
-HDFWalkerIO.lo: Particle/HDFWalkerIO.cpp
-@AMDEP_TRUE@	source='Particle/HDFWalkerIO.cpp' object='HDFWalkerIO.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/HDFWalkerIO.Plo' tmpdepfile='$(DEPDIR)/HDFWalkerIO.TPlo' @AMDEPBACKSLASH@
+HDFWalkerInput0.lo: Particle/HDFWalkerInput0.cpp
+@AMDEP_TRUE@	source='Particle/HDFWalkerInput0.cpp' object='HDFWalkerInput0.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/HDFWalkerInput0.Plo' tmpdepfile='$(DEPDIR)/HDFWalkerInput0.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o HDFWalkerIO.lo `test -f 'Particle/HDFWalkerIO.cpp' || echo '$(srcdir)/'`Particle/HDFWalkerIO.cpp
+	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o HDFWalkerInput0.lo `test -f 'Particle/HDFWalkerInput0.cpp' || echo '$(srcdir)/'`Particle/HDFWalkerInput0.cpp
+
+HDFWalkerInputCollect.o: Particle/HDFWalkerInputCollect.cpp
+@AMDEP_TRUE@	source='Particle/HDFWalkerInputCollect.cpp' object='HDFWalkerInputCollect.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/HDFWalkerInputCollect.Po' tmpdepfile='$(DEPDIR)/HDFWalkerInputCollect.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o HDFWalkerInputCollect.o `test -f 'Particle/HDFWalkerInputCollect.cpp' || echo '$(srcdir)/'`Particle/HDFWalkerInputCollect.cpp
+
+HDFWalkerInputCollect.obj: Particle/HDFWalkerInputCollect.cpp
+@AMDEP_TRUE@	source='Particle/HDFWalkerInputCollect.cpp' object='HDFWalkerInputCollect.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/HDFWalkerInputCollect.Po' tmpdepfile='$(DEPDIR)/HDFWalkerInputCollect.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o HDFWalkerInputCollect.obj `cygpath -w Particle/HDFWalkerInputCollect.cpp`
+
+HDFWalkerInputCollect.lo: Particle/HDFWalkerInputCollect.cpp
+@AMDEP_TRUE@	source='Particle/HDFWalkerInputCollect.cpp' object='HDFWalkerInputCollect.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/HDFWalkerInputCollect.Plo' tmpdepfile='$(DEPDIR)/HDFWalkerInputCollect.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o HDFWalkerInputCollect.lo `test -f 'Particle/HDFWalkerInputCollect.cpp' || echo '$(srcdir)/'`Particle/HDFWalkerInputCollect.cpp
+
+HDFWalkerInputManager.o: Particle/HDFWalkerInputManager.cpp
+@AMDEP_TRUE@	source='Particle/HDFWalkerInputManager.cpp' object='HDFWalkerInputManager.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/HDFWalkerInputManager.Po' tmpdepfile='$(DEPDIR)/HDFWalkerInputManager.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o HDFWalkerInputManager.o `test -f 'Particle/HDFWalkerInputManager.cpp' || echo '$(srcdir)/'`Particle/HDFWalkerInputManager.cpp
+
+HDFWalkerInputManager.obj: Particle/HDFWalkerInputManager.cpp
+@AMDEP_TRUE@	source='Particle/HDFWalkerInputManager.cpp' object='HDFWalkerInputManager.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/HDFWalkerInputManager.Po' tmpdepfile='$(DEPDIR)/HDFWalkerInputManager.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o HDFWalkerInputManager.obj `cygpath -w Particle/HDFWalkerInputManager.cpp`
+
+HDFWalkerInputManager.lo: Particle/HDFWalkerInputManager.cpp
+@AMDEP_TRUE@	source='Particle/HDFWalkerInputManager.cpp' object='HDFWalkerInputManager.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/HDFWalkerInputManager.Plo' tmpdepfile='$(DEPDIR)/HDFWalkerInputManager.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o HDFWalkerInputManager.lo `test -f 'Particle/HDFWalkerInputManager.cpp' || echo '$(srcdir)/'`Particle/HDFWalkerInputManager.cpp
+
+HDFWalkerOutput.o: Particle/HDFWalkerOutput.cpp
+@AMDEP_TRUE@	source='Particle/HDFWalkerOutput.cpp' object='HDFWalkerOutput.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/HDFWalkerOutput.Po' tmpdepfile='$(DEPDIR)/HDFWalkerOutput.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o HDFWalkerOutput.o `test -f 'Particle/HDFWalkerOutput.cpp' || echo '$(srcdir)/'`Particle/HDFWalkerOutput.cpp
+
+HDFWalkerOutput.obj: Particle/HDFWalkerOutput.cpp
+@AMDEP_TRUE@	source='Particle/HDFWalkerOutput.cpp' object='HDFWalkerOutput.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/HDFWalkerOutput.Po' tmpdepfile='$(DEPDIR)/HDFWalkerOutput.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o HDFWalkerOutput.obj `cygpath -w Particle/HDFWalkerOutput.cpp`
+
+HDFWalkerOutput.lo: Particle/HDFWalkerOutput.cpp
+@AMDEP_TRUE@	source='Particle/HDFWalkerOutput.cpp' object='HDFWalkerOutput.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/HDFWalkerOutput.Plo' tmpdepfile='$(DEPDIR)/HDFWalkerOutput.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o HDFWalkerOutput.lo `test -f 'Particle/HDFWalkerOutput.cpp' || echo '$(srcdir)/'`Particle/HDFWalkerOutput.cpp
 
 XMLParticleIO.o: ParticleIO/XMLParticleIO.cpp
 @AMDEP_TRUE@	source='ParticleIO/XMLParticleIO.cpp' object='XMLParticleIO.o' libtool=no @AMDEPBACKSLASH@
