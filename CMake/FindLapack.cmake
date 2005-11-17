@@ -13,45 +13,55 @@ SET(MKL_PATHS "")
 
 #use environment variables
 #use environment variables: e.g, module at OSC uses MKL
-IF($ENV{MKL} MATCHES "mkl")
+#IF(NOT QMC_BUILD_STATIC)
 
+  IF($ENV{MKL} MATCHES "mkl")
+  
     MESSAGE(STATUS "Using intel/mkl library: $ENV{MKL}")
-
+    
     #look for the path where the mkl is installed
     STRING(REGEX MATCHALL "[-][L]([^ ;])+" MKL_PATH_WITH_PREFIX  "$ENV{MKL}")
     STRING(REGEX REPLACE "[-][L]" "" MKL_PATHS ${MKL_PATH_WITH_PREFIX})
-
+  
   ENDIF($ENV{MKL} MATCHES "mkl")
-
+  
   SET(MKL_PATHS ${MKL_PATHS} 
-        $ENV{MKL_HOME}/lib/${BITS}
-        $ENV{MKL_HOME}/lib
-	/usr/local/intel/mkl60/mkl60/lib/64
-	/usr/local/intel/mkl/lib/32 
-	/opt/intel/mkl/lib/32
-  ) 
-
+      $ENV{MKL_HOME}/lib/${BITS}
+      $ENV{MKL_HOME}/lib
+      /usr/local/intel/mkl60/mkl60/lib/64
+      /usr/local/intel/mkl/lib/32 
+      /opt/intel/mkl/lib/32
+     ) 
   MESSAGE(STATUS "Looking for intel/mkl library in ${MKL_PATHS}")
 
-  IF(NOT LAPACK_LIBRARY_INIT)
-    FIND_LIBRARY(LAPACK_LIBRARY 
-      NAMES mkl_lapack 
+#ENDIF(NOT QMC_BUILD_STATIC)
+
+IF(NOT LAPACK_LIBRARY_INIT)
+  FIND_LIBRARY(LAPACK_LIBRARY 
+    NAMES mkl_lapack 
+    PATHS ${MKL_PATHS}
+  )
+  IF(QMC_BUILD_STATIC) 
+    FIND_LIBRARY(BLAS_LIBRARY
+      NAMES mkl_ia32 mkl_ipf
       PATHS ${MKL_PATHS}
     )
+  ELSE(QMC_BUILD_STATIC) 
     FIND_LIBRARY(BLAS_LIBRARY
       NAMES mkl mkl_itp
       PATHS ${MKL_PATHS}
     )
-    FIND_LIBRARY(INTEL_GUIDE_LIBRARY
-      NAMES guide
-      PATHS ${MKL_PATHS}
-    )
-    IF(LAPACK_LIBRARY MATCHES "mkl")
-      MESSAGE(STATUS "Found intel/mkl library")
-      SET(LAPACK_LIBRARY_INIT 1 CACHE BOOL "lapack is initialized")
-      SET(BLAS_LIBRARY_INIT 1 CACHE BOOL "blas is initialized")
-      SET(INTEL_MKL 1 CACHE BOOL "INTEL_MKL is set to 1")
-    ENDIF(LAPACK_LIBRARY MATCHES "mkl")
+  ENDIF(QMC_BUILD_STATIC) 
+  FIND_LIBRARY(INTEL_GUIDE_LIBRARY
+    NAMES guide
+    PATHS ${MKL_PATHS}
+  )
+  IF(LAPACK_LIBRARY MATCHES "mkl")
+    MESSAGE(STATUS "Found intel/mkl library")
+    SET(LAPACK_LIBRARY_INIT 1 CACHE BOOL "lapack is initialized")
+    SET(BLAS_LIBRARY_INIT 1 CACHE BOOL "blas is initialized")
+    SET(INTEL_MKL 1 CACHE BOOL "INTEL_MKL is set to 1")
+  ENDIF(LAPACK_LIBRARY MATCHES "mkl")
 ENDIF(NOT LAPACK_LIBRARY_INIT)
 
 IF($ENV{ATLAS} MATCHES "atlas")
