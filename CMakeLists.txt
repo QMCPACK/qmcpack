@@ -10,8 +10,26 @@ SET(version 0.2)
 SET (LIBRARY_OUTPUT_PATH ${qmcPlusPlus_BINARY_DIR}/lib CACHE PATH "Single output directory for building all libraries.")
 SET (EXECUTABLE_OUTPUT_PATH ${qmcPlusPlus_BINARY_DIR}/bin CACHE PATH "Single output directory for building all executables.")
 
-#list of options to determine libraries. First, try to use libraries available
+######################################################################
+# Optinal features
+######################################################################
+
+######################
+#choose parallel mode
+######################
+OPTION(QMC_MPI "Enable MPI library" OFF)
+
+######################
+#1 to build static library
+######################
+SET(QMC_BUILD_STATIC 0)
+
+######################
+#set 32/64 bit OS 
+######################
 SET(BITS 32)
+
+#list of options to determine libraries. First, try to use libraries available
 SET(INTEL_COMPILER 0)
 SET(ENABLE_OPENMP 0)
 SET(HAVE_MPI 0)
@@ -22,8 +40,6 @@ SET(HAVE_LIBHDF5 0)
 SET(HAVE_LIBSPRNG 0)
 SET(HAVE_LIBBLITZ 0)
 SET(HAVE_LIBGSL 0)
-
-OPTION(QMC_MPI "Enable MPI library" OFF)
 
 ######################################################################
 #important settings for QMC simulations to instantiate template classes
@@ -52,8 +68,8 @@ SET (PROJECT_CMAKE ${qmcPlusPlus_SOURCE_DIR}/CMake)
 #COMPILER choose one of the cmake files to customize the compiler options
 #If nothing is chosen, default settings by cmake will  be used.
 ######################################################
-#INCLUDE(${PROJECT_CMAKE}/GNUCompilers.cmake)
-INCLUDE(${PROJECT_CMAKE}/Intel8.cmake)
+INCLUDE(${PROJECT_CMAKE}/GNUCompilers.cmake)
+#INCLUDE(${PROJECT_CMAKE}/Intel8.cmake)
 #INCLUDE(${PROJECT_CMAKE}/IBMCompilers.cmake)
 #INCLUDE(${PROJECT_CMAKE}/KCCCompilers.cmake)
 #INCLUDE(${PROJECT_CMAKE}/Intel7.cmake)
