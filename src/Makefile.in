@@ -74,7 +74,6 @@ BLAS_LIBS = @BLAS_LIBS@
 CC = @CC@
 CPP = @CPP@
 CXX = @CXX@
-CXXCPP = @CXXCPP@
 CXXFFLAGS = @CXXFFLAGS@
 CXXFLAGS = @CXXFLAGS@
 CXX_DEBUG_FLAGS = @CXX_DEBUG_FLAGS@
@@ -83,17 +82,15 @@ CXX_OPTIMIZE_FLAGS = @CXX_OPTIMIZE_FLAGS@
 DEPDIR = @DEPDIR@
 DLLTOOL = @DLLTOOL@
 ECHO = @ECHO@
-EGREP = @EGREP@
 F77 = @F77@
 F77_OPTIMIZE_FLAGS = @F77_OPTIMIZE_FLAGS@
 F90 = @F90@
 F90_OPTIMIZE_FLAGS = @F90_OPTIMIZE_FLAGS@
 FFLAGS = @FFLAGS@
 FLIBS = @FLIBS@
-GCJ = @GCJ@
-GCJFLAGS = @GCJFLAGS@
 HDF5_LIBS = @HDF5_LIBS@
-INCLUDES = @INCLUDES@
+
+INCLUDES = $(OOMPI_INC)
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
 LAPACK_LIBS = @LAPACK_LIBS@
 LDFLAGS = @LDFLAGS@
@@ -108,7 +105,6 @@ OBJDUMP = @OBJDUMP@
 PACKAGE = @PACKAGE@
 QMCBASE_LIBS = @QMCBASE_LIBS@
 RANLIB = @RANLIB@
-RC = @RC@
 SPRNG_LIBS = @SPRNG_LIBS@
 STRIP = @STRIP@
 UP = @UP@
@@ -117,11 +113,13 @@ ac_aux_dir = @ac_aux_dir@
 am__include = @am__include@
 am__quote = @am__quote@
 install_sh = @install_sh@
+
+#add mpi-related sources and oompi directory for --enable-mpi=yes
 pkginclude_HEADERS = \
 	ohmms-config.h 
 
 
-OHMMS_UTILITIES = \
+QMCPP_UTILITIES = \
 	Utilities/OhmmsObject.cpp \
 	Utilities/OhmmsInform.cpp \
 	Utilities/OhmmsInfo.cpp \
@@ -136,11 +134,11 @@ OHMMS_UTILITIES = \
 	Numerics/OhmmsBlas.cpp
 
 
-OHMMS_MESSAGE = \
+QMCPP_MESSAGE = \
 	Message/Communicate.cpp 
 
 
-OHMMS_PARTICLE = \
+QMCPP_PARTICLE = \
 	ParticleTags.cpp \
         Lattice/Uniform3DGridLayout.cpp \
         Particle/ParticleSet.BC.cpp \
@@ -164,13 +162,16 @@ QMC_BASE = \
 	QMCWaveFunctions/TrialWaveFunction.cpp
 
 
+@NEEDTOBUILDOOMPI_TRUE@oompi = OOMPI
+@NEEDTOBUILDOOMPI_TRUE@OOMPI_INC = -I$(top_srcdir)/src/OOMPI
+
 # build the base library used by any application
 lib_LIBRARIES = libqmcbase.a
 
 libqmcbase_a_SOURCES = \
-	$(OHMMS_UTILITIES) \
-	$(OHMMS_MESSAGE) \
-	$(OHMMS_PARTICLE) \
+	$(QMCPP_UTILITIES) \
+	$(QMCPP_MESSAGE) \
+	$(QMCPP_PARTICLE) \
 	$(QMC_BASE)
 
 
@@ -179,7 +180,7 @@ libqmcbase_a_SOURCES = \
 # ii) application-dependent libraries: FortranLib, OOMPI, SlaterKosterTB
 #iii) the main application: OhmmsApp
 # iv) ready to install the header files and libraries
-SUBDIRS = .  QMCApp
+SUBDIRS = $(oompi) . QMCApp
 subdir = src
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = ohmms-config.h
@@ -260,7 +261,7 @@ RECURSIVE_TARGETS = info-recursive dvi-recursive install-info-recursive \
 	uninstall-recursive check-recursive installcheck-recursive
 DIST_COMMON = $(pkginclude_HEADERS) Makefile.am Makefile.in \
 	ohmms-config.h.in
-DIST_SUBDIRS = $(SUBDIRS)
+DIST_SUBDIRS = OOMPI . QMCApp
 SOURCES = $(libqmcbase_a_SOURCES)
 
 all: ohmms-config.h
@@ -1104,7 +1105,7 @@ distdir: $(DISTFILES)
 	    || exit 1; \
 	  fi; \
 	done
-	list='$(SUBDIRS)'; for subdir in $$list; do \
+	list='$(DIST_SUBDIRS)'; for subdir in $$list; do \
 	  if test "$$subdir" = .; then :; else \
 	    test -d $(distdir)/$$subdir \
 	    || mkdir $(distdir)/$$subdir \

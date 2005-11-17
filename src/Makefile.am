@@ -1,3 +1,4 @@
+#add mpi-related sources and oompi directory for --enable-mpi=yes
 pkginclude_HEADERS= \
 	ohmms-config.h 
 
@@ -41,16 +42,14 @@ QMC_BASE = \
 	QMCWaveFunctions/JastrowBuilder.cpp\
 	QMCWaveFunctions/TrialWaveFunction.cpp
 
-#add mpi-related sources and oompi directory for --enable-mpi=yes
 if NEEDTOBUILDOOMPI
 oompi=OOMPI
 OOMPI_INC =  -I$(top_srcdir)/src/OOMPI
 endif
 
-INCLUDES = $(OOMPI_INC)
-
 # build the base library used by any application
 lib_LIBRARIES = libqmcbase.a
+
 
 libqmcbase_a_SOURCES = \
 	$(QMCPP_UTILITIES) \
@@ -58,9 +57,11 @@ libqmcbase_a_SOURCES = \
 	$(QMCPP_PARTICLE) \
 	$(QMC_BASE)
 
+INCLUDES = $(OOMPI_INC)
+
 #important: build order,
 #  i) current directory for the base libraries
 # ii) application-dependent libraries: FortranLib, OOMPI, SlaterKosterTB
 #iii) the main application: OhmmsApp
 # iv) ready to install the header files and libraries
-SUBDIRS = .  $(oompi) QMCApp
+SUBDIRS = $(oompi) . QMCApp

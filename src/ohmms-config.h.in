@@ -6,19 +6,16 @@
 //
 //See the LICENSE file in the top-level directory for copyright notices
 //
-#ifndef OHMMS_QMC_CONFIGURATION_H
-#define OHMMS_QMC_CONFIGURATION_H
+#ifndef QMCPLUSPLUS_CONFIGURATION_H
+#define QMCPLUSPLUS_CONFIGURATION_H
 
 
 /* Enable OpenMP parallelization. */
 #undef ENABLE_OPENMP
 
-/* Define to dummy `main' function (if any) required to link to the Fortran
+/* Define to dummy `main' function (if any) required to link to the Fortran 77
    libraries. */
 #undef F77_DUMMY_MAIN
-
-/* Define if F77 and FC dummy `main' functions are identical. */
-#undef FC_DUMMY_MAIN_EQ_F77
 
 /* Define to 1 if you have the `atexit' function. */
 #undef HAVE_ATEXIT
@@ -187,4 +184,4 @@
    code using `volatile' can become incorrect without. Disable with care. */
 #undef volatile
 
-#endif // OHMMS_QMCCONFIGURATION_H
+#endif // QMCPLUSPLUS_QMCCONFIGURATION_H

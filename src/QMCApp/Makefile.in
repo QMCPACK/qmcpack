@@ -74,7 +74,6 @@ BLAS_LIBS = @BLAS_LIBS@
 CC = @CC@
 CPP = @CPP@
 CXX = @CXX@
-CXXCPP = @CXXCPP@
 CXXFFLAGS = @CXXFFLAGS@
 CXXFLAGS = @CXXFLAGS@
 CXX_DEBUG_FLAGS = @CXX_DEBUG_FLAGS@
@@ -83,18 +82,15 @@ CXX_OPTIMIZE_FLAGS = @CXX_OPTIMIZE_FLAGS@
 DEPDIR = @DEPDIR@
 DLLTOOL = @DLLTOOL@
 ECHO = @ECHO@
-EGREP = @EGREP@
 F77 = @F77@
 F77_OPTIMIZE_FLAGS = @F77_OPTIMIZE_FLAGS@
 F90 = @F90@
 F90_OPTIMIZE_FLAGS = @F90_OPTIMIZE_FLAGS@
 FFLAGS = @FFLAGS@
 FLIBS = @FLIBS@
-GCJ = @GCJ@
-GCJFLAGS = @GCJFLAGS@
 HDF5_LIBS = @HDF5_LIBS@
 
-INCLUDES = -I$(top_srcdir)/src
+INCLUDES = -I$(top_srcdir)/src $(OOMPI_INC)
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
 LAPACK_LIBS = @LAPACK_LIBS@
 LDFLAGS = @LDFLAGS@
@@ -109,7 +105,6 @@ OBJDUMP = @OBJDUMP@
 PACKAGE = @PACKAGE@
 QMCBASE_LIBS = @QMCBASE_LIBS@
 RANLIB = @RANLIB@
-RC = @RC@
 SPRNG_LIBS = @SPRNG_LIBS@
 STRIP = @STRIP@
 UP = @UP@
@@ -162,16 +157,24 @@ QMC_APP = \
   QMCMain.cpp\
   qmcapp.cpp
 
+@NEEDTOBUILDOOMPI_TRUE@QMC_MPP_SRC = \
+@NEEDTOBUILDOOMPI_TRUE@  ../QMCDrivers/GlobalWalkerControl.cpp
+
 
 bin_PROGRAMS = qmcapp
 qmcapp_SOURCES = \
 $(QMC_COMMON_SRCS) \
 $(QMC_DRIVERS) \
+$(QMC_MPP_SRC) \
 $(QMC_APP)
 
-qmcapp_LDADD = @QMCBASE_LIBS@ 
+
+@NEEDTOBUILDOOMPI_TRUE@OOMPI_INC = -I$(top_srcdir)/src/OOMPI
+@NEEDTOBUILDOOMPI_TRUE@OOMPI_LIB = ${top_builddir}/src/OOMPI/liboompi.a
+
+qmcapp_LDADD = @QMCBASE_LIBS@  $(OOMPI_LIB)
 qmcapp_LDFLAGS = @LDFLAGS@ 
-qmcapp_DEPENDENCIES = ${top_builddir}/src/libqmcbase.a
+qmcapp_DEPENDENCIES = ${top_builddir}/src/libqmcbase.a $(OOMPI_LIB)
 subdir = src/QMCApp
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/ohmms-config.h
@@ -195,10 +198,12 @@ am__objects_2 = SimpleFixedNodeBranch.$(OBJEXT) QMCDriver.$(OBJEXT) \
 	DMCParticleByParticle.$(OBJEXT) WalkerControlBase.$(OBJEXT) \
 	QMCOptimize.$(OBJEXT) QMCCostFunction.$(OBJEXT) \
 	ScalarEstimatorManager.$(OBJEXT)
-am__objects_3 = ParticleSetPool.$(OBJEXT) WaveFunctionPool.$(OBJEXT) \
+@NEEDTOBUILDOOMPI_TRUE@am__objects_3 = GlobalWalkerControl.$(OBJEXT)
+am__objects_4 = ParticleSetPool.$(OBJEXT) WaveFunctionPool.$(OBJEXT) \
 	HamiltonianPool.$(OBJEXT) InitMolecularSystem.$(OBJEXT) \
 	QMCAppBase.$(OBJEXT) QMCMain.$(OBJEXT) qmcapp.$(OBJEXT)
-am_qmcapp_OBJECTS = $(am__objects_1) $(am__objects_2) $(am__objects_3)
+am_qmcapp_OBJECTS = $(am__objects_1) $(am__objects_2) $(am__objects_3) \
+	$(am__objects_4)
 qmcapp_OBJECTS = $(am_qmcapp_OBJECTS)
 
 DEFS = @DEFS@
@@ -213,6 +218,7 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/ElectronGasOrbitalBuilder.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/GTO2GridBuilder.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/GTOMolecularOrbitals.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/GlobalWalkerControl.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/GridMolecularOrbitals.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/HFAtomicSTOSet.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/HFAtomicSTOSetBuilder.Po \
@@ -337,6 +343,7 @@ QMCOptimize.$(OBJEXT): ../QMCDrivers/QMCOptimize.cpp
 QMCCostFunction.$(OBJEXT): ../QMCDrivers/QMCCostFunction.cpp
 ScalarEstimatorManager.$(OBJEXT): \
 	../Estimators/ScalarEstimatorManager.cpp
+GlobalWalkerControl.$(OBJEXT): ../QMCDrivers/GlobalWalkerControl.cpp
 qmcapp$(EXEEXT): $(qmcapp_OBJECTS) $(qmcapp_DEPENDENCIES) 
 	@rm -f qmcapp$(EXEEXT)
 	$(CXXLINK) $(qmcapp_LDFLAGS) $(qmcapp_OBJECTS) $(qmcapp_LDADD) $(LIBS)
@@ -353,6 +360,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ElectronGasOrbitalBuilder.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/GTO2GridBuilder.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/GTOMolecularOrbitals.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/GlobalWalkerControl.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/GridMolecularOrbitals.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/HFAtomicSTOSet.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/HFAtomicSTOSetBuilder.Po@am__quote@
@@ -926,6 +934,24 @@ ScalarEstimatorManager.lo: ../Estimators/ScalarEstimatorManager.cpp
 @AMDEP_TRUE@	depfile='$(DEPDIR)/ScalarEstimatorManager.Plo' tmpdepfile='$(DEPDIR)/ScalarEstimatorManager.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ScalarEstimatorManager.lo `test -f '../Estimators/ScalarEstimatorManager.cpp' || echo '$(srcdir)/'`../Estimators/ScalarEstimatorManager.cpp
+
+GlobalWalkerControl.o: ../QMCDrivers/GlobalWalkerControl.cpp
+@AMDEP_TRUE@	source='../QMCDrivers/GlobalWalkerControl.cpp' object='GlobalWalkerControl.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/GlobalWalkerControl.Po' tmpdepfile='$(DEPDIR)/GlobalWalkerControl.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o GlobalWalkerControl.o `test -f '../QMCDrivers/GlobalWalkerControl.cpp' || echo '$(srcdir)/'`../QMCDrivers/GlobalWalkerControl.cpp
+
+GlobalWalkerControl.obj: ../QMCDrivers/GlobalWalkerControl.cpp
+@AMDEP_TRUE@	source='../QMCDrivers/GlobalWalkerControl.cpp' object='GlobalWalkerControl.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/GlobalWalkerControl.Po' tmpdepfile='$(DEPDIR)/GlobalWalkerControl.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o GlobalWalkerControl.obj `cygpath -w ../QMCDrivers/GlobalWalkerControl.cpp`
+
+GlobalWalkerControl.lo: ../QMCDrivers/GlobalWalkerControl.cpp
+@AMDEP_TRUE@	source='../QMCDrivers/GlobalWalkerControl.cpp' object='GlobalWalkerControl.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/GlobalWalkerControl.Plo' tmpdepfile='$(DEPDIR)/GlobalWalkerControl.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o GlobalWalkerControl.lo `test -f '../QMCDrivers/GlobalWalkerControl.cpp' || echo '$(srcdir)/'`../QMCDrivers/GlobalWalkerControl.cpp
 CXXDEPMODE = @CXXDEPMODE@
 
 mostlyclean-libtool:

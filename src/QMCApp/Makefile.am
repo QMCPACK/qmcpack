@@ -39,15 +39,25 @@ QMC_APP =\
   QMCAppBase.cpp\
   QMCMain.cpp\
   qmcapp.cpp
+if NEEDTOBUILDOOMPI
+QMC_MPP_SRC = \
+  ../QMCDrivers/GlobalWalkerControl.cpp
+endif
 
 bin_PROGRAMS = qmcapp
 qmcapp_SOURCES = \
 $(QMC_COMMON_SRCS) \
 $(QMC_DRIVERS) \
+$(QMC_MPP_SRC) \
 $(QMC_APP)
 
-INCLUDES = -I$(top_srcdir)/src
-qmcapp_LDADD = @QMCBASE_LIBS@ 
-qmcapp_LDFLAGS = @LDFLAGS@ 
-qmcapp_DEPENDENCIES = ${top_builddir}/src/libqmcbase.a
+if NEEDTOBUILDOOMPI
+OOMPI_INC = -I$(top_srcdir)/src/OOMPI
+OOMPI_LIB = ${top_builddir}/src/OOMPI/liboompi.a
+endif
 
+INCLUDES = -I$(top_srcdir)/src $(OOMPI_INC)
+
+qmcapp_LDADD = @QMCBASE_LIBS@  $(OOMPI_LIB)
+qmcapp_LDFLAGS = @LDFLAGS@ 
+qmcapp_DEPENDENCIES = ${top_builddir}/src/libqmcbase.a $(OOMPI_LIB)

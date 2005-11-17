@@ -219,7 +219,7 @@ AC_ARG_WITH(cxx,
        if test x"$F77" = x; then
          F77="ifort"
        fi
-       CXX_OPTIMIZE_FLAGS="-O3 -unroll -ipo -ipo_obj"
+       CXX_OPTIMIZE_FLAGS="-O3 -unroll -Ob=2 -cxxlib-icc"
        CXX_DEBUG_FLAGS="-g -O0 -DPRINT_DEBUG"
      ;;
      icpc)                # Intel C++ compiler   http://www.intel.com/
@@ -233,7 +233,7 @@ AC_ARG_WITH(cxx,
        if test x"$F77" = x; then
          F77="ifort"
        fi
-       CXX_OPTIMIZE_FLAGS="-O3 -unroll -ipo -ipo_obj"
+       CXX_OPTIMIZE_FLAGS="-O3 -unroll -Ob=2 -cxxlib-icc"
        CXX_DEBUG_FLAGS="-g -O0 -DPRINT_DEBUG"
      ;;
      ecc)                # Intel C++ compiler for IA64 http://www.intel.com/
@@ -536,10 +536,10 @@ if test "$enable_mpi" != "no"; then
    [
      echo "Checking MPICXX=$MPICXX"
      if test x"$MPICXX" != x ; then
-       if test "$MPICXX" = "cmpicc";then
-         if test "$CXX" = "icc"; then
+       if test "$MPICXX" = "cmpic++";then
+         if test "$CXX" = "icpc"; then
   	   echo "cmpicc requires an extra option when compiled with intel compilers"
-           CXXFLAGS="$CXXFLAGS -icc"
+           CXXFLAGS="$CXXFLAGS -ccl icpc"
          fi
        fi
        CXX="$MPICXX"
@@ -712,6 +712,7 @@ ACX_BOOST([], [AC_MSG_WARN([Could not find boost. Disabled.])])
 
 #time to add mpi stuff only for --enable-mpi=yes
 needtobuild_oompi=false
+OOMPI_INC=""
 
 if test "$enable_mpi" != "no"; then
    echo "MPI compilation is requested. Checking mpi stuff...."
@@ -749,7 +750,7 @@ if test "$enable_mpi" != "no"; then
 
 #include <stdlib.h>
 #include <sys/types.h>
-nclude "ohmms-config.h"
+#include "ohmms-config.h"
 
 #if SIZEOF_INT != SIZEOF_BOOL
 #define OOMPI_BOOL_NE_INT 1
@@ -766,9 +767,9 @@ _EOF_
   ])
 fi
 
-AM_CONDITIONAL(NEEDTOBUILDOOMPI,test "$needtobuild_oompi" = "true")
-
 LIBS="$XML2_LIBS $HDF5_LIBS $LAPACK_LIBS $BLAS_LIBS $SPRNG_LIBS $FLIBS $LIBS"
+
+AM_CONDITIONAL(NEEDTOBUILDOOMPI,test "$needtobuild_oompi" = "true")
 
 QMCBASE_LIBS="-L\$(top_builddir)/src -lqmcbase"
 
