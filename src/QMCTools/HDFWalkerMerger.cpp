@@ -118,7 +118,12 @@ void HDFWalkerMerger::merge() {
   char GrpName[128];
   char ConfName[128];
 
+#if H5_VERS_RELEASE < 4
   hssize_t offset[]={0,0,0};
+#else
+  hsize_t offset[]={0,0,0};
+#endif
+
 
   typedef std::vector<OHMMS_PRECISION> Container_t;
   Container_t vecIn(MaxNumWalkers*NumPtcl*Dimension);
