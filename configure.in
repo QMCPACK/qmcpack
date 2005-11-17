@@ -19,10 +19,10 @@ AH_TOP([// -*- c++  -*-
 //
 //See the LICENSE file in the top-level directory for copyright notices
 //
-#ifndef OHMMS_QMC_CONFIGURATION_H
-#define OHMMS_QMC_CONFIGURATION_H
+#ifndef QMCPLUSPLUS_CONFIGURATION_H
+#define QMCPLUSPLUS_CONFIGURATION_H
 ])
-AH_BOTTOM([#endif // OHMMS_QMCCONFIGURATION_H])
+AH_BOTTOM([#endif // QMCPLUSPLUS_QMCCONFIGURATION_H])
 AM_CONFIG_HEADER([src/ohmms-config.h])
 
 # setting up config directory to hold autoconf stuff
