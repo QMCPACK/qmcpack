@@ -55,7 +55,8 @@ namespace qmcplusplus {
         int pid_target= (anode<0)?pid:anode;
         if(pid_target == pid && cfile != "invalid") {
           HDFWalkerInput0 WO(cfile); 
-          WO.append(Wref,nwalkers);
+          WO.append(Wref,nblocks);
+          //WO.append(Wref,nwalkers);
           //read random state
           WO.getRandomState(true);
           CurrentFileRoot = cfile;

@@ -187,7 +187,12 @@ HDFWalkerInputCollect::read(MCWalkerConfiguration& W, int firstConf, int lastCon
 
   char confName[128];
   char coordName[128];
+   
+#if H5_VERS_RELEASE < 4
   hssize_t offset[3];
+#else
+  hsize_t offset[3];
+#endif
   hsize_t dimIn[3],dimTot[3];
   offset[0]=0; offset[1]=0; offset[2]=0;
 

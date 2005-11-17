@@ -156,65 +156,68 @@ HDFWalkerInput0::put(MCWalkerConfiguration& W, int ic){
   return true;
 }
 
-bool HDFWalkerInput0::append(MCWalkerConfiguration& W){
-
-  if(Counter<0) return false;
-
-  typedef MCWalkerConfiguration::PosType PosType;
-  typedef Matrix<PosType>  PosContainer_t;
-  PosContainer_t Pos_temp;
-  int nw_in=0,curConfig=FirstSet;
-  while(curConfig<LastSet) {
-    //open the group
-    char GrpName[128];
-    sprintf(GrpName,"config%04d",curConfig);
-    hid_t group_id = H5Gopen(h_config,GrpName);
-    HDFAttribIO<PosContainer_t> Pos_in(Pos_temp);
-    //read the dataset
-    Pos_in.read(group_id,"coord");
-    //close the group
-    H5Gclose(group_id);
-    /*check to see if the number of walkers and particles is  consistent with W */
-    int nptcl = Pos_temp.cols();
-    int nwt = Pos_temp.rows();
-    int curWalker = W.getActiveWalkers();
-    if(curWalker) {
-      W.createWalkers(nwt);
-    } else {
-      W.resize(nwt,nptcl); 
-    }
-    MCWalkerConfiguration::iterator it = W.begin()+curWalker; 
-    for(int iw=0; iw<nwt; iw++) {
-      //std::copy(Post_temp[iw],Post_temp[iw+1], (*it)->R.begin());
-      for(int iat=0; iat < nptcl; iat++){
-        (*it)->R(iat) = Pos_temp(iw,iat);
-      }
-      ++it;
-    }
-    nw_in += nwt; 
-    curConfig++;
-  }
-
-  LOGMSG("Total " << nw_in << " walkers are loaded using " << LastSet-FirstSet << " frames.")
-  return true;
-}
+//bool HDFWalkerInput0::append(MCWalkerConfiguration& W){
+//
+//  if(Counter<0) return false;
+//
+//  typedef MCWalkerConfiguration::PosType PosType;
+//  typedef Matrix<PosType>  PosContainer_t;
+//  PosContainer_t Pos_temp;
+//  int nw_in=0,curConfig=FirstSet;
+//  while(curConfig<LastSet) {
+//    //open the group
+//    char GrpName[128];
+//    sprintf(GrpName,"config%04d",curConfig);
+//    hid_t group_id = H5Gopen(h_config,GrpName);
+//    HDFAttribIO<PosContainer_t> Pos_in(Pos_temp);
+//    //read the dataset
+//    Pos_in.read(group_id,"coord");
+//    //close the group
+//    H5Gclose(group_id);
+//    /*check to see if the number of walkers and particles is  consistent with W */
+//    int nptcl = Pos_temp.cols();
+//    int nwt = Pos_temp.rows();
+//    int curWalker = W.getActiveWalkers();
+//    if(curWalker) {
+//      W.createWalkers(nwt);
+//    } else {
+//      W.resize(nwt,nptcl); 
+//    }
+//    MCWalkerConfiguration::iterator it = W.begin()+curWalker; 
+//    for(int iw=0; iw<nwt; iw++) {
+//      //std::copy(Post_temp[iw],Post_temp[iw+1], (*it)->R.begin());
+//      for(int iat=0; iat < nptcl; iat++){
+//        (*it)->R(iat) = Pos_temp(iw,iat);
+//      }
+//      ++it;
+//    }
+//    nw_in += nwt; 
+//    curConfig++;
+//  }
+//
+//  LOGMSG("Total " << nw_in << " walkers are loaded using " << LastSet-FirstSet << " frames.")
+//  return true;
+//}
 
 bool  
-HDFWalkerInput0::append(MCWalkerConfiguration& W, int nwalkers){
+HDFWalkerInput0::append(MCWalkerConfiguration& W, int blocks){
 
   if(Counter<0) return false;
 
-  if(nwalkers<0) return put(W,-1);
+  //if(nwalkers<0) return put(W,-1);
 
   typedef MCWalkerConfiguration::PosType PosType;
   typedef Matrix<PosType>  PosContainer_t;
   PosContainer_t Pos_temp;
 
-  int nw_in=0,curConfig=NumSets-1, numConfigIn=0;
-  while(curConfig>=0 && nw_in<nwalkers){
+  int nw_in=0;
+  int firstConf=std::max(0,NumSets-blocks);
+  if(blocks<0) firstConf=0;
+
+  for(int iconf=firstConf; iconf<NumSets; iconf++) {
     //open the group
     char GrpName[128];
-    sprintf(GrpName,"config%04d",curConfig);
+    sprintf(GrpName,"config%04d",iconf);
     hid_t group_id = H5Gopen(h_config,GrpName);
     HDFAttribIO<PosContainer_t> Pos_in(Pos_temp);
     //read the dataset
@@ -240,11 +243,9 @@ HDFWalkerInput0::append(MCWalkerConfiguration& W, int nwalkers){
       ++it;
     }
     nw_in += nwt; 
-    curConfig--;
-    numConfigIn++;
   }
 
-  LOGMSG("Total " << nw_in << " walkers are loaded using " << numConfigIn << " frames.")
+  LOGMSG("Total " << nw_in << " walkers are loaded using " << NumSets-firstConf << " blocks.")
   return true;
 }
 

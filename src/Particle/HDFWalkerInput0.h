@@ -48,8 +48,8 @@ namespace qmcplusplus {
     //int put(MCWalkerConfiguration&);
     bool put(MCWalkerConfiguration&, int ic);
 
-    bool append(MCWalkerConfiguration& w);
-    bool append(MCWalkerConfiguration& w, int nwalkers);
+    //bool append(MCWalkerConfiguration& w);
+    bool append(MCWalkerConfiguration& w, int blocks);
 
     template<class CT>
     void read(CT& anything) {
