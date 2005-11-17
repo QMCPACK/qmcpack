@@ -11,19 +11,25 @@ SET(WFSRCS
   ../QMCWaveFunctions/MolecularOrbitals/STOMolecularOrbitals.cpp
   ../QMCWaveFunctions/MolecularOrbitals/GTOMolecularOrbitals.cpp
   ../QMCWaveFunctions/MolecularOrbitals/RGFBuilderBase.cpp
+  ../QMCWaveFunctions/MolecularOrbitals/NumericalRGFBuilder.cpp
   ../QMCWaveFunctions/MolecularOrbitals/STO2GridBuilder.cpp
   ../QMCWaveFunctions/MolecularOrbitals/GTO2GridBuilder.cpp
   ../QMCWaveFunctions/MolecularOrbitals/Any2GridBuilder.cpp
-  ../QMCWaveFunctions/MolecularOrbitals/NumericalRGFBuilder.cpp
   ../QMCWaveFunctions/MolecularOrbitals/GridMolecularOrbitals.cpp
   ../QMCWaveFunctions/MolecularOrbitals/MolecularOrbitalBuilder.cpp
-  ../QMCWaveFunctions/NumericalOrbitalSetBuilder.cpp
   ../QMCWaveFunctions/ElectronGasOrbitalBuilder.cpp
   ../QMCHamiltonians/LocalPPotential.cpp
   ../QMCHamiltonians/NonLocalPPotential.cpp
   ../QMCHamiltonians/LocalCorePolPotential.cpp
-  ../LongRange/LPQHIBasis.cpp
 )
+
+IF(NOT QMCPLUSPLUS_RELEASE)
+SET(WFSRCS ${WFSRCS}
+  ../QMCWaveFunctions/NumericalOrbitalSetBuilder.cpp
+  ../LongRange/LPQHIBasis.cpp
+  )
+
+ENDIF(NOT QMCPLUSPLUS_RELEASE)
 
 ####################################
 # QMC Drivers which implements various QMC algorithms
@@ -35,24 +41,30 @@ SET(QMCDRIVERS
   ../QMCDrivers/VMC.cpp
   ../QMCDrivers/VMCParticleByParticle.cpp
   ../QMCDrivers/MolecuDMC.cpp
-  ../QMCDrivers/ReptationMC.cpp
-  ../QMCDrivers/PolymerEstimator.cpp
-  ../QMCDrivers/VMCMultiple.cpp
-  ../QMCDrivers/VMCPbyPMultiple.cpp
-  ../QMCDrivers/RQMCMultiple.cpp
-  ../QMCDrivers/MultiChain.cpp
   ../QMCDrivers/DMCParticleByParticle.cpp
   ../QMCDrivers/WalkerControlBase.cpp
   ../Estimators/ScalarEstimatorManager.cpp
-  ../Estimators/MultipleEnergyEstimator.cpp
   ../QMCDrivers/QMCOptimize.cpp
   ../QMCDrivers/QMCCostFunction.cpp
 )
 
+IF(NOT QMCPLUSPLUS_RELEASE)
+  SET(QMCDRIVERS ${QMCDRIVERS}
+    ../QMCDrivers/VMCMultiple.cpp
+    ../QMCDrivers/VMCPbyPMultiple.cpp
+    ../QMCDrivers/ReptationMC.cpp
+    ../QMCDrivers/PolymerEstimator.cpp
+    ../QMCDrivers/RQMCMultiple.cpp
+    ../QMCDrivers/MultiChain.cpp
+    ../Estimators/MultipleEnergyEstimator.cpp
+  )
+
 #include GSLOptimize.cpp if libgsl is enabled
-#IF(HAVE_LIBGSL)
-#  SET(QMCDRIVERS ${QMCDRIVERS} ../QMCDrivers/GSLOptimize.cpp)
-#ENDIF(HAVE_LIBGSL)
+  IF(HAVE_LIBGSL)
+    SET(QMCDRIVERS ${QMCDRIVERS} ../QMCDrivers/GSLOptimize.cpp)
+  ENDIF(HAVE_LIBGSL)
+ENDIF(NOT QMCPLUSPLUS_RELEASE)
+
 
 IF(HAVE_MPI) 
 SET(QMCDRIVERS ${QMCDRIVERS} 

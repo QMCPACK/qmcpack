@@ -30,10 +30,12 @@ using namespace std;
 #include "QMCHamiltonians/BareKineticEnergy.h"
 #include "QMCHamiltonians/CoulombPotential.h"
 #include "QMCHamiltonians/IonIonPotential.h"
-#include "QMCHamiltonians/CoulombPBC.h"
 #include "QMCHamiltonians/LocalPPotential.h"
 #include "QMCHamiltonians/NonLocalPPotential.h"
 #include "QMCHamiltonians/LocalCorePolPotential.h"
+#if !defined(QMCPLUSPLUS_RELEASE)
+#include "QMCHamiltonians/CoulombPBC.h"
+#endif
 
 namespace qmcplusplus {
 
@@ -99,7 +101,12 @@ namespace qmcplusplus {
             if(ion) {
               if(ion->getTotalNum()>1) 
 		if(ion->Lattice.BoxBConds[0]){
+#if defined(QMCPLUSPLUS_RELEASE)
+                  ERRORMSG("This version cannot handle PBC. The IonIon potential will be wrong.")
+		  curH->add(new IonIonPotential(*ion),"IonIon");
+#else
 		  curH->add(new CoulombPBCAA(*ion),"IonIon");
+#endif
 		}
 		else {
 		  curH->add(new IonIonPotential(*ion),"IonIon");
@@ -121,7 +128,12 @@ namespace qmcplusplus {
       }
 
       if(qp->Lattice.BoxBConds[0]){
+#if defined(QMCPLUSPLUS_RELEASE)
+        ERRORMSG("This version cannot handle PBC. The ElecElec potential will be wrong.")
+	curH->add(new CoulombPotentialAA(*qp),"ElecElec");
+#else
 	curH->add(new CoulombPBCAA(*qp),"ElecElec");
+#endif
       }
       else{
 	curH->add(new CoulombPotentialAA(*qp),"ElecElec");
@@ -129,7 +141,12 @@ namespace qmcplusplus {
 
       if(htype == "molecule" || htype=="coulomb"){
 	if(qp->Lattice.BoxBConds[0]){
+#if defined(QMCPLUSPLUS_RELEASE)
+          ERRORMSG("This version cannot handle PBC. The Coulomb potential will be wrong.")
+	  curH->add(new CoulombPotentialAB(*ion,*qp),"Coulomb");
+#else
 	  curH->add(new CoulombPBCAB(*ion,*qp),"Coulomb");
+#endif
 	} else {
 	  curH->add(new CoulombPotentialAB(*ion,*qp),"Coulomb");
 	}
@@ -148,7 +165,12 @@ namespace qmcplusplus {
 
       if(ion->getTotalNum()>1) 
 	if(ion->Lattice.BoxBConds[0]){
+#if defined(QMCPLUSPLUS_RELEASE)
+          ERRORMSG("This version cannot handle PBC. The IonIon potential will be wrong.")
+          curH->add(new IonIonPotential(*ion),"IonIon");
+#else
           curH->add(new CoulombPBCAA(*ion),"IonIon");
+#endif
 	}
 	else{
           curH->add(new IonIonPotential(*ion),"IonIon");
@@ -178,7 +200,12 @@ namespace qmcplusplus {
       //CHECK PBC and create CoulombPBC for el-el
       if(source->getTotalNum()>1)  {
 	  if(target->Lattice.BoxBConds[0]) {
+#if defined(QMCPLUSPLUS_RELEASE)
+            ERRORMSG("This version cannot handle PBC. The " << title << " potential will be wrong.")
+	    curH->add(new CoulombPotentialAA(*target),title);
+#else
 	    curH->add(new CoulombPBCAA(*target),title);
+#endif
 	  }
 	  else {
 	    curH->add(new CoulombPotentialAA(*target),title);
@@ -186,8 +213,12 @@ namespace qmcplusplus {
       }
     } else {
       if(target->Lattice.BoxBConds[0]) {
+#if defined(QMCPLUSPLUS_RELEASE)
+        ERRORMSG("This version cannot handle PBC. The " << title << " potential will be wrong.")
+	curH->add(new CoulombPotentialAB(*source,*target),title);
+#else
 	curH->add(new CoulombPBCAB(*source,*target),title);
-
+#endif
       } else {
 	curH->add(new CoulombPotentialAB(*source,*target),title);
       }

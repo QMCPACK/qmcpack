@@ -8,6 +8,18 @@
 #ifndef QMCPLUSPLUS_CONFIGURATION_H
 #define QMCPLUSPLUS_CONFIGURATION_H
 
+/* define the major version */
+#define QMCPLUSPLUS_VERSION_MAJOR  @QMCPLUSPLUS_VERSION_MAJOR@
+
+/* define the minor version */
+#define QMCPLUSPLUS_VERSION_MINOR  @QMCPLUSPLUS_VERSION_MINOR@
+
+/* define the patch version */
+#define QMCPLUSPLUS_VERSION_PATCH  @QMCPLUSPLUS_VERSION_PATCH@
+
+/* define the release version */
+#cmakedefine QMCPLUSPLUS_RELEASE  @QMCPLUSPLUS_RELEASE@
+
 /* Enable OpenMP parallelization. */
 #cmakedefine ENABLE_OPENMP @ENABLE_OPENMP@
 

@@ -1,10 +1,13 @@
 PROJECT(qmcPlusPlus)
+
+######################################################################
+# Version 
+######################################################################
 SET(QMCPLUSPLUS_VERSION_MAJOR 0)
 SET(QMCPLUSPLUS_VERSION_MINOR 2)
 SET(QMCPLUSPLUS_VERSION_PATCH 0)
+SET(QMCPLUSPLUS_RELEASE 0)
 SET(QMCPLUSPLUS_VERSION "${QMCPLUSPLUS_VERSION_MAJOR}.${QMCPLUSPLUS_VERSION_MINOR}.$(QMCPLUSPLUS_VERSION_PATH}")
-
-SET(version 0.2)
 
 #define the paths for library and executable for out-of-soruce compilation
 SET (LIBRARY_OUTPUT_PATH ${qmcPlusPlus_BINARY_DIR}/lib CACHE PATH "Single output directory for building all libraries.")

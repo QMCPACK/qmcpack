@@ -28,13 +28,15 @@
 #include "QMCDrivers/DummyQMC.h"
 #include "QMCDrivers/VMC.h"
 #include "QMCDrivers/VMCParticleByParticle.h"
-#include "QMCDrivers/VMCMultiple.h"
-#include "QMCDrivers/VMCPbyPMultiple.h"
 #include "QMCDrivers/DMCParticleByParticle.h"
 #include "QMCDrivers/QMCOptimize.h"
 #include "QMCDrivers/MolecuDMC.h"
+#if !defined(QMCPLUSPLUS_RELEASE)
+#include "QMCDrivers/VMCMultiple.h"
+#include "QMCDrivers/VMCPbyPMultiple.h"
 #include "QMCDrivers/ReptationMC.h"
 #include "QMCDrivers/RQMCMultiple.h"
+#endif
 #include "Utilities/OhmmsInfo.h"
 #include "Particle/HDFWalkerIO.h"
 #include "QMCApp/InitMolecularSystem.h"
@@ -351,9 +353,7 @@ namespace qmcplusplus {
         opt->setWaveFunctionNode(psiPool->getWaveFunctionNode("null"));
         qmcDriver=opt;
         curRunType = OPTIMIZE_RUN;
-      } else if(what == "rmc") {
-        qmcDriver = new ReptationMC(*qmcSystem,*primaryPsi,*primaryH);
-        curRunType = RMC_RUN;
+#if !defined(QMCPLUSPLUS_RELEASE)
       } else if(what == "vmc-multi") {
         qmcDriver = new VMCMultiple(*qmcSystem,*primaryPsi,*primaryH);
         while(targetH.size()) {
@@ -370,6 +370,9 @@ namespace qmcplusplus {
           targetPsi.pop(); 
         }
         curRunType = VMC_RUN;
+      } else if(what == "rmc") {
+        qmcDriver = new ReptationMC(*qmcSystem,*primaryPsi,*primaryH);
+        curRunType = RMC_RUN;
       } else if(what == "rmc-multi") {
         qmcDriver = new RQMCMultiple(*qmcSystem,*primaryPsi,*primaryH);
         while(targetH.size()) {
@@ -378,6 +381,7 @@ namespace qmcplusplus {
           targetPsi.pop(); 
         }
         curRunType = RMC_RUN;
+#endif
       } else {
         qmcDriver = new DummyQMC(*qmcSystem,*primaryPsi,*primaryH);
         WARNMSG("Cannot termine what type of qmc to run. Creating DummyQMC for testing")
