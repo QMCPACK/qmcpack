@@ -83,7 +83,8 @@ namespace qmcplusplus {
         else Normalized=false;
 
         if(abasis == "invalid") continue;
-        if(sph == "spherical") addsignforM=1; //include (-1)^m
+        if(sph == "spherical") addsignforM=true; //include (-1)^m
+        if(sph == "cartesian") addsignforM=false;
 
         if(Morder == "gaussian") {
           expandlm = GAUSSIAN_EXPAND;
@@ -123,9 +124,9 @@ namespace qmcplusplus {
 	    } 
 	    cur1 = cur1->next;
 	  }
-	  XMLReport("Adding a center " << abasis << " centerid "<< CenterID[abasis])
-          XMLReport("Maximum angular momentum    = " << Lmax)
-          XMLReport("Number of centered orbitals = " << num)
+	  LOGMSG("Adding a center " << abasis << " centerid "<< CenterID[abasis])
+          LOGMSG("Maximum angular momentum    = " << Lmax)
+          LOGMSG("Number of centered orbitals = " << num)
 
 	  //create a new set of atomic orbitals sharing a center with (Lmax, num)
           //if(addsignforM) the basis function has (-1)^m sqrt(2)Re(Ylm)
@@ -152,16 +153,16 @@ namespace qmcplusplus {
 	      }
 	      att = att->next;
 	    }
-	    XMLReport("\n(n,l,m,s) " << nlms[0] << " " << nlms[1] << " " << nlms[2] << " " << nlms[3])
+	    LOGMSG("\n(n,l,m,s) " << nlms[0] << " " << nlms[1] << " " << nlms[2] << " " << nlms[3])
 
             //add Ylm channels
             num = expandYlm(rnl,nlms,num,aos,cur1,expandlm);
             ++it;
           }
 
-          //LOGMSG("Checking the order of angular momentum ")
-          //std::copy(aos->LM.begin(), aos->LM.end(), ostream_iterator<int>(cout," "));
-          //cout << endl;
+          LOGMSG("Checking the order of angular momentum ")
+          std::copy(aos->LM.begin(), aos->LM.end(), ostream_iterator<int>(app_log()," "));
+          app_log() << endl;
 
 	  //add the new atomic basis to the basis set
 	  BasisSet->add(aos,activeCenter);
