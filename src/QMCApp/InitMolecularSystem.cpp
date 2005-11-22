@@ -62,8 +62,6 @@ namespace qmcplusplus {
       initAtom(els);
     }
      
-    LOGMSG("Checking the new positions for " << target)
-    els->get(cout);
     return true;
   }
 
