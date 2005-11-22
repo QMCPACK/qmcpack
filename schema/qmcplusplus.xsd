@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- edited with XMLSPY v5 rel. 4 U (http://www.xmlspy.com) by Jeongnim Kim (University of Illinois) -->
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" attributeFormDefault="unqualified">
-	<xs:include schemaLocation="qmcbase.xsd"/>
-	<xs:include schemaLocation="particleset.xsd"/>
-	<xs:include schemaLocation="hamiltonian.xsd"/>
-	<xs:include schemaLocation="numerics.xsd"/>
-	<xs:include schemaLocation="wavefunction.xsd"/>
+	<xs:include schemaLocation="http://www.mcc.uiuc.edu/qmc/schema/qmcbase.xsd"/>
+	<xs:include schemaLocation="http://www.mcc.uiuc.edu/qmc/schema/particleset.xsd"/>
+	<xs:include schemaLocation="http://www.mcc.uiuc.edu/qmc/schema/hamiltonian.xsd"/>
+	<xs:include schemaLocation="http://www.mcc.uiuc.edu/qmc/schema/numerics.xsd"/>
+	<xs:include schemaLocation="http://www.mcc.uiuc.edu/qmc/schema/wavefunction.xsd"/>
 	<xs:complexType name="qmcType">
 		<xs:annotation>
 			<xs:documentation>A QMC section</xs:documentation>

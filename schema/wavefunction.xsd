@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" attributeFormDefault="unqualified">
-<xs:include schemaLocation="qmcbase.xsd"/>
-
-    <xs:include schemaLocation="numerics.xsd"/>
+	<xs:include schemaLocation="http://www.mcc.uiuc.edu/qmc/schema/qmcbase.xsd"/>
+	<xs:include schemaLocation="http://www.mcc.uiuc.edu/qmc/schema/numerics.xsd"/>
 	<xs:complexType name="basisGroupType">
 		<xs:sequence>
 			<xs:element name="radfunc" type="radfuncType" minOccurs="0" maxOccurs="unbounded"/>
