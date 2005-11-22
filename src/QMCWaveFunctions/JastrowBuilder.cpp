@@ -22,7 +22,7 @@
 #include "QMCWaveFunctions/OneBodyJastrowFunction.h"
 #include "QMCWaveFunctions/TwoBodyJastrowFunction.h"
 #include "QMCWaveFunctions/PolarizedJastrow.h"
-#include "QMCWaveFunctions/ThreeBodyGerminalBuilder.h"
+#include "QMCWaveFunctions/ThreeBodyGeminalBuilder.h"
 
 namespace qmcplusplus {
 
@@ -349,14 +349,14 @@ is implemted
       } else {
         return false;
       }
-    } else if(jasttype == "Three-Body-Germinal") {
+    } else if(jasttype == "Three-Body-Geminal") {
       app_log() << "  creating Three-Body-Germinal Jastrow function " << endl;
       string source_name("i");
       const xmlChar* iptr = xmlGetProp(cur, (const xmlChar *)"source");
       if(iptr != NULL) source_name=(const char*)iptr;
       map<string,ParticleSet*>::iterator pa_it(ptclPool.find(source_name));
       if(pa_it != ptclPool.end()) {
-        ThreeBodyGerminalBuilder g(targetPtcl,targetPsi,*((*pa_it).second));
+        ThreeBodyGeminalBuilder g(targetPtcl,targetPsi,*((*pa_it).second));
         g.put(cur);
       }
     }
