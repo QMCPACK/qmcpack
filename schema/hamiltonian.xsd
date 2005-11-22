@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" attributeFormDefault="unqualified">
+	<xs:complexType name="qmcHamiltonianType">
+		<xs:annotation>
+			<xs:documentation>Hamiltonian</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="pairpot" type="hamiltonianType" minOccurs="0" maxOccurs="unbounded"/>
+			<xs:element name="constant" type="hamiltonianType" minOccurs="0" maxOccurs="unbounded"/>
+		</xs:sequence>
+		<xs:attribute name="name" type="xs:string" use="optional"/>
+		<xs:attribute name="type" use="optional" default="generic">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="generic"/>
+					<xs:enumeration value="molecule"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute name="target" type="xs:string" use="optional" default="e"/>
+	</xs:complexType>
+	<xs:complexType name="hamiltonianType">
+		<xs:annotation>
+			<xs:documentation>Operators that make up a Hamiltonian</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="name" type="xs:string" use="required"/>
+		<xs:attribute name="type" type="xs:NMTOKEN" use="required"/>
+		<xs:attribute name="source" type="xs:string" use="optional" default="i"/>
+		<xs:attribute name="target" type="xs:string" use="optional" default="e"/>
+	</xs:complexType>
+</xs:schema>
