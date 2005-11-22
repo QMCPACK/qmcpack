@@ -20,6 +20,7 @@
 #include "Particle/DistanceTableData.h"
 #include "Numerics/DeterminantOperators.h"
 #include "Numerics/OhmmsBlas.h"
+#include "Numerics/MatrixOperators.h"
 namespace qmcplusplus {
 
   ThreeBodyGeminal::ThreeBodyGeminal(ParticleSet& ions, ParticleSet& els): 
@@ -43,17 +44,20 @@ namespace qmcplusplus {
 		                 ParticleSet::ParticleLaplacian_t& L) {
     GeminalBasis->evaluate(P);
 
+    MatrixOperators::product(GeminalBasis->Y, Lambda, V);
+
     //Rewrite with gemm
-    for(int i=0; i<NumPtcls; i++) {
-      for(int k=0; k<BasisSize; k++) {
-        V(i,k) = BLAS::dot(BasisSize,GeminalBasis->Y[i],Lambda[k]);
-      }
-    }
+    //for(int i=0; i<NumPtcls; i++) {
+    //  for(int k=0; k<BasisSize; k++) {
+    //    V(i,k) = BLAS::dot(BasisSize,GeminalBasis->Y[i],Lambda[k]);
+    //  }
+    //}
 
     LogValue=ValueType();
     for(int i=0; i< NumPtcls-1; i++) {
+      const RealType* restrict yptr=GeminalBasis->Y[i];
       for(int j=i+1; j<NumPtcls; j++) {
-        ValueType x= dot(V[j],GeminalBasis->Y[i],BasisSize);
+        ValueType x= dot(V[j],yptr,BasisSize);
         LogValue += x;
         Uk[i]+= x;
         Uk[j]+= x;
@@ -61,12 +65,15 @@ namespace qmcplusplus {
     }
 
     for(int i=0; i<NumPtcls; i++)  {
+      const PosType* restrict dptr=GeminalBasis->dY[i];
+      const RealType* restrict d2ptr=GeminalBasis->d2Y[i];
+      const RealType* restrict vptr=V[0];
       PosType grad=0.0;
       ValueType lap=0.0;
-      for(int j=0; j<NumPtcls; j++) {
+      for(int j=0; j<NumPtcls; j++, vptr+=BasisSize) {
         if(j==i) continue;
-        grad+=dot(V[j],GeminalBasis->dY[i],BasisSize);
-        lap+=dot(V[j],GeminalBasis->d2Y[i],BasisSize);
+        grad+=dot(vptr,dptr,BasisSize);
+        lap+=dot(vptr,d2ptr,BasisSize);
       }
       G(i)+=0.5*grad;
       L(i)+=0.5*lap;
