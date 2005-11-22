@@ -33,9 +33,14 @@ namespace qmcplusplus {
     //clean up
 
   }
-    ///reset the value of all the Two-Body Jastrow functions
+
+  ///reset the value of all the Two-Body Jastrow functions
   void ThreeBodyGeminal::reset() {
 
+    //only symmetrize it
+    for(int ib=0; ib<BasisSize-1; ib++) 
+      for(int jb=ib+1; jb<BasisSize; jb++)
+        Lambda(jb,ib)=Lambda(ib,jb);
   }
 
   OrbitalBase::ValueType 
@@ -207,15 +212,28 @@ namespace qmcplusplus {
     V.resize(NumPtcls,BasisSize);
     Lambda.resize(BasisSize,BasisSize);
 
+    char coeffname[128];
+    string aname("j3g");
+
+    const xmlChar* aptr=xmlGetProp(cur,(const xmlChar*)"name");
+    if(aptr!=NULL) aname = (const char*)aptr;
+
     //assign the coefficients
     putContent(Lambda,cur);
 
     //symmetrize it
-    //for(int ib=1; ib<BasisSize; ib++) {
-    //  for(int jb=0; jb<ib; jb++) {
-    //    Lambda(ib,jb) = Lambda(jb,ib);
-    //  }
-    //}
+    for(int ib=0; ib<BasisSize; ib++) {
+      sprintf(coeffname,"%s_%d_%d",aname.c_str(),ib,ib);
+      RealType* lptr=Lambda.data()+ib*BasisSize+ib;
+      varlist.add(coeffname,lptr);
+      for(int jb=ib+1; jb<BasisSize; jb++) {
+        Lambda(jb,ib) = Lambda(ib,jb);
+
+        ++lptr;
+        sprintf(coeffname,"%s_%d_%d",aname.c_str(),ib,jb);
+        varlist.add(coeffname,lptr);
+      }
+    }
 
     Uk.resize(NumPtcls);
     dUk.resize(NumPtcls);
