@@ -6,7 +6,7 @@ IF(CMAKE_COMPILER_IS_GNUCXX)
 #  SET(CMAKE_CXX_FLAGS "-g -ftemplate-depth-60 -Drestrict=__restrict__ -fstrict-aliasing -Wno-deprecated")
 
 IF(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-  SET(CMAKE_SHARED_LIBRARY_CXX_FLAGS "${CMAKE_SHARED_LIBRARY_CXX_FLAGS} -faltivec -framework Accelerate")
+  SET(CMAKE_SHARED_LIBRARY_CXX_FLAGS "${CMAKE_SHARED_LIBRARY_CXX_FLAGS} -faltivec -framework Accelerate -bind_at_load")
   SET(F77 xlf)
   SET(F77FLAGS -O3)
 ELSE(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
