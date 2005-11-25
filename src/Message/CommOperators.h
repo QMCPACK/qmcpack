@@ -67,6 +67,16 @@ inline void gsum(std::vector<double>& g, int gid) {
   g = gt;
 }
 
+template<>
+inline void gsum(Matrix<double>& g, int gid) {
+  //TinyVector<double,N> gt = g;
+  //MPI_Allreduce(gt.begin(), g.begin(), N, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+  vector<double> gt(g.size());
+  std::copy(g.begin(),g.end(),gt.begin());
+  MPI_Allreduce(g.data(), &gt[0], g.size(), MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+  std::copy(gt.begin(),gt.end(),g.data());
+}
+
 
 #endif
 
