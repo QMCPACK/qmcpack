@@ -211,6 +211,7 @@ namespace qmcplusplus {
      */
   void MultipleEnergyEstimator::report(RecordNamedProperty<RealType>& record, RealType wgtinv) {
 
+    if(CollectSum) gsum(esum,0);
 
     for(int i=0; i<NumCopies; i++) {
       RealType r = 1.0/esum(i,WEIGHT_INDEX);

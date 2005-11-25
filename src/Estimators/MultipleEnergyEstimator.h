@@ -35,6 +35,7 @@ namespace qmcplusplus {
     typedef ScalarEstimatorBase<RealType>::Walker_t Walker_t;
     typedef Matrix<RealType> EnergyContainer_t;
 
+    using ScalarEstimatorBase<RealType>::CollectSum;
     using ScalarEstimatorBase<RealType>::b_average;
     using ScalarEstimatorBase<RealType>::b_variance;
 
