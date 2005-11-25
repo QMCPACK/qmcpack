@@ -18,9 +18,9 @@
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 #include "Estimators/MultipleEnergyEstimator.h"
-#include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
-#include "Particle/DistanceTable.h"
+#include "QMCWaveFunctions/TrialWaveFunction.h"
+#include "Message/CommOperators.h"
 
 namespace qmcplusplus {
 
@@ -152,10 +152,16 @@ namespace qmcplusplus {
      */
   void 
   MultipleEnergyEstimator::add2Record(RecordNamedProperty<RealType>& record) {
-    FirstColumnIndex = record.add(ediff_name[0].c_str());
-    for(int i=1; i<ediff_name.size(); i++) record.add(ediff_name[i].c_str());
-    for(int i=0; i<esum_name.size(); i++) record.add(esum_name(i).c_str());
+    if(ediff_name.size()) {
+      FirstColumnIndex = record.add(ediff_name[0].c_str());
+      for(int i=1; i<ediff_name.size(); i++) record.add(ediff_name[i].c_str());
+      for(int i=0; i<esum_name.size(); i++) record.add(esum_name(i).c_str());
+    } else {
+      FirstColumnIndex = record.add(esum_name(0).c_str());
+      for(int i=1; i<esum_name.size(); i++) record.add(esum_name(i).c_str());
+    }
     for(int i=0; i<elocal_name.size(); i++) record.add(elocal_name(i).c_str());
+
     //FirstColumnIndex = record.add(esum_name(0).c_str());
     //for(int i=1; i<esum_name.size(); i++) record.add(esum_name(i).c_str());
     //for(int i=0; i<ediff_name.size(); i++) record.add(ediff_name[i].c_str());
