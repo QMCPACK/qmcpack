@@ -55,6 +55,12 @@ namespace qmcplusplus {
      */
     bool put(MCWalkerConfiguration& W, int rollback=1);
 
+    /** read all the walkers
+     *
+     * A special put function to read entire configurations without sharing
+     */
+    bool putSingle(MCWalkerConfiguration& W);
+
     /** read walkers for rollback blocks
      * @param W walker set to which new walkers will be added
      * @param rollback number of blocks to read

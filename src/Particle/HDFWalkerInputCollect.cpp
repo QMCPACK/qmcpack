@@ -134,6 +134,12 @@ HDFWalkerInputCollect::put(MCWalkerConfiguration& W, int rollback) {
   return read(W,firstConf,numConfigs);
 }
 
+bool HDFWalkerInputCollect::putSingle(MCWalkerConfiguration& W) {
+
+  CollectMode=false;
+  return put(W,-1);
+}
+
 bool
 HDFWalkerInputCollect::rewind(MCWalkerConfiguration& W, int rollback) {
 
@@ -211,9 +217,6 @@ HDFWalkerInputCollect::read(MCWalkerConfiguration& W, int firstConf, int lastCon
 
     if(CollectMode) {
       distribute(dimTot[0]);
-      app_log() << "    Distibution of the walkers: ";
-      std::copy(OffSet.begin(), OffSet.end(), ostream_iterator<hsize_t>(app_log(), " "));
-      app_log() << endl;
     } else  {
       OffSet[myID]=0;
       OffSet[myID+1]=dimTot[0];
