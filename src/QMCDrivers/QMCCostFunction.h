@@ -67,7 +67,10 @@ namespace qmcplusplus {
 
     void setWaveFunctionNode(xmlNodePtr cur) { m_wfPtr=cur; }
 
-    void checkConfigurations(vector<string>& ConfigFile, int partid, int nparts);
+    void getConfigurations(vector<string>& ConfigFile, int partid, int nparts);
+    void getConfigurations(const string& aroot);
+
+    void checkConfigurations();
 
     void setTargetEnergy(Return_t et);
 

@@ -186,12 +186,23 @@ namespace qmcplusplus {
     return SumValue[SUM_WGT]*SumValue[SUM_WGT]/SumValue[SUM_WGTSQ];
   }
 
+  void 
+  QMCCostFunction::getConfigurations(const string& aroot) {
+    if(aroot.size() && aroot != "invalid") {
+      app_log() << "  Reading configurations from the previous qmc block" << endl;
+      HDFWalkerInputCollect wReader(aroot);
+      wReader.putSingle(W);
+    }
+  }
+
   /** evaluate everything before optimization */
-  void QMCCostFunction::checkConfigurations(vector<string>& ConfigFile, int partid, int nparts) {
-
-    dL.resize(W.getTotalNum());
-
+  void 
+  QMCCostFunction::getConfigurations(vector<string>& ConfigFile, 
+      int partid, int nparts) {
     if(ConfigFile.size()) {
+
+      app_log() << "  Reading configurations from mcwalkerset " << endl;
+
       W.destroyWalkers(W.begin(),W.end());
       for(int i=0; i<ConfigFile.size(); i++) {
         //JNKIM: needs to change to HDFWalkerInputCollect
@@ -200,36 +211,44 @@ namespace qmcplusplus {
         wReader.put(W,-1);
       }
 
-      NumSamples=W.getActiveWalkers();
-      Records.resize(NumSamples,6);
-      typedef MCWalkerConfiguration::Walker_t Walker_t;
-      MCWalkerConfiguration::iterator it(W.begin()); 
-      MCWalkerConfiguration::iterator it_end(W.end()); 
-      int nat = W.getTotalNum();
-      int iw=0;
-      Etarget=0.0;
-      while(it != it_end) {
-
-        Walker_t& thisWalker(**it);
-
-        //clean-up DataSet to save re-used values
-        thisWalker.DataSet.clear();
-        //rewind the counter
-        thisWalker.DataSet.rewind();
-        //MCWalkerConfiguraton::registerData add distance-table data
-        W.registerData(thisWalker,thisWalker.DataSet);
-
-        Return_t*  saved=Records[iw];
-        Psi.evaluateDeltaLog(W, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], thisWalker.Drift, dL);
-        thisWalker.DataSet.add(dL.begin(),dL.end());
-        Etarget += saved[ENERGY_TOT] = H.evaluate(W);
-        saved[ENERGY_FIXED] = H.getInvariantEnergy();
-
-        ++it;
-        ++iw;
-      }
       //remove input files
       ConfigFile.erase(ConfigFile.begin(),ConfigFile.end());
+    }
+  }
+
+  /** evaluate everything before optimization */
+  void 
+  QMCCostFunction::checkConfigurations() {
+
+    dL.resize(W.getTotalNum());
+
+    NumSamples=W.getActiveWalkers();
+    Records.resize(NumSamples,6);
+    typedef MCWalkerConfiguration::Walker_t Walker_t;
+    MCWalkerConfiguration::iterator it(W.begin()); 
+    MCWalkerConfiguration::iterator it_end(W.end()); 
+    int nat = W.getTotalNum();
+    int iw=0;
+    Etarget=0.0;
+    while(it != it_end) {
+
+      Walker_t& thisWalker(**it);
+
+      //clean-up DataSet to save re-used values
+      thisWalker.DataSet.clear();
+      //rewind the counter
+      thisWalker.DataSet.rewind();
+      //MCWalkerConfiguraton::registerData add distance-table data
+      W.registerData(thisWalker,thisWalker.DataSet);
+
+      Return_t*  saved=Records[iw];
+      Psi.evaluateDeltaLog(W, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], thisWalker.Drift, dL);
+      thisWalker.DataSet.add(dL.begin(),dL.end());
+      Etarget += saved[ENERGY_TOT] = H.evaluate(W);
+      saved[ENERGY_FIXED] = H.getInvariantEnergy();
+
+      ++it;
+      ++iw;
     }
 
     //Need to sum over the processors
