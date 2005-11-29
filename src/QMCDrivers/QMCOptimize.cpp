@@ -60,8 +60,13 @@ namespace qmcplusplus {
     optTarget->setRootName(RootName);
     optTarget->setWaveFunctionNode(wfNode);
 
-    //set the data members to start a new run
-    optTarget->checkConfigurations(ConfigFile,PartID,NumParts);
+    //get configuration from the previous run
+    optTarget->getConfigurations(h5FileRoot);
+
+    //get configurations from files
+    optTarget->getConfigurations(ConfigFile,PartID,NumParts);
+
+    optTarget->checkConfigurations();
 
     //estimator has to collect the data over mpi nodes
     Estimators->setCollectionMode(OHMMS::Controller->ncontexts()>1);
