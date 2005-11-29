@@ -349,7 +349,7 @@ namespace qmcplusplus {
       } else if(what == "optimize"){
         primaryH->remove("Flux");
         QMCOptimize *opt = new QMCOptimize(*qmcSystem,*primaryPsi,*primaryH);
-        opt->addConfiguration(PrevConfigFile);
+        //opt->addConfiguration(PrevConfigFile);
         opt->setWaveFunctionNode(psiPool->getWaveFunctionNode("null"));
         qmcDriver=opt;
         curRunType = OPTIMIZE_RUN;
