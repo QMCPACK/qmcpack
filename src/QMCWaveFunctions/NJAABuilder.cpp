@@ -1,0 +1,145 @@
+////////////////////////////////////////////////////////////////// // (c) Copyright 2003-  by Jeongnim Kim
+//////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////
+//   National Center for Supercomputing Applications &
+//   Materials Computation Center
+//   University of Illinois, Urbana-Champaign
+//   Urbana, IL 61801
+//   e-mail: jnkim@ncsa.uiuc.edu
+//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
+//
+// Supported by 
+//   National Center for Supercomputing Applications, UIUC
+//   Materials Computation Center, UIUC
+//////////////////////////////////////////////////////////////////
+// -*- C++ -*-
+#include "Utilities/OhmmsInfo.h"
+#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
+#include "QMCWaveFunctions/NJAABuilder.h"
+#include "QMCWaveFunctions/PadeJastrow.h"
+#include "QMCWaveFunctions/TwoBodyJastrowOrbital.h"
+#include "QMCFactory/OneDimGridFactory.h"
+
+namespace qmcplusplus {
+
+
+  /** constructor
+   * @param p target ParticleSet whose wave function is to be initialized
+   *@param psi the wavefunction
+   *@param psets a vector containing the ParticleSets
+   * 
+   *Jastrow wavefunctions chose the needed distance tables and the 
+   *DistanceTableData objects are initialized based on the source 
+   *and target particle sets.
+   */
+  NJAABuilder::NJAABuilder(ParticleSet& p, TrialWaveFunction& psi):
+    OrbitalBuilderBase(p,psi),gridPtr(NULL),IgnoreSpin(true)
+  { }
+
+  NJAABuilder::InFuncType* 
+  NJAABuilder::createInFunc(const string& jastfunction) {
+    return new PadeJastrow<ValueType>;
+    //if(jastfunction == "pade") {
+    //  return PadeJastrow<ValueType>;
+    //} else if(jastfunction == "rpa") {
+    //  return RPAJastrow<ValueType>;
+    //}
+  }
+  bool NJAABuilder::putInFunc(xmlNodePtr cur) {
+
+    string corr_tag("correlation");
+
+    string jastfunction("pade");
+    const xmlChar *ftype = xmlGetProp(cur, (const xmlChar *)"function");
+    if(ftype) jastfunction = (const char*) ftype;
+
+    int	ng = targetPtcl.groups();
+    ///happends only once
+    if(InFunc.size() != ng*ng) { 
+      InFunc.resize(ng*ng,0);
+    }
+
+    int ia=0, ib=0, iab=0;
+    cur = cur->children;
+    while(cur != NULL) {
+      string cname((const char*)(cur->name));
+      if(cname == "grid") {
+        gridPtr=cur; //save the pointer
+      } else if(cname ==corr_tag) {
+	string spA((const char*)(xmlGetProp(cur,(const xmlChar *)"speciesA")));
+	string spB((const char*)(xmlGetProp(cur,(const xmlChar *)"speciesB")));
+        const xmlChar* refptr=xmlGetProp(cur,(const xmlChar *)"ref");
+        const xmlChar* idptr=xmlGetProp(cur,(const xmlChar *)"id");
+        if(!IgnoreSpin) { //get the species
+          ia = targetPtcl.getSpeciesSet().findSpecies(spA);
+          ib = targetPtcl.getSpeciesSet().findSpecies(spB);
+          iab = ia*ng+ib;
+        }
+	if(!(InFunc[ia*ng+ib])) {
+          InFuncType *j2=createInFunc(jastfunction);
+	  j2->put(cur,targetPsi.VarList);
+	  InFunc[ia*ng+ib]= j2;
+	  XMLReport("Added Jastrow Correlation between "<<spA<<" and "<<spB)
+	} else {
+	  ERRORMSG("Using an existing Jastrow Correlation "<<spA<<" and "<<spB)
+	}
+      }
+      cur = cur->next;
+    } // while cur
+    
+    return true;
+  }
+  
+  bool NJAABuilder::put(xmlNodePtr cur) {
+
+    const xmlChar* spin=xmlGetProp(cur,(const xmlChar*)"spin");
+    if(spin != NULL) {
+      string a((const char*)spin);
+      if(a == "yes") IgnoreSpin=false;
+    }
+
+    //create analytic functions 
+    bool success = putInFunc(cur);
+
+    //create grid and initialize CubicSplineFunctions
+    OneDimGridFactory::GridType* agrid = OneDimGridFactory::createGrid(gridPtr);
+
+    DistanceTableData* d_table = DistanceTable::getTable(DistanceTable::add(targetPtcl));
+    TwoBodyJastrowOrbital<FuncType> *J2 = new TwoBodyJastrowOrbital<FuncType>(targetPtcl,d_table);
+
+    int	ng = targetPtcl.groups();
+
+    FuncType* dfunc= new FuncType;
+    dfunc->setInFunc(InFunc[0]);
+    dfunc->setOutFunc(new OutFuncType(agrid));
+    dfunc->reset();
+    J2->F.resize(ng*ng,dfunc);
+    J2->insert("j00",dfunc);
+
+    if(!IgnoreSpin) {
+      char oname[8];
+      for(int i=0; i<ng-1; i++) {
+        for(int j=i+1; j<ng; j++) {
+          FuncType* ofunc= new FuncType;
+          ofunc->setInFunc(InFunc[i*ng+j]);
+          ofunc->setOutFunc(new OutFuncType(agrid));
+          ofunc->reset();
+          J2->F[i*ng+j]=ofunc;
+          J2->F[j*ng+i]=ofunc;
+          sprintf(oname,"j%d%d",i,j);
+          J2->insert(oname,ofunc);
+        }
+      }
+    }
+    J2->setOptimizable(true);
+    targetPsi.add(J2);
+    XMLReport("Added a Two-Body Jastrow Function")
+    return success;
+  }
+}
+/***************************************************************************
+ * $RCSfile$   $Author$
+ * $Revision$   $Date$
+ * $Id$ 
+ ***************************************************************************/
