@@ -16,21 +16,27 @@
 // -*- C++ -*-
 #ifndef QMCPLUSPLUS_JASTROWFUNCTIONS_H
 #define QMCPLUSPLUS_JASTROWFUNCTIONS_H
-#include "OhmmsData/libxmldefs.h"
-#include "Optimize/VarList.h"
+#include "QMCWaveFunctions/JastrowFunctorBase.h"
 
 /** Pade functional of \f[ u(r) = \frac{a*r}{1+b*r} \f]
  *
  * Prototype of the template parameter of TwoBodyJastrow and OneBodyJastrow
  */
 template<class T>
-struct PadeJastrow {
+struct PadeJastrow:public JastrowFunctorBase<T> {
+
+  typedef JastrowFunctorBase<T>::real_type real_type;
+  typedef JastrowFunctorBase<T>::value_type value_type;
+
   ///coefficients
-  T A, B, AB, B2;
+  real_type A, B, AB, B2;
+
   ///reference to the pade function
   PadeJastrow<T>* RefFunc;
+
   ///constructor
-  PadeJastrow(T a=1.0, T b=1.0): RefFunc(0) {reset(a,b);}
+  PadeJastrow(real_type a=1.0, real_type b=1.0): 
+    RefFunc(0) {reset(a,b);}
 
   ///constructor with a PadeJastrow
   PadeJastrow(PadeJastrow<T>* func): RefFunc(func) {
@@ -50,7 +56,7 @@ struct PadeJastrow {
    *@param a Pade Jastrow parameter a 
    *@param b Pade Jastrow parameter b 
    */
-  void reset(T a, T b) {
+  void reset(real_type a, real_type b) {
     A=a; B=b; AB=a*b; B2=2.0*b;
   }
 
@@ -58,7 +64,7 @@ struct PadeJastrow {
    * @param r the distance
    * @return \f$ u(r) = a*r/(1+b*r) \f$
    */
-  inline T evaluate(T r) {
+  inline value_type evaluate(real_type r) {
     return A*r/(1.0+B*r);
   }
 
@@ -68,21 +74,25 @@ struct PadeJastrow {
    * @param d2udr2 return value  \f$ d^2u/dr^2 = -2ab/(1+br)^3 \f$
    * @return \f$ u(r) = a*r/(1+b*r) \f$ 
    */
-  inline T evaluate(T r, T& dudr, T& d2udr2) {
-    T u = 1.0/(1.0+B*r);
+  inline value_type 
+    evaluate(real_type r, value_type& dudr, value_type& d2udr2) {
+    real_type u = 1.0/(1.0+B*r);
     dudr = A*u*u;
     d2udr2 = -B2*dudr*u;
     return A*u*r;
   }
 
-  /**@param cur current xmlNode from which the data members are reset
-   @param vlist VarRegistry<T1> to which the Pade variables A and B
-   are added for optimization
-   @brief T1 is the type of VarRegistry, typically double.  Read 
-   in the Pade parameters from the xml input file.
-  */
-  template<class T1>
-  void put(xmlNodePtr cur, VarRegistry<T1>& vlist){
+  value_type f(real_type r) {
+    return evaluate(r);
+  }
+
+  value_type df(real_type r) {
+    value_type dudr,d2udr2;
+    value_type res=evaluate(r,dudr,d2udr2);
+    return dudr;
+  }
+
+  void put(xmlNodePtr cur, VarRegistry<real_type>& vlist){
     T Atemp,Btemp;
     string ida, idb;
     //jastrow[iab]->put(cur->xmlChildrenNode,wfs_ref.RealVars);
@@ -115,13 +125,15 @@ struct PadeJastrow {
  * Prototype of the template parameter of TwoBodyJastrow and OneBodyJastrow
  */
 template<class T>
-struct PadeJastrow2 {
+struct PadeJastrow2:public JastrowFunctorBase<T> {
 
+  typedef JastrowFunctorBase<T>::real_type real_type;
+  typedef JastrowFunctorBase<T>::value_type value_type;
   ///coefficients
-  T A, B, C, C2;
+  real_type A, B, C, C2;
 
   ///constructor
-  PadeJastrow2(T a=1.0, T b=1.0, T c=1.0) {reset(a,b,c);}
+  PadeJastrow2(real_type a=1.0, real_type b=1.0, real_type c=1.0) {reset(a,b,c);}
 
   PadeJastrow2(PadeJastrow2<T>* func) {
     reset(1.0,1.0,1.0);
@@ -139,15 +151,15 @@ struct PadeJastrow2 {
    *@param b Pade Jastrow parameter b 
    *@param c Pade Jastrow parameter c 
    */
-  void reset(T a, T b, T c) {
+  void reset(real_type a, real_type b, real_type c) {
     A = a; B=b; C = c; C2 = 2.0*C;
   }
 
   /**@param r the distance
      @return \f$ u(r) = a*r/(1+b*r) \f$
   */
-  inline T evaluate(T r) {
-    T br(B*r);
+  inline value_type evaluate(real_type r) {
+    real_type br(B*r);
     return (A+br)*r/(1.0+br);
   }
 
@@ -157,13 +169,23 @@ struct PadeJastrow2 {
      @param d2udr2 return value  \f$ d^2u/dr^2 = -2ab/(1+br)^3 \f$
      @return \f$ u(r) = a*r/(1+b*r) \f$
   */
-  inline T evaluate(T r, T& dudr, T& d2udr2) {
+  inline value_type evaluate(real_type r, real_type& dudr, real_type& d2udr2) {
     T u = 1.0/(1.0+B*r);
     T v = A*r+B*r*r;
     T w = A+C2*r;
     dudr = u*(w-B*u*v);
     d2udr2 = 2.0*u*(C-B*dudr);
     return u*v;
+  }
+
+  value_type f(real_type r) {
+    return evaluate(r);
+  }
+
+  value_type df(real_type r) {
+    value_type dudr,d2udr2;
+    value_type res=evaluate(r,dudr,d2udr2);
+    return dudr;
   }
 
   /** process input xml node
@@ -173,8 +195,7 @@ struct PadeJastrow2 {
    * T1 is the type of VarRegistry, typically double.  
    * Read in the Pade parameters from the xml input file.
    */
-  template<class T1>
-  void put(xmlNodePtr cur, VarRegistry<T1>& vlist){
+  void put(xmlNodePtr cur, VarRegistry<real_type>& vlist){
     T Atemp,Btemp, Ctemp;
     string ida, idb, idc;
     //jastrow[iab]->put(cur->xmlChildrenNode,wfs_ref.RealVars);
