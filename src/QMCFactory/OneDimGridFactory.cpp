@@ -1,0 +1,69 @@
+//////////////////////////////////////////////////////////////////
+// (c) Copyright 2005- by Jeongnim Kim
+//////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////
+//   National Center for Supercomputing Applications &
+//   Materials Computation Center
+//   University of Illinois, Urbana-Champaign
+//   Urbana, IL 61801
+//   e-mail: jnkim@ncsa.uiuc.edu
+//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
+//
+// Supported by 
+//   National Center for Supercomputing Applications, UIUC
+//   Materials Computation Center, UIUC
+//////////////////////////////////////////////////////////////////
+// -*- C++ -*-
+#include "QMCFactory/OneDimGridFactory.h"
+#include "OhmmsData/AttributeSet.h"
+namespace qmcplusplus {
+
+  //initialize the static data
+  OneDimGridFactory::GridObjectMapType OneDimGridFactory::GridObjects;
+
+  OneDimGridFactory::GridType* OneDimGridFactory::createGrid(xmlNodePtr cur) {
+
+    GridType *agrid=0;
+    RealType ri = 1e-5;
+    RealType rf = 100.0;
+    RealType ascale = -1.0e0;
+    RealType astep = 1.25e-2;
+    IndexType npts = 1001;
+    string gridType("log");
+
+    OhmmsAttributeSet radAttrib;
+    radAttrib.add(gridType,"type"); 
+    radAttrib.add(npts,"npts"); 
+    radAttrib.add(ri,"ri"); radAttrib.add(rf,"rf");
+    radAttrib.add(ascale,"ascale"); radAttrib.add(astep,"astep");
+
+    if(cur != NULL) radAttrib.put(cur);
+
+    if(gridType == "log") {
+      if(ascale>0.0) {
+        LOGMSG("Using log grid with default values: scale = " << ascale << " step = " << astep << " npts = " << npts)
+        agrid = new LogGridZero<RealType>;
+        agrid->set(astep,ascale,npts);
+      } else {
+        LOGMSG("Using log grid with default values: ri = " << ri << " rf = " << rf << " npts = " << npts)
+        agrid = new LogGrid<RealType>;
+        agrid->set(ri,rf,npts);
+      }
+    } else if(gridType == "linear") {
+      LOGMSG("Using linear grid with default values: ri = " << ri << " rf = " << rf << " npts = " << npts)
+      agrid = new LinearGrid<RealType>;
+      agrid->set(ri,rf,npts);
+    }
+
+    char gname[16];
+    sprintf(gname,"g1_%d",GridObjects.size());
+    GridObjects[gname]=agrid;
+
+    return agrid;
+  }
+}
+/***************************************************************************
+ * $RCSfile$   $Author$
+ * $Revision$   $Date$
+ * $Id$ 
+ ***************************************************************************/
