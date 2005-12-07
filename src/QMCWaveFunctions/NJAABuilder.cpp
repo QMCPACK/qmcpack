@@ -104,6 +104,8 @@ namespace qmcplusplus {
 
     //create grid and initialize CubicSplineFunctions
     OneDimGridFactory::GridType* agrid = OneDimGridFactory::createGrid(gridPtr);
+    //get the cutoff radius
+    RealType rcut = OneDimGridFactory::setSmoothCutoff(agrid,gridPtr);
 
     DistanceTableData* d_table = DistanceTable::getTable(DistanceTable::add(targetPtcl));
     TwoBodyJastrowOrbital<FuncType> *J2 = new TwoBodyJastrowOrbital<FuncType>(targetPtcl,d_table);
@@ -113,6 +115,7 @@ namespace qmcplusplus {
     FuncType* dfunc= new FuncType;
     dfunc->setInFunc(InFunc[0]);
     dfunc->setOutFunc(new OutFuncType(agrid));
+    dfunc->setCutoff(rcut,agrid->rmax());
     dfunc->reset();
     J2->F.resize(ng*ng,dfunc);
     J2->insert("j00",dfunc);
@@ -124,6 +127,7 @@ namespace qmcplusplus {
           FuncType* ofunc= new FuncType;
           ofunc->setInFunc(InFunc[i*ng+j]);
           ofunc->setOutFunc(new OutFuncType(agrid));
+          ofunc->setCutoff(rcut,agrid->rmax());
           ofunc->reset();
           J2->F[i*ng+j]=ofunc;
           J2->F[j*ng+i]=ofunc;

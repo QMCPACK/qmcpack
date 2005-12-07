@@ -81,8 +81,7 @@ namespace qmcplusplus {
 	if(!(InFunc[ia])) {
           InFuncType *j1=createInFunc(jastfunction);
 	  InFunc[ia]= j1;
-	  app_log() <<"   Added Jastrow Correlation between "
-            <<spA<<" and "<<targetPtcl.getName() << endl;
+	  app_log() <<"   Added Jastrow Correlation between " <<spA<<" and "<<targetPtcl.getName() << endl;
 	}
 	InFunc[ia]->put(cur,targetPsi.VarList);
       }
@@ -100,16 +99,18 @@ namespace qmcplusplus {
     //create grid and initialize CubicSplineFunctions
     OneDimGridFactory::GridType* agrid = OneDimGridFactory::createGrid(gridPtr);
 
+    //get the cutoff value to smooth the function
+    RealType rcut = OneDimGridFactory::setSmoothCutoff(agrid,gridPtr);
+
     OneBodyJastrow<FuncType> *J1 = new OneBodyJastrow<FuncType>(targetPtcl,d_table);
     for(int i=0; i<InFunc.size(); i++) {
       if(InFunc[i]) {
         FuncType* ofunc= new FuncType;
         ofunc->setInFunc(InFunc[i]);
         ofunc->setOutFunc(new OutFuncType(agrid));
+        ofunc->setCutoff(rcut,agrid->rmax());
         ofunc->reset();
         J1->addFunc(i,ofunc);
-        ofunc->print(cout);
-        cout << endl;
       } else {
         J1->addFunc(i,0);
       }

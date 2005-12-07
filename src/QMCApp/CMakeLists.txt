@@ -5,6 +5,10 @@ PROJECT(newqmc)
 ####################################
 SET(WFSRCS
   ../QMCWaveFunctions/OrbitalBuilderBase.cpp
+  ../QMCWaveFunctions/JAABuilder.cpp
+  ../QMCWaveFunctions/NJAABuilder.cpp
+  ../QMCWaveFunctions/JABBuilder.cpp
+  ../QMCWaveFunctions/NJABBuilder.cpp
   ../QMCWaveFunctions/AtomicOrbitals/HFAtomicSTOSet.cpp 
   ../QMCWaveFunctions/AtomicOrbitals/HFAtomicSTOSetBuilder.cpp 
   ../QMCWaveFunctions/AtomicOrbitals/HeSTOClementiRottie.cpp
