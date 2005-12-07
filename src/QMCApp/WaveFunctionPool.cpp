@@ -26,6 +26,11 @@
 #include "QMCWaveFunctions/MolecularOrbitals/MolecularOrbitalBuilder.h"
 #include "QMCWaveFunctions/AtomicOrbitals/HeSTOClementiRottie.h"
 #include "QMCWaveFunctions/ElectronGasOrbitalBuilder.h"
+#include "QMCWaveFunctions/JAABuilder.h"
+#include "QMCWaveFunctions/JABBuilder.h"
+#include "QMCWaveFunctions/NJAABuilder.h"
+#include "QMCWaveFunctions/NJABBuilder.h"
+#include "QMCWaveFunctions/ThreeBodyGeminalBuilder.h"
 //#include "QMCWaveFunctions/NumericalOrbitalSetBuilder.h"
 using namespace std;
 #include "OhmmsData/AttributeSet.h"
@@ -104,11 +109,58 @@ namespace qmcplusplus {
         }
       } else if (cname ==  OrbitalBuilderBase::jastrow_tag) {
         xmlAddChild(curWfsPtr,xmlCopyNode(cur,1));
-        JastrowBuilder a(*qp,*psi,ptclPool->getPool());
-        a.put(cur);
+        addJastrow(*qp,*psi,cur);
       }
       cur = cur->next;
     }
+    return true;
+  }
+
+  bool WaveFunctionPool::addDeterminants(xmlNodePtr cur) {
+    return true;
+  }
+
+  bool WaveFunctionPool::addJastrow(ParticleSet& targetPtcl,
+      TrialWaveFunction& targetPsi, xmlNodePtr cur) {
+
+    string jasttype((const char*)(xmlGetProp(cur, (const xmlChar *)"type")));
+    string jastname((const char*)(xmlGetProp(cur, (const xmlChar *)"name")));
+    bool useSpline=false;
+    const xmlChar* gptr=xmlGetProp(cur,(const xmlChar*)"transform");
+    if(gptr != NULL) {
+      if(xmlStrEqual(gptr,(const xmlChar*)"yes")) {
+        useSpline=true;
+      } 
+    }
+
+    if(jasttype == "Two-Body-Spin" || jasttype == "Two-Body") {
+      if(useSpline) {
+        NJAABuilder jaa(targetPtcl,targetPsi);
+        return jaa.put(cur);
+      } else {
+        JAABuilder jaa(targetPtcl,targetPsi);
+        return jaa.put(cur);
+      }
+    } else if(jasttype == "One-Body") {
+      if(useSpline) {
+        NJABBuilder jab(targetPtcl,targetPsi,ptclPool->getPool());
+        return jab.put(cur);
+      } else {
+        JABBuilder jab(targetPtcl,targetPsi,ptclPool->getPool());
+        return jab.put(cur);
+      }
+    } else if(jasttype == "Three-Body-Geminal") {
+      app_log() << "  creating Three-Body-Germinal Jastrow function " << endl;
+      string source_name("i");
+      const xmlChar* iptr = xmlGetProp(cur, (const xmlChar *)"source");
+      if(iptr != NULL) source_name=(const char*)iptr;
+      ParticleSet* ion = ptclPool->getParticleSet(source_name);
+      if(ion) {
+        ThreeBodyGeminalBuilder g(targetPtcl,targetPsi,*ion);
+        g.put(cur);
+      }
+    }
+
     return true;
   }
 

@@ -32,6 +32,7 @@ namespace qmcplusplus {
   class TrialWaveFunction;
   class ParticleSetPool;
   class OrbitalBuilderBase;
+  class ParticleSet;
 
   /** @ingroup qmcapp
    * @brief Manage a collection of TrialWaveFunction objects
@@ -93,6 +94,11 @@ namespace qmcplusplus {
     std::vector<OrbitalBuilderBase*> orbitalBuilders;
 
     std::map<std::string,xmlNodePtr> m_wfsPtr;
+
+    bool addJastrow(ParticleSet& targetPtcl, 
+        TrialWaveFunction& targetPsi,
+        xmlNodePtr cur);
+    bool addDeterminants(xmlNodePtr cur);
   };
 }
 #endif
