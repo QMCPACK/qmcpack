@@ -29,15 +29,29 @@ namespace qmcplusplus {
     RealType ascale = -1.0e0;
     RealType astep = 1.25e-2;
     IndexType npts = 1001;
-    string gridType("log");
 
+    string gridType("log");
+    string gridID("invalid");
     OhmmsAttributeSet radAttrib;
     radAttrib.add(gridType,"type"); 
     radAttrib.add(npts,"npts"); 
     radAttrib.add(ri,"ri"); radAttrib.add(rf,"rf");
     radAttrib.add(ascale,"ascale"); radAttrib.add(astep,"astep");
+    radAttrib.add(gridID,"id"); 
+    radAttrib.add(gridID,"name");
+    radAttrib.add(gridID,"ref"); 
 
     if(cur != NULL) radAttrib.put(cur);
+
+    //return for the same grid
+    bool hasName= (gridID != "invalid");
+    if(hasName) {
+      std::map<string,GridType*>::iterator it(GridObjects.find(gridID));
+      if(it != GridObjects.end()) {
+        app_log() << "  Reuse " << gridID << " grid" << endl;
+        return (*it).second;
+      }
+    }
 
     if(gridType == "log") {
       if(ascale>0.0) {
@@ -55,11 +69,38 @@ namespace qmcplusplus {
       agrid->set(ri,rf,npts);
     }
 
-    char gname[16];
-    sprintf(gname,"g1_%d",GridObjects.size());
-    GridObjects[gname]=agrid;
+    if(hasName) {
+      GridObjects[gridID]=agrid;
+    } else {
+      char gname[16];
+      sprintf(gname,"g1_%d",GridObjects.size());
+      GridObjects[gname]=agrid;
+    }
 
     return agrid;
+  }
+
+  OneDimGridFactory::RealType 
+  OneDimGridFactory::setSmoothCutoff(GridType* agrid, xmlNodePtr cur) {
+
+    //first create one if none
+    if(agrid == 0) agrid = createGrid(cur);
+
+    RealType rmax=agrid->rmax();
+    RealType rmin=agrid->rmin();
+
+    //This should check the targetPtcl::Lattice 
+    RealType rcut=rmax+1.0; //rcut is set to larget than 
+    if(cur != NULL) {
+      const xmlChar* rcPtr = xmlGetProp(cur,(const xmlChar*)"rc");
+      if(rcPtr != NULL) {
+        rcut=atof((const char*)rcPtr);
+      }
+    }
+    if(rcut>rmax) { //set it to 0.99 
+      rcut = (rmax-rmin)*0.99+rmin;
+    } 
+    return rcut;
   }
 }
 /***************************************************************************

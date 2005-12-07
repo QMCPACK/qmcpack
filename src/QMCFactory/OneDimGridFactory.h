@@ -38,6 +38,7 @@ namespace qmcplusplus {
      */
     static GridType* createGrid(xmlNodePtr cur);
 
+    static RealType setSmoothCutoff(GridType* agrid, xmlNodePtr cur);
   };
 }
 #endif
