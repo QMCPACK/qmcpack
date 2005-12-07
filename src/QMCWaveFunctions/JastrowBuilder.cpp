@@ -265,24 +265,8 @@ namespace qmcplusplus {
     } // while cur
     
     J1 = new JneType(targetPtcl, d_table);
-    FuncType* func_shared = NULL;
-    int ig=0;
-    while(!func_shared && ig<ng) {
-      if(jastrow[ig]) func_shared = jastrow[ig];
-      ig++;
-    }
-    if(!func_shared) {
-      WARNMSG("Cannot create one-body Jastrow Function. Do nothing")
-      return false;
-    }
-
-    ig = 0;    
-    for(; ig<ng; ig++) {
-      if(jastrow[ig]) {//(i,*) center is missing. Use the first valid jastrow function
-	J1->F.push_back(jastrow[ig]);
-      } else {
-	J1->F.push_back(func_shared);
-      }
+    for(int ig=0; ig<ng; ig++) {
+      J1->addFunc(ig,jastrow[ig]);
     }
 
     //set this jastrow function to be not optimizable

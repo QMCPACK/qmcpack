@@ -179,6 +179,7 @@ namespace qmcplusplus {
     \left( \frac{r_f}{r_0} \right) ^{\frac{i}{N-1}} \f]
     or LogZero \f[ r_i = B 
     \left[ \exp(Ai)-1 \right] \f]
+    @todo use OneDimGridFactory
   */
   bool 
   NumericalRGFBuilder::addGrid(xmlNodePtr cur) {

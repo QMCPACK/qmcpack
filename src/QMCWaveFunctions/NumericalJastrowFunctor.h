@@ -24,13 +24,15 @@ struct CutoffFunctor {
   T R1;
   T R2;
   T R12;
+  T pi;
   CutoffFunctor() {}
   inline CutoffFunctor(T r1, T r2){
     set(r1,r2);
   }
   inline void set(T r1, T r2) {
+    pi = 4.0*atan(1.0);
     R1=r1; 
-    if(R2<=R1) { 
+    if(r2<=r1) { 
       R2=R1; R12=1e9;
     } else {
       R2=r2;R12=1.0/(R2-R1);
@@ -81,15 +83,14 @@ struct NumericalJastrow {
     //reference to the output functions grid
     const FNOUT::grid_type& grid = OutFunc->grid();
     //set cutoff function
-    //Rcut.set(grid(grid.size()/2),grid(grid.size()-1));
+    int last=grid.size()-1;
     for(int i=0; i<grid.size(); i++) {
-      (*OutFunc)(i) = InFunc->f(grid(i));
+      (*OutFunc)(i) = InFunc->f(grid(i))*Rcut(grid(i));
     }
 
-    int last=grid.size()-1;
     //boundary conditions
     value_type deriv1=InFunc->df(grid(0));
-    value_type deriv2=InFunc->df(grid(last));
+    value_type deriv2=0.0;
     OutFunc->spline(0,deriv1,last,deriv2);
   }
 
@@ -107,6 +108,13 @@ struct NumericalJastrow {
 
   void put(xmlNodePtr cur, VarRegistry<real_type>& vlist) {
     InFunc->put(cur,vlist);
+  }
+
+  void print(ostream& os) {
+    const FNOUT::grid_type& grid = OutFunc->grid();
+    for(int i=0; i<grid.size(); i++) {
+      cout << grid(i) << " " << (*OutFunc)(i) << endl;
+    }
   }
 };
 #endif

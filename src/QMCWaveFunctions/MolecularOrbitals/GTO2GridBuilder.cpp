@@ -21,6 +21,7 @@
 #include "Numerics/GaussianBasisSet.h"
 #include "QMCWaveFunctions/MolecularOrbitals/GridMolecularOrbitals.h"
 #include "QMCWaveFunctions/MolecularOrbitals/GTO2GridBuilder.h"
+#include "QMCFactory/OneDimGridFactory.h"
 
 namespace qmcplusplus {
 
@@ -92,22 +93,7 @@ namespace qmcplusplus {
     }
 
     XMLReport("Converting analytic orbitals to radial grid functions. Modify to use zero-based grid.")
-    RealType ri = 1e-6;
-    RealType rf = 100.0;
-    IndexType npts = 1001;
-    const xmlChar* ri_ptr = xmlGetProp(cur,(const xmlChar *)"ri");
-    const xmlChar* rf_ptr = xmlGetProp(cur,(const xmlChar *)"rf");
-    const xmlChar* n_ptr = xmlGetProp(cur,(const xmlChar *)"npts");
-
-    if(ri_ptr) ri = atof((const char*)ri_ptr);
-    if(rf_ptr) rf = atof((const char*)rf_ptr);
-    if(n_ptr) npts = atoi((const char*)n_ptr);
-    LOGMSG("Using log grid with default values: ri = " << ri << " rf = " << rf << " npts = " << npts)
-
-    GridType *agrid = new LogGrid<RealType>;
-    agrid->set(ri,rf,npts);
-
-    m_orbitals->Grids.push_back(agrid);
+    m_orbitals->Grids.push_back(OneDimGridFactory::createGrid(cur));
     return true;
   }
 }

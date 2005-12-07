@@ -78,12 +78,12 @@ namespace qmcplusplus {
     ValueVectorType U,d2U;
     GradVectorType dU;
     ValueType *FirstAddressOfdU, *LastAddressOfdU;
-
+    vector<FT*> Fs;
+    vector<FT*> Funique;
   public:
 
     typedef FT FuncType;
 
-    vector<FT*> F;
 
     ///constructor
     //OneBodyJastrow(DistanceTableData* dtable)
@@ -92,18 +92,27 @@ namespace qmcplusplus {
       U.resize(els.getTotalNum());
     }
 
-    ~OneBodyJastrow(){
-      DEBUGMSG("OneBodyJastrow::~OneBodyJastrow")
-	//for(int i=0; i<F.size(); i++) delete F[i];
-    }
+    ~OneBodyJastrow(){ }
 
     //evaluate the distance table with P
     void resetTargetParticleSet(ParticleSet& P) {
       d_table = DistanceTable::getTable(DistanceTable::add(d_table->origin(),P));
     }
 
+    void addFunc(int source_type, FT* afunc) {
+      const ParticleSet& ions=d_table->origin();
+      if(Fs.empty()) {
+        Fs.resize(ions.getTotalNum(),0);
+      }
+      for(int i=0; i<Fs.size(); i++) {
+        if(ions.GroupID[i] == source_type) Fs[i]=afunc;
+      }
+      Funique.push_back(afunc);
+    }
+
     void reset() { 
-      for(int i=0; i<F.size(); i++) F[i]->reset();
+      for(int i=0; i<Funique.size(); i++) 
+        if(Funique[i]) Funique[i]->reset();
     }
 
     /** 
@@ -124,14 +133,15 @@ namespace qmcplusplus {
 		          ParticleSet::ParticleGradient_t& G, 
 		          ParticleSet::ParticleLaplacian_t& L) {
       LogValue=0.0;
-      //
       U=0.0;
       ValueType dudr, d2udr2;
       for(int i=0; i<d_table->size(SourceIndex); i++) {
+        FT* func=Fs[i];
+        if(func == 0) continue;
 	for(int nn=d_table->M[i]; nn<d_table->M[i+1]; nn++) {
 	  int j = d_table->J[nn];
-          //LogValue -= F[d_table->PairID[nn]]->evaluate(d_table->r(nn), dudr, d2udr2);
-          ValueType uij= F[d_table->PairID[nn]]->evaluate(d_table->r(nn), dudr, d2udr2);
+          //ValueType uij= F[d_table->PairID[nn]]->evaluate(d_table->r(nn), dudr, d2udr2);
+          ValueType uij= func->evaluate(d_table->r(nn), dudr, d2udr2);
           LogValue -= uij; U[j] += uij;
 	  dudr *= d_table->rinv(nn);
 	  G[j] -= dudr*d_table->dr(nn);
@@ -155,7 +165,8 @@ namespace qmcplusplus {
       int n=d_table->size(VisitorIndex);
       ValueType d(0.0);
       for(int i=0, nn=iat; i<d_table->size(SourceIndex); i++,nn+= n) {
-        d += F[d_table->PairID[nn]]->evaluate(d_table->Temp[i].r1);
+        if(Fs[i]) d += Fs[i]->evaluate(d_table->Temp[i].r1);
+        //d += F[d_table->PairID[nn]]->evaluate(d_table->Temp[i].r1);
       }
       return exp(U[iat]-d);
       //for(int i=0, nn=iat; i<d_table->size(SourceIndex); i++,nn+= n) {
@@ -181,11 +192,17 @@ namespace qmcplusplus {
       curGrad = 0.0;
       ValueType dudr, d2udr2;
       for(int i=0, nn=iat; i<d_table->size(SourceIndex); i++,nn+= n) {
-        int ij=d_table->PairID[nn];
-        curVal += F[ij]->evaluate(d_table->Temp[i].r1,dudr,d2udr2);
-        dudr *= d_table->Temp[i].rinv1;
-        curGrad -= dudr*d_table->Temp[i].dr1;
-        curLap  -= d2udr2+2.0*dudr;
+        if(Fs[i]) {
+          curVal += Fs[i]->evaluate(d_table->Temp[i].r1,dudr,d2udr2);
+          dudr *= d_table->Temp[i].rinv1;
+          curGrad -= dudr*d_table->Temp[i].dr1;
+          curLap  -= d2udr2+2.0*dudr;
+        }
+        //int ij=d_table->PairID[nn];
+        //curVal += F[ij]->evaluate(d_table->Temp[i].r1,dudr,d2udr2);
+        //dudr *= d_table->Temp[i].rinv1;
+        //curGrad -= dudr*d_table->Temp[i].dr1;
+        //curLap  -= d2udr2+2.0*dudr;
       }
       dG[iat] += curGrad-dU[iat];
       dL[iat] += curLap-d2U[iat]; 
@@ -201,11 +218,17 @@ namespace qmcplusplus {
       curGrad = 0.0;
       ValueType dudr, d2udr2;
       for(int i=0, nn=iat; i<d_table->size(SourceIndex); i++,nn+= n) {
-        int ij=d_table->PairID[nn];
-        curVal += F[ij]->evaluate(d_table->Temp[i].r1,dudr,d2udr2);
-        dudr *= d_table->Temp[i].rinv1;
-        curGrad -= dudr*d_table->Temp[i].dr1;
-        curLap  -= d2udr2+2.0*dudr;
+        if(Fs[i]) {
+          curVal += Fs[i]->evaluate(d_table->Temp[i].r1,dudr,d2udr2);
+          dudr *= d_table->Temp[i].rinv1;
+          curGrad -= dudr*d_table->Temp[i].dr1;
+          curLap  -= d2udr2+2.0*dudr;
+        }
+        //int ij=d_table->PairID[nn];
+        //curVal += F[ij]->evaluate(d_table->Temp[i].r1,dudr,d2udr2);
+        //dudr *= d_table->Temp[i].rinv1;
+        //curGrad -= dudr*d_table->Temp[i].dr1;
+        //curLap  -= d2udr2+2.0*dudr;
       }
       dG[iat] += curGrad-dU[iat];
       dL[iat] += curLap-d2U[iat]; 
@@ -242,12 +265,12 @@ namespace qmcplusplus {
       U=0.0; dU=0.0; d2U=0.0;
       ValueType uij, dudr, d2udr2;
       for(int i=0; i<d_table->size(SourceIndex); i++) {
+        FT* func=Fs[i];
+        if(func == 0) continue;
 	for(int nn=d_table->M[i]; nn<d_table->M[i+1]; nn++) {
 	  int j = d_table->J[nn];
-	  //U[j] += F[d_table->PairID[nn]]->evaluate(d_table->r(nn));
-	  //Grad/Lap are not calculated here
-	  //U[j] += F[d_table->PairID[nn]]->evaluate(d_table->r(nn), dudr, d2udr2);
-	  uij = F[d_table->PairID[nn]]->evaluate(d_table->r(nn), dudr, d2udr2);
+	  //uij = F[d_table->PairID[nn]]->evaluate(d_table->r(nn), dudr, d2udr2);
+	  uij = func->evaluate(d_table->r(nn), dudr, d2udr2);
           LogValue-=uij;
           U[j]+=uij; 
 	  dudr *= d_table->rinv(nn);
@@ -276,9 +299,12 @@ namespace qmcplusplus {
       U=0.0; dU=0.0; d2U=0.0;
       ValueType uij, dudr, d2udr2;
       for(int i=0; i<d_table->size(SourceIndex); i++) {
+        FT* func=Fs[i];
+        if(func == 0) continue;
 	for(int nn=d_table->M[i]; nn<d_table->M[i+1]; nn++) {
 	  int j = d_table->J[nn];
-	  uij = F[d_table->PairID[nn]]->evaluate(d_table->r(nn), dudr, d2udr2);
+	  //uij = F[d_table->PairID[nn]]->evaluate(d_table->r(nn), dudr, d2udr2);
+	  uij = func->evaluate(d_table->r(nn), dudr, d2udr2);
           LogValue-=uij;
           U[j]+=uij; 
 	  dudr *= d_table->rinv(nn);

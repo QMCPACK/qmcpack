@@ -34,7 +34,8 @@ namespace qmcplusplus {
 
     bool put(xmlNodePtr cur);
 
-    template<class FN> bool createJAA(xmlNodePtr cur, FN* dummy);
+    template<class FN> 
+    struct createJAA(xmlNodePtr cur, FN* dummy);
 
     bool IgnoreSpin;
 

@@ -15,13 +15,11 @@
 //////////////////////////////////////////////////////////////////
 #include "Utilities/OhmmsInfo.h"
 #include "Numerics/LibxmlNumericIO.h"
-#include "Numerics/SlaterTypeOrbital.h"
-#include "Numerics/Transform2GridFunctor.h"
 #include "Numerics/OneDimCubicSpline.h"
 #include "Numerics/HDFNumericAttrib.h"
 #include "QMCWaveFunctions/MolecularOrbitals/GridMolecularOrbitals.h"
 #include "QMCWaveFunctions/MolecularOrbitals/RGFBuilderBase.h"
-#include "OhmmsData/AttributeSet.h"
+#include "QMCFactory/OneDimGridFactory.h"
 using namespace std;
 namespace qmcplusplus {
 
@@ -119,36 +117,35 @@ namespace qmcplusplus {
     }
 
     XMLReport("Converting analytic orbitals to radial grid functions")
-
-    GridType *agrid=0;
-    RealType ri = 1e-5;
-    RealType rf = 100.0;
-    RealType ascale = -1.0e0;
-    RealType astep = 1.25e-2;
-    IndexType npts = 1001;
-    string gridType("log");
-
-    OhmmsAttributeSet radAttrib;
-    radAttrib.add(gridType,"type"); 
-    radAttrib.add(npts,"npts"); 
-    radAttrib.add(ri,"ri"); radAttrib.add(rf,"rf");
-    radAttrib.add(ascale,"ascale"); radAttrib.add(astep,"astep");
-    if(cur) radAttrib.put(cur);
-    if(gridType == "log") {
-      if(ascale>0.0) {
-        LOGMSG("Using log grid with default values: scale = " << ascale << " step = " << astep << " npts = " << npts)
-        agrid = new LogGridZero<RealType>;
-        agrid->set(astep,ascale,npts);
-      } else {
-        LOGMSG("Using log grid with default values: ri = " << ri << " rf = " << rf << " npts = " << npts)
-        agrid = new LogGrid<RealType>;
-        agrid->set(ri,rf,npts);
-      }
-    } else if(gridType == "linear") {
-      LOGMSG("Using linear grid with default values: ri = " << ri << " rf = " << rf << " npts = " << npts)
-      agrid = new LinearGrid<RealType>;
-      agrid->set(ri,rf,npts);
-    }
+    //GridType *agrid=0;
+    //RealType ri = 1e-5;
+    //RealType rf = 100.0;
+    //RealType ascale = -1.0e0;
+    //RealType astep = 1.25e-2;
+    //IndexType npts = 1001;
+    //string gridType("log");
+    //OhmmsAttributeSet radAttrib;
+    //radAttrib.add(gridType,"type"); 
+    //radAttrib.add(npts,"npts"); 
+    //radAttrib.add(ri,"ri"); radAttrib.add(rf,"rf");
+    //radAttrib.add(ascale,"ascale"); radAttrib.add(astep,"astep");
+    //if(cur) radAttrib.put(cur);
+    //if(gridType == "log") {
+    //  if(ascale>0.0) {
+    //    LOGMSG("Using log grid with default values: scale = " << ascale << " step = " << astep << " npts = " << npts)
+    //    agrid = new LogGridZero<RealType>;
+    //    agrid->set(astep,ascale,npts);
+    //  } else {
+    //    LOGMSG("Using log grid with default values: ri = " << ri << " rf = " << rf << " npts = " << npts)
+    //    agrid = new LogGrid<RealType>;
+    //    agrid->set(ri,rf,npts);
+    //  }
+    //} else if(gridType == "linear") {
+    //  LOGMSG("Using linear grid with default values: ri = " << ri << " rf = " << rf << " npts = " << npts)
+    //  agrid = new LinearGrid<RealType>;
+    //  agrid->set(ri,rf,npts);
+    //}
+    GridType *agrid = OneDimGridFactory::createGrid(cur);
     m_orbitals->Grids.push_back(agrid);
     return true;
   }
