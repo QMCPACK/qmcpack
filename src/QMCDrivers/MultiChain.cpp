@@ -71,7 +71,7 @@ void MultiChain::write(hid_t grp) {
   HDFAttribIO<int> v(m_version);
   v.write(h_config,"Version");
 
-  int nc=this->size();
+  int nc=Beads.size();
   HDFAttribIO<int> c(nc);
   c.write(h_config,"NumberOfBeads");
 
@@ -139,8 +139,8 @@ bool MultiChain::read(hid_t grp){
   int nc(0);
   HDFAttribIO<int> c(nc);
   c.read(h_config,"NumberOfBeads");
-  if(nc != this->size()) {
-    WARNMSG("The number of chains is different. Previous = "  << nc << " Current = " << this->size())
+  if(nc != Beads.size()) {
+    WARNMSG("The number of chains is different. Previous = "  << nc << " Current = " << Beads.size())
   }
 
   typedef Bead::RealType PosType;

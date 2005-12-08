@@ -128,7 +128,14 @@ namespace qmcplusplus {
     }
   };
 
-  struct MultiChain: public std::deque<Bead*> {
+  //struct MultiChain: public std::deque<Bead*> {
+  struct MultiChain {
+
+    typedef std::deque<Bead*>               Container_t;
+    typedef Container_t::iterator           iterator;
+    typedef Container_t::const_iterator     const_iterator;
+    typedef Container_t::reference          reference;
+    typedef Container_t::const_reference    const_reference;
 
     typedef MCWalkerConfiguration::Walker_t Walker_t;
     typedef MCWalkerConfiguration::RealType RealType;
@@ -151,6 +158,8 @@ namespace qmcplusplus {
     Vector<RealType> GlobalAction,UmbrellaWeight;
     Vector<int>      GlobalSignWgt,RefSign;
 
+    Container_t      Beads;
+
     /**  constructor    
      * @param abead Bead used to generate len Beads to form a chain
      * @param len size of the chain
@@ -165,7 +174,7 @@ namespace qmcplusplus {
       Middle = len/2;
       Last = len-1;
       for(int i=0; i<len; i++) {
-        push_back(new Bead(*abead));
+        Beads.push_back(new Bead(*abead));
       }
       GlobalAction.resize(npsi);   GlobalAction=0.0;
       UmbrellaWeight.resize(npsi); UmbrellaWeight=1.0;
@@ -178,9 +187,27 @@ namespace qmcplusplus {
      * Need to clean up the walkers in the repository and the polymer chain
      */
     ~MultiChain() {
-      delete_iter(this->begin(),this->end());
+      delete_iter(Beads.begin(),Beads.end());
     }
 
+    inline reference operator[](int n) { return Beads[n];}
+    inline const_reference operator[](int n) const { return Beads[n];}
+    inline iterator begin() { return Beads.begin();}
+    inline iterator end() { return Beads.end();}
+    inline reference front() { return Beads.front();}
+    inline reference back() { return Beads.back();}
+    INLINE_ALL void push_front(Bead* abead) {
+      Beads.push_front(abead);
+    }
+    INLINE_ALL void push_back(Bead* abead) {
+      Beads.push_back(abead);
+    }
+    INLINE_ALL void pop_back() {
+      Beads.pop_back();
+    }
+    INLINE_ALL void pop_front() {
+      Beads.pop_front();
+    }
     inline void flip(){ 
       GrowthDirection = abs(GrowthDirection-1); //flip the direction
     }
@@ -189,7 +216,7 @@ namespace qmcplusplus {
      * @param buf buffer to read from
      */
     inline void copyFromBuffer(Buffer_t& buf) {
-      int n(this->size());
+      int n(Beads.size());
       buf.get(n);
       buf.get(GrowthDirection);
       buf.get(Middle);
@@ -210,7 +237,7 @@ namespace qmcplusplus {
      * add takes care of memory allocation and assignment
      */
     inline void copyToBuffer(Buffer_t& buf) {
-      double n= static_cast<double>(this->size());
+      double n= static_cast<double>(Beads.size());
       buf.add(n);
       buf.add(GrowthDirection);
       buf.add(Middle);
