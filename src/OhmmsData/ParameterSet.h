@@ -25,22 +25,28 @@
  *
  *This may become an inherited class from OhmmsElementBase.
  */
-struct ParameterSet: public OhmmsElementBase,
-  public std::map<std::string, OhmmsElementBase*> {
+struct ParameterSet: public OhmmsElementBase {
+//  public std::map<std::string, OhmmsElementBase*> {
+
+  typedef std::map<std::string, OhmmsElementBase*>  Container_t;
+  typedef Container_t::iterator       iterator;
+  typedef Container_t::const_iterator const_iterator;
+
+  Container_t m_param;
 
   ParameterSet(const char* aname="parameter"):
     OhmmsElementBase(aname) {
   }
 
   ~ParameterSet() {
-    iterator it = begin();
-    iterator it_end = end();
+    iterator it(m_param.begin());
+    iterator it_end(m_param.end());
     while(it!=it_end) { delete (*it).second; ++it;}
   }
 
   inline bool get(std::ostream& os) const {
-    const_iterator it = begin();
-    const_iterator it_end = end();
+    const_iterator it(m_param.begin());
+    const_iterator it_end(m_param.end());
     while(it != it_end) {
       (*it).second->get(os);++it;
     }
@@ -64,8 +70,8 @@ struct ParameterSet: public OhmmsElementBase,
         const xmlChar* aptr= xmlGetProp(cur, (const xmlChar *) "name");
         if(aptr) {
 	  //string aname = (const char*)(xmlGetProp(cur, (const xmlChar *) "name"));
-	  iterator it = find((const char*)aptr);
-	  if(it != end()) {
+	  iterator it = m_param.find((const char*)aptr);
+	  if(it != m_param.end()) {
             something =true;
 	    (*it).second->put(cur);
 	  } 
@@ -89,17 +95,17 @@ struct ParameterSet: public OhmmsElementBase,
    *The condition will be used to convert the external unit to the internal unit.
    */
   template<class PDT>
-  inline void add(PDT& aparam, const char* aname, const char* uname) {
-    iterator it = find(aname);
-    if(it == end()) {
-      operator[](aname) = new OhmmsParameter<PDT>(aparam,aname,uname);
+  INLINE_ALL void add(PDT& aparam, const char* aname, const char* uname) {
+    iterator it = m_param.find(aname);
+    if(it == m_param.end()) {
+      m_param[aname] = new OhmmsParameter<PDT>(aparam,aname,uname);
     }
   }
 
   template<class PDT>
-  inline void setValue(const std::string& aname, PDT aval){
-    iterator it = find(aname);
-    if(it != end()) {
+  INLINE_ALL void setValue(const std::string& aname, PDT aval){
+    iterator it = m_param.find(aname);
+    if(it != m_param.end()) {
        (dynamic_cast<OhmmsParameter<PDT>*>((*it).second))->setValue(aval);
     }
   }

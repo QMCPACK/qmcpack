@@ -25,22 +25,26 @@
  *
  *This may become an inherited class from OhmmsElementBase.
  */
-struct OhmmsAttributeSet: public std::map<std::string, OhmmsElementBase*> 
+struct OhmmsAttributeSet
 {
+  typedef std::map<std::string, OhmmsElementBase*>  Container_t;
+  typedef Container_t::iterator iterator;
+  typedef Container_t::const_iterator const_iterator;
 
   xmlNodePtr myNode;
+  Container_t m_param;
 
   inline OhmmsAttributeSet(): myNode(0) {}
 
   ~OhmmsAttributeSet() {
-    iterator it = begin();
-    iterator it_end = end();
+    iterator it(m_param.begin());
+    iterator it_end(m_param.end());
     while(it!=it_end) {delete (*it).second; ++it;}
   }
 
   bool get(std::ostream& os) const {
-    const_iterator it = begin();
-    const_iterator it_end = end();
+    const_iterator it(m_param.begin());
+    const_iterator it_end(m_param.end());
     while(it != it_end) {
       (*it).second->get(os);++it;
     }
@@ -57,10 +61,10 @@ struct OhmmsAttributeSet: public std::map<std::string, OhmmsElementBase*>
    *The condition will be used to convert the external unit to the internal unit.
    */
   template<class PDT>
-  inline void add(PDT& aparam, const string& aname) {
-    iterator it = find(aname);
-    if(it == end()) {
-      operator[](aname) = new OhmmsParameter<PDT>(aparam,aname.c_str(),"none");
+  INLINE_ALL void add(PDT& aparam, const string& aname) {
+    iterator it(m_param.find(aname));
+    if(it == m_param.end()) {
+      m_param[aname] = new OhmmsParameter<PDT>(aparam,aname.c_str(),"none");
     }
   }
 
@@ -68,12 +72,12 @@ struct OhmmsAttributeSet: public std::map<std::string, OhmmsElementBase*>
    *@param cur the xml node to work on
    *@return true, if any valid parameter is processed.
    */
-  inline bool put(xmlNodePtr cur) {
+  INLINE_ALL bool put(xmlNodePtr cur) {
     xmlAttrPtr att = cur->properties;
     while(att != NULL) {
       string aname((const char*)(att->name));
-      iterator it = find(aname);
-      if(it != end()) {
+      iterator it = m_param.find(aname);
+      if(it != m_param.end()) {
         std::istringstream stream((const char*)(att->children->content));
         (*it).second->put(stream);
       } 
