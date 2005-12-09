@@ -16,6 +16,7 @@ SET(UTILITIES
   OhmmsApp/RandomNumberControl.cpp
   Numerics/OhmmsBlas.cpp
   Platforms/sysutil.cpp
+  QMCFactory/OneDimGridFactory.cpp
 )
 
 SET(PARTICLE
