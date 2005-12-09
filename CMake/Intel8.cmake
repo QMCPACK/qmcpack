@@ -1,6 +1,6 @@
 #compiler flags for intel 8.x
 SET(INTEL_COMPILER 1)
-ADD_DEFINITIONS(-DADD_)
+ADD_DEFINITIONS(-DADD_ -DINLINE_ALL=inline)
 
 #enable Interprocedural (IP) Optimizations
 #-ipo_obj force generation of real object files (requires -ipo)
@@ -12,7 +12,8 @@ ADD_DEFINITIONS(-DADD_)
 #SET(CMAKE_CXX_FLAGS "-restrict -unroll -fno-alias -O3 -ansi -fno-fnalias -ivdep_parallel -Ob=2")
 #SET(CMAKE_CXX_FLAGS "-restrict -unroll -fno-alias -O3 -ivdep_parallel -Ob=2")
 #SET(CMAKE_CXX_FLAGS "-restrict -unroll -fno-alias -O3 -Ob=2 -qp")
-SET(CMAKE_CXX_FLAGS "-restrict -unroll -fno-alias -O3 -Ob=2 -cxxlib-icc")
+#SET(CMAKE_CXX_FLAGS "-restrict -unroll -fno-alias -O3 -Ob=2 -cxxlib-icc")
+SET(CMAKE_CXX_FLAGS "-restrict -unroll -fno-alias -O3 -cxxlib-icc")
 SET(CMAKE_CC_FLAGS "-restrict -unroll -fno-alias -O3")
 
 IF(OHMMS_OMP)
