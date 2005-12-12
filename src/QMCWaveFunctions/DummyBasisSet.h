@@ -31,5 +31,16 @@ namespace qmcplusplus {
     inline void resetTargetParticleSet(ParticleSet& P) { }
     inline void evaluate(ParticleSet& P) { }
   };
+
+  struct BasisSetBase {
+    virtual void resize(int n) = 0;
+  };
+
+  template<class BS>
+  struct BasisSetProxy: public BasisSetBase {
+    BS* basisRef;
+    BasisSetProxy(BS* basis): basisRef(basis){}
+    void resize(int n) { basisRef->resize(n);}
+  };
 }
 #endif
