@@ -20,6 +20,9 @@
 /* define the release version */
 #cmakedefine QMCPLUSPLUS_RELEASE  @QMCPLUSPLUS_RELEASE@
 
+/* define the linearscale version */
+#cmakedefine QMCPLUSPLUS_LINEARSCALE  @QMCPLUSPLUS_LINEARSCALE@
+
 /* Enable OpenMP parallelization. */
 #cmakedefine ENABLE_OPENMP @ENABLE_OPENMP@
 
