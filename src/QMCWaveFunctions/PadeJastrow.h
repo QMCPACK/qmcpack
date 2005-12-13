@@ -25,8 +25,8 @@
 template<class T>
 struct PadeJastrow:public JastrowFunctorBase<T> {
 
-  typedef JastrowFunctorBase<T>::real_type real_type;
-  typedef JastrowFunctorBase<T>::value_type value_type;
+  typedef typename JastrowFunctorBase<T>::real_type real_type;
+  typedef typename JastrowFunctorBase<T>::value_type value_type;
 
   ///coefficients
   real_type A, B, AB, B2;
@@ -127,8 +127,8 @@ struct PadeJastrow:public JastrowFunctorBase<T> {
 template<class T>
 struct PadeJastrow2:public JastrowFunctorBase<T> {
 
-  typedef JastrowFunctorBase<T>::real_type real_type;
-  typedef JastrowFunctorBase<T>::value_type value_type;
+  typedef typename JastrowFunctorBase<T>::real_type real_type;
+  typedef typename JastrowFunctorBase<T>::value_type value_type;
   ///coefficients
   real_type A, B, C, C2;
 

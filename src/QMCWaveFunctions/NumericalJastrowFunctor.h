@@ -81,7 +81,7 @@ struct NumericalJastrow {
   inline void reset() {
     InFunc->reset();
     //reference to the output functions grid
-    const FNOUT::grid_type& grid = OutFunc->grid();
+    const typename FNOUT::grid_type& grid = OutFunc->grid();
     //set cutoff function
     int last=grid.size()-1;
     for(int i=0; i<grid.size(); i++) {
@@ -111,7 +111,7 @@ struct NumericalJastrow {
   }
 
   void print(ostream& os) {
-    const FNOUT::grid_type& grid = OutFunc->grid();
+    const typename FNOUT::grid_type& grid = OutFunc->grid();
     for(int i=0; i<grid.size(); i++) {
       cout << grid(i) << " " << (*OutFunc)(i) << endl;
     }

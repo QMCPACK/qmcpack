@@ -24,10 +24,11 @@
 template<class RT>
 struct JastrowFunctorBase {
 
+  typedef QMCDataTrait<RT> data_type;
   ///typedef for the argument
-  typedef QMCDataTrait<RT>::real_type real_type;
+  typedef typename data_type::real_type real_type;
   ///typedef for the return value
-  typedef QMCDataTrait<RT>::value_type value_type;
+  typedef typename data_type::value_type value_type;
 
   ///reset the Jastrow Function
   virtual void reset()=0;

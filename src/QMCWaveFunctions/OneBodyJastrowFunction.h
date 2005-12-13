@@ -354,56 +354,6 @@ namespace qmcplusplus {
       return exp(-sumu);
     }
 
-#ifdef USE_FASTWALKER
-    void evaluate(WalkerSetRef& W, 
-		  ValueVectorType& psi,
-		  WalkerSetRef::WalkerGradient_t& G,
-		  WalkerSetRef::WalkerLaplacian_t& L) {
-
-      ValueType dudr, d2udr2;
-      int nw = W.walkers();
-      const DistanceTableData::IndexVectorType& M = d_table->M;
-      const DistanceTableData::IndexVectorType& J = d_table->J;
-      const DistanceTableData::IndexVectorType& PairID = d_table->PairID;
-      for(int iw=0; iw<nw; iw++) {
-	ValueType sumu = 0.0;
-	for(int i=0; i<d_table->size(SourceIndex); i++) {
-	  for(int nn=M[i]; nn<M[i+1]; nn++) {
-	    int j = J[nn];
-	    sumu += F[PairID[nn]]->evaluate(d_table->r(iw,nn), dudr, d2udr2);
-	    dudr *= d_table->rinv(iw,nn);
-	    G(iw,j) -= dudr*d_table->dr(iw,nn);
-	    L(iw,j) -= d2udr2+2.0*dudr;
-	  }
-	}
-	psi[iw] *=  exp(-sumu);
-      }
-    }
-#else
-    void evaluate(WalkerSetRef& W,
-                  ValueVectorType& psi,
-                  WalkerSetRef::WalkerGradient_t& G,
-                  WalkerSetRef::WalkerLaplacian_t& L) {
-      ValueType dudr, d2udr2;
-      int nw = W.walkers();
-      const DistanceTableData::IndexVectorType& M = d_table->M;
-      const DistanceTableData::IndexVectorType& J = d_table->J;
-      const DistanceTableData::IndexVectorType& PairID = d_table->PairID;
-      vector<ValueType> sumu(nw,0.0);
-      for(int i=0; i<d_table->size(SourceIndex); i++) {
-        for(int nn=M[i]; nn<M[i+1]; nn++) {
-          int j = J[nn];
-          for(int iw=0; iw<nw; iw++) {
-            sumu[iw] += F[PairID[nn]]->evaluate(d_table->r(iw,nn),dudr,d2udr2);
-            dudr *= d_table->rinv(iw,nn);
-            G(iw,j) -= dudr*d_table->dr(iw,nn);
-            L(iw,j) -= d2udr2+2.0*dudr;
-          }
-        }
-      }
-      for(int iw=0; iw<nw; iw++) psi[iw]*= exp(-sumu[iw]);
-    }
-#endif
   };
 
 }
