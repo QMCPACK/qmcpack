@@ -25,7 +25,7 @@ using namespace std;
 #include "Message/Communicate.h"
 #include "Platforms/sysutil.h"
 #if defined(HAVE_LIBBOOST)
-#include "boost/date_time/gregorian/gregorian.hpp" 
+#include <boost/date_time/posix_time/posix_time.hpp>
 #endif
 
 namespace OHMMS {
@@ -49,13 +49,17 @@ namespace OHMMS {
     //os << "<Project ID=\""<<m_title << "\" series=\"" << m_series << "/>" << endl;
     os << "  Project = " << m_title << "\n";
 #if defined(HAVE_LIBBOOST)
-    typedef boost::gregorian::date date_type;
-    typedef boost::gregorian::date_facet date_facet;
-    typedef boost::date_time::day_clock<date_type> day_clock_type;
-
-    date_type today(day_clock_type::local_day());
-    date_facet* facet(new date_facet("%A %B %d, %Y"));
-    os.imbue(std::locale(os.getloc(), facet));
+  using namespace boost::posix_time;
+  ptime today(second_clock::local_time());
+  time_facet* facet(new time_facet("%Y-%m-%d %T"));
+  os.imbue(std::locale(os.getloc(), facet));
+//    typedef boost::gregorian::date date_type;
+//    typedef boost::gregorian::date_facet date_facet;
+//    typedef boost::date_time::day_clock<date_type> day_clock_type;
+//
+//    date_type today(day_clock_type::local_day());
+//    date_facet* facet(new date_facet("%A %B %d, %Y"));
+//    os.imbue(std::locale(os.getloc(), facet));
     os << "  date    = " << today << "\n";
 #endif
     os << "  host    = " << m_host << "\n";
