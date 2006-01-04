@@ -208,7 +208,8 @@ namespace qmcplusplus {
         //JNKIM: needs to change to HDFWalkerInputCollect
         //HDFWalkerInput0 wReader(ConfigFile[i],partid,nparts);
         HDFWalkerInputCollect wReader(ConfigFile[i]);
-        wReader.put(W,-1);
+        wReader.putSingle(W);
+        //wReader.put(W,-1);
       }
 
       //remove input files
