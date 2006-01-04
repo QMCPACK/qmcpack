@@ -47,6 +47,7 @@ int main(int argc, char **argv) {
 
   //broadcast the input file name to other nodes
   MPI_Bcast(fname,128,MPI_CHAR,0,OHMMS::Controller->getID());
+
   if(qmc.parse(fname)) {
     qmc.execute();
   }

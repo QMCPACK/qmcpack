@@ -99,6 +99,8 @@ namespace qmcplusplus {
     //initialize all the instances of distance tables and evaluate them 
     ptclPool->reset();
 
+    OHMMS::Controller->barrier();
+
     //write stuff
     app_log() << "=========================================================\n";
     app_log() << " Summary of QMC systems \n";
@@ -278,6 +280,8 @@ namespace qmcplusplus {
    */
   bool QMCMain::runQMC(xmlNodePtr cur) {
 
+    OHMMS::Controller->barrier();
+
     string what("invalid");
     string append_tag("no");
     OhmmsAttributeSet aAttrib;
@@ -398,6 +402,10 @@ namespace qmcplusplus {
       qmcDriver->setStatus(myProject.CurrentRoot(),PrevConfigFile, append_run);
       qmcDriver->putWalkers(m_walkerset_in);
       qmcDriver->process(cur);
+
+      //set up barrier
+      OHMMS::Controller->barrier();
+
       qmcDriver->run();
 
       //keeps track of the configuration file
