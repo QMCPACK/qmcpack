@@ -142,37 +142,37 @@ bool MCWalkerConfiguration::createAuxDataSet(int nfield) {
   return true;
 }
 
-void 
-MCWalkerConfiguration::registerData(Walker_t& awalker, PooledData<RealType>& buf) {
-  R = awalker.R;
-  for(int i=0; i< DistTables.size(); i++) {
-    DistTables[i]->evaluate(*this);
-    DistTables[i]->registerData(buf);
-  }
-}
-
-void 
-MCWalkerConfiguration::updateBuffer(Walker_t& awalker, PooledData<RealType>& buf) {
-  R = awalker.R;
-  for(int i=0; i< DistTables.size(); i++) {
-    DistTables[i]->evaluate(*this);
-    DistTables[i]->updateBuffer(buf);
-  }
-}
-  
-void 
-MCWalkerConfiguration::copyToBuffer(PooledData<RealType>& buf) {
-  for(int i=0; i< DistTables.size(); i++) {
-    DistTables[i]->copyToBuffer(buf);
-  }
-}
-
-void 
-MCWalkerConfiguration::copyFromBuffer(PooledData<RealType>& buf) {
-  for(int i=0; i< DistTables.size(); i++) {
-    DistTables[i]->copyFromBuffer(buf);
-  }
-}
+//void 
+//MCWalkerConfiguration::registerData(Walker_t& awalker, PooledData<RealType>& buf) {
+//  R = awalker.R;
+//  for(int i=0; i< DistTables.size(); i++) {
+//    DistTables[i]->evaluate(*this);
+//    DistTables[i]->registerData(buf);
+//  }
+//}
+//
+//void 
+//MCWalkerConfiguration::updateBuffer(Walker_t& awalker, PooledData<RealType>& buf) {
+//  R = awalker.R;
+//  for(int i=0; i< DistTables.size(); i++) {
+//    DistTables[i]->evaluate(*this);
+//    DistTables[i]->updateBuffer(buf);
+//  }
+//}
+//  
+//void 
+//MCWalkerConfiguration::copyToBuffer(PooledData<RealType>& buf) {
+//  for(int i=0; i< DistTables.size(); i++) {
+//    DistTables[i]->copyToBuffer(buf);
+//  }
+//}
+//
+//void 
+//MCWalkerConfiguration::copyFromBuffer(PooledData<RealType>& buf) {
+//  for(int i=0; i< DistTables.size(); i++) {
+//    DistTables[i]->copyFromBuffer(buf);
+//  }
+//}
 
 
 void MCWalkerConfiguration::loadWalker(Walker_t& awalker) {

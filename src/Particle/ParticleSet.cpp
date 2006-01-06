@@ -156,6 +156,38 @@ namespace qmcplusplus {
     }
   }
 
+  void 
+  ParticleSet::registerData(Walker_t& awalker, PooledData<RealType>& buf) {
+    R = awalker.R;
+    for(int i=0; i< DistTables.size(); i++) {
+      DistTables[i]->evaluate(*this);
+      DistTables[i]->registerData(buf);
+    }
+  }
+  
+  void 
+  ParticleSet::updateBuffer(Walker_t& awalker, PooledData<RealType>& buf) {
+    R = awalker.R;
+    for(int i=0; i< DistTables.size(); i++) {
+      DistTables[i]->evaluate(*this);
+      DistTables[i]->updateBuffer(buf);
+    }
+  }
+    
+  void 
+  ParticleSet::copyToBuffer(PooledData<RealType>& buf) {
+    for(int i=0; i< DistTables.size(); i++) {
+      DistTables[i]->copyToBuffer(buf);
+    }
+  }
+  
+  void 
+  ParticleSet::copyFromBuffer(PooledData<RealType>& buf) {
+    for(int i=0; i< DistTables.size(); i++) {
+      DistTables[i]->copyFromBuffer(buf);
+    }
+  }
+
 }
 
 /***************************************************************************

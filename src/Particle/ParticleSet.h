@@ -46,6 +46,7 @@ namespace qmcplusplus {
     
     typedef ParticleAttrib<GradType>  ParticleGradient_t;
     typedef ParticleAttrib<ValueType> ParticleLaplacian_t;
+    typedef Walker<RealType,ParticlePos_t> Walker_t;
     
     ///gradients of the particles
     ParticleGradient_t G;
@@ -141,6 +142,11 @@ namespace qmcplusplus {
    void applyBC(const ParticlePos_t& pin, ParticlePos_t& pout);
    void applyBC(ParticlePos_t& pos);
    void applyBC(const ParticlePos_t& pin, ParticlePos_t& pout, int first, int last);
+
+   void registerData(Walker_t& awalker, PooledData<RealType>& buf);
+   void updateBuffer(Walker_t& awalker, PooledData<RealType>& buf);
+   void copyToBuffer(PooledData<RealType>& buf);
+   void copyFromBuffer(PooledData<RealType>& buf);
 
   protected:
     ///the number of particle objects

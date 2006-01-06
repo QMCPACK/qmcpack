@@ -48,8 +48,6 @@ namespace qmcplusplus {
 	  Update_Particle ///move a particle by particle
     };
     
-    ///type of Walker class
-    typedef Walker<RealType,ParticlePos_t> Walker_t;
     ///container type of the Properties of a Walker
     typedef Walker_t::PropertyContainer_t  PropertyContainer_t;
     ///container type of Walkers
@@ -173,10 +171,10 @@ namespace qmcplusplus {
      */
     void loadWalker(Walker_t& awalker);
     bool createAuxDataSet(int nfield=256);
-    void registerData(Walker_t& awalker, PooledData<RealType>& buf);
-    void updateBuffer(Walker_t& awalker, PooledData<RealType>& buf);
-    void copyToBuffer(PooledData<RealType>& buf);
-    void copyFromBuffer(PooledData<RealType>& buf);
+    //void registerData(Walker_t& awalker, PooledData<RealType>& buf);
+    //void updateBuffer(Walker_t& awalker, PooledData<RealType>& buf);
+    //void copyToBuffer(PooledData<RealType>& buf);
+    //void copyFromBuffer(PooledData<RealType>& buf);
 
     void resetWalkerProperty(int ncopy=1);
 
