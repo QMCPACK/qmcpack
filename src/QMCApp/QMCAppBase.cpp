@@ -60,6 +60,7 @@ namespace qmcplusplus {
    */
   bool QMCAppBase::parse(const string& infile) {
 
+    app_log() << "  Input XML = " << infile << endl;
     return pushDocument(infile);
   }
 
