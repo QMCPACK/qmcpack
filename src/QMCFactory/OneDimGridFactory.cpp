@@ -73,7 +73,8 @@ namespace qmcplusplus {
       GridObjects[gridID]=agrid;
     } else {
       char gname[16];
-      sprintf(gname,"g1_%d",GridObjects.size());
+      int s=GridObjects.size();
+      sprintf(gname,"g1_%d",s);
       GridObjects[gname]=agrid;
     }
 
