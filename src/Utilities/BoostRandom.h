@@ -60,7 +60,7 @@ public:
    */
   void init(int i, int nstr, int iseed_in) {
     baseSeed=iseed_in;
-    myContext=1;
+    myContext=i;
     nContexts=nstr;
     if(iseed_in<=0) {
       baseSeed=static_cast<uint32_t>(std::time(0))%16081+(i+1)*nstr+i;
@@ -76,6 +76,7 @@ public:
       state_size=a.str().size();
       state_array=new char[state_size+128];
       state_name="mt19937";
+      std::cout << "  BoostRandom::init " << myContext << " " << baseSeed << std::endl;
     }
 
   }
@@ -87,6 +88,7 @@ public:
     baseSeed=static_cast<uint32_t>(std::time(0))%16081+(myContext+1)*nContexts+myContext;
     generator = new generator_type(baseSeed);
     uni = new uniform_generator_type(*generator,unit_dist);
+    std::cout << "  BoostRandom::reset " << myContext << " " << baseSeed << std::endl;
   }
 
   inline uniform_generator_type& getGenerator() { return *uni;}
