@@ -69,6 +69,13 @@ namespace qmcplusplus {
         return TableList[(*it).second];
     }
 
+    static DistanceTableData* getTable(const char* sname, const char* tname){
+      string newname(sname);
+      newname.append(tname);
+      return getTable(newname.c_str());
+    }
+
+
     /** returns the pointer to SimulationCell
      */
     static const ParticleLayout_t* getSimulationCell() {
