@@ -3,39 +3,40 @@ pkginclude_HEADERS= \
 	ohmms-config.h 
 
 QMCPP_UTILITIES = \
-	Utilities/OhmmsObject.cpp \
-	Utilities/OhmmsInform.cpp \
-	Utilities/OhmmsInfo.cpp \
-	Utilities/SimpleParser.cpp \
-	Utilities/SpeciesSet.cpp \
-	Utilities/RandRandom.cpp \
-	Utilities/RandomGenerator.cpp \
-	OhmmsData/Libxml2Doc.cpp \
-	OhmmsApp/ProjectData.cpp \
-        OhmmsApp/RandomNumberControl.cpp \
-        Platforms/sysutil.cpp\
-	Numerics/OhmmsBlas.cpp
+  Utilities/RandRandom.cpp  \
+  Utilities/RandomGenerator.cpp  \
+  Utilities/OhmmsObject.cpp  \
+  Utilities/SpeciesSet.cpp  \
+  Utilities/SimpleParser.cpp  \
+  Utilities/OhmmsInform.cpp  \
+  Utilities/OhmmsInfo.cpp  \
+  OhmmsData/Libxml2Doc.cpp \
+  OhmmsApp/ProjectData.cpp \
+  OhmmsApp/RandomNumberControl.cpp\
+  Numerics/OhmmsBlas.cpp \
+  Platforms/sysutil.cpp \
+  QMCFactory/OneDimGridFactory.cpp
 
    
 QMCPP_MESSAGE = \
 	Message/Communicate.cpp 
 
 QMCPP_PARTICLE = \
-	ParticleTags.cpp \
-        Lattice/Uniform3DGridLayout.cpp \
-        Particle/ParticleSet.BC.cpp \
-	Particle/ParticleSet.cpp \
-	Particle/MCWalkerConfiguration.cpp \
-        Particle/DistanceTable.cpp \
-        Particle/HDFWalkerInput0.cpp \
-        Particle/HDFWalkerInputCollect.cpp \
-        Particle/HDFWalkerInputManager.cpp \
-        Particle/HDFWalkerOutput.cpp \
-        ParticleIO/XMLParticleIO.cpp \
-        ParticleIO/ParticleLayoutIO.cpp \
-        ParticleIO/HDFParticleIO.cpp \
-        LongRange/KContainer.cpp \
-        LongRange/StructFact.cpp 
+  Lattice/Uniform3DGridLayout.cpp  \
+  Particle/ParticleSet.cpp  \
+  Particle/ParticleSet.BC.cpp  \
+  Particle/MCWalkerConfiguration.cpp  \
+  Particle/DistanceTable.cpp \
+  Particle/HDFWalkerOutput.cpp \
+  Particle/HDFWalkerInput0.cpp \
+  Particle/HDFWalkerInputCollect.cpp \
+  Particle/HDFWalkerInputManager.cpp \
+  LongRange/KContainer.cpp \
+  LongRange/StructFact.cpp \
+  ParticleTags.cpp  \
+  ParticleIO/ParticleLayoutIO.cpp  \
+  ParticleIO/HDFParticleIO.cpp  \
+  ParticleIO/XMLParticleIO.cpp  
 
 QMC_BASE = \
 	QMCHamiltonians/QMCHamiltonian.cpp\

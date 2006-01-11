@@ -1,22 +1,27 @@
 QMC_COMMON_SRCS = \
-  ../QMCWaveFunctions/OrbitalBuilderBase.cpp\
+  ../QMCWaveFunctions/OrbitalBuilderBase.cpp \
+  ../QMCWaveFunctions/JAABuilder.cpp \
+  ../QMCWaveFunctions/NJAABuilder.cpp \
+  ../QMCWaveFunctions/JABBuilder.cpp \
+  ../QMCWaveFunctions/NJABBuilder.cpp \
   ../QMCWaveFunctions/AtomicOrbitals/HFAtomicSTOSet.cpp \
   ../QMCWaveFunctions/AtomicOrbitals/HFAtomicSTOSetBuilder.cpp \
   ../QMCWaveFunctions/AtomicOrbitals/HeSTOClementiRottie.cpp\
   ../QMCWaveFunctions/MolecularOrbitals/STOMolecularOrbitals.cpp\
-  ../QMCWaveFunctions/MolecularOrbitals/GTOMolecularOrbitals.cpp \
+  ../QMCWaveFunctions/MolecularOrbitals/GTOMolecularOrbitals.cpp\
   ../QMCWaveFunctions/MolecularOrbitals/RGFBuilderBase.cpp\
-  ../QMCWaveFunctions/MolecularOrbitals/STO2GridBuilder.cpp\
-  ../QMCWaveFunctions/MolecularOrbitals/GTO2GridBuilder.cpp \
-  ../QMCWaveFunctions/MolecularOrbitals/Any2GridBuilder.cpp \
   ../QMCWaveFunctions/MolecularOrbitals/NumericalRGFBuilder.cpp\
+  ../QMCWaveFunctions/MolecularOrbitals/STO2GridBuilder.cpp\
+  ../QMCWaveFunctions/MolecularOrbitals/GTO2GridBuilder.cpp\
+  ../QMCWaveFunctions/MolecularOrbitals/Any2GridBuilder.cpp\
   ../QMCWaveFunctions/MolecularOrbitals/GridMolecularOrbitals.cpp\
   ../QMCWaveFunctions/MolecularOrbitals/MolecularOrbitalBuilder.cpp\
-  ../QMCWaveFunctions/MolecularOrbitals/NumericalMolecularOrbitals.cpp\
-  ../QMCWaveFunctions/ElectronGasOrbitalBuilder.cpp \
+  ../QMCWaveFunctions/ElectronGasOrbitalBuilder.cpp\
+  ../QMCWaveFunctions/ThreeBodyGeminal.cpp\
+  ../QMCWaveFunctions/ThreeBodyGeminalBuilder.cpp\
   ../QMCHamiltonians/LocalPPotential.cpp\
   ../QMCHamiltonians/NonLocalPPotential.cpp\
-  ../QMCHamiltonians/LocalCorePolPotential.cpp 
+  ../QMCHamiltonians/LocalCorePolPotential.cpp
 
 QMC_DRIVERS = \
   ../QMCDrivers/SimpleFixedNodeBranch.cpp\
