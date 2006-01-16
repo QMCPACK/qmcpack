@@ -90,6 +90,10 @@ namespace qmcplusplus {
       os << "Ion-Ion potential: " << PtclRef.getName();
       return true;
     }
+
+    QMCHamiltonianBase* clone() {
+      return new IonIonPotential(PtclRef);
+    }
   };
 }
 #endif

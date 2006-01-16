@@ -37,6 +37,10 @@ namespace qmcplusplus {
     
     ///constructor
     QMCHamiltonian();
+
+    ///copy constructor
+    QMCHamiltonian(const QMCHamiltonian& qh);
+
     ///destructor
     ~QMCHamiltonian();
 

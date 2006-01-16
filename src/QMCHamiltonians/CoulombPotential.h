@@ -86,6 +86,9 @@ namespace qmcplusplus {
       return true;
     }
     
+    QMCHamiltonianBase* clone() {
+      return new CoulombPotentialAB(*PtclSource,*PtclTarget);
+    }
     //#ifdef USE_FASTWALKER
     //    inline void 
     //    evaluate(WalkerSetRef& W, ValueVectorType& LE) {
@@ -164,6 +167,10 @@ namespace qmcplusplus {
     bool get(std::ostream& os) const {
       os << "CoulomAA potential: " << PtclRef->getName();
       return true;
+    }
+
+    QMCHamiltonianBase* clone() {
+      return new CoulombPotentialAA(*PtclRef);
     }
     
     //#ifdef USE_FASTWALKER

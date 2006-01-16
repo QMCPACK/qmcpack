@@ -47,6 +47,11 @@ namespace qmcplusplus {
       LOGMSG("Performing long-range breakup for CoulombAA potential");
       AA = new LRCoulombAA<LPQHIBasis>(*PtclRef);
     }
+
+    /// copy constructor
+    CoulombPBCAA(const CoulombPBCAA& c): FirstTime(true),PtclRef(c.PtclRef) {
+      AA = new LRCoulombAA<LPQHIBasis>(*PtclRef);
+    }
     
     ~CoulombPBCAA() { 
       if(AA) delete AA;
@@ -79,6 +84,10 @@ namespace qmcplusplus {
       os << "CoulomPBCAA potential: " << PtclRef->getName();
       return true;
     }
+
+    QMCHamiltonianBase* clone() {
+      return new CoulombPBCAA(*this);
+    }
   };
 
 
@@ -92,6 +101,12 @@ namespace qmcplusplus {
     LRCoulombAB<LPQHIBasis>* AB;
     
     CoulombPBCAB(ParticleSet& ions,ParticleSet& elns): PtclIons(&ions), PtclElns(&elns), AB(0) {
+      LOGMSG("Performing long-range breakup for CoulombAB potential");
+      AB = new LRCoulombAB<LPQHIBasis>(*PtclIons,*PtclElns);
+    }
+
+    ///copy constructor
+    CoulombPBCAB(const CoulombPBCAB& c): PtclIons(c.PtclIons), PtclElns(c.PtclElns), AB(0) {
       LOGMSG("Performing long-range breakup for CoulombAB potential");
       AB = new LRCoulombAB<LPQHIBasis>(*PtclIons,*PtclElns);
     }
@@ -122,6 +137,10 @@ namespace qmcplusplus {
         << " source = " << PtclIons->getName() 
         << " target = " << PtclElns->getName();
       return true;
+    }
+
+    QMCHamiltonianBase* clone() {
+      return new CoulombPBCAB(*this);
     }
   };
 }

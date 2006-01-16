@@ -41,14 +41,16 @@ namespace qmcplusplus {
   */
   struct BareKineticEnergy: public QMCHamiltonianBase {
 
-    ///\f$ 1/(2 m^*) \f$
+    ///mass of the particle
     RealType M;
+    ///\f$ 1/(2 m^*) \f$
+    RealType OneOver2M;
 
     /** constructor
      *
      * Kinetic operators need to be re-evaluated during optimization.
      */
-    BareKineticEnergy(RealType m=1.0): M(0.5/m) { 
+    BareKineticEnergy(RealType m=1.0): M(m),OneOver2M(0.5/m) { 
       UpdateMode.set(OPTIMIZABLE,1);
     }
     ///destructor
@@ -62,7 +64,7 @@ namespace qmcplusplus {
       for(int i=0; i<P.getTotalNum(); i++) {
         Value += dot(P.G(i),P.G(i)) + P.L(i);
       }
-      return Value*=-M;
+      return Value*=-OneOver2M;
     }
     
     /** implements the virtual function.
@@ -76,6 +78,10 @@ namespace qmcplusplus {
     bool get(std::ostream& os) const {
       os << "Kinetic energy";
       return true;
+    }
+
+    QMCHamiltonianBase* clone() {
+      return new BareKineticEnergy(M);
     }
     //Not used anymore
     //void evaluate(WalkerSetRef& W, ValueVectorType& LE) {

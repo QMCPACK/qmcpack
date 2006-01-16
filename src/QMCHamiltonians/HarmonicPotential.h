@@ -75,6 +75,10 @@ namespace qmcplusplus {
       return true;
     }
 
+    QMCHamiltonianBase* clone() {
+      return new HarmonicPotential;
+    }
+
   };
 }
 #endif

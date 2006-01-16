@@ -146,9 +146,9 @@ namespace qmcplusplus {
     ///the set of local-potentials (one for each ion)
     vector<RadialPotentialSet*> PP;
     ///unique index for each ion
-    const ParticleSet::ParticleIndex_t& Centers;
+    ParticleSet::ParticleIndex_t Centers;
 
-    TrialWaveFunction& Psi;
+    TrialWaveFunction* Psi;
 
     NonLocalPPotential(ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi);
 
@@ -167,6 +167,9 @@ namespace qmcplusplus {
       os << "NoLocalPPotential: " << d_table->origin().getName();
       return true;
     }
+
+
+    QMCHamiltonianBase* clone();
   };
 }
 #endif

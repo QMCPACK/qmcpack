@@ -136,7 +136,7 @@ namespace qmcplusplus {
    */
   NonLocalPPotential::NonLocalPPotential(ParticleSet& ions, ParticleSet& els,
       TrialWaveFunction& psi):
-    Centers(ions.GroupID), d_table(NULL), Psi(psi)
+    Centers(ions.GroupID), d_table(NULL), Psi(&psi)
   { 
 
     d_table = DistanceTable::getTable(DistanceTable::add(ions,els));
@@ -237,9 +237,14 @@ namespace qmcplusplus {
     Value=0.0;
     //loop over all the ions
     for(int iat=0; iat<Centers.size(); iat++) {
-      Value += PP[Centers[iat]]->evaluate(P,d_table,iat,Psi,UpdateMode[PRIMARY]);
+      Value += PP[Centers[iat]]->evaluate(P,d_table,iat,*Psi,UpdateMode[PRIMARY]);
     }
     return Value;
+  }
+
+  QMCHamiltonianBase* NonLocalPPotential::clone() {
+    ERRORMSG("Incomplete implementation of NonLocalPPotential::clone() ")
+    return this;
   }
 }
 /***************************************************************************

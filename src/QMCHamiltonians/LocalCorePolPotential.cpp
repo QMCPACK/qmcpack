@@ -145,6 +145,19 @@ namespace qmcplusplus {
     }
     return Value=e;
   }
+
+
+  LocalCorePolPotential::LocalCorePolPotential(const LocalCorePolPotential& cpp):
+    FirstTime(true), nCenters(cpp.nCenters), nParticles(cpp.nParticles),
+  eCoreCore(0.0), IonSys(cpp.IonSys), d_ie(cpp.d_ie), d_ii(cpp.d_ii) {
+    CoreCoreDipole.resize(nCenters,0.0);
+    CoreElDipole.resize(nCenters,nParticles);
+    CoreElDipole = 0.0;
+  }
+
+  QMCHamiltonianBase* LocalCorePolPotential::clone() {
+    return new LocalCorePolPotential(*this);
+  }
 }
 /***************************************************************************
  * $RCSfile$   $Author$

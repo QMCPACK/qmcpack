@@ -86,6 +86,10 @@ namespace qmcplusplus {
       os << "ConservedEnergy";
       return true;
     }
+
+    QMCHamiltonianBase* clone() {
+      return new ConservedEnergy;
+    }
   };
 }
 #endif

@@ -102,6 +102,9 @@ namespace qmcplusplus {
     ///constructor
     LocalCorePolPotential(ParticleSet& ions, ParticleSet& els);
 
+    ///copy constructor
+    LocalCorePolPotential(const LocalCorePolPotential& cpp);
+
     ~LocalCorePolPotential();
 
     void resetTargetParticleSet(ParticleSet& P);
@@ -118,6 +121,7 @@ namespace qmcplusplus {
     //  return pow((1.0-exp(-1.0*z*z)),2);
     //}
 
+    QMCHamiltonianBase* clone();
   };
 }
 #endif

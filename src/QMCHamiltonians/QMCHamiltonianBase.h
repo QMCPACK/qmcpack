@@ -77,6 +77,9 @@ namespace qmcplusplus {
     /** write about the class */
     virtual bool get(std::ostream& os) const =0;
     
+    /** clone the object */
+    virtual QMCHamiltonianBase* clone() = 0;
+
     /** set Tau
      * @param tau time step
      */
@@ -86,6 +89,7 @@ namespace qmcplusplus {
      * @param i index among PRIMARY, OPTIMIZABLE, RATIOUPDATE
      */
     inline bool getMode(int i) { return UpdateMode[i];}
+
   };
 }
 #endif
