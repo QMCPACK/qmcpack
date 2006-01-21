@@ -94,6 +94,7 @@ bool SimpleFixedNodeBranch::put(xmlNodePtr cur){
 }
 
 
+#if defined(HAVE_LIBHDF5)
 void SimpleFixedNodeBranch::write(hid_t grp, bool append) {
   hsize_t dim=3;
   vector<RealType> esave(3);
@@ -146,6 +147,11 @@ void SimpleFixedNodeBranch::read(const string& fname) {
   H5Gclose(h_config);
   H5Fclose(h_file);
 }
+#else
+void SimpleFixedNodeBranch::write(hid_t grp, bool append) { }
+void SimpleFixedNodeBranch::read(hid_t grp) {}
+void SimpleFixedNodeBranch::read(const string& fname) {}
+#endif
 
   /*
 int SimpleFixedNodeBranch::branch(int iter, MCWalkerConfiguration& W) {
