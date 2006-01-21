@@ -23,17 +23,42 @@
 #include "Particle/HDFWalkerIO.h"
 #include "ParticleBase/ParticleUtility.h"
 #include "ParticleBase/RandomSeqGenerator.h"
-#include "QMCWaveFunctions/WaveFunctionFactory.h"
+#include "QMCApp/HamiltonianPool.h"
 #include "Message/Communicate.h"
 #include "Message/OpenMP.h"
 
 namespace qmcplusplus { 
 
   /// Constructor.
-  DMCPbyPOpenMP::DMCPbyPOpenMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, WaveFunctionFactory* psifac): 
-    QMCDriver(w,psi,h),psiFactory(psifac){ 
+  DMCPbyPOpenMP::DMCPbyPOpenMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h):
+    QMCDriver(w,psi,h){ 
     RootName = "dummy";
     QMCType ="dummy";
+    NumThreads=omp_get_max_threads();
+    wPerNode.resize(NumThreads+1,0);
+  }
+
+  void DMCPbyPOpenMP::makeClones(HamiltonianPool& hpool, int np) {
+
+    //np is ignored but will see if ever needed
+    wPerNode.resize(NumThreads+1,0);
+
+    if(wClones.size()) {
+      ERRORMSG("Cannot make clones again. Use clones")
+      return;
+    }
+
+    wClones.resize(NumThreads,0);
+    psiClones.resize(NumThreads,0);
+    hClones.resize(NumThreads,0);
+    wClones[0]=&W;
+    psiClones[0]=&Psi;
+    hClones[0]=&H;
+    if(NumThreads == 1) {
+      WARNMSG("Using a single thread with DMCPbyPOpenMP.")
+      return;
+    }
+    hpool.clone(W,Psi,H,wClones,psiClones,hClones);
   }
   
   bool DMCPbyPOpenMP::run() { 
@@ -48,78 +73,54 @@ namespace qmcplusplus {
     //MCWalkerConfiguration::PropertyContainer_t Properties;
     MCWalkerConfiguration::Walker_t& thisWalker(**W.begin());
 
-    int np= omp_get_max_threads();
-    cout << "The number of threads " << np << endl;
-    vector<ParticleSet*> newPtclSets;
-    vector<QMCHamiltonian*> Hdup;
-    vector<TrialWaveFunction*> Psidup;
-
-    //create arrays with 0 points
-    newPtclSets.resize(np,0);
-    Hdup.resize(np,0);
-    Psidup.resize(np,0);
-    psiFactory->setCloneSize(np);
-
-    newPtclSets[0]=&W;
-    Hdup[0]=&H;
-    Psidup[0]=&Psi;
-
-
-    char pnameIP[128];
-#pragma omp parallel for
-    for(int ip=0; ip<np; ip++) {
-      if(newPtclSets[ip] == 0) {
-        char pnameIP[128];
-        sprintf(pnameIP,"%s.c%i",W.getName().c_str(),ip);
-        newPtclSets[ip]=new ParticleSet(W);
-        newPtclSets[ip]->setName(pnameIP);
-        Hdup[ip]=new QMCHamiltonian(H);
-        Hdup[ip]->resetTargetParticleSet(*newPtclSets[ip]);
-        Psidup[ip]= psiFactory->cloneWaveFunction(newPtclSets[ip],ip);
-      }
-    }
-
     makeGaussRandom(deltaR); 
 
     drift = W.R;
     //new poosition
     //W.R = m_sqrttau*deltaR + thisWalker.R + thisWalker.Drift;
 
-    vector<int> wPerNode(np+1);
-    int n=W.getActiveWalkers()/np;
-    wPerNode[0]=0;
-    for(int ip=0; ip<np; ip++) {
+    int n=W.getActiveWalkers()/NumThreads;
+    for(int ip=0; ip<NumThreads; ip++) {
       wPerNode[ip+1]=wPerNode[ip]+n;
+    }
+
+    
+    for(int ip=0; ip<NumThreads; ip++) {
+        char fname[16];
+        sprintf(fname,"test.%i",ip);
+        ofstream fout(fname);
     }
 //#pragma omp parallel for
 //    for(int ip=0; ip<np; ip++) {
+
+    //TESTING
     for(int istep=0; istep<nSteps; istep++) {
 #pragma omp parallel  
-    {
-      int ip = omp_get_thread_num();
-      char fname[16];
-      sprintf(fname,"test%i.%i",ip,istep);
-      ofstream fout(fname);
-      //for(int i=0; i<10000; i++) {
-      MCWalkerConfiguration::iterator it(W.begin()+wPerNode[ip]); 
-      MCWalkerConfiguration::iterator it_end(W.begin()+wPerNode[ip+1]); 
-      int i=0;
-      while(it != it_end) {
-        RealType x=static_cast<RealType>(i%10);
-        Walker_t& thisWalker(**it);
-        newPtclSets[ip]->R = x*m_sqrttau*deltaR + thisWalker.R;
-        //update the distance table associated with W
-        newPtclSets[ip]->update();
-        //evaluate wave function
-        //update the properties: note that we are getting \f$\sum_i \ln(|psi_i|)\f$ and catching the sign separately
-        //ValueType logpsi(Psi.evaluateLog(*newPtclSets[ip]));
-        ValueType logpsi(Psidup[ip]->evaluateLog(*newPtclSets[ip]));
-        RealType e = Hdup[ip]->evaluate(*newPtclSets[ip]);
-        fout << logpsi << " " << e << endl;
-        ++i; ++it;
+      {
+        int ip = omp_get_thread_num();
+        char fname[16];
+        sprintf(fname,"test.%i",ip);
+        ofstream fout(fname,ios::app);
+        //for(int i=0; i<10000; i++) {
+        MCWalkerConfiguration::iterator it(W.begin()+wPerNode[ip]); 
+        MCWalkerConfiguration::iterator it_end(W.begin()+wPerNode[ip+1]); 
+        int i=0;
+        while(it != it_end) {
+          RealType x=static_cast<RealType>(i%10);
+          Walker_t& thisWalker(**it);
+          wClones[ip]->R = x*m_sqrttau*deltaR + thisWalker.R;
+          //update the distance table associated with W
+          wClones[ip]->update();
+          //evaluate wave function
+          //update the properties: note that we are getting \f$\sum_i \ln(|psi_i|)\f$ and catching the sign separately
+          //ValueType logpsi(Psi.evaluateLog(*newPtclSets[ip]));
+          ValueType logpsi(psiClones[ip]->evaluateLog(*wClones[ip]));
+          RealType e = hClones[ip]->evaluate(*wClones[ip]);
+          fout << logpsi << " " << e << endl;
+          ++i; ++it;
+        }
+        //}
       }
-      //}
-    }
     }
     return true;
   }

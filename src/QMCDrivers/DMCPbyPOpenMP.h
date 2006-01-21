@@ -22,16 +22,19 @@
 #include "QMCDrivers/QMCDriver.h" 
 namespace qmcplusplus {
 
-  class WaveFunctionFactory;
+
+  class HamiltonianPool;
 
   /** @ingroup QMCDrivers 
    *@brief A dummy QMCDriver for testing
    */
   class DMCPbyPOpenMP: public QMCDriver {
   public:
+
     /// Constructor.
-    DMCPbyPOpenMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, 
-        QMCHamiltonian& h, WaveFunctionFactory* psifac);
+    DMCPbyPOpenMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h);
+
+    void makeClones(HamiltonianPool& hpool, int np=-1);
 
     bool run();
     bool put(xmlNodePtr cur);
@@ -42,8 +45,11 @@ namespace qmcplusplus {
     /// Copy operator (disabled).
     DMCPbyPOpenMP& operator=(const DMCPbyPOpenMP&) { return *this;}
 
-    WaveFunctionFactory* psiFactory;
-    vector<ParticleSet*> WW;
+    int NumThreads;
+    vector<ParticleSet*> wClones;
+    vector<TrialWaveFunction*> psiClones;
+    vector<QMCHamiltonian*> hClones;
+    vector<int> wPerNode;
   };
 }
 
