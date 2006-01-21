@@ -69,7 +69,7 @@ namespace qmcplusplus {
       J1->setOptimizable(false);
     }
 
-    targetPsi.add(J1);
+    targetPsi.addOrbital(J1);
     XMLReport("Added a One-Body Jastrow Function")
     return true;
   }

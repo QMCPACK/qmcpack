@@ -23,6 +23,9 @@
 
 namespace qmcplusplus {
 
+   JAABuilder::JAABuilder(ParticleSet& p, TrialWaveFunction& psi):OrbitalBuilderBase(p,psi),
+    IgnoreSpin(true){
+    }
   /** Create a two-body Jatrow function with a template 
    *@param cur the current xmlNode 
    *@param dummy null pointer used to identify FN
@@ -129,7 +132,7 @@ namespace qmcplusplus {
       J2->setOptimizable(false);
     }
 
-    targetPsi.add(J2);
+    targetPsi.addOrbital(J2);
     XMLReport("Added a Two-Body Jastrow Function")
     return true;
   }

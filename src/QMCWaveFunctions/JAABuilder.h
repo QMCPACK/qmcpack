@@ -29,8 +29,7 @@ namespace qmcplusplus {
    */
   struct JAABuilder: public OrbitalBuilderBase {
 
-    JAABuilder(ParticleSet& p, TrialWaveFunction& psi):OrbitalBuilderBase(p,psi),
-    IgnoreSpin(true){}
+    JAABuilder(ParticleSet& p, TrialWaveFunction& psi);
 
     bool put(xmlNodePtr cur);
 
