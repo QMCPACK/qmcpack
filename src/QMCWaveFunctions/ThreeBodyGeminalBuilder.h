@@ -22,8 +22,9 @@
 #include "QMCWaveFunctions/OrbitalBuilderBase.h"
 namespace qmcplusplus {
 
-  class GTOMolecularOrbitals;
+  //class GTOMolecularOrbitals;
   class ThreeBodyGeminal;
+  class GridMolecularOrbitals;
 
   /**@ingroup WFSBuilder
    * @brief An abstract class for wave function builders
@@ -40,7 +41,7 @@ namespace qmcplusplus {
 
   protected:
 
-    GTOMolecularOrbitals* gtoBuilder;
+    GridMolecularOrbitals* gtoBuilder;
     ThreeBodyGeminal* J3;
   };
 }
