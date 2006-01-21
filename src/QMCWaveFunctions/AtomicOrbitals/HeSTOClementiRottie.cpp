@@ -69,7 +69,7 @@ namespace qmcplusplus {
     asymmpsi->setBasisSet(new HePresetHF::BasisSet_t);
 
     //add the SlaterDeterminant to the trial wavefuntion
-    targetPsi.add(asymmpsi);
+    targetPsi.addOrbital(asymmpsi);
   }
 
   bool 

@@ -252,10 +252,10 @@ HFAtomicSTOSetBuilder::put(xmlNodePtr cur){
       slaterdets[i]->setBasisSet(bs);
       multidet->add(slaterdets[i],C[i]);
     }
-    targetPsi.add(multidet);
+    targetPsi.addOrbital(multidet);
   } else {
     slaterdets[0]->setBasisSet(new HFAtomicSTOSet::BasisSet_t);
-    targetPsi.add(slaterdets[0]);
+    targetPsi.addOrbital(slaterdets[0]);
   }
   return true;
 }

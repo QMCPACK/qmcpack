@@ -158,11 +158,11 @@ namespace qmcplusplus {
 	}
         multidet->setOptimizable(optimizeit);
 	//add a MultiDeterminant to the trial wavefuntion
-	targetPsi.add(multidet);
+	targetPsi.addOrbital(multidet);
       } else {
 	XMLReport("Creating a SlaterDeterminant wavefunction")
 	//add a SlaterDeterminant to the trial wavefuntion
-	targetPsi.add(slaterdets[0]);
+	targetPsi.addOrbital(slaterdets[0]);
         if(targetPsi.VarList.size()>nvar) slaterdets[0]->setOptimizable(true);
       }
       NumPtcl=first; 
