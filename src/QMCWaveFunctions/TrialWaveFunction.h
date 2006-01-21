@@ -41,7 +41,7 @@ namespace qmcplusplus {
    *Each OrbitalBase should provide proper evaluate functions
    *for the value, gradient and laplacian values.
    */
-  class TrialWaveFunction {
+  class TrialWaveFunction: public OhmmsElementBase {
 
   public:
 
@@ -68,13 +68,25 @@ namespace qmcplusplus {
 
     ~TrialWaveFunction();
 
+    inline int size() const { return Z.size();}
     inline RealType getSign() const { return SignValue;}
     inline ValueType getLogPsi() const { return LogValue;}
 
     ///Add an OrbitalBase 
-    void add(OrbitalBase* aterm);
-    ///reset OrbitalBase s during optimization
+    void addOrbital(OrbitalBase* aterm);
+
+    ///write to ostream
+    bool get(std::ostream& ) const;
+
+    ///read from istream
+    bool put(std::istream& );
+
+    ///read from xmlNode
+    bool put(xmlNodePtr cur);
+
+    ///reset member data
     void reset();
+
     /**resize the internal storage
      * @param nwalkers number of walkers 
      *
@@ -82,6 +94,7 @@ namespace qmcplusplus {
      */
     void resizeByWalkers(int nwalkers);
 
+    /** recursively change the ParticleSet whose G and L are evaluated */
     void resetTargetParticleSet(ParticleSet& P);
 
     ///Check if aname-ed Single-Particle-Orbital set exists

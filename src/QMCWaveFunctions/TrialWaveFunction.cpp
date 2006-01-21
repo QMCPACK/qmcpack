@@ -22,7 +22,9 @@
 
 namespace qmcplusplus {
 
-  TrialWaveFunction::TrialWaveFunction():SignValue(1.0),LogValue(0.0){ }
+  TrialWaveFunction::TrialWaveFunction():SignValue(1.0),LogValue(0.0) {
+    myName="psi0";
+  }
 
   /** Destructor
    *
@@ -44,7 +46,7 @@ namespace qmcplusplus {
    *@param aterm a many-body wavefunction 
    */
   void 
-  TrialWaveFunction::add(OrbitalBase* aterm) {
+  TrialWaveFunction::addOrbital(OrbitalBase* aterm) {
     Z.push_back(aterm);
   }
 
@@ -399,6 +401,18 @@ namespace qmcplusplus {
 
   void TrialWaveFunction::addSPOSet(OhmmsElementBase* spo) {
     SPOSet.push_back(spo);
+  }
+
+  bool TrialWaveFunction::get(std::ostream& ) const {
+    return true;
+  }
+
+  bool TrialWaveFunction::put(std::istream& ) {
+    return true;
+  }
+
+  bool TrialWaveFunction::put(xmlNodePtr cur) {
+    return true;
   }
 }
 /***************************************************************************
