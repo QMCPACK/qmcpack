@@ -52,7 +52,7 @@ bool QMCHamiltonian::get(std::ostream& os) const {
  *@param aname the name of the Hamiltonian
  */
 void 
-QMCHamiltonian::add(QMCHamiltonianBase* h, const string& aname) {
+QMCHamiltonian::addOperator(QMCHamiltonianBase* h, const string& aname) {
   //check if already added, if not add at the end
   map<string,int>::iterator it = Hmap.find(aname);
   if(it == Hmap.end()) {
@@ -153,6 +153,16 @@ QMCHamiltonian::resetTargetParticleSet(ParticleSet& P) {
 //  LE = 0.0;
 //  for(int i=0; i<H.size(); i++) H[i]->evaluate(W, LE);
 //}
+
+//bool QMCHamiltonian::put(std::istream& ) {
+//  return true;
+//}
+//
+//bool QMCHamiltonian::put(xmlNodePtr cur) {
+//  return true;
+//}
+//
+//void QMCHamiltonian::reset() { }
 
 /***************************************************************************
  * $RCSfile$   $Author$

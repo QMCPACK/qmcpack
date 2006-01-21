@@ -27,7 +27,7 @@ namespace qmcplusplus {
    *
    * Note that QMCHamiltonian is not derived from QMCHmailtonianBase.
    */
-  class QMCHamiltonian  {
+  class QMCHamiltonian {
 
   public:
   
@@ -44,11 +44,9 @@ namespace qmcplusplus {
     ///destructor
     ~QMCHamiltonian();
 
-    void add(QMCHamiltonianBase* h, const string& aname);
+    void addOperator(QMCHamiltonianBase* h, const string& aname);
     bool remove(const string& aname);
 
-    ///write the content of this object
-    bool get(std::ostream& os) const;
     ///add each term to the PropertyList for averages
     void add2WalkerProperty(ParticleSet& P);
 
@@ -134,10 +132,25 @@ namespace qmcplusplus {
 
     void resetTargetParticleSet(ParticleSet& P);
 
+    /** By mistake, QMCHamiltonian::getName(int i) is used
+     * and this is in conflict with the declaration of OhmmsElementBase.
+     * For the moment, QMCHamiltonian is not inherited from OhmmsElementBase.
+     */
+    void setName(const string& aname) { 
+      myName=aname;
+    }
+
+    
+    string getName() const { return myName;}
+
+    bool get(std::ostream& os) const;
+
    private:
 
     ///Current Local Energy
     Return_t LocalEnergy;
+    ///getName is in the way
+    string myName;
     ///vector of Hamiltonians
     std::vector<QMCHamiltonianBase*> H;
     ///vector containing the index of the Hamiltonians
