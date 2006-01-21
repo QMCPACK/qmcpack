@@ -38,7 +38,7 @@ namespace qmcplusplus {
     //default: when walkers below 90% stop
     MinNumWalkers = 0.9;
 
-    H_KE.add(H.getHamiltonian("Kinetic"),"Kinetic");
+    H_KE.addOperator(H.getHamiltonian("Kinetic"),"Kinetic");
     //move to Optimize class
     ////create an etimator with H_KE
     //if(Estimators == 0) Estimators =new ScalarEstimatorManager(H_KE);
