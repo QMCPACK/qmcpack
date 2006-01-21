@@ -114,24 +114,31 @@ am__include = @am__include@
 am__quote = @am__quote@
 install_sh = @install_sh@
 QMC_COMMON_SRCS = \
-  ../QMCWaveFunctions/OrbitalBuilderBase.cpp\
+  ../QMCWaveFunctions/OrbitalBuilderBase.cpp \
+  ../QMCWaveFunctions/JAABuilder.cpp \
+  ../QMCWaveFunctions/NJAABuilder.cpp \
+  ../QMCWaveFunctions/JABBuilder.cpp \
+  ../QMCWaveFunctions/NJABBuilder.cpp \
   ../QMCWaveFunctions/AtomicOrbitals/HFAtomicSTOSet.cpp \
   ../QMCWaveFunctions/AtomicOrbitals/HFAtomicSTOSetBuilder.cpp \
   ../QMCWaveFunctions/AtomicOrbitals/HeSTOClementiRottie.cpp\
   ../QMCWaveFunctions/MolecularOrbitals/STOMolecularOrbitals.cpp\
-  ../QMCWaveFunctions/MolecularOrbitals/GTOMolecularOrbitals.cpp \
+  ../QMCWaveFunctions/MolecularOrbitals/GTOMolecularOrbitals.cpp\
   ../QMCWaveFunctions/MolecularOrbitals/RGFBuilderBase.cpp\
-  ../QMCWaveFunctions/MolecularOrbitals/STO2GridBuilder.cpp\
-  ../QMCWaveFunctions/MolecularOrbitals/GTO2GridBuilder.cpp \
-  ../QMCWaveFunctions/MolecularOrbitals/Any2GridBuilder.cpp \
   ../QMCWaveFunctions/MolecularOrbitals/NumericalRGFBuilder.cpp\
+  ../QMCWaveFunctions/MolecularOrbitals/STO2GridBuilder.cpp\
+  ../QMCWaveFunctions/MolecularOrbitals/GTO2GridBuilder.cpp\
+  ../QMCWaveFunctions/MolecularOrbitals/Any2GridBuilder.cpp\
   ../QMCWaveFunctions/MolecularOrbitals/GridMolecularOrbitals.cpp\
   ../QMCWaveFunctions/MolecularOrbitals/MolecularOrbitalBuilder.cpp\
-  ../QMCWaveFunctions/MolecularOrbitals/NumericalMolecularOrbitals.cpp\
-  ../QMCWaveFunctions/ElectronGasOrbitalBuilder.cpp \
+  ../QMCWaveFunctions/ElectronGasOrbitalBuilder.cpp\
+  ../QMCWaveFunctions/ThreeBodyGeminal.cpp\
+  ../QMCWaveFunctions/ThreeBodyGeminalBuilder.cpp\
   ../QMCHamiltonians/LocalPPotential.cpp\
   ../QMCHamiltonians/NonLocalPPotential.cpp\
-  ../QMCHamiltonians/LocalCorePolPotential.cpp 
+  ../QMCHamiltonians/LocalCorePolPotential.cpp \
+  ../QMCWaveFunctions/WaveFunctionFactory.cpp \
+  ../QMCHamiltonians/HamiltonianFactory.cpp
 
 
 QMC_DRIVERS = \
@@ -145,6 +152,7 @@ QMC_DRIVERS = \
   ../QMCDrivers/WalkerControlBase.cpp\
   ../QMCDrivers/QMCOptimize.cpp\
   ../QMCDrivers/QMCCostFunction.cpp\
+  ../QMCDrivers/DMCPbyPOpenMP.cpp \
   ../Estimators/ScalarEstimatorManager.cpp
 
 
@@ -182,22 +190,25 @@ CONFIG_CLEAN_FILES =
 bin_PROGRAMS = qmcapp$(EXEEXT)
 PROGRAMS = $(bin_PROGRAMS)
 
-am__objects_1 = OrbitalBuilderBase.$(OBJEXT) HFAtomicSTOSet.$(OBJEXT) \
+am__objects_1 = OrbitalBuilderBase.$(OBJEXT) JAABuilder.$(OBJEXT) \
+	NJAABuilder.$(OBJEXT) JABBuilder.$(OBJEXT) \
+	NJABBuilder.$(OBJEXT) HFAtomicSTOSet.$(OBJEXT) \
 	HFAtomicSTOSetBuilder.$(OBJEXT) HeSTOClementiRottie.$(OBJEXT) \
 	STOMolecularOrbitals.$(OBJEXT) GTOMolecularOrbitals.$(OBJEXT) \
-	RGFBuilderBase.$(OBJEXT) STO2GridBuilder.$(OBJEXT) \
-	GTO2GridBuilder.$(OBJEXT) Any2GridBuilder.$(OBJEXT) \
-	NumericalRGFBuilder.$(OBJEXT) GridMolecularOrbitals.$(OBJEXT) \
+	RGFBuilderBase.$(OBJEXT) NumericalRGFBuilder.$(OBJEXT) \
+	STO2GridBuilder.$(OBJEXT) GTO2GridBuilder.$(OBJEXT) \
+	Any2GridBuilder.$(OBJEXT) GridMolecularOrbitals.$(OBJEXT) \
 	MolecularOrbitalBuilder.$(OBJEXT) \
-	NumericalMolecularOrbitals.$(OBJEXT) \
-	ElectronGasOrbitalBuilder.$(OBJEXT) LocalPPotential.$(OBJEXT) \
-	NonLocalPPotential.$(OBJEXT) LocalCorePolPotential.$(OBJEXT)
+	ElectronGasOrbitalBuilder.$(OBJEXT) ThreeBodyGeminal.$(OBJEXT) \
+	ThreeBodyGeminalBuilder.$(OBJEXT) LocalPPotential.$(OBJEXT) \
+	NonLocalPPotential.$(OBJEXT) LocalCorePolPotential.$(OBJEXT) \
+	WaveFunctionFactory.$(OBJEXT) HamiltonianFactory.$(OBJEXT)
 am__objects_2 = SimpleFixedNodeBranch.$(OBJEXT) QMCDriver.$(OBJEXT) \
 	DummyQMC.$(OBJEXT) VMC.$(OBJEXT) \
 	VMCParticleByParticle.$(OBJEXT) MolecuDMC.$(OBJEXT) \
 	DMCParticleByParticle.$(OBJEXT) WalkerControlBase.$(OBJEXT) \
 	QMCOptimize.$(OBJEXT) QMCCostFunction.$(OBJEXT) \
-	ScalarEstimatorManager.$(OBJEXT)
+	DMCPbyPOpenMP.$(OBJEXT) ScalarEstimatorManager.$(OBJEXT)
 @NEEDTOBUILDOOMPI_TRUE@am__objects_3 = GlobalWalkerControl.$(OBJEXT)
 am__objects_4 = ParticleSetPool.$(OBJEXT) WaveFunctionPool.$(OBJEXT) \
 	HamiltonianPool.$(OBJEXT) InitMolecularSystem.$(OBJEXT) \
@@ -214,6 +225,7 @@ depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
 @AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/Any2GridBuilder.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/DMCParticleByParticle.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/DMCPbyPOpenMP.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/DummyQMC.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ElectronGasOrbitalBuilder.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/GTO2GridBuilder.Po \
@@ -222,15 +234,18 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/GridMolecularOrbitals.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/HFAtomicSTOSet.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/HFAtomicSTOSetBuilder.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/HamiltonianFactory.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/HamiltonianPool.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/HeSTOClementiRottie.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/InitMolecularSystem.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/JAABuilder.Po ./$(DEPDIR)/JABBuilder.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/LocalCorePolPotential.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/LocalPPotential.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/MolecuDMC.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/MolecularOrbitalBuilder.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/NJAABuilder.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/NJABBuilder.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/NonLocalPPotential.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/NumericalMolecularOrbitals.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/NumericalRGFBuilder.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/OrbitalBuilderBase.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ParticleSetPool.Po \
@@ -243,9 +258,12 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/STOMolecularOrbitals.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ScalarEstimatorManager.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/SimpleFixedNodeBranch.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/ThreeBodyGeminal.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/ThreeBodyGeminalBuilder.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/VMC.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/VMCParticleByParticle.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/WalkerControlBase.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/WaveFunctionFactory.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/WaveFunctionPool.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/qmcapp.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
@@ -299,6 +317,10 @@ clean-binPROGRAMS:
 	  rm -f $$p $$f ; \
 	done
 OrbitalBuilderBase.$(OBJEXT): ../QMCWaveFunctions/OrbitalBuilderBase.cpp
+JAABuilder.$(OBJEXT): ../QMCWaveFunctions/JAABuilder.cpp
+NJAABuilder.$(OBJEXT): ../QMCWaveFunctions/NJAABuilder.cpp
+JABBuilder.$(OBJEXT): ../QMCWaveFunctions/JABBuilder.cpp
+NJABBuilder.$(OBJEXT): ../QMCWaveFunctions/NJABBuilder.cpp
 HFAtomicSTOSet.$(OBJEXT): \
 	../QMCWaveFunctions/AtomicOrbitals/HFAtomicSTOSet.cpp
 HFAtomicSTOSetBuilder.$(OBJEXT): \
@@ -311,26 +333,30 @@ GTOMolecularOrbitals.$(OBJEXT): \
 	../QMCWaveFunctions/MolecularOrbitals/GTOMolecularOrbitals.cpp
 RGFBuilderBase.$(OBJEXT): \
 	../QMCWaveFunctions/MolecularOrbitals/RGFBuilderBase.cpp
+NumericalRGFBuilder.$(OBJEXT): \
+	../QMCWaveFunctions/MolecularOrbitals/NumericalRGFBuilder.cpp
 STO2GridBuilder.$(OBJEXT): \
 	../QMCWaveFunctions/MolecularOrbitals/STO2GridBuilder.cpp
 GTO2GridBuilder.$(OBJEXT): \
 	../QMCWaveFunctions/MolecularOrbitals/GTO2GridBuilder.cpp
 Any2GridBuilder.$(OBJEXT): \
 	../QMCWaveFunctions/MolecularOrbitals/Any2GridBuilder.cpp
-NumericalRGFBuilder.$(OBJEXT): \
-	../QMCWaveFunctions/MolecularOrbitals/NumericalRGFBuilder.cpp
 GridMolecularOrbitals.$(OBJEXT): \
 	../QMCWaveFunctions/MolecularOrbitals/GridMolecularOrbitals.cpp
 MolecularOrbitalBuilder.$(OBJEXT): \
 	../QMCWaveFunctions/MolecularOrbitals/MolecularOrbitalBuilder.cpp
-NumericalMolecularOrbitals.$(OBJEXT): \
-	../QMCWaveFunctions/MolecularOrbitals/NumericalMolecularOrbitals.cpp
 ElectronGasOrbitalBuilder.$(OBJEXT): \
 	../QMCWaveFunctions/ElectronGasOrbitalBuilder.cpp
+ThreeBodyGeminal.$(OBJEXT): ../QMCWaveFunctions/ThreeBodyGeminal.cpp
+ThreeBodyGeminalBuilder.$(OBJEXT): \
+	../QMCWaveFunctions/ThreeBodyGeminalBuilder.cpp
 LocalPPotential.$(OBJEXT): ../QMCHamiltonians/LocalPPotential.cpp
 NonLocalPPotential.$(OBJEXT): ../QMCHamiltonians/NonLocalPPotential.cpp
 LocalCorePolPotential.$(OBJEXT): \
 	../QMCHamiltonians/LocalCorePolPotential.cpp
+WaveFunctionFactory.$(OBJEXT): \
+	../QMCWaveFunctions/WaveFunctionFactory.cpp
+HamiltonianFactory.$(OBJEXT): ../QMCHamiltonians/HamiltonianFactory.cpp
 SimpleFixedNodeBranch.$(OBJEXT): ../QMCDrivers/SimpleFixedNodeBranch.cpp
 QMCDriver.$(OBJEXT): ../QMCDrivers/QMCDriver.cpp
 DummyQMC.$(OBJEXT): ../QMCDrivers/DummyQMC.cpp
@@ -341,6 +367,7 @@ DMCParticleByParticle.$(OBJEXT): ../QMCDrivers/DMCParticleByParticle.cpp
 WalkerControlBase.$(OBJEXT): ../QMCDrivers/WalkerControlBase.cpp
 QMCOptimize.$(OBJEXT): ../QMCDrivers/QMCOptimize.cpp
 QMCCostFunction.$(OBJEXT): ../QMCDrivers/QMCCostFunction.cpp
+DMCPbyPOpenMP.$(OBJEXT): ../QMCDrivers/DMCPbyPOpenMP.cpp
 ScalarEstimatorManager.$(OBJEXT): \
 	../Estimators/ScalarEstimatorManager.cpp
 GlobalWalkerControl.$(OBJEXT): ../QMCDrivers/GlobalWalkerControl.cpp
@@ -356,6 +383,7 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Any2GridBuilder.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DMCParticleByParticle.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DMCPbyPOpenMP.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DummyQMC.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ElectronGasOrbitalBuilder.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/GTO2GridBuilder.Po@am__quote@
@@ -364,15 +392,19 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/GridMolecularOrbitals.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/HFAtomicSTOSet.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/HFAtomicSTOSetBuilder.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/HamiltonianFactory.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/HamiltonianPool.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/HeSTOClementiRottie.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/InitMolecularSystem.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/JAABuilder.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/JABBuilder.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LocalCorePolPotential.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LocalPPotential.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MolecuDMC.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MolecularOrbitalBuilder.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NJAABuilder.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NJABBuilder.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NonLocalPPotential.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NumericalMolecularOrbitals.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NumericalRGFBuilder.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/OrbitalBuilderBase.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ParticleSetPool.Po@am__quote@
@@ -386,9 +418,12 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/STOMolecularOrbitals.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ScalarEstimatorManager.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SimpleFixedNodeBranch.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ThreeBodyGeminal.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ThreeBodyGeminalBuilder.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/VMC.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/VMCParticleByParticle.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/WalkerControlBase.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/WaveFunctionFactory.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/WaveFunctionPool.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/qmcapp.Po@am__quote@
 
@@ -430,6 +465,78 @@ OrbitalBuilderBase.lo: ../QMCWaveFunctions/OrbitalBuilderBase.cpp
 @AMDEP_TRUE@	depfile='$(DEPDIR)/OrbitalBuilderBase.Plo' tmpdepfile='$(DEPDIR)/OrbitalBuilderBase.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o OrbitalBuilderBase.lo `test -f '../QMCWaveFunctions/OrbitalBuilderBase.cpp' || echo '$(srcdir)/'`../QMCWaveFunctions/OrbitalBuilderBase.cpp
+
+JAABuilder.o: ../QMCWaveFunctions/JAABuilder.cpp
+@AMDEP_TRUE@	source='../QMCWaveFunctions/JAABuilder.cpp' object='JAABuilder.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/JAABuilder.Po' tmpdepfile='$(DEPDIR)/JAABuilder.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o JAABuilder.o `test -f '../QMCWaveFunctions/JAABuilder.cpp' || echo '$(srcdir)/'`../QMCWaveFunctions/JAABuilder.cpp
+
+JAABuilder.obj: ../QMCWaveFunctions/JAABuilder.cpp
+@AMDEP_TRUE@	source='../QMCWaveFunctions/JAABuilder.cpp' object='JAABuilder.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/JAABuilder.Po' tmpdepfile='$(DEPDIR)/JAABuilder.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o JAABuilder.obj `cygpath -w ../QMCWaveFunctions/JAABuilder.cpp`
+
+JAABuilder.lo: ../QMCWaveFunctions/JAABuilder.cpp
+@AMDEP_TRUE@	source='../QMCWaveFunctions/JAABuilder.cpp' object='JAABuilder.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/JAABuilder.Plo' tmpdepfile='$(DEPDIR)/JAABuilder.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o JAABuilder.lo `test -f '../QMCWaveFunctions/JAABuilder.cpp' || echo '$(srcdir)/'`../QMCWaveFunctions/JAABuilder.cpp
+
+NJAABuilder.o: ../QMCWaveFunctions/NJAABuilder.cpp
+@AMDEP_TRUE@	source='../QMCWaveFunctions/NJAABuilder.cpp' object='NJAABuilder.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/NJAABuilder.Po' tmpdepfile='$(DEPDIR)/NJAABuilder.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NJAABuilder.o `test -f '../QMCWaveFunctions/NJAABuilder.cpp' || echo '$(srcdir)/'`../QMCWaveFunctions/NJAABuilder.cpp
+
+NJAABuilder.obj: ../QMCWaveFunctions/NJAABuilder.cpp
+@AMDEP_TRUE@	source='../QMCWaveFunctions/NJAABuilder.cpp' object='NJAABuilder.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/NJAABuilder.Po' tmpdepfile='$(DEPDIR)/NJAABuilder.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NJAABuilder.obj `cygpath -w ../QMCWaveFunctions/NJAABuilder.cpp`
+
+NJAABuilder.lo: ../QMCWaveFunctions/NJAABuilder.cpp
+@AMDEP_TRUE@	source='../QMCWaveFunctions/NJAABuilder.cpp' object='NJAABuilder.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/NJAABuilder.Plo' tmpdepfile='$(DEPDIR)/NJAABuilder.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NJAABuilder.lo `test -f '../QMCWaveFunctions/NJAABuilder.cpp' || echo '$(srcdir)/'`../QMCWaveFunctions/NJAABuilder.cpp
+
+JABBuilder.o: ../QMCWaveFunctions/JABBuilder.cpp
+@AMDEP_TRUE@	source='../QMCWaveFunctions/JABBuilder.cpp' object='JABBuilder.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/JABBuilder.Po' tmpdepfile='$(DEPDIR)/JABBuilder.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o JABBuilder.o `test -f '../QMCWaveFunctions/JABBuilder.cpp' || echo '$(srcdir)/'`../QMCWaveFunctions/JABBuilder.cpp
+
+JABBuilder.obj: ../QMCWaveFunctions/JABBuilder.cpp
+@AMDEP_TRUE@	source='../QMCWaveFunctions/JABBuilder.cpp' object='JABBuilder.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/JABBuilder.Po' tmpdepfile='$(DEPDIR)/JABBuilder.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o JABBuilder.obj `cygpath -w ../QMCWaveFunctions/JABBuilder.cpp`
+
+JABBuilder.lo: ../QMCWaveFunctions/JABBuilder.cpp
+@AMDEP_TRUE@	source='../QMCWaveFunctions/JABBuilder.cpp' object='JABBuilder.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/JABBuilder.Plo' tmpdepfile='$(DEPDIR)/JABBuilder.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o JABBuilder.lo `test -f '../QMCWaveFunctions/JABBuilder.cpp' || echo '$(srcdir)/'`../QMCWaveFunctions/JABBuilder.cpp
+
+NJABBuilder.o: ../QMCWaveFunctions/NJABBuilder.cpp
+@AMDEP_TRUE@	source='../QMCWaveFunctions/NJABBuilder.cpp' object='NJABBuilder.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/NJABBuilder.Po' tmpdepfile='$(DEPDIR)/NJABBuilder.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NJABBuilder.o `test -f '../QMCWaveFunctions/NJABBuilder.cpp' || echo '$(srcdir)/'`../QMCWaveFunctions/NJABBuilder.cpp
+
+NJABBuilder.obj: ../QMCWaveFunctions/NJABBuilder.cpp
+@AMDEP_TRUE@	source='../QMCWaveFunctions/NJABBuilder.cpp' object='NJABBuilder.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/NJABBuilder.Po' tmpdepfile='$(DEPDIR)/NJABBuilder.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NJABBuilder.obj `cygpath -w ../QMCWaveFunctions/NJABBuilder.cpp`
+
+NJABBuilder.lo: ../QMCWaveFunctions/NJABBuilder.cpp
+@AMDEP_TRUE@	source='../QMCWaveFunctions/NJABBuilder.cpp' object='NJABBuilder.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/NJABBuilder.Plo' tmpdepfile='$(DEPDIR)/NJABBuilder.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NJABBuilder.lo `test -f '../QMCWaveFunctions/NJABBuilder.cpp' || echo '$(srcdir)/'`../QMCWaveFunctions/NJABBuilder.cpp
 
 HFAtomicSTOSet.o: ../QMCWaveFunctions/AtomicOrbitals/HFAtomicSTOSet.cpp
 @AMDEP_TRUE@	source='../QMCWaveFunctions/AtomicOrbitals/HFAtomicSTOSet.cpp' object='HFAtomicSTOSet.o' libtool=no @AMDEPBACKSLASH@
@@ -539,6 +646,24 @@ RGFBuilderBase.lo: ../QMCWaveFunctions/MolecularOrbitals/RGFBuilderBase.cpp
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o RGFBuilderBase.lo `test -f '../QMCWaveFunctions/MolecularOrbitals/RGFBuilderBase.cpp' || echo '$(srcdir)/'`../QMCWaveFunctions/MolecularOrbitals/RGFBuilderBase.cpp
 
+NumericalRGFBuilder.o: ../QMCWaveFunctions/MolecularOrbitals/NumericalRGFBuilder.cpp
+@AMDEP_TRUE@	source='../QMCWaveFunctions/MolecularOrbitals/NumericalRGFBuilder.cpp' object='NumericalRGFBuilder.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/NumericalRGFBuilder.Po' tmpdepfile='$(DEPDIR)/NumericalRGFBuilder.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NumericalRGFBuilder.o `test -f '../QMCWaveFunctions/MolecularOrbitals/NumericalRGFBuilder.cpp' || echo '$(srcdir)/'`../QMCWaveFunctions/MolecularOrbitals/NumericalRGFBuilder.cpp
+
+NumericalRGFBuilder.obj: ../QMCWaveFunctions/MolecularOrbitals/NumericalRGFBuilder.cpp
+@AMDEP_TRUE@	source='../QMCWaveFunctions/MolecularOrbitals/NumericalRGFBuilder.cpp' object='NumericalRGFBuilder.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/NumericalRGFBuilder.Po' tmpdepfile='$(DEPDIR)/NumericalRGFBuilder.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NumericalRGFBuilder.obj `cygpath -w ../QMCWaveFunctions/MolecularOrbitals/NumericalRGFBuilder.cpp`
+
+NumericalRGFBuilder.lo: ../QMCWaveFunctions/MolecularOrbitals/NumericalRGFBuilder.cpp
+@AMDEP_TRUE@	source='../QMCWaveFunctions/MolecularOrbitals/NumericalRGFBuilder.cpp' object='NumericalRGFBuilder.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/NumericalRGFBuilder.Plo' tmpdepfile='$(DEPDIR)/NumericalRGFBuilder.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NumericalRGFBuilder.lo `test -f '../QMCWaveFunctions/MolecularOrbitals/NumericalRGFBuilder.cpp' || echo '$(srcdir)/'`../QMCWaveFunctions/MolecularOrbitals/NumericalRGFBuilder.cpp
+
 STO2GridBuilder.o: ../QMCWaveFunctions/MolecularOrbitals/STO2GridBuilder.cpp
 @AMDEP_TRUE@	source='../QMCWaveFunctions/MolecularOrbitals/STO2GridBuilder.cpp' object='STO2GridBuilder.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@	depfile='$(DEPDIR)/STO2GridBuilder.Po' tmpdepfile='$(DEPDIR)/STO2GridBuilder.TPo' @AMDEPBACKSLASH@
@@ -593,24 +718,6 @@ Any2GridBuilder.lo: ../QMCWaveFunctions/MolecularOrbitals/Any2GridBuilder.cpp
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Any2GridBuilder.lo `test -f '../QMCWaveFunctions/MolecularOrbitals/Any2GridBuilder.cpp' || echo '$(srcdir)/'`../QMCWaveFunctions/MolecularOrbitals/Any2GridBuilder.cpp
 
-NumericalRGFBuilder.o: ../QMCWaveFunctions/MolecularOrbitals/NumericalRGFBuilder.cpp
-@AMDEP_TRUE@	source='../QMCWaveFunctions/MolecularOrbitals/NumericalRGFBuilder.cpp' object='NumericalRGFBuilder.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/NumericalRGFBuilder.Po' tmpdepfile='$(DEPDIR)/NumericalRGFBuilder.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NumericalRGFBuilder.o `test -f '../QMCWaveFunctions/MolecularOrbitals/NumericalRGFBuilder.cpp' || echo '$(srcdir)/'`../QMCWaveFunctions/MolecularOrbitals/NumericalRGFBuilder.cpp
-
-NumericalRGFBuilder.obj: ../QMCWaveFunctions/MolecularOrbitals/NumericalRGFBuilder.cpp
-@AMDEP_TRUE@	source='../QMCWaveFunctions/MolecularOrbitals/NumericalRGFBuilder.cpp' object='NumericalRGFBuilder.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/NumericalRGFBuilder.Po' tmpdepfile='$(DEPDIR)/NumericalRGFBuilder.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NumericalRGFBuilder.obj `cygpath -w ../QMCWaveFunctions/MolecularOrbitals/NumericalRGFBuilder.cpp`
-
-NumericalRGFBuilder.lo: ../QMCWaveFunctions/MolecularOrbitals/NumericalRGFBuilder.cpp
-@AMDEP_TRUE@	source='../QMCWaveFunctions/MolecularOrbitals/NumericalRGFBuilder.cpp' object='NumericalRGFBuilder.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/NumericalRGFBuilder.Plo' tmpdepfile='$(DEPDIR)/NumericalRGFBuilder.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NumericalRGFBuilder.lo `test -f '../QMCWaveFunctions/MolecularOrbitals/NumericalRGFBuilder.cpp' || echo '$(srcdir)/'`../QMCWaveFunctions/MolecularOrbitals/NumericalRGFBuilder.cpp
-
 GridMolecularOrbitals.o: ../QMCWaveFunctions/MolecularOrbitals/GridMolecularOrbitals.cpp
 @AMDEP_TRUE@	source='../QMCWaveFunctions/MolecularOrbitals/GridMolecularOrbitals.cpp' object='GridMolecularOrbitals.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@	depfile='$(DEPDIR)/GridMolecularOrbitals.Po' tmpdepfile='$(DEPDIR)/GridMolecularOrbitals.TPo' @AMDEPBACKSLASH@
@@ -647,24 +754,6 @@ MolecularOrbitalBuilder.lo: ../QMCWaveFunctions/MolecularOrbitals/MolecularOrbit
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o MolecularOrbitalBuilder.lo `test -f '../QMCWaveFunctions/MolecularOrbitals/MolecularOrbitalBuilder.cpp' || echo '$(srcdir)/'`../QMCWaveFunctions/MolecularOrbitals/MolecularOrbitalBuilder.cpp
 
-NumericalMolecularOrbitals.o: ../QMCWaveFunctions/MolecularOrbitals/NumericalMolecularOrbitals.cpp
-@AMDEP_TRUE@	source='../QMCWaveFunctions/MolecularOrbitals/NumericalMolecularOrbitals.cpp' object='NumericalMolecularOrbitals.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/NumericalMolecularOrbitals.Po' tmpdepfile='$(DEPDIR)/NumericalMolecularOrbitals.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NumericalMolecularOrbitals.o `test -f '../QMCWaveFunctions/MolecularOrbitals/NumericalMolecularOrbitals.cpp' || echo '$(srcdir)/'`../QMCWaveFunctions/MolecularOrbitals/NumericalMolecularOrbitals.cpp
-
-NumericalMolecularOrbitals.obj: ../QMCWaveFunctions/MolecularOrbitals/NumericalMolecularOrbitals.cpp
-@AMDEP_TRUE@	source='../QMCWaveFunctions/MolecularOrbitals/NumericalMolecularOrbitals.cpp' object='NumericalMolecularOrbitals.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/NumericalMolecularOrbitals.Po' tmpdepfile='$(DEPDIR)/NumericalMolecularOrbitals.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NumericalMolecularOrbitals.obj `cygpath -w ../QMCWaveFunctions/MolecularOrbitals/NumericalMolecularOrbitals.cpp`
-
-NumericalMolecularOrbitals.lo: ../QMCWaveFunctions/MolecularOrbitals/NumericalMolecularOrbitals.cpp
-@AMDEP_TRUE@	source='../QMCWaveFunctions/MolecularOrbitals/NumericalMolecularOrbitals.cpp' object='NumericalMolecularOrbitals.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/NumericalMolecularOrbitals.Plo' tmpdepfile='$(DEPDIR)/NumericalMolecularOrbitals.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NumericalMolecularOrbitals.lo `test -f '../QMCWaveFunctions/MolecularOrbitals/NumericalMolecularOrbitals.cpp' || echo '$(srcdir)/'`../QMCWaveFunctions/MolecularOrbitals/NumericalMolecularOrbitals.cpp
-
 ElectronGasOrbitalBuilder.o: ../QMCWaveFunctions/ElectronGasOrbitalBuilder.cpp
 @AMDEP_TRUE@	source='../QMCWaveFunctions/ElectronGasOrbitalBuilder.cpp' object='ElectronGasOrbitalBuilder.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@	depfile='$(DEPDIR)/ElectronGasOrbitalBuilder.Po' tmpdepfile='$(DEPDIR)/ElectronGasOrbitalBuilder.TPo' @AMDEPBACKSLASH@
@@ -682,6 +771,42 @@ ElectronGasOrbitalBuilder.lo: ../QMCWaveFunctions/ElectronGasOrbitalBuilder.cpp
 @AMDEP_TRUE@	depfile='$(DEPDIR)/ElectronGasOrbitalBuilder.Plo' tmpdepfile='$(DEPDIR)/ElectronGasOrbitalBuilder.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ElectronGasOrbitalBuilder.lo `test -f '../QMCWaveFunctions/ElectronGasOrbitalBuilder.cpp' || echo '$(srcdir)/'`../QMCWaveFunctions/ElectronGasOrbitalBuilder.cpp
+
+ThreeBodyGeminal.o: ../QMCWaveFunctions/ThreeBodyGeminal.cpp
+@AMDEP_TRUE@	source='../QMCWaveFunctions/ThreeBodyGeminal.cpp' object='ThreeBodyGeminal.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/ThreeBodyGeminal.Po' tmpdepfile='$(DEPDIR)/ThreeBodyGeminal.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ThreeBodyGeminal.o `test -f '../QMCWaveFunctions/ThreeBodyGeminal.cpp' || echo '$(srcdir)/'`../QMCWaveFunctions/ThreeBodyGeminal.cpp
+
+ThreeBodyGeminal.obj: ../QMCWaveFunctions/ThreeBodyGeminal.cpp
+@AMDEP_TRUE@	source='../QMCWaveFunctions/ThreeBodyGeminal.cpp' object='ThreeBodyGeminal.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/ThreeBodyGeminal.Po' tmpdepfile='$(DEPDIR)/ThreeBodyGeminal.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ThreeBodyGeminal.obj `cygpath -w ../QMCWaveFunctions/ThreeBodyGeminal.cpp`
+
+ThreeBodyGeminal.lo: ../QMCWaveFunctions/ThreeBodyGeminal.cpp
+@AMDEP_TRUE@	source='../QMCWaveFunctions/ThreeBodyGeminal.cpp' object='ThreeBodyGeminal.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/ThreeBodyGeminal.Plo' tmpdepfile='$(DEPDIR)/ThreeBodyGeminal.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ThreeBodyGeminal.lo `test -f '../QMCWaveFunctions/ThreeBodyGeminal.cpp' || echo '$(srcdir)/'`../QMCWaveFunctions/ThreeBodyGeminal.cpp
+
+ThreeBodyGeminalBuilder.o: ../QMCWaveFunctions/ThreeBodyGeminalBuilder.cpp
+@AMDEP_TRUE@	source='../QMCWaveFunctions/ThreeBodyGeminalBuilder.cpp' object='ThreeBodyGeminalBuilder.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/ThreeBodyGeminalBuilder.Po' tmpdepfile='$(DEPDIR)/ThreeBodyGeminalBuilder.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ThreeBodyGeminalBuilder.o `test -f '../QMCWaveFunctions/ThreeBodyGeminalBuilder.cpp' || echo '$(srcdir)/'`../QMCWaveFunctions/ThreeBodyGeminalBuilder.cpp
+
+ThreeBodyGeminalBuilder.obj: ../QMCWaveFunctions/ThreeBodyGeminalBuilder.cpp
+@AMDEP_TRUE@	source='../QMCWaveFunctions/ThreeBodyGeminalBuilder.cpp' object='ThreeBodyGeminalBuilder.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/ThreeBodyGeminalBuilder.Po' tmpdepfile='$(DEPDIR)/ThreeBodyGeminalBuilder.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ThreeBodyGeminalBuilder.obj `cygpath -w ../QMCWaveFunctions/ThreeBodyGeminalBuilder.cpp`
+
+ThreeBodyGeminalBuilder.lo: ../QMCWaveFunctions/ThreeBodyGeminalBuilder.cpp
+@AMDEP_TRUE@	source='../QMCWaveFunctions/ThreeBodyGeminalBuilder.cpp' object='ThreeBodyGeminalBuilder.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/ThreeBodyGeminalBuilder.Plo' tmpdepfile='$(DEPDIR)/ThreeBodyGeminalBuilder.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ThreeBodyGeminalBuilder.lo `test -f '../QMCWaveFunctions/ThreeBodyGeminalBuilder.cpp' || echo '$(srcdir)/'`../QMCWaveFunctions/ThreeBodyGeminalBuilder.cpp
 
 LocalPPotential.o: ../QMCHamiltonians/LocalPPotential.cpp
 @AMDEP_TRUE@	source='../QMCHamiltonians/LocalPPotential.cpp' object='LocalPPotential.o' libtool=no @AMDEPBACKSLASH@
@@ -736,6 +861,42 @@ LocalCorePolPotential.lo: ../QMCHamiltonians/LocalCorePolPotential.cpp
 @AMDEP_TRUE@	depfile='$(DEPDIR)/LocalCorePolPotential.Plo' tmpdepfile='$(DEPDIR)/LocalCorePolPotential.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o LocalCorePolPotential.lo `test -f '../QMCHamiltonians/LocalCorePolPotential.cpp' || echo '$(srcdir)/'`../QMCHamiltonians/LocalCorePolPotential.cpp
+
+WaveFunctionFactory.o: ../QMCWaveFunctions/WaveFunctionFactory.cpp
+@AMDEP_TRUE@	source='../QMCWaveFunctions/WaveFunctionFactory.cpp' object='WaveFunctionFactory.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/WaveFunctionFactory.Po' tmpdepfile='$(DEPDIR)/WaveFunctionFactory.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o WaveFunctionFactory.o `test -f '../QMCWaveFunctions/WaveFunctionFactory.cpp' || echo '$(srcdir)/'`../QMCWaveFunctions/WaveFunctionFactory.cpp
+
+WaveFunctionFactory.obj: ../QMCWaveFunctions/WaveFunctionFactory.cpp
+@AMDEP_TRUE@	source='../QMCWaveFunctions/WaveFunctionFactory.cpp' object='WaveFunctionFactory.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/WaveFunctionFactory.Po' tmpdepfile='$(DEPDIR)/WaveFunctionFactory.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o WaveFunctionFactory.obj `cygpath -w ../QMCWaveFunctions/WaveFunctionFactory.cpp`
+
+WaveFunctionFactory.lo: ../QMCWaveFunctions/WaveFunctionFactory.cpp
+@AMDEP_TRUE@	source='../QMCWaveFunctions/WaveFunctionFactory.cpp' object='WaveFunctionFactory.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/WaveFunctionFactory.Plo' tmpdepfile='$(DEPDIR)/WaveFunctionFactory.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o WaveFunctionFactory.lo `test -f '../QMCWaveFunctions/WaveFunctionFactory.cpp' || echo '$(srcdir)/'`../QMCWaveFunctions/WaveFunctionFactory.cpp
+
+HamiltonianFactory.o: ../QMCHamiltonians/HamiltonianFactory.cpp
+@AMDEP_TRUE@	source='../QMCHamiltonians/HamiltonianFactory.cpp' object='HamiltonianFactory.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/HamiltonianFactory.Po' tmpdepfile='$(DEPDIR)/HamiltonianFactory.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o HamiltonianFactory.o `test -f '../QMCHamiltonians/HamiltonianFactory.cpp' || echo '$(srcdir)/'`../QMCHamiltonians/HamiltonianFactory.cpp
+
+HamiltonianFactory.obj: ../QMCHamiltonians/HamiltonianFactory.cpp
+@AMDEP_TRUE@	source='../QMCHamiltonians/HamiltonianFactory.cpp' object='HamiltonianFactory.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/HamiltonianFactory.Po' tmpdepfile='$(DEPDIR)/HamiltonianFactory.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o HamiltonianFactory.obj `cygpath -w ../QMCHamiltonians/HamiltonianFactory.cpp`
+
+HamiltonianFactory.lo: ../QMCHamiltonians/HamiltonianFactory.cpp
+@AMDEP_TRUE@	source='../QMCHamiltonians/HamiltonianFactory.cpp' object='HamiltonianFactory.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/HamiltonianFactory.Plo' tmpdepfile='$(DEPDIR)/HamiltonianFactory.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o HamiltonianFactory.lo `test -f '../QMCHamiltonians/HamiltonianFactory.cpp' || echo '$(srcdir)/'`../QMCHamiltonians/HamiltonianFactory.cpp
 
 SimpleFixedNodeBranch.o: ../QMCDrivers/SimpleFixedNodeBranch.cpp
 @AMDEP_TRUE@	source='../QMCDrivers/SimpleFixedNodeBranch.cpp' object='SimpleFixedNodeBranch.o' libtool=no @AMDEPBACKSLASH@
@@ -916,6 +1077,24 @@ QMCCostFunction.lo: ../QMCDrivers/QMCCostFunction.cpp
 @AMDEP_TRUE@	depfile='$(DEPDIR)/QMCCostFunction.Plo' tmpdepfile='$(DEPDIR)/QMCCostFunction.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o QMCCostFunction.lo `test -f '../QMCDrivers/QMCCostFunction.cpp' || echo '$(srcdir)/'`../QMCDrivers/QMCCostFunction.cpp
+
+DMCPbyPOpenMP.o: ../QMCDrivers/DMCPbyPOpenMP.cpp
+@AMDEP_TRUE@	source='../QMCDrivers/DMCPbyPOpenMP.cpp' object='DMCPbyPOpenMP.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/DMCPbyPOpenMP.Po' tmpdepfile='$(DEPDIR)/DMCPbyPOpenMP.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o DMCPbyPOpenMP.o `test -f '../QMCDrivers/DMCPbyPOpenMP.cpp' || echo '$(srcdir)/'`../QMCDrivers/DMCPbyPOpenMP.cpp
+
+DMCPbyPOpenMP.obj: ../QMCDrivers/DMCPbyPOpenMP.cpp
+@AMDEP_TRUE@	source='../QMCDrivers/DMCPbyPOpenMP.cpp' object='DMCPbyPOpenMP.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/DMCPbyPOpenMP.Po' tmpdepfile='$(DEPDIR)/DMCPbyPOpenMP.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o DMCPbyPOpenMP.obj `cygpath -w ../QMCDrivers/DMCPbyPOpenMP.cpp`
+
+DMCPbyPOpenMP.lo: ../QMCDrivers/DMCPbyPOpenMP.cpp
+@AMDEP_TRUE@	source='../QMCDrivers/DMCPbyPOpenMP.cpp' object='DMCPbyPOpenMP.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/DMCPbyPOpenMP.Plo' tmpdepfile='$(DEPDIR)/DMCPbyPOpenMP.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o DMCPbyPOpenMP.lo `test -f '../QMCDrivers/DMCPbyPOpenMP.cpp' || echo '$(srcdir)/'`../QMCDrivers/DMCPbyPOpenMP.cpp
 
 ScalarEstimatorManager.o: ../Estimators/ScalarEstimatorManager.cpp
 @AMDEP_TRUE@	source='../Estimators/ScalarEstimatorManager.cpp' object='ScalarEstimatorManager.o' libtool=no @AMDEPBACKSLASH@

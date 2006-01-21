@@ -21,7 +21,9 @@ QMC_COMMON_SRCS = \
   ../QMCWaveFunctions/ThreeBodyGeminalBuilder.cpp\
   ../QMCHamiltonians/LocalPPotential.cpp\
   ../QMCHamiltonians/NonLocalPPotential.cpp\
-  ../QMCHamiltonians/LocalCorePolPotential.cpp
+  ../QMCHamiltonians/LocalCorePolPotential.cpp \
+  ../QMCWaveFunctions/WaveFunctionFactory.cpp \
+  ../QMCHamiltonians/HamiltonianFactory.cpp
 
 QMC_DRIVERS = \
   ../QMCDrivers/SimpleFixedNodeBranch.cpp\
@@ -34,6 +36,7 @@ QMC_DRIVERS = \
   ../QMCDrivers/WalkerControlBase.cpp\
   ../QMCDrivers/QMCOptimize.cpp\
   ../QMCDrivers/QMCCostFunction.cpp\
+  ../QMCDrivers/DMCPbyPOpenMP.cpp \
   ../Estimators/ScalarEstimatorManager.cpp
 
 QMC_APP =\

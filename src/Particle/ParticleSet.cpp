@@ -30,7 +30,7 @@ namespace qmcplusplus {
     initParticleSet();
   }
 
-  ParticleSet::ParticleSet(const ParticleSet& p): SK(0) {
+  ParticleSet::ParticleSet(const ParticleSet& p): SK(0), mySpecies(p.mySpecies) {
     initBase();
     initParticleSet();
     assign(p);
