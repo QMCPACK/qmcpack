@@ -20,7 +20,9 @@
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "Numerics/DeterminantOperators.h"
 #include "Numerics/OhmmsBlas.h"
+#if defined(HAVE_LIBHDF5)
 #include "Numerics/HDFNumericAttrib.h"
+#endif
 #include <limits>
 
 namespace qmcplusplus {
@@ -344,6 +346,7 @@ namespace qmcplusplus {
 
       NumSPOs=norb;
 
+#if defined(HAVE_LIBHDF5)
       vector<RealType> occupation(numBasis(),0.0);
       for(int i=0; i<NumSPOs; i++) occupation[i]=1.0;
       vector<int> occ_in;
@@ -395,6 +398,13 @@ namespace qmcplusplus {
 	  n++;
 	}
       }
+#else
+      ERRORMSG("HDF5 is disabled. Using identity")
+      Identity=1;
+      C.resize(NumSPOs,numBasis());
+      C=0.0;
+      for(int i=0; i<NumSPOs; i++) C(i,i)=1.0;
+#endif
 
       //XMLReport("The Molecular Orbital Coefficients:")
       //XMLReport(C)
