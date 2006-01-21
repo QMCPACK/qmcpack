@@ -148,7 +148,7 @@ namespace qmcplusplus {
       J2->setOptimizable(false);
     }
 
-    targetPsi.add(J2);
+    targetPsi.addOrbital(J2);
     XMLReport("Added a Two-Body Jastrow Function")
     return true;
   }
@@ -210,7 +210,7 @@ namespace qmcplusplus {
     if(targetPsi.VarList.size() == cur_var) {
       J2->setOptimizable(false);
     }
-    targetPsi.add(J2);
+    targetPsi.addOrbital(J2);
     XMLReport("Added a Two-Body Jastrow Function")
     return true;
   }
@@ -273,7 +273,7 @@ namespace qmcplusplus {
     if(targetPsi.VarList.size() == cur_var) {
       J1->setOptimizable(false);
     }
-    targetPsi.add(J1);
+    targetPsi.addOrbital(J1);
     XMLReport("Added a One-Body Jastrow Function")
     return true;
   }
@@ -328,7 +328,7 @@ is implemted
         if(targetPsi.VarList.size() == cur_var) {
           jp->setOptimizable(false);
         }
-        targetPsi.add(jp);
+        targetPsi.addOrbital(jp);
         return true;
       } else {
         return false;
