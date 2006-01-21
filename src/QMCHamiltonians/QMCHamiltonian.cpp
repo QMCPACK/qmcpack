@@ -24,13 +24,8 @@ using namespace qmcplusplus;
  */
 QMCHamiltonian::QMCHamiltonian(){ }
 
-QMCHamiltonian::QMCHamiltonian(const QMCHamiltonian& qh):
-Hindex(qh.Hindex), Hvalue(qh.Hvalue), Hname(qh.Hname), Hmap(qh.Hmap){ 
-
-  for(int i=0; i<qh.H.size(); i++) {
-    H.push_back(qh.H[i]->clone());
-  }
-}
+/// copy constructor is distable by declaring it as private
+QMCHamiltonian::QMCHamiltonian(const QMCHamiltonian& qh) {}
 
 /** destructor
  */

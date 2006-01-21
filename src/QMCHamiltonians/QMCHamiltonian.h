@@ -39,7 +39,6 @@ namespace qmcplusplus {
     QMCHamiltonian();
 
     ///copy constructor
-    QMCHamiltonian(const QMCHamiltonian& qh);
 
     ///destructor
     ~QMCHamiltonian();
@@ -161,6 +160,9 @@ namespace qmcplusplus {
     std::vector<string> Hname;
     ///map the name to an index
     std::map<string,int> Hmap;
+
+    ///disable copy constructor
+    QMCHamiltonian(const QMCHamiltonian& qh);
   };
 }
 #endif
