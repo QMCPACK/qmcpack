@@ -29,6 +29,7 @@
 #include "QMCDrivers/VMC.h"
 #include "QMCDrivers/VMCParticleByParticle.h"
 #include "QMCDrivers/DMCParticleByParticle.h"
+#include "QMCDrivers/DMCPbyPOpenMP.h"
 #include "QMCDrivers/QMCOptimize.h"
 #include "QMCDrivers/MolecuDMC.h"
 #if !defined(QMCPLUSPLUS_RELEASE)
@@ -248,6 +249,8 @@ namespace qmcplusplus {
     return true;
   }   
 
+  
+
   /** grep basic objects and add to Pools
    * @param cur current node 
    *
@@ -333,11 +336,11 @@ namespace qmcplusplus {
       primaryH->setPrimary(true);
       ///////////////////////////////////////////////
       if (what == "vmc"){
-        primaryH->add(new ConservedEnergy,"Flux");
+        primaryH->addOperator(new ConservedEnergy,"Flux");
         qmcDriver = new VMC(*qmcSystem,*primaryPsi,*primaryH);
         curRunType = VMC_RUN;
       } else if(what == "vmc-ptcl"){
-        primaryH->add(new ConservedEnergy,"Flux");
+        primaryH->addOperator(new ConservedEnergy,"Flux");
         qmcDriver = new VMCParticleByParticle(*qmcSystem,*primaryPsi,*primaryH);
         curRunType = VMC_RUN;
       } else if(what == "dmc"){
@@ -386,10 +389,15 @@ namespace qmcplusplus {
         }
         curRunType = RMC_RUN;
 #endif
+      } else if(what == "dmc-omp") {
+        DMCPbyPOpenMP *domp = new DMCPbyPOpenMP(*qmcSystem,*primaryPsi,*primaryH);
+        domp->makeClones(*hamPool);
+        qmcDriver=domp;
+        curRunType = DUMMY_RUN; //change this to something else
       } else {
         qmcDriver = new DummyQMC(*qmcSystem,*primaryPsi,*primaryH);
         WARNMSG("Cannot termine what type of qmc to run. Creating DummyQMC for testing")
-          curRunType = DUMMY_RUN;
+        curRunType = DUMMY_RUN;
       }
     }
 
@@ -411,6 +419,7 @@ namespace qmcplusplus {
       //keeps track of the configuration file
       PrevConfigFile = myProject.CurrentRoot();
 
+      //do not change the input href
       //change the content of mcwalkerset/@file attribute
       for(int i=0; i<m_walkerset.size(); i++) {
         xmlSetProp(m_walkerset[i],

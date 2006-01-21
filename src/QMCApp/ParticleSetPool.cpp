@@ -31,6 +31,16 @@ namespace qmcplusplus {
   ParticleSetPool::ParticleSetPool(const char* aname):
     OhmmsElementBase(aname){ }
 
+  void  ParticleSetPool::addParticleSet(ParticleSet* p) {
+    PoolType::iterator pit(myPool.find(p->getName()));
+    if(pit == myPool.end()) {
+      LOGMSG("  Adding " << p->getName() << " ParticleSet to the pool")
+      myPool[p->getName()]=p;
+    } else {
+      WARNMSG("  " << p->getName() << " exists. Ignore addition")
+    }
+  }
+
   /** process an xml element
    * @param cur current xmlNodePtr
    * @return true, if successful.
@@ -105,6 +115,44 @@ namespace qmcplusplus {
     //  ++it;
     //}
   }
+
+// Experimental implementation of cloning ParticleSet*
+// All taken care by HamiltonianPool
+//  std::vector<ParticleSet*>
+//  ParticleSetPool::clone(const string& pname, int np) {
+//    ParticleSet* pRef=getParticleSet(pname);
+//    vector<ParticleSet*> newPtclSets;
+//    if(pRef == 0) return newPtclSets;
+//
+//    newPtclSets.resize(np,0);
+//    newPtclSets[0]=pRef;
+//    char pnameIP[128];
+//
+//    for(int ip=1; ip<np; ip++) {
+//      sprintf(pnameIP,"%s.c%i",pname.c_str(),ip);
+//      map<string,ParticleSet*>::iterator pit(myPool.find(pname));
+//      if(pit == myPool.end())  {
+//        myPool[pnameIP]=0;//add to the pool
+//      } else {
+//        newPtclSets[ip]=(*pit).second;
+//      }
+//    }
+//
+//#pragma omp parallel for
+//    for(int ip=0; ip<np; ip++) {
+//      if(newPtclSets[ip] == 0) {
+//        newPtclSets[ip]=new ParticleSet(*pRef);
+//      }
+//    }
+//
+//    //add the cloned particle sets to myPool
+//    for(int ip=1; ip<np; ip++) {
+//      sprintf(pnameIP,"%s%i",pname.c_str(),ip);
+//      myPool[pnameIP]=newPtclSets[ip];
+//    }
+//
+//    return newPtclSets;
+//  }
 }
 /***************************************************************************
  * $RCSfile$   $Author$

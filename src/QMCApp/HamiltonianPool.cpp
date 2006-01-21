@@ -26,44 +26,22 @@
 using namespace std;
 #include "OhmmsData/AttributeSet.h"
 #include "Utilities/OhmmsInfo.h"
-#include "QMCHamiltonians/QMCHamiltonian.h"
-#include "QMCHamiltonians/BareKineticEnergy.h"
-#include "QMCHamiltonians/CoulombPotential.h"
-#include "QMCHamiltonians/IonIonPotential.h"
-#include "QMCHamiltonians/LocalPPotential.h"
-#include "QMCHamiltonians/NonLocalPPotential.h"
-#include "QMCHamiltonians/LocalCorePolPotential.h"
-#if !defined(QMCPLUSPLUS_RELEASE)
-#include "QMCHamiltonians/CoulombPBC.h"
-#endif
+#include "Message/OpenMP.h"
 
 namespace qmcplusplus {
 
   HamiltonianPool::HamiltonianPool(const char* aname):
-    OhmmsElementBase(aname), curH(0), ptclPool(0), psiPool(0){ }
+    OhmmsElementBase(aname), curH(0), ptclPool(0), psiPool(0),
+  curDoc(0){ }
 
   bool HamiltonianPool::put(xmlNodePtr cur) {
 
-    string id("h0"), htype("generic"), target("e"), source("i"),role("extra");
-
+    string id("h0"), target("e"),role("extra");
     OhmmsAttributeSet hAttrib;
     hAttrib.add(id,"id"); hAttrib.add(id,"name"); 
-    hAttrib.add(htype,"type"); 
-    hAttrib.add(target,"target");
-    hAttrib.add(source,"source");
     hAttrib.add(role,"role");
+    hAttrib.add(target,"target");
     hAttrib.put(cur);
-
-    curH = getHamiltonian(id);
-    if(curH) {
-      WARNMSG("hamiltonian with " << id << " is already created. Will add new terms.")
-    } else {
-      curH = new QMCHamiltonian;
-      if(myPool.empty() || role == "primary" ) {
-        primaryH = curH;
-      }
-      myPool[id]=curH;
-    }
 
     ParticleSet* qp=ptclPool->getParticleSet(target);
     if(qp == 0) {
@@ -71,203 +49,87 @@ namespace qmcplusplus {
       return false;
     }
 
-    //important to add KineticEnergy first
-    curH->add(new BareKineticEnergy,"Kinetic");
+    bool set2Primary=false;
+    if(myPool.empty() || role == "primary" ) { set2Primary=true;}
 
-    //using hamiltonian/@type to populate QMCHamiltonian
-    cur=cur->children;
-    //check the child nodes of hamiltonian: pairpot 
-    while(cur != NULL) {
-      string cname((const char*)cur->name);
-      const xmlChar* t = xmlGetProp(cur,(const xmlChar*)"type");
-      if(t) { // accept only if it has type
-        string pot_type((const char*)t);
-        if(cname == "pairpot") {
-          if(pot_type == "coulomb") {
-	    addCoulombPotential(cur,qp);
-          } else if(pot_type == "pseudo") {
-            addPseudoPotential(cur,qp);
-          } else if(pot_type == "cpp") {
-            addCorePolPotential(cur,qp);
-          }
-        } else if(cname == "constant") { 
-          if(pot_type == "coulomb") { //ugly!!!
-            t = xmlGetProp(cur,(const xmlChar*)"source");
-            string nuclei("i");
-            if(t) nuclei=(const char*)t;
-            ParticleSet* ion=ptclPool->getParticleSet(nuclei);
+    HamiltonianFactory *curH=0;
+    PoolType::iterator hit(myPool.find(id));
+    if(hit == myPool.end()) {
+      curH= new HamiltonianFactory(qp, ptclPool->getPool(), psiPool->getPool());
+      curH->setName(id);
+      myPool[id]=curH;
+    }
+    else 
+      curH=(*hit).second;
 
-	    //CHECK PBC and create CoulombPBC for ion-ion
-            if(ion) {
-              if(ion->getTotalNum()>1) 
-		if(ion->Lattice.BoxBConds[0]){
-#if defined(QMCPLUSPLUS_RELEASE)
-                  ERRORMSG("This version cannot handle PBC. The IonIon potential will be wrong.")
-		  curH->add(new IonIonPotential(*ion),"IonIon");
-#else
-		  curH->add(new CoulombPBCAA(*ion),"IonIon");
-#endif
-		}
-		else {
-		  curH->add(new IonIonPotential(*ion),"IonIon");
-		}
-             }
-          }
-        }
-      }
-      cur = cur->next;
+    bool success= curH->put(cur);
+    
+    if(set2Primary) {
+      primaryH=curH->targetH;
     }
 
-    if(curH->size() == 1) {//no external potential is provided, use type
-
-      WARNMSG("Using pre-determined hamiltonian for molecular systems.")
-      ParticleSet* ion=ptclPool->getParticleSet(source);
-      if(ion == 0) {
-        ERRORMSG("No ionic system " << source << " exists.")
-        return false;
-      }
-
-      if(qp->Lattice.BoxBConds[0]){
-#if defined(QMCPLUSPLUS_RELEASE)
-        ERRORMSG("This version cannot handle PBC. The ElecElec potential will be wrong.")
-	curH->add(new CoulombPotentialAA(*qp),"ElecElec");
-#else
-	curH->add(new CoulombPBCAA(*qp),"ElecElec");
-#endif
-      }
-      else{
-	curH->add(new CoulombPotentialAA(*qp),"ElecElec");
-      }
-
-      if(htype == "molecule" || htype=="coulomb"){
-	if(qp->Lattice.BoxBConds[0]){
-#if defined(QMCPLUSPLUS_RELEASE)
-          ERRORMSG("This version cannot handle PBC. The Coulomb potential will be wrong.")
-	  curH->add(new CoulombPotentialAB(*ion,*qp),"Coulomb");
-#else
-	  curH->add(new CoulombPBCAB(*ion,*qp),"Coulomb");
-#endif
-	} else {
-	  curH->add(new CoulombPotentialAB(*ion,*qp),"Coulomb");
-	}
-      } else if(htype == "siesta" || htype=="pseudo") {
-        TrialWaveFunction* psi = psiPool->getPrimary();
-        curH->add(new NonLocalPPotential(*ion,*qp,*psi),"NonLocal");
-      //} else if(htype == "cpp") {
-      //  xmlChar* att2=xmlGetProp(cur,(const xmlChar*)"species");
-      //  string stype("Ge");
-      //  if(att2) stype = (const char*)att2;
-      //  curH->add(new LocalPPotential(*ion,*qp), "PseudoPot");
-      //  curH->add(new LocalCorePolPotential(*ion,*qp), "GeCPP");
-      } else {
-        ERRORMSG(htype << " is diabled")
-      }
-
-      if(ion->getTotalNum()>1) 
-	if(ion->Lattice.BoxBConds[0]){
-#if defined(QMCPLUSPLUS_RELEASE)
-          ERRORMSG("This version cannot handle PBC. The IonIon potential will be wrong.")
-          curH->add(new IonIonPotential(*ion),"IonIon");
-#else
-          curH->add(new CoulombPBCAA(*ion),"IonIon");
-#endif
-	}
-	else{
-          curH->add(new IonIonPotential(*ion),"IonIon");
-	}
-    }
-
-
-    return true;
+    return success;
   }
 
-  void 
-  HamiltonianPool::addCoulombPotential(xmlNodePtr cur, ParticleSet* target) {
+  void HamiltonianPool::clone(const ParticleSet& qp, const TrialWaveFunction& psi, const QMCHamiltonian& h,
+        vector<ParticleSet*>& plist, vector<TrialWaveFunction*>& olist, vector<QMCHamiltonian*>& hlist) {
 
-    string a("e"),title("ElecElec");
-    OhmmsAttributeSet hAttrib;
-    hAttrib.add(title,"id"); hAttrib.add(title,"name"); 
-    hAttrib.add(a,"source"); 
-    hAttrib.put(cur);
+    //clone ParticleSet and TrialWaveFunction
+    WaveFunctionFactory* psiFac=psiPool->getWaveFunctionFactory(psi.getName());
+    omp_int_t np=omp_get_max_threads();
+    psiFac->setCloneSize(np);
 
-    ParticleSet* source = ptclPool->getParticleSet(a);
-    if(source ==0) {
-      ERRORMSG("Missing source ParticleSet" << a)
-      return;
+    //capture cloned WaveFunctionFactory*
+    vector<WaveFunctionFactory*> otemp;
+    otemp.resize(np,0);
+
+    //allocate the data on each thread
+#pragma omp parallel for
+    for(int ip=0; ip<np; ip++) {
+      if(ip) {
+        char pname[16],oname[16];
+        sprintf(pname,"%s.c%i",qp.getName().c_str(),ip);
+        plist[ip]=new ParticleSet(qp);
+        plist[ip]->setName(pname);
+
+        sprintf(oname,"%s.c%i",psi.getName().c_str(),ip);
+        otemp[ip]= psiFac->clone(plist[ip],ip,oname);
+      }
+    }
+    
+    //add the Clones to the pools
+    for(int ip=1; ip<np; ip++) {
+      ptclPool->addParticleSet(plist[ip]);
+      psiPool->addFactory(otemp[ip]);
+      olist[ip]=otemp[ip]->targetPsi;
     }
 
-    if(source == target) {
-      //CHECK PBC and create CoulombPBC for el-el
-      if(source->getTotalNum()>1)  {
-	  if(target->Lattice.BoxBConds[0]) {
-#if defined(QMCPLUSPLUS_RELEASE)
-            ERRORMSG("This version cannot handle PBC. The " << title << " potential will be wrong.")
-	    curH->add(new CoulombPotentialAA(*target),title);
-#else
-	    curH->add(new CoulombPBCAA(*target),title);
-#endif
-	  }
-	  else {
-	    curH->add(new CoulombPotentialAA(*target),title);
-	  }
-      }
+    //find the HamiltonianFactory* to be cloned
+    HamiltonianFactory* hFac=0;
+    PoolType::iterator hit(myPool.find(h.getName()));
+    if(hit == myPool.end()) {
+      hFac=(*(myPool.begin())).second;
     } else {
-      if(target->Lattice.BoxBConds[0]) {
-#if defined(QMCPLUSPLUS_RELEASE)
-        ERRORMSG("This version cannot handle PBC. The " << title << " potential will be wrong.")
-	curH->add(new CoulombPotentialAB(*source,*target),title);
-#else
-	curH->add(new CoulombPBCAB(*source,*target),title);
-#endif
-      } else {
-	curH->add(new CoulombPotentialAB(*source,*target),title);
+      hFac=(*hit).second;
+    }
+    hFac->setCloneSize(np);
+
+    vector<HamiltonianFactory*> htemp;
+    htemp.resize(np,0);
+
+#pragma omp parallel for
+    for(int ip=0; ip<np; ip++) {
+      if(ip) {
+        char hname[16];
+        sprintf(hname,"%s.c%i",h.getName().c_str(),ip);
+        htemp[ip]= hFac->clone(plist[ip],olist[ip],ip,hname);
       }
     }
-  }
-  
-  void 
-  HamiltonianPool::addPseudoPotential(xmlNodePtr cur, ParticleSet* target) {
 
-    string src("i"),title("PseudoPot"),wfname("invalid");
-
-    OhmmsAttributeSet pAttrib;
-    pAttrib.add(title,"name");
-    pAttrib.add(src,"source");
-    pAttrib.add(wfname,"wavefunction");
-    pAttrib.put(cur);
-
-    ParticleSet* ion=ptclPool->getParticleSet(src);
-    if(ion == 0) return;
-
-    TrialWaveFunction* psi=0;
-
-    if(wfname == "invalid") {
-      psi = psiPool->getPrimary();
-    } else {
-      psi = psiPool->getWaveFunction(wfname);
+    for(int ip=1; ip<np; ip++) {
+      myPool[htemp[ip]->getName()]=htemp[ip];
+      hlist[ip]=htemp[ip]->targetH;
     }
-
-    if(psi == 0) return;
-
-    curH->add(new NonLocalPPotential(*ion,*target,*psi), title);
-  }
-
-  void 
-  HamiltonianPool::addCorePolPotential(xmlNodePtr cur, ParticleSet* target) {
-
-    string src("i"),title("CorePol");
-
-    OhmmsAttributeSet pAttrib;
-    pAttrib.add(title,"name");
-    pAttrib.add(src,"source");
-    pAttrib.put(cur);
-
-    ParticleSet* ion=ptclPool->getParticleSet(src);
-    if(ion == 0) return;
-
-    QMCHamiltonianBase* cpp=(new LocalCorePolPotential(*ion,*target));
-    cpp->put(cur); 
-    curH->add(cpp, title);
   }
 
   bool HamiltonianPool::put(std::istream& is) {
@@ -279,7 +141,7 @@ namespace qmcplusplus {
     PoolType::const_iterator it(myPool.begin()), it_end(myPool.end());
     while(it != it_end) {
       os << "\n  Hamiltonian " << (*it).first << endl;;
-      (*it).second->get(os);
+      (*it).second->targetH->get(os);
       ++it;
     }
     return true;

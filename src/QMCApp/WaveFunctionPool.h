@@ -24,14 +24,13 @@
 #define QMCPLUSPLUS_WAVEFUNCTIONPOOL_H
 
 #include "OhmmsData/OhmmsElementBase.h"
+#include "QMCWaveFunctions/WaveFunctionFactory.h"
 #include <map>
 #include <string>
 
 namespace qmcplusplus {
 
-  class TrialWaveFunction;
   class ParticleSetPool;
-  class OrbitalBuilderBase;
   class ParticleSet;
 
   /** @ingroup qmcapp
@@ -42,7 +41,10 @@ namespace qmcplusplus {
    */
   class WaveFunctionPool : public OhmmsElementBase {
 
+
   public:
+
+    typedef std::map<std::string,WaveFunctionFactory*> PoolType;
 
     WaveFunctionPool(const char* aname = "wavefunction");
 
@@ -58,9 +60,21 @@ namespace qmcplusplus {
     }
 
     TrialWaveFunction* getWaveFunction(const std::string& pname) {
-      std::map<std::string,TrialWaveFunction*>::iterator pit(myPool.find(pname));
+      std::map<std::string,WaveFunctionFactory*>::iterator pit(myPool.find(pname));
       if(pit == myPool.end()) 
         return 0;
+      else 
+        return (*pit).second->targetPsi;
+    }
+
+    WaveFunctionFactory* getWaveFunctionFactory(const std::string& pname) { 
+      std::map<std::string,WaveFunctionFactory*>::iterator pit(myPool.find(pname));
+      if(pit == myPool.end()) { 
+        if(myPool.empty()) 
+        return 0;
+        else
+          return (*(myPool.begin())).second;
+      }
       else 
         return (*pit).second;
     }
@@ -77,10 +91,21 @@ namespace qmcplusplus {
      */
     xmlNodePtr getWaveFunctionNode(const std::string& id);
 
+    /** get the Pool object
+     */
+    inline PoolType& getPool() { return myPool;}
+
+    /** add a WaveFunctionFactory* to myPool
+     */
+    void addFactory(WaveFunctionFactory* psifac);
+
   private:
 
+    /// pointer to the primary TrialWaveFunction
     TrialWaveFunction* primaryPsi;
-    std::map<std::string,TrialWaveFunction*> myPool;
+
+    /// storage of WaveFunctionFactory
+    PoolType myPool;
 
     /** pointer to ParticleSetPool
      *
@@ -89,16 +114,6 @@ namespace qmcplusplus {
      */
     ParticleSetPool* ptclPool;
 
-    /** save the builder class to clean up at the end
-     */
-    std::vector<OrbitalBuilderBase*> orbitalBuilders;
-
-    std::map<std::string,xmlNodePtr> m_wfsPtr;
-
-    bool addJastrow(ParticleSet& targetPtcl, 
-        TrialWaveFunction& targetPsi,
-        xmlNodePtr cur);
-    bool addDeterminants(xmlNodePtr cur);
   };
 }
 #endif

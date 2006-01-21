@@ -23,15 +23,16 @@
 #ifndef QMCPLUSPLUS_QMCHAMILTONIANS_H
 #define QMCPLUSPLUS_QMCHAMILTONIANS_H
 
+#include "QMCHamiltonians/HamiltonianFactory.h"
 #include "OhmmsData/OhmmsElementBase.h"
 #include <map>
 
 namespace qmcplusplus {
 
   class ParticleSet;
-  class QMCHamiltonian;
   class ParticleSetPool;
   class WaveFunctionPool;
+  class Libxml2Document;
 
   /** @ingroup qmcapp
    * @brief Manage a collection of QMCHamiltonian objects
@@ -43,7 +44,7 @@ namespace qmcplusplus {
 
   public:
 
-    typedef std::map<std::string,QMCHamiltonian*> PoolType;
+    typedef std::map<std::string,HamiltonianFactory*> PoolType;
 
     HamiltonianPool(const char* aname = "hamiltonian");
 
@@ -71,7 +72,11 @@ namespace qmcplusplus {
       if(hit == myPool.end()) 
         return 0;
       else 
-        return (*hit).second;
+        return (*hit).second->targetH;
+    }
+
+    void setDocument(Libxml2Document* doc) {
+      curDoc=doc;
     }
 
     /** assign a pointer to a ParticleSetPool
@@ -82,9 +87,18 @@ namespace qmcplusplus {
      */
     inline void setWaveFunctionPool(WaveFunctionPool* pset) { psiPool=pset;}
 
-    void addCoulombPotential(xmlNodePtr cur, ParticleSet* target);
-    void addPseudoPotential(xmlNodePtr cur, ParticleSet* target);
-    void addCorePolPotential(xmlNodePtr cur, ParticleSet* target);
+    /** clone P/Psi/H 
+     * @param qp original ParticleSet to be cloned
+     * @param psi original TrialWaveFunction to be cloned
+     * @param h original QuantumHamiltonian to be cloned
+     * @param plist array containing the original and cloned ParticleSets
+     * @param olist array containing the original and cloned TrialWaveFunctions
+     * @param hlist array containing the original and cloned QMCHamiltonians
+     */
+    void clone(const ParticleSet& qp, const TrialWaveFunction& psi, const QMCHamiltonian& h,
+        vector<ParticleSet*>& plist, vector<TrialWaveFunction*>& olist, 
+        vector<QMCHamiltonian*>& hlist);
+
 
   private:
 
@@ -112,6 +126,11 @@ namespace qmcplusplus {
      */
     WaveFunctionPool* psiPool;
 
+
+    /** point to the working document */
+    Libxml2Document* curDoc;
+
+    /** storage for HamiltonianFactory */
     PoolType myPool;
   };
 }

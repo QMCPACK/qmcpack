@@ -24,9 +24,11 @@ SET(WFSRCS
   ../QMCWaveFunctions/ElectronGasOrbitalBuilder.cpp
   ../QMCWaveFunctions/ThreeBodyGeminal.cpp
   ../QMCWaveFunctions/ThreeBodyGeminalBuilder.cpp
+  ../QMCWaveFunctions/WaveFunctionFactory.cpp
   ../QMCHamiltonians/LocalPPotential.cpp
   ../QMCHamiltonians/NonLocalPPotential.cpp
   ../QMCHamiltonians/LocalCorePolPotential.cpp
+  ../QMCHamiltonians/HamiltonianFactory.cpp
 )
 
 IF(NOT QMCPLUSPLUS_RELEASE)
@@ -52,6 +54,7 @@ SET(QMCDRIVERS
   ../Estimators/ScalarEstimatorManager.cpp
   ../QMCDrivers/QMCOptimize.cpp
   ../QMCDrivers/QMCCostFunction.cpp
+  ../QMCDrivers/DMCPbyPOpenMP.cpp
 )
 
 IF(NOT QMCPLUSPLUS_RELEASE)

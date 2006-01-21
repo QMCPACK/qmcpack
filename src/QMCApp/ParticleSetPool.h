@@ -54,6 +54,8 @@ namespace qmcplusplus {
     ///return true, if the pool is empty
     inline bool empty() const { return myPool.empty();}
 
+    ///add a ParticleSet* to the pool
+    void addParticleSet(ParticleSet* p);
     /** get a named ParticleSet
      * @param pname name of the ParticleSet
      * @return a ParticleSet object with pname
@@ -87,6 +89,18 @@ namespace qmcplusplus {
     /** get the Pool object
      */
     inline PoolType& getPool() { return myPool;}
+
+    /** clone the ParticleSet with the name
+     * @param pname ParticleSet name which is cloned
+     * @param np number of copies
+     * @return vector<ParticleSet*> of np elements
+     *
+     * The first element is always the ParticleSet* of the original
+     * ParticleSet to be cloned.
+     * When OpenMP is enabled, each thread creates the ParticleSet
+     * @todo use vector<shared_ptr<ParticleSet> >
+    vector<ParticleSet*> clone(const string& pname, int np);
+     */
 
   private:
 
