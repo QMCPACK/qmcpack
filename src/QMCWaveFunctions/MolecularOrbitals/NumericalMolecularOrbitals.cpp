@@ -20,8 +20,12 @@
 #include "QMCWaveFunctions/MolecularOrbitals/GridMolecularOrbitals.h"
 #include "QMCWaveFunctions/LCOrbitals.h"
 #include "OhmmsData/AttributeSet.h"
+#if defined(HAVE_LIBHDF5)
 #include "Numerics/HDFSTLAttrib.h"
 #include "Numerics/HDFTriCubicSpline.h"
+#else
+#include "Numerics/TriCubicSplineT.h"
+#endif
 #include "Utilities/Clock.h"
 
 namespace qmcplusplus {
@@ -174,6 +178,7 @@ namespace qmcplusplus {
       }
     }
 
+#if defined(HAVE_LIBHDF5)
     for(int is=0; is<dat.size(); is++) {
       char oname[128];
       sprintf(oname,"out%04d.h5",is);
@@ -191,6 +196,7 @@ namespace qmcplusplus {
 
     //stop for now
     //OHMMS::Controller->finalize();
+#endif
     return true;
   }
 }

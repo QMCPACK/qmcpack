@@ -18,7 +18,6 @@
 #include "Numerics/SlaterTypeOrbital.h"
 #include "Numerics/Transform2GridFunctor.h"
 #include "Numerics/OneDimCubicSpline.h"
-#include "Numerics/HDFNumericAttrib.h"
 #include "QMCWaveFunctions/MolecularOrbitals/GridMolecularOrbitals.h"
 #include "QMCWaveFunctions/MolecularOrbitals/STO2GridBuilder.h"
 using namespace std;

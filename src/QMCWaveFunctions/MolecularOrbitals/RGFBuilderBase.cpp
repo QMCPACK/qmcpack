@@ -16,7 +16,9 @@
 #include "Utilities/OhmmsInfo.h"
 #include "Numerics/LibxmlNumericIO.h"
 #include "Numerics/OneDimCubicSpline.h"
+#if defined(HAVE_LIBHDF5)
 #include "Numerics/HDFNumericAttrib.h"
+#endif
 #include "QMCWaveFunctions/MolecularOrbitals/GridMolecularOrbitals.h"
 #include "QMCWaveFunctions/MolecularOrbitals/RGFBuilderBase.h"
 #include "QMCFactory/OneDimGridFactory.h"
@@ -26,9 +28,10 @@ namespace qmcplusplus {
   /** the destructor
   */
   RGFBuilderBase::~RGFBuilderBase() {
-    //clean up
+#if defined(HAVE_LIBHDF5)
     if(m_group_id>-1) H5Gclose(m_group_id);   
     if(m_file_id>-1) H5Fclose(m_file_id);   
+#endif
   }
 
   /** printout for debug

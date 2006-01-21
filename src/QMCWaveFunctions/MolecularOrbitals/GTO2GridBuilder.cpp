@@ -17,7 +17,6 @@
 #include "Numerics/LibxmlNumericIO.h"
 #include "Numerics/Transform2GridFunctor.h"
 #include "Numerics/OneDimCubicSpline.h"
-#include "Numerics/HDFNumericAttrib.h"
 #include "Numerics/GaussianBasisSet.h"
 #include "QMCWaveFunctions/MolecularOrbitals/GridMolecularOrbitals.h"
 #include "QMCWaveFunctions/MolecularOrbitals/GTO2GridBuilder.h"

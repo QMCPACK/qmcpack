@@ -18,7 +18,9 @@
 #include "Numerics/SlaterTypeOrbital.h"
 #include "Numerics/Transform2GridFunctor.h"
 #include "Numerics/OneDimCubicSpline.h"
+#if defined(HAVE_LIBHDF5)
 #include "Numerics/HDFNumericAttrib.h"
+#endif
 #include "QMCWaveFunctions/MolecularOrbitals/GridMolecularOrbitals.h"
 #include "QMCWaveFunctions/MolecularOrbitals/NumericalRGFBuilder.h"
 using namespace std;
@@ -28,6 +30,7 @@ namespace qmcplusplus {
 
   NumericalRGFBuilder::NumericalRGFBuilder(xmlNodePtr cur) {
 
+#if defined(HAVE_LIBHDF5)
     string afilename("invalid");
     OhmmsAttributeSet aAttrib;
     aAttrib.add(afilename,"href"); 
@@ -41,6 +44,7 @@ namespace qmcplusplus {
       m_file_id = H5Fopen(afilename.c_str(),H5F_ACC_RDWR,H5P_DEFAULT);
       XMLReport("Opening file: " << afilename)
     } 
+#endif
   }
 
   /**  Add a new numerical radial orbital with quantum numbers \f$(n,l,m,s)\f$ to the list of radial orbitals.
@@ -81,6 +85,7 @@ namespace qmcplusplus {
       att = att->next;
     }
 
+#if defined(HAVE_LIBHDF5)
     //open the group containing the proper orbital
     char grpname[128];
     sprintf(grpname,"orbital%04d",Counter++);
@@ -164,6 +169,10 @@ namespace qmcplusplus {
     }
 
     return true;
+#else
+    ERRORMSG("HDF5 is disabled.")
+    OHMMS::Controller->abort();
+#endif
   }
 
   /** Add a radial grid to the list of radial grids from a HDF5 file
@@ -189,7 +198,7 @@ namespace qmcplusplus {
       return false;
     }
 
-
+#if defined(HAVE_LIBHDF5)
     //create a grid and initialize it
     GridType* agrid = 0;
 
@@ -245,6 +254,10 @@ namespace qmcplusplus {
     }
     //exit(-1);
     return true;
+#else
+    ERRORMSG("HDF5 is disabled.")
+    OHMMS::Controller->abort();
+#endif
   }
   
 }
