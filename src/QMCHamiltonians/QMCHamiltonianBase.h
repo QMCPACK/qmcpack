@@ -77,9 +77,6 @@ namespace qmcplusplus {
     /** write about the class */
     virtual bool get(std::ostream& os) const =0;
     
-    /** clone the object */
-    virtual QMCHamiltonianBase* clone() = 0;
-
     /** set Tau
      * @param tau time step
      */
