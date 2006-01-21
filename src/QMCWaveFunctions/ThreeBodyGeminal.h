@@ -18,7 +18,8 @@
 #define QMCPLUSPLUS_THREEBODY_GEMINAL_H
 #include "Configuration.h"
 #include "QMCWaveFunctions/OrbitalBase.h"
-#include "QMCWaveFunctions/MolecularOrbitals/GTOMolecularOrbitals.h"
+//#include "QMCWaveFunctions/MolecularOrbitals/GTOMolecularOrbitals.h"
+#include "QMCWaveFunctions/MolecularOrbitals/GridMolecularOrbitals.h"
 
 namespace qmcplusplus {
 
@@ -29,7 +30,8 @@ namespace qmcplusplus {
 
   public:
 
-    typedef GTOMolecularOrbitals::BasisSetType BasisSetType;
+    //typedef GTOMolecularOrbitals::BasisSetType BasisSetType;
+    typedef GridMolecularOrbitals::BasisSetType BasisSetType;
 
     ///constructor
     ThreeBodyGeminal(ParticleSet& ions, ParticleSet& els);
