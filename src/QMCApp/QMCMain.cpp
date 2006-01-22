@@ -402,6 +402,9 @@ namespace qmcplusplus {
     }
 
     if(qmcDriver) {
+      app_log() << endl;
+      myProject.get(app_log());
+      app_log() << endl;
 
       //advance the project id 
       //if it is NOT the first qmc node and qmc/@append!='yes'

@@ -84,8 +84,11 @@ namespace qmcplusplus {
     otemp.resize(np,0);
 
     //allocate the data on each thread
-#pragma omp parallel for
-    for(int ip=0; ip<np; ip++) {
+//#pragma omp parallel for
+//    for(int ip=0; ip<np; ip++) {
+#pragma omp parallel 
+    {
+      omp_int_t ip=omp_get_thread_num();
       if(ip) {
         char pname[16],oname[16];
         sprintf(pname,"%s.c%i",qp.getName().c_str(),ip);
@@ -117,8 +120,11 @@ namespace qmcplusplus {
     vector<HamiltonianFactory*> htemp;
     htemp.resize(np,0);
 
-#pragma omp parallel for
-    for(int ip=0; ip<np; ip++) {
+//#pragma omp parallel for
+//    for(int ip=0; ip<np; ip++) {
+#pragma omp parallel 
+    {
+      omp_int_t ip=omp_get_thread_num();
       if(ip) {
         char hname[16];
         sprintf(hname,"%s.c%i",h.getName().c_str(),ip);
