@@ -18,12 +18,12 @@
 #include "Numerics/SlaterTypeOrbital.h"
 #include "Numerics/Transform2GridFunctor.h"
 #include "Numerics/OneDimCubicSpline.h"
-#if defined(HAVE_LIBHDF5)
-#include "Numerics/HDFNumericAttrib.h"
-#endif
 #include "QMCWaveFunctions/MolecularOrbitals/GridMolecularOrbitals.h"
 #include "QMCWaveFunctions/MolecularOrbitals/NumericalRGFBuilder.h"
 using namespace std;
+#if defined(HAVE_LIBHDF5)
+#include "Numerics/HDFNumericAttrib.h"
+#endif
 #include "OhmmsData/AttributeSet.h"
 
 namespace qmcplusplus {
@@ -93,8 +93,8 @@ namespace qmcplusplus {
 
     /*find the correct power such that:
       R(r)/r^l = rad_orb(r)/r^{power}*/
-    Vector<int> power;
-    HDFAttribIO<Vector<int> > PowerHDFIn(power);
+    Vector<int> Power;
+    HDFAttribIO<Vector<int> > PowerHDFIn(Power);
     PowerHDFIn.read(group_id_orb,"power");
 
     //check that the quantum numbers are consistent
@@ -117,7 +117,7 @@ namespace qmcplusplus {
     //pointer to the grid
     GridType* agrid = m_orbitals->Grids[0];
 
-    int rinv_p = power[0];    
+    int rinv_p = Power[0];    
     if(rinv_p != 0)
       for(int ig=0; ig<rad_orb.size(); ig++) 
         rad_orb[ig] *= pow(agrid->r(ig),-rinv_p);
