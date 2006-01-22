@@ -48,6 +48,28 @@ inline void FairDivide(int ntot, int npart, IV& adist) {
   }
   adist[npart]=ntot;
 }
+
+/** partition ntot elements among npart
+ * @param ntot total number of elements
+ * @param npart number of partitions
+ * @param adist distribution offset 
+ *
+ * adist[ip-1]-adist[ip] is the number of elements of ip partition
+ * This method makes the zero-th node equal to or less than 1.
+ */
+template<class IV>
+inline void FairDivideLow(int ntot, int npart, IV& adist) {
+  int bat=ntot/npart;
+  int residue = npart-ntot%npart;
+  adist[0] = 0;
+  for(int i=0; i<npart; i++) {
+    if(i<residue)
+      adist[i+1] = adist[i] + bat;
+    else
+      adist[i+1] = adist[i] + bat+1;
+  }
+}
+
 #endif
 /***************************************************************************
  * $RCSfile$   $Author$
