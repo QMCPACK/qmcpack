@@ -82,7 +82,7 @@ namespace qmcplusplus {
     SlaterDeterminant_t* sdet = addSlaterDeterminant(sdetPtr[0]);
     SlaterDetSet.push_back(sdet);
 
-    targetPsi.add(sdet);
+    targetPsi.addOrbital(sdet);
 
     //BasisSet needs to be resized
     if(MOBasisSet) MOBasisSet->resize(targetPtcl.getTotalNum());
