@@ -51,14 +51,26 @@ namespace qmcplusplus {
     wClones.resize(NumThreads,0);
     psiClones.resize(NumThreads,0);
     hClones.resize(NumThreads,0);
+    Rng.resize(NumThreads,0);
+    ranR.resize(NumThreads,0);
     wClones[0]=&W;
     psiClones[0]=&Psi;
     hClones[0]=&H;
+
     if(NumThreads == 1) {
       WARNMSG("Using a single thread with DMCPbyPOpenMP.")
       return;
     }
+
     hpool.clone(W,Psi,H,wClones,psiClones,hClones);
+
+#pragma omp parallel  
+    {
+      int ip = omp_get_thread_num();
+      Rng[ip]=new RandomGenerator_t();
+      Rng[ip]->init(ip,NumThreads,-1);
+      ranR[ip]=new ParticleSet::ParticlePos_t(W.getTotalNum());
+    }
   }
   
   bool DMCPbyPOpenMP::run() { 
@@ -71,11 +83,7 @@ namespace qmcplusplus {
 
     //property container to hold temporary properties, such as a local energy
     //MCWalkerConfiguration::PropertyContainer_t Properties;
-    MCWalkerConfiguration::Walker_t& thisWalker(**W.begin());
-
-    makeGaussRandom(deltaR); 
-
-    drift = W.R;
+    //MCWalkerConfiguration::Walker_t& thisWalker(**W.begin());
     //new poosition
     //W.R = m_sqrttau*deltaR + thisWalker.R + thisWalker.Drift;
 
@@ -104,11 +112,11 @@ namespace qmcplusplus {
         //for(int i=0; i<10000; i++) {
         MCWalkerConfiguration::iterator it(W.begin()+wPerNode[ip]); 
         MCWalkerConfiguration::iterator it_end(W.begin()+wPerNode[ip+1]); 
-        int i=0;
+        ParticleSet::ParticlePos_t& disp(*ranR[ip]);
         while(it != it_end) {
-          RealType x=static_cast<RealType>(i%10);
           Walker_t& thisWalker(**it);
-          wClones[ip]->R = x*m_sqrttau*deltaR + thisWalker.R;
+          makeGaussRandomWithEngine(disp,*Rng[ip]); 
+          wClones[ip]->R = m_sqrttau*(disp)+ thisWalker.R;
           //update the distance table associated with W
           wClones[ip]->update();
           //evaluate wave function
@@ -117,7 +125,7 @@ namespace qmcplusplus {
           ValueType logpsi(psiClones[ip]->evaluateLog(*wClones[ip]));
           RealType e = hClones[ip]->evaluate(*wClones[ip]);
           fout << logpsi << " " << e << endl;
-          ++i; ++it;
+          ++it;
         }
         //}
       }

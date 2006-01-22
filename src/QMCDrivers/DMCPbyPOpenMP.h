@@ -49,6 +49,8 @@ namespace qmcplusplus {
     vector<ParticleSet*> wClones;
     vector<TrialWaveFunction*> psiClones;
     vector<QMCHamiltonian*> hClones;
+    vector<RandomGenerator_t*> Rng;
+    vector<ParticleSet::ParticlePos_t*> ranR;
     vector<int> wPerNode;
   };
 }
