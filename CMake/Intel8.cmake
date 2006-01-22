@@ -16,11 +16,11 @@ ADD_DEFINITIONS(-DADD_ -DINLINE_ALL=inline)
 SET(CMAKE_CXX_FLAGS "-restrict -unroll -fno-alias -O3 -cxxlib-icc")
 SET(CMAKE_CC_FLAGS "-restrict -unroll -fno-alias -O3")
 
-IF(OHMMS_OMP)
+IF(QMC_OMP)
   SET(ENABLE_OPENMP 1)
   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -openmp")
 #-pch_dir ${ohmms_BINARY_DIR}/lib")
-ENDIF(OHMMS_OMP)
+ENDIF(QMC_OMP)
 
 
 #check if ia64 or ia32 and add the appropriate flags 
