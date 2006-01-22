@@ -21,6 +21,7 @@ SET (EXECUTABLE_OUTPUT_PATH ${qmcPlusPlus_BINARY_DIR}/bin CACHE PATH "Single out
 #choose parallel mode
 ######################
 OPTION(QMC_MPI "Enable MPI library" OFF)
+OPTION(QMC_OMP "Enable OpenMP parallelization" ON)
 
 ######################
 #1 to build static library
