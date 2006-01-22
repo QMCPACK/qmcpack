@@ -39,13 +39,14 @@ namespace qmcplusplus {
     typedef SimpleFixedNodeBranch           BranchEngineType;
 
     /// Constructor.
-    DMCPbyPUpdate(MCWalkerConfiguration& w, TrialWaveFunction& psi, 
+    DMCPbyPUpdate(ParticleSet& w, TrialWaveFunction& psi, 
         QMCHamiltonian& h, RandomGenerator_t& rg);
     ///destructor
     ~DMCPbyPUpdate();
 
     void advanceRejectNodeCrossing(WalkerIter_t it, WalkerIter_t it_end);
     void advanceKillNodeCrossing(WalkerIter_t it, WalkerIter_t it_end);
+    void benchMark(WalkerIter_t it, WalkerIter_t it_end, int ip);
 
     void resetRun(BranchEngineType* brancher);
     void resetBlock();
@@ -72,7 +73,7 @@ namespace qmcplusplus {
     RealType m_sqrttau;
 
     ///walker ensemble
-    MCWalkerConfiguration& W;
+    ParticleSet& W;
 
     ///trial function
     TrialWaveFunction& Psi;

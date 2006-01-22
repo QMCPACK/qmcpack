@@ -30,6 +30,12 @@ WalkerController(0)
   logN = Feed*log(static_cast<RealType>(Nideal));
 }
 
+SimpleFixedNodeBranch::SimpleFixedNodeBranch(const SimpleFixedNodeBranch& abranch)
+{
+  Tau=abranch.Tau;
+  E_T=abranch.E_T;
+}
+
 void SimpleFixedNodeBranch::reset() {
 
   WalkerController = CreateWalkerController(SwapMode, Nideal, Nmax, Nmin, WalkerController);

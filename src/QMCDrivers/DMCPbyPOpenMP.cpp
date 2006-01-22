@@ -52,7 +52,7 @@ namespace qmcplusplus {
     psiClones.resize(NumThreads,0);
     hClones.resize(NumThreads,0);
     Rng.resize(NumThreads,0);
-    ranR.resize(NumThreads,0);
+
     wClones[0]=&W;
     psiClones[0]=&Psi;
     hClones[0]=&H;
@@ -64,70 +64,51 @@ namespace qmcplusplus {
 
     hpool.clone(W,Psi,H,wClones,psiClones,hClones);
 
+  }
+
+  void DMCPbyPOpenMP::resetRun() {
+
+    if(Movers.empty()) {
+      Movers.resize(NumThreads,0);
 #pragma omp parallel  
-    {
-      int ip = omp_get_thread_num();
-      Rng[ip]=new RandomGenerator_t();
-      Rng[ip]->init(ip,NumThreads,-1);
-      ranR[ip]=new ParticleSet::ParticlePos_t(W.getTotalNum());
+      {
+        int ip = omp_get_thread_num();
+        Rng[ip]=new RandomGenerator_t();
+        Rng[ip]->init(ip,NumThreads,-1);
+        Movers[ip] = new DMCPbyPUpdate(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]); 
+        Movers[ip]->resetRun(new BranchEngineType(*branchEngine));
+      }
     }
   }
   
   bool DMCPbyPOpenMP::run() { 
     
-    m_oneover2tau = 0.5/Tau;
-    m_sqrttau = sqrt(Tau);
-    
-    //cout << "Lattice of ParticleSet " << endl;
-    //W.Lattice.print(cout);
+    //set the collection mode for the estimator
+    Estimators->setCollectionMode(branchEngine->SwapMode);
 
-    //property container to hold temporary properties, such as a local energy
-    //MCWalkerConfiguration::PropertyContainer_t Properties;
-    //MCWalkerConfiguration::Walker_t& thisWalker(**W.begin());
-    //new poosition
-    //W.R = m_sqrttau*deltaR + thisWalker.R + thisWalker.Drift;
+    IndexType PopIndex = Estimators->addColumn("Population");
+    IndexType EtrialIndex = Estimators->addColumn("Etrial");
+    Estimators->reportHeader(AppendRun);
+    Estimators->reset();
 
-    int n=W.getActiveWalkers()/NumThreads;
+    IndexType block = 0;
+    RealType Eest = branchEngine->E_T;
+
+    resetRun();
+
     for(int ip=0; ip<NumThreads; ip++) {
-      wPerNode[ip+1]=wPerNode[ip]+n;
+      char fname[16];
+      sprintf(fname,"test.%i",ip);
+      ofstream fout(fname);
     }
 
-    
-    for(int ip=0; ip<NumThreads; ip++) {
-        char fname[16];
-        sprintf(fname,"test.%i",ip);
-        ofstream fout(fname);
-    }
-//#pragma omp parallel for
-//    for(int ip=0; ip<np; ip++) {
-
-    //TESTING
     for(int istep=0; istep<nSteps; istep++) {
+
+      FairDivideLow(W.getActiveWalkers(),NumThreads,wPerNode);
 #pragma omp parallel  
       {
         int ip = omp_get_thread_num();
-        char fname[16];
-        sprintf(fname,"test.%i",ip);
-        ofstream fout(fname,ios::app);
-        //for(int i=0; i<10000; i++) {
-        MCWalkerConfiguration::iterator it(W.begin()+wPerNode[ip]); 
-        MCWalkerConfiguration::iterator it_end(W.begin()+wPerNode[ip+1]); 
-        ParticleSet::ParticlePos_t& disp(*ranR[ip]);
-        while(it != it_end) {
-          Walker_t& thisWalker(**it);
-          makeGaussRandomWithEngine(disp,*Rng[ip]); 
-          wClones[ip]->R = m_sqrttau*(disp)+ thisWalker.R;
-          //update the distance table associated with W
-          wClones[ip]->update();
-          //evaluate wave function
-          //update the properties: note that we are getting \f$\sum_i \ln(|psi_i|)\f$ and catching the sign separately
-          //ValueType logpsi(Psi.evaluateLog(*newPtclSets[ip]));
-          ValueType logpsi(psiClones[ip]->evaluateLog(*wClones[ip]));
-          RealType e = hClones[ip]->evaluate(*wClones[ip]);
-          fout << logpsi << " " << e << endl;
-          ++it;
-        }
-        //}
+        Movers[ip]->benchMark(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1],ip);
       }
     }
     return true;

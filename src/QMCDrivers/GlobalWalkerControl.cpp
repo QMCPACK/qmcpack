@@ -20,27 +20,6 @@
 #include "Utilities/UtilityFunctions.h"
 using namespace qmcplusplus;
 
-/** partition ntot elements among npart
- * @param ntot total number of elements
- * @param npart number of partitions
- * @param adist distribution offset 
- *
- * adist[ip-1]-adist[ip] is the number of elements of ip partition
- * This method makes the zero-th node equal to or less than 1.
- */
-template<class IV>
-inline void FairPartition(int ntot, int npart, IV& adist) {
-  int bat=ntot/npart;
-  int residue = npart-ntot%npart;
-  adist[0] = 0;
-  for(int i=0; i<npart; i++) {
-    if(i<residue)
-      adist[i+1] = adist[i] + bat;
-    else
-      adist[i+1] = adist[i] + bat+1;
-  }
-}
-
 /** default constructor
  *
  * set SwapMode
@@ -109,7 +88,7 @@ void GlobalWalkerControl::swapWalkersAsync(MCWalkerConfiguration& W) {
 
   OffSet[0]=0;
   for(int i=0; i<NumContexts; i++) OffSet[i+1]=OffSet[i]+NumPerNode[i];
-  FairPartition(Cur_pop,NumContexts,FairOffSet);
+  FairDivideLow(Cur_pop,NumContexts,FairOffSet);
 
   int toLeft=FairOffSet[MyContext]-OffSet[MyContext];
   int toRight=FairOffSet[MyContext+1]-OffSet[MyContext+1];
@@ -196,7 +175,7 @@ void GlobalWalkerControl::swapWalkersBlocked(MCWalkerConfiguration& W) {
 
   OffSet[0]=0;
   for(int i=0; i<NumContexts; i++) OffSet[i+1]=OffSet[i]+NumPerNode[i];
-  FairPartition(Cur_pop,NumContexts,FairOffSet);
+  FairDivideLow(Cur_pop,NumContexts,FairOffSet);
 
   int toLeft=FairOffSet[MyContext]-OffSet[MyContext];
   int toRight=FairOffSet[MyContext+1]-OffSet[MyContext+1];

@@ -20,6 +20,7 @@
 #ifndef QMCPLUSPLUS_DMC_PARTICLEBYPARTICLE_OPNEMP_H
 #define QMCPLUSPLUS_DMC_PARTICLEBYPARTICLE_OPNEMP_H
 #include "QMCDrivers/QMCDriver.h" 
+#include "QMCDrivers/DMCPbyPUpdate.h" 
 namespace qmcplusplus {
 
 
@@ -46,12 +47,15 @@ namespace qmcplusplus {
     DMCPbyPOpenMP& operator=(const DMCPbyPOpenMP&) { return *this;}
 
     int NumThreads;
+
+    vector<DMCPbyPUpdate*> Movers;
     vector<ParticleSet*> wClones;
     vector<TrialWaveFunction*> psiClones;
     vector<QMCHamiltonian*> hClones;
     vector<RandomGenerator_t*> Rng;
-    vector<ParticleSet::ParticlePos_t*> ranR;
     vector<int> wPerNode;
+
+    void resetRun();
   };
 }
 

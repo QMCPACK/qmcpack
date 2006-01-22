@@ -28,10 +28,8 @@
 namespace qmcplusplus { 
 
   /// Constructor.
-  DMCPbyPUpdate::DMCPbyPUpdate(MCWalkerConfiguration& w, 
-      TrialWaveFunction& psi, QMCHamiltonian& h,
-      RandomGenerator_t& rg):
-    W(w),Psi(psi),H(h), RandomGen(rg)
+  DMCPbyPUpdate::DMCPbyPUpdate(ParticleSet& w, TrialWaveFunction& psi, QMCHamiltonian& h,
+      RandomGenerator_t& rg): W(w),Psi(psi),H(h), RandomGen(rg)
     { }
   
   /// destructor
@@ -49,6 +47,8 @@ namespace qmcplusplus {
     Tau=brancher->Tau;
     m_oneover2tau = 1.0/(2.0*Tau);
     m_sqrttau = sqrt(Tau);
+
+    cout << "Tau " << Tau << endl;
   }
 
   void DMCPbyPUpdate::resetBlock() {
@@ -259,6 +259,23 @@ namespace qmcplusplus {
       nAccept += nAcceptTemp;
       nReject += nRejectTemp;
       ++it;
+    }
+  }
+
+  void DMCPbyPUpdate::benchMark(WalkerIter_t it, WalkerIter_t it_end, int ip) {
+    char fname[16];
+    sprintf(fname,"test.%i",ip);
+    ofstream fout(fname,ios::app);
+    int i=0;
+    while(it != it_end) {
+      Walker_t& thisWalker(**it);
+      makeGaussRandomWithEngine(deltaR,RandomGen); 
+      W.R = m_sqrttau*deltaR+ thisWalker.R;
+      W.update();
+      ValueType logpsi(Psi.evaluateLog(W));
+      RealType e = H.evaluate(W);
+      fout <<  i << " " << logpsi << " " << e << endl;
+      ++it;++i;
     }
   }
 }

@@ -78,6 +78,9 @@ namespace qmcplusplus {
      ///Constructor
      SimpleFixedNodeBranch(RealType tau, int nideal);
 
+     ///copy constructor
+     SimpleFixedNodeBranch(const SimpleFixedNodeBranch& abranch);
+
      //inline void setSwapWalkers(bool swap) { SwapWalkers=swap;}
      //inline bool swapWalkers() { return SwapWalkers;}
 
