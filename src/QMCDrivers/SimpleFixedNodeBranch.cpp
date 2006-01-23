@@ -99,6 +99,15 @@ bool SimpleFixedNodeBranch::put(xmlNodePtr cur){
   return true;
 }
 
+int SimpleFixedNodeBranch::branch(int iter, MCWalkerConfiguration& w, vector<ThisType*>& clones) {
+
+  for(int i=0; i<clones.size(); i++) {
+    Counter += clones[i]->Counter;
+    EavgSum += clones[i]->EavgSum;
+    WgtSum += clones[i]->WgtSum;
+  }
+  return WalkerController->branch(iter,w,PopControl);
+}
 
 #if defined(HAVE_LIBHDF5)
 void SimpleFixedNodeBranch::write(hid_t grp, bool append) {

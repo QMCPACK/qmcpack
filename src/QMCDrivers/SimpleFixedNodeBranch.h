@@ -44,6 +44,8 @@ namespace qmcplusplus {
 
    public:
 
+     typedef SimpleFixedNodeBranch ThisType;
+
      ///boolean to swap walkers among processors
      int SwapMode;
      ///counts the number of times update has been called
@@ -122,6 +124,9 @@ namespace qmcplusplus {
      inline int branch(int iter, MCWalkerConfiguration& w) {
        return WalkerController->branch(iter,w,PopControl);
      }
+
+     int branch(int iter, MCWalkerConfiguration& w, vector<ThisType*>& clones);
+
 
      /** restart averaging
       * @param counter Counter to determine the cummulative average will be reset.

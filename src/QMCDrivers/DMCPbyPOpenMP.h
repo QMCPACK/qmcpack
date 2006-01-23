@@ -41,6 +41,22 @@ namespace qmcplusplus {
     bool put(xmlNodePtr cur);
  
   private:
+    ///Index to determine what to do when node crossing is detected
+    IndexType KillNodeCrossing;
+    ///Column index for Populaton
+    IndexType PopIndex;
+    ///Column index for E_T
+    IndexType EtrialIndex;
+    ///Total number of accepted steps per block
+    IndexType nAcceptTot;
+    ///Total number of rejected steps per block
+    IndexType nRejectTot;
+    ///hdf5 file name for Branch conditions
+    string BranchInfo;
+    ///input string to determine kill walkers or not
+    string KillWalker;
+    ///input string to determine swap walkers among mpi processors
+    string SwapWalkers;
     /// Copy Constructor (disabled)
     DMCPbyPOpenMP(const DMCPbyPOpenMP& a): QMCDriver(a) { }
     /// Copy operator (disabled).
@@ -53,9 +69,11 @@ namespace qmcplusplus {
     vector<TrialWaveFunction*> psiClones;
     vector<QMCHamiltonian*> hClones;
     vector<RandomGenerator_t*> Rng;
+    vector<BranchEngineType*> branchClones;
     vector<int> wPerNode;
 
     void resetRun();
+    bool benchMark();
   };
 }
 

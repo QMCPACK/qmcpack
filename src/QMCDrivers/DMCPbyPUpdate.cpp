@@ -47,8 +47,6 @@ namespace qmcplusplus {
     Tau=brancher->Tau;
     m_oneover2tau = 1.0/(2.0*Tau);
     m_sqrttau = sqrt(Tau);
-
-    cout << "Tau " << Tau << endl;
   }
 
   void DMCPbyPUpdate::resetBlock() {
@@ -56,6 +54,44 @@ namespace qmcplusplus {
     nReject=0;
     nAllRejected = 0;
     nNodeCrossing=0;
+  }
+
+  void DMCPbyPUpdate::resetEtrial(RealType et) {
+    branchEngine->E_T=et;
+    branchEngine->flush(0);
+  }
+
+  void DMCPbyPUpdate::initialize(WalkerIter_t it, WalkerIter_t it_end) {
+    while(it != it_end) {
+      (*it)->DataSet.rewind();
+      W.registerData(**it,(*it)->DataSet);
+      ValueType logpsi=Psi.registerData(W,(*it)->DataSet);
+
+      RealType vsq = Dot(W.G,W.G);
+      RealType scale = ((-1.0+sqrt(1.0+2.0*Tau*vsq))/vsq);
+      (*it)->Drift = scale*W.G;
+
+      RealType ene = H.evaluate(W);
+      (*it)->resetProperty(logpsi,Psi.getSign(),ene);
+      H.saveProperty((*it)->getPropertyBase());
+      ++it;
+    } 
+  }
+
+  void DMCPbyPUpdate::updateWalkers(WalkerIter_t it, WalkerIter_t it_end) {
+    while(it != it_end) {
+      Buffer_t& w_buffer((*it)->DataSet);
+      w_buffer.rewind();
+      W.updateBuffer(**it,w_buffer);
+      ValueType logpsi=Psi.updateBuffer(W,w_buffer);
+      RealType enew= H.evaluate(W);
+      (*it)->resetProperty(logpsi,Psi.getSign(),enew);
+      H.saveProperty((*it)->getPropertyBase());
+      ValueType vsq = Dot(W.G,W.G);
+      ValueType scale = ((-1.0+sqrt(1.0+2.0*Tau*vsq))/vsq);
+      (*it)->Drift = scale*W.G;
+      ++it;
+    }
   }
 
   /** advance all the walkers with killnode==yes
@@ -170,8 +206,8 @@ namespace qmcplusplus {
    * as a normal rejection.
    */
   void DMCPbyPUpdate::advanceRejectNodeCrossing(WalkerIter_t it, WalkerIter_t it_end) {
+    int item=0;
     while(it != it_end) {
-
       //MCWalkerConfiguration::WalkerData_t& w_buffer = *(W.DataSet[iwalker]);
       Walker_t& thisWalker(**it);
       Buffer_t& w_buffer(thisWalker.DataSet);

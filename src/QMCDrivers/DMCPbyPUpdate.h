@@ -44,12 +44,16 @@ namespace qmcplusplus {
     ///destructor
     ~DMCPbyPUpdate();
 
+    void initialize(WalkerIter_t it, WalkerIter_t it_end);
+    void updateWalkers(WalkerIter_t it, WalkerIter_t it_end);
+
     void advanceRejectNodeCrossing(WalkerIter_t it, WalkerIter_t it_end);
     void advanceKillNodeCrossing(WalkerIter_t it, WalkerIter_t it_end);
     void benchMark(WalkerIter_t it, WalkerIter_t it_end, int ip);
 
     void resetRun(BranchEngineType* brancher);
     void resetBlock();
+    void resetEtrial(RealType et);
 
     ///counter for number of moves accepted
     IndexType nAccept;
