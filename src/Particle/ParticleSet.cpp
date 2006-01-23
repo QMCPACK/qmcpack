@@ -28,12 +28,16 @@ namespace qmcplusplus {
 
   ParticleSet::ParticleSet(): SK(0) {
     initParticleSet();
+
+    initPropertyList();
   }
 
   ParticleSet::ParticleSet(const ParticleSet& p): SK(0), mySpecies(p.mySpecies) {
     initBase();
     initParticleSet();
     assign(p);
+    
+    initPropertyList();
   }
 
   ParticleSet::~ParticleSet() {
@@ -164,6 +168,14 @@ namespace qmcplusplus {
       DistTables[i]->registerData(buf);
     }
   }
+
+  void 
+  ParticleSet::registerData(PooledData<RealType>& buf) {
+    for(int i=0; i< DistTables.size(); i++) {
+      DistTables[i]->evaluate(*this);
+      DistTables[i]->registerData(buf);
+    }
+  }
   
   void 
   ParticleSet::updateBuffer(Walker_t& awalker, PooledData<RealType>& buf) {
@@ -188,6 +200,14 @@ namespace qmcplusplus {
     }
   }
 
+  void ParticleSet::initPropertyList() {
+    //Need to add the default Properties according to the enumeration
+    PropertyList.add("LogPsi");
+    PropertyList.add("SignPsi");
+    PropertyList.add("UmbrellaWeight");
+    PropertyList.add("LocalEnergy");
+    PropertyList.add("LocalPotential");
+  }
 }
 
 /***************************************************************************

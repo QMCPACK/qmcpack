@@ -26,14 +26,15 @@ using namespace qmcplusplus;
 
 MCWalkerConfiguration::MCWalkerConfiguration(): 
 OwnWalkers(true),ReadyForPbyP(false),UpdateMode(Update_Walker) {
-  initPropertyList();
+  //move to ParticleSet
+  //initPropertyList();
 }
 
 MCWalkerConfiguration::MCWalkerConfiguration(const MCWalkerConfiguration& mcw)
 : ParticleSet(mcw), OwnWalkers(true),
   UpdateMode(Update_Walker), ReadyForPbyP(false)
 {
-  initPropertyList();
+  //initPropertyList();
 }
 
 ///default destructor
@@ -193,14 +194,14 @@ void MCWalkerConfiguration::resetWalkerProperty(int ncopy) {
   }
 }
 
-void MCWalkerConfiguration::initPropertyList() {
-  //Need to add the default Properties according to the enumeration
-  PropertyList.add("LogPsi");
-  PropertyList.add("SignPsi");
-  PropertyList.add("UmbrellaWeight");
-  PropertyList.add("LocalEnergy");
-  PropertyList.add("LocalPotential");
-}
+//void MCWalkerConfiguration::initPropertyList() {
+//  //Need to add the default Properties according to the enumeration
+//  PropertyList.add("LogPsi");
+//  PropertyList.add("SignPsi");
+//  PropertyList.add("UmbrellaWeight");
+//  PropertyList.add("LocalEnergy");
+//  PropertyList.add("LocalPotential");
+//}
 
 //int 
 //MCWalkerConfiguration::branch(int maxcopy, int Nmax, int Nmin, bool swap) {

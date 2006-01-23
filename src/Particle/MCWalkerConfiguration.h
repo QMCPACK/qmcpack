@@ -197,8 +197,8 @@ namespace qmcplusplus {
     /** initialize the PropertyList
      *
      * Add the named values of the default properties
-     */
     void initPropertyList();
+     */
   };
 }
 #endif

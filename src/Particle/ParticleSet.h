@@ -127,6 +127,7 @@ namespace qmcplusplus {
      */
     void acceptMove(Index_t iat);
 
+    void initPropertyList();
     inline int addProperty(const string& pname) {
       return PropertyList.add(pname.c_str());
     }
@@ -143,6 +144,7 @@ namespace qmcplusplus {
    void applyBC(ParticlePos_t& pos);
    void applyBC(const ParticlePos_t& pin, ParticlePos_t& pout, int first, int last);
 
+   void registerData(PooledData<RealType>& buf);
    void registerData(Walker_t& awalker, PooledData<RealType>& buf);
    void updateBuffer(Walker_t& awalker, PooledData<RealType>& buf);
    void copyToBuffer(PooledData<RealType>& buf);
