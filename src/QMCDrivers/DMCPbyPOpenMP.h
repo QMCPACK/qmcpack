@@ -62,6 +62,7 @@ namespace qmcplusplus {
     /// Copy operator (disabled).
     DMCPbyPOpenMP& operator=(const DMCPbyPOpenMP&) { return *this;}
 
+    string BenchMarkRun;
     int NumThreads;
 
     vector<DMCPbyPUpdate*> Movers;
@@ -74,6 +75,7 @@ namespace qmcplusplus {
 
     void resetRun();
     bool benchMark();
+    bool runDMC();
   };
 }
 

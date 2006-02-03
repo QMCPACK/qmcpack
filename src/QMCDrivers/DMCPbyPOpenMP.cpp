@@ -33,7 +33,8 @@ namespace qmcplusplus {
   DMCPbyPOpenMP::DMCPbyPOpenMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h):
     QMCDriver(w,psi,h),
     KillNodeCrossing(0),
-    PopIndex(-1), EtrialIndex(-1){
+    PopIndex(-1), EtrialIndex(-1),
+    BenchMarkRun("no"){
     RootName = "dummy";
     QMCType ="dummy";
     NumThreads=omp_get_max_threads();
@@ -43,6 +44,7 @@ namespace qmcplusplus {
     QMCDriverMode.set(QMC_MULTIPLE,1);
 
     m_param.add(KillWalker,"killnode","string");
+    m_param.add(BenchMarkRun,"benchmark","string");
   }
 
   void DMCPbyPOpenMP::makeClones(HamiltonianPool& hpool, int np) {
@@ -97,8 +99,17 @@ namespace qmcplusplus {
       }
     }
   }
-  
+
   bool DMCPbyPOpenMP::run() {
+    if(BenchMarkRun == "yes")  {
+      app_log() << "  Running DMCPbyPOpenMP::benchMark " << endl;
+      return benchMark();
+    } else 
+      return runDMC();
+  }
+  
+  bool DMCPbyPOpenMP::runDMC() {
+
     KillNodeCrossing = (KillWalker == "yes");
     if(KillNodeCrossing) {
       app_log() << "Walkers will be killed if a node crossing is detected." << endl;
@@ -200,6 +211,7 @@ namespace qmcplusplus {
     Estimators->finalize();
     return true;
   }
+
 
   bool DMCPbyPOpenMP::benchMark() { 
     
