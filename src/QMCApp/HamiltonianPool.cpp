@@ -89,6 +89,8 @@ namespace qmcplusplus {
 #pragma omp parallel 
     {
       omp_int_t ip=omp_get_thread_num();
+#pragma omp critical 
+      {
       if(ip) {
         char pname[16],oname[16];
         sprintf(pname,"%s.c%i",qp.getName().c_str(),ip);
@@ -97,6 +99,7 @@ namespace qmcplusplus {
 
         sprintf(oname,"%s.c%i",psi.getName().c_str(),ip);
         otemp[ip]= psiFac->clone(plist[ip],ip,oname);
+      }
       }
     }
     
@@ -125,10 +128,13 @@ namespace qmcplusplus {
 #pragma omp parallel 
     {
       omp_int_t ip=omp_get_thread_num();
-      if(ip) {
-        char hname[16];
-        sprintf(hname,"%s.c%i",h.getName().c_str(),ip);
-        htemp[ip]= hFac->clone(plist[ip],olist[ip],ip,hname);
+#pragma omp critical 
+      {
+        if(ip) {
+          char hname[16];
+          sprintf(hname,"%s.c%i",h.getName().c_str(),ip);
+          htemp[ip]= hFac->clone(plist[ip],olist[ip],ip,hname);
+        }
       }
     }
 
