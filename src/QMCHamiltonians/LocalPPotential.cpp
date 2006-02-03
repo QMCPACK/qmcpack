@@ -23,7 +23,7 @@
 #include "Numerics/OneDimGridBase.h"
 #include "Numerics/OneDimGridFunctor.h"
 #include "Numerics/OneDimCubicSpline.h"
-#include "Numerics/HDFNumericAttrib.h"
+//#include "Numerics/HDFNumericAttrib.h"
 #include "Utilities/SimpleParser.h"
 #include "Utilities/OhmmsInfo.h"
 

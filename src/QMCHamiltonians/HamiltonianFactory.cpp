@@ -52,7 +52,14 @@ namespace qmcplusplus {
     bool attach2Node=false;
     if(buildtree) {
       if(myNode == NULL) {
-        myNode = xmlCopyNode(cur,2);
+//#if (LIBXMLD_VERSION < 20616)
+//        app_warning() << "   Workaround of libxml2 bug prior to 2.6.x versions" << endl;
+//        myNode = xmlCopyNode(cur,2);
+//#else
+//        app_warning() << "   using libxml2 2.6.x versions" << endl;
+//        myNode = xmlCopyNode(cur,1);
+//#endif
+        myNode = xmlCopyNode(cur,1);
       } else {
         attach2Node=true;
       }
