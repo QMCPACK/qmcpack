@@ -20,14 +20,17 @@
 #include "Particle/MCWalkerConfiguration.h"
 #include "Particle/HDFWalkerInput0.h"
 #include "OhmmsPETE/OhmmsVector.h"
+#if defined(HAVE_LIBHDF5)
 #include "Particle/HDFParticleAttrib.h"
 #include "Numerics/HDFNumericAttrib.h"
+#endif
 #include "Utilities/OhmmsInfo.h"
 #include "Utilities/RandomGenerator.h"
 #include "OhmmsData/FileUtility.h"
 using namespace qmcplusplus;
 
 
+#if defined(HAVE_LIBHDF5)
 /** Open the HDF5 file "aroot.config.h5" for reading. 
  *@param aroot the root file name
  *
@@ -259,6 +262,33 @@ void  HDFWalkerInput0::getRandomState(bool restart){
     }
   }
 }
+#else
+HDFWalkerInput0::HDFWalkerInput0(const string& aroot, int ipart, int nparts):
+Counter(0), NumSets(0) {
+  ERRORMSG("HDF5 is disabled")
+}
+
+/** Destructor closes the HDF5 file and main group. */
+HDFWalkerInput0::~HDFWalkerInput0() {
+  ERRORMSG("HDF5 is disabled")
+}
+
+bool  
+HDFWalkerInput0::put(MCWalkerConfiguration& W, int ic){
+  ERRORMSG("HDF5 is disabled")
+  return false;
+}
+
+bool  
+HDFWalkerInput0::append(MCWalkerConfiguration& W, int blocks){
+  ERRORMSG("HDF5 is disabled")
+  return false;
+}
+
+void  HDFWalkerInput0::getRandomState(bool restart){
+  ERRORMSG("HDF5 is disabled")
+}
+#endif
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$

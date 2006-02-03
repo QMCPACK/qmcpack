@@ -18,8 +18,10 @@
 #include "Particle/MCWalkerConfiguration.h"
 #include "Particle/HDFWalkerInputCollect.h"
 #include "OhmmsPETE/OhmmsVector.h"
+#if defined(HAVE_LIBHDF5)
 #include "Particle/HDFParticleAttrib.h"
 #include "Numerics/HDFNumericAttrib.h"
+#endif
 #include "Utilities/OhmmsInfo.h"
 #include "Utilities/RandomGenerator.h"
 #include "OhmmsData/FileUtility.h"
@@ -40,6 +42,7 @@ HDFWalkerInputCollect::~HDFWalkerInputCollect() {
   close();
 }
 
+#if defined(HAVE_LIBHDF5)
 bool 
 HDFWalkerInputCollect::open(const string& aroot) {
 
@@ -276,6 +279,41 @@ void HDFWalkerInputCollect::distribute(hsize_t nw) {
       OffSet[i+1] = OffSet[i] + bat+1;
   }
 }
+#else
+bool 
+HDFWalkerInputCollect::open(const string& aroot) {
+  return false;
+}
+
+bool HDFWalkerInputCollect::close() {
+  return false;
+}
+
+void HDFWalkerInputCollect::readRandomState() {
+}
+
+bool 
+HDFWalkerInputCollect::put(MCWalkerConfiguration& W, int rollback) {
+  return false;
+}
+
+bool HDFWalkerInputCollect::putSingle(MCWalkerConfiguration& W) {
+  return false;
+}
+
+bool
+HDFWalkerInputCollect::rewind(MCWalkerConfiguration& W, int rollback) {
+  return false;
+}
+
+bool 
+HDFWalkerInputCollect::read(MCWalkerConfiguration& W, int firstConf, int lastConf) {
+  return false;
+}
+
+void HDFWalkerInputCollect::distribute(hsize_t nw) {
+}
+#endif
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$

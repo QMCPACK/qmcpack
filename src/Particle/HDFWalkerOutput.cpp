@@ -20,13 +20,16 @@
 #include "Particle/MCWalkerConfiguration.h"
 #include "Particle/HDFWalkerOutput.h"
 #include "OhmmsPETE/OhmmsVector.h"
+#if defined(HAVE_LIBHDF5)
 #include "Particle/HDFParticleAttrib.h"
 #include "Numerics/HDFNumericAttrib.h"
+#endif
 #include "Utilities/OhmmsInfo.h"
 #include "Utilities/RandomGenerator.h"
 #include "OhmmsData/FileUtility.h"
 using namespace qmcplusplus;
 
+#if defined(HAVE_LIBHDF5)
 /** Create the HDF5 file "aroot.config.h5" for output. 
  *@param aroot the root file name
  *@param append 
@@ -127,6 +130,24 @@ bool HDFWalkerOutput::get(MCWalkerConfiguration& W) {
   
   return true;
 }
+#else
+HDFWalkerOutput::HDFWalkerOutput(const string& aroot, bool append, int count)
+  : Counter(count) {
+}
+
+/** Destructor closes the HDF5 file and main group. */
+
+HDFWalkerOutput::~HDFWalkerOutput() {
+}
+
+
+/** Write the set of walker configurations to the HDF5 file.  
+ *@param W set of walker configurations
+ */
+bool HDFWalkerOutput::get(MCWalkerConfiguration& W) {
+  return false;
+}
+#endif
 
 /***************************************************************************
  * $RCSfile$   $Author$
