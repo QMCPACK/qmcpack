@@ -42,7 +42,7 @@ namespace qmcplusplus {
     bool attach2Node=false;
     if(buildtree) {
       if(myNode == NULL) {
-        myNode = xmlCopyNode(cur,2);
+        myNode = xmlCopyNode(cur,1);
       } else {
         attach2Node=true;
       }
