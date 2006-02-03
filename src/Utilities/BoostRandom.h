@@ -119,6 +119,7 @@ public:
     rout << uni->engine();
   }
 
+#if defined(HAVE_LIBHDF5)
   /** read the state from a hdf5 group
    * @param gid group id
    */
@@ -150,6 +151,7 @@ public:
       H5Sclose(dataspace);
     }
   }
+#endif
 
 private:
   uint32_t baseSeed;
