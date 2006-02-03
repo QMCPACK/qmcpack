@@ -26,6 +26,7 @@
 #include "hdf5.h"
 #else
 typedef int hid_t;
+typedef std::size_t hsize_t;
 #endif
 
 /*\class HDFParticleAttribBase
