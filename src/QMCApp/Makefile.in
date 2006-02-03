@@ -153,6 +153,8 @@ QMC_DRIVERS = \
   ../QMCDrivers/QMCOptimize.cpp\
   ../QMCDrivers/QMCCostFunction.cpp\
   ../QMCDrivers/DMCPbyPOpenMP.cpp \
+  ../QMCDrivers/DMCPbyPUpdate.cpp \
+  ../QMCDrivers/DMCPbyP.cpp \
   ../Estimators/ScalarEstimatorManager.cpp
 
 
@@ -208,7 +210,8 @@ am__objects_2 = SimpleFixedNodeBranch.$(OBJEXT) QMCDriver.$(OBJEXT) \
 	VMCParticleByParticle.$(OBJEXT) MolecuDMC.$(OBJEXT) \
 	DMCParticleByParticle.$(OBJEXT) WalkerControlBase.$(OBJEXT) \
 	QMCOptimize.$(OBJEXT) QMCCostFunction.$(OBJEXT) \
-	DMCPbyPOpenMP.$(OBJEXT) ScalarEstimatorManager.$(OBJEXT)
+	DMCPbyPOpenMP.$(OBJEXT) DMCPbyPUpdate.$(OBJEXT) \
+	DMCPbyP.$(OBJEXT) ScalarEstimatorManager.$(OBJEXT)
 @NEEDTOBUILDOOMPI_TRUE@am__objects_3 = GlobalWalkerControl.$(OBJEXT)
 am__objects_4 = ParticleSetPool.$(OBJEXT) WaveFunctionPool.$(OBJEXT) \
 	HamiltonianPool.$(OBJEXT) InitMolecularSystem.$(OBJEXT) \
@@ -225,7 +228,8 @@ depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
 @AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/Any2GridBuilder.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/DMCParticleByParticle.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/DMCPbyPOpenMP.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/DMCPbyP.Po ./$(DEPDIR)/DMCPbyPOpenMP.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/DMCPbyPUpdate.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/DummyQMC.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ElectronGasOrbitalBuilder.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/GTO2GridBuilder.Po \
@@ -368,6 +372,8 @@ WalkerControlBase.$(OBJEXT): ../QMCDrivers/WalkerControlBase.cpp
 QMCOptimize.$(OBJEXT): ../QMCDrivers/QMCOptimize.cpp
 QMCCostFunction.$(OBJEXT): ../QMCDrivers/QMCCostFunction.cpp
 DMCPbyPOpenMP.$(OBJEXT): ../QMCDrivers/DMCPbyPOpenMP.cpp
+DMCPbyPUpdate.$(OBJEXT): ../QMCDrivers/DMCPbyPUpdate.cpp
+DMCPbyP.$(OBJEXT): ../QMCDrivers/DMCPbyP.cpp
 ScalarEstimatorManager.$(OBJEXT): \
 	../Estimators/ScalarEstimatorManager.cpp
 GlobalWalkerControl.$(OBJEXT): ../QMCDrivers/GlobalWalkerControl.cpp
@@ -383,7 +389,9 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Any2GridBuilder.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DMCParticleByParticle.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DMCPbyP.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DMCPbyPOpenMP.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DMCPbyPUpdate.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DummyQMC.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ElectronGasOrbitalBuilder.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/GTO2GridBuilder.Po@am__quote@
@@ -1095,6 +1103,42 @@ DMCPbyPOpenMP.lo: ../QMCDrivers/DMCPbyPOpenMP.cpp
 @AMDEP_TRUE@	depfile='$(DEPDIR)/DMCPbyPOpenMP.Plo' tmpdepfile='$(DEPDIR)/DMCPbyPOpenMP.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o DMCPbyPOpenMP.lo `test -f '../QMCDrivers/DMCPbyPOpenMP.cpp' || echo '$(srcdir)/'`../QMCDrivers/DMCPbyPOpenMP.cpp
+
+DMCPbyPUpdate.o: ../QMCDrivers/DMCPbyPUpdate.cpp
+@AMDEP_TRUE@	source='../QMCDrivers/DMCPbyPUpdate.cpp' object='DMCPbyPUpdate.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/DMCPbyPUpdate.Po' tmpdepfile='$(DEPDIR)/DMCPbyPUpdate.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o DMCPbyPUpdate.o `test -f '../QMCDrivers/DMCPbyPUpdate.cpp' || echo '$(srcdir)/'`../QMCDrivers/DMCPbyPUpdate.cpp
+
+DMCPbyPUpdate.obj: ../QMCDrivers/DMCPbyPUpdate.cpp
+@AMDEP_TRUE@	source='../QMCDrivers/DMCPbyPUpdate.cpp' object='DMCPbyPUpdate.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/DMCPbyPUpdate.Po' tmpdepfile='$(DEPDIR)/DMCPbyPUpdate.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o DMCPbyPUpdate.obj `cygpath -w ../QMCDrivers/DMCPbyPUpdate.cpp`
+
+DMCPbyPUpdate.lo: ../QMCDrivers/DMCPbyPUpdate.cpp
+@AMDEP_TRUE@	source='../QMCDrivers/DMCPbyPUpdate.cpp' object='DMCPbyPUpdate.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/DMCPbyPUpdate.Plo' tmpdepfile='$(DEPDIR)/DMCPbyPUpdate.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o DMCPbyPUpdate.lo `test -f '../QMCDrivers/DMCPbyPUpdate.cpp' || echo '$(srcdir)/'`../QMCDrivers/DMCPbyPUpdate.cpp
+
+DMCPbyP.o: ../QMCDrivers/DMCPbyP.cpp
+@AMDEP_TRUE@	source='../QMCDrivers/DMCPbyP.cpp' object='DMCPbyP.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/DMCPbyP.Po' tmpdepfile='$(DEPDIR)/DMCPbyP.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o DMCPbyP.o `test -f '../QMCDrivers/DMCPbyP.cpp' || echo '$(srcdir)/'`../QMCDrivers/DMCPbyP.cpp
+
+DMCPbyP.obj: ../QMCDrivers/DMCPbyP.cpp
+@AMDEP_TRUE@	source='../QMCDrivers/DMCPbyP.cpp' object='DMCPbyP.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/DMCPbyP.Po' tmpdepfile='$(DEPDIR)/DMCPbyP.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o DMCPbyP.obj `cygpath -w ../QMCDrivers/DMCPbyP.cpp`
+
+DMCPbyP.lo: ../QMCDrivers/DMCPbyP.cpp
+@AMDEP_TRUE@	source='../QMCDrivers/DMCPbyP.cpp' object='DMCPbyP.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/DMCPbyP.Plo' tmpdepfile='$(DEPDIR)/DMCPbyP.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o DMCPbyP.lo `test -f '../QMCDrivers/DMCPbyP.cpp' || echo '$(srcdir)/'`../QMCDrivers/DMCPbyP.cpp
 
 ScalarEstimatorManager.o: ../Estimators/ScalarEstimatorManager.cpp
 @AMDEP_TRUE@	source='../Estimators/ScalarEstimatorManager.cpp' object='ScalarEstimatorManager.o' libtool=no @AMDEPBACKSLASH@

@@ -37,6 +37,8 @@ QMC_DRIVERS = \
   ../QMCDrivers/QMCOptimize.cpp\
   ../QMCDrivers/QMCCostFunction.cpp\
   ../QMCDrivers/DMCPbyPOpenMP.cpp \
+  ../QMCDrivers/DMCPbyPUpdate.cpp \
+  ../QMCDrivers/DMCPbyP.cpp \
   ../Estimators/ScalarEstimatorManager.cpp
 
 QMC_APP =\

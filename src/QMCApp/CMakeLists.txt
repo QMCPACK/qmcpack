@@ -54,7 +54,9 @@ SET(QMCDRIVERS
   ../Estimators/ScalarEstimatorManager.cpp
   ../QMCDrivers/QMCOptimize.cpp
   ../QMCDrivers/QMCCostFunction.cpp
+  ../QMCDrivers/DMCPbyPUpdate.cpp
   ../QMCDrivers/DMCPbyPOpenMP.cpp
+  ../QMCDrivers/DMCPbyP.cpp
 )
 
 IF(NOT QMCPLUSPLUS_RELEASE)

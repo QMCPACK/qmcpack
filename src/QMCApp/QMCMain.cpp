@@ -29,7 +29,7 @@
 #include "QMCDrivers/VMC.h"
 #include "QMCDrivers/VMCParticleByParticle.h"
 #include "QMCDrivers/DMCParticleByParticle.h"
-#include "QMCDrivers/DMCPbyPOpenMP.h"
+#include "QMCDrivers/DMCPbyP.h"
 #include "QMCDrivers/QMCOptimize.h"
 #include "QMCDrivers/MolecuDMC.h"
 #if !defined(QMCPLUSPLUS_RELEASE)
@@ -37,6 +37,9 @@
 #include "QMCDrivers/VMCPbyPMultiple.h"
 #include "QMCDrivers/ReptationMC.h"
 #include "QMCDrivers/RQMCMultiple.h"
+#if defined(ENABLE_OPENMP)
+#include "QMCDrivers/DMCPbyPOpenMP.h"
+#endif
 #endif
 #include "Utilities/OhmmsInfo.h"
 #include "Particle/HDFWalkerIO.h"
@@ -349,9 +352,8 @@ namespace qmcplusplus {
         qmcDriver=dmc;
         curRunType = DMC_RUN;
       } else if(what == "dmc-ptcl"){
-        DMCParticleByParticle *dmc = new DMCParticleByParticle(*qmcSystem,*primaryPsi,*primaryH);
-        //dmc->setBranchInfo(PrevConfigFile);
-        qmcDriver=dmc;
+        //DMCParticleByParticle *dmc = new DMCParticleByParticle(*qmcSystem,*primaryPsi,*primaryH);
+        qmcDriver = new DMCPbyP(*qmcSystem,*primaryPsi,*primaryH);
         curRunType = DMC_RUN;
       } else if(what == "optimize"){
         primaryH->remove("Flux");
@@ -388,12 +390,15 @@ namespace qmcplusplus {
           targetPsi.pop(); 
         }
         curRunType = RMC_RUN;
-#endif
+#if defined(ENABLE_OPENMP)
       } else if(what == "dmc-omp") {
-        DMCPbyPOpenMP *domp = new DMCPbyPOpenMP(*qmcSystem,*primaryPsi,*primaryH);
+        DMCPbyPOpenMP *domp 
+         = new DMCPbyPOpenMP(*qmcSystem,*primaryPsi,*primaryH);
         domp->makeClones(*hamPool);
         qmcDriver=domp;
-        curRunType = DUMMY_RUN; //change this to something else
+        curRunType = DMC_RUN; 
+#endif
+#endif
       } else {
         qmcDriver = new DummyQMC(*qmcSystem,*primaryPsi,*primaryH);
         WARNMSG("Cannot termine what type of qmc to run. Creating DummyQMC for testing")
