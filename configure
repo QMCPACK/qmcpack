@@ -2000,6 +2000,7 @@ if test "${with_cxx+set}" = set; then
          *aix*)
            # When using KCC under AIX, enable long long type
            cxxwith=`echo $withval | sed -e 's/ /@/'`
+   cxxflags_save="$CXXFLAGS"
    case "$cxxwith" in
      *:*@*)                 # Full initialization syntax
        CXX=`echo "$cxxwith" | sed  -n -e 's/.*:\(.*\)@.*/\1/p'`
@@ -2014,9 +2015,12 @@ if test "${with_cxx+set}" = set; then
        CXXFLAGS="--restrict --longlong --strict_warnings"
      ;;
    esac
+   CXXFLAGS="$cxxflags_save $CXXFLAGS"
+
          ;;
          *)
            cxxwith=`echo $withval | sed -e 's/ /@/'`
+   cxxflags_save="$CXXFLAGS"
    case "$cxxwith" in
      *:*@*)                 # Full initialization syntax
        CXX=`echo "$cxxwith" | sed  -n -e 's/.*:\(.*\)@.*/\1/p'`
@@ -2031,6 +2035,8 @@ if test "${with_cxx+set}" = set; then
        CXXFLAGS="--restrict --strict_warnings"
      ;;
    esac
+   CXXFLAGS="$cxxflags_save $CXXFLAGS"
+
          ;;
        esac
        CXX_OPTIMIZE_FLAGS="+K3 -O3"
@@ -2042,6 +2048,7 @@ if test "${with_cxx+set}" = set; then
        echo "Configuring for SGI C++ (64 bit abi)"
        bz_compiler=sgiCC
        cxxwith=`echo $withval | sed -e 's/ /@/'`
+   cxxflags_save="$CXXFLAGS"
    case "$cxxwith" in
      *:*@*)                 # Full initialization syntax
        CXX=`echo "$cxxwith" | sed  -n -e 's/.*:\(.*\)@.*/\1/p'`
@@ -2056,6 +2063,8 @@ if test "${with_cxx+set}" = set; then
        CXXFLAGS="-64 -LANG:std -LANG:restrict -DADD_"
      ;;
    esac
+   CXXFLAGS="$cxxflags_save $CXXFLAGS"
+
        CXX_LIBS="-lCio"
        CXX_OPTIMIZE_FLAGS="-Ofast"
        CXX_DEBUG_FLAGS="-g -DPRINT_DEBUG"
@@ -2066,6 +2075,7 @@ if test "${with_cxx+set}" = set; then
        echo "Configuring for SGI C++ (32 bit abi)"
        bz_compiler=sgiCC
        cxxwith=`echo $withval | sed -e 's/ /@/'`
+   cxxflags_save="$CXXFLAGS"
    case "$cxxwith" in
      *:*@*)                 # Full initialization syntax
        CXX=`echo "$cxxwith" | sed  -n -e 's/.*:\(.*\)@.*/\1/p'`
@@ -2080,6 +2090,8 @@ if test "${with_cxx+set}" = set; then
        CXXFLAGS="-n32 -LANG:std -LANG:restrict -DADD_"
      ;;
    esac
+   CXXFLAGS="$cxxflags_save $CXXFLAGS"
+
        CXX_LIBS="-lCio"
        CXX_OPTIMIZE_FLAGS="-Ofast"
        CXX_DEBUG_FLAGS="-g -DPRINT_DEBUG"
@@ -2090,6 +2102,7 @@ if test "${with_cxx+set}" = set; then
        echo "Configuring for SGI C++"
        bz_compiler=sgiCC
        cxxwith=`echo $withval | sed -e 's/ /@/'`
+   cxxflags_save="$CXXFLAGS"
    case "$cxxwith" in
      *:*@*)                 # Full initialization syntax
        CXX=`echo "$cxxwith" | sed  -n -e 's/.*:\(.*\)@.*/\1/p'`
@@ -2104,6 +2117,8 @@ if test "${with_cxx+set}" = set; then
        CXXFLAGS="-LANG:std -LANG:restrict -DADD_"
      ;;
    esac
+   CXXFLAGS="$cxxflags_save $CXXFLAGS"
+
        CXX_OPTIMIZE_FLAGS="-Ofast"
        CXX_DEBUG_FLAGS="-g -DPRINT_DEBUG"
        AR="\$(CXX)"
@@ -2114,6 +2129,7 @@ if test "${with_cxx+set}" = set; then
        echo "Configuring for Fujitsu C++"
        bz_compiler=FCC
        cxxwith=`echo $withval | sed -e 's/ /@/'`
+   cxxflags_save="$CXXFLAGS"
    case "$cxxwith" in
      *:*@*)                 # Full initialization syntax
        CXX=`echo "$cxxwith" | sed  -n -e 's/.*:\(.*\)@.*/\1/p'`
@@ -2128,6 +2144,8 @@ if test "${with_cxx+set}" = set; then
        CXXFLAGS=""
      ;;
    esac
+   CXXFLAGS="$cxxflags_save $CXXFLAGS"
+
        CXX_OPTIMIZE_FLAGS="-K fast"
        CXX_DEBUG_FLAGS="-g -DPRINT_DEBUG"
      ;;
@@ -2135,6 +2153,7 @@ if test "${with_cxx+set}" = set; then
        echo "Configuring for DEC cxx 6.2"
        bz_compiler=cxx
        cxxwith=`echo $withval | sed -e 's/ /@/'`
+   cxxflags_save="$CXXFLAGS"
    case "$cxxwith" in
      *:*@*)                 # Full initialization syntax
        CXX=`echo "$cxxwith" | sed  -n -e 's/.*:\(.*\)@.*/\1/p'`
@@ -2149,6 +2168,8 @@ if test "${with_cxx+set}" = set; then
        CXXFLAGS="-DBZ_ENABLE_XOPEN_SOURCE -std strict_ansi"
      ;;
    esac
+   CXXFLAGS="$cxxflags_save $CXXFLAGS"
+
        CXX_OPTIMIZE_FLAGS="-O4 -tune host"
        CXX_DEBUG_FLAGS="-g -msg_display_tag -DPRINT_DEBUG"
        AR_FLAGS="-rv"
@@ -2158,6 +2179,7 @@ if test "${with_cxx+set}" = set; then
        echo "Configuring for DEC cxx 6.3"
        bz_compiler=cxx
        cxxwith=`echo $withval | sed -e 's/ /@/'`
+   cxxflags_save="$CXXFLAGS"
    case "$cxxwith" in
      *:*@*)                 # Full initialization syntax
        CXX=`echo "$cxxwith" | sed  -n -e 's/.*:\(.*\)@.*/\1/p'`
@@ -2172,6 +2194,8 @@ if test "${with_cxx+set}" = set; then
        CXXFLAGS="-DBZ_ENABLE_XOPEN_SOURCE -std strict_ansi -nopure_cname"
      ;;
    esac
+   CXXFLAGS="$cxxflags_save $CXXFLAGS"
+
        CXX_OPTIMIZE_FLAGS="-O4 -tune host"
        CXX_DEBUG_FLAGS="-g -msg_display_tag -DPRINT_DEBUG"
        AR_FLAGS="-rv"
@@ -2181,6 +2205,7 @@ if test "${with_cxx+set}" = set; then
        echo "Configuring for Cray C++."
        bz_compiler=cray
        cxxwith=`echo $withval | sed -e 's/ /@/'`
+   cxxflags_save="$CXXFLAGS"
    case "$cxxwith" in
      *:*@*)                 # Full initialization syntax
        CXX=`echo "$cxxwith" | sed  -n -e 's/.*:\(.*\)@.*/\1/p'`
@@ -2195,6 +2220,8 @@ if test "${with_cxx+set}" = set; then
        CXXFLAGS="-h instantiate=used"
      ;;
    esac
+   CXXFLAGS="$cxxflags_save $CXXFLAGS"
+
        CXX_OPTIMIZE_FLAGS="-O3 -hpipeline3 -hunroll -haggress -hscalar2"
        CXX_DEBUG_FLAGS="-g -DPRINT_DEBUG"
      ;;
@@ -2202,6 +2229,7 @@ if test "${with_cxx+set}" = set; then
        echo "Configuring for gcc (wahoo!)"
        bz_compiler=gcc
        cxxwith=`echo $withval | sed -e 's/ /@/'`
+   cxxflags_save="$CXXFLAGS"
    case "$cxxwith" in
      *:*@*)                 # Full initialization syntax
        CXX=`echo "$cxxwith" | sed  -n -e 's/.*:\(.*\)@.*/\1/p'`
@@ -2216,6 +2244,8 @@ if test "${with_cxx+set}" = set; then
        CXXFLAGS="-ftemplate-depth-60 -DADD_"
      ;;
    esac
+   CXXFLAGS="$cxxflags_save $CXXFLAGS"
+
        CXX_OPTIMIZE_FLAGS="-O3 -funroll-loops -fstrict-aliasing -ffast-math -finline-limit=1000 -fno-gcse -Wno-deprecated"
        CXX_DEBUG_FLAGS="-g -DPRINT_DEBUG"
      ;;
@@ -2223,6 +2253,7 @@ if test "${with_cxx+set}" = set; then
        echo "Configuring for aCC (HP-UX)"
        bz_compiler=aCC
        cxxwith=`echo $withval | sed -e 's/ /@/'`
+   cxxflags_save="$CXXFLAGS"
    case "$cxxwith" in
      *:*@*)                 # Full initialization syntax
        CXX=`echo "$cxxwith" | sed  -n -e 's/.*:\(.*\)@.*/\1/p'`
@@ -2237,6 +2268,8 @@ if test "${with_cxx+set}" = set; then
        CXXFLAGS="-AA"
      ;;
    esac
+   CXXFLAGS="$cxxflags_save $CXXFLAGS"
+
        CXX_OPTIMIZE_FLAGS="-O"
        CXX_DEBUG_FLAGS="-g -DPRINT_DEBUG"
      ;;
@@ -2245,6 +2278,7 @@ if test "${with_cxx+set}" = set; then
        bz_compiler=icc
        cxx_native_compiler=false
        cxxwith=`echo $withval | sed -e 's/ /@/'`
+   cxxflags_save="$CXXFLAGS"
    case "$cxxwith" in
      *:*@*)                 # Full initialization syntax
        CXX=`echo "$cxxwith" | sed  -n -e 's/.*:\(.*\)@.*/\1/p'`
@@ -2259,6 +2293,8 @@ if test "${with_cxx+set}" = set; then
        CXXFLAGS="-restrict -DADD_"
      ;;
    esac
+   CXXFLAGS="$cxxflags_save $CXXFLAGS"
+
        if test x"$CC" = x; then
          CC="icc"
        fi
@@ -2273,6 +2309,7 @@ if test "${with_cxx+set}" = set; then
        bz_compiler=icc
        cxx_native_compiler=false
        cxxwith=`echo $withval | sed -e 's/ /@/'`
+   cxxflags_save="$CXXFLAGS"
    case "$cxxwith" in
      *:*@*)                 # Full initialization syntax
        CXX=`echo "$cxxwith" | sed  -n -e 's/.*:\(.*\)@.*/\1/p'`
@@ -2287,6 +2324,8 @@ if test "${with_cxx+set}" = set; then
        CXXFLAGS="-restrict -DADD_ -fno-alias -ansi -no-gcc"
      ;;
    esac
+   CXXFLAGS="$cxxflags_save $CXXFLAGS"
+
        if test x"$CC" = x; then
          CC="icc"
        fi
@@ -2301,6 +2340,7 @@ if test "${with_cxx+set}" = set; then
        bz_compiler=icpc
        cxx_native_compiler=false
        cxxwith=`echo $withval | sed -e 's/ /@/'`
+   cxxflags_save="$CXXFLAGS"
    case "$cxxwith" in
      *:*@*)                 # Full initialization syntax
        CXX=`echo "$cxxwith" | sed  -n -e 's/.*:\(.*\)@.*/\1/p'`
@@ -2315,6 +2355,8 @@ if test "${with_cxx+set}" = set; then
        CXXFLAGS="-restrict -DADD_ -fno-alias -ansi -cxxlib-icc"
      ;;
    esac
+   CXXFLAGS="$cxxflags_save $CXXFLAGS"
+
        if test x"$CC" = x; then
          CC="icc"
        fi
@@ -2336,6 +2378,7 @@ if test "${with_cxx+set}" = set; then
          F77="efc"
        fi
        cxxwith=`echo $withval | sed -e 's/ /@/'`
+   cxxflags_save="$CXXFLAGS"
    case "$cxxwith" in
      *:*@*)                 # Full initialization syntax
        CXX=`echo "$cxxwith" | sed  -n -e 's/.*:\(.*\)@.*/\1/p'`
@@ -2350,6 +2393,8 @@ if test "${with_cxx+set}" = set; then
        CXXFLAGS="-restrict -ftz -DADD_"
      ;;
    esac
+   CXXFLAGS="$cxxflags_save $CXXFLAGS"
+
        CXX_OPTIMIZE_FLAGS="-O3 -unroll"
        CXX_DEBUG_FLAGS="-g -O0 -DPRINT_DEBUG"
      ;;
@@ -2357,6 +2402,7 @@ if test "${with_cxx+set}" = set; then
        echo "Configuring for Portland Group C++"
        bz_compiler=pgCC
        cxxwith=`echo $withval | sed -e 's/ /@/'`
+   cxxflags_save="$CXXFLAGS"
    case "$cxxwith" in
      *:*@*)                 # Full initialization syntax
        CXX=`echo "$cxxwith" | sed  -n -e 's/.*:\(.*\)@.*/\1/p'`
@@ -2371,6 +2417,8 @@ if test "${with_cxx+set}" = set; then
        CXXFLAGS=""
      ;;
    esac
+   CXXFLAGS="$cxxflags_save $CXXFLAGS"
+
        CXX_OPTIMIZE_FLAGS="-O4 -Mnoframe -Mnodepchk -Minline=levels:25"
        CXX_DEBUG_FLAGS="-g -O0 -DPRINT_DEBUG"
      ;;
@@ -2384,6 +2432,7 @@ if test "${with_cxx+set}" = set; then
          F77="xlf"
        fi
        cxxwith=`echo $withval | sed -e 's/ /@/'`
+   cxxflags_save="$CXXFLAGS"
    case "$cxxwith" in
      *:*@*)                 # Full initialization syntax
        CXX=`echo "$cxxwith" | sed  -n -e 's/.*:\(.*\)@.*/\1/p'`
@@ -2398,6 +2447,8 @@ if test "${with_cxx+set}" = set; then
        CXXFLAGS="-qstrict  -qarch=auto -qtune=auto -qansialias -qrtti=dyna -qkeepinlines"
      ;;
    esac
+   CXXFLAGS="$cxxflags_save $CXXFLAGS"
+
        CXX_OPTIMIZE_FLAGS="-O3 -qinline=1000 -qspill=2000  -qalias=typeptr -qnoeh"
        CXX_DEBUG_FLAGS="-g -DPRINT_DEBUG"
      ;;
@@ -4119,7 +4170,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:4122:" \
+echo "$as_me:4173:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -5945,7 +5996,7 @@ test "x$enable_libtool_lock" != xno && enable_libtool_lock=yes
 case $host in
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 5948 "configure"' > conftest.$ac_ext
+  echo '#line 5999 "configure"' > conftest.$ac_ext
   if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -6474,7 +6525,7 @@ chmod -w .
 save_CFLAGS="$CFLAGS"
 CFLAGS="$CFLAGS -o out/conftest2.$ac_objext"
 compiler_c_o=no
-if { (eval echo configure:6477: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>out/conftest.err; } && test -s out/conftest2.$ac_objext; then
+if { (eval echo configure:6528: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>out/conftest.err; } && test -s out/conftest2.$ac_objext; then
   # The compiler can only warn and ignore the option if not recognized
   # So say no if there are warnings
   if test -s out/conftest.err; then
@@ -7658,7 +7709,7 @@ linux-gnu*)
   libsuff=
   case "$host_cpu" in
   x86_64*|s390x*)
-    echo '#line 7661 "configure"' > conftest.$ac_ext
+    echo '#line 7712 "configure"' > conftest.$ac_ext
     if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -8330,7 +8381,7 @@ else
     lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 8333 "configure"
+#line 8384 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -8428,7 +8479,7 @@ else
     lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 8431 "configure"
+#line 8482 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -9648,7 +9699,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:9651: \"$ac_link\") >&5
+(eval echo $as_me:9702: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -9728,7 +9779,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:9731: \"$ac_link\") >&5
+(eval echo $as_me:9782: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -13748,7 +13799,7 @@ if test "${enable_openmp+set}" = set; then
        xlC*)
          CXXFLAGS="$CXXFLAGS -qsmp=omp"
        ;;
-       icc|ecc)
+       icc|ecc|icpc)
          CXXFLAGS="$CXXFLAGS -openmp"
        ;;
       *)

@@ -568,7 +568,7 @@ AC_ARG_ENABLE(openmp,
        xlC*)
          CXXFLAGS="$CXXFLAGS -qsmp=omp"
        ;;
-       icc|ecc)
+       icc|ecc|icpc)
          CXXFLAGS="$CXXFLAGS -openmp"
        ;;
       *)
