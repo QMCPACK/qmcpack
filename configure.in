@@ -4,7 +4,7 @@
 #   AC_MSG_ERRORS (and probably other things) will not except commas!!!
 #     Bad things will happen!!!
 
-AC_PREREQ(2.57)
+AC_PREREQ(2.53)
 AC_INIT(qmcplusplus,0.4.0)
 AC_CONFIG_AUX_DIR([config])
 
@@ -226,7 +226,7 @@ AC_ARG_WITH(cxx,
        echo "Configuring for Intel C++. Setting CC and F77 to intel compilers post 8.1"
        bz_compiler=icpc
        cxx_native_compiler=false
-       AC_BZ_SET_COMPILER($withval,"icpc","-restrict -DADD_ -fno-alias -ansi -cxxlib-icc")
+       AC_BZ_SET_COMPILER($withval,"icpc","-restrict -DADD_ -fno-alias -ansi")
        if test x"$CC" = x; then
          CC="icc"
        fi
@@ -607,11 +607,14 @@ AC_ARG_ENABLE(openmp,
 #   fi], 
 #  [])
 
-CXXFLAGS="$CXXFLAGS $CXX_OPTIMIZE_FLAGS"
+CXXFLAGS="$CXXFLAGS $CXX_OPTIMIZE_FLAGS -DINLINE_ALL= "
+
 FFLAGS="$F77_OPTIMIZE_FLAGS $FFLAGS"
 
 #add fortran-related libraries to CXXFLAGS
 CXXFLAGS="$CXXFLAGS $CXXFFLAGS"
+
+
 
 if test "$cxx_native_compiler" = "false"; then
   AC_MSG_WARN([The compilers may need to include /usr/local/include.])
