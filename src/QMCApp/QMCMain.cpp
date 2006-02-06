@@ -29,7 +29,7 @@
 #include "QMCDrivers/VMC.h"
 #include "QMCDrivers/VMCParticleByParticle.h"
 #include "QMCDrivers/DMCParticleByParticle.h"
-#include "QMCDrivers/DMCPbyP.h"
+//#include "QMCDrivers/DMCPbyP.h"
 #include "QMCDrivers/QMCOptimize.h"
 #include "QMCDrivers/MolecuDMC.h"
 #if !defined(QMCPLUSPLUS_RELEASE)
@@ -352,8 +352,8 @@ namespace qmcplusplus {
         qmcDriver=dmc;
         curRunType = DMC_RUN;
       } else if(what == "dmc-ptcl"){
-        //DMCParticleByParticle *dmc = new DMCParticleByParticle(*qmcSystem,*primaryPsi,*primaryH);
-        qmcDriver = new DMCPbyP(*qmcSystem,*primaryPsi,*primaryH);
+        qmcDriver = new DMCParticleByParticle(*qmcSystem,*primaryPsi,*primaryH);
+        //qmcDriver = new DMCPbyP(*qmcSystem,*primaryPsi,*primaryH);
         curRunType = DMC_RUN;
       } else if(what == "optimize"){
         primaryH->remove("Flux");
