@@ -24,7 +24,6 @@ SET(WFSRCS
   ../QMCWaveFunctions/ElectronGasOrbitalBuilder.cpp
   ../QMCWaveFunctions/ThreeBodyGeminal.cpp
   ../QMCWaveFunctions/ThreeBodyGeminalBuilder.cpp
-  ../QMCWaveFunctions/NEGOBuilder.cpp
   ../QMCWaveFunctions/WaveFunctionFactory.cpp
   ../QMCHamiltonians/LocalPPotential.cpp
   ../QMCHamiltonians/NonLocalPPotential.cpp
