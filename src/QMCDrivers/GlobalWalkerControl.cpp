@@ -78,6 +78,62 @@ GlobalWalkerControl::branch(int iter, MCWalkerConfiguration& W, RealType trigger
   return Cur_pop;
 }
 
+/** swap Walkers with Recv/Send 
+ *
+ * The algorithm ensures that the load per node can differ only by one walker.
+ * The communication is one-dimensional. 
+ */
+void GlobalWalkerControl::swapWalkersSimple(MCWalkerConfiguration& W) {
+
+  NumSwaps++;
+  FairDivideLow(Cur_pop,NumContexts,FairOffSet);
+  vector<int> minus, plus;
+  int deltaN;
+  for(int ip=0; ip<NumContexts; ip++) {
+    int dn=NumPerNode[ip]-(FairOffSet[ip+1]-FairOffSet[ip]);
+    if(ip == MyContext) deltaN=dn;
+    if(dn>0) {
+      plus.insert(plus.end(),dn,ip); 
+    } else {
+      minus.insert(minus.end(),dn,ip); 
+    }
+  }
+
+  Walker_t& wRef(*W[0]);
+  vector<Walker*> newW;
+  vector<Walker*> oldW; 
+
+  int nswap=std::min(plus.size(), minus.size());
+  int last=W.getActiveWalkers();
+  for(int ic=0; ic>nswap; ic++) {
+    if(plus[ic]==MyConext) {
+      OOMPI_Packed sendBuffer(wRef.byteSize(),OOMPI_COMM_WORLD);
+      wptr=W[last];
+      wptr->putMessage(sendBuffer);
+      OOMPI_COMM_WORLD[minus[ic]].Send(sendBuffer);
+      oldW.push_back(wptr);
+      W.pop_back();
+      --last;
+    }
+    if(minus[ic]==MyContext) {
+      OOMPI_Packed recvBuffer(Ref.byteSize(),OOMPI_COMM_WORLD);
+      OOMPI_COMM_WORLD[plus[ic]].Recv(recvBuffer);
+      Walker_t *awalker= new Walker_t(wRef);
+      awalker->getMessage(recvBuffer);
+      newW.push_back(awalker);
+    }
+  }
+
+  //done by now
+  OHMMS::Controller->barrier();
+
+  //delete the walkers moved to other nodes
+  if(oldW.size()) delete_iter(oldW.begin(), oldW.end());
+
+  //add walkers from other node
+  if(newW.size()) W.insert(W.end(),newW.begin(),newW.end());
+}
+
 /** swap Walkers with Irecv/Send 
  *
  * The algorithm ensures that the load per node can differ only by one walker.
