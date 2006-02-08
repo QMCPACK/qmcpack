@@ -54,6 +54,7 @@ namespace qmcplusplus {
     void swapWalkersAsync(MCWalkerConfiguration& W);
     void swapWalkersBlocked(MCWalkerConfiguration& W);
     void swapWalkersMap(MCWalkerConfiguration& W);
+    void swapWalkersSimple(MCWalkerConfiguration& W);
   };
 }
 #endif
