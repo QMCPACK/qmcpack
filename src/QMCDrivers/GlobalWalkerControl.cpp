@@ -19,6 +19,7 @@
 #include "Utilities/IteratorUtility.h"
 #include "Utilities/UtilityFunctions.h"
 using namespace qmcplusplus;
+//#define MCWALKERSET_MPI_DEBUG
 
 /** default constructor
  *
@@ -65,7 +66,10 @@ GlobalWalkerControl::branch(int iter, MCWalkerConfiguration& W, RealType trigger
   int max_diff = std::max(Cur_max*NumContexts-Cur_pop,Cur_pop-Cur_min*NumContexts);
   double diff_pop = static_cast<double>(max_diff)/static_cast<double>(Cur_pop);
 
-  if(diff_pop > trigger) { swapWalkersMap(W); }
+  if(diff_pop > trigger) { 
+    swapWalkersSimple(W); 
+    //swapWalkersMap(W); 
+  }
 
   //set Weight and Multiplicity to default values
   MCWalkerConfiguration::iterator it(W.begin()),it_end(W.end());
@@ -95,28 +99,45 @@ void GlobalWalkerControl::swapWalkersSimple(MCWalkerConfiguration& W) {
     if(dn>0) {
       plus.insert(plus.end(),dn,ip); 
     } else {
-      minus.insert(minus.end(),dn,ip); 
+      minus.insert(minus.end(),-dn,ip); 
     }
   }
 
   Walker_t& wRef(*W[0]);
-  vector<Walker*> newW;
-  vector<Walker*> oldW; 
+  vector<Walker_t*> newW;
+  vector<Walker_t*> oldW; 
+
+#ifdef MCWALKERSET_MPI_DEBUG
+  char fname[128];
+  sprintf(fname,"test.%d",MyContext);
+  ofstream fout(fname, ios::app);
+  //fout << NumSwaps << " " << Cur_pop << " ";
+  //for(int ic=0; ic<NumContexts; ic++) fout << NumPerNode[ic] << " ";
+  //fout << " | ";
+  //for(int ic=0; ic<NumContexts; ic++) fout << FairOffSet[ic+1]-FairOffSet[ic] << " ";
+  //fout << " | ";
+  for(int ic=0; ic<plus.size(); ic++) {
+    fout << plus[ic] << " ";
+  }
+  fout << " | ";
+  for(int ic=0; ic<minus.size(); ic++) {
+    fout << minus[ic] << " ";
+  }
+  fout << endl;
+#endif
 
   int nswap=std::min(plus.size(), minus.size());
-  int last=W.getActiveWalkers();
-  for(int ic=0; ic>nswap; ic++) {
-    if(plus[ic]==MyConext) {
+  int last=W.getActiveWalkers()-1;
+  int nsend=0;
+  for(int ic=0; ic<nswap; ic++) {
+    if(plus[ic]==MyContext) {
       OOMPI_Packed sendBuffer(wRef.byteSize(),OOMPI_COMM_WORLD);
-      wptr=W[last];
-      wptr->putMessage(sendBuffer);
+      W[last]->putMessage(sendBuffer);
       OOMPI_COMM_WORLD[minus[ic]].Send(sendBuffer);
-      oldW.push_back(wptr);
-      W.pop_back();
-      --last;
+      --last; ++nsend;
     }
     if(minus[ic]==MyContext) {
-      OOMPI_Packed recvBuffer(Ref.byteSize(),OOMPI_COMM_WORLD);
+      OOMPI_Packed recvBuffer(wRef.byteSize(),OOMPI_COMM_WORLD);
       OOMPI_COMM_WORLD[plus[ic]].Recv(recvBuffer);
       Walker_t *awalker= new Walker_t(wRef);
       awalker->getMessage(recvBuffer);
@@ -127,8 +148,10 @@ void GlobalWalkerControl::swapWalkersSimple(MCWalkerConfiguration& W) {
   //done by now
   OHMMS::Controller->barrier();
 
-  //delete the walkers moved to other nodes
-  if(oldW.size()) delete_iter(oldW.begin(), oldW.end());
+  if(nsend) {
+    nsend=NumPerNode[MyContext]-nsend;
+    W.destroyWalkers(W.begin()+nsend, W.end());
+  }
 
   //add walkers from other node
   if(newW.size()) W.insert(W.end(),newW.begin(),newW.end());
