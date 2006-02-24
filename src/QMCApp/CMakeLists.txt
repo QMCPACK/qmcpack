@@ -42,21 +42,32 @@ ENDIF(NOT QMCPLUSPLUS_RELEASE)
 ####################################
 # QMC Drivers which implements various QMC algorithms
 ####################################
-SET(QMCDRIVERS
+SET(DMCDRIVERS
+  ../QMCDrivers/DMC/DMCMoveAll.cpp
+  ../QMCDrivers/DMC/DMCPbyP.cpp
+  ../QMCDrivers/DMC/DMCFactory.cpp
+  ../QMCDrivers/DMC/DMCUpdateBase.cpp
+  ../QMCDrivers/DMC/DMCUpdateAll.cpp
+  ../QMCDrivers/DMC/DMCUpdatePbyP.cpp
+  ../QMCDrivers/WalkerControlBase.cpp
+  ../QMCDrivers/FixedWalkerControl.cpp
+)
+
+IF(ENABLE_OPENMP) 
+  SET(DMCDRIVERS ${DMCDRIVERS} ../QMCDrivers/DMCPbyPOpenMP.cpp)
+ENDIF(ENABLE_OPENMP) 
+
+SET(QMCDRIVERS ${DMCDRIVERS}
   ../QMCDrivers/SimpleFixedNodeBranch.cpp
   ../QMCDrivers/QMCDriver.cpp
   ../QMCDrivers/DummyQMC.cpp
   ../QMCDrivers/VMC.cpp
   ../QMCDrivers/VMCParticleByParticle.cpp
-  ../QMCDrivers/MolecuDMC.cpp
-  ../QMCDrivers/DMCParticleByParticle.cpp
-  ../QMCDrivers/WalkerControlBase.cpp
   ../Estimators/ScalarEstimatorManager.cpp
   ../QMCDrivers/QMCOptimize.cpp
   ../QMCDrivers/QMCCostFunction.cpp
-  ../QMCDrivers/DMCPbyPUpdate.cpp
-  ../QMCDrivers/DMCPbyPOpenMP.cpp
 )
+
 
 IF(NOT QMCPLUSPLUS_RELEASE)
   SET(QMCDRIVERS ${QMCDRIVERS}

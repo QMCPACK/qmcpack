@@ -28,18 +28,13 @@
 #include "QMCDrivers/DummyQMC.h"
 #include "QMCDrivers/VMC.h"
 #include "QMCDrivers/VMCParticleByParticle.h"
-#include "QMCDrivers/DMCParticleByParticle.h"
-//#include "QMCDrivers/DMCPbyP.h"
+#include "QMCDrivers/DMC/DMCFactory.h"
 #include "QMCDrivers/QMCOptimize.h"
-#include "QMCDrivers/MolecuDMC.h"
 #if !defined(QMCPLUSPLUS_RELEASE)
 #include "QMCDrivers/VMCMultiple.h"
 #include "QMCDrivers/VMCPbyPMultiple.h"
 #include "QMCDrivers/ReptationMC.h"
 #include "QMCDrivers/RQMCMultiple.h"
-#if defined(ENABLE_OPENMP)
-#include "QMCDrivers/DMCPbyPOpenMP.h"
-#endif
 #endif
 #include "Utilities/OhmmsInfo.h"
 #include "Particle/HDFWalkerIO.h"
@@ -346,14 +341,9 @@ namespace qmcplusplus {
         primaryH->addOperator(new ConservedEnergy,"Flux");
         qmcDriver = new VMCParticleByParticle(*qmcSystem,*primaryPsi,*primaryH);
         curRunType = VMC_RUN;
-      } else if(what == "dmc"){
-        MolecuDMC *dmc = new MolecuDMC(*qmcSystem,*primaryPsi,*primaryH);
-        //dmc->setBranchInfo(PrevConfigFile);
-        qmcDriver=dmc;
-        curRunType = DMC_RUN;
-      } else if(what == "dmc-ptcl"){
-        qmcDriver = new DMCParticleByParticle(*qmcSystem,*primaryPsi,*primaryH);
-        //qmcDriver = new DMCPbyP(*qmcSystem,*primaryPsi,*primaryH);
+      } else if(what == "dmc" || what == "dmc-ptcl") {
+        DMCFactory fac(what,cur);
+        qmcDriver = fac.create(*qmcSystem,*primaryPsi,*primaryH,*hamPool);
         curRunType = DMC_RUN;
       } else if(what == "optimize"){
         primaryH->remove("Flux");
@@ -390,14 +380,6 @@ namespace qmcplusplus {
           targetPsi.pop(); 
         }
         curRunType = RMC_RUN;
-#if defined(ENABLE_OPENMP)
-      } else if(what == "dmc-omp") {
-        DMCPbyPOpenMP *domp 
-         = new DMCPbyPOpenMP(*qmcSystem,*primaryPsi,*primaryH);
-        domp->makeClones(*hamPool);
-        qmcDriver=domp;
-        curRunType = DMC_RUN; 
-#endif
 #endif
       } else {
         qmcDriver = new DummyQMC(*qmcSystem,*primaryPsi,*primaryH);
