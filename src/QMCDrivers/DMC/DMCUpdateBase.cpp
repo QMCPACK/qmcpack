@@ -15,7 +15,7 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#include "QMCDrivers/DMCUpdateBase.h"
+#include "QMCDrivers/DMC/DMCUpdateBase.h"
 #include "ParticleBase/ParticleUtility.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "Message/CommCreate.h"
