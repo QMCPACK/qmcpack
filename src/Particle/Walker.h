@@ -105,6 +105,18 @@ namespace qmcplusplus {
       return *this;
     }
 
+    inline void assign(const Walker& a) {
+      Age=a.Age;
+      Weight=a.Weight;
+      Multiplicity=a.Multiplicity;
+      R = a.R;
+      Drift = a.Drift;
+      Properties=a.Properties;
+      if(a.DataSet.size()) {
+        DataSet=a.DataSet;
+      }
+    }
+
     ///return the number of particles per walker
     inline int size() const { return R.size(); }
 
@@ -151,11 +163,12 @@ namespace qmcplusplus {
      *@param sigN  sign of the trial wavefunction
      *@param ene the local energy
      *
-     *Assign the values and reset the weight and multiplicity to one to start a run
+     *Assign the values and reset the age
+     * but leave the weight and multiplicity 
      */
     inline void resetProperty(T logpsi, T sigN, T ene) {
       Age=0;
-      Weight=1.0;
+      //Weight=1.0;
       Properties(LOGPSI)=logpsi;
       Properties(SIGN)=sigN;
       Properties(LOCALENERGY) = ene;
