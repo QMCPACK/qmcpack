@@ -19,32 +19,96 @@
 #include <numeric>
 #include "OhmmsData/ParameterSet.h"
 #include "OhmmsData/FileUtility.h"
+#include "Utilities/RandomGenerator.h"
 using namespace qmcplusplus;
 
 SimpleFixedNodeBranch::SimpleFixedNodeBranch(RealType tau, int nideal): 
-SwapMode(0), Counter(0), Nideal(nideal), NumGeneration(50), 
-  MaxCopy(-1), Tau(tau), E_T(0.0), EavgSum(0.0), WgtSum(0.0), PopControl(0.1),
-WalkerController(0)
+FixedNumWalkers(false), SwapMode(0), Counter(0), 
+  Nideal(nideal), NumGeneration(50), 
+  MaxCopy(-1), MaxAge(1), Tau(tau), E_T(0.0), EavgSum(0.0), WgtSum(0.0), PopControl(0.1), 
+  WalkerController(0)
 {
-  Feed = 1.0/(static_cast<RealType>(NumGeneration)*Tau);
-  logN = Feed*log(static_cast<RealType>(Nideal));
+  reset();
 }
 
-SimpleFixedNodeBranch::SimpleFixedNodeBranch(const SimpleFixedNodeBranch& abranch)
+/** copy constructor
+ *
+ * Copy only selected data members and WalkerController is never copied.
+ */
+SimpleFixedNodeBranch::SimpleFixedNodeBranch(const SimpleFixedNodeBranch& abranch):
+  FixedNumWalkers(false), SwapMode(0), Counter(0), 
+  Nideal(abranch.Nideal), NumGeneration(abranch.NumGeneration), 
+  MaxCopy(-1), MaxAge(abranch.MaxAge), Tau(abranch.Tau), E_T(abranch.E_T), 
+  EavgSum(0.0), WgtSum(0.0), PopControl(abranch.PopControl), 
+  WalkerController(0)
 {
-  Tau=abranch.Tau;
-  E_T=abranch.E_T;
+  reset();
 }
 
+void SimpleFixedNodeBranch::initWalkerController(RealType tau, bool fixW) {
+  Tau=tau;
+  reset();
+  if(WalkerController == 0) {
+    FixedNumWalkers=fixW;
+    if(fixW) {Feed=0.0;logN=0.0;}
+    WalkerController = CreateWalkerController(FixedNumWalkers, SwapMode, Nideal, Nmax, Nmin, WalkerController);
+    Nmax=WalkerController->Nmax;
+    Nmin=WalkerController->Nmin;
+  }
+
+  app_log() << "  reference energy = " << E_T << endl;
+  if(!fixW) {
+    app_log() << "  target_walkers = " << Nideal << endl;
+    app_log() << "  Max and mimum walkers per node= " << Nmax << " " << Nmin << endl;
+    app_log() << "  number of generations (feedback) = " << NumGeneration << " ("<< Feed << ")"<< endl;
+  }
+}
+
+/** update the weights and multiplicity of all the walkers
+ * @param it starting walker
+ * @param it_end ending walker
+ * @return new trial energy
+ */
+SimpleFixedNodeBranch::RealType 
+SimpleFixedNodeBranch::setWeights(MCWalkerConfiguration::iterator it, 
+    MCWalkerConfiguration::iterator it_end) {
+  int nw=0;
+  while(it != it_end) {
+    MCWalkerConfiguration::Walker_t& thisWalker(**it);
+    RealType M=thisWalker.Weight;
+    if(thisWalker.Age > MaxAge) M = std::min(0.5,M);
+    else if(thisWalker.Age > 0) M = std::min(1.0,M);
+    thisWalker.Multiplicity = M + Random();
+    accumulate(thisWalker.Properties(LOCALENERGY),M);
+    ++it; ++nw;
+  }
+  return E_T = WalkerController->average(EavgSum,WgtSum)-Feed*log(static_cast<RealType>(nw))+logN;
+}
+
+//void SimpleFixedNodeBranch::setWeight(MCWalkerConfiguration::Walker_t& aWalker, RealType tau, RealType emixed, RealType delta) {
+//  if(FixedNumWalkers) {
+//    aWalker.Weight*=exp(-tau*(emixed-E_T));
+//    accumulate(emixed,1.0);
+//  } else { 
+//    RealType mult=exp(-tau*(emixed-E_T));
+//    if(aWalker.Age>MaxAge)  
+//      mult=std::min(0.5,mult);
+//    else if(aWalker.Age>0) 
+//      mult=std::min(1.0,mult);
+//    aWalker.Weight=mult;
+//    aWalker.Multiplicity=mult+delta;
+//    accumulate(emixed,mult);
+//  }
+//}
 void SimpleFixedNodeBranch::reset() {
-
-  WalkerController = CreateWalkerController(SwapMode, Nideal, Nmax, Nmin, WalkerController);
-  Nmax=WalkerController->Nmax;
-  Nmin=WalkerController->Nmin;
+  //WalkerController = CreateWalkerController(FixedNumWalkers, SwapMode, Nideal, Nmax, Nmin, WalkerController);
+  //Nmax=WalkerController->Nmax;
+  //Nmin=WalkerController->Nmin;
+  //Feed=WalkerController->getFeedBackParameter(NumGeneration,Tau);
   Feed = 1.0/(static_cast<RealType>(NumGeneration)*Tau);
   logN = Feed*log(static_cast<RealType>(Nideal));
-  
   app_log() << "  Current Counter = " << Counter << "\n  Trial Energy = " << E_T << endl;
+  app_log() << "  Feedback parameter = " << Feed <<endl;
 }
 
 /**  Parse the xml file for parameters
@@ -59,6 +123,8 @@ void SimpleFixedNodeBranch::reset() {
  * </ul>
  */
 bool SimpleFixedNodeBranch::put(xmlNodePtr cur){
+
+  //check dmc/vmc and decide to create WalkerControllerBase
   string toswap("no");
   ParameterSet m_param;
   m_param.add(E_T,"ref_energy","AU"); m_param.add(E_T,"en_ref","AU");
@@ -92,10 +158,6 @@ bool SimpleFixedNodeBranch::put(xmlNodePtr cur){
 
   reset();
 
-  app_log() << "  target_walkers = " << Nideal << endl;
-  app_log() << "  Max and mimum walkers per node= " << Nmax << " " << Nmin << endl;
-  app_log() << "  reference energy = " << E_T << endl;
-  app_log() << "  number of generations (feedback) = " << NumGeneration << " ("<< Feed << ")"<< endl;
   return true;
 }
 

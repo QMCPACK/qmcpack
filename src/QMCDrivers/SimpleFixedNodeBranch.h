@@ -46,6 +46,8 @@ namespace qmcplusplus {
 
      typedef SimpleFixedNodeBranch ThisType;
 
+     ///use reconfiguration method for DMC
+     bool FixedNumWalkers;
      ///boolean to swap walkers among processors
      int SwapMode;
      ///counts the number of times update has been called
@@ -60,6 +62,8 @@ namespace qmcplusplus {
      int MaxCopy;
      ///control population fluctutaions
      int NumGeneration;
+     ///maximum age to remove persistent walkers 
+     int MaxAge;
      ///the timestep
      RealType Tau;
      ///feedback parameter to control the population
@@ -83,15 +87,20 @@ namespace qmcplusplus {
      ///copy constructor
      SimpleFixedNodeBranch(const SimpleFixedNodeBranch& abranch);
 
-     //inline void setSwapWalkers(bool swap) { SwapWalkers=swap;}
-     //inline bool swapWalkers() { return SwapWalkers;}
-
      ///return true if the nodal surface is crossed
      inline bool operator()(RealType psi0, RealType psi1) const { return psi0*psi1 < 0;}
 
      //inline bool operator()(complex<RealType>& psi0, complex<RealType>& psi1) const { 
      //  return true;
      //}
+
+
+     /** initialize  the WalkerController 
+      * @param fixW true, if reconfiguration with the fixed number of walkers is used
+      */
+     void initWalkerController(RealType tau, bool fixW=false);
+
+     RealType setWeights(MCWalkerConfiguration::iterator it, MCWalkerConfiguration::iterator it_end);
 
      /**  Calculates the Branching Green's function
       *@param tau effective time step
@@ -104,17 +113,14 @@ namespace qmcplusplus {
       \f[ G_{branch} = \min \left(\frac{1}{2q},G_{branch}\right). \f]
       */
      inline RealType branchGF(RealType tau, RealType emixed, RealType reject) const { 
-       return exp(-tau*(emixed-E_T));
        //return min(0.5/(reject+1e-12),exp(-tau*(emix-E_T)));
+       return exp(-tau*(emixed-E_T));
      }
 
      /** set the trial energy \f$ <E_G> = eg \f$
       * @param eg input trial energy
       */
-     inline void setEguess(RealType eg){
-       E_T = eg;
-     } 
-
+     inline void setEguess(RealType eg){ E_T = eg; } 
 
      /** call MCWalkerConfiguration::branch
       *@param iter the iteration
@@ -126,7 +132,6 @@ namespace qmcplusplus {
      }
 
      int branch(int iter, MCWalkerConfiguration& w, vector<ThisType*>& clones);
-
 
      /** restart averaging
       * @param counter Counter to determine the cummulative average will be reset.

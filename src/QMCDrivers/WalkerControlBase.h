@@ -69,9 +69,14 @@ namespace qmcplusplus {
      */
     int copyWalkers(MCWalkerConfiguration& W);
 
-#if defined(HAVE_MPI)
     /** perform branch and swap walkers as required */
     virtual int branch(int iter, MCWalkerConfiguration& W, RealType trigger);
+
+    virtual RealType getFeedBackParameter(int ngen, RealType tau) {
+      return 1.0/(static_cast<RealType>(ngen)*tau);
+    }
+
+#if defined(HAVE_MPI)
 
     /** collect the energies */
     inline RealType average(RealType eavg, RealType wgt) {
@@ -81,8 +86,6 @@ namespace qmcplusplus {
       return gEavgWgt[0]/gEavgWgt[1];
     }
 #else
-    /** perform branch and swap walkers as required */
-    int branch(int iter, MCWalkerConfiguration& W, RealType trigger);
 
     /** collect the energies */
     inline RealType average(RealType eavg, RealType wgt) {
@@ -103,8 +106,8 @@ namespace qmcplusplus {
    * When wc is the same as the requested controller object, only reset the
    * internal values and return wc itself.
    */
-  WalkerControlBase* CreateWalkerController(int& swapmode, 
-      int nideal, int nmax, int nmin, WalkerControlBase* wc);
+  WalkerControlBase* CreateWalkerController(bool reconfig, 
+      int& swapmode, int nideal, int nmax, int nmin, WalkerControlBase* wc);
 }
 #endif
 /***************************************************************************

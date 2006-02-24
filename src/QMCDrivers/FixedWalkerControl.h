@@ -49,14 +49,15 @@ namespace qmcplusplus {
     /** perform branch and swap walkers as required */
     int branch(int iter, MCWalkerConfiguration& W, RealType trigger);
 
-    /** collect the energies */
-    inline void collect(TinyVector<RealType,2>& eavgwgt) {
-      gsum(eavgwgt,0);
+    /** return 0.0 to disable feedback method */
+    RealType getFeedBackParameter(int ngen, RealType tau) {
+      return 0.0;
     }
 
-    void swapWalkersAsync(MCWalkerConfiguration& W);
-    void swapWalkersBlocked(MCWalkerConfiguration& W);
-    void swapWalkersMap(MCWalkerConfiguration& W);
+    /** return the surviving Walkers
+     */
+    int getIndexPermutation(MCWalkerConfiguration& W);
+    int shuffleIndex(int nw);
   };
 }
 #endif

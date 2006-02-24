@@ -20,6 +20,7 @@
 #include "QMCDrivers/GlobalWalkerControl.h"
 //#include "QMCDrivers/AsyncWalkerControl.h"
 #endif
+#include "QMCDrivers/FixedWalkerControl.h"
 namespace qmcplusplus {
 
   int WalkerControlBase::branch(int iter, MCWalkerConfiguration& W, RealType trigger) {
@@ -151,15 +152,28 @@ namespace qmcplusplus {
       return wc;
     }
 #else
-  WalkerControlBase* CreateWalkerController(int& swapmode, int nideal,
+  WalkerControlBase* CreateWalkerController(
+      bool reconfig, int& swapmode, int nideal,
       int nmax, int nmin, WalkerControlBase* wc) {
     //reset to 0 so that never ask the same question
     swapmode = 0;
     //if(nmax<0) nmax=2*nideal;
     //if(nmin<0) nmin=nideal/2;
-    if(wc== 0) wc= new WalkerControlBase;
-    wc->Nmax=2*nideal;
-    wc->Nmin=nideal/2;
+
+    //if(wc== 0) wc= new WalkerControlBase;
+    if(wc== 0) {
+      if(reconfig) {
+        app_log() << "  Using a fixed number of walkers by reconfiguration." << endl;
+        wc = new FixedWalkerControl;
+        wc->Nmax=nideal;
+        wc->Nmin=nideal;
+      } else {
+        app_log() << "  Using a WalkerControlBase with population fluctations." << endl;
+        wc = new WalkerControlBase;
+        wc->Nmax=2*nideal;
+        wc->Nmin=nideal/2;
+      }
+    }
     return wc;
   }
 #endif
