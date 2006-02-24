@@ -87,8 +87,15 @@ namespace qmcplusplus {
 
     deltaR.resize(W.getTotalNum());
     drift.resize(W.getTotalNum());
+
     qmcNode=cur;
     putQMCInfo(qmcNode);
+
+    bool firstTime = (branchEngine == 0);
+    if(firstTime) {
+      branchEngine = new BranchEngineType(Tau,W.getActiveWalkers());
+    }
+
     put(qmcNode);
 
     if(h5FileRoot.size() && RollBackBlocks>1) {
@@ -97,14 +104,7 @@ namespace qmcplusplus {
       RollBackBlocks=0;
     }
 
-
-    bool firstTime = (branchEngine == 0);
-    if(firstTime) {
-      branchEngine = new BranchEngineType(Tau,W.getActiveWalkers());
-    }
-
     branchEngine->put(qmcNode);
-    //branchEngine->put(qmcNode,LogOut);
 
     if(firstTime && h5FileRoot.size() && h5FileRoot != "invalid") {
       app_log() << "  Initializing BranchEngine with " << h5FileRoot << endl;
@@ -266,16 +266,17 @@ namespace qmcplusplus {
     MCWalkerConfiguration::iterator it(W.begin()); 
     MCWalkerConfiguration::iterator it_end(W.end()); 
     while(it != it_end) {
-      Buffer_t& w_buffer((*it)->DataSet);
+      Walker_t& thisWalker(**it);
+      Buffer_t& w_buffer(thisWalker.DataSet);
       w_buffer.rewind();
-      W.updateBuffer(**it,w_buffer);
+      W.updateBuffer(thisWalker,w_buffer);
       ValueType logpsi=Psi.updateBuffer(W,w_buffer);
       RealType enew= H.evaluate(W);
-      (*it)->resetProperty(logpsi,Psi.getSign(),enew);
-      H.saveProperty((*it)->getPropertyBase());
+      thisWalker.resetProperty(logpsi,Psi.getSign(),enew);
+      H.saveProperty(thisWalker.getPropertyBase());
       ValueType vsq = Dot(W.G,W.G);
       ValueType scale = ((-1.0+sqrt(1.0+2.0*Tau*vsq))/vsq);
-      (*it)->Drift = scale*W.G;
+      thisWalker.Drift = scale*W.G;
       ++it;
     }
   }
