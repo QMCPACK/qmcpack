@@ -43,21 +43,29 @@ ENDIF(NOT QMCPLUSPLUS_RELEASE)
 # QMC Drivers which implements various QMC algorithms
 ####################################
 SET(DMCDRIVERS
+  ../QMCDrivers/WalkerControlBase.cpp
   ../QMCDrivers/DMC/DMCMoveAll.cpp
   ../QMCDrivers/DMC/DMCPbyP.cpp
   ../QMCDrivers/DMC/DMCFactory.cpp
   ../QMCDrivers/DMC/DMCUpdateBase.cpp
   ../QMCDrivers/DMC/DMCUpdateAll.cpp
   ../QMCDrivers/DMC/DMCUpdatePbyP.cpp
-  ../QMCDrivers/WalkerControlBase.cpp
-  ../QMCDrivers/FixedWalkerControl.cpp
+  ../QMCDrivers/DMC/WalkerControlFactory.cpp
+  ../QMCDrivers/DMC/WalkerReconfiguration.cpp
 )
 
 IF(ENABLE_OPENMP) 
-  SET(DMCDRIVERS ${DMCDRIVERS} ../QMCDrivers/DMCPbyPOpenMP.cpp)
+  SET(DMCDRIVERS ${DMCDRIVERS} ../QMCDrivers/DMC/DMCPbyPOMP.cpp)
 ENDIF(ENABLE_OPENMP) 
 
-SET(QMCDRIVERS ${DMCDRIVERS}
+IF(ENABLE_MPI) 
+  SET(DMCDRIVERS ${DMCDRIVERS} 
+  ../QMCDrivers/DMC/WalkerControlMPI.cpp
+  ../QMCDrivers/DMC/WalkerReconfigurationMPI.cpp)
+ENDIF(ENABLE_MPI) 
+
+
+SET(QMCDRIVERS 
   ../QMCDrivers/SimpleFixedNodeBranch.cpp
   ../QMCDrivers/QMCDriver.cpp
   ../QMCDrivers/DummyQMC.cpp
@@ -66,8 +74,8 @@ SET(QMCDRIVERS ${DMCDRIVERS}
   ../Estimators/ScalarEstimatorManager.cpp
   ../QMCDrivers/QMCOptimize.cpp
   ../QMCDrivers/QMCCostFunction.cpp
+  ${DMCDRIVERS}
 )
-
 
 IF(NOT QMCPLUSPLUS_RELEASE)
   SET(QMCDRIVERS ${QMCDRIVERS}
@@ -86,12 +94,6 @@ IF(NOT QMCPLUSPLUS_RELEASE)
   ENDIF(HAVE_LIBGSL)
 ENDIF(NOT QMCPLUSPLUS_RELEASE)
 
-
-IF(HAVE_MPI) 
-SET(QMCDRIVERS ${QMCDRIVERS} 
-    ../QMCDrivers/GlobalWalkerControl.cpp
-    )
-ENDIF(HAVE_MPI) 
 
 
 ####################################
