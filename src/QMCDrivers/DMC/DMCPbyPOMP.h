@@ -61,8 +61,9 @@ namespace qmcplusplus {
     /// Copy operator (disabled).
     DMCPbyPOMP& operator=(const DMCPbyPOMP&) { return *this;}
 
-    string BenchMarkRun;
     int NumThreads;
+    string Reconfiguration;
+    string BenchMarkRun;
 
     vector<DMCUpdateBase*> Movers;
     vector<ParticleSet*> wClones;

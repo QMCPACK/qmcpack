@@ -73,10 +73,10 @@ namespace qmcplusplus {
     Mover->initWalkers(W.begin(),W.end());
 
     if(fixW)  {
-      app_log() << "  DMC Particle-By-Particle Update with reconfigurations" << endl;
+      app_log() << "  DMC PbyP update with reconfigurations" << endl;
       dmcWithReconfiguration();
     } else {
-      app_log() << "  DMC Particle-By-Particle Update with a fluctuating population" << endl;
+      app_log() << "  DMC PbyP update with a fluctuating population" << endl;
       dmcWithBranching();
     }
 

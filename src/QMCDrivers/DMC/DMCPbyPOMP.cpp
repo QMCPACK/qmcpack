@@ -30,7 +30,7 @@ namespace qmcplusplus {
     QMCDriver(w,psi,h),
     KillNodeCrossing(0),
     PopIndex(-1), EtrialIndex(-1),
-    BenchMarkRun("no"){
+    Reconfiguration("no"), BenchMarkRun("no"){
     RootName = "dummy";
     QMCType ="dummy";
     NumThreads=omp_get_max_threads();
@@ -41,12 +41,10 @@ namespace qmcplusplus {
 
     m_param.add(KillWalker,"killnode","string");
     m_param.add(BenchMarkRun,"benchmark","string");
+    m_param.add(Reconfiguration,"reconfiguration","string");
   }
 
   void DMCPbyPOMP::makeClones(HamiltonianPool& hpool, int np) {
-
-    //np is ignored but will see if ever needed
-    wPerNode.resize(NumThreads+1,0);
 
     if(wClones.size()) {
       ERRORMSG("Cannot make clones again. Use clones")
@@ -62,13 +60,7 @@ namespace qmcplusplus {
     psiClones[0]=&Psi;
     hClones[0]=&H;
 
-    if(NumThreads == 1) {
-      WARNMSG("Using a single thread with DMCPbyPOMP.")
-      return;
-    }
-
     hpool.clone(W,Psi,H,wClones,psiClones,hClones);
-
   }
 
   void DMCPbyPOMP::resetRun() {
@@ -115,15 +107,78 @@ namespace qmcplusplus {
     if(BenchMarkRun == "yes")  {
       app_log() << "  Running DMCPbyPOMP::benchMark " << endl;
       benchMark();
-    } else 
-      dmcWithBranching();
+    } else  {
+      if(Reconfiguration == "yes") {
+        app_log() << "  DMC/OMP PbyP Update with reconfigurations" << endl;
+        dmcWithReconfiguration();
+      } else {
+        app_log() << "  DMC/OMP PbyP update with a fluctuating population" << endl;
+        dmcWithBranching();
+      }
+    }
 
     Estimators->finalize();
     return true;
   }
   
   void DMCPbyPOMP::dmcWithReconfiguration() {
+
+    RealType Eest = branchEngine->E_T;
+    resetRun();
+    
+    IndexType block = 0;
+    IndexType nAcceptTot = 0;
+    IndexType nRejectTot = 0;
+    do {
+      for(int ip=0; ip<NumThreads; ip++) {
+        Movers[ip]->startBlock();
+      } 
+      Estimators->startBlock();
+
+      IndexType step = 0;
+      do {
+#pragma omp parallel  
+        {
+          int ip = omp_get_thread_num();
+          Movers[ip]->resetEtrial(Eest);
+          MCWalkerConfiguration::iterator it(W.begin()+wPerNode[ip]), 
+            it_end(W.begin()+wPerNode[ip+1]);
+          Movers[ip]->advanceWalkers(it, it_end);
+          while(it != it_end) {
+            branchEngine->accumulate((*it)->Properties(LOCALENERGY),1.0);
+            ++it;
+          }
+        }
+        step++; CurrentStep++;
+      } while(step<nSteps);
+
+      Estimators->accumulate(W);
+      int nwKept = branchEngine->branch(CurrentStep,W, branchClones);
+
+
+      nAcceptTot=0;
+      nRejectTot=0;
+      for(int ip=0; ip<NumThreads; ip++) {
+        nAcceptTot+=Movers[ip]->nAccept;
+        nRejectTot+=Movers[ip]->nReject;
+      }
+      
+      Estimators->stopBlock(static_cast<RealType>(nAccept)/static_cast<RealType>(nAccept+nReject));
+      Estimators->setColumn(PopIndex,nwKept);
+
+      block++;
+      recordBlock(block);
+      if(CurrentStep%100 == 0) {
+#pragma omp parallel  
+        {
+          int ip = omp_get_thread_num();
+          Movers[ip]->updateWalkers(W.begin()+wPerNode[ip], W.begin()+wPerNode[ip+1]);
+        }
+      }
+
+    } while(block<nBlocks);
   }
+
   void DMCPbyPOMP::dmcWithBranching() {
 
 

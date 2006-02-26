@@ -23,6 +23,7 @@
 #if defined(ENABLE_OPENMP)
 #include "QMCDrivers/DMC/DMCPbyPOMP.h" 
 #endif
+#include "Message/OpenMP.h"
 
 namespace qmcplusplus {
 

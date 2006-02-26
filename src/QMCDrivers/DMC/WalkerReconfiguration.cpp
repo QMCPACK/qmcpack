@@ -32,7 +32,7 @@ WalkerReconfiguration::WalkerReconfiguration() {
 
   UnitZeta=Random();
 
-  ofstream fout("check.dat");
+  //ofstream fout("check.dat");
 }
 
 int WalkerReconfiguration::getIndexPermutation(MCWalkerConfiguration& W) {
@@ -65,18 +65,19 @@ int WalkerReconfiguration::getIndexPermutation(MCWalkerConfiguration& W) {
   //}
 
   //assign negative
-  std::fill(IndexCopy.begin(),IndexCopy.end(),-1);
+  //std::fill(IndexCopy.begin(),IndexCopy.end(),-1);
 
   int ind=0;
   RealType wCur=0.0;
   //surviving walkers
   int icdiff=0;
   it=W.begin();
+  vector<int> ipip(nw,0);
   for(int iw=0; iw<nw; iw++) {
     RealType tryp=wCur+fabs(wConf[iw]);
     int ni=0;
     while(Zeta[ind]<tryp && Zeta[ind] >= wCur) {
-      IndexCopy[ind]=iw;
+      //IndexCopy[ind]=iw;
       ind++;
       ni++;
     }
@@ -84,25 +85,39 @@ int WalkerReconfiguration::getIndexPermutation(MCWalkerConfiguration& W) {
     if(ni) {
       icdiff++;
     } 
+    ipip[iw]=ni;
   }
 
-  ofstream fout("check.dat", ios::app);
-  fout << wtot << " " << icdiff << endl;
+  //ofstream fout("check.dat", ios::app);
+  //fout << wtot << " " << icdiff << endl;
 
-  int killed = shuffleIndex(nw);
+  vector<int> plus,minus;
+  for(int iw=0; iw<nw; iw++) {
+    int m=ipip[iw];
+    if(m>1) 
+      plus.insert(plus.end(),m-1,iw);
+    else if(m==0) 
+      minus.push_back(iw);
+  }
+
+  for(int i=0; i<plus.size(); i++) {
+    W[minus[i]]->assign(*(W[plus[i]]));
+  }
+  //int killed = shuffleIndex(nw);
   //fout << "# Total weight " << wtot << " " << killed <<  endl;
   //cout << "<<<< CopyIndex " << endl;
   //std::copy(IndexCopy.begin(), IndexCopy.end(), ostream_iterator<int>(cout, " "));
   //cout << endl << "<<<<<<" << endl;
 
-  for(int iw=0; iw<nw; iw++) {
-    if(IndexCopy[iw] != iw) {
-      W[iw]->assign(*(W[IndexCopy[iw]]));
-    }
-  }
+  //for(int iw=0; iw<nw; iw++) {
+  //  if(IndexCopy[iw] != iw) {
+  //    W[iw]->assign(*(W[IndexCopy[iw]]));
+  //  }
+  //}
 
   return icdiff;
 }
+
 int WalkerReconfiguration::shuffleIndex(int nw) {
   vector<int> ipip(nw,0);
   for(int iw=0; iw<nw; iw++) ipip[IndexCopy[iw]]+=1;

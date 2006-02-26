@@ -44,8 +44,6 @@ FixedWalkerControl::branch(int iter, MCWalkerConfiguration& W, RealType trigger)
 
   int nwkept = swapWalkers(W);
 
-  gsum(nwkept,0);
-
   //set Weight and Multiplicity to default values
   MCWalkerConfiguration::iterator it(W.begin()),it_end(W.end());
   while(it != it_end) {
