@@ -24,22 +24,27 @@
 namespace qmcplusplus {
 
 #if defined(HAVE_MPI)
-  WalkerControlBase* 
-    CreateWalkerController(int& swapmode, 
-        int nideal, int nmax, int nmin, WalkerControlBase* wc) {
+  WalkerControlBase* CreateWalkerController(
+      bool reconfig, int& swapmode, int nideal,
+      int nmax, int nmin, WalkerControlBase* wc) {
 
       int ncontexts = OHMMS::Controller->ncontexts();
 
       //overwrite the SwapMode
       if(ncontexts == 1) { swapmode=0;}
 
-      if(swapmode) {
-        int npernode=nideal/ncontexts;
-        nmax=2*npernode+1;
-        nmin=npernode/5+1;
+      if(reconfig) {
+        nmax=nideal/ncontexts;
+        nmin=nideal/ncontexts;
       } else {
-        nmax=2*nideal;
-        nmin=nideal/2;
+        if(swapmode) {
+          int npernode=nideal/ncontexts;
+          nmax=2*npernode+1;
+          nmin=npernode/5+1;
+        } else {
+          nmax=2*nideal;
+          nmin=nideal/2;
+        }
       }
 
       if(wc) {
@@ -51,12 +56,24 @@ namespace qmcplusplus {
 
       if(wc == 0) {
         if(swapmode) {
-          wc = new WalkerControlMPI;
-          //wc = new AsyncWalkerControl;
+          if(reconfig)  {
+            app_log() << "  Using a WalkerReconfigurationMPI for population control." << endl;
+            wc = new WalkerReconfigurationMPI;
+          } else {
+            app_log() << "  Using a WalkerControlMPI for dynamic population control." << endl;
+            wc = new WalkerControlMPI;
+          }
         } else {
-          wc = new WalkerControlBase;
+          if(reconfig)  {
+            app_log() << "  Using a WalkerReconfiguration for population control." << endl;
+            wc = new WalkerReconfiguration;
+          } else {
+            app_log() << "  Using a WalkerControlBase for dynamic population control." << endl;
+            wc = new WalkerControlBase;
+          }
         }
       }
+
       wc->Nmin=nmin;
       wc->Nmax=nmax;
       return wc;
