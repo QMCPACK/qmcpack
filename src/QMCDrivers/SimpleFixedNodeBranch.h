@@ -62,8 +62,6 @@ namespace qmcplusplus {
      int MaxCopy;
      ///control population fluctutaions
      int NumGeneration;
-     ///maximum age to remove persistent walkers 
-     int MaxAge;
      ///the timestep
      RealType Tau;
      ///feedback parameter to control the population
@@ -100,7 +98,7 @@ namespace qmcplusplus {
       */
      void initWalkerController(RealType tau, bool fixW=false);
 
-     RealType setWeights(MCWalkerConfiguration::iterator it, MCWalkerConfiguration::iterator it_end);
+     //void setWeights(MCWalkerConfiguration::iterator it, MCWalkerConfiguration::iterator it_end);
 
      /**  Calculates the Branching Green's function
       *@param tau effective time step

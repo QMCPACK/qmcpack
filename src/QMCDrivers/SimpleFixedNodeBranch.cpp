@@ -26,7 +26,7 @@ using namespace qmcplusplus;
 SimpleFixedNodeBranch::SimpleFixedNodeBranch(RealType tau, int nideal): 
 FixedNumWalkers(false), SwapMode(0), Counter(0), 
   Nideal(nideal), NumGeneration(50), 
-  MaxCopy(-1), MaxAge(1), Tau(tau), E_T(0.0), EavgSum(0.0), WgtSum(0.0), PopControl(0.1), 
+  MaxCopy(-1), Tau(tau), E_T(0.0), EavgSum(0.0), WgtSum(0.0), PopControl(0.1), 
   WalkerController(0)
 {
   reset();
@@ -39,7 +39,7 @@ FixedNumWalkers(false), SwapMode(0), Counter(0),
 SimpleFixedNodeBranch::SimpleFixedNodeBranch(const SimpleFixedNodeBranch& abranch):
   FixedNumWalkers(false), SwapMode(0), Counter(0), 
   Nideal(abranch.Nideal), NumGeneration(abranch.NumGeneration), 
-  MaxCopy(-1), MaxAge(abranch.MaxAge), Tau(abranch.Tau), E_T(abranch.E_T), 
+  MaxCopy(-1), Tau(abranch.Tau), E_T(abranch.E_T), 
   EavgSum(0.0), WgtSum(0.0), PopControl(abranch.PopControl), 
   WalkerController(0)
 {
@@ -69,11 +69,9 @@ void SimpleFixedNodeBranch::initWalkerController(RealType tau, bool fixW) {
  * @param it starting walker
  * @param it_end ending walker
  * @return new trial energy
- */
-SimpleFixedNodeBranch::RealType 
+void
 SimpleFixedNodeBranch::setWeights(MCWalkerConfiguration::iterator it, 
     MCWalkerConfiguration::iterator it_end) {
-  int nw=0;
   while(it != it_end) {
     MCWalkerConfiguration::Walker_t& thisWalker(**it);
     RealType M=thisWalker.Weight;
@@ -81,26 +79,22 @@ SimpleFixedNodeBranch::setWeights(MCWalkerConfiguration::iterator it,
     else if(thisWalker.Age > 0) M = std::min(1.0,M);
     thisWalker.Multiplicity = M + Random();
     accumulate(thisWalker.Properties(LOCALENERGY),M);
-    ++it; ++nw;
+    ++it; 
   }
-  return E_T = WalkerController->average(EavgSum,WgtSum)-Feed*log(static_cast<RealType>(nw))+logN;
+  //return E_T = WalkerController->average(EavgSum,WgtSum)-Feed*log(static_cast<RealType>(nw))+logN;
+}
+*/
+
+int SimpleFixedNodeBranch::branch(int iter, MCWalkerConfiguration& w, vector<ThisType*>& clones) {
+
+  for(int i=0; i<clones.size(); i++) {
+    Counter += clones[i]->Counter;
+    EavgSum += clones[i]->EavgSum;
+    WgtSum += clones[i]->WgtSum;
+  }
+  return WalkerController->branch(iter,w,PopControl);
 }
 
-//void SimpleFixedNodeBranch::setWeight(MCWalkerConfiguration::Walker_t& aWalker, RealType tau, RealType emixed, RealType delta) {
-//  if(FixedNumWalkers) {
-//    aWalker.Weight*=exp(-tau*(emixed-E_T));
-//    accumulate(emixed,1.0);
-//  } else { 
-//    RealType mult=exp(-tau*(emixed-E_T));
-//    if(aWalker.Age>MaxAge)  
-//      mult=std::min(0.5,mult);
-//    else if(aWalker.Age>0) 
-//      mult=std::min(1.0,mult);
-//    aWalker.Weight=mult;
-//    aWalker.Multiplicity=mult+delta;
-//    accumulate(emixed,mult);
-//  }
-//}
 void SimpleFixedNodeBranch::reset() {
   //WalkerController = CreateWalkerController(FixedNumWalkers, SwapMode, Nideal, Nmax, Nmin, WalkerController);
   //Nmax=WalkerController->Nmax;
@@ -162,15 +156,6 @@ bool SimpleFixedNodeBranch::put(xmlNodePtr cur){
   return true;
 }
 
-int SimpleFixedNodeBranch::branch(int iter, MCWalkerConfiguration& w, vector<ThisType*>& clones) {
-
-  for(int i=0; i<clones.size(); i++) {
-    Counter += clones[i]->Counter;
-    EavgSum += clones[i]->EavgSum;
-    WgtSum += clones[i]->WgtSum;
-  }
-  return WalkerController->branch(iter,w,PopControl);
-}
 
 #if defined(HAVE_LIBHDF5)
 void SimpleFixedNodeBranch::write(hid_t grp, bool append) {
