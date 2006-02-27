@@ -46,7 +46,7 @@ namespace qmcplusplus {
     
     RealType Eest = branchEngine->E_T;
     Mover->resetRun(branchEngine);
-    branchEngine->MaxAge=3;
+    Mover->MaxAge=3;
 
     IndexType block = 0;
     IndexType nAcceptTot = 0;
@@ -64,13 +64,9 @@ namespace qmcplusplus {
         pop_acc += W.getActiveWalkers();
 
         Mover->advanceWalkers(W.begin(),W.end());
-
-        //update the Weight/Multiplicity and get the new trial energy
-        Eest = branchEngine->setWeights(W.begin(), W.end());
-
         step++; CurrentStep++;
-
         Estimators->accumulate(W);
+        Eest = branchEngine->CollectAndUpdate(W.getActiveWalkers(),Eest);
         branchEngine->branch(CurrentStep,W);
       } while(step<nSteps);
 
@@ -96,6 +92,7 @@ namespace qmcplusplus {
   }
 
   void DMCMoveAll::dmcWithReconfiguration() {
+    Mover->MaxAge=0;
     IndexType block = 0;
     RealType Eest = branchEngine->E_T;
     IndexType nAcceptTot = 0;
@@ -108,12 +105,6 @@ namespace qmcplusplus {
 
       do {
         Mover->advanceWalkers(W.begin(), W.end());
-
-        MCWalkerConfiguration::iterator it(W.begin()), it_end(W.end());
-        while(it != it_end) {
-          branchEngine->accumulate((*it)->Properties(LOCALENERGY),1.0);
-          ++it;
-        }
         step++; CurrentStep++;
       } while(step<nSteps);
 

@@ -86,25 +86,25 @@ namespace qmcplusplus {
   }
 
   void DMCPbyP::dmcWithReconfiguration() {
+    //MaxAge is set to 0 not to evaluate branching factor
+    Mover->MaxAge=0;
     IndexType block = 0;
     IndexType nAcceptTot = 0;
     IndexType nRejectTot = 0;
+    RealType Est=branchEngine->E_T;
     do {
       IndexType step = 0;
       Mover->startBlock();
       Estimators->startBlock();
       do {
         Mover->advanceWalkers(W.begin(), W.end());
-        MCWalkerConfiguration::iterator it(W.begin()), it_end(W.end());
-        while(it != it_end) {
-          branchEngine->accumulate((*it)->Properties(LOCALENERGY),1.0);
-          ++it;
-        }
         step++; CurrentStep++;
       } while(step<nSteps);
 
       Estimators->accumulate(W);
       int nwKept= branchEngine->branch(CurrentStep,W);
+
+      Eest = branchEngine->CollectAndUpdate(W.getActiveWalkers(),Eest);
 
       Estimators->stopBlock(Mover->acceptRatio());
 
@@ -123,7 +123,7 @@ namespace qmcplusplus {
 
   void DMCPbyP::dmcWithBranching() {
 
-    branchEngine->MaxAge=1;
+    Mover->MaxAge=1;
     IndexType block = 0;
     RealType Eest = branchEngine->E_T;
     nAcceptTot = 0;
@@ -137,9 +137,11 @@ namespace qmcplusplus {
       Estimators->startBlock();
       do {
         Mover->advanceWalkers(W.begin(),W.end());
-        Eest = branchEngine->setWeights(W.begin(), W.end());
+
         ++step; ++CurrentStep;
         Estimators->accumulate(W);
+
+        Eest = branchEngine->CollectAndUpdate(W.getActiveWalkers(),Eest);
         pop_acc += branchEngine->branch(CurrentStep,W);
         if(CurrentStep%100 == 0) updateWalkers();
       } while(step<nSteps);

@@ -94,6 +94,15 @@ namespace qmcplusplus {
       }
 
       thisWalker.Weight *= branchEngine->branchGF(Tau,emixed,0.0);
+      if(MaxAge) {
+        RealType M=thisWalker.Weight;
+        if(thisWalker.Age > MaxAge) M = std::min(0.5,M);
+        else if(thisWalker.Age > 0) M = std::min(1.0,M);
+        thisWalker.Multiplicity = M + RandomGen();
+        branchEngine->accumulate(eold,M);
+      } else {
+        branchEngine->accumulate(eold,1);
+      }
 
       if(accepted) 
         ++nAccept;
@@ -171,6 +180,15 @@ namespace qmcplusplus {
         }
 
         thisWalker.Weight *= branchEngine->branchGF(Tau,emixed,0.0);
+        if(MaxAge) {
+          RealType M=thisWalker.Weight;
+          if(thisWalker.Age > MaxAge) M = std::min(0.5,M);
+          else if(thisWalker.Age > 0) M = std::min(1.0,M);
+          thisWalker.Multiplicity = M + RandomGen();
+          branchEngine->accumulate(eold,M);
+        } else {
+          branchEngine->accumulate(eold,1);
+        }
       }
 
       if(accepted) 

@@ -65,10 +65,21 @@ namespace qmcplusplus {
 
   void DMCPbyPOMP::resetRun() {
 
+    //KillNodeCrossing = (KillWalker == "yes");
+    //if(KillNodeCrossing) {
+    //  app_log() << "Walkers will be killed if a node crossing is detected." << endl;
+    //} else {
+    //  app_log() << "Walkers will be kept even if a node crossing is detected." << endl;
+    //}
+
     if(Movers.empty()) {
       Movers.resize(NumThreads,0);
       branchClones.resize(NumThreads,0);
       FairDivideLow(W.getActiveWalkers(),NumThreads,wPerNode);
+
+      app_log() << "  Initial partition of walkers ";
+      std::copy(wPerNode.begin(),wPerNode.end(),ostream_iterator<int>(app_log()," "));
+      app_log() << endl;
 #pragma omp parallel  
       {
         int ip = omp_get_thread_num();
@@ -90,13 +101,6 @@ namespace qmcplusplus {
 
   bool DMCPbyPOMP::run() {
 
-    KillNodeCrossing = (KillWalker == "yes");
-    if(KillNodeCrossing) {
-      app_log() << "Walkers will be killed if a node crossing is detected." << endl;
-    } else {
-      app_log() << "Walkers will be kept even if a node crossing is detected." << endl;
-    }
-
     //set the collection mode for the estimator
     Estimators->setCollectionMode(branchEngine->SwapMode);
 
@@ -110,9 +114,11 @@ namespace qmcplusplus {
     } else  {
       if(Reconfiguration == "yes") {
         app_log() << "  DMC/OMP PbyP Update with reconfigurations" << endl;
+        for(int ip=0; ip<Movers.size(); ip++) Movers[ip]->MaxAge=0;
         dmcWithReconfiguration();
       } else {
         app_log() << "  DMC/OMP PbyP update with a fluctuating population" << endl;
+        for(int ip=0; ip<Movers.size(); ip++) Movers[ip]->MaxAge=1;
         dmcWithBranching();
       }
     }
@@ -141,20 +147,13 @@ namespace qmcplusplus {
         {
           int ip = omp_get_thread_num();
           Movers[ip]->resetEtrial(Eest);
-          MCWalkerConfiguration::iterator it(W.begin()+wPerNode[ip]), 
-            it_end(W.begin()+wPerNode[ip+1]);
-          Movers[ip]->advanceWalkers(it, it_end);
-          while(it != it_end) {
-            branchEngine->accumulate((*it)->Properties(LOCALENERGY),1.0);
-            ++it;
-          }
+          Movers[ip]->advanceWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
         }
         step++; CurrentStep++;
       } while(step<nSteps);
 
       Estimators->accumulate(W);
       int nwKept = branchEngine->branch(CurrentStep,W, branchClones);
-
 
       nAcceptTot=0;
       nRejectTot=0;
@@ -180,7 +179,6 @@ namespace qmcplusplus {
   }
 
   void DMCPbyPOMP::dmcWithBranching() {
-
 
     IndexType block = 0;
     RealType Eest = branchEngine->E_T;
@@ -209,14 +207,12 @@ namespace qmcplusplus {
           Movers[ip]->advanceWalkers(W.begin()+wPerNode[ip], W.begin()+wPerNode[ip+1]);
         }
 
-        Eest = branchEngine->setWeights(W.begin(), W.end());
-
         ++step; ++CurrentStep;
         Estimators->accumulate(W);
 
         int cur_pop = branchEngine->branch(CurrentStep,W, branchClones);
         pop_acc += cur_pop;
-        //Eest = branchEngine->CollectAndUpdate(cur_pop, Eest); 
+        Eest = branchEngine->CollectAndUpdate(cur_pop, Eest); 
 
         FairDivideLow(W.getActiveWalkers(),NumThreads,wPerNode);
 

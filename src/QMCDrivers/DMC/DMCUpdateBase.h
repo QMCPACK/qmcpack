@@ -44,6 +44,8 @@ namespace qmcplusplus {
     typedef MCWalkerConfiguration::iterator WalkerIter_t;
     typedef SimpleFixedNodeBranch           BranchEngineType;
 
+    ///MaxAge>0 indicates branch is done
+    IndexType MaxAge;
     ///counter for number of moves accepted
     IndexType nAccept;
     ///counter for number of moves /rejected

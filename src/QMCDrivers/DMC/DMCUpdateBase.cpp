@@ -24,7 +24,7 @@ namespace qmcplusplus {
 
   /// Constructor.
   DMCUpdateBase::DMCUpdateBase(ParticleSet& w, TrialWaveFunction& psi, QMCHamiltonian& h,
-      RandomGenerator_t& rg): W(w),Psi(psi),H(h), RandomGen(rg)
+      RandomGenerator_t& rg): W(w),Psi(psi),H(h), RandomGen(rg), MaxAge(0)
     { }
   
   /// destructor
