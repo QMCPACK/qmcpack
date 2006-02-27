@@ -38,10 +38,12 @@ namespace qmcplusplus {
     int FirstWalker;
     ///ending index of the local walkers
     int LastWalker;
-    //random number [0,1)
+    ///random number [0,1)
     RealType UnitZeta;
-    //random number [0,1)/number of walkers
+    ///random number [0,1)/number of walkers
     RealType DeltaStep;
+    ///1/(total number of walkers)
+    RealType nwInv;
 
     //vector<int>      IndexCopy;
     //weight per walker

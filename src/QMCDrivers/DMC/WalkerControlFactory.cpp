@@ -30,8 +30,8 @@ namespace qmcplusplus {
 
       int ncontexts = OHMMS::Controller->ncontexts();
 
-      //overwrite the SwapMode
-      if(ncontexts == 1) { swapmode=0;}
+      //overwrite the SwapMode for a single-node run
+      if(ncontexts == 1) {swapmode=0;}
 
       if(reconfig) {
         nmax=nideal/ncontexts;

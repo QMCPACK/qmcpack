@@ -25,25 +25,26 @@ using namespace qmcplusplus;
  *
  * set SwapMode
  */
-WalkerReconfigurationMPI::WalkerReconfigurationMPI() {
+WalkerReconfigurationMPI::WalkerReconfigurationMPI(): TotalWalkers(0) {
   SwapMode=1;
   NumContexts=OHMMS::Controller->ncontexts();
   MyContext=OHMMS::Controller->mycontext();
   UnitZeta=Random();
 
   MPI_Bcast(&UnitZeta,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
-
-  ostringstream o;
-  o << "check." << MyContext << ".dat";
-  ofstream fout(o.str().c_str());
-  fout << "UnitZeta " << UnitZeta << endl;
+  app_log() << "  First weight [0,1) for reconfiguration" << endl;
+  //ostringstream o;
+  //o << "check." << MyContext << ".dat";
+  //ofstream fout(o.str().c_str());
+  //fout << "UnitZeta " << UnitZeta << endl;
 }
 
 int 
-FixedWalkerControl::branch(int iter, MCWalkerConfiguration& W, RealType trigger) {
+WalkerReconfigurationMPI::branch(int iter, MCWalkerConfiguration& W, RealType trigger) {
 
   int nwkept = swapWalkers(W);
 
+  gsum(nwkept,0);
   //set Weight and Multiplicity to default values
   MCWalkerConfiguration::iterator it(W.begin()),it_end(W.end());
   while(it != it_end) {
@@ -55,17 +56,16 @@ FixedWalkerControl::branch(int iter, MCWalkerConfiguration& W, RealType trigger)
   return nwkept;
 }
 
-int FixedWalkerControl::swapWalkers(MCWalkerConfiguration& W) {
+int WalkerReconfigurationMPI::swapWalkers(MCWalkerConfiguration& W) {
 
   int nw=W.getActiveWalkers();
-  if(Zeta.empty()) {
+  if(TotalWalkers ==0) {
     FirstWalker=nw*MyContext;
     LastWalker=FirstWalker+nw;
     TotalWalkers = nw*NumContexts;
     nwInv = 1.0/static_cast<RealType>(TotalWalkers);
     DeltaStep = UnitZeta*nwInv;
 
-    IndexCopy.resize(nw);
     ncopy_w.resize(nw);
     wConf.resize(nw);
     wSum.resize(NumContexts);
@@ -93,12 +93,10 @@ int FixedWalkerControl::swapWalkers(MCWalkerConfiguration& W) {
   wtot=wOffset[NumContexts];
 
   //find the lower and upper bound of index
-  int minIndex=(wOffset[MyContext]/wtot-DeltaStep)*static_cast<RealType>(TotalWalkers)-1;
+  int minIndex=(wOffset[MyContext]/wtot-DeltaStep)*static_cast<RealType>(TotalWalkers);
   int maxIndex=(wOffset[MyContext+1]/wtot-DeltaStep)*static_cast<RealType>(TotalWalkers)+1;
-
   int nb=maxIndex-minIndex;
   vector<RealType> Zeta(nb);
-  vector<int> IndexCopy(nb,-1);
 
   for(int i=minIndex, ii=0; i<maxIndex; i++,ii++) {
     Zeta[ii]= wtot*(DeltaStep+static_cast<RealType>(i)*nwInv);
@@ -114,7 +112,6 @@ int FixedWalkerControl::swapWalkers(MCWalkerConfiguration& W) {
     RealType tryp=wCur+fabs(wConf[iw]);
     int ni=0;
     while(Zeta[ind]<tryp && Zeta[ind] >= wCur) {
-      IndexCopy[ind]=iw;
       ind++;
       ni++;
     }
@@ -135,6 +132,7 @@ int FixedWalkerControl::swapWalkers(MCWalkerConfiguration& W) {
     }
   }
 
+
   //copy within the local node
   int lower=std::min(plus.size(),minus.size()); 
   while(lower>0) {
@@ -143,6 +141,7 @@ int FixedWalkerControl::swapWalkers(MCWalkerConfiguration& W) {
     minus.pop_back();
     plus.pop_back();
   }
+
 
   //dN[ip] extra/missing walkers
   vector<int> dN(NumContexts,0);
@@ -160,6 +159,8 @@ int FixedWalkerControl::swapWalkers(MCWalkerConfiguration& W) {
       minusN.insert(minusN.end(),-dN[ip],ip);
   }
 
+  int wbuffer_size=W[0]->byteSize();
+
   //minusN.size() == plusN.size()
   //a node either send walker or recv walker but never both
   int nswap=plusN.size();
@@ -167,13 +168,13 @@ int FixedWalkerControl::swapWalkers(MCWalkerConfiguration& W) {
   int ic=0;
   while(ic<nswap && last>=0) {
     if(plusN[ic]==MyContext) {
-      OOMPI_Packed sendBuffer(wRef.byteSize(),OOMPI_COMM_WORLD);
+      OOMPI_Packed sendBuffer(wbuffer_size,OOMPI_COMM_WORLD);
       W[plus[last]]->putMessage(sendBuffer);
       OOMPI_COMM_WORLD[minusN[ic]].Send(sendBuffer);
       --last; 
     } 
     if(minusN[ic]==MyContext) {
-      OOMPI_Packed recvBuffer(wRef.byteSize(),OOMPI_COMM_WORLD);
+      OOMPI_Packed recvBuffer(wbuffer_size,OOMPI_COMM_WORLD);
       OOMPI_COMM_WORLD[plusN[ic]].Recv(recvBuffer);
       W[minus[last]]->getMessage(recvBuffer);
       --last;
