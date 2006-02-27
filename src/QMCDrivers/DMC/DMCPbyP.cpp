@@ -91,7 +91,7 @@ namespace qmcplusplus {
     IndexType block = 0;
     IndexType nAcceptTot = 0;
     IndexType nRejectTot = 0;
-    RealType Est=branchEngine->E_T;
+    RealType Eest=branchEngine->E_T;
     do {
       IndexType step = 0;
       Mover->startBlock();
@@ -140,9 +140,11 @@ namespace qmcplusplus {
 
         ++step; ++CurrentStep;
         Estimators->accumulate(W);
+        int cur_pop = branchEngine->branch(CurrentStep,W);
+        pop_acc += cur_pop;
 
-        Eest = branchEngine->CollectAndUpdate(W.getActiveWalkers(),Eest);
-        pop_acc += branchEngine->branch(CurrentStep,W);
+        Eest = branchEngine->CollectAndUpdate(cur_pop,Eest);
+
         if(CurrentStep%100 == 0) updateWalkers();
       } while(step<nSteps);
       
