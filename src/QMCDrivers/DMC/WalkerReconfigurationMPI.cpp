@@ -32,7 +32,8 @@ WalkerReconfigurationMPI::WalkerReconfigurationMPI(): TotalWalkers(0) {
   UnitZeta=Random();
 
   MPI_Bcast(&UnitZeta,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
-  app_log() << "  First weight [0,1) for reconfiguration" << endl;
+  app_log() << "  First weight [0,1) for reconfiguration =" << UnitZeta << endl;
+
   //ostringstream o;
   //o << "check." << MyContext << ".dat";
   //ofstream fout(o.str().c_str());
@@ -42,9 +43,14 @@ WalkerReconfigurationMPI::WalkerReconfigurationMPI(): TotalWalkers(0) {
 int 
 WalkerReconfigurationMPI::branch(int iter, MCWalkerConfiguration& W, RealType trigger) {
 
+  OHMMS::Controller->barrier();
+
   int nwkept = swapWalkers(W);
 
+  OHMMS::Controller->barrier();
+
   gsum(nwkept,0);
+
   //set Weight and Multiplicity to default values
   MCWalkerConfiguration::iterator it(W.begin()),it_end(W.end());
   while(it != it_end) {
@@ -57,6 +63,9 @@ WalkerReconfigurationMPI::branch(int iter, MCWalkerConfiguration& W, RealType tr
 }
 
 int WalkerReconfigurationMPI::swapWalkers(MCWalkerConfiguration& W) {
+  //ostringstream o;
+  //o << "check." << MyContext << ".dat";
+  //ofstream fout(o.str().c_str(),ios::app);
 
   int nw=W.getActiveWalkers();
   if(TotalWalkers ==0) {
@@ -93,9 +102,9 @@ int WalkerReconfigurationMPI::swapWalkers(MCWalkerConfiguration& W) {
   wtot=wOffset[NumContexts];
 
   //find the lower and upper bound of index
-  int minIndex=(wOffset[MyContext]/wtot-DeltaStep)*static_cast<RealType>(TotalWalkers);
+  int minIndex=(wOffset[MyContext]/wtot-DeltaStep)*static_cast<RealType>(TotalWalkers)-1;
   int maxIndex=(wOffset[MyContext+1]/wtot-DeltaStep)*static_cast<RealType>(TotalWalkers)+1;
-  int nb=maxIndex-minIndex;
+  int nb=maxIndex-minIndex+1;
   vector<RealType> Zeta(nb);
 
   for(int i=minIndex, ii=0; i<maxIndex; i++,ii++) {
@@ -132,7 +141,6 @@ int WalkerReconfigurationMPI::swapWalkers(MCWalkerConfiguration& W) {
     }
   }
 
-
   //copy within the local node
   int lower=std::min(plus.size(),minus.size()); 
   while(lower>0) {
@@ -158,6 +166,11 @@ int WalkerReconfigurationMPI::swapWalkers(MCWalkerConfiguration& W) {
     else if(dN[ip]<0)
       minusN.insert(minusN.end(),-dN[ip],ip);
   }
+
+  //fout << " | p="<<plusN.size() << " ";
+  //std::copy(plusN.begin(), plusN.end(), ostream_iterator<int>(fout," "));
+  //fout << " | m="<< minusN.size() << " " ;
+  //std::copy(minusN.begin(), minusN.end(), ostream_iterator<int>(fout," "));
 
   int wbuffer_size=W[0]->byteSize();
 
