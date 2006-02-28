@@ -102,8 +102,8 @@ int WalkerReconfigurationMPI::swapWalkers(MCWalkerConfiguration& W) {
   wtot=wOffset[NumContexts];
 
   //find the lower and upper bound of index
-  int minIndex=(wOffset[MyContext]/wtot-DeltaStep)*static_cast<RealType>(TotalWalkers)-1;
-  int maxIndex=(wOffset[MyContext+1]/wtot-DeltaStep)*static_cast<RealType>(TotalWalkers)+1;
+  int minIndex=static_cast<int>((wOffset[MyContext]/wtot-DeltaStep)*static_cast<RealType>(TotalWalkers))-1;
+  int maxIndex=static_cast<int>((wOffset[MyContext+1]/wtot-DeltaStep)*static_cast<RealType>(TotalWalkers))+1;
   int nb=maxIndex-minIndex+1;
   vector<RealType> Zeta(nb);
 
