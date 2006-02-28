@@ -45,7 +45,8 @@ namespace qmcplusplus {
     ///1/(total number of walkers)
     RealType nwInv;
 
-    //vector<int>      IndexCopy;
+    ///the number of extra/missing walkers
+    vector<IndexType> dN;
     //weight per walker
     vector<RealType> wConf;
     //accumulated weight [0,ip) for each ip
@@ -67,6 +68,18 @@ namespace qmcplusplus {
     /** return the surviving Walkers
      */
     int swapWalkers(MCWalkerConfiguration& W);
+
+
+    /** send the extra walkers to other node
+     * @param plus local indices of the walkers to be sent
+     */
+    void sendWalkers(MCWalkerConfiguration& W, const vector<IndexType>& plus);
+
+    /** send the missing walkers from other node
+     * @param minus local indices of the walkers to be copied
+     */
+    void recvWalkers(MCWalkerConfiguration& W, const vector<IndexType>& minus);
+
   };
 }
 #endif
