@@ -25,7 +25,7 @@
 #include "QMCHamiltonians/QMCHamiltonianBase.h"
 #include "Message/Communicate.h"
 #include "Utilities/Clock.h"
-#include "QMC/WaveFunctionTester.h"
+#include "QMCDrivers/WaveFunctionTester.h"
 #include "Utilities/OhmmsInform.h"
 #include "math.h"
 using namespace qmcplusplus;
@@ -33,9 +33,8 @@ using namespace qmcplusplus;
 
 WaveFunctionTester::WaveFunctionTester(MCWalkerConfiguration& w, 
 				       TrialWaveFunction& psi, 
-				       QMCHamiltonian& h, 
-				       xmlNodePtr q):
-  QMCDriver(w,psi,h,q) { }
+				       QMCHamiltonian& h):
+  QMCDriver(w,psi,h) { }
 
 
 /*!
@@ -58,11 +57,11 @@ WaveFunctionTester::WaveFunctionTester(MCWalkerConfiguration& w,
 bool 
 WaveFunctionTester::run() {
 
-  LogOut->getStream() << "Starting a Wavefucntion tester" << endl;
+  app_log() << "Starting a Wavefucntion tester" << endl;
 
   DistanceTable::create(1);
 
-  put(qmc_node);
+  put(qmcNode);
 
   IndexType nskipped = 0;
   RealType sig2Enloc=0, sig2Drift=0;
@@ -88,7 +87,8 @@ WaveFunctionTester::run() {
 
   W.R += deltaR;
 
-  DistanceTable::update(W);
+  W.update();
+  //DistanceTable::update(W);
   ValueType psi =log(fabs(Psi.evaluate(W)));
 
   ParticleSet::ParticlePos_t G(nat), G1(nat);
@@ -103,11 +103,11 @@ WaveFunctionTester::run() {
     for(int idim=0; idim<3; idim++) {
    
       W.R[iat][idim] = r0[idim]+delta;         
-      DistanceTable::update(W);
+      W.update();
       ValueType psi_p = log(fabs(Psi.evaluate(W)));
 
       W.R[iat][idim] = r0[idim]-delta;         
-      DistanceTable::update(W);
+      W.update();
       ValueType psi_m = log(fabs(Psi.evaluate(W)));
 
       lap += psi_m + psi_p;

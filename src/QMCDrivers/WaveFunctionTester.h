@@ -20,7 +20,7 @@
 #ifndef QMCPLUSPLUS_WAVEFUNCTIONTEST_H
 #define QMCPLUSPLUS_WAVEFUNCTIONTEST_H
 
-#include "QMC/QMCDriver.h" 
+#include "QMCDrivers/QMCDriver.h" 
 namespace qmcplusplus {
 
   /** Test the correctness of TrialWaveFunction for the values,
@@ -32,8 +32,7 @@ namespace qmcplusplus {
     /// Constructor.
     WaveFunctionTester(MCWalkerConfiguration& w, 
 		       TrialWaveFunction& psi, 
-		       QMCHamiltonian& h, 
-		       xmlNodePtr q);
+		       QMCHamiltonian& h);
 
     bool run();
     bool put(xmlNodePtr q);
