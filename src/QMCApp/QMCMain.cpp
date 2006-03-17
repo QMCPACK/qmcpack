@@ -35,7 +35,11 @@
 #include "QMCDrivers/VMCPbyPMultiple.h"
 #include "QMCDrivers/ReptationMC.h"
 #include "QMCDrivers/RQMCMultiple.h"
+#include "QMCDrivers/RQMCMultiple.h"
+//#include "QMCDrivers/VMCMultipleWarp.h"
+//#include "QMCDrivers/RQMCMultiWarp.h"
 #endif
+#include "QMCDrivers/WaveFunctionTester.h"
 #include "Utilities/OhmmsInfo.h"
 #include "Particle/HDFWalkerIO.h"
 #include "QMCApp/InitMolecularSystem.h"
@@ -361,6 +365,15 @@ namespace qmcplusplus {
           targetPsi.pop(); 
         }
         curRunType = VMC_RUN;
+//      } else if(what == "vmc-warp") {
+//        qmcDriver = new VMCMultipleWarp(*qmcSystem,*primaryPsi,*primaryH,
+//            *ptclPool);
+//        while(targetH.size()) {
+//          qmcDriver->add_H_and_Psi(targetH.front(),targetPsi.front());
+//          targetH.pop();
+//          targetPsi.pop(); 
+//        }
+//        curRunType = VMC_RUN;
       } else if(what == "vmc-ptcl-multi") {
         qmcDriver = new VMCPbyPMultiple(*qmcSystem,*primaryPsi,*primaryH);
         while(targetH.size()) {
@@ -380,7 +393,19 @@ namespace qmcplusplus {
           targetPsi.pop(); 
         }
         curRunType = RMC_RUN;
+//      } else if(what == "rmc-multi-warp") {
+//        qmcDriver = new RQMCMultiWarp(*qmcSystem,*primaryPsi,*primaryH, *ptclPool);
+//        while(targetH.size()) {
+//          qmcDriver->add_H_and_Psi(targetH.front(),targetPsi.front());
+//          targetH.pop();
+//          targetPsi.pop(); 
+//        }
+//        curRunType = RMC_RUN;
 #endif
+      } else if(what == "test") {
+        qmcDriver = new WaveFunctionTester(*qmcSystem,*primaryPsi,*primaryH);
+        WARNMSG("Testing wavefunctions. Creating WaveFunctionTester for testing")
+        curRunType = DUMMY_RUN;
       } else {
         qmcDriver = new DummyQMC(*qmcSystem,*primaryPsi,*primaryH);
         WARNMSG("Cannot termine what type of qmc to run. Creating DummyQMC for testing")
