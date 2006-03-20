@@ -124,8 +124,12 @@ void MCWalkerConfiguration::sample(iterator it, RealType tauinv) {
 }
 
 void MCWalkerConfiguration::reset() {
-  iterator it=WalkerList.begin();
-  while(it != WalkerList.end()) {(*it)->reset();it++;}
+  iterator it(WalkerList.begin()), it_end(WalkerList.end());
+  while(it != it_end) {//(*it)->reset();++it;}
+    (*it)->Weight=1.0;
+    (*it)->Multiplicity=1.0;
+    ++it;
+  }
 }
 
 bool MCWalkerConfiguration::createAuxDataSet(int nfield) {

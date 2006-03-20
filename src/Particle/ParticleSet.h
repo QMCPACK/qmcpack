@@ -122,10 +122,14 @@ namespace qmcplusplus {
 
     void makeMoveOnSphere(Index_t iat, const SingleParticlePos_t& displ);
 
-    /**accept the move
+    /** accept the move
      *@param iat the index of the particle whose position and other attributes to be updated
      */
     void acceptMove(Index_t iat);
+
+    /** reject the move
+     */
+    void rejectMove(Index_t iat);
 
     void initPropertyList();
     inline int addProperty(const string& pname) {

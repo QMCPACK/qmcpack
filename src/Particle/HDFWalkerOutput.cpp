@@ -83,11 +83,10 @@ HDFWalkerOutput::~HDFWalkerOutput() {
   hid_t ret = H5Dwrite(dataset, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT,&Counter);
   H5Sclose(dataspace);
   H5Dclose(dataset);
-  H5Gclose(h_config);
 
+  H5Gclose(h_config);
   Random.write(h_random,AppendMode);
   H5Gclose(h_random);
-
   H5Fclose(h_file);
 }
 

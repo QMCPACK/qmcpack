@@ -32,13 +32,15 @@ namespace qmcplusplus {
     initPropertyList();
   }
 
-  ParticleSet::ParticleSet(const ParticleSet& p): SK(0), mySpecies(p.mySpecies) {
+  ParticleSet::ParticleSet(const ParticleSet& p): SK(0) {
     initBase();
     initParticleSet();
     assign(p);
-    
-    initPropertyList();
+
+    PropertyList.Name=p.PropertyList.Name;
+    PropertyList.Values=p.PropertyList.Values;
   }
+
 
   ParticleSet::~ParticleSet() {
     if(SK) delete SK;
@@ -96,6 +98,23 @@ namespace qmcplusplus {
   }
 
   void ParticleSet::update(int iflag) { 
+
+    //apply Boundary condition
+    //R.setUnit(0);
+    //double xL=Lattice.R(0,0);
+    //double yL=Lattice.R(1,1);
+    //double zL=Lattice.R(2,2);
+    //for(int iat=0; iat<LocalNum; iat++) {
+    //  if(R[iat][0]<0) R[iat][0]+=xL;
+    //  else if(R[iat][0]>xL) R[iat][0]-=xL;
+
+    //  if(R[iat][1]<0) R[iat][1]+=yL;
+    //  else if(R[iat][0]>yL) R[iat][1]-=yL;
+
+    //  if(R[iat][2]<0) R[iat][2]+=zL;
+    //  else if(R[iat][0]>zL) R[iat][2]-=zL;
+    //}
+
     for(int i=0; i< DistTables.size(); i++) DistTables[i]->evaluate(*this);
     //Update SK
     if(SK) SK->UpdateAllPart();
@@ -119,11 +138,17 @@ namespace qmcplusplus {
   ParticleSet::SingleParticlePos_t 
   ParticleSet::makeMove(Index_t iat, const SingleParticlePos_t& displ) {
     activePtcl=iat;
-    activePos=R[iat]+displ;
+    activePos=R[iat]; //save the current position
+    SingleParticlePos_t newpos(activePos+displ);
     for(int i=0; i< DistTables.size(); i++) {
-      DistTables[i]->move(*this,activePos,iat);
+      DistTables[i]->move(*this,newpos,iat);
     }
-    return activePos;
+    return R[iat]=newpos;
+    //activePos=R[iat]+displ;
+    //for(int i=0; i< DistTables.size(); i++) {
+    //  DistTables[i]->move(*this,activePos,iat);
+    //}
+    //return activePos;
   }
 
   void
@@ -142,13 +167,18 @@ namespace qmcplusplus {
   void ParticleSet::acceptMove(Index_t iat) {
     if(iat == activePtcl) {
       //Update SK with smart moving...
-      if(SK) SK->Update1Part(R[iat],activePos,GroupID[iat]);
+      //if(SK) SK->Update1Part(R[iat],activePos,GroupID[iat]);
+      if(SK) SK->Update1Part(activePos,R[iat],GroupID[iat]); //activePos is the previous position
       //Update position + distance-table
-      R[iat]=activePos; 
       for(int i=0; i< DistTables.size(); i++) {
         DistTables[i]->update(iat);
       }
     }
+  }
+
+  void ParticleSet::rejectMove(Index_t iat) {
+    //restore the position by the saved activePos
+    R[iat]=activePos;
   }
 
   /** resize Sphere by the LocalNum
@@ -188,6 +218,9 @@ namespace qmcplusplus {
     
   void 
   ParticleSet::copyToBuffer(PooledData<RealType>& buf) {
+    //DEBUG begin: ElectronGasTest for 2 els
+    if(SK) SK->UpdateAllPart();
+    //DEBUG end
     for(int i=0; i< DistTables.size(); i++) {
       DistTables[i]->copyToBuffer(buf);
     }
