@@ -18,8 +18,8 @@
  *@brief definition of three-body jastrow of Geminal functions
  */
 #include "QMCWaveFunctions/ThreeBodyGeminalBuilder.h"
-//#include "QMCWaveFunctions/MolecularOrbitals/GTOMolecularOrbitals.h"
-#include "QMCWaveFunctions/MolecularOrbitals/GridMolecularOrbitals.h"
+#include "QMCWaveFunctions/MolecularOrbitals/GTOMolecularOrbitals.h"
+//#include "QMCWaveFunctions/MolecularOrbitals/GridMolecularOrbitals.h"
 #include "QMCWaveFunctions/ThreeBodyGeminal.h"
 namespace qmcplusplus {
 
@@ -27,8 +27,8 @@ namespace qmcplusplus {
       TrialWaveFunction& wfs, 
       ParticleSet& ions):
     OrbitalBuilderBase(els,wfs) {
-    //gtoBuilder = new GTOMolecularOrbitals(els,wfs,ions);
-    gtoBuilder = new GridMolecularOrbitals(els,wfs,ions);
+    gtoBuilder = new GTOMolecularOrbitals(els,wfs,ions);
+    //gtoBuilder = new GridMolecularOrbitals(els,wfs,ions);
     J3 = new ThreeBodyGeminal(ions, els);
   }
 

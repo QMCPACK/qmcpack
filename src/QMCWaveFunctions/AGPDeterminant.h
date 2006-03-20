@@ -19,7 +19,9 @@
 #define QMCPLUSPLUS_AGP_DIRACDETERMINANT_H
 #include "QMCWaveFunctions/OrbitalBase.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
-#include "QMCWaveFunctions/MolecularOrbitals/GridMolecularOrbitals.h"
+#include "OhmmsPETE/OhmmsVector.h"
+//#include "QMCWaveFunctions/MolecularOrbitals/GridMolecularOrbitals.h"
+#include "QMCWaveFunctions/MolecularOrbitals/STOMolecularOrbitals.h"
 
 namespace qmcplusplus {
 
@@ -27,12 +29,13 @@ namespace qmcplusplus {
 
   public:
 
-    typedef GridMolecularOrbitals::BasisSetType BasisSetType;
+    //typedef GridMolecularOrbitals::BasisSetType BasisSetType;
+    typedef STOMolecularOrbitals::BasisSetType BasisSetType;
     typedef Matrix<ValueType> Determinant_t;
     typedef Matrix<GradType>  Gradient_t;
     typedef Matrix<ValueType> Laplacian_t;
 
-    BasisSetType* BasisSet;
+    BasisSetType* GeminalBasis;
 
     /** constructor
      *@param spos the single-particle orbital set
@@ -44,14 +47,12 @@ namespace qmcplusplus {
     ~AGPDeterminant();
   
     ///reset the single-particle orbital set
-    void reset() { BasisSet->reset(); }
+    void reset() { GeminalBasis->reset(); }
    
-    void resetTargetParticleSet(ParticleSet& P) { 
-      BasisSet->resetTargetParticleSet(P);
-    }
+    void resetTargetParticleSet(ParticleSet& P);
 
     ///reset the size: with the number of particles and number of orbtials
-    inline void resize(int nup, int ndown);
+    void resize(int nup, int ndown);
 
     ValueType registerData(ParticleSet& P, PooledData<RealType>& buf);
 
@@ -90,6 +91,13 @@ namespace qmcplusplus {
 		    ParticleSet::ParticleGradient_t& dG, 
 		    ParticleSet::ParticleLaplacian_t& dL);
 
+    void ratioUp(ParticleSet& P, int iat,
+		    ParticleSet::ParticleGradient_t& dG, 
+		    ParticleSet::ParticleLaplacian_t& dL);
+
+    void ratioDown(ParticleSet& P, int iat,
+		    ParticleSet::ParticleGradient_t& dG, 
+		    ParticleSet::ParticleLaplacian_t& dL);
 
     ValueType logRatio(ParticleSet& P, int iat,
 		    ParticleSet::ParticleGradient_t& dG, 
@@ -102,7 +110,7 @@ namespace qmcplusplus {
 
     /** move was accepted, update the real container
      */
-    void update(ParticleSet& P, int iat);
+    void acceptMove(ParticleSet& P, int iat);
 
     /** move was rejected. copy the real container to the temporary to move on
      */
@@ -162,50 +170,45 @@ namespace qmcplusplus {
     ValueType CurrentDet;
 
     ///coefficient of the up/down block
-    Determinant_t Coeff;
+    Determinant_t Lambda;
 
     ///coefficient of the major block
-    Vector<ValueType> CoeffMajor;
+    Determinant_t LambdaUP;
 
     /// psiM(j,i) \f$= \psi_j({\bf r}_i)\f$
     Determinant_t psiM, psiM_temp;
 
-    /**  Transient data for gradient and laplacian evaluation
-     *
-     * \f$phiU(j,k) = \sum_{j^{'}} \lambda_{j,j^{'}} \phi_k(r_j) \f$
-     * j denotes the spin-up index
-     */
-    Determinant_t phiU;
 
     /**  Transient data for gradient and laplacian evaluation
      *
      * \f$phiD(j,k) = \sum_{j^{'}} \lambda_{j^{'},j} \phi_k(r_j) \f$
-     * j runs over the spin-down index
+     * j runs over the particle index index
      */
-    Determinant_t phiD;
+    Determinant_t phiT;
 
     /// temporary container for testing
     Determinant_t psiMinv;
-
-    /// dpsiM(i,j) \f$= \nabla_i \psi_j({\bf r}_i)\f$
-    Gradient_t    dpsiM, dpsiM_temp;
-
-    /// d2psiM(i,j) \f$= \nabla_i^2 \psi_j({\bf r}_i)\f$
-    Laplacian_t   d2psiM, d2psiM_temp;
+    /// store gradients
+    Gradient_t dY;
+    /// store laplacians
+    Laplacian_t d2Y;
 
     /// value of single-particle orbital for particle-by-particle update
-    std::vector<ValueType> psiV;
-    std::vector<GradType> dpsiV;
-    std::vector<ValueType> d2psiV;
-    std::vector<ValueType> workV1, workV2;
-
-    ///storages to process many walkers once
-    vector<Determinant_t> psiM_v; 
-    vector<Gradient_t>    dpsiM_v; 
-    vector<Laplacian_t>   d2psiM_v; 
+    Vector<ValueType> psiU, psiD;
+    Vector<GradType> dpsiU, dpsiD;
+    Vector<ValueType> d2psiU, d2psiD;
+    Vector<ValueType> workV1, workV2;
+    /** temporary vector for a particle-by-particle move
+     *
+     * phiTv = Lambda Y(iat)
+     */
+    Vector<ValueType> phiTv;
+    Vector<GradType> dYv;
+    Vector<ValueType> d2Yv;
 
     Vector<ValueType> WorkSpace;
     Vector<IndexType> Pivot;
+
 
     ValueType curRatio,cumRatio;
     ValueType *FirstAddressOfG;
@@ -215,6 +218,8 @@ namespace qmcplusplus {
 
     ParticleSet::ParticleGradient_t myG, myG_temp;
     ParticleSet::ParticleLaplacian_t myL, myL_temp;
+    
+    void evaluateLogAndStore(ParticleSet& P);
   };
 }
 #endif

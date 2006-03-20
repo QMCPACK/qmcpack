@@ -237,7 +237,7 @@ namespace qmcplusplus {
 
     inline void restore(int iat) {}
 
-    void update(ParticleSet& P, int iat) {
+    void acceptMove(ParticleSet& P, int iat) {
       U[iat] = curVal;
       dU[iat]=curGrad;
       d2U[iat]=curLap;

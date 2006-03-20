@@ -238,7 +238,7 @@ namespace qmcplusplus {
    * All the temporary data should be restored to the state prior to the move.
    */
   void 
-  TrialWaveFunction::restore(int iat) {
+  TrialWaveFunction::rejectMove(int iat) {
     for(int i=0; i<Z.size(); i++) Z[i]->restore(iat);
   }
 
@@ -250,8 +250,8 @@ namespace qmcplusplus {
    * All the temporary data should be incorporated so that the next move is valid.
    */
   void   
-  TrialWaveFunction::update2(ParticleSet& P,int iat) {
-    for(int i=0; i<Z.size(); i++) Z[i]->update(P,iat);
+  TrialWaveFunction::acceptMove(ParticleSet& P,int iat) {
+    for(int i=0; i<Z.size(); i++) Z[i]->acceptMove(P,iat);
   }
 
   void TrialWaveFunction::resizeByWalkers(int nwalkers){

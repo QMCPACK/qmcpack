@@ -219,7 +219,7 @@ namespace qmcplusplus {
 
     if(BasisSet) {
       BasisSet->setTable(d_table);
-      XMLReport("The total number of basis functions " << BasisSet->TotalBasis)
+      LOGMSG("The total number of basis functions " << BasisSet->TotalBasis)
       return BasisSet;
     } else {
       ERRORMSG("BasisSet is not initialized.")

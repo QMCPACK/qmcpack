@@ -28,6 +28,7 @@
 #include "QMCWaveFunctions/NJABBuilder.h"
 #include "QMCWaveFunctions/WaveFunctionFactory.h"
 #include "QMCWaveFunctions/ThreeBodyGeminalBuilder.h"
+#include "QMCWaveFunctions/AGPDeterminantBuilder.h"
 #include "OhmmsData/AttributeSet.h"
 namespace qmcplusplus {
   WaveFunctionFactory::WaveFunctionFactory(ParticleSet* qp, PtclPoolType& pset): 
@@ -94,7 +95,13 @@ namespace qmcplusplus {
       //  a.put(cur);
     } else if(orbtype == "electron-gas") {
       detbuilder = new ElectronGasOrbitalBuilder(*targetPtcl,*targetPsi);
-    } 
+    }  else if(orbtype == "AGP") {
+      app_log() << "  Creating AGPDeterminant centers at " << nuclei << endl;
+      PtclPoolType::iterator pit(ptclPool.find(nuclei));
+      if(pit != ptclPool.end()) {
+        detbuilder = new AGPDeterminantBuilder(*targetPtcl,*targetPsi,*((*pit).second));
+      }
+    }
 
     if(detbuilder) {//valid determinant set
       detbuilder->put(cur);
@@ -121,14 +128,18 @@ namespace qmcplusplus {
 
     if(jasttype == "Two-Body-Spin" || jasttype == "Two-Body") {
       if(useSpline) {
+        app_log() << "  Using NJAABuilder for two-body jatrow with spline functions" << endl;
         jbuilder = new NJAABuilder(*targetPtcl,*targetPsi);
       } else {
+        app_log() << "  Using JAABuilder for two-body jatrow with analytic functions" << endl;
         jbuilder = new JAABuilder(*targetPtcl,*targetPsi);
       }
     } else if(jasttype == "One-Body") {
       if(useSpline) {
+        app_log() << "  Using NJABBuilder for one-body jatrow with spline functions" << endl;
         jbuilder = new NJABBuilder(*targetPtcl,*targetPsi,ptclPool);
       } else {
+        app_log() << "  Using JABBuilder for one-body jatrow with analytic functions" << endl;
         jbuilder = new JABBuilder(*targetPtcl,*targetPsi,ptclPool);
       }
     } else if(jasttype == "Three-Body-Geminal") {
@@ -138,6 +149,7 @@ namespace qmcplusplus {
       if(iptr != NULL) source_name=(const char*)iptr;
       PtclPoolType::iterator pit(ptclPool.find(source_name));
       if(pit != ptclPool.end()) {
+        cout << "Creating three body with " << source_name << endl;
         jbuilder = new ThreeBodyGeminalBuilder(*targetPtcl,*targetPsi,*((*pit).second));
       }
     }

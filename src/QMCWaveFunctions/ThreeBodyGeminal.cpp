@@ -57,6 +57,7 @@ namespace qmcplusplus {
     //    V(i,k) = BLAS::dot(BasisSize,GeminalBasis->Y[i],Lambda[k]);
     //  }
     //}
+    Uk=0.0;
 
     LogValue=ValueType();
     for(int i=0; i< NumPtcls-1; i++) {
@@ -73,15 +74,16 @@ namespace qmcplusplus {
       const PosType* restrict dptr=GeminalBasis->dY[i];
       const RealType* restrict d2ptr=GeminalBasis->d2Y[i];
       const RealType* restrict vptr=V[0];
-      PosType grad=0.0;
-      ValueType lap=0.0;
+      GradType grad(0.0);
+      ValueType lap(0.0);
       for(int j=0; j<NumPtcls; j++, vptr+=BasisSize) {
-        if(j==i) continue;
-        grad+=dot(vptr,dptr,BasisSize);
-        lap+=dot(vptr,d2ptr,BasisSize);
+        if(j!=i) {
+          grad += dot(vptr,dptr,BasisSize);
+          lap +=  dot(vptr,d2ptr,BasisSize);
+        }
       }
-      G(i)+=0.5*grad;
-      L(i)+=0.5*lap;
+      G(i)+=grad;
+      L(i)+=lap;
     }
 
     return LogValue;
@@ -90,14 +92,12 @@ namespace qmcplusplus {
   OrbitalBase::ValueType 
   ThreeBodyGeminal::ratio(ParticleSet& P, int iat) {
     GeminalBasis->evaluate(P,iat);
-    curVal=0.0;
+    diffVal=0.0;
     for(int j=0; j<NumPtcls; j++) {
       if(j == iat) continue;
-      curVal+= dot(V[j],GeminalBasis->y(0),BasisSize);
+      diffVal+= dot(V[j],GeminalBasis->y(0),BasisSize);
     }
-    //double counting
-    curVal*=0.5;
-    return exp(curVal-Uk[iat]);
+    return exp(diffVal-Uk[iat]);
   }
 
     /** later merge the loop */
@@ -105,6 +105,7 @@ namespace qmcplusplus {
   ThreeBodyGeminal::ratio(ParticleSet& P, int iat,
 		    ParticleSet::ParticleGradient_t& dG,
 		    ParticleSet::ParticleLaplacian_t& dL) {
+
     return exp(logRatio(P,iat,dG,dL));
   }
 
@@ -116,77 +117,191 @@ namespace qmcplusplus {
 
     GeminalBasis->evaluateAll(P,iat);
 
-    curVal=0.0;
-    curLap=0.0;
-    curGrad=0.0;
-    for(int j=0; j<NumPtcls; j++) {
-      if(j == iat) continue;
-      curVal+= dot(V[j],GeminalBasis->y(0),BasisSize);
-      curGrad += dot(V[j],GeminalBasis->dy(0),BasisSize);
-      curLap += dot(V[j],GeminalBasis->d2y(0),BasisSize);
+    const ValueType* restrict y_ptr=GeminalBasis->y(0);
+    const GradType* restrict  dy_ptr=GeminalBasis->dy(0);
+    const ValueType* restrict d2y_ptr=GeminalBasis->d2y(0);
+
+    for(int k=0; k<BasisSize; k++) {
+      curV[k] = BLAS::dot(BasisSize,y_ptr,Lambda[k]);
+      delV[k] = curV[k]-V[iat][k];
+    }
+
+    diffVal=0.0;
+    GradType dg_acc(0.0);
+    ValueType dl_acc(0.0);
+    const RealType* restrict vptr=V[0];
+    for(int j=0; j<NumPtcls; j++, vptr+=BasisSize) {
+      if(j == iat) {
+        curLap[j]=0.0;
+        curGrad[j]=0.0;
+        tLap[j]=0.0;
+        tGrad[j]=0.0;
+      } else {
+        diffVal+= (curVal[j]=dot(delV.data(),Y[j],BasisSize));
+        dG[j] += (tGrad[j]=dot(delV.data(),dY[j],BasisSize));
+        dL[j] += (tLap[j]=dot(delV.data(),d2Y[j],BasisSize));
+
+        curGrad[j]= dot(vptr,dy_ptr,BasisSize);
+        curLap[j] = dot(vptr,d2y_ptr,BasisSize);
+
+        dg_acc += curGrad[j]-dUk(iat,j);
+        dl_acc += curLap[j]-d2Uk(iat,j);
+      }
     }
     
-    curGrad*=0.5;
-    dG[iat] += curGrad-dUk[iat];
+    dG[iat] += dg_acc;
+    dL[iat] += dl_acc;
 
-    curLap*=0.5;
-    dL[iat] += curLap-d2Uk[iat];
+    curVal[iat]=diffVal;
 
-    curVal*=0.5;
-    return curVal-Uk[iat];
+    return diffVal;
   }
 
   void ThreeBodyGeminal::restore(int iat) {
     //nothing to do here
   }
 
-  void ThreeBodyGeminal::update(ParticleSet& P, int iat) {
-    Uk[iat]=curVal;
-    dUk[iat]=curGrad;
-    d2Uk[iat]=curLap;
-    //change to gemv
-    for(int k=0; k<BasisSize; k++) {
-      V(iat,k) = BLAS::dot(BasisSize,GeminalBasis->y(0),Lambda[k]);
-    }
+  void ThreeBodyGeminal::acceptMove(ParticleSet& P, int iat) {
+
+    //add the differential
+    LogValue += diffVal;
+    Uk+=curVal; //accumulate the differences
+
+    dUk.replaceRow(curGrad.begin(),iat);
+    d2Uk.replaceRow(curLap.begin(),iat);
+
+    dUk.add2Column(tGrad.begin(),iat);
+    d2Uk.add2Column(tLap.begin(),iat);
+
+    Y.replaceRow(GeminalBasis->y(0),iat);
+    dY.replaceRow(GeminalBasis->dy(0),iat);
+    d2Y.replaceRow(GeminalBasis->d2y(0),iat);
+    V.replaceRow(curV.begin(),iat);
+
   }
 
   void ThreeBodyGeminal::update(ParticleSet& P, 		
 		       ParticleSet::ParticleGradient_t& dG, 
 		       ParticleSet::ParticleLaplacian_t& dL,
 		       int iat) {
-    dG[iat]+=curGrad-dUk[iat]; 
-    dL[iat]+=curLap-d2Uk[iat]; 
-    update(P,iat);
+    cout << "****  This is to be removed " << endl;
+    //dG[iat]+=curGrad-dUk[iat]; 
+    //dL[iat]+=curLap-d2Uk[iat]; 
+    acceptMove(P,iat);
   }
 
   OrbitalBase::ValueType 
   ThreeBodyGeminal::registerData(ParticleSet& P, PooledData<RealType>& buf) {
 
-    LogValue=evaluateLog(P,P.G,P.L);
+    evaluateLogAndStore(P);
+    FirstAddressOfdY=&(dY(0,0)[0]);
+    LastAddressOfdY=FirstAddressOfdY+NumPtcls*BasisSize*DIM;
+
+    FirstAddressOfgU=&(dUk(0,0)[0]);
+    LastAddressOfgU = FirstAddressOfgU + NumPtcls*NumPtcls*DIM;
+
+    buf.add(LogValue);
     buf.add(V.begin(), V.end());
+
+    buf.add(Y.begin(), Y.end());
+    buf.add(FirstAddressOfdY,LastAddressOfdY);
+    buf.add(d2Y.begin(),d2Y.end());
+
+    buf.add(Uk.begin(), Uk.end());
+    buf.add(FirstAddressOfgU,LastAddressOfgU);
+    buf.add(d2Uk.begin(), d2Uk.end());
+
     return LogValue;
   }
 
-  OrbitalBase::ValueType 
-  ThreeBodyGeminal::updateBuffer(ParticleSet& P, 
-      PooledData<RealType>& buf) {
-    LogValue=evaluateLog(P,P.G,P.L);
-    buf.put(V.begin(), V.end());
-    return LogValue;
-  }
-    
   void 
-  ThreeBodyGeminal::copyFromBuffer(ParticleSet& P, 
-      PooledData<RealType>& buf) {
+  ThreeBodyGeminal::evaluateLogAndStore(ParticleSet& P) {
+    GeminalBasis->evaluate(P);
+
+    MatrixOperators::product(GeminalBasis->Y, Lambda, V);
+    
+    Y=GeminalBasis->Y;
+    dY=GeminalBasis->dY;
+    d2Y=GeminalBasis->d2Y;
+
+    Uk=0.0;
+    LogValue=ValueType();
+    for(int i=0; i< NumPtcls-1; i++) {
+      const RealType* restrict yptr=GeminalBasis->Y[i];
+      for(int j=i+1; j<NumPtcls; j++) {
+        ValueType x= dot(V[j],yptr,BasisSize);
+        LogValue += x;
+        Uk[i]+= x;
+        Uk[j]+= x;
+      }
+    }
+
+    for(int i=0; i<NumPtcls; i++)  {
+      const PosType* restrict dptr=GeminalBasis->dY[i];
+      const RealType* restrict d2ptr=GeminalBasis->d2Y[i];
+      const RealType* restrict vptr=V[0];
+      GradType grad(0.0);
+      ValueType lap(0.0);
+      for(int j=0; j<NumPtcls; j++, vptr+=BasisSize) {
+        if(j==i) {
+          dUk(i,j) = 0.0;
+          d2Uk(i,j)= 0.0;
+        } else {
+          grad+= (dUk(i,j) = dot(vptr,dptr,BasisSize));
+          lap += (d2Uk(i,j)= dot(vptr,d2ptr,BasisSize));
+        }
+      }
+      P.G(i)+=grad;
+      P.L(i)+=lap;
+    }
+  }
+
+  void 
+  ThreeBodyGeminal::copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf) {
+    buf.get(LogValue);
     buf.get(V.begin(), V.end());
+
+    buf.get(Y.begin(), Y.end());
+    buf.get(FirstAddressOfdY,LastAddressOfdY);
+    buf.get(d2Y.begin(),d2Y.end());
+
+    buf.get(Uk.begin(), Uk.end());
+    buf.get(FirstAddressOfgU,LastAddressOfgU);
+    buf.get(d2Uk.begin(), d2Uk.end());
   }
 
   OrbitalBase::ValueType 
   ThreeBodyGeminal::evaluate(ParticleSet& P, PooledData<RealType>& buf) {
-    LogValue=evaluateLog(P,P.G,P.L);
+    buf.put(LogValue);
     buf.put(V.begin(), V.end());
+
+    buf.put(Y.begin(), Y.end());
+    buf.put(FirstAddressOfdY,LastAddressOfdY);
+    buf.put(d2Y.begin(),d2Y.end());
+
+    buf.put(Uk.begin(), Uk.end());
+    buf.put(FirstAddressOfgU,LastAddressOfgU);
+    buf.put(d2Uk.begin(), d2Uk.end());
+
     return exp(LogValue);
   }
+
+  OrbitalBase::ValueType 
+  ThreeBodyGeminal::updateBuffer(ParticleSet& P, PooledData<RealType>& buf) {
+    evaluateLogAndStore(P);
+    buf.put(LogValue);
+    buf.put(V.begin(), V.end());
+
+    buf.put(Y.begin(), Y.end());
+    buf.put(FirstAddressOfdY,LastAddressOfdY);
+    buf.put(d2Y.begin(),d2Y.end());
+
+    buf.put(Uk.begin(), Uk.end());
+    buf.put(FirstAddressOfgU,LastAddressOfgU);
+    buf.put(d2Uk.begin(), d2Uk.end());
+    return LogValue;
+  }
+    
 
   template<class T>
     inline bool
@@ -208,8 +323,6 @@ namespace qmcplusplus {
       <<"for Three-body Jastrow " << BasisSize << endl;
     app_log() << "  The number of particles " << NumPtcls << endl;
 
-    U.resize(NumPtcls,BasisSize);
-    V.resize(NumPtcls,BasisSize);
     Lambda.resize(BasisSize,BasisSize);
 
     char coeffname[128];
@@ -218,26 +331,60 @@ namespace qmcplusplus {
     const xmlChar* aptr=xmlGetProp(cur,(const xmlChar*)"name");
     if(aptr!=NULL) aname = (const char*)aptr;
 
-    //assign the coefficients
-    putContent(Lambda,cur);
+    ////assign the coefficients
+    //putContent(Lambda,cur);
 
-    //symmetrize it
-    for(int ib=0; ib<BasisSize; ib++) {
-      sprintf(coeffname,"%s_%d_%d",aname.c_str(),ib,ib);
-      RealType* lptr=Lambda.data()+ib*BasisSize+ib;
-      varlist.add(coeffname,lptr);
-      for(int jb=ib+1; jb<BasisSize; jb++) {
-        Lambda(jb,ib) = Lambda(ib,jb);
+    ////symmetrize it
+    //for(int ib=0; ib<BasisSize; ib++) {
+    //  sprintf(coeffname,"%s_%d_%d",aname.c_str(),ib,ib);
+    //  RealType* lptr=Lambda.data()+ib*BasisSize+ib;
+    //  varlist.add(coeffname,lptr);
+    //  for(int jb=ib+1; jb<BasisSize; jb++) {
+    //    Lambda(jb,ib) = Lambda(ib,jb);
 
-        ++lptr;
-        sprintf(coeffname,"%s_%d_%d",aname.c_str(),ib,jb);
-        varlist.add(coeffname,lptr);
+    //    ++lptr;
+    //    sprintf(coeffname,"%s_%d_%d",aname.c_str(),ib,jb);
+    //    varlist.add(coeffname,lptr);
+    //  }
+    //}
+    int offset=1;
+    xmlNodePtr tcur=cur->xmlChildrenNode;
+    while(tcur != NULL) {
+      if(xmlStrEqual(tcur->name,(const xmlChar*)"lambda")) {
+        int i=atoi((const char*)(xmlGetProp(tcur,(const xmlChar*)"i")));
+        int j=atoi((const char*)(xmlGetProp(tcur,(const xmlChar*)"j")));
+        double c=atof((const char*)(xmlGetProp(tcur,(const xmlChar*)"c")));
+        Lambda(i-offset,j-offset)=c;
+        if(i != j) {
+          Lambda(j-offset,i-offset)=c;
+        }
+        sprintf(coeffname,"%s_%d_%d",aname.c_str(),i,j);
+        varlist.add(coeffname,Lambda.data()+i*BasisSize+j);
       }
+      tcur=tcur->next;
     }
 
+    V.resize(NumPtcls,BasisSize);
+    Y.resize(NumPtcls,BasisSize);
+    dY.resize(NumPtcls,BasisSize);
+    d2Y.resize(NumPtcls,BasisSize);
+
+    curGrad.resize(NumPtcls);
+    curLap.resize(NumPtcls);
+    curVal.resize(NumPtcls);
+
+    tGrad.resize(NumPtcls);
+    tLap.resize(NumPtcls);
+    curV.resize(BasisSize);
+    delV.resize(BasisSize);
+
     Uk.resize(NumPtcls);
-    dUk.resize(NumPtcls);
-    d2Uk.resize(NumPtcls);
+    dUk.resize(NumPtcls,NumPtcls);
+    d2Uk.resize(NumPtcls,NumPtcls);
+
+
+    //app_log() << "  Three-body Geminal coefficients " << endl;
+    //app_log() << Lambda << endl;
 
     GeminalBasis->resize(NumPtcls);
 

@@ -115,7 +115,7 @@ namespace qmcplusplus {
      *@param dL the differential laplacian
      *@return \f$ \psi( \{ {\bf R}^{'} \} )/ \psi( \{ {\bf R}^{'} \}) \f$
      *
-     *Paired with update(ParticleSet& P, int iat).
+     *Paired with acceptMove(ParticleSet& P, int iat).
      */
     virtual ValueType ratio(ParticleSet& P, int iat,
 			    ParticleSet::ParticleGradient_t& dG,
@@ -138,7 +138,7 @@ namespace qmcplusplus {
      * @param P target ParticleSet
      * @param iat index of the particle whose new position was proposed
      */
-    virtual void update(ParticleSet& P, int iat) =0;
+    virtual void acceptMove(ParticleSet& P, int iat) =0;
 
     /** a move for iat-th particle is reject. Restore to the content.
      * @param iat index of the particle whose new position was proposed

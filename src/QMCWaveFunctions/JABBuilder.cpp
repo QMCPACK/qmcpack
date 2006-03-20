@@ -52,7 +52,7 @@ namespace qmcplusplus {
 	if(!(jastrow[ia])) {
 	  jastrow[ia]= new FN;
 	  jastrow[ia]->put(cur,targetPsi.VarList);
-	  XMLReport("Added Jastrow Correlation between " << speciesA)
+	  LOGMSG("  Added Jastrow Correlation between " << speciesA)
 	}
       }
       cur = cur->next;

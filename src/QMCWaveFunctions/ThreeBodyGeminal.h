@@ -18,8 +18,10 @@
 #define QMCPLUSPLUS_THREEBODY_GEMINAL_H
 #include "Configuration.h"
 #include "QMCWaveFunctions/OrbitalBase.h"
-//#include "QMCWaveFunctions/MolecularOrbitals/GTOMolecularOrbitals.h"
-#include "QMCWaveFunctions/MolecularOrbitals/GridMolecularOrbitals.h"
+#include "OhmmsPETE/OhmmsVector.h"
+#include "OhmmsPETE/OhmmsMatrix.h"
+#include "QMCWaveFunctions/MolecularOrbitals/GTOMolecularOrbitals.h"
+//#include "QMCWaveFunctions/MolecularOrbitals/GridMolecularOrbitals.h"
 
 namespace qmcplusplus {
 
@@ -30,8 +32,8 @@ namespace qmcplusplus {
 
   public:
 
-    //typedef GTOMolecularOrbitals::BasisSetType BasisSetType;
-    typedef GridMolecularOrbitals::BasisSetType BasisSetType;
+    typedef GTOMolecularOrbitals::BasisSetType BasisSetType;
+    //typedef GridMolecularOrbitals::BasisSetType BasisSetType;
 
     ///constructor
     ThreeBodyGeminal(ParticleSet& ions, ParticleSet& els);
@@ -44,6 +46,7 @@ namespace qmcplusplus {
     //evaluate the distance table with els
     void resetTargetParticleSet(ParticleSet& P) {
       d_table = DistanceTable::getTable(DistanceTable::add(d_table->origin(),P));
+      GeminalBasis->resetTargetParticleSet(P);
     }
 
     ValueType evaluateLog(ParticleSet& P,
@@ -70,7 +73,7 @@ namespace qmcplusplus {
 
     void restore(int iat);
 
-    void update(ParticleSet& P, int iat);
+    void acceptMove(ParticleSet& P, int iat);
 
     inline void update(ParticleSet& P, 		
 		       ParticleSet::ParticleGradient_t& dG, 
@@ -95,9 +98,17 @@ namespace qmcplusplus {
     int BasisSize;
     int NumPtcls;
     ParticleSet& CenterRef;
-    /** U(i,k)  k-th element of the i-th particle 
+    /** temporary value for update */
+    ValueType diffVal;
+    /** Y(iat,ibasis) value of the iat-th ortbial, the basis index ibasis
      */
-    Matrix<RealType> U;
+    Matrix<ValueType> Y;
+    /** dY(iat,ibasis) value of the iat-th ortbial, the basis index ibasis
+     */
+    Matrix<GradType>  dY;
+    /** d2Y(iat,ibasis) value of the iat-th ortbial, the basis index ibasis
+     */
+    Matrix<ValueType> d2Y;
     /** V(i,j) = Lambda(k,kk) U(i,kk)
      */
     Matrix<RealType> V;
@@ -106,26 +117,35 @@ namespace qmcplusplus {
     Matrix<RealType> Lambda;
 
     /** Uk[i] = \sum_j dot(U[i],V[j]) */
-    vector<RealType> Uk;
+    Vector<RealType> Uk;
 
     /** Gradient for update mode */
-    vector<GradType> dUk;
+    Matrix<GradType> dUk;
 
     /** Laplacian for update mode */
-    vector<RealType> d2Uk;
+    Matrix<RealType> d2Uk;
 
-    /** temporary value for update */
-    ValueType curVal;
     /** temporary Laplacin for update */
-    ValueType curLap;
+    Vector<ValueType> curLap, tLap;
     /** temporary Gradient for update */
-    GradType curGrad;
+    Vector<GradType> curGrad, tGrad;
+    /** tempory Lambda*newY for update */
+    Vector<ValueType> curV;
+    /** tempory Lambda*(newY-Y(iat)) for update */
+    Vector<ValueType> delV;
+    /** tempory Lambda*(newY-Y(iat)) for update */
+    Vector<ValueType> curVal;
 
+    ValueType *FirstAddressOfdY;
+    ValueType *LastAddressOfdY;
     ValueType *FirstAddressOfgU;
     ValueType *LastAddressOfgU;
 
     /** Geminal basis function */
     BasisSetType *GeminalBasis;
+
+    /** evaluateLog and store data for particle-by-particle update */
+    void evaluateLogAndStore(ParticleSet& P);
   };
 }
 #endif

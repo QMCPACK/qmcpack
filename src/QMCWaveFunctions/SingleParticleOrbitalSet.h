@@ -17,6 +17,7 @@
 #ifndef QMCPLUSPLUS_SINGLEPARTICLEORBITALSET_H
 #define QMCPLUSPLUS_SINGLEPARTICLEORBITALSET_H
 #include <vector>
+#include "QMCWaveFunctions/DummyBasisSet.h"
 namespace qmcplusplus {
 
 /**a set of single-particle orbitals. 
@@ -35,9 +36,11 @@ struct SingleParticleOrbitalSet {
 
   ///the type of single-particle orbtials 
   typedef OT                      SPOrbital_t;
+  typedef vector<OT*>             SPOContainer_t;
   typedef typename OT::value_type value_type;
+  typedef DummyBasisSet           BasisSet_t;
 
-  vector<SPOrbital_t*> Phi;
+  SPOContainer_t Phi;
 
   ///constructor
   SingleParticleOrbitalSet(){ }
@@ -48,38 +51,39 @@ struct SingleParticleOrbitalSet {
     return Phi.size()-1;
   }
 
-  void reset() {
-    for(int i=0; i<Phi.size(); i++) Phi[i]->reset();
-  }
-
-  void resizeByWalkers(int ) { }
-
   inline int size() const { return Phi.size();}
 
-  template<class PTCL, class VV>
-  inline void
-  evaluate(const PTCL& P, int iat, VV& psi) {
+  void reset() { for(int i=0; i<Phi.size(); i++) Phi[i]->reset(); }
+  void resetTargetParticleSet(ParticleSet& P) { }
+  void resizeByWalkers(int ) { }
+
+  inline value_type
+  evaluate(const ParticleSet& P, int iat, int jorb) {
+    return Phi[jorb]->evaluate(P.R[iat]);
+  }
+
+  template<class VV>
+  inline void 
+  evaluate(const ParticleSet& P, int iat, VV& psi) {
     vector<SPOrbital_t*>::iterator it(Phi.begin()),it_end(Phi.end());
     int j(0);
-    //(*it)->setPoint(P.R[iat]);
     while(it != it_end) {
-      psi(j)=(*it)->evaluate(P.R[iat]);++it;j++;
+      psi[j]=(*it)->evaluate(P.R[iat]);++it;j++;
     }
   }
 
-  template<class PTCL, class VV, class GV>
+  template<class VV, class GV>
   inline void
-  evaluate(const PTCL& P, int iat, VV& psi, GV& dpsi, VV& d2psi) {
+  evaluate(const ParticleSet& P, int iat, VV& psi, GV& dpsi, VV& d2psi) {
     vector<SPOrbital_t*>::iterator it(Phi.begin()),it_end(Phi.end());
     int j(0);
-    //(*it)->setPoint(P.R[iat]);
     while(it != it_end) {
-      psi(j)=(*it)->evaluate(P.R[iat],dpsi(j),d2psi(j));++it;j++;
+      psi[j]=(*it)->evaluate(P.R[iat],dpsi[j],d2psi[j]);++it;j++;
     }
   }
 
-  template<class PTCL, class VM, class GM>
-  inline void evaluate(const PTCL& P, int first, int last,
+  template<class VM, class GM>
+  inline void evaluate(const ParticleSet& P, int first, int last,
 		       VM& logdet, GM& dlogdet, VM& d2logdet) {
     int n = last-first;
     int iat = first;
@@ -93,35 +97,6 @@ struct SingleParticleOrbitalSet {
       }
     }
   }
-  template<class WREF, class VM, class GM>
-  inline void 
-  evaluate(const WREF& W, int first, int last,
-	   vector<VM>& logdet, vector<GM>& dlogdet, vector<VM>& d2logdet) {
-   int n = last-first;
-    for(int i=0; i<n; i++){
-      for(int iw=0; iw<W.walkers(); iw++) {
-	int jat = first;
-	for(int j=0; j<n; j++,jat++) {
-	  logdet[iw](i,j) 
-	    = Phi[i]->evaluate(W.R(iw,jat),dlogdet[iw](i,j), d2logdet[iw](i,j));
-	}
-     }
-   }
-  }
-
-//   template<class PT, class GT>
-//   inline void evaluate(const PT* R, 	
-// 		       value_type* logdet, GT* dlogdet,value_type* d2logdet,
-// 		       int first, int last, int iw, int nw) {
-//     int ij = 0;
-//     int n = last-first;
-//     int iat = nw*first+iw;
-//     for(int i=0; i<n; i++,iat+=nw) {
-//       for(int j=0; j<n; j++,ij++) {
-// 	logdet[j*n+i] = Phi[j]->evaluate(R[iat], dlogdet[ij],d2logdet[ij]);
-//       }
-//     }
-
 };
 }
 #endif

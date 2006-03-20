@@ -87,6 +87,10 @@ namespace qmcplusplus {
     }
     
 
+    /** return the size of the basis set
+     */
+    inline int size() const { return TotalBasis;}
+
     /** reset the distance table with a new target P
      */
     void resetTargetParticleSet(ParticleSet& P) {

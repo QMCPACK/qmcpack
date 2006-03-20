@@ -158,7 +158,7 @@ public:
 
   inline void restore(int iat) { }
 
-  void update(ParticleSet& P, int iat) {
+  void acceptMove(ParticleSet& P, int iat) {
     std::cerr << "MultiSlaterDeterminant::update is empty" << std::endl;
   }
 

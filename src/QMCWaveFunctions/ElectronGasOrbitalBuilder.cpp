@@ -51,6 +51,7 @@ namespace qmcplusplus {
       nc = static_cast<int>(pow(static_cast<double>(nup),1.0/3.0))/2+1;
     }
 
+    cout << "   The number of shells " << nc << endl;
     map<int,vector<PosType>*> rs;
     int first_ix2, first_ix3; 
     for(int ix1=0; ix1<=nc; ix1++) {
@@ -74,6 +75,7 @@ namespace qmcplusplus {
     }
 
     int nkpts=(nup-1)/2;
+
     vector<PosType> kpt(nkpts);
     vector<RealType> mk2(nkpts);
 

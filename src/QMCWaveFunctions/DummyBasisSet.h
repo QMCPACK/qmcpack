@@ -20,6 +20,33 @@
 #include "Particle/ParticleSet.h"
 
 namespace qmcplusplus {
+
+//  struct BasisSetBase {
+//    virtual void resize(int ntpcl) = 0;
+//    virtual void resetTargetParticleSet(ParticleSet& P)=0;
+//    virtual void evaluate(const ParticleSet& P)=0;
+//    virtual void evaluate(const ParticleSet& P, int iat)=0;
+//    virtual void evaluateAll(const ParticleSet& P, int iat)=0;
+//  };
+//
+//  template<class BS>
+//  struct BasisSetProxy: public BasisSetBase {
+//    BS* basisRef;
+//    BasisSetProxy(BS* basis): basisRef(basis){}
+//
+//    void resize(int nptcl) { basisRef->resize(nptcl);}
+//
+//    void evaluate(const ParticleSet& P) {
+//      basisRef->evaluate(P);
+//    }
+//    void evaluate(const ParticleSet& P, int iat) {
+//      basisRef->evaluate(P,iat);
+//    }
+//    void evaluateAll(const ParticleSet& P, int iat) {
+//      basisRef->evaluateAll(P,iat);
+//    }
+//  };
+//
   /** DummyBasisSet class which implements functions
    *
    * Any S(ingle)P(article)O(rbital)Set can contain
@@ -32,15 +59,6 @@ namespace qmcplusplus {
     inline void evaluate(ParticleSet& P) { }
   };
 
-  struct BasisSetBase {
-    virtual void resize(int n) = 0;
-  };
 
-  template<class BS>
-  struct BasisSetProxy: public BasisSetBase {
-    BS* basisRef;
-    BasisSetProxy(BS* basis): basisRef(basis){}
-    void resize(int n) { basisRef->resize(n);}
-  };
 }
 #endif

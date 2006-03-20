@@ -24,7 +24,8 @@ namespace qmcplusplus {
 
   //class GTOMolecularOrbitals;
   class ThreeBodyGeminal;
-  class GridMolecularOrbitals;
+  class GTOMolecularOrbitals;
+  //class GridMolecularOrbitals;
 
   /**@ingroup WFSBuilder
    * @brief An abstract class for wave function builders
@@ -41,7 +42,8 @@ namespace qmcplusplus {
 
   protected:
 
-    GridMolecularOrbitals* gtoBuilder;
+    GTOMolecularOrbitals* gtoBuilder;
+    //GridMolecularOrbitals* gtoBuilder;
     ThreeBodyGeminal* J3;
   };
 }

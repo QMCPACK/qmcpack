@@ -131,8 +131,8 @@ namespace qmcplusplus {
 		    ParticleSet::ParticleLaplacian_t& dL);
 
 
-    void restore(int iat);
-    void update2(ParticleSet& P, int iat);
+    void rejectMove(int iat);
+    void acceptMove(ParticleSet& P, int iat);
 
     ValueType registerData(ParticleSet& P, BufferType& buf);
     ValueType updateBuffer(ParticleSet& P, BufferType& buf);

@@ -277,7 +277,7 @@ namespace qmcplusplus {
 
     inline void restore(int iat) {}
 
-    void update(ParticleSet& P, int iat) { 
+    void acceptMove(ParticleSet& P, int iat) { 
       DiffValSum += DiffVal;
       for(int jat=0,ij=iat*N,ji=iat; jat<N; jat++,ij++,ji+=N) {
 	dU[ij]=curGrad[jat]; 

@@ -208,8 +208,8 @@ namespace qmcplusplus {
       return Dets[DetID[iat]]->restore(iat);
     }
 
-    inline void update(ParticleSet& P, int iat) {
-      Dets[DetID[iat]]->update(P,iat);
+    inline void acceptMove(ParticleSet& P, int iat) {
+      Dets[DetID[iat]]->acceptMove(P,iat);
     }
 
     ValueType

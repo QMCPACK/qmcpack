@@ -331,7 +331,7 @@ namespace qmcplusplus {
 
     /** move was accepted, update the real container
      */
-    void update(ParticleSet& P, int iat) {
+    void acceptMove(ParticleSet& P, int iat) {
       CurrentDet *= curRatio;
       myG = myG_temp;
       myL = myL_temp;
