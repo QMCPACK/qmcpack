@@ -232,7 +232,7 @@ namespace qmcplusplus {
       	        thisWalker.Drift = scale*G;
       	      } else {
       	        ++nRejectTemp; 
-      	        Psi.restore(iat);
+                W.rejectMove(iat); Psi.rejectMove(iat);
       	      }
             } 
             ++iat;

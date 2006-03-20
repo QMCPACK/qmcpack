@@ -29,6 +29,7 @@ namespace qmcplusplus {
     RootName = "dmc";
     QMCType ="dmc";
     m_param.add(KillWalker,"killnode","string");
+    m_param.add(Reconfiguration,"reconfiguration","string");
   }
 
   DMCMoveAll::~DMCMoveAll() {
@@ -94,15 +95,14 @@ namespace qmcplusplus {
   void DMCMoveAll::dmcWithReconfiguration() {
     Mover->MaxAge=0;
     IndexType block = 0;
-    RealType Eest = branchEngine->E_T;
     IndexType nAcceptTot = 0;
     IndexType nRejectTot = 0;
+    RealType Eest = branchEngine->E_T;
+    Mover->resetRun(branchEngine);
     do {
       IndexType step = 0;
-
       Mover->startBlock();
       Estimators->startBlock();
-
       do {
         Mover->advanceWalkers(W.begin(), W.end());
         step++; CurrentStep++;
@@ -120,6 +120,7 @@ namespace qmcplusplus {
       nAcceptTot += nAccept;
       nRejectTot += nReject;
       
+      Estimators->setColumn(PopIndex,pop);
       Estimators->setColumn(EtrialIndex,Eest);
 
       Eest = Estimators->average(0);
@@ -166,7 +167,7 @@ namespace qmcplusplus {
         Mover = new DMCUpdateAllWithKill(W,Psi,H,Random);
       } else {
         app_log() << "  Walkers will be kept even if a node crossing is detected." << endl;
-        if(Mover ==0) Mover = new DMCUpdateAllWithRejection(W,Psi,H,Random);
+        Mover = new DMCUpdateAllWithRejection(W,Psi,H,Random);
       }
     }
 
@@ -175,10 +176,13 @@ namespace qmcplusplus {
     EtrialIndex = Estimators->addColumn("Etrial");
     Estimators->reportHeader(AppendRun);
 
-    if(fixW) 
+    if(fixW)  {
+      app_log() << "  DMC all-ptcl update with reconfigurations" << endl;
       dmcWithReconfiguration();
-    else
+    } else {
+      app_log() << "  DMC all-ptcl update with a fluctuating population" << endl;
       dmcWithBranching();
+    }
 
     Estimators->finalize();
     return true;

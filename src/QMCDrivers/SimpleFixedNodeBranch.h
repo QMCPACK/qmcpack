@@ -76,6 +76,9 @@ namespace qmcplusplus {
      RealType WgtSum;
      ///tolerance to trigger swapping to control populations per node
      RealType PopControl;
+     ///LogJacob
+     RealType LogJacobRef;
+
     
      WalkerControlBase* WalkerController;
 

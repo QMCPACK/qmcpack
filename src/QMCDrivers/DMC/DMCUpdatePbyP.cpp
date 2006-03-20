@@ -80,7 +80,7 @@ namespace qmcplusplus {
         if(ratio < 0.0) {//node is crossed reject the move
           ++nRejectTemp;
           ++nNodeCrossing;
-          Psi.restore(iat);
+          W.rejectMove(iat); Psi.rejectMove(iat);
         } else {
           G = W.G+dG;
           RealType logGf = -0.5*dot(deltaR[iat],deltaR[iat]);
@@ -93,14 +93,14 @@ namespace qmcplusplus {
           if(RandomGen() < prob) { 
             ++nAcceptTemp;
             W.acceptMove(iat);
-            Psi.update2(W,iat);
+            Psi.acceptMove(W,iat);
             W.G = G;
             W.L += dL;
             thisWalker.Drift = scale*G;
             rr_accepted+=rr;
           } else {
             ++nRejectTemp; 
-            Psi.restore(iat);
+            W.rejectMove(iat); Psi.rejectMove(iat);
           }
         } 
 

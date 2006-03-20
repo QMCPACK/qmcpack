@@ -141,15 +141,13 @@ namespace qmcplusplus {
           moved = true;
           ++nAccept;
           W.acceptMove(iat);
-          //Psi.update(W,iat);
-          Psi.update2(W,iat);
+          Psi.acceptMove(W,iat);
           W.G = G;
           W.L += dL;
-          //(*it)->Drift = Tau*G;
           thisWalker.Drift = scale*G;
         } else {
           ++nReject; 
-          Psi.restore(iat);
+          W.rejectMove(iat); Psi.rejectMove(iat);
         }
       }
 

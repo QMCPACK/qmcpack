@@ -171,7 +171,7 @@ namespace qmcplusplus {
 	      thisWalker.Multiplicity=sumratio[0];
 	      for(int ipsi=0; ipsi< nPsi; ipsi++){
 		////Update local Psi1[i] buffer for the next move
-		Psi1[ipsi]->update2(W,iat);  
+		Psi1[ipsi]->acceptMove(W,iat);  
 		// Update G and L in Psi1[i]
 		Psi1[ipsi]->G = *G[ipsi];
 		Psi1[ipsi]->L += *dL[ipsi];
@@ -181,8 +181,9 @@ namespace qmcplusplus {
 	      (*it)->Drift = drift;
 	    } else {
 	      ++nReject;
+              W.rejectMove(iat);
 	      for(int ipsi=0; ipsi< nPsi; ipsi++)
-		Psi1[ipsi]->restore(iat);
+		Psi1[ipsi]->rejectMove(iat);
 	    }
 	  }
 

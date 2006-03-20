@@ -26,12 +26,13 @@
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "Message/Communicate.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
+using namespace std;
 namespace qmcplusplus { 
   RQMCMultiple::RQMCMultiple(MCWalkerConfiguration& w, 
       TrialWaveFunction& psi, QMCHamiltonian& h):
     QMCDriver(w,psi,h), 
     ReptileLength(21),
-    NumTurns(0), Reptile(0)
+    NumTurns(0), Reptile(0), NewBead(0)
   { 
     RootName = "rmc-multi";
     QMCType ="rmc-multi";
@@ -78,6 +79,8 @@ namespace qmcplusplus {
 	*(NewBead->Gradients[ipsi])=W.G;
       }
     }
+    std::cout << "==============================" << std::endl;
+    std::cout << "NEWBEAD " << NewBead << std::endl;
 
     //Reptile is made up by replicating the first walker. To be read if restarted.
     //if(Reptile == 0) Reptile=new MultiChain(*W.begin(),ReptileLength,InitialGrowthDirection,nPsi);
@@ -155,14 +158,14 @@ namespace qmcplusplus {
         // Compute contribution to the Action in the MinusDirection
         if(bead!=first_bead){//forward action
           Bead& prevW(**(bead-1));
-          deltaR=prevW.R-curW.R - Tau*W.G;
+          deltaR=prevW.R-curW.R - Tau*(*curW.Gradients[ipsi]);
           KinActMinus=Dot(deltaR,deltaR);
         }
 
         // Compute contribution to the Action in the PlusDirection
         if(bead!=last_bead){//backward action
           Bead& nextW(**(bead+1));
-          deltaR=nextW.R-curW.R - Tau*W.G;
+          deltaR=nextW.R-curW.R - Tau*(*curW.Gradients[ipsi]);
           KinActPlus=Dot(deltaR,deltaR);
         } 
 
@@ -242,15 +245,23 @@ namespace qmcplusplus {
 
     //Compute the Global Action
     bead=first_bead;
-    for(int ipsi=0; ipsi<nPsi; ipsi++) Reptile->GlobalAction[ipsi]=(*bead)->Properties(ipsi,LOGPSI);
+    for(int ipsi=0; ipsi<nPsi; ipsi++) {Reptile->GlobalAction[ipsi]=(*bead)->Properties(ipsi,LOGPSI);
+      cout << " WF : " << ipsi << " " << Reptile->GlobalAction[ipsi] << endl;
+    }
     while(bead != last_bead){
       for(int ipsi=0; ipsi<nPsi; ipsi++){
-        Reptile->GlobalAction[ipsi]-=( (*bead)->Action(PlusDirection) + (*(bead+1))->Action(MinusDirection)+
-            (*bead)->Action(Directionless) + (*(bead+1))->Action(Directionless)   );
+        RealType LinkAction( (*bead)->Action(ipsi,PlusDirection) + (*(bead+1))->Action(ipsi,MinusDirection)+
+                             (*bead)->Action(ipsi,Directionless) + (*(bead+1))->Action(ipsi,Directionless) );
+        cout << " LA " << ipsi << " : " << LinkAction << endl;
+        Reptile->GlobalAction[ipsi]-=LinkAction;
+        //Reptile->GlobalAction[ipsi]-=( (*bead)->Action(PlusDirection) + (*(bead+1))->Action(MinusDirection)+
+          //  (*bead)->Action(Directionless) + (*(bead+1))->Action(Directionless)   );
       } 
       bead++;
     }
-    for(int ipsi=0; ipsi<nPsi; ipsi++) Reptile->GlobalAction[ipsi]+=(*bead)->Properties(ipsi,LOGPSI);
+    for(int ipsi=0; ipsi<nPsi; ipsi++){ Reptile->GlobalAction[ipsi]+=(*bead)->Properties(ipsi,LOGPSI);
+      cout << " WF : " << ipsi << " " << Reptile->GlobalAction[ipsi] << endl;
+    }
 
     //Compute Global Sign weight (need to be initialized somewhere)
     bead=first_bead;
@@ -281,7 +292,10 @@ namespace qmcplusplus {
       RealType DeltaAction(Reptile->GlobalAction[ipsi]-Reptile->GlobalWgt);
       if((WeightSign[ipsi]>0) && (DeltaAction > -30)) Reptile->UmbrellaWeight[ipsi] = exp(DeltaAction);
       else Reptile->UmbrellaWeight[ipsi] = 0.0e0;
+      cout << "GA " << ipsi <<  " : " << Reptile->GlobalAction[ipsi] << endl;
+      cout << "UW " << ipsi <<  " : " << Reptile->UmbrellaWeight[ipsi] << endl;
     }
+    cout << "GW " <<  " : " << Reptile->GlobalWgt << endl;
   }
 
   bool RQMCMultiple::run() { 

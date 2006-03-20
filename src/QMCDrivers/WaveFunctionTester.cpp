@@ -182,7 +182,7 @@ void WaveFunctionTester::runRatioTest() {
 
     //mave a move
     RealType ratio_accum=1.0;
-    for(int iat=3; iat<4; iat++) {
+    for(int iat=0; iat<1; iat++) {
       PosType dr(Tau*deltaR[iat]);
 
       PosType newpos(W.makeMove(iat,dr));
