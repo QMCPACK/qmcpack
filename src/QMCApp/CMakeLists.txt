@@ -74,6 +74,7 @@ SET(QMCDRIVERS
   ../Estimators/ScalarEstimatorManager.cpp
   ../QMCDrivers/QMCOptimize.cpp
   ../QMCDrivers/QMCCostFunction.cpp
+  ../QMCDrivers/WaveFunctionTester.cpp
   ${DMCDRIVERS}
 )
 
@@ -86,6 +87,12 @@ IF(NOT QMCPLUSPLUS_RELEASE)
     ../QMCDrivers/RQMCMultiple.cpp
     ../QMCDrivers/MultiChain.cpp
     ../Estimators/MultipleEnergyEstimator.cpp
+    ../QMCWaveFunctions/AGPDeterminant.cpp
+    ../QMCWaveFunctions/AGPDeterminantBuilder.cpp
+    ../QMCDrivers/SpaceWarp.cpp
+    ../QMCDrivers/VMCMultipleWarp.cpp
+    ../QMCDrivers/VMCPbyPMultiWarp.cpp
+    ../QMCDrivers/RQMCMultiWarp.cpp
   )
 
 #include GSLOptimize.cpp if libgsl is enabled
