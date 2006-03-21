@@ -21,6 +21,7 @@
 #define QMCPLUSPLUS_MULTIPLELOCALENERGYESTIMATOR_H
 
 #include "Estimators/ScalarEstimatorBase.h"
+#include "QMCDrivers/SpaceWarp.h"
 
 namespace qmcplusplus {
 
@@ -154,6 +155,10 @@ namespace qmcplusplus {
       //UmbrellaWeight(iw,ipsi)=invr;
     }
      */
+
+    void initialize(MCWalkerConfiguration& W, vector<ParticleSet*>& WW, SpaceWarp& Warp,
+        vector<QMCHamiltonian*>& h, vector<TrialWaveFunction*>& psi,
+        RealType tau, bool require_register=false);
 
   };
 

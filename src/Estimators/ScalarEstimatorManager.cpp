@@ -48,7 +48,6 @@ ScalarEstimatorManager::add(EstimatorType* newestimator, const string& aname) {
     //newestimator->add2Record(BlockAverages);
     return n;
   } else {
-    cout << "Already added estimator " << aname << endl;
     return (*it).second;
   }
 }

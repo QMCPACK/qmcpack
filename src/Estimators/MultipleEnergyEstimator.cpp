@@ -118,6 +118,7 @@ namespace qmcplusplus {
         sumratio[ipsi]=1.0;
       } 							
      
+
       //Check SIMONE's note
       //Compute the sum over j of Psi^2[j]/Psi^2[i] for each i
       int indexij(0);
@@ -142,6 +143,113 @@ namespace qmcplusplus {
         thisWalker.Properties(ipsi,UMBRELLAWEIGHT)=wgt;
         thisWalker.Drift += wgt*psi[ipsi]->G;
       }
+      thisWalker.Drift *= tau;
+      ++it;++iw;
+    }
+  }
+
+  void 
+  MultipleEnergyEstimator
+  ::initialize(MCWalkerConfiguration& W, vector<ParticleSet*>& WW,SpaceWarp& Warp,
+      vector<QMCHamiltonian*>& h, 
+      vector<TrialWaveFunction*>& psi,
+      RealType tau,
+      bool require_register) {
+
+    NumWalkers = W.getActiveWalkers();
+
+    int numPtcls(W.getTotalNum());
+
+    RatioIJ.resize(NumWalkers,NumCopies*(NumCopies-1)/2);
+
+    MCWalkerConfiguration::iterator it(W.begin()); 
+    MCWalkerConfiguration::iterator it_end(W.end()); 
+
+    vector<RealType> sumratio(NumCopies), logpsi(NumCopies);
+    vector<RealType> Jacobian(NumCopies);
+
+    int jindex=W.addProperty("Jacobian");
+    int iw(0);
+    while(it != it_end) {
+
+      Walker_t& thisWalker(**it);
+
+      if(require_register) {
+        (*it)->DataSet.rewind();
+        W.registerData(thisWalker,(*it)->DataSet);
+      } else {
+        W.R = thisWalker.R;
+        W.update();
+      }
+
+      for(int ipsi=0; ipsi<NumCopies; ipsi++) Jacobian[ipsi]=1.e0;
+      for(int iptcl=0; iptcl< numPtcls; iptcl++){
+        Warp.warp_one(iptcl,0);
+        for(int ipsi=0; ipsi<NumCopies; ipsi++){
+          WW[ipsi]->R[iptcl]=W.R[iptcl]+Warp.get_displacement(iptcl,ipsi);
+          Jacobian[ipsi]*=Warp.get_Jacobian(iptcl,ipsi);
+        }
+        if(require_register)Warp.update_one_ptcl_Jacob(iptcl);
+      }
+
+      for(int ipsi=0; ipsi<NumCopies; ipsi++){
+        thisWalker.Properties(ipsi,jindex)=Jacobian[ipsi];
+      }
+      
+      //update distance table and bufferize it if necessary
+      if(require_register) {
+        for(int ipsi=0; ipsi<NumCopies; ipsi++){ 
+          WW[ipsi]->registerData((*it)->DataSet);
+        }
+        Warp.registerData(WW,(*it)->DataSet);
+      } else {
+        for(int ipsi=0; ipsi<NumCopies; ipsi++) WW[ipsi]->update();
+      }
+
+
+      //evalaute the wavefunction and hamiltonian
+      for(int ipsi=0; ipsi< NumCopies;ipsi++) {			  
+        psi[ipsi]->G.resize(numPtcls);
+        psi[ipsi]->L.resize(numPtcls);
+        //Need to modify the return value of OrbitalBase::registerData
+        if(require_register) {
+	  logpsi[ipsi]=psi[ipsi]->registerData(*WW[ipsi],(*it)->DataSet);
+        } else {
+	  logpsi[ipsi]=psi[ipsi]->evaluateLog(*WW[ipsi]); 		 
+        }
+        psi[ipsi]->G=WW[ipsi]->G;
+        thisWalker.Properties(ipsi,LOGPSI)=logpsi[ipsi];
+        thisWalker.Properties(ipsi,LOCALENERGY)=h[ipsi]->evaluate(*WW[ipsi]);
+        h[ipsi]->saveProperty(thisWalker.getPropertyBase(ipsi));
+        sumratio[ipsi]=1.0;
+      } 							
+     
+      //Check SIMONE's note
+      //Compute the sum over j of Psi^2[j]/Psi^2[i] for each i
+      int indexij(0);
+      RealType *rPtr=RatioIJ[iw];
+      for(int ipsi=0; ipsi< NumCopies-1; ipsi++) {			  
+        for(int jpsi=ipsi+1; jpsi< NumCopies; jpsi++){     		 
+          RealType r=exp(2.0*(logpsi[jpsi]-logpsi[ipsi])); 
+	  r*=(Jacobian[jpsi]/Jacobian[ipsi]);
+          rPtr[indexij++]=r;
+          sumratio[ipsi] += r;                            
+          sumratio[jpsi] += 1.0/r;		
+        }                                              
+      }                                               
+
+      //Re-use Multiplicity as the sumratio
+      thisWalker.Multiplicity=sumratio[0];
+
+      //DON't forget DRIFT!!!
+      thisWalker.Drift=0.0;
+
+      for(int ipsi=0; ipsi< NumCopies; ipsi++) {
+        RealType wgt=1.0/sumratio[ipsi];
+        thisWalker.Properties(ipsi,UMBRELLAWEIGHT)=wgt;
+       // thisWalker.Drift += wgt*psi[ipsi]->G;
+      }
+      thisWalker.Drift = psi[0]->G;
       thisWalker.Drift *= tau;
       ++it;++iw;
     }
