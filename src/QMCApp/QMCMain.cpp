@@ -327,15 +327,18 @@ namespace qmcplusplus {
         tcur=tcur->next;
       }
 
+      //mark the first targetPsi and targetH as the primaries
       if(targetH.empty()) {
         primaryPsi=psiPool->getPrimary();
         primaryH=hamPool->getPrimary();
-      } else { //mark the first targetPsi and targetH as the primaries
+      } else { 
         primaryPsi=targetPsi.front(); targetPsi.pop();
         primaryH=targetH.front();targetH.pop();
       }
+
       //set primaryH->Primary
       primaryH->setPrimary(true);
+
       ///////////////////////////////////////////////
       if (what == "vmc"){
         primaryH->addOperator(new ConservedEnergy,"Flux");
@@ -382,10 +385,7 @@ namespace qmcplusplus {
           targetPsi.pop(); 
         }
         curRunType = VMC_RUN;
-      } else if(what == "rmc") {
-        qmcDriver = new ReptationMC(*qmcSystem,*primaryPsi,*primaryH);
-        curRunType = RMC_RUN;
-      } else if(what == "rmc-multi") {
+      } else if(what == "rmc" || what == "rmc-multi") {
         qmcDriver = new RQMCMultiple(*qmcSystem,*primaryPsi,*primaryH);
         while(targetH.size()) {
           qmcDriver->add_H_and_Psi(targetH.front(),targetPsi.front());
