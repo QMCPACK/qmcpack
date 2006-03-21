@@ -149,6 +149,16 @@ DetRatio(const MatA& Minv, Iter newrow, int rowchanged) {
   return res;
 }
 
+template<class MatA, class Iter>
+inline
+typename MatA::value_type 
+DetRatioTranspose(const MatA& Minv, Iter newcol, int colchanged) {
+  typename MatA::value_type res = 0.0;
+  for(int i=0; i<Minv.rows(); i++, newcol++)
+    res += Minv(i,colchanged)*(*newcol);
+  return res;
+}
+
 template<class T, class Iter2>
 inline T
 detRatio(T* restrict Minv, Iter2 newrow, int cols) {
@@ -178,6 +188,49 @@ DetUpdate(MatA& Minv,
   }
   for(int k=0; k<ncols; k++) Minv(rowchanged,k) *= ratio_inv;
 
+	/*
+  for(int j=0; j<ncols; j++) {
+    rvec[j] = DetRatio(Minv,newrow.begin(),j);
+    rvecinv[j] = 1.0/rvec[j];
+  }
+
+  for(int j=0; j<ncols; j++) {
+    Minv(rowchanged, j) *= rvecinv[rowchanged];
+  }
+
+  for(int i=0; i<rowchanged; i++) {
+    for(int j=0; j<ncols; j++) {
+      Minv(i,j) -= Minv(rowchanged,j)*rvec[i];
+    }
+  }
+  for(int i=rowchanged+1; i<Minv.rows(); i++) {
+    for(int j=0; j<ncols; j++) {
+      Minv(i,j) -= Minv(rowchanged,j)*rvec[i];
+    }
+  }
+  */
+}
+
+template<class MatA, class VecT>
+inline
+void
+DetUpdateTranspose(MatA& Minv, 
+    VecT& newcol, 
+    VecT& rvec, 
+    VecT& rvecinv, 
+    int colchanged,
+    typename MatA::value_type c_ratio) {
+
+  int nrows=Minv.rows();
+  typename MatA::value_type ratio_inv=1.0/c_ratio;
+  for(int i=0; i<nrows; i++) {
+    if(i == colchanged) continue;
+    typename MatA::value_type temp = 0.0;
+    for(int k=0; k<nrows; k++) temp += newcol[k]*Minv(k,i);
+    temp *= -ratio_inv;
+    for(int k=0; k<nrows; k++) Minv(k,i) += temp*Minv(k,colchanged);
+  }
+  for(int k=0; k<nrows; k++) Minv(k,colchanged) *= ratio_inv;
 	/*
   for(int j=0; j<ncols; j++) {
     rvec[j] = DetRatio(Minv,newrow.begin(),j);
