@@ -56,6 +56,7 @@ namespace qmcplusplus {
     typedef OHMMS_PRECISION           ValueType;
     typedef TinyVector<RealType,DIM>  PosType;
     typedef TinyVector<ValueType,DIM> GradType;
+    typedef Tensor<ValueType,DIM>     TensorType;
   };
 
   /** Particle traits to use UniformGridLayout for the ParticleLayout.
