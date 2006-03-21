@@ -221,6 +221,18 @@ public:
     return X[i*D+j];
   }
 
+  inline TinyVector<T,D> getRow(unsigned int i) {
+    TinyVector<T,D> res;
+    for(int j=0; j<D; j++) res[j]=X[i*D+j];
+    return res;
+  }
+
+  inline TinyVector<T,D> getColumn(unsigned int i) {
+    TinyVector<T,D> res;
+    for(int j=0; j<D; j++) res[j]=X[j*D+i];
+    return res;
+  }
+
 //  Removed operator using std::pair
 //    Type_t operator()(const pair<int,int> i) const {
 //      PAssert ( (i.first>=0) && (i.second>=0) && (i.first<D) && (i.second<D) );
@@ -272,7 +284,7 @@ private:
 //////////////////////////////////////////////////////////////////////
 
 template <class T, unsigned D>
-T trace(const Tensor<T,D>& rhs) {
+inline T trace(const Tensor<T,D>& rhs) {
   T result = 0.0;
   for (int i = 0 ; i < D ; i++ )
     result += rhs(i,i);
@@ -280,11 +292,26 @@ T trace(const Tensor<T,D>& rhs) {
 }
 
 template <class T, unsigned D>
-Tensor<T,D> transpose(const Tensor<T,D>& rhs) {
+inline Tensor<T,D> transpose(const Tensor<T,D>& rhs) {
   Tensor<T,D> result; // = Tensor<T,D>::DontInitialize();
   for (int j = 0 ; j < D ; j++ ) 
     for (int i = 0 ; i < D ; i++ )
       result(i,j) = rhs(j,i);
+  return result;
+}
+
+template <class T, unsigned D>
+inline T trace(const Tensor<T,D>& a, const Tensor<T,D>& b) {
+  T result = 0.0;
+  for (int i = 0 ; i < D ; i++ )
+    for(int j=0; j<D; j++) result += a(i,j)*b(j,i);
+  return result;
+}
+
+template <class T, unsigned D>
+inline T traceAtB(const Tensor<T,D>& a, const Tensor<T,D>& b) {
+  T result = 0.0;
+  for (int i = 0 ; i < D*D ; i++ ) result += a(i)*b(i);
   return result;
 }
 

@@ -145,11 +145,30 @@ public:
     return X[i*D2+j];
   }
 
-  //! \param sub an input array to be copied
-  //! \param d1  row-dimension of the input array
-  //! \param d2  column-dimension of the input array
-  //! \param i0  starting row where the copying is done
-  //! \param j0  starting column where the copying is done
+  template<class IT>
+    inline void replaceRow(IT first, size_type i) {
+      std::copy(first,first+D2,X.begin()+i*D2);
+    }
+
+  template<class IT>
+    inline void replaceColumn(IT first,size_type j) {
+      typename Container_t::iterator ii(X.begin()+j);
+      for(int i=0; i<D1; i++, ii+=D2) *ii=*first++;
+    }
+
+  template<class IT>
+    inline void add2Column(IT first,size_type j) {
+      typename Container_t::iterator ii(X.begin()+j);
+      for(int i=0; i<D1; i++, ii+=D2) *ii+=*first++;
+    }
+
+  /** 
+   * \param sub an input array to be copied
+   * \param d1  row-dimension of the input array
+   * \param d2  column-dimension of the input array
+   * \param i0  starting row where the copying is done
+   * \param j0  starting column where the copying is done
+   */
   template<class T1>
   inline void add(const T1* sub, size_type d1, size_type d2, size_type i0, size_type j0) {
     int ii=0;
