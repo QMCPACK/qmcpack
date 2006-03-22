@@ -38,11 +38,12 @@ namespace qmcplusplus {
     typedef PooledData<RealType>         BufferType;
 
     bool Optimizable;
+    bool UseBuffer;
     ValueType LogValue;
     ValueType SignValue;
 
     ///default constructor
-    inline OrbitalBase(): Optimizable(true),LogValue(1.0),SignValue(1.0){ }
+    inline OrbitalBase(): Optimizable(true), UseBuffer(true),LogValue(1.0),SignValue(1.0){ }
 
     ///default destructor
     virtual ~OrbitalBase() { }
