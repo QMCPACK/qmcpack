@@ -91,13 +91,9 @@ namespace qmcplusplus {
 		    ParticleSet::ParticleGradient_t& dG, 
 		    ParticleSet::ParticleLaplacian_t& dL);
 
-    void ratioUp(ParticleSet& P, int iat,
-		    ParticleSet::ParticleGradient_t& dG, 
-		    ParticleSet::ParticleLaplacian_t& dL);
+    void ratioUp(ParticleSet& P, int iat);
 
-    void ratioDown(ParticleSet& P, int iat,
-		    ParticleSet::ParticleGradient_t& dG, 
-		    ParticleSet::ParticleLaplacian_t& dL);
+    void ratioDown(ParticleSet& P, int iat);
 
     ValueType logRatio(ParticleSet& P, int iat,
 		    ParticleSet::ParticleGradient_t& dG, 
@@ -192,29 +188,41 @@ namespace qmcplusplus {
     Gradient_t dY;
     /// store laplacians
     Laplacian_t d2Y;
+    /// temporary determinant-related matrix for gradients
+    Gradient_t dpsiU, dpsiD;
+    /// temporary determinant-related matrix for laplacians
+    Laplacian_t d2psiU, d2psiD;
 
     /// value of single-particle orbital for particle-by-particle update
-    Vector<ValueType> psiU, psiD;
-    Vector<GradType> dpsiU, dpsiD;
-    Vector<ValueType> d2psiU, d2psiD;
-    Vector<ValueType> workV1, workV2;
     /** temporary vector for a particle-by-particle move
      *
      * phiTv = Lambda Y(iat)
      */
     Vector<ValueType> phiTv;
-    Vector<GradType> dYv;
-    Vector<ValueType> d2Yv;
-
+    Vector<ValueType> psiU, psiD;
+    Vector<GradType> dpsiUv, dpsiDv;
+    Vector<ValueType> d2psiUv, d2psiDv;
+    Vector<ValueType> workV1, workV2;
     Vector<ValueType> WorkSpace;
     Vector<IndexType> Pivot;
 
-
     ValueType curRatio,cumRatio;
+    ///address of  dpsiU[0][0]
+    ValueType *FirstAddressOfdVU;
+    ///address of FirstAddressOfdVU+OHMMS_DIM*Nup*Nup
+    ValueType *LastAddressOfdVU;
+    ///address of  dpsiD[0][0]
+    ValueType *FirstAddressOfdVD;
+    ///address of FirstAddressOfdVD+OHMMS_DIM*Ndown*Nup
+    ValueType *LastAddressOfdVD;
+    ///address of myG[0][0]
     ValueType *FirstAddressOfG;
+    ///address of FirstAddressOfG+OHMMS_DIM*NumPtcls
     ValueType *LastAddressOfG;
-    ValueType *FirstAddressOfdV;
-    ValueType *LastAddressOfdV;
+    ///address of dY[0][0]
+    ValueType *FirstAddressOfdY;
+    ///address of FirstAddressOfdY+NumPtcls*BasisSize
+    ValueType *LastAddressOfdY;
 
     ParticleSet::ParticleGradient_t myG, myG_temp;
     ParticleSet::ParticleLaplacian_t myL, myL_temp;
