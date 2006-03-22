@@ -46,7 +46,6 @@ namespace qmcplusplus {
       //int charge = center.Species.addAttribute("charge");
       Centers = center.getTotalNum();
       Omega.resize(Centers,0.5);
-
       RealType C = 0.5;
       for(int iat=0; iat<Centers;iat++) {
         //RealType omega = center.getSpeciesSet(charge,center.GroupID[iat]);
@@ -68,7 +67,7 @@ namespace qmcplusplus {
       for(int iat=0; iat<Centers; iat++) {
         RealType e = 0.0;
         for(int nn=d_table->M[iat]; nn<d_table->M[iat+1]; nn++) {
-          e += d_table->r(0,nn)*d_table->r(0,nn);
+          e += d_table->r(nn)*d_table->r(nn);
         }
         Value += Omega[iat]*e;
       }
@@ -81,6 +80,9 @@ namespace qmcplusplus {
     }
 
     bool get(std::ostream& os) const {
+      os << "Harmonic potential: ";
+      for(int i=0; i<Centers;i++) os << Omega[i] << " ";
+      os << endl;
       return true;
     }
 

@@ -94,6 +94,7 @@ namespace qmcplusplus {
           if(pit != ptclPool.end()) {
             ParticleSet* ion=(*pit).second;
             targetH->addOperator(new HarmonicPotential(*ion, *targetPtcl),"Harmonic");
+            app_log() << "  Adding HarmonicPotential " << endl;
           }
         } else if(cname == "constant") { 
           if(pot_type == "coulomb") { //ugly!!!
