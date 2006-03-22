@@ -39,23 +39,28 @@ namespace qmcplusplus {
     DistanceTableData* d_table;
 
     ///constructor
-    HarmonicPotential(RealType omega=1.0): Omega(1,omega){ }
+    HarmonicPotential(RealType omega=0.5): Omega(1,omega){ }
 
     HarmonicPotential(ParticleSet& center, ParticleSet& visitor) { 
       d_table = DistanceTable::getTable(DistanceTable::add(center,visitor));
-      int charge = center.Species.addAttribute("charge");
+      //int charge = center.Species.addAttribute("charge");
       Centers = center.getTotalNum();
-      Omega.resize(Centers);
+      Omega.resize(Centers,0.5);
 
       RealType C = 0.5;
       for(int iat=0; iat<Centers;iat++) {
-        RealType omega = center.Species(charge,center.GroupID[iat]);
+        //RealType omega = center.getSpeciesSet(charge,center.GroupID[iat]);
+        RealType omega=0.5;
         Omega[iat] = C*omega*omega;
       }
     }
 
     ///destructor
     ~HarmonicPotential() { }
+
+    void resetTargetParticleSet(ParticleSet& P)  {
+      d_table = DistanceTable::getTable(DistanceTable::add(d_table->origin(),P));
+    }
 
     inline Return_t 
     evaluate(ParticleSet& P) {
@@ -75,8 +80,8 @@ namespace qmcplusplus {
       return true;
     }
 
-    QMCHamiltonianBase* clone() {
-      return new HarmonicPotential;
+    bool get(std::ostream& os) const {
+      return true;
     }
 
   };

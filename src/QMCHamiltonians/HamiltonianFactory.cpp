@@ -25,6 +25,7 @@
 #include "QMCHamiltonians/LocalPPotential.h"
 #include "QMCHamiltonians/NonLocalPPotential.h"
 #include "QMCHamiltonians/LocalCorePolPotential.h"
+#include "QMCHamiltonians/HarmonicPotential.h"
 #if !defined(QMCPLUSPLUS_RELEASE)
 #include "QMCHamiltonians/CoulombPBC.h"
 #endif
@@ -84,6 +85,15 @@ namespace qmcplusplus {
             addPseudoPotential(cur);
           } else if(pot_type == "cpp") {
             addCorePolPotential(cur);
+          }
+        } else if(cname == "harmonic") {
+          t = xmlGetProp(cur,(const xmlChar*)"source");
+          string nuclei("i");
+          if(t) nuclei=(const char*)t;
+          PtclPoolType::iterator pit(ptclPool.find(nuclei));
+          if(pit != ptclPool.end()) {
+            ParticleSet* ion=(*pit).second;
+            targetH->addOperator(new HarmonicPotential(*ion, *targetPtcl),"Harmonic");
           }
         } else if(cname == "constant") { 
           if(pot_type == "coulomb") { //ugly!!!
