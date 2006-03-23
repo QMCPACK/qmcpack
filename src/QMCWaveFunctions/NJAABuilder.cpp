@@ -106,6 +106,7 @@ namespace qmcplusplus {
     OneDimGridFactory::GridType* agrid = OneDimGridFactory::createGrid(gridPtr);
     //get the cutoff radius
     RealType rcut = OneDimGridFactory::setSmoothCutoff(agrid,gridPtr);
+    app_log() << "  smoothing function starts at " << rcut << endl;
 
     DistanceTableData* d_table = DistanceTable::getTable(DistanceTable::add(targetPtcl));
     TwoBodyJastrowOrbital<FuncType> *J2 = new TwoBodyJastrowOrbital<FuncType>(targetPtcl,d_table);
