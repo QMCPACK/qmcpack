@@ -266,7 +266,7 @@ namespace qmcplusplus {
     TrialWaveFunction* psi=0;
     if(oit == psiPool.end()) {
       if(psiPool.empty()) return;
-      cout << "  Cannot find " << wfname << " in the pool "<< endl;
+      cout << "  Cannot find " << wfname << " in the Wavefunction pool. Using the first wavefunction."<< endl;
       psi=(*(psiPool.begin())).second->targetPsi;
     } else {
       psi=(*oit).second->targetPsi;
