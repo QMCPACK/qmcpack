@@ -79,6 +79,7 @@ namespace qmcplusplus {
        	    PosType deltar(r*rrotsgrid_m[j]-dr);
        	    W.makeMove(iel,deltar); 
        	    psiratio[j]=Psi.ratio(W,iel)*sgridweight_m[j];
+            W.rejectMove(iel);
           }
           
           // Compute radial potential
