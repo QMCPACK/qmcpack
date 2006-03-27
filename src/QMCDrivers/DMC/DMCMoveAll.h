@@ -50,6 +50,7 @@ namespace qmcplusplus {
     IndexType PopIndex;
     IndexType EtrialIndex;
     IndexType KillNodeCrossing;
+    IndexType BranchInterval;
     string Reconfiguration;
     string KillWalker;
     /// Copy Constructor (disabled)

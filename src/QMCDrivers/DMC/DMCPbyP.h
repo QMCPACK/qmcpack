@@ -53,6 +53,8 @@ namespace qmcplusplus {
     IndexType nAcceptTot;
     ///Total number of rejected steps per block
     IndexType nRejectTot;
+    ///Interval between branching
+    IndexType BranchInterval;
     ///hdf5 file name for Branch conditions
     string BranchInfo;
     ///input string to determine kill walkers or not

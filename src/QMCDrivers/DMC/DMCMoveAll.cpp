@@ -24,12 +24,14 @@
 namespace qmcplusplus {
 
   DMCMoveAll::DMCMoveAll(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h):
-    QMCDriver(w,psi,h),
-    Reconfiguration("no"), KillNodeCrossing(0), KillWalker("no"),Mover(0){ 
+    QMCDriver(w,psi,h),Mover(0),
+    BranchInterval(-1),KillNodeCrossing(0), KillWalker("no"),
+    Reconfiguration("no") { 
     RootName = "dmc";
     QMCType ="dmc";
     m_param.add(KillWalker,"killnode","string");
     m_param.add(Reconfiguration,"reconfiguration","string");
+    m_param.add(BranchInterval,"branch_interval","int");
   }
 
   DMCMoveAll::~DMCMoveAll() {
@@ -104,13 +106,17 @@ namespace qmcplusplus {
       Mover->startBlock();
       Estimators->startBlock();
       do {
-        Mover->advanceWalkers(W.begin(), W.end());
-        step++; CurrentStep++;
+        int interval=0; 
+        do {
+          Mover->advanceWalkers(W.begin(), W.end());
+          ++interval;
+          ++step; ++CurrentStep; 
+        } while(interval<BranchInterval);
+
+        Estimators->accumulate(W);
+        int pop=branchEngine->branch(CurrentStep,W);
+        Estimators->setColumn(PopIndex,pop);
       } while(step<nSteps);
-
-      Estimators->accumulate(W);
-
-      int pop=branchEngine->branch(CurrentStep,W);
 
       nAccept = Mover->nAccept;
       nReject = Mover->nReject;
@@ -120,7 +126,6 @@ namespace qmcplusplus {
       nAcceptTot += nAccept;
       nRejectTot += nReject;
       
-      Estimators->setColumn(PopIndex,pop);
       Estimators->setColumn(EtrialIndex,Eest);
 
       Eest = Estimators->average(0);
@@ -177,7 +182,14 @@ namespace qmcplusplus {
     Estimators->reportHeader(AppendRun);
 
     if(fixW)  {
-      app_log() << "  DMC all-ptcl update with reconfigurations" << endl;
+      if(BranchInterval<0) {
+        BranchInterval=nSteps;
+        nSteps=1;
+      }
+      app_log() << "  DMC all-ptcl update with reconfigurations " << endl;
+      app_log() << "    BranchInterval=" << BranchInterval << endl;
+      app_log() << "    Steps         =" << nSteps << endl;
+      app_log() << "    Blocks        =" << nBlocks << endl;
       dmcWithReconfiguration();
     } else {
       app_log() << "  DMC all-ptcl update with a fluctuating population" << endl;

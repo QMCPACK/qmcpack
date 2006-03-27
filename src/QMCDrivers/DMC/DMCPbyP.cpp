@@ -26,7 +26,7 @@ namespace qmcplusplus {
   DMCPbyP::DMCPbyP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h):
     QMCDriver(w,psi,h),
     KillNodeCrossing(0),
-    PopIndex(-1), EtrialIndex(-1),
+    PopIndex(-1), EtrialIndex(-1),BranchInterval(-1),
     BranchInfo("default"), KillWalker("no"), Reconfiguration("no"), Mover(0){ 
     RootName = "dmc";
     QMCType ="dmc";
@@ -37,6 +37,7 @@ namespace qmcplusplus {
 
     m_param.add(KillWalker,"killnode","string");
     m_param.add(Reconfiguration,"reconfiguration","string");
+    m_param.add(BranchInterval,"branch_interval","int");
   }
   
   /// destructor
@@ -73,7 +74,14 @@ namespace qmcplusplus {
     Mover->initWalkers(W.begin(),W.end());
 
     if(fixW)  {
+      if(BranchInterval<0) {
+        BranchInterval=nSteps;
+        nSteps=1;
+      }
       app_log() << "  DMC PbyP update with reconfigurations" << endl;
+      app_log() << "    BranchInterval=" << BranchInterval << endl;
+      app_log() << "    Steps         =" << nSteps << endl;
+      app_log() << "    Blocks        =" << nBlocks << endl;
       dmcWithReconfiguration();
     } else {
       app_log() << "  DMC PbyP update with a fluctuating population" << endl;
@@ -97,23 +105,26 @@ namespace qmcplusplus {
       Mover->startBlock();
       Estimators->startBlock();
       do {
-        Mover->advanceWalkers(W.begin(), W.end());
-        step++; CurrentStep++;
+        int interval=0; 
+        do {
+          Mover->advanceWalkers(W.begin(), W.end());
+          ++interval;
+          ++step; ++CurrentStep; 
+        } while(interval<BranchInterval);
+
+        Estimators->accumulate(W);
+        int nwKept= branchEngine->branch(CurrentStep,W);
+        Estimators->setColumn(PopIndex,nwKept);
+        Eest = branchEngine->CollectAndUpdate(W.getActiveWalkers(),Eest);
+
       } while(step<nSteps);
-
-      Estimators->accumulate(W);
-      int nwKept= branchEngine->branch(CurrentStep,W);
-
-      Eest = branchEngine->CollectAndUpdate(W.getActiveWalkers(),Eest);
 
       Estimators->stopBlock(Mover->acceptRatio());
 
       nAcceptTot += Mover->nAccept;
       nRejectTot += Mover->nReject;
       
-      Estimators->setColumn(PopIndex,nwKept);
       Estimators->setColumn(EtrialIndex,branchEngine->E_T);
-
       block++;
       recordBlock(block);
 
