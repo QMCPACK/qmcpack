@@ -23,16 +23,10 @@
 #ifndef QMCPLUSPLUS_MAINAPPLICATIONS_H
 #define QMCPLUSPLUS_MAINAPPLICATIONS_H
 
+#include "QMCApp/QMCDriverFactory.h"
 #include "QMCApp/QMCAppBase.h"
 
 namespace qmcplusplus {
-
-  //forward declaration
-  class MCWalkerConfiguration;
-  class QMCDriver;
-  class ParticleSetPool;
-  class WaveFunctionPool;
-  class HamiltonianPool;
 
   /** @ingroup qmcapp
    * @brief Main application to perform QMC simulations 
@@ -40,17 +34,11 @@ namespace qmcplusplus {
    * This is a generalized QMC application which can handle multiple ParticleSet,
    * TrialWaveFunction and QMCHamiltonian objects.
    */
-  class QMCMain: public QMCAppBase {
+  class QMCMain: public QMCDriverFactory, 
+                 public QMCAppBase {
 
   public:
 
-    /*! enum for QMC Run Type */
-    enum QMCRunType {DUMMY_RUN, /*!< dummy */
-      VMC_RUN, /*!< VMC type: vmc, vmc-ptcl, vmc-multiple, vmc-ptcl-multiple */
-      DMC_RUN, /*!< DMC type: dmc, dmc-ptcl*/
-      RMC_RUN, /*!< RMC type: rmc, rmc-ptcl */
-      OPTIMIZE_RUN /*!< Optimization */
-    };
 
     ///constructor
     QMCMain(int argc, char** argv);
@@ -63,34 +51,8 @@ namespace qmcplusplus {
 
   private:
 
-    ///type of 
-    QMCRunType curRunType;
-
-    ///name of the current QMCriver
-    std::string curMethod;
-
     ///flag to indicate that a qmc is the first QMC
     bool FirstQMC;
-
-    /** current QMCDriver
-     */
-    QMCDriver *qmcDriver;
-
-    /** current MCWalkerConfiguration
-     */
-    MCWalkerConfiguration *qmcSystem;
-
-    /** ParticleSet Pool
-     */
-    ParticleSetPool* ptclPool;
-
-    /** TrialWaveFunction Pool
-     */
-    WaveFunctionPool* psiPool;
-
-    /** QMCHamiltonian Pool
-     */
-    HamiltonianPool* hamPool;
 
     ///previous configuration file for next qmc node
     string PrevConfigFile;

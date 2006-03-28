@@ -120,6 +120,7 @@ SET(MAINSRCS
   HamiltonianPool.cpp
   InitMolecularSystem.cpp
   QMCAppBase.cpp
+  QMCDriverFactory.cpp
   QMCMain.cpp
   qmcapp.cpp
 )
