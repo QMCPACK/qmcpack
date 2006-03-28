@@ -169,8 +169,7 @@ namespace qmcplusplus {
       RealType logGf = -0.5*Dot(deltaR,deltaR);
       
       //converting gradients W.G to drifts, D = tau*G (reuse G)
-      ValueType vsq = Dot(W.G,W.G);
-      ValueType scale = ((-1.0+sqrt(1.0+2.0*Tau*vsq))/vsq);
+      RealType scale = getDriftScale(Tau,W.G);
       drift = scale*W.G;
       
       //backward GreenFunction needs \f$d{\bf R} = {\bf R}_{old} - {\bf R}_{new} - {\bf V}_d\f$

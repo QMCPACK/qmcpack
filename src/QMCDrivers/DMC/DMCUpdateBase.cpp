@@ -64,8 +64,7 @@ namespace qmcplusplus {
       W.registerData(**it,(*it)->DataSet);
       ValueType logpsi=Psi.registerData(W,(*it)->DataSet);
 
-      RealType vsq = Dot(W.G,W.G);
-      RealType scale = ((-1.0+sqrt(1.0+2.0*Tau*vsq))/vsq);
+      RealType scale=getDriftScale(Tau,W.G);
       (*it)->Drift = scale*W.G;
 
       RealType ene = H.evaluate(W);
@@ -84,8 +83,7 @@ namespace qmcplusplus {
       RealType enew= H.evaluate(W);
       (*it)->resetProperty(logpsi,Psi.getSign(),enew);
       H.saveProperty((*it)->getPropertyBase());
-      ValueType vsq = Dot(W.G,W.G);
-      ValueType scale = ((-1.0+sqrt(1.0+2.0*Tau*vsq))/vsq);
+      RealType scale=getDriftScale(Tau,W.G);
       (*it)->Drift = scale*W.G;
       ++it;
     }

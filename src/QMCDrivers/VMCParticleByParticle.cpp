@@ -128,8 +128,7 @@ namespace qmcplusplus {
         //RealType backwardGF = exp(-oneover2tau*dot(dr,dr));
         RealType logGf = -0.5e0*dot(deltaR[iat],deltaR[iat]);
 
-        ValueType vsq = Dot(G,G);
-        ValueType scale = ((-1.0e0+sqrt(1.0e0+2.0e0*Tau*vsq))/vsq);
+        RealType scale=getDriftScale(Tau,G);
         dr = thisWalker.R[iat]-newpos-scale*G[iat];
         //dr = (*it)->R[iat]-newpos-Tau*G[iat]; 
 

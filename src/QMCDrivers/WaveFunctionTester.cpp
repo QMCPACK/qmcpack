@@ -182,14 +182,14 @@ void WaveFunctionTester::runRatioTest() {
 
     //mave a move
     RealType ratio_accum=1.0;
-    for(int iat=0; iat<1; iat++) {
+    for(int iat=0; iat<nat; iat++) {
       PosType dr(Tau*deltaR[iat]);
 
       PosType newpos(W.makeMove(iat,dr));
 
       RealType ratio=Psi.ratio(W,iat,dG,dL);
 
-      //if(ratio > 0 && iat%2 == 0) {//accept only the even index
+      if(ratio > 0 && iat%2 == 0) {//accept only the even index
         W.acceptMove(iat);
         Psi.acceptMove(W,iat);
 
@@ -198,10 +198,10 @@ void WaveFunctionTester::runRatioTest() {
         //G=W.G+dG;
         //L=W.L+dL;
         ratio_accum *= ratio;
-      //} else {
-      //  cout << " Rejecting a move for " << iat << endl;
-      //  W.rejectMove(iat); Psi.rejectMove(iat);
-      //}
+      } else {
+        cout << " Rejecting a move for " << iat << endl;
+        W.rejectMove(iat); Psi.rejectMove(iat);
+      }
     }
 
     G = W.G;

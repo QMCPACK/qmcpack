@@ -73,8 +73,7 @@ namespace qmcplusplus {
         RealType enew(H.evaluate(W));
         RealType logGf = -0.5*Dot(deltaR,deltaR);
         //converting gradients to drifts, D = tau*G (reuse G)
-        ValueType vsq = Dot(W.G,W.G);
-        ValueType scale = ((-1.0+sqrt(1.0+2.0*Tau*vsq))/vsq);
+        RealType scale=getDriftScale(Tau,W.G);
         drift = scale*W.G;
         deltaR = (*it)->R - W.R - drift;
         RealType logGb = -m_oneover2tau*Dot(deltaR,deltaR);
@@ -159,9 +158,8 @@ namespace qmcplusplus {
       } else {
         RealType enew(H.evaluate(W));
         RealType logGf = -0.5*Dot(deltaR,deltaR);
-        ValueType vsq = Dot(W.G,W.G);
         //converting gradients to drifts, D = tau*G (reuse G)
-        ValueType scale = ((-1.0+sqrt(1.0+2.0*Tau*vsq))/vsq);
+        RealType scale=getDriftScale(Tau,W.G);
         drift = scale*W.G;
         deltaR = (*it)->R - W.R - drift;
         RealType logGb = -m_oneover2tau*Dot(deltaR,deltaR);
