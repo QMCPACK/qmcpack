@@ -26,13 +26,13 @@ namespace qmcplusplus {
 
   int  ParticleSet::PtclObjectCounter = 0;
 
-  ParticleSet::ParticleSet(): SK(0) {
+  ParticleSet::ParticleSet(): SK(NULL), SKOld(NULL) {
     initParticleSet();
 
     initPropertyList();
   }
 
-  ParticleSet::ParticleSet(const ParticleSet& p): SK(0) {
+  ParticleSet::ParticleSet(const ParticleSet& p): SK(NULL), SKOld(NULL) {
     initBase();
     initParticleSet();
     assign(p);
@@ -44,6 +44,7 @@ namespace qmcplusplus {
 
   ParticleSet::~ParticleSet() {
     if(SK) delete SK;
+    if(SKOld) delete SKOld;
   }
 
   void ParticleSet::initParticleSet() {
@@ -116,14 +117,33 @@ namespace qmcplusplus {
     //}
 
     for(int i=0; i< DistTables.size(); i++) DistTables[i]->evaluate(*this);
-    //Update SK
-    if(SK) SK->UpdateAllPart();
+
+    //Update SK if used. 
+    //Swap pointers for old and current so that old is accurate.
+    //This is for all-particle moves, so the contents of old before this point are irrelevant.
+    if(SK){	
+      void* tmp = SK;
+      SK = SKOld;
+      SKOld = static_cast<StructFact*>(tmp);
+      //Evaluate current structurefactor.
+      SK->UpdateAllPart();
+    }
   }  
 
   void ParticleSet::update(const ParticlePos_t& pos) { 
     R = pos;
     for(int i=0; i< DistTables.size(); i++) DistTables[i]->evaluate(*this);
-    if(SK) SK->UpdateAllPart();
+
+    //Update SK if used. 
+    //Swap pointers for old and current so that old is accurate.
+    //This is for all-particle moves, so the contents of old before this point are irrelevant.
+    if(SK){	
+      void* tmp = SK;
+      SK = SKOld;
+      SKOld = static_cast<StructFact*>(tmp);
+      //Evaluate current structurefactor.
+      SK->UpdateAllPart();
+    }
   }  
 
 
@@ -143,6 +163,18 @@ namespace qmcplusplus {
     for(int i=0; i< DistTables.size(); i++) {
       DistTables[i]->move(*this,newpos,iat);
     }
+
+    //Update SK if used. Use smart-moving. 
+    //In this case we can't simply swap pointers SK and SKOld because we evaluate the new
+    //SK by adding the change due to particle move. For this reason, the data in SKOld
+    //must be copied from SK before the update of SK
+
+    //R is not changed by ->move. Use newpos and activepos as new and old.
+    if(SK) {
+      *SKOld = *SK; //Copy data from current using overloaded assignment operator.
+      SK->Update1Part(activePos,newpos,GroupID[iat]); //old = activePos, new=newpos
+    }
+
     return R[iat]=newpos;
     //activePos=R[iat]+displ;
     //for(int i=0; i< DistTables.size(); i++) {
@@ -166,9 +198,6 @@ namespace qmcplusplus {
    */
   void ParticleSet::acceptMove(Index_t iat) {
     if(iat == activePtcl) {
-      //Update SK with smart moving...
-      //if(SK) SK->Update1Part(R[iat],activePos,GroupID[iat]);
-      if(SK) SK->Update1Part(activePos,R[iat],GroupID[iat]); //activePos is the previous position
       //Update position + distance-table
       for(int i=0; i< DistTables.size(); i++) {
         DistTables[i]->update(iat);
@@ -179,6 +208,14 @@ namespace qmcplusplus {
   void ParticleSet::rejectMove(Index_t iat) {
     //restore the position by the saved activePos
     R[iat]=activePos;
+    //If the move is rejected then we must restore the SKOld data back to the current.
+    //Swap the pointers for a fast way.
+    //Accept the proposed structurefactor. Just swap the pointers.
+    if(SK){
+      void* tmp = SK;
+      SK = SKOld;
+      SKOld = static_cast<StructFact*>(tmp);
+    }
   }
 
   /** resize Sphere by the LocalNum
@@ -197,6 +234,10 @@ namespace qmcplusplus {
       DistTables[i]->evaluate(*this);
       DistTables[i]->registerData(buf);
     }
+    if(SK){
+      SK->UpdateAllPart();
+      SK->registerData(buf);
+    }
   }
 
   void 
@@ -204,6 +245,10 @@ namespace qmcplusplus {
     for(int i=0; i< DistTables.size(); i++) {
       DistTables[i]->evaluate(*this);
       DistTables[i]->registerData(buf);
+    }
+    if(SK){
+      SK->UpdateAllPart();
+      SK->registerData(buf);
     }
   }
   
@@ -214,16 +259,18 @@ namespace qmcplusplus {
       DistTables[i]->evaluate(*this);
       DistTables[i]->updateBuffer(buf);
     }
+    if(SK){
+      SK->UpdateAllPart();
+      SK->updateBuffer(buf);
+    }
   }
     
   void 
   ParticleSet::copyToBuffer(PooledData<RealType>& buf) {
-    //DEBUG begin: ElectronGasTest for 2 els
-    if(SK) SK->UpdateAllPart();
-    //DEBUG end
     for(int i=0; i< DistTables.size(); i++) {
       DistTables[i]->copyToBuffer(buf);
     }
+    if(SK)SK->copyToBuffer(buf);
   }
   
   void 
@@ -231,6 +278,7 @@ namespace qmcplusplus {
     for(int i=0; i< DistTables.size(); i++) {
       DistTables[i]->copyFromBuffer(buf);
     }
+    if(SK)SK->copyFromBuffer(buf);
   }
 
   void ParticleSet::initPropertyList() {
