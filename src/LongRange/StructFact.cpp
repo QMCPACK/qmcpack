@@ -3,14 +3,41 @@
 using namespace qmcplusplus;
 
 //Constructor - pass arguments to KLists' constructor
-StructFact::StructFact(ParticleSet& ref, RealType kc): PtclRef(ref), 
-						       KLists(ref.Lattice) {
+StructFact::StructFact(ParticleSet& ref, RealType kc): PtclRef(ref), KLists(ref.Lattice) {
   //Update Rhok with new "Lattice" information.
   UpdateNewCell(kc);
 }
 
+//Copy Constructor
+StructFact::StructFact(const StructFact &ref): PtclRef(ref.PtclRef), KLists(ref.PtclRef.Lattice) {
+  // Lattices are forced to match in PtclRef initialization.
+  // The KLists constructor doesn't generate the lists. It merely sets the lattice reference.
+  // "=" is defined for all data members that need to be copied.
+  KLists = ref.KLists; //= checks for same cutoff and returns with no cost if equal.
+  rhok = ref.rhok;
+}
+
 //Destructor
 StructFact::~StructFact() { }
+
+//Overload the assignment operator
+StructFact& 
+StructFact::operator=(const StructFact &ref) {
+  if(this != &ref){
+    //Copy data from ref.
+    //Check that PtclRefs are the same and k-shells
+    //If PtclRef match then Lattice match. All KLists should then 
+    //match if cutoffs do.
+    if(&PtclRef != &ref.PtclRef){
+      LOGMSG("ERROR: tried to copy SK with different PtclRef");
+      return *this;
+    }
+    // "=" is defined for all data members that need to be copied.
+    KLists = ref.KLists; //= checks for same cutoff and returns with no cost if equal.
+    rhok = ref.rhok;
+  }
+  return *this; //Allows assignment chaining 
+}
 
 //Public Methods:
 // UpdateNewCell - recompute Rhok if lattice changed
@@ -34,20 +61,16 @@ StructFact::UpdateAllPart() {
   FillRhok();
 }
 
-
-
 //Private Methods
 // FillRhok
 // UpdateRhok
 void 
 StructFact::FillRhok() {
-
   SpeciesSet& tspecies(PtclRef.getSpeciesSet());
 	
   //Evaluate "Rho_k" using fast method
   //Ken's breakup doc., section 5.1.
   //This is the structure-factor of the ion coordinates.
-  //Currently only for 1 species!!! Extend this.
   rhok.resize(KLists.numk,tspecies.TotalNum);
 
   //Zero out rhok
@@ -56,8 +79,7 @@ StructFact::FillRhok() {
       rhok(ki,t) = complex<RealType>(0.0,0.0);
   
   TinyVector<double,3> k111; //k=1*b1 + 1*b2 + 1*b3
-  //Convert to Cartesian
-  
+  //Convert to Cartesian  
   for(int idim=0; idim<3; idim++){
     k111[idim] = 0.0;
     for(int idir=0; idir<3; idir++){
@@ -136,11 +158,11 @@ StructFact::UpdateRhok(Position_t rold,Position_t rnew,int GroupID){
   for(int ki=0; ki<KLists.numk; ki++){
     complex<double> temp = 1.0;
     for(int idim=0; idim<3; idim++)
-      temp *= -C(idim,KLists.kpts[ki][idim]+KLists.mmax[idim]);
-    rhok(ki,GroupID) += temp;
+      temp *= C(idim,KLists.kpts[ki][idim]+KLists.mmax[idim]);
+    rhok(ki,GroupID) -= temp;
   }
 
-  //Prepare for subtracting new position
+  //Prepare for adding new position
   for(unsigned int idim=0; idim<3; idim++){
     complex<double> Ctemp;
     //start the recursion with the 111 vector.
@@ -154,7 +176,7 @@ StructFact::UpdateRhok(Position_t rold,Position_t rnew,int GroupID){
     }
   }
 
-  //Subtract old position
+  //Add new position
   for(int ki=0; ki<KLists.numk; ki++){
     complex<double> temp = 1.0;
     for(int idim=0; idim<3; idim++)

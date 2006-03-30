@@ -22,6 +22,7 @@ namespace qmcplusplus {
     //Second index: GroupID from PtclRef.
   private:
     typedef TinyVector<OHMMS_PRECISION,3> Position_t;
+    typedef PooledData<RealType>  BufferType;
 
   public:
     Matrix<complex<RealType> > rhok;
@@ -37,8 +38,13 @@ namespace qmcplusplus {
   public:
     //Constructor - copy ParticleSet and init. k-shells
     StructFact(ParticleSet& ref, RealType kc);
+    //Copy Constructor
+    StructFact(const StructFact& ref);
     //Destructor
     ~StructFact();
+    //Need to overload assignment operator.
+    //Default doesn't work because we have non-static reference members.
+    StructFact& operator=(const StructFact& ref);
       
     //Public Methods:
     ///Recompute Rhok if lattice changed
@@ -47,6 +53,51 @@ namespace qmcplusplus {
     void Update1Part(Position_t rold,Position_t rnew,int GroupID);
     /// Update Rhok if all particles moved
     void UpdateAllPart();
+
+    //Buffer methods. For PbyP MC where data must be stored in an anonymous
+    //buffer between iterations
+    /** @brief register rhok data to buf so that it can copyToBuffer and copyFromBuffer
+     *
+     * This function is used for particle-by-particle MC methods to register structure factor
+     * to an anonymous buffer.
+     */
+    inline void registerData(BufferType& buf) {
+      //Buffertype is presently always real. Rhok is complex. Trick to force saving
+      RealType* first = static_cast<RealType*>(&(rhok(0,0).real()));
+      RealType* last = first + rhok.size()*2;
+      buf.add(first,last);
+    };
+    /** @brief register rhok data to buf so that it can copyToBuffer and copyFromBuffer
+     *
+     * This function is used for particle-by-particle MC methods to register structure factor
+     * to an anonymous buffer.
+     */
+    inline void updateBuffer(BufferType& buf) {
+      //Buffertype is presently always real. Rhok is complex. Trick to force saving
+      RealType* first = static_cast<RealType*>(&(rhok(0,0).real()));
+      RealType* last = first + rhok.size()*2;
+      buf.put(first,last);
+    };
+    /** @brief copy the data to an anonymous buffer
+     *
+     * Any data that will be used by the next iteration will be copied to a buffer.
+     */
+    inline void copyToBuffer(BufferType& buf) {
+      //Buffertype is presently always real. Rhok is complex. Trick to force saving
+      RealType* first = static_cast<RealType*>(&(rhok(0,0).real()));
+      RealType* last = first + rhok.size()*2;
+      buf.put(first,last);
+    };
+    /** @brief copy the data from an anonymous buffer
+     *
+     * Any data that was used by the previous iteration will be copied from a buffer.
+     */
+    inline void copyFromBuffer(BufferType& buf) {
+      //Buffertype is presently always real. Rhok is complex. Trick to force saving
+      RealType* first = static_cast<RealType*>(&(rhok(0,0).real()));
+      RealType* last = first + rhok.size()*2;
+      buf.get(first,last);
+    };
 
   private:
     //Private Methods
