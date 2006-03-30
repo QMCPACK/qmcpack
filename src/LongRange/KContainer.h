@@ -23,7 +23,6 @@ namespace qmcplusplus {
     RealType kcut2; //kcutoff*kcutoff
 
   public:
-
     //Maximum integer translations of reciprocal cell within kc.
     //Last index is max. of first 3.
     TinyVector<int,4> mmax;
@@ -40,12 +39,17 @@ namespace qmcplusplus {
   public:
     //Constructor
     KContainer(ParticleLayout_t& ref);
+    //Copy Constructor
+    //    KContainer(const KContainer& ref);
     //Destructor
     ~KContainer();
+    //Overloaded assignment operator
+    KContainer& operator=(const KContainer&);
 
     //Public Methods:
     // UpdateKLists() - call for new k or when lattice changed.
     void UpdateKLists(ParticleLayout_t& ref, RealType kc);
+    void UpdateKLists(RealType kc);
 
   private:
     //Private Methods:

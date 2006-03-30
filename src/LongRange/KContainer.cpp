@@ -4,10 +4,34 @@
 using namespace qmcplusplus;
 
 //Constructor
-KContainer::KContainer(ParticleLayout_t& ref): Lattice(ref) { }
+KContainer::KContainer(ParticleLayout_t& ref): Lattice(ref),kcutoff(0.0) { }
 
 //Destructor
 KContainer::~KContainer() { }
+
+//Overloaded assignment operator
+KContainer&
+KContainer::operator=(const KContainer& ref) {
+  //Lattices should be equal. 
+  if(&Lattice != &ref.Lattice){
+    LOGMSG("ERROR: tried to copy KContainer with different lattices");
+    OHMMS::Controller->abort();
+  }
+  //Now, if kcutoffs are the same then we can be sure that the lists are identical.
+  //otherwise the STL containers must have contents copied.
+  if(this!=&ref && kcutoff!=ref.kcutoff){
+    //All components have a valid '=' defined
+    kcutoff = ref.kcutoff;
+    kcut2 = ref.kcut2;
+    mmax = ref.mmax;
+    kpts = ref.kpts;
+    kpts_cart = ref.kpts_cart;
+    minusk = ref.minusk;
+    numk = ref.numk;
+  }
+
+  return *this;
+}
 
 //Public Methods
 // UpdateKLists - call for new k or when lattice changed.
@@ -17,7 +41,22 @@ KContainer::UpdateKLists(ParticleLayout_t& ref, RealType kc) {
   kcut2 = kc*kc;
   Lattice = ref;
 
-  if(kcutoff < 0.0){
+  if(kcutoff <= 0.0){
+    LOGMSG("KContainer initialised with cutoff " << kcutoff);
+    OHMMS::Controller->abort();
+  }
+
+  FindApproxMMax();
+  BuildKLists();
+}
+
+// UpdateKLists - call for new k or when lattice changed.
+void
+KContainer::UpdateKLists(RealType kc) {
+  kcutoff = kc;
+  kcut2 = kc*kc;
+
+  if(kcutoff <= 0.0){
     LOGMSG("KContainer initialised with cutoff " << kcutoff);
     OHMMS::Controller->abort();
   }
