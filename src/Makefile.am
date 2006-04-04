@@ -41,22 +41,83 @@ QMCPP_PARTICLE = \
 QMC_BASE = \
 	QMCHamiltonians/QMCHamiltonian.cpp\
 	QMCWaveFunctions/JastrowBuilder.cpp\
-	QMCWaveFunctions/TrialWaveFunction.cpp
+	QMCWaveFunctions/TrialWaveFunction.cpp \
+  QMCWaveFunctions/OrbitalBuilderBase.cpp \
+  QMCWaveFunctions/JAABuilder.cpp \
+  QMCWaveFunctions/NJAABuilder.cpp \
+  QMCWaveFunctions/JABBuilder.cpp \
+  QMCWaveFunctions/NJABBuilder.cpp \
+  QMCWaveFunctions/AtomicOrbitals/HFAtomicSTOSet.cpp \
+  QMCWaveFunctions/AtomicOrbitals/HFAtomicSTOSetBuilder.cpp \
+  QMCWaveFunctions/AtomicOrbitals/HeSTOClementiRottie.cpp\
+  QMCWaveFunctions/MolecularOrbitals/STOMolecularOrbitals.cpp\
+  QMCWaveFunctions/MolecularOrbitals/GTOMolecularOrbitals.cpp\
+  QMCWaveFunctions/MolecularOrbitals/RGFBuilderBase.cpp\
+  QMCWaveFunctions/MolecularOrbitals/NumericalRGFBuilder.cpp\
+  QMCWaveFunctions/MolecularOrbitals/STO2GridBuilder.cpp\
+  QMCWaveFunctions/MolecularOrbitals/GTO2GridBuilder.cpp\
+  QMCWaveFunctions/MolecularOrbitals/Any2GridBuilder.cpp\
+  QMCWaveFunctions/MolecularOrbitals/GridMolecularOrbitals.cpp\
+  QMCWaveFunctions/MolecularOrbitals/MolecularOrbitalBuilder.cpp\
+  QMCWaveFunctions/ElectronGasOrbitalBuilder.cpp\
+  QMCWaveFunctions/ThreeBodyGeminal.cpp\
+  QMCWaveFunctions/ThreeBodyGeminalBuilder.cpp\
+  QMCWaveFunctions/WaveFunctionFactory.cpp \
+  QMCWaveFunctions/AGPDeterminant.cpp \
+  QMCWaveFunctions/AGPDeterminantBuilder.cpp \
+  QMCHamiltonians/LocalPPotential.cpp\
+  QMCHamiltonians/NonLocalPPotential.cpp\
+  QMCHamiltonians/LocalCorePolPotential.cpp \
+  QMCHamiltonians/HamiltonianFactory.cpp
+
+QMC_DRIVERS = \
+  QMCDrivers/SimpleFixedNodeBranch.cpp\
+  QMCDrivers/QMCDriver.cpp\
+  QMCDrivers/DummyQMC.cpp\
+  QMCDrivers/VMC.cpp\
+  QMCDrivers/VMCParticleByParticle.cpp\
+  QMCDrivers/QMCOptimize.cpp\
+  QMCDrivers/QMCCostFunction.cpp\
+  QMCDrivers/WaveFunctionTester.cpp \
+  Estimators/ScalarEstimatorManager.cpp \
+  QMCDrivers/WalkerControlBase.cpp \
+  QMCDrivers/DMC/DMCMoveAll.cpp \
+  QMCDrivers/DMC/DMCPbyP.cpp \
+  QMCDrivers/DMC/DMCFactory.cpp \
+  QMCDrivers/DMC/DMCUpdateBase.cpp \
+  QMCDrivers/DMC/DMCUpdateAll.cpp \
+  QMCDrivers/DMC/DMCUpdatePbyP.cpp \
+  QMCDrivers/DMC/WalkerControlFactory.cpp \
+  QMCDrivers/DMC/WalkerReconfiguration.cpp \
+  QMCDrivers/VMCMultiple.cpp \
+  QMCDrivers/VMCPbyPMultiple.cpp \
+  QMCDrivers/ReptationMC.cpp \
+  QMCDrivers/PolymerEstimator.cpp \
+  QMCDrivers/RQMCMultiple.cpp \
+  QMCDrivers/MultiChain.cpp \
+  Estimators/MultipleEnergyEstimator.cpp \
+  QMCDrivers/SpaceWarp.cpp \
+  QMCDrivers/VMCMultipleWarp.cpp \
+  QMCDrivers/VMCPbyPMultiWarp.cpp \
+  QMCDrivers/RQMCMultiWarp.cpp
 
 if NEEDTOBUILDOOMPI
 oompi=OOMPI
 OOMPI_INC =  -I$(top_srcdir)/src/OOMPI
+QMC_MPP_SRC = \
+  QMCDrivers/DMC/WalkerControlMPI.cpp \
+  QMCDrivers/DMC/WalkerReconfigurationMPI.cpp
 endif
 
 # build the base library used by any application
 lib_LIBRARIES = libqmcbase.a
 
-
 libqmcbase_a_SOURCES = \
 	$(QMCPP_UTILITIES) \
 	$(QMCPP_MESSAGE) \
 	$(QMCPP_PARTICLE) \
-	$(QMC_BASE)
+	$(QMC_BASE) \
+	$(QMC_DRIVERS) 
 
 INCLUDES = $(OOMPI_INC)
 
