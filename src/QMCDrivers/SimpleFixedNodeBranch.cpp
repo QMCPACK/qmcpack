@@ -18,7 +18,6 @@
 #include "QMCDrivers/SimpleFixedNodeBranch.h"
 #include "QMCDrivers/DMC/WalkerControlFactory.h"
 #include <numeric>
-#include "OhmmsData/ParameterSet.h"
 #include "OhmmsData/FileUtility.h"
 #include "Utilities/RandomGenerator.h"
 using namespace qmcplusplus;
@@ -27,8 +26,9 @@ SimpleFixedNodeBranch::SimpleFixedNodeBranch(RealType tau, int nideal):
 FixedNumWalkers(false), SwapMode(0), Counter(0), 
   Nideal(nideal), NumGeneration(50), 
   MaxCopy(-1), Tau(tau), E_T(0.0), EavgSum(0.0), WgtSum(0.0), PopControl(0.1), 
-  WalkerController(0)
+  WalkerController(0),SwapWalkers("yes")
 {
+  registerParameters();
   reset();
 }
 
@@ -43,8 +43,30 @@ SimpleFixedNodeBranch::SimpleFixedNodeBranch(const SimpleFixedNodeBranch& abranc
   EavgSum(0.0), WgtSum(0.0), PopControl(abranch.PopControl), 
   WalkerController(0)
 {
+  registerParameters();
   reset();
 }
+
+void SimpleFixedNodeBranch::registerParameters() {
+  m_param.add(E_T,"refEnergy","AU");
+  m_param.add(NumGeneration,"popControl","int"); 
+  m_param.add(MaxCopy,"maxCopy","int"); 
+  m_param.add(Nideal,"targetWalkers","int"); 
+  m_param.add(EavgSum,"energySum","AU"); 
+  m_param.add(WgtSum,"weightSum","none");
+  m_param.add(PopControl,"swapTrigger","none");
+  m_param.add(SwapWalkers,"swapWalkers","string");
+  m_param.add(SwapWalkers,"collect","string");
+
+  //backward compatability
+  m_param.add(E_T,"ref_energy","AU"); m_param.add(E_T,"en_ref","AU");
+  m_param.add(NumGeneration,"pop_control","int"); 
+  m_param.add(NumGeneration,"num_gen","int"); 
+  m_param.add(Nideal,"target_walkers","int");
+  m_param.add(PopControl,"swap_trigger","none");
+  m_param.add(SwapWalkers,"swap_walkers","string");
+}
+
 
 void SimpleFixedNodeBranch::initWalkerController(RealType tau, bool fixW) {
   Tau=tau;
@@ -120,27 +142,17 @@ void SimpleFixedNodeBranch::reset() {
 bool SimpleFixedNodeBranch::put(xmlNodePtr cur){
 
   //check dmc/vmc and decide to create WalkerControllerBase
-  string toswap("no");
-  ParameterSet m_param;
-  m_param.add(E_T,"ref_energy","AU"); m_param.add(E_T,"en_ref","AU");
-  m_param.add(NumGeneration,"pop_control","int"); m_param.add(NumGeneration,"num_gen","int");
-  m_param.add(MaxCopy,"max_branch","int"); m_param.add(MaxCopy,"max_copy","int");
-  m_param.add(Nideal,"target_walkers","int");
-  m_param.add(EavgSum,"energy_sum","AU");
-  m_param.add(WgtSum,"weight_sum","none");
-  m_param.add(toswap,"swap_walkers","string");
-  m_param.add(PopControl,"swap_trigger","none");
   m_param.put(cur);
 
-  if(toswap == "yes") {
-    SwapMode = 1;
-  } else {//check qmc/@collect
-    const xmlChar* t=xmlGetProp(cur,(const xmlChar*)"collect");
-    if(t != NULL) {
-      toswap=(const char*)t;
-      SwapMode = (toswap == "yes");
-    }
-  }
+  //set the SwapMode
+  SwapMode = (SwapWalkers=="yes");
+
+  /* \warning{backward compatability qmc/@collect="yes|no"}
+   */
+  const xmlChar* t=xmlGetProp(cur,(const xmlChar*)"collect");
+  if(t != NULL) {
+    SwapMode = xmlStrEqual(t,(const xmlChar*)"yes");
+  } 
 
   //overwrite the SwapMode with the number of contexts
   SwapMode = (SwapMode && (OHMMS::Controller->ncontexts()>1));
@@ -216,103 +228,6 @@ void SimpleFixedNodeBranch::read(hid_t grp) {}
 void SimpleFixedNodeBranch::read(const string& fname) {}
 #endif
 
-  /*
-int SimpleFixedNodeBranch::branch(int iter, MCWalkerConfiguration& W) {
-
-  return WalkerController->branch(iter,W);
-  int maxcopy=10;
-
-  typedef MCWalkerConfiguration::Walker_t Walker_t;
-
-  MCWalkerConfiguration::iterator it(W.begin());
-  int iw=0, nw = W.getActiveWalkers();
-
-  vector<Walker_t*> good, bad;
-  vector<int> ncopy;
-  ncopy.reserve(nw);
-
-  int num_walkers=0;
-  MCWalkerConfiguration::iterator it_end(W.end());
-  while(it != it_end) {
-    int nc = std::min(static_cast<int>((*it)->Multiplicity),maxcopy);
-    if(nc) {
-      num_walkers += nc;
-      good.push_back(*it);
-      ncopy.push_back(nc-1);
-    } else {
-      bad.push_back(*it);
-    }
-    iw++;it++;
-  }
-
-  //remove bad walkers
-  for(int i=0; i<bad.size(); i++) delete bad[i];
-
-  if(good.empty()) {
-    ERRORMSG("All the walkers have died. Abort. ")
-    OHMMS::Controller->abort();
-  }
-
-  //check if the projected number of walkers is too small or too large
-  if(num_walkers>Nmax) {
-    int nsub=0;
-    int nsub_target=num_walkers-static_cast<int>(0.9*Nmax);
-    int i=0;
-    while(i<ncopy.size() && nsub<nsub_target) {
-      if(ncopy[i]) {ncopy[i]--; nsub++;}
-      i++;
-    }
-    num_walkers -= nsub;
-  } else  if(num_walkers < Nmin) {
-    int nadd=0;
-    int nadd_target = static_cast<int>(Nmin*1.1)-num_walkers;
-    if(nadd_target>good.size()) {
-      WARNMSG("The number of walkers is running low. Requested walkers " << nadd_target << " good walkers = " << good.size())
-    }
-    int i=0;
-    while(i<ncopy.size() && nadd<nadd_target) {
-      ncopy[i]++; nadd++;i++;
-    }
-    num_walkers +=  nadd;
-  }
-
-  //WalkerControl
-  //MPI Send to the master, MPI Irecv by the master
-  //send the total number of walkers to the master
- 
-  //clear the WalkerList to populate them with the good walkers
-  W.clear();
-  W.insert(W.begin(), good.begin(), good.end());
-
-  int cur_walker = good.size();
-  for(int i=0; i<good.size(); i++) { //,ie+=ncols) {
-    for(int j=0; j<ncopy[i]; j++, cur_walker++) {
-      W.push_back(new Walker_t(*(good[i])));
-    }
-  }
-
-  int nw_tot = W.getActiveWalkers();
-
-  //WalkerControl
-  //Master check if criteria is met and send back 0/1, total walkers, max, min
-
-  //if(swap) nw_tot= swapWalkers();
-  if(SwapWalkers) gsum(nw_tot,0);
-
-  //set Weight and Multiplicity to default values
-  iw=0;
-  it=W.begin();
-  it_end=W.end();
-  while(it != it_end) {
-    (*it)->Weight= 1.0;
-    (*it)->Multiplicity=1.0;
-    ++it;
-  }
-
-  return nw_tot;
-   //return w.branch(10,Nmax,Nmin,SwapWalkers);
-}
-  */
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$

@@ -19,6 +19,7 @@
 #define QMCPLUSPLUS_SIMPLE_FIXEDNODE_BRANCHER_H
 
 #include "Configuration.h"
+#include "OhmmsData/ParameterSet.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "OhmmsData/HDFAttribIO.h"
 #include "QMCDrivers/WalkerControlBase.h"
@@ -84,10 +85,12 @@ namespace qmcplusplus {
      RealType PopControl;
      ///LogJacob
      RealType LogJacobRef;
-
-    
+     ///Controls walkers
      WalkerControlBase* WalkerController;
-
+     ///(yes|no) string to determine SwapMode
+     string SwapWalkers;
+     ///set of parameters
+     ParameterSet m_param;
      ///Constructor
      SimpleFixedNodeBranch(RealType tau, int nideal);
 
@@ -194,6 +197,8 @@ namespace qmcplusplus {
 
     void read(const string& fname);
 
+    /** create map between the parameter name and variables */
+    void registerParameters();
    private:
     ///default constructor (disabled)
     SimpleFixedNodeBranch(){}

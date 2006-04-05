@@ -29,16 +29,13 @@ namespace qmcplusplus {
 
   QMCDriver* DMCFactory::create(MCWalkerConfiguration& w, TrialWaveFunction& psi, 
       QMCHamiltonian& h, HamiltonianPool& hpool) {
-    
-    //determine the type of move
-    bool pbyp=(DMCType == "dmc-ptcl");
    // string reconfigure("no");
    // ParameterSet param;
    // param.add(reconfigure,"reconfiguration");
    // param.put(cur);
    // bool fixW = (reconfigure == "yes");
    QMCDriver* qmc=0;
-    if(pbyp) {
+    if(PbyPUpdate) {
 #if defined(ENABLE_OPENMP)
       int np=omp_get_max_threads();
       if(np>1) {

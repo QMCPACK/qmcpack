@@ -24,9 +24,9 @@
 
 namespace qmcplusplus {
   struct DMCFactory {
-    string DMCType;
+    bool PbyPUpdate;
     xmlNodePtr myNode;
-    DMCFactory(const string& what, xmlNodePtr cur):DMCType(what),myNode(cur){}
+    DMCFactory(bool pbyp, xmlNodePtr cur):PbyPUpdate(pbyp), myNode(cur){}
     QMCDriver* create(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, HamiltonianPool& hpool);
   };
 }

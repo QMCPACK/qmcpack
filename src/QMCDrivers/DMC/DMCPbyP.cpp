@@ -29,7 +29,7 @@ namespace qmcplusplus {
     PopIndex(-1), EtrialIndex(-1),BranchInterval(-1),
     BranchInfo("default"), KillWalker("no"), Reconfiguration("no"), Mover(0){ 
     RootName = "dmc";
-    QMCType ="dmc";
+    QMCType ="DMCPbyP";
 
     //to prevent initialization
     QMCDriverMode.set(QMC_MULTIPLE,1);
@@ -38,6 +38,7 @@ namespace qmcplusplus {
     m_param.add(KillWalker,"killnode","string");
     m_param.add(Reconfiguration,"reconfiguration","string");
     m_param.add(BranchInterval,"branch_interval","int");
+    m_param.add(BranchInterval,"branchInterval","int");
   }
   
   /// destructor
@@ -175,10 +176,10 @@ namespace qmcplusplus {
     } while(block<nBlocks);
   }
 
-  bool 
-  DMCPbyP::put(xmlNodePtr q){
+  bool DMCPbyP::put(xmlNodePtr q){
     return true;
   }
+
 }
 
 /***************************************************************************

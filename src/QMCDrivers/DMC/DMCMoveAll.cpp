@@ -28,9 +28,10 @@ namespace qmcplusplus {
     BranchInterval(-1),KillNodeCrossing(0), KillWalker("no"),
     Reconfiguration("no") { 
     RootName = "dmc";
-    QMCType ="dmc";
+    QMCType ="DMVMoveAll";
     m_param.add(KillWalker,"killnode","string");
     m_param.add(Reconfiguration,"reconfiguration","string");
+    m_param.add(BranchInterval,"branchInterval","int"); 
     m_param.add(BranchInterval,"branch_interval","int");
   }
 

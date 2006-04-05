@@ -39,8 +39,7 @@ namespace qmcplusplus {
 
     bool run();
     bool put(xmlNodePtr cur);
- 
-    //void setBranchInfo(const string& aname);
+
   private:
 
     ///Index to determine what to do when node crossing is detected

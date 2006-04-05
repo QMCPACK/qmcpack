@@ -32,7 +32,7 @@ namespace qmcplusplus {
 					       QMCHamiltonian& h):
     QMCDriver(w,psi,h) { 
     RootName = "vmc";
-    QMCType ="vmc";
+    QMCType ="VMCParticleByParticle";
     QMCDriverMode.set(QMC_UPDATE_MODE,1);
   }
   

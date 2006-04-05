@@ -31,7 +31,7 @@ namespace qmcplusplus {
   VMC::VMC(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h): 
     QMCDriver(w,psi,h) { 
     RootName = "vmc";
-    QMCType ="vmc";
+    QMCType ="VMC";
   }
   
   /** Run the VMC algorithm.

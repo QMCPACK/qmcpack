@@ -32,7 +32,8 @@ namespace qmcplusplus {
     PopIndex(-1), EtrialIndex(-1),
     Reconfiguration("no"), BenchMarkRun("no"){
     RootName = "dummy";
-    QMCType ="dummy";
+    QMCType ="DMCPbyPOMP";
+
     NumThreads=omp_get_max_threads();
     wPerNode.resize(NumThreads+1,0);
 
