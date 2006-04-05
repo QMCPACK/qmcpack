@@ -116,11 +116,9 @@ namespace qmcplusplus {
     
     virtual bool put(xmlNodePtr cur) = 0;
 
-    //template<class GT>
-    //inline RealType getDriftScale(const GT& ga) {
-    //  RealType vsq=Dot(ga,ga);
-    //  return (vsq<numeric_limits<RealType>::epsilon())? Tau:((-1.0+sqrt(1.0+2.0*Tau*vsq))/vsq);
-    //}
+    inline string getEngineName() const { 
+      return  QMCType;
+    }
 
   protected:
 
