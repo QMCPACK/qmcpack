@@ -70,6 +70,7 @@ void Libxml2Document::dump(const std::string& newxml) {
 }
 
 void Libxml2Document::addChild(xmlNodePtr newnode) {
+  xmlKeepBlanksDefault(1);
   xmlAddChild(m_root,newnode);
 }
 

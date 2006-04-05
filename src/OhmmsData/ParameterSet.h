@@ -66,16 +66,22 @@ struct ParameterSet: public OhmmsElementBase {
     bool something = false;
     while(cur != NULL) {
       std::string cname((const char*)(cur->name));
-      if(cname == myName) {
-        const xmlChar* aptr= xmlGetProp(cur, (const xmlChar *) "name");
-        if(aptr) {
-	  //string aname = (const char*)(xmlGetProp(cur, (const xmlChar *) "name"));
-	  iterator it = m_param.find((const char*)aptr);
-	  if(it != m_param.end()) {
-            something =true;
-	    (*it).second->put(cur);
-	  } 
+      iterator it_tag = m_param.find(cname);
+      if(it_tag == m_param.end()) {
+        if(cname == myName) {
+          const xmlChar* aptr= xmlGetProp(cur, (const xmlChar *) "name");
+          if(aptr) {
+            //string aname = (const char*)(xmlGetProp(cur, (const xmlChar *) "name"));
+            iterator it = m_param.find((const char*)aptr);
+            if(it != m_param.end()) {
+              something =true;
+              (*it).second->put(cur);
+            } 
+          }
         }
+      } else {
+        something =true;
+        (*it_tag).second->put(cur);
       }
       cur=cur->next;
     }
