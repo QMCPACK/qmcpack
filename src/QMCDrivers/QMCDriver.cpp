@@ -45,6 +45,7 @@ namespace qmcplusplus {
     m_param.add(nBlocks,"blocks","int");
     m_param.add(nTargetWalkers,"walkers","int");
     m_param.add(CurrentStep,"current","int");
+    m_param.add(Tau,"timeStep","AU");
     m_param.add(Tau,"Tau","AU");
     m_param.add(Tau,"timestep","AU");
     m_param.add(RollBackBlocks,"rewind","int");
@@ -468,6 +469,7 @@ namespace qmcplusplus {
     getContent(CurrentStep,current_ptr);
     return newqmc;
   }
+
 }
 
 
