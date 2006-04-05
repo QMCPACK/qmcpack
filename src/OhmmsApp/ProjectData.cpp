@@ -122,6 +122,9 @@ namespace OHMMS {
   void ProjectData::reset() {
 
     char fileroot[128], nextroot[128];
+    sprintf(fileroot,"%s.s%03d",m_title.c_str(),m_series);
+    m_projectmain=fileroot;
+
     int nproc = Controller->ncontexts();
     int nodeid = Controller->mycontext(); 
     if(nproc > 1) {
@@ -135,6 +138,7 @@ namespace OHMMS {
     m_projectroot.append(fileroot);
     m_nextroot = m_title;
     m_nextroot.append(nextroot);
+
 
     std::stringstream s;
     s << m_series+1;

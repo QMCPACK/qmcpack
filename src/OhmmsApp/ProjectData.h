@@ -55,6 +55,9 @@ namespace OHMMS {
     }
 
     ///returns the name of the project
+    inline const char* CurrentMainRoot() const { return m_projectmain.c_str();}
+
+    ///returns the name of the project
     inline const char* CurrentRoot() const { return m_projectroot.c_str();}
 
     ///returns the name of the project
@@ -77,7 +80,10 @@ namespace OHMMS {
     ///date when the job is executed
     string m_date;
 
-    ///root for all the output engines
+    ///main root for all the output engines
+    string m_projectmain;
+
+    ///processor-dependent root for all the output engines
     string m_projectroot;
 
     ///root for the next run
