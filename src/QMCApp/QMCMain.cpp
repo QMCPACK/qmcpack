@@ -80,37 +80,45 @@ namespace qmcplusplus {
     hamPool->get(app_log());
 
     curMethod = string("invalid");
-    vector<xmlNodePtr> q;
-
     //xmlNodePtr cur=m_root->children;
     xmlNodePtr cur=XmlDocStack.top()->getRoot()->children;
     while(cur != NULL) {
       string cname((const char*)cur->name);
-      if(cname == "qmc") {
+      if(cname == "qmc" || cname == "vmc" || cname == "dmc" || cname =="rmc" ||
+          cname == "optimize") {
         string target("e");
         const xmlChar* t=xmlGetProp(cur,(const xmlChar*)"target");
         if(t) target = (const char*)t;
-        qmcSystem = ptclPool->getWalkerSet(target);
-        bool good = runQMC(cur);
-        q.push_back(cur);
 
-        //advance is done in runQMC
-        //myProject.advance();
-        //set to false
-        FirstQMC=false;
+        bool toRunQMC=true;
+        t=xmlGetProp(cur,(const xmlChar*)"completed");
+        if(t != NULL) {
+          if(xmlStrEqual(t,(const xmlChar*)"yes")) {
+            app_log() << "  This " << cname << " section is already executed." << endl;
+            toRunQMC=false;
+          }
+        } else {
+          xmlAttrPtr t1=xmlNewProp(cur,(const xmlChar*)"completed", (const xmlChar*)"no");
+        }
+
+        if(toRunQMC) {
+          qmcSystem = ptclPool->getWalkerSet(target);
+          bool good = runQMC(cur);
+          if(good) {
+            xmlAttrPtr t1=xmlSetProp(cur,(const xmlChar*)"completed", (const xmlChar*)"yes");
+            //q.push_back(cur);
+            FirstQMC=false;
+          } else {
+            app_error() << "   " << cname << " failed." << endl;
+          }
+          t=xmlGetProp(cur,(const xmlChar*)"id");
+          if(t == NULL) {
+            xmlAttrPtr t1=xmlNewProp(cur,(const xmlChar*)"id", 
+                (const xmlChar*)myProject.CurrentMainRoot());
+          }
+        }
       }
-
       cur=cur->next;
-    }
-
-    if(q.size()) { 
-      xmlNodePtr newqmc_ptr=qmcDriver->getQMCNode();
-      //unlink other qmc node but the last one
-      for(int i=0; i<q.size(); i++) {
-        xmlUnlinkNode(q[i]);
-        xmlFreeNode(q[i]);
-      }
-      XmlDocStack.top()->addChild(newqmc_ptr);
     }
 
     if(OHMMS::Controller->master()) {
@@ -254,7 +262,7 @@ namespace qmcplusplus {
   bool QMCMain::runQMC(xmlNodePtr cur) {
 
     OHMMS::Controller->barrier();
-    bool append_run = createQMCDriver(myProject.m_series,cur);
+    bool append_run = setQMCDriver(myProject.m_series,cur);
 
     if(qmcDriver) {
       app_log() << endl;

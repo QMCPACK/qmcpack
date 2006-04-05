@@ -18,7 +18,7 @@
 #ifndef QMCPLUSPLUS_QMCDRIVER_FACTORY_H
 #define QMCPLUSPLUS_QMCDRIVER_FACTORY_H
 #include "OhmmsData/OhmmsElementBase.h"
-
+#include <bitset>
 namespace qmcplusplus {
 
   //forward declaration
@@ -32,11 +32,24 @@ namespace qmcplusplus {
 
     /*! enum for QMC Run Type */
     enum QMCRunType {DUMMY_RUN, /*!< dummy */
-      VMC_RUN, /*!< VMC type: vmc, vmc-ptcl, vmc-multiple, vmc-ptcl-multiple */
-      DMC_RUN, /*!< DMC type: dmc, dmc-ptcl*/
-      RMC_RUN, /*!< RMC type: rmc, rmc-ptcl */
+      VMC_RUN, /**< VMC type: vmc, vmc-ptcl, vmc-multiple, vmc-ptcl-multiple */
+      DMC_RUN, /**< DMC type: dmc, dmc-ptcl*/
+      RMC_RUN, /**< RMC type: rmc, rmc-ptcl */
       OPTIMIZE_RUN /*!< Optimization */
     };
+
+    /*! enum to set the bit to determine the QMC mode */
+    enum QMCModeEnum {
+      UPDATE_MODE,  /**< bit for move: walker or pbyp */
+      MULTIPLE_MODE, /**< bit for multple configuration */
+      SPACEWARP_MODE /**< bit for space-warping */
+    };
+
+    ///current QMC mode determined by curQmcModeBits
+    unsigned long curQmcMode;
+
+    ///3-bit (SPACEWARP_MODE, MULTIPLE_MODE, UPDATE_MODE)
+    std::bitset<3> curQmcModeBits;
 
     ///type of qmcdriver
     QMCRunType curRunType;
@@ -68,10 +81,12 @@ namespace qmcplusplus {
     /** default constructor **/
     QMCDriverFactory();
 
-    bool createQMCDriver(int curSeries, xmlNodePtr cur);
+    bool setQMCDriver(int curSeries, xmlNodePtr cur);
 
     /** virtual destructor **/
     virtual ~QMCDriverFactory();
+
+    void createQMCDriver(xmlNodePtr cur);
   };
 }
 #endif
