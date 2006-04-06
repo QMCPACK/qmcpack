@@ -25,6 +25,7 @@
 #include <cmath>
 #include "OhmmsPETE/OhmmsVector.h"
 
+namespace qmcplusplus {
 /** An abstract base class to implement a One-Dimensional grid 
  */
 template <class T, class CT=Vector<T> >
@@ -282,7 +283,7 @@ struct LogGridZero: public OneDimGridBase<T,CT> {
     OneOverA = 1.0/ri;
     OneOverB = 1.0/rf;
     X.resize(n);
-    for(int i=0; i<n; i++) X[i] = rf*(exp(ri*i)-1.0);
+    for(int i=0; i<n; i++) X[i] = rf*(std::exp(ri*i)-1.0);
     Delta = 0.0;
   }
 };
@@ -329,6 +330,8 @@ ostream& operator<<(ostream& out, const OneDimGridBase<T>& rhs)
   for(int i=0; i<rhs.size(); i++)
     out << i << " " << rhs.r(i) << " " << rhs.dr(i)<< endl;
   return out;
+}
+
 }
 #endif
 /***************************************************************************

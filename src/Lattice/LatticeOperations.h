@@ -22,6 +22,8 @@
 #include "OhmmsPETE/TinyVector.h"
 #include "OhmmsPETE/Tensor.h"
 
+namespace qmcplusplus {
+
 /** Dot product between a vector and tensor
  *
  * This is a dummy template class to be specialized.
@@ -168,6 +170,8 @@ struct CartesianNorm2<TinyVector<T1,3>,Tensor<T2,3>,true>
     return a[0]*X[0]*b[0]+a[1]*X[4]*b[1]+a[2]*X[8]*b[2];
   }
 };
+
+}
 
 #endif
 /***************************************************************************

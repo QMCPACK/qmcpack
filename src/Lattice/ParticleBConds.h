@@ -22,6 +22,7 @@
 #include <limits>
 #include <math.h>
 
+namespace qmcplusplus {
 /**generic ParticleBConds
  */
 template<class T, unsigned D> struct ParticleBConds {};
@@ -62,7 +63,7 @@ public:
   ///wrap -> apply
   inline TinyVector<T,3> wrap(const TinyVector<T,3>& rin) const {
     register T x(rin[0]),y(rin[1]),z(rin[2]);
-    const T epsilon = -numeric_limits<T>::epsilon();
+    const T epsilon = -std::numeric_limits<T>::epsilon();
     const T plus_one = 1.0;
     if(x<epsilon) x+=plus_one;
     else if(x>=plus_one) x-=plus_one;
@@ -75,7 +76,7 @@ public:
 
   ///applyBC
   inline void applyBC(const TinyVector<T,3>& rin, TinyVector<T,3>& rout) const {
-    const T epsilon = -numeric_limits<T>::epsilon();
+    const T epsilon = -std::numeric_limits<T>::epsilon();
     const T plus_one = 1.0;
     rout=rin;
     if(rout[0]<epsilon)        rout[0] += plus_one;
@@ -87,6 +88,7 @@ public:
   }
 };
 
+}
 #endif // OHMMS_PARTICLE_BCONDS_H
 
 

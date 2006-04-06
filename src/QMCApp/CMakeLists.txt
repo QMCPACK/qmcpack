@@ -82,7 +82,6 @@ IF(NOT QMCPLUSPLUS_RELEASE)
   SET(QMCDRIVERS ${QMCDRIVERS}
     ../QMCDrivers/VMCMultiple.cpp
     ../QMCDrivers/VMCPbyPMultiple.cpp
-    ../QMCDrivers/ReptationMC.cpp
     ../QMCDrivers/PolymerEstimator.cpp
     ../QMCDrivers/RQMCMultiple.cpp
     ../QMCDrivers/MultiChain.cpp

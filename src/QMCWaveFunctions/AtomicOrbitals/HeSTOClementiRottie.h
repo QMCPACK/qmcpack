@@ -53,9 +53,9 @@ namespace qmcplusplus {
     HePresetHF(){
       C[0]=0.76838;C[1]=0.22346;C[2]=0.04082;C[3]=-0.00994;C[4]=0.00230;
       Z[0]=1.41714;Z[1]=2.37682;Z[2]=4.39628;Z[3]=6.52699;Z[4]=7.94252;
-      const RealType fourpi = 4.0*(4.0*atan(1.0));
+      const RealType fourpi = 4.0*(4.0*std::atan(1.0));
       for(int i=0; i<N; i++) {
-	C[i] *= sqrt(pow(2.0*Z[i],3.0)/(2.0*fourpi));
+	C[i] *= std::sqrt(std::pow(2.0*Z[i],3.0)/(2.0*fourpi));
 	//C[i] *= sqrt(pow(2.0*Z[i],3.0)/2)/fourpi;
       }
       for(int i=0; i<N; i++) ZZ[i] = Z[i]*Z[i];
@@ -77,7 +77,7 @@ namespace qmcplusplus {
       RealType r(d_table->Temp[0].r1);
       RealType chi(0.0);
       for(int i=0; i<C.size(); i++) {
-        chi += C[i]*exp(-Z[i]*r);
+        chi += C[i]*std::exp(-Z[i]*r);
       }
       phi[0]=chi;
     }
@@ -97,7 +97,7 @@ namespace qmcplusplus {
       RealType chi = 0.0, d2chi = 0.0;
       PosType dchi;
       for(int i=0; i<C.size(); i++) {
-	RealType u = C[i]*exp(-Z[i]*r);
+	RealType u = C[i]*std::exp(-Z[i]*r);
 	RealType du = -u*Z[i]*rinv; // 1/r du/dr 
 	RealType d2u = u*ZZ[i]; // d2u/dr2
 	chi += u;
@@ -143,7 +143,7 @@ namespace qmcplusplus {
       RealType chi = 0.0, d2chi = 0.0;
       PosType dchi;
       for(int i=0; i<C.size(); i++) {
-	RealType u = C[i]*exp(-Z[i]*r);
+	RealType u = C[i]*std::exp(-Z[i]*r);
 	RealType du = -u*Z[i]*rinv; // 1/r du/dr 
 	RealType d2u = u*ZZ[i]; // d2u/dr2
 	chi += u;
@@ -170,7 +170,7 @@ namespace qmcplusplus {
 	RealType chi = 0.0, d2chi = 0.0;
 	PosType dchi;
 	for(int i=0; i<C.size(); i++) {
-	  RealType u = C[i]*exp(-Z[i]*r);
+	  RealType u = C[i]*std::exp(-Z[i]*r);
 	  RealType du = -u*Z[i]*rinv; // 1/r du/dr 
 	  RealType d2u = u*ZZ[i]; // d2u/dr2
 	  chi += u;

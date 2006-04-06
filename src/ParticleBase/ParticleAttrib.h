@@ -45,6 +45,7 @@
 #ifndef DEBUGMSG
 #define DEBUGMSG(msg)
 #endif
+namespace qmcplusplus {
 template<class T>
 class ParticleAttrib: public OhmmsObject {
 public:
@@ -280,6 +281,7 @@ bool ParticleAttrib<T>::put(xmlNodePtr cur) {
   return true;
 }
 
+}
 #include "ParticleBase/ParticleAttrib.cpp"
 #endif // OHMMS_PARTICLEATTRIB_PEPE_H
 

@@ -101,7 +101,6 @@ namespace qmcplusplus {
      * @todo use vector<shared_ptr<ParticleSet> >
     vector<ParticleSet*> clone(const string& pname, int np);
      */
-
   private:
 
     map<string,ParticleSet*> myPool;

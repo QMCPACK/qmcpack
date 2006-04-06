@@ -26,6 +26,7 @@
 #include "Numerics/HDFNumericAttrib.h"
 #include "QMCDrivers/SpaceWarp.h"
 #include <deque>
+
 namespace qmcplusplus {
 
   struct Bead: public MCWalkerConfiguration::Walker_t{
@@ -135,7 +136,7 @@ namespace qmcplusplus {
       RealType denom(0.e0),wgtpsi;
       Drift=0.e0;
       for(int ipsi=0; ipsi<npsi; ipsi++) {
-        wgtpsi=BeadSignWgt[ipsi]*exp(2.0*(Properties(ipsi,LOGPSI)-Properties(0,LOGPSI)));
+        wgtpsi=BeadSignWgt[ipsi]*std::exp(2.0*(Properties(ipsi,LOGPSI)-Properties(0,LOGPSI)));
         denom += wgtpsi;
         Drift += (wgtpsi*(*Gradients[ipsi]));
       }
@@ -152,7 +153,7 @@ namespace qmcplusplus {
       RealType denom(0.e0),wgtpsi;
       Drift=0.e0; 
       for(int ipsi=0; ipsi<npsi; ipsi++) {
-        wgtpsi=BeadSignWgt[ipsi]*Jacobian[ipsi]*exp(2.0*(Properties(ipsi,LOGPSI)-Properties(0,LOGPSI)));
+        wgtpsi=BeadSignWgt[ipsi]*Jacobian[ipsi]*std::exp(2.0*(Properties(ipsi,LOGPSI)-Properties(0,LOGPSI)));
         denom += wgtpsi;
         for(int iptcl=0; iptcl< nptcl; iptcl++){
           WarpDrift=dot(  (*Gradients[ipsi])[iptcl],PtclWarp.get_Jacob_matrix(iptcl,ipsi)  )

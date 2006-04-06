@@ -29,6 +29,7 @@
 #ifndef PETE_PETE_TYPECOMPUTATIONS_H
 #define PETE_PETE_TYPECOMPUTATIONS_H
 
+namespace qmcplusplus {
 //-----------------------------------------------------------------------------
 //
 // CLASS NAME
@@ -399,6 +400,7 @@ struct TrinaryReturn {
   typedef typename BinaryReturn<T2, T3, Op>::Type_t Type_t;
 };
 
+}
 
 #endif // PETE_PETE_TYPE_COMPUTATIONS_H
 

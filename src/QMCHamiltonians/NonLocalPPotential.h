@@ -26,7 +26,6 @@
 
 namespace qmcplusplus {
 
-
   class WalkerSetRef;
 
   /** @ingroup hamiltonian
@@ -113,8 +112,8 @@ namespace qmcplusplus {
         if(randomize) {
           const RealType twopi(6.28318530718);
           RealType phi(twopi*Random()),psi(twopi*Random()),cth(Random()-0.5),
-                   sph(sin(phi)),cph(cos(phi)),sth(sqrt(1-cth*cth)),sps(sin(psi)),
-                   cps(cos(psi));
+                   sph(std::sin(phi)),cph(std::cos(phi)),sth(std::sqrt(1-cth*cth)),sps(std::sin(psi)),
+                   cps(std::cos(psi));
           Tensor<double,3> rmat( cph*cth*cps-sph*sps, sph*cth*cps+cph*sps,-sth*cps,
                                 -cph*cth*sps-sph*cps,-sph*cth*sps+cph*cps, sth*sps,
               		       cph*sth,             sph*sth,             cth     );

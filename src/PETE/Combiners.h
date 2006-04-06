@@ -29,6 +29,7 @@
 #ifndef PETE_PETE_COMBINERS_H
 #define PETE_PETE_COMBINERS_H
 
+namespace qmcplusplus {
 ///////////////////////////////////////////////////////////////////////////////
 //
 // WARNING: THIS FILE IS FOR INTERNAL PETE USE. DON'T INCLUDE IT YOURSELF
@@ -361,6 +362,7 @@ struct Combine2<int, int, Op, SumCombine>
 };
 
 
+}
 #endif // PETE_PETE_COMBINERS_H
 
 // ACL:rcsinfo

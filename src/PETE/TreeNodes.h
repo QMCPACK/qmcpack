@@ -29,6 +29,7 @@
 #ifndef PETE_PETE_TREENODES_H
 #define PETE_PETE_TREENODES_H
 
+namespace qmcplusplus {
 ///////////////////////////////////////////////////////////////////////////////
 //
 // WARNING: THIS FILE IS FOR INTERNAL PETE USE. DON'T INCLUDE IT YOURSELF
@@ -434,6 +435,7 @@ private:
 
 };
 
+}
 #endif // PETE_PETE_TREENODES_H
 
 // ACL:rcsinfo

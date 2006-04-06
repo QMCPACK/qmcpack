@@ -20,20 +20,23 @@
 #ifndef QMCPLUSPLUS_MATRIXOPERATORS_H
 #define QMCPLUSPLUS_MATRIXOPERATORS_H
 #include "OhmmsPETE/OhmmsMatrix.h"
-struct MatrixOperators {
 
-  inline static void product(const Matrix<double>& A,
-      const Matrix<double>& B, Matrix<double>& C) {
+namespace qmcplusplus {
+  struct MatrixOperators {
 
-    const char transa = 'N';
-    const char transb = 'N';
-    const double one=1.0;
-    const double zero=0.0;
-    dgemm(transa, transb, B.cols(), A.rows(), B.rows(),
-        one, B.data(), B.cols(), A.data(), A.cols(),
-        zero, C.data(), C.cols());
-  }
-};
+    inline static void product(const Matrix<double>& A,
+        const Matrix<double>& B, Matrix<double>& C) {
+
+      const char transa = 'N';
+      const char transb = 'N';
+      const double one=1.0;
+      const double zero=0.0;
+      dgemm(transa, transb, B.cols(), A.rows(), B.rows(),
+          one, B.data(), B.cols(), A.data(), A.cols(),
+          zero, C.data(), C.cols());
+    }
+  };
+}
 #endif
 /***************************************************************************
  * $RCSfile$   $Author$

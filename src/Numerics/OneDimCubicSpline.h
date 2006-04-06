@@ -20,7 +20,7 @@
 #include "Numerics/OneDimGridFunctor.h"
 #include "Numerics/NRSplineFunctions.h"
 
-
+namespace qmcplusplus {
 /** Perform One-Dimensional Cubic Spline Interpolation with fixed first-derivatives at the ends
  *
  * Using m-relationship and the first-order derivaties.
@@ -539,6 +539,9 @@ public:
     spline(0,0.0,m_grid->size()-1,0.0);
   }
 };
+
+
+}
 #endif
 /***************************************************************************
  * $RCSfile$   $Author$

@@ -18,6 +18,7 @@
 #ifndef OHMMS_TINYVECTORTENSOR_OPERATORS_H
 #define OHMMS_TINYVECTORTENSOR_OPERATORS_H
 
+namespace qmcplusplus {
 //////////////////////////////////////////////////////////////////////
 // Definition of the struct OTDot.
 // template<class T1, class T2> struct OTDot {};
@@ -608,6 +609,8 @@ struct OuterProduct< TinyVector<T1,3> , TinyVector<T2,3> >
                     a[2]*b[0],a[2]*b[1],a[2]*b[2]);
   }
 };
+
+}
 #endif // OHMMS_TINYVECTOR_DOTCROSS_H 
 
 /***************************************************************************

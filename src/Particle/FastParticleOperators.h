@@ -22,6 +22,7 @@
  */
 #ifndef OHMMS_FAST_PARTICLE_OPERATORS_H
 #define OHMMS_FAST_PARTICLE_OPERATORS_H
+namespace qmcplusplus {
 /** Dummy template class to be specialized
  *
  * - T1 the datatype to be transformed
@@ -478,6 +479,8 @@ struct ApplyBConds<ParticleAttrib<TinyVector<T,3> >, Tensor<T,3>, false> {
     return Component_t(x*R[0]+y*R[3]+z*R[6], x*R[1]+y*R[4]+z*R[7], x*R[2]+y*R[5]+z*R[8]);
   }
 };
+
+}
 #endif
 /***************************************************************************
  * $RCSfile$   $Author$

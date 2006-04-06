@@ -154,7 +154,7 @@ namespace qmcplusplus {
     ValueType evaluate(ParticleSet& P,
 		       ParticleSet::ParticleGradient_t& G, 
 		       ParticleSet::ParticleLaplacian_t& L) {
-      return exp(evaluateLog(P,G,L));
+      return std::exp(evaluateLog(P,G,L));
     }
 
     /** evaluate the ratio \f$exp(U(iat)-U_0(iat))\f$
@@ -168,7 +168,7 @@ namespace qmcplusplus {
         if(Fs[i]) d += Fs[i]->evaluate(d_table->Temp[i].r1);
         //d += F[d_table->PairID[nn]]->evaluate(d_table->Temp[i].r1);
       }
-      return exp(U[iat]-d);
+      return std::exp(U[iat]-d);
       //for(int i=0, nn=iat; i<d_table->size(SourceIndex); i++,nn+= n) {
       //  FT *func=F[d_table->PairID[nn]];
       //  d += func->evaluate(d_table->Temp[i].r0)
@@ -206,7 +206,7 @@ namespace qmcplusplus {
       }
       dG[iat] += curGrad-dU[iat];
       dL[iat] += curLap-d2U[iat]; 
-      return exp(U[iat]-curVal);
+      return std::exp(U[iat]-curVal);
     }
 
     inline ValueType logRatio(ParticleSet& P, int iat,
@@ -351,7 +351,7 @@ namespace qmcplusplus {
       buf.put(d2U.begin(), d2U.end());
       buf.put(FirstAddressOfdU,LastAddressOfdU);
 
-      return exp(-sumu);
+      return std::exp(-sumu);
     }
 
   };

@@ -87,7 +87,7 @@ namespace qmcplusplus {
         WW[ipsi]->update();
         NewBead->Properties(ipsi,LOGPSI) = Psi1[ipsi]->evaluateLog(*WW[ipsi]);
         NewBead->Properties(ipsi,SIGN) = Psi1[ipsi]->getSign();
-        NewBead->Properties(ipsi,LOGJACOB)=log(fabs(Jacobian[ipsi]));
+        NewBead->Properties(ipsi,LOGJACOB)=std::log(std::abs(Jacobian[ipsi]));
         RealType eloc= H1[ipsi]->evaluate(*WW[ipsi]);
         NewBead->Properties(ipsi,LOCALENERGY)= eloc;
         H1[ipsi]->saveProperty(NewBead->getPropertyBase(ipsi));
@@ -369,14 +369,14 @@ namespace qmcplusplus {
     Reptile->GlobalWgt=0.0e0;
     for(int ipsi=0; ipsi<nPsi; ipsi++){
       RealType DeltaAction(Reptile->GlobalAction[ipsi]-RefAction);
-      if((WeightSign[ipsi]>0) && (DeltaAction > -30)) Reptile->GlobalWgt += exp(DeltaAction);
+      if((WeightSign[ipsi]>0) && (DeltaAction > -30)) Reptile->GlobalWgt += std::exp(DeltaAction);
     }
-    Reptile->GlobalWgt=log(Reptile->GlobalWgt)+RefAction;
+    Reptile->GlobalWgt=std::log(Reptile->GlobalWgt)+RefAction;
 
     //Compute Umbrella Weight 
     for(int ipsi=0; ipsi<nPsi; ipsi++){
       RealType DeltaAction(Reptile->GlobalAction[ipsi]-Reptile->GlobalWgt);
-      if((WeightSign[ipsi]>0) && (DeltaAction > -30)) Reptile->UmbrellaWeight[ipsi] = exp(DeltaAction);
+      if((WeightSign[ipsi]>0) && (DeltaAction > -30)) Reptile->UmbrellaWeight[ipsi] = std::exp(DeltaAction);
       else Reptile->UmbrellaWeight[ipsi] = 0.0e0;
     }
 
@@ -540,7 +540,7 @@ namespace qmcplusplus {
 
     //Used several times
     m_oneover2tau=0.5/Tau; 
-    m_sqrttau=sqrt(Tau);
+    m_sqrttau=std::sqrt(Tau);
     int ihead,inext,itail;
 
     //cout << "ciao00" << endl;
@@ -630,7 +630,7 @@ namespace qmcplusplus {
       NewBead->Action(ipsi,backward)=0.5*m_oneover2tau*Dot(gRand,gRand);
 
       //Save the Log of the jacobian
-      NewBeadProp[LOGJACOB]=log(fabs(Jacobian[ipsi]));
+      NewBeadProp[LOGJACOB]=std::log(std::abs(Jacobian[ipsi]));
 
       NewBead->Action(ipsi,Directionless)=0.5*Tau*eloc;
       int beadwgt=abs( ( int(NewBeadProp[SIGN])+Reptile->RefSign[ipsi] )/2 );
@@ -673,11 +673,11 @@ namespace qmcplusplus {
       //Compute Log of global Wgt
       for(int ipsi=0; ipsi<nPsi; ipsi++) {
         RealType DeltaAction(NewGlobalAction[ipsi]-RefAction);
-        if((WeightSign[ipsi]>0) && (DeltaAction > -30.0)) NewGlobalWgt+=exp(DeltaAction);
+        if((WeightSign[ipsi]>0) && (DeltaAction > -30.0)) NewGlobalWgt+=std::exp(DeltaAction);
       }
-      NewGlobalWgt=log(NewGlobalWgt)+RefAction;
+      NewGlobalWgt=std::log(NewGlobalWgt)+RefAction;
 
-      AcceptProb=exp(NewGlobalWgt - Reptile->GlobalWgt + head->TransProb[forward] - next->TransProb[backward]);
+      AcceptProb=std::exp(NewGlobalWgt - Reptile->GlobalWgt + head->TransProb[forward] - next->TransProb[backward]);
     }
     //cout << "ciao3" << endl;
 
@@ -691,7 +691,7 @@ namespace qmcplusplus {
         Reptile->GlobalSignWgt[ipsi]=NewGlobalSignWgt[ipsi];
         RealType DeltaAction(NewGlobalAction[ipsi]-NewGlobalWgt);
         if((WeightSign[ipsi]>0) && (DeltaAction > -30.0))
-          Reptile->UmbrellaWeight[ipsi]=exp(DeltaAction);
+          Reptile->UmbrellaWeight[ipsi]=std::exp(DeltaAction);
         else Reptile->UmbrellaWeight[ipsi]=0.0e0;
       }
     //cout << "ciaoACCEPTED1" << endl;

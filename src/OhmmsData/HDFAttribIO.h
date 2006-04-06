@@ -29,6 +29,7 @@ typedef int hid_t;
 typedef std::size_t hsize_t;
 #endif
 
+namespace qmcplusplus {
 /*\class HDFParticleAttribBase
  *\brief Base class to write/read ParticleAttrib using hdf5
  */
@@ -56,6 +57,7 @@ struct HDFAttribIO: public HDFAttribIOBase {
   
 };
 
+}
 #endif
 /***************************************************************************
  * $RCSfile$   $Author$

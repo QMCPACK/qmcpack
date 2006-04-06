@@ -18,6 +18,7 @@
 #ifndef OHMMS_TENSOR_OPERATORS_H
 #define OHMMS_TENSOR_OPERATORS_H
 
+namespace qmcplusplus {
 //////////////////////////////////////////////////////////////////////
 //
 // The default definitions for Tensors of arbitrary size.
@@ -1151,6 +1152,7 @@ struct OTDot< SymTensor<T1,3> , SymTensor<T2,3> >
   }
 };
 
+}
 
 #endif // OHMMS_TENSOR_OPERATORS_H
 

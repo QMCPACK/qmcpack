@@ -117,7 +117,7 @@ namespace qmcplusplus {
       ValueType psi = 1.0;
       for(int i=0; i<Dets.size(); i++) psi *= Dets[i]->evaluate(P,G,L);
       SignValue = (psi<0.0)?-1.0:1.0;
-      LogValue = log(abs(psi));
+      LogValue = std::log(std::abs(psi));
       return LogValue;
     }
 
@@ -148,7 +148,7 @@ namespace qmcplusplus {
       for(int i=0; i<Dets.size(); i++) 
         psi *= Dets[i]->registerData(P,buf);
       SignValue = (psi<0.0)?-1.0:1.0;
-      LogValue = log(abs(psi));
+      LogValue = std::log(std::abs(psi));
       return LogValue;
     }
     
@@ -156,7 +156,7 @@ namespace qmcplusplus {
       ValueType psi = 1.0;
       for(int i=0; i<Dets.size(); i++) psi *= Dets[i]->updateBuffer(P,buf);
       SignValue = (psi<0.0)?-1.0:1.0;
-      LogValue = log(abs(psi));
+      LogValue = std::log(std::abs(psi));
       return LogValue;
     }
 
@@ -201,7 +201,7 @@ namespace qmcplusplus {
 			   ParticleSet::ParticleLaplacian_t& dL) { 
       ValueType r = Dets[DetID[iat]]->ratio(P,iat,dG,dL);
       SignValue = (r<0.0)?-1.0:1.0;
-      return log(abs(r));
+      return std::log(std::abs(r));
     }
     
     inline void restore(int iat) {

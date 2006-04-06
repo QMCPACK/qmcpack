@@ -67,7 +67,7 @@ namespace qmcplusplus {
         alpha=a; C=-0.5*a;r_b=r; one_over_rr=1/r/r;
       }
       inline RealType operator()(RealType r) {
-        RealType z=1.0-exp(-r*r*one_over_rr);
+        RealType z=1.0-std::exp(-r*r*one_over_rr);
         return z*z;
       }
       bool put(xmlNodePtr cur);

@@ -20,6 +20,7 @@
 #include "Particle/DistanceTableData.h"
 #include "Numerics/DeterminantOperators.h"
 #include "Numerics/OhmmsBlas.h"
+using namespace std;
 #include "Numerics/MatrixOperators.h"
 namespace qmcplusplus {
 
@@ -97,7 +98,7 @@ namespace qmcplusplus {
       if(j == iat) continue;
       diffVal+= dot(V[j],GeminalBasis->y(0),BasisSize);
     }
-    return exp(diffVal-Uk[iat]);
+    return std::exp(diffVal-Uk[iat]);
   }
 
     /** later merge the loop */
@@ -106,7 +107,7 @@ namespace qmcplusplus {
 		    ParticleSet::ParticleGradient_t& dG,
 		    ParticleSet::ParticleLaplacian_t& dL) {
 
-    return exp(logRatio(P,iat,dG,dL));
+    return std::exp(logRatio(P,iat,dG,dL));
   }
 
     /** later merge the loop */
@@ -283,7 +284,7 @@ namespace qmcplusplus {
     buf.put(FirstAddressOfgU,LastAddressOfgU);
     buf.put(d2Uk.begin(), d2Uk.end());
 
-    return exp(LogValue);
+    return std::exp(LogValue);
   }
 
   OrbitalBase::ValueType 

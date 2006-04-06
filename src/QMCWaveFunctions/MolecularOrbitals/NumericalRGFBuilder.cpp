@@ -120,7 +120,7 @@ namespace qmcplusplus {
     int rinv_p = Power[0];    
     if(rinv_p != 0)
       for(int ig=0; ig<rad_orb.size(); ig++) 
-        rad_orb[ig] *= pow(agrid->r(ig),-rinv_p);
+        rad_orb[ig] *= std::pow(agrid->r(ig),-rinv_p);
     XMLReport("Multiplying orbital by r^" << -rinv_p)
 
 
@@ -129,7 +129,7 @@ namespace qmcplusplus {
     RadialOrbitalType *radorb = new OneDimCubicSpline<ValueType>(agrid,rad_orb);
     //calculate boundary condition, assume derivates at endpoint are 0.0
     RealType yprime_i = rad_orb[imin+1]-rad_orb[imin];
-    if(fabs(yprime_i)<1e-10)  yprime_i = 0.0;
+    if(std::abs(yprime_i)<1e-10)  yprime_i = 0.0;
     yprime_i /= (agrid->r(imin+1)-agrid->r(imin)); 
     //set up 1D-Cubic Spline
     radorb->spline(imin,yprime_i,imax,0.0);

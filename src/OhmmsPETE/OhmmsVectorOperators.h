@@ -18,6 +18,7 @@
 #ifndef OHMMS_VECTOR_OPERATORS_H
 #define OHMMS_VECTOR_OPERATORS_H
 
+namespace qmcplusplus {
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -3118,6 +3119,8 @@ Vector<T1, C1>& operator>>=(Vector<T1, C1>& lhs,const RHS& rhs)
   typedef typename CreateLeaf<RHS>::Leaf_t Leaf_t;
   evaluate(lhs,OpRightShiftAssign(),MakeReturn<Leaf_t>::make(CreateLeaf<RHS>::make(rhs)));
   return lhs;
+}
+
 }
 
 #endif //  GENERATED_OPERATORS_H

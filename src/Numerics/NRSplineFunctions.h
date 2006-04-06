@@ -16,6 +16,8 @@
 // -*- C++ -*-
 #ifndef OHMMS_NR_CUBICSPLINE_H
 #define OHMMS_NR_CUBICSPLINE_H
+
+namespace qmcplusplus {
 /**template function: converted from Numerical Recipe spline.c
  *note that the range of data is [0,n) instead of [1,n]
  */
@@ -201,6 +203,8 @@ NRCubicSplineFirst(const T* x, const T* y, int n, T* d1, T* d2 ) {
   T hn(x[last]-x[last1]);
   d1[last]=an;
   d2[last]=d2[last1]+hn*d3[last1];
+}
+
 }
 #endif
 /***************************************************************************

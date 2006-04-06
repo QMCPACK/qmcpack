@@ -18,6 +18,7 @@
 #define QMCPLUSPLUS_JASTROWFUNCTIONS_H
 #include "QMCWaveFunctions/JastrowFunctorBase.h"
 
+namespace qmcplusplus {
 /** Pade functional of \f[ u(r) = \frac{a*r}{1+b*r} \f]
  *
  * Prototype of the template parameter of TwoBodyJastrow and OneBodyJastrow
@@ -226,6 +227,8 @@ struct PadeJastrow2:public JastrowFunctorBase<T> {
     XMLReport("Jastrow (A*r+C*r*r)/(1+Br) = (" << A << "," << B << "," << C << ")") 
   }
 };
+
+}
 #endif
 /***************************************************************************
  * $RCSfile$   $Author$

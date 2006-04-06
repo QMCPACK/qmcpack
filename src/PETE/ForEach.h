@@ -29,6 +29,7 @@
 #ifndef PETE_PETE_FOREACH_H
 #define PETE_PETE_FOREACH_H
 
+namespace qmcplusplus {
 ///////////////////////////////////////////////////////////////////////////////
 //
 // WARNING: THIS FILE IS FOR INTERNAL PETE USE. DON'T INCLUDE IT YOURSELF
@@ -172,6 +173,8 @@ struct ForEach<Reference<T>, FTag, CTag>
     return ForEach<T, FTag, CTag>::apply(ref.reference(), f, c);
   }
 };
+
+}
 
 #endif // PETE_PETE_FOREACH_H
 

@@ -207,7 +207,7 @@ namespace qmcplusplus {
       RealType denom=curW.BeadSignWgt[0];
       for(int ipsi=1; ipsi<nPsi; ipsi++) {
         RealType wgtpsi=curW.BeadSignWgt[ipsi]*
-          exp(2.0*(curW.Properties(ipsi,LOGPSI)-curW.Properties(0,LOGPSI)));
+          std::exp(2.0*(curW.Properties(ipsi,LOGPSI)-curW.Properties(0,LOGPSI)));
         curW.Drift += (wgtpsi*(*curW.Gradients[ipsi]));
         denom += wgtpsi;
       }
@@ -283,14 +283,14 @@ namespace qmcplusplus {
     Reptile->GlobalWgt=0.0e0;
     for(int ipsi=0; ipsi<nPsi; ipsi++){
       RealType DeltaAction(Reptile->GlobalAction[ipsi]-RefAction);
-      if((WeightSign[ipsi]>0) && (DeltaAction > -30)) Reptile->GlobalWgt += exp(DeltaAction);
+      if((WeightSign[ipsi]>0) && (DeltaAction > -30)) Reptile->GlobalWgt += std::exp(DeltaAction);
     }
-    Reptile->GlobalWgt=log(Reptile->GlobalWgt)+RefAction;
+    Reptile->GlobalWgt=std::log(Reptile->GlobalWgt)+RefAction;
 
     //Compute Umbrella Weight 
     for(int ipsi=0; ipsi<nPsi; ipsi++){
       RealType DeltaAction(Reptile->GlobalAction[ipsi]-Reptile->GlobalWgt);
-      if((WeightSign[ipsi]>0) && (DeltaAction > -30)) Reptile->UmbrellaWeight[ipsi] = exp(DeltaAction);
+      if((WeightSign[ipsi]>0) && (DeltaAction > -30)) Reptile->UmbrellaWeight[ipsi] = std::exp(DeltaAction);
       else Reptile->UmbrellaWeight[ipsi] = 0.0e0;
       cout << "GA " << ipsi <<  " : " << Reptile->GlobalAction[ipsi] << endl;
       cout << "UW " << ipsi <<  " : " << Reptile->UmbrellaWeight[ipsi] << endl;
@@ -411,7 +411,7 @@ namespace qmcplusplus {
 
     //Used several times
     m_oneover2tau=0.5/Tau; 
-    m_sqrttau=sqrt(Tau);
+    m_sqrttau=std::sqrt(Tau);
     int ihead,inext,itail;
 
     //Depending on the growth direction initialize growth variables
@@ -505,11 +505,11 @@ namespace qmcplusplus {
       //Compute Log of global Wgt
       for(int ipsi=0; ipsi<nPsi; ipsi++) {
         RealType DeltaAction(NewGlobalAction[ipsi]-RefAction);
-        if((WeightSign[ipsi]>0) && (DeltaAction > -30.0)) NewGlobalWgt+=exp(DeltaAction);
+        if((WeightSign[ipsi]>0) && (DeltaAction > -30.0)) NewGlobalWgt+=std::exp(DeltaAction);
       }
-      NewGlobalWgt=log(NewGlobalWgt)+RefAction;
+      NewGlobalWgt=std::log(NewGlobalWgt)+RefAction;
 
-      AcceptProb=exp(NewGlobalWgt - Reptile->GlobalWgt + head->TransProb[forward] - next->TransProb[backward]);
+      AcceptProb=std::exp(NewGlobalWgt - Reptile->GlobalWgt + head->TransProb[forward] - next->TransProb[backward]);
     }
 
     if(Random() < AcceptProb){
@@ -521,7 +521,7 @@ namespace qmcplusplus {
         Reptile->GlobalSignWgt[ipsi]=NewGlobalSignWgt[ipsi];
         RealType DeltaAction(NewGlobalAction[ipsi]-NewGlobalWgt);
         if((WeightSign[ipsi]>0) && (DeltaAction > -30.0))
-	  Reptile->UmbrellaWeight[ipsi]=exp(DeltaAction);
+	  Reptile->UmbrellaWeight[ipsi]=std::exp(DeltaAction);
         else Reptile->UmbrellaWeight[ipsi]=0.0e0;
       }
 
@@ -530,7 +530,7 @@ namespace qmcplusplus {
       RealType denom=NewBead->BeadSignWgt[0];
       for(int ipsi=1; ipsi<nPsi; ipsi++) {
         RealType wgtpsi=NewBead->BeadSignWgt[ipsi]*
-	  exp(2.0*(NewBead->Properties(ipsi,LOGPSI)-NewBead->Properties(0,LOGPSI)));
+	  std::exp(2.0*(NewBead->Properties(ipsi,LOGPSI)-NewBead->Properties(0,LOGPSI)));
         NewBead->Drift += (wgtpsi*(*NewBead->Gradients[ipsi]));
         denom += wgtpsi;
       }

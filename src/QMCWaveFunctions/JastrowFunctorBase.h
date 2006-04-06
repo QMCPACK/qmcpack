@@ -19,6 +19,8 @@
 #include "OhmmsData/libxmldefs.h"
 #include "Optimize/VarList.h"
 #include "QMCWaveFunctions/OrbitalTraits.h"
+
+namespace qmcplusplus {
 /** Base class for any functor used as a source for NumericalJastrow
  */
 template<class RT>
@@ -53,6 +55,8 @@ struct JastrowFunctorBase {
   */
   virtual void put(xmlNodePtr cur, VarRegistry<real_type>& vlist) = 0;
 };
+
+}
 
 #endif
 /***************************************************************************

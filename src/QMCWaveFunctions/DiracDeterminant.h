@@ -325,7 +325,7 @@ namespace qmcplusplus {
 		    ParticleSet::ParticleLaplacian_t& dL) {
       ValueType r=ratio(P,iat,dG,dL);
       SignValue = (r<0.0)? -1.0: 1.0;
-      return log(abs(r));
+      return std::log(std::abs(r));
     }
 
 

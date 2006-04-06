@@ -32,7 +32,7 @@
 #include <iostream>
 using namespace std;
 
-
+namespace qmcplusplus {
 template<class T, class C = vector<T> >
 class Vector {
 public:
@@ -137,8 +137,11 @@ template<class T, class C>
 void Vector<T,C>::create(unsigned n) {
   X.insert(X.end(), n, T());
 }
+}
  
 #include "OhmmsPETE/OhmmsVectorOperators.h"
+
+namespace qmcplusplus {
 //-----------------------------------------------------------------------------
 // We need to specialize CreateLeaf<T> for our class, so that operators
 // know what to stick in the leaves of the expression tree.
@@ -240,14 +243,15 @@ inline void evaluate(Vector<T, C> &lhs, const Op &op, const Expression<RHS> &rhs
 }
 // I/O
 template<class T, class C>
-ostream& operator<<(ostream& out, const Vector<T,C>& rhs)
+std::ostream& operator<<(std::ostream& out, const Vector<T,C>& rhs)
 {
 
   for(int i=0; i<rhs.size(); i++)
-    out << rhs[i] << endl;
+    out << rhs[i] << std::endl;
   return out;
 }
 
+}
 #endif // VEKTOR_H
 
 /***************************************************************************

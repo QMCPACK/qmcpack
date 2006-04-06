@@ -13,6 +13,7 @@
 // MatrixDefs.in
 ///////////////////////////////////////////////////////////////////////////////
 
+namespace qmcplusplus {
 
 template<class T1, class C1>
 inline typename MakeReturn<UnaryNode<OpUnaryMinus,
@@ -1020,6 +1021,8 @@ Matrix<T1, C1>& operator^=(Matrix<T1, C1>& lhs,const RHS& rhs)
   typedef typename CreateLeaf<RHS>::Leaf_t Leaf_t;
   evaluate(lhs,OpBitwiseXorAssign(),MakeReturn<Leaf_t>::make(CreateLeaf<RHS>::make(rhs)));
   return lhs;
+}
+
 }
 
 #endif // OHMMS_MATRIXOPERATOR_H

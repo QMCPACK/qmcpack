@@ -111,7 +111,7 @@ namespace qmcplusplus {
 
       //Test if the box sizes are same (=> kcut same for fixed dimcut)
       kcdifferent = false;
-      if(fabs(Ions->Lattice.LR_kc - Elns->Lattice.LR_kc) > 1.e-6){
+      if(std::abs(Ions->Lattice.LR_kc - Elns->Lattice.LR_kc) > 1.e-6){
 	kcdifferent = true;
 	minkc = std::min(Ions->Lattice.LR_kc,Elns->Lattice.LR_kc);
       }
@@ -175,7 +175,7 @@ namespace qmcplusplus {
     LRCoulombAB<BreakupBasis>::evalFk(RealType k,int FunctionIndex) {
       RealType FatK;
       FatK = 4.0*M_PI/(Basis.get_CellVolume()*k*k)*
-        cos(k*Basis.get_rc());
+        std::cos(k*Basis.get_rc());
       for(int n=0; n<Basis.NumBasisElem(); n++)
         FatK += coefs[0][n]*Basis.c(n,k);
       return(FatK);
@@ -188,7 +188,7 @@ namespace qmcplusplus {
     LRCoulombAB<BreakupBasis>::evalXk(RealType k,int FunctionIndex) {
       RealType FatK;
       FatK = -4.0*M_PI/(Basis.get_CellVolume()*k*k)*
-        cos(k*Basis.get_rc());
+        std::cos(k*Basis.get_rc());
       return (FatK);
     }
 

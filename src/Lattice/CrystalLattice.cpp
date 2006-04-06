@@ -21,6 +21,7 @@
  */
 #include "Lattice/MakeCrystalLattice.h"
 
+namespace qmcplusplus {
 /*! \fn CrystalLattice::CrystalLattice()
  *  Default constructor. Initialized to a \p 1x1x1 cubic supercell.
  */
@@ -100,10 +101,10 @@ template<class T, unsigned D,bool ORTHO>
 void CrystalLattice<T,D,ORTHO>::reset() {
 
   G = inverse(R); //G = transpose(Inverse(R));
-  Volume = fabs(det(R));
+  Volume = std::abs(det(R));
   //M = dot(transpose(R),R);
   M = dot(R,transpose(R));
-  T t = pow(TWOPI,2.0);
+  T t = TWOPI*TWOPI;
   Mg = t*dot(transpose(G),G);
   for(int i=0; i<D; i++)
     for(int j=0; j<D; j++)
@@ -113,12 +114,12 @@ void CrystalLattice<T,D,ORTHO>::reset() {
       Gv[i][j] = G(j,i);
 
   const T rad_to_deg = 180.0/M_PI;
-  T a0=sqrt(dot(Rv[0],Rv[0]));
-  T a1=sqrt(dot(Rv[1],Rv[1]));
-  T a2=sqrt(dot(Rv[2],Rv[2]));
-  ABC[0] = rad_to_deg*acos(dot(Rv[0],Rv[1])*a0*a1);
-  ABC[1] = rad_to_deg*acos(dot(Rv[1],Rv[2])*a1*a2);
-  ABC[2] = rad_to_deg*acos(dot(Rv[2],Rv[0])*a2*a0);
+  T a0=std::sqrt(dot(Rv[0],Rv[0]));
+  T a1=std::sqrt(dot(Rv[1],Rv[1]));
+  T a2=std::sqrt(dot(Rv[2],Rv[2]));
+  ABC[0] = rad_to_deg*std::acos(dot(Rv[0],Rv[1])*a0*a1);
+  ABC[1] = rad_to_deg*std::acos(dot(Rv[1],Rv[2])*a1*a2);
+  ABC[2] = rad_to_deg*std::acos(dot(Rv[2],Rv[0])*a2*a0);
 }
 
 /*! \fn  CrystalLattice<T,D>::operator=(const CrystalLattice<T,D>& rhs)
@@ -242,6 +243,7 @@ inline bool orthorombic(const CrystalLattice<T,D,ORTHO>& a) {
 //          (a.R(2,0) < eps) && (a.R(2,1) < eps) );
 //}
 
+}
 
 /***************************************************************************
  * $RCSfile$   $Author$

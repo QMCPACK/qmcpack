@@ -17,6 +17,8 @@
 #ifndef QMCPLUSPLUS_POOLEDDATA_H
 #define QMCPLUSPLUS_POOLEDDATA_H
 #include <vector>
+#include <complex>
+using namespace std;
 
 /**class PooledData<T>
  */
@@ -52,10 +54,20 @@ public:
 
   inline void add(T x) { Current++; this->push_back(x);}
 
+  inline void add(complex<T>& x) { Current+=2; this->push_back(x.real); this->push_back(x.imag);}
+
   template<class _InputIterator>
   inline void add(_InputIterator first, _InputIterator last) {
     while(first != last) {
       Current++; this->push_back(*first++);
+    }
+  }
+
+  inline void add(std::complex<T>* first,std::complex<T>* last) {
+    while(first != last) {
+      this->push_back((*first).real()); 
+      this->push_back((*first).imag());
+      Current+=2; ++first;
     }
   }
 
@@ -66,19 +78,39 @@ public:
 
   inline void get(T& x) { x = (*this)[Current++];}
 
+  inline void get(std::complex<T>& x) { 
+    x=std::complex<T>((*this)[Current],(*this)[Current+1]); Current+=2;
+  }
+
   template<class _OutputIterator>
   inline void get(_OutputIterator first, _OutputIterator last) {
     while(first != last) {
       *first++ = (*this)[Current++];
     }
   }
+
+  inline void get(std::complex<T>* first, std::complex<T>* last){
+    while(first != last) {
+      (*first)=std::complex<T>((*this)[Current],(*this)[Current+1]);
+      ++first; Current+=2;
+    }
+  }
   
   inline void put(T x) { (*this)[Current++] = x;}
+  inline void put(std::complex<T>& x) { (*this)[Current++] = x.real;  (*this)[Current++] = x.imag;}
 
   template<class _InputIterator>
   inline void put(_InputIterator first, _InputIterator last){
     while(first != last) {
       (*this)[Current++] = *first++;
+    }
+  }
+
+  inline void put(std::complex<T>* first, std::complex<T>* last) {
+    while(first != last) {
+      (*this)[Current++] = (*first).real();
+      (*this)[Current++] = (*first).imag();
+      ++first;
     }
   }
 

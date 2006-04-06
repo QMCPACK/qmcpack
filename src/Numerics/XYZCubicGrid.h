@@ -3,6 +3,7 @@
 #include "OhmmsPETE/TinyVector.h"
 #include "Numerics/OneDimGridBase.h"
 
+namespace qmcplusplus {
 /** Tri-cubic Splines with periodic boundary conditions and fixed first derivatives.
  *
  * Adapting TriCubicSpline implemented by K. Esler and D. Das.
@@ -453,6 +454,7 @@ struct XYZCubicGrid {
        b3*(Y330*d2c0+Y331*d2c1+Y332*d2c2+Y333*d2c3));
   }
 };
+}
 #endif
 /***************************************************************************
  * $RCSfile$   $Author$

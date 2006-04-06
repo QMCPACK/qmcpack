@@ -20,24 +20,26 @@
 #ifndef OHMMS_ITERATOR_UTILITIES_H
 #define OHMMS_ITERATOR_UTILITIES_H
 
-/** delete the pointers in [first,last)
- */
-template<class IT>
-inline void delete_iter(IT first, IT last) {
-  while(first != last) { delete *first; ++first;}
+namespace qmcplusplus {
+  /** delete the pointers in [first,last)
+  */
+  template<class IT>
+    inline void delete_iter(IT first, IT last) {
+      while(first != last) { delete *first; ++first;}
+    }
+
+
+  template<class T, unsigned D>
+    inline T* get_first_address(ParticleAttrib<TinyVector<T,D> >& a) {
+      return &(a[0][0]);
+    }
+
+  template<class T, unsigned D>
+    inline T* get_last_address(ParticleAttrib<TinyVector<T,D> >& a) {
+      return &(a[0][0])+D*a.size();
+    }
+
 }
-
-
-template<class T, unsigned D>
-inline T* get_first_address(ParticleAttrib<TinyVector<T,D> >& a) {
-  return &(a[0][0]);
-}
-
-template<class T, unsigned D>
-inline T* get_last_address(ParticleAttrib<TinyVector<T,D> >& a) {
-  return &(a[0][0])+D*a.size();
-}
-
 #endif
 /***************************************************************************
  * $RCSfile$   $Author$

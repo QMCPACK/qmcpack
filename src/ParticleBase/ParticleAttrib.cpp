@@ -30,6 +30,7 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
+namespace qmcplusplus {
 
 template<class T1>
 inline typename MakeReturn<UnaryNode<OpUnaryMinus,
@@ -1144,12 +1145,14 @@ const Op &op, const Expression<RHS> &rhs)
 
 // I/O
 template<class T>
-ostream& operator<<(ostream& out, const ParticleAttrib<T>& rhs)
+std::ostream& operator<<(std::ostream& out, const ParticleAttrib<T>& rhs)
 {
 
   for(int i=0; i<rhs.size(); i++)
-    out << rhs[i] << endl;
+    out << rhs[i] << std::endl;
   return out;
+}
+
 }
 #endif // OHMMS_PARTICLEATTRIB_PEPE_OPERATORS_H
 

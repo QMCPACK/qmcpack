@@ -151,7 +151,7 @@ LRHandler<BreakupBasis>::fillFk(KContainer& KList) {
   for(int fn=0; fn<NumFns; fn++)
     for(int ki=0; ki<KList.kpts_cart.size(); ki++){
       RealType k=dot(KList.kpts_cart[ki],KList.kpts_cart[ki]);
-      k=sqrt(k);
+      k=std::sqrt(k);
       Fk[fn][ki] = evalFk(k,fn); //Call derived fn.
     }
 }

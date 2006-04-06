@@ -18,6 +18,8 @@
 // -*- C++ -*-
 #ifndef OHMMS_PARTICLEUTILITY_H
 #define OHMMS_PARTICLEUTILITY_H
+
+namespace qmcplusplus {
 //////////////////////////////////////////////////////////
 // functors to generate vectors with each element [-0.5,0.5)
 //////////////////////////////////////////////////////////
@@ -216,6 +218,7 @@ void   normalize(ParticleAttrib<TinyVector<T, D> >& pa)
   pa *= factor;
 }
 
+}
 #endif
 
 /***************************************************************************

@@ -18,11 +18,13 @@
 #ifndef OHMMS_CRYSTALLATTICE_H
 #define OHMMS_CRYSTALLATTICE_H
 #include <limits>
-#include <math.h>
+#include <cmath>
 #include "OhmmsPETE/TinyVector.h"
 #include "OhmmsPETE/Tensor.h"
 #include "Lattice/ParticleBConds.h"
 #include "Lattice/LatticeOperations.h"
+
+using namespace std;
 
 /**@file CrystalLattice.h
  *@brief Declaration of CrystalLattice<T,D>
@@ -35,6 +37,7 @@
 #endif /* M_PI */
 #endif /* TWOPI */
 
+namespace qmcplusplus {
 /** class to assist copy and unit conversion operations on position vectors
  */
 struct PosUnit {
@@ -272,252 +275,9 @@ struct CrystalLattice{
   void print(ostream& , int level=2) const;
 };
 
+}
 //including the definitions of the member functions
 #include "Lattice/CrystalLattice.cpp"
-//
-///** Copy operation pout = pin with the unit checking of the in/out vectors
-// *
-// *@param pin an input position array
-// *@param pout an output position array
-// *
-// *@note The units of in/out vectors are conserved.
-// */
-//template<class T, unsigned D, bool ORTHO>
-//template<class PA>
-//inline void CrystalLattice<T,D,ORTHO>::convert(const PA& pin, PA& pout) const
-//{
-//  if(pin.getUnit() == pout.getUnit())   {
-//    pout = pin;
-//    return;
-//  }
-//  if(pin.getUnit() == PosUnit::LatticeUnit) { //convert to CartesianUnit
-//    for(int i=0; i<pin.size(); i++)
-//#ifdef OHMMS_LATTICEOPERATORS_H
-//      pout[i] = DotProduct<TinyVector<T,D>,Tensor<T,D>,ORTHO>::apply(pin[i],R);
-//#else
-//      pout[i] = dot(pin[i],R);
-//#endif
-//  } else { //convert to LatticeUnit
-//    for(int i=0; i<pin.size(); i++)
-//#ifdef OHMMS_LATTICEOPERATORS_H
-//      pout[i] = DotProduct<TinyVector<T,D>,Tensor<T,D>,ORTHO>::apply(pin[i],G);
-//#else
-//      pout[i] = dot(pin[i],G);
-//#endif
-//  }
-//}
-//
-///** Copy operation pout = pin with the unit checking of the in/out vectors
-// *
-// *@param pin an input position array
-// *@param pout an output position array
-// *
-// *@note The unit of the out vector is forced to be Cartesian.
-// */
-//template<class T, unsigned D, bool ORTHO>
-//template<class PA>
-//inline void CrystalLattice<T,D,ORTHO>::convert2Cart(const PA& pin, PA& pout) const
-//{
-//  pout.setUnit(PosUnit::CartesianUnit);
-//  if(pin.getUnit() == PosUnit::CartesianUnit) 
-//    pout = pin;
-//  else //need to convert to CartesianUnit
-//    for(int i=0; i<pin.size(); i++) {
-//#ifdef OHMMS_LATTICEOPERATORS_H
-//      pout[i] = DotProduct<TinyVector<T,D>,Tensor<T,D>,ORTHO>::apply(pin[i],R);
-//#else
-//      pout[i] = dot(pin[i],R);
-//#endif
-//    }
-//}
-//
-///** Copy operation pout = pin with the unit checking of the in/out vectors
-// *
-// *@param pin an input position array
-// *@param pout an output position array
-// *
-// *@note The unit of the out vector is forced to be Lattice unit.
-// */
-//template<class T, unsigned D,bool ORTHO>
-//template<class PA>
-//inline void CrystalLattice<T,D, ORTHO>::convert2Unit(const PA& pin, PA& pout) const
-//{
-//  pout.setUnit(PosUnit::LatticeUnit);
-//  if(pin.getUnit() == PosUnit::LatticeUnit) 
-//    pout = pin;
-//  else //need to convert to LatticeUnit
-//    for(int i=0; i<pin.size(); i++) {
-//#ifdef OHMMS_LATTICEOPERATORS_H
-//      pout[i] = DotProduct<TinyVector<T,D>,Tensor<T,D>,ORTHO>::apply(pin[i],G);
-//#else
-//      pout[i] = dot(pin[i],G);
-//#endif
-//    }
-//}
-//
-///** Conversion of a position array to Cartesian unit.
-// *
-// *@param pos in/out position array
-// *
-// *@note The unit of the out vector is forced to be Cartesian. If the unit
-// *of pos is in Cartesian, no action is taken.
-// */
-//template<class T, unsigned D,bool ORTHO>
-//template<class PA>
-//inline void CrystalLattice<T,D,ORTHO>::convert2Cart(PA& pos) const
-//{
-//  if(pos.getUnit() == PosUnit::LatticeUnit) {
-//    for(int i=0; i<pos.size(); i++) {
-//#ifdef OHMMS_LATTICEOPERATORS_H
-//      pos[i] = DotProduct<TinyVector<T,D>,Tensor<T,D>,ORTHO>::apply(pos[i],R);
-//#else
-//      pos[i] = dot(pos[i],R);
-//#endif
-//    }
-//    pos.setUnit(PosUnit::CartesianUnit);
-//  }
-//}
-//
-///** Conversion of a position array to Lattice unit.
-// *
-// *@param pos in/out position array
-// *
-// *@note The unit of the out vector is forced to be in Lattice unit. 
-// *If the unit of pos is in Lattice unit, no action is taken.
-// */
-//template<class T, unsigned D,bool ORTHO>
-//template<class PA>
-//inline void CrystalLattice<T,D,ORTHO>::convert2Unit(PA& pos) const
-//{
-//  if(pos.getUnit() == PosUnit::CartesianUnit) {
-//    for(int i=0; i<pos.size(); i++) {
-//#ifdef OHMMS_LATTICEOPERATORS_H
-//      pos[i] = DotProduct<TinyVector<T,D>,Tensor<T,D>,ORTHO>::apply(pos[i],G);
-//#else
-//      pos[i] = dot(pos[i],G);
-//#endif
-//    }
-//    pos.setUnit(PosUnit::LatticeUnit);
-//  }
-//}
-//
-///** Copy an in vector to an out vector after applying boundary conditions.
-// *
-// *@param pin an input position array
-// *@param pout an output position array
-// *@param del a tolerance for wrapping the values within [0,1)
-// *
-// *@note The values of pout are all within a bounding box.
-// *The units of the in/out vectors are preserved. Numerical problems
-// *can appear by using del=0 due to rounding errors. For instance,
-// *when the box is partioned by 3x3x3, a terrible thing can happen.
-// */
-//template<class T, unsigned D,bool ORTHO>
-//template<class PA>
-//void 
-//CrystalLattice<T,D,ORTHO>::applyBC(const PA& pin, PA& pout) const
-//{
-//  int mode = pin.InUnit*2+pout.InUnit;
-//  switch(mode) {
-//  case(0):
-//    for(int i=0; i<pin.size(); i++)
-//      pout[i] = dot(BConds.wrap(dot(pin[i],G)),R);
-//    break;
-//  case(1):
-//    for(int i=0; i<pin.size(); i++)
-//      BConds.applyBC(dot(pin[i],G),pout[i]); 
-//    //pout[i] = BConds.wrap(dot(pin[i],G));
-//    break;
-//  case(2):
-//    for(int i=0; i<pin.size(); i++) pout[i] = dot(BConds.wrap(pin[i]),R);
-//    break;
-//  case(3):
-//    for(int i=0; i<pin.size(); i++) BConds.applyBC(pin[i],pout[i]);
-//    //pout[i] = BConds.wrap(pin[i]);
-//    break;
-//  }
-//
-////   switch(mode) {
-////   case(0):
-////     for(int i=0; i<pin.size(); i++)
-////       pout[i] = dot(BConds.wrap(dot(pin[i],G)),R);
-////     break;
-////   case(1):
-////     for(int i=0; i<pin.size(); i++)
-////       pout[i] = BConds.wrap(dot(pin[i],G));
-////     break;
-////   case(2):
-////     for(int i=0; i<pin.size(); i++) pout[i] = dot(BConds.wrap(pin[i]),R);
-////     break;
-////   case(3):
-////     for(int i=0; i<pin.size(); i++) pout[i] = BConds.wrap(pin[i]);
-////     break;
-////   }
-//
-//}
-//
-///** Copy an in-vector to an out-vector in [first,last) after applying boundary conditions.
-// *
-// *@param pin an input position array
-// *@param pout an output position array
-// *@param first the first index
-// *@param first the last index
-// *@param del a tolerance for wrapping the values within [0,1)
-// *
-// *The indices first and last are introduced for threaded routines.
-// */
-//template<class T, unsigned D, bool ORTHO>
-//template<class PA>
-//void 
-//CrystalLattice<T,D,ORTHO>::applyBC(const PA& pin, PA& pout, int first, int last) const
-//{
-//  int mode = pin.InUnit*2+pout.InUnit;
-//  switch(mode) {
-//  case(0):
-//    for(int i=first; i<last; i++)
-//      pout[i] = dot(BConds.wrap(dot(pin[i],G)),R);
-//    break;
-//  case(1):
-//    for(int i=first; i<last; i++)
-//      pout[i] = BConds.wrap(dot(pin[i],G));
-//    break;
-//  case(2):
-//    for(int i=first; i<last; i++) pout[i] = dot(BConds.wrap(pin[i]),R);
-//    break;
-//  case(3):
-//    for(int i=first; i<last; i++) pout[i] = BConds.wrap(pin[i]);
-//    break;
-//  }
-//}
-//
-///** Copy an in vector to an out vector after applying boundary conditions.
-// *
-// *@param pos an in/out position array
-// *@param del a tolerance for wrapping the values within [0,1)
-// *
-// *@note The values of pos are all within a bounding box.
-// *The unit is preserved. Numerical problems can appear 
-// *by using del=0 due to rounding errors.
-// */
-//template<class T, unsigned D, bool ORTHO>
-//template<class PA>
-//void CrystalLattice<T,D,ORTHO>::applyBC(PA& pos) const
-//{
-//  if(pos.InUnit) {
-//    for(int i=0; i<pos.size(); i++) pos[i] = BConds.wrap(pos[i]);
-//  } else {
-//    for(int i=0; i<pos.size(); i++) pos[i] = BConds.wrap(dot(pos[i],G));
-//    pos.InUnit = true;
-//  }
-//
-////   if(pos.InUnit) {
-////     for(int i=0; i<pos.size(); i++) pos[i] = BConds.wrap(pos[i]);
-////   } else {
-////     for(int i=0; i<pos.size(); i++) pos[i] = BConds.wrap(dot(pos[i],G));
-////     pos.InUnit = true;
-////   }
-//
-//}
 
 #endif
   

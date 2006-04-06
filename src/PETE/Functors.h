@@ -41,6 +41,7 @@
 
 #include <iterator>
 
+namespace qmcplusplus {
 //-----------------------------------------------------------------------------
 //
 // CLASS NAME
@@ -417,6 +418,7 @@ struct LeafFunctor<Scalar<T>, DereferenceLeaf>
   }
 };
 
+}
 
 #endif // PETE_PETE_FUNCTORS_H
 

@@ -48,7 +48,7 @@ namespace qmcplusplus {
     int nat=targetPtcl.getTotalNum();
     int nup=nat/2;
     if(nc == 0) {
-      nc = static_cast<int>(pow(static_cast<double>(nup),1.0/3.0))/2+1;
+      nc = static_cast<int>(std::pow(static_cast<double>(nup),1.0/3.0))/2+1;
     }
 
     cout << "   The number of shells " << nc << endl;

@@ -18,6 +18,7 @@
 #ifndef OHMMS_TINYVECTOR_OPERATORS_H
 #define OHMMS_TINYVECTOR_OPERATORS_H
 
+namespace qmcplusplus {
 
 ///////////////////////////////////////////////////////////////////////
 //
@@ -363,6 +364,7 @@ struct OTCross< TinyVector<T1,3> , TinyVector<T2,3> >
   }
 };
 
+}
 
 /* This has been substituted by OHMMS_META_BINARY_OPERATORS
 #define OHMMS_TINYVECTOR_BINARY_OPERATORS(FUNC,TAG)                           \

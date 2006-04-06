@@ -24,6 +24,8 @@
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "Numerics/Blasf.h"
 
+namespace qmcplusplus {
+
 inline void 
 LUFactorization(const int& n, const int& m, double* restrict a, const int& n0, 
      int* restrict piv) {
@@ -276,6 +278,8 @@ inline T dot(const T* restrict a, const T* restrict b, int n) {
 //   for(int i=0; i<n; i++) res += a[i]*b[i];
 //   return res;
 // }
+
+}
 #endif
 /***************************************************************************
  * $RCSfile$   $Author$

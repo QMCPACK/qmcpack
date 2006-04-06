@@ -28,6 +28,7 @@
 #endif
 
 
+namespace qmcplusplus {
 /** Specialization for hsize_t */
 template<>
 struct HDFAttribIO<hsize_t>: public HDFAttribIOBase {
@@ -430,6 +431,7 @@ struct HDFAttribIO<blitz::Array<TinyVector<double,D>,2> >: public HDFAttribIOBas
 };
 #endif
 
+}
 #endif
 /***************************************************************************
  * $RCSfile$   $Author$

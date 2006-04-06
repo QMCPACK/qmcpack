@@ -23,7 +23,7 @@
 #include "Utilities/OhmmsInfo.h"
 #include "Utilities/RandomGenerator.h"
 #include "OhmmsData/FileUtility.h"
-using namespace qmcplusplus;
+namespace qmcplusplus {
 
 /** specialization for PooledData<double>
  */
@@ -190,6 +190,7 @@ bool MultiChain::read(hid_t grp){
   H5Gclose(h_config);
 
   return true;
+}
 }
 
 /***************************************************************************

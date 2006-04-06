@@ -21,6 +21,7 @@
 #include <string>
 #include <vector>
 #include <map>
+using namespace std;
 #include "OhmmsPETE/TinyVector.h"
 #include "OhmmsPETE/Tensor.h"
 #include "OhmmsData/OhmmsElementBase.h"

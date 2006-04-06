@@ -25,7 +25,7 @@
 #include <map>
 #include "ParticleTags.h"
 
-
+namespace qmcplusplus {
 /**@file ParticleBase.h
  *@brief Declaration of ParticleBase<PT>
  */
@@ -187,6 +187,7 @@ protected:
   vector<OhmmsObject*>        myAttribList;
 };
 
+}
 #include "ParticleBase/ParticleBase.cpp"
 #endif
 

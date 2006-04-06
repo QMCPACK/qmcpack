@@ -100,7 +100,7 @@ namespace qmcplusplus {
 		    ParticleSet::ParticleLaplacian_t& dL) {
       ValueType r=ratio(P,iat,dG,dL);
       SignValue = (r<0.0)? -1.0: 1.0;
-      return log(abs(r));
+      return std::log(abs(r));
     }
 
 
@@ -131,7 +131,7 @@ namespace qmcplusplus {
 	        ParticleSet::ParticleLaplacian_t& L) {
       ValueType psi=evaluate(P,G,L);
       SignValue = (psi<0.0)?-1.0:1.0;
-      return LogValue = log(abs(psi));
+      return LogValue = std::log(abs(psi));
     }
 
     /** Calculate the value of the Dirac determinant for particles

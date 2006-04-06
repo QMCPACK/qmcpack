@@ -18,6 +18,8 @@
 #ifndef OHMMS_TINY_META_H
 #define OHMMS_TINY_META_H
 
+
+namespace qmcplusplus {
 /* \note
  *  For optimization, operators for TinyVector and Tensor classes are specalized for D.
  *  Instead of using PETE generated operators, the operators for TinyVector, Tensor and TinyMatrix
@@ -40,6 +42,7 @@ template<class T1, class T2, class OP> struct OTBinary {};
 
 // generic Dot-product functors
 template<class T1, class T2> struct OTDot {};
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 // TinyVectorOps.h        assignment/unary and binary operators  for TinyVector

@@ -32,6 +32,7 @@
  *@brief Concrete uniform grid layout for 3D
  */
 
+namespace qmcplusplus {
 /** A concrete, specialized class equivalent to UniformGridLayout<T,3>
  *
  *This class represents a supercell and is one of the layout classes 
@@ -181,17 +182,17 @@ public:
     for(int i=0; i<3; i++) {
       //Unit vector normal to surface i. Cyclic permutations of i.
       b = cross(a(i-2<0?i-2+3:i-2),a(i-1<0?i-1+3:i-1));
-      b = b/sqrt(b[0]*b[0] + b[1]*b[1] + b[2]*b[2]);
+      b = b/std::sqrt(b[0]*b[0] + b[1]*b[1] + b[2]*b[2]);
       //Now find multiple of 'b' that moves to centre of box
       d = 0.5*(a(i-2<0?i-2+3:i-2)+a(i-1<0?i-1+3:i-1))-c;
       x[i]=1.e+6;
       for(int l=0;l<3;l++){
-	if(fabs(b[l]) < 1.e-6)continue; //Don't treat 0 elements.
+	if(std::abs(b[l]) < 1.e-6)continue; //Don't treat 0 elements.
 	d[l] = d[l]/b[l];
-	x[i] = min(x[i],fabs(d[l]));
+	x[i] = std::min(x[i],std::abs(d[l]));
       }
       //Real-space cutoff is minimal x[i] => sphere fits entirely inside cell.
-      LR_rc = min(LR_rc,x[i]);
+      LR_rc = std::min(LR_rc,x[i]);
     }
 
     //Set KC for structure-factor and LRbreakups.
@@ -259,6 +260,7 @@ public:
   //typedef std::vector<ConnectedCell> CCContainer_t;
   //std::vector<CCContainer_t*> Connections;
 };
+}
 #endif  
 /***************************************************************************
  * $RCSfile$   $Author$

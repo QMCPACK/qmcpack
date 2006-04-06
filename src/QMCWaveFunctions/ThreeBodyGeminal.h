@@ -56,7 +56,7 @@ namespace qmcplusplus {
     ValueType evaluate(ParticleSet& P,
 		       ParticleSet::ParticleGradient_t& G, 
 		       ParticleSet::ParticleLaplacian_t& L) {
-      return exp(evaluateLog(P,G,L));
+      return std::exp(evaluateLog(P,G,L));
     }
 
     ValueType ratio(ParticleSet& P, int iat);

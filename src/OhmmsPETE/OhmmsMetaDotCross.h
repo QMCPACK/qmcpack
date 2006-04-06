@@ -17,6 +17,7 @@
 // -*- C++ -*-
 #ifndef OHMMS_TINYVECTORTENSOR_DOTCROSS_H
 #define OHMMS_TINYVECTORTENSOR_DOTCROSS_H
+namespace qmcplusplus {
 //////////////////////////////////////////////////////////////////////
 //
 // Definition of the struct OTDot.
@@ -729,6 +730,7 @@ struct OTDot< AntiSymTensor<T1,3> , TinyVector<T2,3> >
 				 lhs(2,0)*rhs[0] + lhs(2,1)*rhs[1] + lhs(2,2)*rhs[2] );
   }
 };
+}
 
 #endif // OHMMS_TINYVECTOR_DOTCROSS_H 
 

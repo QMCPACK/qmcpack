@@ -19,6 +19,8 @@
 #include "QMCWaveFunctions/JastrowFunctorBase.h"
 #include "Numerics/OneDimCubicSpline.h"
 
+namespace qmcplusplus {
+
 template<class T>
 struct CutoffFunctor {
   T R1;
@@ -30,7 +32,7 @@ struct CutoffFunctor {
     set(r1,r2);
   }
   inline void set(T r1, T r2) {
-    pi = 4.0*atan(1.0);
+    pi = 4.0*std::atan(1.0);
     R1=r1; 
     if(r2<=r1) { 
       R2=R1; R12=1e9;
@@ -41,7 +43,7 @@ struct CutoffFunctor {
   inline T operator()(T r) {
     if(r<R1) return 1.0;
     if(r>R2) return 0.0;
-    return 0.5*(1.0+cos(pi*(r-R1)*R12));
+    return 0.5*(1.0+std::cos(pi*(r-R1)*R12));
   }
 };
 /** A nuerical functor
@@ -117,6 +119,8 @@ struct NumericalJastrow {
     }
   }
 };
+
+}
 #endif
 /***************************************************************************
  * $RCSfile$   $Author$

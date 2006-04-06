@@ -23,9 +23,10 @@
 
 #include <vector>
 #include <iostream>
-using namespace std;
 
-template<class T, class C = vector<T> >
+namespace qmcplusplus {
+
+template<class T, class C = std::vector<T> >
 class Matrix {
 public:
 
@@ -229,14 +230,14 @@ protected:
 
 // I/O
 template<class T, class C>
-ostream& operator<<(ostream& out, const Matrix<T,C>& rhs)
+std::ostream& operator<<(std::ostream& out, const Matrix<T,C>& rhs)
 {
   typedef typename Matrix<T,C>::size_type size_type;
   size_type ii=0;
   for(size_type i=0; i<rhs.rows(); i++) {
     for(size_type j=0; j<rhs.cols(); j++)
       out << rhs(ii++) << " ";
-    out << endl;
+    out << std::endl;
   }
   return out;
 }
@@ -362,9 +363,10 @@ const Expression<RHS> &rhs)
     }
   else
     {
-      cerr << "Error: LHS and RHS don't conform." << endl;
+      std::cerr << "Error: LHS and RHS don't conform." << std::endl;
       exit(1);
     }
+}
 }
 
 #include "OhmmsPETE/OhmmsMatrixOperators.h"

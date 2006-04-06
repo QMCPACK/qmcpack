@@ -21,6 +21,7 @@
 #define OHMMS_HDF_STL_NUMERICATTRIBIO_H
 #include "OhmmsData/HDFAttribIO.h"
 
+namespace qmcplusplus {
 /** Specialization for std::vector<double> */
 template<>
 struct HDFAttribIO<std::vector<int> >: public HDFAttribIOBase {
@@ -117,6 +118,7 @@ struct HDFAttribIO<std::vector<double> >: public HDFAttribIOBase {
 
 };
 
+}
 #endif
 /***************************************************************************
  * $RCSfile$   $Author$

@@ -2,6 +2,8 @@
 #define QMCPLUSPLUS_TRICUBICSPLINETEMPLATE_H
 #include "Numerics/XYZCubicGrid.h"
 #include "Numerics/OneDimCubicSpline.h"
+
+namespace qmcplusplus {
 /** Tri-cubic Splines with periodic boundary conditions and fixed first derivatives.
  *
  * Adapting TriCubicSpline implemented by K. Esler and D. Das.
@@ -231,6 +233,7 @@ void TriCubicSplineT<T,Tg>::UpdateZ(int source, int target, bool periodic){
   delete temp;
 }
 
+}
 #endif
 /***************************************************************************
  * $RCSfile$   $Author$

@@ -233,7 +233,7 @@ namespace qmcplusplus {
     }
 
     SignValue = (CurrentDet<0.0)?-1.0:1.0;
-    return LogValue = log(abs(CurrentDet));
+    return LogValue = std::log(abs(CurrentDet));
   }
 
   AGPDeterminant::ValueType 

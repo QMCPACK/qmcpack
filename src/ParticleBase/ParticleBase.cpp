@@ -17,6 +17,7 @@
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 
+namespace qmcplusplus {
 /** @file ParticleBase.cpp
  * @brief Declarations of the template functions of ParticleBase
  */
@@ -342,6 +343,8 @@ void ParticleBase<PL>::create(const vector<int>& agroup) {
   for(int i=0; i<agroup.size(); i++) {
     for(int j=0; j<agroup[i]; j++,loc++) GroupID[loc] = i;
   }
+}
+
 }
 
 /*

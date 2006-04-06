@@ -160,7 +160,7 @@ struct DistributedIndex {
   void create(int npart) {
     int dn = npart-I.size();
     while(dn) {
-      I.push_back(new list<int>); --dn;
+      I.push_back(new std::list<int>); --dn;
     }
   }
 
@@ -204,9 +204,9 @@ struct DistributedIndex {
     if(I.empty()) {
       return M[1];
     } else {
-      list<int>::size_type n=0;
+      std::list<int>::size_type n=0;
       for(int i=0; i<I.size(); i++) {
-	n = max(n,I[i]->size());
+	n = std::max(n,I[i]->size());
       }
       return int(n);
     }
@@ -249,7 +249,7 @@ struct DistributedIndex {
     os  << "The number of data sets " << I.size() << std::endl;
     for(int ig=0; ig<I.size(); ig++) {
       os << "Data set " << ig << std::endl;
-      std::copy(I[ig]->begin(), I[ig]->end(),ostream_iterator<int>(os, " "));
+      std::copy(I[ig]->begin(), I[ig]->end(),std::ostream_iterator<int>(os, " "));
       os << std::endl;
     }
   }

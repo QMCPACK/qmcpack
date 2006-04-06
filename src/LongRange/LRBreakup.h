@@ -174,7 +174,7 @@ LRBreakup<BreakupBasis>::AddKToList(RealType k,
 				     RealType degeneracy /* =1.0 */) {
   //Search for this k already in list
   int ki=0;
-  while((ki < KList.size()) && (fabs(k-KList[ki][0]) > 1.0e-12))
+  while((ki < KList.size()) && (std::abs(k-KList[ki][0]) > 1.0e-12))
     ki++;
 
   if(ki==KList.size()) {
@@ -201,7 +201,7 @@ LRBreakup<BreakupBasis>::SetupKVecs(RealType kc, RealType kcont,
   for(int ki=0; ki<kexact.numk; ki++) {
     modk2 = dot(kexact.kpts_cart[ki],kexact.kpts_cart[ki]);
     if(modk2 > (kc*kc)) { //Breakup needs kc < k < kcont.
-      AddKToList(sqrt(modk2));
+      AddKToList(std::sqrt(modk2));
       numk++;
     } 
   }

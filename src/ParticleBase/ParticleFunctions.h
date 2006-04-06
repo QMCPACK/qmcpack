@@ -24,6 +24,8 @@
 #define OHMMS_PARTICLEBASIC_FUNCTIONS_H
 
 #include "ParticleBase/ParticleUtility.h"
+
+namespace qmcplusplus {
 /** Make three-level partition of the layout.
  *@param lattice Particle Layout class, e.g., CrystalLattice<T,D>
  *@param grid three by D-dimensional index array
@@ -196,6 +198,8 @@ bool ExpandSuperCell(PT& inout_, GIV& uc_grid) {
 
   inout_.clear();
   return ExpandSuperCell(temp,inout_,uc_grid, grid);
+}
+
 }
 
 #endif

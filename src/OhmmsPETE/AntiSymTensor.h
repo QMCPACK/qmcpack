@@ -44,8 +44,8 @@
 #include "OhmmsPETE/Tensor.h"
 
 #include <iostream>
-using namespace std;
 
+namespace qmcplusplus {
 
 //////////////////////////////////////////////////////////////////////
 //
@@ -516,8 +516,6 @@ OHMMS_META_BINARY_OPERATORS(AntiSymTensor,operator+,OpAdd)
 OHMMS_META_BINARY_OPERATORS(AntiSymTensor,operator-,OpSubtract)
 OHMMS_META_BINARY_OPERATORS(AntiSymTensor,operator*,OpMultiply)
 OHMMS_META_BINARY_OPERATORS(AntiSymTensor,operator/,OpDivide)
-//TSV_ELEMENTWISE_OPERATOR(AntiSymTensor,Min,FnMin)
-//TSV_ELEMENTWISE_OPERATOR(AntiSymTensor,Max,FnMax)
 
 //----------------------------------------------------------------------
 // dot products.
@@ -624,14 +622,14 @@ dot(const AntiSymTensor<T1,D> &lhs, const TinyVector<T2,D> &rhs)
 //----------------------------------------------------------------------
 // I/O
 template<class T, unsigned D>
-ostream& operator<<(ostream& out, const AntiSymTensor<T,D>& rhs) {
+std::ostream& operator<<(std::ostream& out, const AntiSymTensor<T,D>& rhs) {
   if (D >= 1) {
     for (int i=0; i<D; i++) {
       for (int j=0; j<D-1; j++) {
 	out << rhs(i,j) << " ";
       }
       out << rhs(i,D-1) << " ";
-      if (i < D - 1) out << endl;
+      if (i < D - 1) out << std::endl;
     }
   } else {
     out << " " << rhs(0,0) << " ";
@@ -644,6 +642,7 @@ ostream& operator<<(ostream& out, const AntiSymTensor<T,D>& rhs) {
 template<class T, unsigned int D>
 T AntiSymTensor<T,D>::Zero = 0;
 
+}
 #endif // ANTI_SYM_TENZOR_H
 
 

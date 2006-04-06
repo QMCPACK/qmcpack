@@ -21,6 +21,7 @@
 #define OHMMS_HDF_PARTICLEATTRIBIO_H
 #include "OhmmsData/HDFAttribIO.h"
 
+namespace qmcplusplus {
 // specialization for ParticleAttrib<int> type
 template<>
 struct HDFAttribIO<ParticleAttrib<int> >: public HDFAttribIOBase {
@@ -148,6 +149,8 @@ struct HDFAttribIO<ParticleAttrib<TinyVector<double,3> > >: public HDFAttribIOBa
 //     H5Dclose(h1);
 //   }
 // };
+
+}
 #endif
 /***************************************************************************
  * $RCSfile$   $Author$

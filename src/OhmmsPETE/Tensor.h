@@ -38,6 +38,8 @@
 
 #include "PETE/PETE.h"
 #include "OhmmsPETE/OhmmsTinyMeta.h"
+
+namespace qmcplusplus {
 // forward declarations
 template <class T, unsigned D> class SymTensor;
 template <class T, unsigned D> class AntiSymTensor;
@@ -436,11 +438,13 @@ std::istream& operator>>(std::istream& is, Tensor<T,D>& rhs)
   return is;
 }
 
+}
 // include header files for SymTensor and AntiSymTensor in order
 // to define constructors for Tensor using these types
 #include "OhmmsPETE/SymTensor.h"
 #include "OhmmsPETE/AntiSymTensor.h"
 
+namespace qmcplusplus {
 template <class T, unsigned D>
 Tensor<T,D>::Tensor(const SymTensor<T,D>& rhs) {
   for (int i=0; i<D; ++i)
@@ -453,6 +457,8 @@ Tensor<T,D>::Tensor(const AntiSymTensor<T,D>& rhs) {
   for (int i=0; i<D; ++i)
     for (int j=0; j<D; ++j)
       (*this)(i,j) = rhs(i,j);
+}
+
 }
 
 #endif // OHMMS_TENSOR_H

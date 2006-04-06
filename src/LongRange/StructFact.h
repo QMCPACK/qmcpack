@@ -63,9 +63,10 @@ namespace qmcplusplus {
      */
     inline void registerData(BufferType& buf) {
       //Buffertype is presently always real. Rhok is complex. Trick to force saving
-      RealType* first = static_cast<RealType*>(&(rhok(0,0).real()));
-      RealType* last = first + rhok.size()*2;
-      buf.add(first,last);
+      //RealType* first = static_cast<RealType*>(&(rhok(0,0).real()));
+      //RealType* last = first + rhok.size()*2;
+      //buf.add(first,last);
+      buf.add(rhok.data(),rhok.data()+rhok.size());
     };
     /** @brief register rhok data to buf so that it can copyToBuffer and copyFromBuffer
      *
@@ -74,9 +75,10 @@ namespace qmcplusplus {
      */
     inline void updateBuffer(BufferType& buf) {
       //Buffertype is presently always real. Rhok is complex. Trick to force saving
-      RealType* first = static_cast<RealType*>(&(rhok(0,0).real()));
-      RealType* last = first + rhok.size()*2;
-      buf.put(first,last);
+      //RealType* first = static_cast<RealType*>(&(rhok(0,0).real()));
+      //RealType* last = first + rhok.size()*2;
+      //buf.put(first,last);
+      buf.put(rhok.data(),rhok.data()+rhok.size());
     };
     /** @brief copy the data to an anonymous buffer
      *
@@ -84,9 +86,10 @@ namespace qmcplusplus {
      */
     inline void copyToBuffer(BufferType& buf) {
       //Buffertype is presently always real. Rhok is complex. Trick to force saving
-      RealType* first = static_cast<RealType*>(&(rhok(0,0).real()));
-      RealType* last = first + rhok.size()*2;
-      buf.put(first,last);
+      //RealType* first = static_cast<RealType*>(&(rhok(0,0).real()));
+      //RealType* last = first + rhok.size()*2;
+      //buf.put(first,last);
+      buf.put(rhok.data(),rhok.data()+rhok.size());
     };
     /** @brief copy the data from an anonymous buffer
      *
@@ -94,9 +97,10 @@ namespace qmcplusplus {
      */
     inline void copyFromBuffer(BufferType& buf) {
       //Buffertype is presently always real. Rhok is complex. Trick to force saving
-      RealType* first = static_cast<RealType*>(&(rhok(0,0).real()));
-      RealType* last = first + rhok.size()*2;
-      buf.get(first,last);
+      //RealType* first = static_cast<RealType*>(&(rhok(0,0).real()));
+      //RealType* last = first + rhok.size()*2;
+      //buf.get(first,last);
+      buf.get(rhok.data(),rhok.data()+rhok.size());
     };
 
   private:

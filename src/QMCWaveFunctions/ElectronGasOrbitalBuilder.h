@@ -19,6 +19,7 @@
 
 #include "QMCWaveFunctions/OrbitalBuilderBase.h"
 #include "QMCWaveFunctions/DummyBasisSet.h"
+
 namespace qmcplusplus {
 
   /** OrbitalBuilder for Slater determinants of electron-gas 
@@ -53,10 +54,10 @@ namespace qmcplusplus {
         if(jorb) {
           if(jorb&1) {
             kdotr=dot(K[jorb/2],P.R[iat]);
-            return cos(kdotr);
+            return std::cos(kdotr);
           }
           else {
-            return sin(kdotr);
+            return std::sin(kdotr);
           }
         } else {
           return 1.0;
@@ -69,8 +70,8 @@ namespace qmcplusplus {
           psi[0]=1.0;
           for(int ik=0, j=1; ik<KptMax; ik++) {
             kdotr=dot(K[ik],P.R[iat]);
-            psi[j++]=cos(kdotr);
-            psi[j++]=sin(kdotr);
+            psi[j++]=std::cos(kdotr);
+            psi[j++]=std::sin(kdotr);
           }
         }
 
@@ -83,8 +84,8 @@ namespace qmcplusplus {
           for(int ik=0,j1=1; ik<KptMax; ik++,j1+=2) {
             int j2=j1+1;
             kdotr=dot(K[ik],P.R[iat]);
-            RealType coskr=cos(kdotr);
-            RealType sinkr=sin(kdotr);
+            RealType coskr=std::cos(kdotr);
+            RealType sinkr=std::sin(kdotr);
             psi[j1]=coskr;
             psi[j2]=sinkr;
             dpsi[j1]=-sinkr*K[ik];
@@ -104,8 +105,8 @@ namespace qmcplusplus {
             d2logdet(i,0)=0.0;
             for(int ik=0,j1=1; ik<KptMax; ik++,j1+=2) {
               kdotr=dot(K[ik],P.R[iat]);
-              RealType coskr=cos(kdotr);
-              RealType sinkr=sin(kdotr);
+              RealType coskr=std::cos(kdotr);
+              RealType sinkr=std::sin(kdotr);
               int j2=j1+1;
               logdet(j1,i)=coskr;
               logdet(j2,i)=sinkr;

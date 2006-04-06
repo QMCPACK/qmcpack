@@ -129,7 +129,7 @@ inline typename LRCoulombAA<BreakupBasis>::RealType
 LRCoulombAA<BreakupBasis>::evalFk(RealType k,int FunctionIndex) {
   RealType FatK;
   FatK = 4.0*M_PI/(Basis.get_CellVolume()*k*k)*
-    cos(k*Basis.get_rc());
+    std::cos(k*Basis.get_rc());
   for(int n=0; n<Basis.NumBasisElem(); n++)
     FatK += coefs[0][n]*Basis.c(n,k);
   return(FatK);
@@ -142,7 +142,7 @@ inline typename LRCoulombAA<BreakupBasis>::RealType
 LRCoulombAA<BreakupBasis>::evalXk(RealType k,int FunctionIndex) {
   RealType FatK;
   FatK = -4.0*M_PI/(Basis.get_CellVolume()*k*k)*
-    cos(k*Basis.get_rc());
+    std::cos(k*Basis.get_rc());
   return (FatK);
 }
 

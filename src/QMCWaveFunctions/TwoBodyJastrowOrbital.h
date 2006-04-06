@@ -135,7 +135,7 @@ namespace qmcplusplus {
     ValueType evaluate(ParticleSet& P,
 		       ParticleSet::ParticleGradient_t& G, 
 		       ParticleSet::ParticleLaplacian_t& L) {
-      return exp(evaluateLog(P,G,L));
+      return std::exp(evaluateLog(P,G,L));
     }
 
     ValueType ratio(ParticleSet& P, int iat) {
@@ -146,7 +146,7 @@ namespace qmcplusplus {
           d += U[ij]-F[pairid[jat]]->evaluate(d_table->Temp[jat].r1);
         }
       }
-      return exp(d);
+      return std::exp(d);
     }
 
     /** later merge the loop */
@@ -178,7 +178,7 @@ namespace qmcplusplus {
       }
       dG[iat] += sumg;
       dL[iat] += suml;     
-      return exp(DiffVal);
+      return std::exp(DiffVal);
     }
 
     /** later merge the loop */
@@ -351,7 +351,7 @@ namespace qmcplusplus {
       buf.put(U.begin(), U.end());
       buf.put(d2U.begin(), d2U.end());
       buf.put(FirstAddressOfdU,LastAddressOfdU);
-      return exp(x); 
+      return std::exp(x); 
     }
 
   };

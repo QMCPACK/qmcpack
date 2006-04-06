@@ -45,6 +45,7 @@
 #include "PETE/PETE.h"
 #include "OhmmsPETE/OhmmsTinyMeta.h"
 
+namespace qmcplusplus {
 //////////////////////////////////////////////////////////////////////
 //
 // Definition of class TinyVector.
@@ -204,7 +205,6 @@ OHMMS_META_BINARY_OPERATORS(TinyVector,operator-,OpSubtract)
 OHMMS_META_BINARY_OPERATORS(TinyVector,operator*,OpMultiply)
 OHMMS_META_BINARY_OPERATORS(TinyVector,operator/,OpDivide)
 
-
 //----------------------------------------------------------------------
 // dot product
 //----------------------------------------------------------------------
@@ -287,6 +287,7 @@ std::istream& operator>>(std::istream& is, TinyVector<T,D>& rhs)
   //printTinyVector<TinyVector<T,D> >::print(out,rhs);
   for(int i=0; i<D; i++)  is >> rhs[i];
   return is;
+}
 }
 
 #endif // VEKTOR_H

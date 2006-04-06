@@ -26,16 +26,18 @@
 //  }
 //}
 
+namespace qmcplusplus {
+
 template<class T, class RG> 
 inline void assignGaussRand(T* restrict a, unsigned n, RG& rng) {
   for (int i=0; i+1<n; i+=2) {
     T temp1=1-0.9999999999*rng(), temp2=rng();
-    a[i]  =sqrt(-2.0*log(temp1))*cos(6.283185306*temp2);
-    a[i+1]=sqrt(-2.0*log(temp1))*sin(6.283185306*temp2);
+    a[i]  =std::sqrt(-2.0*std::log(temp1))*std::cos(6.283185306*temp2);
+    a[i+1]=std::sqrt(-2.0*std::log(temp1))*std::sin(6.283185306*temp2);
   }
   if (n%2==1) {
     T temp1=1-0.9999999999*rng(), temp2=rng();
-    a[n-1]=sqrt(-2.0*log(temp1))*cos(6.283185306*temp2);
+    a[n-1]=std::sqrt(-2.0*std::log(temp1))*std::cos(6.283185306*temp2);
   }
 }
 /*!\fn template<class T> void assignUniformRand(T* restrict a, unsigned n)
@@ -87,7 +89,7 @@ inline void makeSphereRandom(ParticleAttrib<TinyVector<double,3> >& a) {
       double x=1.0-2.0*Random();
       double y=1.0-2.0*Random();
       double z=1.0-2.0*Random();
-      double sep=sqrt(x*x+y*y+z*z);
+      double sep=std::sqrt(x*x+y*y+z*z);
       if(sep<1) {
         double rinv=1.0/sep;
         a[i][0]=x*rinv; a[i][1]=y*rinv; a[i][2]=z*rinv;
@@ -100,6 +102,8 @@ inline void makeSphereRandom(ParticleAttrib<TinyVector<double,3> >& a) {
 template<class RG>
 inline void makeGaussRandomWithEngine(ParticleAttrib<TinyVector<double,3> >& a, RG& rng) {
   assignGaussRand(&(a[0][0]), a.size()*3, rng);
+}
+
 }
 
 #endif

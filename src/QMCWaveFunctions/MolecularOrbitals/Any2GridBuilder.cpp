@@ -130,13 +130,13 @@ namespace qmcplusplus {
     void reset() {}
   
     inline value_type f(value_type r) const {
-      return a0*exp((a1+a2*r)*r/(1.0e0+a3*r));
+      return a0*std::exp((a1+a2*r)*r/(1.0e0+a3*r));
     }
   
     inline value_type df(value_type r) const {
       value_type t = 1.0/(1.0e0+a3*r);
       value_type z=(a1+a2*r)*r*t;
-      value_type res = a0*exp(z);
+      value_type res = a0*std::exp(z);
       return res*(a1+2.0*a2*r-z*a3)*t;
     }
   
@@ -149,7 +149,7 @@ namespace qmcplusplus {
           radAttrib.add(a0,"a0"); radAttrib.add(a1,"a1"); 
           radAttrib.add(a2,"a2"); radAttrib.add(a3,"a3");
           radAttrib.put(cur);
-          rcut = -1.0/a3-numeric_limits<T>::epsilon();
+          rcut = -1.0/a3-std::numeric_limits<T>::epsilon();
           LOGMSG("Pade compoenent (a0,a1,a2,a3,rcut) = " << a0 << " " << a1 << " " << a2 << " " << a3 << " " << rcut)
         }
         cur=cur->next;

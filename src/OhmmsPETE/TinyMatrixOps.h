@@ -18,6 +18,8 @@
 #ifndef OHMMS_TINYMATRIX_OPERATORS_H
 #define OHMMS_TINYMATRIX_OPERATORS_H
 
+namespace qmcplusplus {
+
 ///////////////////////////////////////////////////////////////////////
 // specialized assignment and element-by-element binary functors for tinymatrix
 //
@@ -748,6 +750,7 @@ struct OTDot< TinyMatrix<T1,4,4> , TinyMatrix<T2,4,4> >
   }
 };
 
+}
 #endif // OHMMS_TINYVECTOR_OPERATORS_H
 
 /***************************************************************************

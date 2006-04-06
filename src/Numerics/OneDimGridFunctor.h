@@ -19,6 +19,7 @@
 
 #include "Numerics/OneDimGridBase.h"
 
+namespace qmcplusplus {
 template<class T, unsigned D>
 struct FunctorBase { };
 
@@ -262,6 +263,8 @@ public:
 
   inline void spline() { }
 };
+
+}
 #endif
 /***************************************************************************
  * $RCSfile$   $Author$

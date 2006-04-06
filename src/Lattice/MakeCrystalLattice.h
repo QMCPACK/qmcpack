@@ -22,6 +22,7 @@
  *The arguments are stored in std::vector<string>. 
  *
  */
+namespace qmcplusplus {
 /** dummy template class to be specialized */
 template<class CL>
 struct makelattice { };
@@ -129,10 +130,10 @@ struct makelattice<CrystalLattice<T,3> > {
         lat.R(2,0) =  0.5; lat.R(2,1) =  0.5; lat.R(2,2) = -0.5;
       } else if(argv[i] == "hcp") {
         a0 = atof(argv[++i].c_str());
-        double covera = sqrt(8.0/3.0);
+        double covera = std::sqrt(8.0/3.0);
         if(argc-i > 1) covera = atof(argv[++i].c_str());
-        lat.R(0,0) = 0.5*a0; lat.R(0,1) = -sqrt(3.0)*0.5*a0; lat.R(0,2) = 0.0;
-        lat.R(1,0) = 0.5*a0; lat.R(1,1) =  sqrt(3.0)*0.5*a0; lat.R(1,2) = 0.0;
+        lat.R(0,0) = 0.5*a0; lat.R(0,1) = -std::sqrt(3.0)*0.5*a0; lat.R(0,2) = 0.0;
+        lat.R(1,0) = 0.5*a0; lat.R(1,1) =  std::sqrt(3.0)*0.5*a0; lat.R(1,2) = 0.0;
         lat.R(2,0) = 0.0;    lat.R(2,1) =   0.0;             lat.R(2,2) = covera*a0;
         a0 = 1.0e0;
       } 
@@ -142,6 +143,7 @@ struct makelattice<CrystalLattice<T,3> > {
     lat.reset();
   }
 };
+}
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$

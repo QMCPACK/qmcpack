@@ -18,6 +18,7 @@
 #define QMCPLUSPLUS_NOCUSPJASTROW_H
 #include "QMCWaveFunctions/JastrowFunctorBase.h"
 
+namespace qmcplusplus {
 /**Class NoCusp functional
  *@brief \f[ u(r) = \frac{a}{1+br^2} \f]
  * Prototype of the template parameter of TwoBodyJastrow and OneBodyJastrow
@@ -112,6 +113,8 @@ struct NoCuspJastrow: public JastrowFunctorBase<T> {
     XMLReport("Jastrow Parameters = (" << A << "," << B << ")") 
   }
 };
+
+}
 #endif
 /***************************************************************************
  * $RCSfile$   $Author$

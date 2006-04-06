@@ -108,7 +108,7 @@ public:
 	      ParticleSet::ParticleLaplacian_t& L){
     ValueType psi = evaluate(P,G,L);
     SignValue = (psi<0.0)?-1.0:1.0;
-    LogValue = log(abs(psi));
+    LogValue = std::log(std::abs(psi));
     return LogValue;
   }
 
