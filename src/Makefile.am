@@ -16,10 +16,9 @@ QMCPP_UTILITIES = \
   Numerics/OhmmsBlas.cpp \
   Platforms/sysutil.cpp \
   QMCFactory/OneDimGridFactory.cpp
-
    
 QMCPP_MESSAGE = \
-	Message/Communicate.cpp 
+  Message/Communicate.cpp 
 
 QMCPP_PARTICLE = \
   Lattice/Uniform3DGridLayout.cpp  \
@@ -38,11 +37,10 @@ QMCPP_PARTICLE = \
   ParticleIO/HDFParticleIO.cpp  \
   ParticleIO/XMLParticleIO.cpp  
 
-QMC_BASE = \
-	QMCHamiltonians/QMCHamiltonian.cpp\
-	QMCWaveFunctions/JastrowBuilder.cpp\
-	QMCWaveFunctions/TrialWaveFunction.cpp \
+QMC_WFS = \
   QMCWaveFunctions/OrbitalBuilderBase.cpp \
+  QMCWaveFunctions/JastrowBuilder.cpp\
+  QMCWaveFunctions/TrialWaveFunction.cpp  \
   QMCWaveFunctions/JAABuilder.cpp \
   QMCWaveFunctions/NJAABuilder.cpp \
   QMCWaveFunctions/JABBuilder.cpp \
@@ -62,9 +60,12 @@ QMC_BASE = \
   QMCWaveFunctions/ElectronGasOrbitalBuilder.cpp\
   QMCWaveFunctions/ThreeBodyGeminal.cpp\
   QMCWaveFunctions/ThreeBodyGeminalBuilder.cpp\
-  QMCWaveFunctions/WaveFunctionFactory.cpp \
   QMCWaveFunctions/AGPDeterminant.cpp \
   QMCWaveFunctions/AGPDeterminantBuilder.cpp \
+  QMCWaveFunctions/WaveFunctionFactory.cpp 
+ 
+QMC_HAM = \
+  QMCHamiltonians/QMCHamiltonian.cpp\
   QMCHamiltonians/LocalPPotential.cpp\
   QMCHamiltonians/NonLocalPPotential.cpp\
   QMCHamiltonians/LocalCorePolPotential.cpp \
@@ -91,7 +92,6 @@ QMC_DRIVERS = \
   QMCDrivers/DMC/WalkerReconfiguration.cpp \
   QMCDrivers/VMCMultiple.cpp \
   QMCDrivers/VMCPbyPMultiple.cpp \
-  QMCDrivers/ReptationMC.cpp \
   QMCDrivers/PolymerEstimator.cpp \
   QMCDrivers/RQMCMultiple.cpp \
   QMCDrivers/MultiChain.cpp \
@@ -110,13 +110,15 @@ QMC_MPP_SRC = \
 endif
 
 # build the base library used by any application
-lib_LIBRARIES = libqmcbase.a
+lib_LIBRARIES = libqmcutil.a libqmcbase.a 
+libqmcutil_a_SOURCES = \
+	$(QMCPP_UTILITIES) \
+	$(QMCPP_MESSAGE) 
 
 libqmcbase_a_SOURCES = \
-	$(QMCPP_UTILITIES) \
-	$(QMCPP_MESSAGE) \
-	$(QMCPP_PARTICLE) \
-	$(QMC_BASE) \
+	$(QMCPP_PARTICLE)   \
+	$(QMC_WFS) \
+	$(QMC_HAM) \
 	$(QMC_DRIVERS) 
 
 INCLUDES = $(OOMPI_INC)

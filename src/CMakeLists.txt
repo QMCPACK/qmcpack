@@ -63,7 +63,11 @@ SET(BASEDIR
    ${UTILITIES}
    ${MESSAGE}
 )
-ADD_LIBRARY(qmcbase ${BASEDIR})
+
+####################################
+# create libqmcutil
+####################################
+ADD_LIBRARY(qmcutil ${BASEDIR})
 
 #QMC-related package, build qmc
 SET(QMCBASEDIR
@@ -73,7 +77,10 @@ SET(QMCBASEDIR
    ${WFSBASE}
 )
 
-ADD_LIBRARY(qmc ${QMCBASEDIR})
+####################################
+# create libqmcbase 
+####################################
+ADD_LIBRARY(qmcbase ${QMCBASEDIR})
 
 IF(HAVE_OOMPI)
   CONFIGURE_FILE(${qmcPlusPlus_SOURCE_DIR}/src/oompi-config.h.cmake.in 

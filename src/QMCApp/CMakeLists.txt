@@ -100,27 +100,28 @@ IF(NOT QMCPLUSPLUS_RELEASE)
   ENDIF(HAVE_LIBGSL)
 ENDIF(NOT QMCPLUSPLUS_RELEASE)
 
-
+SET(QMCAPPDIR 
+    ${WFSRCS} 
+    ${QMCDRIVERS}
+    ParticleSetPool.cpp
+    WaveFunctionPool.cpp
+    HamiltonianPool.cpp
+    InitMolecularSystem.cpp
+    QMCAppBase.cpp
+    QMCDriverFactory.cpp
+    QMCMain.cpp
+)
 
 ####################################
-# Test code to debug DMCParticleByParticle
-#  ../QMCDrivers/DMCParticleByParticleDebug.cpp
+# create libqmc 
 ####################################
+ADD_LIBRARY(qmc ${QMCAPPDIR})
 
 ####################################
 #sources for new qmcapp, general QMC code to handle multiple
 #configurations, hamiltonians and wavefunctions.
 ####################################
-SET(MAINSRCS 
-  ${WFSRCS}
-  ${QMCDRIVERS}
-  ParticleSetPool.cpp
-  WaveFunctionPool.cpp
-  HamiltonianPool.cpp
-  InitMolecularSystem.cpp
-  QMCAppBase.cpp
-  QMCDriverFactory.cpp
-  QMCMain.cpp
+SET(QMCMAIN 
   qmcapp.cpp
 )
 
@@ -139,11 +140,11 @@ SET(MOSRCS
 ####################################
 # link lapack/blas and fortran library 
 ####################################
-LINK_LIBRARIES(
-  ${LAPACK_LIBRARY} 
-  ${BLAS_LIBRARY} 
-  ${FORTRAN_LIBS} 
-)
+#LINK_LIBRARIES(
+#  ${LAPACK_LIBRARY} 
+#  ${BLAS_LIBRARY} 
+#  ${FORTRAN_LIBS} 
+#)
 
 ####################################
 # adding thread library: e.g., -lguide -lpthread
@@ -165,6 +166,8 @@ ENDIF(INTEL_MKL)
 ####################################
 #general qmcapp for multiple configurations, hamiltonians and wavefunctions.
 ####################################
-ADD_EXECUTABLE(qmcapp ${MAINSRCS})
-TARGET_LINK_LIBRARIES(qmcapp qmc qmcbase)
+ADD_EXECUTABLE(qmcapp ${QMCMAIN})
+TARGET_LINK_LIBRARIES(qmcapp qmc qmcbase qmcutil 
+${LAPACK_LIBRARY}
+${BLAS_LIBRARY} ${FORTRAN_LIBS})
 

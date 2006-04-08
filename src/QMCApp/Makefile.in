@@ -141,11 +141,11 @@ qmcapp.cpp
 @NEEDTOBUILDOOMPI_TRUE@OOMPI_INC = -I$(top_srcdir)/src/OOMPI
 @NEEDTOBUILDOOMPI_TRUE@OOMPI_LIB = ${top_builddir}/src/OOMPI/liboompi.a
 
-QMC_LIB = $(top_builddir)/src/QMCApp/libqmc.a
+QMC_LIB = $(top_builddir)/src/QMCApp/libqmc.a 
 
 qmcapp_LDADD = $(QMC_LIB) @QMCBASE_LIBS@  $(OOMPI_LIB)
 qmcapp_LDFLAGS = @LDFLAGS@ 
-qmcapp_DEPENDENCIES = ${top_builddir}/src/libqmcbase.a $(OOMPI_LIB) $(QMC_LIB)
+qmcapp_DEPENDENCIES = ${top_builddir}/src/libqmcbase.a ${top_builddir}/src/libqmcutil.a $(OOMPI_LIB) $(QMC_LIB)
 subdir = src/QMCApp
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/ohmms-config.h
