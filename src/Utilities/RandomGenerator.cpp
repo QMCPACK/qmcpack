@@ -11,24 +11,22 @@
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
-//   Department of Physics, Ohio State University
-//   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 
 #include "Utilities/RandomGenerator.h"
 #include "Message/Communicate.h"
 
+//using namespace qmcplusplus;
 //RandomGenerator_t 
 //Random(CommCreate::get()->getNodeID(), CommCreate::get()->getNumNodes());
 
-RandomGenerator_t Random;
+qmcplusplus::RandomGenerator_t qmcplusplus::Random;
 
 // /**class GaussinRandomGenerator
 //  *\brief A filter class that converts random numbers [0,1) -> gaussian 
 //  */
 // class GaussianRandomGenerator {
-
 // public:
 
 //   typedef RandomGenerator_t::Return_t Return_t; 
