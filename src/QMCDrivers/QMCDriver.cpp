@@ -175,26 +175,6 @@ namespace qmcplusplus {
     } else {
       HDFWalkerInputManager W_in(W);
       if(W_in.put(wset)) h5FileRoot = W_in.getLastFile();
-      //int pid=OHMMS::Controller->mycontext(); 
-      //for(int ifile=0; ifile<nfile; ifile++) {
-      //  string cfile("invalid"), target("e");
-      //  int anode=-1, nwalkers=-1;
-      //  OhmmsAttributeSet pAttrib;
-      //  pAttrib.add(cfile,"href"); pAttrib.add(cfile,"file"); 
-      //  pAttrib.add(target,"target"); pAttrib.add(target,"ref"); 
-      //  pAttrib.add(anode,"node");
-      //  pAttrib.add(nwalkers,"walkers");
-      //  pAttrib.put(wset[ifile]);
-      //  int pid_target= (anode<0)?pid:anode;
-      //  if(pid_target == pid && cfile != "invalid") {
-      //    XMLReport("Using previous configuration of " << target << " from " << cfile)
-      //    HDFWalkerInput WO(cfile); 
-      //    WO.append(W,nwalkers);
-      //    //read random state
-      //    WO.getRandomState(true);
-      //    h5FileRoot = cfile;
-      //  }
-      //}
     }
 
     //clear the walker set
