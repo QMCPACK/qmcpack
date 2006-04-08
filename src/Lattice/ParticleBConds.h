@@ -22,7 +22,7 @@
 #include <limits>
 #include <math.h>
 
-namespace qmcplusplus {
+namespace APPNAMESPACE {
 /**generic ParticleBConds
  */
 template<class T, unsigned D> struct ParticleBConds {};

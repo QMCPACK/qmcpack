@@ -18,7 +18,7 @@
 #ifndef OHMMS_TINYVECTOR_OPERATORS_H
 #define OHMMS_TINYVECTOR_OPERATORS_H
 
-namespace qmcplusplus {
+namespace APPNAMESPACE {
 
 ///////////////////////////////////////////////////////////////////////
 //

@@ -37,7 +37,7 @@ using namespace std;
 #endif /* M_PI */
 #endif /* TWOPI */
 
-namespace qmcplusplus {
+namespace APPNAMESPACE {
 /** class to assist copy and unit conversion operations on position vectors
  */
 struct PosUnit {

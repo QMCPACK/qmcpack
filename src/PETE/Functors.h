@@ -41,7 +41,7 @@
 
 #include <iterator>
 
-namespace qmcplusplus {
+namespace APPNAMESPACE {
 //-----------------------------------------------------------------------------
 //
 // CLASS NAME

@@ -39,7 +39,7 @@
 #include "PETE/PETE.h"
 #include "OhmmsPETE/OhmmsTinyMeta.h"
 
-namespace qmcplusplus {
+namespace APPNAMESPACE {
 // forward declarations
 template <class T, unsigned D> class SymTensor;
 template <class T, unsigned D> class AntiSymTensor;

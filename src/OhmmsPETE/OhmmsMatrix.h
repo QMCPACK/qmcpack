@@ -24,7 +24,7 @@
 #include <vector>
 #include <iostream>
 
-namespace qmcplusplus {
+namespace APPNAMESPACE {
 
 template<class T, class C = std::vector<T> >
 class Matrix {

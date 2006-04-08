@@ -18,7 +18,7 @@
 #ifndef OHMMS_TINYMATRIX_OPERATORS_H
 #define OHMMS_TINYMATRIX_OPERATORS_H
 
-namespace qmcplusplus {
+namespace APPNAMESPACE {
 
 ///////////////////////////////////////////////////////////////////////
 // specialized assignment and element-by-element binary functors for tinymatrix

@@ -18,7 +18,7 @@
 #ifndef OHMMS_VECTOR_OPERATORS_H
 #define OHMMS_VECTOR_OPERATORS_H
 
-namespace qmcplusplus {
+namespace APPNAMESPACE {
 
 ///////////////////////////////////////////////////////////////////////////////
 //

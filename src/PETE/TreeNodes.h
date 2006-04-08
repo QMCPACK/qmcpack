@@ -29,7 +29,7 @@
 #ifndef PETE_PETE_TREENODES_H
 #define PETE_PETE_TREENODES_H
 
-namespace qmcplusplus {
+namespace APPNAMESPACE {
 ///////////////////////////////////////////////////////////////////////////////
 //
 // WARNING: THIS FILE IS FOR INTERNAL PETE USE. DON'T INCLUDE IT YOURSELF

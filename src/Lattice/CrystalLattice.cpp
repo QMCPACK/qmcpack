@@ -21,7 +21,7 @@
  */
 #include "Lattice/MakeCrystalLattice.h"
 
-namespace qmcplusplus {
+namespace APPNAMESPACE {
 /*! \fn CrystalLattice::CrystalLattice()
  *  Default constructor. Initialized to a \p 1x1x1 cubic supercell.
  */

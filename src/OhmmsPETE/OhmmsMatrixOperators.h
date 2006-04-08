@@ -13,7 +13,7 @@
 // MatrixDefs.in
 ///////////////////////////////////////////////////////////////////////////////
 
-namespace qmcplusplus {
+namespace APPNAMESPACE {
 
 template<class T1, class C1>
 inline typename MakeReturn<UnaryNode<OpUnaryMinus,

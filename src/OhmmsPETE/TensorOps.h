@@ -18,7 +18,7 @@
 #ifndef OHMMS_TENSOR_OPERATORS_H
 #define OHMMS_TENSOR_OPERATORS_H
 
-namespace qmcplusplus {
+namespace APPNAMESPACE {
 //////////////////////////////////////////////////////////////////////
 //
 // The default definitions for Tensors of arbitrary size.

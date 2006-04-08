@@ -17,7 +17,7 @@
 // -*- C++ -*-
 #ifndef OHMMS_TINYVECTORTENSOR_DOTCROSS_H
 #define OHMMS_TINYVECTORTENSOR_DOTCROSS_H
-namespace qmcplusplus {
+namespace APPNAMESPACE {
 //////////////////////////////////////////////////////////////////////
 //
 // Definition of the struct OTDot.

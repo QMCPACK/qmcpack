@@ -49,9 +49,11 @@ namespace qmcplusplus {
       }
     }
 
+
     if(targetPsi==0) {//allocate targetPsi and set the name
       targetPsi  = new TrialWaveFunction;
       targetPsi->setName(myName);
+      app_log() << "  Creating a trial wavefunction " << myName << endl;
     }
 
     cur = cur->children;

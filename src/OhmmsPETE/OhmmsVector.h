@@ -32,7 +32,7 @@
 #include <iostream>
 using namespace std;
 
-namespace qmcplusplus {
+namespace APPNAMESPACE {
 template<class T, class C = vector<T> >
 class Vector {
 public:

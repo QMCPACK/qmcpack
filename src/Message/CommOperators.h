@@ -30,10 +30,10 @@ inline void gsum(int& g, int gid) {
 }
 
 template<unsigned N>
-inline void gsum(TinyVector<double,N>& g, int gid) {
+inline void gsum(APPNAMESPACE::TinyVector<double,N>& g, int gid) {
   //TinyVector<double,N> gt = g;
   //MPI_Allreduce(gt.begin(), g.begin(), N, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-  TinyVector<double,N> gt(g);
+  APPNAMESPACE::TinyVector<double,N> gt(g);
   MPI_Allreduce(g.begin(), gt.begin(), N, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
   g = gt;
 }
@@ -52,10 +52,10 @@ inline void gsum(double& g, int gid) {
 }
 
 template<unsigned N>
-inline void gsum(TinyVector<int,N>& g, int gid) {
+inline void gsum(APPNAMESPACE::TinyVector<int,N>& g, int gid) {
   //TinyVector<double,N> gt = g;
   //MPI_Allreduce(gt.begin(), g.begin(), N, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-  TinyVector<int,N> gt(g);
+  APPNAMESPACE::TinyVector<int,N> gt(g);
   MPI_Allreduce(g.begin(), gt.begin(), N, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
   g = gt;
 }
@@ -68,7 +68,7 @@ inline void gsum(std::vector<double>& g, int gid) {
 }
 
 template<>
-inline void gsum(Matrix<double>& g, int gid) {
+inline void gsum(APPNAMESPACE::Matrix<double>& g, int gid) {
   //TinyVector<double,N> gt = g;
   //MPI_Allreduce(gt.begin(), g.begin(), N, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
   vector<double> gt(g.size());

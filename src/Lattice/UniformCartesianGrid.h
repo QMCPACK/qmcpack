@@ -26,7 +26,7 @@
 #include "OhmmsPETE/TinyVector.h"
 #include <iostream>
 
-namespace qmcplusplus {
+namespace APPNAMESPACE {
 /* \class UniformCartesianGrid
  * \brief Class to manage a uniform grid.
  *

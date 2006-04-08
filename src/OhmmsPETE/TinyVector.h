@@ -45,7 +45,7 @@
 #include "PETE/PETE.h"
 #include "OhmmsPETE/OhmmsTinyMeta.h"
 
-namespace qmcplusplus {
+namespace APPNAMESPACE {
 //////////////////////////////////////////////////////////////////////
 //
 // Definition of class TinyVector.

@@ -21,7 +21,7 @@
 #include "Message/OpenMP.h"
 #include <limits>
 
-using namespace qmcplusplus;
+using namespace APPNAMESPACE;
 
 void Uniform3DGridLayout::makeShell(std::vector<SingleParticleIndex_t>& RS,
 				    std::vector<bool>& FS,

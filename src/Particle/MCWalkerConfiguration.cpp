@@ -22,7 +22,7 @@
 #include "Message/Communicate.h"
 #include "Message/CommOperators.h"
 #include <map>
-using namespace qmcplusplus;
+namespace qmcplusplus {
 
 MCWalkerConfiguration::MCWalkerConfiguration(): 
 OwnWalkers(true),ReadyForPbyP(false),UpdateMode(Update_Walker) {
@@ -298,6 +298,7 @@ void MCWalkerConfiguration::resetWalkerProperty(int ncopy) {
 //
 //  return nw_tot;
 //}
+}
 
 /***************************************************************************
  * $RCSfile$   $Author$

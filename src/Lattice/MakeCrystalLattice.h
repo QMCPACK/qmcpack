@@ -22,7 +22,7 @@
  *The arguments are stored in std::vector<string>. 
  *
  */
-namespace qmcplusplus {
+namespace APPNAMESPACE {
 /** dummy template class to be specialized */
 template<class CL>
 struct makelattice { };

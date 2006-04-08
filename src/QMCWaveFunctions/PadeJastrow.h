@@ -117,7 +117,7 @@ struct PadeJastrow:public JastrowFunctorBase<T> {
     reset(Atemp,Btemp);
     vlist.add(ida,&A,1);
     if(RefFunc == 0) vlist.add(idb,&B,1);
-    XMLReport("Jastrow Parameters = (" << A << "," << B << ")") 
+    LOGMSG("Jastrow Parameters = (" << A << "," << B << ")")
   }
 };
 
