@@ -775,7 +775,7 @@ LIBS="$XML2_LIBS $HDF5_LIBS $LAPACK_LIBS $BLAS_LIBS $SPRNG_LIBS $FLIBS $LIBS"
 
 AM_CONDITIONAL(NEEDTOBUILDOOMPI,test "$needtobuild_oompi" = "true")
 
-QMCBASE_LIBS="-L\$(top_builddir)/src -lqmcbase"
+QMCBASE_LIBS="-L\$(top_builddir)/src -lqmcbase -lqmcutil"
 
 AC_SUBST(QMCBASE_LIBS)
 
