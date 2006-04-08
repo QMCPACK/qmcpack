@@ -9,7 +9,7 @@ int main(int argc, char **argv) {
   OHMMS::Controller->initialize(argc,argv);
 
   OhmmsInfo welcome(argc,argv,OHMMS::Controller->mycontext());
-  Random.init(0,1,-1);
+  APPNAMESPACE::Random.init(0,1,-1);
 
   if(argc<2) {
     std::cerr << " Usage: h5merge rootname number-of-processor " << std::endl;
