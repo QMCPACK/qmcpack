@@ -35,7 +35,7 @@ namespace qmcplusplus {
     NumTurns(0), Reptile(0), NewBead(0)
   { 
     RootName = "rmc-multi";
-    QMCType ="rmc-multi";
+    QMCType ="RQMCMultiple";
     m_param.add(ReptileLength,"chains","int");
 
     QMCDriverMode.set(QMC_MULTIPLE,1);
