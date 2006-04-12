@@ -109,6 +109,10 @@ class OhmmsParameter: public OhmmsElementBase {
     return true;
   }
 
+  inline void setValue(T x) {
+    ref_=x;
+  }
+
   ///reset member data
   inline void reset(){
     getContent(ref_,node_);
@@ -164,6 +168,10 @@ class OhmmsParameter<bool>: public OhmmsElementBase {
       ref_ = !ref_;//flip the bit
       return true;
     }
+  }
+
+  inline void setValue(bool x) {
+    ref_=x;
   }
 
   ///read from istream
