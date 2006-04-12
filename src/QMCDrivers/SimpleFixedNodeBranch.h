@@ -55,6 +55,8 @@ namespace qmcplusplus {
 
      ///use reconfiguration method for DMC
      bool FixedNumWalkers;
+     ///number of qmc sections executed
+     int QMCCounter;
      ///boolean to swap walkers among processors
      int SwapMode;
      ///counts the number of times update has been called
@@ -104,6 +106,12 @@ namespace qmcplusplus {
      //  return true;
      //}
 
+
+     /** increment QMCCounter
+      *
+      * QMCCounter is the number of times any QMC section is processed.
+      */
+     inline void advanceQMCCounter() { QMCCounter++;}
 
      /** initialize  the WalkerController 
       * @param fixW true, if reconfiguration with the fixed number of walkers is used

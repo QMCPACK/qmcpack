@@ -23,7 +23,7 @@
 using namespace qmcplusplus;
 
 SimpleFixedNodeBranch::SimpleFixedNodeBranch(RealType tau, int nideal): 
-FixedNumWalkers(false), SwapMode(0), Counter(0), 
+FixedNumWalkers(false), QMCCounter(-1), SwapMode(0), Counter(0), 
   Nideal(nideal), NumGeneration(50), 
   MaxCopy(-1), Tau(tau), E_T(0.0), EavgSum(0.0), WgtSum(0.0), PopControl(0.1), 
   WalkerController(0),SwapWalkers("yes")
@@ -79,6 +79,7 @@ void SimpleFixedNodeBranch::initWalkerController(RealType tau, bool fixW) {
     Nmin=WalkerController->Nmin;
   }
 
+  app_log() << "  QMC counter      = " << QMCCounter << endl;
   app_log() << "  reference energy = " << E_T << endl;
   if(!fixW) {
     app_log() << "  target_walkers = " << Nideal << endl;

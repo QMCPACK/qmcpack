@@ -387,6 +387,7 @@ namespace qmcplusplus {
       << endl;
 
     Estimators->finalize();
+    MyCounter++;
     return true;
   }
 

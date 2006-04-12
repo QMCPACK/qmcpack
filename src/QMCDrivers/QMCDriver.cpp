@@ -26,14 +26,11 @@
 
 namespace qmcplusplus {
 
-  //initialize the static data
-  int QMCDriver::Counter = -1;
-  QMCDriver::BranchEngineType* QMCDriver::branchEngine=0;
-  
   QMCDriver::QMCDriver(MCWalkerConfiguration& w, 
 		       TrialWaveFunction& psi, 
 		       QMCHamiltonian& h):
-    ResetRandom(false), AppendRun(false),RollBackBlocks(0),
+    branchEngine(0), ResetRandom(false), AppendRun(false),
+    MyCounter(0), RollBackBlocks(0),
     Period4CheckPoint(1), Period4WalkerDump(0),
     CurrentStep(0), nBlocks(100), nSteps(1000), 
     nAccept(0), nReject(0), nTargetWalkers(0),
@@ -142,7 +139,8 @@ namespace qmcplusplus {
     //flush the ostreams
     OhmmsInfo::flush();
 
-    Counter++; 
+    //increment QMCCounter of the branch engine
+    branchEngine->advanceQMCCounter();
   }
 
   void QMCDriver::setStatus(const string& aname, const string& h5name, bool append) {
@@ -296,6 +294,9 @@ namespace qmcplusplus {
     WOextra.write(*branchEngine);
 
     Estimators->finalize();
+
+    //increment MyCounter
+    MyCounter++;
 
     //flush the ostream
     OhmmsInfo::flush();

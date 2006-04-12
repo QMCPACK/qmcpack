@@ -100,7 +100,7 @@ namespace qmcplusplus {
     bool restartmode = false;
     if(Reptile == 0) {
       Reptile=new MultiChain(NewBead,ReptileLength,InitialGrowthDirection,nPsi);
-      if(Counter == 0 && h5FileRoot != "invalid") {
+      if(MyCounter == 0 && h5FileRoot != "invalid") {
         app_log() << "Reading the previous multi-chain configurations" << endl;
         restartmode = Reptile->read(h5FileRoot);
       }
@@ -478,6 +478,7 @@ namespace qmcplusplus {
       << endl;
 
     Estimators->finalize();
+    MyCounter++;
     return true;
   }
 

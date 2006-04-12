@@ -120,22 +120,38 @@ namespace qmcplusplus {
       return  QMCType;
     }
 
+    template<class PDT>
+    void setValue(const string& aname, PDT x) {
+      m_param.setValue(aname,x);
+    }
+
+    ///set the BranchEngineType
+    void setBranchEngine(BranchEngineType* be) {
+      branchEngine=be;
+    }
+
+    ///return BranchEngineType*
+    BranchEngineType* getBranchEngine() {
+      return branchEngine;
+    }
+
   protected:
 
-    ///counts the number of qmc runs
-    static int Counter;
-
-    ///branch engine, declared to be static
-    static BranchEngineType *branchEngine;
-
+    ///branch engine
+    BranchEngineType *branchEngine;
     ///randomize it
     bool ResetRandom;
     ///flag to append or restart the run
     bool AppendRun;
-
+    /** the number of times this QMCDriver is executed
+     *
+     * MyCounter is initialized to zero by the constructor and is incremented 
+     * whenever a run is completed by calling finalize(int block) or 
+     * using MyCounter++ as in RQMC.
+     */
+    int MyCounter;
     ///the number of blocks to be rolled back
     int RollBackBlocks;
-
     /** period of dumping walker configurations and everything else for restart
      *
      * The unit is a block.
