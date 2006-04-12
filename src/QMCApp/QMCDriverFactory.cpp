@@ -132,10 +132,17 @@ namespace qmcplusplus {
     } 
 
     unsigned long newQmcMode=WhatToDo.to_ulong();
+   
+    //initialize to 0
+    QMCDriver::BranchEngineType* branchEngine=0;
 
     if(qmcDriver) {
       if(newRunType != curRunType || newQmcMode != curQmcMode) {
+        //copy the pointer of the BranchEngine 
+        branchEngine=qmcDriver->getBranchEngine();
+        //remove the qmcDriver
         delete qmcDriver;
+        //set to 0 so that a new driver is created
         qmcDriver = 0;
         //if the current qmc method is different from the previous one, append_run is set to false
         append_run = false;
@@ -154,6 +161,9 @@ namespace qmcplusplus {
     curQmcMode = newQmcMode;
     curQmcModeBits = WhatToDo;
     createQMCDriver(cur);
+
+    //branchEngine has to be transferred to a new QMCDriver
+    if(branchEngine) qmcDriver->setBranchEngine(branchEngine);
 
     return append_run;
   }

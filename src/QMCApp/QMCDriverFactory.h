@@ -58,13 +58,12 @@ namespace qmcplusplus {
     std::string curMethod;
 
     /** current MCWalkerConfiguration
-    */
+     */
     MCWalkerConfiguration *qmcSystem;
 
     /** current QMCDriver
      */
     QMCDriver *qmcDriver;
-
 
     /** ParticleSet Pool
      */
@@ -81,11 +80,14 @@ namespace qmcplusplus {
     /** default constructor **/
     QMCDriverFactory();
 
+    /** set the active qmcDriver */
     bool setQMCDriver(int curSeries, xmlNodePtr cur);
 
     /** virtual destructor **/
     virtual ~QMCDriverFactory();
 
+    /** create a new QMCDriver 
+     */
     void createQMCDriver(xmlNodePtr cur);
   };
 }
