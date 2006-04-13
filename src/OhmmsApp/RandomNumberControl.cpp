@@ -75,34 +75,6 @@ namespace OHMMS{
       random_ptr = rg_request->nodesetval->nodeTab[0];
     }
     
-    //Spatial decomposition is not used
-    //overwrite the <random/> node if ParticleLayout
-    //bool use_mpi=false, use_distributed_data=false;
-    //xmlXPathObjectPtr result
-    //  =xmlXPathEvalExpression((const xmlChar*)"//ParticleLayout",acontext);
-    //if(!xmlXPathNodeSetIsEmpty(result->nodesetval)) {
-    //  xmlAttrPtr att = result->nodesetval->nodeTab[0]->properties;
-    //  while(att != NULL) {
-    //    std::string aname((const char*)(att->name));
-    //    std::string vname((const char*)(att->children->content));
-    //    if(aname == "mpi") 
-    //      use_mpi= (vname == "on"|vname == "true");
-    //    else if(aname =="method") 
-    //      use_distributed_data = (vname == "distributed");
-    //    att = att->next;
-    //  }
-    //}
-    //xmlXPathFreeObject(result);
-    
-    //if(use_mpi && !use_distributed_data) parallel_random = "false";
-    //if(xmlHasProp(random_ptr,(const xmlChar*)"parallel")) {
-    //  xmlSetProp(random_ptr,(const xmlChar*)"parallel",
-    //    	 (const xmlChar*)parallel_random.c_str());
-    //} else {
-    //  xmlNewProp(random_ptr,(const xmlChar*)"parallel",
-    //    	 (const xmlChar*)parallel_random.c_str());
-    //}
-    
     put(random_ptr);
     xmlXPathFreeObject(rg_request);
     return myCur;
