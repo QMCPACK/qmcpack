@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////
-// (c) Copyright 1998-2002 by Jeongnim Kim
+// (c) Copyright 1998-2002,2003- by Jeongnim Kim
 //////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////
 //   Jeongnim Kim
@@ -13,9 +13,10 @@
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
-//   Department of Physics, Ohio State University
-//   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
+/** @file DeterminantOperator.h
+ * @brief Define determinant operators 
+ */
 #ifndef OHMMS_NUMERIC_DETERMINANT_H
 #define OHMMS_NUMERIC_DETERMINANT_H
 
@@ -26,88 +27,66 @@
 
 namespace qmcplusplus {
 
-inline void 
-LUFactorization(const int& n, const int& m, double* restrict a, const int& n0, 
-     int* restrict piv) {
-  int status;
-  dgetrf(n,m,a,n0,piv,status);
-}
+  /** LU factorization of double */
+  inline void 
+    LUFactorization(const int& n, const int& m, double* restrict a, const int& n0, 
+        int* restrict piv) {
+      int status;
+      dgetrf(n,m,a,n0,piv,status);
+    }
 
-inline void 
-LUFactorization(const int& n, const int& m, complex<double>* restrict a, 
-    const int& n0, int* restrict piv) {
-  int status;
-  zgetrf(n,m,a,n0,piv,status);
-}
+  /** LU factorization of complex<double> */
+  inline void 
+    LUFactorization(const int& n, const int& m, std::complex<double>* restrict a, 
+        const int& n0, int* restrict piv) {
+      int status;
+      zgetrf(n,m,a,n0,piv,status);
+    }
 
-inline void InvertLU(const int& n, double* restrict a, const int& n0, 
-	      int* restrict piv, double* restrict work, const int& n1){
-  int status;
-  dgetri(n,a,n0,piv,work,n1,status);
-}
-
-template<class T>
-inline T 
-Invert(T* restrict x, int n, int m, T* restrict work, int* restrict pivot) {
-  T detvalue(1.0);
-  LUFactorization(n,m,x,n,pivot);
-  for(int i=0,ip=1; i<m; i++, ip++) {
-    if(pivot[i]==ip) 
-      detvalue *= x[i*m+i];
-    else 
-      detvalue *= -x[i*m+i];
+  /** Inversion of a double matrix after LU factorization*/
+  inline void InvertLU(const int& n, double* restrict a, const int& n0, 
+      int* restrict piv, double* restrict work, const int& n1){
+    int status;
+    dgetri(n,a,n0,piv,work,n1,status);
   }
-  InvertLU(n, x, n, pivot, work, n);
-  return detvalue;
-}
 
-template<class T>
-inline T Invert(T* restrict x, int n, int m) {
-  T detvalue(1.0);
-  vector<T> work(n);
-  vector<int> pivot(n);
-  LUFactorization(n,m,x,n,&pivot[0]);
-  for(int i=0,ip=1; i<m; i++, ip++) {
-    if(pivot[i]==ip) 
-      detvalue *= x[i*m+i];
-    else 
-      detvalue *= -x[i*m+i];
+  /** Inversion of a complex<double> matrix after LU factorization*/
+  inline void InvertLU(const int& n, std::complex<double>* restrict a, const int& n0, 
+      int* restrict piv, std::complex<double>* restrict work, const int& n1){
+    int status;
+    zgetri(n,a,n0,piv,work,n1,status);
   }
-  InvertLU(n,x, n, &pivot[0], &work[0], n);
-  /*
-  switch(n) {
-  case(1):
-    detvalue = x[0];
-    x[0]=1.0/detvalue;break;
-  case(2):
-    detvalue = x[0] * x[3] - x[1] * x[2];
-    double deti = 1.0/detvalue;
-    x[0] = deti*x[3]; 
-    x[1]*=-deti; 
-    x[2]*=-deti;
-    x[3] = deti*x[0];
-    break;
-  defaults:
-    cout << "using generic inversion " << endl;
-    vector<double> work(n);
-    vector<int> pivot(n);
-    LUFactorization(n,m,x,n,&pivot[0]);
-    for (int i=1; i<m; ++i) detvalue *= x[i*m+i];
-    InvertLU(n,x, n, &pivot[0], &work[0], n);
-    break;
-  }
-    */
-//   if(n == 1) {
-//     x[0]=1.0/detvalue;
-//   } else {
-//     vector<double> work(n);
-//     vector<int> pivot(n);
-//     LUFactorization(n,m,x,n,&pivot[0]);
-//     for (int i=1; i<m; ++i) detvalue *= x[i*m+i];
-//     InvertLU(n,x, n, &pivot[0], &work[0], n);
-//   }
-  return detvalue;
-}
+
+  template<class T>
+    inline T 
+    Invert(T* restrict x, int n, int m, T* restrict work, int* restrict pivot) {
+      T detvalue(1.0);
+      LUFactorization(n,m,x,n,pivot);
+      for(int i=0,ip=1; i<m; i++, ip++) {
+        if(pivot[i]==ip) 
+          detvalue *= x[i*m+i];
+        else 
+          detvalue *= -x[i*m+i];
+      }
+      InvertLU(n, x, n, pivot, work, n);
+      return detvalue;
+    }
+
+  template<class T>
+    inline T Invert(T* restrict x, int n, int m) {
+      T detvalue(1.0);
+      vector<T> work(n);
+      vector<int> pivot(n);
+      LUFactorization(n,m,x,n,&pivot[0]);
+      for(int i=0,ip=1; i<m; i++, ip++) {
+        if(pivot[i]==ip) 
+          detvalue *= x[i*m+i];
+        else 
+          detvalue *= -x[i*m+i];
+      }
+      InvertLU(n,x, n, &pivot[0], &work[0], n);
+      return detvalue;
+    }
 
 /** invert a matrix
  * \param M a matrix to be inverted
@@ -137,7 +116,7 @@ invert_matrix(MatrixA& M, bool getdet=true) {
   }
 
   dgetri(M.rows(), M.data(),  M.rows(), pivot.data(), work.data(), 
-	 M.rows(), status);
+      M.rows(), status);
   return det0;
 }  
 
@@ -173,11 +152,11 @@ template<class MatA, class VecT>
 inline
 void
 DetUpdate(MatA& Minv, 
-	  VecT& newrow, 
-	  VecT& rvec, 
-	  VecT& rvecinv, 
-	  int rowchanged,
-	  typename MatA::value_type c_ratio) {
+    VecT& newrow, 
+    VecT& rvec, 
+    VecT& rvecinv, 
+    int rowchanged,
+    typename MatA::value_type c_ratio) {
 
   int ncols=Minv.cols();
   typename MatA::value_type ratio_inv=1.0/c_ratio;
@@ -189,28 +168,27 @@ DetUpdate(MatA& Minv,
     for(int k=0; k<ncols; k++) Minv(j,k) += temp*Minv(rowchanged,k);
   }
   for(int k=0; k<ncols; k++) Minv(rowchanged,k) *= ratio_inv;
+  /*
+     for(int j=0; j<ncols; j++) {
+     rvec[j] = DetRatio(Minv,newrow.begin(),j);
+     rvecinv[j] = 1.0/rvec[j];
+     }
 
-	/*
-  for(int j=0; j<ncols; j++) {
-    rvec[j] = DetRatio(Minv,newrow.begin(),j);
-    rvecinv[j] = 1.0/rvec[j];
-  }
+     for(int j=0; j<ncols; j++) {
+     Minv(rowchanged, j) *= rvecinv[rowchanged];
+     }
 
-  for(int j=0; j<ncols; j++) {
-    Minv(rowchanged, j) *= rvecinv[rowchanged];
-  }
-
-  for(int i=0; i<rowchanged; i++) {
-    for(int j=0; j<ncols; j++) {
-      Minv(i,j) -= Minv(rowchanged,j)*rvec[i];
-    }
-  }
-  for(int i=rowchanged+1; i<Minv.rows(); i++) {
-    for(int j=0; j<ncols; j++) {
-      Minv(i,j) -= Minv(rowchanged,j)*rvec[i];
-    }
-  }
-  */
+     for(int i=0; i<rowchanged; i++) {
+     for(int j=0; j<ncols; j++) {
+     Minv(i,j) -= Minv(rowchanged,j)*rvec[i];
+     }
+     }
+     for(int i=rowchanged+1; i<Minv.rows(); i++) {
+     for(int j=0; j<ncols; j++) {
+     Minv(i,j) -= Minv(rowchanged,j)*rvec[i];
+     }
+     }
+     */
 }
 
 template<class MatA, class VecT>
@@ -233,27 +211,27 @@ DetUpdateTranspose(MatA& Minv,
     for(int k=0; k<nrows; k++) Minv(k,i) += temp*Minv(k,colchanged);
   }
   for(int k=0; k<nrows; k++) Minv(k,colchanged) *= ratio_inv;
-	/*
-  for(int j=0; j<ncols; j++) {
-    rvec[j] = DetRatio(Minv,newrow.begin(),j);
-    rvecinv[j] = 1.0/rvec[j];
-  }
+  /*
+     for(int j=0; j<ncols; j++) {
+     rvec[j] = DetRatio(Minv,newrow.begin(),j);
+     rvecinv[j] = 1.0/rvec[j];
+     }
 
-  for(int j=0; j<ncols; j++) {
-    Minv(rowchanged, j) *= rvecinv[rowchanged];
-  }
+     for(int j=0; j<ncols; j++) {
+     Minv(rowchanged, j) *= rvecinv[rowchanged];
+     }
 
-  for(int i=0; i<rowchanged; i++) {
-    for(int j=0; j<ncols; j++) {
-      Minv(i,j) -= Minv(rowchanged,j)*rvec[i];
-    }
-  }
-  for(int i=rowchanged+1; i<Minv.rows(); i++) {
-    for(int j=0; j<ncols; j++) {
-      Minv(i,j) -= Minv(rowchanged,j)*rvec[i];
-    }
-  }
-  */
+     for(int i=0; i<rowchanged; i++) {
+     for(int j=0; j<ncols; j++) {
+     Minv(i,j) -= Minv(rowchanged,j)*rvec[i];
+     }
+     }
+     for(int i=rowchanged+1; i<Minv.rows(); i++) {
+     for(int j=0; j<ncols; j++) {
+     Minv(i,j) -= Minv(rowchanged,j)*rvec[i];
+     }
+     }
+     */
 }
 
 template<class T, unsigned D>
