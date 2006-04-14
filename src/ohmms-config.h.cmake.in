@@ -62,6 +62,9 @@
 /* Define the base precision: float, double */
 #cmakedefine OHMMS_PRECISION @OHMMS_PRECISION@
 
+/* Define to 1 if complex wavefunctions are used */
+#cmakedefine QMC_COMPLEX @QMC_COMPLEX@
+
 /* Define if the code is specialized for orthorhombic supercell */
 #define OHMMS_ORTHO @OHMMS_ORTHO@
 
