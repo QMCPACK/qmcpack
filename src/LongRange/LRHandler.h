@@ -107,7 +107,7 @@ LRHandler<BreakupBasis>::InitBreakup(ParticleLayout_t& ref,int NumFunctions) {
 
   //Find size of basis from cutoffs
   RealType kc(ref.LR_kc); //User cutoff parameter...
-  RealType kcut = max(25.0,kc); //switch over to continuous shells at 25 or kc.
+  RealType kcut = max(12.5,kc); //switch over to continuous shells at 25 or kc.
   //Use 3000/LMax here...==6000/rc for non-ortho cells
   RealType kmax(6000.0/ref.LR_rc);
   breakuphandler.SetupKVecs(kc,kcut,kmax);
