@@ -18,6 +18,11 @@ namespace qmcplusplus {
     //Typedef for the lattice-type. We don't need the full particle-set.
     typedef ParticleSet::ParticleLayout_t ParticleLayout_t;
 
+    //Function to return a unique number for each kVector
+    long GetHashOfVec(const TinyVector<int,3>& inpv, int hashparam) {
+      return inpv[2] + hashparam * (inpv[1] + hashparam * inpv[0]);
+    }
+    
     //The cutoff up to which k-vectors are generated.
     RealType kcutoff;
     RealType kcut2; //kcutoff*kcutoff
