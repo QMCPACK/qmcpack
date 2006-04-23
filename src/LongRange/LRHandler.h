@@ -90,7 +90,6 @@ LRHandler<BreakupBasis>::InitBreakup(ParticleLayout_t& ref,int NumFunctions) {
   //that has been initialised here. We then discard the handler, leaving
   //basis and coefs in a usable state.
   //This method can be re-called later if lattice changes shape.
-
   NumFns = NumFunctions; //How many functions the derived class will breakup
 
   //First we send the new Lattice to the Basis, in case it has been updated.
@@ -107,7 +106,12 @@ LRHandler<BreakupBasis>::InitBreakup(ParticleLayout_t& ref,int NumFunctions) {
 
   //Find size of basis from cutoffs
   RealType kc(ref.LR_kc); //User cutoff parameter...
-  RealType kcut = max(12.5,kc); //switch over to continuous shells at 25 or kc.
+  //kcut is the cutoff for switching to approximate k-point degeneracies for
+  //better performance in making the breakup. A good bet is 50*K-spacing so that
+  //there are 50 "boxes" in each direction that are treated with exact degeneracies.
+  //Assume orthorhombic cell just for deriving this cutoff - should be insensitive.
+  //K-Spacing = (kpt_vol)**1/3 = 2*pi/(cellvol**1/3)
+  RealType kcut = 100*M_PI*std::pow(Basis.get_CellVolume(),-1.0/3.0); 
   //Use 3000/LMax here...==6000/rc for non-ortho cells
   RealType kmax(6000.0/ref.LR_rc);
   breakuphandler.SetupKVecs(kc,kcut,kmax);
