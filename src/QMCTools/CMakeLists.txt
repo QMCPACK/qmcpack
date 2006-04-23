@@ -36,7 +36,9 @@ ENDIF(INTEL_MKL)
 #ADD_EXECUTABLE(boostrandom random.cpp)
 #TARGET_LINK_LIBRARIES(boostrandom qmcbase)
 ADD_EXECUTABLE(convert4qmc ${CASINO})
-TARGET_LINK_LIBRARIES(convert4qmc qmc qmcbase qmcutil)
+TARGET_LINK_LIBRARIES(convert4qmc qmc qmcbase qmcutil
+${LAPACK_LIBRARY}
+${BLAS_LIBRARY} ${FORTRAN_LIBS})
 #ADD_EXECUTABLE(spline spline.cpp)
 #TARGET_LINK_LIBRARIES(spline qmc qmcbase)
 #ADD_EXECUTABLE(spline3d spline3.cpp)
