@@ -44,8 +44,9 @@ namespace qmcplusplus {
     bool FirstTime;
     
     CoulombPBCAA(ParticleSet& ref): FirstTime(true), PtclRef(&ref), AA(0) {
-      LOGMSG("Performing long-range breakup for CoulombAA potential");
+      LOGMSG("\n  Performing long-range breakup for CoulombAA potential");
       AA = new LRCoulombAA<LPQHIBasis>(*PtclRef);
+      LOGMSG("    Done\n");
     }
 
     /// copy constructor
@@ -81,7 +82,7 @@ namespace qmcplusplus {
     }
 
     bool get(std::ostream& os) const {
-      os << "CoulomPBCAA potential: " << PtclRef->getName();
+      os << "CoulombPBCAA potential: " << PtclRef->getName();
       return true;
     }
 
@@ -103,12 +104,14 @@ namespace qmcplusplus {
     CoulombPBCAB(ParticleSet& ions,ParticleSet& elns): PtclIons(&ions), PtclElns(&elns), AB(0) {
       LOGMSG("Performing long-range breakup for CoulombAB potential");
       AB = new LRCoulombAB<LPQHIBasis>(*PtclIons,*PtclElns);
+      LOGMSG("    Done\n");
     }
 
     ///copy constructor
     CoulombPBCAB(const CoulombPBCAB& c): PtclIons(c.PtclIons), PtclElns(c.PtclElns), AB(0) {
       LOGMSG("Performing long-range breakup for CoulombAB potential");
       AB = new LRCoulombAB<LPQHIBasis>(*PtclIons,*PtclElns);
+      LOGMSG("    Done\n");
     }
     
     ~CoulombPBCAB() { 
@@ -133,7 +136,7 @@ namespace qmcplusplus {
     }
 
     bool get(std::ostream& os) const {
-      os << "CoulomPBCAB potential: " 
+      os << "CoulombPBCAB potential: " 
         << " source = " << PtclIons->getName() 
         << " target = " << PtclElns->getName();
       return true;
