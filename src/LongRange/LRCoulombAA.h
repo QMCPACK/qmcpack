@@ -11,7 +11,7 @@
 namespace qmcplusplus {
 
   template<class BreakupBasis>
-    class LRCoulombAA: public LRHandler<BreakupBasis> {
+  class LRCoulombAA: public LRHandler<BreakupBasis> {
   private:
     //Typedef for the lattice-type.
     typedef ParticleSet::ParticleLayout_t ParticleLayout_t;
@@ -78,7 +78,6 @@ namespace qmcplusplus {
       }
       for(int iat=0; iat<NParticles; iat++)
 	Zat[iat] = Zspec[PtclRef->GroupID[iat]];
-
 
       //Initialise the breakup. Can be recalled later if lattice changes.
       //Otherwise all subsequent potential evaluations can reuse existing data.

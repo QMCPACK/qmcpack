@@ -59,7 +59,7 @@ WaveFunctionTester::WaveFunctionTester(MCWalkerConfiguration& w,
 bool 
 WaveFunctionTester::run() {
 
-  app_log() << "Starting a Wavefucntion tester" << endl;
+  app_log() << "Starting a Wavefunction tester" << endl;
 
   DistanceTable::create(1);
 
@@ -120,7 +120,6 @@ void WaveFunctionTester::runBasicTest() {
       W.R[iat][idim] = r0[idim]-delta;         
       W.update();
       ValueType psi_m = log(fabs(Psi.evaluate(W)));
-
       lap += psi_m + psi_p;
       g0[idim] = psi_p - psi_m;
 

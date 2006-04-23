@@ -199,7 +199,7 @@ public:
     LR_kc = LR_dim_cutoff/LR_rc;
 
     LOGMSG("\tLong-range breakup parameters:");
-    LOGMSG("\trc*kc = " << LR_dim_cutoff << "; rc = " << LR_rc << "; kc = " << LR_kc);
+    LOGMSG("\trc*kc = " << LR_dim_cutoff << "; rc = " << LR_rc << "; kc = " << LR_kc << "\n");
   }
 
   /** set the lattice vector with a tensor
