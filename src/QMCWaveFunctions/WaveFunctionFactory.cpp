@@ -22,6 +22,7 @@
 #include "QMCWaveFunctions/MolecularOrbitals/MolecularOrbitalBuilder.h"
 #include "QMCWaveFunctions/AtomicOrbitals/HeSTOClementiRottie.h"
 #include "QMCWaveFunctions/ElectronGasOrbitalBuilder.h"
+#include "QMCWaveFunctions/PlaneWaveOrbitalBuilder.h"
 #include "QMCWaveFunctions/JAABuilder.h"
 #include "QMCWaveFunctions/JABBuilder.h"
 #include "QMCWaveFunctions/NJAABuilder.h"
@@ -83,7 +84,7 @@ namespace qmcplusplus {
     oAttrib.add(nuclei,"source");
     oAttrib.put(cur);
 
-    app_log() << "Slater-determinant terms using " << orbtype << endl;
+    app_log() << "  Slater determinant terms using " << orbtype << endl;
     if(orbtype == "MolecularOrbital") {
       detbuilder = new MolecularOrbitalBuilder(*targetPtcl,*targetPsi,ptclPool);
     } else if(orbtype == "STO-He-Optimized") {
@@ -97,7 +98,9 @@ namespace qmcplusplus {
       //  a.put(cur);
     } else if(orbtype == "electron-gas") {
       detbuilder = new ElectronGasOrbitalBuilder(*targetPtcl,*targetPsi);
-    }  else if(orbtype == "AGP") {
+    } else if(orbtype == "PWBasis") {
+      detbuilder = new PlaneWaveOrbitalBuilder(*targetPtcl,*targetPsi);
+    } else if(orbtype == "AGP") {
       app_log() << "  Creating AGPDeterminant centers at " << nuclei << endl;
       PtclPoolType::iterator pit(ptclPool.find(nuclei));
       if(pit != ptclPool.end()) {
