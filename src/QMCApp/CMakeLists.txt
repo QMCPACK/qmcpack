@@ -22,6 +22,7 @@ SET(WFSRCS
   ../QMCWaveFunctions/MolecularOrbitals/GridMolecularOrbitals.cpp
   ../QMCWaveFunctions/MolecularOrbitals/MolecularOrbitalBuilder.cpp
   ../QMCWaveFunctions/ElectronGasOrbitalBuilder.cpp
+  ../QMCWaveFunctions/PlaneWaveOrbitalBuilder.cpp
   ../QMCWaveFunctions/ThreeBodyGeminal.cpp
   ../QMCWaveFunctions/ThreeBodyGeminalBuilder.cpp
   ../QMCWaveFunctions/WaveFunctionFactory.cpp
@@ -44,6 +45,7 @@ ENDIF(NOT QMCPLUSPLUS_RELEASE)
 ####################################
 SET(DMCDRIVERS
   ../QMCDrivers/WalkerControlBase.cpp
+  ../QMCDrivers/MolecuDMC.cpp
   ../QMCDrivers/DMC/DMCMoveAll.cpp
   ../QMCDrivers/DMC/DMCPbyP.cpp
   ../QMCDrivers/DMC/DMCFactory.cpp
