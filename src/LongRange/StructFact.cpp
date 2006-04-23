@@ -92,8 +92,10 @@ StructFact::FillRhok() {
   //Allocate the 'C' arrays.
   //C needs to be allocated from [0..2][-max..max]
   //Actually, map -max..max to 0..2max
+  //where max is the largest of KLists.mmax[3]
+  int maxdim = max(KLists.mmax[0],max(KLists.mmax[1],KLists.mmax[2]));
   Matrix<complex<double> > C;
-  C.resize(3,2*KLists.mmax[3]+1);
+  C.resize(3,2*maxdim+1);
   
   int npart = PtclRef.getTotalNum();
   for(int i=0; i<npart; i++){
