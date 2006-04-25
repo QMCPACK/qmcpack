@@ -25,18 +25,23 @@
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "Message/CommCreate.h"
 #include "Estimators/MultipleEnergyEstimator.h"
+#include "QMCApp/ParticleSetPool.h"
 
 namespace qmcplusplus { 
 
   /// Constructor.
   VMCPbyPMultiWarp::VMCPbyPMultiWarp(MCWalkerConfiguration& w, 
 					       TrialWaveFunction& psi, 
-					       QMCHamiltonian& h):
-    QMCDriver(w,psi,h) { 
+					       QMCHamiltonian& h,
+                                               ParticleSetPool& ptclPool):
+    QMCDriver(w,psi,h), PtclPool(ptclPool){ 
     RootName = "vmc-PbyP-warp";
     QMCType ="vmc-PbyP-warp";
     QMCDriverMode.set(QMC_UPDATE_MODE,1);
     QMCDriverMode.set(QMC_MULTIPLE,1);
+    equilBlocks=-1;
+    m_param.add(equilBlocks,"equilBlocks","int");
+    cout << "EquilBlocks " << equilBlocks << endl;
     add_H_and_Psi(&h,&psi);
   }
 
@@ -54,7 +59,17 @@ namespace qmcplusplus {
     //going to add routines to calculate how much we need
     bool require_register =  W.createAuxDataSet();
 
-    multiEstimator->initialize(W,WW,PtclWarp,H1,Psi1,Tau,require_register);
+    vector<RealType>Norm(nPsi),tmpNorm(nPsi);
+    if(equilBlocks > 0){
+      for(int ipsi=0; ipsi< nPsi; ipsi++){
+        Norm[ipsi]=1.0; 
+        tmpNorm[ipsi]=0.0;
+      }
+    }else{
+      for(int ipsi=0; ipsi< nPsi; ipsi++) Norm[ipsi]=exp(branchEngine->LogNorm[ipsi]);
+    }
+
+    multiEstimator->initialize(W,WW,PtclWarp,H1,Psi1,Tau,Norm,require_register);
 
     Estimators->reset();
 
@@ -150,6 +165,7 @@ namespace qmcplusplus {
 	    int indexij(0);
 	    for(int ipsi=0; ipsi< nPsi_minus_one; ipsi++){
 	      for(int jpsi=ipsi+1; jpsi < nPsi; jpsi++, indexij++){
+                //Ratio between Norm already in ratioijPtr from MultiEstimator->initialize.
                 ratioij[indexij]=exp(logpsi2[jpsi]-logpsi2[ipsi])*ratioijPtr[indexij];
                 RealType rji=ratioij[indexij]*new_Jacobian[jpsi]/new_Jacobian[ipsi];
 		sumratio[ipsi] += rji;
@@ -268,6 +284,22 @@ namespace qmcplusplus {
 	Estimators->accumulate(W);
       } while(step<nSteps);
 
+      //Modify Norm. 
+      if(block < equilBlocks){
+        for(int ipsi=0; ipsi< nPsi; ipsi++){
+          tmpNorm[ipsi]+=multiEstimator->esum(ipsi,MultipleEnergyEstimator::WEIGHT_INDEX);
+        }
+        if(block==(equilBlocks-1) || block==(nBlocks-1)){
+          RealType SumNorm(0.e0);
+          for(int ipsi=0; ipsi< nPsi; ipsi++) SumNorm+=tmpNorm[ipsi];
+          for(int ipsi=0; ipsi< nPsi; ipsi++){
+            Norm[ipsi]=tmpNorm[ipsi]/SumNorm;
+            branchEngine->LogNorm[ipsi]=log(Norm[ipsi]);
+            cout << "LOGNORM VMC " << branchEngine->LogNorm[ipsi] << endl;
+          }
+        }
+      }
+
       Estimators->stopBlock(static_cast<RealType>(nAccept)/static_cast<RealType>(nAccept+nReject));
 
       nAcceptTot += nAccept;
@@ -280,7 +312,7 @@ namespace qmcplusplus {
       recordBlock(block);
 
       //re-evaluate the ratio
-      multiEstimator->initialize(W,WW,PtclWarp,H1,Psi1,Tau,false);
+      multiEstimator->initialize(W,WW,PtclWarp,H1,Psi1,Tau,Norm,false);
     } while(block<nBlocks);
 
     //Need MPI-IO
@@ -323,6 +355,10 @@ namespace qmcplusplus {
     resize(nPsi,W.getTotalNum()); 
     PtclWarp.resize_one_ptcl_Jacob();
 
+    if(branchEngine->LogNorm.size()==0)branchEngine->LogNorm.resize(nPsi);
+    if(equilBlocks>0){
+      for(int ipsi=0; ipsi<nPsi; ipsi++)branchEngine->LogNorm[ipsi]=0.e0;
+    }
     //////////////////////////
     for(int ipsi=0; ipsi<nPsi; ipsi++) H1[ipsi]->add2WalkerProperty(W);
       //H1[ipsi]->add2WalkerProperty(W);
@@ -345,17 +381,26 @@ namespace qmcplusplus {
       WW.push_back(&W);
       char newname[128];
       for(int ipsi=1; ipsi<nPsi; ipsi++){
-	WW.push_back(new ParticleSet(W));
-
 	sprintf(newname,"%s%d", W.getName().c_str(),ipsi);
-        //cout << "Setting the name of WW " << newname << endl;
-	WW[ipsi]->setName(newname);
-
+        ParticleSet* pclone=PtclPool.getParticleSet(newname);
+        if(pclone == 0) {
+          app_log() << "  Cloning particle set in VMCMultipleWarp " << newname << endl;
+          pclone=new ParticleSet(W);
+          pclone->setName(newname);
+          PtclPool.addParticleSet(pclone);
+        } else {
+          app_log() << "  Cloned particle exists " << newname << endl;
+        }
+	//Correct copy constructor????????
+	WW.push_back(pclone);
+	WW[ipsi]=pclone;
 	Psi1[ipsi]->resetTargetParticleSet(*WW[ipsi]);
         H1[ipsi]->resetTargetParticleSet(*WW[ipsi]);
+	//Psi1[ipsi]->resetTargetParticleSet(W);
+        //H1[ipsi]->resetTargetParticleSet(W
+        //WW[ipsi]->setUpdateMode(MCWalkerConfiguration::Update_Particle);
       }
     }
-
     
     return true;
   }

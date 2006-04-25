@@ -24,6 +24,7 @@
 namespace qmcplusplus {
 
   class MultipleEnergyEstimator;
+  class ParticleSetPool;
   
   /** @ingroup QMCDrivers MultiplePsi ParticleByParticle
    * @brief Implements the VMC algorithm
@@ -33,7 +34,8 @@ namespace qmcplusplus {
     /// Constructor.
     VMCPbyPMultiWarp(MCWalkerConfiguration& w, 
 			  TrialWaveFunction& psi, 
-			  QMCHamiltonian& h);
+			  QMCHamiltonian& h, 
+                          ParticleSetPool& ptclPool);
     ~VMCPbyPMultiWarp();
 
     bool run();
@@ -41,11 +43,13 @@ namespace qmcplusplus {
  
   private:
     /// Copy Constructor (disabled)
-    VMCPbyPMultiWarp(const VMCPbyPMultiWarp& a): QMCDriver(a) { }
+    VMCPbyPMultiWarp(const VMCPbyPMultiWarp& a, ParticleSetPool& ptclPool): QMCDriver(a), PtclPool(ptclPool) { }
     /// Copy operator (disabled).
     VMCPbyPMultiWarp& operator=(const VMCPbyPMultiWarp&) { return *this;}
 
-    int nPsi,nptcl,JACOBIAN;
+    ParticleSetPool& PtclPool;
+
+    int nPsi,nptcl,JACOBIAN,equilBlocks;
     typedef ParticleSet::ParticleGradient_t ParticleGradient_t;
     typedef ParticleSet::ParticleLaplacian_t ParticleLaplacian_t;
     ParticleGradient_t dG;
