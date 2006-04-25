@@ -81,13 +81,8 @@ namespace qmcplusplus {
       NewBead->Action(ipsi,PlusDirection)=NewBead->Action(ipsi,MinusDirection);
       NewBead->Action(ipsi,Directionless)=0.5*Tau*eloc;
     }
-<<<<<<< RQMCMultiple.cpp
     NewBead->TransProb[MinusDirection]=(0.5*Tau)*Dot(NewBead->Drift,NewBead->Drift) ;
     NewBead->TransProb[PlusDirection]=NewBead->TransProb[MinusDirection];
-=======
-    std::cout << "==============================" << std::endl;
-    std::cout << "NEWBEAD " << NewBead << std::endl;
->>>>>>> 1.17
 
     //Reptile is made up by replicating the first walker. To be read if restarted.
     //if(Reptile == 0) Reptile=new MultiChain(*W.begin(),ReptileLength,InitialGrowthDirection,nPsi);
@@ -136,7 +131,7 @@ namespace qmcplusplus {
 
     MultiChain::iterator bead(Reptile->begin());
 
-    RealType spring_norm( -1.5e0 * log(4*acos(0.e0)) * (*bead)->Drift.size() * Reptile->Last );
+    RealType spring_norm( -1.5e0 * std::log(4*acos(0.e0)) * (*bead)->Drift.size() * Reptile->Last );
 
     //Assign Reference Sign as the majority Sign
     for(int ipsi=0; ipsi<nPsi; ipsi++)
@@ -163,14 +158,14 @@ namespace qmcplusplus {
     Reptile->GlobalWgt=0.0e0;
     for(int ipsi=0; ipsi<nPsi; ipsi++){
       RealType DeltaAction(Reptile->GlobalAction[ipsi]-RefAction);
-      if(DeltaAction > -30) Reptile->GlobalWgt += exp(DeltaAction);
+      if(DeltaAction > -30) Reptile->GlobalWgt += std::exp(DeltaAction);
     }
-    Reptile->GlobalWgt=log(Reptile->GlobalWgt)+RefAction;
+    Reptile->GlobalWgt=std::log(Reptile->GlobalWgt)+RefAction;
 
     //Compute Umbrella Weight 
     for(int ipsi=0; ipsi<nPsi; ipsi++){
       RealType DeltaAction(Reptile->GlobalAction[ipsi]-Reptile->GlobalWgt);
-      if(DeltaAction > -30) Reptile->UmbrellaWeight[ipsi] = exp(DeltaAction);
+      if(DeltaAction > -30) Reptile->UmbrellaWeight[ipsi] = std::exp(DeltaAction);
       else Reptile->UmbrellaWeight[ipsi] = 0.0e0;
     }
 
