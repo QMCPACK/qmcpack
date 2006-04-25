@@ -14,12 +14,18 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
+/** @file MCWalkerConfiguration.h
+ * @brief Declaration of a MCWalkerConfiguration
+ */
 #ifndef QMCPLUSPLUS_MCWALKERCONFIGURATION_H
 #define QMCPLUSPLUS_MCWALKERCONFIGURATION_H
 #include "Particle/ParticleSet.h"
 #include "Particle/Walker.h"
 
 namespace qmcplusplus {
+
+  //Forward declaration
+  struct MultiChain;
 
   /** A set of walkers that are to be advanced by Metropolis Monte Carlo.  
    *
@@ -162,6 +168,14 @@ namespace qmcplusplus {
      */
     inline RealType getLocalEnergy() const {return LocalEnergy;}
 
+    inline MultiChain* getPolymer(){
+      return Polymer;
+    }
+
+    inline void setPolymer(MultiChain *chain){
+      Polymer=chain;
+    }
+
     /** reset the Walkers 
      */
     void reset();
@@ -193,6 +207,7 @@ namespace qmcplusplus {
 
    private:
 
+     MultiChain *Polymer;
 
     /** initialize the PropertyList
      *
