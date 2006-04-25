@@ -37,6 +37,9 @@ namespace qmcplusplus {
     QMCType ="vmc";
     QMCDriverMode.set(QMC_UPDATE_MODE,1);
     QMCDriverMode.set(QMC_MULTIPLE,1);
+    equilBlocks=-1;
+    m_param.add(equilBlocks,"equilBlocks","int");
+    cout << "EquilBlocks " << equilBlocks << endl;
     add_H_and_Psi(&h,&psi);
   }
 
@@ -52,7 +55,17 @@ namespace qmcplusplus {
     //going to add routines to calculate how much we need
     bool require_register =  W.createAuxDataSet();
 
-    multiEstimator->initialize(W,H1,Psi1,Tau,require_register);
+    vector<RealType>Norm(nPsi),tmpNorm(nPsi);
+    if(equilBlocks > 0){
+      for(int ipsi=0; ipsi< nPsi; ipsi++){
+        Norm[ipsi]=1.0;
+        tmpNorm[ipsi]=0.0;
+      }
+    }else{
+      for(int ipsi=0; ipsi< nPsi; ipsi++) Norm[ipsi]=exp(branchEngine->LogNorm[ipsi]);
+    }
+
+    multiEstimator->initialize(W,H1,Psi1,Tau,Norm,require_register);
 
     Estimators->reset();
 
@@ -124,8 +137,7 @@ namespace qmcplusplus {
 	    int indexij(0);
 	    for(int ipsi=0; ipsi< nPsi_minus_one; ipsi++){
 	      for(int jpsi=ipsi+1; jpsi < nPsi; jpsi++, indexij++){
-		//RealType rji=ratio[jpsi]/ratio[ipsi];
-		//rji = rji*rji*ratioijPtr[indexij]; 
+                // Ratio between norms is already included in ratioijPtr from initialize.
                 RealType rji=exp(logpsi2[jpsi]-logpsi2[ipsi])*ratioijPtr[indexij];
 		ratioij[indexij]=rji;
 		sumratio[ipsi] += rji;
@@ -220,6 +232,21 @@ namespace qmcplusplus {
 	Estimators->accumulate(W);
       } while(step<nSteps);
 
+      //Modify Norm. 
+      if(block < equilBlocks){
+        for(int ipsi=0; ipsi< nPsi; ipsi++){
+          tmpNorm[ipsi]+=multiEstimator->esum(ipsi,MultipleEnergyEstimator::WEIGHT_INDEX);
+        }
+        if(block==(equilBlocks-1) || block==(nBlocks-1)){
+          RealType SumNorm(0.e0);
+          for(int ipsi=0; ipsi< nPsi; ipsi++) SumNorm+=tmpNorm[ipsi];
+          for(int ipsi=0; ipsi< nPsi; ipsi++){
+            Norm[ipsi]=tmpNorm[ipsi]/SumNorm;
+            branchEngine->LogNorm[ipsi]=log(Norm[ipsi]);
+          }
+        }
+      }
+
       Estimators->stopBlock(static_cast<RealType>(nAccept)/static_cast<RealType>(nAccept+nReject));
 
       nAcceptTot += nAccept;
@@ -231,8 +258,8 @@ namespace qmcplusplus {
       //record the current configuration
       recordBlock(block);
 
-      //re-evaluate the ratio
-      multiEstimator->initialize(W,H1,Psi1,Tau,false);
+      //re-evaluate the ratio and update the Norm
+      multiEstimator->initialize(W,H1,Psi1,Tau,Norm,false);
     } while(block<nBlocks);
 
     //Need MPI-IO
@@ -251,6 +278,11 @@ namespace qmcplusplus {
   VMCPbyPMultiple::put(xmlNodePtr q){
     nPsi=Psi1.size();
     resize(nPsi,W.getTotalNum());
+
+    if(branchEngine->LogNorm.size()==0)branchEngine->LogNorm.resize(nPsi);
+    if(equilBlocks>0){
+      for(int ipsi=0; ipsi<nPsi; ipsi++)branchEngine->LogNorm[ipsi]=0.e0;
+    }
 
     for(int ipsi=0; ipsi<nPsi; ipsi++) 
       H1[ipsi]->add2WalkerProperty(W);
