@@ -47,7 +47,6 @@ namespace qmcplusplus {
   }
 
   RQMCMultiWarp::~RQMCMultiWarp() {
-    if(Reptile) delete Reptile;
     delete NewBead;
   }
 
@@ -65,45 +64,54 @@ namespace qmcplusplus {
     int InitialGrowthDirection(0);
 
     //Build NewBead. This takes care of a bunch of resizing operation and properties of the starting bead
-    if(NewBead == 0) {
-      //Resize working arrays
-      resizeArrays(Psi1.size());
+    //Resize working arrays
+    resizeArrays(Psi1.size());
 
-      NewBead=new Bead(**W.begin());
-      W.R = NewBead->R;
+    NewBead=new Bead(**W.begin());
+    W.R = NewBead->R;
 
-      W.update();
-      for(int ipsi=0; ipsi<nPsi; ipsi++) Jacobian[ipsi]=1.0;
-      for(int iptcl=0; iptcl< nptcl; iptcl++){
-        PtclWarp.warp_one(iptcl,0);
-        //Save particle position
-        for(int ipsi=0; ipsi<nPsi; ipsi++){
-          WW[ipsi]->R[iptcl]=W.R[iptcl]+PtclWarp.get_displacement(iptcl,ipsi);
-          Jacobian[ipsi]*=PtclWarp.get_Jacobian(iptcl,ipsi);
-        }
-      }
-
-      for(int ipsi=0; ipsi<nPsi; ipsi++) {
-        WW[ipsi]->update();
-        NewBead->Properties(ipsi,LOGPSI) = Psi1[ipsi]->evaluateLog(*WW[ipsi]);
-        NewBead->Properties(ipsi,SIGN) = Psi1[ipsi]->getSign();
-        NewBead->Properties(ipsi,LOGJACOB)=std::log(std::abs(Jacobian[ipsi]));
-        RealType eloc= H1[ipsi]->evaluate(*WW[ipsi]);
-        NewBead->Properties(ipsi,LOCALENERGY)= eloc;
-        H1[ipsi]->saveProperty(NewBead->getPropertyBase(ipsi));
-        *(NewBead->Gradients[ipsi])=WW[ipsi]->G;
+    W.update();
+    for(int ipsi=0; ipsi<nPsi; ipsi++) Jacobian[ipsi]=1.0;
+    for(int iptcl=0; iptcl< nptcl; iptcl++){
+      PtclWarp.warp_one(iptcl,0);
+      //Save particle position
+      for(int ipsi=0; ipsi<nPsi; ipsi++){
+        WW[ipsi]->R[iptcl]=W.R[iptcl]+PtclWarp.get_displacement(iptcl,ipsi);
+        Jacobian[ipsi]*=PtclWarp.get_Jacobian(iptcl,ipsi);
       }
     }
 
-    //Reptile is made up by replicating the first walker. To be read if restarted.
+    for(int ipsi=0; ipsi<nPsi; ipsi++) {
+      WW[ipsi]->update();
+      NewBead->Properties(ipsi,LOGPSI) = Psi1[ipsi]->evaluateLog(*WW[ipsi]);
+      NewBead->Properties(ipsi,SIGN) = Psi1[ipsi]->getSign();
+      NewBead->Properties(ipsi,LOGJACOB)=log(fabs(Jacobian[ipsi]));
+      RealType eloc= H1[ipsi]->evaluate(*WW[ipsi]);
+      NewBead->Properties(ipsi,LOCALENERGY)= eloc;
+      H1[ipsi]->saveProperty(NewBead->getPropertyBase(ipsi));
+      *(NewBead->Gradients[ipsi])=WW[ipsi]->G;
+      NewBead->BeadSignWgt[ipsi]=1;
+      NewBead->Action(ipsi,MinusDirection)=0.25*Tau*Dot(*NewBead->Gradients[ipsi],*NewBead->Gradients[ipsi]);
+      NewBead->Action(ipsi,PlusDirection)=NewBead->Action(ipsi,MinusDirection);
+      NewBead->Action(ipsi,Directionless)=0.5*Tau*eloc;
+    }
+    NewBead->getDrift(Jacobian,PtclWarp,branchEngine->LogNorm);
+    NewBead->TransProb[MinusDirection]=(0.5*Tau)*Dot(NewBead->Drift,NewBead->Drift) ;
+    NewBead->TransProb[PlusDirection]=NewBead->TransProb[MinusDirection];
+
+    //Reptile is made up by replicating the NewBead. To be read if restarted.
     //if(Reptile == 0) Reptile=new MultiChain(*W.begin(),ReptileLength,InitialGrowthDirection,nPsi);
     bool restartmode = false;
-    if(Reptile == 0) {
+    bool reuseReptile= true;
+    Reptile=W.getPolymer();
+    if(Reptile==0){
+      reuseReptile=false;
       Reptile=new MultiChain(NewBead,ReptileLength,InitialGrowthDirection,nPsi);
-      if(MyCounter == 0 && h5FileRoot != "invalid") {
+      if( h5FileRoot != "invalid") {
         app_log() << "Reading the previous multi-chain configurations" << endl;
         restartmode = Reptile->read(h5FileRoot);
       }
+      W.setPolymer(Reptile);
     }
 
     if(restartmode){ 
@@ -122,9 +130,13 @@ namespace qmcplusplus {
       //Save initial warped position for move
       for(int ipsi=0; ipsi<nPsi; ipsi++) Warped_R[ipsi]=WW[ipsi]->R;
     }else{
-      setRefProperties();
+      if(reuseReptile)
+        checkReptileProperties();
+      else 
+        setReptileProperties();
     }
   } // END OF InitReptile
+
 
   void RQMCMultiWarp::resizeArrays(int n) {
     nPsi = n;
@@ -153,12 +165,60 @@ namespace qmcplusplus {
 
   }
 
-  void RQMCMultiWarp::setRefProperties() {
+  //Set initial properties assuming all beads are occupying the same position
+  void RQMCMultiWarp::setReptileProperties() {
+
+    MultiChain::iterator bead(Reptile->begin());
+
+    RealType spring_norm( -1.5e0 * log(4*acos(0.e0)) * (*bead)->Drift.size() * ReptileLength );
+
+    //Assign Reference Sign as the majority Sign
+    for(int ipsi=0; ipsi<nPsi; ipsi++)
+      Reptile->RefSign[ipsi]=(*bead)->Properties(ipsi,SIGN);
+
+    //Compute the Global Action
+    for(int ipsi=0; ipsi<nPsi; ipsi++){
+      RealType LinkAction( 2*((*bead)->Action(ipsi,MinusDirection)+ (*bead)->Action(ipsi,Directionless) ));
+      Reptile->GlobalAction[ipsi]=2*(*bead)->Properties(ipsi,LOGPSI) + spring_norm
+         + ReptileLength*(*bead)->Properties(ipsi,LOGJACOB) - Reptile->Last*LinkAction
+         - branchEngine->LogNorm[ipsi] ;
+    } 
+
+    //Compute Global Sign weight (need to be initialized somewhere)
+    for(int ipsi=0; ipsi<nPsi; ipsi++)
+      Reptile->GlobalSignWgt[ipsi] = ReptileLength;
+
+    //Compute reference action
+    RealType RefAction(-1.0e20);
+    for(int ipsi=0; ipsi<nPsi; ipsi++){
+      RefAction=max(RefAction,Reptile->GlobalAction[ipsi]);
+    }
+
+    //Compute Total Weight
+    Reptile->GlobalWgt=0.0e0;
+    for(int ipsi=0; ipsi<nPsi; ipsi++){
+      RealType DeltaAction(Reptile->GlobalAction[ipsi]-RefAction);
+      if(DeltaAction > -30) Reptile->GlobalWgt += exp(DeltaAction);
+    }
+    Reptile->GlobalWgt=log(Reptile->GlobalWgt)+RefAction;
+
+    //Compute Umbrella Weight 
+    for(int ipsi=0; ipsi<nPsi; ipsi++){
+      RealType DeltaAction(Reptile->GlobalAction[ipsi]-Reptile->GlobalWgt);
+      if(DeltaAction > -30) Reptile->UmbrellaWeight[ipsi] = exp(DeltaAction);
+      else Reptile->UmbrellaWeight[ipsi] = 0.0e0;
+    }
+
+  }
+
+  void RQMCMultiWarp::checkReptileProperties() {
 
     //Temporary vector
     typedef MCWalkerConfiguration::ParticlePos_t ParticlePos_t;
     vector<ParticlePos_t> Warped_R_prev,Warped_R_next,Warped_R_curr;
     vector<int> SumSign(nPsi);
+    vector<RealType>Jacobian_next(nPsi);
+
     for(int ipsi=0; ipsi<nPsi; ipsi++){
       Warped_R_prev.push_back(ParticlePos_t(nptcl));
       Warped_R_next.push_back(ParticlePos_t(nptcl));
@@ -173,10 +233,13 @@ namespace qmcplusplus {
 
     W.R=(*first_bead)->R;
     W.update();
+    for(int ipsi=0; ipsi<nPsi; ipsi++) Jacobian[ipsi]=1.e0;
     for(int iptcl=0; iptcl< nptcl; iptcl++){
       PtclWarp.warp_one(iptcl,0);
-      for(int ipsi=0; ipsi<nPsi; ipsi++)
+      for(int ipsi=0; ipsi<nPsi; ipsi++){
         (Warped_R_curr[ipsi])[iptcl]=(*first_bead)->R[iptcl]+PtclWarp.get_displacement(iptcl,ipsi);
+        Jacobian[ipsi]*=PtclWarp.get_Jacobian(iptcl,ipsi);
+      }
     }
 
     //cout << "<<<<<<<<< setRefProperties():Step1 " << endl;
@@ -195,16 +258,16 @@ namespace qmcplusplus {
 
       //Do not re-evaluate the Properties
       ////Copy to W (ParticleSet) to compute distances, Psi and H
-      //W.R=curW.R;
-      //W.update();
 
       if(bead!=first_bead){
         for(int ipsi=0; ipsi<nPsi; ipsi++){
           Warped_R_prev[ipsi]=Warped_R_curr[ipsi];
           Warped_R_curr[ipsi]=Warped_R_next[ipsi];
+          Jacobian[ipsi]=Jacobian_next[ipsi];
         }
       }
 
+      for(int ipsi=0; ipsi<nPsi; ipsi++) Jacobian[ipsi]=1.e0;
       if(bead!=last_bead){
         Bead& nextW(**(bead+1));
         W.R=nextW.R;
@@ -212,22 +275,26 @@ namespace qmcplusplus {
         for(int iptcl=0; iptcl< nptcl; iptcl++){
           PtclWarp.warp_one(iptcl,0);
           //Save particle position
-          for(int ipsi=0; ipsi<nPsi; ipsi++)
+          for(int ipsi=0; ipsi<nPsi; ipsi++){
             (Warped_R_next[ipsi])[iptcl]=nextW.R[iptcl]+PtclWarp.get_displacement(iptcl,ipsi);
+            Jacobian_next[ipsi]*=PtclWarp.get_Jacobian(iptcl,ipsi);
+          }
         }
       }
+
       for(int ipsi=0; ipsi<nPsi; ipsi++) {
 
-        ////Compute Energy and Psi and save in curW
-        //curW.Properties(ipsi,LOGPSI) = Psi1[ipsi]->evaluateLog(W);
-        //RealType BeadSign = curW.Properties(ipsi,SIGN) = Psi1[ipsi]->getSign();
-        //RealType eloc= H1[ipsi]->evaluate(W);
-        //curW.Properties(ipsi,LOCALENERGY)= eloc;
-        //H1[ipsi]->saveProperty(curW.getPropertyBase(ipsi));
-        //*curW.Gradients[ipsi]=W.G;
+        WW[ipsi]->R = Warped_R_curr[ipsi];
+        WW[ipsi]->update();
 
-        RealType BeadSign = curW.Properties(ipsi,SIGN);
-        RealType eloc=curW.Properties(ipsi,LOCALENERGY);
+        //Compute Energy and Psi and save in curW
+        curW.Properties(ipsi,LOGPSI) = Psi1[ipsi]->evaluateLog(*WW[ipsi]);
+        RealType BeadSign = curW.Properties(ipsi,SIGN) = Psi1[ipsi]->getSign();
+        RealType eloc= H1[ipsi]->evaluate(*WW[ipsi]);
+        curW.Properties(ipsi,LOCALENERGY)= eloc;
+        H1[ipsi]->saveProperty(curW.getPropertyBase(ipsi));
+        *curW.Gradients[ipsi]=WW[ipsi]->G;
+        curW.Properties(ipsi,LOGJACOB)=log(fabs(Jacobian[ipsi]));
 
         ///Initialize Kinetic Action
         RealType KinActMinus=0.0;
@@ -299,7 +366,7 @@ namespace qmcplusplus {
           Jacobian[ipsi]*=PtclWarp.get_Jacobian(iptcl,ipsi);
         }
       }
-      curW.getDrift(Jacobian,PtclWarp);
+      curW.getDrift(Jacobian,PtclWarp,branchEngine->LogNorm);
       ++bead;
     }
 
@@ -336,18 +403,24 @@ namespace qmcplusplus {
     for(int ipsi=0; ipsi<nPsi; ipsi++) Reptile->GlobalAction[ipsi]=(*bead)->Properties(ipsi,LOGPSI);
     while(bead != last_bead){
       for(int ipsi=0; ipsi<nPsi; ipsi++){
-        RealType LinkAction( (*bead)->Action(ipsi,PlusDirection) + (*(bead+1))->Action(ipsi,MinusDirection)+
-                             (*bead)->Action(ipsi,Directionless) + (*(bead+1))->Action(ipsi,Directionless) );
-        //Reptile->GlobalAction[ipsi]-=( (*bead)->Action(ipsi,PlusDirection) + (*(bead+1))->Action(ipsi,MinusDirection)+
-         //   (*bead)->Action(ipsi,Directionless) + (*(bead+1))->Action(ipsi,Directionless) ); 
+        RealType LinkAction( (*bead)->Action(ipsi,PlusDirection) + 
+                             (*(bead+1))->Action(ipsi,MinusDirection)+
+                             (*bead)->Action(ipsi,Directionless) + 
+                             (*(bead+1))->Action(ipsi,Directionless) );
+        //Reptile->GlobalAction[ipsi]-=( (*bead)->Action(ipsi,PlusDirection) + 
+        //                               (*(bead+1))->Action(ipsi,MinusDirection)+
+        //                               (*bead)->Action(ipsi,Directionless) + 
+        //                               (*(bead+1))->Action(ipsi,Directionless) ); 
         Reptile->GlobalAction[ipsi]+=((*bead)->Properties(ipsi,LOGJACOB)-LinkAction);
-        //cout << "Psi: " << ipsi << " LA " << LinkAction << "   LJ " << (*bead)->Properties(ipsi,LOGJACOB) << endl;
+        //cout << "Psi: " << ipsi << " LA " << LinkAction << "   LJ " << 
+        //        (*bead)->Properties(ipsi,LOGJACOB) << endl;
       } 
       bead++;
     }
-    for(int ipsi=0; ipsi<nPsi; ipsi++) Reptile->GlobalAction[ipsi]+= ( (*bead)->Properties(ipsi,LOGPSI) +
-        (*bead)->Properties(ipsi,LOGJACOB) );
-    //Reptile->GlobalAction[1]-=(0.5*ReptileLength*branchEngine->LogJacobRef);
+    for(int ipsi=0; ipsi<nPsi; ipsi++) 
+     Reptile->GlobalAction[ipsi]+= ( (*bead)->Properties(ipsi,LOGPSI) +
+                                     (*bead)->Properties(ipsi,LOGJACOB) - 
+                                      branchEngine->LogNorm[ipsi] );
 
     //Compute Global Sign weight (need to be initialized somewhere)
     bead=first_bead;
@@ -369,14 +442,14 @@ namespace qmcplusplus {
     Reptile->GlobalWgt=0.0e0;
     for(int ipsi=0; ipsi<nPsi; ipsi++){
       RealType DeltaAction(Reptile->GlobalAction[ipsi]-RefAction);
-      if((WeightSign[ipsi]>0) && (DeltaAction > -30)) Reptile->GlobalWgt += std::exp(DeltaAction);
+      if((WeightSign[ipsi]>0) && (DeltaAction > -30)) Reptile->GlobalWgt += exp(DeltaAction);
     }
-    Reptile->GlobalWgt=std::log(Reptile->GlobalWgt)+RefAction;
+    Reptile->GlobalWgt=log(Reptile->GlobalWgt)+RefAction;
 
     //Compute Umbrella Weight 
     for(int ipsi=0; ipsi<nPsi; ipsi++){
       RealType DeltaAction(Reptile->GlobalAction[ipsi]-Reptile->GlobalWgt);
-      if((WeightSign[ipsi]>0) && (DeltaAction > -30)) Reptile->UmbrellaWeight[ipsi] = std::exp(DeltaAction);
+      if((WeightSign[ipsi]>0) && (DeltaAction > -30)) Reptile->UmbrellaWeight[ipsi] = exp(DeltaAction);
       else Reptile->UmbrellaWeight[ipsi] = 0.0e0;
     }
 
@@ -386,13 +459,13 @@ namespace qmcplusplus {
 
     Estimators->reportHeader(AppendRun);
 
-    initReptile();
+    //Check if we need to update the norm of the wave functions
+
+    if(MyCounter==0) initReptile();
 
     IndexType block = 0;
     IndexType nAcceptTot = 0;
     IndexType nRejectTot = 0;
-
-    int ipsi(0);
 
     std::vector<double>AveEloc,AveWeight;
     AveEloc.resize(nPsi);
@@ -407,6 +480,9 @@ namespace qmcplusplus {
     //accumulate configuration: probably need to reorder
     //HDFWalkerOutput WO(RootName);
 
+    vector<RealType>Norm(nPsi);
+    for(int ipsi=0; ipsi<nPsi; ipsi++)Norm[ipsi]=0.0;
+
     RealType oneoversteps=1.0/static_cast<RealType>(nSteps);
 
     do { //Loop over Blocks
@@ -417,6 +493,7 @@ namespace qmcplusplus {
 
       Estimators->startBlock();
 
+
       for(int ipsi=0; ipsi<nPsi; ipsi++){
         AveEloc[ipsi]=0.0;
         AveWeight[ipsi]=0.0;
@@ -425,10 +502,8 @@ namespace qmcplusplus {
       do { //Loop over steps
 
 
-        //cout <<"ciaoRUN-1"<<endl;
         moveReptile();
         step++; CurrentStep++;
-        //cout <<"ciaoRUN0"<<endl;
 
         //Copy the front and back to W to take average report
         //W.copyWalkerRefs(Reptile->front(),Reptile->back());
@@ -439,12 +514,9 @@ namespace qmcplusplus {
           AveEloc[ipsi]+=WeightedEloc;
           AveWeight[ipsi]+=Reptile->UmbrellaWeight[ipsi];
         }
-        //cout <<"ciaoRUN1"<<endl;
         Estimators->accumulate(W);
-        //cout <<"ciaoRUN2"<<endl;
         //use the first energy for the branch
         branchEngine->accumulate(AveEloc[0],1.0);
-        //cout <<"ciaoRUN3"<<endl;
         //reptileReport.accumulate();
       } while(step<nSteps);
 
@@ -478,7 +550,6 @@ namespace qmcplusplus {
       << endl;
 
     Estimators->finalize();
-    MyCounter++;
     return true;
   }
 
@@ -492,7 +563,7 @@ namespace qmcplusplus {
   }
 
   bool RQMCMultiWarp::put(xmlNodePtr q){
-    //nothing to do yet
+
     MinusDirection=0;
     PlusDirection=1;
     Directionless=2;
@@ -534,6 +605,12 @@ namespace qmcplusplus {
       }
     }
 
+    if(branchEngine->LogNorm.size()==0){                      
+      branchEngine->LogNorm.resize(nPsi);                     
+      for(int i=0; i<nPsi; i++)branchEngine->LogNorm[i]=0.e0; 
+    }                                                         
+
+
     return true;
   }
 
@@ -541,10 +618,9 @@ namespace qmcplusplus {
 
     //Used several times
     m_oneover2tau=0.5/Tau; 
-    m_sqrttau=std::sqrt(Tau);
+    m_sqrttau=sqrt(Tau);
     int ihead,inext,itail;
 
-    //cout << "ciao00" << endl;
     //Depending on the growth direction initialize growth variables
     if(Reptile->GrowthDirection==MinusDirection){
       forward=MinusDirection;
@@ -559,8 +635,7 @@ namespace qmcplusplus {
       itail = 0;
       inext = 1;
     }
-
-    //cout << "ciao01" << endl;
+ 
     //Point head to the growing end of the reptile
     Bead *head,*tail,*next;
     head = (*Reptile)[ihead];
@@ -570,7 +645,6 @@ namespace qmcplusplus {
     else next=(*Reptile)[inext];
     //create a 3N-Dimensional Gaussian with variance=1
     makeGaussRandom(gRand);
-    //cout << "ciao02" << endl;
 
     //new position,\f$R_{yp} = R_{xp} + \sqrt(2}*\Delta + tau*D_{xp}\f$
     W.R = head->R + m_sqrttau*gRand + Tau*head->Drift;
@@ -581,18 +655,19 @@ namespace qmcplusplus {
     //update the distance table associated with W
     //DistanceTable::update(W);
     W.update();
-    //cout << "ciao03" << endl;
 
     for(int ipsi=0; ipsi<nPsi; ipsi++) Jacobian[ipsi]=1.e0;
     for(int iptcl=0; iptcl< nptcl; iptcl++){
       PtclWarp.warp_one(iptcl,0);
       //Save particle position
       for(int ipsi=0; ipsi<nPsi; ipsi++){
+        //cout << PtclWarp.get_displacement(iptcl,ipsi) << endl;
         WW[ipsi]->R[iptcl]=W.R[iptcl]+PtclWarp.get_displacement(iptcl,ipsi);
         Jacobian[ipsi]*=PtclWarp.get_Jacobian(iptcl,ipsi);
       }
     }
-    //cout << "ciao04" << endl;
+    //Save the Log of the jacobian
+    for(int ipsi=0; ipsi<nPsi; ipsi++) NewBead->Properties(ipsi,LOGJACOB)=log(fabs(Jacobian[ipsi]));
 
     //Compute deltaR : necessary to compute transition probability
     deltaR= NewBead->R - head->R;
@@ -600,14 +675,12 @@ namespace qmcplusplus {
     for(int ipsi=0; ipsi<nPsi; ipsi++){
       Warped_deltaR[ipsi]=WW[ipsi]->R - Warped_R[ipsi];
     }
-    //cout << "ciao06" << endl;
 
     //Compute HEAD action in forward direction
     for(int ipsi=0; ipsi<nPsi; ipsi++) {
       gRand = Warped_deltaR[ipsi]-Tau*(*head->Gradients[ipsi]);
       head->Action(ipsi,forward)=0.5*m_oneover2tau*Dot(gRand,gRand);
     }
-    //cout << "ciao05" << endl;
 
     //evaluate all relevant quantities in the new position
     int totbeadwgt(0);
@@ -630,9 +703,6 @@ namespace qmcplusplus {
       gRand=Warped_deltaR[ipsi]+Tau*WW[ipsi]->G;
       NewBead->Action(ipsi,backward)=0.5*m_oneover2tau*Dot(gRand,gRand);
 
-      //Save the Log of the jacobian
-      NewBeadProp[LOGJACOB]=std::log(std::abs(Jacobian[ipsi]));
-
       NewBead->Action(ipsi,Directionless)=0.5*Tau*eloc;
       int beadwgt=abs( ( int(NewBeadProp[SIGN])+Reptile->RefSign[ipsi] )/2 );
       NewBead->BeadSignWgt[ipsi]=beadwgt;
@@ -640,13 +710,10 @@ namespace qmcplusplus {
     }
     //Compute Drift and TransProb here. This could be done after acceptance 
     //if # of beads is greater than 1 but needs to be done here to make the
-    //1-bead case working ok. Acceptance ratio is fairly high so this should
-    //not really matter.
-    //cout << "ciao0" << endl;
-    NewBead->getDrift(Jacobian,PtclWarp);
+    //one-bead case working ok. 
+    NewBead->getDrift(Jacobian,PtclWarp,branchEngine->LogNorm);
     gRand=deltaR+Tau*NewBead->Drift;
     NewBead->TransProb[backward]=m_oneover2tau*Dot(gRand,gRand);
-    //cout << "ciao1" << endl;
 
     RealType AcceptProb(-1.0),NewGlobalWgt(0.0);
     RealType RefAction(-1.0e20);
@@ -674,17 +741,15 @@ namespace qmcplusplus {
       //Compute Log of global Wgt
       for(int ipsi=0; ipsi<nPsi; ipsi++) {
         RealType DeltaAction(NewGlobalAction[ipsi]-RefAction);
-        if((WeightSign[ipsi]>0) && (DeltaAction > -30.0)) NewGlobalWgt+=std::exp(DeltaAction);
+        if((WeightSign[ipsi]>0) && (DeltaAction > -30.0)) NewGlobalWgt+=exp(DeltaAction);
       }
-      NewGlobalWgt=std::log(NewGlobalWgt)+RefAction;
+      NewGlobalWgt=log(NewGlobalWgt)+RefAction;
 
-      AcceptProb=std::exp(NewGlobalWgt - Reptile->GlobalWgt + head->TransProb[forward] - next->TransProb[backward]);
+      AcceptProb=exp(NewGlobalWgt - Reptile->GlobalWgt + head->TransProb[forward] - next->TransProb[backward]);
     }
-    //cout << "ciao3" << endl;
 
     if(Random() < AcceptProb){
 
-    //cout << "ciaoACCEPTED0" << endl;
       //Update Reptile information
       Reptile->GlobalWgt=NewGlobalWgt;
       for(int ipsi=0; ipsi<nPsi; ipsi++) {
@@ -692,10 +757,9 @@ namespace qmcplusplus {
         Reptile->GlobalSignWgt[ipsi]=NewGlobalSignWgt[ipsi];
         RealType DeltaAction(NewGlobalAction[ipsi]-NewGlobalWgt);
         if((WeightSign[ipsi]>0) && (DeltaAction > -30.0))
-          Reptile->UmbrellaWeight[ipsi]=std::exp(DeltaAction);
+          Reptile->UmbrellaWeight[ipsi]=exp(DeltaAction);
         else Reptile->UmbrellaWeight[ipsi]=0.0e0;
       }
-    //cout << "ciaoACCEPTED1" << endl;
       //Add NewBead to the Polymer.
       if(Reptile->GrowthDirection==MinusDirection){
         Reptile->push_front(NewBead);
@@ -706,12 +770,9 @@ namespace qmcplusplus {
         NewBead=tail;
         Reptile->pop_front();
       }
-    //cout << "ciaoACCEPTED2" << endl;
       for(int ipsi=0; ipsi<nPsi; ipsi++) Warped_R[ipsi]=WW[ipsi]->R;
-    ////cout << "ciaoACCEPTED3" << endl;
       ++nAccept;
     } else {
-    //cout << "ciaoREJECTED" << endl;
       ++nReject; 
       ++NumTurns; 
       //Evaluate initial position with warp
