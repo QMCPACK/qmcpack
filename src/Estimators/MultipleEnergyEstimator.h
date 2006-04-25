@@ -143,7 +143,7 @@ namespace qmcplusplus {
      */
     void initialize(MCWalkerConfiguration& W, 
         vector<QMCHamiltonian*>& h, vector<TrialWaveFunction*>& psi,
-        RealType tau, bool require_register=false);
+        RealType tau, vector<RealType>& Norm, bool require_register=false);
 
     /** update the energy and weight for umbrella sampling
      * @param iw walker index
@@ -158,8 +158,7 @@ namespace qmcplusplus {
 
     void initialize(MCWalkerConfiguration& W, vector<ParticleSet*>& WW, SpaceWarp& Warp,
         vector<QMCHamiltonian*>& h, vector<TrialWaveFunction*>& psi,
-        RealType tau, bool require_register=false);
-
+        RealType tau, vector<RealType>& Norm, bool require_register=false);
   };
 
 }
