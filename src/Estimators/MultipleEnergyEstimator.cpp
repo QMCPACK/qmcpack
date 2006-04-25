@@ -67,7 +67,7 @@ namespace qmcplusplus {
   ::initialize(MCWalkerConfiguration& W, 
       vector<QMCHamiltonian*>& h, 
       vector<TrialWaveFunction*>& psi,
-      RealType tau,
+      RealType tau,vector<RealType>& Norm,
       bool require_register) {
 
     NumWalkers = W.getActiveWalkers();
@@ -126,7 +126,7 @@ namespace qmcplusplus {
       for(int ipsi=0; ipsi< NumCopies-1; ipsi++) {			  
         for(int jpsi=ipsi+1; jpsi< NumCopies; jpsi++){     		 
           RealType r=exp(2.0*(logpsi[jpsi]-logpsi[ipsi])); 
-          rPtr[indexij++]=r;
+          rPtr[indexij++]=r*Norm[ipsi]/Norm[jpsi];
           sumratio[ipsi] += r;                            
           sumratio[jpsi] += 1.0/r;		
         }                                              
@@ -153,7 +153,7 @@ namespace qmcplusplus {
   ::initialize(MCWalkerConfiguration& W, vector<ParticleSet*>& WW,SpaceWarp& Warp,
       vector<QMCHamiltonian*>& h, 
       vector<TrialWaveFunction*>& psi,
-      RealType tau,
+      RealType tau,vector<RealType>& Norm,
       bool require_register) {
 
     NumWalkers = W.getActiveWalkers();
@@ -231,7 +231,7 @@ namespace qmcplusplus {
       for(int ipsi=0; ipsi< NumCopies-1; ipsi++) {			  
         for(int jpsi=ipsi+1; jpsi< NumCopies; jpsi++){     		 
           RealType r=exp(2.0*(logpsi[jpsi]-logpsi[ipsi])); 
-	  r*=(Jacobian[jpsi]/Jacobian[ipsi]);
+	  r*=(Jacobian[jpsi]*Norm[ipsi]/Jacobian[ipsi]/Norm[jpsi]);
           rPtr[indexij++]=r;
           sumratio[ipsi] += r;                            
           sumratio[jpsi] += 1.0/r;		
@@ -249,8 +249,21 @@ namespace qmcplusplus {
         thisWalker.Properties(ipsi,UMBRELLAWEIGHT)=wgt;
        // thisWalker.Drift += wgt*psi[ipsi]->G;
       }
-      thisWalker.Drift = psi[0]->G;
-      thisWalker.Drift *= tau;
+
+      QMCTraits::PosType WarpDrift;
+      RealType denom(0.e0),wgtpsi;
+      thisWalker.Drift=0.e0; 
+      for(int ipsi=0; ipsi< NumCopies; ipsi++) {
+        wgtpsi=1.e0/sumratio[ipsi];
+        denom += wgtpsi;
+        for(int iptcl=0; iptcl< numPtcls; iptcl++){
+          WarpDrift=dot(  psi[ipsi]->G[iptcl],Warp.get_Jacob_matrix(iptcl,ipsi)  )
+            +5.0e-1*Warp.get_grad_ln_Jacob(iptcl,ipsi) ;
+          thisWalker.Drift[iptcl] += (wgtpsi*WarpDrift);
+        }
+      }
+      //Drift = denom*Drift;
+      thisWalker.Drift *= (tau/denom);
       ++it;++iw;
     }
   }
@@ -367,5 +380,5 @@ namespace qmcplusplus {
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$
- * $Id$ 
+ * $Id$
  ***************************************************************************/
