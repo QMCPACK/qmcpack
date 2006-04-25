@@ -49,12 +49,14 @@ namespace qmcplusplus {
     VMCMultiple& operator=(const VMCMultiple&) { return *this;}
 
     MultipleEnergyEstimator *multiEstimator;
-
     ///temporary storage
-    int nPsi;				
+    int nPsi;
+    ///number of blocks to compute the normalization factor
+    int equilBlocks;
     vector<RealType> logpsi;		
     vector<RealType> sumratio;		
     vector<RealType> invsumratio;	
+    vector<RealType> Norm;	
   };
 }
 

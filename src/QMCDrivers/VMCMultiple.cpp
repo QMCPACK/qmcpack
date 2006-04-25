@@ -33,6 +33,9 @@ namespace qmcplusplus {
     QMCDriver(w,psi,h), multiEstimator(0) { 
     RootName = "vmc";
     QMCType ="vmc-multi";
+    equilBlocks=-1;
+    m_param.add(equilBlocks,"equilBlocks","int");
+    cout << "EquilBlocks " << equilBlocks << endl;
 
     QMCDriverMode.set(QMC_MULTIPLE,1);
     //Add the primary h and psi, extra H and Psi pairs will be added by QMCMain
@@ -52,6 +55,12 @@ namespace qmcplusplus {
     logpsi.resize(nPsi);
     sumratio.resize(nPsi);	
     invsumratio.resize(nPsi);	
+
+    Norm.resize(nPsi);
+    if(branchEngine->LogNorm.size()==0)branchEngine->LogNorm.resize(nPsi);
+    if(equilBlocks>0){
+      for(int ipsi=0; ipsi<nPsi; ipsi++)branchEngine->LogNorm[ipsi]=0.e0;
+    }
 
     for(int ipsi=0; ipsi<nPsi; ipsi++) 
       H1[ipsi]->add2WalkerProperty(W);
@@ -81,8 +90,19 @@ namespace qmcplusplus {
 
     bool require_register=false;
 
+    //Check if we need to update the norm of the wave functions
+    vector<RealType> tmpNorm(nPsi);
+    if(equilBlocks > 0){
+      for(int ipsi=0; ipsi< nPsi; ipsi++){
+        Norm[ipsi]=1.0;
+        tmpNorm[ipsi]=0.0;
+      }
+    }else{
+      for(int ipsi=0; ipsi< nPsi; ipsi++) Norm[ipsi]=exp(branchEngine->LogNorm[ipsi]);
+    }
+
     //this is where the first values are evaulated
-    multiEstimator->initialize(W,H1,Psi1,Tau,require_register);
+    multiEstimator->initialize(W,H1,Psi1,Tau,Norm,require_register);
     
     Estimators->reset();
 
@@ -91,6 +111,8 @@ namespace qmcplusplus {
     double wh=0.0;
     IndexType nAcceptTot = 0;
     IndexType nRejectTot = 0;
+    
+
     do {
       IndexType step = 0;
       nAccept = 0; nReject=0;
@@ -101,6 +123,21 @@ namespace qmcplusplus {
         step++;CurrentStep++;
         Estimators->accumulate(W);
       } while(step<nSteps);
+
+      //Modify Norm. 
+      if(block < equilBlocks){
+        for(int ipsi=0; ipsi< nPsi; ipsi++){
+          tmpNorm[ipsi]+=multiEstimator->esum(ipsi,MultipleEnergyEstimator::WEIGHT_INDEX);
+        }
+        if(block==(equilBlocks-1) || block==(nBlocks-1)){
+          RealType SumNorm(0.e0);
+          for(int ipsi=0; ipsi< nPsi; ipsi++) SumNorm+=tmpNorm[ipsi];
+          for(int ipsi=0; ipsi< nPsi; ipsi++){
+            Norm[ipsi]=tmpNorm[ipsi]/SumNorm;
+            branchEngine->LogNorm[ipsi]=log(Norm[ipsi]);
+          }
+        }
+      }
 
       Estimators->stopBlock(nAccept/static_cast<RealType>(nAccept+nReject));
 
@@ -117,7 +154,6 @@ namespace qmcplusplus {
 
     } while(block<nBlocks);
 
-    
     //Need MPI-IO
     app_log() << "Ratio = " 
       << static_cast<double>(nAcceptTot)/static_cast<double>(nAcceptTot+nRejectTot)
@@ -167,7 +203,7 @@ namespace qmcplusplus {
       // Compute the sum over j of Psi^2[j]/Psi^2[i] for each i	   
       for(int ipsi=0; ipsi< nPsi_minus_one; ipsi++) {			  
 	for(int jpsi=ipsi+1; jpsi< nPsi; jpsi++){     		  
-	  RealType ratioij=exp(2.0*(logpsi[jpsi]-logpsi[ipsi]));  
+	  RealType ratioij=Norm[ipsi]/Norm[jpsi]*exp(2.0*(logpsi[jpsi]-logpsi[ipsi]));  
 	  sumratio[ipsi] += ratioij;                              
 	  sumratio[jpsi] += 1.0/ratioij;			  
 	}                                                         
