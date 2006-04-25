@@ -131,7 +131,7 @@ namespace qmcplusplus {
 
     MultiChain::iterator bead(Reptile->begin());
 
-    RealType spring_norm( -1.5e0 * std::log(4*acos(0.e0)) * (*bead)->Drift.size() * Reptile->Last );
+    RealType spring_norm( -1.5e0 * std::log(4*std::acos(0.e0)) * (*bead)->Drift.size() * Reptile->Last );
 
     //Assign Reference Sign as the majority Sign
     for(int ipsi=0; ipsi<nPsi; ipsi++)
