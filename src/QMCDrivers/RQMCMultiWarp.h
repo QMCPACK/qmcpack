@@ -104,7 +104,10 @@ namespace qmcplusplus {
     void initReptile();
 
     ///for the first run starting with a point, set reference properties (sign)
-    void setRefProperties();
+    void setReptileProperties();
+
+    ///for the first run starting with a point, set reference properties (sign)
+    void checkReptileProperties();
 
     ///Working arrays
     Vector<RealType> NewGlobalAction,DeltaG;
