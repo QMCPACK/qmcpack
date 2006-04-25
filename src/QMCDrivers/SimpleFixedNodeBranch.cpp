@@ -173,7 +173,7 @@ bool SimpleFixedNodeBranch::put(xmlNodePtr cur){
 #if defined(HAVE_LIBHDF5)
 void SimpleFixedNodeBranch::write(hid_t grp, bool append) {
   hsize_t dim=3;
-  vector<RealType> esave(3);
+  vector<RealType> esave(dim);
   /** stupid gnu compiler bug */
   esave[0] = (fabs(E_T) < numeric_limits<RealType>::epsilon())? EavgSum/WgtSum:E_T;
   esave[1]=EavgSum; esave[2]=WgtSum;
@@ -183,6 +183,13 @@ void SimpleFixedNodeBranch::write(hid_t grp, bool append) {
     hid_t ret = 
       H5Dwrite(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT,&esave[0]);
     H5Dclose(dataset);
+
+    if(LogNorm.size()){
+      //lognorm
+      dataset = H5Dopen(grp,"LogNorm");
+      ret = H5Dwrite(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT,&LogNorm[0]);
+      H5Dclose(dataset);
+    }
   } else {
     hid_t dataspace  = H5Screate_simple(1, &dim, NULL);
     hid_t dataset =  H5Dcreate(grp, "Summary", H5T_NATIVE_DOUBLE, dataspace, H5P_DEFAULT);
@@ -190,6 +197,16 @@ void SimpleFixedNodeBranch::write(hid_t grp, bool append) {
       H5Dwrite(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT,&esave[0]);
     H5Dclose(dataset);
     H5Sclose(dataspace);
+
+    //create lognrom
+    if(LogNorm.size()){
+      dim=LogNorm.size();
+      dataspace  = H5Screate_simple(1, &dim, NULL);
+      dataset =  H5Dcreate(grp, "LogNorm", H5T_NATIVE_DOUBLE, dataspace, H5P_DEFAULT);
+      ret = H5Dwrite(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT,&LogNorm[0]);
+      H5Dclose(dataset);
+      H5Sclose(dataspace);
+    }
   }
 }
 
@@ -201,11 +218,22 @@ void SimpleFixedNodeBranch::read(hid_t grp) {
     vector<RealType> esave(3);
     hsize_t ret = H5Dread(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, &esave[0]);
     H5Dclose(dataset);
+
     E_T=esave[0]; EavgSum=esave[1]; WgtSum=esave[2];
+
+    //Will add reading LogNorm
+    bool normFound(0);
+    if(LogNorm.size()) {
+      dataset = H5Dopen(grp, "LogNorm");
+      ret = H5Dread(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, &LogNorm[0]);
+      H5Dclose(dataset);
+      normFound=1;
+    }
     app_log() << "  Summary is found. BranchEngine is initialized"
       << "\n    E_T     = " << E_T 
       << "\n    EavgSum = " << EavgSum 
       << "\n    WgtSum  = " << WgtSum << endl;
+    if(normFound)app_log() << " Normalization factor defined from previous calculation " << endl;
   } else {
     app_log() << "  Summary is not found. Starting from scratch" << endl;
   }

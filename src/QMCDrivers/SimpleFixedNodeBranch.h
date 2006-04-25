@@ -87,7 +87,8 @@ namespace qmcplusplus {
      RealType PopControl;
      ///LogJacob
      RealType LogJacobRef;
-     ///Controls walkers
+     ///LogNorm
+     vector<RealType> LogNorm;
      WalkerControlBase* WalkerController;
      ///(yes|no) string to determine SwapMode
      string SwapWalkers;
