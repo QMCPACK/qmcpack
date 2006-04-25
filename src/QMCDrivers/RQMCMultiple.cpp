@@ -38,7 +38,6 @@ namespace qmcplusplus {
     QMCType ="RQMCMultiple";
     m_param.add(ReptileLength,"chains","int");
 
-    MyCounter=-1;
     QMCDriverMode.set(QMC_MULTIPLE,1);
     QMCDriverMode.set(QMC_UPDATE_MODE,1);
     //Add the primary h and psi, extra H and Psi pairs will be added by QMCMain
@@ -442,7 +441,6 @@ namespace qmcplusplus {
       << endl;
 
     Estimators->finalize();
-    MyCounter++;
     return true;
   }
 
@@ -456,7 +454,6 @@ namespace qmcplusplus {
   }
 
   bool RQMCMultiple::put(xmlNodePtr q){
-    MyCounter+=1;
     MinusDirection=0;
     PlusDirection=1;
     Directionless=2;
