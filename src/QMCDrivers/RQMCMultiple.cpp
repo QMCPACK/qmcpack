@@ -38,6 +38,7 @@ namespace qmcplusplus {
     QMCType ="RQMCMultiple";
     m_param.add(ReptileLength,"chains","int");
 
+    MyCounter=-1;
     QMCDriverMode.set(QMC_MULTIPLE,1);
     QMCDriverMode.set(QMC_UPDATE_MODE,1);
     //Add the primary h and psi, extra H and Psi pairs will be added by QMCMain
@@ -66,33 +67,48 @@ namespace qmcplusplus {
     int InitialGrowthDirection(0);
 
     //Build NewBead. This takes care of a bunch of resizing operation and properties of the starting bead
-    if(NewBead == 0) {
-      NewBead=new Bead(**W.begin());
-      W.R = NewBead->R;
-      W.update();
-      for(int ipsi=0; ipsi<nPsi; ipsi++) {
-        NewBead->Properties(ipsi,LOGPSI) = Psi1[ipsi]->evaluateLog(W);
-        NewBead->Properties(ipsi,SIGN) = Psi1[ipsi]->getSign();
-        RealType eloc= H1[ipsi]->evaluate(W);
-        NewBead->Properties(ipsi,LOCALENERGY)= eloc;
-        H1[ipsi]->saveProperty(NewBead->getPropertyBase(ipsi));
-	*(NewBead->Gradients[ipsi])=W.G;
-      }
+    NewBead=new Bead(**W.begin());
+    W.R = NewBead->R;
+    W.update();
+    for(int ipsi=0; ipsi<nPsi; ipsi++) {
+      NewBead->Properties(ipsi,LOGPSI) = Psi1[ipsi]->evaluateLog(W);
+      NewBead->Properties(ipsi,SIGN) = Psi1[ipsi]->getSign();
+      RealType eloc= H1[ipsi]->evaluate(W);
+      NewBead->Properties(ipsi,LOCALENERGY)= eloc;
+      H1[ipsi]->saveProperty(NewBead->getPropertyBase(ipsi));
+      *(NewBead->Gradients[ipsi])=W.G;
+      NewBead->BeadSignWgt[ipsi]=1;
+      NewBead->Action(ipsi,MinusDirection)=0.25*Tau*Dot(*NewBead->Gradients[ipsi],*NewBead->Gradients[ipsi]);
+      NewBead->Action(ipsi,PlusDirection)=NewBead->Action(ipsi,MinusDirection);
+      NewBead->Action(ipsi,Directionless)=0.5*Tau*eloc;
     }
+<<<<<<< RQMCMultiple.cpp
+    NewBead->TransProb[MinusDirection]=(0.5*Tau)*Dot(NewBead->Drift,NewBead->Drift) ;
+    NewBead->TransProb[PlusDirection]=NewBead->TransProb[MinusDirection];
+=======
     std::cout << "==============================" << std::endl;
     std::cout << "NEWBEAD " << NewBead << std::endl;
+>>>>>>> 1.17
 
     //Reptile is made up by replicating the first walker. To be read if restarted.
     //if(Reptile == 0) Reptile=new MultiChain(*W.begin(),ReptileLength,InitialGrowthDirection,nPsi);
     bool restartmode = false;
-    if(Reptile == 0) {
+    bool reuseReptile= true;
+    Reptile=W.getPolymer();
+    if(Reptile==0){
+      reuseReptile=false;
       Reptile=new MultiChain(NewBead,ReptileLength,InitialGrowthDirection,nPsi);
       if(h5FileRoot != "invalid") {
         app_log() << "Reading the previous multi-chain configurations" << endl;
         restartmode = Reptile->read(h5FileRoot);
       }
+      W.setPolymer(Reptile);
     }
-    if(!restartmode) setRefProperties();
+
+    if(!restartmode){
+      if(reuseReptile)checkReptileProperties();
+      else setReptileProperties();
+    }
   } // END OF InitReptile
 
   void RQMCMultiple::resizeArrays(int n) {
@@ -116,7 +132,52 @@ namespace qmcplusplus {
     }
   }
 
-  void RQMCMultiple::setRefProperties() {
+  //Set initial properties assuming all beads are occupying the same position
+  void RQMCMultiple::setReptileProperties() {
+
+    MultiChain::iterator bead(Reptile->begin());
+
+    RealType spring_norm( -1.5e0 * log(4*acos(0.e0)) * (*bead)->Drift.size() * Reptile->Last );
+
+    //Assign Reference Sign as the majority Sign
+    for(int ipsi=0; ipsi<nPsi; ipsi++)
+      Reptile->RefSign[ipsi]=(*bead)->Properties(ipsi,SIGN);
+
+    //Compute the Global Action
+    for(int ipsi=0; ipsi<nPsi; ipsi++){
+      RealType LinkAction( 2*((*bead)->Action(ipsi,MinusDirection)+ (*bead)->Action(ipsi,Directionless) ));
+      Reptile->GlobalAction[ipsi]= 2*(*bead)->Properties(ipsi,LOGPSI) + spring_norm
+                                 - Reptile->Last*LinkAction - branchEngine->LogNorm[ipsi] ;
+    } 
+
+    //Compute Global Sign weight (need to be initialized somewhere)
+    for(int ipsi=0; ipsi<nPsi; ipsi++)
+      Reptile->GlobalSignWgt[ipsi] = ReptileLength;
+
+    //Compute reference action
+    RealType RefAction(-1.0e20);
+    for(int ipsi=0; ipsi<nPsi; ipsi++){
+      RefAction=max(RefAction,Reptile->GlobalAction[ipsi]);
+    }
+
+    //Compute Total Weight
+    Reptile->GlobalWgt=0.0e0;
+    for(int ipsi=0; ipsi<nPsi; ipsi++){
+      RealType DeltaAction(Reptile->GlobalAction[ipsi]-RefAction);
+      if(DeltaAction > -30) Reptile->GlobalWgt += exp(DeltaAction);
+    }
+    Reptile->GlobalWgt=log(Reptile->GlobalWgt)+RefAction;
+
+    //Compute Umbrella Weight 
+    for(int ipsi=0; ipsi<nPsi; ipsi++){
+      RealType DeltaAction(Reptile->GlobalAction[ipsi]-Reptile->GlobalWgt);
+      if(DeltaAction > -30) Reptile->UmbrellaWeight[ipsi] = exp(DeltaAction);
+      else Reptile->UmbrellaWeight[ipsi] = 0.0e0;
+    }
+
+  }
+
+  void RQMCMultiple::checkReptileProperties() {
 
     //Temporary vector
     vector<int> SumSign;
@@ -134,22 +195,19 @@ namespace qmcplusplus {
 
       //Do not re-evaluate the Properties
       ////Copy to W (ParticleSet) to compute distances, Psi and H
-      //W.R=curW.R;
-      //W.update();
+      W.R=curW.R;
+      W.update();
 
       ///loop over WF to compute contribution to the action and WF
       for(int ipsi=0; ipsi<nPsi; ipsi++) {
 
-        ////Compute Energy and Psi and save in curW
-        //curW.Properties(ipsi,LOGPSI) = Psi1[ipsi]->evaluateLog(W);
-        //RealType BeadSign = curW.Properties(ipsi,SIGN) = Psi1[ipsi]->getSign();
-        //RealType eloc= H1[ipsi]->evaluate(W);
-        //curW.Properties(ipsi,LOCALENERGY)= eloc;
-        //H1[ipsi]->saveProperty(curW.getPropertyBase(ipsi));
-        //*curW.Gradients[ipsi]=W.G;
-
-        RealType BeadSign = curW.Properties(ipsi,SIGN);
-        RealType eloc=curW.Properties(ipsi,LOCALENERGY);
+        //Compute Energy and Psi and save in curW
+        curW.Properties(ipsi,LOGPSI) = Psi1[ipsi]->evaluateLog(W);
+        RealType BeadSign = curW.Properties(ipsi,SIGN) = Psi1[ipsi]->getSign();
+        RealType eloc= H1[ipsi]->evaluate(W);
+        curW.Properties(ipsi,LOCALENERGY)= eloc;
+        H1[ipsi]->saveProperty(curW.getPropertyBase(ipsi));
+        *curW.Gradients[ipsi]=W.G;
 
         ///Initialize Kinetic Action
         RealType KinActMinus=0.0;
@@ -250,12 +308,9 @@ namespace qmcplusplus {
     }
     while(bead != last_bead){
       for(int ipsi=0; ipsi<nPsi; ipsi++){
-        RealType LinkAction( (*bead)->Action(ipsi,PlusDirection) + (*(bead+1))->Action(ipsi,MinusDirection)+
-                             (*bead)->Action(ipsi,Directionless) + (*(bead+1))->Action(ipsi,Directionless) );
-        cout << " LA " << ipsi << " : " << LinkAction << endl;
-        Reptile->GlobalAction[ipsi]-=LinkAction;
-        //Reptile->GlobalAction[ipsi]-=( (*bead)->Action(PlusDirection) + (*(bead+1))->Action(MinusDirection)+
-          //  (*bead)->Action(Directionless) + (*(bead+1))->Action(Directionless)   );
+        Reptile->GlobalAction[ipsi]-=
+          ( (*bead)->Action(ipsi,PlusDirection) + (*(bead+1))->Action(ipsi,MinusDirection)+
+            (*bead)->Action(ipsi,Directionless) + (*(bead+1))->Action(ipsi,Directionless)   );
       } 
       bead++;
     }
@@ -302,7 +357,7 @@ namespace qmcplusplus {
 
     Estimators->reportHeader(AppendRun);
 
-    initReptile();
+    if(MyCounter==0)initReptile();
 
     IndexType block = 0;
     IndexType nAcceptTot = 0;
@@ -401,10 +456,14 @@ namespace qmcplusplus {
   }
 
   bool RQMCMultiple::put(xmlNodePtr q){
-    //nothing to do yet
+    MyCounter+=1;
     MinusDirection=0;
     PlusDirection=1;
     Directionless=2;
+    if(branchEngine->LogNorm.size()==0){
+      branchEngine->LogNorm.resize(nPsi);
+      for(int i=0; i<nPsi; i++)branchEngine->LogNorm[i]=0.e0;
+    }
     return true;
   }
 
@@ -433,7 +492,10 @@ namespace qmcplusplus {
     //Point head to the growing end of the reptile
     Bead *head,*tail,*next;
     head = (*Reptile)[ihead];
-    tail=(*Reptile)[itail]; next=(*Reptile)[inext];
+    tail=(*Reptile)[itail];
+    //Treat the case with one bead differently
+    if(ReptileLength==1)next=NewBead;
+    else next=(*Reptile)[inext];
     //create a 3N-Dimensional Gaussian with variance=1
     makeGaussRandom(gRand);
 
@@ -480,9 +542,15 @@ namespace qmcplusplus {
       NewBead->BeadSignWgt[ipsi]=beadwgt;
       totbeadwgt+=beadwgt;
     }
+    //Compute Drift and TransProb here. This could be done (and was originally done)
+    //after acceptance if # of beads is greater than one but needs to be done here 
+    //to make the one-bead case working ok. 
+    NewBead->getDrift(branchEngine->LogNorm);
+    gRand=deltaR+Tau*NewBead->Drift;
+    NewBead->TransProb[backward]=m_oneover2tau*Dot(gRand,gRand);
 
     RealType AcceptProb(-1.0),NewGlobalWgt(0.0);
-    RealType RefAction(-10.0e20);
+    RealType RefAction(-1.0e20);
     if(totbeadwgt!=0){
       for(int ipsi=0; ipsi<nPsi; ipsi++) {
 
@@ -525,20 +593,6 @@ namespace qmcplusplus {
 	  Reptile->UmbrellaWeight[ipsi]=std::exp(DeltaAction);
         else Reptile->UmbrellaWeight[ipsi]=0.0e0;
       }
-
-      //Compute Drift and TransProb in NewBead position
-      NewBead->Drift=NewBead->BeadSignWgt[0]*(*NewBead->Gradients[0]);
-      RealType denom=NewBead->BeadSignWgt[0];
-      for(int ipsi=1; ipsi<nPsi; ipsi++) {
-        RealType wgtpsi=NewBead->BeadSignWgt[ipsi]*
-	  std::exp(2.0*(NewBead->Properties(ipsi,LOGPSI)-NewBead->Properties(0,LOGPSI)));
-        NewBead->Drift += (wgtpsi*(*NewBead->Gradients[ipsi]));
-        denom += wgtpsi;
-      }
-      denom=1.0/denom;
-      NewBead->Drift = denom*NewBead->Drift;
-      gRand=deltaR+Tau*NewBead->Drift;
-      NewBead->TransProb[backward]=m_oneover2tau*Dot(gRand,gRand);
 
       //Add NewBead to the Polymer.
       if(Reptile->GrowthDirection==MinusDirection){
