@@ -38,8 +38,7 @@ namespace qmcplusplus {
   class VMCMultipleWarp: public QMCDriver {
   public:
     /// Constructor.
-    VMCMultipleWarp(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
-        ParticleSetPool& ptclPool);
+    VMCMultipleWarp(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, ParticleSetPool& ptclPool);
 
     void advanceWalkerByWalker();
     bool run();
@@ -58,13 +57,14 @@ namespace qmcplusplus {
     SpaceWarp PtclWarp;
     
     ///temporary storage
-    int nPsi;				
+    int nPsi,equilBlocks;
     int nptcl;
     int JACOBIAN;
     vector<RealType> logpsi;		
     vector<RealType> sumratio;		
     vector<RealType> invsumratio;	
     vector<RealType> Jacobian;	
+    vector<RealType> Norm;	
     vector<ParticleSet*> WW;
   };
 }

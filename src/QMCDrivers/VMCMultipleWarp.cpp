@@ -38,6 +38,8 @@ namespace qmcplusplus {
     QMCDriver(w,psi,h), PtclPool(ptclPool), multiEstimator(0) { 
     RootName = "vmc-warp";
     QMCType ="vmc-warp";
+    equilBlocks=-1;
+    m_param.add(equilBlocks,"equilBlocks","int");
 
     QMCDriverMode.set(QMC_MULTIPLE,1);
     JACOBIAN=w.addProperty("Jacobian");
@@ -75,6 +77,13 @@ namespace qmcplusplus {
     sumratio.resize(nPsi);	
     invsumratio.resize(nPsi);	
     Jacobian.resize(nPsi);	
+
+    Norm.resize(nPsi);
+    if(branchEngine->LogNorm.size()==0)branchEngine->LogNorm.resize(nPsi);
+    if(equilBlocks>0){
+      for(int ipsi=0; ipsi<nPsi; ipsi++)branchEngine->LogNorm[ipsi]=0.e0;
+    }
+
 
     for(int ipsi=0; ipsi<nPsi; ipsi++) 
       H1[ipsi]->add2WalkerProperty(W);
@@ -117,8 +126,6 @@ namespace qmcplusplus {
       }
     }
 
-
-    
     return true;
   }
   
@@ -127,15 +134,26 @@ namespace qmcplusplus {
    * Similar to VMC::run 
    */
   bool VMCMultipleWarp::run() { 
+    
     int JACCOL=Estimators->addColumn("LogJacob");
       
     Estimators->reportHeader(AppendRun);
 
     bool require_register=false;
 
+    //Check if we need to update the norm of the wave functions
+    vector<RealType> tmpNorm(nPsi);
+    if(equilBlocks > 0){
+      for(int ipsi=0; ipsi< nPsi; ipsi++){
+        Norm[ipsi]=1.0;
+        tmpNorm[ipsi]=0.0;
+      }
+    }else{
+      for(int ipsi=0; ipsi< nPsi; ipsi++) Norm[ipsi]=std::exp(branchEngine->LogNorm[ipsi]);
+    }
+
     //this is where the first values are evaulated
-    // Have to generalize to WW
-    multiEstimator->initialize(W,WW,PtclWarp,H1,Psi1,Tau,require_register);
+    multiEstimator->initialize(W,WW,PtclWarp,H1,Psi1,Tau,Norm,require_register);
     
     Estimators->reset();
 
@@ -146,8 +164,7 @@ namespace qmcplusplus {
     double wh=0.0;
     IndexType nAcceptTot = 0;
     IndexType nRejectTot = 0;
-    //bool appendwalker=pStride>0;
-
+    
     branchEngine->LogJacobRef=0.e0;
     do {
       IndexType step = 0;
@@ -159,14 +176,31 @@ namespace qmcplusplus {
         advanceWalkerByWalker();
         step++;CurrentStep++;
         Estimators->accumulate(W);
-        Jacblk+=log(fabs((*W.begin())->Properties(1,JACOBIAN)));
+        Jacblk+=std::log(fabs((*W.begin())->Properties(1,JACOBIAN)));
       } while(step<nSteps);
+      
+      //Modify Norm. 
+      if(block < equilBlocks){
+        for(int ipsi=0; ipsi< nPsi; ipsi++){
+          tmpNorm[ipsi]+=multiEstimator->esum(ipsi,MultipleEnergyEstimator::WEIGHT_INDEX);
+        }
+        if(block==(equilBlocks-1) || block==(nBlocks-1)){
+          RealType SumNorm(0.e0);
+          for(int ipsi=0; ipsi< nPsi; ipsi++) SumNorm+=tmpNorm[ipsi];
+          for(int ipsi=0; ipsi< nPsi; ipsi++){
+            Norm[ipsi]=tmpNorm[ipsi]/SumNorm;
+            branchEngine->LogNorm[ipsi]=std::log(Norm[ipsi]);
+          }
+          cout << "BranchEngine is updated " << branchEngine->LogNorm[0] << " " << branchEngine->LogNorm[1] << endl;
+        }
+      }
 
       Estimators->stopBlock(nAccept/static_cast<RealType>(nAccept+nReject));
       RealType AveJacobLog=Jacblk/static_cast<RealType>(nSteps);
       Estimators->setColumn(JACCOL,AveJacobLog);
 
-      nAcceptTot += nAccept; 
+
+      nAcceptTot += nAccept;
       nRejectTot += nReject;
 
       branchEngine->accumulate(Estimators->average(0),1.0);
@@ -180,6 +214,8 @@ namespace qmcplusplus {
 
     } while(block<nBlocks);
     branchEngine->LogJacobRef/=static_cast<RealType>(nBlocks);
+
+    //Normalize norms :-)
 
    // do {
    //   IndexType step = 0;
@@ -283,6 +319,7 @@ namespace qmcplusplus {
 
       for(int ipsi=0; ipsi< nPsi;ipsi++) {
         if(ipsi) WW[ipsi]->update();
+        //SIMONE SIMONE SIMONE SIMONE
 	logpsi[ipsi]=Psi1[ipsi]->evaluateLog(*WW[ipsi]);
         //cout << "LOGPSI " << ipsi << " "<< logpsi[ipsi] << endl;
 	//Redundant???
@@ -294,7 +331,7 @@ namespace qmcplusplus {
       // Compute the sum over j of Psi^2[j]/Psi^2[i] for each i
       for(int ipsi=0; ipsi< nPsi_minus_one; ipsi++) {
 	for(int jpsi=ipsi+1; jpsi< nPsi; jpsi++){
-	  RealType ratioij=exp(2.0*(logpsi[jpsi]-logpsi[ipsi]));
+	  RealType ratioij=Norm[ipsi]/Norm[jpsi]*std::exp(2.0*(logpsi[jpsi]-logpsi[ipsi]));
 	  ratioij*=(Jacobian[jpsi]/Jacobian[ipsi]);
 	  sumratio[ipsi] += ratioij;
 	  sumratio[jpsi] += 1.0/ratioij;
@@ -317,22 +354,29 @@ namespace qmcplusplus {
       ValueType scale = Tau; // ((-1.0+sqrt(1.0+2.0*Tau*vsq))/vsq);
 
       //accumulate the weighted drift
-      drift = Psi1[0]->G;
-      /*drift = invsumratio[0]*Psi1[0]->G;
-      for(int ipsi=1; ipsi< nPsi ;ipsi++) {
-        drift += invsumratio[ipsi]*Warp.G[ipsi];
-      }*/
-      drift *= scale;
+      QMCTraits::PosType WarpDrift;
+      RealType denom(0.e0),wgtpsi;
+      drift=0.e0; 
+      for(int ipsi=0; ipsi<nPsi; ipsi++) {
+        wgtpsi=1.e0/sumratio[ipsi];
+        denom += wgtpsi;
+        for(int iptcl=0; iptcl< nptcl; iptcl++){
+          WarpDrift=dot(  Psi1[ipsi]->G[iptcl],PtclWarp.get_Jacob_matrix(iptcl,ipsi)  )
+            +5.0e-1*PtclWarp.get_grad_ln_Jacob(iptcl,ipsi) ;
+          drift[iptcl] += (wgtpsi*WarpDrift);
+        }
+      }
+      drift *= (scale/denom);
 
       deltaR = thisWalker.R - W.R - drift;
       RealType logGb = -m_oneover2tau*Dot(deltaR,deltaR);
       
       //Original
       //RealType g = Properties(SUMRATIO)/thisWalker.Properties(SUMRATIO)*   		
-      //	exp(logGb-logGf+2.0*(Properties(LOGPSI)-thisWalker.Properties(LOGPSI)));	
+      //	std::exp(logGb-logGf+2.0*(Properties(LOGPSI)-thisWalker.Properties(LOGPSI)));	
       //Reuse Multiplicity to store the sumratio[0]
       RealType g = sumratio[0]/thisWalker.Multiplicity*   		
-       	exp(logGb-logGf+2.0*(logpsi[0]-thisWalker.Properties(LOGPSI)));	
+       	std::exp(logGb-logGf+2.0*(logpsi[0]-thisWalker.Properties(LOGPSI)));	
 
       //cout << "ACCPROB " << g << endl;
 
