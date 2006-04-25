@@ -255,16 +255,7 @@ namespace qmcplusplus {
     bead=first_bead;
     while(bead != bead_end) {
       Bead& curW(**bead);
-      curW.Drift=curW.BeadSignWgt[0]*(*curW.Gradients[0]);
-      RealType denom=curW.BeadSignWgt[0];
-      for(int ipsi=1; ipsi<nPsi; ipsi++) {
-        RealType wgtpsi=curW.BeadSignWgt[ipsi]*
-          std::exp(2.0*(curW.Properties(ipsi,LOGPSI)-curW.Properties(0,LOGPSI)));
-        curW.Drift += (wgtpsi*(*curW.Gradients[ipsi]));
-        denom += wgtpsi;
-      }
-      denom=1.0/denom;
-      curW.Drift = curW.Drift*denom;
+      curW.getDrift(branchEngine->LogNorm);
       ++bead;
     }
 
