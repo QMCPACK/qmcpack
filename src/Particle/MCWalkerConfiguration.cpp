@@ -25,14 +25,14 @@
 namespace qmcplusplus {
 
 MCWalkerConfiguration::MCWalkerConfiguration(): 
-OwnWalkers(true),ReadyForPbyP(false),UpdateMode(Update_Walker) {
+OwnWalkers(true),ReadyForPbyP(false),UpdateMode(Update_Walker),Polymer(0) {
   //move to ParticleSet
   //initPropertyList();
 }
 
 MCWalkerConfiguration::MCWalkerConfiguration(const MCWalkerConfiguration& mcw)
 : ParticleSet(mcw), OwnWalkers(true),
-  UpdateMode(Update_Walker), ReadyForPbyP(false)
+  UpdateMode(Update_Walker), ReadyForPbyP(false), Polymer(0)
 {
   //initPropertyList();
 }
