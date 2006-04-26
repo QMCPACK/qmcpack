@@ -125,6 +125,8 @@ namespace qmcplusplus {
         newRunType=RMC_RUN;
       } else if(qmc_mode == "rmc-multiple") {
         newRunType=RMC_RUN;
+      } else if(qmc_mode == "optimize") {
+        newRunType=OPTIMIZE_RUN;
       }
     } else if(curName == "vmc") {
       newRunType=VMC_RUN;
