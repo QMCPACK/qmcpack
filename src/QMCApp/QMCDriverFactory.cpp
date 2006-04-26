@@ -32,11 +32,9 @@
 //#if !defined(QMCPLUSPLUS_RELEASE)
 #include "QMCDrivers/VMCMultiple.h"
 #include "QMCDrivers/VMCPbyPMultiple.h"
-#include "QMCDrivers/ReptationMC.h"
-#include "QMCDrivers/RQMCMultiple.h"
-#include "QMCDrivers/RQMCMultiple.h"
 #include "QMCDrivers/VMCMultipleWarp.h"
-#include "QMCDrivers/VMCPbyPMultipleWarp.h"
+#include "QMCDrivers/VMCPbyPMultiWarp.h"
+#include "QMCDrivers/RQMCMultiple.h"
 #include "QMCDrivers/RQMCMultiWarp.h"
 //#endif
 #include "QMCDrivers/WaveFunctionTester.h"
@@ -229,7 +227,7 @@ namespace qmcplusplus {
       } else if(curQmcMode == 6) {//(1,1,0)
         qmcDriver = new VMCMultipleWarp(*qmcSystem,*primaryPsi,*primaryH, *ptclPool);
       } else if(curQmcMode == 7) {//(1,1,1)
-        qmcDriver = new VMCPbyPMultipleWarp(*qmcSystem,*primaryPsi,*primaryH, *ptclPool);
+        qmcDriver = new VMCPbyPMultiWarp(*qmcSystem,*primaryPsi,*primaryH, *ptclPool);
       }
     } else if(curRunType == DMC_RUN) {
       DMCFactory fac(curQmcModeBits[UPDATE_MODE],cur);
