@@ -134,7 +134,7 @@ namespace qmcplusplus {
       RealType denom(0.e0),wgtpsi;
       Drift=0.e0;
       for(int ipsi=0; ipsi<npsi; ipsi++) {
-        wgtpsi=BeadSignWgt[ipsi]*exp(2.0*( Properties(ipsi,LOGPSI)- LogNorm[ipsi]
+        wgtpsi=BeadSignWgt[ipsi]*std::exp(2.0*( Properties(ipsi,LOGPSI)- LogNorm[ipsi]
                                           -Properties(0,LOGPSI)   + LogNorm[0]));
         denom += wgtpsi;
         Drift += (wgtpsi*(*Gradients[ipsi]));
@@ -152,7 +152,7 @@ namespace qmcplusplus {
       RealType denom(0.e0),wgtpsi;
       Drift=0.e0; 
       for(int ipsi=0; ipsi<npsi; ipsi++) {
-        wgtpsi=BeadSignWgt[ipsi]*Jacobian[ipsi]*exp(2.0*( Properties(ipsi,LOGPSI)-LogNorm[ipsi]
+        wgtpsi=BeadSignWgt[ipsi]*Jacobian[ipsi]*std::exp(2.0*( Properties(ipsi,LOGPSI)-LogNorm[ipsi]
                                                          -Properties(0,LOGPSI)   +LogNorm[0]));
         denom += wgtpsi;
         for(int iptcl=0; iptcl< nptcl; iptcl++){
@@ -206,7 +206,7 @@ namespace qmcplusplus {
      * @param npsi number of Psi/H pairs
      */
     //MultiChain(Walker_t* awalker,int len, int direction, int npsi): 
-    MultiChain(Bead* abead,int len, int direction, int npsi): 
+    MultiChain(Bead* abead,int &len, int direction, int npsi): 
       GrowthDirection(direction), nPsi(npsi){
       //always add number of beads
       if(len%2 == 0) len++;
