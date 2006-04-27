@@ -85,7 +85,7 @@ namespace qmcplusplus {
       WW[ipsi]->update();
       NewBead->Properties(ipsi,LOGPSI) = Psi1[ipsi]->evaluateLog(*WW[ipsi]);
       NewBead->Properties(ipsi,SIGN) = Psi1[ipsi]->getSign();
-      NewBead->Properties(ipsi,LOGJACOB)=log(fabs(Jacobian[ipsi]));
+      NewBead->Properties(ipsi,LOGJACOB)=std::log(std::fabs(Jacobian[ipsi]));
       RealType eloc= H1[ipsi]->evaluate(*WW[ipsi]);
       NewBead->Properties(ipsi,LOCALENERGY)= eloc;
       H1[ipsi]->saveProperty(NewBead->getPropertyBase(ipsi));
@@ -170,11 +170,11 @@ namespace qmcplusplus {
 
     MultiChain::iterator bead(Reptile->begin());
 
-    RealType spring_norm( -1.5e0 * log(4*acos(0.e0)) * (*bead)->Drift.size() * ReptileLength );
-
     //Assign Reference Sign as the majority Sign
     for(int ipsi=0; ipsi<nPsi; ipsi++)
       Reptile->RefSign[ipsi]=(*bead)->Properties(ipsi,SIGN);
+
+    RealType spring_norm( -1.5e0 * std::log(4*std::acos(0.e0)) * (*bead)->Drift.size() * Reptile->Last );
 
     //Compute the Global Action
     for(int ipsi=0; ipsi<nPsi; ipsi++){
@@ -198,14 +198,14 @@ namespace qmcplusplus {
     Reptile->GlobalWgt=0.0e0;
     for(int ipsi=0; ipsi<nPsi; ipsi++){
       RealType DeltaAction(Reptile->GlobalAction[ipsi]-RefAction);
-      if(DeltaAction > -30) Reptile->GlobalWgt += exp(DeltaAction);
+      if(DeltaAction > -30) Reptile->GlobalWgt += std::exp(DeltaAction);
     }
-    Reptile->GlobalWgt=log(Reptile->GlobalWgt)+RefAction;
+    Reptile->GlobalWgt=std::log(Reptile->GlobalWgt)+RefAction;
 
     //Compute Umbrella Weight 
     for(int ipsi=0; ipsi<nPsi; ipsi++){
       RealType DeltaAction(Reptile->GlobalAction[ipsi]-Reptile->GlobalWgt);
-      if(DeltaAction > -30) Reptile->UmbrellaWeight[ipsi] = exp(DeltaAction);
+      if(DeltaAction > -30) Reptile->UmbrellaWeight[ipsi] = std::exp(DeltaAction);
       else Reptile->UmbrellaWeight[ipsi] = 0.0e0;
     }
 
@@ -267,7 +267,7 @@ namespace qmcplusplus {
         }
       }
 
-      for(int ipsi=0; ipsi<nPsi; ipsi++) Jacobian[ipsi]=1.e0;
+      for(int ipsi=0; ipsi<nPsi; ipsi++) Jacobian_next[ipsi]=1.e0;
       if(bead!=last_bead){
         Bead& nextW(**(bead+1));
         W.R=nextW.R;
@@ -294,7 +294,7 @@ namespace qmcplusplus {
         curW.Properties(ipsi,LOCALENERGY)= eloc;
         H1[ipsi]->saveProperty(curW.getPropertyBase(ipsi));
         *curW.Gradients[ipsi]=WW[ipsi]->G;
-        curW.Properties(ipsi,LOGJACOB)=log(fabs(Jacobian[ipsi]));
+        curW.Properties(ipsi,LOGJACOB)=std::log(std::fabs(Jacobian[ipsi]));
 
         ///Initialize Kinetic Action
         RealType KinActMinus=0.0;
@@ -417,10 +417,11 @@ namespace qmcplusplus {
       } 
       bead++;
     }
+    RealType spring_norm( -1.5e0 * std::log(4*std::acos(0.e0)) * (*bead)->Drift.size() * Reptile->Last );
     for(int ipsi=0; ipsi<nPsi; ipsi++) 
      Reptile->GlobalAction[ipsi]+= ( (*bead)->Properties(ipsi,LOGPSI) +
                                      (*bead)->Properties(ipsi,LOGJACOB) - 
-                                      branchEngine->LogNorm[ipsi] );
+                                      branchEngine->LogNorm[ipsi] + spring_norm );
 
     //Compute Global Sign weight (need to be initialized somewhere)
     bead=first_bead;
@@ -442,14 +443,14 @@ namespace qmcplusplus {
     Reptile->GlobalWgt=0.0e0;
     for(int ipsi=0; ipsi<nPsi; ipsi++){
       RealType DeltaAction(Reptile->GlobalAction[ipsi]-RefAction);
-      if((WeightSign[ipsi]>0) && (DeltaAction > -30)) Reptile->GlobalWgt += exp(DeltaAction);
+      if((WeightSign[ipsi]>0) && (DeltaAction > -30)) Reptile->GlobalWgt += std::exp(DeltaAction);
     }
-    Reptile->GlobalWgt=log(Reptile->GlobalWgt)+RefAction;
+    Reptile->GlobalWgt=std::log(Reptile->GlobalWgt)+RefAction;
 
     //Compute Umbrella Weight 
     for(int ipsi=0; ipsi<nPsi; ipsi++){
       RealType DeltaAction(Reptile->GlobalAction[ipsi]-Reptile->GlobalWgt);
-      if((WeightSign[ipsi]>0) && (DeltaAction > -30)) Reptile->UmbrellaWeight[ipsi] = exp(DeltaAction);
+      if((WeightSign[ipsi]>0) && (DeltaAction > -30)) Reptile->UmbrellaWeight[ipsi] = std::exp(DeltaAction);
       else Reptile->UmbrellaWeight[ipsi] = 0.0e0;
     }
 
@@ -462,6 +463,15 @@ namespace qmcplusplus {
     //Check if we need to update the norm of the wave functions
 
     if(MyCounter==0) initReptile();
+
+    cout << "==========================================" << endl;
+    cout << "  CHECKING ACTION" << endl;
+    for(int ipsi=0; ipsi<nPsi; ipsi++)
+      cout << "Initial " << ipsi << " " << Reptile->GlobalAction[ipsi] << endl;
+    checkReptileProperties();
+    
+    for(int ipsi=0; ipsi<nPsi; ipsi++)
+      cout << "Recomputed " << ipsi << " " << Reptile->GlobalAction[ipsi] << endl;
 
     IndexType block = 0;
     IndexType nAcceptTot = 0;
@@ -531,6 +541,15 @@ namespace qmcplusplus {
       }
       *OutEnergy << endl;
       OutEnergy->flush();
+
+      cout << "==========================================" << endl;
+      cout << "  CHECKING ACTION" << endl;
+      for(int ipsi=0; ipsi<nPsi; ipsi++)
+        cout << "Updated " << ipsi << " " << Reptile->GlobalAction[ipsi] << endl;
+      checkReptileProperties();
+      
+      for(int ipsi=0; ipsi<nPsi; ipsi++)
+        cout << "Recomputed " << ipsi << " " << Reptile->GlobalAction[ipsi] << endl;
 
       nAcceptTot += nAccept;
       nRejectTot += nReject;
@@ -618,7 +637,7 @@ namespace qmcplusplus {
 
     //Used several times
     m_oneover2tau=0.5/Tau; 
-    m_sqrttau=sqrt(Tau);
+    m_sqrttau=std::sqrt(Tau);
     int ihead,inext,itail;
 
     //Depending on the growth direction initialize growth variables
@@ -667,7 +686,7 @@ namespace qmcplusplus {
       }
     }
     //Save the Log of the jacobian
-    for(int ipsi=0; ipsi<nPsi; ipsi++) NewBead->Properties(ipsi,LOGJACOB)=log(fabs(Jacobian[ipsi]));
+    for(int ipsi=0; ipsi<nPsi; ipsi++) NewBead->Properties(ipsi,LOGJACOB)=std::log(std::fabs(Jacobian[ipsi]));
 
     //Compute deltaR : necessary to compute transition probability
     deltaR= NewBead->R - head->R;
@@ -741,11 +760,11 @@ namespace qmcplusplus {
       //Compute Log of global Wgt
       for(int ipsi=0; ipsi<nPsi; ipsi++) {
         RealType DeltaAction(NewGlobalAction[ipsi]-RefAction);
-        if((WeightSign[ipsi]>0) && (DeltaAction > -30.0)) NewGlobalWgt+=exp(DeltaAction);
+        if((WeightSign[ipsi]>0) && (DeltaAction > -30.0)) NewGlobalWgt+=std::exp(DeltaAction);
       }
-      NewGlobalWgt=log(NewGlobalWgt)+RefAction;
+      NewGlobalWgt=std::log(NewGlobalWgt)+RefAction;
 
-      AcceptProb=exp(NewGlobalWgt - Reptile->GlobalWgt + head->TransProb[forward] - next->TransProb[backward]);
+      AcceptProb=std::exp(NewGlobalWgt - Reptile->GlobalWgt + head->TransProb[forward] - next->TransProb[backward]);
     }
 
     if(Random() < AcceptProb){
@@ -757,7 +776,7 @@ namespace qmcplusplus {
         Reptile->GlobalSignWgt[ipsi]=NewGlobalSignWgt[ipsi];
         RealType DeltaAction(NewGlobalAction[ipsi]-NewGlobalWgt);
         if((WeightSign[ipsi]>0) && (DeltaAction > -30.0))
-          Reptile->UmbrellaWeight[ipsi]=exp(DeltaAction);
+          Reptile->UmbrellaWeight[ipsi]=std::exp(DeltaAction);
         else Reptile->UmbrellaWeight[ipsi]=0.0e0;
       }
       //Add NewBead to the Polymer.
