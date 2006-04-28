@@ -45,6 +45,7 @@ namespace qmcplusplus {
     VMCPbyPMultiple& operator=(const VMCPbyPMultiple&) { return *this;}
 
     int nPsi;
+    int equilBlocks;
     typedef ParticleSet::ParticleGradient_t ParticleGradient_t;
     typedef ParticleSet::ParticleLaplacian_t ParticleLaplacian_t;
     ParticleGradient_t dG;
