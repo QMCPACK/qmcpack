@@ -77,6 +77,10 @@ namespace qmcplusplus {
       BlockAverages[i] = v;
     }
 
+    inline RealType getColumn(int i) const {
+      return  BlockAverages[i];
+    }
+
     /*!\return the index of the newestimator
      *\brief add a new estimator with name aname
      */
@@ -92,7 +96,7 @@ namespace qmcplusplus {
     inline RealType average(int i) const { 
       return Estimators[i]->average(); 
     }
-    
+
     ///returns a variance for estimator i
     inline RealType variance(int i) const { 
       return Estimators[i]->variance();
@@ -118,6 +122,7 @@ namespace qmcplusplus {
     }
 
     void setCollectionMode(bool collect);
+
 
   private:
 
