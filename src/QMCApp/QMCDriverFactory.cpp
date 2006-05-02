@@ -188,9 +188,19 @@ namespace qmcplusplus {
     while(tcur != NULL) {
       if(xmlStrEqual(tcur->name,(const xmlChar*)"qmcsystem")) {
         const xmlChar* t= xmlGetProp(tcur,(const xmlChar*)"wavefunction");
-        targetPsi.push(psiPool->getWaveFunction((const char*)t));
+        if(t != NULL) {
+          targetPsi.push(psiPool->getWaveFunction((const char*)t));
+        } else {
+          app_warning() << " qmcsystem does not have wavefunction. Assign 0" << endl;
+          targetPsi.push(0);
+        }
         t= xmlGetProp(tcur,(const xmlChar*)"hamiltonian");
-        targetH.push(hamPool->getHamiltonian((const char*)t));
+        if(t != NULL) {
+          targetH.push(hamPool->getHamiltonian((const char*)t));
+        } else {
+          app_warning() << " qmcsystem does not have hamiltonian. Assign 0" << endl;
+          targetH.push(0);
+        }
       }
       tcur=tcur->next;
     }
