@@ -135,6 +135,17 @@ namespace qmcplusplus {
       return branchEngine;
     }
 
+    int addObservable(const string& aname) {
+      if(Estimators)
+        return Estimators->addColumn(aname.c_str());
+      else
+        return -1;
+    }
+
+    RealType getObervable(int i) {
+      return Estimators->getColumn(i);
+    }
+
   protected:
 
     ///branch engine
