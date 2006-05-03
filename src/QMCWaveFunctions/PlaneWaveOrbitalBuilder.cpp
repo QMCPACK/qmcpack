@@ -133,7 +133,7 @@ namespace qmcplusplus {
     updet->set(targetPtcl.first(upindx),nup); //first member in ptclset, length
     sdet->add(updet);
     //create down determinant
-    LOGMSG("  \tBuilding downdet with particles "<<targetPtcl.first(1-upindx)<<"-"<<targetPtcl.last(1-upindx)-1);
+    LOGMSG("  \tBuilding downdet with particles "<<targetPtcl.first(1-upindx)<<"-"<<targetPtcl.last(1-upindx)-1<<"\n");
     Det_t *downdet = new Det_t(*PWOSet,targetPtcl.first(1-upindx));
     downdet->set(targetPtcl.first(1-upindx),ndown);
     sdet->add(downdet);

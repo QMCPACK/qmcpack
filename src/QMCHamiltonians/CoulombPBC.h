@@ -44,7 +44,7 @@ namespace qmcplusplus {
     bool FirstTime;
     
     CoulombPBCAA(ParticleSet& ref): FirstTime(true), PtclRef(&ref), AA(0) {
-      LOGMSG("\n  Performing long-range breakup for CoulombAA potential");
+      LOGMSG("  Performing long-range breakup for CoulombAA potential");
       AA = new LRCoulombAA<LPQHIBasis>(*PtclRef);
       LOGMSG("    Done\n");
     }
@@ -102,14 +102,14 @@ namespace qmcplusplus {
     LRCoulombAB<LPQHIBasis>* AB;
     
     CoulombPBCAB(ParticleSet& ions,ParticleSet& elns): PtclIons(&ions), PtclElns(&elns), AB(0) {
-      LOGMSG("Performing long-range breakup for CoulombAB potential");
+      LOGMSG("  Performing long-range breakup for CoulombAB potential");
       AB = new LRCoulombAB<LPQHIBasis>(*PtclIons,*PtclElns);
       LOGMSG("    Done\n");
     }
 
     ///copy constructor
     CoulombPBCAB(const CoulombPBCAB& c): PtclIons(c.PtclIons), PtclElns(c.PtclElns), AB(0) {
-      LOGMSG("Performing long-range breakup for CoulombAB potential");
+      LOGMSG("  Performing long-range breakup for CoulombAB potential");
       AB = new LRCoulombAB<LPQHIBasis>(*PtclIons,*PtclElns);
       LOGMSG("    Done\n");
     }
