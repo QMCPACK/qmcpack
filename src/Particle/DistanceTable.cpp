@@ -159,6 +159,9 @@ DistanceTable::add(ParticleSet& s, const char* aname) {
     else
       dt = new SymmetricDTD<DTD_BConds<OHMMS_PRECISION,OHMMS_DIM,7> >(s,s);
 
+    //set the name of the table
+    dt->setName(newname);
+
     TableList.push_back(dt);
     TableMap[newname] = n;
     VisitorID.push_back(s.tag());
@@ -200,6 +203,9 @@ DistanceTable::add(const ParticleSet& s, ParticleSet& t, const char* aname) {
     else 
       dt = new AsymmetricDTD<DTD_BConds<OHMMS_PRECISION,OHMMS_DIM,7> >(s,t);
 
+    //set the name of the table
+    dt->setName(newname);
+
     TableList.push_back(dt);
     t.addTable(dt);
 
@@ -213,15 +219,31 @@ DistanceTable::add(const ParticleSet& s, ParticleSet& t, const char* aname) {
 }
 
 void 
+DistanceTable::removeTable(const string& tname) {
+  map<string,int>::iterator it = TableMap.find(tname);
+  if(it != TableMap.end()) {
+    DistanceTableData* dt=TableList[(*it).second];
+    if(dt) {
+      app_warning() << "  Removing distance table " << tname << endl;
+      delete dt;
+      TableList[(*it).second]=0;
+    } else {
+      app_warning() << "  " << tname << " distance table is already removed."<< endl;
+    }
+  }
+}
+
+void 
 DistanceTable::getTables(int ptag, vector<DistanceTableData*>&  tables) {
   ///add the table if ptag matches to the source or visitor
   for(int i=0; i<TableList.size(); i++) 
-    if(ptag == VisitorID[i] || ptag ==  TableList[i]->origin().tag()) 
+    if(TableList[i] && (ptag == VisitorID[i] || ptag ==  TableList[i]->origin().tag())) 
       tables.push_back(TableList[i]);
 }
 
 void DistanceTable::create(int walkers) {
-  for(int i=0; i<TableList.size(); i++) TableList[i]->create(walkers);
+  for(int i=0; i<TableList.size(); i++) 
+    if(TableList[i]) TableList[i]->create(walkers);
 }
 
 void DistanceTable::reset() {

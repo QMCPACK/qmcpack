@@ -136,6 +136,8 @@ namespace qmcplusplus {
       return PropertyList.add(pname.c_str());
     }
 
+
+    void clearDistanceTables();
    void resizeSphere(int nc);
 
    void convert(const ParticlePos_t& pin, ParticlePos_t& pout);

@@ -289,6 +289,14 @@ namespace qmcplusplus {
     PropertyList.add("LocalEnergy");
     PropertyList.add("LocalPotential");
   }
+
+  void ParticleSet::clearDistanceTables() {
+    //Physically remove the tables
+    for(int i=0; i< DistTables.size(); i++) {
+      DistanceTable::removeTable(DistTables[i]->getName());
+    }
+    DistTables.erase(DistTables.begin(),DistTables.end());
+  }
 }
 
 /***************************************************************************

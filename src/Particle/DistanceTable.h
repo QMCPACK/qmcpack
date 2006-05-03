@@ -101,9 +101,8 @@ namespace qmcplusplus {
     ///return true if ith table has been updated
     static bool updated(int i) { return Updated[i];}
     
-    //static void update(ParticleSet& t);
-
-    //static void update(WalkerSetRef& t);
+    ///remove the distance table with the name
+    static void removeTable(const string& tname);
 
     static void registerData(PooledData<RealType>& buf);
 

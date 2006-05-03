@@ -102,6 +102,7 @@ namespace qmcplusplus {
     ///size of indicies
     TinyVector<IndexType,3> N;
 
+    std::string Name;
 
     /** @brief M.size() = N[SourceIndex]+1
      *
@@ -142,6 +143,11 @@ namespace qmcplusplus {
 
     ///virutal destructor
     virtual ~DistanceTableData() { }
+
+    ///return the name of table
+    inline string getName() const { return Name;}
+    ///set the name of table
+    inline void setName(const string& tname) { Name = tname;}
 
     ///returns the reference the origin
     const ParticleSet& origin() const { return Origin;}
