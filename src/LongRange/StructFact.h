@@ -26,6 +26,7 @@ namespace qmcplusplus {
 
   public:
     Matrix<complex<RealType> > rhok;
+    Matrix<complex<RealType> > eikr;
     //Maximum reciprocal cell translations in kc.
     //Last index is max. of first 3.
     //    TinyVector<int,4> mmax; 
@@ -50,7 +51,7 @@ namespace qmcplusplus {
     ///Recompute Rhok if lattice changed
     void UpdateNewCell(RealType kc);
     /// Update Rhok if 1 particle moved
-    void Update1Part(Position_t rold,Position_t rnew,int GroupID);
+    void Update1Part(Position_t rold,Position_t rnew,int iat,int GroupID);
     /// Update Rhok if all particles moved
     void UpdateAllPart();
 
@@ -67,6 +68,7 @@ namespace qmcplusplus {
       //RealType* last = first + rhok.size()*2;
       //buf.add(first,last);
       buf.add(rhok.data(),rhok.data()+rhok.size());
+      buf.add(eikr.data(),eikr.data()+eikr.size());
     };
     /** @brief register rhok data to buf so that it can copyToBuffer and copyFromBuffer
      *
@@ -79,6 +81,7 @@ namespace qmcplusplus {
       //RealType* last = first + rhok.size()*2;
       //buf.put(first,last);
       buf.put(rhok.data(),rhok.data()+rhok.size());
+      buf.put(eikr.data(),eikr.data()+eikr.size());
     };
     /** @brief copy the data to an anonymous buffer
      *
@@ -90,6 +93,7 @@ namespace qmcplusplus {
       //RealType* last = first + rhok.size()*2;
       //buf.put(first,last);
       buf.put(rhok.data(),rhok.data()+rhok.size());
+      buf.put(eikr.data(),eikr.data()+eikr.size());
     };
     /** @brief copy the data from an anonymous buffer
      *
@@ -101,6 +105,7 @@ namespace qmcplusplus {
       //RealType* last = first + rhok.size()*2;
       //buf.get(first,last);
       buf.get(rhok.data(),rhok.data()+rhok.size());
+      buf.get(eikr.data(),eikr.data()+eikr.size());
     };
 
   private:
@@ -108,7 +113,7 @@ namespace qmcplusplus {
     ///Compute all rhok elements from the start
     void FillRhok();
     ///Smart update of rhok for 1-particle move. Simply supply old+new position
-    void UpdateRhok(Position_t rold,Position_t rnew,int GroupID);
+    void UpdateRhok(Position_t rold,Position_t rnew,int iat,int GroupID);
 
   };
 }
