@@ -160,7 +160,7 @@ LRCoulombAA<BreakupBasis>::evalLR() {
       //For each k, find -k and add term to LR.
       for(int ki=0; ki<PtclRhoK.KLists.kpts_cart.size(); ki++) {
 	int kj=PtclRhoK.KLists.minusk[ki];
-	temp += (PtclRhoK.rhok(ki,spec1)*PtclRhoK.rhok(kj,spec2)).real()*Fk[0][ki];
+	temp += (PtclRhoK.rhok(spec1,ki)*PtclRhoK.rhok(spec2,kj)).real()*Fk[0][ki];
       } //ki
       LR += Z1*Z2*temp;    
     } //spec2

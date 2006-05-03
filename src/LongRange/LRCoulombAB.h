@@ -216,7 +216,7 @@ namespace qmcplusplus {
             //For each k, find -k and add term to LR.
             for(int ki=0; ki<IonsRhoK.KLists.kpts_cart.size(); ki++) {
               int kj=IonsRhoK.KLists.minusk[ki];
-              temp += (IonsRhoK.rhok(ki,specion)*ElnsRhoK.rhok(kj,speceln)).real()*Fk[0][ki];
+              temp += (IonsRhoK.rhok(specion,ki)*ElnsRhoK.rhok(speceln,kj)).real()*Fk[0][ki];
             } //ki
 	    LR += Zion*Zeln*temp;
           } //spec2

@@ -71,12 +71,13 @@ StructFact::FillRhok() {
   //Evaluate "Rho_k" using fast method
   //Ken's breakup doc., section 5.1.
   //This is the structure-factor of the ion coordinates.
-  rhok.resize(KLists.numk,tspecies.TotalNum);
+  //rhok.resize(KLists.numk,tspecies.TotalNum);
+  rhok.resize(tspecies.TotalNum,KLists.numk);
 
   //Zero out rhok
   for(int ki=0; ki<KLists.numk; ki++)
     for(int t=0; t<tspecies.TotalNum; t++)
-      rhok(ki,t) = complex<RealType>(0.0,0.0);
+      rhok(t,ki) = complex<RealType>(0.0,0.0);
   
   TinyVector<double,3> k111; //k=1*b1 + 1*b2 + 1*b3
   //Convert to Cartesian  
@@ -117,7 +118,7 @@ StructFact::FillRhok() {
       complex<double> temp = 1.0;
       for(int idim=0; idim<3; idim++)
 	temp *= C(idim,KLists.kpts[ki][idim]+KLists.mmax[idim]);
-      rhok(ki,PtclRef.GroupID[i]) += temp;
+      rhok(PtclRef.GroupID[i],ki) += temp;
     }
   } //End particle loop
 }
@@ -161,7 +162,7 @@ StructFact::UpdateRhok(Position_t rold,Position_t rnew,int GroupID){
     complex<double> temp = 1.0;
     for(int idim=0; idim<3; idim++)
       temp *= C(idim,KLists.kpts[ki][idim]+KLists.mmax[idim]);
-    rhok(ki,GroupID) -= temp;
+    rhok(GroupID,ki) -= temp;
   }
 
   //Prepare for adding new position
@@ -183,6 +184,6 @@ StructFact::UpdateRhok(Position_t rold,Position_t rnew,int GroupID){
     complex<double> temp = 1.0;
     for(int idim=0; idim<3; idim++)
       temp *= C(idim,KLists.kpts[ki][idim]+KLists.mmax[idim]);
-    rhok(ki,GroupID) += temp;
+    rhok(GroupID,ki) += temp;
   }
 }
