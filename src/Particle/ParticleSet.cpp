@@ -172,7 +172,7 @@ namespace qmcplusplus {
     //R is not changed by ->move. Use newpos and activepos as new and old.
     if(SK) {
       *SKOld = *SK; //Copy data from current using overloaded assignment operator.
-      SK->Update1Part(activePos,newpos,GroupID[iat]); //old = activePos, new=newpos
+      SK->Update1Part(activePos,newpos,iat,GroupID[iat]); //old = activePos, new=newpos
     }
 
     return R[iat]=newpos;
