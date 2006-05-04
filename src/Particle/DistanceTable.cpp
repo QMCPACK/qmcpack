@@ -169,19 +169,20 @@ DistanceTable::add(ParticleSet& s, const char* aname) {
     //add to the list
     return n;
   } else {
-    DistanceTableData* dt((*it).second);
+    //DistanceTableData* dt((*it).second);
+    DistanceTableData* dt(TableList[(*it).second]);
     if(dt == 0) {//need to add a new table since it was destroyed
       if(SuperCellType<OHMMS_DIM>::apply(s.Lattice.BoxBConds) == SUPERCELL_OPEN) 
         dt = new SymmetricDTD<DTD_BConds<OHMMS_PRECISION,OHMMS_DIM,0> >(s,s);
       else
         dt = new SymmetricDTD<DTD_BConds<OHMMS_PRECISION,OHMMS_DIM,7> >(s,s);
       dt->setName(newname);
-      (*it).second=dt;
-      TableList[(*it).first]=dt;
+      TableList[(*it).second]=dt;
+      //TableList[(*it).first]=dt;
       s.addTable(dt);
     }
     //LOGMSG("Distance table " << newname << " is reused")
-    return dt;
+    return (*it).second;
   }
 }
 
@@ -224,19 +225,19 @@ DistanceTable::add(const ParticleSet& s, ParticleSet& t, const char* aname) {
     VisitorID.push_back(t.tag());
     return n;
   } else {
-    DistanceTableData* dt((*it).second);
+    DistanceTableData* dt(TableList[(*it).second]);
     if(dt == 0) {//need to add a new table since it was destroyed
       if(SuperCellType<OHMMS_DIM>::apply(s.Lattice.BoxBConds) == SUPERCELL_OPEN) 
         dt = new AsymmetricDTD<DTD_BConds<OHMMS_PRECISION,OHMMS_DIM,0> >(s,t);
       else 
         dt = new AsymmetricDTD<DTD_BConds<OHMMS_PRECISION,OHMMS_DIM,7> >(s,t);
       dt->setName(newname);
-      (*it).second=dt;
-      TableList[(*it).first]=dt;
+      TableList[(*it).second]=dt;
+      //TableList[(*it).first]=dt;
       t.addTable(dt);
     }
     //LOGMSG("Distance table " << newname << " is reused")
-    return dt;
+    return (*it).second;
   }
 }
 
