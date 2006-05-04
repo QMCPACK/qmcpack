@@ -41,12 +41,11 @@ namespace qmcplusplus {
     int Centers;
     ///container for the ion charges
     vector<RealType> Z;
-    ParticleSet *PtclSource, *PtclTarget;
+    ParticleSet& sourcePtcl;
     DistanceTableData* d_table;
 
     CoulombPotentialAB(ParticleSet& ions, ParticleSet& els): 
-      PtclSource(&ions), PtclTarget(&els), d_table(NULL) { 
-
+      sourcePtcl(ions), d_table(0) { 
       d_table = DistanceTable::getTable(DistanceTable::add(ions,els));
       //index for attribute charge
       SpeciesSet& tspecies(ions.getSpeciesSet());
@@ -60,8 +59,7 @@ namespace qmcplusplus {
     }
     
     void resetTargetParticleSet(ParticleSet& P)  {
-      d_table = DistanceTable::getTable(DistanceTable::add(*PtclSource,P));
-      PtclTarget=&P;
+      d_table = DistanceTable::getTable(DistanceTable::add(sourcePtcl,P));
     }
 
     ~CoulombPotentialAB() { }
@@ -80,15 +78,9 @@ namespace qmcplusplus {
     }
 
     bool get(std::ostream& os) const {
-      os << "CoulomAB potential: " 
-        << " source = " << PtclSource->getName() 
-        << " target = " << PtclTarget->getName();
       return true;
     }
     
-    QMCHamiltonianBase* clone() {
-      return new CoulombPotentialAB(*PtclSource,*PtclTarget);
-    }
     //#ifdef USE_FASTWALKER
     //    inline void 
     //    evaluate(WalkerSetRef& W, ValueVectorType& LE) {

@@ -23,7 +23,7 @@ namespace qmcplusplus {
  
   LocalCorePolPotential::LocalCorePolPotential(ParticleSet& ions, 
 					       ParticleSet& els): 
-    FirstTime(true), eCoreCore(0.0), IonSys(ions), d_ie(0), d_ii(0) { 
+    FirstTime(true), eCoreCore(0.0), IonConfig(ions), d_ie(0), d_ii(0) { 
     
     //set the distance tables
     d_ie = DistanceTable::getTable(DistanceTable::add(ions,els));
@@ -47,7 +47,7 @@ namespace qmcplusplus {
   
 
   void LocalCorePolPotential::resetTargetParticleSet(ParticleSet& P) {
-    d_ie = DistanceTable::getTable(DistanceTable::add(d_ie->origin(),P));
+    d_ie = DistanceTable::getTable(DistanceTable::add(IonConfig,P));
   }
 
   /** process xml node for each element
@@ -68,13 +68,13 @@ namespace qmcplusplus {
    * @param cur xmlnode containing element+
    * 
    * element/@name is used to find the index of the element of the 
-   * IonSys::SpeciesSet. The size of InpCPP is the number of species.
+   * IonConfig::SpeciesSet. The size of InpCPP is the number of species.
    * The size of Centers is the number of ions.
    */
   bool LocalCorePolPotential::put(xmlNodePtr cur){
     string ename;
 
-    InpCPP.resize(IonSys.getSpeciesSet().getTotalNum(),0);
+    InpCPP.resize(IonConfig.getSpeciesSet().getTotalNum(),0);
     cur= cur->children;
     bool success(false);
     while(cur != NULL){
@@ -82,9 +82,9 @@ namespace qmcplusplus {
       if(cname == "element"){
       	const xmlChar* e_ptr = xmlGetProp(cur,(const xmlChar*)"name");
       	if(e_ptr){
-          int itype = IonSys.getSpeciesSet().addSpecies((const char*)e_ptr);
+          int itype = IonConfig.getSpeciesSet().addSpecies((const char*)e_ptr);
           if(InpCPP[itype]==0) InpCPP[itype] = new CPP_Param;
-          LOGMSG("CPP parameters for " << IonSys.getSpeciesSet().speciesName[itype])
+          LOGMSG("CPP parameters for " << IonConfig.getSpeciesSet().speciesName[itype])
           success &= InpCPP[itype]->put(cur);
       	}
       }
@@ -94,7 +94,7 @@ namespace qmcplusplus {
     //resize Centers by the number of centers
     Centers.resize(nCenters,0);
     for(int iat=0; iat<nCenters; iat++) {
-      Centers[iat]=InpCPP[IonSys.GroupID[iat]];
+      Centers[iat]=InpCPP[IonConfig.GroupID[iat]];
     }
     return success;
   }
@@ -104,7 +104,7 @@ namespace qmcplusplus {
 
     if(FirstTime) {
       //index for attribute charge
-      SpeciesSet& Species(IonSys.getSpeciesSet());
+      SpeciesSet& Species(IonConfig.getSpeciesSet());
       int iz = Species.addAttribute("charge");
       //calculate the Core-Core Dipole matrix
       for(int iat=0; iat<nCenters; iat++) {
@@ -113,8 +113,8 @@ namespace qmcplusplus {
           RealType rinv3 = pow(d_ii->rinv(nn),3);//(1/R_{JI}^3) R_{JI} = R_J-R_I
           PosType dipole(rinv3*d_ii->dr(nn));//(\vec{R_{JI}}/R_{JI}^3)
           //Sign and the charge of the paired ion are taken into account here 
-          CoreCoreDipole[iat] -= dipole*Species(iz,IonSys.GroupID[jat]);
-          CoreCoreDipole[jat] += dipole*Species(iz,IonSys.GroupID[iat]);
+          CoreCoreDipole[iat] -= dipole*Species(iz,IonConfig.GroupID[jat]);
+          CoreCoreDipole[jat] += dipole*Species(iz,IonConfig.GroupID[iat]);
         }
       }
 
@@ -149,15 +149,12 @@ namespace qmcplusplus {
 
   LocalCorePolPotential::LocalCorePolPotential(const LocalCorePolPotential& cpp):
     FirstTime(true), nCenters(cpp.nCenters), nParticles(cpp.nParticles),
-  eCoreCore(0.0), IonSys(cpp.IonSys), d_ie(cpp.d_ie), d_ii(cpp.d_ii) {
+  eCoreCore(0.0), IonConfig(cpp.IonConfig), d_ie(cpp.d_ie), d_ii(cpp.d_ii) {
     CoreCoreDipole.resize(nCenters,0.0);
     CoreElDipole.resize(nCenters,nParticles);
     CoreElDipole = 0.0;
   }
 
-  QMCHamiltonianBase* LocalCorePolPotential::clone() {
-    return new LocalCorePolPotential(*this);
-  }
 }
 /***************************************************************************
  * $RCSfile$   $Author$

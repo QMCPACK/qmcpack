@@ -83,7 +83,7 @@ namespace qmcplusplus {
     RealType eCoreCore;
 
     ///reference to the ionic system
-    ParticleSet& IonSys;
+    ParticleSet& IonConfig;
     ///the ion-electron DistanceTable
     DistanceTableData* d_ie;
     ///the ion-ion DistanceTable
@@ -114,14 +114,13 @@ namespace qmcplusplus {
     bool put(xmlNodePtr cur);
 
     bool get(std::ostream& os) const {
-      os << "LocalCorePolPotential: " << IonSys.getName();
+      os << "LocalCorePolPotential: " << IonConfig.getName();
       return true;
     }
     //inline RealType fcpp(RealType z) {
     //  return pow((1.0-exp(-1.0*z*z)),2);
     //}
 
-    QMCHamiltonianBase* clone();
   };
 }
 #endif

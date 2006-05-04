@@ -120,7 +120,7 @@ namespace qmcplusplus {
       }
 
   void NonLocalPPotential::resetTargetParticleSet(ParticleSet& P) {
-    d_table = DistanceTable::getTable(DistanceTable::add(d_table->origin(),P));
+    d_table = DistanceTable::getTable(DistanceTable::add(IonConfig,P));
   }
 
   /** constructor
@@ -136,8 +136,8 @@ namespace qmcplusplus {
    set so that the values are re-evaluated during the optimizations.
    */
   NonLocalPPotential::NonLocalPPotential(ParticleSet& ions, ParticleSet& els,
-      TrialWaveFunction& psi):
-    Centers(ions.GroupID), d_table(NULL), Psi(&psi)
+      TrialWaveFunction& psi): 
+    IonConfig(ions), Centers(ions.GroupID), d_table(0), Psi(&psi)
   { 
 
     d_table = DistanceTable::getTable(DistanceTable::add(ions,els));

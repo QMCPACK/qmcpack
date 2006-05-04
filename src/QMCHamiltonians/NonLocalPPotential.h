@@ -144,6 +144,8 @@ namespace qmcplusplus {
     DistanceTableData* d_table;
     ///the set of local-potentials (one for each ion)
     vector<RadialPotentialSet*> PP;
+    ///reference to the center ion
+    ParticleSet& IonConfig;
     ///unique index for each ion
     ParticleSet::ParticleIndex_t Centers;
 
