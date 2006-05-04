@@ -53,6 +53,7 @@ namespace qmcplusplus {
 
     ParticleSetPool& PtclPool;
     MultipleEnergyEstimator *multiEstimator;
+    string refSetName;
 
     SpaceWarp PtclWarp;
     

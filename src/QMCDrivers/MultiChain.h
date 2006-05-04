@@ -206,10 +206,9 @@ namespace qmcplusplus {
      * @param npsi number of Psi/H pairs
      */
     //MultiChain(Walker_t* awalker,int len, int direction, int npsi): 
-    MultiChain(Bead* abead,int &len, int direction, int npsi): 
+    MultiChain(Bead* abead,int len, int direction, int npsi): 
       GrowthDirection(direction), nPsi(npsi){
       //always add number of beads
-      if(len%2 == 0) len++;
       Middle = len/2;
       Last = len-1;
       for(int i=0; i<len; i++) {

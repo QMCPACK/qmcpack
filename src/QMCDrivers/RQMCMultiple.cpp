@@ -565,7 +565,7 @@ namespace qmcplusplus {
     }
 
     if(Random() < AcceptProb){
-
+   
       //Update Reptile information
       Reptile->GlobalWgt=NewGlobalWgt;
       for(int ipsi=0; ipsi<nPsi; ipsi++) {
@@ -589,6 +589,7 @@ namespace qmcplusplus {
       }
       ++nAccept;
     } else {
+
       ++nReject; 
       ++NumTurns; 
       Reptile->flip();

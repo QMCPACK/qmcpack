@@ -41,7 +41,8 @@ namespace qmcplusplus {
     QMCDriverMode.set(QMC_MULTIPLE,1);
     equilBlocks=-1;
     m_param.add(equilBlocks,"equilBlocks","int");
-    cout << "EquilBlocks " << equilBlocks << endl;
+    refSetName="invalid";
+    m_param.add(refSetName,"reference","str");
     add_H_and_Psi(&h,&psi);
   }
 
@@ -332,7 +333,37 @@ namespace qmcplusplus {
     //////////////////////////
     //Taken from VMCMultiple//
     //////////////////////////
-    vector<DistanceTableData*> dtableList;
+    if(WW.empty()) {
+      W.clearDistanceTables();
+    }
+    //qmcsystem
+    vector<ParticleSet*> ionSets;
+    DistanceTableData* dtableReference;
+    xmlNodePtr cur=q->children;
+    while(cur != NULL) {
+      string cname((const char*)(cur->name));
+      if(cname == "qmcsystem") {
+	string source_name((const char*)xmlGetProp(cur,(const xmlChar*)"source"));
+        ionSets.push_back(PtclPool.getParticleSet(source_name));
+      }
+      cur=cur->next;
+    }
+
+    ParticleSet* p(0);
+    if(refSetName!="invalid"){
+      p=PtclPool.getParticleSet(refSetName);
+      if(p==0){
+        cout << "The specified reference cannot be found. Stop." << endl;
+        abort();
+      }
+    }else{
+      refSetName=ionSets[0]->getName().c_str();
+      p=PtclPool.getParticleSet(refSetName);
+    }
+
+    dtableReference=DistanceTable::getTable(DistanceTable::add(*p,W));
+
+    /*vector<DistanceTableData*> dtableList;
     string target_name(W.getName());
     xmlNodePtr cur=q->children;
     while(cur != NULL) {
@@ -342,14 +373,15 @@ namespace qmcplusplus {
 	dtableList.push_back(DistanceTable::getTable(source_name.c_str(),target_name.c_str()));
       }
       cur=cur->next;
-    }
+    }*/
 
     nptcl=W.R.size();
     ///////////////////////////
     
     nPsi=Psi1.size();
 
-    PtclWarp.initialize(dtableList);
+    //PtclWarp.initialize(dtableList);
+    PtclWarp.initialize(ionSets,dtableReference);
     JACOBIAN=W.addProperty("Jacobian");
     
     resize(nPsi,W.getTotalNum()); 
@@ -369,15 +401,37 @@ namespace qmcplusplus {
       Estimators->add(multiEstimator,"elocal");
     }
 
-    H1[0]->setPrimary(true);
+    //H1[0]->setPrimary(true);
     for(int ipsi=1; ipsi<nPsi; ipsi++) {
-      H1[ipsi]->setPrimary(false);
+      H1[ipsi]->setPrimary(true);
     }
 
     //////////////////////////////
     //Taken from VMCMultipleWarp//
     //////////////////////////////
+
     if(WW.empty()){
+      //WW.push_back(&W);
+      char newname[128];
+      //for(int ipsi=1; ipsi<nPsi; ipsi++){
+      for(int ipsi=0; ipsi<nPsi; ipsi++){
+	sprintf(newname,"%s%d", W.getName().c_str(),ipsi);
+        ParticleSet* pclone=PtclPool.getParticleSet(newname);
+        if(pclone == 0) {
+          app_log() << "  Cloning particle set in VMCMultipleWarp " << newname << endl;
+          pclone=new ParticleSet(W);
+          pclone->setName(newname);
+          PtclPool.addParticleSet(pclone);
+        } else {
+          app_log() << "  Cloned particle exists " << newname << endl;
+        }
+	WW.push_back(pclone);
+	Psi1[ipsi]->resetTargetParticleSet(*WW[ipsi]);
+        H1[ipsi]->resetTargetParticleSet(*WW[ipsi]);
+      }
+    }
+
+    /*if(WW.empty()){
       WW.push_back(&W);
       char newname[128];
       for(int ipsi=1; ipsi<nPsi; ipsi++){
@@ -400,7 +454,7 @@ namespace qmcplusplus {
         //H1[ipsi]->resetTargetParticleSet(W
         //WW[ipsi]->setUpdateMode(MCWalkerConfiguration::Update_Particle);
       }
-    }
+    }*/
     
     return true;
   }

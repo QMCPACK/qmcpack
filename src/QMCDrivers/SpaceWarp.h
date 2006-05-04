@@ -188,7 +188,7 @@ namespace qmcplusplus {
     //    one_ptcl_Jacob[ipsi][iel]=WarpVector[iel]->Jacobian[ipsi];
     //}
 
-    void initialize(vector<DistanceTableData*>& dtList);
+    void initialize(vector<ParticleSet*>& IonSets, DistanceTableData* dtprime);
     
     void warp_one(int iel, bool require_register );
 

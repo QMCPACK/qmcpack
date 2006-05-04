@@ -8,9 +8,11 @@ namespace qmcplusplus {
       one_ptcl_Jacob[ipsi][iel]=WarpVector[iel]->Jacobian[ipsi];
   }
 
-  void SpaceWarp::initialize(vector<DistanceTableData*>& dtList){
-    npsi=dtList.size();
-    dtPrimary=dtList[0];
+  //void SpaceWarp::initialize(vector<DistanceTableData*>& dtList){
+  void SpaceWarp::initialize(vector<ParticleSet*>& ionSets, DistanceTableData* dtprime){
+    dtPrimary=dtprime;
+    npsi=ionSets.size();
+    cout << dtPrimary->VisitorIndex<<endl;
     nptcl= dtPrimary->size(DistanceTableData::VisitorIndex);
     ncenter=dtPrimary->centers();
     //resize and Initialize nuclear displacement
@@ -23,8 +25,8 @@ namespace qmcplusplus {
     //Compute displacements of ions for each ionic configuration
     for(int ipsi=0; ipsi<npsi; ipsi++){
       for(int iat=0; iat<ncenter; iat++)
-        (Delta[ipsi])[iat]= dtList[ipsi]->origin().R[iat] - 
-          dtPrimary->origin().R[iat];
+        //(Delta[ipsi])[iat]= dtList[ipsi]->origin().R[iat] - dtPrimary->origin().R[iat];
+        (Delta[ipsi])[iat]= ionSets[ipsi]->R[iat] - dtPrimary->origin().R[iat];
     }
     //auxiliary vectors
     r.resize(ncenter);

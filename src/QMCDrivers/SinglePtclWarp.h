@@ -83,6 +83,8 @@ namespace qmcplusplus {
 
     RealType get_Jacobian(int ipsi, const vector<PosType>& delta){
       Jacob_matrix[ipsi]=unitMatrix;
+      //first index (row index) of Jacob matrix is coordinate in reference system.
+      //This is the variable we derive for.
       for(int iat=0; iat<ncenter; iat++) Jacob_matrix[ipsi]+= outerProduct(delta[iat],d_omega[iat]);
       //Compute the cofactor matrix
       Jacob_cofactor[ipsi] = getCof(Jacob_matrix[ipsi]);

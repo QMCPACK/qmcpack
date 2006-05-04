@@ -81,6 +81,8 @@ namespace qmcplusplus {
     //index of the log-jacobian in Properties
     int LOGJACOB;
 
+    string refSetName;
+
     vector<RealType> Jacobian;
 
     SpaceWarp PtclWarp;

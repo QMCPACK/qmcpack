@@ -58,6 +58,7 @@ namespace qmcplusplus {
     vector<RealType> ratio, ratioij, logpsi2, UmbrellaWeight,sumratio,invsumratio;
     vector<ParticleSet*> WW;
     MultipleEnergyEstimator *multiEstimator;
+    string refSetName;
 
     SpaceWarp PtclWarp;
     
