@@ -49,11 +49,12 @@ namespace qmcplusplus {
   class MolecularOrbitalBasis: public QMCTraits {
   public:
 
+    const ParticleSet* IonConfig;
     ///constructor
-    MolecularOrbitalBasis(): myTable(NULL){ }
+    MolecularOrbitalBasis(): myTable(0), IonConfig(0){ }
 
     ///constructor with ncenters
-    explicit MolecularOrbitalBasis(int ncenters): myTable(NULL){ 
+    explicit MolecularOrbitalBasis(int ncenters): myTable(0), IonConfig(0){ 
       for(int ic=0; ic<ncenters; ic++) AOs.push_back(0);
     }
   
@@ -63,7 +64,7 @@ namespace qmcplusplus {
      *determine the total number of basis states.
     */
     void setTable(DistanceTableData* atable) { 
-
+      IonConfig=&(atable->origin());
       myTable = atable;
       //first set up the center list
       const ParticleSet& ptcl_ref = myTable->origin();
@@ -95,7 +96,8 @@ namespace qmcplusplus {
      */
     void resetTargetParticleSet(ParticleSet& P) {
       LOGMSG("MolecularOrbitalBasis::resetTaretParticleSet")
-      myTable = DistanceTable::getTable(DistanceTable::add(myTable->origin(),P));
+      //myTable = DistanceTable::getTable(DistanceTable::add(myTable->origin(),P));
+      myTable = DistanceTable::getTable(DistanceTable::add(*IonConfig,P));
       for(int i=0; i<AOs.size(); i++) AOs[i]->reset(myTable);
     }
 
