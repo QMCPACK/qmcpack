@@ -31,24 +31,32 @@ namespace qmcplusplus {
     string corr_tag("correlation");
 
     vector<FN*> jastrow;
-    cur = cur->xmlChildrenNode;
-    DistanceTableData* d_table = NULL;
     int ng = 0;
+    ParticleSet* sourcePtcl=0;
+    const xmlChar* s=xmlGetProp(cur,(const xmlChar*)"source");
+    if(s != NULL) {
+      map<string,ParticleSet*>::iterator pa_it(ptclPool.find((const char*)s));
+      if(pa_it == ptclPool.end()) return false;
+      sourcePtcl = (*pa_it).second;
+      ng=sourcePtcl->getSpeciesSet().getTotalNum();
+    }
+
+    cur = cur->xmlChildrenNode;
     while(cur != NULL) {
       string cname((const char*)(cur->name));
       if(cname == dtable_tag) {
       	string source_name((const char*)(xmlGetProp(cur,(const xmlChar *)"source")));
         map<string,ParticleSet*>::iterator pa_it(ptclPool.find(source_name));
         if(pa_it == ptclPool.end()) return false;
-	ParticleSet* a = (*pa_it).second;
-	d_table = DistanceTable::getTable(DistanceTable::add(*a,targetPtcl));
-	ng = a->getSpeciesSet().getTotalNum();
+        sourcePtcl = (*pa_it).second;
+        ng=sourcePtcl->getSpeciesSet().getTotalNum();
 	XMLReport("Number of sources " << ng)
 	for(int i=0; i<ng; i++) jastrow.push_back(NULL);
       } else if(cname == corr_tag) {
+        if(sourcePtcl == 0) return false;
 	string speciesA((const char*)(xmlGetProp(cur,(const xmlChar *)"speciesA")));
 	//string speciesB((const char*)(xmlGetProp(cur,(const xmlChar *)"speciesB")));
-	int ia = d_table->origin().getSpeciesSet().findSpecies(speciesA);
+	int ia = sourcePtcl->getSpeciesSet().findSpecies(speciesA);
 	if(!(jastrow[ia])) {
 	  jastrow[ia]= new FN;
 	  jastrow[ia]->put(cur,targetPsi.VarList);
@@ -58,8 +66,13 @@ namespace qmcplusplus {
       cur = cur->next;
     } // while cur
     
+    if(sourcePtcl == 0) {//invalid input: cleanup
+      for(int ig=0; ig<ng; ig++)  if(jastrow[ig]) delete jastrow[ig];
+      return false;
+    }
+
     typedef OneBodyJastrow<FN> JneType;
-    JneType* J1 = new JneType(targetPtcl, d_table);
+    JneType* J1 = new JneType(*sourcePtcl,targetPtcl);
     for(int ig=0; ig<ng; ig++) {
       J1->addFunc(ig,jastrow[ig]);
     }

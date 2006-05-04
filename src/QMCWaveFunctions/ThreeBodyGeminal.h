@@ -45,7 +45,7 @@ namespace qmcplusplus {
 
     //evaluate the distance table with els
     void resetTargetParticleSet(ParticleSet& P) {
-      d_table = DistanceTable::getTable(DistanceTable::add(d_table->origin(),P));
+      d_table = DistanceTable::getTable(DistanceTable::add(CenterRef,P));
       GeminalBasis->resetTargetParticleSet(P);
     }
 

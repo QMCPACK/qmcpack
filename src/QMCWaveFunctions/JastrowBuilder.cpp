@@ -232,9 +232,18 @@ namespace qmcplusplus {
     int cur_var = targetPsi.VarList.size();
 
     vector<FuncType*> jastrow;
-    DistanceTableData* d_table = NULL;
-    cur = cur->xmlChildrenNode;
+    ParticleSet* center=0;
     int ng = 0;
+
+    const xmlChar* s=xmlGetProp(cur,(const xmlChar*)"source");
+    if(s != NULL) {
+      map<string,ParticleSet*>::iterator pa_it(ptclPool.find((const char*)s));
+      if(pa_it == ptclPool.end()) return false;
+      center = (*pa_it).second;
+      ng=center->getSpeciesSet().getTotalNum();
+    }
+
+    cur = cur->xmlChildrenNode;
     while(cur != NULL) {
       string cname((const char*)(cur->name));
       if(cname == dtable_tag) {
@@ -242,19 +251,15 @@ namespace qmcplusplus {
       	string target_name((const char*)(xmlGetProp(cur,(const xmlChar *)"target")));
         map<string,ParticleSet*>::iterator pa_it(ptclPool.find(source_name));
         map<string,ParticleSet*>::iterator pb_it(ptclPool.find(target_name));
-
         if(pa_it == ptclPool.end()  || pb_it == ptclPool.end()) return false;
-
-	ParticleSet* a = (*pa_it).second;
-	ParticleSet* b = (*pb_it).second;
-	d_table = DistanceTable::getTable(DistanceTable::add(*a,*b));
-	ng = a->getSpeciesSet().getTotalNum();
+        center = (*pa_it).second;
+        ng=center->getSpeciesSet().getTotalNum();
 	XMLReport("Number of sources " << ng)
-	for(int i=0; i<ng; i++) jastrow.push_back(NULL);
+	for(int i=0; i<ng; i++) jastrow.push_back(0);
       } else if(cname == corr_tag) {
 	string speciesA((const char*)(xmlGetProp(cur,(const xmlChar *)"speciesA")));
 	//string speciesB((const char*)(xmlGetProp(cur,(const xmlChar *)"speciesB")));
-	int ia = d_table->origin().getSpeciesSet().findSpecies(speciesA);
+	int ia = center->getSpeciesSet().findSpecies(speciesA);
 	if(!(jastrow[ia])) {
 	  jastrow[ia]= new FuncType;
 	  jastrow[ia]->put(cur,targetPsi.VarList);
@@ -264,7 +269,7 @@ namespace qmcplusplus {
       cur = cur->next;
     } // while cur
     
-    J1 = new JneType(targetPtcl, d_table);
+    J1 = new JneType(*center,targetPtcl);
     for(int ig=0; ig<ng; ig++) {
       J1->addFunc(ig,jastrow[ig]);
     }

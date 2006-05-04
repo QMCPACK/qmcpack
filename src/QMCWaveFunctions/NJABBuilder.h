@@ -37,8 +37,8 @@ namespace qmcplusplus {
 
     ///reference to the pool
     PtclPoolType& ptclPool;
-    ///distance table
-    DistanceTableData* d_table;
+    ///pointer to the center ParticleSet
+    ParticleSet* sourcePtcl;
     ///pointer to <grid/>
     xmlNodePtr gridPtr;
     ///unique analytic functions

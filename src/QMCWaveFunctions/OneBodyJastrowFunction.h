@@ -71,6 +71,7 @@ namespace qmcplusplus {
   template<class FT>
   class OneBodyJastrow: public OrbitalBase {
 
+    const ParticleSet& CenterRef;
     const DistanceTableData* d_table;
 
     ValueType curVal, curLap;
@@ -80,32 +81,32 @@ namespace qmcplusplus {
     ValueType *FirstAddressOfdU, *LastAddressOfdU;
     vector<FT*> Fs;
     vector<FT*> Funique;
+
   public:
 
     typedef FT FuncType;
 
 
     ///constructor
-    //OneBodyJastrow(DistanceTableData* dtable)
-    OneBodyJastrow(ParticleSet& els, DistanceTableData* dt)
-      : d_table(dt), FirstAddressOfdU(NULL), LastAddressOfdU(NULL){ 
+    OneBodyJastrow(const ParticleSet& centers, ParticleSet& els)
+      : CenterRef(centers), d_table(0), FirstAddressOfdU(0), LastAddressOfdU(0){ 
       U.resize(els.getTotalNum());
+      d_table = DistanceTable::getTable(DistanceTable::add(CenterRef,els));
     }
 
     ~OneBodyJastrow(){ }
 
     //evaluate the distance table with P
     void resetTargetParticleSet(ParticleSet& P) {
-      d_table = DistanceTable::getTable(DistanceTable::add(d_table->origin(),P));
+      d_table = DistanceTable::getTable(DistanceTable::add(CenterRef,P));
     }
 
     void addFunc(int source_type, FT* afunc) {
-      const ParticleSet& ions=d_table->origin();
       if(Fs.empty()) {
-        Fs.resize(ions.getTotalNum(),0);
+        Fs.resize(CenterRef.getTotalNum(),0);
       }
       for(int i=0; i<Fs.size(); i++) {
-        if(ions.GroupID[i] == source_type) Fs[i]=afunc;
+        if(CenterRef.GroupID[i] == source_type) Fs[i]=afunc;
       }
       Funique.push_back(afunc);
     }

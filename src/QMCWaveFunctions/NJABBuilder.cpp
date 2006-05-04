@@ -35,7 +35,7 @@ namespace qmcplusplus {
    *and target particle sets.
    */
   NJABBuilder::NJABBuilder(ParticleSet& p, TrialWaveFunction& psi, PtclPoolType& psets):
-    OrbitalBuilderBase(p,psi), ptclPool(psets), gridPtr(NULL),d_table(0)
+    OrbitalBuilderBase(p,psi), ptclPool(psets), gridPtr(0), sourcePtcl(0)
   { }
 
   NJABBuilder::InFuncType* 
@@ -53,13 +53,19 @@ namespace qmcplusplus {
   bool NJABBuilder::putInFunc(xmlNodePtr cur) {
 
     string corr_tag("correlation");
-
     string jastfunction("pade");
-    const xmlChar *ftype = xmlGetProp(cur, (const xmlChar *)"function");
-    if(ftype) jastfunction = (const char*) ftype;
-    ParticleSet* nuclei=0;
-
     int	ng=1;
+
+    const xmlChar *ftype = xmlGetProp(cur, (const xmlChar *)"function");
+    if(ftype != NULL) jastfunction = (const char*) ftype;
+    const xmlChar* s=xmlGetProp(cur,(const xmlChar*)"source");
+    if(s != NULL) {
+      map<string,ParticleSet*>::iterator pa_it(ptclPool.find((const char*)s));
+      if(pa_it == ptclPool.end()) return false;
+      sourcePtcl = (*pa_it).second;
+      ng=sourcePtcl->getSpeciesSet().getTotalNum();
+    }
+
     int ia=0, ib=0, iab=0;
     cur = cur->children;
     while(cur != NULL) {
@@ -70,14 +76,14 @@ namespace qmcplusplus {
       	string source_name((const char*)(xmlGetProp(cur,(const xmlChar *)"source")));
         map<string,ParticleSet*>::iterator pa_it(ptclPool.find(source_name));
         if(pa_it == ptclPool.end()) return false;
-	nuclei=(*pa_it).second;
-	d_table = DistanceTable::getTable(DistanceTable::add(*nuclei,targetPtcl));
-	ng = nuclei->getSpeciesSet().getTotalNum();
+	sourcePtcl=(*pa_it).second;
+	ng = sourcePtcl->getSpeciesSet().getTotalNum();
 	XMLReport("Number of sources " << ng)
         InFunc.resize(ng,0);
       } else if(cname ==corr_tag) {
+        if(sourcePtcl==0) return false;
 	string spA((const char*)(xmlGetProp(cur,(const xmlChar *)"speciesA")));
-        ia = nuclei->getSpeciesSet().findSpecies(spA);
+        ia = sourcePtcl->getSpeciesSet().findSpecies(spA);
 	if(!(InFunc[ia])) {
           InFuncType *j1=createInFunc(jastfunction);
 	  InFunc[ia]= j1;
@@ -102,7 +108,7 @@ namespace qmcplusplus {
     //get the cutoff value to smooth the function
     RealType rcut = OneDimGridFactory::setSmoothCutoff(agrid,gridPtr);
 
-    OneBodyJastrow<FuncType> *J1 = new OneBodyJastrow<FuncType>(targetPtcl,d_table);
+    OneBodyJastrow<FuncType> *J1 = new OneBodyJastrow<FuncType>(*sourcePtcl, targetPtcl);
     for(int i=0; i<InFunc.size(); i++) {
       if(InFunc[i]) {
         FuncType* ofunc= new FuncType;
