@@ -64,6 +64,10 @@ namespace qmcplusplus {
     app_log() << "Effective Target Energy = " << EtargetEff << endl;
     app_log() << "Cost Function = " << w_en << "*<E> + " 
       << w_var << "*<Var> + " << w_abs << "*|E-E_T|^" << PowerE << endl;
+    if(UseWeight) 
+      app_log() << "Correlated sampling is used." << endl;
+    else
+      app_log() << "Weight is set to one." << endl;
 
     if(msg_stream) {
       *msg_stream << "  Total number of walkers          = " << NumSamples << endl;
@@ -155,7 +159,7 @@ namespace qmcplusplus {
       W.L += dL;
 
       eloc_new=H_KE.evaluate(W)+saved[ENERGY_FIXED];
-      Return_t weight = exp(2.0*(logpsi-saved[LOGPSI_FREE]));
+      Return_t weight = UseWeight?exp(2.0*(logpsi-saved[LOGPSI_FREE])):1.0;
 
       //////////////////////////////////////////
       //THIS WAS TO TEST 
@@ -390,12 +394,15 @@ namespace qmcplusplus {
   bool
   QMCCostFunction::put(xmlNodePtr q) {
 
+    string useWeightStr("yes");
     ParameterSet m_param;
-    m_param.add(UseWeight,"useweight","none");
+    m_param.add(useWeightStr,"useWeight","string");
     m_param.add(PowerE,"power","int");
     m_param.add(CorrelationFactor,"correlation","scalar");
     m_param.add(MinNumWalkers,"min_walkers","scalar");
     m_param.put(q);
+
+    UseWeight = (useWeightStr == "yes");
 
     xmlNodePtr qsave=q;
     //Estimators.put(q);
