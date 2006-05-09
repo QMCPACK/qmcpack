@@ -69,7 +69,7 @@ namespace qmcplusplus {
   QMCDriverFactory::setQMCDriver(int curSeries, xmlNodePtr cur) {
 
     string curName((const char*)cur->name);
-    string update_mode("pbyp");
+    string update_mode("walker");
     string qmc_mode("invalid");
     string multi_tag("no");
     string warp_tag("no");
@@ -84,7 +84,6 @@ namespace qmcplusplus {
     aAttrib.put(cur);
 
     bool append_run =(append_tag == "yes");
-
     bitset<3>  WhatToDo;
     WhatToDo[SPACEWARP_MODE]= (warp_tag == "yes");
     WhatToDo[MULTIPLE_MODE]= (multi_tag == "yes");
@@ -95,19 +94,16 @@ namespace qmcplusplus {
       //overwrite the bits
       if(qmc_mode == "vmc") {
         newRunType=VMC_RUN;
-        WhatToDo[UPDATE_MODE]=0;
       } else if (qmc_mode == "vmc-ptcl") {
         newRunType=VMC_RUN;
         WhatToDo[UPDATE_MODE]=1;
       } else if (qmc_mode == "vmc-multi") {
         newRunType=VMC_RUN;
         WhatToDo[MULTIPLE_MODE]=1;
-        WhatToDo[UPDATE_MODE]=0;
       } else if(qmc_mode == "vmc-warp") {
         newRunType=VMC_RUN;
         WhatToDo[SPACEWARP_MODE]=1;
         WhatToDo[MULTIPLE_MODE]=1;
-        WhatToDo[UPDATE_MODE]=0;
       } else if(qmc_mode == "vmc-ptcl-multi") {
         newRunType=VMC_RUN;
         WhatToDo[SPACEWARP_MODE]=1;
@@ -115,7 +111,6 @@ namespace qmcplusplus {
         WhatToDo[UPDATE_MODE]=1;
       } else if(qmc_mode == "dmc") {
         newRunType=DMC_RUN;
-        WhatToDo[UPDATE_MODE]=0;
       } else if(qmc_mode == "dmc-ptcl") {
         newRunType=DMC_RUN;
         WhatToDo[UPDATE_MODE]=1;
