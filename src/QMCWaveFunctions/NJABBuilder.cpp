@@ -50,6 +50,21 @@ namespace qmcplusplus {
     return 0;
   }
 
+  /** create Input Analytic function
+   *
+   * \xmlonly
+   * <jastrow name="Jne" 
+   *   type="Two-Body|One-Body|Polarization|Three-Body-Geminal"
+   *   function="pade|pade2|no-cusp" 
+   *   transform="no|yes" spin="no|yes" 
+   *   source="ionic system">
+   *   <grid/>
+   *   <correlation speciesA="sourceSpecies" speciesB="targetSpecies" type="pade|pade2|no-cusp">
+   *      <parameter name=" ">value<parameter>
+   *   </correlation>
+   * </jastrow>
+   * \endxmlonly
+   */
   bool NJABBuilder::putInFunc(xmlNodePtr cur) {
 
     string corr_tag("correlation");
@@ -82,12 +97,19 @@ namespace qmcplusplus {
         InFunc.resize(ng,0);
       } else if(cname ==corr_tag) {
         if(sourcePtcl==0) return false;
+        string jfunctype(jastfunction);
 	string spA((const char*)(xmlGetProp(cur,(const xmlChar *)"speciesA")));
+        ftype = xmlGetProp(cur, (const xmlChar *)"type");
+        if(ftype) {
+          jfunctype=(const char*)ftype;
+        }
+
         ia = sourcePtcl->getSpeciesSet().findSpecies(spA);
 	if(!(InFunc[ia])) {
-          InFuncType *j1=createInFunc(jastfunction);
+          InFuncType *j1=createInFunc(jfunctype);
 	  InFunc[ia]= j1;
-	  app_log() <<"   Added Jastrow Correlation between " <<spA<<" and "<<targetPtcl.getName() << endl;
+	  app_log() <<"   Added Jastrow Correlation ("<<jfunctype 
+            << ") between " <<spA<<" and "<<targetPtcl.getName() << endl;
 	}
 	InFunc[ia]->put(cur,targetPsi.VarList);
       }
