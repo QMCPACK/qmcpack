@@ -78,6 +78,7 @@ namespace qmcplusplus {
     }
 
     bool get(std::ostream& os) const {
+      os << "CoulombPotentialAB potential: " << sourcePtcl.getName();
       return true;
     }
     
@@ -157,7 +158,7 @@ namespace qmcplusplus {
     }
 
     bool get(std::ostream& os) const {
-      os << "CoulomAA potential: " << PtclRef->getName();
+      os << "CoulombPotentialAA: " << PtclRef->getName();
       return true;
     }
 

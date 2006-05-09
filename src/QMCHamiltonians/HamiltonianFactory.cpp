@@ -38,6 +38,19 @@ namespace qmcplusplus {
   ptclPool(pset),psiPool(oset), myNode(NULL), psiName("psi0") 
   {}
 
+  /** main hamiltonian build function
+   * @param cur element node <hamiltonian/>
+   * @param buildtree if true, build xml tree for a reuse
+   *
+   * A valid hamiltonian node contains
+   * \xmlonly
+   *  <hamiltonian target="e">
+   *    <pairpot type="coulomb" name="ElecElec" source="e"/>
+   *    <pairpot type="coulomb" name="IonElec" source="i"/>
+   *    <pairpot type="coulomb" name="IonIon" source="i" source="i"/>
+   *  </hamiltonian>
+   * \endxmlonly
+   */
   bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree) {
 
     if(cur == NULL) return false;
@@ -76,20 +89,32 @@ namespace qmcplusplus {
     while(cur != NULL) {
       string cname((const char*)cur->name);
       const xmlChar* t = xmlGetProp(cur,(const xmlChar*)"type");
-      if(t) { // accept only if it has type
+      if(t != NULL) { // accept only if it has type
         string pot_type((const char*)t);
+        string nuclei("i");
+        const xmlChar* sptr = xmlGetProp(cur,(const xmlChar*)"source");
+        if(sptr != NULL) nuclei=(const char*)sptr;
         if(cname == "pairpot") {
           if(pot_type == "coulomb") {
-	    addCoulombPotential(cur);
+            bool sameTarget=true;
+            string aNewTarget(targetPtcl->getName());
+            const xmlChar* aptr = xmlGetProp(cur,(const xmlChar*)"target");
+            if(aptr != NULL) {
+              aNewTarget=(const char*)aptr;
+              sameTarget= (aNewTarget == targetPtcl->getName());
+            } 
+            if(sameTarget) 
+	      addCoulombPotential(cur);
+            else {
+              app_log() << "  Creating Coulomb potential " << nuclei << "-" << nuclei << endl;
+              addConstCoulombPotential(cur,nuclei);
+            }
           } else if(pot_type == "pseudo") {
             addPseudoPotential(cur);
           } else if(pot_type == "cpp") {
             addCorePolPotential(cur);
           }
         } else if(cname == "harmonic") {
-          t = xmlGetProp(cur,(const xmlChar*)"source");
-          string nuclei("i");
-          if(t) nuclei=(const char*)t;
           PtclPoolType::iterator pit(ptclPool.find(nuclei));
           if(pit != ptclPool.end()) {
             ParticleSet* ion=(*pit).second;
@@ -98,28 +123,7 @@ namespace qmcplusplus {
           }
         } else if(cname == "constant") { 
           if(pot_type == "coulomb") { //ugly!!!
-            t = xmlGetProp(cur,(const xmlChar*)"source");
-            string nuclei("i");
-            if(t) nuclei=(const char*)t;
-
-            renameProperty(nuclei);
-
-            PtclPoolType::iterator pit(ptclPool.find(nuclei));
-            if(pit != ptclPool.end()) {
-              ParticleSet* ion=(*pit).second;
-              if(ion->getTotalNum()>1) 
-		if(ion->Lattice.BoxBConds[0]){
-#if defined(QMCPLUSPLUS_RELEASE)
-                  ERRORMSG("This version cannot handle PBC. The IonIon potential will be wrong.")
-		  targetH->addOperator(new IonIonPotential(*ion),"IonIon");
-#else
-		  targetH->addOperator(new CoulombPBCAA(*ion),"IonIon");
-#endif
-		}
-		else {
-		  targetH->addOperator(new IonIonPotential(*ion),"IonIon");
-		}
-             }
+            addConstCoulombPotential(cur,nuclei);
           }
         }
       }
@@ -298,6 +302,27 @@ namespace qmcplusplus {
     cpp->put(cur); 
     targetH->addOperator(cpp, title);
   }
+
+  void 
+  HamiltonianFactory::addConstCoulombPotential(xmlNodePtr cur, string& nuclei){
+    renameProperty(nuclei);
+    PtclPoolType::iterator pit(ptclPool.find(nuclei));
+    if(pit != ptclPool.end()) {
+      ParticleSet* ion=(*pit).second;
+      if(ion->getTotalNum()>1) 
+        if(ion->Lattice.BoxBConds[0]){
+#if defined(QMCPLUSPLUS_RELEASE)
+          ERRORMSG("This version cannot handle PBC. The IonIon potential will be wrong.")
+          targetH->addOperator(new IonIonPotential(*ion),"IonIon");
+#else
+	  targetH->addOperator(new CoulombPBCAA(*ion),"IonIon");
+#endif
+        } else {
+          targetH->addOperator(new IonIonPotential(*ion),"IonIon");
+        }
+     }
+  }
+
 
   void HamiltonianFactory::renameProperty(const string& a, const string& b){
     RenamedProperty[a]=b;

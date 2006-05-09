@@ -87,7 +87,7 @@ namespace qmcplusplus {
     }
 
     bool get(std::ostream& os) const {
-      os << "Ion-Ion potential: " << PtclRef.getName();
+      os << "IonIonPotential: " << PtclRef.getName();
       return true;
     }
 
