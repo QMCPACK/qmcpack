@@ -141,6 +141,23 @@ void WaveFunctionTester::runBasicTest() {
 	 << "  Finite diff = " << setw(12) << L1[iat] << endl 
 	 << "  Error       = " << setw(12) << L[iat]-L1[iat] << endl << endl;
   }
+
+  makeGaussRandom(deltaR);
+  //testing ratio alone
+  for(int iat=0; iat<nat; iat++) {
+    W.update();
+    ValueType psi_p = log(fabs(Psi.evaluate(W)));
+
+    W.makeMove(iat,deltaR[iat]);
+    RealType aratio=Psi.ratio(W,iat);
+    W.rejectMove(iat);
+
+    W.R[iat] += deltaR[iat];         
+    W.update();
+    ValueType psi_m = log(fabs(Psi.evaluate(W)));
+
+    cout << iat << " ratio " << aratio << " " << exp(psi_m-psi_p) << endl;
+  }
 } 
 
 void WaveFunctionTester::runRatioTest() {
@@ -188,7 +205,8 @@ void WaveFunctionTester::runRatioTest() {
 
       RealType ratio=Psi.ratio(W,iat,dG,dL);
 
-      if(ratio > 0 && iat%2 == 0) {//accept only the even index
+      //if(ratio > 0 && iat%2 == 1) {//accept only the even index
+      if(ratio > 0) {
         W.acceptMove(iat);
         Psi.acceptMove(W,iat);
 
