@@ -18,7 +18,7 @@
  *@brief definition of three-body jastrow of Geminal functions
  */
 #include "QMCWaveFunctions/AGPDeterminant.h"
-#include "QMCWaveFunctions/MolecularOrbitals/GridMolecularOrbitals.h"
+//#include "QMCWaveFunctions/MolecularOrbitals/GridMolecularOrbitals.h"
 #include "QMCWaveFunctions/MolecularOrbitals/STOMolecularOrbitals.h"
 #include "QMCWaveFunctions/AGPDeterminantBuilder.h"
 namespace qmcplusplus {

@@ -44,6 +44,7 @@ namespace qmcplusplus {
       psiU.resize(nup);
       psiD.resize(ndown);
       phiT.resize(NumPtcls,BasisSize);
+      phiTv.resize(BasisSize);
 
       WorkSpace.resize(nup);
       Pivot.resize(nup);
@@ -190,7 +191,6 @@ namespace qmcplusplus {
       myL_temp.resize(NumPtcls);
       dY.resize(NumPtcls,BasisSize);
       d2Y.resize(NumPtcls,BasisSize);
-      phiTv.resize(BasisSize);
       dpsiU.resize(Nup,Nup);
       dpsiD.resize(Ndown,Nup);
       d2psiU.resize(Nup,Nup);
@@ -287,7 +287,9 @@ namespace qmcplusplus {
     AGPDeterminant::ValueType 
     AGPDeterminant::ratio(ParticleSet& P, int iat) {
 
+      std::copy(phiT[iat],phiT[iat]+BasisSize,phiTv.begin());
       GeminalBasis->evaluate(P,iat);
+      //BLAS::gemv(Lambda.rows(),Lambda.cols(), Lambda.data(), GeminalBasis->y(0), phiT[iat]);
 
       const ValueType* restrict y_ptr=GeminalBasis->y(0);
       if(iat<Nup) {
@@ -300,11 +302,8 @@ namespace qmcplusplus {
         }
         return DetRatio(psiM, psiU.data(),iat);
       } else {
-        for(int u=0; u<Ndown; u++) {
+        for(int u=0; u<Nup; u++) {
           psiD[u]=BLAS::dot(BasisSize,y_ptr,phiT[u]);
-        }
-        for(int u=Ndown; u<Nup; u++) {
-          psiD[u]=0.0;
         }
         return DetRatioTranspose(psiM, psiD.data(),iat-Nup);
       }
@@ -401,11 +400,8 @@ namespace qmcplusplus {
     AGPDeterminant::ratioDown(ParticleSet& P, int iat) {
       const ValueType* restrict y_ptr=GeminalBasis->y(0);
       int d=iat-Nup;
-      for(int u=0; u<Ndown; u++) {
+      for(int u=0; u<Nup; u++) {
         psiD[u]=BLAS::dot(BasisSize,y_ptr,phiT[u]);
-      }
-      for(int u=Ndown; u<Nup; u++) {
-        psiD[u]=0.0;
       }
 
       curRatio = DetRatioTranspose(psiM_temp, psiD.data(),d);

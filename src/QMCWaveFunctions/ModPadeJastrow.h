@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////
-// (c) Copyright 2003  by Jeongnim Kim and Jordan Vincent
+// (c) Copyright 2003-  by Jeongnim Kim
 //////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////
 //   National Center for Supercomputing Applications &
@@ -14,57 +14,49 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef QMCPLUSPLUS_RPAFUNCTION_H
-#define QMCPLUSPLUS_RPAFUNCTION_H
+#ifndef QMCPLUSPLUS_MODIFIED_PADEFUNCTION_H
+#define QMCPLUSPLUS_MODIFIED_PADEFUNCTION_H
 
 #include "QMCWaveFunctions/JastrowFunctorBase.h"
 
-/** RPA Jastrow functional
+namespace qmcplusplus {
+/** ModPade Jastrow functional
  *
- * \f[ u(r) = \frac{A}{r}\left[1-\exp(-\frac{r}{F})\right], \f]
- * where $F$ satisfies the cusp conditions: \f$F_{\uparrow \uparrow} = \sqrt{2A}\f$ 
- * and \f$F_{\uparrow \downarrow} = \sqrt{A} \f$.
- * Prototype of the template parameter of TwoBodyJastrow 
- * Reformulated by using B=1/F.
+ * \f[ u(r) = \frac{1}{2*A}\left[1-\exp(-A*r)\right], \f]
  */
 template<class T>
-struct RPAJastrow: public JastrowFunctorBase<T> {
+struct ModPadeJastrow: public JastrowFunctorBase<T> {
 
   typedef typename JastrowFunctorBase<T>::real_type real_type;
   typedef typename JastrowFunctorBase<T>::value_type value_type;
 
-  bool SameSpin;
-
   ///coefficients
-  T A, B, AB, ABB;
+  T A;
+  T B;
+  T Zeff;
+
+  T Coeff;
+  T mAB;
 
   /** constructor
    * @param a A coefficient
    * @param samespin boolean to indicate if this function is for parallel spins
    */
-  RPAJastrow(T a=1.0, bool samespin=true): SameSpin(samespin) {reset(a);}
-
-  /** dummy constructor to handle referenced case
-   */
-  RPAJastrow(RPAJastr<T>* func): SameSpin(true) {
-    reset(1.0);
-  }
+  ModPadeJastrow(T a=-0.5, T b=1): Zeff(1.0) {reset(a,b);}
 
   /** reset the internal variables.
    */
   inline void reset() {
-    T F=sqrt(abs(a));
-    if(SameSpin) F*=sqrt(2.0);
-    B=1.0/F;
-    AB=A*B;
-    ABB=AB*B;
+    Coeff=A/B;
+    mAB = -A*B;
   }
 
   /** reset the internal variables.
    *@param a New Jastrow parameter a 
    */
-  void reset(T a) {
+  inline void reset(T a, T b) {
     A = a;
+    B = b;
     reset();
   }
 
@@ -73,7 +65,7 @@ struct RPAJastrow: public JastrowFunctorBase<T> {
    * @return \f$ u(r) = \frac{A}{r}\left[1-\exp(-\frac{r}{F})\right]\f$
    */
   inline T evaluate(T r) {
-    return A/r*(1.0-exp(-B*r));
+    return Coeff*(1.0-exp(-B*r));
   }
 
   /**@param r the distance
@@ -82,12 +74,10 @@ struct RPAJastrow: public JastrowFunctorBase<T> {
      @return the value
   */
   inline T evaluate(T r, T& dudr, T& d2udr2) {
-    T rinv=1.0/r;
-    T expbr=exp(-B*r);
-    T u = A*rinv*(1.0-expbr);
-    dudr=-rinv*(u-AB*expbr);
-    d2udr2=-rinv*(2.0*dudr+ABB*expbr);
-    return u;
+    T expmar=exp(-B*r);
+    dudr=A*expmar;
+    d2udr2=mAB*expmar;
+    return Coeff*(1.0-expmar);
   }
 
   /** return a value at r
@@ -99,19 +89,16 @@ struct RPAJastrow: public JastrowFunctorBase<T> {
   /** return a derivative at r
    */
   value_type df(real_type r) {
-    value_type dudr,d2udr2;
-    value_type res=evaluate(r,dudr,d2udr2);
-    return dudr;
+    return A*exp(-B*r);
   }
 
   /** Read in the parameter from the xml input file.
-   @param cur current xmlNode from which the data members are reset
-   @param vlist VarRegistry<T1> to which the variable A will be added for optimization
-  */
-  template<class T1>
-  void put(xmlNodePtr cur, VarRegistry<T1>& vlist){
-    T Atemp;
-    string ida;
+   * @param cur current xmlNode from which the data members are reset
+   * @param vlist VarRegistry<T1> to which the variable A will be added for optimization
+   */
+  void put(xmlNodePtr cur, VarRegistry<real_type>& vlist){
+    Zeff=1.0;
+    string idb;
     //jastrow[iab]->put(cur->xmlChildrenNode,wfs_ref.RealVars);
     xmlNodePtr tcur = cur->xmlChildrenNode;
     while(tcur != NULL) {
@@ -121,18 +108,22 @@ struct RPAJastrow: public JastrowFunctorBase<T> {
 	string aname((const char*)(xmlGetProp(tcur,(const xmlChar *)"name")));
 	string idname((const char*)(xmlGetProp(tcur,(const xmlChar *)"id")));
 	if(aname == "A") {
-	  ida = idname;
-	  putContent(Atemp,tcur);
-	} 
+	  putContent(A,tcur);
+        } else if(aname == "B") {
+	  idb = idname;
+	  putContent(B,tcur);
+	} else if(aname == "Z") {
+	  putContent(Zeff,tcur);
+        }
       }
       tcur = tcur->next;
     }
-    reset(Atemp);
-    vlist.add(ida,&A,1);
-    XMLReport("Jastrow A/r[1-exp(-r/F)] = (" << A << "," << 1.0/B << ")") 
+    reset(A,B);
+    vlist.add(idb,&A,1);
+    XMLReport("Jastrow A/B [1-exp(-B*r)] = (" << A << "," << B << ")") 
   }
 };
-
+}
 #endif
 /***************************************************************************
  * $RCSfile$   $Author$

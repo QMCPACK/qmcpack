@@ -19,8 +19,8 @@
 #include "QMCWaveFunctions/JABBuilder.h"
 #include "QMCWaveFunctions/PadeJastrow.h"
 #include "QMCWaveFunctions/NoCuspJastrow.h"
+#include "QMCWaveFunctions/ModPadeJastrow.h"
 #include "QMCWaveFunctions/OneBodyJastrowFunction.h"
-//#include "QMCWaveFunctions/TwoBodyJastrowFunction.h"
 
 namespace qmcplusplus {
 
@@ -103,6 +103,9 @@ namespace qmcplusplus {
       success = createJAB(cur,dummy);
     } else if(jastfunction == "pade2") {
       PadeJastrow2<ValueType> *dummy = 0;
+      success = createJAB(cur,dummy);
+    } else if(jastfunction == "what") {
+      ModPadeJastrow<ValueType> *dummy = 0;
       success = createJAB(cur,dummy);
     }
     return success;
