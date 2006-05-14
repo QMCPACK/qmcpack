@@ -29,6 +29,10 @@ SET(WFSRCS
   ../QMCHamiltonians/LocalPPotential.cpp
   ../QMCHamiltonians/NonLocalPPotential.cpp
   ../QMCHamiltonians/LocalCorePolPotential.cpp
+  ../QMCHamiltonians/LocalECPotential.cpp
+  ../QMCHamiltonians/NonLocalECPotential.cpp
+  ../QMCHamiltonians/ECPotentialBuilder.cpp
+  ../QMCHamiltonians/ECPComponentBuilder.cpp
   ../QMCHamiltonians/HamiltonianFactory.cpp
 )
 
