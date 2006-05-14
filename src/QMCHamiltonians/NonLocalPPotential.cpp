@@ -39,9 +39,8 @@ namespace qmcplusplus {
      Amat.resize(n*m);
      lpol.resize(l+1,1.0);
      rrotsgrid_m.resize(n);
-     HasNonLocalPP = nlpp_m.size()>1;
+     HasNonLocalPP = nlpp_m.size()>0;
      if(HasNonLocalPP) {
-       LOGMSG(" Found Non-Local Potential ")
        nchannel=nlpp_m.size();
        nknot=sgridxyz_m.size();
        //This is just to check
@@ -52,6 +51,7 @@ namespace qmcplusplus {
          Lfactor1[nl]=static_cast<RealType>(2*nl+1);
          Lfactor2[nl]=1.0e0/static_cast<RealType>(nl+1);
        }
+       LOGMSG(" Found Non-Local Potential. Number of channels=" << 1)
      }
   }
 
@@ -103,8 +103,12 @@ namespace qmcplusplus {
             for(int l=0; l <nchannel; l++,jl++) Amat[jl]=lpol[ angpp_m[l] ]; 
           } 
        
-          BLAS::gemv(nknot, nchannel, &Amat[0], &psiratio[0], &wvec[0]);
-          esum += BLAS::dot(nchannel, &vrad[0], &wvec[0]);
+          if(nchannel==1) {
+            esum += vrad[0]*BLAS::dot(nknot, &Amat[0],&psiratio[0]);
+          } else {
+            BLAS::gemv(nknot, nchannel, &Amat[0], &psiratio[0], &wvec[0]);
+            esum += BLAS::dot(nchannel, &vrad[0], &wvec[0]);
+          }
           ////////////////////////////////////
           //Original implmentation by S. C.
           //const char TRANS('T');
@@ -150,7 +154,7 @@ namespace qmcplusplus {
       ifstream fin(fname.c_str(),ios_base::in);
       if(!fin){
 	ERRORMSG("Could not open file " << fname)
-	  exit(-1);
+        exit(-1);
       }      
       XMLReport("Reading a file for the PseudoPotential for species " << species);
       // Add a new center to the list.
@@ -184,7 +188,9 @@ namespace qmcplusplus {
 	  app->spline(imin,yprime_i,app->size()-1,0.0);
 	  PP[i]->add(agrid,app);
         } else {
-	  app->spline(imin,0.0,app->size()-1,0.0);
+          LOGMSG("NonPP l=" << angmom << " deriv= " << yprime_i)
+	  app->spline(imin,yprime_i,app->size()-1,0.0);
+	  //app->spline(imin,0.0,app->size()-1,0.0);
 	  PP[i]->add(angmom,agrid,app);
 	  numnonloc++;
 	  lmax=std::max(lmax,angmom);
@@ -193,7 +199,7 @@ namespace qmcplusplus {
       }
       //cout << npotentials << " potentials read" << endl;
       PP[i]->lmax=lmax; PP[i]->Rmax=rmax;
-      LOGMSG("Maximum cutoff of NonPP " << rmax)
+      LOGMSG("   Maximum cutoff of NonPP " << rmax)
       fin.close();
       int numsgridpts=0;
       // if NonLocal look for file containing the spherical grid
