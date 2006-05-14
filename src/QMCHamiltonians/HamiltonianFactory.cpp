@@ -25,6 +25,7 @@
 #include "QMCHamiltonians/LocalPPotential.h"
 #include "QMCHamiltonians/NonLocalPPotential.h"
 #include "QMCHamiltonians/LocalCorePolPotential.h"
+#include "QMCHamiltonians/ECPotentialBuilder.h"
 #include "QMCHamiltonians/HarmonicPotential.h"
 #if !defined(QMCPLUSPLUS_RELEASE)
 #include "QMCHamiltonians/CoulombPBC.h"
@@ -247,12 +248,13 @@ namespace qmcplusplus {
   void 
   HamiltonianFactory::addPseudoPotential(xmlNodePtr cur) {
 
-    string src("i"),title("PseudoPot"),wfname("invalid");
+    string src("i"),title("PseudoPot"),wfname("invalid"),format("old");
 
     OhmmsAttributeSet pAttrib;
     pAttrib.add(title,"name");
     pAttrib.add(src,"source");
     pAttrib.add(wfname,"wavefunction");
+    pAttrib.add(format,"format"); //temperary tag to switch between format
     pAttrib.put(cur);
 
     renameProperty(src);
@@ -270,7 +272,7 @@ namespace qmcplusplus {
     TrialWaveFunction* psi=0;
     if(oit == psiPool.end()) {
       if(psiPool.empty()) return;
-      cout << "  Cannot find " << wfname << " in the Wavefunction pool. Using the first wavefunction."<< endl;
+      app_error() << "  Cannot find " << wfname << " in the Wavefunction pool. Using the first wavefunction."<< endl;
       psi=(*(psiPool.begin())).second->targetPsi;
     } else {
       psi=(*oit).second->targetPsi;
@@ -278,7 +280,16 @@ namespace qmcplusplus {
 
     //remember the TrialWaveFunction used by this pseudopotential
     psiName=wfname;
-    targetH->addOperator(new NonLocalPPotential(*ion,*targetPtcl,*psi), title);
+
+    if(format == "old") {
+      app_log() << "  Using OLD NonLocalPseudopotential "<< endl;
+      targetH->addOperator(new NonLocalPPotential(*ion,*targetPtcl,*psi), title);
+    }
+    else  {
+      app_log() << "  Using ECPotential builder "<< endl;
+      ECPotentialBuilder ecp(*targetH,*ion,*targetPtcl,*psi);
+      ecp.put(cur);
+    }
   }
 
   void 
