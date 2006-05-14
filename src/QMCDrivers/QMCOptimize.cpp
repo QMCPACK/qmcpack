@@ -35,8 +35,8 @@ namespace qmcplusplus {
     //set the optimization flag
     QMCDriverMode.set(QMC_OPTIMIZE,1);
     //read to use vmc output (just in case)
-    RootName = "vmc";
-    QMCType ="opt";
+    RootName = "pot";
+    QMCType ="QMCOptimize";
     //default method is cg
     optmethod = "cg";
   }
