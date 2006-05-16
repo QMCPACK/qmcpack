@@ -62,6 +62,7 @@ QMC_WFS = \
   QMCWaveFunctions/ThreeBodyGeminalBuilder.cpp\
   QMCWaveFunctions/AGPDeterminant.cpp \
   QMCWaveFunctions/AGPDeterminantBuilder.cpp \
+  QMCWaveFunctions/PlaneWaveOrbitalBuilder.cpp \
   QMCWaveFunctions/WaveFunctionFactory.cpp 
  
 QMC_HAM = \
@@ -69,6 +70,10 @@ QMC_HAM = \
   QMCHamiltonians/LocalPPotential.cpp\
   QMCHamiltonians/NonLocalPPotential.cpp\
   QMCHamiltonians/LocalCorePolPotential.cpp \
+  QMCHamiltonians/LocalECPotential.cpp \
+  QMCHamiltonians/NonLocalECPotential.cpp \
+  QMCHamiltonians/ECPComponentBuilder.cpp \
+  QMCHamiltonians/ECPotentialBuilder.cpp \
   QMCHamiltonians/HamiltonianFactory.cpp
 
 QMC_DRIVERS = \
