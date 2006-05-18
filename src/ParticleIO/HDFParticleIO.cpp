@@ -27,10 +27,11 @@ using namespace std;
 #include "ParticleIO/ParticleLayoutIO.h"
 #include "ParticleIO/HDFParticleIO.h"
 #include "ParticleBase/ParticleUtility.h"
-using namespace qmcplusplus;
+//using namespace qmcplusplus;
 
 #if defined(HAVE_LIBHDF5)
 #include "ParticleIO/HDFParticleAttrib.h"
+namespace qmcplusplus {
 bool HDFParticleParser::put(const char* fname) {
 
   xmlDocPtr doc;
@@ -148,74 +149,75 @@ void HDFSaveParticle::reset(const char* fileroot, bool append){
 
 void HDFSaveParticle::report(int iter) {
 
-  typedef Particle_t::ParticleIndex_t ParticleIndex_t;
-  typedef Particle_t::ParticleScalar_t ParticleScalar_t;
-  typedef Particle_t::ParticlePos_t ParticlePos_t;
-
-  string metafile = FileRoot;
-  metafile.append(".xml");
-
-  string hfile = FileRoot;
-  hfile.append(".h5");
-
-  // writing a meta file
-  ofstream ftbmd(metafile.c_str()); // always overwrite
-  ftbmd << "<?xml version=\"1.0\"?>" << endl;
-  ftbmd << "<particleset src=\"" << hfile << "\" size=\"" << ref_.getTotalNum()
-	<<"\" format=\"hdf5\">" << endl;
-  ftbmd.setf(ios_base::scientific);
-  ftbmd.precision(15);
-  LatticeXMLWriter latticeout(ref_.Lattice);
-  latticeout.get(ftbmd);
-  Particle_t::PAListIterator it = ref_.first_attrib();
-  while(it != ref_.last_attrib()) {
-    OhmmsObject& ooref= *((*it).second);
-    ooref.begin_node(ftbmd);
-    ooref.end_node(ftbmd);
-    it++;
-  }
-  ftbmd << "</particleset>" << endl;
-  ftbmd.close();
-
-  // creat HDF file handler
-  hid_t hdfFile = 
-    H5Fcreate(hfile.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
-
-  hsize_t dim = 1;
-  int natom = ref_.getLocalNum();
-  hid_t dataspace  = H5Screate_simple(1, &dim, NULL);
-  hid_t dataset =  
-  H5Dcreate(hdfFile, "atnum", H5T_NATIVE_INT, dataspace, H5P_DEFAULT);
-  hid_t ret = 
-      H5Dwrite(dataset, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT,&natom);
-  H5Dclose(dataset);
-  H5Sclose(dataspace);
-
-  // write all the extra ParticleAttrib's added to the ParticleList
-  it = ref_.first_attrib();
-  while(it != ref_.last_attrib()) {
-    OhmmsObject* ooref= (*it).second;
-    int t_id = ref_.getAttribType(ooref->typeName());
-    int o_id = ooref->id();
-    if(t_id == PA_IndexType) {
-      HDFAttribIO<ParticleIndex_t> hdf_i(*(ref_.getIndexAttrib(o_id)));
-      hdf_i.write(hdfFile,ooref->objName().c_str());
-    } else if(t_id == PA_ScalarType) {
-      HDFAttribIO<ParticleScalar_t> hdf_s(*(ref_.getScalarAttrib(o_id)));
-      hdf_s.write(hdfFile,ooref->objName().c_str());
-    } else if(t_id == PA_PositionType) {
-      HDFAttribIO<ParticlePos_t> hdf_p(*(ref_.getVectorAttrib(o_id)));
-      hdf_p.write(hdfFile,ooref->objName().c_str());
-    } else if(t_id == PA_TensorType) {
-      WARNMSG("Not working yet")
-    }
-    it++;
-  }
-  H5Fclose(hdfFile);
+//  typedef Particle_t::ParticleIndex_t ParticleIndex_t;
+//  typedef Particle_t::ParticleScalar_t ParticleScalar_t;
+//  typedef Particle_t::ParticlePos_t ParticlePos_t;
+//
+//  string metafile = FileRoot;
+//  metafile.append(".xml");
+//
+//  string hfile = FileRoot;
+//  hfile.append(".h5");
+//
+//  // writing a meta file
+//  ofstream ftbmd(metafile.c_str()); // always overwrite
+//  ftbmd << "<?xml version=\"1.0\"?>" << endl;
+//  ftbmd << "<particleset src=\"" << hfile << "\" size=\"" << ref_.getTotalNum()
+//	<<"\" format=\"hdf5\">" << endl;
+//  ftbmd.setf(ios_base::scientific);
+//  ftbmd.precision(15);
+//  LatticeXMLWriter latticeout(ref_.Lattice);
+//  latticeout.get(ftbmd);
+//  Particle_t::PAListIterator it = ref_.first_attrib();
+//  while(it != ref_.last_attrib()) {
+//    OhmmsObject& ooref= *((*it).second);
+//    ooref.begin_node(ftbmd);
+//    ooref.end_node(ftbmd);
+//    it++;
+//  }
+//  ftbmd << "</particleset>" << endl;
+//  ftbmd.close();
+//
+//  // creat HDF file handler
+//  hid_t hdfFile = 
+//    H5Fcreate(hfile.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+//
+//  hsize_t dim = 1;
+//  int natom = ref_.getLocalNum();
+//  hid_t dataspace  = H5Screate_simple(1, &dim, NULL);
+//  hid_t dataset =  
+//  H5Dcreate(hdfFile, "atnum", H5T_NATIVE_INT, dataspace, H5P_DEFAULT);
+//  hid_t ret = 
+//      H5Dwrite(dataset, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT,&natom);
+//  H5Dclose(dataset);
+//  H5Sclose(dataspace);
+//
+//  // write all the extra ParticleAttrib's added to the ParticleList
+//  it = ref_.first_attrib();
+//  while(it != ref_.last_attrib()) {
+//    OhmmsObject* ooref= (*it).second;
+//    int t_id = ref_.getAttribType(ooref->typeName());
+//    int o_id = ooref->id();
+//    if(t_id == PA_IndexType) {
+//      HDFAttribIO<ParticleIndex_t> hdf_i(*(ref_.getIndexAttrib(o_id)));
+//      hdf_i.write(hdfFile,ooref->objName().c_str());
+//    } else if(t_id == PA_ScalarType) {
+//      HDFAttribIO<ParticleScalar_t> hdf_s(*(ref_.getScalarAttrib(o_id)));
+//      hdf_s.write(hdfFile,ooref->objName().c_str());
+//    } else if(t_id == PA_PositionType) {
+//      HDFAttribIO<ParticlePos_t> hdf_p(*(ref_.getVectorAttrib(o_id)));
+//      hdf_p.write(hdfFile,ooref->objName().c_str());
+//    } else if(t_id == PA_TensorType) {
+//      WARNMSG("Not working yet")
+//    }
+//    it++;
+//  }
+//  H5Fclose(hdfFile);
 }
 
 bool HDFSaveParticle::put(xmlNodePtr cur) {
   return true;
+}
 }
 #else
 bool HDFParticleParser::put(const char* fname) {
@@ -234,6 +236,7 @@ void HDFSaveParticle::report(int iter) {
 }
 bool HDFSaveParticle::put(xmlNodePtr cur) {
   return true;
+}
 }
 #endif
 
