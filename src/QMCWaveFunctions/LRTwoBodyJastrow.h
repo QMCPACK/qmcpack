@@ -23,8 +23,10 @@ namespace qmcplusplus {
 
   class LRTwoBodyJastrow: public  OrbitalBase {
     
-    ///pointer to the target ParticleSet
-    ParticleSet* PtclRef;
+    ValueType curVal, curLap;
+    GradType curGrad;
+    ValueVectorType U,d2U;
+    GradVectorType dU;
 
     ///Coefficients
     Vector<RealType> Fk; 
@@ -73,3 +75,8 @@ namespace qmcplusplus {
   };
 }
 #endif
+/***************************************************************************
+ * $RCSfile$   $Author$
+ * $Revision$   $Date$
+ * $Id$ 
+ ***************************************************************************/
