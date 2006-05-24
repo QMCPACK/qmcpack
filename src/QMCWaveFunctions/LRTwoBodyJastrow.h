@@ -27,11 +27,14 @@ namespace qmcplusplus {
     GradType curGrad;
     ValueVectorType U,d2U;
     GradVectorType dU;
+    Matrix<ComplexType> rokbyF;
+
+    bool Initialized;
+
+  public:
 
     ///Coefficients
     Vector<RealType> Fk; 
-
-  public:
 
     LRTwoBodyJastrow(ParticleSet& p);
 
@@ -50,11 +53,14 @@ namespace qmcplusplus {
       return exp(evaluateLog(P,G,L));
     }
 
+
     ValueType ratio(ParticleSet& P, int iat);
 
     ValueType ratio(ParticleSet& P, int iat,
 		    ParticleSet::ParticleGradient_t& dG,
-		    ParticleSet::ParticleLaplacian_t& dL) ;
+		    ParticleSet::ParticleLaplacian_t& dL)  {
+      return exp(logRatio(P,iat,dG,dL));
+    }
 
     ValueType logRatio(ParticleSet& P, int iat,
 		    ParticleSet::ParticleGradient_t& dG,

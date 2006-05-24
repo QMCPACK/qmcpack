@@ -18,7 +18,7 @@
 
 namespace qmcplusplus {
 
-    LRTwoBodyJastrow::LRTwoBodyJastrow(ParticleSet& p) {
+    LRTwoBodyJastrow::LRTwoBodyJastrow(ParticleSet& p):NeverInitialized(true) {
       NumSpecies=p.groups();
     }
 
@@ -32,6 +32,15 @@ namespace qmcplusplus {
     LRTwoBodyJastrow::evaluateLog(ParticleSet& P, 
         ParticleSet::ParticleGradient_t& G, 
         ParticleSet::ParticleLaplacian_t& L) {
+
+      if(NeverInitialized) {
+        Rhok.resize(P.SK->rhok.cols());
+        rokbyF.resize(P.SK->rhok.rows(),P.SK->rhok.cols());
+        U.resize(P.getTotalNum());
+        dU.resize(P.getTotalNum());
+        d2U.resize(P.getTotalNum());
+        NeverInitialized=false;
+      }
 
       Rhok=0.0;
       for(int spec1=0; spec1<NumSpecies; spec1++) {
@@ -71,12 +80,6 @@ namespace qmcplusplus {
       return sum;//use trait
     }
 
-    LRTwoBodyJastrow::ValueType 
-    LRTwoBodyJastrow::evaluate(ParticleSet& P,
-			      ParticleSet::ParticleGradient_t& G, 
-			      ParticleSet::ParticleLaplacian_t& L) {
-      return exp(evaluateLog(P,G,L));
-    }
 
     LRTwoBodyJastrow::ValueType 
     LRTwoBodyJastrow::ratio(ParticleSet& P, int iat) {
@@ -93,12 +96,6 @@ namespace qmcplusplus {
       return exp(curVal-U[iat]);
     }
 
-    LRTwoBodyJastrow::ValueType 
-    LRTwoBodyJastrow::ratio(ParticleSet& P, int iat,
-		    ParticleSet::ParticleGradient_t& dG,
-		    ParticleSet::ParticleLaplacian_t& dL) {
-      return exp(logRatio(P,iat,dG,dL));
-    }
 
     LRTwoBodyJastrow::ValueType 
     LRTwoBodyJastrow::logRatio(ParticleSet& P, int iat,
@@ -140,21 +137,39 @@ namespace qmcplusplus {
         t[ki]=(Rhok[ki]-eikrNew[ki]+eikrOld[ki])*Fk[ki];
       }
     }
+
     void LRTwoBodyJastrow::update(ParticleSet& P, 
 		ParticleSet::ParticleGradient_t& dG, 
 		ParticleSet::ParticleLaplacian_t& dL,
 		int iat) {
+      return LogValue;
     }
 
 
-    LRTwoBodyJastrow::ValueType LRTwoBodyJastrow::registerData(ParticleSet& P, PooledData<RealType>& buf) {
+    LRTwoBodyJastrow::ValueType 
+    LRTwoBodyJastrow::registerData(ParticleSet& P, PooledData<RealType>& buf) {
+      LogValue=evaluateLog(P,P.G,P.L); 
+      buf.add(U.begin(), U.end());
+      buf.add(d2U.begin(), d2U.end());
+      buf.add(FirstAddressOfdU,LastAddressOfdU);
+      return LogValue;
+    }
 
+    LRTwoBodyJastrow::ValueType 
+    LRTwoBodyJastrow::updateBuffer(ParticleSet& P, PooledData<RealType>& buf) {
     }
-    LRTwoBodyJastrow::ValueType LRTwoBodyJastrow::updateBuffer(ParticleSet& P, PooledData<RealType>& buf) {
+
+    void 
+    LRTwoBodyJastrow::copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf) {
     }
-    void LRTwoBodyJastrow::copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf) {
-    }
-    LRTwoBodyJastrow::ValueType LRTwoBodyJastrow::evaluate(ParticleSet& P, PooledData<RealType>& buf) {
+
+    LRTwoBodyJastrow::ValueType 
+    LRTwoBodyJastrow::evaluate(ParticleSet& P, PooledData<RealType>& buf) {
+      LogValue=evaluateLog(P,P.G,P.L); 
+      buf.put(U.begin(), U.end());
+      buf.put(d2U.begin(), d2U.end());
+      buf.put(FirstAddressOfdU,LastAddressOfdU);
+      return LogValue;
     }
 }
 /***************************************************************************
