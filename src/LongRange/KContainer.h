@@ -17,6 +17,10 @@ namespace qmcplusplus {
   private:
     //Typedef for the lattice-type. We don't need the full particle-set.
     typedef ParticleSet::ParticleLayout_t ParticleLayout_t;
+    ///typedef of vector containers
+    typedef vector<TinyVector<RealType,3> > VContainer_t;
+    ///typedef of scalar containers
+    typedef vector<RealType>                SContainer_t;
 
     //Function to return a unique number for each kVector
     long GetHashOfVec(const TinyVector<int,3>& inpv, int hashparam) {
@@ -33,9 +37,18 @@ namespace qmcplusplus {
     TinyVector<int,4> mmax;
 
     //K-vector list
-    vector<TinyVector<int,3> > kpts; //In reduced coordinates
-    vector<TinyVector<RealType,3> > kpts_cart; //In Cartesian coordinates
-    vector<int> minusk; //Given a k index, return index to -k.
+    /** K-vector in reduced coordinates 
+     */
+    vector<TinyVector<int,3> > kpts; 
+    /** K-vector in Cartesian coordinates 
+     */
+    VContainer_t kpts_cart; 
+    /** squre of kpts in Cartesian coordniates 
+     */
+    SContainer_t ksq; 
+    /** Given a k index, return index to -k
+     */
+    vector<int> minusk; 
     int numk;
 
     //A copy of the lattice, so that we have the cell-vectors
@@ -53,15 +66,15 @@ namespace qmcplusplus {
 
     //Public Methods:
     // UpdateKLists() - call for new k or when lattice changed.
-    void UpdateKLists(ParticleLayout_t& ref, RealType kc);
-    void UpdateKLists(RealType kc);
+    void UpdateKLists(ParticleLayout_t& ref, RealType kc, bool useSphere=true);
+    void UpdateKLists(RealType kc, bool useSphere=true);
 
   private:
     //Private Methods:
     // FindApproxMMax - compute approximate parallelpiped that surrounds kc
     // BuildKLists - Correct mmax and fill lists of k-vectors.
     void FindApproxMMax();
-    void BuildKLists();
+    void BuildKLists(bool useSphere);
   };
 
 }

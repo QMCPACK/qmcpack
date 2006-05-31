@@ -37,7 +37,7 @@ KContainer::operator=(const KContainer& ref) {
 //Public Methods
 // UpdateKLists - call for new k or when lattice changed.
 void
-KContainer::UpdateKLists(ParticleLayout_t& ref, RealType kc) {
+KContainer::UpdateKLists(ParticleLayout_t& ref, RealType kc, bool useSphere) {
   kcutoff = kc;
   kcut2 = kc*kc;
   Lattice = ref;
@@ -48,12 +48,12 @@ KContainer::UpdateKLists(ParticleLayout_t& ref, RealType kc) {
   }
 
   FindApproxMMax();
-  BuildKLists();
+  BuildKLists(useSphere);
 }
 
 // UpdateKLists - call for new k or when lattice changed.
 void
-KContainer::UpdateKLists(RealType kc) {
+KContainer::UpdateKLists(RealType kc, bool useSphere) {
   kcutoff = kc;
   kcut2 = kc*kc;
 
@@ -63,7 +63,7 @@ KContainer::UpdateKLists(RealType kc) {
   }
 
   FindApproxMMax();
-  BuildKLists();
+  BuildKLists(useSphere);
 }
 
 //Private Methods:
@@ -113,18 +113,24 @@ KContainer::FindApproxMMax() {
 }
 
 void 
-KContainer::BuildKLists() {
+KContainer::BuildKLists(bool useSphere) {
+
+  kpts.clear();
+  kpts_cart.clear();
+
+  //reserve the space for memory efficiency
+  int numGuess=8*mmax[0]*mmax[1]*mmax[2];
+  kpts.reserve(numGuess);
+  kpts_cart.reserve(numGuess);
+  ksq.reserve(numGuess);
+  
+  
   TinyVector<int,4> TempActualMax;
   TinyVector<int,3> kvec;
   TinyVector<RealType,3> kvec_cart;
   RealType modk2;
-
-  kpts.clear();
-  kpts_cart.clear();
-  
   for(int i=0; i<4; i++)
     TempActualMax[i] = 0;
-  
   //Loop over guesses for valid k-points.
   for(int i=-mmax[0]; i<=mmax[0]; i++){
     kvec[0] = i;
@@ -152,11 +158,12 @@ KContainer::BuildKLists() {
 	//Find modk
 	modk2 = dot(kvec_cart,kvec_cart);
 
-	if(modk2>kcut2)continue; //Inside cutoff?
+	if(modk2>kcut2) continue; //Inside cutoff?
 
 	//This k-point should be added to the list
 	kpts.push_back(kvec);
 	kpts_cart.push_back(kvec_cart);
+	ksq.push_back(modk2);
 	
 	//Update record of the allowed maximum translation.
 	for(int idim=0; idim<3; idim++)
