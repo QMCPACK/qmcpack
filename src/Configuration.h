@@ -21,7 +21,7 @@
 #include <string>
 #include <vector>
 #include <map>
-using namespace std;
+#include <complex>
 #include "OhmmsPETE/TinyVector.h"
 #include "OhmmsPETE/Tensor.h"
 #include "OhmmsData/OhmmsElementBase.h"
@@ -52,16 +52,17 @@ namespace qmcplusplus {
    */
   struct QMCTraits {
     enum {DIM = OHMMS_DIM};
-    typedef OHMMS_INDEXTYPE           IndexType;
-    typedef OHMMS_PRECISION           RealType;
+    typedef OHMMS_INDEXTYPE                IndexType;
+    typedef OHMMS_PRECISION                RealType;
 #if defined(QMC_COMPLEX)
     typedef std::complex<OHMMS_PRECISION>  ValueType;
 #else
-    typedef OHMMS_PRECISION           ValueType;
+    typedef OHMMS_PRECISION                ValueType;
 #endif
-    typedef TinyVector<RealType,DIM>  PosType;
-    typedef TinyVector<ValueType,DIM> GradType;
-    typedef Tensor<ValueType,DIM>     TensorType;
+    typedef std::complex<OHMMS_PRECISION>  ComplexType;
+    typedef TinyVector<RealType,DIM>       PosType;
+    typedef TinyVector<ValueType,DIM>      GradType;
+    typedef Tensor<ValueType,DIM>          TensorType;
   };
 
   /** Particle traits to use UniformGridLayout for the ParticleLayout.
