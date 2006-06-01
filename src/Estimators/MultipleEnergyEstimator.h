@@ -34,6 +34,7 @@ namespace qmcplusplus {
 
     typedef ParticleSet::RealType RealType;
     typedef ScalarEstimatorBase<RealType>::Walker_t Walker_t;
+    typedef ScalarEstimatorBase<RealType>::WalkerIterator WalkerIterator;
     typedef Matrix<RealType> EnergyContainer_t;
 
     using ScalarEstimatorBase<RealType>::CollectSum;
@@ -123,6 +124,13 @@ namespace qmcplusplus {
     void add2Record(RecordNamedProperty<RealType>& record);
 
     void accumulate(const Walker_t& awalker, RealType wgt);
+
+    void accumulate(WalkerIterator first, WalkerIterator last) {
+      while(first != last) {
+        accumulate(**first,(*first)->Weight);
+        ++first;
+      }
+    }
 
     ///reset all the cumulative sums to zero
     void reset();

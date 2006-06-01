@@ -63,17 +63,25 @@ ScalarEstimatorManager::reset() {
 /** accumulate data for all the estimators
  */
 void 
-ScalarEstimatorManager::accumulate(const MCWalkerConfiguration& W) {
+ScalarEstimatorManager::accumulate(MCWalkerConfiguration& W) {
 
+  for(int i=0; i< Estimators.size(); i++) 
+    Estimators[i]->accumulate(W.begin(),W.end());
+
+  //RealType wgt_sum=0;
+  //MCWalkerConfiguration::const_iterator it(W.begin()),it_end(W.end());
+  //while(it != it_end) {
+  //  RealType wgt = (*it)->Weight;
+  //  wgt_sum+= wgt;
+  //  for(int i=0; i< Estimators.size(); i++) Estimators[i]->accumulate(**it,wgt);
+  //  ++it;
+  //}
   RealType wgt_sum=0;
   MCWalkerConfiguration::const_iterator it(W.begin()),it_end(W.end());
   while(it != it_end) {
-    RealType wgt = (*it)->Weight;
-    wgt_sum+= wgt;
-    for(int i=0; i< Estimators.size(); i++) Estimators[i]->accumulate(**it,wgt);
+    wgt_sum+= (*it)->Weight;
     ++it;
   }
-
   MyData[WEIGHT_INDEX]+=wgt_sum;
 }
 

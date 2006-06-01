@@ -41,6 +41,7 @@ namespace qmcplusplus {
   struct ScalarEstimatorBase {
 
     typedef typename MCWalkerConfiguration::Walker_t Walker_t;
+    typedef typename MCWalkerConfiguration::iterator WalkerIterator;
     bool CollectSum;
 
     T b_average;
@@ -63,6 +64,8 @@ namespace qmcplusplus {
      *\param wgt the weight
      */
     virtual void accumulate(const Walker_t& awalker, T wgt) = 0;
+
+    virtual void accumulate(WalkerIterator first, WalkerIterator last) = 0;
 
     /** a virtual function to report the scalar estimator
      *@param record 

@@ -50,7 +50,7 @@ namespace qmcplusplus {
     ///process xml tag associated with estimators
     bool put(xmlNodePtr cur);
 
-    void accumulate(const MCWalkerConfiguration& W);
+    void accumulate(MCWalkerConfiguration& W);
     void resetReportSettings(const string& aname, bool append);
     void reportHeader(bool append);
     void flushreport(int iter);

@@ -64,6 +64,7 @@ namespace qmcplusplus {
     int LocalPotentialIndex;
     int FirstHamiltonian;
     int SizeOfHamiltonians;
+    QMCHamiltonian& Href;
 
     ///vector to contain the names of all the constituents of the local energy
     std::vector<string> elocal_name;
@@ -74,11 +75,12 @@ namespace qmcplusplus {
   public:
 
     typedef typename ScalarEstimatorBase<T>::Walker_t Walker_t;
+    typedef typename ScalarEstimatorBase<T>::WalkerIterator WalkerIterator;
   
     /** constructor
      * @param h QMCHamiltonian to define the components
      */
-    LocalEnergyEstimator(QMCHamiltonian& h) { 
+    LocalEnergyEstimator(QMCHamiltonian& h):Href(h) { 
       int hterms(h.size());
       SizeOfHamiltonians = hterms;
       FirstHamiltonian = h.startIndex();
@@ -121,6 +123,16 @@ namespace qmcplusplus {
 	elocal[ii] += wgt*e_ptr[i]; //wgt*(awalker.E[i]);
       }
       */
+    }
+
+    void accumulate(WalkerIterator first, WalkerIterator last) {
+      T deltaE = Href.getEnsembleAverage();
+      int wsum=0;
+      while(first != last) {
+        accumulate(**first,(*first)->Weight);
+        ++first; wsum++;
+      }
+      elocal[ENERGY_INDEX] += static_cast<T>(wsum)*deltaE;
     }
 
     ///reset all the cumulative sums to zero

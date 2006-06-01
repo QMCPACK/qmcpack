@@ -38,6 +38,7 @@ namespace qmcplusplus {
   public:
 
     typedef typename ScalarEstimatorBase<T>::Walker_t Walker_t;
+    typedef typename ScalarEstimatorBase<T>::WalkerIterator WalkerIterator;
   
     PolarizationEstimator() { 
       z_sum.resize(2,0.0);
@@ -53,6 +54,13 @@ namespace qmcplusplus {
 	T z = awalker.R[i][2];
 	z_sum[0] += wgt*z;
 	z_sum[1] += wgt*z*z;
+      }
+    }
+
+    void accumulate(WalkerIterator first, WalkerIterator last) {
+      while(first != last) {
+        accumulate(**first,(*first)->Weight);
+        ++first;
       }
     }
 
