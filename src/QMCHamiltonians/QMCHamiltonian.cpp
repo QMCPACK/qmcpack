@@ -114,6 +114,12 @@ QMCHamiltonian::evaluate(ParticleSet& P) {
 }
 
 
+QMCHamiltonian::Return_t 
+QMCHamiltonian::getEnsembleAverage() {
+  Return_t sum=0.0;
+  for(int i=0; i<H.size(); i++) sum += H[i]->getEnsembleAverage();
+  return sum;
+}
 /** return pointer to the QMCHamtiltonian with the name
  *@param aname the name of Hamiltonian
  *@return the pointer to the named term.

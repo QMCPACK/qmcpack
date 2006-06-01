@@ -129,6 +129,12 @@ namespace qmcplusplus {
      */
     Return_t evaluate(ParticleSet& P);
 
+    /** return an average value of the LocalEnergy 
+     *
+     * Introduced to get a collective value
+     */ 
+    Return_t getEnsembleAverage();
+
     void resetTargetParticleSet(ParticleSet& P);
 
     /** By mistake, QMCHamiltonian::getName(int i) is used

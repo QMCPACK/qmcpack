@@ -69,6 +69,10 @@ namespace qmcplusplus {
      */
     virtual Return_t evaluate(ParticleSet& P) = 0; 
 
+    /** return an average value by collective operation
+     */ 
+    virtual Return_t getEnsembleAverage() { return 0.0;}
+
     /** read the input parameter
      * @param cur xml node for a QMCHamiltonianBase object
      */
