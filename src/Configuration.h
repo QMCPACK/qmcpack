@@ -67,13 +67,15 @@ namespace qmcplusplus {
 
   /** Particle traits to use UniformGridLayout for the ParticleLayout.
    */
-  struct PtclOnLatticeTraits {
+  struct PtclOnLatticeTraits{
 
     //typedef UniformGridLayout<OHMMS_PRECISION,OHMMS_DIM> ParticleLayout_t;
     typedef Uniform3DGridLayout                          ParticleLayout_t;
 
     typedef int                                          Index_t;
-    typedef ParticleLayout_t::Scalar_t                   Scalar_t;
+    typedef OHMMS_PRECISION                              Scalar_t;
+    typedef std::complex<Scalar_t>                       Complex_t;
+
     typedef ParticleLayout_t::SingleParticleIndex_t      SingleParticleIndex_t;
     typedef ParticleLayout_t::SingleParticlePos_t        SingleParticlePos_t;
     typedef ParticleLayout_t::Tensor_t                   Tensor_t;
@@ -82,6 +84,14 @@ namespace qmcplusplus {
     typedef ParticleAttrib<Scalar_t>                     ParticleScalar_t;
     typedef ParticleAttrib<SingleParticlePos_t>          ParticlePos_t;
     typedef ParticleAttrib<Tensor_t>                     ParticleTensor_t;
+
+#if defined(QMC_COMPLEX)
+    typedef ParticleAttrib<TinyVector<Complex_t,OHMMS_DIM> > ParticleGradient_t;
+    typedef ParticleAttrib<Complex_t>                      ParticleLaplacian_t;
+#else
+    typedef ParticleAttrib<SingleParticlePos_t>            ParticleGradient_t;
+    typedef ParticleAttrib<Scalar_t>                       ParticleLaplacian_t;
+#endif
   };
 
   inline std::ostream& app_log() { 
