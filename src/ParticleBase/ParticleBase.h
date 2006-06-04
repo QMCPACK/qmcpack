@@ -60,6 +60,12 @@ public:
 
   //! D-dimensional tensor quantity associated with each atom, e.g., R
   typedef typename PT::ParticleTensor_t      ParticleTensor_t;
+
+  //! D-dimensional real/complex quantity associated with each atom, e.g., R
+  typedef typename PT::ParticleGradient_t     ParticleGradient_t;
+
+  //! D-dimensional real/complex quantity associated with each atom, e.g., R
+  typedef typename PT::ParticleLaplacian_t     ParticleLaplacian_t;
   //@}
 
   //! Mapping between an attribute name and particle attribute
@@ -105,6 +111,7 @@ public:
   inline PAListIterator last_attrib() { return AttribList.end(); } 
 
   bool hasAttrib(const std::string& attrib_name);
+
   int addAttribute(const std::string& tname, const std::string& oname);
   int addAttribute(ParticleIndex_t& pa);
   int addAttribute(ParticleScalar_t& pa);
@@ -124,6 +131,11 @@ public:
   inline ParticleScalar_t* getScalarAttrib(int i) { return VAL[i];}
   inline ParticlePos_t*    getVectorAttrib(int i) { return POS[i];}
   inline ParticleTensor_t* getTensorAttrib(int i) { return TENZOR[i];}
+
+#if defined(QMC_COMPLEX)
+  int addAttribute(ParticleGradient_t& pa);
+  int addAttribute(ParticleLaplacian_t& pa);
+#endif
 
   void create(unsigned m);
   void create(const vector<int>& agroup);
@@ -184,6 +196,10 @@ protected:
   vector<ParticleScalar_t*>   VAL;
   vector<ParticlePos_t*>      POS;
   vector<ParticleTensor_t*>   TENZOR;
+#if defined(QMC_COMPLEX)
+  vector<ParticleGradient_t*>   GRADS;
+  vector<ParticleLaplacian_t*>  LAPS;
+#endif
   vector<OhmmsObject*>        myAttribList;
 };
 

@@ -195,6 +195,51 @@ ParticleBase<PL>::addAttribute(typename ParticleBase<PL>::ParticleTensor_t& pa) 
   return oid;
 }
 
+#if defined(QMC_COMPLEX)
+/** Add ParticleLaplacian_t  attribute, if not found
+ * \param pa  ParticleLaplacian_t to be added
+ * \return true the locator (iterator) of the pa in the vector<ParticlePos_t*>
+ *
+ * This function is only requred when QMC_COMPLEX is defined
+ */
+template<class PL>
+int
+ParticleBase<PL>::addAttribute(typename ParticleBase<PL>::ParticleLaplacian_t& pa) {
+
+  map<string,int>::iterator it= Name2Index.find(pa.objName());
+  if(it != Name2Index.end()) return  (*it).second;
+
+  if(pa.size() < getLocalNum()) pa.resize(getLocalNum());
+
+  int oid=Name2Index[pa.objName()]=LAPS.size();
+  LAPS.push_back(&pa);
+  pa.setID(oid);
+  AttribList[pa.objName()]=&pa;
+  return oid;
+}
+/** Add ParticleGradient_t  attribute, if not found
+ * \param pa  ParticleGradient_t to be added
+ * \return true the locator (iterator) of the pa in the vector<ParticlePos_t*>
+ *
+ * This function is only requred when QMC_COMPLEX is defined
+ */
+template<class PL>
+int
+ParticleBase<PL>::addAttribute(typename ParticleBase<PL>::ParticleGradient_t& pa) {
+
+  map<string,int>::iterator it= Name2Index.find(pa.objName());
+  if(it != Name2Index.end()) return  (*it).second;
+
+  if(pa.size() < getLocalNum()) pa.resize(getLocalNum());
+
+  int oid=Name2Index[pa.objName()]=GRADS.size();
+  GRADS.push_back(&pa);
+  pa.setID(oid);
+  AttribList[pa.objName()]=&pa;
+  return oid;
+}
+#endif
+
 /*@{
  * \fn ParticlePos_t* ParticleBase<PL>::getVectorAttrib(const std::string& aname)
  * \param aname String for the attribute name
