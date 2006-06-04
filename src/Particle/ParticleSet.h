@@ -44,8 +44,6 @@ namespace qmcplusplus {
    
   public:
     
-    typedef ParticleAttrib<GradType>  ParticleGradient_t;
-    typedef ParticleAttrib<ValueType> ParticleLaplacian_t;
     typedef Walker<RealType,ParticlePos_t> Walker_t;
     
     ///gradients of the particles
