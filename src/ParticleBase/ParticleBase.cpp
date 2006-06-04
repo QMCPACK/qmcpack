@@ -330,6 +330,10 @@ void ParticleBase<PL>::create(unsigned m) {
   for(int i=0; i< VAL.size(); i++)   VAL[i]->create(m);
   for(int i=0; i< POS.size(); i++)   POS[i]->create(m);
   for(int i=0; i< TENZOR.size(); i++) TENZOR[i]->create(m);
+#if defined(QMC_COMPLEX)
+  for(int i=0; i< GRADS.size(); i++) GRADS[i]->create(m);
+  for(int i=0; i< LAPS.size(); i++) LAPS[i]->create(m);
+#endif
   curR.create(m);
   DEBUGMSG("==================================================")
   LocalNum += m;
@@ -347,6 +351,10 @@ void ParticleBase<PL>::resize(unsigned m) {
   for(int i=0; i< VAL.size(); i++)   VAL[i]->resize(m);
   for(int i=0; i< POS.size(); i++)   POS[i]->resize(m);
   for(int i=0; i< TENZOR.size(); i++) TENZOR[i]->resize(m);
+#if defined(QMC_COMPLEX)
+  for(int i=0; i< GRADS.size(); i++) GRADS[i]->resize(m);
+  for(int i=0; i< LAPS.size(); i++) LAPS[i]->resize(m);
+#endif
   curR.resize(m);
   DEBUGMSG("==================================================");
   LocalNum = m;
@@ -364,6 +372,10 @@ void ParticleBase<PL>::clear() {
   for(int i=0; i< VAL.size(); i++)   VAL[i]->clear();
   for(int i=0; i< POS.size(); i++)   POS[i]->clear();
   for(int i=0; i< TENZOR.size(); i++)  TENZOR[i]->clear();
+#if defined(QMC_COMPLEX)
+  for(int i=0; i< GRADS.size(); i++) GRADS[i]->clear();
+  for(int i=0; i< LAPS.size(); i++) LAPS[i]->clear();
+#endif
   curR.clear();
   DEBUGMSG("==================================================");
   LocalNum = 0;
