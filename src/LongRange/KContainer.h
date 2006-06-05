@@ -36,7 +36,6 @@ namespace qmcplusplus {
     //Last index is max. of first 3.
     TinyVector<int,4> mmax;
 
-    //K-vector list
     /** K-vector in reduced coordinates 
      */
     vector<TinyVector<int,3> > kpts; 
@@ -49,6 +48,7 @@ namespace qmcplusplus {
     /** Given a k index, return index to -k
      */
     vector<int> minusk; 
+
     int numk;
 
     //A copy of the lattice, so that we have the cell-vectors

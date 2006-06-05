@@ -118,60 +118,95 @@ KContainer::BuildKLists(bool useSphere) {
   kpts.clear();
   kpts_cart.clear();
 
-  //reserve the space for memory efficiency
-  int numGuess=8*mmax[0]*mmax[1]*mmax[2];
+  // reserve the space for memory efficiency
+  int numGuess=(2*mmax[0]+1)*(2*mmax[1]+1)*(2*mmax[2]+1);
   kpts.reserve(numGuess);
   kpts_cart.reserve(numGuess);
-  ksq.reserve(numGuess);
-  
-  
+  ksq.reserve(numGuess);  
+
+
   TinyVector<int,4> TempActualMax;
   TinyVector<int,3> kvec;
   TinyVector<RealType,3> kvec_cart;
   RealType modk2;
-  for(int i=0; i<4; i++)
+  for(int i=0; i <4; i++) 
     TempActualMax[i] = 0;
-  //Loop over guesses for valid k-points.
-  for(int i=-mmax[0]; i<=mmax[0]; i++){
-    kvec[0] = i;
-    for(int j=-mmax[1]; j<=mmax[1]; j++){
-      kvec[1] = j;
-      for(int k=-mmax[2]; k<=mmax[2]; k++){
-	kvec[2] = k;
+
+  if(useSphere) {
+    //Loop over guesses for valid k-points.
+    for(int i=-mmax[0]; i<=mmax[0]; i++){
+      kvec[0] = i;
+      for(int j=-mmax[1]; j<=mmax[1]; j++){
+        kvec[1] = j;
+        for(int k=-mmax[2]; k<=mmax[2]; k++){
+	  kvec[2] = k;
 	      
-	//Do not include k=0 in evaluations.
-	if(i==0 && j==0 && k==0)continue;
+	  //Do not include k=0 in evaluations.
+	  if(i==0 && j==0 && k==0)continue;
 
-	//Convert kvec to Cartesian
-	/*
-      	for(int idim=0; idim<3; idim++){
-	  kvec_cart[idim] = 0.0;
-	  for(int idir=0; idir<3; idir++){
-	    kvec_cart[idim]+=kvec[idir]*Lattice.b(idir)[idim];
+	  //Convert kvec to Cartesian
+	  /*
+      	  for(int idim=0; idim<3; idim++){
+	    kvec_cart[idim] = 0.0;
+	    for(int idir=0; idir<3; idir++){
+	      kvec_cart[idim]+=kvec[idir]*Lattice.b(idir)[idim];
+	    }
+	    kvec_cart[idim]*=TWOPI;
 	  }
-	  kvec_cart[idim]*=TWOPI;
-	}
-	*/
-	kvec_cart = Lattice.k_cart(kvec);
+	  */
+	  kvec_cart = Lattice.k_cart(kvec);
 	
 
-	//Find modk
-	modk2 = dot(kvec_cart,kvec_cart);
+	  //Find modk
+	  modk2 = dot(kvec_cart,kvec_cart);
 
-	if(modk2>kcut2) continue; //Inside cutoff?
+	  if(modk2>kcut2)continue; //Inside cutoff?
 
-	//This k-point should be added to the list
-	kpts.push_back(kvec);
-	kpts_cart.push_back(kvec_cart);
-	ksq.push_back(modk2);
+	  //This k-point should be added to the list
+	  kpts.push_back(kvec);
+	  kpts_cart.push_back(kvec_cart);
+	  ksq.push_back(modk2);
 	
-	//Update record of the allowed maximum translation.
-	for(int idim=0; idim<3; idim++)
-	  if(abs(kvec[idim]) > TempActualMax[idim])
-	    TempActualMax[idim] = abs(kvec[idim]);
-	
+	  //Update record of the allowed maximum translation.
+	  for(int idim=0; idim<3; idim++)
+	    if(abs(kvec[idim]) > TempActualMax[idim])
+	      TempActualMax[idim] = abs(kvec[idim]);
+        }
       }
     }
+  } else {
+    // Loop over all k-points in the parallelpiped and add them to kcontainer
+    // note layout is for interfacing with fft, so for each dimension, the 
+    // positive indexes come first then the negative indexes backwards
+    // e.g.    0, 1, .... mmax, -mmax+1, -mmax+2, ... -1
+    const int idimsize = mmax[0]*2;
+    const int jdimsize = mmax[1]*2;
+    const int kdimsize = mmax[2]*2;
+    for (int i = 0; i < idimsize; i++) {
+      kvec[0] = i;
+      if (kvec[0] > mmax[0]) kvec[0] -= idimsize;
+      for (int j = 0; j < jdimsize; j++) {
+        kvec[1] = j;
+        if (kvec[1] > mmax[1]) kvec[1] -= jdimsize;
+        for (int k = 0; k < kdimsize; k++) {
+          kvec[2] = k;
+          if (kvec[2] > mmax[2]) kvec[2] -= kdimsize;
+
+          // get cartesian location and modk2
+          kvec_cart = Lattice.k_cart(kvec);
+          modk2 = dot(kvec_cart, kvec_cart);
+
+          // add k-point to lists
+          kpts.push_back(kvec);
+          kpts_cart.push_back(kvec_cart);
+          ksq.push_back(modk2);
+        }
+      }
+    }
+    // set allowed maximum translation
+    TempActualMax[0] = mmax[0];
+    TempActualMax[1] = mmax[1];
+    TempActualMax[2] = mmax[2];
   }
   
   //Finished searching k-points. Copy list of maximum translations.
