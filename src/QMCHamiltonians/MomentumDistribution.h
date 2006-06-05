@@ -34,9 +34,8 @@ namespace qmcplusplus {
       if (!IsCurrent) {
         IsCurrent = true;
         CurrentChoice = static_cast<IndexType>(Random() * p.getTotalNum());
-      } else {
-        return CurrentChoice;
-      }
+      } 
+      return CurrentChoice;
     }
   };
   
@@ -53,9 +52,8 @@ namespace qmcplusplus {
       if (!IsCurrent) {
         IsCurrent = true;
         CurrentChoice = static_cast<IndexType>(Random() * p.getTotalNum());
-      } else {
-        return CurrentChoice;
-      }
+      } 
+      return CurrentChoice;
     }
   };
   
