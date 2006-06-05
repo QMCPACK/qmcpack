@@ -41,6 +41,9 @@
 /* Define to 1 if you have libxml2 */
 #cmakedefine HAVE_LIBXML2 @HAVE_LIBXML2@
 
+/* Define to 1 if you have fftw */
+#cmakedefine HAVE_LIBFFTW @HAVE_LIBFFTW@
+
 /* Define to 1 if you have libxml++ */
 #cmakedefine HAVE_LIBXMLPP @HAVE_LIBXMLPP@
 
