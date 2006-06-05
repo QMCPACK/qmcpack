@@ -27,6 +27,9 @@
 #include "QMCHamiltonians/LocalCorePolPotential.h"
 #include "QMCHamiltonians/ECPotentialBuilder.h"
 #include "QMCHamiltonians/HarmonicPotential.h"
+#include "QMCHamiltonians/ModInsKineticEnergy.h"
+#include "QMCHamiltonians/MomentumDistribution.h"
+#include "QMCHamiltonians/DispersionRelation.h"
 #if !defined(QMCPLUSPLUS_RELEASE)
 #include "QMCHamiltonians/CoulombPBC.h"
 #endif
@@ -56,10 +59,11 @@ namespace qmcplusplus {
 
     if(cur == NULL) return false;
 
-    string htype("generic"), source("i");
+    string htype("generic"), source("i"), defaultKE("yes");
     OhmmsAttributeSet hAttrib;
     hAttrib.add(htype,"type"); 
     hAttrib.add(source,"source");
+    hAttrib.add(defaultKE,"default");
     hAttrib.put(cur);
 
     renameProperty(source);
@@ -83,7 +87,9 @@ namespace qmcplusplus {
     if(targetH==0) {
       targetH  = new QMCHamiltonian;
       targetH->setName(myName);
-      targetH->addOperator(new BareKineticEnergy,"Kinetic");
+      
+      if(defaultKE == "yes")
+        targetH->addOperator(new BareKineticEnergy,"Kinetic");
     }
 
     cur = cur->children;
@@ -126,6 +132,8 @@ namespace qmcplusplus {
           if(pot_type == "coulomb") { //ugly!!!
             addConstCoulombPotential(cur,nuclei);
           }
+        } else if(cname == "modInsKE") {
+          addModInsKE(cur);
         }
       }
       if(attach2Node) xmlAddChild(myNode,xmlCopyNode(cur,1));
@@ -334,7 +342,83 @@ namespace qmcplusplus {
      }
   }
 
-
+  void
+  HamiltonianFactory::addModInsKE(xmlNodePtr cur) {
+    string Dimensions, DispRelType, MomDistType, PtclSelType;
+    RealType Cutoff, GapSize(0.0), FermiMomentum(0.0);
+    
+    OhmmsAttributeSet pAttrib;
+    pAttrib.add(Dimensions, "dims");
+    pAttrib.add(DispRelType, "dispersion");
+    pAttrib.add(PtclSelType, "selectParticle");
+    pAttrib.add(Cutoff, "cutoff");
+    pAttrib.add(GapSize, "gapSize");
+    pAttrib.add(FermiMomentum, "kf");
+    pAttrib.put(cur);
+    
+    TrialWaveFunction* psi;
+    psi = (*(psiPool.begin())).second->targetPsi;
+    
+    Vector<PosType> LocLattice;
+    Vector<IndexType> DimSizes;
+    if (Dimensions == "3") {
+      gen3DLattice(Cutoff, *targetPtcl, LocLattice, DimSizes);
+    } else if (Dimensions == "1" || Dimensions == "1averaged") {
+      gen1DLattice(Cutoff, *targetPtcl, LocLattice, DimSizes);
+    } else {
+      ERRORMSG("Dimensions value not recognized!")
+    }
+    
+    Vector<RealType> Dispersion;
+    if (DispRelType == "freeParticle") {
+      genFreeParticleDispersion(LocLattice, Dispersion);
+    } else if (DispRelType == "simpleModel") {
+      genSimpleModelDispersion(LocLattice, Dispersion, GapSize, FermiMomentum);
+    } else if (DispRelType == "pennModel") {
+      genPennModelDispersion(LocLattice, Dispersion, GapSize, FermiMomentum);
+    } else {
+      ERRORMSG("Dispersion relation not recognized");
+    }
+    
+    QMCHamiltonianBase* modInsKE;
+    if (Dimensions == "3") { 
+      if (PtclSelType == "random") {
+        modInsKE = new ModInsKineticEnergy<ThreeDimMomDist<RandomChoicePolicy> >
+          (*targetPtcl, *psi, Dispersion, DimSizes);
+      } else if (PtclSelType == "randomPerWalker") {
+        modInsKE = new ModInsKineticEnergy<ThreeDimMomDist<RandomChoicePerWalkerPolicy> >
+          (*targetPtcl, *psi, Dispersion, DimSizes);
+      } else if (PtclSelType == "constant") {
+        modInsKE = new ModInsKineticEnergy<ThreeDimMomDist<StaticChoicePolicy> >
+          (*targetPtcl, *psi, Dispersion, DimSizes);
+      }
+    } else if (Dimensions == "1") {
+      if (PtclSelType == "random") {
+        modInsKE = new ModInsKineticEnergy<OneDimMomDist<RandomChoicePolicy> >
+          (*targetPtcl, *psi, Dispersion, DimSizes);
+      } else if (PtclSelType == "randomPerWalker") {
+        modInsKE = new ModInsKineticEnergy<OneDimMomDist<RandomChoicePerWalkerPolicy> >
+          (*targetPtcl, *psi, Dispersion, DimSizes);
+      } else if (PtclSelType == "constant") {
+        modInsKE = new ModInsKineticEnergy<OneDimMomDist<StaticChoicePolicy> >
+          (*targetPtcl, *psi, Dispersion, DimSizes);
+      }
+    } else if (Dimensions == "1averaged") {
+      if (PtclSelType == "random") {
+        modInsKE = new ModInsKineticEnergy<AveragedOneDimMomDist<RandomChoicePolicy> >
+          (*targetPtcl, *psi, Dispersion, DimSizes);
+      } else if (PtclSelType == "randomPerWalker") {
+        modInsKE = new ModInsKineticEnergy<AveragedOneDimMomDist<RandomChoicePerWalkerPolicy> >
+          (*targetPtcl, *psi, Dispersion, DimSizes);
+      } else if (PtclSelType == "constant") {
+        modInsKE = new ModInsKineticEnergy<AveragedOneDimMomDist<StaticChoicePolicy> >
+          (*targetPtcl, *psi, Dispersion, DimSizes);
+      }
+    }
+    modInsKE->put(cur);
+    targetH->addOperator(modInsKE, "ModelInsulatorKE");
+  }
+  
   void HamiltonianFactory::renameProperty(const string& a, const string& b){
     RenamedProperty[a]=b;
   }
