@@ -41,7 +41,7 @@ namespace qmcplusplus {
     }    
   }
   
-  void genFreeParticleDispersion(const Vector<PosType>& LocLattice, Vector<RealType> Disp) {
+  void genFreeParticleDispersion(const Vector<PosType>& LocLattice, Vector<RealType>& Disp) {
     Disp.resize(LocLattice.size());
     for (IndexType i = 0; i < LocLattice.size(); i++) {
       Disp[i] = dot(LocLattice[i], LocLattice[i]) / 2.0;
@@ -49,7 +49,7 @@ namespace qmcplusplus {
   }
 
   void genSimpleModelDispersion(const Vector<PosType>& LocLattice, 
-                                Vector<RealType> Disp, RealType GapSize,
+                                Vector<RealType>& Disp, RealType GapSize,
                                 RealType FermiMomentum) {
     Disp.resize(LocLattice.size());
     RealType FermiEnergy = FermiMomentum * FermiMomentum / 2.0;
@@ -64,7 +64,7 @@ namespace qmcplusplus {
   }
     
   void genPennModelDispersion(const Vector<PosType>& LocLattice, 
-                                Vector<RealType> Disp, RealType GapSize,
+                                Vector<RealType>& Disp, RealType GapSize,
                                 RealType FermiMomentum) {
     Disp.resize(LocLattice.size());
     RealType FermiEnergy = FermiMomentum * FermiMomentum / 2.0;
