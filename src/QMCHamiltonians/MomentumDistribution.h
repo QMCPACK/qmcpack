@@ -67,6 +67,7 @@ namespace qmcplusplus {
     IndexType nz;
     PtclChoicePolicy pcp;
     FFTAbleVector<3, ComplexType, FFTWEngine>* NofK;
+    Vector<RealType> MomDist;
     void placeInBin(const ParticleSet& PtclSet, const PosType& FracDispVector, ValueType RatioOfWvFcn) {
       RealType xSpacing = std::sqrt(dot(PtclSet.Lattice.a(0), PtclSet.Lattice.a(0))) / nx;
       RealType ySpacing = std::sqrt(dot(PtclSet.Lattice.a(1), PtclSet.Lattice.a(1))) / ny;
@@ -78,14 +79,15 @@ namespace qmcplusplus {
     }
   public:
     ThreeDimMomDist(const Vector<IndexType>& DimSizes) : totalNumSamples(0), nx(0), ny(0), nz(0) {
-      nx = DimSizes[0] / 2;
-      ny = DimSizes[1] / 2;
-      nz = DimSizes[2] / 2;
+      nx = DimSizes[0];
+      ny = DimSizes[1];
+      nz = DimSizes[2];
       NofK = new FFTAbleVector<3, ComplexType, FFTWEngine>(nx, ny, nz);
+      MomDist.resize(NofK->size());
     }
     
     ThreeDimMomDist(const ThreeDimMomDist& rhs) : totalNumSamples(rhs.totalNumSamples),
-    nx(rhs.nx), ny(rhs.ny), nz(rhs.nz), pcp(rhs.pcp) {
+    nx(rhs.nx), ny(rhs.ny), nz(rhs.nz), pcp(rhs.pcp), MomDist(rhs.MomDist) {
       NofK = new FFTAbleVector<3, ComplexType, FFTWEngine>(*(rhs.NofK));
     }
     
@@ -116,15 +118,13 @@ namespace qmcplusplus {
       }
     }
     
-    Vector<ValueType> getNofK() {
+    Vector<RealType>& getNofK() {
       NofK->setForwardNorm(1.0 / NofK->size());
       NofK->transformForward();
-      Vector<ValueType> temp;
-      temp.resize(NofK->size());
       for (IndexType i = 0; i < NofK->size(); i++) {
-        temp[i] = (*NofK)[i].real();
+        MomDist[i] = (*NofK)[i].real();
       }
-      return temp;
+      return MomDist;
     }
   };
 
@@ -135,6 +135,7 @@ namespace qmcplusplus {
     IndexType nx;
     PtclChoicePolicy pcp;
     FFTAbleVector<1, ComplexType, FFTWEngine>* NofK;
+    Vector<RealType> MomDist;
     void placeInBin(const ParticleSet& PtclSet, const PosType& DispVector, ValueType RatioOfWvFcn) {
       RealType DispVecLength = std::sqrt(dot(DispVector, DispVector));
       RealType Spacing = std::sqrt(dot(PtclSet.Lattice.a(0), PtclSet.Lattice.a(0))) / nx;
@@ -143,12 +144,13 @@ namespace qmcplusplus {
     } 
   public:
     OneDimMomDist(const Vector<IndexType>& DimSizes) : totalNumSamples(0), nx(0) {
-      nx = DimSizes[0] / 2;
+      nx = DimSizes[0];
       NofK = new FFTAbleVector<1, ComplexType, FFTWEngine>(nx);
+      MomDist.resize(NofK->size());
     }
 
     OneDimMomDist(const OneDimMomDist& rhs) : totalNumSamples(rhs.totalNumSamples), 
-    nx(rhs.nx), pcp(rhs.pcp) {
+    nx(rhs.nx), pcp(rhs.pcp), MomDist(rhs.MomDist) {
       NofK = new FFTAbleVector<1, ComplexType, FFTWEngine>(*(rhs.NofK));
     }
     
@@ -174,15 +176,13 @@ namespace qmcplusplus {
       }
     }
     
-    Vector<ValueType> getNofK() {
+    Vector<RealType>& getNofK() {
       NofK->setForwardNorm(1.0 / NofK->size());
       NofK->transformForward();
-      Vector<ValueType> temp;
-      temp.resize(NofK->size());
       for (IndexType i = 0; i < NofK->size(); i++) {
-        temp[i] = (*NofK)[i].real();
+        MomDist[i] = (*NofK)[i].real();
       }
-      return temp;
+      return MomDist;
     }
   };
   
@@ -194,6 +194,7 @@ namespace qmcplusplus {
     IndexType nx;
     PtclChoicePolicy pcp;
     FFTAbleVector<1, ComplexType, FFTWEngine>* NofK;
+    Vector<RealType> MomDist;
     void placeInBin(const ParticleSet& PtclSet, const PosType& DispVector, ValueType RatioOfWvFcn) {
       RealType DispVecLength = std::sqrt(dot(DispVector, DispVector));
       RealType Spacing = std::sqrt(dot(PtclSet.Lattice.a(0), PtclSet.Lattice.a(0))) / nx;
@@ -202,12 +203,13 @@ namespace qmcplusplus {
     } 
   public:
     AveragedOneDimMomDist(const Vector<IndexType>& DimSizes) : totalNumSamples(0), nx(0) {
-      nx = DimSizes[0] / 2;
+      nx = DimSizes[0];
       NofK = new FFTAbleVector<1, ComplexType, FFTWEngine>(nx);
+      MomDist.resize(NofK->size());
     }
 
     AveragedOneDimMomDist(const AveragedOneDimMomDist& rhs) : totalNumSamples(rhs.totalNumSamples), 
-    nx(rhs.nx), pcp(rhs.pcp) {
+    nx(rhs.nx), pcp(rhs.pcp), MomDist(rhs.MomDist) {
       NofK = new FFTAbleVector<1, ComplexType, FFTWEngine>(*(rhs.NofK));
     }
     
@@ -236,15 +238,13 @@ namespace qmcplusplus {
       }
     }
     
-    Vector<ValueType> getNofK() {
+    Vector<RealType>& getNofK() {
       NofK->setForwardNorm(1.0 / NofK->size());
       NofK->transformForward();
-      Vector<ValueType> temp;
-      temp.resize(NofK->size());
       for (IndexType i = 0; i < NofK->size(); i++) {
-        temp[i] = (*NofK)[i].real();
+        MomDist[i] = (*NofK)[i].real();
       }
-      return temp;
+      return MomDist;
     }
   };
   
