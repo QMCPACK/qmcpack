@@ -60,26 +60,28 @@ namespace qmcplusplus {
     inline Return_t evaluate(ParticleSet& P) {
       if(Accumulate) {
         MomDist.updateDistribution(P, WaveFcn, NumDispl);
-        return 0.0;
+        Value = 0.0;
       } else {
         MomDist.resetDistribution();
         MomDist.updateDistribution(P, WaveFcn, NumDispl);
-        Vector<ValueType> NofK = MomDist.getNofK();
+        Vector<RealType>& NofK(MomDist.getNofK());
         RealType retVal = 0.0;
         for (IndexType i = 0; i < NofK.size(); i++) {
           retVal += NofK[i] * DispRel[i];
         }
-        return OneOverM * retVal;
+        Value = OneOverM * retVal;
       }
+      return Value;
     }
     
     Return_t getEnsembleAverage() {
-      Vector<ValueType> NofK = MomDist.getNofK();
+      Vector<RealType>& NofK(MomDist.getNofK());
       MomDist.resetDistribution();
       RealType retVal = 0.0;
       for (IndexType i = 0; i < NofK.size(); i++) {
         retVal += NofK[i] * DispRel[i];
       }
+//      std::cout << retVal * OneOverM << std::endl;
       return OneOverM * retVal;
     }
     
