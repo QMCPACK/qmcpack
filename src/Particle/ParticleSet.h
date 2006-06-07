@@ -151,6 +151,7 @@ namespace qmcplusplus {
    void registerData(PooledData<RealType>& buf);
    void registerData(Walker_t& awalker, PooledData<RealType>& buf);
    void updateBuffer(Walker_t& awalker, PooledData<RealType>& buf);
+   void updateBuffer(PooledData<RealType>& buf);
    void copyToBuffer(PooledData<RealType>& buf);
    void copyFromBuffer(PooledData<RealType>& buf);
 
