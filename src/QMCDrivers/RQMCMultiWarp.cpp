@@ -467,15 +467,6 @@ namespace qmcplusplus {
 
     if(MyCounter==0) initReptile();
 
-    cout << "==========================================" << endl;
-    cout << "  CHECKING ACTION" << endl;
-    for(int ipsi=0; ipsi<nPsi; ipsi++)
-      cout << "Initial " << ipsi << " " << Reptile->GlobalAction[ipsi] << endl;
-    checkReptileProperties();
-    
-    for(int ipsi=0; ipsi<nPsi; ipsi++)
-      cout << "Recomputed " << ipsi << " " << Reptile->GlobalAction[ipsi] << endl;
-
     IndexType block = 0;
     IndexType nAcceptTot = 0;
     IndexType nRejectTot = 0;
@@ -544,15 +535,6 @@ namespace qmcplusplus {
       }
       *OutEnergy << endl;
       OutEnergy->flush();
-
-      cout << "==========================================" << endl;
-      cout << "  CHECKING ACTION" << endl;
-      for(int ipsi=0; ipsi<nPsi; ipsi++)
-        cout << "Updated " << ipsi << " " << Reptile->GlobalAction[ipsi] << endl;
-      checkReptileProperties();
-      
-      for(int ipsi=0; ipsi<nPsi; ipsi++)
-        cout << "Recomputed " << ipsi << " " << Reptile->GlobalAction[ipsi] << endl;
 
       nAcceptTot += nAccept;
       nRejectTot += nReject;
