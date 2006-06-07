@@ -87,6 +87,8 @@ namespace qmcplusplus {
 
     MCWalkerConfiguration::iterator it;
     MCWalkerConfiguration::iterator it_end(W.end());
+
+
     do {  //Blocks loop
       IndexType step = 0;
       nAccept = 0; nReject=0;
@@ -117,7 +119,6 @@ namespace qmcplusplus {
 	    Psi1[ipsi]->L=WW[ipsi]->L;
           }
 
-
 	  // Point to the correct walker in the ratioij buffer
 	  RealType *ratioijPtr=multiEstimator->RatioIJ[iwalker];
 
@@ -127,23 +128,16 @@ namespace qmcplusplus {
 
           for(int iat=0; iat<W.getTotalNum(); iat++) {  //Particles loop
 
-            //cout << "initial jacobian" << thisWalker.Properties(0,JACOBIAN) << " " << thisWalker.Properties(1,JACOBIAN) << endl;
-            //cout << "Initial Position" << endl;
-            //cout << W.R << endl;
-
             PosType dr = m_sqrttau*deltaR[iat]+thisWalker.Drift[iat];
             PosType newpos = W.makeMove(iat,dr);
-            //cout << "moved " << iat << " to " << newpos << endl;
-            //cout << "Random displacement " << m_sqrttau*deltaR[iat] << endl;
-            //cout << "Classical Drift     " << thisWalker.Drift[iat] << endl;
             //Compute the displacement due to space-warp
             PtclWarp.warp_one(iat,1);
 
 	    for(int ipsi=0; ipsi<nPsi; ipsi++){
-              if(ipsi) { //need to call makeMove for the secondary particles
+              //if(ipsi) { //need to call makeMove for the secondary particles
                 dr=newpos+PtclWarp.get_displacement(iat,ipsi)-WW[ipsi]->R[iat];
                 WW[ipsi]->makeMove(iat,dr);
-              }
+              //}
               //Warp the particle position
               //WW[ipsi]->R[iat]=W.R[iat]+PtclWarp.get_displacement(ipsi);
 	      // Compute ratios before and after the move
@@ -156,11 +150,6 @@ namespace qmcplusplus {
                 *PtclWarp.get_Jacobian(iat,ipsi)/PtclWarp.one_ptcl_Jacob(ipsi,iat);
 	      sumratio[ipsi]=1.e0;
 	    }
-            //cout << "Jacobian " << new_Jacobian[0] << " " << new_Jacobian[1] << endl;
-            //cout << "old 1-body jacobian " << PtclWarp.one_ptcl_Jacob(1,iat) << endl;
-            //cout << "new 1-body jacobian " << PtclWarp.get_Jacobian(1) << endl;
-            //cout << "ratio new/old " << new_Jacobian[0]/thisWalker.Properties(0,JACOBIAN) << " " 
-              //<< new_Jacobian[1]/thisWalker.Properties(1,JACOBIAN) << endl;
 
 	    // Compute new (Psi[i]/Psi[j])^2 and their sum
 	    int indexij(0);
@@ -173,25 +162,23 @@ namespace qmcplusplus {
 		sumratio[jpsi] += 1.e0/rji;
 	      }
 	    }
-
-            RealType logGf = -0.5*dot(deltaR[iat],deltaR[iat]);
-	    drift=0.0;
 	    // Evaluate new Umbrella Weight and new drift
-            // TEMPORARY: Use only drift of first wave function
-            drift=*G[0];
-            drift*=Tau;
-	    for(int ipsi=0; ipsi< nPsi; ipsi++){
-	      invsumratio[ipsi]=1.0/sumratio[ipsi];
-	    }
-            /*
-	    for(int ipsi=0; ipsi< nPsi; ipsi++){
-	      invsumratio[ipsi]=1.0/sumratio[ipsi];
-	      drift += invsumratio[ipsi]*(*G[ipsi]);
-	    }
-            ValueType vsq = Dot(drift,drift);
-            ValueType scale = ((-1.0e0+sqrt(1.0e0+2.0e0*Tau*vsq))/vsq);
-            //ValueType scale=Tau;
-	    drift *= scale;*/
+            RealType logGf = -0.5*dot(deltaR[iat],deltaR[iat]);
+
+	    drift=0.0;
+            QMCTraits::PosType WarpDrift;
+            RealType denom(0.e0);
+            for(int ipsi=0; ipsi< nPsi ; ipsi++) {
+              invsumratio[ipsi]=1.e0/sumratio[ipsi];
+              denom += invsumratio[ipsi];
+              for(int iptcl=0; iptcl< W.getTotalNum(); iptcl++){
+                WarpDrift=dot(  (*G[ipsi])[iptcl],PtclWarp.get_Jacob_matrix(iptcl,ipsi)  )
+                  +5.0e-1*PtclWarp.get_grad_ln_Jacob(iptcl,ipsi) ;
+                drift[iptcl] += (invsumratio[ipsi]*WarpDrift);
+              }
+            }
+            drift *= (Tau/denom);
+
             dr = thisWalker.R[iat]-newpos-drift[iat];
             RealType logGb = -m_oneover2tau*dot(dr,dr);
 
@@ -211,7 +198,8 @@ namespace qmcplusplus {
 		 -buffered info for each Psi1[i]*/
 	      moved = true;
 	      ++nAccept;
-	      //W.acceptMove(iat);
+
+	      W.acceptMove(iat);
               for(int ipsi=0; ipsi<nPsi; ipsi++){
                 // Update warped position
                 WW[ipsi]->acceptMove(iat);
@@ -227,7 +215,7 @@ namespace qmcplusplus {
 	      thisWalker.Multiplicity=sumratio[0];
 	      for(int ipsi=0; ipsi< nPsi; ipsi++){
 		////Update local Psi1[i] buffer for the next move
-		Psi1[ipsi]->acceptMove(W,iat);  
+		Psi1[ipsi]->acceptMove(*WW[ipsi],iat);  
 		// Update G and L in Psi1[i]
 		Psi1[ipsi]->G = *G[ipsi];
 		Psi1[ipsi]->L += *dL[ipsi];
@@ -239,6 +227,7 @@ namespace qmcplusplus {
 	    } else {
               //cout << "REJECTED" << endl << endl;
 	      ++nReject; 
+	      W.rejectMove(iat);
               // reject moves
               for(int ipsi=0; ipsi<nPsi; ipsi++) 
                 WW[ipsi]->rejectMove(iat);
@@ -272,8 +261,9 @@ namespace qmcplusplus {
               //Properties is used for UmbrellaWeight and UmbrellaEnergy
               thisWalker.Properties(ipsi,UMBRELLAWEIGHT)=UmbrellaWeight[ipsi];
               thisWalker.Properties(ipsi,LOCALENERGY)=et;
-              H1[ipsi]->saveProperty(thisWalker.getPropertyBase(ipsi));
+              thisWalker.Properties(ipsi,LOGPSI)=log(abs(psi));
 
+              H1[ipsi]->saveProperty(thisWalker.getPropertyBase(ipsi));
 	    }
 	  }
 	  else {
@@ -288,6 +278,7 @@ namespace qmcplusplus {
       //Modify Norm. 
       if(block < equilBlocks){
         for(int ipsi=0; ipsi< nPsi; ipsi++){
+          cout << "WGT " << multiEstimator->esum(ipsi,MultipleEnergyEstimator::WEIGHT_INDEX) << endl;
           tmpNorm[ipsi]+=multiEstimator->esum(ipsi,MultipleEnergyEstimator::WEIGHT_INDEX);
         }
         if(block==(equilBlocks-1) || block==(nBlocks-1)){
@@ -402,7 +393,7 @@ namespace qmcplusplus {
     }
 
     //H1[0]->setPrimary(true);
-    for(int ipsi=1; ipsi<nPsi; ipsi++) {
+    for(int ipsi=0; ipsi<nPsi; ipsi++) {
       H1[ipsi]->setPrimary(true);
     }
 
