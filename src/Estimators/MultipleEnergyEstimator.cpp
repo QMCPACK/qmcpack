@@ -75,8 +75,6 @@ namespace qmcplusplus {
     //allocate UmbrellaEnergy
     int numPtcls(W.getTotalNum());
 
-    //UmbrellaEnergy.resize(NumWalkers,NumCopies);
-    //UmbrellaWeight.resize(NumWalkers,NumCopies);
     RatioIJ.resize(NumWalkers,NumCopies*(NumCopies-1)/2);
 
     MCWalkerConfiguration::iterator it(W.begin()); 
@@ -85,19 +83,18 @@ namespace qmcplusplus {
     vector<RealType> sumratio(NumCopies), logpsi(NumCopies);
 
     int iw(0);
+    int DataSetSize((*it)->DataSet.size());
     while(it != it_end) {
 
       Walker_t& thisWalker(**it);
+      (*it)->DataSet.rewind();
 
       if(require_register) {
-        (*it)->DataSet.rewind();
         W.registerData(thisWalker,(*it)->DataSet);
-        //W.DataSet[iw]->rewind();
-        //W.registerData(thisWalker,*(W.DataSet[iw]));
       } else {
         W.R = thisWalker.R;
-        //DistanceTable::update(W);
         W.update();
+        if(DataSetSize) W.updateBuffer((*it)->DataSet);
       }
 
       //evalaute the wavefunction and hamiltonian
@@ -107,9 +104,9 @@ namespace qmcplusplus {
         //Need to modify the return value of OrbitalBase::registerData
         if(require_register) {
 	  logpsi[ipsi]=psi[ipsi]->registerData(W,(*it)->DataSet);
-	  //logpsi[ipsi]=psi[ipsi]->registerData(W,*(W.DataSet[iw]));
         } else {
-	  logpsi[ipsi]=psi[ipsi]->evaluateLog(W); 		 
+	  if(DataSetSize)logpsi[ipsi]=psi[ipsi]->updateBuffer(W,(*it)->DataSet);
+          else logpsi[ipsi]=psi[ipsi]->evaluateLog(W); 		 
         }
         psi[ipsi]->G=W.G;
         thisWalker.Properties(ipsi,LOGPSI)=logpsi[ipsi];
@@ -150,7 +147,8 @@ namespace qmcplusplus {
 
   void 
   MultipleEnergyEstimator
-  ::initialize(MCWalkerConfiguration& W, vector<ParticleSet*>& WW,SpaceWarp& Warp,
+  ::initialize(MCWalkerConfiguration& W, vector<ParticleSet*>& WW,
+      SpaceWarp& Warp,
       vector<QMCHamiltonian*>& h, 
       vector<TrialWaveFunction*>& psi,
       RealType tau,vector<RealType>& Norm,
@@ -170,16 +168,18 @@ namespace qmcplusplus {
 
     int jindex=W.addProperty("Jacobian");
     int iw(0);
+    int DataSetSize((*it)->DataSet.size());
     while(it != it_end) {
-
       Walker_t& thisWalker(**it);
+      (*it)->DataSet.rewind();
 
+      //NECESSARY SINCE THE DISTANCE TABLE OF W ARE USED TO WARP
       if(require_register) {
-        (*it)->DataSet.rewind();
         W.registerData(thisWalker,(*it)->DataSet);
       } else {
         W.R = thisWalker.R;
         W.update();
+        if(DataSetSize) W.updateBuffer((*it)->DataSet);
       }
 
       for(int ipsi=0; ipsi<NumCopies; ipsi++) Jacobian[ipsi]=1.e0;
@@ -189,7 +189,7 @@ namespace qmcplusplus {
           WW[ipsi]->R[iptcl]=W.R[iptcl]+Warp.get_displacement(iptcl,ipsi);
           Jacobian[ipsi]*=Warp.get_Jacobian(iptcl,ipsi);
         }
-        if(require_register)Warp.update_one_ptcl_Jacob(iptcl);
+        if(require_register || DataSetSize) Warp.update_one_ptcl_Jacob(iptcl);
       }
 
       for(int ipsi=0; ipsi<NumCopies; ipsi++){
@@ -203,8 +203,13 @@ namespace qmcplusplus {
         }
         Warp.registerData(WW,(*it)->DataSet);
       } else {
-        for(int ipsi=0; ipsi<NumCopies; ipsi++) WW[ipsi]->update();
+        for(int ipsi=0; ipsi<NumCopies; ipsi++){
+          WW[ipsi]->update();
+          if(DataSetSize) WW[ipsi]->updateBuffer((*it)->DataSet);
+        }
+        if(DataSetSize) Warp.updateBuffer((*it)->DataSet);
       }
+
 
 
       //evalaute the wavefunction and hamiltonian
@@ -214,8 +219,9 @@ namespace qmcplusplus {
         //Need to modify the return value of OrbitalBase::registerData
         if(require_register) {
 	  logpsi[ipsi]=psi[ipsi]->registerData(*WW[ipsi],(*it)->DataSet);
-        } else {
-	  logpsi[ipsi]=psi[ipsi]->evaluateLog(*WW[ipsi]); 		 
+        }else{
+	  if(DataSetSize)logpsi[ipsi]=psi[ipsi]->updateBuffer(*WW[ipsi],(*it)->DataSet);
+	  else logpsi[ipsi]=psi[ipsi]->evaluateLog(*WW[ipsi]); 		 
         }
         psi[ipsi]->G=WW[ipsi]->G;
         thisWalker.Properties(ipsi,LOGPSI)=logpsi[ipsi];
@@ -223,7 +229,7 @@ namespace qmcplusplus {
         h[ipsi]->saveProperty(thisWalker.getPropertyBase(ipsi));
         sumratio[ipsi]=1.0;
       } 							
-     
+
       //Check SIMONE's note
       //Compute the sum over j of Psi^2[j]/Psi^2[i] for each i
       int indexij(0);
@@ -241,20 +247,12 @@ namespace qmcplusplus {
       //Re-use Multiplicity as the sumratio
       thisWalker.Multiplicity=sumratio[0];
 
-      //DON't forget DRIFT!!!
-      thisWalker.Drift=0.0;
-
-      for(int ipsi=0; ipsi< NumCopies; ipsi++) {
-        RealType wgt=1.0/sumratio[ipsi];
-        thisWalker.Properties(ipsi,UMBRELLAWEIGHT)=wgt;
-       // thisWalker.Drift += wgt*psi[ipsi]->G;
-      }
-
       QMCTraits::PosType WarpDrift;
       RealType denom(0.e0),wgtpsi;
       thisWalker.Drift=0.e0; 
       for(int ipsi=0; ipsi< NumCopies; ipsi++) {
         wgtpsi=1.e0/sumratio[ipsi];
+        thisWalker.Properties(ipsi,UMBRELLAWEIGHT)=wgtpsi;
         denom += wgtpsi;
         for(int iptcl=0; iptcl< numPtcls; iptcl++){
           WarpDrift=dot(  psi[ipsi]->G[iptcl],Warp.get_Jacob_matrix(iptcl,ipsi)  )
