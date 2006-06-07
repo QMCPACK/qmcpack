@@ -302,6 +302,9 @@ namespace qmcplusplus {
 
     Estimators->finalize();
 
+    //set the target walkers
+    nTargetWalkers = W.getActiveWalkers();
+
     //increment MyCounter
     MyCounter++;
 
@@ -349,6 +352,8 @@ namespace qmcplusplus {
     } else if(nwalkers<0) {
       W.destroyWalkers(-nwalkers);
       app_log() << "  Removed " << -nwalkers << " walkers. Current number of walkers =" << W.getActiveWalkers() << endl;
+    } else {
+      app_log() << "  Using the current " << W.getActiveWalkers() << " walkers." <<  endl;
     }
 
   }
@@ -422,10 +427,11 @@ namespace qmcplusplus {
       from the current population.*/ 
     int nw  = W.getActiveWalkers();
     int ndiff = 0;
-    if(nw) {
-      ndiff = nTargetWalkers-nw;
+    if(nw) { // walkers exist
+      // nTargetWalkers == 0, if it is not set by the input file
+      ndiff = (nTargetWalkers)? nTargetWalkers-nw: 0;
     } else {
-      ndiff=(nTargetWalkers)? nTargetWalkers:defaultw;
+      ndiff= (nTargetWalkers)? nTargetWalkers:defaultw;
     }
 
     addWalkers(ndiff);
