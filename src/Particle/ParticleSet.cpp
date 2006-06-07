@@ -266,6 +266,18 @@ namespace qmcplusplus {
   }
     
   void 
+  ParticleSet::updateBuffer(PooledData<RealType>& buf) {
+    for(int i=0; i< DistTables.size(); i++) {
+      DistTables[i]->evaluate(*this);
+      DistTables[i]->updateBuffer(buf);
+    }
+    if(SK){
+      SK->UpdateAllPart();
+      SK->updateBuffer(buf);
+    }
+  }
+    
+  void 
   ParticleSet::copyToBuffer(PooledData<RealType>& buf) {
     for(int i=0; i< DistTables.size(); i++) {
       DistTables[i]->copyToBuffer(buf);
