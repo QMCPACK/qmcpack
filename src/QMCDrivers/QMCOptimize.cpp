@@ -133,6 +133,8 @@ namespace qmcplusplus {
     }  
     //will check the method
 
+    W.destroyWalkers(W.begin(),W.end());
+
     int nfile=mcwalkerNodePtr.size();
     if(nfile) {
       int ng=OHMMS::Controller->ncontexts()/nfile;
