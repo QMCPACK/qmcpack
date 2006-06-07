@@ -12,7 +12,7 @@ namespace qmcplusplus {
   void SpaceWarp::initialize(vector<ParticleSet*>& ionSets, DistanceTableData* dtprime){
     dtPrimary=dtprime;
     npsi=ionSets.size();
-    cout << dtPrimary->VisitorIndex<<endl;
+    cout << dtPrimary->VisitorIndex << endl;
     nptcl= dtPrimary->size(DistanceTableData::VisitorIndex);
     ncenter=dtPrimary->centers();
     //resize and Initialize nuclear displacement
@@ -65,6 +65,10 @@ namespace qmcplusplus {
     return WarpVector[iel]->Jacob_matrix[ipsi];
   }
 
+  QMCTraits::TensorType SpaceWarp::get_Jacob_cofactor(int iel, int ipsi){
+    return WarpVector[iel]->Jacob_cofactor[ipsi];
+  }
+
   QMCTraits::PosType SpaceWarp::get_grad_ln_Jacob(int iel, int ipsi){
     WarpVector[iel]->update_warp_grad();
     return WarpVector[iel]->get_grad_ln_Jacob(ipsi,Delta[ipsi]);
@@ -101,13 +105,21 @@ namespace qmcplusplus {
   void SpaceWarp::registerData(vector<ParticleSet*>& plist, PooledData<RealType>& buf) {
     if(PtclRefs.empty()) {
       SizeOfR=plist[0]->getTotalNum()*OHMMS_DIM;
-      for(int ipsi=1; ipsi<npsi; ipsi++){
+      for(int ipsi=0; ipsi<npsi; ipsi++){
         PtclRefs.push_back(plist[ipsi]);
-        RealType* first=&(plist[ipsi]->R[0][0]);
-        buf.add(first,first+SizeOfR);
       }
-      buf.add(one_ptcl_Jacob.begin(),one_ptcl_Jacob.end());
     }
+
+    for(int ipsi=0; ipsi<npsi; ipsi++){
+      RealType* first=&(plist[ipsi]->R[0][0]);
+      buf.add(first,first+SizeOfR);
+    }
+    buf.add(one_ptcl_Jacob.begin(),one_ptcl_Jacob.end());
+  }
+
+  void SpaceWarp::updateBuffer(PooledData<RealType>& buf) {
+//recompute Jacobian from scratch
+    copyToBuffer(buf);
   }
 
   void SpaceWarp::copyToBuffer(PooledData<RealType>& buf) {
