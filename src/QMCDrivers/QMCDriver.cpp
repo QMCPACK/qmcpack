@@ -83,6 +83,12 @@ namespace qmcplusplus {
    */
   void QMCDriver::process(xmlNodePtr cur) {
 
+    //first-time with this  QMCDriver, clear the buffer so
+    if(MyCounter == 0) { 
+      app_log() << "  Clearing buffer of all the walkers " << endl;
+      W.clearAuxDataSet();
+    }
+
     deltaR.resize(W.getTotalNum());
     drift.resize(W.getTotalNum());
 
@@ -184,6 +190,7 @@ namespace qmcplusplus {
    * Evaluate the Properties of Walkers when a QMC starts
    */
   void QMCDriver::initialize() {
+
 
     //For optimization, do nothing
     if(QMCDriverMode[QMC_OPTIMIZE]) return;
@@ -339,8 +346,9 @@ namespace qmcplusplus {
 	(*it)->R=W.R;
 	++it;
       }
-    } else {
-      app_log() << "  Using the existing " << W.getActiveWalkers() << " walkers" << endl;
+    } else if(nwalkers<0) {
+      W.destroyWalkers(-nwalkers);
+      app_log() << "  Removed " << -nwalkers << " walkers. Current number of walkers =" << W.getActiveWalkers() << endl;
     }
 
   }
