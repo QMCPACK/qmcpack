@@ -33,8 +33,7 @@ namespace qmcplusplus {
 
 
   /// Constructor.
-  VMCMultipleWarp::VMCMultipleWarp(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
-      ParticleSetPool& ptclPool):
+  VMCMultipleWarp::VMCMultipleWarp(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, ParticleSetPool& ptclPool):
     QMCDriver(w,psi,h), PtclPool(ptclPool), multiEstimator(0) { 
     RootName = "vmc-warp";
     QMCType ="vmc-warp";
@@ -55,10 +54,10 @@ namespace qmcplusplus {
    * See QMCDriver::process
    */
   bool VMCMultipleWarp::put(xmlNodePtr q){
-
     if(WW.empty()) {
       W.clearDistanceTables();
     }
+
     //qmcsystem
     vector<ParticleSet*> ionSets;
     DistanceTableData* dtableReference;
@@ -66,7 +65,7 @@ namespace qmcplusplus {
     while(cur != NULL) {
       string cname((const char*)(cur->name));
       if(cname == "qmcsystem") {
-	string source_name((const char*)xmlGetProp(cur,(const xmlChar*)"source"));
+        string source_name((const char*)xmlGetProp(cur,(const xmlChar*)"source"));
         ionSets.push_back(PtclPool.getParticleSet(source_name));
       }
       cur=cur->next;
@@ -102,7 +101,6 @@ namespace qmcplusplus {
       for(int ipsi=0; ipsi<nPsi; ipsi++)branchEngine->LogNorm[ipsi]=0.e0;
     }
 
-
     for(int ipsi=0; ipsi<nPsi; ipsi++) 
       H1[ipsi]->add2WalkerProperty(W);
 
@@ -114,7 +112,6 @@ namespace qmcplusplus {
 
     LOGMSG("Number of H and Psi " << nPsi)
 
-    //H1[0]->setPrimary(true);
     for(int ipsi=0; ipsi<nPsi; ipsi++) {
       H1[ipsi]->setPrimary(true);
     }
@@ -141,6 +138,7 @@ namespace qmcplusplus {
       }
     }
 
+    
     return true;
   }
   
@@ -149,7 +147,7 @@ namespace qmcplusplus {
    * Similar to VMC::run 
    */
   bool VMCMultipleWarp::run() { 
-    
+
     int JACCOL=Estimators->addColumn("LogJacob");
       
     Estimators->reportHeader(AppendRun);
@@ -166,8 +164,8 @@ namespace qmcplusplus {
     }else{
       for(int ipsi=0; ipsi< nPsi; ipsi++) Norm[ipsi]=std::exp(branchEngine->LogNorm[ipsi]);
     }
-
     //this is where the first values are evaulated
+    // Have to generalize to WW
     multiEstimator->initialize(W,WW,PtclWarp,H1,Psi1,Tau,Norm,require_register);
     
     Estimators->reset();
@@ -179,8 +177,8 @@ namespace qmcplusplus {
     double wh=0.0;
     IndexType nAcceptTot = 0;
     IndexType nRejectTot = 0;
-    
-    branchEngine->LogJacobRef=0.e0;
+    //bool appendwalker=pStride>0;
+
     do {
       IndexType step = 0;
       nAccept = 0; nReject=0;
@@ -193,7 +191,7 @@ namespace qmcplusplus {
         Estimators->accumulate(W);
         Jacblk+=std::log(fabs((*W.begin())->Properties(1,JACOBIAN)));
       } while(step<nSteps);
-      
+
       //Modify Norm. 
       if(block < equilBlocks){
         for(int ipsi=0; ipsi< nPsi; ipsi++){
@@ -214,8 +212,7 @@ namespace qmcplusplus {
       RealType AveJacobLog=Jacblk/static_cast<RealType>(nSteps);
       Estimators->setColumn(JACCOL,AveJacobLog);
 
-
-      nAcceptTot += nAccept;
+      nAcceptTot += nAccept; 
       nRejectTot += nReject;
 
       branchEngine->accumulate(Estimators->average(0),1.0);
@@ -229,8 +226,6 @@ namespace qmcplusplus {
 
     } while(block<nBlocks);
     branchEngine->LogJacobRef/=static_cast<RealType>(nBlocks);
-
-    //Normalize norms :-)
 
    // do {
    //   IndexType step = 0;
@@ -296,6 +291,7 @@ namespace qmcplusplus {
     
     MCWalkerConfiguration::iterator it(W.begin()); 
     MCWalkerConfiguration::iterator it_end(W.end()); 
+    ParticleSet::ParticlePos_t deltaRTemp(W.getTotalNum());
     int iwlk(0); 
     int nPsi_minus_one(nPsi-1);
 
@@ -305,122 +301,103 @@ namespace qmcplusplus {
 
       //create a 3N-Dimensional Gaussian with variance=1
       makeGaussRandom(deltaR);
-     
-      W.R = m_sqrttau*deltaR + thisWalker.R + thisWalker.Drift;
-      
-      //Evaluate Psi and graidients and laplacians
-      //\f$\sum_i \ln(|psi_i|)\f$ and catching the sign separately
-      //WW[0]->R=W.R;
 
-      W.update();
 
-      for(int ipsi=0; ipsi<nPsi; ipsi++) Jacobian[ipsi]=1.e0;
-      for(int iptcl=0; iptcl< nptcl; iptcl++){
-	PtclWarp.warp_one(iptcl,0);
-	//Save particle position
-	for(int ipsi=0; ipsi<nPsi; ipsi++){
-	  WW[ipsi]->R[iptcl]=W.R[iptcl]+PtclWarp.get_displacement(iptcl,ipsi);
-	  Jacobian[ipsi]*=PtclWarp.get_Jacobian(iptcl,ipsi);
-	}
-      }
+      for(int iat=0; iat<W.getTotalNum(); iat++) {  //Particles loop
 
-      /*for(int i=0; i<nptcl; i++){
-        for(int ipsi=0; ipsi<nPsi; ipsi++){
-          cout << ipsi << " " << WW[ipsi]->R[i] << "         ";
-	}
-        cout << endl;
-      }
-      cout << endl;*/
+        W.R=thisWalker.R;
+        W.R[iat] = m_sqrttau*deltaR[iat] + thisWalker.R[iat] + thisWalker.Drift[iat];
 
-      for(int ipsi=0; ipsi< nPsi;ipsi++) {
-        WW[ipsi]->update();
-        //SIMONE SIMONE SIMONE SIMONE
-	logpsi[ipsi]=Psi1[ipsi]->evaluateLog(*WW[ipsi]);
-        //cout << "LOGPSI " << ipsi << " "<< logpsi[ipsi] << endl;
-	//Redundant???
-        Psi1[ipsi]->L=WW[ipsi]->L;
-        Psi1[ipsi]->G=WW[ipsi]->G;
-	sumratio[ipsi]=1.0;
-      }
+        W.update();
 
-      // Compute the sum over j of Psi^2[j]/Psi^2[i] for each i
-      for(int ipsi=0; ipsi< nPsi_minus_one; ipsi++) {
-	for(int jpsi=ipsi+1; jpsi< nPsi; jpsi++){
-	  RealType ratioij=Norm[ipsi]/Norm[jpsi]*std::exp(2.0*(logpsi[jpsi]-logpsi[ipsi]));
-	  ratioij*=(Jacobian[jpsi]/Jacobian[ipsi]);
-	  sumratio[ipsi] += ratioij;
-	  sumratio[jpsi] += 1.0/ratioij;
-	}
-      }
-
-      for(int ipsi=0; ipsi< nPsi; ipsi++)			  
-	invsumratio[ipsi]=1.0/sumratio[ipsi];			  
-
-     // cout << invsumratio[0] << " " << invsumratio[1] << endl;
-
-      // Only these properties need to be updated
-      // Using the sum of the ratio Psi^2[j]/Psi^2[iwref]
-      // because these are number of order 1. Potentially
-      // the sum of Psi^2[j] can get very big
-      //Properties(LOGPSI) =logpsi[0];
-      //Properties(SUMRATIO) = sumratio[0];
- 
-      RealType logGf = -0.5*Dot(deltaR,deltaR);
-      ValueType scale = Tau; // ((-1.0+sqrt(1.0+2.0*Tau*vsq))/vsq);
-
-      //accumulate the weighted drift
-      QMCTraits::PosType WarpDrift;
-      RealType denom(0.e0),wgtpsi;
-      drift=0.e0; 
-      for(int ipsi=0; ipsi<nPsi; ipsi++) {
-        wgtpsi=1.e0/sumratio[ipsi];
-        denom += wgtpsi;
+        for(int ipsi=0; ipsi<nPsi; ipsi++) Jacobian[ipsi]=1.e0;
         for(int iptcl=0; iptcl< nptcl; iptcl++){
-          WarpDrift=dot(  Psi1[ipsi]->G[iptcl],PtclWarp.get_Jacob_matrix(iptcl,ipsi)  )
-            +5.0e-1*PtclWarp.get_grad_ln_Jacob(iptcl,ipsi) ;
-          drift[iptcl] += (wgtpsi*WarpDrift);
+          PtclWarp.warp_one(iptcl,nptcl);
+          //Save particle position
+          for(int ipsi=1; ipsi<nPsi; ipsi++){
+            WW[ipsi]->R[iptcl]=W.R[iptcl]+PtclWarp.get_displacement(iptcl,ipsi);
+            Jacobian[ipsi]*=PtclWarp.get_Jacobian(iptcl,ipsi);
+          }
         }
-      }
-      drift *= (scale/denom);
 
-      deltaR = thisWalker.R - W.R - drift;
-      RealType logGb = -m_oneover2tau*Dot(deltaR,deltaR);
-      
-      //Original
-      //RealType g = Properties(SUMRATIO)/thisWalker.Properties(SUMRATIO)*   		
-      //	std::exp(logGb-logGf+2.0*(Properties(LOGPSI)-thisWalker.Properties(LOGPSI)));	
-      //Reuse Multiplicity to store the sumratio[0]
-      RealType g = sumratio[0]/thisWalker.Multiplicity*   		
-       	std::exp(logGb-logGf+2.0*(logpsi[0]-thisWalker.Properties(LOGPSI)));	
+        for(int ipsi=0; ipsi< nPsi;ipsi++) {
+          WW[ipsi]->update();
+          logpsi[ipsi]=Psi1[ipsi]->evaluateLog(*WW[ipsi]);
+          //Redundant???
+          Psi1[ipsi]->L=WW[ipsi]->L;
+          Psi1[ipsi]->G=WW[ipsi]->G;
+          sumratio[ipsi]=1.0;
+        }
 
-      //cout << "ACCPROB " << g << endl;
+        // Compute the sum over j of Psi^2[j]/Psi^2[i] for each i
+        for(int ipsi=0; ipsi< nPsi_minus_one; ipsi++) {
+          for(int jpsi=ipsi+1; jpsi< nPsi; jpsi++){
+            RealType ratioij=Norm[ipsi]/Norm[jpsi]*std::exp(2.0*(logpsi[jpsi]-logpsi[ipsi]));
+            ratioij*=(Jacobian[jpsi]/Jacobian[ipsi]);
+            sumratio[ipsi] += ratioij;
+            sumratio[jpsi] += 1.0/ratioij;
+          }
+        }  
 
-      //g=1.0;
+        for(int ipsi=0; ipsi< nPsi; ipsi++)			  
+          invsumratio[ipsi]=1.0/sumratio[ipsi];			  
 
-      if(Random() > g) {
-	thisWalker.Age++;     
-	++nReject; 
-  //      cout << " REJECTED " << endl;
-      } else {
-	thisWalker.Age=0;
-        thisWalker.Multiplicity=sumratio[0];
-	thisWalker.R = W.R;
-	thisWalker.Drift = drift;
-	for(int ipsi=0; ipsi<nPsi; ipsi++){ 		            
-          WW[ipsi]->L=Psi1[ipsi]->L; //NECESSARY??????? 
-          WW[ipsi]->G=Psi1[ipsi]->G;
-	  RealType et = H1[ipsi]->evaluate(*WW[ipsi]);
-          //cout << " ENERGY " <<  et << endl ;
-          thisWalker.Properties(ipsi,LOGPSI)=logpsi[ipsi];
-          thisWalker.Properties(ipsi,SIGN) =Psi1[ipsi]->getSign();
-          thisWalker.Properties(ipsi,UMBRELLAWEIGHT)=invsumratio[ipsi];
-          thisWalker.Properties(ipsi,LOCALENERGY)=et;
-          thisWalker.Properties(ipsi,JACOBIAN)=Jacobian[ipsi];
-          //multiEstimator->updateSample(iwlk,ipsi,et,invsumratio[ipsi]); 
-          H1[ipsi]->saveProperty(thisWalker.getPropertyBase(ipsi));
-	}
+        // cout << invsumratio[0] << " " << invsumratio[1] << endl;
 
-	++nAccept;
+        // Only these properties need to be updated
+        // Using the sum of the ratio Psi^2[j]/Psi^2[iwref]
+        // because these are number of order 1. Potentially
+        // the sum of Psi^2[j] can get very big
+        //Properties(LOGPSI) =logpsi[0];
+        //Properties(SUMRATIO) = sumratio[0];
+
+        for(int jat=0; jat< W.getTotalNum(); jat++) deltaRTemp[jat]=0.0;
+        deltaRTemp[iat] = deltaR[iat];
+        RealType logGf = -0.5*Dot(deltaRTemp,deltaRTemp);
+        ValueType scale = Tau; // ((-1.0+sqrt(1.0+2.0*Tau*vsq))/vsq);
+
+        //accumulate the weighted drift
+        drift = Psi1[0]->G;
+        /*drift = invsumratio[0]*Psi1[0]->G;
+          for(int ipsi=1; ipsi< nPsi ;ipsi++) {
+          drift += invsumratio[ipsi]*Warp.G[ipsi];
+          }*/
+        drift *= scale;
+
+        deltaRTemp[iat] = thisWalker.R[iat] - W.R[iat] - drift[iat];
+        RealType logGb = -m_oneover2tau*Dot(deltaRTemp,deltaRTemp);
+
+        //Original
+        //RealType g = Properties(SUMRATIO)/thisWalker.Properties(SUMRATIO)*   		
+        //	exp(logGb-logGf+2.0*(Properties(LOGPSI)-thisWalker.Properties(LOGPSI)));	
+        //Reuse Multiplicity to store the sumratio[0]
+        RealType g = sumratio[0]/thisWalker.Multiplicity*   		
+          std::exp(logGb-logGf+2.0*(logpsi[0]-thisWalker.Properties(LOGPSI)));	
+
+        if(Random() > g) {
+          //cout << "REJECTED" << endl << endl;
+          thisWalker.Age++;     
+          ++nReject; 
+        } else {
+          thisWalker.Age=0;
+          thisWalker.Multiplicity=sumratio[0];
+          thisWalker.R = W.R;
+          thisWalker.Drift = drift;
+          for(int ipsi=0; ipsi<nPsi; ipsi++){ 		            
+            WW[ipsi]->L=Psi1[ipsi]->L; //NECESSARY??????? 
+            WW[ipsi]->G=Psi1[ipsi]->G;
+            RealType et = H1[ipsi]->evaluate(*WW[ipsi]);
+            thisWalker.Properties(ipsi,LOGPSI)=logpsi[ipsi];
+            thisWalker.Properties(ipsi,SIGN) =Psi1[ipsi]->getSign();
+            thisWalker.Properties(ipsi,UMBRELLAWEIGHT)=invsumratio[ipsi];
+            thisWalker.Properties(ipsi,LOCALENERGY)=et;
+            thisWalker.Properties(ipsi,JACOBIAN)=Jacobian[ipsi];
+            H1[ipsi]->saveProperty(thisWalker.getPropertyBase(ipsi));
+          }
+          //cout << "ACCEPTED" << endl << endl;
+
+          ++nAccept;
+        }
       }
       ++it; 
       ++iwlk;
