@@ -27,9 +27,11 @@
 #include "QMCHamiltonians/LocalCorePolPotential.h"
 #include "QMCHamiltonians/ECPotentialBuilder.h"
 #include "QMCHamiltonians/HarmonicPotential.h"
+#if defined(HAVE_LIBFFTW)
 #include "QMCHamiltonians/ModInsKineticEnergy.h"
 #include "QMCHamiltonians/MomentumDistribution.h"
 #include "QMCHamiltonians/DispersionRelation.h"
+#endif
 #if !defined(QMCPLUSPLUS_RELEASE)
 #include "QMCHamiltonians/CoulombPBC.h"
 #endif
@@ -51,7 +53,7 @@ namespace qmcplusplus {
    *  <hamiltonian target="e">
    *    <pairpot type="coulomb" name="ElecElec" source="e"/>
    *    <pairpot type="coulomb" name="IonElec" source="i"/>
-   *    <pairpot type="coulomb" name="IonIon" source="i" source="i"/>
+   *    <pairpot type="coulomb" name="IonIon" source="i" target="i"/>
    *  </hamiltonian>
    * \endxmlonly
    */
@@ -344,6 +346,7 @@ namespace qmcplusplus {
 
   void
   HamiltonianFactory::addModInsKE(xmlNodePtr cur) {
+#if defined(HAVE_LIBFFTW)
     string Dimensions, DispRelType, MomDistType, PtclSelType;
     RealType Cutoff, GapSize(0.0), FermiMomentum(0.0);
     
@@ -417,6 +420,9 @@ namespace qmcplusplus {
     }
     modInsKE->put(cur);
     targetH->addOperator(modInsKE, "ModelInsulatorKE");
+#else
+    app_error() << "  ModelInsulatorKE cannot be used without FFTW " << endl;
+#endif
   }
   
   void HamiltonianFactory::renameProperty(const string& a, const string& b){
