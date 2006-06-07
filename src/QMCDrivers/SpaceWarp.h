@@ -197,6 +197,8 @@ namespace qmcplusplus {
     RealType get_Jacobian(int iptcl, int ipsi);
     
     TensorType get_Jacob_matrix(int iptcl, int ipsi);
+
+    TensorType get_Jacob_cofactor(int iptcl, int ipsi);
     
     PosType get_grad_ln_Jacob(int iptcl, int ipsi);
 
@@ -204,8 +206,9 @@ namespace qmcplusplus {
 
     void registerData(vector<ParticleSet*>& plist, PooledData<RealType>& buf);
 
-    void copyToBuffer(PooledData<RealType>& buf);
 
+    void updateBuffer(PooledData<RealType>& buf);
+    void copyToBuffer(PooledData<RealType>& buf);
     void copyFromBuffer(PooledData<RealType>& buf);
     
   };
