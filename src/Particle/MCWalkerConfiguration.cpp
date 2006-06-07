@@ -93,6 +93,15 @@ MCWalkerConfiguration::destroyWalkers(iterator first, iterator last) {
   return WalkerList.erase(first,last);
 }
 
+void
+MCWalkerConfiguration::destroyWalkers(int nw) {
+   iterator it(WalkerList.begin()+nw),it_end(WalkerList.end());
+   while(it != it_end) {
+     delete *it++;
+   }
+   WalkerList.erase(WalkerList.begin()+nw,WalkerList.end());
+}
+
 void 
 MCWalkerConfiguration::copyWalkerRefs(Walker_t* head, Walker_t* tail) {
 
@@ -130,6 +139,16 @@ void MCWalkerConfiguration::reset() {
     (*it)->Multiplicity=1.0;
     ++it;
   }
+}
+
+void MCWalkerConfiguration::clearAuxDataSet() {
+  UpdateMode=Update_Particle;
+  iterator it(WalkerList.begin());
+  iterator it_end(WalkerList.end());
+  while(it!=it_end) {
+    (*it)->DataSet.clear(); ++it;
+  }
+  ReadyForPbyP = false;
 }
 
 bool MCWalkerConfiguration::createAuxDataSet(int nfield) {

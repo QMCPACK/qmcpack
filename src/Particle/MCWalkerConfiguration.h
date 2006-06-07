@@ -84,6 +84,11 @@ namespace qmcplusplus {
      */
     iterator destroyWalkers(iterator first, iterator last);
 
+    /** destroy Walkers 
+     *@param nw number of walkers to be destroyed
+     */
+    void destroyWalkers(int nw);
+
     /** copy the pointers to the Walkers to WalkerList 
      * @param head pointer to the head walker
      * @param tail pointer to the tail walker
@@ -184,6 +189,7 @@ namespace qmcplusplus {
      *@param awalker the reference to the walker to be loaded
      */
     void loadWalker(Walker_t& awalker);
+    void clearAuxDataSet();
     bool createAuxDataSet(int nfield=256);
     //void registerData(Walker_t& awalker, PooledData<RealType>& buf);
     //void updateBuffer(Walker_t& awalker, PooledData<RealType>& buf);
