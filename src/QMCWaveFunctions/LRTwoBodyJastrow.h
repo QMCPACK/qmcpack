@@ -18,19 +18,34 @@
 #define QMCPLUSPLUS_LR_RPAJASTROW_H
 
 #include "QMCWaveFunctions/OrbitalBase.h"
+#include "Optimize/VarList.h"
+#include "OhmmsData/libxmldefs.h"
+#include "OhmmsPETE/OhmmsVector.h"
+#include "OhmmsPETE/OhmmsMatrix.h"
 
 namespace qmcplusplus {
 
   class LRTwoBodyJastrow: public  OrbitalBase {
     
+    IndexType NumPtcls;
+    IndexType NumSpecies;
+    IndexType NumKpts;
+    ///Omega 
+    RealType Omega;
+    ///4*pi*Omega 
+    RealType FourPiOmega;
+    ///1.0/Omega 
+    RealType OneOverOmega;
+    ///Rs 
+    RealType Rs;
     ValueType curVal, curLap;
     GradType curGrad;
     ValueVectorType U,d2U;
     GradVectorType dU;
     Matrix<ComplexType> rokbyF;
+    Vector<ComplexType> Rhok;
 
-    bool Initialized;
-
+    const StructFact* skRef;
   public:
 
     ///Coefficients
@@ -39,6 +54,7 @@ namespace qmcplusplus {
     LRTwoBodyJastrow(ParticleSet& p);
 
     void reset();
+    void resize();
 
     //evaluate the distance table with els
     void resetTargetParticleSet(ParticleSet& P);
@@ -50,7 +66,7 @@ namespace qmcplusplus {
     inline ValueType evaluate(ParticleSet& P,
 			      ParticleSet::ParticleGradient_t& G, 
 			      ParticleSet::ParticleLaplacian_t& L) {
-      return exp(evaluateLog(P,G,L));
+      return std::exp(evaluateLog(P,G,L));
     }
 
 
@@ -59,7 +75,7 @@ namespace qmcplusplus {
     ValueType ratio(ParticleSet& P, int iat,
 		    ParticleSet::ParticleGradient_t& dG,
 		    ParticleSet::ParticleLaplacian_t& dL)  {
-      return exp(logRatio(P,iat,dG,dL));
+      return std::exp(logRatio(P,iat,dG,dL));
     }
 
     ValueType logRatio(ParticleSet& P, int iat,
@@ -78,6 +94,14 @@ namespace qmcplusplus {
     ValueType updateBuffer(ParticleSet& P, PooledData<RealType>& buf);
     void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf);
     ValueType evaluate(ParticleSet& P, PooledData<RealType>& buf);
+
+    ///process input file
+    bool put(xmlNodePtr cur, VarRegistry<RealType>& vlist);
+
+    inline RealType getRPACoeff(RealType ksq) {
+      return FourPiOmega*(1.0/ksq-1.0/(ksq+OneOverOmega));
+    }
+
   };
 }
 #endif

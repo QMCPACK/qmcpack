@@ -15,17 +15,38 @@
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 #include "QMCWaveFunctions/LRTwoBodyJastrow.h"
+#include "LongRange/StructFact.h"
 
 namespace qmcplusplus {
 
-    LRTwoBodyJastrow::LRTwoBodyJastrow(ParticleSet& p):NeverInitialized(true) {
+    LRTwoBodyJastrow::LRTwoBodyJastrow(ParticleSet& p):
+      NumPtcls(0), NumSpecies(0), skRef(0) {
       NumSpecies=p.groups();
+      skRef=p.SK;
+      if(skRef) {
+        Rs=std::pow(3.0/4.0/M_PI*p.Lattice.Volume/static_cast<RealType>(p.getTotalNum()),1.0/3.0);
+        Omega=std::sqrt(4.0*M_PI*static_cast<RealType>(p.getTotalNum())/p.Lattice.Volume);
+        OneOverOmega=1.0/Omega;
+        FourPiOmega=4.0*M_PI*Omega;
+        NumPtcls=p.getTotalNum();
+        NumKpts=skRef->KLists.numk;
+        resize();
+      }
+    }
+
+    void LRTwoBodyJastrow::resize() {
+      Rhok.resize(NumKpts);
+      rokbyF.resize(NumSpecies,NumKpts);
+      U.resize(NumPtcls);
+      dU.resize(NumPtcls);
+      d2U.resize(NumPtcls);
     }
 
     void LRTwoBodyJastrow::reset() {
     }
 
     void LRTwoBodyJastrow::resetTargetParticleSet(ParticleSet& P) {
+      skRef=P.SK;
     }
 
     LRTwoBodyJastrow::ValueType 
@@ -33,19 +54,10 @@ namespace qmcplusplus {
         ParticleSet::ParticleGradient_t& G, 
         ParticleSet::ParticleLaplacian_t& L) {
 
-      if(NeverInitialized) {
-        Rhok.resize(P.SK->rhok.cols());
-        rokbyF.resize(P.SK->rhok.rows(),P.SK->rhok.cols());
-        U.resize(P.getTotalNum());
-        dU.resize(P.getTotalNum());
-        d2U.resize(P.getTotalNum());
-        NeverInitialized=false;
-      }
-
       Rhok=0.0;
       for(int spec1=0; spec1<NumSpecies; spec1++) {
         const ComplexType* restrict rhok(P.SK->rhok[spec1]);
-        for(int ki=0; ki<nk; ki++) {
+        for(int ki=0; ki<NumKpts; ki++) {
           Rhok[ki] += rhok[ki];
         }
       }
@@ -55,28 +67,26 @@ namespace qmcplusplus {
 
       ValueType sum(0.0);
       for(int iat=0; iat<NumPtcls; iat++) {
-        ValueType res(0.0);
+        ValueType res(0.0),l(0.0);
         GradType g;
-        ValueType l(0.0);
         const ComplexType* restrict eikr(P.SK->eikr[iat]);
-        for(int ki=0; ki<nk; ki++) {
-          //ComplexType skp((Rhok[ki]-eikr[ki])*Fk[ki]*conj(eikr[ki]));
-          ComplexType skp(rokbyF(iat,ki)=(Rhok[ki]-eikr[ki])*Fk[ki]);
-          skp*=conj(eikr[ki]);
+        for(int ki=0; ki<NumKpts; ki++) {
+          ComplexType skp((Fk[ki]*conj(eikr[ki])*Rhok[ki]));
 #if defined(QMC_COMPLEX)
-          res += skp;
-          g+=skp*kpts[ki];
-          l+=skp*ksq[ki];
+          res +=  skp;
+          l += ksq[ki]*(Fk[ki]*Rhok[ki]-skp);
+          g += ComplexType(skp.imag(),-skp.real())*kpts[ki];
 #else
-          res += skp.real();
-          g+=kpts[ki]*skp.real();
-          l+=ksq[ki]*skp.real();
+          res +=  skp.real();
+          g += kpts[ki]*skp.imag();
+          l += ksq[ki]*(Fk[ki]-skp.real());
 #endif
         }
         sum+=(U[iat]=res);
         G[iat]+=(dU[iat]=g);
-        L[iat]+=(d2U[iat]=lap);
+        L[iat]+=(d2U[iat]=l);
       }
+      cout<< " Sum " << sum << endl;
       return sum;//use trait
     }
 
@@ -85,15 +95,16 @@ namespace qmcplusplus {
     LRTwoBodyJastrow::ratio(ParticleSet& P, int iat) {
       curVal=0.0;
       const ComplexType* restrict eikr(P.SK->eikr[iat]);
-      for(int ki=0; ki<nk; ki++) {
-        ComplexType skp(rhokbyF[ki]*conj(eikr[ki]));
+      const ComplexType* restrict rtemp(rokbyF[iat]);
+      for(int ki=0; ki<NumKpts; ki++) {
+        ComplexType skp(rtemp[ki]*conj(eikr[ki]));
 #if defined(QMC_COMPLEX)
         curVal += skp;
 #else
         curVal += skp.real();
 #endif
       }
-      return exp(curVal-U[iat]);
+      return std::exp(curVal-U[iat]);
     }
 
 
@@ -101,10 +112,14 @@ namespace qmcplusplus {
     LRTwoBodyJastrow::logRatio(ParticleSet& P, int iat,
 		    ParticleSet::ParticleGradient_t& dG,
 		    ParticleSet::ParticleLaplacian_t& dL) {
+      const KContainer::VContainer_t& kpts(P.SK->KLists.kpts_cart);
+      const KContainer::SContainer_t& ksq(P.SK->KLists.ksq);
+
       const ComplexType* restrict eikr(P.SK->eikr[iat]);
       curVal=0.0; curLap=0.0; curGrad=0.0;
-      for(int ki=0; ki<nk; ki++) {
-        ComplexType skp(rhokbyF[ki]*conj(eikr[ki]));
+      const ComplexType* restrict rtemp(rokbyF[iat]);
+      for(int ki=0; ki<NumKpts; ki++) {
+        ComplexType skp(rtemp[ki]*conj(eikr[ki]));
 #if defined(QMC_COMPLEX)
         curVal += skp;
         curGrad+=skp*kpts[ki];
@@ -133,7 +148,7 @@ namespace qmcplusplus {
       const ComplexType* restrict eikrOld(P.SKOld->eikr[iat]);
       const ComplexType* restrict eikrNew(P.SK->eikr[iat]);
       ComplexType* restrict t(rokbyF[iat]);
-      for(int ki=0; ki<nk; ki++) {
+      for(int ki=0; ki<NumKpts; ki++) {
         t[ki]=(Rhok[ki]-eikrNew[ki]+eikrOld[ki])*Fk[ki];
       }
     }
@@ -142,21 +157,22 @@ namespace qmcplusplus {
 		ParticleSet::ParticleGradient_t& dG, 
 		ParticleSet::ParticleLaplacian_t& dL,
 		int iat) {
-      return LogValue;
     }
 
 
     LRTwoBodyJastrow::ValueType 
     LRTwoBodyJastrow::registerData(ParticleSet& P, PooledData<RealType>& buf) {
       LogValue=evaluateLog(P,P.G,P.L); 
-      buf.add(U.begin(), U.end());
-      buf.add(d2U.begin(), d2U.end());
-      buf.add(FirstAddressOfdU,LastAddressOfdU);
+
+      //buf.add(U.begin(), U.end());
+      //buf.add(d2U.begin(), d2U.end());
+      //buf.add(FirstAddressOfdU,LastAddressOfdU);
       return LogValue;
     }
 
     LRTwoBodyJastrow::ValueType 
     LRTwoBodyJastrow::updateBuffer(ParticleSet& P, PooledData<RealType>& buf) {
+      return 1.0;
     }
 
     void 
@@ -166,10 +182,29 @@ namespace qmcplusplus {
     LRTwoBodyJastrow::ValueType 
     LRTwoBodyJastrow::evaluate(ParticleSet& P, PooledData<RealType>& buf) {
       LogValue=evaluateLog(P,P.G,P.L); 
-      buf.put(U.begin(), U.end());
-      buf.put(d2U.begin(), d2U.end());
-      buf.put(FirstAddressOfdU,LastAddressOfdU);
+      //buf.put(U.begin(), U.end());
+      //buf.put(d2U.begin(), d2U.end());
+      //buf.put(FirstAddressOfdU,LastAddressOfdU);
       return LogValue;
+    }
+
+
+    bool
+    LRTwoBodyJastrow::put(xmlNodePtr cur, VarRegistry<RealType>& vlist) {
+
+      if(skRef == 0) {
+        app_error() << "  LRTowBodyJastrow should not be used for non periodic systems." << endl;
+        return false;
+      }
+
+      //not optimization yet
+      Fk.resize(NumKpts);
+      app_log() << "  LRTwoBodyJastrow: kx ky kz U[k] " << endl;
+      for(int ikpt=0; ikpt<NumKpts; ikpt++) {
+        Fk[ikpt]= getRPACoeff(skRef->KLists.ksq[ikpt]);
+        app_log() <<  skRef->KLists.ksq[ikpt] << " " << Fk[ikpt] << endl;
+      }
+      return true;
     }
 }
 /***************************************************************************
