@@ -107,8 +107,13 @@ public:
 	      ParticleSet::ParticleGradient_t& G,
 	      ParticleSet::ParticleLaplacian_t& L){
     ValueType psi = evaluate(P,G,L);
+#if defined(QMC_COMPLEX)
+    SignValue = (psi.imag()/psi.real()<0)?-1.0:1.0;
+    LogValue = std::log(norm(psi));
+#else
     SignValue = (psi<0.0)?-1.0:1.0;
     LogValue = std::log(std::abs(psi));
+#endif
     return LogValue;
   }
 
