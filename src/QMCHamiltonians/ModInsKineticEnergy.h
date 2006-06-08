@@ -27,8 +27,6 @@ namespace qmcplusplus {
     MomentumDistribution MomDist;
     // Reference to the wave function
     TrialWaveFunction& WaveFcn;
-    // Particle Set Reference For use in cloning
-    ParticleSet& PtclSet;
     
   public:
     /** constructor
@@ -39,14 +37,14 @@ namespace qmcplusplus {
                         const Vector<RealType>& DispersRelat,
                         const Vector<IndexType>& DimSizes) :
     Accumulate(false), NumSamples(0), NumDispl(1), OneOverM(1.0), DispRel(DispersRelat), 
-    MomDist(DimSizes), WaveFcn(psi), PtclSet(p) {
+    MomDist(p, DimSizes), WaveFcn(psi) {
       UpdateMode.set(OPTIMIZABLE,1);
     }
     
     // copy constructor
     ModInsKineticEnergy(const ModInsKineticEnergy& rhs) : Accumulate(rhs.Accumulate),
     NumSamples(rhs.NumSamples), OneOverM(rhs.OneOverM), DispRel(rhs.DispRel),
-    MomDist(rhs.MomDist), WaveFcn(rhs.WaveFcn), PtclSet(rhs.PtclSet) {
+    MomDist(rhs.MomDist), WaveFcn(rhs.WaveFcn) {
       UpdateMode.set(OPTIMIZABLE,1);
     }
     
