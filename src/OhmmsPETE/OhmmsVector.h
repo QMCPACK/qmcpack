@@ -80,6 +80,12 @@ public:
   inline Type_t* data() { return &(X[0]);}
   inline const Type_t* data() const { return &(X[0]);}
 
+  inline Type_t* first_address() { return &(X[0]);}
+  inline const Type_t* first_address() const { return &(X[0]);}
+
+  inline Type_t* last_address() { return &(X[0])+size();}
+  inline const Type_t* last_address() const { return &(X[0])+size();}
+
   inline iterator begin() { return X.begin();}
   inline const_iterator begin() const { return X.begin();}
 

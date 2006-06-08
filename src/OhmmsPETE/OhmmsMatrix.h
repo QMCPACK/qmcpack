@@ -79,6 +79,7 @@ public:
 
   inline void resize(size_type n, size_type m) {
     D1 = n; D2 = m;
+    TotSize=n*m;
     X.resize(n*m);
   }
 
@@ -117,6 +118,25 @@ public:
   inline const Type_t* data() const { 
     return &(X[0]);
   }
+
+  inline Type_t* first_address() { 
+    return &(X[0]);
+  }
+
+  // returns a pointer of i-th row 
+  inline const Type_t* first_address() const { 
+    return &(X[0]);
+  }
+
+  inline Type_t* last_address() { 
+    return &(X[0])+TotSize;
+  }
+
+  // returns a pointer of i-th row 
+  inline const Type_t* last_address() const { 
+    return &(X[0])+TotSize;
+  }
+
 
   // returns a const pointer of i-th row 
   inline const Type_t* operator[](size_type i) const { 
@@ -225,6 +245,7 @@ public:
 
 protected:
   size_type D1, D2;
+  size_type TotSize;
   Container_t X;
 };
 
