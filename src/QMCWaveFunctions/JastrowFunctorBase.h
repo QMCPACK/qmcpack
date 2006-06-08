@@ -26,11 +26,12 @@ namespace qmcplusplus {
 template<class RT>
 struct JastrowFunctorBase {
 
-  typedef QMCDataTrait<RT> data_type;
-  ///typedef for the argument
-  typedef typename data_type::real_type real_type;
-  ///typedef for the return value
-  typedef typename data_type::value_type value_type;
+  //typedef WFTraits<RT> data_type;
+  /////typedef for the argument
+  //typedef typename data_type::real_type real_type;
+  /////typedef for the return value
+  //typedef typename data_type::value_type value_type;
+  typedef RT real_type;
 
   ///reset the Jastrow Function
   virtual void reset()=0;
@@ -40,14 +41,14 @@ struct JastrowFunctorBase {
    *
    * virtual function necessary for a transformation to a numerical functor
    */
-  virtual value_type f(real_type r)=0;
+  virtual real_type f(real_type r)=0;
 
   /** evaluate the first derivate 
    * @param r distance
    *
    * virtual function necessary for a transformation to a numerical functor
    */
-  virtual value_type df(real_type r)=0;
+  virtual real_type df(real_type r)=0;
 
   /** process xmlnode and registers variables to optimize
    * @param cur xmlNode for a functor
