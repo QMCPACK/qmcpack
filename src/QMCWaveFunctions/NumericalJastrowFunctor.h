@@ -53,17 +53,14 @@ struct CutoffFunctor {
  * - TwoBodyJastrow<NumericalJastrow>
  */
 template <class RT>
-struct NumericalJastrow {
+struct NumericalJastrow: public JastrowFunctorBase<RT> {
 
   ///typedef of the source functor
   typedef JastrowFunctorBase<RT> FNIN;
   ///typedef for the argument
   typedef typename FNIN::real_type real_type;
-  ///typedef for the return value
-  typedef typename FNIN::value_type value_type;
   ///typedef of the target functor
-  //typedef OneDimGridFunctor<value_type,real_type>  FNOUT;
-  typedef OneDimCubicSpline<value_type,real_type>  FNOUT;
+  typedef OneDimCubicSpline<real_type,real_type>  FNOUT;
 
   FNIN *InFunc;
   FNOUT *OutFunc;
@@ -91,21 +88,33 @@ struct NumericalJastrow {
     }
 
     //boundary conditions
-    value_type deriv1=InFunc->df(grid(0));
-    value_type deriv2=0.0;
+    real_type deriv1=InFunc->df(grid(0));
+    real_type deriv2=0.0;
     OutFunc->spline(0,deriv1,last,deriv2);
   }
 
   /** evaluate everything: value, first and second derivaties
    */
-  inline value_type evaluate(real_type r, value_type& dudr, value_type& d2udr2) {
+  inline real_type evaluate(real_type r, real_type& dudr, real_type& d2udr2) {
     return OutFunc->splint(r,dudr,d2udr2);
   }
 
   /** evaluate value only
    */
-  inline value_type evaluate(real_type r) {
+  inline real_type evaluate(real_type r) {
     return OutFunc->splint(r);
+  }
+
+  /** implement the virtual function of JastrowFunctorBase */
+  real_type f(real_type r) {
+    return OutFunc->splint(r);
+  }
+
+  /** implement the virtual function of JastrowFunctorBase  */
+  real_type df(real_type r) {
+    real_type dudr,d2udr2;
+    OutFunc->splint(r,dudr,d2udr2);
+    return dudr;
   }
 
   void put(xmlNodePtr cur, VarRegistry<real_type>& vlist) {
