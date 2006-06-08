@@ -70,7 +70,7 @@ namespace qmcplusplus {
 
     inline int size() const { return Z.size();}
     inline RealType getSign() const { return SignValue;}
-    inline ValueType getLogPsi() const { return LogValue;}
+    inline RealType getLogPsi() const { return LogValue;}
 
     ///Add an OrbitalBase 
     void addOrbital(OrbitalBase* aterm);
@@ -108,36 +108,36 @@ namespace qmcplusplus {
     ValueType evaluate(ParticleSet& P);
 
     /** evalaute the log of the trial wave function */
-    ValueType evaluateLog(ParticleSet& P);
+    RealType evaluateLog(ParticleSet& P);
 
-    ValueType evaluateDeltaLog(ParticleSet& P);
+    RealType evaluateDeltaLog(ParticleSet& P);
 
     void evaluateDeltaLog(ParticleSet& P, 
-        ValueType& logpsi_fixed,
-        ValueType& logpsi_opt,
+        RealType& logpsi_fixed,
+        RealType& logpsi_opt,
         ParticleSet::ParticleGradient_t& fixedG,
         ParticleSet::ParticleLaplacian_t& fixedL);
 
     /** functions to handle particle-by-particle update */
-    ValueType ratio(ParticleSet& P, int iat);
+    RealType ratio(ParticleSet& P, int iat);
     void update(ParticleSet& P, int iat);
 
-    ValueType ratio(ParticleSet& P, int iat, 
+    RealType ratio(ParticleSet& P, int iat, 
 		    ParticleSet::ParticleGradient_t& dG,
 		    ParticleSet::ParticleLaplacian_t& dL);
 
-    ValueType logRatio(ParticleSet& P, int iat, 
-		    ParticleSet::ParticleGradient_t& dG,
-		    ParticleSet::ParticleLaplacian_t& dL);
+//    RealType logRatio(ParticleSet& P, int iat, 
+//		    ParticleSet::ParticleGradient_t& dG,
+//		    ParticleSet::ParticleLaplacian_t& dL);
 
 
     void rejectMove(int iat);
     void acceptMove(ParticleSet& P, int iat);
 
-    ValueType registerData(ParticleSet& P, BufferType& buf);
-    ValueType updateBuffer(ParticleSet& P, BufferType& buf);
+    RealType registerData(ParticleSet& P, BufferType& buf);
+    RealType updateBuffer(ParticleSet& P, BufferType& buf);
     void copyFromBuffer(ParticleSet& P, BufferType& buf);
-    ValueType evaluate(ParticleSet& P, BufferType& buf);
+    RealType evaluate(ParticleSet& P, BufferType& buf);
 
     void dumpToBuffer(ParticleSet& P, BufferType& buf);
     void dumpFromBuffer(ParticleSet& P, BufferType& buf);
@@ -146,6 +146,9 @@ namespace qmcplusplus {
     //void evaluate(WalkerSetRef& W, OrbitalBase::ValueVectorType& psi);
 
   private:
+
+    ///the size of ParticleSet
+    int NumPtcls;
 
     ///the size of gradient component (QMCTraits::DIM)*the number of particles 
     int TotalDim;
@@ -157,7 +160,7 @@ namespace qmcplusplus {
     RealType SignValue;
 
     ///log of the trial wave function
-    ValueType LogValue;
+    RealType LogValue;
 
     ///a list of OrbitalBases constituting many-body wave functions
     vector<OrbitalBase*> Z;

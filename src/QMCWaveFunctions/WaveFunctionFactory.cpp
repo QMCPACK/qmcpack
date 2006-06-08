@@ -28,9 +28,11 @@
 #include "QMCWaveFunctions/NJAABuilder.h"
 #include "QMCWaveFunctions/NJABBuilder.h"
 #include "QMCWaveFunctions/WaveFunctionFactory.h"
+#if !defined(QMC_COMPLEX)
 #include "QMCWaveFunctions/ThreeBodyGeminalBuilder.h"
 #include "QMCWaveFunctions/ThreeBodyPadeBuilder.h"
 #include "QMCWaveFunctions/AGPDeterminantBuilder.h"
+#endif
 #include "OhmmsData/AttributeSet.h"
 namespace qmcplusplus {
   WaveFunctionFactory::WaveFunctionFactory(ParticleSet* qp, PtclPoolType& pset): 
@@ -86,6 +88,13 @@ namespace qmcplusplus {
     oAttrib.put(cur);
 
     app_log() << "  Slater determinant terms using " << orbtype << endl;
+#if defined(QMC_COMPLEX)
+    if(orbtype == "electron-gas") {
+      detbuilder = new ElectronGasOrbitalBuilder(*targetPtcl,*targetPsi);
+    } else {
+      app_log() << "QMC_COMPLEX==1  Cannot create " << orbtype << endl;
+    }
+#else
     if(orbtype == "MolecularOrbital") {
       detbuilder = new MolecularOrbitalBuilder(*targetPtcl,*targetPsi,ptclPool);
     } else if(orbtype == "STO-He-Optimized") {
@@ -108,6 +117,7 @@ namespace qmcplusplus {
         detbuilder = new AGPDeterminantBuilder(*targetPtcl,*targetPsi,*((*pit).second));
       }
     }
+#endif
 
     if(detbuilder) {//valid determinant set
       detbuilder->put(cur);
@@ -148,7 +158,9 @@ namespace qmcplusplus {
         app_log() << "  Using JABBuilder for one-body jatrow with analytic functions" << endl;
         jbuilder = new JABBuilder(*targetPtcl,*targetPsi,ptclPool);
       }
-    } else if(jasttype == "Three-Body-Geminal") {
+    } 
+#if !defined(QMC_COMPLEX)
+    else if(jasttype == "Three-Body-Geminal") {
       app_log() << "  creating Three-Body-Germinal Jastrow function " << endl;
       string source_name("i");
       const xmlChar* iptr = xmlGetProp(cur, (const xmlChar *)"source");
@@ -168,6 +180,7 @@ namespace qmcplusplus {
         jbuilder = new ThreeBodyPadeBuilder(*targetPtcl,*targetPsi,*((*pit).second));
       }
     }
+#endif
 
     if(jbuilder) {
       jbuilder->put(cur);

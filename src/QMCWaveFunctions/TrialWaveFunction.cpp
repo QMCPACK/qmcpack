@@ -19,6 +19,7 @@
 #include "Particle/Walker.h"
 #include "Particle/WalkerSetRef.h"
 #include "Utilities/OhmmsInfo.h"
+#include "QMCWaveFunctions/OrbitalTraits.h"
 
 namespace qmcplusplus {
 
@@ -50,21 +51,28 @@ namespace qmcplusplus {
     Z.push_back(aterm);
   }
 
-  TrialWaveFunction::ValueType 
+  
+  /** return log(|psi|)
+   *
+   * SignValue is the phase for the complex wave function
+   */
+  TrialWaveFunction::RealType
   TrialWaveFunction::evaluateLog(ParticleSet& P) {
     P.G = 0.0;
     P.L = 0.0;
-    //ValueType logpsi=0.0;
-    LogValue=0.0;
+
+    ValueType logpsi(0.0);
     SignValue=1.0;
     vector<OrbitalBase*>::iterator it(Z.begin());
     vector<OrbitalBase*>::iterator it_end(Z.end());
+
+    //WARNING: multiplication for SignValue is not correct, fix this!!
     while(it != it_end) {
-      LogValue += (*it)->evaluateLog(P, P.G, P.L); 
+      logpsi += (*it)->evaluateLog(P, P.G, P.L); 
       SignValue *= (*it)->SignValue;
       ++it;
     }
-    return LogValue;
+    return LogValue=real(logpsi);
   }
   
   /** evaluate the log value of a many-body wave function
@@ -82,23 +90,22 @@ namespace qmcplusplus {
    * Each OrbitalBase evaluates SignValue and LogValue = log(abs(psi_i))
    * Jastrow functions always have SignValue=1.
    */
-  TrialWaveFunction::ValueType 
+  TrialWaveFunction::RealType 
   TrialWaveFunction::evaluateDeltaLog(ParticleSet& P) {
     P.G = 0.0;
     P.L = 0.0;
-    //ValueType logpsi=0.0;
-    LogValue=0.0;
+    ValueType logpsi(0.0);
     SignValue=1.0;
     vector<OrbitalBase*>::iterator it(Z.begin());
     vector<OrbitalBase*>::iterator it_end(Z.end());
     while(it != it_end) {
       if((*it)->Optimizable) {
-        LogValue += (*it)->evaluateLog(P, P.G, P.L); 
+        logpsi += (*it)->evaluateLog(P, P.G, P.L); 
         SignValue *= (*it)->SignValue;
       }
       ++it;
     }
-    return LogValue;
+    return LogValue=real(logpsi);
   }
 
 
@@ -119,16 +126,16 @@ namespace qmcplusplus {
    */
   void
   TrialWaveFunction::evaluateDeltaLog(ParticleSet& P,
-      ValueType& logpsi_fixed, 
-      ValueType& logpsi_opt,
+      RealType& logpsi_fixed_r, 
+      RealType& logpsi_opt_r,
       ParticleSet::ParticleGradient_t& fixedG,
       ParticleSet::ParticleLaplacian_t& fixedL) {
     P.G = 0.0;
     P.L = 0.0;
     fixedG = 0.0;
     fixedL = 0.0;
-    logpsi_fixed=0.0;
-    logpsi_opt=0.0;
+    ValueType logpsi_fixed(0.0);
+    ValueType logpsi_opt(0.0);
     vector<OrbitalBase*>::iterator it(Z.begin());
     vector<OrbitalBase*>::iterator it_end(Z.end());
     while(it != it_end) {
@@ -140,6 +147,9 @@ namespace qmcplusplus {
     }
     P.G += fixedG; 
     P.L += fixedL;
+
+    logpsi_fixed_r = real(logpsi_fixed);
+    logpsi_opt_r = real(logpsi_opt);
   }
   
   /** evaluate the value of a many-body wave function
@@ -152,7 +162,7 @@ namespace qmcplusplus {
   TrialWaveFunction::evaluate(ParticleSet& P) {
     P.G = 0.0;
     P.L = 0.0;
-    ValueType psi = 1.0;
+    ValueType psi(1.0);
     for(int i=0; i<Z.size(); i++) {
       psi *= Z[i]->evaluate(P, P.G, P.L);
     }
@@ -161,31 +171,15 @@ namespace qmcplusplus {
     return psi;
   }
   
-  /** Evaluate local energies, the gradient and laplacian operators
-   * @param W the input set of walkers
-   * @param psi a array containing Nw wave function values of each walker
-  void 
-  TrialWaveFunction::evaluate(WalkerSetRef& W, 
-			      OrbitalBase::ValueVectorType& psi)
-  {
-    W.G = 0.0;
-    W.L = 0.0;
-    psi = 1.0;
-    for(int i=0; i<Z.size(); i++) {
-      Z[i]->evaluate(W,psi,W.G,W.L);
-    }
-    //for(int iw=0; iw<psi.size(); iw++) W.Properties(iw,Sign) = psi[iw];
-  }
-   */
-  
-  TrialWaveFunction::ValueType
+  TrialWaveFunction::RealType
   TrialWaveFunction::ratio(ParticleSet& P,int iat) {
-    RealType r=1.0;
+    ValueType r(1.0);
     for(int i=0; i<Z.size(); i++) {
       r *= Z[i]->ratio(P,iat);
     }
-    return r;
+    return real(r);
   }
+
   void   
   TrialWaveFunction::update(ParticleSet& P,int iat) {
     //ready to collect "changes" in the gradients and laplacians by the move
@@ -205,31 +199,31 @@ namespace qmcplusplus {
    *
    * Each OrbitalBase object adds the differential gradients and lapacians.
    */
-  TrialWaveFunction::ValueType 
+  TrialWaveFunction::RealType 
   TrialWaveFunction::ratio(ParticleSet& P, int iat, 
 			   ParticleSet::ParticleGradient_t& dG,
 			   ParticleSet::ParticleLaplacian_t& dL) {
     dG = 0.0;
     dL = 0.0;
-    RealType r=1.0;
+    ValueType r(1.0);
     for(int i=0; i<Z.size(); i++) r *= Z[i]->ratio(P,iat,dG,dL);
-    return r;
+    return real(r);
   }
 
-  TrialWaveFunction::ValueType 
-  TrialWaveFunction::logRatio(ParticleSet& P, int iat, 
-			   ParticleSet::ParticleGradient_t& dG,
-			   ParticleSet::ParticleLaplacian_t& dL) {
-    dG = 0.0;
-    dL = 0.0;
-    RealType logr=0.0;
-    SignValue=1.0;
-    for(int i=0; i<Z.size(); i++) {
-      logr += Z[i]->ratio(P,iat,dG,dL);
-      SignValue *= Z[i]->SignValue;
-    }
-    return logr;
-  }
+ // TrialWaveFunction::RealType 
+ // TrialWaveFunction::logRatio(ParticleSet& P, int iat, 
+ //       		   ParticleSet::ParticleGradient_t& dG,
+ //       		   ParticleSet::ParticleLaplacian_t& dL) {
+ //   dG = 0.0;
+ //   dL = 0.0;
+ //   ValueType logr(0.0);
+ //   SignValue=1.0;
+ //   for(int i=0; i<Z.size(); i++) {
+ //     logr += Z[i]->ratio(P,iat,dG,dL);
+ //     SignValue *= Z[i]->SignValue;
+ //   }
+ //   return logr;
+ // }
 
   /** restore to the original state
    * @param iat index of the particle with a trial move
@@ -262,27 +256,31 @@ namespace qmcplusplus {
     for(int i=0; i<Z.size(); i++) Z[i]->reset();
   }
   
-  TrialWaveFunction::ValueType
+  TrialWaveFunction::RealType
   TrialWaveFunction::registerData(ParticleSet& P, PooledData<RealType>& buf) {
     delta_G.resize(P.getTotalNum());
     delta_L.resize(P.getTotalNum());
     P.G = 0.0;
     P.L = 0.0;
 
-    LogValue=0.0;
+    ValueType logpsi(0.0);
     SignValue=1.0;
     vector<OrbitalBase*>::iterator it(Z.begin());
     vector<OrbitalBase*>::iterator it_end(Z.end());
     while(it != it_end) {
-      LogValue += (*it)->registerData(P,buf);
+      logpsi += (*it)->registerData(P,buf);
       SignValue *= (*it)->SignValue;
       ++it;
     }
 
+    LogValue=real(logpsi);
+
     //append current gradients and laplacians to the buffer
-    TotalDim = OHMMS_DIM*P.getTotalNum();
+    NumPtcls = P.getTotalNum();
+    TotalDim = OHMMS_DIM*NumPtcls;
+
     buf.add(&(P.G[0][0]), &(P.G[0][0])+TotalDim);
-    buf.add(P.L.begin(), P.L.end());
+    buf.add(&(P.L[0]), &(P.L[P.getTotalNum()]));
 
     return LogValue;
 //     cout << "Registering gradients and laplacians " << endl;
@@ -291,23 +289,24 @@ namespace qmcplusplus {
 //     }
   }
 
-  TrialWaveFunction::ValueType
+  TrialWaveFunction::RealType
   TrialWaveFunction::updateBuffer(ParticleSet& P, PooledData<RealType>& buf) {
     P.G = 0.0;
     P.L = 0.0;
 
-    LogValue=0.0;
+    ValueType logpsi(0.0);
     SignValue=1.0;
     vector<OrbitalBase*>::iterator it(Z.begin());
     vector<OrbitalBase*>::iterator it_end(Z.end());
     while(it != it_end) {
-      LogValue += (*it)->updateBuffer(P,buf);
+      logpsi += (*it)->updateBuffer(P,buf);
       SignValue *= (*it)->SignValue;
       ++it;
     }
 
+    LogValue=real(logpsi);
     buf.put(&(P.G[0][0]), &(P.G[0][0])+TotalDim);
-    buf.put(P.L.begin(), P.L.end());
+    buf.put(&(P.L[0]), &(P.L[0])+NumPtcls);
     return LogValue;
   }
 
@@ -317,7 +316,7 @@ namespace qmcplusplus {
 
     //get the gradients and laplacians from the buffer
     buf.get(&(P.G[0][0]), &(P.G[0][0])+TotalDim);
-    buf.get(P.L.begin(), P.L.end());
+    buf.get(&(P.L[0]), &(P.L[0])+NumPtcls);
 
 //     cout << "Checking out gradients and laplacians " << endl;
 //     for(int i=0; i<P.getLocalNum(); i++) {
@@ -361,19 +360,18 @@ namespace qmcplusplus {
     }
   }
 
-  TrialWaveFunction::ValueType
+  TrialWaveFunction::RealType
   TrialWaveFunction::evaluate(ParticleSet& P, PooledData<RealType>& buf) {
 
-    ValueType psi = 1.0;
+    ValueType psi(1.0);
     for(int i=0; i<Z.size(); i++) psi *= Z[i]->evaluate(P,buf);
     buf.put(&(P.G[0][0]), &(P.G[0][0])+TotalDim);
-    buf.put(P.L.begin(), P.L.end());
-
+    buf.put(&(P.L[0]), &(P.L[0])+NumPtcls);
 //     cout << "Checking in gradients and laplacians " << endl;
 //     for(int i=0; i<P.getLocalNum(); i++) {
 //       cout << P.G[i] << " " << P.L[i] << endl;
 //     }
-    return psi;
+    return real(psi);
   }
 
   bool TrialWaveFunction::hasSPOSet(const string& aname) {

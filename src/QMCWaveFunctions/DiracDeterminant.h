@@ -326,8 +326,8 @@ namespace qmcplusplus {
       //THIS SHOULD NOT BE CALLED
       ValueType r=ratio(P,iat,dG,dL);
 #if defined(QMC_COMPLEX)
-      SignValue = std::arg(psi);
-      return LogValue = std::log(psi);
+      SignValue = std::arg(r);
+      return LogValue = std::log(r);
 #else
       SignValue = (r<0.0)?-1.0:1.0;
       return std::log(std::abs(r));
