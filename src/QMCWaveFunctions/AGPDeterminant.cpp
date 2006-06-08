@@ -488,9 +488,6 @@ namespace qmcplusplus {
     return CurrentDet;
   }
 
-  void AGPDeterminant::resizeByWalkers(int nwalkers) {
-    //don't know what to do here
-  }
 }
 /***************************************************************************
  * $RCSfile$   $Author$

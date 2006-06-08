@@ -284,17 +284,6 @@ namespace qmcplusplus {
       return CurrentDet;
     }
 
-  void DiracDeterminantBase::resizeByWalkers(int nwalkers) {
-    //if(psiM_v.size() < nwalkers) {
-    //  psiM_v.resize(nwalkers);
-    //  dpsiM_v.resize(nwalkers);
-    //  d2psiM_v.resize(nwalkers);
-    //  for(int iw=0; iw<nwalkers; iw++) psiM_v[iw].resize(NumPtcls, NumOrbitals);
-    //  for(int iw=0; iw<nwalkers; iw++) dpsiM_v[iw].resize(NumPtcls, NumOrbitals);
-    //  for(int iw=0; iw<nwalkers; iw++) d2psiM_v[iw].resize(NumPtcls, NumOrbitals);
-    //}
-    app_error() << "::resizeByWalkers obsolete" << endl;
-  }
 }
 /***************************************************************************
  * $RCSfile$   $Author$

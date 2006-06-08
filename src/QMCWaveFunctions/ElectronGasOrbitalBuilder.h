@@ -46,7 +46,6 @@ namespace qmcplusplus {
 
       inline void reset() { }
       inline void resetTargetParticleSet(ParticleSet& P) { }
-      inline void resizeByWalkers(int nwalkers) {}
 
       inline ValueType
       evaluate(const ParticleSet& P, int iat, int jorb) {

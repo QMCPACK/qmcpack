@@ -66,8 +66,6 @@ namespace qmcplusplus {
 
     ///reset the size: with the number of particles and number of orbtials
     void resize(int nel, int morb);
-    ///resize the data with the number of walkers
-    void resizeByWalkers(int nwalkers);
     ///return the number of rows (or the number of electrons)
     inline int rows() const { return NumPtcls;}
     ///return the number of coloumns  (or the number of orbitals)

@@ -68,8 +68,6 @@ namespace qmcplusplus {
       d_table = DistanceTable::getTable(DistanceTable::add(d_table->origin(),P));
     }
 
-    inline void resizeByWalkers(int nw) { }
-
     template<class VV>
     inline 
     void 

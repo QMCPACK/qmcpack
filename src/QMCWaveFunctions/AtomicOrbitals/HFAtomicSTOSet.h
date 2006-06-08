@@ -135,8 +135,6 @@ namespace qmcplusplus {
       d_table = DistanceTable::getTable(DistanceTable::add(d_table->origin(),P));
     }
     
-    inline void resizeByWalkers(int nw) { }
-    
     inline int size() const { return Orbital.size();}
 
     template<class VV>

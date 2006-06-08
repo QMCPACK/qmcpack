@@ -52,10 +52,6 @@ namespace qmcplusplus {
 	        ParticleSet::ParticleGradient_t& G, 
 	        ParticleSet::ParticleLaplacian_t& L);
 
-    void resizeByWalkers(int nwalkers) {
-      for(int i=0; i<Dets.size(); i++) 	Dets[i]->resizeByWalkers(nwalkers);
-    }
-
     ///return the total number of Dirac determinants
     inline int size() const { return Dets.size();}
 
