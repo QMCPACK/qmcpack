@@ -20,6 +20,7 @@
 #include "Estimators/MultipleEnergyEstimator.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
+#include "ParticleBase/ParticleAttribOps.h"
 #include "Message/CommOperators.h"
 
 namespace qmcplusplus {
@@ -132,7 +133,9 @@ namespace qmcplusplus {
       for(int ipsi=0; ipsi< NumCopies; ipsi++) {
         RealType wgt=1.0/sumratio[ipsi];
         thisWalker.Properties(ipsi,UMBRELLAWEIGHT)=wgt;
-        thisWalker.Drift += wgt*psi[ipsi]->G;
+
+        //thisWalker.Drift += wgt*psi[ipsi]->G;
+        PAOps<RealType,OHMMS_DIM>::axpy(wgt,psi[ipsi]->G,thisWalker.Drift);
       }
       thisWalker.Drift *= tau;
       ++it;++iw;
@@ -249,7 +252,7 @@ namespace qmcplusplus {
         thisWalker.Properties(ipsi,UMBRELLAWEIGHT)=wgtpsi;
         denom += wgtpsi;
         for(int iptcl=0; iptcl< numPtcls; iptcl++){
-          WarpDrift=dot(  psi[ipsi]->G[iptcl],Warp.get_Jacob_matrix(iptcl,ipsi)  )
+          WarpDrift=dot( psi[ipsi]->G[iptcl], Warp.get_Jacob_matrix(iptcl,ipsi)  )
             +5.0e-1*Warp.get_grad_ln_Jacob(iptcl,ipsi) ;
           thisWalker.Drift[iptcl] += (wgtpsi*WarpDrift);
         }
