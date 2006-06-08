@@ -80,7 +80,7 @@ namespace qmcplusplus {
     //Not so useful
     if(!ClonePolymer) {
       Walker_t* cur((*Reptile)[0]);
-      RealType g = sqrt(Tau);
+      RealType g = std::sqrt(Tau);
       for(int i=0; i<NumCuts-1; i++ ) {
         //create a 3N-Dimensional Gaussian with variance=1
         makeGaussRandom(deltaR);
@@ -167,7 +167,7 @@ namespace qmcplusplus {
     //RealType oneovertau = 1.0/Tau;
     //RealType oneover2tau = 0.5*oneovertau;
     RealType tauover2 = 0.5*Tau;
-    RealType g = sqrt(Tau);
+    RealType g = std::sqrt(Tau);
     
     typedef MCWalkerConfiguration::PropertyContainer_t PropertyContainer_t;
     if(!UseBounce && Random()<0.5) {
@@ -248,7 +248,7 @@ namespace qmcplusplus {
       }
     }
 
-    Wpolymer = exp(-tauover2*Wpolymer);
+    Wpolymer = std::exp(-tauover2*Wpolymer);
     double accept = std::min(1.0,Wpolymer);
     if(Random() < accept){//move accepted
       Reptile->updateEnds();

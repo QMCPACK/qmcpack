@@ -69,19 +69,15 @@ namespace qmcplusplus {
       vector<TrialWaveFunction*>& psi,
       RealType tau,vector<RealType>& Norm,
       bool require_register) {
-
     NumWalkers = W.getActiveWalkers();
-
     //allocate UmbrellaEnergy
     int numPtcls(W.getTotalNum());
-
     RatioIJ.resize(NumWalkers,NumCopies*(NumCopies-1)/2);
 
     MCWalkerConfiguration::iterator it(W.begin()); 
     MCWalkerConfiguration::iterator it_end(W.end()); 
 
     vector<RealType> sumratio(NumCopies), logpsi(NumCopies);
-
     int iw(0);
     int DataSetSize((*it)->DataSet.size());
     while(it != it_end) {
@@ -98,7 +94,7 @@ namespace qmcplusplus {
       }
 
       //evalaute the wavefunction and hamiltonian
-      for(int ipsi=0; ipsi< NumCopies;ipsi++) {			  
+      for(int ipsi=0; ipsi< NumCopies;ipsi++) {
         psi[ipsi]->G.resize(numPtcls);
         psi[ipsi]->L.resize(numPtcls);
         //Need to modify the return value of OrbitalBase::registerData
@@ -115,7 +111,6 @@ namespace qmcplusplus {
         sumratio[ipsi]=1.0;
       } 							
      
-
       //Check SIMONE's note
       //Compute the sum over j of Psi^2[j]/Psi^2[i] for each i
       int indexij(0);
@@ -131,7 +126,6 @@ namespace qmcplusplus {
 
       //Re-use Multiplicity as the sumratio
       thisWalker.Multiplicity=sumratio[0];
-
       //DON't forget DRIFT!!!
       thisWalker.Drift=0.0;
 

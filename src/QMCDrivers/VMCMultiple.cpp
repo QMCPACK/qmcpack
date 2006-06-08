@@ -84,8 +84,8 @@ namespace qmcplusplus {
    *
    * Similar to VMC::run 
    */
-  bool VMCMultiple::run() { 
-
+  bool VMCMultiple::run() {
+cerr << " In VMCMultiple::run" << endl;
     Estimators->reportHeader(AppendRun);
 
     bool require_register=false;
@@ -100,10 +100,9 @@ namespace qmcplusplus {
     }else{
       for(int ipsi=0; ipsi< nPsi; ipsi++) Norm[ipsi]=exp(branchEngine->LogNorm[ipsi]);
     }
-
     //this is where the first values are evaulated
     multiEstimator->initialize(W,H1,Psi1,Tau,Norm,require_register);
-    
+   
     Estimators->reset();
 
     IndexType block = 0;
@@ -114,11 +113,13 @@ namespace qmcplusplus {
     
 
     do {
+			//cerr << "do " << block << " of " << nBlocks << endl;
       IndexType step = 0;
       nAccept = 0; nReject=0;
 
       Estimators->startBlock();
       do {
+				//cerr << "  do " << step << " of " << nSteps << endl;
         advanceWalkerByWalker();
         step++;CurrentStep++;
         Estimators->accumulate(W);
@@ -158,7 +159,6 @@ namespace qmcplusplus {
     app_log() << "Ratio = " 
       << static_cast<double>(nAcceptTot)/static_cast<double>(nAcceptTot+nRejectTot)
       << endl;
-    
     //finalize a qmc section
     return finalize(block);
   }

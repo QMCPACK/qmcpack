@@ -25,6 +25,7 @@ SET(WFSRCS
   ../QMCWaveFunctions/PlaneWaveOrbitalBuilder.cpp
   ../QMCWaveFunctions/ThreeBodyGeminal.cpp
   ../QMCWaveFunctions/ThreeBodyGeminalBuilder.cpp
+  ../QMCWaveFunctions/ThreeBodyPadeBuilder.cpp
   ../QMCWaveFunctions/WaveFunctionFactory.cpp
   ../QMCHamiltonians/LocalPPotential.cpp
   ../QMCHamiltonians/NonLocalPPotential.cpp
@@ -77,6 +78,7 @@ SET(QMCDRIVERS
   ../QMCDrivers/DummyQMC.cpp
   ../QMCDrivers/VMC.cpp
   ../QMCDrivers/VMCParticleByParticle.cpp
+	../QMCDrivers/ReptationMC.cpp
   ../Estimators/ScalarEstimatorManager.cpp
   ../QMCDrivers/QMCOptimize.cpp
   ../QMCDrivers/QMCCostFunction.cpp
@@ -116,6 +118,7 @@ SET(QMCAPPDIR
     QMCAppBase.cpp
     QMCDriverFactory.cpp
     QMCMain.cpp
+		QMCInterface.cpp
 )
 
 ####################################

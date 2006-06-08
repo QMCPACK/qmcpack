@@ -123,7 +123,7 @@ namespace qmcplusplus {
       //log_buffer.clear();
 
       if(NumWalkersEff < NumSamples*MinNumWalkers) {
-        ERRORMSG("Number of Effective Walkers is too small " << NumWalkersEff)
+        ERRORMSG("CostFunction-> Number of Effective Walkers is too small " << NumWalkersEff)
         ERRORMSG("Going to stop now.")
         IsValid=false;
         //OHMMS::Controller->abort();

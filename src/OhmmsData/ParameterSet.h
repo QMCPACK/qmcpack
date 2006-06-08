@@ -101,7 +101,8 @@ struct ParameterSet: public OhmmsElementBase {
    *The condition will be used to convert the external unit to the internal unit.
    */
   template<class PDT>
-  INLINE_ALL void add(PDT& aparam, const char* aname, const char* uname) {
+ // INLINE_ALL void add(PDT& aparam, const char* aname, const char* uname) {
+  inline void add(PDT& aparam, const char* aname, const char* uname) {
     iterator it = m_param.find(aname);
     if(it == m_param.end()) {
       m_param[aname] = new OhmmsParameter<PDT>(aparam,aname,uname);
@@ -109,7 +110,8 @@ struct ParameterSet: public OhmmsElementBase {
   }
 
   template<class PDT>
-  INLINE_ALL void setValue(const std::string& aname, PDT aval){
+  //INLINE_ALL void setValue(const std::string& aname, PDT aval){
+  inline void setValue(const std::string& aname, PDT aval){
     iterator it = m_param.find(aname);
     if(it != m_param.end()) {
        (dynamic_cast<OhmmsParameter<PDT>*>((*it).second))->setValue(aval);

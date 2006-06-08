@@ -22,6 +22,7 @@
 
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include <map>
+
 /**@defgroup WFSBuilder Orbital builder group
  * @brief Builder classes to add OrbitalComponent to a TrialWaveFunction
  */

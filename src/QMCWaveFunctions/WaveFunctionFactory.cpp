@@ -29,6 +29,7 @@
 #include "QMCWaveFunctions/NJABBuilder.h"
 #include "QMCWaveFunctions/WaveFunctionFactory.h"
 #include "QMCWaveFunctions/ThreeBodyGeminalBuilder.h"
+#include "QMCWaveFunctions/ThreeBodyPadeBuilder.h"
 #include "QMCWaveFunctions/AGPDeterminantBuilder.h"
 #include "OhmmsData/AttributeSet.h"
 namespace qmcplusplus {
@@ -156,6 +157,15 @@ namespace qmcplusplus {
       if(pit != ptclPool.end()) {
         cout << "Creating three body with " << source_name << endl;
         jbuilder = new ThreeBodyGeminalBuilder(*targetPtcl,*targetPsi,*((*pit).second));
+      }
+    } else if (jasttype == "Three-Body-Pade") {
+      app_log() << "  creating Three-Body-Pade Jastrow function " << endl;
+      string source_name("i");
+      const xmlChar* iptr = xmlGetProp(cur, (const xmlChar *)"source");
+      //if(iptr != NULL) source_name=(const char*)iptr;
+      PtclPoolType::iterator pit(ptclPool.find(source_name));
+      if(pit != ptclPool.end()) {
+        jbuilder = new ThreeBodyPadeBuilder(*targetPtcl,*targetPsi,*((*pit).second));
       }
     }
 

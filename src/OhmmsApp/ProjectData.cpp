@@ -24,9 +24,9 @@ using namespace std;
 #include "OhmmsApp/ProjectData.h"
 #include "Message/Communicate.h"
 #include "Platforms/sysutil.h"
-#if defined(HAVE_LIBBOOST)
-#include <boost/date_time/posix_time/posix_time.hpp>
-#endif
+//#if defined(HAVE_LIBBOOST)
+//#include <boost/date_time/posix_time/posix_time.hpp>
+//#endif
 
 namespace OHMMS {
 
@@ -48,7 +48,8 @@ namespace OHMMS {
   {
     //os << "<Project ID=\""<<m_title << "\" series=\"" << m_series << "/>" << endl;
     os << "  Project = " << m_title << "\n";
-#if defined(HAVE_LIBBOOST)
+//#if defined(HAVE_LIBBOOST)
+/*
   using namespace boost::posix_time;
   ptime today(second_clock::local_time());
   time_facet* facet(new time_facet("%Y-%m-%d %T"));
@@ -61,7 +62,8 @@ namespace OHMMS {
 //    date_facet* facet(new date_facet("%A %B %d, %Y"));
 //    os.imbue(std::locale(os.getloc(), facet));
     os << "  date    = " << today << "\n";
-#endif
+*/
+//#endif
     os << "  host    = " << m_host << "\n";
     os << "  user    = " << m_user << "\n";
     return true;

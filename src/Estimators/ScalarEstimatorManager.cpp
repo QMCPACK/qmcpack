@@ -26,10 +26,10 @@
 using namespace qmcplusplus;
 
 ScalarEstimatorManager::ScalarEstimatorManager(QMCHamiltonian& h): 
- FileManager(true), CollectSum(false),
+ FileManager(true), CollectSum(false), AccumulateBlocks(false),
  Period(1000), NodeWeight(1.0), H(h), RootName("estimator"), 
-  OutStream(0) { 
-  
+  OutStream(0), firstReport(true) { 
+ 		Block2Total.resize(0); 
   }
 
 ScalarEstimatorManager::~ScalarEstimatorManager(){ 
@@ -107,12 +107,53 @@ void ScalarEstimatorManager::flush(){
  * @param iter the interval 
  */
 void ScalarEstimatorManager::report(int iter){
-  if(FileManager) {
-    (*OutStream) << setw(10) << iter;
-    for(int i=0; i<BlockAverages.size();i++)
-      (*OutStream) << setw(16) << BlockAverages[i];
-    (*OutStream) << endl;
+  if(AccumulateBlocks) {
+		if(firstReport){
+			index = 0;
+			TotalAveragesData.resize(0,TotalAverages.size());
+			firstReport = false;
+		}
+		TotalAveragesData.add(1);
+    for(int i=0; i<Block2Total.size(); i++) {
+      TotalAveragesData(index,Block2Total[i])=BlockAverages[i];
+    }
+		index++;
+  }// else {
+    if(FileManager) {
+      (*OutStream) << setw(10) << iter;
+      for(int i=0; i<BlockAverages.size();i++)
+        (*OutStream) << setw(16) << BlockAverages[i];
+      (*OutStream) << endl;
+    }
+  //}
+}
+
+
+int ScalarEstimatorManager::addObservable(const char* aname) {
+	cerr << "ScalarEstimator: addObservable with string " << aname;
+	int mine = BlockAverages.add(aname);
+  int add = TotalAverages.add(aname);
+	cerr << " [found mine " << mine << " and add " << add << "; TotalAverages has size " << TotalAverages.size() << "] ";
+	if(mine < Block2Total.size()) {
+  	Block2Total[mine] = add;
+		cerr << mine << "<" << Block2Total.size() << endl;
+  } else {
+		cerr << "pushing back" << endl;
+    Block2Total.push_back(add);
   }
+  return mine;
+}
+
+void ScalarEstimatorManager::getData(int i, vector<RealType>& values){
+	//cerr << "ScalarEstimator::getData my data has ";
+	int entries = TotalAveragesData.rows();
+	//cerr << entries << " rows and " << TotalAveragesData.cols() << " columns." << endl;
+	values.resize(entries);
+	//cerr << " so entries is of size " << entries << " and I want to collect observables at index " << i << "; Block2Ttoal has size " << Block2Total.size() << endl;
+	for (int a=0; a<entries; a++){	
+		values[a] = TotalAveragesData(a,Block2Total[i]);
+		//cerr << "    " << a << ": loaded " << values[a] << " of " << entries << endl;
+	}
 }
 
 /** combines the functionality of flush and report
@@ -122,7 +163,8 @@ void ScalarEstimatorManager::flushreport(int iter){
 
   if(CollectSum) gsum(MyData,0);
   RealType wgtinv = 1.0/MyData[WEIGHT_INDEX];
-  for(int i=0; i<Estimators.size(); i++)  Estimators[i]->report(BlockAverages,wgtinv);
+  for(int i=0; i<Estimators.size(); i++)  
+    Estimators[i]->report(BlockAverages,wgtinv);
 
   BlockAverages[MyIndex[WEIGHT_INDEX]]=MyData[WEIGHT_INDEX];
   BlockAverages[MyIndex[BLOCK_CPU_INDEX]] = MyData[BLOCK_CPU_INDEX]*NodeWeight;

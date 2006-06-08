@@ -124,7 +124,7 @@ template<class T>
 CGOptimization<T>::CGOptimization(ObjectFuncType* atarget):
   TargetFunc(atarget), RestartCG(true),
   NumSteps(100),Displacement(1e-6),
-  CostTol(1.e-6),GradTol(1.e-6),GammaTol(1.e-4)
+  CostTol(1.e-6),GradTol(1.e-6),GammaTol(1.e-7) // GammaTol was set to 1e-4 originally
 {
   prevCost=10e6; //some large number
 }
@@ -136,8 +136,10 @@ void CGOptimization<T>::setTarget(ObjectFuncType* fn) {
   Y.resize(NumParams);
   gY.resize(NumParams,0);
   cgY.resize(NumParams,0);
+  //cerr << "SETTARGET:   NUMPARAMS IS " << NumParams << endl;
   for(int i=0;i<NumParams; i++) {
     Y[i]=TargetFunc->Params(i);
+    //cerr << "  " << i << ", Y[i] = " << Y[i] << endl;
   }
 }
 
@@ -146,7 +148,9 @@ bool CGOptimization<T>::optimize() {
 
   CurStep=0;
   do {
+cerr << "  optimize routine: " << CurStep << endl;
     if(RestartCG) { //first time
+cerr << "    first time" << endl;
       evaluateGradients(gY);
       gdotg = dotProduct(gY,gY);
       gdotg0 = gdotg;
@@ -158,10 +162,13 @@ bool CGOptimization<T>::optimize() {
     }
 
     bool success = this->lineoptimization();
+if(!success)cerr << "lineoptimization unsuccessful" << endl;
     success &= TargetFunc->IsValid;
+if(!TargetFunc->IsValid)cerr << "TargetFunc Invalid" << endl;
     if(success) { //successful lineminimization
+cerr << "    successful lineopt... ";
       curCost= Func(this->Lambda);
-      for(int i=0; i<NumParams; i++) Y[i]+=this->Lambda*cgY[i];
+      for(int i=0; i<NumParams; i++){ Y[i]+=this->Lambda*cgY[i]; cerr << " Y[i]="<<Y[i];}
     } else {
       if(msg_stream) {
         *msg_stream << "Stop CGOptimization due to the failure of line optimization" << std::endl;
@@ -178,8 +185,9 @@ bool CGOptimization<T>::optimize() {
     //gdotg=Dot(dY,dY,fx);
     //if(fx<GradMaxTol) {
     if(fx<GradTol) {
-      if(msg_stream) *msg_stream << " CGOptimization  has reached gradient max|G| = " << fx << endl;
-      return false;
+      if(msg_stream) *msg_stream << " CGOptimization  has reached gradient max|G| = " << fx << "<" << GradTol << endl;
+      cerr << "going to continue and see what happens..." << endl;
+      return true;//false;
     }
     //if(gdotg < GradTol) {
     //  *msg_stream << " CGOptimization::Converged gradients" << endl;
@@ -192,7 +200,7 @@ bool CGOptimization<T>::optimize() {
 
     if(fabs(gamma) < GammaTol){
       if(msg_stream) 
-      *msg_stream << " CGOptimization::Converged conjugate gradients" << endl;
+      *msg_stream << " CGOptimization::Converged conjugate gradients; gamma = " << gamma << "<" << GammaTol << endl;
       return false; 
     }
 
@@ -206,7 +214,8 @@ bool CGOptimization<T>::optimize() {
     if(dx <= CostTol) {
       if(msg_stream) 
       *msg_stream << " CGOptimization::Converged cost with " << dx << endl;
-      return false; //
+      cerr << "going to continue and see what happens..." << endl;
+      return true;// false; //
     }
 
     prevCost=curCost;

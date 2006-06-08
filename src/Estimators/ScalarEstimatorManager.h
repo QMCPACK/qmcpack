@@ -81,6 +81,14 @@ namespace qmcplusplus {
       return  BlockAverages[i];
     }
 
+    int addObservable(const char* aname);
+
+    inline RealType getObservable(int i) const {
+      return  TotalAverages[i];
+    }
+
+		void getData(int i, vector<RealType>& values);
+
     /*!\return the index of the newestimator
      *\brief add a new estimator with name aname
      */
@@ -123,17 +131,24 @@ namespace qmcplusplus {
 
     void setCollectionMode(bool collect);
 
+		void setAccumulateMode (bool setAccum) {AccumulateBlocks = setAccum;};
 
   private:
 
-    ///the root file name
-    string RootName;
     ///if yes, this estimator will write the data to a file
     bool FileManager;
     ///if yes, the averages are collected over mpi nodes
     bool CollectSum;
+    ///if yes, the block averages  are stored in TotalAverages
+    bool AccumulateBlocks;
+
+		bool firstReport;
+		int index;
+
     ///Period to write 
     IndexType Period;
+    ///the root file name
+    string RootName;
     ///Weight for global collection
     RealType NodeWeight;
     ///Index map for the data maintained by this object
@@ -146,11 +161,18 @@ namespace qmcplusplus {
     QMCHamiltonian& H;
     ///block averages
     RecordNamedProperty<RealType> BlockAverages;
+
+    ///block averages: name to value
+    RecordNamedProperty<RealType> TotalAverages;
+    ///data accumulated over the blocks
+    Matrix<RealType> TotalAveragesData;
+    ///index mapping between BlockAverages and TotalAverages
+    vector<int> Block2Total;
+
     ///column map
     std::map<string,int> EstimatorMap;
     ///estimators
     vector<EstimatorType*> Estimators;
-
     ///Timer
     Timer MyTimer;
   };

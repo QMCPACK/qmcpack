@@ -28,7 +28,7 @@
 #include "QMCDrivers/VMC_OPT.h"
 #include "QMCDrivers/MolecuDMC.h"
 #include "QMCDrivers/ReptationMC.h"
-//#include "QMC/WaveFunctionTester.h"
+#include "QMCDrivers/WaveFunctionTester.h"
 #include "QMCHamiltonians/ConservedEnergy.h"
 
 namespace qmcplusplus {
@@ -227,11 +227,11 @@ namespace qmcplusplus {
 	    rmc.setFileRoot(myProject.CurrentRoot());
             rmc.process(cur);
 	    rmc.run();
-	  //} else if(methodname == "test"){
-	  //  H.remove("Flux");
-	  //  WaveFunctionTester wftest(el,Psi,H,cur);
-	  //  wftest.setFileRoot(myProject.CurrentRoot());
-	  //  wftest.run();
+	  } else if(methodname == "test"){
+	    H.remove("Flux");
+	    WaveFunctionTester wftest(el,Psi,H,cur);
+	    wftest.setFileRoot(myProject.CurrentRoot());
+	    wftest.run();
           //} else if(methodname == "vmc-multi") {
           //  VMCMulti vmc(el,Psi,H,cur);
           //  vmc.add(&H, &Psi);

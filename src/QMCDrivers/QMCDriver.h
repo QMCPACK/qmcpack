@@ -137,14 +137,17 @@ namespace qmcplusplus {
 
     int addObservable(const string& aname) {
       if(Estimators)
-        return Estimators->addColumn(aname.c_str());
+        return Estimators->addObservable(aname.c_str());
       else
         return -1;
     }
 
-    RealType getObervable(int i) {
-      return Estimators->getColumn(i);
+    RealType getObservable(int i) {
+      return Estimators->getObservable(i);
     }
+
+    ///Observables manager
+    ScalarEstimatorManager* Estimators;
 
   protected:
 
@@ -208,9 +211,6 @@ namespace qmcplusplus {
     RealType m_oneover2tau;
     ///Time-step factor \f$ \sqrt{\Tau}\f$
     RealType m_sqrttau;
-
-    ///Observables manager
-    ScalarEstimatorManager* Estimators;
 
     ///pointer to qmc node in xml file
     xmlNodePtr qmcNode;

@@ -19,6 +19,8 @@
 #include "Configuration.h"
 #include  <map>
 #include "QMCWaveFunctions/OrbitalBase.h"
+#include <iostream>
+#include <fstream>
 
 namespace qmcplusplus {
 
@@ -46,10 +48,10 @@ namespace qmcplusplus {
   public:
 
     typedef FT FuncType;
-
+    //QIO out;
     ///container for the Jastrow functions 
     vector<FT*> F;
-
+    ofstream out;
     ///constructor
     TwoBodyJastrowOrbital(ParticleSet& p, DistanceTableData* dtable): d_table(dtable) { 
       N=p.getTotalNum();
@@ -60,6 +62,8 @@ namespace qmcplusplus {
       for(int i=0; i<N; i++)
 	for(int j=0; j<N; j++) 
 	  PairID(i,j) = p.GroupID[i]*nsp+p.GroupID[j];
+      out.open("TwoBodJast.dat");
+      //out.Open("TwoBodJast.dat");
     }
 
     ~TwoBodyJastrowOrbital(){ }
@@ -129,6 +133,8 @@ namespace qmcplusplus {
 	  L[j] -= lap; 
 	}
       }
+      //out.WriteLine(LogValue);
+      //out << LogValue << endl;
       return LogValue;
     }
 

@@ -23,6 +23,7 @@
 #include "QMCWaveFunctions/TwoBodyJastrowFunction.h"
 #include "QMCWaveFunctions/PolarizedJastrow.h"
 #include "QMCWaveFunctions/ThreeBodyGeminalBuilder.h"
+#include "QMCWaveFunctions/ThreeBodyPadeBuilder.h"
 
 namespace qmcplusplus {
 
@@ -339,13 +340,24 @@ is implemted
         return false;
       }
     } else if(jasttype == "Three-Body-Geminal") {
-      app_log() << "  creating Three-Body-Germinal Jastrow function " << endl;
+      app_log() << "  creating Three-Body-Geminal Jastrow function " << endl;
       string source_name("i");
       const xmlChar* iptr = xmlGetProp(cur, (const xmlChar *)"source");
       if(iptr != NULL) source_name=(const char*)iptr;
       map<string,ParticleSet*>::iterator pa_it(ptclPool.find(source_name));
       if(pa_it != ptclPool.end()) {
         ThreeBodyGeminalBuilder g(targetPtcl,targetPsi,*((*pa_it).second));
+        g.put(cur);
+      }
+    } else if(jasttype == "Three-Body-Pade") {
+      app_log() << "  creating Three-Body-Pade Jastrow function " << endl;
+      cerr << "  creating Three-Body-Pade Jastrow function " << endl;
+      string source_name("i");
+      //const xmlChar* iptr = xmlGetProp(cur, (const xmlChar *)"source");
+      //if(iptr != NULL) source_name=(const char*)iptr;
+      map<string,ParticleSet*>::iterator pa_it(ptclPool.find(source_name));
+      if(pa_it != ptclPool.end()) {
+        ThreeBodyPadeBuilder g(targetPtcl,targetPsi,*((*pa_it).second));
         g.put(cur);
       }
     }
