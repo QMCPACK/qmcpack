@@ -6,42 +6,60 @@ PROJECT(newqmc)
 SET(WFSRCS
   ../QMCWaveFunctions/OrbitalBuilderBase.cpp
   ../QMCWaveFunctions/JAABuilder.cpp
-  ../QMCWaveFunctions/NJAABuilder.cpp
   ../QMCWaveFunctions/JABBuilder.cpp
+  ../QMCWaveFunctions/NJAABuilder.cpp
   ../QMCWaveFunctions/NJABBuilder.cpp
-  ../QMCWaveFunctions/AtomicOrbitals/HFAtomicSTOSet.cpp 
-  ../QMCWaveFunctions/AtomicOrbitals/HFAtomicSTOSetBuilder.cpp 
-  ../QMCWaveFunctions/AtomicOrbitals/HeSTOClementiRottie.cpp
-  ../QMCWaveFunctions/MolecularOrbitals/STOMolecularOrbitals.cpp
-  ../QMCWaveFunctions/MolecularOrbitals/GTOMolecularOrbitals.cpp
-  ../QMCWaveFunctions/MolecularOrbitals/RGFBuilderBase.cpp
-  ../QMCWaveFunctions/MolecularOrbitals/NumericalRGFBuilder.cpp
-  ../QMCWaveFunctions/MolecularOrbitals/STO2GridBuilder.cpp
-  ../QMCWaveFunctions/MolecularOrbitals/GTO2GridBuilder.cpp
-  ../QMCWaveFunctions/MolecularOrbitals/Any2GridBuilder.cpp
-  ../QMCWaveFunctions/MolecularOrbitals/GridMolecularOrbitals.cpp
-  ../QMCWaveFunctions/MolecularOrbitals/MolecularOrbitalBuilder.cpp
-  ../QMCWaveFunctions/ElectronGasOrbitalBuilder.cpp
-  ../QMCWaveFunctions/PlaneWaveOrbitalBuilder.cpp
-  ../QMCWaveFunctions/ThreeBodyGeminal.cpp
-  ../QMCWaveFunctions/ThreeBodyGeminalBuilder.cpp
-  ../QMCWaveFunctions/ThreeBodyPadeBuilder.cpp
+  ../QMCWaveFunctions/LRTwoBodyJastrow.cpp
+  ../QMCWaveFunctions/JAAPBCBuilder.cpp
   ../QMCWaveFunctions/WaveFunctionFactory.cpp
-  ../QMCHamiltonians/LocalPPotential.cpp
-  ../QMCHamiltonians/NonLocalPPotential.cpp
-  ../QMCHamiltonians/LocalCorePolPotential.cpp
-  ../QMCHamiltonians/LocalECPotential.cpp
-  ../QMCHamiltonians/NonLocalECPotential.cpp
-  ../QMCHamiltonians/ECPotentialBuilder.cpp
-  ../QMCHamiltonians/ECPComponentBuilder.cpp
   ../QMCHamiltonians/HamiltonianFactory.cpp
 )
 
+IF(QMC_COMPLEX)
+  SET(WFSRCS ${WFSRCS}
+    ../QMCWaveFunctions/ElectronGasOrbitalBuilder.cpp
+    ../QMCHamiltonians/LocalCorePolPotential.cpp
+  )
+ELSE(QMC_COMPLEX)
+  SET(WFSRCS ${WFSRCS}
+    ../QMCWaveFunctions/ElectronGasOrbitalBuilder.cpp
+    ../QMCWaveFunctions/PlaneWaveOrbitalBuilder.cpp
+    ../QMCWaveFunctions/ThreeBodyGeminal.cpp
+    ../QMCWaveFunctions/ThreeBodyGeminalBuilder.cpp
+    ../QMCWaveFunctions/ThreeBodyPadeBuilder.cpp
+    ../QMCWaveFunctions/MolecularOrbitals/STOMolecularOrbitals.cpp
+    ../QMCWaveFunctions/MolecularOrbitals/GTOMolecularOrbitals.cpp
+    ../QMCWaveFunctions/MolecularOrbitals/RGFBuilderBase.cpp
+    ../QMCWaveFunctions/MolecularOrbitals/NumericalRGFBuilder.cpp
+    ../QMCWaveFunctions/MolecularOrbitals/STO2GridBuilder.cpp
+    ../QMCWaveFunctions/MolecularOrbitals/GTO2GridBuilder.cpp
+    ../QMCWaveFunctions/MolecularOrbitals/Any2GridBuilder.cpp
+    ../QMCWaveFunctions/MolecularOrbitals/GridMolecularOrbitals.cpp
+    ../QMCWaveFunctions/MolecularOrbitals/MolecularOrbitalBuilder.cpp
+    ../QMCWaveFunctions/AtomicOrbitals/HFAtomicSTOSet.cpp 
+    ../QMCWaveFunctions/AtomicOrbitals/HFAtomicSTOSetBuilder.cpp 
+    ../QMCWaveFunctions/AtomicOrbitals/HeSTOClementiRottie.cpp
+    ../QMCHamiltonians/LocalCorePolPotential.cpp
+    ../QMCHamiltonians/NonLocalPPotential.cpp
+    ../QMCHamiltonians/LocalECPotential.cpp
+    ../QMCHamiltonians/NonLocalECPotential.cpp
+    ../QMCHamiltonians/ECPotentialBuilder.cpp
+    ../QMCHamiltonians/ECPComponentBuilder.cpp
+  )
+ENDIF(QMC_COMPLEX)
+
+
 IF(NOT QMCPLUSPLUS_RELEASE)
+IF(QMC_COMPLEX)
+SET(WFSRCS ${WFSRCS}
+  ../LongRange/LPQHIBasis.cpp
+  )
+ELSE(QMC_COMPLEX)
 SET(WFSRCS ${WFSRCS}
   ../QMCWaveFunctions/NumericalOrbitalSetBuilder.cpp
   ../LongRange/LPQHIBasis.cpp
   )
+ENDIF(QMC_COMPLEX)
 
 ENDIF(NOT QMCPLUSPLUS_RELEASE)
 
@@ -50,7 +68,6 @@ ENDIF(NOT QMCPLUSPLUS_RELEASE)
 ####################################
 SET(DMCDRIVERS
   ../QMCDrivers/WalkerControlBase.cpp
-  ../QMCDrivers/MolecuDMC.cpp
   ../QMCDrivers/DMC/DMCMoveAll.cpp
   ../QMCDrivers/DMC/DMCPbyP.cpp
   ../QMCDrivers/DMC/DMCFactory.cpp
@@ -78,7 +95,7 @@ SET(QMCDRIVERS
   ../QMCDrivers/DummyQMC.cpp
   ../QMCDrivers/VMC.cpp
   ../QMCDrivers/VMCParticleByParticle.cpp
-	../QMCDrivers/ReptationMC.cpp
+  ../QMCDrivers/ReptationMC.cpp
   ../Estimators/ScalarEstimatorManager.cpp
   ../QMCDrivers/QMCOptimize.cpp
   ../QMCDrivers/QMCCostFunction.cpp
@@ -87,6 +104,14 @@ SET(QMCDRIVERS
 )
 
 IF(NOT QMCPLUSPLUS_RELEASE)
+
+  IF(NOT QMC_COMPLEX)
+    SET(QMCDRIVERS ${QMCDRIVERS}
+      ../QMCWaveFunctions/AGPDeterminant.cpp
+      ../QMCWaveFunctions/AGPDeterminantBuilder.cpp
+    )
+  ENDIF(NOT QMC_COMPLEX)
+
   SET(QMCDRIVERS ${QMCDRIVERS}
     ../QMCDrivers/VMCMultiple.cpp
     ../QMCDrivers/VMCPbyPMultiple.cpp
@@ -94,8 +119,6 @@ IF(NOT QMCPLUSPLUS_RELEASE)
     ../QMCDrivers/RQMCMultiple.cpp
     ../QMCDrivers/MultiChain.cpp
     ../Estimators/MultipleEnergyEstimator.cpp
-    ../QMCWaveFunctions/AGPDeterminant.cpp
-    ../QMCWaveFunctions/AGPDeterminantBuilder.cpp
     ../QMCDrivers/SpaceWarp.cpp
     ../QMCDrivers/VMCMultipleWarp.cpp
     ../QMCDrivers/VMCPbyPMultiWarp.cpp
