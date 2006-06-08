@@ -46,6 +46,7 @@ namespace qmcplusplus {
 
   };
 
+
   /** traits for QMC variables
    *
    *typedefs for the QMC data types
@@ -62,7 +63,8 @@ namespace qmcplusplus {
     typedef std::complex<OHMMS_PRECISION>  ComplexType;
     typedef TinyVector<RealType,DIM>       PosType;
     typedef TinyVector<ValueType,DIM>      GradType;
-    typedef Tensor<ValueType,DIM>          TensorType;
+    typedef Tensor<RealType,DIM>           TensorType;
+
   };
 
   /** Particle traits to use UniformGridLayout for the ParticleLayout.
