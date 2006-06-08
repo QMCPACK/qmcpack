@@ -55,7 +55,7 @@ namespace qmcplusplus {
     bool Optimizable;
     bool UseBuffer;
     ValueType LogValue;
-    ValueType SignValue;
+    RealType SignValue;
 
     ///default constructor
     inline OrbitalBase(): Optimizable(true), UseBuffer(true),LogValue(1.0),SignValue(1.0){ }
@@ -77,7 +77,9 @@ namespace qmcplusplus {
      *
      *Specialized for all-walker move.
      */
-    virtual void resizeByWalkers(int nwalkers) {}
+    void resizeByWalkers(int nwalkers) {
+      UseBuffer=nwalkers>1;
+    }
 
     /** reset properties, e.g., distance tables, for a new target ParticleSet
      * @param P ParticleSet
