@@ -21,6 +21,7 @@
 #include "Particle/DistanceTableData.h"
 #include "Particle/WalkerSetRef.h"
 #include "OhmmsData/RecordProperty.h"
+#include "QMCWaveFunctions/OrbitalTraits.h"
 
 /**@file OrbitalBase.h
  *@brief Declaration of OrbitalBase
