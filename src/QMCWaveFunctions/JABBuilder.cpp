@@ -21,8 +21,6 @@
 #include "QMCWaveFunctions/NoCuspJastrow.h"
 #include "QMCWaveFunctions/ModPadeJastrow.h"
 #include "QMCWaveFunctions/OneBodyJastrowFunction.h"
-//#include "QMCWaveFunctions/TwoBodyJastrowFunction.h"
-#include "QMCWaveFunctions/ThreeBodyPade.h"
 
 namespace qmcplusplus {
 
@@ -33,9 +31,6 @@ namespace qmcplusplus {
     string corr_tag("correlation");
 
     vector<FN*> jastrow;
-    cur = cur->xmlChildrenNode;
-    DistanceTableData* d_table = NULL;
-    //DistanceTableData* ee_table = NULL;
     int ng = 0;
     ParticleSet* sourcePtcl=0;
     const xmlChar* s=xmlGetProp(cur,(const xmlChar*)"source");
@@ -53,14 +48,8 @@ namespace qmcplusplus {
       	string source_name((const char*)(xmlGetProp(cur,(const xmlChar *)"source")));
         map<string,ParticleSet*>::iterator pa_it(ptclPool.find(source_name));
         if(pa_it == ptclPool.end()) return false;
-	ParticleSet* a = (*pa_it).second;
-	d_table = DistanceTable::getTable(DistanceTable::add(*a,targetPtcl));
-        //ee_table = DistanceTable::getTable(DistanceTable::add(targetPtcl));
-	ng = a->getSpeciesSet().getTotalNum();
-//=======
-//        sourcePtcl = (*pa_it).second;
-//        ng=sourcePtcl->getSpeciesSet().getTotalNum();
-//>>>>>>> 1.6
+        sourcePtcl = (*pa_it).second;
+        ng=sourcePtcl->getSpeciesSet().getTotalNum();
 	XMLReport("Number of sources " << ng)
 	for(int i=0; i<ng; i++) jastrow.push_back(NULL);
       } else if(cname == corr_tag) {
@@ -107,16 +96,16 @@ namespace qmcplusplus {
     bool success=false;
     app_log() << "  One-Body Jastrow Function = " << jastfunction << endl;
     if(jastfunction == "nocusp") {
-      NoCuspJastrow<ValueType> *dummy = 0;
+      NoCuspJastrow<RealType> *dummy = 0;
       success = createJAB(cur,dummy);
     } else if(jastfunction == "pade") {
-      PadeJastrow<ValueType> *dummy = 0;
+      PadeJastrow<RealType> *dummy = 0;
       success = createJAB(cur,dummy);
     } else if(jastfunction == "pade2") {
-      PadeJastrow2<ValueType> *dummy = 0;
+      PadeJastrow2<RealType> *dummy = 0;
       success = createJAB(cur,dummy);
     } else if(jastfunction == "what") {
-      ModPadeJastrow<ValueType> *dummy = 0;
+      ModPadeJastrow<RealType> *dummy = 0;
       success = createJAB(cur,dummy);
     }
     return success;
