@@ -54,7 +54,10 @@ public:
 
   inline void add(T x) { Current++; this->push_back(x);}
 
-  inline void add(complex<T>& x) { Current+=2; this->push_back(x.real); this->push_back(x.imag);}
+  inline void add(complex<T>& x) { Current+=2; 
+    this->push_back(x.real()); 
+    this->push_back(x.imag());
+  }
 
   template<class _InputIterator>
   inline void add(_InputIterator first, _InputIterator last) {
@@ -97,7 +100,10 @@ public:
   }
   
   inline void put(T x) { (*this)[Current++] = x;}
-  inline void put(std::complex<T>& x) { (*this)[Current++] = x.real;  (*this)[Current++] = x.imag;}
+  inline void put(std::complex<T>& x) { 
+    (*this)[Current++] = x.real();  
+    (*this)[Current++] = x.imag();
+  }
 
   template<class _InputIterator>
   inline void put(_InputIterator first, _InputIterator last){
