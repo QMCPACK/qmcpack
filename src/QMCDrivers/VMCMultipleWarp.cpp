@@ -21,7 +21,7 @@
 #include "Utilities/OhmmsInfo.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "Particle/HDFWalkerIO.h"
-#include "ParticleBase/ParticleUtility.h"
+#include "ParticleBase/ParticleAttribOps.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "Message/Communicate.h"
 #include "Utilities/Clock.h"
@@ -354,15 +354,16 @@ namespace qmcplusplus {
         for(int jat=0; jat< W.getTotalNum(); jat++) deltaRTemp[jat]=0.0;
         deltaRTemp[iat] = deltaR[iat];
         RealType logGf = -0.5*Dot(deltaRTemp,deltaRTemp);
-        ValueType scale = Tau; // ((-1.0+sqrt(1.0+2.0*Tau*vsq))/vsq);
+        RealType scale = Tau; // ((-1.0+sqrt(1.0+2.0*Tau*vsq))/vsq);
 
         //accumulate the weighted drift
-        drift = Psi1[0]->G;
+        //drift = Psi1[0]->G;
         /*drift = invsumratio[0]*Psi1[0]->G;
           for(int ipsi=1; ipsi< nPsi ;ipsi++) {
           drift += invsumratio[ipsi]*Warp.G[ipsi];
           }*/
-        drift *= scale;
+        //drift *= scale;
+        PAOps<RealType,DIM>::scale(scale,Psi1[0]->G,drift);
 
         deltaRTemp[iat] = thisWalker.R[iat] - W.R[iat] - drift[iat];
         RealType logGb = -m_oneover2tau*Dot(deltaRTemp,deltaRTemp);

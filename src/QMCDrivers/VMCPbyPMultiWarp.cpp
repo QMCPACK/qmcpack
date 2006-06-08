@@ -21,7 +21,7 @@
 #include "Utilities/OhmmsInfo.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "Particle/HDFWalkerIO.h"
-#include "ParticleBase/ParticleUtility.h"
+#include "ParticleBase/ParticleAttribOps.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "Message/CommCreate.h"
 #include "Estimators/MultipleEnergyEstimator.h"
@@ -60,7 +60,7 @@ namespace qmcplusplus {
     //going to add routines to calculate how much we need
     bool require_register =  W.createAuxDataSet();
 
-    vector<RealType>Norm(nPsi),tmpNorm(nPsi);
+    vector<RealType>  Norm(nPsi),tmpNorm(nPsi);
     if(equilBlocks > 0){
       for(int ipsi=0; ipsi< nPsi; ipsi++){
         Norm[ipsi]=1.0; 
@@ -80,7 +80,8 @@ namespace qmcplusplus {
     m_sqrttau = sqrt(Tau);
     RealType nPsi_minus_one = nPsi-1;
 
-    ParticleSet::ParticleGradient_t dG(W.getTotalNum());
+    //ParticleSet::ParticleGradient_t dG(W.getTotalNum());
+    dG.resize(W.getTotalNum());
 
     IndexType nAcceptTot = 0;
     IndexType nRejectTot = 0;
@@ -162,6 +163,7 @@ namespace qmcplusplus {
 		sumratio[jpsi] += 1.e0/rji;
 	      }
 	    }
+
 	    // Evaluate new Umbrella Weight and new drift
             RealType logGf = -0.5*dot(deltaR[iat],deltaR[iat]);
 
@@ -177,7 +179,10 @@ namespace qmcplusplus {
                 drift[iptcl] += (invsumratio[ipsi]*WarpDrift);
               }
             }
-            drift *= (Tau/denom);
+            
+            //drift *= (Tau/denom);
+            denom = Tau/denom;
+            drift *= denom;
 
             dr = thisWalker.R[iat]-newpos-drift[iat];
             RealType logGb = -m_oneover2tau*dot(dr,dr);
@@ -254,7 +259,7 @@ namespace qmcplusplus {
 	    for(int ipsi=0; ipsi< nPsi; ipsi++){
 	      WW[ipsi]->G=Psi1[ipsi]->G;
 	      WW[ipsi]->L=Psi1[ipsi]->L;
-	      ValueType psi = Psi1[ipsi]->evaluate(*WW[ipsi],w_buffer);
+	      RealType psi = Psi1[ipsi]->evaluate(*WW[ipsi],w_buffer);
 	      RealType et = H1[ipsi]->evaluate(*WW[ipsi]);
 
 	      //multiEstimator->updateSample(iwalker,ipsi,et,UmbrellaWeight[ipsi]);

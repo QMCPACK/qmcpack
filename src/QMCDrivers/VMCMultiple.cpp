@@ -23,6 +23,7 @@
 #include "Particle/HDFWalkerIO.h"
 #include "ParticleBase/ParticleUtility.h"
 #include "ParticleBase/RandomSeqGenerator.h"
+#include "ParticleBase/ParticleAttribOps.h"
 #include "Message/Communicate.h"
 #include "Estimators/MultipleEnergyEstimator.h"
 
@@ -220,12 +221,17 @@ cerr << " In VMCMultiple::run" << endl;
       //Properties(SUMRATIO) = sumratio[0];			 
  
       RealType logGf = -0.5*Dot(deltaR,deltaR);
-      ValueType scale = Tau; // ((-1.0+sqrt(1.0+2.0*Tau*vsq))/vsq);	
+      RealType scale = Tau; // ((-1.0+sqrt(1.0+2.0*Tau*vsq))/vsq);	
 
-      //accumulate the weighted drift
-      drift = invsumratio[0]*Psi1[0]->G;
+      //accumulate the weighted drift: using operators in ParticleBase/ParticleAttribOps.h
+      //to handle complex-to-real assignment and axpy operations.
+      //drift = invsumratio[0]*Psi1[0]->G;
+      //for(int ipsi=1; ipsi< nPsi ;ipsi++) {               		
+      //  drift += invsumratio[ipsi]*Psi1[ipsi]->G;  
+      //} 							    	
+      PAOps<RealType,DIM>::scale(invsumratio[0],Psi1[0]->G,drift);
       for(int ipsi=1; ipsi< nPsi ;ipsi++) {               		
-        drift += invsumratio[ipsi]*Psi1[ipsi]->G;  
+        PAOps<RealType,DIM>::axpy(invsumratio[ipsi],Psi1[ipsi]->G,drift);
       } 							    	
       drift *= scale; 						   	
 

@@ -22,6 +22,8 @@
 #include "ParticleBase/ParticleUtility.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "OhmmsData/AttributeSet.h"
+#include "QMCDrivers/DriftOperators.h"
+#include "QMCWaveFunctions/OrbitalTraits.h"
 #include "Message/Communicate.h"
 
 namespace qmcplusplus {
@@ -205,10 +207,11 @@ namespace qmcplusplus {
         while(it != it_end) {
           (*it)->DataSet.rewind();
           W.registerData(**it,(*it)->DataSet);
-          ValueType logpsi=Psi.registerData(W,(*it)->DataSet);
+          RealType logpsi=Psi.registerData(W,(*it)->DataSet);
 
-          RealType scale=getDriftScale(Tau,W.G);
-          (*it)->Drift = scale*W.G;
+          //RealType scale=getDriftScale(Tau,W.G);
+          //(*it)->Drift = scale*W.G;
+          setScaledDrift(Tau,W.G,(*it)->Drift);
 
           RealType ene = H.evaluate(W);
           (*it)->resetProperty(logpsi,Psi.getSign(),ene);
@@ -228,9 +231,12 @@ namespace qmcplusplus {
         //DistanceTable::update(W);
         W.update();
 
-        ValueType logpsi(Psi.evaluateLog(W));
-        RealType scale=getDriftScale(Tau,W.G);
-        (*it)->Drift = scale*W.G;
+        RealType logpsi(Psi.evaluateLog(W));
+
+        //RealType scale=getDriftScale(Tau,W.G);
+        //(*it)->Drift = scale*W.G;
+        setScaledDrift(Tau,W.G,(*it)->Drift);
+
         RealType ene = H.evaluate(W);
         (*it)->resetProperty(logpsi,Psi.getSign(),ene);
         H.saveProperty((*it)->getPropertyBase());
@@ -239,6 +245,7 @@ namespace qmcplusplus {
     }
 
   }
+
 
   /** Update walkers
    *
@@ -254,13 +261,15 @@ namespace qmcplusplus {
       Buffer_t& w_buffer(thisWalker.DataSet);
       w_buffer.rewind();
       W.updateBuffer(thisWalker,w_buffer);
-      ValueType logpsi=Psi.updateBuffer(W,w_buffer);
+      RealType logpsi=Psi.updateBuffer(W,w_buffer);
       RealType enew= H.evaluate(W);
       thisWalker.resetProperty(logpsi,Psi.getSign(),enew);
       H.saveProperty(thisWalker.getPropertyBase());
       ValueType vsq = Dot(W.G,W.G);
-      ValueType scale = ((-1.0+sqrt(1.0+2.0*Tau*vsq))/vsq);
-      thisWalker.Drift = scale*W.G;
+
+      setScaledDrift(Tau,W.G,thisWalker.Drift);
+      //ValueType scale = ((-1.0+sqrt(1.0+2.0*Tau*vsq))/vsq);
+      //thisWalker.Drift = scale*W.G;
       ++it;
     }
   }

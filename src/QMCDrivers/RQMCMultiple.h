@@ -90,7 +90,7 @@ namespace qmcplusplus {
 
     ///Working arrays
     Vector<RealType> NewGlobalAction,DeltaG;
-    Vector<int>NewGlobalSignWgt,WeightSign;
+    Vector<int> NewGlobalSignWgt,WeightSign;
     
     void resizeArrays(int n);
 

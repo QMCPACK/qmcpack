@@ -25,6 +25,7 @@
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "Message/CommCreate.h"
 #include "Estimators/MultipleEnergyEstimator.h"
+#include "QMCDrivers/DriftOperators.h"
 
 namespace qmcplusplus { 
 
@@ -148,13 +149,18 @@ namespace qmcplusplus {
             RealType logGf = -0.5*dot(deltaR[iat],deltaR[iat]);
 	    drift=0.0;
 	    // Evaluate new Umbrella Weight and new drift
-	    for(int ipsi=0; ipsi< nPsi; ipsi++){
+	    //for(int ipsi=0; ipsi< nPsi; ipsi++){
+	    //  invsumratio[ipsi]=1.0/sumratio[ipsi];
+	    //  drift += invsumratio[ipsi]*(*G[ipsi]);
+	    //}
+            for(int ipsi=0; ipsi< nPsi ;ipsi++) {               		
 	      invsumratio[ipsi]=1.0/sumratio[ipsi];
-	      drift += invsumratio[ipsi]*(*G[ipsi]);
-	    }
-            ValueType vsq = Dot(drift,drift);
-            ValueType scale = ((-1.0e0+sqrt(1.0e0+2.0e0*Tau*vsq))/vsq);
-            //ValueType scale=Tau;
+              PAOps<RealType,DIM>::axpy(invsumratio[ipsi],Psi1[ipsi]->G,drift);
+            } 							    	
+
+            //RealType vsq = Dot(drift,drift);
+            //RealType scale = ((-1.0e0+sqrt(1.0e0+2.0e0*Tau*vsq))/vsq);
+            RealType scale=getDriftScale(Tau,drift);
 	    drift *= scale;
             dr = thisWalker.R[iat]-newpos-drift[iat];
             RealType logGb = -m_oneover2tau*dot(dr,dr);

@@ -23,6 +23,7 @@
 #include "Particle/DistanceTable.h"
 #include "ParticleBase/ParticleUtility.h"
 #include "ParticleBase/RandomSeqGenerator.h"
+#include "QMCDrivers/DriftOperators.h"
 #include "Message/Communicate.h"
 
 namespace qmcplusplus { 
@@ -161,7 +162,7 @@ namespace qmcplusplus {
       
       //evaluate wave function
       //update the properties: note that we are getting \f$\sum_i \ln(|psi_i|)\f$ and catching the sign separately
-      ValueType logpsi(Psi.evaluateLog(W));
+      RealType logpsi(Psi.evaluateLog(W));
  
       //deltaR = W.R - (*it)->R - (*it)->Drift;
       //RealType forwardGF = exp(-oneover2tau*Dot(deltaR,deltaR));
@@ -169,8 +170,9 @@ namespace qmcplusplus {
       RealType logGf = -0.5*Dot(deltaR,deltaR);
       
       //converting gradients W.G to drifts, D = tau*G (reuse G)
-      RealType scale = getDriftScale(Tau,W.G);
-      drift = scale*W.G;
+      //RealType scale = getDriftScale(Tau,W.G);
+      //drift = scale*W.G;
+      setScaledDrift(Tau,W.G,drift);
       
       //backward GreenFunction needs \f$d{\bf R} = {\bf R}_{old} - {\bf R}_{new} - {\bf V}_d\f$
       deltaR = thisWalker.R - W.R - drift;

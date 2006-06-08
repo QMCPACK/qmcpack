@@ -22,7 +22,7 @@
 #include "Utilities/OhmmsInfo.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "Particle/HDFWalkerIO.h"
-#include "ParticleBase/ParticleUtility.h"
+#include "ParticleBase/ParticleAttribOps.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "Message/Communicate.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
@@ -75,9 +75,10 @@ namespace qmcplusplus {
       RealType eloc= H1[ipsi]->evaluate(W);
       NewBead->Properties(ipsi,LOCALENERGY)= eloc;
       H1[ipsi]->saveProperty(NewBead->getPropertyBase(ipsi));
-      *(NewBead->Gradients[ipsi])=W.G;
+      //*(NewBead->Gradients[ipsi])=W.G;
+      Copy(W.G,*(NewBead->Gradients[ipsi]));
       NewBead->BeadSignWgt[ipsi]=1;
-      NewBead->Action(ipsi,MinusDirection)=0.25*Tau*Dot(*NewBead->Gradients[ipsi],*NewBead->Gradients[ipsi]);
+      NewBead->Action(ipsi,MinusDirection)= 0.25*Tau*Dot(*NewBead->Gradients[ipsi],*NewBead->Gradients[ipsi]);
       NewBead->Action(ipsi,PlusDirection)=NewBead->Action(ipsi,MinusDirection);
       NewBead->Action(ipsi,Directionless)=0.5*Tau*eloc;
     }
@@ -201,7 +202,8 @@ namespace qmcplusplus {
         RealType eloc= H1[ipsi]->evaluate(W);
         curW.Properties(ipsi,LOCALENERGY)= eloc;
         H1[ipsi]->saveProperty(curW.getPropertyBase(ipsi));
-        *curW.Gradients[ipsi]=W.G;
+        //*curW.Gradients[ipsi]=W.G;
+        Copy(W.G,*curW.Gradients[ipsi]);
 
         ///Initialize Kinetic Action
         RealType KinActMinus=0.0;
@@ -514,10 +516,12 @@ namespace qmcplusplus {
 
       //Save properties
       H1[ipsi]->saveProperty(NewBeadProp);
-      *(NewBead->Gradients[ipsi])=W.G; 
+      //*(NewBead->Gradients[ipsi])=W.G; 
+      Copy(W.G,*(NewBead->Gradients[ipsi]));
 
       //Compute the backward part of the Kinetic action
-      gRand=deltaR+Tau*W.G;
+      //gRand=deltaR+Tau*W.G;
+      PAOps<RealType,DIM>::axpy(Tau,W.G,deltaR,gRand);
       NewBead->Action(ipsi,backward)=0.5*m_oneover2tau*Dot(gRand,gRand);
 
       NewBead->Action(ipsi,Directionless)=0.5*Tau*eloc;
@@ -557,7 +561,8 @@ namespace qmcplusplus {
       //Compute Log of global Wgt
       for(int ipsi=0; ipsi<nPsi; ipsi++) {
         RealType DeltaAction(NewGlobalAction[ipsi]-RefAction);
-        if((WeightSign[ipsi]>0) && (DeltaAction > -30.0)) NewGlobalWgt+=std::exp(DeltaAction);
+        if((WeightSign[ipsi]>0) && (DeltaAction > -30.0)) 
+          NewGlobalWgt+=std::exp(DeltaAction);
       }
       NewGlobalWgt=std::log(NewGlobalWgt)+RefAction;
 
@@ -569,23 +574,23 @@ namespace qmcplusplus {
       //Update Reptile information
       Reptile->GlobalWgt=NewGlobalWgt;
       for(int ipsi=0; ipsi<nPsi; ipsi++) {
-	Reptile->GlobalAction[ipsi]=NewGlobalAction[ipsi];
+        Reptile->GlobalAction[ipsi]=NewGlobalAction[ipsi];
         Reptile->GlobalSignWgt[ipsi]=NewGlobalSignWgt[ipsi];
         RealType DeltaAction(NewGlobalAction[ipsi]-NewGlobalWgt);
         if((WeightSign[ipsi]>0) && (DeltaAction > -30.0))
-	  Reptile->UmbrellaWeight[ipsi]=std::exp(DeltaAction);
+          Reptile->UmbrellaWeight[ipsi]=std::exp(DeltaAction);
         else Reptile->UmbrellaWeight[ipsi]=0.0e0;
       }
 
       //Add NewBead to the Polymer.
       if(Reptile->GrowthDirection==MinusDirection){
-	Reptile->push_front(NewBead);
-	NewBead=tail;
-	Reptile->pop_back();
+        Reptile->push_front(NewBead);
+        NewBead=tail;
+        Reptile->pop_back();
       }else{
-	Reptile->push_back(NewBead);
-	NewBead=tail;
-	Reptile->pop_front();
+        Reptile->push_back(NewBead);
+        NewBead=tail;
+        Reptile->pop_front();
       }
       ++nAccept;
     } else {

@@ -22,6 +22,7 @@
 #include "Particle/MCWalkerConfiguration.h"
 #include "ParticleBase/ParticleUtility.h"
 #include "ParticleBase/RandomSeqGenerator.h"
+#include "QMCDrivers/DriftOperators.h"
 #include "Message/CommCreate.h"
 
 namespace qmcplusplus { 
@@ -107,8 +108,8 @@ namespace qmcplusplus {
       W.copyFromBuffer(w_buffer);
       Psi.copyFromBuffer(W,w_buffer);
 
-      ValueType psi_old = thisWalker.Properties(SIGN);
-      ValueType psi = psi_old;
+      RealType psi_old = thisWalker.Properties(SIGN);
+      RealType psi = psi_old;
       //create a 3N-Dimensional Gaussian with variance=1
       makeGaussRandom(deltaR);
       bool moved = false;
@@ -129,12 +130,14 @@ namespace qmcplusplus {
         RealType logGf = -0.5e0*dot(deltaR[iat],deltaR[iat]);
 
         RealType scale=getDriftScale(Tau,G);
-        dr = thisWalker.R[iat]-newpos-scale*G[iat];
-        //dr = (*it)->R[iat]-newpos-Tau*G[iat]; 
+        //COMPLEX WARNING
+        //dr = thisWalker.R[iat]-newpos-scale*G[iat];
+        dr = thisWalker.R[iat]-newpos-scale*real(G[iat]);
 
         RealType logGb = -m_oneover2tau*dot(dr,dr);
 
         RealType prob = std::min(1.0e0,ratio*ratio*exp(logGb-logGf));
+
         //alternatively
         if(Random() < prob) { 
           moved = true;
@@ -143,7 +146,10 @@ namespace qmcplusplus {
           Psi.acceptMove(W,iat);
           W.G = G;
           W.L += dL;
-          thisWalker.Drift = scale*G;
+
+          //thisWalker.Drift = scale*G;
+          assignDrift(scale,G,thisWalker.Drift);
+
         } else {
           ++nReject; 
           W.rejectMove(iat); Psi.rejectMove(iat);
@@ -157,7 +163,8 @@ namespace qmcplusplus {
 
         thisWalker.R = W.R;
         RealType eloc=H.evaluate(W);
-        thisWalker.resetProperty(log(abs(psi)),psi,eloc);
+
+        thisWalker.resetProperty(log(abs(psi)), psi,eloc);
         H.saveProperty(thisWalker.getPropertyBase());
       }
       //Keep until everything is tested: debug routine

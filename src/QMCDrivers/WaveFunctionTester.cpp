@@ -21,13 +21,10 @@
 #include "Particle/DistanceTable.h"
 #include "ParticleBase/ParticleUtility.h"
 #include "ParticleBase/RandomSeqGenerator.h"
-#include "QMCWaveFunctions/TrialWaveFunction.h"
-#include "QMCHamiltonians/QMCHamiltonianBase.h"
 #include "Message/Communicate.h"
-#include "Utilities/Clock.h"
 #include "QMCDrivers/WaveFunctionTester.h"
+#include "QMCDrivers/DriftOperators.h"
 #include "Utilities/OhmmsInform.h"
-#include "math.h"
 using namespace qmcplusplus;
 
 
@@ -70,6 +67,12 @@ WaveFunctionTester::run() {
   } else {
     runBasicTest();
   }
+
+  RealType ene = H.evaluate(W);
+
+  cout << " Energy " << ene << endl;
+
+  cout << " argument of 1.0 " << std::arg(ComplexType(0.0,1.0)) << endl;
   return true;
 }
 
@@ -99,27 +102,28 @@ void WaveFunctionTester::runBasicTest() {
   //W.R += deltaR;
 
   W.update();
-  //DistanceTable::update(W);
-  ValueType psi =log(fabs(Psi.evaluate(W)));
-
-  ParticleSet::ParticlePos_t G(nat), G1(nat);
+  RealType psi = Psi.evaluateLog(W);
+  ParticleSet::ParticleGradient_t G(nat), G1(nat);
   ParticleSet::ParticleLaplacian_t L(nat), L1(nat);
   G = W.G;
   L = W.L;
 
   for(int iat=0; iat<nat; iat++) {
     PosType r0 = W.R[iat];
-    PosType g0;  
+    GradType g0;  
     ValueType lap = 0.0;
     for(int idim=0; idim<3; idim++) {
    
       W.R[iat][idim] = r0[idim]+delta;         
       W.update();
-      ValueType psi_p = log(fabs(Psi.evaluate(W)));
+      //ValueType psi_p = log(fabs(Psi.evaluate(W)));
+      RealType psi_p = Psi.evaluateLog(W);
 
+      
       W.R[iat][idim] = r0[idim]-delta;         
       W.update();
-      ValueType psi_m = log(fabs(Psi.evaluate(W)));
+      //ValueType psi_m = log(fabs(Psi.evaluate(W)));
+      RealType psi_m = Psi.evaluateLog(W);
       lap += psi_m + psi_p;
       g0[idim] = psi_p - psi_m;
 
@@ -146,15 +150,17 @@ void WaveFunctionTester::runBasicTest() {
   //testing ratio alone
   for(int iat=0; iat<nat; iat++) {
     W.update();
-    ValueType psi_p = log(fabs(Psi.evaluate(W)));
+    //ValueType psi_p = log(fabs(Psi.evaluate(W)));
+    RealType psi_p = Psi.evaluateLog(W);
 
     W.makeMove(iat,deltaR[iat]);
-    RealType aratio=Psi.ratio(W,iat);
+    RealType aratio = Psi.ratio(W,iat);
     W.rejectMove(iat);
 
     W.R[iat] += deltaR[iat];         
     W.update();
-    ValueType psi_m = log(fabs(Psi.evaluate(W)));
+    //ValueType psi_m = log(fabs(Psi.evaluate(W)));
+    RealType psi_m = Psi.evaluateLog(W);
 
     cout << iat << " ratio " << aratio << " " << exp(psi_m-psi_p) << endl;
   }
@@ -170,9 +176,10 @@ void WaveFunctionTester::runRatioTest() {
   while(it != it_end) {
     (*it)->DataSet.rewind();
     W.registerData(**it,(*it)->DataSet);
-    ValueType logpsi=Psi.registerData(W,(*it)->DataSet);
-    RealType vsq = Dot(W.G,W.G);
-    (*it)->Drift = Tau*W.G;
+    RealType logpsi=Psi.registerData(W,(*it)->DataSet);
+    //RealType vsq = Dot(W.G,W.G);
+    //(*it)->Drift = Tau*W.G;
+    setScaledDrift(Tau,W.G,(*it)->Drift);
 
     RealType ene = H.evaluate(W);
     (*it)->resetProperty(logpsi,Psi.getSign(),ene);
@@ -190,14 +197,14 @@ void WaveFunctionTester::runRatioTest() {
     W.copyFromBuffer(w_buffer);
     Psi.copyFromBuffer(W,w_buffer);
 
-    ValueType eold(thisWalker.Properties(LOCALENERGY));
-    ValueType logpsi(thisWalker.Properties(LOGPSI));
-    ValueType emixed(eold), enew(eold);
+    RealType eold(thisWalker.Properties(LOCALENERGY));
+    RealType logpsi(thisWalker.Properties(LOGPSI));
+    RealType emixed(eold), enew(eold);
 
     makeGaussRandom(deltaR);
 
     //mave a move
-    RealType ratio_accum=1.0;
+    RealType ratio_accum(1.0);
     for(int iat=0; iat<nat; iat++) {
       PosType dr(Tau*deltaR[iat]);
 
@@ -226,10 +233,10 @@ void WaveFunctionTester::runRatioTest() {
 
     w_buffer.rewind();
     W.copyToBuffer(w_buffer);
-    ValueType psi = Psi.evaluate(W,w_buffer);
+    RealType psi = Psi.evaluate(W,w_buffer);
 
     W.update();
-    ValueType newlogpsi=Psi.evaluateLog(W);
+    RealType newlogpsi=Psi.evaluateLog(W);
 
     cout << " Ratio " << ratio_accum*ratio_accum 
       << " | " << exp(2.0*(newlogpsi-logpsi)) << " " << ratio_accum*ratio_accum/exp(2.0*(newlogpsi-logpsi)) << endl
