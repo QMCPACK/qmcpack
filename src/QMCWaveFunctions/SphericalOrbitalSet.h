@@ -61,7 +61,7 @@ namespace qmcplusplus {
     typedef DistanceTableData::RealType        RealType;
     typedef DistanceTableData::ValueType       ValueType;
     typedef DistanceTableData::PosType         PosType;
-    typedef SphericalTensor<ValueType,PosType> SphericalHarmonics_t;
+    typedef SphericalTensor<RealType,PosType>  SphericalHarmonics_t;
     typedef ROT                                RadialOrbital_t;
 
     ///reference to a DistanceTableData (ion-electron)
