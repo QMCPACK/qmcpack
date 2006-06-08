@@ -102,6 +102,16 @@ namespace qmcplusplus {
       return psi;
     }
 
+    inline void evaluateLogAndSign(const ValueType& psi) {
+#if defined(QMC_COMPLEX)
+      SignValue = std::arg(psi);
+      LogValue = std::log(psi);
+#else
+      SignValue = (psi<0.0)?-1.0:1.0;
+      LogValue = std::log(std::abs(psi));
+#endif
+    }
+
     inline ValueType 
     evaluateLog(ParticleSet& P, 
 	        ParticleSet::ParticleGradient_t& G, 
@@ -116,13 +126,8 @@ namespace qmcplusplus {
 
       ValueType psi = 1.0;
       for(int i=0; i<Dets.size(); i++) psi *= Dets[i]->evaluate(P,G,L);
-      SignValue = (psi<0.0)?-1.0:1.0;
-      LogValue = std::log(std::abs(psi));
+      evaluateLogAndSign(psi);
       return LogValue;
-    }
-
-    virtual void resizeByWalkers(int nwalkers) {
-      for(int i=0; i<Dets.size(); i++) 	Dets[i]->resizeByWalkers(nwalkers);
     }
 
     ///return the total number of Dirac determinants
@@ -147,16 +152,14 @@ namespace qmcplusplus {
       ValueType psi = 1.0;
       for(int i=0; i<Dets.size(); i++) 
         psi *= Dets[i]->registerData(P,buf);
-      SignValue = (psi<0.0)?-1.0:1.0;
-      LogValue = std::log(std::abs(psi));
+      evaluateLogAndSign(psi);
       return LogValue;
     }
     
     ValueType updateBuffer(ParticleSet& P, PooledData<RealType>& buf){
       ValueType psi = 1.0;
       for(int i=0; i<Dets.size(); i++) psi *= Dets[i]->updateBuffer(P,buf);
-      SignValue = (psi<0.0)?-1.0:1.0;
-      LogValue = std::log(std::abs(psi));
+      evaluateLogAndSign(psi);
       return LogValue;
     }
 
@@ -200,8 +203,13 @@ namespace qmcplusplus {
 			   ParticleSet::ParticleGradient_t& dG, 
 			   ParticleSet::ParticleLaplacian_t& dL) { 
       ValueType r = Dets[DetID[iat]]->ratio(P,iat,dG,dL);
+#if defined(QMC_COMPLEX)
+      SignValue = (r.imag()/r.real()<0)?-1.0:1.0;
+      return std::log(norm(r));
+#else
       SignValue = (r<0.0)?-1.0:1.0;
       return std::log(std::abs(r));
+#endif
     }
     
     inline void restore(int iat) {
