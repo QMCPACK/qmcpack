@@ -203,10 +203,10 @@ namespace qmcplusplus {
       P.L += myL;
 
       //add the data: determinant, inverse, gradient and laplacians
-      buf.add(psiM.begin(),psiM.end());
+      buf.add(psiM.first_address(),psiM.last_address());
       buf.add(FirstAddressOfdV,LastAddressOfdV);
-      buf.add(d2psiM.begin(),d2psiM.end());
-      buf.add(myL.begin(), myL.end());
+      buf.add(d2psiM.first_address(),d2psiM.last_address());
+      buf.add(myL.first_address(), myL.last_address());
       buf.add(FirstAddressOfG,LastAddressOfG);
       buf.add(CurrentDet);
 
@@ -220,10 +220,10 @@ namespace qmcplusplus {
       ValueType x=evaluate(P,myG,myL); 
       P.G += myG;
       P.L += myL;
-      buf.put(psiM.begin(),psiM.end());
+      buf.put(psiM.first_address(),psiM.last_address());
       buf.put(FirstAddressOfdV,LastAddressOfdV);
-      buf.put(d2psiM.begin(),d2psiM.end());
-      buf.put(myL.begin(), myL.end());
+      buf.put(d2psiM.first_address(),d2psiM.last_address());
+      buf.put(myL.first_address(), myL.last_address());
       buf.put(FirstAddressOfG,LastAddressOfG);
       buf.put(CurrentDet);
 
@@ -232,10 +232,10 @@ namespace qmcplusplus {
 
     void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf) {
 
-      buf.get(psiM.begin(),psiM.end());
+      buf.get(psiM.first_address(),psiM.last_address());
       buf.get(FirstAddressOfdV,LastAddressOfdV);
-      buf.get(d2psiM.begin(),d2psiM.end());
-      buf.get(myL.begin(), myL.end());
+      buf.get(d2psiM.first_address(),d2psiM.last_address());
+      buf.get(myL.first_address(), myL.last_address());
       buf.get(FirstAddressOfG,LastAddressOfG);
       buf.get(CurrentDet);
 
@@ -251,13 +251,13 @@ namespace qmcplusplus {
     /** dump the inverse to the buffer
      */
     inline void dumpToBuffer(ParticleSet& P, PooledData<RealType>& buf) {
-      buf.add(psiM.begin(),psiM.end());
+      buf.add(psiM.first_address(),psiM.last_address());
     }
 
     /** copy the inverse from the buffer
      */
     inline void dumpFromBuffer(ParticleSet& P, PooledData<RealType>& buf) {
-      buf.get(psiM.begin(),psiM.end());
+      buf.get(psiM.first_address(),psiM.last_address());
     }
 
     /** return the ratio only for the  iat-th partcle move
@@ -306,7 +306,7 @@ namespace qmcplusplus {
 
       int kat=FirstIndex;
       for(int i=0; i<NumPtcls; i++,kat++) {
-	PosType rv =psiM_temp(i,0)*dpsiM_temp(i,0);
+	GradType rv =psiM_temp(i,0)*dpsiM_temp(i,0);
 	ValueType lap=psiM_temp(i,0)*d2psiM_temp(i,0);
         for(int j=1; j<NumOrbitals; j++) {
 	  rv += psiM_temp(i,j)*dpsiM_temp(i,j);
@@ -323,9 +323,15 @@ namespace qmcplusplus {
     ValueType logRatio(ParticleSet& P, int iat,
 		    ParticleSet::ParticleGradient_t& dG, 
 		    ParticleSet::ParticleLaplacian_t& dL) {
+      //THIS SHOULD NOT BE CALLED
       ValueType r=ratio(P,iat,dG,dL);
-      SignValue = (r<0.0)? -1.0: 1.0;
+#if defined(QMC_COMPLEX)
+      SignValue = std::arg(psi);
+      return LogValue = std::log(psi);
+#else
+      SignValue = (r<0.0)?-1.0:1.0;
       return std::log(std::abs(r));
+#endif
     }
 
 
@@ -368,7 +374,7 @@ namespace qmcplusplus {
 
       int kat=FirstIndex;
       for(int i=0; i<NumPtcls; i++,kat++) {
-	PosType rv =psiM(i,0)*dpsiM(i,0);
+	GradType rv =psiM(i,0)*dpsiM(i,0);
 	ValueType lap=psiM(i,0)*d2psiM(i,0);
 	for(int j=1; j<NumOrbitals; j++) {
 	  rv += psiM(i,j)*dpsiM(i,j);
@@ -386,17 +392,16 @@ namespace qmcplusplus {
 
     ValueType evaluate(ParticleSet& P, PooledData<RealType>& buf) {
 
-      buf.put(psiM.begin(),psiM.end());
+      buf.put(psiM.first_address(),psiM.last_address());
       buf.put(FirstAddressOfdV,LastAddressOfdV);
-      buf.put(d2psiM.begin(),d2psiM.end());
-      buf.put(myL.begin(), myL.end());
+      buf.put(d2psiM.first_address(),d2psiM.last_address());
+      buf.put(myL.first_address(), myL.last_address());
       buf.put(FirstAddressOfG,LastAddressOfG);
       buf.put(CurrentDet);
 
       return CurrentDet;
     }
 
-    void resizeByWalkers(int nwalkers);
 
     ///return the number of rows (or the number of electrons)
     inline int rows() const { return NumPtcls;}
@@ -434,7 +439,7 @@ namespace qmcplusplus {
         CurrentDet=psiM(0,0);
         ValueType y=1.0/CurrentDet;
         psiM(0,0)=y;
-        PosType rv = y*dpsiM(0,0);
+        GradType rv = y*dpsiM(0,0);
         G(FirstIndex) += rv;
         L(FirstIndex) += y*d2psiM(0,0) - dot(rv,rv);
       } else {
@@ -442,7 +447,7 @@ namespace qmcplusplus {
         //CurrentDet = Invert(psiM.data(),NumPtcls,NumOrbitals);
         int iat = FirstIndex; //the index of the particle with respect to P
         for(int i=0; i<NumPtcls; i++, iat++) {
-          PosType rv = psiM(i,0)*dpsiM(i,0);
+          GradType rv = psiM(i,0)*dpsiM(i,0);
           ValueType lap=psiM(i,0)*d2psiM(i,0);
           for(int j=1; j<NumOrbitals; j++) {
             rv += psiM(i,j)*dpsiM(i,j);
@@ -566,18 +571,6 @@ namespace qmcplusplus {
 //    //}
 //  }
   
-  template<class SPOSet>
-  void DiracDeterminant<SPOSet>::resizeByWalkers(int nwalkers) {
-    if(psiM_v.size() < nwalkers) {
-      psiM_v.resize(nwalkers);
-      dpsiM_v.resize(nwalkers);
-      d2psiM_v.resize(nwalkers);
-      for(int iw=0; iw<nwalkers; iw++) psiM_v[iw].resize(NumPtcls, NumOrbitals);
-      for(int iw=0; iw<nwalkers; iw++) dpsiM_v[iw].resize(NumPtcls, NumOrbitals);
-      for(int iw=0; iw<nwalkers; iw++) d2psiM_v[iw].resize(NumPtcls, NumOrbitals);
-    }
-    Phi.resizeByWalkers(nwalkers);
-  }
 }
 #endif
 /***************************************************************************
