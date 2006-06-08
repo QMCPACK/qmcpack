@@ -9,15 +9,41 @@
 // that vector (copy the pointer so that FFTing the data causes the 
 // data in the original Vector to be transformed.
 
+// also in the future move everything to the base class and just have
+// an FFTEngine handed to this by some builder
+
 namespace APPNAMESPACE {
-template<unsigned dimensions, typename precision, template<unsigned, class> class FFTEngine>
-class FFTAbleVector : public Vector<precision> {
-private:
+   
+// dummy base
+template<typename precision>
+class FFTAbleVectorBase : public Vector<precision> { 
+protected:
   int NumPts;
   // would like to use precision here, but precision is a complex type
   // and this needs to be a real type commensurate with precision
-  double ForwardNorm; 
+  double ForwardNorm;
   double BackwardNorm;
+public:
+  FFTAbleVectorBase() : NumPts(1), ForwardNorm(1.0), BackwardNorm(1.0) { ; }
+  virtual ~FFTAbleVectorBase() { ; }
+  FFTAbleVectorBase(const FFTAbleVectorBase& rhs) : Vector<precision>(rhs), NumPts(rhs.NumPts), 
+     ForwardNorm(rhs.ForwardNorm), BackwardNorm(rhs.BackwardNorm) { ; }
+  virtual FFTAbleVectorBase* clone() const = 0;
+  inline void setForwardNorm(double fn) { ForwardNorm = fn; }
+  inline void setBackwardNorm(double bn) { BackwardNorm = bn; }
+  virtual void transformForward() = 0;
+  virtual void transformBackward() = 0;
+   
+};
+   
+template<unsigned dimensions, typename precision, template<unsigned, class> class FFTEngine>
+class FFTAbleVector : public FFTAbleVectorBase<precision> {	
+private:
+ typedef FFTAbleVectorBase<precision> base;
+  using base::NumPts;
+  using base::ForwardNorm;
+  using base::BackwardNorm;
+
   TinyVector<int, dimensions> SizeDims;
   FFTEngine<dimensions, precision> MyEngine;
   void initialize(const TinyVector<int, dimensions>& DimSizes) {
@@ -37,8 +63,7 @@ private:
    */
 public:
   FFTAbleVector(int sizeDim1, int sizeDim2 = 0, int sizeDim3 = 0, int sizeDim4 = 0,
-                int sizeDim5 = 0, int sizeDim6 = 0, int sizeDim7 = 0, int sizeDim8 = 0) : 
-  NumPts(1), ForwardNorm(1.0), BackwardNorm(1.0) {
+                int sizeDim5 = 0, int sizeDim6 = 0, int sizeDim7 = 0, int sizeDim8 = 0) {
     TinyVector<int, 8> DimSizes;
     DimSizes[0] = sizeDim1; DimSizes[1] = sizeDim2; DimSizes[2] = sizeDim3;
     DimSizes[3] = sizeDim4; DimSizes[4] = sizeDim5; DimSizes[5] = sizeDim6;
@@ -46,15 +71,19 @@ public:
     initialize(DimSizes);
   }
   
-  FFTAbleVector(const TinyVector<int, dimensions>& DimSizes) : NumPts(1), ForwardNorm(1.0), BackwardNorm(1.0) {
+  FFTAbleVector(const TinyVector<int, dimensions>& DimSizes) {
     initialize(DimSizes);
   }
-  
-  FFTAbleVector(const FFTAbleVector& rhs) : NumPts(rhs.NumPts), ForwardNorm(rhs.ForwardNorm),
-  BackwardNorm(rhs.NumPts), SizeDims(rhs.SizeDims), Vector<precision>(rhs) {
+
+  FFTAbleVector(const FFTAbleVector& rhs) : FFTAbleVectorBase<precision>(rhs) {
+    SizeDims = rhs.SizeDims;
     MyEngine.initialize(SizeDims.begin(), this->data());
+  }  
+   
+  FFTAbleVector* clone() const {
+    return new FFTAbleVector(*this);
   }
-  
+ 
   inline void transformForward() {
     MyEngine.transformForward(this->data());
     (*this) *= ForwardNorm;
@@ -63,10 +92,7 @@ public:
   inline void transformBackward() {
     MyEngine.transformBackward(this->data());
     (*this) *= BackwardNorm;
-  }
-  
-  inline void setForwardNorm(double fn) { ForwardNorm = fn; }
-  inline void setBackwardNorm(double bn) { BackwardNorm = bn; }
+  }  
 };
 }
 #endif
