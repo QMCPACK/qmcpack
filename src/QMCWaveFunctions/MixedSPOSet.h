@@ -81,9 +81,6 @@ namespace qmcplusplus {
       if(LocalizedOrbitals) LocalizedOrbitals->resetTargetParticleSet(P);
     }
 
-    inline void resizeByWalkers(int nw) {
-      if(LocalizedOrbitals) LocalizedOrbitals->resizeByWalkers(nw);
-    }
 
     /** evaluate the values of the single-particle orbitals 
      *

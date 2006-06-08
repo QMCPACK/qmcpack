@@ -98,12 +98,6 @@ namespace qmcplusplus {
 
     }
 
-    inline void resizeByWalkers(int nw) {
-      cout << "resizeByWalkers not yet coded." << endl;
-      OHMMS::Controller->abort();
-      //      BasisSet->resizeByWalkers(nw);
-    }
-
 
     ///resize the internal storage of BasisSet by the number of particles
     //keep same number of basis elements.
