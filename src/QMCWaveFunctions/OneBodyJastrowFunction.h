@@ -74,11 +74,11 @@ namespace qmcplusplus {
     const ParticleSet& CenterRef;
     const DistanceTableData* d_table;
 
-    ValueType curVal, curLap;
-    GradType curGrad;
-    ValueVectorType U,d2U;
-    GradVectorType dU;
-    ValueType *FirstAddressOfdU, *LastAddressOfdU;
+    RealType curVal, curLap;
+    PosType curGrad;
+    ParticleAttrib<RealType> U,d2U;
+    ParticleAttrib<PosType> dU;
+    RealType *FirstAddressOfdU, *LastAddressOfdU;
     vector<FT*> Fs;
     vector<FT*> Funique;
 
@@ -135,14 +135,14 @@ namespace qmcplusplus {
 		          ParticleSet::ParticleLaplacian_t& L) {
       LogValue=0.0;
       U=0.0;
-      ValueType dudr, d2udr2;
+      RealType dudr, d2udr2;
       for(int i=0; i<d_table->size(SourceIndex); i++) {
         FT* func=Fs[i];
         if(func == 0) continue;
 	for(int nn=d_table->M[i]; nn<d_table->M[i+1]; nn++) {
 	  int j = d_table->J[nn];
           //ValueType uij= F[d_table->PairID[nn]]->evaluate(d_table->r(nn), dudr, d2udr2);
-          ValueType uij= func->evaluate(d_table->r(nn), dudr, d2udr2);
+          RealType uij= func->evaluate(d_table->r(nn), dudr, d2udr2);
           LogValue -= uij; U[j] += uij;
 	  dudr *= d_table->rinv(nn);
 	  G[j] -= dudr*d_table->dr(nn);
@@ -191,7 +191,7 @@ namespace qmcplusplus {
       curVal=0.0;
       curLap=0.0;
       curGrad = 0.0;
-      ValueType dudr, d2udr2;
+      RealType dudr, d2udr2;
       for(int i=0, nn=iat; i<d_table->size(SourceIndex); i++,nn+= n) {
         if(Fs[i]) {
           curVal += Fs[i]->evaluate(d_table->Temp[i].r1,dudr,d2udr2);
@@ -217,7 +217,7 @@ namespace qmcplusplus {
       curVal=0.0;
       curLap=0.0;
       curGrad = 0.0;
-      ValueType dudr, d2udr2;
+      RealType dudr, d2udr2;
       for(int i=0, nn=iat; i<d_table->size(SourceIndex); i++,nn+= n) {
         if(Fs[i]) {
           curVal += Fs[i]->evaluate(d_table->Temp[i].r1,dudr,d2udr2);
@@ -264,7 +264,7 @@ namespace qmcplusplus {
 
       LogValue = 0.0;
       U=0.0; dU=0.0; d2U=0.0;
-      ValueType uij, dudr, d2udr2;
+      RealType uij, dudr, d2udr2;
       for(int i=0; i<d_table->size(SourceIndex); i++) {
         FT* func=Fs[i];
         if(func == 0) continue;
@@ -298,7 +298,7 @@ namespace qmcplusplus {
     ValueType updateBuffer(ParticleSet& P, BufferType& buf)  {
       LogValue = 0.0;
       U=0.0; dU=0.0; d2U=0.0;
-      ValueType uij, dudr, d2udr2;
+      RealType uij, dudr, d2udr2;
       for(int i=0; i<d_table->size(SourceIndex); i++) {
         FT* func=Fs[i];
         if(func == 0) continue;
