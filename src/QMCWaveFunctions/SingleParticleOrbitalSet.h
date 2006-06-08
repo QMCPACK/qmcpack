@@ -55,7 +55,6 @@ struct SingleParticleOrbitalSet {
 
   void reset() { for(int i=0; i<Phi.size(); i++) Phi[i]->reset(); }
   void resetTargetParticleSet(ParticleSet& P) { }
-  void resizeByWalkers(int ) { }
 
   inline value_type
   evaluate(const ParticleSet& P, int iat, int jorb) {
