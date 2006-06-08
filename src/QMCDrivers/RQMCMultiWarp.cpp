@@ -22,7 +22,7 @@
 #include "Utilities/OhmmsInfo.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "Particle/HDFWalkerIO.h"
-#include "ParticleBase/ParticleUtility.h"
+#include "ParticleBase/ParticleAttribOps.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "Message/Communicate.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
@@ -92,7 +92,8 @@ namespace qmcplusplus {
       RealType eloc= H1[ipsi]->evaluate(*WW[ipsi]);
       NewBead->Properties(ipsi,LOCALENERGY)= eloc;
       H1[ipsi]->saveProperty(NewBead->getPropertyBase(ipsi));
-      *(NewBead->Gradients[ipsi])=WW[ipsi]->G;
+      //*(NewBead->Gradients[ipsi])=WW[ipsi]->G;
+      Copy(WW[ipsi]->G,*(NewBead->Gradients[ipsi]));
       NewBead->BeadSignWgt[ipsi]=1;
       NewBead->Action(ipsi,MinusDirection)=0.25*Tau*Dot(*NewBead->Gradients[ipsi],*NewBead->Gradients[ipsi]);
       NewBead->Action(ipsi,PlusDirection)=NewBead->Action(ipsi,MinusDirection);
@@ -296,7 +297,8 @@ namespace qmcplusplus {
         RealType eloc= H1[ipsi]->evaluate(*WW[ipsi]);
         curW.Properties(ipsi,LOCALENERGY)= eloc;
         H1[ipsi]->saveProperty(curW.getPropertyBase(ipsi));
-        *curW.Gradients[ipsi]=WW[ipsi]->G;
+        //*curW.Gradients[ipsi]=WW[ipsi]->G;
+        Copy(WW[ipsi]->G,*curW.Gradients[ipsi]);
         curW.Properties(ipsi,LOGJACOB)=std::log(std::fabs(Jacobian[ipsi]));
 
         ///Initialize Kinetic Action
@@ -418,7 +420,7 @@ namespace qmcplusplus {
         //cout << "Psi: " << ipsi << " LA " << LinkAction << "   LJ " << 
         //        (*bead)->Properties(ipsi,LOGJACOB) << endl;
       } 
-      bead++;
+      ++bead;
     }
     RealType spring_norm( -1.5e0 * std::log(4*std::acos(0.e0)) * (*bead)->Drift.size() * Reptile->Last );
     for(int ipsi=0; ipsi<nPsi; ipsi++) 
@@ -471,7 +473,7 @@ namespace qmcplusplus {
     IndexType nAcceptTot = 0;
     IndexType nRejectTot = 0;
 
-    std::vector<double>AveEloc,AveWeight;
+    std::vector<RealType> AveEloc,AveWeight;
     AveEloc.resize(nPsi);
     AveWeight.resize(nPsi);
     std::string filename(RootName);
@@ -733,6 +735,7 @@ namespace qmcplusplus {
     //Compute HEAD action in forward direction
     for(int ipsi=0; ipsi<nPsi; ipsi++) {
       gRand = Warped_deltaR[ipsi]-Tau*(*head->Gradients[ipsi]);
+      //head->Action(ipsi,forward)=0.5*m_oneover2tau*Dot(gRand,gRand);
       head->Action(ipsi,forward)=0.5*m_oneover2tau*Dot(gRand,gRand);
     }
 
@@ -751,10 +754,12 @@ namespace qmcplusplus {
 
       //Save properties
       H1[ipsi]->saveProperty(NewBeadProp);
-      *(NewBead->Gradients[ipsi])= WW[ipsi]->G;
+      //*(NewBead->Gradients[ipsi])= WW[ipsi]->G;
+      Copy(WW[ipsi]->G,*(NewBead->Gradients[ipsi]));
 
       //Compute the backward part of the Kinetic action
-      gRand=Warped_deltaR[ipsi]+Tau*WW[ipsi]->G;
+      //gRand=Warped_deltaR[ipsi]+Tau*WW[ipsi]->G;
+      PAOps<RealType,DIM>::axpy(Tau,WW[ipsi]->G,Warped_deltaR[ipsi],gRand);
       NewBead->Action(ipsi,backward)=0.5*m_oneover2tau*Dot(gRand,gRand);
 
       NewBead->Action(ipsi,Directionless)=0.5*Tau*eloc;
