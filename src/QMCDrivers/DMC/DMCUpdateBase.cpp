@@ -18,6 +18,7 @@
 #include "QMCDrivers/DMC/DMCUpdateBase.h"
 #include "ParticleBase/ParticleUtility.h"
 #include "ParticleBase/RandomSeqGenerator.h"
+#include "QMCDrivers/DriftOperators.h"
 #include "Message/CommCreate.h"
 
 namespace qmcplusplus { 
@@ -62,10 +63,11 @@ namespace qmcplusplus {
     while(it != it_end) {
       (*it)->DataSet.rewind();
       W.registerData(**it,(*it)->DataSet);
-      ValueType logpsi=Psi.registerData(W,(*it)->DataSet);
+      RealType logpsi=Psi.registerData(W,(*it)->DataSet);
 
-      RealType scale=getDriftScale(Tau,W.G);
-      (*it)->Drift = scale*W.G;
+      //RealType scale=getDriftScale(Tau,W.G);
+      //(*it)->Drift = scale*W.G;
+      setScaledDrift(Tau,W.G,(*it)->Drift);
 
       RealType ene = H.evaluate(W);
       (*it)->resetProperty(logpsi,Psi.getSign(),ene);
@@ -79,12 +81,15 @@ namespace qmcplusplus {
       Walker_t::Buffer_t& w_buffer((*it)->DataSet);
       w_buffer.rewind();
       W.updateBuffer(**it,w_buffer);
-      ValueType logpsi=Psi.updateBuffer(W,w_buffer);
+      RealType logpsi=Psi.updateBuffer(W,w_buffer);
       RealType enew= H.evaluate(W);
       (*it)->resetProperty(logpsi,Psi.getSign(),enew);
       H.saveProperty((*it)->getPropertyBase());
-      RealType scale=getDriftScale(Tau,W.G);
-      (*it)->Drift = scale*W.G;
+
+      //RealType scale=getDriftScale(Tau,W.G);
+      //(*it)->Drift = scale*W.G;
+      setScaledDrift(Tau,W.G,(*it)->Drift);
+
       ++it;
     }
   }

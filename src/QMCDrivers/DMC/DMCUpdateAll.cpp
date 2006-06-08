@@ -20,6 +20,7 @@
 #include "QMCDrivers/DMC/DMCUpdateAll.h"
 #include "ParticleBase/ParticleUtility.h"
 #include "ParticleBase/RandomSeqGenerator.h"
+#include "QMCDrivers/DriftOperators.h"
 
 namespace qmcplusplus { 
 
@@ -64,7 +65,7 @@ namespace qmcplusplus {
       W.update();
       
       //evaluate wave function
-      ValueType logpsi(Psi.evaluateLog(W));
+      RealType logpsi(Psi.evaluateLog(W));
 
       bool accepted=false; 
       if((*branchEngine)(Psi.getSign(),thisWalker.Properties(SIGN))) {
@@ -73,8 +74,10 @@ namespace qmcplusplus {
         RealType enew(H.evaluate(W));
         RealType logGf = -0.5*Dot(deltaR,deltaR);
         //converting gradients to drifts, D = tau*G (reuse G)
-        RealType scale=getDriftScale(Tau,W.G);
-        drift = scale*W.G;
+        //RealType scale=getDriftScale(Tau,W.G);
+        //drift = scale*W.G;
+        setScaledDrift(Tau,W.G,drift);
+
         deltaR = (*it)->R - W.R - drift;
         RealType logGb = -m_oneover2tau*Dot(deltaR,deltaR);
 
@@ -149,7 +152,7 @@ namespace qmcplusplus {
       W.update();
       
       //evaluate wave function
-      ValueType logpsi(Psi.evaluateLog(W));
+      RealType logpsi(Psi.evaluateLog(W));
 
       bool accepted=false; 
       if((*branchEngine)(Psi.getSign(),thisWalker.Properties(SIGN))) {
@@ -159,8 +162,10 @@ namespace qmcplusplus {
         RealType enew(H.evaluate(W));
         RealType logGf = -0.5*Dot(deltaR,deltaR);
         //converting gradients to drifts, D = tau*G (reuse G)
-        RealType scale=getDriftScale(Tau,W.G);
-        drift = scale*W.G;
+        //RealType scale=getDriftScale(Tau,W.G);
+        //drift = scale*W.G;
+        setScaledDrift(Tau,W.G,drift);
+
         deltaR = (*it)->R - W.R - drift;
         RealType logGb = -m_oneover2tau*Dot(deltaR,deltaR);
 

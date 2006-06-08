@@ -42,6 +42,27 @@ namespace qmcplusplus {
     DMCUpdatePbyPWithRejection& operator=(const DMCUpdatePbyPWithRejection&) { return *this;}
 
   };
+
+  class DMCUpdatePbyPWithKill: public DMCUpdateBase {
+
+  public:
+
+    /// Constructor.
+    DMCUpdatePbyPWithKill(ParticleSet& w, TrialWaveFunction& psi, 
+        QMCHamiltonian& h, RandomGenerator_t& rg);
+    ///destructor
+    ~DMCUpdatePbyPWithKill();
+
+    void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end);
+
+  private:
+
+    /// Copy Constructor (disabled)
+    DMCUpdatePbyPWithKill(const DMCUpdatePbyPWithKill& a): DMCUpdateBase(a){ }
+    /// Copy operator (disabled).
+    DMCUpdatePbyPWithKill& operator=(const DMCUpdatePbyPWithKill&) { return *this;}
+
+  };
 }
 
 #endif

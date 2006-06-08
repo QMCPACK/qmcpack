@@ -54,13 +54,13 @@ namespace qmcplusplus {
     branchEngine->initWalkerController(Tau,fixW);
 
     if(Mover ==0) {
-      //if(killNC) {
-      //  app_log() << "Walkers will be killed if a node crossing is detected." << endl;
-      //} else {
-      //  app_log() << "Walkers will be kept even if a node crossing is detected." << endl;
-      //}
-      app_log() << "  Reject a move when the node crossing is detected." << endl;
-      Mover = new DMCUpdatePbyPWithRejection(W,Psi,H,Random);
+      if(killNC) {
+        app_log() << "  Kll a walker, if a node crossing is detected." << endl;
+        Mover = new DMCUpdatePbyPWithKill(W,Psi,H,Random);
+      } else {
+        app_log() << "  Reject a move when the node crossing is detected." << endl;
+        Mover = new DMCUpdatePbyPWithRejection(W,Psi,H,Random);
+      }
     }
 
     //set the collection mode for the estimator

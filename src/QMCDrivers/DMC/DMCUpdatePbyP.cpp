@@ -23,6 +23,7 @@
 #include "Particle/HDFWalkerIO.h"
 #include "ParticleBase/ParticleUtility.h"
 #include "ParticleBase/RandomSeqGenerator.h"
+#include "QMCDrivers/DriftOperators.h"
 #include "Message/CommCreate.h"
 
 namespace qmcplusplus { 
@@ -51,8 +52,8 @@ namespace qmcplusplus {
       //thisWalker.Weight = 1.0e0;
       //thisWalker.Multiplicity=1.0e0;
       //save old local energy
-      ValueType eold(thisWalker.Properties(LOCALENERGY));
-      ValueType emixed(eold), enew(eold);
+      RealType eold(thisWalker.Properties(LOCALENERGY));
+      RealType emixed(eold), enew(eold);
 
       W.R = thisWalker.R;
       w_buffer.rewind();
@@ -87,7 +88,7 @@ namespace qmcplusplus {
           RealType scale=Tau;
           //ValueType vsq = Dot(G,G);
           //ValueType scale = ((-1.0+sqrt(1.0+2.0*Tau*vsq))/vsq);
-          dr = thisWalker.R[iat]-newpos-scale*G[iat]; 
+          dr = thisWalker.R[iat]-newpos-scale*real(G[iat]); 
           RealType logGb = -m_oneover2tau*dot(dr,dr);
           RealType prob = std::min(1.0,ratio*ratio*exp(logGb-logGf));
           if(RandomGen() < prob) { 
@@ -96,7 +97,9 @@ namespace qmcplusplus {
             Psi.acceptMove(W,iat);
             W.G = G;
             W.L += dL;
-            thisWalker.Drift = scale*G;
+
+            assignDrift(scale,G,thisWalker.Drift);
+            
             rr_accepted+=rr;
           } else {
             ++nRejectTemp; 
@@ -111,7 +114,7 @@ namespace qmcplusplus {
         thisWalker.R = W.R;
         w_buffer.rewind();
         W.copyToBuffer(w_buffer);
-        ValueType psi = Psi.evaluate(W,w_buffer);
+        RealType psi = Psi.evaluate(W,w_buffer);
         enew= H.evaluate(W);
         thisWalker.resetProperty(log(abs(psi)),psi,enew);
         H.saveProperty(thisWalker.getPropertyBase());
@@ -138,6 +141,24 @@ namespace qmcplusplus {
       nReject += nRejectTemp;
       ++it;
     }
+  }
+
+  /// Constructor.
+  DMCUpdatePbyPWithKill::DMCUpdatePbyPWithKill(ParticleSet& w, TrialWaveFunction& psi, QMCHamiltonian& h,
+      RandomGenerator_t& rg): DMCUpdateBase(w,psi,h,rg)
+    { }
+  
+  /// destructor
+  DMCUpdatePbyPWithKill::~DMCUpdatePbyPWithKill() { }
+
+  /** advance all the walkers with killnode==no
+   * @param nat number of particles to move
+   * 
+   * When killnode==no, any move resulting in node-crossing is treated
+   * as a normal rejection.
+   */
+  void DMCUpdatePbyPWithKill::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end) {
+    app_error() << "  DMCUpdatePbyPWithKill::advanceWalkers in not implemented." << endl;
   }
 }
 
