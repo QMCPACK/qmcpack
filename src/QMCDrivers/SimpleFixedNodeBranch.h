@@ -26,11 +26,11 @@
 
 namespace qmcplusplus {
 
-  template<class T, class GT>
-  inline T getDriftScale(T tau, const GT& ga) {
-    T vsq=Dot(ga,ga);
-    return (vsq<numeric_limits<T>::epsilon())? tau:((-1.0+sqrt(1.0+2.0*tau*vsq))/vsq);
-  }
+//  template<class T, class GT>
+//  inline T getDriftScale(T tau, const GT& ga) {
+//    T vsq=ParticleAttribOps<T,OHMMS_DIM>::Dot(ga,ga);
+//    return (vsq<numeric_limits<T>::epsilon())? tau:((-1.0+sqrt(1.0+2.0*tau*vsq))/vsq);
+//  }
 
   /** Implements branching algorithm for the fixed-node Diffusion Monte Carlo
    *
