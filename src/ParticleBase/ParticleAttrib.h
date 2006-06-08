@@ -187,6 +187,12 @@ public:
 
   inline iterator begin() { return X.begin();}
   inline iterator end() { return X.end()-nGhosts;}
+
+  inline Type_t* first_address() { return &(X[0]);}
+  inline const Type_t* first_address() const { return &(X[0]);}
+
+  inline Type_t* last_address() { return &(X[0])+nLocal;}
+  inline const Type_t* last_address() const { return &(X[0])+nLocal;}
   //@}
 
   inline void begin_node(std::ostream& os) const {
