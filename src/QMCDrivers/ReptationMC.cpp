@@ -67,7 +67,7 @@ namespace qmcplusplus {
       W.R = cur->R;
       //DistanceTable::update(W);
       W.update();
-      ValueType logpsi(Psi.evaluateLog(W));
+      RealType logpsi(Psi.evaluateLog(W));
       RealType  eloc_cur = H.evaluate(W);
       cur->resetProperty(logpsi,Psi.getSign(),eloc_cur);
       H.saveProperty(cur->getPropertyBase());
@@ -91,7 +91,7 @@ namespace qmcplusplus {
         W.update();
         
         //evaluate wave function
-        ValueType logpsic(Psi.evaluateLog(W));
+        RealType logpsic(Psi.evaluateLog(W));
         RealType e0=H.evaluate(W);
         cur = (*Reptile)[i+1];	  
         cur->resetProperty(logpsic,Psi.getSign(),e0);
@@ -202,7 +202,7 @@ namespace qmcplusplus {
       W.update();
       
       //evaluate wave function
-      ValueType logpsi(Psi.evaluateLog(W));
+      RealType logpsi(Psi.evaluateLog(W));
       
       //update the properties of the front chain
       //RealType eloc_yp = head->Properties(LOCALENERGY) = H.evaluate(W);
