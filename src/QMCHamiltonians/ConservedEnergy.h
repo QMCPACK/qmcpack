@@ -20,6 +20,7 @@
 #include "Particle/ParticleSet.h"
 #include "Particle/WalkerSetRef.h"
 #include "QMCHamiltonians/QMCHamiltonianBase.h"
+#include "ParticleBase/ParticleAttribOps.h"
 
 namespace qmcplusplus {
 
@@ -67,12 +68,8 @@ namespace qmcplusplus {
 
     Return_t 
     evaluate(ParticleSet& P) {
-      RealType gradsq = 0.0;
-      RealType lap = 0.0;
-      for(int iat=0; iat<P.getTotalNum(); iat++) {
-        gradsq += dot(P.G(iat),P.G(iat));
-        lap += P.L(iat);
-      }
+      RealType gradsq = Dot(P.G,P.G);
+      RealType lap = Sum(P.L); 
       Value = lap+2.0*gradsq;
       return 0.0;
     }

@@ -22,11 +22,12 @@
 #include "QMCHamiltonians/BareKineticEnergy.h"
 #include "QMCHamiltonians/CoulombPotential.h"
 #include "QMCHamiltonians/IonIonPotential.h"
-#include "QMCHamiltonians/LocalPPotential.h"
-#include "QMCHamiltonians/NonLocalPPotential.h"
-#include "QMCHamiltonians/LocalCorePolPotential.h"
-#include "QMCHamiltonians/ECPotentialBuilder.h"
 #include "QMCHamiltonians/HarmonicPotential.h"
+#include "QMCHamiltonians/LocalCorePolPotential.h"
+#if !defined(QMC_COMPLEX)
+#include "QMCHamiltonians/NonLocalPPotential.h"
+#include "QMCHamiltonians/ECPotentialBuilder.h"
+#endif
 #if defined(HAVE_LIBFFTW)
 #include "QMCHamiltonians/ModInsKineticEnergy.h"
 #include "QMCHamiltonians/MomentumDistribution.h"
@@ -123,7 +124,8 @@ namespace qmcplusplus {
           } else if(pot_type == "cpp") {
             addCorePolPotential(cur);
           }
-        } else if(cname == "harmonic") {
+        } 
+        else if(cname == "harmonic") {
           PtclPoolType::iterator pit(ptclPool.find(nuclei));
           if(pit != ptclPool.end()) {
             ParticleSet* ion=(*pit).second;
@@ -175,17 +177,11 @@ namespace qmcplusplus {
 	} else {
 	  targetH->addOperator(new CoulombPotentialAB(*ion,*targetPtcl),"Coulomb");
 	}
-      } else if(htype == "siesta" || htype=="pseudo") {
-        if(!psiPool.empty())  {
-          TrialWaveFunction* psi = (*(psiPool.begin())).second->targetPsi;
-          targetH->addOperator(new NonLocalPPotential(*ion,*targetPtcl,*psi),"NonLocal");
-        }
-      //} else if(htype == "cpp") {
-      //  xmlChar* att2=xmlGetProp(cur,(const xmlChar*)"species");
-      //  string stype("Ge");
-      //  if(att2) stype = (const char*)att2;
-      //  targetH->add(new LocalPPotential(*ion,*qp), "PseudoPot");
-      //  targetH->add(new LocalCorePolPotential(*ion,*qp), "GeCPP");
+//      } else if(htype == "siesta" || htype=="pseudo") {
+//        if(!psiPool.empty())  {
+//          TrialWaveFunction* psi = (*(psiPool.begin())).second->targetPsi;
+//          targetH->addOperator(new NonLocalPPotential(*ion,*targetPtcl,*psi),"NonLocal");
+//        }
       } else {
         ERRORMSG(htype << " is diabled")
       }
@@ -258,6 +254,7 @@ namespace qmcplusplus {
   void 
   HamiltonianFactory::addPseudoPotential(xmlNodePtr cur) {
 
+#if !defined(QMC_COMPLEX)
     string src("i"),title("PseudoPot"),wfname("invalid"),format("old");
 
     OhmmsAttributeSet pAttrib;
@@ -300,6 +297,7 @@ namespace qmcplusplus {
       ECPotentialBuilder ecp(*targetH,*ion,*targetPtcl,*psi);
       ecp.put(cur);
     }
+#endif
   }
 
   void 

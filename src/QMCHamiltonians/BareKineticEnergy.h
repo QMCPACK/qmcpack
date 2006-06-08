@@ -19,6 +19,7 @@
 #include "Particle/ParticleSet.h"
 #include "Particle/WalkerSetRef.h"
 #include "QMCHamiltonians/QMCHamiltonianBase.h"
+#include "ParticleBase/ParticleAttribOps.h"
 
 namespace qmcplusplus {
 
@@ -60,10 +61,9 @@ namespace qmcplusplus {
 
     inline Return_t 
     evaluate(ParticleSet& P) {
-      Value = 0.0;
-      for(int i=0; i<P.getTotalNum(); i++) {
-        Value += dot(P.G(i),P.G(i)) + P.L(i);
-      }
+      Value = Dot(P.G,P.G) + Sum(P.L); 
+      //Value = 0.0;
+      //Value=Dot(P.G,P.G)+Sum(P.L);
       return Value*=-OneOver2M;
     }
     
