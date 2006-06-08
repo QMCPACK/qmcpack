@@ -247,8 +247,13 @@ namespace qmcplusplus {
       W.registerData(thisWalker,thisWalker.DataSet);
 
       Return_t*  saved=Records[iw];
+#if defined(QMC_COMPLEX)
+      app_error() << " Optimization is not working with complex wavefunctions yet" << endl;
+      app_error() << "  Needs to fix TrialWaveFunction::evaluateDeltaLog " << endl;
+#else
       Psi.evaluateDeltaLog(W, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], thisWalker.Drift, dL);
-      thisWalker.DataSet.add(dL.begin(),dL.end());
+#endif
+      thisWalker.DataSet.add(dL.first_address(),dL.last_address());
       Etarget += saved[ENERGY_TOT] = H.evaluate(W);
       saved[ENERGY_FIXED] = H.getInvariantEnergy();
 
