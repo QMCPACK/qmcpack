@@ -41,11 +41,11 @@ namespace qmcplusplus {
   NJABBuilder::InFuncType* 
   NJABBuilder::createInFunc(const string& jastfunction) {
     if(jastfunction == "nocusp") {
-      return new NoCuspJastrow<ValueType>;
+      return new NoCuspJastrow<RealType>;
     } else if(jastfunction == "pade") {
-      return new PadeJastrow<ValueType>;
+      return new PadeJastrow<RealType>;
     } else if(jastfunction == "pade2") {
-      return new PadeJastrow2<ValueType>;
+      return new PadeJastrow2<RealType>;
     }
     return 0;
   }

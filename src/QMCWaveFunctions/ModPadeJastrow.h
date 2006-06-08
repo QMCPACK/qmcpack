@@ -28,21 +28,20 @@ template<class T>
 struct ModPadeJastrow: public JastrowFunctorBase<T> {
 
   typedef typename JastrowFunctorBase<T>::real_type real_type;
-  typedef typename JastrowFunctorBase<T>::value_type value_type;
 
   ///coefficients
-  T A;
-  T B;
-  T Zeff;
+  real_type A;
+  real_type B;
+  real_type Zeff;
 
-  T Coeff;
-  T mAB;
+  real_type Coeff;
+  real_type mAB;
 
   /** constructor
    * @param a A coefficient
    * @param samespin boolean to indicate if this function is for parallel spins
    */
-  ModPadeJastrow(T a=-0.5, T b=1): Zeff(1.0) {reset(a,b);}
+  ModPadeJastrow(real_type a=-0.5, real_type b=1): Zeff(1.0) {reset(a,b);}
 
   /** reset the internal variables.
    */
@@ -54,7 +53,7 @@ struct ModPadeJastrow: public JastrowFunctorBase<T> {
   /** reset the internal variables.
    *@param a New Jastrow parameter a 
    */
-  inline void reset(T a, T b) {
+  inline void reset(real_type a, real_type b) {
     A = a;
     B = b;
     reset();
@@ -64,7 +63,7 @@ struct ModPadeJastrow: public JastrowFunctorBase<T> {
    * @param r the distance
    * @return \f$ u(r) = \frac{A}{r}\left[1-\exp(-\frac{r}{F})\right]\f$
    */
-  inline T evaluate(T r) {
+  inline real_type evaluate(real_type r) {
     return Coeff*(1.0-exp(-B*r));
   }
 
@@ -73,8 +72,8 @@ struct ModPadeJastrow: public JastrowFunctorBase<T> {
      @param d2udr second derivative
      @return the value
   */
-  inline T evaluate(T r, T& dudr, T& d2udr2) {
-    T expmar=exp(-B*r);
+  inline real_type evaluate(real_type r, real_type& dudr, real_type& d2udr2) {
+    real_type expmar=exp(-B*r);
     dudr=A*expmar;
     d2udr2=mAB*expmar;
     return Coeff*(1.0-expmar);
@@ -82,13 +81,13 @@ struct ModPadeJastrow: public JastrowFunctorBase<T> {
 
   /** return a value at r
    */
-  value_type f(real_type r) {
+  real_type f(real_type r) {
     return evaluate(r);
   }
 
   /** return a derivative at r
    */
-  value_type df(real_type r) {
+  real_type df(real_type r) {
     return A*exp(-B*r);
   }
 

@@ -39,7 +39,7 @@ namespace qmcplusplus {
 
   NJAABuilder::InFuncType* 
   NJAABuilder::createInFunc(const string& jastfunction) {
-    return new PadeJastrow<ValueType>;
+    return new PadeJastrow<RealType>;
     //if(jastfunction == "pade") {
     //  return PadeJastrow<ValueType>;
     //} else if(jastfunction == "rpa") {

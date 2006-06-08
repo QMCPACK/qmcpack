@@ -31,7 +31,7 @@ namespace qmcplusplus {
    */
   struct NJAABuilder: public OrbitalBuilderBase {
 
-    typedef NumericalJastrow<ValueType> FuncType;
+    typedef NumericalJastrow<RealType> FuncType;
     typedef FuncType::FNIN              InFuncType;
     typedef FuncType::FNOUT             OutFuncType;
 
