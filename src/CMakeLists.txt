@@ -54,7 +54,6 @@ IF(HAVE_LIBGSL)
 ENDIF(HAVE_LIBGSL)
 
 SET(WFSBASE
-  QMCWaveFunctions/JastrowBuilder.cpp
   QMCWaveFunctions/TrialWaveFunction.cpp
 )
 
@@ -92,7 +91,7 @@ ENDIF(HAVE_OOMPI)
 
 SUBDIRS(QMCApp)
 
-#do not build qmctools with mpi
-IF(NOT HAVE_MPI)
+#do not build qmctools with mpi or complex
+IF(NOT HAVE_MPI AND NOT QMC_COMPLEX)
   SUBDIRS(QMCTools)
-ENDIF(NOT HAVE_MPI)
+ENDIF(NOT HAVE_MPI AND NOT QMC_COMPLEX)
