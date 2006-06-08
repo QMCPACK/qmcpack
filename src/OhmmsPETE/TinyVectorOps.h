@@ -17,6 +17,7 @@
 // -*- C++ -*-
 #ifndef OHMMS_TINYVECTOR_OPERATORS_H
 #define OHMMS_TINYVECTOR_OPERATORS_H
+#include <complex>
 
 namespace APPNAMESPACE {
 
@@ -106,6 +107,17 @@ struct OTAssign< TinyVector<T1,3> , TinyVector<T2,3> , OP >
     op(lhs[0] , rhs[0] );
     op(lhs[1] , rhs[1] );
     op(lhs[2] , rhs[2] );
+  }
+};
+
+template<class T1, class OP>
+struct OTAssign< TinyVector<T1,3> , TinyVector<std::complex<T1>,3> , OP >
+{
+  inline static void
+  apply( TinyVector<T1,3>& lhs, const TinyVector<std::complex<T1>,3>& rhs, OP op) {
+    op(lhs[0] , rhs[0].real() );
+    op(lhs[1] , rhs[1].real() );
+    op(lhs[2] , rhs[2].real() );
   }
 };
 
@@ -321,6 +333,28 @@ struct OTDot< TinyVector<T1,3> , TinyVector<T2,3> >
   inline static Type_t
   apply(const TinyVector<T1,3>& lhs, const TinyVector<T2,3>& rhs) {
     return lhs[0]*rhs[0] + lhs[1]*rhs[1] + lhs[2]*rhs[2];
+  }
+};
+
+/** specialization for real-complex TinyVector */
+template<class T1>
+struct OTDot< TinyVector<T1,3> , TinyVector<std::complex<T1>,3> >
+{
+  typedef T1 Type_t;
+  inline static Type_t
+  apply(const TinyVector<T1,3>& lhs, const TinyVector<std::complex<T1>,3>& rhs) {
+    return lhs[0]*rhs[0].real() + lhs[1]*rhs[1].real() + lhs[2]*rhs[2].real();
+  }
+};
+
+/** specialization for complex-real TinyVector */
+template<class T1>
+struct OTDot< TinyVector<std::complex<T1>,3> , TinyVector<T1,3> >
+{
+  typedef T1 Type_t;
+  inline static Type_t
+  apply(const TinyVector<std::complex<T1>,3>& lhs, const TinyVector<T1,3>& rhs) {
+    return lhs[0].real()*rhs[0] + lhs[1].real()*rhs[1] + lhs[2].real()*rhs[2];
   }
 };
 
