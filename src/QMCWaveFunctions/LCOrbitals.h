@@ -110,15 +110,6 @@ namespace qmcplusplus {
       BasisSize=BasisSet->TotalBasis;
     }
 
-    /** resize the internal storage of BasisSet by the number of walkers
-     *
-     *@todo This works only with MolecularOrbitalBasis at this point.
-     *To be generalized for any basis function
-     */
-    inline void resizeByWalkers(int nw) {
-      BasisSet->resizeByWalkers(nw);
-    }
-
     /** evaluate the values of the single-particle orbitals 
      *@param P input configuration containing N particles
      *@param iat particle index whose position has been modified
