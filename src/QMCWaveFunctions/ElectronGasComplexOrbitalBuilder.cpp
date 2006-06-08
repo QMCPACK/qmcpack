@@ -16,6 +16,7 @@
 #include "Utilities/OhmmsInfo.h"
 #include "QMCWaveFunctions/ElectronGasComplexOrbitalBuilder.h"
 #include "QMCWaveFunctions/SlaterDeterminant.h"
+#include "QMCWaveFunctions/HEGGrid.h"
 
 namespace qmcplusplus {
 
@@ -56,71 +57,21 @@ namespace qmcplusplus {
 
     int nat=targetPtcl.getTotalNum();
     int nup=nat/2;
+
+    HEGGrid<RealType,OHMMS_DIM> egGrid(targetPtcl.Lattice);
     if(nc == 0) {
-      nc = static_cast<int>(std::pow(static_cast<double>(nup),1.0/3.0))/2+1;
+      nc = egGrid.getNC(nup);
     }
 
-    //probably easier here
-    cout << "   The number of shells " << nc << endl;
-    map<double,vector<PosType>*> rs;
-    int first_ix2, first_ix3; 
-    for(int ix1=0; ix1<=nc; ix1++) {
-      if(ix1 == 0) first_ix2=0;
-      else         first_ix2=-nc;
-      for(int ix2=first_ix2; ix2<=nc; ix2++) {
-        if(ix1 == 0 && ix2 == 0) first_ix3=1;
-        else                     first_ix3=-nc;
-        for(int ix3=first_ix3; ix3<=nc; ix3++) {
-          PosType g(ix1,ix2,ix3);
-          PosType k=g+twistAngle;
-          double k2(dot(k,k));
-          std::map<double,vector<PosType>*>::iterator it = rs.find(k);
-          if(it == rs.end()) {
-            vector<PosType>* ns = new vector<PosType>;
-            ns->push_back(k);
-            rs[ih] = ns;
-          } else {
-            (*it).second->push_back(PosType(ix1,ix2,ix3));
-          }
-        }
-      }
-    }
-
+    //number of kpoints in a half sphere at zero twist
     int nkpts=(nup-1)/2;
 
-    vector<PosType> kpt(nkpts);
-    vector<RealType> mk2(nkpts);
-
-    int ikpt=0;
-    map<int, vector<PosType>*>::iterator rs_it(rs.begin()), rs_end(rs.end());
-    while(ikpt<nkpts && rs_it != rs_end) {
-      vector<PosType>::iterator ns_it((*rs_it).second->begin()), ns_end((*rs_it).second->end());
-      RealType minus_ksq=-targetPtcl.Lattice.ksq(*ns_it);
-      while(ikpt<nkpts && ns_it!=ns_end) {
-        kpt[ikpt]=targetPtcl.Lattice.k_cart(*ns_it);
-        mk2[ikpt]=minus_ksq;
-        ++ikpt;
-        ++ns_it;
-      }
-      ++rs_it;
-    }
-
-    cout << "Lattice of electrons " << endl;
-    targetPtcl.Lattice.print(cout);
-
-    cout << "Number of kpts " << nkpts << endl;
-
-    cout << "Initial position of the electrons " << endl;
-    for(int iat=0; iat<nat; iat++) {
-      cout << targetPtcl.R[iat] <<endl;
-    }
-    cout << "List of kpoints (half-sphere) " << endl;
-    for(int ik=0; ik<kpt.size(); ik++) {
-      cout << ik << " " << kpt[ik] << " " << mk2[ik] << endl;
-    }
+    //create k-points ordered wrt the k^2
+    egGrid.createGrid(nc,knpts);
+    egGrid.createGrid(twistAngle);
 
     //create a E(lectron)G(as)O(rbital)Set
-    EGOSet* psi=new EGOSet(kpt,mk2); 
+    EGOSet* psi=new EGOSet(egGrid.kpt,egGrid.mk2); 
 
     //create up determinant
     Det_t *updet = new Det_t(*psi,0);
