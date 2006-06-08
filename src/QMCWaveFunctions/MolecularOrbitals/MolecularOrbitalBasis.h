@@ -51,10 +51,10 @@ namespace qmcplusplus {
 
     const ParticleSet* IonConfig;
     ///constructor
-    MolecularOrbitalBasis(): myTable(0), IonConfig(0){ }
+    MolecularOrbitalBasis(): NumWalkers(1),myTable(0), IonConfig(0){ }
 
     ///constructor with ncenters
-    explicit MolecularOrbitalBasis(int ncenters): myTable(0), IonConfig(0){ 
+    explicit MolecularOrbitalBasis(int ncenters):NumWalkers(1), myTable(0), IonConfig(0){ 
       for(int ic=0; ic<ncenters; ic++) AOs.push_back(0);
     }
   
@@ -112,14 +112,6 @@ namespace qmcplusplus {
       d2Y.resize(nptcl,TotalBasis);
     }
 
-
-    inline void resizeByWalkers(int nw) {
-      int n = NumPtcls*nw;
-      NumWalkers = nw;
-      Y.resize(n,TotalBasis);
-      dY.resize(n,TotalBasis);
-      d2Y.resize(n,TotalBasis);
-    }
 
     /** Evalaute the values of  basis functions
        @param P input configuration containing N particles
