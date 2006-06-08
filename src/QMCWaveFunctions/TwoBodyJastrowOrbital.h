@@ -19,8 +19,6 @@
 #include "Configuration.h"
 #include  <map>
 #include "QMCWaveFunctions/OrbitalBase.h"
-#include <iostream>
-#include <fstream>
 
 namespace qmcplusplus {
 
@@ -37,10 +35,10 @@ namespace qmcplusplus {
     const DistanceTableData* d_table;
 
     int N,NN;
-    ValueType DiffVal, DiffValSum;
-    ValueVectorType U,d2U,curLap,curVal;
-    GradVectorType dU,curGrad;
-    ValueType *FirstAddressOfdU, *LastAddressOfdU;
+    RealType DiffVal, DiffValSum;
+    ParticleAttrib<RealType> U,d2U,curLap,curVal;
+    ParticleAttrib<PosType> dU,curGrad;
+    RealType *FirstAddressOfdU, *LastAddressOfdU;
     Matrix<int> PairID;
 
     std::map<std::string,FT*> J2Unique;
@@ -48,10 +46,10 @@ namespace qmcplusplus {
   public:
 
     typedef FT FuncType;
-    //QIO out;
+
     ///container for the Jastrow functions 
     vector<FT*> F;
-    ofstream out;
+
     ///constructor
     TwoBodyJastrowOrbital(ParticleSet& p, DistanceTableData* dtable): d_table(dtable) { 
       N=p.getTotalNum();
@@ -62,8 +60,6 @@ namespace qmcplusplus {
       for(int i=0; i<N; i++)
 	for(int j=0; j<N; j++) 
 	  PairID(i,j) = p.GroupID[i]*nsp+p.GroupID[j];
-      out.open("TwoBodJast.dat");
-      //out.Open("TwoBodJast.dat");
     }
 
     ~TwoBodyJastrowOrbital(){ }
@@ -111,20 +107,20 @@ namespace qmcplusplus {
 		          ParticleSet::ParticleGradient_t& G, 
 		          ParticleSet::ParticleLaplacian_t& L) {
       LogValue=0.0;
-      ValueType dudr, d2udr2;
+      RealType dudr, d2udr2;
       PosType gr;
       for(int i=0; i<d_table->size(SourceIndex); i++) {
 	for(int nn=d_table->M[i]; nn<d_table->M[i+1]; nn++) {
 	  int j = d_table->J[nn];
 	  //LogValue -= F[d_table->PairID[nn]]->evaluate(d_table->r(nn), dudr, d2udr2);
-	  ValueType uij = F[d_table->PairID[nn]]->evaluate(d_table->r(nn), dudr, d2udr2);
+	  RealType uij = F[d_table->PairID[nn]]->evaluate(d_table->r(nn), dudr, d2udr2);
           LogValue -= uij;
 	  U[i*N+j]=uij; U[j*N+i]=uij; //save for the ratio
 	  //multiply 1/r
 	  dudr *= d_table->rinv(nn);
 	  gr = dudr*d_table->dr(nn);
 	  //(d^2 u \over dr^2) + (2.0\over r)(du\over\dr)
-	  ValueType lap = d2udr2+2.0*dudr;
+	  RealType lap(d2udr2+2.0*dudr);
 
 	  //multiply -1
 	  G[i] += gr;
@@ -133,8 +129,6 @@ namespace qmcplusplus {
 	  L[j] -= lap; 
 	}
       }
-      //out.WriteLine(LogValue);
-      //out << LogValue << endl;
       return LogValue;
     }
 
@@ -159,7 +153,7 @@ namespace qmcplusplus {
     ValueType ratio(ParticleSet& P, int iat,
 		    ParticleSet::ParticleGradient_t& dG,
 		    ParticleSet::ParticleLaplacian_t& dL)  {
-      register ValueType dudr, d2udr2,u;
+      register RealType dudr, d2udr2,u;
       register PosType gr;
       DiffVal = 0.0;      
       const int* pairid = PairID[iat];
@@ -174,8 +168,8 @@ namespace qmcplusplus {
 	  DiffVal += (U[ij]-curVal[jat]);
 	}
       }
-      GradType sumg,dg;
-      ValueType suml=0.0,dl;
+      PosType sumg,dg;
+      RealType suml=0.0,dl;
       for(int jat=0,ij=iat*N,ji=iat; jat<N; jat++,ij++,ji+=N) {
 	sumg += (dg=curGrad[jat]-dU[ij]);
 	suml += (dl=curLap[jat]-d2U[ij]);
@@ -191,7 +185,7 @@ namespace qmcplusplus {
     ValueType logRatio(ParticleSet& P, int iat,
 		    ParticleSet::ParticleGradient_t& dG,
 		    ParticleSet::ParticleLaplacian_t& dL)  {
-      register ValueType dudr, d2udr2,u;
+      register RealType dudr, d2udr2,u;
       register PosType gr;
       DiffVal = 0.0;      
       const int* pairid = PairID[iat];
@@ -206,8 +200,8 @@ namespace qmcplusplus {
 	  DiffVal += (U[ij]-curVal[jat]);
 	}
       }
-      GradType sumg,dg;
-      ValueType suml=0.0,dl;
+      PosType sumg,dg;
+      RealType suml=0.0,dl;
       for(int jat=0,ij=iat*N,ji=iat; jat<N; jat++,ij++,ji+=N) {
 	sumg += (dg=curGrad[jat]-dU[ij]);
 	suml += (dl=curLap[jat]-d2U[ij]);
@@ -225,7 +219,8 @@ namespace qmcplusplus {
       DiffValSum += DiffVal;
       for(int jat=0,ij=iat*N,ji=iat; jat<N; jat++,ij++,ji+=N) {
 	dU[ij]=curGrad[jat]; 
-	dU[ji]=-1.0*curGrad[jat];
+	//dU[ji]=-1.0*curGrad[jat];
+	dU[ji]=curGrad[jat]*-1.0;
 	d2U[ij]=d2U[ji] = curLap[jat];
 	U[ij] =  U[ji] = curVal[jat];
       }
@@ -243,7 +238,8 @@ namespace qmcplusplus {
 	sumg += (dg=curGrad[jat]-dU[ij]);
 	suml += (dl=curLap[jat]-d2U[ij]);
 	dU[ij]=curGrad[jat]; 
-	dU[ji]=-1.0*curGrad[jat];
+	//dU[ji]=-1.0*curGrad[jat];
+	dU[ji]=curGrad[jat]*-1.0;
 	d2U[ij]=d2U[ji] = curLap[jat];
 	U[ij] =  U[ji] = curVal[jat];
         dG[jat] -= dg;
@@ -262,10 +258,10 @@ namespace qmcplusplus {
       curGrad.resize(N);
       curLap.resize(N);
       curVal.resize(N);
-      ValueType dudr, d2udr2,u;
 
       LogValue=0.0;
-      PosType gr;
+      RealType dudr, d2udr2,u;
+      GradType gr;
       PairID.resize(d_table->size(SourceIndex),d_table->size(SourceIndex));
       int nsp=P.groups();
       for(int i=0; i<d_table->size(SourceIndex); i++)
@@ -281,10 +277,11 @@ namespace qmcplusplus {
 	  dudr *= d_table->rinv(nn);
 	  gr = dudr*d_table->dr(nn);
 	  //(d^2 u \over dr^2) + (2.0\over r)(du\over\dr)\f$
-	  ValueType lap = d2udr2+2.0*dudr;
+	  RealType lap = d2udr2+2.0*dudr;
 	  int ij = i*N+j, ji=j*N+i;
 	  U[ij]=u; U[ji]=u;
-	  dU[ij] = gr; dU[ji] = -1.0*gr;
+	  //dU[ij] = gr; dU[ji] = -1.0*gr;
+	  dU[ij] = gr; dU[ji] = gr*-1.0;
 	  d2U[ij] = -lap; d2U[ji] = -lap;
 
 	  //add gradient and laplacian contribution
@@ -295,7 +292,7 @@ namespace qmcplusplus {
 	}
       }
 
-      U[NN]= LogValue;
+      U[NN]= real(LogValue);
       buf.add(U.begin(), U.end());
       buf.add(d2U.begin(), d2U.end());
       FirstAddressOfdU = &(dU[0][0]);
@@ -306,9 +303,9 @@ namespace qmcplusplus {
     }
 
     inline ValueType updateBuffer(ParticleSet& P, PooledData<RealType>& buf){
-      ValueType dudr, d2udr2,u;
+      RealType dudr, d2udr2,u;
       LogValue=0.0;
-      PosType gr;
+      GradType gr;
       PairID.resize(d_table->size(SourceIndex),d_table->size(SourceIndex));
       int nsp=P.groups();
       for(int i=0; i<d_table->size(SourceIndex); i++)
@@ -324,10 +321,11 @@ namespace qmcplusplus {
 	  dudr *= d_table->rinv(nn);
 	  gr = dudr*d_table->dr(nn);
 	  //(d^2 u \over dr^2) + (2.0\over r)(du\over\dr)\f$
-	  ValueType lap = d2udr2+2.0*dudr;
+	  RealType lap = d2udr2+2.0*dudr;
 	  int ij = i*N+j, ji=j*N+i;
 	  U[ij]=u; U[ji]=u;
-	  dU[ij] = gr; dU[ji] = -1.0*gr;
+	  //dU[ij] = gr; dU[ji] = -1.0*gr;
+	  dU[ij] = gr; dU[ji] = gr*-1.0;
 	  d2U[ij] = -lap; d2U[ji] = -lap;
 
 	  //add gradient and laplacian contribution
@@ -338,7 +336,7 @@ namespace qmcplusplus {
 	}
       }
 
-      U[NN]= LogValue;
+      U[NN]= real(LogValue);
       buf.put(U.begin(), U.end());
       buf.put(d2U.begin(), d2U.end());
       buf.put(FirstAddressOfdU,LastAddressOfdU);
@@ -353,7 +351,7 @@ namespace qmcplusplus {
     }
 
     inline ValueType evaluate(ParticleSet& P, PooledData<RealType>& buf) {
-      ValueType x = (U[NN] += DiffValSum);
+      RealType x = (U[NN] += DiffValSum);
       buf.put(U.begin(), U.end());
       buf.put(d2U.begin(), d2U.end());
       buf.put(FirstAddressOfdU,LastAddressOfdU);

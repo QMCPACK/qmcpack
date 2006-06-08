@@ -27,7 +27,6 @@ template<class T>
 struct NoCuspJastrow: public JastrowFunctorBase<T> {
 
   typedef typename JastrowFunctorBase<T>::real_type real_type;
-  typedef typename JastrowFunctorBase<T>::value_type value_type;
   ///coefficients
   real_type A, B, AB2;
 
@@ -52,7 +51,7 @@ struct NoCuspJastrow: public JastrowFunctorBase<T> {
   /**@param r the distance
      @return \f$ u(r) = a/(1+br^2) \f$
   */
-  inline value_type evaluate(real_type r) {
+  inline real_type evaluate(real_type r) {
     return A/(1.0+B*r*r);
   }
 
@@ -62,7 +61,7 @@ struct NoCuspJastrow: public JastrowFunctorBase<T> {
      -2ab(1-3br^2)/(1+br^2)^3 \f$
      @return \f$ u(r) = a/(1+br^2) \f$
   */
-  inline value_type evaluate(real_type r, value_type& dudr, value_type& d2udr2) {
+  inline real_type evaluate(real_type r, real_type& dudr, real_type& d2udr2) {
     real_type rsq = r*r;
     real_type u = 1.0/(1.0+B*rsq);
     real_type usq = u*u;
@@ -71,13 +70,13 @@ struct NoCuspJastrow: public JastrowFunctorBase<T> {
     return A*u;
   }
 
-  value_type f(real_type r) {
+  real_type f(real_type r) {
     return evaluate(r);
   }
 
-  value_type df(real_type r) {
-    value_type dudr,d2udr2;
-    value_type res=evaluate(r,dudr,d2udr2);
+  real_type df(real_type r) {
+    real_type dudr,d2udr2;
+    real_type res=evaluate(r,dudr,d2udr2);
     return dudr;
   }
 
@@ -88,7 +87,7 @@ struct NoCuspJastrow: public JastrowFunctorBase<T> {
    in the Pade parameters from the xml input file.
   */
   void put(xmlNodePtr cur, VarRegistry<real_type>& vlist){
-    T Atemp,Btemp;
+    real_type Atemp,Btemp;
     string ida, idb;
     //jastrow[iab]->put(cur->xmlChildrenNode,wfs_ref.RealVars);
     xmlNodePtr tcur = cur->xmlChildrenNode;
