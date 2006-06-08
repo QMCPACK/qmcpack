@@ -14,23 +14,27 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
+#ifndef QMCPLUSPLUS_ORBITALTRAITS_H
+#define QMCPLUSPLUS_ORBITALTRAITS_H
 #include <complex>
-/** dummy trait class **/
-template <class T> struct QMCDataTrait {};
+#include "OhmmsPETE/TinyVector.h"
 
-/** specialization for double **/
-template <>
-struct QMCDataTrait<double> {
-  typedef double real_type;
-  typedef double value_type;
-};
+namespace qmcplusplus {
 
-/** specialization for complex<double> **/
-template <>
-struct QMCDataTrait<std::complex<double> > {
-  typedef double real_type;
-  typedef std::complex<double> value_type;
-};
+  inline double real(double a) {
+    return a;
+  }
+  
+  inline TinyVector<double,3> real(const TinyVector<double,3>& a) { 
+    return a;
+  }
+
+  inline TinyVector<double,3> real(const TinyVector<complex<double>,3>& a) { 
+    return TinyVector<double,3>(a[0].real(),a[1].real(),a[2].real());
+  }
+
+}
+#endif
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$
