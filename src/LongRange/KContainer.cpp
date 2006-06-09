@@ -111,7 +111,6 @@ KContainer::FindApproxMMax() {
   for (int i = 0; i < 3; i++) 
     mmax[i] = static_cast<int>(floor(sqrt(dot(Lattice.a(i),Lattice.a(i))) * kcutoff / (2 * M_PI))) + 1;
 }
-
 void 
 KContainer::BuildKLists(bool useSphere) {
 
@@ -234,3 +233,4 @@ KContainer::BuildKLists(bool useSphere) {
     minusk[ki] = hashToIndex[ GetHashOfVec(-1 * kpts[ki], numk) ];
   }
 }
+

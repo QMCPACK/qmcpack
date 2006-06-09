@@ -15,12 +15,6 @@ namespace qmcplusplus {
 
   class KContainer: public QMCTraits {
   private:
-    //Typedef for the lattice-type. We don't need the full particle-set.
-    typedef ParticleSet::ParticleLayout_t ParticleLayout_t;
-    ///typedef of vector containers
-    typedef vector<TinyVector<RealType,3> > VContainer_t;
-    ///typedef of scalar containers
-    typedef vector<RealType>                SContainer_t;
 
     //Function to return a unique number for each kVector
     long GetHashOfVec(const TinyVector<int,3>& inpv, int hashparam) {
@@ -32,6 +26,12 @@ namespace qmcplusplus {
     RealType kcut2; //kcutoff*kcutoff
 
   public:
+    //Typedef for the lattice-type. We don't need the full particle-set.
+    typedef ParticleSet::ParticleLayout_t ParticleLayout_t;
+    ///typedef of vector containers
+    typedef vector<TinyVector<RealType,3> > VContainer_t;
+    ///typedef of scalar containers
+    typedef vector<RealType>                SContainer_t;
     //Maximum integer translations of reciprocal cell within kc.
     //Last index is max. of first 3.
     TinyVector<int,4> mmax;
@@ -54,7 +54,6 @@ namespace qmcplusplus {
     //A copy of the lattice, so that we have the cell-vectors
     ParticleLayout_t& Lattice;
     
-  public:
     //Constructor
     KContainer(ParticleLayout_t& ref);
     //Copy Constructor

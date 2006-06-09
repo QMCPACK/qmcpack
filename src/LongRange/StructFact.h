@@ -4,7 +4,6 @@
 #include "Particle/ParticleSet.h"
 #include "Utilities/PooledData.h"
 #include "LongRange/KContainer.h"
-#include <complex>
 
 namespace qmcplusplus {
 
@@ -21,12 +20,11 @@ namespace qmcplusplus {
     //First index: k-point (ordered as per kpts and kptscart)
     //Second index: GroupID from PtclRef.
   private:
-    typedef TinyVector<OHMMS_PRECISION,3> Position_t;
     typedef PooledData<RealType>  BufferType;
 
   public:
-    Matrix<complex<RealType> > rhok;
-    Matrix<complex<RealType> > eikr;
+    Matrix<ComplexType> rhok;
+    Matrix<ComplexType> eikr;
     //Maximum reciprocal cell translations in kc.
     //Last index is max. of first 3.
     //    TinyVector<int,4> mmax; 
@@ -51,7 +49,7 @@ namespace qmcplusplus {
     ///Recompute Rhok if lattice changed
     void UpdateNewCell(RealType kc);
     /// Update Rhok if 1 particle moved
-    void Update1Part(Position_t rold,Position_t rnew,int iat,int GroupID);
+    void Update1Part(const PosType& rold, const PosType& rnew,int iat,int GroupID);
     /// Update Rhok if all particles moved
     void UpdateAllPart();
 
@@ -113,7 +111,8 @@ namespace qmcplusplus {
     ///Compute all rhok elements from the start
     void FillRhok();
     ///Smart update of rhok for 1-particle move. Simply supply old+new position
-    void UpdateRhok(Position_t rold,Position_t rnew,int iat,int GroupID);
+    void UpdateRhok(const PosType& rold,
+        const PosType& rnew,int iat,int GroupID);
 
   };
 }

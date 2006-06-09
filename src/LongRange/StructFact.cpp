@@ -52,7 +52,7 @@ StructFact::UpdateNewCell(RealType kc) {
 }
 
 void 
-StructFact::Update1Part(Position_t rold,Position_t rnew,int iat,int GroupID) {
+StructFact::Update1Part(const PosType& rold,const PosType& rnew,int iat,int GroupID) {
   UpdateRhok(rold,rnew,iat,GroupID);
 }
 
@@ -126,7 +126,7 @@ StructFact::FillRhok() {
 
 
 void 
-StructFact::UpdateRhok(Position_t rold,Position_t rnew,int iat,int GroupID){
+StructFact::UpdateRhok(const PosType& rold,const PosType& rnew,int iat,int GroupID){
   TinyVector<double,3> k111; //k=1*b1 + 1*b2 + 1*b3
   //Convert to Cartesian
   
