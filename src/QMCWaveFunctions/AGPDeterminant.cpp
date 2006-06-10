@@ -232,8 +232,7 @@ namespace qmcplusplus {
       buf.add(myL.begin(), myL.end());
     }
 
-    SignValue = (CurrentDet<0.0)?-1.0:1.0;
-    return LogValue = std::log(abs(CurrentDet));
+    return LogValue = evaluateLogAndPhase(CurrentDet,PhaseValue);
   }
 
   AGPDeterminant::ValueType 

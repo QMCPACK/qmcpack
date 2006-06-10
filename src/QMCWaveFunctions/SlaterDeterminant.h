@@ -90,7 +90,7 @@ namespace qmcplusplus {
      *@param L a vector containing N laplacians
      *@return SlaterDeterminant value
      *
-     *Add the gradient and laplacian contribution of the Slater determinant to G(radient) and L(aplacian)
+     aAdd the gradient and laplacian contribution of the Slater determinant to G(radient) and L(aplacian)
      *for local energy calculations.
      */
     inline ValueType 
@@ -102,15 +102,6 @@ namespace qmcplusplus {
       return psi;
     }
 
-    inline void evaluateLogAndSign(const ValueType& psi) {
-#if defined(QMC_COMPLEX)
-      SignValue = std::arg(psi);
-      LogValue = std::log(psi);
-#else
-      SignValue = (psi<0.0)?-1.0:1.0;
-      LogValue = std::log(std::abs(psi));
-#endif
-    }
 
     inline ValueType 
     evaluateLog(ParticleSet& P, 
@@ -126,8 +117,7 @@ namespace qmcplusplus {
 
       ValueType psi = 1.0;
       for(int i=0; i<Dets.size(); i++) psi *= Dets[i]->evaluate(P,G,L);
-      evaluateLogAndSign(psi);
-      return LogValue;
+      return LogValue = evaluateLogAndPhase(psi,PhaseValue);
     }
 
     ///return the total number of Dirac determinants
@@ -148,19 +138,16 @@ namespace qmcplusplus {
     ValueType registerData(ParticleSet& P, PooledData<RealType>& buf){
 
       //BasisSet->evaluate(P);
-
       ValueType psi = 1.0;
       for(int i=0; i<Dets.size(); i++) 
         psi *= Dets[i]->registerData(P,buf);
-      evaluateLogAndSign(psi);
-      return LogValue;
+      return LogValue = evaluateLogAndPhase(psi,PhaseValue);
     }
     
     ValueType updateBuffer(ParticleSet& P, PooledData<RealType>& buf){
       ValueType psi = 1.0;
       for(int i=0; i<Dets.size(); i++) psi *= Dets[i]->updateBuffer(P,buf);
-      evaluateLogAndSign(psi);
-      return LogValue;
+      return LogValue = evaluateLogAndPhase(psi,PhaseValue);
     }
 
     void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf) {
@@ -203,13 +190,7 @@ namespace qmcplusplus {
 			   ParticleSet::ParticleGradient_t& dG, 
 			   ParticleSet::ParticleLaplacian_t& dL) { 
       ValueType r = Dets[DetID[iat]]->ratio(P,iat,dG,dL);
-#if defined(QMC_COMPLEX)
-      SignValue = (r.imag()/r.real()<0)?-1.0:1.0;
-      return std::log(norm(r));
-#else
-      SignValue = (r<0.0)?-1.0:1.0;
-      return std::log(std::abs(r));
-#endif
+      return evaluateLogAndPhase(r,PhaseValue);
     }
     
     inline void restore(int iat) {

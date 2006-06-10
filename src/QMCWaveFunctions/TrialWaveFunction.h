@@ -69,7 +69,7 @@ namespace qmcplusplus {
     ~TrialWaveFunction();
 
     inline int size() const { return Z.size();}
-    inline RealType getSign() const { return SignValue;}
+    inline RealType getPhase() const { return PhaseValue;}
     inline RealType getLogPsi() const { return LogValue;}
 
     ///Add an OrbitalBase 
@@ -157,7 +157,7 @@ namespace qmcplusplus {
     int WorkingPtcl;
 
     ///sign of the trial wave function
-    RealType SignValue;
+    RealType PhaseValue;
 
     ///log of the trial wave function
     RealType LogValue;

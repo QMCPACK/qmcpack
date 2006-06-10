@@ -56,10 +56,10 @@ namespace qmcplusplus {
     bool Optimizable;
     bool UseBuffer;
     ValueType LogValue;
-    RealType SignValue;
+    RealType PhaseValue;
 
-    ///default constructor
-    inline OrbitalBase(): Optimizable(true), UseBuffer(true),LogValue(1.0),SignValue(1.0){ }
+    /// default constructor
+    inline OrbitalBase(): Optimizable(true), UseBuffer(true),LogValue(1.0),PhaseValue(0.0){ }
 
     ///default destructor
     virtual ~OrbitalBase() { }

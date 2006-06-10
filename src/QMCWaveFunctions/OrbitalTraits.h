@@ -21,6 +21,22 @@
 
 namespace qmcplusplus {
 
+  template<class T> struct OrbitalTraits {};
+
+  template<>
+    struct OrbitalTraits<double> {
+      typedef double          real_type;
+      typedef double          value_type;
+      typedef complex<double> complex_type;
+    };
+
+  template<>
+    struct OrbitalTraits<complex<double> > {
+      typedef double          real_type;
+      typedef complex<double> value_type;
+      typedef complex<double> complex_type;
+    };
+
   inline double real(double a) {
     return a;
   }
@@ -33,6 +49,38 @@ namespace qmcplusplus {
     return TinyVector<double,3>(a[0].real(),a[1].real(),a[2].real());
   }
 
+
+  /** evaluate the log(|psi|) and phase
+   * @param psi real/complex value
+   * @param phase phase of psi
+   * @return log(|psi|)
+   */
+  template<class T>
+    inline T evaluateLogAndPhase(const T psi, T& phase) {
+      if(psi<0.0) {
+        phase= M_PI;
+        return std::log(-psi);
+      } else {
+        phase = 0.0;
+        return std::log(psi);
+      }
+    }
+
+  template<class T>
+    inline T
+    evaluateLogAndPhase(const std::complex<T>& psi, T& phase) {
+      phase = std::arg(psi);
+      return 0.5*std::log(psi.real()*psi.real()+psi.imag()*psi.imag());
+      //return std::log(psi);
+    }
+
+    inline double evaluatePhase(const double psi) {
+      return (psi<0.0)?M_PI:0.0;
+    }
+
+    inline double evaluatePhase(const std::complex<double>& psi) {
+      return std::arg(psi);
+    }
 }
 #endif
 /***************************************************************************

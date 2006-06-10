@@ -1,4 +1,3 @@
-//////////////////////////////////////////////////////////////////
 // (c) Copyright 2003  by Jeongnim Kim
 //////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////
@@ -23,7 +22,7 @@
 
 namespace qmcplusplus {
 
-  TrialWaveFunction::TrialWaveFunction():SignValue(1.0),LogValue(0.0) {
+  TrialWaveFunction::TrialWaveFunction():PhaseValue(0.0),LogValue(0.0) {
     myName="psi0";
   }
 
@@ -54,7 +53,7 @@ namespace qmcplusplus {
   
   /** return log(|psi|)
    *
-   * SignValue is the phase for the complex wave function
+   * PhaseValue is the phase for the complex wave function
    */
   TrialWaveFunction::RealType
   TrialWaveFunction::evaluateLog(ParticleSet& P) {
@@ -62,14 +61,14 @@ namespace qmcplusplus {
     P.L = 0.0;
 
     ValueType logpsi(0.0);
-    SignValue=1.0;
+    PhaseValue=0.0;
     vector<OrbitalBase*>::iterator it(Z.begin());
     vector<OrbitalBase*>::iterator it_end(Z.end());
 
-    //WARNING: multiplication for SignValue is not correct, fix this!!
+    //WARNING: multiplication for PhaseValue is not correct, fix this!!
     while(it != it_end) {
       logpsi += (*it)->evaluateLog(P, P.G, P.L); 
-      SignValue *= (*it)->SignValue;
+      PhaseValue += (*it)->PhaseValue;
       ++it;
     }
     return LogValue=real(logpsi);
@@ -87,21 +86,21 @@ namespace qmcplusplus {
    *  evaluate the value only
    *
    * Upon return, the gradient and laplacian operators are added by the components.
-   * Each OrbitalBase evaluates SignValue and LogValue = log(abs(psi_i))
-   * Jastrow functions always have SignValue=1.
+   * Each OrbitalBase evaluates PhaseValue and LogValue = log(abs(psi_i))
+   * Jastrow functions always have PhaseValue=1.
    */
   TrialWaveFunction::RealType 
   TrialWaveFunction::evaluateDeltaLog(ParticleSet& P) {
     P.G = 0.0;
     P.L = 0.0;
     ValueType logpsi(0.0);
-    SignValue=1.0;
+    PhaseValue=0.0;
     vector<OrbitalBase*>::iterator it(Z.begin());
     vector<OrbitalBase*>::iterator it_end(Z.end());
     while(it != it_end) {
       if((*it)->Optimizable) {
         logpsi += (*it)->evaluateLog(P, P.G, P.L); 
-        SignValue *= (*it)->SignValue;
+        PhaseValue += (*it)->PhaseValue;
       }
       ++it;
     }
@@ -168,7 +167,8 @@ namespace qmcplusplus {
     }
     //for(int iat=0; iat<P.getTotalNum(); iat++)
     // cout << P.G[iat] << " " << P.L[iat] << endl;
-    return psi;
+    LogValue = evaluateLogAndPhase(psi,PhaseValue);
+    return std::exp(LogValue);
   }
   
   TrialWaveFunction::RealType
@@ -177,6 +177,7 @@ namespace qmcplusplus {
     for(int i=0; i<Z.size(); i++) {
       r *= Z[i]->ratio(P,iat);
     }
+    PhaseValue=evaluatePhase(r);
     return real(r);
   }
 
@@ -207,23 +208,10 @@ namespace qmcplusplus {
     dL = 0.0;
     ValueType r(1.0);
     for(int i=0; i<Z.size(); i++) r *= Z[i]->ratio(P,iat,dG,dL);
+
+    PhaseValue=evaluatePhase(r);
     return real(r);
   }
-
- // TrialWaveFunction::RealType 
- // TrialWaveFunction::logRatio(ParticleSet& P, int iat, 
- //       		   ParticleSet::ParticleGradient_t& dG,
- //       		   ParticleSet::ParticleLaplacian_t& dL) {
- //   dG = 0.0;
- //   dL = 0.0;
- //   ValueType logr(0.0);
- //   SignValue=1.0;
- //   for(int i=0; i<Z.size(); i++) {
- //     logr += Z[i]->ratio(P,iat,dG,dL);
- //     SignValue *= Z[i]->SignValue;
- //   }
- //   return logr;
- // }
 
   /** restore to the original state
    * @param iat index of the particle with a trial move
@@ -264,12 +252,12 @@ namespace qmcplusplus {
     P.L = 0.0;
 
     ValueType logpsi(0.0);
-    SignValue=1.0;
+    PhaseValue=0.0;
     vector<OrbitalBase*>::iterator it(Z.begin());
     vector<OrbitalBase*>::iterator it_end(Z.end());
     while(it != it_end) {
       logpsi += (*it)->registerData(P,buf);
-      SignValue *= (*it)->SignValue;
+      PhaseValue += (*it)->PhaseValue;
       ++it;
     }
 
@@ -295,12 +283,12 @@ namespace qmcplusplus {
     P.L = 0.0;
 
     ValueType logpsi(0.0);
-    SignValue=1.0;
+    PhaseValue=0.0;
     vector<OrbitalBase*>::iterator it(Z.begin());
     vector<OrbitalBase*>::iterator it_end(Z.end());
     while(it != it_end) {
       logpsi += (*it)->updateBuffer(P,buf);
-      SignValue *= (*it)->SignValue;
+      PhaseValue += (*it)->PhaseValue;
       ++it;
     }
 
