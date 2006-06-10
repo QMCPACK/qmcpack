@@ -182,7 +182,7 @@ void WaveFunctionTester::runRatioTest() {
     setScaledDrift(Tau,W.G,(*it)->Drift);
 
     RealType ene = H.evaluate(W);
-    (*it)->resetProperty(logpsi,Psi.getSign(),ene);
+    (*it)->resetProperty(logpsi,Psi.getPhase(),ene);
     H.saveProperty((*it)->getPropertyBase());
     ++it;
   } 

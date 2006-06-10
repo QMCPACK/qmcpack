@@ -78,7 +78,8 @@ namespace qmcplusplus {
         RealType rr=dot(dr,dr);
         rr_proposed+=rr;
 
-        if(ratio < 0.0) {//node is crossed reject the move
+        //if(ratio < 0.0) {//node is crossed reject the move
+        if(Psi.getPhase() > numeric_limits<RealType>::epsilon()) {
           ++nRejectTemp;
           ++nNodeCrossing;
           W.rejectMove(iat); Psi.rejectMove(iat);

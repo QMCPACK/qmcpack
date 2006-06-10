@@ -69,7 +69,7 @@ namespace qmcplusplus {
       W.update();
       RealType logpsi(Psi.evaluateLog(W));
       RealType  eloc_cur = H.evaluate(W);
-      cur->resetProperty(logpsi,Psi.getSign(),eloc_cur);
+      cur->resetProperty(logpsi,Psi.getPhase(),eloc_cur);
       H.saveProperty(cur->getPropertyBase());
       cur->Drift = W.G;
       Reptile  = new PolymerChain(cur,PolymerLength,NumCuts);
@@ -94,7 +94,7 @@ namespace qmcplusplus {
         RealType logpsic(Psi.evaluateLog(W));
         RealType e0=H.evaluate(W);
         cur = (*Reptile)[i+1];	  
-        cur->resetProperty(logpsic,Psi.getSign(),e0);
+        cur->resetProperty(logpsic,Psi.getPhase(),e0);
         H.saveProperty(cur->getPropertyBase());
 
         cur->R = W.R;
@@ -209,7 +209,7 @@ namespace qmcplusplus {
       //H.copy(head->getEnergyBase());
       //head->Properties(LOCALPOTENTIAL) = H.getLocalPotential();
       RealType eloc_yp = H.evaluate(W);
-      head->resetProperty(logpsi,Psi.getSign(),eloc_yp);
+      head->resetProperty(logpsi,Psi.getPhase(),eloc_yp);
       H.saveProperty(head->getPropertyBase());
       
       head->R = W.R;

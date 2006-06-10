@@ -189,7 +189,7 @@ namespace qmcplusplus {
         RealType eloc=H.evaluate(W);
 	thisWalker.R = W.R;
 	thisWalker.Drift = drift;
-        thisWalker.resetProperty(logpsi,Psi.getSign(),eloc);
+        thisWalker.resetProperty(logpsi,Psi.getPhase(),eloc);
 	H.saveProperty(thisWalker.getPropertyBase());
 	++nAccept;
       }

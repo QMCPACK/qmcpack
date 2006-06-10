@@ -68,7 +68,7 @@ namespace qmcplusplus {
       RealType logpsi(Psi.evaluateLog(W));
 
       bool accepted=false; 
-      if((*branchEngine)(Psi.getSign(),thisWalker.Properties(SIGN))) {
+      if(branchEngine->phaseChanged(Psi.getPhase(),thisWalker.Properties(SIGN))) {
         thisWalker.Age++;
       } else {
         RealType enew(H.evaluate(W));
@@ -88,7 +88,7 @@ namespace qmcplusplus {
           accepted=true;  
           thisWalker.R = W.R;
           thisWalker.Drift = drift;
-          thisWalker.resetProperty(logpsi,Psi.getSign(),enew);
+          thisWalker.resetProperty(logpsi,Psi.getPhase(),enew);
           H.saveProperty(thisWalker.getPropertyBase());
           emixed = (emixed+enew)*0.5;
           eold=enew;
@@ -155,7 +155,7 @@ namespace qmcplusplus {
       RealType logpsi(Psi.evaluateLog(W));
 
       bool accepted=false; 
-      if((*branchEngine)(Psi.getSign(),thisWalker.Properties(SIGN))) {
+      if(branchEngine->phaseChanged(Psi.getPhase(),thisWalker.Properties(SIGN))) {
         thisWalker.Age++;
         thisWalker.willDie();
       } else {
@@ -176,7 +176,7 @@ namespace qmcplusplus {
           accepted=true;  
           thisWalker.R = W.R;
           thisWalker.Drift = drift;
-          thisWalker.resetProperty(logpsi,Psi.getSign(),enew);
+          thisWalker.resetProperty(logpsi,Psi.getPhase(),enew);
           H.saveProperty(thisWalker.getPropertyBase());
           emixed = (emixed+enew)*0.5;
           eold=enew;

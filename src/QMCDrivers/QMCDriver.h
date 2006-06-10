@@ -31,7 +31,6 @@
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Estimators/ScalarEstimatorManager.h"
 #include "Utilities/OhmmsInfo.h"
-//#include "QMCDrivers/MolecuFixedNodeBranch.h"
 #include "QMCDrivers/SimpleFixedNodeBranch.h"
 
 namespace qmcplusplus {
@@ -280,6 +279,7 @@ namespace qmcplusplus {
      * Finialize the estimators
      */
     bool finalize(int block);
+
 
   };
   /**@}*/

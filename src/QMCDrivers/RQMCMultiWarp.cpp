@@ -87,7 +87,7 @@ namespace qmcplusplus {
     for(int ipsi=0; ipsi<nPsi; ipsi++) {
       WW[ipsi]->update();
       NewBead->Properties(ipsi,LOGPSI) = Psi1[ipsi]->evaluateLog(*WW[ipsi]);
-      NewBead->Properties(ipsi,SIGN) = Psi1[ipsi]->getSign();
+      NewBead->Properties(ipsi,SIGN) = Psi1[ipsi]->getPhase();
       NewBead->Properties(ipsi,LOGJACOB)=std::log(std::fabs(Jacobian[ipsi]));
       RealType eloc= H1[ipsi]->evaluate(*WW[ipsi]);
       NewBead->Properties(ipsi,LOCALENERGY)= eloc;
@@ -293,7 +293,7 @@ namespace qmcplusplus {
 
         //Compute Energy and Psi and save in curW
         curW.Properties(ipsi,LOGPSI) = Psi1[ipsi]->evaluateLog(*WW[ipsi]);
-        RealType BeadSign = curW.Properties(ipsi,SIGN) = Psi1[ipsi]->getSign();
+        RealType BeadSign = curW.Properties(ipsi,SIGN) = Psi1[ipsi]->getPhase();
         RealType eloc= H1[ipsi]->evaluate(*WW[ipsi]);
         curW.Properties(ipsi,LOCALENERGY)= eloc;
         H1[ipsi]->saveProperty(curW.getPropertyBase(ipsi));
@@ -749,7 +749,7 @@ namespace qmcplusplus {
 
       //evaluate Psi and H
       NewBeadProp[LOGPSI]=Psi1[ipsi]->evaluateLog(*WW[ipsi]);
-      NewBeadProp[SIGN]=Psi1[ipsi]->getSign();
+      NewBeadProp[SIGN]=Psi1[ipsi]->getPhase();
       RealType eloc=NewBeadProp[LOCALENERGY]= H1[ipsi]->evaluate(*WW[ipsi]);
 
       //Save properties

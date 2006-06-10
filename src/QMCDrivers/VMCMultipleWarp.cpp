@@ -389,7 +389,7 @@ namespace qmcplusplus {
             WW[ipsi]->G=Psi1[ipsi]->G;
             RealType et = H1[ipsi]->evaluate(*WW[ipsi]);
             thisWalker.Properties(ipsi,LOGPSI)=logpsi[ipsi];
-            thisWalker.Properties(ipsi,SIGN) =Psi1[ipsi]->getSign();
+            thisWalker.Properties(ipsi,SIGN) =Psi1[ipsi]->getPhase();
             thisWalker.Properties(ipsi,UMBRELLAWEIGHT)=invsumratio[ipsi];
             thisWalker.Properties(ipsi,LOCALENERGY)=et;
             thisWalker.Properties(ipsi,JACOBIAN)=Jacobian[ipsi];

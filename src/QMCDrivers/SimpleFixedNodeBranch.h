@@ -101,7 +101,10 @@ namespace qmcplusplus {
      SimpleFixedNodeBranch(const SimpleFixedNodeBranch& abranch);
 
      ///return true if the nodal surface is crossed
-     inline bool operator()(RealType psi0, RealType psi1) const { return psi0*psi1 < 0;}
+     //inline bool operator()(RealType psi0, RealType psi1) const { return psi0*psi1 < 0;}
+     inline bool phaseChanged(RealType psi0, RealType psi1) const { 
+       return abs(psi0-psi1) > numeric_limits<RealType>::epsilon();
+     }
 
      //inline bool operator()(complex<RealType>& psi0, complex<RealType>& psi1) const { 
      //  return true;

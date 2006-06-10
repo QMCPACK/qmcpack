@@ -70,7 +70,7 @@ namespace qmcplusplus {
       setScaledDrift(Tau,W.G,(*it)->Drift);
 
       RealType ene = H.evaluate(W);
-      (*it)->resetProperty(logpsi,Psi.getSign(),ene);
+      (*it)->resetProperty(logpsi,Psi.getPhase(),ene);
       H.saveProperty((*it)->getPropertyBase());
       ++it;
     } 
@@ -83,7 +83,7 @@ namespace qmcplusplus {
       W.updateBuffer(**it,w_buffer);
       RealType logpsi=Psi.updateBuffer(W,w_buffer);
       RealType enew= H.evaluate(W);
-      (*it)->resetProperty(logpsi,Psi.getSign(),enew);
+      (*it)->resetProperty(logpsi,Psi.getPhase(),enew);
       H.saveProperty((*it)->getPropertyBase());
 
       //RealType scale=getDriftScale(Tau,W.G);

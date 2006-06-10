@@ -258,7 +258,7 @@ cerr << " In VMCMultiple::run" << endl;
           W.G=Psi1[ipsi]->G; 
 	  RealType et = H1[ipsi]->evaluate(W);
           thisWalker.Properties(ipsi,LOGPSI)=logpsi[ipsi];
-          thisWalker.Properties(ipsi,SIGN) =Psi1[ipsi]->getSign();
+          thisWalker.Properties(ipsi,SIGN) =Psi1[ipsi]->getPhase();
           thisWalker.Properties(ipsi,UMBRELLAWEIGHT)=invsumratio[ipsi];
           thisWalker.Properties(ipsi,LOCALENERGY)=et;
           //multiEstimator->updateSample(iwlk,ipsi,et,invsumratio[ipsi]); 
