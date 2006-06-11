@@ -71,7 +71,7 @@ namespace qmcplusplus {
       //using FirstTime flag.
       if(FirstTime || PtclRef->tag() == P.tag()){
         Value = AA->evalTotal();
-	FirstTime = false;
+        FirstTime = false;
       }
       return Value;
     }

@@ -51,7 +51,15 @@ namespace qmcplusplus {
     virtual RealType evalConsts() = 0;
     //Override IF needed.
     //Constants are not particle position dependent - compute once only...
-    virtual RealType evalTotal() { return (evalLR()+evalSR()+m_consts); }
+    virtual RealType evalTotal() { 
+      RealType LR = evalLR();
+      RealType SR = evalSR();
+      //cout << "Constant   terms = " << m_consts<<endl;
+      //cout << "LongRange  terms = " << LR <<endl;
+      //cout << "ShortRange terms = " << SR<<endl;
+      //cout << "Total            = " << LR+SR+m_consts<<endl<<endl;
+      return (LR+SR+m_consts); 
+    }
 
   protected:
     //Override this to provide Fk or Xk for a |k|. 
@@ -108,12 +116,11 @@ LRHandler<BreakupBasis>::InitBreakup(ParticleLayout_t& ref,int NumFunctions) {
   RealType kc(ref.LR_kc); //User cutoff parameter...
 
   //kcut is the cutoff for switching to approximate k-point degeneracies for
-  //better performance in making the breakup. A good bet is 50*K-spacing so that
-  //there are 50 "boxes" in each direction that are treated with exact degeneracies.
+  //better performance in making the breakup. A good bet is 30*K-spacing so that
+  //there are 30 "boxes" in each direction that are treated with exact degeneracies.
   //Assume orthorhombic cell just for deriving this cutoff - should be insensitive.
   //K-Spacing = (kpt_vol)**1/3 = 2*pi/(cellvol**1/3)
-  RealType kcut = 100*M_PI*std::pow(Basis.get_CellVolume(),-1.0/3.0); 
-
+  RealType kcut = 60*M_PI*std::pow(Basis.get_CellVolume(),-1.0/3.0); 
   //Use 3000/LMax here...==6000/rc for non-ortho cells
   RealType kmax(6000.0/ref.LR_rc);
   breakuphandler.SetupKVecs(kc,kcut,kmax);
