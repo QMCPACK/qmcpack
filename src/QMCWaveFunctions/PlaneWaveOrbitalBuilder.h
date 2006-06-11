@@ -22,13 +22,8 @@ namespace qmcplusplus {
     ///Read routine for HDF wavefunction file version 0.10
     void ReadHDFWavefunction010(hid_t hfile,double& ecut);
 
-#if defined(QMC_COMPLEX)
-    typedef PlaneWaveOrbitalSet<complex<double> >PWOSetType;
-#else
-    typedef PlaneWaveOrbitalSet<double> PWOSetType;
-#endif
     //Storage for the orbitals and basis is created in PWOSet.
-    PWOSetType *PWOSet;
+    PlaneWaveOrbitalSet *PWOSet;
 
   public:
     ///constructor

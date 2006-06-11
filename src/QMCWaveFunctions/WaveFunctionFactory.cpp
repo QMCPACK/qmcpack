@@ -91,6 +91,8 @@ namespace qmcplusplus {
 #if defined(QMC_COMPLEX)
     if(orbtype == "electron-gas") {
       detbuilder = new ElectronGasOrbitalBuilder(*targetPtcl,*targetPsi);
+    } else if (orbtype == "PWBasis") {
+      detbuilder = new PlaneWaveOrbitalBuilder(*targetPtcl,*targetPsi);
     } else {
       app_log() << "QMC_COMPLEX==1  Cannot create " << orbtype << endl;
     }
