@@ -118,6 +118,60 @@ struct HDFAttribIO<std::vector<double> >: public HDFAttribIOBase {
 
 };
 
+template<>
+struct HDFAttribIO<std::vector<complex<double> > >: public HDFAttribIOBase {
+  //NOTE: This specialization assumes each complex number was/will be saved
+  // as a pair of doubles. This is checked.
+
+  typedef std::vector<complex<double> > ArrayType_t;
+  std::vector<hsize_t> Dim;
+  ArrayType_t&  ref;
+
+  //Assumes complex stored as a pair of floats/doubles.
+  HDFAttribIO<ArrayType_t>(ArrayType_t& a): ref(a) { 
+    Dim.resize(2);
+    Dim[0] = a.size();
+    Dim[1] = 2;
+  }
+  
+  inline void write(hid_t grp, const char* name) {
+
+    //hsize_t dim = ref.size();
+    //hid_t dataspace  = H5Screate_simple(1, &dim, NULL);
+    hid_t dataspace  = H5Screate_simple(Dim.size(), &Dim[0], NULL);
+    hid_t dataset =  
+      H5Dcreate(grp, name, H5T_NATIVE_DOUBLE, dataspace, H5P_DEFAULT);
+    hid_t ret = 
+      H5Dwrite(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT,&ref[0]);
+    H5Sclose(dataspace);
+    H5Dclose(dataset);
+  }
+
+  inline void read(hid_t grp, const char* name) {
+    hid_t h1 = H5Dopen(grp, name);
+    hid_t dataspace = H5Dget_space(h1);
+    //hsize_t dims_out[1];
+    std::vector<hsize_t> dims_out(Dim);
+    int rank = H5Sget_simple_extent_ndims(dataspace);
+    if(rank!=2) {
+      LOGMSG("Error: HDF rank does not match for complex vector");
+      return;
+    }
+    int status_n 
+      = H5Sget_simple_extent_dims(dataspace, &dims_out[0], NULL);
+    if(dims_out[1]!=2) {
+      LOGMSG("Error: HDF rank does not match for complex vector");
+      return;
+    }
+    Dim=dims_out;
+    hsize_t ntot=Dim[0];
+    if(ref.size() != int(ntot)) { ref.resize(int(ntot)); }
+    hid_t ret = H5Dread(h1, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, &ref[0]);
+    H5Sclose(dataspace);
+    H5Dclose(h1);
+  }
+
+};
 }
 #endif
 /***************************************************************************
