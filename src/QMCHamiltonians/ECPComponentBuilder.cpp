@@ -23,10 +23,11 @@ namespace qmcplusplus {
   ECPComponentBuilder::ECPComponentBuilder(const string& aname):
     NumNonLocal(0), Lmax(0), Zeff(0), Species(aname),
     pp_loc(0), pp_nonloc(0) {
-    angMon["s"]=0; angMon["p"]=1; angMon["d"]=2; angMon["f"]=3;
+    angMon["s"]=0; angMon["p"]=1; angMon["d"]=2; angMon["f"]=3; angMon["g"]=4;
+    angMon["0"]=0; angMon["1"]=1; angMon["2"]=2; angMon["3"]=3; angMon["4"]=4;
   }
 
-  void ECPComponentBuilder::parse(const string& fname) {
+  bool ECPComponentBuilder::parse(const string& fname) {
 
     // build an XML tree from a the file;
     xmlDocPtr m_doc = xmlParseFile(fname.c_str());
@@ -43,6 +44,8 @@ namespace qmcplusplus {
 
     bool success=put(cur);
     xmlFreeDoc(m_doc);
+
+    return success;
   }
 
   bool ECPComponentBuilder::put(xmlNodePtr cur) {
@@ -73,6 +76,8 @@ namespace qmcplusplus {
       } else {
         buildSemiLocalAndLocal(semiPtr);
       }
+      app_log() << "    Maximum angular momentum of NonLocalECP " << pp_nonloc->lmax << endl;
+      app_log() << "    Maximum cutoff of NonLocalECP " << pp_nonloc->Rmax << endl;
     } 
 
     if(pp_nonloc) {
@@ -128,7 +133,9 @@ namespace qmcplusplus {
       cur=cur->next;
     }
 
+    pp_nonloc->lmax=Lmax;
     pp_nonloc->Rmax=rmax;
+
     NumNonLocal++;
     //ofstream fout("C.semilocal.dat");
     //fout.setf(std::ios::scientific, std::ios::floatfield);

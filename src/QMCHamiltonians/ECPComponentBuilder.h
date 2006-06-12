@@ -40,7 +40,7 @@ namespace qmcplusplus {
 
     ECPComponentBuilder(const string& aname);
 
-    void parse(const string& fname);
+    bool parse(const string& fname);
     bool put(xmlNodePtr cur);
     void addSemiLocal(xmlNodePtr cur);
     void buildLocal(xmlNodePtr cur);

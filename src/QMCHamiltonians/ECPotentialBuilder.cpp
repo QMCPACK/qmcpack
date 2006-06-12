@@ -15,8 +15,9 @@
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 #include "QMCHamiltonians/ECPotentialBuilder.h"
-#include "Particle/DistanceTable.h"
+#include "QMCHamiltonians/ECPComponentBuilder.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
+#include "OhmmsData/AttributeSet.h"
 
 namespace qmcplusplus {
   /** constructor
@@ -77,25 +78,43 @@ namespace qmcplusplus {
 
   void ECPotentialBuilder::useXmlFormat(xmlNodePtr cur) {
 
-    //cur=cur->children;
-    //while(cur != NULL) {
-    //  string cname((const char*)cur->name);
-    //  if(cname == "pseudo") {
-    //    string href("none");
-    //    string ionName("none");
-    //    OhmmsAttributeSet hAttrib;
-    //    hAttrib.add(href,"href");
-    //    hAttrib.add(ionName,"symbol");
-    //    hAttrib.put(cur);
-    //    ECPComponentBuilder ecp(ionName);
-    //    if(href == "none") {
-    //      ecp.put(cur);
-    //    } else {
-    //      cep.parse(href);
-    //    }
-    //  } 
-    //  cur=cur->next;
-    //}
+    cur=cur->children;
+    while(cur != NULL) {
+      string cname((const char*)cur->name);
+      if(cname == "pseudo") {
+        string href("none");
+        string ionName("none");
+        OhmmsAttributeSet hAttrib;
+        hAttrib.add(href,"href");
+        hAttrib.add(ionName,"elementType"); hAttrib.add(ionName,"symbol");
+        hAttrib.put(cur);
+
+        int speciesIndex=IonConfig.getSpeciesSet().findSpecies(ionName);
+        if(speciesIndex < IonConfig.getSpeciesSet().getTotalNum()) {
+          app_log() << "  Adding pseudopotential for " << ionName << endl;
+          ECPComponentBuilder ecp(ionName);
+          bool success=false;
+          if(href == "none") {
+            success=ecp.put(cur);
+          } else {
+            success=ecp.parse(href);
+          }
+          if(success) {
+            if(ecp.pp_loc) {
+              localPot[speciesIndex]=ecp.pp_loc;
+              hasLocalPot=true;
+            }
+            if(ecp.pp_nonloc) {
+              nonLocalPot[speciesIndex]=ecp.pp_nonloc;
+              hasNonLocalPot=true;
+            }
+          }
+        } else {
+          app_error() << "  Ion species " << ionName << " is not found." << endl;
+        }
+      } 
+      cur=cur->next;
+    }
   }
 
   /** reimplement simple table format used by NonLocalPPotential
