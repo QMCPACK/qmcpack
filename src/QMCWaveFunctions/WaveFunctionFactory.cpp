@@ -21,14 +21,16 @@
 #include "QMCWaveFunctions/JastrowBuilder.h"
 #include "QMCWaveFunctions/MolecularOrbitals/MolecularOrbitalBuilder.h"
 #include "QMCWaveFunctions/AtomicOrbitals/HeSTOClementiRottie.h"
-#include "QMCWaveFunctions/ElectronGasOrbitalBuilder.h"
 #include "QMCWaveFunctions/PlaneWaveOrbitalBuilder.h"
 #include "QMCWaveFunctions/JAABuilder.h"
 #include "QMCWaveFunctions/JABBuilder.h"
 #include "QMCWaveFunctions/NJAABuilder.h"
 #include "QMCWaveFunctions/NJABBuilder.h"
 #include "QMCWaveFunctions/WaveFunctionFactory.h"
-#if !defined(QMC_COMPLEX)
+#if defined(QMC_COMPLEX)
+#include "QMCWaveFunctions/ElectronGasComplexOrbitalBuilder.h"
+#else
+#include "QMCWaveFunctions/ElectronGasOrbitalBuilder.h"
 #include "QMCWaveFunctions/ThreeBodyGeminalBuilder.h"
 #include "QMCWaveFunctions/ThreeBodyPadeBuilder.h"
 #include "QMCWaveFunctions/AGPDeterminantBuilder.h"
@@ -90,7 +92,7 @@ namespace qmcplusplus {
     app_log() << "  Slater determinant terms using " << orbtype << endl;
 #if defined(QMC_COMPLEX)
     if(orbtype == "electron-gas") {
-      detbuilder = new ElectronGasOrbitalBuilder(*targetPtcl,*targetPsi);
+      detbuilder = new ElectronGasComplexOrbitalBuilder(*targetPtcl,*targetPsi);
     } else if (orbtype == "PWBasis") {
       detbuilder = new PlaneWaveOrbitalBuilder(*targetPtcl,*targetPsi);
     } else {
