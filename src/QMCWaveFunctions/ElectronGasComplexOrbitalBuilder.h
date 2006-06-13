@@ -38,7 +38,6 @@ namespace qmcplusplus {
       typedef DummyBasisSet BasisSet_t;
 
       int KptMax;
-      RealType kdotr;
       vector<PosType> K;
       vector<RealType> mK2;
 
@@ -50,15 +49,15 @@ namespace qmcplusplus {
       inline ValueType
       evaluate(const ParticleSet& P, int iat, int jorb) {
         cout << "EGOSet::this should not be used" << endl;
-        kdotr=dot(K[jorb],P.R[iat]);
-        return ValueType(std::cost(kdotr),std::sin(kdotr));
+        RealType kdotr=dot(K[jorb],P.R[iat]);
+        return ValueType(std::cos(kdotr),std::sin(kdotr));
       }
 
       template<class VV>
         inline void 
         evaluate(const ParticleSet& P, int iat, VV& psi) {
           for(int ik=0; ik<KptMax; ik++) {
-            kdotr=dot(K[ik],P.R[iat]);
+            RealType kdotr=dot(K[ik],P.R[iat]);
             psi[ik]=ValueType(std::cos(kdotr),std::sin(kdotr));
           }
         }
@@ -67,7 +66,7 @@ namespace qmcplusplus {
         inline void 
         evaluate(const ParticleSet& P, int iat, VV& psi, GV& dpsi, VV& d2psi) {
           for(int ik=0; ik<KptMax; ik++) {
-            kdotr=dot(K[ik],P.R[iat]);
+            RealType kdotr=dot(K[ik],P.R[iat]);
             RealType coskr=std::cos(kdotr);
             RealType sinkr=std::sin(kdotr);
             psi[ik]=ValueType(coskr,sinkr);
@@ -81,18 +80,17 @@ namespace qmcplusplus {
         evaluate(const ParticleSet& P, int first, int last,
             VM& logdet, GM& dlogdet, VM& d2logdet) {
           for(int i=0,iat=first; iat<last; i++,iat++) {
-          for(int ik=0; ik<KptMax; ik++) {
-            kdotr=dot(K[ik],P.R[iat]);
-            RealType coskr=std::cos(kdotr);
-            RealType sinkr=std::sin(kdotr);
-            logdet(ik,i)=ValueType(coskr,sinkr);
-            dlogdet(i,ik)=ValueType(-sinkr,coskr)*K[ik];
-            d2logdet(i,ik)=ValueType(mK2[ik]*coskr,mK2[ik]*sinkr);
+            for(int ik=0; ik<KptMax; ik++) {
+              RealType kdotr=dot(K[ik],P.R[iat]);
+              RealType coskr=std::cos(kdotr);
+              RealType sinkr=std::sin(kdotr);
+              logdet(ik,i)=ValueType(coskr,sinkr);
+              dlogdet(i,ik)=ValueType(-sinkr,coskr)*K[ik];
+              d2logdet(i,ik)=ValueType(mK2[ik]*coskr,mK2[ik]*sinkr);
+            }
           }
         }
     };
-
-  private:
 
   };
 }

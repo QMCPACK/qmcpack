@@ -25,11 +25,13 @@ namespace qmcplusplus {
    * @param k list of unique k points in Cartesian coordinate excluding gamma
    * @param k2 k2[i]=dot(k[i],k[i])
    */
-  ElectronGasComplexOrbitalBuilder::EGOSet::EGOSet(const vector<PosType>& k, const vector<RealType>& k2): K(k),mK2(k2) {
+  ElectronGasComplexOrbitalBuilder::EGOSet::EGOSet(const vector<PosType>& k, 
+      const vector<RealType>& k2): K(k), mK2(k2) {
     KptMax=k.size();
   }
 
-  ElectronGasComplexOrbitalBuilder::ElectronGasComplexOrbitalBuilder(ParticleSet& els, TrialWaveFunction& psi):
+  ElectronGasComplexOrbitalBuilder::ElectronGasComplexOrbitalBuilder(ParticleSet& els, 
+      TrialWaveFunction& psi):
     OrbitalBuilderBase(els,psi)
   { 
   }   
@@ -67,7 +69,7 @@ namespace qmcplusplus {
     int nkpts=(nup-1)/2;
 
     //create k-points ordered wrt the k^2
-    egGrid.createGrid(nc,knpts);
+    egGrid.createGrid(nc,nkpts);
     egGrid.createGrid(twistAngle);
 
     //create a E(lectron)G(as)O(rbital)Set
