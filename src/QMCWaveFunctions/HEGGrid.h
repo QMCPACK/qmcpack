@@ -119,7 +119,7 @@ namespace qmcplusplus {
 
       //add gamma
       int ikpt=0;
-      kpt[ikpt]=Lattice.toCart(twistAngle);
+      kpt[ikpt]=Lattice.k_cart(twistAngle);
       mk2[ikpt]=-Lattice.ksq(twistAngle);
       
       ++ikpt;
@@ -146,7 +146,7 @@ namespace qmcplusplus {
 
       app_log() << "List of kpoints with twist = " << twistAngle << endl;
       for(int ik=0; ik<kpt.size(); ik++) {
-        app_log() << ik << " " << kpt[ik] << " " << mk2[ik] << endl;
+        app_log() << ik << " " << kpt[ik] << " " <<-mk2[ik] << endl;
       }
     }
   };
