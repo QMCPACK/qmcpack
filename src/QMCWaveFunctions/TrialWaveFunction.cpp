@@ -177,8 +177,12 @@ namespace qmcplusplus {
     for(int i=0; i<Z.size(); i++) {
       r *= Z[i]->ratio(P,iat);
     }
+#if defined(QMC_COMPLEX)
+    return std::exp(evaluateLogAndPhase(r,PhaseValue));
+#else
     PhaseValue=evaluatePhase(r);
     return real(r);
+#endif
   }
 
   void   
@@ -209,8 +213,12 @@ namespace qmcplusplus {
     ValueType r(1.0);
     for(int i=0; i<Z.size(); i++) r *= Z[i]->ratio(P,iat,dG,dL);
 
+#if defined(QMC_COMPLEX)
+    return std::exp(evaluateLogAndPhase(r,PhaseValue));
+#else
     PhaseValue=evaluatePhase(r);
     return real(r);
+#endif
   }
 
   /** restore to the original state
