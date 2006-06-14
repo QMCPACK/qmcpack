@@ -1,4 +1,3 @@
-// TODO: non-GS occupation schemes.
 // -*- C++ -*-
 #ifndef QMCPLUSPLUS_PLANEWAVEBASIS_H
 #define QMCPLUSPLUS_PLANEWAVEBASIS_H
@@ -18,9 +17,9 @@ namespace qmcplusplus {
     ///the number of particles
     int NumPtcls;
 
-    //The PlaneWave data
+    //The PlaneWave data - keep all of these strictly private to prevent inconsistencies.
     RealType ecut;
-    TinyVector<RealType,3> twist;
+    TinyVector<RealType,3> twist,twist_cart; //Twist angle in reduced and Cartesian.
     vector<RealType> modkplusg;
     vector<TinyVector<int,3> > gvecs; //Reduced coordinates
     vector<TinyVector<RealType,3> > kplusgvecs_cart; //Cartesian.
@@ -143,6 +142,9 @@ namespace qmcplusplus {
       NumPlaneWaves = gvecs.size();
       inputmap.resize(NumPlaneWaves);
 
+      //Convert the twist angle to Cartesian coordinates.
+      twist_cart = Lattice.k_cart(twist);
+
       //ig is the loop index to access the member of gvecs for testing.
       //newig is the index showing where ig exists in the new (truncated) basis.
       //oldig is the index showing where ig came from...differs from ig after gvecs 
@@ -217,6 +219,8 @@ namespace qmcplusplus {
       }
     }
 
+
+
     ///Evaluate all planewaves for current particle coordinates
     //This function does not evaluate first or second derivatives -> use evaluateAll.
     //The basis functions are evaluated for particles iat: first <= iat < last
@@ -232,14 +236,18 @@ namespace qmcplusplus {
       //orbital evaluations.
       //Allocate the 'C' temporary arrays. Fill with information to decouple dimensions.
       Matrix<complex<RealType> > C;
+      RealType twistdotr;
       complex<RealType> pw;
       C.resize(3,2*maxmaxg+1);
       for(int iat=first; iat<last; iat++){
         BuildRecursionCoefs(C,P,iat);
 
+        twistdotr = dot(twist_cart,P.R[iat]);
         //Evaluate the planewaves for particle iat.
         for(int ig=0; ig<NumPlaneWaves; ig++) {
-          pw = 1.0;
+          //PW is initialized as exp(i*twist.r) so that the final basis evaluations
+          //are for (twist+G).r
+          pw = complex<RealType>(std::cos(twistdotr),std::sin(twistdotr));
           for(int idim=0; idim<3; idim++)
             pw *= C(idim,gvecs[ig][idim]+maxg[idim]);
 #if defined(QMC_COMPLEX)
@@ -250,6 +258,8 @@ namespace qmcplusplus {
         }
       }
     } 
+
+
 
     ///Evaluate all planewaves and derivatives for current coordinates
     //The basis functions are evaluated for particles iat: first <= iat < last
@@ -266,15 +276,20 @@ namespace qmcplusplus {
       //orbital evaluations.
       //Allocate the 'C' temporary arrays. Fill with information to decouple dimensions.
       Matrix<complex<RealType> > C;
+      RealType twistdotr;
       complex<RealType> pw;
       C.resize(3,2*maxmaxg+1);
 
       for(int iat=first; iat<last; iat++){
         BuildRecursionCoefs(C,P,iat);
 
+        twistdotr = dot(twist_cart,P.R[iat]);
+
         //Evaluate the planewaves and derivatives.
         for(int ig=0; ig<NumPlaneWaves; ig++) {
-          pw = 1.0;
+          //PW is initialized as exp(i*twist.r) so that the final basis evaluations
+          //are for (twist+G).r
+          pw = complex<RealType>(std::cos(twistdotr),std::sin(twistdotr));
           for(int idim=0; idim<3; idim++)
             pw *= C(idim,gvecs[ig][idim]+maxg[idim]);
 #if defined(QMC_COMPLEX)
