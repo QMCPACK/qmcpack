@@ -281,18 +281,21 @@ QMCGaussianParserBase::createDeterminantSet() {
   xmlNewProp(adet,(const xmlChar*)"id",(const xmlChar*)"updet");
   xmlNewProp(adet,(const xmlChar*)"orbitals",(const xmlChar*)up_size.str().c_str());
 
-  occ<<"\n";
-  vector<int>::iterator it(Occ_alpha.begin()); 
-  int i=0;
-  while(i<SizeOfBasisSet) {
-    int n = (i+10<SizeOfBasisSet)? 10 : SizeOfBasisSet-i;
-    std::copy(it, it+n, ostream_iterator<int>(occ," "));
-    occ << "\n"; it += 10; i+=10;
-  }
+  //occ<<"\n";
+  //vector<int>::iterator it(Occ_alpha.begin()); 
+  //int i=0;
+  //while(i<SizeOfBasisSet) {
+  //  int n = (i+10<SizeOfBasisSet)? 10 : SizeOfBasisSet-i;
+  //  std::copy(it, it+n, ostream_iterator<int>(occ," "));
+  //  occ << "\n"; it += 10; i+=10;
+  //}
 
-  xmlNodePtr occ_data 
-    = xmlNewTextChild(adet,NULL,(const xmlChar*)"occupation",(const xmlChar*)occ.str().c_str());
-  xmlNewProp(occ_data,(const xmlChar*)"size",(const xmlChar*)b_size.str().c_str());
+  //xmlNodePtr occ_data 
+  //  = xmlNewTextChild(adet,NULL,(const xmlChar*)"occupation",(const xmlChar*)occ.str().c_str());
+  //xmlNewProp(occ_data,(const xmlChar*)"size",(const xmlChar*)b_size.str().c_str());
+  xmlNodePtr occ_data = xmlNewNode(NULL,(const xmlChar*)"occupation");
+  xmlNewProp(occ_data,(const xmlChar*)"mode",(const xmlChar*)"ground");
+  xmlAddChild(adet,occ_data);
 
   int btot=SizeOfBasisSet*SizeOfBasisSet;
   int n=btot/4, b=0;
@@ -321,17 +324,20 @@ QMCGaussianParserBase::createDeterminantSet() {
   if(SpinRestricted)
     xmlNewProp(adet,(const xmlChar*)"ref",(const xmlChar*)"updet");
   else {
-    std::ostringstream occ_beta;
-    occ_beta<<"\n";
-    it=Occ_beta.begin(); 
-    int i=0;
-    while(i<SizeOfBasisSet) {
-      int n = (i+10<SizeOfBasisSet)? 10 : SizeOfBasisSet-i;
-      std::copy(it, it+n, ostream_iterator<int>(occ_beta," "));
-      occ_beta << "\n"; it += 10; i+=10;
-    }
-    occ_data=xmlNewTextChild(adet,NULL,(const xmlChar*)"occupation",(const xmlChar*)occ_beta.str().c_str());
-    xmlNewProp(occ_data,(const xmlChar*)"size",(const xmlChar*)b_size.str().c_str());
+    //std::ostringstream occ_beta;
+    //occ_beta<<"\n";
+    //it=Occ_beta.begin(); 
+    //int i=0;
+    //while(i<SizeOfBasisSet) {
+    //  int n = (i+10<SizeOfBasisSet)? 10 : SizeOfBasisSet-i;
+    //  std::copy(it, it+n, ostream_iterator<int>(occ_beta," "));
+    //  occ_beta << "\n"; it += 10; i+=10;
+    //}
+    //occ_data=xmlNewTextChild(adet,NULL,(const xmlChar*)"occupation",(const xmlChar*)occ_beta.str().c_str());
+    //xmlNewProp(occ_data,(const xmlChar*)"size",(const xmlChar*)b_size.str().c_str());
+    occ_data = xmlNewNode(NULL,(const xmlChar*)"occupation");
+    xmlNewProp(occ_data,(const xmlChar*)"mode",(const xmlChar*)"ground");
+    xmlAddChild(adet,occ_data);
 
     std::ostringstream eigD;
     eigD.setf(std::ios::scientific, std::ios::floatfield);

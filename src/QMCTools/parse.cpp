@@ -10,7 +10,7 @@
 int main(int argc, char **argv) {
 
   if(argc<2) {
-    std::cout << "Usage: convert [-gaussian|-casino|-gamesxml] filename -gridtype log|log0|linear -first ri -last rf -size npts]" << std::endl;
+    std::cout << "Usage: convert [-gaussian|-casino|-gamesxml] filename -hdf5 -gridtype log|log0|linear -first ri -last rf -size npts]" << std::endl;
     std::cout << "Defaults : -gridtype log -first 1e-6 -last 100 -size 1001" << std::endl;
     std::cout << "When the input format is missing, the  extension of filename is used to determine the parser " << std::endl;
     std::cout << " *.Fchk -> gaussian; *.data -> casino; *.xml -> gamesxml" << std::endl;
@@ -32,6 +32,7 @@ int main(int argc, char **argv) {
   QMCGaussianParserBase *parser=0;
   int iargc=0;
   string in_file(argv[1]);
+  bool usehdf5=false;
   while(iargc<argc) {
     std::string a(argv[iargc]);
     if(a == "-gaussian") {
@@ -45,6 +46,8 @@ int main(int argc, char **argv) {
     else if(a == "-casino") {
       parser = new CasinoParser(argc,argv);
       in_file =argv[++iargc];
+    } else if(a == "-hdf5") {
+      usehdf5=true;
     }
     ++iargc;
   }
@@ -63,6 +66,7 @@ int main(int argc, char **argv) {
       parser = new GamesXmlParser(argc,argv);
     }
   }
+
   parser->parse(in_file);
 
   xmlDocPtr doc = xmlNewDoc((const xmlChar*)"1.0");
@@ -86,8 +90,12 @@ int main(int argc, char **argv) {
         xmlNodePtr bsetPtr = parser->createBasisSet();
         xmlAddChild(detPtr,bsetPtr);
 
-        xmlNodePtr slaterdetPtr = parser->createDeterminantSetWithHDF5();
-        //xmlNodePtr slaterdetPtr = parser->createDeterminantSet();
+        xmlNodePtr slaterdetPtr=NULL;
+        if(usehdf5) {
+          slaterdetPtr = parser->createDeterminantSetWithHDF5();
+        } else {
+          slaterdetPtr = parser->createDeterminantSet();
+        }
         xmlAddChild(detPtr,slaterdetPtr);
       }
       xmlAddChild(wfPtr,detPtr);
