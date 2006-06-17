@@ -26,6 +26,7 @@
 #include "QMCWaveFunctions/JABBuilder.h"
 #include "QMCWaveFunctions/NJAABuilder.h"
 #include "QMCWaveFunctions/NJABBuilder.h"
+#include "QMCWaveFunctions/JAAPBCBuilder.h"
 #include "QMCWaveFunctions/WaveFunctionFactory.h"
 #if defined(QMC_COMPLEX)
 #include "QMCWaveFunctions/ElectronGasComplexOrbitalBuilder.h"
@@ -154,6 +155,9 @@ namespace qmcplusplus {
         app_log() << "  Using JAABuilder for two-body jatrow with analytic functions" << endl;
         jbuilder = new JAABuilder(*targetPtcl,*targetPsi);
       }
+    } else if(jasttype == "Long-Range") {
+      app_log() << "  Using JAAPBCBuilder for two-body jatrow TESTING ONLY" << endl;
+      jbuilder = new JAAPBCBuilder(*targetPtcl,*targetPsi);
     } else if(jasttype == "One-Body") {
       if(useSpline) {
         app_log() << "  Using NJABBuilder for one-body jatrow with spline functions" << endl;
