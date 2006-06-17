@@ -30,16 +30,23 @@ namespace qmcplusplus {
         FourPiOmega=4.0*M_PI*Omega;
         NumPtcls=p.getTotalNum();
         NumKpts=skRef->KLists.numk;
+        NormConstant=FourPiOmega*NumPtcls*(NumPtcls-1)*0.5;
         resize();
       }
     }
 
     void LRTwoBodyJastrow::resize() {
       Rhok.resize(NumKpts);
-      rokbyF.resize(NumSpecies,NumKpts);
+      rokbyF.resize(NumPtcls,NumKpts);
       U.resize(NumPtcls);
       dU.resize(NumPtcls);
       d2U.resize(NumPtcls);
+      FirstAddressOfdU=&(dU[0][0]);
+      LastAddressOfdU = FirstAddressOfdU+NumPtcls*DIM;
+
+      offU.resize(NumPtcls);
+      offdU.resize(NumPtcls);
+      offd2U.resize(NumPtcls);
     }
 
     void LRTwoBodyJastrow::reset() {
@@ -86,21 +93,24 @@ namespace qmcplusplus {
         G[iat]+=(dU[iat]=g);
         L[iat]+=(d2U[iat]=l);
       }
-      cout<< " Sum " << sum << endl;
-      return sum;//use trait
+
+      return sum*0.5;
     }
 
 
     LRTwoBodyJastrow::ValueType 
     LRTwoBodyJastrow::ratio(ParticleSet& P, int iat) {
       curVal=0.0;
-      const ComplexType* restrict eikr(P.SK->eikr[iat]);
+      const KContainer::VContainer_t& kpts(P.SK->KLists.kpts_cart);
+      const Vector<ComplexType>& eikr(P.SK->eikr_new);
+      const Vector<ComplexType>& del_eikr(P.SK->delta_eikr);
       const ComplexType* restrict rtemp(rokbyF[iat]);
       for(int ki=0; ki<NumKpts; ki++) {
-        ComplexType skp(rtemp[ki]*conj(eikr[ki]));
 #if defined(QMC_COMPLEX)
-        curVal += skp;
+        curVal += Fk[ki]*conj(eikr[ki])*(Rhok[ki]+del_eikr[ki]);
+        curVal += conj(eikr[ki])*rtemp[ki]+Fk[ki];
 #else
+        ComplexType skp(Fk[ki]*conj(eikr[ki])*(Rhok[ki]+del_eikr[ki]));
         curVal += skp.real();
 #endif
       }
@@ -112,79 +122,112 @@ namespace qmcplusplus {
     LRTwoBodyJastrow::logRatio(ParticleSet& P, int iat,
 		    ParticleSet::ParticleGradient_t& dG,
 		    ParticleSet::ParticleLaplacian_t& dL) {
+
       const KContainer::VContainer_t& kpts(P.SK->KLists.kpts_cart);
       const KContainer::SContainer_t& ksq(P.SK->KLists.ksq);
+      const Vector<ComplexType>& eikr1(P.SK->eikr_new);
+      const Vector<ComplexType>& del_eikr(P.SK->delta_eikr);
 
-      const ComplexType* restrict eikr(P.SK->eikr[iat]);
+      //add the difference
+      Rhok += del_eikr;
+
       curVal=0.0; curLap=0.0; curGrad=0.0;
-      const ComplexType* restrict rtemp(rokbyF[iat]);
-      for(int ki=0; ki<NumKpts; ki++) {
-        ComplexType skp(rtemp[ki]*conj(eikr[ki]));
+      for(int jat=0;jat<NumPtcls; jat++) {
+        if(iat==jat) {
+          for(int ki=0; ki<NumKpts; ki++) {
+            //ComplexType rhok_new(Rhok[ki]+del_eikr[ki]);
+            //ComplexType skp((Fk[ki]*conj(eikr1[ki])*rhok_new));
+            ComplexType skp((Fk[ki]*conj(eikr1[ki])*Rhok[ki]));
 #if defined(QMC_COMPLEX)
-        curVal += skp;
-        curGrad+=skp*kpts[ki];
-        curLap+=skp*ksq[ki];
+            curVal +=  skp;
+            curGrad += ComplexType(skp.imag(),-skp.real())*kpts[ki];
+            curLap += ksq[ki]*(Fk[ki]*rhok_new-skp);
 #else
-        curVal += skp.real();
-        curGrad+=kpts[ki]*skp.real();
-        curLap +=ksq[ki]*skp.real();
+            curVal +=  skp.real();
+            curGrad += kpts[ki]*skp.imag();
+            curLap += ksq[ki]*(Fk[ki]-skp.real());
 #endif
+          }
+        } else {
+          const ComplexType* restrict eikrj(P.SK->eikr[jat]);
+          GradType g;
+          ValueType l(0.0), v(0.0);
+          for(int ki=0; ki<NumKpts; ki++) {
+            ComplexType skp(Fk[ki]*del_eikr[ki]*conj(eikrj[ki]));
+            GradType dg(skp.imag()*kpts[ki]);
+            ValueType dl(skp.real()*ksq[ki]);
+            v += skp.real();
+            g +=dg;
+            l -= dl;
+            //dG[jat] += Fk[ki]*skp.imag()*kpts[ki];
+            //dL[jat] -= Fk[ki]*skp.real()*ksq[ki];
+          }
+          offU[jat]=v;
+          offdU[jat]=g;
+          offd2U[jat]=l;
+          dG[jat] += g;
+          dL[jat] += l;
+        }
       }
 
-      dG[iat] += curGrad-dU[iat];
-      dL[iat] += curLap-d2U[iat];
-      return curVal-U[iat];
+      dG[iat] += offdU[iat] = curGrad-dU[iat];
+      dL[iat] += offd2U[iat] = curLap-d2U[iat];
+      return offU[iat] = curVal-U[iat];
     }
 
     void LRTwoBodyJastrow::restore(int iat) {
-      //do nothing
+      //substract the addition in logRatio
+      Rhok -= skRef->delta_eikr;
     }
 
     void LRTwoBodyJastrow::acceptMove(ParticleSet& P, int iat) {
-      U[iat]=curVal;
-      dU[iat]=curGrad;
-      d2U[iat]=curLap;
-      //update rhokbyF
-      const ComplexType* restrict eikrOld(P.SKOld->eikr[iat]);
-      const ComplexType* restrict eikrNew(P.SK->eikr[iat]);
-      ComplexType* restrict t(rokbyF[iat]);
-      for(int ki=0; ki<NumKpts; ki++) {
-        t[ki]=(Rhok[ki]-eikrNew[ki]+eikrOld[ki])*Fk[ki];
-      }
+      U += offU;
+      dU += offdU;
+      d2U += offd2U;
     }
 
     void LRTwoBodyJastrow::update(ParticleSet& P, 
 		ParticleSet::ParticleGradient_t& dG, 
 		ParticleSet::ParticleLaplacian_t& dL,
 		int iat) {
+      app_error() << "LRTwoBodyJastrow::update is INCOMPLETE " << endl;
     }
 
 
     LRTwoBodyJastrow::ValueType 
     LRTwoBodyJastrow::registerData(ParticleSet& P, PooledData<RealType>& buf) {
       LogValue=evaluateLog(P,P.G,P.L); 
-
-      //buf.add(U.begin(), U.end());
-      //buf.add(d2U.begin(), d2U.end());
-      //buf.add(FirstAddressOfdU,LastAddressOfdU);
+      buf.add(Rhok.first_address(), Rhok.last_address());
+      buf.add(U.first_address(), U.last_address());
+      buf.add(d2U.first_address(), d2U.last_address());
+      buf.add(FirstAddressOfdU,LastAddressOfdU);
       return LogValue;
     }
 
     LRTwoBodyJastrow::ValueType 
     LRTwoBodyJastrow::updateBuffer(ParticleSet& P, PooledData<RealType>& buf) {
-      return 1.0;
+      LogValue=evaluateLog(P,P.G,P.L); 
+      buf.put(Rhok.first_address(), Rhok.last_address());
+      buf.put(U.first_address(), U.last_address());
+      buf.put(d2U.first_address(), d2U.last_address());
+      buf.put(FirstAddressOfdU,LastAddressOfdU);
+      return LogValue;
     }
 
     void 
     LRTwoBodyJastrow::copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf) {
+      buf.get(Rhok.first_address(), Rhok.last_address());
+      buf.get(U.first_address(), U.last_address());
+      buf.get(d2U.first_address(), d2U.last_address());
+      buf.get(FirstAddressOfdU,LastAddressOfdU);
     }
 
     LRTwoBodyJastrow::ValueType 
     LRTwoBodyJastrow::evaluate(ParticleSet& P, PooledData<RealType>& buf) {
-      LogValue=evaluateLog(P,P.G,P.L); 
-      //buf.put(U.begin(), U.end());
-      //buf.put(d2U.begin(), d2U.end());
-      //buf.put(FirstAddressOfdU,LastAddressOfdU);
+      buf.put(Rhok.first_address(), Rhok.last_address());
+      buf.put(U.first_address(), U.last_address());
+      buf.put(d2U.first_address(), d2U.last_address());
+      buf.put(FirstAddressOfdU,LastAddressOfdU);
       return LogValue;
     }
 
@@ -201,7 +244,7 @@ namespace qmcplusplus {
       Fk.resize(NumKpts);
       app_log() << "  LRTwoBodyJastrow: kx ky kz U[k] " << endl;
       for(int ikpt=0; ikpt<NumKpts; ikpt++) {
-        Fk[ikpt]= getRPACoeff(skRef->KLists.ksq[ikpt]);
+        Fk[ikpt]= -0.001*getRPACoeff(skRef->KLists.ksq[ikpt]);
         app_log() <<  skRef->KLists.ksq[ikpt] << " " << Fk[ikpt] << endl;
       }
       return true;

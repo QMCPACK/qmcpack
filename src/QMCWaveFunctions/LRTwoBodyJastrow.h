@@ -38,12 +38,17 @@ namespace qmcplusplus {
     RealType OneOverOmega;
     ///Rs 
     RealType Rs;
+    ///Normalization Constant
+    RealType NormConstant;
     ValueType curVal, curLap;
     GradType curGrad;
     ValueVectorType U,d2U;
     GradVectorType dU;
+    ValueType *FirstAddressOfdU, *LastAddressOfdU;
     Matrix<ComplexType> rokbyF;
     Vector<ComplexType> Rhok;
+    ValueVectorType offU, offd2U;
+    GradVectorType offdU;
 
     const StructFact* skRef;
   public:
