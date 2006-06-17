@@ -56,7 +56,7 @@ namespace qmcplusplus {
     SpeciesSet mySpecies;
 
     ///Structure factor
-    StructFact *SK, *SKOld;
+    StructFact *SK;
 
     ///spherical-grids for non-local PP
     vector<ParticlePos_t*> Sphere;
