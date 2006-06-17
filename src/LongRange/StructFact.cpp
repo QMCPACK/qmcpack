@@ -74,6 +74,8 @@ StructFact::FillRhok() {
   //rhok.resize(KLists.numk,tspecies.TotalNum);
   rhok.resize(tspecies.TotalNum,KLists.numk);
   eikr.resize(PtclRef.getTotalNum(),KLists.numk);
+  eikr_new.resize(KLists.numk);
+  delta_eikr.resize(KLists.numk);
 
   //Zero out rhok
   for(int ki=0; ki<KLists.numk; ki++) 
@@ -105,7 +107,7 @@ StructFact::FillRhok() {
       complex<double> Ctemp;
       //start the recursion with the 111 vector.
       double phi = (PtclRef.R[i])[idim] * k111[idim];
-      Ctemp = complex<double>(cos(phi), sin(phi));
+      Ctemp = complex<double>(std::cos(phi), std::sin(phi));
       C(idim,KLists.mmax[idim]) = 1.0; // K=0 term
       //Recursively generate all Cs.
       for(int n=1; n<=KLists.mmax[idim]; n++){
@@ -149,7 +151,7 @@ StructFact::UpdateRhok(const PosType& rold,const PosType& rnew,int iat,int Group
     complex<double> Ctemp;
     //start the recursion with the 111 vector.
     double phi = rold[idim] * k111[idim];
-    Ctemp = complex<double>(cos(phi), sin(phi));
+    Ctemp = complex<double>(std::cos(phi), std::sin(phi));
     C(idim,KLists.mmax[idim]) = 1.0; // K=0
     //Recursively generate all Cs.
     for(int n=1; n<=KLists.mmax[idim]; n++){
@@ -171,7 +173,7 @@ StructFact::UpdateRhok(const PosType& rold,const PosType& rnew,int iat,int Group
     complex<double> Ctemp;
     //start the recursion with the 111 vector.
     double phi = rnew[idim] * k111[idim];
-    Ctemp = complex<double>(cos(phi), sin(phi));
+    Ctemp = complex<double>(std::cos(phi), std::sin(phi));
     C(idim,KLists.mmax[idim]) = 1.0; // K=0
     //Recursively generate all Cs.
     for(int n=1; n<=KLists.mmax[idim]; n++){
@@ -188,4 +190,25 @@ StructFact::UpdateRhok(const PosType& rold,const PosType& rnew,int iat,int Group
     rhok(GroupID,ki) += temp;
     eikr(iat,ki) = temp;
   }
+}
+
+void StructFact::makeMove(int iat, const PosType& pos) {
+  const ComplexType* restrict eikr0(eikr[iat]);
+  for(int ki=0; ki<KLists.numk; ki++){
+    RealType kdotr(dot(KLists.kpts_cart[ki],pos));
+    eikr_new[ki]=ComplexType(std::cos(kdotr),std::sin(kdotr));
+    delta_eikr[ki]=eikr_new[ki]-eikr0[ki];
+  }
+}
+
+void StructFact::acceptMove(int iat) {
+  std::copy(eikr_new.begin(),eikr_new.end(),eikr[iat]);
+  ComplexType* restrict rhok_ptr(rhok[PtclRef.GroupID[iat]]);
+  for(int ki=0; ki<KLists.numk; ki++){
+    rhok_ptr[ki]+= delta_eikr[ki];
+  }
+}
+
+void StructFact::rejectMove(int iat) {
+  //do nothing
 }

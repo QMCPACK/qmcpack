@@ -4,6 +4,7 @@
 #include "Particle/ParticleSet.h"
 #include "Utilities/PooledData.h"
 #include "LongRange/KContainer.h"
+#include "OhmmsPETE/OhmmsVector.h"
 
 namespace qmcplusplus {
 
@@ -25,6 +26,8 @@ namespace qmcplusplus {
   public:
     Matrix<ComplexType> rhok;
     Matrix<ComplexType> eikr;
+    Vector<ComplexType> eikr_new;
+    Vector<ComplexType> delta_eikr;
     //Maximum reciprocal cell translations in kc.
     //Last index is max. of first 3.
     //    TinyVector<int,4> mmax; 
@@ -53,6 +56,10 @@ namespace qmcplusplus {
     /// Update Rhok if all particles moved
     void UpdateAllPart();
 
+    void makeMove(int iat, const PosType& pos);
+    void acceptMove(int iat);
+    void rejectMove(int iat);
+
     //Buffer methods. For PbyP MC where data must be stored in an anonymous
     //buffer between iterations
     /** @brief register rhok data to buf so that it can copyToBuffer and copyFromBuffer
@@ -61,50 +68,34 @@ namespace qmcplusplus {
      * to an anonymous buffer.
      */
     inline void registerData(BufferType& buf) {
-      //Buffertype is presently always real. Rhok is complex. Trick to force saving
-      //RealType* first = static_cast<RealType*>(&(rhok(0,0).real()));
-      //RealType* last = first + rhok.size()*2;
-      //buf.add(first,last);
-      buf.add(rhok.data(),rhok.data()+rhok.size());
-      buf.add(eikr.data(),eikr.data()+eikr.size());
-    };
-    /** @brief register rhok data to buf so that it can copyToBuffer and copyFromBuffer
+      buf.add(rhok.first_address(),rhok.last_address());
+      buf.add(eikr.first_address(),eikr.last_address());
+    }
+
+    /** @brief put rhok data to buf
      *
-     * This function is used for particle-by-particle MC methods to register structure factor
-     * to an anonymous buffer.
+     * This function is used for particle-by-particle MC methods
      */
     inline void updateBuffer(BufferType& buf) {
-      //Buffertype is presently always real. Rhok is complex. Trick to force saving
-      //RealType* first = static_cast<RealType*>(&(rhok(0,0).real()));
-      //RealType* last = first + rhok.size()*2;
-      //buf.put(first,last);
-      buf.put(rhok.data(),rhok.data()+rhok.size());
-      buf.put(eikr.data(),eikr.data()+eikr.size());
-    };
+      buf.put(rhok.first_address(),rhok.last_address());
+      buf.put(eikr.first_address(),eikr.last_address());
+    }
     /** @brief copy the data to an anonymous buffer
      *
      * Any data that will be used by the next iteration will be copied to a buffer.
      */
     inline void copyToBuffer(BufferType& buf) {
-      //Buffertype is presently always real. Rhok is complex. Trick to force saving
-      //RealType* first = static_cast<RealType*>(&(rhok(0,0).real()));
-      //RealType* last = first + rhok.size()*2;
-      //buf.put(first,last);
-      buf.put(rhok.data(),rhok.data()+rhok.size());
-      buf.put(eikr.data(),eikr.data()+eikr.size());
-    };
+      buf.put(rhok.first_address(),rhok.last_address());
+      buf.put(eikr.first_address(),eikr.last_address());
+    }
     /** @brief copy the data from an anonymous buffer
      *
      * Any data that was used by the previous iteration will be copied from a buffer.
      */
     inline void copyFromBuffer(BufferType& buf) {
-      //Buffertype is presently always real. Rhok is complex. Trick to force saving
-      //RealType* first = static_cast<RealType*>(&(rhok(0,0).real()));
-      //RealType* last = first + rhok.size()*2;
-      //buf.get(first,last);
-      buf.get(rhok.data(),rhok.data()+rhok.size());
-      buf.get(eikr.data(),eikr.data()+eikr.size());
-    };
+      buf.get(rhok.first_address(),rhok.last_address());
+      buf.get(eikr.first_address(),eikr.last_address());
+    }
 
   private:
     //Private Methods
