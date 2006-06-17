@@ -30,10 +30,10 @@
 
 #include <vector>
 #include <iostream>
-using namespace std;
+//using namespace std;
 
 namespace APPNAMESPACE {
-template<class T, class C = vector<T> >
+template<class T, class C = std::vector<T> >
 class Vector {
 public:
 
