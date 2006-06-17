@@ -39,7 +39,7 @@ namespace qmcplusplus {
       Lattice.SetLRCutoffs();
       SK = new StructFact(*this,Lattice.LR_kc);
       //This uses the copy constructor to avoid recomputing the data.
-      SKOld = new StructFact(*SK);
+      //SKOld = new StructFact(*SK);
     }
   }
 
