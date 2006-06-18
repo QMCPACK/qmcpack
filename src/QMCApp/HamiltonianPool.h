@@ -69,8 +69,12 @@ namespace qmcplusplus {
      */
     inline QMCHamiltonian* getHamiltonian(const std::string& pname) {
       PoolType::iterator hit(myPool.find(pname));
-      if(hit == myPool.end()) 
-        return 0;
+      if(hit == myPool.end())  {
+        if(myPool.empty())
+          return 0;
+        else
+          return (*(myPool.begin())).second->targetH;
+      }
       else 
         return (*hit).second->targetH;
     }

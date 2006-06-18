@@ -61,8 +61,12 @@ namespace qmcplusplus {
 
     TrialWaveFunction* getWaveFunction(const std::string& pname) {
       std::map<std::string,WaveFunctionFactory*>::iterator pit(myPool.find(pname));
-      if(pit == myPool.end()) 
-        return 0;
+      if(pit == myPool.end())  {
+        if(myPool.empty()) 
+          return 0;
+        else 
+          return (*(myPool.begin())).second->targetPsi;
+      }
       else 
         return (*pit).second->targetPsi;
     }
@@ -71,7 +75,7 @@ namespace qmcplusplus {
       std::map<std::string,WaveFunctionFactory*>::iterator pit(myPool.find(pname));
       if(pit == myPool.end()) { 
         if(myPool.empty()) 
-        return 0;
+          return 0;
         else
           return (*(myPool.begin())).second;
       }
