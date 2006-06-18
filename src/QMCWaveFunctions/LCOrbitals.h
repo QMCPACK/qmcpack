@@ -71,6 +71,7 @@ namespace qmcplusplus {
     BS* BasisSet;
     ///matrix containing the coefficients
     Matrix<ValueType> C;
+    vector<RealType> Occupation;
 
     /** constructor
      * @param bs pointer to the BasisSet
@@ -264,28 +265,53 @@ namespace qmcplusplus {
         cur=cur->next;
       }
 
+      NumSPOs=norb;
+      bool success=putOccupation(occ_ptr);
+      Identity=true;
+
       if(h == NULL) {
-        return putFromXML(norb, occ_ptr, coeff_ptr);
+        success = putFromXML(coeff_ptr);
       } else {
-        return putFromH5(norb, (const char*)h, occ_ptr, coeff_ptr);
+        success = putFromH5((const char*)h, coeff_ptr);
       }
+
+      //LOGMSG("The Molecular Orbital Coefficients:")
+      //LOGMSG(C)
+      return success;
+    }
+
+    bool putOccupation(xmlNodePtr occ_ptr) {
+      
+      Occupation.resize(numBasis());
+      for(int i=0; i<NumSPOs; i++) Occupation[i]=1.0;
+      vector<int> occ_in;
+      string occ_mode("table");
+      if(occ_ptr == NULL) {
+        occ_mode="ground";
+      } else {
+        const xmlChar* o=xmlGetProp(occ_ptr,(const xmlChar*)"mode");  
+        if(o) occ_mode = (const char*)o;
+      }
+      //Do nothing if mode == ground
+      if(occ_mode == "excited") {
+        putContent(occ_in,occ_ptr);
+        for(int k=0; k<occ_in.size(); k++) {
+          if(occ_in[k]<0) //remove this, -1 is to adjust the base
+            Occupation[-occ_in[k]-1]=0.0;
+          else
+            Occupation[occ_in[k]-1]=1.0;
+        }
+      } else if(occ_mode == "table") {
+        putContent(Occupation,occ_ptr);
+      }
+
       return true;
     }
 
-    bool putFromXML(int norb, xmlNodePtr occ_ptr, xmlNodePtr coeff_ptr) {
-
-      NumSPOs=norb;
-      vector<RealType> occupation(NumSPOs,1.0);
+    bool putFromXML(xmlNodePtr coeff_ptr) {
       vector<ValueType> Ctemp;
-
-      int nocc(0),total(NumSPOs);
+      int total(NumSPOs);
       Identity = true;
-
-      if(occ_ptr != NULL) {
-        nocc = atoi((const char*)(xmlGetProp(occ_ptr, (const xmlChar *)"size")));
-        putContent(occupation,occ_ptr);
-      }
-
       if(coeff_ptr != NULL){
 	if(xmlHasProp(coeff_ptr, (const xmlChar*)"size")){
 	  total = atoi((const char*)(xmlGetProp(coeff_ptr, (const xmlChar *)"size")));
@@ -295,37 +321,29 @@ namespace qmcplusplus {
 	Identity = false;
       }
 
-      occupation.resize(total);	
-      XMLReport("The number of orbitals for a Dirac Determinant " << NumSPOs)
-      XMLReport("The number of basis functions " << numBasis())
-
-      if(nocc && nocc != total) {
-        ERRORMSG("Inconsistent input for the occupation and size of the coefficients")
-        Identity=true;
-      }
+      LOGMSG("The number of orbitals for a Dirac Determinant " << NumSPOs)
+      LOGMSG("The number of basis functions " << numBasis())
 
       C.resize(NumSPOs,numBasis());
       if(Identity) {
         C=0.0;
         for(int i=0; i<NumSPOs; i++) C(i,i)=1.0;
       } else {
-	int n=0,i=0;
+        int n=0,i=0;
         typename vector<ValueType>::iterator cit(Ctemp.begin());
         BasisSize=numBasis();
-	while(i<NumSPOs){
-	  if(occupation[n]>numeric_limits<RealType>::epsilon()){
+        while(i<NumSPOs){
+          if(Occupation[n]>numeric_limits<RealType>::epsilon()){
             std::copy(cit,cit+BasisSize,C[i]);
-	    i++; 
-	  }
-	  n++;cit+=BasisSize;
-	}
+            i++; 
+          }
+          n++;cit+=BasisSize;
+        }
       }
-
-      //XMLReport("The Molecular Orbital Coefficients:")
-      //XMLReport(C)
 
       return true;
     }
+
 
     /** read data from a hdf5 file 
      * @param norb number of orbitals to be initialized
@@ -333,33 +351,9 @@ namespace qmcplusplus {
      * @param occ_ptr xmlnode for occupation
      * @param coeff_ptr xmlnode for coefficients
      */
-    bool putFromH5(int norb, const char* fname, xmlNodePtr occ_ptr, xmlNodePtr coeff_ptr) {
-
-      NumSPOs=norb;
+    bool putFromH5(const char* fname, xmlNodePtr coeff_ptr) {
 
 #if defined(HAVE_LIBHDF5)
-      vector<RealType> occupation(numBasis(),0.0);
-      for(int i=0; i<NumSPOs; i++) occupation[i]=1.0;
-      vector<int> occ_in;
-
-      string occ_mode("default");
-      if(occ_ptr != NULL) {
-        const xmlChar* o=xmlGetProp(occ_ptr,(const xmlChar*)"mode");  
-        if(o) occ_mode = (const char*)o;
-      }
-      //Do nothing if mode == ground
-      if(occ_mode == "excited") {
-        putContent(occ_in,occ_ptr);
-        for(int k=0; k<occ_in.size(); k++) {
-          if(occ_in[k]<0) //remove this, -1 is to adjust the base
-            occupation[-occ_in[k]-1]=0.0;
-          else
-            occupation[occ_in[k]-1]=1.0;
-        }
-      } else if(occ_mode == "default") {
-        putContent(occupation,occ_ptr);
-      }
-
       int neigs=numBasis();
       string setname("invalid");
       if(coeff_ptr) {
@@ -368,12 +362,12 @@ namespace qmcplusplus {
          d=xmlGetProp(coeff_ptr,(const xmlChar*)"size");  
          if(d) neigs=atoi((const char*)d);
       }
-
       C.resize(NumSPOs,numBasis());
       if(setname == "invalid") {
         C=0.0;
         for(int i=0; i<NumSPOs; i++) C(i,i)=1.0;
       } else {
+        Identity=false;
         Matrix<RealType> Ctemp(neigs,numBasis());
         hid_t h_file=  H5Fopen(fname,H5F_ACC_RDWR,H5P_DEFAULT);
         HDFAttribIO<Matrix<RealType> > h(Ctemp);
@@ -382,7 +376,7 @@ namespace qmcplusplus {
 	int n=0,i=0;
         BasisSize=numBasis();
 	while(i<NumSPOs){
-	  if(occupation[n]>numeric_limits<RealType>::epsilon()){
+	  if(Occupation[n]>numeric_limits<RealType>::epsilon()){
             std::copy(Ctemp[n],Ctemp[n+1],C[i]);
 	    i++; 
 	  }
@@ -397,8 +391,6 @@ namespace qmcplusplus {
       for(int i=0; i<NumSPOs; i++) C(i,i)=1.0;
 #endif
 
-      //XMLReport("The Molecular Orbital Coefficients:")
-      //XMLReport(C)
       return true;
     }
 
