@@ -10,7 +10,8 @@
 int main(int argc, char **argv) {
 
   if(argc<2) {
-    std::cout << "Usage: convert [-gaussian|-casino|-gamesxml] filename -hdf5 -gridtype log|log0|linear -first ri -last rf -size npts]" << std::endl;
+    std::cout << "Usage: convert [-gaussian|-casino|-gamesxml] filename ";
+    std::cout << "[-hdf5 -psi_tag psi0 -ion_tag ion0 -gridtype log|log0|linear -first ri -last rf -size npts]" << std::endl;
     std::cout << "Defaults : -gridtype log -first 1e-6 -last 100 -size 1001" << std::endl;
     std::cout << "When the input format is missing, the  extension of filename is used to determine the parser " << std::endl;
     std::cout << " *.Fchk -> gaussian; *.data -> casino; *.xml -> gamesxml" << std::endl;
@@ -32,6 +33,8 @@ int main(int argc, char **argv) {
   QMCGaussianParserBase *parser=0;
   int iargc=0;
   string in_file(argv[1]);
+  string psi_tag("psi0");
+  string ion_tag("ion0");
   bool usehdf5=false;
   while(iargc<argc) {
     std::string a(argv[iargc]);
@@ -48,6 +51,10 @@ int main(int argc, char **argv) {
       in_file =argv[++iargc];
     } else if(a == "-hdf5") {
       usehdf5=true;
+    } else if(a == "-psi_tag") {
+      psi_tag=argv[++iargc];
+    } else if(a == "-ion_tag") {
+      ion_tag=argv[++iargc];
     }
     ++iargc;
   }
@@ -67,6 +74,7 @@ int main(int argc, char **argv) {
     }
   }
 
+  parser->IonSystem.setName(ion_tag);
   parser->parse(in_file);
 
   xmlDocPtr doc = xmlNewDoc((const xmlChar*)"1.0");
@@ -79,13 +87,13 @@ int main(int argc, char **argv) {
 
     //wavefunction
     xmlNodePtr wfPtr = xmlNewNode(NULL,(const xmlChar*)"wavefunction");
-    xmlNewProp(wfPtr,(const xmlChar*)"id",(const xmlChar*)"psi0");
+    xmlNewProp(wfPtr,(const xmlChar*)"id",(const xmlChar*)psi_tag.c_str());
     xmlNewProp(wfPtr,(const xmlChar*)"target",(const xmlChar*)"e");
     {
       xmlNodePtr detPtr = xmlNewNode(NULL, (const xmlChar*) "determinantset");
       xmlNewProp(detPtr,(const xmlChar*)"type",(const xmlChar*)"MolecularOrbital");
-      xmlNewProp(detPtr,(const xmlChar*)"usegrid",(const xmlChar*)"yes");
-      xmlNewProp(detPtr,(const xmlChar*)"source",(const xmlChar*)"i");
+      xmlNewProp(detPtr,(const xmlChar*)"transform",(const xmlChar*)"yes");
+      xmlNewProp(detPtr,(const xmlChar*)"source",(const xmlChar*)ion_tag.c_str());
       {
         xmlNodePtr bsetPtr = parser->createBasisSet();
         xmlAddChild(detPtr,bsetPtr);

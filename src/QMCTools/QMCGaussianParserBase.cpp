@@ -29,7 +29,7 @@ QMCGaussianParserBase::QMCGaussianParserBase(int argc, char** argv):
   Title("sample"),basisType("Gaussian"),basisName("generic"),  
   Normalized("no"),gridPtr(0)
 {
-  IonSystem.setName("i");
+  //IonSystem.setName("i");
   IonChargeIndex=IonSystem.getSpeciesSet().addAttribute("charge");
   ValenceChargeIndex=IonSystem.getSpeciesSet().addAttribute("valence");
   AtomicNumberIndex=IonSystem.getSpeciesSet().addAttribute("atomicnumber");
