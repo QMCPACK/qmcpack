@@ -17,7 +17,7 @@ SET(WFSRCS
 
 IF(QMC_COMPLEX)
   SET(WFSRCS ${WFSRCS}
-    ../QMCWaveFunctions/ElectronGasOrbitalBuilder.cpp
+    ../QMCWaveFunctions/ElectronGasComplexOrbitalBuilder.cpp
     ../QMCWaveFunctions/PlaneWaveOrbitalBuilder.cpp
     ../QMCHamiltonians/LocalCorePolPotential.cpp
   )
