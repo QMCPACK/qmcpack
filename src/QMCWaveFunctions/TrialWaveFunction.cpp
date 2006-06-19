@@ -168,7 +168,7 @@ namespace qmcplusplus {
     //for(int iat=0; iat<P.getTotalNum(); iat++)
     // cout << P.G[iat] << " " << P.L[iat] << endl;
     LogValue = evaluateLogAndPhase(psi,PhaseValue);
-    return std::exp(LogValue);
+    return psi;
   }
   
   TrialWaveFunction::RealType
