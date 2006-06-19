@@ -104,6 +104,7 @@ namespace qmcplusplus {
       evaluate(const ParticleSet& P, int iat, int jorb) {
       LOGMSG("PWOSet: this should not be used");
       OHMMS::Controller->abort();
+      return 0.0;
     }
 
     template<class VV>
