@@ -211,27 +211,6 @@ DetUpdateTranspose(MatA& Minv,
     for(int k=0; k<nrows; k++) Minv(k,i) += temp*Minv(k,colchanged);
   }
   for(int k=0; k<nrows; k++) Minv(k,colchanged) *= ratio_inv;
-  /*
-     for(int j=0; j<ncols; j++) {
-     rvec[j] = DetRatio(Minv,newrow.begin(),j);
-     rvecinv[j] = 1.0/rvec[j];
-     }
-
-     for(int j=0; j<ncols; j++) {
-     Minv(rowchanged, j) *= rvecinv[rowchanged];
-     }
-
-     for(int i=0; i<rowchanged; i++) {
-     for(int j=0; j<ncols; j++) {
-     Minv(i,j) -= Minv(rowchanged,j)*rvec[i];
-     }
-     }
-     for(int i=rowchanged+1; i<Minv.rows(); i++) {
-     for(int j=0; j<ncols; j++) {
-     Minv(i,j) -= Minv(rowchanged,j)*rvec[i];
-     }
-     }
-     */
 }
 
 template<class T, unsigned D>

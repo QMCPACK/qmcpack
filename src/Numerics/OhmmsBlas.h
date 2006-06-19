@@ -185,6 +185,11 @@ struct BLAS {
   }
 
   inline static
+  complex<double> dot(int n, const complex<double>* a, const complex<double>* b) {
+    return zdot(n,a,INCX,b,INCY);
+  }
+
+  inline static
   float dot(int n, const float* a, const float* b) {
     return sdot(n,a,INCX,b,INCY);
   }

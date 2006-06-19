@@ -224,7 +224,7 @@ struct OneDimGridFunctor//: public FunctorBase<Td,1> {
   int NumNodes;
 
   ///address of coefficients Y and dY or d2Y
-  vector<value_type*> FirstAddress;
+  std::vector<value_type*> FirstAddress;
 };
 
 /** One-dimensional grid functor that returns a constant

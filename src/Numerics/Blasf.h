@@ -35,6 +35,7 @@ using namespace std;
 #define zsymv zsymv_
 #define ddot  ddot_
 #define sdot  sdot_
+#define zdot  zdot_
 #define dscal  dscal_
 #define dcopy dcopy_
 #define zcopy zcopy_
@@ -56,6 +57,10 @@ extern "C" {
   double ddot(const int& n, const double *dx, const int& incx, const double *dy, const int &incy);
 
   float sdot(const int& n, const float *dx, const int& incx,  const float *dy, const int &incy);
+
+  complex<double> 
+    zdot(const int& n, const complex<double> *dx, const int& incx, 
+        const complex<double> *dy, const int &incy);
 
   void daxpy(const int& n, const double& da,  
 	     const double *dx, const int& incx, double *dy, const int& incy);
