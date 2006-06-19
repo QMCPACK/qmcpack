@@ -81,7 +81,7 @@ namespace qmcplusplus {
           ComplexType skp((Fk[ki]*conj(eikr[ki])*Rhok[ki]));
 #if defined(QMC_COMPLEX)
           res +=  skp;
-          l += ksq[ki]*(Fk[ki]*Rhok[ki]-skp);
+          l += ksq[ki]*(Fk[ki]-skp);
           g += ComplexType(skp.imag(),-skp.real())*kpts[ki];
 #else
           res +=  skp.real();
@@ -102,16 +102,15 @@ namespace qmcplusplus {
     LRTwoBodyJastrow::ratio(ParticleSet& P, int iat) {
       curVal=0.0;
       const KContainer::VContainer_t& kpts(P.SK->KLists.kpts_cart);
-      const Vector<ComplexType>& eikr(P.SK->eikr_new);
+      const Vector<ComplexType>& eikr1(P.SK->eikr_new);
       const Vector<ComplexType>& del_eikr(P.SK->delta_eikr);
-      const ComplexType* restrict rtemp(rokbyF[iat]);
+      Rhok += del_eikr;
       for(int ki=0; ki<NumKpts; ki++) {
+        ComplexType skp((Fk[ki]*conj(eikr1[ki])*Rhok[ki]));
 #if defined(QMC_COMPLEX)
-        curVal += Fk[ki]*conj(eikr[ki])*(Rhok[ki]+del_eikr[ki]);
-        curVal += conj(eikr[ki])*rtemp[ki]+Fk[ki];
+        curVal +=  skp;
 #else
-        ComplexType skp(Fk[ki]*conj(eikr[ki])*(Rhok[ki]+del_eikr[ki]));
-        curVal += skp.real();
+        curVal +=  skp.real();
 #endif
       }
       return std::exp(curVal-U[iat]);
@@ -141,7 +140,7 @@ namespace qmcplusplus {
 #if defined(QMC_COMPLEX)
             curVal +=  skp;
             curGrad += ComplexType(skp.imag(),-skp.real())*kpts[ki];
-            curLap += ksq[ki]*(Fk[ki]*rhok_new-skp);
+            curLap += ksq[ki]*(Fk[ki]-skp);
 #else
             curVal +=  skp.real();
             curGrad += kpts[ki]*skp.imag();
