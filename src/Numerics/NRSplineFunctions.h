@@ -27,7 +27,7 @@ NRCubicSpline(const T* x, const T* y, int n, T yp1, T ypn, T* y2) {
 
   int i,k;
   T p,qn,sig,un;
-  vector<T> u(n);
+  std::vector<T> u(n);
   if (yp1 > 0.99e30)
     y2[0]=u[0]=0.0;
   else {

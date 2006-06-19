@@ -213,7 +213,7 @@ template<class T>
 bool GaussianCombo<T>::putBasisGroup(xmlNodePtr cur) {
   cur = cur->children;
   while(cur != NULL) {
-    string cname((const char*)cur->name);
+    std::string cname((const char*)cur->name);
     if(cname == "radfunc") {
       put(cur);
     }

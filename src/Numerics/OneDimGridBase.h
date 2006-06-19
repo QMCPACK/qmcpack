@@ -325,10 +325,10 @@ struct NumericalGrid: public OneDimGridBase<T,CT> {
 };
 
 template<class T>
-ostream& operator<<(ostream& out, const OneDimGridBase<T>& rhs)
+std::ostream& operator<<(std::ostream& out, const OneDimGridBase<T>& rhs)
 {
   for(int i=0; i<rhs.size(); i++)
-    out << i << " " << rhs.r(i) << " " << rhs.dr(i)<< endl;
+    out << i << " " << rhs.r(i) << " " << rhs.dr(i)<< std::endl;
   return out;
 }
 

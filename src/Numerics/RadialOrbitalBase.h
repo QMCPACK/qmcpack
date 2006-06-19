@@ -35,7 +35,7 @@ struct RadialOrbitalBase {
 template<class T>
 struct RadialOrbitalSet: public RadialOrbitalBase<T> {
 
-  vector<RadialOrbitalBase<T>*> InFunc;
+  std::vector<RadialOrbitalBase<T>*> InFunc;
 
   ~RadialOrbitalSet() {
     typename std::vector<RadialOrbitalBase<T>*>::iterator it(InFunc.begin());

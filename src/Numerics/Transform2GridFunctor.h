@@ -171,10 +171,13 @@ struct TestTransform {
       nf.setgrid(x0);
       y = nf.evaluate(x0,1.0/x0,yp,y2p);
       z = af.evaluate(x0,1.0/x0,zp,z2p);
-      std::cout << setw(10) << x0 
-		<< setw(20) << setprecision(10) << y << setw(20) << (y-z)/z
-		<< setw(20) << yp << setw(20) << (yp-zp)/zp
-		<< setw(20) << y2p << setw(20) << (y2p-z2p)/z2p << std::endl;
+      std::cout << std::setw(10) << x0 
+		<< std::setw(20) << std::setprecision(10) << y 
+                << std::setw(20) << (y-z)/z
+		<< std::setw(20) << yp 
+                << std::setw(20) << (yp-zp)/zp
+		<< std::setw(20) << y2p 
+                << std::setw(20) << (y2p-z2p)/z2p << std::endl;
       
     }
 

@@ -117,7 +117,7 @@ template<class T>
 bool SlaterCombo<T>::putBasisGroup(xmlNodePtr cur) {
   cur = cur->children;
   while(cur != NULL) {
-    string cname((const char*)cur->name);
+    std::string cname((const char*)cur->name);
     if(cname == "radfunc" || cname == "Rnl") {
       T zeta(1.0),c(1.0);
       int qN=1;

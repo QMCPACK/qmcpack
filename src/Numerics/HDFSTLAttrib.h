@@ -20,6 +20,7 @@
 #ifndef OHMMS_HDF_STL_NUMERICATTRIBIO_H
 #define OHMMS_HDF_STL_NUMERICATTRIBIO_H
 #include "OhmmsData/HDFAttribIO.h"
+#include <complex>
 
 namespace qmcplusplus {
 /** Specialization for std::vector<double> */
@@ -119,11 +120,11 @@ struct HDFAttribIO<std::vector<double> >: public HDFAttribIOBase {
 };
 
 template<>
-struct HDFAttribIO<std::vector<complex<double> > >: public HDFAttribIOBase {
+struct HDFAttribIO<std::vector<std::complex<double> > >: public HDFAttribIOBase {
   //NOTE: This specialization assumes each complex number was/will be saved
   // as a pair of doubles. This is checked.
 
-  typedef std::vector<complex<double> > ArrayType_t;
+  typedef std::vector<std::complex<double> > ArrayType_t;
   std::vector<hsize_t> Dim;
   ArrayType_t&  ref;
 
@@ -154,13 +155,13 @@ struct HDFAttribIO<std::vector<complex<double> > >: public HDFAttribIOBase {
     std::vector<hsize_t> dims_out(Dim);
     int rank = H5Sget_simple_extent_ndims(dataspace);
     if(rank!=2) {
-      LOGMSG("Error: HDF rank does not match for complex vector");
+      //LOGMSG("Error: HDF rank does not match for complex vector")
       return;
     }
     int status_n 
       = H5Sget_simple_extent_dims(dataspace, &dims_out[0], NULL);
     if(dims_out[1]!=2) {
-      LOGMSG("Error: HDF rank does not match for complex vector");
+      //LOGMSG("Error: HDF rank does not match for complex vector")
       return;
     }
     Dim=dims_out;
