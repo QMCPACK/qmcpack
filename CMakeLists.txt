@@ -41,6 +41,9 @@ SET(OHMMS_DIM 3)
 SET(OHMMS_INDEXTYPE int)
 SET(OHMMS_PRECISION double)
 SET(QMC_COMPLEX 0)
+IF($ENV{QMC_COMPLEX})
+  SET(QMC_COMPLEX $ENV{QMC_COMPLEX})
+ENDIF($ENV{QMC_COMPLEX})
 
 ######################################################################
 # FIXED PARAMETERS for test and legacy reasons
@@ -83,7 +86,19 @@ SET (PROJECT_CMAKE ${qmcPlusPlus_SOURCE_DIR}/CMake)
 #COMPILER choose one of the cmake files to customize the compiler options
 #If nothing is chosen, default settings by cmake will  be used.
 ######################################################
-INCLUDE(${PROJECT_CMAKE}/GNUCompilers.cmake)
+SET(FOUND_CXXENV 0)
+IF($ENV{CXX} MATCHES "icpc")
+  INCLUDE(${PROJECT_CMAKE}/Intel8.cmake)
+  SET(FOUND_CXXENV 1)
+ENDIF($ENV{CXX} MATCHES "icpc")
+IF($ENV{CXX} MATCHES "xlC")
+  INCLUDE(${PROJECT_CMAKE}/IBMCompilers.cmake)
+  SET(FOUND_CXXENV 1)
+ENDIF($ENV{CXX} MATCHES "xlC")
+IF(NOT FOUND_CXXENV)
+  INCLUDE(${PROJECT_CMAKE}/GNUCompilers.cmake)
+ENDIF(NOT FOUND_CXXENV)
+#INCLUDE(${PROJECT_CMAKE}/GNUCompilers.cmake)
 #INCLUDE(${PROJECT_CMAKE}/Intel8.cmake)
 #INCLUDE(${PROJECT_CMAKE}/IBMCompilers.cmake)
 #INCLUDE(${PROJECT_CMAKE}/KCCCompilers.cmake)
