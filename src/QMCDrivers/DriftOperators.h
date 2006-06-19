@@ -24,14 +24,14 @@ namespace qmcplusplus {
   template<class T, unsigned D>
   inline T getDriftScale(T tau, const ParticleAttrib<TinyVector<T,D> >& ga) {
     T vsq=Dot(ga,ga);
-    return (vsq<numeric_limits<T>::epsilon())? tau:((-1.0+sqrt(1.0+2.0*tau*vsq))/vsq);
+    return (vsq<numeric_limits<T>::epsilon())? tau:((-1.0+std::sqrt(1.0+2.0*tau*vsq))/vsq);
   }
 
   template<class T, unsigned D>
   inline T getDriftScale(T tau, 
       const ParticleAttrib<TinyVector<complex<T>,D> >& ga) {
     T vsq=Dot(ga,ga);
-    return (vsq<numeric_limits<T>::epsilon())? tau:((-1.0+sqrt(1.0+2.0*tau*vsq))/vsq);
+    return (vsq<numeric_limits<T>::epsilon())? tau:((-1.0+std::sqrt(1.0+2.0*tau*vsq))/vsq);
   }
 
   /** da = scaled(tau)*ga
