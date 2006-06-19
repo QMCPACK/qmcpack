@@ -17,6 +17,7 @@
 //   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
+using namespace std;
 #include "Particle/MCWalkerConfiguration.h"
 #include "Particle/DistanceTable.h"
 #include "ParticleBase/ParticleUtility.h"
@@ -25,7 +26,8 @@
 #include "QMCDrivers/WaveFunctionTester.h"
 #include "QMCDrivers/DriftOperators.h"
 #include "Utilities/OhmmsInform.h"
-using namespace qmcplusplus;
+#include "LongRange/StructFact.h"
+namespace qmcplusplus {
 
 
 WaveFunctionTester::WaveFunctionTester(MCWalkerConfiguration& w, 
@@ -72,7 +74,6 @@ WaveFunctionTester::run() {
 
   cout << " Energy " << ene << endl;
 
-  cout << " argument of 1.0 " << std::arg(ComplexType(0.0,1.0)) << endl;
   return true;
 }
 
@@ -102,11 +103,18 @@ void WaveFunctionTester::runBasicTest() {
   //W.R += deltaR;
 
   W.update();
-  RealType psi = Psi.evaluateLog(W);
+  ValueType psi = Psi.evaluate(W);
+  //RealType psi = Psi.evaluateLog(W);
   ParticleSet::ParticleGradient_t G(nat), G1(nat);
   ParticleSet::ParticleLaplacian_t L(nat), L1(nat);
   G = W.G;
   L = W.L;
+
+#if defined(QMC_COMPLEX)
+  ValueType logpsi(std::log(psi));
+#else
+  ValueType logpsi(std::log(std::abs(psi)));
+#endif
 
   for(int iat=0; iat<nat; iat++) {
     PosType r0 = W.R[iat];
@@ -116,22 +124,23 @@ void WaveFunctionTester::runBasicTest() {
    
       W.R[iat][idim] = r0[idim]+delta;         
       W.update();
-      //ValueType psi_p = log(fabs(Psi.evaluate(W)));
-      RealType psi_p = Psi.evaluateLog(W);
-
+      ValueType psi_p = Psi.evaluate(W);
       
       W.R[iat][idim] = r0[idim]-delta;         
       W.update();
-      //ValueType psi_m = log(fabs(Psi.evaluate(W)));
-      RealType psi_m = Psi.evaluateLog(W);
-      lap += psi_m + psi_p;
-      g0[idim] = psi_p - psi_m;
-
+      ValueType psi_m = Psi.evaluate(W);
+#if defined(QMC_COMPLEX)
+      lap += std::log(psi_m*psi_p);
+      g0[idim] = std::log(psi_p/psi_m);
+#else
+      lap += std::log(std::abs(psi_m*psi_p));
+      g0[idim] = std::log(std::abs(psi_p/psi_m));
+#endif
       W.R[iat] = r0;
     }
 
     G1[iat] = c1*g0;
-    L1[iat] = c2*(lap-6.0*psi);
+    L1[iat] = c2*(lap-6.0*logpsi);
   }
   
   cout.precision(15);
@@ -156,13 +165,14 @@ void WaveFunctionTester::runBasicTest() {
     W.makeMove(iat,deltaR[iat]);
     RealType aratio = Psi.ratio(W,iat);
     W.rejectMove(iat);
+    Psi.rejectMove(iat);
 
     W.R[iat] += deltaR[iat];         
     W.update();
     //ValueType psi_m = log(fabs(Psi.evaluate(W)));
     RealType psi_m = Psi.evaluateLog(W);
 
-    cout << iat << " ratio " << aratio << " " << exp(psi_m-psi_p) << endl;
+    cout << iat << " ratio " << aratio/std::exp(psi_m-psi_p) << " " << std::exp(psi_m-psi_p) << endl;
   }
 } 
 
@@ -188,7 +198,10 @@ void WaveFunctionTester::runRatioTest() {
   } 
 
   it=W.begin();
+  int iw=0;
   while(it != it_end) {
+
+    cout << "\nStart Walker " << iw++ << endl;
 
     Walker_t& thisWalker(**it);
     Walker_t::Buffer_t& w_buffer(thisWalker.DataSet);
@@ -213,7 +226,8 @@ void WaveFunctionTester::runRatioTest() {
       RealType ratio=Psi.ratio(W,iat,dG,dL);
 
       //if(ratio > 0 && iat%2 == 1) {//accept only the even index
-      if(ratio > 0) {
+      if(ratio > Random()) {
+        cout << " Accepting a move for " << iat << endl;
         W.acceptMove(iat);
         Psi.acceptMove(W,iat);
 
@@ -224,9 +238,11 @@ void WaveFunctionTester::runRatioTest() {
         ratio_accum *= ratio;
       } else {
         cout << " Rejecting a move for " << iat << endl;
-        W.rejectMove(iat); Psi.rejectMove(iat);
+        W.rejectMove(iat); 
+        Psi.rejectMove(iat);
       }
     }
+
 
     G = W.G;
     L = W.L;
@@ -239,7 +255,8 @@ void WaveFunctionTester::runRatioTest() {
     RealType newlogpsi=Psi.evaluateLog(W);
 
     cout << " Ratio " << ratio_accum*ratio_accum 
-      << " | " << exp(2.0*(newlogpsi-logpsi)) << " " << ratio_accum*ratio_accum/exp(2.0*(newlogpsi-logpsi)) << endl
+      << " | " << std::exp(2.0*(newlogpsi-logpsi)) << " " 
+      << ratio_accum*ratio_accum/std::exp(2.0*(newlogpsi-logpsi)) << endl
       << " new log(psi) " << newlogpsi 
       << " old log(psi) " << logpsi << endl;
 
@@ -249,7 +266,7 @@ void WaveFunctionTester::runRatioTest() {
     }
     cout << " Laplacians " << endl;
     for(int iat=0; iat<nat; iat++) {
-      cout << W.L[iat]-L[iat] << endl;
+      cout << W.L[iat]-L[iat] << " " << W.L[iat] << endl;
     }
     ++it;
   }
@@ -258,6 +275,7 @@ void WaveFunctionTester::runRatioTest() {
 bool 
 WaveFunctionTester::put(xmlNodePtr q){
   return putQMCInfo(q);
+}
 }
 
 /***************************************************************************
