@@ -27,6 +27,7 @@ namespace qmcplusplus {
 
   class LRTwoBodyJastrow: public  OrbitalBase {
     
+    bool NeedToRestore;
     IndexType NumPtcls;
     IndexType NumSpecies;
     IndexType NumKpts;

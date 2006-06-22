@@ -100,13 +100,16 @@ namespace qmcplusplus {
 
     LRTwoBodyJastrow::ValueType 
     LRTwoBodyJastrow::ratio(ParticleSet& P, int iat) {
+      //restore, if called should do nothing
+      NeedToRestore=false;
       curVal=0.0;
       const KContainer::VContainer_t& kpts(P.SK->KLists.kpts_cart);
       const Vector<ComplexType>& eikr1(P.SK->eikr_new);
       const Vector<ComplexType>& del_eikr(P.SK->delta_eikr);
-      Rhok += del_eikr;
+      //Rhok += del_eikr;
       for(int ki=0; ki<NumKpts; ki++) {
-        ComplexType skp((Fk[ki]*conj(eikr1[ki])*Rhok[ki]));
+        //ComplexType skp((Fk[ki]*conj(eikr1[ki])*Rhok[ki]));
+        ComplexType skp((Fk[ki]*conj(eikr1[ki])*(Rhok[ki]+del_eikr[ki])));
 #if defined(QMC_COMPLEX)
         curVal +=  skp;
 #else
@@ -122,6 +125,7 @@ namespace qmcplusplus {
 		    ParticleSet::ParticleGradient_t& dG,
 		    ParticleSet::ParticleLaplacian_t& dL) {
 
+      NeedToRestore=true;
       const KContainer::VContainer_t& kpts(P.SK->KLists.kpts_cart);
       const KContainer::SContainer_t& ksq(P.SK->KLists.ksq);
       const Vector<ComplexType>& eikr1(P.SK->eikr_new);
@@ -176,7 +180,7 @@ namespace qmcplusplus {
 
     void LRTwoBodyJastrow::restore(int iat) {
       //substract the addition in logRatio
-      Rhok -= skRef->delta_eikr;
+      if(NeedToRestore) Rhok -= skRef->delta_eikr;
     }
 
     void LRTwoBodyJastrow::acceptMove(ParticleSet& P, int iat) {
