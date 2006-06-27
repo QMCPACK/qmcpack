@@ -22,6 +22,7 @@
 #include "QMCWaveFunctions/MolecularOrbitals/MolecularOrbitalBuilder.h"
 #include "QMCWaveFunctions/AtomicOrbitals/HeSTOClementiRottie.h"
 #include "QMCWaveFunctions/PlaneWaveOrbitalBuilder.h"
+#include "QMCWaveFunctions/PlaneWave/PWOrbitalBuilder.h"
 #include "QMCWaveFunctions/JAABuilder.h"
 #include "QMCWaveFunctions/JABBuilder.h"
 #include "QMCWaveFunctions/NJAABuilder.h"
@@ -94,8 +95,10 @@ namespace qmcplusplus {
 #if defined(QMC_COMPLEX)
     if(orbtype == "electron-gas") {
       detbuilder = new ElectronGasComplexOrbitalBuilder(*targetPtcl,*targetPsi);
-    } else if (orbtype == "PWBasis") {
+    } else if(orbtype == "PWBasis") {
       detbuilder = new PlaneWaveOrbitalBuilder(*targetPtcl,*targetPsi);
+    } else if(orbtype == "PW") {
+      detbuilder = new PWOrbitalBuilder(*targetPtcl,*targetPsi);
     } else {
       app_log() << "QMC_COMPLEX==1  Cannot create " << orbtype << endl;
     }
