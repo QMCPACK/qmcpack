@@ -243,7 +243,7 @@ inline void evaluate(Vector<T, C> &lhs, const Op &op, const Expression<RHS> &rhs
     }
   else
     {
-      cerr << "Error: LHS and RHS don't conform." << endl;
+      std::cerr << "Error: LHS and RHS don't conform." << std::endl;
       exit(1);
     }
 }
