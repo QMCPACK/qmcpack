@@ -42,7 +42,9 @@ using namespace std;
 #define dsyrk  dsyrk_
 #define dsymm  dsymm_
 #define dgemm  dgemm_
+#define zgemm  zgemm_
 #define dgemv  dgemv_
+#define zgemv  zgemv_
 #define dsyr2k dsyr2k_
 #define dgetrf dgetrf_
 #define dgetri dgetri_
@@ -118,10 +120,20 @@ extern "C" {
 	     const double&, const double*, const int&, const double*, const int&,
 	     const double&, double*, const int&);
 
+  void zgemm(const char&, const char&,
+	     const int&, const int&, const int&,
+	     const complex<double>&, const complex<double>*, const int&, const complex<double>*, const int&,
+	     const complex<double>&, complex<double>*, const int&);
+
   void dgemv(const char& trans, const int& nr, const int& nc, 
 	     const double& alpha, const double* amat, const int& lda, 
              const double* bv, const int& incx,
 	     const double& beta, double* cv, const int& incy);
+
+  void zgemv(const char& trans, const int& nr, const int& nc, 
+	     const complex<double>& alpha, const complex<double>* amat, const int& lda, 
+             const complex<double>* bv, const int& incx,
+	     const complex<double>& beta, complex<double>* cv, const int& incy);
 
   void dsyrk(const char&, const char&, const int&, const int&,
              const double&, const double*, const int&,

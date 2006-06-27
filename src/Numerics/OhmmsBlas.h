@@ -105,9 +105,18 @@ struct BLAS {
   //}
 
   inline static 
-  void gemv(int n, int m, const double* amat, const double* x, double* y) {
+  void gemv(int n, int m, const double* restrict amat, const double* restrict x, double* restrict y) {
     dgemv(TRANS, m, n, done, amat, m, x, INCX, dzero, y, INCY);
   }
+
+  inline static 
+  void gemv(int n, int m, 
+      const std::complex<double>* restrict amat, 
+      const std::complex<double>* restrict x, 
+      std::complex<double>* restrict y) {
+    zgemv(TRANS, m, n, zone, amat, m, x, INCX, zzero, y, INCY);
+  }
+
 
 //   inline static
 //   void symv(char uplo, int n, const double alpha, double* a, int lda,
