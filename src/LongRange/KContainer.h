@@ -29,9 +29,9 @@ namespace qmcplusplus {
     //Typedef for the lattice-type. We don't need the full particle-set.
     typedef ParticleSet::ParticleLayout_t ParticleLayout_t;
     ///typedef of vector containers
-    typedef vector<TinyVector<RealType,3> > VContainer_t;
+    typedef vector<PosType>  VContainer_t;
     ///typedef of scalar containers
-    typedef vector<RealType>                SContainer_t;
+    typedef vector<RealType> SContainer_t;
     //Maximum integer translations of reciprocal cell within kc.
     //Last index is max. of first 3.
     TinyVector<int,4> mmax;
@@ -50,6 +50,13 @@ namespace qmcplusplus {
     vector<int> minusk; 
 
     int numk;
+
+    /** k points sorted by the |k|  excluding |k|=0
+     *
+     * The first for |k|
+     * The second for a map to the full index. The size of the second is the degeneracy.
+     */
+    std::map<int,std::vector<int>*>  kpts_sorted;
 
     //A copy of the lattice, so that we have the cell-vectors
     ParticleLayout_t& Lattice;

@@ -206,6 +206,7 @@ KContainer::BuildKLists(bool useSphere) {
     TempActualMax[0] = mmax[0];
     TempActualMax[1] = mmax[1];
     TempActualMax[2] = mmax[2];
+
   }
   
   //Finished searching k-points. Copy list of maximum translations.
@@ -232,5 +233,31 @@ KContainer::BuildKLists(bool useSphere) {
   for(int ki=0; ki<numk; ki++) {
     minusk[ki] = hashToIndex[ GetHashOfVec(-1 * kpts[ki], numk) ];
   }
+
+  //create the map: use simple integer with resolution of 0.001 in ksq
+  for(int ik=0; ik<kpts.size(); ik++) {
+    int k_ind=static_cast<int>(ksq[ik]*1000);
+    std::map<int,std::vector<int>*>::iterator it(kpts_sorted.find(k_ind));
+    if(it == kpts_sorted.end()) {
+      std::vector<int>* newSet=new std::vector<int>;
+      kpts_sorted[k_ind]=newSet;
+      newSet->push_back(ik);
+    } else {
+      (*it).second->push_back(ik);
+    }
+  }
+
+ // std::map<int,std::vector<int>*>::iterator it(kpts_sorted.begin());
+ // cout << "<<<<< sorted kpts " << endl;
+ // while(it != kpts_sorted.end()) {
+ //   cout << (*it).first << " " << (*it).second->size() << endl;
+ //   std::vector<int>::iterator vit((*it).second->begin());
+ //   while(vit != (*it).second->end()) {
+ //     int ik=(*vit);
+ //     cout << "   " << ik <<  " " << kpts[ik] << " " << ksq[ik] << endl;
+ //     ++vit;
+ //   }
+ //   ++it;
+ // }
 }
 
