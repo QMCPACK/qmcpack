@@ -26,7 +26,7 @@ namespace qmcplusplus {
     //Need to store the maximum translation in each dimension to use recursive PW generation.
     TinyVector<int,3> maxg;
     int maxmaxg;
-    Matrix<ValueType> C;
+    Matrix<ComplexType> C;
 #if !defined(QMC_COMPLEX)
     //Real wavefunctions here. Now the basis states are cos(Gr) or sin(Gr), not exp(iGr) 
     //We need a way of switching between them for G -> -G, otherwise the
@@ -40,8 +40,8 @@ namespace qmcplusplus {
     //enumeration for the value, laplacian, gradients and size
     enum {PW_VALUE, PW_LAP, PW_GRADX, PW_GRADY, PW_GRADZ, PW_MAXINDEX};
 
-    Matrix<ValueType> Z;
-    Vector<ValueType> Zv;
+    Matrix<ComplexType> Z;
+    Vector<ComplexType> Zv;
     /* inputmap is used for a memory efficient way of 
      *
      * importing the basis-set and coefficients when the desired energy cutoff may be
@@ -262,7 +262,9 @@ namespace qmcplusplus {
         zptr[3]= pw*ComplexType(0.0,kplusgvecs_cart[ig][1]);
         zptr[4]= pw*ComplexType(0.0,kplusgvecs_cart[ig][2]);
 #else
-        ERROR_MSG("DO NOT USE THIS UNTIL TESTED")
+        cout << "DO NOT USE THIS UNTIL TESTED" << endl;
+        abort();
+        //ERROR_MSG("DO NOT USE THIS UNTIL TESTED")
 #endif
       }
     }
