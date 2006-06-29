@@ -21,6 +21,7 @@ namespace qmcplusplus {
 
     LRTwoBodyJastrow::LRTwoBodyJastrow(ParticleSet& p):
       NumPtcls(0), NumSpecies(0), skRef(0) {
+        Optimizable=true;
       NumSpecies=p.groups();
       skRef=p.SK;
       if(skRef) {
@@ -49,7 +50,22 @@ namespace qmcplusplus {
       offd2U.resize(NumPtcls);
     }
 
+    /** reset Fk
+     *
+     * Fk_symm values are modified. Update Fk according to the sorted kpts
+     */
     void LRTwoBodyJastrow::reset() {
+      std::map<int,std::vector<int>*>& kpts_sorted(skRef->KLists.kpts_sorted);
+      std::map<int,std::vector<int>*>::iterator it(kpts_sorted.begin());
+      int uniqueK=0;
+      while(it != kpts_sorted.end()) {
+        std::vector<int>::iterator vit((*it).second->begin());
+        RealType c=Fk_symm[uniqueK];
+        while(vit != (*it).second->end()) {
+          Fk[*vit++]=c;
+        }
+        ++it;++uniqueK;
+      }
     }
 
     void LRTwoBodyJastrow::resetTargetParticleSet(ParticleSet& P) {
@@ -243,13 +259,68 @@ namespace qmcplusplus {
         return false;
       }
 
-      //not optimization yet
-      Fk.resize(NumKpts);
-      app_log() << "  LRTwoBodyJastrow: kx ky kz U[k] " << endl;
-      for(int ikpt=0; ikpt<NumKpts; ikpt++) {
-        Fk[ikpt]= -0.001*getRPACoeff(skRef->KLists.ksq[ikpt]);
-        app_log() <<  skRef->KLists.ksq[ikpt] << " " << Fk[ikpt] << endl;
+      std::map<int,std::vector<int>*>& kpts_sorted(skRef->KLists.kpts_sorted);
+      Fk_symm.resize(kpts_sorted.size());
+
+      bool foundCoeff=false;
+      xmlNodePtr tcur=cur->children;
+      while(tcur != NULL) {
+        string cname((const char*)(tcur->name));
+        if(cname == "parameter") {
+          const xmlChar* kptr=xmlGetProp(tcur,(const xmlChar *)"name");
+          const xmlChar* idptr=xmlGetProp(tcur,(const xmlChar *)"id");
+          if(idptr!= NULL && kptr != NULL) {
+            int ik=atoi((const char*)kptr);
+            if(ik<Fk_symm.size()) { // only accept valid ik 
+              RealType x;
+              putContent(x,tcur);
+              Fk_symm[ik]=x;
+              vlist.add((const char*)idptr,Fk_symm.data()+ik);
+            }
+            foundCoeff=true;
+          }
+        }
+        tcur=tcur->next;
       }
+
+      Fk.resize(NumKpts);
+      if(foundCoeff) {
+        reset();
+      } else {
+        cout << " Initialize by Rs" << endl;
+        std::map<int,std::vector<int>*>::iterator it(kpts_sorted.begin());
+        int uniqueK=0;
+        while(it != kpts_sorted.end()) {
+          std::vector<int>::iterator vit((*it).second->begin());
+          int ik=(*vit);
+          Fk_symm[uniqueK]=Fk[ik]=-0.001*getRPACoeff(skRef->KLists.ksq[ik]);
+          cout << "  " << ik <<  Fk[ik] << endl;
+          ++vit;
+          while(vit != (*it).second->end()) {
+            int ik=(*vit);
+            Fk[ik]=-0.001*getRPACoeff(skRef->KLists.ksq[ik]);
+            ++vit;
+          }
+          ++it;++uniqueK;
+        }
+        char coeffname[128];
+        for(int ik=0; ik<Fk_symm.size(); ik++) {
+          sprintf(coeffname,"rpa_k%d",ik);
+          vlist.add(coeffname,Fk_symm.data()+ik);
+          std::ostringstream kname,val;
+          kname << ik;
+          val<<Fk_symm[ik];
+          xmlNodePtr p_ptr = xmlNewTextChild(cur,NULL,(const xmlChar*)"parameter",
+              (const xmlChar*)val.str().c_str());
+          xmlNewProp(p_ptr,(const xmlChar*)"id",(const xmlChar*)coeffname);
+          xmlNewProp(p_ptr,(const xmlChar*)"name",(const xmlChar*)kname.str().c_str());
+        }
+      }
+
+      //for(int ikpt=0; ikpt<NumKpts; ikpt++) {
+      //  Fk[ikpt]= -0.001*getRPACoeff(skRef->KLists.ksq[ikpt]);
+      //  app_log() <<  skRef->KLists.ksq[ikpt] << " " << Fk[ikpt] << endl;
+      //}
       return true;
     }
 }

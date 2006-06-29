@@ -14,6 +14,14 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
+/** @file LRTwoBodyJastrow.h
+ * @brief Declaration of Long-range TwoBody Jastrow
+ *
+ * The initial coefficients are evaluated according to RPA.
+ * A set of k-dependent coefficients are generated.
+ * Optimization should use rpa_k0, ...rpa_kn as the names of the
+ * optimizable parameters.
+ */
 #ifndef QMCPLUSPLUS_LR_RPAJASTROW_H
 #define QMCPLUSPLUS_LR_RPAJASTROW_H
 
@@ -51,11 +59,14 @@ namespace qmcplusplus {
     ValueVectorType offU, offd2U;
     GradVectorType offdU;
 
-    const StructFact* skRef;
+    StructFact* skRef;
+
   public:
 
     ///Coefficients
     Vector<RealType> Fk; 
+    ///A unique Fk sorted by |k|
+    Vector<RealType> Fk_symm;
 
     LRTwoBodyJastrow(ParticleSet& p);
 
