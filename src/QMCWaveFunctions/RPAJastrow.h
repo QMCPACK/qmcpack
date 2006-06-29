@@ -105,7 +105,7 @@ struct RPAJastrow: public JastrowFunctorBase<T> {
   }
 
   void setDensity(real_type n) {
-    A = 1.0/std::pow(4.0*M_PI*n/3.0,-1.0/3.0);
+    A = std::pow(4.0*M_PI*n/3.0,-1.0/3.0);
     reset();
   }
 
