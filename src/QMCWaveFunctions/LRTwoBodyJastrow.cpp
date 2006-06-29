@@ -287,14 +287,12 @@ namespace qmcplusplus {
       if(foundCoeff) {
         reset();
       } else {
-        cout << " Initialize by Rs" << endl;
         std::map<int,std::vector<int>*>::iterator it(kpts_sorted.begin());
         int uniqueK=0;
         while(it != kpts_sorted.end()) {
           std::vector<int>::iterator vit((*it).second->begin());
           int ik=(*vit);
           Fk_symm[uniqueK]=Fk[ik]=-0.001*getRPACoeff(skRef->KLists.ksq[ik]);
-          cout << "  " << ik <<  Fk[ik] << endl;
           ++vit;
           while(vit != (*it).second->end()) {
             int ik=(*vit);
@@ -317,10 +315,10 @@ namespace qmcplusplus {
         }
       }
 
-      //for(int ikpt=0; ikpt<NumKpts; ikpt++) {
-      //  Fk[ikpt]= -0.001*getRPACoeff(skRef->KLists.ksq[ikpt]);
-      //  app_log() <<  skRef->KLists.ksq[ikpt] << " " << Fk[ikpt] << endl;
-      //}
+      app_log() << "  Long-range Two-Body Jastrow coefficients " << endl;
+      for(int ikpt=0; ikpt<NumKpts; ikpt++) {
+        app_log() <<  skRef->KLists.ksq[ikpt] << " " << Fk[ikpt] << endl;
+      }
       return true;
     }
 }
