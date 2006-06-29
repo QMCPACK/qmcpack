@@ -18,6 +18,7 @@
 #include "Particle/DistanceTable.h"
 #include "QMCWaveFunctions/JAABuilder.h"
 #include "QMCWaveFunctions/PadeJastrow.h"
+#include "QMCWaveFunctions/RPAJastrow.h"
 #include "QMCWaveFunctions/ModPadeJastrow.h"
 #include "QMCWaveFunctions/TwoBodyJastrowOrbital.h"
 //#include "QMCWaveFunctions/TwoBodyJastrowFunction.h"
@@ -66,7 +67,9 @@ namespace qmcplusplus {
         }
         if(!(jastrow[iab])) {
           //create the new Jastrow function
-          FN *j2=  new FN;
+          FN *j2= new FN(ia==ib);
+          if(targetPtcl.Lattice.BoxBConds[0])
+            j2->setDensity(targetPtcl.getTotalNum()/targetPtcl.Lattice.Volume);
           if(idptr == NULL) {
             ostringstream idassigned; idassigned << "j2"<<iab;
             j2Unique[idassigned.str()] = j2;
@@ -165,6 +168,10 @@ namespace qmcplusplus {
       app_log() << "  Modified Jastrow function Two-Body Jastrow Function = " << jastfunction << endl;
       IgnoreSpin=true;
       ModPadeJastrow<RealType> *dummy = 0;
+      success = createJAA(cur,dummy);
+    } else if(jastfunction == "rpa") {
+      app_log() << "  Two-Body Jastrow Function = " << jastfunction << endl;
+      RPAJastrow<RealType> *dummy = 0;
       success = createJAA(cur,dummy);
     }
     return success;

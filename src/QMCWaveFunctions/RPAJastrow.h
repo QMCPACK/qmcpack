@@ -19,6 +19,7 @@
 
 #include "QMCWaveFunctions/JastrowFunctorBase.h"
 
+namespace qmcplusplus {
 /** RPA Jastrow functional
  *
  * \f[ u(r) = \frac{A}{r}\left[1-\exp(-\frac{r}{F})\right], \f]
@@ -31,7 +32,6 @@ template<class T>
 struct RPAJastrow: public JastrowFunctorBase<T> {
 
   typedef typename JastrowFunctorBase<T>::real_type real_type;
-  typedef typename JastrowFunctorBase<T>::value_type value_type;
 
   bool SameSpin;
 
@@ -42,19 +42,19 @@ struct RPAJastrow: public JastrowFunctorBase<T> {
    * @param a A coefficient
    * @param samespin boolean to indicate if this function is for parallel spins
    */
-  RPAJastrow(T a=1.0, bool samespin=true): SameSpin(samespin) {reset(a);}
+  RPAJastrow(bool samespin=true): SameSpin(samespin) {reset(1.0);}
 
   /** dummy constructor to handle referenced case
    */
-  RPAJastrow(RPAJastr<T>* func): SameSpin(true) {
+  RPAJastrow(RPAJastrow<T>* func): SameSpin(true) {
     reset(1.0);
   }
 
   /** reset the internal variables.
    */
   inline void reset() {
-    T F=sqrt(abs(a));
-    if(SameSpin) F*=sqrt(2.0);
+    T F=std::sqrt(std::abs(A));
+    if(SameSpin) F*=std::sqrt(2.0);
     B=1.0/F;
     AB=A*B;
     ABB=AB*B;
@@ -73,7 +73,7 @@ struct RPAJastrow: public JastrowFunctorBase<T> {
    * @return \f$ u(r) = \frac{A}{r}\left[1-\exp(-\frac{r}{F})\right]\f$
    */
   inline T evaluate(T r) {
-    return A/r*(1.0-exp(-B*r));
+    return A/r*(1.0-std::exp(-B*r));
   }
 
   /**@param r the distance
@@ -83,7 +83,7 @@ struct RPAJastrow: public JastrowFunctorBase<T> {
   */
   inline T evaluate(T r, T& dudr, T& d2udr2) {
     T rinv=1.0/r;
-    T expbr=exp(-B*r);
+    T expbr=std::exp(-B*r);
     T u = A*rinv*(1.0-expbr);
     dudr=-rinv*(u-AB*expbr);
     d2udr2=-rinv*(2.0*dudr+ABB*expbr);
@@ -92,25 +92,29 @@ struct RPAJastrow: public JastrowFunctorBase<T> {
 
   /** return a value at r
    */
-  value_type f(real_type r) {
+  real_type f(real_type r) {
     return evaluate(r);
   }
 
   /** return a derivative at r
    */
-  value_type df(real_type r) {
-    value_type dudr,d2udr2;
-    value_type res=evaluate(r,dudr,d2udr2);
+  real_type df(real_type r) {
+    real_type dudr,d2udr2;
+    real_type res=evaluate(r,dudr,d2udr2);
     return dudr;
+  }
+
+  void setDensity(real_type n) {
+    A = 1.0/std::pow(4.0*M_PI*n/3.0,-1.0/3.0);
+    reset();
   }
 
   /** Read in the parameter from the xml input file.
    @param cur current xmlNode from which the data members are reset
    @param vlist VarRegistry<T1> to which the variable A will be added for optimization
   */
-  template<class T1>
-  void put(xmlNodePtr cur, VarRegistry<T1>& vlist){
-    T Atemp;
+  void put(xmlNodePtr cur, VarRegistry<T>& vlist){
+    T Atemp=-100;
     string ida;
     //jastrow[iab]->put(cur->xmlChildrenNode,wfs_ref.RealVars);
     xmlNodePtr tcur = cur->xmlChildrenNode;
@@ -127,11 +131,13 @@ struct RPAJastrow: public JastrowFunctorBase<T> {
       }
       tcur = tcur->next;
     }
-    reset(Atemp);
+    //only if Atemp is given
+    if(Atemp>0) reset(Atemp);
     vlist.add(ida,&A,1);
-    XMLReport("Jastrow A/r[1-exp(-r/F)] = (" << A << "," << 1.0/B << ")") 
+    app_log() << "  RPA Jastrow A/r[1-exp(-r/F)] = (" << A << "," << 1.0/B << ")" << std::endl;
   }
 };
+}
 
 #endif
 /***************************************************************************

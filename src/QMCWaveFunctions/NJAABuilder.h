@@ -55,7 +55,15 @@ namespace qmcplusplus {
      */
     bool putInFunc(xmlNodePtr cur);
 
-    InFuncType* createInFunc(const string& jastfunction);
+    /** create an analytic function for speciesA-speciesB pair
+     * @param jastfunction name of JastrowFunctor
+     * @param speciesA species index
+     * @param speciesB species index
+     *
+     * Check IgnoreSpin flag and speciesA-speciesB to instantiate a proper
+     * function, e.g., PadeJastrow
+     */
+    InFuncType* createInFunc(const string& jastfunction, int speciesA, int speciesB);
 
   };
 }

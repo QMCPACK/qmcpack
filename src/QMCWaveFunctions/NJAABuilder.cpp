@@ -18,6 +18,7 @@
 #include "Particle/DistanceTable.h"
 #include "QMCWaveFunctions/NJAABuilder.h"
 #include "QMCWaveFunctions/PadeJastrow.h"
+#include "QMCWaveFunctions/RPAJastrow.h"
 #include "QMCWaveFunctions/TwoBodyJastrowOrbital.h"
 #include "QMCFactory/OneDimGridFactory.h"
 
@@ -38,13 +39,19 @@ namespace qmcplusplus {
   { }
 
   NJAABuilder::InFuncType* 
-  NJAABuilder::createInFunc(const string& jastfunction) {
+  NJAABuilder::createInFunc(const string& jastfunction, int speciesA, int speciesB) {
+    //return new PadeJastrow<RealType>;
+    if(jastfunction == "rpa") {
+      RPAJastrow<RealType>* newRPA=0;
+      if(IgnoreSpin)
+        newRPA= new RPAJastrow<RealType>(false); 
+      else 
+        newRPA = new RPAJastrow<RealType>(speciesA==speciesB);
+      if(targetPtcl.Lattice.BoxBConds[0])
+        newRPA->setDensity(targetPtcl.getTotalNum()/targetPtcl.Lattice.Volume);
+      return newRPA;
+    } 
     return new PadeJastrow<RealType>;
-    //if(jastfunction == "pade") {
-    //  return PadeJastrow<ValueType>;
-    //} else if(jastfunction == "rpa") {
-    //  return RPAJastrow<ValueType>;
-    //}
   }
   bool NJAABuilder::putInFunc(xmlNodePtr cur) {
 
@@ -77,7 +84,7 @@ namespace qmcplusplus {
           iab = ia*ng+ib;
         }
 	if(!(InFunc[ia*ng+ib])) {
-          InFuncType *j2=createInFunc(jastfunction);
+          InFuncType *j2=createInFunc(jastfunction,ia,ib);
 	  j2->put(cur,targetPsi.VarList);
 	  InFunc[ia*ng+ib]= j2;
 	  XMLReport("Added Jastrow Correlation between "<<spA<<" and "<<spB)
@@ -101,6 +108,23 @@ namespace qmcplusplus {
 
     //create analytic functions 
     bool success = putInFunc(cur);
+
+    bool insertGrid=false;
+    //create a grid node if missing
+    //use the lattice constant to set the cutoff but not GENERAL
+    if(gridPtr == NULL) {
+      gridPtr = xmlNewNode(NULL,(const xmlChar*)"grid");
+      xmlNewProp(gridPtr,(const xmlChar*)"type",(const xmlChar*)"log");
+      xmlNewProp(gridPtr,(const xmlChar*)"ri",(const xmlChar*)"1.0e-6");
+      std::ostringstream rf;
+      if(targetPtcl.Lattice.BoxBConds[0])
+        rf << targetPtcl.Lattice.R(0,0)*0.48;
+      else 
+        rf << 100.;
+      xmlNewProp(gridPtr,(const xmlChar*)"rf",(const xmlChar*)rf.str().c_str());
+      xmlNewProp(gridPtr,(const xmlChar*)"npts",(const xmlChar*)"101");
+      insertGrid=true;
+    }
 
     //create grid and initialize CubicSplineFunctions
     OneDimGridFactory::GridType* agrid = OneDimGridFactory::createGrid(gridPtr);
@@ -140,6 +164,8 @@ namespace qmcplusplus {
     J2->setOptimizable(true);
     targetPsi.addOrbital(J2);
     XMLReport("Added a Two-Body Jastrow Function")
+
+    if(insertGrid) xmlAddChild(cur,gridPtr);
     return success;
   }
 }

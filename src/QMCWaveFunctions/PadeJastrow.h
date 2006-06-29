@@ -35,12 +35,17 @@ struct PadeJastrow:public JastrowFunctorBase<T> {
   PadeJastrow<T>* RefFunc;
 
   ///constructor
-  PadeJastrow(real_type a=1.0, real_type b=1.0): 
+  explicit PadeJastrow(real_type a=1.0, real_type b=1.0): 
     RefFunc(0) {reset(a,b);}
 
   ///constructor with a PadeJastrow
   PadeJastrow(PadeJastrow<T>* func): RefFunc(func) {
     reset(RefFunc->A, RefFunc->B);
+  }
+
+  ///constructor which take
+  explicit PadeJastrow(bool samespin): RefFunc(0){
+    reset(1.0,1.0);
   }
 
   /** reset the internal variables.

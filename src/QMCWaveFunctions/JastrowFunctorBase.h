@@ -55,6 +55,10 @@ struct JastrowFunctorBase {
    * @param vlist optimizable variables 
   */
   virtual void put(xmlNodePtr cur, VarRegistry<real_type>& vlist) = 0;
+
+  /** empty virtual function to help builder classes
+   */
+  virtual void setDensity(real_type n) { }
 };
 
 }
