@@ -55,6 +55,21 @@ namespace qmcplusplus {
           zero, C.data(), C.cols());
     }
 
+    /** static function to perform C=AB for complex matrices
+     *
+     * Call zgemm
+     */
+    inline static void product(const Matrix<double>& A,
+        const Matrix<std::complex<double> >& B, Matrix<double>& C) {
+//      const char transa = 'N';
+//      const char transb = 'N';
+//      const std::complex<double> zone(1.0,0.0);
+//      const std::complex<double> zero(0.0,0.0);
+//      zgemm(transa, transb, B.cols(), A.rows(), B.rows(),
+//          zone, B.data(), B.cols(), A.data(), A.cols(),
+//          zero, C.data(), C.cols());
+    }
+
     /** static function to perform y=Ax for generic matrix and vector
      */
     inline static void product(const Matrix<double>& A, const Vector<double>& x, double* restrict yptr) {
@@ -73,6 +88,16 @@ namespace qmcplusplus {
       const std::complex<double> zone(1.0,0.0);
       const std::complex<double> zero(0.0,0.0);
       zgemv(transa, A.cols(), A.rows(), zone, A.data(), A.cols(), x.data(), 1, zero, yptr, 1);
+    }
+
+    /** static function to perform y=Ax for generic matrix and vector
+     */
+    inline static void product(const Matrix<double>& A, 
+        const Vector<std::complex<double> >& x, double* restrict yptr) {
+//      const char transa = 'T';
+//      const std::complex<double> zone(1.0,0.0);
+//      const std::complex<double> zero(0.0,0.0);
+//      zgemv(transa, A.cols(), A.rows(), zone, A.data(), A.cols(), x.data(), 1, zero, yptr, 1);
     }
 
   };
