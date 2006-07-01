@@ -67,7 +67,7 @@ struct NRCOptimization {
     TOL = 2.0e-4;
     GLIMIT = 100.0;
     TINY = numeric_limits<T>::epsilon();
-    LambdaMax = 0.2;
+    LambdaMax = 0.02;
   }
 
   virtual ~NRCOptimization() { }
