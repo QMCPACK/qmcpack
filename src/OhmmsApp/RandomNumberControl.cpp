@@ -92,7 +92,7 @@ namespace OHMMS{
   	  std::string aname((const char*)(att->name));
   	  std::string vname((const char*)(att->children->content));
 	  if(aname == "parallel") {
-	    if(vname == "0" || vname == "false") init_mpi = false;
+	    if(vname == "0" || vname == "false" || vname == "no") init_mpi = false;
 	  } else if(aname == "seed") {
 	    iseed = atoi(vname.c_str());
 	  }
