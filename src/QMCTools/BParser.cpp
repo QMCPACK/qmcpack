@@ -42,14 +42,18 @@ xmlNodePtr AGPLambda::createNode() {
   return aptr;
 }
 
-BParser::BParser() {
+BParser::BParser():
+  DetShells(0),J3Shells(0),J2Index(0),
+  DetSize(0), J3Size(0), DetNonZero(0), J3NonZero(0){
   basisName = "AGP";
   Normalized = "no";
   BMakeFuncBase::init();
 }
 
 BParser::BParser(int argc, char** argv): 
-  QMCGaussianParserBase(argc,argv) {
+  QMCGaussianParserBase(argc,argv),
+  DetShells(0),J3Shells(0),J2Index(0),
+  DetSize(0), J3Size(0), DetNonZero(0), J3NonZero(0){
   basisName = "AGP";
   Normalized = "no";
   BMakeFuncBase::init();
