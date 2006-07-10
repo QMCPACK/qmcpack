@@ -95,6 +95,16 @@ struct BMakeFunc<22>: public BMakeFuncBase {
   }
 }; 
 
+/** case 30: r*exp(-z1*x)
+ */
+template<>
+struct BMakeFunc<30>: public BMakeFuncBase { 
+  void put(vector<string>& words) {
+    N=2; L=2; RadFuncType=SLATERTYPE;
+    addRadFunc(atof(words[1].c_str()),1.0,3);
+  }
+}; 
+
 /** case 100: s Gaussian for J3 exp(-z*r*r)
  */
 template<>
@@ -134,6 +144,40 @@ struct BMakeFunc<200>: public BMakeFuncBase {
   }
 }; 
 
+/** case 3000: s with contracted STO
+ */
+template<>
+struct BMakeFunc<3000>: public BMakeFuncBase { 
+  void put(vector<string>& words) {
+    N=1; L=0; RadFuncType=SLATERTYPE;
+    int nc=(words.size()-1)/2;
+    for(int ic=1; ic<=nc; ic++) {
+      double e=atof(words[ic].c_str());
+      double c=atof(words[ic+nc].c_str());
+      int p=static_cast<int>(e/1000.);
+      e -= static_cast<double>(p)*1000.;
+      addRadFunc(e,c,p+1);
+    }
+  }
+}; 
+
+/** case 3100: p with  contracted STO
+ */
+template<>
+struct BMakeFunc<3100>: public BMakeFuncBase { 
+  void put(vector<string>& words) {
+    N=2; L=1; RadFuncType=SLATERTYPE;
+    int nc=(words.size()-1)/2;
+    for(int ic=1; ic<=nc; ic++) {
+      double e=atof(words[ic].c_str());
+      double c=atof(words[ic+nc].c_str());
+      int p=static_cast<int>(e/1000.);
+      e -= static_cast<double>(p)*1000.;
+      addRadFunc(e,c,p+2);
+    }
+  }
+}; 
+
 BMakeFuncBase* createBMakeFunc(int iflag) {
   BMakeFuncBase* b;
   switch(iflag) {
@@ -141,11 +185,14 @@ BMakeFuncBase* createBMakeFunc(int iflag) {
     case(12): b=new BMakeFunc<12>; break;
     case(20): b=new BMakeFunc<20>; break;
     case(22): b=new BMakeFunc<22>; break;
+    case(30): b=new BMakeFunc<30>; break;
     case(34): b=new BMakeFunc<34>; break;
     case(100): b=new BMakeFunc<100>; break;
     case(103): b=new BMakeFunc<103>; break;
     case(147): b=new BMakeFunc<147>; break;
     case(200): b=new BMakeFunc<200>; break;
+    case(3000): b=new BMakeFunc<3000>; break;
+    case(3100): b=new BMakeFunc<3100>; break;
     default: b=new BMakeFunc<0>;
   }
   return b;

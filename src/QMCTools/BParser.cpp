@@ -189,7 +189,6 @@ void BParser::getBasisSetForDet(std::istream& is) {
     afunc->BasisID=rname;
     afunc->L=angL;
     afunc->put(items);
-    afunc->get(cout);
     b->push_back(afunc);
     nitem--;
   }
@@ -228,7 +227,6 @@ void BParser::getBasisSetForJ3(std::istream& is) {
     afunc->BasisID=rname;
     afunc->L=angL;
     afunc->put(items);
-    afunc->get(cout);
     b->push_back(afunc);
     nitem--;
   }
@@ -310,25 +308,94 @@ void BParser::getLambdaForJ3(std::istream& is) {
   }
 }
 
-xmlNodePtr BParser::createBasisSet(map<int,vector<BMakeFuncBase*>*>& bset, 
-    vector<int>& basisPerAtom, vector<int>& occ) {
+xmlNodePtr 
+BParser::createBasisSet(map<int,vector<BMakeFuncBase*>*>& bset, 
+    vector<int>& basisPerAtom, vector<int>& occ, bool jastrow) {
+
+  xmlNodePtr bPtr = xmlNewNode(NULL, (const xmlChar*) "basisset");
 
   int boffset=0;
   vector<bool> newCenter(IonSystem.getSpeciesSet().getTotalNum(),true);
   map<int,vector<BMakeFuncBase*>*>::iterator it(bset.begin()), it_end(bset.end());
-  while(it != it_end()) {
+  while(it != it_end) {
     int id=(*it).first;
     int centerID=IonSystem.GroupID[id];
     if(newCenter[centerID]) {
+      std::ostringstream s;
+      s << GroupName[id];
+      xmlNodePtr cPtr = xmlNewNode(NULL, (const xmlChar*) "atomicBasisSet");
+      xmlNewProp(cPtr,(const xmlChar*)"elementType",(const xmlChar*)s.str().c_str());
+      if(jastrow) {
+        xmlNewProp(cPtr,(const xmlChar*)"type",(const xmlChar*)"Gaussian");
+        xmlNewProp(cPtr,(const xmlChar*)"normalized",(const xmlChar*)"yes");
+        xmlNewProp(cPtr,(const xmlChar*)"angular",(const xmlChar*)"spherical");
+        xmlNewProp(cPtr,(const xmlChar*)"expandYlm",(const xmlChar*)"no");
+      } else {
+        xmlNewProp(cPtr,(const xmlChar*)"type",(const xmlChar*)"STO");
+        xmlNewProp(cPtr,(const xmlChar*)"normalized",(const xmlChar*)"no");
+        xmlNewProp(cPtr,(const xmlChar*)"angular",(const xmlChar*)"spherical");
+        xmlNewProp(cPtr,(const xmlChar*)"expandYlm",(const xmlChar*)"no");
+      }
       newCenter[centerID]=false;
       vector<BMakeFuncBase*>& rgroup(*((*it).second));
+      int b=boffset;
       for(int k=0; k<rgroup.size(); k++) {
         int angL=rgroup[k]->L;
-      }
+        bool duplicated=false;
+        switch(angL) {
+          case(1):
+            if(occ[b++]) {
+              rgroup[k]->M=1; xmlAddChild(cPtr,rgroup[k]->createBasisGroup(duplicated)); 
+              duplicated=true;
+            }
+            if(occ[b++]) {
+              rgroup[k]->M=-1; xmlAddChild(cPtr,rgroup[k]->createBasisGroup(duplicated));
+              duplicated=true;
+            }
+            if(occ[b++]) {
+              rgroup[k]->M=0; xmlAddChild(cPtr,rgroup[k]->createBasisGroup(duplicated));
+              duplicated=true;
+            }
+            break;
+          case(2):
+            if(occ[b++]) {
+              rgroup[k]->M=0; xmlAddChild(cPtr,rgroup[k]->createBasisGroup(duplicated));
+              duplicated=true;
+            }
+            if(occ[b++]) {
+              rgroup[k]->M=2; xmlAddChild(cPtr,rgroup[k]->createBasisGroup(duplicated));
+              duplicated=true;
+            }
+            if(occ[b++]) {
+              rgroup[k]->M=-2; xmlAddChild(cPtr,rgroup[k]->createBasisGroup(duplicated));
+              duplicated=true;
+            }
+            if(occ[b++]) {
+              rgroup[k]->M=-1; xmlAddChild(cPtr,rgroup[k]->createBasisGroup(duplicated));
+              duplicated=true;
+            }
+            if(occ[b++]) {
+              rgroup[k]->M=1; xmlAddChild(cPtr,rgroup[k]->createBasisGroup(duplicated));
+              duplicated=true;
+            }
+            break;
+          default:
+            for(int m=-angL; m<=angL; m++) {
+              if(occ[b++]) {
+                rgroup[k]->M=m; xmlAddChild(cPtr,rgroup[k]->createBasisGroup(duplicated));
+                duplicated=true;
+              }
+            }
+        }//switch(angL)
+      }//angL
+      xmlAddChild(bPtr,cPtr);
+
     } 
     boffset+=basisPerAtom[id];
     ++it;
   }
+
+  return bPtr;
 }
 
 /** xmlNode for determinant set
@@ -348,6 +415,9 @@ xmlNodePtr BParser::createDeterminantSet() {
   xmlNewProp(detPtr,(const xmlChar*)"type",(const xmlChar*)"AGP");
   xmlNewProp(detPtr,(const xmlChar*)"transform",(const xmlChar*)"yes");
   xmlNewProp(detPtr,(const xmlChar*)"source",(const xmlChar*)IonSystem.getName().c_str());
+
+  cout << "Checking the basis set for the determinants " << endl;
+  xmlAddChild(detPtr,createBasisSet(detBasisSet,detBasisPerAtom, detOcc,false));
 
   //add basis here
   if(detPairedLambda.size()) {
@@ -393,6 +463,9 @@ xmlNodePtr BParser::createJ3() {
   xmlNewProp(j3Ptr,(const xmlChar*)"function",(const xmlChar*)"gto");
   xmlNewProp(j3Ptr,(const xmlChar*)"transform",(const xmlChar*)"yes");
   xmlNewProp(j3Ptr,(const xmlChar*)"source",(const xmlChar*)IonSystem.getName().c_str());
+
+  cout << "Checking the basis set for the Jastrow " << endl;
+  xmlAddChild(j3Ptr, createBasisSet(j3BasisSet,j3BasisPerAtom, j3Occ, true));
 
   std::ostringstream s;
   s << J3Size;

@@ -40,7 +40,7 @@ struct BMakeFuncBase {
   BMakeFuncBase(): 
     N(1),L(0),M(0),RadFuncType(GAUSSIANTYPE),BasisID("none") {}
 
-  xmlNodePtr createBasisGroup() {
+  xmlNodePtr createBasisGroup(bool shortform=false) {
     xmlNodePtr bptr = xmlNewNode(NULL,(const xmlChar*)"basisGroup");
     std::ostringstream n,l,m;
     n<<N; l<<L; m<<M;
@@ -59,8 +59,13 @@ struct BMakeFuncBase {
         xmlNewProp(bptr,(const xmlChar*)"type",(const xmlChar*)"Gaussian");
         break;
     }
+    if(shortform) return bptr;
     for(int i=0; i<exponent.size(); i++) {
       std::ostringstream a,b,c;
+      a.setf(std::ios::scientific, std::ios::floatfield);
+      a.precision(8);
+      b.setf(std::ios::scientific, std::ios::floatfield);
+      b.precision(8);
       a << exponent[i]; b << contraction[i]; c << node[i];
       xmlNodePtr anode = xmlNewNode(NULL,(const xmlChar*)"radfunc");
       xmlNewProp(anode,(const xmlChar*)"exponent",(const xmlChar*)a.str().c_str());

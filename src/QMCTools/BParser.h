@@ -98,7 +98,8 @@ public:
   xmlNodePtr createDeterminantSet();
   xmlNodePtr createJ3();
   xmlNodePtr createBasisSet(map<int,vector<BMakeFuncBase*>*>& bset, 
-     vector<int>& basisPerAtom, <int>& occ);
+     vector<int>& basisPerAtom, vector<int>& occ,
+     bool jastrow);
 };
 #endif
 /***************************************************************************
