@@ -526,3 +526,58 @@ void QMCGaussianParserBase::createGridNode(int argc, char** argv) {
   xmlNewProp(gridPtr,(const xmlChar*)"rf",(const xmlChar*)gridLast.c_str());
   xmlNewProp(gridPtr,(const xmlChar*)"npts",(const xmlChar*)gridSize.c_str());
 }
+
+void QMCGaussianParserBase::dump(const string& psi_tag,
+    const string& ion_tag) {
+
+  cout << " QMCGaussianParserBase::dump " << endl;
+  xmlDocPtr doc = xmlNewDoc((const xmlChar*)"1.0");
+
+  xmlNodePtr qm_root = xmlNewNode(NULL, BAD_CAST "qmcsystem"); 
+  {
+    //particleset
+    xmlAddChild(qm_root,createElectronSet());
+    xmlAddChild(qm_root,createIonSet());
+
+    //wavefunction
+    xmlNodePtr wfPtr = xmlNewNode(NULL,(const xmlChar*)"wavefunction");
+    xmlNewProp(wfPtr,(const xmlChar*)"id",(const xmlChar*)psi_tag.c_str());
+    xmlNewProp(wfPtr,(const xmlChar*)"target",(const xmlChar*)"e");
+    {
+      xmlNodePtr detPtr = xmlNewNode(NULL, (const xmlChar*) "determinantset");
+      xmlNewProp(detPtr,(const xmlChar*)"type",(const xmlChar*)"MolecularOrbital");
+      xmlNewProp(detPtr,(const xmlChar*)"transform",(const xmlChar*)"yes");
+      xmlNewProp(detPtr,(const xmlChar*)"source",(const xmlChar*)ion_tag.c_str());
+      {
+        xmlNodePtr bsetPtr = createBasisSet();
+        xmlAddChild(detPtr,bsetPtr);
+
+        xmlNodePtr slaterdetPtr=NULL;
+        if(UseHDF5) {
+          slaterdetPtr = createDeterminantSetWithHDF5();
+        } else {
+          slaterdetPtr = createDeterminantSet();
+        }
+        xmlAddChild(detPtr,slaterdetPtr);
+      }
+      xmlAddChild(wfPtr,detPtr);
+    }
+    xmlAddChild(qm_root,wfPtr);
+  }
+  xmlDocSetRootElement(doc, qm_root);
+
+  xmlXPathContextPtr m_context = xmlXPathNewContext(doc);
+  xmlXPathObjectPtr result
+    = xmlXPathEvalExpression((const xmlChar*)"//atomicBasisSet",m_context);
+  if(!xmlXPathNodeSetIsEmpty(result->nodesetval)) {
+    for(int ic=0; ic<result->nodesetval->nodeNr; ic++) {
+      xmlNodePtr cur = result->nodesetval->nodeTab[ic];
+      map2GridFunctors(cur);
+    }
+  }
+  xmlXPathFreeObject(result);
+
+  std::string fname = Title+"."+basisName+".xml";
+  xmlSaveFormatFile(fname.c_str(),doc,1);
+  xmlFreeDoc(doc);
+}

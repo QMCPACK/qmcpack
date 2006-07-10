@@ -64,6 +64,7 @@ struct QMCGaussianParserBase {
   bool BohrUnit;
   bool SpinRestricted;
   bool Periodicity;
+  bool UseHDF5;
   int IonChargeIndex;
   int ValenceChargeIndex;
   int AtomicNumberIndex;
@@ -108,6 +109,9 @@ struct QMCGaussianParserBase {
 
   void map2GridFunctors(xmlNodePtr cur);
   virtual void parse(const std::string& fname) = 0;
+
+  virtual void dump(const string& psi_tag,
+      const string& ion_tag);
 
   //static std::vector<std::string> IonName;
   static std::map<int,std::string> IonName;
