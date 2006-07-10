@@ -1,6 +1,7 @@
 #include "QMCTools/CasinoParser.h"
 #include "QMCTools/GaussianFCHKParser.h"
 #include "QMCTools/GamesXmlParser.h"
+#include "QMCTools/BParser.h"
 #include "Message/Communicate.h"
 #include "Utilities/OhmmsInfo.h"
 #include "OhmmsData/FileUtility.h"
@@ -49,6 +50,10 @@ int main(int argc, char **argv) {
     else if(a == "-casino") {
       parser = new CasinoParser(argc,argv);
       in_file =argv[++iargc];
+    }
+    else if(a == "-b") {
+      parser = new BParser(argc,argv);
+      in_file =argv[++iargc];
     } else if(a == "-hdf5") {
       usehdf5=true;
     } else if(a == "-psi_tag") {
@@ -71,61 +76,16 @@ int main(int argc, char **argv) {
     } else if(ext == "xml") {
       WARNMSG("Creating GamesXmlParser")
       parser = new GamesXmlParser(argc,argv);
+    } else if(ext == "10") {
+      WARNMSG("Creating BParser")
+      parser = new BParser(argc,argv);
     }
   }
 
+  parser->UseHDF5=usehdf5;
   parser->IonSystem.setName(ion_tag);
   parser->parse(in_file);
-
-  xmlDocPtr doc = xmlNewDoc((const xmlChar*)"1.0");
-
-  xmlNodePtr qm_root = xmlNewNode(NULL, BAD_CAST "qmcsystem"); 
-  {
-    //particleset
-    xmlAddChild(qm_root,parser->createElectronSet());
-    xmlAddChild(qm_root,parser->createIonSet());
-
-    //wavefunction
-    xmlNodePtr wfPtr = xmlNewNode(NULL,(const xmlChar*)"wavefunction");
-    xmlNewProp(wfPtr,(const xmlChar*)"id",(const xmlChar*)psi_tag.c_str());
-    xmlNewProp(wfPtr,(const xmlChar*)"target",(const xmlChar*)"e");
-    {
-      xmlNodePtr detPtr = xmlNewNode(NULL, (const xmlChar*) "determinantset");
-      xmlNewProp(detPtr,(const xmlChar*)"type",(const xmlChar*)"MolecularOrbital");
-      xmlNewProp(detPtr,(const xmlChar*)"transform",(const xmlChar*)"yes");
-      xmlNewProp(detPtr,(const xmlChar*)"source",(const xmlChar*)ion_tag.c_str());
-      {
-        xmlNodePtr bsetPtr = parser->createBasisSet();
-        xmlAddChild(detPtr,bsetPtr);
-
-        xmlNodePtr slaterdetPtr=NULL;
-        if(usehdf5) {
-          slaterdetPtr = parser->createDeterminantSetWithHDF5();
-        } else {
-          slaterdetPtr = parser->createDeterminantSet();
-        }
-        xmlAddChild(detPtr,slaterdetPtr);
-      }
-      xmlAddChild(wfPtr,detPtr);
-    }
-    xmlAddChild(qm_root,wfPtr);
-  }
-  xmlDocSetRootElement(doc, qm_root);
-
-  xmlXPathContextPtr m_context = xmlXPathNewContext(doc);
-  xmlXPathObjectPtr result
-    = xmlXPathEvalExpression((const xmlChar*)"//atomicBasisSet",m_context);
-  if(!xmlXPathNodeSetIsEmpty(result->nodesetval)) {
-    for(int ic=0; ic<result->nodesetval->nodeNr; ic++) {
-      xmlNodePtr cur = result->nodesetval->nodeTab[ic];
-      parser->map2GridFunctors(cur);
-    }
-  }
-  xmlXPathFreeObject(result);
-
-  std::string fname = parser->Title+"."+parser->basisName+".xml";
-  xmlSaveFormatFile(fname.c_str(),doc,1);
-  xmlFreeDoc(doc);
+  parser->dump(psi_tag, ion_tag);
   return 0;
 }
 
