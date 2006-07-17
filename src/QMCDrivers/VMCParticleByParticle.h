@@ -38,11 +38,16 @@ namespace qmcplusplus {
     IndexType nAcceptTot;
     IndexType nRejectTot;
     IndexType nAllRejected;
+    IndexType nSubSteps;
+
+    string UseDrift;
 
     ParticleSet::ParticleGradient_t G, dG;
     ParticleSet::ParticleLaplacian_t L, dL;
 
-    void advanceWalkerByWalker();
+    void runBlockWithDrift();
+    void runBlockWithoutDrift();
+    //void advanceWalkerByWalker();
     /// Copy Constructor (disabled)
     VMCParticleByParticle(const VMCParticleByParticle& a): QMCDriver(a) { }
     /// Copy operator (disabled).
