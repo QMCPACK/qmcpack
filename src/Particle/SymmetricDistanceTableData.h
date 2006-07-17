@@ -182,7 +182,8 @@ namespace qmcplusplus {
 	r_m[loc] = Temp[iat].r1;
 	//rr_m[loc] = Temp[iat].rr1;
 	rinv_m[loc]= Temp[iat].rinv1;
-	dr_m[loc]= -1.0*Temp[iat].dr1;
+	//dr_m[loc]= -1.0*Temp[iat].dr1;
+	dr_m[loc]= Temp[iat].dr1;
       }
 
       for(int nn=M[jat]; nn<M[jat+1]; nn++) {
@@ -190,7 +191,8 @@ namespace qmcplusplus {
 	r_m[nn] = Temp[iat].r1;
 	//rr_m[nn] = Temp[iat].rr1;
 	rinv_m[nn]= Temp[iat].rinv1;
-        dr_m[nn]= Temp[iat].dr1;
+        //dr_m[nn]= Temp[iat].dr1;
+        dr_m[nn]= -1.0*Temp[iat].dr1;
       }
     }
   };
