@@ -42,7 +42,7 @@ namespace qmcplusplus {
     RealType evalSR();
     RealType evalConsts();
 
-    void InitBreakup();
+    void initBreakup();
     void resetTargetParticleSet(ParticleSet& ref);
 
     //Constructor
@@ -55,7 +55,7 @@ namespace qmcplusplus {
 
       //Set up the internal distance-table for the particle pair.
       //This is used in evalSR.
-      d_aa = DistanceTable::getTable(DistanceTable::add(*PtclRef));
+      d_aa = DistanceTable::add(*PtclRef);
 
       //Safety Check: ensure SK was created. 
       if(!ref.SK){
@@ -83,7 +83,7 @@ namespace qmcplusplus {
       //Otherwise all subsequent potential evaluations can reuse existing data.
       //This calls and stores result of evalConsts at end. Ensure that 
       //required data is set up already!
-      InitBreakup();
+      initBreakup();
     }
       
   private:
@@ -94,7 +94,7 @@ namespace qmcplusplus {
 
 template<class BreakupBasis> 
 void 
-LRCoulombAA<BreakupBasis>::InitBreakup() {
+LRCoulombAA<BreakupBasis>::initBreakup() {
 
   //In this case, all functionality of the base-class can be reused.
   //We only breakup 1 function: The bare interaction for q1=q2=1. 
@@ -117,7 +117,7 @@ LRCoulombAA<BreakupBasis>::resetTargetParticleSet(ParticleSet& newP) {
   PtclRef = &newP;
 
   //Update the distancetable pointer to use the new Particleset.
-  d_aa = DistanceTable::getTable(DistanceTable::add(*PtclRef));
+  d_aa = DistanceTable::add(*PtclRef);
 }
 
 

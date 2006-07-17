@@ -52,7 +52,7 @@ namespace qmcplusplus {
     RealType evalSR();
     RealType evalConsts();
 
-    void InitBreakup();
+    void initBreakup();
     void resetTargetParticleSet(ParticleSet& ref);
 
     //Constructor
@@ -69,7 +69,7 @@ namespace qmcplusplus {
 
       //Set up the internal distance-table for the particle pair.
       //This is used in evalSR.
-      d_table = DistanceTable::getTable(DistanceTable::add(*Ions,*Elns));
+      d_table = DistanceTable::add(*Ions,*Elns);
 
       //Safety check: ensure SK was created.
       if(!ions.SK || !elns.SK){
@@ -118,7 +118,7 @@ namespace qmcplusplus {
 
       //Initialise the breakup. Can be re-called later if lattice changes.
       //Otherwise all subsequent potential evaluations can reuse existing data.
-      InitBreakup();
+      initBreakup();
     }
       
   private:
@@ -129,7 +129,7 @@ namespace qmcplusplus {
 
   template<class BreakupBasis> 
     void 
-    LRCoulombAB<BreakupBasis>::InitBreakup() {
+    LRCoulombAB<BreakupBasis>::initBreakup() {
 
       //In this case, all functionality of the base-class can be reused.
       //We only breakup 1 function: The bare interaction for q1=q2=1. 
@@ -164,7 +164,7 @@ namespace qmcplusplus {
     Elns = &newP;
     
     //Update the distancetable pointer to use the new Particleset.
-    d_table = DistanceTable::getTable(DistanceTable::add(*Ions,*Elns));
+    d_table = DistanceTable::add(*Ions,*Elns);
   }
 
 
