@@ -26,8 +26,8 @@ namespace qmcplusplus {
     FirstTime(true), eCoreCore(0.0), IonConfig(ions), d_ie(0), d_ii(0) { 
     
     //set the distance tables
-    d_ie = DistanceTable::getTable(DistanceTable::add(ions,els));
-    d_ii = DistanceTable::getTable(DistanceTable::add(ions));
+    d_ie = DistanceTable::add(ions,els);
+    d_ii = DistanceTable::add(ions);
 
     nCenters = ions.getTotalNum();
     nParticles = els.getTotalNum();
@@ -47,7 +47,7 @@ namespace qmcplusplus {
   
 
   void LocalCorePolPotential::resetTargetParticleSet(ParticleSet& P) {
-    d_ie = DistanceTable::getTable(DistanceTable::add(IonConfig,P));
+    d_ie = DistanceTable::add(IonConfig,P);
   }
 
   /** process xml node for each element

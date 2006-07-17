@@ -47,7 +47,7 @@ namespace qmcplusplus {
     
     IonIonPotential(ParticleSet& ref): FirstTime(true), d_ii(0), PtclRef(ref){ 
       
-      d_ii = DistanceTable::getTable(DistanceTable::add(ref));
+      d_ii = DistanceTable::add(ref);
 
       SpeciesSet& tspecies(ref.getSpeciesSet());
       int charge = tspecies.addAttribute("charge");

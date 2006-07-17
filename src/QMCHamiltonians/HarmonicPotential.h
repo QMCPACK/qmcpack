@@ -41,7 +41,7 @@ namespace qmcplusplus {
     ParticleSet& sourcePtcl;
 
     HarmonicPotential(ParticleSet& center, ParticleSet& visitor): sourcePtcl(center) { 
-      d_table = DistanceTable::getTable(DistanceTable::add(center,visitor));
+      d_table = DistanceTable::add(center,visitor);
       //int charge = center.Species.addAttribute("charge");
       Centers = center.getTotalNum();
       Omega.resize(Centers,0.5);
@@ -57,7 +57,7 @@ namespace qmcplusplus {
     ~HarmonicPotential() { }
 
     void resetTargetParticleSet(ParticleSet& P)  {
-      d_table = DistanceTable::getTable(DistanceTable::add(sourcePtcl,P));
+      d_table = DistanceTable::add(sourcePtcl,P);
     }
 
     inline Return_t 

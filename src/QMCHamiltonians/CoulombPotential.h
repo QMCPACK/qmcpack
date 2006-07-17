@@ -46,7 +46,7 @@ namespace qmcplusplus {
 
     CoulombPotentialAB(ParticleSet& ions, ParticleSet& els): 
       sourcePtcl(ions), d_table(0) { 
-      d_table = DistanceTable::getTable(DistanceTable::add(ions,els));
+      d_table = DistanceTable::add(ions,els);
       //index for attribute charge
       SpeciesSet& tspecies(ions.getSpeciesSet());
       int iz = tspecies.addAttribute("charge");
@@ -59,7 +59,7 @@ namespace qmcplusplus {
     }
     
     void resetTargetParticleSet(ParticleSet& P)  {
-      d_table = DistanceTable::getTable(DistanceTable::add(sourcePtcl,P));
+      d_table = DistanceTable::add(sourcePtcl,P);
     }
 
     ~CoulombPotentialAB() { }
@@ -130,14 +130,14 @@ namespace qmcplusplus {
     ParticleSet* PtclRef;
     //ElecElecPotential(RealType c=1.0): C(c){}
     CoulombPotentialAA(ParticleSet& P):d_table(NULL),PtclRef(&P) {
-      d_table = DistanceTable::getTable(DistanceTable::add(P));
+      d_table = DistanceTable::add(P);
       C = 1.0;
     }
 
     ~CoulombPotentialAA() { }
 
     void resetTargetParticleSet(ParticleSet& P)  {
-      d_table = DistanceTable::getTable(DistanceTable::add(P));
+      d_table = DistanceTable::add(P);
       PtclRef=&P;
     }
 

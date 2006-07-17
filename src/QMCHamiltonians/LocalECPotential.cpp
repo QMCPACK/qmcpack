@@ -26,7 +26,7 @@ namespace qmcplusplus {
     IonConfig(ions), d_table(0)
   { 
     NumIons=ions.getTotalNum();
-    d_table = DistanceTable::getTable(DistanceTable::add(ions,els));
+    d_table = DistanceTable::add(ions,els);
     //allocate null
     PP.resize(NumIons,0);
   } 
@@ -40,7 +40,7 @@ namespace qmcplusplus {
   }
 
   void LocalECPotential::resetTargetParticleSet(ParticleSet& P) {
-    d_table = DistanceTable::getTable(DistanceTable::add(IonConfig,P));
+    d_table = DistanceTable::add(IonConfig,P);
   }
 
   void LocalECPotential::add(int groupID, RadialPotentialType* ppot) {

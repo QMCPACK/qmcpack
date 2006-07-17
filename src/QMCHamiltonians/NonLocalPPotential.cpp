@@ -124,7 +124,7 @@ namespace qmcplusplus {
       }
 
   void NonLocalPPotential::resetTargetParticleSet(ParticleSet& P) {
-    d_table = DistanceTable::getTable(DistanceTable::add(IonConfig,P));
+    d_table = DistanceTable::add(IonConfig,P);
   }
 
   /** constructor
@@ -144,7 +144,7 @@ namespace qmcplusplus {
     IonConfig(ions), Centers(ions.GroupID), d_table(0), Psi(&psi)
   { 
 
-    d_table = DistanceTable::getTable(DistanceTable::add(ions,els));
+    d_table = DistanceTable::add(ions,els);
     els.resizeSphere(ions.getTotalNum());
     const SpeciesSet& Species(ions.getSpeciesSet());
     for(int i=0; i<Species.getTotalNum();i++) {

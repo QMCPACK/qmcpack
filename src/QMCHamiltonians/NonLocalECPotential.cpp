@@ -123,7 +123,7 @@ namespace qmcplusplus {
       }
 
   void NonLocalECPotential::resetTargetParticleSet(ParticleSet& P) {
-    d_table = DistanceTable::getTable(DistanceTable::add(IonConfig,P));
+    d_table = DistanceTable::add(IonConfig,P);
   }
 
   /** constructor
@@ -134,7 +134,7 @@ namespace qmcplusplus {
   NonLocalECPotential::NonLocalECPotential(ParticleSet& ions, ParticleSet& els,
       TrialWaveFunction& psi): IonConfig(ions), d_table(0), Psi(psi)
   { 
-    d_table = DistanceTable::getTable(DistanceTable::add(ions,els));
+    d_table = DistanceTable::add(ions,els);
     NumIons=ions.getTotalNum();
     els.resizeSphere(NumIons);
     PP.resize(NumIons,0);
