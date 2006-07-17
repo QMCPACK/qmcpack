@@ -83,7 +83,7 @@ namespace qmcplusplus {
       p=PtclPool.getParticleSet(refSetName);
     }
 
-    dtableReference=DistanceTable::getTable(DistanceTable::add(*p,W));
+    dtableReference=DistanceTable::add(*p,W);
 
     nptcl=W.R.size();
     nPsi=Psi1.size();	

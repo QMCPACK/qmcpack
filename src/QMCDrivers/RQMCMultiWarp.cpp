@@ -602,7 +602,7 @@ namespace qmcplusplus {
        p=PtclPool.getParticleSet(refSetName);
     }
 
-    dtableReference=DistanceTable::getTable(DistanceTable::add(*p,W));
+    dtableReference=DistanceTable::add(*p,W);
     /*vector<DistanceTableData*> dtableList;
     string target_name(W.getName());
     xmlNodePtr cur=q->children;
