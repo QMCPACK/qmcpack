@@ -55,6 +55,15 @@ namespace qmcplusplus {
       N=p.getTotalNum();
       NN=N*N;
       U.resize(NN+1);
+      d2U.resize(NN);
+      dU.resize(NN);
+      curGrad.resize(N);
+      curLap.resize(N);
+      curVal.resize(N);
+
+      FirstAddressOfdU = &(dU[0][0]);
+      LastAddressOfdU = FirstAddressOfdU + dU.size()*DIM;
+
       PairID.resize(N,N);
       int nsp=p.groups();
       for(int i=0; i<N; i++)
@@ -85,7 +94,7 @@ namespace qmcplusplus {
 
     //evaluate the distance table with els
     void resetTargetParticleSet(ParticleSet& P) {
-      d_table = DistanceTable::getTable(DistanceTable::add(P));
+      d_table = DistanceTable::add(P);
     }
 
     /** 
@@ -139,14 +148,19 @@ namespace qmcplusplus {
     }
 
     ValueType ratio(ParticleSet& P, int iat) {
-      ValueType d(0.0);
+      DiffVal=0.0;
+      //ValueType d(0.0);
       const int* pairid(PairID[iat]);
       for(int jat=0, ij=iat*N; jat<N; jat++,ij++) {
-        if(iat != jat) {
-          d += U[ij]-F[pairid[jat]]->evaluate(d_table->Temp[jat].r1);
+        if(jat == iat) {
+          curVal[jat]=0.0;
+        } else {
+          curVal[jat]=F[pairid[jat]]->evaluate(d_table->Temp[jat].r1);
+          DiffVal += U[ij]-curVal[jat];
+          //DiffVal += U[ij]-F[pairid[jat]]->evaluate(d_table->Temp[jat].r1);
         }
       }
-      return std::exp(d);
+      return std::exp(DiffVal);
     }
 
     /** later merge the loop */
@@ -249,25 +263,13 @@ namespace qmcplusplus {
       dL[iat] += suml;     
     }
 
-    inline ValueType registerData(ParticleSet& P, PooledData<RealType>& buf){
-      N=d_table->size(VisitorIndex);
-      NN=N*N;
-      U.resize(NN+1);
-      d2U.resize(NN);
-      dU.resize(NN);
-      curGrad.resize(N);
-      curLap.resize(N);
-      curVal.resize(N);
 
-      LogValue=0.0;
+    inline void evaluateLogAndStore(ParticleSet& P, 
+		       ParticleSet::ParticleGradient_t& dG, 
+		       ParticleSet::ParticleLaplacian_t& dL) {
       RealType dudr, d2udr2,u;
+      LogValue=0.0;
       GradType gr;
-      PairID.resize(d_table->size(SourceIndex),d_table->size(SourceIndex));
-      int nsp=P.groups();
-      for(int i=0; i<d_table->size(SourceIndex); i++)
-	for(int j=0; j<d_table->size(SourceIndex); j++) 
-	  PairID(i,j) = P.GroupID[i]*nsp+P.GroupID[j];
-
       for(int i=0; i<d_table->size(SourceIndex); i++) {
 	for(int nn=d_table->M[i]; nn<d_table->M[i+1]; nn++) {
 	  int j = d_table->J[nn];
@@ -285,56 +287,92 @@ namespace qmcplusplus {
 	  d2U[ij] = -lap; d2U[ji] = -lap;
 
 	  //add gradient and laplacian contribution
-	  P.G[i] += gr;
-	  P.G[j] -= gr;
-	  P.L[i] -= lap; 
-	  P.L[j] -= lap; 
+	  dG[i] += gr;
+	  dG[j] -= gr;
+	  dL[i] -= lap; 
+	  dL[j] -= lap; 
 	}
       }
+    }
+
+    inline ValueType registerData(ParticleSet& P, PooledData<RealType>& buf){
+
+      evaluateLogAndStore(P,P.G,P.L);
+      //LogValue=0.0;
+      //RealType dudr, d2udr2,u;
+      //GradType gr;
+      //PairID.resize(d_table->size(SourceIndex),d_table->size(SourceIndex));
+      //int nsp=P.groups();
+      //for(int i=0; i<d_table->size(SourceIndex); i++)
+      //  for(int j=0; j<d_table->size(SourceIndex); j++) 
+      //    PairID(i,j) = P.GroupID[i]*nsp+P.GroupID[j];
+
+      //for(int i=0; i<d_table->size(SourceIndex); i++) {
+      //  for(int nn=d_table->M[i]; nn<d_table->M[i+1]; nn++) {
+      //    int j = d_table->J[nn];
+      //    //ValueType sumu = F.evaluate(d_table->r(nn));
+      //    u = F[d_table->PairID[nn]]->evaluate(d_table->r(nn), dudr, d2udr2);
+      //    LogValue -= u;
+      //    dudr *= d_table->rinv(nn);
+      //    gr = dudr*d_table->dr(nn);
+      //    //(d^2 u \over dr^2) + (2.0\over r)(du\over\dr)\f$
+      //    RealType lap = d2udr2+2.0*dudr;
+      //    int ij = i*N+j, ji=j*N+i;
+      //    U[ij]=u; U[ji]=u;
+      //    //dU[ij] = gr; dU[ji] = -1.0*gr;
+      //    dU[ij] = gr; dU[ji] = gr*-1.0;
+      //    d2U[ij] = -lap; d2U[ji] = -lap;
+
+      //    //add gradient and laplacian contribution
+      //    P.G[i] += gr;
+      //    P.G[j] -= gr;
+      //    P.L[i] -= lap; 
+      //    P.L[j] -= lap; 
+      //  }
+      //}
 
       U[NN]= real(LogValue);
       buf.add(U.begin(), U.end());
       buf.add(d2U.begin(), d2U.end());
-      FirstAddressOfdU = &(dU[0][0]);
-      LastAddressOfdU = FirstAddressOfdU + dU.size()*DIM;
       buf.add(FirstAddressOfdU,LastAddressOfdU);
 
       return LogValue;
     }
 
     inline ValueType updateBuffer(ParticleSet& P, PooledData<RealType>& buf){
-      RealType dudr, d2udr2,u;
-      LogValue=0.0;
-      GradType gr;
-      PairID.resize(d_table->size(SourceIndex),d_table->size(SourceIndex));
-      int nsp=P.groups();
-      for(int i=0; i<d_table->size(SourceIndex); i++)
-	for(int j=0; j<d_table->size(SourceIndex); j++) 
-	  PairID(i,j) = P.GroupID[i]*nsp+P.GroupID[j];
+      evaluateLogAndStore(P,P.G,P.L);
+      //RealType dudr, d2udr2,u;
+      //LogValue=0.0;
+      //GradType gr;
+      //PairID.resize(d_table->size(SourceIndex),d_table->size(SourceIndex));
+      //int nsp=P.groups();
+      //for(int i=0; i<d_table->size(SourceIndex); i++)
+      //  for(int j=0; j<d_table->size(SourceIndex); j++) 
+      //    PairID(i,j) = P.GroupID[i]*nsp+P.GroupID[j];
 
-      for(int i=0; i<d_table->size(SourceIndex); i++) {
-	for(int nn=d_table->M[i]; nn<d_table->M[i+1]; nn++) {
-	  int j = d_table->J[nn];
-	  //ValueType sumu = F.evaluate(d_table->r(nn));
-	  u = F[d_table->PairID[nn]]->evaluate(d_table->r(nn), dudr, d2udr2);
-	  LogValue -= u;
-	  dudr *= d_table->rinv(nn);
-	  gr = dudr*d_table->dr(nn);
-	  //(d^2 u \over dr^2) + (2.0\over r)(du\over\dr)\f$
-	  RealType lap = d2udr2+2.0*dudr;
-	  int ij = i*N+j, ji=j*N+i;
-	  U[ij]=u; U[ji]=u;
-	  //dU[ij] = gr; dU[ji] = -1.0*gr;
-	  dU[ij] = gr; dU[ji] = gr*-1.0;
-	  d2U[ij] = -lap; d2U[ji] = -lap;
+      //for(int i=0; i<d_table->size(SourceIndex); i++) {
+      //  for(int nn=d_table->M[i]; nn<d_table->M[i+1]; nn++) {
+      //    int j = d_table->J[nn];
+      //    //ValueType sumu = F.evaluate(d_table->r(nn));
+      //    u = F[d_table->PairID[nn]]->evaluate(d_table->r(nn), dudr, d2udr2);
+      //    LogValue -= u;
+      //    dudr *= d_table->rinv(nn);
+      //    gr = dudr*d_table->dr(nn);
+      //    //(d^2 u \over dr^2) + (2.0\over r)(du\over\dr)\f$
+      //    RealType lap = d2udr2+2.0*dudr;
+      //    int ij = i*N+j, ji=j*N+i;
+      //    U[ij]=u; U[ji]=u;
+      //    //dU[ij] = gr; dU[ji] = -1.0*gr;
+      //    dU[ij] = gr; dU[ji] = gr*-1.0;
+      //    d2U[ij] = -lap; d2U[ji] = -lap;
 
-	  //add gradient and laplacian contribution
-	  P.G[i] += gr;
-	  P.G[j] -= gr;
-	  P.L[i] -= lap; 
-	  P.L[j] -= lap; 
-	}
-      }
+      //    //add gradient and laplacian contribution
+      //    P.G[i] += gr;
+      //    P.G[j] -= gr;
+      //    P.L[i] -= lap; 
+      //    P.L[j] -= lap; 
+      //  }
+      //}
 
       U[NN]= real(LogValue);
       buf.put(U.begin(), U.end());

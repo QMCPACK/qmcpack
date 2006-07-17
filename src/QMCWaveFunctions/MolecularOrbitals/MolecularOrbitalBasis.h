@@ -96,7 +96,7 @@ namespace qmcplusplus {
      */
     void resetTargetParticleSet(ParticleSet& P) {
       LOGMSG("MolecularOrbitalBasis::resetTargetParticleSet")
-      myTable = DistanceTable::getTable(DistanceTable::add(*IonConfig,P));
+      myTable = DistanceTable::add(*IonConfig,P);
       for(int i=0; i<AOs.size(); i++) AOs[i]->reset(myTable);
     }
 

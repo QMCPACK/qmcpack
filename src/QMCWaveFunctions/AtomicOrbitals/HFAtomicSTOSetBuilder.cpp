@@ -38,7 +38,7 @@ namespace qmcplusplus {
 
   HFAtomicSTOSetBuilder::HFAtomicSTOSetBuilder(ParticleSet& els, TrialWaveFunction& wfs, ParticleSet& ions): 
     OrbitalBuilderBase(els,wfs), Lmax(-1) { 
-    d_table = DistanceTable::getTable(DistanceTable::add(ions,els));
+    d_table = DistanceTable::add(ions,els);
   }
 
   bool 

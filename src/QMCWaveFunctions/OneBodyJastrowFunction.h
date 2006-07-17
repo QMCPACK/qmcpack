@@ -91,14 +91,14 @@ namespace qmcplusplus {
     OneBodyJastrow(const ParticleSet& centers, ParticleSet& els)
       : CenterRef(centers), d_table(0), FirstAddressOfdU(0), LastAddressOfdU(0){ 
       U.resize(els.getTotalNum());
-      d_table = DistanceTable::getTable(DistanceTable::add(CenterRef,els));
+      d_table = DistanceTable::add(CenterRef,els);
     }
 
     ~OneBodyJastrow(){ }
 
     //evaluate the distance table with P
     void resetTargetParticleSet(ParticleSet& P) {
-      d_table = DistanceTable::getTable(DistanceTable::add(CenterRef,P));
+      d_table = DistanceTable::add(CenterRef,P);
     }
 
     void addFunc(int source_type, FT* afunc) {
@@ -164,18 +164,11 @@ namespace qmcplusplus {
      */
     inline ValueType ratio(ParticleSet& P, int iat) {
       int n=d_table->size(VisitorIndex);
-      ValueType d(0.0);
+      curVal=0.0;
       for(int i=0, nn=iat; i<d_table->size(SourceIndex); i++,nn+= n) {
-        if(Fs[i]) d += Fs[i]->evaluate(d_table->Temp[i].r1);
-        //d += F[d_table->PairID[nn]]->evaluate(d_table->Temp[i].r1);
+        if(Fs[i]) curVal += Fs[i]->evaluate(d_table->Temp[i].r1);
       }
-      return std::exp(U[iat]-d);
-      //for(int i=0, nn=iat; i<d_table->size(SourceIndex); i++,nn+= n) {
-      //  FT *func=F[d_table->PairID[nn]];
-      //  d += func->evaluate(d_table->Temp[i].r0)
-      //    -func->evaluate(d_table->Temp[i].r1);
-      //}
-      //return exp(d);
+      return std::exp(U[iat]-curVal);
     }
 
     /** evaluate the ratio \f$exp(U(iat)-U_0(iat))\f$ and fill-in the differential gradients/laplacians
@@ -187,27 +180,28 @@ namespace qmcplusplus {
     inline ValueType ratio(ParticleSet& P, int iat,
 		    ParticleSet::ParticleGradient_t& dG,
 		    ParticleSet::ParticleLaplacian_t& dL)  {
-      int n=d_table->size(VisitorIndex);
-      curVal=0.0;
-      curLap=0.0;
-      curGrad = 0.0;
-      RealType dudr, d2udr2;
-      for(int i=0, nn=iat; i<d_table->size(SourceIndex); i++,nn+= n) {
-        if(Fs[i]) {
-          curVal += Fs[i]->evaluate(d_table->Temp[i].r1,dudr,d2udr2);
-          dudr *= d_table->Temp[i].rinv1;
-          curGrad -= dudr*d_table->Temp[i].dr1;
-          curLap  -= d2udr2+2.0*dudr;
-        }
-        //int ij=d_table->PairID[nn];
-        //curVal += F[ij]->evaluate(d_table->Temp[i].r1,dudr,d2udr2);
-        //dudr *= d_table->Temp[i].rinv1;
-        //curGrad -= dudr*d_table->Temp[i].dr1;
-        //curLap  -= d2udr2+2.0*dudr;
-      }
-      dG[iat] += curGrad-dU[iat];
-      dL[iat] += curLap-d2U[iat]; 
-      return std::exp(U[iat]-curVal);
+      //int n=d_table->size(VisitorIndex);
+      //curVal=0.0;
+      //curLap=0.0;
+      //curGrad = 0.0;
+      //RealType dudr, d2udr2;
+      //for(int i=0, nn=iat; i<d_table->size(SourceIndex); i++,nn+= n) {
+      //  if(Fs[i]) {
+      //    curVal += Fs[i]->evaluate(d_table->Temp[i].r1,dudr,d2udr2);
+      //    dudr *= d_table->Temp[i].rinv1;
+      //    curGrad -= dudr*d_table->Temp[i].dr1;
+      //    curLap  -= d2udr2+2.0*dudr;
+      //  }
+      //  //int ij=d_table->PairID[nn];
+      //  //curVal += F[ij]->evaluate(d_table->Temp[i].r1,dudr,d2udr2);
+      //  //dudr *= d_table->Temp[i].rinv1;
+      //  //curGrad -= dudr*d_table->Temp[i].dr1;
+      //  //curLap  -= d2udr2+2.0*dudr;
+      //}
+      //dG[iat] += curGrad-dU[iat];
+      //dL[iat] += curLap-d2U[iat]; 
+      //return std::exp(U[iat]-curVal);
+      return std::exp(logRatio(P,iat,dG,dL));
     }
 
     inline ValueType logRatio(ParticleSet& P, int iat,
@@ -225,11 +219,6 @@ namespace qmcplusplus {
           curGrad -= dudr*d_table->Temp[i].dr1;
           curLap  -= d2udr2+2.0*dudr;
         }
-        //int ij=d_table->PairID[nn];
-        //curVal += F[ij]->evaluate(d_table->Temp[i].r1,dudr,d2udr2);
-        //dudr *= d_table->Temp[i].rinv1;
-        //curGrad -= dudr*d_table->Temp[i].dr1;
-        //curLap  -= d2udr2+2.0*dudr;
       }
       dG[iat] += curGrad-dU[iat];
       dL[iat] += curLap-d2U[iat]; 
@@ -254,13 +243,9 @@ namespace qmcplusplus {
       U[iat] = curVal;
     }
 
-
-    /** equivalent to evalaute with additional data management */
-    ValueType registerData(ParticleSet& P, PooledData<RealType>& buf){
-
-      //U.resize(d_table->size(VisitorIndex));
-      d2U.resize(d_table->size(VisitorIndex));
-      dU.resize(d_table->size(VisitorIndex));
+    void evaluateLogAndStore(ParticleSet& P, 
+		ParticleSet::ParticleGradient_t& dG, 
+		ParticleSet::ParticleLaplacian_t& dL) {
 
       LogValue = 0.0;
       U=0.0; dU=0.0; d2U=0.0;
@@ -279,13 +264,22 @@ namespace qmcplusplus {
 	  d2U[j] -= d2udr2+2.0*dudr;
 
 	  //add gradient and laplacian contribution
-	  P.G[j] -= dudr*d_table->dr(nn);
-	  P.L[j] -= d2udr2+2.0*dudr;
+	  dG[j] -= dudr*d_table->dr(nn);
+	  dL[j] -= d2udr2+2.0*dudr;
 	}
       }
+    }
 
+    /** equivalent to evalaute with additional data management */
+    ValueType registerData(ParticleSet& P, PooledData<RealType>& buf){
+
+      //U.resize(d_table->size(VisitorIndex));
+      d2U.resize(d_table->size(VisitorIndex));
+      dU.resize(d_table->size(VisitorIndex));
       FirstAddressOfdU = &(dU[0][0]);
       LastAddressOfdU = FirstAddressOfdU + dU.size()*DIM;
+
+      evaluateLogAndStore(P,P.G,P.L);
 
       //add U, d2U and dU. Keep the order!!!
       buf.add(U.begin(), U.end());
@@ -296,33 +290,34 @@ namespace qmcplusplus {
     }
 
     ValueType updateBuffer(ParticleSet& P, BufferType& buf)  {
-      LogValue = 0.0;
-      U=0.0; dU=0.0; d2U=0.0;
-      RealType uij, dudr, d2udr2;
-      for(int i=0; i<d_table->size(SourceIndex); i++) {
-        FT* func=Fs[i];
-        if(func == 0) continue;
-	for(int nn=d_table->M[i]; nn<d_table->M[i+1]; nn++) {
-	  int j = d_table->J[nn];
-	  //uij = F[d_table->PairID[nn]]->evaluate(d_table->r(nn), dudr, d2udr2);
-	  uij = func->evaluate(d_table->r(nn), dudr, d2udr2);
-          LogValue-=uij;
-          U[j]+=uij; 
-	  dudr *= d_table->rinv(nn);
-	  dU[j] -= dudr*d_table->dr(nn);
-	  d2U[j] -= d2udr2+2.0*dudr;
+      evaluateLogAndStore(P,P.G,P.L);
+      //LogValue = 0.0;
+      //U=0.0; dU=0.0; d2U=0.0;
+      //RealType uij, dudr, d2udr2;
+      //for(int i=0; i<d_table->size(SourceIndex); i++) {
+      //  FT* func=Fs[i];
+      //  if(func == 0) continue;
+      //  for(int nn=d_table->M[i]; nn<d_table->M[i+1]; nn++) {
+      //    int j = d_table->J[nn];
+      //    //uij = F[d_table->PairID[nn]]->evaluate(d_table->r(nn), dudr, d2udr2);
+      //    uij = func->evaluate(d_table->r(nn), dudr, d2udr2);
+      //    LogValue-=uij;
+      //    U[j]+=uij; 
+      //    dudr *= d_table->rinv(nn);
+      //    dU[j] -= dudr*d_table->dr(nn);
+      //    d2U[j] -= d2udr2+2.0*dudr;
 
-	  //add gradient and laplacian contribution
-	  P.G[j] -= dudr*d_table->dr(nn);
-	  P.L[j] -= d2udr2+2.0*dudr;
-	}
-      }
+      //    //add gradient and laplacian contribution
+      //    P.G[j] -= dudr*d_table->dr(nn);
+      //    P.L[j] -= d2udr2+2.0*dudr;
+      //  }
+      //}
 
-      FirstAddressOfdU = &(dU[0][0]);
-      LastAddressOfdU = FirstAddressOfdU + dU.size()*DIM;
+      //FirstAddressOfdU = &(dU[0][0]);
+      //LastAddressOfdU = FirstAddressOfdU + dU.size()*DIM;
 
-      buf.put(U.begin(), U.end());
-      buf.put(d2U.begin(), d2U.end());
+      buf.put(U.first_address(), U.last_address());
+      buf.put(d2U.first_address(), d2U.last_address());
       buf.put(FirstAddressOfdU,LastAddressOfdU);
 
       return LogValue;
@@ -335,8 +330,8 @@ namespace qmcplusplus {
      *copyFromBuffer uses the data stored by registerData or evaluate(P,buf)
      */
     void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf) {
-      buf.get(U.begin(), U.end());
-      buf.get(d2U.begin(), d2U.end());
+      buf.get(U.first_address(), U.last_address());
+      buf.get(d2U.first_address(), d2U.last_address());
       buf.get(FirstAddressOfdU,LastAddressOfdU);
     }
 
@@ -348,10 +343,9 @@ namespace qmcplusplus {
       ValueType sumu = 0.0;
       for(int i=0; i<U.size(); i++) sumu+=U[i];
 
-      buf.put(U.begin(), U.end());
-      buf.put(d2U.begin(), d2U.end());
+      buf.put(U.first_address(), U.last_address());
+      buf.put(d2U.first_address(), d2U.last_address());
       buf.put(FirstAddressOfdU,LastAddressOfdU);
-
       return std::exp(-sumu);
     }
 

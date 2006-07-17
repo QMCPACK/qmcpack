@@ -86,8 +86,8 @@ namespace qmcplusplus {
     ///constructor
     ThreeBodyPade(ParticleSet& ions, ParticleSet& els) :  FirstAddressOfdU(NULL), LastAddressOfdU(NULL){ 
       U.resize(els.getTotalNum());
-      ee_table = DistanceTable::getTable(DistanceTable::add(els));
-      d_table = DistanceTable::getTable(DistanceTable::add(ions,els));
+      ee_table = DistanceTable::add(els);
+      d_table = DistanceTable::add(ions,els);
       C.reserve(32); // need to reserve the memory...
       //InitC();
     }
@@ -96,7 +96,7 @@ namespace qmcplusplus {
 
     //evaluate the distance table with P
     void resetTargetParticleSet(ParticleSet& P) {
-      d_table = DistanceTable::getTable(DistanceTable::add(d_table->origin(),P));
+      d_table = DistanceTable::add(d_table->origin(),P);
     }
 
     void reset() { }

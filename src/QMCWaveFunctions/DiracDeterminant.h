@@ -265,11 +265,13 @@ namespace qmcplusplus {
      * @param iat the particle thas is being moved
      */
     inline ValueType ratio(ParticleSet& P, int iat) {
+      UseRatioOnly=true;
+      WorkingIndex = iat-FirstIndex;
       Phi.evaluate(P, iat, psiV);
 #ifdef DIRAC_USE_BLAS
       return curRatio = BLAS::dot(NumOrbitals,psiM[iat-FirstIndex],&psiV[0]);
 #else
-      return DetRatio(psiM, psiV.begin(),iat-FirstIndex);
+      return curRatio = DetRatio(psiM, psiV.begin(),iat-FirstIndex);
 #endif
     }
 
@@ -285,7 +287,7 @@ namespace qmcplusplus {
     ValueType ratio(ParticleSet& P, int iat,
 		    ParticleSet::ParticleGradient_t& dG, 
 		    ParticleSet::ParticleLaplacian_t& dL) {
-
+      UseRatioOnly=false;
       Phi.evaluate(P, iat, psiV, dpsiV, d2psiV);
       WorkingIndex = iat-FirstIndex;
 
@@ -333,12 +335,16 @@ namespace qmcplusplus {
      */
     void acceptMove(ParticleSet& P, int iat) {
       CurrentDet *= curRatio;
-      myG = myG_temp;
-      myL = myL_temp;
-      psiM = psiM_temp;
-      for(int j=0; j<NumOrbitals; j++) {
-	dpsiM(WorkingIndex,j)=dpsiV[j];
-	d2psiM(WorkingIndex,j)=d2psiV[j];
+      if(UseRatioOnly) {
+        DetUpdate(psiM,psiV,workV1,workV2,WorkingIndex,curRatio);
+      } else {
+        myG = myG_temp;
+        myL = myL_temp;
+        psiM = psiM_temp;
+        for(int j=0; j<NumOrbitals; j++) {
+          dpsiM(WorkingIndex,j)=dpsiV[j];
+          d2psiM(WorkingIndex,j)=d2psiV[j];
+        }
       }
       curRatio=1.0;
     }
@@ -346,15 +352,16 @@ namespace qmcplusplus {
     /** move was rejected. copy the real container to the temporary to move on
      */
     void restore(int iat) {
-      psiM_temp = psiM;
-      for(int j=0; j<NumOrbitals; j++) {
-	dpsiM_temp(WorkingIndex,j)=dpsiM(WorkingIndex,j);
-	d2psiM_temp(WorkingIndex,j)=d2psiM(WorkingIndex,j);
+      if(!UseRatioOnly) {
+        psiM_temp = psiM;
+        for(int j=0; j<NumOrbitals; j++) {
+          dpsiM_temp(WorkingIndex,j)=dpsiM(WorkingIndex,j);
+          d2psiM_temp(WorkingIndex,j)=d2psiM(WorkingIndex,j);
+        }
       }
       curRatio=1.0;
     }
 
-    
     void update(ParticleSet& P, 
 		ParticleSet::ParticleGradient_t& dG, 
 		ParticleSet::ParticleLaplacian_t& dL,
@@ -455,6 +462,7 @@ namespace qmcplusplus {
     }
 
 
+    bool UseRatioOnly;
     ///The number of particles
     int NP;
 

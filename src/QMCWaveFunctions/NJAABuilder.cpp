@@ -132,7 +132,7 @@ namespace qmcplusplus {
     RealType rcut = OneDimGridFactory::setSmoothCutoff(agrid,gridPtr);
     app_log() << "  smoothing function starts at " << rcut << endl;
 
-    DistanceTableData* d_table = DistanceTable::getTable(DistanceTable::add(targetPtcl));
+    DistanceTableData* d_table = DistanceTable::add(targetPtcl);
     TwoBodyJastrowOrbital<FuncType> *J2 = new TwoBodyJastrowOrbital<FuncType>(targetPtcl,d_table);
 
     int	ng = targetPtcl.groups();

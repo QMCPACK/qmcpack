@@ -32,7 +32,7 @@ namespace qmcplusplus {
     OrbitalBuilderBase(els,psi), IonSys(ions), BasisSet(0), d_table(0), rbuilder(0)
   { 
     //int d_ie = DistanceTable::add(ions,els);
-    d_table = DistanceTable::getTable(DistanceTable::add(ions,els));
+    d_table = DistanceTable::add(ions,els);
     nlms_id["n"] = q_n;
     nlms_id["l"] = q_l;
     nlms_id["m"] = q_m;

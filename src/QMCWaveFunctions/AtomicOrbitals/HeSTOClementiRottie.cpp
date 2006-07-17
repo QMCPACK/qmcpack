@@ -37,7 +37,7 @@ namespace qmcplusplus {
   {   
 
     //the electron-ion distancetable
-    DistanceTableData* d_ei = DistanceTable::getTable(DistanceTable::add(ions,els));
+    DistanceTableData* d_ei = DistanceTable::add(ions,els);
     
     typedef DiracDeterminant<HePresetHF> Det_t;
     //pointer to the Helium single particle orbitals

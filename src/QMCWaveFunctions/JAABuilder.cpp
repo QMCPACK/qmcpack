@@ -92,7 +92,7 @@ namespace qmcplusplus {
       cur = cur->next;
     } // while cur
 
-    DistanceTableData* d_table = DistanceTable::getTable(DistanceTable::add(targetPtcl));
+    DistanceTableData* d_table = DistanceTable::add(targetPtcl);
     /*
     if(IgnoreSpin) {
       TwoBodyJastrow<FN,true>* J2 = new TwoBodyJastrow<FN,true>(targetPtcl,d_table);

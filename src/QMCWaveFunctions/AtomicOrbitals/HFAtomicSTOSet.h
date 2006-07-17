@@ -132,7 +132,7 @@ namespace qmcplusplus {
 
     //evaluate the distance table with P
     void resetTargetParticleSet(ParticleSet& P) {
-      d_table = DistanceTable::getTable(DistanceTable::add(d_table->origin(),P));
+      d_table = DistanceTable::add(d_table->origin(),P);
     }
     
     inline int size() const { return Orbital.size();}
