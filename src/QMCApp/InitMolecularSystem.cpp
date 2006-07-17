@@ -87,8 +87,7 @@ namespace qmcplusplus {
   
   void InitMolecularSystem::initMolecule(ParticleSet* ions, ParticleSet* els) {
     
-    DistanceTableData* d_ii = 
-      DistanceTable::getTable(DistanceTable::add(*ions));
+    DistanceTableData* d_ii = DistanceTable::add(*ions);
     d_ii->create(1);
     d_ii->evaluate(*ions);
 
