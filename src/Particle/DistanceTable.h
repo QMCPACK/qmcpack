@@ -46,35 +46,10 @@ namespace qmcplusplus {
       SUPERCELL_SLAB=3, SUPERCELL_BULK=7};
 
     ///add a named DistanceTableData_t of Symmectric type
-    static int add(ParticleSet& s, const char* aname = NULL);
+    static DistanceTableData* add(ParticleSet& s, const char* aname = NULL);
     
     ///add a named DistanceTableData_t of Asymmectric type
-    static int add(const ParticleSet& s, ParticleSet& t, const char* aname = NULL);
-    
-    /** returns a pointer to a DistanceTableData_t
-     * @param i index to access TableList
-     */
-    static DistanceTableData* getTable(int i){
-      return TableList[i];
-    }
-
-    /** returns a pointer to a DistanceTableData of the pair
-     *@param atable name of the distance table
-     */
-    static DistanceTableData* getTable(const char* atable) {
-      map<string,int>::iterator it = TableMap.find(atable);
-      if(it == TableMap.end()) 
-	return NULL;
-      else 
-        return TableList[(*it).second];
-    }
-
-    static DistanceTableData* getTable(const char* sname, const char* tname){
-      string newname(sname);
-      newname.append(tname);
-      return getTable(newname.c_str());
-    }
-
+    static DistanceTableData* add(const ParticleSet& s, ParticleSet& t, const char* aname = NULL);
 
     /** returns the pointer to SimulationCell
      */
@@ -87,41 +62,22 @@ namespace qmcplusplus {
      */
     static void createSimulationCell(xmlNodePtr cur);
 
-    /** select DistanceTableData objects whose visitor tag matches ptag
-     *@param ptag the tag of a ParticleSet
-     *@param tables The objects related to the particle set
-     */
-    static void getTables(int ptag, vector<DistanceTableData*>& tables);
 
     ///reset the internal values, mainly Updated flags to prepare new series
     static void reset();
 
+    /** resize the containers
+     * @param walkers number of walkers
+     */
     static void create(int walkers);
-    
-    ///return true if ith table has been updated
-    static bool updated(int i) { return Updated[i];}
     
     ///remove the distance table with the name
     static void removeTable(const string& tname);
 
-    static void registerData(PooledData<RealType>& buf);
-
-    static void copyFromBuffer(PooledData<RealType>& buf);
-
-    static void copyToBuffer(PooledData<RealType>& buf);
-
   private:
     
-    ///a list of update flags
-    static vector<bool> Updated;
-    
-    ///a list of DistanceTableData_t
-    static vector<DistanceTableData*> TableList;
-
-    static vector<int> VisitorID;
-
-    ///Center_map[name] returns the Table index
-    static map<string,int>  TableMap;
+    ///Center_map[name] returns DistanceTableData*
+    static map<string,DistanceTableData*> TableMap;
     
     ///Global object to define a simulation cell
     static ParticleLayout_t* SimulationCell;

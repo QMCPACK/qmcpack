@@ -24,10 +24,7 @@
 using namespace qmcplusplus;
 
 /**@{instantiation of static data members*/
-vector<bool>                DistanceTable::Updated;
-vector<DistanceTableData*>  DistanceTable::TableList;
-map<string,int>             DistanceTable::TableMap;
-vector<int>                 DistanceTable::VisitorID;
+map<string,DistanceTableData*>  DistanceTable::TableMap;
 ParticleSet::ParticleLayout_t* DistanceTable::SimulationCell=0;
 /**@}*/
 
@@ -136,7 +133,7 @@ void DistanceTable::createSimulationCell(xmlNodePtr cur) {
  *\param aname of a new DistanceTableData
  *\return index of the distance table with the name
  */
-int
+DistanceTableData*
 DistanceTable::add(ParticleSet& s, const char* aname) {
 
   string newname;
@@ -147,12 +144,11 @@ DistanceTable::add(ParticleSet& s, const char* aname) {
     newname = s.getName(); newname.append(s.getName());
   }
 
-  map<string,int>::iterator it = TableMap.find(newname);
+  map<string,DistanceTableData*>::iterator it = TableMap.find(newname);
 
   //the named pair does not exist, add a new symmetric metrics
   if(it == TableMap.end()) {
     //LOGMSG("Distance table " << newname << " is created.")
-    int n = TableList.size();
     DistanceTableData* dt=0;
     if(SuperCellType<OHMMS_DIM>::apply(s.Lattice.BoxBConds) == SUPERCELL_OPEN) 
       dt = new SymmetricDTD<DTD_BConds<OHMMS_PRECISION,OHMMS_DIM,0> >(s,s);
@@ -161,26 +157,11 @@ DistanceTable::add(ParticleSet& s, const char* aname) {
 
     //set the name of the table
     dt->setName(newname);
-
-    TableList.push_back(dt);
-    TableMap[newname] = n;
-    VisitorID.push_back(s.tag());
+    TableMap[newname] = dt;
     s.addTable(dt);
     //add to the list
-    return n;
+    return dt;
   } else {
-    //DistanceTableData* dt((*it).second);
-    DistanceTableData* dt(TableList[(*it).second]);
-    if(dt == 0) {//need to add a new table since it was destroyed
-      if(SuperCellType<OHMMS_DIM>::apply(s.Lattice.BoxBConds) == SUPERCELL_OPEN) 
-        dt = new SymmetricDTD<DTD_BConds<OHMMS_PRECISION,OHMMS_DIM,0> >(s,s);
-      else
-        dt = new SymmetricDTD<DTD_BConds<OHMMS_PRECISION,OHMMS_DIM,7> >(s,s);
-      dt->setName(newname);
-      TableList[(*it).second]=dt;
-      //TableList[(*it).first]=dt;
-      s.addTable(dt);
-    }
     //LOGMSG("Distance table " << newname << " is reused")
     return (*it).second;
   }
@@ -192,7 +173,7 @@ DistanceTable::add(ParticleSet& s, const char* aname) {
  *\param aname of a new DistanceTableData
  *\return index of the distance table with the name
  */
-int
+DistanceTableData*
 DistanceTable::add(const ParticleSet& s, ParticleSet& t, const char* aname) {
 
   string newname;
@@ -203,12 +184,10 @@ DistanceTable::add(const ParticleSet& s, ParticleSet& t, const char* aname) {
     newname.append(t.getName());
   }
 
-  map<string,int>::iterator it = TableMap.find(newname);
+  map<string,DistanceTableData*>::iterator it = TableMap.find(newname);
 
   ///the named pair does not exist, add a new asymmetric metrics
   if(it == TableMap.end()) {
-    //LOGMSG("Distance table " << newname << " is created.")
-    int n = TableList.size();
     DistanceTableData* dt=0;
     if(SuperCellType<OHMMS_DIM>::apply(s.Lattice.BoxBConds) == SUPERCELL_OPEN) 
       dt = new AsymmetricDTD<DTD_BConds<OHMMS_PRECISION,OHMMS_DIM,0> >(s,t);
@@ -218,24 +197,10 @@ DistanceTable::add(const ParticleSet& s, ParticleSet& t, const char* aname) {
     //set the name of the table
     dt->setName(newname);
 
-    TableList.push_back(dt);
     t.addTable(dt);
-
-    TableMap[newname] = n;
-    VisitorID.push_back(t.tag());
-    return n;
+    TableMap[newname] = dt;
+    return dt;
   } else {
-    DistanceTableData* dt(TableList[(*it).second]);
-    if(dt == 0) {//need to add a new table since it was destroyed
-      if(SuperCellType<OHMMS_DIM>::apply(s.Lattice.BoxBConds) == SUPERCELL_OPEN) 
-        dt = new AsymmetricDTD<DTD_BConds<OHMMS_PRECISION,OHMMS_DIM,0> >(s,t);
-      else 
-        dt = new AsymmetricDTD<DTD_BConds<OHMMS_PRECISION,OHMMS_DIM,7> >(s,t);
-      dt->setName(newname);
-      TableList[(*it).second]=dt;
-      //TableList[(*it).first]=dt;
-      t.addTable(dt);
-    }
     //LOGMSG("Distance table " << newname << " is reused")
     return (*it).second;
   }
@@ -243,57 +208,23 @@ DistanceTable::add(const ParticleSet& s, ParticleSet& t, const char* aname) {
 
 void 
 DistanceTable::removeTable(const string& tname) {
-  map<string,int>::iterator it = TableMap.find(tname);
+  map<string,DistanceTableData*>::iterator it = TableMap.find(tname);
   if(it != TableMap.end()) {
-    DistanceTableData* dt=TableList[(*it).second];
-    if(dt) {
-      app_warning() << "  Removing distance table " << tname << endl;
-      delete dt;
-      TableList[(*it).second]=0;
-    } else {
-      app_warning() << "  " << tname << " distance table is already removed."<< endl;
-    }
+    delete (*it).second;
+    TableMap.erase(it);
   }
 }
 
-void 
-DistanceTable::getTables(int ptag, vector<DistanceTableData*>&  tables) {
-  ///add the table if ptag matches to the source or visitor
-  for(int i=0; i<TableList.size(); i++) 
-    if(TableList[i] && (ptag == VisitorID[i] || ptag ==  TableList[i]->origin().tag())) 
-      tables.push_back(TableList[i]);
-}
-
 void DistanceTable::create(int walkers) {
-  for(int i=0; i<TableList.size(); i++) 
-    if(TableList[i]) TableList[i]->create(walkers);
+  map<string,DistanceTableData*>::iterator it = TableMap.begin();
+  map<string,DistanceTableData*>::iterator it_end = TableMap.end();
+  while(it != it_end) {
+    (*it).second->create(walkers);
+    ++it;
+  }
 }
 
 void DistanceTable::reset() {
-  for(int i=0; i<Updated.size(); i++) Updated[i] = false;
-}
-
-//void DistanceTable::update(ParticleSet& t) {
-//  for(int i=0; i< TableList.size(); i++) 
-//    if(t.tag() == VisitorID[i]) TableList[i]->evaluate(t);
-//}
-
-//void DistanceTable::update(WalkerSetRef& w) {
-//  int id = w.tag();
-//  for(int i=0; i< TableList.size(); i++) 
-//    if(id == VisitorID[i]) TableList[i]->evaluate(w);
-//}
-
-void DistanceTable::registerData(PooledData<RealType>& buf) {
-  for(int i=0; i<TableList.size(); i++) TableList[i]->registerData(buf);
-}
-
-void DistanceTable::copyToBuffer(PooledData<RealType>& buf) {
-  for(int i=0; i<TableList.size(); i++) TableList[i]->copyToBuffer(buf);
-}
-
-void DistanceTable::copyFromBuffer(PooledData<RealType>& buf) {
-  for(int i=0; i<TableList.size(); i++) TableList[i]->copyFromBuffer(buf);
 }
 
 //May need to make it singleton

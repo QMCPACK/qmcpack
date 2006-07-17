@@ -93,7 +93,20 @@ namespace qmcplusplus {
   //  }
   //}
 
+  /** add a distance table to DistTables list
+   * @param d_table pointer to a DistanceTableData to be added
+   *
+   * DistTables is a list of DistanceTables which are updated by MC moves.
+   */
   void ParticleSet::addTable(DistanceTableData* d_table) {
+    int oid=d_table->origin().tag();
+    int i=0;
+    int dsize=DistTables.size();
+    while(i<dsize) {
+      if(oid == DistTables[i]->origin().tag()) //table already exists
+        return;
+      ++i;
+    }
     DistTables.push_back(d_table);
   }
 
