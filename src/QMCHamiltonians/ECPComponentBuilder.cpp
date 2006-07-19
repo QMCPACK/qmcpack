@@ -126,6 +126,7 @@ namespace qmcplusplus {
         while(cur1 != NULL) {
           if(xmlStrEqual(cur1->name,(const xmlChar*)"basisGroup")) {
             pp_nonloc->add(l,createVr(cur1,grid_semilocal));
+            NumNonLocal++;
           }
           cur1=cur1->next;
         }
@@ -136,7 +137,6 @@ namespace qmcplusplus {
     pp_nonloc->lmax=Lmax;
     pp_nonloc->Rmax=rmax;
 
-    NumNonLocal++;
     //ofstream fout("C.semilocal.dat");
     //fout.setf(std::ios::scientific, std::ios::floatfield);
     //fout.precision(12);
@@ -144,8 +144,8 @@ namespace qmcplusplus {
     //while(ig<grid_semilocal->size()) {
     //  double r=(*grid_semilocal)[ig++];
     //  fout << setw(20) << r;
-    //  for(int i=0; i<semilocal.size(); i++) {
-    //    fout << setw(20) << semilocal[i]->f(r);
+    //  for(int i=0; i<pp_nonloc->nlpp_m.size(); i++) {
+    //    fout << setw(20) << pp_nonloc->nlpp_m[i]->operator()(ig);
     //  }
     //  fout << endl;
     //}
@@ -160,6 +160,12 @@ namespace qmcplusplus {
     RadialPotentialType *app=new RadialPotentialType(agrid);
     Transform2GridFunctor<InFuncType,RadialPotentialType> transform(a,*app);
     transform.generate(agrid->rmin(),agrid->rmax(), agrid->size());
+    //int ig=0;
+    //while(ig<agrid->size()) {
+    //  (*app)(ig)=a.f((*agrid)[ig]);
+    //  ++ig;
+    //}
+    //app->spline(0,0.0,app->size()-1,0.0);
     return app;
   }
 
