@@ -22,7 +22,6 @@
 #include "QMCWaveFunctions/MolecularOrbitals/MolecularOrbitalBuilder.h"
 #include "QMCWaveFunctions/AtomicOrbitals/HeSTOClementiRottie.h"
 #include "QMCWaveFunctions/PlaneWaveOrbitalBuilder.h"
-#include "QMCWaveFunctions/PlaneWave/PWOrbitalBuilder.h"
 #include "QMCWaveFunctions/JAABuilder.h"
 #include "QMCWaveFunctions/JABBuilder.h"
 #include "QMCWaveFunctions/NJAABuilder.h"
@@ -31,6 +30,7 @@
 #include "QMCWaveFunctions/WaveFunctionFactory.h"
 #if defined(QMC_COMPLEX)
 #include "QMCWaveFunctions/ElectronGasComplexOrbitalBuilder.h"
+#include "QMCWaveFunctions/PlaneWave/PWOrbitalBuilder.h"
 #else
 #include "QMCWaveFunctions/ElectronGasOrbitalBuilder.h"
 #include "QMCWaveFunctions/ThreeBodyGeminalBuilder.h"
