@@ -211,8 +211,8 @@ namespace qmcplusplus {
             PosType dr = m_sqrttau*deltaR[iat];
             PosType newpos = W.makeMove(iat,dr);
 
-            //RealType ratio = Psi.ratio(W,iat);
-            RealType ratio = Psi.ratio(W,iat,dG,dL);
+            RealType ratio = Psi.ratio(W,iat);
+            //RealType ratio = Psi.ratio(W,iat,dG,dL);
 
             RealType prob = std::min(1.0e0,ratio*ratio);
 
@@ -222,8 +222,8 @@ namespace qmcplusplus {
               ++nAccept;
               W.acceptMove(iat);
               Psi.acceptMove(W,iat);
-              W.G+=dG;
-              W.L+=dL;
+              //W.G+=dG;
+              //W.L+=dL;
             } else {
               ++nReject; 
               W.rejectMove(iat); 
@@ -238,10 +238,10 @@ namespace qmcplusplus {
 
         thisWalker.R = W.R;
         w_buffer.rewind();
-        //W.updateBuffer(w_buffer);
-        //RealType logpsi = Psi.updateBuffer(W,w_buffer);
-        W.copyToBuffer(w_buffer);
-        RealType logpsi = Psi.evaluate(W,w_buffer);
+        W.updateBuffer(w_buffer);
+        RealType logpsi = Psi.updateBuffer(W,w_buffer);
+        //W.copyToBuffer(w_buffer);
+        //RealType logpsi = Psi.evaluate(W,w_buffer);
 
         RealType eloc=H.evaluate(W);
         thisWalker.resetProperty(logpsi,Psi.getPhase(),eloc);
