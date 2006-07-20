@@ -153,6 +153,8 @@ void GaussianFCHKParser::getGaussianCenters(std::istream& is) {
   gsMap[-1]=2; //sp
   gsMap[1] =3; //p
   gsMap[-2]=4; //d
+  gsMap[-3]=5; //f
+  gsMap[-4]=6; //g
 
   vector<int> n(gShell.size()), dn(NumberOfAtoms,0);
 
