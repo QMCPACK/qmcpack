@@ -22,6 +22,7 @@
 
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "OhmmsPETE/OhmmsVector.h"
+#include "OhmmsPETE/TinyVector.h"
 #include "Numerics/OhmmsBlas.h"
 namespace qmcplusplus {
   struct MatrixOperators {
@@ -61,13 +62,7 @@ namespace qmcplusplus {
      */
     inline static void product(const Matrix<double>& A,
         const Matrix<std::complex<double> >& B, Matrix<double>& C) {
-//      const char transa = 'N';
-//      const char transb = 'N';
-//      const std::complex<double> zone(1.0,0.0);
-//      const std::complex<double> zero(0.0,0.0);
-//      zgemm(transa, transb, B.cols(), A.rows(), B.rows(),
-//          zone, B.data(), B.cols(), A.data(), A.cols(),
-//          zero, C.data(), C.cols());
+        cerr << " Undefined C=AB with real A and complex B " << endl;
     }
 
     /** static function to perform y=Ax for generic matrix and vector
@@ -78,6 +73,36 @@ namespace qmcplusplus {
       const double zero=0.0;
       dgemv(transa, A.cols(), A.rows(), one, A.data(), A.cols(), x.data(), 1, zero, yptr, 1);
     }
+
+    /** static function to perform y=Ax for generic matrix and vector
+     */
+    template<unsigned D>
+    inline static void product(const Matrix<double>& A, const Vector<TinyVector<double,D> >& x, 
+        TinyVector<double,D>* restrict yptr) {
+      const double one=1.0;
+      const double zero=0.0;
+      const char transa = 'N';
+      const char transb = 'N';
+      dgemm(transa, transb, D, A.rows(), x.size(),
+          one, x.data()->begin(), D, A.data(), A.cols(),
+          zero, yptr->begin(), D);
+    }
+
+    /** static function to perform y=Ax for generic matrix and vector
+     */
+    template<unsigned D>
+    inline static void product(const Matrix<std::complex<double> >& A, 
+        const Vector<TinyVector<std::complex<double>,D> >& x, 
+        TinyVector<std::complex<double>,D>* restrict yptr) {
+      const char transa = 'N';
+      const char transb = 'N';
+      const std::complex<double> zone(1.0,0.0);
+      const std::complex<double> zero(0.0,0.0);
+      zgemm(transa, transb, D, A.rows(), x.size(),
+          zone, x.data()->begin(), D, A.data(), A.cols(),
+          zero, yptr->begin(), D);
+    }
+
 
     /** static function to perform y=Ax for generic matrix and vector
      */
@@ -94,10 +119,7 @@ namespace qmcplusplus {
      */
     inline static void product(const Matrix<double>& A, 
         const Vector<std::complex<double> >& x, double* restrict yptr) {
-//      const char transa = 'T';
-//      const std::complex<double> zone(1.0,0.0);
-//      const std::complex<double> zero(0.0,0.0);
-//      zgemv(transa, A.cols(), A.rows(), zone, A.data(), A.cols(), x.data(), 1, zero, yptr, 1);
+        cerr << " Undefined C=AB with real A and complex x " << endl;
     }
 
   };
