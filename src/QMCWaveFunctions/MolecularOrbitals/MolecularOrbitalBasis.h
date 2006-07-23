@@ -73,12 +73,12 @@ namespace qmcplusplus {
 	I[ic] = ptcl_ref.GroupID[ic];
       }
       //reset the distance table for the atomic orbitals
-      for(int i=0; i<AOs.size(); i++) AOs[i]->reset(myTable);
+      for(int i=0; i<AOs.size(); i++) AOs[i]->setTable(myTable);
       //evaluate the total basis dimension and offset for each center
       Basis.resize(I.size()+1);
       Basis[0] = 0;
       for(int c=0; c<I.size(); c++){
-	Basis[c+1] = Basis[c]+AOs[I[c]]->basis();
+	Basis[c+1] = Basis[c]+AOs[I[c]]->getBasisSetSize();
       }
       TotalBasis = Basis[I.size()];
     }
@@ -97,7 +97,7 @@ namespace qmcplusplus {
     void resetTargetParticleSet(ParticleSet& P) {
       LOGMSG("MolecularOrbitalBasis::resetTargetParticleSet")
       myTable = DistanceTable::add(*IonConfig,P);
-      for(int i=0; i<AOs.size(); i++) AOs[i]->reset(myTable);
+      for(int i=0; i<AOs.size(); i++) AOs[i]->setTable(myTable);
     }
 
     /**
