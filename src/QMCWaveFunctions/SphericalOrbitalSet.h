@@ -90,10 +90,10 @@ namespace qmcplusplus {
     }
 
     ///return the number of basis functions
-    inline int basis() const { return NL.size(); }
+    inline int getBasisSetSize() const { return NL.size(); }
 
     ///reset the DistanceTableData (ion-electron)
-    inline void reset(DistanceTableData* atable) { 
+    inline void setTable(DistanceTableData* atable) { 
       myTable = atable;
     }
 
