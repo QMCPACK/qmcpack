@@ -250,6 +250,14 @@ namespace qmcplusplus {
       GrowthDirection = abs(GrowthDirection-1); //flip the direction
     }
 
+    inline void setRefSign(int ipsi, RealType phase) {
+      RefSign[ipsi]=(phase>M_PI_2)?-1:1;
+    }
+
+    inline int getSign(RealType phase) {
+      return (phase>M_PI_2)?-1:1;
+    }
+
     /** copy the restart data from buf 
      * @param buf buffer to read from
      */
