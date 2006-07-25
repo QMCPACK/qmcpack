@@ -200,15 +200,12 @@ namespace qmcplusplus {
             ++it;
           }
 
-          //LOGMSG("Checking the order of angular momentum ")
-          //std::copy(aos->LM.begin(), aos->LM.end(), ostream_iterator<int>(cout," "));
-          //cout << endl;
-
 	  //add the new atomic basis to the basis set
 	  BasisSet->add(aos,activeCenter);
 
+#if !defined(HAVE_MPI)
           rbuilder->print(abasis,1);
-
+#endif
           if(rbuilder) {delete rbuilder; rbuilder=0;}
 	}else {
 	  WARNMSG("Species " << abasis << " is already initialized. Ignore the input.")
