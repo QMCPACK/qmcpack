@@ -198,7 +198,7 @@ namespace qmcplusplus {
 
         //Compute Energy and Psi and save in curW
         curW.Properties(ipsi,LOGPSI) = Psi1[ipsi]->evaluateLog(W);
-        RealType BeadSign = Reptile->getSign(curW.Properties(ipsi,SIGN) = Psi1[ipsi]->getPhase());
+        IndexType BeadSign = Reptile->getSign(curW.Properties(ipsi,SIGN) = Psi1[ipsi]->getPhase());
         RealType eloc= H1[ipsi]->evaluate(W);
         curW.Properties(ipsi,LOCALENERGY)= eloc;
         H1[ipsi]->saveProperty(curW.getPropertyBase(ipsi));
@@ -225,7 +225,7 @@ namespace qmcplusplus {
         } 
 
         //Compute the Total "Sign" of the Reptile
-        SumSign[ipsi] += int(BeadSign);
+        SumSign[ipsi] += BeadSign;
 
         // Save them in curW
         curW.Action(ipsi,MinusDirection)=0.25/Tau*KinActMinus;
@@ -512,7 +512,7 @@ namespace qmcplusplus {
 
       //evaluate Psi and H
       NewBeadProp[LOGPSI]=Psi1[ipsi]->evaluateLog(W);
-      NewBeadProp[SIGN]=Reptile->getSign(Psi1[ipsi]->getPhase());
+      NewBeadProp[SIGN]=Psi1[ipsi]->getPhase();
       RealType eloc=NewBeadProp[LOCALENERGY]= H1[ipsi]->evaluate(W);
 
       //Save properties
@@ -526,7 +526,7 @@ namespace qmcplusplus {
       NewBead->Action(ipsi,backward)=0.5*m_oneover2tau*Dot(gRand,gRand);
 
       NewBead->Action(ipsi,Directionless)=0.5*Tau*eloc;
-      int beadwgt=abs( ( int(NewBeadProp[SIGN])+Reptile->RefSign[ipsi] )/2 );
+      int beadwgt=abs( ( Reptile->getSign(NewBeadProp[SIGN])+Reptile->RefSign[ipsi] )/2 );
       NewBead->BeadSignWgt[ipsi]=beadwgt;
       totbeadwgt+=beadwgt;
     }
