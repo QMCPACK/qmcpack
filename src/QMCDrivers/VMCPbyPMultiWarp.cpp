@@ -26,6 +26,7 @@
 #include "Message/CommCreate.h"
 #include "Estimators/MultipleEnergyEstimator.h"
 #include "QMCApp/ParticleSetPool.h"
+#include "QMCDrivers/DriftOperators.h"
 
 namespace qmcplusplus { 
 
@@ -89,7 +90,6 @@ namespace qmcplusplus {
     MCWalkerConfiguration::iterator it;
     MCWalkerConfiguration::iterator it_end(W.end());
 
-
     do {  //Blocks loop
       IndexType step = 0;
       nAccept = 0; nReject=0;
@@ -131,6 +131,12 @@ namespace qmcplusplus {
 
             PosType dr = m_sqrttau*deltaR[iat]+thisWalker.Drift[iat];
             PosType newpos = W.makeMove(iat,dr);
+            /*
+            cout << "========================" << endl;
+            cout << "PARTICLE " << iat << endl;
+            cout << "DRIFT        " << thisWalker.Drift[iat]<< endl;
+            cout << "NEW POSITION " << W.R[iat] << endl;
+            */
             //Compute the displacement due to space-warp
             PtclWarp.warp_one(iat,1);
 
@@ -151,6 +157,14 @@ namespace qmcplusplus {
                 *PtclWarp.get_Jacobian(iat,ipsi)/PtclWarp.one_ptcl_Jacob(ipsi,iat);
 	      sumratio[ipsi]=1.e0;
 	    }
+            /*
+            for(int ipsi=0; ipsi<nPsi; ipsi++){
+              cout << "NEW WARP POSITION " << ipsi << " " << WW[ipsi]->R[iat]<<endl;
+            }
+            for(int ipsi=0; ipsi<nPsi; ipsi++){
+              cout << "NEW JACOBIAN " << ipsi << " " << new_Jacobian[ipsi]<<endl;
+            }
+            */
 
 	    // Compute new (Psi[i]/Psi[j])^2 and their sum
 	    int indexij(0);
@@ -163,10 +177,22 @@ namespace qmcplusplus {
 		sumratio[jpsi] += 1.e0/rji;
 	      }
 	    }
+            /*
+            for(int ipsi=0; ipsi<nPsi; ipsi++){
+              cout << "WF RATIO " << ipsi << " " << ratio[ipsi] << endl;
+            }
+            for(int ipsi=0; ipsi<nPsi; ipsi++){
+              cout << "NEW GRADIENT " << ipsi << " " << (*G[ipsi])[iat]<<endl;
+            }
+            for(int ipsi=0; ipsi<nPsi; ipsi++){
+              cout << "NEW LAPLACIAN " << ipsi << " " << (Psi1[ipsi]->L[iat]+ (*dL[ipsi])[iat]) <<endl;
+            }
+            */
 
 	    // Evaluate new Umbrella Weight and new drift
             RealType logGf = -0.5*dot(deltaR[iat],deltaR[iat]);
-
+            
+            /* START COMMENT
 	    drift=0.0;
             QMCTraits::PosType WarpDrift;
             RealType denom(0.e0);
@@ -178,11 +204,36 @@ namespace qmcplusplus {
                   +5.0e-1*PtclWarp.get_grad_ln_Jacob(iptcl,ipsi) ;
                 drift[iptcl] += (invsumratio[ipsi]*WarpDrift);
               }
-            }
+            } 
             
             //drift *= (Tau/denom);
             denom = Tau/denom;
             drift *= denom;
+            END COMMENT*/
+            //START NEW
+            for(int ipsi=0; ipsi< nPsi ;ipsi++)
+	      invsumratio[ipsi]=1.0/sumratio[ipsi];
+            /*
+            for(int ipsi=0; ipsi<nPsi; ipsi++){
+              cout << "NEW WEIGHT " << ipsi << " " << invsumratio[ipsi]<<endl;
+            }
+            */
+            setScaledDrift(Tau,*G[0],drift);
+            /*
+            cout << "NEXT GRAD " << "0" << " " << (*G[0])[iat+1]<<endl;
+            cout << "NEXT DRIFT " << "0" << " " << drift[iat+1]<<endl;
+            */
+            drift*=invsumratio[0];
+            for(int ipsi=1; ipsi< nPsi ;ipsi++) {               		
+              setScaledDrift(Tau,*G[ipsi],dG);
+              /*
+              cout << "NEXT GRAD " << ipsi << " " << (*G[ipsi])[iat+1]<<endl;
+              cout << "NEXT DRIFT " << ipsi << " " << dG[iat+1]<<endl;
+              */
+              drift+= (invsumratio[ipsi]*dG);
+            }
+            //END NEW
+
 
             dr = thisWalker.R[iat]-newpos-drift[iat];
             RealType logGb = -m_oneover2tau*dot(dr,dr);
@@ -283,7 +334,7 @@ namespace qmcplusplus {
       //Modify Norm. 
       if(block < equilBlocks){
         for(int ipsi=0; ipsi< nPsi; ipsi++){
-          cout << "WGT " << multiEstimator->esum(ipsi,MultipleEnergyEstimator::WEIGHT_INDEX) << endl;
+          //cout << "WGT " << multiEstimator->esum(ipsi,MultipleEnergyEstimator::WEIGHT_INDEX) << endl;
           tmpNorm[ipsi]+=multiEstimator->esum(ipsi,MultipleEnergyEstimator::WEIGHT_INDEX);
         }
         if(block==(equilBlocks-1) || block==(nBlocks-1)){
@@ -292,7 +343,7 @@ namespace qmcplusplus {
           for(int ipsi=0; ipsi< nPsi; ipsi++){
             Norm[ipsi]=tmpNorm[ipsi]/SumNorm;
             branchEngine->LogNorm[ipsi]=log(Norm[ipsi]);
-            cout << "LOGNORM VMC " << branchEngine->LogNorm[ipsi] << endl;
+            //cout << "LOGNORM VMC " << branchEngine->LogNorm[ipsi] << endl;
           }
         }
       }
@@ -308,7 +359,7 @@ namespace qmcplusplus {
       //record the current configuration
       recordBlock(block);
 
-      //re-evaluate the ratio
+      //refresh the buffer
       multiEstimator->initialize(W,WW,PtclWarp,H1,Psi1,Tau,Norm,false);
     } while(block<nBlocks);
 

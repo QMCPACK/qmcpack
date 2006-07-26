@@ -22,6 +22,7 @@
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "ParticleBase/ParticleAttribOps.h"
 #include "Message/CommOperators.h"
+#include "QMCDrivers/DriftOperators.h"
 
 namespace qmcplusplus {
 
@@ -157,6 +158,9 @@ namespace qmcplusplus {
 
     RatioIJ.resize(NumWalkers,NumCopies*(NumCopies-1)/2);
 
+    vector<RealType> invsumratio(NumCopies);
+    MCWalkerConfiguration::ParticlePos_t drift(numPtcls);
+
     MCWalkerConfiguration::iterator it(W.begin()); 
     MCWalkerConfiguration::iterator it_end(W.end()); 
 
@@ -233,9 +237,10 @@ namespace qmcplusplus {
       RealType *rPtr=RatioIJ[iw];
       for(int ipsi=0; ipsi< NumCopies-1; ipsi++) {			  
         for(int jpsi=ipsi+1; jpsi< NumCopies; jpsi++){     		 
-          RealType r=exp(2.0*(logpsi[jpsi]-logpsi[ipsi])); 
-	  r*=(Jacobian[jpsi]*Norm[ipsi]/Jacobian[ipsi]/Norm[jpsi]);
+          RealType r=exp(2.0*(logpsi[jpsi]-logpsi[ipsi]))*Norm[ipsi]/Norm[jpsi];
+          //BEWARE: RatioIJ DOES NOT INCLUDE THE JACOBIANS!
           rPtr[indexij++]=r;
+	  r*=(Jacobian[jpsi]/Jacobian[ipsi]);
           sumratio[ipsi] += r;                            
           sumratio[jpsi] += 1.0/r;		
         }                                              
@@ -244,6 +249,7 @@ namespace qmcplusplus {
       //Re-use Multiplicity as the sumratio
       thisWalker.Multiplicity=sumratio[0];
 
+      /*START COMMENT
       QMCTraits::PosType WarpDrift;
       RealType denom(0.e0),wgtpsi;
       thisWalker.Drift=0.e0; 
@@ -259,6 +265,17 @@ namespace qmcplusplus {
       }
       //Drift = denom*Drift;
       thisWalker.Drift *= (tau/denom);
+      END COMMENT*/
+      for(int ipsi=0; ipsi< NumCopies ;ipsi++){
+        invsumratio[ipsi]=1.0/sumratio[ipsi];
+        thisWalker.Properties(ipsi,UMBRELLAWEIGHT)=invsumratio[ipsi];
+      }
+      setScaledDrift(tau,psi[0]->G,drift);
+      thisWalker.Drift=invsumratio[0]*drift;
+      for(int ipsi=1; ipsi< NumCopies ;ipsi++) {               		
+        setScaledDrift(tau,psi[ipsi]->G,drift);
+        thisWalker.Drift += (invsumratio[ipsi]*drift);
+      }
       ++it;++iw;
     }
   }
@@ -358,9 +375,15 @@ namespace qmcplusplus {
     }
 
     //(each hamiltonian term)*
-    for(int i=0; i<elocal.size(); i++, ir++) {
-      record[ir]=wgtinv*elocal(i);
+    int iloc=0;
+    for(int i=0; i<NumCopies; i++) {
+      for(int j=0; j<NumOperators; j++, ir++) {
+        record[ir]=elocal(iloc++)*wgtinv/esum(i,WEIGHT_INDEX);
+      }
     }
+    /*for(int i=0; i<elocal.size(); i++, ir++) {
+      record[ir]=wgtinv*elocal(i);
+    }*/
     //int n(elocal.size());
     //const RealType* restrict eit(elocal.data());
     //while(n) {record[ir++]=wgtinv*(*eit++);--n;}

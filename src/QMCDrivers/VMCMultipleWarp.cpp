@@ -28,6 +28,7 @@
 #include "Estimators/MultipleEnergyEstimator.h"
 #include "Particle/DistanceTable.h"
 #include "QMCApp/ParticleSetPool.h"
+#include "QMCDrivers/DriftOperators.h"
 
 namespace qmcplusplus { 
 
@@ -291,7 +292,6 @@ namespace qmcplusplus {
     
     MCWalkerConfiguration::iterator it(W.begin()); 
     MCWalkerConfiguration::iterator it_end(W.end()); 
-    ParticleSet::ParticlePos_t deltaRTemp(W.getTotalNum());
     int iwlk(0); 
     int nPsi_minus_one(nPsi-1);
 
@@ -302,113 +302,111 @@ namespace qmcplusplus {
       //create a 3N-Dimensional Gaussian with variance=1
       makeGaussRandom(deltaR);
 
+      W.R = m_sqrttau*deltaR + thisWalker.R + thisWalker.Drift;
 
-      for(int iat=0; iat<W.getTotalNum(); iat++) {  //Particles loop
+      W.update();
 
-        W.R=thisWalker.R;
-        W.R[iat] = m_sqrttau*deltaR[iat] + thisWalker.R[iat] + thisWalker.Drift[iat];
-
-        W.update();
-
-        for(int ipsi=0; ipsi<nPsi; ipsi++) Jacobian[ipsi]=1.e0;
-        for(int iptcl=0; iptcl< nptcl; iptcl++){
-          PtclWarp.warp_one(iptcl,nptcl);
-          //Save particle position
-          for(int ipsi=1; ipsi<nPsi; ipsi++){
-            WW[ipsi]->R[iptcl]=W.R[iptcl]+PtclWarp.get_displacement(iptcl,ipsi);
-            Jacobian[ipsi]*=PtclWarp.get_Jacobian(iptcl,ipsi);
-          }
+      for(int ipsi=0; ipsi<nPsi; ipsi++) Jacobian[ipsi]=1.e0;
+      for(int iptcl=0; iptcl< nptcl; iptcl++){
+        PtclWarp.warp_one(iptcl,nptcl);
+        //Save particle position
+        for(int ipsi=1; ipsi<nPsi; ipsi++){
+          WW[ipsi]->R[iptcl]=W.R[iptcl]+PtclWarp.get_displacement(iptcl,ipsi);
+          Jacobian[ipsi]*=PtclWarp.get_Jacobian(iptcl,ipsi);
         }
+      }
 
-        for(int ipsi=0; ipsi< nPsi;ipsi++) {
-          WW[ipsi]->update();
-          logpsi[ipsi]=Psi1[ipsi]->evaluateLog(*WW[ipsi]);
-          //Redundant???
-          Psi1[ipsi]->L=WW[ipsi]->L;
-          Psi1[ipsi]->G=WW[ipsi]->G;
-          sumratio[ipsi]=1.0;
+      for(int ipsi=0; ipsi< nPsi;ipsi++) {
+        WW[ipsi]->update();
+        logpsi[ipsi]=Psi1[ipsi]->evaluateLog(*WW[ipsi]);
+        //Redundant???
+        Psi1[ipsi]->L=WW[ipsi]->L;
+        Psi1[ipsi]->G=WW[ipsi]->G;
+        sumratio[ipsi]=1.0;
+      }
+
+      // Compute the sum over j of Psi^2[j]/Psi^2[i] for each i
+      for(int ipsi=0; ipsi< nPsi_minus_one; ipsi++) {
+        for(int jpsi=ipsi+1; jpsi< nPsi; jpsi++){
+          RealType ratioij=Norm[ipsi]/Norm[jpsi]*std::exp(2.0*(logpsi[jpsi]-logpsi[ipsi]));
+          ratioij*=(Jacobian[jpsi]/Jacobian[ipsi]);
+          sumratio[ipsi] += ratioij;
+          sumratio[jpsi] += 1.0/ratioij;
         }
+      }  
 
-        // Compute the sum over j of Psi^2[j]/Psi^2[i] for each i
-        for(int ipsi=0; ipsi< nPsi_minus_one; ipsi++) {
-          for(int jpsi=ipsi+1; jpsi< nPsi; jpsi++){
-            RealType ratioij=Norm[ipsi]/Norm[jpsi]*std::exp(2.0*(logpsi[jpsi]-logpsi[ipsi]));
-            ratioij*=(Jacobian[jpsi]/Jacobian[ipsi]);
-            sumratio[ipsi] += ratioij;
-            sumratio[jpsi] += 1.0/ratioij;
-          }
-        }  
+      for(int ipsi=0; ipsi< nPsi; ipsi++)			  
+        invsumratio[ipsi]=1.0/sumratio[ipsi];			  
 
-        for(int ipsi=0; ipsi< nPsi; ipsi++)			  
-          invsumratio[ipsi]=1.0/sumratio[ipsi];			  
+      // cout << invsumratio[0] << " " << invsumratio[1] << endl;
 
-        // cout << invsumratio[0] << " " << invsumratio[1] << endl;
+      // Only these properties need to be updated
+      // Using the sum of the ratio Psi^2[j]/Psi^2[iwref]
+      // because these are number of order 1. Potentially
+      // the sum of Psi^2[j] can get very big
+      //Properties(LOGPSI) =logpsi[0];
+      //Properties(SUMRATIO) = sumratio[0];
 
-        // Only these properties need to be updated
-        // Using the sum of the ratio Psi^2[j]/Psi^2[iwref]
-        // because these are number of order 1. Potentially
-        // the sum of Psi^2[j] can get very big
-        //Properties(LOGPSI) =logpsi[0];
-        //Properties(SUMRATIO) = sumratio[0];
+      RealType logGf = -0.5*Dot(deltaR,deltaR);
+      RealType scale = Tau; // ((-1.0+sqrt(1.0+2.0*Tau*vsq))/vsq);
 
-        for(int jat=0; jat< W.getTotalNum(); jat++) deltaRTemp[jat]=0.0;
-        deltaRTemp[iat] = deltaR[iat];
-        RealType logGf = -0.5*Dot(deltaRTemp,deltaRTemp);
-        RealType scale = Tau; // ((-1.0+sqrt(1.0+2.0*Tau*vsq))/vsq);
+      //accumulate the weighted drift
+      //drift = Psi1[0]->G;
+      /*drift = invsumratio[0]*Psi1[0]->G;
+        for(int ipsi=1; ipsi< nPsi ;ipsi++) {
+        drift += invsumratio[ipsi]*Warp.G[ipsi];
+        }*/
+      //drift *= scale;
+      setScaledDrift(Tau,Psi1[0]->G,drift);
+      drift*=invsumratio[0];
+      for(int ipsi=1; ipsi< nPsi ;ipsi++) {               		
+        setScaledDrift(Tau,Psi1[ipsi]->G,deltaR);
+        drift+= (invsumratio[ipsi]*deltaR);
+      }
 
-        //accumulate the weighted drift
-        //drift = Psi1[0]->G;
-        /*drift = invsumratio[0]*Psi1[0]->G;
-          for(int ipsi=1; ipsi< nPsi ;ipsi++) {
-          drift += invsumratio[ipsi]*Warp.G[ipsi];
-          }*/
-        //drift *= scale;
-        PAOps<RealType,DIM>::scale(scale,Psi1[0]->G,drift);
+      deltaR = thisWalker.R - W.R - drift;
+      RealType logGb = -m_oneover2tau*Dot(deltaR,deltaR);
 
-        deltaRTemp[iat] = thisWalker.R[iat] - W.R[iat] - drift[iat];
-        RealType logGb = -m_oneover2tau*Dot(deltaRTemp,deltaRTemp);
+      //Original
+      //RealType g = Properties(SUMRATIO)/thisWalker.Properties(SUMRATIO)*   		
+      //	exp(logGb-logGf+2.0*(Properties(LOGPSI)-thisWalker.Properties(LOGPSI)));	
+      //Reuse Multiplicity to store the sumratio[0]
+      RealType g = sumratio[0]/thisWalker.Multiplicity*   		
+        std::exp(logGb-logGf+2.0*(logpsi[0]-thisWalker.Properties(LOGPSI)));	
 
-        //Original
-        //RealType g = Properties(SUMRATIO)/thisWalker.Properties(SUMRATIO)*   		
-        //	exp(logGb-logGf+2.0*(Properties(LOGPSI)-thisWalker.Properties(LOGPSI)));	
-        //Reuse Multiplicity to store the sumratio[0]
-        RealType g = sumratio[0]/thisWalker.Multiplicity*   		
-          std::exp(logGb-logGf+2.0*(logpsi[0]-thisWalker.Properties(LOGPSI)));	
-
-        if(Random() > g) {
-          //cout << "REJECTED" << endl << endl;
-          thisWalker.Age++;     
-          ++nReject; 
-        } else {
-          thisWalker.Age=0;
-          thisWalker.Multiplicity=sumratio[0];
-          thisWalker.R = W.R;
-          thisWalker.Drift = drift;
-          for(int ipsi=0; ipsi<nPsi; ipsi++){ 		            
-            WW[ipsi]->L=Psi1[ipsi]->L; //NECESSARY??????? 
-            WW[ipsi]->G=Psi1[ipsi]->G;
-            RealType et = H1[ipsi]->evaluate(*WW[ipsi]);
-            thisWalker.Properties(ipsi,LOGPSI)=logpsi[ipsi];
-            thisWalker.Properties(ipsi,SIGN) =Psi1[ipsi]->getPhase();
-            thisWalker.Properties(ipsi,UMBRELLAWEIGHT)=invsumratio[ipsi];
-            thisWalker.Properties(ipsi,LOCALENERGY)=et;
-            thisWalker.Properties(ipsi,JACOBIAN)=Jacobian[ipsi];
-            H1[ipsi]->saveProperty(thisWalker.getPropertyBase(ipsi));
-          }
-          //cout << "ACCEPTED" << endl << endl;
-
-          ++nAccept;
+      if(Random() > g) {
+        //cout << "REJECTED" << endl << endl;
+        thisWalker.Age++;     
+        ++nReject; 
+      } else {
+        thisWalker.Age=0;
+        thisWalker.Multiplicity=sumratio[0];
+        thisWalker.R = W.R;
+        thisWalker.Drift = drift;
+        for(int ipsi=0; ipsi<nPsi; ipsi++){ 		            
+          WW[ipsi]->L=Psi1[ipsi]->L; //NECESSARY??????? 
+          WW[ipsi]->G=Psi1[ipsi]->G;
+          RealType et = H1[ipsi]->evaluate(*WW[ipsi]);
+          thisWalker.Properties(ipsi,LOGPSI)=logpsi[ipsi];
+          thisWalker.Properties(ipsi,SIGN) =Psi1[ipsi]->getPhase();
+          thisWalker.Properties(ipsi,UMBRELLAWEIGHT)=invsumratio[ipsi];
+          thisWalker.Properties(ipsi,LOCALENERGY)=et;
+          thisWalker.Properties(ipsi,JACOBIAN)=Jacobian[ipsi];
+          H1[ipsi]->saveProperty(thisWalker.getPropertyBase(ipsi));
         }
+        //cout << "ACCEPTED" << endl << endl;
+
+        ++nAccept;
       }
       ++it; 
       ++iwlk;
     }
     //cout << endl;
   }
-}
+  }
 
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$ 
- ***************************************************************************/
+  /***************************************************************************
+   * $RCSfile$   $Author$
+   * $Revision$   $Date$
+   * $Id$ 
+   ***************************************************************************/
