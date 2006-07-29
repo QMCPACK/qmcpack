@@ -170,7 +170,17 @@ void BParser::getBasisSetForDet(std::istream& is) {
     int nterms=atoi(currentWords[1].c_str());
     int iflag=atoi(currentWords[2].c_str());
     vector<string> items(nterms+1);
-    getwords(items,is); 
+
+    //white-space at the end is killing me
+    vector<string> temp;
+    int inw=0;
+    while(inw<nterms+1) {
+      getwords(temp,is); 
+      items[inw++]=temp[0];
+      for(int i=1; i<temp.size(); i++) {
+        if(temp[i].size()>1) items[inw++]=temp[i];
+      }
+    } 
 
     int centerID=atoi(items[0].c_str())-1;
     vector<BMakeFuncBase*>* b=0;
@@ -305,7 +315,7 @@ void BParser::getLambdaForJ3(std::istream& is) {
     j3++;
   }
 
-  cout << "Non-zero elements for J3 Lambda " << endl;
+  cout << "Non-zero elements for J3 Lambda " << J3NonZero << endl;
   for(int i=0; i<j3Lambda.size(); i++) {
     cout << j3Lambda[i].I << " " <<  j3Lambda[i].J << " "
          <<  j3Lambda[i].X << endl;
@@ -476,8 +486,8 @@ xmlNodePtr BParser::createJ3() {
   xmlNodePtr cptr = xmlNewNode(NULL, BAD_CAST "coefficients"); 
   xmlNewProp(cptr,(const xmlChar*)"offset",(const xmlChar*)"1");
   xmlNewProp(cptr,(const xmlChar*)"size",(const xmlChar*)s.str().c_str());
-  for(int i=0; i<detPairedLambda.size(); i++) {
-    xmlAddChild(cptr,detPairedLambda[i].createNode());
+  for(int i=0; i<j3Lambda.size(); i++) {
+    xmlAddChild(cptr,j3Lambda[i].createNode());
   }
   xmlAddChild(j3Ptr,cptr);
   return j3Ptr;

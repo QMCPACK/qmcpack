@@ -125,6 +125,16 @@ struct BMakeFunc<103>: public BMakeFuncBase {
   }
 }; 
 
+/** case 127: d Slater for J3 exp(-z*r)
+ */
+template<>
+struct BMakeFunc<127>: public BMakeFuncBase { 
+  void put(vector<string>& words) {
+    N=1; L=2; RadFuncType=SLATERTYPE;
+    addRadFunc(atof(words[1].c_str()),YlmNorm[L],1);
+  }
+}; 
+
 /** case 147: d Gaussian for J3 exp(-z*r*r)
  */
 template<>
@@ -141,6 +151,40 @@ struct BMakeFunc<200>: public BMakeFuncBase {
   void put(vector<string>& words) {
     N=0; L=0; RadFuncType=GAUSSIANTYPE;
     addRadFunc(0.0,YlmNorm[L],1);
+  }
+}; 
+
+/** case 300: s with contracted GTO
+ */
+template<>
+struct BMakeFunc<300>: public BMakeFuncBase { 
+  void put(vector<string>& words) {
+    N=1; L=0; RadFuncType=GAUSSIANTYPE;
+    int nc=(words.size()-1)/2;
+    cout << " 300 = " << nc << endl;
+    for(int ic=1; ic<=nc; ic++) {
+      double e=atof(words[ic].c_str());
+      double c=atof(words[ic+nc].c_str());
+      cout << " 300:" << e << " " << c  << endl;
+      addRadFunc(e,c,1);
+    }
+  }
+}; 
+
+/** case 400: p with contracted GTO
+ */
+template<>
+struct BMakeFunc<400>: public BMakeFuncBase { 
+  void put(vector<string>& words) {
+    N=1; L=1; RadFuncType=GAUSSIANTYPE;
+    int nc=(words.size()-1)/2;
+    cout << " 400 = " << nc << endl;
+    for(int ic=1; ic<=nc; ic++) {
+      double e=atof(words[ic].c_str());
+      double c=atof(words[ic+nc].c_str());
+      cout << " 400:" << e << " " << c  << endl;
+      addRadFunc(e,c,1);
+    }
   }
 }; 
 
@@ -189,8 +233,11 @@ BMakeFuncBase* createBMakeFunc(int iflag) {
     case(34): b=new BMakeFunc<34>; break;
     case(100): b=new BMakeFunc<100>; break;
     case(103): b=new BMakeFunc<103>; break;
+    case(127): b=new BMakeFunc<127>; break;
     case(147): b=new BMakeFunc<147>; break;
     case(200): b=new BMakeFunc<200>; break;
+    case(300): b=new BMakeFunc<300>; break;
+    case(400): b=new BMakeFunc<400>; break;
     case(3000): b=new BMakeFunc<3000>; break;
     case(3100): b=new BMakeFunc<3100>; break;
     default: b=new BMakeFunc<0>;
