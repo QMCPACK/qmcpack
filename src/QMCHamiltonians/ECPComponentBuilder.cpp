@@ -126,10 +126,10 @@ namespace qmcplusplus {
         while(cur1 != NULL) {
           if(xmlStrEqual(cur1->name,(const xmlChar*)"basisGroup")) {
             pp_nonloc->add(l,createVr(cur1,grid_semilocal));
-            NumNonLocal++;
           }
           cur1=cur1->next;
         }
+        NumNonLocal++;
       }
       cur=cur->next;
     }
