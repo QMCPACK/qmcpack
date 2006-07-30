@@ -22,11 +22,10 @@
 #include "QMCWaveFunctions/MolecularOrbitals/MolecularOrbitalBuilder.h"
 #include "QMCWaveFunctions/AtomicOrbitals/HeSTOClementiRottie.h"
 #include "QMCWaveFunctions/PlaneWaveOrbitalBuilder.h"
-#include "QMCWaveFunctions/JAABuilder.h"
 #include "QMCWaveFunctions/JABBuilder.h"
-#include "QMCWaveFunctions/NJAABuilder.h"
 #include "QMCWaveFunctions/NJABBuilder.h"
 #include "QMCWaveFunctions/JAAPBCBuilder.h"
+#include "QMCWaveFunctions/TwoBodyJastrowBuilder.h"
 #include "QMCWaveFunctions/WaveFunctionFactory.h"
 #if defined(QMC_COMPLEX)
 #include "QMCWaveFunctions/ElectronGasComplexOrbitalBuilder.h"
@@ -140,6 +139,7 @@ namespace qmcplusplus {
 
     string jasttype((const char*)(xmlGetProp(cur, (const xmlChar *)"type")));
     string jastname((const char*)(xmlGetProp(cur, (const xmlChar *)"name")));
+    string funcname((const char*)(xmlGetProp(cur, (const xmlChar *)"function")));
     bool useSpline=false;
     const xmlChar* gptr=xmlGetProp(cur,(const xmlChar*)"transform");
     if(gptr != NULL) {
@@ -149,15 +149,8 @@ namespace qmcplusplus {
     }
 
     OrbitalBuilderBase* jbuilder=0;
-
-    if(jasttype == "Two-Body-Spin" || jasttype == "Two-Body") {
-      if(useSpline) {
-        app_log() << "  Using NJAABuilder for two-body jatrow with spline functions" << endl;
-        jbuilder = new NJAABuilder(*targetPtcl,*targetPsi);
-      } else {
-        app_log() << "  Using JAABuilder for two-body jatrow with analytic functions" << endl;
-        jbuilder = new JAABuilder(*targetPtcl,*targetPsi);
-      }
+    if(jasttype.find("Two") < jasttype.size()) {
+      jbuilder=new TwoBodyJastrowBuilder(*targetPtcl,*targetPsi,ptclPool);
     } else if(jasttype == "Long-Range") {
       app_log() << "  Using JAAPBCBuilder for two-body jatrow TESTING ONLY" << endl;
       jbuilder = new JAAPBCBuilder(*targetPtcl,*targetPsi);
