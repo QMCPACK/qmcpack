@@ -11,6 +11,12 @@ SET(WFSRCS
   ../QMCWaveFunctions/NJABBuilder.cpp
   ../QMCWaveFunctions/LRTwoBodyJastrow.cpp
   ../QMCWaveFunctions/JAAPBCBuilder.cpp
+  ../QMCWaveFunctions/BasisSetBase.cpp
+  ../QMCWaveFunctions/ComboOrbital.cpp
+  ../QMCWaveFunctions/OrbitalConstraintsBase.cpp
+  ../QMCWaveFunctions/PadeConstraints.cpp
+  ../QMCWaveFunctions/TwoBodyJastrowBuilder.cpp
+  ../QMCWaveFunctions/RPAConstraints.cpp
   ../QMCWaveFunctions/WaveFunctionFactory.cpp
   ../QMCHamiltonians/HamiltonianFactory.cpp
 )
