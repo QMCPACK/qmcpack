@@ -17,11 +17,10 @@
 #include "Particle/DistanceTableData.h"
 #include "Particle/DistanceTable.h"
 #include "QMCWaveFunctions/JAABuilder.h"
-#include "QMCWaveFunctions/PadeJastrow.h"
-#include "QMCWaveFunctions/RPAJastrow.h"
+//#include "QMCWaveFunctions/PadeJastrow.h"
+//#include "QMCWaveFunctions/RPAJastrow.h"
 #include "QMCWaveFunctions/ModPadeJastrow.h"
 #include "QMCWaveFunctions/TwoBodyJastrowOrbital.h"
-//#include "QMCWaveFunctions/TwoBodyJastrowFunction.h"
 
 namespace qmcplusplus {
 
@@ -160,20 +159,22 @@ namespace qmcplusplus {
     if(ftype) jastfunction = (const char*) ftype;
 
     bool success=false;
-    if(jastfunction == "pade") {
-      app_log() << "  Two-Body Jastrow Function = " << jastfunction << endl;
-      PadeJastrow<RealType> *dummy = 0;
-      success = createJAA(cur,dummy);
-    } else if(jastfunction == "what") {
+    //if(jastfunction == "pade") {
+    //  app_log() << "  Two-Body Jastrow Function = " << jastfunction << endl;
+    //  PadeJastrow<RealType> *dummy = 0;
+    //  success = createJAA(cur,dummy);
+    //} else 
+    if(jastfunction == "short") {
       app_log() << "  Modified Jastrow function Two-Body Jastrow Function = " << jastfunction << endl;
       IgnoreSpin=true;
       ModPadeJastrow<RealType> *dummy = 0;
       success = createJAA(cur,dummy);
-    } else if(jastfunction == "rpa") {
-      app_log() << "  Two-Body Jastrow Function = " << jastfunction << endl;
-      RPAJastrow<RealType> *dummy = 0;
-      success = createJAA(cur,dummy);
     }
+    //} else if(jastfunction == "rpa") {
+    //  app_log() << "  Two-Body Jastrow Function = " << jastfunction << endl;
+    //  RPAJastrow<RealType> *dummy = 0;
+    //  success = createJAA(cur,dummy);
+    //}
     return success;
   }
 }

@@ -16,9 +16,9 @@
 // -*- C++ -*-
 #ifndef QMCPLUSPLUS_RPA_COMBO_CONSTRAINTS_H
 #define QMCPLUSPLUS_RPA_COMBO_CONSTRAINTS_H
-#include "QMCWaveFunctions/RPAJastrow.h"
 #include "QMCWaveFunctions/OrbitalConstraintsBase.h"
 #include "QMCWaveFunctions/NumericalJastrowFunctor.h"
+#include "QMCWaveFunctions/RPAJastrow.h"
 
 namespace qmcplusplus {
 
