@@ -18,6 +18,7 @@
 #define QMCPLUSPLUS_PADE_COMBO_CONSTRAINTS_H
 #include "QMCWaveFunctions/PadeFunctors.h"
 #include "QMCWaveFunctions/OrbitalConstraintsBase.h"
+#include "QMCWaveFunctions/NumericalJastrowFunctor.h"
 
 namespace qmcplusplus {
 
@@ -43,6 +44,26 @@ namespace qmcplusplus {
       outVars.add(ID,&B,1);
     }
 
+    OrbitalBase* createTwoBody(ParticleSet& target);
+    OrbitalBase* createOneBody(ParticleSet& target, ParticleSet& source);
+    bool put(xmlNodePtr cur);
+  };
+
+  struct PadeOnGridConstraints: public OrbitalConstraintsBase {
+    ///analytic functor
+    typedef PadeFunctor<RealType> InFuncType;
+    ///numerical functor
+    typedef NumericalJastrow<RealType> FuncType;
+    bool IgnoreSpin;
+    RealType B;
+    string ID;
+    vector<InFuncType*> InFuncList;
+    vector<FuncType*> FuncList;
+
+    ~PadeOnGridConstraints();
+    PadeOnGridConstraints(bool nospin=true):IgnoreSpin(nospin) {}
+    void apply();
+    void addOptimizables(VarRegistry<RealType>& outVars);
     OrbitalBase* createTwoBody(ParticleSet& target);
     OrbitalBase* createOneBody(ParticleSet& target, ParticleSet& source);
     bool put(xmlNodePtr cur);
