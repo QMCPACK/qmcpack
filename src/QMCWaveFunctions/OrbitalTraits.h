@@ -27,14 +27,14 @@ namespace qmcplusplus {
     struct OrbitalTraits<double> {
       typedef double          real_type;
       typedef double          value_type;
-      typedef complex<double> complex_type;
+      typedef std::complex<double> complex_type;
     };
 
   template<>
-    struct OrbitalTraits<complex<double> > {
+    struct OrbitalTraits<std::complex<double> > {
       typedef double          real_type;
-      typedef complex<double> value_type;
-      typedef complex<double> complex_type;
+      typedef std::complex<double> value_type;
+      typedef std::complex<double> complex_type;
     };
 
   inline double real(double a) {
@@ -45,7 +45,7 @@ namespace qmcplusplus {
     return a;
   }
 
-  inline TinyVector<double,3> real(const TinyVector<complex<double>,3>& a) { 
+  inline TinyVector<double,3> real(const TinyVector<std::complex<double>,3>& a) { 
     return TinyVector<double,3>(a[0].real(),a[1].real(),a[2].real());
   }
 
