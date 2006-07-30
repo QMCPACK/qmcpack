@@ -1,0 +1,134 @@
+//////////////////////////////////////////////////////////////////
+// (c) Copyright 2003-  by Jeongnim Kim
+//////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////
+//   National Center for Supercomputing Applications &
+//   Materials Computation Center
+//   University of Illinois, Urbana-Champaign
+//   Urbana, IL 61801
+//   e-mail: jnkim@ncsa.uiuc.edu
+//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
+//
+// Supported by 
+//   National Center for Supercomputing Applications, UIUC
+//   Materials Computation Center, UIUC
+//////////////////////////////////////////////////////////////////
+// -*- C++ -*-
+#include "QMCWaveFunctions/PadeConstraints.h"
+#include "QMCWaveFunctions/TwoBodyJastrowOrbital.h"
+#include "QMCWaveFunctions/OneBodyJastrowFunction.h"
+#include "Utilities/IteratorUtility.h"
+
+namespace qmcplusplus {
+
+  ////////////////////////////////////////
+  //PadeConstraints definitions
+  ////////////////////////////////////////
+  PadeConstraints::~PadeConstraints() {
+    delete_iter(FuncList.begin(), FuncList.end());
+  }
+
+  bool PadeConstraints::put(xmlNodePtr cur) {
+    bool success=getVariables(cur);
+    map<string,pair<string,RealType> >::iterator vit(inVars.find("B"));
+    if(vit == inVars.end()) return false; //disaster, need to abort
+    ID=(*vit).second.first; B=(*vit).second.second;
+    return true;
+  }
+
+  OrbitalBase* PadeConstraints::createTwoBody(ParticleSet& target) {
+    typedef TwoBodyJastrowOrbital<FuncType> JeeType;
+    JeeType *J2 = new JeeType(target);
+    if(IgnoreSpin) {
+      app_log() << "  PadeConstraints::Adding Spin-independent Pade Two-Body Jastrow " << endl;
+      FuncType *func=new FuncType(-0.5,B);
+      for(int i=0; i<4; i++) {
+        J2->addFunc(func);
+      }
+      FuncList.push_back(func);
+    } else {
+      app_log() << "  PadeConstraints::Adding Spin-dependent Pade Two-Body Jastrow " << endl;
+      FuncType *funcUU=new FuncType(-0.25,B);
+      FuncType *funcUD=new FuncType(-0.5,B);
+      J2->addFunc(funcUU);
+      J2->addFunc(funcUD);
+      J2->addFunc(funcUD);
+      J2->addFunc(funcUU);
+
+      FuncList.push_back(funcUU);
+      FuncList.push_back(funcUD);
+    }
+    app_log() << "  PadeConstraints:: B = " << B <<endl;
+    return J2;
+  }
+
+  OrbitalBase* PadeConstraints::createOneBody(ParticleSet& target, ParticleSet& source) {
+    app_log() << "  PadeBuilder::Adding Pade One-Body Jastrow with effective ionic charges." << endl;
+    typedef OneBodyJastrow<FuncType> JneType;
+    JneType* J1 = new JneType(source,target);
+    SpeciesSet& Species(source.getSpeciesSet());
+    int ng=Species.getTotalNum();
+    int icharge = Species.addAttribute("charge");
+    for(int ig=0; ig<ng; ig++) {
+      RealType zeff=Species(icharge,ig);
+      FuncType *func=new FuncType(zeff,B,pow(2*zeff,0.25));
+      J1->addFunc(ig,func);
+      FuncList.push_back(func);
+    }
+    return J1;
+  }
+
+  ////////////////////////////////////////
+  //ScaledPadeConstraints definitions
+  ////////////////////////////////////////
+  ScaledPadeConstraints::~ScaledPadeConstraints() {
+    delete_iter(FuncList.begin(), FuncList.end());
+  }
+
+  bool ScaledPadeConstraints::put(xmlNodePtr cur) {
+    bool success=getVariables(cur);
+    map<string,pair<string,RealType> >::iterator bit(inVars.find("B"));
+    map<string,pair<string,RealType> >::iterator cit(inVars.find("C"));
+    if(bit == inVars.end() || cit == inVars.end()) return false; 
+    BID=(*bit).second.first; B=(*bit).second.second; 
+    CID=(*cit).second.first; C=(*cit).second.second; 
+    return true;
+  }
+
+  OrbitalBase* ScaledPadeConstraints::createTwoBody(ParticleSet& target) {
+    typedef TwoBodyJastrowOrbital<FuncType> JeeType;
+    JeeType *J2 = new JeeType(target);
+    if(IgnoreSpin) {
+      app_log() << "  ScaledPadeConstraints::Adding Spin-independent Pade Two-Body Jastrow " << endl;
+      FuncType *func=new FuncType(-0.5,B,C);
+      for(int i=0; i<4; i++) {
+        J2->addFunc(func);
+      }
+      FuncList.push_back(func); 
+    } else {
+      app_log() << "  ScaledPadeConstraints::Adding Spin-dependent Pade Two-Body Jastrow " << endl;
+      FuncType *funcUU=new FuncType(-0.25,B,C);
+      FuncType *funcUD=new FuncType(-0.5,B,C);
+      J2->addFunc(funcUU);
+      J2->addFunc(funcUD);
+      J2->addFunc(funcUD);
+      J2->addFunc(funcUU);
+
+      FuncList.push_back(funcUU);
+      FuncList.push_back(funcUD);
+    }
+    app_log() << "  ScaledPadeConstraints:: B = " << B << " C = " << C <<endl;
+    return J2;
+  }
+
+  OrbitalBase* 
+    ScaledPadeConstraints::createOneBody(ParticleSet& target, ParticleSet& source) {
+    //return 0 for now
+    return 0;
+  }
+}
+/***************************************************************************
+ * $RCSfile$   $Author$
+ * $Revision$   $Date$
+ * $Id$ 
+ ***************************************************************************/
