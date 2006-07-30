@@ -127,6 +127,14 @@ struct NumericalJastrow: public JastrowFunctorBase<RT> {
       cout << grid(i) << " " << (*OutFunc)(i) << endl;
     }
   }
+
+  ///set the input, analytic function
+  void initialize(FNIN* in_, typename FNOUT::grid_type* agrid, real_type rcut) { 
+    InFunc=in_;
+    setOutFunc(new FNOUT(agrid));
+    setCutoff(rcut,agrid->rmax());
+    reset();
+  }
 };
 
 }
@@ -136,4 +144,3 @@ struct NumericalJastrow: public JastrowFunctorBase<RT> {
  * $Revision$   $Date$
  * $Id$ 
  ***************************************************************************/
-
