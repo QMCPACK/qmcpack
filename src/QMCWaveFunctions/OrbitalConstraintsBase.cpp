@@ -18,6 +18,10 @@
 
 namespace qmcplusplus {
 
+  OrbitalConstraintsBase::OrbitalConstraintsBase():
+    myNode(NULL), myGrid(0) {
+    }
+
   void OrbitalConstraintsBase::getParam(xmlNodePtr cur) {
     const xmlChar* a=xmlGetProp(cur,(const xmlChar*)"id");
     const xmlChar* b=xmlGetProp(cur,(const xmlChar*)"name");
@@ -32,6 +36,8 @@ namespace qmcplusplus {
   }
 
   bool OrbitalConstraintsBase::getVariables(xmlNodePtr cur) {
+    //save the xml node
+    myNode=cur;
     cur = cur->children;
     while(cur != NULL) {
       string cname((const char*)(cur->name));
@@ -51,6 +57,38 @@ namespace qmcplusplus {
     } // while cur
     return true;
   }
+
+  void
+    OrbitalConstraintsBase::setRadialGrid(ParticleSet& target) {
+      if(myGrid) return;
+      xmlNodePtr gridPtr=NULL;
+      xmlNodePtr cur=myNode->children;
+      while(cur != NULL) {
+        if(xmlStrEqual(cur->name,(const xmlChar*)"grid")) {
+          gridPtr=cur;
+        }
+        cur=cur->next;
+      }
+
+      if(gridPtr == NULL) {
+        gridPtr = xmlNewNode(NULL,(const xmlChar*)"grid");
+        xmlNewProp(gridPtr,(const xmlChar*)"type",(const xmlChar*)"log");
+        xmlNewProp(gridPtr,(const xmlChar*)"ri",(const xmlChar*)"1.0e-6");
+        std::ostringstream rf;
+        if(target.Lattice.BoxBConds[0])
+          rf << target.Lattice.R(0,0)*0.48;
+        else 
+          rf << 100.;
+        xmlNewProp(gridPtr,(const xmlChar*)"rf",(const xmlChar*)rf.str().c_str());
+        xmlNewProp(gridPtr,(const xmlChar*)"npts",(const xmlChar*)"101");
+        xmlAddChild(cur,gridPtr);
+      }
+      //create grid and initialize CubicSplineFunctions
+      myGrid = OneDimGridFactory::createGrid(gridPtr);
+      //get the cutoff radius
+      Rcut = OneDimGridFactory::setSmoothCutoff(myGrid,gridPtr);
+      app_log() << "  Radial Grid Rcut=" << Rcut << " Rmax=" << myGrid->rmax() <<endl;
+    }
 }
 /***************************************************************************
  * $RCSfile$   $Author$

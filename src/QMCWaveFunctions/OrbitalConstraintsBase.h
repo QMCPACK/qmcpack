@@ -20,15 +20,28 @@
 #ifndef QMCPLUSPLUS_ORBITALCONSTRAINTSBASE_H
 #define QMCPLUSPLUS_ORBITALCONSTRAINTSBASE_H
 #include "QMCWaveFunctions/OrbitalBase.h"
+#include "QMCFactory/OneDimGridFactory.h"
 #include "Optimize/VarList.h"
 
 namespace qmcplusplus {
 
   struct OrbitalConstraintsBase: public QMCTraits {
 
+    typedef OneDimGridFactory::GridType RadialGridType;
+
+    /** xmlNode on which the constraints operate
+     */
+    xmlNodePtr myNode;
+    /** a common radial grid 
+     */
+    RadialGridType* myGrid;
+    /** cutoff radius to truncated any radial grid functor*/
+    RealType Rcut;
     /** inVars[variable name] = (variable id, value)
      */
     std::map<std::string,std::pair<std::string,RealType> > inVars;
+    ///default contructor
+    OrbitalConstraintsBase();
     ///virtual destructor
     virtual ~OrbitalConstraintsBase() {}
     ///Apply contraints
@@ -54,6 +67,7 @@ namespace qmcplusplus {
 
     void getParam(xmlNodePtr cur);
     bool getVariables(xmlNodePtr cur);
+    void setRadialGrid(ParticleSet& target);
   };
 }
 #endif
