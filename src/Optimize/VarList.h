@@ -29,11 +29,11 @@ template<class T>
 struct VarRegistry {
 
   ///vector containing the names of all the sets of optimizable variables
-  vector<string> Names;
+  std::vector<std::string> Names;
   ///vector containing the pointers to all the sets of optimizable variables 
-  vector<T*> Pointers;
+  std::vector<T*> Pointers;
   ///vector containing the sizes of the sets of optimizable variables 
-  vector<int> Sizes;
+  std::vector<int> Sizes;
 
   /** return the current size of variables */
   inline int size() const { 
@@ -45,8 +45,8 @@ struct VarRegistry {
    * \param ptr pointer to the set
    * \param size size of the set 
    */
-  void add(const string& aname, T* ptr, int size=1) {
-    vector<string>::iterator it = Names.begin();
+  void add(const std::string& aname, T* ptr, int size=1) {
+    std::vector<std::string>::iterator it = Names.begin();
     while(it != Names.end()) {
       if((*it) == aname) {
 	return;
@@ -59,9 +59,9 @@ struct VarRegistry {
   }
 
   ///return the index of aname
-  int find(const string& aname) {
+  int find(const std::string& aname) {
     int id = 0;
-    vector<string>::iterator it = Names.begin();
+    std::vector<std::string>::iterator it = Names.begin();
     while(it != Names.end()) {
       if((*it) == aname) {
 	return id;
@@ -71,7 +71,7 @@ struct VarRegistry {
     return -1;
   }
 
-  void print(ostream& os) {
+  void print(std::ostream& os) {
     os << "Optimizable variable list " << std::endl;
     for(int i=0; i<Names.size(); i++)
       os << Names[i] << " " << *(Pointers[i]) << std::endl;

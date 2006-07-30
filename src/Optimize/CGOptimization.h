@@ -136,10 +136,8 @@ void CGOptimization<T>::setTarget(ObjectFuncType* fn) {
   Y.resize(NumParams);
   gY.resize(NumParams,0);
   cgY.resize(NumParams,0);
-  //cerr << "SETTARGET:   NUMPARAMS IS " << NumParams << endl;
   for(int i=0;i<NumParams; i++) {
     Y[i]=TargetFunc->Params(i);
-    //cerr << "  " << i << ", Y[i] = " << Y[i] << endl;
   }
 }
 
@@ -148,9 +146,7 @@ bool CGOptimization<T>::optimize() {
 
   CurStep=0;
   do {
-cerr << "  optimize routine: " << CurStep << endl;
     if(RestartCG) { //first time
-cerr << "    first time" << endl;
       evaluateGradients(gY);
       gdotg = dotProduct(gY,gY);
       gdotg0 = gdotg;
@@ -162,13 +158,10 @@ cerr << "    first time" << endl;
     }
 
     bool success = this->lineoptimization();
-if(!success)cerr << "lineoptimization unsuccessful" << endl;
     success &= TargetFunc->IsValid;
-if(!TargetFunc->IsValid)cerr << "TargetFunc Invalid" << endl;
     if(success) { //successful lineminimization
-cerr << "    successful lineopt... ";
       curCost= Func(this->Lambda);
-      for(int i=0; i<NumParams; i++){ Y[i]+=this->Lambda*cgY[i]; cerr << " Y[i]="<<Y[i];}
+      for(int i=0; i<NumParams; i++){ Y[i]+=this->Lambda*cgY[i]; }
     } else {
       if(msg_stream) {
         *msg_stream << "Stop CGOptimization due to the failure of line optimization" << std::endl;
@@ -186,8 +179,7 @@ cerr << "    successful lineopt... ";
     //if(fx<GradMaxTol) {
     if(fx<GradTol) {
       if(msg_stream) *msg_stream << " CGOptimization  has reached gradient max|G| = " << fx << "<" << GradTol << endl;
-      cerr << "going to continue and see what happens..." << endl;
-      return true;//false;
+      return false;
     }
     //if(gdotg < GradTol) {
     //  *msg_stream << " CGOptimization::Converged gradients" << endl;
@@ -214,8 +206,7 @@ cerr << "    successful lineopt... ";
     if(dx <= CostTol) {
       if(msg_stream) 
       *msg_stream << " CGOptimization::Converged cost with " << dx << endl;
-      cerr << "going to continue and see what happens..." << endl;
-      return true;// false; //
+      return false; //
     }
 
     prevCost=curCost;
