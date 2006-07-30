@@ -19,6 +19,8 @@
 #include "Configuration.h"
 #include  <map>
 #include "QMCWaveFunctions/OrbitalBase.h"
+#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 
 namespace qmcplusplus {
 
@@ -50,8 +52,19 @@ namespace qmcplusplus {
     ///container for the Jastrow functions 
     vector<FT*> F;
 
+    TwoBodyJastrowOrbital(ParticleSet& p) {
+      d_table=DistanceTable::add(p);
+      init(p);
+    }
+
     ///constructor
     TwoBodyJastrowOrbital(ParticleSet& p, DistanceTableData* dtable): d_table(dtable) { 
+      init(p);
+    }
+
+    ~TwoBodyJastrowOrbital(){ }
+
+    void init(ParticleSet& p) {
       N=p.getTotalNum();
       NN=N*N;
       U.resize(NN+1);
@@ -70,8 +83,6 @@ namespace qmcplusplus {
 	for(int j=0; j<N; j++) 
 	  PairID(i,j) = p.GroupID[i]*nsp+p.GroupID[j];
     }
-
-    ~TwoBodyJastrowOrbital(){ }
 
     void insert(const string& aname, FT* j) {
       J2Unique[aname]=j;
