@@ -39,6 +39,7 @@ namespace qmcplusplus {
       if(pa_it == ptclPool.end()) return false;
       sourcePtcl = (*pa_it).second;
       ng=sourcePtcl->getSpeciesSet().getTotalNum();
+      for(int i=0; i<ng; i++) jastrow.push_back(0);
     }
 
     cur = cur->xmlChildrenNode;
@@ -51,7 +52,7 @@ namespace qmcplusplus {
         sourcePtcl = (*pa_it).second;
         ng=sourcePtcl->getSpeciesSet().getTotalNum();
 	XMLReport("Number of sources " << ng)
-	for(int i=0; i<ng; i++) jastrow.push_back(NULL);
+	for(int i=0; i<ng; i++) jastrow.push_back(0);
       } else if(cname == corr_tag) {
         if(sourcePtcl == 0) return false;
 	string speciesA((const char*)(xmlGetProp(cur,(const xmlChar *)"speciesA")));
@@ -104,7 +105,7 @@ namespace qmcplusplus {
     } else if(jastfunction == "pade2") {
       PadeJastrow2<RealType> *dummy = 0;
       success = createJAB(cur,dummy);
-    } else if(jastfunction == "what") {
+    } else if(jastfunction == "short") {
       ModPadeJastrow<RealType> *dummy = 0;
       success = createJAB(cur,dummy);
     }
