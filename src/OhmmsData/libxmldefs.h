@@ -21,9 +21,16 @@
 #include <iosfwd>
 #include <string>
 #include <vector>
+#include <algorithm>
 #include <libxml/xmlmemory.h>
 #include <libxml/parser.h>
 #include <libxml/xpath.h>
+
+template<typename _CharT>
+inline void getNodeName(std::basic_string<_CharT>& cname, xmlNodePtr cur) {
+  cname=(const char*)cur->name;
+  std::transform(cname.begin(), cname.end(), cname.begin(), std::tolower);
+}
 
 /**\file libxmldefs.h
  *\brief A collection of put/get functions to read from or write to a xmlNode defined in libxml2.
