@@ -75,9 +75,10 @@ namespace qmcplusplus {
       int nvar(targetPsi.VarList.size());
       int is=0, first=0;
       int detCounter = 0;
+      string cname, tname;
       cur = cur->xmlChildrenNode;
       while(cur != NULL) {
-	string cname((const char*)(cur->name));
+        getNodeName(cname,cur);
 	if(cname == basisset_tag) {
 	  //call the BasisSet builder
 	  basisSet = builder_ref.addBasisSet(cur);
@@ -90,7 +91,8 @@ namespace qmcplusplus {
 	  
 	  xmlNodePtr tcur = cur->xmlChildrenNode;
 	  while(tcur != NULL) {
-	    string tname((const char*)(tcur->name));
+	    //string tname((const char*)(tcur->name));
+            getNodeName(tname,tcur);
 	    if(tname == param_tag) {
 	      putContent(sdet_coeff[is],tcur);
 	    } else if(tname == det_tag) {
