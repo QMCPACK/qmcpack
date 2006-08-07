@@ -76,6 +76,29 @@ namespace qmcplusplus {
 
     /** static function to perform y=Ax for generic matrix and vector
      */
+    inline static void product(const Matrix<double>& A, const double* restrict xptr, double* restrict yptr) {
+      const char transa = 'T';
+      const double one=1.0;
+      const double zero=0.0;
+      dgemv(transa, A.cols(), A.rows(), one, A.data(), A.cols(), xptr, 1, zero, yptr, 1);
+    }
+
+    /** static function to perform y=Ax for generic matrix and vector
+     */
+    template<unsigned D>
+    inline static void product(const Matrix<double>& A, const TinyVector<double,D>* xvPtr, 
+        TinyVector<double,D>* restrict yptr) {
+      const double one=1.0;
+      const double zero=0.0;
+      const char transa = 'N';
+      const char transb = 'N';
+      dgemm(transa, transb, D, A.rows(), A.cols(), 
+          one, xvPtr->begin(), D, A.data(), A.cols(),
+          zero, yptr->begin(), D);
+    }
+
+    /** static function to perform y=Ax for generic matrix and vector
+     */
     template<unsigned D>
     inline static void product(const Matrix<double>& A, const Vector<TinyVector<double,D> >& x, 
         TinyVector<double,D>* restrict yptr) {
