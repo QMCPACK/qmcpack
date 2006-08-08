@@ -43,7 +43,7 @@ namespace qmcplusplus {
     enum {DEBUG_OUTPUT=0, ASCII_OUTPUT, HDF_OUTPUT};
 
     if(omode == DEBUG_OUTPUT) {
-       GridType* agrid = m_orbitals->Grids[0];
+       GridType& agrid(m_orbitals->Rnl[0]->grid());
       for(int i=0; i<m_orbitals->Rnl.size(); i++) {
         RadialOrbitalType* radorb = m_orbitals->Rnl[i];
         char fname[128];
@@ -52,10 +52,10 @@ namespace qmcplusplus {
         dfile.setf(ios::scientific, ios::floatfield);
         dfile.setf(ios::left,ios::adjustfield);
         dfile.precision(12);
-        for(int ig=0; ig<agrid->size()-1; ig++) {
-          RealType dr = ((*agrid)(ig+1)-(*agrid)(ig))/5.0;
-          RealType _r =(*agrid)(ig)+dr*0.00131,y,dy,d2y;
-          while(_r<(*agrid)(ig+1)) {
+        for(int ig=0; ig<agrid.size()-1; ig++) {
+          RealType dr = (agrid(ig+1)-agrid(ig))/5.0;
+          RealType _r =agrid(ig)+dr*0.00131,y,dy,d2y;
+          while(_r<agrid(ig+1)) {
             //setgrid is removed.  The GridManager functor will re-evaluate the grid parameters.
             //radorb->setgrid(_r);
             y = radorb->evaluate(_r,1.0/_r,dy,d2y);
@@ -67,7 +67,7 @@ namespace qmcplusplus {
         }
       }
     } else if(omode == ASCII_OUTPUT) {
-      GridType* agrid = m_orbitals->Grids[0];
+      GridType& agrid(m_orbitals->Rnl[0]->grid());
       char fname[128];
       sprintf(fname,"%s.combo.dat",aroot.c_str());
       ofstream dfile(fname);
@@ -80,14 +80,11 @@ namespace qmcplusplus {
       }
       dfile.precision(15);
 
-      for(int ig=0; ig<agrid->size()-1; ig++) {
-        RealType _r = (*agrid)(ig);
-        //RealType _rinv = 1.0/_r;
-        //agrid->locate(_r);
+      for(int ig=0; ig<agrid.size()-1; ig++) {
+        RealType _r = agrid(ig);
         dfile << setw(30) << _r;
         for(int i=0; i<norb; i++) {
           dfile << setw(30) << m_orbitals->Rnl[i]->operator()(ig);
-          //dfile << setw(30) << m_orbitals->Rnl[i]->evaluateAll(_r,_rinv);
         }
         dfile << endl;
       }

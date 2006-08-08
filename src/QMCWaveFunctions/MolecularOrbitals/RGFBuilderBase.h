@@ -17,6 +17,8 @@
 #define QMCPLUSPLUS_RADIALGRIDFUNCTOR_BUILDERBASE_H
 
 #include "Configuration.h"
+#include "Numerics/OneDimGridFunctor.h"
+#include "QMCWaveFunctions/SphericalOrbitalSet.h"
 #include "OhmmsData/HDFAttribIO.h"
 
 namespace qmcplusplus {
@@ -50,6 +52,9 @@ namespace qmcplusplus {
 
     ///add a radial orbital with quantum numbers nlms
     virtual bool addRadialOrbital(xmlNodePtr cur, const QuantumNumberType& nlms) = 0;
+
+    ///add common parameters
+    virtual bool putCommon(xmlNodePtr cur) = 0;
 
     void print(const std::string& aroot, int omode);
   
