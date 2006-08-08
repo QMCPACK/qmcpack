@@ -22,13 +22,19 @@ namespace qmcplusplus {
   BasisSetBase::BasisSetBase():BasisSetSize(0) { }
   BasisSetBase::~BasisSetBase() { }
 
+
+  /** As now, wasting memory. Y, dY and d2Y may not be used */
   void 
-  BasisSetBase::resize() {
+  BasisSetBase::resize(int ntargets) {
     if(BasisSetSize) {
       Phi.resize(BasisSetSize);
       dPhi.resize(BasisSetSize);
       d2Phi.resize(BasisSetSize);
       Temp.resize(BasisSetSize,MAXINDEX);
+
+      Y.resize(ntargets,BasisSetSize);
+      dY.resize(ntargets,BasisSetSize);
+      d2Y.resize(ntargets,BasisSetSize);
     } else {
       app_error() << "  BasisSetBase::BasisSetSize == 0" << endl;
     }
