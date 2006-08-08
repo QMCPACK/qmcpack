@@ -30,6 +30,7 @@ namespace qmcplusplus {
    */
   struct OrbitalSetTraits: public QMCTraits {
     enum {MAXINDEX=2+DIM};
+    typedef Vector<IndexType> IndexVector_t;
     typedef Vector<ValueType> ValueVector_t;
     typedef Matrix<ValueType> ValueMatrix_t;
     typedef Vector<GradType>  GradVector_t;
