@@ -39,6 +39,7 @@ namespace qmcplusplus {
     GTO2GridBuilder(bool normalized=false):Normalized(normalized){}
     //bool addGrid(xmlNodePtr cur);
     bool addRadialOrbital(xmlNodePtr cur, const QuantumNumberType& nlms);
+    bool putCommon(xmlNodePtr cur);
 
     bool addGrid(xmlNodePtr cur);
   };

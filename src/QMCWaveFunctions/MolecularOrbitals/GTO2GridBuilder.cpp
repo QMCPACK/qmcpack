@@ -23,6 +23,14 @@
 #include "QMCFactory/OneDimGridFactory.h"
 
 namespace qmcplusplus {
+  bool
+  GTO2GridBuilder::putCommon(xmlNodePtr cur) {
+    const xmlChar* a=xmlGetProp(cur,(const xmlChar*)"normalized");
+    if(a) {
+      if(xmlStrEqual(a,(const xmlChar*)"no")) Normalized=false;
+    }
+    return true;
+  }
 
   /** Process basisGroup node
    * @param cur current xml node
