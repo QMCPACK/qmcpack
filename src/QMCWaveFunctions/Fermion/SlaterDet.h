@@ -17,7 +17,6 @@
 #ifndef QMCPLUSPLUS_SLATERDETERMINANT_WITHBASE_H
 #define QMCPLUSPLUS_SLATERDETERMINANT_WITHBASE_H
 #include "QMCWaveFunctions/OrbitalBase.h"
-#include "QMCWaveFunctions/DummyBasisSet.h"
 #include "QMCWaveFunctions/Fermion/DiracDeterminantBase.h"
 
 namespace qmcplusplus {
@@ -55,7 +54,7 @@ namespace qmcplusplus {
     ///return the total number of Dirac determinants
     inline int size() const { return Dets.size();}
 
-    ///return the dimension of the i-th Dirac determinant
+    ///return the column dimension of the i-th Dirac determinant
     inline int size(int i) const { return Dets[i]->cols();}
 
     ValueType registerData(ParticleSet& P, PooledData<RealType>& buf);
@@ -75,19 +74,18 @@ namespace qmcplusplus {
 			   ParticleSet::ParticleGradient_t& dG, 
 			   ParticleSet::ParticleLaplacian_t& dL) { 
       ValueType r = Dets[DetID[iat]]->ratio(P,iat,dG,dL);
-      SignValue = (r<0.0)?-1.0:1.0;
-      return log(abs(r));
+      return evaluateLogAndPhase(r,PhaseValue);
     }
     
     inline void restore(int iat) {
       return Dets[DetID[iat]]->restore(iat);
     }
 
-    inline void update(ParticleSet& P, int iat) {
-      Dets[DetID[iat]]->update(P,iat);
+    inline void acceptMove(ParticleSet& P, int iat) {
+      Dets[DetID[iat]]->acceptMove(P,iat);
     }
 
-    ValueType
+    inline ValueType
     ratio(ParticleSet& P, int iat) {
       return Dets[DetID[iat]]->ratio(P,iat);
     } 	  

@@ -62,32 +62,22 @@ namespace qmcplusplus {
       //  OHMMS::Controller->abort();
       //}
       //BasisSet->evaluate(P);
-
       ValueType psi = 1.0;
       for(int i=0; i<Dets.size(); i++) psi *= Dets[i]->evaluate(P,G,L);
-      SignValue = (psi<0.0)?-1.0:1.0;
-      LogValue = log(abs(psi));
-      return LogValue;
+      return LogValue = evaluateLogAndPhase(psi,PhaseValue);
     }
 
     SlaterDet::ValueType SlaterDet::registerData(ParticleSet& P, PooledData<RealType>& buf){
-
-      //BasisSet->evaluate(P);
-
       ValueType psi = 1.0;
       for(int i=0; i<Dets.size(); i++) 
         psi *= Dets[i]->registerData(P,buf);
-      SignValue = (psi<0.0)?-1.0:1.0;
-      LogValue = log(abs(psi));
-      return LogValue;
+      return LogValue = evaluateLogAndPhase(psi,PhaseValue);
     }
     
     SlaterDet::ValueType SlaterDet::updateBuffer(ParticleSet& P, PooledData<RealType>& buf){
       ValueType psi = 1.0;
       for(int i=0; i<Dets.size(); i++) psi *= Dets[i]->updateBuffer(P,buf);
-      SignValue = (psi<0.0)?-1.0:1.0;
-      LogValue = log(abs(psi));
-      return LogValue;
+      return LogValue = evaluateLogAndPhase(psi,PhaseValue);
     }
 
     void SlaterDet::copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf) {
@@ -113,9 +103,6 @@ namespace qmcplusplus {
 
     SlaterDet::ValueType 
       SlaterDet::evaluate(ParticleSet& P, PooledData<RealType>& buf) {
-
-      //BasisSet->evaluate(P);
-
       ValueType r=1.0;
       for(int i=0; i<Dets.size(); i++) 	r *= Dets[i]->evaluate(P,buf);
       return r;
