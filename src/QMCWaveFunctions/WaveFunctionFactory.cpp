@@ -27,6 +27,7 @@
 #include "QMCWaveFunctions/JAAPBCBuilder.h"
 #include "QMCWaveFunctions/TwoBodyJastrowBuilder.h"
 #include "QMCWaveFunctions/WaveFunctionFactory.h"
+//#include "QMCWaveFunctions/Fermion/SlaterDetBuilder.h"
 #if defined(QMC_COMPLEX)
 #include "QMCWaveFunctions/ElectronGasComplexOrbitalBuilder.h"
 #include "QMCWaveFunctions/PlaneWave/PWOrbitalBuilder.h"
@@ -67,6 +68,7 @@ namespace qmcplusplus {
     bool success=true;
     while(cur != NULL) {
       string cname((const char*)(cur->name));
+
       if (cname == OrbitalBuilderBase::detset_tag) {
         success |= addFermionTerm(cur);
       } else if (cname ==  OrbitalBuilderBase::jastrow_tag) {
@@ -90,7 +92,7 @@ namespace qmcplusplus {
     oAttrib.add(nuclei,"source");
     oAttrib.put(cur);
 
-    app_log() << "  Slater determinant terms using " << orbtype << endl;
+    app_log() << "\n  Slater determinant terms using " << orbtype << endl;
 #if defined(QMC_COMPLEX)
     if(orbtype == "electron-gas") {
       detbuilder = new ElectronGasComplexOrbitalBuilder(*targetPtcl,*targetPsi);
@@ -105,7 +107,6 @@ namespace qmcplusplus {
     if(orbtype == "MolecularOrbital") {
       detbuilder = new MolecularOrbitalBuilder(*targetPtcl,*targetPsi,ptclPool);
     } else if(orbtype == "STO-He-Optimized") {
-
       PtclPoolType::iterator pit(ptclPool.find(nuclei));
       if(pit != ptclPool.end()) {
         detbuilder = new HePresetHFBuilder(*targetPtcl,*targetPsi,*((*pit).second));
@@ -123,6 +124,9 @@ namespace qmcplusplus {
       if(pit != ptclPool.end()) {
         detbuilder = new AGPDeterminantBuilder(*targetPtcl,*targetPsi,*((*pit).second));
       }
+    //} else if(orbtype=="MO") {
+    //  app_log() << "  Creating concrete SlaterDeterminant class with SlaterDetBuilder." << endl;
+    //  detbuilder = new SlaterDetBuilder(*targetPtcl,*targetPsi,ptclPool);
     }
 #endif
 
@@ -152,30 +156,29 @@ namespace qmcplusplus {
     if(jasttype.find("Two") < jasttype.size()) {
       jbuilder=new TwoBodyJastrowBuilder(*targetPtcl,*targetPsi,ptclPool);
     } else if(jasttype == "Long-Range") {
-      app_log() << "  Using JAAPBCBuilder for two-body jatrow TESTING ONLY" << endl;
+      app_log() << "\n  Using JAAPBCBuilder for two-body jatrow TESTING ONLY" << endl;
       jbuilder = new JAAPBCBuilder(*targetPtcl,*targetPsi);
     } else if(jasttype == "One-Body") {
       if(useSpline) {
-        app_log() << "  Using NJABBuilder for one-body jatrow with spline functions" << endl;
+        app_log() << "\n  Using NJABBuilder for one-body jatrow with spline functions" << endl;
         jbuilder = new NJABBuilder(*targetPtcl,*targetPsi,ptclPool);
       } else {
-        app_log() << "  Using JABBuilder for one-body jatrow with analytic functions" << endl;
+        app_log() << "\n  Using JABBuilder for one-body jatrow with analytic functions" << endl;
         jbuilder = new JABBuilder(*targetPtcl,*targetPsi,ptclPool);
       }
     } 
 #if !defined(QMC_COMPLEX)
     else if(jasttype == "Three-Body-Geminal") {
-      app_log() << "  creating Three-Body-Germinal Jastrow function " << endl;
+      app_log() << "\n  creating Three-Body-Germinal Jastrow function " << endl;
       string source_name("i");
       const xmlChar* iptr = xmlGetProp(cur, (const xmlChar *)"source");
       if(iptr != NULL) source_name=(const char*)iptr;
       PtclPoolType::iterator pit(ptclPool.find(source_name));
       if(pit != ptclPool.end()) {
-        cout << "Creating three body with " << source_name << endl;
         jbuilder = new ThreeBodyGeminalBuilder(*targetPtcl,*targetPsi,*((*pit).second));
       }
     } else if (jasttype == "Three-Body-Pade") {
-      app_log() << "  creating Three-Body-Pade Jastrow function " << endl;
+      app_log() << "\n  creating Three-Body-Pade Jastrow function " << endl;
       string source_name("i");
       const xmlChar* iptr = xmlGetProp(cur, (const xmlChar *)"source");
       //if(iptr != NULL) source_name=(const char*)iptr;
