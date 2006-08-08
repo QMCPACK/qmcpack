@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////
-// (c) Copyright 2003  by Jeongnim Kim
+// (c) Copyright 2003-  by Jeongnim Kim
 //////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////
 //   National Center for Supercomputing Applications &
@@ -14,136 +14,139 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 #include "QMCWaveFunctions/Fermion/SlaterDetBuilder.h"
-#include "QMCWaveFunctions/Fermion/DiracDeterminantT.h"
-#include "QMCWaveFunctions/MolecularOrbitals/GridMolecularOrbitals.h"
-#include "QMCWaveFunctions/LCOrbitals.h"
+#include "QMCWaveFunctions/LCOrbitalSetB.h"
+#include "QMCWaveFunctions/BasisSetFactory.h"
 #include "OhmmsData/AttributeSet.h"
 
 namespace qmcplusplus {
 
-  SlaterDetBuilder::SlaterDetBuilder(ParticleSet& p, 
-      TrialWaveFunction& psi, PtclPoolType& psets): 
-      OrbitalBuilderBase(p,psi), ptclPool(psets),spoBuilder(0){
-    } 
+  SlaterDetBuilder::SlaterDetBuilder(ParticleSet& els, TrialWaveFunction& psi,
+     PtclPoolType& psets):
+    OrbitalBuilderBase(els,psi), 
+    ptclPool(psets), 
+    myBasisSetFactory(0)
+  { 
+  }   
 
-  bool SlaterDetBuilder::put(xmlNodePtr cur) {
-    ///vector of Slater determinants 
-    std::vector<SlaterDeterminant_t*> slaterdets;
-    ///vector of coefficients of the Slater determinants
-    std::vector<RealType> sdet_coeff;
-    int nvar(targetPsi.VarList.size());
-    int is=0, first=0;
-    cur = cur->xmlChildrenNode;
+  bool SlaterDetBuilder::put(xmlNodePtr cur){
+    ///save the current node
+    xmlNodePtr curRoot=cur;
+    bool success=true;
+    cur = cur->children;
+    string cname, tname;
     while(cur != NULL) {
-      string cname((const char*)(cur->name));
+      getNodeName(cname,cur);
       if(cname == basisset_tag) {
-        //create the basis set
-        createBasisSet(cur);
+        if(myBasisSetFactory == 0) {
+          myBasisSetFactory = new BasisSetFactory(targetPtcl,targetPsi, ptclPool);
+        }
+        myBasisSetFactory->createBasisSet(cur,curRoot);
+        //Children.push_back(bsFactory);
       } else if(cname == sd_tag) {
-        first = 0;
+        int is=SlaterDetSet.size();
         //add a new SlaterDeterminant
-        slaterdets.push_back(new SlaterDeterminant_t);
+        SlaterDetSet.push_back(new SlaterDeterminant_t);
         sdet_coeff.push_back(1.0);
-
-        xmlNodePtr tcur = cur->xmlChildrenNode;
+        int firstIndex = 0;
+        xmlNodePtr tcur = cur->children;
         while(tcur != NULL) {
-          string tname((const char*)(tcur->name));
+          getNodeName(tname,tcur);
           if(tname == param_tag) {
             putContent(sdet_coeff[is],tcur);
           } else if(tname == det_tag) {
-            //add the DiracDeterminant to the SlaterDeterminant
-            Det_t *adet = createDeterminant(tcur,is,first);
-            slaterdets[is]->add(adet);
-            first += adet->cols();
+            firstIndex = putDeterminant(tcur, firstIndex);
           }
           tcur = tcur->next;
         }
-        is++;
       }
       cur = cur->next;
     }
-
-    bool optimizeit=(targetPsi.VarList.size()>nvar);
-    if(optimizeit) {
-      WARNMSG("Slater determinants will be optimized")
+    
+    if(SlaterDetSet.empty()) {
+      app_error() << "  Failed to create a SlaterDeterminant. Abort at SlaterDetBuilder::put " << endl;
+      OHMMS::Controller->abort();
+      return false;
     }
 
-    BasisSet->resize(targetPtcl.getTotalNum());
-
-    //distable multi-determinant for now
- //   if(slaterdets.size() > 1) {
- //     MultiSlaterDet *multidet= new MultiSlaterDet;
- //     for(int i=0; i<slaterdets.size(); i++) {
- //       slaterdets[i]->setOptimizable(optimizeit);
- //       multidet->add(slaterdets[i],sdet_coeff[i]);
- //     }
- //     multidet->setOptimizable(optimizeit);
- //     //add a MultiDeterminant to the trial wavefuntion
- //     targetPsi.add(multidet);
- //   } else {
-      targetPsi.add(slaterdets[0]);
-      if(targetPsi.VarList.size()>nvar) slaterdets[0]->setOptimizable(true);
- //   }
-    return true;
+    if(SlaterDetSet.size()>1)
+      buildMultiSlaterDetermiant();
+    else
+      buildSlaterDetermiant();
+    return success;
   }
 
-  void SlaterDetBuilder::createBasisSet(xmlNodePtr cur) {
 
-    if(spoBuilder ==0) {
-      basisName="mo";
+  int SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int firstIndex) {
 
-      string source("i");
-      ParticleSet* ions=0;
-      const xmlChar*  a=xmlGetProp(cur,(const xmlChar*)"source");
-      if(a) { source = (const char*)a;}
-      PtclPoolType::iterator pit = ptclPool.find(source);
-      if(pit != ptclPool.end()) ions = (*pit).second;
+    //if(myBasisSet == 0) {
+    //  app_error() << "  LCOrbitalSet cannot be constructed without a basis set" << endl;
+    //  return 0;
+    //}
 
-      GridMolecularOrbitals *gmoBuilder = new GridMolecularOrbitals(targetPtcl,targetPsi,*ions);
-      typedef GridMolecularOrbitals::BasisSetType BasisSetType;
-      BasisSet = new BasisSetProxy<BasisSetType>(gmoBuilder->addBasisSet(cur));
-      spoBuilder=gmoBuilder;
-      SPOSetID=0;
-    }
-  }
-
-  SlaterDetBuilder::Det_t*
-  SlaterDetBuilder::createDeterminant(xmlNodePtr cur, int is, int first) {
-
-    string abasis(basisName);
-    string detname("invalid"), refname("invalid");
+    string basisName("invalid");
+    string detname("NONE"), refname("NONE");
     OhmmsAttributeSet aAttrib;
-    aAttrib.add(abasis,basisset_tag);
+    aAttrib.add(basisName,basisset_tag);
     aAttrib.add(detname,"id");
     aAttrib.add(refname,"ref");
     aAttrib.put(cur);
 
-    typedef GridMolecularOrbitals::BasisSetType BasisSetType;
-    typedef BasisSetProxy<BasisSetType> BasisSetProxyType;
-    typedef LCOrbitals<BasisSetType>            SPOSetType;
+    xmlNodePtr c_ptr = NULL, o_ptr=NULL;
 
-    SPOSetType *psi=0;
-    if(refname == "invalid") { //create one and use detname
-      if(detname =="invalid") { //no id is given, assign one
-        detname="det";
-        ostringstream idassigned(detname);
-        idassigned << is;
-      }
-      BasisSetProxyType* bs = dynamic_cast<BasisSetProxyType*>(BasisSet);
-      psi = new SPOSetType(bs->basisRef,is);
-      psi->put(cur);
-      psi->setName(detname);
-      targetPsi.addSPOSet(psi);
-    } else {
-      if(targetPsi.hasSPOSet(refname)) {
-        psi = dynamic_cast<SPOSetType*>(targetPsi.getSPOSet(refname));
+    Det_t* adet=0;
+
+    //index of the last SlaterDeterminant
+    int dIndex=DetSet.size();
+
+    if(refname == "NONE") { //create one and use detname
+      if(detname =="NONE") { //no id is given, assign one
+        char newname[8];
+        sprintf(newname,"det%d",dIndex);
+        detname=newname;
       }
     }
 
-    Det_t *adet = new DiracDeterminantT<SPOSetType>(*psi,first);
-    adet->set(first,psi->numOrbitals());
+    map<string,SPOSetBase*>::iterator lit(SPOSet.find(detname));
+    SPOSetBase* psi=0;
+    if(lit == SPOSet.end()) {
+      psi = myBasisSetFactory->createSPOSet(cur); 
+      psi->put(cur);
+      SPOSet[detname]=psi;
+    } else {
+      psi = (*lit).second;
+    }
 
-    return adet;
+    if(psi->getOrbitalSetSize()) {
+      map<string,Det_t*>::iterator dit(DetSet.find(detname));
+      if(dit == DetSet.end()) {
+        adet = new Det_t(*psi,firstIndex);
+        adet->set(firstIndex,psi->getOrbitalSetSize());
+        DetSet[detname]=adet;
+      } else {
+        adet = (*dit).second;
+      }
+      firstIndex += psi->getOrbitalSetSize();
+    }
+
+    //only if a determinant is not 0
+    if(adet) SlaterDetSet.back()->add(adet);
+    return firstIndex;
+  }
+
+  void SlaterDetBuilder::buildSlaterDetermiant() {
+    if(SlaterDetSet.empty()) return;
+    //add a SlaterDeterminant to the trial wavefuntion
+    targetPsi.addOrbital(SlaterDetSet[0]);
+  }
+
+  void SlaterDetBuilder::buildMultiSlaterDetermiant() {
+//    MultiSlaterDeterminant<LCOrbitalSet> *multidet= new MultiSlaterDeterminant<LCOrbitalSet>;
+//    for(int i=0; i<SlaterDetSet.size(); i++) {
+//      multidet->add(SlaterDetSet[i],sdet_coeff[i]);
+//    }
+//    multidet->setOptimizable(true);
+//    //add a MultiDeterminant to the trial wavefuntion
+//    targetPsi.addOrbital(multidet);
   }
 }
 /***************************************************************************
