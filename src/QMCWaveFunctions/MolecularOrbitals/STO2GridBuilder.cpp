@@ -23,6 +23,11 @@
 using namespace std;
 namespace qmcplusplus {
 
+  bool
+  STO2GridBuilder::putCommon(xmlNodePtr cur) {
+    return true;
+  }
+
   /** Add a new Slater Type Orbital with quantum numbers \f$(n,l,m,s)\f$ 
    * \param cur  the current xmlNode to be processed
    * \param nlms a vector containing the quantum numbers \f$(n,l,m,s)\f$

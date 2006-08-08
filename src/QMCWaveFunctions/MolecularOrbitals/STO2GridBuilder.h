@@ -31,6 +31,7 @@ namespace qmcplusplus {
     ///constructor
     STO2GridBuilder(){}
     bool addRadialOrbital(xmlNodePtr cur, const QuantumNumberType& nlms);
+    bool putCommon(xmlNodePtr cur);
   };
 
 }
