@@ -18,7 +18,9 @@
 #define QMCPLUSPLUS_SPHERICALORBITALSET_H
 
 #include "Particle/DistanceTableData.h"
+#include "ParticleBase/ParticleAttribOps.h"
 #include "Numerics/SphericalTensor.h"
+#include "QMCWaveFunctions/OrbitalSetTraits.h"
 
 namespace qmcplusplus {
 
@@ -56,17 +58,19 @@ namespace qmcplusplus {
     and NumericalGrid
   */
   template<class ROT, class GT=DummyGrid>
-  struct SphericalOrbitalSet {
+  struct SphericalOrbitalSet: public OrbitalSetTraits {
 
-    typedef DistanceTableData::RealType        RealType;
-    typedef DistanceTableData::ValueType       ValueType;
-    typedef DistanceTableData::PosType         PosType;
     typedef SphericalTensor<RealType,PosType>  SphericalHarmonics_t;
     typedef ROT                                RadialOrbital_t;
 
+    ///size of the basis set
+    IndexType BasisSetSize;
+    ///index of the CurrentCenter
+    IndexType CurrentCenter;
+    ///offset
+    IndexType CurrentOffset;
     ///reference to a DistanceTableData (ion-electron)
     const DistanceTableData* myTable;
-
     ///spherical tensor unique to this set of SphericalOrbitals
     SphericalHarmonics_t Ylm;
     ///index of the corresponding real Spherical Harmonic with quantum 
@@ -84,37 +88,113 @@ namespace qmcplusplus {
 
     ///the constructor
     explicit SphericalOrbitalSet(int lmax, bool addsignforM=false): Ylm(lmax,addsignforM){ }
-    ~SphericalOrbitalSet() {
-      myTable = NULL;
-      //for(int i=0; i<Rnl.size(); i++) delete Rnl[i];
-    }
 
-    ///return the number of basis functions
-    inline int getBasisSetSize() const { return NL.size(); }
-
-    ///reset the DistanceTableData (ion-electron)
-    inline void setTable(DistanceTableData* atable) { 
-      myTable = atable;
-    }
+    ~SphericalOrbitalSet() { }
 
     ///reset the internal values
     inline void reset() { 
       for(int nl=0; nl<Rnl.size(); nl++) Rnl[nl]->reset();
     }
 
+    /** return the number of basis functions
+     */
+    inline int getBasisSetSize() const { return BasisSetSize;}//=NL.size(); }
+
+
+    /** implement a BasisSetBase virutal function
+     *
+     * Use the size of LM to set BasisSetSize
+     */
+    inline void setBasisSetSize(int n) {
+      BasisSetSize=LM.size();
+    }
+
+    /** reset the target ParticleSet
+     *
+     * Do nothing. Leave it to a composite object which owns this
+     */
+    void resetTargetParticleSet(ParticleSet& P) { }
+
+    ///reset the DistanceTableData (ion-electron)
+    inline void setTable(DistanceTableData* atable) { 
+      myTable = atable;
+      BasisSetSize=LM.size();
+    }
+
+    ///set the current offset
+    inline void setCenter(int c, int offset) {
+      CurrentCenter=c;
+      CurrentOffset=offset;
+    }
+
+    template<class VV, class GV>
+    inline void 
+    evaluateBasis(int c, int iat, int offset, VV& psi, GV& dpsi, VV& d2psi) {
+      int nn = myTable->M[c]+iat;
+      RealType r(myTable->r(nn));
+      RealType rinv(myTable->rinv(nn));
+      PosType  dr(myTable->dr(nn));
+
+      Ylm.evaluateAll(dr);
+
+      typename vector<ROT*>::iterator rit(Rnl.begin()), rit_end(Rnl.end());
+      while(rit != rit_end) {(*rit)->evaluateAll(r,rinv); ++rit;}
+      
+      vector<int>::iterator nlit(NL.begin()),nlit_end(NL.end()),lmit(LM.begin()); 
+      while(nlit != nlit_end) { //for(int ib=0; ib<NL.size(); ib++, offset++) {
+	int nl(*nlit);//NL[ib];
+	int lm(*lmit);//LM[ib];
+        const ROT& rnl(*Rnl[nl]);
+	RealType drnloverr(rinv*rnl.dY);
+	ValueType ang(Ylm.getYlm(lm));
+	PosType gr_rad(drnloverr*dr);
+	PosType gr_ang(Ylm.getGradYlm(lm));
+        psi[offset]  = ang*rnl.Y;
+        dpsi[offset] = ang*gr_rad+rnl.Y*gr_ang;
+	d2psi[offset] = ang*(2.0*drnloverr+rnl.d2Y) + 2.0*dot(gr_rad,gr_ang);
+        ++nlit; ++lmit;++offset;
+      }
+    }
+
+    /////evaluate the value, gradient and laplacian of basis functions for the iath-particle
+    //inline void
+    //evaluateBasis(int c, int iat, int offset, Matrix<ValueType>& temp) {
+    //  //RealType r(myTable->Temp[CurrentCenter].r1);
+    //  //RealType rinv(myTable->Temp[CurrentCenter].rinv1);
+    //  //PosType  dr(myTable->Temp[CurrentCenter].dr1);
+    //  int nn = myTable->M[c]+iat;
+    //  RealType r(myTable->r(nn));
+    //  RealType rinv(myTable->rinv(nn));
+    //  PosType  dr(myTable->dr(nn));
+    //  Ylm.evaluateAll(dr);
+    //  typename vector<ROT*>::iterator rit(Rnl.begin()), rit_end(Rnl.end());
+    //  while(rit != rit_end) {(*rit)->evaluateAll(r,rinv); ++rit;}
+    //  
+    //  vector<int>::iterator nlit(NL.begin()),nlit_end(NL.end()),lmit(LM.begin()); 
+    //  while(nlit != nlit_end) { //for(int ib=0; ib<NL.size(); ib++, offset++) {
+    //    int nl(*nlit);//NL[ib];
+    //    int lm(*lmit);//LM[ib];
+    //    const ROT& rnl(*Rnl[nl]);
+    //    RealType drnloverr(rinv*rnl.dY);
+    //    RealType ang(Ylm.getYlm(lm));
+    //    PosType gr_rad(drnloverr*dr);
+    //    PosType gr_ang(Ylm.getGradYlm(lm));
+    //    PosType g(ang*gr_rad+rnl.Y*gr_ang);
+    //    PAOps<RealType,DIM>::copy(ang*rnl.Y, ang*(2.0*drnloverr+rnl.d2Y) + 2.0*dot(gr_rad,gr_ang), ang*gr_rad+rnl.Y*gr_ang, temp[offset]); 
+    //    ++nlit; ++lmit; ++offset;
+    //  }
+    //}
+
+
     template<class VM>
     inline void
     evaluate(int source, int iat,  int offset, VM& y) {
-
       RealType r(myTable->Temp[source].r1);
       RealType rinv(myTable->Temp[source].rinv1);
       PosType  dr(myTable->Temp[source].dr1);
-
       Ylm.evaluate(dr);
-
       typename vector<ROT*>::iterator rit(Rnl.begin()), rit_end(Rnl.end());
       while(rit != rit_end) {(*rit)->evaluate(r,rinv); ++rit;}
-      
       vector<int>::iterator nlit(NL.begin()),nlit_end(NL.end()),lmit(LM.begin()); 
       while(nlit != nlit_end) { //for(int ib=0; ib<NL.size(); ib++, offset++) {
         y(0,offset++)=Ylm.getYlm(*lmit++)*Rnl[*nlit++]->Y;
@@ -131,12 +211,8 @@ namespace qmcplusplus {
 
       Ylm.evaluateAll(dr);
 	
-      //typename vector<GT*>::iterator git(Grids.begin()),git_end(Grids.end());
-      //while(git != git_end) {(*git)->locate(r); ++git;}
-
       typename vector<ROT*>::iterator rit(Rnl.begin()), rit_end(Rnl.end());
       while(rit != rit_end) {(*rit)->evaluateAll(r,rinv); ++rit;}
-      //while(rit != rit_end) {(*rit)->evaluate(r,rinv); ++rit;}
       
       vector<int>::iterator nlit(NL.begin()),nlit_end(NL.end()),lmit(LM.begin()); 
       while(nlit != nlit_end) { //for(int ib=0; ib<NL.size(); ib++, offset++) {
@@ -155,14 +231,14 @@ namespace qmcplusplus {
     }
 
     /** For the center with index (source), evaluate all the basis functions beginning with index (offset). 
-    @param source index of the center \f$ I \f$
-    @param first index of the first particle
-    @param nptcl number of particles
-    @param offset index of the first basis function
-    @param y return vector \f$ y[i,j] = \phi_j({\bf r_i-R_I}) \f$
-    @param dy return vector \f$ dy[i,j] =  {\bf \nabla}_i \phi_j({\bf r_i-R_I}) \f$
-    @param d2y return vector \f$ d2y[i,j] = \nabla^2_i \phi_j({\bf r_i-R_I}) \f$  
-    *
+     * @param source index of the center \f$ I \f$
+     * @param first index of the first particle
+     * @param nptcl number of particles
+     * @param offset index of the first basis function
+     * @param y return vector \f$ y[i,j] = \phi_j({\bf r_i-R_I}) \f$
+     * @param dy return vector \f$ dy[i,j] =  {\bf \nabla}_i \phi_j({\bf r_i-R_I}) \f$
+     * @param d2y return vector \f$ d2y[i,j] = \nabla^2_i \phi_j({\bf r_i-R_I}) \f$  
+     *
        The results are stored in the matrices:
        \f[ y[i,k] = \phi_k(r_{ic}) \f]
        \f[ dy[i,k] = {\bf \nabla}_i \phi_k(r_{ic}) \f]
@@ -195,15 +271,6 @@ namespace qmcplusplus {
        {\partial r} \left( r^2 \frac{\partial G}{\partial r}\right)
        - \frac{l(l+1)G}{r^2} = 0.
        \f]
-       @param source index of the center \f$ I \f$
-       @param first index of the first particle
-       @param nptcl number of particles
-       @param offset index of the first basis function
-       @param y return vector \f$ y[i,j] = \phi_j({\bf r_i-R_I}) \f$
-       @param dy return vector \f$ dy[i,j] = 
-       {bf \nabla}_i \phi_j({\bf r_i-R_I}) \f$
-       @param d2y return vector \f$ d2y[i,j] = 
-       \nabla^2_i \phi_j({\bf r_i-R_I}) \f$  
     */ 
     template<class VM, class GM>
     inline void 
@@ -216,9 +283,6 @@ namespace qmcplusplus {
 	PosType dr(myTable->dr(nn));
 
 	Ylm.evaluateAll(dr);
-
-        //typename vector<GT*>::iterator git(Grids.begin()),git_end(Grids.end());
-        //while(git != git_end) {(*git)->locate(r); ++git;}
 
         typename vector<ROT*>::iterator rit(Rnl.begin()), rit_end(Rnl.end());
         while(rit != rit_end) {(*rit)->evaluateAll(r,rinv); ++rit;}
@@ -252,70 +316,45 @@ namespace qmcplusplus {
       }
     }
 
-    /**
-       @brief For the center with index (source), evaluate
-       all the basis functions beginning with index (offset). 
-       @param source index of the source particle
-       @param first starting index of the quantum particle
-       @param nptcl the number of particles to be evaluate [first, first+npcl)
-       @param offset the basis offset of the source
-       @param nw the number of walkers
-       @param nstride the number that makes up a composite index 
-       for (walker,particle)
-       @param y function values, y((walker,particle),basis), basis 
-       includes the offset
-       @param dy gradients, dy((walker,particle),basis)
-       @param d2y laplacians, d2y((walker,particle),basis)
-       *
-       @note Implements a vectorized operation over particles and walkers.
-    */
+    template<class VV>
+    inline void
+    evaluate(RealType r, RealType rinv, const PosType& dr, int offset, VV& psi) {
+      Ylm.evaluate(dr);
+      typename vector<ROT*>::iterator rit(Rnl.begin()), rit_end(Rnl.end());
+      while(rit != rit_end) {(*rit)->evaluate(r,rinv); ++rit;}
+      vector<int>::iterator nlit(NL.begin()),nlit_end(NL.end()),lmit(LM.begin()); 
+      while(nlit != nlit_end) { //for(int ib=0; ib<NL.size(); ib++, offset++) {
+        psi[offset++]=Ylm.getYlm(*lmit++)*Rnl[*nlit++]->Y;
+      }
+    }
 
-    template<class VM, class GM>
+    template<class VV, class GV>
     inline void 
-    evaluateW(int source, int first, int nptcl, int offset, 
-	      int nw, int nstride,
-	      VM& y, GM& dy, VM& d2y) {
+    evaluate(RealType r, RealType rinv, const PosType& dr, int offset, VV& y, GV& dy, VV& d2y) {
 
-      //composite index with the (particle,walker)
-#ifdef USE_FASTWALKER
-      //first pair of the particle subset
-      int nn = myTable->M[source]+first;
-      int iiw = 0;
-      for(int i=0, iat=first; i<nptcl; i++, iat++, nn++) {
-	for(int iw=0; iw < nw; iw++, iiw ++) {
-#else
-	  int nn0 = myTable->M[source]+first;
-	  for(int iw=0; iw < nw; iw++) {
-	    int iiw = iw*nstride+first;
-	    for(int i=0, iat=first,nn=nn0; i<nptcl; i++, iat++, nn++, iiw++) {
-#endif
-	      RealType r = myTable->r(iw,nn);
-	      RealType rinv = myTable->rinv(iw,nn);
-	      PosType dr = myTable->dr(iw,nn);
-	      Ylm.evaluateAll(dr);
+      Ylm.evaluateAll(dr);
+	
+      typename vector<ROT*>::iterator rit(Rnl.begin()), rit_end(Rnl.end());
+      while(rit != rit_end) {(*rit)->evaluateAll(r,rinv); ++rit;}
+      
+      vector<int>::iterator nlit(NL.begin()),nlit_end(NL.end()),lmit(LM.begin()); 
+      while(nlit != nlit_end) { //for(int ib=0; ib<NL.size(); ib++, offset++) {
+	int nl(*nlit);//NL[ib];
+	int lm(*lmit);//LM[ib];
+        const ROT& rnl(*Rnl[nl]);
+	RealType drnloverr(rinv*rnl.dY);
+	ValueType ang(Ylm.getYlm(lm));
+	PosType gr_rad(drnloverr*dr);
+	PosType gr_ang(Ylm.getGradYlm(lm));
+	y[offset]= ang*rnl.Y;
+	dy[offset] = ang*gr_rad+rnl.Y*gr_ang;
+	d2y[offset]= ang*(2.0*drnloverr+rnl.d2Y) + 2.0*dot(gr_rad,gr_ang);
+        ++nlit; ++lmit;++offset;
+      }
+    }
 
-	      //spline them
-	      for(int nl=0; nl<Rnl.size(); nl++) {
-		Rnl[nl]->evaluateAll(r,rinv);
-	      }
-
-	      int bindex = offset;
-	      for(int ib=0; ib<NL.size(); ib++, bindex++) {
-		int nl = NL[ib];
-		int lm = LM[ib];
-		RealType drnloverr = rinv*Rnl[nl]->dY;
-		ValueType ang = Ylm.getYlm(lm);
-		PosType gr_rad = drnloverr*dr;
-		PosType gr_ang = Ylm.getGradYlm(lm);
-		y(iiw,bindex)= ang*Rnl[nl]->Y;
-		dy(iiw,bindex) = ang*gr_rad+Rnl[nl]->Y*gr_ang;
-		d2y(iiw,bindex)= ang*(2.0*drnloverr+Rnl[nl]->d2Y)
-		  +2.0*dot(gr_rad,gr_ang);
-	      }
-	    }
-	  }
-	}
-      };
+    };
+    
     }
 #endif
 
