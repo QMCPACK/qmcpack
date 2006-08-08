@@ -29,10 +29,11 @@ namespace qmcplusplus {
   struct Any2GridBuilder: public RGFBuilderBase {
 
     ///constructor
-    Any2GridBuilder(xmlNodePtr cur);
+    Any2GridBuilder(xmlNodePtr cur=NULL);
 
     ///implement the virtual function
     bool addRadialOrbital(xmlNodePtr cur, const QuantumNumberType& nlms);
+    bool putCommon(xmlNodePtr cur);
 
     bool Normalized;
     RealType m_rcut;

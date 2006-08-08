@@ -26,11 +26,17 @@ namespace qmcplusplus {
 
   Any2GridBuilder::Any2GridBuilder(xmlNodePtr cur): 
     Normalized(true),m_rcut(-1.0){
-    
+      if(cur != NULL) {
+        putCommon(cur);
+      }
+  }
+
+  bool Any2GridBuilder::putCommon(xmlNodePtr cur) {
     const xmlChar* a=xmlGetProp(cur,(const xmlChar*)"normalized");
     if(a) {
       if(xmlStrEqual(a,(const xmlChar*)"no")) Normalized=false;
     }
+    return true;
   }
 
   /** Add a new Slater Type Orbital with quantum numbers \f$(n,l,m,s)\f$ 
@@ -71,7 +77,7 @@ namespace qmcplusplus {
     }
 
     if(lastRnl && m_orbitals->Rnl.size()> lastRnl) {
-      LOGMSG("\tSetting GridManager of " << lastRnl << " radial orbital to false")
+      //LOGMSG("\tSetting GridManager of " << lastRnl << " radial orbital to false")
       m_orbitals->Rnl[lastRnl]->setGridManager(false);
     }
 
