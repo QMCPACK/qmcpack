@@ -27,6 +27,7 @@ namespace qmcplusplus {
   struct NumericalRGFBuilder: public RGFBuilderBase {
     ///constructor
     NumericalRGFBuilder(xmlNodePtr cur);
+    bool putCommon(xmlNodePtr cur);
     bool addGrid(xmlNodePtr cur);
     bool addRadialOrbital(xmlNodePtr cur, const QuantumNumberType& nlms);
 

@@ -29,6 +29,10 @@ using namespace std;
 namespace qmcplusplus {
 
   NumericalRGFBuilder::NumericalRGFBuilder(xmlNodePtr cur) {
+    if(cur != NULL) putCommon(cur);
+  }
+
+  bool NumericalRGFBuilder::putCommon(xmlNodePtr cur) {
 
 #if defined(HAVE_LIBHDF5)
     string afilename("invalid");
@@ -45,6 +49,7 @@ namespace qmcplusplus {
       XMLReport("Opening file: " << afilename)
     } 
 #endif
+    return true;
   }
 
   /**  Add a new numerical radial orbital with quantum numbers \f$(n,l,m,s)\f$ to the list of radial orbitals.
