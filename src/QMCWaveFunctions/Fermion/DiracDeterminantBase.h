@@ -17,85 +17,111 @@
 //   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-/** @file DiracDeterminantBase.h
- * @brief declaration of DiracDeterminantBase
- *
- * This is an abstract base class of DiractDeterminant.
+/**@file DiracDeterminantBaseBase.h
+ * @brief Declaration of DiracDeterminantBase with a S(ingle)P(article)O(rbital)SetBase
  */
-#ifndef QMCPLUSPLUS_DIRACDETERMINANTBASE_H
-#define QMCPLUSPLUS_DIRACDETERMINANTBASE_H
+#ifndef QMCPLUSPLUS_DIRACDETERMINANTWITHBASE_H
+#define QMCPLUSPLUS_DIRACDETERMINANTWITHBASE_H
 #include "QMCWaveFunctions/OrbitalBase.h"
-#include "OhmmsPETE/OhmmsVector.h"
+#include "QMCWaveFunctions/SPOSetBase.h"
 
 namespace qmcplusplus {
 
-  class ParticleSet;
-  class WalkerSetRef;
-
-  /** Base class to handle a DiracDeterminantBase.
-   */
   class DiracDeterminantBase: public OrbitalBase {
   public:
-    typedef Matrix<ValueType> Determinant_t;
-    typedef Matrix<GradType>  Gradient_t;
-    typedef Matrix<ValueType> Laplacian_t;
-    typedef std::vector<ValueType> TempValue_t;
-    typedef std::vector<GradType>  TempGradient_t;
-    typedef std::vector<ValueType> TempLaplacian_t;
+
+    typedef SPOSetBase::IndexVector_t IndexVector_t;
+    typedef SPOSetBase::ValueVector_t ValueVector_t;
+    typedef SPOSetBase::ValueMatrix_t ValueMatrix_t;
+    typedef SPOSetBase::GradVector_t  GradVector_t;
+    typedef SPOSetBase::GradMatrix_t  GradMatrix_t;
 
     /** constructor
      *@param spos the single-particle orbital set
      *@param first index of the first particle
      */
-    DiracDeterminantBase(int first=0);
+    DiracDeterminantBase(SPOSetBase& spos, int first=0);
 
     ///default destructor
-    virtual ~DiracDeterminantBase();
+    ~DiracDeterminantBase();
   
+    /**copy constructor
+     *@brief copy constructor, only resize and assign orbitals
+     */
+    DiracDeterminantBase(const DiracDeterminantBase& s);
 
     DiracDeterminantBase& operator=(const DiracDeterminantBase& s);
+
+
+    inline IndexType rows() const {
+      return NumPtcls;
+    }
+
+    inline IndexType cols() const {
+      return NumOrbitals;
+    }
 
     /** set the index of the first particle in the determinant and reset the size of the determinant
      *@param first index of first particle
      *@param nel number of particles in the determinant
      */
-    inline void set(int first, int nel) {
-      FirstIndex = first;
-      resize(nel,nel);
+    void set(int first, int nel);
+
+    ///reset the single-particle orbital set
+    inline void reset() { Phi.reset(); }
+   
+    void resetTargetParticleSet(ParticleSet& P) { 
+      Phi.resetTargetParticleSet(P);
     }
 
     ///reset the size: with the number of particles and number of orbtials
     void resize(int nel, int morb);
-    ///return the number of rows (or the number of electrons)
-    inline int rows() const { return NumPtcls;}
-    ///return the number of coloumns  (or the number of orbitals)
-    inline int cols() const { return NumOrbitals;}
 
     ValueType registerData(ParticleSet& P, PooledData<RealType>& buf);
+
     ValueType updateBuffer(ParticleSet& P, PooledData<RealType>& buf);
+
     void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf);
 
     /** dump the inverse to the buffer
      */
-    inline void dumpToBuffer(ParticleSet& P, PooledData<RealType>& buf) {
-      buf.add(psiM.begin(),psiM.end());
-    }
+    void dumpToBuffer(ParticleSet& P, PooledData<RealType>& buf);
+
     /** copy the inverse from the buffer
      */
-    inline void dumpFromBuffer(ParticleSet& P, PooledData<RealType>& buf) {
-      buf.get(psiM.begin(),psiM.end());
-    }
+    void dumpFromBuffer(ParticleSet& P, PooledData<RealType>& buf);
 
+    /** return the ratio only for the  iat-th partcle move
+     * @param P current configuration
+     * @param iat the particle thas is being moved
+     */
     ValueType ratio(ParticleSet& P, int iat);
+
+    /** return the ratio
+     * @param P current configuration
+     * @param iat particle whose position is moved
+     * @param dG differential Gradients
+     * @param dL differential Laplacians
+     *
+     * Data member *_temp contain the data assuming that the move is accepted
+     * and are used to evaluate differential Gradients and Laplacians.
+     */
     ValueType ratio(ParticleSet& P, int iat,
 		    ParticleSet::ParticleGradient_t& dG, 
 		    ParticleSet::ParticleLaplacian_t& dL);
+
     ValueType logRatio(ParticleSet& P, int iat,
 		    ParticleSet::ParticleGradient_t& dG, 
 		    ParticleSet::ParticleLaplacian_t& dL);
 
-    void update(ParticleSet& P, int iat);
+    /** move was accepted, update the real container
+     */
+    void acceptMove(ParticleSet& P, int iat);
+
+    /** move was rejected. copy the real container to the temporary to move on
+     */
     void restore(int iat);
+
     void update(ParticleSet& P, 
 		ParticleSet::ParticleGradient_t& dG, 
 		ParticleSet::ParticleLaplacian_t& dL,
@@ -103,6 +129,8 @@ namespace qmcplusplus {
 
     ValueType evaluate(ParticleSet& P, PooledData<RealType>& buf);
 
+
+    ///evaluate log of determinant for a particle set: should not be called 
     ValueType
     evaluateLog(ParticleSet& P, 
 	        ParticleSet::ParticleGradient_t& G, 
@@ -117,17 +145,14 @@ namespace qmcplusplus {
 	     ParticleSet::ParticleGradient_t& G, 
 	     ParticleSet::ParticleLaplacian_t& L);
 
-    virtual void evaluateSingle(ParticleSet& P, int iat)=0;
-    virtual void evaluateSingleAll(ParticleSet& P, int iat)=0;
-    virtual void evaluateAll(ParticleSet& P)=0;
 
+    bool UseRatioOnly;
     ///The number of particles
     int NP;
 
-    ///Number of orbitals
+    ///number of single-particle orbitals which belong to this Dirac determinant
     int NumOrbitals;
-
-    ///Number of particles
+    ///number of particles which belong to this Dirac determinant
     int NumPtcls;
 
     ///index of the first particle with respect to the particle set
@@ -136,6 +161,9 @@ namespace qmcplusplus {
     ///index of the last particle with respect to the particle set
     int LastIndex;
 
+    ///a set of single-particle orbitals used to fill in the  values of the matrix 
+    SPOSetBase& Phi;
+
     ///index of the particle (or row) 
     int WorkingIndex;      
 
@@ -143,27 +171,22 @@ namespace qmcplusplus {
     ValueType CurrentDet;
 
     /// psiM(j,i) \f$= \psi_j({\bf r}_i)\f$
-    Determinant_t psiM, psiM_temp;
+    ValueMatrix_t psiM, psiM_temp;
 
     /// temporary container for testing
-    Determinant_t psiMinv;
+    ValueMatrix_t psiMinv;
 
     /// dpsiM(i,j) \f$= \nabla_i \psi_j({\bf r}_i)\f$
-    Gradient_t    dpsiM, dpsiM_temp;
+    GradMatrix_t  dpsiM, dpsiM_temp;
 
     /// d2psiM(i,j) \f$= \nabla_i^2 \psi_j({\bf r}_i)\f$
-    Laplacian_t   d2psiM, d2psiM_temp;
+    ValueMatrix_t d2psiM, d2psiM_temp;
 
     /// value of single-particle orbital for particle-by-particle update
-    TempValue_t psiV;
-    TempGradient_t dpsiV;
-    TempLaplacian_t d2psiV;
-    TempValue_t workV1, workV2;
-
-    ///storages to process many walkers once
-    //vector<Determinant_t> psiM_v; 
-    //vector<Gradient_t>    dpsiM_v; 
-    //vector<Laplacian_t>   d2psiM_v; 
+    ValueVector_t psiV;
+    GradVector_t dpsiV;
+    ValueVector_t d2psiV;
+    ValueVector_t workV1, workV2;
 
     Vector<ValueType> WorkSpace;
     Vector<IndexType> Pivot;
@@ -177,6 +200,9 @@ namespace qmcplusplus {
     ParticleSet::ParticleGradient_t myG, myG_temp;
     ParticleSet::ParticleLaplacian_t myL, myL_temp;
   };
+
+
+  
 }
 #endif
 /***************************************************************************
