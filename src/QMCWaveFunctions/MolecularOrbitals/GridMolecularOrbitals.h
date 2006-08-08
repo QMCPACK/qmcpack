@@ -17,8 +17,6 @@
 #ifndef QMCPLUSPLUS_CONVERT2_RADIALGRID_H
 #define QMCPLUSPLUS_CONVERT2_RADIALGRID_H
 
-#include "Numerics/OneDimGridFunctor.h"
-#include "QMCWaveFunctions/SphericalOrbitalSet.h"
 #include "QMCWaveFunctions/OrbitalBuilderBase.h"
 #include "QMCWaveFunctions/MolecularOrbitals/MolecularOrbitalBasis.h"
 #include "QMCWaveFunctions/MolecularOrbitals/RGFBuilderBase.h"
