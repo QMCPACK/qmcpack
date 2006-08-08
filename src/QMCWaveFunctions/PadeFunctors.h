@@ -44,6 +44,8 @@ namespace qmcplusplus {
       real_type AB;
       ///B2=2*B
       real_type B2;
+      ///AoverB=A/B 
+      real_type AoverB;
 
       ///constructor
       explicit PadeFunctor(real_type a, real_type b, real_type s=1.0): Scale(s) {
@@ -53,6 +55,7 @@ namespace qmcplusplus {
       inline void reset() {
         B = B0*Scale;
         AB = A*B; B2=2.0*B;
+        AoverB=A/B;
       }
 
       void reset(real_type a, real_type b, real_type s=1.0) {
@@ -73,7 +76,7 @@ namespace qmcplusplus {
         }
 
       inline real_type f(real_type r) {
-        return evaluate(r);
+        return evaluate(r)-AoverB;
       }
 
       inline real_type df(real_type r) {
