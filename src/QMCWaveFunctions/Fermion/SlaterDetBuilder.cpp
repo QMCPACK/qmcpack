@@ -14,7 +14,6 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 #include "QMCWaveFunctions/Fermion/SlaterDetBuilder.h"
-#include "QMCWaveFunctions/LCOrbitalSetB.h"
 #include "QMCWaveFunctions/BasisSetFactory.h"
 #include "OhmmsData/AttributeSet.h"
 
