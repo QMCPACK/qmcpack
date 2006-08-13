@@ -18,7 +18,7 @@
 #define QMCPLUSPLUS_GTO_BUILDER_H
 
 #include "Configuration.h"
-#include "QMCWaveFunctions/SphericalOrbitalSet.h"
+#include "QMCWaveFunctions/SphericalBasisSet.h"
 #include "Numerics/GaussianBasisSet.h"
 
 namespace qmcplusplus {
@@ -28,7 +28,7 @@ namespace qmcplusplus {
   public:
 
     typedef GaussianCombo<RealType>                    RadialOrbitalType;
-    typedef SphericalOrbitalSet<RadialOrbitalType>     CenteredOrbitalType;
+    typedef SphericalBasisSet<RadialOrbitalType>     CenteredOrbitalType;
 
     ///true, if the RadialOrbitalType is normalized
     bool Normalized;
