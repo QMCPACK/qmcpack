@@ -25,6 +25,15 @@
 #include "OhmmsPETE/OhmmsVector.h"
 
 namespace qmcplusplus {
+  /** dummy class for templated classes
+   */
+  struct DummyGrid {
+    inline void locate(double r) {}
+  };
+
+  typedef TinyVector<int,4> QuantumNumberType;
+
+  enum {q_n=0,q_l,q_m, q_s};
 
   /** trait class to handel a set of Orbitals
    */
