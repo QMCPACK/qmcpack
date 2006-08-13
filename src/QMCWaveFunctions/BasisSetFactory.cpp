@@ -15,7 +15,8 @@
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 #include "QMCWaveFunctions/BasisSetFactory.h"
-#include "QMCWaveFunctions/MolecularOrbitals/Any2GridBuilder.h"
+//#include "QMCWaveFunctions/MolecularOrbitals/Any2GridBuilder.h"
+#include "QMCWaveFunctions/MolecularOrbitals/NGOBuilder.h"
 #include "QMCWaveFunctions/MolecularOrbitals/GTOBuilder.h"
 #include "QMCWaveFunctions/MolecularOrbitals/STOBuilder.h"
 #include "QMCWaveFunctions/MolecularOrbitals/MolecularBasisBuilder.h"
@@ -70,7 +71,8 @@ namespace qmcplusplus {
 
       if(transformOpt == "yes") {
         app_log() << " by numerical radial functors." << endl;
-        bb = new MolecularBasisBuilder<Any2GridBuilder>(targetPtcl,*ions);
+        bb = new MolecularBasisBuilder<NGOBuilder>(targetPtcl,*ions);
+        //bb = new MolecularBasisBuilder<Any2GridBuilder>(targetPtcl,*ions);
       } else {
         if(keyOpt == "GTO") {
           app_log() << " by analytic GTO functors." << endl;
