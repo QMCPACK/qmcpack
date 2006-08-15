@@ -85,9 +85,9 @@ namespace qmcplusplus {
     int lastRnl = m_orbitals->Rnl.size();
 
     m_nlms = nlms;
-    if(radtype == "Gaussian") {
+    if(radtype == "Gaussian" || radtype == "GTO") {
       addGaussian(cur);
-    } else if(radtype == "Slater") {
+    } else if(radtype == "Slater" || radtype == "STO") {
       addSlater(cur);
     } else if(radtype == "Pade") {
       addPade(cur);
