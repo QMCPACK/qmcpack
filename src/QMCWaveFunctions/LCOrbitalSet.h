@@ -41,6 +41,9 @@ namespace qmcplusplus {
 
     ///pointer to the basis set
     BS* myBasisSet;
+
+    ValueMatrix_t Temp;
+    ValueMatrix_t Tempv;
     /** constructor
      * @param bs pointer to the BasisSet
      * @param id identifier of this LCOrbitalSet
@@ -69,6 +72,7 @@ namespace qmcplusplus {
      */
     void setOrbitalSetSize(int norbs) {
       OrbitalSetSize=norbs;
+      Tempv.resize(OrbitalSetSize,5);
     }
 
     /** set the basis set
@@ -76,6 +80,7 @@ namespace qmcplusplus {
     void setBasisSet(BS* bs) {
       myBasisSet=bs;
       BasisSetSize=myBasisSet->getBasisSetSize();
+      Temp.resize(BasisSetSize,5);
     }
 
     /** return the size of the basis set
@@ -86,30 +91,84 @@ namespace qmcplusplus {
 
     inline void 
     evaluate(const ParticleSet& P, int iat, ValueVector_t& psi) {
-      myBasisSet->evaluate(P,iat);
+      myBasisSet->evaluateForPtclMove(P,iat);
       for(int j=0 ; j<OrbitalSetSize; j++) 
         psi[j] = dot(C[j],myBasisSet->Phi.data(),BasisSetSize);
-        //psi[j] = BLAS::dot(BasisSetSize,C[j],myBasisSet->y(0));
+
+      //overhead of blas::gemv is big
       //MatrixOperators::product(C,myBasisSet->Phi,psi.data());
+      //overhead of blas::dot is too big, better to use the inline function
+      //for((int j=0 ; j<OrbitalSetSize; j++)
+      //  psi[j] = BLAS::dot(BasisSetSize,C[j],myBasisSet->Phi.data());
     }
 
     inline void 
     evaluate(const ParticleSet& P, int iat, 
         ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi) {
-      myBasisSet->evaluateAll(P,iat);
-      for(int j=0 ; j<OrbitalSetSize; j++) {
-        psi[j]   = dot(C[j],myBasisSet->Phi.data(),  BasisSetSize);
-        dpsi[j]  = dot(C[j],myBasisSet->dPhi.data(), BasisSetSize);
-        d2psi[j] = dot(C[j],myBasisSet->d2Phi.data(),BasisSetSize);
-        //psi[j]   = dot(C[j],myBasisSet->Y[0],  BasisSetSize);
-        //dpsi[j]  = dot(C[j],myBasisSet->dY[0], BasisSetSize);
-        //d2psi[j] = dot(C[j],myBasisSet->d2Y[0],BasisSetSize);
+      myBasisSet->evaluateAllForPtclMove(P,iat);
+
+      //optimal on tungsten
+      const ValueType* restrict cptr=C.data();
+      const ValueType* restrict pptr=myBasisSet->Phi.data();
+      const ValueType* restrict d2ptr=myBasisSet->d2Phi.data();
+      const GradType* restrict dptr=myBasisSet->dPhi.data();
+#pragma ivdep
+      for(int j=0; j<OrbitalSetSize; j++) {
+        register ValueType res=0.0, d2res=0.0;
+        register GradType dres;
+        for(int b=0; b<BasisSetSize; b++,cptr++) {
+          res += *cptr*pptr[b];
+          d2res += *cptr*d2ptr[b];
+          dres += *cptr*dptr[b];
+          //res += *cptr * (*pptr++);
+          //d2res += *cptr* (*d2ptr++);
+          //dres += *cptr* (*dptr++);
+        }
+        psi[j]=res; dpsi[j]=dres; d2psi[j]=d2res;
       }
+
+      //blasI is not too good
+      //for(int j=0 ; j<OrbitalSetSize; j++) {
+      //  psi[j]   = dot(C[j],myBasisSet->Phi.data(),  BasisSetSize);
+      //  dpsi[j]  = dot(C[j],myBasisSet->dPhi.data(), BasisSetSize);
+      //  d2psi[j] = dot(C[j],myBasisSet->d2Phi.data(),BasisSetSize);
+      //  //psi[j]   = dot(C[j],myBasisSet->Y[0],  BasisSetSize);
+      //  //dpsi[j]  = dot(C[j],myBasisSet->dY[0], BasisSetSize);
+      //  //d2psi[j] = dot(C[j],myBasisSet->d2Y[0],BasisSetSize);
+      //}
+
     }
 
+    /** evaluate everything for the walker move
+     *
+     * Using gemm can improve the performance for a larger problem
+     */
     void evaluate(const ParticleSet& P, int first, int last,
         ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet) {
-      //if(first ==0) myBasisSet->evaluate(P);
+
+      //unroll myself: rely on the compilers
+      //optimal on xeon
+#pragma ivdep
+      for(int i=0, iat=first; iat<last; i++,iat++){
+        myBasisSet->evaluateForWalkerMove(P,iat);
+        const ValueType* restrict cptr=C.data();
+        const ValueType* restrict pptr=myBasisSet->Phi.data();
+        const ValueType* restrict d2ptr=myBasisSet->d2Phi.data();
+        const GradType* restrict dptr=myBasisSet->dPhi.data();
+        for(int j=0; j<OrbitalSetSize; j++) {
+          register ValueType res=0.0, d2res=0.0;
+          register GradType dres;
+          for(int b=0; b<BasisSetSize; b++,cptr++) {
+            res += *cptr*pptr[b];
+            d2res += *cptr*d2ptr[b];
+            dres += *cptr*dptr[b];
+          }
+          logdet(j,i)=res;dlogdet(i,j)=dres;d2logdet(i,j)=d2res;
+        }
+      }
+
+      //evaluate everything first and use dot product
+      //if(first ==0) myBasisSet->evaluateForWalkerMove(P);
       //for(int i=0, iat=first; iat<last; i++,iat++){
       //  for(int j=0 ; j<OrbitalSetSize; j++) {
       //    //logdet(j,i) = \f$\sum_k^{nb} C(j,k) Y(i+first,k)\f$
@@ -119,15 +178,17 @@ namespace qmcplusplus {
       //  }
       //}
      
-      for(int i=0, iat=first; iat<last; i++,iat++){
-        myBasisSet->evaluateBasis(P,iat);
-        for(int j=0 ; j<OrbitalSetSize; j++) {
-          //logdet(j,i) = \f$\sum_k^{nb} C(j,k) Y(i+first,k)\f$
-          logdet(j,i)   = dot(C[j],myBasisSet->Phi.data(),  BasisSetSize);
-          dlogdet(i,j)  = dot(C[j],myBasisSet->dPhi.data(), BasisSetSize);
-          d2logdet(i,j) = dot(C[j],myBasisSet->d2Phi.data(),BasisSetSize);
-        }
-      }
+      //Dot product is less efficient of the loop-version above
+      //for(int i=0, iat=first; iat<last; i++,iat++){
+      //  myBasisSet->evaluateForWalkerMove(P,iat);
+      //  for(int j=0 ; j<OrbitalSetSize; j++) {
+      //    //logdet(j,i) = \f$\sum_k^{nb} C(j,k) Y(i+first,k)\f$
+      //    logdet(j,i)   = dot(C[j],myBasisSet->Phi.data(),  BasisSetSize);
+      //    dlogdet(i,j)  = dot(C[j],myBasisSet->dPhi.data(), BasisSetSize);
+      //    d2logdet(i,j) = dot(C[j],myBasisSet->d2Phi.data(),BasisSetSize);
+      //  }
+      //}
+      //
     }
   };
 }
