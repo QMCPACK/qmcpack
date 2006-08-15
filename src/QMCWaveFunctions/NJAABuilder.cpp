@@ -14,8 +14,6 @@
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 #include "Utilities/OhmmsInfo.h"
-#include "Particle/DistanceTableData.h"
-#include "Particle/DistanceTable.h"
 #include "QMCWaveFunctions/NJAABuilder.h"
 #include "QMCWaveFunctions/PadeJastrow.h"
 #include "QMCWaveFunctions/RPAJastrow.h"
