@@ -27,7 +27,7 @@
 #include "QMCWaveFunctions/JAAPBCBuilder.h"
 #include "QMCWaveFunctions/TwoBodyJastrowBuilder.h"
 #include "QMCWaveFunctions/WaveFunctionFactory.h"
-//#include "QMCWaveFunctions/Fermion/SlaterDetBuilder.h"
+#include "QMCWaveFunctions/Fermion/SlaterDetBuilder.h"
 #if defined(QMC_COMPLEX)
 #include "QMCWaveFunctions/ElectronGasComplexOrbitalBuilder.h"
 #include "QMCWaveFunctions/PlaneWave/PWOrbitalBuilder.h"
@@ -124,9 +124,9 @@ namespace qmcplusplus {
       if(pit != ptclPool.end()) {
         detbuilder = new AGPDeterminantBuilder(*targetPtcl,*targetPsi,*((*pit).second));
       }
-    //} else if(orbtype=="MO") {
-    //  app_log() << "  Creating concrete SlaterDeterminant class with SlaterDetBuilder." << endl;
-    //  detbuilder = new SlaterDetBuilder(*targetPtcl,*targetPsi,ptclPool);
+    } else if(orbtype=="MO") {
+      app_log() << "  Creating concrete SlaterDeterminant class with SlaterDetBuilder." << endl;
+      detbuilder = new SlaterDetBuilder(*targetPtcl,*targetPsi,ptclPool);
     }
 #endif
 
