@@ -62,13 +62,13 @@ namespace qmcplusplus {
     app_log() << "  TwoBodyJastrowBuilder for " << functionOpt << endl;
 
     if(functionOpt == "pade") {
-      control = new PadeConstraints(IgnoreSpin);
+      //control = new PadeConstraints(IgnoreSpin);
       //Transform is ignored. Cutoff function is not too good
-      //if(useSpline) {
-      //  control = new TwoBodyJastrowBuilderOnGridConstraints(IgnoreSpin);
-      //} else {
-      //  control = new TwoBodyJastrowBuilderConstraints(IgnoreSpin);
-      //}
+      if(useSpline) {
+        control = new PadeOnGridConstraints(IgnoreSpin);
+      } else {
+        control = new PadeConstraints(IgnoreSpin);
+      }
     } else if(functionOpt == "scaledpade") {
       control = new ScaledPadeConstraints(IgnoreSpin);
     } else if(functionOpt == "rpa") {
@@ -89,6 +89,7 @@ namespace qmcplusplus {
       return jbuilder->put(cur);
     }
 
+    success=control->put(cur);
     if(!control->put(cur)) {
       delete control;
       return false;
