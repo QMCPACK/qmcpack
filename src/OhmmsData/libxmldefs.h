@@ -29,7 +29,8 @@
 template<typename _CharT>
 inline void getNodeName(std::basic_string<_CharT>& cname, xmlNodePtr cur) {
   cname=(const char*)cur->name;
-  std::transform(cname.begin(), cname.end(), cname.begin(), std::tolower);
+  for(int i=0; i<cname.size(); i++) cname[i]=tolower(cname[i]);
+  //std::transform(cname.begin(), cname.end(), cname.begin(), std::tolower);
 }
 
 /**\file libxmldefs.h
