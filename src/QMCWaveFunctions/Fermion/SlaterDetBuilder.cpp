@@ -77,11 +77,6 @@ namespace qmcplusplus {
 
   int SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int firstIndex) {
 
-    //if(myBasisSet == 0) {
-    //  app_error() << "  LCOrbitalSet cannot be constructed without a basis set" << endl;
-    //  return 0;
-    //}
-
     string basisName("invalid");
     string detname("NONE"), refname("NONE");
     OhmmsAttributeSet aAttrib;
