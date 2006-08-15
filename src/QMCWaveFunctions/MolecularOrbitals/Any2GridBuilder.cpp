@@ -67,6 +67,7 @@ namespace qmcplusplus {
 
     int lastRnl = m_orbitals->Rnl.size();
 
+    app_log() << "    basisGroup " << radtype << endl;
     m_nlms = nlms;
     if(radtype == "Gaussian") {
       addGaussian(cur);
