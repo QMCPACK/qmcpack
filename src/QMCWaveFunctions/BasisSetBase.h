@@ -21,6 +21,7 @@
 #define QMCPLUSPLUS_BASISSETBASE_H
 
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
+#include "QMCWaveFunctions/SPOSetBase.h"
 #include "Particle/ParticleSet.h"
 
 namespace qmcplusplus {
@@ -68,6 +69,11 @@ namespace qmcplusplus {
     virtual void setBasisSetSize(int nbs) = 0;
     ///reset the target particle set
     virtual void resetTargetParticleSet(ParticleSet& P)=0;
+
+    virtual void evaluateForWalkerMove(const ParticleSet& P)=0;
+    virtual void evaluateForWalkerMove(const ParticleSet& P, int iat) =0;
+    virtual void evaluateForPtclMove(const ParticleSet& P, int iat) =0;
+    virtual void evaluateAllForPtclMove(const ParticleSet& P, int iat) =0;
   };
 
 
