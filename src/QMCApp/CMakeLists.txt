@@ -18,6 +18,14 @@ SET(WFSRCS
   ../QMCWaveFunctions/TwoBodyJastrowBuilder.cpp
   ../QMCWaveFunctions/RPAConstraints.cpp
   ../QMCWaveFunctions/WaveFunctionFactory.cpp
+  ../QMCWaveFunctions/SPOSetBase.cpp
+  ../QMCWaveFunctions/BasisSetFactory.cpp
+  ../QMCWaveFunctions/Fermion/DiracDeterminantBase.cpp
+  ../QMCWaveFunctions/Fermion/SlaterDet.cpp
+  ../QMCWaveFunctions/Fermion/SlaterDetBuilder.cpp
+  ../QMCWaveFunctions/MolecularOrbitals/STOBuilder.cpp
+  ../QMCWaveFunctions/MolecularOrbitals/GTOBuilder.cpp
+  ../QMCWaveFunctions/MolecularOrbitals/NGOBuilder.cpp
   ../QMCHamiltonians/HamiltonianFactory.cpp
 )
 
