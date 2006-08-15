@@ -97,31 +97,6 @@ namespace qmcplusplus {
           expandlm = DONOT_EXPAND;
         }
 
-        //int expandlm = DONOT_EXPAND;
-        //xmlAttrPtr att = cur->properties;
-	//while(att != NULL) {
-	//  string aname((const char*)(att->name));
-	//  if(aname == "species" || aname == "elementType") {
-	//    abasis = (const char*)(att->children->content);
-	//  } else if(aname == "type") {
-	//    btype = (const char*)(att->children->content);
-        //  } else if(aname == "angular") {
-        //    addsignforM = xmlStrEqual(att->children->content,(const xmlChar*)"spherical");
-        //  } else if(aname == "expM") {
-        //    addsignforM = atoi((const char*)att->children->content);
-        //  } else if(aname == "expandYlm") {
-        //   string expandtype((const char*)(att->children->content));
-        //   if(expandtype == "gaussian") {
-        //     expandlm = GAUSSIAN_EXPAND;
-        //   } else if(expandtype == "natural"){
-        //     expandlm = NATURAL_EXPAND;
-        //   } else if(expandtype == "no") {
-        //     expandlm = DONOT_EXPAND;
-        //   }
-        // }
-	//  att = att->next;
-        //}
-
         if(addsignforM) 
           LOGMSG("Spherical Harmonics contain (-1)^m factor")
         else
@@ -194,7 +169,6 @@ namespace qmcplusplus {
 	      att = att->next;
 	    }
 	    XMLReport("\n(n,l,m,s) " << nlms[0] << " " << nlms[1] << " " << nlms[2] << " " << nlms[3])
-
             //add Ylm channels
             num = expandYlm(rnl,nlms,num,aos,cur1,expandlm);
             ++it;
