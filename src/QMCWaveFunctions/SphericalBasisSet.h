@@ -98,7 +98,7 @@ namespace qmcplusplus {
     }
 
     inline void 
-    evaluateBasis(int c, int iat, int offset, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi) {
+    evaluateForWalkerMove(int c, int iat, int offset, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi) {
       int nn = myTable->M[c]+iat;
       RealType r(myTable->r(nn));
       RealType rinv(myTable->rinv(nn));
@@ -125,59 +125,8 @@ namespace qmcplusplus {
       }
     }
 
-    ///evaluate the value, gradient and laplacian of basis functions for the iath-particle
-    inline void
-    evaluateBasis(int c, int iat, int offset, Matrix<ValueType>& temp) {
-      //RealType r(myTable->Temp[c].r1);
-      //RealType rinv(myTable->Temp[c].rinv1);
-      //PosType  dr(myTable->Temp[c].dr1);
-      //
-      int nn = myTable->M[c]+iat;
-      RealType r(myTable->r(nn));
-      RealType rinv(myTable->rinv(nn));
-      PosType  dr(myTable->dr(nn));
-      Ylm.evaluateAll(dr);
-      typename vector<ROT*>::iterator rit(Rnl.begin()), rit_end(Rnl.end());
-      while(rit != rit_end) {(*rit++)->evaluateAll(r,rinv);}
-      
-      vector<int>::iterator nlit(NL.begin()),nlit_end(NL.end()),lmit(LM.begin()); 
-      ValueType* restrict tptr=temp[offset];
-      while(nlit != nlit_end) { //for(int ib=0; ib<NL.size(); ib++, offset++) {
-        int nl(*nlit++);//NL[ib];
-        int lm(*lmit++);//LM[ib];
-        const ROT& rnl(*Rnl[nl]);
-        RealType drnloverr(rinv*rnl.dY);
-        RealType ang(Ylm.getYlm(lm));
-        PosType gr_rad(drnloverr*dr);
-        PosType gr_ang(Ylm.getGradYlm(lm));
-        //PosType g(ang*gr_rad+rnl.Y*gr_ang);
-        *tptr++ = ang*rnl.Y;
-        *tptr++ = ang*(2.0*drnloverr+rnl.d2Y) + 2.0*dot(gr_rad,gr_ang);
-        *tptr++ = ang*gr_rad[0]+rnl.Y*gr_ang[0];
-        *tptr++ = ang*gr_rad[1]+rnl.Y*gr_ang[1];
-        *tptr++ = ang*gr_rad[2]+rnl.Y*gr_ang[2];
-        //PAOps<RealType,DIM>::copy(ang*rnl.Y, ang*(2.0*drnloverr+rnl.d2Y) + 2.0*dot(gr_rad,gr_ang), ang*gr_rad+rnl.Y*gr_ang, temp[offset]); 
-        //++nlit; ++lmit; 
-      }
-    }
-
-    inline void
-    evaluate(int source, int iat,  int offset, ValueVector_t& y) {
-      RealType r(myTable->Temp[source].r1);
-      RealType rinv(myTable->Temp[source].rinv1);
-      PosType  dr(myTable->Temp[source].dr1);
-      Ylm.evaluate(dr);
-      typename vector<ROT*>::iterator rit(Rnl.begin()), rit_end(Rnl.end());
-      while(rit != rit_end) {(*rit)->evaluate(r,rinv); ++rit;}
-      vector<int>::iterator nlit(NL.begin()),nlit_end(NL.end()),lmit(LM.begin()); 
-      while(nlit != nlit_end) { //for(int ib=0; ib<NL.size(); ib++, offset++) {
-        y[offset++]=Ylm.getYlm(*lmit++)*Rnl[*nlit++]->Y;
-      }
-    }
-
-
     inline void 
-    evaluate(int source, int first, int nptcl, int offset, ValueMatrix_t& y, GradMatrix_t& dy, ValueMatrix_t& d2y) {
+    evaluateForWalkerMove(int source, int first, int nptcl, int offset, ValueMatrix_t& y, GradMatrix_t& dy, ValueMatrix_t& d2y) {
 
       int nn = myTable->M[source]+first;//first pair of the particle subset
       for(int i=0, iat=first; i<nptcl; i++, iat++, nn++) {
@@ -215,6 +164,86 @@ namespace qmcplusplus {
       }
     }
 
+
+    ///evaluate the value, gradient and laplacian of basis functions for the iath-particle
+    inline void
+    evaluateForWalkerMove(int c, int iat, int offset, Matrix<ValueType>& temp) {
+      //RealType r(myTable->Temp[c].r1);
+      //RealType rinv(myTable->Temp[c].rinv1);
+      //PosType  dr(myTable->Temp[c].dr1);
+      //
+      int nn = myTable->M[c]+iat;
+      RealType r(myTable->r(nn));
+      RealType rinv(myTable->rinv(nn));
+      PosType  dr(myTable->dr(nn));
+      Ylm.evaluateAll(dr);
+      typename vector<ROT*>::iterator rit(Rnl.begin()), rit_end(Rnl.end());
+      while(rit != rit_end) {(*rit++)->evaluateAll(r,rinv);}
+      
+      vector<int>::iterator nlit(NL.begin()),nlit_end(NL.end()),lmit(LM.begin()); 
+      ValueType* restrict tptr=temp[offset];
+      while(nlit != nlit_end) { //for(int ib=0; ib<NL.size(); ib++, offset++) {
+        int nl(*nlit++);//NL[ib];
+        int lm(*lmit++);//LM[ib];
+        const ROT& rnl(*Rnl[nl]);
+        RealType drnloverr(rinv*rnl.dY);
+        RealType ang(Ylm.getYlm(lm));
+        PosType gr_rad(drnloverr*dr);
+        PosType gr_ang(Ylm.getGradYlm(lm));
+        //PosType g(ang*gr_rad+rnl.Y*gr_ang);
+        *tptr++ = ang*rnl.Y;
+        *tptr++ = ang*(2.0*drnloverr+rnl.d2Y) + 2.0*dot(gr_rad,gr_ang);
+        *tptr++ = ang*gr_rad[0]+rnl.Y*gr_ang[0];
+        *tptr++ = ang*gr_rad[1]+rnl.Y*gr_ang[1];
+        *tptr++ = ang*gr_rad[2]+rnl.Y*gr_ang[2];
+        //PAOps<RealType,DIM>::copy(ang*rnl.Y, ang*(2.0*drnloverr+rnl.d2Y) + 2.0*dot(gr_rad,gr_ang), ang*gr_rad+rnl.Y*gr_ang, temp[offset]); 
+        //++nlit; ++lmit; 
+      }
+    }
+
+    inline void
+    evaluateForPtclMove(int source, int iat,  int offset, ValueVector_t& y) {
+      RealType r(myTable->Temp[source].r1);
+      RealType rinv(myTable->Temp[source].rinv1);
+      PosType  dr(myTable->Temp[source].dr1);
+      Ylm.evaluate(dr);
+      typename vector<ROT*>::iterator rit(Rnl.begin()), rit_end(Rnl.end());
+      while(rit != rit_end) {(*rit)->evaluate(r,rinv); ++rit;}
+      vector<int>::iterator nlit(NL.begin()),nlit_end(NL.end()),lmit(LM.begin()); 
+      while(nlit != nlit_end) { //for(int ib=0; ib<NL.size(); ib++, offset++) {
+        y[offset++]=Ylm.getYlm(*lmit++)*Rnl[*nlit++]->Y;
+      }
+    }
+
+    inline void
+    evaluateAllForPtclMove(int source, int iat,  int offset, ValueVector_t& y,
+        GradVector_t& dy, ValueVector_t& d2y) {
+      RealType r(myTable->Temp[source].r1);
+      RealType rinv(myTable->Temp[source].rinv1);
+      PosType  dr(myTable->Temp[source].dr1);
+
+      Ylm.evaluateAll(dr);
+	
+      typename vector<ROT*>::iterator rit(Rnl.begin()), rit_end(Rnl.end());
+      while(rit != rit_end) {(*rit)->evaluateAll(r,rinv); ++rit;}
+      
+      vector<int>::iterator nlit(NL.begin()),nlit_end(NL.end()),lmit(LM.begin()); 
+      while(nlit != nlit_end) { //for(int ib=0; ib<NL.size(); ib++, offset++) {
+	int nl(*nlit);//NL[ib];
+	int lm(*lmit);//LM[ib];
+        const ROT& rnl(*Rnl[nl]);
+	RealType drnloverr(rinv*rnl.dY);
+	ValueType ang(Ylm.getYlm(lm));
+	PosType gr_rad(drnloverr*dr);
+	PosType gr_ang(Ylm.getGradYlm(lm));
+	y[offset]= ang*rnl.Y;
+	dy[offset] = ang*gr_rad+rnl.Y*gr_ang;
+	d2y[offset]= ang*(2.0*drnloverr+rnl.d2Y) + 2.0*dot(gr_rad,gr_ang);
+        ++nlit; ++lmit;++offset;
+      }
+    }
+
+
     inline void
     evaluate(RealType r, RealType rinv, const PosType& dr, int offset, ValueVector_t& psi) {
       Ylm.evaluate(dr);
@@ -227,7 +256,8 @@ namespace qmcplusplus {
     }
 
     inline void 
-    evaluate(RealType r, RealType rinv, const PosType& dr, int offset, ValueVector_t& y, GradVector_t& dy, ValueVector_t& d2y) {
+    evaluate(RealType r, RealType rinv, const PosType& dr, int offset, ValueVector_t& y, 
+        GradVector_t& dy, ValueVector_t& d2y) {
 
       Ylm.evaluateAll(dr);
 	
