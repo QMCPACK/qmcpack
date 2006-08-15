@@ -209,13 +209,30 @@ namespace qmcplusplus {
     }
 
     int kat=FirstIndex;
+
+    const ValueType* restrict yptr=psiM_temp.data();
+    const ValueType* restrict d2yptr=d2psiM_temp.data();
+    const GradType* restrict dyptr=dpsiM_temp.data();
     for(int i=0; i<NumPtcls; i++,kat++) {
-      GradType rv =psiM_temp(i,0)*dpsiM_temp(i,0);
-      ValueType lap=psiM_temp(i,0)*d2psiM_temp(i,0);
-      for(int j=1; j<NumOrbitals; j++) {
-        rv += psiM_temp(i,j)*dpsiM_temp(i,j);
-        lap += psiM_temp(i,j)*d2psiM_temp(i,j);
+      //This mimics gemm with loop optimization
+      GradType rv;
+      ValueType lap=0.0;
+      for(int j=0; j<NumOrbitals; j++,yptr++) {
+        rv += *yptr * *dyptr++;
+        lap += *yptr * *d2yptr++;
       }
+
+      //using inline dot functions
+      //GradType rv=dot(psiM_temp[i],dpsiM_temp[i],NumOrbitals);
+      //ValueType lap=dot(psiM_temp[i],d2psiM_temp[i],NumOrbitals);
+
+      //Old index: This is not pretty
+      //GradType rv =psiM_temp(i,0)*dpsiM_temp(i,0);
+      //ValueType lap=psiM_temp(i,0)*d2psiM_temp(i,0);
+      //for(int j=1; j<NumOrbitals; j++) {
+      //  rv += psiM_temp(i,j)*dpsiM_temp(i,j);
+      //  lap += psiM_temp(i,j)*d2psiM_temp(i,j);
+      //}
       lap -= dot(rv,rv);
       dG[kat] += rv - myG[kat];  myG_temp[kat]=rv;
       dL[kat] += lap -myL[kat];  myL_temp[kat]=lap;
@@ -243,10 +260,12 @@ namespace qmcplusplus {
       myG = myG_temp;
       myL = myL_temp;
       psiM = psiM_temp;
-      for(int j=0; j<NumOrbitals; j++) {
-        dpsiM(WorkingIndex,j)=dpsiV[j];
-        d2psiM(WorkingIndex,j)=d2psiV[j];
-      }
+      std::copy(dpsiV.begin(),dpsiV.end(),dpsiM[WorkingIndex]);
+      std::copy(d2psiV.begin(),d2psiV.end(),d2psiM[WorkingIndex]);
+      //for(int j=0; j<NumOrbitals; j++) {
+      //  dpsiM(WorkingIndex,j)=dpsiV[j];
+      //  d2psiM(WorkingIndex,j)=d2psiV[j];
+      //}
     }
     curRatio=1.0;
   }
@@ -256,10 +275,12 @@ namespace qmcplusplus {
   void DiracDeterminantBase::restore(int iat) {
     if(!UseRatioOnly) {
       psiM_temp = psiM;
-      for(int j=0; j<NumOrbitals; j++) {
-        dpsiM_temp(WorkingIndex,j)=dpsiM(WorkingIndex,j);
-        d2psiM_temp(WorkingIndex,j)=d2psiM(WorkingIndex,j);
-      }
+      std::copy(dpsiM[WorkingIndex],dpsiM[WorkingIndex+1],dpsiM_temp[WorkingIndex]);
+      std::copy(d2psiM[WorkingIndex],d2psiM[WorkingIndex+1],d2psiM_temp[WorkingIndex]);
+      //for(int j=0; j<NumOrbitals; j++) {
+      //  dpsiM_temp(WorkingIndex,j)=dpsiM(WorkingIndex,j);
+      //  d2psiM_temp(WorkingIndex,j)=d2psiM(WorkingIndex,j);
+      //}
     }
     curRatio=1.0;
   }
@@ -277,12 +298,14 @@ namespace qmcplusplus {
 
     int kat=FirstIndex;
     for(int i=0; i<NumPtcls; i++,kat++) {
-      GradType rv =psiM(i,0)*dpsiM(i,0);
-      ValueType lap=psiM(i,0)*d2psiM(i,0);
-      for(int j=1; j<NumOrbitals; j++) {
-        rv += psiM(i,j)*dpsiM(i,j);
-        lap += psiM(i,j)*d2psiM(i,j);
-      }
+      GradType rv=dot(psiM[i],dpsiM[i],NumOrbitals);
+      ValueType lap=dot(psiM[i],d2psiM[i],NumOrbitals);
+      //GradType rv =psiM(i,0)*dpsiM(i,0);
+      //ValueType lap=psiM(i,0)*d2psiM(i,0);
+      //for(int j=1; j<NumOrbitals; j++) {
+      //  rv += psiM(i,j)*dpsiM(i,j);
+      //  lap += psiM(i,j)*d2psiM(i,j);
+      //}
       lap -= dot(rv,rv);
       dG[kat] += rv - myG[kat]; myG[kat]=rv;
       dL[kat] += lap -myL[kat]; myL[kat]=lap;
@@ -333,14 +356,24 @@ namespace qmcplusplus {
       } else {
         CurrentDet = Invert(psiM.data(),NumPtcls,NumOrbitals, WorkSpace.data(), Pivot.data());
         //CurrentDet = Invert(psiM.data(),NumPtcls,NumOrbitals);
-        int iat = FirstIndex; //the index of the particle with respect to P
-        for(int i=0; i<NumPtcls; i++, iat++) {
-          GradType rv = psiM(i,0)*dpsiM(i,0);
-          ValueType lap=psiM(i,0)*d2psiM(i,0);
-          for(int j=1; j<NumOrbitals; j++) {
-            rv += psiM(i,j)*dpsiM(i,j);
-            lap += psiM(i,j)*d2psiM(i,j);
+        
+        const ValueType* restrict yptr=psiM.data();
+        const ValueType* restrict d2yptr=d2psiM.data();
+        const GradType* restrict dyptr=dpsiM.data();
+        for(int i=0, iat=FirstIndex; i<NumPtcls; i++, iat++) {
+          GradType rv;
+          ValueType lap=0.0;
+          for(int j=0; j<NumOrbitals; j++,yptr++) {
+            rv += *yptr * *dyptr++;
+            lap += *yptr * *d2yptr++;
           }
+          //Old index
+          //    GradType rv = psiM(i,0)*dpsiM(i,0);
+          //    ValueType lap=psiM(i,0)*d2psiM(i,0);
+          //    for(int j=1; j<NumOrbitals; j++) {
+          //      rv += psiM(i,j)*dpsiM(i,j);
+          //      lap += psiM(i,j)*d2psiM(i,j);
+          //    }
           G(iat) += rv;
           L(iat) += lap - dot(rv,rv);
         }
