@@ -37,14 +37,14 @@ namespace qmcplusplus {
   public:
 
     typedef typename RFB::CenteredOrbitalType COT;
-    typedef LocalizedBasisSet<COT>   BasisSetType;
+    typedef LocalizedBasisSet<COT>   ThisBasisSetType;
 
     /** constructor
      * \param els reference to the electrons
      * \param ions reference to the ions
      */
     MolecularBasisBuilder(ParticleSet& els, ParticleSet& ions):
-      targetPtcl(els), sourcePtcl(ions), myBasisSet(0) { }   
+      targetPtcl(els), sourcePtcl(ions), thisBasisSet(0) { }   
 
     bool put(xmlNodePtr cur) {
 
@@ -53,7 +53,7 @@ namespace qmcplusplus {
       DistanceTableData* d_table=DistanceTable::add(sourcePtcl,targetPtcl);
 
       //create the BasisSetType
-      myBasisSet = new BasisSetType(sourcePtcl,targetPtcl);
+      thisBasisSet = new ThisBasisSetType(sourcePtcl,targetPtcl);
 
       //create the basis set
       //go thru the tree
@@ -76,7 +76,7 @@ namespace qmcplusplus {
             COT* aoBasis= any->createAOSet(cur);
             if(aoBasis) { //add the new atomic basis to the basis set
               int activeCenter =sourcePtcl.getSpeciesSet().findSpecies(elementType);
-              myBasisSet->add(activeCenter, aoBasis);
+              thisBasisSet->add(activeCenter, aoBasis);
             }
             aoBuilders[elementType]=any;
           } else {
@@ -87,12 +87,13 @@ namespace qmcplusplus {
       }
 
       //resize the basis set
-      myBasisSet->setBasisSetSize(-1);
+      thisBasisSet->setBasisSetSize(-1);
+      myBasisSet=thisBasisSet;
       return true;
     }
 
     SPOSetBase* createSPOSet(xmlNodePtr cur) {
-      return new LCOrbitalSet<BasisSetType>(myBasisSet);
+      return new LCOrbitalSet<ThisBasisSetType>(thisBasisSet);
     }
 
   private:
@@ -101,7 +102,7 @@ namespace qmcplusplus {
     ///source ParticleSet
     ParticleSet& sourcePtcl;
     ///BasisSet
-    BasisSetType* myBasisSet;
+    ThisBasisSetType* thisBasisSet;
     ///save AtomiBasisBuilder<RFB>*
     map<string,BasisSetBuilder*> aoBuilders;
   };
