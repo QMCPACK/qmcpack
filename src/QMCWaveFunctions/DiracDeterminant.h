@@ -306,14 +306,15 @@ namespace qmcplusplus {
 	d2psiM_temp(WorkingIndex,j)=d2psiV[j];
       }
 
-      int kat=FirstIndex;
-      for(int i=0; i<NumPtcls; i++,kat++) {
-	GradType rv =psiM_temp(i,0)*dpsiM_temp(i,0);
-	ValueType lap=psiM_temp(i,0)*d2psiM_temp(i,0);
-        for(int j=1; j<NumOrbitals; j++) {
-	  rv += psiM_temp(i,j)*dpsiM_temp(i,j);
-	  lap += psiM_temp(i,j)*d2psiM_temp(i,j);
-	}
+      for(int i=0,kat=FirstIndex; i<NumPtcls; i++,kat++) {
+        GradType rv = dot(psiM_temp[i],dpsiM_temp[i],NumOrbitals);
+        ValueType lap = dot(psiM_temp[i],d2psiM_temp[i],NumOrbitals);
+	//GradType rv =psiM_temp(i,0)*dpsiM_temp(i,0);
+	//ValueType lap=psiM_temp(i,0)*d2psiM_temp(i,0);
+        //for(int j=1; j<NumOrbitals; j++) {
+	//  rv += psiM_temp(i,j)*dpsiM_temp(i,j);
+	//  lap += psiM_temp(i,j)*d2psiM_temp(i,j);
+	//}
 	lap -= dot(rv,rv);
 	dG[kat] += rv - myG[kat];  myG_temp[kat]=rv;
 	dL[kat] += lap -myL[kat];  myL_temp[kat]=lap;
@@ -445,15 +446,15 @@ namespace qmcplusplus {
         L(FirstIndex) += y*d2psiM(0,0) - dot(rv,rv);
       } else {
         CurrentDet = Invert(psiM.data(),NumPtcls,NumOrbitals, WorkSpace.data(), Pivot.data());
-        //CurrentDet = Invert(psiM.data(),NumPtcls,NumOrbitals);
-        int iat = FirstIndex; //the index of the particle with respect to P
-        for(int i=0; i<NumPtcls; i++, iat++) {
-          GradType rv = psiM(i,0)*dpsiM(i,0);
-          ValueType lap=psiM(i,0)*d2psiM(i,0);
-          for(int j=1; j<NumOrbitals; j++) {
-            rv += psiM(i,j)*dpsiM(i,j);
-            lap += psiM(i,j)*d2psiM(i,j);
-          }
+        for(int i=0,iat=FirstIndex; i<NumPtcls; i++, iat++) {
+          GradType rv = dot(psiM[i],dpsiM[i],NumOrbitals);
+          ValueType lap = dot(psiM[i],d2psiM[i],NumOrbitals);
+          //GradType rv = psiM(i,0)*dpsiM(i,0);
+          //ValueType lap=psiM(i,0)*d2psiM(i,0);
+          //for(int j=1; j<NumOrbitals; j++) {
+          //  rv += psiM(i,j)*dpsiM(i,j);
+          //  lap += psiM(i,j)*d2psiM(i,j);
+          //}
           G(iat) += rv;
           L(iat) += lap - dot(rv,rv);
         }
