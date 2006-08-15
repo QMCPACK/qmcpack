@@ -24,13 +24,6 @@
 
 namespace qmcplusplus {
 
-  struct DummyGrid {
-    inline void locate(double r) {}
-  };
-
-  typedef TinyVector<int,4> QuantumNumberType;
-  enum {q_n=0,q_l,q_m, q_s};
-
   /**Class to represent a set of spherical orbitals centered at a common origin origin.
    *
    *Each basis orbital is represented by 
@@ -155,35 +148,6 @@ namespace qmcplusplus {
         ++nlit; ++lmit;++offset;
       }
     }
-
-    /////evaluate the value, gradient and laplacian of basis functions for the iath-particle
-    //inline void
-    //evaluateBasis(int c, int iat, int offset, Matrix<ValueType>& temp) {
-    //  //RealType r(myTable->Temp[CurrentCenter].r1);
-    //  //RealType rinv(myTable->Temp[CurrentCenter].rinv1);
-    //  //PosType  dr(myTable->Temp[CurrentCenter].dr1);
-    //  int nn = myTable->M[c]+iat;
-    //  RealType r(myTable->r(nn));
-    //  RealType rinv(myTable->rinv(nn));
-    //  PosType  dr(myTable->dr(nn));
-    //  Ylm.evaluateAll(dr);
-    //  typename vector<ROT*>::iterator rit(Rnl.begin()), rit_end(Rnl.end());
-    //  while(rit != rit_end) {(*rit)->evaluateAll(r,rinv); ++rit;}
-    //  
-    //  vector<int>::iterator nlit(NL.begin()),nlit_end(NL.end()),lmit(LM.begin()); 
-    //  while(nlit != nlit_end) { //for(int ib=0; ib<NL.size(); ib++, offset++) {
-    //    int nl(*nlit);//NL[ib];
-    //    int lm(*lmit);//LM[ib];
-    //    const ROT& rnl(*Rnl[nl]);
-    //    RealType drnloverr(rinv*rnl.dY);
-    //    RealType ang(Ylm.getYlm(lm));
-    //    PosType gr_rad(drnloverr*dr);
-    //    PosType gr_ang(Ylm.getGradYlm(lm));
-    //    PosType g(ang*gr_rad+rnl.Y*gr_ang);
-    //    PAOps<RealType,DIM>::copy(ang*rnl.Y, ang*(2.0*drnloverr+rnl.d2Y) + 2.0*dot(gr_rad,gr_ang), ang*gr_rad+rnl.Y*gr_ang, temp[offset]); 
-    //    ++nlit; ++lmit; ++offset;
-    //  }
-    //}
 
 
     template<class VM>
@@ -316,42 +280,6 @@ namespace qmcplusplus {
       }
     }
 
-    template<class VV>
-    inline void
-    evaluate(RealType r, RealType rinv, const PosType& dr, int offset, VV& psi) {
-      Ylm.evaluate(dr);
-      typename vector<ROT*>::iterator rit(Rnl.begin()), rit_end(Rnl.end());
-      while(rit != rit_end) {(*rit)->evaluate(r,rinv); ++rit;}
-      vector<int>::iterator nlit(NL.begin()),nlit_end(NL.end()),lmit(LM.begin()); 
-      while(nlit != nlit_end) { //for(int ib=0; ib<NL.size(); ib++, offset++) {
-        psi[offset++]=Ylm.getYlm(*lmit++)*Rnl[*nlit++]->Y;
-      }
-    }
-
-    template<class VV, class GV>
-    inline void 
-    evaluate(RealType r, RealType rinv, const PosType& dr, int offset, VV& y, GV& dy, VV& d2y) {
-
-      Ylm.evaluateAll(dr);
-	
-      typename vector<ROT*>::iterator rit(Rnl.begin()), rit_end(Rnl.end());
-      while(rit != rit_end) {(*rit)->evaluateAll(r,rinv); ++rit;}
-      
-      vector<int>::iterator nlit(NL.begin()),nlit_end(NL.end()),lmit(LM.begin()); 
-      while(nlit != nlit_end) { //for(int ib=0; ib<NL.size(); ib++, offset++) {
-	int nl(*nlit);//NL[ib];
-	int lm(*lmit);//LM[ib];
-        const ROT& rnl(*Rnl[nl]);
-	RealType drnloverr(rinv*rnl.dY);
-	ValueType ang(Ylm.getYlm(lm));
-	PosType gr_rad(drnloverr*dr);
-	PosType gr_ang(Ylm.getGradYlm(lm));
-	y[offset]= ang*rnl.Y;
-	dy[offset] = ang*gr_rad+rnl.Y*gr_ang;
-	d2y[offset]= ang*(2.0*drnloverr+rnl.d2Y) + 2.0*dot(gr_rad,gr_ang);
-        ++nlit; ++lmit;++offset;
-      }
-    }
 
     };
     
