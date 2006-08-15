@@ -134,16 +134,16 @@ namespace qmcplusplus {
     }
 
     inline void 
-    evaluate(const ParticleSet& P) {
+    evaluateForWalkerMove(const ParticleSet& P) {
       for(int c=0; c<NumCenters;c++) {
-        LOBasis[c]->evaluate(c,0,P.getTotalNum(),BasisOffset[c],Y,dY,d2Y);
+        LOBasis[c]->evaluateForWalkerMove(c,0,P.getTotalNum(),BasisOffset[c],Y,dY,d2Y);
       }
     }
 
     inline void 
-    evaluateBasis(const ParticleSet& P, int iat) {
+    evaluateForWalkerMove(const ParticleSet& P, int iat) {
       for(int c=0; c<NumCenters;c++) {
-	LOBasis[c]->evaluateBasis(c,iat,BasisOffset[c],Phi,dPhi,d2Phi);
+	LOBasis[c]->evaluateForWalkerMove(c,iat,BasisOffset[c],Phi,dPhi,d2Phi);
         //int nn = myTable->M[c]+iat;
 	//LOBasis[c]->evaluate(myTable->r(nn),myTable->rinv(nn), myTable->dr(nn), 
         //    BasisOffset[c],Phi,dPhi,d2Phi);
@@ -151,20 +151,20 @@ namespace qmcplusplus {
     }
 
     inline void 
-    evaluate(const ParticleSet& P, int iat)  {
+    evaluateForPtclMove(const ParticleSet& P, int iat)  {
       for(int c=0; c<NumCenters;c++) {
-	LOBasis[c]->evaluate(myTable->Temp[c].r1,myTable->Temp[c].rinv1, myTable->Temp[c].dr1, 
-            BasisOffset[c],Phi);
-	//LOBasis[c]->evaluate(c,iat,BasisOffset[c],Phi);
+	//LOBasis[c]->evaluate(myTable->Temp[c].r1,myTable->Temp[c].rinv1, myTable->Temp[c].dr1, 
+        //    BasisOffset[c],Phi);
+	LOBasis[c]->evaluateForPtclMove(c,iat,BasisOffset[c],Phi);
       }
     }
 
     inline void 
-    evaluateAll(const ParticleSet& P, int iat)  {
+    evaluateAllForPtclMove(const ParticleSet& P, int iat)  {
       for(int c=0; c<NumCenters;c++) {
-	LOBasis[c]->evaluate(myTable->Temp[c].r1,myTable->Temp[c].rinv1, myTable->Temp[c].dr1, 
-            BasisOffset[c],Phi,dPhi,d2Phi);
-	//LOBasis[c]->evaluateWithTemp(c,iat,BasisOffset[c],Phi,dPhi,d2Phi);
+	//LOBasis[c]->evaluate(myTable->Temp[c].r1,myTable->Temp[c].rinv1, myTable->Temp[c].dr1, 
+        //    BasisOffset[c],Phi,dPhi,d2Phi);
+	LOBasis[c]->evaluateAllForPtclMove(c,iat,BasisOffset[c],Phi,dPhi,d2Phi);
       }
     }
 
