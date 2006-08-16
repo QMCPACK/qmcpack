@@ -54,6 +54,8 @@ namespace qmcplusplus {
     IndexType nRejectTot;
     ///Interval between branching
     IndexType BranchInterval;
+    ///Interval between branching
+    IndexType NonLocalMoveIndex;
     ///hdf5 file name for Branch conditions
     string BranchInfo;
     ///input string to determine kill walkers or not
@@ -62,6 +64,8 @@ namespace qmcplusplus {
     string SwapWalkers;
     ///input string to determine to use reconfiguration
     string Reconfiguration;
+    ///input string to determine to use nonlocal move
+    string NonLocalMove;
 
     DMCUpdateBase *Mover;
     /// Copy Constructor (disabled)

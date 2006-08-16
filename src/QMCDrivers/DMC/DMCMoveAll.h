@@ -51,8 +51,12 @@ namespace qmcplusplus {
     IndexType EtrialIndex;
     IndexType KillNodeCrossing;
     IndexType BranchInterval;
+    ///Interval between branching
+    IndexType NonLocalMoveIndex;
     string Reconfiguration;
     string KillWalker;
+    ///input string to determine to use nonlocal move
+    string NonLocalMove;
     /// Copy Constructor (disabled)
     DMCMoveAll(const DMCMoveAll& a): QMCDriver(a) { }
     /// Copy operator (disabled).
