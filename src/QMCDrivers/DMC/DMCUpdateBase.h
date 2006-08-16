@@ -54,6 +54,8 @@ namespace qmcplusplus {
     IndexType nAllRejected;
     ///Total number of node crossings per block
     IndexType nNodeCrossing;
+    ///Total numer of non-local moves accepted
+    IndexType NonLocalMoveAccepted;
 
     /// Constructor.
     DMCUpdateBase(ParticleSet& w, TrialWaveFunction& psi, 

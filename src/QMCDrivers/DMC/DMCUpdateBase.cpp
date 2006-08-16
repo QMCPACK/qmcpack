@@ -25,7 +25,8 @@ namespace qmcplusplus {
 
   /// Constructor.
   DMCUpdateBase::DMCUpdateBase(ParticleSet& w, TrialWaveFunction& psi, QMCHamiltonian& h,
-      RandomGenerator_t& rg): W(w),Psi(psi),H(h), RandomGen(rg), MaxAge(0)
+      RandomGenerator_t& rg): W(w),Psi(psi),H(h), 
+                              RandomGen(rg), MaxAge(0)
     { }
   
   /// destructor
@@ -52,6 +53,7 @@ namespace qmcplusplus {
     nReject=0;
     nAllRejected=0;
     nNodeCrossing=0;
+    NonLocalMoveAccepted=0;
   }
   void DMCUpdateBase::initWalkers(WalkerIter_t it, WalkerIter_t it_end) {
     if(G.size() != NumPtcl) {
