@@ -19,13 +19,15 @@
 // -*- C++ -*-
 #include "QMCDrivers/DMC/DMCMoveAll.h"
 #include "QMCDrivers/DMC/DMCUpdateAll.h"
+#include "QMCDrivers/DMC/DMCNonLocalUpdate.h"
 #include "Message/Communicate.h"
 
 namespace qmcplusplus {
 
   DMCMoveAll::DMCMoveAll(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h):
     QMCDriver(w,psi,h),Mover(0),
-    BranchInterval(-1),KillNodeCrossing(0), KillWalker("no"),
+    BranchInterval(-1),KillNodeCrossing(0), NonLocalMoveIndex(-1),
+    KillWalker("no"),NonLocalMove("no"), 
     Reconfiguration("no") { 
     RootName = "dmc";
     QMCType ="DMVMoveAll";
@@ -33,6 +35,7 @@ namespace qmcplusplus {
     m_param.add(Reconfiguration,"reconfiguration","string");
     m_param.add(BranchInterval,"branchInterval","int"); 
     m_param.add(BranchInterval,"branch_interval","int");
+    m_param.add(NonLocalMove,"nonlocalmoves","string");
   }
 
   DMCMoveAll::~DMCMoveAll() {
@@ -52,6 +55,7 @@ namespace qmcplusplus {
     Mover->resetRun(branchEngine);
     Mover->MaxAge=3;
 
+    bool checkNonLocalMove=(NonLocalMoveIndex>0);
     IndexType block = 0;
     IndexType nAcceptTot = 0;
     IndexType nRejectTot = 0;
@@ -64,6 +68,7 @@ namespace qmcplusplus {
       Mover->startBlock();
       Estimators->startBlock();
 
+      Mover->NonLocalMoveAccepted=0;
       do {
         pop_acc += W.getActiveWalkers();
 
@@ -74,9 +79,14 @@ namespace qmcplusplus {
         branchEngine->branch(CurrentStep,W);
       } while(step<nSteps);
 
+
       nAccept = Mover->nAccept;
       nReject = Mover->nReject;
-      Estimators->stopBlock(static_cast<RealType>(nAccept)/static_cast<RealType>(nAccept+nReject));
+      RealType oneOverTotSteps=1.0/static_cast<RealType>(nAccept+nReject);
+      if(checkNonLocalMove) {
+        Estimators->setColumn(NonLocalMoveIndex, Mover->NonLocalMoveAccepted*oneOverTotSteps);
+      }
+      Estimators->stopBlock(static_cast<RealType>(nAccept)*oneOverTotSteps);
 
       nAcceptTot += nAccept;
       nRejectTot += nReject;
@@ -101,22 +111,32 @@ namespace qmcplusplus {
     IndexType nAcceptTot = 0;
     IndexType nRejectTot = 0;
     RealType Eest = branchEngine->E_T;
-    Mover->resetRun(branchEngine);
+
+    bool checkNonLocalMove=(NonLocalMoveIndex>0);
+    //Mover->resetRun(branchEngine);
     do {
       IndexType step = 0;
       Mover->startBlock();
       Estimators->startBlock();
       do {
         int interval=0; 
+        Mover->NonLocalMoveAccepted=0;
         do {
           Mover->advanceWalkers(W.begin(), W.end());
           ++interval;
           ++step; ++CurrentStep; 
         } while(interval<BranchInterval);
 
+        if(checkNonLocalMove) {
+          Estimators->setColumn(NonLocalMoveIndex, 
+              static_cast<RealType>(Mover->NonLocalMoveAccepted)/
+              static_cast<RealType>(W.getActiveWalkers()*BranchInterval));
+        }
+
         Estimators->accumulate(W);
-        int pop=branchEngine->branch(CurrentStep,W);
-        Estimators->setColumn(PopIndex,pop);
+        int nwKept=branchEngine->branch(CurrentStep,W);
+        Estimators->setColumn(PopIndex,nwKept);
+        Eest = branchEngine->CollectAndUpdate(W.getActiveWalkers(),Eest);
       } while(step<nSteps);
 
       nAccept = Mover->nAccept;
@@ -165,15 +185,23 @@ namespace qmcplusplus {
     bool fixW = (Reconfiguration == "yes");
 
     branchEngine->initWalkerController(Tau,fixW);
+    KillNodeCrossing = (KillWalker == "yes");
 
     if(Mover ==0) {
-      KillNodeCrossing = (KillWalker == "yes");
-      if(KillNodeCrossing) {
-        app_log() << "  Walkers will be killed if a node crossing is detected." << endl;
-        Mover = new DMCUpdateAllWithKill(W,Psi,H,Random);
+      if(NonLocalMove == "yes") {
+        app_log() << "  Non-local update is used." << endl;
+        DMCNonLocalUpdate* nlocMover= new DMCNonLocalUpdate(W,Psi,H,Random);
+        nlocMover->put(qmcNode);
+        Mover=nlocMover;
+        NonLocalMoveIndex=Estimators->addColumn("NonLocalMove");
       } else {
-        app_log() << "  Walkers will be kept even if a node crossing is detected." << endl;
-        Mover = new DMCUpdateAllWithRejection(W,Psi,H,Random);
+        if(KillNodeCrossing) {
+          app_log() << "  Walkers will be killed if a node crossing is detected." << endl;
+          Mover = new DMCUpdateAllWithKill(W,Psi,H,Random);
+        } else {
+          app_log() << "  Walkers will be kept even if a node crossing is detected." << endl;
+          Mover = new DMCUpdateAllWithRejection(W,Psi,H,Random);
+        }
       }
     }
 
@@ -181,6 +209,8 @@ namespace qmcplusplus {
     PopIndex = Estimators->addColumn("Population");
     EtrialIndex = Estimators->addColumn("Etrial");
     Estimators->reportHeader(AppendRun);
+
+    Mover->resetRun(branchEngine);
 
     if(fixW)  {
       if(BranchInterval<0) {
