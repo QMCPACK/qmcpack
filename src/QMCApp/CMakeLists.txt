@@ -82,6 +82,7 @@ ENDIF(NOT QMCPLUSPLUS_RELEASE)
 # QMC Drivers which implements various QMC algorithms
 ####################################
 SET(DMCDRIVERS
+  ../QMCHamiltonians/NonLocalTOperator.cpp
   ../QMCDrivers/WalkerControlBase.cpp
   ../QMCDrivers/DMC/DMCMoveAll.cpp
   ../QMCDrivers/DMC/DMCPbyP.cpp
@@ -89,6 +90,7 @@ SET(DMCDRIVERS
   ../QMCDrivers/DMC/DMCUpdateBase.cpp
   ../QMCDrivers/DMC/DMCUpdateAll.cpp
   ../QMCDrivers/DMC/DMCUpdatePbyP.cpp
+  ../QMCDrivers/DMC/DMCNonLocalUpdate.cpp
   ../QMCDrivers/DMC/WalkerControlFactory.cpp
   ../QMCDrivers/DMC/WalkerReconfiguration.cpp
 )
