@@ -102,7 +102,6 @@ namespace qmcplusplus {
       solver->put(optNode);
 
     bool success = solver->optimize(optTarget);
-
     delete solver;
     return success;
   }
@@ -168,7 +167,6 @@ namespace qmcplusplus {
       app_log() << "# " << ConfigFile[i] << " part " << PartID << "/" << NumParts << endl;
 
     if(optTarget == 0) {
-cerr << "OPTTARGET IS 0!!" << endl;
       optTarget = new QMCCostFunction(W,Psi,H);
       //THIS IS TEST ONLY
       optTarget->setStream(&app_log());
