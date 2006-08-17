@@ -176,7 +176,8 @@ namespace qmcplusplus {
 
     //Assign Reference Sign as the majority Sign
     for(int ipsi=0; ipsi<nPsi; ipsi++)
-      Reptile->RefSign[ipsi]=(*bead)->Properties(ipsi,SIGN);
+      Reptile->setRefSign(ipsi,(*bead)->Properties(ipsi,SIGN));
+      //Reptile->RefSign[ipsi]=(*bead)->Properties(ipsi,SIGN);
 
     RealType spring_norm( -1.5e0 * std::log(4*std::acos(0.e0)) * (*bead)->Drift.size() * Reptile->Last );
 
@@ -293,7 +294,8 @@ namespace qmcplusplus {
 
         //Compute Energy and Psi and save in curW
         curW.Properties(ipsi,LOGPSI) = Psi1[ipsi]->evaluateLog(*WW[ipsi]);
-        RealType BeadSign = curW.Properties(ipsi,SIGN) = Psi1[ipsi]->getPhase();
+        RealType BeadSign = Reptile->getSign(curW.Properties(ipsi,SIGN) = Psi1[ipsi]->getPhase());
+        //RealType BeadSign = curW.Properties(ipsi,SIGN) = Psi1[ipsi]->getPhase();
         RealType eloc= H1[ipsi]->evaluate(*WW[ipsi]);
         curW.Properties(ipsi,LOCALENERGY)= eloc;
         H1[ipsi]->saveProperty(curW.getPropertyBase(ipsi));
@@ -349,7 +351,8 @@ namespace qmcplusplus {
     while(bead != bead_end){
       Bead& curW(**bead);
       for(int ipsi=0; ipsi<nPsi; ipsi++) {
-        int BeadSign = int(curW.Properties(ipsi,SIGN));
+        //int BeadSign = int(curW.Properties(ipsi,SIGN));
+        int BeadSign = Reptile->getSign(curW.Properties(ipsi,SIGN));
         curW.BeadSignWgt[ipsi]=abs((BeadSign+Reptile->RefSign[ipsi])/2);
       }
       ++bead;
@@ -763,7 +766,8 @@ namespace qmcplusplus {
       NewBead->Action(ipsi,backward)=0.5*m_oneover2tau*Dot(gRand,gRand);
 
       NewBead->Action(ipsi,Directionless)=0.5*Tau*eloc;
-      int beadwgt=abs( ( int(NewBeadProp[SIGN])+Reptile->RefSign[ipsi] )/2 );
+      int beadwgt=abs( ( Reptile->getSign(NewBeadProp[SIGN])+Reptile->RefSign[ipsi] )/2 );
+      //int beadwgt=abs( ( int(NewBeadProp[SIGN])+Reptile->RefSign[ipsi] )/2 );
       NewBead->BeadSignWgt[ipsi]=beadwgt;
       totbeadwgt+=beadwgt;
     }
