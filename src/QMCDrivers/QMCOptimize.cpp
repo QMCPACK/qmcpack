@@ -102,9 +102,7 @@ namespace qmcplusplus {
       solver->put(optNode);
 
     bool success = solver->optimize(optTarget);
-cerr << " Optimatization status is ";
-if (success) cerr << "success" << endl;
-else cerr << "FAILED" << endl;
+
     delete solver;
     return success;
   }
