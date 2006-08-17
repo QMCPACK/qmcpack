@@ -116,6 +116,8 @@ namespace qmcplusplus {
     Return_t NumWalkersEff;
     ///fraction of the number of walkers below which the costfunction becomes invalid
     Return_t MinNumWalkers;
+    ///maximum weight beyond which the weight is set to 1
+    Return_t MaxWeight;
 
     ///current Average
     Return_t curAvg;

@@ -27,7 +27,7 @@ namespace qmcplusplus {
 
   QMCCostFunction::QMCCostFunction(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h):
     W(w),Psi(psi),H(h),
-    UseWeight(false), PowerE(2), NumCostCalls(0), NumSamples(0),
+    UseWeight(false), PowerE(2), NumCostCalls(0), NumSamples(0), MaxWeight(5),
     w_en(0.0), w_var(0.0), w_abs(1.0),
     CorrelationFactor(0.0), m_wfPtr(NULL), m_doc_out(NULL), msg_stream(0)
   { 
@@ -136,15 +136,16 @@ namespace qmcplusplus {
    */
   QMCCostFunction::Return_t QMCCostFunction::correlatedSampling() {
 
-    SumValue=0.0;
     typedef MCWalkerConfiguration::Walker_t Walker_t;
     MCWalkerConfiguration::iterator it(W.begin()); 
     MCWalkerConfiguration::iterator it_end(W.end()); 
     Return_t eloc_new;
     int iw=0;
+    Return_t wgt_tot=0.0;
+    //SumValue=0.0;
     while(it != it_end) {
       Walker_t& thisWalker(**it);
-      Return_t* saved = Records[iw];
+      Return_t* restrict saved = Records[iw];
 
       //rewind the buffer to get the data from buffer
       thisWalker.DataSet.rewind();
@@ -170,7 +171,34 @@ namespace qmcplusplus {
       //  cout << "Check wfs and energy " << logpsi+saved[LOGPSI_FIXED]-logpsi2 << " " << et-eloc_new << endl;
       saved[ENERGY_NEW]=eloc_new;
       saved[REWEIGHT]=weight;
+      wgt_tot+=weight;
+      //Return_t delE=pow(abs(eloc_new-EtargetEff),PowerE);
+      //SumValue[SUM_E_BARE] += eloc_new;
+      //SumValue[SUM_ESQ_BARE] += eloc_new*eloc_new;
+      //SumValue[SUM_ABSE_BARE] += delE;
+      //SumValue[SUM_E_WGT] += eloc_new*weight;
+      //SumValue[SUM_ESQ_WGT] += eloc_new*eloc_new*weight;
+      //SumValue[SUM_ABSE_WGT] += delE*weight;
+      //SumValue[SUM_WGT] += weight;
+      //SumValue[SUM_WGTSQ] += weight*weight;
+      ++it;
+      ++iw;
+    }
 
+    //collect the total weight for normalization and apply maximum weight
+    gsum(wgt_tot,0);
+
+
+    SumValue=0.0;
+    wgt_tot=1.0/wgt_tot;
+
+    Return_t wgt_max=MaxWeight*wgt_tot;
+    for(iw=0; iw<NumSamples;iw++) {
+      Return_t* restrict saved = Records[iw];
+      Return_t weight=saved[REWEIGHT]*wgt_tot;
+      Return_t eloc_new=saved[ENERGY_NEW];
+
+      weight = (weight>wgt_max)? weight:wgt_max;
       Return_t delE=pow(abs(eloc_new-EtargetEff),PowerE);
       SumValue[SUM_E_BARE] += eloc_new;
       SumValue[SUM_ESQ_BARE] += eloc_new*eloc_new;
@@ -180,8 +208,6 @@ namespace qmcplusplus {
       SumValue[SUM_ABSE_WGT] += delE*weight;
       SumValue[SUM_WGT] += weight;
       SumValue[SUM_WGTSQ] += weight*weight;
-      ++it;
-      ++iw;
     }
 
     //collect everything
@@ -405,6 +431,7 @@ namespace qmcplusplus {
     m_param.add(PowerE,"power","int");
     m_param.add(CorrelationFactor,"correlation","scalar");
     m_param.add(MinNumWalkers,"min_walkers","scalar");
+    m_param.add(MaxWeight,"maxWeight","scalar");
     m_param.put(q);
 
     UseWeight = (useWeightStr == "yes");
