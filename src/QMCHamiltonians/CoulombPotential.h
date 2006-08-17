@@ -72,6 +72,9 @@ namespace qmcplusplus {
       }
       return Value;
     }
+    inline Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy) {
+      return evaluate(P);
+    }
 
     bool put(xmlNodePtr cur) {
       return true;
@@ -150,6 +153,10 @@ namespace qmcplusplus {
       //return C*std::accumulate(d_table->rinv.data(), 
       //	  	       d_table->rinv.data()+d_table->getTotNadj(),
       //		       0.0);
+    }
+
+    inline Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy) {
+      return evaluate(P);
     }
 
     /** Do nothing */

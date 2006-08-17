@@ -66,6 +66,11 @@ namespace qmcplusplus {
       //Value=Dot(P.G,P.G)+Sum(P.L);
       return Value*=-OneOver2M;
     }
+
+    inline Return_t 
+    evaluate(ParticleSet& P, vector<NonLocalData>& Txy) {
+      return evaluate(P);
+    }
     
     /** implements the virtual function.
      * 

@@ -79,6 +79,7 @@ namespace qmcplusplus {
             W.makeMove(iel,deltar); 
             psiratio[j]=psi.ratio(W,iel)*sgridweight_m[j];
             W.rejectMove(iel);
+            psi.rejectMove(iel);
           }
           // Compute radial potential
           for(int ip=0;ip< nchannel; ip++){
@@ -122,6 +123,61 @@ namespace qmcplusplus {
         return esum;
       }
 
+  NonLocalECPComponent::ValueType 
+  NonLocalECPComponent::evaluate(ParticleSet& W, TrialWaveFunction& psi,int iat, vector<NonLocalData>& Txy) {
+    RealType esum=0.0;
+
+    //int iel=0;
+    for(int nn=myTable->M[iat],iel=0; nn<myTable->M[iat+1]; nn++,iel++){
+
+      register RealType r(myTable->r(nn));
+      if(r>Rmax) continue;
+
+      register RealType rinv(myTable->rinv(nn));
+      register PosType  dr(myTable->dr(nn));
+
+      int txyCounter=Txy.size();
+      // Compute ratio of wave functions
+      for (int j=0; j < nknot ; j++){ 
+        PosType deltar(r*rrotsgrid_m[j]-dr);
+        PosType newpos(W.makeMove(iel,deltar)); 
+        psiratio[j]=psi.ratio(W,iel)*sgridweight_m[j];
+        W.rejectMove(iel);
+        //first, add a new NonLocalData with ratio
+        Txy.push_back(NonLocalData(iel,psiratio[j],deltar));
+      }
+      // Compute radial potential
+      for(int ip=0;ip< nchannel; ip++){
+        vrad[ip]=nlpp_m[ip]->splint(r)*wgt_angpp_m[ip];
+      }
+
+      // Compute spherical harmonics on grid
+      for (int j=0, jl=0; j<nknot ; j++){ 
+        RealType zz=dot(dr,rrotsgrid_m[j])*rinv;
+        // Forming the Legendre polynomials
+        lpol[0]=1.0;
+        RealType lpolprev=0.0;
+        for (int l=0 ; l< lmax ; l++){
+          //Not a big difference
+          //lpol[l+1]=(2*l+1)*zz*lpol[l]-l*lpolprev;
+          //lpol[l+1]/=(l+1);
+          lpol[l+1]=Lfactor1[l]*zz*lpol[l]-l*lpolprev; 
+          lpol[l+1]*=Lfactor2[l]; 
+          lpolprev=lpol[l];
+        }
+
+        //for(int l=0; l <nchannel; l++,jl++) Amat[jl]=lpol[ angpp_m[l] ]; 
+        RealType lsum=0;
+        for(int l=0; l <nchannel; l++,jl++) lsum += vrad[l]*lpol[ angpp_m[l] ]; 
+        esum += Txy[txyCounter++].Weight *= lsum;
+      } 
+     //BLAS::gemv(nknot, nchannel, &Amat[0], &psiratio[0], &wvec[0]);
+     //esum += BLAS::dot(nchannel, &vrad[0], &wvec[0]);
+    }   /* end loop over electron */
+    return esum;
+
+  }
+
   void NonLocalECPotential::resetTargetParticleSet(ParticleSet& P) {
     d_table = DistanceTable::add(IonConfig,P);
   }
@@ -158,9 +214,23 @@ namespace qmcplusplus {
     return Value;
   }
 
+  NonLocalECPotential::Return_t
+  NonLocalECPotential::evaluate(ParticleSet& P, vector<NonLocalData>& Txy) { 
+    Value=0.0;
+    //loop over all the ions
+    for(int iat=0; iat<NumIons; iat++) {
+      if(PP[iat]) {
+        PP[iat]->randomize_grid(*(P.Sphere[iat]),UpdateMode[PRIMARY]);
+        Value += PP[iat]->evaluate(P,Psi,iat,Txy);
+      }
+    }
+    return Value;
+  }
+
   void 
   NonLocalECPotential::add(int groupID, NonLocalECPComponent* ppot) {
     map<int,NonLocalECPComponent*>::iterator pit(PPset.find(groupID));
+    ppot->myTable=d_table;
     if(pit  == PPset.end()) {
       for(int iat=0; iat<PP.size(); iat++) {
         if(IonConfig.GroupID[iat]==groupID) PP[iat]=ppot;

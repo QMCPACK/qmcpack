@@ -61,6 +61,8 @@ namespace qmcplusplus {
     ///Working arrays
     vector<ValueType> psiratio,vrad,wvec,Amat,lpol;
 
+    DistanceTableData* myTable;
+
     NonLocalECPComponent();
 
     ///destructor
@@ -104,6 +106,9 @@ namespace qmcplusplus {
     ValueType 
       evaluate(ParticleSet& W, DistanceTableData* d_table, 
           int iat, TrialWaveFunction& Psi, bool randomize);
+
+    ValueType 
+    evaluate(ParticleSet& W, TrialWaveFunction& Psi,int iat, vector<NonLocalData>& Txy);
   }; //end of RadialPotentialSet
 
 
@@ -131,6 +136,8 @@ namespace qmcplusplus {
     void resetTargetParticleSet(ParticleSet& P);
 
     Return_t evaluate(ParticleSet& P);
+
+    Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy);
 
     /** Do nothing */
     bool put(xmlNodePtr cur) { return true; }

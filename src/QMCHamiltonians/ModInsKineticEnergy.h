@@ -71,6 +71,10 @@ namespace qmcplusplus {
       }
       return Value;
     }
+
+    inline Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy) {
+      return evaluate(P);
+    }
     
     Return_t getEnsembleAverage() {
       Vector<RealType>& NofK(MomDist.getNofK());

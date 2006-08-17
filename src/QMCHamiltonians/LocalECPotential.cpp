@@ -52,6 +52,20 @@ namespace qmcplusplus {
       PPset[groupID]=ppot;
     }
   }
+
+  LocalECPotential::Return_t 
+    LocalECPotential::evaluate(ParticleSet& P) {
+      Value=0.0;
+      //loop over all the ions
+      for(int iat=0; iat<NumIons; iat++) {
+        if(PP[iat]) {
+          for(int nn=d_table->M[iat]; nn<d_table->M[iat+1]; nn++){
+            Value += PP[iat]->evaluate(d_table->r(nn),d_table->rinv(nn));
+          }
+        }
+      }
+      return Value;
+    }
 }
 /***************************************************************************
  * $RCSfile$   $Author$

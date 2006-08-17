@@ -32,6 +32,14 @@ namespace qmcplusplus {
 
   class DistanceTableData;
 
+  struct NonLocalData: public QMCTraits {
+    IndexType PID;
+    RealType Weight;
+    PosType Delta;
+    inline NonLocalData():PID(-1),Weight(1.0){}
+    inline NonLocalData(IndexType id, RealType w, const PosType& d):PID(id),Weight(w),Delta(d) {}
+  };
+
   /** @ingroup hamiltonian
    * @brief An abstract class for Local Energy operators 
    *
@@ -68,6 +76,8 @@ namespace qmcplusplus {
      *@return the value of the Hamiltonian
      */
     virtual Return_t evaluate(ParticleSet& P) = 0; 
+
+    virtual Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy) = 0; 
 
     /** return an average value by collective operation
      */ 

@@ -50,15 +50,10 @@ namespace qmcplusplus {
 
     void resetTargetParticleSet(ParticleSet& P);
 
-    inline Return_t evaluate(ParticleSet& P) {
-      Value=0.0;
-      //loop over all the ions
-      for(int iat=0; iat<NumIons; iat++) {
-        for(int nn=d_table->M[iat]; nn<d_table->M[iat+1]; nn++){
-          Value += PP[iat]->evaluate(d_table->r(nn),d_table->rinv(nn));
-        }
-      }
-      return Value;
+    Return_t evaluate(ParticleSet& P);
+
+    inline Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy) {
+      return evaluate(P);
     }
 
     bool put(xmlNodePtr cur) { return true;}

@@ -58,6 +58,10 @@ namespace qmcplusplus {
       return e;
     }
 
+    inline Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy) {
+      return evaluate(P);
+    }
+
     inline ValueType evaluate(ParticleSet& P, RealType& x){
       return x=evaluate(P);
     }

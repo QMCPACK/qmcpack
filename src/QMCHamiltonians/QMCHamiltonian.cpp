@@ -113,6 +113,19 @@ QMCHamiltonian::evaluate(ParticleSet& P) {
   return LocalEnergy;
 }
 
+QMCHamiltonian::Return_t 
+QMCHamiltonian::evaluate(ParticleSet& P, vector<NonLocalData>& Txy) {
+  LocalEnergy = 0.0;
+  vector<QMCHamiltonianBase*>::iterator hit(H.begin()),hit_end(H.end());
+  int i(0);
+  while(hit != hit_end) {
+    LocalEnergy += (*hit)->evaluate(P,Txy);
+    Hvalue[i]=(*hit)->Value; 
+    ++hit;++i;
+  }
+  return LocalEnergy;
+}
+
 
 QMCHamiltonian::Return_t 
 QMCHamiltonian::getEnsembleAverage() {

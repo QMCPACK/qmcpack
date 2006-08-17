@@ -129,6 +129,14 @@ namespace qmcplusplus {
      */
     Return_t evaluate(ParticleSet& P);
 
+
+    /** evaluate Local and NonLocal energies
+     * @param P ParticleSEt
+     * @param Txy transition matrix of nonlocal Hamiltonians
+     * @return Local energy
+     */
+    Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy); 
+
     /** return an average value of the LocalEnergy 
      *
      * Introduced to get a collective value

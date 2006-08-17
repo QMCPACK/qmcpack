@@ -74,6 +74,10 @@ namespace qmcplusplus {
       return 0.0;
     }
 
+    inline Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy) {
+      return evaluate(P);
+    }
+
     /** Do nothing */
     bool put(xmlNodePtr cur) {
       return true;
