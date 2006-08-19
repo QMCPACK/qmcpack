@@ -130,15 +130,15 @@ void ScalarEstimatorManager::report(int iter){
 
 
 int ScalarEstimatorManager::addObservable(const char* aname) {
-	cerr << "ScalarEstimator: addObservable with string " << aname;
+	//cerr << "ScalarEstimator: addObservable with string " << aname;
 	int mine = BlockAverages.add(aname);
   int add = TotalAverages.add(aname);
-	cerr << " [found mine " << mine << " and add " << add << "; TotalAverages has size " << TotalAverages.size() << "] ";
+	//cerr << " [found mine " << mine << " and add " << add << "; TotalAverages has size " << TotalAverages.size() << "] ";
 	if(mine < Block2Total.size()) {
   	Block2Total[mine] = add;
-		cerr << mine << "<" << Block2Total.size() << endl;
+		//cerr << mine << "<" << Block2Total.size() << endl;
   } else {
-		cerr << "pushing back" << endl;
+		//cerr << "pushing back" << endl;
     Block2Total.push_back(add);
   }
   return mine;

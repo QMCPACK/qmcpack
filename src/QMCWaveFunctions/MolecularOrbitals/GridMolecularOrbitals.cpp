@@ -43,10 +43,8 @@ namespace qmcplusplus {
 
     LOGMSG("GridMolecularOrbitals::put")
     DetSetBuilderWithBasisSet<GridMolecularOrbitals> spobuilder(targetPtcl,targetPsi,*this);
-
     if(spobuilder.put(cur)) {
       BasisSet->resize(spobuilder.NumPtcl);
-
       return true;
     } else {
       return false;
@@ -55,6 +53,7 @@ namespace qmcplusplus {
 
   GridMolecularOrbitals::BasisSetType* 
   GridMolecularOrbitals::addBasisSet(xmlNodePtr cur) {
+cerr << "GridMolec::addBasisSet...";
 
     if(!BasisSet) 
       BasisSet = new BasisSetType(IonSys.getSpeciesSet().getTotalNum());
@@ -114,27 +113,27 @@ namespace qmcplusplus {
 	  //CenterID[abasis] = activeCenter = ncenters++;
           CenterID[abasis]=activeCenter=IonSys.getSpeciesSet().findSpecies(abasis);
 	  int Lmax(0); //maxmimum angular momentum of this center
-          int num(0);//the number of localized basis functions of this center
+    int num(0);//the number of localized basis functions of this center
 
 	  //process the basic property: maximun angular momentum, the number of basis functions to be added
-          vector<xmlNodePtr> radGroup;
+    vector<xmlNodePtr> radGroup;
 	  xmlNodePtr cur1 = cur->xmlChildrenNode;
-          xmlNodePtr gptr=0;
+    xmlNodePtr gptr=0;
 	  while(cur1 != NULL) {
 	    string cname1((const char*)(cur1->name));
 	    if(cname1 == basisfunc_tag || cname1 == "basisGroup") {
-              radGroup.push_back(cur1);
-    	      int l=atoi((const char*)(xmlGetProp(cur1, (const xmlChar *)"l")));
+        radGroup.push_back(cur1);
+    	  int l=atoi((const char*)(xmlGetProp(cur1, (const xmlChar *)"l")));
 	      Lmax = max(Lmax,l);
 	      //expect that only Rnl is given
 	      if(expandlm) 
-                num += 2*l+1;
+          num += 2*l+1;
 	      else
-                num++;
-	    } else if(cname1 == "grid") {
-              gptr = cur1;
-            }
-	    cur1 = cur1->next;
+          num++;
+	   	} else if(cname1 == "grid") {
+        gptr = cur1;
+    	}
+	  	cur1 = cur1->next;
 	  }
 	  XMLReport("Adding a center " << abasis << " centerid "<< CenterID[abasis])
           XMLReport("Maximum angular momentum    = " << Lmax)
@@ -176,6 +175,7 @@ namespace qmcplusplus {
 
 	  //add the new atomic basis to the basis set
 	  BasisSet->add(aos,activeCenter);
+cerr << " done." << endl;
 
 #if !defined(HAVE_MPI)
           rbuilder->print(abasis,1);
@@ -185,17 +185,25 @@ namespace qmcplusplus {
 	  WARNMSG("Species " << abasis << " is already initialized. Ignore the input.")
 	}
       }
+cerr << "bottom of while; cur is " << cur;
       cur = cur->next;
+cerr << " and now it's " << cur << endl;
     }
+cerr << "left while" << endl;
 
     if(BasisSet) {
+cerr << "BasisSet was true I guess; setTable... ";
       BasisSet->setTable(d_table);
+cerr << " done" << endl;
       LOGMSG("The total number of basis functions " << BasisSet->TotalBasis)
+cerr << "returing " << BasisSet << endl;
       return BasisSet;
     } else {
+cerr << "False!" << endl;
       ERRORMSG("BasisSet is not initialized.")
       return NULL;
     }
+cerr << " leaving" << endl;
   }
 
   int 

@@ -47,8 +47,8 @@ namespace qmcplusplus {
 
     bool validateXML();
     bool initialize();
-    bool SetVMC(int nblocks);
-    bool SetVMCMultiple(int nblocks);
+  	bool SetVMC(double dt, int w, int steps, int nblocks);
+  	bool SetVMCMultiple(double dt, int w, int steps, int nblocks);
 		bool process();
     bool execute();
     void SetPtclPos(int id, double* newR);

@@ -14,6 +14,7 @@ QMCPP_UTILITIES = \
   OhmmsApp/ProjectData.cpp \
   OhmmsApp/RandomNumberControl.cpp\
   Numerics/OhmmsBlas.cpp \
+	Numerics/FFTEngines.h \
   Platforms/sysutil.cpp \
   QMCFactory/OneDimGridFactory.cpp
    

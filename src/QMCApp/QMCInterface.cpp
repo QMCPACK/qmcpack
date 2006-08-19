@@ -85,7 +85,7 @@ namespace qmcplusplus {
     return true;
   }
 
-  bool QMCInterface::SetVMC(int nblocks){
+  bool QMCInterface::SetVMC(double dt, int w, int steps, int nblocks){
     cerr << "    QMCInterface::SetVMC: Creating new VMC driver...";
     qmcDriver = new VMC(*ptclPool->getWalkerSet("e"),*psiPool->getPrimary(),*hamPool->getPrimary());
     cerr << " done." << endl;
@@ -95,9 +95,9 @@ namespace qmcplusplus {
 
     //cerr << "QMCInterface::SetVMC: Using Default Parameters:" << endl;
     //cerr << "  timestep = 0.03; walkers = 100; steps = 100;" << endl;
-    qmcDriver->setValue("timeStep", 0.03);
-    qmcDriver->setValue("walkers", 100);
-    qmcDriver->setValue("steps",100);
+    qmcDriver->setValue("timeStep", dt);
+    qmcDriver->setValue("walkers", w);
+    qmcDriver->setValue("steps", steps);
     qmcDriver->setValue("blocks", nblocks);
     //cerr << "  blocks = " << nblocks << endl;
 
@@ -107,7 +107,7 @@ namespace qmcplusplus {
     return true;
   } 
 
-  bool QMCInterface::SetVMCMultiple(int nblocks){
+  bool QMCInterface::SetVMCMultiple(double dt, int w, int steps, int nblocks){
     cerr << "    QMCInterface::SetVMCMultiple: Creating new VMCMultiple driver...";
     qmcDriver = new VMCMultiple(*ptclPool->getWalkerSet("e"),*psiPool->getPrimary(),*hamPool->getPrimary());
     cerr << " done." << endl;
@@ -123,9 +123,9 @@ namespace qmcplusplus {
     bool append_run = false;
     qmcDriver->setStatus(myProject.CurrentRoot(),PrevConfigFile, append_run);
 
-    qmcDriver->setValue("timeStep", 0.03);
-    qmcDriver->setValue("walkers", 100);
-    qmcDriver->setValue("steps",100);
+    qmcDriver->setValue("timeStep", dt);
+    qmcDriver->setValue("walkers", w);
+    qmcDriver->setValue("steps", steps);
     qmcDriver->setValue("blocks", nblocks);
 
     runInfoNode = xmlNewNode(NULL,(const xmlChar*)"vmc-multi");
@@ -133,17 +133,27 @@ namespace qmcplusplus {
   }
 
 	bool QMCInterface::process(){
-  cerr << "    QMCInterface::process: Processing..." << endl;
+  //cerr << "    QMCInterface::process: Processing..." << endl;
   qmcDriver->process(runInfoNode);
 	qmcDriver->Estimators->setAccumulateMode(true);		
-	cerr << " done." << endl;
+	//cerr << " done." << endl;
 	return true;
 	}
 
   bool QMCInterface::execute() {
+		// SERIOUSLY SPECIALIZED HACK FOR H2 WITH MOLECULE-CENTERED GAUSSIAN ORBIATLS
+		//ParticleSet* refSet = ptclPool->getParticleSet("i");
+    //ParticleSet* pseudoSet = ptclPool->getParticleSet("pseudo");
+		//ParticleSet* refSet1 = ptclPool->getParticleSet("i1");
+    //ParticleSet* pseudoSet1 = ptclPool->getParticleSet("pseudo1");
+		//cerr << "	qmcpack: updating pseudo center from " << pseudoSet->R[0];
+		//pseudoSet->R[0] = 0.5*(refSet->R[0] + refSet->R[1]);
+		//cerr << " to " << pseudoSet->R[0] << " given H1 at " << refSet->R[0] << " and H2 at " << refSet->R[1] << endl;
+		//pseudoSet1->R[0] = 0.5*(refSet1->R[0] + refSet1->R[1]);
+
     cerr << "    QMCInterface::execute: Running...";
     qmcDriver->run();
-    cerr << " done." << endl;
+    //cerr << " done." << endl;
     return true;
   }
 
@@ -165,14 +175,15 @@ namespace qmcplusplus {
 	// sets ptcl coordinates in set "i" for ion
   void QMCInterface::SetPtclPos(int id, double* newR){
     ParticleSet* mySet = ptclPool->getParticleSet("i");
-    cerr << "    QMCInterface::SetPtclPos: updated ion " << id << " from " << mySet->R[id];
+    //cerr << "    QMCInterface::SetPtclPos: updated ion " << id << " from " << mySet->R[id];
     qmcplusplus::TinyVector<double,3> newVec(newR[0],newR[1],newR[2]);
     mySet->R[id] = newVec;
-    cerr << " to " << mySet->R[id] << endl;
+    //cerr << " to " << mySet->R[id] << endl;
   }
 
 	// sets ptcl coordinates in speciefied set
   void QMCInterface::SetPtclPos(string set, int id, double* newR){
+		cerr << "int SetPtclPos, looking to move " << id << " of set " << set << endl;
     ParticleSet* mySet = ptclPool->getParticleSet(set);
     cerr << "    QMCInterface::SetPtclPos: updated particle " << id << " of ParticleSet " << set << " from " << mySet->R[id];
     qmcplusplus::TinyVector<double,3> newVec(newR[0],newR[1],newR[2]);

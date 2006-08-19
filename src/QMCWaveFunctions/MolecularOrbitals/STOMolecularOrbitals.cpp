@@ -49,6 +49,7 @@ namespace qmcplusplus {
 
   STOMolecularOrbitals::BasisSetType* 
   STOMolecularOrbitals::addBasisSet(xmlNodePtr cur) {
+cerr << "STO::addBasisSet...";
 
     if(!BasisSet) 
       BasisSet = new BasisSetType(IonSys.getSpeciesSet().getTotalNum());
@@ -180,6 +181,7 @@ namespace qmcplusplus {
       ERRORMSG("BasisSet is not initialized.")
       return NULL;
     }
+cerr << " leaving." << endl;
   }
 
   int 
