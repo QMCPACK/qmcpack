@@ -67,8 +67,10 @@ namespace qmcplusplus {
       
       ///vector of Slater determinants 
       std::vector<SlaterDeterminant_t*> slaterdets;
-      ///vector of coefficients of the Slater determinants
+      std::vector<string> sdet_coeff_id;
       std::vector<RealType> sdet_coeff;
+      ///vector of coefficients of the Slater determinants
+      //std::vector<RealType> sdet_coeff;
       ///pointer to the basis set
       BasisSetType *basisSet =0;
 
@@ -87,6 +89,7 @@ namespace qmcplusplus {
 	  first = 0;
 	  //add a new SlaterDeterminant
 	  slaterdets.push_back(new SlaterDeterminant_t);
+          string multiCoeff_name("detC");
 	  sdet_coeff.push_back(1.0);
 	  
 	  xmlNodePtr tcur = cur->xmlChildrenNode;
@@ -94,6 +97,8 @@ namespace qmcplusplus {
 	    //string tname((const char*)(tcur->name));
             getNodeName(tname,tcur);
 	    if(tname == param_tag) {
+              const xmlChar* cptr=xmlGetProp(tcur,(const xmlChar*)"id");
+              if(cptr != NULL) multiCoeff_name=(const char*)cptr;
 	      putContent(sdet_coeff[is],tcur);
 	    } else if(tname == det_tag) {
               string basisName(BasisName);
@@ -134,7 +139,8 @@ namespace qmcplusplus {
               }
 	    }
 	    tcur = tcur->next;
-	  }
+            sdet_coeff_id.push_back(multiCoeff_name);
+	  }//cname == sd_tag
 	  is++;
 	}
 	cur = cur->next;
@@ -154,11 +160,12 @@ namespace qmcplusplus {
 	MultiSlaterDeterminant<SPOSetType>
 	  *multidet= new MultiSlaterDeterminant<SPOSetType>;
 	for(int i=0; i<slaterdets.size(); i++) {
-	  XMLReport("Coefficient for a SlaterDeterminant " << sdet_coeff[i])
           slaterdets[i]->setOptimizable(optimizeit);
-	  multidet->add(slaterdets[i],sdet_coeff[i]);
+	  multidet->add(slaterdets[i],sdet_coeff[i],sdet_coeff_id[i],targetPsi.VarList);
+	  app_log() << "   MultiSlaterDeterminant coeff name=" << sdet_coeff_id[i]
+            << " value=" << sdet_coeff[i] << endl;
 	}
-        multidet->setOptimizable(optimizeit);
+        multidet->setOptimizable(true);
 	//add a MultiDeterminant to the trial wavefuntion
 	targetPsi.addOrbital(multidet);
       } else {

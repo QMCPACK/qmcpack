@@ -68,6 +68,13 @@ public:
     C.push_back(c);
   }
 
+  void add(DeterminantSet_t* sdet, RealType c, const string& id, VarRegistry<RealType>& vlist) {
+    int cur=C.size();
+    SDets.push_back(sdet);
+    C.push_back(c);
+    vlist.add(id,&(C[cur]),1);
+  }
+
   void reset() {  
     if(Optimizable) for(int i=0; i<SDets.size(); i++) SDets[i]->reset();
   }
