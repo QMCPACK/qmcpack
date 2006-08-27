@@ -80,6 +80,9 @@ namespace qmcplusplus {
      */
     void startBlock();
 
+    /** set the multiplicity of the walkers to branch */
+    void setMultiplicity(WalkerIter_t it, WalkerIter_t it_end);
+
     /** initialize Walker buffers for PbyP update
      */
     void initWalkers(WalkerIter_t it, WalkerIter_t it_end);

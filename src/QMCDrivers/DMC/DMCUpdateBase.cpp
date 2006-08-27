@@ -96,6 +96,18 @@ namespace qmcplusplus {
     }
   }
 
+  void DMCUpdateBase::setMultiplicity(WalkerIter_t it, WalkerIter_t it_end) {
+    while(it != it_end) {
+      RealType M=(*it)->Weight;
+      if((*it)->Age>MaxAge) 
+        M = std::min(0.5,M);
+      else if((*it)->Age > 0) 
+        M = std::min(1.0,M);
+      (*it)->Multiplicity = M + RandomGen();
+      ++it;
+    }
+  }
+
   void DMCUpdateBase::benchMark(WalkerIter_t it, WalkerIter_t it_end, int ip) {
     char fname[16];
     sprintf(fname,"test.%i",ip);
