@@ -144,15 +144,25 @@ namespace qmcplusplus {
       */
      inline void setEguess(RealType eg){ E_T = eg; } 
 
-     /** call MCWalkerConfiguration::branch
+     inline void setTrialEnergy(RealType etot, RealType wtot) {
+       EavgSum=etot;
+       WgtSum=wtot;
+       E_T=etot/wtot;
+     }
+
+     /** perform branching
       *@param iter the iteration
       *@param w the walker ensemble
       *@return the number of walkers after branching
       */
-     inline int branch(int iter, MCWalkerConfiguration& w) {
-       return WalkerController->branch(iter,w,PopControl);
-     }
+     int branch(int iter, MCWalkerConfiguration& w);
 
+     /** perform branching
+      * @param iter the iteration
+      * @param w the walker ensemble
+      * @param clones of the branch engine for OpenMP threads
+      * @return the number of walkers after branching
+      */
      int branch(int iter, MCWalkerConfiguration& w, vector<ThisType*>& clones);
 
      /** restart averaging
@@ -184,9 +194,11 @@ namespace qmcplusplus {
       return E_T = EavgSum/WgtSum-Feed*log(static_cast<RealType>(pop_now))+logN;
     }
 
-    inline RealType CollectAndUpdate(int pop_now, RealType ecur) {
-      return E_T = WalkerController->average(EavgSum,WgtSum)-Feed*log(static_cast<RealType>(pop_now))+logN;
-    }
+    RealType CollectAndUpdate(int pop_now, RealType ecur);
+    //inline RealType CollectAndUpdate(int pop_now, RealType ecur) {
+    //  //return E_T = WalkerController->average(EavgSum,WgtSum)-Feed*log(static_cast<RealType>(pop_now))+logN;
+    //  return E_T = (WalkerController->average(EavgSum,WgtSum)+E_T)*0.5-Feed*log(static_cast<RealType>(pop_now))+logN;
+    //}
 
     /** reset the internal parameters */
     void reset();

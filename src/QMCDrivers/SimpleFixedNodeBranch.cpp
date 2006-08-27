@@ -107,9 +107,17 @@ SimpleFixedNodeBranch::setWeights(MCWalkerConfiguration::iterator it,
   //return E_T = WalkerController->average(EavgSum,WgtSum)-Feed*log(static_cast<RealType>(nw))+logN;
 }
 */
+SimpleFixedNodeBranch::RealType 
+SimpleFixedNodeBranch::CollectAndUpdate(int pop_now, RealType ecur) {
+  //return E_T = WalkerController->average(EavgSum,WgtSum)-Feed*log(static_cast<RealType>(pop_now))+logN;
+  return E_T = (WalkerController->average(EavgSum,WgtSum)+E_T)*0.5-Feed*log(static_cast<RealType>(pop_now))+logN;
+}
+
+int SimpleFixedNodeBranch::branch(int iter, MCWalkerConfiguration& w) {
+  return WalkerController->branch(iter,w,PopControl);
+}
 
 int SimpleFixedNodeBranch::branch(int iter, MCWalkerConfiguration& w, vector<ThisType*>& clones) {
-
   for(int i=0; i<clones.size(); i++) {
     Counter += clones[i]->Counter;
     EavgSum += clones[i]->EavgSum;
@@ -119,10 +127,6 @@ int SimpleFixedNodeBranch::branch(int iter, MCWalkerConfiguration& w, vector<Thi
 }
 
 void SimpleFixedNodeBranch::reset() {
-  //WalkerController = CreateWalkerController(FixedNumWalkers, SwapMode, Nideal, Nmax, Nmin, WalkerController);
-  //Nmax=WalkerController->Nmax;
-  //Nmin=WalkerController->Nmin;
-  //Feed=WalkerController->getFeedBackParameter(NumGeneration,Tau);
   Feed = 1.0/(static_cast<RealType>(NumGeneration)*Tau);
   logN = Feed*log(static_cast<RealType>(Nideal));
   app_log() << "  Current Counter = " << Counter << "\n  Trial Energy = " << E_T << endl;
@@ -176,7 +180,8 @@ void SimpleFixedNodeBranch::write(hid_t grp, bool append) {
   vector<RealType> esave(dim);
   /** stupid gnu compiler bug */
   esave[0] = (fabs(E_T) < numeric_limits<RealType>::epsilon())? EavgSum/WgtSum:E_T;
-  esave[1]=EavgSum; esave[2]=WgtSum;
+  esave[1] = EavgSum; 
+  esave[2] = WgtSum;
   
   if(append) {
     hid_t dataset = H5Dopen(grp,"Summary");
