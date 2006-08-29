@@ -41,7 +41,7 @@ namespace qmcplusplus {
     oAttrib.add(functionOpt,"function");
     oAttrib.add(transformOpt,"transform");
     oAttrib.add(sourceOpt,"source");
-    oAttrib.add(spinOpt,"psin");
+    oAttrib.add(spinOpt,"spin");
     oAttrib.put(cur);
 
     IgnoreSpin = (spinOpt == "no");
