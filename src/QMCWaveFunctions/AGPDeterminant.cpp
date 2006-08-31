@@ -286,7 +286,7 @@ namespace qmcplusplus {
     AGPDeterminant::ratio(ParticleSet& P, int iat) {
 
       UseRatioOnly=true;
-      std::copy(phiT[iat],phiT[iat]+BasisSize,phiTv.begin());
+      //std::copy(phiT[iat],phiT[iat]+BasisSize,phiTv.begin());
       GeminalBasis->evaluate(P,iat);
       //BLAS::gemv(Lambda.rows(),Lambda.cols(), Lambda.data(), GeminalBasis->y(0), phiT[iat]);
 
@@ -444,8 +444,8 @@ namespace qmcplusplus {
     /** move was rejected. copy the real container to the temporary to move on
      */
     void AGPDeterminant::restore(int iat) {
-      std::copy(phiTv.begin(), phiTv.end(),phiT[iat]);
       if(!UseRatioOnly) {
+        std::copy(phiTv.begin(), phiTv.end(),phiT[iat]);
         psiM_temp = psiM;
         if(iat<Nup) {
           std::copy(dpsiUv.begin(), dpsiUv.end(),dpsiU[iat]);
