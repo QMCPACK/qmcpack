@@ -29,6 +29,8 @@ namespace qmcplusplus {
   void AGPDeterminant::resize(int nup, int ndown) {
     BasisSize=GeminalBasis->size();
 
+    app_log() << "  AGPDetermiant::resize checking size nup, ndown, basis " << nup << " " << ndown << " " << BasisSize << endl;
+
     if(NumPtcls == 0) { //use Numptcls to ensure resizing only once
       Lambda.resize(BasisSize,BasisSize);
       if(nup>ndown) {
@@ -75,8 +77,6 @@ namespace qmcplusplus {
       LastAddressOfG = FirstAddressOfG + DIM*NumPtcls;
     }
 
-    app_log() << "  AGPDetermiant::resize checking size nup, ndown, basis " << nup << " " << ndown 
-      << " " << BasisSize << endl;
   }
 
   void AGPDeterminant::resetTargetParticleSet(ParticleSet& P) { 
@@ -431,8 +431,8 @@ namespace qmcplusplus {
      */
     void AGPDeterminant::acceptMove(ParticleSet& P, int iat) {
       CurrentDet *= curRatio;
-      psiM = psiM_temp;
       if(!UseRatioOnly) {
+        psiM = psiM_temp;
         myG = myG_temp;
         myL = myL_temp;
         std::copy(GeminalBasis->dy(0),GeminalBasis->dy(0)+BasisSize,dY[iat]);
@@ -444,9 +444,9 @@ namespace qmcplusplus {
     /** move was rejected. copy the real container to the temporary to move on
      */
     void AGPDeterminant::restore(int iat) {
-      psiM_temp = psiM;
       std::copy(phiTv.begin(), phiTv.end(),phiT[iat]);
       if(!UseRatioOnly) {
+        psiM_temp = psiM;
         if(iat<Nup) {
           std::copy(dpsiUv.begin(), dpsiUv.end(),dpsiU[iat]);
           std::copy(d2psiUv.begin(), d2psiUv.end(),d2psiU[iat]);
