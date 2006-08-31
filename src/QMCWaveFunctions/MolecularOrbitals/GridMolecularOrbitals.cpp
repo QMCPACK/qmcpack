@@ -53,7 +53,6 @@ namespace qmcplusplus {
 
   GridMolecularOrbitals::BasisSetType* 
   GridMolecularOrbitals::addBasisSet(xmlNodePtr cur) {
-cerr << "GridMolec::addBasisSet...";
 
     if(!BasisSet) 
       BasisSet = new BasisSetType(IonSys.getSpeciesSet().getTotalNum());
@@ -175,7 +174,6 @@ cerr << "GridMolec::addBasisSet...";
 
 	  //add the new atomic basis to the basis set
 	  BasisSet->add(aos,activeCenter);
-cerr << " done." << endl;
 
 #if !defined(HAVE_MPI)
           rbuilder->print(abasis,1);
@@ -185,25 +183,17 @@ cerr << " done." << endl;
 	  WARNMSG("Species " << abasis << " is already initialized. Ignore the input.")
 	}
       }
-cerr << "bottom of while; cur is " << cur;
       cur = cur->next;
-cerr << " and now it's " << cur << endl;
     }
-cerr << "left while" << endl;
 
     if(BasisSet) {
-cerr << "BasisSet was true I guess; setTable... ";
       BasisSet->setTable(d_table);
-cerr << " done" << endl;
       LOGMSG("The total number of basis functions " << BasisSet->TotalBasis)
-cerr << "returing " << BasisSet << endl;
       return BasisSet;
     } else {
-cerr << "False!" << endl;
       ERRORMSG("BasisSet is not initialized.")
       return NULL;
     }
-cerr << " leaving" << endl;
   }
 
   int 
