@@ -18,9 +18,9 @@
  *@brief definition of three-body jastrow of Geminal functions
  */
 #include "QMCWaveFunctions/AGPDeterminant.h"
-//#include "QMCWaveFunctions/MolecularOrbitals/GridMolecularOrbitals.h"
+#include "QMCWaveFunctions/MolecularOrbitals/GridMolecularOrbitals.h"
 //#include "QMCWaveFunctions/MolecularOrbitals/STOMolecularOrbitals.h"
-#include "QMCWaveFunctions/MolecularOrbitals/GTOMolecularOrbitals.h"
+//#include "QMCWaveFunctions/MolecularOrbitals/GTOMolecularOrbitals.h"
 #include "QMCWaveFunctions/AGPDeterminantBuilder.h"
 namespace qmcplusplus {
 
@@ -91,9 +91,9 @@ namespace qmcplusplus {
 
     bool success = false;
     if(basisBuilder == 0) {
-      //GridMolecularOrbitals* gtoBuilder = new GridMolecularOrbitals(targetPtcl,targetPsi,ionRef);
+      GridMolecularOrbitals* gtoBuilder = new GridMolecularOrbitals(targetPtcl,targetPsi,ionRef);
       //STOMolecularOrbitals* gtoBuilder = new STOMolecularOrbitals(targetPtcl,targetPsi,ionRef);
-      GTOMolecularOrbitals* gtoBuilder = new GTOMolecularOrbitals(targetPtcl,targetPsi,ionRef);
+      //GTOMolecularOrbitals* gtoBuilder = new GTOMolecularOrbitals(targetPtcl,targetPsi,ionRef);
       success = createAGP(gtoBuilder,cur);
       basisBuilder=gtoBuilder;
     }
