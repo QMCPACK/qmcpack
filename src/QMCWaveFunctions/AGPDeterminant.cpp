@@ -48,6 +48,31 @@ namespace qmcplusplus {
 
       WorkSpace.resize(nup);
       Pivot.resize(nup);
+
+      dY.resize(NumPtcls,BasisSize);
+      d2Y.resize(NumPtcls,BasisSize);
+      dpsiU.resize(Nup,Nup);
+      dpsiD.resize(Ndown,Nup);
+      d2psiU.resize(Nup,Nup);
+      d2psiD.resize(Ndown,Nup);
+      dpsiUv.resize(Nup);
+      d2psiUv.resize(Nup);
+      dpsiDv.resize(Nup);
+      d2psiDv.resize(Nup);
+
+      FirstAddressOfdVU=&(dpsiU(0,0)[0]);
+      LastAddressOfdVU=FirstAddressOfdVU+DIM*Nup*Nup;
+      FirstAddressOfdVD=&(dpsiD(0,0)[0]);
+      LastAddressOfdVD=FirstAddressOfdVD+DIM*Ndown*Nup;
+      FirstAddressOfdY=&(dY(0,0)[0]);
+      LastAddressOfdY=FirstAddressOfdY+DIM*NumPtcls*BasisSize;
+
+      myG.resize(NumPtcls);
+      myL.resize(NumPtcls);
+      myG_temp.resize(NumPtcls);
+      myL_temp.resize(NumPtcls);
+      FirstAddressOfG = &myG[0][0];
+      LastAddressOfG = FirstAddressOfG + DIM*NumPtcls;
     }
 
     app_log() << "  AGPDetermiant::resize checking size nup, ndown, basis " << nup << " " << ndown 
@@ -184,32 +209,6 @@ namespace qmcplusplus {
   AGPDeterminant::ValueType 
   AGPDeterminant::registerData(ParticleSet& P, PooledData<RealType>& buf) {
 
-    if(myG.size() == 0) {
-      myG.resize(NumPtcls);
-      myL.resize(NumPtcls);
-      myG_temp.resize(NumPtcls);
-      myL_temp.resize(NumPtcls);
-      dY.resize(NumPtcls,BasisSize);
-      d2Y.resize(NumPtcls,BasisSize);
-      dpsiU.resize(Nup,Nup);
-      dpsiD.resize(Ndown,Nup);
-      d2psiU.resize(Nup,Nup);
-      d2psiD.resize(Ndown,Nup);
-      dpsiUv.resize(Nup);
-      d2psiUv.resize(Nup);
-      dpsiDv.resize(Nup);
-      d2psiDv.resize(Nup);
-
-      FirstAddressOfdVU=&(dpsiU(0,0)[0]);
-      LastAddressOfdVU=FirstAddressOfdVU+DIM*Nup*Nup;
-      FirstAddressOfdVD=&(dpsiD(0,0)[0]);
-      LastAddressOfdVD=FirstAddressOfdVD+DIM*Ndown*Nup;
-      FirstAddressOfdY=&(dY(0,0)[0]);
-      LastAddressOfdY=FirstAddressOfdY+DIM*NumPtcls*BasisSize;
-      FirstAddressOfG = &myG[0][0];
-      LastAddressOfG = FirstAddressOfG + DIM*NumPtcls;
-    }
-
     evaluateLogAndStore(P);
 
     P.G += myG;
@@ -286,6 +285,7 @@ namespace qmcplusplus {
     AGPDeterminant::ValueType 
     AGPDeterminant::ratio(ParticleSet& P, int iat) {
 
+      UseRatioOnly=true;
       std::copy(phiT[iat],phiT[iat]+BasisSize,phiTv.begin());
       GeminalBasis->evaluate(P,iat);
       //BLAS::gemv(Lambda.rows(),Lambda.cols(), Lambda.data(), GeminalBasis->y(0), phiT[iat]);
@@ -322,6 +322,7 @@ namespace qmcplusplus {
 		    ParticleSet::ParticleGradient_t& dG, 
 		    ParticleSet::ParticleLaplacian_t& dL) {
 
+      UseRatioOnly=false;
       //copy the iat-row to temporary vectors, restore when rejected
       std::copy(phiT[iat],phiT[iat]+BasisSize,phiTv.begin());
 
@@ -430,11 +431,13 @@ namespace qmcplusplus {
      */
     void AGPDeterminant::acceptMove(ParticleSet& P, int iat) {
       CurrentDet *= curRatio;
-      myG = myG_temp;
-      myL = myL_temp;
       psiM = psiM_temp;
-      std::copy(GeminalBasis->dy(0),GeminalBasis->dy(0)+BasisSize,dY[iat]);
-      std::copy(GeminalBasis->d2y(0),GeminalBasis->d2y(0)+BasisSize,d2Y[iat]);
+      if(!UseRatioOnly) {
+        myG = myG_temp;
+        myL = myL_temp;
+        std::copy(GeminalBasis->dy(0),GeminalBasis->dy(0)+BasisSize,dY[iat]);
+        std::copy(GeminalBasis->d2y(0),GeminalBasis->d2y(0)+BasisSize,d2Y[iat]);
+      }
       curRatio=1.0;
     }
 
@@ -443,20 +446,22 @@ namespace qmcplusplus {
     void AGPDeterminant::restore(int iat) {
       psiM_temp = psiM;
       std::copy(phiTv.begin(), phiTv.end(),phiT[iat]);
-      if(iat<Nup) {
-        std::copy(dpsiUv.begin(), dpsiUv.end(),dpsiU[iat]);
-        std::copy(d2psiUv.begin(), d2psiUv.end(),d2psiU[iat]);
-        for(int d=0; d<Ndown; d++) {
-          dpsiD(d,iat)=dpsiDv[d];
-          d2psiD(d,iat)=d2psiDv[d];
-        }
-      } else {
-        int d=iat-Nup;
-        std::copy(dpsiDv.begin(), dpsiDv.end(),dpsiD[d]);
-        std::copy(d2psiDv.begin(), d2psiDv.end(),d2psiD[d]);
-        for(int kat=0; kat<Nup; kat++) {
-          dpsiU(kat,d)=dpsiUv[kat];
-          d2psiU(kat,d) = d2psiUv[kat];
+      if(!UseRatioOnly) {
+        if(iat<Nup) {
+          std::copy(dpsiUv.begin(), dpsiUv.end(),dpsiU[iat]);
+          std::copy(d2psiUv.begin(), d2psiUv.end(),d2psiU[iat]);
+          for(int d=0; d<Ndown; d++) {
+            dpsiD(d,iat)=dpsiDv[d];
+            d2psiD(d,iat)=d2psiDv[d];
+          }
+        } else {
+          int d=iat-Nup;
+          std::copy(dpsiDv.begin(), dpsiDv.end(),dpsiD[d]);
+          std::copy(d2psiDv.begin(), d2psiDv.end(),d2psiD[d]);
+          for(int kat=0; kat<Nup; kat++) {
+            dpsiU(kat,d)=dpsiUv[kat];
+            d2psiU(kat,d) = d2psiUv[kat];
+          }
         }
       }
       curRatio=1.0;

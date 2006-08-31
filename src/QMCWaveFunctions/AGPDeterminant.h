@@ -21,7 +21,8 @@
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "OhmmsPETE/OhmmsVector.h"
 //#include "QMCWaveFunctions/MolecularOrbitals/GridMolecularOrbitals.h"
-#include "QMCWaveFunctions/MolecularOrbitals/STOMolecularOrbitals.h"
+//#include "QMCWaveFunctions/MolecularOrbitals/STOMolecularOrbitals.h"
+#include "QMCWaveFunctions/MolecularOrbitals/GTOMolecularOrbitals.h"
 
 namespace qmcplusplus {
 
@@ -30,7 +31,8 @@ namespace qmcplusplus {
   public:
 
     //typedef GridMolecularOrbitals::BasisSetType BasisSetType;
-    typedef STOMolecularOrbitals::BasisSetType BasisSetType;
+    //typedef STOMolecularOrbitals::BasisSetType BasisSetType;
+    typedef GTOMolecularOrbitals::BasisSetType BasisSetType;
     typedef Matrix<ValueType> Determinant_t;
     typedef Matrix<GradType>  Gradient_t;
     typedef Matrix<ValueType> Laplacian_t;
@@ -147,6 +149,7 @@ namespace qmcplusplus {
 	     ParticleSet::ParticleGradient_t& G, 
 	     ParticleSet::ParticleLaplacian_t& L);
 
+    bool UseRatioOnly;
 
     ///Total number of particles
     int NumPtcls;
