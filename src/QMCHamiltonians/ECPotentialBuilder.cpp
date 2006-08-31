@@ -60,6 +60,9 @@ namespace qmcplusplus {
     }
 
     if(hasNonLocalPot) {
+      //resize the sphere
+      targetPtcl.resizeSphere(IonConfig.getTotalNum());
+
       NonLocalECPotential* apot = new NonLocalECPotential(IonConfig,targetPtcl,targetPsi);
       for(int i=0; i<nonLocalPot.size(); i++) {
         if(nonLocalPot[i]) apot->add(i,nonLocalPot[i]);

@@ -192,7 +192,7 @@ namespace qmcplusplus {
   { 
     d_table = DistanceTable::add(ions,els);
     NumIons=ions.getTotalNum();
-    els.resizeSphere(NumIons);
+    //els.resizeSphere(NumIons);
     PP.resize(NumIons,0);
   }
 
