@@ -21,6 +21,7 @@
 #include "Particle/DistanceTableData.h"
 #include "Particle/DistanceTable.h"
 #include "LongRange/StructFact.h"
+#include "Utilities/IteratorUtility.h"
 
 namespace qmcplusplus {
 
@@ -44,6 +45,7 @@ namespace qmcplusplus {
 
   ParticleSet::~ParticleSet() {
     if(SK) delete SK;
+    delete_iter(Sphere.begin(), Sphere.end());
   }
 
   void ParticleSet::initParticleSet() {
@@ -194,8 +196,10 @@ namespace qmcplusplus {
    * @param nc number of centers to which Spherical grid will be assigned.
    */
   void ParticleSet::resizeSphere(int nc) {
-    if(Sphere.size() != nc) {
-      for(int i=0; i<nc; i++) Sphere.push_back(new ParticlePos_t);
+    int nsadd=nc-Sphere.size();
+    while(nsadd>0) {
+      Sphere.push_back(new ParticlePos_t);
+      --nsadd;
     }
   }
 
