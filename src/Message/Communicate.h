@@ -28,6 +28,9 @@
 #else
   #ifdef HAVE_MPI
   #include <mpi.h>
+  #else
+  typedef int MPI_Status;
+  typedef int MPI_Request;
   #endif
 #endif
 
@@ -79,6 +82,7 @@ public:
 
   void cleanupMessage(void*);
   inline void setNodeID(int i) { d_mycontext = i;}
+  inline void setNumNodes(int n) { d_ncontexts = n;}
   inline void setCommID(mpi_comm_type i) { CommID = i;}
   void barrier();
 
