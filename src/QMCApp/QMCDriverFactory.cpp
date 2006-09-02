@@ -29,14 +29,14 @@
 #include "QMCDrivers/VMCParticleByParticle.h"
 #include "QMCDrivers/DMC/DMCFactory.h"
 #include "QMCDrivers/QMCOptimize.h"
-//#if !defined(QMCPLUSPLUS_RELEASE)
 #include "QMCDrivers/VMCMultiple.h"
 #include "QMCDrivers/VMCPbyPMultiple.h"
+#include "QMCDrivers/RQMCMultiple.h"
+#if !defined(QMC_COMPLEX)
 #include "QMCDrivers/VMCMultipleWarp.h"
 #include "QMCDrivers/VMCPbyPMultiWarp.h"
-#include "QMCDrivers/RQMCMultiple.h"
 #include "QMCDrivers/RQMCMultiWarp.h"
-//#endif
+#endif
 #include "QMCDrivers/WaveFunctionTester.h"
 #include "Utilities/OhmmsInfo.h"
 #include <queue>
@@ -230,20 +230,26 @@ namespace qmcplusplus {
         qmcDriver = new VMCMultiple(*qmcSystem,*primaryPsi,*primaryH);
       } else if(curQmcMode == 3) {//(0,1,1)
         qmcDriver = new VMCPbyPMultiple(*qmcSystem,*primaryPsi,*primaryH);
+#if !defined(QMC_COMPLEX)
       } else if(curQmcMode == 6) {//(1,1,0)
         qmcDriver = new VMCMultipleWarp(*qmcSystem,*primaryPsi,*primaryH, *ptclPool);
       } else if(curQmcMode == 7) {//(1,1,1)
         qmcDriver = new VMCPbyPMultiWarp(*qmcSystem,*primaryPsi,*primaryH, *ptclPool);
+#endif
       }
     } else if(curRunType == DMC_RUN) {
       DMCFactory fac(curQmcModeBits[UPDATE_MODE],cur);
       qmcDriver = fac.create(*qmcSystem,*primaryPsi,*primaryH,*hamPool);
     } else if(curRunType == RMC_RUN) {
+#if defined(QMC_COMPLEX)
+      qmcDriver = new RQMCMultiple(*qmcSystem,*primaryPsi,*primaryH);
+#else
       if(curQmcModeBits[SPACEWARP_MODE]) {
         qmcDriver = new RQMCMultiWarp(*qmcSystem,*primaryPsi,*primaryH, *ptclPool);
       } else {
         qmcDriver = new RQMCMultiple(*qmcSystem,*primaryPsi,*primaryH);
       }
+#endif
     } else if(curRunType == OPTIMIZE_RUN) {
       QMCOptimize *opt = new QMCOptimize(*qmcSystem,*primaryPsi,*primaryH);
       //opt->addConfiguration(PrevConfigFile);
