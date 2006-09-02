@@ -38,8 +38,7 @@ int main(int argc, char **argv) {
 
   qmcplusplus::QMCMain qmc(argc,argv);
 
-
-#if defined(HAVE_MPI)
+#if defined(MPIRUN_EXTRA_ARGUMENTS)
   char fname[128];
   if(OHMMS::Controller->master()) {
     sprintf(fname,"%s",argv[1]);
