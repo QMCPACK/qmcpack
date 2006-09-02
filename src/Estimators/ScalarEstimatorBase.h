@@ -23,6 +23,7 @@
 #include "OhmmsData/RecordProperty.h"
 #include "OhmmsPETE/TinyVector.h"
 #include "Particle/MCWalkerConfiguration.h"
+#include "Utilities/PooledData.h"
 
 namespace qmcplusplus {
 
@@ -42,6 +43,8 @@ namespace qmcplusplus {
 
     typedef typename MCWalkerConfiguration::Walker_t Walker_t;
     typedef typename MCWalkerConfiguration::iterator WalkerIterator;
+    typedef PooledData<T>                            BufferType;
+
     bool CollectSum;
 
     T b_average;
@@ -57,7 +60,7 @@ namespace qmcplusplus {
      *
      *Each ScalarEstimatorBase object adds a number of scalar data to record.
      */
-    virtual void add2Record(RecordNamedProperty<T>& record) = 0;
+    virtual void add2Record(RecordNamedProperty<T>& record, BufferType& msg) = 0;
 
     /** a virtual function to accumulate expectation values
      *\param awalker a single walker
@@ -73,7 +76,10 @@ namespace qmcplusplus {
      *
      *Evalaute the block-average and flush the internal data for new averages
      */
-    virtual void report(RecordNamedProperty<T>& record, T wgtinv) = 0;
+    virtual void report(RecordNamedProperty<T>& record, T wgtinv, BufferType& msg) = 0;
+
+    /** update the message buffer */
+    virtual void copy2Buffer(BufferType& msg)=0;
 
     /// a virtual function to flush the internal data to start a new block average
     virtual void reset() = 0;

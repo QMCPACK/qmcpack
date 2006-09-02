@@ -26,12 +26,14 @@
 
 #include "Configuration.h"
 #include "Estimators/ScalarEstimatorBase.h"
+#include "Message/Communicate.h"
 #include "Utilities/Timer.h"
 
 namespace qmcplusplus {
 
   class MCWalkerConifugration;
   class QMCHamiltonian;
+  class SimpleFixedNodeBranch;
 
   /**Class to manage a set of ScalarEstimators */
   class ScalarEstimatorManager: public QMCTraits {
@@ -39,6 +41,7 @@ namespace qmcplusplus {
   public:
 
     typedef ScalarEstimatorBase<RealType> EstimatorType;
+    typedef EstimatorType::BufferType     BufferType;
     enum { WEIGHT_INDEX=0, BLOCK_CPU_INDEX, ACCEPT_RATIO_INDEX, TOTAL_INDEX};
 
     ScalarEstimatorManager(QMCHamiltonian& h);
@@ -59,6 +62,7 @@ namespace qmcplusplus {
     void finalize();
     void reset();
   
+    void finalize(SimpleFixedNodeBranch& branchEngine);
     /** add a column with the name
      * @param aname name of the column
      * @return the column index
@@ -87,7 +91,7 @@ namespace qmcplusplus {
       return  TotalAverages[i];
     }
 
-		void getData(int i, vector<RealType>& values);
+    void getData(int i, vector<RealType>& values);
 
     /*!\return the index of the newestimator
      *\brief add a new estimator with name aname
@@ -131,7 +135,7 @@ namespace qmcplusplus {
 
     void setCollectionMode(bool collect);
 
-		void setAccumulateMode (bool setAccum) {AccumulateBlocks = setAccum;};
+    void setAccumulateMode (bool setAccum) {AccumulateBlocks = setAccum;};
 
   private:
 
@@ -141,9 +145,23 @@ namespace qmcplusplus {
     bool CollectSum;
     ///if yes, the block averages  are stored in TotalAverages
     bool AccumulateBlocks;
+    ///boolean to determine whether a header should be printed.
+    bool firstReport;
+    ///if true, needs to collect data using irecv.
+    bool ManagerNode;
+    int index;
 
-		bool firstReport;
-		int index;
+    //this should be encapsulated
+    int myNodeID;
+    int numNodes;
+    int myGroupID;
+    int msgBufferSize;
+    ///storage for MPI_Request
+    vector<MPI_Request> myRequest;
+    ///storage for MPI_Status
+    vector<MPI_Status> myStatus;
+    ///Data for communication
+    vector<BufferType*> RemoteData;
 
     ///Period to write 
     IndexType Period;
@@ -155,6 +173,8 @@ namespace qmcplusplus {
     TinyVector<IndexType,TOTAL_INDEX>  MyIndex;
     ///Data maintained by this object
     TinyVector<RealType,TOTAL_INDEX>  MyData;
+    ///Accumulated energy and population
+    TinyVector<RealType,2> EPSum;
     ///ostream for the output
     ostream* OutStream;
     ///ostream for the output
@@ -175,6 +195,7 @@ namespace qmcplusplus {
     vector<EstimatorType*> Estimators;
     ///Timer
     Timer MyTimer;
+
   };
 }
 #endif

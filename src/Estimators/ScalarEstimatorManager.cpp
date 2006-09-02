@@ -21,19 +21,44 @@
 #include "Message/Communicate.h"
 #include "Message/CommOperators.h"
 #include "Estimators/LocalEnergyEstimator.h"
-#include "Estimators/PolarizationEstimator.h"
+#include "QMCDrivers/SimpleFixedNodeBranch.h"
+//#include "Estimators/PolarizationEstimator.h"
+#include "Utilities/IteratorUtility.h"
+#define QMC_ASYNC_COLLECT
 
 using namespace qmcplusplus;
 
 ScalarEstimatorManager::ScalarEstimatorManager(QMCHamiltonian& h): 
- FileManager(true), CollectSum(false), AccumulateBlocks(false),
+ FileManager(true), CollectSum(false), 
+ AccumulateBlocks(false), ManagerNode(false),
+ firstReport(true), 
  Period(1000), NodeWeight(1.0), H(h), RootName("estimator"), 
-  OutStream(0), firstReport(true) { 
- 		Block2Total.resize(0); 
+  OutStream(0){ 
+    Block2Total.resize(0); 
+    myNodeID=OHMMS::Controller->mycontext();
+    numNodes=OHMMS::Controller->getNumNodes();
+    myGroupID=0;
+    if(numNodes ==1) {
+      RemoteData.push_back(new BufferType);
+      myRequest.resize(1);
+      myStatus.resize(1);
+    } else {
+      if(myNodeID) {
+        RemoteData.push_back(new BufferType);
+        RemoteData.push_back(new BufferType);
+        myRequest.resize(1);
+        myStatus.resize(1);
+      } else {
+        for(int i=0; i<numNodes;i++) RemoteData.push_back(new BufferType);
+        myRequest.resize(numNodes-1);
+        myStatus.resize(numNodes-1);
+      }
+    }
   }
 
 ScalarEstimatorManager::~ScalarEstimatorManager(){ 
-  Estimators.erase(Estimators.begin(), Estimators.end());
+  delete_iter(Estimators.begin(), Estimators.end());
+  delete_iter(RemoteData.begin(), RemoteData.end());
   if(OutStream) delete OutStream;
 }
 
@@ -45,7 +70,6 @@ ScalarEstimatorManager::add(EstimatorType* newestimator, const string& aname) {
     int n =  Estimators.size();
     Estimators.push_back(newestimator);
     EstimatorMap[aname] = n;
-    //newestimator->add2Record(BlockAverages);
     return n;
   } else {
     return (*it).second;
@@ -60,6 +84,64 @@ ScalarEstimatorManager::reset() {
   for(int i=0; i< Estimators.size(); i++) Estimators[i]->reset();
 }
 
+/**  print the header to the output file
+ *
+ * When ColllectSum is true, the manager node initiates asychronous recv.
+ */
+void 
+ScalarEstimatorManager::reportHeader(bool append) {
+
+  EPSum=0.0;
+
+  if(FileManager) {
+    if(!append)  {
+      *OutStream << "#    index     ";
+      for(int i=0; i<BlockAverages.size(); i++) 
+        (*OutStream) << setw(16) << BlockAverages.Name[i];
+      (*OutStream) << endl;
+    }
+    OutStream->setf(ios::right,ios::adjustfield);
+  }
+
+#if defined(HAVE_MPI) && defined(QMC_ASYNC_COLLECT)
+  if(ManagerNode) { //initiate the recv
+    for(int i=1,is=0; i<numNodes; i++,is++) {
+      MPI_Irecv(RemoteData[i]->begin(),msgBufferSize,MPI_DOUBLE,i,i,MPI_COMM_WORLD,&(myRequest[is]));
+    }
+  }
+#endif
+}
+
+/** closes the stream to the output file
+ */
+void 
+ScalarEstimatorManager::finalize() {
+  if(OutStream) delete OutStream;
+  OutStream = 0;
+#if defined(HAVE_MPI) && defined(QMC_ASYNC_COLLECT)
+  if(ManagerNode) {//cancel irecv initiazed by flush
+    for(int is=0; is<numNodes-1; is++) MPI_Cancel(&myRequest[is]);
+  }
+#endif
+}
+
+/** closes the stream to the output file
+ */
+void 
+ScalarEstimatorManager::finalize(SimpleFixedNodeBranch& branchEngine) {
+  if(OutStream) delete OutStream;
+  OutStream = 0;
+#if defined(HAVE_MPI) 
+#if defined(QMC_ASYNC_COLLECT)
+  if(ManagerNode) {//cancel irecv initiazed by flush
+    for(int is=0; is<numNodes-1; is++) MPI_Cancel(&myRequest[is]);
+  }
+#endif
+  MPI_Bcast(EPSum.begin(),2,MPI_DOUBLE,0,MPI_COMM_WORLD);
+#endif
+  branchEngine.setTrialEnergy(EPSum[0],EPSum[1]);
+}
+
 /** accumulate data for all the estimators
  */
 void 
@@ -68,14 +150,6 @@ ScalarEstimatorManager::accumulate(MCWalkerConfiguration& W) {
   for(int i=0; i< Estimators.size(); i++) 
     Estimators[i]->accumulate(W.begin(),W.end());
 
-  //RealType wgt_sum=0;
-  //MCWalkerConfiguration::const_iterator it(W.begin()),it_end(W.end());
-  //while(it != it_end) {
-  //  RealType wgt = (*it)->Weight;
-  //  wgt_sum+= wgt;
-  //  for(int i=0; i< Estimators.size(); i++) Estimators[i]->accumulate(**it,wgt);
-  //  ++it;
-  //}
   RealType wgt_sum=0;
   MCWalkerConfiguration::const_iterator it(W.begin()),it_end(W.end());
   while(it != it_end) {
@@ -85,21 +159,73 @@ ScalarEstimatorManager::accumulate(MCWalkerConfiguration& W) {
   MyData[WEIGHT_INDEX]+=wgt_sum;
 }
 
+
 /**  compute the averages for all the estimators and reset
+ *
+ * @todo MPI calls will be rmoved.
  */
 void ScalarEstimatorManager::flush(){
 
-  if(CollectSum) gsum(MyData,0);
+#if defined(HAVE_MPI) 
+  if(CollectSum) {
+    RemoteData[0]->rewind();
+    RemoteData[0]->put(MyData.begin(),MyData.end());
+    for(int i=0; i<Estimators.size(); i++) {
+      Estimators[i]->copy2Buffer(*RemoteData[0]);
+    }
+#if defined(QMC_ASYNC_COLLECT)
+    if(myNodeID) {
+      MPI_Isend(RemoteData[0]->data(),msgBufferSize, MPI_DOUBLE,0,myNodeID,MPI_COMM_WORLD,&(myRequest[0]));
+    } else {
+      MPI_Waitall(numNodes-1,&(myRequest[0]),&(myStatus[0]));
+      for(int is=1; is<numNodes; is++) {
+        BufferType::iterator tit(RemoteData[0]->begin());
+        BufferType::const_iterator rit(RemoteData[is]->begin()), rit_end(RemoteData[is]->end());
+        while(rit != rit_end) (*tit++) += (*rit++);
+      }
+    }
+    RemoteData[0]->rewind();
+    RemoteData[0]->get(MyData.begin(),MyData.end());
+    RealType wgtinv = 1.0/MyData[WEIGHT_INDEX];
+    for(int i=0; i<Estimators.size(); i++) 
+      Estimators[i]->report(BlockAverages,wgtinv,*RemoteData[0]);
+#else
+    //using reduce function
+    MPI_Reduce(RemoteData[0]->data(),RemoteData[1]->data(),RemoteData[0]->size(),
+        MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
+    RemoteData[1]->rewind();
+    RemoteData[1]->get(MyData.begin(),MyData.end());
+    RealType wgtinv = 1.0/MyData[WEIGHT_INDEX];
+    for(int i=0; i<Estimators.size(); i++) 
+      Estimators[i]->report(BlockAverages,wgtinv,*RemoteData[1]);
+#endif
+  } else {//CollectSum == false
+#endif
+    RealType wgtinv = 1.0/MyData[WEIGHT_INDEX];
+    for(int i=0; i<Estimators.size(); i++) 
+      Estimators[i]->report(BlockAverages,wgtinv,*RemoteData[0]);
 
-  RealType wgtinv = 1.0/MyData[WEIGHT_INDEX];
-  for(int i=0; i<Estimators.size(); i++) 
-    Estimators[i]->report(BlockAverages,wgtinv);
+#if defined(HAVE_MPI) 
+  }
+#endif
 
+    
   BlockAverages[MyIndex[WEIGHT_INDEX]]=MyData[WEIGHT_INDEX];
   BlockAverages[MyIndex[BLOCK_CPU_INDEX]] = MyData[BLOCK_CPU_INDEX]*NodeWeight;
   BlockAverages[MyIndex[ACCEPT_RATIO_INDEX]] = MyData[ACCEPT_RATIO_INDEX]*NodeWeight;
 
   MyData=0.0;
+
+  EPSum[0]+= Estimators[0]->average();
+  EPSum[1]+= 1.0;
+
+#if defined(HAVE_MPI) && defined(QMC_ASYNC_COLLECT)
+  if(ManagerNode) {
+    for(int i=1,is=0; i<numNodes; i++,is++) {
+      MPI_Irecv(RemoteData[i]->begin(),msgBufferSize,MPI_DOUBLE,i,i,MPI_COMM_WORLD,&(myRequest[is]));
+    }
+  }
+#endif
 }
 
 
@@ -108,69 +234,51 @@ void ScalarEstimatorManager::flush(){
  */
 void ScalarEstimatorManager::report(int iter){
   if(AccumulateBlocks) {
-		if(firstReport){
-			index = 0;
-			TotalAveragesData.resize(0,TotalAverages.size());
-			firstReport = false;
-		}
-		TotalAveragesData.add(1);
+    if(firstReport){
+      index = 0;
+      TotalAveragesData.resize(0,TotalAverages.size());
+      firstReport = false;
+    }
+    TotalAveragesData.add(1);
     for(int i=0; i<Block2Total.size(); i++) {
       TotalAveragesData(index,Block2Total[i])=BlockAverages[i];
     }
-		index++;
+    index++;
   }// else {
-    if(FileManager) {
-      (*OutStream) << setw(10) << iter;
-      for(int i=0; i<BlockAverages.size();i++)
-        (*OutStream) << setw(16) << BlockAverages[i];
-      (*OutStream) << endl;
-    }
+  if(FileManager) {
+    (*OutStream) << setw(10) << iter;
+    for(int i=0; i<BlockAverages.size();i++)
+      (*OutStream) << setw(16) << BlockAverages[i];
+    (*OutStream) << endl;
+  }
   //}
 }
 
 
 int ScalarEstimatorManager::addObservable(const char* aname) {
-	//cerr << "ScalarEstimator: addObservable with string " << aname;
-	int mine = BlockAverages.add(aname);
+  int mine = BlockAverages.add(aname);
   int add = TotalAverages.add(aname);
-	//cerr << " [found mine " << mine << " and add " << add << "; TotalAverages has size " << TotalAverages.size() << "] ";
-	if(mine < Block2Total.size()) {
-  	Block2Total[mine] = add;
-		//cerr << mine << "<" << Block2Total.size() << endl;
+  if(mine < Block2Total.size()) {
+    Block2Total[mine] = add;
   } else {
-		//cerr << "pushing back" << endl;
     Block2Total.push_back(add);
   }
   return mine;
 }
 
 void ScalarEstimatorManager::getData(int i, vector<RealType>& values){
-	//cerr << "ScalarEstimator::getData my data has ";
-	int entries = TotalAveragesData.rows();
-	//cerr << entries << " rows and " << TotalAveragesData.cols() << " columns." << endl;
-	values.resize(entries);
-	//cerr << " so entries is of size " << entries << " and I want to collect observables at index " << i << "; Block2Ttoal has size " << Block2Total.size() << endl;
-	for (int a=0; a<entries; a++){	
-		values[a] = TotalAveragesData(a,Block2Total[i]);
-		//cerr << "    " << a << ": loaded " << values[a] << " of " << entries << endl;
-	}
+  int entries = TotalAveragesData.rows();
+  values.resize(entries);
+  for (int a=0; a<entries; a++){	
+    values[a] = TotalAveragesData(a,Block2Total[i]);
+  }
 }
 
 /** combines the functionality of flush and report
  * @param iter the interval
  */
 void ScalarEstimatorManager::flushreport(int iter){
-
-  if(CollectSum) gsum(MyData,0);
-  RealType wgtinv = 1.0/MyData[WEIGHT_INDEX];
-  for(int i=0; i<Estimators.size(); i++)  
-    Estimators[i]->report(BlockAverages,wgtinv);
-
-  BlockAverages[MyIndex[WEIGHT_INDEX]]=MyData[WEIGHT_INDEX];
-  BlockAverages[MyIndex[BLOCK_CPU_INDEX]] = MyData[BLOCK_CPU_INDEX]*NodeWeight;
-  BlockAverages[MyIndex[ACCEPT_RATIO_INDEX]] = MyData[ACCEPT_RATIO_INDEX]*NodeWeight;
-  MyData=0.0;
-
+  flush();
   if(FileManager) {
     (*OutStream) << setw(10) << iter;
     for(int i=0; i<BlockAverages.size();i++) (*OutStream) << setw(16) << BlockAverages[i];
@@ -193,6 +301,7 @@ void ScalarEstimatorManager::setCollectionMode(bool collect) {
     FileManager = true;
     NodeWeight = 1.0;
   }
+  ManagerNode = (CollectSum && myNodeID==0);
 }
 
 
@@ -203,10 +312,18 @@ ScalarEstimatorManager::resetReportSettings(const string& aname, bool append) {
   if(Estimators.empty()) {
     add(new LocalEnergyEstimator<RealType>(H),"elocal");
   } 
+  
+  RemoteData[0]->clear();
+  RemoteData[0]->rewind();
+  RemoteData[0]->add(MyData.begin(),MyData.end());
+  //update the weight index table and set up the buffer
+  for(int i=0; i<Estimators.size(); i++) {
+    Estimators[i]->add2Record(BlockAverages,*RemoteData[0]);
+  }
+  msgBufferSize=RemoteData[0]->current();
 
-  //update the weight index
-  for(int i=0; i<Estimators.size(); i++) 
-    Estimators[i]->add2Record(BlockAverages);
+  //copy extra remote data
+  for(int i=1;i<RemoteData.size(); i++) (*RemoteData[i]) = (*RemoteData[0]);
 
   MyIndex[WEIGHT_INDEX] = BlockAverages.add("WeightSum");
   MyIndex[BLOCK_CPU_INDEX] = BlockAverages.add("BlockCPU");
@@ -229,29 +346,7 @@ ScalarEstimatorManager::resetReportSettings(const string& aname, bool append) {
   }
 
   BlockAverages.setValues(0.0);
-}
 
-/**  print the header to the output file
- */
-void 
-ScalarEstimatorManager::reportHeader(bool append) {
-  if(FileManager) {
-    if(!append)  {
-      *OutStream << "#    index     ";
-      for(int i=0; i<BlockAverages.size(); i++) 
-        (*OutStream) << setw(16) << BlockAverages.Name[i];
-      (*OutStream) << endl;
-    }
-    OutStream->setf(ios::right,ios::adjustfield);
-  }
-}
-
-/** closes the stream to the output file
- */
-void 
-ScalarEstimatorManager::finalize() {
-  if(OutStream) delete OutStream;
-  OutStream = 0;
 }
 
 
@@ -300,11 +395,11 @@ bool ScalarEstimatorManager::put(xmlNodePtr cur) {
     add(new LocalEnergyEstimator<RealType>(H),"elocal");
   } 
 
-  for(int i=0; i<extra.size(); i++) {
-    if(extra[i] == "Polarization"){
-      add(new PolarizationEstimator<RealType>(),extra[i]);
-    }
-  }
+  //for(int i=0; i<extra.size(); i++) {
+  //  if(extra[i] == "Polarization"){
+  //    add(new PolarizationEstimator<RealType>(),extra[i]);
+  //  }
+  //}
 
   //add extra
   return true;

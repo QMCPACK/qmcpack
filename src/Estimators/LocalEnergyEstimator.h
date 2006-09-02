@@ -94,12 +94,16 @@ namespace qmcplusplus {
     }
 
     /**  add the local energy, variance and all the Hamiltonian components to the scalar record container
-     *@param record storage of scalar records (name,value)
+     * @param record storage of scalar records (name,value)
+     * @param msg buffer for message passing
      */
-    void add2Record(RecordNamedProperty<T>& record) {
+    void add2Record(RecordNamedProperty<T>& record, BufferType& msg) {
       LocalEnergyIndex = record.add(elocal_name[ENERGY_INDEX].c_str());
       for(int i=1; i<elocal_name.size(); i++)
 	record.add(elocal_name[i].c_str());
+
+      //add elocal to the message buffer
+      msg.add(elocal.begin(),elocal.end());
     }
 
     inline void accumulate(const Walker_t& awalker, T wgt) {
@@ -142,12 +146,17 @@ namespace qmcplusplus {
       }
     }
 
+    ///copy the value to a message buffer
+    inline void copy2Buffer(BufferType& msg) {
+      msg.put(elocal.begin(),elocal.end());
+    }
+
     /** calculate the averages and reset to zero
      *\param record a container class for storing scalar records (name,value)
      *\param wgtinv the inverse weight
      */
-    inline void report(RecordNamedProperty<T>& record, T wgtinv) {
-      if(CollectSum) gsum(elocal,0);
+    inline void report(RecordNamedProperty<T>& record, T wgtinv, BufferType& msg) {
+      if(CollectSum) msg.get(elocal.begin(),elocal.end());
       register int ir=LocalEnergyIndex;
       b_average =  elocal[ENERGY_INDEX]*wgtinv;
       b_variance = elocal[ENERGY_SQ_INDEX]*wgtinv-b_average*b_average;
@@ -159,7 +168,6 @@ namespace qmcplusplus {
       }
       reset();
     }
-
   };
 
 }

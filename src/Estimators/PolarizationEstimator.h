@@ -44,12 +44,12 @@ namespace qmcplusplus {
       z_sum.resize(2,0.0);
     }
 
-    void add2Record(RecordNamedProperty<T>& record) {
+    void add2Record(RecordNamedProperty<T>& record, BufferType& msg) {
       pindex_0 = record.add("Pol-z");
       pindex_1 = record.add("Pol-z-var");
     }
 
-    inline void accumulate(const Walker_t& awalker, T wgt) {
+    inline void accumulate(const Walker_t& awalker, T wgt, BufferType& msg) {
       for(int i=0; i<awalker.size(); i++) {
 	T z = awalker.R[i][2];
 	z_sum[0] += wgt*z;

@@ -284,7 +284,7 @@ namespace qmcplusplus {
      *@param record storage of scalar records (name,value)
      */
   void 
-  MultipleEnergyEstimator::add2Record(RecordNamedProperty<RealType>& record) {
+  MultipleEnergyEstimator::add2Record(RecordNamedProperty<RealType>& record, BufferType& msg) {
     if(ediff_name.size()) {
       FirstColumnIndex = record.add(ediff_name[0].c_str());
       for(int i=1; i<ediff_name.size(); i++) record.add(ediff_name[i].c_str());
@@ -348,7 +348,8 @@ namespace qmcplusplus {
      *
      * Disable collection. MultipleEnergyEstimator does not need to communiate at all.
      */
-  void MultipleEnergyEstimator::report(RecordNamedProperty<RealType>& record, RealType wgtinv) {
+  void MultipleEnergyEstimator::report(RecordNamedProperty<RealType>& record, RealType wgtinv,
+      BufferType& msg) {
 
     if(CollectSum) gsum(esum,0);
 

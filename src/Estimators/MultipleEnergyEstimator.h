@@ -121,7 +121,7 @@ namespace qmcplusplus {
     /**  add the local energy, variance and all the Hamiltonian components to the scalar record container
      *@param record storage of scalar records (name,value)
      */
-    void add2Record(RecordNamedProperty<RealType>& record);
+    void add2Record(RecordNamedProperty<RealType>& record, BufferType& msg);
 
     void accumulate(const Walker_t& awalker, RealType wgt);
 
@@ -132,6 +132,8 @@ namespace qmcplusplus {
       }
     }
 
+    void copy2Buffer(BufferType& msg) { }
+
     ///reset all the cumulative sums to zero
     void reset();
 
@@ -139,7 +141,7 @@ namespace qmcplusplus {
      *\param record a container class for storing scalar records (name,value)
      *\param wgtinv the inverse weight
      */
-    void report(RecordNamedProperty<RealType>& record, RealType wgtinv);
+    void report(RecordNamedProperty<RealType>& record, RealType wgtinv, BufferType& msg);
 
     /** initialize the multi-configuration data
      *
