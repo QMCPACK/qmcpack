@@ -107,6 +107,14 @@ namespace qmcplusplus {
     return W.getActiveWalkers();
   }
 
+//#if defined(HAVE_MPI)
+//  WalkerControlBase::RealType WalkerControlBase::average(RealType eavg, RealType wgt) {
+//    gEavgWgt[0]=eavg;
+//    gEavgWgt[1]=wgt;
+//    gsum(gEavgWgt,0);
+//    return gEavgWgt[0]/gEavgWgt[1];
+//  }
+//#endif
 
 }
 /***************************************************************************

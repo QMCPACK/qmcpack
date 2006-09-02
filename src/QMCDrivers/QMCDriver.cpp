@@ -303,13 +303,14 @@ namespace qmcplusplus {
 
   bool QMCDriver::finalize(int block) {
 
-    branchEngine->update(W.getActiveWalkers(), Estimators->average(0));
+    Estimators->finalize(*branchEngine);
+    //branchEngine->update(W.getActiveWalkers(), Estimators->average(0));
 
     int nconf= (Period4WalkerDump>0) ? block/Period4WalkerDump:1;
     HDFWalkerOutput WOextra(RootName,true,nconf);
     WOextra.write(*branchEngine);
 
-    Estimators->finalize();
+    //Estimators->finalize();
 
     //set the target walkers
     nTargetWalkers = W.getActiveWalkers();
