@@ -53,7 +53,7 @@ WalkerControlMPI::branch(int iter, MCWalkerConfiguration& W, RealType trigger) {
   int nw = copyWalkers(W);
 
   //wait until everynode comes here
-  OHMMS::Controller->barrier();
+  //OHMMS::Controller->barrier();
   gsum(NumPerNode,0);
 
   Cur_min=Nmax; Cur_max=0; Cur_pop=0;

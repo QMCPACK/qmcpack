@@ -122,20 +122,21 @@ namespace qmcplusplus {
         do {
           Mover->advanceWalkers(W.begin(), W.end());
           ++interval;
-          ++step; ++CurrentStep; 
+          ++CurrentStep; 
         } while(interval<BranchInterval);
-
-        if(checkNonLocalMove) {
-          Estimators->setColumn(NonLocalMoveIndex, 
-              static_cast<RealType>(Mover->NonLocalMoveAccepted)/static_cast<RealType>(W.getActiveWalkers()*BranchInterval));
-        }
 
         Estimators->accumulate(W);
         int nwKept= branchEngine->branch(CurrentStep,W);
         Estimators->setColumn(PopIndex,nwKept);
         Eest = branchEngine->CollectAndUpdate(W.getActiveWalkers(),Eest);
 
+        ++step; 
       } while(step<nSteps);
+
+      if(checkNonLocalMove) {
+        Estimators->setColumn(NonLocalMoveIndex, 
+            static_cast<RealType>(Mover->NonLocalMoveAccepted)/static_cast<RealType>(W.getActiveWalkers()*BranchInterval));
+      }
 
       Estimators->stopBlock(Mover->acceptRatio());
 
@@ -166,15 +167,23 @@ namespace qmcplusplus {
       Mover->startBlock();
       Estimators->startBlock();
       do {
-        Mover->advanceWalkers(W.begin(),W.end());
 
-        ++step; ++CurrentStep;
+        IndexType interval = 0;
+        do {
+          Mover->advanceWalkers(W.begin(),W.end());
+          ++interval;
+          ++CurrentStep;
+        } while(interval<BranchInterval);
+
+        ++step; 
+        Mover->setMultiplicity(W.begin(),W.end());
+
+        //Will merge
         Estimators->accumulate(W);
         int cur_pop = branchEngine->branch(CurrentStep,W);
-        pop_acc += cur_pop;
-
         Eest = branchEngine->CollectAndUpdate(cur_pop,Eest);
 
+        pop_acc += cur_pop;
         if(CurrentStep%100 == 0) updateWalkers();
       } while(step<nSteps);
       
