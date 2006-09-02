@@ -70,7 +70,6 @@ namespace qmcplusplus {
     //initialize all the instances of distance tables and evaluate them 
     ptclPool->reset();
 
-    OHMMS::Controller->barrier();
 
     //write stuff
     app_log() << "=========================================================\n";
@@ -261,8 +260,9 @@ namespace qmcplusplus {
    */
   bool QMCMain::runQMC(xmlNodePtr cur) {
 
-    OHMMS::Controller->barrier();
     bool append_run = setQMCDriver(myProject.m_series,cur);
+
+    OHMMS::Controller->barrier();
 
     if(qmcDriver) {
       app_log() << endl;
@@ -276,9 +276,6 @@ namespace qmcplusplus {
       qmcDriver->setStatus(myProject.CurrentRoot(),PrevConfigFile, append_run);
       qmcDriver->putWalkers(m_walkerset_in);
       qmcDriver->process(cur);
-
-      //set up barrier
-      OHMMS::Controller->barrier();
 
       qmcDriver->run();
 
