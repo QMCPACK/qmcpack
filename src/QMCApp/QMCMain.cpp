@@ -262,7 +262,7 @@ namespace qmcplusplus {
 
     bool append_run = setQMCDriver(myProject.m_series,cur);
 
-    OHMMS::Controller->barrier();
+    //OHMMS::Controller->barrier();
 
     if(qmcDriver) {
       app_log() << endl;
