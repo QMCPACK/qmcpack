@@ -95,9 +95,10 @@ namespace qmcplusplus {
       //make a non-local move
       if(ibar) {
         int iat=nonLocalOps.id(ibar);
-        W.R[iat] += nonLocalOps.delta(ibar);
-        thisWalker.R[iat] = W.R[iat];
-        W.update();
+
+        //W.R[iat] += nonLocalOps.delta(ibar);
+        //thisWalker.R[iat] = W.R[iat];
+        //W.update();
         logpsi=Psi.evaluateLog(W);
         setScaledDrift(Tau,W.G,thisWalker.Drift);
         thisWalker.resetProperty(logpsi,Psi.getPhase(),emixed);
@@ -105,15 +106,16 @@ namespace qmcplusplus {
       } 
 
       thisWalker.Weight *= branchEngine->branchGF(Tau,emixed,0.0);
-      if(MaxAge) {
-        RealType M=thisWalker.Weight;
-        if(thisWalker.Age > MaxAge) M = std::min(0.5,M);
-        else if(thisWalker.Age > 0) M = std::min(1.0,M);
-        thisWalker.Multiplicity = M + RandomGen();
-        branchEngine->accumulate(eold,M);
-      } else {
-        branchEngine->accumulate(eold,1);
-      }
+      branchEngine->accumulate(eold,1);
+      //if(MaxAge) {
+      //  RealType M=thisWalker.Weight;
+      //  if(thisWalker.Age > MaxAge) M = std::min(0.5,M);
+      //  else if(thisWalker.Age > 0) M = std::min(1.0,M);
+      //  thisWalker.Multiplicity = M + RandomGen();
+      //  branchEngine->accumulate(eold,M);
+      //} else {
+      //  branchEngine->accumulate(eold,1);
+      //}
       
       ++it;
     }
@@ -196,16 +198,23 @@ namespace qmcplusplus {
         ++iat;
       }//end of drift+diffusion
 
-      if(nAcceptTemp) {
+      nonLocalOps.reset();
+      if(nAcceptTemp>0) {//need to overwrite the walker properties
         thisWalker.R = W.R;
+        w_buffer.rewind();
+        W.copyToBuffer(w_buffer);
+        RealType psi = Psi.evaluate(W,w_buffer);
+        enew= H.evaluate(W,nonLocalOps.Txy);
+        thisWalker.resetProperty(log(abs(psi)),psi,enew);
+        H.saveProperty(thisWalker.getPropertyBase());
+        //emixed = (eold+enew)*0.5e0;
+        emixed = enew;
       } else {
         thisWalker.Age++;
         ++nAllRejected;
         rr_accepted=0.0;
       }
 
-      nonLocalOps.reset();
-      enew= H.evaluate(W,nonLocalOps.Txy);
       int ibar = nonLocalOps.selectMove(RandomGen());
 
       //make a non-local move
@@ -218,28 +227,26 @@ namespace qmcplusplus {
         W.G += dG;
         W.L += dL;
         assignDrift(Tau,W.G,thisWalker.Drift);
+
+        thisWalker.R[iat]=W.R[iat];
+        w_buffer.rewind();
+        W.copyToBuffer(w_buffer);
+        RealType psi = Psi.evaluate(W,w_buffer);
+
         ++NonLocalMoveAccepted;
       } 
 
-      w_buffer.rewind();
-      W.copyToBuffer(w_buffer);
-      RealType psi = Psi.evaluate(W,w_buffer);
-
-      thisWalker.resetProperty(log(abs(psi)),psi,enew);
-      H.saveProperty(thisWalker.getPropertyBase());
-      emixed = (eold+enew)*0.5e0;
-
-      //branchEngine->setWeight(thisWalker,Tau*rr_accepted/rr_proposed,emixed,RandomGen());
       thisWalker.Weight *= branchEngine->branchGF(Tau*rr_accepted/rr_proposed,emixed,0.0);
-      if(MaxAge) {
-        RealType M=thisWalker.Weight;
-        if(thisWalker.Age > MaxAge) M = std::min(0.5,M);
-        else if(thisWalker.Age > 0) M = std::min(1.0,M);
-        thisWalker.Multiplicity = M + RandomGen();
-        branchEngine->accumulate(eold,M);
-      } else {
-        branchEngine->accumulate(eold,1);
-      }
+      branchEngine->accumulate(eold,1);
+      //if(MaxAge) {
+      //  RealType M=thisWalker.Weight;
+      //  if(thisWalker.Age > MaxAge) M = std::min(0.5,M);
+      //  else if(thisWalker.Age > 0) M = std::min(1.0,M);
+      //  thisWalker.Multiplicity = M + RandomGen();
+      //  branchEngine->accumulate(eold,M);
+      //} else {
+      //  branchEngine->accumulate(eold,1);
+      //}
       
       nAccept += nAcceptTemp;
       nReject += nRejectTemp;
@@ -249,12 +256,6 @@ namespace qmcplusplus {
 
   bool DMCNonLocalUpdatePbyP::put(xmlNodePtr cur) {
     return nonLocalOps.put(cur);
-    //ParameterSet m_param;
-    //m_param.add(Alpha,"alpha","double");
-    //m_param.add(Gamma,"gamma","double");
-    //bool success = m_param.put(cur);
-    //app_log() << "  Non-Local Move alpha = " << Alpha << " gamma = " << Gamma << endl; 
-    //return success;
   }
 }
 
