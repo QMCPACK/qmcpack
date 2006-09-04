@@ -320,7 +320,6 @@ namespace qmcplusplus {
 
     //flush the ostream
     OhmmsInfo::flush();
-
     return true;
   }
 

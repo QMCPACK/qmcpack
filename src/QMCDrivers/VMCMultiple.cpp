@@ -86,7 +86,6 @@ namespace qmcplusplus {
    * Similar to VMC::run 
    */
   bool VMCMultiple::run() {
-cerr << " In VMCMultiple::run" << endl;
     Estimators->reportHeader(AppendRun);
 
     bool require_register=false;
@@ -114,13 +113,11 @@ cerr << " In VMCMultiple::run" << endl;
     
 
     do {
-			//cerr << "do " << block << " of " << nBlocks << endl;
       IndexType step = 0;
       nAccept = 0; nReject=0;
 
       Estimators->startBlock();
       do {
-				//cerr << "  do " << step << " of " << nSteps << endl;
         advanceWalkerByWalker();
         step++;CurrentStep++;
         Estimators->accumulate(W);

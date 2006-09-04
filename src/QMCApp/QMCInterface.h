@@ -46,7 +46,7 @@ namespace qmcplusplus {
     ~QMCInterface();
 
     bool validateXML();
-    bool initialize();
+    bool initialize(int myProc, int numProcs);
   	bool SetVMC(double dt, int w, int steps, int nblocks);
   	bool SetVMCMultiple(double dt, int w, int steps, int nblocks);
 		bool process();

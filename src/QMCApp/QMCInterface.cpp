@@ -35,6 +35,7 @@
 #include <queue>
 using namespace std;
 #include "OhmmsData/AttributeSet.h"
+#include <sstream>
 
 namespace qmcplusplus {
 
@@ -56,12 +57,18 @@ namespace qmcplusplus {
   }
 
 
-  bool QMCInterface::initialize() {
+  bool QMCInterface::initialize(int myProc, int numProcs) {
 
     if(XmlDocStack.empty()) {
       ERRORMSG("No valid input file exists! Aborting QMCInterface::initialize")
       return false;
     }
+
+  	OHMMS::Controller->setNodeID(myProc);
+  	OHMMS::Controller->setNumNodes(numProcs);
+		ostringstream newTitle;
+		newTitle << myProject.m_title << "." << OHMMS::Controller->getNodeID();
+		myProject.setTitle(newTitle.str());
 
     //validate the input file
     bool success = validateXML();
@@ -86,9 +93,13 @@ namespace qmcplusplus {
   }
 
   bool QMCInterface::SetVMC(double dt, int w, int steps, int nblocks){
-    cerr << "    QMCInterface::SetVMC: Creating new VMC driver...";
+    //cerr << "    QMCInterface::SetVMC: Creating new VMC driver...";
+		if(qmcDriver != NULL){
+			//cerr << "qmcpack: deleting previous driver" << endl;
+			delete qmcDriver;
+		}
     qmcDriver = new VMC(*ptclPool->getWalkerSet("e"),*psiPool->getPrimary(),*hamPool->getPrimary());
-    cerr << " done." << endl;
+    //cerr << " done." << endl;
 
     bool append_run = false;
     qmcDriver->setStatus(myProject.CurrentRoot(),PrevConfigFile, append_run);
@@ -108,9 +119,13 @@ namespace qmcplusplus {
   } 
 
   bool QMCInterface::SetVMCMultiple(double dt, int w, int steps, int nblocks){
-    cerr << "    QMCInterface::SetVMCMultiple: Creating new VMCMultiple driver...";
+    //cerr << "    QMCInterface::SetVMCMultiple: Creating new VMCMultiple driver...";
+		if(qmcDriver != NULL){
+			//cerr << "qmcpack: deleting previous driver" << endl;
+			delete qmcDriver;
+		}
     qmcDriver = new VMCMultiple(*ptclPool->getWalkerSet("e"),*psiPool->getPrimary(),*hamPool->getPrimary());
-    cerr << " done." << endl;
+    //cerr << " done." << endl;
     
 		// get second psi, hamiltonian
     QMCHamiltonian* secondHam = hamPool->getHamiltonian("h1");
@@ -151,7 +166,7 @@ namespace qmcplusplus {
 		//cerr << " to " << pseudoSet->R[0] << " given H1 at " << refSet->R[0] << " and H2 at " << refSet->R[1] << endl;
 		//pseudoSet1->R[0] = 0.5*(refSet1->R[0] + refSet1->R[1]);
 
-    cerr << "    QMCInterface::execute: Running...";
+    //cerr << "    QMCInterface::execute: Running...";
     qmcDriver->run();
     //cerr << " done." << endl;
     return true;
@@ -183,96 +198,13 @@ namespace qmcplusplus {
 
 	// sets ptcl coordinates in speciefied set
   void QMCInterface::SetPtclPos(string set, int id, double* newR){
-		cerr << "int SetPtclPos, looking to move " << id << " of set " << set << endl;
+		//cerr << "int SetPtclPos, looking to move " << id << " of set " << set << endl;
     ParticleSet* mySet = ptclPool->getParticleSet(set);
-    cerr << "    QMCInterface::SetPtclPos: updated particle " << id << " of ParticleSet " << set << " from " << mySet->R[id];
+    //cerr << "    QMCInterface::SetPtclPos: updated particle " << id << " of ParticleSet " << set << " from " << mySet->R[id];
     qmcplusplus::TinyVector<double,3> newVec(newR[0],newR[1],newR[2]);
     mySet->R[id] = newVec;
-    cerr << " to " << mySet->R[id] << endl;
+    //cerr << " to " << mySet->R[id] << endl;
   }
-
-/*
-  bool QMCInterface::execute() {
-
-    cerr << "Going to try and print some particle positions " << endl;
-    ParticleSet* mySet = ptclPool->getParticleSet("i");
-    for(int i=0; i<mySet->R.size(); i++) cerr << i << ": " << mySet->R[i] << endl;
-
-//    qmcplusplus::TinyVector<double,3> newR(1.0,1.0,1.0);
-//    cerr << "Try moving the ion" << endl; 
-//    mySet->R[0] = newR;
-//    for(int i=0; i<mySet->R.size(); i++) cerr << i << ": " << mySet->R[i] << endl;
-
-    curMethod = string("invalid");
-    //xmlNodePtr cur=m_root->children;
-    xmlNodePtr cur=XmlDocStack.top()->getRoot()->children;
-    while(cur != NULL) {
-      string cname((const char*)cur->name);
-      if(cname == "qmc" || cname == "vmc" || cname == "dmc" || cname =="rmc" ||
-          cname == "optimize") {
-        string target("e");
-        const xmlChar* t=xmlGetProp(cur,(const xmlChar*)"target");
-        if(t) target = (const char*)t;
-cerr << "found target " << target << endl;
-
-        bool toRunQMC=true;
-        t=xmlGetProp(cur,(const xmlChar*)"completed");
-        if(t != NULL) {
-          if(xmlStrEqual(t,(const xmlChar*)"yes")) {
-            app_log() << "  This " << cname << " section is already executed." << endl;
-            toRunQMC=false;
-          }
-        } else {
-          xmlAttrPtr t1=xmlNewProp(cur,(const xmlChar*)"completed", (const xmlChar*)"no");
-        }
-
-        if(toRunQMC) {
-          qmcSystem = ptclPool->getWalkerSet(target);
-          bool good = runQMC(cur);
-          if(good) {
-            xmlAttrPtr t1=xmlSetProp(cur,(const xmlChar*)"completed", (const xmlChar*)"yes");
-            //q.push_back(cur);
-            FirstQMC=false;
-          } else {
-            app_error() << "   " << cname << " failed." << endl;
-          }
-          t=xmlGetProp(cur,(const xmlChar*)"id");
-          if(t == NULL) {
-            xmlAttrPtr t1=xmlNewProp(cur,(const xmlChar*)"id", 
-                (const xmlChar*)myProject.CurrentMainRoot());
-          }
-        }
-      }
-      cur=cur->next;
-    }
-
-    if(OHMMS::Controller->master()) {
-      int nproc=OHMMS::Controller->ncontexts();
-      if(nproc>1) {
-        xmlNodePtr t=m_walkerset.back();
-        xmlSetProp(t, (const xmlChar*)"node",(const xmlChar*)"0");
-        string fname((const char*)xmlGetProp(t,(const xmlChar*)"href"));
-        string::size_type ending=fname.find(".p");
-        string froot;
-        if(ending<fname.size()) 
-          froot = string(fname.begin(),fname.begin()+ending);
-        else
-          froot=fname;
-        char pfile[128];
-        for(int ip=1; ip<nproc; ip++) {
-	  sprintf(pfile,"%s.p%03d",froot.c_str(),ip);
-          std::ostringstream ip_str;
-          ip_str<<ip;
-          t = xmlAddNextSibling(t,xmlCopyNode(t,1));
-          xmlSetProp(t, (const xmlChar*)"node",(const xmlChar*)ip_str.str().c_str());
-          xmlSetProp(t, (const xmlChar*)"href",(const xmlChar*)pfile);
-        }
-      }
-      saveXml();
-    }
-    return true;
-  }
-*/
 
   /** validate the Interface document
    * @return false, if any of the basic objects is not properly created.
