@@ -119,6 +119,7 @@ namespace qmcplusplus {
       Estimators->startBlock();
       do {
         int interval=0; 
+        Mover->NonLocalMoveAccepted=0;
         do {
           Mover->advanceWalkers(W.begin(), W.end());
           ++interval;
@@ -129,7 +130,6 @@ namespace qmcplusplus {
         int nwKept= branchEngine->branch(CurrentStep,W);
         Estimators->setColumn(PopIndex,nwKept);
         Eest = branchEngine->CollectAndUpdate(W.getActiveWalkers(),Eest);
-
         ++step; 
       } while(step<nSteps);
 
@@ -167,7 +167,7 @@ namespace qmcplusplus {
       Mover->startBlock();
       Estimators->startBlock();
       do {
-
+        Mover->NonLocalMoveAccepted=0;
         IndexType interval = 0;
         do {
           Mover->advanceWalkers(W.begin(),W.end());
