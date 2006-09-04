@@ -74,6 +74,8 @@ namespace qmcplusplus {
 
         Mover->advanceWalkers(W.begin(),W.end());
         step++; CurrentStep++;
+
+        Mover->setMultiplicity(W.begin(),W.end());
         Estimators->accumulate(W);
         Eest = branchEngine->CollectAndUpdate(W.getActiveWalkers(),Eest);
         branchEngine->branch(CurrentStep,W);
