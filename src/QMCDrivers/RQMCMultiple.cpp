@@ -446,7 +446,8 @@ namespace qmcplusplus {
     MinusDirection=0;
     PlusDirection=1;
     Directionless=2;
-    if(branchEngine->LogNorm.size()==0){
+    nPsi=H1.size();
+    if(branchEngine->LogNorm.size()!=nPsi){
       branchEngine->LogNorm.resize(nPsi);
       for(int i=0; i<nPsi; i++)branchEngine->LogNorm[i]=0.e0;
     }
