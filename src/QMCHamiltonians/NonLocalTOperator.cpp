@@ -52,11 +52,9 @@ namespace qmcplusplus {
     RealType wgt_t=1.0;
     for(int i=1; i<Txy.size(); i++) {
       if(Txy[i].Weight>0) {
-        //wgt_t += newW[ii]=Tau*Gamma*Txy[i].Weight;
         wgt_t += Txy[i].Weight *=plusFactor;
       }
       else {
-        // wgt_t += newW[ii]=-Tau*(1.0-Alpha*(1.0+Gamma))*Txy[i].Weight;
         wgt_t += Txy[i].Weight *=minusFactor;
       }
     }
@@ -68,7 +66,6 @@ namespace qmcplusplus {
       ibar++;
       wsum += Txy[ibar].Weight;
     }
-
     return ibar;
   }
 
