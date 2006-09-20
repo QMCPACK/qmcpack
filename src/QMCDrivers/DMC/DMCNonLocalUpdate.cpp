@@ -207,8 +207,7 @@ namespace qmcplusplus {
         enew= H.evaluate(W,nonLocalOps.Txy);
         thisWalker.resetProperty(log(abs(psi)),psi,enew);
         H.saveProperty(thisWalker.getPropertyBase());
-        //emixed = (eold+enew)*0.5e0;
-        emixed = enew;
+        emixed = (eold+enew)*0.5e0;
       } else {
         thisWalker.Age++;
         ++nAllRejected;
