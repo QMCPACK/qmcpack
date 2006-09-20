@@ -57,6 +57,7 @@ ELSE(QMC_COMPLEX)
     ../QMCHamiltonians/LocalCorePolPotential.cpp
     ../QMCHamiltonians/NonLocalPPotential.cpp
     ../QMCHamiltonians/LocalECPotential.cpp
+    ../QMCHamiltonians/NonLocalECPComponent.cpp
     ../QMCHamiltonians/NonLocalECPotential.cpp
     ../QMCHamiltonians/ECPotentialBuilder.cpp
     ../QMCHamiltonians/ECPComponentBuilder.cpp
