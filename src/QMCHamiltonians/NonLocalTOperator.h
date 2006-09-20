@@ -15,7 +15,9 @@
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 /**@file NonLocalTOperator.h
- *@brief Declaration of NonLocalTOperator
+ * @brief Declaration of NonLocalTOperator
+ *
+ * NonLocalTOperator has the off-diagonal transition probability matrix.
  */
 #ifndef QMCPLUSPLUS_NONLOCALTRANSITIONOPERATOR_H
 #define QMCPLUSPLUS_NONLOCALTRANSITIONOPERATOR_H
@@ -48,9 +50,22 @@ namespace qmcplusplus {
       return Txy[ibar].Delta;
     }
 
+    /** initialize the parameters */
     bool put(xmlNodePtr cur);
+
+    /** reserve Txy for memory optimization */
     void reserve(int n);
+
+    /** reset Txy for a new set of non-local moves 
+     *
+     * Txy[0] is always 1 corresponding to the diagonal(no) move
+     */
     void reset();
+
+    /** select the move for a given probability
+     * @param prob value [0,1)
+     * @return the move index k for \f$\sum_i^K T/\sum_i^N < prob\f$
+     */
     int selectMove(RealType prob);
   };
 
