@@ -76,6 +76,7 @@ namespace qmcplusplus {
 
     typedef typename ScalarEstimatorBase<T>::Walker_t Walker_t;
     typedef typename ScalarEstimatorBase<T>::WalkerIterator WalkerIterator;
+    typedef typename ScalarEstimatorBase<T>::BufferType BufferType;
   
     /** constructor
      * @param h QMCHamiltonian to define the components
