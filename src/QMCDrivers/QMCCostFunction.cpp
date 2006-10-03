@@ -431,6 +431,7 @@ namespace qmcplusplus {
     m_param.add(PowerE,"power","int");
     m_param.add(CorrelationFactor,"correlation","scalar");
     m_param.add(MinNumWalkers,"min_walkers","scalar");
+    m_param.add(MinNumWalkers,"minWalkers","scalar");
     m_param.add(MaxWeight,"maxWeight","scalar");
     m_param.put(q);
 
