@@ -112,27 +112,27 @@ namespace qmcplusplus {
 	  //CenterID[abasis] = activeCenter = ncenters++;
           CenterID[abasis]=activeCenter=IonSys.getSpeciesSet().findSpecies(abasis);
 	  int Lmax(0); //maxmimum angular momentum of this center
-    int num(0);//the number of localized basis functions of this center
+          int num(0);//the number of localized basis functions of this center
 
-	  //process the basic property: maximun angular momentum, the number of basis functions to be added
-    vector<xmlNodePtr> radGroup;
-	  xmlNodePtr cur1 = cur->xmlChildrenNode;
-    xmlNodePtr gptr=0;
-	  while(cur1 != NULL) {
-	    string cname1((const char*)(cur1->name));
-	    if(cname1 == basisfunc_tag || cname1 == "basisGroup") {
-        radGroup.push_back(cur1);
-    	  int l=atoi((const char*)(xmlGetProp(cur1, (const xmlChar *)"l")));
-	      Lmax = max(Lmax,l);
-	      //expect that only Rnl is given
-	      if(expandlm) 
-          num += 2*l+1;
-	      else
-          num++;
-	   	} else if(cname1 == "grid") {
-        gptr = cur1;
-    	}
-	  	cur1 = cur1->next;
+          //process the basic property: maximun angular momentum, the number of basis functions to be added
+          vector<xmlNodePtr> radGroup;
+          xmlNodePtr cur1 = cur->xmlChildrenNode;
+          xmlNodePtr gptr=0;
+          while(cur1 != NULL) {
+            string cname1((const char*)(cur1->name));
+            if(cname1 == basisfunc_tag || cname1 == "basisGroup") {
+              radGroup.push_back(cur1);
+              int l=atoi((const char*)(xmlGetProp(cur1, (const xmlChar *)"l")));
+              Lmax = max(Lmax,l);
+              //expect that only Rnl is given
+              if(expandlm) 
+                num += 2*l+1;
+              else
+                num++;
+            } else if(cname1 == "grid") {
+              gptr = cur1;
+            }
+            cur1 = cur1->next;
 	  }
 	  XMLReport("Adding a center " << abasis << " centerid "<< CenterID[abasis])
           XMLReport("Maximum angular momentum    = " << Lmax)
