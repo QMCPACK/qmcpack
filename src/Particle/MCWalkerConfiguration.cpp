@@ -95,11 +95,16 @@ MCWalkerConfiguration::destroyWalkers(iterator first, iterator last) {
 
 void
 MCWalkerConfiguration::destroyWalkers(int nw) {
-   iterator it(WalkerList.begin()+nw),it_end(WalkerList.end());
-   while(it != it_end) {
-     delete *it++;
-   }
-   WalkerList.erase(WalkerList.begin()+nw,WalkerList.end());
+  if(WalkerList.size() == 1 || nw >= WalkerList.size()) {
+    app_warning() << "  Cannot remove walkers. Current Walkers = " << WalkerList.size() << endl;
+    return;
+  }
+  nw=WalkerList.size()-nw;
+  iterator it(WalkerList.begin()+nw),it_end(WalkerList.end());
+  while(it != it_end) {
+    delete *it++;
+  }
+  WalkerList.erase(WalkerList.begin()+nw,WalkerList.end());
 }
 
 void 
