@@ -95,28 +95,17 @@ namespace qmcplusplus {
       //make a non-local move
       if(ibar) {
         int iat=nonLocalOps.id(ibar);
-
-        //W.R[iat] += nonLocalOps.delta(ibar);
-        //thisWalker.R[iat] = W.R[iat];
-        //W.update();
+        W.R[iat] += nonLocalOps.delta(ibar);
+        W.update();
         logpsi=Psi.evaluateLog(W);
         setScaledDrift(Tau,W.G,thisWalker.Drift);
-        thisWalker.resetProperty(logpsi,Psi.getPhase(),emixed);
+        thisWalker.resetProperty(logpsi,Psi.getPhase(),eold);
+        thisWalker.R[iat] = W.R[iat];
         ++NonLocalMoveAccepted;
       } 
 
       thisWalker.Weight *= branchEngine->branchGF(Tau,emixed,0.0);
       branchEngine->accumulate(eold,1);
-      //if(MaxAge) {
-      //  RealType M=thisWalker.Weight;
-      //  if(thisWalker.Age > MaxAge) M = std::min(0.5,M);
-      //  else if(thisWalker.Age > 0) M = std::min(1.0,M);
-      //  thisWalker.Multiplicity = M + RandomGen();
-      //  branchEngine->accumulate(eold,M);
-      //} else {
-      //  branchEngine->accumulate(eold,1);
-      //}
-      
       ++it;
     }
   }
@@ -237,15 +226,6 @@ namespace qmcplusplus {
 
       thisWalker.Weight *= branchEngine->branchGF(Tau*rr_accepted/rr_proposed,emixed,0.0);
       branchEngine->accumulate(eold,1);
-      //if(MaxAge) {
-      //  RealType M=thisWalker.Weight;
-      //  if(thisWalker.Age > MaxAge) M = std::min(0.5,M);
-      //  else if(thisWalker.Age > 0) M = std::min(1.0,M);
-      //  thisWalker.Multiplicity = M + RandomGen();
-      //  branchEngine->accumulate(eold,M);
-      //} else {
-      //  branchEngine->accumulate(eold,1);
-      //}
       
       nAccept += nAcceptTemp;
       nReject += nRejectTemp;
