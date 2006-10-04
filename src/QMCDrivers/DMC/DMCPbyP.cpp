@@ -85,33 +85,104 @@ namespace qmcplusplus {
     Mover->resetRun(branchEngine);
     Mover->initWalkers(W.begin(),W.end());
 
-    if(fixW)  {
+    if(fixW) {
+      Mover->MaxAge=0;
       if(BranchInterval<0) {
         BranchInterval=nSteps;
         nSteps=1;
       }
       app_log() << "  DMC PbyP update with reconfigurations" << endl;
-      app_log() << "    BranchInterval=" << BranchInterval << endl;
-      app_log() << "    Steps         =" << nSteps << endl;
-      app_log() << "    Blocks        =" << nBlocks << endl;
-      dmcWithReconfiguration();
     } else {
+      Mover->MaxAge=1;
+      if(BranchInterval<0) BranchInterval=1;
       app_log() << "  DMC PbyP update with a fluctuating population" << endl;
-      dmcWithBranching();
     }
+
+    app_log() << "    BranchInterval=" << BranchInterval << endl;
+    app_log() << "    Steps         =" << nSteps << endl;
+    app_log() << "    Blocks        =" << nBlocks << endl;
+
+    nAcceptTot = 0;
+    nRejectTot = 0;
+
+    dmcWithBranching();
+    //if(fixW)  {
+    //  dmcWithReconfiguration();
+    //} else {
+    //  dmcWithBranching();
+    //}
 
     Estimators->finalize();
 
     return true;
   }
 
+  void DMCPbyP::dmcWithBranching() {
+
+    bool checkNonLocalMove=(NonLocalMoveIndex>0);
+    //Mover->MaxAge=1;
+    IndexType block = 0;
+    RealType Eest = branchEngine->E_T;
+    do {
+      IndexType step = 0;
+      IndexType pop_acc=0; 
+
+      Mover->startBlock();
+      Estimators->startBlock();
+      Mover->NonLocalMoveAccepted=0;
+
+      do {
+
+        //DMC without branching, weights are accumulated
+        IndexType interval = 0;
+        do {
+          Mover->advanceWalkers(W.begin(),W.end());
+          ++interval;
+          ++CurrentStep;
+        } while(interval<BranchInterval);
+
+        //set the multiplicity with the weights
+        Mover->setMultiplicity(W.begin(),W.end());
+
+        Estimators->accumulate(W);
+        int cur_pop = branchEngine->branch(CurrentStep,W);
+
+        Estimators->setColumn(PopIndex,cur_pop);
+        Eest = branchEngine->CollectAndUpdate(W.getActiveWalkers(),Eest);
+        //Eest = branchEngine->CollectAndUpdate(cur_pop,Eest);
+
+        pop_acc += cur_pop;
+        if(CurrentStep%100 == 0) updateWalkers();
+
+        ++step; 
+      } while(step<nSteps);
+      
+      if(checkNonLocalMove) {
+        Estimators->setColumn(NonLocalMoveIndex, 
+        static_cast<RealType>(Mover->NonLocalMoveAccepted)/
+        static_cast<RealType>(W.getActiveWalkers()*BranchInterval));
+      }
+
+      Estimators->stopBlock(Mover->acceptRatio());
+
+      nAcceptTot += Mover->nAccept;
+      nRejectTot += Mover->nReject;
+
+      //update estimator
+      //Estimators->setColumn(PopIndex,static_cast<RealType>(pop_acc)/static_cast<RealType>(nSteps));
+      Estimators->setColumn(EtrialIndex,Eest); 
+      Eest = Estimators->average(0);
+      RealType totmoves=1.0/static_cast<RealType>(step*W.getActiveWalkers());
+
+      block++;
+      recordBlock(block);
+    } while(block<nBlocks);
+  }
+
   void DMCPbyP::dmcWithReconfiguration() {
     //MaxAge is set to 0 not to evaluate branching factor
     bool checkNonLocalMove=(NonLocalMoveIndex>0);
-    Mover->MaxAge=0;
     IndexType block = 0;
-    IndexType nAcceptTot = 0;
-    IndexType nRejectTot = 0;
     RealType Eest=branchEngine->E_T;
     do {
       IndexType step = 0;
@@ -148,64 +219,6 @@ namespace qmcplusplus {
       recordBlock(block);
 
       updateWalkers();
-    } while(block<nBlocks);
-  }
-
-  void DMCPbyP::dmcWithBranching() {
-
-    bool checkNonLocalMove=(NonLocalMoveIndex>0);
-    Mover->MaxAge=1;
-    IndexType block = 0;
-    RealType Eest = branchEngine->E_T;
-    nAcceptTot = 0;
-    nRejectTot = 0;
-
-    do {
-      IndexType step = 0;
-      IndexType pop_acc=0; 
-
-      Mover->startBlock();
-      Estimators->startBlock();
-      do {
-        Mover->NonLocalMoveAccepted=0;
-        IndexType interval = 0;
-        do {
-          Mover->advanceWalkers(W.begin(),W.end());
-          ++interval;
-          ++CurrentStep;
-        } while(interval<BranchInterval);
-
-        ++step; 
-        Mover->setMultiplicity(W.begin(),W.end());
-
-        //Will merge
-        Estimators->accumulate(W);
-        int cur_pop = branchEngine->branch(CurrentStep,W);
-        Eest = branchEngine->CollectAndUpdate(cur_pop,Eest);
-
-        pop_acc += cur_pop;
-        if(CurrentStep%100 == 0) updateWalkers();
-      } while(step<nSteps);
-      
-      if(checkNonLocalMove) {
-        Estimators->setColumn(NonLocalMoveIndex, 
-        static_cast<RealType>(Mover->NonLocalMoveAccepted)/
-        static_cast<RealType>(W.getActiveWalkers()*BranchInterval));
-      }
-
-      Estimators->stopBlock(Mover->acceptRatio());
-
-      nAcceptTot += Mover->nAccept;
-      nRejectTot += Mover->nReject;
-
-      //update estimator
-      Estimators->setColumn(PopIndex,static_cast<RealType>(pop_acc)/static_cast<RealType>(nSteps));
-      Estimators->setColumn(EtrialIndex,Eest); 
-      Eest = Estimators->average(0);
-      RealType totmoves=1.0/static_cast<RealType>(step*W.getActiveWalkers());
-
-      block++;
-      recordBlock(block);
     } while(block<nBlocks);
   }
 
