@@ -31,6 +31,8 @@ namespace qmcplusplus {
     typedef map<string,ParticleSet*> PtclPoolType;
     typedef map<string,WaveFunctionFactory*> OrbitalPoolType;
 
+    ///type of the lattice. 0=non-periodic, 1=periodic
+    int PBCType;
     ///target ParticleSet
     ParticleSet* targetPtcl;
     ///many-body wavefunction object

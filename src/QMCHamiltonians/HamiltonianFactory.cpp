@@ -33,9 +33,10 @@
 #include "QMCHamiltonians/MomentumDistribution.h"
 #include "QMCHamiltonians/DispersionRelation.h"
 #endif
-#if !defined(QMCPLUSPLUS_RELEASE)
-#include "QMCHamiltonians/CoulombPBC.h"
-#endif
+//CoulombPBC is replaced by CoulombPBCAATemp and CoulombPBCABTemp
+//#include "QMCHamiltonians/CoulombPBC.h"
+#include "QMCHamiltonians/CoulombPBCAATemp.h"
+#include "QMCHamiltonians/CoulombPBCABTemp.h"
 #include "OhmmsData/AttributeSet.h"
 
 namespace qmcplusplus {
@@ -43,7 +44,10 @@ namespace qmcplusplus {
     PtclPoolType& pset, OrbitalPoolType& oset): 
     targetPtcl(qp), targetH(0), 
   ptclPool(pset),psiPool(oset), myNode(NULL), psiName("psi0") 
-  {}
+  {
+    //PBCType is zero or 1 but should be generalized 
+    PBCType=targetPtcl->Lattice.BoxBConds[0];
+  }
 
   /** main hamiltonian build function
    * @param cur element node <hamiltonian/>
@@ -144,60 +148,27 @@ namespace qmcplusplus {
       cur = cur->next;
     }
 
+    //This should be disabled
     if(targetH->size() == 1) {//no external potential is provided, use type
-
       WARNMSG("Using pre-determined hamiltonian for molecular systems.")
-
       PtclPoolType::iterator pit(ptclPool.find(source));
       if(pit == ptclPool.end()) {
         ERRORMSG("No ionic system " << source << " exists.")
         return false;
       }
       ParticleSet* ion=(*pit).second;
-      if(targetPtcl->Lattice.BoxBConds[0]){
-#if defined(QMCPLUSPLUS_RELEASE)
-        ERRORMSG("This version cannot handle PBC. The ElecElec potential will be wrong.")
-	targetH->addOperator(new CoulombPotentialAA(*targetPtcl),"ElecElec");
-#else
-	targetH->addOperator(new CoulombPBCAA(*targetPtcl),"ElecElec");
-#endif
-      }
-      else{
-	targetH->addOperator(new CoulombPotentialAA(*targetPtcl),"ElecElec");
-      }
-
+      if(PBCType) targetH->addOperator(new CoulombPBCAATemp(*targetPtcl),"ElecElec");
+      else targetH->addOperator(new CoulombPotentialAA(*targetPtcl),"ElecElec");
       if(htype == "molecule" || htype=="coulomb"){
-	if(targetPtcl->Lattice.BoxBConds[0]){
-#if defined(QMCPLUSPLUS_RELEASE)
-          ERRORMSG("This version cannot handle PBC. The Coulomb potential will be wrong.")
-	  targetH->addOperator(new CoulombPotentialAB(*ion,*targetPtcl),"Coulomb");
-#else
-	  targetH->addOperator(new CoulombPBCAB(*ion,*targetPtcl),"Coulomb");
-#endif
-	} else {
-	  targetH->addOperator(new CoulombPotentialAB(*ion,*targetPtcl),"Coulomb");
-	}
-//      } else if(htype == "siesta" || htype=="pseudo") {
-//        if(!psiPool.empty())  {
-//          TrialWaveFunction* psi = (*(psiPool.begin())).second->targetPsi;
-//          targetH->addOperator(new NonLocalPPotential(*ion,*targetPtcl,*psi),"NonLocal");
-//        }
+        if(PBCType) targetH->addOperator(new CoulombPBCABTemp(*ion,*targetPtcl),"Coulomb");
+        else targetH->addOperator(new CoulombPotentialAB(*ion,*targetPtcl),"Coulomb");
       } else {
         ERRORMSG(htype << " is diabled")
       }
-
-      if(ion->getTotalNum()>1) 
-	if(ion->Lattice.BoxBConds[0]){
-#if defined(QMCPLUSPLUS_RELEASE)
-          ERRORMSG("This version cannot handle PBC. The IonIon potential will be wrong.")
-          targetH->addOperator(new IonIonPotential(*ion),"IonIon");
-#else
-          targetH->addOperator(new CoulombPBCAA(*ion),"IonIon");
-#endif
-	}
-	else{
-          targetH->addOperator(new IonIonPotential(*ion),"IonIon");
-	}
+      if(ion->getTotalNum()>1) {
+        if(PBCType) targetH->addOperator(new CoulombPBCAATemp(*ion),"IonIon");
+        else targetH->addOperator(new IonIonPotential(*ion),"IonIon");
+      }
     }
 
     return true;
@@ -222,31 +193,22 @@ namespace qmcplusplus {
 
     ParticleSet* source = (*pit).second;
 
+    //CHECK PBC and create CoulombPBC for el-el
     if(source == targetPtcl) {
-      //CHECK PBC and create CoulombPBC for el-el
       if(source->getTotalNum()>1)  {
-	  if(targetPtcl->Lattice.BoxBConds[0]) {
-#if defined(QMCPLUSPLUS_RELEASE)
-            ERRORMSG("This version cannot handle PBC. The " << title << " potential will be wrong.")
-	    targetH->addOperator(new CoulombPotentialAA(*targetPtcl),title);
-#else
-	    targetH->addOperator(new CoulombPBCAA(*targetPtcl),title);
-#endif
-	  }
-	  else {
-	    targetH->addOperator(new CoulombPotentialAA(*targetPtcl),title);
-	  }
+        if(PBCType) {
+          //targetH->addOperator(new CoulombPBCAA(*targetPtcl),title);
+          targetH->addOperator(new CoulombPBCAATemp(*targetPtcl),title);
+        } else {
+          targetH->addOperator(new CoulombPotentialAA(*targetPtcl),title);
+        }
       }
     } else {
-      if(targetPtcl->Lattice.BoxBConds[0]) {
-#if defined(QMCPLUSPLUS_RELEASE)
-        ERRORMSG("This version cannot handle PBC. The " << title << " potential will be wrong.")
-	targetH->addOperator(new CoulombPotentialAB(*source,*targetPtcl),title);
-#else
-	targetH->addOperator(new CoulombPBCAB(*source,*targetPtcl),title);
-#endif
+      if(PBCType) {
+        //targetH->addOperator(new CoulombPBCAB(*source,*targetPtcl),title);
+        targetH->addOperator(new CoulombPBCABTemp(*source,*targetPtcl),title);
       } else {
-	targetH->addOperator(new CoulombPotentialAB(*source,*targetPtcl),title);
+        targetH->addOperator(new CoulombPotentialAB(*source,*targetPtcl),title);
       }
     }
   }
@@ -329,13 +291,9 @@ namespace qmcplusplus {
     if(pit != ptclPool.end()) {
       ParticleSet* ion=(*pit).second;
       if(ion->getTotalNum()>1) 
-        if(ion->Lattice.BoxBConds[0]){
-#if defined(QMCPLUSPLUS_RELEASE)
-          ERRORMSG("This version cannot handle PBC. The IonIon potential will be wrong.")
-          targetH->addOperator(new IonIonPotential(*ion),"IonIon");
-#else
-	  targetH->addOperator(new CoulombPBCAA(*ion),"IonIon");
-#endif
+        if(PBCType){
+          //targetH->addOperator(new CoulombPBCAA(*ion),"IonIon");
+          targetH->addOperator(new CoulombPBCAATemp(*ion),"IonIon");
         } else {
           targetH->addOperator(new IonIonPotential(*ion),"IonIon");
         }
