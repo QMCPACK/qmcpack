@@ -16,6 +16,8 @@ namespace qmcplusplus {
 
   class LRBasis: public QMCTraits {
   protected:
+    ///size of the basis elements
+    int BasisSize;
     ///Real-space cutoff for short-range part
     RealType m_rc; 
 
@@ -33,9 +35,10 @@ namespace qmcplusplus {
 
     virtual ~LRBasis() { }
 
-    virtual int NumBasisElem() = 0;
+    inline int NumBasisElem() const {return BasisSize;}
+
     //Real-space basis function + integral: override these
-    virtual RealType h(int n, RealType r) = 0;
+    virtual RealType h(int n, RealType r) const = 0;
     virtual RealType hintr2(int n) = 0;
     //k-space basis function: override this
     virtual RealType c(int m, RealType k) = 0;
