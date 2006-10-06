@@ -29,6 +29,7 @@ namespace qmcplusplus {
     d_table = DistanceTable::add(ions,els);
     //allocate null
     PP.resize(NumIons,0);
+    Zeff.resize(NumIons,1.0);
   } 
 
   ///destructor
@@ -43,11 +44,14 @@ namespace qmcplusplus {
     d_table = DistanceTable::add(IonConfig,P);
   }
 
-  void LocalECPotential::add(int groupID, RadialPotentialType* ppot) {
+  void LocalECPotential::add(int groupID, RadialPotentialType* ppot, RealType z) {
     map<int,RadialPotentialType*>::iterator pit(PPset.find(groupID));
     if(pit  == PPset.end()) {
       for(int iat=0; iat<PP.size(); iat++) {
-        if(IonConfig.GroupID[iat]==groupID) PP[iat]=ppot;
+        if(IonConfig.GroupID[iat]==groupID) {
+          PP[iat]=ppot;
+          Zeff[iat]=z;
+        }
       }
       PPset[groupID]=ppot;
     }
@@ -59,9 +63,13 @@ namespace qmcplusplus {
       //loop over all the ions
       for(int iat=0; iat<NumIons; iat++) {
         if(PP[iat]) {
+          Return_t esum=0.0;
           for(int nn=d_table->M[iat]; nn<d_table->M[iat+1]; nn++){
-            Value += PP[iat]->evaluate(d_table->r(nn),d_table->rinv(nn));
+            //Value += PP[iat]->evaluate(d_table->r(nn),d_table->rinv(nn));
+            esum += PP[iat]->evaluate(d_table->r(nn),d_table->rinv(nn));
           }
+          //count the sign and effective charge
+          Value -= esum*Zeff[iat];
         }
       }
       return Value;
