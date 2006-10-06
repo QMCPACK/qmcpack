@@ -26,6 +26,11 @@ SET(WFSRCS
   ../QMCWaveFunctions/MolecularOrbitals/STOBuilder.cpp
   ../QMCWaveFunctions/MolecularOrbitals/GTOBuilder.cpp
   ../QMCWaveFunctions/MolecularOrbitals/NGOBuilder.cpp
+  ../QMCWaveFunctions/NumericalOrbitalSetBuilder.cpp
+  ../LongRange/LPQHIBasis.cpp
+  ../QMCHamiltonians/CoulombPBCAATemp.cpp
+  ../QMCHamiltonians/CoulombPBCABTemp.cpp
+  ../QMCHamiltonians/LocalCorePolPotential.cpp
   ../QMCHamiltonians/HamiltonianFactory.cpp
 )
 
@@ -33,7 +38,8 @@ IF(QMC_COMPLEX)
   SET(WFSRCS ${WFSRCS}
     ../QMCWaveFunctions/ElectronGasComplexOrbitalBuilder.cpp
     ../QMCWaveFunctions/PlaneWaveOrbitalBuilder.cpp
-    ../QMCHamiltonians/LocalCorePolPotential.cpp
+    ../QMCWaveFunctions/PlaneWave/PWOrbitalBuilder.cpp
+    ../QMCWaveFunctions/PlaneWave/PWOrbitalSet.cpp
   )
 ELSE(QMC_COMPLEX)
   SET(WFSRCS ${WFSRCS}
@@ -54,7 +60,6 @@ ELSE(QMC_COMPLEX)
     ../QMCWaveFunctions/AtomicOrbitals/HFAtomicSTOSet.cpp 
     ../QMCWaveFunctions/AtomicOrbitals/HFAtomicSTOSetBuilder.cpp 
     ../QMCWaveFunctions/AtomicOrbitals/HeSTOClementiRottie.cpp
-    ../QMCHamiltonians/LocalCorePolPotential.cpp
     ../QMCHamiltonians/NonLocalPPotential.cpp
     ../QMCHamiltonians/LocalECPotential.cpp
     ../QMCHamiltonians/NonLocalECPComponent.cpp
@@ -63,21 +68,6 @@ ELSE(QMC_COMPLEX)
     ../QMCHamiltonians/ECPComponentBuilder.cpp
   )
 ENDIF(QMC_COMPLEX)
-
-
-IF(NOT QMCPLUSPLUS_RELEASE)
-IF(QMC_COMPLEX)
-SET(WFSRCS ${WFSRCS}
-  ../LongRange/LPQHIBasis.cpp
-  )
-ELSE(QMC_COMPLEX)
-SET(WFSRCS ${WFSRCS}
-  ../QMCWaveFunctions/NumericalOrbitalSetBuilder.cpp
-  ../LongRange/LPQHIBasis.cpp
-  )
-ENDIF(QMC_COMPLEX)
-
-ENDIF(NOT QMCPLUSPLUS_RELEASE)
 
 ####################################
 # QMC Drivers which implements various QMC algorithms
