@@ -194,14 +194,25 @@ namespace qmcplusplus {
     vector<RealType> v(ng);
     if(bareCoulomb) {
       for(int ig=0; ig<ng; ig++) {
-        v[ig]=-Zeff/(*grid_local)[ig];
+        v[ig]=1.0/(*grid_local)[ig];
       }
     } else {
+      RealType zinv=1.0/Zeff;
       for(int ig=0; ig<ng; ig++) {
         double r=(*grid_local)[ig];
-        v[ig]=vr.f(r)-Zeff/r;
+        v[ig]=1.0/r-zinv*vr.f(r);
       }
     }
+    //if(bareCoulomb) {
+    //  for(int ig=0; ig<ng; ig++) {
+    //    v[ig]=-Zeff/(*grid_local)[ig];
+    //  }
+    //} else {
+    //  for(int ig=0; ig<ng; ig++) {
+    //    double r=(*grid_local)[ig];
+    //    v[ig]=vr.f(r)-Zeff/r;
+    //  }
+    //}
 
     pp_loc=new RadialPotentialType(grid_local,v);
     int imin = 0;
