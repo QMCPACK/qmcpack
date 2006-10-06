@@ -60,6 +60,20 @@ namespace qmcplusplus {
     PAOps<T,D>::scale(s,qf,drift);
   }
 
+  /** da = scaled(tau)*ga
+   * @param tau time step
+   * @param qf complex quantum forces
+   * @param drift drift
+   */
+  template<class T, unsigned D>
+  inline void setScaledDrift(T tau, 
+      const ParticleAttrib<TinyVector<complex<T>,D> >& qf,
+      ParticleAttrib<TinyVector<complex<T>,D> >& drift) {
+    T s = getDriftScale(tau,qf);
+    ///INCOMPLETE implementation
+    //PAOps<T,D>::scale(s,qf,drift);
+  }
+
   template<class T, unsigned D>
   inline void assignDrift(T s, 
       const ParticleAttrib<TinyVector<T,D> >& ga,

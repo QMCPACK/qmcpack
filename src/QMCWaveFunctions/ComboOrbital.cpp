@@ -48,7 +48,7 @@ namespace qmcplusplus {
     ComboOrbital::ratio(ParticleSet& P, int iat,
         ParticleSet::ParticleGradient_t& dG,
         ParticleSet::ParticleLaplacian_t& dL) {
-      RealType r(1.0);
+      ValueType r(1.0);
       for(int i=0; i<Psi.size(); i++) 
         r *= Psi[i]->ratio(P,iat,dG,dL);
       return r;
@@ -56,7 +56,7 @@ namespace qmcplusplus {
 
   ComboOrbital::ValueType 
     ComboOrbital::ratio(ParticleSet& P, int iat) {
-      RealType r(1.0);
+      ValueType r(1.0);
       for(int i=0; i<Psi.size(); i++) 
         r *= Psi[i]->ratio(P,iat);
       return r;
@@ -66,7 +66,7 @@ namespace qmcplusplus {
     ComboOrbital::logRatio(ParticleSet& P, int iat,
         ParticleSet::ParticleGradient_t& dG,
         ParticleSet::ParticleLaplacian_t& dL) {
-      RealType r(0.0);
+      ValueType r(0.0);
       for(int i=0; i<Psi.size(); i++) 
         r += Psi[i]->logRatio(P,iat,dG,dL);
       return r;

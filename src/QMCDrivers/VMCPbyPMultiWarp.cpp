@@ -230,7 +230,11 @@ namespace qmcplusplus {
               cout << "NEXT GRAD " << ipsi << " " << (*G[ipsi])[iat+1]<<endl;
               cout << "NEXT DRIFT " << ipsi << " " << dG[iat+1]<<endl;
               */
+#ifndef QMC_COMPLEX
               drift+= (invsumratio[ipsi]*dG);
+#else
+              app_error() << " Operation is not implemented." << endl;  
+#endif
             }
             //END NEW
 

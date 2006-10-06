@@ -31,6 +31,7 @@ SET(PARTICLE
   Particle/HDFWalkerInputManager.cpp
   LongRange/KContainer.cpp
   LongRange/StructFact.cpp
+  LongRange/LRCoulombSingleton.cpp
 )
 
 SET(PARTICLEIO
