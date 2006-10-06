@@ -17,6 +17,7 @@
 #include "QMCHamiltonians/ECPotentialBuilder.h"
 #include "QMCHamiltonians/ECPComponentBuilder.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
+#include "QMCHamiltonians/CoulombPBCABTemp.h"
 #include "OhmmsData/AttributeSet.h"
 
 namespace qmcplusplus {
@@ -53,11 +54,19 @@ namespace qmcplusplus {
 
     ///create LocalECPotential
     if(hasLocalPot) {
-      LocalECPotential* apot = new LocalECPotential(IonConfig,targetPtcl);
-      for(int i=0; i<localPot.size(); i++) {
-        if(localPot[i]) apot->add(i,localPot[i],localZeff[i]);
+      if(IonConfig.Lattice.BoxBConds[0]) {
+        CoulombPBCABTemp* apot=new CoulombPBCABTemp(IonConfig,targetPtcl);
+        for(int i=0; i<localPot.size(); i++) {
+          if(localPot[i]) apot->add(i,localPot[i]);
+        }
+        targetH.addOperator(apot,"LocalECP");
+      } else {
+        LocalECPotential* apot = new LocalECPotential(IonConfig,targetPtcl);
+        for(int i=0; i<localPot.size(); i++) {
+          if(localPot[i]) apot->add(i,localPot[i],localZeff[i]);
+        }
+        targetH.addOperator(apot,"LocalECP");
       }
-      targetH.addOperator(apot,"LocalECP");
     }
 
     if(hasNonLocalPot) {
