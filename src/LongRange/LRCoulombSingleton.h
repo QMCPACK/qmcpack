@@ -21,9 +21,11 @@
 #define QMCPLUSPLUS_LRCOULOMBSINGLETON_H
 
 #include "LongRange/LRHandlerTemp.h"
+#include "Numerics/OneDimGridBase.h"
+#include "Numerics/OneDimGridFunctor.h"
+#include "Numerics/OneDimCubicSpline.h"
 
 namespace qmcplusplus {
-
 
   /** CoulombFunctor
    *
@@ -41,6 +43,25 @@ namespace qmcplusplus {
       NormFactor=4.0*M_PI/volume;
     }
     inline T operator()(T r, T rinv) { return rinv;}
+    inline T Fk(T k, T rc) {
+      return NormFactor/(k*k)* std::cos(k*rc);
+    }
+    inline T Xk(T k, T rc) {
+      return -NormFactor/(k*k)* std::cos(k*rc);
+    }
+    inline T df(T r) { return -1.0/r/r;}
+  };
+
+  template<class T=double>
+  struct PseudoCoulombFunctor {
+    typedef OneDimCubicSpline<T> RadialFunctorType;
+    RadialFunctorType& radFunc;
+    T NormFactor;
+    inline PseudoCoulombFunctor(RadialFunctorType& rfunc):radFunc(rfunc){}
+    void reset(T volume) {
+      NormFactor=4.0*M_PI/volume;
+    }
+    inline T operator()(T r, T rinv) { return radFunc.splint(r);}
     inline T Fk(T k, T rc) {
       return NormFactor/(k*k)* std::cos(k*rc);
     }
