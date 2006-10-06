@@ -22,7 +22,7 @@ namespace qmcplusplus {
 
   CoulombPBCABTemp::CoulombPBCABTemp(ParticleSet& ions, ParticleSet& elns): 
     PtclA(&ions), PtclB(&elns), FirstTime(true), myConst(0.0){
-      LOGMSG("  Performing long-range breakup for CoulombAATemp potential");
+      LOGMSG("    Performing long-range breakup for CoulombABTemp potential");
       //Use singleton pattern 
       //AB = new LRHandlerType(ions);
       d_ab = DistanceTable::add(ions,elns);

@@ -21,7 +21,7 @@ namespace qmcplusplus {
 
   CoulombPBCAATemp::CoulombPBCAATemp(ParticleSet& ref): 
     PtclRef(&ref), FirstTime(true), myConst(0.0){
-      LOGMSG("  Performing long-range breakup for CoulombAATemp potential");
+      LOGMSG("    Performing long-range breakup for CoulombAATemp potential");
       //AA = new LRHandlerType(ref);
       d_aa = DistanceTable::add(ref);
       initBreakup();
