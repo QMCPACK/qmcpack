@@ -39,6 +39,7 @@ namespace qmcplusplus {
     ParticleSet& targetPtcl;
     TrialWaveFunction& targetPsi;
 
+    vector<RealType>  localZeff;
     vector<RadialPotentialType*>  localPot;
     vector<NonLocalECPComponent*>  nonLocalPot;
 

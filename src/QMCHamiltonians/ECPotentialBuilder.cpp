@@ -35,6 +35,7 @@ namespace qmcplusplus {
 
     if(localPot.empty()) {
       int ng(IonConfig.getSpeciesSet().getTotalNum());
+      localZeff.resize(ng,1);
       localPot.resize(ng,0);
       nonLocalPot.resize(ng,0);
     }
@@ -54,7 +55,7 @@ namespace qmcplusplus {
     if(hasLocalPot) {
       LocalECPotential* apot = new LocalECPotential(IonConfig,targetPtcl);
       for(int i=0; i<localPot.size(); i++) {
-        if(localPot[i]) apot->add(i,localPot[i]);
+        if(localPot[i]) apot->add(i,localPot[i],localZeff[i]);
       }
       targetH.addOperator(apot,"LocalECP");
     }
@@ -105,6 +106,7 @@ namespace qmcplusplus {
           if(success) {
             if(ecp.pp_loc) {
               localPot[speciesIndex]=ecp.pp_loc;
+              localZeff[speciesIndex]=ecp.Zeff;
               hasLocalPot=true;
             }
             if(ecp.pp_nonloc) {
