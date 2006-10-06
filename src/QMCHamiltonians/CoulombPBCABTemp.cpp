@@ -21,7 +21,7 @@
 namespace qmcplusplus {
 
   CoulombPBCABTemp::CoulombPBCABTemp(ParticleSet& ions, ParticleSet& elns): 
-    PtclA(&ions), PtclB(&elns), FirstTime(true), myConst(0.0){
+    PtclA(&ions), PtclB(&elns), FirstTime(true), myConst(0.0), myGrid(0),V0(0){
       LOGMSG("    Performing long-range breakup for CoulombABTemp potential");
       //Use singleton pattern 
       //AB = new LRHandlerType(ions);
@@ -37,6 +37,8 @@ namespace qmcplusplus {
     }
     
   CoulombPBCABTemp:: ~CoulombPBCABTemp() { 
+    //remove Vspec
+    //remove grid
   }
 
   void CoulombPBCABTemp::resetTargetParticleSet(ParticleSet& P) {
@@ -101,6 +103,45 @@ namespace qmcplusplus {
     AB = LRCoulombSingleton::getHandler(*PtclB);
     myConst=evalConsts();
     myRcut=AB->Basis.get_rc();
+
+    if(V0==0) {
+      myGrid = new GridType;
+      myGrid->set(1.0e-6,myRcut,501);
+      int ng=myGrid->size();
+      vector<RealType> v(ng);
+      for(int ig=0; ig<ng; ig++) {
+        RealType r=(*myGrid)[ig];
+        v[ig]=AB->evaluate(r,1.0/r);
+      }
+      V0=new RadFunctorType(myGrid,v);
+      RealType deriv=(v[1]-v[0])/((*myGrid)[1]-(*myGrid)[0]);
+      V0->spline(0,deriv,ng-1,0.0);
+      if(Vat.size()) {
+        app_log() << "  Vat is not empty. Something is wrong" << endl;
+        OHMMS::Controller->abort();
+      }
+      Vat.resize(NptclA,V0);
+      Vspec.resize(NumSpeciesA,0);
+    }
+  }
+
+  void CoulombPBCABTemp::add(int groupID, RadFunctorType* ppot) {
+    //add a numerical functor
+    if(Vspec[groupID]==0){
+      int ng=myGrid->size();
+      vector<RealType> v(ng);
+      for(int ig=0; ig<ng; ig++) {
+        RealType r=(*myGrid)[ig];
+        v[ig]=AB->evaluateLR(r)+ppot->splint(r);;
+      }
+      RadFunctorType* rfunc=new RadFunctorType(myGrid,v);
+      RealType deriv=(v[1]-v[0])/((*myGrid)[1]-(*myGrid)[0]);
+      rfunc->spline(0,deriv,ng-1,0.0);
+      Vspec[groupID]=rfunc;
+      for(int iat=0; iat<NptclA; iat++) {
+        if(PtclA->GroupID[iat]==groupID) Vat[iat]=rfunc;
+      }
+    }
   }
 
   CoulombPBCABTemp::Return_t
@@ -124,9 +165,11 @@ namespace qmcplusplus {
       //Loop over distinct eln-ion pairs
       for(int iat=0; iat<NptclA; iat++){
         RealType esum = 0.0;
+        RadFunctorType* Vs=Vat[iat];
         for(int nn=d_ab->M[iat], jat=0; nn<d_ab->M[iat+1]; nn++,jat++) {
           if(d_ab->r(nn)>=myRcut) continue;
-          esum += Qat[jat]*AB->evaluate(d_ab->r(nn),d_ab->rinv(nn));
+          //esum += Qat[jat]*AB->evaluate(d_ab->r(nn),d_ab->rinv(nn));
+          esum += Qat[jat]*Vs->splint(d_ab->r(nn));
         }
         //Accumulate pair sums...species charge for atom i.
         SR += Zat[iat]*esum;

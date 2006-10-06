@@ -18,6 +18,9 @@
 #define QMCPLUSPLUS_COULOMBPBCAB_TEMP_H
 #include "QMCHamiltonians/QMCHamiltonianBase.h"
 #include "LongRange/LRCoulombSingleton.h"
+#include "Numerics/OneDimGridBase.h"
+#include "Numerics/OneDimGridFunctor.h"
+#include "Numerics/OneDimCubicSpline.h"
 
 namespace qmcplusplus {
 
@@ -30,6 +33,9 @@ namespace qmcplusplus {
   struct CoulombPBCABTemp: public QMCHamiltonianBase {
 
     typedef LRCoulombSingleton::LRHandlerType LRHandlerType;
+    typedef LogGrid<RealType> GridType;
+    typedef OneDimCubicSpline<RealType> RadFunctorType;
+
     ParticleSet* PtclA;
     ParticleSet* PtclB;
     LRHandlerType* AB;
@@ -51,6 +57,15 @@ namespace qmcplusplus {
     vector<RealType> Qat,Qspec; 
     vector<int> NofSpeciesA;
     vector<int> NofSpeciesB;
+
+    ///radial grid
+    GridType* myGrid;
+    ///Always mave a radial functor for the bare coulomb
+    RadFunctorType* V0;
+    ///Short-range potential for each ion
+    vector<RadFunctorType*> Vat;
+    ///Short-range potential for each species
+    vector<RadFunctorType*> Vspec;
 
     //This is set to true if the K_c of structure-factors are different
     bool kcdifferent; 
@@ -86,7 +101,7 @@ namespace qmcplusplus {
     Return_t evalSR();
     Return_t evalLR();
     Return_t evalConsts();
-
+    void add(int groupID, RadFunctorType* ppot);
   };
 
 }
