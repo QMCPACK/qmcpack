@@ -193,8 +193,9 @@ LRCoulombAA<BreakupBasis>::evalSR() {
       //First set equal to the bare-Coulombic interaction with q1=q2=1
       vspair = d_aa->rinv(nn);
       //The subtract off the long-range term (with q1=q2=1):
-      for(int n=0; n<coefs.size(); n++)
-	vspair -= coefs[0][n]*Basis.h(n,sep);
+      //for(int n=0; n<coefs.size(); n++)
+      for(int n=0; n<Basis.NumBasisElem(); n++)
+        vspair -= coefs[0][n]*Basis.h(n,sep);
       
       esum += Zat[jpart]*vspair;
     }

@@ -74,8 +74,6 @@ namespace qmcplusplus {
       //Safety check: ensure SK was created.
       if(!ions.SK || !elns.SK){
 	LOGMSG("Structure factor hasn't been created for LRCoulombAB");
-	cout << ions.SK << endl;
-	cout << elns.SK << endl;
 	OHMMS::Controller->abort();
       }
 
@@ -119,6 +117,7 @@ namespace qmcplusplus {
       //Initialise the breakup. Can be re-called later if lattice changes.
       //Otherwise all subsequent potential evaluations can reuse existing data.
       initBreakup();
+
     }
       
   private:
@@ -251,7 +250,8 @@ namespace qmcplusplus {
           vspair = d_table->rinv(nn);
 
           //The subtract off the long-range term (with q1=q2=1):
-          for(int n=0; n<coefs.size(); n++)
+          //for(int n=0; n<coefs.size(); n++)
+          for(int n=0; n<Basis.NumBasisElem(); n++)
             vspair -= coefs[0][n]*Basis.h(n,sep);
 
           //Now multiply the species charge for atom j
