@@ -23,9 +23,6 @@
 #include "LongRange/StructFact.h"
 #include "LongRange/LPQHIBasis.h"
 #include "LongRange/LRBreakup.h"
-#include "Numerics/OneDimGridBase.h"
-#include "Numerics/OneDimGridFunctor.h"
-#include "Numerics/OneDimCubicSpline.h"
 
 namespace qmcplusplus {
 
@@ -43,14 +40,10 @@ namespace qmcplusplus {
     typedef ParticleSet::ParticleLayout_t ParticleLayout_t;
     typedef BreakupBasis BreakupBasisType;
 
-    //typedef LogGrid<RealType> GridType;
-    //typedef OneDimCubicSpline<RealType> RadFunctorType;
-
     BreakupBasis Basis; //This needs a Lattice for the constructor...
     Vector<RealType> coefs; 
     Vector<RealType> Fk; 
     Func myFunc;
-    //RadFunctorType* radFunc;
 
     //Constructor
     LRHandlerTemp(ParticleSet& ref): Basis(ref.Lattice) {
@@ -60,20 +53,6 @@ namespace qmcplusplus {
     void initBreakup(ParticleSet& ref) {
       InitBreakup(ref.Lattice,1); 
       fillFk(ref.SK->KLists);
-      //if(radFunc==0) {
-      //  GridType  *agrid = new GridType;
-      //  agrid->set(1.0e-6,Basis.get_rc(),501);
-      //  int ng=agrid->size();
-      //  vector<RealType> v(ng);
-      //  for(int ig=0; ig<ng; ig++) {
-      //    double r=(*agrid)[ig];
-      //    v[ig]=0.0;
-      //    for(int n=0; n<coefs.size(); n++) v[ig] -= coefs[n]*Basis.h(n,r);
-      //  }
-      //  radFunc=new RadFunctorType(agrid,v);
-      //  radFunc->spline(0,0.0,ng-1,0.0);
-      //  //radFunc->spline(0,myFunc.df((*agrid)[0]),ng-1,0.0);
-      //}
     }
 
     void resetTargetParticleSet(ParticleSet& ref) {
@@ -82,6 +61,13 @@ namespace qmcplusplus {
 
     inline RealType evaluate(RealType r, RealType rinv) {
       RealType v=myFunc(r,rinv);
+      for(int n=0; n<coefs.size(); n++) v -= coefs[n]*Basis.h(n,r);
+      return v;
+    }
+
+    ///a utility function for spline
+    inline RealType evaluateLR(RealType r) {
+      RealType v=0.0;
       for(int n=0; n<coefs.size(); n++) v -= coefs[n]*Basis.h(n,r);
       return v;
     }

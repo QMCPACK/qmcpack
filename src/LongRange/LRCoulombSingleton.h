@@ -49,7 +49,6 @@ namespace qmcplusplus {
     inline T Xk(T k, T rc) {
       return -NormFactor/(k*k)* std::cos(k*rc);
     }
-    inline T df(T r) { return -1.0/r/r;}
   };
 
   template<class T=double>
@@ -68,7 +67,6 @@ namespace qmcplusplus {
     inline T Xk(T k, T rc) {
       return -NormFactor/(k*k)* std::cos(k*rc);
     }
-    inline T df(T r) { return -1.0/r/r;}
   };
 
 
