@@ -13,6 +13,9 @@ LPQHIBasis::set_NumKnots(int n) {
     delta = m_rc / (NumKnots - 1);
     deltainv = 1.0/delta;
   }
+
+  //set the BasisSize to 3*NumKnots
+  BasisSize=3*NumKnots;
 }
 
 
@@ -26,36 +29,36 @@ LPQHIBasis::set_rc(RealType rc) {
 }
 
 
-LPQHIBasis::RealType 
-LPQHIBasis::h(int n, RealType r) {
-  int i=n/3;
-  int alpha = n-3*i;
-  RealType ra = delta*(i-1);
-  RealType rb = delta*i;
-  RealType rc = delta*(i+1);
-  rc = std::min(m_rc, rc);
-  if ((r > ra) && (r <= rb)) {
-    RealType sum = 0.0;
-    RealType prod = 1.0;
-    for (int j=0; j<=5; j++) {
-      sum += (S(alpha,j) * prod);
-      prod *= ((rb - r) * deltainv);
-    }
-    for (int j=0; j<alpha; j++)
-      sum *= -1.0;
-    return (sum);
-  }
-  else if ((r > rb) && (r <= rc)) {
-    RealType sum = 0.0;
-    RealType prod = 1.0;
-    for (int j=0; j<=5; j++) {
-      sum += S(alpha,j) * prod;
-      prod *= ((r-rb) * deltainv);
-    }
-    return sum;
-  }
-  return 0.0;
-}
+//LPQHIBasis::RealType 
+//LPQHIBasis::h(int n, RealType r) {
+//  int i=n/3;
+//  int alpha = n-3*i;
+//  RealType ra = delta*(i-1);
+//  RealType rb = delta*i;
+//  RealType rc = delta*(i+1);
+//  rc = std::min(m_rc, rc);
+//  if ((r > ra) && (r <= rb)) {
+//    RealType sum = 0.0;
+//    RealType prod = 1.0;
+//    for (int j=0; j<=5; j++) {
+//      sum += (S(alpha,j) * prod);
+//      prod *= ((rb - r) * deltainv);
+//    }
+//    for (int j=0; j<alpha; j++)
+//      sum *= -1.0;
+//    return (sum);
+//  }
+//  else if ((r > rb) && (r <= rc)) {
+//    RealType sum = 0.0;
+//    RealType prod = 1.0;
+//    for (int j=0; j<=5; j++) {
+//      sum += S(alpha,j) * prod;
+//      prod *= ((r-rb) * deltainv);
+//    }
+//    return sum;
+//  }
+//  return 0.0;
+//}
 
 
 LPQHIBasis::RealType 

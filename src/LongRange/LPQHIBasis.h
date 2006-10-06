@@ -16,6 +16,9 @@ namespace qmcplusplus {
     int NumKnots; //Number of knots for basis.
     RealType delta, deltainv;
     Matrix<RealType> S; //Coefficients for LPQHI
+    Matrix<RealType> S1; //First derivatives
+    Matrix<RealType> S2; //Second derivatives
+    RealType Mfactor[3];
 
     //Helper functions for computing FT of basis functions (used in c(n,k))
     inline complex<RealType> Eplus(int i, RealType k, int n);
@@ -27,11 +30,54 @@ namespace qmcplusplus {
       
 
   public:
-    inline RealType get_delta() { return delta; }
+    inline RealType get_delta() const { return delta; }
+    //inline int NumBasisElem() const {return 3*NumKnots;}
     void set_NumKnots(int n); // n >= 2 required
     void set_rc(RealType rc);
-    inline int NumBasisElem() {return 3*NumKnots;}
-    RealType h(int n, RealType r);
+    inline RealType h(int n, RealType r) const {
+      int i=n/3;
+      int alpha = n-3*i;
+      RealType ra = delta*(i-1);
+      RealType rb = delta*i;
+      RealType rc = delta*(i+1);
+      rc = std::min(m_rc, rc);
+      const RealType* restrict Sa(S[alpha]);
+      if(r<ra || r>rc) return 0.0;
+      if (r <= rb) {
+        RealType x=(rb-r)*deltainv;
+        return Mfactor[alpha]*(Sa[0]+x*(Sa[1]+x*(Sa[2]+x*(Sa[3]+x*(Sa[4]+x*Sa[5])))));
+      } else {
+        RealType x=(r-rb)*deltainv;
+        return Sa[0]+x*(Sa[1]+x*(Sa[2]+x*(Sa[3]+x*(Sa[4]+x*Sa[5]))));
+      }
+    }
+//    inline TinyVector<RealType,3> getTriplet(int n, RealType r) const {
+//      typedef TinyVector<RealType,3> Return_t;
+//      int i=n/3;
+//      int alpha = n-3*i;
+//      RealType ra = delta*(i-1);
+//      RealType rb = delta*i;
+//      RealType rc = delta*(i+1);
+//      rc = std::min(m_rc, rc);
+//      if(r<ra || r>rc) return Return_t;
+//      const RealType* restrict Sa(S[alpha]);
+//      const RealType* restrict S1a(S1[alpha]);
+//      const RealType* restrict S2a(S2[alpha]);
+//      if (r <= rb) {
+//        RealType x=(rb-r)*deltainv;
+//        return Return_t(
+//            Mfactor[alpha]*(Sa[0] +x*(Sa[1] +x*(Sa[2] +x*(Sa[3] +x*(Sa[4]+x*Sa[5]))))), 
+//            Mfactor[alpha]*(S1a[0]+x*(S1a[1]+x*(S1a[2]+x*(S1a[3]+x*S1a[4])))),
+//            Mfactor[alpha]*(S2a[0]+x*(S2a[1]+x*(S2a[2]+x*S2a[3]))));
+//      } else {
+//        RealType x=(r-rb)*deltainv;
+//        return Return_t(
+//            Sa[0] +x*(Sa[1] +x*(Sa[2] +x*(Sa[3] +x*(Sa[4]+x*Sa[5])))), 
+//            S1a[0]+x*(S1a[1]+x*(S1a[2]+x*(S1a[3]+x*S1a[4]))),
+//            S2a[0]+x*(S2a[1]+x*(S2a[2]+x*S2a[3])));
+//      }
+//    }
+
     RealType hintr2(int n);
     RealType c(int n, RealType k);
     //Constructor...fill S matrix...call correct base-class constructor
@@ -45,6 +91,8 @@ namespace qmcplusplus {
       
       S(2,0)=0.0; S(2,1)=0.0; S(2,2)=0.5; S(2,3)=-1.5;  
       S(2,4)=1.5; S(2,5)=-0.5; 
+
+      Mfactor[0]=1.0; Mfactor[1]=-1.0; Mfactor[2]=1.0;
     }
   };
 
