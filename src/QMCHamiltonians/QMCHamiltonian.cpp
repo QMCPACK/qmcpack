@@ -37,7 +37,9 @@ QMCHamiltonian::~QMCHamiltonian() {
 
 bool QMCHamiltonian::get(std::ostream& os) const {
   for(int i=0; i<H.size(); i++) {
-    os << "    "; H[i]->get(os); os << "\n";
+    os.setf(ios::left);
+    os << "  " << setw(16) << Hname[i]; 
+    H[i]->get(os); os << "\n";
   }
   return true;
 }
