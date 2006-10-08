@@ -39,8 +39,8 @@ namespace qmcplusplus {
   struct CoulombFunctor {
     T NormFactor;
     inline CoulombFunctor(){}
-    void reset(T volume) {
-      NormFactor=4.0*M_PI/volume;
+    void reset(ParticleSet& ref) {
+      NormFactor=4.0*M_PI/ref.Lattice.Volume;
     }
     inline T operator()(T r, T rinv) { return rinv;}
     inline T Fk(T k, T rc) {
@@ -57,8 +57,8 @@ namespace qmcplusplus {
     RadialFunctorType& radFunc;
     T NormFactor;
     inline PseudoCoulombFunctor(RadialFunctorType& rfunc):radFunc(rfunc){}
-    void reset(T volume) {
-      NormFactor=4.0*M_PI/volume;
+    void reset(ParticleSet& ref) {
+      NormFactor=4.0*M_PI/ref.Lattice.Volume;
     }
     inline T operator()(T r, T rinv) { return radFunc.splint(r);}
     inline T Fk(T k, T rc) {

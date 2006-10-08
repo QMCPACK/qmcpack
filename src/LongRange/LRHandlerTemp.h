@@ -47,7 +47,7 @@ namespace qmcplusplus {
 
     //Constructor
     LRHandlerTemp(ParticleSet& ref): Basis(ref.Lattice) {
-      myFunc.reset(ref.Lattice.Volume);
+      myFunc.reset(ref);
     }
       
     void initBreakup(ParticleSet& ref) {
@@ -56,7 +56,7 @@ namespace qmcplusplus {
     }
 
     void resetTargetParticleSet(ParticleSet& ref) {
-      myFunc.reset(ref.Lattice.Volume);
+      myFunc.reset(ref);
     }
 
     inline RealType evaluate(RealType r, RealType rinv) {
