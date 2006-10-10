@@ -195,6 +195,7 @@ ELSE(INTEL_MKL)
   LINK_LIBRARIES(${CMAKE_THREAD_LIBS_INIT})
 ENDIF(INTEL_MKL)
 
+
 ####################################
 # build mo2grid3d executable
 ####################################
@@ -207,7 +208,12 @@ ENDIF(INTEL_MKL)
 #general qmcapp for multiple configurations, hamiltonians and wavefunctions.
 ####################################
 ADD_EXECUTABLE(qmcapp ${QMCMAIN})
-TARGET_LINK_LIBRARIES(qmcapp qmc qmcbase qmcutil 
-${LAPACK_LIBRARY}
-${BLAS_LIBRARY} ${FORTRAN_LIBS})
+
+IF(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+  TARGET_LINK_LIBRARIES(qmcapp qmc qmcbase qmcutil)
+ELSE(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+  TARGET_LINK_LIBRARIES(qmcapp qmc qmcbase qmcutil 
+  ${LAPACK_LIBRARY}
+  ${BLAS_LIBRARY} ${FORTRAN_LIBS})
+ENDIF(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 
