@@ -21,24 +21,16 @@
 namespace qmcplusplus {
 
   SplineSetBuilder::SplineSetBuilder(ParticleSet& p, PtclPoolType& psets):
-    targetPtcl(p),ptclPool(psets) {
+    targetPtcl(p),ptclPool(psets),GridXYZ(0) {
   }   
 
   /** Initialize the cubic grid
    */
   bool SplineSetBuilder::put(xmlNodePtr cur){
-    cur=cur->children;
-    while(cur != NULL) {
-      string cname((const char*)(cur->name));
-      if(cname == "spline") { //check this out
-        if(GridXYZ==0) {
-          GridXYZ = new GridType;
-          GridXYZ->put(cur);
-        }
-      }
-      cur=cur->next;
+    if(GridXYZ==0) {
+      GridXYZ = new GridType;
+      GridXYZ->put(cur);
     }
-    //grid
     return true;
   }
 
@@ -53,8 +45,10 @@ namespace qmcplusplus {
 
     string hrefname("NONE");
     int norb(0);
+    int degeneracy(1);
     OhmmsAttributeSet aAttrib;
     aAttrib.add(norb,"orbitals");
+    aAttrib.add(degeneracy,"degeneracy");
     aAttrib.add(hrefname,"href");
     aAttrib.put(cur);
 
@@ -63,6 +57,7 @@ namespace qmcplusplus {
       return 0;
     }
 
+    app_log() << "    Degeneracy = " << degeneracy << endl;
     std::vector<int> npts(3);
     npts[0]=GridXYZ->nX;
     npts[1]=GridXYZ->nY;
@@ -94,32 +89,31 @@ namespace qmcplusplus {
               occSet[occRemoved[kpopd++]]=occ_in[k]-1;
           }
         }
-        cout << "Index of the occupied states " << endl;
-        for(int i=0; i< norb; i++) cout << occSet[i] << endl;
- 
+
         hid_t h_file = H5Fopen(hrefname.c_str(),H5F_ACC_RDWR,H5P_DEFAULT);
 
         const xmlChar* h5path = xmlGetProp(cur,(const xmlChar*)"h5path");
         string hroot("/eigenstates_3/twist_0");
         if(h5path != NULL) hroot=(const char*)h5path;
-        char wfname[128];
+        char wfname[128],wfshortname[16];
         for(int iorb=0; iorb<norb; iorb++) {
-          sprintf(wfname,"%s/band_%d/eigenvector",hroot.c_str(),occSet[iorb]);
-          app_log() << "   Reading spline function " << wfname << endl;
+          sprintf(wfname,"%s/band_%d/eigenvector",hroot.c_str(),occSet[iorb]/degeneracy);
+          sprintf(wfshortname,"b%d",occSet[iorb]/degeneracy);
           SPOType* neworb=0;
-          map<string,SPOType*>::iterator it(NumericalOrbitals.find(wfname));
+          map<string,SPOType*>::iterator it(NumericalOrbitals.find(wfshortname));
           if(it == NumericalOrbitals.end()) {
             neworb=new SPOType(GridXYZ);
             HDFAttribIO<std::vector<RealType> > dummy(inData,npts);
             dummy.read(h_file,wfname);
-            //////////////////////////////
-            //HDFAttribIO<NumericalOrbitalType> dummy(*neworb);
-            //dummy.read(h_file,"CubicSpline");
-            ////////////////////////////
             neworb->reset(inData.begin(), inData.end(), targetPtcl.Lattice.BoxBConds[0]);
-            NumericalOrbitals[wfname]=neworb;
+            NumericalOrbitals[wfshortname]=neworb;
+            app_log() << "   Reading spline function " << wfname << endl;
+            //PosType r0(4.9194332197e+00,4.5695928280e+00,1.2260692483e+01);
+            //double val=neworb->evaluate(r0);
+            //abort();
           } else {
             neworb = (*it).second;
+            app_log() << "   Reusing spline function " << wfname << endl;
           }
           psi->add(neworb);
         }
