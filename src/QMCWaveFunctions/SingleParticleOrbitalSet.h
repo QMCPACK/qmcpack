@@ -16,13 +16,13 @@
 // -*- C++ -*-
 #ifndef QMCPLUSPLUS_SINGLEPARTICLEORBITALSET_H
 #define QMCPLUSPLUS_SINGLEPARTICLEORBITALSET_H
-#include <vector>
-#include "QMCWaveFunctions/DummyBasisSet.h"
+#include "QMCWaveFunctions/SPOSetBase.h"
+
 namespace qmcplusplus {
 
 /**a set of single-particle orbitals. 
  *
- * This class provides necessary interfaces for SlaterDeterminant<SPOSet>
+ * This class provides necessary interfaces for SlaterDeterminant<SPOSet> and SlaterDet
  * and can be used by any orbital representation that has an one-to-one
  * mapping between the function evaluations and the column indeices of a
  * Dirac determinant.
@@ -32,18 +32,19 @@ namespace qmcplusplus {
  * Example classes can be found in Numerics/CosineFunction.h
  */
 template<class OT>
-struct SingleParticleOrbitalSet {
+struct SingleParticleOrbitalSet: public SPOSetBase {
 
   ///the type of single-particle orbtials 
   typedef OT                      SPOrbital_t;
   typedef vector<OT*>             SPOContainer_t;
   typedef typename OT::value_type value_type;
-  typedef DummyBasisSet           BasisSet_t;
 
   SPOContainer_t Phi;
 
   ///constructor
-  SingleParticleOrbitalSet(){ }
+  SingleParticleOrbitalSet(int norbs=0){ 
+    setOrbitalSetSize(norbs);
+  }
 
   /**add a single-particle orbital */
   int add(SPOrbital_t* afunction ) {
@@ -51,51 +52,57 @@ struct SingleParticleOrbitalSet {
     return Phi.size()-1;
   }
 
-  inline int size() const { return Phi.size();}
-
+  void setOrbitalSetSize(int norbs) { 
+    if(norbs == OrbitalSetSize ) return;
+    OrbitalSetSize=norbs;
+    BasisSetSize=norbs;
+  }
   void reset() { for(int i=0; i<Phi.size(); i++) Phi[i]->reset(); }
   void resetTargetParticleSet(ParticleSet& P) { }
 
-  inline value_type
-  evaluate(const ParticleSet& P, int iat, int jorb) {
-    return Phi[jorb]->evaluate(P.R[iat]);
-  }
-
-  template<class VV>
-  inline void 
-  evaluate(const ParticleSet& P, int iat, VV& psi) {
-    vector<SPOrbital_t*>::iterator it(Phi.begin()),it_end(Phi.end());
-    int j(0);
-    while(it != it_end) {
-      psi[j]=(*it)->evaluate(P.R[iat]);++it;j++;
+  void 
+    evaluate(const ParticleSet& P, int iat, ValueVector_t& psi) {
+      for(int j=0; j<OrbitalSetSize;j++) 
+        psi[j]=Phi[j]->evaluate(P.R[iat]);
+      //vector<SPOrbital_t*>::iterator it(Phi.begin()),it_end(Phi.end());
+      //int j(0);
+      //while(it != it_end) {
+      //  psi[j++]=(*it)->evaluate(P.R[iat]);++it;
+      //}
     }
-  }
 
-  template<class VV, class GV>
-  inline void
-  evaluate(const ParticleSet& P, int iat, VV& psi, GV& dpsi, VV& d2psi) {
-    vector<SPOrbital_t*>::iterator it(Phi.begin()),it_end(Phi.end());
-    int j(0);
-    while(it != it_end) {
-      psi[j]=(*it)->evaluate(P.R[iat],dpsi[j],d2psi[j]);++it;j++;
-    }
-  }
-
-  template<class VM, class GM>
-  inline void evaluate(const ParticleSet& P, int first, int last,
-		       VM& logdet, GM& dlogdet, VM& d2logdet) {
-    int n = last-first;
-    int iat = first;
-    vector<SPOrbital_t*>::iterator it_end(Phi.end());
-    for(int i=0; i<n; i++,iat++) {
-      vector<SPOrbital_t*>::iterator it(Phi.begin());
-      int j(0);
-      while(it != it_end) {
-	logdet(j,i)= (*it)->evaluate(P.R[iat], dlogdet(i,j),d2logdet(i,j));
-        ++it;++j;
+    void 
+      evaluate(const ParticleSet& P, int iat, 
+          ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi) {
+        for(int j=0; j<OrbitalSetSize;j++) {
+          psi[j]=Phi[j]->evaluate(P.R[iat],dpsi[j],d2psi[j]);
+        }
+        //vector<SPOrbital_t*>::iterator it(Phi.begin()),it_end(Phi.end());
+        //int j(0);
+        //while(it != it_end) {
+        //  psi[j]=(*it)->evaluate(P.R[iat],dpsi[j],d2psi[j]);++it;j++;
+        //}
       }
+
+    void evaluate(const ParticleSet& P, int first, int last,
+        ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet) {
+      for(int j=0; j<OrbitalSetSize; j++) {
+        for(int i=0,iat=first; iat<last; i++,iat++) {
+          logdet(j,i)=Phi[j]->evaluate(P.R[iat],dlogdet(i,j),d2logdet(i,j));
+        }
+      }
+      //int n = last-first;
+      //int iat = first;
+      //vector<SPOrbital_t*>::iterator it_end(Phi.end());
+      //for(int i=0; i<n; i++,iat++) {
+      //  vector<SPOrbital_t*>::iterator it(Phi.begin());
+      //  int j(0);
+      //  while(it != it_end) {
+      //    logdet(j,i)= (*it)->evaluate(P.R[iat], dlogdet(i,j),d2logdet(i,j));
+      //    ++it;++j;
+      //  }
+      //}
     }
-  }
 };
 }
 #endif
