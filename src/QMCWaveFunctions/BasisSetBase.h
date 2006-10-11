@@ -79,7 +79,7 @@ namespace qmcplusplus {
 
   /** base class for the BasisSet builder
    */
-  struct BasisSetBuilder {
+  struct BasisSetBuilder: public QMCTraits {
     BasisSetBase* myBasisSet;
     BasisSetBuilder():myBasisSet(0) {}
     virtual ~BasisSetBuilder(){}
