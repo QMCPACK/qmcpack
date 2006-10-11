@@ -152,8 +152,9 @@ namespace qmcplusplus {
           Consts += -V0*za*zb*na*nb;
         }
       }
-      return Consts;
 
+      app_log() << "   Constant of PBCAA " << Consts << endl;
+      return Consts;
     }
 }
 

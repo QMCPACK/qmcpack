@@ -66,10 +66,6 @@ namespace qmcplusplus {
     NptclA = PtclA->getTotalNum();
     NptclB = PtclB->getTotalNum();
 
-    if(NptclA != NptclB) {
-      LOGMSG("PBCs not yet finished for non-neutral cells");
-      OHMMS::Controller->abort();
-    }
 
     NumSpeciesA = tspeciesA.TotalNum;
     NumSpeciesB = tspeciesB.TotalNum;
@@ -89,13 +85,20 @@ namespace qmcplusplus {
       Qspec[spec] = tspeciesB(ChargeAttribIndxB,spec);
       NofSpeciesB[spec] = static_cast<int>(tspeciesB(MemberAttribIndxB,spec));
     }
+
+    RealType totQ=0.0;
     for(int iat=0; iat<NptclA; iat++)
-      Zat[iat] = Zspec[PtclA->GroupID[iat]];
+      totQ+=Zat[iat] = Zspec[PtclA->GroupID[iat]];
     for(int iat=0; iat<NptclB; iat++)
-      Qat[iat] = Qspec[PtclB->GroupID[iat]];
+      totQ+=Qat[iat] = Qspec[PtclB->GroupID[iat]];
+
+    if(totQ>numeric_limits<RealType>::epsilon()) {
+      LOGMSG("PBCs not yet finished for non-neutral cells");
+      OHMMS::Controller->abort();
+    }
 
     ////Test if the box sizes are same (=> kcut same for fixed dimcut)
-    kcdifferent = (std::abs(PtclA->Lattice.LR_kc - PtclB->Lattice.LR_kc) > 1e-6);
+    kcdifferent = (std::abs(PtclA->Lattice.LR_kc - PtclB->Lattice.LR_kc) > numeric_limits<RealType>::epsilon());
     minkc = std::min(PtclA->Lattice.LR_kc,PtclB->Lattice.LR_kc);
 
     //AB->initBreakup(*PtclB);
@@ -195,6 +198,8 @@ namespace qmcplusplus {
           Consts += -V0*Qspec[j]*NofSpeciesB[j]*q;
         }
       }
+
+      app_log() << "   Constant of PBCAB " << Consts << endl;
       return Consts;
     }
 }
