@@ -26,11 +26,8 @@ namespace qmcplusplus {
   }
 
   bool WMConstraints::put(xmlNodePtr cur) {
+    //get generic parameters and grid information
     bool success=getVariables(cur);
-    map<string,pair<string,RealType> >::iterator vit(inVars.find("B"));
-    if(vit == inVars.end()) return false; //disaster, need to abort
-    ID=(*vit).second.first; B=(*vit).second.second;
-    return true;
   }
 
   void WMConstraints::apply() {
@@ -40,57 +37,164 @@ namespace qmcplusplus {
   }
 
   void WMConstraints::addOptimizables(VarRegistry<RealType>& outVars) {
+    map<string,BasisSetType*>::iterator it(myBasisSet.begin()),it_end(myBasisSet.end());
+    while(it != it_end) {
+      BasisSetType* basis((*it).second);
+      for(int ib=0; ib<basis.size(); ib++) {
+        addVars.add(basis[ib]->ID, &(basis[ib]->B0),1);
+      }
+      ++it;
+    }
+
+    for(int i=0; i<InFuncList.size(); i++) {
+      InFuncList& infunc(*InFuncList[i]);
+      for(int k=0; k<infunc.size(); k++) {
+        addVars.add(infunc.ID[k],&(infunc.C[k]),1);
+      }
+    }
     //outVars.add(ID,&B,1);
     //potentially add Rcut
   }
 
+  void WMConstraints::addBasisGroup(xmlNodePtr cur) {
+    string sourceOpt("e");
+    string elementType("e");
+    OhmmsAttributeSet aAttrib;
+    aAttrib.add(sourceOpt,"source");
+    aAttrib.add(elementType,"elementType");
+    aAttrib.put(cur);
+
+    RealType rcut(myGrid->rmax());
+    map<string,BasisSetType*>::iterator it(myBasisSet.find(elementType));
+    if(it == myBasisSet.end()) {
+       BasisSetType* newBasis=new BasisSetType;
+       cur=cur->children;
+       while(cur != NULL) {
+         string cname((const char*)(cur->name));
+         if(cname == "radfunc") {
+           WMFunctor* a=new WMFunctor(1.0,rcut);
+           OhmmsAttributeSet rAttrib;
+           rAttrib.add(a->ID,"id");
+           rAttrib.add(a->B,"b");
+           rAttrib.put(cur);
+           newBasis.push_back(a);
+         }
+         cur=cur->next;
+       }
+       //add a new BasisSet
+       myBasisSet[elementType]=newBasis;
+    }
+  }
+
+
   OrbitalBase* WMConstraints::createTwoBody(ParticleSet& target) {
 
+    InFuncType* infunc=0;
     setRadialGrid(target);
+    xmlNodePtr cur=myNode->children;
+    while(cur != NULL) {
+      string cname((const char*)(cur->name));
+      if(cname == "basisGroup") {
+        addBasisGroup(cur);
+      } else if(cname =="correlation") {
+        string speciesA(target.getName());
+        string speciesB(target.getName());
+        OhmmsAttributeSet aAttrib;
+        aAttrib.add(speciesA,"speciesA");
+        aAttrib.add(speciesB,"speciesB");
+        aAttrib.put(cur);
+        if(speciesA==speciesA) {
+          map<string,BasisSetType*>::iterator it(myBasisSet.find(speciesA));
+          if(it == it.end()) {
+            app_error() <<  "  WMBasisSet for " << speciesA << " does not exist." << endl;
+            continue;
+          }
+          infunc = createCorrelation(cur,(*it).second);
+        }
+      }
+      cur=cur->next;
+    }
 
-    typedef FuncType::FNOUT OutFuncType;
+    if(infunc==0) return 0;
+
     typedef TwoBodyJastrowOrbital<FuncType> JeeType;
     JeeType *J2 = new JeeType(target);
-    if(IgnoreSpin) {
-      app_log() << "  WMConstraints::Adding Spin-independent Pade Two-Body Jastrow B=" << B << endl;
-      //create an analytic input functor
-      InFuncType *infunc=new InFuncType(-0.5,B);
-      //create a numerical functor
-      FuncType* nfunc= new FuncType;
-      //initialize the numerical functor
-      nfunc->initialize(infunc,myGrid,Rcut);
-
-      InFuncList.push_back(infunc);
-      FuncList.push_back(nfunc);
-      for(int i=0; i<4; i++) J2->addFunc(nfunc);
-    } else {
-      app_log() << "  WMConstraints::Adding Spin-dependent Pade Two-Body Jastrow B= " << B << endl;
-      InFuncType *uu=new InFuncType(-0.25,B);
-      InFuncType *ud=new InFuncType(-0.5,B);
-
-      FuncType *funcUU= new FuncType; 
-      funcUU->initialize(uu,myGrid,Rcut);
-
-      FuncType *funcUD= new FuncType; 
-      funcUD->initialize(ud,myGrid,Rcut);
-
-      InFuncList.push_back(uu);
-      InFuncList.push_back(ud);
-
-      FuncList.push_back(funcUU);
-      FuncList.push_back(funcUD);
-
-      J2->addFunc(funcUU);//uu
-      J2->addFunc(funcUD);//ud
-      J2->addFunc(funcUD);//du
-      J2->addFunc(funcUU);//dd
-    }
+    FuncType* nfunc= new FuncType(infunc,myGrid);
+    for(int i=0; i<4; i++) J2->addFunc(nfunc);
+    FuncList.push_back(nfunc);
     return J2;
   }
 
   OrbitalBase* WMConstraints::createOneBody(ParticleSet& target, ParticleSet& source) {
-    //return 0 for the moment
-    return 0;
+    vector<InFuncType*> jnSet(source.getSpeciesSet().getTotalNum(),0);
+    xmlNodePtr cur=myNode->children;
+    bool noOneBody=true;
+    while(cur != NULL) {
+      string cname((const char*)(cur->name));
+      if(cname == "basisGroup") {
+        addBasisGroup(cur);
+      } else if(cname =="correlation") {
+        string speciesA("e");
+        string speciesB("e");
+        OhmmsAttributeSet aAttrib;
+        aAttrib.add(speciesA,"speciesA");
+        aAttrib.add(speciesB,"speciesB");
+        aAttrib.put(cur);
+        if(speciesA != speciesB) {
+          map<string,BasisSetType*>::iterator it(myBasisSet.find(speciesA));
+          if(it == it.end()) {
+            app_error() <<  "  WMBasisSet for " << speciesA << " does not exist." << endl;
+            continue;
+          }
+          int gid=source.getSpeciesSet().addSpecies(speciesA);
+          jnSet[gid] = createCorrelation(cur,(*it).second);
+          noOneBody=false;
+        }
+      }
+      cur=cur->next;
+    }
+
+    if(noOneBody) return 0;
+
+    typedef OneBodyJastrow<FuncType> JneType;
+    JneType* jne=new JneType;
+    for(int ig=0; ig<jnSet.size(); ig++) {
+      if(jnSet[ig]) {
+        FuncType* nfunc= new FuncType(jnSet[ig],myGrid);
+        J1->addFunc(nfunc);
+        FuncList.push_back(nfunc);
+      }
+    }
+    return jne;
+  }
+
+  WMConstraints::InFuncType*
+    WMConstraints::createCorrelation(xmlNodePtr cur,BasisSetType* basis) {
+      int nc=0;
+      InFuncType* acombo=new InFuncType;
+      cur=cur->children;
+      while(cur != NULL) {
+        string cname((const char*)(cur->name));
+        if(cname == "parameter") {
+          string id("0");
+          string ref("0");
+          RealType c=1.0;
+          OhmmsAttributeSet aAttrib;
+          aAttrib.add(id,"id");
+          aAttrib.add(ref,"ref");
+          aAttrib.put(cur);
+          putContent(c,cur);
+          if(nc <basis.size()) acombo->add(basis[nc++],c,id);
+        }
+        cur=cur->next;
+      }
+
+      if(nc)
+        return acomb;
+      else {
+        delete acombo; 
+        return 0;
+      }
   }
 
 }

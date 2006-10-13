@@ -14,8 +14,8 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef QMCPLUSPLUS_WMFUNCTOR_COMBO_CONSTRAINTS_H
-#define QMCPLUSPLUS_WMFUNCTOR_COMBO_CONSTRAINTS_H
+#ifndef QMCPLUSPLUS_WMFUNCTOR_SM_CONSTRAINTS_H
+#define QMCPLUSPLUS_WMFUNCTOR_SM_CONSTRAINTS_H
 #include "QMCWaveFunctions/OrbitalConstraintsBase.h"
 #include "QMCWaveFunctions/NumericalJastrowFunctor.h"
 
@@ -24,7 +24,6 @@ namespace qmcplusplus {
   /** Implements a screened Function \f$u[r]=(1-z(r/rcut))/(1+B*z(r/rcut)\f$
    * 
    * Short-range functor introduced by Wagner and Mitas, cond-mat/0610088
-   * This functor is used with NumericalJastrow<T>
    */
   template<class T>
     struct WMFunctor {
@@ -35,6 +34,8 @@ namespace qmcplusplus {
       real_type Rcut;
       ///1/Rcut
       real_type OneOverRc;
+      ///id
+      string ID;
       ///constructor
       explicit WMFunctor(real_type b, real_type rc=7.5) {
         reset(b,rc);
@@ -53,30 +54,45 @@ namespace qmcplusplus {
       }
     };
 
+  /** Implements a linear combination of WMFunctors for Two-body and One-body Jastrow orbitals
+   */
   template<class T>
     struct WMComboFunctor: public JastrowFunctorBase<T> {
       typedef typename JastrowFunctorBase<T>::real_type real_type;
-      typedef pair<T,WMFunctor*> CompType;
-      vector<CompType> Phi;
-      void add(WMFunctor* func, T c) {
-        Phi.push_back(CompType(c,func));
+      vector<T> C;
+      vector<WMFunctor*> Phi;
+      vector<string> ID;
+
+      WMComboFunctor() { 
+        C.reserve(8);
+        Phi.reserve(8);
+        ID.reserve(8);
       }
+
+      int size() const { return Phi.size();}
+
+      void add(WMFunctor* func, T c,  const string& id) {
+        C.push_back(c);
+        Phi.push_back(func);
+        ID.push_back(id);
+      }
+
       inline void reset() {
-        vector<CompType>::iterator it(Phi.begin()),it_end(Phi.end());
-        while(it != it_end) (*it++).second->reset();
+        for(int i=0; i<Phi.size(); i++) Phi.[i]->reset();
       }
+
       inline real_type f(real_type r) {
         real_type res=0;
-        vector<CompType>::iterator it(Phi.begin()),it_end(Phi.end());
-        while(it != it_end) {res += (*it).first*(*it).second->f(r);++it;}
+        for(int i=0; i<Phi.size(); i++) { res += C[i]*Phi[i]->f(r);}
         return res;
       }
+
       inline real_type df(real_type r) {
         real_type res(0);
-        vector<CompType>::iterator it(Phi.begin()),it_end(Phi.end());
-        while(it != it_end) {res += (*it).first*(*it).second->df(r);++it;}
+        for(int i=0; i<Phi.size(); i++) { res += C[i]*Phi[i]->df(r);}
         return res;
       }
+
       void put(xmlNodePtr cur, VarRegistry<real_type>& vlist) {}
     };
 
@@ -85,9 +101,12 @@ namespace qmcplusplus {
     ///analytic functor
     typedef WMComboFunctor<RealType> InFuncType;
     ///numerical functor
-    typedef NumericalJastrow<RealType> FuncType;
+    typedef SplineJastrow<RealType> FuncType;
     bool IgnoreSpin;
     RealType Rcut;
+
+    typedef vector<WMFunctor*> BasisSetType;
+    map<string,BasisSetType*> myBasisSet;
     vector<InFuncType*> InFuncList;
     vector<FuncType*> FuncList;
 
@@ -98,6 +117,8 @@ namespace qmcplusplus {
     OrbitalBase* createTwoBody(ParticleSet& target);
     OrbitalBase* createOneBody(ParticleSet& target, ParticleSet& source);
     bool put(xmlNodePtr cur);
+    void addBasisGroup(xmlNodePtr cur);
+    InFuncType* createCorrelation(xmlNodePtr cur, BasisSetType* basis);
   };
 
 }
