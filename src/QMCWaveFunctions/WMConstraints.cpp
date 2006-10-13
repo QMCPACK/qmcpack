@@ -18,6 +18,7 @@
 #include "QMCWaveFunctions/TwoBodyJastrowOrbital.h"
 #include "QMCWaveFunctions/OneBodyJastrowFunction.h"
 #include "Utilities/IteratorUtility.h"
+#include "OhmmsData/AttributeSet.h"
 
 namespace qmcplusplus {
 
@@ -28,6 +29,7 @@ namespace qmcplusplus {
   bool WMConstraints::put(xmlNodePtr cur) {
     //get generic parameters and grid information
     bool success=getVariables(cur);
+    return success;
   }
 
   void WMConstraints::apply() {
@@ -39,19 +41,19 @@ namespace qmcplusplus {
   void WMConstraints::addOptimizables(VarRegistry<RealType>& outVars) {
     map<string,BasisSetType*>::iterator it(myBasisSet.begin()),it_end(myBasisSet.end());
     while(it != it_end) {
-      BasisSetType* basis((*it).second);
+      BasisSetType& basis(*((*it).second));
       for(int ib=0; ib<basis.size(); ib++) {
-        addVars.add(basis[ib]->ID, &(basis[ib]->B0),1);
+        basis[ib]->addOptimizables(outVars);
       }
       ++it;
     }
-
     for(int i=0; i<InFuncList.size(); i++) {
-      InFuncList& infunc(*InFuncList[i]);
-      for(int k=0; k<infunc.size(); k++) {
-        addVars.add(infunc.ID[k],&(infunc.C[k]),1);
-      }
+      cout << "What are you upto??? " << endl;
+      InFuncList[i]->addOptimizables(outVars);
     }
+
+    cout << "Show the optimizable variables " << endl;
+    outVars.print(cout);
     //outVars.add(ID,&B,1);
     //potentially add Rcut
   }
@@ -72,12 +74,12 @@ namespace qmcplusplus {
        while(cur != NULL) {
          string cname((const char*)(cur->name));
          if(cname == "radfunc") {
-           WMFunctor* a=new WMFunctor(1.0,rcut);
+           BasisType* a=new BasisType(1.0,rcut);
            OhmmsAttributeSet rAttrib;
            rAttrib.add(a->ID,"id");
-           rAttrib.add(a->B,"b");
+           rAttrib.add(a->B0,"b");
            rAttrib.put(cur);
-           newBasis.push_back(a);
+           newBasis->push_back(a);
          }
          cur=cur->next;
        }
@@ -105,10 +107,11 @@ namespace qmcplusplus {
         aAttrib.put(cur);
         if(speciesA==speciesA) {
           map<string,BasisSetType*>::iterator it(myBasisSet.find(speciesA));
-          if(it == it.end()) {
+          if(it == myBasisSet.end()) {
             app_error() <<  "  WMBasisSet for " << speciesA << " does not exist." << endl;
             continue;
-          }
+          } 
+          app_log() << "    Creating a correlation function = " << speciesA << "-" << speciesB << endl;
           infunc = createCorrelation(cur,(*it).second);
         }
       }
@@ -117,6 +120,7 @@ namespace qmcplusplus {
 
     if(infunc==0) return 0;
 
+    InFuncList.push_back(infunc);
     typedef TwoBodyJastrowOrbital<FuncType> JeeType;
     JeeType *J2 = new JeeType(target);
     FuncType* nfunc= new FuncType(infunc,myGrid);
@@ -126,7 +130,8 @@ namespace qmcplusplus {
   }
 
   OrbitalBase* WMConstraints::createOneBody(ParticleSet& target, ParticleSet& source) {
-    vector<InFuncType*> jnSet(source.getSpeciesSet().getTotalNum(),0);
+    vector<InFuncType*> jnSet;
+    jnSet.resize(source.getSpeciesSet().getTotalNum(),0);
     xmlNodePtr cur=myNode->children;
     bool noOneBody=true;
     while(cur != NULL) {
@@ -142,10 +147,11 @@ namespace qmcplusplus {
         aAttrib.put(cur);
         if(speciesA != speciesB) {
           map<string,BasisSetType*>::iterator it(myBasisSet.find(speciesA));
-          if(it == it.end()) {
+          if(it == myBasisSet.end()) {
             app_error() <<  "  WMBasisSet for " << speciesA << " does not exist." << endl;
             continue;
           }
+          app_log() << "    Creating a correlation function = " << speciesA << "-" << speciesB << endl;
           int gid=source.getSpeciesSet().addSpecies(speciesA);
           jnSet[gid] = createCorrelation(cur,(*it).second);
           noOneBody=false;
@@ -157,12 +163,13 @@ namespace qmcplusplus {
     if(noOneBody) return 0;
 
     typedef OneBodyJastrow<FuncType> JneType;
-    JneType* jne=new JneType;
+    JneType* jne=new JneType(source,target);
     for(int ig=0; ig<jnSet.size(); ig++) {
       if(jnSet[ig]) {
         FuncType* nfunc= new FuncType(jnSet[ig],myGrid);
-        J1->addFunc(nfunc);
+        jne->addFunc(ig,nfunc);
         FuncList.push_back(nfunc);
+        InFuncList.push_back(jnSet[ig]);
       }
     }
     return jne;
@@ -184,13 +191,13 @@ namespace qmcplusplus {
           aAttrib.add(ref,"ref");
           aAttrib.put(cur);
           putContent(c,cur);
-          if(nc <basis.size()) acombo->add(basis[nc++],c,id);
+          if(nc <basis->size()) acombo->add((*basis)[nc++],c,id);
         }
         cur=cur->next;
       }
 
       if(nc)
-        return acomb;
+        return acombo;
       else {
         delete acombo; 
         return 0;

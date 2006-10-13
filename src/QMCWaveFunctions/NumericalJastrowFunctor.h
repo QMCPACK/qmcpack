@@ -18,6 +18,7 @@
 #define QMCPLUSPLUS_NUMERICAL_JASTROWFUNCTIONS_H
 #include "QMCWaveFunctions/JastrowFunctorBase.h"
 #include "Numerics/OneDimCubicSpline.h"
+#include "Optimize/VarList.h"
 
 namespace qmcplusplus {
 
@@ -156,8 +157,12 @@ struct SplineJastrow: public JastrowFunctorBase<RT> {
   FNIN *InFunc;
   FNOUT *OutFunc;
 
-  ///constrctor
+  ///constructor
   SplineJastrow(): InFunc(0), OutFunc(0) { }
+  ///constructor with arguments
+  SplineJastrow(FNIN* in_, typename FNOUT::grid_type* agrid){
+    initialize(in_,agrid);
+  }
   ///set the input, analytic function
   void setInFunc(FNIN* in_) { InFunc=in_;}
   ///set the output numerical function

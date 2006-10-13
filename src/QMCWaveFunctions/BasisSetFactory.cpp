@@ -20,7 +20,9 @@
 #include "QMCWaveFunctions/MolecularOrbitals/GTOBuilder.h"
 #include "QMCWaveFunctions/MolecularOrbitals/STOBuilder.h"
 #include "QMCWaveFunctions/MolecularOrbitals/MolecularBasisBuilder.h"
+#if! defined(QMC_COMPLEX)
 #include "QMCWaveFunctions/SplineSetBuilder.h"
+#endif
 #include "Message/Communicate.h"
 #include "OhmmsData/AttributeSet.h"
 
@@ -57,8 +59,12 @@ namespace qmcplusplus {
 
     BasisSetBuilder* bb=0;
     if(typeOpt == "spline") {
+#if defined(QMC_COMPLEX)
+      OHMMS::Controller->abort("BasisSetFactory::SplineSetBuilder is disabled QMC_COMPLEX=1");
+#else
       app_log() << "  SplineSetBuilder: spline on 3D TriCubicGrid " << endl;
       bb = new SplineSetBuilder(targetPtcl,ptclPool);
+#endif
     } else { 
     //if(typeOpt == "MolecularOrbital") {
       ParticleSet* ions=0;
@@ -66,9 +72,7 @@ namespace qmcplusplus {
       //initialize with the source tag
       PtclPoolType::iterator pit(ptclPool.find(sourceOpt));
       if(pit == ptclPool.end()) {
-        app_error() << "Molecular orbital cannot be created.\n" 
-          << "Missing/incorrect source attribute. Abort at BasisSetFactory::createBasisSet." << endl;
-        OHMMS::Controller->abort();
+        OHMMS::Controller->abort("Molecular orbital cannot be created.\n Missing/incorrect source attribute. Abort at BasisSetFactory::createBasisSet.");
       } else {
         app_log() << "  Molecular orbital with " << sourceOpt;
         ions=(*pit).second; 

@@ -65,7 +65,7 @@ namespace qmcplusplus {
     ///constructor
     PWBasis(const TinyVector<RealType,3>& twistangle): twist(twistangle) {
       NumPlaneWaves=0;
-      maxg=0.0;
+      maxg=0;
     }
 
     ///Read basisset from hdf5 file. Apply ecut. Resize internal storage.

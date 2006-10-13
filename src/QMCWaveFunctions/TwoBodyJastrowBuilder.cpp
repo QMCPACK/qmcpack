@@ -18,6 +18,7 @@
 #include "QMCWaveFunctions/ComboOrbital.h"
 #include "QMCWaveFunctions/PadeConstraints.h"
 #include "QMCWaveFunctions/RPAConstraints.h"
+#include "QMCWaveFunctions/WMConstraints.h"
 #include "QMCWaveFunctions/JAABuilder.h"
 #include "QMCWaveFunctions/NJAABuilder.h"
 #include "OhmmsData/AttributeSet.h"
@@ -77,7 +78,9 @@ namespace qmcplusplus {
       } else {
         control = new RPAConstraints(IgnoreSpin);
       }
-    } 
+    } else if(functionOpt == "WM") {
+      control = new WMConstraints(IgnoreSpin);
+    }
 
     if(control==0) { //try generic JAABuilder and NJAABuilder
       OrbitalBuilderBase* jbuilder=0;
@@ -94,7 +97,6 @@ namespace qmcplusplus {
       delete control;
       return false;
     }
-    control->addOptimizables(targetPsi.VarList);
 
     ComboOrbital* jcombo=new ComboOrbital(control);
     OrbitalBase* j2=control->createTwoBody(targetPtcl);
@@ -105,6 +107,7 @@ namespace qmcplusplus {
       if(j1) jcombo->Psi.push_back(j1);
     }
 
+    control->addOptimizables(targetPsi.VarList);
     targetPsi.addOrbital(jcombo);
     return success;
   }

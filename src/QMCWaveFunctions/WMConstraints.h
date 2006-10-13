@@ -52,18 +52,22 @@ namespace qmcplusplus {
         real_type z=x*x*(6.0-8*x+3.0*x*x);
         return -(1+B0)/(1+B0*z)*(1+B0*z)*OneOverRc*12*x*(1-2.0*x+x*x);
       }
+
+      void addOptimizables(VarRegistry<T>& vlist) {
+        vlist.add(ID,&B0,1);
+      }
     };
 
-  /** Implements a linear combination of WMFunctors for Two-body and One-body Jastrow orbitals
+  /** Implements a linear combination of any functor
    */
-  template<class T>
-    struct WMComboFunctor: public JastrowFunctorBase<T> {
-      typedef typename JastrowFunctorBase<T>::real_type real_type;
-      vector<T> C;
-      vector<WMFunctor*> Phi;
+  template<class CT>
+    struct ComboFunctor: public JastrowFunctorBase<CT::real_type> {
+      typedef typename CT::real_type real_type;
+      vector<real_type> C;
+      vector<CT*> Phi;
       vector<string> ID;
 
-      WMComboFunctor() { 
+      ComboFunctor() { 
         C.reserve(8);
         Phi.reserve(8);
         ID.reserve(8);
@@ -71,14 +75,14 @@ namespace qmcplusplus {
 
       int size() const { return Phi.size();}
 
-      void add(WMFunctor* func, T c,  const string& id) {
+      void add(CT* func, real_type c,  const string& id) {
         C.push_back(c);
         Phi.push_back(func);
         ID.push_back(id);
       }
 
       inline void reset() {
-        for(int i=0; i<Phi.size(); i++) Phi.[i]->reset();
+        for(int i=0; i<Phi.size(); i++) Phi[i]->reset();
       }
 
       inline real_type f(real_type r) {
@@ -94,18 +98,29 @@ namespace qmcplusplus {
       }
 
       void put(xmlNodePtr cur, VarRegistry<real_type>& vlist) {}
+
+      void addOptimizables(VarRegistry<real_type>& vlist) {
+        for(int i=0; i<C.size(); i++) {
+          cout << "Adding " << ID[i] << " " << C[i] << endl;
+          vlist.add(ID[i],&(C[i]),1);
+        }
+      }
     };
 
 
   struct WMConstraints: public OrbitalConstraintsBase {
+    ///basis type
+    typedef WMFunctor<RealType> BasisType;
+    ///basis set type
+    typedef vector<BasisType*> BasisSetType;
     ///analytic functor
-    typedef WMComboFunctor<RealType> InFuncType;
+    typedef ComboFunctor<BasisType> InFuncType;
     ///numerical functor
     typedef SplineJastrow<RealType> FuncType;
     bool IgnoreSpin;
     RealType Rcut;
 
-    typedef vector<WMFunctor*> BasisSetType;
+
     map<string,BasisSetType*> myBasisSet;
     vector<InFuncType*> InFuncList;
     vector<FuncType*> FuncList;
