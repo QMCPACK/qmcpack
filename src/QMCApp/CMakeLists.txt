@@ -17,6 +17,7 @@ SET(WFSRCS
   ../QMCWaveFunctions/PadeConstraints.cpp
   ../QMCWaveFunctions/TwoBodyJastrowBuilder.cpp
   ../QMCWaveFunctions/RPAConstraints.cpp
+  ../QMCWaveFunctions/WMConstraints.cpp
   ../QMCWaveFunctions/WaveFunctionFactory.cpp
   ../QMCWaveFunctions/SPOSetBase.cpp
   ../QMCWaveFunctions/BasisSetFactory.cpp
@@ -26,7 +27,6 @@ SET(WFSRCS
   ../QMCWaveFunctions/MolecularOrbitals/STOBuilder.cpp
   ../QMCWaveFunctions/MolecularOrbitals/GTOBuilder.cpp
   ../QMCWaveFunctions/MolecularOrbitals/NGOBuilder.cpp
-  ../QMCWaveFunctions/NumericalOrbitalSetBuilder.cpp
   ../LongRange/LPQHIBasis.cpp
   ../QMCHamiltonians/CoulombPBCAATemp.cpp
   ../QMCHamiltonians/CoulombPBCABTemp.cpp
@@ -43,6 +43,8 @@ IF(QMC_COMPLEX)
   )
 ELSE(QMC_COMPLEX)
   SET(WFSRCS ${WFSRCS}
+    ../QMCWaveFunctions/NumericalOrbitalSetBuilder.cpp
+    ../QMCWaveFunctions/SplineSetBuilder.cpp
     ../QMCWaveFunctions/ElectronGasOrbitalBuilder.cpp
     ../QMCWaveFunctions/PlaneWaveOrbitalBuilder.cpp
     ../QMCWaveFunctions/ThreeBodyGeminal.cpp

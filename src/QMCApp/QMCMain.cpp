@@ -110,11 +110,12 @@ namespace qmcplusplus {
           } else {
             app_error() << "   " << cname << " failed." << endl;
           }
-          t=xmlGetProp(cur,(const xmlChar*)"id");
-          if(t == NULL) {
-            xmlAttrPtr t1=xmlNewProp(cur,(const xmlChar*)"id", 
-                (const xmlChar*)myProject.CurrentMainRoot());
-          }
+          //t=xmlGetProp(cur,(const xmlChar*)"id");
+          //if(t == NULL) {
+          //  //cout << "What is wrong with you " << myProject.CurrentMainRoot() << endl;
+          //  //xmlAttrPtr t1=xmlNewProp(cur,(const xmlChar*)"id", 
+          //  //    (const xmlChar*)myProject.CurrentMainRoot());
+          //}
         }
       }
       cur=cur->next;
