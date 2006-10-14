@@ -78,6 +78,8 @@ namespace qmcplusplus {
       cur = cur->next;
     }
 
+    app_log() << "  List of optimizable variables " << endl;
+    targetPsi->VarList.print(app_log());
     return success;
   }
 
