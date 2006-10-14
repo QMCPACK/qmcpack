@@ -48,14 +48,8 @@ namespace qmcplusplus {
       ++it;
     }
     for(int i=0; i<InFuncList.size(); i++) {
-      cout << "What are you upto??? " << endl;
       InFuncList[i]->addOptimizables(outVars);
     }
-
-    cout << "Show the optimizable variables " << endl;
-    outVars.print(cout);
-    //outVars.add(ID,&B,1);
-    //potentially add Rcut
   }
 
   void WMConstraints::addBasisGroup(xmlNodePtr cur) {
@@ -73,12 +67,12 @@ namespace qmcplusplus {
        cur=cur->children;
        while(cur != NULL) {
          string cname((const char*)(cur->name));
-         if(cname == "radfunc") {
+         if(cname == "parameter") {
            BasisType* a=new BasisType(1.0,rcut);
            OhmmsAttributeSet rAttrib;
-           rAttrib.add(a->ID,"id");
-           rAttrib.add(a->B0,"b");
+           rAttrib.add(a->ID,"id"); //rAttrib.add(a->B0,"b");
            rAttrib.put(cur);
+           putContent(a->B0,cur);
            newBasis->push_back(a);
          }
          cur=cur->next;
@@ -105,7 +99,7 @@ namespace qmcplusplus {
         aAttrib.add(speciesA,"speciesA");
         aAttrib.add(speciesB,"speciesB");
         aAttrib.put(cur);
-        if(speciesA==speciesA) {
+        if(speciesA==speciesB) {
           map<string,BasisSetType*>::iterator it(myBasisSet.find(speciesA));
           if(it == myBasisSet.end()) {
             app_error() <<  "  WMBasisSet for " << speciesA << " does not exist." << endl;

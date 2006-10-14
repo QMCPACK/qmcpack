@@ -58,54 +58,6 @@ namespace qmcplusplus {
       }
     };
 
-  /** Implements a linear combination of any functor
-   */
-  template<class CT>
-    struct ComboFunctor: public JastrowFunctorBase<CT::real_type> {
-      typedef typename CT::real_type real_type;
-      vector<real_type> C;
-      vector<CT*> Phi;
-      vector<string> ID;
-
-      ComboFunctor() { 
-        C.reserve(8);
-        Phi.reserve(8);
-        ID.reserve(8);
-      }
-
-      int size() const { return Phi.size();}
-
-      void add(CT* func, real_type c,  const string& id) {
-        C.push_back(c);
-        Phi.push_back(func);
-        ID.push_back(id);
-      }
-
-      inline void reset() {
-        for(int i=0; i<Phi.size(); i++) Phi[i]->reset();
-      }
-
-      inline real_type f(real_type r) {
-        real_type res=0;
-        for(int i=0; i<Phi.size(); i++) { res += C[i]*Phi[i]->f(r);}
-        return res;
-      }
-
-      inline real_type df(real_type r) {
-        real_type res(0);
-        for(int i=0; i<Phi.size(); i++) { res += C[i]*Phi[i]->df(r);}
-        return res;
-      }
-
-      void put(xmlNodePtr cur, VarRegistry<real_type>& vlist) {}
-
-      void addOptimizables(VarRegistry<real_type>& vlist) {
-        for(int i=0; i<C.size(); i++) {
-          cout << "Adding " << ID[i] << " " << C[i] << endl;
-          vlist.add(ID[i],&(C[i]),1);
-        }
-      }
-    };
 
 
   struct WMConstraints: public OrbitalConstraintsBase {
