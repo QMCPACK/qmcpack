@@ -52,6 +52,18 @@ struct OneDimGridBase {
   ///return the current index 
   inline int currentIndex() const { return Loc;}
 
+  inline int getIndex(T r) const { 
+    int k;
+    int klo=0;
+    int khi=this->size()-1;
+    while(khi-klo > 1){
+      k=(khi+klo) >> 1;
+      if(X[k] > r) khi=k;
+      else klo=k;
+    }
+    return klo;
+  }
+
   ///assign a value
   inline T& operator[](int i) { return X[i];}
   ///assign a value

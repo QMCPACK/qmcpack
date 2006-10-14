@@ -1,5 +1,6 @@
 #ifndef QMCPLUSPLUS_XYZCUBICGRID_H
 #define QMCPLUSPLUS_XYZCUBICGRID_H
+#include <cmath>
 #include "OhmmsPETE/TinyVector.h"
 #include "Numerics/OneDimGridBase.h"
 
@@ -47,9 +48,9 @@ struct XYZCubicGrid {
   int Loc;
   int ix, iy, iz;
   int nX, nY, nZ;
-  T x_min, x_max, LengthX;
-  T y_min, y_max, LengthY;
-  T z_min, z_max, LengthZ;
+  T x_min, x_max, LengthX, OneOverLx;
+  T y_min, y_max, LengthY, OneOverLy;
+  T z_min, z_max, LengthZ, OneOverLz;
   T h,k,l,hinv,kinv,linv;
   T u,v,w;
   T val, gradfX, gradfY, gradfZ, lapf;
@@ -69,9 +70,9 @@ struct XYZCubicGrid {
   void 
   setGridXYZ(Grid1DType *xgrid, Grid1DType *ygrid, Grid1DType *zgrid) {
     gridX=xgrid; gridY=ygrid; gridZ=zgrid;
-    x_min=gridX->rmin(); x_max=gridX->rmax(); LengthX=x_max-x_min;
-    y_min=gridY->rmin(); y_max=gridY->rmax(); LengthY=y_max-y_min;
-    z_min=gridZ->rmin(); z_max=gridZ->rmax(); LengthZ=z_max-z_min;
+    x_min=gridX->rmin(); x_max=gridX->rmax(); LengthX=x_max-x_min; OneOverLx=1.0/LengthX;
+    y_min=gridY->rmin(); y_max=gridY->rmax(); LengthY=y_max-y_min; OneOverLy=1.0/LengthY;
+    z_min=gridZ->rmin(); z_max=gridZ->rmax(); LengthZ=z_max-z_min; OneOverLz=1.0/LengthZ;
     nX = gridX->size(); nY = gridY->size(); nZ = gridZ->size();
   }
 
@@ -86,7 +87,7 @@ struct XYZCubicGrid {
     cur = cur->xmlChildrenNode;
     int idir(0);
     while(cur != NULL) {
-      string cname((const char*)(cur->name));
+      std::string cname((const char*)(cur->name));
       if(cname == "grid") {
         const xmlChar* a=xmlGetProp(cur,(const xmlChar*)"dir");
         if(a) { idir=atoi((const char*)a);}
@@ -122,20 +123,30 @@ struct XYZCubicGrid {
     //grid(X,Y,Z)->locate(r) evaluates the factors used by interpolations
     Loc=-1;
     if(Periodic) {
-      if(x<x_min) x+=LengthX;
-      else if(x>=x_max) x-=LengthX;
-      if(y<y_min) y+=LengthY;
-      else if(y>=y_max) y-=LengthY;
-      if(z<z_min) z+=LengthZ;
-      else if(z>=z_max) z-=LengthZ;
+      x-=LengthX*std::floor(x*OneOverLx);
+      y-=LengthY*std::floor(y*OneOverLy);
+      z-=LengthZ*std::floor(z*OneOverLz);
+      //T x0=std::fmod(x-x_min,LengthX);
+      //x=x0-LengthX*static_cast<int>(x0*TwoOverLx)+x_min;
+      //T y0=std::fmod(y-y_min,LengthY);
+      //y=y0-LengthY*static_cast<int>(y0*TwoOverLy)+y_min;
+      //T z0=std::fmod(z-z_min,LengthZ);
+      //z=z0-LengthZ*static_cast<int>(z0*TwoOverLz)+z_min;
+      //if(x<x_min) x+=LengthX;
+      //else if(x>=x_max) x-=LengthX;
+      //if(y<y_min) y+=LengthY;
+      //else if(y>=y_max) y-=LengthY;
+      //if(z<z_min) z+=LengthZ;
+      //else if(z>=z_max) z-=LengthZ;
+    } else {
+      if(x<x_min || x > x_max) return;
+      if(y<y_min || y > y_max) return;
+      if(z<z_min || z > z_max) return;
     }
 
-    gridX->locate(x); ix=gridX->currentIndex();
-    if(ix<0||ix>= nX)  return;
-    gridY->locate(y); iy=gridY->currentIndex();
-    if(iy<0||iy>= nY)  return;
-    gridZ->locate(z); iz=gridZ->currentIndex();
-    if(iz<0||iz>= nZ)  return;
+    ix=gridX->getIndex(x);
+    iy=gridY->getIndex(y);
+    iz=gridY->getIndex(z);
 
     h = gridX->dr(ix);
     hinv = 1.0/h;
