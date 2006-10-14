@@ -100,7 +100,7 @@ namespace qmcplusplus {
 
     ComboOrbital* jcombo=new ComboOrbital(control);
     OrbitalBase* j2=control->createTwoBody(targetPtcl);
-    jcombo->Psi.push_back(j2);
+    if(j2) jcombo->Psi.push_back(j2);
 
     if(sourcePtcl) { // add one-body term using Zeff and e-e B
       OrbitalBase* j1=control->createOneBody(targetPtcl,*sourcePtcl);
