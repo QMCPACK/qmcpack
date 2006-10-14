@@ -38,6 +38,8 @@ namespace qmcplusplus {
       LOGMSG("\n  Creating Structure Factor for periodic systems.")
       Lattice.SetLRCutoffs();
       SK = new StructFact(*this,Lattice.LR_kc);
+
+      Lattice.print(app_log());
       //This uses the copy constructor to avoid recomputing the data.
       //SKOld = new StructFact(*SK);
     }
