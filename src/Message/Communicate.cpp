@@ -19,6 +19,7 @@
 
 #include "Message/Communicate.h"
 #include "Message/TagMaker.h"
+#include <iostream>
 
 //static data of TagMaker::CurrentTag is initialized.
 int TagMaker::CurrentTag = 1000;
@@ -97,6 +98,11 @@ Communicate::~Communicate(){}
 void Communicate::initialize(int argc, char **argv){ }
 void Communicate::finalize(){ }
 void Communicate::abort(){ 
+  abort();
+}
+
+void Communicate::abort(const char* msg){ 
+  std::cerr << msg << std::endl;
   abort();
 }
 void Communicate::barrier(){

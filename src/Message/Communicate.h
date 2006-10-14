@@ -65,6 +65,7 @@ public:
   void initialize(int argc, char **argv);
   void finalize();
   void abort();
+  void abort(const char* msg);
 
   ///return the Communicator ID (typically MPI_WORLD_COMM)
   inline mpi_comm_type getID() const { return CommID;}
