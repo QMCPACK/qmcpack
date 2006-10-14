@@ -125,9 +125,9 @@ namespace qmcplusplus {
 
     void accumulate(const Walker_t& awalker, RealType wgt);
 
-    void accumulate(WalkerIterator first, WalkerIterator last) {
+    void accumulate(WalkerIterator first, WalkerIterator last, RealType wgtnorm) {
       while(first != last) {
-        accumulate(**first,(*first)->Weight);
+        accumulate(**first,(*first)->Weight*wgtnorm);
         ++first;
       }
     }

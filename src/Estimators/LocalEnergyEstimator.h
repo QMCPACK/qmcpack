@@ -130,11 +130,11 @@ namespace qmcplusplus {
       */
     }
 
-    void accumulate(WalkerIterator first, WalkerIterator last) {
+    void accumulate(WalkerIterator first, WalkerIterator last, T wgtnorm) {
       T deltaE = Href.getEnsembleAverage();
       int wsum=0;
       while(first != last) {
-        accumulate(**first,(*first)->Weight);
+        accumulate(**first,(*first)->Weight*wgtnorm);
         ++first; wsum++;
       }
       elocal[ENERGY_INDEX] += static_cast<T>(wsum)*deltaE;

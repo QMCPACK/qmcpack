@@ -80,6 +80,7 @@ ScalarEstimatorManager::add(EstimatorType* newestimator, const string& aname) {
  */
 void 
 ScalarEstimatorManager::reset() {
+  BinSize=0;
   MyData=0.0;
   for(int i=0; i< Estimators.size(); i++) Estimators[i]->reset();
 }
@@ -147,15 +148,22 @@ ScalarEstimatorManager::finalize(SimpleFixedNodeBranch& branchEngine) {
 void 
 ScalarEstimatorManager::accumulate(MCWalkerConfiguration& W) {
 
-  for(int i=0; i< Estimators.size(); i++) 
-    Estimators[i]->accumulate(W.begin(),W.end());
-
   RealType wgt_sum=0;
   MCWalkerConfiguration::const_iterator it(W.begin()),it_end(W.end());
   while(it != it_end) {
     wgt_sum+= (*it)->Weight;
     ++it;
   }
+
+  //unfortulately, need to collect the weights for DMC
+  RealType oneOverWgt=1.0/wgt_sum;
+
+  //RealType oneOverWgt=1.0;
+  for(int i=0; i< Estimators.size(); i++) 
+    Estimators[i]->accumulate(W.begin(),W.end(), oneOverWgt);
+
+  //increment BinSize
+  BinSize++;
   MyData[WEIGHT_INDEX]+=wgt_sum;
 }
 
@@ -201,7 +209,8 @@ void ScalarEstimatorManager::flush(){
 #endif
   } else {//CollectSum == false
 #endif
-    RealType wgtinv = 1.0/MyData[WEIGHT_INDEX];
+    //RealType wgtinv = 1.0/MyData[WEIGHT_INDEX];
+    RealType wgtinv = 1.0/static_cast<RealType>(BinSize);
     for(int i=0; i<Estimators.size(); i++) 
       Estimators[i]->report(BlockAverages,wgtinv,*RemoteData[0]);
 
@@ -214,6 +223,7 @@ void ScalarEstimatorManager::flush(){
   BlockAverages[MyIndex[BLOCK_CPU_INDEX]] = MyData[BLOCK_CPU_INDEX]*NodeWeight;
   BlockAverages[MyIndex[ACCEPT_RATIO_INDEX]] = MyData[ACCEPT_RATIO_INDEX]*NodeWeight;
 
+  BinSize=0;
   MyData=0.0;
 
   EPSum[0]+= Estimators[0]->average();
@@ -346,6 +356,7 @@ ScalarEstimatorManager::resetReportSettings(const string& aname, bool append) {
   }
 
   BlockAverages.setValues(0.0);
+  BinSize=0;
 
 }
 

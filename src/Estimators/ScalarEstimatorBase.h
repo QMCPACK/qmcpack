@@ -68,7 +68,7 @@ namespace qmcplusplus {
      */
     virtual void accumulate(const Walker_t& awalker, T wgt) = 0;
 
-    virtual void accumulate(WalkerIterator first, WalkerIterator last) = 0;
+    virtual void accumulate(WalkerIterator first, WalkerIterator last, T wgtnorm) = 0;
 
     /** a virtual function to report the scalar estimator
      *@param record 

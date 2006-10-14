@@ -149,6 +149,7 @@ namespace qmcplusplus {
     bool firstReport;
     ///if true, needs to collect data using irecv.
     bool ManagerNode;
+    int BinSize;
     int index;
 
     //this should be encapsulated
