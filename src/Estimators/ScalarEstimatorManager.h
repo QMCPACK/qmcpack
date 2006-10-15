@@ -45,24 +45,12 @@ namespace qmcplusplus {
     enum { WEIGHT_INDEX=0, BLOCK_CPU_INDEX, ACCEPT_RATIO_INDEX, TOTAL_INDEX};
 
     ScalarEstimatorManager(QMCHamiltonian& h);
-    ~ScalarEstimatorManager();
+    virtual ~ScalarEstimatorManager();
 
     ///return the number of ScalarEstimators
     inline int size() const { return Estimators.size();}
 
-    ///process xml tag associated with estimators
-    bool put(xmlNodePtr cur);
 
-    void accumulate(MCWalkerConfiguration& W);
-    void resetReportSettings(const string& aname, bool append);
-    void reportHeader(bool append);
-    void flushreport(int iter);
-    void report(int iter);
-    void flush();
-    void finalize();
-    void reset();
-  
-    void finalize(SimpleFixedNodeBranch& branchEngine);
     /** add a column with the name
      * @param aname name of the column
      * @return the column index
@@ -137,7 +125,19 @@ namespace qmcplusplus {
 
     void setAccumulateMode (bool setAccum) {AccumulateBlocks = setAccum;};
 
-  private:
+    ///process xml tag associated with estimators
+    virtual bool put(xmlNodePtr cur);
+    virtual void accumulate(MCWalkerConfiguration& W);
+    virtual void resetReportSettings(const string& aname, bool append);
+    virtual void reportHeader(bool append);
+    virtual void flushreport(int iter);
+    virtual void report(int iter);
+    virtual void flush();
+    virtual void finalize();
+    virtual void reset();
+    virtual void finalize(SimpleFixedNodeBranch& branchEngine);
+
+  protected:
 
     ///if yes, this estimator will write the data to a file
     bool FileManager;
