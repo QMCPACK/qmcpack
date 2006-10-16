@@ -64,7 +64,7 @@ struct JastrowFunctorBase {
   /** Implements a linear combination of any functor
    */
   template<class CT>
-    struct ComboFunctor: public JastrowFunctorBase<CT::real_type> {
+    struct ComboFunctor: public JastrowFunctorBase<typename CT::real_type> {
       typedef typename CT::real_type real_type;
       vector<real_type> C;
       vector<CT*> Phi;
