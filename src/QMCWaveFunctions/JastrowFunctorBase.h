@@ -19,10 +19,14 @@
 #include "OhmmsData/libxmldefs.h"
 #include "Optimize/VarList.h"
 #include "QMCWaveFunctions/OrbitalTraits.h"
+#include <vector>
+#include <string>
 
 namespace qmcplusplus {
 /** Base class for any functor used as a source for NumericalJastrow
  */
+using namespace std;
+
 template<class RT>
 struct JastrowFunctorBase {
 
@@ -66,9 +70,9 @@ struct JastrowFunctorBase {
   template<class CT>
     struct ComboFunctor: public JastrowFunctorBase<typename CT::real_type> {
       typedef typename CT::real_type real_type;
-      vector<real_type> C;
-      vector<CT*> Phi;
-      vector<string> ID;
+      std::vector<real_type> C;
+      std::vector<CT*> Phi;
+      std::vector<string> ID;
 
       ComboFunctor() { 
         C.reserve(8);
