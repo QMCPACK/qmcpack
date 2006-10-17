@@ -161,6 +161,7 @@ void WaveFunctionTester::runBasicTest() {
     W.update();
     //ValueType psi_p = log(fabs(Psi.evaluate(W)));
     RealType psi_p = Psi.evaluateLog(W);
+    RealType phase_p=Psi.getPhase();
 
     W.makeMove(iat,deltaR[iat]);
     RealType aratio = Psi.ratio(W,iat);
@@ -171,8 +172,10 @@ void WaveFunctionTester::runBasicTest() {
     W.update();
     //ValueType psi_m = log(fabs(Psi.evaluate(W)));
     RealType psi_m = Psi.evaluateLog(W);
+    RealType phase_m=Psi.getPhase();
 
-    cout << iat << " ratio " << aratio/std::exp(psi_m-psi_p) << " " << std::exp(psi_m-psi_p) << endl;
+    RealType ratDiff=std::exp(psi_m-psi_p)*std::cos(phase_m-phase_p) ;
+    cout << iat << " ratio " << aratio/ratDiff << " " << ratDiff << endl;
   }
 } 
 
