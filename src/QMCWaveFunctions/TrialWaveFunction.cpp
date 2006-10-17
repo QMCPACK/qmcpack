@@ -178,7 +178,9 @@ namespace qmcplusplus {
       r *= Z[i]->ratio(P,iat);
     }
 #if defined(QMC_COMPLEX)
-    return std::exp(evaluateLogAndPhase(r,PhaseValue));
+    //return std::exp(evaluateLogAndPhase(r,PhaseValue));
+    RealType logr=evaluateLogAndPhase(r,PhaseValue);
+    return std::exp(logr)*std::cos(PhaseValue);
 #else
     PhaseValue=evaluatePhase(r);
     return real(r);
