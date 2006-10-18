@@ -20,7 +20,7 @@
 #include "QMCDrivers/DMC/DMCMoveAll.h"
 #include "QMCDrivers/DMC/DMCUpdateAll.h"
 #include "QMCDrivers/DMC/DMCNonLocalUpdate.h"
-#include "Message/Communicate.h"
+#include "Estimators/DMCEnergyEstimator.h"
 
 namespace qmcplusplus {
 
@@ -36,6 +36,10 @@ namespace qmcplusplus {
     m_param.add(BranchInterval,"branchInterval","int"); 
     m_param.add(BranchInterval,"branch_interval","int");
     m_param.add(NonLocalMove,"nonlocalmoves","string");
+
+    //create a ScalarEstimator and add DMCEnergyEstimator
+    Estimators = new ScalarEstimatorManager(H);
+    Estimators->add(new DMCEnergyEstimator,"elocal");
   }
 
   DMCMoveAll::~DMCMoveAll() {
@@ -47,11 +51,10 @@ namespace qmcplusplus {
   }
   
 
-  void DMCMoveAll::dmcWithBranching() {
+  bool DMCMoveAll::dmcWithBranching() {
     //m_oneover2tau = 0.5/Tau;
     //m_sqrttau = sqrt(Tau);
     
-    RealType Eest = branchEngine->E_T;
     Mover->resetRun(branchEngine);
     Mover->MaxAge=3;
 
@@ -77,7 +80,6 @@ namespace qmcplusplus {
 
         Mover->setMultiplicity(W.begin(),W.end());
         Estimators->accumulate(W);
-        Eest = branchEngine->CollectAndUpdate(W.getActiveWalkers(),Eest);
         branchEngine->branch(CurrentStep,W);
       } while(step<nSteps);
 
@@ -92,11 +94,6 @@ namespace qmcplusplus {
 
       nAcceptTot += nAccept;
       nRejectTot += nReject;
-      
-      Estimators->setColumn(PopIndex,static_cast<RealType>(pop_acc)/static_cast<RealType>(nSteps));
-      Estimators->setColumn(EtrialIndex,Eest);
-
-      Eest = Estimators->average(0);
 
       nAccept = 0; nReject = 0;
       block++;
@@ -105,15 +102,15 @@ namespace qmcplusplus {
     
     //Need MPI-IO
     app_log() << "\t ratio = " << static_cast<double>(nAcceptTot)/static_cast<double>(nAcceptTot+nRejectTot) << endl;
+
+    return finalize(block);
   }
 
-  void DMCMoveAll::dmcWithReconfiguration() {
+  bool DMCMoveAll::dmcWithReconfiguration() {
     Mover->MaxAge=0;
     IndexType block = 0;
     IndexType nAcceptTot = 0;
     IndexType nRejectTot = 0;
-    RealType Eest = branchEngine->E_T;
-
     bool checkNonLocalMove=(NonLocalMoveIndex>0);
     //Mover->resetRun(branchEngine);
     do {
@@ -136,9 +133,7 @@ namespace qmcplusplus {
         }
 
         Estimators->accumulate(W);
-        int nwKept=branchEngine->branch(CurrentStep,W);
-        Estimators->setColumn(PopIndex,nwKept);
-        Eest = branchEngine->CollectAndUpdate(W.getActiveWalkers(),Eest);
+        branchEngine->branch(CurrentStep,W);
       } while(step<nSteps);
 
       nAccept = Mover->nAccept;
@@ -149,9 +144,6 @@ namespace qmcplusplus {
       nAcceptTot += nAccept;
       nRejectTot += nReject;
       
-      Estimators->setColumn(EtrialIndex,Eest);
-
-      Eest = Estimators->average(0);
       nAccept = 0; nReject = 0;
       block++;
       recordBlock(block);
@@ -160,6 +152,8 @@ namespace qmcplusplus {
     
     //Need MPI-IO
     app_log() << "\t ratio = " << static_cast<double>(nAcceptTot)/static_cast<double>(nAcceptTot+nRejectTot) << endl;
+
+    return finalize(block);
   }
   /** Advance the walkers nblocks*nsteps timesteps. 
    *
@@ -207,13 +201,11 @@ namespace qmcplusplus {
       }
     }
 
-    //add columns
-    PopIndex = Estimators->addColumn("Population");
-    EtrialIndex = Estimators->addColumn("Etrial");
     Estimators->reportHeader(AppendRun);
 
     Mover->resetRun(branchEngine);
 
+    bool success=false;
     if(fixW)  {
       if(BranchInterval<0) {
         BranchInterval=nSteps;
@@ -223,14 +215,13 @@ namespace qmcplusplus {
       app_log() << "    BranchInterval=" << BranchInterval << endl;
       app_log() << "    Steps         =" << nSteps << endl;
       app_log() << "    Blocks        =" << nBlocks << endl;
-      dmcWithReconfiguration();
+      success = dmcWithReconfiguration();
     } else {
       app_log() << "  DMC all-ptcl update with a fluctuating population" << endl;
-      dmcWithBranching();
+      success = dmcWithBranching();
     }
 
-    Estimators->finalize();
-    return true;
+    return success;
   }
 }
 /***************************************************************************

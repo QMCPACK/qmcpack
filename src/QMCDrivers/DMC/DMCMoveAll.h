@@ -47,8 +47,6 @@ namespace qmcplusplus {
   private:
 
     DMCUpdateBase *Mover;
-    IndexType PopIndex;
-    IndexType EtrialIndex;
     IndexType KillNodeCrossing;
     IndexType BranchInterval;
     ///Interval between branching
@@ -62,8 +60,8 @@ namespace qmcplusplus {
     /// Copy operator (disabled).
     DMCMoveAll& operator=(const DMCMoveAll&) { return *this;}
 
-    void dmcWithBranching();
-    void dmcWithReconfiguration();
+    bool dmcWithBranching();
+    bool dmcWithReconfiguration();
   };
 }
 #endif

@@ -20,6 +20,7 @@
 #include "QMCDrivers/DMC/DMCPbyP.h"
 #include "QMCDrivers/DMC/DMCUpdatePbyP.h"
 #include "QMCDrivers/DMC/DMCNonLocalUpdate.h"
+#include "Estimators/DMCEnergyEstimator.h"
 
 namespace qmcplusplus { 
 
@@ -27,7 +28,7 @@ namespace qmcplusplus {
   DMCPbyP::DMCPbyP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h):
     QMCDriver(w,psi,h),
     KillNodeCrossing(0),
-    PopIndex(-1), EtrialIndex(-1),BranchInterval(-1), NonLocalMoveIndex(-1),
+    BranchInterval(-1), NonLocalMoveIndex(-1),
     BranchInfo("default"), KillWalker("no"), Reconfiguration("no"), NonLocalMove("no"), 
     Mover(0){ 
     RootName = "dmc";
@@ -42,6 +43,10 @@ namespace qmcplusplus {
     m_param.add(BranchInterval,"branch_interval","int");
     m_param.add(BranchInterval,"branchInterval","int");
     m_param.add(NonLocalMove,"nonlocalmoves","string");
+
+    //create a ScalarEstimator and add DMCEnergyEstimator
+    Estimators = new ScalarEstimatorManager(H);
+    Estimators->add(new DMCEnergyEstimator,"elocal");
   }
   
   /// destructor
@@ -77,8 +82,6 @@ namespace qmcplusplus {
     //set the collection mode for the estimator
     Estimators->setCollectionMode(branchEngine->SwapMode);
 
-    PopIndex = Estimators->addColumn("Population");
-    EtrialIndex = Estimators->addColumn("Etrial");
     Estimators->reportHeader(AppendRun);
     Estimators->reset();
 
@@ -105,19 +108,10 @@ namespace qmcplusplus {
     nAcceptTot = 0;
     nRejectTot = 0;
 
-    dmcWithBranching();
-    //if(fixW)  {
-    //  dmcWithReconfiguration();
-    //} else {
-    //  dmcWithBranching();
-    //}
-
-    Estimators->finalize();
-
-    return true;
+    return dmcWithBranching();
   }
 
-  void DMCPbyP::dmcWithBranching() {
+  bool DMCPbyP::dmcWithBranching() {
 
     bool checkNonLocalMove=(NonLocalMoveIndex>0);
     //Mover->MaxAge=1;
@@ -143,15 +137,10 @@ namespace qmcplusplus {
 
         //set the multiplicity with the weights
         Mover->setMultiplicity(W.begin(),W.end());
-
         Estimators->accumulate(W);
-        int cur_pop = branchEngine->branch(CurrentStep,W);
+        branchEngine->branch(CurrentStep,W);
 
-        Estimators->setColumn(PopIndex,cur_pop);
-        Eest = branchEngine->CollectAndUpdate(W.getActiveWalkers(),Eest);
-        //Eest = branchEngine->CollectAndUpdate(cur_pop,Eest);
-
-        pop_acc += cur_pop;
+        pop_acc += W.getActiveWalkers();
         if(CurrentStep%100 == 0) updateWalkers();
 
         ++step; 
@@ -168,18 +157,17 @@ namespace qmcplusplus {
       nAcceptTot += Mover->nAccept;
       nRejectTot += Mover->nReject;
 
-      //update estimator
-      //Estimators->setColumn(PopIndex,static_cast<RealType>(pop_acc)/static_cast<RealType>(nSteps));
-      Estimators->setColumn(EtrialIndex,Eest); 
       Eest = Estimators->average(0);
       RealType totmoves=1.0/static_cast<RealType>(step*W.getActiveWalkers());
 
       block++;
       recordBlock(block);
     } while(block<nBlocks);
+
+    return finalize(block);
   }
 
-  void DMCPbyP::dmcWithReconfiguration() {
+  bool DMCPbyP::dmcWithReconfiguration() {
     //MaxAge is set to 0 not to evaluate branching factor
     bool checkNonLocalMove=(NonLocalMoveIndex>0);
     IndexType block = 0;
@@ -198,9 +186,7 @@ namespace qmcplusplus {
         } while(interval<BranchInterval);
 
         Estimators->accumulate(W);
-        int nwKept= branchEngine->branch(CurrentStep,W);
-        Estimators->setColumn(PopIndex,nwKept);
-        Eest = branchEngine->CollectAndUpdate(W.getActiveWalkers(),Eest);
+        branchEngine->branch(CurrentStep,W);
         ++step; 
       } while(step<nSteps);
 
@@ -214,12 +200,13 @@ namespace qmcplusplus {
       nAcceptTot += Mover->nAccept;
       nRejectTot += Mover->nReject;
       
-      Estimators->setColumn(EtrialIndex,branchEngine->E_T);
       block++;
       recordBlock(block);
 
       updateWalkers();
     } while(block<nBlocks);
+
+    return finalize(block);
   }
 
   bool DMCPbyP::put(xmlNodePtr q){

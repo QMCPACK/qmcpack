@@ -21,6 +21,7 @@
 #define QMCPLUSPLUS_DMC_PARTICLEBYPARTCLE_TESTING_H
 #include "QMCDrivers/QMCDriver.h" 
 #include "Utilities/OhmmsInfo.h"
+
 namespace qmcplusplus {
 
   //class DMCPbyPUpdate;
@@ -44,10 +45,6 @@ namespace qmcplusplus {
 
     ///Index to determine what to do when node crossing is detected
     IndexType KillNodeCrossing;
-    ///Column index for Populaton
-    IndexType PopIndex;
-    ///Column index for E_T
-    IndexType EtrialIndex;
     ///Total number of accepted steps per block
     IndexType nAcceptTot;
     ///Total number of rejected steps per block
@@ -66,15 +63,15 @@ namespace qmcplusplus {
     string Reconfiguration;
     ///input string to determine to use nonlocal move
     string NonLocalMove;
-
+    ///update engine
     DMCUpdateBase *Mover;
     /// Copy Constructor (disabled)
     DMCPbyP(const DMCPbyP& a): QMCDriver(a) { }
     /// Copy operator (disabled).
     DMCPbyP& operator=(const DMCPbyP&) { return *this;}
 
-    void dmcWithReconfiguration();
-    void dmcWithBranching();
+    bool dmcWithReconfiguration();
+    bool dmcWithBranching();
 
   };
 }
