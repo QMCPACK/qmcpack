@@ -33,23 +33,22 @@ namespace qmcplusplus {
 
   class MCWalkerConifugration;
   class QMCHamiltonian;
-  class SimpleFixedNodeBranch;
 
   /**Class to manage a set of ScalarEstimators */
   class ScalarEstimatorManager: public QMCTraits {
 
   public:
 
-    typedef ScalarEstimatorBase<RealType> EstimatorType;
+    typedef ScalarEstimatorBase           EstimatorType;
     typedef EstimatorType::BufferType     BufferType;
     enum { WEIGHT_INDEX=0, BLOCK_CPU_INDEX, ACCEPT_RATIO_INDEX, TOTAL_INDEX};
+
 
     ScalarEstimatorManager(QMCHamiltonian& h);
     virtual ~ScalarEstimatorManager();
 
     ///return the number of ScalarEstimators
     inline int size() const { return Estimators.size();}
-
 
     /** add a column with the name
      * @param aname name of the column
@@ -91,6 +90,9 @@ namespace qmcplusplus {
 
     ///return a pointer to the estimator aname
     EstimatorType* getEstimator(const string& a);
+
+    ///return a pointer to the estimator 
+    EstimatorType* getMainEstimator();
  
     ///return the average for estimator i
     inline RealType average(int i) const { 
@@ -101,13 +103,6 @@ namespace qmcplusplus {
     inline RealType variance(int i) const { 
       return Estimators[i]->variance();
     }
-  
-    /** set the total weight
-     *@param w the weight
-    inline void setWeight(RealType w) {
-      MyData[WEIGHT_INDEX] = w;
-    }
-     */
 
     /// start the timer
     inline void startBlock() { MyTimer.restart();}
@@ -122,20 +117,19 @@ namespace qmcplusplus {
     }
 
     void setCollectionMode(bool collect);
-
     void setAccumulateMode (bool setAccum) {AccumulateBlocks = setAccum;};
 
     ///process xml tag associated with estimators
-    virtual bool put(xmlNodePtr cur);
-    virtual void accumulate(MCWalkerConfiguration& W);
-    virtual void resetReportSettings(const string& aname, bool append);
-    virtual void reportHeader(bool append);
-    virtual void flushreport(int iter);
-    virtual void report(int iter);
-    virtual void flush();
-    virtual void finalize();
-    virtual void reset();
-    virtual void finalize(SimpleFixedNodeBranch& branchEngine);
+    bool put(xmlNodePtr cur);
+    void accumulate(MCWalkerConfiguration& W);
+    void resetReportSettings(const string& aname, bool append);
+    void reportHeader(bool append);
+    void flushreport(int iter);
+    void report(int iter);
+    void flush();
+    void reset();
+    void getEnergyAndWeight(RealType& e, RealType& w);
+    void finalize();
 
   protected:
 
@@ -174,8 +168,8 @@ namespace qmcplusplus {
     TinyVector<IndexType,TOTAL_INDEX>  MyIndex;
     ///Data maintained by this object
     TinyVector<RealType,TOTAL_INDEX>  MyData;
-    ///Accumulated energy and population
-    TinyVector<RealType,2> EPSum;
+    ///Cummulative energy and weight
+    TinyVector<RealType,2>  EPSum;
     ///ostream for the output
     ostream* OutStream;
     ///ostream for the output

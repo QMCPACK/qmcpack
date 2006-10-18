@@ -91,9 +91,7 @@ ScalarEstimatorManager::reset() {
  */
 void 
 ScalarEstimatorManager::reportHeader(bool append) {
-
   EPSum=0.0;
-
   if(FileManager) {
     if(!append)  {
       *OutStream << "#    index     ";
@@ -113,6 +111,16 @@ ScalarEstimatorManager::reportHeader(bool append) {
 #endif
 }
 
+
+void ScalarEstimatorManager::getEnergyAndWeight(RealType& e, RealType& w) {
+  //EPSum is always valid for the manager node
+#if defined(HAVE_MPI)
+  MPI_Bcast(EPSum.begin(),2,MPI_DOUBLE,0,MPI_COMM_WORLD);
+#endif
+  e=EPSum[0];
+  w=EPSum[1];
+}
+
 /** closes the stream to the output file
  */
 void 
@@ -126,45 +134,49 @@ ScalarEstimatorManager::finalize() {
 #endif
 }
 
-/** closes the stream to the output file
- */
-void 
-ScalarEstimatorManager::finalize(SimpleFixedNodeBranch& branchEngine) {
-  if(OutStream) delete OutStream;
-  OutStream = 0;
-#if defined(HAVE_MPI) 
-#if defined(QMC_ASYNC_COLLECT)
-  if(ManagerNode) {//cancel irecv initiazed by flush
-    for(int is=0; is<numNodes-1; is++) MPI_Cancel(&myRequest[is]);
-  }
-#endif
-  MPI_Bcast(EPSum.begin(),2,MPI_DOUBLE,0,MPI_COMM_WORLD);
-#endif
-  branchEngine.setTrialEnergy(EPSum[0],EPSum[1]);
-}
+//void 
+//ScalarEstimatorManager::finalize() {
+//  if(OutStream) delete OutStream;
+//  OutStream = 0;
+//#if defined(HAVE_MPI) 
+//#if defined(QMC_ASYNC_COLLECT)
+//  if(ManagerNode) {//cancel irecv initiazed by flush
+//    for(int is=0; is<numNodes-1; is++) MPI_Cancel(&myRequest[is]);
+//  }
+//#endif
+//  MPI_Bcast(EPSum.begin(),2,MPI_DOUBLE,0,MPI_COMM_WORLD);
+//#endif
+//}
+///** closes the stream to the output file
+// */
+//void 
+//ScalarEstimatorManager::finalize(SimpleFixedNodeBranch& branchEngine) {
+//  if(OutStream) delete OutStream;
+//  OutStream = 0;
+//#if defined(HAVE_MPI) 
+//#if defined(QMC_ASYNC_COLLECT)
+//  if(ManagerNode) {//cancel irecv initiazed by flush
+//    for(int is=0; is<numNodes-1; is++) MPI_Cancel(&myRequest[is]);
+//  }
+//#endif
+//  MPI_Bcast(EPSum.begin(),2,MPI_DOUBLE,0,MPI_COMM_WORLD);
+//#endif
+//  branchEngine.setTrialEnergy(EPSum[0],EPSum[1]);
+//}
+//
+
 
 /** accumulate data for all the estimators
  */
 void 
 ScalarEstimatorManager::accumulate(MCWalkerConfiguration& W) {
 
-  RealType wgt_sum=0;
-  MCWalkerConfiguration::const_iterator it(W.begin()),it_end(W.end());
-  while(it != it_end) {
-    wgt_sum+= (*it)->Weight;
-    ++it;
-  }
-
-  //unfortulately, need to collect the weights for DMC
-  RealType oneOverWgt=1.0/wgt_sum;
-
-  //RealType oneOverWgt=1.0;
+  RealType wgt=0.0;
   for(int i=0; i< Estimators.size(); i++) 
-    Estimators[i]->accumulate(W.begin(),W.end(), oneOverWgt);
-
+    wgt += Estimators[i]->accumulate(W.begin(),W.end());
   //increment BinSize
   BinSize++;
-  MyData[WEIGHT_INDEX]+=wgt_sum;
+  MyData[WEIGHT_INDEX]+=wgt;
 }
 
 
@@ -209,8 +221,7 @@ void ScalarEstimatorManager::flush(){
 #endif
   } else {//CollectSum == false
 #endif
-    //RealType wgtinv = 1.0/MyData[WEIGHT_INDEX];
-    RealType wgtinv = 1.0/static_cast<RealType>(BinSize);
+    RealType wgtinv = 1.0/MyData[WEIGHT_INDEX];
     for(int i=0; i<Estimators.size(); i++) 
       Estimators[i]->report(BlockAverages,wgtinv,*RemoteData[0]);
 
@@ -225,7 +236,6 @@ void ScalarEstimatorManager::flush(){
 
   BinSize=0;
   MyData=0.0;
-
   EPSum[0]+= Estimators[0]->average();
   EPSum[1]+= 1.0;
 
@@ -320,7 +330,7 @@ ScalarEstimatorManager::resetReportSettings(const string& aname, bool append) {
 
   //at least have local energy
   if(Estimators.empty()) {
-    add(new LocalEnergyEstimator<RealType>(H),"elocal");
+    add(new LocalEnergyEstimator(H),"elocal");
   } 
   
   RemoteData[0]->clear();
@@ -362,6 +372,11 @@ ScalarEstimatorManager::resetReportSettings(const string& aname, bool append) {
 
 
 ScalarEstimatorManager::EstimatorType* 
+ScalarEstimatorManager::getMainEstimator() {
+  return getEstimator("elocal");
+}
+
+ScalarEstimatorManager::EstimatorType* 
 ScalarEstimatorManager::getEstimator(const string& a) {
   std::map<string,int>::iterator it = EstimatorMap.find(a);
   if(it == EstimatorMap.end()) {
@@ -392,7 +407,7 @@ bool ScalarEstimatorManager::put(xmlNodePtr cur) {
 	  //int ncopy(1);
           //if(att) {ncopy=atoi((const char*)att);}
           //add(new LocalEnergyEstimator<RealType>(H,ncopy),"elocal");
-          add(new LocalEnergyEstimator<RealType>(H),"elocal");
+          add(new LocalEnergyEstimator(H),"elocal");
 	} else { 
 	  extra.push_back(cname);
 	}
@@ -403,7 +418,7 @@ bool ScalarEstimatorManager::put(xmlNodePtr cur) {
 
   if(Estimators.empty()) {
     //if(nsystem == 0) nsystem=1;
-    add(new LocalEnergyEstimator<RealType>(H),"elocal");
+    add(new LocalEnergyEstimator(H),"elocal");
   } 
 
   //for(int i=0; i<extra.size(); i++) {
