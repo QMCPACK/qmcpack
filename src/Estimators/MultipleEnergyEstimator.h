@@ -28,18 +28,9 @@ namespace qmcplusplus {
   class QMCHamiltonian;
   class TrialWaveFunction;
 
-  struct MultipleEnergyEstimator: public ScalarEstimatorBase<ParticleSet::RealType> {
+  struct MultipleEnergyEstimator: public ScalarEstimatorBase {
 
     enum {ENERGY_INDEX, ENERGY_SQ_INDEX, WEIGHT_INDEX, LE_INDEX};
-
-    typedef ParticleSet::RealType RealType;
-    typedef ScalarEstimatorBase<RealType>::Walker_t Walker_t;
-    typedef ScalarEstimatorBase<RealType>::WalkerIterator WalkerIterator;
-    typedef Matrix<RealType> EnergyContainer_t;
-
-    using ScalarEstimatorBase<RealType>::CollectSum;
-    using ScalarEstimatorBase<RealType>::b_average;
-    using ScalarEstimatorBase<RealType>::b_variance;
 
     ///index to keep track how many times accumulate is called
     int CurrentWalker;
@@ -125,11 +116,13 @@ namespace qmcplusplus {
 
     void accumulate(const Walker_t& awalker, RealType wgt);
 
-    void accumulate(WalkerIterator first, WalkerIterator last, RealType wgtnorm) {
+    RealType accumulate(WalkerIterator first, WalkerIterator last) {
+      int nw=0;
       while(first != last) {
-        accumulate(**first,(*first)->Weight*wgtnorm);
-        ++first;
+        accumulate(**first,(*first)->Weight);
+        ++first;++nw;
       }
+      return nw;
     }
 
     void copy2Buffer(BufferType& msg) { }
