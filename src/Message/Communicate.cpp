@@ -60,6 +60,10 @@ void Communicate::abort(){
 void Communicate::barrier(){
   OOMPI_COMM_WORLD.Barrier();
 }
+void Communicate::abort(const char* msg){ 
+  std::cerr << msg << std::endl;
+  OOMPI_COMM_WORLD.Abort();
+}
 
 #else
 
@@ -85,7 +89,11 @@ void Communicate::finalize(){
   MPI_Finalize();
 }
 void Communicate::abort(){
-    MPI_Abort(MPI_COMM_WORLD,-1);
+  MPI_Abort(MPI_COMM_WORLD,-1);
+}
+void Communicate::abort(const char* msg){ 
+  std::cerr << msg << std::endl;
+  MPI_Abort(MPI_COMM_WORLD,-1);
 }
 
 void Communicate::cleanupMessage(void*) { }
