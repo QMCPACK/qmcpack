@@ -1,7 +1,7 @@
-#CONFIGURE_FILE(${qmcPlusPlus_SOURCE_DIR}/src/Configuration.h.in
-#               ${qmcPlusPlus_BINARY_DIR}/src/Configuration.h)
-CONFIGURE_FILE(${qmcPlusPlus_SOURCE_DIR}/src/ohmms-config.h.cmake.in
-               ${qmcPlusPlus_BINARY_DIR}/src/ohmms-config.h)
+#CONFIGURE_FILE(${qmcpack_SOURCE_DIR}/src/Configuration.h.in
+#               ${qmcpack_BINARY_DIR}/src/Configuration.h)
+CONFIGURE_FILE(${qmcpack_SOURCE_DIR}/src/ohmms-config.h.cmake.in
+               ${qmcpack_BINARY_DIR}/src/ohmms-config.h)
 
 SET(UTILITIES
   Utilities/RandRandom.cpp 
@@ -83,9 +83,9 @@ SET(QMCBASEDIR
 ADD_LIBRARY(qmcbase ${QMCBASEDIR})
 
 IF(HAVE_OOMPI)
-  CONFIGURE_FILE(${qmcPlusPlus_SOURCE_DIR}/src/oompi-config.h.cmake.in 
-                 ${qmcPlusPlus_BINARY_DIR}/src/oompi-config.h)
-  INCLUDE_DIRECTORIES(${qmcPlusPlus_SOURCE_DIR}/src/OOMPI)
+  CONFIGURE_FILE(${qmcpack_SOURCE_DIR}/src/oompi-config.h.cmake.in 
+                 ${qmcpack_BINARY_DIR}/src/oompi-config.h)
+  INCLUDE_DIRECTORIES(${qmcpack_SOURCE_DIR}/src/OOMPI)
   SUBDIRS(OOMPI)
   LINK_LIBRARIES(oompi)
 ENDIF(HAVE_OOMPI)
@@ -93,6 +93,6 @@ ENDIF(HAVE_OOMPI)
 SUBDIRS(QMCApp)
 
 #do not build qmctools with mpi or complex
-IF(NOT HAVE_MPI AND NOT QMC_COMPLEX)
+IF(NOT HAVE_MPI)
   SUBDIRS(QMCTools)
-ENDIF(NOT HAVE_MPI AND NOT QMC_COMPLEX)
+ENDIF(NOT HAVE_MPI)

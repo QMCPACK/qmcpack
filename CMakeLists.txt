@@ -45,7 +45,7 @@ ENDIF($ENV{QMC_ASYNC_COLLECT})
 ######################################################################
 #set 32/64 bit OS 
 ######################################################################
-SET(BITS 64)
+SET(BITS 32)
 IF($ENV{QMC_BITS})
   SET(BITS $ENV{QMC_BITS})
 ENDIF($ENV{QMC_BITS})
@@ -104,7 +104,7 @@ SET(QMC_BUILD_STATIC 0)
 ######################################################
 # Directory where customize cmake files reside
 ######################################################
-SET (PROJECT_CMAKE ${qmcPlusPlus_SOURCE_DIR}/CMake)
+SET (PROJECT_CMAKE ${qmcpack_SOURCE_DIR}/CMake)
 
 ######################################################
 #COMPILER choose one of the cmake files to customize the compiler options
@@ -115,6 +115,10 @@ IF($ENV{CXX} MATCHES "icpc")
   INCLUDE(${PROJECT_CMAKE}/Intel8.cmake)
   SET(FOUND_CXXENV 1)
 ENDIF($ENV{CXX} MATCHES "icpc")
+IF($ENV{CXX} MATCHES "cmpic++")
+  INCLUDE(${PROJECT_CMAKE}/Intel8.cmake)
+  SET(FOUND_CXXENV 1)
+ENDIF($ENV{CXX} MATCHES "cmpic++")
 IF($ENV{CXX} MATCHES "xlC")
   INCLUDE(${PROJECT_CMAKE}/IBMCompilers.cmake)
   SET(FOUND_CXXENV 1)
@@ -179,8 +183,8 @@ IF(FOUND_HDF5)
 ENDIF(FOUND_HDF5)
 
 INCLUDE_DIRECTORIES(
-  ${qmcPlusPlus_SOURCE_DIR}/src
-  ${qmcPlusPlus_BINARY_DIR}/src
+  ${qmcpack_SOURCE_DIR}/src
+  ${qmcpack_BINARY_DIR}/src
 )
 ADD_DEFINITIONS(-DHAVE_CONFIG_H -DAPPNAMESPACE=qmcplusplus)
 
