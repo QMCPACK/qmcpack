@@ -137,7 +137,7 @@ namespace qmcplusplus {
       //} else {
       //  branchEngine->accumulate(eold,1);
       //}
-      branchEngine->accumulate(eold,1);
+      //branchEngine->accumulate(eold,1);
       
       nAccept += nAcceptTemp;
       nReject += nRejectTemp;
