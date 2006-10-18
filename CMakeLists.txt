@@ -1,4 +1,4 @@
-PROJECT(qmcPlusPlus)
+PROJECT(qmcpack)
 
 ######################################################################
 # Version 
@@ -12,19 +12,43 @@ SET(QMCPLUSPLUS_VERSION "${QMCPLUSPLUS_VERSION_MAJOR}.${QMCPLUSPLUS_VERSION_MINO
 ######################################################################
 #define the paths for library and executable for out-of-soruce compilation
 ######################################################################
-SET (LIBRARY_OUTPUT_PATH ${qmcPlusPlus_BINARY_DIR}/lib CACHE PATH "Single output directory for building all libraries.")
-SET (EXECUTABLE_OUTPUT_PATH ${qmcPlusPlus_BINARY_DIR}/bin CACHE PATH "Single output directory for building all executables.")
+SET (LIBRARY_OUTPUT_PATH ${qmcpack_BINARY_DIR}/lib CACHE PATH "Single output directory for building all libraries.")
+SET (EXECUTABLE_OUTPUT_PATH ${qmcpack_BINARY_DIR}/bin CACHE PATH "Single output directory for building all executables.")
 
 ######################################################################
-#choose parallel mode
-######################
-OPTION(QMC_MPI "Enable MPI library" ON)
-OPTION(QMC_OMP "Enable OpenMP parallelization" OFF)
+# choose parallel mode 
+# set each variable to 1 to enable  or set environment variables
+#
+# QMC_MPI : enable MPI 
+# QMC_OMP : enable OMP 
+# QMC_ASYNC_COLLECT : enable async collect for the estimator manager
+#   This is useful for slow networks including gigabit ethernet and
+#   Myrinet. Infiband and better is ok but depends on the MPI
+#   implementation. 
+######################################################################
+#OPTION(QMC_MPI "Enable MPI library" ON)
+#OPTION(QMC_OMP "Enable OpenMP parallelization" OFF)
+SET(QMC_MPI 1)
+SET(QMC_OMP 0)
+SET(QMC_ASYNC_COLLECT 1)
+
+IF($ENV{QMC_MPI})
+  SET(QMC_MPI $ENV{QMC_MPI}) 
+ENDIF($ENV{QMC_MPI})
+IF($ENV{QMC_OMP})
+  SET(QMC_OMP $ENV{QMC_OMP}) 
+ENDIF($ENV{QMC_OMP})
+IF($ENV{QMC_ASYNC_COLLECT})
+  SET(QMC_ASYNC_COLLECT $ENV{QMC_ASYNC_COLLECT})
+ENDIF($ENV{QMC_ASYNC_COLLECT})
 
 ######################################################################
 #set 32/64 bit OS 
 ######################################################################
-SET(BITS 32)
+SET(BITS 64)
+IF($ENV{QMC_BITS})
+  SET(BITS $ENV{QMC_BITS})
+ENDIF($ENV{QMC_BITS})
 
 ######################################################################
 #important settings for QMC simulations to instantiate template classes
@@ -148,10 +172,10 @@ IF(FOUND_HDF5)
     LINK_LIBRARIES(${ZLIB_LIBRARY})
   ENDIF(ZLIB_FOUND)
   #szlib
-  INCLUDE(${PROJECT_CMAKE}/FindSZLIB.cmake)
-  IF(SZLIB_FOUND)
-    LINK_LIBRARIES(${SZLIB_LIBRARY})
-  ENDIF(SZLIB_FOUND)
+#  INCLUDE(${PROJECT_CMAKE}/FindSZLIB.cmake)
+#  IF(SZLIB_FOUND)
+#    LINK_LIBRARIES(${SZLIB_LIBRARY})
+#  ENDIF(SZLIB_FOUND)
 ENDIF(FOUND_HDF5)
 
 INCLUDE_DIRECTORIES(
