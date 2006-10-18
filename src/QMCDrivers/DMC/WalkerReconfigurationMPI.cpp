@@ -35,7 +35,7 @@ WalkerReconfigurationMPI::WalkerReconfigurationMPI(): TotalWalkers(0) {
   app_log() << "  First weight [0,1) for reconfiguration =" << UnitZeta << endl;
 
   accumData.resize(LE_MAX);
-  carData.resize(LE_MAX+NumContexts);
+  curData.resize(LE_MAX+NumContexts);
 
   //ostringstream o;
   //o << "check." << MyContext << ".dat";
@@ -92,7 +92,6 @@ int WalkerReconfigurationMPI::swapWalkers(MCWalkerConfiguration& W) {
   //std::fill(wSum.begin(),wSum.end(),0.0);
 
   MCWalkerConfiguration::iterator it(W.begin()), it_end(W.end());
-  RealType wtot=0.0;
   int iw=0;
   RealType esum=0.0,e2sum=0.0,wtot=0.0,ecum=0.0;
   while(it != it_end) {
