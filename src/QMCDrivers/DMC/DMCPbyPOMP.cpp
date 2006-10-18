@@ -124,8 +124,7 @@ namespace qmcplusplus {
       }
     }
 
-    Estimators->finalize();
-    return true;
+    return finalize(1);
   }
   
   void DMCPbyPOMP::dmcWithReconfiguration() {

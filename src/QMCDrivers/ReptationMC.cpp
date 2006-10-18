@@ -151,8 +151,7 @@ namespace qmcplusplus {
       << static_cast<double>(nAcceptTot)/static_cast<double>(nAcceptTot+nRejectTot)
       << endl;
 
-    branchEngine->finalize();
-    return true;
+    return finalize(block);
   }
 
   bool 

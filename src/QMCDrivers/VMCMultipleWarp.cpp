@@ -216,7 +216,6 @@ namespace qmcplusplus {
       nAcceptTot += nAccept; 
       nRejectTot += nReject;
 
-      branchEngine->accumulate(Estimators->average(0),1.0);
       branchEngine->LogJacobRef+=AveJacobLog;
 
       nAccept = 0; nReject = 0;
@@ -267,15 +266,6 @@ namespace qmcplusplus {
       << static_cast<double>(nAcceptTot)/static_cast<double>(nAcceptTot+nRejectTot)
       << endl;
     
-    /*
-    int nconf= appendwalker ? block:1;
-    HDFWalkerOutput WOextra(RootName,true,nconf);
-    WOextra.write(*branchEngine);
-    
-    Estimators->finalize();
-
-    return true;*/
-
     //finalize a qmc section
     return finalize(block);
   }

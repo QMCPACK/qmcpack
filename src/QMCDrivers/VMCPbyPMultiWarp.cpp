@@ -373,8 +373,6 @@ namespace qmcplusplus {
       << static_cast<RealType>(nAcceptTot)/static_cast<RealType>(nAcceptTot+nRejectTot)
       << endl;
 
-    branchEngine->accumulate(Estimators->average(0),1.0);
-
     return finalize(block);
   }
 
