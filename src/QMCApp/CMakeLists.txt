@@ -32,6 +32,8 @@ SET(WFSRCS
   ../QMCHamiltonians/CoulombPBCABTemp.cpp
   ../QMCHamiltonians/LocalCorePolPotential.cpp
   ../QMCHamiltonians/HamiltonianFactory.cpp
+  ../Estimators/LocalEnergyEstimator.cpp
+  ../Estimators/ScalarEstimatorManager.cpp
 )
 
 IF(QMC_COMPLEX)
@@ -106,7 +108,6 @@ SET(QMCDRIVERS
   ../QMCDrivers/VMC.cpp
   ../QMCDrivers/VMCParticleByParticle.cpp
   ../QMCDrivers/ReptationMC.cpp
-  ../Estimators/ScalarEstimatorManager.cpp
   ../QMCDrivers/QMCOptimize.cpp
   ../QMCDrivers/QMCCostFunction.cpp
   ../QMCDrivers/WaveFunctionTester.cpp
@@ -128,11 +129,11 @@ IF(NOT QMCPLUSPLUS_RELEASE)
     ../QMCDrivers/PolymerEstimator.cpp
     ../QMCDrivers/RQMCMultiple.cpp
     ../QMCDrivers/MultiChain.cpp
-    ../Estimators/MultipleEnergyEstimator.cpp
     ../QMCDrivers/SpaceWarp.cpp
     ../QMCDrivers/VMCMultipleWarp.cpp
     ../QMCDrivers/VMCPbyPMultiWarp.cpp
     ../QMCDrivers/RQMCMultiWarp.cpp
+    ../Estimators/MultipleEnergyEstimator.cpp
   )
 
 #include GSLOptimize.cpp if libgsl is enabled
