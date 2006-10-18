@@ -105,7 +105,7 @@ namespace qmcplusplus {
       } 
 
       thisWalker.Weight *= branchEngine->branchGF(Tau,emixed,0.0);
-      branchEngine->accumulate(eold,1);
+      //branchEngine->accumulate(eold,1);
       ++it;
     }
   }
@@ -225,7 +225,7 @@ namespace qmcplusplus {
       } 
 
       thisWalker.Weight *= branchEngine->branchGF(Tau*rr_accepted/rr_proposed,emixed,0.0);
-      branchEngine->accumulate(eold,1);
+      //branchEngine->accumulate(eold,1);
       
       nAccept += nAcceptTemp;
       nReject += nRejectTemp;
