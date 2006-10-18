@@ -117,9 +117,6 @@ namespace qmcplusplus {
       branchEngine->read(h5FileRoot);
     }
     
-    //A new run, branchEngine needs to be flushed
-    if(!AppendRun) branchEngine->flush(0);
-
     //create estimator if not allocated
     if(Estimators == 0) Estimators =new ScalarEstimatorManager(H);
 
@@ -128,6 +125,12 @@ namespace qmcplusplus {
     W.resetWalkerProperty(numCopies);
 
     Estimators->put(qmcNode);
+
+    //set branchEngine->MyEstimator 
+    branchEngine->setEstimatorManager(Estimators);
+
+    //A new run, branchEngine needs to be flushed
+    if(!AppendRun) branchEngine->flush(0);
 
     //set the collection mode
     Estimators->setPeriod(nSteps);
@@ -303,12 +306,13 @@ namespace qmcplusplus {
 
   bool QMCDriver::finalize(int block) {
 
-    Estimators->finalize(*branchEngine);
+    branchEngine->finalize();
+    //Estimators->finalize(*branchEngine);
     //branchEngine->update(W.getActiveWalkers(), Estimators->average(0));
 
-    int nconf= (Period4WalkerDump>0) ? block/Period4WalkerDump:1;
-    HDFWalkerOutput WOextra(RootName,true,nconf);
-    WOextra.write(*branchEngine);
+    //int nconf= (Period4WalkerDump>0) ? block/Period4WalkerDump:1;
+    //HDFWalkerOutput WOextra(RootName,true,nconf);
+    //WOextra.write(*branchEngine);
 
     //Estimators->finalize();
 
