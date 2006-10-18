@@ -24,7 +24,7 @@
 #include "QMCDrivers/SimpleFixedNodeBranch.h"
 //#include "Estimators/PolarizationEstimator.h"
 #include "Utilities/IteratorUtility.h"
-#define QMC_ASYNC_COLLECT
+//#define QMC_ASYNC_COLLECT
 
 using namespace qmcplusplus;
 
@@ -193,6 +193,7 @@ void ScalarEstimatorManager::flush(){
     for(int i=0; i<Estimators.size(); i++) {
       Estimators[i]->copy2Buffer(*RemoteData[0]);
     }
+
 #if defined(QMC_ASYNC_COLLECT)
     if(myNodeID) {
       MPI_Isend(RemoteData[0]->data(),msgBufferSize, MPI_DOUBLE,0,myNodeID,MPI_COMM_WORLD,&(myRequest[0]));
@@ -204,9 +205,10 @@ void ScalarEstimatorManager::flush(){
         while(rit != rit_end) (*tit++) += (*rit++);
       }
     }
+
     RemoteData[0]->rewind();
     RemoteData[0]->get(MyData.begin(),MyData.end());
-    RealType wgtinv = 1.0/MyData[WEIGHT_INDEX];
+    RealType wgtinv = static_cast<RealType>(numNodes)/MyData[WEIGHT_INDEX];
     for(int i=0; i<Estimators.size(); i++) 
       Estimators[i]->report(BlockAverages,wgtinv,*RemoteData[0]);
 #else
@@ -215,7 +217,7 @@ void ScalarEstimatorManager::flush(){
         MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
     RemoteData[1]->rewind();
     RemoteData[1]->get(MyData.begin(),MyData.end());
-    RealType wgtinv = 1.0/MyData[WEIGHT_INDEX];
+    RealType wgtinv = static_cast<RealType>(numNodes)/MyData[WEIGHT_INDEX];
     for(int i=0; i<Estimators.size(); i++) 
       Estimators[i]->report(BlockAverages,wgtinv,*RemoteData[1]);
 #endif
