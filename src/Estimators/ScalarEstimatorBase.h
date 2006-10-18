@@ -21,54 +21,43 @@
 #define QMCPLUSPLUS_SCALAR_ESTIMATORBASE_H
 #include "Configuration.h"
 #include "OhmmsData/RecordProperty.h"
-#include "OhmmsPETE/TinyVector.h"
 #include "Particle/MCWalkerConfiguration.h"
-#include "Utilities/PooledData.h"
 
 namespace qmcplusplus {
 
   /** Abstract class for an estimator of an operator.
-   *
-   *@note derived classes should provide virtual functions of 
-   ScalarEstimatorBase
-   * 
-   * void add2Record(RecordNameProperty<T>& record);
-   *
-   * void accumulate(const MCWalkerConfiguration&);
-   *
-   * void report(RecordNameProperty<T>& record);
    */
-  template<class T>
-  struct ScalarEstimatorBase {
+  struct ScalarEstimatorBase: public QMCTraits {
 
-    typedef typename MCWalkerConfiguration::Walker_t Walker_t;
-    typedef typename MCWalkerConfiguration::iterator WalkerIterator;
-    typedef PooledData<T>                            BufferType;
+    typedef MCWalkerConfiguration::Walker_t Walker_t;
+    typedef MCWalkerConfiguration::iterator WalkerIterator;
+    typedef RecordNamedProperty<RealType>   RecordListType;
+    typedef PooledData<RealType>            BufferType;
 
     bool CollectSum;
 
-    T b_average;
-    T b_variance;
+    RealType b_average;
+    RealType b_variance;
 
-    ScalarEstimatorBase(): CollectSum(false), b_average(T()), b_variance(T()){}
+    ScalarEstimatorBase(): CollectSum(false), b_average(RealType()), b_variance(RealType()){}
 
-    inline T average() const { return b_average;}
-    inline T variance() const { return b_variance;}
+    inline RealType average() const { return b_average;}
+    inline RealType variance() const { return b_variance;}
 
     /** add the content of the scalar estimator to the record
      *\param record scalar data list 
      *
      *Each ScalarEstimatorBase object adds a number of scalar data to record.
      */
-    virtual void add2Record(RecordNamedProperty<T>& record, BufferType& msg) = 0;
+    virtual void add2Record(RecordNamedProperty<RealType>& record, BufferType& msg) = 0;
 
     /** a virtual function to accumulate expectation values
      *\param awalker a single walker
      *\param wgt the weight
      */
-    virtual void accumulate(const Walker_t& awalker, T wgt) = 0;
+    virtual void accumulate(const Walker_t& awalker, RealType wgt) = 0;
 
-    virtual void accumulate(WalkerIterator first, WalkerIterator last, T wgtnorm) = 0;
+    virtual RealType accumulate(WalkerIterator first, WalkerIterator last) = 0;
 
     /** a virtual function to report the scalar estimator
      *@param record 
@@ -76,7 +65,7 @@ namespace qmcplusplus {
      *
      *Evalaute the block-average and flush the internal data for new averages
      */
-    virtual void report(RecordNamedProperty<T>& record, T wgtinv, BufferType& msg) = 0;
+    virtual void report(RecordListType&, RealType wgtinv, BufferType& msg) = 0;
 
     /** update the message buffer */
     virtual void copy2Buffer(BufferType& msg)=0;
