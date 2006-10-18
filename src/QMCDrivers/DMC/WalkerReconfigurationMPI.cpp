@@ -34,6 +34,9 @@ WalkerReconfigurationMPI::WalkerReconfigurationMPI(): TotalWalkers(0) {
   MPI_Bcast(&UnitZeta,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
   app_log() << "  First weight [0,1) for reconfiguration =" << UnitZeta << endl;
 
+  accumData.resize(LE_MAX);
+  carData.resize(LE_MAX+NumContexts);
+
   //ostringstream o;
   //o << "check." << MyContext << ".dat";
   //ofstream fout(o.str().c_str());
@@ -43,9 +46,14 @@ WalkerReconfigurationMPI::WalkerReconfigurationMPI(): TotalWalkers(0) {
 int 
 WalkerReconfigurationMPI::branch(int iter, MCWalkerConfiguration& W, RealType trigger) {
 
-  OHMMS::Controller->barrier();
-
   int nwkept = swapWalkers(W);
+
+  RealType wgtInv(1.0/curData[WEIGHT_INDEX]);
+  accumData[ENERGY_INDEX]     += curData[ENERGY_INDEX]*wgtInv;
+  accumData[ENERGY_SQ_INDEX]  += curData[ENERGY_SQ_INDEX]*wgtInv;
+  accumData[WALKERSIZE_INDEX] = nwkept;
+  //accumData[WALKERSIZE_INDEX] += curData[WALKERSIZE_INDEX];
+  accumData[WEIGHT_INDEX]     += curData[WEIGHT_INDEX];
 
   //OHMMS::Controller->barrier();
   //gsum(nwkept,0);
@@ -76,28 +84,45 @@ int WalkerReconfigurationMPI::swapWalkers(MCWalkerConfiguration& W) {
 
     ncopy_w.resize(nw);
     wConf.resize(nw);
-    wSum.resize(NumContexts);
+    //wSum.resize(NumContexts);
     wOffset.resize(NumContexts+1);
     dN.resize(NumContexts+1);
   }
 
-  std::fill(wSum.begin(),wSum.end(),0.0);
+  //std::fill(wSum.begin(),wSum.end(),0.0);
 
   MCWalkerConfiguration::iterator it(W.begin()), it_end(W.end());
   RealType wtot=0.0;
   int iw=0;
+  RealType esum=0.0,e2sum=0.0,wtot=0.0,ecum=0.0;
   while(it != it_end) {
-    wtot+=wConf[iw++]=(*it)->Weight;
+    RealType wgt((*it)->Weight);
+    RealType e((*it)->Properties(LOCALENERGY));
+    esum += wgt*e;
+    e2sum += wgt*e*e;
+    wtot += wgt;
+    ecum += e;
+    wtot+=wConf[iw++]=wgt;
     ++it;
   }
-  wSum[MyContext]=wtot;
+  //wSum[MyContext]=wtot;
+  curData[ENERGY_INDEX]=esum;
+  curData[ENERGY_SQ_INDEX]=e2sum;
+  curData[WALKERSIZE_INDEX]=nw;
+  curData[WEIGHT_INDEX]=wtot;
+  curData[EREF_INDEX]=ecum;
+  std::fill(curData.begin()+LE_MAX,curData.end(),0.0);
+  curData[LE_MAX+MyContext]=wtot;
 
+  //collect everything
+  gsum(curData,0);
   //collect the local sum of the weights
-  gsum(wSum,0);
+  //gsum(wSum,0);
 
   //wOffset[ip] is the partial sum update to ip
   wOffset[0]=0;
-  for(int ip=0; ip<NumContexts; ip++) wOffset[ip+1]=wOffset[ip]+wSum[ip];
+  //for(int ip=0; ip<NumContexts; ip++) wOffset[ip+1]=wOffset[ip]+wSum[ip];
+  for(int ip=0,jp=LE_MAX; ip<NumContexts; ip++,jp++) wOffset[ip+1]=wOffset[ip]+curData[jp];
 
   //wtot is the total weight
   wtot=wOffset[NumContexts];

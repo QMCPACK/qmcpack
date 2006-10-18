@@ -34,6 +34,9 @@ WalkerControlMPI::WalkerControlMPI() {
   FairOffSet.resize(NumContexts+1);
   NumSwaps=0;
 
+  accumData.resize(LE_MAX);
+  curData.resize(LE_MAX);
+
 #ifdef MCWALKERSET_MPI_DEBUG
   char fname[128];
   sprintf(fname,"test.%d",MyContext);
@@ -44,21 +47,29 @@ WalkerControlMPI::WalkerControlMPI() {
 int 
 WalkerControlMPI::branch(int iter, MCWalkerConfiguration& W, RealType trigger) {
 
-  std::fill(NumPerNode.begin(),NumPerNode.end(),0);
-
+  std::fill(curData.begin(),curData.end(),0);
+  //std::fill(NumPerNode.begin(),NumPerNode.end(),0);
   sortWalkers(W);
 
-  NumPerNode[MyContext] = NumWalkers;
+  //update the number of walkers for this node
+  curData[LE_MAX+MyContext]=NumWalkers;
+  //NumPerNode[MyContext] = NumWalkers;
 
   int nw = copyWalkers(W);
 
+  gsum(curData,0);
+  RealType wgtInv(1.0/curData[WEIGHT_INDEX]);
+  accumData[ENERGY_INDEX]     += curData[ENERGY_INDEX]*wgtInv;
+  accumData[ENERGY_SQ_INDEX]  += curData[ENERGY_SQ_INDEX]*wgtInv;
+  accumData[WALKERSIZE_INDEX] += curData[WALKERSIZE_INDEX];
+  accumData[WEIGHT_INDEX]     += curData[WEIGHT_INDEX];
+
   //wait until everynode comes here
   //OHMMS::Controller->barrier();
-  gsum(NumPerNode,0);
-
+  //gsum(NumPerNode,0);
   Cur_min=Nmax; Cur_max=0; Cur_pop=0;
-  for(int i=0; i<NumContexts; i++) {
-    Cur_pop+= NumPerNode[i];
+  for(int i=0, j=LE_MAX; i<NumContexts; i++,j++) {
+    Cur_pop+= NumPerNode[i]=static_cast<int>(curData[j]);
     Cur_min = std::min(Cur_min,NumPerNode[i]);
     Cur_max = std::max(Cur_max,NumPerNode[i]);
   }

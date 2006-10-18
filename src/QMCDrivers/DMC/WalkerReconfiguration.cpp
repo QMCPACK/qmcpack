@@ -37,24 +37,34 @@ WalkerReconfiguration::WalkerReconfiguration() {
 
 int WalkerReconfiguration::getIndexPermutation(MCWalkerConfiguration& W) {
 
+  int nw(W.getActiveWalkers());
+
   if(Zeta.empty()) {
-    Zeta.resize(W.getActiveWalkers()+1);
-    IndexCopy.resize(W.getActiveWalkers());
-    wConf.resize(W.getActiveWalkers());
+    Zeta.resize(nw+1);
+    IndexCopy.resize(nw);
+    wConf.resize(nw);
   }
 
+  //accumulate the energies
+  RealType esum=0.0,e2sum=0.0,wtot=0.0,ecum=0.0;
   MCWalkerConfiguration::iterator it(W.begin());
-  MCWalkerConfiguration::iterator it_end(W.end());
-  RealType wtot=0.0;
-  int nw=0;
-  while(it != it_end) {
-    wtot += wConf[nw]=(*it)->Weight;
-    ++nw;++it;
+  for(int iw=0; iw<nw; iw++) {
+    RealType wgt((*it)->Weight);
+    RealType e((*it)->Properties(LOCALENERGY));
+    esum += wgt*e;
+    e2sum += wgt*e*e;
+    ecum += e;
+    wtot += wConf[iw]=wgt;
+    ++it;
   }
+  curData[ENERGY_INDEX]=esum;
+  curData[ENERGY_SQ_INDEX]=e2sum;
+  curData[WALKERSIZE_INDEX]=nw;
+  curData[WEIGHT_INDEX]=wtot;
+  curData[EREF_INDEX]=ecum;
 
   RealType nwInv=1.0/static_cast<RealType>(nw);
   RealType dstep=UnitZeta*nwInv;
-
   for(int iw=0; iw<nw;iw++) {
     Zeta[iw]=wtot*(dstep+static_cast<RealType>(iw)*nwInv);
   }
@@ -147,6 +157,13 @@ WalkerReconfiguration::branch(int iter, MCWalkerConfiguration& W, RealType trigg
 
   int nwkept = getIndexPermutation(W);
 
+  RealType wgtInv(1.0/curData[WEIGHT_INDEX]);
+  accumData[ENERGY_INDEX]     += curData[ENERGY_INDEX]*wgtInv;
+  accumData[ENERGY_SQ_INDEX]  += curData[ENERGY_SQ_INDEX]*wgtInv;
+  accumData[WALKERSIZE_INDEX] += nwkept;
+  //accumData[WALKERSIZE_INDEX] += curData[WALKERSIZE_INDEX];
+  accumData[WEIGHT_INDEX]     += curData[WEIGHT_INDEX];
+
   //set Weight and Multiplicity to default values
   MCWalkerConfiguration::iterator it(W.begin()),it_end(W.end());
   while(it != it_end) {
@@ -155,6 +172,7 @@ WalkerReconfiguration::branch(int iter, MCWalkerConfiguration& W, RealType trigg
     ++it;
   }
 
+  //curData[WALKERSIZE_INDEX]=nwkept;
   return nwkept;
 }
 
