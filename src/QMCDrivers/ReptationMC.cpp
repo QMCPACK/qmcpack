@@ -151,7 +151,7 @@ namespace qmcplusplus {
       << static_cast<double>(nAcceptTot)/static_cast<double>(nAcceptTot+nRejectTot)
       << endl;
 
-    Estimators->finalize();
+    branchEngine->finalize();
     return true;
   }
 

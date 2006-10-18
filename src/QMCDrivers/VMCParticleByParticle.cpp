@@ -77,8 +77,6 @@ namespace qmcplusplus {
       nAcceptTot += nAccept;
       nRejectTot += nReject;
       
-      branchEngine->accumulate(Estimators->average(0),1.0);
-      
       nAccept = 0; nReject = 0;
       ++block;
 

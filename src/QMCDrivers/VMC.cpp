@@ -85,16 +85,9 @@ namespace qmcplusplus {
 
       nAcceptTot += nAccept;
       nRejectTot += nReject;
-      
-      //accumulate running average with weight 1
-      branchEngine->accumulate(Estimators->average(0),1.0);
-
-      nAccept = 0; nReject = 0;
       block++;
-
-      //record the current configuration
+      nAccept = 0; nReject = 0;
       recordBlock(block);
-
     } while(block<nBlocks);
     
     //finalize a qmc section
