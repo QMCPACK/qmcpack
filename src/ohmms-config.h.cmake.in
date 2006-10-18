@@ -68,6 +68,9 @@
 /* Define to 1 if complex wavefunctions are used */
 #cmakedefine QMC_COMPLEX @QMC_COMPLEX@
 
+/* Define to 1 if using AYSNC comm for estimator */
+#cmakedefine QMC_ASYNC_COLLECT @QMC_ASYNC_COLLECT@
+
 /* Define if the code is specialized for orthorhombic supercell */
 #define OHMMS_ORTHO @OHMMS_ORTHO@
 
