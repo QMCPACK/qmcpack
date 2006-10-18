@@ -20,13 +20,17 @@
 #include <numeric>
 #include "OhmmsData/FileUtility.h"
 #include "Utilities/RandomGenerator.h"
-using namespace qmcplusplus;
+#include "QMCDrivers/WalkerControlBase.h"
+#include "Estimators/ScalarEstimatorManager.h"
+#include "Estimators/DMCEnergyEstimator.h"
+
+namespace qmcplusplus {
 
 SimpleFixedNodeBranch::SimpleFixedNodeBranch(RealType tau, int nideal): 
 FixedNumWalkers(false), QMCCounter(-1), SwapMode(0), Counter(0), 
   Nideal(nideal), NumGeneration(50), 
   MaxCopy(-1), Tau(tau), E_T(0.0), EavgSum(0.0), WgtSum(0.0), PopControl(0.1), 
-  WalkerController(0),SwapWalkers("yes")
+  WalkerController(0), MyEstimator(0), SwapWalkers("yes")
 {
   registerParameters();
   reset();
@@ -67,6 +71,9 @@ void SimpleFixedNodeBranch::registerParameters() {
   m_param.add(SwapWalkers,"swap_walkers","string");
 }
 
+void SimpleFixedNodeBranch::setEstimatorManager(ScalarEstimatorManager* est) {
+  MyEstimator=est;
+}
 
 void SimpleFixedNodeBranch::initWalkerController(RealType tau, bool fixW) {
   Tau=tau;
@@ -79,6 +86,19 @@ void SimpleFixedNodeBranch::initWalkerController(RealType tau, bool fixW) {
     Nmin=WalkerController->Nmin;
   }
 
+  if(fixW) {
+    ETrialIndex=-1;
+  } else {
+    ETrialIndex = MyEstimator->addColumn("Etrial");
+  }
+
+  DMCEnergyEstimator* dmcE= dynamic_cast<DMCEnergyEstimator*>(MyEstimator->getMainEstimator());
+  if(dmcE) {
+    dmcE->setWalkerControl(WalkerController);
+  } else {
+    OHMMS::Controller->abort("SimpleFixedNodeBranch::initWalkerController failed."); 
+  }
+
   app_log() << "  QMC counter      = " << QMCCounter << endl;
   app_log() << "  reference energy = " << E_T << endl;
   if(!fixW) {
@@ -88,41 +108,27 @@ void SimpleFixedNodeBranch::initWalkerController(RealType tau, bool fixW) {
   }
 }
 
-/** update the weights and multiplicity of all the walkers
- * @param it starting walker
- * @param it_end ending walker
- * @return new trial energy
-void
-SimpleFixedNodeBranch::setWeights(MCWalkerConfiguration::iterator it, 
-    MCWalkerConfiguration::iterator it_end) {
-  while(it != it_end) {
-    MCWalkerConfiguration::Walker_t& thisWalker(**it);
-    RealType M=thisWalker.Weight;
-    if(thisWalker.Age > MaxAge) M = std::min(0.5,M);
-    else if(thisWalker.Age > 0) M = std::min(1.0,M);
-    thisWalker.Multiplicity = M + Random();
-    accumulate(thisWalker.Properties(LOCALENERGY),M);
-    ++it; 
-  }
-  //return E_T = WalkerController->average(EavgSum,WgtSum)-Feed*log(static_cast<RealType>(nw))+logN;
-}
-*/
-SimpleFixedNodeBranch::RealType 
-SimpleFixedNodeBranch::CollectAndUpdate(int pop_now, RealType ecur) {
-  //return E_T = WalkerController->average(EavgSum,WgtSum)-Feed*log(static_cast<RealType>(pop_now))+logN;
-  return E_T = (WalkerController->average(EavgSum,WgtSum)+E_T)*0.5-Feed*log(static_cast<RealType>(pop_now))+logN;
+void SimpleFixedNodeBranch::flush(int counter) 
+{
+  if(counter==0) 
+    if(WalkerController) WalkerController->reset();
+  Counter=counter;
 }
 
-int SimpleFixedNodeBranch::branch(int iter, MCWalkerConfiguration& w) {
-  return WalkerController->branch(iter,w,PopControl);
+void
+SimpleFixedNodeBranch::branch(int iter, MCWalkerConfiguration& w) {
+  int pop_now = WalkerController->branch(iter,w,PopControl);
+  EavgSum+=WalkerController->getCurrentValue(WalkerControlBase::EREF_INDEX);
+  WgtSum+=WalkerController->getCurrentValue(WalkerControlBase::WALKERSIZE_INDEX);
+  if(ETrialIndex>0) {
+    E_T = (EavgSum/WgtSum+E_T)*0.5-Feed*log(static_cast<RealType>(pop_now))+logN;
+    MyEstimator->setColumn(ETrialIndex,E_T);
+  } else {
+    E_T=EavgSum/WgtSum;
+  }
 }
 
 int SimpleFixedNodeBranch::branch(int iter, MCWalkerConfiguration& w, vector<ThisType*>& clones) {
-  for(int i=0; i<clones.size(); i++) {
-    Counter += clones[i]->Counter;
-    EavgSum += clones[i]->EavgSum;
-    WgtSum += clones[i]->WgtSum;
-  }
   return WalkerController->branch(iter,w,PopControl);
 }
 
@@ -131,6 +137,10 @@ void SimpleFixedNodeBranch::reset() {
   logN = Feed*log(static_cast<RealType>(Nideal));
   app_log() << "  Current Counter = " << Counter << "\n  Trial Energy = " << E_T << endl;
   app_log() << "  Feedback parameter = " << Feed <<endl;
+}
+
+void SimpleFixedNodeBranch::finalize() {
+  MyEstimator->finalize();
 }
 
 /**  Parse the xml file for parameters
@@ -173,13 +183,20 @@ bool SimpleFixedNodeBranch::put(xmlNodePtr cur){
   return true;
 }
 
-
 #if defined(HAVE_LIBHDF5)
 void SimpleFixedNodeBranch::write(hid_t grp, bool append) {
+
+  //This is the case with the VMC.
+  if(!WalkerController) {
+    MyEstimator->getEnergyAndWeight(EavgSum,WgtSum);
+    E_T=EavgSum/WgtSum;
+  }
+
   hsize_t dim=3;
   vector<RealType> esave(dim);
   /** stupid gnu compiler bug */
-  esave[0] = (fabs(E_T) < numeric_limits<RealType>::epsilon())? EavgSum/WgtSum:E_T;
+  //esave[0] = (fabs(E_T) < numeric_limits<RealType>::epsilon())?  EavgSum/WgtSum:E_T;
+  esave[0] = E_T;
   esave[1] = EavgSum; 
   esave[2] = WgtSum;
   
@@ -242,6 +259,7 @@ void SimpleFixedNodeBranch::read(hid_t grp) {
   } else {
     app_log() << "  Summary is not found. Starting from scratch" << endl;
   }
+  
 }
 
 void SimpleFixedNodeBranch::read(const string& fname) {
@@ -261,6 +279,7 @@ void SimpleFixedNodeBranch::write(hid_t grp, bool append) { }
 void SimpleFixedNodeBranch::read(hid_t grp) {}
 void SimpleFixedNodeBranch::read(const string& fname) {}
 #endif
+}
 
 /***************************************************************************
  * $RCSfile$   $Author$
