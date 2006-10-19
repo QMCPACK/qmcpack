@@ -21,10 +21,11 @@
 #include "Message/Communicate.h"
 #include "Message/CommOperators.h"
 #include "Estimators/LocalEnergyEstimator.h"
+#include "Estimators/LocalEnergyOnlyEstimator.h"
 #include "QMCDrivers/SimpleFixedNodeBranch.h"
 //#include "Estimators/PolarizationEstimator.h"
 #include "Utilities/IteratorUtility.h"
-#define QMC_ASYNC_COLLECT
+//#define QMC_ASYNC_COLLECT
 
 namespace qmcplusplus {
 
@@ -181,7 +182,7 @@ namespace qmcplusplus {
 
       //at least have local energy
       if(Estimators.empty()) {
-        add(new LocalEnergyEstimator(H),MainEstimatorName);
+        add(new LocalEnergyOnlyEstimator(),MainEstimatorName);
       } 
 
       RemoteData[0]->clear();
@@ -225,7 +226,7 @@ namespace qmcplusplus {
     ScalarEstimatorManager::getMainEstimator() {
       if(MainEstimator==0) 
       {
-        add(new LocalEnergyEstimator(H),MainEstimatorName);
+        add(new LocalEnergyOnlyEstimator(),MainEstimatorName);
       }
       return MainEstimator;
     }
@@ -269,7 +270,8 @@ namespace qmcplusplus {
     }
 
     if(Estimators.empty()) {
-      add(new LocalEnergyEstimator(H),MainEstimatorName);
+      app_log() << "  Using a default LocalEnergyOnlyEstimator for the MainEstimator " << endl;
+      add(new LocalEnergyOnlyEstimator(),MainEstimatorName);
     } 
 
     //add extra
@@ -362,9 +364,8 @@ namespace qmcplusplus {
     }
 
   void ScalarEstimatorManager::getEnergyAndWeight(RealType& e, RealType& w) {
-#if defined(QMC_ASYNC_COLLECT)
+    //MPI_Reduce does not put back the data
     MPI_Bcast(EPSum.begin(),2,MPI_DOUBLE,0,MPI_COMM_WORLD);
-#endif
     e=EPSum[0];
     w=EPSum[1];
   }
@@ -408,18 +409,18 @@ namespace qmcplusplus {
 
       RemoteData[0]->rewind();
       RemoteData[0]->get(MyData.begin(),MyData.end());
-      RealType wgtinv = static_cast<RealType>(numNodes)/MyData[WEIGHT_INDEX];
+      RealType wgtinv = 1.0/MyData[WEIGHT_INDEX];
       for(int i=0; i<Estimators.size(); i++) 
         Estimators[i]->report(BlockAverages,wgtinv,*RemoteData[0]);
 #else
       //using reduce function
-      MPI_Reduce(RemoteData[0]->data(),RemoteData[1]->data(),RemoteData[0]->size(),
-          MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
-      RemoteData[1]->rewind();
-      RemoteData[1]->get(MyData.begin(),MyData.end());
-      RealType wgtinv = static_cast<RealType>(numNodes)/MyData[WEIGHT_INDEX];
+      MPI_Reduce(RemoteData[0]->data(),RemoteData[1]->data(),RemoteData[0]->size(), MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
+      int nc=(ManagerNode)?1:0;
+      RemoteData[nc]->rewind();
+      RemoteData[nc]->get(MyData.begin(),MyData.end());
+      RealType wgtinv = 1.0/MyData[WEIGHT_INDEX];
       for(int i=0; i<Estimators.size(); i++) 
-        Estimators[i]->report(BlockAverages,wgtinv,*RemoteData[1]);
+        Estimators[i]->report(BlockAverages,wgtinv,*RemoteData[nc]);
 #endif
     } else {//CollectSum == false
       RealType wgtinv = 1.0/MyData[WEIGHT_INDEX];
@@ -433,6 +434,7 @@ namespace qmcplusplus {
 
     BinSize=0;
     MyData=0.0;
+
     EPSum[0]+= Estimators[0]->average();
     EPSum[1]+= 1.0;
 

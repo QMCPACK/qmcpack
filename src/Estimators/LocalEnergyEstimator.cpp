@@ -40,6 +40,7 @@ namespace qmcplusplus {
    *\param wgtinv the inverse weight
    */
   void LocalEnergyEstimator::report(RecordListType& record, RealType wgtinv, BufferType& msg) {
+    msg.get(elocal.begin(),elocal.end());
     register int ir=LocalEnergyIndex;
     b_average =  elocal[ENERGY_INDEX]*wgtinv;
     b_variance = elocal[ENERGY_SQ_INDEX]*wgtinv-b_average*b_average;
