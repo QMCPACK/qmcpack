@@ -35,8 +35,10 @@ WalkerControlMPI::WalkerControlMPI() {
   NumSwaps=0;
 
   accumData.resize(LE_MAX);
-  curData.resize(LE_MAX);
+  curData.resize(LE_MAX+NumContexts);
 
+  Cur_min=0;
+  Cur_max=0; 
 #ifdef MCWALKERSET_MPI_DEBUG
   char fname[128];
   sprintf(fname,"test.%d",MyContext);
@@ -53,7 +55,6 @@ WalkerControlMPI::branch(int iter, MCWalkerConfiguration& W, RealType trigger) {
 
   //update the number of walkers for this node
   curData[LE_MAX+MyContext]=NumWalkers;
-  //NumPerNode[MyContext] = NumWalkers;
 
   int nw = copyWalkers(W);
 
@@ -64,23 +65,28 @@ WalkerControlMPI::branch(int iter, MCWalkerConfiguration& W, RealType trigger) {
   accumData[WALKERSIZE_INDEX] += curData[WALKERSIZE_INDEX];
   accumData[WEIGHT_INDEX]     += curData[WEIGHT_INDEX];
 
-  //wait until everynode comes here
-  //OHMMS::Controller->barrier();
-  //gsum(NumPerNode,0);
-  Cur_min=Nmax; Cur_max=0; Cur_pop=0;
+  Cur_pop=0;
   for(int i=0, j=LE_MAX; i<NumContexts; i++,j++) {
     Cur_pop+= NumPerNode[i]=static_cast<int>(curData[j]);
-    Cur_min = std::min(Cur_min,NumPerNode[i]);
-    Cur_max = std::max(Cur_max,NumPerNode[i]);
   }
 
-  int max_diff = std::max(Cur_max*NumContexts-Cur_pop,Cur_pop-Cur_min*NumContexts);
-  double diff_pop = static_cast<double>(max_diff)/static_cast<double>(Cur_pop);
+  swapWalkersSimple(W); 
 
-  if(diff_pop > trigger) { 
-    swapWalkersSimple(W); 
-    //swapWalkersMap(W); 
-  }
+  //Do not need to use a trigger.
+  //Cur_min=Nmax; 
+  //Cur_max=0; 
+  //Cur_pop=0;
+  //for(int i=0, j=LE_MAX; i<NumContexts; i++,j++) {
+  //  Cur_pop+= NumPerNode[i]=static_cast<int>(curData[j]);
+  //  Cur_min = std::min(Cur_min,NumPerNode[i]);
+  //  Cur_max = std::max(Cur_max,NumPerNode[i]);
+  //}
+  //int max_diff = std::max(Cur_max*NumContexts-Cur_pop,Cur_pop-Cur_min*NumContexts);
+  //double diff_pop = static_cast<double>(max_diff)/static_cast<double>(Cur_pop);
+  //if(diff_pop > trigger) { 
+  //  swapWalkersSimple(W); 
+  //  //swapWalkersMap(W); 
+  //}
 
   //set Weight and Multiplicity to default values
   MCWalkerConfiguration::iterator it(W.begin()),it_end(W.end());
