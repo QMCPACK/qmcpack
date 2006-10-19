@@ -141,6 +141,12 @@ void SimpleFixedNodeBranch::reset() {
 
 void SimpleFixedNodeBranch::finalize() {
   MyEstimator->finalize();
+#if !defined(QMC_ASYNC_COLLECT)
+  if(!WalkerController) {
+    MyEstimator->getEnergyAndWeight(EavgSum,WgtSum);
+    E_T=EavgSum/WgtSum;
+  }
+#endif
 }
 
 /**  Parse the xml file for parameters
@@ -186,12 +192,11 @@ bool SimpleFixedNodeBranch::put(xmlNodePtr cur){
 #if defined(HAVE_LIBHDF5)
 void SimpleFixedNodeBranch::write(hid_t grp, bool append) {
 
-  //This is the case with the VMC.
-  if(!WalkerController) {
-    MyEstimator->getEnergyAndWeight(EavgSum,WgtSum);
-    E_T=EavgSum/WgtSum;
-  }
-
+  ////This is the case with the VMC.
+  //if(!WalkerController) {
+  //  MyEstimator->getEnergyAndWeight(EavgSum,WgtSum);
+  //  E_T=EavgSum/WgtSum;
+  //}
   hsize_t dim=3;
   vector<RealType> esave(dim);
   /** stupid gnu compiler bug */
