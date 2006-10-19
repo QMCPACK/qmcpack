@@ -43,6 +43,8 @@ namespace qmcplusplus {
     typedef EstimatorType::BufferType     BufferType;
     enum { WEIGHT_INDEX=0, BLOCK_CPU_INDEX, ACCEPT_RATIO_INDEX, TOTAL_INDEX};
 
+    ///name of the primary estimator name
+    std::string MainEstimatorName;
 
     ScalarEstimatorManager(QMCHamiltonian& h);
     virtual ~ScalarEstimatorManager();
@@ -174,6 +176,8 @@ namespace qmcplusplus {
     ostream* OutStream;
     ///ostream for the output
     QMCHamiltonian& H;
+    ///pointer to the primary ScalarEstimatorBase
+    ScalarEstimatorBase* MainEstimator;
     ///block averages
     RecordNamedProperty<RealType> BlockAverages;
 
