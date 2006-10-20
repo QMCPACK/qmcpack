@@ -324,6 +324,12 @@ namespace qmcplusplus {
    */
   void ScalarEstimatorManager::flush(){
 
+    RemoteData[0]->rewind();
+    for(int i=0; i<Estimators.size(); i++) {
+      Estimators[i]->copy2Buffer(*RemoteData[0]);
+    }
+
+    RemoteData[0]->rewind();
     RealType wgtinv = 1.0/MyData[WEIGHT_INDEX];
     for(int i=0; i<Estimators.size(); i++) 
       Estimators[i]->report(BlockAverages,wgtinv,*RemoteData[0]);
@@ -337,6 +343,7 @@ namespace qmcplusplus {
     EPSum[0]+= Estimators[0]->average();
     EPSum[1]+= 1.0;
   }
+
 #else  /* MPI */
   /**  print the header to the output file
    *
