@@ -57,18 +57,18 @@ namespace qmcplusplus {
       if(wc == 0) {
         if(swapmode) {
           if(reconfig)  {
-            app_log() << "  Using a WalkerReconfigurationMPI for population control." << endl;
+            app_log() << "  Using WalkerReconfigurationMPI for population control." << endl;
             wc = new WalkerReconfigurationMPI;
           } else {
-            app_log() << "  Using a WalkerControlMPI for dynamic population control." << endl;
+            app_log() << "  Using WalkerControlMPI for dynamic population control." << endl;
             wc = new WalkerControlMPI;
           }
         } else {
           if(reconfig)  {
-            app_log() << "  Using a WalkerReconfiguration for population control." << endl;
+            app_log() << "  Using WalkerReconfiguration for population control." << endl;
             wc = new WalkerReconfiguration;
           } else {
-            app_log() << "  Using a WalkerControlBase for dynamic population control." << endl;
+            app_log() << "  Using WalkerControlBase for dynamic population control." << endl;
             wc = new WalkerControlBase;
           }
         }

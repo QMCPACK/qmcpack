@@ -51,7 +51,7 @@ WalkerReconfigurationMPI::branch(int iter, MCWalkerConfiguration& W, RealType tr
   RealType wgtInv(1.0/curData[WEIGHT_INDEX]);
   accumData[ENERGY_INDEX]     += curData[ENERGY_INDEX]*wgtInv;
   accumData[ENERGY_SQ_INDEX]  += curData[ENERGY_SQ_INDEX]*wgtInv;
-  accumData[WALKERSIZE_INDEX] = nwkept;
+  accumData[WALKERSIZE_INDEX] += nwkept;
   //accumData[WALKERSIZE_INDEX] += curData[WALKERSIZE_INDEX];
   accumData[WEIGHT_INDEX]     += curData[WEIGHT_INDEX];
 
@@ -101,7 +101,7 @@ int WalkerReconfigurationMPI::swapWalkers(MCWalkerConfiguration& W) {
     e2sum += wgt*e*e;
     wtot += wgt;
     ecum += e;
-    wtot+=wConf[iw++]=wgt;
+    wConf[iw++]=wgt;
     ++it;
   }
   //wSum[MyContext]=wtot;
@@ -121,10 +121,10 @@ int WalkerReconfigurationMPI::swapWalkers(MCWalkerConfiguration& W) {
   //wOffset[ip] is the partial sum update to ip
   wOffset[0]=0;
   //for(int ip=0; ip<NumContexts; ip++) wOffset[ip+1]=wOffset[ip]+wSum[ip];
-  for(int ip=0,jp=LE_MAX; ip<NumContexts; ip++,jp++) wOffset[ip+1]=wOffset[ip]+curData[jp];
+  for(int ip=0,jp=LE_MAX; ip<NumContexts; ip++,jp++) 
+    wOffset[ip+1]=wOffset[ip]+curData[jp];
 
-  //wtot is the total weight
-  wtot=wOffset[NumContexts];
+  wtot=wOffset[NumContexts]; //wtot is the total weight
 
   //find the lower and upper bound of index
   int minIndex=static_cast<int>((wOffset[MyContext]/wtot-DeltaStep)*static_cast<RealType>(TotalWalkers))-1;
