@@ -88,6 +88,7 @@ void SimpleFixedNodeBranch::initWalkerController(RealType tau, bool fixW) {
 
   if(fixW) {
     ETrialIndex=-1;
+    E_T=0.0;
   } else {
     ETrialIndex = MyEstimator->addColumn("Etrial");
   }
@@ -106,6 +107,7 @@ void SimpleFixedNodeBranch::initWalkerController(RealType tau, bool fixW) {
     app_log() << "  Max and mimum walkers per node= " << Nmax << " " << Nmin << endl;
     app_log() << "  number of generations (feedback) = " << NumGeneration << " ("<< Feed << ")"<< endl;
   }
+
 }
 
 void SimpleFixedNodeBranch::flush(int counter) 
@@ -123,8 +125,6 @@ SimpleFixedNodeBranch::branch(int iter, MCWalkerConfiguration& w) {
   if(ETrialIndex>0) {
     E_T = (EavgSum/WgtSum+E_T)*0.5-Feed*log(static_cast<RealType>(pop_now))+logN;
     MyEstimator->setColumn(ETrialIndex,E_T);
-  } else {
-    E_T=EavgSum/WgtSum;
   }
 }
 
@@ -141,12 +141,10 @@ void SimpleFixedNodeBranch::reset() {
 
 void SimpleFixedNodeBranch::finalize() {
   MyEstimator->finalize();
-#if !defined(QMC_ASYNC_COLLECT)
   if(!WalkerController) {
     MyEstimator->getEnergyAndWeight(EavgSum,WgtSum);
     E_T=EavgSum/WgtSum;
   }
-#endif
 }
 
 /**  Parse the xml file for parameters
