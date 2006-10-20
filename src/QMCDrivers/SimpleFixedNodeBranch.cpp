@@ -141,7 +141,7 @@ void SimpleFixedNodeBranch::reset() {
 
 void SimpleFixedNodeBranch::finalize() {
   MyEstimator->finalize();
-  if(!WalkerController) {
+  if(!WalkerController || ETrialIndex<0) {
     MyEstimator->getEnergyAndWeight(EavgSum,WgtSum);
     E_T=EavgSum/WgtSum;
   }
