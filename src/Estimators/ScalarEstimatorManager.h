@@ -25,9 +25,9 @@
 #define QMCPLUSPLUS_SCALAR_ESTIMATORMANAGER_H
 
 #include "Configuration.h"
-#include "Estimators/ScalarEstimatorBase.h"
-#include "Message/Communicate.h"
 #include "Utilities/Timer.h"
+#include "Message/Communicate.h"
+#include "Estimators/ScalarEstimatorBase.h"
 
 namespace qmcplusplus {
 
@@ -35,7 +35,8 @@ namespace qmcplusplus {
   class QMCHamiltonian;
 
   /**Class to manage a set of ScalarEstimators */
-  class ScalarEstimatorManager: public QMCTraits {
+  class ScalarEstimatorManager: public QMCTraits
+  {
 
   public:
 
@@ -46,8 +47,18 @@ namespace qmcplusplus {
     ///name of the primary estimator name
     std::string MainEstimatorName;
 
-    ScalarEstimatorManager(QMCHamiltonian& h);
+    ScalarEstimatorManager(QMCHamiltonian& h, Communicate* c=0);
     virtual ~ScalarEstimatorManager();
+
+    /** set the communicator */
+    void setCommunicator(Communicate* c);
+
+    /** return the communicator 
+     */
+    Communicate* getCommunicator()  
+    { 
+      return myComm;
+    }
 
     ///return the number of ScalarEstimators
     inline int size() const { return Estimators.size();}
@@ -87,9 +98,6 @@ namespace qmcplusplus {
      */
     int add(EstimatorType* newestimator, const string& aname);
 
-    ///set the stride for all the estimators
-    void setPeriod(int p) { Period=p;}
-
     ///return a pointer to the estimator aname
     EstimatorType* getEstimator(const string& a);
 
@@ -124,6 +132,7 @@ namespace qmcplusplus {
     ///process xml tag associated with estimators
     bool put(xmlNodePtr cur);
     void accumulate(MCWalkerConfiguration& W);
+    void accumulate(ParticleSet& P, MCWalkerConfiguration::Walker_t& awalker);
     void resetReportSettings(const string& aname, bool append);
     void reportHeader(bool append);
     void flushreport(int iter);
@@ -148,20 +157,20 @@ namespace qmcplusplus {
     int BinSize;
     int index;
 
+    /** communicator to handle communication
+     */
+    Communicate* myComm;
     //this should be encapsulated
     int myNodeID;
     int numNodes;
-    int myGroupID;
     int msgBufferSize;
     ///storage for MPI_Request
-    vector<MPI_Request> myRequest;
+    vector<Communicate::mpi_request_type> myRequest;
     ///storage for MPI_Status
-    vector<MPI_Status> myStatus;
+    vector<Communicate::mpi_status_type> myStatus;
     ///Data for communication
     vector<BufferType*> RemoteData;
 
-    ///Period to write 
-    IndexType Period;
     ///the root file name
     string RootName;
     ///Weight for global collection
