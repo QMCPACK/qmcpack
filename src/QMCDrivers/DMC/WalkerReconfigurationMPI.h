@@ -44,7 +44,8 @@ namespace qmcplusplus {
     RealType DeltaStep;
     ///1/(total number of walkers)
     RealType nwInv;
-
+    ///pointer to the Communicator
+    Communicate* myComm;
     ///the number of extra/missing walkers
     vector<IndexType> dN;
     //weight per walker
@@ -60,7 +61,9 @@ namespace qmcplusplus {
      *
      * Set the SwapMode to zero so that instantiation can be done
      */
-    WalkerReconfigurationMPI();
+    WalkerReconfigurationMPI(Communicate* c=0);
+
+    void setCommunicator(Communicate* c=0);
 
     /** perform branch and swap walkers as required */
     int branch(int iter, MCWalkerConfiguration& W, RealType trigger);

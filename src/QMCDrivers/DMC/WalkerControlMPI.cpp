@@ -25,18 +25,11 @@ using namespace qmcplusplus;
  *
  * set SwapMode
  */
-WalkerControlMPI::WalkerControlMPI() {
+WalkerControlMPI::WalkerControlMPI(Communicate* c) {
   SwapMode=1;
-  NumContexts=OHMMS::Controller->ncontexts();
-  MyContext=OHMMS::Controller->mycontext();
-  NumPerNode.resize(NumContexts);
-  OffSet.resize(NumContexts+1);
-  FairOffSet.resize(NumContexts+1);
+  setCommunicator(c);
+
   NumSwaps=0;
-
-  accumData.resize(LE_MAX);
-  curData.resize(LE_MAX+NumContexts);
-
   Cur_min=0;
   Cur_max=0; 
 #ifdef MCWALKERSET_MPI_DEBUG
@@ -44,6 +37,23 @@ WalkerControlMPI::WalkerControlMPI() {
   sprintf(fname,"test.%d",MyContext);
   ofstream fout(fname);
 #endif
+}
+
+void WalkerControlMPI::setCommunicator(Communicate* c)
+{
+
+  if(c) 
+    myComm=c;
+  else
+    myComm = OHMMS::Controller;
+
+  NumContexts=myComm->ncontexts();
+  MyContext=myComm->mycontext();
+  NumPerNode.resize(NumContexts);
+  OffSet.resize(NumContexts+1);
+  FairOffSet.resize(NumContexts+1);
+  accumData.resize(LE_MAX);
+  curData.resize(LE_MAX+NumContexts);
 }
 
 int 
@@ -58,7 +68,8 @@ WalkerControlMPI::branch(int iter, MCWalkerConfiguration& W, RealType trigger) {
 
   int nw = copyWalkers(W);
 
-  gsum(curData,0);
+  myComm->allreduce(curData);
+
   RealType wgtInv(1.0/curData[WEIGHT_INDEX]);
   accumData[ENERGY_INDEX]     += curData[ENERGY_INDEX]*wgtInv;
   accumData[ENERGY_SQ_INDEX]  += curData[ENERGY_SQ_INDEX]*wgtInv;
@@ -148,14 +159,18 @@ void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W) {
   int nsend=0;
   for(int ic=0; ic<nswap; ic++) {
     if(plus[ic]==MyContext) {
-      OOMPI_Packed sendBuffer(wRef.byteSize(),OOMPI_COMM_WORLD);
+      //OOMPI_Packed sendBuffer(wRef.byteSize(),OOMPI_COMM_WORLD);
+      OOMPI_Packed sendBuffer(wRef.byteSize(),myComm->getComm());
       W[last]->putMessage(sendBuffer);
-      OOMPI_COMM_WORLD[minus[ic]].Send(sendBuffer);
+      //OOMPI_COMM_WORLD[minus[ic]].Send(sendBuffer);
+      myComm->getComm()[minus[ic]].Send(sendBuffer);
       --last; ++nsend;
     }
     if(minus[ic]==MyContext) {
-      OOMPI_Packed recvBuffer(wRef.byteSize(),OOMPI_COMM_WORLD);
-      OOMPI_COMM_WORLD[plus[ic]].Recv(recvBuffer);
+      //OOMPI_Packed recvBuffer(wRef.byteSize(),OOMPI_COMM_WORLD);
+      OOMPI_Packed recvBuffer(wRef.byteSize(),myComm->getComm());
+      //OOMPI_COMM_WORLD[plus[ic]].Recv(recvBuffer);
+      myComm->getComm()[plus[ic]].Recv(recvBuffer);
       Walker_t *awalker= new Walker_t(wRef);
       awalker->getMessage(recvBuffer);
       newW.push_back(awalker);
@@ -202,32 +217,40 @@ void WalkerControlMPI::swapWalkersAsync(MCWalkerConfiguration& W) {
   //initiate Irecv
   if(toLeft<0) { // recv from node-1 
     int dn=-toLeft;
-    recvLeftBuffer = new OOMPI_Packed(dn*wRef.byteSize(),OOMPI_COMM_WORLD);
-    recvLeftRequest = OOMPI_COMM_WORLD[MyContext-1].Irecv(*recvLeftBuffer,MPI_ANY_TAG);
+    //recvLeftBuffer = new OOMPI_Packed(dn*wRef.byteSize(),OOMPI_COMM_WORLD);
+    //recvLeftRequest = OOMPI_COMM_WORLD[MyContext-1].Irecv(*recvLeftBuffer,MPI_ANY_TAG);
+    recvLeftBuffer = new OOMPI_Packed(dn*wRef.byteSize(),myComm->getComm());
+    recvLeftRequest = myComm->getComm()[MyContext-1].Irecv(*recvLeftBuffer,MPI_ANY_TAG);
   } 
   if(toRight>0) { //recv from node+1
-    recvRightBuffer = new OOMPI_Packed(toRight*wRef.byteSize(),OOMPI_COMM_WORLD);
-    recvRightRequest = OOMPI_COMM_WORLD[MyContext+1].Irecv(*recvRightBuffer,MPI_ANY_TAG);
+    //recvRightBuffer = new OOMPI_Packed(toRight*wRef.byteSize(),OOMPI_COMM_WORLD);
+    //recvRightRequest = OOMPI_COMM_WORLD[MyContext+1].Irecv(*recvRightBuffer,MPI_ANY_TAG);
+    recvRightBuffer = new OOMPI_Packed(toRight*wRef.byteSize(),myComm->getComm());
+    recvRightRequest = myComm->getComm()[MyContext+1].Irecv(*recvRightBuffer,MPI_ANY_TAG);
   }
   
   //send the data
   if(toLeft>0) { //send to node-1
     int dn=toLeft;
     num_deleted+=dn;
-    OOMPI_Packed sendBuffer(dn*wRef.byteSize(),OOMPI_COMM_WORLD);
+    //OOMPI_Packed sendBuffer(dn*wRef.byteSize(),OOMPI_COMM_WORLD);
+    OOMPI_Packed sendBuffer(dn*wRef.byteSize(),myComm->getComm());
     while(dn) {
       W[last]->putMessage(sendBuffer); --dn; --last;
     }
-    OOMPI_COMM_WORLD[MyContext-1].Send(sendBuffer);
+    //OOMPI_COMM_WORLD[MyContext-1].Send(sendBuffer);
+    myComm->getComm()[MyContext-1].Send(sendBuffer);
   }
   if(toRight<0) { // send to node+1
     int dn=-toRight;
     num_deleted+=dn;
-    OOMPI_Packed sendBuffer(dn*wRef.byteSize(),OOMPI_COMM_WORLD);
+    //OOMPI_Packed sendBuffer(dn*wRef.byteSize(),OOMPI_COMM_WORLD);
+    OOMPI_Packed sendBuffer(dn*wRef.byteSize(),myComm->getComm());
     while(dn) {
       W[last]->putMessage(sendBuffer); --dn; --last;
     }
-    OOMPI_COMM_WORLD[MyContext+1].Send(sendBuffer);
+    //OOMPI_COMM_WORLD[MyContext+1].Send(sendBuffer);
+    myComm->getComm()[MyContext+1].Send(sendBuffer);
   } 
 
   while(num_deleted>0) {
@@ -285,8 +308,10 @@ void WalkerControlMPI::swapWalkersBlocked(MCWalkerConfiguration& W) {
   //scehdule irecv
   if(toLeft<0) { // recv from node-1 
     int dn=-toLeft;
-    OOMPI_Packed recvBuffer(dn*wRef.byteSize(),OOMPI_COMM_WORLD);
-    OOMPI_COMM_WORLD[MyContext-1].Recv(recvBuffer);
+    //OOMPI_Packed recvBuffer(dn*wRef.byteSize(),OOMPI_COMM_WORLD);
+    //OOMPI_COMM_WORLD[MyContext-1].Recv(recvBuffer);
+    OOMPI_Packed recvBuffer(dn*wRef.byteSize(),myComm->getComm());
+    myComm->getComm()[MyContext-1].Recv(recvBuffer);
     while(dn) {
       Walker_t *awalker= new Walker_t(wRef);
       awalker->getMessage(recvBuffer);
@@ -296,24 +321,30 @@ void WalkerControlMPI::swapWalkersBlocked(MCWalkerConfiguration& W) {
   } else if(toLeft>0) { //send to node-1
     int dn=toLeft;
     num_deleted+=dn;
-    OOMPI_Packed sendBuffer(dn*wRef.byteSize(),OOMPI_COMM_WORLD);
+    //OOMPI_Packed sendBuffer(dn*wRef.byteSize(),OOMPI_COMM_WORLD);
+    OOMPI_Packed sendBuffer(dn*wRef.byteSize(),myComm->getComm());
     while(dn) {
       W[last]->putMessage(sendBuffer); --dn; --last;
     }
-    OOMPI_COMM_WORLD[MyContext-1].Send(sendBuffer);
+    //OOMPI_COMM_WORLD[MyContext-1].Send(sendBuffer);
+    myComm->getComm()[MyContext-1].Send(sendBuffer);
   }
 
   if(toRight<0) { // send to node+1
     int dn=-toRight;
     num_deleted+=dn;
-    OOMPI_Packed sendBuffer(dn*wRef.byteSize(),OOMPI_COMM_WORLD);
+    //OOMPI_Packed sendBuffer(dn*wRef.byteSize(),OOMPI_COMM_WORLD);
+    OOMPI_Packed sendBuffer(dn*wRef.byteSize(),myComm->getComm());
     while(dn) {
       W[last]->putMessage(sendBuffer); --dn; --last;
     }
-    OOMPI_COMM_WORLD[MyContext+1].Send(sendBuffer);
+    //OOMPI_COMM_WORLD[MyContext+1].Send(sendBuffer);
+    myComm->getComm()[MyContext+1].Send(sendBuffer);
   } else if(toRight>0) { //recv from node+1
-    OOMPI_Packed recvBuffer(toRight*wRef.byteSize(),OOMPI_COMM_WORLD);
-    OOMPI_COMM_WORLD[MyContext+1].Recv(recvBuffer);
+    //OOMPI_Packed recvBuffer(toRight*wRef.byteSize(),OOMPI_COMM_WORLD);
+    //OOMPI_COMM_WORLD[MyContext+1].Recv(recvBuffer);
+    OOMPI_Packed recvBuffer(toRight*wRef.byteSize(),myComm->getComm());
+    myComm->getComm()[MyContext+1].Recv(recvBuffer);
     int dn=toRight;
     while(dn) {
       Walker_t *awalker= new Walker_t(wRef);
@@ -380,8 +411,10 @@ void WalkerControlMPI::swapWalkersMap(MCWalkerConfiguration& W) {
   if(dnw) {//something to swap
     if(minorcontext) {//open recv buffer
       Walker_t& wRef(*W[0]);
-      OOMPI_Packed recvBuffer(dnw*wRef.byteSize(),OOMPI_COMM_WORLD);
-      OOMPI_COMM_WORLD[target_context].Recv(recvBuffer);
+      //OOMPI_Packed recvBuffer(dnw*wRef.byteSize(),OOMPI_COMM_WORLD);
+      //OOMPI_COMM_WORLD[target_context].Recv(recvBuffer);
+      OOMPI_Packed recvBuffer(dnw*wRef.byteSize(),myComm->getComm());
+      myComm->getComm()[target_context].Recv(recvBuffer);
       //create walkers
       int last = W.getActiveWalkers();
       while(dnw) {
@@ -392,13 +425,15 @@ void WalkerControlMPI::swapWalkersMap(MCWalkerConfiguration& W) {
       }
     } else {
       Walker_t& wRef(*W[0]);
-      OOMPI_Packed sendBuffer(dnw*wRef.byteSize(),OOMPI_COMM_WORLD);
+      //OOMPI_Packed sendBuffer(dnw*wRef.byteSize(),OOMPI_COMM_WORLD);
+      OOMPI_Packed sendBuffer(dnw*wRef.byteSize(),myComm->getComm());
       int last=W.getActiveWalkers()-1;
       while(dnw) {
         W[last]->putMessage(sendBuffer);
         --dnw; --last;
       }
-      OOMPI_COMM_WORLD[target_context].Send(sendBuffer);
+      //OOMPI_COMM_WORLD[target_context].Send(sendBuffer);
+      myComm->getComm()[target_context].Send(sendBuffer);
       //last=WalkerList.size()-1;
       //while(dnw_save) {
       //  delete WalkerList[last]; 

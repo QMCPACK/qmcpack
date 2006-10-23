@@ -25,15 +25,10 @@ using namespace qmcplusplus;
  *
  * set SwapMode
  */
-WalkerReconfigurationMPI::WalkerReconfigurationMPI(): TotalWalkers(0) {
+WalkerReconfigurationMPI::WalkerReconfigurationMPI(Communicate* c): 
+TotalWalkers(0) {
   SwapMode=1;
-  NumContexts=OHMMS::Controller->ncontexts();
-  MyContext=OHMMS::Controller->mycontext();
-  UnitZeta=Random();
-
-  MPI_Bcast(&UnitZeta,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
-  app_log() << "  First weight [0,1) for reconfiguration =" << UnitZeta << endl;
-
+  setCommunicator(c);
   accumData.resize(LE_MAX);
   curData.resize(LE_MAX+NumContexts);
 
@@ -41,6 +36,21 @@ WalkerReconfigurationMPI::WalkerReconfigurationMPI(): TotalWalkers(0) {
   //o << "check." << MyContext << ".dat";
   //ofstream fout(o.str().c_str());
   //fout << "UnitZeta " << UnitZeta << endl;
+}
+
+void WalkerReconfigurationMPI::setCommunicator(Communicate* c)
+{
+  if(c) 
+    myComm=c;
+  else
+    myComm = OHMMS::Controller;
+
+  NumContexts=myComm->ncontexts();
+  MyContext=myComm->mycontext();
+  UnitZeta=Random();
+  myComm->bcast(&UnitZeta,1);
+  //MPI_Bcast(&UnitZeta,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
+  app_log() << "  First weight [0,1) for reconfiguration =" << UnitZeta << endl;
 }
 
 int 
@@ -54,9 +64,6 @@ WalkerReconfigurationMPI::branch(int iter, MCWalkerConfiguration& W, RealType tr
   accumData[WALKERSIZE_INDEX] += nwkept;
   //accumData[WALKERSIZE_INDEX] += curData[WALKERSIZE_INDEX];
   accumData[WEIGHT_INDEX]     += curData[WEIGHT_INDEX];
-
-  //OHMMS::Controller->barrier();
-  //gsum(nwkept,0);
 
   //set Weight and Multiplicity to default values
   MCWalkerConfiguration::iterator it(W.begin()),it_end(W.end());
@@ -114,9 +121,7 @@ int WalkerReconfigurationMPI::swapWalkers(MCWalkerConfiguration& W) {
   curData[LE_MAX+MyContext]=wtot;
 
   //collect everything
-  gsum(curData,0);
-  //collect the local sum of the weights
-  //gsum(wSum,0);
+  myComm->allreduce(curData);
 
   //wOffset[ip] is the partial sum update to ip
   wOffset[0]=0;
@@ -184,7 +189,7 @@ int WalkerReconfigurationMPI::swapWalkers(MCWalkerConfiguration& W) {
   if(minus.size()) { dN[MyContext]=-minus.size();}
 
   //collect the data
-  gsum(dN,0);
+  myComm->allreduce(dN);
 
   if(plus.size()) sendWalkers(W,plus);
   if(minus.size()) recvWalkers(W,minus);
@@ -244,9 +249,11 @@ void WalkerReconfigurationMPI::sendWalkers(MCWalkerConfiguration& W,
   int ic=0;
   while(ic<nswap && last>=0) {
     if(plusN[ic]==MyContext) {
-      OOMPI_Packed sendBuffer(wbuffer_size,OOMPI_COMM_WORLD);
+      //OOMPI_Packed sendBuffer(wbuffer_size,OOMPI_COMM_WORLD);
+      OOMPI_Packed sendBuffer(wbuffer_size,myComm->getComm());
       W[plus[last]]->putMessage(sendBuffer);
-      OOMPI_COMM_WORLD[minusN[ic]].Send(sendBuffer);
+      //OOMPI_COMM_WORLD[minusN[ic]].Send(sendBuffer);
+      myComm->getComm()[minusN[ic]].Send(sendBuffer);
       --last; 
     } 
     ++ic;
@@ -271,8 +278,10 @@ void WalkerReconfigurationMPI::recvWalkers(MCWalkerConfiguration& W,
   int ic=0;
   while(ic<nswap && last>=0) {
     if(minusN[ic]==MyContext) {
-      OOMPI_Packed recvBuffer(wbuffer_size,OOMPI_COMM_WORLD);
-      OOMPI_COMM_WORLD[plusN[ic]].Recv(recvBuffer);
+      //OOMPI_Packed recvBuffer(wbuffer_size,OOMPI_COMM_WORLD);
+      //OOMPI_COMM_WORLD[plusN[ic]].Recv(recvBuffer);
+      OOMPI_Packed recvBuffer(wbuffer_size,myComm->getComm());
+      myComm->getComm()[plusN[ic]].Recv(recvBuffer);
       W[minus[last]]->getMessage(recvBuffer);
       --last;
     }

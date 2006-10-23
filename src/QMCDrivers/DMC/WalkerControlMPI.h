@@ -20,6 +20,7 @@
 
 #include "QMCDrivers/WalkerControlBase.h"
 
+
 namespace qmcplusplus {
 
   /** Class to handle walker controls with simple global sum
@@ -34,6 +35,7 @@ namespace qmcplusplus {
     int Cur_max;
     int Cur_min;
     int Cur_pop;
+    Communicate* myComm;
     vector<int> NumPerNode;
     vector<int> OffSet;
     vector<int> FairOffSet;
@@ -41,15 +43,12 @@ namespace qmcplusplus {
      *
      * Set the SwapMode to zero so that instantiation can be done
      */
-    WalkerControlMPI();
+    WalkerControlMPI(Communicate* c=0);
+
+    void setCommunicator(Communicate* c=0);
 
     /** perform branch and swap walkers as required */
     int branch(int iter, MCWalkerConfiguration& W, RealType trigger);
-
-    /** collect the energies */
-    inline void collect(TinyVector<RealType,2>& eavgwgt) {
-      gsum(eavgwgt,0);
-    }
 
     void swapWalkersSimple(MCWalkerConfiguration& W);
 
