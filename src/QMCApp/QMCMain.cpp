@@ -263,9 +263,12 @@ namespace qmcplusplus {
 
     bool append_run = setQMCDriver(myProject.m_series,cur);
 
-    //OHMMS::Controller->barrier();
-
     if(qmcDriver) {
+
+      //Communicate newComm(OHMMS::Controller->split(2));
+      //qmcDriver->setCommunicator(&newComm);
+      qmcDriver->setCommunicator(OHMMS::Controller);
+
       app_log() << endl;
       myProject.get(app_log());
       app_log() << endl;
