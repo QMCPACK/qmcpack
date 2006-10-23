@@ -30,7 +30,7 @@ SET (EXECUTABLE_OUTPUT_PATH ${qmcpack_BINARY_DIR}/bin CACHE PATH "Single output 
 #OPTION(QMC_OMP "Enable OpenMP parallelization" OFF)
 SET(QMC_MPI 1)
 SET(QMC_OMP 0)
-SET(QMC_ASYNC_COLLECT 1)
+OPTION(MPIP_PROFILE "Enable MPI profiling MPI with mpiP library" OFF)
 
 IF($ENV{QMC_MPI})
   SET(QMC_MPI $ENV{QMC_MPI}) 
@@ -38,9 +38,6 @@ ENDIF($ENV{QMC_MPI})
 IF($ENV{QMC_OMP})
   SET(QMC_OMP $ENV{QMC_OMP}) 
 ENDIF($ENV{QMC_OMP})
-IF($ENV{QMC_ASYNC_COLLECT})
-  SET(QMC_ASYNC_COLLECT $ENV{QMC_ASYNC_COLLECT})
-ENDIF($ENV{QMC_ASYNC_COLLECT})
 
 ######################################################################
 #set 32/64 bit OS 
@@ -143,6 +140,12 @@ INCLUDE(${PROJECT_CMAKE}/FindBoost.cmake)
 #INCLUDE(${PROJECT_CMAKE}/FindFFTW.cmake)
 
 IF(QMC_MPI)
+  IF(MPIP_PROFILE)
+    LINK_LIBRARIES("/usr/apps/tools/mpip/lib/cmpi/libmpiP.a")
+    LINK_LIBRARIES("/usr/lib/libbfd.a")
+    LINK_LIBRARIES("/usr/lib/libiberty.a")
+  ENDIF(MPIP_PROFILE)
+
   INCLUDE(${PROJECT_SOURCE_DIR}/CMake/addMPI.cmake)
   IF(FOUND_MPI)
     LINK_LIBRARIES(${MPI_LIBRARY})
