@@ -19,12 +19,19 @@
 namespace qmcplusplus {
 
   WalkerControlBase::WalkerControlBase(): 
-    SwapMode(0), Nmin(1), Nmax(10), MaxCopy(10) {
-      accumData.resize(LE_MAX);
-      curData.resize(LE_MAX);
+  SwapMode(0), Nmin(1), Nmax(10), MaxCopy(10) 
+  {
+    accumData.resize(LE_MAX);
+    curData.resize(LE_MAX);
   }
 
-  void WalkerControlBase::reset() {
+  void WalkerControlBase:: setCommunicator(Communicate* c)
+  {
+    //nothing to be done
+  }
+
+  void WalkerControlBase::reset() 
+  {
     std::fill(accumData.begin(),accumData.end(),0.0);
   }
 

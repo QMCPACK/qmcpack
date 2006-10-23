@@ -97,6 +97,8 @@ namespace qmcplusplus {
     /** empty destructor to clean up the derived classes */
     virtual ~WalkerControlBase() {}
 
+    virtual void setCommunicator(Communicate* c=0); 
+
     /** reset to accumulate data */
     virtual void reset();
     
