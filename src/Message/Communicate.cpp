@@ -28,7 +28,10 @@ int TagMaker::CurrentTag = 1000;
 Communicate* OHMMS::Controller = new Communicate;
 
 //default constructor: ready for a serial execution
-Communicate::Communicate():d_mycontext(0), d_ncontexts(1), CommID(0){}
+Communicate::Communicate():
+d_mycontext(0), d_ncontexts(1), myCommID(0)
+{
+}
 
 Communicate::Communicate(int argc, char **argv){
   initialize(argc,argv);
@@ -36,71 +39,70 @@ Communicate::Communicate(int argc, char **argv){
 
 //exclusive:  OOMPI, MPI or Serial
 #ifdef HAVE_OOMPI
+
+Communicate::Communicate(const intra_comm_type& c):myComm(c) {
+  myCommID = myComm.Get_mpi();
+  d_mycontext=myComm.Rank();
+  d_ncontexts=myComm.Size();
+}
 //================================================================
 // Implements Communicate with OOMPI library
 //================================================================
-Communicate::~Communicate(){ }
+Communicate::~Communicate()
+{ 
 
-void Communicate::initialize(int argc, char **argv){
+}
+
+void Communicate::initialize(int argc, char **argv)
+{
   OOMPI_COMM_WORLD.Init(argc, argv);
   d_mycontext = OOMPI_COMM_WORLD.Rank();
   d_ncontexts = OOMPI_COMM_WORLD.Size();
-  CommID = OOMPI_COMM_WORLD.Get_mpi();
-  //LOGMSG("Initializating MPI/OOMPI communicator")
+  myComm = OOMPI_COMM_WORLD;
+  myCommID = OOMPI_COMM_WORLD.Get_mpi();
 }
 
-void Communicate::finalize() {
+void Communicate::finalize() 
+{
   OOMPI_COMM_WORLD.Finalize();
 }
 
-void Communicate::cleanupMessage(void*) { }
-void Communicate::abort(){
+void Communicate::cleanupMessage(void*) 
+{ 
+}
+
+void Communicate::abort()
+{
   OOMPI_COMM_WORLD.Abort();
 }
-void Communicate::barrier(){
+
+void Communicate::barrier()
+{
   OOMPI_COMM_WORLD.Barrier();
 }
-void Communicate::abort(const char* msg){ 
+
+void Communicate::abort(const char* msg)
+{ 
   std::cerr << msg << std::endl;
   OOMPI_COMM_WORLD.Abort();
 }
 
-#else
-
-#ifdef HAVE_MPI
-
-//================================================================
-// Implements Communicate with standard MPI library
-//================================================================
-Communicate::~Communicate(){ }
-
-void Communicate::initialize(int argc, char **argv){
-  int flag;
-  MPI_Initialized(&flag);
-  if(!flag) {
-    MPI_Init(&argc, &argv);
-    MPI_Comm_size(MPI_COMM_WORLD,&d_ncontexts);
-    MPI_Comm_rank(MPI_COMM_WORLD,&d_mycontext);
-    CommID = MPI_COMM_WORLD;
+Communicate::intra_comm_type
+Communicate::split(int n) 
+{
+  //this is a workaround due to the OOMPI bug with split
+  if(n>1) {
+    MPI_Comm row;
+    int p=d_mycontext/n;
+    int q=d_mycontext%n;
+    MPI_Comm_split(myCommID,p,q,&row);
+    return OOMPI_Intra_comm(row);
+  } else {
+    return OOMPI_Intra_comm(myCommID);
   }
 }
 
-void Communicate::finalize(){
-  MPI_Finalize();
-}
-void Communicate::abort(){
-  MPI_Abort(MPI_COMM_WORLD,-1);
-}
-void Communicate::abort(const char* msg){ 
-  std::cerr << msg << std::endl;
-  MPI_Abort(MPI_COMM_WORLD,-1);
-}
-
-void Communicate::cleanupMessage(void*) { }
-void Communicate::barrier(){
-  MPI_Barrier(MPI_COMM_WORLD);
-}
-#else //HAVE_MPI
+#else
 
 Communicate::~Communicate(){}
 void Communicate::initialize(int argc, char **argv){ }
@@ -117,8 +119,14 @@ void Communicate::barrier(){
 }
 void Communicate::cleanupMessage(void*) { }
 
-#endif // !HAVE_MPI
+Communicate::mpi_comm_type Communicate::split(int n) {
+  return myCommID;
+}
 
+Communicate::Communicate(const intra_comm_type& c):
+d_mycontext(0), d_ncontexts(1), myCommID(0)
+{
+}
 #endif // !HAVE_OOMPI
 /***************************************************************************
  * $RCSfile$   $Author$

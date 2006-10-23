@@ -25,14 +25,21 @@
 
 #ifdef HAVE_OOMPI
 #include "oompi.h"
+struct CommunicatorTraits {
+  typedef MPI_Comm         mpi_comm_type;
+  typedef MPI_Status       mpi_status_type;
+  typedef MPI_Request      mpi_request_type;
+  typedef OOMPI_Intra_comm intra_comm_type;
+};
 #else
-  #ifdef HAVE_MPI
-  #include <mpi.h>
-  #else
-  typedef int MPI_Status;
-  typedef int MPI_Request;
-  #endif
+struct CommunicatorTraits {
+  typedef int  mpi_comm_type;
+  typedef int  mpi_status_type;
+  typedef int  mpi_request_type;
+  typedef int  intra_comm_type;
+};
 #endif
+
 
 /**@class Communicate
  * @ingroup Message
@@ -42,20 +49,18 @@
  *  is available (mutually exclusive).
  * @todo Possibly, make it a general manager class for mpi+openmp, mpi+mpi
  */
-class Communicate {
-public:
+class Communicate: public CommunicatorTraits {
 
-#ifdef HAVE_MPI
-   typedef MPI_Comm mpi_comm_type;
-#else
-   typedef int mpi_comm_type;
-#endif
+public:
 
   ///constructor
   Communicate();
 
   ///constructor with arguments
   Communicate(int argc, char **argv);
+
+  ///constructor with communicator
+  Communicate(const intra_comm_type& c);
 
   /**destructor
    * Call proper finalization of Communication library
@@ -67,9 +72,13 @@ public:
   void abort();
   void abort(const char* msg);
 
-  ///return the Communicator ID (typically MPI_WORLD_COMM)
-  inline mpi_comm_type getID() const { return CommID;}
+  template<class T> void allreduce(T&);
+  template<class T> void reduce(T* restrict, T* restrict, int n);
+  template<class T> void bcast(T* restrict, int n);
 
+  ///return the Communicator ID (typically MPI_WORLD_COMM)
+  inline mpi_comm_type getMPI() const { return myCommID;}
+  inline intra_comm_type& getComm() { return myComm;}
 
   ///return the rank of this node
   inline int getNodeID() const { return d_mycontext;}
@@ -81,15 +90,17 @@ public:
 
   inline bool master() const { return (d_mycontext == 0);}
 
+  intra_comm_type split(int n);
   void cleanupMessage(void*);
   inline void setNodeID(int i) { d_mycontext = i;}
   inline void setNumNodes(int n) { d_ncontexts = n;}
-  inline void setCommID(mpi_comm_type i) { CommID = i;}
+  inline void setCommID(mpi_comm_type i) { myCommID = i;}
   void barrier();
 
 protected:
 
-  mpi_comm_type CommID; 
+  mpi_comm_type myCommID; 
+  intra_comm_type myComm;
   int d_mycontext; 
   int d_ncontexts;
 
