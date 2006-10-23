@@ -84,6 +84,8 @@ void SimpleFixedNodeBranch::initWalkerController(RealType tau, bool fixW) {
     WalkerController = CreateWalkerController(FixedNumWalkers, SwapMode, Nideal, Nmax, Nmin, WalkerController);
     Nmax=WalkerController->Nmax;
     Nmin=WalkerController->Nmin;
+    //default is the communicator is shared
+    WalkerController->setCommunicator(MyEstimator->getCommunicator());
   }
 
   if(fixW) {
