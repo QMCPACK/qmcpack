@@ -33,7 +33,10 @@
 #include "Utilities/OhmmsInfo.h"
 #include "QMCDrivers/SimpleFixedNodeBranch.h"
 
+class Communicate;
+
 namespace qmcplusplus {
+
 
   /** @defgroup QMCDrivers QMC Driver group
    * QMC drivers that implement QMC algorithms
@@ -91,6 +94,10 @@ namespace qmcplusplus {
      */
     void setStatus(const string& aname, const string& h5name, bool append);
 
+    /** set qmcComm 
+     * @param c Communicate*
+     */
+    void setCommunicator(Communicate* c=0);
     /** add QMCHamiltonian/TrialWaveFunction pair for multiple
      * @param h QMCHamiltonian
      * @param psi TrialWaveFunction
@@ -223,6 +230,9 @@ namespace qmcplusplus {
 
     ///store any parameter that has to be read from a file
     ParameterSet m_param;
+
+    ///communicator
+    Communicate* qmcComm;
 
     ///walker ensemble
     MCWalkerConfiguration& W;

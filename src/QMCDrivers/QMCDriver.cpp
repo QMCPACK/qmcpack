@@ -29,16 +29,16 @@
 namespace qmcplusplus {
 
   QMCDriver::QMCDriver(MCWalkerConfiguration& w, 
-		       TrialWaveFunction& psi, 
-		       QMCHamiltonian& h):
+      TrialWaveFunction& psi, 
+      QMCHamiltonian& h):
     branchEngine(0), ResetRandom(false), AppendRun(false),
-    MyCounter(0), RollBackBlocks(0),
-    Period4CheckPoint(1), Period4WalkerDump(0),
-    CurrentStep(0), nBlocks(100), nSteps(1000), 
-    nAccept(0), nReject(0), nTargetWalkers(0),
-    Tau(0.001), qmcNode(NULL),
-    QMCType("invalid"), h5FileRoot("invalid"),
-    W(w), Psi(psi), H(h), Estimators(0)
+  MyCounter(0), RollBackBlocks(0),
+  Period4CheckPoint(1), Period4WalkerDump(0),
+  CurrentStep(0), nBlocks(100), nSteps(1000), 
+  nAccept(0), nReject(0), nTargetWalkers(0),
+  Tau(0.001), qmcNode(NULL),
+  QMCType("invalid"), h5FileRoot("invalid"),
+  qmcComm(0), W(w), Psi(psi), H(h), Estimators(0)
   { 
     m_param.add(nSteps,"steps","int");
     m_param.add(nBlocks,"blocks","int");
@@ -53,10 +53,22 @@ namespace qmcplusplus {
     H.add2WalkerProperty(W);
   }
 
-  QMCDriver::~QMCDriver() { 
-    
+  void QMCDriver::setCommunicator(Communicate* c) 
+  {
+    if(c)
+    {
+      qmcComm=c;
+    }
+    else
+    {
+      qmcComm=OHMMS::Controller;
+    }
+  }
+
+  QMCDriver::~QMCDriver() 
+  { 
     if(Estimators) {
-      if(Estimators->size()) W.setLocalEnergy(Estimators->average(0));
+      //if(Estimators->size()) W.setLocalEnergy(Estimators->average(0));
       delete Estimators;
     }
   }
@@ -112,13 +124,18 @@ namespace qmcplusplus {
 
     branchEngine->put(qmcNode);
 
-    if(firstTime && h5FileRoot.size() && h5FileRoot != "invalid") {
+    if(firstTime && h5FileRoot.size() && h5FileRoot != "invalid") 
+    {
       app_log() << "  Initializing BranchEngine with " << h5FileRoot << endl;
       branchEngine->read(h5FileRoot);
     }
     
     //create estimator if not allocated
-    if(Estimators == 0) Estimators =new ScalarEstimatorManager(H);
+    if(!Estimators) 
+      Estimators =new ScalarEstimatorManager(H);
+    //set the communicator only once
+    if(!MyCounter) 
+      Estimators->setCommunicator(qmcComm);
 
     //reset the Properties of all the walkers
     int numCopies= (H1.empty())?1:H1.size();
@@ -130,10 +147,11 @@ namespace qmcplusplus {
     branchEngine->setEstimatorManager(Estimators);
 
     //A new run, branchEngine needs to be flushed
-    if(!AppendRun) branchEngine->flush(0);
+    if(!AppendRun) 
+      branchEngine->flush(0);
 
     //set the collection mode
-    Estimators->setPeriod(nSteps);
+    //Estimators->setPeriod(nSteps);
     Estimators->setCollectionMode(branchEngine->SwapMode);
     Estimators->resetReportSettings(RootName, AppendRun);
 
