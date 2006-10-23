@@ -68,7 +68,14 @@ namespace qmcplusplus {
       app_error() << "Disabled DMCEnergyEstimator::accumulate(const Walker_t& awalker, T wgt) " << endl;
     }
 
-    //accumulate: nothing
+    inline void accumulate(ParticleSet& P, MCWalkerConfiguration::Walker_t& awalker) {
+      //Current counter is not correctly implemented. 
+    }
+
+    /** accumulate a Current counter for normalizations. 
+     *
+     * walkerControl accumulate the local energy and other quantities.
+     */
     inline RealType accumulate(WalkerIterator first, WalkerIterator last) { 
       Current++;
       return walkerControl->getValue(WEIGHT_INDEX); 

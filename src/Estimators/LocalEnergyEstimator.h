@@ -94,17 +94,10 @@ namespace qmcplusplus {
           i++,target++,source++) {
         elocal[target] += wgt*ePtr[source];
       }
-      /*
-      T e = awalker.Properties(LOCALENERGY);
-      const T* restrict e_ptr = awalker.getEnergyBase();
-      //energy_sum += wgt*e; energy_sq_sum += wgt*e*e;
-      elocal[ENERGY_INDEX] += wgt*e;
-      elocal[ENERGY_SQ_INDEX] += wgt*e*e;
-      elocal[POTENTIAL_INDEX] += wgt*awalker.Properties(LOCALPOTENTIAL);
-      for(int ii=LE_MAX, i=0; i<SizeOfHamiltonians; ii++,i++) {
-        elocal[ii] += wgt*e_ptr[i]; //wgt*(awalker.E[i]);
-      }
-      */
+    }
+
+    inline void accumulate(ParticleSet& P, MCWalkerConfiguration::Walker_t& awalker) {
+      accumulate(awalker,awalker.Weight);
     }
 
     inline RealType accumulate(WalkerIterator first, WalkerIterator last) {

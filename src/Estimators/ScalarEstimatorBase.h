@@ -58,6 +58,7 @@ namespace qmcplusplus {
     virtual void accumulate(const Walker_t& awalker, RealType wgt) = 0;
 
     virtual RealType accumulate(WalkerIterator first, WalkerIterator last) = 0;
+    virtual void accumulate(ParticleSet& P, MCWalkerConfiguration::Walker_t& awalker)=0;
 
     /** a virtual function to report the scalar estimator
      *@param record 

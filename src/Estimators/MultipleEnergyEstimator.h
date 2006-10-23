@@ -116,6 +116,11 @@ namespace qmcplusplus {
 
     void accumulate(const Walker_t& awalker, RealType wgt);
 
+    /** @warning Incomplete. Only to avoid compiler problems
+     */
+    inline void accumulate(ParticleSet& P, MCWalkerConfiguration::Walker_t& awalker) {
+    }
+
     RealType accumulate(WalkerIterator first, WalkerIterator last) {
       int nw=0;
       while(first != last) {

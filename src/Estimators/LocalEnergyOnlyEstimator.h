@@ -54,6 +54,14 @@ namespace qmcplusplus {
       e2Sum += wgt*e*e;
     }
 
+    inline void accumulate(ParticleSet& P, MCWalkerConfiguration::Walker_t& awalker) 
+    {
+      RealType e(awalker.Properties(LOCALENERGY));
+      RealType wgt(awalker.Weight);
+      eSum += wgt*e;
+      e2Sum += wgt*e*e;
+    }
+
     inline RealType accumulate(WalkerIterator first, WalkerIterator last) {
       //RealType deltaE = Href.getEnsembleAverage();
       int wsum=0;
