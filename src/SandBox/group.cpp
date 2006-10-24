@@ -2,10 +2,10 @@
 #include <string>
 #include <iostream>
 #include <iomanip>
-#include "Utilities/OhmmsInfo.h"
+#include "Configuration.h"
 #include "Utilities/RandomGenerator.h"
-#include "Utilities/Timer.h"
 #include "Message/Communicate.h"
+#include "Message/CommOperators.h"
 #include "Message/CommunicateGroup.h"
 using namespace qmcplusplus;
 
@@ -26,7 +26,10 @@ int main(int argc, char** argv) {
   int ndiv=atoi(argv[1]);
   Communicate newComm(OHMMS::Controller->split(ndiv));
   std::cout << OHMMS::Controller->mycontext() << " Rank = " << newComm.mycontext() << " Size = " << newComm.ncontexts() << " " << sumL << std::endl;
-  MPI_Allreduce(&(sumL), &(sumG), 1, MPI_DOUBLE, MPI_SUM, newComm.getID());
+  sumG=sumL;
+  newComm.allreduce(sumG);
+
+  //MPI_Allreduce(&(sumL), &(sumG), 1, MPI_DOUBLE, MPI_SUM, newComm.getMPI());
 
   //int p=OHMMS::Controller->mycontext()/ndiv;
   //int q=OHMMS::Controller->mycontext()%ndiv;
@@ -56,12 +59,14 @@ int main(int argc, char** argv) {
 
 
   //alternatively, use group
-  CommunicateGroup testGroup(*(OHMMS::Controller),ndiv);
-  sumL=0.0;
-  for(int i=0; i<1000; i++) sumL += Random();
-  std::cout << OHMMS::Controller->mycontext() << " Rank = " << testGroup.mycontext() << " Size = " << testGroup.ncontexts() << " " << sumL << std::endl;
-  MPI_Allreduce(&(sumL), &(sumG), 1, MPI_DOUBLE, MPI_SUM, testGroup.getID());
-  std::cout << OHMMS::Controller->mycontext() << " Local sum = " << sumL << " Global sum " << sumG << std::endl;
+  //CommunicateGroup testGroup(*(OHMMS::Controller),ndiv);
+  //sumL=0.0;
+  //for(int i=0; i<1000; i++) sumL += Random();
+  //std::cout << OHMMS::Controller->mycontext() << " Rank = " << testGroup.mycontext() << " Size = " << testGroup.ncontexts() << " " << sumL << std::endl;
+  //MPI_Allreduce(&(sumL), &(sumG), 1, MPI_DOUBLE, MPI_SUM, testGroup.getID());
+  //std::cout << OHMMS::Controller->mycontext() << " Local sum = " << sumL << " Global sum " << sumG << std::endl;
 
   OHMMS::Controller->finalize();
+
+  return 0;
 }
