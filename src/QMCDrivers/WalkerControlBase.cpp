@@ -25,11 +25,6 @@ namespace qmcplusplus {
     curData.resize(LE_MAX);
   }
 
-  void WalkerControlBase:: setCommunicator(Communicate* c)
-  {
-    //nothing to be done
-  }
-
   void WalkerControlBase::reset() 
   {
     std::fill(accumData.begin(),accumData.end(),0.0);
