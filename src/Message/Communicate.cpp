@@ -87,12 +87,17 @@ void Communicate::abort(const char* msg)
   OOMPI_COMM_WORLD.Abort();
 }
 
+/** split a communicator into ng groups
+ * @param number of groups
+ * @return a communicator
+ */
 Communicate::intra_comm_type
-Communicate::split(int n) 
+Communicate::split(int ng) 
 {
   //this is a workaround due to the OOMPI bug with split
-  if(n>1) {
+  if(ng>1) {
     MPI_Comm row;
+    int n=d_ncontexts/ng;
     int p=d_mycontext/n;
     int q=d_mycontext%n;
     MPI_Comm_split(myCommID,p,q,&row);
