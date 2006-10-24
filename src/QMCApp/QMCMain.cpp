@@ -185,7 +185,12 @@ namespace qmcplusplus {
     xmlNodePtr cur=XmlDocStack.top()->getRoot()->children;
     while(cur != NULL) {
       string cname((const char*)cur->name);
-      if(cname == "particleset") {
+      if(cname == "parallel")
+      {
+        putCommunicator(cur);
+      }
+      else if(cname == "particleset") 
+      {
         ptclPool->put(cur);
       } else if(cname == "wavefunction") {
         psiPool->put(cur);
@@ -264,10 +269,6 @@ namespace qmcplusplus {
     bool append_run = setQMCDriver(myProject.m_series,cur);
 
     if(qmcDriver) {
-
-      //Communicate newComm(OHMMS::Controller->split(2));
-      //qmcDriver->setCommunicator(&newComm);
-      qmcDriver->setCommunicator(OHMMS::Controller);
 
       app_log() << endl;
       myProject.get(app_log());
