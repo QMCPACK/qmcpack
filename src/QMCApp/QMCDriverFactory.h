@@ -19,6 +19,9 @@
 #define QMCPLUSPLUS_QMCDRIVER_FACTORY_H
 #include "OhmmsData/OhmmsElementBase.h"
 #include <bitset>
+
+class Communicate;
+
 namespace qmcplusplus {
 
   //forward declaration
@@ -57,6 +60,8 @@ namespace qmcplusplus {
     ///name of the current QMCriver
     std::string curMethod;
 
+    ///communicator
+    Communicate* qmcComm;
     /** current MCWalkerConfiguration
      */
     MCWalkerConfiguration *qmcSystem;
@@ -81,14 +86,17 @@ namespace qmcplusplus {
     QMCDriverFactory();
 
     /** set the active qmcDriver */
-    bool setQMCDriver(int curSeries, xmlNodePtr cur);
+    void putCommunicator(xmlNodePtr cur);
 
-    /** virtual destructor **/
-    virtual ~QMCDriverFactory();
+    /** set the active qmcDriver */
+    bool setQMCDriver(int curSeries, xmlNodePtr cur);
 
     /** create a new QMCDriver 
      */
     void createQMCDriver(xmlNodePtr cur);
+
+    /** virtual destructor **/
+    virtual ~QMCDriverFactory();
   };
 }
 #endif
