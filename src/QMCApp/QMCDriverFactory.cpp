@@ -42,10 +42,12 @@
 #include <queue>
 using namespace std;
 #include "OhmmsData/AttributeSet.h"
+#include "OhmmsData/ParameterSet.h"
 
 namespace qmcplusplus {
 
-  QMCDriverFactory::QMCDriverFactory(): qmcSystem(0), qmcDriver(0) {
+  QMCDriverFactory::QMCDriverFactory(): qmcComm(0), qmcSystem(0), qmcDriver(0) 
+  {
     //create ParticleSetPool
     ptclPool = new ParticleSetPool;
 
@@ -59,14 +61,34 @@ namespace qmcplusplus {
     hamPool->setWaveFunctionPool(psiPool);
   }
 
-  QMCDriverFactory::~QMCDriverFactory(){
+  QMCDriverFactory::~QMCDriverFactory()
+  {
     delete hamPool;
     delete psiPool;
     delete ptclPool;
+
+    if(qmcComm)
+      delete qmcComm;
   }
 
-  bool
-  QMCDriverFactory::setQMCDriver(int curSeries, xmlNodePtr cur) {
+  void QMCDriverFactory::putCommunicator(xmlNodePtr cur)
+  {
+    //this should be done only once
+    if(qmcComm) return;
+    ParameterSet params;
+    int nparts=1;
+    params.add(nparts,"groups","int");
+    params.add(nparts,"twistAngles","int");
+    params.put(cur);
+    if(nparts>1) 
+    {
+      app_log() << "  Communiator groups = " << nparts << endl;
+      qmcComm = new Communicate(OHMMS::Controller->split(nparts));
+    }
+  }
+
+  bool QMCDriverFactory::setQMCDriver(int curSeries, xmlNodePtr cur) 
+  {
 
     string curName((const char*)cur->name);
     string update_mode("walker");
@@ -152,16 +174,23 @@ namespace qmcplusplus {
       }
     }
 
-    if(curSeries == 0) append_run = false;
+    if(curSeries == 0) 
+      append_run = false;
 
-    //carryon
-    if(qmcDriver) return append_run;
+    //carryon with the existing qmcDriver
+    if(qmcDriver) 
+      return append_run;
 
-    //need to create one
+    //need to create a qmcDriver
     curRunType = newRunType;
     curQmcMode = newQmcMode;
     curQmcModeBits = WhatToDo;
     createQMCDriver(cur);
+
+    if(qmcComm)
+      qmcDriver->setCommunicator(qmcComm);
+    else
+      qmcDriver->setCommunicator(OHMMS::Controller);
 
     //branchEngine has to be transferred to a new QMCDriver
     if(branchEngine) qmcDriver->setBranchEngine(branchEngine);
