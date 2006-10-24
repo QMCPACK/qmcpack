@@ -25,10 +25,9 @@ using namespace qmcplusplus;
  *
  * set SwapMode
  */
-WalkerControlMPI::WalkerControlMPI(Communicate* c) {
+WalkerControlMPI::WalkerControlMPI(Communicate* c): myComm(0) {
   SwapMode=1;
   setCommunicator(c);
-
   NumSwaps=0;
   Cur_min=0;
   Cur_max=0; 
@@ -41,7 +40,6 @@ WalkerControlMPI::WalkerControlMPI(Communicate* c) {
 
 void WalkerControlMPI::setCommunicator(Communicate* c)
 {
-
   if(c) 
     myComm=c;
   else
@@ -49,6 +47,7 @@ void WalkerControlMPI::setCommunicator(Communicate* c)
 
   NumContexts=myComm->ncontexts();
   MyContext=myComm->mycontext();
+
   NumPerNode.resize(NumContexts);
   OffSet.resize(NumContexts+1);
   FairOffSet.resize(NumContexts+1);
@@ -176,9 +175,6 @@ void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W) {
       newW.push_back(awalker);
     }
   }
-
-  //done by now
-  OHMMS::Controller->barrier();
 
   if(nsend) {
     nsend=NumPerNode[MyContext]-nsend;

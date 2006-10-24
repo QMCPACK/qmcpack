@@ -34,7 +34,9 @@ namespace qmcplusplus {
    * internal values and return wc itself.
    */
   WalkerControlBase* CreateWalkerController(bool reconfig, 
-      int& swapmode, int nideal, int nmax, int nmin, WalkerControlBase* wc);
+      int& swapmode, int nideal, int nmax, int nmin, 
+      WalkerControlBase* wc,
+      Communicate* comm);
 }
 #endif
 /***************************************************************************

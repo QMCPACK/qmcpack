@@ -26,9 +26,10 @@ namespace qmcplusplus {
 #if defined(HAVE_MPI)
   WalkerControlBase* CreateWalkerController(
       bool reconfig, int& swapmode, int nideal,
-      int nmax, int nmin, WalkerControlBase* wc) {
+      int nmax, int nmin, WalkerControlBase* wc,
+      Communicate* comm) {
 
-      int ncontexts = OHMMS::Controller->ncontexts();
+      int ncontexts = comm->ncontexts();
 
       //overwrite the SwapMode for a single-node run
       if(ncontexts == 1) {swapmode=0;}
@@ -58,10 +59,10 @@ namespace qmcplusplus {
         if(swapmode) {
           if(reconfig)  {
             app_log() << "  Using WalkerReconfigurationMPI for population control." << endl;
-            wc = new WalkerReconfigurationMPI;
+            wc = new WalkerReconfigurationMPI(comm);
           } else {
             app_log() << "  Using WalkerControlMPI for dynamic population control." << endl;
-            wc = new WalkerControlMPI;
+            wc = new WalkerControlMPI(comm);
           }
         } else {
           if(reconfig)  {
@@ -81,7 +82,8 @@ namespace qmcplusplus {
 #else
   WalkerControlBase* CreateWalkerController(
       bool reconfig, int& swapmode, int nideal,
-      int nmax, int nmin, WalkerControlBase* wc) {
+      int nmax, int nmin, WalkerControlBase* wc,
+      Communicate* comm) {
     //reset to 0 so that never ask the same question
     swapmode = 0;
     //if(nmax<0) nmax=2*nideal;
