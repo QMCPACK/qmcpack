@@ -134,7 +134,7 @@ void Communicate::cleanupMessage(void*)
 { 
 }
 
-Communicate::Communicate(const Communicate& comm, int nparts)
+Communicate::Communicate(const Communicate& comm, int nparts):
 myMPI(0), d_mycontext(0), d_ncontexts(1), d_groupid(0)
 {
 }
