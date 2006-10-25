@@ -113,7 +113,7 @@ inline void
 Communicate::allreduce(int& g) 
 {
   int gt = g;
-  MPI_Allreduce(&(gt), &(g), 1, MPI_INT, MPI_SUM, myCommID);
+  MPI_Allreduce(&(gt), &(g), 1, MPI_INT, MPI_SUM, myMPI);
 }
 
 template<>
@@ -121,7 +121,7 @@ inline void
 Communicate::allreduce(double& g) 
 {
   double gt = g;
-  MPI_Allreduce(&(gt), &(g), 1, MPI_DOUBLE, MPI_SUM, myCommID);
+  MPI_Allreduce(&(gt), &(g), 1, MPI_DOUBLE, MPI_SUM, myMPI);
 }
 
 template<>
@@ -129,7 +129,7 @@ inline void
 Communicate::allreduce(APPNAMESPACE::TinyVector<double,OHMMS_DIM>& g) 
 {
   APPNAMESPACE::TinyVector<double,OHMMS_DIM> gt(g);
-  MPI_Allreduce(g.begin(), gt.begin(), OHMMS_DIM, MPI_DOUBLE, MPI_SUM, myCommID);
+  MPI_Allreduce(g.begin(), gt.begin(), OHMMS_DIM, MPI_DOUBLE, MPI_SUM, myMPI);
   g = gt;
 }
 
@@ -138,7 +138,7 @@ inline void
 Communicate::allreduce(APPNAMESPACE::TinyVector<int,OHMMS_DIM>& g) 
 {
   APPNAMESPACE::TinyVector<int,OHMMS_DIM> gt(g);
-  MPI_Allreduce(g.begin(), gt.begin(), OHMMS_DIM, MPI_INT, MPI_SUM, myCommID);
+  MPI_Allreduce(g.begin(), gt.begin(), OHMMS_DIM, MPI_INT, MPI_SUM, myMPI);
   g = gt;
 }
 
@@ -147,7 +147,7 @@ inline void
 Communicate::allreduce(std::vector<int>& g) 
 {
   std::vector<int> gt(g.size(), 0);
-  MPI_Allreduce(&(g[0]),&(gt[0]),g.size(),MPI_INT,MPI_SUM,myCommID);
+  MPI_Allreduce(&(g[0]),&(gt[0]),g.size(),MPI_INT,MPI_SUM,myMPI);
   g = gt;
 }
 
@@ -157,7 +157,7 @@ Communicate::allreduce(std::vector<double>& g)
 {
   std::vector<double> gt(g.size(), 0.0);
   MPI_Allreduce(&(g[0]),&(gt[0]),g.size(),MPI_DOUBLE,MPI_SUM,
-      myCommID);
+      myMPI);
   g = gt;
 }
 
@@ -168,7 +168,7 @@ Communicate::allreduce(APPNAMESPACE::Matrix<double>& g)
   vector<double> gt(g.size());
   std::copy(g.begin(),g.end(),gt.begin());
   MPI_Allreduce(g.data(), &gt[0], g.size(), MPI_DOUBLE, MPI_SUM, 
-      myCommID);
+      myMPI);
   std::copy(gt.begin(),gt.end(),g.data());
 }
 
@@ -176,28 +176,28 @@ template<>
 inline void 
 Communicate::reduce(int* restrict g, int* restrict res, int n) 
 {
-  MPI_Reduce(g, res, n, MPI_INT, MPI_SUM, 0, myCommID);
+  MPI_Reduce(g, res, n, MPI_INT, MPI_SUM, 0, myMPI);
 }
 
 template<>
 inline void 
 Communicate::reduce(double* restrict g, double* restrict res, int n) 
 {
-  MPI_Reduce(g, res, n, MPI_DOUBLE, MPI_SUM, 0, myCommID);
+  MPI_Reduce(g, res, n, MPI_DOUBLE, MPI_SUM, 0, myMPI);
 }
 
 template<>
 inline void
 Communicate::bcast(double* restrict x, int n) 
 {
-  MPI_Bcast(x,n,MPI_DOUBLE,0,myCommID);
+  MPI_Bcast(x,n,MPI_DOUBLE,0,myMPI);
 }
 
 template<>
 inline void
 Communicate::bcast(int* restrict x, int n) 
 {
-  MPI_Bcast(x,n,MPI_INT,0,myCommID);
+  MPI_Bcast(x,n,MPI_INT,0,myMPI);
 }
 
 #endif

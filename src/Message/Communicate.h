@@ -60,7 +60,8 @@ public:
   Communicate(int argc, char **argv);
 
   ///constructor with communicator
-  Communicate(const intra_comm_type& c);
+  //Communicate(const intra_comm_type& c);
+  Communicate(const Communicate& comm, int nparts);
 
   /**destructor
    * Call proper finalization of Communication library
@@ -77,8 +78,10 @@ public:
   template<class T> void bcast(T* restrict, int n);
 
   ///return the Communicator ID (typically MPI_WORLD_COMM)
-  inline mpi_comm_type getMPI() const { return myCommID;}
+  inline mpi_comm_type getMPI() const { return myMPI;}
+
   inline intra_comm_type& getComm() { return myComm;}
+  inline const intra_comm_type& getComm() const { return myComm;}
 
   ///return the rank of this node
   inline int getNodeID() const { return d_mycontext;}
@@ -88,21 +91,24 @@ public:
   inline int getNumNodes() const { return d_ncontexts;}
   inline int ncontexts() const { return d_ncontexts;}
 
+  ///return the group id
+  inline int getGroupID() const {return d_groupid;}
+
   inline bool master() const { return (d_mycontext == 0);}
 
-  intra_comm_type split(int n);
+  //intra_comm_type split(int n);
   void cleanupMessage(void*);
   inline void setNodeID(int i) { d_mycontext = i;}
   inline void setNumNodes(int n) { d_ncontexts = n;}
-  inline void setCommID(mpi_comm_type i) { myCommID = i;}
   void barrier();
 
 protected:
 
-  mpi_comm_type myCommID; 
+  mpi_comm_type myMPI;
   intra_comm_type myComm;
   int d_mycontext; 
   int d_ncontexts;
+  int d_groupid;
 
 };
 

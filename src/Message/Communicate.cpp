@@ -1,4 +1,4 @@
-//////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
 // (c) Copyright 1998-2002, 2003- by Jeongnim Kim
 //////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////
@@ -29,22 +29,39 @@ Communicate* OHMMS::Controller = new Communicate;
 
 //default constructor: ready for a serial execution
 Communicate::Communicate():
-d_mycontext(0), d_ncontexts(1), myCommID(0)
+myMPI(0), d_mycontext(0), d_ncontexts(1), d_groupid(0)
 {
 }
 
-Communicate::Communicate(int argc, char **argv){
+Communicate::Communicate(int argc, char **argv)
+{
   initialize(argc,argv);
 }
 
 //exclusive:  OOMPI, MPI or Serial
 #ifdef HAVE_OOMPI
 
-Communicate::Communicate(const intra_comm_type& c):myComm(c) {
-  myCommID = myComm.Get_mpi();
+Communicate::Communicate(const Communicate& comm, int nparts)
+{
+  //this is a workaround due to the OOMPI bug with split
+  if(nparts>1) {
+    MPI_Comm row;
+    int n=comm.ncontexts()/nparts;
+    int p=comm.mycontext()/n;
+    int q=comm.mycontext()%n;
+    MPI_Comm_split(comm.getMPI(),p,q,&row);
+    myComm=OOMPI_Intra_comm(row);
+    d_groupid=p;
+  } else {
+    myComm=OOMPI_Intra_comm(comm.getComm());
+    d_groupid=0;
+  }
+
+  myMPI = myComm.Get_mpi();
   d_mycontext=myComm.Rank();
   d_ncontexts=myComm.Size();
 }
+
 //================================================================
 // Implements Communicate with OOMPI library
 //================================================================
@@ -56,10 +73,10 @@ Communicate::~Communicate()
 void Communicate::initialize(int argc, char **argv)
 {
   OOMPI_COMM_WORLD.Init(argc, argv);
+  myComm = OOMPI_COMM_WORLD;
+  myMPI = myComm.Get_mpi();
   d_mycontext = OOMPI_COMM_WORLD.Rank();
   d_ncontexts = OOMPI_COMM_WORLD.Size();
-  myComm = OOMPI_COMM_WORLD;
-  myCommID = OOMPI_COMM_WORLD.Get_mpi();
 }
 
 void Communicate::finalize() 
@@ -87,32 +104,20 @@ void Communicate::abort(const char* msg)
   OOMPI_COMM_WORLD.Abort();
 }
 
-/** split a communicator into ng groups
- * @param number of groups
- * @return a communicator
- */
-Communicate::intra_comm_type
-Communicate::split(int ng) 
-{
-  //this is a workaround due to the OOMPI bug with split
-  if(ng>1) {
-    MPI_Comm row;
-    int n=d_ncontexts/ng;
-    int p=d_mycontext/n;
-    int q=d_mycontext%n;
-    MPI_Comm_split(myCommID,p,q,&row);
-    return OOMPI_Intra_comm(row);
-  } else {
-    return OOMPI_Intra_comm(myCommID);
-  }
-}
 
 #else
 
 Communicate::~Communicate(){}
-void Communicate::initialize(int argc, char **argv){ }
-void Communicate::finalize(){ }
-void Communicate::abort(){ 
+void Communicate::initialize(int argc, char **argv)
+{ 
+}
+
+void Communicate::finalize()
+{ 
+}
+
+void Communicate::abort()
+{ 
   abort();
 }
 
@@ -120,18 +125,20 @@ void Communicate::abort(const char* msg){
   std::cerr << msg << std::endl;
   abort();
 }
-void Communicate::barrier(){
-}
-void Communicate::cleanupMessage(void*) { }
 
-Communicate::mpi_comm_type Communicate::split(int n) {
-  return myCommID;
-}
-
-Communicate::Communicate(const intra_comm_type& c):
-d_mycontext(0), d_ncontexts(1), myCommID(0)
+void Communicate::barrier()
 {
 }
+
+void Communicate::cleanupMessage(void*) 
+{ 
+}
+
+Communicate::Communicate(const Communicate& comm, int nparts)
+myMPI(0), d_mycontext(0), d_ncontexts(1), d_groupid(0)
+{
+}
+
 #endif // !HAVE_OOMPI
 /***************************************************************************
  * $RCSfile$   $Author$
