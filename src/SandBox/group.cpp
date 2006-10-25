@@ -24,8 +24,10 @@ int main(int argc, char** argv) {
   for(int i=0; i<1000; i++) sumL += Random();
 
   int ndiv=atoi(argv[1]);
-  Communicate newComm(OHMMS::Controller->split(ndiv));
-  std::cout << OHMMS::Controller->mycontext() << " Rank = " << newComm.mycontext() << " Size = " << newComm.ncontexts() << " " << sumL << std::endl;
+  cout << "Group = " << ndiv << endl;
+  Communicate newComm(*OHMMS::Controller,ndiv);
+  std::cout << OHMMS::Controller->mycontext() << " Rank = " 
+    << newComm.mycontext() << " Size = " << newComm.ncontexts() << " " << sumL << std::endl;
   sumG=sumL;
   newComm.allreduce(sumG);
 
