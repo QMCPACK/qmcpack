@@ -83,7 +83,7 @@ namespace qmcplusplus {
     if(nparts>1) 
     {
       app_log() << "  Communiator groups = " << nparts << endl;
-      qmcComm = new Communicate(OHMMS::Controller->split(nparts));
+      qmcComm = new Communicate(*OHMMS::Controller,nparts);
     }
   }
 
