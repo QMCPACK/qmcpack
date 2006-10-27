@@ -31,7 +31,7 @@ namespace qmcplusplus {
     typedef LocalECPotential::RadialPotentialType RadialPotentialType;
 
     int NumNonLocal;
-    int Lmax;
+    int Lmax, Llocal, Nrule;
     RealType Zeff;
     string Species;
     RadialPotentialType* pp_loc;
@@ -45,6 +45,19 @@ namespace qmcplusplus {
     void addSemiLocal(xmlNodePtr cur);
     void buildLocal(xmlNodePtr cur);
     void buildSemiLocalAndLocal(vector<xmlNodePtr>& semiPtr);
+    // This sets the spherical quadrature rule used to apply the
+    // projection operators.  rule can be 1 to 7.  See
+    // J. Chem. Phys. 95 (3467) (1991)
+    // Rule     # points     lexact
+    //  1           1          0
+    //  2           4          2
+    //  3           6          3
+    //  4          12          5
+    //  5          18          5
+    //  6          26          7
+    //  7          50         11
+    void SetQuadratureRule(int rule);
+    void CheckQuadratureRule(int lexact);
     RadialPotentialType* createVr(xmlNodePtr cur, GridType* agrid);
   };
 

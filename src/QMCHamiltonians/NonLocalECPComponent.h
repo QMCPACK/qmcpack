@@ -57,9 +57,10 @@ namespace qmcplusplus {
     ///randomized spherical grid
     SpherGridType rrotsgrid_m;
     ///weight of the spherical grid
-    vector<ValueType> sgridweight_m;
+    vector<RealType> sgridweight_m;
     ///Working arrays
-    vector<ValueType> psiratio,vrad,wvec,Amat,lpol;
+    vector<ValueType> psiratio,vrad,wvec,Amat;
+    vector<RealType> lpol;
 
     DistanceTableData* myTable;
 
@@ -72,7 +73,7 @@ namespace qmcplusplus {
     void add(int l, RadialPotentialType* pp); 
 
     ///add knots to the spherical grid
-    void addknot(PosType xyz, ValueType weight){
+    void addknot(PosType xyz, RealType weight){
       sgridxyz_m.push_back(xyz);
       sgridweight_m.push_back(weight);
     }

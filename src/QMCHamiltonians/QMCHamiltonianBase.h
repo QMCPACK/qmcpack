@@ -34,10 +34,10 @@ namespace qmcplusplus {
 
   struct NonLocalData: public QMCTraits {
     IndexType PID;
-    RealType Weight;
+    ValueType Weight;
     PosType Delta;
     inline NonLocalData():PID(-1),Weight(1.0){}
-    inline NonLocalData(IndexType id, RealType w, const PosType& d):PID(id),Weight(w),Delta(d) {}
+    inline NonLocalData(IndexType id, ValueType w, const PosType& d):PID(id),Weight(w),Delta(d) {}
   };
 
   /** @ingroup hamiltonian

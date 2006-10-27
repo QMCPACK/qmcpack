@@ -64,7 +64,7 @@ namespace qmcplusplus {
    */
   NonLocalECPComponent::ValueType 
   NonLocalECPComponent::evaluate(ParticleSet& W, int iat, TrialWaveFunction& psi) {
-    RealType esum=0.0;
+    ValueType esum=0.0;
     for(int nn=myTable->M[iat],iel=0; nn<myTable->M[iat+1]; nn++,iel++){
 
       register RealType r(myTable->r(nn));
@@ -125,7 +125,7 @@ namespace qmcplusplus {
 
   NonLocalECPComponent::ValueType 
   NonLocalECPComponent::evaluate(ParticleSet& W, TrialWaveFunction& psi,int iat, vector<NonLocalData>& Txy) {
-    RealType esum=0.0;
+    ValueType esum=0.0;
 
     //int iel=0;
     for(int nn=myTable->M[iat],iel=0; nn<myTable->M[iat+1]; nn++,iel++){
@@ -168,7 +168,7 @@ namespace qmcplusplus {
         }
 
         //for(int l=0; l <nchannel; l++,jl++) Amat[jl]=lpol[ angpp_m[l] ]; 
-        RealType lsum=0;
+        ValueType lsum=0;
         for(int l=0; l <nchannel; l++) lsum += vrad[l]*lpol[ angpp_m[l] ]; 
         esum += Txy[txyCounter++].Weight *= lsum;
       } 
