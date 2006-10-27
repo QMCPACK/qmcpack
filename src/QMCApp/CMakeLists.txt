@@ -32,6 +32,7 @@ SET(WFSRCS
   ../QMCHamiltonians/CoulombPBCABTemp.cpp
   ../QMCHamiltonians/LocalCorePolPotential.cpp
   ../QMCHamiltonians/HamiltonianFactory.cpp
+  ../QMCHamiltonians/Ylm.cpp
   ../Estimators/LocalEnergyEstimator.cpp
   ../Estimators/ScalarEstimatorManager.cpp
 )
@@ -42,6 +43,11 @@ IF(QMC_COMPLEX)
     ../QMCWaveFunctions/PlaneWaveOrbitalBuilder.cpp
     ../QMCWaveFunctions/PlaneWave/PWOrbitalBuilder.cpp
     ../QMCWaveFunctions/PlaneWave/PWOrbitalSet.cpp
+    ../QMCHamiltonians/LocalECPotential.cpp
+    ../QMCHamiltonians/NonLocalECPComponent.cpp
+    ../QMCHamiltonians/NonLocalECPotential.cpp
+    ../QMCHamiltonians/ECPotentialBuilder.cpp
+    ../QMCHamiltonians/ECPComponentBuilder.cpp
   )
 ELSE(QMC_COMPLEX)
   SET(WFSRCS ${WFSRCS}
