@@ -37,6 +37,7 @@ namespace qmcplusplus {
     radAttrib.add(npts,"npts"); 
     radAttrib.add(ri,"ri"); radAttrib.add(rf,"rf");
     radAttrib.add(ascale,"ascale"); radAttrib.add(astep,"astep");
+    radAttrib.add(ascale,"scale"); radAttrib.add(astep,"step");
     radAttrib.add(gridID,"id"); 
     radAttrib.add(gridID,"name");
     radAttrib.add(gridID,"ref"); 
