@@ -81,6 +81,19 @@ struct OTDot< Tensor<T1,3> , TinyVector<T2,3> >
   }
 };
 
+template<class T1, class T2>
+struct OTDot< Tensor<T1,4> , TinyVector<T2,4> >
+{
+  typedef typename BinaryReturn<T1,T2,OpMultiply>::Type_t Type_t;
+  inline static TinyVector<Type_t,4>
+  apply(const Tensor<T1,4>& lhs, const TinyVector<T2,4>& rhs) {
+    return TinyVector<Type_t,3>( lhs(0,0)*rhs[0] + lhs(0,1)*rhs[1] + lhs(0,2)*rhs[2] + lhs(0,3)*rhs[3],
+				 lhs(1,0)*rhs[0] + lhs(1,1)*rhs[1] + lhs(1,2)*rhs[2] + lhs(1,3)*rhs[3],
+				 lhs(2,0)*rhs[0] + lhs(2,1)*rhs[1] + lhs(2,2)*rhs[2] + lhs(2,3)*rhs[3],
+                                 lhs(3,0)*rhs[0] + lhs(3,1)*rhs[1] + lhs(3,2)*rhs[2] + lhs(3,3)*rhs[3]);
+  }
+};
+
 //////////////////////////////////////////////////////////////////////
 //
 // Specializations for TinyVector dot Tensor
@@ -133,8 +146,21 @@ struct OTDot< TinyVector<T1,3> , Tensor<T2,3> >
   inline static TinyVector<Type_t,3>
   apply(const TinyVector<T1,3>& lhs, const Tensor<T2,3>& rhs) {
     return TinyVector<Type_t,3>( lhs[0]*rhs(0,0) + lhs[1]*rhs(1,0) + lhs[2]*rhs(2,0),
-			 lhs[0]*rhs(0,1) + lhs[1]*rhs(1,1) + lhs[2]*rhs(2,1),
-			 lhs[0]*rhs(0,2) + lhs[1]*rhs(1,2) + lhs[2]*rhs(2,2) );
+			         lhs[0]*rhs(0,1) + lhs[1]*rhs(1,1) + lhs[2]*rhs(2,1),
+			         lhs[0]*rhs(0,2) + lhs[1]*rhs(1,2) + lhs[2]*rhs(2,2) );
+  }
+};
+
+template<class T1, class T2>
+struct OTDot< TinyVector<T1,4> , Tensor<T2,4> >
+{
+  typedef typename BinaryReturn<T1,T2,OpMultiply>::Type_t Type_t;
+  inline static TinyVector<Type_t,4>
+  apply(const TinyVector<T1,4>& lhs, const Tensor<T2,4>& rhs) {
+    return TinyVector<Type_t,4>( lhs[0]*rhs(0,0) + lhs[1]*rhs(1,0) + lhs[2]*rhs(2,0) + lhs[3]*rhs(3,0),
+			         lhs[0]*rhs(0,1) + lhs[1]*rhs(1,1) + lhs[2]*rhs(2,1) + lhs[3]*rhs(3,1),
+			         lhs[0]*rhs(0,2) + lhs[1]*rhs(1,2) + lhs[2]*rhs(2,2) + lhs[3]*rhs(3,2),
+			         lhs[0]*rhs(0,3) + lhs[1]*rhs(1,3) + lhs[2]*rhs(2,3) + lhs[3]*rhs(3,3));
   }
 };
 

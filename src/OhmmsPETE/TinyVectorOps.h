@@ -336,6 +336,16 @@ struct OTDot< TinyVector<T1,3> , TinyVector<T2,3> >
   }
 };
 
+template<class T1, class T2>
+struct OTDot< TinyVector<T1,4> , TinyVector<T2,4> >
+{
+  typedef typename BinaryReturn<T1,T2,OpMultiply>::Type_t Type_t;
+  inline static Type_t
+  apply(const TinyVector<T1,4>& lhs, const TinyVector<T2,4>& rhs) {
+    return lhs[0]*rhs[0] + lhs[1]*rhs[1] + lhs[2]*rhs[2] + lhs[3]*rhs[3];
+  }
+};
+
 /** specialization for real-complex TinyVector */
 template<class T1>
 struct OTDot< TinyVector<T1,3> , TinyVector<std::complex<T1>,3> >
