@@ -126,7 +126,7 @@ namespace qmcplusplus {
       if(pit != ptclPool.end()) {
         detbuilder = new AGPDeterminantBuilder(*targetPtcl,*targetPsi,*((*pit).second));
       }
-    } else if(orbtype=="MO" || orbtype == "spline") {
+    } else {
       app_log() << "  Creating concrete SlaterDeterminant class with SlaterDetBuilder." << endl;
       detbuilder = new SlaterDetBuilder(*targetPtcl,*targetPsi,ptclPool);
     }

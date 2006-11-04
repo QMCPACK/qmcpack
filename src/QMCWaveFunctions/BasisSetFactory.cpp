@@ -22,6 +22,7 @@
 #include "QMCWaveFunctions/MolecularOrbitals/MolecularBasisBuilder.h"
 #if! defined(QMC_COMPLEX)
 #include "QMCWaveFunctions/SplineSetBuilder.h"
+#include "QMCWaveFunctions/TricubicBsplineSetBuilder.h"
 #endif
 #include "Message/Communicate.h"
 #include "OhmmsData/AttributeSet.h"
@@ -65,7 +66,14 @@ namespace qmcplusplus {
       app_log() << "  SplineSetBuilder: spline on 3D TriCubicGrid " << endl;
       bb = new SplineSetBuilder(targetPtcl,ptclPool);
 #endif
-    } else { 
+    } 
+    else if(typeOpt == "bspline")
+    {
+      app_log() << "  TricubicBsplineSetBuilder: b-spline on 3D TriCubicGrid " << endl;
+      bb = new TricubicBsplineSetBuilder(targetPtcl,ptclPool);
+    }
+    else 
+    { 
     //if(typeOpt == "MolecularOrbital") {
       ParticleSet* ions=0;
 
