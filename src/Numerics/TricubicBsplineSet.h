@@ -18,6 +18,7 @@
 #ifndef TRICUBIC_B_SPLINE_SET_H
 #define TRICUBIC_B_SPLINE_SET_H
 
+#include "QMCWaveFunctions/OrbitalTraits.h"
 #include "Numerics/TricubicBsplineGrid.h"
 
 namespace qmcplusplus {
@@ -59,7 +60,7 @@ namespace qmcplusplus {
           evaluate(const TinyVector<real_type,3>& r, TinyVector<T,3>& gradf, T& lapf)
           {
             bKnots.FindAll(r[0],r[1],r[2]);
-            return bKnots.evaluate(P,grad,lapf);
+            return bKnots.evaluate(P,gradf,lapf);
           }
 
       private:

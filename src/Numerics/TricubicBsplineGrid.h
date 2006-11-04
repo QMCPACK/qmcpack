@@ -70,18 +70,16 @@ namespace qmcplusplus {
     T evaluate(const Array<T,3>& P, TinyVector<T,3>& grad, Tensor<T,3>& secDerivs) const;
 
     void Init(const Array<T,3>& data, Array<T,3>& P);
-    void SolvePeriodicInterp (Array<T,3> &data, Array<T,3>& P);
+    void SolvePeriodicInterp (const Array<T,3> &data, Array<T,3>& P);
     void MakePeriodic(Array<T,3>& P);
   };
 
 #include "Numerics/TricubicBsplineGrid.cpp"
 
 }
-
+#endif
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$
  * $Id$
  ***************************************************************************/
-#endif
-

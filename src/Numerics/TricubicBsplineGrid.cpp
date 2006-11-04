@@ -15,6 +15,7 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
+
 template<typename T>
 inline TricubicBsplineGrid<T>::TricubicBsplineGrid()
 {
@@ -86,9 +87,9 @@ inline void TricubicBsplineGrid<T>::Find(real_type x, real_type y, real_type z)
     //     xDelta -= nearbyint(xDelta*LxInv)*Lx;
     //     yDelta -= nearbyint(yDelta*LyInv)*Ly;
     //     zDelta -= nearbyint(zDelta*LzInv)*Lz;
-    xDelta -= floor(xDelta*LxInv)*Lx;
-    yDelta -= floor(yDelta*LyInv)*Ly;
-    zDelta -= floor(zDelta*LzInv)*Lz;
+    xDelta -= std::floor(xDelta*LxInv)*Lx;
+    yDelta -= std::floor(yDelta*LyInv)*Ly;
+    zDelta -= std::floor(zDelta*LzInv)*Lz;
   }
 
   real_type xInt, yInt, zInt;
@@ -146,7 +147,7 @@ inline void TricubicBsplineGrid<T>::FindAll(real_type x, real_type y, real_type 
 }
 
 template<typename T>
-inline T TricubicBsplineGrid<T>::evalaute(const Array<T,3>& P) const
+inline T TricubicBsplineGrid<T>::evaluate(const Array<T,3>& P) const
 {
   return 
     (a[0]*(b[0]*(c[0]*P(ix0,iy0,iz0)+c[1]*P(ix0,iy0,iz1)+c[2]*P(ix0,iy0,iz2)+c[3]*P(ix0,iy0,iz3))+
@@ -168,7 +169,7 @@ inline T TricubicBsplineGrid<T>::evalaute(const Array<T,3>& P) const
 }
 
 template<typename T>
-inline T TricubicBsplineGrid<T>::evalaute(const Array<T,3>& P,
+inline T TricubicBsplineGrid<T>::evaluate(const Array<T,3>& P,
      TinyVector<T,3>& grad, T& laplacian) const 
 { 
   //put the blocks in cache
@@ -247,7 +248,7 @@ inline T TricubicBsplineGrid<T>::evalaute(const Array<T,3>& P,
 }
 
 template<typename T> 
-inline T TricubicBsplineGrid<T>::evalaute(const Array<T,3>& P,
+inline T TricubicBsplineGrid<T>::evaluate(const Array<T,3>& P,
      TinyVector<T,3>& grad, Tensor<T,3>& secDerivs) const 
 {
   //put the blocks in cache
@@ -353,42 +354,10 @@ inline T TricubicBsplineGrid<T>::evalaute(const Array<T,3>& P,
   return dot(a,bcP);
 }
 
-template<typename T> inline void
-SolvePeriodicInterp1D (const std::vector<T>& data, std::vector<T>& p)
-{
-  const double ratio = 0.25;
-  int N = data.size();
-  std::vector<double> d(N), gamma(N), mu(N);
-  d = 1.5*data;
-  // First, eliminate leading coefficients
-  gamma [0] = ratio;
-  mu[0] = ratio;
-  mu[N-1] = ratio;
-  gamma[N-1] = 1.0;
-  for (int row=1; row <(N-1); row++) {
-    double diag = 1.0- mu[row-1]*ratio;
-    double diagInv = 1.0/diag;
-    gamma[row] = -ratio*gamma[row-1]*diagInv;
-    mu[row] = diagInv*ratio;
-    d[row]  = diagInv*(d[row]-ratio*d[row-1]);
-    // Last row
-    d[N-1] -= mu[N-1] * d[row-1];
-    gamma[N-1] -= mu[N-1]*gamma[row-1];
-    mu[N-1] = -mu[N-1]*mu[row-1];
-  }
-  // Last row:  gamma(N-1) hold diagonal element
-  mu[N-1] += ratio;
-  gamma[N-1] -= mu[N-1]*(mu[N-2]+gamma[N-2]);
-  d[N-1] -= mu[N-1] * d[N-2];
-  p[N-1] = d[N-1]/gamma[N-1];
- 
-  // Now go back upward, back substituting
-  for (int row=N-2; row>=0; row--) 
-    p[row] = d[row] - mu[row]*p[row+1] - gamma[row]*p[N-1];
-}
+#include "Numerics/BsplineOneDimSolvers.h"
 
 template<typename T> void
-TricubicBsplineGrid<T>::SolvePeriodicInterp (Array<T,3> &data, Array<T,3>& P)
+TricubicBsplineGrid<T>::SolvePeriodicInterp(const Array<T,3>& data, Array<T,3>& P)
 {
   vector<T> dTemp(Nx),pTemp(Nx);
   // Do X direction
@@ -396,11 +365,12 @@ TricubicBsplineGrid<T>::SolvePeriodicInterp (Array<T,3> &data, Array<T,3>& P)
     for (int iz=0; iz<Nz; iz++)  
     {
       for(int ix=0; ix<Nx;ix++) dTemp[ix]=data(ix,iy,iz);
-      SolvePeriodicInterp1D(dTemp,pTemp);
-      for(int ix=0; ix<Nx;ix++) P(ix+1,iy+1,iz+1)=dTemp[ix];
+      SolvePeriodicInterp1D<T>::apply(dTemp,pTemp);
+      for(int ix=0; ix<Nx;ix++) P(ix+1,iy+1,iz+1)=pTemp[ix];
       //SolvePeriodicInterp1D(data(Range(0,Nx-1), iy, iz), P(Range(1,Nx),iy+1, iz+1));
     }
   
+
   dTemp.resize(Ny);
   pTemp.resize(Ny);
   // Do Y direction
@@ -408,22 +378,23 @@ TricubicBsplineGrid<T>::SolvePeriodicInterp (Array<T,3> &data, Array<T,3>& P)
     for (int iz=0; iz<Nz; iz++) 
     {
       for(int iy=0;iy<Ny; iy++) dTemp[iy]=P(ix+1,iy+1,iz+1);
-      SolvePeriodicInterp1D(dTemp,pTemp);
+      SolvePeriodicInterp1D<T>::apply(dTemp,pTemp);
       for(int iy=0;iy<Ny; iy++) P(ix+1,iy+1,iz+1)=pTemp[iy];
       //SolvePeriodicInterp1D(P(ix+1,Range(1,Ny), iz+1), P(ix+1, Range(1,Ny), iz+1));
     }
   
   dTemp.resize(Nz);
-  pTemp.resize(Ny);
+  pTemp.resize(Nz);
   // Do z direction
   for (int ix=0; ix<Nx; ix++)
     for (int iy=0; iy<Ny; iy++) 
     {
       for(int iz=0; iz<Nz; iz++) dTemp[iz]=P(ix+1,iy+1,iz+1);
-      SolvePeriodicInterp1D(dTemp,pTemp);
+      SolvePeriodicInterp1D<T>::apply(dTemp,pTemp);
       for(int iz=0; iz<Nz; iz++) P(ix+1,iy+1,iz+1)=pTemp[iz];
       //SolvePeriodicInterp1D(P(ix+1,iy+1,Range(1,Nz)), P(ix+1, iy+1, Range(1,Nz)));
     }
+
 }
 
 template<typename T> void
@@ -441,7 +412,7 @@ TricubicBsplineGrid<T>::Init(const Array<T,3>& data, Array<T,3>& P)
 {
   P.resize(Nx+3,Ny+3,Nz+3);
   if (Periodic) {
-    if (interp)
+    if (Interpolating)
       SolvePeriodicInterp(data,P);
     else
     {
