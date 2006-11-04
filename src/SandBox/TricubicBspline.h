@@ -4,7 +4,7 @@
 #include <blitz/array.h>
 #include <blitz/tinymat.h>
 
-using namespace blitz;
+namespace blitz {
 
 template<typename T>
 class TricubicBspline
@@ -57,15 +57,15 @@ TricubicBspline<T>::Find(double x, double y, double z) const
 //     xDelta -= nearbyint(xDelta*LxInv)*Lx;
 //     yDelta -= nearbyint(yDelta*LyInv)*Ly;
 //     zDelta -= nearbyint(zDelta*LzInv)*Lz;
-    xDelta -= floor(xDelta*LxInv)*Lx;
-    yDelta -= floor(yDelta*LyInv)*Ly;
-    zDelta -= floor(zDelta*LzInv)*Lz;
+    xDelta -= std::floor(xDelta*LxInv)*Lx;
+    yDelta -= std::floor(yDelta*LyInv)*Ly;
+    zDelta -= std::floor(zDelta*LzInv)*Lz;
   }
   
   double xInt, yInt, zInt;
-  tx = modf (xDelta*dxInv, &xInt);
-  ty = modf (yDelta*dyInv, &yInt);
-  tz = modf (zDelta*dzInv, &zInt);
+  tx = std::modf (xDelta*dxInv, &xInt);
+  ty = std::modf (yDelta*dyInv, &yInt);
+  tz = std::modf (zDelta*dzInv, &zInt);
   ix = (int)xInt;
   iy = (int)yInt;
   iz = (int)zInt;
@@ -527,7 +527,7 @@ TricubicBspline<T>::Evaluate(double x, double y, double z,
 
 }
  
-
-
+#include "SandBox/TricubicBspline.cc"
+}
 #endif
 

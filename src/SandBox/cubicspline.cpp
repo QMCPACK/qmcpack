@@ -35,6 +35,8 @@ int main(int argc, char** argv) {
   ComboFunc infunc;
   infunc.push_back(0.5,new TestFunc(1,1,1));
   infunc.push_back(0.3,new TestFunc(1,1,2));
+  infunc.push_back(0.01,new TestFunc(5,3,2));
+  infunc.push_back(0.01,new TestFunc(5,7,1));
   //infunc.push_back(0.1,new TestFunc(1,2,1));
   //infunc.push_back(0.01,new TestFunc(2,1,1));
   //infunc.push_back(0.01,new TestFunc(2,2,1));
@@ -51,6 +53,7 @@ int main(int argc, char** argv) {
 
   Pooma::Clock timer;
   //Assign the values
+  timer.start();
   for(int ix=0; ix<npts[0]; ix++) {
     double x(gridX(ix));
     for(int iy=0; iy<npts[1]; iy++) {
@@ -69,13 +72,15 @@ int main(int argc, char** argv) {
 
   //Reset the coefficients
   aorb.reset(inData.begin(), inData.end());
+  timer.stop();
+  std::cout << "Spline " << timer.cpu_time() << std::endl;
 
   double lap,val,lap0,val0,g;
   TinyVector<double,3> grad,grad0;
 
-  double x0=0.45;
-  double y0=0.43;
-  double z=0, dz=0.01;
+  double x0=xcut;
+  double y0=ycut;
+  double z=-0.5, dz=0.01;
 
   std::ofstream fout("cs.value.dat");
   std::ofstream dfout("cs.grad.dat");
@@ -83,17 +88,16 @@ int main(int argc, char** argv) {
   fout.setf(std::ios::scientific, std::ios::floatfield);
   dfout.setf(std::ios::scientific, std::ios::floatfield);
   d2fout.setf(std::ios::scientific, std::ios::floatfield);
-  while(z<1.0)
+  while(z<1.5)
   {
     TinyVector<double,3> pos(x0,y0,z);
     val=aorb.evaluate(pos,grad,lap);
     val0=infunc.f(pos);
     grad0=infunc.df(pos);
     lap0=infunc.d2f(pos);
-    fout << z << std::setw(20) << val0 << std::setw(20) << val <<std::setw(20) <<  (val-val0)/val0 <<  std::endl;
-    g=1.0/dot(grad0,grad0);
-    dfout << z << std::setw(20) << grad0 << grad << g*(grad-grad0) <<  std::endl;
-    d2fout << z << std::setw(20) << lap0 <<std::setw(20) <<  lap << std::setw(20) << (lap-lap0)/lap0 << std::endl;
+    fout << z << std::setw(20) << val0 << std::setw(20) << val <<std::setw(20) <<  (val-val0) <<  std::endl;
+    dfout << z << std::setw(20) << grad0 << grad <<grad-grad0 <<  std::endl;
+    d2fout << z << std::setw(20) << lap0 <<std::setw(20) <<  lap << std::setw(20) << (lap-lap0) << std::endl;
     z+=dz;
   }
 

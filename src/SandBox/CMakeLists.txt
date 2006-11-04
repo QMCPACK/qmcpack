@@ -18,8 +18,19 @@ TARGET_LINK_LIBRARIES(mpi_group qmc qmcbase qmcutil)
 #/u/ncsa/jnkim/share/boost/bin/boost/libs/serialization/build/libboost_serialization.so/intel-linux/release/shared-linkable-true/
 #)
 
-ADD_EXECUTABLE(serialization serialization.cpp)
-TARGET_LINK_LIBRARIES(serialization boost)
+#ADD_EXECUTABLE(serialization serialization.cpp)
+#TARGET_LINK_LIBRARIES(serialization boost)
+
+ADD_EXECUTABLE(cubicspline cubicspline.cpp)
+TARGET_LINK_LIBRARIES(cubicspline qmc qmcbase)
+
+ADD_EXECUTABLE(bspline bspline.cpp)
+TARGET_LINK_LIBRARIES(bspline qmc qmcbase)
+
+INCLUDE(${PROJECT_CMAKE}/FindBlitz++.cmake)
+INCLUDE_DIRECTORIES(${BLITZ_INCLUDE_DIR})
+ADD_EXECUTABLE(bspline_blitz bspline_blitz.cpp)
+TARGET_LINK_LIBRARIES(bspline_blitz qmc qmcbase)
 
 #ADD_EXECUTABLE(reduce_test reduce_performance_test.cpp)
 #TARGET_LINK_LIBRARIES(reduce_test boost)

@@ -1,11 +1,11 @@
-#include "TricubicBspline.h"
+//#include "TricubicBspline.h"
 
 template<typename T> inline void
 SolvePeriodicInterp1D (Array<T,1> data, Array<T,1> p)
 {
+
   double ratio = 0.25;
   int N = data.size();
-
   Array<double,1> d(N), gamma(N), mu(N);
   d = 1.5*data;
   // First, eliminate leading coefficients
@@ -58,11 +58,12 @@ SolvePeriodicInterp1D (Array<complex<double>,1> data,
 template<typename T> void
 TricubicBspline<T>::SolvePeriodicInterp (Array<T,3> &data)
 {
+
   // Do X direction
   for (int iy=0; iy<Ny; iy++)
     for (int iz=0; iz<Nz; iz++) 
       SolvePeriodicInterp1D(data(Range(0,Nx-1), iy, iz), P(Range(1,Nx),iy+1, iz+1));
-  
+
   // Do Y direction
   for (int ix=0; ix<Nx; ix++)
     for (int iz=0; iz<Nz; iz++) 
@@ -72,6 +73,7 @@ TricubicBspline<T>::SolvePeriodicInterp (Array<T,3> &data)
   for (int ix=0; ix<Nx; ix++)
     for (int iy=0; iy<Ny; iy++) 
       SolvePeriodicInterp1D(P(ix+1,iy+1,Range(1,Nz)), P(ix+1, iy+1, Range(1,Nz)));
+
 }
 
 template<typename T> void

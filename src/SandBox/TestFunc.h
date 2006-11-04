@@ -1,6 +1,4 @@
-#include "OhmmsPETE/TinyVector.h"
 #include <cmath>
-namespace qmcplusplus {
 
 struct TestFunc {
 
@@ -22,7 +20,8 @@ struct TestFunc {
   //  return sin(k0*x)*sin(k1*y)*sin(k2*z);
   //}
   //
-  inline double f(const TinyVector<double,3>& pos) {
+  template<class PV>
+  inline double f(const PV& pos) {
     return std::sin(k0*pos[0])*std::sin(k1*pos[1])*std::sin(k2*pos[2]);
   }
 
@@ -30,13 +29,15 @@ struct TestFunc {
     return std::sin(k0*x)*std::sin(k1*y)*std::sin(k2*z);
   }
 
-  inline TinyVector<double,3> df(const TinyVector<double,3>& pos) {
-    return TinyVector<double,3>(k0*std::cos(k0*pos[0])*std::sin(k1*pos[1])*std::sin(k2*pos[2]),
+  template<class PV>
+  inline PV df(const PV& pos) {
+    return PV(k0*std::cos(k0*pos[0])*std::sin(k1*pos[1])*std::sin(k2*pos[2]),
         k1*std::sin(k0*pos[0])*std::cos(k1*pos[1])*std::sin(k2*pos[2]),
         k2*std::sin(k0*pos[0])*std::sin(k1*pos[1])*std::cos(k2*pos[2]));
   }
 
-  inline double d2f(const TinyVector<double,3>& pos) {
+  template<class PV>
+  inline double d2f(const PV& pos) {
     return d2factor*f(pos);
   }
 
@@ -68,9 +69,19 @@ struct ComboFunc {
     return res;
   }
 
-  inline TinyVector<double,3> df(const TinyVector<double,3>& pos) {
-    TinyVector<double,3> res;
+  template<class PV>
+  inline PV df(const PV& pos) {
+    PV res(0.0,0.0,0.0);
+#if defined(USE_BLITZ_TINYVECTOR)
+    for(int i=0; i<C.size(); i++) 
+    { PV t=F[i]->df(pos);
+      res[0] += C[i]*t[0];
+      res[1] += C[i]*t[1];
+      res[2] += C[i]*t[2];
+    }
+#else
     for(int i=0; i<C.size(); i++) res += C[i]*F[i]->df(pos);
+#endif
     return res;
   }
 
@@ -80,14 +91,15 @@ struct ComboFunc {
     return res;
   }
 
-  inline double f(const TinyVector<double,3>& pos) {
+  template<class PV>
+  inline double f(const PV& pos) {
     return f(pos[0],pos[1],pos[2]);
   }
 
-  inline double d2f(const TinyVector<double,3>& pos) {
+  template<class PV>
+  inline double d2f(const PV& pos) {
     return d2f(pos[0],pos[1],pos[2]);
   }
 
 };
-}
 
