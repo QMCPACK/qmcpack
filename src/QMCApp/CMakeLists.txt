@@ -53,6 +53,7 @@ ELSE(QMC_COMPLEX)
   SET(WFSRCS ${WFSRCS}
     ../QMCWaveFunctions/NumericalOrbitalSetBuilder.cpp
     ../QMCWaveFunctions/SplineSetBuilder.cpp
+    ../QMCWaveFunctions/TricubicBsplineSetBuilder.cpp
     ../QMCWaveFunctions/ElectronGasOrbitalBuilder.cpp
     ../QMCWaveFunctions/PlaneWaveOrbitalBuilder.cpp
     ../QMCWaveFunctions/ThreeBodyGeminal.cpp
