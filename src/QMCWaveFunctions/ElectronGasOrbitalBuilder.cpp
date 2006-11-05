@@ -25,7 +25,7 @@ namespace qmcplusplus {
    * @param k list of unique k points in Cartesian coordinate excluding gamma
    * @param k2 k2[i]=dot(k[i],k[i])
    */
-  ElectronGasOrbitalBuilder::EGOSet::EGOSet(const vector<PosType>& k, const vector<RealType>& k2): K(k),mK2(k2) {
+  RealEGOSet::RealEGOSet(const vector<PosType>& k, const vector<RealType>& k2): K(k),mK2(k2) {
     KptMax=k.size();
   }
 
@@ -51,8 +51,8 @@ namespace qmcplusplus {
       stream >> twist;
     }
 
-    typedef DiracDeterminant<EGOSet>  Det_t;
-    typedef SlaterDeterminant<EGOSet> SlaterDeterminant_t;
+    typedef DiracDeterminant<RealEGOSet>  Det_t;
+    typedef SlaterDeterminant<RealEGOSet> SlaterDeterminant_t;
 
     int nat=targetPtcl.getTotalNum();
     int nup=nat/2;
@@ -67,7 +67,7 @@ namespace qmcplusplus {
 
     //create a E(lectron)G(as)O(rbital)Set
     egGrid.createGrid(nc,nkpts);
-    EGOSet* psi=new EGOSet(egGrid.kpt,egGrid.mk2); 
+    RealEGOSet* psi=new RealEGOSet(egGrid.kpt,egGrid.mk2); 
 
     //cout << "   The number of shells " << nc << endl;
     //map<int,vector<PosType>*> rs;

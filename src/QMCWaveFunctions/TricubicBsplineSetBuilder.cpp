@@ -16,22 +16,11 @@
 #include "OhmmsData/AttributeSet.h"
 #include "Numerics/HDFSTLAttrib.h"
 #include "QMCWaveFunctions/TricubicBsplineSetBuilder.h"
-
+#include "QMCWaveFunctions/ElectronGasOrbitalBuilder.h"
+#include "QMCWaveFunctions/HEGGrid.h"
+#include "Message/Communicate.h"
+//#define DEBUG_BSPLINE_EG
 namespace qmcplusplus {
-
-  TricubicBsplineSetBuilder::TricubicBsplineSetBuilder(ParticleSet& p, PtclPoolType& psets):
-    targetPtcl(p),ptclPool(psets),GridXYZ(0) {
-  }   
-
-  /** Initialize the cubic grid
-   */
-  bool TricubicBsplineSetBuilder::put(xmlNodePtr cur){
-    if(GridXYZ==0) {
-      GridXYZ = new GridType;
-      GridXYZ->put(cur);
-    }
-    return true;
-  }
 
   /** Specialization for Array<double,3> */
   template<>
@@ -55,6 +44,86 @@ namespace qmcplusplus {
       }
     };
 
+
+  TricubicBsplineSetBuilder::TricubicBsplineSetBuilder(ParticleSet& p, PtclPoolType& psets):
+    targetPtcl(p),ptclPool(psets),GridXYZ(0) {
+  }   
+
+  /** Initialize the cubic grid
+   */
+  bool TricubicBsplineSetBuilder::put(xmlNodePtr cur){
+
+    if(GridXYZ==0) {
+      GridXYZ = new GridType;
+      GridXYZ->put(cur);
+    }
+    return true;
+  }
+
+  SPOSetBase* TricubicBsplineSetBuilder::createSPOSetWithEG()
+  {
+    int norb=7;
+    std::vector<int> npts(3);
+    npts[0]=GridXYZ->nX-1;
+    npts[1]=GridXYZ->nY-1;
+    npts[2]=GridXYZ->nZ-1;
+    StorageType inData(npts[0],npts[1],npts[2]);
+
+    SPOSetType* psi= new SPOSetType(norb);
+    map<string,OrbitalGroupType*>::iterator git(myBasis.find("0"));
+    OrbitalGroupType *abasis=0;
+    if(git == myBasis.end())
+    {
+      abasis = new OrbitalGroupType;
+      abasis->setGrid(GridXYZ->x_min,GridXYZ->x_max,
+          GridXYZ->y_min,GridXYZ->y_max, GridXYZ->z_min,GridXYZ->z_max,
+          GridXYZ->nX-1, GridXYZ->nY-1, GridXYZ->nZ-1);
+      myBasis["0"]=abasis;
+
+      int nc=1;
+      int nat=targetPtcl.getTotalNum();
+      int nup=nat/2;
+      HEGGrid<RealType,OHMMS_DIM> egGrid(targetPtcl.Lattice);
+      int nkpts=(nup-1)/2;
+
+      cout << "Number of kpoints " << nkpts << endl;
+      //create a E(lectron)G(as)O(rbital)Set
+      egGrid.createGrid(nc,nkpts);
+      RealEGOSet* eg=new RealEGOSet(egGrid.kpt,egGrid.mk2); 
+      char wfshortname[16];
+      for(int iorb=0; iorb<norb; iorb++) {
+        sprintf(wfshortname,"b%d",iorb);
+        for(int ix=0; ix<npts[0]; ix++) {
+          double x(GridXYZ->gridX->operator()(ix));
+          for(int iy=0; iy<npts[1]; iy++) {
+            double y(GridXYZ->gridY->operator()(iy));
+            for(int iz=0; iz<npts[2]; iz++) {
+              inData(ix,iy,iz)=eg->f(PosType(x,y,GridXYZ->gridZ->operator()(iz)),iorb);
+            }
+          }
+        }
+        StorageType* newP=0;
+        map<string,StorageType*>::iterator it(BigDataSet.find(wfshortname));
+        if(it == BigDataSet.end()) {
+          newP=new StorageType;
+          BigDataSet[wfshortname]=newP;
+          abasis->add(iorb,inData,newP);
+          app_log() << "   Using spline function for EG " << wfshortname << endl;
+        } 
+      }
+
+      //(*BigDataSet["b0"])=1.0;
+
+      delete eg;
+    } 
+    else
+    {
+      abasis=(*git).second;
+    }
+
+    psi->add(abasis);
+    return psi;
+  }
   /** create a SlaterDeterminant
    * @param cur xmlnode containing \<slaterdeterminant\>
    * @return a SlaterDeterminant
@@ -64,6 +133,9 @@ namespace qmcplusplus {
   SPOSetBase*
   TricubicBsplineSetBuilder::createSPOSet(xmlNodePtr cur){
 
+#if defined(DEBUG_BSPLINE_EG)
+    return createSPOSetWithEG();
+#else
     string hrefname("NONE");
     int norb(0);
     int degeneracy(1);
@@ -160,6 +232,7 @@ namespace qmcplusplus {
       cur=cur->next;
     }
     return psi;
+#endif
   }
 }
 /***************************************************************************

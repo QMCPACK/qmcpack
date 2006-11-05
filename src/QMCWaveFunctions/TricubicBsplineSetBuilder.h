@@ -51,6 +51,7 @@ namespace qmcplusplus {
     SPOSetBase* createSPOSet(xmlNodePtr cur);
 
   private:
+    bool DebugWithEG;
     ///target ParticleSet
     ParticleSet& targetPtcl;
     ///reference to a ParticleSetPool
@@ -63,6 +64,8 @@ namespace qmcplusplus {
     map<string,OrbitalGroupType*> myBasis;
     ///single-particle orbital sets
     map<string,SPOSetType*> mySPOSet;
+
+    SPOSetBase* createSPOSetWithEG();
   };
 }
 #endif
