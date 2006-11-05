@@ -170,7 +170,7 @@ inline T TricubicBsplineGrid<T>::evaluate(const Array<T,3>& P) const
 
 template<typename T>
 inline T TricubicBsplineGrid<T>::evaluate(const Array<T,3>& P,
-     TinyVector<T,3>& grad, T& laplacian) const 
+     TinyVector<T,3>& grad, T& laplacian) const
 { 
   //put the blocks in cache
   TinyVector<T,4> p00(P(ix0,iy0,iz0),P(ix0,iy0,iz1),P(ix0,iy0,iz2),P(ix0,iy0,iz3));
@@ -249,7 +249,7 @@ inline T TricubicBsplineGrid<T>::evaluate(const Array<T,3>& P,
 
 template<typename T> 
 inline T TricubicBsplineGrid<T>::evaluate(const Array<T,3>& P,
-     TinyVector<T,3>& grad, Tensor<T,3>& secDerivs) const 
+     TinyVector<T,3>& grad, Tensor<T,3>& secDerivs) const
 {
   //put the blocks in cache
   TinyVector<T,4> p00(P(ix0,iy0,iz0),P(ix0,iy0,iz1),P(ix0,iy0,iz2),P(ix0,iy0,iz3));
@@ -321,7 +321,7 @@ inline T TricubicBsplineGrid<T>::evaluate(const Array<T,3>& P,
      a[2]*(cP(2,0)*db[0]+cP(2,1)*db[1]+cP(2,2)*db[2]+cP(2,3)*db[3]) +
      a[3]*(cP(3,0)*db[0]+cP(3,1)*db[1]+cP(3,2)*db[2]+cP(3,3)*db[3]));
 
-  grad[2] = dzInv *  dot(a,dbcP);
+  grad[2] = dzInv *  dot(a,bdcP);
 
   // Compute laplacian
   secDerivs(0,0) = dxInv * dxInv * dot(d2a,bcP);

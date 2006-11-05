@@ -24,10 +24,10 @@
 namespace qmcplusplus {
 
   template<typename T>
-    class TricubicBspline
+    class TricubicBspline: public OrbitalTraits<T>
     {
       public:
-        typedef OrbitalTraits<T>::real_type real_type;
+        typedef typename OrbitalTraits<T>::real_type real_type;
         typedef TricubicBsplineGrid<T> GridType;
 
         TricubicBspline(){}
@@ -71,11 +71,11 @@ namespace qmcplusplus {
     };
 
   template<typename T>
-    class TricubicBsplineSet
+    class TricubicBsplineSet: public OrbitalTraits<T>
     {
       public:
-        typedef OrbitalTraits<T>::real_type real_type;
-        typedef OrbitalTraits<T>::value_type value_type;
+        typedef typename OrbitalTraits<T>::real_type real_type;
+        typedef typename OrbitalTraits<T>::value_type value_type;
         typedef TricubicBsplineGrid<T> GridType;
         typedef Array<T,3>             StorageType;
 

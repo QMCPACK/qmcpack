@@ -21,6 +21,7 @@
 #include "OhmmsPETE/TinyVector.h"
 #include "OhmmsPETE/Tensor.h"
 #include "OhmmsPETE/OhmmsArray.h"
+#include "QMCWaveFunctions/OrbitalTraits.h"
 //#include <blitz/array.h>
 //#include <blitz/tinymat.h>
 //using namespace blitz;
@@ -28,10 +29,10 @@
 namespace qmcplusplus {
 
   template<typename T>
-  struct TricubicBsplineGrid {
+  struct TricubicBsplineGrid: public OrbitalTraits<T> {
 
-    typedef OrbitalTraits<T>::real_type real_type;
-    typedef OrbitalTraits<T>::value_type value_type;
+    typedef typename OrbitalTraits<T>::real_type real_type;
+    typedef typename OrbitalTraits<T>::value_type value_type;
 
     bool Interpolating, Periodic;
     // The grid sizes
@@ -45,7 +46,6 @@ namespace qmcplusplus {
     int ix0,ix1,ix2,ix3,iy0,iy1,iy2,iy3,iz0,iz1,iz2,iz3;
 
     Tensor<real_type,4> A, dA, d2A, d3A;
-
     TinyVector<real_type,4> px, py, pz;
     TinyVector<real_type,4> a,b,c;
     TinyVector<real_type,4> da,db,dc;
@@ -63,19 +63,17 @@ namespace qmcplusplus {
 
     void FindAll(real_type x, real_type y, real_type z);
 
-    T evaluate(const Array<T,3>& P) const;
+    T evaluate(const Array<T,3>& P) const ;
 
-    T evaluate(const Array<T,3>& P, TinyVector<T,3>& grad, T& laplacian) const;
+    T evaluate(const Array<T,3>& P, TinyVector<T,3>& grad, T& laplacian) const ;
 
-    T evaluate(const Array<T,3>& P, TinyVector<T,3>& grad, Tensor<T,3>& secDerivs) const;
+    T evaluate(const Array<T,3>& P, TinyVector<T,3>& grad, Tensor<T,3>& secDerivs) const ;
 
     void Init(const Array<T,3>& data, Array<T,3>& P);
     void SolvePeriodicInterp (const Array<T,3> &data, Array<T,3>& P);
     void MakePeriodic(Array<T,3>& P);
   };
-
 #include "Numerics/TricubicBsplineGrid.cpp"
-
 }
 #endif
 /***************************************************************************
