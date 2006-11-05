@@ -75,16 +75,36 @@ namespace qmcplusplus {
     {
       public:
         typedef OrbitalTraits<T>::real_type real_type;
+        typedef OrbitalTraits<T>::value_type value_type;
         typedef TricubicBsplineGrid<T> GridType;
+        typedef Array<T,3>             StorageType;
 
-        TricubicBsplineSet() { }
+        /** default constructure
+         *
+         * For memory efficiency, reserve DeleteP and P
+         * OffSet is set to 1000000. Safe until we can do 1000000 orbitals.
+         */
+        TricubicBsplineSet():OffSet(1000000) 
+        { 
+          DeleteP.reserve(1024); 
+          P.reserve(1024);
+        }
+
         ~TricubicBsplineSet() { 
-          delete_iter(P.begin(), P.end());
+          for(int i=0; i<DeleteP.size(); i++)
+          {
+            if(DeleteP[i]) delete P[i];
+          }
         }
 
         inline void setGrid(const GridType& knots)
         {
           bKnots=knots;
+        }
+
+        ///empty reset
+        void reset()
+        {
         }
 
         inline void setGrid(real_type xi, real_type xf, 
@@ -95,12 +115,31 @@ namespace qmcplusplus {
           bKnots.setGrid(xi,xf,yi,yf,zi,zf,nx,ny,nz,interp,periodic,openend);
         }
 
-        void add(int i, const Array<T,3>& data)
+        /** add a orbital
+         * @param i index of the orbital
+         * @param data input data
+         * @param curP interpolated data
+         */
+        void add(int i, const StorageType& data, StorageType* curP)
         {
-          int offset=P.size();
-          Array<T,3> *curP=new Array<T,3>;
+          if(i<OffSet) OffSet=i;
+          DeleteP.push_back(false);
           P.push_back(curP);
-          Pid.push_back(i);
+          bKnots.Init(data,*curP);
+        }
+
+        /** add a orbital
+         * @param i index of the orbital
+         * @param data input data
+         *
+         * New interpolated data is created and will be deleted by the constructor.
+         */
+        void add(int i, const StorageType& data)
+        {
+          if(i<OffSet) OffSet=i;
+          StorageType *curP=new StorageType;
+          DeleteP.push_back(true);
+          P.push_back(curP);
           bKnots.Init(data,*curP);
         }
 
@@ -108,9 +147,9 @@ namespace qmcplusplus {
         inline void evaluate(const TinyVector<real_type,3>& r, PV& vals) 
         {
           bKnots.Find(r[0],r[1],r[2]);
-          for(int i=0;i<Pid.size(); i++)
+          for(int m=0, j=OffSet;m<P.size(); m++,j++)
           {
-            vals[Pid[i]]=bKnots.evaluate(*P[i]);
+            vals[j]=bKnots.evaluate(*P[m]);
           }
         }
 
@@ -119,16 +158,28 @@ namespace qmcplusplus {
           evaluate(const TinyVector<real_type,3>& r, PV& vals, GV& grads, PV& laps)
           {
             bKnots.FindAll(r[0],r[1],r[2]);
-            for(int i=0;i<Pid.size(); i++)
+            for(int m=0,j=OffSet;m<P.size(); m++,j++)
             {
-              int j=Pid[i];
-              vals[j]=bKnots.evaluate(*P[i],grads[j],laps[j]);
+              vals[j]=bKnots.evaluate(*P[m],grads[j],laps[j]);
+            }
+          }
+
+        template<typename PM, typename GM>
+        inline void
+          evaluate(const TinyVector<real_type,3>& r, int i, PM& vals, GM& grads, PM& laps)
+          {
+            bKnots.FindAll(r[0],r[1],r[2]);
+            for(int m=0,j=OffSet;m<P.size(); m++,j++)
+            {
+              vals(j,i)=bKnots.evaluate(*P[m],grads(i,j),laps(i,j));
             }
           }
 
       private:
+        int OffSet;
         GridType bKnots;
-        std::vector<Array<T,3>*> P;
+        std::vector<bool> DeleteP;
+        std::vector<StorageType*> P;
     };
 }
 

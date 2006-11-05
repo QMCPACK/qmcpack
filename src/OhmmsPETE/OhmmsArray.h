@@ -66,6 +66,10 @@ public:
   inline unsigned size() const { return X.size();}
   int size(int i) const { return Length[i];}
 
+  Container_t& storage()
+  {
+    return X;
+  }
   // resize is specialized for D-dimensional
   void resize(unsigned );          
   void resize(unsigned, unsigned);  
