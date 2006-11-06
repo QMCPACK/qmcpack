@@ -201,6 +201,11 @@ namespace qmcplusplus {
       setCommunicator(0);//use default
     }
 
+    if(myComm->ncontexts() == 1)
+    {
+      collect=false;
+    }
+
     CollectSum=collect;
     for(int i=0; i< Estimators.size(); i++) 
       Estimators[i]->CollectSum = collect;
@@ -465,6 +470,7 @@ namespace qmcplusplus {
    */
   void ScalarEstimatorManager::flush()
   {
+
     if(CollectSum) 
     {
       RemoteData[0]->rewind();
@@ -505,6 +511,10 @@ namespace qmcplusplus {
     } 
     else 
     {//CollectSum == false
+      RemoteData[0]->rewind();
+      for(int i=0; i<Estimators.size(); i++) 
+        Estimators[i]->copy2Buffer(*RemoteData[0]);
+      RemoteData[0]->rewind();
       RealType wgtinv = 1.0/MyData[WEIGHT_INDEX];
       for(int i=0; i<Estimators.size(); i++) 
         Estimators[i]->report(BlockAverages,wgtinv,*RemoteData[0]);
