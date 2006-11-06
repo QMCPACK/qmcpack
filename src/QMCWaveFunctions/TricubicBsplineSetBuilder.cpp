@@ -91,7 +91,7 @@ namespace qmcplusplus {
    */
   SPOSetBase*
   TricubicBsplineSetBuilder::createSPOSet(xmlNodePtr cur){
-
+#if !defined(DEBUG_BSPLINE_EG)
     string hrefname("NONE");
     int norb(0);
     int degeneracy(1);
@@ -179,6 +179,9 @@ namespace qmcplusplus {
       cur=cur->next;
     }
     return psi;
+#else
+    return createSPOSetWithEG();
+#endif
   }
 
   /** Create B-spline for the electron-gas wavefunctions
