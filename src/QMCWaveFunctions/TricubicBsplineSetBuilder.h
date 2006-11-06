@@ -20,7 +20,6 @@
 #include "QMCWaveFunctions/BasisSetBase.h"
 #include "QMCWaveFunctions/GroupedOrbitalSet.h"
 #include "Numerics/TricubicBsplineSet.h"
-#include "Numerics/XYZCubicGrid.h"
 
 namespace qmcplusplus {
 
@@ -32,7 +31,6 @@ namespace qmcplusplus {
   public:
 
     typedef TricubicBsplineSet<ValueType>              OrbitalGroupType;      
-    typedef XYZCubicGrid<RealType>                     GridType;
     typedef TricubicBsplineSet<ValueType>::StorageType StorageType;
     typedef GroupedOrbitalSet<OrbitalGroupType>        SPOSetType;             
     typedef map<string,ParticleSet*>                   PtclPoolType;
@@ -56,8 +54,12 @@ namespace qmcplusplus {
     ParticleSet& targetPtcl;
     ///reference to a ParticleSetPool
     PtclPoolType& ptclPool;
+
+    PosType LowerBox;
+    PosType UpperBox;
+    TinyVector<IndexType,DIM> BoxGrid;
     ///three-dimnesional grid
-    GridType* GridXYZ;
+    //GridType* GridXYZ;
     ///set of StorageType*
     map<string,StorageType*> BigDataSet;
     ///set of WFSetType*

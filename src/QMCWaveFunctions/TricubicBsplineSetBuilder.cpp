@@ -46,84 +46,43 @@ namespace qmcplusplus {
 
 
   TricubicBsplineSetBuilder::TricubicBsplineSetBuilder(ParticleSet& p, PtclPoolType& psets):
-    targetPtcl(p),ptclPool(psets),GridXYZ(0) {
+    targetPtcl(p),ptclPool(psets),LowerBox(0.0),UpperBox(1.0),BoxGrid(2){
+      for(int idim=0; idim<DIM; idim++)
+        UpperBox[idim]=targetPtcl.Lattice.R(idim,idim);
   }   
 
   /** Initialize the cubic grid
    */
   bool TricubicBsplineSetBuilder::put(xmlNodePtr cur){
 
-    if(GridXYZ==0) {
-      GridXYZ = new GridType;
-      GridXYZ->put(cur);
+    cur=cur->children;
+    while(cur != NULL)
+    {
+      std::string cname((const char*)(cur->name));
+      if(cname == "grid") {
+        int idir=0,npts=2; 
+        RealType ri=0,rf=-1.0;
+        OhmmsAttributeSet aAttrib;
+        aAttrib.add(idir,"dir");
+        aAttrib.add(ri,"ri");
+        aAttrib.add(rf,"rf");
+        aAttrib.add(npts,"npts");
+        aAttrib.put(cur);
+        //bound check
+        RealType del=rf-ri;
+        if(del>0 && del<UpperBox[idir]) UpperBox[idir]=rf;
+        LowerBox[idir]=ri;
+        BoxGrid[idir]=npts;
+      }
+      cur=cur->next;
     }
+    app_log() << "  TricubicBsplineSetBuilder set a global box " << endl;
+    app_log() << "    Lower box " << LowerBox << endl;
+    app_log() << "    Upper box " << UpperBox << endl;
+    app_log() << "    Box grid "  << BoxGrid << endl;
     return true;
   }
 
-  SPOSetBase* TricubicBsplineSetBuilder::createSPOSetWithEG()
-  {
-    int norb=7;
-    std::vector<int> npts(3);
-    npts[0]=GridXYZ->nX-1;
-    npts[1]=GridXYZ->nY-1;
-    npts[2]=GridXYZ->nZ-1;
-    StorageType inData(npts[0],npts[1],npts[2]);
-
-    SPOSetType* psi= new SPOSetType(norb);
-    map<string,OrbitalGroupType*>::iterator git(myBasis.find("0"));
-    OrbitalGroupType *abasis=0;
-    if(git == myBasis.end())
-    {
-      abasis = new OrbitalGroupType;
-      abasis->setGrid(GridXYZ->x_min,GridXYZ->x_max,
-          GridXYZ->y_min,GridXYZ->y_max, GridXYZ->z_min,GridXYZ->z_max,
-          GridXYZ->nX-1, GridXYZ->nY-1, GridXYZ->nZ-1);
-      myBasis["0"]=abasis;
-
-      int nc=1;
-      int nat=targetPtcl.getTotalNum();
-      int nup=nat/2;
-      HEGGrid<RealType,OHMMS_DIM> egGrid(targetPtcl.Lattice);
-      int nkpts=(nup-1)/2;
-
-      cout << "Number of kpoints " << nkpts << endl;
-      //create a E(lectron)G(as)O(rbital)Set
-      egGrid.createGrid(nc,nkpts);
-      RealEGOSet* eg=new RealEGOSet(egGrid.kpt,egGrid.mk2); 
-      char wfshortname[16];
-      for(int iorb=0; iorb<norb; iorb++) {
-        sprintf(wfshortname,"b%d",iorb);
-        for(int ix=0; ix<npts[0]; ix++) {
-          double x(GridXYZ->gridX->operator()(ix));
-          for(int iy=0; iy<npts[1]; iy++) {
-            double y(GridXYZ->gridY->operator()(iy));
-            for(int iz=0; iz<npts[2]; iz++) {
-              inData(ix,iy,iz)=eg->f(PosType(x,y,GridXYZ->gridZ->operator()(iz)),iorb);
-            }
-          }
-        }
-        StorageType* newP=0;
-        map<string,StorageType*>::iterator it(BigDataSet.find(wfshortname));
-        if(it == BigDataSet.end()) {
-          newP=new StorageType;
-          BigDataSet[wfshortname]=newP;
-          abasis->add(iorb,inData,newP);
-          app_log() << "   Using spline function for EG " << wfshortname << endl;
-        } 
-      }
-
-      //(*BigDataSet["b0"])=1.0;
-
-      delete eg;
-    } 
-    else
-    {
-      abasis=(*git).second;
-    }
-
-    psi->add(abasis);
-    return psi;
-  }
   /** create a SlaterDeterminant
    * @param cur xmlnode containing \<slaterdeterminant\>
    * @return a SlaterDeterminant
@@ -133,9 +92,6 @@ namespace qmcplusplus {
   SPOSetBase*
   TricubicBsplineSetBuilder::createSPOSet(xmlNodePtr cur){
 
-#if defined(DEBUG_BSPLINE_EG)
-    return createSPOSetWithEG();
-#else
     string hrefname("NONE");
     int norb(0);
     int degeneracy(1);
@@ -152,11 +108,7 @@ namespace qmcplusplus {
 
     app_log() << "    Only valid for spin-unpolarized cases " << endl;
     app_log() << "    Degeneracy = " << degeneracy << endl;
-    std::vector<int> npts(3);
-    npts[0]=GridXYZ->nX;
-    npts[1]=GridXYZ->nY;
-    npts[2]=GridXYZ->nZ;
-    StorageType inData(npts[0],npts[1],npts[2]);
+    StorageType inData(BoxGrid[0],BoxGrid[1],BoxGrid[2]);
 
     SPOSetType* psi= new SPOSetType(norb);
     vector<int> occSet(norb);
@@ -195,9 +147,8 @@ namespace qmcplusplus {
         if(git == myBasis.end())
         {
           abasis = new OrbitalGroupType;
-          abasis->setGrid(GridXYZ->x_min,GridXYZ->x_max,
-              GridXYZ->y_min,GridXYZ->y_max, GridXYZ->z_min,GridXYZ->z_max,
-              GridXYZ->nX-1, GridXYZ->nY-1, GridXYZ->nZ-1);
+          abasis->setGrid(LowerBox[0],UpperBox[0],LowerBox[1],UpperBox[1],LowerBox[2],UpperBox[2],
+              BoxGrid[0]-1,BoxGrid[1]-1,BoxGrid[2]-1);
           myBasis["0"]=abasis;
         } 
         else
@@ -218,13 +169,9 @@ namespace qmcplusplus {
             BigDataSet[wfshortname]=newP;
             abasis->add(iorb,inData,newP);
             app_log() << "   Reading spline function " << wfname << endl;
-            //PosType r0(4.9194332197e+00,4.5695928280e+00,1.2260692483e+01);
-            //double val=neworb->evaluate(r0);
-            //abort();
           } else {
             app_log() << "   Reusing spline function " << wfname << endl;
           }
-          //psi->add(neworb);
         }
         psi->add(abasis);
         H5Fclose(h_file);
@@ -232,7 +179,77 @@ namespace qmcplusplus {
       cur=cur->next;
     }
     return psi;
-#endif
+  }
+
+  /** Create B-spline for the electron-gas wavefunctions
+   *
+   * This function is to test bspline against analytic electron-gas
+   * single-particle orbitals.
+   */
+  SPOSetBase* TricubicBsplineSetBuilder::createSPOSetWithEG()
+  {
+    int norb=7;
+    std::vector<int> npts(3);
+    npts[0]=BoxGrid[0]-1; 
+    npts[1]=BoxGrid[1]-1;
+    npts[2]=BoxGrid[2]-1;
+    StorageType inData(npts[0],npts[1],npts[2]);
+
+    RealType dx=(UpperBox[0]-LowerBox[0])/static_cast<RealType>(npts[0]);
+    RealType dy=(UpperBox[1]-LowerBox[1])/static_cast<RealType>(npts[1]);
+    RealType dz=(UpperBox[2]-LowerBox[2])/static_cast<RealType>(npts[2]);
+
+    SPOSetType* psi= new SPOSetType(norb);
+    map<string,OrbitalGroupType*>::iterator git(myBasis.find("0"));
+    OrbitalGroupType *abasis=0;
+    if(git == myBasis.end())
+    {
+      abasis = new OrbitalGroupType;
+      abasis->setGrid(LowerBox[0],UpperBox[0],LowerBox[1],UpperBox[1],LowerBox[2],UpperBox[2],
+          npts[0],npts[1],npts[2]);
+      myBasis["0"]=abasis;
+
+      int nc=1;
+      int nat=targetPtcl.getTotalNum();
+      int nup=nat/2;
+      HEGGrid<RealType,OHMMS_DIM> egGrid(targetPtcl.Lattice);
+      int nkpts=(nup-1)/2;
+
+      cout << "Number of kpoints " << nkpts << endl;
+      //create a E(lectron)G(as)O(rbital)Set
+      egGrid.createGrid(nc,nkpts);
+      RealEGOSet* eg=new RealEGOSet(egGrid.kpt,egGrid.mk2); 
+      char wfshortname[16];
+      for(int iorb=0; iorb<norb; iorb++) {
+        sprintf(wfshortname,"b%d",iorb);
+        for(int ix=0; ix<npts[0]; ix++) {
+          double x(dx*ix+LowerBox[0]);
+          for(int iy=0; iy<npts[1]; iy++) {
+            double y(dy*iy+LowerBox[1]);
+            double z(LowerBox[2]);
+            for(int iz=0; iz<npts[2]; iz++) {
+              inData(ix,iy,iz)=eg->f(PosType(x,y,z),iorb); z+=dz;
+            }
+          }
+        }
+        StorageType* newP=0;
+        map<string,StorageType*>::iterator it(BigDataSet.find(wfshortname));
+        if(it == BigDataSet.end()) {
+          newP=new StorageType;
+          BigDataSet[wfshortname]=newP;
+          abasis->add(iorb,inData,newP);
+          app_log() << "   Using spline function for EG " << wfshortname << endl;
+        } 
+      }
+      delete eg;
+    } 
+    else
+    {
+      abasis=(*git).second;
+    }
+
+    psi->add(abasis);
+    return psi;
   }
 }
 /***************************************************************************
