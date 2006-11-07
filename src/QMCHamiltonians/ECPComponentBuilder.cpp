@@ -501,28 +501,35 @@ namespace qmcplusplus {
 
     int ng=grid_local->size();
     vector<RealType> v(ng);
+
+    //if(bareCoulomb) {
+    //  for(int ig=0; ig<ng; ig++) {
+    //    v[ig]=1.0/(*grid_local)[ig];
+    //  }
+    //} else {
+    //  RealType zinv=1.0/Zeff;
+    //  for(int ig=0; ig<ng; ig++) {
+    //    double r=(*grid_local)[ig];
+    //    v[ig]=1.0/r-zinv*vr.f(r);
+    //  }
+    //}
+    //pp_loc=new RadialPotentialType(grid_local,v);
+    //int imin = 0;
+    //RealType yprime_i = ((*pp_loc)(imin+1)-(*pp_loc)(imin))/pp_loc->dr(imin);
+    //pp_loc->spline(imin,yprime_i,ng-1,0.0);
+
+    //multiply by r
     if(bareCoulomb) {
       for(int ig=0; ig<ng; ig++) {
-        v[ig]=1.0/(*grid_local)[ig];
+        v[ig]=1.0;
       }
     } else {
       RealType zinv=1.0/Zeff;
       for(int ig=0; ig<ng; ig++) {
         double r=(*grid_local)[ig];
-        v[ig]=1.0/r-zinv*vr.f(r);
+        v[ig]=1.0-zinv*r*vr.f(r);
       }
     }
-    //if(bareCoulomb) {
-    //  for(int ig=0; ig<ng; ig++) {
-    //    v[ig]=-Zeff/(*grid_local)[ig];
-    //  }
-    //} else {
-    //  for(int ig=0; ig<ng; ig++) {
-    //    double r=(*grid_local)[ig];
-    //    v[ig]=vr.f(r)-Zeff/r;
-    //  }
-    //}
-
     pp_loc=new RadialPotentialType(grid_local,v);
     int imin = 0;
     RealType yprime_i = ((*pp_loc)(imin+1)-(*pp_loc)(imin))/pp_loc->dr(imin);
@@ -661,8 +668,13 @@ namespace qmcplusplus {
       if (i == iLocal) {  
 	// Construct the local channel
 	vector<double> vloc(Vls[i].size());
+
+        //Multiply by r
+	//for (int j=0; j<vloc.size(); j++)
+	//  vloc[j] = Vls[i][j]/(-Zeff);
 	for (int j=0; j<vloc.size(); j++)
-	  vloc[j] = Vls[i][j]/(-Zeff);
+	  vloc[j] = (*Grids[i])[j]*Vls[i][j]/(-Zeff);
+        
 	pp_loc = new RadialPotentialType (Grids[i], vloc);
 	int imin = 0; int ng = vloc.size();
 	RealType yprime_i = ((*pp_loc)(imin+1)-(*pp_loc)(imin))/pp_loc->dr(imin);
