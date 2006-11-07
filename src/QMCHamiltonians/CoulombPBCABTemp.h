@@ -33,8 +33,8 @@ namespace qmcplusplus {
   struct CoulombPBCABTemp: public QMCHamiltonianBase {
 
     typedef LRCoulombSingleton::LRHandlerType LRHandlerType;
-    typedef LogGrid<RealType> GridType;
-    typedef OneDimCubicSpline<RealType> RadFunctorType;
+    typedef LRCoulombSingleton::GridType GridType;
+    typedef LRCoulombSingleton::RadFunctorType RadFunctorType;
 
     ParticleSet* PtclA;
     ParticleSet* PtclB;

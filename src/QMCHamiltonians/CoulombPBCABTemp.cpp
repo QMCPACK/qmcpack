@@ -108,17 +108,7 @@ namespace qmcplusplus {
     myRcut=AB->Basis.get_rc();
 
     if(V0==0) {
-      myGrid = new GridType;
-      myGrid->set(1.0e-6,myRcut,501);
-      int ng=myGrid->size();
-      vector<RealType> v(ng);
-      for(int ig=0; ig<ng; ig++) {
-        RealType r=(*myGrid)[ig];
-        v[ig]=AB->evaluate(r,1.0/r);
-      }
-      V0=new RadFunctorType(myGrid,v);
-      RealType deriv=(v[1]-v[0])/((*myGrid)[1]-(*myGrid)[0]);
-      V0->spline(0,deriv,ng-1,0.0);
+      V0 = LRCoulombSingleton::createSpline4RbyVs(AB,myRcut,myGrid);
       if(Vat.size()) {
         app_log() << "  Vat is not empty. Something is wrong" << endl;
         OHMMS::Controller->abort();
@@ -135,8 +125,10 @@ namespace qmcplusplus {
       vector<RealType> v(ng);
       for(int ig=0; ig<ng; ig++) {
         RealType r=(*myGrid)[ig];
-        v[ig]=AB->evaluateLR(r)+ppot->splint(r);;
+        //need to multiply r for the LR
+        v[ig]=r*AB->evaluateLR(r)+ppot->splint(r);;
       }
+      v[ng-1]=0.0;
       RadFunctorType* rfunc=new RadFunctorType(myGrid,v);
       RealType deriv=(v[1]-v[0])/((*myGrid)[1]-(*myGrid)[0]);
       rfunc->spline(0,deriv,ng-1,0.0);
@@ -168,11 +160,10 @@ namespace qmcplusplus {
       //Loop over distinct eln-ion pairs
       for(int iat=0; iat<NptclA; iat++){
         RealType esum = 0.0;
-        RadFunctorType* Vs=Vat[iat];
+        RadFunctorType* rVs=Vat[iat];
         for(int nn=d_ab->M[iat], jat=0; nn<d_ab->M[iat+1]; nn++,jat++) {
           if(d_ab->r(nn)>=myRcut) continue;
-          //esum += Qat[jat]*AB->evaluate(d_ab->r(nn),d_ab->rinv(nn));
-          esum += Qat[jat]*Vs->splint(d_ab->r(nn));
+          esum += Qat[jat]*d_ab->rinv(nn)*rVs->splint(d_ab->r(nn));
         }
         //Accumulate pair sums...species charge for atom i.
         SR += Zat[iat]*esum;
