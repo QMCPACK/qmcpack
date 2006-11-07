@@ -30,9 +30,13 @@ namespace qmcplusplus {
   struct CoulombPBCAATemp: public QMCHamiltonianBase {
 
     typedef LRCoulombSingleton::LRHandlerType LRHandlerType;
+    typedef LRCoulombSingleton::GridType       GridType;
+    typedef LRCoulombSingleton::RadFunctorType RadFunctorType;
     ParticleSet* PtclRef;
-    LRHandlerType* AA;
     DistanceTableData* d_aa;
+    LRHandlerType* AA;
+    GridType* myGrid;
+    RadFunctorType* rVs;
 
     bool FirstTime;
     int NumSpecies;

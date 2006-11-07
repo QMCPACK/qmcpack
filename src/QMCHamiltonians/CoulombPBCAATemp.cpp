@@ -20,7 +20,7 @@
 namespace qmcplusplus {
 
   CoulombPBCAATemp::CoulombPBCAATemp(ParticleSet& ref): 
-    PtclRef(&ref), FirstTime(true), myConst(0.0){
+    PtclRef(&ref), AA(0), myGrid(0), rVs(0), FirstTime(true), myConst(0.0){
       LOGMSG("    Performing long-range breakup for CoulombAATemp potential");
       //AA = new LRHandlerType(ref);
       d_aa = DistanceTable::add(ref);
@@ -30,7 +30,7 @@ namespace qmcplusplus {
 
   /// copy constructor
   CoulombPBCAATemp::CoulombPBCAATemp(const CoulombPBCAATemp& c): 
-    PtclRef(c.PtclRef),d_aa(c.d_aa), FirstTime(true), myConst(0.0){
+    PtclRef(c.PtclRef),d_aa(c.d_aa),myGrid(0),rVs(0), FirstTime(true), myConst(0.0){
       AA = new LRHandlerType(*PtclRef);
       initBreakup();
     }
@@ -76,6 +76,9 @@ namespace qmcplusplus {
     //AA->initBreakup(*PtclRef);
     myConst=evalConsts();
     myRcut=AA->Basis.get_rc();
+    if(rVs==0) {
+      rVs = LRCoulombSingleton::createSpline4RbyVs(AA,myRcut,myGrid);
+    }
   }
 
   CoulombPBCAATemp::Return_t
@@ -104,7 +107,8 @@ namespace qmcplusplus {
         RealType esum = 0.0;
         for(int nn=d_aa->M[ipart],jpart=ipart+1; nn<d_aa->M[ipart+1]; nn++,jpart++) {
           if(d_aa->r(nn)>=myRcut) continue;
-          esum += Zat[jpart]*AA->evaluate(d_aa->r(nn),d_aa->rinv(nn));
+          //esum += Zat[jpart]*AA->evaluate(d_aa->r(nn),d_aa->rinv(nn));
+          esum += Zat[jpart]*d_aa->rinv(nn)*rVs->splint(d_aa->r(nn));
         }
         //Accumulate pair sums...species charge for atom i.
         SR += Zat[ipart]*esum;
