@@ -65,8 +65,8 @@ namespace qmcplusplus {
         if(PP[iat]) {
           Return_t esum=0.0;
           for(int nn=d_table->M[iat]; nn<d_table->M[iat+1]; nn++){
-            //Value += PP[iat]->evaluate(d_table->r(nn),d_table->rinv(nn));
-            esum += PP[iat]->evaluate(d_table->r(nn),d_table->rinv(nn));
+            //esum += PP[iat]->evaluate(d_table->r(nn),d_table->rinv(nn));
+            esum += PP[iat]->splint(d_table->r(nn))*d_table->rinv(nn);
           }
           //count the sign and effective charge
           Value -= esum*Zeff[iat];
