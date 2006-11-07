@@ -135,8 +135,10 @@ namespace qmcplusplus {
    */
   void ECPotentialBuilder::useSimpleTableFormat() {
 
-    const SpeciesSet& Species(IonConfig.getSpeciesSet());
+    SpeciesSet& Species(IonConfig.getSpeciesSet());
     int ng(Species.getTotalNum());
+    int icharge(Species.addAttribute("charge"));
+
     for(int ig=0; ig<ng;ig++) {
       vector<RealType> grid_temp, pp_temp;
       string species(Species.speciesName[ig]);
@@ -174,6 +176,11 @@ namespace qmcplusplus {
 	int imin = 0;
 	RealType yprime_i = ((*app)(imin+1)-(*app)(imin))/app->dr(imin);
 	if(angmom < 0) {
+          //mutiply -r/z
+          RealType zinv=-1.0/Species(icharge,ig);
+          for (int j=0; j<npoints; j++){
+            pp_temp[j]*=grid_temp[j]*zinv;
+          }
           hasLocalPot=true; //will create LocalECPotential
 	  app->spline(imin,yprime_i,app->size()-1,0.0);
           localPot[ig]=app;
