@@ -23,7 +23,8 @@
 #include "LongRange/LRHandlerTemp.h"
 #include "Numerics/OneDimGridBase.h"
 #include "Numerics/OneDimGridFunctor.h"
-#include "Numerics/OneDimCubicSpline.h"
+//#include "Numerics/OneDimCubicSpline.h"
+#include "Numerics/OneDimLinearSpline.h"
 
 namespace qmcplusplus {
 
@@ -53,7 +54,8 @@ namespace qmcplusplus {
 
   template<class T=double>
   struct PseudoCoulombFunctor {
-    typedef OneDimCubicSpline<T> RadialFunctorType;
+    //typedef OneDimCubicSpline<T> RadialFunctorType;
+    typedef OneDimLinearSpline<T> RadialFunctorType;
     RadialFunctorType& radFunc;
     T NormFactor;
     inline PseudoCoulombFunctor(RadialFunctorType& rfunc):radFunc(rfunc){}
@@ -72,11 +74,26 @@ namespace qmcplusplus {
 
   struct LRCoulombSingleton {
 
-    typedef LRHandlerTemp<CoulombFunctor<double>,LPQHIBasis> LRHandlerType;
-    
+    typedef OHMMS_PRECISION                                    RealType;
+    typedef LRHandlerTemp<CoulombFunctor<RealType>,LPQHIBasis> LRHandlerType;
+    typedef LinearGrid<RealType>                               GridType;
+    typedef OneDimLinearSpline<RealType>                       RadFunctorType;
+
     static LRHandlerType* CoulombHandler;
 
     static LRHandlerType* getHandler(ParticleSet& ref);
+
+    /** create a linear spline function
+     * @param aLR LRHandler
+     * @param rcut cutoff radius
+     * @param agrid pointer to a grid
+     * @return a RadFunctorType
+     *
+     * The spline function is the short-range term after breaking up
+     * \f$r V_{S} = r \times (V(r)-V_{L})\f$
+     */
+    static RadFunctorType* createSpline4RbyVs(LRHandlerType* aLR, RealType rcut,
+        GridType* agrid=0);
   };
 }
 #endif
