@@ -303,7 +303,11 @@ namespace qmcplusplus {
   void
   HamiltonianFactory::addModInsKE(xmlNodePtr cur) {
 #if defined(HAVE_LIBFFTW)
-    string Dimensions, DispRelType, MomDistType, PtclSelType;
+    typedef QMCTraits::RealType    RealType;
+    typedef QMCTraits::IndexType   IndexType;
+    typedef QMCTraits::PosType     PosType;
+    
+    string Dimensions, DispRelType, PtclSelType, MomDistType;
     RealType Cutoff, GapSize(0.0), FermiMomentum(0.0);
     
     OhmmsAttributeSet pAttrib;
@@ -313,69 +317,74 @@ namespace qmcplusplus {
     pAttrib.add(Cutoff, "cutoff");
     pAttrib.add(GapSize, "gapSize");
     pAttrib.add(FermiMomentum, "kf");
+    pAttrib.add(MomDistType, "momdisttype");
     pAttrib.put(cur);
+    
+    if (MomDistType == "") MomDistType = "FFT";
     
     TrialWaveFunction* psi;
     psi = (*(psiPool.begin())).second->targetPsi;
     
     Vector<PosType> LocLattice;
     Vector<IndexType> DimSizes;
+    Vector<RealType> Dispersion;
+
     if (Dimensions == "3") {
-      gen3DLattice(Cutoff, *targetPtcl, LocLattice, DimSizes);
+      gen3DLattice(Cutoff, *targetPtcl, LocLattice, Dispersion, DimSizes);
     } else if (Dimensions == "1" || Dimensions == "1averaged") {
-      gen1DLattice(Cutoff, *targetPtcl, LocLattice, DimSizes);
+      gen1DLattice(Cutoff, *targetPtcl, LocLattice, Dispersion, DimSizes);
+    } else if (Dimensions == "homogeneous") {
+      genDegenLattice(Cutoff, *targetPtcl, LocLattice, Dispersion, DimSizes);
     } else {
       ERRORMSG("Dimensions value not recognized!")
     }
     
-    Vector<RealType> Dispersion;
     if (DispRelType == "freeParticle") {
       genFreeParticleDispersion(LocLattice, Dispersion);
     } else if (DispRelType == "simpleModel") {
       genSimpleModelDispersion(LocLattice, Dispersion, GapSize, FermiMomentum);
     } else if (DispRelType == "pennModel") {
       genPennModelDispersion(LocLattice, Dispersion, GapSize, FermiMomentum);
+    } else if (DispRelType == "debug") {
+      genDebugDispersion(LocLattice, Dispersion);  
     } else {
       ERRORMSG("Dispersion relation not recognized");
     }
     
-    QMCHamiltonianBase* modInsKE;
-    if (Dimensions == "3") { 
-      if (PtclSelType == "random") {
-        modInsKE = new ModInsKineticEnergy<ThreeDimMomDist<RandomChoicePolicy> >
-          (*targetPtcl, *psi, Dispersion, DimSizes);
-      } else if (PtclSelType == "randomPerWalker") {
-        modInsKE = new ModInsKineticEnergy<ThreeDimMomDist<RandomChoicePerWalkerPolicy> >
-          (*targetPtcl, *psi, Dispersion, DimSizes);
-      } else if (PtclSelType == "constant") {
-        modInsKE = new ModInsKineticEnergy<ThreeDimMomDist<StaticChoicePolicy> >
-          (*targetPtcl, *psi, Dispersion, DimSizes);
-      }
-    } else if (Dimensions == "1") {
-      if (PtclSelType == "random") {
-        modInsKE = new ModInsKineticEnergy<OneDimMomDist<RandomChoicePolicy> >
-          (*targetPtcl, *psi, Dispersion, DimSizes);
-      } else if (PtclSelType == "randomPerWalker") {
-        modInsKE = new ModInsKineticEnergy<OneDimMomDist<RandomChoicePerWalkerPolicy> >
-          (*targetPtcl, *psi, Dispersion, DimSizes);
-      } else if (PtclSelType == "constant") {
-        modInsKE = new ModInsKineticEnergy<OneDimMomDist<StaticChoicePolicy> >
-          (*targetPtcl, *psi, Dispersion, DimSizes);
-      }
-    } else if (Dimensions == "1averaged") {
-      if (PtclSelType == "random") {
-        modInsKE = new ModInsKineticEnergy<AveragedOneDimMomDist<RandomChoicePolicy> >
-          (*targetPtcl, *psi, Dispersion, DimSizes);
-      } else if (PtclSelType == "randomPerWalker") {
-        modInsKE = new ModInsKineticEnergy<AveragedOneDimMomDist<RandomChoicePerWalkerPolicy> >
-          (*targetPtcl, *psi, Dispersion, DimSizes);
-      } else if (PtclSelType == "constant") {
-        modInsKE = new ModInsKineticEnergy<AveragedOneDimMomDist<StaticChoicePolicy> >
-          (*targetPtcl, *psi, Dispersion, DimSizes);
-      }
+    PtclChoiceBase* pcp;
+    if (PtclSelType == "random") {
+      pcp = new RandomChoice(*targetPtcl);
+    } else if (PtclSelType == "randomPerWalker") {
+      pcp = new RandomChoicePerWalker(*targetPtcl);
+    } else if (PtclSelType == "constant") {
+      pcp = new StaticChoice(*targetPtcl);
+    } else {
+      ERRORMSG("Particle choice policy not recognized!");
     }
+    
+    MomDistBase* mdp;
+    if (MomDistType == "direct") {
+      mdp = new RandomMomDist(*targetPtcl, LocLattice, pcp);
+    } else if (MomDistType == "FFT" || MomDistType =="fft") { 
+      if (Dimensions == "3") {
+	mdp = new ThreeDimMomDist(*targetPtcl, DimSizes, pcp);
+      } else if (Dimensions == "1") {
+	mdp = new OneDimMomDist(*targetPtcl, DimSizes, pcp);
+      } else if (Dimensions == "1averaged") {
+	mdp = new AveragedOneDimMomDist(*targetPtcl, DimSizes, pcp);
+      } else {
+	ERRORMSG("Dimensions value not recognized!");
+      }
+    } else {
+      ERRORMSG("MomDistType value not recognized!");
+    }
+    delete pcp;
+    
+    QMCHamiltonianBase* modInsKE = new ModInsKineticEnergy(*psi, Dispersion, mdp);
     modInsKE->put(cur);
-    targetH->addOperator(modInsKE, "ModelInsulatorKE");
+    targetH->addOperator(modInsKE, "ModelInsKE");
+    
+    delete mdp;
 #else
     app_error() << "  ModelInsulatorKE cannot be used without FFTW " << endl;
 #endif
