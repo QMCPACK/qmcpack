@@ -64,6 +64,13 @@ namespace qmcplusplus {
       for(int n=0; n<coefs.size(); n++) v -= coefs[n]*Basis.h(n,r);
       return v;
     }
+    // get the radial derivative of the short range part
+    inline RealType srDf(RealType r, RealType rinv) {
+      RealType df = myFunc.df(r, rinv);
+      for(int n=0; n<coefs.size(); n++) df -= coefs[n]*Basis.df(n,r);
+      return df;
+    }
+    
 
     ///a utility function for spline
     inline RealType evaluateLR(RealType r) {
