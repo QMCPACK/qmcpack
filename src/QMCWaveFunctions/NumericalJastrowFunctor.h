@@ -178,7 +178,9 @@ namespace qmcplusplus {
         int last=grid.size()-1;
         for(int i=0; i<grid.size(); i++) {
           (*OutFunc)(i) = InFunc->f(grid(i));
+//	  cout << grid(i) << "   " << (*OutFunc)(i) << endl;
         }
+	(*OutFunc)(last)=0.0;
         //boundary conditions
         real_type deriv1=InFunc->df(grid(0));
         real_type deriv2=0.0;
