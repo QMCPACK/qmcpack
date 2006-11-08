@@ -32,6 +32,7 @@ SET(PARTICLE
   LongRange/KContainer.cpp
   LongRange/StructFact.cpp
   LongRange/LRCoulombSingleton.cpp
+  LongRange/LRJastrowSingleton.cpp
 )
 
 SET(PARTICLEIO
