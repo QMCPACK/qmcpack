@@ -170,7 +170,7 @@ namespace qmcplusplus {
           fin >> grid_temp[j] >> pp_temp[j];
 	}
 
-        GridType *agrid = new NumericalGrid<ValueType>(grid_temp);
+        GridType *agrid = new NumericalGrid<RealType>(grid_temp);
 	RadialPotentialType *app = new RadialPotentialType(agrid,pp_temp);
 
 	int imin = 0;
@@ -215,7 +215,7 @@ namespace qmcplusplus {
           exit(-1);
         }
         PosType xyz;
-        ValueType weight;
+        RealType weight;
         while(fin >> xyz >> weight){
           mynnloc->addknot(xyz,weight);
           numsgridpts++;

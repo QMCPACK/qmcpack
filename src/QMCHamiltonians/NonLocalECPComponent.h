@@ -59,7 +59,7 @@ namespace qmcplusplus {
     ///weight of the spherical grid
     vector<RealType> sgridweight_m;
     ///Working arrays
-    vector<ValueType> psiratio,vrad,wvec,Amat;
+    vector<RealType> psiratio,vrad,wvec,Amat;
     vector<RealType> lpol;
 
     DistanceTableData* myTable;
@@ -104,10 +104,10 @@ namespace qmcplusplus {
         }
       }
 
-    ValueType 
+    RealType 
       evaluate(ParticleSet& W, int iat, TrialWaveFunction& Psi);
 
-    ValueType 
+    RealType 
     evaluate(ParticleSet& W, TrialWaveFunction& Psi,int iat, vector<NonLocalData>& Txy);
   }; //end of RadialPotentialSet
 

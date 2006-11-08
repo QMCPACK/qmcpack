@@ -62,9 +62,9 @@ namespace qmcplusplus {
    * Currently, we assume that the ratio-only evaluation does not change the state
    * of the trial wavefunction and do not call psi.rejectMove(ieL).
    */
-  NonLocalECPComponent::ValueType 
+  NonLocalECPComponent::RealType 
   NonLocalECPComponent::evaluate(ParticleSet& W, int iat, TrialWaveFunction& psi) {
-    ValueType esum=0.0;
+    RealType esum=0.0;
     for(int nn=myTable->M[iat],iel=0; nn<myTable->M[iat+1]; nn++,iel++){
 
       register RealType r(myTable->r(nn));
@@ -123,9 +123,9 @@ namespace qmcplusplus {
     return esum;
   }
 
-  NonLocalECPComponent::ValueType 
+  NonLocalECPComponent::RealType 
   NonLocalECPComponent::evaluate(ParticleSet& W, TrialWaveFunction& psi,int iat, vector<NonLocalData>& Txy) {
-    ValueType esum=0.0;
+    RealType esum=0.0;
 
     //int iel=0;
     for(int nn=myTable->M[iat],iel=0; nn<myTable->M[iat+1]; nn++,iel++){
@@ -168,7 +168,7 @@ namespace qmcplusplus {
         }
 
         //for(int l=0; l <nchannel; l++,jl++) Amat[jl]=lpol[ angpp_m[l] ]; 
-        ValueType lsum=0;
+        RealType lsum=0;
         for(int l=0; l <nchannel; l++) lsum += vrad[l]*lpol[ angpp_m[l] ]; 
         esum += Txy[txyCounter++].Weight *= lsum;
       } 
