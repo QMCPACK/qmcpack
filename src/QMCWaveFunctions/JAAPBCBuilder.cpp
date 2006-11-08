@@ -16,6 +16,7 @@
 #include "Utilities/OhmmsInfo.h"
 #include "QMCWaveFunctions/JAAPBCBuilder.h"
 #include "QMCWaveFunctions/LRTwoBodyJastrow.h"
+#include "LongRange/LRJastrowSingleton.h"
 
 namespace qmcplusplus {
 
@@ -33,7 +34,9 @@ namespace qmcplusplus {
   { }
 
   bool JAAPBCBuilder::put(xmlNodePtr cur) {
-    LRTwoBodyJastrow *J2 = new LRTwoBodyJastrow(targetPtcl);
+    typedef LRJastrowSingleton::LRHandlerType HandlerType;
+    HandlerType* handler = LRJastrowSingleton::getHandler(targetPtcl);
+    LRTwoBodyJastrow *J2 = new LRTwoBodyJastrow(targetPtcl, handler);
     bool success = J2->put(cur, targetPsi.VarList);
     J2->setOptimizable(true);
     targetPsi.addOrbital(J2);
