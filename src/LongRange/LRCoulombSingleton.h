@@ -44,6 +44,7 @@ namespace qmcplusplus {
       NormFactor=4.0*M_PI/ref.Lattice.Volume;
     }
     inline T operator()(T r, T rinv) { return rinv;}
+    inline T df(T r) { return -rinv*rinv; }
     inline T Fk(T k, T rc) {
       return NormFactor/(k*k)* std::cos(k*rc);
     }
@@ -63,6 +64,11 @@ namespace qmcplusplus {
       NormFactor=4.0*M_PI/ref.Lattice.Volume;
     }
     inline T operator()(T r, T rinv) { return radFunc.splint(r);}
+    inline T df(T r) {
+      T du, d2u;
+      radFunc.splint(r, du, d2u);
+      return du;
+    }
     inline T Fk(T k, T rc) {
       return NormFactor/(k*k)* std::cos(k*rc);
     }

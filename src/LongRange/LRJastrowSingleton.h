@@ -58,7 +58,16 @@ namespace qmcplusplus {
     }
      
     inline T operator()(T r, T rinv) { 
-       return Rs*rinv*(1.0 - std::exp(-r*OneOverSqrtRs));
+      if (r > 1e-10) return Rs*rinv*(1.0 - std::exp(-r*OneOverSqrtRs));
+      return 1.0 / OneOverSqrtRs - 0.5 * r;
+    }
+    
+    inline T df(T r, T rinv) {
+      if (r > 1e-10) {
+	T exponential = std::exp(-r*OneOverSqrtRs);
+	return -Rs*rinv*rinv*(1.0 - exponential) + exponential*rinv / OneOverSqrtRs;
+      }
+      return -0.5+r*OneOverSqrtRs/3.0;
     }
     
     inline T Fk(T k, T rc) {
