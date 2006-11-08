@@ -27,7 +27,7 @@ SET(WFSRCS
   ../QMCWaveFunctions/MolecularOrbitals/STOBuilder.cpp
   ../QMCWaveFunctions/MolecularOrbitals/GTOBuilder.cpp
   ../QMCWaveFunctions/MolecularOrbitals/NGOBuilder.cpp
-  ../LongRange/LPQHIBasis.cpp
+  ../LongRange/LPQHIBasis.cpp			      	
   ../QMCHamiltonians/CoulombPBCAATemp.cpp
   ../QMCHamiltonians/CoulombPBCABTemp.cpp
   ../QMCHamiltonians/LocalCorePolPotential.cpp
@@ -79,6 +79,22 @@ ELSE(QMC_COMPLEX)
     ../QMCHamiltonians/ECPComponentBuilder.cpp
   )
 ENDIF(QMC_COMPLEX)
+
+IF(HAVE_LIBFFTW)
+  SET(WFSRCS ${WFSRCS}
+    ../QMCHamiltonians/DispersionRelation.cpp
+    ../QMCHamiltonians/MomentumDistribution.cpp
+)
+ENDIF(HAVE_LIBFFTW)
+
+IF(NOT QMCPLUSPLUS_RELEASE)
+IF(NOT QMC_COMPLEX)
+SET(WFSRCS ${WFSRCS}
+  ../QMCWaveFunctions/NumericalOrbitalSetBuilder.cpp
+  )
+ENDIF(NOT QMC_COMPLEX)
+
+ENDIF(NOT QMCPLUSPLUS_RELEASE)
 
 ####################################
 # QMC Drivers which implements various QMC algorithms
