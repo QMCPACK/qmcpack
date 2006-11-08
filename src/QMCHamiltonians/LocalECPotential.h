@@ -41,6 +41,7 @@ namespace qmcplusplus {
     map<int,RadialPotentialType*> PPset;
     ///PP[iat] is the local potential for the iat-th particle
     vector<RadialPotentialType*> PP;
+    ///effective charge per ion
     vector<RealType> Zeff;
     ///reference to the ionic configuration
     const ParticleSet& IonConfig;

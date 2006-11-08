@@ -62,11 +62,12 @@ namespace qmcplusplus {
       Value=0.0;
       //loop over all the ions
       for(int iat=0; iat<NumIons; iat++) {
-        if(PP[iat]) {
-          Return_t esum=0.0;
+        RadialPotentialType* ppot(PP[iat]);
+        if(ppot) {
+          Return_t esum(0.0);
           for(int nn=d_table->M[iat]; nn<d_table->M[iat+1]; nn++){
             //esum += PP[iat]->evaluate(d_table->r(nn),d_table->rinv(nn));
-            esum += PP[iat]->splint(d_table->r(nn))*d_table->rinv(nn);
+            esum += ppot->splint(d_table->r(nn))*d_table->rinv(nn);
           }
           //count the sign and effective charge
           Value -= esum*Zeff[iat];
