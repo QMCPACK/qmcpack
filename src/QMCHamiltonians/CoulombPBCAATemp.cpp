@@ -106,7 +106,7 @@ namespace qmcplusplus {
       for(int ipart=0; ipart<NParticles; ipart++){
         RealType esum = 0.0;
         for(int nn=d_aa->M[ipart],jpart=ipart+1; nn<d_aa->M[ipart+1]; nn++,jpart++) {
-          if(d_aa->r(nn)>=myRcut) continue;
+          //if(d_aa->r(nn)>=myRcut) continue;
           //esum += Zat[jpart]*AA->evaluate(d_aa->r(nn),d_aa->rinv(nn));
           esum += Zat[jpart]*d_aa->rinv(nn)*rVs->splint(d_aa->r(nn));
         }

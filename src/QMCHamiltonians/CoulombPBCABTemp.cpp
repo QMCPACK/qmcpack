@@ -162,7 +162,7 @@ namespace qmcplusplus {
         RealType esum = 0.0;
         RadFunctorType* rVs=Vat[iat];
         for(int nn=d_ab->M[iat], jat=0; nn<d_ab->M[iat+1]; nn++,jat++) {
-          if(d_ab->r(nn)>=myRcut) continue;
+          //if(d_ab->r(nn)>=myRcut) continue;
           esum += Qat[jat]*d_ab->rinv(nn)*rVs->splint(d_ab->r(nn));
         }
         //Accumulate pair sums...species charge for atom i.
