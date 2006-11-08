@@ -51,6 +51,23 @@ namespace qmcplusplus {
         return Sa[0]+x*(Sa[1]+x*(Sa[2]+x*(Sa[3]+x*(Sa[4]+x*Sa[5]))));
       }
     }
+    inline RealType df(int n, RealType r) const {
+      int i=n/3;
+      int alpha = n-3*i;
+      RealType ra = delta*(i-1);
+      RealType rb = delta*i;
+      RealType rc = delta*(i+1);
+      rc = std::min(m_rc, rc);
+      const RealType* restrict Sa(S1[alpha]);
+      if(r<ra || r>rc) return 0.0;
+      if (r <= rb) {
+        RealType x=(rb-r)*deltainv;
+        return Mfactor[alpha]*(Sa[0]+x*(Sa[1]+x*(Sa[2]+x*(Sa[3]+x*Sa[4]))));
+      } else {
+        RealType x=(r-rb)*deltainv;
+        return Sa[0]+x*(Sa[1]+x*(Sa[2]+x*(Sa[3]+x*Sa[4])));
+      }
+    }
 //    inline TinyVector<RealType,3> getTriplet(int n, RealType r) const {
 //      typedef TinyVector<RealType,3> Return_t;
 //      int i=n/3;
@@ -91,6 +108,13 @@ namespace qmcplusplus {
       
       S(2,0)=0.0; S(2,1)=0.0; S(2,2)=0.5; S(2,3)=-1.5;  
       S(2,4)=1.5; S(2,5)=-0.5; 
+      
+      S1.resize(3,5);
+      for (int i = 0; i < 5; i++) {
+	for (int j = 0; j < 3; j++) {
+	  S1(j,i) = static_cast<double>(i+1.0)*S(j,i+1);
+	}
+      }
 
       Mfactor[0]=1.0; Mfactor[1]=-1.0; Mfactor[2]=1.0;
     }
