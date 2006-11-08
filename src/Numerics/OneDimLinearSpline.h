@@ -49,7 +49,7 @@ public:
 
   data_type m_Y1;
   int First,Last;
-  point_type r_min, r_max;
+  point_type r_min, r_max, delta_inv;
 
   OneDimLinearSpline(grid_type* gt = 0): base_type(gt){ }
 
@@ -58,15 +58,23 @@ public:
   {
     m_Y.resize(nv.size());
     std::copy(nv.begin(), nv.end(), m_Y.data());
+    r_min=m_grid->rmin();
+    r_max=m_grid->rmax();
+    delta_inv=1.0/m_grid->dh();
   }
 
+  inline point_type rmax() const
+  {
+    return r_max;
+  }
   /** evaluate the value at r
    * @param r value on a grid
    * @return value obtained by cubic-spline
    */
   inline value_type splint(point_type r) {
     if(r>=r_max) return 0.0;
-    int k = m_grid->getIndex(r);
+    int k = static_cast<int>((r-r_min)*delta_inv);
+    //int k = m_grid->getIndex(r);
     //m_grid->locate(r);
     //int k=m_grid->currentIndex();
     point_type dr=r-(*m_grid)[k];
