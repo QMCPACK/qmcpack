@@ -30,15 +30,18 @@
 #include "OhmmsData/libxmldefs.h"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
+#include "LongRange/LRJastrowSingleton.h"
 
 namespace qmcplusplus {
 
-  class LRTwoBodyJastrow: public  OrbitalBase {
-    
+  class LRTwoBodyJastrow: public OrbitalBase {
+
     bool NeedToRestore;
     IndexType NumPtcls;
     IndexType NumSpecies;
     IndexType NumKpts;
+    /// 1/Cell Volume
+    RealType OneOverCellVolume;
     ///Omega 
     RealType Omega;
     ///4*pi*Omega 
@@ -60,15 +63,19 @@ namespace qmcplusplus {
     GradVectorType offdU;
 
     StructFact* skRef;
-
+    // handler used to do evalFk
+    typedef LRJastrowSingleton::LRHandlerType HandlerType;    
+    HandlerType* handler;
+    
   public:
-
+    Vector<RealType> Fk_0; 
+    Vector<RealType> Fk_1; 
     ///Coefficients
     Vector<RealType> Fk; 
     ///A unique Fk sorted by |k|
     Vector<RealType> Fk_symm;
 
-    LRTwoBodyJastrow(ParticleSet& p);
+    LRTwoBodyJastrow(ParticleSet& p, HandlerType* inhandler);
 
     void reset();
     void resize();
@@ -114,10 +121,6 @@ namespace qmcplusplus {
 
     ///process input file
     bool put(xmlNodePtr cur, VarRegistry<RealType>& vlist);
-
-    inline RealType getRPACoeff(RealType ksq) {
-      return FourPiOmega*(1.0/ksq-1.0/(ksq+OneOverOmega));
-    }
 
   };
 }
