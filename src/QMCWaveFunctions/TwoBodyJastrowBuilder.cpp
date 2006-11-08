@@ -82,7 +82,7 @@ namespace qmcplusplus {
       control = new WMConstraints(IgnoreSpin);
     }
 
-    if(control==0) { //try generic JAABuilder and NJAABuilder
+     if(control==0) { //try generic JAABuilder and NJAABuilder
       OrbitalBuilderBase* jbuilder=0;
       if(useSpline) {
         jbuilder = new NJAABuilder(targetPtcl,targetPsi);
@@ -99,8 +99,8 @@ namespace qmcplusplus {
     }
 
     ComboOrbital* jcombo=new ComboOrbital(control);
-    OrbitalBase* j2=control->createTwoBody(targetPtcl);
-    if(j2) jcombo->Psi.push_back(j2);
+
+    control->addTwoBodyPart(targetPtcl, jcombo);
 
     if(sourcePtcl) { // add one-body term using Zeff and e-e B
       OrbitalBase* j1=control->createOneBody(targetPtcl,*sourcePtcl);
