@@ -17,7 +17,9 @@
 #include "QMCWaveFunctions/RPAConstraints.h"
 #include "QMCWaveFunctions/TwoBodyJastrowOrbital.h"
 #include "QMCWaveFunctions/OneBodyJastrowFunction.h"
+#include "QMCWaveFunctions/LRTwoBodyJastrow.h"
 #include "Utilities/IteratorUtility.h"
+#include "LongRange/LRJastrowSingleton.h"
 
 namespace qmcplusplus {
 
@@ -89,9 +91,7 @@ namespace qmcplusplus {
   ////////////////////////////////////////
   //RPAPBCConstraints definitions
   ////////////////////////////////////////
-  RPAPBCConstraints::~RPAPBCConstraints() {
-    delete_iter(FuncList.begin(), FuncList.end());
-  }
+  RPAPBCConstraints::~RPAPBCConstraints() { ; }
 
   bool RPAPBCConstraints::put(xmlNodePtr cur) {
     bool success=getVariables(cur);
@@ -107,78 +107,49 @@ namespace qmcplusplus {
     return true;
   }
 
-  void RPAPBCConstraints::apply() {
-    for(int i=0; i<FuncList.size(); i++) {
-      InFuncList[i]->reset(Rs);
-      FuncList[i]->reset();
-    }
-  }
+  void RPAPBCConstraints::apply() { ; }
 
   void RPAPBCConstraints::addOptimizables(VarRegistry<RealType>& outVars) {
     //potentially add Rcut
     outVars.add(ID,&Rs,1);
   }
 
-  OrbitalBase* RPAPBCConstraints::createTwoBody(ParticleSet& target) {
+  // right now this only does a numerical two body short range jastrow
+  // based on the short range part from the breakup handled by the LRHandler
+  OrbitalBase* RPAPBCConstraints::createSRTwoBody(ParticleSet& target) {
+    typedef SplineJastrow<RealType> FuncType;
+    typedef LinearGrid<RealType> GridType;
+    
+    //setRadialGrid(target);
+    HandlerType* handler = LRJastrowSingleton::getHandler(target);
+    RealType Rcut = 0.999999999 * handler->Basis.get_rc();
+    myGrid = new GridType;
+    myGrid->set(0,Rcut,51);
 
-    setRadialGrid(target);
-
-    if(Rs<0) {
-      if(target.Lattice.BoxBConds[0]) {
-        Rs=std::pow(3.0/4.0/M_PI*target.Lattice.Volume/static_cast<RealType>(target.getTotalNum()),1.0/3.0);
-      } else {
-        Rs=1.0;
-      }
+    /*
+    for (int i = 0; i < myGrid->size(); i++) {
+      RealType r=(*myGrid)(i);
+      cout << r << "   " << handler->evaluate(r,1./r) << "   " << handler->evaluateLR(r) << endl;
     }
+    */
+  
+    //create the numerical functor
+    FuncType* nfunc = new FuncType;
+    ShortRangePartAdapter<RealType>* sra = new ShortRangePartAdapter<RealType>(handler);
+    nfunc->initialize(sra, myGrid);
+    
+    TwoBodyJastrowOrbital<FuncType> *J2 = new TwoBodyJastrowOrbital<FuncType>(target);
+    for (int i=0; i<4; i++) J2->addFunc(nfunc);
 
-
-    typedef FuncType::FNOUT OutFuncType;
-    typedef TwoBodyJastrowOrbital<FuncType> JeeType;
-    JeeType *J2 = new JeeType(target);
-    if(IgnoreSpin) {
-      //create an analytic input functor
-      InFuncType *infunc=new InFuncType(false);
-      infunc->reset(Rs);
-      //create a numerical functor
-      FuncType* nfunc= new FuncType;
-      //initialize the numerical functor
-      nfunc->initialize(infunc,myGrid,Rcut);
-
-      InFuncList.push_back(infunc);
-      FuncList.push_back(nfunc);
-      for(int i=0; i<4; i++) J2->addFunc(nfunc);
-
-      app_log() << "  RPAPBCConstraints::Adding Spin-independent RPA Two-Body Jastrow " << endl;
-      app_log() << "    Rs=" << Rs << "  F=" << 1.0/infunc->B << endl;
-    } else {
-      InFuncType *uu=new InFuncType(true);
-      InFuncType *ud=new InFuncType(false);
-      uu->reset(Rs);
-      ud->reset(Rs);
-
-      FuncType *funcUU= new FuncType; 
-      funcUU->initialize(uu,myGrid,Rcut);
-
-      FuncType *funcUD= new FuncType; 
-      funcUD->initialize(ud,myGrid,Rcut);
-
-      InFuncList.push_back(uu);
-      InFuncList.push_back(ud);
-
-      FuncList.push_back(funcUU);
-      FuncList.push_back(funcUD);
-
-      J2->addFunc(funcUU);//uu
-      J2->addFunc(funcUD);//ud
-      J2->addFunc(funcUD);//du
-      J2->addFunc(funcUU);//dd
-
-      app_log() << "  RPAPBCConstraints::Adding Spin-dependent RPA Two-Body Jastrow " << endl;
-      app_log() << "    Rs=" << Rs << "  F(uu)=" << 1.0/uu->B << "  F(ud)= " << 1.0/ud->B << endl;
-    }
     return J2;
   }
-
+     
+  OrbitalBase* RPAPBCConstraints::createLRTwoBody(ParticleSet& target) {
+    HandlerType* handler = LRJastrowSingleton::getHandler(target);
+    LRTwoBodyJastrow* LROrbital = new LRTwoBodyJastrow(target, handler);
+    return LROrbital;
+  }
+     
   OrbitalBase* RPAPBCConstraints::createOneBody(ParticleSet& target, ParticleSet& source) {
     return 0;
   }

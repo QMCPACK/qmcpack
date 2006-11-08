@@ -19,6 +19,8 @@
 #include "QMCWaveFunctions/OrbitalConstraintsBase.h"
 #include "QMCWaveFunctions/NumericalJastrowFunctor.h"
 #include "QMCWaveFunctions/RPAJastrow.h"
+#include "QMCWaveFunctions/ComboOrbital.h"
+#include "LongRange/LRJastrowSingleton.h"
 
 namespace qmcplusplus {
 
@@ -45,29 +47,68 @@ namespace qmcplusplus {
 
     OrbitalBase* createTwoBody(ParticleSet& target);
     OrbitalBase* createOneBody(ParticleSet& target, ParticleSet& source);
+    inline void addTwoBodyPart(ParticleSet& target, ComboOrbital* jcombo) {
+      OrbitalBase* j2 = createTwoBody(target);
+      if (j2) jcombo->Psi.push_back(j2);
+    }
     bool put(xmlNodePtr cur);
   };
-
+     
   struct RPAPBCConstraints: public OrbitalConstraintsBase {
-    ///analytic functor
-    typedef RPAJastrow<RealType> InFuncType;
-    ///numerical functor
-    typedef NumericalJastrow<RealType> FuncType;
+    typedef LRJastrowSingleton::LRHandlerType HandlerType;
+    
     bool IgnoreSpin;
     RealType Rs;
     string ID;
-    vector<InFuncType*> InFuncList;
-    vector<FuncType*> FuncList;
 
     ~RPAPBCConstraints();
     RPAPBCConstraints(bool nospin=true):IgnoreSpin(nospin) {}
     void apply();
     void addOptimizables(VarRegistry<RealType>& outVars);
-    OrbitalBase* createTwoBody(ParticleSet& target);
+    OrbitalBase* createSRTwoBody(ParticleSet& target);
+    OrbitalBase* createLRTwoBody(ParticleSet& target);
+    inline void addTwoBodyPart(ParticleSet& target, ComboOrbital* jcombo) {
+      OrbitalBase* sr = createSRTwoBody(target);
+      if (sr) jcombo->Psi.push_back(sr);
+      OrbitalBase* lr = createLRTwoBody(target);
+      if (lr) jcombo->Psi.push_back(lr);
+    } 
     OrbitalBase* createOneBody(ParticleSet& target, ParticleSet& source);
     bool put(xmlNodePtr cur);
+     
+  private:
   };
 
+  template<class T>
+  struct ShortRangePartAdapter : JastrowFunctorBase<T> {
+  private:
+    typedef LRJastrowSingleton::LRHandlerType HandlerType;
+    HandlerType* handler;
+  public:
+    typedef typename JastrowFunctorBase<T>::real_type real_type;  
+    
+    explicit ShortRangePartAdapter(HandlerType* inhandler) {
+      handler = inhandler;
+    }
+    inline real_type evaluate(real_type r) { return f(r); }
+    inline real_type f(real_type r) { return handler->evaluate(r, 1.0/r); }
+    inline real_type df(real_type r) {
+ /*
+      // for now just do this numerically (very crudely)
+      real_type dr = 1e-8;
+      real_type fr = handler->evaluate(r, 1.0/r);
+      real_type frPlusDr = handler->evaluate(r+dr, 1.0/(r+dr));
+      return (frPlusDr - fr) / dr;
+  */    
+       
+      return handler->srDf(r, 1.0/r);
+    }
+    void reset() { ; }
+    void put(xmlNodePtr cur, VarRegistry<real_type>& vlist) { ; }
+  };
+
+
+  
 }
 #endif
 /***************************************************************************
