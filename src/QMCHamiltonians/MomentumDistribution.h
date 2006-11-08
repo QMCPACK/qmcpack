@@ -12,201 +12,218 @@
 
 namespace qmcplusplus {
 
-  // particle choice policies
-  class RandomChoicePolicy : public QMCTraits {
-  private:
-    const IndexType NumParticles;
+  class PtclChoiceBase : public QMCTraits {
   public:
-    RandomChoicePolicy(ParticleSet& p) : NumParticles(p.getTotalNum()) { ; }
-    RandomChoicePolicy(const RandomChoicePolicy& arg) : NumParticles(arg.NumParticles) { ; }
-    inline void NewWalker() { ; }
-    inline IndexType operator() () {
-      return static_cast<IndexType>(Random() * NumParticles);
-    }
-  };
-
-  class RandomChoicePerWalkerPolicy : public QMCTraits {
-  private:
-    bool IsCurrent;
-    IndexType CurrentChoice;
-    const IndexType NumParticles;
-  public:
-    RandomChoicePerWalkerPolicy(ParticleSet& p) : IsCurrent(false), NumParticles(p.getTotalNum()) { ; }
-    RandomChoicePerWalkerPolicy(const RandomChoicePerWalkerPolicy& rhs) :
-      IsCurrent(rhs.IsCurrent), CurrentChoice(rhs.CurrentChoice), NumParticles(rhs.NumParticles) { ; }
-    inline void NewWalker() { IsCurrent = false; }
-    inline IndexType operator() () {
-      if (!IsCurrent) {
-        IsCurrent = true;
-        CurrentChoice = static_cast<IndexType>(Random() * NumParticles);
-      } 
-      return CurrentChoice;
-    }
+    PtclChoiceBase() { ; }
+    PtclChoiceBase(const PtclChoiceBase& arg) { ; }
+    virtual void NewWalker() = 0;
+    virtual IndexType operator() () = 0;
+    virtual PtclChoiceBase* clone() const = 0;
+    virtual ~PtclChoiceBase() { ; }
   };
   
-  class StaticChoicePolicy : public QMCTraits {
+  // particle choice policies
+  class RandomChoice : public PtclChoiceBase {
+  private:
+    const IndexType NumParticles;
+  public:
+    RandomChoice(ParticleSet& p) : NumParticles(p.getTotalNum()) { ; }
+    RandomChoice(const RandomChoice& arg) : NumParticles(arg.NumParticles) { ; }
+    ~RandomChoice() { ; }
+    inline void NewWalker() { ; }
+    inline IndexType operator() () { return static_cast<IndexType>(Random() * NumParticles); }
+    inline RandomChoice* clone() const { return new RandomChoice(*this); };
+  };
+
+  class RandomChoicePerWalker : public PtclChoiceBase {
+  private:
+    IndexType CurrentChoice;
+    const IndexType NumParticles;
+  public:
+    RandomChoicePerWalker(ParticleSet& p) : NumParticles(p.getTotalNum()) { 
+      CurrentChoice = static_cast<IndexType>(Random() * NumParticles); 
+    }
+    RandomChoicePerWalker(const RandomChoicePerWalker& rhs) :
+      CurrentChoice(rhs.CurrentChoice), NumParticles(rhs.NumParticles) { ; }
+    ~RandomChoicePerWalker() { ; }
+    inline void NewWalker() { CurrentChoice = static_cast<IndexType>(Random() * NumParticles);  }
+    inline IndexType operator() () { return CurrentChoice; }
+    inline RandomChoicePerWalker* clone() const { return new RandomChoicePerWalker(*this); };
+  };
+  
+  class StaticChoice : public PtclChoiceBase {
   private:
     IndexType CurrentChoice;
   public:
-    StaticChoicePolicy(ParticleSet& p) { 
-      CurrentChoice = static_cast<IndexType>(Random() * p.getTotalNum()); 
-    }
-    StaticChoicePolicy(const StaticChoicePolicy& rhs) : CurrentChoice(rhs.CurrentChoice) { ; }
+    StaticChoice(ParticleSet& p) { CurrentChoice = static_cast<IndexType>(Random() * p.getTotalNum()); }
+    StaticChoice(const StaticChoice& rhs) : CurrentChoice(rhs.CurrentChoice) { ; }
+    ~StaticChoice() { ; }
     inline void NewWalker() { ; }
-    inline IndexType operator() () {
-      return CurrentChoice;
-    }
+    inline IndexType operator() () { return CurrentChoice; }
+    inline StaticChoice* clone() const { return new StaticChoice(*this); };
   };
+  
   
   class MomDistBase : public QMCTraits {
   protected:
+    IndexType NumParticles;
     IndexType totalNumSamples;
-    TinyVector<IndexType, 3> NumPts;
-    PosType InvSpacing;
-    FFTAbleVectorBase<ComplexType>* NofK;
     Vector<RealType> MomDist;
-
-    template<IndexType DistrDims>
-    void placeInBin(const PosType& FracDisp, ValueType RatioOfWvFcn) { 
-      TinyVector<IndexType, DistrDims> locInDistribution;
-      for (IndexType i = 0; i < DistrDims; i++) {
-	locInDistribution[i] = IndexType(std::floor(FracDisp[i] * NumPts[i]));
-      }
-      IndexType IndexInNofK = locInDistribution[DistrDims-1];
-      for (IndexType i = 1; i < DistrDims; i++) {
-	IndexInNofK *= NumPts[DistrDims-i];
-	IndexInNofK += locInDistribution[DistrDims-i-1];
-      }
-      (*NofK)(IndexInNofK) += RatioOfWvFcn;
-      totalNumSamples++;
-    }
-     
-    template<IndexType DisplDims, IndexType DistrDims> 
-    void updateDistHelper(ParticleSet& PtclSet, TrialWaveFunction& Psi, IndexType PtclToDisplace) {
-      PosType dr;
-      PosType fracDisp;
-      for (IndexType i = 0; i < DisplDims; i++) {
-	fracDisp[i] = Random();
-	dr += fracDisp[i] * PtclSet.Lattice.a(i);
-      }
-      PtclSet.makeMove(PtclToDisplace, dr);
-      placeInBin<DistrDims>(fracDisp, Psi.ratio(PtclSet, PtclToDisplace));
-      PtclSet.rejectMove(PtclToDisplace);
-    }
+    PtclChoiceBase* pcp;
+    
   public:
     // It is expected that all of the values will be initialized in the derived classes!
-    MomDistBase() { ; }
-    ~MomDistBase() {
-      delete NofK;
+    MomDistBase(PtclChoiceBase* pcb, IndexType NumPart) : NumParticles(NumPart) { 
+      totalNumSamples = 0;
+      pcp = pcb->clone(); 
     }
-    MomDistBase(const MomDistBase& arg) : totalNumSamples(arg.totalNumSamples),
-    InvSpacing(arg.InvSpacing), MomDist(arg.MomDist) { 
-       NofK = arg.NofK->clone();
+    virtual ~MomDistBase() { 
+      if (pcp) delete pcp; 
+    }
+    MomDistBase(const MomDistBase& arg) : NumParticles(arg.NumParticles), totalNumSamples(arg.totalNumSamples),
+    MomDist(arg.MomDist) { 
+      pcp = arg.pcp->clone(); 
     }
     
-    inline void resetDistribution() { *NofK *= 0.0; totalNumSamples = 0; }
+    virtual MomDistBase* clone() const = 0;
+    virtual void resetDistribution() { totalNumSamples = 0; }
+    virtual void updateDistribution(ParticleSet& PtclSet, TrialWaveFunction& Psi, IndexType NumCycles) = 0;   
+    virtual Vector<RealType>& getNofK() = 0;
+  };
+
+  template<unsigned dims>
+  class FFTMomentumDist : public MomDistBase {
+  protected:
+    TinyVector<IndexType, dims> NumPts;
+    FFTAbleVectorBase<ComplexType>* NofK;
+    TinyVector<RealType, dims> InvRsLatSize;
+    TinyVector<RealType, dims> Spacing;
+
+    // go from a set of integers with respect to NumPts and find the index in
+    // the linear structure that holds them
+    IndexType getIndex(const TinyVector<IndexType, dims>& LocInDistribution) {
+      IndexType IndexInNofK = LocInDistribution[0];
+      for (IndexType i = 1; i < dims; i++) {
+        IndexInNofK *= NumPts[i]; 
+	IndexInNofK += LocInDistribution[i];
+      }
+      return IndexInNofK;
+    }
+    
+    // These are used when a simple interpolation is needed to put a value that does not
+    // fall exactly on the grid onto the grid
+    void PlaceCloudInBin(const TinyVector<RealType, dims>& FracDisp, ValueType RatioOfWvFcn);
      
-    virtual void updateDistribution(ParticleSet& PtclSet, TrialWaveFunction& Psi, IndexType NumSamples) = 0;
-     
+    // This handles putting a value onto the grid
+    inline void placeIntsInBin(const TinyVector<IndexType, dims>& Indexes, 
+			       ValueType RatioOfWvFcn) {
+      IndexType index = getIndex(Indexes);
+      (*NofK)(index) += RatioOfWvFcn;
+    }
+
+    inline void placeInBin(const TinyVector<RealType, dims>& FracDisp, ValueType RatioOfWvFcn) { 
+      TinyVector<IndexType, dims> Indexes;
+      for (IndexType i = 0; i < dims; i++) {
+	Indexes[i] =IndexType(std::floor(FracDisp[i] * NumPts[i]));
+      }
+      placeIntsInBin(Indexes, RatioOfWvFcn);
+    } 
+
+    void initialize(const TinyVector<IndexType, dims>& inDimSizes, const TinyVector<RealType, dims>& inInvRsLatSize) {
+      NumPts = inDimSizes;
+      InvRsLatSize = inInvRsLatSize;
+      for (IndexType i = 0; i < dims; i++) {
+	Spacing[i] = 1.0 / (InvRsLatSize[i] * static_cast<RealType>(NumPts[i]));
+      }
+      NofK = new FFTAbleVector<dims, ComplexType, FFTWEngine>(NumPts);
+      MomDist.resize(NofK->size());
+    }
+    FFTMomentumDist(PtclChoiceBase* pcb, IndexType NumPart) : MomDistBase(pcb, NumPart) { ; }
+  public:
+    ~FFTMomentumDist() {
+      if (NofK) delete NofK;
+    }
+    FFTMomentumDist(const FFTMomentumDist& arg) : MomDistBase(arg), NumPts(arg.NumPts),
+    InvRsLatSize(arg.InvRsLatSize), Spacing(arg.Spacing) {
+      NofK = arg.NofK->clone();
+    }
+    
+    void resetDistribution() { (*NofK) *= 0.0; totalNumSamples = 0; }
+    
     Vector<RealType>& getNofK() {
-      NofK->setForwardNorm(1.0 / (NofK->size() * totalNumSamples));
+      NofK->setForwardNorm(static_cast<RealType>(NumParticles) / static_cast<RealType>(totalNumSamples));
+      /*
+       for(IndexType i = 0; i < NofK->size() / 2; i++) {
+         std::cout << (*NofK)[i].real() * static_cast<RealType>(NofK->size()) / static_cast<RealType>(totalNumSamples) << "    ";
+       }
+       std::cout << std::endl;
+      */
       NofK->transformForward();
       for (IndexType i = 0; i < NofK->size(); i++) {
-        MomDist[i] = (*NofK)[i].real();
+	MomDist[i] = (*NofK)[i].real();
+	std::cout << MomDist[i] << "    ";
       }
+      std::cout << std::endl;
+      
       return MomDist;
     }
-  };	  
-   
-  // really ugly, but works for now and shows the code that needs to
-  // be put some other place eventually
-  template<> void MomDistBase::updateDistHelper<3,1>(ParticleSet& PtclSet, TrialWaveFunction& Psi, IndexType PtclToDisplace) {
-    PosType dr;
-    for (IndexType i = 0; i < 3; i++) {
-      dr += Random() * PtclSet.Lattice.a(i);
-    }
-    PtclSet.makeMove(PtclToDisplace, dr);
-    RealType DispVecLength = std::sqrt(dot(dr, dr));
-    IndexType IndexInNofK = int(std::floor(NumPts[0] * InvSpacing[0] * DispVecLength));
-    if (IndexInNofK < NumPts[0]) {
-      (*NofK)[IndexInNofK] += Psi.ratio(PtclSet, PtclToDisplace);
-       totalNumSamples++;
-    }
-    PtclSet.rejectMove(PtclToDisplace);
-  }
+  };
+    
 
-  template<class PtclChoicePolicy>
-  class ThreeDimMomDist : public MomDistBase {
-  private:
-    PtclChoicePolicy pcp;
+  
+  class ThreeDimMomDist : public FFTMomentumDist<3> {
   public:
-    ThreeDimMomDist(ParticleSet& PtclSet, const Vector<IndexType>& DimSizes) : pcp(PtclSet) {
-      totalNumSamples = 0;
-      for (IndexType i = 0; i < 3; i++) {
-        NumPts[i] = DimSizes[i];
-        InvSpacing = 1.0 / std::sqrt(dot(PtclSet.Lattice.a(i), PtclSet.Lattice.a(i)));
-      }
-      NofK = new FFTAbleVector<3, ComplexType, FFTWEngine>(NumPts);
-      MomDist.resize(NofK->size());
-    }
-    ThreeDimMomDist(const ThreeDimMomDist& arg) : MomDistBase(arg), pcp(arg.pcp) { ; }
-    void updateDistribution(ParticleSet& PtclSet, TrialWaveFunction& Psi, IndexType NumSamples) {
-      IndexType targetNumSamples = totalNumSamples + NumSamples;
-      while(totalNumSamples < targetNumSamples) {
-        IndexType TargetParticle = pcp();
-        updateDistHelper<3,3>(PtclSet, Psi, TargetParticle);
-      }
-    }
+    ThreeDimMomDist(ParticleSet& PtclSet, const Vector<IndexType>& DimSizes, PtclChoiceBase* pcb);
+    ThreeDimMomDist(const ThreeDimMomDist& arg) : FFTMomentumDist<3>(arg) { ; }
+    ~ThreeDimMomDist() { ; }
+    
+    void updateDistribution(ParticleSet& PtclSet, TrialWaveFunction& Psi, IndexType NumCycles);
+    ThreeDimMomDist* clone() const { return new ThreeDimMomDist(*this); }
   };
 
-  template<class PtclChoicePolicy>
-  class OneDimMomDist : public MomDistBase {
-  private:
-    PtclChoicePolicy pcp;
+  class OneDimMomDist : public FFTMomentumDist<1> {
   public:
-    OneDimMomDist(ParticleSet& PtclSet, const Vector<IndexType>& DimSizes) : pcp(PtclSet) {
-      totalNumSamples = 0;
-      for (IndexType i = 0; i < 1; i++) {
-        NumPts[i] = DimSizes[i];
-        InvSpacing = 1.0 / std::sqrt(dot(PtclSet.Lattice.a(i), PtclSet.Lattice.a(i)));
-      }
-      NofK = new FFTAbleVector<1, ComplexType, FFTWEngine>(NumPts);
-      MomDist.resize(NofK->size());
-    }
-    OneDimMomDist(const OneDimMomDist& arg) : MomDistBase(arg), pcp(arg.pcp) { ; }
-    void updateDistribution(ParticleSet& PtclSet, TrialWaveFunction& Psi, IndexType NumSamples) {
-      IndexType targetNumSamples = totalNumSamples + NumSamples;
-      while(totalNumSamples < targetNumSamples) {
-        IndexType TargetParticle = pcp();
-        updateDistHelper<1,1>(PtclSet, Psi, TargetParticle);
-      }
-    }
+    OneDimMomDist(ParticleSet& PtclSet, const Vector<IndexType>& DimSizes, PtclChoiceBase* pcb);
+    OneDimMomDist(const OneDimMomDist& arg) : FFTMomentumDist<1>(arg) { ; }
+    ~OneDimMomDist() { ; }
+    
+    void updateDistribution(ParticleSet& PtclSet, TrialWaveFunction& Psi, IndexType NumCycles);
+    OneDimMomDist* clone() const { return new OneDimMomDist(*this); }
   };
 
-  template<class PtclChoicePolicy>
-  class AveragedOneDimMomDist : public MomDistBase {
-  private:
-    PtclChoicePolicy pcp;
+  class AveragedOneDimMomDist : public FFTMomentumDist<1> {
   public:
-    AveragedOneDimMomDist(ParticleSet& PtclSet, const Vector<IndexType>& DimSizes) : pcp(PtclSet) {
-      totalNumSamples = 0;
-      for (IndexType i = 0; i < 1; i++) {
-        NumPts[i] = DimSizes[i];
-        InvSpacing = 1.0 / std::sqrt(dot(PtclSet.Lattice.a(i), PtclSet.Lattice.a(i)));
-      }
-      NofK = new FFTAbleVector<1, ComplexType, FFTWEngine>(NumPts);
-      MomDist.resize(NofK->size());
-    }
-    AveragedOneDimMomDist(const AveragedOneDimMomDist& arg) : MomDistBase(arg), pcp(arg.pcp) { ; }
-    void updateDistribution(ParticleSet& PtclSet, TrialWaveFunction& Psi, IndexType NumSamples) {
-      IndexType targetNumSamples = totalNumSamples + NumSamples;
-      while(totalNumSamples < targetNumSamples) {
-        IndexType TargetParticle = pcp();
-        updateDistHelper<3,1>(PtclSet, Psi, TargetParticle);
-      }
-    }
+    AveragedOneDimMomDist(ParticleSet& PtclSet, const Vector<IndexType>& DimSizes, PtclChoiceBase* pcb);
+    AveragedOneDimMomDist(const AveragedOneDimMomDist& arg) : FFTMomentumDist<1>(arg) { ; }
+    ~AveragedOneDimMomDist() { ; }
+    
+    void updateDistribution(ParticleSet& PtclSet, TrialWaveFunction& Psi, IndexType NumSamples);
+    AveragedOneDimMomDist* clone() const { return new AveragedOneDimMomDist(*this); }
   };
 
+  class DirectMomDist : public MomDistBase {
+  protected:
+    Vector<PosType> GVectors;
+    Vector<ComplexType> NofK;
+    DirectMomDist(PtclChoiceBase* pcb, IndexType NumPart) : MomDistBase(pcb, NumPart) { ; }
+  public:  
+    DirectMomDist(const DirectMomDist& arg) : MomDistBase(arg), GVectors(arg.GVectors), NofK(arg.NofK) { ; }
+    ~DirectMomDist() { ; }
+    void resetDistribution() { totalNumSamples = 0; NofK *= 0.0; }
+    Vector<RealType>& getNofK();
+  };
+  
+  
+  class RandomMomDist : public DirectMomDist {
+  public:
+    RandomMomDist(ParticleSet& PtclSet, const Vector<PosType>& GVectors, PtclChoiceBase* pcb);
+    RandomMomDist(const RandomMomDist& arg) : DirectMomDist(arg) { ; }
+    ~RandomMomDist() { ; }
+    
+    void updateDistribution(ParticleSet& PtclSet, TrialWaveFunction& Psi, IndexType NumSamples);
+    RandomMomDist* clone() const { return new RandomMomDist(*this); }
+  };
+  
 }
            
 #endif
