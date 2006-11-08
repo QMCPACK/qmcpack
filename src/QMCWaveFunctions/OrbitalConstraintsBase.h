@@ -24,7 +24,9 @@
 #include "Optimize/VarList.h"
 
 namespace qmcplusplus {
-
+  
+  class ComboOrbital;
+  
   struct OrbitalConstraintsBase: public QMCTraits {
 
     typedef OneDimGridFactory::GridType RadialGridType;
@@ -54,7 +56,13 @@ namespace qmcplusplus {
      * @param target Quantum Particle Set on which an Orbital depend
      * @return A OrbitalBase*, typically ComboOrbital*
      */
-    virtual OrbitalBase* createTwoBody(ParticleSet& target)=0;
+
+    virtual void addTwoBodyPart(ParticleSet& target, ComboOrbital* j)=0;
+    /** Add the appropriate orbital (or orbitals in the case of 
+     *  a jastrow with a short and a long range part) to the ComboOrbital
+     */
+     
+//    virtual OrbitalBase* createTwoBody(ParticleSet& target)=0;
     /** Create an OrbitalBase using one-body relation
      * @param target Quantum Particle Set on which an Orbital depend
      * @param source Quantum/Classical ParticleSet 
