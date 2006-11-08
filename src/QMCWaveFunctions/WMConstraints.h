@@ -18,6 +18,7 @@
 #define QMCPLUSPLUS_WMFUNCTOR_SM_CONSTRAINTS_H
 #include "QMCWaveFunctions/OrbitalConstraintsBase.h"
 #include "QMCWaveFunctions/NumericalJastrowFunctor.h"
+#include "QMCWaveFunctions/ComboOrbital.h"
 
 namespace qmcplusplus {
 
@@ -83,6 +84,10 @@ namespace qmcplusplus {
     void addOptimizables(VarRegistry<RealType>& outVars);
     OrbitalBase* createTwoBody(ParticleSet& target);
     OrbitalBase* createOneBody(ParticleSet& target, ParticleSet& source);
+    inline void addTwoBodyPart(ParticleSet& target, ComboOrbital* jcombo) {
+      OrbitalBase* twobody = createTwoBody(target);
+      if (twobody) jcombo->Psi.push_back(twobody);
+    }
     bool put(xmlNodePtr cur);
     void addBasisGroup(xmlNodePtr cur);
     InFuncType* createCorrelation(xmlNodePtr cur, BasisSetType* basis);

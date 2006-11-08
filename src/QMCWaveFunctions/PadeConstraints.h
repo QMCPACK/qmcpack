@@ -18,6 +18,7 @@
 #define QMCPLUSPLUS_PADE_COMBO_CONSTRAINTS_H
 #include "QMCWaveFunctions/PadeFunctors.h"
 #include "QMCWaveFunctions/OrbitalConstraintsBase.h"
+#include "QMCWaveFunctions/ComboOrbital.h"
 #include "QMCWaveFunctions/NumericalJastrowFunctor.h"
 
 namespace qmcplusplus {
@@ -46,6 +47,10 @@ namespace qmcplusplus {
 
     OrbitalBase* createTwoBody(ParticleSet& target);
     OrbitalBase* createOneBody(ParticleSet& target, ParticleSet& source);
+    inline void addTwoBodyPart(ParticleSet& target, ComboOrbital* jcombo) {
+      OrbitalBase* j2 = createTwoBody(target);
+      if (j2) jcombo->Psi.push_back(j2);
+    }
     bool put(xmlNodePtr cur);
   };
 
@@ -66,6 +71,10 @@ namespace qmcplusplus {
     void addOptimizables(VarRegistry<RealType>& outVars);
     OrbitalBase* createTwoBody(ParticleSet& target);
     OrbitalBase* createOneBody(ParticleSet& target, ParticleSet& source);
+    inline void addTwoBodyPart(ParticleSet& target, ComboOrbital* jcombo) {
+      OrbitalBase* j2 = createTwoBody(target);
+      if (j2) jcombo->Psi.push_back(j2);
+    }
     bool put(xmlNodePtr cur);
   };
 
@@ -98,6 +107,10 @@ namespace qmcplusplus {
 
     OrbitalBase* createTwoBody(ParticleSet& target);
     OrbitalBase* createOneBody(ParticleSet& target, ParticleSet& source);
+    inline void addTwoBodyPart(ParticleSet& target, ComboOrbital* jcombo) {
+      OrbitalBase* j2 = createTwoBody(target);
+      if (j2) jcombo->Psi.push_back(j2);
+    }
     bool put(xmlNodePtr cur);
   };
 }
