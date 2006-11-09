@@ -31,6 +31,7 @@
 #include "QMCDrivers/QMCDriver.h"
 #include "QMCDrivers/VMC.h"
 #include "QMCDrivers/VMCMultiple.h"
+#include "QMCDrivers/RQMCMultiple.h"
 #include "Message/Communicate.h"
 #include <queue>
 using namespace std;
@@ -144,6 +145,33 @@ namespace qmcplusplus {
     qmcDriver->setValue("blocks", nblocks);
 
     runInfoNode = xmlNewNode(NULL,(const xmlChar*)"vmc-multi");
+    return true;
+  }
+
+  bool QMCInterface::SetRQMCMultiple(double dt, int chains, int steps, int nblocks){
+		if(qmcDriver != NULL){
+			delete qmcDriver;
+		}
+    qmcDriver = new RQMCMultiple(*ptclPool->getWalkerSet("e"),*psiPool->getPrimary(),*hamPool->getPrimary());
+    //cerr << " done." << endl;
+    
+		// get second psi, hamiltonian
+    QMCHamiltonian* secondHam = hamPool->getHamiltonian("h1");
+
+    TrialWaveFunction* secondPsi = psiPool->getWaveFunction("psi1");
+
+		// add them
+    qmcDriver->add_H_and_Psi(secondHam,secondPsi);
+
+    bool append_run = false;
+    qmcDriver->setStatus(myProject.CurrentRoot(),PrevConfigFile, append_run);
+
+    qmcDriver->setValue("timeStep", dt);
+    qmcDriver->setValue("chains", chains);
+    qmcDriver->setValue("steps", steps);
+    qmcDriver->setValue("blocks", nblocks);
+
+    runInfoNode = xmlNewNode(NULL,(const xmlChar*)"rqmc-multi");
     return true;
   }
 

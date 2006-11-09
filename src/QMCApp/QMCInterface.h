@@ -49,6 +49,7 @@ namespace qmcplusplus {
     bool initialize(int myProc, int numProcs);
   	bool SetVMC(double dt, int w, int steps, int nblocks);
   	bool SetVMCMultiple(double dt, int w, int steps, int nblocks);
+  	bool SetRQMCMultiple(double dt, int chains, int steps, int nblocks);
 		bool process();
     bool execute();
     void SetPtclPos(int id, double* newR);
