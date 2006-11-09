@@ -44,7 +44,7 @@ namespace qmcplusplus {
       NormFactor=4.0*M_PI/ref.Lattice.Volume;
     }
     inline T operator()(T r, T rinv) { return rinv;}
-    inline T df(T r) { return -rinv*rinv; }
+    inline T df(T r) { return -1.0/(r*r); }
     inline T Fk(T k, T rc) {
       return NormFactor/(k*k)* std::cos(k*rc);
     }
