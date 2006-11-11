@@ -160,7 +160,11 @@ struct GaussianTimesRN: public RadialOrbitalBase<T> {
 
   bool put(xmlNodePtr cur);
 
-  bool putBasisGroup(xmlNodePtr cur);
+  /** process cur xmlnode
+   * @param cur root node
+   * @param baseOff offset to the basePower
+   */
+  bool putBasisGroup(xmlNodePtr cur, int baseOff=0);
 
 };
 
@@ -195,9 +199,10 @@ void GaussianTimesRN<T>::reset() {
 }
 
 template<class T>
-bool GaussianTimesRN<T>::putBasisGroup(xmlNodePtr cur) {
+bool GaussianTimesRN<T>::putBasisGroup(xmlNodePtr cur, int baseOff) {
   const xmlChar* t=xmlGetProp(cur,(const xmlChar*)"basePower");
   if(t!= NULL) basePower = atoi((const char*)t);
+  basePower += baseOff;
   cur = cur->children;
   while(cur != NULL) {
     string cname((const char*)cur->name);
