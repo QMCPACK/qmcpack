@@ -87,14 +87,6 @@ IF(HAVE_LIBFFTW)
 )
 ENDIF(HAVE_LIBFFTW)
 
-IF(NOT QMCPLUSPLUS_RELEASE)
-IF(NOT QMC_COMPLEX)
-SET(WFSRCS ${WFSRCS}
-  ../QMCWaveFunctions/NumericalOrbitalSetBuilder.cpp
-  )
-ENDIF(NOT QMC_COMPLEX)
-
-ENDIF(NOT QMCPLUSPLUS_RELEASE)
 
 ####################################
 # QMC Drivers which implements various QMC algorithms
