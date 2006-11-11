@@ -26,6 +26,9 @@
 #include "OhmmsPETE/OhmmsVector.h"
 
 namespace qmcplusplus {
+
+enum {LINEAR_1DGRID, LOG_1DGRID, LOGZERO_1DGRID, CUSTOM_1DGRID};
+
 /** An abstract base class to implement a One-Dimensional grid 
  */
 template <class T, class CT=Vector<T> >
@@ -34,8 +37,13 @@ struct OneDimGridBase {
   typedef T value_type;
   typedef CT Array_t;
 
+
   ///the current index of the grid
   int Loc;
+  int GridTag;
+  int num_points;
+  value_type lower_bound;
+  value_type upper_bound;
   ///differential spacing of the grid
   value_type Delta;
   value_type dL;
@@ -48,6 +56,14 @@ struct OneDimGridBase {
 
   ///array to store the radial grid data
   Array_t X;
+
+
+  inline OneDimGridBase():num_points(0)
+  {}
+  inline int getGridTag() const  
+  {
+    return GridTag;
+  }
 
   ///return the current index 
   inline int currentIndex() const { return Loc;}
@@ -83,11 +99,11 @@ struct OneDimGridBase {
   ///returns \f$ r(i+1)-r(i)\f$
   inline T dr(int i) const { return X[i+1]-X[i];}  
   ///returns the size of the grid
-  inline int size() const { return X.size();}
+  inline int size() const { return num_points;}
   ///return the first grid point
-  inline T rmin() const { return X[0];}
+  inline T rmin() const { return lower_bound;}
   ///return the last grid point
-  inline T rmax() const { return X[X.size()-1];}
+  inline T rmax() const { return upper_bound;}
 
   ///update the variables for interpolations
   inline void updateFirstOrder(T r, bool all) {
@@ -203,9 +219,10 @@ struct OneDimGridBase {
 template <class T, class CT=Vector<T> >
 struct LinearGrid: public OneDimGridBase<T,CT> {
 
-  using OneDimGridBase<T,CT>::X;
   using OneDimGridBase<T,CT>::Loc;
+  using OneDimGridBase<T,CT>::GridTag;
   using OneDimGridBase<T,CT>::Delta;
+  using OneDimGridBase<T,CT>::X;
 
   // T Delta;
   T DeltaInv;
@@ -215,6 +232,10 @@ struct LinearGrid: public OneDimGridBase<T,CT> {
   }
 
   inline void set(T ri, T rf, int n) {
+    GridTag = LINEAR_1DGRID;
+    lower_bound=ri;
+    upper_bound=rf;
+    num_points=n;
     // Delta is the differential spacing
     X.resize(n);
     Delta = (rf-ri)/static_cast<T>(n-1);
@@ -235,17 +256,22 @@ struct LinearGrid: public OneDimGridBase<T,CT> {
 template <class T, class CT=Vector<T> >
 struct LogGrid: public OneDimGridBase<T,CT> {
 
-  using OneDimGridBase<T,CT>::X;
   using OneDimGridBase<T,CT>::Loc;
+  using OneDimGridBase<T,CT>::GridTag;
   using OneDimGridBase<T,CT>::Delta;
+  using OneDimGridBase<T,CT>::X;
   // T Delta;
   T OneOverLogDelta; 
-  
+
   inline void locate(T r){
     Loc = static_cast<int>(std::log(r/X[0])*OneOverLogDelta);
   }
 
   inline void set(T ri, T rf, int n) {
+    GridTag = LOG_1DGRID;
+    lower_bound=ri;
+    upper_bound=rf;
+    num_points=n;
     // r(i) = ri*(rf/ri)^(i/(n-1))
     // this expression is equal to:
     // r(i) = ri*exp(dlog_ratio*i)
@@ -276,9 +302,10 @@ struct LogGrid: public OneDimGridBase<T,CT> {
 template <class T, class CT=Vector<T> >
 struct LogGridZero: public OneDimGridBase<T,CT> {
 
-  using OneDimGridBase<T,CT>::X;
   using OneDimGridBase<T,CT>::Loc;
+  using OneDimGridBase<T,CT>::GridTag;
   using OneDimGridBase<T,CT>::Delta;
+  using OneDimGridBase<T,CT>::X;
   T OneOverA; 
   T OneOverB;
 
@@ -292,6 +319,10 @@ struct LogGridZero: public OneDimGridBase<T,CT> {
    * @param n number of grid, [0,n)
    */
   inline void set(T ri, T rf, int n) {
+    GridTag = LOGZERO_1DGRID;
+    lower_bound=ri;
+    upper_bound=rf;
+    num_points=n;
     OneOverA = 1.0/ri;
     OneOverB = 1.0/rf;
     X.resize(n);
@@ -308,12 +339,17 @@ struct LogGridZero: public OneDimGridBase<T,CT> {
 template <class T, class CT=Vector<T> >
 struct NumericalGrid: public OneDimGridBase<T,CT> {
 
-  using OneDimGridBase<T,CT>::X;
   using OneDimGridBase<T,CT>::Loc;
+  using OneDimGridBase<T,CT>::GridTag;
   using OneDimGridBase<T,CT>::Delta;
+  using OneDimGridBase<T,CT>::X;
  
   template<class VA>
   NumericalGrid(const VA& nv) {
+    GridTag = CUSTOM_1DGRID;
+    lower_bound=nv[0];
+    upper_bound=nv[nv.size()-1];
+    num_points=nv.size();
     X.resize(nv.size());
     std::copy(nv.begin(), nv.end(), X.data());
   }
@@ -331,8 +367,11 @@ struct NumericalGrid: public OneDimGridBase<T,CT> {
   }
   
   inline void set(T ri, T rf, int n) {
-    X.resize(n);
-    Delta = 0.0;
+    lower_bound=ri;
+    upper_bound=rf;
+    num_points=n;
+    //X.resize(n);
+    //Delta = 0.0;
   }
 };
 
