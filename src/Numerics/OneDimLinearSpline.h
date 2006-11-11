@@ -18,6 +18,7 @@
 #define QMCPLUSPLUS_GRID_FUNCTOR_LINEAR_SPLINE_H
 
 #include "Numerics/OneDimGridFunctor.h"
+//#define USE_MEMORYSAVEMODE
 
 namespace qmcplusplus {
 /** Perform One-Dimensional Cubic Spline Interpolation with fixed first-derivatives at the ends
@@ -47,9 +48,14 @@ public:
   using base_type::m_Y;
   using base_type::FirstAddress;
 
+  int First;
+  int Last;
+  value_type ConstValue;
+  point_type r_min;
+  point_type r_max; 
+  point_type delta; 
+  point_type delta_inv;
   data_type m_Y1;
-  int First,Last;
-  point_type r_min, r_max, delta_inv;
 
   OneDimLinearSpline(grid_type* gt = 0): base_type(gt){ }
 
@@ -60,25 +66,59 @@ public:
     std::copy(nv.begin(), nv.end(), m_Y.data());
     r_min=m_grid->rmin();
     r_max=m_grid->rmax();
-    delta_inv=1.0/m_grid->dh();
+    delta=m_grid->dh();
+    delta_inv=1.0/delta;
   }
 
   inline point_type rmax() const
   {
     return r_max;
   }
+
   /** evaluate the value at r
    * @param r value on a grid
    * @return value obtained by cubic-spline
+   *
+   * Performance may be tunned: define USE_MEMORYSAVEMODE
+   * to evaluate the coefficients instead of using aux. arrays
    */
   inline value_type splint(point_type r) {
-    if(r>=r_max) return 0.0;
+    if(r>=r_max) return ConstValue;
     int k = static_cast<int>((r-r_min)*delta_inv);
-    //int k = m_grid->getIndex(r);
-    //m_grid->locate(r);
-    //int k=m_grid->currentIndex();
-    point_type dr=r-(*m_grid)[k];
-    return m_Y[k]+m_Y1[k]*dr;
+#if defined(USE_MEMORYSAVEMODE)
+    return m_Y[k]+(m_Y[k+1]-m_Y[k])*(r*delta_inv-k);
+#else
+    return m_Y[k]+m_Y1[k]*(r-(*m_grid)[k]);
+#endif
+  }
+
+  inline value_type f(point_type r) const
+  {
+    if(r>=r_max) return ConstValue;
+    int k = static_cast<int>((r-r_min)*delta_inv);
+#if defined(USE_MEMORYSAVEMODE)
+    return m_Y[k]+(m_Y[k+1]-m_Y[k])*(r*delta_inv-k);
+#else
+    return m_Y[k]+m_Y1[k]*(r-(*m_grid)[k]);
+#endif
+  }
+
+  /** evaluate the index and the linear coefficient
+   * @param r distance
+   * @param k return index
+   * @param rfrac (r-floor(r/delta))/delta
+   */
+  inline void locate(point_type r, int &k, point_type& rfrac)
+  {
+    k=static_cast<int>((r-r_min)*delta_inv);
+    rfrac=r*delta_inv-k;
+  }
+
+  /** evaluate the value at r=(k + rfrac)*delta
+   */
+  inline value_type f(int k, point_type rfrac)
+  {
+    return m_Y[k]*(1.0-rfrac)+m_Y[k+1]*rfrac;
   }
 
   /** evaluate the value at r
@@ -99,19 +139,21 @@ public:
    * @param imax index of the last valid grid
    * @param ypn first derivative at imax grid point
    *
-   * Use m-relation to evalaute the spline coefficients on [imin,imax] grid points.
    */
   inline 
   void spline(int imin, value_type yp1, int imax, value_type ypn) {
     int npts(imax-imin+1);
     First=imin; Last=imax;
     m_Y1.resize(npts);
-    r_min=m_grid->r(imin);
-    r_max=m_grid->r(imax);
-    for(int i=0; i<imax-1; i++)
+    //r_min=m_grid->r(imin);
+    //r_max=m_grid->r(imax);
+    for(int i=imin; i<imax-1; i++)
     {
-      m_Y1[i]= (m_Y[i+1]-m_Y[i])/((*m_grid)[i+1]-(*m_grid)[i]);
+      //m_Y1[i]= (m_Y[i+1]-m_Y[i])/((*m_grid)[i+1]-(*m_grid)[i]);
+      m_Y1[i]= (m_Y[i+1]-m_Y[i])*delta_inv;
     }
+    m_Y1[imax]=0.0;
+    ConstValue=m_Y[imax];
   }
 
   inline void spline() {
