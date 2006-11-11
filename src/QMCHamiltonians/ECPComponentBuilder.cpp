@@ -73,9 +73,10 @@ namespace qmcplusplus {
 
     if(semiPtr.size()) {
       if(pp_nonloc==0) pp_nonloc=new NonLocalECPComponent; 
-      if(pp_loc) {
+      if(pp_loc) 
+      {
         for(int i=0; i<semiPtr.size(); i++) addSemiLocal(semiPtr[i]);
-      } 
+      }
       else 
         buildSemiLocalAndLocal(semiPtr);
  
@@ -446,6 +447,7 @@ namespace qmcplusplus {
     pp_nonloc->lmax=Lmax;
     pp_nonloc->Rmax=rmax;
 
+    //Debug
     //ofstream fout("C.semilocal.dat");
     //fout.setf(std::ios::scientific, std::ios::floatfield);
     //fout.precision(12);
@@ -466,21 +468,66 @@ namespace qmcplusplus {
     typedef GaussianTimesRN<RealType> InFuncType;
     InFuncType a;
     a.putBasisGroup(cur);
-    RadialPotentialType *app=new RadialPotentialType(agrid);
-    Transform2GridFunctor<InFuncType,RadialPotentialType> transform(a,*app);
-    transform.generate(agrid->rmin(),agrid->rmax(), agrid->size());
-    //int ig=0;
-    //while(ig<agrid->size()) {
-    //  (*app)(ig)=a.f((*agrid)[ig]);
-    //  ++ig;
+
+    int ng=agrid->size();
+    if(agrid->GridTag != LINEAR_1DGRID)
+    {
+      RealType ri=0.0;
+      RealType rf=agrid->rmax();
+      agrid = new LinearGrid<RealType>;
+      agrid->set(ri,rf,ng);
+      app_log() << "  Reset the grid for SemiLocal component to a LinearGrid. " << endl;
+    }
+
+    std::vector<RealType> v(ng);
+    for(int ig=0; ig<ng; ig++) {
+      v[ig]=a.f((*agrid)[ig]);
+    }
+    RadialPotentialType *app=new RadialPotentialType(agrid,v);
+    app->spline();
+
+    //ofstream fout("C.nonlocal.dat");
+    //fout.setf(std::ios::scientific, std::ios::floatfield);
+    //fout.precision(12);
+    //RealType r=0;
+    //while(r<agrid->rmax())
+    //{
+    //  RealType nvr=app->f(r);
+    //  RealType avr= a.f(r);
+    //  fout << setw(20) << r << setw(20) << nvr<< " " << avr << " " << nvr-avr << endl;
+    //  r+=0.01;
     //}
-    //app->spline(0,0.0,app->size()-1,0.0);
     return app;
   }
 
+  /** build a Local Pseudopotential
+   *
+   * For numerical stability, the radial function of the local pseudopotential is stored 
+   * as \f$rV(r)/Z_{eff}/Z_{e}\f$ for the distance r and \f$Z_e = -1\f$. 
+   * The coulomb factor $Z_{e}Z_{eff}/r$ is applied by LocalECPotential 
+   * (see LocalECPotential::evaluate).
+   */
   void ECPComponentBuilder::buildLocal(xmlNodePtr cur) {
 
     if(pp_loc) return; //something is wrong
+
+    string vFormat("V");
+    const xmlChar* vptr=xmlGetProp(cur,(const xmlChar*)"format");
+    if(vptr != NULL)
+    {
+      vFormat=(const char*)vptr;
+    }
+
+    int vPowerCorrection=1;
+    if(vFormat == "rV")
+    {
+      app_log() << "  Local pseudopotential format = rV" << endl;
+      vPowerCorrection=0;
+    } 
+    else 
+    {
+      app_log() << "  Local pseudopotential format = V" << endl;
+    }
 
     typedef GaussianTimesRN<RealType> InFuncType;
     GridType* grid_local=0;
@@ -493,56 +540,71 @@ namespace qmcplusplus {
       if(cname == "grid") {
         grid_local=OneDimGridFactory::createGrid(cur);
       } else if(cname == "basisGroup") {
-        vr.putBasisGroup(cur);
+        vr.putBasisGroup(cur,vPowerCorrection);
         bareCoulomb=false;
       }
       cur=cur->next;
     }
 
-    int ng=grid_local->size();
-    vector<RealType> v(ng);
-
-    //if(bareCoulomb) {
-    //  for(int ig=0; ig<ng; ig++) {
-    //    v[ig]=1.0/(*grid_local)[ig];
-    //  }
-    //} else {
-    //  RealType zinv=1.0/Zeff;
-    //  for(int ig=0; ig<ng; ig++) {
-    //    double r=(*grid_local)[ig];
-    //    v[ig]=1.0/r-zinv*vr.f(r);
-    //  }
-    //}
-    //pp_loc=new RadialPotentialType(grid_local,v);
-    //int imin = 0;
-    //RealType yprime_i = ((*pp_loc)(imin+1)-(*pp_loc)(imin))/pp_loc->dr(imin);
-    //pp_loc->spline(imin,yprime_i,ng-1,0.0);
-
-    //multiply by r
-    if(bareCoulomb) {
-      for(int ig=0; ig<ng; ig++) {
-        v[ig]=1.0;
-      }
-    } else {
-      RealType zinv=1.0/Zeff;
-      for(int ig=0; ig<ng; ig++) {
-        double r=(*grid_local)[ig];
-        v[ig]=1.0-zinv*r*vr.f(r);
+    if(grid_local->GridTag == CUSTOM_1DGRID)
+    {
+      app_error() << "  Custom grid is used. Need to recast to the linear grid" << endl;
+      OHMMS::Controller->abort();
+    } 
+    else
+    {
+      vector<RealType> v;
+      if(bareCoulomb) {
+        app_log() << "   Bare Coulomb potential is used." << endl;
+        grid_local->set(0.0,1.,3);
+        v.resize(3);
+        for(int ig=0; ig<3; ig++) v[ig]=1.0;
+        pp_loc=new RadialPotentialType(grid_local,v);
+        pp_loc->spline(0,0.0,2,0.0);
+      } else {
+        app_log() << "   Guassian basisGroup is used: base power " << vr.basePower << endl;
+        const RealType eps=1e-12;//numeric_limits<RealType>::epsilon();//1e-12;
+        RealType zinv=1.0/Zeff;
+        RealType r=5.;
+        bool ignore=true;
+        int last=grid_local->size()-1;
+        while(ignore&&last)
+        {
+          r=(*grid_local)[last];
+          ignore=(abs(zinv*vr.f(r))<eps);
+          --last;
+        }
+        if(last ==0)
+        {
+          app_error() << "  Illegal Local Pseudopotential " <<endl;
+        }
+        //Add the reset values here
+        int ng=r/1e-3+1;
+        app_log() << "     Use a Linear Grid: [0,"<< r << "] Number of points = " << ng << endl;
+        grid_local->set(0.0,r,ng);
+        v.resize(ng);
+        v[0]=1.0;
+        for(int ig=1; ig<ng-1; ig++) {
+          double r=(*grid_local)[ig];
+          v[ig]=1.0-zinv*vr.f(r);
+        }
+        v[ng-1]=1.0;
+        pp_loc=new RadialPotentialType(grid_local,v);
+        pp_loc->spline(); //use the fixed conditions
       }
     }
-    pp_loc=new RadialPotentialType(grid_local,v);
-    int imin = 0;
-    RealType yprime_i = ((*pp_loc)(imin+1)-(*pp_loc)(imin))/pp_loc->dr(imin);
-    pp_loc->spline(imin,yprime_i,ng-1,0.0);
 
-    //cout << " Effective Z = " << Zeff << endl;
     //ofstream fout("C.local.dat");
     //fout.setf(std::ios::scientific, std::ios::floatfield);
     //fout.precision(12);
-    //int ig=0;
-    //while(ig<grid_semilocal->size()) {
-    //  double r=(*grid_semilocal)[ig++];
-    //  fout << setw(20) << r << setw(20) << localpp->f(r)-Zeff/r<< endl;
+    //RealType r=1e-6;
+    //RealType zinv=1.0/Zeff;
+    //while(r<5.0)
+    //{
+    //  RealType nvr=pp_loc->f(r);
+    //  RealType avr= 1.0-zinv*r*vr.f(r);
+    //  fout << setw(20) << r << setw(20) << nvr<< " " << nvr-avr << endl;
+    //  r+=0.01;
     //}
   }
 
