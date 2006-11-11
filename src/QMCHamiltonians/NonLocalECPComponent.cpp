@@ -82,6 +82,12 @@ namespace qmcplusplus {
         //psi.rejectMove(iel);
       }
       // Compute radial potential
+      //int k;
+      //RealType rfrac;
+      //nlpp_m[0]->locate(r,k,rfrac);
+      //for(int ip=0;ip< nchannel; ip++){
+      //  vrad[ip]=nlpp_m[ip]->f(k,rfrac)*wgt_angpp_m[ip];
+      //}
       for(int ip=0;ip< nchannel; ip++){
         vrad[ip]=nlpp_m[ip]->splint(r)*wgt_angpp_m[ip];
       }
