@@ -221,6 +221,9 @@ struct LinearGrid: public OneDimGridBase<T,CT> {
 
   using OneDimGridBase<T,CT>::Loc;
   using OneDimGridBase<T,CT>::GridTag;
+  using OneDimGridBase<T,CT>::num_points;
+  using OneDimGridBase<T,CT>::lower_bound;
+  using OneDimGridBase<T,CT>::upper_bound;
   using OneDimGridBase<T,CT>::Delta;
   using OneDimGridBase<T,CT>::X;
 
@@ -258,6 +261,9 @@ struct LogGrid: public OneDimGridBase<T,CT> {
 
   using OneDimGridBase<T,CT>::Loc;
   using OneDimGridBase<T,CT>::GridTag;
+  using OneDimGridBase<T,CT>::num_points;
+  using OneDimGridBase<T,CT>::lower_bound;
+  using OneDimGridBase<T,CT>::upper_bound;
   using OneDimGridBase<T,CT>::Delta;
   using OneDimGridBase<T,CT>::X;
   // T Delta;
@@ -304,6 +310,9 @@ struct LogGridZero: public OneDimGridBase<T,CT> {
 
   using OneDimGridBase<T,CT>::Loc;
   using OneDimGridBase<T,CT>::GridTag;
+  using OneDimGridBase<T,CT>::num_points;
+  using OneDimGridBase<T,CT>::lower_bound;
+  using OneDimGridBase<T,CT>::upper_bound;
   using OneDimGridBase<T,CT>::Delta;
   using OneDimGridBase<T,CT>::X;
   T OneOverA; 
@@ -341,6 +350,9 @@ struct NumericalGrid: public OneDimGridBase<T,CT> {
 
   using OneDimGridBase<T,CT>::Loc;
   using OneDimGridBase<T,CT>::GridTag;
+  using OneDimGridBase<T,CT>::num_points;
+  using OneDimGridBase<T,CT>::lower_bound;
+  using OneDimGridBase<T,CT>::upper_bound;
   using OneDimGridBase<T,CT>::Delta;
   using OneDimGridBase<T,CT>::X;
  
