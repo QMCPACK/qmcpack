@@ -61,6 +61,11 @@ namespace qmcplusplus {
         agrid->set(astep,ascale,npts);
       } else {
         LOGMSG("Using log grid with default values: ri = " << ri << " rf = " << rf << " npts = " << npts)
+        if(ri<numeric_limits<RealType>::epsilon())
+        {
+          ri=numeric_limits<RealType>::epsilon();
+          app_error() << "   LogGrid cannot accept r=0 for the initial point. Using ri=" << ri << endl;
+        }
         agrid = new LogGrid<RealType>;
         agrid->set(ri,rf,npts);
       }
