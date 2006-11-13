@@ -13,11 +13,14 @@
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
+// -*- C++ -*-
 #include "QMCHamiltonians/ECPComponentBuilder.h"
 #include "Numerics/GaussianTimesRN.h"
 #include "Numerics/Transform2GridFunctor.h"
 #include "QMCFactory/OneDimGridFactory.h"
 #include "QMCHamiltonians/Ylm.h"
+#include "QMCHamiltonians/FSAtomPseudoPot.h"
+#include "Utilities/IteratorUtility.h"
 #include <cmath>
 
 namespace qmcplusplus {
@@ -34,14 +37,16 @@ namespace qmcplusplus {
     // build an XML tree from a the file;
     xmlDocPtr m_doc = xmlParseFile(fname.c_str());
     if (m_doc == NULL) {
-      ERRORMSG("File " << fname << " is invalid")
-        xmlFreeDoc(m_doc);
+      xmlFreeDoc(m_doc);
+      app_error() <<"File " << fname << " is invalid" << endl;
+      OHMMS::Controller->abort();
     }    
     // Check the document is of the right kind
     xmlNodePtr cur = xmlDocGetRootElement(m_doc);
     if (cur == NULL) {
-      ERRORMSG("Empty document");
       xmlFreeDoc(m_doc);
+      app_error() << "Empty document" << endl;
+      OHMMS::Controller->abort();
     }
 
     bool success=put(cur);
@@ -52,7 +57,7 @@ namespace qmcplusplus {
 
   bool ECPComponentBuilder::put(xmlNodePtr cur) {
     int nk=0;
-    vector<RealType> kpts;
+    //vector<RealType> kpts;
     vector<xmlNodePtr> semiPtr;
     cur=cur->children;
     while(cur != NULL) {
@@ -63,10 +68,10 @@ namespace qmcplusplus {
         semiPtr.push_back(cur);//save the pointer
       } else if(cname == "local") {
         buildLocal(cur);
-      } else if(cname == "sphericalGrid") {
-        nk=atoi((const char*)xmlGetProp(cur,(const xmlChar*)"size"));
-        kpts.resize(nk*4);
-        putContent(kpts,cur);
+      //} else if(cname == "sphericalGrid") {
+      //  nk=atoi((const char*)xmlGetProp(cur,(const xmlChar*)"size"));
+      //  kpts.resize(nk*4);
+      //  putContent(kpts,cur);
       }
       cur=cur->next;
     }
@@ -79,14 +84,11 @@ namespace qmcplusplus {
       }
       else 
         buildSemiLocalAndLocal(semiPtr);
- 
-      app_log() << "    Maximum angular momentum of NonLocalECP " << pp_nonloc->lmax << endl;
-      app_log() << "    Maximum cutoff of NonLocalECP " << pp_nonloc->Rmax << endl;
     } 
 
     if(pp_nonloc) {
-      pp_nonloc->lmax=Lmax;
       SetQuadratureRule(Nrule);
+      pp_nonloc->print(app_log());
 //       if(nk == 0) { //assign default
 //         RealType w=1.0/12.0;
 //         pp_nonloc->addknot(PosType( 0.000000, 0.525731, 0.850651),w);
@@ -288,18 +290,14 @@ namespace qmcplusplus {
     double wSum = 0.0;
     for (int k=0; k < nk; k++) {
       PosType r = pp_nonloc->sgridxyz_m[k];
-      double nrm = r[0]*r[0] + r[1]*r[1] + r[2]*r[2];
+      double nrm = dot(r,r);
       assert (std::fabs(nrm-1.0) < 1.0e-14);
       wSum += pp_nonloc->sgridweight_m[k];
-//       fprintf (stderr, "%14.10f %14.10f %14.10f %14.10f\n",
-// 	       pp_nonloc->sgridxyz_m[k][0],
-// 	       pp_nonloc->sgridxyz_m[k][1],
-// 	       pp_nonloc->sgridxyz_m[k][2],
-// 	       pp_nonloc->sgridweight_m[k]);
+      //cout << pp_nonloc->sgridxyz_m[k] << " " << pp_nonloc->sgridweight_m[k] << endl;
     }
     assert (std::fabs(wSum - 1.0) < 1.0e-14);
     // Check the quadrature rule
-    CheckQuadratureRule (lexact);
+    CheckQuadratureRule(lexact);
 
   }
 
@@ -406,15 +404,13 @@ namespace qmcplusplus {
 	    if ((l1==l2) && (m1==m2)) 
 	      re -= 1.0;
 	    if ((std::fabs(im) > 1.0e-14) || (std::fabs(re) > 1.0e-14)) {
-	      ERRORMSG("Broken spherical quadrature for " << grid.size()
-		       << "-point rule.\n");
-	      	      abort();
+	      app_error() << "Broken spherical quadrature for " << grid.size() << "-point rule.\n" << endl;
+              OHMMS::Controller->abort();
 	    }
 // 	    fprintf (stderr, "(l1,m1,l2m,m2) = (%2d,%2d,%2d,%2d)  sum = (%20.16f %20.16f)\n",
 // 	     l1, m1, l2, m2, real(sum), imag(sum));
 	    
 	  }
-    cerr << "Passed harmonic check for " << grid.size() << "-point quadrature rule.\n";
   }
 
 
@@ -519,9 +515,9 @@ namespace qmcplusplus {
     }
 
     int vPowerCorrection=1;
-    if(vFormat == "rV")
+    if(vFormat == "r*V")
     {
-      app_log() << "  Local pseudopotential format = rV" << endl;
+      app_log() << "  Local pseudopotential format = r*V" << endl;
       vPowerCorrection=0;
     } 
     else 
@@ -579,7 +575,7 @@ namespace qmcplusplus {
           app_error() << "  Illegal Local Pseudopotential " <<endl;
         }
         //Add the reset values here
-        int ng=r/1e-3+1;
+        int ng=static_cast<int>(r/1e-3)+1;
         app_log() << "     Use a Linear Grid: [0,"<< r << "] Number of points = " << ng << endl;
         grid_local->set(0.0,r,ng);
         v.resize(ng);
@@ -611,151 +607,122 @@ namespace qmcplusplus {
   void ECPComponentBuilder::buildSemiLocalAndLocal(vector<xmlNodePtr>& semiPtr) {
     //this is abinit/siesta format
     // There should only be one semilocal tag
-    bool is_r_times_V(false);
+    bool is_r_times_V(true);
 
-    if (semiPtr.size() != 1) {
+    if (semiPtr.size()> 1) {
       ERRORMSG("We have more than one semilocal sections in the PP xml file.");
-      return;
+      OHMMS::Controller->abort();
     }
-    RealType rmax = 0.0;
-    xmlNodePtr cur_semilocal = semiPtr[0];
 
-    // First, check the attributes of the semilocal section
-    string units = (const char*) xmlGetProp(cur_semilocal, (const xmlChar*)"units");
-    RealType Vprefactor;
-    if (units == "rydberg")
+    RealType rmax = 0.0;
+    //attributes: initailize by defaults
+    string units("hartree");
+    string format("r*V");
+    string lloc;
+    int ndown=1; 
+    int nup=0;
+    int nrule=4;//default quadrature
+    int Llocal = -1;
+
+    OhmmsAttributeSet aAttrib;
+    aAttrib.add(units,"units");
+    aAttrib.add(format,"format");
+    aAttrib.add(ndown,"npots-down");
+    aAttrib.add(nup,"npots-up");
+    aAttrib.add(Llocal,"l-local");
+    aAttrib.add(nrule,"nrule");
+
+    xmlNodePtr cur_semilocal = semiPtr[0];
+    aAttrib.put(cur_semilocal);
+
+
+    RealType Vprefactor=1.0;
+    if (units == "rydberg") 
       Vprefactor = 0.5;
     else if (units == "hartree")
       Vprefactor = 1.0;
     else {
       ERRORMSG("Unrecognized units """ << units << """ in PP file.");
-      return;
+      OHMMS::Controller->abort();
     }
 
-    // Read "format" type
-    string format = (const char*)xmlGetProp(cur_semilocal, (const xmlChar*)"format");
     if (format == "r*V") 
       is_r_times_V = true;
     else if (format == "V")
       is_r_times_V = false;
     else {
       ERRORMSG("Unrecognized format """ << format << """ in PP file.");
-      return;
+      OHMMS::Controller->abort();
     }
 
-    // Read number of potentials
-    int ndown = atol((const char*)xmlGetProp(cur_semilocal, (const xmlChar*)"npots-down"));
-    int nup   = atol((const char*)xmlGetProp(cur_semilocal, (const xmlChar*)"npots-up"));
-    
-    // Read which channels is the local one
-    string lloc = (const char *)xmlGetProp(cur_semilocal, (const xmlChar*)"l-local");
-    if (lloc != "")
-      Llocal = (int)atol(lloc.c_str());
-    else
-      Llocal = -1;
-
     // Read which quadrature rule to use
-    const char *nrule = (const char*)xmlGetProp(cur_semilocal, (const xmlChar*)"nrule");
-    Nrule = (nrule==NULL) ? 4 : (int)atol(nrule);
-    cerr << "nrule = " << Nrule << endl;
+    //const char *nrule = (const char*)xmlGetProp(cur_semilocal, (const xmlChar*)"nrule");
+    //Nrule = (nrule==NULL) ? 4 : (int)atol(nrule);
+    //cerr << "nrule = " << Nrule << endl;
 
-    // Now read vps sections
-    xmlNodePtr cur_vps = cur_semilocal->children;
     // We cannot construct the potentials as we construct them since
     // we may not know which one is local yet.
-    vector<vector<double> > Vls;
-    vector<GridType*> Grids;
-    vector<int> Ls;
+    typedef FSAtomPseudoPot<RealType> InFuncType;
+    vector<InFuncType*> Vls;
+    int iLocal=-1;
+    // Now read vps sections
+    xmlNodePtr cur_vps = cur_semilocal->children;
     while (cur_vps != NULL) {
       string vname ((const char*)cur_vps->name);
-      if (vname == "vps") {
-	int l=angMon[(const char*)xmlGetProp(cur_vps,(const xmlChar*)"l")];
-	double rc = atof ((const char*)xmlGetProp(cur_vps, (const xmlChar*)"cutoff"));
-	rmax = max(rmax, rc);
+      if (vname == "vps") 
+      {
+        OhmmsAttributeSet aAttrib;
+        string lstr("s");
+        RealType rc=-1.0;
+        aAttrib.add(lstr,"l");
+        aAttrib.add(rc,"cutoff");
+        aAttrib.put(cur_vps);
 
-	xmlNodePtr cur_radfunc = cur_vps->children;
-	if ((string)(const char*)cur_radfunc->name == "text")
-	  cur_radfunc = cur_radfunc->next;
-	assert ((string)(const char*)cur_radfunc->name == "radfunc");
+        InFuncType* avps=new InFuncType(angMon[lstr],rc);
 
-	xmlNodePtr cur_data = cur_radfunc->children;
-	GridType *grid_vps(NULL);
-	vector<RealType> vr;
-	bool addedPot = false;
-	while (cur_data != NULL) {
-	  if ((string) (const char*)cur_data->name == "grid")
-	    grid_vps = OneDimGridFactory::createGrid(cur_data);
-	  else if ((string) (const char*)cur_data->name == "data") {
-	    // Read the numerical data
-	    putContent(vr, cur_data);
-	  }
-	  else if ((string) (const char*)cur_data->name == "text")
-	    ; // do nothing
-	  else {
-	    ERRORMSG( "Unrecognized section """ << cur_data->name << " in vps in reading PP.");
-	    return;
-	  }
-	  cur_data = cur_data->next;
-	}
-	if ((vr.size()!=0) && (grid_vps != NULL) && !addedPot) {
-	  if (is_r_times_V) {
-	    for (int i=0; i<vr.size(); i++)
-	      vr[i] /= (*grid_vps)[i];
-	    // simple extrapolation
-	    vr[0] = 2.0*vr[1] - vr[2];
-	  }
-	  for (int i=0; i<vr.size(); i++)
-	    vr[i] *= Vprefactor;
-	  Vls.push_back (vr);
-	  Grids.push_back(grid_vps);
-	  Ls.push_back(l);
-	  addedPot = true;
-	}
+        avps->put(cur_vps);
+        Lmax=std::max(Lmax,avps->AngL);
+        rmax=std::max(rmax,rc);
+
+        Vls.push_back(avps);
       }
       cur_vps = cur_vps->next;
     }
 
-    if (Llocal == -1)
-      Llocal = Lmax;    
+    if (Llocal == -1) Llocal = Lmax;    
+
+    Lmax=0;
     // Find which channel is the local one
-    int iLocal = 0;
-    for (int i=0; i<Ls.size(); i++)
-      if (Ls[i] == Llocal)
-	iLocal = i;
+    for (int i=0; i<Vls.size(); i++)
+    {
+      int l(Vls[i]->AngL);
+      if (l == Llocal)
+        iLocal = i;
       else
-	Lmax = std::max(Ls[i],Lmax);
+        Lmax = std::max(l,Lmax);
+    }
+
+    //take care of the local first
+    if(is_r_times_V) 
+    {
+      pp_loc = Vls[iLocal]->getLocalPot(-Vprefactor/Zeff);
+    } 
+    else
+    {
+      app_error() << "  format=\"V\" is not implemented." << endl;
+      OHMMS::Controller->abort();
+    }
 
     // Now construct the radial potentials
+    NumNonLocal=0;
     for (int i=0; i<Vls.size(); i++) {
-      if (i == iLocal) {  
-	// Construct the local channel
-	vector<double> vloc(Vls[i].size());
-
-        //Multiply by r
-	//for (int j=0; j<vloc.size(); j++)
-	//  vloc[j] = Vls[i][j]/(-Zeff);
-	for (int j=0; j<vloc.size(); j++)
-	  vloc[j] = (*Grids[i])[j]*Vls[i][j]/(-Zeff);
-        
-	pp_loc = new RadialPotentialType (Grids[i], vloc);
-	int imin = 0; int ng = vloc.size();
-	RealType yprime_i = ((*pp_loc)(imin+1)-(*pp_loc)(imin))/pp_loc->dr(imin);
-	pp_loc->spline(imin,yprime_i,ng-1,0.0);
-	cerr << "Added local potential for l=" << Ls[i] << endl;
-      }
-      else {
-	// Construct the nonlocal channels
-	for (int j=0; j<Vls[i].size(); j++)
-	  Vls[i][j] -= Vls[iLocal][j];
-	RadialPotentialType *newpot = new RadialPotentialType(Grids[i], Vls[i]);
-	int ng = Vls[i].size();
-	RealType yprime_i = (Vls[i][1]-Vls[i][0])/Grids[i]->dr(0);	
-	newpot->spline(0, yprime_i, ng-1, 0.0);
-	pp_nonloc->add (Ls[i], newpot); 
-	cerr << "Added nonlocal potential for l=" << Ls[i] << endl;
-	NumNonLocal++;
-      }
+      if (i == iLocal) continue;
+      RadialPotentialType* newpot = Vls[i]->getNonLocalPot(*Vls[iLocal],Vprefactor);
+      pp_nonloc->add(Vls[i]->AngL,newpot);
+      NumNonLocal++;
     }
+
+    delete_iter(Vls.begin(),Vls.end());
     pp_nonloc->lmax=Lmax;
     pp_nonloc->Rmax=rmax;
   }
