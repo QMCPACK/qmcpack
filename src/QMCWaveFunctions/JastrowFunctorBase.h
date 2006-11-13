@@ -72,7 +72,7 @@ struct JastrowFunctorBase {
       typedef typename CT::real_type real_type;
       std::vector<real_type> C;
       std::vector<CT*> Phi;
-      std::vector<string> ID;
+      std::vector<std::string> ID;
 
       ComboFunctor() { 
         C.reserve(8);

@@ -108,20 +108,59 @@ namespace qmcplusplus {
             neworb->reset(inData.begin(), inData.end(), targetPtcl.Lattice.BoxBConds[0]);
             NumericalOrbitals[wfshortname]=neworb;
             app_log() << "   Reading spline function " << wfname << endl;
-            //PosType r0(4.9194332197e+00,4.5695928280e+00,1.2260692483e+01);
-            //double val=neworb->evaluate(r0);
-            //abort();
           } else {
             neworb = (*it).second;
             app_log() << "   Reusing spline function " << wfname << endl;
           }
           psi->add(neworb);
         }
-
         H5Fclose(h_file);
       }
       cur=cur->next;
     }
+
+
+    SPOType* aorb=(*NumericalOrbitals.begin()).second;
+    string fname("spline3d.vti");
+    std::ofstream dfile(fname.c_str());
+    dfile.setf(ios::scientific, ios::floatfield);
+    dfile.setf(ios::left,ios::adjustfield);
+    dfile.precision(10);
+
+    dfile << "<?xml version=\"1.0\"?>" << endl;
+    dfile << "<VTKFile type=\"ImageData\" version=\"0.1\">" << endl;
+    dfile << "  <ImageData WholeExtent=\"0 " << npts[0]-2 << " 0 " << npts[1]-2 << " 0 " << npts[2]-2 
+      << "\" Origin=\"0 0 0\" Spacing=\"1 1 1\">"<< endl;
+    dfile << "    <Piece Extent=\"0 " << npts[0]-2 << " 0 " << npts[1]-2 << " 0 " << npts[2]-2 << "\">" << endl;
+    dfile << "       <PointData Scalars=\"wfs\">" << endl;
+    dfile << "          <DataArray type=\"Float32\" Name=\"wfs\">" << endl;
+    int ng=0;
+    GradType grad;
+    RealType lap;
+    for(int ix=0; ix<npts[0]-1; ix++) {
+      double x(GridXYZ->gridX->operator()(ix));
+      for(int iy=0; iy<npts[1]-1; iy++) {
+        double y(GridXYZ->gridY->operator()(iy));
+        for(int iz=0; iz<npts[2]-1; iz++, ng++) {
+          PosType p(x,y,GridXYZ->gridZ->operator()(iz));
+          //aorb.setgrid(p);
+          //Timing with the ofstream is not correct. 
+          //Uncomment the line below and comment out the next two line.
+          //double t=aorb.evaluate(p,grad,lap);
+          dfile << setw(20) << aorb->evaluate(p,grad,lap);
+          if(ng%5 == 4) dfile << endl;
+        }
+      }
+    }
+    dfile << "          </DataArray>" << endl;
+    dfile << "       </PointData>" << endl;
+    dfile << "    </Piece>" << endl;
+    dfile << "  </ImageData>" << endl;
+    dfile << "</VTKFile>" << endl;
+
+    abort();
+
+
     return psi;
   }
 }
