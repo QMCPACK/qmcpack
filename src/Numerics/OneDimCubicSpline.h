@@ -222,6 +222,14 @@ public:
     std::copy(nv.begin(), nv.end(), m_Y.data());
   }
 
+  template<class VV>
+  void assign(grid_type* gt, const VV& nv)
+  {
+    m_grid=gt;
+    m_Y.resize(nv.size());
+    std::copy(nv.begin(), nv.end(), m_Y.data());
+  }
+
   inline value_type 
   splint(point_type r) {
     //If this functor manages the grid, apply periodic boundary condition and
