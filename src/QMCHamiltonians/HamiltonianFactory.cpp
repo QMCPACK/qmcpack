@@ -24,10 +24,7 @@
 #include "QMCHamiltonians/IonIonPotential.h"
 #include "QMCHamiltonians/HarmonicPotential.h"
 #include "QMCHamiltonians/LocalCorePolPotential.h"
-#if !defined(QMC_COMPLEX)
-#include "QMCHamiltonians/NonLocalPPotential.h"
 #include "QMCHamiltonians/ECPotentialBuilder.h"
-#endif
 #if defined(HAVE_LIBFFTW)
 #include "QMCHamiltonians/ModInsKineticEnergy.h"
 #include "QMCHamiltonians/MomentumDistribution.h"
@@ -216,8 +213,7 @@ namespace qmcplusplus {
   void 
   HamiltonianFactory::addPseudoPotential(xmlNodePtr cur) {
 
-#if !defined(QMC_COMPLEX)
-    string src("i"),title("PseudoPot"),wfname("invalid"),format("old");
+    string src("i"),title("PseudoPot"),wfname("invalid"),format("xml");
 
     OhmmsAttributeSet pAttrib;
     pAttrib.add(title,"name");
@@ -225,6 +221,12 @@ namespace qmcplusplus {
     pAttrib.add(wfname,"wavefunction");
     pAttrib.add(format,"format"); //temperary tag to switch between format
     pAttrib.put(cur);
+
+    if(format == "old")
+    {
+      app_error() << "Table format is not supported." << endl;
+      OHMMS::Controller->abort();
+    }
 
     renameProperty(src);
     renameProperty(wfname);
@@ -250,16 +252,15 @@ namespace qmcplusplus {
     //remember the TrialWaveFunction used by this pseudopotential
     psiName=wfname;
 
-    if(format == "old") {
-      app_log() << "  Using OLD NonLocalPseudopotential "<< endl;
-      targetH->addOperator(new NonLocalPPotential(*ion,*targetPtcl,*psi), title);
-    }
-    else  {
-      app_log() << "  Using ECPotential builder "<< endl;
-      ECPotentialBuilder ecp(*targetH,*ion,*targetPtcl,*psi);
-      ecp.put(cur);
-    }
-#endif
+    //if(format == "old") {
+    //  app_log() << "  Using OLD NonLocalPseudopotential "<< endl;
+    //  targetH->addOperator(new NonLocalPPotential(*ion,*targetPtcl,*psi), title);
+    //}
+    //else  {
+    app_log() << endl << "  ECPotential builder for pseudopotential "<< endl;
+    ECPotentialBuilder ecp(*targetH,*ion,*targetPtcl,*psi);
+    ecp.put(cur);
+    //}
   }
 
   void 
