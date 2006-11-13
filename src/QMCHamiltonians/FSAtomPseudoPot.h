@@ -39,9 +39,10 @@ namespace qmcplusplus {
 
       bool OwnGrid;
       int AngL;
+      T Rcut;
       
-      FSAtomPseudoPot(): 
-        OneDimCubicSpline<T>(0), OwnGrid(false), AngL(-1)
+      FSAtomPseudoPot(int l, T rc): 
+        OneDimCubicSpline<T>(0), OwnGrid(false), AngL(l), Rcut(rc)
       {
       }
 
@@ -57,6 +58,7 @@ namespace qmcplusplus {
         T r=(*m_grid)(ng);
         while(ignore&& ng)
         {
+          cout << r << " " << m_Y[ng] << endl;
           ignore=abs(m_Y[ng]-v0)<1e-12;
           r=(*m_grid)(--ng);
         }
@@ -69,63 +71,56 @@ namespace qmcplusplus {
        */
       return_type* getLocalPot(T sc)
       {
-        m_Y *= sc;
         this->spline();
 
-        T rcut=getCutOff(1.0);
-        int ng=static_cast<int>(rcut*100)+1;
-
-        cout << "  FSAtomPseudoPot::getLocalPot grid = [0," 
-          << rcut << "] npts=" << ng << endl;
+        const T d=1.0e-2;
+        int ng=static_cast<int>(Rcut/d)+1;
+        cout << "  FSAtomPseudoPot::getLocalPot grid = [0," << Rcut << "] npts=" << ng << endl;
 
         LinearGrid<T> *agrid=new LinearGrid<T>;
-        agrid->set(0.0,rcut,ng);
+        agrid->set(0.0,Rcut,ng);
 
         return_type* newFunc=new return_type(agrid);
+        (*newFunc)(0) = 0.0;
         for(int i=1; i<ng-1; i++)
         {
-          (*newFunc)(i)=this->splint((*agrid)[i]);
+          (*newFunc)(i)=sc*this->splint((*agrid)[i]);
         }
-        (*newFunc)(0) =  2.0*(*newFunc)(1) - (*newFunc)(2);
         (*newFunc)(ng-1)=1.0;
-        newFunc->spline();
+
+        T y_prime=((*newFunc)(1)-(*newFunc)(0))/d;
+        newFunc->spline(0,y_prime,ng-1,0.0);
         return newFunc;
       }
 
       return_type* getNonLocalPot(FSAtomPseudoPot<T>& vloc, T vFac)
       {
         m_Y -= vloc.m_Y;
-        m_Y *= vFac;
         this->spline();
 
-        T rcut=getCutOff(0.0);
-        int ng=static_cast<int>(m_grid->rmax()*100)+1;
-
-        cout << "  FSAtomPseudoPot::getNonLocalPot grid = [0," 
-          << rcut << "] npts=" << ng << endl;
+        const T d=1.0e-2;
+        int ng=static_cast<int>(Rcut*100)+1;
         LinearGrid<T> *agrid=new LinearGrid<T>;
-        agrid->set(0.0,m_grid->rmax(),ng);
+        agrid->set(0.0,Rcut,ng);
 
         return_type* newFunc=new return_type(agrid);
         for(int i=1; i<ng-1; i++)
         {
-          (*newFunc)(i)=this->splint((*agrid)[i])/(*agrid)[i];
+          (*newFunc)(i)=vFac*this->splint((*agrid)[i])/(*agrid)[i];
         }
-
-        (*newFunc)(0) =  2.0*(*newFunc)(1) - (*newFunc)(2);
+        (*newFunc)(0) = 2.0*(*newFunc)(1) - (*newFunc)(2);
         (*newFunc)(ng-1)=0.0;
+
+        //for(int i=0; i<ng; i++)
+        //  cout << (*agrid)[i] << " " << (*newFunc)(i) << endl;
+        //for(int i=1; i<m_Y.size(); i++)
+        //  cout << (*m_grid)[i] << " " << m_Y[i]/(*m_grid)[i] << endl;
         newFunc->spline();
         return newFunc;
       }
 
       bool put(xmlNodePtr cur)
       {
-        T rc=-1.0;
-        OhmmsAttributeSet aAttrib;
-        aAttrib.add(AngL,"l");
-        aAttrib.add(rc,"cutoff");
-        aAttrib.put(cur);
-
         cur=cur->children;
         while(cur != NULL)
         {
