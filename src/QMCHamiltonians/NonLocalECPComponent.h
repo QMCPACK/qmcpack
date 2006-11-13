@@ -109,6 +109,9 @@ namespace qmcplusplus {
 
     RealType 
     evaluate(ParticleSet& W, TrialWaveFunction& Psi,int iat, vector<NonLocalData>& Txy);
+
+    void print(std::ostream& os);
+
   }; //end of RadialPotentialSet
 
 }

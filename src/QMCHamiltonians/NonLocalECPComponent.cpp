@@ -53,6 +53,15 @@ namespace qmcplusplus {
      }
   }
 
+  void NonLocalECPComponent::print(std::ostream& os)
+  {
+     os << "    Maximum angular mementum = "<<  lmax << endl;
+     os << "    Number of non-local channels = " << nchannel << endl;
+     os << "    Cutoff radius = " << Rmax << endl;
+     os << "    Spherical grids and weights: " << endl;
+     for(int ik=0;ik<nknot; ik++)
+       os << "       " << sgridxyz_m[ik] << setw(20) << sgridweight_m[ik] << endl;
+  }
   /** evaluate the non-local potential of the iat-th ionic center
    * @param W electron configuration
    * @param iat ionic index
