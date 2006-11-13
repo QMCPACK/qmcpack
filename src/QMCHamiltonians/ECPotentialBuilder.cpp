@@ -19,6 +19,7 @@
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "QMCHamiltonians/CoulombPBCABTemp.h"
 #include "OhmmsData/AttributeSet.h"
+#include "Numerics/OneDimNumGridFunctor.h"
 
 namespace qmcplusplus {
   /** constructor
@@ -104,7 +105,7 @@ namespace qmcplusplus {
 
         int speciesIndex=IonConfig.getSpeciesSet().findSpecies(ionName);
         if(speciesIndex < IonConfig.getSpeciesSet().getTotalNum()) {
-          app_log() << "  Adding pseudopotential for " << ionName << endl;
+          app_log() << endl << "  Adding pseudopotential for " << ionName << endl;
           ECPComponentBuilder ecp(ionName);
           bool success=false;
           if(href == "none") {
@@ -143,6 +144,7 @@ namespace qmcplusplus {
       vector<RealType> grid_temp, pp_temp;
       string species(Species.speciesName[ig]);
       string fname = species+".psf";
+
       ifstream fin(fname.c_str(),ios_base::in);
       if(!fin){
 	ERRORMSG("Could not open file " << fname)
@@ -161,38 +163,60 @@ namespace qmcplusplus {
       app_log() << "  ECPotential for " << species << endl;
       NonLocalECPComponent* mynnloc=0;
 
+      typedef OneDimCubicSpline<RealType> CubicSplineFuncType;
       for (int ij=0; ij<npotentials; ij++){
 	int angmom,npoints;
 	fin >> angmom >> npoints;
-        if(grid_temp.size()<npoints) grid_temp.resize(npoints);
-        if(pp_temp.size()<npoints) pp_temp.resize(npoints);
-	for (int j=0; j<npoints; j++){
-          fin >> grid_temp[j] >> pp_temp[j];
-	}
 
-        GridType *agrid = new NumericalGrid<RealType>(grid_temp);
-	RadialPotentialType *app = new RadialPotentialType(agrid,pp_temp);
+        OneDimNumGridFunctor<RealType> inFunc;
+        inFunc.put(npoints,fin);
 
-	int imin = 0;
-	RealType yprime_i = ((*app)(imin+1)-(*app)(imin))/app->dr(imin);
-	if(angmom < 0) {
-          //mutiply -r/z
+	if(angmom < 0) {//local potential, input is rescale by -r/z
+
           RealType zinv=-1.0/Species(icharge,ig);
-          for (int j=0; j<npoints; j++){
-            pp_temp[j]*=grid_temp[j]*zinv;
+          int ng=npoints-1;
+          RealType rf=5.0;
+          ng=static_cast<int>(rf*100)+1;//use 1e-2 resolution
+          GridType * agrid= new LinearGrid<RealType>;
+          agrid->set(0,rf,ng);
+          vector<RealType> pp_temp(ng);
+          pp_temp[0]=0.0;
+          for (int j=1; j<ng; j++){
+            RealType r((*agrid)[j]);
+            pp_temp[j]=r*zinv*inFunc.splint(r);
           }
-          hasLocalPot=true; //will create LocalECPotential
-	  app->spline(imin,yprime_i,app->size()-1,0.0);
+          pp_temp[ng-1]=1.0;
+          RadialPotentialType *app = new RadialPotentialType(agrid,pp_temp);
+	  app->spline();
           localPot[ig]=app;
-          app_log() << "    LocalECP l=" << angmom << " deriv= " << yprime_i << endl;
+          app_log() << "    LocalECP l=" << angmom << endl;
+          app_log() << "      Linear grid=[0," << rf << "] npts=" << ng << endl;
+          hasLocalPot=true; //will create LocalECPotential
         } else {
-          app_log() << "    NonLocalECP l=" << angmom << " rmax = " << agrid->rmax() << endl;
           hasNonLocalPot=true; //will create NonLocalECPotential
           if(mynnloc == 0) mynnloc = new NonLocalECPComponent;
-	  app->spline(imin,yprime_i,app->size()-1,0.0);
+
+          RealType rf=inFunc.rmax();
+
+          GridType * agrid= new LinearGrid<RealType>;
+          int ng=static_cast<int>(rf*100)+1;
+          agrid->set(0.0,rf,ng);
+          app_log() << "    NonLocalECP l=" << angmom << " rmax = " << rf << endl;
+          app_log() << "      Linear grid=[0," << rf << "] npts=" << ng << endl;
+
+          vector<RealType> pp_temp(ng);
+          //get the value
+          pp_temp[0]=inFunc(0);
+          for (int j=1; j<ng; j++){
+            pp_temp[j]=inFunc.splint((*agrid)[j]);
+          }
+
+          RadialPotentialType *app = new RadialPotentialType(agrid,pp_temp);
+	  app->spline();
+
 	  mynnloc->add(angmom,app);
 	  lmax=std::max(lmax,angmom);
-	  rmax=std::max(rmax,agrid->rmax());
+	  rmax=std::max(rmax,rf);
           numnonloc++;
 	}
 
