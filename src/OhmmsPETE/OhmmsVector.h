@@ -257,6 +257,14 @@ std::ostream& operator<<(std::ostream& out, const Vector<T,C>& rhs)
   return out;
 }
 
+template<class T, class C>
+std::istream& operator>>(std::istream& is, Vector<T,C>& rhs)
+{
+  //printTinyVector<TinyVector<T,D> >::print(out,rhs);
+  for(int i=0; i<rhs.size(); i++)  is >> rhs[i];
+  return is;
+}
+
 }
 #endif // VEKTOR_H
 

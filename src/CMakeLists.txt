@@ -31,6 +31,7 @@ SET(PARTICLE
   Particle/HDFWalkerInputManager.cpp
   LongRange/KContainer.cpp
   LongRange/StructFact.cpp
+  LongRange/LPQHIBasis.cpp			      	
   LongRange/LRCoulombSingleton.cpp
   LongRange/LRJastrowSingleton.cpp
 )
@@ -91,9 +92,12 @@ IF(HAVE_OOMPI)
   LINK_LIBRARIES(oompi)
 ENDIF(HAVE_OOMPI)
 
+SUBDIRS(QMCWaveFunctions)
+SUBDIRS(QMCHamiltonians)
+SUBDIRS(QMCDrivers)
 SUBDIRS(QMCApp)
 
 #do not build qmctools with mpi or complex
-IF(NOT HAVE_MPI)
-  SUBDIRS(QMCTools)
-ENDIF(NOT HAVE_MPI)
+#IF(NOT HAVE_MPI)
+#  SUBDIRS(QMCTools SandBox)
+#ENDIF(NOT HAVE_MPI)
