@@ -36,19 +36,22 @@ namespace qmcplusplus {
 
       using mybase_type::m_grid;
       using mybase_type::m_Y;
-
-      bool OwnGrid;
       int AngL;
       T Rcut;
       
-      FSAtomPseudoPot(int l, T rc): 
-        OneDimCubicSpline<T>(0), OwnGrid(false), AngL(l), Rcut(rc)
+      FSAtomPseudoPot(int l, T rc, grid_type* agrid): 
+        OneDimCubicSpline<T>(agrid), AngL(l), Rcut(rc)
       {
       }
 
       ~FSAtomPseudoPot()
       {
-        if(OwnGrid) delete m_grid;
+      }
+
+      void convert2RV()
+      {
+        for(int i=0; i<m_grid->size(); i++)
+          m_Y[i] *= (*m_grid)[i];
       }
 
       T getCutOff(T v0)
@@ -74,11 +77,11 @@ namespace qmcplusplus {
         this->spline();
 
         const T d=1.0e-2;
-        int ng=static_cast<int>(Rcut/d)+1;
-        cout << "  FSAtomPseudoPot::getLocalPot grid = [0," << Rcut << "] npts=" << ng << endl;
+        int ng=static_cast<int>(2*Rcut/d)+1;
+        app_log() << "  FSAtomPseudoPot::getLocalPot grid = [0," << 2*Rcut << "] npts=" << ng << endl;
 
         LinearGrid<T> *agrid=new LinearGrid<T>;
-        agrid->set(0.0,Rcut,ng);
+        agrid->set(0.0,2*Rcut,ng);
 
         return_type* newFunc=new return_type(agrid);
         (*newFunc)(0) = 0.0;
@@ -96,7 +99,8 @@ namespace qmcplusplus {
       return_type* getNonLocalPot(FSAtomPseudoPot<T>& vloc, T vFac)
       {
         m_Y -= vloc.m_Y;
-        this->spline();
+        T y_prime=(m_Y[1]-m_Y[0])/m_grid->dr(0);
+        this->spline(0,y_prime,m_Y.size()-1,0.0);
 
         const T d=1.0e-2;
         int ng=static_cast<int>(Rcut*100)+1;
@@ -131,10 +135,14 @@ namespace qmcplusplus {
             while(cur1 != NULL)
             {
               string cname1((const char*)cur1->name);
-              if(cname1 =="grid")
-                putGrid(cur1);
-              else if(cname1=="data")
+              if(cname1=="data") 
+              {
                 putContent(m_Y,cur1);
+              }
+              //else if(cname1 =="grid")
+              //{
+              //  app_warning() << "    FSAtomPseudoPot::vps/grid is ignored " << endl;
+              //}
               cur1=cur1->next;
             }
           }
@@ -143,44 +151,6 @@ namespace qmcplusplus {
         return true;
       }
 
-      void putGrid(xmlNodePtr cur)
-      {
-        if(m_grid == 0)
-        {
-          T ri = 1e-5;
-          T rf = 100.0;
-          T ascale = -1.0e0;
-          T astep = 1.25e-2;
-          int npts = 1001;
-
-          string gridType("log");
-          OhmmsAttributeSet radAttrib;
-          radAttrib.add(gridType,"type"); 
-          radAttrib.add(npts,"npts"); 
-          radAttrib.add(ri,"ri"); radAttrib.add(rf,"rf");
-          radAttrib.add(ascale,"ascale"); radAttrib.add(astep,"astep");
-          radAttrib.add(ascale,"scale"); radAttrib.add(astep,"step");
-          radAttrib.put(cur);
-
-          if(gridType == "log") {
-            if(ascale>0.0) {
-              m_grid = new LogGridZero<T>;
-              m_grid->set(astep,ascale,npts);
-            } else {
-              if(ri<numeric_limits<T>::epsilon())
-              {
-                ri=numeric_limits<T>::epsilon();
-              }
-              m_grid = new LogGrid<T>;
-              m_grid->set(ri,rf,npts);
-            }
-          } else if(gridType == "linear") {
-            m_grid = new LinearGrid<T>;
-            m_grid->set(ri,rf,npts);
-          }
-        }
-        this->resize(m_grid->size());
-      }
     };
 } // namespace qmcPlusPlus
 #endif

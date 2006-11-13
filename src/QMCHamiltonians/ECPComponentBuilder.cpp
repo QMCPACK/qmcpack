@@ -17,7 +17,6 @@
 #include "QMCHamiltonians/ECPComponentBuilder.h"
 #include "Numerics/GaussianTimesRN.h"
 #include "Numerics/Transform2GridFunctor.h"
-#include "QMCFactory/OneDimGridFactory.h"
 #include "QMCHamiltonians/Ylm.h"
 #include "QMCHamiltonians/FSAtomPseudoPot.h"
 #include "Utilities/IteratorUtility.h"
@@ -27,7 +26,7 @@ namespace qmcplusplus {
 
   ECPComponentBuilder::ECPComponentBuilder(const string& aname):
     NumNonLocal(0), Lmax(0), Zeff(0), Species(aname), Nrule(4),
-    pp_loc(0), pp_nonloc(0) {
+    grid_inp(0), pp_loc(0), pp_nonloc(0) {
     angMon["s"]=0; angMon["p"]=1; angMon["d"]=2; angMon["f"]=3; angMon["g"]=4;
     angMon["0"]=0; angMon["1"]=1; angMon["2"]=2; angMon["3"]=3; angMon["4"]=4;
   }
@@ -62,17 +61,34 @@ namespace qmcplusplus {
     cur=cur->children;
     while(cur != NULL) {
       string cname((const char*)cur->name);
-      if(cname == "header") {
+      if(cname == "header") 
+      {
         Zeff = atoi((const char*)xmlGetProp(cur,(const xmlChar*)"zval"));
-      } else if(cname == "semilocal") {
+      } 
+      else if(cname == "grid")
+      {
+        if(grid_inp) {
+          app_warning() << "   Only one global grid is accepted. Ignore this grid" << endl;
+        }
+        else 
+        {
+          grid_inp = createGrid(cur);
+        }
+      }
+      else if(cname == "semilocal") 
+      {
         semiPtr.push_back(cur);//save the pointer
-      } else if(cname == "local") {
+      } 
+      else if(cname == "local") 
+      {
         buildLocal(cur);
-      //} else if(cname == "sphericalGrid") {
+      }
+      // else if(cname == "sphericalGrid") 
+      // {
       //  nk=atoi((const char*)xmlGetProp(cur,(const xmlChar*)"size"));
       //  kpts.resize(nk*4);
       //  putContent(kpts,cur);
-      }
+      // } 
       cur=cur->next;
     }
 
@@ -422,7 +438,7 @@ namespace qmcplusplus {
     while(cur != NULL) {
       string cname((const char*)cur->name);
       if(cname == "grid") {
-        grid_semilocal=OneDimGridFactory::createGrid(cur);
+        grid_semilocal=createGrid(cur);
         rmax=grid_semilocal->rmax();
       } else if(cname == "vps") {
         //should be able to overwrite rmax
@@ -534,7 +550,7 @@ namespace qmcplusplus {
     while(cur != NULL) {
       string cname((const char*)cur->name);
       if(cname == "grid") {
-        grid_local=OneDimGridFactory::createGrid(cur);
+        grid_local=createGrid(cur); 
       } else if(cname == "basisGroup") {
         vr.putBasisGroup(cur,vPowerCorrection);
         bareCoulomb=false;
@@ -605,6 +621,12 @@ namespace qmcplusplus {
   }
 
   void ECPComponentBuilder::buildSemiLocalAndLocal(vector<xmlNodePtr>& semiPtr) {
+    if(grid_inp==0)
+    {
+      app_error() << "  Pseudopotential file does not defined a global grid. vps/grid is disabled." << endl;
+      OHMMS::Controller->abort();
+    }
+
     //this is abinit/siesta format
     // There should only be one semilocal tag
     bool is_r_times_V(true);
@@ -634,7 +656,6 @@ namespace qmcplusplus {
 
     xmlNodePtr cur_semilocal = semiPtr[0];
     aAttrib.put(cur_semilocal);
-
 
     RealType Vprefactor=1.0;
     if (units == "rydberg") 
@@ -678,11 +699,14 @@ namespace qmcplusplus {
         aAttrib.add(rc,"cutoff");
         aAttrib.put(cur_vps);
 
-        InFuncType* avps=new InFuncType(angMon[lstr],rc);
+        InFuncType* avps=new InFuncType(angMon[lstr],rc,grid_inp);
 
         avps->put(cur_vps);
         Lmax=std::max(Lmax,avps->AngL);
         rmax=std::max(rmax,rc);
+
+        //multiply by R
+        if(!is_r_times_V) avps->convert2RV();
 
         Vls.push_back(avps);
       }
@@ -702,16 +726,7 @@ namespace qmcplusplus {
         Lmax = std::max(l,Lmax);
     }
 
-    //take care of the local first
-    if(is_r_times_V) 
-    {
-      pp_loc = Vls[iLocal]->getLocalPot(-Vprefactor/Zeff);
-    } 
-    else
-    {
-      app_error() << "  format=\"V\" is not implemented." << endl;
-      OHMMS::Controller->abort();
-    }
+    pp_loc = Vls[iLocal]->getLocalPot(-Vprefactor/Zeff);
 
     // Now construct the radial potentials
     NumNonLocal=0;
@@ -726,6 +741,44 @@ namespace qmcplusplus {
     pp_nonloc->lmax=Lmax;
     pp_nonloc->Rmax=rmax;
   }
+
+  ECPComponentBuilder::GridType* ECPComponentBuilder::createGrid(xmlNodePtr cur)
+  {
+    GridType *agrid=0;
+    RealType ri = 1e-5;
+    RealType rf = 100.0;
+    RealType ascale = -1.0e0;
+    RealType astep = 1.25e-2;
+    int npts = 1001;
+
+    string gridType("log");
+    OhmmsAttributeSet radAttrib;
+    radAttrib.add(gridType,"type"); 
+    radAttrib.add(npts,"npts"); 
+    radAttrib.add(ri,"ri"); radAttrib.add(rf,"rf");
+    radAttrib.add(ascale,"ascale"); radAttrib.add(astep,"astep");
+    radAttrib.add(ascale,"scale"); radAttrib.add(astep,"step");
+    radAttrib.put(cur);
+
+    if(gridType == "log") {
+      if(ascale>0.0) {
+        agrid = new LogGridZero<RealType>;
+        agrid->set(astep,ascale,npts);
+      } else {
+        if(ri<numeric_limits<RealType>::epsilon())
+        {
+          ri=numeric_limits<RealType>::epsilon();
+        }
+        agrid = new LogGrid<RealType>;
+        agrid->set(ri,rf,npts);
+      }
+    } else if(gridType == "linear") {
+      agrid = new LinearGrid<RealType>;
+      agrid->set(ri,rf,npts);
+    }
+    return agrid;
+  }
+
 
 } // namespace qmcPlusPlus
 /***************************************************************************
