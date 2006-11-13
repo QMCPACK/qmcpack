@@ -356,6 +356,7 @@ struct NumericalGrid: public OneDimGridBase<T,CT> {
   using OneDimGridBase<T,CT>::Delta;
   using OneDimGridBase<T,CT>::X;
  
+  NumericalGrid() { }
   template<class VA>
   NumericalGrid(const VA& nv) {
     GridTag = CUSTOM_1DGRID;
@@ -364,6 +365,12 @@ struct NumericalGrid: public OneDimGridBase<T,CT> {
     num_points=nv.size();
     X.resize(nv.size());
     std::copy(nv.begin(), nv.end(), X.data());
+  }
+
+
+  inline void resize(int n)
+  {
+    X.resize(n);
   }
 
   inline void locate(T r){
