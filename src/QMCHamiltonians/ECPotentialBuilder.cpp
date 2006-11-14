@@ -47,11 +47,15 @@ namespace qmcplusplus {
     if(t != NULL) {
       ecpFormat= (const char*)t;
     } 
-    if(ecpFormat == "xml")  {
+
+    if(ecpFormat == "xml")  
+    {
       useXmlFormat(cur);
-    } else {
+    } 
+    else 
+    {
       useSimpleTableFormat();
-    }
+    } 
 
     ///create LocalECPotential
     if(hasLocalPot) {
@@ -76,7 +80,9 @@ namespace qmcplusplus {
 
       NonLocalECPotential* apot = new NonLocalECPotential(IonConfig,targetPtcl,targetPsi);
       for(int i=0; i<nonLocalPot.size(); i++) {
-        if(nonLocalPot[i]) apot->add(i,nonLocalPot[i]);
+        if(nonLocalPot[i]) {
+          apot->add(i,nonLocalPot[i]);
+        }
       }
       targetH.addOperator(apot,"NonLocalECP");
 
@@ -98,9 +104,13 @@ namespace qmcplusplus {
       if(cname == "pseudo") {
         string href("none");
         string ionName("none");
+        string format("xml");
+        RealType rc(2.0);//use 2 Bohr
         OhmmsAttributeSet hAttrib;
         hAttrib.add(href,"href");
         hAttrib.add(ionName,"elementType"); hAttrib.add(ionName,"symbol");
+        hAttrib.add(format,"format");
+        hAttrib.add(rc,"cutoff");
         hAttrib.put(cur);
 
         int speciesIndex=IonConfig.getSpeciesSet().findSpecies(ionName);
@@ -108,11 +118,18 @@ namespace qmcplusplus {
           app_log() << endl << "  Adding pseudopotential for " << ionName << endl;
           ECPComponentBuilder ecp(ionName);
           bool success=false;
-          if(href == "none") {
-            success=ecp.put(cur);
-          } else {
-            success=ecp.parse(href);
+          if(format == "xml") {
+            if(href == "none") {
+              success=ecp.put(cur);
+            } else {
+              success=ecp.parse(href);
+            }
+          } 
+          else if(format == "casino")
+          {
+            success=ecp.parseCasino(href,rc);
           }
+
           if(success) {
             if(ecp.pp_loc) {
               localPot[speciesIndex]=ecp.pp_loc;

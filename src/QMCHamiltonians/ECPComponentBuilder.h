@@ -46,6 +46,8 @@ namespace qmcplusplus {
     void addSemiLocal(xmlNodePtr cur);
     void buildLocal(xmlNodePtr cur);
     void buildSemiLocalAndLocal(vector<xmlNodePtr>& semiPtr);
+
+    bool parseCasino(std::string& fname, RealType rc);
     // This sets the spherical quadrature rule used to apply the
     // projection operators.  rule can be 1 to 7.  See
     // J. Chem. Phys. 95 (3467) (1991)
