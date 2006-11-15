@@ -749,7 +749,8 @@ namespace qmcplusplus {
     RealType ri = 1e-5;
     RealType rf = 100.0;
     RealType ascale = -1.0e0;
-    RealType astep = 1.25e-2;
+    RealType astep = -1.0;
+    //RealType astep = 1.25e-2;
     int npts = 1001;
 
     string gridType("log");
@@ -775,6 +776,11 @@ namespace qmcplusplus {
       }
     } else if(gridType == "linear") {
       agrid = new LinearGrid<RealType>;
+      if(astep>0.0)
+      {
+        npts = static_cast<int>((rf-ri)/astep)+1;
+        app_log() << "   Linear grid overwrites npts = " << npts << " with step = " << astep << endl;
+      }
       agrid->set(ri,rf,npts);
     }
     return agrid;
@@ -817,101 +823,94 @@ namespace qmcplusplus {
       aParser.skiplines(fin,1);//R(i) in atomic units
       aParser.getValues(fin,temp.begin(),temp.end());
 
+      const RealType rLower=1e-4;
       //pick the lower and upper bound of the input grid
-      vector<RealType>::iterator upper=upper_bound(temp.begin(),temp.end(),rmax*1.1);
-      vector<RealType>::iterator lower=lower_bound(temp.begin(),temp.end(),1e-4);
+      vector<RealType>::iterator upper=upper_bound(temp.begin(),temp.end(),rmax);
+      vector<RealType>::iterator lower=lower_bound(temp.begin(),temp.end(),rLower);
       int nUpper=temp.size()-1;
       int nLower=0;
       if(upper != temp.end()) {
         nUpper=upper-temp.begin();
         nLower=lower-temp.begin();
+        ++upper;
       }
 
       //build a numerical grid of [nUpper,nLower]
       int ngKept=nUpper-nLower+1;
-      vector<RealType> grid_data(ngKept);
-      Matrix<RealType> vnn(Lmax+1,ngKept);
-
-      std::copy(temp.begin()+nLower, temp.begin()+nUpper+1, grid_data.begin());
+      //vector<RealType> grid_data(ngKept);
+      Matrix<RealType> vnn(Lmax+1,npts);
+      //std::copy(temp.begin()+nLower, temp.begin()+nUpper+1, grid_data.begin());
       for(int l=0; l<=Lmax; l++)
       {
         aParser.skiplines(fin,1);
-        aParser.getValues(fin,temp.begin(),temp.end());
-        std::copy(temp.begin()+nLower, temp.begin()+nUpper+1, vnn[l]);
+        aParser.getValues(fin,vnn[l],vnn[l]+npts);
       }
 
       RealType vfac=-Vprefactor/Zeff;
 
-      //cout.precision(12);
-      //cout << "Size of reduced grid " << grid_data.size() << endl;
-      //for(int i=0; i<ngKept; i++)
-      //{
-      //  cout << setw(5) << i << setw(20) << grid_data[i];
-      //  for(int l=0; l<Lmax; l++)
-      //    cout << setw(20) <<vnn(l,i)-vnn(Lmax,i);
-      //  cout << setw(20) << vfac*vnn(Lmax,i) << endl;
-      //}
-
       LinearGrid<RealType> *agrid=new LinearGrid<RealType>;
-      int ng=static_cast<int>(rmax/1.e-2)+1;
+      int ng=static_cast<int>(rmax/1.0e-3)+1;
       agrid->set(0,rmax,ng);
 
       //temp is used to create a temporary data to spline
-      temp.resize(ngKept);
-      vector<RealType> newP(ng);
-      NumericalGrid<RealType> *numGrid=new  NumericalGrid<RealType>(grid_data);
+      vector<RealType> newP(ng),newPin(ngKept);
 
       for(int l=0; l<Lmax; l++)
       {
         //store corrected non-local part in Hartree
-        for(int i=0; i<ngKept; i++) 
-          temp[i]=Vprefactor*(vnn(l,i)-vnn(Lmax,i));
+        for(int i=nLower,j=0; i<=nUpper; i++,j++) 
+          newPin[j]=Vprefactor*(vnn(l,i)-vnn(Lmax,i));
 
-        OneDimCubicSpline<RealType> inFunc(numGrid,temp);
-        inFunc.spline(0,(temp[1]-temp[0])/((*numGrid)(1)-(*numGrid)(0)),ngKept-1,0.0);
+        OneDimLinearSpline<RealType> inFunc;
+        inFunc.assign(lower,upper,newPin.begin(),newPin.end());
+        inFunc.spline();
 
-        for(int i=1; i<ng; i++)
+        for(int i=1; i<ng-1; i++)
         {
           RealType r((*agrid)[i]);
-          newP[i]=inFunc.splint(r)/r;
+          newP[i]=inFunc.splintNG(r)/r;
         }
         newP[0]=newP[1];
+        newP[ng-1]=0.0;
        
         RadialPotentialType *app = new RadialPotentialType(agrid,newP);
         app->spline();
         pp_nonloc->add(l,app);
       }
 
-      int locL=Lmax;
       Lmax--;
       pp_nonloc->lmax=Lmax;
       pp_nonloc->Rmax=rmax;
       NumNonLocal=Lmax;
 
-      temp[0]=0.0;
-      for(int i=1; i<ngKept; i++) temp[i]= vfac*vnn(locL,i);
-
-      //Time to build local
-      OneDimCubicSpline<RealType> inFunc(numGrid,temp);
-      RealType y_prime=(temp[1]-temp[0])/((*numGrid)[1]-(*numGrid)[0]);
-      inFunc.spline(0,y_prime,ngKept-1,0.0);
-
-      newP[0]=0.0;
-      for(int i=1; i<ng-1; i++)
       {
-        newP[i]=inFunc.splint((*agrid)[i]);
-      }
-      newP[ng-1]=1.0;
+        int locL=Lmax+1;
+        newPin[0]=0.0;
+        for(int i=nLower+1,j=1; j<ngKept-1; i++,j++) 
+          newPin[j]= vfac*vnn(locL,i);
+        newPin[ngKept-1]=1.0;
 
-      pp_loc = new RadialPotentialType(agrid,newP);
-      pp_loc->spline(0,y_prime,ng-1,0.0);
+        //Time to build local
+        OneDimLinearSpline<RealType> inFunc;
+        inFunc.assign(lower, ++upper, newPin.begin(),newPin.end());
+        inFunc.spline();
+
+        newP[0]=0.0;
+        for(int i=1; i<ng-1; i++)
+        {
+          newP[i]=inFunc.splintNG((*agrid)[i]);
+        }
+        newP[ng-1]=1.0;
+
+        pp_loc = new RadialPotentialType(agrid,newP);
+        pp_loc->spline();
+      }
 
       SetQuadratureRule(Nrule);
 
       app_log() << "    Non-local pseudopotential parameters" <<endl;
       pp_nonloc->print(app_log());
 
-      delete numGrid;
       return true;
   }
 
