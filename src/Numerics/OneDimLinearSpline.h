@@ -70,6 +70,25 @@ public:
     delta_inv=1.0/delta;
   }
 
+  template<class IT1, class IT2>
+  void assign(IT1 g_first, IT1 g_last, IT2 d_first, IT2 d_last)
+  {
+    if(m_grid ==0)
+    {
+      NumericalGrid<Td> *agrid=new NumericalGrid<Td>;
+      agrid->assign(g_first,g_last);
+      m_grid=agrid;
+    }
+
+    m_Y.resize(m_grid->size());
+    std::copy(d_first, d_last, m_Y.begin());
+    r_min=m_grid->rmin();
+    r_max=m_grid->rmax();
+    delta=m_grid->dh();
+    delta_inv=1.0/delta;
+  }
+
+
   inline point_type rmax() const
   {
     return r_max;
@@ -92,10 +111,14 @@ public:
 #endif
   }
 
-  inline value_type f(point_type r) const
+  /** evaluate the value at r using a binary search on a grid
+   * @param r distance
+   */
+  inline value_type splintNG(point_type r) const
   {
     if(r>=r_max) return ConstValue;
-    int k = static_cast<int>((r-r_min)*delta_inv);
+    int k=m_grid->getIndex(r); 
+    //int k = static_cast<int>((r-r_min)*delta_inv);
 #if defined(USE_MEMORYSAVEMODE)
     return m_Y[k]+(m_Y[k+1]-m_Y[k])*(r*delta_inv-k);
 #else
@@ -149,8 +172,8 @@ public:
     //r_max=m_grid->r(imax);
     for(int i=imin; i<imax-1; i++)
     {
-      //m_Y1[i]= (m_Y[i+1]-m_Y[i])/((*m_grid)[i+1]-(*m_grid)[i]);
-      m_Y1[i]= (m_Y[i+1]-m_Y[i])*delta_inv;
+      m_Y1[i]= (m_Y[i+1]-m_Y[i])/((*m_grid)[i+1]-(*m_grid)[i]);
+      //m_Y1[i]= (m_Y[i+1]-m_Y[i])*delta_inv;
     }
     m_Y1[imax]=0.0;
     ConstValue=m_Y[imax];
