@@ -22,8 +22,8 @@
 #include "QMCWaveFunctions/MolecularOrbitals/MolecularBasisBuilder.h"
 #if! defined(QMC_COMPLEX)
 #include "QMCWaveFunctions/SplineSetBuilder.h"
-#include "QMCWaveFunctions/TricubicBsplineSetBuilder.h"
 #endif
+#include "QMCWaveFunctions/TricubicBsplineSetBuilder.h"
 #include "Message/Communicate.h"
 #include "OhmmsData/AttributeSet.h"
 
