@@ -786,132 +786,167 @@ namespace qmcplusplus {
     return agrid;
   }
 
-  bool ECPComponentBuilder::parseCasino(std::string& fname, RealType rmax)
+  bool ECPComponentBuilder::parseCasino(const std::string& fname, xmlNodePtr cur)
   {
-      ifstream fin(fname.c_str(),ios_base::in);
-      if(!fin){
-	ERRORMSG("Could not open file " << fname)
-        OHMMS::Controller->abort();
-      }      
 
-      if(pp_nonloc==0) pp_nonloc=new NonLocalECPComponent; 
+    RealType rmax=2.0;
+    const xmlChar* rptr=xmlGetProp(cur,(const xmlChar*)"cutoff");
+    if(rptr != NULL) rmax = atof((const char*)rptr);
 
-      OhmmsAsciiParser aParser;
-      int atomNumber;
-      int npts;
-      string eunits("rydberg");
-      
-      app_log() << "    ECPComponentBuilder::parseCasino" <<endl;
-      aParser.skiplines(fin,1);//Header
-      aParser.skiplines(fin,1);//Atomic number and pseudo-charge
-      aParser.getValue(fin,atomNumber,Zeff);
-      app_log() << "      Atomic number = " << atomNumber << "  Zeff = " << Zeff << endl;
-      aParser.skiplines(fin,1);//Energy units (rydberg/hartree/ev):
-      aParser.getValue(fin,eunits);
-      app_log() << "      Unit of the potentials = " << eunits << endl;
-      RealType Vprefactor = (eunits == "rydberg")?0.5:1.0;
-
-      aParser.skiplines(fin,1);//Angular momentum of local component (0=s,1=p,2=d..)
-      aParser.getValue(fin,Lmax);
-      aParser.skiplines(fin,1);//NLRULE override (1) VMC/DMC (2) config gen (0 ==> input/default value)
-      aParser.skiplines(fin,1);//0 0, not sure what to do yet
-      aParser.skiplines(fin,1);//Number of grid points
-      aParser.getValue(fin,npts);
-      app_log() << "      Input Grid size = " << npts << endl;
-      vector<RealType> temp(npts);
-
-      aParser.skiplines(fin,1);//R(i) in atomic units
-      aParser.getValues(fin,temp.begin(),temp.end());
-
-      const RealType rLower=1e-4;
-      //pick the lower and upper bound of the input grid
-      vector<RealType>::iterator upper=upper_bound(temp.begin(),temp.end(),rmax);
-      vector<RealType>::iterator lower=lower_bound(temp.begin(),temp.end(),rLower);
-      int nUpper=temp.size()-1;
-      int nLower=0;
-      if(upper != temp.end()) {
-        nUpper=upper-temp.begin();
-        nLower=lower-temp.begin();
-        ++upper;
-      }
-
-      //build a numerical grid of [nUpper,nLower]
-      int ngKept=nUpper-nLower+1;
-      //vector<RealType> grid_data(ngKept);
-      Matrix<RealType> vnn(Lmax+1,npts);
-      //std::copy(temp.begin()+nLower, temp.begin()+nUpper+1, grid_data.begin());
-      for(int l=0; l<=Lmax; l++)
+    //first create with the input
+    GridType *agrid=0;
+    cur=cur->children;
+    while(cur != NULL)
+    {
+      if(xmlStrEqual(cur->name,(const xmlChar*)"grid"))
       {
-        aParser.skiplines(fin,1);
-        aParser.getValues(fin,vnn[l],vnn[l]+npts);
+        agrid=createGrid(cur);
       }
+      cur=cur->next;
+    }
 
-      RealType vfac=-Vprefactor/Zeff;
-
-      LinearGrid<RealType> *agrid=new LinearGrid<RealType>;
-      int ng=static_cast<int>(rmax/1.0e-3)+1;
+    const RealType d=5e-4;
+    int ng=0;
+    if(agrid == 0)
+    {
+      agrid = new LinearGrid<RealType>;
+      ng=static_cast<int>(rmax/d)+1;
       agrid->set(0,rmax,ng);
+    }
+    else 
+    {
+      ng=agrid->size();
+      rmax=agrid->rmax();
+    }
 
-      //temp is used to create a temporary data to spline
-      vector<RealType> newP(ng),newPin(ngKept);
+    if(ng == 0)
+    {
+      app_error() << "Grid for the pseudopotentials is not defined." << endl;
+      OHMMS::Controller->abort();
+    }
 
-      for(int l=0; l<Lmax; l++)
+    ifstream fin(fname.c_str(),ios_base::in);
+    if(!fin)
+    {
+      app_error() << "Could not open file " << fname << endl;
+      OHMMS::Controller->abort();
+    }      
+
+    if(pp_nonloc==0) pp_nonloc=new NonLocalECPComponent; 
+
+    OhmmsAsciiParser aParser;
+    int atomNumber;
+    int npts;
+    string eunits("rydberg");
+
+    app_log() << "    ECPComponentBuilder::parseCasino" <<endl;
+    aParser.skiplines(fin,1);//Header
+    aParser.skiplines(fin,1);//Atomic number and pseudo-charge
+    aParser.getValue(fin,atomNumber,Zeff);
+    app_log() << "      Atomic number = " << atomNumber << "  Zeff = " << Zeff << endl;
+    aParser.skiplines(fin,1);//Energy units (rydberg/hartree/ev):
+    aParser.getValue(fin,eunits);
+    app_log() << "      Unit of the potentials = " << eunits << endl;
+    RealType Vprefactor = (eunits == "rydberg")?0.5:1.0;
+
+    aParser.skiplines(fin,1);//Angular momentum of local component (0=s,1=p,2=d..)
+    aParser.getValue(fin,Lmax);
+    aParser.skiplines(fin,1);//NLRULE override (1) VMC/DMC (2) config gen (0 ==> input/default value)
+    aParser.skiplines(fin,1);//0 0, not sure what to do yet
+    aParser.skiplines(fin,1);//Number of grid points
+    aParser.getValue(fin,npts);
+    app_log() << "      Input Grid size = " << npts << endl;
+    vector<RealType> temp(npts);
+
+    aParser.skiplines(fin,1);//R(i) in atomic units
+    aParser.getValues(fin,temp.begin(),temp.end());
+
+    const RealType rLower=1e-4;
+    //pick the lower and upper bound of the input grid
+    vector<RealType>::iterator upper=upper_bound(temp.begin(),temp.end(),rmax);
+    vector<RealType>::iterator lower=lower_bound(temp.begin(),temp.end(),rLower);
+    int nUpper=temp.size()-1;
+    int nLower=0;
+    if(upper != temp.end()) {
+      nUpper=upper-temp.begin();
+      nLower=lower-temp.begin();
+      ++upper;
+    }
+
+    //build a numerical grid of [nUpper,nLower]
+    int ngKept=nUpper-nLower+1;
+    //vector<RealType> grid_data(ngKept);
+    Matrix<RealType> vnn(Lmax+1,npts);
+    //std::copy(temp.begin()+nLower, temp.begin()+nUpper+1, grid_data.begin());
+    for(int l=0; l<=Lmax; l++)
+    {
+      aParser.skiplines(fin,1);
+      aParser.getValues(fin,vnn[l],vnn[l]+npts);
+    }
+
+    RealType vfac=-Vprefactor/Zeff;
+
+
+    //temp is used to create a temporary data to spline
+    vector<RealType> newP(ng),newPin(ngKept);
+
+    for(int l=0; l<Lmax; l++)
+    {
+      //store corrected non-local part in Hartree
+      for(int i=nLower,j=0; i<=nUpper; i++,j++) 
+        newPin[j]=Vprefactor*(vnn(l,i)-vnn(Lmax,i));
+
+      OneDimLinearSpline<RealType> inFunc;
+      inFunc.assign(lower,upper,newPin.begin(),newPin.end());
+      inFunc.spline();
+
+      for(int i=1; i<ng-1; i++)
       {
-        //store corrected non-local part in Hartree
-        for(int i=nLower,j=0; i<=nUpper; i++,j++) 
-          newPin[j]=Vprefactor*(vnn(l,i)-vnn(Lmax,i));
-
-        OneDimLinearSpline<RealType> inFunc;
-        inFunc.assign(lower,upper,newPin.begin(),newPin.end());
-        inFunc.spline();
-
-        for(int i=1; i<ng-1; i++)
-        {
-          RealType r((*agrid)[i]);
-          newP[i]=inFunc.splintNG(r)/r;
-        }
-        newP[0]=newP[1];
-        newP[ng-1]=0.0;
-       
-        RadialPotentialType *app = new RadialPotentialType(agrid,newP);
-        app->spline();
-        pp_nonloc->add(l,app);
+        RealType r((*agrid)[i]);
+        newP[i]=inFunc.splintNG(r)/r;
       }
+      newP[0]=newP[1];
+      newP[ng-1]=0.0;
 
-      Lmax--;
-      pp_nonloc->lmax=Lmax;
-      pp_nonloc->Rmax=rmax;
-      NumNonLocal=Lmax;
+      RadialPotentialType *app = new RadialPotentialType(agrid,newP);
+      app->spline();
+      pp_nonloc->add(l,app);
+    }
 
+    Lmax--;
+    pp_nonloc->lmax=Lmax;
+    pp_nonloc->Rmax=rmax;
+    NumNonLocal=Lmax;
+
+    {
+      int locL=Lmax+1;
+      newPin[0]=0.0;
+      for(int i=nLower+1,j=1; j<ngKept-1; i++,j++) 
+        newPin[j]= vfac*vnn(locL,i);
+      newPin[ngKept-1]=1.0;
+
+      //Time to build local
+      OneDimLinearSpline<RealType> inFunc;
+      inFunc.assign(lower, ++upper, newPin.begin(),newPin.end());
+      inFunc.spline();
+
+      newP[0]=0.0;
+      for(int i=1; i<ng-1; i++)
       {
-        int locL=Lmax+1;
-        newPin[0]=0.0;
-        for(int i=nLower+1,j=1; j<ngKept-1; i++,j++) 
-          newPin[j]= vfac*vnn(locL,i);
-        newPin[ngKept-1]=1.0;
-
-        //Time to build local
-        OneDimLinearSpline<RealType> inFunc;
-        inFunc.assign(lower, ++upper, newPin.begin(),newPin.end());
-        inFunc.spline();
-
-        newP[0]=0.0;
-        for(int i=1; i<ng-1; i++)
-        {
-          newP[i]=inFunc.splintNG((*agrid)[i]);
-        }
-        newP[ng-1]=1.0;
-
-        pp_loc = new RadialPotentialType(agrid,newP);
-        pp_loc->spline();
+        newP[i]=inFunc.splintNG((*agrid)[i]);
       }
+      newP[ng-1]=1.0;
 
-      SetQuadratureRule(Nrule);
+      pp_loc = new RadialPotentialType(agrid,newP);
+      pp_loc->spline();
+    }
 
-      app_log() << "    Non-local pseudopotential parameters" <<endl;
-      pp_nonloc->print(app_log());
+    SetQuadratureRule(Nrule);
 
-      return true;
+    app_log() << "    Non-local pseudopotential parameters" <<endl;
+    pp_nonloc->print(app_log());
+
+    return true;
   }
 
 } // namespace qmcPlusPlus

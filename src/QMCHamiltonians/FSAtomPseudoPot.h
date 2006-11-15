@@ -76,7 +76,7 @@ namespace qmcplusplus {
       {
         this->spline();
 
-        const T d=1.0e-2;
+        const T d=1.0e-3;
         int ng=static_cast<int>(2*Rcut/d)+1;
         app_log() << "  FSAtomPseudoPot::getLocalPot grid = [0," << 2*Rcut << "] npts=" << ng << endl;
 
@@ -102,8 +102,8 @@ namespace qmcplusplus {
         T y_prime=(m_Y[1]-m_Y[0])/m_grid->dr(0);
         this->spline(0,y_prime,m_Y.size()-1,0.0);
 
-        const T d=1.0e-2;
-        int ng=static_cast<int>(Rcut*100)+1;
+        const T d=1.0e-3;
+        int ng=static_cast<int>(Rcut/d)+1;
         LinearGrid<T> *agrid=new LinearGrid<T>;
         agrid->set(0.0,Rcut,ng);
 
@@ -112,7 +112,8 @@ namespace qmcplusplus {
         {
           (*newFunc)(i)=vFac*this->splint((*agrid)[i])/(*agrid)[i];
         }
-        (*newFunc)(0) = 2.0*(*newFunc)(1) - (*newFunc)(2);
+        (*newFunc)(0) =(*newFunc)(1);
+        //(*newFunc)(0) = 2.0*(*newFunc)(1) - (*newFunc)(2);
         (*newFunc)(ng-1)=0.0;
 
         //for(int i=0; i<ng; i++)

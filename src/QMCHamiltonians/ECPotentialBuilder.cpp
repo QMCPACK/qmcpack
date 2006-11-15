@@ -105,12 +105,12 @@ namespace qmcplusplus {
         string href("none");
         string ionName("none");
         string format("xml");
-        RealType rc(2.0);//use 2 Bohr
+        //RealType rc(2.0);//use 2 Bohr
         OhmmsAttributeSet hAttrib;
         hAttrib.add(href,"href");
         hAttrib.add(ionName,"elementType"); hAttrib.add(ionName,"symbol");
         hAttrib.add(format,"format");
-        hAttrib.add(rc,"cutoff");
+        //hAttrib.add(rc,"cutoff");
         hAttrib.put(cur);
 
         int speciesIndex=IonConfig.getSpeciesSet().findSpecies(ionName);
@@ -127,7 +127,8 @@ namespace qmcplusplus {
           } 
           else if(format == "casino")
           {
-            success=ecp.parseCasino(href,rc);
+            //success=ecp.parseCasino(href,rc);
+            success=ecp.parseCasino(href,cur);
           }
 
           if(success) {
