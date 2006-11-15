@@ -418,7 +418,7 @@ public:
   value_type first_deriv;
   value_type last_deriv;
 
-  OneDimCubicSpline(grid_type* gt = NULL):base_type(gt) { }
+  OneDimCubicSpline(grid_type* gt = 0):base_type(gt) { }
 
   template<class VV>
   OneDimCubicSpline(grid_type* gt, const VV& nv):
