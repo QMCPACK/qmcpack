@@ -356,21 +356,33 @@ struct NumericalGrid: public OneDimGridBase<T,CT> {
   using OneDimGridBase<T,CT>::Delta;
   using OneDimGridBase<T,CT>::X;
  
-  NumericalGrid() { }
+  NumericalGrid() 
+  {
+    GridTag = CUSTOM_1DGRID;
+  }
+
   template<class VA>
   NumericalGrid(const VA& nv) {
     GridTag = CUSTOM_1DGRID;
-    lower_bound=nv[0];
-    upper_bound=nv[nv.size()-1];
-    num_points=nv.size();
-    X.resize(nv.size());
-    std::copy(nv.begin(), nv.end(), X.data());
+    assign(nv.begin(),nv.end());
   }
 
 
+  template<class IT>
+  void assign(IT g_first, IT g_last)
+  {
+    num_points=g_last-g_first;
+    X.resize(num_points);
+    std::copy(g_first,g_last,X.begin());
+    lower_bound=X[0];
+    upper_bound=X[num_points-1];
+    int nf=num_points/2;
+    Delta=X[nf]-X[nf-1];
+  }
+
   inline void resize(int n)
   {
-    X.resize(n);
+    if(X.size() != n) X.resize(n);
   }
 
   inline void locate(T r){
