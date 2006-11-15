@@ -56,7 +56,7 @@ namespace qmcplusplus {
 
     typedef TwoBodyJastrowOrbital<FuncType> JeeType;
     JeeType *J2 = new JeeType(target);
-    if(IgnoreSpin) {
+//    if(IgnoreSpin) {
       FuncType *func=new FuncType(false);
       func->reset(Rs);
       for(int i=0; i<4; i++) {
@@ -65,22 +65,22 @@ namespace qmcplusplus {
       FuncList.push_back(func);
       app_log() << "  RPAConstraints::Adding Spin-independent RPA Two-Body Jastrow " << endl;
       app_log() << "    Rs=" << Rs << "  F=" << 1.0/func->B << endl;
-    } else {
-      FuncType *funcUU=new FuncType(true);
-      FuncType *funcUD=new FuncType(false);
-      funcUU->reset(Rs);
-      funcUD->reset(Rs);
-
-      J2->addFunc(funcUU);
-      J2->addFunc(funcUD);
-      J2->addFunc(funcUD);
-      J2->addFunc(funcUU);
-
-      FuncList.push_back(funcUU);
-      FuncList.push_back(funcUD);
-      app_log() << "  RPAConstraints::Adding Spin-dependent RPA Two-Body Jastrow " << endl;
-      app_log() << "    Rs=" << Rs << "  F(uu)=" << 1.0/funcUU->B << "  F(ud)= " << 1.0/funcUD->B << endl;
-    }
+//    } else {
+//      FuncType *funcUU=new FuncType(true);
+//      FuncType *funcUD=new FuncType(false);
+//      funcUU->reset(Rs);
+//      funcUD->reset(Rs);
+//
+//      J2->addFunc(funcUU);
+//      J2->addFunc(funcUD);
+//      J2->addFunc(funcUD);
+//      J2->addFunc(funcUU);
+//
+//      FuncList.push_back(funcUU);
+//      FuncList.push_back(funcUD);
+//      app_log() << "  RPAConstraints::Adding Spin-dependent RPA Two-Body Jastrow " << endl;
+//      app_log() << "    Rs=" << Rs << "  F(uu)=" << 1.0/funcUU->B << "  F(ud)= " << 1.0/funcUD->B << endl;
+//    }
     return J2;
   }
 
@@ -122,21 +122,20 @@ namespace qmcplusplus {
     
     //setRadialGrid(target);
     HandlerType* handler = LRJastrowSingleton::getHandler(target);
-    RealType Rcut = 0.999999999 * handler->Basis.get_rc();
+    //RealType Rcut = 0.999999999 * handler->Basis.get_rc();
+    RealType Rcut = handler->Basis.get_rc();
     myGrid = new GridType;
-    myGrid->set(0,Rcut,51);
-
-    /*
-    for (int i = 0; i < myGrid->size(); i++) {
-      RealType r=(*myGrid)(i);
-      cout << r << "   " << handler->evaluate(r,1./r) << "   " << handler->evaluateLR(r) << endl;
-    }
-    */
+    myGrid->set(0,Rcut,11);
   
     //create the numerical functor
     FuncType* nfunc = new FuncType;
     ShortRangePartAdapter<RealType>* sra = new ShortRangePartAdapter<RealType>(handler);
     nfunc->initialize(sra, myGrid);
+
+    for (int i = 0; i < myGrid->size(); i++) {
+      RealType r=(*myGrid)(i);
+      cout << r << "   " << nfunc->evaluate(r) << "   " << handler->evaluate(r,1.0/r) << " " << handler->evaluateLR(r) << endl;
+    }
     
     TwoBodyJastrowOrbital<FuncType> *J2 = new TwoBodyJastrowOrbital<FuncType>(target);
     for (int i=0; i<4; i++) J2->addFunc(nfunc);
@@ -149,6 +148,24 @@ namespace qmcplusplus {
     LRTwoBodyJastrow* LROrbital = new LRTwoBodyJastrow(target, handler);
     return LROrbital;
   }
+
+  void RPAPBCConstraints::addTwoBodyPart(ParticleSet& target, ComboOrbital* jcombo) {
+    
+    if(Rs<0) {
+      if(target.Lattice.BoxBConds[0]) {
+        Rs=std::pow(3.0/4.0/M_PI*target.Lattice.Volume/static_cast<RealType>(target.getTotalNum()),1.0/3.0);
+      } else {
+        Rs=1.0;
+      }
+    }
+
+    app_log() << "  RPAPBCConstraints::addTwoBodyPart Rs " << Rs << endl;
+
+    OrbitalBase* sr = createSRTwoBody(target);
+    if (sr) jcombo->Psi.push_back(sr);
+    //OrbitalBase* lr = createLRTwoBody(target);
+    //if (lr) jcombo->Psi.push_back(lr);
+  } 
      
   OrbitalBase* RPAPBCConstraints::createOneBody(ParticleSet& target, ParticleSet& source) {
     return 0;
