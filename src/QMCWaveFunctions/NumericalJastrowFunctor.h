@@ -156,6 +156,7 @@ namespace qmcplusplus {
       ///typedef of the target functor
       typedef OneDimCubicSpline<real_type,real_type>  FNOUT;
 
+      real_type Rmax;
       FNIN *InFunc;
       FNOUT *OutFunc;
 
@@ -185,6 +186,7 @@ namespace qmcplusplus {
         real_type deriv1=InFunc->df(grid(0));
         real_type deriv2=0.0;
         OutFunc->spline(0,deriv1,last,deriv2);
+        Rmax=(*grid)(last);
       }
 
       /** evaluate everything: value, first and second derivaties
