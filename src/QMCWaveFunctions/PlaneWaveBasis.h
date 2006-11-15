@@ -197,11 +197,12 @@ namespace qmcplusplus {
 
     void BuildRecursionCoefs(Matrix<complex<RealType> > &C, const ParticleSet &P, 
                              int iat) {
-      //Fill the recursion coefficients matrix.
-      TinyVector<RealType,3> G111; // Cartesian of twist+G for 1,1,1 (reduced coordinates)
-      for(int idim=0; idim<3; idim++)
-        G111[idim] = 1.0 + twist[idim]; //Reduced
-      G111 = P.Lattice.k_cart(G111); //Cartesian
+      ////Fill the recursion coefficients matrix.
+      //for(int idim=0; idim<3; idim++)
+      //  G111[idim] = 1.0 + twist[idim]; //Reduced
+      //G111 = P.Lattice.k_cart(G111); //Cartesian
+      TinyVector<RealType,3> G111(1.0,1.0,1.0); 
+      G111 = P.Lattice.k_cart(G111); 
 
       //Precompute a small number of complex factors (PWs along b1,b2.b3 lines)
       //using a fast recursion algorithm
