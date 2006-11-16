@@ -68,7 +68,8 @@ namespace qmcplusplus {
     myNodeID=myComm->mycontext();
     ManagerNode = (CollectSum && myNodeID==0);
 
-    delete_iter(RemoteData.begin(),RemoteData.end());
+    if(!RemoteData.empty())
+      delete_iter(RemoteData.begin(),RemoteData.end());
 
     if(numNodes ==1) 
     {

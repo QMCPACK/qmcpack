@@ -130,7 +130,7 @@ namespace qmcplusplus {
       return nw;
     }
 
-    void copy2Buffer(BufferType& msg) { }
+    void copy2Buffer(BufferType& msg);
 
     ///reset all the cumulative sums to zero
     void reset();

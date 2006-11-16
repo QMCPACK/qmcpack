@@ -295,6 +295,8 @@ namespace qmcplusplus {
     }
     for(int i=0; i<elocal_name.size(); i++) record.add(elocal_name(i).c_str());
 
+    msg.add(esum.begin(),esum.end());
+
     //FirstColumnIndex = record.add(esum_name(0).c_str());
     //for(int i=1; i<esum_name.size(); i++) record.add(esum_name(i).c_str());
     //for(int i=0; i<ediff_name.size(); i++) record.add(ediff_name[i].c_str());
@@ -342,6 +344,10 @@ namespace qmcplusplus {
     elocal=0.0; esum=0.0;
   }
 
+  void MultipleEnergyEstimator::copy2Buffer(BufferType& msg) 
+  { 
+    msg.put(esum.begin(),esum.end());
+  }
     /** calculate the averages and reset to zero
      *@param record a container class for storing scalar records (name,value)
      *@param wgtinv the inverse weight
@@ -351,7 +357,9 @@ namespace qmcplusplus {
   void MultipleEnergyEstimator::report(RecordNamedProperty<RealType>& record, RealType wgtinv,
       BufferType& msg) {
 
-    if(CollectSum) gsum(esum,0);
+    msg.get(esum.begin(),esum.end());
+
+    //if(CollectSum) gsum(esum,0);
 
     for(int i=0; i<NumCopies; i++) {
       RealType r = 1.0/esum(i,WEIGHT_INDEX);
