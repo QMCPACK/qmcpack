@@ -396,7 +396,7 @@ namespace qmcplusplus {
 	}
 	Estimators->accumulate(W);
         //use the first energy for the branch
-        branchEngine->accumulate(AveEloc[0],1.0);
+        //branchEngine->accumulate(AveEloc[0],1.0);
 	//reptileReport.accumulate();
       } while(step<nSteps);
 
@@ -429,7 +429,7 @@ namespace qmcplusplus {
       << static_cast<double>(nAcceptTot)/static_cast<double>(nAcceptTot+nRejectTot)
       << endl;
 
-    Estimators->finalize();
+    branchEngine->finalize();
     return true;
   }
 
