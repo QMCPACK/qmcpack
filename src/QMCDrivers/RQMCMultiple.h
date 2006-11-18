@@ -22,6 +22,7 @@
 
 #include "QMCDrivers/QMCDriver.h" 
 #include "OhmmsPETE/OhmmsVector.h" 
+#include "Estimators/RQMCMultipleEstimator.h"
 
 namespace qmcplusplus {
 
@@ -57,6 +58,8 @@ namespace qmcplusplus {
      */
     ///The length of polymers
     int ReptileLength;
+
+    RQMCEstimator *multiEstimator;
 
     ///
     int MinusDirection,PlusDirection,Directionless;

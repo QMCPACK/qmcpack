@@ -102,6 +102,7 @@ QMC_DRIVERS = \
   QMCDrivers/RQMCMultiple.cpp \
   QMCDrivers/MultiChain.cpp \
   Estimators/MultipleEnergyEstimator.cpp \
+	Estimators/RQMCMultipleEstimator.cpp \
   QMCDrivers/SpaceWarp.cpp \
   QMCDrivers/VMCMultipleWarp.cpp \
   QMCDrivers/VMCPbyPMultiWarp.cpp \

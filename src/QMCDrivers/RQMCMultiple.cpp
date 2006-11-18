@@ -26,11 +26,12 @@
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "Message/Communicate.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
+
 using namespace std;
 namespace qmcplusplus { 
   RQMCMultiple::RQMCMultiple(MCWalkerConfiguration& w, 
       TrialWaveFunction& psi, QMCHamiltonian& h):
-    QMCDriver(w,psi,h), 
+    QMCDriver(w,psi,h),
     ReptileLength(21),
     NumTurns(0), Reptile(0), NewBead(0)
   { 
@@ -341,11 +342,12 @@ namespace qmcplusplus {
     cout << "GW " <<  " : " << Reptile->GlobalWgt << endl;
   }
 
-  bool RQMCMultiple::run() { 
-
-    Estimators->reportHeader(AppendRun);
+  bool RQMCMultiple::run() {
 
     if(MyCounter==0)initReptile();
+
+    multiEstimator->initialize(Reptile, Directionless, Tau, nSteps);
+    Estimators->reportHeader(AppendRun);
 
     IndexType block = 0;
     IndexType nAcceptTot = 0;
@@ -367,6 +369,7 @@ namespace qmcplusplus {
     //HDFWalkerOutput WO(RootName);
 
     RealType oneoversteps=1.0/static_cast<RealType>(nSteps);
+   
 
     do { //Loop over Blocks
 
@@ -376,8 +379,8 @@ namespace qmcplusplus {
       Estimators->startBlock();
 
       for(int ipsi=0; ipsi<nPsi; ipsi++){
-	AveEloc[ipsi]=0.0;
-	AveWeight[ipsi]=0.0;
+				AveEloc[ipsi]=0.0;
+				AveWeight[ipsi]=0.0;
       }
 
       do { //Loop over steps
@@ -391,8 +394,8 @@ namespace qmcplusplus {
 	  double WeightedEloc=Reptile->UmbrellaWeight[ipsi]*
 	    ( Reptile->front()->Action(ipsi,Directionless)
 	      +Reptile->back()->Action(ipsi,Directionless) );
-	  AveEloc[ipsi]+=WeightedEloc;
-	  AveWeight[ipsi]+=Reptile->UmbrellaWeight[ipsi];
+	 	AveEloc[ipsi]+=WeightedEloc;
+	 	AveWeight[ipsi]+=Reptile->UmbrellaWeight[ipsi];
 	}
 	Estimators->accumulate(W);
         //use the first energy for the branch
@@ -400,14 +403,19 @@ namespace qmcplusplus {
 	//reptileReport.accumulate();
       } while(step<nSteps);
 
+//      if(block < equilBlocks){
+//        for(int ipsi=0; ipsi< nPsi; ipsi++){
+//        }
+//			}
+
       RealType acceptedR = static_cast<RealType>(nAccept)/static_cast<RealType>(nAccept+nReject); 
       Estimators->stopBlock(acceptedR);
 
       *OutEnergy << block << " " ;
       for(int ipsi=0; ipsi<nPsi; ipsi++){
-	AveEloc[ipsi]/=(AveWeight[ipsi]*Tau+numeric_limits<RealType>::epsilon());
-	*OutEnergy << AveEloc[ipsi] << " ";
-	*OutEnergy << AveWeight[ipsi]/nSteps << " ";
+				AveEloc[ipsi]/=(AveWeight[ipsi]*Tau+numeric_limits<RealType>::epsilon());
+				*OutEnergy << AveEloc[ipsi] << " ";
+				*OutEnergy << AveWeight[ipsi]/nSteps << " ";
       }
       *OutEnergy << endl;
       OutEnergy->flush();
@@ -450,6 +458,13 @@ namespace qmcplusplus {
     if(branchEngine->LogNorm.size()!=nPsi){
       branchEngine->LogNorm.resize(nPsi);
       for(int i=0; i<nPsi; i++)branchEngine->LogNorm[i]=0.e0;
+    }
+
+		// taken from VMCMultiple
+    if(Estimators == 0) {
+      Estimators = new ScalarEstimatorManager(H);
+      multiEstimator = new RQMCEstimator(H,nPsi);
+      Estimators->add(multiEstimator,"elocal");
     }
     return true;
   }

@@ -51,6 +51,7 @@ namespace qmcplusplus {
   */
   class LocalEnergyEstimator: public ScalarEstimatorBase {
 
+    //typedef PooledData<T>                            BufferType;
     enum {ENERGY_INDEX, ENERGY_SQ_INDEX, POTENTIAL_INDEX, LE_MAX};
 
     ///locator of the first data this object handles

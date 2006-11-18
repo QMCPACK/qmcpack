@@ -5,6 +5,7 @@ SET(DMCDRIVERS
   ../Estimators/LocalEnergyEstimator.cpp
   ../Estimators/ScalarEstimatorManager.cpp
   ../Estimators/MultipleEnergyEstimator.cpp
+	../Estimators/RQMCMultipleEstimator.cpp
   WalkerControlBase.cpp
   DMC/DMCMoveAll.cpp
   DMC/DMCPbyP.cpp

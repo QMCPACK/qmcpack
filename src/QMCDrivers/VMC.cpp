@@ -75,7 +75,14 @@ namespace qmcplusplus {
       Estimators->startBlock(); 
 
       do {
-        advanceWalkerByWalker();
+				advanceWalkerByWalker();
+				//cerr << "HEY!!  I'M NOT MOVING ANYBODY; JUST FOR TESTING. -FROM VMC.CPP" << endl;
+				//cerr << "going to evaluate Psi.  it is ";
+      	//RealType logpsi(Psi.evaluateLog(W));
+				//cerr << logpsi << endl;
+				//cerr << "this is for coords" << endl;
+				//for (int w=0; w<W.R.size(); w++)
+				//	cerr << w << ": " << W.R[w] << endl;
         step++;CurrentStep++;
         Estimators->accumulate(W);
       } while(step<nSteps);
