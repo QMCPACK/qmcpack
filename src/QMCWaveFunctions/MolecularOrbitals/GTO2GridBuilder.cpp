@@ -50,12 +50,12 @@ namespace qmcplusplus {
     string b_name((const char*)xmlGetProp(cur,(const xmlChar*)"rid"));
 
     //Using default <radfunc exponent="alpha" contraction="c"/>
-    GaussianCombo<ValueType> gaussian(l,Normalized);
+    GaussianCombo<RealType> gaussian(l,Normalized);
     gaussian.putBasisGroup(cur);
 
     //pointer to the grid
     GridType* agrid = m_orbitals->Grids[0];
-    RadialOrbitalType *radorb = new OneDimCubicSpline<ValueType>(agrid);
+    RadialOrbitalType *radorb = new OneDimCubicSpline<RealType>(agrid);
 
     //spline the slater type orbital
     Transform2GridFunctor<GaussianCombo<RealType>,RadialOrbitalType> transform(gaussian, *radorb);

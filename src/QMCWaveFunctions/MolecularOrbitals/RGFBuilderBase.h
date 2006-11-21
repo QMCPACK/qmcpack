@@ -29,7 +29,7 @@ namespace qmcplusplus {
   struct RGFBuilderBase: public QMCTraits {
 
     typedef OneDimGridBase<RealType>                        GridType;
-    typedef OneDimGridFunctor<ValueType>                    RadialOrbitalType;
+    typedef OneDimGridFunctor<RealType>                     RadialOrbitalType;
     typedef SphericalOrbitalSet<RadialOrbitalType,GridType> CenteredOrbitalType;
 
     ///the species
