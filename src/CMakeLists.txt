@@ -3,6 +3,9 @@
 CONFIGURE_FILE(${qmcpack_SOURCE_DIR}/src/ohmms-config.h.cmake.in
                ${qmcpack_BINARY_DIR}/src/ohmms-config.h)
 
+####################################
+# create libqmcutil
+####################################
 SET(UTILITIES
   Utilities/RandRandom.cpp 
   Utilities/RandomGenerator.cpp 
@@ -17,8 +20,31 @@ SET(UTILITIES
   Numerics/OhmmsBlas.cpp
   Platforms/sysutil.cpp
   QMCFactory/OneDimGridFactory.cpp
+  Message/Communicate.cpp 
 )
 
+##gsl library will be optional
+#IF(HAVE_LIBGSL)
+#  SET(UTILITIES ${UTILITIES} Optimize/GSLMinimize.cpp)
+#ENDIF(HAVE_LIBGSL)
+
+ADD_LIBRARY(qmcutil ${UTILITIES})
+
+####################################
+# create liboompi
+####################################
+IF(HAVE_OOMPI)
+  CONFIGURE_FILE(${qmcpack_SOURCE_DIR}/src/oompi-config.h.cmake.in 
+                 ${qmcpack_BINARY_DIR}/src/oompi-config.h)
+  INCLUDE_DIRECTORIES(${qmcpack_SOURCE_DIR}/src/OOMPI)
+  SUBDIRS(OOMPI)
+  LINK_LIBRARIES(oompi)
+ENDIF(HAVE_OOMPI)
+
+
+####################################
+# create libqmcbase 
+####################################
 SET(PARTICLE
   Lattice/Uniform3DGridLayout.cpp 
   Particle/ParticleSet.cpp 
@@ -43,61 +69,18 @@ SET(PARTICLEIO
   ParticleIO/HDFParticleIO.cpp 
 )
 
-SET(MESSAGE
-  Message/Communicate.cpp 
-)
+ADD_LIBRARY(qmcbase ${PARTICLE}  ${PARTICLEIO})
 
-SET(HAMILTONIAN
-  QMCHamiltonians/QMCHamiltonian.cpp
-)
-
-#gsl library will be optional
-IF(HAVE_LIBGSL)
-  SET(UTILITIES ${UTILITIES} Optimize/GSLMinimize.cpp)
-ENDIF(HAVE_LIBGSL)
-
-SET(WFSBASE
-  QMCWaveFunctions/TrialWaveFunction.cpp
-)
-
-#Only basic packages common for both AtomicHF and QMC
-SET(BASEDIR
-   ${UTILITIES}
-   ${MESSAGE}
-)
-
-####################################
-# create libqmcutil
-####################################
-ADD_LIBRARY(qmcutil ${BASEDIR})
-
-#QMC-related package, build qmc
-SET(QMCBASEDIR
-   ${PARTICLE}
-   ${PARTICLEIO}
-   ${HAMILTONIAN}
-   ${WFSBASE}
-)
-
-####################################
-# create libqmcbase 
-####################################
-ADD_LIBRARY(qmcbase ${QMCBASEDIR})
-
-IF(HAVE_OOMPI)
-  CONFIGURE_FILE(${qmcpack_SOURCE_DIR}/src/oompi-config.h.cmake.in 
-                 ${qmcpack_BINARY_DIR}/src/oompi-config.h)
-  INCLUDE_DIRECTORIES(${qmcpack_SOURCE_DIR}/src/OOMPI)
-  SUBDIRS(OOMPI)
-  LINK_LIBRARIES(oompi)
-ENDIF(HAVE_OOMPI)
 
 SUBDIRS(QMCWaveFunctions)
 SUBDIRS(QMCHamiltonians)
 SUBDIRS(QMCDrivers)
 SUBDIRS(QMCApp)
 
-#do not build qmctools with mpi or complex
-#IF(NOT HAVE_MPI)
-#  SUBDIRS(QMCTools SandBox)
-#ENDIF(NOT HAVE_MPI)
+IF(BUILD_QMCTOOLS)
+  SUBDIRS(QMCTools)
+ENDIF(BUILD_QMCTOOLS)
+
+IF(BUILD_SANDBOX)
+  SUBDIRS(SandBox)
+ENDIF(BUILD_SANDBOX)
