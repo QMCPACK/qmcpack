@@ -30,9 +30,9 @@ namespace qmcplusplus {
 
   public:
 
-    typedef TriCubicSplineT<ValueType,RealType> SPOType;
+    typedef TriCubicSplineT<ValueType,RealType>           SPOType;
     typedef TriCubicSplineT<ValueType,RealType>::GridType GridType;
-    typedef SingleParticleOrbitalSet<SPOType> SPOSetType;
+    typedef SingleParticleOrbitalSet<SPOType>             SPOSetType;
     typedef map<string,ParticleSet*> PtclPoolType;
 
     /** constructor

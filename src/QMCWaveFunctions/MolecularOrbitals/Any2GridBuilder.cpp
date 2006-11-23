@@ -106,7 +106,7 @@ namespace qmcplusplus {
 
     ////pointer to the grid
     GridType* agrid = m_orbitals->Grids[0];
-    RadialOrbitalType *radorb = new OneDimCubicSpline<ValueType>(agrid);
+    RadialOrbitalType *radorb = new OneDimCubicSpline<RealType>(agrid);
 
     SlaterCombo<RealType> sto(m_nlms[1],Normalized);
     sto.putBasisGroup(cur);
@@ -168,7 +168,7 @@ namespace qmcplusplus {
   void Any2GridBuilder::addPade(xmlNodePtr cur) {
 
     GridType* agrid = m_orbitals->Grids[0];
-    RadialOrbitalType *radorb = new OneDimCubicSpline<ValueType>(agrid);
+    RadialOrbitalType *radorb = new OneDimCubicSpline<RealType>(agrid);
 
     PadeOrbital<RealType> pade;
     pade.putBasisGroup(cur);

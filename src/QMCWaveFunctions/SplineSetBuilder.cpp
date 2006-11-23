@@ -136,7 +136,7 @@ namespace qmcplusplus {
     dfile << "          <DataArray type=\"Float32\" Name=\"wfs\">" << endl;
     int ng=0;
     GradType grad;
-    RealType lap;
+    ValueType lap;
     for(int ix=0; ix<npts[0]-1; ix++) {
       double x(GridXYZ->gridX->operator()(ix));
       for(int iy=0; iy<npts[1]-1; iy++) {

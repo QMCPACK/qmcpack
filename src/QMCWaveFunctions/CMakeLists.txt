@@ -1,65 +1,67 @@
-SET(WFSRCS
+
+SET(WFBASE_SRCS
+  TrialWaveFunction.cpp
   OrbitalBuilderBase.cpp
+  WaveFunctionFactory.cpp
+  )
+
+SET(JASTROW_SRCS
   JAABuilder.cpp
   JABBuilder.cpp
   NJAABuilder.cpp
   NJABBuilder.cpp
   LRTwoBodyJastrow.cpp
   JAAPBCBuilder.cpp
-  BasisSetBase.cpp
-  ComboOrbital.cpp
+  TwoBodyJastrowBuilder.cpp
   OrbitalConstraintsBase.cpp
   PadeConstraints.cpp
-  TwoBodyJastrowBuilder.cpp
   RPAConstraints.cpp
   WMConstraints.cpp
-  WaveFunctionFactory.cpp
+  ComboOrbital.cpp
+)
+
+SET(FERMION_SRCS
+  BasisSetBase.cpp
   SPOSetBase.cpp
   BasisSetFactory.cpp
+  SplineSetBuilder.cpp
+  TricubicBsplineSetBuilder.cpp
   Fermion/DiracDeterminantBase.cpp
   Fermion/SlaterDet.cpp
   Fermion/SlaterDetBuilder.cpp
+  PlaneWave/PWOrbitalBuilder.cpp
+  PlaneWave/PWOrbitalSet.cpp
   MolecularOrbitals/STOBuilder.cpp
   MolecularOrbitals/GTOBuilder.cpp
   MolecularOrbitals/NGOBuilder.cpp
+  MolecularOrbitals/STOMolecularOrbitals.cpp
+  MolecularOrbitals/GTOMolecularOrbitals.cpp
+  MolecularOrbitals/RGFBuilderBase.cpp
+  MolecularOrbitals/NumericalRGFBuilder.cpp
+  MolecularOrbitals/STO2GridBuilder.cpp
+  MolecularOrbitals/GTO2GridBuilder.cpp
+  MolecularOrbitals/Any2GridBuilder.cpp
+  MolecularOrbitals/GridMolecularOrbitals.cpp
+  MolecularOrbitals/MolecularOrbitalBuilder.cpp
 )
 
 IF(QMC_COMPLEX)
-  SET(WFSRCS ${WFSRCS}
+  SET(FERMION_SRCS ${FERMION_SRCS}
     ElectronGasComplexOrbitalBuilder.cpp
-    PlaneWaveOrbitalBuilder.cpp
-    PlaneWave/PWOrbitalBuilder.cpp
-    PlaneWave/PWOrbitalSet.cpp
   )
 ELSE(QMC_COMPLEX)
-  SET(WFSRCS ${WFSRCS}
-    NumericalOrbitalSetBuilder.cpp
-    SplineSetBuilder.cpp
-    TricubicBsplineSetBuilder.cpp
+  SET(FERMION_SRCS ${FERMION_SRCS}
     ElectronGasOrbitalBuilder.cpp
-    PlaneWaveOrbitalBuilder.cpp
     ThreeBodyGeminal.cpp
     ThreeBodyGeminalBuilder.cpp
     ThreeBodyPadeBuilder.cpp
     AGPDeterminant.cpp
     AGPDeterminantBuilder.cpp
-    MolecularOrbitals/STOMolecularOrbitals.cpp
-    MolecularOrbitals/GTOMolecularOrbitals.cpp
-    MolecularOrbitals/RGFBuilderBase.cpp
-    MolecularOrbitals/NumericalRGFBuilder.cpp
-    MolecularOrbitals/STO2GridBuilder.cpp
-    MolecularOrbitals/GTO2GridBuilder.cpp
-    MolecularOrbitals/Any2GridBuilder.cpp
-    MolecularOrbitals/GridMolecularOrbitals.cpp
-    MolecularOrbitals/MolecularOrbitalBuilder.cpp
-    AtomicOrbitals/HFAtomicSTOSet.cpp 
-    AtomicOrbitals/HFAtomicSTOSetBuilder.cpp 
-    AtomicOrbitals/HeSTOClementiRottie.cpp
   )
 ENDIF(QMC_COMPLEX)
 
 ####################################
 # create libqmcwfs
 ####################################
-ADD_LIBRARY(qmcwfs ${WFSRCS})
+ADD_LIBRARY(qmcwfs ${WFBASE_SRCS} ${JASTROW_SRCS} ${FERMION_SRCS})
 

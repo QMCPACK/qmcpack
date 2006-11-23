@@ -50,7 +50,7 @@ namespace qmcplusplus {
     RadialOrbitalType *radorb =  NULL;
     int n=nlms[0];
     int l=nlms[1];
-    ValueType zeta = 1.0;
+    RealType zeta = 1.0;
     xmlNodePtr s = cur->xmlChildrenNode;
     while(s != NULL) {
       string cname((const char*)(s->name));
@@ -68,7 +68,7 @@ namespace qmcplusplus {
       //pointer to the grid
     GridType* agrid = m_orbitals->Grids[0];
 
-    radorb = new OneDimCubicSpline<ValueType>(agrid);
+    radorb = new OneDimCubicSpline<RealType>(agrid);
     //spline the slater type orbital
     Transform2GridFunctor<GenericSTO<RealType>,RadialOrbitalType> transform(sto, *radorb);
     transform.generate(agrid->rmin(), agrid->rmax(),agrid->size());

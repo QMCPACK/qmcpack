@@ -20,7 +20,6 @@
 #include "QMCWaveFunctions/WaveFunctionFactory.h"
 #include "QMCWaveFunctions/JastrowBuilder.h"
 #include "QMCWaveFunctions/MolecularOrbitals/MolecularOrbitalBuilder.h"
-#include "QMCWaveFunctions/AtomicOrbitals/HeSTOClementiRottie.h"
 #include "QMCWaveFunctions/PlaneWaveOrbitalBuilder.h"
 #include "QMCWaveFunctions/JABBuilder.h"
 #include "QMCWaveFunctions/NJABBuilder.h"
@@ -28,9 +27,9 @@
 #include "QMCWaveFunctions/TwoBodyJastrowBuilder.h"
 #include "QMCWaveFunctions/WaveFunctionFactory.h"
 #include "QMCWaveFunctions/Fermion/SlaterDetBuilder.h"
+#include "QMCWaveFunctions/PlaneWave/PWOrbitalBuilder.h"
 #if defined(QMC_COMPLEX)
 #include "QMCWaveFunctions/ElectronGasComplexOrbitalBuilder.h"
-#include "QMCWaveFunctions/PlaneWave/PWOrbitalBuilder.h"
 #else
 #include "QMCWaveFunctions/ElectronGasOrbitalBuilder.h"
 #include "QMCWaveFunctions/ThreeBodyGeminalBuilder.h"
@@ -95,42 +94,47 @@ namespace qmcplusplus {
     oAttrib.put(cur);
 
     app_log() << "\n  Slater determinant terms using " << orbtype << endl;
+
 #if defined(QMC_COMPLEX)
-    if(orbtype == "electron-gas") {
+    if(orbtype == "electron-gas") 
+    {
       detbuilder = new ElectronGasComplexOrbitalBuilder(*targetPtcl,*targetPsi);
-    } else if(orbtype == "PWBasis") {
-      detbuilder = new PlaneWaveOrbitalBuilder(*targetPtcl,*targetPsi);
-    } else if(orbtype == "PW") {
-      detbuilder = new PWOrbitalBuilder(*targetPtcl,*targetPsi);
-    } else {
-      app_log() << "QMC_COMPLEX==1  Cannot create " << orbtype << endl;
-    }
+    } 
 #else
-    if(orbtype == "MolecularOrbital") {
-      detbuilder = new MolecularOrbitalBuilder(*targetPtcl,*targetPsi,ptclPool);
-    } else if(orbtype == "STO-He-Optimized") {
-      PtclPoolType::iterator pit(ptclPool.find(nuclei));
-      if(pit != ptclPool.end()) {
-        detbuilder = new HePresetHFBuilder(*targetPtcl,*targetPsi,*((*pit).second));
-      }
-      //} else if(orbtype == "NumericalOrbital") {
-      //  NumericalOrbitalSetBuilder a(*qp,*psi,ptclPool->getPool());
-      //  a.put(cur);
-    } else if(orbtype == "electron-gas") {
+    if(orbtype == "electron-gas") 
+    {
       detbuilder = new ElectronGasOrbitalBuilder(*targetPtcl,*targetPsi);
-    } else if(orbtype == "PWBasis") {
-      detbuilder = new PlaneWaveOrbitalBuilder(*targetPtcl,*targetPsi);
-    } else if(orbtype == "AGP") {
+    } 
+    else if(orbtype == "AGP") 
+    {
       app_log() << "  Creating AGPDeterminant centers at " << nuclei << endl;
       PtclPoolType::iterator pit(ptclPool.find(nuclei));
       if(pit != ptclPool.end()) {
         detbuilder = new AGPDeterminantBuilder(*targetPtcl,*targetPsi,*((*pit).second));
       }
-    } else {
+    } 
+    //else if(orbtype == "STO-He-Optimized") 
+    //{
+    //  PtclPoolType::iterator pit(ptclPool.find(nuclei));
+    //  if(pit != ptclPool.end()) {
+    //    detbuilder = new HePresetHFBuilder(*targetPtcl,*targetPsi,*((*pit).second));
+    //  }
+    //} 
+#endif
+    else if(orbtype == "PWBasis" || orbtype == "PW") 
+    {
+      //detbuilder = new PlaneWaveOrbitalBuilder(*targetPtcl,*targetPsi);
+      detbuilder = new PWOrbitalBuilder(*targetPtcl,*targetPsi);
+    } 
+    else if(orbtype == "MolecularOrbital") 
+    {
+      detbuilder = new MolecularOrbitalBuilder(*targetPtcl,*targetPsi,ptclPool);
+    } 
+    else 
+    {
       app_log() << "  Creating concrete SlaterDeterminant class with SlaterDetBuilder." << endl;
       detbuilder = new SlaterDetBuilder(*targetPtcl,*targetPsi,ptclPool);
     }
-#endif
 
     if(detbuilder) {//valid determinant set
       detbuilder->put(cur);

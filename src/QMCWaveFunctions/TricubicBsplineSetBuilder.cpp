@@ -44,6 +44,40 @@ namespace qmcplusplus {
       }
     };
 
+  template<>
+    struct HDFAttribIO<Array<complex<double>,3> >: public HDFAttribIOBase 
+    {
+      typedef Array<complex<double>,3> ArrayType_t;
+
+      ArrayType_t&  ref;
+      HDFAttribIO<ArrayType_t>(ArrayType_t& a):ref(a) { }
+      inline void write(hid_t grp, const char* name) 
+      {
+      }
+
+      inline void read(hid_t grp, const char* name) 
+      {
+        std::vector<int> npts(3);
+        npts[0]=ref.size(0);
+        npts[1]=ref.size(1);
+        npts[2]=ref.size(2);
+        std::vector<double> t(2*npts[0]*npts[1]*npts[2]);
+
+        HDFAttribIO<std::vector<double> > dummy(t);
+        dummy.read(grp,name);
+
+        const double* restrict tptr1(&(t[0]));
+        const double* restrict tptr2(&(t[1]));
+        ArrayType_t::Container_t::iterator ref_ptr(ref.storage().begin());
+
+        for(int i=0; i<npts[0]; i++)
+          for(int j=0; j<npts[1]; j++)
+            for(int k=0; k<npts[2]; k++, tptr1+=2, tptr2+=2, ref_ptr++) 
+              *ref_ptr=complex<double>(*tptr1,*tptr2);
+        //HDFAttribIO<std::vector<complex<double> > > dummy(ref.storage(),npts);
+      }
+    };
+
 
   TricubicBsplineSetBuilder::TricubicBsplineSetBuilder(ParticleSet& p, PtclPoolType& psets):
     targetPtcl(p),ptclPool(psets),LowerBox(0.0),UpperBox(1.0),BoxGrid(2){
@@ -191,6 +225,11 @@ namespace qmcplusplus {
    */
   SPOSetBase* TricubicBsplineSetBuilder::createSPOSetWithEG()
   {
+#if defined(QMC_COMPLEX)
+    app_error() << " TricubicBsplineSetBuilder::createSPOSetWithEG cannot be used for QMC_COMPLEX=1" << endl;
+    OHMMS::Controller->abort();
+    return 0; //to make some compilers happy
+#else
     int norb=7;
     std::vector<int> npts(3);
     npts[0]=BoxGrid[0]-1; 
@@ -253,6 +292,7 @@ namespace qmcplusplus {
 
     psi->add(abasis);
     return psi;
+#endif
   }
 }
 /***************************************************************************

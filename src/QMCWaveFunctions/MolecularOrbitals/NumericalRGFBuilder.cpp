@@ -131,7 +131,7 @@ namespace qmcplusplus {
 
     //last valid index for radial grid
     int imax = rad_orb.size()-1;
-    RadialOrbitalType *radorb = new OneDimCubicSpline<ValueType>(agrid,rad_orb);
+    RadialOrbitalType *radorb = new OneDimCubicSpline<RealType>(agrid,rad_orb);
     //calculate boundary condition, assume derivates at endpoint are 0.0
     RealType yprime_i = rad_orb[imin+1]-rad_orb[imin];
     if(std::abs(yprime_i)<1e-10)  yprime_i = 0.0;
