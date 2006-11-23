@@ -211,7 +211,7 @@ public:
   int First;
   int Last;
   int Difference;
-  value_type Length;
+  point_type Length;
 
   OneDimCubicSplinePBC(grid_type* gt = 0): base_type(gt){ }
 

@@ -16,7 +16,7 @@ public:
 
   typedef T                             value_type;
   typedef Tg                            point_type;
-  typedef XYZCubicGrid<Tg>              GridType;
+  typedef XYZCubicGrid<T,Tg>            GridType;
   typedef TriCubicSplineT<T,Tg>         ThisType;
   typedef typename GridType::KnotType   KnotType;
   typedef typename GridType::Grid1DType Grid1DType;
@@ -104,8 +104,7 @@ public:
   //  m_grid->locate(r[0],r[1],r[2]);
   //}
 
-  template<class PV>
-  inline T evaluate(const PV& r){
+  inline T evaluate(const TinyVector<Tg,3>& r){
 
     if(GridManager) {
       m_grid->locate(r[0],r[1],r[2],false);
@@ -121,8 +120,7 @@ public:
                        F[cur+n100], F[cur+n101], F[cur+n110], F[cur+n111]);
   }
 
-  template<class PV>
-  inline T evaluate(const PV& r, PV& gradf, T& lapf){
+  inline T evaluate(const TinyVector<Tg,3>& r, TinyVector<T,3>& gradf, T& lapf){
 
     if(GridManager) {
       m_grid->locate(r[0],r[1],r[2],true);
@@ -226,7 +224,8 @@ void TriCubicSplineT<T,Tg>::UpdateZ(int source, int target, bool periodic){
       for(int iz=0,cur=first; iz< nZ; iz++,cur++,s++) *s = F[cur][source];
       temp->spline();
       const T* restrict sfit = temp->data(1);
-      for(int iz=0,cur=first; iz< nZ; iz++,cur++) F[cur][target] = *sfit++;
+      for(int iz=0,cur=first; iz< nZ; iz++,cur++) 
+        F[cur][target] = *sfit++;
     }
   }
 

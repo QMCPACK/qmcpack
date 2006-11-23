@@ -21,9 +21,9 @@ namespace qmcplusplus {
 /**template function: converted from Numerical Recipe spline.c
  *note that the range of data is [0,n) instead of [1,n]
  */
-template<class T>
+template<typename Tg, typename T>
 inline void 
-NRCubicSpline(const T* x, const T* y, int n, T yp1, T ypn, T* y2) {
+NRCubicSpline(const Tg* x, const T* y, int n, T yp1, T ypn, T* y2) {
 
   int i,k;
   T p,qn,sig,un;
@@ -61,9 +61,9 @@ NRCubicSpline(const T* x, const T* y, int n, T yp1, T ypn, T* y2) {
  *
  *Note that the range of data is [0,n) instead of [1,n]
  */
-template<class T>
+template<typename Tg, typename T>
 inline void 
-NRCubicSplinePBC(const T* x, const T* y, int n, T* d1, T* d2 ) {
+NRCubicSplinePBC(const Tg* x, const T* y, int n, T* d1, T* d2 ) {
 
   //store the last valid index
   int last(n-1),last1(n-2),last2(n-3);
@@ -133,9 +133,9 @@ NRCubicSplinePBC(const T* x, const T* y, int n, T* d1, T* d2 ) {
   d2[last]=d2[0];
 }
 
-template<class T>
+template<typename Tg, typename T>
 inline void 
-NRCubicSplineFirst(const T* x, const T* y, int n, T* d1, T* d2 ) {
+NRCubicSplineFirst(const Tg* x, const T* y, int n, T* d1, T* d2 ) {
 
   int last(n-1),last1(n-2),last2(n-3);
 

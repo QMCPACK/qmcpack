@@ -150,11 +150,13 @@ struct OneDimGridBase {
     }
   }
 
-  inline T cubicInterpolateFirst(T a, T b, T a1, T b1) {
+  template <typename T1>
+  inline T1 cubicInterpolateFirst(T1 a, T1 b, T1 a1, T1 b1) {
     return p1*a+p2*b+dL*(q1*a1+q2*b1);
   }
 
-  inline T cubicInterpolateFirst(T a, T b, T a1, T b1, T& du, T& d2u) {
+  template <typename T1>
+  inline T1 cubicInterpolateFirst(T1 a, T1 b, T1 a1, T1 b1, T1& du, T1& d2u) {
     du = dp1*(a-b)+dq1*a1+dq2*b1;
     d2u = d2p1*(a-b)+d2q1*a1+d2q2*b1;
     return p1*a+p2*b+dL*(q1*a1+q2*b1);
@@ -181,11 +183,13 @@ struct OneDimGridBase {
     }
   }
 
-  inline T cubicInterpolateSecond(T y1, T y2, T d2y1, T d2y2) {
+  template <typename T1>
+  inline T1 cubicInterpolateSecond(T1 y1, T1 y2, T1 d2y1, T1 d2y2) {
     return cR*y1+cL*y2+q1*d2y1+q2*d2y2;
   }
 
-  inline T cubicInterpolateSecond(T y1, T y2, T d2y1, T d2y2, 
+  template <typename T1>
+  inline T1 cubicInterpolateSecond(T1 y1, T1 y2, T1 d2y1, T1 d2y2, 
       T& du, T& d2u) {
     du = dLinv*(y2-y1)+dq1*d2y1+dq2*d2y2;
     d2u = cR*d2y1+cL*d2y2; 

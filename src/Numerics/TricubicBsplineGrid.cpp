@@ -192,22 +192,38 @@ inline T TricubicBsplineGrid<T>::evaluate(const Array<T,3>& P,
 
   // Save some operations by factorizing computation.
   Tensor<T,4> cP;
-  cP(0,0) = dot(c, p00);
-  cP(0,1) = dot(c, p01);
-  cP(0,2) = dot(c, p02);
-  cP(0,3) = dot(c, p03);
-  cP(1,0) = dot(c, p10);
-  cP(1,1) = dot(c, p11);
-  cP(1,2) = dot(c, p12);
-  cP(1,3) = dot(c, p13);
-  cP(2,0) = dot(c, p20);
-  cP(2,1) = dot(c, p21);
-  cP(2,2) = dot(c, p22);
-  cP(2,3) = dot(c, p23);
-  cP(3,0) = dot(c, p30);
-  cP(3,1) = dot(c, p31);
-  cP(3,2) = dot(c, p32);
-  cP(3,3) = dot(c, p33);
+  //cP(0,0) = dot(c, p00);
+  //cP(0,1) = dot(c, p01);
+  //cP(0,2) = dot(c, p02);
+  //cP(0,3) = dot(c, p03);
+  //cP(1,0) = dot(c, p10);
+  //cP(1,1) = dot(c, p11);
+  //cP(1,2) = dot(c, p12);
+  //cP(1,3) = dot(c, p13);
+  //cP(2,0) = dot(c, p20);
+  //cP(2,1) = dot(c, p21);
+  //cP(2,2) = dot(c, p22);
+  //cP(2,3) = dot(c, p23);
+  //cP(3,0) = dot(c, p30);
+  //cP(3,1) = dot(c, p31);
+  //cP(3,2) = dot(c, p32);
+  //cP(3,3) = dot(c, p33);
+  cP(0,0) = dot(p00, c);
+  cP(0,1) = dot(p01, c);
+  cP(0,2) = dot(p02, c);
+  cP(0,3) = dot(p03, c);
+  cP(1,0) = dot(p10, c);
+  cP(1,1) = dot(p11, c);
+  cP(1,2) = dot(p12, c);
+  cP(1,3) = dot(p13, c);
+  cP(2,0) = dot(p20, c);
+  cP(2,1) = dot(p21, c);
+  cP(2,2) = dot(p22, c);
+  cP(2,3) = dot(p23, c);
+  cP(3,0) = dot(p30, c);
+  cP(3,1) = dot(p31, c);
+  cP(3,2) = dot(p32, c);
+  cP(3,3) = dot(p33, c);
 
   TinyVector<T,4> bcP=dot(cP,b);
 

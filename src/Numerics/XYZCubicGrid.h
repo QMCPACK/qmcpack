@@ -10,37 +10,37 @@ namespace qmcplusplus {
  * Adapting TriCubicSpline implemented by K. Esler and D. Das.
  * Use stl containers
  */
-template<class T>
+template<typename T, typename Tg>
 struct XYZCubicGrid {
 
   typedef TinyVector<T,8>   KnotType;
-  typedef OneDimGridBase<T> Grid1DType;
+  typedef OneDimGridBase<Tg> Grid1DType;
 
   /// functions which depend on the point where the interpolated value
   /// is required. t = (x - xi)/h
-  inline T p1(T t)
+  inline Tg p1(Tg t)
   { return ((t-1.0)*(t-1.0)*(1.0+2.0*t)); }
-  inline T p2(T t)
+  inline Tg p2(Tg t)
   { return (t*t*(3.0-2.0*t)); }
-  inline T q1(T t)
+  inline Tg q1(Tg t)
   { return (t*(t-1.0)*(t-1.0)); }
-  inline T q2(T t)
+  inline Tg q2(Tg t)
   { return (t*t*(t-1.0)); }
-  inline T dp1(T t)
+  inline Tg dp1(Tg t)
   { return (6.0*t*(t-1.0)); }
-  inline T dq1(T t)
+  inline Tg dq1(Tg t)
   { return ((t-1.0)*(3.0*t-1.0)); }
-  inline T dp2(T t)
+  inline Tg dp2(Tg t)
   { return (-dp1(t)); }
-  inline T dq2 (T t)
+  inline Tg dq2 (Tg t)
   { return ((3.0*t - 2.0)*t); }
-  inline T d2p1(T t)
+  inline Tg d2p1(Tg t)
   { return (12.0*t-6.0); }
-  inline T d2q1 (T t)
+  inline Tg d2q1 (Tg t)
   { return (6.0*t - 4.0); }
-  inline T d2p2 (T t)
+  inline Tg d2p2 (Tg t)
   { return (-d2p1(t)); }
-  inline T d2q2 (T t)
+  inline Tg d2q2 (Tg t)
   { return (6.0*t - 2.0); } 
 
   bool OwnGrid;
@@ -48,16 +48,16 @@ struct XYZCubicGrid {
   int Loc;
   int ix, iy, iz;
   int nX, nY, nZ;
-  T x_min, x_max, LengthX, OneOverLx;
-  T y_min, y_max, LengthY, OneOverLy;
-  T z_min, z_max, LengthZ, OneOverLz;
-  T h,k,l,hinv,kinv,linv;
-  T u,v,w;
-  T val, gradfX, gradfY, gradfZ, lapf;
-  T a0,a1,a2,a3,b0,b1,b2,b3,c0,c1,c2,c3;
-  T da0,da1,da2,da3,db0,db1,db2,db3,dc0,dc1,dc2,dc3;
-  T d2a0,d2a1,d2a2,d2a3,d2b0,d2b1,d2b2,d2b3,d2c0,d2c1,d2c2,d2c3;
+  Tg x_min, x_max, LengthX, OneOverLx;
+  Tg y_min, y_max, LengthY, OneOverLy;
+  Tg z_min, z_max, LengthZ, OneOverLz;
+  Tg h,k,l,hinv,kinv,linv;
+  Tg u,v,w;
+  Tg a0,a1,a2,a3,b0,b1,b2,b3,c0,c1,c2,c3;
+  Tg da0,da1,da2,da3,db0,db1,db2,db3,dc0,dc1,dc2,dc3;
+  Tg d2a0,d2a1,d2a2,d2a3,d2b0,d2b1,d2b2,d2b3,d2c0,d2c1,d2c2,d2c3;
 
+  T val, gradfX, gradfY, gradfZ, lapf;
   Grid1DType *gridX, *gridY, *gridZ;
 
   XYZCubicGrid(): OwnGrid(false),Loc(-1),gridX(0),gridY(0),gridZ(0) {}
@@ -81,8 +81,8 @@ struct XYZCubicGrid {
   /** process xmlnode to set the grids
    */
   bool put(xmlNodePtr cur) {
-    std::vector<T> ri(3,-5.0);
-    std::vector<T> rf(3,5.0);
+    std::vector<Tg> ri(3,-5.0);
+    std::vector<Tg> rf(3,5.0);
     std::vector<int> npts(3,101);
     cur = cur->xmlChildrenNode;
     int idir(0);
@@ -100,9 +100,9 @@ struct XYZCubicGrid {
       }
       cur=cur->next;
     }
-    if(gridX ==0) gridX=new LinearGrid<T>;
-    if(gridY ==0) gridY=new LinearGrid<T>;
-    if(gridZ ==0) gridZ=new LinearGrid<T>;
+    if(gridX ==0) gridX=new LinearGrid<Tg>;
+    if(gridY ==0) gridY=new LinearGrid<Tg>;
+    if(gridZ ==0) gridZ=new LinearGrid<Tg>;
     gridX->set(ri[0],rf[0],npts[0]);
     gridY->set(ri[1],rf[1],npts[1]);
     gridZ->set(ri[2],rf[2],npts[2]);
@@ -119,7 +119,7 @@ struct XYZCubicGrid {
     
   /** locate the grid point (x,y,z) and update the coefficients
    */
-  inline void locate(T x, T y, T z, bool updateall) {
+  inline void locate(Tg x, Tg y, Tg z, bool updateall) {
     //grid(X,Y,Z)->locate(r) evaluates the factors used by interpolations
     Loc=-1;
     if(Periodic) {
