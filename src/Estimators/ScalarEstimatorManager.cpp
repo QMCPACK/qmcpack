@@ -435,7 +435,7 @@ namespace qmcplusplus {
     { //initiate the recv
       for(int i=1,is=0; i<numNodes; i++,is++) 
         //MPI_Irecv(RemoteData[i]->begin(),msgBufferSize,MPI_DOUBLE,i,i,MPI_COMM_WORLD,&(myRequest[is]));
-        MPI_Irecv(RemoteData[i]->begin(),msgBufferSize,
+        MPI_Irecv(RemoteData[i]->data(),msgBufferSize,
             MPI_DOUBLE,i,i,myComm->getMPI(),&(myRequest[is]));
     }
 #endif
@@ -536,7 +536,7 @@ namespace qmcplusplus {
     {
       for(int i=1,is=0; i<numNodes; i++,is++) 
         //MPI_Irecv(RemoteData[i]->begin(),msgBufferSize,MPI_DOUBLE,i,i,MPI_COMM_WORLD,&(myRequest[is]));
-        MPI_Irecv(RemoteData[i]->begin(),msgBufferSize,MPI_DOUBLE,i,i,myComm->getMPI(),&(myRequest[is]));
+        MPI_Irecv(RemoteData[i]->data(),msgBufferSize,MPI_DOUBLE,i,i,myComm->getMPI(),&(myRequest[is]));
     }
 #endif
   }
