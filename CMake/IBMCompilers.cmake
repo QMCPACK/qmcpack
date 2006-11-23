@@ -8,13 +8,13 @@ MESSAGE(STATUS "AIX system using xlC/xlc/xlf")
 #If BITS=64, compiler and ar options have to have -q64 or -X64
 ######################################################################
 SET(AIX_BIT_FLAGS "")
-IF(BITS MATCHES 64)
+IF(QMC_BITS MATCHES 64)
   SET(AIX_BIT_FLAGS " -q64")
   SET(F77OPTFLAGS  -O3 -qstrict -q64)
   SET(AR_OPTIONS "-X64")
-ELSE(BITS MATCHES 64)
+ELSE(QMC_BITS MATCHES 64)
   SET(F77OPTFLAGS  -O3 -qstrict)
-ENDIF(BITS MATCHES 64)
+ENDIF(QMC_BITS MATCHES 64)
 
 ######################################################################
 #AIX_CXX_COMMON_FLAGS for the flags required for any level of optimizations

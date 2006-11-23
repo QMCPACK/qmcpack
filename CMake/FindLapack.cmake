@@ -26,7 +26,7 @@ SET(MKL_PATHS "")
   ENDIF($ENV{MKL} MATCHES "mkl")
   
   SET(MKL_PATHS ${MKL_PATHS} 
-      $ENV{MKL_HOME}/lib/${BITS}
+      $ENV{MKL_HOME}/lib/${QMC_BITS}
       $ENV{MKL_HOME}/lib
       /usr/local/intel/mkl60/mkl60/lib/64
       /usr/local/intel/mkl/lib/32 
