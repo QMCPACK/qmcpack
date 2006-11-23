@@ -38,10 +38,10 @@ namespace qmcplusplus {
 
   QMCMain::QMCMain(int argc, char** argv): QMCAppBase(argc,argv), FirstQMC(true) { 
 
-    app_log() << "\n=========================================================\n"
-              <<   "                   qmcplusplus 0.2                       \n"
-              << "\n  (c) Copyright 2003-  qmcplusplus developers          \n"
-              <<   "=========================================================\n";
+    app_log() << "\n=====================================================\n"
+              <<   "                   qmcpack 0.2                       \n"
+              << "\n  (c) Copyright 2003-  qmcpack developers            \n"
+              <<   "=====================================================\n";
 
     app_log().flush();
   }

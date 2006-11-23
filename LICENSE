@@ -1,4 +1,4 @@
-Important Notice for qmcplusplus developers and end-users:
+Important Notice for qmcpack developers and end-users:
 
 i) The original programs developed by Jeongnim Kim and her collaborators
 are distributed under UIUC/NCSA Open Source License (below). 
@@ -22,7 +22,7 @@ Developed by:
   Condensed Matter Physics,
   National Center for Supercomputing Applications, University of Illinois
   Materials computation Center, University of Illinois
-  http://www.mcc.uiuc.edu/qmcplusplus/
+  http://www.mcc.uiuc.edu/qmc/
 
 Permission is hereby granted, free of charge, to any person obtaining a
 copy of this software and associated documentation files (the
