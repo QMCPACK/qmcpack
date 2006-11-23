@@ -1,4 +1,5 @@
 SET(HAMSRCS
+  QMCHamiltonian.cpp
   CoulombPBCAATemp.cpp
   CoulombPBCABTemp.cpp
   LocalCorePolPotential.cpp
