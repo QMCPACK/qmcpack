@@ -21,6 +21,16 @@
 
 namespace APPNAMESPACE {
 
+  template<class T1>
+    struct BinaryReturn<T1, std::complex<T1>, OpMultiply > {
+      typedef std::complex<T1> Type_t;
+    };
+
+  template<class T1>
+    struct BinaryReturn<std::complex<T1>, T1, OpMultiply > {
+      typedef std::complex<T1> Type_t;
+    };
+
 ///////////////////////////////////////////////////////////////////////
 //
 // Assignment operators
