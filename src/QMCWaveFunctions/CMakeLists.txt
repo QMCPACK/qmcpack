@@ -29,8 +29,10 @@ SET(FERMION_SRCS
   Fermion/DiracDeterminantBase.cpp
   Fermion/SlaterDet.cpp
   Fermion/SlaterDetBuilder.cpp
-  PlaneWave/PWOrbitalBuilder.cpp
+  PlaneWave/PWBasis.cpp
   PlaneWave/PWOrbitalSet.cpp
+  PlaneWave/PWParameterSet.cpp
+  PlaneWave/PWOrbitalBuilder.cpp
   MolecularOrbitals/STOBuilder.cpp
   MolecularOrbitals/GTOBuilder.cpp
   MolecularOrbitals/NGOBuilder.cpp
