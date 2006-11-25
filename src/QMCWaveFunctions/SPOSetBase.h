@@ -19,6 +19,10 @@
 
 #include "Particle/ParticleSet.h"
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
+//#define ENABLE_SMARTPOINTER
+#if defined(ENABLE_SMARTPOINTER)
+#include <boost/shared_ptr.hpp>
+#endif
 
 namespace qmcplusplus {
 
@@ -116,6 +120,13 @@ protected:
     bool putFromXML(xmlNodePtr coeff_ptr);
     bool putFromH5(const char* fname, xmlNodePtr coeff_ptr);
   };
+
+#if defined(ENABLE_SMARTPOINTER)
+  typedef boost::shared_ptr<SPOSetBase> SPOSetBasePtr;
+#else
+  typedef SPOSetBase*                   SPOSetBasePtr;
+#endif
+
 }
 #endif
 
