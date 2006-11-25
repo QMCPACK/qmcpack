@@ -123,7 +123,6 @@ namespace qmcplusplus {
 #endif
     else if(orbtype == "PWBasis" || orbtype == "PW") 
     {
-      //detbuilder = new PlaneWaveOrbitalBuilder(*targetPtcl,*targetPsi);
       detbuilder = new PWOrbitalBuilder(*targetPtcl,*targetPsi);
     } 
     else if(orbtype == "MolecularOrbital") 

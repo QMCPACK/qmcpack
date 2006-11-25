@@ -15,14 +15,11 @@
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 #include "QMCWaveFunctions/BasisSetFactory.h"
-//#include "QMCWaveFunctions/MolecularOrbitals/Any2GridBuilder.h"
 #include "QMCWaveFunctions/MolecularOrbitals/NGOBuilder.h"
 #include "QMCWaveFunctions/MolecularOrbitals/GTOBuilder.h"
 #include "QMCWaveFunctions/MolecularOrbitals/STOBuilder.h"
 #include "QMCWaveFunctions/MolecularOrbitals/MolecularBasisBuilder.h"
-#if! defined(QMC_COMPLEX)
 #include "QMCWaveFunctions/SplineSetBuilder.h"
-#endif
 #include "QMCWaveFunctions/TricubicBsplineSetBuilder.h"
 #include "Message/Communicate.h"
 #include "OhmmsData/AttributeSet.h"
@@ -60,12 +57,8 @@ namespace qmcplusplus {
 
     BasisSetBuilder* bb=0;
     if(typeOpt == "spline") {
-#if defined(QMC_COMPLEX)
-      OHMMS::Controller->abort("BasisSetFactory::SplineSetBuilder is disabled QMC_COMPLEX=1");
-#else
       app_log() << "  SplineSetBuilder: spline on 3D TriCubicGrid " << endl;
       bb = new SplineSetBuilder(targetPtcl,ptclPool);
-#endif
     } 
     else if(typeOpt == "bspline")
     {
