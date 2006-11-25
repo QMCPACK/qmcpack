@@ -1,4 +1,22 @@
+//////////////////////////////////////////////////////////////////
+// (c) Copyright 2006-  by Kris Delaney and Jeongnim Kim
+//////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////
+//   National Center for Supercomputing Applications &
+//   Materials Computation Center
+//   University of Illinois, Urbana-Champaign
+//   Urbana, IL 61801
+//   e-mail: jnkim@ncsa.uiuc.edu
+//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
+//
+// Supported by
+//   National Center for Supercomputing Applications, UIUC
+//   Materials Computation Center, UIUC
+//////////////////////////////////////////////////////////////////
 // -*- C++ -*-
+/** @file PWBasis.h
+ * @brief Declaration of Plane-wave basis set
+ */
 #ifndef QMCPLUSPLUS_PLANEWAVEBASIS_BLAS_H
 #define QMCPLUSPLUS_PLANEWAVEBASIS_BLAS_H
 
@@ -13,22 +31,29 @@ namespace qmcplusplus {
   /** Plane-wave basis set
    *
    * Rewrite of PlaneWaveBasis to utilize blas II or III
+   * Support more general input tags
    */
   class PWBasis: public QMCTraits {
   private:
     typedef ParticleSet::ParticleLayout_t ParticleLayout_t;    
+    typedef TinyVector<IndexType,3>       GIndex_t;
+
+    ///max of maxg[i]
+    int maxmaxg;
+    //Need to store the maximum translation in each dimension to use recursive PW generation.
+    GIndex_t maxg;
     //The PlaneWave data - keep all of these strictly private to prevent inconsistencies.
     RealType ecut;
-    TinyVector<RealType,3> twist,twist_cart; //Twist angle in reduced and Cartesian.
+    ///twist angle in reduced
+    PosType twist;
+    ///twist angle in cartesian
+    PosType twist_cart; //Twist angle in reduced and Cartesian.
+
     vector<RealType> minusModKplusG2;
-    vector<TinyVector<int,3> > gvecs; //Reduced coordinates
+    vector<GIndex_t> gvecs; //Reduced coordinates
     vector<PosType> kplusgvecs_cart; //Cartesian.
-    //Need to store the maximum translation in each dimension to use recursive PW generation.
-    TinyVector<int,3> maxg;
-    int maxmaxg;
     Matrix<ComplexType> C;
     Matrix<RealType> logC;
-#if !defined(QMC_COMPLEX)
     //Real wavefunctions here. Now the basis states are cos(Gr) or sin(Gr), not exp(iGr) 
     //We need a way of switching between them for G -> -G, otherwise the
     //determinant will have multiple rows that are equal (to within a constant factor) 
@@ -36,12 +61,12 @@ namespace qmcplusplus {
     //stores whether a vector is "+" or "-" (with some criterion, to be defined). We
     //the switch from cos() to sin() based on the value of this input.
     vector<int> negative;
-#endif
   public:
     //enumeration for the value, laplacian, gradients and size
     enum {PW_VALUE, PW_LAP, PW_GRADX, PW_GRADY, PW_GRADZ, PW_MAXINDEX};
 
     Matrix<ComplexType> Z;
+
     Vector<ComplexType> Zv;
     /* inputmap is used for a memory efficient way of 
      *
@@ -63,134 +88,62 @@ namespace qmcplusplus {
     ///total number of basis functions
     int NumPlaneWaves;
 
+    ///local copy of Lattice
+    ParticleLayout_t Lattice;
+
+    ///default constructor
+    PWBasis():maxmaxg(0), NumPlaneWaves(0)
+    {
+    }
+
     ///constructor
-    PWBasis(const TinyVector<RealType,3>& twistangle): twist(twistangle) {
-      NumPlaneWaves=0;
-      maxg=0;
-    }
-
-    ///Read basisset from hdf5 file. Apply ecut. Resize internal storage.
-    inline void
-    readbasis(hid_t h5basisgroup,RealType ecutoff,int& nh5gvecs, 
-              ParticleLayout_t &Lattice) {
-      //First, read the total number of planewaves:
-      int idata;
-      HDFAttribIO<int> hdfint(idata);
-      hdfint.read(h5basisgroup,"num_planewaves");
-      NumPlaneWaves = idata;
-      nh5gvecs = idata;
-
-      //Resize the storage for the G-Vectors in reduced coordinates:
-      gvecs.resize(NumPlaneWaves);
-
-      //Read ALL of the planewaves (even those > ecut):
-      //      HDFAttribIO<int*>hdfvtv(&gvecs[0][0],NumPlaneWaves*3);
-      HDFAttribIO<std::vector<TinyVector<int,3> > >hdfvtv(gvecs);
-      hdfvtv.read(h5basisgroup,"planewaves");
-
-      //Now remove elements outside Ecut. At the same time, fill k+G and |k+G| lists.
-      //Also keep track of the original index ordering (using indexmap[]) so that
-      //orbital coefficients can be ordered and trimmed for ecut in the same way.
-      ecut = ecutoff;
-      trimforecut(Lattice);
-
-      //Store the maximum number of translations, within ecut, of any reciprocal cell vector.
-      for(int ig=0; ig<NumPlaneWaves; ig++)
-        for(int i=0; i<3; i++)
-           if(abs(gvecs[ig][i]) > maxg[i]) 
-             maxg[i] = abs(gvecs[ig][i]);
-      maxmaxg = max(maxg[0],max(maxg[1],maxg[2]));
-
-      //changes the order????
-      C.resize(3,2*maxmaxg+1);
-      logC.resize(3,2*maxmaxg+1);
-
-      LOGMSG("\n\tBasisset energy cutoff = " << ecut);
-      LOGMSG("\tNumber of planewaves = " << NumPlaneWaves<<"\n");
-
-      //Check that we actually kept some elements within ecut.
-      if(NumPlaneWaves < 1){
-        LOGMSG("No planewaves exist within ecut (="<<ecut<<")");
-        OHMMS::Controller->abort();
-      }
-
-      Z.resize(NumPlaneWaves,2+DIM);
-      Zv.resize(NumPlaneWaves);
+    PWBasis(const PosType& twistangle): 
+      maxmaxg(0), twist(twistangle), NumPlaneWaves(0){
     }
 
 
-    ///Remove basis elements if kinetic energy > ecut.
-    //Keep and indexmap so we know how to match coefficients on read.
-    void trimforecut(ParticleLayout_t &Lattice) { 
-      TinyVector<RealType,3> tempvec;
-      RealType mod2, mod;
-      RealType kcutoff = std::sqrt(2.0*ecut);
-
-      //resize inputmap
-      NumPlaneWaves = gvecs.size();
-      inputmap.resize(NumPlaneWaves);
-
-      //Convert the twist angle to Cartesian coordinates.
-      twist_cart = Lattice.k_cart(twist);
-
-      //ig is the loop index to access the member of gvecs for testing.
-      //newig is the index showing where ig exists in the new (truncated) basis.
-      //oldig is the index showing where ig came from...differs from ig after gvecs 
-      // has at least one element truncated.
-      for(int ig=0, newig=0, oldig=0; ig<NumPlaneWaves; ig++,oldig++) {
-        //Check size of this g-vector
-        tempvec = Lattice.k_cart(gvecs[ig]+twist);
-        mod2 = dot(tempvec,tempvec);
-        mod = std::sqrt(mod2);
-        if(mod<=kcutoff){
-          //Keep this element
-          kplusgvecs_cart.push_back(tempvec);
-          minusModKplusG2.push_back(-mod2);
-          //Remember which position in the HDF5 file this came from...for coefficients
-          inputmap[oldig] = newig;
-          newig++;
-#if !defined(QMC_COMPLEX)
-          //Build the negative vector. See comment at declaration (above) for details.
-          if(gvecs[ig][0] < 0)
-            negative.push_back(0);
-          else if(gvecs[ig][0] > 0)
-            negative.push_back(1);
-          else { //gx == 0, test gy
-            if(gvecs[ig][1] < 0)
-              negative.push_back(0);
-            else if(gvecs[ig][1] > 0)
-              negative.push_back(1);
-            else { //gx == gy == 0; test gz. If gz==0 also, take negative=1 (arbitrary)
-              if(gvecs[ig][2] < 0)
-                negative.push_back(0);
-              else
-                negative.push_back(1);
-            }
-          }
-#endif
-        } else {
-          //Remove this element. Remember to set ig back by one element so 
-          //removal doesn't lead to a skipping
-          inputmap[oldig] = -1; //Temporary value...need to know final NumPlaneWaves.
-          gvecs.erase(gvecs.begin()+ig,gvecs.begin()+ig+1);
-          ig--; NumPlaneWaves--;
-        }
-      }
-
-      //Finalize the basis. Fix temporary values of inputmap.
-      for(int ig=0; ig<inputmap.size(); ig++) 
-        if(inputmap[ig] == -1)
-          inputmap[ig] = NumPlaneWaves; //For dumping coefficients of PWs>ecut
+    ~PWBasis()
+    {
+      cout << "Cleanup PWBasis " << endl;
     }
+
+    inline IndexType getBasisSetSize() const {
+      return NumPlaneWaves;
+    }
+
+    ///set the twist angle
+    void setTwistAngle(const PosType& tang);
+
+    ///reset
+    void reset();
+
+    /** Read basisset from hdf5 file. Apply ecut. 
+     * @param h5basisgroup h5 node where basis is located
+     * @param ecutoff cutoff energy
+     * @param lat CrystalLattice
+     * @param resizeContainer if true, resize internal storage.
+     * @return the number of plane waves
+     */
+    int
+    readbasis(hid_t h5basisgroup,RealType ecutoff,
+              ParticleLayout_t &lat, 
+              const string& pwname="planewaves",
+              bool resizeContainer=true);
+
+    /** Remove basis elements if kinetic energy > ecut.
+     *
+     * Keep and indexmap so we know how to match coefficients on read.
+     */
+    void trimforecut();
 
     /** Fill the recursion coefficients matrix.
      *
      * @todo Generalize to non-orthorohmbic cells
      */
-    void BuildRecursionCoefs(const ParticleSet &P, int iat) {
+    inline void BuildRecursionCoefs(const ParticleSet &P, int iat) {
 
       // Cartesian of twist for 1,1,1 (reduced coordinates)
-      TinyVector<RealType,3> G111(1.0,1.0,1.0); 
+      PosType G111(1.0,1.0,1.0); 
       G111 = P.Lattice.k_cart(G111); 
       //PosType redP=P.Lattice.toUnit(P.R[iat]);
 
@@ -220,7 +173,7 @@ namespace qmcplusplus {
     void BuildRecursionCoefsByAdd(const ParticleSet &P, int iat) {
 
       // Cartesian of twist for 1,1,1 (reduced coordinates)
-      TinyVector<RealType,3> G111(1.0,1.0,1.0); 
+      PosType G111(1.0,1.0,1.0); 
       G111 = P.Lattice.k_cart(G111); 
       //PosType redP=P.Lattice.toUnit(P.R[iat]);
       //Precompute a small number of complex factors (PWs along b1,b2,b3 lines)
@@ -337,3 +290,8 @@ namespace qmcplusplus {
   };
 }
 #endif
+/***************************************************************************
+ * $RCSfile$   $Author$
+ * $Revision$   $Date$
+ * $Id$
+ ***************************************************************************/
