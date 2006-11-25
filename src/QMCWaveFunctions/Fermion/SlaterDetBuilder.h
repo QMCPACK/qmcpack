@@ -54,7 +54,7 @@ namespace qmcplusplus {
     ////map<string,BasisSetBase*> BasisSet;
     //BasisSetBase* myBasisSet;
 
-    map<string,SPOSetBase*> SPOSet;
+    map<string,SPOSetBasePtr> SPOSet;
 
     map<string,Det_t*> DetSet;
 

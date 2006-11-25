@@ -100,10 +100,14 @@ namespace qmcplusplus {
       }
     }
 
-    map<string,SPOSetBase*>::iterator lit(SPOSet.find(detname));
-    SPOSetBase* psi=0;
+    map<string,SPOSetBasePtr>::iterator lit(SPOSet.find(detname));
+    SPOSetBasePtr psi;
     if(lit == SPOSet.end()) {
+#if defined(ENABLE_SMARTPOINTER)
+      psi.reset(myBasisSetFactory->createSPOSet(cur)); 
+#else
       psi = myBasisSetFactory->createSPOSet(cur); 
+#endif
       psi->put(cur);
       SPOSet[detname]=psi;
     } else {
@@ -113,7 +117,7 @@ namespace qmcplusplus {
     if(psi->getOrbitalSetSize()) {
       map<string,Det_t*>::iterator dit(DetSet.find(detname));
       if(dit == DetSet.end()) {
-        adet = new Det_t(*psi,firstIndex);
+        adet = new Det_t(psi,firstIndex);
         adet->set(firstIndex,psi->getOrbitalSetSize());
         DetSet[detname]=adet;
       } else {

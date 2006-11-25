@@ -40,7 +40,7 @@ namespace qmcplusplus {
      *@param spos the single-particle orbital set
      *@param first index of the first particle
      */
-    DiracDeterminantBase(SPOSetBase& spos, int first=0);
+    DiracDeterminantBase(SPOSetBasePtr const &spos, int first=0);
 
     ///default destructor
     ~DiracDeterminantBase();
@@ -68,10 +68,10 @@ namespace qmcplusplus {
     void set(int first, int nel);
 
     ///reset the single-particle orbital set
-    inline void reset() { Phi.reset(); }
+    inline void reset() { Phi->reset(); }
    
     void resetTargetParticleSet(ParticleSet& P) { 
-      Phi.resetTargetParticleSet(P);
+      Phi->resetTargetParticleSet(P);
     }
 
     ///reset the size: with the number of particles and number of orbtials
@@ -162,7 +162,7 @@ namespace qmcplusplus {
     int LastIndex;
 
     ///a set of single-particle orbitals used to fill in the  values of the matrix 
-    SPOSetBase& Phi;
+    SPOSetBasePtr Phi;
 
     ///index of the particle (or row) 
     int WorkingIndex;      

@@ -28,7 +28,7 @@ namespace qmcplusplus {
    *@param spos the single-particle orbital set
    *@param first index of the first particle
    */
-  DiracDeterminantBase::DiracDeterminantBase(SPOSetBase& spos, int first): 
+  DiracDeterminantBase::DiracDeterminantBase(SPOSetBasePtr const &spos, int first): 
     NP(0), Phi(spos), FirstIndex(first) {}
 
   ///default destructor
@@ -169,7 +169,7 @@ namespace qmcplusplus {
   DiracDeterminantBase::ValueType DiracDeterminantBase::ratio(ParticleSet& P, int iat) {
     UseRatioOnly=true;
     WorkingIndex = iat-FirstIndex;
-    Phi.evaluate(P, iat, psiV);
+    Phi->evaluate(P, iat, psiV);
 #ifdef DIRAC_USE_BLAS
     return curRatio = BLAS::dot(NumOrbitals,psiM[iat-FirstIndex],&psiV[0]);
 #else
@@ -190,7 +190,7 @@ namespace qmcplusplus {
       ParticleSet::ParticleGradient_t& dG, 
       ParticleSet::ParticleLaplacian_t& dL) {
     UseRatioOnly=false;
-    Phi.evaluate(P, iat, psiV, dpsiV, d2psiV);
+    Phi->evaluate(P, iat, psiV, dpsiV, d2psiV);
     WorkingIndex = iat-FirstIndex;
 
 #ifdef DIRAC_USE_BLAS
@@ -344,7 +344,7 @@ namespace qmcplusplus {
         ParticleSet::ParticleGradient_t& G, 
         ParticleSet::ParticleLaplacian_t& L){
 
-      Phi.evaluate(P, FirstIndex, LastIndex, psiM,dpsiM, d2psiM);
+      Phi->evaluate(P, FirstIndex, LastIndex, psiM,dpsiM, d2psiM);
 
       if(NumPtcls==1) {
         CurrentDet=psiM(0,0);
