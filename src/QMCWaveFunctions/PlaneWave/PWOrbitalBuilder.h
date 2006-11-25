@@ -1,31 +1,50 @@
+///////////////////////////////////////////////////////////////
+// (c) Copyright 2006-  by Jeongnim Kim and Kris Delaney
+//////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////
+//   National Center for Supercomputing Applications &
+//   Materials Computation Center
+//   University of Illinois, Urbana-Champaign
+//   Urbana, IL 61801
+//   e-mail: jnkim@ncsa.uiuc.edu
+//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
+//
+// Supported by
+//   National Center for Supercomputing Applications, UIUC
+//   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef QMCPLUSPLUS_PLANEWAVE_ORBITALBUILD_BLAS_H
-#define QMCPLUSPLUS_PLANEWAVE_ORBITALBUILD_BLAS_H
+/** @file PWOribitalBuilder.h
+ * @brief Declaration of a builder class for PWOrbitalSet
+ *
+ */
+#ifndef QMCPLUSPLUS_PLANEWAVE_ORBITALBUILD_V0_H
+#define QMCPLUSPLUS_PLANEWAVE_ORBITALBUILD_V0_H
 #include "QMCWaveFunctions/OrbitalBuilderBase.h"
 #include "QMCWaveFunctions/PlaneWave/PWOrbitalSet.h"
 namespace qmcplusplus {
+
+  class PWParameterSet;
 
   /** OrbitalBuilder for Slater determinants in PW basis
   */
   class PWOrbitalBuilder: public OrbitalBuilderBase {
 
   private:
-    ///Number of up and down particles from ParticleSet
-    int nup, ndown, upindx;
-    ///Index of spin data from HDF5 file to use for updet and downdet
-    int updetspinindex, downdetspinindex;
+
+    typedef PWOrbitalSet::PWBasisPtr PWBasisPtr;
 
     ///Read routine for HDF wavefunction file version 0.10
-    void ReadHDFWavefunction010(hid_t hfile,double& ecut);
+    void ReadHDFWavefunction(hid_t hfile);
 
-    //Storage for the orbitals and basis is created in PWOSet.
-    std::map<std::string,PWOrbitalSet*> PWOSet;
-    //the last PWOrbitalSet created by the builder
-    PWOrbitalSet* myPWOSUp;
-    PWOrbitalSet* myPWOSDown;
+    ///hdf5 handler to clean up
+    hid_t hfileID;
+    ///parameter set
+    PWParameterSet* myParam;
     //will do something for twist
-    PWBasis* myBasisSet;
+    PWBasisPtr myBasisSet;
+    //Storage for the orbitals and basis is created in PWOSet.
+    std::map<std::string,SPOSetBasePtr> PWOSet;
 
   public:
 
@@ -35,6 +54,17 @@ namespace qmcplusplus {
 
     ///implement vritual function
     bool put(xmlNodePtr cur);
+
+  private:
+    hid_t getH5(xmlNodePtr cur, const char* aname);
+    bool putSlaterDet(xmlNodePtr cur);
+    bool createPWBasis(xmlNodePtr cur);
+    PWOrbitalSet* createPW(xmlNodePtr cur, int spinIndex);
   };
 }
 #endif
+/***************************************************************************
+ * $RCSfile$   $Author$
+ * $Revision$   $Date$
+ * $Id$
+ ***************************************************************************/

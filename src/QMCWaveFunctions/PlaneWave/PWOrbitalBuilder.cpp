@@ -1,8 +1,29 @@
+/////////////////////////////////////////////////////////////////
+// (c) Copyright 2006-  by Kris Delaney and Jeongnim Kim
 //////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////
+//   National Center for Supercomputing Applications &
+//   Materials Computation Center
+//   University of Illinois, Urbana-Champaign
+//   Urbana, IL 61801
+//   e-mail: jnkim@ncsa.uiuc.edu
+//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
+//
+// Supported by
+//   National Center for Supercomputing Applications, UIUC
+//   Materials Computation Center, UIUC
+//////////////////////////////////////////////////////////////////
+// -*- C++ -*-
+/** @file PWOribitalBuilder.cpp
+ * @brief Definition of a builder class for PWOrbitalSet
+ */
 #include "Utilities/OhmmsInfo.h"
 #include "QMCWaveFunctions/PlaneWave/PWOrbitalBuilder.h"
-#include "QMCWaveFunctions/SlaterDeterminant.h"
+#include "QMCWaveFunctions/PlaneWave/PWParameterSet.h"
+#include "QMCWaveFunctions/Fermion/SlaterDet.h"
 #include "QMCWaveFunctions/DummyBasisSet.h"
+#include "OhmmsData/ParameterSet.h"
+#include "OhmmsData/AttributeSet.h"
 #include "Numerics/HDFSTLAttrib.h"
 #include "Numerics/HDFNumericAttrib.h"
 #include "Message/Communicate.h"
@@ -10,303 +31,326 @@
 namespace qmcplusplus {
 
   PWOrbitalBuilder::PWOrbitalBuilder(ParticleSet& els, TrialWaveFunction& psi):
-    OrbitalBuilderBase(els,psi), myPWOSUp(0), myPWOSDown(0), myBasisSet(0) { 
+    OrbitalBuilderBase(els,psi),hfileID(-1)
+#if !defined(EANBLE_SMARTPOINTER)
+    ,myBasisSet(0)
+#endif
+  { 
+    myParam=new PWParameterSet;
   }   
 
-  PWOrbitalBuilder::~PWOrbitalBuilder() { 
-    //DO NOT DELETE ANYTHING
+  PWOrbitalBuilder::~PWOrbitalBuilder() 
+  { 
+    delete myParam;
   }   
 
   //All data parsing is handled here, outside storage classes.
   bool PWOrbitalBuilder::put(xmlNodePtr cur) {
-    //Find how many up and down electrons in ParticleSet
-    nup=-1;
-    SpeciesSet tspecies=targetPtcl.getSpeciesSet();
-    int MemberAttrib = tspecies.addAttribute("membersize");
-    for(int i=0; i<tspecies.TotalNum; i++) {
-      if(strcmp(tspecies.speciesName[i].c_str(),"u")==0){
-        nup = static_cast<int>(tspecies(MemberAttrib,i));
-        upindx = i;
-      }
-    }
-    if(nup<0){
-      LOGMSG("Up channel not found in electron particleset.\n");
-      OHMMS::Controller->abort();
-    }
-    ndown = targetPtcl.getTotalNum() - nup;
+
+    //catch the parameters at the root level
+    myParam->put(cur);
     //
     //Get wavefunction data and parameters from XML and HDF5
     //
-    string hdf5file;
     RealType ecut=-1.0;
     
+    if(hfileID>0) H5Fclose(hfileID);
+
+    hfileID = getH5(cur,"href");
+
+    bool success=true;
     //Move through the XML tree and read basis information
     cur = cur->children;
     while(cur != NULL) {
       string cname((const char*)(cur->name));
       if(cname == "basisset") {
         const xmlChar* aptr = xmlGetProp(cur,(const xmlChar*)"ecut");
-        if(aptr != NULL)ecut=atof((const char*)aptr);
+        if(aptr != NULL) ecut=atof((const char*)aptr);
+        myParam->put(cur);
       } else if(cname == "coefficients"){
-        const xmlChar* aptr = xmlGetProp(cur,(const xmlChar*)"hdata");
-        if(!aptr){
-          LOGMSG("Error finding HDF5 filename in PWOrbitalBuilder");
+        hfileID=getH5(cur,"hdata");
+      } else if(cname == "slaterdeterminant") {
+        if(hfileID<0)
+          hfileID=getH5(cur,"href");
+
+        if(hfileID<0)
+        {
+          app_error() << "  Cannot create a SlaterDet due to missing h5 file" << endl;
           OHMMS::Controller->abort();
         }
-        hdf5file=(const char*)aptr;
-        LOGMSG("\tReading wavefunction data from " << hdf5file);
-      } else if(cname == "slaterdeterminant") {
-        //OCCUPATION MODE NOT YET READ; ASSUMED GROUND STATE
-        //Find which orbitals should be occupied in each determinant
-        //Which spin channel? Ground state or excited?
-        //Default: use spin channel 0 and ground-state determinants
-        updetspinindex = downdetspinindex = 0;
-        xmlNodePtr slaterdetnode=cur->children;
-        while(slaterdetnode != NULL) {
-          string cname2((const char*)(slaterdetnode->name));
-          //Which determinant?
-          if(cname2 == "determinant") {
-            const xmlChar* aptr = xmlGetProp(slaterdetnode,(const xmlChar*)"id");
-            if(strcmp((const char*)aptr,"updet")==0){ //Up determinant
-              //Get occupation property
-              xmlNodePtr detnode = slaterdetnode->children;
-              while(detnode!=NULL) {
-                string cname3((const char*)(detnode->name));
-                if(cname3 == "occupation") {
-                  const xmlChar* aptr2 = xmlGetProp(detnode,(const xmlChar*)"spindataset");
-                  updetspinindex = std::abs(atoi((const char*)aptr2));
-                  //const xmlChar* aptr2 = xmlGetProp(detnode,(const xmlChar*)"mode");
-                }
-                detnode = detnode->next;
-              }
-            } else if(strcmp((const char*)aptr,"downdet")==0) { //Down determinant
-              //Get occupation property
-              xmlNodePtr detnode = slaterdetnode->children;
-              while(detnode!=NULL){
-                string cname3((const char*)(detnode->name));
-                if(cname3 == "occupation"){
-                  const xmlChar* aptr2 = xmlGetProp(detnode,(const xmlChar*)"spindataset");
-                  downdetspinindex = std::abs(atoi((const char*)aptr2));
-                  //const xmlChar* aptr2 = xmlGetProp(detnode,(const xmlChar*)"mode");
-                }
-                detnode = detnode->next;
-              }
-            }
-          }
-          slaterdetnode = slaterdetnode->next;
-        }
+
+        success = createPWBasis(cur);
+        success = putSlaterDet(cur);
       } 
       cur=cur->next;
     }
-
-    //create at least two PWOrbitalSet for up and down
-    if(PWOSet.empty()) {
-      PWOSet["updet"] = myPWOSUp = new PWOrbitalSet;
-      PWOSet["downdet"] = myPWOSDown = new PWOrbitalSet;
-    }
-
-    //Open the HDF5 file
-    hid_t hfile = H5Fopen(hdf5file.c_str(),H5F_ACC_RDWR,H5P_DEFAULT);
-
-    //Check the wavefunction version number
-    std::vector<int> version;
-    HDFAttribIO<std::vector<int> > hdfver(version);
-    hdfver.read(hfile,"version");
-    LOGMSG("\tWavefunction HDF version: " << version[0] << "." << version[1]);
-    //Only version 0.10 (test) supported now.
-    if(version[0] == 0 && version[1] == 10){
-      ReadHDFWavefunction010(hfile,ecut);
-    } else {
-      LOGMSG("\n\tUnsupported wavefunction HDF version");
-      OHMMS::Controller->abort();
-    }
-    H5Fclose(hfile);
-
-
-    //Finished reading orbital data.
-    //Build the Slater determinant from the prescription in the XML input
-    typedef SlaterDeterminant<PWOrbitalSet> SlaterDeterminant_t;
-    typedef DiracDeterminant<PWOrbitalSet> Det_t;
-    SlaterDeterminant_t *sdet  = new SlaterDeterminant_t;
-    //create up determinant
-    LOGMSG("  \tBuilding updet with particles "<<targetPtcl.first(upindx)<<"-"<<targetPtcl.last(upindx)-1);
-    Det_t *updet = new Det_t(*myPWOSUp,targetPtcl.first(upindx));
-    updet->set(targetPtcl.first(upindx),nup); //first member in ptclset, length
-    sdet->add(updet);
-    //create down determinant
-    LOGMSG("  \tBuilding downdet with particles "<<targetPtcl.first(1-upindx)<<"-"<<targetPtcl.last(1-upindx)-1<<"\n");
-    Det_t *downdet = new Det_t(*myPWOSDown,targetPtcl.first(1-upindx));
-    downdet->set(targetPtcl.first(1-upindx),ndown);
-    sdet->add(downdet);
-
-    //add Slater determinant to targetPsi
-    targetPsi.addOrbital(sdet);
-
-    return true;
+    H5Fclose(hfileID);
+    return success;
   }
 
 
+  bool PWOrbitalBuilder::putSlaterDet(xmlNodePtr cur)
+  {
+    
+    //catch parameters
+    myParam->put(cur);
+
+    typedef SlaterDet SlaterDeterminant_t;
+    typedef DiracDeterminantBase Det_t;
+
+    SlaterDeterminant_t* sdet(new SlaterDeterminant_t);
+
+    int sid=0;
+    int firstIndex=0;
+    cur=cur->children;
+    while(cur != NULL) {
+      string cname((const char*)(cur->name));
+      //Which determinant?
+      if(cname == "determinant") {
+        string id("updet");
+        string ref("0");
+        OhmmsAttributeSet aAttrib;
+        aAttrib.add(id,"id");
+        aAttrib.add(ref,"ref");
+        aAttrib.put(cur);
+
+        if(ref == "0") ref=id;
+
+        map<string,SPOSetBasePtr>::iterator lit(PWOSet.find(ref));
+        Det_t* adet=0;
+        int nstates=0;
+        if(lit == PWOSet.end())
+        {
+          app_log() << "  Create a PWOrbitalSet" << endl;;
+          SPOSetBasePtr psi(createPW(cur,sid));
+          PWOSet[id]=psi;
+          adet= new Det_t(psi,firstIndex);
+          nstates=psi->getOrbitalSetSize();
+        }
+        else
+        {
+          app_log() << "  Reuse a PWOrbitalSet" << endl;
+          adet= new Det_t((*lit).second,firstIndex);
+          nstates=(*lit).second->getOrbitalSetSize();
+        }
+
+        app_log()<< "    spin=" << sid  << " id=" << id << " ref=" << ref << endl; 
+
+        if(adet) 
+        {
+          adet->set(firstIndex,nstates);
+          sdet->add(adet);
+        }
+
+        firstIndex += nstates;
+        ++sid;
+      }
+      cur = cur->next;
+    }
+
+
+    if(sid)
+    {
+      targetPsi.addOrbital(sdet);
+    }
+    else
+    {
+      app_error() << "  Failed to create a SlaterDet at PWOrbitalBuilder::putSlaterDet " << endl;
+      OHMMS::Controller->abort();
+    }
+
+    return true;
+  }
   
-  //
-  // The read routine - get data from XML and H5. Process it and build orbitals.
-  //
-  void PWOrbitalBuilder::ReadHDFWavefunction010(hid_t hfile, RealType& ecut) {
-    hid_t grp_id;
-    RealType h5ecut;
-    int nh5gvecs(0),nkpts(0),nbands(0),nspins(0);
-    bool h5coefsreal;
+  /** The read routine - get data from XML and H5. Process it and build orbitals.
+   *
+   * - parameters
+   *   -- num_tiwsts
+   *   -- num_bands
+   *   -- complex_coefficients
+   *   -- maximum_ecut
+   * - basis
+   */
+  bool PWOrbitalBuilder::createPWBasis(xmlNodePtr cur)
+  {
 
-    //Get the system run parameters and check that ecut and nh5gvecs are consistent
-    char GrpName[128];
-    sprintf(GrpName,"parameters");
-    grp_id = H5Gopen(hfile,GrpName);
-
-    //read the dataset - nkpts, h5ecut
+    //recycle int and double reader
     int idata;
     double ddata;
     HDFAttribIO<int> hdfint(idata);
     HDFAttribIO<double> hdfdbl(ddata);
+
+    //start of parameters
+    hid_t grp_id = H5Gopen(hfileID,myParam->paramTag.c_str());
     
     hdfint.read(grp_id,"num_twists");
-    nkpts = idata; 
-    if(nkpts > 1){
-      LOGMSG("  Warning: HDF5 wavefunction data contains multiple twists");
-      LOGMSG("  Only the first twist angle will be used in this code");
-    }
+    int nkpts = idata; 
 
     hdfint.read(grp_id,"num_bands");
-    nbands = idata;
+    int nbands = idata;
 
-    if(nbands < nup || nbands < ndown){
-      LOGMSG("Not enough bands in h5 file");
-      OHMMS::Controller->abort();
-    }
-
-    //How many spin channels are in wavefunction file?
-    hdfint.read(grp_id,"num_spins");
-    nspins = idata;
-    if((updetspinindex >= nspins) ||( downdetspinindex >= nspins)) {
-      LOGMSG("  Attempt to use spin channel not present on HDF5 file.");
-      OHMMS::Controller->abort();
-    }
-
-    //Are the PW coefficients in H5 file real or complex?
     hdfint.read(grp_id,"complex_coefficients");
-    idata==0 ? h5coefsreal=true : h5coefsreal=false; 
-    if(h5coefsreal && nkpts > 1) {
-      LOGMSG("HDF Wavefunction file is inconsistent");
-      LOGMSG("Number of twists > 1 (" << nkpts << ")");
-      LOGMSG("But coefficients are real.");
-      OHMMS::Controller->abort();
-    }
-    
+    bool h5coefsreal = (idata==0);
+
     hdfdbl.read(grp_id,"maximum_ecut");
-    h5ecut = ddata;
-    if(ecut > h5ecut) {
-      ecut = h5ecut;
-      LOGMSG("  Warning: chosen Ecut exceeds available data.");
-      LOGMSG("  Ecut reset to: " << ecut);
-    } else if(ecut < 0.0) {
-      ecut = h5ecut;
-      LOGMSG("  Plane-wave energy cutoff not specified.");
-      LOGMSG("  Choosing maximum: " << ecut);
-    }
+    RealType h5ecut = ddata;
+    RealType ecut = ddata;
     
-    //Close the parameters group - back to root
     H5Gclose(grp_id);
+    //end of parameters
 
-    sprintf(GrpName,"eigenstates");
-    hid_t es_grp_id = H5Gopen(hfile,GrpName);
-
-    //Open the twist group...only 1 right now
-    int twistindx = 0;
-    sprintf(GrpName,"twist%d",twistindx);
-    hid_t twist_grp_id = H5Gopen(es_grp_id,GrpName);
-
-    //Read the twist angle
-    TinyVector<double,3> twist;
-    HDFAttribIO<TinyVector<double,3> > hdfobj_twist(twist);
-    hdfobj_twist.read(twist_grp_id,"twist_angle");
-    if(h5coefsreal){
-      //Test that twist = gamma if real coefficients
-      for(int idim=0; idim<3; idim++)
-        if(abs(twist[idim]) > 1.e-6){
-          LOGMSG("Error: real wavefunction with non-Gamma twist angle");
-          OHMMS::Controller->abort();
-        }
-    }
-#if !defined (QMC_COMPLEX)
-    else {
-      //Complex wavefunctions in file with real code
-      LOGMSG("This binary doesn't support complex wavefunctions.");
-      LOGMSG("Recompile with complex support (set in Configuration.h).");
+    //check if input parameters are valid
+    int nup=targetPtcl.last(0);
+    int ndown=targetPtcl.getTotalNum()-nup;
+    if(nbands < nup || nbands < ndown){
+      app_error() << "Not enough bands in h5 file" << endl;
       OHMMS::Controller->abort();
+    }
+
+    string tname=myParam->getTwistAngleName();
+    //hid_t es_grp_id = H5Gopen(hfile,myParam->eigTag.c_str());
+    //hid_t twist_grp_id = H5Gopen(es_grp_id,tname.c_str());
+    PosType twist;
+    HDFAttribIO<PosType> hdfobj_twist(twist);
+    hdfobj_twist.read(hfileID,tname.c_str());
+
+#if defined(ENABLE_SMARTPOINTER)
+    if(myBasisSet.get() ==0)
+    {
+      myBasisSet.reset(new PWBasis(twist));
+    }
+#else
+    if(myBasisSet==0) {
+      myBasisSet = new PWBasis(twist);
     }
 #endif
     //Read the planewave basisset.
     //Note that the same data is opened here for each twist angle-avoids duplication in the
     //h5 file (which may become very large).
-    sprintf(GrpName,"basis");
-    grp_id = H5Gopen(hfile,GrpName);
-    //create at least one basis set
-    if(myBasisSet==0) {
-      myBasisSet = new PWBasis(twist);
-    }
-    myBasisSet->readbasis(grp_id,ecut,nh5gvecs,targetPtcl.Lattice);
+
+    grp_id = H5Gopen(hfileID,myParam->basisTag.c_str());
+    //create at least one basis set but do resize the containers
+    int nh5gvecs=myBasisSet->readbasis(grp_id,ecut,targetPtcl.Lattice,myParam->pwTag);
     H5Gclose(grp_id); //Close PW Basis group
 
-    myPWOSUp->resize(myBasisSet,nup,true);
-    myPWOSDown->resize(myBasisSet,ndown,false);
+    app_log() << "  num_twist = " << nkpts << endl;
+    app_log() << "  twist angle = " << twist << endl;
+    app_log() << "  num_bands = " << nbands << endl;
+    app_log() << "  maximum_ecut = " << ecut << endl;
+    app_log() << "  num_planewaves = " << nh5gvecs<< endl;
+
+    return true;
+  }
+
+  PWOrbitalSet* 
+    PWOrbitalBuilder::createPW(xmlNodePtr cur, int spinIndex)
+  {
+
+    int nb=targetPtcl.last(spinIndex)-targetPtcl.first(spinIndex);
+    vector<int> occBand(nb);
+    for(int i=0;i<nb; i++) occBand[i]=i;
+
+    cur=cur->children;
+    while(cur != NULL)
+    {
+      string cname((const char*)(cur->name));
+      if(cname == "occupation")
+      {
+        string occMode("ground");
+        int bandoffset(1);
+        OhmmsAttributeSet aAttrib;
+        aAttrib.add(spinIndex,"spindataset");
+        aAttrib.add(occMode,"mode");
+        aAttrib.add(bandoffset,"offset"); /* reserved for index offset */
+        aAttrib.put(cur);
+
+        if(occMode == "excited")
+        {
+          vector<int> occ;
+          vector<int> deleted, added;
+
+          putContent(occ,cur);
+          for(int i=0; i<occ.size(); i++)
+          {
+            if(occ[i]<0) 
+              deleted.push_back(-occ[i]);
+            else 
+              added.push_back(occ[i]);
+          }
+          if(deleted.size() != added.size()) 
+          {
+            app_error() << "  Numbers of deleted and added bands are not identical." << endl;
+            OHMMS::Controller->abort();
+          }
+
+          for(int i=0; i<deleted.size(); i++)
+          {
+            occBand[deleted[i]-bandoffset]=added[i]-bandoffset;
+          }
+
+          app_log() << "  mode=\"excited\" Occupied states: " << endl;
+          std::copy(occBand.begin(),occBand.end(),ostream_iterator<int>(app_log()," "));
+          app_log() << endl;
+        }
+      }
+      cur=cur->next;
+    }
+
+    string tname=myParam->getTwistName();
+    hid_t es_grp_id = H5Gopen(hfileID,myParam->eigTag.c_str());
+    hid_t twist_grp_id = H5Gopen(es_grp_id,tname.c_str());
+
+    PWOrbitalSet* psi=new PWOrbitalSet;
+
+    //node name of the spin#/eigenvector
+    string sname(myParam->getSpinName(spinIndex));
+
+    //going to take care of occ
+    psi->resize(myBasisSet,nb,true);
 
     typedef std::vector<ValueType> TempVecType;
     TempVecType coefs;
-    coefs.resize(nh5gvecs);
     HDFAttribIO<TempVecType> hdfobj_coefs(coefs);
 
-    //Go through all bands in inputfile.
     int ib=0;
-    int up_in=0, down_in=0;
-    while(ib<nbands && (up_in < nup || down_in <ndown)) {
-      sprintf  (GrpName,"band%d",ib);
-      hid_t band_grp_id = H5Gopen(twist_grp_id,GrpName);
-      //Is this band occupied by either the up channel or the down?
-      //If so, add it to the Coefs in PWOSet. Technicality: nup and ndown
-      //may be different. This means that we need to be consistent when 
-      //filing the orbitals in Coefs so that the order matches ParticleSet
-      //(i.e. 0..nup-1, nup..ndown+nup for upindx==0
-      // or   0..ndown-1, ndown..nup+ndown for upindx==1) otherwise
-      //low-energy bands may be used for high-energy electrons.
-      //Add coefficient for up determinant...if occupied
-      if(ib<nup){
-        //Open the correct spin channel in HDF5 file for up
-        sprintf(GrpName,"spin%d",updetspinindex);
-        hid_t spin_grp_id = H5Gopen(band_grp_id,GrpName);
-        //Read PW coefficients.
-        hdfobj_coefs.read(spin_grp_id,"eigenvector");
-        //File it
-        myPWOSUp->addVector(coefs,up_in);
-        //Close HDF group
-        H5Gclose(spin_grp_id);
-        up_in++;
-      } 
-      //Now add for down determinant...if occupied
-      if(ib<ndown){
-        //Open the correct spin channel in HDF5 file for down
-        sprintf(GrpName,"spin%d",downdetspinindex);
-        hid_t spin_grp_id = H5Gopen(band_grp_id,GrpName);
-        //Read PW coefficients.
-        hdfobj_coefs.read(spin_grp_id,"eigenvector");
-        //File
-        myPWOSDown->addVector(coefs,down_in);
-        //Close HDF group
-        H5Gclose(spin_grp_id);
-        down_in++;
-      }
+    while(ib<nb) 
+    {
+      string bname(myParam->getBandName(occBand[ib]));
+      hid_t band_grp_id =  H5Gopen(twist_grp_id,bname.c_str());
+      hdfobj_coefs.read(band_grp_id,sname.c_str());
+      psi->addVector(coefs,ib);
       H5Gclose(band_grp_id);
-      ib++;
-    } // ib 
+      ++ib;
+    }
+
     H5Gclose(twist_grp_id);
     H5Gclose(es_grp_id);
+
+    return psi;
   }
 
+
+  hid_t PWOrbitalBuilder::getH5(xmlNodePtr cur, const char* aname)
+  {
+    const xmlChar* aptr = xmlGetProp(cur,(const xmlChar*)aname);
+    if(aptr == NULL){
+      return -1;
+    }
+
+    hid_t h = H5Fopen((const char*)aptr,H5F_ACC_RDWR,H5P_DEFAULT);
+    if(h<0)
+    {
+      app_error() << " Cannot open " << (const char*)aptr << " file." << endl;
+      OHMMS::Controller->abort();
+    }
+
+    myParam->checkVersion(h);
+
+    return h;
+  }
 }
+/***************************************************************************
+ * $RCSfile$   $Author$
+ * $Revision$   $Date$
+ * $Id$
+ ***************************************************************************/
