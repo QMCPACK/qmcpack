@@ -498,15 +498,15 @@ namespace qmcplusplus {
     Laplacian_t   d2psiM, d2psiM_temp;
 
     /// value of single-particle orbital for particle-by-particle update
-    std::vector<ValueType> psiV;
-    std::vector<GradType> dpsiV;
-    std::vector<ValueType> d2psiV;
-    std::vector<ValueType> workV1, workV2;
+    Vector<ValueType> psiV;
+    Vector<GradType> dpsiV;
+    Vector<ValueType> d2psiV;
+    Vector<ValueType> workV1, workV2;
 
     ///storages to process many walkers once
-    vector<Determinant_t> psiM_v; 
-    vector<Gradient_t>    dpsiM_v; 
-    vector<Laplacian_t>   d2psiM_v; 
+    Vector<Determinant_t> psiM_v; 
+    Vector<Gradient_t>    dpsiM_v; 
+    Vector<Laplacian_t>   d2psiM_v; 
 
     Vector<ValueType> WorkSpace;
     Vector<IndexType> Pivot;
