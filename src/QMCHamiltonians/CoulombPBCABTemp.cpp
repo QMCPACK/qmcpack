@@ -119,16 +119,29 @@ namespace qmcplusplus {
   }
 
   void CoulombPBCABTemp::add(int groupID, RadFunctorType* ppot) {
+
+    if(myGrid ==0)
+    {
+      myGrid = new LinearGrid<RealType>;
+      int ng=static_cast<int>(myRcut/1e-3)+1;
+      app_log() << "  CoulombPBCABTemp::add \n Setting a linear grid=[0," 
+        << myRcut << ") number of grid =" << ng << endl;
+      myGrid->set(0,myRcut,ng);
+    }
+
     //add a numerical functor
     if(Vspec[groupID]==0){
       int ng=myGrid->size();
       vector<RealType> v(ng);
-      for(int ig=0; ig<ng; ig++) {
+      v[0]=0.0;
+      for(int ig=1; ig<ng-1; ig++) {
         RealType r=(*myGrid)[ig];
         //need to multiply r for the LR
         v[ig]=r*AB->evaluateLR(r)+ppot->splint(r);;
       }
       v[ng-1]=0.0;
+
+
       RadFunctorType* rfunc=new RadFunctorType(myGrid,v);
       RealType deriv=(v[1]-v[0])/((*myGrid)[1]-(*myGrid)[0]);
       rfunc->spline(0,deriv,ng-1,0.0);
