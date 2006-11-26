@@ -27,10 +27,14 @@ namespace qmcplusplus {
   /** class to handle various name conventions for hdf5 file
    */
   struct PWParameterSet {
+    ///true if spin channel exists
+    bool hasSpin;
     ///version
     TinyVector<int,2> version;
     ///index of the twist angle
     int twistIndex;
+    ///number of input bands
+    int numBands;
     ///tag for the parameters
     std::string paramTag;
     ///tag for the basis
@@ -67,7 +71,9 @@ namespace qmcplusplus {
 
     string getBandName(int ib, int ispin);
 
-    //string getSpinName(int i);
+    string getBandName(int ib);
+
+    string getSpinName(int ispin);
   };
 }
 #endif

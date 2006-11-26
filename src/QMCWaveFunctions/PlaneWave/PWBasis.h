@@ -34,10 +34,12 @@ namespace qmcplusplus {
    * Support more general input tags
    */
   class PWBasis: public QMCTraits {
-  private:
+
+  public:
     typedef ParticleSet::ParticleLayout_t ParticleLayout_t;    
     typedef TinyVector<IndexType,3>       GIndex_t;
 
+  private:
     ///max of maxg[i]
     int maxmaxg;
     //Need to store the maximum translation in each dimension to use recursive PW generation.

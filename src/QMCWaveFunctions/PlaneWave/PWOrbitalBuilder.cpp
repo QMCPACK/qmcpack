@@ -63,13 +63,17 @@ namespace qmcplusplus {
     cur = cur->children;
     while(cur != NULL) {
       string cname((const char*)(cur->name));
-      if(cname == "basisset") {
+      if(cname == "basisset") 
+      {
         const xmlChar* aptr = xmlGetProp(cur,(const xmlChar*)"ecut");
         if(aptr != NULL) ecut=atof((const char*)aptr);
         myParam->put(cur);
-      } else if(cname == "coefficients"){
+      } 
+      else if(cname == "coefficients")
+      {
         hfileID=getH5(cur,"hdata");
-      } else if(cname == "slaterdeterminant") {
+      } 
+      else if(cname == "slaterdeterminant") {
         if(hfileID<0)
           hfileID=getH5(cur,"href");
 
@@ -91,7 +95,6 @@ namespace qmcplusplus {
 
   bool PWOrbitalBuilder::putSlaterDet(xmlNodePtr cur)
   {
-    
     //catch parameters
     myParam->put(cur);
 
@@ -188,6 +191,7 @@ namespace qmcplusplus {
 
     hdfint.read(grp_id,"num_bands");
     int nbands = idata;
+    myParam->numBands = nbands;
 
     hdfint.read(grp_id,"complex_coefficients");
     bool h5coefsreal = (idata==0);
@@ -250,11 +254,20 @@ namespace qmcplusplus {
     vector<int> occBand(nb);
     for(int i=0;i<nb; i++) occBand[i]=i;
 
+    typedef PWBasis::GIndex_t GIndex_t;
+    GIndex_t nG(1);
+    bool transform2grid=false;
+
     cur=cur->children;
     while(cur != NULL)
     {
       string cname((const char*)(cur->name));
-      if(cname == "occupation")
+      if(cname == "transform")
+      {
+        putContent(nG,cur);
+        transform2grid=true;
+      }
+      else if(cname == "occupation")
       {
         string occMode("ground");
         int bandoffset(1);
@@ -292,7 +305,7 @@ namespace qmcplusplus {
           std::copy(occBand.begin(),occBand.end(),ostream_iterator<int>(app_log()," "));
           app_log() << endl;
         }
-      }
+      } 
       cur=cur->next;
     }
 
@@ -302,6 +315,13 @@ namespace qmcplusplus {
 
     ///create PWOrbital
     PWOrbitalSet* psi=new PWOrbitalSet;
+
+    if(transform2grid)
+    {
+      nb=myParam->numBands;
+      occBand.resize(nb);
+      for(int i=0;i<nb; i++) occBand[i]=i;
+    }
 
     //going to take care of occ
     psi->resize(myBasisSet,nb,true);
@@ -324,9 +344,84 @@ namespace qmcplusplus {
     H5Gclose(twist_grp_id);
     H5Gclose(es_grp_id);
 
+    if(transform2grid)
+    {
+      app_warning() << "  Going to transform on grid " << endl;
+      transform2GridData(nG,spinIndex,*psi);
+    }
+
     return psi;
   }
 
+  void PWOrbitalBuilder::transform2GridData(PWBasis::GIndex_t& nG, int spinIndex, PWOrbitalSet& pwFunc)
+  {
+    ostringstream splineTag;
+    splineTag << "eigenstates_"<<nG[0]<<"_"<<nG[1]<<"_"<<nG[2];
+    herr_t status = H5Eset_auto(NULL, NULL);
+
+    hid_t es_grp_id;
+    status = H5Gget_objinfo (hfileID, splineTag.str().c_str(), 0, NULL);
+    if(status)
+    {
+      es_grp_id = H5Gcreate(hfileID,splineTag.str().c_str(),0);
+      HDFAttribIO<PWBasis::GIndex_t> t(nG);
+      t.write(es_grp_id,"grid");
+    } 
+    else
+    {
+      es_grp_id = H5Gopen(hfileID,splineTag.str().c_str());
+    }
+
+    string tname=myParam->getTwistName();
+    hid_t twist_grp_id;
+    status = H5Gget_objinfo (es_grp_id, tname.c_str(), 0, NULL);
+    if(status)
+      twist_grp_id = H5Gcreate(es_grp_id,tname.c_str(),0);
+    else
+      twist_grp_id = H5Gopen(es_grp_id,tname.c_str());
+
+    int ib=0;
+    while(ib<myParam->numBands) 
+    {
+      string bname(myParam->getBandName(ib));
+      status = H5Gget_objinfo (twist_grp_id, bname.c_str(), 0, NULL);
+      hid_t band_grp_id, spin_grp_id=-1;
+      if(status)
+      {
+        band_grp_id =  H5Gcreate(twist_grp_id,bname.c_str(),0);
+      }
+      else
+      {
+        band_grp_id =  H5Gopen(twist_grp_id,bname.c_str());
+      }
+
+      hid_t parent_id=band_grp_id;
+      if(myParam->hasSpin)
+      {
+        bname=myParam->getSpinName(spinIndex);
+        status = H5Gget_objinfo (band_grp_id, bname.c_str(), 0, NULL);
+        if(status)
+        {
+          spin_grp_id =  H5Gcreate(band_grp_id,bname.c_str(),0);
+        }
+        else
+        {
+          spin_grp_id =  H5Gopen(band_grp_id,bname.c_str());
+        }
+        parent_id=spin_grp_id;
+      }
+
+      HDFAttribIO<PWBasis::GIndex_t> t(nG);
+      t.write(parent_id,myParam->eigvecTag.c_str());
+
+      if(spin_grp_id>=0) H5Gclose(spin_grp_id);
+      H5Gclose(band_grp_id);
+      ++ib;
+    }
+
+    H5Gclose(twist_grp_id);
+    H5Gclose(es_grp_id);
+  }
 
   hid_t PWOrbitalBuilder::getH5(xmlNodePtr cur, const char* aname)
   {

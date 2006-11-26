@@ -60,6 +60,7 @@ namespace qmcplusplus {
     bool putSlaterDet(xmlNodePtr cur);
     bool createPWBasis(xmlNodePtr cur);
     SPOSetBase* createPW(xmlNodePtr cur, int spinIndex);
+    void transform2GridData(PWBasis::GIndex_t& nG, int spinIndex, PWOrbitalSet& pwFunc);
   };
 }
 #endif

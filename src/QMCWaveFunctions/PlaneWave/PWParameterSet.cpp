@@ -23,6 +23,7 @@
 
 namespace qmcplusplus {
   PWParameterSet::PWParameterSet():
+    hasSpin(true),
     twistIndex(0),
   paramTag("parameters"),
   basisTag("basis"),
@@ -75,19 +76,19 @@ namespace qmcplusplus {
     return oss.str();
   }
 
-  //string PWParameterSet::getSpinName(int i)
-  //{
-  //  ostringstream oss;
-  //  if(version[1]==10) 
-  //  {
-  //    oss << spinTag << i << "/" << eigvecTag;
-  //  }
-  //  else if(version[1] == 11)/* Ken's abinit parser does not have spin */
-  //  {
-  //    oss << eigvecTag;
-  //  }
-  //  return oss.str();
-  //}
+  string PWParameterSet::getBandName(int ib)
+  {
+    ostringstream oss;
+    oss << bandTag << ib;
+    return oss.str();
+  }
+
+  string PWParameterSet::getSpinName(int ispin)
+  {
+    ostringstream oss;
+    oss << spinTag << ispin;
+    return oss.str();
+  }
 
   void PWParameterSet::checkVersion(hid_t h)
   {
@@ -119,6 +120,7 @@ namespace qmcplusplus {
     app_log() << "\tWavefunction HDF version: " << version[0] << "." << version[1] << endl;
     if(version[1] == 11)
     {
+      hasSpin=false;
       paramTag="parameters_0";
       basisTag="basis_1";
       pwTag="multipliers";
