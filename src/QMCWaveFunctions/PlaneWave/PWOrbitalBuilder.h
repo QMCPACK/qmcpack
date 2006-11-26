@@ -59,7 +59,7 @@ namespace qmcplusplus {
     hid_t getH5(xmlNodePtr cur, const char* aname);
     bool putSlaterDet(xmlNodePtr cur);
     bool createPWBasis(xmlNodePtr cur);
-    PWOrbitalSet* createPW(xmlNodePtr cur, int spinIndex);
+    SPOSetBase* createPW(xmlNodePtr cur, int spinIndex);
   };
 }
 #endif

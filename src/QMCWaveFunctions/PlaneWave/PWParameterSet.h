@@ -65,9 +65,9 @@ namespace qmcplusplus {
 
     string getTwistName(int i);
 
-    string getBandName(int i);
+    string getBandName(int ib, int ispin);
 
-    string getSpinName(int i);
+    //string getSpinName(int i);
   };
 }
 #endif

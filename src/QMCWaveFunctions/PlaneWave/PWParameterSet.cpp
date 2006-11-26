@@ -64,26 +64,30 @@ namespace qmcplusplus {
     return oss.str();
   }
 
-  string PWParameterSet::getBandName(int i)
+  string PWParameterSet::getBandName(int ib, int ispin)
   {
     ostringstream oss;
-    oss << bandTag << i;
+    oss << bandTag << ib;
+    if(version[1]==10)
+    {
+      oss << "/" << spinTag << ispin;
+    }
     return oss.str();
   }
 
-  string PWParameterSet::getSpinName(int i)
-  {
-    ostringstream oss;
-    if(version[1]==10) 
-    {
-      oss << spinTag << i << "/" << eigvecTag;
-    }
-    else if(version[1] == 11)/* Ken's abinit parser does not have spin */
-    {
-      oss << eigvecTag;
-    }
-    return oss.str();
-  }
+  //string PWParameterSet::getSpinName(int i)
+  //{
+  //  ostringstream oss;
+  //  if(version[1]==10) 
+  //  {
+  //    oss << spinTag << i << "/" << eigvecTag;
+  //  }
+  //  else if(version[1] == 11)/* Ken's abinit parser does not have spin */
+  //  {
+  //    oss << eigvecTag;
+  //  }
+  //  return oss.str();
+  //}
 
   void PWParameterSet::checkVersion(hid_t h)
   {

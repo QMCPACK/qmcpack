@@ -242,7 +242,7 @@ namespace qmcplusplus {
     return true;
   }
 
-  PWOrbitalSet* 
+  SPOSetBase* 
     PWOrbitalBuilder::createPW(xmlNodePtr cur, int spinIndex)
   {
 
@@ -300,10 +300,8 @@ namespace qmcplusplus {
     hid_t es_grp_id = H5Gopen(hfileID,myParam->eigTag.c_str());
     hid_t twist_grp_id = H5Gopen(es_grp_id,tname.c_str());
 
+    ///create PWOrbital
     PWOrbitalSet* psi=new PWOrbitalSet;
-
-    //node name of the spin#/eigenvector
-    string sname(myParam->getSpinName(spinIndex));
 
     //going to take care of occ
     psi->resize(myBasisSet,nb,true);
@@ -315,9 +313,9 @@ namespace qmcplusplus {
     int ib=0;
     while(ib<nb) 
     {
-      string bname(myParam->getBandName(occBand[ib]));
+      string bname(myParam->getBandName(occBand[ib],spinIndex));
       hid_t band_grp_id =  H5Gopen(twist_grp_id,bname.c_str());
-      hdfobj_coefs.read(band_grp_id,sname.c_str());
+      hdfobj_coefs.read(band_grp_id,myParam->eigvecTag.c_str());
       psi->addVector(coefs,ib);
       H5Gclose(band_grp_id);
       ++ib;
