@@ -33,7 +33,8 @@ namespace qmcplusplus {
       TrialWaveFunction& psi, QMCHamiltonian& h):
     QMCDriver(w,psi,h),
     ReptileLength(21),
-    NumTurns(0), Reptile(0), NewBead(0)
+    NumTurns(0), Reptile(0), NewBead(0),
+		multiEstimator(0) 
   { 
     RootName = "rmc-multi";
     QMCType ="RQMCMultiple";
@@ -184,6 +185,8 @@ namespace qmcplusplus {
     MultiChain::iterator bead(first_bead),last_bead(bead_end-1);
 
     ///Loop over beads to initialize action and WF
+		// just for debugging
+		int beadCount = 0;
     while(bead != bead_end){
 
       ///Pointer to the current walker
@@ -235,6 +238,7 @@ namespace qmcplusplus {
       }
 
       ++bead;
+			beadCount++;
     }// End Loop over beads
 
     //Assign Reference Sign as the majority Sign

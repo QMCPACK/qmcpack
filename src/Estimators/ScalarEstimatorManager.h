@@ -134,6 +134,7 @@ namespace qmcplusplus {
     void accumulate(MCWalkerConfiguration& W);
     void accumulate(ParticleSet& P, MCWalkerConfiguration::Walker_t& awalker);
     void resetReportSettings(const string& aname, bool append);
+    void resetReportSettings(bool append);
     void reportHeader(bool append);
     void flushreport(int iter);
     void report(int iter);

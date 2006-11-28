@@ -149,6 +149,42 @@ namespace qmcplusplus {
   }
 
   bool QMCInterface::SetRQMCMultiple(double dt, int chains, int steps, int nblocks){
+    bool append_run;
+    bool isNewDriver = false;
+		if(qmcDriver == NULL){
+      //cerr << "Creating new RQMC driver" << endl;
+      qmcDriver = new RQMCMultiple(*ptclPool->getWalkerSet("e"),*psiPool->getPrimary(),*hamPool->getPrimary());
+		  // get second psi, hamiltonian
+      QMCHamiltonian* secondHam = hamPool->getHamiltonian("h1");
+
+      TrialWaveFunction* secondPsi = psiPool->getWaveFunction("psi1");
+
+		  // add them
+      qmcDriver->add_H_and_Psi(secondHam,secondPsi);
+      append_run = false;
+      isNewDriver = true;
+		}
+
+    else{
+      //cerr << "REUSING RQMC driver" << endl;
+      append_run = false;
+    }
+
+    qmcDriver->setStatus(myProject.CurrentRoot(),PrevConfigFile, append_run);
+
+    qmcDriver->setValue("timeStep", dt);
+    qmcDriver->setValue("chains", chains);
+    qmcDriver->setValue("steps", steps);
+    qmcDriver->setValue("blocks", nblocks);
+
+    runInfoNode = xmlNewNode(NULL,(const xmlChar*)"rqmc-multi");
+    //cerr << " done." << endl;
+    //return true;
+    return isNewDriver;
+  }
+
+  /*
+  bool QMCInterface::SetRQMCMultiple(double dt, int chains, int steps, int nblocks){
 		if(qmcDriver != NULL){
 			delete qmcDriver;
 		}
@@ -174,6 +210,7 @@ namespace qmcplusplus {
     runInfoNode = xmlNewNode(NULL,(const xmlChar*)"rqmc-multi");
     return true;
   }
+  */
 
 	bool QMCInterface::process(){
   //cerr << "    QMCInterface::process: Processing..." << endl;
@@ -194,9 +231,7 @@ namespace qmcplusplus {
 		//cerr << " to " << pseudoSet->R[0] << " given H1 at " << refSet->R[0] << " and H2 at " << refSet->R[1] << endl;
 		//pseudoSet1->R[0] = 0.5*(refSet1->R[0] + refSet1->R[1]);
 
-    //cerr << "    QMCInterface::execute: Running...";
     qmcDriver->run();
-    //cerr << " done." << endl;
     return true;
   }
 

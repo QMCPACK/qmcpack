@@ -222,6 +222,10 @@ namespace qmcplusplus {
     ManagerNode = (CollectSum && myNodeID==0);
   }
 
+  void ScalarEstimatorManager::resetReportSettings(bool append)
+  {
+    resetReportSettings(RootName, append);
+  }
 
   void ScalarEstimatorManager::resetReportSettings(const string& aname, bool append) 
   {
