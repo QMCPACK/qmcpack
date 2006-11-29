@@ -125,6 +125,8 @@ namespace qmcplusplus {
     MyData=0.0;
     for(int i=0; i< Estimators.size(); i++) 
       Estimators[i]->reset();
+    index = 0;
+    TotalAveragesData.resize(0,TotalAverages.size());
   }
 
 
