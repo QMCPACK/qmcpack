@@ -63,7 +63,7 @@ namespace qmcplusplus {
     void SetQuadratureRule(int rule);
     void CheckQuadratureRule(int lexact);
 
-    GridType* createGrid(xmlNodePtr cur);
+    GridType* createGrid(xmlNodePtr cur, bool useLinear=false);
     RadialPotentialType* createVr(xmlNodePtr cur, GridType* agrid);
   };
 

@@ -551,7 +551,7 @@ namespace qmcplusplus {
     while(cur != NULL) {
       string cname((const char*)cur->name);
       if(cname == "grid") {
-        grid_local=createGrid(cur); 
+        grid_local=createGrid(cur,true); 
       } else if(cname == "basisGroup") {
         vr.putBasisGroup(cur,vPowerCorrection);
         bareCoulomb=false;
@@ -743,7 +743,7 @@ namespace qmcplusplus {
     pp_nonloc->Rmax=rmax;
   }
 
-  ECPComponentBuilder::GridType* ECPComponentBuilder::createGrid(xmlNodePtr cur)
+  ECPComponentBuilder::GridType* ECPComponentBuilder::createGrid(xmlNodePtr cur, bool useLinear)
   {
     GridType *agrid=0;
     RealType ri = 1e-5;
@@ -761,6 +761,13 @@ namespace qmcplusplus {
     radAttrib.add(ascale,"ascale"); radAttrib.add(astep,"astep");
     radAttrib.add(ascale,"scale"); radAttrib.add(astep,"step");
     radAttrib.put(cur);
+
+    //overwrite the grid type to linear starting at 0.0
+    if(useLinear)
+    {
+      gridType="linear";
+      ri=0.0;
+    }
 
     if(gridType == "log") {
       if(ascale>0.0) {
