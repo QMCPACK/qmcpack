@@ -80,9 +80,12 @@ namespace qmcplusplus {
     RealType mod2, mod;
     RealType kcutoff = std::sqrt(2.0*ecut);
 
+
     //resize inputmap
     NumPlaneWaves = gvecs.size();
     inputmap.resize(NumPlaneWaves);
+
+    app_log() << "  PWBasis::trimforecut NumPlaneWaves (before) =" << NumPlaneWaves << endl;
 
     //Convert the twist angle to Cartesian coordinates.
     twist_cart = Lattice.k_cart(twist);
@@ -135,6 +138,8 @@ namespace qmcplusplus {
     for(int ig=0; ig<inputmap.size(); ig++) 
       if(inputmap[ig] == -1)
         inputmap[ig] = NumPlaneWaves; //For dumping coefficients of PWs>ecut
+
+    app_log() << "                       NumPlaneWaves (after)  =" <<NumPlaneWaves << endl;
   }
 }
 /***************************************************************************
