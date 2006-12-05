@@ -49,6 +49,19 @@ namespace qmcplusplus {
 
   /** da = scaled(tau)*ga
    * @param tau time step
+   * @param qf real quantum forces
+   * @param drift drift
+   */
+  template<class T, unsigned D>
+  inline void setScaledDrift(T tau, 
+      ParticleAttrib<TinyVector<T,D> >& drift) {
+    T s = getDriftScale(tau,drift);
+    drift *=s;
+  }
+
+
+  /** da = scaled(tau)*ga
+   * @param tau time step
    * @param qf complex quantum forces
    * @param drift drift
    */
