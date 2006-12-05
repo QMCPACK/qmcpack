@@ -33,14 +33,14 @@ namespace qmcplusplus {
   MultipleEnergyEstimator::MultipleEnergyEstimator(QMCHamiltonian& h, int hcopy) : CurrentWalker(0) {
 
     NumCopies=hcopy;
-    NumOperators = h.size();
+    //NumOperators = h.size();
     FirstHamiltonian=h.startIndex();
 
     esum.resize(NumCopies,LE_INDEX);
     esum_name.resize(LE_INDEX,NumCopies);
 
-    elocal.resize(NumCopies,NumOperators);
-    elocal_name.resize(NumCopies,NumOperators);
+    //elocal.resize(NumCopies,NumOperators);
+    //elocal_name.resize(NumCopies,NumOperators);
 
     char aname[32];
     //make the name tables
@@ -49,11 +49,12 @@ namespace qmcplusplus {
       sprintf(aname,"LE%i",i);   esum_name(ENERGY_INDEX,i)=aname;
       sprintf(aname,"Var%i",i);  esum_name(ENERGY_SQ_INDEX,i)=aname;
       sprintf(aname,"WPsi%i",i); esum_name(WEIGHT_INDEX,i)=aname;
-
-      for(int j=0; j<NumOperators; j++) {
-        sprintf(aname,"%s%i",h.getName(j).c_str(),i);
-        elocal_name(i,j)=aname;
-      }
+      sprintf(aname,"PE%i",i);  esum_name(PE_INDEX,i)=aname;
+      sprintf(aname,"KE%i",i); esum_name(KE_INDEX,i)=aname;
+      //for(int j=0; j<NumOperators; j++) {
+      //  sprintf(aname,"%s%i",h.getName(j).c_str(),i);
+      //  elocal_name(i,j)=aname;
+      //}
     }
 
     int ipair=0;
@@ -293,7 +294,7 @@ namespace qmcplusplus {
       FirstColumnIndex = record.add(esum_name(0).c_str());
       for(int i=1; i<esum_name.size(); i++) record.add(esum_name(i).c_str());
     }
-    for(int i=0; i<elocal_name.size(); i++) record.add(elocal_name(i).c_str());
+    //for(int i=0; i<elocal_name.size(); i++) record.add(elocal_name(i).c_str());
 
     msg.add(esum.begin(),esum.end());
 
@@ -309,16 +310,18 @@ namespace qmcplusplus {
     //const RealType* restrict etot=UmbrellaEnergy[CurrentWalker];
     //const RealType* restrict wsum=UmbrellaWeight[CurrentWalker];
     int iloc=0;
-    RealType *restrict esumPtr = esum.data();
 
     for(int i=0; i<NumCopies; i++) {
       //get the pointer to the i-th row
       const RealType* restrict prop=awalker.getPropertyBase(i);
+      RealType *restrict esumPtr = esum[i];
       RealType invr = prop[UMBRELLAWEIGHT];
       RealType e = prop[LOCALENERGY];
-      *esumPtr++ += invr*e;   //esum(i,ENERGY_INDEX)    += invr*e;
-      *esumPtr++ += invr*e*e; //esum(i,ENERGY_SQ_INDEX) += invr*e*e; //how to variance
-      *esumPtr++ += invr;     //esum(i,WEIGHT_INDEX)    += invr;
+      esumPtr[ENERGY_INDEX] += invr*e;   //esum(i,ENERGY_INDEX)    += invr*e;
+      esumPtr[ENERGY_SQ_INDEX] += invr*e*e; //esum(i,ENERGY_SQ_INDEX) += invr*e*e; //how to variance
+      esumPtr[WEIGHT_INDEX] += invr;     //esum(i,WEIGHT_INDEX)    += invr;
+      esumPtr[PE_INDEX] += invr*prop[LOCALPOTENTIAL];
+      esumPtr[KE_INDEX] += invr*prop[FirstHamiltonian]; 
       //accumulate elocal(i,j) with the weight,
       //The content the Walker::DynProperties other than LOCALENERGY are NOT weighted.
       //const RealType *t= awalker.getEnergyBase(i);
@@ -326,10 +329,10 @@ namespace qmcplusplus {
       //  *elocPtr++ += invr*(*t++);
       //}
       
-      //const RealType *t= awalker.getPropertyBase(i)+FirstHamiltonian;
-      for(int j=0,h=FirstHamiltonian; j<NumOperators; j++,h++) {
-        elocal(iloc++) += invr*prop[h];
-      }
+      ////const RealType *t= awalker.getPropertyBase(i)+FirstHamiltonian;
+      //for(int j=0,h=FirstHamiltonian; j<NumOperators; j++,h++) {
+      //  elocal(iloc++) += invr*prop[h];
+      //}
     }
 
     ++CurrentWalker;
@@ -341,19 +344,21 @@ namespace qmcplusplus {
   ///Set CurrentWalker to zero so that accumulation is done in a vectorized way
   void MultipleEnergyEstimator::reset() { 
     CurrentWalker=0;
-    elocal=0.0; esum=0.0;
+    // elocal=0.0; 
+    esum=0.0;
   }
 
   void MultipleEnergyEstimator::copy2Buffer(BufferType& msg) 
   { 
     msg.put(esum.begin(),esum.end());
   }
-    /** calculate the averages and reset to zero
-     *@param record a container class for storing scalar records (name,value)
-     *@param wgtinv the inverse weight
-     *
-     * Disable collection. MultipleEnergyEstimator does not need to communiate at all.
-     */
+
+  /** calculate the averages and reset to zero
+   *@param record a container class for storing scalar records (name,value)
+   *@param wgtinv the inverse weight
+   *
+   * Disable collection. MultipleEnergyEstimator does not need to communiate at all.
+   */
   void MultipleEnergyEstimator::report(RecordNamedProperty<RealType>& record, RealType wgtinv,
       BufferType& msg) {
 
@@ -367,6 +372,8 @@ namespace qmcplusplus {
       esum(i,ENERGY_INDEX)=e;
       esum(i,ENERGY_SQ_INDEX)=esum(i,ENERGY_SQ_INDEX)*r-e*e;
       esum(i,WEIGHT_INDEX)*=wgtinv; 
+      esum(i,PE_INDEX)*=wgtinv; 
+      esum(i,KE_INDEX)*=wgtinv; 
     }
 
     //ediff
@@ -383,13 +390,13 @@ namespace qmcplusplus {
         record[ir++]=esum(i,l);
     }
 
-    //(each hamiltonian term)*
-    int iloc=0;
-    for(int i=0; i<NumCopies; i++) {
-      for(int j=0; j<NumOperators; j++, ir++) {
-        record[ir]=elocal(iloc++)*wgtinv/esum(i,WEIGHT_INDEX);
-      }
-    }
+    ////(each hamiltonian term)*
+    //int iloc=0;
+    //for(int i=0; i<NumCopies; i++) {
+    //  for(int j=0; j<NumOperators; j++, ir++) {
+    //    record[ir]=elocal(iloc++)*wgtinv/esum(i,WEIGHT_INDEX);
+    //  }
+    //}
     /*for(int i=0; i<elocal.size(); i++, ir++) {
       record[ir]=wgtinv*elocal(i);
     }*/

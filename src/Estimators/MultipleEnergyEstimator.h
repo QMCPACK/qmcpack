@@ -30,7 +30,7 @@ namespace qmcplusplus {
 
   struct MultipleEnergyEstimator: public ScalarEstimatorBase {
 
-    enum {ENERGY_INDEX, ENERGY_SQ_INDEX, WEIGHT_INDEX, LE_INDEX};
+    enum {ENERGY_INDEX, ENERGY_SQ_INDEX, WEIGHT_INDEX, PE_INDEX, KE_INDEX, LE_INDEX};
 
     ///index to keep track how many times accumulate is called
     int CurrentWalker;
