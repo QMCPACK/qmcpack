@@ -214,18 +214,17 @@ namespace qmcplusplus {
     string tname=myParam->getTwistAngleName();
     //hid_t es_grp_id = H5Gopen(hfile,myParam->eigTag.c_str());
     //hid_t twist_grp_id = H5Gopen(es_grp_id,tname.c_str());
-    PosType twist;
-    HDFAttribIO<PosType> hdfobj_twist(twist);
+    HDFAttribIO<PosType> hdfobj_twist(TwistAngle);
     hdfobj_twist.read(hfileID,tname.c_str());
 
 #if defined(ENABLE_SMARTPOINTER)
     if(myBasisSet.get() ==0)
     {
-      myBasisSet.reset(new PWBasis(twist));
+      myBasisSet.reset(new PWBasis(TwistAngle));
     }
 #else
     if(myBasisSet==0) {
-      myBasisSet = new PWBasis(twist);
+      myBasisSet = new PWBasis(TwistAngle);
     }
 #endif
     //Read the planewave basisset.
@@ -238,7 +237,7 @@ namespace qmcplusplus {
     H5Gclose(grp_id); //Close PW Basis group
 
     app_log() << "  num_twist = " << nkpts << endl;
-    app_log() << "  twist angle = " << twist << endl;
+    app_log() << "  twist angle = " << TwistAngle << endl;
     app_log() << "  num_bands = " << nbands << endl;
     app_log() << "  maximum_ecut = " << ecut << endl;
     app_log() << "  num_planewaves = " << nh5gvecs<< endl;
@@ -251,6 +250,8 @@ namespace qmcplusplus {
   {
 
     int nb=targetPtcl.last(spinIndex)-targetPtcl.first(spinIndex);
+
+
     vector<int> occBand(nb);
     for(int i=0;i<nb; i++) occBand[i]=i;
 
@@ -327,7 +328,7 @@ namespace qmcplusplus {
     psi->resize(myBasisSet,nb,true);
 
     typedef std::vector<ValueType> TempVecType;
-    TempVecType coefs;
+    TempVecType coefs(myBasisSet->inputmap.size());
     HDFAttribIO<TempVecType> hdfobj_coefs(coefs);
 
     int ib=0;
@@ -379,6 +380,9 @@ namespace qmcplusplus {
       twist_grp_id = H5Gcreate(es_grp_id,tname.c_str(),0);
     else
       twist_grp_id = H5Gopen(es_grp_id,tname.c_str());
+
+    HDFAttribIO<PosType> hdfobj_twist(TwistAngle);
+    hdfobj_twist.write(twist_grp_id,"twist_angle");
 
     int ib=0;
     while(ib<myParam->numBands) 

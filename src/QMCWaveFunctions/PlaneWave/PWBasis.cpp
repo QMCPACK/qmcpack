@@ -73,13 +73,13 @@ namespace qmcplusplus {
     Zv.resize(NumPlaneWaves);
   }
 
-  ///Remove basis elements if kinetic energy > ecut.
-  //Keep and indexmap so we know how to match coefficients on read.
+  /** Remove basis elements if kinetic energy > ecut.
+   *
+   * Keep and indexmap so we know how to match coefficients on read.
+   */
   void PWBasis::trimforecut() { 
-    PosType tempvec;
-    RealType mod2, mod;
-    RealType kcutoff = std::sqrt(2.0*ecut);
-
+    //Convert the twist angle to Cartesian coordinates.
+    twist_cart = Lattice.k_cart(twist);
 
     //resize inputmap
     NumPlaneWaves = gvecs.size();
@@ -87,38 +87,36 @@ namespace qmcplusplus {
 
     app_log() << "  PWBasis::trimforecut NumPlaneWaves (before) =" << NumPlaneWaves << endl;
 
-    //Convert the twist angle to Cartesian coordinates.
-    twist_cart = Lattice.k_cart(twist);
+    //make a copy of input to gvecCopy
+    vector<GIndex_t> gvecCopy(gvecs);
+    gvecs.clear();
+    gvecs.reserve(gvecCopy.size());
 
-    //ig is the loop index to access the member of gvecs for testing.
-    //newig is the index showing where ig exists in the new (truncated) basis.
-    //oldig is the index showing where ig came from...differs from ig after gvecs 
-    // has at least one element truncated.
-    for(int ig=0, newig=0, oldig=0; ig<NumPlaneWaves; ig++,oldig++) {
+    RealType kcutoff2 = 2.0*ecut; //std::sqrt(2.0*ecut);
+    int ngIn=NumPlaneWaves;
+    for(int ig=0, newig=0; ig<ngIn; ig++) {
       //Check size of this g-vector
-      tempvec = Lattice.k_cart(gvecs[ig]+twist);
-      mod2 = dot(tempvec,tempvec);
-      mod = std::sqrt(mod2);
-      if(mod<=kcutoff){
-        //Keep this element
+      PosType tempvec = Lattice.k_cart(gvecCopy[ig]+twist);
+      RealType mod2 = dot(tempvec,tempvec);
+      if(mod2<=kcutoff2){ //Keep this element
+        gvecs.push_back(gvecCopy[ig]);
         kplusgvecs_cart.push_back(tempvec);
         minusModKplusG2.push_back(-mod2);
         //Remember which position in the HDF5 file this came from...for coefficients
-        inputmap[oldig] = newig;
-        newig++;
+        inputmap[ig] = newig++;
 #if !defined(QMC_COMPLEX)
         //Build the negative vector. See comment at declaration (above) for details.
-        if(gvecs[ig][0] < 0)
+        if(gvecCopy[ig][0] < 0)
           negative.push_back(0);
-        else if(gvecs[ig][0] > 0)
+        else if(gvecCopy[ig][0] > 0)
           negative.push_back(1);
         else { //gx == 0, test gy
-          if(gvecs[ig][1] < 0)
+          if(gvecCopy[ig][1] < 0)
             negative.push_back(0);
-          else if(gvecs[ig][1] > 0)
+          else if(gvecCopy[ig][1] > 0)
             negative.push_back(1);
           else { //gx == gy == 0; test gz. If gz==0 also, take negative=1 (arbitrary)
-            if(gvecs[ig][2] < 0)
+            if(gvecCopy[ig][2] < 0)
               negative.push_back(0);
             else
               negative.push_back(1);
@@ -126,19 +124,14 @@ namespace qmcplusplus {
         }
 #endif
       } else {
-        //Remove this element. Remember to set ig back by one element so 
-        //removal doesn't lead to a skipping
-        inputmap[oldig] = -1; //Temporary value...need to know final NumPlaneWaves.
-        gvecs.erase(gvecs.begin()+ig,gvecs.begin()+ig+1);
-        ig--; NumPlaneWaves--;
+        inputmap[ig] = -1; //Temporary value...need to know final NumPlaneWaves.
+        NumPlaneWaves--;
       }
     }
-
     //Finalize the basis. Fix temporary values of inputmap.
-    for(int ig=0; ig<inputmap.size(); ig++) 
-      if(inputmap[ig] == -1)
-        inputmap[ig] = NumPlaneWaves; //For dumping coefficients of PWs>ecut
-
+    //for(int ig=0; ig<inputmap.size(); ig++) 
+    //  if(inputmap[ig] == -1)
+    //    inputmap[ig] = NumPlaneWaves; //For dumping coefficients of PWs>ecut
     app_log() << "                       NumPlaneWaves (after)  =" <<NumPlaneWaves << endl;
   }
 }

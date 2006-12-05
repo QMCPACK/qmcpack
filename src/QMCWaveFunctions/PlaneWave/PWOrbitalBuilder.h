@@ -39,6 +39,8 @@ namespace qmcplusplus {
 
     ///hdf5 handler to clean up
     hid_t hfileID;
+    ///input twist angle
+    PosType TwistAngle;
     ///parameter set
     PWParameterSet* myParam;
     //will do something for twist

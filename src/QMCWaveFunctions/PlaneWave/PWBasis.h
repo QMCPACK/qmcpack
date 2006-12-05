@@ -106,7 +106,6 @@ namespace qmcplusplus {
 
     ~PWBasis()
     {
-      cout << "Cleanup PWBasis " << endl;
     }
 
     inline IndexType getBasisSetSize() const {
@@ -260,9 +259,8 @@ namespace qmcplusplus {
         zptr[3]= pw*ComplexType(0.0,kplusgvecs_cart[ig][1]);
         zptr[4]= pw*ComplexType(0.0,kplusgvecs_cart[ig][2]);
 #else
-        cout << "DO NOT USE THIS UNTIL TESTED" << endl;
-        abort();
-        //ERROR_MSG("DO NOT USE THIS UNTIL TESTED")
+        app_error() << "DO NOT USE THIS UNTIL TESTED" << endl;
+        OHMMS::Controller->abort();
 #endif
       }
 

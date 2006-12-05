@@ -20,8 +20,18 @@ namespace qmcplusplus {
   }
 
   void PWOrbitalSet::resetTargetParticleSet(ParticleSet& P) {
-    cout << "resetTargetParticleSet not yet coded." << endl;
+    app_error() << "PWOrbitalSet::resetTargetParticleSet not yet coded." << endl;
     OHMMS::Controller->abort();
+  }
+
+  void PWOrbitalSet::resize(PWBasisPtr bset, int nbands, bool cleanup) {
+    myBasisSet=bset;
+    OrbitalSetSize=nbands;
+    OwnBasisSet=cleanup;
+    BasisSetSize=myBasisSet->NumPlaneWaves;
+    C.resize(OrbitalSetSize,BasisSetSize);
+    Temp.resize(OrbitalSetSize,PW_MAXINDEX);
+    app_log() << "  PWOrbitalSet::resize OrbitalSetSize =" << OrbitalSetSize << " BasisSetSize = " << BasisSetSize << endl;
   }
 
   void PWOrbitalSet::addVector(const std::vector<ValueType>& coefs,int jorb)
@@ -35,7 +45,8 @@ namespace qmcplusplus {
      const vector<int> &inputmap(myBasisSet->inputmap);
      for(int ig=0; ig<ng; ig++)
      {
-       if(inputmap[ig]>=0) C[jorb][inputmap[ig]]=coefs[ig];
+       if(inputmap[ig]>-1) 
+         C[jorb][inputmap[ig]]=coefs[ig];
      }
   }
 

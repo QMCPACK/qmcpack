@@ -56,15 +56,12 @@ namespace qmcplusplus {
        */
       ~PWOrbitalSet();
 
-      void resize(PWBasisPtr bset, int nbands, bool cleanup=false) {
-        myBasisSet=bset;
-        OrbitalSetSize=nbands;
-        OwnBasisSet=cleanup;
-        BasisSetSize=myBasisSet->NumPlaneWaves;
-        C.resize(OrbitalSetSize,BasisSetSize);
-        Temp.resize(OrbitalSetSize,PW_MAXINDEX);
-      }
-
+      /** resize  the orbital base
+       * @param bset PWBasis
+       * @param nbands number of bands
+       * @param cleaup if true, owns PWBasis. Will clean up.
+       */
+      void resize(PWBasisPtr bset, int nbands, bool cleanup=false);
 
       /** Builder class takes care of the assertion
       */
