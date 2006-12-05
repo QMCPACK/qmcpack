@@ -146,22 +146,20 @@ namespace qmcplusplus {
 	      }
 	    }
 
-            RealType logGf = -0.5*dot(deltaR[iat],deltaR[iat]);
-	    drift=0.0;
-	    // Evaluate new Umbrella Weight and new drift
-	    //for(int ipsi=0; ipsi< nPsi; ipsi++){
-	    //  invsumratio[ipsi]=1.0/sumratio[ipsi];
-	    //  drift += invsumratio[ipsi]*(*G[ipsi]);
-	    //}
+	    // Evaluate new Umbrella Weight
             for(int ipsi=0; ipsi< nPsi ;ipsi++) {               		
 	      invsumratio[ipsi]=1.0/sumratio[ipsi];
-              PAOps<RealType,DIM>::axpy(invsumratio[ipsi],Psi1[ipsi]->G,drift);
             } 							    	
 
-            //RealType vsq = Dot(drift,drift);
-            //RealType scale = ((-1.0e0+sqrt(1.0e0+2.0e0*Tau*vsq))/vsq);
-            RealType scale=getDriftScale(Tau,drift);
-	    drift *= scale;
+
+	    // Evaluate new drift
+            PAOps<RealType,DIM>::scale(invsumratio[0],Psi1[0]->G,drift);
+            for(int ipsi=1; ipsi< nPsi ;ipsi++) {               		
+              PAOps<RealType,DIM>::axpy(invsumratio[ipsi],Psi1[ipsi]->G,drift);
+            } 							    	
+            setScaledDrift(Tau,drift);
+
+            RealType logGf = -0.5*dot(deltaR[iat],deltaR[iat]);
             dr = thisWalker.R[iat]-newpos-drift[iat];
             RealType logGb = -m_oneover2tau*dot(dr,dr);
 

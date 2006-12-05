@@ -26,6 +26,7 @@
 #include "ParticleBase/ParticleAttribOps.h"
 #include "Message/Communicate.h"
 #include "Estimators/MultipleEnergyEstimator.h"
+#include "QMCDrivers/DriftOperators.h"
 
 namespace qmcplusplus { 
 
@@ -216,7 +217,7 @@ namespace qmcplusplus {
       //Properties(SUMRATIO) = sumratio[0];			 
  
       RealType logGf = -0.5*Dot(deltaR,deltaR);
-      RealType scale = Tau; // ((-1.0+sqrt(1.0+2.0*Tau*vsq))/vsq);	
+      //RealType scale = Tau; // ((-1.0+sqrt(1.0+2.0*Tau*vsq))/vsq);	
 
       //accumulate the weighted drift: using operators in ParticleBase/ParticleAttribOps.h
       //to handle complex-to-real assignment and axpy operations.
@@ -228,7 +229,8 @@ namespace qmcplusplus {
       for(int ipsi=1; ipsi< nPsi ;ipsi++) {               		
         PAOps<RealType,DIM>::axpy(invsumratio[ipsi],Psi1[ipsi]->G,drift);
       } 							    	
-      drift *= scale; 						   	
+      //drift *= scale; 						   	
+      setScaledDrift(Tau,drift);
 
       deltaR = thisWalker.R - W.R - drift;
       RealType logGb = -m_oneover2tau*Dot(deltaR,deltaR);
