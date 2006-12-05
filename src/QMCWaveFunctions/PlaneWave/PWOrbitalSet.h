@@ -68,9 +68,7 @@ namespace qmcplusplus {
 
       /** Builder class takes care of the assertion
       */
-      inline void addVector(const std::vector<ValueType>& coefs,int jorb) {
-        std::copy(coefs.begin(),coefs.end(),C[jorb]);
-      }
+      void addVector(const std::vector<ValueType>& coefs,int jorb);
 
       void reset();
 

@@ -23,6 +23,22 @@ namespace qmcplusplus {
     cout << "resetTargetParticleSet not yet coded." << endl;
     OHMMS::Controller->abort();
   }
+
+  void PWOrbitalSet::addVector(const std::vector<ValueType>& coefs,int jorb)
+  {
+     int ng=myBasisSet->inputmap.size();
+     if(ng != coefs.size()) {
+       app_error() << "  Input G map does not match the basis size of wave functions " << endl;
+       OHMMS::Controller->abort();
+     }
+
+     const vector<int> &inputmap(myBasisSet->inputmap);
+     for(int ig=0; ig<ng; ig++)
+     {
+       if(inputmap[ig]>=0) C[jorb][inputmap[ig]]=coefs[ig];
+     }
+  }
+
   void 
   PWOrbitalSet::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
   {
