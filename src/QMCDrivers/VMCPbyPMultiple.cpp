@@ -39,8 +39,10 @@ namespace qmcplusplus {
     QMCDriverMode.set(QMC_UPDATE_MODE,1);
     QMCDriverMode.set(QMC_MULTIPLE,1);
     equilBlocks=-1;
+    useDriftOpt="no";
+    useDrift=false;
     m_param.add(equilBlocks,"equilBlocks","int");
-    cout << "EquilBlocks " << equilBlocks << endl;
+    m_param.add(useDriftOpt,"useDrift","string"); m_param.add(useDriftOpt,"usedrift","string");
     add_H_and_Psi(&h,&psi);
   }
 
@@ -49,7 +51,27 @@ namespace qmcplusplus {
     for(int i=0; i<dL.size(); i++) delete dL[i];
   }
   
+    void VMCPbyPMultiple::resize(int ncopy, int nptcls){
+      int m=ncopy*(ncopy-1)/2; 
+      ratio.resize(ncopy);
+      logpsi2.resize(ncopy);
+      UmbrellaWeight.resize(ncopy);
+      invsumratio.resize(ncopy);
+      sumratio.resize(ncopy);
+      ratioij.resize(m);
+      for(int i=0; i<ncopy; i++){
+	G.push_back(new ParticleGradient_t(nptcls));
+	dL.push_back(new ParticleLaplacian_t(nptcls));
+      }
+    }
   bool VMCPbyPMultiple::run() { 
+
+    useDrift = (useDriftOpt=="yes");
+
+    if(useDrift)
+      app_log() << "  VMCPbyPMultiple::run useDrift=yes" << endl;
+    else
+      app_log() << "  VMCPbyPMultiple::run useDrift=no" << endl;
 
     Estimators->reportHeader(AppendRun);
       
@@ -121,7 +143,9 @@ namespace qmcplusplus {
 
           for(int iat=0; iat<W.getTotalNum(); iat++) {  //Particles loop
 
-            PosType dr = m_sqrttau*deltaR[iat]+thisWalker.Drift[iat];
+            PosType dr = m_sqrttau*deltaR[iat];
+            if(useDrift) dr += thisWalker.Drift[iat];
+
             PosType newpos = W.makeMove(iat,dr);
 
 	    for(int ipsi=0; ipsi<nPsi; ipsi++){
@@ -151,23 +175,26 @@ namespace qmcplusplus {
 	      invsumratio[ipsi]=1.0/sumratio[ipsi];
             } 							    	
 
+	    RealType td=ratio[0]*ratio[0]*sumratio[0]/(*it)->Multiplicity;
 
-	    // Evaluate new drift
-            PAOps<RealType,DIM>::scale(invsumratio[0],Psi1[0]->G,drift);
-            for(int ipsi=1; ipsi< nPsi ;ipsi++) {               		
-              PAOps<RealType,DIM>::axpy(invsumratio[ipsi],Psi1[ipsi]->G,drift);
-            } 							    	
-            setScaledDrift(Tau,drift);
-
-            RealType logGf = -0.5*dot(deltaR[iat],deltaR[iat]);
-            dr = thisWalker.R[iat]-newpos-drift[iat];
-            RealType logGb = -m_oneover2tau*dot(dr,dr);
-
+            if(useDrift)
+            {
+              // Evaluate new drift
+              PAOps<RealType,DIM>::scale(invsumratio[0],Psi1[0]->G,drift);
+              for(int ipsi=1; ipsi< nPsi ;ipsi++) {               		
+                PAOps<RealType,DIM>::axpy(invsumratio[ipsi],Psi1[ipsi]->G,drift);
+              } 							    	
+              setScaledDrift(Tau,drift);
+              RealType logGf = -0.5*dot(deltaR[iat],deltaR[iat]);
+              dr = thisWalker.R[iat]-newpos-drift[iat];
+              RealType logGb = -m_oneover2tau*dot(dr,dr);
+              td *=exp(logGb-logGf);
+            }
 	    // td = Target Density ratio
 	    //RealType td=pow(ratio[0],2)*sumratio[0]/(*it)->Properties(SUMRATIO);
-	    RealType td=ratio[0]*ratio[0]*sumratio[0]/(*it)->Multiplicity;
-	    RealType prob = std::min(1.0,td*exp(logGb-logGf));
-
+	    //td=ratio[0]*ratio[0]*sumratio[0]/(*it)->Multiplicity;
+	    //RealType prob = std::min(1.0,td*exp(logGb-logGf));
+	    RealType prob = std::min(1.0,td);
 	    if(Random() < prob) { 
 	      /* Electron move is accepted. Update:
 		 -ratio (Psi[i]/Psi[j])^2 for this walker
@@ -186,15 +213,15 @@ namespace qmcplusplus {
 	      //thisWalker.Properties(SUMRATIO)=sumratio[0];
 	      thisWalker.Multiplicity=sumratio[0];
 	      for(int ipsi=0; ipsi< nPsi; ipsi++){
-		////Update local Psi1[i] buffer for the next move
+		//Update local Psi1[i] buffer for the next move
 		Psi1[ipsi]->acceptMove(W,iat);  
-		// Update G and L in Psi1[i]
+		//Update G and L in Psi1[i]
 		Psi1[ipsi]->G = *G[ipsi];
 		Psi1[ipsi]->L += *dL[ipsi];
                 thisWalker.Properties(ipsi,LOGPSI)+=log(abs(ratio[ipsi]));
 	      }
 	      // Update Drift
-	      (*it)->Drift = drift;
+	      if(useDrift) (*it)->Drift = drift;
 	    } else {
 	      ++nReject;
               W.rejectMove(iat);
@@ -266,11 +293,11 @@ namespace qmcplusplus {
       multiEstimator->initialize(W,H1,Psi1,Tau,Norm,false);
     } while(block<nBlocks);
 
-    //Need MPI-IO
-    app_log()
-      << "Ratio = " 
-      << static_cast<RealType>(nAcceptTot)/static_cast<RealType>(nAcceptTot+nRejectTot)
-      << endl;
+    ////Need MPI-IO
+    //app_log()
+    //  << "Ratio = " 
+    //  << static_cast<RealType>(nAcceptTot)/static_cast<RealType>(nAcceptTot+nRejectTot)
+    //  << endl;
 
     return finalize(block);
   }

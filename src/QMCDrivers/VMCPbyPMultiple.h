@@ -39,13 +39,14 @@ namespace qmcplusplus {
     bool put(xmlNodePtr cur);
  
   private:
-    /// Copy Constructor (disabled)
-    VMCPbyPMultiple(const VMCPbyPMultiple& a): QMCDriver(a) { }
-    /// Copy operator (disabled).
-    VMCPbyPMultiple& operator=(const VMCPbyPMultiple&) { return *this;}
-
+    ///number of configurations
     int nPsi;
+    ///number of blocks to equilibrate
     int equilBlocks;
+    ///turn on/off drift for moves
+    bool useDrift;
+    ///option
+    string useDriftOpt;
     typedef ParticleSet::ParticleGradient_t ParticleGradient_t;
     typedef ParticleSet::ParticleLaplacian_t ParticleLaplacian_t;
     ParticleGradient_t dG;
@@ -53,21 +54,12 @@ namespace qmcplusplus {
     vector<ParticleLaplacian_t*> dL;
     vector<RealType> ratio, ratioij, logpsi2, UmbrellaWeight,sumratio,invsumratio;
     MultipleEnergyEstimator *multiEstimator;
-
-    
-    inline void resize(int ncopy, int nptcls){
-      int m=ncopy*(ncopy-1)/2; 
-      ratio.resize(ncopy);
-      logpsi2.resize(ncopy);
-      UmbrellaWeight.resize(ncopy);
-      invsumratio.resize(ncopy);
-      sumratio.resize(ncopy);
-      ratioij.resize(m);
-      for(int i=0; i<ncopy; i++){
-	G.push_back(new ParticleGradient_t(nptcls));
-	dL.push_back(new ParticleLaplacian_t(nptcls));
-      }
-    }
+    ///resize the containers
+    void resize(int ncopy, int nptcls);
+    /// Copy Constructor (disabled)
+    VMCPbyPMultiple(const VMCPbyPMultiple& a): QMCDriver(a) { }
+    /// Copy operator (disabled).
+    VMCPbyPMultiple& operator=(const VMCPbyPMultiple&) { return *this;}
   };
   
 }
