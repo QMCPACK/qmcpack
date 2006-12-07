@@ -24,6 +24,7 @@
 #include "Particle/ParticleSet.h"
 #include "Numerics/HDFSTLAttrib.h"
 #include "Numerics/HDFNumericAttrib.h"
+#include "Message/Communicate.h"
 #include <complex>
 
 namespace qmcplusplus {

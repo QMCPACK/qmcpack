@@ -20,7 +20,6 @@
 #include "QMCWaveFunctions/PlaneWave/PWBasis.h"
 #include "Numerics/HDFSTLAttrib.h"
 #include "Numerics/HDFNumericAttrib.h"
-#include "Message/Communicate.h"
 
 namespace qmcplusplus {
 
