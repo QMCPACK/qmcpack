@@ -63,7 +63,7 @@ namespace qmcplusplus {
     else if(typeOpt == "bspline")
     {
       app_log() << "  TricubicBsplineSetBuilder: b-spline on 3D TriCubicGrid " << endl;
-      bb = new TricubicBsplineSetBuilder(targetPtcl,ptclPool);
+      bb = new TricubicBsplineSetBuilder(targetPtcl,ptclPool,rootNode);
     }
     else 
     { 
