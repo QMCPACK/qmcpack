@@ -39,6 +39,8 @@ namespace qmcplusplus {
 
     ///hdf5 handler to clean up
     hid_t hfileID;
+    ///xml node for determinantset
+    xmlNodePtr rootNode;
     ///input twist angle
     PosType TwistAngle;
     ///parameter set

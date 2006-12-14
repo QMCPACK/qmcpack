@@ -31,7 +31,7 @@
 namespace qmcplusplus {
 
   PWOrbitalBuilder::PWOrbitalBuilder(ParticleSet& els, TrialWaveFunction& psi):
-    OrbitalBuilderBase(els,psi),hfileID(-1)
+    OrbitalBuilderBase(els,psi),hfileID(-1), rootNode(NULL)
 #if !defined(EANBLE_SMARTPOINTER)
     ,myBasisSet(0)
 #endif
@@ -46,9 +46,8 @@ namespace qmcplusplus {
 
   //All data parsing is handled here, outside storage classes.
   bool PWOrbitalBuilder::put(xmlNodePtr cur) {
-
-    //catch the parameters at the root level
-    myParam->put(cur);
+    //save the parent
+    rootNode=cur;
     //
     //Get wavefunction data and parameters from XML and HDF5
     //
@@ -66,8 +65,7 @@ namespace qmcplusplus {
       if(cname == "basisset") 
       {
         const xmlChar* aptr = xmlGetProp(cur,(const xmlChar*)"ecut");
-        if(aptr != NULL) ecut=atof((const char*)aptr);
-        myParam->put(cur);
+        if(aptr != NULL) myParam->Ecut=atof((const char*)aptr);
       } 
       else if(cname == "coefficients")
       {
@@ -231,15 +229,19 @@ namespace qmcplusplus {
     //Note that the same data is opened here for each twist angle-avoids duplication in the
     //h5 file (which may become very large).
 
+    //return the ecut to be used by the basis set
+    RealType real_ecut = myParam->getEcut(ecut);
+
     grp_id = H5Gopen(hfileID,myParam->basisTag.c_str());
     //create at least one basis set but do resize the containers
-    int nh5gvecs=myBasisSet->readbasis(grp_id,ecut,targetPtcl.Lattice,myParam->pwTag);
+    int nh5gvecs=myBasisSet->readbasis(grp_id,real_ecut,targetPtcl.Lattice,myParam->pwTag);
     H5Gclose(grp_id); //Close PW Basis group
 
     app_log() << "  num_twist = " << nkpts << endl;
     app_log() << "  twist angle = " << TwistAngle << endl;
     app_log() << "  num_bands = " << nbands << endl;
-    app_log() << "  maximum_ecut = " << ecut << endl;
+    app_log() << "  input maximum_ecut = " << ecut << endl;
+    app_log() << "  current maximum_ecut = " << real_ecut << endl;
     app_log() << "  num_planewaves = " << nh5gvecs<< endl;
 
     return true;
@@ -324,6 +326,7 @@ namespace qmcplusplus {
       for(int i=0;i<nb; i++) occBand[i]=i;
     }
 
+
     //going to take care of occ
     psi->resize(myBasisSet,nb,true);
 
@@ -360,6 +363,8 @@ namespace qmcplusplus {
     splineTag << "eigenstates_"<<nG[0]<<"_"<<nG[1]<<"_"<<nG[2];
     herr_t status = H5Eset_auto(NULL, NULL);
 
+    app_log() << " splineTag " << splineTag.str() << endl;
+
     hid_t es_grp_id;
     status = H5Gget_objinfo (hfileID, splineTag.str().c_str(), 0, NULL);
     if(status)
@@ -384,6 +389,15 @@ namespace qmcplusplus {
     HDFAttribIO<PosType> hdfobj_twist(TwistAngle);
     hdfobj_twist.write(twist_grp_id,"twist_angle");
 
+    ParticleSet::ParticleLayout_t& lattice(targetPtcl.Lattice);
+    RealType dx=1.0/static_cast<RealType>(nG[0]-1);
+    RealType dy=1.0/static_cast<RealType>(nG[1]-1);
+    RealType dz=1.0/static_cast<RealType>(nG[2]-1);
+
+#if defined(VERYTINYMEMORY)
+    typedef Array<ValueType,3> StorageType;
+    StorageType inData(nG[0],nG[1],nG[2]);
+   
     int ib=0;
     while(ib<myParam->numBands) 
     {
@@ -415,14 +429,91 @@ namespace qmcplusplus {
         parent_id=spin_grp_id;
       }
 
-      HDFAttribIO<PWBasis::GIndex_t> t(nG);
+      for(int ig=0; ig<nG[0]; ig++)
+      {
+        RealType x=ig*dx;
+        for(int jg=0; jg<nG[1]; jg++)
+        {
+          RealType y=jg*dy;
+          for(int kg=0; kg<nG[2]; kg++)
+          {
+            inData(ig,jg,kg)= pwFunc.evaluate(ib,lattice.toCart(PosType(x,y,kg*dz)));
+          }
+        }
+      }
+
+      app_log() << "  Add spline data " << ib << " h5path=" << tname << "/eigvector" << endl;
+      HDFAttribIO<StorageType> t(inData);
       t.write(parent_id,myParam->eigvecTag.c_str());
 
       if(spin_grp_id>=0) H5Gclose(spin_grp_id);
       H5Gclose(band_grp_id);
       ++ib;
     }
+#else
+    typedef Array<ValueType,3> StorageType;
+    vector<StorageType*> inData;
+    int nb=myParam->numBands;
+    for(int ib=0; ib<nb; ib++)
+      inData.push_back(new StorageType(nG[0],nG[1],nG[2]));
 
+    PWOrbitalSet::ValueVector_t phi(nb);
+    for(int ig=0; ig<nG[0]; ig++)
+    {
+      cout << " ig = " << ig << endl;
+      RealType x=ig*dx;
+      for(int jg=0; jg<nG[1]; jg++)
+      {
+        RealType y=jg*dy;
+        for(int kg=0; kg<nG[2]; kg++)
+        {
+          targetPtcl.R[0]=lattice.toCart(PosType(x,y,kg*dz));
+          pwFunc.evaluate(targetPtcl,0,phi);
+          for(int ib=0; ib<nb; ib++)
+              (*inData[ib])(ig,jg,kg)=phi[ib];
+        }
+      }
+    }
+
+    for(int ib=0; ib<nb; ib++)
+    {
+      string bname(myParam->getBandName(ib));
+      status = H5Gget_objinfo (twist_grp_id, bname.c_str(), 0, NULL);
+      hid_t band_grp_id, spin_grp_id=-1;
+      if(status)
+      {
+        band_grp_id =  H5Gcreate(twist_grp_id,bname.c_str(),0);
+      }
+      else
+      {
+        band_grp_id =  H5Gopen(twist_grp_id,bname.c_str());
+      }
+
+      hid_t parent_id=band_grp_id;
+      if(myParam->hasSpin)
+      {
+        bname=myParam->getSpinName(spinIndex);
+        status = H5Gget_objinfo (band_grp_id, bname.c_str(), 0, NULL);
+        if(status)
+        {
+          spin_grp_id =  H5Gcreate(band_grp_id,bname.c_str(),0);
+        }
+        else
+        {
+          spin_grp_id =  H5Gopen(band_grp_id,bname.c_str());
+        }
+        parent_id=spin_grp_id;
+      }
+
+      app_log() << "  Add spline data " << ib << " h5path=" << tname << "/eigvector" << endl;
+      HDFAttribIO<StorageType> t(*(inData[ib]));
+      t.write(parent_id,myParam->eigvecTag.c_str());
+
+      if(spin_grp_id>=0) H5Gclose(spin_grp_id);
+      H5Gclose(band_grp_id);
+    }
+    for(int ib=0; ib<nb; ib++) delete inData[ib];
+#endif
     H5Gclose(twist_grp_id);
     H5Gclose(es_grp_id);
   }
@@ -442,7 +533,8 @@ namespace qmcplusplus {
     }
 
     myParam->checkVersion(h);
-
+    //overwrite the parameters
+    myParam->put(rootNode);
     return h;
   }
 }
