@@ -189,12 +189,26 @@ struct BLAS {
 //   }
 
   inline static
-  double dot(int n, const double* a, const double* b) {
+  double dot(int n, const double* restrict a, const double* restrict b) {
     return ddot(n,a,INCX,b,INCY);
   }
 
   inline static
   complex<double> dot(int n, const complex<double>* restrict a, const complex<double>* restrict b) {
+    complex<double> res=0.0;
+    for(int i=0; i<n; i++) res += (*a++)*(*b++);
+    return res;
+  }
+
+  inline static
+  complex<double> dot(int n, const complex<double>* restrict a, const double* restrict b) {
+    complex<double> res=0.0;
+    for(int i=0; i<n; i++) res += (*a++)*(*b++);
+    return res;
+  }
+
+  inline static
+  complex<double> dot(int n, const double* restrict a, const complex<double>* restrict b) {
     complex<double> res=0.0;
     for(int i=0; i<n; i++) res += (*a++)*(*b++);
     return res;
