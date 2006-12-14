@@ -73,7 +73,18 @@ namespace qmcplusplus {
     void SolvePeriodicInterp (const Array<T,3> &data, Array<T,3>& P);
     void MakePeriodic(Array<T,3>& P);
   };
+
 #include "Numerics/TricubicBsplineGrid.cpp"
+
+  template<typename T>
+    struct TricubicBsplineTraits: public OrbitalTraits<T>
+    {
+      typedef typename OrbitalTraits<T>::real_type real_type;
+      typedef typename OrbitalTraits<T>::value_type value_type;
+      typedef TinyVector<real_type,3> PosType;
+      typedef TricubicBsplineGrid<T> GridType;
+      typedef Array<T,3>             StorageType;
+    };
 }
 #endif
 /***************************************************************************
