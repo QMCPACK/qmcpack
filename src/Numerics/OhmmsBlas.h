@@ -194,8 +194,10 @@ struct BLAS {
   }
 
   inline static
-  complex<double> dot(int n, const complex<double>* a, const complex<double>* b) {
-    return zdot(n,a,INCX,b,INCY);
+  complex<double> dot(int n, const complex<double>* restrict a, const complex<double>* restrict b) {
+    complex<double> res=0.0;
+    for(int i=0; i<n; i++) res += (*a++)*(*b++);
+    return res;
   }
 
   inline static
@@ -206,6 +208,11 @@ struct BLAS {
   inline static
   void copy(int n, const double* a, double* b) {
     dcopy(n,a,INCX,b,INCY);
+  }
+
+  inline static
+  void copy(int n, const complex<double>* a, double* b) {
+    for(int i=0; i<n; i++) b[i]=a[i].real();
   }
 
   inline static
