@@ -24,11 +24,14 @@
 namespace qmcplusplus {
 
   template<typename T>
-    class TricubicBspline: public OrbitalTraits<T>
+    class TricubicBspline
     {
       public:
-        typedef typename OrbitalTraits<T>::real_type real_type;
-        typedef TricubicBsplineGrid<T> GridType;
+        typedef typename TricubicBsplineTraits<T>::real_type   real_type;
+        typedef typename TricubicBsplineTraits<T>::value_type  value_type;
+        typedef typename TricubicBsplineTraits<T>::PosType     PosType;
+        typedef typename TricubicBsplineTraits<T>::GridType    GridType;
+        typedef typename TricubicBsplineTraits<T>::StorageType StorageType;
 
         TricubicBspline(){}
 
@@ -70,21 +73,23 @@ namespace qmcplusplus {
         Array<T,3> P;
     };
 
+
   template<typename T>
-    class TricubicBsplineSet: public OrbitalTraits<T>
+    class TricubicBsplineSet
     {
       public:
-        typedef typename OrbitalTraits<T>::real_type real_type;
-        typedef typename OrbitalTraits<T>::value_type value_type;
-        typedef TricubicBsplineGrid<T> GridType;
-        typedef Array<T,3>             StorageType;
+        typedef typename TricubicBsplineTraits<T>::real_type   real_type;
+        typedef typename TricubicBsplineTraits<T>::value_type  value_type;
+        typedef typename TricubicBsplineTraits<T>::PosType     PosType;
+        typedef typename TricubicBsplineTraits<T>::GridType    GridType;
+        typedef typename TricubicBsplineTraits<T>::StorageType StorageType;
 
         /** default constructure
          *
          * For memory efficiency, reserve DeleteP and P
          * OffSet is set to 1000000. Safe until we can do 1000000 orbitals.
          */
-        TricubicBsplineSet():OffSet(1000000) 
+        TricubicBsplineSet():OffSet(1000000)
         { 
           DeleteP.reserve(1024); 
           P.reserve(1024);
@@ -106,6 +111,7 @@ namespace qmcplusplus {
         void reset()
         {
         }
+
 
         inline void setGrid(real_type xi, real_type xf, 
             real_type yi, real_type yf, real_type zi, real_type zf, 
@@ -143,8 +149,15 @@ namespace qmcplusplus {
           bKnots.Init(data,*curP);
         }
 
+        inline value_type 
+          evaluate(int iorb, const PosType& r)
+        {
+          bKnots.Find(r[0],r[1],r[2]);
+          return bKnots.evaluate(*P[iorb]);
+        }
+
         template<typename PV>
-        inline void evaluate(const TinyVector<real_type,3>& r, PV& vals) 
+        inline void evaluate(const PosType& r, PV& vals) 
         {
           bKnots.Find(r[0],r[1],r[2]);
           for(int m=0, j=OffSet;m<P.size(); m++,j++)
@@ -155,7 +168,7 @@ namespace qmcplusplus {
 
         template<typename PV, typename GV>
         inline void
-          evaluate(const TinyVector<real_type,3>& r, PV& vals, GV& grads, PV& laps)
+          evaluate(const PosType& r, PV& vals, GV& grads, PV& laps)
           {
             bKnots.FindAll(r[0],r[1],r[2]);
             for(int m=0,j=OffSet;m<P.size(); m++,j++)
@@ -166,7 +179,7 @@ namespace qmcplusplus {
 
         template<typename PM, typename GM>
         inline void
-          evaluate(const TinyVector<real_type,3>& r, int i, PM& vals, GM& grads, PM& laps)
+          evaluate(const PosType& r, int i, PM& vals, GM& grads, PM& laps)
           {
             bKnots.FindAll(r[0],r[1],r[2]);
             for(int m=0,j=OffSet;m<P.size(); m++,j++)
