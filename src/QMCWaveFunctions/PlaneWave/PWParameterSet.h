@@ -35,6 +35,8 @@ namespace qmcplusplus {
     int twistIndex;
     ///number of input bands
     int numBands;
+    ///energy cutoff for QMC wavefunction
+    double Ecut;
     ///tag for the parameters
     std::string paramTag;
     ///tag for the basis
@@ -62,6 +64,8 @@ namespace qmcplusplus {
     }
 
     void checkVersion(hid_t h);
+
+    double getEcut(double ecut);
 
     string getTwistAngleName();
 

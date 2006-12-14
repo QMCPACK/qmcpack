@@ -24,7 +24,9 @@
 namespace qmcplusplus {
   PWParameterSet::PWParameterSet():
     hasSpin(true),
-    twistIndex(0),
+  twistIndex(0),
+  numBands(0),
+  Ecut(-1),
   paramTag("parameters"),
   basisTag("basis"),
   pwTag("planewaves"),
@@ -45,6 +47,13 @@ namespace qmcplusplus {
     m_param.add(spinTag,"spin","string");
     m_param.add(eigvecTag,"eigenvector","string");
   }   
+
+  double PWParameterSet::getEcut(double ecut) 
+  {
+    if(Ecut<0 || Ecut >= ecut) 
+      Ecut=ecut;
+    return Ecut;
+  }
 
   string PWParameterSet::getTwistAngleName()
   {
