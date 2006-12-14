@@ -76,10 +76,18 @@ public:
   void resize(unsigned, unsigned, unsigned); 
   void resize(unsigned, unsigned, unsigned, unsigned);
 
-  const T* begin() const { return X.begin();}
-  T* begin() { return X.begin();}
-  const T* end() const { return X.end();}
-  T* end() { return X.end();}
+  inline typename Container_t::iterator begin() { return X.begin();}
+  inline typename Container_t::iterator end() { return X.end();}
+  inline typename Container_t::const_iterator begin() const { return X.begin();}
+  inline typename Container_t::const_iterator end() const { return X.end();}
+
+  inline Type_t* data() { 
+    return &(X[0]);
+  }
+
+  inline const Type_t* data() const { 
+    return &(X[0]);
+  }
 
   This_t& operator=(const T rhs) {
     for(int i=0; i<X.size(); i++) X[i] = rhs;
