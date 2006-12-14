@@ -142,18 +142,19 @@ namespace qmcplusplus {
      *
      * @todo Generalize to non-orthorohmbic cells
      */
-    inline void BuildRecursionCoefs(const ParticleSet &P, int iat) {
+    inline void BuildRecursionCoefs(const PosType& pos) { //const ParticleSet &P, int iat) {
 
       // Cartesian of twist for 1,1,1 (reduced coordinates)
       PosType G111(1.0,1.0,1.0); 
-      G111 = P.Lattice.k_cart(G111); 
+      G111 = Lattice.k_cart(G111); 
+      //G111 = P.Lattice.k_cart(G111); 
       //PosType redP=P.Lattice.toUnit(P.R[iat]);
 
       //Precompute a small number of complex factors (PWs along b1,b2,b3 lines)
       //using a fast recursion algorithm
       for(int idim=0; idim<3; idim++){
         //start the recursion with the 111 vector.
-        RealType phi = (P.R[iat])[idim] * G111[idim];
+        RealType phi = pos[idim] * G111[idim];
         register ComplexType Ctemp(std::cos(phi), std::sin(phi));
         register int ng=maxg[idim];
         ComplexType* restrict cp_ptr=C[idim]+ng;
@@ -172,16 +173,16 @@ namespace qmcplusplus {
      *
      * @todo Generalize to non-orthorohmbic cells
      */
-    void BuildRecursionCoefsByAdd(const ParticleSet &P, int iat) {
-
+    void BuildRecursionCoefsByAdd(const PosType& pos) 
+    {
       // Cartesian of twist for 1,1,1 (reduced coordinates)
       PosType G111(1.0,1.0,1.0); 
-      G111 = P.Lattice.k_cart(G111); 
+      G111 = Lattice.k_cart(G111); 
       //PosType redP=P.Lattice.toUnit(P.R[iat]);
       //Precompute a small number of complex factors (PWs along b1,b2,b3 lines)
       for(int idim=0; idim<3; idim++){
         //start the recursion with the 111 vector.
-        RealType phi = (P.R[iat])[idim] * G111[idim];
+        RealType phi = pos[idim] * G111[idim];
         int ng(maxg[idim]);
         RealType* restrict cp_ptr=logC[idim]+ng;
         RealType* restrict cn_ptr=logC[idim]+ng-1;
@@ -195,10 +196,17 @@ namespace qmcplusplus {
       }
     }
 
+    //inline void 
+    //evaluate(const ParticleSet& P, int iat) 
+    //{
+    //  evaluate(P.R[iat]);
+    //}
+
     inline void 
-    evaluate(const ParticleSet& P, int iat) {
-      BuildRecursionCoefs(P,iat);
-      RealType twistdotr = dot(twist_cart,P.R[iat]);
+    evaluate(const PosType& pos)
+    {
+      BuildRecursionCoefs(pos);
+      RealType twistdotr = dot(twist_cart,pos);
       ComplexType pw0(std::cos(twistdotr),std::sin(twistdotr));
       //Evaluate the planewaves for particle iat.
       for(int ig=0; ig<NumPlaneWaves; ig++) {
@@ -241,7 +249,8 @@ namespace qmcplusplus {
      */
     inline void 
     evaluateAll(const ParticleSet& P, int iat) {
-      BuildRecursionCoefs(P,iat);
+      //BuildRecursionCoefs(P,iat);
+      BuildRecursionCoefs(P.R[iat]);
       RealType twistdotr = dot(twist_cart,P.R[iat]);
       ComplexType pw0(std::cos(twistdotr),std::sin(twistdotr));
       //Evaluate the planewaves and derivatives.
