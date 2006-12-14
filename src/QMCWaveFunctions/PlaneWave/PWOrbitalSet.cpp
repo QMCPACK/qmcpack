@@ -55,7 +55,8 @@ namespace qmcplusplus {
   {
     //Evaluate every orbital for particle iat.
     //Evaluate the basis-set at these coordinates:
-    myBasisSet->evaluate(P,iat);
+    //myBasisSet->evaluate(P,iat);
+    myBasisSet->evaluate(P.R[iat]);
     MatrixOperators::product(C,myBasisSet->Zv,&psi[0]);
   }
 

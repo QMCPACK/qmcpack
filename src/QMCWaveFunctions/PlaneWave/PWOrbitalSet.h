@@ -22,6 +22,7 @@
 
 #include "QMCWaveFunctions/PlaneWave/PWBasis.h"
 #include "QMCWaveFunctions/SPOSetBase.h"
+#include "Numerics/OhmmsBlas.h"
 
 namespace qmcplusplus {
 
@@ -73,12 +74,15 @@ namespace qmcplusplus {
 
       void resetTargetParticleSet(ParticleSet& P);
 
-      //inline RealType
-      //  evaluate(const ParticleSet& P, int iat, int jorb) {
-      //  LOGMSG("PWOSet: this should not be used");
-      //  OHMMS::Controller->abort();
-      //  return 0.0;
-      //}
+      inline ValueType evaluate(int ib, const PosType& pos)
+      {
+        myBasisSet->evaluate(pos);
+#if defined(QMC_COMPLEX)
+        return BLAS::dot(BasisSetSize,C[ib],myBasisSet->Zv.data());
+#else
+        return 1.0;
+#endif
+      }
 
       void 
         evaluate(const ParticleSet& P, int iat, ValueVector_t& psi);
