@@ -398,7 +398,7 @@ namespace qmcplusplus {
 		// not sure if this is the correct format for more than 2 correlated samples
     for(int ipsi=0; ipsi<NumCopies-1; ipsi++)
 			for(int jpsi=ipsi+1; jpsi<NumCopies; jpsi++)
-				record[ir++] = AveEloc[ipsi] - AveEloc[jpsi];
+				record[ir++] = AveEloc[jpsi] - AveEloc[ipsi];
 
     for(int ipsi=0; ipsi<NumCopies; ipsi++)
 			record[ir++] = AveEloc[ipsi];
