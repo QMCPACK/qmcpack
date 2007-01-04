@@ -7,7 +7,6 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
@@ -109,6 +108,10 @@ namespace qmcplusplus {
 
     ///return the id
     inline int tag() const { return ObjectTag;}
+
+    ///return the id
+    inline int parent() const { return ParentTag;}
+    
     
     /**move a particle
      *@param iat the index of the particle to be moved
@@ -161,6 +164,9 @@ namespace qmcplusplus {
 
     ///id of this object    
     Index_t ObjectTag;
+
+    ///id of the parent
+    Index_t ParentTag;
 
     ///the indexp of the active particle for particle-by-particle moves
     Index_t activePtcl;

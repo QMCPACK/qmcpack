@@ -8,7 +8,6 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
@@ -27,16 +26,21 @@ namespace qmcplusplus {
 
   int  ParticleSet::PtclObjectCounter = 0;
 
-  ParticleSet::ParticleSet(): SK(0){ 
+  ParticleSet::ParticleSet(): SK(0), ParentTag(-1){ 
     initParticleSet();
 
     initPropertyList();
   }
 
-  ParticleSet::ParticleSet(const ParticleSet& p): SK(0){
+  ParticleSet::ParticleSet(const ParticleSet& p): SK(0), mySpecies(p.getSpeciesSet()), ParentTag(p.tag()){
     initBase();
     initParticleSet();
     assign(p);
+
+    if(p.SK) 
+    {
+      createSK();
+    }
 
     PropertyList.Name=p.PropertyList.Name;
     PropertyList.Values=p.PropertyList.Values;
