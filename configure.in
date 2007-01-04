@@ -6,7 +6,7 @@
 
 AC_PREREQ(2.53)
 AC_INIT(qmcplusplus,0.4.0)
-AC_CONFIG_AUX_DIR([config])
+AC_CONFIG_AUX_DIR([m4])
 
 AC_DEFINE([QMCPLUSPLUS_RELEASE], 1, [This is a public relase.])
 
