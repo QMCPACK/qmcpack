@@ -62,8 +62,24 @@ public:
   template<class VV>
   OneDimLinearSpline(grid_type* gt, const VV& nv, bool pbc=true): base_type(gt)
   {
-    m_Y.resize(nv.size());
-    std::copy(nv.begin(), nv.end(), m_Y.data());
+    assign(nv.begin(), nv.end());
+  }
+
+  /** copy constructor
+   */
+  OneDimLinearSpline(const OneDimLinearSpline<Td,Tg,CTd,CTg>& rhs):
+    First(rhs.First), Last(rhs.Last), ConstValue(rhs.ConstValue), m_Y1(rhs.m_Y1)
+  {
+    m_grid = new LinearGrid;
+    m_grid->set(rhs.r_min,rhs.r_max,rhs.size());
+    assign(rhs.m_Y.begin(),rhs.m_Y.end());
+  }
+
+  template<class IT>
+  void assign(IT d_first, IT d_last)
+  {
+    m_Y.resize(m_grid->size());
+    std::copy(d_first,d_last,m_Y.data());
     r_min=m_grid->rmin();
     r_max=m_grid->rmax();
     delta=m_grid->dh();
@@ -79,13 +95,7 @@ public:
       agrid->assign(g_first,g_last);
       m_grid=agrid;
     }
-
-    m_Y.resize(m_grid->size());
-    std::copy(d_first, d_last, m_Y.begin());
-    r_min=m_grid->rmin();
-    r_max=m_grid->rmax();
-    delta=m_grid->dh();
-    delta_inv=1.0/delta;
+    assign(d_first,d_last);
   }
 
 
