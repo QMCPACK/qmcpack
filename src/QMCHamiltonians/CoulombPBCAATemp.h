@@ -73,6 +73,8 @@ namespace qmcplusplus {
       return true;
     }
 
+    QMCHamiltonianBase* clone(ParticleSet& qp, TrialWaveFunction& psi);
+
     void initBreakup();
 
     Return_t evalSR();

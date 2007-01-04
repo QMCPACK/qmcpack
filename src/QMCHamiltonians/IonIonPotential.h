@@ -94,7 +94,8 @@ namespace qmcplusplus {
       return true;
     }
 
-    QMCHamiltonianBase* clone() {
+    QMCHamiltonianBase* clone(ParticleSet& qp, TrialWaveFunction& psi)
+    {
       return new IonIonPotential(PtclRef);
     }
   };

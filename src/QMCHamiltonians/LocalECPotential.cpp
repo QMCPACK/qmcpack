@@ -22,7 +22,7 @@
 
 namespace qmcplusplus {
 
-  LocalECPotential::LocalECPotential(ParticleSet& ions, ParticleSet& els):
+  LocalECPotential::LocalECPotential(const ParticleSet& ions, ParticleSet& els):
     IonConfig(ions), d_table(0)
   { 
     NumIons=ions.getTotalNum();
@@ -74,6 +74,11 @@ namespace qmcplusplus {
       }
       return Value;
     }
+
+  QMCHamiltonianBase* LocalECPotential::clone(ParticleSet& qp, TrialWaveFunction& psi)
+  {
+    return new LocalECPotential(IonConfig,qp);
+  }
 }
 /***************************************************************************
  * $RCSfile$   $Author$

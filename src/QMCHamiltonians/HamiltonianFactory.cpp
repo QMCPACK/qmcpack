@@ -99,54 +99,104 @@ namespace qmcplusplus {
     cur = cur->children;
     while(cur != NULL) {
       string cname((const char*)cur->name);
-      const xmlChar* t = xmlGetProp(cur,(const xmlChar*)"type");
-      if(t != NULL) { // accept only if it has type
-        string pot_type((const char*)t);
-        string nuclei("i");
-        const xmlChar* sptr = xmlGetProp(cur,(const xmlChar*)"source");
-        if(sptr != NULL) nuclei=(const char*)sptr;
-        if(cname == "pairpot") {
-          if(pot_type == "coulomb") {
-            bool sameTarget=true;
-            string aNewTarget(targetPtcl->getName());
-            const xmlChar* aptr = xmlGetProp(cur,(const xmlChar*)"target");
-            if(aptr != NULL) {
-              aNewTarget=(const char*)aptr;
-              sameTarget= (aNewTarget == targetPtcl->getName());
-            } 
-            if(sameTarget) 
-	      addCoulombPotential(cur);
-            else {
-              app_log() << "  Creating Coulomb potential " << nuclei << "-" << nuclei << endl;
-              addConstCoulombPotential(cur,nuclei);
-            }
-          } else if(pot_type == "pseudo") {
-            addPseudoPotential(cur);
-          } else if(pot_type == "cpp") {
-            addCorePolPotential(cur);
+      string potType("0");
+      string sourceInp(targetPtcl->getName());
+      string targetInp(targetPtcl->getName());
+      OhmmsAttributeSet attrib;
+      attrib.add(sourceInp,"source");
+      attrib.add(targetInp,"target");
+      attrib.add(potType,"type");
+      attrib.put(cur);
+      renameProperty(sourceInp);
+      renameProperty(targetInp);
+      if(cname == "pairpot") 
+      {
+        if(potType == "coulomb") 
+        {
+          if(targetInp == targetPtcl->getName())
+            addCoulombPotential(cur);
+          else {
+            addConstCoulombPotential(cur,sourceInp);
           }
-        } 
-        else if(cname == "harmonic") {
-          PtclPoolType::iterator pit(ptclPool.find(nuclei));
-          if(pit != ptclPool.end()) {
-            ParticleSet* ion=(*pit).second;
-            targetH->addOperator(new HarmonicPotential(*ion, *targetPtcl),"Harmonic");
-            app_log() << "  Adding HarmonicPotential " << endl;
-          }
-        } else if(cname == "constant") { 
-          if(pot_type == "coulomb") { //ugly!!!
-            addConstCoulombPotential(cur,nuclei);
-          }
-        } else if(cname == "modInsKE") {
-          addModInsKE(cur);
+        } else if(potType == "pseudo") {
+          addPseudoPotential(cur);
+        } else if(potType == "cpp") {
+          addCorePolPotential(cur);
         }
+      } 
+      else if(cname == "constant") 
+      { //ugly!!!
+        if(potType == "coulomb")  addConstCoulombPotential(cur,sourceInp);
+      } 
+      else if(cname == "modInsKE") 
+      {
+        addModInsKE(cur);
       }
+      //else if(cname == "harmonic") 
+      //{
+      //  PtclPoolType::iterator pit(ptclPool.find(sourceInp));
+      //  if(pit != ptclPool.end()) 
+      //  {
+      //    ParticleSet* ion=(*pit).second;
+      //    targetH->addOperator(new HarmonicPotential(*ion, *targetPtcl),"Harmonic");
+      //    app_log() << "  Adding HarmonicPotential " << endl;
+      //  }
+      //} 
+
+      //const xmlChar* t = xmlGetProp(cur,(const xmlChar*)"type");
+      //if(t != NULL) { // accept only if it has type
+      //  string pot_type((const char*)t);
+      //  string nuclei("i");
+
+      //  const xmlChar* sptr = xmlGetProp(cur,(const xmlChar*)"source");
+      //  if(sptr != NULL) nuclei=(const char*)sptr;
+      //  renameProperty(nuclei);
+
+      //  if(cname == "pairpot") {
+      //    if(pot_type == "coulomb") {
+      //      bool sameTarget=true;
+      //      string aNewTarget(targetPtcl->getName());
+      //      const xmlChar* aptr = xmlGetProp(cur,(const xmlChar*)"target");
+      //      if(aptr != NULL) {
+      //        aNewTarget=(const char*)aptr;
+      //        renameProperty(aNewTarget);
+      //        sameTarget= (aNewTarget == targetPtcl->getName());
+      //      } 
+      //      cout << "This is most likely problem " << aNewTarget << " " << targetPtcl->getName() << " " << targetPtcl->parent() << endl;
+      //      if(sameTarget) 
+      //        addCoulombPotential(cur);
+      //      else {
+      //        app_log() << "  Creating Coulomb potential " << nuclei << "-" << nuclei << endl;
+      //        addConstCoulombPotential(cur,nuclei);
+      //      }
+      //    } else if(pot_type == "pseudo") {
+      //      addPseudoPotential(cur);
+      //    } else if(pot_type == "cpp") {
+      //      addCorePolPotential(cur);
+      //    }
+      //  } 
+      //  else if(cname == "harmonic") {
+      //    PtclPoolType::iterator pit(ptclPool.find(nuclei));
+      //    if(pit != ptclPool.end()) {
+      //      ParticleSet* ion=(*pit).second;
+      //      targetH->addOperator(new HarmonicPotential(*ion, *targetPtcl),"Harmonic");
+      //      app_log() << "  Adding HarmonicPotential " << endl;
+      //    }
+      //  } else if(cname == "constant") { 
+      //    if(pot_type == "coulomb") { //ugly!!!
+      //      addConstCoulombPotential(cur,nuclei);
+      //    }
+      //  } else if(cname == "modInsKE") {
+      //    addModInsKE(cur);
+      //  }
+      //}
       if(attach2Node) xmlAddChild(myNode,xmlCopyNode(cur,1));
       cur = cur->next;
     }
 
     //This should be disabled
-    if(targetH->size() == 1) {//no external potential is provided, use type
+    if(targetH->size() == 1) 
+    {//no external potential is provided, use type
       WARNMSG("Using pre-determined hamiltonian for molecular systems.")
       PtclPoolType::iterator pit(ptclPool.find(source));
       if(pit == ptclPool.end()) {
@@ -156,10 +206,13 @@ namespace qmcplusplus {
       ParticleSet* ion=(*pit).second;
       if(PBCType) targetH->addOperator(new CoulombPBCAATemp(*targetPtcl),"ElecElec");
       else targetH->addOperator(new CoulombPotentialAA(*targetPtcl),"ElecElec");
-      if(htype == "molecule" || htype=="coulomb"){
+      if(htype == "molecule" || htype=="coulomb")
+      {
         if(PBCType) targetH->addOperator(new CoulombPBCABTemp(*ion,*targetPtcl),"Coulomb");
         else targetH->addOperator(new CoulombPotentialAB(*ion,*targetPtcl),"Coulomb");
-      } else {
+      } 
+      else 
+      {
         ERRORMSG(htype << " is diabled")
       }
       if(ion->getTotalNum()>1) {
@@ -287,6 +340,7 @@ namespace qmcplusplus {
 
   void 
   HamiltonianFactory::addConstCoulombPotential(xmlNodePtr cur, string& nuclei){
+    app_log() << "  Creating Coulomb potential " << nuclei << "-" << nuclei << endl;
     renameProperty(nuclei);
     PtclPoolType::iterator pit(ptclPool.find(nuclei));
     if(pit != ptclPool.end()) {
@@ -425,10 +479,8 @@ namespace qmcplusplus {
 
     aCopy->renameProperty("e",qp->getName());
     aCopy->renameProperty(psiName,psi->getName());
-
     aCopy->build(myNode,false);
     myClones[ip]=aCopy;
-
     aCopy->get(app_log());
     return aCopy;
   }

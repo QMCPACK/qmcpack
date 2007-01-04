@@ -46,7 +46,7 @@ namespace qmcplusplus {
     ///reference to the ionic configuration
     const ParticleSet& IonConfig;
 
-    LocalECPotential(ParticleSet& ions, ParticleSet& els);
+    LocalECPotential(const ParticleSet& ions, ParticleSet& els);
     
     ~LocalECPotential();
 
@@ -64,6 +64,8 @@ namespace qmcplusplus {
       os << "LocalECPotential: " << IonConfig.getName();
       return true;
     }
+
+    QMCHamiltonianBase* clone(ParticleSet& qp, TrialWaveFunction& psi);
 
     /** Add a RadialPotentialType of a species
      * @param groupID index of the ion species

@@ -31,6 +31,7 @@ namespace qmcplusplus {
    */
 
   class DistanceTableData;
+  class TrialWaveFunction;
 
   struct NonLocalData: public QMCTraits {
     IndexType PID;
@@ -101,6 +102,7 @@ namespace qmcplusplus {
      */
     inline bool getMode(int i) { return UpdateMode[i];}
 
+    virtual QMCHamiltonianBase* clone(ParticleSet& qp, TrialWaveFunction& psi)=0;
   };
 }
 #endif

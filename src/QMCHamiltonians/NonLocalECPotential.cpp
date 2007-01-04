@@ -83,6 +83,11 @@ namespace qmcplusplus {
       PPset[groupID]=ppot;
     }
   }
+
+  QMCHamiltonianBase* NonLocalECPotential::clone(ParticleSet& qp, TrialWaveFunction& psi)
+  {
+    return new NonLocalECPotential(IonConfig,qp,psi);
+  }
 }
 /***************************************************************************
  * $RCSfile$   $Author$

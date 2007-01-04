@@ -62,8 +62,6 @@ namespace qmcplusplus {
     inline Return_t 
     evaluate(ParticleSet& P) {
       Value = Dot(P.G,P.G) + Sum(P.L); 
-      //Value = 0.0;
-      //Value=Dot(P.G,P.G)+Sum(P.L);
       return Value*=-OneOver2M;
     }
 
@@ -85,9 +83,11 @@ namespace qmcplusplus {
       return true;
     }
 
-    QMCHamiltonianBase* clone() {
+    QMCHamiltonianBase* clone(ParticleSet& qp, TrialWaveFunction& psi)
+    {
       return new BareKineticEnergy(M);
     }
+
     //Not used anymore
     //void evaluate(WalkerSetRef& W, ValueVectorType& LE) {
     //  for(int iw=0; iw< W.walkers(); iw++) {

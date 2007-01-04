@@ -56,6 +56,8 @@ namespace qmcplusplus {
       return true;
     }
 
+    QMCHamiltonianBase* clone(ParticleSet& qp, TrialWaveFunction& psi);
+
     void add(int groupID, NonLocalECPComponent* pp);
 
   };

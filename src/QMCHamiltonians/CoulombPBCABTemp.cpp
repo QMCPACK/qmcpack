@@ -30,6 +30,11 @@ namespace qmcplusplus {
       LOGMSG("    Done\n");
     }
 
+  QMCHamiltonianBase* CoulombPBCABTemp::clone(ParticleSet& qp, TrialWaveFunction& psi)
+  {
+    return new CoulombPBCABTemp(*PtclA,qp);
+  }
+
   /// copy constructor
   CoulombPBCABTemp::CoulombPBCABTemp(const CoulombPBCABTemp& c): 
     PtclA(c.PtclA),PtclB(c.PtclB),d_ab(c.d_ab), FirstTime(true), myConst(0.0){

@@ -88,6 +88,11 @@ namespace qmcplusplus {
       return true;
     }
 
+    QMCHamiltonianBase* clone(ParticleSet& qp, TrialWaveFunction& psi)
+    {
+      return new HarmonicPotential(sourcePtcl,qp);
+    }
+
   };
 }
 #endif

@@ -121,6 +121,11 @@ namespace qmcplusplus {
       os << "LocalCorePolPotential: " << IonConfig.getName();
       return true;
     }
+
+    QMCHamiltonianBase* clone(ParticleSet& qp, TrialWaveFunction& psi)
+    {
+      return new LocalCorePolPotential(IonConfig,qp);
+    }
     //inline RealType fcpp(RealType z) {
     //  return pow((1.0-exp(-1.0*z*z)),2);
     //}

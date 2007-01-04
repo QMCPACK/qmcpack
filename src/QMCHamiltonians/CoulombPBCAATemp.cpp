@@ -28,9 +28,11 @@ namespace qmcplusplus {
       LOGMSG("    Done\n");
     }
 
+
   /// copy constructor
   CoulombPBCAATemp::CoulombPBCAATemp(const CoulombPBCAATemp& c): 
-    PtclRef(c.PtclRef),d_aa(c.d_aa),myGrid(0),rVs(0), FirstTime(true), myConst(0.0){
+    PtclRef(c.PtclRef),d_aa(c.d_aa),myGrid(0),rVs(0), FirstTime(true), myConst(0.0)
+    {
       AA = new LRHandlerType(*PtclRef);
       initBreakup();
     }
@@ -38,10 +40,16 @@ namespace qmcplusplus {
   CoulombPBCAATemp:: ~CoulombPBCAATemp() { }
 
   void CoulombPBCAATemp::resetTargetParticleSet(ParticleSet& P) {
-    //Update the internal particleref
-    PtclRef = &P;
-    d_aa = DistanceTable::add(P);
-    AA->resetTargetParticleSet(P);
+    if(PtclRef->tag() != P.tag())//only P is different
+    {
+      if(P.parent() == -1 || PtclRef->tag() == P.parent()) 
+      {
+        //Update the internal particleref
+        PtclRef = &P;
+        d_aa = DistanceTable::add(P);
+        AA->resetTargetParticleSet(P);
+      }
+    }
   }
 
   CoulombPBCAATemp::Return_t 
@@ -160,6 +168,12 @@ namespace qmcplusplus {
       app_log() << "   Constant of PBCAA " << Consts << endl;
       return Consts;
     }
+
+    QMCHamiltonianBase* CoulombPBCAATemp::clone(ParticleSet& qp, TrialWaveFunction& psi)
+    {
+      return new CoulombPBCAATemp(qp);
+    }
+
 }
 
 /***************************************************************************
