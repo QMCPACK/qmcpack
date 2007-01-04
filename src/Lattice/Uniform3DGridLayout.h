@@ -96,6 +96,7 @@ public:
    */
   inline void copy(const Uniform3DGridLayout& pl){
     MaxConnections=0;
+    LR_kc=pl.LR_kc;
     LR_dim_cutoff=pl.LR_dim_cutoff;
     Base_t::set(pl);
     Grid_t::makeCopy(pl);
