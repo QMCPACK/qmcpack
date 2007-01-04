@@ -94,6 +94,8 @@ SET (PROJECT_CMAKE ${qmcpack_SOURCE_DIR}/CMake)
 ######################################################
 #COMPILER choose one of the cmake files to customize the compiler options
 #If nothing is chosen, default settings by cmake will  be used.
+#If the automatic detection does not work, comment out everything 
+#upto COMPILER MANUAL SELECTION and use one of the customized cmake file.
 ######################################################
 SET(FOUND_CXXENV 0)
 IF($ENV{CXX} MATCHES "icpc")
@@ -112,6 +114,8 @@ ENDIF($ENV{CXX} MATCHES "xlC")
 IF(NOT FOUND_CXXENV)
   INCLUDE(${PROJECT_CMAKE}/GNUCompilers.cmake)
 ENDIF(NOT FOUND_CXXENV)
+
+#COMPIELR MANUAL SELECTION
 #INCLUDE(${PROJECT_CMAKE}/GNUCompilers.cmake)
 #INCLUDE(${PROJECT_CMAKE}/Intel8.cmake)
 #INCLUDE(${PROJECT_CMAKE}/IBMCompilers.cmake)
