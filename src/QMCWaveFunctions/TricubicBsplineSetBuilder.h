@@ -55,6 +55,12 @@ namespace qmcplusplus {
     SPOSetBase* createSPOSet(xmlNodePtr cur);
 
   private:
+    /** set of StorageType*
+     *
+     * Key is $1#$2 where $1 is the hdf5 file name and $2 is the band indenx
+     */
+    static map<string,StorageType*> BigDataSet;
+    ///boolean to enable debug with EG
     bool DebugWithEG;
     ///if true, grid is open-ended [0,nx) x [0,ny) x [0, nz)
     bool OpenEndGrid;
@@ -67,8 +73,6 @@ namespace qmcplusplus {
     PosType LowerBox;
     PosType UpperBox;
     TinyVector<IndexType,DIM> BoxGrid;
-    ///set of StorageType*
-    map<string,StorageType*> BigDataSet;
     ///set of WFSetType*
     map<string,OrbitalGroupType*> myBasis;
     ///single-particle orbital sets

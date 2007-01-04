@@ -24,6 +24,9 @@
 //#define DEBUG_BSPLINE_EG
 namespace qmcplusplus {
 
+  //initialize the static data member
+  map<string,TricubicBsplineSetBuilder::StorageType*> TricubicBsplineSetBuilder::BigDataSet;
+
   TricubicBsplineSetBuilder::TricubicBsplineSetBuilder(ParticleSet& p, PtclPoolType& psets, xmlNodePtr cur):
     targetPtcl(p),ptclPool(psets),rootNode(cur), LowerBox(0.0),UpperBox(1.0),BoxGrid(2){
       for(int idim=0; idim<DIM; idim++)
@@ -139,7 +142,6 @@ namespace qmcplusplus {
       cur=cur->next;
     }
 
-
     map<string,OrbitalGroupType*>::iterator git(myBasis.find("0"));
     OrbitalGroupType *abasis=0;
     if(git == myBasis.end())
@@ -160,18 +162,18 @@ namespace qmcplusplus {
     char wfname[128],wfshortname[16];
     for(int iorb=0; iorb<norb; iorb++) {
       sprintf(wfname,"%s/%s%d/eigenvector", hroot, myParam->bandTag.c_str(), occSet[iorb]/degeneracy);
-      sprintf(wfshortname,"b%d",occSet[iorb]/degeneracy);
-      StorageType* newP=0;
+      sprintf(wfshortname,"%s#%d",hrefname.c_str(),occSet[iorb]/degeneracy);
       map<string,StorageType*>::iterator it(BigDataSet.find(wfshortname));
       if(it == BigDataSet.end()) {
-        app_log() << "   Reading spline function " << wfname << endl;
-        newP=new StorageType;
+        app_log() << "   Reading spline function " << wfname << " (" << wfshortname  << ")" << endl;
+        StorageType* newP=new StorageType;
         HDFAttribIO<StorageType> dummy(inData);
         dummy.read(h_file,wfname);
         BigDataSet[wfshortname]=newP;
         abasis->add(iorb,inData,newP);
       } else {
-        app_log() << "   Reusing spline function " << wfname << endl;
+        app_log() << "   Reusing spline function " << wfname << " (" << wfshortname  << ")" << endl;
+        abasis->add(iorb,(*it).second);
       }
     } 
 #else
@@ -180,20 +182,19 @@ namespace qmcplusplus {
     char wfname[128],wfshortname[16];
     for(int iorb=0; iorb<norb; iorb++) {
       sprintf(wfname,"%s/%s%d/eigenvector", hroot, myParam->bandTag.c_str(), occSet[iorb]/degeneracy);
-      sprintf(wfshortname,"b%d",occSet[iorb]/degeneracy);
-      StorageType* newP=0;
+      sprintf(wfshortname,"%s#%d",hrefname.c_str(),occSet[iorb]/degeneracy);
       map<string,StorageType*>::iterator it(BigDataSet.find(wfshortname));
       if(it == BigDataSet.end()) {
-        app_log() << "   Reading spline function " << wfname << endl;
-        newP=new StorageType;
+        app_log() << "   Reading spline function " << wfname << " (" << wfshortname  << ")" << endl;
+        StorageType* newP =new StorageType;
         HDFAttribIO<Array<ComplexType,3> > dummy(inTemp);
         dummy.read(h_file,wfname);
-
         BLAS::copy(inTemp.size(),inTemp.data(),inData.data());
         BigDataSet[wfshortname]=newP;
         abasis->add(iorb,inData,newP);
       } else {
-        app_log() << "   Reusing spline function " << wfname << endl;
+        app_log() << "   Reusing spline function " << wfname << " (" << wfshortname  << ")" << endl;
+        abasis->add(iorb,(*it).second);
       }
     } 
 #endif
@@ -245,7 +246,7 @@ namespace qmcplusplus {
       HEGGrid<RealType,OHMMS_DIM> egGrid(targetPtcl.Lattice);
       int nkpts=(nup-1)/2;
 
-      cout << "Number of kpoints " << nkpts << endl;
+      app_log() << "Number of kpoints " << nkpts << endl;
       //create a E(lectron)G(as)O(rbital)Set
       egGrid.createGrid(nc,nkpts);
       RealEGOSet* eg=new RealEGOSet(egGrid.kpt,egGrid.mk2); 
