@@ -20,6 +20,7 @@
 
 #include "QMCWaveFunctions/OrbitalTraits.h"
 #include "Numerics/TricubicBsplineGrid.h"
+#include <map>
 
 namespace qmcplusplus {
 
@@ -74,8 +75,12 @@ namespace qmcplusplus {
     };
 
 
+  /** A group of bspline functions stored in a vector<StorageType*>
+   *
+   * Assume a linear order of the bspline sets.
+   */
   template<typename T>
-    class TricubicBsplineSet
+    class TricubicBsplineVector
     {
       public:
         typedef typename TricubicBsplineTraits<T>::real_type   real_type;
@@ -89,13 +94,13 @@ namespace qmcplusplus {
          * For memory efficiency, reserve DeleteP and P
          * OffSet is set to 1000000. Safe until we can do 1000000 orbitals.
          */
-        TricubicBsplineSet():OffSet(1000000)
+        TricubicBsplineVector():OffSet(1000000)
         { 
           DeleteP.reserve(1024); 
           P.reserve(1024);
         }
 
-        ~TricubicBsplineSet() { 
+        ~TricubicBsplineVector() { 
           for(int i=0; i<DeleteP.size(); i++)
           {
             if(DeleteP[i]) delete P[i];
@@ -111,7 +116,6 @@ namespace qmcplusplus {
         void reset()
         {
         }
-
 
         inline void setGrid(real_type xi, real_type xf, 
             real_type yi, real_type yf, real_type zi, real_type zf, 
@@ -193,6 +197,115 @@ namespace qmcplusplus {
         GridType bKnots;
         std::vector<bool> DeleteP;
         std::vector<StorageType*> P;
+    };
+
+  /** A group of bspline functions stored in a map<int,StorageType*>
+   */
+  template<typename T>
+    class TricubicBsplineSet
+    {
+      public:
+        typedef typename TricubicBsplineTraits<T>::real_type   real_type;
+        typedef typename TricubicBsplineTraits<T>::value_type  value_type;
+        typedef typename TricubicBsplineTraits<T>::PosType     PosType;
+        typedef typename TricubicBsplineTraits<T>::GridType    GridType;
+        typedef typename TricubicBsplineTraits<T>::StorageType StorageType;
+        typedef typename std::map<int,const StorageType*>::iterator  IteratorType;
+
+        /** default constructure
+         */
+        TricubicBsplineSet()
+        { 
+        }
+
+        ~TricubicBsplineSet() { 
+        }
+
+        inline void setGrid(const GridType& knots)
+        {
+          bKnots=knots;
+        }
+
+        ///empty reset
+        void reset()
+        {
+        }
+
+        inline void setGrid(real_type xi, real_type xf, 
+            real_type yi, real_type yf, real_type zi, real_type zf, 
+            int nx, int ny, int nz, 
+            bool interp=true, bool periodic=true,bool openend=true)
+        {
+          bKnots.setGrid(xi,xf,yi,yf,zi,zf,nx,ny,nz,interp,periodic,openend);
+        }
+
+        /** add a orbital
+         * @param i index of the orbital
+         * @param data input data
+         * @param curP interpolated data
+         */
+        void add(int i, const StorageType& data, StorageType* curP)
+        {
+          IteratorType pit(P.find(i));
+          if(pit == P.end())
+          {
+            bKnots.Init(data,*curP);
+            P[i]=curP;
+          }
+        }
+
+        void add(int i, StorageType* curP)
+        {
+          IteratorType pit(P.find(i));
+          if(pit == P.end())
+          {
+            P[i]=curP;
+          }
+        }
+
+        template<typename PV>
+        inline void evaluate(const PosType& r, PV& vals) 
+        {
+          bKnots.Find(r[0],r[1],r[2]);
+          IteratorType pit(P.begin()), pit_end(P.end());
+          while(pit != pit_end)
+          {
+            vals[(*pit).first]=bKnots.evaluate(*((*pit).second));
+            ++pit;
+          }
+        }
+
+        template<typename PV, typename GV>
+        inline void
+          evaluate(const PosType& r, PV& vals, GV& grads, PV& laps)
+          {
+            bKnots.FindAll(r[0],r[1],r[2]);
+            IteratorType pit(P.begin()), pit_end(P.end());
+            while(pit != pit_end)
+            {
+              int j((*pit).first);
+              vals[j]=bKnots.evaluate(*((*pit).second),grads[j],laps[j]);
+              ++pit;
+            }
+          }
+
+        template<typename PM, typename GM>
+        inline void
+          evaluate(const PosType& r, int i, PM& vals, GM& grads, PM& laps)
+          {
+            bKnots.FindAll(r[0],r[1],r[2]);
+            IteratorType pit(P.begin()), pit_end(P.end());
+            while(pit != pit_end)
+            {
+              int j((*pit).first);
+              vals(j,i)=bKnots.evaluate(*((*pit).second),grads(i,j),laps(i,j));
+              ++pit;
+            }
+          }
+
+      private:
+        GridType bKnots;
+        std::map<int,const StorageType*> P;
     };
 }
 
