@@ -70,7 +70,7 @@ public:
   OneDimLinearSpline(const OneDimLinearSpline<Td,Tg,CTd,CTg>& rhs):
     First(rhs.First), Last(rhs.Last), ConstValue(rhs.ConstValue), m_Y1(rhs.m_Y1)
   {
-    m_grid = new LinearGrid;
+    m_grid = new LinearGrid<Tg,CTg>;
     m_grid->set(rhs.r_min,rhs.r_max,rhs.size());
     assign(rhs.m_Y.begin(),rhs.m_Y.end());
   }
