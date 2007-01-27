@@ -106,7 +106,11 @@ namespace qmcplusplus {
       record[popIndex]= wgtinv*walkerControl->getValue(WALKERSIZE_INDEX);
       walkerControl->reset();
       Current=0;
+
+      walkerControl->setEnergyAndVariance(b_average,b_variance);
+
     }
+
   };
 
 }
