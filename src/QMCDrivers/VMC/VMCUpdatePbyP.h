@@ -1,0 +1,74 @@
+//////////////////////////////////////////////////////////////////
+// (c) Copyright 2003- by Jeongnim Kim
+//////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////
+//   Jeongnim Kim
+//   National Center for Supercomputing Applications &
+//   Materials Computation Center
+//   University of Illinois, Urbana-Champaign
+//   Urbana, IL 61801
+//   e-mail: jnkim@ncsa.uiuc.edu
+//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
+//
+// Supported by 
+//   National Center for Supercomputing Applications, UIUC
+//   Materials Computation Center, UIUC
+//////////////////////////////////////////////////////////////////
+// -*- C++ -*-
+#ifndef QMCPLUSPLUS_VMC_PARTICLEBYPARTICLE_UPDATE_H
+#define QMCPLUSPLUS_VMC_PARTICLEBYPARTICLE_UPDATE_H
+#include "QMCDrivers/QMCUpdateBase.h"
+
+namespace qmcplusplus {
+
+  /** @ingroup QMCDrivers  ParticleByParticle
+   *@brief Implements the VMC algorithm using particle-by-particle move. 
+   */
+  class VMCUpdatePbyP: public QMCUpdateBase {
+  public:
+    /// Constructor.
+    VMCUpdatePbyP(ParticleSet& w, TrialWaveFunction& psi, 
+        QMCHamiltonian& h, RandomGenerator_t& rg);
+
+    ~VMCUpdatePbyP();
+
+    void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end);
+ 
+    bool put(xmlNodePtr cur);
+
+  private:
+    ///sub steps
+    int nSubSteps;
+    /// Copy Constructor (disabled)
+    VMCUpdatePbyP(const VMCUpdatePbyP& a): QMCUpdateBase(a) { }
+    /// Copy operator (disabled).
+    VMCUpdatePbyP& operator=(const VMCUpdatePbyP&) { return *this;}
+  };
+
+  /** @ingroup QMCDrivers  ParticleByParticle
+   *@brief Implements the VMC algorithm using particle-by-particle move with the drift equation. 
+   */
+  class VMCUpdatePbyPWithDrift: public QMCUpdateBase {
+  public:
+    /// Constructor.
+    VMCUpdatePbyPWithDrift(ParticleSet& w, TrialWaveFunction& psi, 
+        QMCHamiltonian& h, RandomGenerator_t& rg);
+
+    ~VMCUpdatePbyPWithDrift();
+
+    void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end);
+ 
+  private:
+    /// Copy Constructor (disabled)
+    VMCUpdatePbyPWithDrift(const VMCUpdatePbyPWithDrift& a): QMCUpdateBase(a) { }
+    /// Copy operator (disabled).
+    VMCUpdatePbyPWithDrift& operator=(const VMCUpdatePbyPWithDrift&) { return *this;}
+  };
+}
+
+#endif
+/***************************************************************************
+ * $RCSfile: VMCUpdatePbyP.h,v $   $Author: jnkim $
+ * $Revision: 1.5 $   $Date: 2006/07/17 14:29:40 $
+ * $Id: VMCUpdatePbyP.h,v 1.5 2006/07/17 14:29:40 jnkim Exp $ 
+ ***************************************************************************/
