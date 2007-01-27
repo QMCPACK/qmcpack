@@ -24,17 +24,11 @@
 #include "QMCApp/HamiltonianPool.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCHamiltonians/ConservedEnergy.h"
-#include "QMCDrivers/DummyQMC.h"
-#include "QMCDrivers/VMC.h"
-#include "QMCDrivers/VMCParticleByParticle.h"
+#include "QMCDrivers/VMC/VMCFactory.h"
 #include "QMCDrivers/DMC/DMCFactory.h"
 #include "QMCDrivers/QMCOptimize.h"
-#include "QMCDrivers/VMCMultiple.h"
-#include "QMCDrivers/VMCPbyPMultiple.h"
 #include "QMCDrivers/RQMCMultiple.h"
 #if !defined(QMC_COMPLEX)
-#include "QMCDrivers/VMCMultipleWarp.h"
-#include "QMCDrivers/VMCPbyPMultiWarp.h"
 #include "QMCDrivers/RQMCMultiWarp.h"
 #endif
 #include "QMCDrivers/WaveFunctionTester.h"
@@ -251,21 +245,8 @@ namespace qmcplusplus {
 
     //(SPACEWARP_MODE,MULTIPE_MODE,UPDATE_MODE)
     if(curRunType == VMC_RUN) {
-      if(curQmcMode == 0) {//(0,0,0)
-        qmcDriver = new VMC(*qmcSystem,*primaryPsi,*primaryH);
-      } else if(curQmcMode == 1) {//(0,0,1)
-        qmcDriver = new VMCParticleByParticle(*qmcSystem,*primaryPsi,*primaryH);
-      } else if(curQmcMode == 2) {//(0,1,0)
-        qmcDriver = new VMCMultiple(*qmcSystem,*primaryPsi,*primaryH);
-      } else if(curQmcMode == 3) {//(0,1,1)
-        qmcDriver = new VMCPbyPMultiple(*qmcSystem,*primaryPsi,*primaryH);
-#if !defined(QMC_COMPLEX)
-      } else if(curQmcMode == 6) {//(1,1,0)
-        qmcDriver = new VMCMultipleWarp(*qmcSystem,*primaryPsi,*primaryH, *ptclPool);
-      } else if(curQmcMode == 7) {//(1,1,1)
-        qmcDriver = new VMCPbyPMultiWarp(*qmcSystem,*primaryPsi,*primaryH, *ptclPool);
-#endif
-      }
+      VMCFactory fac(curQmcModeBits[UPDATE_MODE],cur);
+      qmcDriver = fac.create(*qmcSystem,*primaryPsi,*primaryH,*ptclPool,*hamPool);
     } else if(curRunType == DMC_RUN) {
       DMCFactory fac(curQmcModeBits[UPDATE_MODE],cur);
       qmcDriver = fac.create(*qmcSystem,*primaryPsi,*primaryH,*hamPool);

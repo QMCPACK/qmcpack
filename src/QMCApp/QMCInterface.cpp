@@ -29,8 +29,8 @@
 #include "QMCApp/InitMolecularSystem.h"
 #include "Particle/DistanceTable.h"
 #include "QMCDrivers/QMCDriver.h"
-#include "QMCDrivers/VMC.h"
-#include "QMCDrivers/VMCMultiple.h"
+#include "QMCDrivers/VMC/VMC.h"
+#include "QMCDrivers/VMC/VMCMultiple.h"
 #include "QMCDrivers/RQMCMultiple.h"
 #include "Message/Communicate.h"
 #include <queue>
