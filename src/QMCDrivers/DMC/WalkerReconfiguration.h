@@ -62,7 +62,7 @@ namespace qmcplusplus {
 }
 #endif
 /***************************************************************************
- * $RCSfile$   $Author$
+ * $RCSfile: WalkerReconfiguration.h,v $   $Author$
  * $Revision$   $Date$
  * $Id$ 
  ***************************************************************************/

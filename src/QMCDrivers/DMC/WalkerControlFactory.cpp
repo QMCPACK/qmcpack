@@ -108,7 +108,7 @@ namespace qmcplusplus {
 #endif
 }
 /***************************************************************************
- * $RCSfile$   $Author$
+ * $RCSfile: WalkerControlFactory.cpp,v $   $Author$
  * $Revision$   $Date$
  * $Id$ 
  ***************************************************************************/

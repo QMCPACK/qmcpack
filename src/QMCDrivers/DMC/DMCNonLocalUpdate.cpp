@@ -23,7 +23,7 @@ namespace qmcplusplus {
 
   /// Constructor.
   DMCNonLocalUpdate::DMCNonLocalUpdate(ParticleSet& w, TrialWaveFunction& psi, QMCHamiltonian& h,
-      RandomGenerator_t& rg): DMCUpdateBase(w,psi,h,rg)
+      RandomGenerator_t& rg): QMCUpdateBase(w,psi,h,rg)
     { }
   
   /// destructor
@@ -116,7 +116,7 @@ namespace qmcplusplus {
 
   /// Constructor.
   DMCNonLocalUpdatePbyP::DMCNonLocalUpdatePbyP(ParticleSet& w, TrialWaveFunction& psi, QMCHamiltonian& h,
-      RandomGenerator_t& rg): DMCUpdateBase(w,psi,h,rg)
+      RandomGenerator_t& rg): QMCUpdateBase(w,psi,h,rg)
     { }
   
   /// destructor
@@ -239,7 +239,7 @@ namespace qmcplusplus {
 }
 
 /***************************************************************************
- * $RCSfile$   $Author$
+ * $RCSfile: DMCNonLocalUpdate.cpp,v $   $Author$
  * $Revision$   $Date$
  * $Id$ 
  ***************************************************************************/

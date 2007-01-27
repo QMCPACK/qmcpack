@@ -19,10 +19,10 @@
 // -*- C++ -*-
 #ifndef QMCPLUSPLUS_DMC_ALLPARTICLE_UPDATE_H
 #define QMCPLUSPLUS_DMC_ALLPARTICLE_UPDATE_H
-#include "QMCDrivers/DMC/DMCUpdateBase.h"
+#include "QMCDrivers/QMCUpdateBase.h"
 namespace qmcplusplus {
 
-  class DMCUpdateAllWithRejection: public DMCUpdateBase {
+  class DMCUpdateAllWithRejection: public QMCUpdateBase {
 
   public:
 
@@ -36,12 +36,12 @@ namespace qmcplusplus {
     void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end);
   private:
     /// Copy Constructor (disabled)
-    DMCUpdateAllWithRejection(const DMCUpdateAllWithRejection& a): DMCUpdateBase(a){}
+    DMCUpdateAllWithRejection(const DMCUpdateAllWithRejection& a): QMCUpdateBase(a){}
     /// Copy operator (disabled).
     DMCUpdateAllWithRejection& operator=(const DMCUpdateAllWithRejection&) { return *this;}
   };
 
-  class DMCUpdateAllWithKill: public DMCUpdateBase {
+  class DMCUpdateAllWithKill: public QMCUpdateBase {
 
   public:
 
@@ -55,7 +55,7 @@ namespace qmcplusplus {
     void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end);
   private:
     /// Copy Constructor (disabled)
-    DMCUpdateAllWithKill(const DMCUpdateAllWithKill& a): DMCUpdateBase(a){}
+    DMCUpdateAllWithKill(const DMCUpdateAllWithKill& a): QMCUpdateBase(a){}
     /// Copy operator (disabled).
     DMCUpdateAllWithKill& operator=(const DMCUpdateAllWithKill&) { return *this;}
   };
@@ -63,7 +63,7 @@ namespace qmcplusplus {
 
 #endif
 /***************************************************************************
- * $RCSfile$   $Author$
+ * $RCSfile: DMCUpdateAll.h,v $   $Author$
  * $Revision$   $Date$
  * $Id$ 
  ***************************************************************************/

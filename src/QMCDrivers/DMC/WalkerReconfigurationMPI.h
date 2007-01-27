@@ -87,7 +87,7 @@ namespace qmcplusplus {
 }
 #endif
 /***************************************************************************
- * $RCSfile$   $Author$
+ * $RCSfile: WalkerReconfigurationMPI.h,v $   $Author$
  * $Revision$   $Date$
  * $Id$ 
  ***************************************************************************/

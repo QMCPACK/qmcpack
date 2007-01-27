@@ -17,11 +17,11 @@
 // -*- C++ -*-
 #ifndef QMCPLUSPLUS_DMC_NONLOCAL_UPDATE_PARTICLEBYPARTCLE_H
 #define QMCPLUSPLUS_DMC_NONLOCAL_UPDATE_PARTICLEBYPARTCLE_H
-#include "QMCDrivers/DMC/DMCUpdateBase.h"
+#include "QMCDrivers/QMCUpdateBase.h"
 #include "QMCHamiltonians/NonLocalTOperator.h"
 namespace qmcplusplus {
 
-  class DMCNonLocalUpdate: public DMCUpdateBase {
+  class DMCNonLocalUpdate: public QMCUpdateBase {
 
   public:
 
@@ -40,13 +40,13 @@ namespace qmcplusplus {
     NonLocalTOperator nonLocalOps;
 
     /// Copy Constructor (disabled)
-    DMCNonLocalUpdate(const DMCNonLocalUpdate& a): DMCUpdateBase(a){ }
+    DMCNonLocalUpdate(const DMCNonLocalUpdate& a): QMCUpdateBase(a){ }
     /// Copy operator (disabled).
     DMCNonLocalUpdate& operator=(const DMCNonLocalUpdate&) { return *this;}
 
   };
 
-  class DMCNonLocalUpdatePbyP: public DMCUpdateBase {
+  class DMCNonLocalUpdatePbyP: public QMCUpdateBase {
 
   public:
 
@@ -64,7 +64,7 @@ namespace qmcplusplus {
 
     NonLocalTOperator nonLocalOps;
     /// Copy Constructor (disabled)
-    DMCNonLocalUpdatePbyP(const DMCNonLocalUpdatePbyP& a): DMCUpdateBase(a){ }
+    DMCNonLocalUpdatePbyP(const DMCNonLocalUpdatePbyP& a): QMCUpdateBase(a){ }
     /// Copy operator (disabled).
     DMCNonLocalUpdatePbyP& operator=(const DMCNonLocalUpdatePbyP&) { return *this;}
 
@@ -74,7 +74,7 @@ namespace qmcplusplus {
 
 #endif
 /***************************************************************************
- * $RCSfile$   $Author$
+ * $RCSfile: DMCNonLocalUpdate.h,v $   $Author$
  * $Revision$   $Date$
  * $Id$ 
  ***************************************************************************/

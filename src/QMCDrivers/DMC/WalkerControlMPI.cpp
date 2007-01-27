@@ -458,7 +458,7 @@ void WalkerControlMPI::swapWalkersMap(MCWalkerConfiguration& W) {
   */
 }
 /***************************************************************************
- * $RCSfile$   $Author$
+ * $RCSfile: WalkerControlMPI.cpp,v $   $Author$
  * $Revision$   $Date$
  * $Id$ 
  ***************************************************************************/

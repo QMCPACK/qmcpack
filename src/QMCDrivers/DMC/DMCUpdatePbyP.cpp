@@ -30,7 +30,7 @@ namespace qmcplusplus {
 
   /// Constructor.
   DMCUpdatePbyPWithRejection::DMCUpdatePbyPWithRejection(ParticleSet& w, TrialWaveFunction& psi, QMCHamiltonian& h,
-      RandomGenerator_t& rg): DMCUpdateBase(w,psi,h,rg)
+      RandomGenerator_t& rg): QMCUpdateBase(w,psi,h,rg)
     { }
   
   /// destructor
@@ -61,7 +61,7 @@ namespace qmcplusplus {
       Psi.copyFromBuffer(W,w_buffer);
 
       //create a 3N-Dimensional Gaussian with variance=1
-      makeGaussRandom(deltaR);
+      makeGaussRandomWithEngine(deltaR,RandomGen);
       bool notcrossed(true);
       int nAcceptTemp(0);
       int nRejectTemp(0);
@@ -147,7 +147,7 @@ namespace qmcplusplus {
 
   /// Constructor.
   DMCUpdatePbyPWithKill::DMCUpdatePbyPWithKill(ParticleSet& w, TrialWaveFunction& psi, QMCHamiltonian& h,
-      RandomGenerator_t& rg): DMCUpdateBase(w,psi,h,rg)
+      RandomGenerator_t& rg): QMCUpdateBase(w,psi,h,rg)
     { }
   
   /// destructor
@@ -165,7 +165,7 @@ namespace qmcplusplus {
 }
 
 /***************************************************************************
- * $RCSfile$   $Author$
+ * $RCSfile: DMCUpdatePbyP.cpp,v $   $Author$
  * $Revision$   $Date$
  * $Id$ 
  ***************************************************************************/

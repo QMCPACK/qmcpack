@@ -40,7 +40,7 @@ namespace qmcplusplus {
 }
 #endif
 /***************************************************************************
- * $RCSfile$   $Author$
+ * $RCSfile: WalkerControlFactory.h,v $   $Author$
  * $Revision$   $Date$
  * $Id$ 
  ***************************************************************************/

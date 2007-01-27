@@ -60,7 +60,7 @@ namespace qmcplusplus {
 }
 #endif
 /***************************************************************************
- * $RCSfile$   $Author$
+ * $RCSfile: WalkerControlMPI.h,v $   $Author$
  * $Revision$   $Date$
  * $Id$ 
  ***************************************************************************/
