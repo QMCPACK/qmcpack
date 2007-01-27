@@ -8,7 +8,6 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
@@ -16,10 +15,11 @@
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 #include "QMCDrivers/WalkerControlBase.h"
+#include "Particle/HDFWalkerIO.h"
 namespace qmcplusplus {
 
   WalkerControlBase::WalkerControlBase(): 
-  SwapMode(0), Nmin(1), Nmax(10), MaxCopy(10) 
+  SwapMode(0), Nmin(1), Nmax(10), MaxCopy(10), targetEnergyBound(20)
   {
     accumData.resize(LE_MAX);
     curData.resize(LE_MAX);
@@ -53,6 +53,21 @@ namespace qmcplusplus {
     return nw_tot;
   }
 
+  void Write2XYZ(MCWalkerConfiguration& W)
+  {
+    ofstream fout("bad.xyz");
+    MCWalkerConfiguration::iterator it(W.begin());
+    MCWalkerConfiguration::iterator it_end(W.end());
+    int nptcls(W.getTotalNum());
+    while(it != it_end) {
+      fout << nptcls << endl 
+        << "# E = " << (*it)->Properties(LOCALENERGY) 
+        << " Wgt= " << (*it)->Weight << endl;
+      for(int i=0; i<nptcls; i++)
+        fout << "H " << (*it)->R[i] << endl;
+      ++it;
+    }
+  }
 
   /** evaluate curData and mark the bad/good walkers
    */
@@ -64,14 +79,20 @@ namespace qmcplusplus {
     NumWalkers=0;
     MCWalkerConfiguration::iterator it_end(W.end());
     RealType esum=0.0,e2sum=0.0,wsum=0.0,ecum=0.0;
+    RealType sigma=std::max(5.0*targetVar,targetEnergyBound);
+    RealType ebar= targetAvg;
     while(it != it_end) {
-      int nc = std::min(static_cast<int>((*it)->Multiplicity),MaxCopy);
-      RealType wgt((*it)->Weight);
       RealType e((*it)->Properties(LOCALENERGY));
-      esum += wgt*e;
-      e2sum += wgt*e*e;
-      wsum += wgt;
-      ecum += e;
+      int nc=0; 
+      if(fabs(ebar-e) < sigma)//exclude extreme energies 
+      {
+        nc = std::min(static_cast<int>((*it)->Multiplicity),MaxCopy);
+        RealType wgt((*it)->Weight);
+        esum += wgt*e;
+        e2sum += wgt*e*e;
+        wsum += wgt;
+        ecum += e;
+      }
       if(nc) {
         NumWalkers += nc;
         good_w.push_back(*it);
@@ -84,6 +105,20 @@ namespace qmcplusplus {
 
     //temp is an array to perform reduction operations
     std::fill(curData.begin(),curData.end(),0);
+
+    //evaluate variance of this block
+    curVar=(e2sum-esum*esum/wsum)/wsum;
+    if(curVar>sigma) {
+      app_error() << "Unphysical block variance is detected. Stop simulations." << endl;
+      Write2XYZ(W);
+      //Does not work some reason
+      //OHMMS::Controller->abort();
+#if defined(HAVE_MPI)
+      OOMPI_COMM_WORLD.Abort();
+#else
+      abort();
+#endif
+    }
 
     //update curData
     curData[ENERGY_INDEX]=esum;

@@ -85,6 +85,8 @@ namespace qmcplusplus {
       RealType PopControl;
       ///LogJacob
       RealType LogJacobRef;
+      ///TargetEnergyBound
+      RealType TargetEnergyBound;
 
       ///LogNorm
       vector<RealType> LogNorm;
@@ -162,9 +164,8 @@ namespace qmcplusplus {
        * @param iter the iteration
        * @param w the walker ensemble
        * @param clones of the branch engine for OpenMP threads
-       * @return the number of walkers after branching
        */
-      int branch(int iter, MCWalkerConfiguration& w, vector<ThisType*>& clones);
+      void branch(int iter, MCWalkerConfiguration& w, vector<ThisType*>& clones);
 
       /** restart averaging
        * @param counter Counter to determine the cummulative average will be reset.
@@ -196,7 +197,7 @@ namespace qmcplusplus {
 }
 #endif
 /***************************************************************************
- * $RCSfile$   $Author$
+ * $RCSfile: SimpleFixedNodeBranch.h,v $   $Author$
  * $Revision$   $Date$
  * $Id$ 
  ***************************************************************************/

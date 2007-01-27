@@ -97,11 +97,11 @@ namespace qmcplusplus {
    */
   void QMCDriver::process(xmlNodePtr cur) {
 
-    //first-time with this  QMCDriver, clear the buffer so
-    if(MyCounter == 0) { 
-      app_log() << "  Clearing buffer of all the walkers " << endl;
-      W.clearAuxDataSet();
-    }
+    ////first-time with this  QMCDriver, clear the buffer so
+    //if(MyCounter == 0) { 
+    //  app_log() << "  Clearing buffer of all the walkers " << endl;
+    //  W.clearAuxDataSet();
+    //}
 
     deltaR.resize(W.getTotalNum());
     drift.resize(W.getTotalNum());
@@ -214,86 +214,83 @@ namespace qmcplusplus {
    */
   void QMCDriver::initialize() {
 
-
     //For optimization, do nothing
     if(QMCDriverMode[QMC_OPTIMIZE]) return;
 
     //For multiple+particle-by-particle, do nothing
     if(QMCDriverMode[QMC_MULTIPLE] && QMCDriverMode[QMC_UPDATE_MODE]) return;
 
-    if(QMCDriverMode[QMC_UPDATE_MODE]) { //using particle-by-particle moves
-      bool require_register =  W.createAuxDataSet();
-      MCWalkerConfiguration::iterator it(W.begin()),it_end(W.end());
-      if(require_register) {
-        while(it != it_end) {
-          (*it)->DataSet.rewind();
-          W.registerData(**it,(*it)->DataSet);
-          RealType logpsi=Psi.registerData(W,(*it)->DataSet);
+    //if(QMCDriverMode[QMC_UPDATE_MODE]) { //using particle-by-particle moves
+    //  bool require_register =  W.createAuxDataSet();
+    //  MCWalkerConfiguration::iterator it(W.begin()),it_end(W.end());
+    //  if(require_register) {
+    //    while(it != it_end) {
+    //      (*it)->DataSet.rewind();
+    //      W.registerData(**it,(*it)->DataSet);
+    //      RealType logpsi=Psi.registerData(W,(*it)->DataSet);
 
-          //RealType scale=getDriftScale(Tau,W.G);
-          //(*it)->Drift = scale*W.G;
-          setScaledDrift(Tau,W.G,(*it)->Drift);
+    //      //RealType scale=getDriftScale(Tau,W.G);
+    //      //(*it)->Drift = scale*W.G;
+    //      setScaledDrift(Tau,W.G,(*it)->Drift);
 
-          RealType ene = H.evaluate(W);
-          (*it)->resetProperty(logpsi,Psi.getPhase(),ene);
-          H.saveProperty((*it)->getPropertyBase());
-          ++it;
-        } 
-      } else {
-        updateWalkers(); // simply re-evaluate the values 
-      }
-    } else { // using walker-by-walker moves
+    //      RealType ene = H.evaluate(W);
+    //      (*it)->resetProperty(logpsi,Psi.getPhase(),ene);
+    //      H.saveProperty((*it)->getPropertyBase());
+    //      ++it;
+    //    } 
+    //  } else {
+    //    updateWalkers(); // simply re-evaluate the values 
+    //  }
+    //} 
+    //else // using walker-by-walker moves
+    //{ 
+    //  app_log() << "  Evaluate all the walkers before starting for walker-by-walker update" << endl;
 
-      app_log() << "  Evaluate all the walkers before starting for walker-by-walker update" << endl;
+    //  MCWalkerConfiguration::iterator it(W.begin()),it_end(W.end());
+    //  while(it != it_end) {
+    //    W.R = (*it)->R;
+    //    //DistanceTable::update(W);
+    //    W.update();
 
-      MCWalkerConfiguration::iterator it(W.begin()),it_end(W.end());
-      while(it != it_end) {
-        W.R = (*it)->R;
-        //DistanceTable::update(W);
-        W.update();
+    //    RealType logpsi(Psi.evaluateLog(W));
 
-        RealType logpsi(Psi.evaluateLog(W));
+    //    //RealType scale=getDriftScale(Tau,W.G);
+    //    //(*it)->Drift = scale*W.G;
+    //    setScaledDrift(Tau,W.G,(*it)->Drift);
 
-        //RealType scale=getDriftScale(Tau,W.G);
-        //(*it)->Drift = scale*W.G;
-        setScaledDrift(Tau,W.G,(*it)->Drift);
-
-        RealType ene = H.evaluate(W);
-        (*it)->resetProperty(logpsi,Psi.getPhase(),ene);
-        H.saveProperty((*it)->getPropertyBase());
-        ++it;
-      }
-    }
-
+    //    RealType ene = H.evaluate(W);
+    //    (*it)->resetProperty(logpsi,Psi.getPhase(),ene);
+    //    H.saveProperty((*it)->getPropertyBase());
+    //    ++it;
+    //  }
+    //}
   }
-
 
   /** Update walkers
    *
    * Evaluate the properties of all the walkers and update anonyous
    * uffers. Used by particle-by-particle updates.
    */
-  void QMCDriver::updateWalkers() {
+  //void QMCDriver::updateWalkers() {
+  //  MCWalkerConfiguration::iterator it(W.begin()); 
+  //  MCWalkerConfiguration::iterator it_end(W.end()); 
+  //  while(it != it_end) {
+  //    Walker_t& thisWalker(**it);
+  //    Buffer_t& w_buffer(thisWalker.DataSet);
+  //    w_buffer.rewind();
+  //    W.updateBuffer(thisWalker,w_buffer);
+  //    RealType logpsi=Psi.updateBuffer(W,w_buffer);
+  //    RealType enew= H.evaluate(W);
+  //    thisWalker.resetProperty(logpsi,Psi.getPhase(),enew);
+  //    H.saveProperty(thisWalker.getPropertyBase());
+  //    ValueType vsq = Dot(W.G,W.G);
 
-    MCWalkerConfiguration::iterator it(W.begin()); 
-    MCWalkerConfiguration::iterator it_end(W.end()); 
-    while(it != it_end) {
-      Walker_t& thisWalker(**it);
-      Buffer_t& w_buffer(thisWalker.DataSet);
-      w_buffer.rewind();
-      W.updateBuffer(thisWalker,w_buffer);
-      RealType logpsi=Psi.updateBuffer(W,w_buffer);
-      RealType enew= H.evaluate(W);
-      thisWalker.resetProperty(logpsi,Psi.getPhase(),enew);
-      H.saveProperty(thisWalker.getPropertyBase());
-      ValueType vsq = Dot(W.G,W.G);
-
-      setScaledDrift(Tau,W.G,thisWalker.Drift);
-      //ValueType scale = ((-1.0+sqrt(1.0+2.0*Tau*vsq))/vsq);
-      //thisWalker.Drift = scale*W.G;
-      ++it;
-    }
-  }
+  //    setScaledDrift(Tau,W.G,thisWalker.Drift);
+  //    //ValueType scale = ((-1.0+sqrt(1.0+2.0*Tau*vsq))/vsq);
+  //    //thisWalker.Drift = scale*W.G;
+  //    ++it;
+  //  }
+  //}
 
   void QMCDriver::recordBlock(int block) {
 
@@ -500,7 +497,7 @@ namespace qmcplusplus {
 
 
 /***************************************************************************
- * $RCSfile$   $Author$
+ * $RCSfile: QMCDriver.cpp,v $   $Author$
  * $Revision$   $Date$
  * $Id$ 
  ***************************************************************************/

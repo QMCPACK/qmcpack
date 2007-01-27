@@ -45,7 +45,7 @@ namespace qmcplusplus {
     enum {ENERGY_INDEX=0, ENERGY_SQ_INDEX, WALKERSIZE_INDEX, WEIGHT_INDEX, EREF_INDEX, LE_MAX};
 
     ///0 is default
-    int SwapMode;
+    IndexType SwapMode;
     ///minimum number of walkers
     IndexType Nmin;
     ///maximum number of walkers
@@ -54,6 +54,16 @@ namespace qmcplusplus {
     IndexType MaxCopy;
     ///current number of walkers per processor
     IndexType NumWalkers;
+    ///a dummy integer
+    IndexType DummyIndex;
+    ///target average energy
+    RealType targetAvg;
+    ///target average variance
+    RealType targetVar;
+    ///bound of the energy window
+    RealType targetEnergyBound;
+    ///current variance
+    RealType curVar;
     ///any accumulated data over a block
     vector<RealType> accumData;
     ///any temporary data
@@ -87,6 +97,19 @@ namespace qmcplusplus {
       return curData[i];
     }
 
+    /** set the target average and variance
+     */
+    inline void setEnergyAndVariance(RealType e, RealType v) {
+      targetAvg=e;
+      targetVar=v;
+    }
+
+    /** set the target energy bound
+     */
+    inline void setEnergyBound(RealType de) {
+      targetEnergyBound=de;
+    }
+
     /** sort Walkers between good and bad and prepare branching
      */
     void sortWalkers(MCWalkerConfiguration& W);
@@ -106,6 +129,7 @@ namespace qmcplusplus {
     virtual RealType getFeedBackParameter(int ngen, RealType tau) {
       return 1.0/(static_cast<RealType>(ngen)*tau);
     }
+
   };
 
 }

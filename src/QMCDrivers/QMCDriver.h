@@ -82,6 +82,14 @@ namespace qmcplusplus {
     ///return current step
     inline int current() const { return CurrentStep;}
 
+    /** set the update mode
+     * @param pbyp if true, use particle-by-particle update
+     */
+    inline void setUpdateMode(bool pbyp) 
+    {
+      QMCDriverMode[QMC_UPDATE_MODE]=pbyp;
+    }
+
     /** Set the status of the QMCDriver
      * @param aname the root file name
      * @param h5name root name of the master hdf5 file containing previous qmcrun
@@ -273,7 +281,7 @@ namespace qmcplusplus {
 
     void addWalkers(int nwalkers);  
 
-    void updateWalkers();
+    //void updateWalkers();
 
     /** record the state of the block
      * @param block current block
@@ -297,7 +305,7 @@ namespace qmcplusplus {
 
 #endif
 /***************************************************************************
- * $RCSfile$   $Author$
+ * $RCSfile: QMCDriver.h,v $   $Author$
  * $Revision$   $Date$
  * $Id$ 
  ***************************************************************************/

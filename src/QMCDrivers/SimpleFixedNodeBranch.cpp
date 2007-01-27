@@ -30,6 +30,7 @@ SimpleFixedNodeBranch::SimpleFixedNodeBranch(RealType tau, int nideal):
 FixedNumWalkers(false), QMCCounter(-1), SwapMode(0), Counter(0), 
   Nideal(nideal), NumGeneration(50), 
   MaxCopy(-1), Tau(tau), E_T(0.0), EavgSum(0.0), WgtSum(0.0), PopControl(0.1), 
+  TargetEnergyBound(20.0),
   WalkerController(0), MyEstimator(0), SwapWalkers("yes")
 {
   registerParameters();
@@ -61,6 +62,7 @@ void SimpleFixedNodeBranch::registerParameters() {
   m_param.add(PopControl,"swapTrigger","none");
   m_param.add(SwapWalkers,"swapWalkers","string");
   m_param.add(SwapWalkers,"collect","string");
+  m_param.add(TargetEnergyBound,"energyBound","double");
 
   //backward compatability
   m_param.add(E_T,"ref_energy","AU"); m_param.add(E_T,"en_ref","AU");
@@ -85,6 +87,10 @@ void SimpleFixedNodeBranch::initWalkerController(RealType tau, bool fixW) {
         SwapMode, Nideal, Nmax, Nmin, WalkerController,MyEstimator->getCommunicator());
     Nmax=WalkerController->Nmax;
     Nmin=WalkerController->Nmin;
+
+    //assign current E_T and a large number for variance
+    WalkerController->setEnergyAndVariance(E_T,10);
+    WalkerController->setEnergyBound(TargetEnergyBound);
   }
 
   if(fixW) {
@@ -129,8 +135,15 @@ SimpleFixedNodeBranch::branch(int iter, MCWalkerConfiguration& w) {
   }
 }
 
-int SimpleFixedNodeBranch::branch(int iter, MCWalkerConfiguration& w, vector<ThisType*>& clones) {
-  return WalkerController->branch(iter,w,PopControl);
+/** perform branching
+ *
+ * Set the trial energy of clones
+ */
+void 
+SimpleFixedNodeBranch::branch(int iter, MCWalkerConfiguration& w, 
+    vector<ThisType*>& clones) {
+  branch(iter,w);
+  for(int i=0; i<clones.size(); i++) clones[i]->E_T=E_T;
 }
 
 void SimpleFixedNodeBranch::reset() {
@@ -286,7 +299,7 @@ void SimpleFixedNodeBranch::read(const string& fname) {}
 }
 
 /***************************************************************************
- * $RCSfile$   $Author$
+ * $RCSfile: SimpleFixedNodeBranch.cpp,v $   $Author$
  * $Revision$   $Date$
  * $Id$ 
  ***************************************************************************/
