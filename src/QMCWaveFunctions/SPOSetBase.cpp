@@ -18,6 +18,7 @@
 #if defined(HAVE_LIBHDF5)
 #include "Numerics/HDFNumericAttrib.h"
 #endif
+#include "Message/Communicate.h"
 #include <limits>
 
 namespace qmcplusplus {
@@ -62,6 +63,14 @@ namespace qmcplusplus {
       success = putFromH5((const char*)h, coeff_ptr);
     }
     return success;
+  }
+
+  void SPOSetBase::checkObject() {
+    if(!(OrbitalSetSize == C.rows() && BasisSetSize == C.cols()))
+    {
+      app_error() << "   SPOSetBase::checkObject Linear coeffient for SPOSet is not consistent with the input." << endl; 
+      OHMMS::Controller->abort();
+    }
   }
 
   bool SPOSetBase::putOccupation(xmlNodePtr occ_ptr) {

@@ -86,7 +86,7 @@ namespace qmcplusplus {
     void resetTargetParticleSet(ParticleSet& P) { }
 
     ///reset the DistanceTableData (ion-electron)
-    inline void setTable(DistanceTableData* atable) { 
+    inline void setTable(const DistanceTableData* atable) { 
       myTable = atable;
       BasisSetSize=LM.size();
     }

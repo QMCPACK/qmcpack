@@ -78,7 +78,7 @@ namespace qmcplusplus {
     vector<COT*> LOBasisSet;
 
     ///the distance table (ion-electron)
-    DistanceTableData* myTable;
+    const DistanceTableData* myTable;
 
     /** constructor
      * @param ions ionic system

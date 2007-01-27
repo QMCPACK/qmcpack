@@ -109,6 +109,7 @@ namespace qmcplusplus {
       psi = myBasisSetFactory->createSPOSet(cur); 
 #endif
       psi->put(cur);
+      psi->checkObject();
       SPOSet[detname]=psi;
     } else {
       psi = (*lit).second;

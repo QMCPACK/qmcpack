@@ -66,14 +66,12 @@ namespace qmcplusplus {
 
     bool setIdentity(bool useIdentity) {
       Identity=useIdentity;
-      if(Identity) {
-        BasisSetSize=OrbitalSetSize;
-      } else {
-        C.resize(OrbitalSetSize,BasisSetSize);
-        for(int i=0; i<OrbitalSetSize; i++) C(i,i)=1.0;
-      }
+      C.resize(OrbitalSetSize,BasisSetSize);
+      for(int i=0; i<OrbitalSetSize; i++) C(i,i)=1.0;
       return true;
     }
+
+    void checkObject();
 
     ///get C and Occ
     bool put(xmlNodePtr cur);

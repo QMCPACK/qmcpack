@@ -93,7 +93,7 @@ namespace qmcplusplus {
     }
 
     SPOSetBase* createSPOSet(xmlNodePtr cur) {
-      return new LCOrbitalSet<ThisBasisSetType>(thisBasisSet);
+      return new LCOrbitalSet<ThisBasisSetType,false>(thisBasisSet);
     }
 
   private:
