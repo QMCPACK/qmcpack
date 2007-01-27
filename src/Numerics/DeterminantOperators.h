@@ -120,7 +120,7 @@ invert_matrix(MatrixA& M, bool getdet=true) {
   return det0;
 }  
 
-template<class MatA, class Iter>
+template<typename MatA, typename Iter>
 inline
 typename MatA::value_type 
 DetRatio(const MatA& Minv, Iter newrow, int rowchanged) {
@@ -130,7 +130,7 @@ DetRatio(const MatA& Minv, Iter newrow, int rowchanged) {
   return res;
 }
 
-template<class MatA, class Iter>
+template<typename MatA, typename Iter>
 inline
 typename MatA::value_type 
 DetRatioTranspose(const MatA& Minv, Iter newcol, int colchanged) {

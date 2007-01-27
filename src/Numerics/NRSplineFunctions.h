@@ -7,17 +7,15 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_NR_CUBICSPLINE_H
-#define OHMMS_NR_CUBICSPLINE_H
+#ifndef QMCPLUSPLUS_NR_CUBICSPLINE_H
+#define QMCPLUSPLUS_NR_CUBICSPLINE_H
 
-namespace qmcplusplus {
 /**template function: converted from Numerical Recipe spline.c
  *note that the range of data is [0,n) instead of [1,n]
  */
@@ -205,7 +203,52 @@ NRCubicSplineFirst(const Tg* x, const T* y, int n, T* d1, T* d2 ) {
   d2[last]=d2[last1]+hn*d3[last1];
 }
 
-}
+/** Solve Tridiagonal problem
+ */
+template<class CT>
+struct TriDiagSolver
+{
+  static void solve(const CT& a, const CT& b, const CT& c, const CT& d, CT& p, int n)
+  {
+    typedef typename CT::value_type value_type;
+
+    value_type bet;
+    CT gamma(n);
+
+    bet=b[0];
+    p[0]=d[0]/bet;
+
+    for(int j=1; j<n; j++)
+    {
+      gamma[j]=c[j-1]/bet;
+      bet=b[j]-a[j]*gamma[j];
+      p[j]=(d[j]-a[j]*p[j-1])/bet;
+    }
+    for(int j=n-2; j>=0; j--)
+      p[j]=p[j]-gamma[j+1]*p[j+1];
+  }
+
+  //static void check(const CT& a, const CT& b, const CT& c, const CT& d, CT& p, int n)
+  //{
+  //  typedef typename CT::value_type value_type;
+
+  //  qmcplusplus::Matrix<value_type> M(n,n);
+  //  for(int i=0; i<n; i++) M(i,i)=b[i];
+  //  for(int i=0; i<n-1; i++) M(i+1,i)=a[i];
+  //  for(int i=0; i<n-1; i++) M(i,i+1)=c[i];
+
+  //  CT res(n,0.0);
+  //  for(int i=0; i<n; i++)
+  //  {
+  //    value_type s=0;
+  //    for(int j=0; j<n; j++) s += M(i,j)*p[j];
+  //    res[i]=s;
+  //  }
+
+  //  for(int i=0; i<n; i++)
+  //    std::cout << d[i] << " " << res[i] << std::endl;
+  //}
+};
 #endif
 /***************************************************************************
  * $RCSfile$   $Author$

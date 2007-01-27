@@ -24,10 +24,10 @@
 #include <algorithm>
 #include <cmath>
 #include "OhmmsPETE/OhmmsVector.h"
+#include "Numerics/GridTraits.h"
 
 namespace qmcplusplus {
 
-enum {LINEAR_1DGRID, LOG_1DGRID, LOGZERO_1DGRID, CUSTOM_1DGRID};
 
 /** An abstract base class to implement a One-Dimensional grid 
  */

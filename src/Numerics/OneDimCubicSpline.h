@@ -212,6 +212,7 @@ public:
   int Last;
   int Difference;
   point_type Length;
+  point_type Linv;
 
   OneDimCubicSplinePBC(grid_type* gt = 0): base_type(gt){ }
 
@@ -235,15 +236,9 @@ public:
     //If this functor manages the grid, apply periodic boundary condition and
     //update the grid accordingly.
     if(GridManager) {
-      m_grid->locate(r);
-      int Loc(m_grid->currentIndex());
-      if(Loc<First) { 
-        Loc += Difference; r += Length;}
-      else if(Loc > Last) { 
-        Loc -= Difference; r -= Length;
-      }
-      m_grid->Loc=Loc;
-      m_grid->updateFirstOrder(r,false);
+      point_type delta = r-std::floor(r*Linv)*Length;
+      m_grid->locate(delta);
+      m_grid->updateFirstOrder(delta,false);
     }
 
     int Loc(m_grid->Loc);
@@ -266,16 +261,21 @@ public:
   splint(point_type r, value_type& du, value_type& d2u) {
 
     if(GridManager) {
-      m_grid->locate(r);
-      int Loc(m_grid->currentIndex());
-      if(Loc<First) { 
-        Loc += Difference; r += Length;}
-      else if(Loc > Last) { 
-        Loc -= Difference; r -= Length;
-      }
-      m_grid->Loc=Loc;
-      m_grid->updateFirstOrder(r,true);
+      point_type delta = r-std::floor(r*Linv)*Length;
+      m_grid->locate(delta);
+      m_grid->updateFirstOrder(delta,true);
     }
+    //if(GridManager) {
+    //  m_grid->locate(r);
+    //  int Loc(m_grid->currentIndex());
+    //  if(Loc<First) { 
+    //    Loc += Difference; r += Length;}
+    //  else if(Loc > Last) { 
+    //    Loc -= Difference; r -= Length;
+    //  }
+    //  m_grid->Loc=Loc;
+    //  m_grid->updateFirstOrder(r,true);
+    //}
 
     int Loc(m_grid->Loc);
     return 
@@ -291,6 +291,7 @@ public:
     int npts(this->size());
     //Period
     Length = m_grid->rmax()-m_grid->rmin();
+    Linv=1.0/Length;
     Difference=npts-1;
     First=0; 
     Last=Difference-1; 
