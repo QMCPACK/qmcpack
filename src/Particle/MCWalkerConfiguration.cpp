@@ -147,12 +147,17 @@ void MCWalkerConfiguration::reset() {
 
 void MCWalkerConfiguration::clearAuxDataSet() {
   UpdateMode=Update_Particle;
+  int nbytes=128*GlobalNum*sizeof(RealType);//could be pagesize
+  if(WalkerList.size())//check if capacity is bigger than the estimated one
+    nbytes = (WalkerList[0]->DataSet.capacity()>nbytes)?WalkerList[0]->DataSet.capacity():nbytes;
   iterator it(WalkerList.begin());
   iterator it_end(WalkerList.end());
   while(it!=it_end) {
-    (*it)->DataSet.clear(); ++it;
+    (*it)->DataSet.clear(); 
+    (*it)->DataSet.reserve(nbytes);
+    ++it;
   }
-  ReadyForPbyP = false;
+  ReadyForPbyP = true;
 }
 
 bool MCWalkerConfiguration::createAuxDataSet(int nfield) {
