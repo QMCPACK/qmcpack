@@ -158,6 +158,8 @@ namespace qmcplusplus {
 
     bool get(std::ostream& os) const;
 
+    void setRandomGenerator(RandomGenerator_t* rng);
+
    private:
 
     ///Current Local Energy

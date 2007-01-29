@@ -20,7 +20,8 @@
 namespace qmcplusplus {
 
   NonLocalECPComponent::NonLocalECPComponent(): 
-    lmax(0), nchannel(0), nknot(0), Rmax(-1){}
+    lmax(0), nchannel(0), nknot(0), Rmax(-1), myRNG(&Random)
+    {}
 
   NonLocalECPComponent::~NonLocalECPComponent() {
     for(int ip=0; ip<nlpp_m.size(); ip++) delete nlpp_m[ip];

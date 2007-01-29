@@ -60,6 +60,7 @@ namespace qmcplusplus {
 
     void add(int groupID, NonLocalECPComponent* pp);
 
+    void setRandomGenerator(RandomGenerator_t* rng);
   };
 }
 #endif

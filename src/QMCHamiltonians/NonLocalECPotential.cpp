@@ -88,6 +88,16 @@ namespace qmcplusplus {
   {
     return new NonLocalECPotential(IonConfig,qp,psi);
   }
+
+
+  void NonLocalECPotential::setRandomGenerator(RandomGenerator_t* rng)
+  {
+    map<int,NonLocalECPComponent*>::iterator pit(PPset.begin()), pit_end(PPset.end());
+    while(pit != pit_end) {
+      (*pit).second->setRandomGenerator(rng);
+      ++pit;
+    }
+  }
 }
 /***************************************************************************
  * $RCSfile$   $Author$

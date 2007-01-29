@@ -42,6 +42,8 @@ namespace qmcplusplus {
     int nknot;
     ///Maximum cutoff the non-local pseudopotential
     RealType Rmax;
+    ///random number generator
+    RandomGenerator_t* myRNG;
     ///Angular momentum map
     vector<int> angpp_m;
     ///Weight of the angular momentum
@@ -84,11 +86,13 @@ namespace qmcplusplus {
     template <class PA>
       inline void randomize_grid(PA& sphere, bool randomize) {
         if(randomize) {
-          const RealType twopi(6.28318530718);
-          RealType phi(twopi*Random()),psi(twopi*Random()),cth(Random()-0.5),
-                   sph(std::sin(phi)),cph(std::cos(phi)),sth(std::sqrt(1-cth*cth)),sps(std::sin(psi)),
-                   cps(std::cos(psi));
-          Tensor<double,3> rmat( cph*cth*cps-sph*sps, sph*cth*cps+cph*sps,-sth*cps,
+          //const RealType twopi(6.28318530718);
+          //RealType phi(twopi*Random()),psi(twopi*Random()),cth(Random()-0.5),
+          RealType phi(TWOPI*((*myRNG)())), psi(TWOPI*((*myRNG)())), cth(((*myRNG)())-0.5);
+          RealType sph(std::sin(phi)),cph(std::cos(phi)),
+          sth(std::sqrt(1.0-cth*cth)),sps(std::sin(psi)),
+          cps(std::cos(psi));
+          TensorType rmat( cph*cth*cps-sph*sps, sph*cth*cps+cph*sps,-sth*cps,
               -cph*cth*sps-sph*cps,-sph*cth*sps+cph*cps, sth*sps,
               cph*sth,             sph*sth,             cth     );
           SpherGridType::iterator it(sgridxyz_m.begin());
@@ -111,6 +115,11 @@ namespace qmcplusplus {
     evaluate(ParticleSet& W, TrialWaveFunction& Psi,int iat, vector<NonLocalData>& Txy);
 
     void print(std::ostream& os);
+
+    void setRandomGenerator(RandomGenerator_t* rng) 
+    {
+      myRNG=rng;
+    }
 
   }; //end of RadialPotentialSet
 

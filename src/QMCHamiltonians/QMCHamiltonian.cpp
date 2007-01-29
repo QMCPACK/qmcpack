@@ -153,8 +153,15 @@ QMCHamiltonian::getHamiltonian(const string& aname) {
 }
 
 void
-QMCHamiltonian::resetTargetParticleSet(ParticleSet& P) {
+QMCHamiltonian::resetTargetParticleSet(ParticleSet& P) 
+{
   for(int i=0; i<H.size(); i++) H[i]->resetTargetParticleSet(P);
+}
+
+void
+QMCHamiltonian::setRandomGenerator(RandomGenerator_t* rng) 
+{
+  for(int i=0; i<H.size(); i++) H[i]->setRandomGenerator(rng);
 }
 
 //Meant for vectorized operators. Not so helpful.

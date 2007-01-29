@@ -22,6 +22,7 @@
 
 #include "Particle/ParticleSet.h"
 #include "Utilities/PooledData.h"
+#include "Utilities/RandomGenerator.h"
 #include <bitset>
 
 namespace qmcplusplus {
@@ -103,6 +104,11 @@ namespace qmcplusplus {
     inline bool getMode(int i) { return UpdateMode[i];}
 
     virtual QMCHamiltonianBase* clone(ParticleSet& qp, TrialWaveFunction& psi)=0;
+
+    virtual void setRandomGenerator(RandomGenerator_t* rng)
+    {
+      //empty
+    }
   };
 }
 #endif
