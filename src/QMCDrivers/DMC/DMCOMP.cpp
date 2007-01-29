@@ -73,6 +73,7 @@ namespace qmcplusplus {
 
         Rng[ip]=new RandomGenerator_t();
         Rng[ip]->init(ip,NumThreads,-1);
+        hClones[ip]->setRandomGenerator(Rng[ip]);
 
         branchClones[ip] = new BranchEngineType(*branchEngine);
         if(QMCDriverMode[QMC_UPDATE_MODE])
