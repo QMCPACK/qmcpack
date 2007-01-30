@@ -14,13 +14,13 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#include "QMCWaveFunctions/TwoBodyJastrowBuilder.h"
+#include "QMCWaveFunctions/Jastrow/TwoBodyJastrowBuilder.h"
 #include "QMCWaveFunctions/ComboOrbital.h"
-#include "QMCWaveFunctions/PadeConstraints.h"
-#include "QMCWaveFunctions/RPAConstraints.h"
-#include "QMCWaveFunctions/WMConstraints.h"
-#include "QMCWaveFunctions/JAABuilder.h"
-#include "QMCWaveFunctions/NJAABuilder.h"
+#include "QMCWaveFunctions/Jastrow/PadeConstraints.h"
+#include "QMCWaveFunctions/Jastrow/RPAConstraints.h"
+#include "QMCWaveFunctions/Jastrow/WMConstraints.h"
+#include "QMCWaveFunctions/Jastrow/JAABuilder.h"
+#include "QMCWaveFunctions/Jastrow/NJAABuilder.h"
 #include "OhmmsData/AttributeSet.h"
 
 namespace qmcplusplus {

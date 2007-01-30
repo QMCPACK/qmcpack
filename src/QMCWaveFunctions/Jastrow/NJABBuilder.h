@@ -17,7 +17,7 @@
 #ifndef QMCPLUSPLUS_NUMERICAL_JASTROW_AB_BUILDER_H
 #define QMCPLUSPLUS_NUMERICAL_JASTROW_AB_BUILDER_H
 #include "QMCWaveFunctions/OrbitalBuilderBase.h"
-#include "QMCWaveFunctions/NumericalJastrowFunctor.h"
+#include "QMCWaveFunctions/Jastrow/NumericalJastrowFunctor.h"
 
 namespace qmcplusplus {
 

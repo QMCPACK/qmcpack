@@ -16,7 +16,7 @@
 // -*- C++ -*-
 #ifndef QMCPLUSPLUS_NUMERICAL_JASTROWFUNCTIONS_H
 #define QMCPLUSPLUS_NUMERICAL_JASTROWFUNCTIONS_H
-#include "QMCWaveFunctions/JastrowFunctorBase.h"
+#include "QMCWaveFunctions/Jastrow/JastrowFunctorBase.h"
 #include "Numerics/OneDimCubicSpline.h"
 #include "Optimize/VarList.h"
 

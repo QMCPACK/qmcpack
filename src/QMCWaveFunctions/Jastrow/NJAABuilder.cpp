@@ -14,10 +14,10 @@
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 #include "Utilities/OhmmsInfo.h"
-#include "QMCWaveFunctions/NJAABuilder.h"
-#include "QMCWaveFunctions/PadeJastrow.h"
-#include "QMCWaveFunctions/RPAJastrow.h"
-#include "QMCWaveFunctions/TwoBodyJastrowOrbital.h"
+#include "QMCWaveFunctions/Jastrow/NJAABuilder.h"
+#include "QMCWaveFunctions/Jastrow/PadeJastrow.h"
+#include "QMCWaveFunctions/Jastrow/RPAJastrow.h"
+#include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbital.h"
 #include "QMCFactory/OneDimGridFactory.h"
 
 namespace qmcplusplus {

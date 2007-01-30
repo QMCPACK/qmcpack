@@ -16,9 +16,9 @@
 // -*- C++ -*-
 #include "Particle/DistanceTableData.h"
 #include "Particle/DistanceTable.h"
-#include "QMCWaveFunctions/JAABuilder.h"
-#include "QMCWaveFunctions/ModPadeJastrow.h"
-#include "QMCWaveFunctions/TwoBodyJastrowOrbital.h"
+#include "QMCWaveFunctions/Jastrow/JAABuilder.h"
+#include "QMCWaveFunctions/Jastrow/ModPadeJastrow.h"
+#include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbital.h"
 
 namespace qmcplusplus {
 

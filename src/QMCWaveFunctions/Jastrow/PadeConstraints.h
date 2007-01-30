@@ -16,10 +16,10 @@
 // -*- C++ -*-
 #ifndef QMCPLUSPLUS_PADE_COMBO_CONSTRAINTS_H
 #define QMCPLUSPLUS_PADE_COMBO_CONSTRAINTS_H
-#include "QMCWaveFunctions/PadeFunctors.h"
+#include "QMCWaveFunctions/Jastrow/PadeFunctors.h"
 #include "QMCWaveFunctions/OrbitalConstraintsBase.h"
 #include "QMCWaveFunctions/ComboOrbital.h"
-#include "QMCWaveFunctions/NumericalJastrowFunctor.h"
+#include "QMCWaveFunctions/Jastrow/NumericalJastrowFunctor.h"
 
 namespace qmcplusplus {
 

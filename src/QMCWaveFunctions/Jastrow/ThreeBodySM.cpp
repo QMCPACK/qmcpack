@@ -17,7 +17,7 @@
 /**@file ThreeBodySM.cpp
  * @brief Definition of ThreeBodySM.
  */
-#include "QMCWaveFunctions/ThreeBodySM.h"
+#include "QMCWaveFunctions/Jastrow/ThreeBodySM.h"
 
 namespace qmcplusplus {
 

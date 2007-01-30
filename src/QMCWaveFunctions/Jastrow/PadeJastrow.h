@@ -16,7 +16,7 @@
 // -*- C++ -*-
 #ifndef QMCPLUSPLUS_JASTROWFUNCTIONS_H
 #define QMCPLUSPLUS_JASTROWFUNCTIONS_H
-#include "QMCWaveFunctions/JastrowFunctorBase.h"
+#include "QMCWaveFunctions/Jastrow/JastrowFunctorBase.h"
 
 namespace qmcplusplus {
 /** Pade functional of \f[ u(r) = \frac{a*r}{1+b*r} \f]

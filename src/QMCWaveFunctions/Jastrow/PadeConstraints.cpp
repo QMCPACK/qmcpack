@@ -14,9 +14,9 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#include "QMCWaveFunctions/PadeConstraints.h"
-#include "QMCWaveFunctions/TwoBodyJastrowOrbital.h"
-#include "QMCWaveFunctions/OneBodyJastrowFunction.h"
+#include "QMCWaveFunctions/Jastrow/PadeConstraints.h"
+#include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbital.h"
+#include "QMCWaveFunctions/Jastrow/OneBodyJastrowFunction.h"
 #include "Utilities/IteratorUtility.h"
 
 namespace qmcplusplus {

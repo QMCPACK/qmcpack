@@ -19,7 +19,7 @@
  */
 #ifndef QMCPLUSPLUS_PADEFUNCTORS_H
 #define QMCPLUSPLUS_PADEFUNCTORS_H
-#include "QMCWaveFunctions/JastrowFunctorBase.h"
+#include "QMCWaveFunctions/Jastrow/JastrowFunctorBase.h"
 
 namespace qmcplusplus {
 

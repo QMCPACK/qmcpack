@@ -20,7 +20,7 @@
 #ifndef QMCPLUSPLUS_GENERIC_THREEBODYSM_H
 #define QMCPLUSPLUS_GENERIC_THREEBODYSM_H
 #include "QMCWaveFunctions/OrbitalBase.h"
-#include "QMCWaveFunctions/NumericalJastrowFunctor.h"
+#include "QMCWaveFunctions/Jastrow/NumericalJastrowFunctor.h"
 
 namespace qmcplusplus {
   

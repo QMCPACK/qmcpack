@@ -14,8 +14,8 @@
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 #include "Utilities/OhmmsInfo.h"
-#include "QMCWaveFunctions/JAAPBCBuilder.h"
-#include "QMCWaveFunctions/LRTwoBodyJastrow.h"
+#include "QMCWaveFunctions/Jastrow/JAAPBCBuilder.h"
+#include "QMCWaveFunctions/Jastrow/LRTwoBodyJastrow.h"
 #include "LongRange/LRJastrowSingleton.h"
 
 namespace qmcplusplus {

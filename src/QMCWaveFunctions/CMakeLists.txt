@@ -6,17 +6,17 @@ SET(WFBASE_SRCS
   )
 
 SET(JASTROW_SRCS
-  JAABuilder.cpp
-  JABBuilder.cpp
-  NJAABuilder.cpp
-  NJABBuilder.cpp
-  LRTwoBodyJastrow.cpp
-  JAAPBCBuilder.cpp
-  TwoBodyJastrowBuilder.cpp
+  Jastrow/JAABuilder.cpp
+  Jastrow/JABBuilder.cpp
+  Jastrow/NJAABuilder.cpp
+  Jastrow/NJABBuilder.cpp
+  Jastrow/LRTwoBodyJastrow.cpp
+  Jastrow/JAAPBCBuilder.cpp
+  Jastrow/TwoBodyJastrowBuilder.cpp
+  Jastrow/PadeConstraints.cpp
+  Jastrow/RPAConstraints.cpp
+  Jastrow/WMConstraints.cpp
   OrbitalConstraintsBase.cpp
-  PadeConstraints.cpp
-  RPAConstraints.cpp
-  WMConstraints.cpp
   ComboOrbital.cpp
 )
 
@@ -49,14 +49,14 @@ SET(FERMION_SRCS
 
 IF(QMC_COMPLEX)
   SET(FERMION_SRCS ${FERMION_SRCS}
-    ElectronGasComplexOrbitalBuilder.cpp
+    ElectronGas/ElectronGasComplexOrbitalBuilder.cpp
   )
 ELSE(QMC_COMPLEX)
   SET(FERMION_SRCS ${FERMION_SRCS}
-    ElectronGasOrbitalBuilder.cpp
-    ThreeBodyGeminal.cpp
-    ThreeBodyGeminalBuilder.cpp
-    ThreeBodyPadeBuilder.cpp
+    ElectronGas/ElectronGasOrbitalBuilder.cpp
+    Jastrow/ThreeBodyGeminal.cpp
+    Jastrow/ThreeBodyGeminalBuilder.cpp
+    Jastrow/ThreeBodyPadeBuilder.cpp
     AGPDeterminant.cpp
     AGPDeterminantBuilder.cpp
   )

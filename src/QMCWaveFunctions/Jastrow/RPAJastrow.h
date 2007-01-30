@@ -17,7 +17,7 @@
 #ifndef QMCPLUSPLUS_RPAFUNCTION_H
 #define QMCPLUSPLUS_RPAFUNCTION_H
 
-#include "QMCWaveFunctions/JastrowFunctorBase.h"
+#include "QMCWaveFunctions/Jastrow/JastrowFunctorBase.h"
 
 namespace qmcplusplus {
 /** RPA Jastrow functional

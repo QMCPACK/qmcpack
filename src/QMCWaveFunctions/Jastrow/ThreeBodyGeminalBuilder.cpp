@@ -17,10 +17,10 @@
 /**@file ThreeBodyGeminalBuilder.cpp
  *@brief definition of three-body jastrow of Geminal functions
  */
-#include "QMCWaveFunctions/ThreeBodyGeminalBuilder.h"
+#include "QMCWaveFunctions/Jastrow/ThreeBodyGeminalBuilder.h"
 #include "QMCWaveFunctions/MolecularOrbitals/GTOMolecularOrbitals.h"
 //#include "QMCWaveFunctions/MolecularOrbitals/GridMolecularOrbitals.h"
-#include "QMCWaveFunctions/ThreeBodyGeminal.h"
+#include "QMCWaveFunctions/Jastrow/ThreeBodyGeminal.h"
 namespace qmcplusplus {
 
   ThreeBodyGeminalBuilder::ThreeBodyGeminalBuilder(ParticleSet& els, 

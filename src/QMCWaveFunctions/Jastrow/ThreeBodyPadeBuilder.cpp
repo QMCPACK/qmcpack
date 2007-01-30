@@ -17,8 +17,8 @@
 /**@file ThreeBodyPadeBuilder.cpp
  *@brief definition of three-body jastrow of Pade functions
  */
-#include "QMCWaveFunctions/ThreeBodyPadeBuilder.h"
-#include "QMCWaveFunctions/ThreeBodyPade.h"
+#include "QMCWaveFunctions/Jastrow/ThreeBodyPadeBuilder.h"
+#include "QMCWaveFunctions/Jastrow/ThreeBodyPade.h"
 namespace qmcplusplus {
 
   ThreeBodyPadeBuilder::ThreeBodyPadeBuilder(ParticleSet& els, TrialWaveFunction& wfs, ParticleSet& ions):

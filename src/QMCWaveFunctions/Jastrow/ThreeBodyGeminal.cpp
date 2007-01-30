@@ -15,7 +15,7 @@
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 #include "OhmmsPETE/OhmmsMatrix.h"
-#include "QMCWaveFunctions/ThreeBodyGeminal.h"
+#include "QMCWaveFunctions/Jastrow/ThreeBodyGeminal.h"
 #include "Particle/DistanceTable.h"
 #include "Particle/DistanceTableData.h"
 #include "Numerics/DeterminantOperators.h"

@@ -17,7 +17,7 @@
 #ifndef QMCPLUSPLUS_WMFUNCTOR_SM_CONSTRAINTS_H
 #define QMCPLUSPLUS_WMFUNCTOR_SM_CONSTRAINTS_H
 #include "QMCWaveFunctions/OrbitalConstraintsBase.h"
-#include "QMCWaveFunctions/NumericalJastrowFunctor.h"
+#include "QMCWaveFunctions/Jastrow/NumericalJastrowFunctor.h"
 #include "QMCWaveFunctions/ComboOrbital.h"
 
 namespace qmcplusplus {

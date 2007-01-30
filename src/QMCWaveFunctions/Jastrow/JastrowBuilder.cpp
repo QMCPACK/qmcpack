@@ -16,14 +16,14 @@
 #include "Utilities/OhmmsInfo.h"
 #include "Particle/DistanceTableData.h"
 #include "Particle/DistanceTable.h"
-#include "QMCWaveFunctions/JastrowBuilder.h"
-#include "QMCWaveFunctions/PadeJastrow.h"
-#include "QMCWaveFunctions/NoCuspJastrow.h"
-#include "QMCWaveFunctions/OneBodyJastrowFunction.h"
-#include "QMCWaveFunctions/TwoBodyJastrowFunction.h"
-#include "QMCWaveFunctions/PolarizedJastrow.h"
-#include "QMCWaveFunctions/ThreeBodyGeminalBuilder.h"
-#include "QMCWaveFunctions/ThreeBodyPadeBuilder.h"
+#include "QMCWaveFunctions/Jastrow/JastrowBuilder.h"
+#include "QMCWaveFunctions/Jastrow/PadeJastrow.h"
+#include "QMCWaveFunctions/Jastrow/NoCuspJastrow.h"
+#include "QMCWaveFunctions/Jastrow/OneBodyJastrowFunction.h"
+#include "QMCWaveFunctions/Jastrow/TwoBodyJastrowFunction.h"
+#include "QMCWaveFunctions/Jastrow/PolarizedJastrow.h"
+#include "QMCWaveFunctions/Jastrow/ThreeBodyGeminalBuilder.h"
+#include "QMCWaveFunctions/Jastrow/ThreeBodyPadeBuilder.h"
 
 namespace qmcplusplus {
 

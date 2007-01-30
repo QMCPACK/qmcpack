@@ -14,10 +14,10 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#include "QMCWaveFunctions/RPAConstraints.h"
-#include "QMCWaveFunctions/TwoBodyJastrowOrbital.h"
-#include "QMCWaveFunctions/OneBodyJastrowFunction.h"
-#include "QMCWaveFunctions/LRTwoBodyJastrow.h"
+#include "QMCWaveFunctions/Jastrow/RPAConstraints.h"
+#include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbital.h"
+#include "QMCWaveFunctions/Jastrow/OneBodyJastrowFunction.h"
+#include "QMCWaveFunctions/Jastrow/LRTwoBodyJastrow.h"
 #include "Utilities/IteratorUtility.h"
 #include "LongRange/LRJastrowSingleton.h"
 

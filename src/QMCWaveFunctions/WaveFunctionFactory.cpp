@@ -18,22 +18,21 @@
  *@brief Definition of a WaveFunctionFactory 
  */
 #include "QMCWaveFunctions/WaveFunctionFactory.h"
-#include "QMCWaveFunctions/JastrowBuilder.h"
 #include "QMCWaveFunctions/MolecularOrbitals/MolecularOrbitalBuilder.h"
-#include "QMCWaveFunctions/PlaneWaveOrbitalBuilder.h"
-#include "QMCWaveFunctions/JABBuilder.h"
-#include "QMCWaveFunctions/NJABBuilder.h"
-#include "QMCWaveFunctions/JAAPBCBuilder.h"
-#include "QMCWaveFunctions/TwoBodyJastrowBuilder.h"
+#include "QMCWaveFunctions/Jastrow/JastrowBuilder.h"
+#include "QMCWaveFunctions/Jastrow/JABBuilder.h"
+#include "QMCWaveFunctions/Jastrow/NJABBuilder.h"
+#include "QMCWaveFunctions/Jastrow/JAAPBCBuilder.h"
+#include "QMCWaveFunctions/Jastrow/TwoBodyJastrowBuilder.h"
 #include "QMCWaveFunctions/WaveFunctionFactory.h"
 #include "QMCWaveFunctions/Fermion/SlaterDetBuilder.h"
 #include "QMCWaveFunctions/PlaneWave/PWOrbitalBuilder.h"
 #if defined(QMC_COMPLEX)
-#include "QMCWaveFunctions/ElectronGasComplexOrbitalBuilder.h"
+#include "QMCWaveFunctions/ElectronGas/ElectronGasComplexOrbitalBuilder.h"
 #else
-#include "QMCWaveFunctions/ElectronGasOrbitalBuilder.h"
-#include "QMCWaveFunctions/ThreeBodyGeminalBuilder.h"
-#include "QMCWaveFunctions/ThreeBodyPadeBuilder.h"
+#include "QMCWaveFunctions/ElectronGas/ElectronGasOrbitalBuilder.h"
+#include "QMCWaveFunctions/Jastrow/ThreeBodyGeminalBuilder.h"
+#include "QMCWaveFunctions/Jastrow/ThreeBodyPadeBuilder.h"
 #include "QMCWaveFunctions/AGPDeterminantBuilder.h"
 #endif
 #include "OhmmsData/AttributeSet.h"

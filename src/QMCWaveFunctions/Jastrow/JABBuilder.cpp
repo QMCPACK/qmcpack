@@ -16,11 +16,11 @@
 // -*- C++ -*-
 #include "Particle/DistanceTableData.h"
 #include "Particle/DistanceTable.h"
-#include "QMCWaveFunctions/JABBuilder.h"
-#include "QMCWaveFunctions/PadeJastrow.h"
-#include "QMCWaveFunctions/NoCuspJastrow.h"
-#include "QMCWaveFunctions/ModPadeJastrow.h"
-#include "QMCWaveFunctions/OneBodyJastrowFunction.h"
+#include "QMCWaveFunctions/Jastrow/JABBuilder.h"
+#include "QMCWaveFunctions/Jastrow/PadeJastrow.h"
+#include "QMCWaveFunctions/Jastrow/NoCuspJastrow.h"
+#include "QMCWaveFunctions/Jastrow/ModPadeJastrow.h"
+#include "QMCWaveFunctions/Jastrow/OneBodyJastrowFunction.h"
 
 namespace qmcplusplus {
 

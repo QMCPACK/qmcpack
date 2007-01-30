@@ -17,7 +17,7 @@
 #ifndef QMCPLUSPLUS_MODIFIED_PADEFUNCTION_H
 #define QMCPLUSPLUS_MODIFIED_PADEFUNCTION_H
 
-#include "QMCWaveFunctions/JastrowFunctorBase.h"
+#include "QMCWaveFunctions/Jastrow/JastrowFunctorBase.h"
 
 namespace qmcplusplus {
 /** ModPade Jastrow functional
