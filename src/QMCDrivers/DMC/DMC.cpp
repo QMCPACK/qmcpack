@@ -162,6 +162,9 @@ namespace qmcplusplus {
       }
       if(BranchInterval<0) BranchInterval=1;
     }
+    app_log() << "  BranchInterval = " << BranchInterval << endl;
+    app_log() << "  Steps per block = " << nSteps << endl;
+    app_log() << "  Number of blocks = " << nBlocks << endl;
   }
 
   bool DMC::put(xmlNodePtr q){
