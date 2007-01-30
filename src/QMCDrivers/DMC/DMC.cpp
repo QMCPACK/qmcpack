@@ -38,6 +38,7 @@ namespace qmcplusplus {
     m_param.add(KillWalker,"killnode","string");
     m_param.add(BenchMarkRun,"benchmark","string");
     m_param.add(Reconfiguration,"reconfiguration","string");
+    m_param.add(BranchInterval,"branchInterval","string");
 
     Estimators = new ScalarEstimatorManager(H);
     Estimators->add(new DMCEnergyEstimator,"elocal");
