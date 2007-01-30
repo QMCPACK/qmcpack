@@ -16,7 +16,7 @@
 // -*- C++ -*-
 #ifndef QMCPLUSPLUS_JASTROWFUNCTIONS_H
 #define QMCPLUSPLUS_JASTROWFUNCTIONS_H
-#include "QMCWaveFunctions/Jastrow/JastrowFunctorBase.h"
+#include "QMCWaveFunctions/OptimizableFunctorBase.h"
 
 namespace qmcplusplus {
 /** Pade functional of \f[ u(r) = \frac{a*r}{1+b*r} \f]
@@ -24,9 +24,9 @@ namespace qmcplusplus {
  * Prototype of the template parameter of TwoBodyJastrow and OneBodyJastrow
  */
 template<class T>
-struct PadeJastrow:public JastrowFunctorBase<T> {
+struct PadeJastrow:public OptimizableFunctorBase<T> {
 
-  typedef typename JastrowFunctorBase<T>::real_type real_type;
+  typedef typename OptimizableFunctorBase<T>::real_type real_type;
 
   ///coefficients
   real_type A, B, AB, B2;
@@ -130,9 +130,9 @@ struct PadeJastrow:public JastrowFunctorBase<T> {
  * Prototype of the template parameter of TwoBodyJastrow and OneBodyJastrow
  */
 template<class T>
-struct PadeJastrow2:public JastrowFunctorBase<T> {
+struct PadeJastrow2:public OptimizableFunctorBase<T> {
 
-  typedef typename JastrowFunctorBase<T>::real_type real_type;
+  typedef typename OptimizableFunctorBase<T>::real_type real_type;
   ///coefficients
   real_type A, B, C, C2;
 

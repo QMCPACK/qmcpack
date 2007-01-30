@@ -16,7 +16,7 @@
 // -*- C++ -*-
 #ifndef QMCPLUSPLUS_NUMERICAL_JASTROWFUNCTIONS_H
 #define QMCPLUSPLUS_NUMERICAL_JASTROWFUNCTIONS_H
-#include "QMCWaveFunctions/Jastrow/JastrowFunctorBase.h"
+#include "QMCWaveFunctions/OptimizableFunctorBase.h"
 #include "Numerics/OneDimCubicSpline.h"
 #include "Optimize/VarList.h"
 
@@ -56,10 +56,10 @@ namespace qmcplusplus {
    * - TwoBodyJastrow<NumericalJastrow>
    */
   template <class RT>
-    struct NumericalJastrow: public JastrowFunctorBase<RT> {
+    struct NumericalJastrow: public OptimizableFunctorBase<RT> {
 
       ///typedef of the source functor
-      typedef JastrowFunctorBase<RT> FNIN;
+      typedef OptimizableFunctorBase<RT> FNIN;
       ///typedef for the argument
       typedef typename FNIN::real_type real_type;
       ///typedef of the target functor
@@ -108,12 +108,12 @@ namespace qmcplusplus {
         return OutFunc->splint(r);
       }
 
-      /** implement the virtual function of JastrowFunctorBase */
+      /** implement the virtual function of OptimizableFunctorBase */
       real_type f(real_type r) {
         return OutFunc->splint(r);
       }
 
-      /** implement the virtual function of JastrowFunctorBase  */
+      /** implement the virtual function of OptimizableFunctorBase  */
       real_type df(real_type r) {
         real_type dudr,d2udr2;
         OutFunc->splint(r,dudr,d2udr2);
@@ -147,10 +147,10 @@ namespace qmcplusplus {
    * - TwoBodyJastrow<NumericalJastrow>
    */
   template <class RT>
-    struct SplineJastrow: public JastrowFunctorBase<RT> {
+    struct SplineJastrow: public OptimizableFunctorBase<RT> {
 
       ///typedef of the source functor
-      typedef JastrowFunctorBase<RT> FNIN;
+      typedef OptimizableFunctorBase<RT> FNIN;
       ///typedef for the argument
       typedef typename FNIN::real_type real_type;
       ///typedef of the target functor
@@ -201,12 +201,12 @@ namespace qmcplusplus {
         return OutFunc->splint(r);
       }
 
-      /** implement the virtual function of JastrowFunctorBase */
+      /** implement the virtual function of OptimizableFunctorBase */
       real_type f(real_type r) {
         return OutFunc->splint(r);
       }
 
-      /** implement the virtual function of JastrowFunctorBase  */
+      /** implement the virtual function of OptimizableFunctorBase  */
       real_type df(real_type r) {
         real_type dudr,d2udr2;
         OutFunc->splint(r,dudr,d2udr2);

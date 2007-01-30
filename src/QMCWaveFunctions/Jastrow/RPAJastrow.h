@@ -17,7 +17,7 @@
 #ifndef QMCPLUSPLUS_RPAFUNCTION_H
 #define QMCPLUSPLUS_RPAFUNCTION_H
 
-#include "QMCWaveFunctions/Jastrow/JastrowFunctorBase.h"
+#include "QMCWaveFunctions/OptimizableFunctorBase.h"
 
 namespace qmcplusplus {
 /** RPA Jastrow functional
@@ -29,9 +29,9 @@ namespace qmcplusplus {
  * Reformulated by using B=1/F.
  */
 template<class T>
-struct RPAJastrow: public JastrowFunctorBase<T> {
+struct RPAJastrow: public OptimizableFunctorBase<T> {
 
-  typedef typename JastrowFunctorBase<T>::real_type real_type;
+  typedef typename OptimizableFunctorBase<T>::real_type real_type;
 
   bool SameSpin;
 

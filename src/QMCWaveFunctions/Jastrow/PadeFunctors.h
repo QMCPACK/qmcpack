@@ -19,7 +19,7 @@
  */
 #ifndef QMCPLUSPLUS_PADEFUNCTORS_H
 #define QMCPLUSPLUS_PADEFUNCTORS_H
-#include "QMCWaveFunctions/Jastrow/JastrowFunctorBase.h"
+#include "QMCWaveFunctions/OptimizableFunctorBase.h"
 
 namespace qmcplusplus {
 
@@ -28,9 +28,9 @@ namespace qmcplusplus {
    * Similar to PadeJastrow with a scale.
    */
   template<class T>
-    struct PadeFunctor:public JastrowFunctorBase<T> {
+    struct PadeFunctor:public OptimizableFunctorBase<T> {
 
-      typedef typename JastrowFunctorBase<T>::real_type real_type;
+      typedef typename OptimizableFunctorBase<T>::real_type real_type;
 
       ///input A
       real_type A;
@@ -93,9 +93,9 @@ namespace qmcplusplus {
    * Prototype of the template parameter of TwoBodyJastrow and OneBodyJastrow
    */
   template<class T>
-    struct ScaledPadeFunctor:public JastrowFunctorBase<T> {
+    struct ScaledPadeFunctor:public OptimizableFunctorBase<T> {
 
-      typedef typename JastrowFunctorBase<T>::real_type real_type;
+      typedef typename OptimizableFunctorBase<T>::real_type real_type;
 
       ///coefficients
       real_type A, B, C; 

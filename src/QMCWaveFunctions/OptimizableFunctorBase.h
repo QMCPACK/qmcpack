@@ -7,15 +7,17 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef QMCPLUSPLUS_JASTROWFUNCTORBASE_H
-#define QMCPLUSPLUS_JASTROWFUNCTORBASE_H
+/** @file OptimizableFunctorBase.h
+ * @brief Define a base class for one-dimensional functions that can be optimized.
+ */
+#ifndef QMCPLUSPLUS_OPTIMIZABLEFUNCTORBASE_H
+#define QMCPLUSPLUS_OPTIMIZABLEFUNCTORBASE_H
 #include "OhmmsData/libxmldefs.h"
 #include "Optimize/VarList.h"
 #include "QMCWaveFunctions/OrbitalTraits.h"
@@ -28,7 +30,7 @@ namespace qmcplusplus {
 using namespace std;
 
 template<class RT>
-struct JastrowFunctorBase {
+struct OptimizableFunctorBase {
 
   //typedef WFTraits<RT> data_type;
   /////typedef for the argument
@@ -68,7 +70,7 @@ struct JastrowFunctorBase {
   /** Implements a linear combination of any functor
    */
   template<class CT>
-    struct ComboFunctor: public JastrowFunctorBase<typename CT::real_type> {
+    struct ComboFunctor: public OptimizableFunctorBase<typename CT::real_type> {
       typedef typename CT::real_type real_type;
       std::vector<real_type> C;
       std::vector<CT*> Phi;

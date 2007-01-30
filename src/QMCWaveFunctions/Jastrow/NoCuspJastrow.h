@@ -16,7 +16,7 @@
 // -*- C++ -*-
 #ifndef QMCPLUSPLUS_NOCUSPJASTROW_H
 #define QMCPLUSPLUS_NOCUSPJASTROW_H
-#include "QMCWaveFunctions/Jastrow/JastrowFunctorBase.h"
+#include "QMCWaveFunctions/OptimizableFunctorBase.h"
 
 namespace qmcplusplus {
 /**Class NoCusp functional
@@ -24,9 +24,9 @@ namespace qmcplusplus {
  * Prototype of the template parameter of TwoBodyJastrow and OneBodyJastrow
  */
 template<class T>
-struct NoCuspJastrow: public JastrowFunctorBase<T> {
+struct NoCuspJastrow: public OptimizableFunctorBase<T> {
 
-  typedef typename JastrowFunctorBase<T>::real_type real_type;
+  typedef typename OptimizableFunctorBase<T>::real_type real_type;
   ///coefficients
   real_type A, B, AB2;
 

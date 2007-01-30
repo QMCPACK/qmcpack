@@ -75,12 +75,12 @@ namespace qmcplusplus {
   };
 
   template<class T>
-  struct ShortRangePartAdapter : JastrowFunctorBase<T> {
+  struct ShortRangePartAdapter : OptimizableFunctorBase<T> {
   private:
     typedef LRJastrowSingleton::LRHandlerType HandlerType;
     HandlerType* handler;
   public:
-    typedef typename JastrowFunctorBase<T>::real_type real_type;  
+    typedef typename OptimizableFunctorBase<T>::real_type real_type;  
     
     explicit ShortRangePartAdapter(HandlerType* inhandler) {
       handler = inhandler;

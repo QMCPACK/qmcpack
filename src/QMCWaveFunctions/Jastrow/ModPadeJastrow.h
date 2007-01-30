@@ -17,7 +17,7 @@
 #ifndef QMCPLUSPLUS_MODIFIED_PADEFUNCTION_H
 #define QMCPLUSPLUS_MODIFIED_PADEFUNCTION_H
 
-#include "QMCWaveFunctions/Jastrow/JastrowFunctorBase.h"
+#include "QMCWaveFunctions/OptimizableFunctorBase.h"
 
 namespace qmcplusplus {
 /** ModPade Jastrow functional
@@ -25,9 +25,9 @@ namespace qmcplusplus {
  * \f[ u(r) = \frac{1}{2*A}\left[1-\exp(-A*r)\right], \f]
  */
 template<class T>
-struct ModPadeJastrow: public JastrowFunctorBase<T> {
+struct ModPadeJastrow: public OptimizableFunctorBase<T> {
 
-  typedef typename JastrowFunctorBase<T>::real_type real_type;
+  typedef typename OptimizableFunctorBase<T>::real_type real_type;
 
   ///coefficients
   real_type A;
