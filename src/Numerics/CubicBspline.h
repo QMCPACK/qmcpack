@@ -63,9 +63,15 @@ struct CubicBspline: public CubicBsplineGrid<T,GRIDTYPE,BC>
     d3A[0]=-1.0; d3A[1]= 3.0; d3A[2]=-3.0; d3A[3]= 1.0;
   }
 
-  void Init(T start, T end, const container_type& datain, bool closed)
+  void Init(point_type start, point_type end, const container_type& datain, bool closed)
   {
     this->spline(start,end,datain,P,closed);
+  }
+
+  void Init(point_type start, point_type end, const container_type& datain, bool closed,
+      T yp1, T ypn)
+  {
+    this->spline(start,end,yp1,ypn,datain,P);
   }
 
   inline value_type getValue(point_type x)
