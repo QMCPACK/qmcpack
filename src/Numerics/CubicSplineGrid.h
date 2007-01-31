@@ -39,6 +39,11 @@ struct CubicSplineGrid<T,LINEAR_1DGRID,PBC_CONSTRAINTS>
 
   inline CubicSplineGrid(){}
 
+  inline point_type getGridValue(int i)
+  {
+    return GridStart+i*GridDelta;
+  }
+
   /** evaluate i , where \f$x[i] <= xIn < x[i+1]\f$
    * @param xinx input grid point
    * @param i return index
@@ -52,27 +57,29 @@ struct CubicSplineGrid<T,LINEAR_1DGRID,PBC_CONSTRAINTS>
     return delta*GridDeltaInv-i;
   }
 
-  void spline(point_type start, point_type end, 
-      const container_type& datain, container_type& p, container_type& dp, bool closed) 
+  void setGrid(point_type start, point_type end, int n)
   {
-    int N(datain.size());
-    if(closed) N--;
     GridStart=start;
     GridEnd=end;
     L=end-start;
     Linv=1.0/L;
-    GridDelta=L/static_cast<point_type>(N);
+    GridDelta=L/static_cast<point_type>(n);
     GridDeltaInv=1.0/GridDelta;
+  }
+  void spline(point_type start, point_type end, 
+      const container_type& datain, container_type& p, container_type& dp, bool closed) 
+  {
+    int n(datain.size());
+    setGrid(start,end,(closed)?n-1:n);
 
-    p.resize(N+1);
+    p.resize(n);
     std::copy(datain.begin(),datain.end(),p.begin());
-    dp.resize(N+1);
-    container_type gr(N+1),d2p(N+1);
+    dp.resize(n);
+    container_type gr(n),d2p(n);
     //don't forget to include the end point
-    for(int i=0; i<=N; i++) gr[i]=i*GridDelta+GridStart;
-
-    p[N]=p[0];
-    NRCubicSplinePBC(&(gr[0]), &(p[0]),N+1,&(dp[0]),&(d2p[0]));
+    for(int i=0; i<n; i++) gr[i]=i*GridDelta+GridStart;
+    p.back()=p.front();
+    NRCubicSplinePBC(&(gr[0]), &(p[0]),n,&(dp[0]),&(d2p[0]));
   }
 };
 
@@ -109,14 +116,18 @@ struct CubicSplineGrid<T,LINEAR_1DGRID,FIRSTDERIV_CONSTRAINTS>
     return delta*GridDeltaInv-i;
   }
 
-  inline bool checkGrid(point_type xIn, int& i, point_type& dl)
+  inline int checkGrid(point_type xIn, int& i, point_type& dl)
   {
-    if(xIn<GridStart||xIn> GridEnd) return false;
-    point_type delta = xIn - GridStart;
-    delta -= std::floor(delta*Linv)*L;
-    i = static_cast<int>(delta*GridDeltaInv);
-    dl=delta*GridDeltaInv-i;
-    return true;
+    if(xIn>GridStart && xIn<GridEnd) 
+    {
+      point_type delta = xIn - GridStart;
+      delta -= std::floor(delta*Linv)*L;
+      i = static_cast<int>(delta*GridDeltaInv);
+      dl=delta*GridDeltaInv-i;
+      return true;
+    }
+    else
+      return false;
   }
 
   /** set linear grid 

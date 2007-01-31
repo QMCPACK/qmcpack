@@ -180,35 +180,70 @@ public CubicSplineGrid<T,GRIDTYPE,FIRSTDERIV_CONSTRAINTS>
     ConstValue=datain.back();
   }
 
+  //inline value_type splint(point_type x)
+  //{
+  //  if (x>GridEnd) return ConstValue;
+  //  cL = this->getDelta(x,i0); 
+  //  cR = 1.0-cL;
+  //  const point_type onesixth = 1.0/6.0;
+  //  point_type h6(GridDelta*GridDelta*onesixth);
+  //  q1 = cR*(cR*cR-1.0)*h6; //C
+  //  q2 = cL*(cL*cL-1.0)*h6; //D
+  //  return cR*P[i0]+cL*P[i0+1]+q1*d2P[i0]+q2*d2P[i0+1];
+  //}
+
+  //inline value_type splint(point_type x, value_type& dy, value_type& d2y)
+  //{
+  //  if (x>GridEnd)
+  //  {
+  //    dy=0.0;d2y=0.0;
+  //    return ConstValue;
+  //  }
+  //  cL = this->getDelta(x,i0); 
+  //  cR = 1.0-cL;
+  //  const point_type onesixth = 1.0/6.0;
+  //  point_type h6(GridDelta*onesixth);
+  //  q1 = cR*(cR*cR-1.0)*h6*GridDelta; //C
+  //  q2 = cL*(cL*cL-1.0)*h6*GridDelta; //D
+  //  dq1 = h6*(1.0-3.0*cR*cR);
+  //  dq2 = h6*(3.0*cL*cL-1.0);
+
+  //  return interpolate(P[i0],P[i0+1],d2P[i0],d2P[i0+1],dy,d2y);
+  //}
+
   inline value_type splint(point_type x)
   {
-    if (x>GridEnd) return ConstValue;
-    cL = this->getDelta(x,i0); 
-    cR = 1.0-cL;
-    const point_type onesixth = 1.0/6.0;
-    point_type h6(GridDelta*GridDelta*onesixth);
-    q1 = cR*(cR*cR-1.0)*h6; //C
-    q2 = cL*(cL*cL-1.0)*h6; //D
-    return cR*P[i0]+cL*P[i0+1]+q1*d2P[i0]+q2*d2P[i0+1];
+    if(checkGrid(x,i0,cL))
+    {
+      cR = 1.0-cL;
+      const point_type onesixth = 1.0/6.0;
+      point_type h6(GridDelta*GridDelta*onesixth);
+      q1 = cR*(cR*cR-1.0)*h6; //C
+      q2 = cL*(cL*cL-1.0)*h6; //D
+      return cR*P[i0]+cL*P[i0+1]+q1*d2P[i0]+q2*d2P[i0+1];
+    }
+    else
+      return ConstValue;
   }
 
   inline value_type splint(point_type x, value_type& dy, value_type& d2y)
   {
-    if (x>GridEnd)
+    if(checkGrid(x,i0,cL))
+    {
+      cR = 1.0-cL;
+      const point_type onesixth = 1.0/6.0;
+      point_type h6(GridDelta*onesixth);
+      q1 = cR*(cR*cR-1.0)*h6*GridDelta; //C
+      q2 = cL*(cL*cL-1.0)*h6*GridDelta; //D
+      dq1 = h6*(1.0-3.0*cR*cR);
+      dq2 = h6*(3.0*cL*cL-1.0);
+      return interpolate(P[i0],P[i0+1],d2P[i0],d2P[i0+1],dy,d2y);
+    }
+    else
     {
       dy=0.0;d2y=0.0;
       return ConstValue;
     }
-    cL = this->getDelta(x,i0); 
-    cR = 1.0-cL;
-    const point_type onesixth = 1.0/6.0;
-    point_type h6(GridDelta*onesixth);
-    q1 = cR*(cR*cR-1.0)*h6*GridDelta; //C
-    q2 = cL*(cL*cL-1.0)*h6*GridDelta; //D
-    dq1 = h6*(1.0-3.0*cR*cR);
-    dq2 = h6*(3.0*cL*cL-1.0);
-
-    return interpolate(P[i0],P[i0+1],d2P[i0],d2P[i0+1],dy,d2y);
   }
 
   inline value_type interpolate(value_type y1, value_type y2,
