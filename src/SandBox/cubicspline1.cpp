@@ -193,13 +193,6 @@ int main(int argc, char** argv) {
   }
   std::cout << "Cubic spline (only value) " << myTimer.elapsed() << " " << sum << std::endl;
 
-  sum=0.0;
-  myTimer.restart();
-  for(int i=0; i<niter; i++)
-  {
-    sum += borb.splint(Random(), grad, lap);
-  }
-  std::cout << "Cubic Bspline " << myTimer.elapsed() << " " << sum << std::endl;
 
   sum=0.0;
   myTimer.restart();
@@ -225,6 +218,30 @@ int main(int argc, char** argv) {
   }
   std::cout << "New Cubic Spline (only value) " << myTimer.elapsed() << " " << sum << std::endl;
 
+
+  sum=0.0;
+  myTimer.restart();
+  for(int i=0; i<niter; i++)
+  {
+    sum += borb.splint(Random(), grad, lap);
+  }
+  std::cout << "Cubic Bspline " << myTimer.elapsed() << " " << sum << std::endl;
+
+  sum=0.0;
+  myTimer.restart();
+  for(int i=0; i<niter; i++)
+  {
+    sum += infunc.f(Random());
+  }
+  std::cout << "Analytic function (only value) " << myTimer.elapsed() << " " << sum << std::endl;
+
+  sum=0.0;
+  myTimer.restart();
+  for(int i=0; i<niter; i++)
+  {
+    sum += infunc.df(Random());
+  }
+  std::cout << "Analytic function (only gradient) " << myTimer.elapsed() << " " << sum << std::endl;
   /*
   sum=0.0;
   myTimer.restart();

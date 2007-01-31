@@ -21,10 +21,10 @@ TARGET_LINK_LIBRARIES(mpi_group qmc qmcbase qmcutil)
 #TARGET_LINK_LIBRARIES(serialization boost)
 
 ADD_EXECUTABLE(cubicspline cubicspline.cpp)
-TARGET_LINK_LIBRARIES(cubicspline qmc qmcbase qmcutil)
+TARGET_LINK_LIBRARIES(cubicspline qmcbase qmcutil)
 
 ADD_EXECUTABLE(cubicspline1 cubicspline1.cpp)
-TARGET_LINK_LIBRARIES(cubicspline1 qmc qmcbase qmcutil)
+TARGET_LINK_LIBRARIES(cubicspline1 qmcbase qmcutil)
 
 ADD_EXECUTABLE(bspline bspline.cpp)
 TARGET_LINK_LIBRARIES(bspline qmc qmcbase)
