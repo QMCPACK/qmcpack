@@ -91,6 +91,11 @@ struct CubicSplineGrid<T,LINEAR_1DGRID,FIRSTDERIV_CONSTRAINTS>
 
   inline CubicSplineGrid():StartDeriv(0.0),EndDeriv(0.0){}
 
+  inline point_type getGridValue(int i)
+  {
+    return GridStart+i*GridDelta;
+  }
+
   /** evaluate i , where \f$x[i] <= xIn < x[i+1]\f$
    * @param xinx input grid point
    * @param i return index
@@ -114,8 +119,12 @@ struct CubicSplineGrid<T,LINEAR_1DGRID,FIRSTDERIV_CONSTRAINTS>
     return true;
   }
 
-  template<typename GRIDCONTAINER>
-  void setGrid(point_type start, point_type end, int n, GRIDCONTAINER& gr)
+  /** set linear grid 
+   * @param start starting grid point 
+   * @param end ending grid point
+   * @param n number of bins
+   */
+  void setGrid(point_type start, point_type end, int n)
   {
     GridStart=start;
     GridEnd=end;
@@ -123,40 +132,63 @@ struct CubicSplineGrid<T,LINEAR_1DGRID,FIRSTDERIV_CONSTRAINTS>
     GridDeltaInv=1.0/GridDelta;
     L=end-start;
     Linv=1.0/L;
-    for(int i=0; i<=n; i++) 
-      gr[i]=start+static_cast<point_type>(i)*GridDelta;
   }
 
-  void spline(point_type start, point_type end, const container_type& datain, 
-      container_type& p, container_type& d2p, bool closed) 
+  /** spline
+   * @param start starting grid point
+   * @param end ending grid point
+   * @param p data on the grid
+   * @param d2p coefficients for 2nd derivate
+   * @param closed 
+   *
+   * \if closed == true 
+   * p is valid in [start,end].
+   * \else
+   * p is valid in [start,end)
+   */
+  void spline(point_type start, point_type end, container_type& p, container_type& d2p, bool closed) 
   {
-    int n=datain.size();
-    if(closed) n--;
-    std::vector<point_type> gr(n+1);
-    setGrid(start,end,n,gr);
-
-    p.resize(n+1);
-    d2p.resize(n+1,0.0);
-    std::copy(datain.begin(), datain.end(),p.begin());
-    StartDeriv=(datain[1]-datain[0])*GridDeltaInv;
-    EndDeriv=0.0;//cheating
-    NRCubicSpline(&gr[0],&datain[0],n+1,StartDeriv,EndDeriv,&d2p[0]);
+    int n=p.size();
+    setGrid(start,end,(closed)?n-1:n);
+    spline((p[1]-p[0])*GridDeltaInv,0.0,p,d2p);
   }
 
-  void spline(point_type start, point_type end, const container_type& datain,  
-      value_type yp1, value_type ypn,
+  /** spline
+   * @param start starting grid point
+   * @param end ending grid point
+   * @param yp1 first derivative at start
+   * @param ypn first derivative at end
+   * @param p data on the grid
+   * @param d2p coefficients for 2nd derivate
+   * @param closed 
+   *
+   * \if closed == true 
+   * p is valid in [start,end].
+   * \else
+   * p is valid in [start,end)
+   */
+  void spline(point_type start, point_type end, value_type yp1, value_type ypn,
       container_type& p, container_type& d2p, bool closed) 
   {
-    int n=datain.size();
-    if(closed) n--;//odd thing about the grid. 
-    std::vector<point_type> gr(n+1);
-    setGrid(start,end,n,gr);
+    int n=p.size();
+    setGrid(start,end,(closed)?n-1:n);
+    spline(yp1,ypn,p,d2p);
+  }
 
-    p.resize(n+1);
-    d2p.resize(n+1,0.0);
-    std::copy(datain.begin(), datain.end(),p.begin());
-    NRCubicSpline(&gr[0],&datain[0],n+1,StartDeriv,EndDeriv,&d2p[0]);
-    std::cout << "Last point " << p[n] << " " << d2p[n] << std::endl;
+  /** spline
+   * @param yp1 first derivative at start
+   * @param ypn first derivative at end
+   * @param p data on the grid
+   * @param d2p coefficients for 2nd derivate
+   */
+  void spline(value_type yp1, value_type ypn, container_type& p, container_type& d2p)
+  {
+    StartDeriv=yp1;
+    EndDeriv=ypn;
+    int n=p.size();
+    std::vector<point_type> gr(n);
+    for(int i=0; i<n; i++) gr[i]=GridStart+static_cast<point_type>(i)*GridDelta;
+    NRCubicSpline(&gr[0],&p[0],n,StartDeriv,EndDeriv,&d2p[0]);
   }
 };
 

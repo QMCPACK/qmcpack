@@ -165,14 +165,18 @@ public CubicSplineGrid<T,GRIDTYPE,FIRSTDERIV_CONSTRAINTS>
 
   void Init(point_type end, const container_type& datain, bool closed)
   {
-    this->spline(0.0,end,datain,P,d2P,closed);
+    P=datain;
+    d2P.resize(datain.size(),0.0);
+    this->spline(0.0,end,P,d2P,closed);
     ConstValue=datain.back();
   }
 
   void Init(point_type end, const container_type& datain,  bool closed,
       value_type yp1, value_type ypn)
   {
-    this->spline(0.0,end,datain,yp1,ypn,P,d2P,closed);
+    P=datain;
+    d2P.resize(datain.size(),0.0);
+    this->spline(0.0,end,yp1,ypn,P,d2P,closed);
     ConstValue=datain.back();
   }
 
