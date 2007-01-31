@@ -8,6 +8,7 @@
 #include "Numerics/OneDimCubicSpline.h"
 #include "Numerics/CubicBspline.h"
 #include "Numerics/CubicSpline.h"
+#include "Numerics/CubicSplineEngine.h"
 #include "Configuration.h"
 #include "Utilities/RandomGenerator.h"
 #include "Utilities/Timer.h"
@@ -149,7 +150,11 @@ int main(int argc, char** argv) {
 
   CubicSpline<double,0,PBC_CONSTRAINTS> corb;
   corb.Init(ri,rf,inData,closedEnd);
-  infunc.compare(borb,"csnew.dat");
+  infunc.compare(corb,"csnew.dat");
+
+  TestCubicSpline<double,0,PBC_CONSTRAINTS> dorb;
+  dorb.Init(ri,rf,inData,closedEnd);
+  infunc.compare(dorb,"crazy.dat");
 
   int niter=100000000;
   Timer myTimer;
@@ -176,6 +181,14 @@ int main(int argc, char** argv) {
     sum += corb.splint(Random(), grad, lap);
   }
   std::cout << "New Cubic Spline " << myTimer.elapsed() << " " << sum << std::endl;
+
+  sum=0.0;
+  myTimer.restart();
+  for(int i=0; i<niter; i++)
+  {
+    sum += dorb.splint(Random(), grad, lap);
+  }
+  std::cout << "Really New Cubic Spline " << myTimer.elapsed() << " " << sum << std::endl;
 
   return 0;
 }

@@ -8,6 +8,7 @@
 #include "Numerics/OneDimCubicSpline.h"
 #include "Numerics/CubicBspline.h"
 #include "Numerics/CubicSpline.h"
+#include "Numerics/CubicSplineEngine.h"
 #include "Configuration.h"
 #include "Utilities/RandomGenerator.h"
 #include "Utilities/Timer.h"
@@ -102,8 +103,8 @@ struct ComboFunc1 {
     double xL=0.99*Xmax;
     while(x0<xL)
     {
-      //val=aorb.splint(x0, grad, lap);
-      val=aorb.splint(x0);
+      val=aorb.splint(x0, grad, lap);
+      //val=aorb.splint(x0);
       val0=f(x0);
       grad0=df(x0);
       lap0=d2f(x0);
@@ -172,8 +173,11 @@ int main(int argc, char** argv) {
 
   CubicSpline<double,0,FIRSTDERIV_CONSTRAINTS> corb;
   corb.Init(rf,inData,closedEnd,infunc.df(ri),0.0);
-  //borb.Init(ri,rf,inData,closedEnd);
   infunc.compare(corb,"csnew.dat");
+
+  TestCubicSpline<double,0,FIRSTDERIV_CONSTRAINTS> dorb;
+  dorb.Init(ri,rf,inData,closedEnd,infunc.df(ri),0.0);
+  infunc.compare(dorb,"temp.dat");
 
   int niter=100000000;
   Timer myTimer;
