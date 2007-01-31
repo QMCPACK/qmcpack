@@ -66,7 +66,7 @@ int main(int argc, char** argv) {
 
   //Test TriCubicSplineT function
   //Create XYZCubicGrid
-  XYZCubicGrid<double> grid3(&gridX,&gridY,&gridZ);
+  XYZCubicGrid<double,double> grid3(&gridX,&gridY,&gridZ);
   //Create a TriCubicSpline with PBC: have to think more about fixed-boundary conditions
   TriCubicSplineT<double> aorb(&grid3);
 
