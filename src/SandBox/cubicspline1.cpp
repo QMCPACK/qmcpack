@@ -167,17 +167,13 @@ int main(int argc, char** argv) {
 
   bool closedEnd=true;
 
-  //CubicBspline<double,0,FIRSTDERIV_CONSTRAINTS> borb;
-  //corb.Init(rf,inData,closedEnd,infunc.df(ri),0.0);
-  //infunc.compare(borb,"bs.dat");
+  CubicBspline<double,0,FIRSTDERIV_CONSTRAINTS> borb;
+  borb.Init(ri,rf,inData,closedEnd,infunc.df(ri),0.0);
+  infunc.compare(borb,"bs.dat");
 
   CubicSpline<double,0,FIRSTDERIV_CONSTRAINTS> corb;
-  corb.Init(rf,inData,closedEnd,infunc.df(ri),0.0);
+  corb.Init(ri,rf,inData,closedEnd,infunc.df(ri),0.0);
   infunc.compare(corb,"csnew.dat");
-
-  TestCubicSpline<double,0,FIRSTDERIV_CONSTRAINTS> dorb;
-  dorb.Init(ri,rf,inData,closedEnd,infunc.df(ri),0.0);
-  infunc.compare(dorb,"temp.dat");
 
   int niter=100000000;
   Timer myTimer;
@@ -201,7 +197,7 @@ int main(int argc, char** argv) {
   myTimer.restart();
   for(int i=0; i<niter; i++)
   {
-    sum += corb.splint(Random(), grad, lap);
+    sum += borb.splint(Random(), grad, lap);
   }
   std::cout << "Cubic Bspline " << myTimer.elapsed() << " " << sum << std::endl;
 
@@ -209,9 +205,25 @@ int main(int argc, char** argv) {
   myTimer.restart();
   for(int i=0; i<niter; i++)
   {
-    sum += corb.splint(Random());
+    sum += borb.splint(Random());
   }
   std::cout << "Cubic Bspline (only value) " << myTimer.elapsed() << " " << sum << std::endl;
+
+  sum=0.0;
+  myTimer.restart();
+  for(int i=0; i<niter; i++)
+  {
+    sum += corb.splint(Random(), grad, lap);
+  }
+  std::cout << "New Cubic Spline " << myTimer.elapsed() << " " << sum << std::endl;
+
+  sum=0.0;
+  myTimer.restart();
+  for(int i=0; i<niter; i++)
+  {
+    sum += corb.splint(Random());
+  }
+  std::cout << "New Cubic Spline (only value) " << myTimer.elapsed() << " " << sum << std::endl;
 
   /*
   sum=0.0;
