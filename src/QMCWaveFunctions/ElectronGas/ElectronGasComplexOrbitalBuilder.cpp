@@ -14,9 +14,9 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 #include "Utilities/OhmmsInfo.h"
-#include "QMCWaveFunctions/ElectronGasComplexOrbitalBuilder.h"
+#include "QMCWaveFunctions/ElectronGas/ElectronGasComplexOrbitalBuilder.h"
+#include "QMCWaveFunctions/ElectronGas/HEGGrid.h"
 #include "QMCWaveFunctions/SlaterDeterminant.h"
-#include "QMCWaveFunctions/HEGGrid.h"
 
 namespace qmcplusplus {
 

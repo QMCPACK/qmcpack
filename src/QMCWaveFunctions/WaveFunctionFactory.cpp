@@ -144,10 +144,25 @@ namespace qmcplusplus {
   }
 
   bool WaveFunctionFactory::addJastrowTerm(xmlNodePtr cur) {
+    string jasttype("0");
+    string jastname("0");
+    string funcname("0");
 
-    string jasttype((const char*)(xmlGetProp(cur, (const xmlChar *)"type")));
-    string jastname((const char*)(xmlGetProp(cur, (const xmlChar *)"name")));
-    string funcname((const char*)(xmlGetProp(cur, (const xmlChar *)"function")));
+    OhmmsAttributeSet oAttrib;
+    oAttrib.add(jasttype,"type");
+    oAttrib.add(jastname,"name");
+    oAttrib.add(funcname,"function");
+    oAttrib.put(cur);
+
+    if(jasttype[0] == '0')
+    {
+      app_warning() << "  WaveFunctionFactory::addJastrowTerm missing type. Ignore " << jastname << endl;
+      return false;
+    }
+
+    //string jasttype((const char*)(xmlGetProp(cur, (const xmlChar *)"type")));
+    //string jastname((const char*)(xmlGetProp(cur, (const xmlChar *)"name")));
+    //string funcname((const char*)(xmlGetProp(cur, (const xmlChar *)"function")));
     bool useSpline=false;
     const xmlChar* gptr=xmlGetProp(cur,(const xmlChar*)"transform");
     if(gptr != NULL) {
