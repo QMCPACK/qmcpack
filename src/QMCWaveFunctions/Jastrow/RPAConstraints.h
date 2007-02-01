@@ -17,7 +17,6 @@
 #ifndef QMCPLUSPLUS_RPA_COMBO_CONSTRAINTS_H
 #define QMCPLUSPLUS_RPA_COMBO_CONSTRAINTS_H
 #include "QMCWaveFunctions/OrbitalConstraintsBase.h"
-#include "QMCWaveFunctions/Jastrow/NumericalJastrowFunctor.h"
 #include "QMCWaveFunctions/Jastrow/RPAJastrow.h"
 #include "QMCWaveFunctions/ComboOrbital.h"
 #include "LongRange/LRJastrowSingleton.h"
