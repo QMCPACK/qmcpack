@@ -74,7 +74,9 @@ namespace qmcplusplus {
             j2Unique[(const char*)idptr]=j2;
           }
           //initialize
-          j2->put(cur,targetPsi.VarList);
+          j2->put(cur);
+          j2->addOptimizables(targetPsi.VarList);
+          //j2->put(cur,targetPsi.VarList);
           jastrow[iab]= j2;
           if(ia != ib) {//up-down-type pair, treat down-up the same way
             jastrow[ib*ng+ia] = j2;

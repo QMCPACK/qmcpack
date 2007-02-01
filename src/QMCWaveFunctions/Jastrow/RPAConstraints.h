@@ -98,8 +98,9 @@ namespace qmcplusplus {
        
       return handler->srDf(r, 1.0/r);
     }
-    void reset() { ; }
-    void put(xmlNodePtr cur, VarRegistry<real_type>& vlist) { ; }
+    void reset() { }
+    bool put(xmlNodePtr cur) {return true;}
+    void addOptimizables( VarRegistry<real_type>& vlist){}
   };
 
 

@@ -29,6 +29,8 @@ struct NoCuspJastrow: public OptimizableFunctorBase<T> {
   typedef typename OptimizableFunctorBase<T>::real_type real_type;
   ///coefficients
   real_type A, B, AB2;
+  string ID_A;
+  string ID_B;
 
   ///constructor
   NoCuspJastrow(real_type a=1.0, real_type b=1.0) {reset(a,b);}
@@ -80,15 +82,12 @@ struct NoCuspJastrow: public OptimizableFunctorBase<T> {
     return dudr;
   }
 
-  /**@param cur current xmlNode from which the data members are reset
-   @param vlist VarRegistry<T1> to which the Pade variables A and B
-   are added for optimization
-   @brief T1 is the type of VarRegistry, typically double.  Read 
-   in the Pade parameters from the xml input file.
-  */
-  void put(xmlNodePtr cur, VarRegistry<real_type>& vlist){
+  /** implements virtual function
+   * @param cur xml node
+   */
+  bool put(xmlNodePtr cur)
+  {
     real_type Atemp,Btemp;
-    string ida, idb;
     //jastrow[iab]->put(cur->xmlChildrenNode,wfs_ref.RealVars);
     xmlNodePtr tcur = cur->xmlChildrenNode;
     while(tcur != NULL) {
@@ -97,20 +96,24 @@ struct NoCuspJastrow: public OptimizableFunctorBase<T> {
 	string aname((const char*)(xmlGetProp(tcur,(const xmlChar *)"name")));
 	string idname((const char*)(xmlGetProp(tcur,(const xmlChar *)"id")));
 	if(aname == "A") {
-	  ida = idname;
+	  ID_A = idname;
 	  putContent(Atemp,tcur);
 	} else if(aname == "B"){
-	  idb = idname;
+	  ID_B = idname;
 	  putContent(Btemp,tcur);
 	}
       }
       tcur = tcur->next;
     }
     reset(Atemp,Btemp);
-    vlist.add(ida,&A,1);
-    vlist.add(idb,&B,1);
-    LOGMSG("  Jastrow Parameters ")
-    LOGMSG("    A (" << ida << ") = " << A  << "  B (" << idb << ") =  " << B)
+    LOGMSG("  NoCuspJastrow Parameters ")
+    LOGMSG("    A (" << ID_A << ") = " << A  << "  B (" << ID_B << ") =  " << B)
+    return true;
+  }
+
+  void addOptimizables( VarRegistry<real_type>& vlist){
+    vlist.add(ID_A,&A,1);
+    vlist.add(ID_B,&B,1);
   }
 };
 

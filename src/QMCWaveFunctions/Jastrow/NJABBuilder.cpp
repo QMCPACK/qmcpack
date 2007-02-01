@@ -111,7 +111,8 @@ namespace qmcplusplus {
 	  app_log() <<"   Added Jastrow Correlation ("<<jfunctype 
             << ") between " <<spA<<" and "<<targetPtcl.getName() << endl;
 	}
-	InFunc[ia]->put(cur,targetPsi.VarList);
+	InFunc[ia]->put(cur);
+        InFunc[ia]->addOptimizables(targetPsi.VarList);
       }
       cur = cur->next;
     } // while cur

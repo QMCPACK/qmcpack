@@ -30,7 +30,10 @@ struct PadeJastrow:public OptimizableFunctorBase<T> {
 
   ///coefficients
   real_type A, B, AB, B2;
-
+  ///id of A
+  string ID_A;
+  ///id of B
+  string ID_B;
   ///reference to the pade function
   PadeJastrow<T>* RefFunc;
 
@@ -97,9 +100,8 @@ struct PadeJastrow:public OptimizableFunctorBase<T> {
     return dudr;
   }
 
-  void put(xmlNodePtr cur, VarRegistry<real_type>& vlist){
+  bool put(xmlNodePtr cur){
     real_type Atemp,Btemp;
-    string ida, idb;
     //jastrow[iab]->put(cur->xmlChildrenNode,wfs_ref.RealVars);
     xmlNodePtr tcur = cur->xmlChildrenNode;
     while(tcur != NULL) {
@@ -109,19 +111,24 @@ struct PadeJastrow:public OptimizableFunctorBase<T> {
 	string aname((const char*)(xmlGetProp(tcur,(const xmlChar *)"name")));
 	string idname((const char*)(xmlGetProp(tcur,(const xmlChar *)"id")));
 	if(aname == "A") {
-	  ida = idname;
+	  ID_A = idname;
 	  putContent(Atemp,tcur);
 	} else if(aname == "B"){
-	  idb = idname;
+	  ID_B = idname;
 	  putContent(Btemp,tcur);
 	}
       }
       tcur = tcur->next;
     }
     reset(Atemp,Btemp);
-    vlist.add(ida,&A,1);
-    if(RefFunc == 0) vlist.add(idb,&B,1);
     LOGMSG("Jastrow Parameters = (" << A << "," << B << ")")
+    return true;
+  }
+
+  void addOptimizables( VarRegistry<real_type>& vlist)
+  {
+    vlist.add(ID_A,&A,1);
+    if(RefFunc == 0) vlist.add(ID_B,&B,1);
   }
 };
 
@@ -135,6 +142,12 @@ struct PadeJastrow2:public OptimizableFunctorBase<T> {
   typedef typename OptimizableFunctorBase<T>::real_type real_type;
   ///coefficients
   real_type A, B, C, C2;
+  ///id for A
+  string ID_A;
+  ///id for B
+  string ID_B;
+  ///id for C
+  string ID_C;
 
   ///constructor
   PadeJastrow2(real_type a=1.0, real_type b=1.0, real_type c=1.0) {reset(a,b,c);}
@@ -194,14 +207,12 @@ struct PadeJastrow2:public OptimizableFunctorBase<T> {
 
   /** process input xml node
    * @param cur current xmlNode from which the data members are reset
-   * @param vlist VarRegistry<T1> to which the Pade variables A and B are added for optimization
    *
    * T1 is the type of VarRegistry, typically double.  
    * Read in the Pade parameters from the xml input file.
    */
-  void put(xmlNodePtr cur, VarRegistry<real_type>& vlist){
+  bool put(xmlNodePtr cur){
     real_type Atemp,Btemp, Ctemp;
-    string ida, idb, idc;
     //jastrow[iab]->put(cur->xmlChildrenNode,wfs_ref.RealVars);
     xmlNodePtr tcur = cur->xmlChildrenNode;
     while(tcur != NULL) {
@@ -211,23 +222,30 @@ struct PadeJastrow2:public OptimizableFunctorBase<T> {
 	string aname((const char*)(xmlGetProp(tcur,(const xmlChar *)"name")));
 	string idname((const char*)(xmlGetProp(tcur,(const xmlChar *)"id")));
 	if(aname == "A") {
-	  ida = idname;
+	  ID_A = idname;
 	  putContent(Atemp,tcur);
 	} else if(aname == "B"){
-	  idb = idname;
+	  ID_B = idname;
 	  putContent(Btemp,tcur);
 	} else if(aname == "C") {
-	  idc = idname;
+	  ID_C = idname;
 	  putContent(Ctemp,tcur);
 	}
       }
       tcur = tcur->next;
     }
     reset(Atemp,Btemp,Ctemp);
-    vlist.add(ida,&A,1);
-    vlist.add(idb,&B,1);
-    vlist.add(idc,&C,1);
-    XMLReport("Jastrow (A*r+C*r*r)/(1+Br) = (" << A << "," << B << "," << C << ")") 
+    LOGMSG("Jastrow (A*r+C*r*r)/(1+Br) = (" << A << "," << B << "," << C << ")") 
+    return true;
+  }
+
+  /** add optimizable variables to vlist
+   * @param vlist VarRegistry<T1> to which the Pade variables A and B are added for optimization
+   */
+  void addOptimizables( VarRegistry<real_type>& vlist){
+    vlist.add(ID_A,&A,1);
+    vlist.add(ID_B,&B,1);
+    vlist.add(ID_C,&C,1);
   }
 };
 

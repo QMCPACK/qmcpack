@@ -37,6 +37,8 @@ struct ModPadeJastrow: public OptimizableFunctorBase<T> {
   real_type Coeff;
   real_type mAB;
 
+  string ID_B;
+
   /** constructor
    * @param a A coefficient
    * @param samespin boolean to indicate if this function is for parallel spins
@@ -95,31 +97,60 @@ struct ModPadeJastrow: public OptimizableFunctorBase<T> {
    * @param cur current xmlNode from which the data members are reset
    * @param vlist VarRegistry<T1> to which the variable A will be added for optimization
    */
-  void put(xmlNodePtr cur, VarRegistry<real_type>& vlist){
+  //void put(xmlNodePtr cur, VarRegistry<real_type>& vlist){
+  //  Zeff=1.0;
+  //  string idb;
+  //  //jastrow[iab]->put(cur->xmlChildrenNode,wfs_ref.RealVars);
+  //  xmlNodePtr tcur = cur->xmlChildrenNode;
+  //  while(tcur != NULL) {
+  //    //@todo Var -> <param(eter) role="opt"/>
+  //    string cname((const char*)(tcur->name));
+  //    if(cname == "parameter" || cname == "Var") {
+  //      string aname((const char*)(xmlGetProp(tcur,(const xmlChar *)"name")));
+  //      string idname((const char*)(xmlGetProp(tcur,(const xmlChar *)"id")));
+  //      if(aname == "A") {
+  //        putContent(A,tcur);
+  //      } else if(aname == "B") {
+  //        idb = idname;
+  //        putContent(B,tcur);
+  //      } else if(aname == "Z") {
+  //        putContent(Zeff,tcur);
+  //      }
+  //    }
+  //    tcur = tcur->next;
+  //  }
+  //  reset(A,B);
+  //  vlist.add(idb,&A,1);
+  //  XMLReport("Jastrow A/B [1-exp(-B*r)] = (" << A << "," << B << ")") 
+  //}
+  bool put(xmlNodePtr cur){
     Zeff=1.0;
-    string idb;
     //jastrow[iab]->put(cur->xmlChildrenNode,wfs_ref.RealVars);
     xmlNodePtr tcur = cur->xmlChildrenNode;
     while(tcur != NULL) {
       //@todo Var -> <param(eter) role="opt"/>
       string cname((const char*)(tcur->name));
       if(cname == "parameter" || cname == "Var") {
-	string aname((const char*)(xmlGetProp(tcur,(const xmlChar *)"name")));
-	string idname((const char*)(xmlGetProp(tcur,(const xmlChar *)"id")));
-	if(aname == "A") {
-	  putContent(A,tcur);
+        string aname((const char*)(xmlGetProp(tcur,(const xmlChar *)"name")));
+        string idname((const char*)(xmlGetProp(tcur,(const xmlChar *)"id")));
+        if(aname == "A") {
+          putContent(A,tcur);
         } else if(aname == "B") {
-	  idb = idname;
-	  putContent(B,tcur);
-	} else if(aname == "Z") {
-	  putContent(Zeff,tcur);
+          ID_B = idname;
+          putContent(B,tcur);
+        } else if(aname == "Z") {
+          putContent(Zeff,tcur);
         }
       }
       tcur = tcur->next;
     }
     reset(A,B);
-    vlist.add(idb,&A,1);
-    XMLReport("Jastrow A/B [1-exp(-B*r)] = (" << A << "," << B << ")") 
+    return true;
+  }
+
+  void addOptimizables(VarRegistry<real_type>& vlist) 
+  {
+    vlist.add(ID_B,&A,1);
   }
 };
 }

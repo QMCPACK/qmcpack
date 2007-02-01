@@ -85,7 +85,8 @@ namespace qmcplusplus {
         return dudr;
       }
 
-      void put(xmlNodePtr cur, VarRegistry<real_type>& vlist) {}
+      bool put(xmlNodePtr cur) {return true;}
+      void addOptimizables( VarRegistry<real_type>& vlist){}
     };
 
   /** Pade functional of \f[ u(r) = \frac{a*f(r)}{1+b*f(r)} \f] with a scale function f(r)
@@ -161,7 +162,8 @@ namespace qmcplusplus {
         return dudr;
       }
 
-      void put(xmlNodePtr cur, VarRegistry<real_type>& vlist) {}
+      bool put(xmlNodePtr cur) {return true;}
+      void addOptimizables( VarRegistry<real_type>& vlist){}
     };
 }
 #endif

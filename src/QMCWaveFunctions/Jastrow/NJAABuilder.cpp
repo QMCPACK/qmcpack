@@ -83,7 +83,8 @@ namespace qmcplusplus {
         }
 	if(!(InFunc[ia*ng+ib])) {
           InFuncType *j2=createInFunc(jastfunction,ia,ib);
-	  j2->put(cur,targetPsi.VarList);
+	  j2->put(cur);
+          j2->addOptimizables(targetPsi.VarList);
 	  InFunc[ia*ng+ib]= j2;
 	  XMLReport("Added Jastrow Correlation between "<<spA<<" and "<<spB)
 	} else {

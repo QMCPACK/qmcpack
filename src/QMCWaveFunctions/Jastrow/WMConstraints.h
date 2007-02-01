@@ -17,7 +17,7 @@
 #ifndef QMCPLUSPLUS_WMFUNCTOR_SM_CONSTRAINTS_H
 #define QMCPLUSPLUS_WMFUNCTOR_SM_CONSTRAINTS_H
 #include "QMCWaveFunctions/OrbitalConstraintsBase.h"
-#include "QMCWaveFunctions/Jastrow/NumericalJastrowFunctor.h"
+#include "QMCWaveFunctions/Jastrow/CubicFunctors.h"
 #include "QMCWaveFunctions/ComboOrbital.h"
 
 namespace qmcplusplus {
@@ -27,7 +27,7 @@ namespace qmcplusplus {
    * Short-range functor introduced by Wagner and Mitas, cond-mat/0610088
    */
   template<class T>
-    struct WMFunctor {
+    struct WMFunctor: public OptimizableFunctorBase<T> {
       typedef T real_type;
       ///input B
       real_type B0;
@@ -54,22 +54,31 @@ namespace qmcplusplus {
         return -(1+B0)/(1+B0*z)*(1+B0*z)*OneOverRc*12*x*(1-2.0*x+x*x);
       }
 
+      bool put(xmlNodePtr cur);
+
       void addOptimizables(VarRegistry<T>& vlist) {
         vlist.add(ID,&B0,1);
       }
+      //void put(xmlNodePtr cur, VarRegistry<real_type>& vlist)
+      //{
+      //  if(cur != NULL)  put(cur);
+      //  addOptimizables(vlist);
+      //}
+
     };
 
 
 
   struct WMConstraints: public OrbitalConstraintsBase {
+    typedef OptimizableFunctorBase<RealType>  BasisType;
     ///basis type
-    typedef WMFunctor<RealType> BasisType;
+    //typedef WMFunctor<RealType> BasisType;
     ///basis set type
     typedef vector<BasisType*> BasisSetType;
     ///analytic functor
-    typedef ComboFunctor<BasisType> InFuncType;
+    typedef ComboFunctor<RealType> InFuncType;
     ///numerical functor
-    typedef SplineJastrow<RealType> FuncType;
+    typedef CubicSplineJastrow<RealType> FuncType;
     bool IgnoreSpin;
     RealType Rcut;
 

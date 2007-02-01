@@ -60,7 +60,8 @@ namespace qmcplusplus {
 	int ia = sourcePtcl->getSpeciesSet().findSpecies(speciesA);
 	if(!(jastrow[ia])) {
 	  jastrow[ia]= new FN;
-	  jastrow[ia]->put(cur,targetPsi.VarList);
+	  jastrow[ia]->put(cur);
+          jastrow[ia]->addOptimizables(targetPsi.VarList);
 	  LOGMSG("  Added Jastrow Correlation between " << speciesA)
 	}
       }

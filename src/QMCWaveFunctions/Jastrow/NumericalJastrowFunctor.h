@@ -85,11 +85,10 @@ namespace qmcplusplus {
         //reference to the output functions grid
         const typename FNOUT::grid_type& grid = OutFunc->grid();
         //set cutoff function
-        int last=grid.size()-1;
+        int last=grid.size();
         for(int i=0; i<grid.size(); i++) {
           (*OutFunc)(i) = InFunc->f(grid(i))*Rcut(grid(i));
         }
-
         //boundary conditions
         real_type deriv1=InFunc->df(grid(0));
         real_type deriv2=0.0;
@@ -120,8 +119,15 @@ namespace qmcplusplus {
         return dudr;
       }
 
-      void put(xmlNodePtr cur, VarRegistry<real_type>& vlist) {
-        InFunc->put(cur,vlist);
+      //void put(xmlNodePtr cur, VarRegistry<real_type>& vlist) {
+      bool put(xmlNodePtr cur)
+      {
+        return InFunc->put(cur);
+      }
+
+      void addOptimizables(VarRegistry<real_type>& vlist) 
+      {
+        InFunc->addOptimizables(vlist);
       }
 
       void print(ostream& os) {
@@ -213,10 +219,15 @@ namespace qmcplusplus {
         return dudr;
       }
 
-      void put(xmlNodePtr cur, VarRegistry<real_type>& vlist) {
-        InFunc->put(cur,vlist);
+      bool put(xmlNodePtr cur) 
+      {
+        return InFunc->put(cur);
       }
 
+      void addOptimizables( VarRegistry<real_type>& vlist)
+      {
+        InFunc->addOptimizables(vlist);
+      }
       void print(ostream& os) {
         const typename FNOUT::grid_type& grid = OutFunc->grid();
         for(int i=0; i<grid.size(); i++) {

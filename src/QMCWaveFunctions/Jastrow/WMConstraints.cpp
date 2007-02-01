@@ -22,6 +22,14 @@
 
 namespace qmcplusplus {
 
+  template<class T> bool WMFunctor<T>::put(xmlNodePtr cur)
+  {
+    OhmmsAttributeSet rAttrib;
+    rAttrib.add(ID,"id"); //rAttrib.add(a->B0,"b");
+    rAttrib.put(cur);
+    return putContent(B0,cur);
+  }
+
   WMConstraints::~WMConstraints() {
     delete_iter(FuncList.begin(), FuncList.end());
   }
@@ -68,11 +76,9 @@ namespace qmcplusplus {
        while(cur != NULL) {
          string cname((const char*)(cur->name));
          if(cname == "parameter") {
-           BasisType* a=new BasisType(1.0,rcut);
-           OhmmsAttributeSet rAttrib;
-           rAttrib.add(a->ID,"id"); //rAttrib.add(a->B0,"b");
-           rAttrib.put(cur);
-           putContent(a->B0,cur);
+           //BasisType* a=new BasisType(1.0,rcut);
+           WMFunctor<RealType>* a = new WMFunctor<RealType>(1.0,rcut);
+           a->put(cur);
            newBasis->push_back(a);
          }
          cur=cur->next;

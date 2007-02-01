@@ -37,7 +37,8 @@ struct RPAJastrow: public OptimizableFunctorBase<T> {
 
   ///coefficients
   T A, B, AB, ABB;
-
+  ///id of A for optimization
+  string ID_A;
   /** constructor
    * @param a A coefficient
    * @param samespin boolean to indicate if this function is for parallel spins
@@ -113,9 +114,8 @@ struct RPAJastrow: public OptimizableFunctorBase<T> {
    @param cur current xmlNode from which the data members are reset
    @param vlist VarRegistry<T1> to which the variable A will be added for optimization
   */
-  void put(xmlNodePtr cur, VarRegistry<T>& vlist){
+  bool put(xmlNodePtr cur){
     T Atemp=-100;
-    string ida;
     //jastrow[iab]->put(cur->xmlChildrenNode,wfs_ref.RealVars);
     xmlNodePtr tcur = cur->xmlChildrenNode;
     while(tcur != NULL) {
@@ -125,7 +125,7 @@ struct RPAJastrow: public OptimizableFunctorBase<T> {
 	string aname((const char*)(xmlGetProp(tcur,(const xmlChar *)"name")));
 	string idname((const char*)(xmlGetProp(tcur,(const xmlChar *)"id")));
 	if(aname == "A") {
-	  ida = idname;
+	  ID_A = idname;
 	  putContent(Atemp,tcur);
 	} 
       }
@@ -133,8 +133,13 @@ struct RPAJastrow: public OptimizableFunctorBase<T> {
     }
     //only if Atemp is given
     if(Atemp>0) reset(Atemp);
-    vlist.add(ida,&A,1);
     app_log() << "  RPA Jastrow A/r[1-exp(-r/F)] = (" << A << "," << 1.0/B << ")" << std::endl;
+    return true;
+  }
+
+  void addOptimizables( VarRegistry<real_type>& vlist)
+  {
+    vlist.add(ID_A,&A,1);
   }
 };
 }
