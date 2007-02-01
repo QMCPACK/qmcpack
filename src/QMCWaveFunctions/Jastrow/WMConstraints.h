@@ -51,7 +51,7 @@ namespace qmcplusplus {
       inline real_type df(real_type r) {
         real_type x=r*OneOverRc;
         real_type z=x*x*(6.0-8*x+3.0*x*x);
-        return -(1+B0)/(1+B0*z)*(1+B0*z)*OneOverRc*12*x*(1-2.0*x+x*x);
+        return -(1+B0)/(1+B0*z)/(1+B0*z)*OneOverRc*12*x*(1-2.0*x+x*x);
       }
 
       bool put(xmlNodePtr cur);
