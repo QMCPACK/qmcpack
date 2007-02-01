@@ -17,7 +17,7 @@
 #ifndef QMCPLUSPLUS_WMFUNCTOR_SM_CONSTRAINTS_H
 #define QMCPLUSPLUS_WMFUNCTOR_SM_CONSTRAINTS_H
 #include "QMCWaveFunctions/OrbitalConstraintsBase.h"
-#include "QMCWaveFunctions/Jastrow/CubicFunctors.h"
+#include "QMCWaveFunctions/Jastrow/SplineFunctors.h"
 #include "QMCWaveFunctions/ComboOrbital.h"
 
 namespace qmcplusplus {
@@ -78,7 +78,7 @@ namespace qmcplusplus {
     ///analytic functor
     typedef ComboFunctor<RealType> InFuncType;
     ///numerical functor
-    typedef CubicSplineJastrow<RealType> FuncType;
+    typedef CubicBsplineSingle<RealType> FuncType;
     bool IgnoreSpin;
     RealType Rcut;
 

@@ -18,7 +18,7 @@
 #include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbital.h"
 #include "QMCWaveFunctions/Jastrow/OneBodyJastrowFunction.h"
 #include "QMCWaveFunctions/Jastrow/LRTwoBodyJastrow.h"
-#include "QMCWaveFunctions/Jastrow/CubicFunctors.h"
+#include "QMCWaveFunctions/Jastrow/SplineFunctors.h"
 #include "Utilities/IteratorUtility.h"
 #include "LongRange/LRJastrowSingleton.h"
 
@@ -118,7 +118,7 @@ namespace qmcplusplus {
   // right now this only does a numerical two body short range jastrow
   // based on the short range part from the breakup handled by the LRHandler
   OrbitalBase* RPAPBCConstraints::createSRTwoBody(ParticleSet& target) {
-    typedef CubicSplineJastrow<RealType> FuncType;
+    typedef CubicBsplineSingle<RealType> FuncType;
     typedef LinearGrid<RealType> GridType;
     
     //setRadialGrid(target);
