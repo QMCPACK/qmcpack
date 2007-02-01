@@ -58,9 +58,13 @@ struct OptimizableFunctorBase {
 
   /** process xmlnode and registers variables to optimize
    * @param cur xmlNode for a functor
-   * @param vlist optimizable variables 
   */
-  virtual void put(xmlNodePtr cur, VarRegistry<real_type>& vlist) = 0;
+  virtual bool put(xmlNodePtr cur) = 0;
+
+  /** add variables to be optimized
+   * @param vlist VarRegistery<T>
+   */
+  virtual void addOptimizables(VarRegistry<real_type>& vlist) =0;
 
   /** empty virtual function to help builder classes
    */
@@ -69,11 +73,13 @@ struct OptimizableFunctorBase {
 
   /** Implements a linear combination of any functor
    */
-  template<class CT>
-    struct ComboFunctor: public OptimizableFunctorBase<typename CT::real_type> {
-      typedef typename CT::real_type real_type;
+  //template<class CT>
+  template<class RT>
+    struct ComboFunctor: public OptimizableFunctorBase<RT> {
+      typedef OptimizableFunctorBase<RT> ComponentType;
+      typedef RT real_type;
       std::vector<real_type> C;
-      std::vector<CT*> Phi;
+      std::vector<ComponentType*> Phi;
       std::vector<std::string> ID;
 
       ComboFunctor() { 
@@ -84,7 +90,7 @@ struct OptimizableFunctorBase {
 
       int size() const { return Phi.size();}
 
-      void add(CT* func, real_type c,  const string& id) {
+      void add(ComponentType* func, real_type c,  const string& id) {
         C.push_back(c);
         Phi.push_back(func);
         ID.push_back(id);
@@ -106,7 +112,10 @@ struct OptimizableFunctorBase {
         return res;
       }
 
-      void put(xmlNodePtr cur, VarRegistry<real_type>& vlist) {}
+      bool put(xmlNodePtr cur) 
+      {
+        return true;
+      }
 
       void addOptimizables(VarRegistry<real_type>& vlist) {
         for(int i=0; i<C.size(); i++) {
