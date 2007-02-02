@@ -32,9 +32,10 @@ namespace qmcplusplus {
     typedef ComboFunctor<RealType> InFuncType;
     ///numerical functor
     typedef CubicBsplineSingle<RealType> FuncType;
+    ///flag to tunr on/off spin-dependent term, always off
     bool IgnoreSpin;
+    ///cutoff radius
     RealType Rcut;
-
 
     map<string,BasisSetType*> myBasisSet;
     vector<InFuncType*> InFuncList;
@@ -53,6 +54,7 @@ namespace qmcplusplus {
     bool put(xmlNodePtr cur);
     void addBasisGroup(xmlNodePtr cur);
     InFuncType* createCorrelation(xmlNodePtr cur, BasisSetType* basis);
+    InFuncType* createDefaultTwoBody(xmlNodePtr cur, const string& tname);
   };
 
 }

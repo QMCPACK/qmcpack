@@ -110,7 +110,9 @@ namespace qmcplusplus {
       cur=cur->next;
     }
 
-    if(infunc==0) return 0;
+    if(infunc==0) {//we can create a default function
+      infunc=createDefaultTwoBody(myNode,target.getName());
+    }
 
     //add analytic function
     InFuncList.push_back(infunc);
@@ -136,6 +138,13 @@ namespace qmcplusplus {
       nfunc= new FuncType(infunc,myGrid);
       delete wrapFunc;
     }
+
+#if !defined(HAVE_MPI)
+    if(PrintTables) {
+      ofstream fout("Jee.dat");
+      nfunc->print(fout);
+    }
+#endif
 
     for(int i=0; i<4; i++) J2->addFunc(nfunc);
     FuncList.push_back(nfunc);
@@ -217,6 +226,46 @@ namespace qmcplusplus {
       }
   }
 
+  WMConstraints::InFuncType*
+    WMConstraints::createDefaultTwoBody(xmlNodePtr cur, const string& tname) {
+     xmlNodePtr basisNode = xmlNewNode(NULL,(const xmlChar*)"basisGroup");
+     xmlNewProp(basisNode,(const xmlChar*)"source",(const xmlChar*)tname.c_str());
+     xmlNodePtr b0 = xmlNewTextChild(basisNode,NULL,(const xmlChar*)"parameter",(const xmlChar*)"4.55682");
+     xmlNewProp(b0,(const xmlChar*)"id",(const xmlChar*)"eeB0");
+     xmlNewProp(b0,(const xmlChar*)"name",(const xmlChar*)"B");
+     xmlNodePtr b1 = xmlNewTextChild(basisNode,NULL,(const xmlChar*)"parameter",(const xmlChar*)"1.83679");
+     xmlNewProp(b1,(const xmlChar*)"id",(const xmlChar*)"eeB1");
+     xmlNewProp(b1,(const xmlChar*)"name",(const xmlChar*)"B");
+     xmlNodePtr b2 = xmlNewTextChild(basisNode,NULL,(const xmlChar*)"parameter",(const xmlChar*)"4.59201");
+     xmlNewProp(b2,(const xmlChar*)"id",(const xmlChar*)"eeB2");
+     xmlNewProp(b2,(const xmlChar*)"name",(const xmlChar*)"B");
+     xmlNodePtr b3 = xmlNewTextChild(basisNode,NULL,(const xmlChar*)"parameter",(const xmlChar*)"0.226152");
+     xmlNewProp(b3,(const xmlChar*)"id",(const xmlChar*)"eeB3");
+     xmlNewProp(b3,(const xmlChar*)"name",(const xmlChar*)"B");
+     xmlAddChild(cur,basisNode);
+
+     addBasisGroup(basisNode);
+
+     xmlNodePtr corrNode = xmlNewNode(NULL,(const xmlChar*)"correlation");
+     xmlNewProp(corrNode,(const xmlChar*)"speciesA",(const xmlChar*)tname.c_str());
+     xmlNewProp(corrNode,(const xmlChar*)"speciesB",(const xmlChar*)tname.c_str());
+     xmlNodePtr c0 = xmlNewTextChild(corrNode,NULL,(const xmlChar*)"parameter",(const xmlChar*)"-0.137958");
+     xmlNewProp(c0,(const xmlChar*)"id",(const xmlChar*)"eeC0");
+     xmlNewProp(c0,(const xmlChar*)"name",(const xmlChar*)"C");
+     xmlNodePtr c1 = xmlNewTextChild(corrNode,NULL,(const xmlChar*)"parameter",(const xmlChar*)"-1.09405");
+     xmlNewProp(c1,(const xmlChar*)"id",(const xmlChar*)"eeC1");
+     xmlNewProp(c1,(const xmlChar*)"name",(const xmlChar*)"C");
+     xmlNodePtr c2 = xmlNewTextChild(corrNode,NULL,(const xmlChar*)"parameter",(const xmlChar*)"1.06578");
+     xmlNewProp(c2,(const xmlChar*)"id",(const xmlChar*)"eeC2");
+     xmlNewProp(c2,(const xmlChar*)"name",(const xmlChar*)"C");
+     xmlNodePtr c3 = xmlNewTextChild(corrNode,NULL,(const xmlChar*)"parameter",(const xmlChar*)"0.96602");
+     xmlNewProp(c3,(const xmlChar*)"id",(const xmlChar*)"eeC3");
+     xmlNewProp(c3,(const xmlChar*)"name",(const xmlChar*)"C");
+     xmlAddChild(cur,corrNode);
+
+     map<string,BasisSetType*>::iterator it(myBasisSet.find("e"));
+     return createCorrelation(corrNode,(*it).second);
+  }
 }
 /***************************************************************************
  * $RCSfile$   $Author$

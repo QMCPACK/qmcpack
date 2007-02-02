@@ -109,7 +109,7 @@ namespace qmcplusplus {
       void print(ostream& os) {
         real_type r=0;
         for(int i=0; i<NumGridPoints; i++, r+=GridDelta) 
-          cout << r << " " << OutFunc->splint(r) << endl;
+          os << r << " " << OutFunc->splint(r) << endl;
       }
 
       ///set the input, analytic function
