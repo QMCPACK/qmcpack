@@ -15,20 +15,12 @@
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 #include "QMCWaveFunctions/Jastrow/WMConstraints.h"
+#include "QMCWaveFunctions/Jastrow/TruncatedPadeFunctor.h"
 #include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbital.h"
 #include "QMCWaveFunctions/Jastrow/OneBodyJastrowFunction.h"
 #include "Utilities/IteratorUtility.h"
-#include "OhmmsData/AttributeSet.h"
 
 namespace qmcplusplus {
-
-  template<class T> bool WMFunctor<T>::put(xmlNodePtr cur)
-  {
-    OhmmsAttributeSet rAttrib;
-    rAttrib.add(ID,"id"); //rAttrib.add(a->B0,"b");
-    rAttrib.put(cur);
-    return putContent(B0,cur);
-  }
 
   WMConstraints::~WMConstraints() {
     delete_iter(FuncList.begin(), FuncList.end());
@@ -120,10 +112,31 @@ namespace qmcplusplus {
 
     if(infunc==0) return 0;
 
+    //add analytic function
     InFuncList.push_back(infunc);
+
+    //try to correct the cusp condition
+    TruncatedPadeFunctor<RealType>* wrapFunc
+      = new TruncatedPadeFunctor<RealType>(-0.5,infunc,myGrid->rmax());
+    wrapFunc->reset();
+
     typedef TwoBodyJastrowOrbital<FuncType> JeeType;
+    //create a Jastrow function
     JeeType *J2 = new JeeType(target);
-    FuncType* nfunc= new FuncType(infunc,myGrid);
+    //numerical functor 
+    FuncType* nfunc= 0;
+
+    if(wrapFunc->Rcut > 0.0)//pade truncation is good to go
+    {
+      //InFuncList.push_back(wrapFunc);
+      nfunc= new FuncType(wrapFunc,myGrid);
+    }
+    else //use the original function
+    {
+      nfunc= new FuncType(infunc,myGrid);
+      delete wrapFunc;
+    }
+
     for(int i=0; i<4; i++) J2->addFunc(nfunc);
     FuncList.push_back(nfunc);
     return J2;
