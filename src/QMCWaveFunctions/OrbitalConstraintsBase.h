@@ -37,6 +37,8 @@ namespace qmcplusplus {
     /** a common radial grid 
      */
     RadialGridType* myGrid;
+    ///print the numerical table 
+    bool PrintTables;
     /** cutoff radius to truncated any radial grid functor*/
     RealType Rcut;
     /** inVars[variable name] = (variable id, value)
