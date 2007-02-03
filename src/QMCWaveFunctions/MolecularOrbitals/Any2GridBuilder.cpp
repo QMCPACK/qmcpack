@@ -74,7 +74,9 @@ namespace qmcplusplus {
     } else if(radtype == "Slater") {
       addSlater(cur);
     } else if(radtype == "Pade") {
-      addPade(cur);
+      app_error() << "  Any2GridBuilder::addPade is disabled." << endl;
+      abort();
+      //addPade(cur);
     }
 
     if(lastRnl && m_orbitals->Rnl.size()> lastRnl) {
@@ -121,67 +123,24 @@ namespace qmcplusplus {
 
   }
 
-  template<class T>
-  struct PadeOrbital: public RadialOrbitalBase<T> {
-  
-    typedef T value_type;
-    T a0,a1,a2,a3,rcut;
-    std::string  nodeName;
-  
-    explicit 
-      PadeOrbital(const char* node_name="radfunc"):
-        a0(1.0),a1(-0.5),a2(0.0),a3(-0.2),rcut(4.0),nodeName(node_name){}
-  
-    ~PadeOrbital(){ }
-  
-    void reset() {}
-  
-    inline value_type f(value_type r) const {
-      return a0*std::exp((a1+a2*r)*r/(1.0e0+a3*r));
-    }
-  
-    inline value_type df(value_type r) const {
-      value_type t = 1.0/(1.0e0+a3*r);
-      value_type z=(a1+a2*r)*r*t;
-      value_type res = a0*std::exp(z);
-      return res*(a1+2.0*a2*r-z*a3)*t;
-    }
-  
-    bool putBasisGroup(xmlNodePtr cur) {
-      cur = cur->children;
-      while(cur != NULL) {
-        string cname((const char*)cur->name);
-        if(cname == nodeName) {
-          OhmmsAttributeSet radAttrib;
-          radAttrib.add(a0,"a0"); radAttrib.add(a1,"a1"); 
-          radAttrib.add(a2,"a2"); radAttrib.add(a3,"a3");
-          radAttrib.put(cur);
-          rcut = -1.0/a3-std::numeric_limits<T>::epsilon();
-          LOGMSG("Pade compoenent (a0,a1,a2,a3,rcut) = " << a0 << " " << a1 << " " << a2 << " " << a3 << " " << rcut)
-        }
-        cur=cur->next;
-      }
-      return true;
-    }
-  };
-
   void Any2GridBuilder::addPade(xmlNodePtr cur) {
 
-    GridType* agrid = m_orbitals->Grids[0];
-    RadialOrbitalType *radorb = new OneDimCubicSpline<RealType>(agrid);
+    //Who is using this????
+    //GridType* agrid = m_orbitals->Grids[0];
+    //RadialOrbitalType *radorb = new OneDimCubicSpline<RealType>(agrid);
 
-    PadeOrbital<RealType> pade;
-    pade.putBasisGroup(cur);
+    //PadeOrbital<RealType> pade;
+    //pade.putBasisGroup(cur);
 
-    //spline the slater type orbital
-    Transform2GridFunctor<PadeOrbital<RealType>,RadialOrbitalType> transform(pade, *radorb);
-    if(pade.rcut>0) 
-      transform.generate(pade.rcut);
-    else 
-      transform.generate(agrid->rmax());
-    //add the radial orbital to the list
-    m_orbitals->Rnl.push_back(radorb);
-    m_orbitals->RnlID.push_back(m_nlms);
+    ////spline the slater type orbital
+    //Transform2GridFunctor<PadeOrbital<RealType>,RadialOrbitalType> transform(pade, *radorb);
+    //if(pade.rcut>0) 
+    //  transform.generate(pade.rcut);
+    //else 
+    //  transform.generate(agrid->rmax());
+    ////add the radial orbital to the list
+    //m_orbitals->Rnl.push_back(radorb);
+    //m_orbitals->RnlID.push_back(m_nlms);
   }
 }
 /***************************************************************************
