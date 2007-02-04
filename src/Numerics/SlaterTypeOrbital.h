@@ -8,18 +8,15 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
-//   Department of Physics, Ohio State University
-//   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 #ifndef QMCPLUSPLUS_SLATERTYPEORBITAL_H
 #define QMCPLUSPLUS_SLATERTYPEORBITAL_H
-#include "Numerics/RadialOrbitalBase.h"
+#include "Numerics/OptimizableFunctorBase.h"
 #include <cmath>
 
 /** class to evaluate the normalization factors for the Slater-Type orbitals
@@ -61,24 +58,25 @@ struct STONorm {
  * where n-1 is the number of nodes.
  */
 template<class T>
-struct GenericSTO: public RadialOrbitalBase<T> {
+struct GenericSTO: public OptimizableFunctorBase<T> {
 
-  typedef T value_type;
+  typedef typename OptimizableFunctorBase<T>::value_type value_type;
+  typedef typename OptimizableFunctorBase<T>::real_type real_type;
 
   int ID;
   ///Principal number
   int N;
   ///N-l-1
   int Power;
-  T Z;
-  T Norm;
-  T Y, dY, d2Y;
+  real_type Z;
+  real_type Norm;
+  value_type Y, dY, d2Y;
 
   GenericSTO(): N(-1), Power(0), Z(1.0), Norm(1.0) { } 
 
   /** constructor with a known contraction factor 
    */
-  explicit GenericSTO(int power, T z, T norm=1.0):  
+  explicit GenericSTO(int power, real_type z, real_type norm=1.0):  
     N(-1), Power(power), Z(z), Norm(norm) { } 
 
   /** constructor with a set of quantum numbers
@@ -89,7 +87,7 @@ struct GenericSTO: public RadialOrbitalBase<T> {
    * Power = n-l-1
    * Contraction factor is the normalization factor evaluated based on N and Z.
    */
-  explicit GenericSTO(int n, int l, T z) : 
+  explicit GenericSTO(int n, int l, real_type z) : 
     N(n), Power(n-l-1), Z(z) {
     reset();
   }
@@ -101,14 +99,14 @@ struct GenericSTO: public RadialOrbitalBase<T> {
     }
   }
 
-  inline void setgrid(T r) { }
+  inline void setgrid(real_type r) { }
 
-  inline T f(T r) const {
+  inline real_type f(real_type r) {
     return exp(-Z*r)*Norm*pow(r,Power);
   }
 
-  inline T df(T r) const {
-    T rnl = exp(-Z*r)*Norm;
+  inline real_type df(real_type r) {
+    real_type rnl = exp(-Z*r)*Norm;
     if(Power == 0) {
       return  -Z*rnl;
     } else {
@@ -120,27 +118,31 @@ struct GenericSTO: public RadialOrbitalBase<T> {
    * @param r distance
    * @param rinv inverse of r
    */
-  inline T evaluate(T r, T rinv) {
+  inline real_type evaluate(real_type r, real_type rinv) {
     return Y = Norm*pow(r,Power)*exp(-Z*r);
   }
 
-  inline void evaluateAll(T r, T rinv) {
+  inline void evaluateAll(real_type r, real_type rinv) {
     Y = evaluate(r,rinv,dY,d2Y);
   }
 
-  inline T evaluate(T r, T rinv, T& drnl, T& d2rnl) {
-    T rnl = Norm*exp(-Z*r);
+  inline value_type evaluate(real_type r, real_type rinv, value_type& drnl, value_type& d2rnl) {
+    real_type rnl = Norm*exp(-Z*r);
     if(Power == 0) {
       drnl = -Z*rnl;
       d2rnl = rnl*Z*Z;
     } else {
       rnl *= pow(r,Power);
-      T x = Power*rinv-Z;
+      real_type x = Power*rinv-Z;
       drnl = rnl*x;
       d2rnl = rnl*(x*x-Power*rinv*rinv);
     }
     return rnl;
   }
+
+  bool put(xmlNodePtr cur) {return true;}
+
+  void addOptimizables( VarRegistry<real_type>& vlist){}
 
 };
 

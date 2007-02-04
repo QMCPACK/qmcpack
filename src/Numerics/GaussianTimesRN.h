@@ -15,15 +15,16 @@
 //////////////////////////////////////////////////////////////////
 #ifndef QMCPLUSPLUS_RADIALGRIDFUNCTOR_GAUSSIANTIMESRN_H
 #define QMCPLUSPLUS_RADIALGRIDFUNCTOR_GAUSSIANTIMESRN_H
-#include "Numerics/RadialOrbitalBase.h"
+#include "Numerics/OptimizableFunctorBase.h"
 #include "OhmmsData/AttributeSet.h"
 #include <cmath>
 
 template<class T>
-struct GaussianTimesRN: public RadialOrbitalBase<T> {
+struct GaussianTimesRN: public OptimizableFunctorBase<T> {
 
-  typedef T value_type;
-  T Y, dY, d2Y;
+  typedef typename OptimizableFunctorBase<T>::value_type value_type;
+  typedef typename OptimizableFunctorBase<T>::real_type real_type;
+  value_type Y, dY, d2Y;
 
   struct BasicGaussian {
     T Sigma;
@@ -55,9 +56,9 @@ struct GaussianTimesRN: public RadialOrbitalBase<T> {
       PowerC=static_cast<T>(Power)*Coeff;
     }
 
-    inline void setgrid(T r) { }
+    inline void setgrid(real_type r) { }
 
-    inline T f(T r, T rr) const {
+    inline real_type f(real_type r, real_type rr) {
       if(Power==0) 
         return Coeff*exp(MinusSigma*rr);
       else if(Power==1)
@@ -66,7 +67,7 @@ struct GaussianTimesRN: public RadialOrbitalBase<T> {
         return std::pow(r,Power)*Coeff*exp(MinusSigma*rr);
     }
 
-    inline T df(T r, T rr) const {
+    inline real_type df(real_type r, real_type rr) {
       if(Power==0) 
         return CoeffP*r*exp(MinusSigma*rr);
       else if(Power==1) 
@@ -77,7 +78,7 @@ struct GaussianTimesRN: public RadialOrbitalBase<T> {
       }
     }
 
-    inline T evaluate(T r, T rr, T& du, T& d2u) {
+    inline value_type evaluate(real_type r, real_type rr, value_type& du, value_type& d2u) {
       T v=exp(MinusSigma*rr);
       if(Power==0) {
         du += CoeffP*r*v;
@@ -117,31 +118,31 @@ struct GaussianTimesRN: public RadialOrbitalBase<T> {
     return gset.size();
   }
 
-  inline value_type f(value_type r) const {
-    value_type res=0;
-    value_type r2 = r*r;
-    typename std::vector<BasicGaussian>::const_iterator it(gset.begin());
-    typename std::vector<BasicGaussian>::const_iterator it_end(gset.end());
+  inline real_type f(real_type r) {
+    real_type res=0;
+    real_type r2 = r*r;
+    typename std::vector<BasicGaussian>::iterator it(gset.begin());
+    typename std::vector<BasicGaussian>::iterator it_end(gset.end());
     while(it != it_end) {
       res += (*it).f(r,r2); ++it;
     }
     return res;
   }
 
-  inline value_type df(value_type r) const {
-    value_type res=0;
-    value_type r2 = r*r;
-    typename std::vector<BasicGaussian>::const_iterator it(gset.begin());
-    typename std::vector<BasicGaussian>::const_iterator it_end(gset.end());
+  inline real_type df(real_type r) {
+    real_type res=0;
+    real_type r2 = r*r;
+    typename std::vector<BasicGaussian>::iterator it(gset.begin());
+    typename std::vector<BasicGaussian>::iterator it_end(gset.end());
     while(it != it_end) {
       res += (*it).df(r,r2); ++it;
     }
     return res;
   }
 
-  inline value_type evaluate(T r, T rinv) {
+  inline value_type evaluate(real_type r, real_type rinv) {
     Y=0.0;
-    value_type rr = r*r;
+    real_type rr = r*r;
     typename std::vector<BasicGaussian>::iterator it(gset.begin()),it_end(gset.end());
     while(it != it_end) {
       Y+=(*it).f(r,rr); ++it;
@@ -149,9 +150,9 @@ struct GaussianTimesRN: public RadialOrbitalBase<T> {
     return Y;
   }
 
-  inline void evaluateAll(T r, T rinv) {
+  inline void evaluateAll(real_type r, real_type rinv) {
     Y=0.0;dY=0.0;d2Y=0.0;
-    value_type rr = r*r;
+    real_type rr = r*r;
     typename std::vector<BasicGaussian>::iterator it(gset.begin()),it_end(gset.end());
     while(it != it_end) {
       Y+=(*it).evaluate(r,rr,dY,d2Y); ++it;
@@ -159,6 +160,8 @@ struct GaussianTimesRN: public RadialOrbitalBase<T> {
   }
 
   bool put(xmlNodePtr cur);
+
+  void addOptimizables( VarRegistry<real_type>& vlist){}
 
   /** process cur xmlnode
    * @param cur root node

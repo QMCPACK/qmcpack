@@ -68,7 +68,7 @@ struct CubicSpline
   {
     int i0=myEngine.getLowerGridBound0(x);
     if(i0>EndIndex)
-      return 0.0;
+      return ConstValue;
     else
       return myEngine.interpolate(P[i0],P[i0+1],auxP[i0],auxP[i0+1]);
   }
@@ -79,7 +79,7 @@ struct CubicSpline
     if(i0>EndIndex)
     {
       dy=0.0; d2y=0.0;
-      return 0.0;
+      return ConstValue;
     }
     else 
     {

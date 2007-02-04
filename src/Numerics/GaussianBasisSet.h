@@ -15,30 +15,33 @@
 //////////////////////////////////////////////////////////////////
 #ifndef QMCPLUSPLUS_RADIALGRIDFUNCTOR_GAUSSIANBASISSET_H
 #define QMCPLUSPLUS_RADIALGRIDFUNCTOR_GAUSSIANBASISSET_H
-#include "Numerics/RadialOrbitalBase.h"
+#include "Numerics/OptimizableFunctorBase.h"
 #include "OhmmsData/AttributeSet.h"
 #include <cmath>
 
 template<class T>
-struct GaussianCombo: public RadialOrbitalBase<T> {
+struct GaussianCombo: public OptimizableFunctorBase<T> {
 
-  typedef T value_type;
-  T Y, dY, d2Y;
+  typedef typename OptimizableFunctorBase<T>::value_type value_type;
+  typedef typename OptimizableFunctorBase<T>::real_type real_type;
+
+  //typedef T value_type;
+  value_type Y, dY, d2Y;
 
   struct BasicGaussian {
-    T Sigma;
-    T Coeff;
+    real_type Sigma;
+    real_type Coeff;
 
-    T MinusSigma;
-    T CoeffP;
-    T CoeffPP;
+    real_type MinusSigma;
+    real_type CoeffP;
+    real_type CoeffPP;
     BasicGaussian(): Sigma(1.0), Coeff(1.0) { } 
 
-    inline BasicGaussian(T sig, T c) { 
+    inline BasicGaussian(real_type sig, real_type c) { 
       reset(sig,c);
     } 
 
-    inline void reset(T sig, T c){
+    inline void reset(real_type sig, real_type c){
       Sigma = sig; 
       MinusSigma=-sig;
       Coeff = c;
@@ -52,16 +55,16 @@ struct GaussianCombo: public RadialOrbitalBase<T> {
       CoeffPP = 4.0*Sigma*Sigma*Coeff;
     }
 
-    inline void setgrid(T r) { }
+    inline void setgrid(real_type r) { }
 
-    inline T f(T rr) const {
+    inline real_type f(real_type rr) const {
       return Coeff*exp(MinusSigma*rr);
     }
-    inline T df(T r, T rr) const {
+    inline real_type df(real_type r, real_type rr) const {
       return CoeffP*r*exp(MinusSigma*rr);
     }
-    inline T evaluate(T r, T rr, T& du, T& d2u) {
-      T v=exp(MinusSigma*rr);
+    inline real_type evaluate(real_type r, real_type rr, real_type& du, real_type& d2u) {
+      real_type v=exp(MinusSigma*rr);
       du += CoeffP*r*v;
       d2u += (CoeffP+CoeffPP*rr)*v;
       return Coeff*v;
@@ -70,9 +73,9 @@ struct GaussianCombo: public RadialOrbitalBase<T> {
 
   ///Boolean
   bool Normalized;
-  T L;
-  T NormL;
-  T NormPow;
+  real_type L;
+  real_type NormL;
+  real_type NormPow;
   std::string  nodeName;
   std::string  expName;
   std::string  coeffName;
@@ -95,7 +98,7 @@ struct GaussianCombo: public RadialOrbitalBase<T> {
     return gset.size();
   }
 
-  inline value_type f(value_type r) const {
+  inline real_type f(value_type r) {
     value_type res=0;
     value_type r2 = r*r;
     typename std::vector<BasicGaussian>::const_iterator it(gset.begin());
@@ -105,7 +108,7 @@ struct GaussianCombo: public RadialOrbitalBase<T> {
     }
     return res;
   }
-  inline value_type df(value_type r) const {
+  inline value_type df(value_type r) {
     value_type res=0;
     value_type r2 = r*r;
     typename std::vector<BasicGaussian>::const_iterator it(gset.begin());
@@ -116,7 +119,7 @@ struct GaussianCombo: public RadialOrbitalBase<T> {
     return res;
   }
 
-  inline value_type evaluate(T r, T rinv) {
+  inline value_type evaluate(real_type r, real_type rinv) {
     Y=0.0;
     value_type rr = r*r;
     typename std::vector<BasicGaussian>::iterator it(gset.begin()),it_end(gset.end());
@@ -126,7 +129,7 @@ struct GaussianCombo: public RadialOrbitalBase<T> {
     return Y;
   }
 
-  inline void evaluateAll(T r, T rinv) {
+  inline void evaluateAll(real_type r, real_type rinv) {
     Y=0.0;dY=0.0;d2Y=0.0;
     value_type rr = r*r;
     typename std::vector<BasicGaussian>::iterator it(gset.begin()),it_end(gset.end());
@@ -135,9 +138,9 @@ struct GaussianCombo: public RadialOrbitalBase<T> {
     }
   }
 
-  //inline value_type evaluate(T r, T rinv, T& drnl, T& d2rnl) {
+  //inline value_type evaluate(real_type r, real_type rinv, real_type& drnl, real_type& d2rnl) {
   //  Y=0.0;drnl=0.0;d2rnl=0.0;
-  //  T du, d2u;
+  //  real_type du, d2u;
   //  typename std::vector<BasicGaussian>::iterator 
   //    it(sset.begin()),it_end(sset.end());
   //  while(it != it_end) {
@@ -149,6 +152,8 @@ struct GaussianCombo: public RadialOrbitalBase<T> {
 
 
   bool put(xmlNodePtr cur);
+
+  void addOptimizables( VarRegistry<real_type>& vlist){}
 
   bool putBasisGroup(xmlNodePtr cur);
 
@@ -172,10 +177,10 @@ GaussianCombo<T>::GaussianCombo(int l, bool normalized,
   Normalized(normalized), nodeName(node_name),
   expName(exp_name), coeffName(c_name)
 {
-  L = static_cast<T>(l);
+  L = static_cast<real_type>(l);
   //Everything related to L goes to NormL and NormPow
-  const T pi = 4.0*atan(1.0);
-  NormL = pow(2,L+1)*sqrt(2.0/static_cast<T>(DFactorial(2*l+1)))*pow(2.0/pi,0.25);
+  const real_type pi = 4.0*atan(1.0);
+  NormL = pow(2,L+1)*sqrt(2.0/static_cast<real_type>(DFactorial(2*l+1)))*pow(2.0/pi,0.25);
   NormPow = 0.5*(L+1.0)+0.25;
 }
 
@@ -190,23 +195,26 @@ void GaussianCombo<T>::reset() {
   if(InParam.empty()) {
     for(int i=0; i<gset.size(); i++) gset[i].reset();
   } else {
-    int n=gset.size();
-    while(n<InParam.size()) {
-      gset.push_back(BasicGaussian());
-      n++;
-    }
-    T alpha(1.0),c(1.0);
+    //while(n<InParam.size()) {
+    //  gset.push_back(BasicGaussian());
+    //  n++;
+    //}
+    real_type alpha(1.0),c(1.0);
     OhmmsAttributeSet radAttrib;
     radAttrib.add(alpha,expName); 
     radAttrib.add(c,coeffName);
 
+    int n=gset.size();
     for(int i=0; i<InParam.size(); i++) {
       radAttrib.put(InParam[i]);
       if(!Normalized) c *= NormL*pow(alpha,NormPow); 
       LOGMSG(" Gaussian exponent = " << alpha << " contraction=" << c)
-      gset[i].reset(alpha,c);
+      gset.push_back(BasicGaussian());
+      gset[n].reset(alpha,c);
     }
+    InParam.clear();
   }
+
 }
 
 template<class T>

@@ -463,7 +463,7 @@ public:
     if(r<r_min) {
       return m_Y[0]+first_deriv*(r-r_min);
     }  else if(r>=r_max) {
-      return 1e-20;
+      return 0.0;
     }
 
     int Loc(m_grid->currentIndex());
@@ -490,7 +490,7 @@ public:
       return m_Y[0]+first_deriv*(r-r_min);
     }  else if(r>=r_max) {
       du = 0.0; d2u = 0.0; 
-      return 1e-20;
+      return 0.0;
     }
 
     int Loc(m_grid->currentIndex());

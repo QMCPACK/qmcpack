@@ -188,6 +188,7 @@ struct CubicBspline: public CubicBsplineGrid<T,GRIDTYPE,BC>
   }
 };
 
+
 #endif
 /***************************************************************************
  * $RCSfile$   $Author: jnkim $

@@ -7,7 +7,6 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
@@ -15,15 +14,14 @@
 //////////////////////////////////////////////////////////////////
 #ifndef QMCPLUSPLUS_RADIALGRIDFUNCTOR_SLATERBASISSET_H
 #define QMCPLUSPLUS_RADIALGRIDFUNCTOR_SLATERBASISSET_H
-
-#include <cmath>
 #include "Numerics/SlaterTypeOrbital.h"
 #include "OhmmsData/AttributeSet.h"
 
 template<class T>
-struct SlaterCombo: public RadialOrbitalBase<T> {
+struct SlaterCombo: public OptimizableFunctorBase<T> {
 
-  typedef T value_type;
+  typedef typename OptimizableFunctorBase<T>::value_type value_type;
+  typedef typename OptimizableFunctorBase<T>::real_type real_type;
   typedef GenericSTO<T> Component_t;
 
   int L;
@@ -34,7 +32,7 @@ struct SlaterCombo: public RadialOrbitalBase<T> {
   std::string  coeffName;
   std::vector<xmlNodePtr> InParam;
   std::vector<Component_t> sset;
-  T Y, dY, d2Y;
+  value_type Y, dY, d2Y;
 
   explicit 
     SlaterCombo(int l=0, 
@@ -47,27 +45,27 @@ struct SlaterCombo: public RadialOrbitalBase<T> {
 
   void reset();
 
-  inline value_type f(value_type r) const {
-    value_type res=0;
-    typename std::vector<Component_t>::const_iterator it(sset.begin());
-    typename std::vector<Component_t>::const_iterator it_end(sset.end());
+  inline real_type f(real_type r) {
+    real_type res=0;
+    typename std::vector<Component_t>::iterator it(sset.begin());
+    typename std::vector<Component_t>::iterator it_end(sset.end());
     while(it != it_end) {
       res += (*it).f(r); ++it;
     }
     return res;
   }
 
-  inline value_type df(value_type r) const {
-    value_type res=0;
-    typename std::vector<Component_t>::const_iterator it(sset.begin());
-    typename std::vector<Component_t>::const_iterator it_end(sset.end());
+  inline real_type df(real_type r) {
+    real_type res=0;
+    typename std::vector<Component_t>::iterator it(sset.begin());
+    typename std::vector<Component_t>::iterator it_end(sset.end());
     while(it != it_end) {
       res += (*it).df(r); ++it;
     }
     return res;
   }
 
-  inline value_type evaluate(T r, T rinv) {
+  inline value_type evaluate(real_type r, real_type rinv) {
     Y=0.0;dY=0.0;d2Y=0.0;
     typename std::vector<Component_t>::iterator it(sset.begin()),it_end(sset.end());
     while(it != it_end) {
@@ -76,9 +74,9 @@ struct SlaterCombo: public RadialOrbitalBase<T> {
     return Y;
   }
 
-  inline void evaluateAll(T r, T rinv) {
+  inline void evaluateAll(real_type r, real_type rinv) {
     Y=0.0;dY=0.0;d2Y=0.0;
-    T du, d2u;
+    real_type du, d2u;
     typename std::vector<Component_t>::iterator it(sset.begin()),it_end(sset.end());
     while(it != it_end) {
       Y+=(*it).evaluate(r,rinv,du,d2u); dY+=du; d2Y+=d2u;
@@ -98,6 +96,10 @@ struct SlaterCombo: public RadialOrbitalBase<T> {
 //  }
 
   bool putBasisGroup(xmlNodePtr cur);
+
+  bool put(xmlNodePtr cur) {return true;}
+
+  void addOptimizables( VarRegistry<real_type>& vlist){}
 };
 
 template<class T>
@@ -119,7 +121,7 @@ bool SlaterCombo<T>::putBasisGroup(xmlNodePtr cur) {
   while(cur != NULL) {
     std::string cname((const char*)cur->name);
     if(cname == "radfunc" || cname == "Rnl") {
-      T zeta(1.0),c(1.0);
+      real_type zeta(1.0),c(1.0);
       int qN=1;
       OhmmsAttributeSet radAttrib;
       radAttrib.add(zeta,expName); radAttrib.add(zeta,"alpha");
