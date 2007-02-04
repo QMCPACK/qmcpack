@@ -16,7 +16,7 @@
 #ifndef QMCPLUSPLUS_TRUNCATEDPADEFUNCTOR_H
 #define QMCPLUSPLUS_TRUNCATEDPADEFUNCTOR_H
 
-#include "QMCWaveFunctions/OptimizableFunctorBase.h"
+#include "Numerics/OptimizableFunctorBase.h"
 namespace qmcplusplus {
 
   /** Implements a truncated Pade Function \f$u[r]=A*r/(1+B*r)\f$ 
@@ -126,7 +126,10 @@ namespace qmcplusplus {
       }
 
       bool put(xmlNodePtr cur) {return true;}
-      void addOptimizables( VarRegistry<real_type>& vlist){}
+      void addOptimizables( VarRegistry<real_type>& vlist)
+      {
+        if(inFunc) inFunc->addOptimizables(vlist);
+      }
     };
 
 }

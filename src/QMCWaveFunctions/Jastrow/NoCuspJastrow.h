@@ -16,7 +16,7 @@
 // -*- C++ -*-
 #ifndef QMCPLUSPLUS_NOCUSPJASTROW_H
 #define QMCPLUSPLUS_NOCUSPJASTROW_H
-#include "QMCWaveFunctions/OptimizableFunctorBase.h"
+#include "Numerics/OptimizableFunctorBase.h"
 
 namespace qmcplusplus {
 /**Class NoCusp functional

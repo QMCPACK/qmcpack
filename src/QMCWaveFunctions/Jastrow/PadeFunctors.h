@@ -19,7 +19,8 @@
  */
 #ifndef QMCPLUSPLUS_PADEFUNCTORS_H
 #define QMCPLUSPLUS_PADEFUNCTORS_H
-#include "QMCWaveFunctions/OptimizableFunctorBase.h"
+#include "Numerics/OptimizableFunctorBase.h"
+#include <cmath>
 
 namespace qmcplusplus {
 

@@ -17,7 +17,7 @@
 #ifndef QMCPLUSPLUS_RPAFUNCTION_H
 #define QMCPLUSPLUS_RPAFUNCTION_H
 
-#include "QMCWaveFunctions/OptimizableFunctorBase.h"
+#include "Numerics/OptimizableFunctorBase.h"
 
 namespace qmcplusplus {
 /** RPA Jastrow functional
@@ -36,7 +36,7 @@ struct RPAJastrow: public OptimizableFunctorBase<T> {
   bool SameSpin;
 
   ///coefficients
-  T A, B, AB, ABB;
+  real_type A, B, AB, ABB;
   ///id of A for optimization
   string ID_A;
   /** constructor
@@ -54,7 +54,7 @@ struct RPAJastrow: public OptimizableFunctorBase<T> {
   /** reset the internal variables.
    */
   inline void reset() {
-    T F=std::sqrt(std::abs(A));
+    real_type F=std::sqrt(std::abs(A));
     if(SameSpin) F*=std::sqrt(2.0);
     B=1.0/F;
     AB=A*B;
@@ -64,7 +64,7 @@ struct RPAJastrow: public OptimizableFunctorBase<T> {
   /** reset the internal variables.
    *@param a New Jastrow parameter a 
    */
-  void reset(T a) {
+  void reset(real_type a) {
     A = a;
     reset();
   }
@@ -73,7 +73,7 @@ struct RPAJastrow: public OptimizableFunctorBase<T> {
    * @param r the distance
    * @return \f$ u(r) = \frac{A}{r}\left[1-\exp(-\frac{r}{F})\right]\f$
    */
-  inline T evaluate(T r) {
+  inline real_type evaluate(real_type r) {
     return A/r*(1.0-std::exp(-B*r));
   }
 
@@ -82,10 +82,10 @@ struct RPAJastrow: public OptimizableFunctorBase<T> {
      @param d2udr second derivative
      @return the value
   */
-  inline T evaluate(T r, T& dudr, T& d2udr2) {
-    T rinv=1.0/r;
-    T expbr=std::exp(-B*r);
-    T u = A*rinv*(1.0-expbr);
+  inline real_type evaluate(real_type r, T& dudr, T& d2udr2) {
+    real_type rinv=1.0/r;
+    real_type expbr=std::exp(-B*r);
+    real_type u = A*rinv*(1.0-expbr);
     dudr=-rinv*(u-AB*expbr);
     d2udr2=-rinv*(2.0*dudr+ABB*expbr);
     return u;
@@ -115,7 +115,7 @@ struct RPAJastrow: public OptimizableFunctorBase<T> {
    @param vlist VarRegistry<T1> to which the variable A will be added for optimization
   */
   bool put(xmlNodePtr cur){
-    T Atemp=-100;
+    real_type Atemp=-100;
     //jastrow[iab]->put(cur->xmlChildrenNode,wfs_ref.RealVars);
     xmlNodePtr tcur = cur->xmlChildrenNode;
     while(tcur != NULL) {

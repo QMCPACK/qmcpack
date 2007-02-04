@@ -15,7 +15,7 @@
 // -*- C++ -*-
 #ifndef QMCPLUSPLUS_WMFUNCTOR_WITHPADECORRECTION_H
 #define QMCPLUSPLUS_WMFUNCTOR_WITHPADECORRECTION_H
-#include "QMCWaveFunctions/OptimizableFunctorBase.h"
+#include "Numerics/OptimizableFunctorBase.h"
 #include "OhmmsData/AttributeSet.h"
 
 namespace qmcplusplus {
@@ -26,7 +26,8 @@ namespace qmcplusplus {
    */
   template<class T>
     struct WMFunctor: public OptimizableFunctorBase<T> {
-      typedef T real_type;
+      ///typedef of real values
+      typedef typename OptimizableFunctorBase<T>::real_type real_type;
       ///input B
       real_type B0;
       ///input Rcut
@@ -34,7 +35,7 @@ namespace qmcplusplus {
       ///1/Rcut
       real_type OneOverRc;
       ///id
-      string ID;
+      string ID_B;
       ///constructor
       explicit WMFunctor(real_type b, real_type rc=7.5) {
         reset(b,rc);
@@ -55,13 +56,13 @@ namespace qmcplusplus {
       bool put(xmlNodePtr cur) 
       {
         OhmmsAttributeSet rAttrib;
-        rAttrib.add(ID,"id"); //rAttrib.add(a->B0,"b");
+        rAttrib.add(ID_B,"id"); //rAttrib.add(a->B0,"b");
         rAttrib.put(cur);
         return putContent(B0,cur);
       }
 
       void addOptimizables(VarRegistry<T>& vlist) {
-        vlist.add(ID,&B0,1);
+        vlist.add(ID_B,&B0,1);
       }
     };
 
