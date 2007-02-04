@@ -18,7 +18,7 @@
 #include "Numerics/OneDimGridBase.h"
 #include "Numerics/CubicBspline.h"
 #include "Optimize/VarList.h"
-#include "QMCWaveFunctions/OptimizableFunctorBase.h"
+#include "Numerics/OptimizableFunctorBase.h"
 
 namespace qmcplusplus {
 
@@ -45,12 +45,20 @@ namespace qmcplusplus {
       int NumGridPoints;
       real_type Rmax;
       real_type GridDelta;
+      real_type Y;
+      real_type dY;
+      real_type d2Y;
+
 
       ///constructor
       CubicBsplineSingle(): InFunc(0), OutFunc(0) { }
       ///constructor with arguments
       CubicBsplineSingle(FNIN* in_, grid_type* agrid){
         initialize(in_,agrid);
+      }
+      ///constructor with arguments
+      CubicBsplineSingle(FNIN* in_, real_type rc, int npts){
+        initialize(in_,rc,npts);
       }
       ///set the input, analytic function
       void setInFunc(FNIN* in_) { InFunc=in_;}
@@ -73,24 +81,43 @@ namespace qmcplusplus {
       }
 
       /** evaluate everything: value, first and second derivaties
-      */
+       */
       inline real_type evaluate(real_type r, real_type& dudr, real_type& d2udr2) {
         return OutFunc->splint(r,dudr,d2udr2);
       }
 
       /** evaluate value only
-      */
+       */
       inline real_type evaluate(real_type r) {
         return OutFunc->splint(r);
       }
+      
+      /** evaluate value only
+       *
+       * Function required for SphericalBasisSet
+       */
+      inline real_type evaluate(real_type r, real_type rinv) 
+      {
+        return Y=OutFunc->splint(r);
+      }
+
+      /** evaluate everything: value, first and second derivaties
+       * 
+       * Function required for SphericalBasisSet
+       */
+      inline real_type evaluateAll(real_type r, real_type rinv) 
+      {
+        return Y=OutFunc->splint(r,dY,d2Y);
+      }
 
       /** implement the virtual function of OptimizableFunctorBase */
-      real_type f(real_type r) {
+      inline real_type f(real_type r) 
+      {
         return OutFunc->splint(r);
       }
 
       /** implement the virtual function of OptimizableFunctorBase  */
-      real_type df(real_type r) {
+      inline real_type df(real_type r) {
         real_type dudr,d2udr2;
         OutFunc->splint(r,dudr,d2udr2);
         return dudr;
@@ -114,10 +141,15 @@ namespace qmcplusplus {
 
       ///set the input, analytic function
       void initialize(FNIN* in_, grid_type* agrid) { 
-        Rmax=agrid->rmax();
-        NumGridPoints=agrid->size();
-        GridDelta=Rmax/static_cast<real_type>(NumGridPoints-1);
+        initialize(in_,agrid->rmax(),agrid->size());
+      }
+
+      void initialize(FNIN* in_, real_type rmax, int npts) 
+      { 
         InFunc=in_;
+        Rmax=rmax;
+        NumGridPoints=npts;
+        GridDelta=Rmax/static_cast<real_type>(NumGridPoints-1);
         reset();
       }
     };
@@ -318,7 +350,7 @@ namespace qmcplusplus {
 //        reset();
 //      }
 //    };
-
+//
 }
 #endif
 /***************************************************************************
