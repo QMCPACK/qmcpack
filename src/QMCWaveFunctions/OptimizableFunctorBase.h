@@ -18,26 +18,33 @@
  */
 #ifndef QMCPLUSPLUS_OPTIMIZABLEFUNCTORBASE_H
 #define QMCPLUSPLUS_OPTIMIZABLEFUNCTORBASE_H
+#include <complex>
 #include "OhmmsData/libxmldefs.h"
 #include "Optimize/VarList.h"
-#include "QMCWaveFunctions/OrbitalTraits.h"
-#include <vector>
-#include <string>
 
-namespace qmcplusplus {
+template<class T> struct NumericTraits {};
+
+template<>
+struct NumericTraits<double> {
+  typedef double          real_type;
+  typedef double          value_type;
+  typedef std::complex<double> complex_type;
+};
+
+template<>
+struct NumericTraits<std::complex<double> > {
+  typedef double          real_type;
+  typedef std::complex<double> value_type;
+  typedef std::complex<double> complex_type;
+};
+
 /** Base class for any functor used as a source for NumericalJastrow
- */
-using namespace std;
+*/
+template<class T>
+struct OptimizableFunctorBase: public NumericTraits<T> {
 
-template<class RT>
-struct OptimizableFunctorBase {
-
-  //typedef WFTraits<RT> data_type;
-  /////typedef for the argument
-  //typedef typename data_type::real_type real_type;
-  /////typedef for the return value
-  //typedef typename data_type::value_type value_type;
-  typedef RT real_type;
+  typedef typename NumericTraits<T>::real_type real_type;
+  typedef typename NumericTraits<T>::value_type value_type;
 
   ///reset the Jastrow Function
   virtual void reset()=0;
@@ -58,7 +65,7 @@ struct OptimizableFunctorBase {
 
   /** process xmlnode and registers variables to optimize
    * @param cur xmlNode for a functor
-  */
+   */
   virtual bool put(xmlNodePtr cur) = 0;
 
   /** add variables to be optimized
@@ -67,64 +74,68 @@ struct OptimizableFunctorBase {
   virtual void addOptimizables(VarRegistry<real_type>& vlist) =0;
 
   /** empty virtual function to help builder classes
-   */
+  */
   virtual void setDensity(real_type n) { }
 };
 
-  /** Implements a linear combination of any functor
-   */
-  //template<class CT>
-  template<class RT>
-    struct ComboFunctor: public OptimizableFunctorBase<RT> {
-      typedef OptimizableFunctorBase<RT> ComponentType;
-      typedef RT real_type;
-      std::vector<real_type> C;
-      std::vector<ComponentType*> Phi;
-      std::vector<std::string> ID;
+/** Implements a linear combination of any functor
+*/
+template<class T>
+struct ComboFunctor: public OptimizableFunctorBase<T> {
 
-      ComboFunctor() { 
-        C.reserve(8);
-        Phi.reserve(8);
-        ID.reserve(8);
-      }
+  typedef OptimizableFunctorBase<T> ComponentType;
+  typedef typename NumericTraits<T>::real_type real_type;
+  typedef typename NumericTraits<T>::value_type value_type;
 
-      int size() const { return Phi.size();}
+  std::vector<real_type> C;
+  std::vector<ComponentType*> Phi;
+  std::vector<std::string> ID;
 
-      void add(ComponentType* func, real_type c,  const string& id) {
-        C.push_back(c);
-        Phi.push_back(func);
-        ID.push_back(id);
-      }
+  ComboFunctor() { 
+    C.reserve(8);
+    Phi.reserve(8);
+    ID.reserve(8);
+  }
 
-      inline void reset() {
-        for(int i=0; i<Phi.size(); i++) Phi[i]->reset();
-      }
+  int size() const { return Phi.size();}
 
-      inline real_type f(real_type r) {
-        real_type res=0;
-        for(int i=0; i<Phi.size(); i++) { res += C[i]*Phi[i]->f(r);}
-        return res;
-      }
+  void add(ComponentType* func, real_type c,  const std::string& id) {
+    C.push_back(c);
+    Phi.push_back(func);
+    ID.push_back(id);
+  }
 
-      inline real_type df(real_type r) {
-        real_type res(0);
-        for(int i=0; i<Phi.size(); i++) { res += C[i]*Phi[i]->df(r);}
-        return res;
-      }
+  inline void reset() {
+    for(int i=0; i<Phi.size(); i++) Phi[i]->reset();
+  }
 
-      bool put(xmlNodePtr cur) 
-      {
-        return true;
-      }
+  inline real_type f(real_type r) {
+    real_type res=0;
+    for(int i=0; i<Phi.size(); i++) { res += C[i]*Phi[i]->f(r);}
+    return res;
+  }
 
-      void addOptimizables(VarRegistry<real_type>& vlist) {
-        for(int i=0; i<C.size(); i++) {
-          vlist.add(ID[i],&(C[i]),1);
-        }
-      }
-    };
+  inline real_type df(real_type r) {
+    real_type res(0);
+    for(int i=0; i<Phi.size(); i++) { res += C[i]*Phi[i]->df(r);}
+    return res;
+  }
 
-}
+  bool put(xmlNodePtr cur) 
+  {
+    return true;
+  }
+
+  void addOptimizables(VarRegistry<real_type>& vlist) {
+    for(int i=0; i<C.size(); i++) {
+      vlist.add(ID[i],&(C[i]),1);
+    }
+    for(int i=0; i<Phi.size(); i++) {
+      Phi[i]->addOptimizables(vlist);
+    }
+  }
+};
+
 
 #endif
 /***************************************************************************
