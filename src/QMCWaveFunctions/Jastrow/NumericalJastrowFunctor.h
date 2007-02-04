@@ -16,9 +16,8 @@
 // -*- C++ -*-
 #ifndef QMCPLUSPLUS_NUMERICAL_JASTROWFUNCTIONS_H
 #define QMCPLUSPLUS_NUMERICAL_JASTROWFUNCTIONS_H
-#include "QMCWaveFunctions/OptimizableFunctorBase.h"
+#include "Numerics/OptimizableFunctorBase.h"
 #include "Numerics/OneDimCubicSpline.h"
-#include "Optimize/VarList.h"
 
 namespace qmcplusplus {
 
