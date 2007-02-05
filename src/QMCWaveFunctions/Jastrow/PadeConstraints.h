@@ -47,10 +47,7 @@ namespace qmcplusplus {
 
     OrbitalBase* createTwoBody();
     OrbitalBase* createOneBody(ParticleSet& source);
-    inline void addTwoBodyPart(ComboOrbital* jcombo) {
-      OrbitalBase* j2 = createTwoBody();
-      if (j2) jcombo->Psi.push_back(j2);
-    }
+    void addExtra2ComboOrbital(ComboOrbital* jcombo) {}
     bool put(xmlNodePtr cur);
   };
 
@@ -83,10 +80,7 @@ namespace qmcplusplus {
 
     OrbitalBase* createTwoBody();
     OrbitalBase* createOneBody(ParticleSet& source);
-    inline void addTwoBodyPart(ComboOrbital* jcombo) {
-      OrbitalBase* j2 = createTwoBody();
-      if (j2) jcombo->Psi.push_back(j2);
-    }
+    void addExtra2ComboOrbital(ComboOrbital* jcombo) {}
     bool put(xmlNodePtr cur);
   };
 

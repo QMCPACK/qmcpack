@@ -30,6 +30,7 @@ namespace qmcplusplus {
   RPAConstraints::RPAConstraints(ParticleSet& p, TrialWaveFunction& psi, bool nospin):
     OrbitalConstraintsBase(p,psi),IgnoreSpin(nospin)
     {
+      JComponent.set(TWOBODY);
     }
 
   RPAConstraints::~RPAConstraints() {
@@ -100,6 +101,9 @@ namespace qmcplusplus {
   RPAPBCConstraints::RPAPBCConstraints(ParticleSet& p, TrialWaveFunction& psi, bool nospin):
     OrbitalConstraintsBase(p,psi),IgnoreSpin(nospin)
     {
+      JComponent.set(MULTIPLE);
+      JComponent.set(TWOBODY);
+      JComponent.set(LONGRANGE);
     }
 
   RPAPBCConstraints::~RPAPBCConstraints() {  }
@@ -136,16 +140,18 @@ namespace qmcplusplus {
     //RealType Rcut = 0.999999999 * handler->Basis.get_rc();
     RealType Rcut = handler->Basis.get_rc();
     myGrid = new GridType;
-    myGrid->set(0,Rcut,11);
+    int npts=static_cast<int>(Rcut/0.05)+1;
+    myGrid->set(0,Rcut,npts);
   
     //create the numerical functor
     FuncType* nfunc = new FuncType;
     ShortRangePartAdapter<RealType>* sra = new ShortRangePartAdapter<RealType>(handler);
     nfunc->initialize(sra, myGrid);
 
+    ofstream fout("rpa.short.dat");
     for (int i = 0; i < myGrid->size(); i++) {
       RealType r=(*myGrid)(i);
-      cout << r << "   " << nfunc->evaluate(r) << "   " << handler->evaluate(r,1.0/r) << " " << handler->evaluateLR(r) << endl;
+      fout << r << "   " << nfunc->evaluate(r) << "   " << handler->evaluate(r,1.0/r) << " " << handler->evaluateLR(r) << endl;
     }
     
     TwoBodyJastrowOrbital<FuncType> *J2 = new TwoBodyJastrowOrbital<FuncType>(targetPtcl);
@@ -156,8 +162,7 @@ namespace qmcplusplus {
      
   OrbitalBase* RPAPBCConstraints::createLRTwoBody() {
     HandlerType* handler = LRJastrowSingleton::getHandler(targetPtcl);
-    LRTwoBodyJastrow* LROrbital = new LRTwoBodyJastrow(targetPtcl, handler);
-    return LROrbital;
+    return new LRTwoBodyJastrow(targetPtcl, handler);
   }
 
   OrbitalBase* RPAPBCConstraints::createTwoBody() 
@@ -169,32 +174,33 @@ namespace qmcplusplus {
         Rs=1.0;
       }
     }
-
     app_log() << "  RPAPBCConstraints::addTwoBodyPart Rs " << Rs << endl;
-
     OrbitalBase* srp=createSRTwoBody();
-    //OrbitalBase* lr = createLRTwoBody(target);
-    //targetPsi.addOrbitals(lr);
     return srp;
   }
 
-  void RPAPBCConstraints::addTwoBodyPart(ComboOrbital* jcombo) {
-    
-    if(Rs<0) {
-      if(targetPtcl.Lattice.BoxBConds[0]) {
-        Rs=std::pow(3.0/4.0/M_PI*targetPtcl.Lattice.Volume/static_cast<RealType>(targetPtcl.getTotalNum()),1.0/3.0);
-      } else {
-        Rs=1.0;
-      }
-    }
+  void RPAPBCConstraints::addExtra2ComboOrbital(ComboOrbital* jcombo)
+  {
+    jcombo->Psi.push_back(createLRTwoBody());
+  }
 
-    app_log() << "  RPAPBCConstraints::addTwoBodyPart Rs " << Rs << endl;
+  //void RPAPBCConstraints::addTwoBodyPart(ComboOrbital* jcombo) {
+  //  
+  //  if(Rs<0) {
+  //    if(targetPtcl.Lattice.BoxBConds[0]) {
+  //      Rs=std::pow(3.0/4.0/M_PI*targetPtcl.Lattice.Volume/static_cast<RealType>(targetPtcl.getTotalNum()),1.0/3.0);
+  //    } else {
+  //      Rs=1.0;
+  //    }
+  //  }
 
-    OrbitalBase* sr = createSRTwoBody();
-    if (sr) jcombo->Psi.push_back(sr);
-    //OrbitalBase* lr = createLRTwoBody(target);
-    //if (lr) jcombo->Psi.push_back(lr);
-  } 
+  //  app_log() << "  RPAPBCConstraints::addTwoBodyPart Rs " << Rs << endl;
+
+  //  OrbitalBase* sr = createSRTwoBody();
+  //  if (sr) jcombo->Psi.push_back(sr);
+  //  //OrbitalBase* lr = createLRTwoBody(target);
+  //  //if (lr) jcombo->Psi.push_back(lr);
+  //} 
      
   OrbitalBase* RPAPBCConstraints::createOneBody(ParticleSet& source) {
     return 0;

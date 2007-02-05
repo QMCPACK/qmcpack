@@ -27,6 +27,9 @@ namespace qmcplusplus {
   PadeConstraints::PadeConstraints(ParticleSet& p, TrialWaveFunction& psi, bool nospin):
     OrbitalConstraintsBase(p,psi),IgnoreSpin(nospin)
     {
+      JComponent.set(MULTIPLE);
+      JComponent.set(ONEBODY);
+      JComponent.set(TWOBODY);
     }
    
   PadeConstraints::~PadeConstraints() {
@@ -90,6 +93,7 @@ namespace qmcplusplus {
   ScaledPadeConstraints::ScaledPadeConstraints(ParticleSet& p, TrialWaveFunction& psi, bool nospin):
     OrbitalConstraintsBase(p,psi),IgnoreSpin(nospin)
     {
+      JComponent.set(TWOBODY);
     }
   ScaledPadeConstraints::~ScaledPadeConstraints() {
     delete_iter(FuncList.begin(), FuncList.end());

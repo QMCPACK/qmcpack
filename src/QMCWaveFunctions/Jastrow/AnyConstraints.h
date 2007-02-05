@@ -56,14 +56,8 @@ namespace qmcplusplus {
     void addOptimizables(VarRegistry<RealType>& outVars);
     OrbitalBase* createTwoBody();
     OrbitalBase* createOneBody(ParticleSet& source);
-
-    inline void addTwoBodyPart(ComboOrbital* jcombo) {
-      //OrbitalBase* twobody = createTwoBody();
-      //if (twobody) jcombo->Psi.push_back(twobody);
-    }
-
+    void addExtra2ComboOrbital(ComboOrbital* jcombo) {}
     bool put(xmlNodePtr cur);
-
     void addSingleBasisPerSpecies(xmlNodePtr cur);
     BasisGroupType* createBasisGroup(xmlNodePtr cur, const string& elementType);
     void add2BasisGroup(BasisGroupType* curBG, xmlNodePtr cur);

@@ -22,8 +22,6 @@
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "Optimize/VarList.h"
 #include "QMCWaveFunctions/BasisSetBase.h"
-//#include "QMCWaveFunctions/MolecularOrbitals/GTOMolecularOrbitals.h"
-//#include "QMCWaveFunctions/MolecularOrbitals/GridMolecularOrbitals.h"
 
 namespace qmcplusplus {
 
@@ -35,8 +33,6 @@ namespace qmcplusplus {
   public:
 
     typedef BasisSetBase BasisSetType;
-    //typedef GTOMolecularOrbitals::BasisSetType BasisSetType;
-    //typedef GridMolecularOrbitals::BasisSetType BasisSetType;
 
     ///constructor
     ThreeBodyGeminal(ParticleSet& ions, ParticleSet& els);

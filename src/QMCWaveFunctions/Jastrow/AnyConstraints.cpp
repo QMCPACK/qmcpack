@@ -24,6 +24,9 @@ namespace qmcplusplus {
   AnyConstraints::AnyConstraints(ParticleSet& p, TrialWaveFunction& psi):
     OrbitalConstraintsBase(p,psi)
     {
+      //note MULTIPLE is false
+      JComponent.set(ONEBODY);
+      JComponent.set(TWOBODY);
     }
 
   AnyConstraints::~AnyConstraints() {

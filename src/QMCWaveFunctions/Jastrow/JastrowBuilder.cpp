@@ -20,6 +20,7 @@
 #include "QMCWaveFunctions/Jastrow/RPAConstraints.h"
 #include "QMCWaveFunctions/Jastrow/JAABuilder.h"
 #include "QMCWaveFunctions/Jastrow/JABBuilder.h"
+#include "QMCWaveFunctions/Jastrow/ThreeBodyGeminalBuilder.h"
 #include "OhmmsData/AttributeSet.h"
 
 namespace qmcplusplus {
@@ -124,7 +125,8 @@ namespace qmcplusplus {
   {
     app_log() << "  JastrowBuilder::addTwoBody "<< endl;
 
-    bool useSpline = (transformOpt == "yes");
+    bool success=false;
+    bool useSpline = (targetPtcl.Lattice.BoxBConds[0] && transformOpt == "yes");
     bool ignoreSpin = (spinOpt == "no");
 
     OrbitalConstraintsBase* control=0;
@@ -158,82 +160,83 @@ namespace qmcplusplus {
       return jbuilder->put(cur);
     }
 
-    bool success=control->put(cur);
+    success=control->put(cur);
     if(!success) {
       app_error() << "   Failed to buld " << nameOpt << "  Jastrow function " << endl;  
       delete control;
       return false;
     }
 
+    OrbitalBase* j2=control->createTwoBody();
+    if(j2== 0) {
+      app_error() << "     JastrowBuilder::addTwoBody failed to create a two body Jastrow" << endl;
+      delete control;
+    }
 
-    if(sourceOpt == targetPtcl.getName()) // pure two-body
+    enum {MULTIPLE=0, LONGRANGE, ONEBODY, TWOBODY, THREEBODY, FOURBODY};
+
+    if(control->JComponent[MULTIPLE])
     {
-      OrbitalBase* j2=control->createTwoBody();
-      if(j2) targetPsi.addOrbital(j2);
+      //create a combo orbital
+      ComboOrbital* jcombo=new ComboOrbital(control);
+      jcombo->Psi.push_back(j2);
+      if(control->JComponent[ONEBODY] && sourceOpt != targetPtcl.getName())
+      {
+        app_log() << "    Adding one-body Jastrow function dependent upon two-body " << funcOpt << endl;
+        map<string,ParticleSet*>::iterator pa_it(ptclPool.find(sourceOpt));
+        if(pa_it != ptclPool.end()) 
+        {
+          OrbitalBase* j1=control->createOneBody(*((*pa_it).second));
+          if(j1) jcombo->Psi.push_back(j1);
+        }
+      }
+      //if(control->JComponent[LONGRANGE])
+      //{
+      //  app_log() << "    Adding long-range component of " << funcOpt << "  Jastrow function "<< endl;
+      //  control->addExtra2ComboOrbital(jcombo);
+      //}
+      targetPsi.addOrbital(jcombo);
     }
     else
     {
-      app_log() << "    Adding one-body Jastrow function dependent upon two-body " << funcOpt << endl;
-      map<string,ParticleSet*>::iterator pa_it(ptclPool.find(sourceOpt));
-      if(pa_it != ptclPool.end()) 
-      {
-        ComboOrbital* jcombo=new ComboOrbital(control);
-        control->addTwoBodyPart(jcombo);
-        ParticleSet* sourcePtcl= sourcePtcl=(*pa_it).second;
-        OrbitalBase* j1=control->createOneBody(*sourcePtcl);
-        if(j1) jcombo->Psi.push_back(j1);
-        targetPsi.addOrbital(jcombo);
-      }
+      targetPsi.addOrbital(j2);
     }
-    
     control->addOptimizables(targetPsi.VarList);
+    Children.push_back(control);
     return success;
-    //  control->put(cur);
-    //  OrbitalBase* j=control->createTwoBody();
-    //  if(j)
-    //  {
-    //    control->addOptimizables(targetPsi.VarList);
-    //    targetPsi.addOrbital(j);
-    //    Children.push_back(control);
-    //    return true;
-    //  }
-    //  else
-    //  {
-    //    delete control;
-    //    return false;
-    //  }
-    //else
-    //{
-    //  OrbitalBuilderBase* jb = new TwoBodyJastrowBuilder(targetPtcl,targetPsi,ptclPool);
-    //  Children.push_back(jb);
-    //  return jb->put(cur);
-    //}
   }
 
   bool JastrowBuilder::addThreeBody(xmlNodePtr cur) 
   {
-    app_log() << "  JastrowBuilder::addThreeBody "<< endl;
-//    if(jasttype == "Three-Body-Geminal") {
-//      app_log() << "\n  creating Three-Body-Germinal Jastrow function " << endl;
-//      string source_name("i");
-//      const xmlChar* iptr = xmlGetProp(cur, (const xmlChar *)"source");
-//      if(iptr != NULL) source_name=(const char*)iptr;
-//      PtclPoolType::iterator pit(ptclPool.find(source_name));
-//      if(pit != ptclPool.end()) {
-//        jbuilder = new ThreeBodyGeminalBuilder(*targetPtcl,*targetPsi,*((*pit).second));
-//      }
-//    } else if (jasttype == "Three-Body-Pade") {
-//      app_log() << "\n  creating Three-Body-Pade Jastrow function " << endl;
-//      string source_name("i");
-//      const xmlChar* iptr = xmlGetProp(cur, (const xmlChar *)"source");
-//      //if(iptr != NULL) source_name=(const char*)iptr;
-//      PtclPoolType::iterator pit(ptclPool.find(source_name));
-//      if(pit != ptclPool.end()) {
-//        jbuilder = new ThreeBodyPadeBuilder(*targetPtcl,*targetPsi,*((*pit).second));
-//      }
-//    }
+    OrbitalBuilderBase* jbuilder=0;
+    if(typeOpt == "Three-Body-Geminal") {
+      app_log() << "\n  creating Three-Body-Germinal Jastrow function " << endl;
+      PtclPoolType::iterator pit(ptclPool.find(sourceOpt));
+      if(pit != ptclPool.end()) {
+        jbuilder = new ThreeBodyGeminalBuilder(targetPtcl,targetPsi,*((*pit).second));
+      }
+    }
+
+    if(jbuilder)
+    {
+      jbuilder->put(cur);
+      Children.push_back(jbuilder);
+      return true;
+    }
+    //    } else if (jasttype == "Three-Body-Pade") {
+    //      app_log() << "\n  creating Three-Body-Pade Jastrow function " << endl;
+    //      string source_name("i");
+    //      const xmlChar* iptr = xmlGetProp(cur, (const xmlChar *)"source");
+    //      //if(iptr != NULL) source_name=(const char*)iptr;
+    //      PtclPoolType::iterator pit(ptclPool.find(source_name));
+    //      if(pit != ptclPool.end()) {
+    //        jbuilder = new ThreeBodyPadeBuilder(*targetPtcl,*targetPsi,*((*pit).second));
+    //      }
+    //    }
     return true;
   }
+
+
 }
 /***************************************************************************
  * $RCSfile$   $Author: jnkim $

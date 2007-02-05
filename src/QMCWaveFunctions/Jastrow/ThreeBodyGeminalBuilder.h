@@ -22,11 +22,8 @@
 #include "QMCWaveFunctions/OrbitalBuilderBase.h"
 namespace qmcplusplus {
 
-  //class GTOMolecularOrbitals;
   class ThreeBodyGeminal;
-  class JastrowBasisBuilder;
-  //class GTOMolecularOrbitals;
-  //class GridMolecularOrbitals;
+  class BasisSetBuilder;
 
   /**@ingroup WFSBuilder
    * @brief An abstract class for wave function builders
@@ -43,10 +40,11 @@ namespace qmcplusplus {
 
   protected:
 
+    ParticleSet& sourcePtcl;
     //GTOMolecularOrbitals* basisBuilder;
     //GridMolecularOrbitals* basisBuilder;
-    ThreeBodyGeminal* J3;
-    JastrowBasisBuilder* basisBuilder;;
+    //ThreeBodyGeminal* J3;
+    //BasisSetBuilder* basisBuilder;;
   };
 }
 #endif

@@ -19,20 +19,20 @@
  */
 #include "QMCWaveFunctions/Jastrow/ThreeBodyGeminalBuilder.h"
 #include "QMCWaveFunctions/Jastrow/JastrowBasisBuilder.h"
-//#include "QMCWaveFunctions/MolecularOrbitals/GTOMolecularOrbitals.h"
-//#include "QMCWaveFunctions/MolecularOrbitals/GridMolecularOrbitals.h"
+#include "QMCWaveFunctions/MolecularOrbitals/NGOBuilder.h"
+#include "QMCWaveFunctions/MolecularOrbitals/GTOBuilder.h"
+#include "QMCWaveFunctions/MolecularOrbitals/STOBuilder.h"
+#include "QMCWaveFunctions/MolecularOrbitals/MolecularBasisBuilder.h"
+#include "QMCWaveFunctions/MolecularOrbitals/GTOMolecularOrbitals.h"
 #include "QMCWaveFunctions/Jastrow/ThreeBodyGeminal.h"
 namespace qmcplusplus {
 
   ThreeBodyGeminalBuilder::ThreeBodyGeminalBuilder(ParticleSet& els, 
       TrialWaveFunction& wfs, 
       ParticleSet& ions):
-    OrbitalBuilderBase(els,wfs) {
-    //gtoBuilder = new GTOMolecularOrbitals(els,wfs,ions);
-    //gtoBuilder = new GridMolecularOrbitals(els,wfs,ions);
-    basisBuilder = new JastrowBasisBuilder(els,ions);
-    J3 = new ThreeBodyGeminal(ions, els);
-  }
+    OrbitalBuilderBase(els,wfs), sourcePtcl(ions) 
+    {
+    }
 
   bool ThreeBodyGeminalBuilder::put(xmlNodePtr cur) {
 
@@ -56,9 +56,13 @@ namespace qmcplusplus {
 
     if(basisPtr != NULL)
     {
-      foundBasisSet = basisBuilder->put(basisPtr);
-      J3->setBasisSet(basisBuilder->myBasisSet);
+      ThreeBodyGeminal* J3 = new ThreeBodyGeminal(sourcePtcl, targetPtcl);
 
+      //GTOMolecularOrbitals* basisBuilder = new GTOMolecularOrbitals(targetPtcl,targetPsi,sourcePtcl);
+      //J3->setBasisSet(basisBuilder->addBasisSet(basisPtr));
+      BasisSetBuilder* basisBuilder = new JastrowBasisBuilder(targetPtcl,sourcePtcl);
+      basisBuilder->put(basisPtr);
+      J3->setBasisSet(basisBuilder->myBasisSet);
       if(coeffPtr != NULL)
       {
         J3->put(coeffPtr,targetPsi.VarList);
@@ -67,10 +71,10 @@ namespace qmcplusplus {
       {
         cout << "Coefficients are not given." << endl;
       }
+      //add three-body jastrow
+      targetPsi.addOrbital(J3);
     }
 
-    //add three-body jastrow
-    targetPsi.addOrbital(J3);
     return true;
   }
 }
