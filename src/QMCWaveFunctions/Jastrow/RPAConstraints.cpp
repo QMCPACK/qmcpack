@@ -160,6 +160,24 @@ namespace qmcplusplus {
     return LROrbital;
   }
 
+  OrbitalBase* RPAPBCConstraints::createTwoBody() 
+  {
+    if(Rs<0) {
+      if(targetPtcl.Lattice.BoxBConds[0]) {
+        Rs=std::pow(3.0/4.0/M_PI*targetPtcl.Lattice.Volume/static_cast<RealType>(targetPtcl.getTotalNum()),1.0/3.0);
+      } else {
+        Rs=1.0;
+      }
+    }
+
+    app_log() << "  RPAPBCConstraints::addTwoBodyPart Rs " << Rs << endl;
+
+    OrbitalBase* srp=createSRTwoBody();
+    //OrbitalBase* lr = createLRTwoBody(target);
+    //targetPsi.addOrbitals(lr);
+    return srp;
+  }
+
   void RPAPBCConstraints::addTwoBodyPart(ComboOrbital* jcombo) {
     
     if(Rs<0) {

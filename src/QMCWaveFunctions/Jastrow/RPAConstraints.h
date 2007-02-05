@@ -65,11 +65,13 @@ namespace qmcplusplus {
     ~RPAPBCConstraints();
     void apply();
     void addOptimizables(VarRegistry<RealType>& outVars);
-    OrbitalBase* createSRTwoBody();
-    OrbitalBase* createLRTwoBody();
+    OrbitalBase* createTwoBody();
     void addTwoBodyPart(ComboOrbital* jcombo);
     OrbitalBase* createOneBody(ParticleSet& source);
     bool put(xmlNodePtr cur);
+
+    OrbitalBase* createSRTwoBody();
+    OrbitalBase* createLRTwoBody();
      
   private:
   };
