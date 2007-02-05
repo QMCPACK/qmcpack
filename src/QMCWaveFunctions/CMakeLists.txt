@@ -8,14 +8,15 @@ SET(WFBASE_SRCS
 SET(JASTROW_SRCS
   Jastrow/JAABuilder.cpp
   Jastrow/JABBuilder.cpp
-  Jastrow/NJAABuilder.cpp
-  Jastrow/NJABBuilder.cpp
   Jastrow/LRTwoBodyJastrow.cpp
   Jastrow/JAAPBCBuilder.cpp
   Jastrow/TwoBodyJastrowBuilder.cpp
   Jastrow/PadeConstraints.cpp
   Jastrow/RPAConstraints.cpp
-  Jastrow/WMConstraints.cpp
+  Jastrow/AnyConstraints.cpp
+  Jastrow/CBSOBuilder.cpp
+  Jastrow/JastrowBasisBuilder.cpp
+  Jastrow/JastrowBuilder.cpp
   OrbitalConstraintsBase.cpp
   ComboOrbital.cpp
 )
