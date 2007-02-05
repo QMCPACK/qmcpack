@@ -6,11 +6,9 @@ SET(WFBASE_SRCS
   )
 
 SET(JASTROW_SRCS
+  Jastrow/LRTwoBodyJastrow.cpp
   Jastrow/JAABuilder.cpp
   Jastrow/JABBuilder.cpp
-  Jastrow/LRTwoBodyJastrow.cpp
-  Jastrow/JAAPBCBuilder.cpp
-  Jastrow/TwoBodyJastrowBuilder.cpp
   Jastrow/PadeConstraints.cpp
   Jastrow/RPAConstraints.cpp
   Jastrow/AnyConstraints.cpp

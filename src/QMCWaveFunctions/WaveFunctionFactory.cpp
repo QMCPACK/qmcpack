@@ -60,15 +60,14 @@ namespace qmcplusplus {
     bool success=true;
     while(cur != NULL) {
       string cname((const char*)(cur->name));
-
       if (cname == OrbitalBuilderBase::detset_tag) 
       {
-        success |= addFermionTerm(cur);
+        success = addFermionTerm(cur);
       } 
       else if (cname ==  OrbitalBuilderBase::jastrow_tag) 
       {
         OrbitalBuilderBase *jbuilder = new JastrowBuilder(*targetPtcl,*targetPsi,ptclPool);
-        success != jbuilder->put(cur);
+        success = jbuilder->put(cur);
         addNode(jbuilder,cur);
         //success |= addJastrowTerm(cur);
       }

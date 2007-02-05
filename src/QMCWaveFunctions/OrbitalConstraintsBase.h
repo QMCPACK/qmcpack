@@ -58,23 +58,24 @@ namespace qmcplusplus {
      */
     virtual void addOptimizables(VarRegistry<RealType>& outVars)=0;
 
+    /** Add the appropriate orbital (or orbitals in the case of 
+     *  a jastrow with a short and a long range part) to the ComboOrbital
+     */
+    virtual OrbitalBase* createTwoBody()=0;
+
     /** Create an OrbitalBase using two-body relation
      * @param target Quantum Particle Set on which an Orbital depend
      * @return A OrbitalBase*, typically ComboOrbital*
      */
     virtual void addTwoBodyPart(ComboOrbital* j)=0;
 
-    /** Add the appropriate orbital (or orbitals in the case of 
-     *  a jastrow with a short and a long range part) to the ComboOrbital
-     */
-    //virtual OrbitalBase* createTwoBody(ParticleSet& target)=0;
-   
     /** Create an OrbitalBase using one-body relation
      * @param target Quantum Particle Set on which an Orbital depend
      * @param source Quantum/Classical ParticleSet 
      * @return A OrbitalBase*, typically ComboOrbital*
      */
     virtual OrbitalBase* createOneBody(ParticleSet& source)=0;
+
 
     void getParam(xmlNodePtr cur);
     bool getVariables(xmlNodePtr cur);
