@@ -17,7 +17,7 @@
 #include "Particle/DistanceTableData.h"
 #include "Particle/DistanceTable.h"
 #include "QMCWaveFunctions/Jastrow/JAABuilder.h"
-#include "QMCWaveFunctions/Jastrow/ModPadeJastrow.h"
+#include "QMCWaveFunctions/Jastrow/ModPadeFunctor.h"
 #include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbital.h"
 
 namespace qmcplusplus {
@@ -167,7 +167,7 @@ namespace qmcplusplus {
     if(jastfunction == "short") {
       app_log() << "  Modified Jastrow function Two-Body Jastrow Function = " << jastfunction << endl;
       IgnoreSpin=true;
-      ModPadeJastrow<RealType> *dummy = 0;
+      ModPadeFunctor<RealType> *dummy = 0;
       success = createJAA(cur,dummy);
     }
     //} else if(jastfunction == "rpa") {
