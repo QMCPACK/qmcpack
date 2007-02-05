@@ -25,7 +25,7 @@ namespace qmcplusplus {
  * \f[ u(r) = \frac{1}{2*A}\left[1-\exp(-A*r)\right], \f]
  */
 template<class T>
-struct ModPadeJastrow: public OptimizableFunctorBase<T> {
+struct ModPadeFunctor: public OptimizableFunctorBase<T> {
 
   typedef typename OptimizableFunctorBase<T>::real_type real_type;
 
@@ -43,7 +43,7 @@ struct ModPadeJastrow: public OptimizableFunctorBase<T> {
    * @param a A coefficient
    * @param samespin boolean to indicate if this function is for parallel spins
    */
-  ModPadeJastrow(real_type a=-0.5, real_type b=1): Zeff(1.0) {reset(a,b);}
+  ModPadeFunctor(real_type a=-0.5, real_type b=1): Zeff(1.0) {reset(a,b);}
 
   /** reset the internal variables.
    */
