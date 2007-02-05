@@ -24,7 +24,7 @@
  * Prototype of the template parameter of TwoBodyJastrow and OneBodyJastrow
  */
 template<class T>
-struct ChebyshevJastrow {
+struct ChebyshevFunctor {
 
   ///coefficients
   T B, L;
@@ -33,7 +33,7 @@ struct ChebyshevJastrow {
 
   vector<T> TT, dTT, d2TT;
   ///constructor
-  ChebyshevJastrow() { }
+  ChebyshevFunctor() { }
 
   /**
    *@brief reset the internal variables.
