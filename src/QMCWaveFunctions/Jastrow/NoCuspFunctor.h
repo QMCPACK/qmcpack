@@ -24,7 +24,7 @@ namespace qmcplusplus {
  * Prototype of the template parameter of TwoBodyJastrow and OneBodyJastrow
  */
 template<class T>
-struct NoCuspJastrow: public OptimizableFunctorBase<T> {
+struct NoCuspFunctor: public OptimizableFunctorBase<T> {
 
   typedef typename OptimizableFunctorBase<T>::real_type real_type;
   ///coefficients
@@ -33,7 +33,7 @@ struct NoCuspJastrow: public OptimizableFunctorBase<T> {
   string ID_B;
 
   ///constructor
-  NoCuspJastrow(real_type a=1.0, real_type b=1.0) {reset(a,b);}
+  NoCuspFunctor(real_type a=1.0, real_type b=1.0) {reset(a,b);}
 
   /**
    *@brief reset the internal variables.
@@ -106,7 +106,7 @@ struct NoCuspJastrow: public OptimizableFunctorBase<T> {
       tcur = tcur->next;
     }
     reset(Atemp,Btemp);
-    LOGMSG("  NoCuspJastrow Parameters ")
+    LOGMSG("  NoCuspFunctor Parameters ")
     LOGMSG("    A (" << ID_A << ") = " << A  << "  B (" << ID_B << ") =  " << B)
     return true;
   }

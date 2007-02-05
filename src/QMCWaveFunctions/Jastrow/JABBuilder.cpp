@@ -18,7 +18,7 @@
 #include "Particle/DistanceTable.h"
 #include "QMCWaveFunctions/Jastrow/JABBuilder.h"
 #include "QMCWaveFunctions/Jastrow/PadeFunctors.h"
-#include "QMCWaveFunctions/Jastrow/NoCuspJastrow.h"
+#include "QMCWaveFunctions/Jastrow/NoCuspFunctor.h"
 #include "QMCWaveFunctions/Jastrow/ModPadeFunctor.h"
 #include "QMCWaveFunctions/Jastrow/OneBodyJastrowFunction.h"
 
@@ -98,7 +98,7 @@ namespace qmcplusplus {
     bool success=false;
     app_log() << "  One-Body Jastrow Function = " << jastfunction << endl;
     if(jastfunction == "nocusp") {
-      NoCuspJastrow<RealType> *dummy = 0;
+      NoCuspFunctor<RealType> *dummy = 0;
       success = createJAB(cur,dummy);
     } else if(jastfunction == "pade") {
       PadeFunctor<RealType> *dummy = 0;
