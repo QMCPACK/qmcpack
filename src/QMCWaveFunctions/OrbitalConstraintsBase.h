@@ -37,6 +37,9 @@ namespace qmcplusplus {
 
     typedef OneDimGridFactory::GridType RadialGridType;
 
+    enum {MULTIPLE=0, LONGRANGE, ONEBODY, TWOBODY, THREEBODY, FOURBODY};
+    ///bitset to set the Jastrow component
+    bitset<8> JComponent;
     /** a common radial grid 
      */
     RadialGridType* myGrid;
@@ -67,7 +70,7 @@ namespace qmcplusplus {
      * @param target Quantum Particle Set on which an Orbital depend
      * @return A OrbitalBase*, typically ComboOrbital*
      */
-    virtual void addTwoBodyPart(ComboOrbital* j)=0;
+    virtual void addExtra2ComboOrbital(ComboOrbital* j)=0;
 
     /** Create an OrbitalBase using one-body relation
      * @param target Quantum Particle Set on which an Orbital depend
