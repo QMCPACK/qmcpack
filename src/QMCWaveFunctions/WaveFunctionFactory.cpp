@@ -18,21 +18,15 @@
  *@brief Definition of a WaveFunctionFactory 
  */
 #include "QMCWaveFunctions/WaveFunctionFactory.h"
-#include "QMCWaveFunctions/MolecularOrbitals/MolecularOrbitalBuilder.h"
-#include "QMCWaveFunctions/Jastrow/JastrowBuilder.h"
-#include "QMCWaveFunctions/Jastrow/JABBuilder.h"
-#include "QMCWaveFunctions/Jastrow/NJABBuilder.h"
-#include "QMCWaveFunctions/Jastrow/JAAPBCBuilder.h"
-#include "QMCWaveFunctions/Jastrow/TwoBodyJastrowBuilder.h"
 #include "QMCWaveFunctions/WaveFunctionFactory.h"
+#include "QMCWaveFunctions/Jastrow/JastrowBuilder.h"
 #include "QMCWaveFunctions/Fermion/SlaterDetBuilder.h"
 #include "QMCWaveFunctions/PlaneWave/PWOrbitalBuilder.h"
 #if defined(QMC_COMPLEX)
 #include "QMCWaveFunctions/ElectronGas/ElectronGasComplexOrbitalBuilder.h"
 #else
 #include "QMCWaveFunctions/ElectronGas/ElectronGasOrbitalBuilder.h"
-#include "QMCWaveFunctions/Jastrow/ThreeBodyGeminalBuilder.h"
-#include "QMCWaveFunctions/Jastrow/ThreeBodyPadeBuilder.h"
+#include "QMCWaveFunctions/MolecularOrbitals/MolecularOrbitalBuilder.h"
 #include "QMCWaveFunctions/AGPDeterminantBuilder.h"
 #endif
 #include "OhmmsData/AttributeSet.h"
@@ -67,10 +61,16 @@ namespace qmcplusplus {
     while(cur != NULL) {
       string cname((const char*)(cur->name));
 
-      if (cname == OrbitalBuilderBase::detset_tag) {
+      if (cname == OrbitalBuilderBase::detset_tag) 
+      {
         success |= addFermionTerm(cur);
-      } else if (cname ==  OrbitalBuilderBase::jastrow_tag) {
-        success |= addJastrowTerm(cur);
+      } 
+      else if (cname ==  OrbitalBuilderBase::jastrow_tag) 
+      {
+        OrbitalBuilderBase *jbuilder = new JastrowBuilder(*targetPtcl,*targetPsi,ptclPool);
+        success != jbuilder->put(cur);
+        addNode(jbuilder,cur);
+        //success |= addJastrowTerm(cur);
       }
       if(attach2Node) xmlAddChild(myNode,xmlCopyNode(cur,1));
       cur = cur->next;
@@ -143,80 +143,6 @@ namespace qmcplusplus {
     }
   }
 
-  bool WaveFunctionFactory::addJastrowTerm(xmlNodePtr cur) {
-    string jasttype("0");
-    string jastname("0");
-    string funcname("0");
-
-    OhmmsAttributeSet oAttrib;
-    oAttrib.add(jasttype,"type");
-    oAttrib.add(jastname,"name");
-    oAttrib.add(funcname,"function");
-    oAttrib.put(cur);
-
-    if(jasttype[0] == '0')
-    {
-      app_warning() << "  WaveFunctionFactory::addJastrowTerm missing type. Ignore " << jastname << endl;
-      return false;
-    }
-
-    //string jasttype((const char*)(xmlGetProp(cur, (const xmlChar *)"type")));
-    //string jastname((const char*)(xmlGetProp(cur, (const xmlChar *)"name")));
-    //string funcname((const char*)(xmlGetProp(cur, (const xmlChar *)"function")));
-    bool useSpline=false;
-    const xmlChar* gptr=xmlGetProp(cur,(const xmlChar*)"transform");
-    if(gptr != NULL) {
-      if(xmlStrEqual(gptr,(const xmlChar*)"yes")) {
-        useSpline=true;
-      } 
-    }
-
-    OrbitalBuilderBase* jbuilder=0;
-    if(jasttype.find("Two") < jasttype.size()) {
-      jbuilder=new TwoBodyJastrowBuilder(*targetPtcl,*targetPsi,ptclPool);
-    } else if(jasttype == "Long-Range") {
-      app_log() << "\n  Using JAAPBCBuilder for two-body jatrow TESTING ONLY" << endl;
-      jbuilder = new JAAPBCBuilder(*targetPtcl,*targetPsi);
-    } else if(jasttype == "One-Body") {
-      if(useSpline) {
-        app_log() << "\n  Using NJABBuilder for one-body jatrow with spline functions" << endl;
-        jbuilder = new NJABBuilder(*targetPtcl,*targetPsi,ptclPool);
-      } else {
-        app_log() << "\n  Using JABBuilder for one-body jatrow with analytic functions" << endl;
-        jbuilder = new JABBuilder(*targetPtcl,*targetPsi,ptclPool);
-      }
-    } 
-#if !defined(QMC_COMPLEX)
-    else if(jasttype == "Three-Body-Geminal") {
-      app_log() << "\n  creating Three-Body-Germinal Jastrow function " << endl;
-      string source_name("i");
-      const xmlChar* iptr = xmlGetProp(cur, (const xmlChar *)"source");
-      if(iptr != NULL) source_name=(const char*)iptr;
-      PtclPoolType::iterator pit(ptclPool.find(source_name));
-      if(pit != ptclPool.end()) {
-        jbuilder = new ThreeBodyGeminalBuilder(*targetPtcl,*targetPsi,*((*pit).second));
-      }
-    } else if (jasttype == "Three-Body-Pade") {
-      app_log() << "\n  creating Three-Body-Pade Jastrow function " << endl;
-      string source_name("i");
-      const xmlChar* iptr = xmlGetProp(cur, (const xmlChar *)"source");
-      //if(iptr != NULL) source_name=(const char*)iptr;
-      PtclPoolType::iterator pit(ptclPool.find(source_name));
-      if(pit != ptclPool.end()) {
-        jbuilder = new ThreeBodyPadeBuilder(*targetPtcl,*targetPsi,*((*pit).second));
-      }
-    }
-#endif
-
-    if(jbuilder) {
-      jbuilder->put(cur);
-      addNode(jbuilder,cur);
-      return true;
-    } else {
-      app_warning() << "    " << jasttype << " is not valid." << endl;
-      return false;
-    }
-  }
 
   bool WaveFunctionFactory::addNode(OrbitalBuilderBase* b, xmlNodePtr cur) {
     psiBuilder.push_back(b);
@@ -257,6 +183,91 @@ namespace qmcplusplus {
   }
 
   void WaveFunctionFactory::reset() { }
+
+//  bool WaveFunctionFactory::addJastrowTerm(xmlNodePtr cur) {
+//    string jasttype("0");
+//    string jastname("0");
+//    string funcname("0");
+//
+//    OhmmsAttributeSet oAttrib;
+//    oAttrib.add(jasttype,"type");
+//    oAttrib.add(jastname,"name");
+//    oAttrib.add(funcname,"function");
+//    oAttrib.put(cur);
+//
+//    if(jasttype[0] == '0')
+//    {
+//      app_warning() << "  WaveFunctionFactory::addJastrowTerm missing type. Ignore " << jastname << endl;
+//      return false;
+//    }
+//
+//    //string jasttype((const char*)(xmlGetProp(cur, (const xmlChar *)"type")));
+//    //string jastname((const char*)(xmlGetProp(cur, (const xmlChar *)"name")));
+//    //string funcname((const char*)(xmlGetProp(cur, (const xmlChar *)"function")));
+//    bool useSpline=false;
+//    const xmlChar* gptr=xmlGetProp(cur,(const xmlChar*)"transform");
+//    if(gptr != NULL) {
+//      if(xmlStrEqual(gptr,(const xmlChar*)"yes")) {
+//        useSpline=true;
+//      } 
+//    }
+//
+//    OrbitalBuilderBase* jbuilder=0;
+//    if(jasttype.find("Two") < jasttype.size()) 
+//    {
+//      jbuilder=new TwoBodyJastrowBuilder(*targetPtcl,*targetPsi,ptclPool);
+//    } 
+//    else if(jasttype == "TEST")
+//    {
+//      app_log() << "\n  Using JastrowBasisBuilder for TESTING ONLY" << endl;
+//      jbuilder=new JastrowBuilder(*targetPtcl,*targetPsi,ptclPool);
+//    }
+//    else if(jasttype == "Long-Range") 
+//    {
+//      app_log() << "\n  Using JAAPBCBuilder for two-body jatrow TESTING ONLY" << endl;
+//      jbuilder = new JAAPBCBuilder(*targetPtcl,*targetPsi);
+//    } 
+//    else if(jasttype == "One-Body") 
+//    {
+//      if(useSpline) {
+//        app_log() << "\n  Using NJABBuilder for one-body jatrow with spline functions" << endl;
+//        jbuilder = new NJABBuilder(*targetPtcl,*targetPsi,ptclPool);
+//      } else {
+//        app_log() << "\n  Using JABBuilder for one-body jatrow with analytic functions" << endl;
+//        jbuilder = new JABBuilder(*targetPtcl,*targetPsi,ptclPool);
+//      }
+//    } 
+//#if !defined(QMC_COMPLEX)
+//    else if(jasttype == "Three-Body-Geminal") {
+//      app_log() << "\n  creating Three-Body-Germinal Jastrow function " << endl;
+//      string source_name("i");
+//      const xmlChar* iptr = xmlGetProp(cur, (const xmlChar *)"source");
+//      if(iptr != NULL) source_name=(const char*)iptr;
+//      PtclPoolType::iterator pit(ptclPool.find(source_name));
+//      if(pit != ptclPool.end()) {
+//        jbuilder = new ThreeBodyGeminalBuilder(*targetPtcl,*targetPsi,*((*pit).second));
+//      }
+//    } else if (jasttype == "Three-Body-Pade") {
+//      app_log() << "\n  creating Three-Body-Pade Jastrow function " << endl;
+//      string source_name("i");
+//      const xmlChar* iptr = xmlGetProp(cur, (const xmlChar *)"source");
+//      //if(iptr != NULL) source_name=(const char*)iptr;
+//      PtclPoolType::iterator pit(ptclPool.find(source_name));
+//      if(pit != ptclPool.end()) {
+//        jbuilder = new ThreeBodyPadeBuilder(*targetPtcl,*targetPsi,*((*pit).second));
+//      }
+//    }
+//#endif
+//
+//    if(jbuilder) {
+//      jbuilder->put(cur);
+//      addNode(jbuilder,cur);
+//      return true;
+//    } else {
+//      app_warning() << "    " << jasttype << " is not valid." << endl;
+//      return false;
+//    }
+//  }
 }
 /***************************************************************************
  * $RCSfile$   $Author$

@@ -59,8 +59,6 @@ namespace qmcplusplus {
      */
     bool build(xmlNodePtr cur, bool buildtree=true);
 
-    /** add Jastrow term */
-    bool addJastrowTerm(xmlNodePtr cur);
     /** add Fermion wavefunction term */
     bool addFermionTerm(xmlNodePtr cur);
 

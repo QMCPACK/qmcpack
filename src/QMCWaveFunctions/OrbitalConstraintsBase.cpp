@@ -18,8 +18,8 @@
 
 namespace qmcplusplus {
 
-  OrbitalConstraintsBase::OrbitalConstraintsBase():
-    myNode(NULL), myGrid(0), PrintTables(false) 
+  OrbitalConstraintsBase::OrbitalConstraintsBase(ParticleSet& p, TrialWaveFunction& psi):
+    OrbitalBuilderBase(p,psi), PrintTables(false) 
     {
     }
 
@@ -68,7 +68,7 @@ namespace qmcplusplus {
     return true;
   }
 
-  void OrbitalConstraintsBase::setRadialGrid(ParticleSet& target) 
+  void OrbitalConstraintsBase::setRadialGrid() 
   {
     if(myGrid) return;
     xmlNodePtr gridPtr=NULL;
@@ -85,8 +85,8 @@ namespace qmcplusplus {
       xmlNewProp(gridPtr,(const xmlChar*)"type",(const xmlChar*)"log");
       xmlNewProp(gridPtr,(const xmlChar*)"ri",(const xmlChar*)"1.0e-6");
       std::ostringstream rf;
-      if(target.Lattice.BoxBConds[0])
-        rf << target.Lattice.R(0,0)*0.48;
+      if(targetPtcl.Lattice.BoxBConds[0])
+        rf << targetPtcl.Lattice.R(0,0)*0.48;
       else 
         rf << 100.;
       xmlNewProp(gridPtr,(const xmlChar*)"rf",(const xmlChar*)rf.str().c_str());

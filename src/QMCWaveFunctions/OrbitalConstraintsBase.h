@@ -19,21 +19,24 @@
  */
 #ifndef QMCPLUSPLUS_ORBITALCONSTRAINTSBASE_H
 #define QMCPLUSPLUS_ORBITALCONSTRAINTSBASE_H
-#include "QMCWaveFunctions/OrbitalBase.h"
+#include "QMCWaveFunctions/OrbitalBuilderBase.h"
 #include "QMCFactory/OneDimGridFactory.h"
-#include "Optimize/VarList.h"
 
 namespace qmcplusplus {
   
   class ComboOrbital;
   
-  struct OrbitalConstraintsBase: public QMCTraits {
+  /**  Base class to build Jastrow functions with constraints.
+   *
+   * OrbitalConstraintsBase is derived from OrbitalBuilderBase  and its derived
+   * classes implement a builder for Jastrow functions with constraints, such 
+   * as cusp conditions.
+   */
+  struct OrbitalConstraintsBase: public OrbitalBuilderBase
+  {
 
     typedef OneDimGridFactory::GridType RadialGridType;
 
-    /** xmlNode on which the constraints operate
-     */
-    xmlNodePtr myNode;
     /** a common radial grid 
      */
     RadialGridType* myGrid;
@@ -45,7 +48,7 @@ namespace qmcplusplus {
      */
     std::map<std::string,std::pair<std::string,RealType> > inVars;
     ///default contructor
-    OrbitalConstraintsBase();
+    OrbitalConstraintsBase(ParticleSet& p, TrialWaveFunction& psi);
     ///virtual destructor
     virtual ~OrbitalConstraintsBase() {}
     ///Apply contraints
@@ -54,30 +57,28 @@ namespace qmcplusplus {
      * @param outVars optimizable variables
      */
     virtual void addOptimizables(VarRegistry<RealType>& outVars)=0;
+
     /** Create an OrbitalBase using two-body relation
      * @param target Quantum Particle Set on which an Orbital depend
      * @return A OrbitalBase*, typically ComboOrbital*
      */
+    virtual void addTwoBodyPart(ComboOrbital* j)=0;
 
-    virtual void addTwoBodyPart(ParticleSet& target, ComboOrbital* j)=0;
     /** Add the appropriate orbital (or orbitals in the case of 
      *  a jastrow with a short and a long range part) to the ComboOrbital
      */
-     
-//    virtual OrbitalBase* createTwoBody(ParticleSet& target)=0;
+    //virtual OrbitalBase* createTwoBody(ParticleSet& target)=0;
+   
     /** Create an OrbitalBase using one-body relation
      * @param target Quantum Particle Set on which an Orbital depend
      * @param source Quantum/Classical ParticleSet 
      * @return A OrbitalBase*, typically ComboOrbital*
      */
-    virtual OrbitalBase* createOneBody(ParticleSet& target,ParticleSet& source)=0;
-    /** Process an xml element
-     */
-    virtual bool put(xmlNodePtr cur)=0;
+    virtual OrbitalBase* createOneBody(ParticleSet& source)=0;
 
     void getParam(xmlNodePtr cur);
     bool getVariables(xmlNodePtr cur);
-    void setRadialGrid(ParticleSet& target);
+    void setRadialGrid();
   };
 }
 #endif

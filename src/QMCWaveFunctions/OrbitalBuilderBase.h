@@ -77,7 +77,8 @@ namespace qmcplusplus {
      * targetPsi. The position of targetPtcl is related to targetPsi's 
      * capability to return a value and derivatives \f$\Psi = $[\{R\}]\f$ .
      */
-    OrbitalBuilderBase(ParticleSet& p, TrialWaveFunction& psi): targetPtcl(p), targetPsi(psi){ }
+    OrbitalBuilderBase(ParticleSet& p, TrialWaveFunction& psi): targetPtcl(p), targetPsi(psi), myNode(NULL)
+    { }
 
     /// process a xml node at cur
     virtual bool put(xmlNodePtr cur) = 0;
@@ -89,6 +90,12 @@ namespace qmcplusplus {
 
     /// reference to the many-body wavefucntion to which each derived class add a term
     TrialWaveFunction& targetPsi;
+
+    /// xmlNode operated by this object
+    xmlNodePtr myNode;
+
+    /// child builder
+    vector<OrbitalBuilderBase*> Children;
   };
   
 }
