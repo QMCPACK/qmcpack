@@ -35,7 +35,7 @@ namespace qmcplusplus {
 
     string functionOpt("pade");
     string transformOpt("no");
-    string sourceOpt("9NONE");
+    string sourceOpt(targetPtcl.getName());
     string spinOpt("yes");
     OhmmsAttributeSet oAttrib;
     oAttrib.add(functionOpt,"function");
@@ -91,6 +91,7 @@ namespace qmcplusplus {
 
     if(sourceOpt != targetPtcl.getName())
     {
+      app_log() << "    Adding one-body Jastrow function dependent upon two-body " << functionOpt << endl;
       map<string,ParticleSet*>::iterator pa_it(ptclPool.find(sourceOpt));
       if(pa_it == ptclPool.end()) 
       {

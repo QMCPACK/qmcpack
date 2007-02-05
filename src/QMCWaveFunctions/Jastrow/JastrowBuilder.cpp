@@ -57,7 +57,7 @@ namespace qmcplusplus {
 
     if(nameOpt[0] == '0')
     {
-      app_warning() << "  WaveFunctionFactory::addJastrowTerm missing type. Ignore " << nameOpt << endl;
+      app_warning() << "  JastrowBuilder::put does not have name "<< endl;
       return false;
     }
 
