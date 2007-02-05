@@ -31,10 +31,7 @@ namespace qmcplusplus {
     bool put(xmlNodePtr cur);
 
     private:
-    bool IgnoreSpin;
     PtclPoolType& ptclPool;
-    ParticleSet* sourcePtcl;
-
   };
 
 }

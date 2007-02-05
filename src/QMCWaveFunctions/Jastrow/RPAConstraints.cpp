@@ -27,6 +27,11 @@ namespace qmcplusplus {
   ////////////////////////////////////////
   //RPAConstraints definitions
   ////////////////////////////////////////
+  RPAConstraints::RPAConstraints(ParticleSet& p, TrialWaveFunction& psi, bool nospin):
+    OrbitalConstraintsBase(p,psi),IgnoreSpin(nospin)
+    {
+    }
+
   RPAConstraints::~RPAConstraints() {
     delete_iter(FuncList.begin(), FuncList.end());
   }
@@ -45,18 +50,18 @@ namespace qmcplusplus {
     return true;
   }
 
-  OrbitalBase* RPAConstraints::createTwoBody(ParticleSet& target) {
+  OrbitalBase* RPAConstraints::createTwoBody() {
 
     if(Rs<0) {
-      if(target.Lattice.BoxBConds[0]) {
-        Rs=std::pow(3.0/4.0/M_PI*target.Lattice.Volume/static_cast<RealType>(target.getTotalNum()),1.0/3.0);
+      if(targetPtcl.Lattice.BoxBConds[0]) {
+        Rs=std::pow(3.0/4.0/M_PI*targetPtcl.Lattice.Volume/static_cast<RealType>(targetPtcl.getTotalNum()),1.0/3.0);
       } else {
         Rs=1.0;
       }
     }
 
     typedef TwoBodyJastrowOrbital<FuncType> JeeType;
-    JeeType *J2 = new JeeType(target);
+    JeeType *J2 = new JeeType(targetPtcl);
 //    if(IgnoreSpin) {
       FuncType *func=new FuncType(false);
       func->reset(Rs);
@@ -85,14 +90,19 @@ namespace qmcplusplus {
     return J2;
   }
 
-  OrbitalBase* RPAConstraints::createOneBody(ParticleSet& target, ParticleSet& source) {
+  OrbitalBase* RPAConstraints::createOneBody(ParticleSet& source) {
     return 0;
   }
 
   ////////////////////////////////////////
   //RPAPBCConstraints definitions
   ////////////////////////////////////////
-  RPAPBCConstraints::~RPAPBCConstraints() { ; }
+  RPAPBCConstraints::RPAPBCConstraints(ParticleSet& p, TrialWaveFunction& psi, bool nospin):
+    OrbitalConstraintsBase(p,psi),IgnoreSpin(nospin)
+    {
+    }
+
+  RPAPBCConstraints::~RPAPBCConstraints() {  }
 
   bool RPAPBCConstraints::put(xmlNodePtr cur) {
     bool success=getVariables(cur);
@@ -117,12 +127,12 @@ namespace qmcplusplus {
 
   // right now this only does a numerical two body short range jastrow
   // based on the short range part from the breakup handled by the LRHandler
-  OrbitalBase* RPAPBCConstraints::createSRTwoBody(ParticleSet& target) {
+  OrbitalBase* RPAPBCConstraints::createSRTwoBody() {
     typedef CubicBsplineSingle<RealType> FuncType;
     typedef LinearGrid<RealType> GridType;
     
     //setRadialGrid(target);
-    HandlerType* handler = LRJastrowSingleton::getHandler(target);
+    HandlerType* handler = LRJastrowSingleton::getHandler(targetPtcl);
     //RealType Rcut = 0.999999999 * handler->Basis.get_rc();
     RealType Rcut = handler->Basis.get_rc();
     myGrid = new GridType;
@@ -138,23 +148,23 @@ namespace qmcplusplus {
       cout << r << "   " << nfunc->evaluate(r) << "   " << handler->evaluate(r,1.0/r) << " " << handler->evaluateLR(r) << endl;
     }
     
-    TwoBodyJastrowOrbital<FuncType> *J2 = new TwoBodyJastrowOrbital<FuncType>(target);
+    TwoBodyJastrowOrbital<FuncType> *J2 = new TwoBodyJastrowOrbital<FuncType>(targetPtcl);
     for (int i=0; i<4; i++) J2->addFunc(nfunc);
 
     return J2;
   }
      
-  OrbitalBase* RPAPBCConstraints::createLRTwoBody(ParticleSet& target) {
-    HandlerType* handler = LRJastrowSingleton::getHandler(target);
-    LRTwoBodyJastrow* LROrbital = new LRTwoBodyJastrow(target, handler);
+  OrbitalBase* RPAPBCConstraints::createLRTwoBody() {
+    HandlerType* handler = LRJastrowSingleton::getHandler(targetPtcl);
+    LRTwoBodyJastrow* LROrbital = new LRTwoBodyJastrow(targetPtcl, handler);
     return LROrbital;
   }
 
-  void RPAPBCConstraints::addTwoBodyPart(ParticleSet& target, ComboOrbital* jcombo) {
+  void RPAPBCConstraints::addTwoBodyPart(ComboOrbital* jcombo) {
     
     if(Rs<0) {
-      if(target.Lattice.BoxBConds[0]) {
-        Rs=std::pow(3.0/4.0/M_PI*target.Lattice.Volume/static_cast<RealType>(target.getTotalNum()),1.0/3.0);
+      if(targetPtcl.Lattice.BoxBConds[0]) {
+        Rs=std::pow(3.0/4.0/M_PI*targetPtcl.Lattice.Volume/static_cast<RealType>(targetPtcl.getTotalNum()),1.0/3.0);
       } else {
         Rs=1.0;
       }
@@ -162,13 +172,13 @@ namespace qmcplusplus {
 
     app_log() << "  RPAPBCConstraints::addTwoBodyPart Rs " << Rs << endl;
 
-    OrbitalBase* sr = createSRTwoBody(target);
+    OrbitalBase* sr = createSRTwoBody();
     if (sr) jcombo->Psi.push_back(sr);
     //OrbitalBase* lr = createLRTwoBody(target);
     //if (lr) jcombo->Psi.push_back(lr);
   } 
      
-  OrbitalBase* RPAPBCConstraints::createOneBody(ParticleSet& target, ParticleSet& source) {
+  OrbitalBase* RPAPBCConstraints::createOneBody(ParticleSet& source) {
     return 0;
   }
 

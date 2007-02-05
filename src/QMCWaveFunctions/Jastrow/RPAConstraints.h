@@ -32,7 +32,7 @@ namespace qmcplusplus {
 
     ~RPAConstraints();
 
-    RPAConstraints(bool nospin=true):IgnoreSpin(nospin) {}
+    RPAConstraints(ParticleSet& p, TrialWaveFunction& psi, bool nospin=true);
 
     inline void apply() {
       for(int i=0; i<FuncList.size(); i++) {
@@ -44,10 +44,10 @@ namespace qmcplusplus {
       outVars.add(ID,&Rs,1);
     }
 
-    OrbitalBase* createTwoBody(ParticleSet& target);
-    OrbitalBase* createOneBody(ParticleSet& target, ParticleSet& source);
-    inline void addTwoBodyPart(ParticleSet& target, ComboOrbital* jcombo) {
-      OrbitalBase* j2 = createTwoBody(target);
+    OrbitalBase* createTwoBody();
+    OrbitalBase* createOneBody(ParticleSet& source);
+    inline void addTwoBodyPart(ComboOrbital* jcombo) {
+      OrbitalBase* j2 = createTwoBody();
       if (j2) jcombo->Psi.push_back(j2);
     }
     bool put(xmlNodePtr cur);
@@ -60,14 +60,15 @@ namespace qmcplusplus {
     RealType Rs;
     string ID;
 
+    RPAPBCConstraints(ParticleSet& p, TrialWaveFunction& psi, bool nospin=true);
+
     ~RPAPBCConstraints();
-    RPAPBCConstraints(bool nospin=true):IgnoreSpin(nospin) {}
     void apply();
     void addOptimizables(VarRegistry<RealType>& outVars);
-    OrbitalBase* createSRTwoBody(ParticleSet& target);
-    OrbitalBase* createLRTwoBody(ParticleSet& target);
-    void addTwoBodyPart(ParticleSet& target, ComboOrbital* jcombo);
-    OrbitalBase* createOneBody(ParticleSet& target, ParticleSet& source);
+    OrbitalBase* createSRTwoBody();
+    OrbitalBase* createLRTwoBody();
+    void addTwoBodyPart(ComboOrbital* jcombo);
+    OrbitalBase* createOneBody(ParticleSet& source);
     bool put(xmlNodePtr cur);
      
   private:

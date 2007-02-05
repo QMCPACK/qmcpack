@@ -32,7 +32,7 @@ namespace qmcplusplus {
 
     ~PadeConstraints();
 
-    PadeConstraints(bool nospin=true):IgnoreSpin(nospin) {}
+    PadeConstraints(ParticleSet& p, TrialWaveFunction& psi, bool nospin=true);
 
     inline void apply() {
       for(int i=0; i<FuncList.size(); i++) {
@@ -45,34 +45,10 @@ namespace qmcplusplus {
       outVars.add(ID,&B,1);
     }
 
-    OrbitalBase* createTwoBody(ParticleSet& target);
-    OrbitalBase* createOneBody(ParticleSet& target, ParticleSet& source);
-    inline void addTwoBodyPart(ParticleSet& target, ComboOrbital* jcombo) {
-      OrbitalBase* j2 = createTwoBody(target);
-      if (j2) jcombo->Psi.push_back(j2);
-    }
-    bool put(xmlNodePtr cur);
-  };
-
-  struct PadeOnGridConstraints: public OrbitalConstraintsBase {
-    ///analytic functor
-    typedef PadeFunctor<RealType> InFuncType;
-    ///numerical functor
-    typedef NumericalJastrow<RealType> FuncType;
-    bool IgnoreSpin;
-    RealType B;
-    string ID;
-    vector<InFuncType*> InFuncList;
-    vector<FuncType*> FuncList;
-
-    ~PadeOnGridConstraints();
-    PadeOnGridConstraints(bool nospin=true):IgnoreSpin(nospin) {}
-    void apply();
-    void addOptimizables(VarRegistry<RealType>& outVars);
-    OrbitalBase* createTwoBody(ParticleSet& target);
-    OrbitalBase* createOneBody(ParticleSet& target, ParticleSet& source);
-    inline void addTwoBodyPart(ParticleSet& target, ComboOrbital* jcombo) {
-      OrbitalBase* j2 = createTwoBody(target);
+    OrbitalBase* createTwoBody();
+    OrbitalBase* createOneBody(ParticleSet& source);
+    inline void addTwoBodyPart(ComboOrbital* jcombo) {
+      OrbitalBase* j2 = createTwoBody();
       if (j2) jcombo->Psi.push_back(j2);
     }
     bool put(xmlNodePtr cur);
@@ -87,7 +63,7 @@ namespace qmcplusplus {
     string CID;
     vector<FuncType*> FuncList;
 
-    ScaledPadeConstraints(bool nospin=true):IgnoreSpin(nospin) {}
+    ScaledPadeConstraints(ParticleSet& p, TrialWaveFunction& psi, bool nospin=true);
 
     ~ScaledPadeConstraints();
 
@@ -105,14 +81,39 @@ namespace qmcplusplus {
       outVars.add(CID,&C,1);
     }
 
-    OrbitalBase* createTwoBody(ParticleSet& target);
-    OrbitalBase* createOneBody(ParticleSet& target, ParticleSet& source);
-    inline void addTwoBodyPart(ParticleSet& target, ComboOrbital* jcombo) {
-      OrbitalBase* j2 = createTwoBody(target);
+    OrbitalBase* createTwoBody();
+    OrbitalBase* createOneBody(ParticleSet& source);
+    inline void addTwoBodyPart(ComboOrbital* jcombo) {
+      OrbitalBase* j2 = createTwoBody();
       if (j2) jcombo->Psi.push_back(j2);
     }
     bool put(xmlNodePtr cur);
   };
+
+  //struct PadeOnGridConstraints: public OrbitalConstraintsBase {
+  //  ///analytic functor
+  //  typedef PadeFunctor<RealType> InFuncType;
+  //  ///numerical functor
+  //  typedef NumericalJastrow<RealType> FuncType;
+  //  bool IgnoreSpin;
+  //  RealType B;
+  //  string ID;
+  //  vector<InFuncType*> InFuncList;
+  //  vector<FuncType*> FuncList;
+
+  //  ~PadeOnGridConstraints();
+  //  PadeOnGridConstraints(bool nospin=true):IgnoreSpin(nospin) {}
+  //  void apply();
+  //  void addOptimizables(VarRegistry<RealType>& outVars);
+  //  OrbitalBase* createTwoBody(ParticleSet& target);
+  //  OrbitalBase* createOneBody(ParticleSet& target, ParticleSet& source);
+  //  inline void addTwoBodyPart(ParticleSet& target, ComboOrbital* jcombo) {
+  //    OrbitalBase* j2 = createTwoBody(target);
+  //    if (j2) jcombo->Psi.push_back(j2);
+  //  }
+  //  bool put(xmlNodePtr cur);
+  //};
+
 }
 #endif
 /***************************************************************************

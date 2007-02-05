@@ -18,21 +18,20 @@
 #include "QMCWaveFunctions/ComboOrbital.h"
 #include "QMCWaveFunctions/Jastrow/PadeConstraints.h"
 #include "QMCWaveFunctions/Jastrow/RPAConstraints.h"
-#include "QMCWaveFunctions/Jastrow/WMConstraints.h"
 #include "QMCWaveFunctions/Jastrow/JAABuilder.h"
-#include "QMCWaveFunctions/Jastrow/NJAABuilder.h"
 #include "OhmmsData/AttributeSet.h"
 
 namespace qmcplusplus {
 
   TwoBodyJastrowBuilder::TwoBodyJastrowBuilder(ParticleSet& p, TrialWaveFunction& psi,
       PtclPoolType& psets):
-    OrbitalBuilderBase(p,psi), IgnoreSpin(true),
-    ptclPool(psets), sourcePtcl(0){
-    }
+    OrbitalBuilderBase(p,psi), ptclPool(psets)
+    { }
 
 
   bool TwoBodyJastrowBuilder::put(xmlNodePtr cur) {
+
+    myNode=cur; 
 
     string functionOpt("pade");
     string transformOpt("no");
@@ -45,14 +44,8 @@ namespace qmcplusplus {
     oAttrib.add(spinOpt,"spin");
     oAttrib.put(cur);
 
-    IgnoreSpin = (spinOpt == "no");
+    bool IgnoreSpin = (spinOpt == "no");
 
-    if(sourceOpt[0] != '9') {
-      map<string,ParticleSet*>::iterator pa_it(ptclPool.find(sourceOpt));
-      if(pa_it != ptclPool.end()) {
-        sourcePtcl=(*pa_it).second;
-      }
-    }
 
     bool success=false;
     OrbitalConstraintsBase* control=0;
@@ -62,48 +55,49 @@ namespace qmcplusplus {
 
     app_log() << "  TwoBodyJastrowBuilder for " << functionOpt << endl;
 
-    if(functionOpt == "pade") {
-      //control = new PadeConstraints(IgnoreSpin);
-      //Transform is ignored. Cutoff function is not too good
-      if(useSpline) {
-        control = new PadeOnGridConstraints(IgnoreSpin);
-      } else {
-        control = new PadeConstraints(IgnoreSpin);
-      }
-    } else if(functionOpt == "scaledpade") {
-      control = new ScaledPadeConstraints(IgnoreSpin);
-    } else if(functionOpt == "rpa") {
-      if(useSpline) {
-        control = new RPAPBCConstraints(IgnoreSpin);
-      } else {
-        control = new RPAConstraints(IgnoreSpin);
-      }
-    } else if(functionOpt == "WM") {
-      control = new WMConstraints(IgnoreSpin);
-    }
-
-     if(control==0) { //try generic JAABuilder and NJAABuilder
+    if(functionOpt == "pade") 
+    {
+      app_log() << "    Using analytic Pade Jastrow Functor " <<endl;
+      control = new PadeConstraints(targetPtcl,targetPsi,IgnoreSpin);
+    } 
+    else if(functionOpt == "scaledpade") 
+    {
+      app_log() << "    Using analytic Scaled Pade Jastrow Functor " <<endl;
+      control = new ScaledPadeConstraints(targetPtcl,targetPsi,IgnoreSpin);
+    } 
+    else if(functionOpt == "rpa") 
+    {
+      if(useSpline) 
+        control = new RPAPBCConstraints(targetPtcl,targetPsi,IgnoreSpin);
+      else 
+        control = new RPAConstraints(targetPtcl,targetPsi,IgnoreSpin);
+    } 
+    else //known analytic function
+    {
       OrbitalBuilderBase* jbuilder=0;
-      if(useSpline) {
-        jbuilder = new NJAABuilder(targetPtcl,targetPsi);
-      } else {
-        jbuilder = new JAABuilder(targetPtcl,targetPsi);
-      }
+      jbuilder = new JAABuilder(targetPtcl,targetPsi);
+      Children.push_back(jbuilder);
       return jbuilder->put(cur);
     }
 
     success=control->put(cur);
-    if(!control->put(cur)) {
+    if(!success) {
       delete control;
       return false;
     }
 
     ComboOrbital* jcombo=new ComboOrbital(control);
+    control->addTwoBodyPart(jcombo);
 
-    control->addTwoBodyPart(targetPtcl, jcombo);
-
-    if(sourcePtcl) { // add one-body term using Zeff and e-e B
-      OrbitalBase* j1=control->createOneBody(targetPtcl,*sourcePtcl);
+    if(sourceOpt != targetPtcl.getName())
+    {
+      map<string,ParticleSet*>::iterator pa_it(ptclPool.find(sourceOpt));
+      if(pa_it == ptclPool.end()) 
+      {
+        return false;
+      }
+      ParticleSet* sourcePtcl= sourcePtcl=(*pa_it).second;
+      OrbitalBase* j1=control->createOneBody(*sourcePtcl);
       if(j1) jcombo->Psi.push_back(j1);
     }
 

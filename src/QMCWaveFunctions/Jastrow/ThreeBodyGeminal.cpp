@@ -22,6 +22,8 @@
 #include "Numerics/OhmmsBlas.h"
 using namespace std;
 #include "Numerics/MatrixOperators.h"
+#include "OhmmsData/AttributeSet.h"
+
 namespace qmcplusplus {
 
   ThreeBodyGeminal::ThreeBodyGeminal(ParticleSet& ions, ParticleSet& els): 
@@ -33,6 +35,12 @@ namespace qmcplusplus {
   ThreeBodyGeminal::~ThreeBodyGeminal() {
     //clean up
 
+  }
+
+  void ThreeBodyGeminal::resetTargetParticleSet(ParticleSet& P) 
+  {
+    d_table = DistanceTable::add(CenterRef,P);
+    GeminalBasis->resetTargetParticleSet(P);
   }
 
   ///reset the value of all the Two-Body Jastrow functions
@@ -48,7 +56,8 @@ namespace qmcplusplus {
   ThreeBodyGeminal::evaluateLog(ParticleSet& P,
 		                 ParticleSet::ParticleGradient_t& G, 
 		                 ParticleSet::ParticleLaplacian_t& L) {
-    GeminalBasis->evaluate(P);
+    //GeminalBasis->evaluate(P);
+    GeminalBasis->evaluateForWalkerMove(P);
 
     MatrixOperators::product(GeminalBasis->Y, Lambda, V);
 
@@ -92,11 +101,13 @@ namespace qmcplusplus {
 
   OrbitalBase::ValueType 
   ThreeBodyGeminal::ratio(ParticleSet& P, int iat) {
-    GeminalBasis->evaluate(P,iat);
+    //GeminalBasis->evaluate(P,iat);
+    GeminalBasis->evaluateForPtclMove(P,iat);
     diffVal=0.0;
     for(int j=0; j<NumPtcls; j++) {
       if(j == iat) continue;
-      diffVal+= dot(V[j],GeminalBasis->y(0),BasisSize);
+      //diffVal+= dot(V[j],GeminalBasis->y(0),BasisSize);
+      diffVal+= dot(V[j],GeminalBasis->Phi.data(),BasisSize);
     }
     return std::exp(diffVal-Uk[iat]);
   }
@@ -116,11 +127,15 @@ namespace qmcplusplus {
 		    ParticleSet::ParticleGradient_t& dG,
 		    ParticleSet::ParticleLaplacian_t& dL) {
 
-    GeminalBasis->evaluateAll(P,iat);
+    //GeminalBasis->evaluateAll(P,iat);
+    GeminalBasis->evaluateAllForPtclMove(P,iat);
 
-    const ValueType* restrict y_ptr=GeminalBasis->y(0);
-    const GradType* restrict  dy_ptr=GeminalBasis->dy(0);
-    const ValueType* restrict d2y_ptr=GeminalBasis->d2y(0);
+    //const ValueType* restrict y_ptr=GeminalBasis->y(0);
+    //const GradType* restrict  dy_ptr=GeminalBasis->dy(0);
+    //const ValueType* restrict d2y_ptr=GeminalBasis->d2y(0);
+    const ValueType* restrict y_ptr=GeminalBasis->Phi.data();
+    const GradType* restrict  dy_ptr=GeminalBasis->dPhi.data();
+    const ValueType* restrict d2y_ptr=GeminalBasis->d2Phi.data();
 
     for(int k=0; k<BasisSize; k++) {
       curV[k] = BLAS::dot(BasisSize,y_ptr,Lambda[k]);
@@ -174,9 +189,12 @@ namespace qmcplusplus {
     dUk.add2Column(tGrad.begin(),iat);
     d2Uk.add2Column(tLap.begin(),iat);
 
-    Y.replaceRow(GeminalBasis->y(0),iat);
-    dY.replaceRow(GeminalBasis->dy(0),iat);
-    d2Y.replaceRow(GeminalBasis->d2y(0),iat);
+    //Y.replaceRow(GeminalBasis->y(0),iat);
+    //dY.replaceRow(GeminalBasis->dy(0),iat);
+    //d2Y.replaceRow(GeminalBasis->d2y(0),iat);
+    Y.replaceRow(GeminalBasis->Phi.data(),iat);
+    dY.replaceRow(GeminalBasis->dPhi.data(),iat);
+    d2Y.replaceRow(GeminalBasis->d2Phi.data(),iat);
     V.replaceRow(curV.begin(),iat);
 
   }
@@ -217,7 +235,7 @@ namespace qmcplusplus {
 
   void 
   ThreeBodyGeminal::evaluateLogAndStore(ParticleSet& P) {
-    GeminalBasis->evaluate(P);
+    GeminalBasis->evaluateForWalkerMove(P);
 
     MatrixOperators::product(GeminalBasis->Y, Lambda, V);
     
@@ -318,7 +336,8 @@ namespace qmcplusplus {
 
   bool ThreeBodyGeminal::put(xmlNodePtr cur, VarRegistry<RealType>& varlist) {
 
-    BasisSize = GeminalBasis->TotalBasis;
+    //BasisSize = GeminalBasis->TotalBasis;
+    BasisSize = GeminalBasis->getBasisSetSize();
 
     app_log() << "  The number of Geminal functions "
       <<"for Three-body Jastrow " << BasisSize << endl;
@@ -329,8 +348,10 @@ namespace qmcplusplus {
     char coeffname[128];
     string aname("j3g");
 
-    const xmlChar* aptr=xmlGetProp(cur,(const xmlChar*)"name");
-    if(aptr!=NULL) aname = (const char*)aptr;
+    OhmmsAttributeSet attrib;
+    attrib.add(aname,"id");
+    attrib.add(aname,"name");
+    attrib.put(cur);
 
     ////assign the coefficients
     //putContent(Lambda,cur);
@@ -387,7 +408,7 @@ namespace qmcplusplus {
     //app_log() << "  Three-body Geminal coefficients " << endl;
     //app_log() << Lambda << endl;
 
-    GeminalBasis->resize(NumPtcls);
+    //GeminalBasis->resize(NumPtcls);
 
     return true;
   }

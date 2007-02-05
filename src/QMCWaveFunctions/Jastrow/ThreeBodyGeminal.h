@@ -20,7 +20,9 @@
 #include "QMCWaveFunctions/OrbitalBase.h"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
-#include "QMCWaveFunctions/MolecularOrbitals/GTOMolecularOrbitals.h"
+#include "Optimize/VarList.h"
+#include "QMCWaveFunctions/BasisSetBase.h"
+//#include "QMCWaveFunctions/MolecularOrbitals/GTOMolecularOrbitals.h"
 //#include "QMCWaveFunctions/MolecularOrbitals/GridMolecularOrbitals.h"
 
 namespace qmcplusplus {
@@ -32,7 +34,8 @@ namespace qmcplusplus {
 
   public:
 
-    typedef GTOMolecularOrbitals::BasisSetType BasisSetType;
+    typedef BasisSetBase BasisSetType;
+    //typedef GTOMolecularOrbitals::BasisSetType BasisSetType;
     //typedef GridMolecularOrbitals::BasisSetType BasisSetType;
 
     ///constructor
@@ -44,10 +47,7 @@ namespace qmcplusplus {
     void reset();
 
     //evaluate the distance table with els
-    void resetTargetParticleSet(ParticleSet& P) {
-      d_table = DistanceTable::add(CenterRef,P);
-      GeminalBasis->resetTargetParticleSet(P);
-    }
+    void resetTargetParticleSet(ParticleSet& P);
 
     ValueType evaluateLog(ParticleSet& P,
 		          ParticleSet::ParticleGradient_t& G, 
