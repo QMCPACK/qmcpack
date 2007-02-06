@@ -15,6 +15,9 @@
 // -*- C++ -*-
 #include "QMCWaveFunctions/Jastrow/JastrowBasisBuilder.h"
 #include "QMCWaveFunctions/MolecularOrbitals/AtomicBasisBuilder.h"
+#include "QMCWaveFunctions/MolecularOrbitals/GTOBuilder.h"
+#include "QMCWaveFunctions/Jastrow/CBSOBuilder.h"
+#include "QMCWaveFunctions/LocalizedBasisSet.h"
 #include "Message/Communicate.h"
 
 namespace qmcplusplus {
@@ -23,19 +26,19 @@ namespace qmcplusplus {
      * \param els reference to the electrons
      * \param ions reference to the ions
      */
-  JastrowBasisBuilder::JastrowBasisBuilder(ParticleSet& els, ParticleSet& ions):
-    targetPtcl(els), sourcePtcl(ions), thisBasisSet(0) 
-    { }   
+  JastrowBasisBuilder::JastrowBasisBuilder(ParticleSet& els, ParticleSet& ions, 
+      const string& functype, bool usespline):
+    targetPtcl(els), sourcePtcl(ions), UseSpline(usespline),FuncType(functype)
+    { 
+    }   
 
-  bool JastrowBasisBuilder::put(xmlNodePtr cur) 
+  template<typename RFBUILDER>
+    void JastrowBasisBuilder::createLocalizedBasisSet(xmlNodePtr cur)
   {
 
-    if(myBasisSet) return true;
-
-    DistanceTableData* d_table=DistanceTable::add(sourcePtcl,targetPtcl);
-
-    //create the BasisSetType
-    thisBasisSet = new ThisBasisSetType(sourcePtcl,targetPtcl);
+    typedef typename RFBUILDER::CenteredOrbitalType COT;
+    typedef LocalizedBasisSet<COT> ThisBasisSetType;
+    ThisBasisSetType* curBasis= new ThisBasisSetType(sourcePtcl,targetPtcl);
 
     //create the basis set
     //go thru the tree
@@ -45,33 +48,37 @@ namespace qmcplusplus {
       if(cname == "atomicBasisSet") {
         const xmlChar* eptr=xmlGetProp(cur,(const xmlChar*)"elementType");
         if(eptr == NULL) {
-          app_error() << "   Missing elementType attribute of atomicBasisSet.\n"
-            << " Abort at MOBasisBuilder::put " << endl;
+          app_error() << "   Missing elementType attribute of atomicBasisSet.\n Abort at MOBasisBuilder::put " << endl;
           OHMMS::Controller->abort();
         }
-        string elementType((const char*)eptr);
 
+        string elementType((const char*)eptr);
         map<string,BasisSetBuilder*>::iterator it = aoBuilders.find(elementType); 
         if(it == aoBuilders.end()) {
-          AtomicBasisBuilder<CBSOBuilder>* any = new AtomicBasisBuilder<CBSOBuilder>(elementType);
+          AtomicBasisBuilder<RFBUILDER>* any = new AtomicBasisBuilder<RFBUILDER>(elementType);
           any->put(cur);
           COT* aoBasis= any->createAOSet(cur);
 
           if(aoBasis) { //add the new atomic basis to the basis set
             int activeCenter =sourcePtcl.getSpeciesSet().findSpecies(elementType);
-            thisBasisSet->add(activeCenter, aoBasis);
+            curBasis->add(activeCenter, aoBasis);
             aoBuilders[elementType]=any;
-            //ofstream fout("test.dat");
-            //int nr=aoBasis->Rnl.size();
-            //double r=0.0;
-            //while(r<20)
-            //{
-            //  fout << r ;
-            //  for(int i=0; i<nr; i++) fout << " " << aoBasis->Rnl[i]->evaluate(r,1.0/r);
-            //  fout << endl;
-            //  r += 0.013;
-            //}
+
+#if !defined(HAVE_MPI)
+            string fname(elementType);
+            fname.append(".j3.dat");
+            ofstream fout(fname.c_str());
+            int nr=aoBasis->Rnl.size();
+            double r=0.0;
+            while(r<20)
+            {
+              fout << r ;
+              for(int i=0; i<nr; i++) fout << " " << aoBasis->Rnl[i]->evaluate(r,1.0/r);
+              fout << endl;
+              r += 0.013;
+            }
           }
+#endif
         } else {
           WARNMSG("Species " << elementType << " is already initialized. Ignore the input.")
         }
@@ -80,10 +87,28 @@ namespace qmcplusplus {
     }
 
     //resize the basis set
-    thisBasisSet->setBasisSetSize(-1);
-    myBasisSet=thisBasisSet;
+    curBasis->setBasisSetSize(-1);
+    myBasisSet=curBasis;
+  }
+
+  bool JastrowBasisBuilder::put(xmlNodePtr cur) 
+  {
+
+    if(myBasisSet) return true;
+
+    if(UseSpline)
+    {
+      createLocalizedBasisSet<CBSOBuilder>(cur);
+    } 
+    else
+    {
+      if(FuncType == "gto" || FuncType == "GTO")
+        createLocalizedBasisSet<GTOBuilder>(cur);
+    }
+
     return true;
   }
+
 }
 /***************************************************************************
  * $RCSfile$   $Author: jnkim $

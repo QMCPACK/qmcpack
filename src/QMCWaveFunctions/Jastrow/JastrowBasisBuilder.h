@@ -16,8 +16,9 @@
 #ifndef QMCPLUSPLUS_JASTROWBASISBUILDER_H
 #define QMCPLUSPLUS_JASTROWBASISBUILDER_H
 
-#include "QMCWaveFunctions/Jastrow/CBSOBuilder.h"
-#include "QMCWaveFunctions/LocalizedBasisSet.h"
+#include "QMCWaveFunctions/BasisSetBase.h"
+//#include "QMCWaveFunctions/Jastrow/CBSOBuilder.h"
+//#include "QMCWaveFunctions/LocalizedBasisSet.h"
 
 namespace qmcplusplus {
 
@@ -31,14 +32,11 @@ namespace qmcplusplus {
 
   public:
 
-    typedef CBSOBuilder::CenteredOrbitalType COT;
-    typedef LocalizedBasisSet<COT>           ThisBasisSetType;
-
     /** constructor
      * \param els reference to the electrons
      * \param ions reference to the ions
      */
-    JastrowBasisBuilder(ParticleSet& els, ParticleSet& ions);
+    JastrowBasisBuilder(ParticleSet& els, ParticleSet& ions, const string& functype, bool usespline=false);
 
     bool put(xmlNodePtr cur);
 
@@ -48,15 +46,21 @@ namespace qmcplusplus {
       return 0;
     }
 
+
   private:
     ///target ParticleSet
     ParticleSet& targetPtcl;
     ///source ParticleSet
     ParticleSet& sourcePtcl;
-    ///BasisSet
-    ThisBasisSetType* thisBasisSet;
+    ///boolean to choose numerical or analytic form
+    bool UseSpline;
+    ///function name
+    string FuncType;
     ///save AtomiBasisBuilder<RFB>*
     map<string,BasisSetBuilder*> aoBuilders;
+
+    template<typename RFBUILDER>
+      void createLocalizedBasisSet(xmlNodePtr cur);
   };
 }
 #endif
