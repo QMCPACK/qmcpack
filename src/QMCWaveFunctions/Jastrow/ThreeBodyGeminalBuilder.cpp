@@ -57,7 +57,7 @@ namespace qmcplusplus {
     if(basisPtr != NULL)
     {
       ThreeBodyGeminal* J3 = new ThreeBodyGeminal(sourcePtcl, targetPtcl);
-      BasisSetBuilder* basisBuilder = new JastrowBasisBuilder(targetPtcl,sourcePtcl);
+      BasisSetBuilder* basisBuilder = new JastrowBasisBuilder(targetPtcl,sourcePtcl,"gto",false);
       basisBuilder->put(basisPtr);
       J3->setBasisSet(basisBuilder->myBasisSet);
       if(coeffPtr != NULL)
