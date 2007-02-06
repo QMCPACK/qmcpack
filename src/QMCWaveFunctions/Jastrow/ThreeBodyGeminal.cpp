@@ -344,46 +344,55 @@ namespace qmcplusplus {
     app_log() << "  The number of particles " << NumPtcls << endl;
 
     Lambda.resize(BasisSize,BasisSize);
+    //identity is the default
+    for(int ib=0; ib<BasisSize; ib++) Lambda(ib,ib)=1.0;
 
-    char coeffname[128];
-    string aname("j3g");
+    if(cur != NULL) { 
+      char coeffname[128];
+      string aname("j3g");
+      string datatype("no");
 
-    OhmmsAttributeSet attrib;
-    attrib.add(aname,"id");
-    attrib.add(aname,"name");
-    attrib.put(cur);
+      OhmmsAttributeSet attrib;
+      attrib.add(aname,"id");
+      attrib.add(aname,"name");
+      attrib.add(datatype,"type");
+      attrib.put(cur);
 
-    ////assign the coefficients
-    //putContent(Lambda,cur);
-
-    ////symmetrize it
-    //for(int ib=0; ib<BasisSize; ib++) {
-    //  sprintf(coeffname,"%s_%d_%d",aname.c_str(),ib,ib);
-    //  RealType* lptr=Lambda.data()+ib*BasisSize+ib;
-    //  varlist.add(coeffname,lptr);
-    //  for(int jb=ib+1; jb<BasisSize; jb++) {
-    //    Lambda(jb,ib) = Lambda(ib,jb);
-
-    //    ++lptr;
-    //    sprintf(coeffname,"%s_%d_%d",aname.c_str(),ib,jb);
-    //    varlist.add(coeffname,lptr);
-    //  }
-    //}
-    int offset=1;
-    xmlNodePtr tcur=cur->xmlChildrenNode;
-    while(tcur != NULL) {
-      if(xmlStrEqual(tcur->name,(const xmlChar*)"lambda")) {
-        int i=atoi((const char*)(xmlGetProp(tcur,(const xmlChar*)"i")));
-        int j=atoi((const char*)(xmlGetProp(tcur,(const xmlChar*)"j")));
-        double c=atof((const char*)(xmlGetProp(tcur,(const xmlChar*)"c")));
-        Lambda(i-offset,j-offset)=c;
-        if(i != j) {
-          Lambda(j-offset,i-offset)=c;
+      if(datatype == "Array")
+      {
+        putContent(Lambda,cur);
+        //symmetrize it
+        for(int ib=0; ib<BasisSize; ib++) {
+          sprintf(coeffname,"%s_%d_%d",aname.c_str(),ib,ib);
+          RealType* lptr=Lambda.data()+ib*BasisSize+ib;
+          varlist.add(coeffname,lptr);
+          for(int jb=ib+1; jb<BasisSize; jb++) {
+            Lambda(jb,ib) = Lambda(ib,jb);
+            ++lptr;
+            sprintf(coeffname,"%s_%d_%d",aname.c_str(),ib,jb);
+            varlist.add(coeffname,lptr);
+          }
         }
-        sprintf(coeffname,"%s_%d_%d",aname.c_str(),i,j);
-        varlist.add(coeffname,Lambda.data()+i*BasisSize+j);
       }
-      tcur=tcur->next;
+      else 
+      {
+        int offset=1;
+        xmlNodePtr tcur=cur->xmlChildrenNode;
+        while(tcur != NULL) {
+          if(xmlStrEqual(tcur->name,(const xmlChar*)"lambda")) {
+            int i=atoi((const char*)(xmlGetProp(tcur,(const xmlChar*)"i")));
+            int j=atoi((const char*)(xmlGetProp(tcur,(const xmlChar*)"j")));
+            double c=atof((const char*)(xmlGetProp(tcur,(const xmlChar*)"c")));
+            Lambda(i-offset,j-offset)=c;
+            if(i != j) {
+              Lambda(j-offset,i-offset)=c;
+            }
+            sprintf(coeffname,"%s_%d_%d",aname.c_str(),i,j);
+            varlist.add(coeffname,Lambda.data()+i*BasisSize+j);
+          }
+          tcur=tcur->next;
+        }
+      }
     }
 
     V.resize(NumPtcls,BasisSize);
