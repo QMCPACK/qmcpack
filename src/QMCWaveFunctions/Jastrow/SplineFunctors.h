@@ -76,7 +76,10 @@ namespace qmcplusplus {
         InFunc->reset();
         typename FNOUT::container_type datain(NumGridPoints);
         real_type r=0;
-        for(int i=0; i<NumGridPoints; i++, r+=GridDelta) datain[i] = InFunc->f(r);
+        for(int i=0; i<NumGridPoints; i++, r+=GridDelta) 
+        {
+          datain[i] = InFunc->f(r);
+        }
         OutFunc->Init(0.0,Rmax,datain,true,InFunc->df(0.0),0.0);
       }
 
@@ -241,7 +244,7 @@ namespace qmcplusplus {
       void print(ostream& os) {
         real_type r=0;
         for(int i=0; i<NumGridPoints; i++, r+=GridDelta) 
-          cout << r << " " << OutFunc->splint(r) << endl;
+          os << r << " " << OutFunc->splint(r) << endl;
       }
 
       ///set the input, analytic function

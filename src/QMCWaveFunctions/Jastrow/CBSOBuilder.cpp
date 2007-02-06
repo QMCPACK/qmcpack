@@ -94,6 +94,7 @@ namespace qmcplusplus {
     {
       GaussianCombo<RealType> *gset = new GaussianCombo<RealType>(L,Normalized);
       gset->putBasisGroup(cur);
+      app_log() << "   " << L << " basisGroup  contains " << gset->size() << " radial functors." << endl;
       infunc=gset;
     } 
     //else if(radtype == "WM")

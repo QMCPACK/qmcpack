@@ -20,7 +20,7 @@
 #include "QMCWaveFunctions/Jastrow/RPAConstraints.h"
 #include "QMCWaveFunctions/Jastrow/JAABuilder.h"
 #include "QMCWaveFunctions/Jastrow/JABBuilder.h"
-#include "QMCWaveFunctions/Jastrow/ThreeBodyGeminalBuilder.h"
+#include "QMCWaveFunctions/Jastrow/ThreeBodyGeminal.h"
 #include "OhmmsData/AttributeSet.h"
 
 namespace qmcplusplus {
@@ -208,21 +208,52 @@ namespace qmcplusplus {
 
   bool JastrowBuilder::addThreeBody(xmlNodePtr cur) 
   {
-    OrbitalBuilderBase* jbuilder=0;
-    if(typeOpt == "Three-Body-Geminal") {
-      app_log() << "\n  creating Three-Body-Germinal Jastrow function " << endl;
-      PtclPoolType::iterator pit(ptclPool.find(sourceOpt));
-      if(pit != ptclPool.end()) {
-        jbuilder = new ThreeBodyGeminalBuilder(targetPtcl,targetPsi,*((*pit).second));
-      }
+    PtclPoolType::iterator pit(ptclPool.find(sourceOpt));
+    if(pit == ptclPool.end()) {
+      app_error() << "     JastrowBuilder::addThreeBody requires a center. " << sourceOpt << " is invalid " << endl;
     }
 
-    if(jbuilder)
-    {
-      jbuilder->put(cur);
-      Children.push_back(jbuilder);
-      return true;
+    xmlNodePtr basisPtr=NULL;
+    xmlNodePtr coeffPtr=NULL;
+    cur = cur->xmlChildrenNode;
+    while(cur != NULL) {
+      string cname((const char*)(cur->name));
+      if(cname == basisset_tag) {
+        basisPtr=cur;
+        //call the BasisSet builder
+        //basisSet = gtoBuilder->addBasisSet(cur);
+      } else if(cname == "coefficient" || cname == "coefficients") {
+        coeffPtr=cur;
+      }
+      cur=cur->next;
     }
+
+    if(basisPtr == NULL)
+    {
+      app_error() << "     JastrowBuilder::addThreeBody exit. Missing <basisset/>"<< endl;
+      return false;
+    }
+
+    ParticleSet* sourcePtcl=(*pit).second;
+    BasisSetBuilder* basisBuilder = 
+      new JastrowBasisBuilder(targetPtcl,*sourcePtcl,funcOpt,transformOpt == "yes");
+    basisBuilder->put(basisPtr);
+
+    if(typeOpt.find("Geminal") < typeOpt.size())
+    {
+      app_log() << "\n  creating Three-Body-Germinal Jastrow function " << endl;
+      ThreeBodyGeminal* J3 = new ThreeBodyGeminal(*sourcePtcl, targetPtcl);
+      J3->setBasisSet(basisBuilder->myBasisSet);
+      J3->put(coeffPtr,targetPsi.VarList);
+      targetPsi.addOrbital(J3);
+    }
+
+    //if(jbuilder)
+    //{
+    //  jbuilder->put(cur);
+    //  Children.push_back(jbuilder);
+    //  return true;
+    //}
     //    } else if (jasttype == "Three-Body-Pade") {
     //      app_log() << "\n  creating Three-Body-Pade Jastrow function " << endl;
     //      string source_name("i");
