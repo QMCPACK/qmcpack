@@ -79,7 +79,6 @@ struct GaussianCombo: public OptimizableFunctorBase<T> {
   std::string  nodeName;
   std::string  expName;
   std::string  coeffName;
-  std::vector<xmlNodePtr> InParam;
   std::vector<BasicGaussian> gset;
 
   explicit 
@@ -186,35 +185,22 @@ GaussianCombo<T>::GaussianCombo(int l, bool normalized,
 
 template<class T>
 bool GaussianCombo<T>::put(xmlNodePtr cur) {
-  InParam.push_back(cur);
+  real_type alpha(1.0),c(1.0);
+  OhmmsAttributeSet radAttrib;
+  radAttrib.add(alpha,expName); 
+  radAttrib.add(c,coeffName);
+  radAttrib.put(cur);
+  real_type c0=c;
+  if(!Normalized) c *= NormL*pow(alpha,NormPow); 
+  LOGMSG("    Gaussian exponent = " << alpha 
+   << "\n              contraction=" << c0 <<  " nomralized contraction = " << c)
+  gset.push_back(BasicGaussian(alpha,c));
   return true;
 }
 
 template<class T>
 void GaussianCombo<T>::reset() {
-  if(InParam.empty()) {
-    for(int i=0; i<gset.size(); i++) gset[i].reset();
-  } else {
-    //while(n<InParam.size()) {
-    //  gset.push_back(BasicGaussian());
-    //  n++;
-    //}
-    real_type alpha(1.0),c(1.0);
-    OhmmsAttributeSet radAttrib;
-    radAttrib.add(alpha,expName); 
-    radAttrib.add(c,coeffName);
-
-    int n=gset.size();
-    for(int i=0; i<InParam.size(); i++) {
-      radAttrib.put(InParam[i]);
-      if(!Normalized) c *= NormL*pow(alpha,NormPow); 
-      LOGMSG(" Gaussian exponent = " << alpha << " contraction=" << c)
-      gset.push_back(BasicGaussian());
-      gset[n].reset(alpha,c);
-    }
-    InParam.clear();
-  }
-
+  for(int i=0; i<gset.size(); i++) gset[i].reset();
 }
 
 template<class T>
