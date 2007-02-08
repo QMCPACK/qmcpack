@@ -19,7 +19,7 @@
 namespace qmcplusplus {
 
   OrbitalConstraintsBase::OrbitalConstraintsBase(ParticleSet& p, TrialWaveFunction& psi):
-    OrbitalBuilderBase(p,psi), PrintTables(false) 
+    OrbitalBuilderBase(p,psi), myGrid(0), PrintTables(false) 
     {
     }
 
