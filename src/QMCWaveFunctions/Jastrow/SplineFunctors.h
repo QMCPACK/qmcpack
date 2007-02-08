@@ -53,11 +53,11 @@ namespace qmcplusplus {
       ///constructor
       CubicBsplineSingle(): InFunc(0), OutFunc(0) { }
       ///constructor with arguments
-      CubicBsplineSingle(FNIN* in_, grid_type* agrid){
+      CubicBsplineSingle(FNIN* in_, grid_type* agrid): InFunc(0), OutFunc(0) {
         initialize(in_,agrid);
       }
       ///constructor with arguments
-      CubicBsplineSingle(FNIN* in_, real_type rc, int npts){
+      CubicBsplineSingle(FNIN* in_, real_type rc, int npts):InFunc(0), OutFunc(0){
         initialize(in_,rc,npts);
       }
       ///set the input, analytic function
