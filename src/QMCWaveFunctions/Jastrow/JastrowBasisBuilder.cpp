@@ -22,10 +22,10 @@
 
 namespace qmcplusplus {
 
-    /** constructor
-     * \param els reference to the electrons
-     * \param ions reference to the ions
-     */
+  /** constructor
+   * \param els reference to the electrons
+   * \param ions reference to the ions
+   */
   JastrowBasisBuilder::JastrowBasisBuilder(ParticleSet& els, ParticleSet& ions, 
       const string& functype, bool usespline):
     targetPtcl(els), sourcePtcl(ions), UseSpline(usespline),FuncType(functype)
@@ -77,10 +77,8 @@ namespace qmcplusplus {
               fout << endl;
               r += 0.013;
             }
-          }
 #endif
-        } else {
-          WARNMSG("Species " << elementType << " is already initialized. Ignore the input.")
+          }
         }
       }
       cur = cur->next;
@@ -103,12 +101,13 @@ namespace qmcplusplus {
     else
     {
       if(FuncType == "gto" || FuncType == "GTO")
+      {
         createLocalizedBasisSet<GTOBuilder>(cur);
+      }
     }
 
     return true;
   }
-
 }
 /***************************************************************************
  * $RCSfile$   $Author: jnkim $
