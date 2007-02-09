@@ -22,7 +22,6 @@
 #include "QMCHamiltonians/BareKineticEnergy.h"
 #include "QMCHamiltonians/CoulombPotential.h"
 #include "QMCHamiltonians/IonIonPotential.h"
-#include "QMCHamiltonians/HarmonicPotential.h"
 #include "QMCHamiltonians/LocalCorePolPotential.h"
 #include "QMCHamiltonians/ECPotentialBuilder.h"
 #if defined(HAVE_LIBFFTW)
@@ -30,8 +29,6 @@
 #include "QMCHamiltonians/MomentumDistribution.h"
 #include "QMCHamiltonians/DispersionRelation.h"
 #endif
-//CoulombPBC is replaced by CoulombPBCAATemp and CoulombPBCABTemp
-//#include "QMCHamiltonians/CoulombPBC.h"
 #include "QMCHamiltonians/CoulombPBCAATemp.h"
 #include "QMCHamiltonians/CoulombPBCABTemp.h"
 #include "OhmmsData/AttributeSet.h"
