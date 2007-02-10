@@ -4,7 +4,6 @@ SET(HAMSRCS
   CoulombPBCABTemp.cpp
   LocalCorePolPotential.cpp
   HamiltonianFactory.cpp
-  Ylm.cpp
   LocalECPotential.cpp
   NonLocalECPComponent.cpp
   NonLocalECPotential.cpp
