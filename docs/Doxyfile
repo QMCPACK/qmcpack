@@ -3,9 +3,9 @@
 #---------------------------------------------------------------------------
 # General configuration options
 #---------------------------------------------------------------------------
-PROJECT_NAME           = qmcPlusPlus
+PROJECT_NAME           = QMCPACK
 PROJECT_NUMBER         = 0.2
-OUTPUT_DIRECTORY       = doxygen
+OUTPUT_DIRECTORY       = ../..
 OUTPUT_LANGUAGE        = English
 EXTRACT_ALL            = YES
 EXTRACT_PRIVATE        = YES
@@ -124,7 +124,10 @@ EXCLUDE                = \
 ../src/QMCWaveFunctions/RadialOrbitalManager.cpp \
 ../src/QMCWaveFunctions/RadialOrbitalManager.h \
 ../src/QMCTools/GridMolecularOrbitals.cpp \
-../src/QMCTools/GridMolecularOrbitals.h 
+../src/QMCTools/GridMolecularOrbitals.h  \
+../src/QMCWaveFunctions/Experimental \
+../src/QMCWaveFunctions/Jastrow/Experimental \
+../src/QMCDrivers/Experimental 
 EXCLUDE_SYMLINKS       = NO
 EXCLUDE_PATTERNS       = 
 EXAMPLE_PATH           = 
@@ -232,12 +235,12 @@ PERL_PATH              = /usr/bin/perl
 #---------------------------------------------------------------------------
 CLASS_DIAGRAMS         = YES
 HIDE_UNDOC_RELATIONS   = NO
-HAVE_DOT               = NO
-CLASS_GRAPH            = NO
+HAVE_DOT               = YES
+CLASS_GRAPH            = YES
 COLLABORATION_GRAPH    = YES
 TEMPLATE_RELATIONS     = YES
-INCLUDE_GRAPH          = NO
-INCLUDED_BY_GRAPH      = NO
+INCLUDE_GRAPH          = YES
+INCLUDED_BY_GRAPH      = YES
 GRAPHICAL_HIERARCHY    = YES
 DOT_IMAGE_FORMAT       = png
 DOT_PATH               = 

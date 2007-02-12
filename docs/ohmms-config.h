@@ -14,14 +14,14 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-/**\mainpage qmcPlusPlus main page
+/**\mainpage QMCPACK main page
  * \section intro_sec Introduction
  *
  * Framework for Quantum Monte Carlo simulations.
  *
- * Home Page: http://www.mcc.uiuc.edu/qmc/qmcplusplus/index.html
+ * Home Page: http://www.mcc.uiuc.edu/qmcpack
  *
- * Developers' Page: https://mcc1.mcc.uiuc.edu/cgi-bin/cvs/qmc/qmc.cgi/
+ * Developers' Page: https://mccweb1.mcc.uiuc.edu/qmcpack/
  *
  * \section Major changes
  *
