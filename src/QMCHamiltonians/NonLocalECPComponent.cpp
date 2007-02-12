@@ -195,6 +195,32 @@ namespace qmcplusplus {
 
   }
 
+  ///Randomly rotate sgrid_m
+  void NonLocalECPComponent::randomize_grid(ParticleSet::ParticlePos_t& sphere, bool randomize)
+  {
+    if(randomize) {
+      //const RealType twopi(6.28318530718);
+      //RealType phi(twopi*Random()),psi(twopi*Random()),cth(Random()-0.5),
+      RealType phi(TWOPI*((*myRNG)())), psi(TWOPI*((*myRNG)())), cth(((*myRNG)())-0.5);
+      RealType sph(std::sin(phi)),cph(std::cos(phi)),
+      sth(std::sqrt(1.0-cth*cth)),sps(std::sin(psi)),
+      cps(std::cos(psi));
+      TensorType rmat( cph*cth*cps-sph*sps, sph*cth*cps+cph*sps,-sth*cps,
+          -cph*cth*sps-sph*cps,-sph*cth*sps+cph*cps, sth*sps,
+          cph*sth,             sph*sth,             cth     );
+      SpherGridType::iterator it(sgridxyz_m.begin());
+      SpherGridType::iterator it_end(sgridxyz_m.end());
+      SpherGridType::iterator jt(rrotsgrid_m.begin());
+      int ic=0;
+      while(it != it_end) {*jt = dot(rmat,*it); ++it; ++jt;}
+      //copy the radomized grid to sphere
+      std::copy(rrotsgrid_m.begin(), rrotsgrid_m.end(), sphere.begin());
+    } else {
+      //copy sphere to the radomized grid
+      std::copy(sphere.begin(), sphere.end(), rrotsgrid_m.begin());
+    }
+  }
+
 }
 /***************************************************************************
  * $RCSfile$   $Author$

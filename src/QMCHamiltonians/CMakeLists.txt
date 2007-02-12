@@ -9,6 +9,8 @@ SET(HAMSRCS
   NonLocalECPotential.cpp
   ECPotentialBuilder.cpp
   ECPComponentBuilder.cpp
+  ECPComponentBuilder.1.cpp
+  ECPComponentBuilder.2.cpp
   NonLocalTOperator.cpp
 )
 
