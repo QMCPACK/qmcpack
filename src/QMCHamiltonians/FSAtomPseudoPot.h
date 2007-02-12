@@ -20,27 +20,21 @@
 #ifndef QMCPLUSPLUS_FSATOMPSEDUOPOTENTIAL_H 
 #define QMCPLUSPLUS_FSATOMPSEDUOPOTENTIAL_H 
 #include "Numerics/OneDimGridBase.h"
-#include "Numerics/OneDimCubicSpline.h"
+#include "Numerics/OneDimLinearSpline.h"
 #include "OhmmsData/AttributeSet.h"
 namespace qmcplusplus {
 
   template<typename T>
-    struct FSAtomPseudoPot:public OneDimCubicSpline<T>
+    struct FSAtomPseudoPot//: public OneDimCubicSpline<T>
     {
-      typedef OneDimCubicSpline<T> mybase_type;
       typedef OneDimLinearSpline<T> return_type;
-      typedef typename mybase_type::value_type value_type;
-      typedef typename mybase_type::point_type point_type;
-      typedef typename mybase_type::data_type  data_type;
-      typedef typename mybase_type::grid_type  grid_type;
-
-      using mybase_type::m_grid;
-      using mybase_type::m_Y;
+      typedef typename OneDimLinearSpline<T>::grid_type grid_type;
+      return_type myFunc;
       int AngL;
       T Rcut;
       
       FSAtomPseudoPot(int l, T rc, grid_type* agrid): 
-        OneDimCubicSpline<T>(agrid), AngL(l), Rcut(rc)
+        myFunc(agrid), AngL(l), Rcut(rc)
       {
       }
 
@@ -50,20 +44,19 @@ namespace qmcplusplus {
 
       void convert2RV()
       {
-        for(int i=0; i<m_grid->size(); i++)
-          m_Y[i] *= (*m_grid)[i];
+        for(int i=0; i<myFunc.size(); i++) myFunc(i) *= myFunc.r(i);
       }
 
       T getCutOff(T v0)
       {
         bool ignore=true;
-        int ng=m_grid->size()-2;
-        T r=(*m_grid)(ng);
+        int ng=myFunc.size()-2;
+        T r=myFunc.r(ng);
         while(ignore&& ng)
         {
-          cout << r << " " << m_Y[ng] << endl;
-          ignore=abs(m_Y[ng]-v0)<1e-12;
-          r=(*m_grid)(--ng);
+          cout << r << " " << myFunc(ng) << endl;
+          ignore=(std::abs(myFunc(ng)-v0)<1e-12);
+          r=myFunc.r(--ng);
         }
         return r;
       }
@@ -74,10 +67,10 @@ namespace qmcplusplus {
        */
       return_type* getLocalPot(T sc)
       {
-        this->spline();
+        myFunc.spline();
 
-        const T d=1.0e-3;
-        int ng=static_cast<int>(2*Rcut/d)+1;
+        const T del=1.0e-3;
+        int ng=static_cast<int>(2*Rcut/del)+1;
         app_log() << "  FSAtomPseudoPot::getLocalPot grid = [0," << 2*Rcut << "] npts=" << ng << endl;
 
         LinearGrid<T> *agrid=new LinearGrid<T>;
@@ -87,30 +80,31 @@ namespace qmcplusplus {
         (*newFunc)(0) = 0.0;
         for(int i=1; i<ng-1; i++)
         {
-          (*newFunc)(i)=sc*this->splint((*agrid)[i]);
+          (*newFunc)(i)=sc*myFunc.splintNG((*agrid)[i]);
         }
         (*newFunc)(ng-1)=1.0;
 
-        T y_prime=((*newFunc)(1)-(*newFunc)(0))/d;
+        T y_prime=((*newFunc)(1)-(*newFunc)(0))/del;
         newFunc->spline(0,y_prime,ng-1,0.0);
         return newFunc;
       }
 
       return_type* getNonLocalPot(FSAtomPseudoPot<T>& vloc, T vFac)
       {
-        m_Y -= vloc.m_Y;
-        T y_prime=(m_Y[1]-m_Y[0])/m_grid->dr(0);
-        this->spline(0,y_prime,m_Y.size()-1,0.0);
+        myFunc.m_Y -= vloc.myFunc.m_Y;
+        //T y_prime=(m_Y[1]-m_Y[0])/m_grid->dr(0);
+        T y_prime=(myFunc(1)-myFunc(0))/myFunc.dr(0);
+        myFunc.spline(0,y_prime,myFunc.size()-1,0.0);
 
-        const T d=1.0e-3;
-        int ng=static_cast<int>(Rcut/d)+1;
+        const T del=1.0e-3;
+        int ng=static_cast<int>(Rcut/del)+1;
         LinearGrid<T> *agrid=new LinearGrid<T>;
         agrid->set(0.0,Rcut,ng);
 
         return_type* newFunc=new return_type(agrid);
         for(int i=1; i<ng-1; i++)
         {
-          (*newFunc)(i)=vFac*this->splint((*agrid)[i])/(*agrid)[i];
+          (*newFunc)(i)=vFac*myFunc.splintNG((*agrid)[i])/(*agrid)[i];
         }
         (*newFunc)(0) =(*newFunc)(1);
         //(*newFunc)(0) = 2.0*(*newFunc)(1) - (*newFunc)(2);
@@ -138,7 +132,8 @@ namespace qmcplusplus {
               string cname1((const char*)cur1->name);
               if(cname1=="data") 
               {
-                putContent(m_Y,cur1);
+                myFunc.m_Y.resize(myFunc.grid().size());
+                putContent(myFunc.m_Y,cur1);
               }
               //else if(cname1 =="grid")
               //{
