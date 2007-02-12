@@ -18,7 +18,7 @@
 #include "Numerics/GaussianTimesRN.h"
 #include "Numerics/Transform2GridFunctor.h"
 #include "QMCHamiltonians/FSAtomPseudoPot.h"
-#include "Utilities/SimpleParser.h"
+#include "Utilities/IteratorUtility.h"
 
 #define QMCPACK_ABORT abort();
 
