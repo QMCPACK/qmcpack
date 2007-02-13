@@ -22,7 +22,7 @@
 namespace qmcplusplus {
 
   void ECPComponentBuilder::addSemiLocal(xmlNodePtr cur) {
-    //INVESTIGATING IBM COMPILERS
+
     GridType* grid_semilocal=0;
     RealType rmax= pp_nonloc->Rmax;
     cur=cur->children;
@@ -67,8 +67,6 @@ namespace qmcplusplus {
 
   ECPComponentBuilder::RadialPotentialType*
   ECPComponentBuilder::createVr(xmlNodePtr cur, GridType* agrid) {
-    return 0;
-    //INVESTIGATING IBM COMPILERS
     //todo rcut should be reset if necessary
     typedef GaussianTimesRN<RealType> InFuncType;
     InFuncType a;
@@ -113,7 +111,6 @@ namespace qmcplusplus {
    * (see LocalECPotential::evaluate).
    */
   void ECPComponentBuilder::buildLocal(xmlNodePtr cur) {
-    //INVESTIGATING IBM COMPILERS
 
     if(pp_loc) return; //something is wrong
 
@@ -212,6 +209,56 @@ namespace qmcplusplus {
     //  fout << setw(20) << r << setw(20) << nvr<< " " << nvr-avr << endl;
     //  r+=0.01;
     //}
+  }
+
+  ECPComponentBuilder::GridType* ECPComponentBuilder::createGrid(xmlNodePtr cur, bool useLinear)
+  {
+    GridType *agrid=0;
+    RealType ri = 1e-5;
+    RealType rf = 100.0;
+    RealType ascale = -1.0e0;
+    RealType astep = -1.0;
+    //RealType astep = 1.25e-2;
+    int npts = 1001;
+
+    string gridType("log");
+    OhmmsAttributeSet radAttrib;
+    radAttrib.add(gridType,"type"); 
+    radAttrib.add(npts,"npts"); 
+    radAttrib.add(ri,"ri"); radAttrib.add(rf,"rf");
+    radAttrib.add(ascale,"ascale"); radAttrib.add(astep,"astep");
+    radAttrib.add(ascale,"scale"); radAttrib.add(astep,"step");
+    radAttrib.put(cur);
+
+    //overwrite the grid type to linear starting at 0.0
+    if(useLinear)
+    {
+      gridType="linear";
+      ri=0.0;
+    }
+
+    if(gridType == "log") {
+      if(ascale>0.0) {
+        agrid = new LogGridZero<RealType>;
+        agrid->set(astep,ascale,npts);
+      } else {
+        if(ri<numeric_limits<RealType>::epsilon())
+        {
+          ri=numeric_limits<RealType>::epsilon();
+        }
+        agrid = new LogGrid<RealType>;
+        agrid->set(ri,rf,npts);
+      }
+    } else if(gridType == "linear") {
+      agrid = new LinearGrid<RealType>;
+      if(astep>0.0)
+      {
+        npts = static_cast<int>((rf-ri)/astep)+1;
+        app_log() << "   Linear grid overwrites npts = " << npts << " with step = " << astep << endl;
+      }
+      agrid->set(ri,rf,npts);
+    }
+    return agrid;
   }
 
   bool ECPComponentBuilder::parseCasino(const std::string& fname, xmlNodePtr cur)
@@ -376,6 +423,7 @@ namespace qmcplusplus {
 
     return true;
   }
+
 
 } // namespace qmcPlusPlus
 /***************************************************************************

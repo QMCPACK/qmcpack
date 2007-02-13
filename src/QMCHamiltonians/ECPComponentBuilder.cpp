@@ -15,8 +15,12 @@
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 #include "QMCHamiltonians/ECPComponentBuilder.h"
+#include "Numerics/GaussianTimesRN.h"
+#include "Numerics/Transform2GridFunctor.h"
 #include "QMCHamiltonians/Ylm.h"
-#include "OhmmsData/AttributeSet.h"
+#include "QMCHamiltonians/FSAtomPseudoPot.h"
+#include "Utilities/IteratorUtility.h"
+#include "Utilities/SimpleParser.h"
 #include <cmath>
 
 namespace qmcplusplus {
@@ -396,8 +400,6 @@ namespace qmcplusplus {
 //     return prefactor * Pl * e2imphi;
 //   }
 
-
-
   void ECPComponentBuilder::CheckQuadratureRule(int lexact)
   {
     vector<PosType> &grid = pp_nonloc->sgridxyz_m;
@@ -424,57 +426,6 @@ namespace qmcplusplus {
 // 	     l1, m1, l2, m2, real(sum), imag(sum));
 	    
 	  }
-  }
-
-
-  ECPComponentBuilder::GridType* ECPComponentBuilder::createGrid(xmlNodePtr cur, bool useLinear)
-  {
-    GridType *agrid=0;
-    RealType ri = 1e-5;
-    RealType rf = 100.0;
-    RealType ascale = -1.0e0;
-    RealType astep = -1.0;
-    //RealType astep = 1.25e-2;
-    int npts = 1001;
-
-    string gridType("log");
-    OhmmsAttributeSet radAttrib;
-    radAttrib.add(gridType,"type"); 
-    radAttrib.add(npts,"npts"); 
-    radAttrib.add(ri,"ri"); radAttrib.add(rf,"rf");
-    radAttrib.add(ascale,"ascale"); radAttrib.add(astep,"astep");
-    radAttrib.add(ascale,"scale"); radAttrib.add(astep,"step");
-    radAttrib.put(cur);
-
-    //overwrite the grid type to linear starting at 0.0
-    if(useLinear)
-    {
-      gridType="linear";
-      ri=0.0;
-    }
-
-    if(gridType == "log") {
-      if(ascale>0.0) {
-        agrid = new LogGridZero<RealType>;
-        agrid->set(astep,ascale,npts);
-      } else {
-        if(ri<numeric_limits<RealType>::epsilon())
-        {
-          ri=numeric_limits<RealType>::epsilon();
-        }
-        agrid = new LogGrid<RealType>;
-        agrid->set(ri,rf,npts);
-      }
-    } else if(gridType == "linear") {
-      agrid = new LinearGrid<RealType>;
-      if(astep>0.0)
-      {
-        npts = static_cast<int>((rf-ri)/astep)+1;
-        app_log() << "   Linear grid overwrites npts = " << npts << " with step = " << astep << endl;
-      }
-      agrid->set(ri,rf,npts);
-    }
-    return agrid;
   }
 
 } // namespace qmcPlusPlus

@@ -7,7 +7,6 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
@@ -25,14 +24,10 @@
 namespace qmcplusplus {
 
   void ECPComponentBuilder::buildSemiLocalAndLocal(vector<xmlNodePtr>& semiPtr) {
-#if defined(__IBMCPP__)
-    app_error() << "  FSAtom parser does not work with IBM compilers." << endl;
-#else
-    //INVESTIGATING IBM COMPILERS
     if(grid_inp==0)
     {
       app_error() << "  Pseudopotential file does not defined a global grid. vps/grid is disabled." << endl;
-      QMCPACK_ABORT
+      OHMMS::Controller->abort();
     }
 
     //this is abinit/siesta format
@@ -41,7 +36,7 @@ namespace qmcplusplus {
 
     if (semiPtr.size()> 1) {
       ERRORMSG("We have more than one semilocal sections in the PP xml file.");
-      QMCPACK_ABORT
+      OHMMS::Controller->abort();
     }
 
     RealType rmax = 0.0;
@@ -71,8 +66,8 @@ namespace qmcplusplus {
     else if (units == "hartree")
       Vprefactor = 1.0;
     else {
-      app_error() << "Unrecognized units """ << units << """ in PP file." << endl;
-      QMCPACK_ABORT
+      ERRORMSG("Unrecognized units """ << units << """ in PP file.");
+      OHMMS::Controller->abort();
     }
 
     if (format == "r*V") 
@@ -80,8 +75,8 @@ namespace qmcplusplus {
     else if (format == "V")
       is_r_times_V = false;
     else {
-      app_error() << "Unrecognized format """ << format << """ in PP file." << endl;
-      QMCPACK_ABORT
+      ERRORMSG("Unrecognized format """ << format << """ in PP file.");
+      OHMMS::Controller->abort();
     }
 
     // Read which quadrature rule to use
@@ -91,7 +86,6 @@ namespace qmcplusplus {
 
     // We cannot construct the potentials as we construct them since
     // we may not know which one is local yet.
-//### IBM INTERNAL ERROR
     typedef FSAtomPseudoPot<RealType> InFuncType;
     vector<InFuncType*> Vls;
     int iLocal=-1;
@@ -149,7 +143,6 @@ namespace qmcplusplus {
     delete_iter(Vls.begin(),Vls.end());
     pp_nonloc->lmax=Lmax;
     pp_nonloc->Rmax=rmax;
-#endif
   }
 
 } // namespace qmcPlusPlus
