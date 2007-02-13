@@ -13,8 +13,8 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef QMCPLUSPLUS_TRUNCATEDPADEFUNCTOR_H
-#define QMCPLUSPLUS_TRUNCATEDPADEFUNCTOR_H
+#ifndef QMCPLUSPLUS_COMPOSITEFUNCTORS_H
+#define QMCPLUSPLUS_COMPOSITEFUNCTORS_H
 
 #include "Numerics/OptimizableFunctorBase.h"
 namespace qmcplusplus {
@@ -129,6 +129,47 @@ namespace qmcplusplus {
       void addOptimizables( VarRegistry<real_type>& vlist)
       {
         if(inFunc) inFunc->addOptimizables(vlist);
+      }
+    };
+
+  /** Implements \f$ u(r) = r^n*f(r) \f$ where \f$ f(r)\f$ is any OptimizableFunctorBase<T>
+   * 
+   * This functor is not optimized and should be used only as a temporary functor
+   * for a final numerical functor.
+   */
+  template<class T>
+    struct AnyTimesRnFunctor: public OptimizableFunctorBase<T> {
+      ///typedef of real values
+      typedef typename OptimizableFunctorBase<T>::real_type real_type;
+      ///pointer to a functor
+      OptimizableFunctorBase<T>* myFunc;
+      ///power
+      int Np;
+      ///constructor
+      AnyTimesRnFunctor(OptimizableFunctorBase<T>* infunc=0, int n=1): 
+        myFunc(infunc),Np(n)
+      {
+      }
+
+      inline void reset() { if(myFunc) myFunc->reset();}
+
+      inline real_type f(real_type r) {
+        return std::pow(r,Np)*myFunc->f(r);
+      }
+
+      inline real_type df(real_type r) {
+        real_type u=myFunc->f(r);
+        real_type du=myFunc->df(r);
+        return (Np*u+r*du)*std::pow(r,Np-1);
+      }
+
+      bool put(xmlNodePtr cur) 
+      {
+        return true;
+      }
+
+      void addOptimizables(VarRegistry<T>& vlist) 
+      {
       }
     };
 

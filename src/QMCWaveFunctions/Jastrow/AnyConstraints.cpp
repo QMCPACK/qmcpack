@@ -7,7 +7,6 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
@@ -15,7 +14,7 @@
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 #include "QMCWaveFunctions/Jastrow/AnyConstraints.h"
-#include "QMCWaveFunctions/Jastrow/TruncatedPadeFunctor.h"
+#include "QMCWaveFunctions/Jastrow/CompositeFunctor.h"
 #include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbital.h"
 #include "QMCWaveFunctions/Jastrow/OneBodyJastrowFunction.h"
 #include "Utilities/IteratorUtility.h"
@@ -148,15 +147,28 @@ namespace qmcplusplus {
         string radID("0");
         RealType exponent=-1.0;
         RealType contraction=1.0;
+        RealType rcut(curBG->Rcut);
+        int rpower=0;
         rAttrib.add(radID,"id"); //rAttrib.add(a->B0,"b");
         rAttrib.add(exponent,"exponent"); 
         rAttrib.add(contraction,"contraction"); 
+        rAttrib.add(rpower,"node"); 
+        rAttrib.add(rcut,"rcut"); 
         rAttrib.put(cur);
-        WMFunctor<RealType>* a = new WMFunctor<RealType>(exponent,curBG->Rcut);
+        WMFunctor<RealType>* a = new WMFunctor<RealType>(exponent,rcut);
         a->ID_B=radID+"_B";
         radID.append("_C");
-        acombo->add(a,contraction,radID);
-        cout << "    radfunc: " << a->ID_B  << " = " << exponent << " " << radID << " =" << contraction << endl;
+        if(rpower == 0)
+        {
+          acombo->add(a,contraction,radID);
+        }
+        else
+        {
+          AnyTimesRnFunctor<RealType>* awrap=new AnyTimesRnFunctor<RealType>(a,rpower);
+          acombo->add(awrap,contraction,radID);
+        }
+        app_log()  << "    radfunc: " << a->ID_B  << " = " << exponent << " " 
+          << radID << " =" << contraction << " node = " << rpower << "  rcut = " << rcut << endl;
       }
       cur=cur->next;
     }
