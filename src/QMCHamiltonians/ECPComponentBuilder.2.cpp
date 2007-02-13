@@ -24,6 +24,9 @@
 namespace qmcplusplus {
 
   void ECPComponentBuilder::buildSemiLocalAndLocal(vector<xmlNodePtr>& semiPtr) {
+#if defined(__IBM_CPP__)
+    app_error() << "  Compiler error with IBM Compilers. Use other pseudo potential format." << endl;
+#else
     if(grid_inp==0)
     {
       app_error() << "  Pseudopotential file does not defined a global grid. vps/grid is disabled." << endl;
@@ -143,6 +146,7 @@ namespace qmcplusplus {
     delete_iter(Vls.begin(),Vls.end());
     pp_nonloc->lmax=Lmax;
     pp_nonloc->Rmax=rmax;
+#endif
   }
 
 } // namespace qmcPlusPlus
