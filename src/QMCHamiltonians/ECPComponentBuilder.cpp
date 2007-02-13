@@ -15,8 +15,8 @@
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 #include "QMCHamiltonians/ECPComponentBuilder.h"
-#include "Numerics/GaussianTimesRN.h"
 #include "QMCHamiltonians/Ylm.h"
+#include "OhmmsData/AttributeSet.h"
 #include <cmath>
 
 namespace qmcplusplus {
@@ -424,46 +424,6 @@ namespace qmcplusplus {
 // 	     l1, m1, l2, m2, real(sum), imag(sum));
 	    
 	  }
-  }
-
-
-
-  ECPComponentBuilder::RadialPotentialType*
-  ECPComponentBuilder::createVr(xmlNodePtr cur, GridType* agrid) {
-    //todo rcut should be reset if necessary
-    typedef GaussianTimesRN<RealType> InFuncType;
-    InFuncType a;
-    a.putBasisGroup(cur);
-
-    int ng=agrid->size();
-    if(agrid->GridTag != LINEAR_1DGRID)
-    {
-      RealType ri=0.0;
-      RealType rf=agrid->rmax();
-      agrid = new LinearGrid<RealType>;
-      agrid->set(ri,rf,ng);
-      app_log() << "  Reset the grid for SemiLocal component to a LinearGrid. " << endl;
-    }
-
-    std::vector<RealType> v(ng);
-    for(int ig=0; ig<ng; ig++) {
-      v[ig]=a.f((*agrid)[ig]);
-    }
-    RadialPotentialType *app=new RadialPotentialType(agrid,v);
-    app->spline();
-
-    //ofstream fout("C.nonlocal.dat");
-    //fout.setf(std::ios::scientific, std::ios::floatfield);
-    //fout.precision(12);
-    //RealType r=0;
-    //while(r<agrid->rmax())
-    //{
-    //  RealType nvr=app->f(r);
-    //  RealType avr= a.f(r);
-    //  fout << setw(20) << r << setw(20) << nvr<< " " << avr << " " << nvr-avr << endl;
-    //  r+=0.01;
-    //}
-    return app;
   }
 
 
