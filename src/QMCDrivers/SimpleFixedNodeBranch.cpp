@@ -88,6 +88,7 @@ void SimpleFixedNodeBranch::initWalkerController(RealType tau, bool fixW) {
     Nmax=WalkerController->Nmax;
     Nmin=WalkerController->Nmin;
 
+    if(MaxCopy>0) WalkerController->MaxCopy=MaxCopy;
     //assign current E_T and a large number for variance
     WalkerController->setEnergyAndVariance(E_T,10);
     WalkerController->setEnergyBound(TargetEnergyBound);
