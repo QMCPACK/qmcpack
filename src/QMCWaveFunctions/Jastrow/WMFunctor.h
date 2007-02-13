@@ -43,11 +43,13 @@ namespace qmcplusplus {
       inline void reset() { OneOverRc=1.0/Rcut; }
       void reset(real_type b, real_type rc) { B0=b; Rcut=rc; reset(); }
       inline real_type f(real_type r) {
+        if(r>Rcut) return 0.0;
         real_type x=r*OneOverRc;
         real_type z=x*x*(6.0-8*x+3.0*x*x);
         return (1-z)/(1+B0*z);
       }
       inline real_type df(real_type r) {
+        if(r>Rcut) return 0.0;
         real_type x=r*OneOverRc;
         real_type z=x*x*(6.0-8*x+3.0*x*x);
         return -(1+B0)/(1+B0*z)/(1+B0*z)*OneOverRc*12*x*(1-2.0*x+x*x);
