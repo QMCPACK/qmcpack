@@ -16,10 +16,13 @@
 // -*- C++ -*-
 #include "QMCDrivers/WalkerControlBase.h"
 #include "Particle/HDFWalkerIO.h"
+#include "OhmmsData/ParameterSet.h"
+
 namespace qmcplusplus {
 
   WalkerControlBase::WalkerControlBase(): 
-  SwapMode(0), Nmin(1), Nmax(10), MaxCopy(10), targetEnergyBound(20)
+  SwapMode(0), Nmin(1), Nmax(10), MaxCopy(5), 
+  targetEnergyBound(20), targetVar(2), targetSigma(10)
   {
     accumData.resize(LE_MAX);
     curData.resize(LE_MAX);
@@ -108,17 +111,17 @@ namespace qmcplusplus {
 
     //evaluate variance of this block
     curVar=(e2sum-esum*esum/wsum)/wsum;
-    if(curVar>sigma) {
-      app_error() << "Unphysical block variance is detected. Stop simulations." << endl;
-      Write2XYZ(W);
-      //Does not work some reason
-      //OHMMS::Controller->abort();
-#if defined(HAVE_MPI)
-      OOMPI_COMM_WORLD.Abort();
-#else
-      abort();
-#endif
-    }
+//    if(curVar>sigma) {
+//      app_error() << "Unphysical block variance is detected. Stop simulations." << endl;
+//      Write2XYZ(W);
+//      //Does not work some reason
+//      //OHMMS::Controller->abort();
+//#if defined(HAVE_MPI)
+//      OOMPI_COMM_WORLD.Abort();
+//#else
+//      abort();
+//#endif
+//    }
 
     //update curData
     curData[ENERGY_INDEX]=esum;
@@ -180,6 +183,19 @@ namespace qmcplusplus {
     return W.getActiveWalkers();
   }
 
+  bool WalkerControlBase::put(xmlNodePtr cur) 
+  {
+    ParameterSet params;
+    params.add(targetEnergyBound,"energyBound","double");
+    params.add(targetSigma,"sigmaBound","double");
+    params.add(MaxCopy,"maxCopy","int"); 
+    bool success=params.put(cur);
+    app_log() << "  WalkerControlBase parameters " << endl;
+    app_log() << "    energyBound = " << targetEnergyBound << endl;
+    app_log() << "    sigmaBound = " << targetSigma << endl;
+    app_log() << "    maxCopy = " << MaxCopy << endl;
+    return true;
+  }
 }
 /***************************************************************************
  * $RCSfile$   $Author$

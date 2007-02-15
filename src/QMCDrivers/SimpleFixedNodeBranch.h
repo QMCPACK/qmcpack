@@ -63,8 +63,6 @@ namespace qmcplusplus {
       int Nmax;
       ///minumum population
       int Nmin;
-      ///maximum copies of a walker
-      int MaxCopy;
       ///control population fluctutaions
       int NumGeneration;
       ///index of the trial energy
@@ -85,8 +83,8 @@ namespace qmcplusplus {
       RealType PopControl;
       ///LogJacob
       RealType LogJacobRef;
-      ///TargetEnergyBound
-      RealType TargetEnergyBound;
+      ///save xml element
+      xmlNodePtr myNode;
 
       ///LogNorm
       vector<RealType> LogNorm;

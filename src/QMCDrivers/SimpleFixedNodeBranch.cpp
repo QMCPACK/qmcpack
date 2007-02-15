@@ -29,8 +29,7 @@ namespace qmcplusplus {
 SimpleFixedNodeBranch::SimpleFixedNodeBranch(RealType tau, int nideal): 
 FixedNumWalkers(false), QMCCounter(-1), SwapMode(0), Counter(0), 
   Nideal(nideal), NumGeneration(50), 
-  MaxCopy(-1), Tau(tau), E_T(0.0), EavgSum(0.0), WgtSum(0.0), PopControl(0.1), 
-  TargetEnergyBound(20.0),
+  Tau(tau), E_T(0.0), EavgSum(0.0), WgtSum(0.0), PopControl(0.1), 
   WalkerController(0), MyEstimator(0), SwapWalkers("yes")
 {
   registerParameters();
@@ -44,7 +43,7 @@ FixedNumWalkers(false), QMCCounter(-1), SwapMode(0), Counter(0),
 SimpleFixedNodeBranch::SimpleFixedNodeBranch(const SimpleFixedNodeBranch& abranch):
   FixedNumWalkers(false), SwapMode(0), Counter(0), 
   Nideal(abranch.Nideal), NumGeneration(abranch.NumGeneration), 
-  MaxCopy(-1), Tau(abranch.Tau), E_T(abranch.E_T), 
+  Tau(abranch.Tau), E_T(abranch.E_T), 
   EavgSum(0.0), WgtSum(0.0), PopControl(abranch.PopControl), 
   WalkerController(0)
 {
@@ -55,14 +54,12 @@ SimpleFixedNodeBranch::SimpleFixedNodeBranch(const SimpleFixedNodeBranch& abranc
 void SimpleFixedNodeBranch::registerParameters() {
   m_param.add(E_T,"refEnergy","AU");
   m_param.add(NumGeneration,"popControl","int"); 
-  m_param.add(MaxCopy,"maxCopy","int"); 
   m_param.add(Nideal,"targetWalkers","int"); 
   m_param.add(EavgSum,"energySum","AU"); 
   m_param.add(WgtSum,"weightSum","none");
   m_param.add(PopControl,"swapTrigger","none");
   m_param.add(SwapWalkers,"swapWalkers","string");
   m_param.add(SwapWalkers,"collect","string");
-  m_param.add(TargetEnergyBound,"energyBound","double");
 
   //backward compatability
   m_param.add(E_T,"ref_energy","AU"); m_param.add(E_T,"en_ref","AU");
@@ -87,12 +84,11 @@ void SimpleFixedNodeBranch::initWalkerController(RealType tau, bool fixW) {
         SwapMode, Nideal, Nmax, Nmin, WalkerController,MyEstimator->getCommunicator());
     Nmax=WalkerController->Nmax;
     Nmin=WalkerController->Nmin;
-
-    if(MaxCopy>0) WalkerController->MaxCopy=MaxCopy;
-    //assign current E_T and a large number for variance
-    WalkerController->setEnergyAndVariance(E_T,10);
-    WalkerController->setEnergyBound(TargetEnergyBound);
   }
+  //update the simulation parameters
+  WalkerController->put(myNode);
+  //assign current E_T and a large number for variance
+  WalkerController->setEnergyAndVariance(E_T,10);
 
   if(fixW) {
     ETrialIndex=-1;
@@ -127,11 +123,20 @@ void SimpleFixedNodeBranch::flush(int counter)
 
 void
 SimpleFixedNodeBranch::branch(int iter, MCWalkerConfiguration& w) {
+  //evaluate a safe bound for the trial energy.
+  RealType sigma=WalkerController->getSigmaBound();
   int pop_now = WalkerController->branch(iter,w,PopControl);
   EavgSum+=WalkerController->getCurrentValue(WalkerControlBase::EREF_INDEX);
   WgtSum+=WalkerController->getCurrentValue(WalkerControlBase::WALKERSIZE_INDEX);
   if(ETrialIndex>0) {
-    E_T = (EavgSum/WgtSum+E_T)*0.5-Feed*log(static_cast<RealType>(pop_now))+logN;
+    //E_T = (EavgSum/WgtSum+E_T)*0.5-Feed*log(static_cast<RealType>(pop_now))+logN;
+    RealType delEt=(EavgSum/WgtSum-E_T)*0.5-Feed*log(static_cast<RealType>(pop_now))+logN;
+    if(delEt<-sigma) 
+      E_T -= sigma;
+    else if(delEt>sigma) 
+      E_T += sigma;
+    else 
+      E_T += delEt;
     MyEstimator->setColumn(ETrialIndex,E_T);
   }
 }
@@ -174,7 +179,8 @@ void SimpleFixedNodeBranch::finalize() {
  * </ul>
  */
 bool SimpleFixedNodeBranch::put(xmlNodePtr cur){
-
+  //save it
+  myNode=cur;
   //check dmc/vmc and decide to create WalkerControllerBase
   m_param.put(cur);
 

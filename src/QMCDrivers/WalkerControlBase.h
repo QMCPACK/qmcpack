@@ -60,6 +60,8 @@ namespace qmcplusplus {
     RealType targetAvg;
     ///target average variance
     RealType targetVar;
+    ///target sigma to limit fluctuations of the trial energy
+    RealType targetSigma;
     ///bound of the energy window
     RealType targetEnergyBound;
     ///current variance
@@ -104,10 +106,13 @@ namespace qmcplusplus {
       targetVar=v;
     }
 
-    /** set the target energy bound
+    /** return a multiple of the current Sigma
+     *
+     * SimpleFixedNodeBranch::branch uses this value to determine a new trial energy.
      */
-    inline void setEnergyBound(RealType de) {
-      targetEnergyBound=de;
+    inline RealType getSigmaBound() const
+    {
+      return std::min(10.0*std::sqrt(targetVar),targetSigma);
     }
 
     /** sort Walkers between good and bad and prepare branching
@@ -129,6 +134,8 @@ namespace qmcplusplus {
     virtual RealType getFeedBackParameter(int ngen, RealType tau) {
       return 1.0/(static_cast<RealType>(ngen)*tau);
     }
+
+    bool put(xmlNodePtr cur);
 
   };
 
