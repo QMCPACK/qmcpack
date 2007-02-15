@@ -86,10 +86,9 @@ namespace qmcplusplus {
     RealType ebar= targetAvg;
     while(it != it_end) {
       RealType e((*it)->Properties(LOCALENERGY));
-      int nc=0; 
+      int nc= std::min(static_cast<int>((*it)->Multiplicity),MaxCopy);
       if(fabs(ebar-e) < sigma)//exclude extreme energies 
       {
-        nc = std::min(static_cast<int>((*it)->Multiplicity),MaxCopy);
         RealType wgt((*it)->Weight);
         esum += wgt*e;
         e2sum += wgt*e*e;
