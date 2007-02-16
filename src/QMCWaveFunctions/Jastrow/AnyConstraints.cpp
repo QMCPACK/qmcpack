@@ -156,7 +156,7 @@ namespace qmcplusplus {
         rAttrib.add(rcut,"rcut"); 
         rAttrib.put(cur);
         WMFunctor<RealType>* a = new WMFunctor<RealType>(exponent,rcut);
-        a->ID_B=radID+"_B";
+        a->ID_B=radID+"_E";
         radID.append("_C");
         if(rpower == 0)
         {
