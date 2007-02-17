@@ -14,6 +14,7 @@
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 #include "QMCWaveFunctions/Jastrow/AnyConstraints.h"
+#include "QMCWaveFunctions/Jastrow/LinearCombinationFunctor.h"
 #include "QMCWaveFunctions/Jastrow/CompositeFunctor.h"
 #include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbital.h"
 #include "QMCWaveFunctions/Jastrow/OneBodyJastrowFunction.h"
@@ -38,15 +39,18 @@ namespace qmcplusplus {
     return success;
   }
 
-  void AnyConstraints::apply() {
+  void AnyConstraints::resetParameters(OptimizableSetType& optVariables) 
+  {
+    cout << "What is going on " << endl;
     map<string,BasisGroupType*>::iterator it(BasisGroups.begin()),it_end(BasisGroups.end());
     while(it != it_end) {
-      (*it).second->Out_->reset();
+      (*it).second->Out_->resetParameters(optVariables);
       ++it;
     }
   }
 
-  void AnyConstraints::addOptimizables(VarRegistry<RealType>& outVars) {
+  void AnyConstraints::addOptimizables(OptimizableSetType& outVars) 
+  {
     map<string,BasisGroupType*>::iterator it(BasisGroups.begin()),it_end(BasisGroups.end());
     while(it != it_end) {
       (*it).second->In_->addOptimizables(outVars);
@@ -135,7 +139,7 @@ namespace qmcplusplus {
 
   void AnyConstraints::add2BasisGroup(BasisGroupType* curBG, xmlNodePtr cur)
   {
-    typedef ComboFunctor<RealType> ComboFuncType;
+    typedef LinearCombinationFunctor<RealType> ComboFuncType;
     ComboFuncType* acombo=new ComboFuncType;
     curBG->In_ = acombo; 
 
@@ -156,19 +160,20 @@ namespace qmcplusplus {
         rAttrib.add(rcut,"rcut"); 
         rAttrib.put(cur);
         WMFunctor<RealType>* a = new WMFunctor<RealType>(exponent,rcut);
-        a->ID_B=radID+"_E";
-        radID.append("_C");
+        a->put(cur);
+        string id_c=radID+"_C";
         if(rpower == 0)
         {
-          acombo->add(a,contraction,radID);
+          acombo->addComponent(a,contraction,id_c,cur);
         }
         else
         {
           AnyTimesRnFunctor<RealType>* awrap=new AnyTimesRnFunctor<RealType>(a,rpower);
-          acombo->add(awrap,contraction,radID);
+          acombo->addComponent(awrap,contraction,id_c,cur);
         }
-        app_log()  << "    radfunc: " << a->ID_B  << " = " << exponent << " " 
-          << radID << " =" << contraction << " node = " << rpower << "  rcut = " << rcut << endl;
+        app_log()  << "<radfunc id=\"" << radID << "\" exponent=\""<< exponent 
+          << "\" contraction=\"" << contraction 
+          << "\" node=\"" << rpower << "\" rcut=\"" << rcut << "\"/>" << endl;
       }
       cur=cur->next;
     }
@@ -183,6 +188,13 @@ namespace qmcplusplus {
         addSingleBasisPerSpecies(cur);
       }
       cur=cur->next;
+    }
+
+    if(BasisGroups.empty())
+    {
+      app_error() << "  AnyConstraints::createTwoBody fails to create a TwoBodyJastrow "
+        << " due to missing <basisset/> " << endl;
+      return 0;
     }
 
     BasisGroupType* curGroup=0;
@@ -203,7 +215,7 @@ namespace qmcplusplus {
     //try to correct the cusp condition
     TruncatedPadeFunctor<RealType>* wrapFunc
       = new TruncatedPadeFunctor<RealType>(-0.5,infunc,curGroup->Rcut);
-    wrapFunc->reset();
+    wrapFunc->applyCuspCondition();
 
     typedef TwoBodyJastrowOrbital<OutFuncType> JeeType;
     //create a Jastrow function
@@ -213,6 +225,7 @@ namespace qmcplusplus {
 
     if(wrapFunc->Rcut > 0.0)//pade truncation is good to go
     {
+      app_log() << "  AnyContraints::createTwoBody add a cusp condition " << endl;
       nfunc= new OutFuncType(wrapFunc,curGroup->Rcut, curGroup->NumGridPoints);
       curGroup->In_ = wrapFunc;//replace In_ which has a correction
     }
@@ -233,7 +246,7 @@ namespace qmcplusplus {
       nfunc->print(fout);
     }
 #endif
-
+    J2->insert("Jee",nfunc);
     for(int i=0; i<4; i++) J2->addFunc(nfunc);
     return J2;
   }
