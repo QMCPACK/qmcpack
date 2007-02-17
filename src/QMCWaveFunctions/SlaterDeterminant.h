@@ -49,7 +49,8 @@ namespace qmcplusplus {
    *@todo Use BasisSet for particle-by-particle update
    */
   template<class SPOSet>
-  class SlaterDeterminant: public OrbitalBase {
+  class SlaterDeterminant: public OrbitalBase 
+  {
 
   public:
 
@@ -71,8 +72,9 @@ namespace qmcplusplus {
     }
 
     ///reset all the Dirac determinants, Optimizable is true
-    void reset() {  
-      if(Optimizable) for(int i=0; i<Dets.size(); i++) Dets[i]->reset();
+    void resetParameters(OptimizableSetType& optVariables) {  
+      if(Optimizable) 
+        for(int i=0; i<Dets.size(); i++) Dets[i]->resetParameters(optVariables);
     }
 
     void resetTargetParticleSet(ParticleSet& P) {
@@ -125,13 +127,6 @@ namespace qmcplusplus {
 
     ///return the dimension of the i-th Dirac determinant
     inline int size(int i) const { return Dets[i]->cols();}
-
-    inline void evaluate(WalkerSetRef& W, //const DistanceTableData* dtable, 
-			 ValueVectorType& psi,
-			 WalkerSetRef::WalkerGradient_t& G,
-			 WalkerSetRef::WalkerLaplacian_t& L) {
-      for(int i=0; i<Dets.size(); i++) 	Dets[i]->evaluate(W,psi,G,L);
-    }
 
     /** similar to evaluateLog 
      */

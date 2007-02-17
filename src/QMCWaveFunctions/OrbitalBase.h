@@ -19,9 +19,9 @@
 #include "Configuration.h"
 #include "Particle/ParticleSet.h"
 #include "Particle/DistanceTableData.h"
-#include "Particle/WalkerSetRef.h"
 #include "OhmmsData/RecordProperty.h"
 #include "QMCWaveFunctions/OrbitalTraits.h"
+#include "Optimize/VarList.h"
 
 /**@file OrbitalBase.h
  *@brief Declaration of OrbitalBase
@@ -42,16 +42,18 @@ namespace qmcplusplus {
   /** @ingroup OrbitalComponent
    * @brief An abstract class for a component of a many-body trial wave function
    */
-  struct OrbitalBase: public QMCTraits {
+  struct OrbitalBase: public QMCTraits 
+  {
 
     ///recasting enum of DistanceTableData to maintain consistency
     enum {SourceIndex  = DistanceTableData::SourceIndex, 
 	  VisitorIndex = DistanceTableData::VisitorIndex, 
 	  WalkerIndex  = DistanceTableData::WalkerIndex};
 
-    typedef ParticleAttrib<ValueType>    ValueVectorType;
-    typedef ParticleAttrib<GradType>     GradVectorType;
-    typedef PooledData<RealType>         BufferType;
+    typedef ParticleAttrib<ValueType> ValueVectorType;
+    typedef ParticleAttrib<GradType>  GradVectorType;
+    typedef PooledData<RealType>      BufferType;
+    typedef VarRegistry<RealType>     OptimizableSetType;
 
     bool Optimizable;
     bool UseBuffer;
@@ -66,12 +68,9 @@ namespace qmcplusplus {
 
     inline void setOptimizable(bool optimizeit) { Optimizable = optimizeit;}
 
-    /**reset the Orbital
-     *
-     *During wavefunction optimizations, the TrailWaveFunction calls
-     *the reset function with new functional variables.
+    /** reset the parameters during optimizations
      */
-    virtual void reset() = 0;
+    virtual void resetParameters(OptimizableSetType& optVariables)=0;
 
     /**resize the internal storage with multiple walkers
      *@param nwalkers the number of walkers

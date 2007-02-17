@@ -26,11 +26,15 @@ namespace qmcplusplus {
 
   /** A composite Orbital
    */
-  struct ComboOrbital: public OrbitalBase {
+  struct ComboOrbital: public OrbitalBase 
+  {
 
     ///A list of OrbitalBase* 
     vector<OrbitalBase*> Psi;
-    ///Contraints on Psi
+    /** Contraints on Psi
+     *
+     * Constraints reset optimizable variables that may be shared by Psi. 
+     */
     OrbitalConstraintsBase* Constraints;
 
     ComboOrbital(OrbitalConstraintsBase* control):
@@ -44,7 +48,9 @@ namespace qmcplusplus {
       Constraints=control;
     }
 
-    void reset();
+    /** reset parameters
+     */
+    void resetParameters(OptimizableSetType& optVariables);
 
     void resetTargetParticleSet(ParticleSet& P);
 

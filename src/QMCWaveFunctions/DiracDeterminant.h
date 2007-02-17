@@ -8,13 +8,10 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
-//   Department of Physics, Ohio State University
-//   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 #ifndef QMCPLUSPLUS_DIRACDETERMINANT_H
@@ -104,7 +101,8 @@ namespace qmcplusplus {
 
    */
   template<class SPOSet>
-  class DiracDeterminant: public OrbitalBase {
+  class DiracDeterminant: public OrbitalBase 
+  {
   public:
 #if defined(USE_BLITZ)
     typedef blitz::Array<ValueType,2> Determinant_t;
@@ -133,7 +131,8 @@ namespace qmcplusplus {
       resize(s.rows(), s.cols());
     }
 
-    DiracDeterminant<SPOSet>& operator=(const DiracDeterminant<SPOSet>& s) {
+    DiracDeterminant<SPOSet>& operator=(const DiracDeterminant<SPOSet>& s) 
+    {
       NP=0;
       resize(s.rows(), s.cols());
       return *this;
@@ -143,15 +142,19 @@ namespace qmcplusplus {
      *@param first index of first particle
      *@param nel number of particles in the determinant
      */
-    inline void set(int first, int nel) {
+    inline void set(int first, int nel) 
+    {
       FirstIndex = first;
       resize(nel,nel);
     }
 
-    ///reset the single-particle orbital set
-    inline void reset() { Phi.reset(); }
-   
-    void resetTargetParticleSet(ParticleSet& P) { 
+    void resetParameters(OptimizableSetType& optVariables)
+    {
+      Phi.resetParameters(optVariables);
+    }
+
+    void resetTargetParticleSet(ParticleSet& P) 
+    { 
       Phi.resetTargetParticleSet(P);
     }
 

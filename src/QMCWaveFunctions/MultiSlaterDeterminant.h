@@ -47,7 +47,8 @@ namespace qmcplusplus {
    \f]
    */
 template<class SPOSet>
-class MultiSlaterDeterminant: public OrbitalBase {
+class MultiSlaterDeterminant: public OrbitalBase 
+{
 
 public:
 
@@ -72,11 +73,25 @@ public:
     int cur=C.size();
     SDets.push_back(sdet);
     C.push_back(c);
-    vlist.add(id,&(C[cur]),1);
+    ID_C.push_back(id);
+    vlist[id]=c;
   }
 
-  void reset() {  
-    if(Optimizable) for(int i=0; i<SDets.size(); i++) SDets[i]->reset();
+  /** resetParameters with optVariables
+   *
+   * USE_resetParameters
+   */
+  void resetParameters(OptimizableSetType& optVariables) 
+  {  
+    if(Optimizable) 
+    {
+      for(int i=0; i<C.size(); i++) 
+      {
+        OptimizableSetType::iterator it(optVariables.find(ID_C[i]));
+        if(it != optVariables.end()) C[i]=(*it).second;
+      }
+      for(int i=0; i<SDets.size(); i++) SDets[i]->resetParameters(optVariables);
+    }
   }
 
   void resetTargetParticleSet(ParticleSet& P) {
@@ -121,14 +136,6 @@ public:
   inline int size(int i, int j) const {return SDets[i]->size(j);}
 
 
-  inline void evaluate(WalkerSetRef& W, //const DistanceTableData* dtable,
-		       ValueVectorType& psi,
-		       WalkerSetRef::WalkerGradient_t& G,
-		       WalkerSetRef::WalkerLaplacian_t& L) {
-    for(int i=0; i<SDets.size(); i++) SDets[i]->evaluate(W,psi,G,L);
-      //Dets[i]->evaluate(W,dtable,psi,G,L);
-  }
-  
   ValueType registerData(ParticleSet& P, PooledData<RealType>& buf){
     std::cerr << "MultiSlaterDeterminant::registerData is empty" << std::endl;
     return 0.0;
@@ -189,6 +196,7 @@ public:
 private:
   vector<DeterminantSet_t*> SDets;
   vector<RealType> C;
+  vector<string> ID_C;
 };
 
 }

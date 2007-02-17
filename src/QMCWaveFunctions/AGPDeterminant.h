@@ -26,7 +26,8 @@
 
 namespace qmcplusplus {
 
-  class AGPDeterminant: public OrbitalBase {
+  class AGPDeterminant: public OrbitalBase 
+  {
 
   public:
 
@@ -49,8 +50,11 @@ namespace qmcplusplus {
     ~AGPDeterminant();
   
     ///reset the single-particle orbital set
-    void reset() { GeminalBasis->reset(); }
-   
+    void resetParameters(OptimizableSetType& optVariables) 
+    { 
+      GeminalBasis->resetParameters(optVariables); 
+    }
+
     void resetTargetParticleSet(ParticleSet& P);
 
     ///reset the size: with the number of particles and number of orbtials

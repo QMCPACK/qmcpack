@@ -22,13 +22,15 @@
 
 namespace qmcplusplus {
 
-  ComboOrbital::~ComboOrbital() {
+  ComboOrbital::~ComboOrbital() 
+  {
     delete_iter(Psi.begin(), Psi.end());
     delete Constraints;
   }
 
-  void ComboOrbital::reset() {
-    Constraints->apply();
+  void ComboOrbital::resetParameters(OptimizableSetType& optVariables) 
+  {
+    Constraints->resetParameters(optVariables);
   }
 
   void ComboOrbital::resetTargetParticleSet(ParticleSet& P) {
