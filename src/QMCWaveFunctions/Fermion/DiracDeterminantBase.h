@@ -68,8 +68,11 @@ namespace qmcplusplus {
     void set(int first, int nel);
 
     ///reset the single-particle orbital set
-    inline void reset() { Phi->reset(); }
-   
+    void resetParameters(OptimizableSetType& optVariables) 
+    { 
+      Phi->resetParameters(optVariables); 
+    }
+
     void resetTargetParticleSet(ParticleSet& P) { 
       Phi->resetTargetParticleSet(P);
     }
