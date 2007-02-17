@@ -83,8 +83,14 @@ namespace qmcplusplus {
       TotalBasis = Basis[I.size()];
     }
 
-    void reset() {
-      for(int i=0; i<AOs.size(); i++) AOs[i]->reset();
+    void reset()
+    {
+      // DO NOTHING
+    }
+
+    void resetParameters(VarRegistry<RealType>& optVariables) 
+    {
+      for(int i=0; i<AOs.size(); i++) AOs[i]->resetParameters(optVariables);
     }
     
 
@@ -141,19 +147,6 @@ namespace qmcplusplus {
     evaluateAll(const ParticleSet& P, int iat)  {
       for(int c=0; c<I.size();c++) {
 	AOs[I[c]]->evaluate(c,iat,Basis[c],Y,dY,d2Y);
-      }
-    }
-
-    /**evaluate \f$ \phi_I^J ({\bf R}_i-{\bf R}_I) \f$
-     *
-     *calling SphericalOrbitals::evaluateW
-     */
-    inline void 
-    evaluate(const WalkerSetRef& W) {
-      for(int c=0; c<I.size();c++) {
-	AOs[I[c]]->evaluateW(c,0,W.particles(),Basis[c],
-			     W.walkers(),NumPtcls,
-			     Y,dY,d2Y);
       }
     }
 
