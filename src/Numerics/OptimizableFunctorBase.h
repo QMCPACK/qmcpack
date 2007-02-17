@@ -14,7 +14,7 @@
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 /** @file OptimizableFunctorBase.h
- * @brief Define a base class for one-dimensional functions that can be optimized.
+ * @brief Define a base class for one-dimensional functions with optimizable variables
  */
 #ifndef QMCPLUSPLUS_OPTIMIZABLEFUNCTORBASE_H
 #define QMCPLUSPLUS_OPTIMIZABLEFUNCTORBASE_H
@@ -43,11 +43,12 @@ struct NumericTraits<std::complex<double> > {
 template<class T>
 struct OptimizableFunctorBase: public NumericTraits<T> {
 
-  typedef typename NumericTraits<T>::real_type real_type;
+  ///define the real type
+  typedef typename NumericTraits<T>::real_type  real_type;
+  ///define the value type
   typedef typename NumericTraits<T>::value_type value_type;
-
-  ///reset the Jastrow Function
-  virtual void reset()=0;
+  ///define the type of Optimizable Sets
+  typedef VarRegistry<real_type>                OptimizableSetType;
 
   /** evaluate the value at r
    * @param r distance
@@ -69,73 +70,20 @@ struct OptimizableFunctorBase: public NumericTraits<T> {
   virtual bool put(xmlNodePtr cur) = 0;
 
   /** add variables to be optimized
-   * @param vlist VarRegistery<T>
+   * @param vlist list to which  derived classes add optimizable variables
    */
-  virtual void addOptimizables(VarRegistry<real_type>& vlist) =0;
+  virtual void addOptimizables(OptimizableSetType& vlist) =0;
+
+  /** reset the optimizable variables
+   *
+   * @param optVariables list of active optimizable variables
+   */
+  virtual void resetParameters(OptimizableSetType& optVariables)=0;
 
   /** empty virtual function to help builder classes
   */
   virtual void setDensity(real_type n) { }
 };
-
-/** Implements a linear combination of any functor
-*/
-template<class T>
-struct ComboFunctor: public OptimizableFunctorBase<T> {
-
-  typedef OptimizableFunctorBase<T> ComponentType;
-  typedef typename NumericTraits<T>::real_type real_type;
-  typedef typename NumericTraits<T>::value_type value_type;
-
-  std::vector<real_type> C;
-  std::vector<ComponentType*> Phi;
-  std::vector<std::string> ID;
-
-  ComboFunctor() { 
-    C.reserve(8);
-    Phi.reserve(8);
-    ID.reserve(8);
-  }
-
-  int size() const { return Phi.size();}
-
-  void add(ComponentType* func, real_type c,  const std::string& id) {
-    C.push_back(c);
-    Phi.push_back(func);
-    ID.push_back(id);
-  }
-
-  inline void reset() {
-    for(int i=0; i<Phi.size(); i++) Phi[i]->reset();
-  }
-
-  inline real_type f(real_type r) {
-    real_type res=0;
-    for(int i=0; i<Phi.size(); i++) { res += C[i]*Phi[i]->f(r);}
-    return res;
-  }
-
-  inline real_type df(real_type r) {
-    real_type res(0);
-    for(int i=0; i<Phi.size(); i++) { res += C[i]*Phi[i]->df(r);}
-    return res;
-  }
-
-  bool put(xmlNodePtr cur) 
-  {
-    return true;
-  }
-
-  void addOptimizables(VarRegistry<real_type>& vlist) {
-    for(int i=0; i<C.size(); i++) {
-      vlist.add(ID[i],&(C[i]),1);
-    }
-    for(int i=0; i<Phi.size(); i++) {
-      Phi[i]->addOptimizables(vlist);
-    }
-  }
-};
-
 
 #endif
 /***************************************************************************
