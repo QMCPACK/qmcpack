@@ -42,7 +42,9 @@ namespace qmcplusplus {
       //for(int i=0; i<F.size(); i++) delete F[i];
     }
 
-    void reset() {  }
+    void resetParameters(OptimizableSetType& optVariables) 
+    {
+    }
 
     void resetTargetParticleSet(ParticleSet& P) {}
 

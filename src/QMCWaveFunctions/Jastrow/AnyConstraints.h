@@ -52,8 +52,10 @@ namespace qmcplusplus {
 
     AnyConstraints(ParticleSet& p, TrialWaveFunction& psi);
     ~AnyConstraints();
-    void apply();
-    void addOptimizables(VarRegistry<RealType>& outVars);
+
+    void addOptimizables(OptimizableSetType& vlist);
+    void resetParameters(OptimizableSetType& optVariables);
+
     OrbitalBase* createTwoBody();
     OrbitalBase* createOneBody(ParticleSet& source);
     void addExtra2ComboOrbital(ComboOrbital* jcombo) {}

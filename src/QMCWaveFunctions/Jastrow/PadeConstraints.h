@@ -7,7 +7,6 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
@@ -27,23 +26,16 @@ namespace qmcplusplus {
     typedef PadeFunctor<RealType> FuncType;
     bool IgnoreSpin;
     RealType B;
-    string ID;
+    string ID_B;
+    xmlNodePtr node_B;
     vector<FuncType*> FuncList;
 
     ~PadeConstraints();
 
     PadeConstraints(ParticleSet& p, TrialWaveFunction& psi, bool nospin=true);
 
-    inline void apply() {
-      for(int i=0; i<FuncList.size(); i++) {
-        FuncList[i]->B0=B;
-        FuncList[i]->reset();
-      }
-    }
-
-    void addOptimizables(VarRegistry<RealType>& outVars) {
-      outVars.add(ID,&B,1);
-    }
+    void addOptimizables(OptimizableSetType& outVars);
+    void resetParameters(OptimizableSetType& optVariables);
 
     OrbitalBase* createTwoBody();
     OrbitalBase* createOneBody(ParticleSet& source);
@@ -56,27 +48,16 @@ namespace qmcplusplus {
     bool IgnoreSpin;
     RealType B;
     RealType C;
-    string BID;
-    string CID;
+    string ID_B;
+    string ID_C;
     vector<FuncType*> FuncList;
 
     ScaledPadeConstraints(ParticleSet& p, TrialWaveFunction& psi, bool nospin=true);
 
     ~ScaledPadeConstraints();
 
-    inline void apply() {
-      for(int i=0; i<FuncList.size(); i++) {
-        FuncList[i]->B=B;
-        FuncList[i]->C=C;
-        FuncList[i]->reset();
-      }
-    }
-
-
-    void addOptimizables(VarRegistry<RealType>& outVars) {
-      outVars.add(BID,&B,1);
-      outVars.add(CID,&C,1);
-    }
+    void addOptimizables(OptimizableSetType& outVars);
+    void resetParameters(OptimizableSetType& optVariables); 
 
     OrbitalBase* createTwoBody();
     OrbitalBase* createOneBody(ParticleSet& source);

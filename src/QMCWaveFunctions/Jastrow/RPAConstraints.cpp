@@ -43,12 +43,32 @@ namespace qmcplusplus {
     if(vit == inVars.end()) {
       vit=inVars.find("rs");
       if(vit == inVars.end()) {
-        ID="rs"; Rs=-1.0;
-        return true;//assign the default value
+        ID_Rs="rs"; Rs=-1.0;
       }
     }
-    ID=(*vit).second.first; Rs=(*vit).second.second;
+    else 
+    {
+      ID_Rs=(*vit).second.first; 
+      Rs=(*vit).second.second;
+    }
     return true;
+  }
+
+  void RPAConstraints::addOptimizables(OptimizableSetType& outVars) 
+  {
+    outVars[ID_Rs]=Rs;
+  }
+
+  void RPAConstraints::resetParameters(OptimizableSetType& optVariables) 
+  {
+    OptimizableSetType::iterator it(optVariables.find(ID_Rs));
+    if(it != optVariables.end()) 
+    {
+      Rs=(*it).second;
+      for(int i=0; i<FuncList.size(); i++) {
+        FuncList[i]->reset(Rs);
+      }
+    }
   }
 
   OrbitalBase* RPAConstraints::createTwoBody() {
@@ -114,19 +134,26 @@ namespace qmcplusplus {
     if(vit == inVars.end()) {
       vit=inVars.find("rs");
       if(vit == inVars.end()) {
-        ID="rs"; Rs=-1.0;
-        return true;//assign the default value
+        ID_Rs="rs"; Rs=-1.0;
       }
     }
-    ID=(*vit).second.first; Rs=(*vit).second.second;
+    else
+    {
+      ID_Rs=(*vit).second.first; 
+      Rs=(*vit).second.second;
+    }
     return true;
   }
 
-  void RPAPBCConstraints::apply() { ; }
-
-  void RPAPBCConstraints::addOptimizables(VarRegistry<RealType>& outVars) {
+  void RPAPBCConstraints::addOptimizables(OptimizableSetType& outVars) {
     //potentially add Rcut
-    outVars.add(ID,&Rs,1);
+    outVars[ID_Rs]=Rs;
+  }
+
+  void RPAPBCConstraints::resetParameters(OptimizableSetType& optVariables) 
+  { 
+    OptimizableSetType::iterator it(optVariables.find(ID_Rs));
+    if(it != optVariables.end()) Rs=(*it).second;
   }
 
   // right now this only does a numerical two body short range jastrow

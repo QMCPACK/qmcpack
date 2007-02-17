@@ -27,22 +27,18 @@ namespace qmcplusplus {
     typedef RPAJastrow<RealType> FuncType;
     bool IgnoreSpin;
     RealType Rs;
-    string ID;
+    string ID_Rs;
     vector<FuncType*> FuncList;
 
     ~RPAConstraints();
 
     RPAConstraints(ParticleSet& p, TrialWaveFunction& psi, bool nospin=true);
 
-    inline void apply() {
-      for(int i=0; i<FuncList.size(); i++) {
-        FuncList[i]->reset(Rs);
-      }
-    }
+    void addOptimizables(OptimizableSetType& outVars); 
+    /** update the optimizable variables
+     */
+    void resetParameters(OptimizableSetType& optVariables);
 
-    void addOptimizables(VarRegistry<RealType>& outVars) {
-      outVars.add(ID,&Rs,1);
-    }
 
     OrbitalBase* createTwoBody();
     OrbitalBase* createOneBody(ParticleSet& source);
@@ -55,13 +51,13 @@ namespace qmcplusplus {
     
     bool IgnoreSpin;
     RealType Rs;
-    string ID;
+    string ID_Rs;
 
     RPAPBCConstraints(ParticleSet& p, TrialWaveFunction& psi, bool nospin=true);
 
     ~RPAPBCConstraints();
-    void apply();
-    void addOptimizables(VarRegistry<RealType>& outVars);
+    void addOptimizables(OptimizableSetType& outVars);
+    void resetParameters(OptimizableSetType& optVariables);
     OrbitalBase* createTwoBody();
     OrbitalBase* createOneBody(ParticleSet& source);
     void addExtra2ComboOrbital(ComboOrbital* jcombo);
@@ -80,6 +76,7 @@ namespace qmcplusplus {
     HandlerType* handler;
   public:
     typedef typename OptimizableFunctorBase<T>::real_type real_type;  
+    typedef typename OptimizableFunctorBase<T>::OptimizableSetType OptimizableSetType;  
     
     explicit ShortRangePartAdapter(HandlerType* inhandler) {
       handler = inhandler;
@@ -97,9 +94,9 @@ namespace qmcplusplus {
        
       return handler->srDf(r, 1.0/r);
     }
-    void reset() { }
+    void resetParameters(OptimizableSetType& optVariables) { }
     bool put(xmlNodePtr cur) {return true;}
-    void addOptimizables( VarRegistry<real_type>& vlist){}
+    void addOptimizables(OptimizableSetType& vlist){}
   };
 
 

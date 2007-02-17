@@ -36,15 +36,37 @@ namespace qmcplusplus {
     delete_iter(FuncList.begin(), FuncList.end());
   }
 
-  bool PadeConstraints::put(xmlNodePtr cur) {
+  bool PadeConstraints::put(xmlNodePtr cur) 
+  {
     bool success=getVariables(cur);
     map<string,pair<string,RealType> >::iterator vit(inVars.find("B"));
     if(vit == inVars.end()) return false; //disaster, need to abort
-    ID=(*vit).second.first; B=(*vit).second.second;
+    ID_B=(*vit).second.first; 
+    B=(*vit).second.second;
+    node_B=cur; //save the last B
     return true;
   }
 
-  OrbitalBase* PadeConstraints::createTwoBody() {
+  void PadeConstraints::addOptimizables(OptimizableSetType& outVars) 
+  {
+    outVars[ID_B]=B;
+  }
+
+  void PadeConstraints::resetParameters(OptimizableSetType& optVariables)
+  {
+    OptimizableSetType::iterator it(optVariables.find(ID_B));
+    if(it != optVariables.end()) 
+    {
+      B=(*it).second;
+      for(int i=0; i<FuncList.size(); i++) {
+        FuncList[i]->B0=B;
+        FuncList[i]->resetParameters(optVariables);
+      }
+    }
+  }
+
+  OrbitalBase* PadeConstraints::createTwoBody() 
+  {
     typedef TwoBodyJastrowOrbital<FuncType> JeeType;
     JeeType *J2 = new JeeType(targetPtcl);
     if(IgnoreSpin) {
@@ -99,13 +121,43 @@ namespace qmcplusplus {
     delete_iter(FuncList.begin(), FuncList.end());
   }
 
+  void ScaledPadeConstraints::addOptimizables(OptimizableSetType& outVars) 
+  {
+    outVars[ID_B]=B;
+    outVars[ID_C]=C;
+  }
+
+  void ScaledPadeConstraints::resetParameters(OptimizableSetType& optVariables) 
+  {
+    bool update=false;
+    OptimizableSetType::iterator it(optVariables.find(ID_B));
+    if(it != optVariables.end())
+    { 
+      B=(*it).second;
+      update=true;
+    }
+    OptimizableSetType::iterator it_c(optVariables.find(ID_C));
+    if(it_c != optVariables.end()) 
+    {
+      C=(*it_c).second;
+      update=true;
+    }
+    if(update)
+      for(int i=0; i<FuncList.size(); i++) {
+        FuncList[i]->B=B;
+        FuncList[i]->C=C;
+        FuncList[i]->resetParameters(optVariables);
+      }
+  }
+
+
   bool ScaledPadeConstraints::put(xmlNodePtr cur) {
     bool success=getVariables(cur);
     map<string,pair<string,RealType> >::iterator bit(inVars.find("B"));
     map<string,pair<string,RealType> >::iterator cit(inVars.find("C"));
     if(bit == inVars.end() || cit == inVars.end()) return false; 
-    BID=(*bit).second.first; B=(*bit).second.second; 
-    CID=(*cit).second.first; C=(*cit).second.second; 
+    ID_B=(*bit).second.first; B=(*bit).second.second; 
+    ID_C=(*cit).second.first; C=(*cit).second.second; 
     return true;
   }
 
