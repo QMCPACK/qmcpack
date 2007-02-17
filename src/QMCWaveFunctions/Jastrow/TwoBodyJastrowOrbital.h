@@ -93,10 +93,12 @@ namespace qmcplusplus {
     }
 
     ///reset the value of all the unique Two-Body Jastrow functions
-    void reset() { 
+    void resetParameters(OptimizableSetType& optVariables) 
+    { 
       typename std::map<std::string,FT*>::iterator it(J2Unique.begin()),it_end(J2Unique.end());
       while(it != it_end) {
-        (*it).second->reset(); ++it;
+        (*it).second->resetParameters(optVariables); 
+        ++it;
       }
     }
 

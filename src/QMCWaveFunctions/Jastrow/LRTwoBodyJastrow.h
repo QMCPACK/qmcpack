@@ -77,7 +77,10 @@ namespace qmcplusplus {
 
     LRTwoBodyJastrow(ParticleSet& p, HandlerType* inhandler);
 
-    void reset();
+    void resetParameters(OptimizableSetType& optVariables);
+
+    void resetInternals();
+
     void resize();
 
     //evaluate the distance table with els

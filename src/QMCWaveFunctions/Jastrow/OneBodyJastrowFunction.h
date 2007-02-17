@@ -111,9 +111,10 @@ namespace qmcplusplus {
       Funique.push_back(afunc);
     }
 
-    void reset() { 
+    void resetParameters(OptimizableSetType& optVariables) 
+    { 
       for(int i=0; i<Funique.size(); i++) 
-        if(Funique[i]) Funique[i]->reset();
+        if(Funique[i]) Funique[i]->resetParameters(optVariables);
     }
 
     /** 

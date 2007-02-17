@@ -99,7 +99,10 @@ namespace qmcplusplus {
       d_table = DistanceTable::add(d_table->origin(),P);
     }
 
-    void reset() { }
+    void resetParameters(OptimizableSetType& optVariables) 
+    { 
+      ///Do nothing
+    }
 
     inline ValueType Delta(int m, int n){
       double value = 1;
@@ -416,10 +419,11 @@ namespace qmcplusplus {
       C.push_back(newCoeff);
 
       //sprintf(ida.c_str(),id);
-cerr << "Adding to VarList: " << (const char*)id << ", " << c << " located at " << &C[C.size()].c << " and index " << C.size() << endl;
-      vlist.add((const char*)id,&(C[now].c),1);
+      cerr << "Adding to VarList: " << (const char*)id << ", " << c << " located at " << &C[C.size()].c << " and index " << C.size() << endl;
+      vlist[(const char*)id]=C[now].c;
+      //vlist.add((const char*)id,&(C[now].c),1);
       XMLReport("Pade (A*r+C*r*r)/(1+Br) = (" << A << "," << B << "," << C << ")") 
-cerr << "Added coefficient set " << newCoeff.m << ", " << newCoeff.n << ", " << newCoeff.o << ", " << newCoeff.c << ", " << newCoeff.d  << endl;
+      cerr << "Added coefficient set " << newCoeff.m << ", " << newCoeff.n << ", " << newCoeff.o << ", " << newCoeff.c << ", " << newCoeff.d  << endl;
     }
   };
 }

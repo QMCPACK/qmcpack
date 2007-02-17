@@ -38,7 +38,7 @@ namespace qmcplusplus {
       NumKpts=skRef->KLists.numk;
       NormConstant=FourPiOmega*NumPtcls*(NumPtcls-1)*0.5;
       resize();
-      reset();
+      resetInternals();
     }
   }
   
@@ -60,16 +60,22 @@ namespace qmcplusplus {
   /**
    * update Fk using the handler
    */
-  void LRTwoBodyJastrow::reset() {
+  void LRTwoBodyJastrow::resetInternals() 
+  {
     Fk.resize(handler->Fk.size());
     Fk = -1.0 * handler->Fk;
   }
   
+  void LRTwoBodyJastrow::resetParameters(OptimizableSetType& optVariables) 
+  {
+    ///DO NOTHING FOR NOW
+  }
+
   void LRTwoBodyJastrow::resetTargetParticleSet(ParticleSet& P) {
     // update handler as well, should there also be a reset?
     skRef=P.SK;
     handler->initBreakup(P);
-    reset();
+    resetInternals();
   }
   
   LRTwoBodyJastrow::ValueType 
@@ -274,7 +280,8 @@ namespace qmcplusplus {
               RealType x;
               putContent(x,tcur);
               Fk_symm[ik]=x;
-              vlist.add((const char*)idptr,Fk_symm.data()+ik);
+              vlist[(const char*)idptr]=x;
+              //vlist.add((const char*)idptr,Fk_symm.data()+ik);
             }
             foundCoeff=true;
           }
@@ -284,7 +291,7 @@ namespace qmcplusplus {
       
       Fk.resize(NumKpts);
       if(foundCoeff) {
-        reset();
+        resetInternals();
       } else {
         std::map<int,std::vector<int>*>::iterator it(kpts_sorted.begin());
         int uniqueK=0;
@@ -303,8 +310,8 @@ namespace qmcplusplus {
         char coeffname[128];
         for(int ik=0; ik<Fk_symm.size(); ik++) {
           sprintf(coeffname,"rpa_k%d",ik);
-	  
-          vlist.add(coeffname,Fk_symm.data()+ik);
+          vlist[coeffname]=Fk_symm[ik];
+          //vlist.add(coeffname,Fk_symm.data()+ik);
 	  
           std::ostringstream kname,val;
           kname << ik;

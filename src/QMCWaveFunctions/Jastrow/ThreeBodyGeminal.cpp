@@ -44,12 +44,23 @@ namespace qmcplusplus {
   }
 
   ///reset the value of all the Two-Body Jastrow functions
-  void ThreeBodyGeminal::reset() {
+  void ThreeBodyGeminal::resetParameters(OptimizableSetType& optVariables) 
+  {
+    char coeffname[16];
+    for(int ib=0; ib<BasisSize-1; ib++) {
+      sprintf(coeffname,"%s_%d_%d",ID_Lambda.c_str(),ib,ib);
+      OptimizableSetType::iterator it(optVariables.find(coeffname));
+      if(it != optVariables.end()) Lambda(ib,ib)=(*it).second;
 
-    //only symmetrize it
-    for(int ib=0; ib<BasisSize-1; ib++) 
-      for(int jb=ib+1; jb<BasisSize; jb++)
-        Lambda(jb,ib)=Lambda(ib,jb);
+      for(int jb=ib+1; jb<BasisSize; jb++) 
+      {
+        sprintf(coeffname,"%s_%d_%d",ID_Lambda.c_str(),ib,jb);
+        it=optVariables.find(coeffname);
+        if(it != optVariables.end()) 
+          Lambda(jb,ib) = Lambda(ib,jb) = (*it).second;
+      }
+    }
+    GeminalBasis->resetParameters(optVariables);
   }
 
   OrbitalBase::ValueType 
@@ -358,19 +369,19 @@ namespace qmcplusplus {
       attrib.add(datatype,"type");
       attrib.put(cur);
 
+      ID_Lambda=aname;
+
       if(datatype == "Array")
       {
         putContent(Lambda,cur);
         //symmetrize it
         for(int ib=0; ib<BasisSize; ib++) {
           sprintf(coeffname,"%s_%d_%d",aname.c_str(),ib,ib);
-          RealType* lptr=Lambda.data()+ib*BasisSize+ib;
-          varlist.add(coeffname,lptr);
+          varlist[coeffname]=Lambda(ib,ib);
           for(int jb=ib+1; jb<BasisSize; jb++) {
-            Lambda(jb,ib) = Lambda(ib,jb);
-            ++lptr;
             sprintf(coeffname,"%s_%d_%d",aname.c_str(),ib,jb);
-            varlist.add(coeffname,lptr);
+            Lambda(jb,ib) = Lambda(ib,jb);
+            varlist[coeffname]=Lambda(ib,jb);
           }
         }
       }
@@ -380,15 +391,14 @@ namespace qmcplusplus {
         xmlNodePtr tcur=cur->xmlChildrenNode;
         while(tcur != NULL) {
           if(xmlStrEqual(tcur->name,(const xmlChar*)"lambda")) {
-            int i=atoi((const char*)(xmlGetProp(tcur,(const xmlChar*)"i")));
-            int j=atoi((const char*)(xmlGetProp(tcur,(const xmlChar*)"j")));
+            int i=atoi((const char*)(xmlGetProp(tcur,(const xmlChar*)"i")))-offset;
+            int j=atoi((const char*)(xmlGetProp(tcur,(const xmlChar*)"j")))-offset;
             double c=atof((const char*)(xmlGetProp(tcur,(const xmlChar*)"c")));
-            Lambda(i-offset,j-offset)=c;
-            if(i != j) {
-              Lambda(j-offset,i-offset)=c;
-            }
+            Lambda(i,j)=c;
+            if(i != j) Lambda(j,i)=c;
             sprintf(coeffname,"%s_%d_%d",aname.c_str(),i,j);
-            varlist.add(coeffname,Lambda.data()+i*BasisSize+j);
+            varlist[coeffname]=c;
+            //varlist.add(coeffname,Lambda.data()+i*BasisSize+j);
           }
           tcur=tcur->next;
         }

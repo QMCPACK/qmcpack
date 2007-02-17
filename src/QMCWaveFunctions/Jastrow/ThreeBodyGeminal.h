@@ -40,8 +40,7 @@ namespace qmcplusplus {
     ~ThreeBodyGeminal();
 
     ///reset the value of all the Two-Body Jastrow functions
-    void reset();
-
+    void resetParameters(OptimizableSetType& optVariables);
     //evaluate the distance table with els
     void resetTargetParticleSet(ParticleSet& P);
 
@@ -93,6 +92,8 @@ namespace qmcplusplus {
     const DistanceTableData* d_table;
     int BasisSize;
     int NumPtcls;
+    ///root name for Lambda compoenents
+    string ID_Lambda;
     ParticleSet& CenterRef;
     /** temporary value for update */
     ValueType diffVal;
