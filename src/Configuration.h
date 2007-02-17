@@ -29,6 +29,7 @@
 #include "ParticleBase/ParticleAttrib.h"
 #include "ParticleBase/ParticleBase.h"
 #include "Utilities/OhmmsInfo.h"
+#include "Message/Communicate.h"
 
 namespace qmcplusplus {
 
