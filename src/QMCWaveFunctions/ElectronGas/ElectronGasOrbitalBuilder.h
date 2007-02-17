@@ -25,6 +25,7 @@ namespace qmcplusplus {
   struct RealEGOSet:public QMCTraits {
 
     typedef DummyBasisSet BasisSet_t;
+    typedef VarRegistry<RealType> OptimizableSetType;
 
     int KptMax;
     RealType kdotr;
@@ -33,7 +34,7 @@ namespace qmcplusplus {
 
     RealEGOSet(const vector<PosType>& k, const vector<RealType>& k2);
 
-    inline void reset() { }
+    inline void resetParameters(OptimizableSetType& vlist) { }
     inline void resetTargetParticleSet(ParticleSet& P) { }
 
     inline ValueType f(const PosType& pos,int i)
