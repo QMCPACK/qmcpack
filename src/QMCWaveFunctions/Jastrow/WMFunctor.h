@@ -28,6 +28,7 @@ namespace qmcplusplus {
     struct WMFunctor: public OptimizableFunctorBase<T> {
       ///typedef of real values
       typedef typename OptimizableFunctorBase<T>::real_type real_type;
+      typedef typename OptimizableFunctorBase<T>::OptimizableSetType OptimizableSetType;
       ///input B
       real_type B0;
       ///input Rcut
@@ -36,12 +37,19 @@ namespace qmcplusplus {
       real_type OneOverRc;
       ///id
       string ID_B;
+      ///name of B-attribute
+      string attribName;
       ///constructor
-      explicit WMFunctor(real_type b, real_type rc=7.5) {
+      WMFunctor(real_type b, real_type rc=7.5, const std::string& bname="exponent"): 
+        attribName(bname)
+      {
         reset(b,rc);
       }
-      inline void reset() { OneOverRc=1.0/Rcut; }
-      void reset(real_type b, real_type rc) { B0=b; Rcut=rc; reset(); }
+      void reset(real_type b, real_type rc) { 
+        B0=b; Rcut=rc; 
+        OneOverRc=1.0/Rcut; 
+      }
+
       inline real_type f(real_type r) {
         if(r>Rcut) return 0.0;
         real_type x=r*OneOverRc;
@@ -58,16 +66,30 @@ namespace qmcplusplus {
       bool put(xmlNodePtr cur) 
       {
         OhmmsAttributeSet rAttrib;
-        rAttrib.add(ID_B,"id"); //rAttrib.add(a->B0,"b");
+        rAttrib.add(ID_B,"id"); 
+        rAttrib.add(B0,"exponent"); 
         rAttrib.put(cur);
-        return putContent(B0,cur);
+        ID_B.append("_E");
+        return true;
       }
 
-      void addOptimizables(VarRegistry<T>& vlist) {
-        vlist.add(ID_B,&B0,1);
+      void addOptimizables(OptimizableSetType& vlist)
+      {
+        vlist[ID_B]=B0;
+      }
+
+      /** reset the internal variables.
+       *
+       * USE_resetParameters
+       */
+      void resetParameters(OptimizableSetType& optVariables) 
+      {
+        typename OptimizableSetType::iterator it_b(optVariables.find(ID_B));
+        if(it_b != optVariables.end()) {
+          B0=(*it_b).second;
+        }
       }
     };
-
 }
 #endif
 /***************************************************************************

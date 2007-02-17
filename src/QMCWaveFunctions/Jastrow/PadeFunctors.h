@@ -32,6 +32,7 @@ namespace qmcplusplus {
     struct PadeFunctor:public OptimizableFunctorBase<T> {
 
       typedef typename OptimizableFunctorBase<T>::real_type real_type;
+      typedef typename OptimizableFunctorBase<T>::OptimizableSetType OptimizableSetType;
 
       ///input A
       real_type A;
@@ -61,15 +62,11 @@ namespace qmcplusplus {
           reset(a,b);
         }
 
-      inline void reset() {
+      void reset(real_type a, real_type b, real_type s=1.0) {
+        A=a; B0=b; Scale=s;
         B = B0*Scale;
         AB = A*B; B2=2.0*B;
         AoverB=A/B;
-      }
-
-      void reset(real_type a, real_type b, real_type s=1.0) {
-        A=a; B0=b; Scale=s;
-        reset();
       }
 
       inline real_type evaluate(real_type r) {
@@ -119,10 +116,26 @@ namespace qmcplusplus {
         return true;
       }
 
-      void addOptimizables(VarRegistry<real_type>& vlist)
+      void addOptimizables(OptimizableSetType& vlist)
       {
-        if(ID_A != "0") vlist.add(ID_A,&A,1);
-        if(ID_B != "0") vlist.add(ID_B,&B0,1);
+        if(ID_A != "0") vlist[ID_A]=A;
+        if(ID_B != "0") vlist[ID_B]=B0;
+      }
+
+      /** reset the internal variables.
+       *
+       * USE_resetParameters
+       */
+      void resetParameters(OptimizableSetType& optVariables) 
+      {
+        typename OptimizableSetType::iterator it_a(optVariables.find(ID_A));
+        if(it_a != optVariables.end()) A=(*it_a).second;
+        typename OptimizableSetType::iterator it_b(optVariables.find(ID_B));
+        if(it_b != optVariables.end()) B0=(*it_b).second;
+        B = B0*Scale;
+        AB = A*B; 
+        B2=2.0*B;
+        AoverB=A/B;
       }
     };
 
@@ -135,6 +148,7 @@ namespace qmcplusplus {
     struct Pade2ndOrderFunctor:public OptimizableFunctorBase<T> {
 
       typedef typename OptimizableFunctorBase<T>::real_type real_type;
+      typedef typename OptimizableFunctorBase<T>::OptimizableSetType OptimizableSetType;
       ///coefficients
       real_type A, B, C, C2;
       ///id for A
@@ -149,13 +163,6 @@ namespace qmcplusplus {
 
       Pade2ndOrderFunctor(Pade2ndOrderFunctor<T>* func) {
         reset(1.0,1.0,1.0);
-      }
-
-      /**
-       *@brief reset the internal variables.
-       */
-      inline void reset() {
-        C2 = 2.0*C;
       }
 
       /** reset the internal variables.
@@ -237,10 +244,22 @@ namespace qmcplusplus {
       /** add optimizable variables to vlist
        * @param vlist VarRegistry<T1> to which the Pade variables A and B are added for optimization
        */
-      void addOptimizables( VarRegistry<real_type>& vlist){
-        vlist.add(ID_A,&A,1);
-        vlist.add(ID_B,&B,1);
-        vlist.add(ID_C,&C,1);
+      void addOptimizables(OptimizableSetType& vlist)
+      {
+        vlist[ID_A]=A;
+        vlist[ID_B]=B;
+        vlist[ID_C]=C;
+      }
+
+      void resetParameters(OptimizableSetType& optVariables) 
+      {
+        typename OptimizableSetType::iterator it(optVariables.find(ID_A));
+        if(it != optVariables.end()) A=(*it).second;
+        it=optVariables.find(ID_B);
+        if(it != optVariables.end()) B=(*it).second;
+        it=optVariables.find(ID_C);
+        if(it != optVariables.end()) C=(*it).second;
+        C2 = 2.0*C;
       }
     };
 
@@ -252,6 +271,7 @@ namespace qmcplusplus {
     struct ScaledPadeFunctor:public OptimizableFunctorBase<T> {
 
       typedef typename OptimizableFunctorBase<T>::real_type real_type;
+      typedef typename OptimizableFunctorBase<T>::OptimizableSetType OptimizableSetType;
 
       ///coefficients
       real_type A, B, C; 
@@ -260,15 +280,6 @@ namespace qmcplusplus {
       ///constructor
       explicit ScaledPadeFunctor(real_type a=1.0, real_type b=1.0, real_type c=1.0) 
       {reset(a,b,c);}
-
-      /** reset the internal variables.
-       *
-       * When RefPade is not 0, use RefPade->B to reset the values
-       */
-      inline void reset() {
-        OneOverC=1.0/C;
-        B2=2.0*B;
-      }
 
       /** reset the internal variables.
        *@param a Pade Jastrow parameter a 
@@ -318,7 +329,17 @@ namespace qmcplusplus {
       }
 
       bool put(xmlNodePtr cur) {return true;}
-      void addOptimizables( VarRegistry<real_type>& vlist){}
+      void addOptimizables(OptimizableSetType& vlist){}
+
+      /** reset the internal variables.
+       *
+       * When RefPade is not 0, use RefPade->B to reset the values
+       */
+      inline void resetParameters(OptimizableSetType& optVariables) 
+      {
+        OneOverC=1.0/C;
+        B2=2.0*B;
+      }
     };
 }
 #endif

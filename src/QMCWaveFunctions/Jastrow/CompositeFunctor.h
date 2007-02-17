@@ -27,7 +27,8 @@ namespace qmcplusplus {
     struct TruncatedPadeFunctor:public OptimizableFunctorBase<T> {
 
       typedef OptimizableFunctorBase<T> ThisBaseType;
-      typedef typename OptimizableFunctorBase<T>::real_type real_type;
+      typedef typename ThisBaseType::real_type real_type;
+      typedef typename ThisBaseType::OptimizableSetType OptimizableSetType;
 
       ///input A
       real_type A;
@@ -58,10 +59,41 @@ namespace qmcplusplus {
         A=a;
       }
 
-      inline void reset() {
+      inline real_type f(real_type r) {
+        if (r>Rcut) 
+          return inFunc->f(r);
+        else
+          return A*r/(1.0+B*r)+OffSet;
+      }
+
+      inline real_type df(real_type r) {
+        if(r>Rcut)
+          return inFunc->df(r);
+        else 
+        {
+          real_type u = 1.0/(1.0+B*r);
+          return A*u*u;
+        }
+      }
+
+      bool put(xmlNodePtr cur) {return true;}
+      void addOptimizables( VarRegistry<real_type>& vlist)
+      {
+        if(inFunc) inFunc->addOptimizables(vlist);
+      }
+
+      void resetParameters(OptimizableSetType& optVariables) 
+      {
+        if(inFunc) 
+        {
+          inFunc->resetParameters(optVariables);
+        }
+        applyCuspCondition();
+      }
+
+      void applyCuspCondition() {
         Rcut=0.0; 
         if(inFunc) {
-          inFunc->reset();
           real_type x=0.001;
           real_type dx=0.001;
           real_type deriv0=inFunc->df(x),deriv;
@@ -107,29 +139,6 @@ namespace qmcplusplus {
           }
         }
       }
-
-      inline real_type f(real_type r) {
-        if (r>Rcut) 
-          return inFunc->f(r);
-        else
-          return A*r/(1.0+B*r)+OffSet;
-      }
-
-      inline real_type df(real_type r) {
-        if(r>Rcut)
-          return inFunc->df(r);
-        else 
-        {
-          real_type u = 1.0/(1.0+B*r);
-          return A*u*u;
-        }
-      }
-
-      bool put(xmlNodePtr cur) {return true;}
-      void addOptimizables( VarRegistry<real_type>& vlist)
-      {
-        if(inFunc) inFunc->addOptimizables(vlist);
-      }
     };
 
   /** Implements \f$ u(r) = r^n*f(r) \f$ where \f$ f(r)\f$ is any OptimizableFunctorBase<T>
@@ -139,8 +148,10 @@ namespace qmcplusplus {
    */
   template<class T>
     struct AnyTimesRnFunctor: public OptimizableFunctorBase<T> {
-      ///typedef of real values
-      typedef typename OptimizableFunctorBase<T>::real_type real_type;
+      typedef OptimizableFunctorBase<T> ThisBaseType;
+      typedef typename ThisBaseType::real_type real_type;
+      typedef typename ThisBaseType::OptimizableSetType OptimizableSetType;
+
       ///pointer to a functor
       OptimizableFunctorBase<T>* myFunc;
       ///power
@@ -150,8 +161,6 @@ namespace qmcplusplus {
         myFunc(infunc),Np(n)
       {
       }
-
-      inline void reset() { if(myFunc) myFunc->reset();}
 
       inline real_type f(real_type r) {
         return std::pow(r,Np)*myFunc->f(r);
@@ -170,7 +179,14 @@ namespace qmcplusplus {
 
       void addOptimizables(VarRegistry<T>& vlist) 
       {
+        if(myFunc) myFunc->addOptimizables(vlist);
       }
+
+      void resetParameters(OptimizableSetType& optVariables) 
+      { 
+        if(myFunc) myFunc->resetParameters(optVariables);
+      }
+
     };
 
 }
