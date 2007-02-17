@@ -143,6 +143,11 @@ public:
     return m_grid->val;
   }
 
+  void resetParameters(VarRegistry<point_type>& vlist)
+  {
+    ///DO NOTHING FOR NOW
+  }
+
 private:
 
 

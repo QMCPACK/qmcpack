@@ -22,6 +22,7 @@ struct SlaterCombo: public OptimizableFunctorBase<T> {
 
   typedef typename OptimizableFunctorBase<T>::value_type value_type;
   typedef typename OptimizableFunctorBase<T>::real_type real_type;
+  typedef typename OptimizableFunctorBase<T>::OptimizableSetType OptimizableSetType;
   typedef GenericSTO<T> Component_t;
 
   int L;
@@ -42,8 +43,6 @@ struct SlaterCombo: public OptimizableFunctorBase<T> {
                 const char* c_name="contraction");
 
   ~SlaterCombo(){ }
-
-  void reset();
 
   inline real_type f(real_type r) {
     real_type res=0;
@@ -99,7 +98,16 @@ struct SlaterCombo: public OptimizableFunctorBase<T> {
 
   bool put(xmlNodePtr cur) {return true;}
 
-  void addOptimizables( VarRegistry<real_type>& vlist){}
+  void addOptimizables(OptimizableSetType& vlist)
+  {
+    //DO NOTHING FOR NOW
+  }
+
+  void resetParameters(OptimizableSetType& vlist) 
+  {
+    //DO NOTHING FOR NOW
+  }
+
 };
 
 template<class T>
@@ -108,11 +116,6 @@ SlaterCombo<T>::SlaterCombo(int l, bool normalized,
   L(l), Normalized(normalized), 
   nodeName(node_name), expName(exp_name), coeffName(c_name)
 {
-}
-
-template<class T>
-void SlaterCombo<T>::reset() {
- //Add reset function
 }
 
 template<class T>
@@ -142,7 +145,7 @@ bool SlaterCombo<T>::putBasisGroup(xmlNodePtr cur) {
     }
     cur=cur->next;
   }
-  reset();
+  //reset();
   return true;
 }
 

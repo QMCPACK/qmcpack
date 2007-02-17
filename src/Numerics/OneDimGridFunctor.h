@@ -18,6 +18,7 @@
 #define QMCPLUSPLUS_GRID_FUNCTOR_H
 
 #include "Numerics/OneDimGridBase.h"
+#include "Optimize/VarList.h"
 
 namespace qmcplusplus {
 template<class T, unsigned D>
@@ -178,6 +179,11 @@ struct OneDimGridFunctor//: public FunctorBase<Td,1> {
 
   ///reset the values: do nothing
   virtual void reset() { }
+  ///reset the values from the pool
+  virtual void resetParameters(VarRegistry<point_type>& vlist) 
+  { 
+    ///DO NOTHING
+  }
 
   virtual 
   value_type 

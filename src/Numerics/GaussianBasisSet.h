@@ -24,6 +24,7 @@ struct GaussianCombo: public OptimizableFunctorBase<T> {
 
   typedef typename OptimizableFunctorBase<T>::value_type value_type;
   typedef typename OptimizableFunctorBase<T>::real_type real_type;
+  typedef typename OptimizableFunctorBase<T>::OptimizableSetType OptimizableSetType;
 
   //typedef T value_type;
   value_type Y, dY, d2Y;
@@ -53,6 +54,11 @@ struct GaussianCombo: public OptimizableFunctorBase<T> {
       MinusSigma=-Sigma;
       CoeffP = -2.0*Sigma*Coeff;
       CoeffPP = 4.0*Sigma*Sigma*Coeff;
+    }
+
+    void resetParameters(OptimizableSetType& vlist)
+    {
+      //DO NOTHING
     }
 
     inline void setgrid(real_type r) { }
@@ -152,7 +158,15 @@ struct GaussianCombo: public OptimizableFunctorBase<T> {
 
   bool put(xmlNodePtr cur);
 
-  void addOptimizables( VarRegistry<real_type>& vlist){}
+  void addOptimizables( VarRegistry<real_type>& vlist)
+  {
+    //DO NOTHING FOR NOW
+  }
+
+  void resetParameters(VarRegistry<real_type>& vlist)
+  {
+    //DO NOTHING FOR NOW
+  }
 
   bool putBasisGroup(xmlNodePtr cur);
 

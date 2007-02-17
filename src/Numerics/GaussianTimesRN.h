@@ -24,6 +24,7 @@ struct GaussianTimesRN: public OptimizableFunctorBase<T> {
 
   typedef typename OptimizableFunctorBase<T>::value_type value_type;
   typedef typename OptimizableFunctorBase<T>::real_type real_type;
+  typedef typename OptimizableFunctorBase<T>::OptimizableSetType OptimizableSetType;
   value_type Y, dY, d2Y;
 
   struct BasicGaussian {
@@ -110,7 +111,11 @@ struct GaussianTimesRN: public OptimizableFunctorBase<T> {
 
   ~GaussianTimesRN(){ }
 
-  void reset();
+  void resetInternals();
+  void resetParameters(OptimizableSetType& vlist)
+  {
+    ///DO NOTHING FOR NOW
+  }
 
   /** return the number Gaussians
    */
@@ -178,7 +183,7 @@ bool GaussianTimesRN<T>::put(xmlNodePtr cur) {
 }
 
 template<class T>
-void GaussianTimesRN<T>::reset() {
+void GaussianTimesRN<T>::resetInternals() {
   if(InParam.empty()) {
     for(int i=0; i<gset.size(); i++) gset[i].reset();
   } else {
@@ -214,7 +219,7 @@ bool GaussianTimesRN<T>::putBasisGroup(xmlNodePtr cur, int baseOff) {
     }
     cur=cur->next;
   }
-  reset();
+  resetInternals();
   return true;
 }
 

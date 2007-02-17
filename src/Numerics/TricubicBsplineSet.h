@@ -113,8 +113,9 @@ namespace qmcplusplus {
         }
 
         ///empty reset
-        void reset()
+        void resetParameters(VarRegistry<real_type>& vlist)
         {
+          ///DO NOTHING FOR NOW
         }
 
         inline void setGrid(real_type xi, real_type xf, 
@@ -227,8 +228,9 @@ namespace qmcplusplus {
         }
 
         ///empty reset
-        void reset()
+        void resetParameters(VarRegistry<real_type>& vlist)
         {
+          ///DO NOTHING FOR NOW
         }
 
         inline void setGrid(real_type xi, real_type xf, 

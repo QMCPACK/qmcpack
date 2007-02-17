@@ -62,6 +62,7 @@ struct GenericSTO: public OptimizableFunctorBase<T> {
 
   typedef typename OptimizableFunctorBase<T>::value_type value_type;
   typedef typename OptimizableFunctorBase<T>::real_type real_type;
+  typedef typename OptimizableFunctorBase<T>::OptimizableSetType OptimizableSetType;
 
   int ID;
   ///Principal number
@@ -89,10 +90,10 @@ struct GenericSTO: public OptimizableFunctorBase<T> {
    */
   explicit GenericSTO(int n, int l, real_type z) : 
     N(n), Power(n-l-1), Z(z) {
-    reset();
+    resetInternals();
   }
 
-  inline void reset() {
+  inline void resetInternals() {
     if(N>0) {
       STONorm<T> anorm(N);
       Norm = anorm(N-1,Z);
@@ -142,7 +143,15 @@ struct GenericSTO: public OptimizableFunctorBase<T> {
 
   bool put(xmlNodePtr cur) {return true;}
 
-  void addOptimizables( VarRegistry<real_type>& vlist){}
+  void addOptimizables( OptimizableSetType& vlist)
+  {
+    //DO NOTHING FOR NOW
+  }
+
+  void resetParameters( OptimizableSetType& vlist)
+  {
+    //DO NOTHING FOR NOW
+  }
 
 };
 
