@@ -11,8 +11,9 @@ namespace qmcplusplus {
 #endif
   }
 
-  void PWOrbitalSet::reset()
+  void PWOrbitalSet::resetParameters(OptimizableSetType& optVariables)
   {
+    //DO NOTHING FOR NOW
   }
 
   void PWOrbitalSet::setOrbitalSetSize(int norbs)

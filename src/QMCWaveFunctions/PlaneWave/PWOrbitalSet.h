@@ -68,7 +68,7 @@ namespace qmcplusplus {
       */
       void addVector(const std::vector<ValueType>& coefs,int jorb);
 
-      void reset();
+      void resetParameters(OptimizableSetType& optVariables);
 
       void setOrbitalSetSize(int norbs);
 
