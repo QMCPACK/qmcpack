@@ -64,7 +64,7 @@ namespace qmcplusplus {
     }
 
     ///reset the basis set
-    virtual void reset() = 0;
+    virtual void resetParameters(VarRegistry<RealType>& optVariables) = 0;
     ///resize the basis set
     virtual void setBasisSetSize(int nbs) = 0;
     ///reset the target particle set

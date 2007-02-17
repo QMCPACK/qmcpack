@@ -23,6 +23,7 @@
 #include "Configuration.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "OhmmsPETE/OhmmsVector.h"
+#include "Optimize/VarList.h"
 
 namespace qmcplusplus {
   /** dummy class for templated classes
@@ -44,6 +45,7 @@ namespace qmcplusplus {
     typedef Matrix<ValueType> ValueMatrix_t;
     typedef Vector<GradType>  GradVector_t;
     typedef Matrix<GradType>  GradMatrix_t;
+    typedef VarRegistry<RealType> OptimizableSetType;
   };
 }
 

@@ -52,9 +52,9 @@ namespace qmcplusplus {
      */
     ~LCOrbitalSet() {}
 
-    ///reset
-    void reset() {
-      myBasisSet->reset();
+    void resetParameters(VarRegistry<RealType>& optVariables) 
+    {
+      myBasisSet->resetParameters(optVariables);
     }
 
     ///reset the target particleset
@@ -149,8 +149,9 @@ namespace qmcplusplus {
     ~LCOrbitalSet() {}
 
     ///reset
-    void reset() {
-      myBasisSet->reset();
+    void resetParameters(VarRegistry<RealType>& optVariables) 
+    {
+      myBasisSet->resetParameters(optVariables);
     }
 
     ///reset the target particleset

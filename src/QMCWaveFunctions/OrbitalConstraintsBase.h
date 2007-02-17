@@ -36,6 +36,7 @@ namespace qmcplusplus {
   {
 
     typedef OneDimGridFactory::GridType RadialGridType;
+    typedef OrbitalBase::OptimizableSetType OptimizableSetType;
 
     enum {MULTIPLE=0, LONGRANGE, ONEBODY, TWOBODY, THREEBODY, FOURBODY};
     ///bitset to set the Jastrow component
@@ -54,8 +55,10 @@ namespace qmcplusplus {
     OrbitalConstraintsBase(ParticleSet& p, TrialWaveFunction& psi);
     ///virtual destructor
     virtual ~OrbitalConstraintsBase() {}
-    ///Apply contraints
-    virtual void apply()=0;
+    /** reset parameters
+     * @param optVariables optimizable variables
+     */
+    virtual void resetParameters(OptimizableSetType& optVaraibles)=0;
     /** Add named values to outVars for optimization
      * @param outVars optimizable variables
      */

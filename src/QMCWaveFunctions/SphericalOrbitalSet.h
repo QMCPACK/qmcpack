@@ -85,8 +85,9 @@ namespace qmcplusplus {
     ~SphericalOrbitalSet() { }
 
     ///reset the internal values
-    inline void reset() { 
-      for(int nl=0; nl<Rnl.size(); nl++) Rnl[nl]->reset();
+    void resetParameters(OptimizableSetType& optVariables) 
+    { 
+      for(int nl=0; nl<Rnl.size(); nl++) Rnl[nl]->resetParameters(optVariables);
     }
 
     /** return the number of basis functions

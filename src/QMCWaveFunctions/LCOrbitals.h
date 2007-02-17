@@ -97,7 +97,14 @@ namespace qmcplusplus {
     ///return the number of basis functions
     inline int numBasis() const { return BasisSet->TotalBasis;}
 
-    inline void reset() { BasisSet->reset();}
+    void reset()
+    {
+      //DO NOTHING
+    }
+    void resetParameters(VarRegistry<RealType>& optVariables) 
+    { 
+      BasisSet->resetParameters(optVariables);
+    }
 
     void resetTargetParticleSet(ParticleSet& P) {
       LOGMSG("LCOrbitals::resetTargetParticleSet with " << P.getName())

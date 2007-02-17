@@ -77,7 +77,7 @@ namespace qmcplusplus {
     bool put(xmlNodePtr cur);
 
     ///reset
-    virtual void reset()=0;
+    virtual void resetParameters(OptimizableSetType& optVariables)=0;
     ///reset the target particleset
     virtual void resetTargetParticleSet(ParticleSet& P)=0;
     /** set the OrbitalSetSize

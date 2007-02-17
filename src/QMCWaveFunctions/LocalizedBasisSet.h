@@ -103,7 +103,6 @@ namespace qmcplusplus {
 
       if(myTable ==0) {
         app_error() << "LocalizedBasisSet cannot function without a distance table. Abort" << endl;
-        OHMMS::Controller->abort();
       }
 
       //reset the distance table for the atomic orbitals
@@ -118,11 +117,10 @@ namespace qmcplusplus {
       resize(NumTargets);
     }
 
-    /** implement the virtual function
-     */
-    void reset() {
+    void resetParameters(VarRegistry<RealType>& optVariables) 
+    {
       //reset each unique basis functions
-      for(int i=0; i<LOBasisSet.size(); i++) LOBasisSet[i]->reset();
+      for(int i=0; i<LOBasisSet.size(); i++) LOBasisSet[i]->resetParameters(optVariables);
     }
     
     /** reset the distance table with a new target P

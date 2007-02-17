@@ -57,7 +57,12 @@ struct SingleParticleOrbitalSet: public SPOSetBase {
     OrbitalSetSize=norbs;
     BasisSetSize=norbs;
   }
-  void reset() { for(int i=0; i<Phi.size(); i++) Phi[i]->reset(); }
+
+  void resetParameters(VarRegistry<RealType>& optVariables) 
+  { 
+    for(int i=0; i<Phi.size(); i++) Phi[i]->resetParameters(optVariables); 
+  }
+
   void resetTargetParticleSet(ParticleSet& P) { }
 
   void 

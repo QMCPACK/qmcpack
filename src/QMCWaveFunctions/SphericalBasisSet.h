@@ -61,9 +61,10 @@ namespace qmcplusplus {
 
     ~SphericalBasisSet() { }
 
-    ///reset the internal values
-    inline void reset() { 
-      for(int nl=0; nl<Rnl.size(); nl++) Rnl[nl]->reset();
+    inline void resetParameters(VarRegistry<RealType>& optVariables) 
+    { 
+      for(int nl=0; nl<Rnl.size(); nl++) 
+        Rnl[nl]->resetParameters(optVariables);
     }
 
     /** return the number of basis functions
