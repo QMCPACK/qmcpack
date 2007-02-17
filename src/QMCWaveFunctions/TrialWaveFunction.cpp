@@ -250,10 +250,12 @@ namespace qmcplusplus {
     for(int i=0; i<Z.size(); i++) Z[i]->resizeByWalkers(nwalkers);
   }
   
-  void TrialWaveFunction::reset(){
-    for(int i=0; i<Z.size(); i++) Z[i]->reset();
+  void TrialWaveFunction::resetParameters(OptimizableSetType& optVariables)
+  {
+    for(int i=0; i<Z.size(); i++) 
+      Z[i]->resetParameters(optVariables);
   }
-  
+
   TrialWaveFunction::RealType
   TrialWaveFunction::registerData(ParticleSet& P, PooledData<RealType>& buf) {
     delta_G.resize(P.getTotalNum());
@@ -409,6 +411,10 @@ namespace qmcplusplus {
 
   bool TrialWaveFunction::put(xmlNodePtr cur) {
     return true;
+  }
+
+  void TrialWaveFunction::reset() 
+  {
   }
 }
 /***************************************************************************

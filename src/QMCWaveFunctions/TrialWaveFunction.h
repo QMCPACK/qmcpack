@@ -21,7 +21,6 @@
 #define QMCPLUSPLUS_TRIALWAVEFUNCTION_H
 
 #include "QMCWaveFunctions/OrbitalBase.h"
-#include "Optimize/VarList.h"
 /**@defgroup MBWfs Many-body wave function group
  * @brief Classes to handle many-body trial wave functions
  */
@@ -45,18 +44,19 @@ namespace qmcplusplus {
 
   public:
 
-    typedef OrbitalBase::RealType   RealType;
-    typedef OrbitalBase::ValueType  ValueType;
-    typedef OrbitalBase::PosType    PosType;
-    typedef OrbitalBase::GradType   GradType;
-    typedef OrbitalBase::BufferType BufferType;
+    typedef OrbitalBase::RealType           RealType;
+    typedef OrbitalBase::ValueType          ValueType;
+    typedef OrbitalBase::PosType            PosType;
+    typedef OrbitalBase::GradType           GradType;
+    typedef OrbitalBase::BufferType         BufferType;
+    typedef OrbitalBase::OptimizableSetType OptimizableSetType;
 
     /**a list of real variables to be optimized
      *
      * Each builder for a trial wavefuncion is responsible for registering
      * the variables to be optimized.
      */
-    VarRegistry<RealType> VarList;
+    OptimizableSetType VarList;
 
     ///differential gradients
     ParticleSet::ParticleGradient_t G;
@@ -83,9 +83,10 @@ namespace qmcplusplus {
 
     ///read from xmlNode
     bool put(xmlNodePtr cur);
-
-    ///reset member data
+    ///implement the virtual function
     void reset();
+    ///reset member data
+    void resetParameters(OptimizableSetType& optVariables);
 
     /**resize the internal storage
      * @param nwalkers number of walkers 
