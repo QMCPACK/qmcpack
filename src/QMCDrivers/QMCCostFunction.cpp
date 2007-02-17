@@ -23,6 +23,7 @@
 #include "OhmmsData/AttributeSet.h"
 #include "OhmmsData/ParameterSet.h"
 #include "Message/CommOperators.h"
+#include <set>
 namespace qmcplusplus {
 
   QMCCostFunction::QMCCostFunction(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h):
@@ -310,28 +311,14 @@ namespace qmcplusplus {
   bool
   QMCCostFunction::resetWaveFunctions() {
 
-    int offset = 0;
     //loop over all the unique id's
-    for(int i=0; i<IDtag.size(); i++){
-      //locate the id in the variable list for Psi
-      int id = Psi.VarList.find(IDtag[i]);
-      if(id>= 0) {
-	//find the number of variables represented by the id
-	int size = Psi.VarList.Sizes[id];
-	//loop over the number of variables for the id
-	//assign the variable its new value
-	Return_t* temp = Psi.VarList.Pointers[id];
-	for(int j=0; j<size; j++,temp++){
-	  *(temp) = OptParams[j+offset];
-	}
-	//increment offset to account for the fact that id
-	//may represent more than one variable
-	offset += size;
-      } 
+    for(int i=0; i<IDtag.size(); i++)
+    {
+      OptVariables[IDtag[i]]=OptParams[i];
     }
-    //reset the wavefunction for the new variables
-    Psi.reset();
 
+    //reset the wavefunction for the new variables
+    Psi.resetParameters(OptVariables);
     return true;
   }
   
@@ -346,27 +333,68 @@ namespace qmcplusplus {
         xmlNodePtr qm_root = xmlNewNode(NULL, BAD_CAST "qmcsystem"); 
         xmlAddChild(qm_root, m_wfPtr);
         xmlDocSetRootElement(m_doc_out, qm_root);
-        m_param_out.resize(IDtag.size(),NULL);
+
         xmlXPathContextPtr acontext = xmlXPathNewContext(m_doc_out);
         xmlXPathObjectPtr result = xmlXPathEvalExpression((const xmlChar*)"//parameter",acontext);
         for(int iparam=0; iparam<result->nodesetval->nodeNr; iparam++) {
           xmlNodePtr cur= result->nodesetval->nodeTab[iparam];
-          string aname((const char*)xmlGetProp(cur,(const xmlChar*)"id"));
-          vector<string>::iterator it= find(IDtag.begin(), IDtag.end(), aname);
-          if(it != IDtag.end()) {
-            int item=it-IDtag.begin();
-            m_param_out[item]=cur;
+          const xmlChar* iptr=xmlGetProp(cur,(const xmlChar*)"id");
+          if(iptr == NULL) continue;
+          string aname((const char*)iptr);
+          OptimizableSetType::iterator oit(OptVariables.find(aname));
+          if(oit != OptVariables.end())
+          {
+            paramNodes[aname]=cur;
           }
         }
         xmlXPathFreeObject(result);
+
+        result = xmlXPathEvalExpression((const xmlChar*)"//radfunc",acontext);
+        for(int iparam=0; iparam<result->nodesetval->nodeNr; iparam++) {
+          xmlNodePtr cur= result->nodesetval->nodeTab[iparam];
+          const xmlChar* iptr=xmlGetProp(cur,(const xmlChar*)"id");
+          if(iptr == NULL) continue;
+          string aname((const char*)iptr);
+          string expID=aname+"_E";
+          xmlAttrPtr aptr=xmlHasProp(cur,(const xmlChar*)"exponent");
+          OptimizableSetType::iterator oit(OptVariables.find(expID));
+          if(aptr != NULL && oit != OptVariables.end())
+          {
+            attribNodes[expID]=pair<xmlNodePtr,string>(cur,"exponent");
+          }
+
+          string cID=aname+"_C";
+          aptr=xmlHasProp(cur,(const xmlChar*)"contraction");
+          oit=OptVariables.find(cID);
+          if(aptr != NULL && oit != OptVariables.end())
+          {
+            attribNodes[cID]=pair<xmlNodePtr,string>(cur,"contraction");
+          }
+        }
+        xmlXPathFreeObject(result);
+
         xmlXPathFreeContext(acontext);
       }
 
-      //update parameters
-      for(int item=0; item<m_param_out.size(); item++) {
-        if(m_param_out[item] != NULL) {
-          getContent(OptParams[item],m_param_out[item]);
-        }
+      Psi.resetParameters(OptVariables);
+
+      map<string,xmlNodePtr>::iterator pit(paramNodes.begin()), pit_end(paramNodes.end());
+      while(pit != pit_end)
+      {
+        Return_t v=OptVariables[(*pit).first];
+        getContent(v,(*pit).second);
+        ++pit;
+      }
+
+      map<string,pair<xmlNodePtr,string> >::iterator ait(attribNodes.begin()), ait_end(attribNodes.end());
+      while(ait != ait_end)
+      {
+        std::ostringstream vout;
+        vout.setf(ios::scientific, ios::floatfield);
+        vout.precision(8);
+        vout << OptVariables[(*ait).first];
+        xmlSetProp((*ait).second.first, (const xmlChar*)(*ait).second.second.c_str(),(const xmlChar*)vout.str().c_str());
+        ++ait;
       }
 
       char newxml[128];
@@ -375,11 +403,11 @@ namespace qmcplusplus {
 
       if(msg_stream) {
         *msg_stream << " curCost " 
-          << setw(5) << NumCostCalls << setw(16) << CostValue << setw(15) << NumWalkersEff 
+          << setw(5) << writeCounter << setw(16) << CostValue << setw(15) << NumWalkersEff 
           << setw(16) << curAvg_w << setw(16) << curAvg 
           << setw(16) << curVar_w << setw(16) << curVar 
           << setw(16) << curVar_abs << endl;
-        *msg_stream << " curVars ";
+        *msg_stream << " curVars " << setw(5) << writeCounter;
         for(int i=0; i<OptParams.size(); i++) *msg_stream << setw(16) << OptParams[i];
         *msg_stream << endl;
       }
@@ -452,52 +480,14 @@ namespace qmcplusplus {
       cur=cur->next;
     }  
 
-    //int nfile=mcwalkerNodePtr.size();
-    //if(nfile) {
-    //  int ng=OHMMS::Controller->ncontexts()/nfile;
-    //  if(ng>=1) {
-    //    NumParts=ng;
-    //    PartID=pid%ng;
-    //    int mygroup=pid/ng;
-    //    string fname("invalid");
-    //    OhmmsAttributeSet pAttrib;
-    //    pAttrib.add(fname,"href"); pAttrib.add(fname,"src"); pAttrib.add(fname,"file");
-    //    pAttrib.put(mcwalkerNodePtr[mygroup]);
-    //    if(fname != "invalid") ConfigFile.push_back(fname);
-    //  } else {//more files than the number of processor
-    //    for(int ifile=0; ifile<nfile; ifile++) {
-    //      int pid_target=pid;
-    //      string fname("invalid");
-    //      OhmmsAttributeSet pAttrib;
-    //      pAttrib.add(pid_target,"node"); 
-    //      pAttrib.add(fname,"href"); pAttrib.add(fname,"src"); pAttrib.add(fname,"file");
-    //      pAttrib.put(mcwalkerNodePtr[ifile]);
-    //      if(pid_target == pid && fname != "invalid") {
-    //        ConfigFile.push_back(fname);
-    //      }
-    //    }
-    //  }
-    //}
-
     if(oset.empty()) {
       ERRORMSG("No Optimization Variables Set")
       return false;
     } else {
       for(int i=0; i<oset.size(); i++) {
-	vector<string> idtag;
-	putContent(idtag,oset[i]);
-	IDtag.reserve(idtag.size());
-	for(int id=0; id<idtag.size(); id++) {
-	  vector<string>::iterator it 
-	    = std::find(IDtag.begin(), IDtag.end(),idtag[id]);
-	  if(it == IDtag.end()) IDtag.push_back(idtag[id]);
-	}
-        if(msg_stream) {
-          *msg_stream << " Variables to be optimized: ";
-          std::copy(IDtag.begin(),IDtag.end(), 
-              ostream_iterator<string>(*msg_stream," "));
-          *msg_stream << endl;
-        }
+	vector<string> tmpid;
+	putContent(tmpid,oset[i]);
+        IDtag.insert(IDtag.end(),tmpid.begin(),tmpid.end());
       }
     }
   
@@ -518,13 +508,6 @@ namespace qmcplusplus {
 	  putContent(w_abs,cset[i]);
       }
     }  
-    //    LogOut->getStream() << "#" << optmethod << " values: tolerance = "
-    //			<< cg_tolerance << " stepsize = " << cg_stepsize 
-    //			<< " epsilon = " << cg_epsilon << " Tau = " 
-    //			<< Tau << endl;
-    //    if(!UseWeight){
-    //      LogOut->getStream() << "#All weights set to 1.0" << endl;
-    //    }
 
     putOptParams();
 
@@ -533,42 +516,62 @@ namespace qmcplusplus {
     return true;
   }
 
-  bool
-  QMCCostFunction::putOptParams(){
+  bool QMCCostFunction::putOptParams(){
 
-    //loop over all the unique id's
-    for(int i=0; i<IDtag.size(); i++){
-      //locate the id in the variable list for Psi
-      int id = Psi.VarList.find(IDtag[i]);
-      if(id>= 0) {
-	//find the number of variables represented by the id
-	int size = Psi.VarList.Sizes[id];
-	Return_t* temp = Psi.VarList.Pointers[id];
-	//loop over the number of variables for the id
-	//assign the value to the optimization parameter set
-	for(int j=0; j<size; j++){
-	  OptParams.push_back(temp[j]);
-	}
-      } else {
-	ERRORMSG("Could not find parameter " << IDtag[i])
-	  return false;
-	OptParams.push_back(0.0);
+    //reduce to a unique list
+    set<string> idcopy;
+    idcopy.insert(IDtag.begin(),IDtag.end());
+
+    IDtag.clear();
+    OptParams.clear();
+    IDtag.reserve(idcopy.size());
+    OptParams.reserve(idcopy.size());
+
+    NumOptimizables=0;
+    set<string>::iterator it(idcopy.begin());
+
+    //build a local OptVariables
+    OptVariables.clear();
+    while(it != idcopy.end())
+    {
+      OptimizableSetType::iterator vIn(Psi.VarList.find(*it));
+      if(vIn != Psi.VarList.end())
+      {
+        OptimizableSetType::iterator vTarget(OptVariables.find(*it));
+        if(vTarget == OptVariables.end())
+        {
+          Return_t v=(*vIn).second;
+          IDtag.push_back((*it));
+          OptParams.push_back(v);
+          OptVariables[(*it)]=v;
+          ++NumOptimizables;
+        }
       }
+      ++it;
     }
 
-    for(int i=0; i<paramList.size(); i++) {
+    if(NumOptimizables == 0)
+    {
+      app_error() << "QMCCostFunction::No valid optimizable variables are found." << endl;
+      abort();
+    }
+
+    for(int i=0; i<paramList.size(); i++) 
+    {
       paramList[i] = OptParams;
     }
+
+    app_log() << "  Input Optimizable Variable List" << endl;
+    for(int i=0; i<NumOptimizables; i++)
+      app_log() << "    " << IDtag[i] << "=" << OptParams[i] << endl;
 
     if(msg_stream) {
       msg_stream->setf(ios::scientific, ios::floatfield);
       msg_stream->precision(8);
-      *msg_stream << " Inital Variables= " ;
-      std::copy(OptParams.begin(),OptParams.end(), ostream_iterator<Return_t>(*msg_stream," "));
-      *msg_stream << endl;
     }
 
-    Psi.reset();
+    Psi.resetParameters(OptVariables);
+
     return true;
   }
 }

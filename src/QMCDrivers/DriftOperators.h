@@ -18,6 +18,7 @@
 #ifndef QMCPLUSPLUS_QMCDRIFTOPERATORS_H
 #define QMCPLUSPLUS_QMCDRIFTOPERATORS_H
 #include "ParticleBase/ParticleAttribOps.h"
+#include "ParticleBase/RandomSeqGenerator.h"
 #include "QMCWaveFunctions/OrbitalTraits.h"
 namespace qmcplusplus {
 

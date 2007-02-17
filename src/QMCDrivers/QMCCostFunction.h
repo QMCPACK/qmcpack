@@ -21,6 +21,7 @@
 #include <deque>
 #include "Configuration.h"
 #include "Optimize/OptimizeBase.h"
+#include "Optimize/VarList.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 
 namespace qmcplusplus {
@@ -39,9 +40,12 @@ namespace qmcplusplus {
   {
   public:
 
+    typedef VarRegistry<Return_t> OptimizableSetType;
+
     enum FieldIndex_OPT {LOGPSI_FIXED=0, LOGPSI_FREE=1, ENERGY_TOT=2, ENERGY_FIXED=3, ENERGY_NEW=4, REWEIGHT=5};
     enum SumIndex_OPT {SUM_E_BARE, SUM_ESQ_BARE, SUM_ABSE_BARE,
       SUM_E_WGT, SUM_ESQ_WGT, SUM_ABSE_WGT, SUM_WGT, SUM_WGTSQ};
+
 
     ///Constructor.
     QMCCostFunction(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h);
@@ -104,6 +108,8 @@ namespace qmcplusplus {
     int NumCostCalls;
     ///total number of samples to use in correlated sampling
     int NumSamples;
+    ///total number of optimizable variables
+    int NumOptimizables;
     ///weights for energy and variance in the cost function
     Return_t w_en, w_var, w_abs;
     ///value of the cost function
@@ -135,12 +141,6 @@ namespace qmcplusplus {
      * default CorrelationFactor=0.0;
      */
     Return_t CorrelationFactor;
-    ///xml node to be dumped
-    xmlNodePtr m_wfPtr;
-    ///document node to be dumped
-    xmlDocPtr m_doc_out;
-    ///parameters to be updated
-    vector<xmlNodePtr> m_param_out;
     ///storage for previous values of the cost function
     std::deque<Return_t> costList;
     ///storage for previous sets of parameters
@@ -149,13 +149,23 @@ namespace qmcplusplus {
     vector<Return_t> OptParams;
     ///ID tag for each optimizable parameter
     vector<string> IDtag;  
+    ///list of optimizables
+    OptimizableSetType OptVariables;
+    ///stream to which progress is sent
+    ostream* msg_stream;
+
+    ///xml node to be dumped
+    xmlNodePtr m_wfPtr;
+    ///document node to be dumped
+    xmlDocPtr m_doc_out;
+    ///parameters to be updated
+    std::map<string,xmlNodePtr> paramNodes;
+    ///attributes to be updated
+    std::map<string,pair<xmlNodePtr,string> > attribNodes;
     ///string for the file root
     string RootName;
     ///Hamiltonians that depend on the optimization: KE
     QMCHamiltonian H_KE;
-
-    ///stream to which progress is sent
-    ostream* msg_stream;
 
     /** Sum of energies and weights for averages
      *
