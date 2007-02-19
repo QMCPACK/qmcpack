@@ -147,8 +147,6 @@ namespace qmcplusplus {
       vmcEngine = new VMCSingle(W,Psi,H);
       vmcEngine->setStatus(RootName,RootName,AppendRun);
     }
-
-    if(MyCounter) WarmupBlocks=0;
     vmcEngine->process(qsave);
 
     if(optSolver ==0)
