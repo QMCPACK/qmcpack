@@ -67,7 +67,7 @@ namespace qmcplusplus {
           else
             Movers[ip]=new VMCUpdatePbyP(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]); 
           Movers[ip]->resetRun(branchClones[ip]);
-          Movers[ip]->initWalkersForPbyP(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
+          //Movers[ip]->initWalkersForPbyP(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
         }
         else
         {
@@ -76,12 +76,20 @@ namespace qmcplusplus {
           else
             Movers[ip]=new VMCUpdateAll(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]); 
           Movers[ip]->resetRun(branchClones[ip]);
-          Movers[ip]->initWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
+          //Movers[ip]->initWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
         }
       }
     }
 
-    for(int ip=0;ip<NumThreads; ip++) Movers[ip]->put(qmcNode);
+#pragma omp parallel  
+    {
+      int ip = omp_get_thread_num();
+      if(QMCDriverMode[QMC_UPDATE_MODE])
+        Movers[ip]->initWalkersForPbyP(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
+      else
+        Movers[ip]->initWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
+      Movers[ip]->put(qmcNode);
+    }
 
     //Used to debug and benchmark opnemp
 //#pragma omp parallel for

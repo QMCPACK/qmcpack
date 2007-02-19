@@ -39,7 +39,6 @@ namespace qmcplusplus {
         else
           Mover=new VMCUpdatePbyP(W,Psi,H,Random);
         Mover->resetRun(branchEngine);
-        Mover->initWalkersForPbyP(W.begin(),W.end());
       }
       else
       {
@@ -48,9 +47,13 @@ namespace qmcplusplus {
         else
           Mover=new VMCUpdateAll(W,Psi,H,Random);
         Mover->resetRun(branchEngine);
-        Mover->initWalkers(W.begin(),W.end());
       }
     }
+
+    if(QMCDriverMode[QMC_UPDATE_MODE])
+      Mover->initWalkersForPbyP(W.begin(),W.end());
+    else
+      Mover->initWalkers(W.begin(),W.end());
 
     Mover->put(qmcNode);
     Estimators->reportHeader(AppendRun);
