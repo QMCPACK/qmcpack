@@ -85,11 +85,6 @@ namespace qmcplusplus {
 
     } while(block<nBlocks);
 
-    //Need MPI-IO
-    app_log() << "Ratio = " 
-      << static_cast<RealType>(nAcceptTot)/static_cast<RealType>(nAcceptTot+nRejectTot)
-      << endl;
-    
     //finalize a qmc section
     return finalize(block);
   }

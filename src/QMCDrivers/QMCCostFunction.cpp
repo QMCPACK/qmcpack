@@ -323,84 +323,12 @@ namespace qmcplusplus {
   }
   
   void QMCCostFunction::Report() {
-
     static int writeCounter=0;
-
-    if(OHMMS::Controller->master()) {
-
-      if(m_doc_out == NULL) {
-        m_doc_out = xmlNewDoc((const xmlChar*)"1.0");
-        xmlNodePtr qm_root = xmlNewNode(NULL, BAD_CAST "qmcsystem"); 
-        xmlAddChild(qm_root, m_wfPtr);
-        xmlDocSetRootElement(m_doc_out, qm_root);
-
-        xmlXPathContextPtr acontext = xmlXPathNewContext(m_doc_out);
-        xmlXPathObjectPtr result = xmlXPathEvalExpression((const xmlChar*)"//parameter",acontext);
-        for(int iparam=0; iparam<result->nodesetval->nodeNr; iparam++) {
-          xmlNodePtr cur= result->nodesetval->nodeTab[iparam];
-          const xmlChar* iptr=xmlGetProp(cur,(const xmlChar*)"id");
-          if(iptr == NULL) continue;
-          string aname((const char*)iptr);
-          OptimizableSetType::iterator oit(OptVariables.find(aname));
-          if(oit != OptVariables.end())
-          {
-            paramNodes[aname]=cur;
-          }
-        }
-        xmlXPathFreeObject(result);
-
-        result = xmlXPathEvalExpression((const xmlChar*)"//radfunc",acontext);
-        for(int iparam=0; iparam<result->nodesetval->nodeNr; iparam++) {
-          xmlNodePtr cur= result->nodesetval->nodeTab[iparam];
-          const xmlChar* iptr=xmlGetProp(cur,(const xmlChar*)"id");
-          if(iptr == NULL) continue;
-          string aname((const char*)iptr);
-          string expID=aname+"_E";
-          xmlAttrPtr aptr=xmlHasProp(cur,(const xmlChar*)"exponent");
-          OptimizableSetType::iterator oit(OptVariables.find(expID));
-          if(aptr != NULL && oit != OptVariables.end())
-          {
-            attribNodes[expID]=pair<xmlNodePtr,string>(cur,"exponent");
-          }
-
-          string cID=aname+"_C";
-          aptr=xmlHasProp(cur,(const xmlChar*)"contraction");
-          oit=OptVariables.find(cID);
-          if(aptr != NULL && oit != OptVariables.end())
-          {
-            attribNodes[cID]=pair<xmlNodePtr,string>(cur,"contraction");
-          }
-        }
-        xmlXPathFreeObject(result);
-
-        xmlXPathFreeContext(acontext);
-      }
-
-      Psi.resetParameters(OptVariables);
-
-      map<string,xmlNodePtr>::iterator pit(paramNodes.begin()), pit_end(paramNodes.end());
-      while(pit != pit_end)
-      {
-        Return_t v=OptVariables[(*pit).first];
-        getContent(v,(*pit).second);
-        ++pit;
-      }
-
-      map<string,pair<xmlNodePtr,string> >::iterator ait(attribNodes.begin()), ait_end(attribNodes.end());
-      while(ait != ait_end)
-      {
-        std::ostringstream vout;
-        vout.setf(ios::scientific, ios::floatfield);
-        vout.precision(8);
-        vout << OptVariables[(*ait).first];
-        xmlSetProp((*ait).second.first, (const xmlChar*)(*ait).second.second.c_str(),(const xmlChar*)vout.str().c_str());
-        ++ait;
-      }
-
+    if(myComm->master()) {
+      updateXmlNodes();
       char newxml[128];
       sprintf(newxml,"%s.opt.%d.xml", RootName.c_str(),writeCounter);
       xmlSaveFormatFile(newxml,m_doc_out,1);
-
       if(msg_stream) {
         *msg_stream << " curCost " 
           << setw(5) << writeCounter << setw(16) << CostValue << setw(15) << NumWalkersEff 
@@ -412,10 +340,19 @@ namespace qmcplusplus {
         *msg_stream << endl;
       }
     }
-
     writeCounter++;
-
     OHMMS::Controller->barrier();
+  }
+
+  void QMCCostFunction::reportParameters(std::ostream& os) {
+    updateXmlNodes();
+    char newxml[128];
+    sprintf(newxml,"%s.opt.xml", RootName.c_str());
+    xmlSaveFormatFile(newxml,m_doc_out,1);
+    os << "  <optVariables href=\"" << newxml << "\">" << endl;
+    for(int i=0; i<OptParams.size(); i++) 
+      os << "      " << IDtag[i] << " "<< OptParams[i]<<endl;;
+    os << "  </optVariables>" << endl;
   }
 
   /** Apply constraints on the optimizables. 
@@ -574,6 +511,77 @@ namespace qmcplusplus {
 
     return true;
   }
+
+  void QMCCostFunction::updateXmlNodes() {
+    if(m_doc_out == NULL) {//first time, create a document tree and get parameters and attributes to be updated
+      m_doc_out = xmlNewDoc((const xmlChar*)"1.0");
+      xmlNodePtr qm_root = xmlNewNode(NULL, BAD_CAST "qmcsystem"); 
+      xmlAddChild(qm_root, m_wfPtr);
+      xmlDocSetRootElement(m_doc_out, qm_root);
+
+      xmlXPathContextPtr acontext = xmlXPathNewContext(m_doc_out);
+      xmlXPathObjectPtr result = xmlXPathEvalExpression((const xmlChar*)"//parameter",acontext);
+      for(int iparam=0; iparam<result->nodesetval->nodeNr; iparam++) {
+        xmlNodePtr cur= result->nodesetval->nodeTab[iparam];
+        const xmlChar* iptr=xmlGetProp(cur,(const xmlChar*)"id");
+        if(iptr == NULL) continue;
+        string aname((const char*)iptr);
+        OptimizableSetType::iterator oit(OptVariables.find(aname));
+        if(oit != OptVariables.end())
+        {
+          paramNodes[aname]=cur;
+        }
+      }
+      xmlXPathFreeObject(result);
+
+      result = xmlXPathEvalExpression((const xmlChar*)"//radfunc",acontext);
+      for(int iparam=0; iparam<result->nodesetval->nodeNr; iparam++) {
+        xmlNodePtr cur= result->nodesetval->nodeTab[iparam];
+        const xmlChar* iptr=xmlGetProp(cur,(const xmlChar*)"id");
+        if(iptr == NULL) continue;
+        string aname((const char*)iptr);
+        string expID=aname+"_E";
+        xmlAttrPtr aptr=xmlHasProp(cur,(const xmlChar*)"exponent");
+        OptimizableSetType::iterator oit(OptVariables.find(expID));
+        if(aptr != NULL && oit != OptVariables.end())
+        {
+          attribNodes[expID]=pair<xmlNodePtr,string>(cur,"exponent");
+        }
+
+        string cID=aname+"_C";
+        aptr=xmlHasProp(cur,(const xmlChar*)"contraction");
+        oit=OptVariables.find(cID);
+        if(aptr != NULL && oit != OptVariables.end())
+        {
+          attribNodes[cID]=pair<xmlNodePtr,string>(cur,"contraction");
+        }
+      }
+      xmlXPathFreeObject(result);
+
+      xmlXPathFreeContext(acontext);
+    }
+    Psi.resetParameters(OptVariables);
+
+    map<string,xmlNodePtr>::iterator pit(paramNodes.begin()), pit_end(paramNodes.end());
+    while(pit != pit_end)
+    {
+      Return_t v=OptVariables[(*pit).first];
+      getContent(v,(*pit).second);
+      ++pit;
+    }
+
+    map<string,pair<xmlNodePtr,string> >::iterator ait(attribNodes.begin()), ait_end(attribNodes.end());
+    while(ait != ait_end)
+    {
+      std::ostringstream vout;
+      vout.setf(ios::scientific, ios::floatfield);
+      vout.precision(8);
+      vout << OptVariables[(*ait).first];
+      xmlSetProp((*ait).second.first, (const xmlChar*)(*ait).second.second.c_str(),(const xmlChar*)vout.str().c_str());
+      ++ait;
+    }
+  }
+
 }
 /***************************************************************************
  * $RCSfile$   $Author$

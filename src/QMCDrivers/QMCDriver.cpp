@@ -48,6 +48,7 @@ namespace qmcplusplus {
     m_param.add(Tau,"Tau","AU");
     m_param.add(Tau,"timestep","AU");
     m_param.add(RollBackBlocks,"rewind","int");
+    m_param.add(Period4WalkerDump,"recordWalkers","int");
 
     //add each QMCHamiltonianBase to W.PropertyList so that averages can be taken
     H.add2WalkerProperty(W);

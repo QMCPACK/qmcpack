@@ -38,6 +38,7 @@ SET(QMCDRIVERS
   SimpleFixedNodeBranch.cpp
   QMCDriver.cpp
   QMCOptimize.cpp
+  QMCOptimizeSingle.cpp
   QMCCostFunction.cpp
   WaveFunctionTester.cpp
   ${DMCDRIVERS}

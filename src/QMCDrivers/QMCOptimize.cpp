@@ -56,6 +56,7 @@ namespace qmcplusplus {
   bool
   QMCOptimize::run() {
 
+    optTarget->setCommunicator(qmcComm);
     //reset the rootname
     optTarget->setRootName(RootName);
     optTarget->setWaveFunctionNode(wfNode);

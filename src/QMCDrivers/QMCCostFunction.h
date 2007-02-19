@@ -65,7 +65,8 @@ namespace qmcplusplus {
     int NumParams() { return OptParams.size(); }
     ///dump the current parameters and other report
     void Report();
-
+    ///report  parameters at the end
+    void reportParameters(std::ostream& os);
     ///evaluate the local energies of the samples
     Return_t correlatedSampling();
 
@@ -81,6 +82,14 @@ namespace qmcplusplus {
     void setRootName(const string& aroot) { RootName=aroot;}
 
     void setStream(ostream* os) { msg_stream = os;}
+
+    /** set myComm 
+     * @param c Communicate*
+     */
+    void setCommunicator(Communicate* c)
+    {
+      myComm=c;
+    }
 
   protected:
 
@@ -151,9 +160,10 @@ namespace qmcplusplus {
     vector<string> IDtag;  
     ///list of optimizables
     OptimizableSetType OptVariables;
+    ///communicator
+    Communicate* myComm;
     ///stream to which progress is sent
     ostream* msg_stream;
-
     ///xml node to be dumped
     xmlNodePtr m_wfPtr;
     ///document node to be dumped
@@ -184,7 +194,7 @@ namespace qmcplusplus {
     bool resetWaveFunctions();
     bool checkParameters();
     bool putOptParams();  
-
+    void updateXmlNodes();
   };
 }
 #endif
