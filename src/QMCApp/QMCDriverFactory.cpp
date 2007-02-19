@@ -27,6 +27,7 @@
 #include "QMCDrivers/VMC/VMCFactory.h"
 #include "QMCDrivers/DMC/DMCFactory.h"
 #include "QMCDrivers/QMCOptimize.h"
+#include "QMCDrivers/QMCOptimizeSingle.h"
 #include "QMCDrivers/RQMCMultiple.h"
 #if !defined(QMC_COMPLEX)
 #include "QMCDrivers/RQMCMultiWarp.h"
@@ -106,46 +107,32 @@ namespace qmcplusplus {
     WhatToDo[UPDATE_MODE]= (update_mode == "pbyp");
 
     QMCRunType newRunType = DUMMY_RUN;
-    if(curName == "qmc") { //generic qmc node
-      //overwrite the bits
-      if(qmc_mode == "vmc") {
-        newRunType=VMC_RUN;
-      } else if (qmc_mode == "vmc-ptcl") {
-        newRunType=VMC_RUN;
-        WhatToDo[UPDATE_MODE]=1;
-      } else if (qmc_mode == "vmc-multi") {
-        newRunType=VMC_RUN;
-        WhatToDo[MULTIPLE_MODE]=1;
-      } else if(qmc_mode == "vmc-warp") {
-        newRunType=VMC_RUN;
-        WhatToDo[SPACEWARP_MODE]=1;
-        WhatToDo[MULTIPLE_MODE]=1;
-      } else if(qmc_mode == "vmc-ptcl-multi") {
-        newRunType=VMC_RUN;
-        WhatToDo[SPACEWARP_MODE]=1;
-        WhatToDo[MULTIPLE_MODE]=1;
-        WhatToDo[UPDATE_MODE]=1;
-      } else if(qmc_mode == "dmc") {
-        newRunType=DMC_RUN;
-      } else if(qmc_mode == "dmc-ptcl") {
-        newRunType=DMC_RUN;
-        WhatToDo[UPDATE_MODE]=1;
-      } else if(qmc_mode == "rmc") {
-        newRunType=RMC_RUN;
-      } else if(qmc_mode == "rmc-multi") {
-        newRunType=RMC_RUN;
-        WhatToDo[MULTIPLE_MODE]=1;
-      } else if(qmc_mode == "optimize") {
+    if(curName != "qmc") qmc_mode=curName;
+    int nchars=qmc_mode.size();
+    if(qmc_mode.find("opt") < nchars)
+    {
+      if(qmc_mode.find("vmc")<nchars) 
+        newRunType=VMC_OPT_RUN;
+      else
         newRunType=OPTIMIZE_RUN;
+    }
+    else
+    {
+      if(qmc_mode.find("vmc")<nchars)
+      {
+        newRunType=VMC_RUN;
       }
-    } else if(curName == "vmc") {
-      newRunType=VMC_RUN;
-    } else if(curName == "dmc") {
-      newRunType=DMC_RUN;
-    } else if(curName == "rmc") {
-      newRunType=RMC_RUN;
-    } else if(curName == "optimize") {
-      newRunType=OPTIMIZE_RUN;
+      else if(qmc_mode.find("dmc")<nchars)
+      {
+        newRunType=DMC_RUN;
+      }
+      else if(qmc_mode.find("rmc")<nchars)
+      {
+        newRunType=RMC_RUN;
+      }
+      if(qmc_mode.find("ptcl")<nchars) WhatToDo[UPDATE_MODE]=1;
+      if(qmc_mode.find("mul")<nchars) WhatToDo[MULTIPLE_MODE]=1;
+      if(qmc_mode.find("warp")<nchars) WhatToDo[SPACEWARP_MODE]=1;
     } 
 
     unsigned long newQmcMode=WhatToDo.to_ulong();
@@ -244,37 +231,49 @@ namespace qmcplusplus {
     }
 
     //(SPACEWARP_MODE,MULTIPE_MODE,UPDATE_MODE)
-    if(curRunType == VMC_RUN) {
+    if(curRunType == VMC_RUN) 
+    {
       VMCFactory fac(curQmcModeBits[UPDATE_MODE],cur);
       qmcDriver = fac.create(*qmcSystem,*primaryPsi,*primaryH,*ptclPool,*hamPool);
-    } else if(curRunType == DMC_RUN) {
+    } 
+    else if(curRunType == DMC_RUN) 
+    {
       DMCFactory fac(curQmcModeBits[UPDATE_MODE],cur);
       qmcDriver = fac.create(*qmcSystem,*primaryPsi,*primaryH,*hamPool);
-    } else if(curRunType == RMC_RUN) {
+    } 
+    else if(curRunType == RMC_RUN) 
+    {
 #if defined(QMC_COMPLEX)
       qmcDriver = new RQMCMultiple(*qmcSystem,*primaryPsi,*primaryH);
 #else
-      if(curQmcModeBits[SPACEWARP_MODE]) {
+      if(curQmcModeBits[SPACEWARP_MODE]) 
         qmcDriver = new RQMCMultiWarp(*qmcSystem,*primaryPsi,*primaryH, *ptclPool);
-      } else {
+      else 
         qmcDriver = new RQMCMultiple(*qmcSystem,*primaryPsi,*primaryH);
-      }
 #endif
-    } else if(curRunType == OPTIMIZE_RUN) {
+    } 
+    else if(curRunType == OPTIMIZE_RUN) 
+    {
       QMCOptimize *opt = new QMCOptimize(*qmcSystem,*primaryPsi,*primaryH);
-      //opt->addConfiguration(PrevConfigFile);
       opt->setWaveFunctionNode(psiPool->getWaveFunctionNode("null"));
       qmcDriver=opt;
-    } else {
+    }
+    else if(curRunType == VMC_OPT_RUN)
+    {
+      QMCOptimizeSingle *opt = new QMCOptimizeSingle(*qmcSystem,*primaryPsi,*primaryH);
+      opt->setWaveFunctionNode(psiPool->getWaveFunctionNode("null"));
+      qmcDriver=opt;
+    } 
+    else 
+    {
       WARNMSG("Testing wavefunctions. Creating WaveFunctionTester for testing")
       qmcDriver = new WaveFunctionTester(*qmcSystem,*primaryPsi,*primaryH);
-      //} else {
-      //  WARNMSG("Cannot termine what type of qmc to run. Creating DummyQMC for testing")
-      //  qmcDriver = new DummyQMC(*qmcSystem,*primaryPsi,*primaryH);
     }
 
-    if(curQmcModeBits[MULTIPLE_MODE]) {
-      while(targetH.size()) {
+    if(curQmcModeBits[MULTIPLE_MODE]) 
+    {
+      while(targetH.size()) 
+      {
         qmcDriver->add_H_and_Psi(targetH.front(),targetPsi.front());
         targetH.pop();
         targetPsi.pop(); 
