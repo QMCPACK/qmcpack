@@ -297,9 +297,7 @@ namespace qmcplusplus {
     NumSamples = static_cast<int>(etemp[1]);
 
     setTargetEnergy(Etarget);
-    //if(msg_stream) {
-    //  *msg_stream << "Etarget (guess from the average) = " << Etarget << endl;
-    //}
+    ReportCounter=0;
   }
 
   /** Reset the Wavefunction \f$ \Psi({\bf R},{{\bf \alpha_i}}) \f$
@@ -323,24 +321,23 @@ namespace qmcplusplus {
   }
   
   void QMCCostFunction::Report() {
-    static int writeCounter=0;
     if(myComm->master()) {
       updateXmlNodes();
       char newxml[128];
-      sprintf(newxml,"%s.opt.%d.xml", RootName.c_str(),writeCounter);
+      sprintf(newxml,"%s.opt.%d.xml", RootName.c_str(),ReportCounter);
       xmlSaveFormatFile(newxml,m_doc_out,1);
       if(msg_stream) {
         *msg_stream << " curCost " 
-          << setw(5) << writeCounter << setw(16) << CostValue << setw(15) << NumWalkersEff 
+          << setw(5) << ReportCounter << setw(16) << CostValue << setw(15) << NumWalkersEff 
           << setw(16) << curAvg_w << setw(16) << curAvg 
           << setw(16) << curVar_w << setw(16) << curVar 
           << setw(16) << curVar_abs << endl;
-        *msg_stream << " curVars " << setw(5) << writeCounter;
+        *msg_stream << " curVars " << setw(5) << ReportCounter;
         for(int i=0; i<OptParams.size(); i++) *msg_stream << setw(16) << OptParams[i];
         *msg_stream << endl;
       }
     }
-    writeCounter++;
+    ReportCounter++;
     OHMMS::Controller->barrier();
   }
 
@@ -351,7 +348,10 @@ namespace qmcplusplus {
     xmlSaveFormatFile(newxml,m_doc_out,1);
     os << "  <optVariables href=\"" << newxml << "\">" << endl;
     for(int i=0; i<OptParams.size(); i++) 
+    {
+      Psi.VarList[IDtag[i]]=OptParams[i];
       os << "      " << IDtag[i] << " "<< OptParams[i]<<endl;;
+    }
     os << "  </optVariables>" << endl;
   }
 
@@ -560,6 +560,7 @@ namespace qmcplusplus {
 
       xmlXPathFreeContext(acontext);
     }
+
     Psi.resetParameters(OptVariables);
 
     map<string,xmlNodePtr>::iterator pit(paramNodes.begin()), pit_end(paramNodes.end());

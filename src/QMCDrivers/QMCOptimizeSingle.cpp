@@ -99,14 +99,8 @@ namespace qmcplusplus {
     app_log() << "<opt stage=\"main\" walkers=\""<< W.getActiveWalkers() << "\">" << endl;
     app_log() << "  <log>" << endl;
 
-    //estimator has to collect the data over mpi nodes
-    Estimators->setCollectionMode(OHMMS::Controller->ncontexts()>1);
-
-    //overwrite the Etarget by E_T if E_T is zero
-    if(abs(branchEngine->E_T)>numeric_limits<RealType>::epsilon()) 
-    {
-      optTarget->setTargetEnergy(branchEngine->E_T);
-    }
+    branchEngine->E_T=vmcEngine->getBranchEngine()->E_T;
+    optTarget->setTargetEnergy(branchEngine->E_T);
 
     bool success=optSolver->optimize(optTarget);
     app_log() << "  </log>" << endl;
@@ -114,6 +108,7 @@ namespace qmcplusplus {
       optTarget->reportParameters(app_log());
     app_log() << "</opt>" << endl;
     app_log() << "</optimization-report>" << endl;
+
     return success;
   }
 
@@ -146,8 +141,9 @@ namespace qmcplusplus {
     if(vmcEngine ==0)
     {
       vmcEngine = new VMCSingle(W,Psi,H);
-      vmcEngine->setStatus(RootName,RootName,AppendRun);
     }
+
+    vmcEngine->setStatus(RootName,RootName,AppendRun);
     vmcEngine->process(qsave);
 
     if(optSolver ==0)

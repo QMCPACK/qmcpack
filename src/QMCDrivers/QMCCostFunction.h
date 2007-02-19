@@ -119,6 +119,8 @@ namespace qmcplusplus {
     int NumSamples;
     ///total number of optimizable variables
     int NumOptimizables;
+    ///counter for output
+    int ReportCounter;
     ///weights for energy and variance in the cost function
     Return_t w_en, w_var, w_abs;
     ///value of the cost function
