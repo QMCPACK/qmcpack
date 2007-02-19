@@ -363,8 +363,19 @@ namespace qmcplusplus {
     EPSum=0.0;
     if(FileManager) 
     {
+      if(OutStream == 0) 
+      {
+        string fname(RootName);
+        fname.append(".scalar.dat");
+        if(append) 
+          OutStream = new ofstream(fname.c_str(), ios::app);
+        else
+          OutStream = new ofstream(fname.c_str());
+        OutStream->setf(ios::scientific, ios::floatfield);
+      }
       if(!append)  
       {
+        OutStream->setf(ios::left,ios::adjustfield);
         *OutStream << "#    index     ";
         for(int i=0; i<BlockAverages.size(); i++) 
           (*OutStream) << setw(16) << BlockAverages.Name[i];
@@ -427,8 +438,20 @@ namespace qmcplusplus {
     EPSum=0.0;
     if(FileManager) 
     {
+      if(OutStream == 0) 
+      {
+        string fname(RootName);
+        fname.append(".scalar.dat");
+        if(append) 
+          OutStream = new ofstream(fname.c_str(), ios::app);
+        else
+          OutStream = new ofstream(fname.c_str());
+        OutStream->setf(ios::scientific, ios::floatfield);
+      }
+
       if(!append)  
       {
+        OutStream->setf(ios::left,ios::adjustfield);
         *OutStream << "#    index     ";
         for(int i=0; i<BlockAverages.size(); i++) 
           (*OutStream) << setw(16) << BlockAverages.Name[i];
