@@ -81,42 +81,16 @@ namespace qmcplusplus {
     curMethod = string("invalid");
     //xmlNodePtr cur=m_root->children;
     xmlNodePtr cur=XmlDocStack.top()->getRoot()->children;
-    while(cur != NULL) {
+    while(cur != NULL) 
+    {
       string cname((const char*)cur->name);
-      if(cname == "qmc" || cname == "vmc" || cname == "dmc" || cname =="rmc" ||
-          cname == "optimize") {
-        string target("e");
-        const xmlChar* t=xmlGetProp(cur,(const xmlChar*)"target");
-        if(t) target = (const char*)t;
-
-        bool toRunQMC=true;
-        t=xmlGetProp(cur,(const xmlChar*)"completed");
-        if(t != NULL) {
-          if(xmlStrEqual(t,(const xmlChar*)"yes")) {
-            app_log() << "  This " << cname << " section is already executed." << endl;
-            toRunQMC=false;
-          }
-        } else {
-          xmlAttrPtr t1=xmlNewProp(cur,(const xmlChar*)"completed", (const xmlChar*)"no");
-        }
-
-        if(toRunQMC) {
-          qmcSystem = ptclPool->getWalkerSet(target);
-          bool good = runQMC(cur);
-          if(good) {
-            xmlAttrPtr t1=xmlSetProp(cur,(const xmlChar*)"completed", (const xmlChar*)"yes");
-            //q.push_back(cur);
-            FirstQMC=false;
-          } else {
-            app_error() << "   " << cname << " failed." << endl;
-          }
-          //t=xmlGetProp(cur,(const xmlChar*)"id");
-          //if(t == NULL) {
-          //  //cout << "What is wrong with you " << myProject.CurrentMainRoot() << endl;
-          //  //xmlAttrPtr t1=xmlNewProp(cur,(const xmlChar*)"id", 
-          //  //    (const xmlChar*)myProject.CurrentMainRoot());
-          //}
-        }
+      if(cname == "qmc" || cname == "optimize")
+      {
+        executeQMCSection(cur);
+      }
+      else if(cname == "loop")
+      {
+        executeLoop(cur);
       }
       cur=cur->next;
     }
@@ -146,6 +120,63 @@ namespace qmcplusplus {
       saveXml();
     }
     return true;
+  }
+
+  void QMCMain::executeLoop(xmlNodePtr cur)
+  {
+    int niter=1;
+    const xmlChar* nptr=xmlGetProp(cur,(const xmlChar*)"max");
+    if(nptr != NULL)
+      niter=atoi((const char*)nptr);
+
+    app_log() << "Loop execution max-interations = " << niter << endl;
+    for(int iter=0; iter<niter; iter++)
+    {
+      xmlNodePtr tcur=cur->children;
+      while(tcur != NULL) 
+      {
+        string cname((const char*)tcur->name);
+        if(cname == "qmc")
+        {
+          //prevent completed is set
+          executeQMCSection(tcur, false);
+        }
+        tcur=tcur->next;
+      }
+    }
+  }
+
+  void QMCMain::executeQMCSection(xmlNodePtr cur, bool noloop)
+  {
+    string target("e");
+    const xmlChar* t=xmlGetProp(cur,(const xmlChar*)"target");
+    if(t) target = (const char*)t;
+
+    bool toRunQMC=true;
+    t=xmlGetProp(cur,(const xmlChar*)"completed");
+    if(t != NULL) 
+    {
+      if(xmlStrEqual(t,(const xmlChar*)"yes")) 
+      {
+        app_log() << "  This qmc section is already executed." << endl;
+        toRunQMC=false;
+      }
+    } 
+    else 
+    {
+      xmlAttrPtr t1=xmlNewProp(cur,(const xmlChar*)"completed", (const xmlChar*)"no");
+    }
+
+    if(toRunQMC) 
+    {
+      qmcSystem = ptclPool->getWalkerSet(target);
+      bool good = runQMC(cur);
+      if(good && noloop) 
+      {
+        xmlAttrPtr t1=xmlSetProp(cur,(const xmlChar*)"completed", (const xmlChar*)"yes");
+      } 
+      FirstQMC=false;
+    }
   }
 
   /** validate the main document

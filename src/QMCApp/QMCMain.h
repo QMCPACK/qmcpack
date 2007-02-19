@@ -71,6 +71,14 @@ namespace qmcplusplus {
     /** add unique ParticleSet, TrialWaveFunction and QMCHamiltonian elements to Pool objects
      */
     void processPWH(xmlNodePtr cur);
+
+    /** execute loop **/
+    void executeLoop(xmlNodePtr cur);
+    /** execute qmc 
+     * @param cur qmc xml node
+     * @param noloop if true, this qmc section is not in a loop.
+     */
+    void executeQMCSection(xmlNodePtr cur, bool noloop=true);
   };
 }
 #endif
