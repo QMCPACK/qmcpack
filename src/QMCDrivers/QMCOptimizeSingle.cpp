@@ -76,6 +76,7 @@ namespace qmcplusplus {
       app_log() << "</vmc>" << endl;
     }
     app_log() << "<vmc stage=\"main\" blocks=\"" << nBlocks << "\">" << endl;
+    vmcEngine->setValue("recordWalkers",1);
     vmcEngine->run();
     app_log() << "</vmc>" << endl;
 
