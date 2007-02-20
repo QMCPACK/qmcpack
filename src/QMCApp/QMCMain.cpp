@@ -139,14 +139,19 @@ namespace qmcplusplus {
         if(cname == "qmc")
         {
           //prevent completed is set
-          executeQMCSection(tcur, false);
+          bool success = executeQMCSection(tcur, false);
+          if(!success)
+          {
+            app_warning() << "  Terminated loop execution. A sub section returns false." << endl;
+            return;
+          }
         }
         tcur=tcur->next;
       }
     }
   }
 
-  void QMCMain::executeQMCSection(xmlNodePtr cur, bool noloop)
+  bool QMCMain::executeQMCSection(xmlNodePtr cur, bool noloop)
   {
     string target("e");
     const xmlChar* t=xmlGetProp(cur,(const xmlChar*)"target");
@@ -176,6 +181,7 @@ namespace qmcplusplus {
         xmlAttrPtr t1=xmlSetProp(cur,(const xmlChar*)"completed", (const xmlChar*)"yes");
       } 
       FirstQMC=false;
+      return good;
     }
   }
 

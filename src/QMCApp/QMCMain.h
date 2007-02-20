@@ -77,8 +77,9 @@ namespace qmcplusplus {
     /** execute qmc 
      * @param cur qmc xml node
      * @param noloop if true, this qmc section is not in a loop.
+     * @return true, if a section is successfully executed.
      */
-    void executeQMCSection(xmlNodePtr cur, bool noloop=true);
+    bool executeQMCSection(xmlNodePtr cur, bool noloop=true);
   };
 }
 #endif
