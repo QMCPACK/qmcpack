@@ -335,6 +335,9 @@ namespace qmcplusplus {
         *msg_stream << " curVars " << setw(5) << ReportCounter;
         for(int i=0; i<OptParams.size(); i++) *msg_stream << setw(16) << OptParams[i];
         *msg_stream << endl;
+
+        //save the converged values
+        for(int i=0; i<OptParams.size(); i++) FinalOptVariables[IDtag[i]]=OptParams[i];
       }
     }
     ReportCounter++;
@@ -342,17 +345,21 @@ namespace qmcplusplus {
   }
 
   void QMCCostFunction::reportParameters(std::ostream& os) {
-    updateXmlNodes();
+
     char newxml[128];
     sprintf(newxml,"%s.opt.xml", RootName.c_str());
-    xmlSaveFormatFile(newxml,m_doc_out,1);
     os << "  <optVariables href=\"" << newxml << "\">" << endl;
     for(int i=0; i<OptParams.size(); i++) 
     {
+      OptParams[i]=FinalOptVariables[IDtag[i]];
+      OptVariables[IDtag[i]]=OptParams[i];
       Psi.VarList[IDtag[i]]=OptParams[i];
       os << "      " << IDtag[i] << " "<< OptParams[i]<<endl;;
     }
     os << "  </optVariables>" << endl;
+
+    updateXmlNodes();
+    xmlSaveFormatFile(newxml,m_doc_out,1);
   }
 
   /** Apply constraints on the optimizables. 

@@ -75,8 +75,10 @@ namespace qmcplusplus {
       vmcEngine->setValue("blocks",nBlocks);
       app_log() << "</vmc>" << endl;
     }
+
+    vmcEngine->setValue("recordWalkers",1);//set record 
+    vmcEngine->setValue("current",0);//reset CurrentStep
     app_log() << "<vmc stage=\"main\" blocks=\"" << nBlocks << "\">" << endl;
-    vmcEngine->setValue("recordWalkers",1);
     vmcEngine->run();
     app_log() << "</vmc>" << endl;
 

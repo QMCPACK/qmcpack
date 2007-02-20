@@ -162,6 +162,8 @@ namespace qmcplusplus {
     vector<string> IDtag;  
     ///list of optimizables
     OptimizableSetType OptVariables;
+    ///list of optimizables
+    OptimizableSetType FinalOptVariables;
     ///communicator
     Communicate* myComm;
     ///stream to which progress is sent
