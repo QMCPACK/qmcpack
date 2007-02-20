@@ -111,7 +111,7 @@ namespace qmcplusplus {
     app_log() << "</opt>" << endl;
     app_log() << "</optimization-report>" << endl;
 
-    return success;
+    return (optTarget->getReportCounter() > 0);
   }
 
   /** Parses the xml input file for parameter definitions for the wavefunction optimization.

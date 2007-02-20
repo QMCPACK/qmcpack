@@ -70,6 +70,12 @@ namespace qmcplusplus {
     ///evaluate the local energies of the samples
     Return_t correlatedSampling();
 
+    ///return the counter which keeps track of optimization steps
+    inline int getReportCounter() const 
+    {
+      return ReportCounter;
+    }
+
     void setWaveFunctionNode(xmlNodePtr cur) { m_wfPtr=cur; }
 
     void getConfigurations(vector<string>& ConfigFile, int partid, int nparts);
