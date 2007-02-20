@@ -66,18 +66,22 @@ namespace qmcplusplus {
 
     /** container of the pointers to the Atomic Orbitals
      *
+     * size of LOBasis =  number  of centers (e.g., ions)
      * AO[i] returns a Centered Orbital for an ion i
      */
     vector<COT*> LOBasis;
 
-    /** container for the pointers to the Atomic Orbitals 
+    /** container of the unique pointers to the Atomic Orbitals 
      *
-     * the size of this container being determined by the number 
-     * of unique centers
+     * size of LOBasisSet = number  of unique centers
      */
     vector<COT*> LOBasisSet;
 
-    ///the distance table (ion-electron)
+    /** distance table, e.g., ion-electron
+     *
+     * Localized basis sets require a pair relationship between CenterSys 
+     * and the quantum particle set. 
+     */
     const DistanceTableData* myTable;
 
     /** constructor
