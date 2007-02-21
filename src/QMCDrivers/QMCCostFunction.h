@@ -67,7 +67,7 @@ namespace qmcplusplus {
     ///dump the current parameters and other report
     void Report();
     ///report  parameters at the end
-    void reportParameters(std::ostream& os);
+    void reportParameters();
     ///evaluate the local energies of the samples
     Return_t correlatedSampling();
 
