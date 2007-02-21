@@ -106,8 +106,7 @@ namespace qmcplusplus {
 
     bool success=optSolver->optimize(optTarget);
     app_log() << "  </log>" << endl;
-    if(qmcComm->master())
-      optTarget->reportParameters(app_log());
+    optTarget->reportParameters();
     app_log() << "</opt>" << endl;
     app_log() << "</optimization-report>" << endl;
 
