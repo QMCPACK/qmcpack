@@ -50,7 +50,6 @@ namespace qmcplusplus {
 
     SumValue.resize(SUM_INDEX_SIZE,0.0);
     IsValid=true;
-
 #if defined(QMCCOSTFUNCTION_DEBUG)
     char fname[16];
     sprintf(fname,"optdebug.p%d",OHMMS::Controller->mycontext());
@@ -58,6 +57,7 @@ namespace qmcplusplus {
     debug_stream->setf(ios::scientific, ios::floatfield);
     debug_stream->precision(8);
 #endif
+
   }
 
   /** Clean up the vector */
@@ -107,39 +107,26 @@ namespace qmcplusplus {
       NumWalkersEff=correlatedSampling();
 
       //Estimators::accumulate has been called by correlatedSampling
-      //Return_t eavg_w = SumValue[SUM_E_WGT]/SumValue[SUM_WGT];
-      //Return_t evar_w = SumValue[SUM_ESQ_WGT]/SumValue[SUM_WGT]-eavg_w*eavg_w;
       curAvg_w = SumValue[SUM_E_WGT]/SumValue[SUM_WGT];
       curVar_w = SumValue[SUM_ESQ_WGT]/SumValue[SUM_WGT]-curAvg_w*curAvg_w;
 
-      Return_t wgtinv=1.0/static_cast<Return_t>(W.getActiveWalkers());
-      //Return_t eavg = SumValue[SUM_E_BARE]*wgtinv;
-      //Return_t evar = SumValue[SUM_ESQ_BARE]*wgtinv-eavg*eavg; 
+      Return_t wgtinv=1.0/static_cast<Return_t>(NumSamples);
       curAvg = SumValue[SUM_E_BARE]*wgtinv;
       curVar = SumValue[SUM_ESQ_BARE]*wgtinv-curAvg*curAvg; 
+
+      curVar_abs = SumValue[SUM_ABSE_WGT]/SumValue[SUM_WGT];
+      CostValue = w_abs*curVar_abs+w_var*curVar;
 
       //DIFFERENT COST FUNCTIOn
       //CostValue = w_en*eavg+w_var*0.5*Tau*evar;
       //CostValue = w_abs*SumValue[SUM_ABSE_BARE]*wgtinv+w_var*evar;
-      
       //Return_t evar_abs = SumValue[SUM_ABSE_WGT]/SumValue[SUM_WGT];
       //CostValue = w_abs*evar_abs+w_var*evar;
-      curVar_abs = SumValue[SUM_ABSE_WGT]/SumValue[SUM_WGT];
-      CostValue = w_abs*curVar_abs+w_var*curVar;
-
-      ////dump to a file
-      //log_buffer << setw(5) << NumCostCalls << " ";
-      //for(int i=0; i<OptParams.size(); i++) log_buffer << setw(16) << OptParams[i];
-      //log_buffer << setw(15) << nw_effect;
-      //log_buffer << setw(16) << eavg_w << setw(16) << eavg << setw(16) << evar_w << setw(16) << evar << setw(16) << evar_abs << setw(16) << CostValue;
-      //LogOut->getStream() << log_buffer.rdbuf() << endl;
-      //log_buffer.clear();
 
       if(NumWalkersEff < NumSamples*MinNumWalkers) {
         ERRORMSG("CostFunction-> Number of Effective Walkers is too small " << NumWalkersEff)
         ERRORMSG("Going to stop now.")
         IsValid=false;
-        //OHMMS::Controller->abort();
       } 
     }
     return CostValue;
@@ -175,39 +162,16 @@ namespace qmcplusplus {
       eloc_new=H_KE.evaluate(W)+saved[ENERGY_FIXED];
       Return_t weight = UseWeight?exp(2.0*(logpsi-saved[LOGPSI_FREE])):1.0;
 
-      //////////////////////////////////////////
-      //THIS WAS TO TEST 
-      //////////////////////////////////////////
-      //Return_t logpsi2(Psi.evaluateLog(W));
-      //Return_t et= H.evaluate(W);
-      //if(abs(logpsi+saved[LOGPSI_FIXED]-logpsi2)>1e-10 || abs(et-eloc_new)>1e-3)
-      //  cout << "Check wfs and energy " << logpsi+saved[LOGPSI_FIXED]-logpsi2 << " " << et-eloc_new << endl;
       saved[ENERGY_NEW]=eloc_new;
       saved[REWEIGHT]=weight;
       wgt_tot+=weight;
-
-      //Return_t delE=pow(abs(eloc_new-EtargetEff),PowerE);
-      //SumValue[SUM_E_BARE] += eloc_new;
-      //SumValue[SUM_ESQ_BARE] += eloc_new*eloc_new;
-      //SumValue[SUM_ABSE_BARE] += delE;
-      //SumValue[SUM_E_WGT] += eloc_new*weight;
-      //SumValue[SUM_ESQ_WGT] += eloc_new*eloc_new*weight;
-      //SumValue[SUM_ABSE_WGT] += delE*weight;
-      //SumValue[SUM_WGT] += weight;
-      //SumValue[SUM_WGTSQ] += weight*weight;
       ++it;
       ++iw;
     }
 
-
-#if defined(QMCCOSTFUNCTION_DEBUG)
-     *debug_msg << "Weight sum (before)" << wgt_tot << endl;
-#endif
+    OHMMS::Controller->barrier();
     //collect the total weight for normalization and apply maximum weight
     myComm->allreduce(wgt_tot);
-#if defined(QMCCOSTFUNCTION_DEBUG)
-     *debug_msg << "Weight sum (after)" << wgt_tot << endl;
-#endif
 
     for(int i=0; i<SumValue.size(); i++) SumValue[i]=0.0;
     wgt_tot=1.0/wgt_tot;
@@ -219,7 +183,7 @@ namespace qmcplusplus {
       Return_t weight=saved[REWEIGHT]*wgt_tot;
       Return_t eloc_new=saved[ENERGY_NEW];
 
-      weight = (weight>wgt_max)? weight:wgt_max;
+      weight = (weight>wgt_max)? wgt_max:weight;
       Return_t delE=pow(abs(eloc_new-EtargetEff),PowerE);
       SumValue[SUM_E_BARE] += eloc_new;
       SumValue[SUM_ESQ_BARE] += eloc_new*eloc_new;
@@ -230,20 +194,9 @@ namespace qmcplusplus {
       SumValue[SUM_WGT] += weight;
       SumValue[SUM_WGTSQ] += weight*weight;
     }
-#if defined(QMCCOSTFUNCTION_DEBUG)
-    *debug_stream << "Before: ";
-    for(int i=0; i<SumValue.size(); i++) *debug_stream << setw(20) << SumValue[i];
-    *debug_stream << endl;
-#endif
 
     //collect everything
     myComm->allreduce(SumValue);
-
-#if defined(QMCCOSTFUNCTION_DEBUG)
-    *debug_stream << "After: ";
-    for(int i=0; i<SumValue.size(); i++) *debug_stream << setw(20) << SumValue[i];
-    *debug_stream << endl;
-#endif
 
     return SumValue[SUM_WGT]*SumValue[SUM_WGT]/SumValue[SUM_WGTSQ];
   }
@@ -255,6 +208,20 @@ namespace qmcplusplus {
       HDFWalkerInputCollect wReader(aroot);
       wReader.putSingle(W);
     }
+
+#if defined(QMCCOSTFUNCTION_DEBUG)
+    if(debug_stream) delete debug_stream;
+    char fname[16];
+    sprintf(fname,"optdebug.p%d",OHMMS::Controller->mycontext());
+    debug_stream = new ofstream(fname);
+    debug_stream->setf(ios::scientific, ios::floatfield);
+    debug_stream->precision(8);
+
+    *debug_stream << "Initial : " << endl;
+    for(int i=0; i<OptParams.size(); i++) 
+      *debug_stream << " " << IDtag[i] << "=" << OptParams[i];
+    *debug_stream << endl;
+#endif
   }
 
   /** evaluate everything before optimization */
@@ -284,8 +251,8 @@ namespace qmcplusplus {
   QMCCostFunction::checkConfigurations() {
 
     dL.resize(W.getTotalNum());
-    NumSamples=W.getActiveWalkers();
-    Records.resize(NumSamples,6);
+    int numLocWalkers=W.getActiveWalkers();
+    Records.resize(numLocWalkers,6);
 
     typedef MCWalkerConfiguration::Walker_t Walker_t;
     MCWalkerConfiguration::iterator it(W.begin()); 
@@ -322,7 +289,7 @@ namespace qmcplusplus {
     //Need to sum over the processors
     vector<Return_t> etemp(2);
     etemp[0]=Etarget;
-    etemp[1]=static_cast<Return_t>(NumSamples);
+    etemp[1]=static_cast<Return_t>(numLocWalkers);
     myComm->allreduce(etemp);
     Etarget = static_cast<Return_t>(etemp[0]/etemp[1]);
     NumSamples = static_cast<int>(etemp[1]);
@@ -354,6 +321,8 @@ namespace qmcplusplus {
   
   void QMCCostFunction::Report() {
 
+    Psi.resetParameters(OptVariables);
+
     if(myComm->master()) {
       updateXmlNodes();
       char newxml[128];
@@ -375,26 +344,40 @@ namespace qmcplusplus {
     //save the converged values
     for(int i=0; i<OptParams.size(); i++) FinalOptVariables[IDtag[i]]=OptParams[i];
 
+#if defined(QMCCOSTFUNCTION_DEBUG)
+    *debug_stream << ReportCounter;
+    for(int i=0; i<OptParams.size(); i++) 
+      *debug_stream << " " << IDtag[i] << "=" << OptParams[i];
+    *debug_stream << endl;
+#endif
+
+
     ReportCounter++;
     OHMMS::Controller->barrier();
   }
 
-  void QMCCostFunction::reportParameters(std::ostream& os) {
+  void QMCCostFunction::reportParameters() {
 
-    char newxml[128];
-    sprintf(newxml,"%s.opt.xml", RootName.c_str());
-    os << "  <optVariables href=\"" << newxml << "\">" << endl;
     for(int i=0; i<OptParams.size(); i++) 
     {
       OptParams[i]=FinalOptVariables[IDtag[i]];
       OptVariables[IDtag[i]]=OptParams[i];
       Psi.VarList[IDtag[i]]=OptParams[i];
-      os << "      " << IDtag[i] << " "<< OptParams[i]<<endl;;
     }
-    os << "  </optVariables>" << endl;
 
-    updateXmlNodes();
-    xmlSaveFormatFile(newxml,m_doc_out,1);
+    Psi.resetParameters(OptVariables);
+
+    if(myComm->master())
+    {
+      char newxml[128];
+      sprintf(newxml,"%s.opt.xml", RootName.c_str());
+      *msg_stream << "  <optVariables href=\"" << newxml << "\">" << endl;
+      for(int i=0; i<OptParams.size(); i++) 
+        *msg_stream << "      " << IDtag[i] << " "<< OptParams[i]<<endl;;
+      *msg_stream << "  </optVariables>" << endl;
+      updateXmlNodes();
+      xmlSaveFormatFile(newxml,m_doc_out,1);
+    }
   }
 
   /** Apply constraints on the optimizables. 
@@ -556,6 +539,7 @@ namespace qmcplusplus {
   }
 
   void QMCCostFunction::updateXmlNodes() {
+
     if(m_doc_out == NULL) {//first time, create a document tree and get parameters and attributes to be updated
       m_doc_out = xmlNewDoc((const xmlChar*)"1.0");
       xmlNodePtr qm_root = xmlNewNode(NULL, BAD_CAST "qmcsystem"); 
@@ -604,7 +588,7 @@ namespace qmcplusplus {
       xmlXPathFreeContext(acontext);
     }
 
-    Psi.resetParameters(OptVariables);
+    //Psi.resetParameters(OptVariables);
 
     map<string,xmlNodePtr>::iterator pit(paramNodes.begin()), pit_end(paramNodes.end());
     while(pit != pit_end)
