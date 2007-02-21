@@ -24,13 +24,23 @@
 #include "OhmmsData/ParameterSet.h"
 #include "Message/CommOperators.h"
 #include <set>
+//#define QMCCOSTFUNCTION_DEBUG
+
+template<> inline void
+Communicate::allreduce(qmcplusplus::TinyVector<double,8>& g)
+{
+  APPNAMESPACE::TinyVector<double,8> gt(g);
+  MPI_Allreduce(g.begin(), gt.begin(), 8, MPI_DOUBLE, MPI_SUM, myMPI);
+  g = gt;
+}
+
 namespace qmcplusplus {
 
   QMCCostFunction::QMCCostFunction(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h):
     W(w),Psi(psi),H(h),
     UseWeight(false), PowerE(2), NumCostCalls(0), NumSamples(0), MaxWeight(5),
     w_en(0.0), w_var(0.0), w_abs(1.0),
-    CorrelationFactor(0.0), m_wfPtr(NULL), m_doc_out(NULL), msg_stream(0)
+    CorrelationFactor(0.0), m_wfPtr(NULL), m_doc_out(NULL), msg_stream(0), debug_stream(0)
   { 
 
     paramList.resize(10); 
@@ -45,13 +55,22 @@ namespace qmcplusplus {
     //if(Estimators == 0) Estimators =new ScalarEstimatorManager(H_KE);
     H_KE.add2WalkerProperty(W);
 
+    SumValue.resize(SUM_INDEX_SIZE,0.0);
     IsValid=true;
+
+#if defined(QMCCOSTFUNCTION_DEBUG)
+    char fname[16];
+    sprintf(fname,"optdebug.p%d",OHMMS::Controller->mycontext());
+    debug_stream = new ofstream(fname);
+    debug_stream->setf(ios::scientific, ios::floatfield);
+    debug_stream->precision(8);
+#endif
   }
 
   /** Clean up the vector */
   QMCCostFunction::~QMCCostFunction() {
     if(m_doc_out != NULL) xmlFreeDoc(m_doc_out);
-
+    if(debug_stream) delete debug_stream;
   }
 
   void QMCCostFunction::setTargetEnergy(Return_t et) {
@@ -143,7 +162,7 @@ namespace qmcplusplus {
     Return_t eloc_new;
     int iw=0;
     Return_t wgt_tot=0.0;
-    //SumValue=0.0;
+
     while(it != it_end) {
       Walker_t& thisWalker(**it);
       Return_t* restrict saved = Records[iw];
@@ -173,6 +192,7 @@ namespace qmcplusplus {
       saved[ENERGY_NEW]=eloc_new;
       saved[REWEIGHT]=weight;
       wgt_tot+=weight;
+
       //Return_t delE=pow(abs(eloc_new-EtargetEff),PowerE);
       //SumValue[SUM_E_BARE] += eloc_new;
       //SumValue[SUM_ESQ_BARE] += eloc_new*eloc_new;
@@ -187,14 +207,14 @@ namespace qmcplusplus {
     }
 
     //collect the total weight for normalization and apply maximum weight
-    gsum(wgt_tot,0);
+    myComm->allreduce(wgt_tot);
 
-
-    SumValue=0.0;
+    std::fill(SumValue.begin(),SumValue.end(),0.0);
     wgt_tot=1.0/wgt_tot;
 
     Return_t wgt_max=MaxWeight*wgt_tot;
-    for(iw=0; iw<NumSamples;iw++) {
+    int nw=Records.size();
+    for(iw=0; iw<nw;iw++) {
       Return_t* restrict saved = Records[iw];
       Return_t weight=saved[REWEIGHT]*wgt_tot;
       Return_t eloc_new=saved[ENERGY_NEW];
@@ -212,7 +232,7 @@ namespace qmcplusplus {
     }
 
     //collect everything
-    gsum(SumValue,0);
+    myComm->allreduce(SumValue);
 
     return SumValue[SUM_WGT]*SumValue[SUM_WGT]/SumValue[SUM_WGTSQ];
   }
@@ -253,9 +273,9 @@ namespace qmcplusplus {
   QMCCostFunction::checkConfigurations() {
 
     dL.resize(W.getTotalNum());
-
     NumSamples=W.getActiveWalkers();
     Records.resize(NumSamples,6);
+
     typedef MCWalkerConfiguration::Walker_t Walker_t;
     MCWalkerConfiguration::iterator it(W.begin()); 
     MCWalkerConfiguration::iterator it_end(W.end()); 
@@ -292,11 +312,12 @@ namespace qmcplusplus {
     vector<Return_t> etemp(2);
     etemp[0]=Etarget;
     etemp[1]=static_cast<Return_t>(NumSamples);
-    gsum(etemp,0);
+    myComm->allreduce(etemp);
     Etarget = static_cast<Return_t>(etemp[0]/etemp[1]);
     NumSamples = static_cast<int>(etemp[1]);
 
     setTargetEnergy(Etarget);
+
     ReportCounter=0;
   }
 
@@ -321,6 +342,7 @@ namespace qmcplusplus {
   }
   
   void QMCCostFunction::Report() {
+
     if(myComm->master()) {
       updateXmlNodes();
       char newxml[128];
@@ -336,10 +358,12 @@ namespace qmcplusplus {
         for(int i=0; i<OptParams.size(); i++) *msg_stream << setw(16) << OptParams[i];
         *msg_stream << endl;
 
-        //save the converged values
-        for(int i=0; i<OptParams.size(); i++) FinalOptVariables[IDtag[i]]=OptParams[i];
       }
     }
+
+    //save the converged values
+    for(int i=0; i<OptParams.size(); i++) FinalOptVariables[IDtag[i]]=OptParams[i];
+
     ReportCounter++;
     OHMMS::Controller->barrier();
   }
@@ -508,6 +532,7 @@ namespace qmcplusplus {
     app_log() << "  Input Optimizable Variable List" << endl;
     for(int i=0; i<NumOptimizables; i++)
       app_log() << "    " << IDtag[i] << "=" << OptParams[i] << endl;
+
 
     if(msg_stream) {
       msg_stream->setf(ios::scientific, ios::floatfield);

@@ -43,8 +43,9 @@ namespace qmcplusplus {
     typedef VarRegistry<Return_t> OptimizableSetType;
 
     enum FieldIndex_OPT {LOGPSI_FIXED=0, LOGPSI_FREE=1, ENERGY_TOT=2, ENERGY_FIXED=3, ENERGY_NEW=4, REWEIGHT=5};
-    enum SumIndex_OPT {SUM_E_BARE, SUM_ESQ_BARE, SUM_ABSE_BARE,
-      SUM_E_WGT, SUM_ESQ_WGT, SUM_ABSE_WGT, SUM_WGT, SUM_WGTSQ};
+    enum SumIndex_OPT {SUM_E_BARE=0, SUM_ESQ_BARE, SUM_ABSE_BARE,
+      SUM_E_WGT, SUM_ESQ_WGT, SUM_ABSE_WGT, SUM_WGT, SUM_WGTSQ,
+      SUM_INDEX_SIZE};
 
 
     ///Constructor.
@@ -191,7 +192,7 @@ namespace qmcplusplus {
      *
      * SumValues[k] where k is one of SumIndex_opt
      */
-    TinyVector<Return_t,8> SumValue;
+    std::vector<Return_t> SumValue;
     /** Saved properties of all the walkers
      *
      * Records(iw,field_id) returns the field_id value of the iw-th walker
@@ -205,6 +206,8 @@ namespace qmcplusplus {
     bool checkParameters();
     bool putOptParams();  
     void updateXmlNodes();
+
+    ostream* debug_stream;
   };
 }
 #endif
