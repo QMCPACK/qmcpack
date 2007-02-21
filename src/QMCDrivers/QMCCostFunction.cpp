@@ -26,13 +26,6 @@
 #include <set>
 //#define QMCCOSTFUNCTION_DEBUG
 
-template<> inline void
-Communicate::allreduce(qmcplusplus::TinyVector<double,8>& g)
-{
-  APPNAMESPACE::TinyVector<double,8> gt(g);
-  MPI_Allreduce(g.begin(), gt.begin(), 8, MPI_DOUBLE, MPI_SUM, myMPI);
-  g = gt;
-}
 
 namespace qmcplusplus {
 
@@ -206,14 +199,21 @@ namespace qmcplusplus {
       ++iw;
     }
 
+
+#if defined(QMCCOSTFUNCTION_DEBUG)
+     *debug_msg << "Weight sum (before)" << wgt_tot << endl;
+#endif
     //collect the total weight for normalization and apply maximum weight
     myComm->allreduce(wgt_tot);
+#if defined(QMCCOSTFUNCTION_DEBUG)
+     *debug_msg << "Weight sum (after)" << wgt_tot << endl;
+#endif
 
-    std::fill(SumValue.begin(),SumValue.end(),0.0);
+    for(int i=0; i<SumValue.size(); i++) SumValue[i]=0.0;
     wgt_tot=1.0/wgt_tot;
 
     Return_t wgt_max=MaxWeight*wgt_tot;
-    int nw=Records.size();
+    int nw=W.getActiveWalkers();
     for(iw=0; iw<nw;iw++) {
       Return_t* restrict saved = Records[iw];
       Return_t weight=saved[REWEIGHT]*wgt_tot;
@@ -230,9 +230,20 @@ namespace qmcplusplus {
       SumValue[SUM_WGT] += weight;
       SumValue[SUM_WGTSQ] += weight*weight;
     }
+#if defined(QMCCOSTFUNCTION_DEBUG)
+    *debug_stream << "Before: ";
+    for(int i=0; i<SumValue.size(); i++) *debug_stream << setw(20) << SumValue[i];
+    *debug_stream << endl;
+#endif
 
     //collect everything
     myComm->allreduce(SumValue);
+
+#if defined(QMCCOSTFUNCTION_DEBUG)
+    *debug_stream << "After: ";
+    for(int i=0; i<SumValue.size(); i++) *debug_stream << setw(20) << SumValue[i];
+    *debug_stream << endl;
+#endif
 
     return SumValue[SUM_WGT]*SumValue[SUM_WGT]/SumValue[SUM_WGTSQ];
   }
