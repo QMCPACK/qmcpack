@@ -143,9 +143,11 @@ namespace qmcplusplus {
     if(vmcEngine ==0)
     {
       vmcEngine = new VMCSingle(W,Psi,H);
+      vmcEngine->setCommunicator(qmcComm);
     }
 
-    vmcEngine->setStatus(RootName,RootName,AppendRun);
+    string h5in;//pass empty string so that it does try to read anything
+    vmcEngine->setStatus(RootName,h5in,AppendRun);
     vmcEngine->process(qsave);
 
     if(optSolver ==0)
