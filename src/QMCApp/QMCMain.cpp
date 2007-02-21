@@ -172,17 +172,18 @@ namespace qmcplusplus {
       xmlAttrPtr t1=xmlNewProp(cur,(const xmlChar*)"completed", (const xmlChar*)"no");
     }
 
+    bool success=true;
     if(toRunQMC) 
     {
       qmcSystem = ptclPool->getWalkerSet(target);
-      bool good = runQMC(cur);
-      if(good && noloop) 
+      success = runQMC(cur);
+      if(success && noloop) 
       {
         xmlAttrPtr t1=xmlSetProp(cur,(const xmlChar*)"completed", (const xmlChar*)"yes");
       } 
       FirstQMC=false;
-      return good;
     }
+    return success;
   }
 
   /** validate the main document
