@@ -85,18 +85,26 @@ namespace qmcplusplus {
 
     void setBasisSet(BasisSetType* abasis) { GeminalBasis=abasis;}
 
-    bool put(xmlNodePtr cur, VarRegistry<RealType>& varlist);
+    bool put(xmlNodePtr cur, OptimizableSetType& varlist);
+
+    void addOptimizables(OptimizableSetType& varlist);
 
   private:
 
+    ///reference to the center
+    const ParticleSet& CenterRef;
+    ///distance table
     const DistanceTableData* d_table;
+    ///size of the localized basis set
     int BasisSize;
+    ///number of particles
     int NumPtcls;
-    ///root name for Lambda compoenents
-    string ID_Lambda;
-    ParticleSet& CenterRef;
+    ///offset of the index
+    int IndexOffSet;
     /** temporary value for update */
     ValueType diffVal;
+    ///root name for Lambda compoenents
+    string ID_Lambda;
     /** Y(iat,ibasis) value of the iat-th ortbial, the basis index ibasis
      */
     Matrix<ValueType> Y;

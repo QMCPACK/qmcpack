@@ -7,7 +7,6 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
@@ -27,14 +26,15 @@ using namespace std;
 namespace qmcplusplus {
 
   ThreeBodyGeminal::ThreeBodyGeminal(ParticleSet& ions, ParticleSet& els): 
-    CenterRef(ions), GeminalBasis(0) {
-    d_table = DistanceTable::add(ions,els);
-    NumPtcls=els.getTotalNum();
-  }
+    CenterRef(ions), GeminalBasis(0), IndexOffSet(1), ID_Lambda("j3g")
+    {
+      d_table = DistanceTable::add(ions,els);
+      NumPtcls=els.getTotalNum();
+    }
 
-  ThreeBodyGeminal::~ThreeBodyGeminal() {
+  ThreeBodyGeminal::~ThreeBodyGeminal() 
+  {
     //clean up
-
   }
 
   void ThreeBodyGeminal::resetTargetParticleSet(ParticleSet& P) 
@@ -47,14 +47,14 @@ namespace qmcplusplus {
   void ThreeBodyGeminal::resetParameters(OptimizableSetType& optVariables) 
   {
     char coeffname[16];
-    for(int ib=0; ib<BasisSize-1; ib++) {
-      sprintf(coeffname,"%s_%d_%d",ID_Lambda.c_str(),ib,ib);
+    for(int ib=0; ib<BasisSize; ib++) {
+      sprintf(coeffname,"%s_%d_%d",ID_Lambda.c_str(),ib+IndexOffSet,ib+IndexOffSet);
       OptimizableSetType::iterator it(optVariables.find(coeffname));
       if(it != optVariables.end()) Lambda(ib,ib)=(*it).second;
 
       for(int jb=ib+1; jb<BasisSize; jb++) 
       {
-        sprintf(coeffname,"%s_%d_%d",ID_Lambda.c_str(),ib,jb);
+        sprintf(coeffname,"%s_%d_%d",ID_Lambda.c_str(),ib+IndexOffSet,jb+IndexOffSet);
         it=optVariables.find(coeffname);
         if(it != optVariables.end()) 
           Lambda(jb,ib) = Lambda(ib,jb) = (*it).second;
@@ -345,7 +345,8 @@ namespace qmcplusplus {
     }
 
 
-  bool ThreeBodyGeminal::put(xmlNodePtr cur, VarRegistry<RealType>& varlist) {
+  bool ThreeBodyGeminal::put(xmlNodePtr cur, OptimizableSetType& varlist) 
+  {
 
     //BasisSize = GeminalBasis->TotalBasis;
     BasisSize = GeminalBasis->getBasisSetSize();
@@ -358,15 +359,21 @@ namespace qmcplusplus {
     //identity is the default
     for(int ib=0; ib<BasisSize; ib++) Lambda(ib,ib)=1.0;
 
-    if(cur != NULL) { 
-      char coeffname[128];
+    if(cur == NULL) 
+    { 
+      addOptimizables(varlist);
+    }
+    else 
+    {//read from an input nodes
+      char coeffname[16];
       string aname("j3g");
       string datatype("no");
-
+      IndexOffSet=1;
       OhmmsAttributeSet attrib;
       attrib.add(aname,"id");
       attrib.add(aname,"name");
       attrib.add(datatype,"type");
+      attrib.add(IndexOffSet,"offset");
       attrib.put(cur);
 
       ID_Lambda=aname;
@@ -374,12 +381,13 @@ namespace qmcplusplus {
       if(datatype == "Array")
       {
         putContent(Lambda,cur);
+        addOptimizables(varlist);
         //symmetrize it
         for(int ib=0; ib<BasisSize; ib++) {
-          sprintf(coeffname,"%s_%d_%d",aname.c_str(),ib,ib);
+          sprintf(coeffname,"%s_%d_%d",aname.c_str(),ib+IndexOffSet,ib+IndexOffSet);
           varlist[coeffname]=Lambda(ib,ib);
           for(int jb=ib+1; jb<BasisSize; jb++) {
-            sprintf(coeffname,"%s_%d_%d",aname.c_str(),ib,jb);
+            sprintf(coeffname,"%s_%d_%d",aname.c_str(),ib+IndexOffSet,jb+IndexOffSet);
             Lambda(jb,ib) = Lambda(ib,jb);
             varlist[coeffname]=Lambda(ib,jb);
           }
@@ -387,18 +395,18 @@ namespace qmcplusplus {
       }
       else 
       {
-        int offset=1;
         xmlNodePtr tcur=cur->xmlChildrenNode;
         while(tcur != NULL) {
           if(xmlStrEqual(tcur->name,(const xmlChar*)"lambda")) {
-            int i=atoi((const char*)(xmlGetProp(tcur,(const xmlChar*)"i")))-offset;
-            int j=atoi((const char*)(xmlGetProp(tcur,(const xmlChar*)"j")))-offset;
+            int iIn=atoi((const char*)(xmlGetProp(tcur,(const xmlChar*)"i")));
+            int jIn=atoi((const char*)(xmlGetProp(tcur,(const xmlChar*)"j")));
+            int i=iIn-IndexOffSet;
+            int j=jIn-IndexOffSet;
             double c=atof((const char*)(xmlGetProp(tcur,(const xmlChar*)"c")));
             Lambda(i,j)=c;
             if(i != j) Lambda(j,i)=c;
-            sprintf(coeffname,"%s_%d_%d",aname.c_str(),i,j);
+            sprintf(coeffname,"%s_%d_%d",aname.c_str(),iIn,jIn);
             varlist[coeffname]=c;
-            //varlist.add(coeffname,Lambda.data()+i*BasisSize+j);
           }
           tcur=tcur->next;
         }
@@ -430,6 +438,20 @@ namespace qmcplusplus {
     //GeminalBasis->resize(NumPtcls);
 
     return true;
+  }
+
+  void ThreeBodyGeminal::addOptimizables(OptimizableSetType& varlist) 
+  {
+    char coeffname[16];
+    for(int ib=0; ib<BasisSize; ib++) {
+      sprintf(coeffname,"%s_%d_%d",ID_Lambda.c_str(),ib+IndexOffSet,ib+IndexOffSet);
+      varlist[coeffname]=Lambda(ib,ib);
+      for(int jb=ib+1; jb<BasisSize; jb++) {
+        sprintf(coeffname,"%s_%d_%d",ID_Lambda.c_str(),ib+IndexOffSet,jb+IndexOffSet);
+        Lambda(jb,ib) = Lambda(ib,jb);
+        varlist[coeffname]=Lambda(ib,jb);
+      }
+    }
   }
 }
 /***************************************************************************
