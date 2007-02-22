@@ -33,7 +33,7 @@ namespace qmcplusplus {
 
   ScalarEstimatorManager::ScalarEstimatorManager(QMCHamiltonian& h, Communicate* c): 
     MainEstimatorName("elocal"), FileManager(true), CollectSum(false), 
-    AccumulateBlocks(false), ManagerNode(false), firstReport(true), 
+    AccumulateBlocks(false), ManagerNode(false), firstReport(true), HasIrecvIssued(false),
     NodeWeight(1.0), RootName("estimator"), myNodeID(0), numNodes(1),
     OutStream(0),  H(h), myComm(0), MainEstimator(0) 
     { 
@@ -459,9 +459,11 @@ namespace qmcplusplus {
       }
       OutStream->setf(ios::right,ios::adjustfield);
     }
+
 #if defined(QMC_ASYNC_COLLECT)
     if(ManagerNode) 
     { //initiate the recv
+      HasIrecvIssued=true;
       for(int i=1,is=0; i<numNodes; i++,is++) 
         //MPI_Irecv(RemoteData[i]->begin(),msgBufferSize,MPI_DOUBLE,i,i,MPI_COMM_WORLD,&(myRequest[is]));
         MPI_Irecv(RemoteData[i]->data(),msgBufferSize,
@@ -486,10 +488,10 @@ namespace qmcplusplus {
     if(OutStream) delete OutStream;
     OutStream = 0;
 #if defined(QMC_ASYNC_COLLECT)
-    if(ManagerNode) 
+    if(ManagerNode && HasIrecvIssued)
     {//cancel irecv initiazed by flush
-      for(int is=0; is<numNodes-1; is++) 
-        MPI_Cancel(&myRequest[is]);
+      for(int is=0; is<numNodes-1; is++) MPI_Cancel(&myRequest[is]);
+      HasIrecvIssued=false;
     }
 #endif
   }
@@ -520,6 +522,7 @@ namespace qmcplusplus {
           BufferType::const_iterator rit(RemoteData[is]->begin()), rit_end(RemoteData[is]->end());
           while(rit != rit_end) (*tit++) += (*rit++);
         }
+        HasIrecvIssued=false;
       }
 
       RemoteData[0]->rewind();
@@ -563,6 +566,7 @@ namespace qmcplusplus {
 #if defined(QMC_ASYNC_COLLECT)
     if(ManagerNode) 
     {
+      HasIrecvIssued=true;
       for(int i=1,is=0; i<numNodes; i++,is++) 
         //MPI_Irecv(RemoteData[i]->begin(),msgBufferSize,MPI_DOUBLE,i,i,MPI_COMM_WORLD,&(myRequest[is]));
         MPI_Irecv(RemoteData[i]->data(),msgBufferSize,MPI_DOUBLE,i,i,myComm->getMPI(),&(myRequest[is]));

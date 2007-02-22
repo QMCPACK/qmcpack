@@ -155,6 +155,8 @@ namespace qmcplusplus {
     bool firstReport;
     ///if true, needs to collect data using irecv.
     bool ManagerNode;
+    ///if true, needs to cancel it
+    bool HasIrecvIssued;
     int BinSize;
     int index;
 
