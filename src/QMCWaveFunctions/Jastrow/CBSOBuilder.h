@@ -16,7 +16,6 @@
 #define QMCPLUSPLUS_SPHERICALBASISBUILDER_H
 
 #include "Configuration.h"
-#include "Message/Communicate.h"
 #include "QMCWaveFunctions/Jastrow/SplineFunctors.h"
 //#include "QMCWaveFunctions/Jastrow/CubicBsplineGroup.h"
 #include "QMCWaveFunctions/SphericalBasisSet.h"
@@ -28,9 +27,12 @@ namespace qmcplusplus {
    * CBSO stands for CubicBSplineOrbitals
    * For a center,
    *   - only one grid is used
-   *   - any number of radial orbitals  of CubicBsplineGroup<T,GRIDTYPE>
+   *   - any number of radial orbitals  of CubicBsplineSingle
+   *
+   * Will test the group function later using CubicBsplineGroup<T,GRIDTYPE>
    */
-  class CBSOBuilder: public QMCTraits {
+  class CBSOBuilder: public QMCTraits 
+  {
 
     public:
       typedef CubicBsplineGrid<RealType,LINEAR_1DGRID,FIRSTDERIV_CONSTRAINTS> GridType;

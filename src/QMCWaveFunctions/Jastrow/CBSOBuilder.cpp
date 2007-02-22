@@ -17,6 +17,7 @@
 #include "Numerics/LibxmlNumericIO.h"
 #include "Numerics/GaussianBasisSet.h"
 #include "QMCWaveFunctions/Jastrow/CBSOBuilder.h"
+#include "QMCWaveFunctions/Jastrow/WMFunctor.h"
 #include "OhmmsData/AttributeSet.h"
 
 namespace qmcplusplus {
@@ -97,20 +98,26 @@ namespace qmcplusplus {
       app_log() << "   " << L << " basisGroup  contains " << gset->size() << " radial functors." << endl;
       infunc=gset;
     } 
-    //else if(radtype == "WM")
-    //{
-    //  xmlNodePtr tcur=cur->children;
-    //  while(tcur != NULL)
-    //  {
-    //     string cname((const char*)(tcur->name));
-    //     if(cname == "parameter") {
-    //       WMFunctor<RealType>* a = new WMFunctor<RealType>(1.0,m_rcut);
-    //       a->put(tcur);
-    //       infunc=a;
-    //     }
-    //    tcur=tcur->next;
-    //  }
-    //}
+    else if(radtype == "WM")
+    {
+      xmlNodePtr tcur=cur->children;
+      int nr=0;
+      while(tcur != NULL)
+      {
+        string cname((const char*)(tcur->name));
+        if(cname == "radfunc")
+        {
+          OhmmsAttributeSet rAttrib;
+          RealType rcut=m_rcut;//use the global cutoff but can overwrite
+          rAttrib.add(rcut,"rcut");
+          rAttrib.put(tcur);
+          infunc = new WMFunctor<RealType>(1.0,rcut);
+          infunc->put(tcur);
+          nr++;
+        }
+        tcur=tcur->next;
+      }
+    }
 
     if(infunc) 
     {
