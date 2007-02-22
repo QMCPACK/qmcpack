@@ -28,7 +28,8 @@ namespace qmcplusplus {
   /**@ingroup WFSBuilder
    * @brief An abstract class for wave function builders
    */
-  class ThreeBodyGeminalBuilder: public OrbitalBuilderBase  {
+  class ThreeBodyGeminalBuilder: public OrbitalBuilderBase  
+  {
     
   public:
 
@@ -41,10 +42,7 @@ namespace qmcplusplus {
   protected:
 
     ParticleSet& sourcePtcl;
-    //GTOMolecularOrbitals* basisBuilder;
-    //GridMolecularOrbitals* basisBuilder;
-    //ThreeBodyGeminal* J3;
-    //BasisSetBuilder* basisBuilder;;
+    BasisSetBuilder* basisBuilder;
   };
 }
 #endif

@@ -30,7 +30,7 @@ namespace qmcplusplus {
   ThreeBodyGeminalBuilder::ThreeBodyGeminalBuilder(ParticleSet& els, 
       TrialWaveFunction& wfs, 
       ParticleSet& ions):
-    OrbitalBuilderBase(els,wfs), sourcePtcl(ions) 
+    OrbitalBuilderBase(els,wfs), sourcePtcl(ions), basisBuilder(0)
     {
     }
 
@@ -42,13 +42,15 @@ namespace qmcplusplus {
     xmlNodePtr basisPtr=NULL;
     xmlNodePtr coeffPtr=NULL;
     cur = cur->xmlChildrenNode;
-    while(cur != NULL) {
+    while(cur != NULL) 
+    {
       string cname((const char*)(cur->name));
-      if(cname == basisset_tag) {
+      if(cname == basisset_tag) 
+      {
         basisPtr=cur;
-        //call the BasisSet builder
-        //basisSet = gtoBuilder->addBasisSet(cur);
-      } else if(cname == "coefficient" || cname == "coefficients") {
+      } 
+      else if(cname == "coefficient" || cname == "coefficients") 
+      {
         coeffPtr=cur;
       }
       cur=cur->next;
@@ -57,22 +59,14 @@ namespace qmcplusplus {
     if(basisPtr != NULL)
     {
       ThreeBodyGeminal* J3 = new ThreeBodyGeminal(sourcePtcl, targetPtcl);
-      BasisSetBuilder* basisBuilder = new JastrowBasisBuilder(targetPtcl,sourcePtcl,"gto",false);
+      basisBuilder = new JastrowBasisBuilder(targetPtcl,sourcePtcl,"gto",false);
       basisBuilder->put(basisPtr);
       J3->setBasisSet(basisBuilder->myBasisSet);
-      if(coeffPtr != NULL)
-      {
-        J3->put(coeffPtr,targetPsi.VarList);
-      }
-      else
-      {
-        cout << "Coefficients are not given." << endl;
-      }
-      //add three-body jastrow
+      J3->put(coeffPtr,targetPsi.VarList);
       targetPsi.addOrbital(J3);
+      return true;
     }
-
-    return true;
+    return false;
   }
 }
 /***************************************************************************
