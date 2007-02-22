@@ -149,7 +149,7 @@ namespace qmcplusplus {
       if(cname == "radfunc") {
         OhmmsAttributeSet rAttrib;
         string radID("0");
-        RealType exponent=-1.0;
+        RealType exponent=1.0;
         RealType contraction=1.0;
         RealType rcut(curBG->Rcut);
         int rpower=0;
