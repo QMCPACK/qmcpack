@@ -40,8 +40,9 @@ namespace qmcplusplus {
     typedef LocalizedBasisSet<COT> ThisBasisSetType;
     ThisBasisSetType* curBasis= new ThisBasisSetType(sourcePtcl,targetPtcl);
 
+    //create the size vector with zeros
+    SizeOfBasisPerCenter.resize(sourcePtcl.getSpeciesSet().getTotalNum(),0);
     //create the basis set
-    //go thru the tree
     cur = cur->xmlChildrenNode;
     while(cur!=NULL) {
       string cname((const char*)(cur->name));
@@ -63,21 +64,8 @@ namespace qmcplusplus {
             int activeCenter =sourcePtcl.getSpeciesSet().findSpecies(elementType);
             curBasis->add(activeCenter, aoBasis);
             aoBuilders[elementType]=any;
-
-#if !defined(HAVE_MPI)
-            string fname(elementType);
-            fname.append(".j3.dat");
-            ofstream fout(fname.c_str());
-            int nr=aoBasis->Rnl.size();
-            double r=0.0;
-            while(r<20)
-            {
-              fout << r ;
-              for(int i=0; i<nr; i++) fout << " " << aoBasis->Rnl[i]->evaluate(r,1.0/r);
-              fout << endl;
-              r += 0.013;
-            }
-#endif
+            printRadialFunctors(elementType,aoBasis);
+            SizeOfBasisPerCenter[activeCenter]=aoBasis->Rnl.size();
           }
         }
       }
@@ -107,6 +95,26 @@ namespace qmcplusplus {
     }
 
     return true;
+  }
+
+  template<typename COT>
+  void JastrowBasisBuilder::printRadialFunctors(const string& elementType, COT* aoBasis)
+  {
+#if !defined(HAVE_MPI)
+    string fname(elementType);
+    fname.append(".j3.dat");
+    ofstream fout(fname.c_str());
+    int nr=aoBasis->Rnl.size();
+    fout << "# number of radial functors = " << nr << endl;
+    double r=0.0;
+    while(r<20)
+    {
+      fout << r ;
+      for(int i=0; i<nr; i++) fout << " " << aoBasis->Rnl[i]->evaluate(r,1.0/r);
+      fout << endl;
+      r += 0.013;
+    }
+#endif
   }
 }
 /***************************************************************************

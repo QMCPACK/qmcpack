@@ -28,7 +28,8 @@ namespace qmcplusplus {
   * Create a basis set of molecular orbital types as defined in MolecularOrbitalBasis
   * with radial wave functions on the radial grids.
   */
-  class JastrowBasisBuilder: public BasisSetBuilder {
+  class JastrowBasisBuilder: public BasisSetBuilder 
+  {
 
   public:
 
@@ -58,9 +59,23 @@ namespace qmcplusplus {
     string FuncType;
     ///save AtomiBasisBuilder<RFB>*
     map<string,BasisSetBuilder*> aoBuilders;
+    ///size of blocks
+    vector<int> SizeOfBasisPerCenter;
 
+    /** create a localized basis set
+     * 
+     * The template parameter RFBUILDER is a builder class for radial
+     * functors.
+     */
     template<typename RFBUILDER>
       void createLocalizedBasisSet(xmlNodePtr cur);
+
+    /** print the basis set 
+     * @param elementType element name
+     * @param aoBasis atomic orbtial basis associated with elementType
+     */
+    template<typename COT>
+      void printRadialFunctors(const string& elementType, COT* aoBasis);
   };
 }
 #endif
