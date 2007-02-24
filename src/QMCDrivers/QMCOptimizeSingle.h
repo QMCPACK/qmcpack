@@ -21,10 +21,12 @@
 #define QMCPLUSPLUS_QMCOPTIMIZATION_VMCSINGLE_H
 
 #include "QMCDrivers/QMCDriver.h" 
-#include "QMCDrivers/QMCCostFunction.h"
 #include "Optimize/OptimizeBase.h"
 
 namespace qmcplusplus {
+
+  ///forward declaration of a cost function
+  class QMCCostFunctionBase;
 
   /** @ingroup QMCDrivers
    * @brief Implements wave-function optimization
@@ -61,8 +63,11 @@ namespace qmcplusplus {
     int NumParts;
     ///total number of Warmup Blocks
     int WarmupBlocks;
+    ///yes/no applicable only first time
+    string SkipSampleGeneration;
     ///target cost function to optimize
-    QMCCostFunction* optTarget;
+    //QMCCostFunction* optTarget;
+    QMCCostFunctionBase* optTarget;
     ///solver
     MinimizerBase<RealType>* optSolver;
     ///vmc engine
@@ -79,6 +84,8 @@ namespace qmcplusplus {
     QMCOptimizeSingle(const QMCOptimizeSingle& a): QMCDriver(a) { }  
     ///Copy operator (disabled).
     QMCOptimizeSingle& operator=(const QMCOptimizeSingle&) { return *this;}
+
+    void generateSamples();
   };
 }
 #endif

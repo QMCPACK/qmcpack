@@ -18,11 +18,12 @@
 #ifndef QMCPLUSPLUS_COSTFUNCTION_H
 #define QMCPLUSPLUS_COSTFUNCTION_H
 
-#include <deque>
 #include "Configuration.h"
 #include "Optimize/OptimizeBase.h"
 #include "Optimize/VarList.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
+#include <deque>
+#include <set>
 
 namespace qmcplusplus {
 
@@ -171,6 +172,16 @@ namespace qmcplusplus {
     OptimizableSetType OptVariables;
     ///list of optimizables
     OptimizableSetType FinalOptVariables;
+    /** full list of optimizables
+     *
+     * The size of OptVariablesForPsi is equal to or larger than
+     * that of OptVariables due to the dependent variables.
+     */
+    OptimizableSetType OptVariablesForPsi;
+    ///list of constraint variables for equal relations
+    std::map<string,set<string>*> equalConstraints;
+    ///list of constraint variables for negative relations
+    std::map<string,set<string>*> negateConstraints;
     ///communicator
     Communicate* myComm;
     ///stream to which progress is sent
@@ -181,6 +192,8 @@ namespace qmcplusplus {
     xmlDocPtr m_doc_out;
     ///parameters to be updated
     std::map<string,xmlNodePtr> paramNodes;
+    ///coefficients to be updated
+    std::map<string,xmlNodePtr> coeffNodes;
     ///attributes to be updated
     std::map<string,pair<xmlNodePtr,string> > attribNodes;
     ///string for the file root
@@ -206,6 +219,7 @@ namespace qmcplusplus {
     bool checkParameters();
     bool putOptParams();  
     void updateXmlNodes();
+    void resetPsi();
 
     ostream* debug_stream;
   };

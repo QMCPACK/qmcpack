@@ -37,7 +37,7 @@ namespace qmcplusplus {
   CurrentStep(0), nBlocks(100), nSteps(1000), 
   nAccept(0), nReject(0), nTargetWalkers(0),
   Tau(0.001), qmcNode(NULL),
-  QMCType("invalid"), h5FileRoot("invalid"),
+  QMCType("invalid"), 
   qmcComm(0), W(w), Psi(psi), H(h), Estimators(0)
   { 
     m_param.add(nSteps,"steps","int");
@@ -125,7 +125,7 @@ namespace qmcplusplus {
 
     branchEngine->put(qmcNode);
 
-    if(firstTime && h5FileRoot.size() && h5FileRoot != "invalid") 
+    if(firstTime && h5FileRoot.size()) 
     {
       app_log() << "  Initializing BranchEngine with " << h5FileRoot << endl;
       branchEngine->read(h5FileRoot);

@@ -37,9 +37,10 @@ ENDIF(HAVE_MPI)
 SET(QMCDRIVERS 
   SimpleFixedNodeBranch.cpp
   QMCDriver.cpp
-  QMCOptimize.cpp
   QMCOptimizeSingle.cpp
   QMCCostFunction.cpp
+  QMCCostFunctionBase.cpp
+  QMCCostFunctionSingle.cpp
   WaveFunctionTester.cpp
   ${DMCDRIVERS}
 )

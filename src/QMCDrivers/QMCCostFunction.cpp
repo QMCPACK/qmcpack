@@ -115,13 +115,14 @@ namespace qmcplusplus {
       curVar = SumValue[SUM_ESQ_BARE]*wgtinv-curAvg*curAvg; 
 
       curVar_abs = SumValue[SUM_ABSE_WGT]/SumValue[SUM_WGT];
-      CostValue = w_abs*curVar_abs+w_var*curVar;
+
+      CostValue = w_abs*curVar_abs+w_var*curVar+w_en*curAvg;
 
       //DIFFERENT COST FUNCTIOn
       //CostValue = w_en*eavg+w_var*0.5*Tau*evar;
       //CostValue = w_abs*SumValue[SUM_ABSE_BARE]*wgtinv+w_var*evar;
-      //Return_t evar_abs = SumValue[SUM_ABSE_WGT]/SumValue[SUM_WGT];
       //CostValue = w_abs*evar_abs+w_var*evar;
+      //Return_t evar_abs = SumValue[SUM_ABSE_WGT]/SumValue[SUM_WGT];
 
       if(NumWalkersEff < NumSamples*MinNumWalkers) {
         ERRORMSG("CostFunction-> Number of Effective Walkers is too small " << NumWalkersEff)
@@ -299,6 +300,39 @@ namespace qmcplusplus {
     ReportCounter=0;
   }
 
+  void QMCCostFunction::resetPsi()
+  {
+
+    OptimizableSetType::iterator oit(OptVariables.begin()), oit_end(OptVariables.end());
+    while(oit != oit_end)
+    {
+      Return_t v=(*oit).second;
+      OptVariablesForPsi[(*oit).first]=v;
+      map<string,set<string>*>::iterator eit(equalConstraints.find((*oit).first));
+      if(eit != equalConstraints.end())
+      {
+        set<string>::iterator f((*eit).second->begin()),l((*eit).second->end());
+        while(f != l)
+        {
+          OptVariablesForPsi[(*f)]=v;
+          ++f;
+        }
+      }
+      ++oit;
+    }
+
+    //cout << "QMCCostFunction::resetPsi " <<endl;
+    //oit=OptVariablesForPsi.begin();
+    //oit_end=OptVariablesForPsi.end();
+    //while(oit != oit_end)
+    //{
+    //  cout << (*oit).first << "=" << (*oit).second << " ";
+    //  ++oit;
+    //}
+    //cout << endl;
+    Psi.resetParameters(OptVariablesForPsi);
+  }
+
   /** Reset the Wavefunction \f$ \Psi({\bf R},{{\bf \alpha_i}}) \f$
    *@return true always
    *
@@ -313,15 +347,14 @@ namespace qmcplusplus {
     {
       OptVariables[IDtag[i]]=OptParams[i];
     }
-
-    //reset the wavefunction for the new variables
-    Psi.resetParameters(OptVariables);
+    resetPsi();
     return true;
   }
   
   void QMCCostFunction::Report() {
 
-    Psi.resetParameters(OptVariables);
+    //reset the wavefunction for with the new variables
+    resetPsi();
 
     if(myComm->master()) {
       updateXmlNodes();
@@ -351,7 +384,6 @@ namespace qmcplusplus {
     *debug_stream << endl;
 #endif
 
-
     ReportCounter++;
     OHMMS::Controller->barrier();
   }
@@ -365,7 +397,7 @@ namespace qmcplusplus {
       Psi.VarList[IDtag[i]]=OptParams[i];
     }
 
-    Psi.resetParameters(OptVariables);
+    resetPsi();
 
     if(myComm->master())
     {
@@ -436,8 +468,34 @@ namespace qmcplusplus {
       string cname((const char*)(cur->name));
       if(cname == "optimize") {
 	oset.push_back(cur);
-      } else if(cname == "cost") {
+      } 
+      else if(cname == "cost") 
+      {
 	cset.push_back(cur);
+      } 
+      else if(cname == "set")
+      {
+        string ctype("equal");
+        string s("0");
+        OhmmsAttributeSet pAttrib;
+        pAttrib.add(ctype,"type");
+        pAttrib.add(s,"name");
+        pAttrib.put(cur);
+        if(ctype == "equal" || ctype == "=")
+        {
+          map<string,set<string>*>::iterator eit(equalConstraints.find(s));
+          set<string>* eqSet=0;
+          if(eit == equalConstraints.end())
+          {
+            eqSet = new set<string>;
+            equalConstraints[s]=eqSet;
+          }
+          else
+            eqSet = (*eit).second;
+          vector<string> econt;
+          putContent(econt,cur);
+          eqSet->insert(econt.begin(),econt.end());
+        }
       }
       cur=cur->next;
     }  
@@ -533,7 +591,7 @@ namespace qmcplusplus {
       msg_stream->precision(8);
     }
 
-    Psi.resetParameters(OptVariables);
+    resetPsi();
 
     return true;
   }
@@ -553,8 +611,8 @@ namespace qmcplusplus {
         const xmlChar* iptr=xmlGetProp(cur,(const xmlChar*)"id");
         if(iptr == NULL) continue;
         string aname((const char*)iptr);
-        OptimizableSetType::iterator oit(OptVariables.find(aname));
-        if(oit != OptVariables.end())
+        OptimizableSetType::iterator oit(OptVariablesForPsi.find(aname));
+        if(oit != OptVariablesForPsi.end())
         {
           paramNodes[aname]=cur;
         }
@@ -569,18 +627,44 @@ namespace qmcplusplus {
         string aname((const char*)iptr);
         string expID=aname+"_E";
         xmlAttrPtr aptr=xmlHasProp(cur,(const xmlChar*)"exponent");
-        OptimizableSetType::iterator oit(OptVariables.find(expID));
-        if(aptr != NULL && oit != OptVariables.end())
+        OptimizableSetType::iterator oit(OptVariablesForPsi.find(expID));
+        if(aptr != NULL && oit != OptVariablesForPsi.end())
         {
           attribNodes[expID]=pair<xmlNodePtr,string>(cur,"exponent");
         }
 
         string cID=aname+"_C";
         aptr=xmlHasProp(cur,(const xmlChar*)"contraction");
-        oit=OptVariables.find(cID);
-        if(aptr != NULL && oit != OptVariables.end())
+        oit=OptVariablesForPsi.find(cID);
+        if(aptr != NULL && oit != OptVariablesForPsi.end())
         {
           attribNodes[cID]=pair<xmlNodePtr,string>(cur,"contraction");
+        }
+      }
+      xmlXPathFreeObject(result);
+
+      result = xmlXPathEvalExpression((const xmlChar*)"//coefficients",acontext);
+      for(int iparam=0; iparam<result->nodesetval->nodeNr; iparam++) {
+        xmlNodePtr cur= result->nodesetval->nodeTab[iparam];
+        OhmmsAttributeSet cAttrib;
+        string aname("0");
+        cAttrib.add(aname,"id");
+        cAttrib.add(aname,"name");
+        cAttrib.put(cur);
+        if(aname[0] == '0') continue;
+
+        //check if any optimizables contains the id of coefficients
+        bool notlisted=true;
+        OptimizableSetType::iterator oit(OptVariablesForPsi.begin()),oit_end(OptVariablesForPsi.end());
+        while(notlisted && oit != oit_end)
+        {
+          const string& oname((*oit).first);
+          notlisted=(oname.find(aname)>=oname.size());
+          ++oit;
+        }
+        if(!notlisted)
+        {
+          coeffNodes[aname]=cur;
         }
       }
       xmlXPathFreeObject(result);
@@ -588,28 +672,83 @@ namespace qmcplusplus {
       xmlXPathFreeContext(acontext);
     }
 
-    //Psi.resetParameters(OptVariables);
-
+    //OptimizableSetType::iterator oit(OptVariablesForPsi.begin()),oit_end(OptVariablesForPsi.end());
+    //while(oit != oit_end)
+    //{
+    //  string aname((*oit).first);
+    //  Return_t v((*oit).second);
+    //  //check parameter
+    //  map<string,xmlNodePtr>::iterator pit(paramNodes.find(aname));
+    //  if(pit != paramNodes.end())
+    //  {
+    //    getContent(v,(*pit).second);
+    //  } else {
+    //    map<string,pair<xmlNodePtr,string> >::iterator ait(attribNodes.find(aname));
+    //    if(ait != attribNodes.end())
+    //    {
+    //      std::ostringstream vout;
+    //      vout.setf(ios::scientific, ios::floatfield);
+    //      vout.precision(8);
+    //      vout << v;
+    //      xmlSetProp((*ait).second.first, (const xmlChar*)(*ait).second.second.c_str(),(const xmlChar*)vout.str().c_str());
+    //    }
+    //  }
+    //  ++oit;
+    //}
     map<string,xmlNodePtr>::iterator pit(paramNodes.begin()), pit_end(paramNodes.end());
     while(pit != pit_end)
     {
-      Return_t v=OptVariables[(*pit).first];
+      Return_t v=OptVariablesForPsi[(*pit).first];
       getContent(v,(*pit).second);
       ++pit;
     }
-
     map<string,pair<xmlNodePtr,string> >::iterator ait(attribNodes.begin()), ait_end(attribNodes.end());
     while(ait != ait_end)
     {
       std::ostringstream vout;
       vout.setf(ios::scientific, ios::floatfield);
       vout.precision(8);
-      vout << OptVariables[(*ait).first];
+      vout << OptVariablesForPsi[(*ait).first];
       xmlSetProp((*ait).second.first, (const xmlChar*)(*ait).second.second.c_str(),(const xmlChar*)vout.str().c_str());
       ++ait;
     }
-  }
 
+    map<string,xmlNodePtr>::iterator cit(coeffNodes.begin()), cit_end(coeffNodes.end());
+    while(cit != cit_end)
+    {
+      string rname((*cit).first);
+      xmlNodePtr cur=(*cit).second->children;
+      while(cur != NULL)
+      {
+        string cname((const char*)(cur->name));
+        if(cname == "lambda")
+        {
+          int i=0;
+          int j=-1;
+          OhmmsAttributeSet pAttrib;
+          pAttrib.add(i,"i");
+          pAttrib.add(j,"j");
+          pAttrib.put(cur);
+          char lambda_id[32];
+          if(j<0)
+            sprintf(lambda_id,"%s_%d",rname.c_str(),i);
+          else
+            sprintf(lambda_id,"%s_%d_%d",rname.c_str(),i,j);
+          OptimizableSetType::iterator vTarget(OptVariablesForPsi.find(lambda_id));
+          if(vTarget != OptVariablesForPsi.end())
+          {
+            std::ostringstream vout;
+            vout.setf(ios::scientific, ios::floatfield);
+            vout.precision(8);
+            vout <<  (*vTarget).second;
+            xmlSetProp(cur, (const xmlChar*)"c",(const xmlChar*)vout.str().c_str());
+          }
+        }
+        cur=cur->next;
+      }
+      ++cit;
+    }
+  }
 }
 /***************************************************************************
  * $RCSfile$   $Author$
