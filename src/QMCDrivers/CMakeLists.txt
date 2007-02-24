@@ -1,11 +1,17 @@
 ####################################
 # QMC Drivers which implements various QMC algorithms
 ####################################
-SET(DMCDRIVERS
+SET(QMCDRIVERS 
   ../Estimators/LocalEnergyEstimator.cpp
   ../Estimators/ScalarEstimatorManager.cpp
   ../Estimators/MultipleEnergyEstimator.cpp
   ../Estimators/RQMCMultipleEstimator.cpp
+  SimpleFixedNodeBranch.cpp
+  QMCDriver.cpp
+  QMCOptimize.cpp
+  QMCCostFunctionBase.cpp
+  QMCCostFunctionSingle.cpp
+  WaveFunctionTester.cpp
   WalkerControlBase.cpp
   CloneManager.cpp
   QMCUpdateBase.cpp
@@ -24,25 +30,15 @@ SET(DMCDRIVERS
 )
 
 IF(ENABLE_OPENMP) 
-  SET(DMCDRIVERS ${DMCDRIVERS} DMC/DMCOMP.cpp)
+  SET(QMCDRIVERS ${QMCDRIVERS} DMC/DMCOMP.cpp)
 ENDIF(ENABLE_OPENMP) 
 
 IF(HAVE_MPI) 
-  SET(DMCDRIVERS ${DMCDRIVERS} 
+  SET(QMCDRIVERS ${QMCDRIVERS} 
   DMC/WalkerControlMPI.cpp
   DMC/WalkerReconfigurationMPI.cpp)
 ENDIF(HAVE_MPI) 
 
-
-SET(QMCDRIVERS 
-  SimpleFixedNodeBranch.cpp
-  QMCDriver.cpp
-  QMCOptimize.cpp
-  QMCCostFunctionBase.cpp
-  QMCCostFunctionSingle.cpp
-  WaveFunctionTester.cpp
-  ${DMCDRIVERS}
-)
 
 IF(NOT QMCPLUSPLUS_RELEASE)
 
@@ -57,12 +53,6 @@ IF(NOT QMCPLUSPLUS_RELEASE)
     VMC/VMCMultipleWarp.cpp
     VMC/VMCPbyPMultiWarp.cpp
   )
-
-#include GSLOptimize.cpp if libgsl is enabled
-#  IF(HAVE_LIBGSL)
-#    SET(QMCDRIVERS ${QMCDRIVERS} ../QMCDrivers/GSLOptimize.cpp)
-#  ENDIF(HAVE_LIBGSL)
-ENDIF(NOT QMCPLUSPLUS_RELEASE)
 
 ####################################
 # create libqmc 
