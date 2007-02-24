@@ -15,6 +15,8 @@ SET(JASTROW_SRCS
   Jastrow/CBSOBuilder.cpp
   Jastrow/JastrowBasisBuilder.cpp
   Jastrow/JastrowBuilder.cpp
+  Jastrow/ThreeBodyGeminal.cpp
+  Jastrow/ThreeBodyBlockSparse.cpp
   OrbitalConstraintsBase.cpp
   ComboOrbital.cpp
 )
@@ -53,12 +55,11 @@ IF(QMC_COMPLEX)
 ELSE(QMC_COMPLEX)
   SET(FERMION_SRCS ${FERMION_SRCS}
     ElectronGas/ElectronGasOrbitalBuilder.cpp
-    Jastrow/ThreeBodyGeminal.cpp
-    Jastrow/ThreeBodyGeminalBuilder.cpp
-    Jastrow/ThreeBodyPadeBuilder.cpp
     AGPDeterminant.cpp
     AGPDeterminantBuilder.cpp
   )
+#    Jastrow/ThreeBodyGeminalBuilder.cpp
+#    Jastrow/ThreeBodyPadeBuilder.cpp
 ENDIF(QMC_COMPLEX)
 
 ####################################
