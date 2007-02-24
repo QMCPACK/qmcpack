@@ -15,7 +15,7 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#include "QMCDrivers/QMCOptimizeSingle.h"
+#include "QMCDrivers/QMCOptimize.h"
 #include "Particle/HDFWalkerIO.h"
 #include "Particle/DistanceTable.h"
 #include "OhmmsData/AttributeSet.h"
@@ -27,7 +27,7 @@
 
 namespace qmcplusplus {
 
-  QMCOptimizeSingle::QMCOptimizeSingle(MCWalkerConfiguration& w,
+  QMCOptimize::QMCOptimize(MCWalkerConfiguration& w,
       TrialWaveFunction& psi, QMCHamiltonian& h):
   QMCDriver(w,psi,h), 
   PartID(0), NumParts(1), WarmupBlocks(10), 
@@ -39,7 +39,7 @@ namespace qmcplusplus {
     QMCDriverMode.set(QMC_OPTIMIZE,1);
     //read to use vmc output (just in case)
     RootName = "pot";
-    QMCType ="QMCOptimizeSingle";
+    QMCType ="QMCOptimize";
     //default method is cg
     optmethod = "cg";
     m_param.add(WarmupBlocks,"warmupBlocks","int");
@@ -47,7 +47,7 @@ namespace qmcplusplus {
   }
 
   /** Clean up the vector */
-  QMCOptimizeSingle::~QMCOptimizeSingle() 
+  QMCOptimize::~QMCOptimize() 
   { 
     delete vmcEngine;
     delete optSolver;
@@ -56,14 +56,14 @@ namespace qmcplusplus {
   /** Add configuration files for the optimization
    * @param a root of a hdf5 configuration file
    */
-  void QMCOptimizeSingle::addConfiguration(const string& a) {
+  void QMCOptimize::addConfiguration(const string& a) {
     if(a.size()) ConfigFile.push_back(a);
   }
 
   /** Reimplement QMCDriver::run
    */
   bool
-  QMCOptimizeSingle::run() {
+  QMCOptimize::run() {
 
     optTarget->setCommunicator(qmcComm);
 
@@ -107,7 +107,7 @@ namespace qmcplusplus {
     return (optTarget->getReportCounter() > 0);
   }
 
-  void QMCOptimizeSingle::generateSamples() 
+  void QMCOptimize::generateSamples() 
   {
     app_log() << "<optimization-report>" << endl;
     if(WarmupBlocks) 
@@ -135,7 +135,7 @@ namespace qmcplusplus {
    * @return true if successful
    */
   bool
-  QMCOptimizeSingle::put(xmlNodePtr q) {
+  QMCOptimize::put(xmlNodePtr q) {
 
     xmlNodePtr qsave=q;
     xmlNodePtr cur=qsave->children;
@@ -200,5 +200,5 @@ namespace qmcplusplus {
 /***************************************************************************
  * $RCSfile$   $Author: jnkim $
  * $Revision: 1286 $   $Date: 2006-08-17 12:33:18 -0500 (Thu, 17 Aug 2006) $
- * $Id: QMCOptimizeSingle.cpp 1286 2006-08-17 17:33:18Z jnkim $ 
+ * $Id: QMCOptimize.cpp 1286 2006-08-17 17:33:18Z jnkim $ 
  ***************************************************************************/

@@ -14,7 +14,7 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-/** @file QMCOptimizeSingle.h
+/** @file QMCOptimize.h
  * @brief Definition of QMCDriver which performs VMC and optimization.
  */
 #ifndef QMCPLUSPLUS_QMCOPTIMIZATION_VMCSINGLE_H
@@ -35,16 +35,16 @@ namespace qmcplusplus {
    * generated from VMC.
    */
 
-  class QMCOptimizeSingle: public QMCDriver
+  class QMCOptimize: public QMCDriver
   {
   public:
 
     ///Constructor.
-    QMCOptimizeSingle(MCWalkerConfiguration& w, TrialWaveFunction& psi, 
+    QMCOptimize(MCWalkerConfiguration& w, TrialWaveFunction& psi, 
 	    QMCHamiltonian& h);
     
     ///Destructor
-    ~QMCOptimizeSingle();
+    ~QMCOptimize();
 
     ///Run the Optimization algorithm.
     bool run();
@@ -81,9 +81,9 @@ namespace qmcplusplus {
     ///list of files storing configurations  
     vector<string> ConfigFile;
     ///Copy Constructor (disabled).
-    QMCOptimizeSingle(const QMCOptimizeSingle& a): QMCDriver(a) { }  
+    QMCOptimize(const QMCOptimize& a): QMCDriver(a) { }  
     ///Copy operator (disabled).
-    QMCOptimizeSingle& operator=(const QMCOptimizeSingle&) { return *this;}
+    QMCOptimize& operator=(const QMCOptimize&) { return *this;}
 
     void generateSamples();
   };
@@ -92,5 +92,5 @@ namespace qmcplusplus {
 /***************************************************************************
  * $RCSfile$   $Author: jnkim $
  * $Revision: 757 $   $Date: 2005-10-31 10:10:28 -0600 (Mon, 31 Oct 2005) $
- * $Id: QMCOptimizeSingle.h 757 2005-10-31 16:10:28Z jnkim $ 
+ * $Id: QMCOptimize.h 757 2005-10-31 16:10:28Z jnkim $ 
  ***************************************************************************/
