@@ -327,10 +327,18 @@ namespace qmcplusplus {
 
       //do not change the input href
       //change the content of mcwalkerset/@file attribute
+#if defined(HAVE_MPI)
+      for(int i=0; i<m_walkerset.size(); i++) {
+        char fileroot[128];
+        sprintf(fileroot,"%s.s%03d.p%03d",myProject.CurrentMainRoot(),myProject.m_series,i);
+        xmlSetProp(m_walkerset[i],(const xmlChar*)"href", (const xmlChar*)fileroot);
+      }
+#else
       for(int i=0; i<m_walkerset.size(); i++) {
         xmlSetProp(m_walkerset[i],
             (const xmlChar*)"href", (const xmlChar*)myProject.CurrentRoot());
       }
+#endif
 
       //curMethod = what;
       return true;
@@ -344,7 +352,7 @@ namespace qmcplusplus {
     OhmmsXPathObject result("/simulation/mcwalkerset",context_);
     if(result.empty()) {
       if(m_walkerset.empty()) {
-        result.put("//qmc",context_);
+        result.put("/simulation/qmc",context_);
         xmlNodePtr newnode_ptr = xmlNewNode(NULL,(const xmlChar*)"mcwalkerset");
         if(result.empty()){
           xmlAddChild(XmlDocStack.top()->getRoot(),newnode_ptr);
