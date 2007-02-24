@@ -8,7 +8,6 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
@@ -25,6 +24,15 @@
 #include "OhmmsPETE/TinyVector.h"
 #include "Numerics/OhmmsBlas.h"
 namespace qmcplusplus {
+
+  template<typename T>
+  inline T TESTDOT(const T* restrict f, const T* restrict l, const T* restrict b) 
+  {
+    T s=0;
+    while(f!=l) s += (*f++)*(*b++);
+    return s;
+  }
+
   struct MatrixOperators {
     /** static function to perform C=AB for real matrices
      *
@@ -145,6 +153,31 @@ namespace qmcplusplus {
         cerr << " Undefined C=AB with real A and complex x " << endl;
     }
 
+    template<typename T>
+    inline static void product(const Matrix<T>& A, const Matrix<T>& B, Matrix<T>& C, std::vector<int>& offset) {
+      int nr=C.rows();
+      int nb=offset.size()-1;
+      for(int i=0; i<nr; i++) 
+      {
+        for(int b=0; b<nb; b++) 
+        {
+          int firstK=offset[b];
+          int lastK=offset[b+1];
+          const T* restrict firstY=A[i]+firstK;
+          const T* restrict lastY=A[i]+lastK;
+          for(int k=firstK; k<lastK; k++) 
+          {
+            C(i,k)=TESTDOT(firstY,lastY,B[k]+firstK);
+          }
+        }
+      }
+    }
+
+//    template<typename T>
+//      inline statis void product(const Matrix<T>& A, const T* restrict x, T* restrict y)
+//      {
+//        GEMV<T,0>::apply(A.data(),x,y,A.rows(),A.cols());
+//      }
   };
 }
 #endif

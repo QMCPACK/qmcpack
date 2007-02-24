@@ -29,7 +29,7 @@
  */
 template<class T>
 inline bool 
-putContent(qmcplusplus::Vector<T>& a, xmlNodePtr cur){
+putContent(APPNAMESPACE::Vector<T>& a, xmlNodePtr cur){
   std::istringstream 
     stream((const char*)
 	   (xmlNodeListGetString(cur->doc, cur->xmlChildrenNode, 1)));
@@ -39,17 +39,17 @@ putContent(qmcplusplus::Vector<T>& a, xmlNodePtr cur){
   return true;
 }
 
-template<class T>
-inline bool 
-putContent(qmcplusplus::Matrix<T>& a, xmlNodePtr cur){
-  std::istringstream 
+template<typename T>
+inline bool
+putContent(APPNAMESPACE::Matrix<T>& a, xmlNodePtr cur){
+  std::istringstream
     stream((const char*)
-	   (xmlNodeListGetString(cur->doc, cur->xmlChildrenNode, 1)));
-  int i=0;
-  int n(a.size());
-  while(!stream.eof()&&i<n){ stream >> a(i++);}
+        (xmlNodeListGetString(cur->doc, cur->xmlChildrenNode, 1)));
+  int i=0, ntot=a.size();
+  while(!stream.eof() && i<ntot){ stream >> a(i++);}
   return true;
 }
+
 #endif
 /***************************************************************************
  * $RCSfile$   $Author$

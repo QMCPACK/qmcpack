@@ -213,6 +213,12 @@ DetUpdateTranspose(MatA& Minv,
   for(int k=0; k<nrows; k++) Minv(k,colchanged) *= ratio_inv;
 }
 
+/** inline dot product 
+ * @param a starting address of an array of type T
+ * @param b starting address of an array of type TinyVector<T,D>
+ * @param n size
+ * @return \f$ {\bf v} = \sum_i a[i] {\bf b}[i]\f$
+ */
 template<class T, unsigned D>
 inline TinyVector<T,D>
 dot(const T* a, const TinyVector<T,D>* b, int n) {
@@ -221,8 +227,19 @@ dot(const T* a, const TinyVector<T,D>* b, int n) {
   return res;
 }
 
+/** inline dot product: replacement of BLAS::dot
+ * @param a starting address of an array of type T
+ * @param b starting address of an array of type T
+ * @param n size
+ * @return  \f$ res = \sum_i a[i] b[i]\f$
+ *
+ * The arguments of this inline function are different from BLAS::dot
+ * This is more efficient than BLAS::dot due to the function overhead,
+ * if a compiler knows how to inline.
+ */
 template<class T>
-inline T dot(const T* restrict a, const T* restrict b, int n) {
+inline T 
+dot(const T* restrict a, const T* restrict b, int n) {
   T res = 0.0;
   for(int i=0; i<n; i++) res += a[i]*b[i];
   return res;
