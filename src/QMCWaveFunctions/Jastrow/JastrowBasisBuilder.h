@@ -47,6 +47,8 @@ namespace qmcplusplus {
       return 0;
     }
 
+    ///size of blocks
+    vector<int> SizeOfBasisPerCenter;
 
   private:
     ///target ParticleSet
@@ -59,9 +61,6 @@ namespace qmcplusplus {
     string FuncType;
     ///save AtomiBasisBuilder<RFB>*
     map<string,BasisSetBuilder*> aoBuilders;
-    ///size of blocks
-    vector<int> SizeOfBasisPerCenter;
-
     /** create a localized basis set
      * 
      * The template parameter RFBUILDER is a builder class for radial

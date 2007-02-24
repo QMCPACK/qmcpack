@@ -21,6 +21,7 @@
 #include "QMCWaveFunctions/Jastrow/JAABuilder.h"
 #include "QMCWaveFunctions/Jastrow/JABBuilder.h"
 #include "QMCWaveFunctions/Jastrow/ThreeBodyGeminal.h"
+#include "QMCWaveFunctions/Jastrow/ThreeBodyBlockSparse.h"
 #include "OhmmsData/AttributeSet.h"
 
 namespace qmcplusplus {
@@ -220,11 +221,11 @@ namespace qmcplusplus {
       app_error() << "     JastrowBuilder::addThreeBody requires a center. " << sourceOpt << " is invalid " << endl;
       return false;
     }
-
     app_log() << "  JastrowBuilder::addThreeBody source="<< sourceOpt <<  endl;
     xmlNodePtr basisPtr=NULL;
     xmlNodePtr coeffPtr=NULL;
     cur = cur->xmlChildrenNode;
+    string diagOnly("no");
     while(cur != NULL) {
       string cname((const char*)(cur->name));
       if(cname == basisset_tag) {
@@ -233,6 +234,9 @@ namespace qmcplusplus {
         //basisSet = gtoBuilder->addBasisSet(cur);
       } else if(cname == "coefficient" || cname == "coefficients") {
         coeffPtr=cur;
+        OhmmsAttributeSet oAttrib;
+        oAttrib.add(diagOnly,"diagonal");
+        oAttrib.put(cur);
       }
       cur=cur->next;
     }
@@ -244,13 +248,22 @@ namespace qmcplusplus {
     }
 
     ParticleSet* sourcePtcl=(*pit).second;
-    BasisSetBuilder* basisBuilder = 
+    JastrowBasisBuilder* basisBuilder = 
       new JastrowBasisBuilder(targetPtcl,*sourcePtcl,funcOpt,transformOpt == "yes");
     basisBuilder->put(basisPtr);
 
-    if(typeOpt.find("Geminal") < typeOpt.size())
+    if(diagOnly == "yes")
     {
-      app_log() << "\n  creating Three-Body-Germinal Jastrow function " << endl;
+      app_log() << "\n  creating Three-Body Jastrow function using only diagnoal blocks." << endl;
+      ThreeBodyBlockSparse* J3 = new ThreeBodyBlockSparse(*sourcePtcl, targetPtcl);
+      J3->setBasisSet(basisBuilder->myBasisSet);
+      J3->put(coeffPtr,targetPsi.VarList);
+      J3->setBlocks(basisBuilder->SizeOfBasisPerCenter);
+      targetPsi.addOrbital(J3);
+    } 
+    else
+    {
+      app_log() << "\n  creating Three-Body Jastrow function using a complete Geminal matrix." << endl;
       ThreeBodyGeminal* J3 = new ThreeBodyGeminal(*sourcePtcl, targetPtcl);
       J3->setBasisSet(basisBuilder->myBasisSet);
       J3->put(coeffPtr,targetPsi.VarList);

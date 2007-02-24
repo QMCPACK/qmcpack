@@ -14,71 +14,43 @@
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 #include "OhmmsPETE/OhmmsMatrix.h"
-#include "QMCWaveFunctions/Jastrow/ThreeBodyGeminal.h"
+#include "QMCWaveFunctions/Jastrow/ThreeBodyBlockSparse.h"
 #include "Particle/DistanceTable.h"
 #include "Particle/DistanceTableData.h"
 #include "Numerics/DeterminantOperators.h"
 #include "Numerics/OhmmsBlas.h"
+#include "Numerics/BlockMatrixFunctions.h"
 #include "Numerics/LibxmlNumericIO.h"
+#include "Utilities/IteratorUtility.h"
 using namespace std;
 #include "Numerics/MatrixOperators.h"
 #include "OhmmsData/AttributeSet.h"
 
 namespace qmcplusplus {
 
-  ThreeBodyGeminal::ThreeBodyGeminal(ParticleSet& ions, ParticleSet& els): 
-    CenterRef(ions), GeminalBasis(0), IndexOffSet(1), ID_Lambda("j3g")
+  ThreeBodyBlockSparse::ThreeBodyBlockSparse(ParticleSet& ions, ParticleSet& els): 
+    CenterRef(ions), GeminalBasis(0), IndexOffSet(1), ID_Lambda("j3g"), SameBlocksForGroup(true)
     {
       d_table = DistanceTable::add(ions,els);
       NumPtcls=els.getTotalNum();
     }
 
-  ThreeBodyGeminal::~ThreeBodyGeminal() 
+  ThreeBodyBlockSparse::~ThreeBodyBlockSparse() 
   {
-    //clean up
-  }
-
-  void ThreeBodyGeminal::resetTargetParticleSet(ParticleSet& P) 
-  {
-    d_table = DistanceTable::add(CenterRef,P);
-    GeminalBasis->resetTargetParticleSet(P);
-  }
-
-  ///reset the value of all the Two-Body Jastrow functions
-  void ThreeBodyGeminal::resetParameters(OptimizableSetType& optVariables) 
-  {
-    char coeffname[16];
-    for(int ib=0; ib<BasisSize; ib++) {
-      sprintf(coeffname,"%s_%d_%d",ID_Lambda.c_str(),ib+IndexOffSet,ib+IndexOffSet);
-      OptimizableSetType::iterator it(optVariables.find(coeffname));
-      if(it != optVariables.end()) Lambda(ib,ib)=(*it).second;
-
-      for(int jb=ib+1; jb<BasisSize; jb++) 
-      {
-        sprintf(coeffname,"%s_%d_%d",ID_Lambda.c_str(),ib+IndexOffSet,jb+IndexOffSet);
-        it=optVariables.find(coeffname);
-        if(it != optVariables.end()) 
-          Lambda(jb,ib) = Lambda(ib,jb) = (*it).second;
-      }
-    }
-    GeminalBasis->resetParameters(optVariables);
+    delete_iter(LambdaBlocks.begin(), LambdaBlocks.end());
   }
 
   OrbitalBase::ValueType 
-  ThreeBodyGeminal::evaluateLog(ParticleSet& P,
+  ThreeBodyBlockSparse::evaluateLog(ParticleSet& P,
 		                 ParticleSet::ParticleGradient_t& G, 
 		                 ParticleSet::ParticleLaplacian_t& L) {
-    //GeminalBasis->evaluate(P);
+
     GeminalBasis->evaluateForWalkerMove(P);
 
-    MatrixOperators::product(GeminalBasis->Y, Lambda, V);
+    //this could be better but it is used only sparsely
+    //MatrixOperators::product(GeminalBasis->Y, Lambda, V);
+    MatrixOperators::product(GeminalBasis->Y, Lambda, V, BlockOffset);
 
-    //Rewrite with gemm
-    //for(int i=0; i<NumPtcls; i++) {
-    //  for(int k=0; k<BasisSize; k++) {
-    //    V(i,k) = BLAS::dot(BasisSize,GeminalBasis->Y[i],Lambda[k]);
-    //  }
-    //}
     Uk=0.0;
 
     LogValue=ValueType();
@@ -112,13 +84,11 @@ namespace qmcplusplus {
   }
 
   OrbitalBase::ValueType 
-  ThreeBodyGeminal::ratio(ParticleSet& P, int iat) {
-    //GeminalBasis->evaluate(P,iat);
+  ThreeBodyBlockSparse::ratio(ParticleSet& P, int iat) {
     GeminalBasis->evaluateForPtclMove(P,iat);
     diffVal=0.0;
     for(int j=0; j<NumPtcls; j++) {
       if(j == iat) continue;
-      //diffVal+= dot(V[j],GeminalBasis->y(0),BasisSize);
       diffVal+= dot(V[j],GeminalBasis->Phi.data(),BasisSize);
     }
     return std::exp(diffVal-Uk[iat]);
@@ -126,7 +96,7 @@ namespace qmcplusplus {
 
     /** later merge the loop */
   OrbitalBase::ValueType 
-  ThreeBodyGeminal::ratio(ParticleSet& P, int iat,
+  ThreeBodyBlockSparse::ratio(ParticleSet& P, int iat,
 		    ParticleSet::ParticleGradient_t& dG,
 		    ParticleSet::ParticleLaplacian_t& dL) {
 
@@ -135,23 +105,24 @@ namespace qmcplusplus {
 
     /** later merge the loop */
   OrbitalBase::ValueType 
-  ThreeBodyGeminal::logRatio(ParticleSet& P, int iat,
+  ThreeBodyBlockSparse::logRatio(ParticleSet& P, int iat,
 		    ParticleSet::ParticleGradient_t& dG,
 		    ParticleSet::ParticleLaplacian_t& dL) {
 
-    //GeminalBasis->evaluateAll(P,iat);
     GeminalBasis->evaluateAllForPtclMove(P,iat);
 
-    //const ValueType* restrict y_ptr=GeminalBasis->y(0);
-    //const GradType* restrict  dy_ptr=GeminalBasis->dy(0);
-    //const ValueType* restrict d2y_ptr=GeminalBasis->d2y(0);
     const ValueType* restrict y_ptr=GeminalBasis->Phi.data();
     const GradType* restrict  dy_ptr=GeminalBasis->dPhi.data();
     const ValueType* restrict d2y_ptr=GeminalBasis->d2Phi.data();
 
-    for(int k=0; k<BasisSize; k++) {
-      curV[k] = BLAS::dot(BasisSize,y_ptr,Lambda[k]);
-      delV[k] = curV[k]-V[iat][k];
+    //This is the only difference from ThreeBodyGeminal
+    RealType* restrict cv_ptr = curV.data();
+    for(int b=0; b<Blocks.size(); b++)
+    {
+      int nb=Blocks[b];
+      GEMV<RealType,0>::apply(LambdaBlocks[b]->data(),y_ptr,cv_ptr,nb,nb);
+      for(int ib=0,k=BlockOffset[b];ib<nb; k++,ib++) delV[k] = (*cv_ptr++)-V[iat][k];
+      y_ptr+=nb;
     }
 
     diffVal=0.0;
@@ -185,11 +156,11 @@ namespace qmcplusplus {
     return diffVal;
   }
 
-  void ThreeBodyGeminal::restore(int iat) {
+  void ThreeBodyBlockSparse::restore(int iat) {
     //nothing to do here
   }
 
-  void ThreeBodyGeminal::acceptMove(ParticleSet& P, int iat) {
+  void ThreeBodyBlockSparse::acceptMove(ParticleSet& P, int iat) {
 
     //add the differential
     LogValue += diffVal;
@@ -211,7 +182,7 @@ namespace qmcplusplus {
 
   }
 
-  void ThreeBodyGeminal::update(ParticleSet& P, 		
+  void ThreeBodyBlockSparse::update(ParticleSet& P, 		
 		       ParticleSet::ParticleGradient_t& dG, 
 		       ParticleSet::ParticleLaplacian_t& dL,
 		       int iat) {
@@ -222,7 +193,7 @@ namespace qmcplusplus {
   }
 
   OrbitalBase::ValueType 
-  ThreeBodyGeminal::registerData(ParticleSet& P, PooledData<RealType>& buf) {
+  ThreeBodyBlockSparse::registerData(ParticleSet& P, PooledData<RealType>& buf) {
 
     evaluateLogAndStore(P);
     FirstAddressOfdY=&(dY(0,0)[0]);
@@ -246,10 +217,12 @@ namespace qmcplusplus {
   }
 
   void 
-  ThreeBodyGeminal::evaluateLogAndStore(ParticleSet& P) {
+  ThreeBodyBlockSparse::evaluateLogAndStore(ParticleSet& P) {
     GeminalBasis->evaluateForWalkerMove(P);
 
-    MatrixOperators::product(GeminalBasis->Y, Lambda, V);
+    //this could be better but it is used only sparsely
+    //MatrixOperators::product(GeminalBasis->Y, Lambda, V);
+    MatrixOperators::product(GeminalBasis->Y, Lambda, V, BlockOffset);
     
     Y=GeminalBasis->Y;
     dY=GeminalBasis->dY;
@@ -288,7 +261,7 @@ namespace qmcplusplus {
   }
 
   void 
-  ThreeBodyGeminal::copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf) {
+  ThreeBodyBlockSparse::copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf) {
     buf.get(LogValue);
     buf.get(V.begin(), V.end());
 
@@ -302,7 +275,7 @@ namespace qmcplusplus {
   }
 
   OrbitalBase::ValueType 
-  ThreeBodyGeminal::evaluate(ParticleSet& P, PooledData<RealType>& buf) {
+  ThreeBodyBlockSparse::evaluate(ParticleSet& P, PooledData<RealType>& buf) {
     buf.put(LogValue);
     buf.put(V.begin(), V.end());
 
@@ -318,7 +291,7 @@ namespace qmcplusplus {
   }
 
   OrbitalBase::ValueType 
-  ThreeBodyGeminal::updateBuffer(ParticleSet& P, PooledData<RealType>& buf) {
+  ThreeBodyBlockSparse::updateBuffer(ParticleSet& P, PooledData<RealType>& buf) {
     evaluateLogAndStore(P);
     buf.put(LogValue);
     buf.put(V.begin(), V.end());
@@ -333,7 +306,42 @@ namespace qmcplusplus {
     return LogValue;
   }
     
-  bool ThreeBodyGeminal::put(xmlNodePtr cur, OptimizableSetType& varlist) 
+  void ThreeBodyBlockSparse::resetTargetParticleSet(ParticleSet& P) 
+  {
+    d_table = DistanceTable::add(CenterRef,P);
+    GeminalBasis->resetTargetParticleSet(P);
+  }
+
+  ///reset the value of all the Two-Body Jastrow functions
+  void ThreeBodyBlockSparse::resetParameters(OptimizableSetType& optVariables) {
+    char coeffname[16];
+    for(int b=0; b<Blocks.size(); b++)
+    {
+      Matrix<RealType>& m(*LambdaBlocks[b]);
+      int firstK=BlockOffset[b];
+      int lastK=BlockOffset[b+1];
+      for(int k=firstK,ib=0; k<lastK; k++,ib++)
+      {
+        for(int kp=k,jb=ib; kp<lastK; kp++,jb++)
+        {
+          sprintf(coeffname,"%s_%d_%d",ID_Lambda.c_str(),k+IndexOffSet,kp+IndexOffSet);
+          OptimizableSetType::iterator it(optVariables.find(coeffname));
+          if(it != optVariables.end()) 
+          {
+            m(ib,jb)=Lambda(k,kp)=(*it).second;
+            if(k!=kp) m(jb,ib)=Lambda(kp,k)=(*it).second;
+          }
+        }
+      }
+    }
+
+    if(SameBlocksForGroup) checkLambda();
+
+    GeminalBasis->resetParameters(optVariables);
+  }
+
+
+  bool ThreeBodyBlockSparse::put(xmlNodePtr cur, OptimizableSetType& varlist) 
   {
 
     //BasisSize = GeminalBasis->TotalBasis;
@@ -344,6 +352,7 @@ namespace qmcplusplus {
     app_log() << "  The number of particles " << NumPtcls << endl;
 
     Lambda.resize(BasisSize,BasisSize);
+
     //identity is the default
     for(int ib=0; ib<BasisSize; ib++) Lambda(ib,ib)=1.0;
 
@@ -356,14 +365,17 @@ namespace qmcplusplus {
       char coeffname[16];
       string aname("j3g");
       string datatype("no");
+      string sameblocks("yes");
       IndexOffSet=1;
       OhmmsAttributeSet attrib;
       attrib.add(aname,"id");
       attrib.add(aname,"name");
       attrib.add(datatype,"type");
       attrib.add(IndexOffSet,"offset");
+      attrib.add(sameblocks,"sameBlocksForGroup");
       attrib.put(cur);
 
+      SameBlocksForGroup = (sameblocks == "yes");
       ID_Lambda=aname;
 
       if(datatype == "Array")
@@ -419,16 +431,65 @@ namespace qmcplusplus {
     dUk.resize(NumPtcls,NumPtcls);
     d2Uk.resize(NumPtcls,NumPtcls);
 
-
-    //app_log() << "  Three-body Geminal coefficients " << endl;
-    //app_log() << Lambda << endl;
-
-    //GeminalBasis->resize(NumPtcls);
-
     return true;
   }
 
-  void ThreeBodyGeminal::addOptimizables(OptimizableSetType& varlist) 
+
+  void ThreeBodyBlockSparse::setBlocks(const vector<int>& blockspergroup) 
+  {
+    //test with three blocks
+    Blocks.resize(CenterRef.getTotalNum());
+    for(int i=0; i<CenterRef.getTotalNum(); i++)
+      Blocks[i]=blockspergroup[CenterRef.GroupID[i]];
+
+    BlockOffset.resize(Blocks.size()+1,0);
+    for(int i=0; i<Blocks.size(); i++)
+      BlockOffset[i+1]=BlockOffset[i]+Blocks[i];
+
+    if(LambdaBlocks.empty())
+    {
+      for(int b=0; b<Blocks.size(); b++)
+      {
+        LambdaBlocks.push_back(new Matrix<RealType>(Blocks[b],Blocks[b]));
+        Matrix<RealType>& m(*LambdaBlocks[b]);
+        for(int k=BlockOffset[b],ib=0; k<BlockOffset[b+1]; k++,ib++)
+        {
+          for(int kp=BlockOffset[b],jb=0; kp<BlockOffset[b+1]; kp++,jb++)
+          {
+            m(ib,jb)=Lambda(k,kp);
+          }
+        }
+      }
+    }
+
+    if(SameBlocksForGroup) checkLambda();
+  }
+
+  /** set dependent Lambda
+   */
+  void ThreeBodyBlockSparse::checkLambda() 
+  {
+    vector<int> need2copy(CenterRef.getSpeciesSet().getTotalNum(),-1);
+    for(int i=0; i<CenterRef.getTotalNum(); i++)
+    {
+      int gid=need2copy[CenterRef.GroupID[i]];
+      if(gid<0)//assign the current block index 
+        need2copy[CenterRef.GroupID[i]] = i;
+      else
+        *(LambdaBlocks[i])=*(LambdaBlocks[gid]);
+
+      const Matrix<RealType>& m(*LambdaBlocks[i]);
+      for(int k=BlockOffset[i],ib=0; k<BlockOffset[i+1]; k++,ib++)
+      {
+        for(int kp=BlockOffset[i],jb=0; kp<BlockOffset[i+1]; kp++,jb++)
+        {
+          Lambda(k,kp)=m(ib,jb);
+        }
+      }
+    }
+  }
+
+  void ThreeBodyBlockSparse::addOptimizables(OptimizableSetType& varlist) 
   {
     char coeffname[16];
     for(int ib=0; ib<BasisSize; ib++) {
@@ -443,8 +504,8 @@ namespace qmcplusplus {
   }
 }
 /***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$ 
+ * $RCSfile$   $Author: jnkim $
+ * $Revision: 1796 $   $Date: 2007-02-22 11:40:21 -0600 (Thu, 22 Feb 2007) $
+ * $Id: ThreeBodyBlockSparse.cpp 1796 2007-02-22 17:40:21Z jnkim $ 
  ***************************************************************************/
 
