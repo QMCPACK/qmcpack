@@ -189,6 +189,107 @@ namespace qmcplusplus {
 
     };
 
+  /** Implements \f$ u(r) = A*(-\frac{1}{B} exp(-Br))*f_c(r)\f$ with a cutoff function.
+   * 
+   * This functor is not optimized and should be used only as a temporary functor
+   * for a final numerical functor to correct the cusp condition.
+   */
+  template<class T>
+    struct CuspCorrectionFunctor: public OptimizableFunctorBase<T> {
+
+      typedef OptimizableFunctorBase<T> ThisBaseType;
+      typedef typename ThisBaseType::real_type real_type;
+      typedef typename ThisBaseType::OptimizableSetType OptimizableSetType;
+
+      ///scaling function or exponent
+      real_type E;
+      ///inverse of E
+      real_type mOneOverE;
+      ///maxium cutoff radius
+      real_type Rmax;
+      ///starting cutoff radius
+      real_type Rcut;
+      ///fixed maxmium cutoff provided by the user class
+      real_type RmaxFixed;
+      ///temporary data
+      real_type R12;
+      ///temporary data for derivative
+      real_type dCosFac;
+      ///ID for variable E 
+      string ID_E;
+
+      ///default constructor not to have nan
+      CuspCorrectionFunctor():E(1.0),Rmax(1) Rcut(0), RmaxFixed(10){}
+      /** constructor
+       * @param c Cusp condition, i.e., the first derivative at r=0
+       * @param e exponent or scaling factor
+       */
+      inline CuspCorrectionFunctor(real_type e, real_type rc)
+      {
+        E=e; 
+        RmaxFixed=rc;
+        resetInternals();
+      }
+
+      inline void resetInternals()
+      {
+        mOneOverE=-1.0/E;
+        Rmax=10.0/E;
+        Rmax=(Rmax>RmaxFixed)? RmaxFixed:Rmax;
+        Rcut=0.9*Rmax;
+        R12=1.0/(Rmax-Rcut);
+        dCosFac=-0.5*M_PI*R12;
+      }
+
+      inline real_type f(real_type r)
+      {
+        if(r>Rmax) return 0.0;
+        real_type v=mOneOverE*std::exp(-E*r);
+        if(r>=Rcut)
+          return v*0.5*(1.0+std::cos(M_PI*(r-Rcut)*R12));
+        else
+          return v;
+      }
+
+      inline real_type df(real_type r) {
+        if(r>Rmax) return 0.0;
+        if(r<Rcut)
+        {
+          return std::exp(-E*r);
+        }
+        else
+        {
+          //this may be wrong but should never be used.
+          real_type rfac=M_PI*(r-Rcut)*R12;
+          return std::exp(-E*r)*(mOneOverE*dCosFac*std::sin(rfac)+0.5*(1.0+std::cos(rfac)));
+        }
+      }
+
+      bool put(xmlNodePtr cur) 
+      {
+        OhmmsAttributeSet rAttrib;
+        rAttrib.add(ID_E,"id"); 
+        rAttrib.add(E,"exponent"); 
+        rAttrib.put(cur);
+        ID_E.append("_E");
+        return true;
+      }
+
+      void addOptimizables(OptimizableSetType& vlist) 
+      {
+        vlist[ID_E]=E;
+      }
+
+      void resetParameters(OptimizableSetType& optVariables) 
+      { 
+        typename OptimizableSetType::iterator it_b(optVariables.find(ID_E));
+        if(it_b != optVariables.end()) {
+          E=(*it_b).second;
+          resetInternals();
+        }
+      }
+    };
+
 }
 #endif
 /***************************************************************************
