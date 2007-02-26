@@ -228,11 +228,12 @@ namespace qmcplusplus {
     string diagOnly("no");
     while(cur != NULL) {
       string cname((const char*)(cur->name));
-      if(cname == basisset_tag) {
+      if(cname == basisset_tag) 
+      {
         basisPtr=cur;
-        //call the BasisSet builder
-        //basisSet = gtoBuilder->addBasisSet(cur);
-      } else if(cname == "coefficient" || cname == "coefficients") {
+      } 
+      else if(cname.find("coeff")<cname.size())
+      {
         coeffPtr=cur;
         OhmmsAttributeSet oAttrib;
         oAttrib.add(diagOnly,"diagonal");
