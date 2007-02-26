@@ -1,9 +1,10 @@
-
 SET(WFBASE_SRCS
-  TrialWaveFunction.cpp
-  OrbitalBuilderBase.cpp
-  WaveFunctionFactory.cpp
-  )
+    TrialWaveFunction.cpp
+    OrbitalBuilderBase.cpp
+    WaveFunctionFactory.cpp
+    ComboOrbital.cpp
+    OrbitalConstraintsBase.cpp
+   )
 
 SET(JASTROW_SRCS
   Jastrow/LRTwoBodyJastrow.cpp
@@ -17,12 +18,9 @@ SET(JASTROW_SRCS
   Jastrow/JastrowBuilder.cpp
   Jastrow/ThreeBodyGeminal.cpp
   Jastrow/ThreeBodyBlockSparse.cpp
-  OrbitalConstraintsBase.cpp
-  ComboOrbital.cpp
 )
 
 SET(FERMION_SRCS
-  BasisSetBase.cpp
   SPOSetBase.cpp
   BasisSetFactory.cpp
   SplineSetBuilder.cpp
@@ -37,15 +35,6 @@ SET(FERMION_SRCS
   MolecularOrbitals/STOBuilder.cpp
   MolecularOrbitals/GTOBuilder.cpp
   MolecularOrbitals/NGOBuilder.cpp
-  MolecularOrbitals/STOMolecularOrbitals.cpp
-  MolecularOrbitals/GTOMolecularOrbitals.cpp
-  MolecularOrbitals/RGFBuilderBase.cpp
-  MolecularOrbitals/NumericalRGFBuilder.cpp
-  MolecularOrbitals/STO2GridBuilder.cpp
-  MolecularOrbitals/GTO2GridBuilder.cpp
-  MolecularOrbitals/Any2GridBuilder.cpp
-  MolecularOrbitals/GridMolecularOrbitals.cpp
-  MolecularOrbitals/MolecularOrbitalBuilder.cpp
 )
 
 IF(QMC_COMPLEX)
@@ -58,12 +47,23 @@ ELSE(QMC_COMPLEX)
     AGPDeterminant.cpp
     AGPDeterminantBuilder.cpp
   )
-#    Jastrow/ThreeBodyGeminalBuilder.cpp
-#    Jastrow/ThreeBodyPadeBuilder.cpp
 ENDIF(QMC_COMPLEX)
 
 ####################################
 # create libqmcwfs
 ####################################
 ADD_LIBRARY(qmcwfs ${WFBASE_SRCS} ${JASTROW_SRCS} ${FERMION_SRCS})
+
+## THESE ARE NOT USED ANYMORE
+#  Jastrow/ThreeBodyGeminalBuilder.cpp
+#  Jastrow/ThreeBodyPadeBuilder.cpp
+#  MolecularOrbitals/GridMolecularOrbitals.cpp
+#  MolecularOrbitals/RGFBuilderBase.cpp
+#  MolecularOrbitals/NumericalRGFBuilder.cpp
+#  MolecularOrbitals/Any2GridBuilder.cpp
+#  MolecularOrbitals/STOMolecularOrbitals.cpp
+#  MolecularOrbitals/GTOMolecularOrbitals.cpp
+#  MolecularOrbitals/STO2GridBuilder.cpp
+#  MolecularOrbitals/GTO2GridBuilder.cpp
+#  MolecularOrbitals/MolecularOrbitalBuilder.cpp
 

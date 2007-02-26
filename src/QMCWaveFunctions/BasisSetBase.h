@@ -20,9 +20,9 @@
 #ifndef QMCPLUSPLUS_BASISSETBASE_H
 #define QMCPLUSPLUS_BASISSETBASE_H
 
-#include "QMCWaveFunctions/OrbitalSetTraits.h"
-#include "QMCWaveFunctions/SPOSetBase.h"
 #include "Particle/ParticleSet.h"
+#include "QMCWaveFunctions/OrbitalSetTraits.h"
+#include "Optimize/VarList.h"
 
 namespace qmcplusplus {
 
@@ -33,7 +33,19 @@ namespace qmcplusplus {
    * Define a common storage for the derived classes and 
    * provides  a minimal set of interfaces to get/set BasisSetSize.
    */
-  struct BasisSetBase: public OrbitalSetTraits {
+  template<typename T>
+  struct BasisSetBase: public OrbitalSetTraits<T> {
+
+    enum {MAXINDEX=2+OHMMS_DIM};
+    typedef typename OrbitalSetTraits<T>::RealType      RealType;
+    typedef typename OrbitalSetTraits<T>::ValueType     ValueType;
+    typedef typename OrbitalSetTraits<T>::IndexType     IndexType;
+    typedef typename OrbitalSetTraits<T>::IndexVector_t IndexVector_t;
+    typedef typename OrbitalSetTraits<T>::ValueVector_t ValueVector_t;
+    typedef typename OrbitalSetTraits<T>::ValueMatrix_t ValueMatrix_t;
+    typedef typename OrbitalSetTraits<T>::GradVector_t  GradVector_t;
+    typedef typename OrbitalSetTraits<T>::GradMatrix_t  GradMatrix_t;
+    typedef VarRegistry<OHMMS_PRECISION> OptimizableSetType;
 
     ///size of the basis set
     IndexType BasisSetSize;
@@ -51,12 +63,26 @@ namespace qmcplusplus {
     ValueMatrix_t d2Y;
 
     ///default constructor
-    BasisSetBase();
+    BasisSetBase():BasisSetSize(0) { }
     ///virtual destructor
-    virtual ~BasisSetBase();
-
+    virtual ~BasisSetBase() { }
     /** resize the container */
-    void resize(int ntargets);
+    void resize(int ntargets)
+    {
+      if(BasisSetSize) 
+      {
+        Phi.resize(BasisSetSize);
+        dPhi.resize(BasisSetSize);
+        d2Phi.resize(BasisSetSize);
+        Temp.resize(BasisSetSize,MAXINDEX);
+
+        Y.resize(ntargets,BasisSetSize);
+        dY.resize(ntargets,BasisSetSize);
+        d2Y.resize(ntargets,BasisSetSize);
+      } else {
+        app_error() << "  BasisSetBase::BasisSetSize == 0" << endl;
+      }
+    }
 
     /** return the basis set size */
     inline IndexType getBasisSetSize() const {
@@ -64,7 +90,7 @@ namespace qmcplusplus {
     }
 
     ///reset the basis set
-    virtual void resetParameters(VarRegistry<RealType>& optVariables) = 0;
+    virtual void resetParameters(OptimizableSetType& optVariables) = 0;
     ///resize the basis set
     virtual void setBasisSetSize(int nbs) = 0;
     ///reset the target particle set
@@ -77,10 +103,20 @@ namespace qmcplusplus {
   };
 
 
-  /** base class for the BasisSet builder
+  /** base class for the real BasisSet builder
+   *
+   * \warning {
+   * We have not quite figured out how to use real/complex efficiently.
+   * There are three cases we have to deal with
+   * - real basis functions and real coefficients
+   * - real basis functions and complex coefficients
+   * - complex basis functions and complex coefficients
+   * For now, we decide to keep both real and complex basis sets and expect
+   * the user classes {\bf KNOW} what they need to use.
+   * }
    */
   struct BasisSetBuilder: public QMCTraits {
-    BasisSetBase* myBasisSet;
+    BasisSetBase<RealType>* myBasisSet;
     BasisSetBuilder():myBasisSet(0) {}
     virtual ~BasisSetBuilder(){}
     virtual bool put(xmlNodePtr cur)=0;

@@ -51,9 +51,7 @@ namespace qmcplusplus {
     aAttrib.add(typeOpt,"type");
     aAttrib.add(keyOpt,"keyword"); aAttrib.add(keyOpt,"key");
     aAttrib.add(transformOpt,"transform");
-    if(rootNode != NULL)  {
-      aAttrib.put(rootNode);
-    }
+    if(rootNode != NULL)  aAttrib.put(rootNode);
 
     BasisSetBuilder* bb=0;
     if(typeOpt == "spline") {
@@ -65,29 +63,36 @@ namespace qmcplusplus {
       app_log() << "  TricubicBsplineSetBuilder: b-spline on 3D TriCubicGrid " << endl;
       bb = new TricubicBsplineSetBuilder(targetPtcl,ptclPool,rootNode);
     }
-    else 
-    { 
-    //if(typeOpt == "MolecularOrbital") {
+    else if(typeOpt == "MolecularOrbital" || typeOpt == "MO") 
+    {
       ParticleSet* ions=0;
 
       //initialize with the source tag
       PtclPoolType::iterator pit(ptclPool.find(sourceOpt));
-      if(pit == ptclPool.end()) {
+      if(pit == ptclPool.end()) 
+      {
         OHMMS::Controller->abort("Molecular orbital cannot be created.\n Missing/incorrect source attribute. Abort at BasisSetFactory::createBasisSet.");
-      } else {
+      } 
+      else 
+      {
         app_log() << "  Molecular orbital with " << sourceOpt;
         ions=(*pit).second; 
       }
 
-      if(transformOpt == "yes") {
+      if(transformOpt == "yes") 
+      {
         app_log() << " by numerical radial functors." << endl;
         bb = new MolecularBasisBuilder<NGOBuilder>(targetPtcl,*ions);
-        //bb = new MolecularBasisBuilder<Any2GridBuilder>(targetPtcl,*ions);
-      } else {
-        if(keyOpt == "GTO") {
+      } 
+      else 
+      {
+        if(keyOpt == "GTO") 
+        {
           app_log() << " by analytic GTO functors." << endl;
           bb = new MolecularBasisBuilder<GTOBuilder>(targetPtcl,*ions);
-        } else if(keyOpt == "STO") {
+        } 
+        else if(keyOpt == "STO") 
+        {
           app_log() << " by analytic STO functors." << endl;
           bb = new MolecularBasisBuilder<STOBuilder>(targetPtcl,*ions);
         }

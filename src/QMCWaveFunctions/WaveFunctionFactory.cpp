@@ -26,7 +26,6 @@
 #include "QMCWaveFunctions/ElectronGas/ElectronGasComplexOrbitalBuilder.h"
 #else
 #include "QMCWaveFunctions/ElectronGas/ElectronGasOrbitalBuilder.h"
-#include "QMCWaveFunctions/MolecularOrbitals/MolecularOrbitalBuilder.h"
 #include "QMCWaveFunctions/AGPDeterminantBuilder.h"
 #endif
 #include "OhmmsData/AttributeSet.h"
@@ -69,8 +68,13 @@ namespace qmcplusplus {
         OrbitalBuilderBase *jbuilder = new JastrowBuilder(*targetPtcl,*targetPsi,ptclPool);
         success = jbuilder->put(cur);
         addNode(jbuilder,cur);
-        //success |= addJastrowTerm(cur);
       }
+      else if(cname == "agp") 
+      {
+        AGPDeterminantBuilder* agpbuilder = new AGPDeterminantBuilder(*targetPtcl,*targetPsi,ptclPool);
+        success = agpbuilder->put(cur);
+        addNode(agpbuilder,cur);
+      } 
       if(attach2Node) xmlAddChild(myNode,xmlCopyNode(cur,1));
       cur = cur->next;
     }
@@ -103,30 +107,15 @@ namespace qmcplusplus {
     {
       detbuilder = new ElectronGasOrbitalBuilder(*targetPtcl,*targetPsi);
     } 
-    else if(orbtype == "AGP") 
-    {
-      app_log() << "  Creating AGPDeterminant centers at " << nuclei << endl;
-      PtclPoolType::iterator pit(ptclPool.find(nuclei));
-      if(pit != ptclPool.end()) {
-        detbuilder = new AGPDeterminantBuilder(*targetPtcl,*targetPsi,*((*pit).second));
-      }
-    } 
-    //else if(orbtype == "STO-He-Optimized") 
-    //{
-    //  PtclPoolType::iterator pit(ptclPool.find(nuclei));
-    //  if(pit != ptclPool.end()) {
-    //    detbuilder = new HePresetHFBuilder(*targetPtcl,*targetPsi,*((*pit).second));
-    //  }
-    //} 
 #endif
     else if(orbtype == "PWBasis" || orbtype == "PW") 
     {
       detbuilder = new PWOrbitalBuilder(*targetPtcl,*targetPsi);
     } 
-    else if(orbtype == "MolecularOrbital") 
-    {
-      detbuilder = new MolecularOrbitalBuilder(*targetPtcl,*targetPsi,ptclPool);
-    } 
+    //else if(orbtype == "MolecularOrbital") 
+    //{
+    //  detbuilder = new MolecularOrbitalBuilder(*targetPtcl,*targetPsi,ptclPool);
+    //} 
     else 
     {
       app_log() << "  Creating concrete SlaterDeterminant class with SlaterDetBuilder." << endl;

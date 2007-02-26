@@ -19,6 +19,7 @@
 
 #include "Particle/ParticleSet.h"
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
+#include "QMCWaveFunctions/OrbitalSetTraits.h"
 //#define ENABLE_SMARTPOINTER
 #if defined(ENABLE_SMARTPOINTER)
 #include <boost/shared_ptr.hpp>
@@ -31,10 +32,15 @@ namespace qmcplusplus {
    * SPOSetBase stands for S(ingle)P(article)O(rbital)SetBase which contains
    * a number of single-particle orbitals with capabilities of evaluating \f$ \psi_j({\bf r}_i)\f$ 
    */
-  class SPOSetBase: public OrbitalSetTraits {
-
+  class SPOSetBase: public QMCTraits
+  {
   public:
-
+    typedef OrbitalSetTraits<ValueType>::IndexVector_t IndexVector_t;
+    typedef OrbitalSetTraits<ValueType>::ValueVector_t ValueVector_t;
+    typedef OrbitalSetTraits<ValueType>::ValueMatrix_t ValueMatrix_t;
+    typedef OrbitalSetTraits<ValueType>::GradVector_t  GradVector_t;
+    typedef OrbitalSetTraits<ValueType>::GradMatrix_t  GradMatrix_t;
+    typedef VarRegistry<RealType> OptimizableSetType;
     ///true if C is an identity matrix
     bool Identity;
     ///number of Single-particle orbtials

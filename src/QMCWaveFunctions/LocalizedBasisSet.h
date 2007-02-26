@@ -29,28 +29,32 @@
 
 namespace qmcplusplus {
 
-  /** Class for a molecular orbital basis
+  /** A localized basis set derived from BasisSetBase<typename COT::value_type>
    *
-   *The molecular orbital \f$ \psi_i \f$ can be written as a linear
-   *combination of basis functions \f$ \{\phi\} \f$ such that
-   \f[
-   \psi_i ({\bf r}_j) = \sum_I \sum_k C_{ikI} \phi_{ikI}({\bf r}_j-{\bf R}_I).
-   \f]
-   *This class performs the evaluation of the basis functions and their
-   *derivatives for each of the N-particles in a configuration.  All that 
-   *is required to generate the actual molecular orbitals is to multiply
-   *by the coefficient matrix.
-   *
-   *The template (C)entered(O)rbital(T)ype should provide the fuctions
-   <ul>
-   <li> evaluate(int source, int first, int nptcl, int offset, 
-   VM& y, GM& dy, VM& d2y) {
-   </ul>
-   *An example being SphericalOrbitalSet
+   * This class performs the evaluation of the basis functions and their
+   * derivatives for each of the N-particles in a configuration. 
+   * The template parameter COT denotes Centered-Orbital-Type which provides
+   * a set of localized orbitals associated with a center.
    */
   template<class COT>
-  struct LocalizedBasisSet: public BasisSetBase {
+  struct LocalizedBasisSet: public BasisSetBase<typename COT::value_type> {
+    typedef BasisSetBase<typename COT::value_type> BasisSetType;
+    typedef typename BasisSetType::RealType      RealType;
+    typedef typename BasisSetType::ValueType     ValueType;
+    typedef typename BasisSetType::IndexType     IndexType;
+    typedef typename BasisSetType::IndexVector_t IndexVector_t;
+    typedef typename BasisSetType::ValueVector_t ValueVector_t;
+    typedef typename BasisSetType::ValueMatrix_t ValueMatrix_t;
+    typedef typename BasisSetType::GradVector_t  GradVector_t;
+    typedef typename BasisSetType::GradMatrix_t  GradMatrix_t;
 
+    using BasisSetType::BasisSetSize;
+    using BasisSetType::Phi;
+    using BasisSetType::dPhi;
+    using BasisSetType::d2Phi;
+    using BasisSetType::Y;
+    using BasisSetType::dY;
+    using BasisSetType::d2Y;
     ///Reference to the center
     const ParticleSet& CenterSys;
     ///number of centers, e.g., ions
@@ -113,12 +117,11 @@ namespace qmcplusplus {
       for(int i=0; i<LOBasisSet.size(); i++) LOBasisSet[i]->setTable(myTable);
       //evaluate the total basis dimension and offset for each center
       BasisOffset[0] = 0;
-      for(int c=0; c<NumCenters; c++){
+      for(int c=0; c<NumCenters; c++)
 	BasisOffset[c+1] = BasisOffset[c]+LOBasis[c]->getBasisSetSize();
-      }
       BasisSetSize = BasisOffset[NumCenters];
 
-      resize(NumTargets);
+      this->resize(NumTargets);
     }
 
     void resetParameters(VarRegistry<RealType>& optVariables) 
@@ -146,17 +149,12 @@ namespace qmcplusplus {
     evaluateForWalkerMove(const ParticleSet& P, int iat) {
       for(int c=0; c<NumCenters;c++) {
 	LOBasis[c]->evaluateForWalkerMove(c,iat,BasisOffset[c],Phi,dPhi,d2Phi);
-        //int nn = myTable->M[c]+iat;
-	//LOBasis[c]->evaluate(myTable->r(nn),myTable->rinv(nn), myTable->dr(nn), 
-        //    BasisOffset[c],Phi,dPhi,d2Phi);
       }
     }
 
     inline void 
     evaluateForPtclMove(const ParticleSet& P, int iat)  {
       for(int c=0; c<NumCenters;c++) {
-	//LOBasis[c]->evaluate(myTable->Temp[c].r1,myTable->Temp[c].rinv1, myTable->Temp[c].dr1, 
-        //    BasisOffset[c],Phi);
 	LOBasis[c]->evaluateForPtclMove(c,iat,BasisOffset[c],Phi);
       }
     }
@@ -164,8 +162,6 @@ namespace qmcplusplus {
     inline void 
     evaluateAllForPtclMove(const ParticleSet& P, int iat)  {
       for(int c=0; c<NumCenters;c++) {
-	//LOBasis[c]->evaluate(myTable->Temp[c].r1,myTable->Temp[c].rinv1, myTable->Temp[c].dr1, 
-        //    BasisOffset[c],Phi,dPhi,d2Phi);
 	LOBasis[c]->evaluateAllForPtclMove(c,iat,BasisOffset[c],Phi,dPhi,d2Phi);
       }
     }
@@ -181,7 +177,6 @@ namespace qmcplusplus {
         if(CenterSys.GroupID[i] == icenter) LOBasis[i]=aos;
       }
     }
-
   };
 
 }

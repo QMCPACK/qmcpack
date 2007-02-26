@@ -8,7 +8,6 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
@@ -20,7 +19,8 @@
 #include "QMCWaveFunctions/OrbitalBase.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "OhmmsPETE/OhmmsVector.h"
-#include "QMCWaveFunctions/MolecularOrbitals/GridMolecularOrbitals.h"
+#include "QMCWaveFunctions/BasisSetBase.h"
+//#include "QMCWaveFunctions/MolecularOrbitals/GridMolecularOrbitals.h"
 //#include "QMCWaveFunctions/MolecularOrbitals/STOMolecularOrbitals.h"
 //#include "QMCWaveFunctions/MolecularOrbitals/GTOMolecularOrbitals.h"
 
@@ -31,12 +31,15 @@ namespace qmcplusplus {
 
   public:
 
-    typedef GridMolecularOrbitals::BasisSetType BasisSetType;
+    //typedef GridMolecularOrbitals::BasisSetType BasisSetType;
     //typedef STOMolecularOrbitals::BasisSetType BasisSetType;
     //typedef GTOMolecularOrbitals::BasisSetType BasisSetType;
-    typedef Matrix<ValueType> Determinant_t;
-    typedef Matrix<GradType>  Gradient_t;
-    typedef Matrix<ValueType> Laplacian_t;
+    typedef BasisSetBase<RealType> BasisSetType;
+    typedef BasisSetType::IndexVector_t IndexVector_t;
+    typedef BasisSetType::ValueVector_t ValueVector_t;
+    typedef BasisSetType::ValueMatrix_t ValueMatrix_t;
+    typedef BasisSetType::GradVector_t  GradVector_t;
+    typedef BasisSetType::GradMatrix_t  GradMatrix_t;
 
     BasisSetType* GeminalBasis;
 
@@ -171,13 +174,13 @@ namespace qmcplusplus {
     ValueType CurrentDet;
 
     ///coefficient of the up/down block
-    Determinant_t Lambda;
+    ValueMatrix_t Lambda;
 
     ///coefficient of the major block
-    Determinant_t LambdaUP;
+    ValueMatrix_t LambdaUP;
 
     /// psiM(j,i) \f$= \psi_j({\bf r}_i)\f$
-    Determinant_t psiM, psiM_temp;
+    ValueMatrix_t psiM, psiM_temp;
 
 
     /**  Transient data for gradient and laplacian evaluation
@@ -185,31 +188,31 @@ namespace qmcplusplus {
      * \f$phiD(j,k) = \sum_{j^{'}} \lambda_{j^{'},j} \phi_k(r_j) \f$
      * j runs over the particle index index
      */
-    Determinant_t phiT;
+    ValueMatrix_t phiT;
 
     /// temporary container for testing
-    Determinant_t psiMinv;
+    ValueMatrix_t psiMinv;
     /// store gradients
-    Gradient_t dY;
+    GradMatrix_t dY;
     /// store laplacians
-    Laplacian_t d2Y;
+    ValueMatrix_t d2Y;
     /// temporary determinant-related matrix for gradients
-    Gradient_t dpsiU, dpsiD;
+    GradMatrix_t dpsiU, dpsiD;
     /// temporary determinant-related matrix for laplacians
-    Laplacian_t d2psiU, d2psiD;
+    ValueMatrix_t d2psiU, d2psiD;
 
     /// value of single-particle orbital for particle-by-particle update
     /** temporary vector for a particle-by-particle move
      *
      * phiTv = Lambda Y(iat)
      */
-    Vector<ValueType> phiTv;
-    Vector<ValueType> psiU, psiD;
-    Vector<GradType> dpsiUv, dpsiDv;
-    Vector<ValueType> d2psiUv, d2psiDv;
-    Vector<ValueType> workV1, workV2;
-    Vector<ValueType> WorkSpace;
-    Vector<IndexType> Pivot;
+    ValueVector_t phiTv;
+    ValueVector_t psiU, psiD;
+    GradVector_t  dpsiUv, dpsiDv;
+    ValueVector_t d2psiUv, d2psiDv;
+    ValueVector_t workV1, workV2;
+    ValueVector_t WorkSpace;
+    IndexVector_t Pivot;
 
     ValueType curRatio,cumRatio;
     ///address of  dpsiU[0][0]

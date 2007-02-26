@@ -21,6 +21,7 @@
 #define QMCPLUSPLUS_ORBITALSETTRAITS_H
 
 #include "Configuration.h"
+#include "QMCWaveFunctions/OrbitalTraits.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "Optimize/VarList.h"
@@ -38,14 +39,20 @@ namespace qmcplusplus {
 
   /** trait class to handel a set of Orbitals
    */
-  struct OrbitalSetTraits: public QMCTraits {
-    enum {MAXINDEX=2+DIM};
-    typedef Vector<IndexType> IndexVector_t;
-    typedef Vector<ValueType> ValueVector_t;
-    typedef Matrix<ValueType> ValueMatrix_t;
-    typedef Vector<GradType>  GradVector_t;
-    typedef Matrix<GradType>  GradMatrix_t;
-    typedef VarRegistry<RealType> OptimizableSetType;
+  template<typename T>
+  struct OrbitalSetTraits: public OrbitalTraits<T> {
+    enum {DIM=OHMMS_DIM};
+    typedef typename OrbitalTraits<T>::real_type RealType;
+    typedef typename OrbitalTraits<T>::value_type ValueType;
+    typedef int                            IndexType;
+    typedef TinyVector<RealType,DIM>       PosType;
+    typedef TinyVector<ValueType,DIM>      GradType;
+    typedef Tensor<RealType,DIM>           TensorType;
+    typedef Vector<IndexType>     IndexVector_t;
+    typedef Vector<ValueType>     ValueVector_t;
+    typedef Matrix<ValueType>     ValueMatrix_t;
+    typedef Vector<GradType>      GradVector_t;
+    typedef Matrix<GradType>      GradMatrix_t;
   };
 }
 

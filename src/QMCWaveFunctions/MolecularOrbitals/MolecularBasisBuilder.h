@@ -39,6 +39,7 @@ namespace qmcplusplus {
     typedef typename RFB::CenteredOrbitalType COT;
     typedef LocalizedBasisSet<COT>   ThisBasisSetType;
 
+
     /** constructor
      * \param els reference to the electrons
      * \param ions reference to the ions

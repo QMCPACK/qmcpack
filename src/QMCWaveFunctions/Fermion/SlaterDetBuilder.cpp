@@ -27,21 +27,27 @@ namespace qmcplusplus {
   { 
   }   
 
-  bool SlaterDetBuilder::put(xmlNodePtr cur){
+  bool SlaterDetBuilder::put(xmlNodePtr cur)
+  {
     ///save the current node
     xmlNodePtr curRoot=cur;
     bool success=true;
     cur = cur->children;
     string cname, tname;
-    while(cur != NULL) {
+    while(cur != NULL) 
+    {
       getNodeName(cname,cur);
-      if(cname == basisset_tag) {
-        if(myBasisSetFactory == 0) {
+      if(cname == basisset_tag) 
+      {
+        if(myBasisSetFactory == 0) 
+        {
           myBasisSetFactory = new BasisSetFactory(targetPtcl,targetPsi, ptclPool);
         }
         myBasisSetFactory->createBasisSet(cur,curRoot);
         //Children.push_back(bsFactory);
-      } else if(cname == sd_tag) {
+      } 
+      else if(cname == sd_tag) 
+      {
         int is=SlaterDetSet.size();
         //add a new SlaterDeterminant
         SlaterDetSet.push_back(new SlaterDeterminant_t);
@@ -61,7 +67,8 @@ namespace qmcplusplus {
       cur = cur->next;
     }
     
-    if(SlaterDetSet.empty()) {
+    if(SlaterDetSet.empty()) 
+    {
       app_error() << "  Failed to create a SlaterDeterminant. Abort at SlaterDetBuilder::put " << endl;
       OHMMS::Controller->abort();
       return false;
