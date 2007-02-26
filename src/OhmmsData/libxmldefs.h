@@ -90,6 +90,8 @@ bool putContent(IT first, IT last, xmlNodePtr cur) {
 template<class T>
 bool getContent(const T& a, xmlNodePtr cur) {
   std::stringstream s;
+  s.setf(std::ios::scientific, std::ios::floatfield);
+  s.precision(8);
   s << a;
   xmlNodeSetContent(cur,(const xmlChar*)(s.str().c_str()));
   return true;
