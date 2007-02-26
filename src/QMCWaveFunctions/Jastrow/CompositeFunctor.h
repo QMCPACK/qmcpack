@@ -285,7 +285,9 @@ namespace qmcplusplus {
         typename OptimizableSetType::iterator it_b(optVariables.find(ID_E));
         if(it_b != optVariables.end()) {
           E=(*it_b).second;
-          resetInternals();
+          //only change the exponent: leave the cutoff fixed
+          mOneOverE=-1.0/E;
+          //resetInternals();
         }
       }
     };
