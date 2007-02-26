@@ -30,9 +30,7 @@ namespace qmcplusplus {
   */
   class JastrowBasisBuilder: public BasisSetBuilder 
   {
-
   public:
-
     /** constructor
      * \param els reference to the electrons
      * \param ions reference to the ions
@@ -46,10 +44,8 @@ namespace qmcplusplus {
     {
       return 0;
     }
-
     ///size of blocks
     vector<int> SizeOfBasisPerCenter;
-
   private:
     ///target ParticleSet
     ParticleSet& targetPtcl;
