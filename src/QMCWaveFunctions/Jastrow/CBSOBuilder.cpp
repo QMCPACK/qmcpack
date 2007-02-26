@@ -16,6 +16,7 @@
 #include "Utilities/OhmmsInfo.h"
 #include "Numerics/LibxmlNumericIO.h"
 #include "Numerics/GaussianBasisSet.h"
+#include "Numerics/SlaterBasisSet.h"
 #include "QMCWaveFunctions/Jastrow/CBSOBuilder.h"
 #include "QMCWaveFunctions/Jastrow/WMFunctor.h"
 #include "OhmmsData/AttributeSet.h"
@@ -98,6 +99,12 @@ namespace qmcplusplus {
       app_log() << "   " << L << " basisGroup  contains " << gset->size() << " radial functors." << endl;
       infunc=gset;
     } 
+    else if(radtype == "Slater")
+    {
+      SlaterCombo<RealType> *sto_set=new SlaterCombo<RealType>(L,Normalized);
+      sto_set->putBasisGroup(cur);
+      infunc=sto_set;
+    }
     else if(radtype == "WM")
     {
       xmlNodePtr tcur=cur->children;
