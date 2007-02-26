@@ -149,6 +149,7 @@ namespace qmcplusplus {
       if(cname == "radfunc") {
         OhmmsAttributeSet rAttrib;
         string radID("0");
+        string rfuncName("WM");
         RealType exponent=1.0;
         RealType contraction=1.0;
         RealType rcut(curBG->Rcut);
@@ -158,8 +159,19 @@ namespace qmcplusplus {
         rAttrib.add(contraction,"contraction"); 
         rAttrib.add(rpower,"node"); 
         rAttrib.add(rcut,"rcut"); 
+        rAttrib.add(rfuncName,"type"); 
         rAttrib.put(cur);
-        WMFunctor<RealType>* a = new WMFunctor<RealType>(exponent,rcut);
+
+        OptimizableFunctorBase<RealType>* a=0;
+        if(rfuncName == "cusp")
+        {
+          a= new CuspCorrectionFunctor<RealType>(exponent,rcut);
+          rpower=0;//overwrite the power
+        }
+        else
+        {
+          a= new WMFunctor<RealType>(exponent,rcut);
+        }
         a->put(cur);
         string id_c=radID+"_C";
         if(rpower == 0)
@@ -209,35 +221,9 @@ namespace qmcplusplus {
       curGroup=(*it).second;
     }
 
-    //setRadialGrid(targetPtcl);
-
     InFuncType* infunc=curGroup->In_;
-    //try to correct the cusp condition
-    TruncatedPadeFunctor<RealType>* wrapFunc
-      = new TruncatedPadeFunctor<RealType>(-0.5,infunc,curGroup->Rcut);
-    wrapFunc->applyCuspCondition();
-
-    typedef TwoBodyJastrowOrbital<OutFuncType> JeeType;
-    //create a Jastrow function
-    JeeType *J2 = new JeeType(targetPtcl);
-    //numerical functor 
-    OutFuncType* nfunc= 0;
-
-    if(wrapFunc->Rcut > 0.0)//pade truncation is good to go
-    {
-      app_log() << "  AnyContraints::createTwoBody add a cusp condition " << endl;
-      nfunc= new OutFuncType(wrapFunc,curGroup->Rcut, curGroup->NumGridPoints);
-      curGroup->In_ = wrapFunc;//replace In_ which has a correction
-    }
-    else //use the original function
-    {
-      nfunc= new OutFuncType(infunc, curGroup->Rcut, curGroup->NumGridPoints);
-      delete wrapFunc;
-    }
-
-    //assign a numerical functor to Out_
+    OutFuncType* nfunc= new OutFuncType(infunc, curGroup->Rcut, curGroup->NumGridPoints);
     curGroup->Out_ = nfunc;
-
 #if !defined(HAVE_MPI)
     if(PrintTables) {
       ofstream fout("J2.dat");
@@ -246,6 +232,9 @@ namespace qmcplusplus {
       nfunc->print(fout);
     }
 #endif
+    //create a Jastrow function
+    typedef TwoBodyJastrowOrbital<OutFuncType> JeeType;
+    JeeType *J2 = new JeeType(targetPtcl);
     J2->insert("Jee",nfunc);
     for(int i=0; i<4; i++) J2->addFunc(nfunc);
     return J2;
