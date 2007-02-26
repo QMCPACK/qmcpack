@@ -31,7 +31,7 @@ namespace qmcplusplus {
 
   public:
 
-    typedef BasisSetBase BasisSetType;
+    typedef BasisSetBase<RealType> BasisSetType;
 
     ///constructor
     ThreeBodyBlockSparse(ParticleSet& ions, ParticleSet& els);
