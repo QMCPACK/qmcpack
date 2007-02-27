@@ -120,9 +120,12 @@ namespace qmcplusplus {
     for(int b=0; b<Blocks.size(); b++)
     {
       int nb=Blocks[b];
-      GEMV<RealType,0>::apply(LambdaBlocks[b]->data(),y_ptr,cv_ptr,nb,nb);
-      for(int ib=0,k=BlockOffset[b];ib<nb; k++,ib++) delV[k] = (*cv_ptr++)-V[iat][k];
-      y_ptr+=nb;
+      if(nb)
+      {
+        GEMV<RealType,0>::apply(LambdaBlocks[b]->data(),y_ptr,cv_ptr,nb,nb);
+        for(int ib=0,k=BlockOffset[b];ib<nb; k++,ib++) delV[k] = (*cv_ptr++)-V[iat][k];
+        y_ptr+=nb;
+      }
     }
 
     diffVal=0.0;
@@ -450,6 +453,7 @@ namespace qmcplusplus {
     {
       for(int b=0; b<Blocks.size(); b++)
       {
+        if(Blocks[b] ==0) continue;
         LambdaBlocks.push_back(new Matrix<RealType>(Blocks[b],Blocks[b]));
         Matrix<RealType>& m(*LambdaBlocks[b]);
         for(int k=BlockOffset[b],ib=0; k<BlockOffset[b+1]; k++,ib++)
@@ -472,6 +476,7 @@ namespace qmcplusplus {
     vector<int> need2copy(CenterRef.getSpeciesSet().getTotalNum(),-1);
     for(int i=0; i<CenterRef.getTotalNum(); i++)
     {
+      if(Blocks[i] == 0) continue;
       int gid=need2copy[CenterRef.GroupID[i]];
       if(gid<0)//assign the current block index 
         need2copy[CenterRef.GroupID[i]] = i;

@@ -17,7 +17,7 @@
 #include "QMCWaveFunctions/MolecularOrbitals/AtomicBasisBuilder.h"
 #include "QMCWaveFunctions/MolecularOrbitals/GTOBuilder.h"
 #include "QMCWaveFunctions/Jastrow/CBSOBuilder.h"
-#include "QMCWaveFunctions/LocalizedBasisSet.h"
+#include "QMCWaveFunctions/SparseLocalizedBasisSet.h"
 #include "Message/Communicate.h"
 
 namespace qmcplusplus {
@@ -37,7 +37,7 @@ namespace qmcplusplus {
   {
 
     typedef typename RFBUILDER::CenteredOrbitalType COT;
-    typedef LocalizedBasisSet<COT> ThisBasisSetType;
+    typedef SparseLocalizedBasisSet<COT> ThisBasisSetType;
     ThisBasisSetType* curBasis= new ThisBasisSetType(sourcePtcl,targetPtcl);
 
     //create the size vector with zeros
