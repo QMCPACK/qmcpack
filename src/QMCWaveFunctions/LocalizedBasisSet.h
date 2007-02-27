@@ -47,6 +47,7 @@ namespace qmcplusplus {
     typedef typename BasisSetType::ValueMatrix_t ValueMatrix_t;
     typedef typename BasisSetType::GradVector_t  GradVector_t;
     typedef typename BasisSetType::GradMatrix_t  GradMatrix_t;
+    typedef typename BasisSetType::OptimizableSetType OptimizableSetType;
 
     using BasisSetType::BasisSetSize;
     using BasisSetType::Phi;
@@ -114,7 +115,8 @@ namespace qmcplusplus {
       }
 
       //reset the distance table for the atomic orbitals
-      for(int i=0; i<LOBasisSet.size(); i++) LOBasisSet[i]->setTable(myTable);
+      for(int i=0; i<LOBasisSet.size(); i++) 
+        LOBasisSet[i]->setTable(myTable);
       //evaluate the total basis dimension and offset for each center
       BasisOffset[0] = 0;
       for(int c=0; c<NumCenters; c++)
@@ -124,10 +126,11 @@ namespace qmcplusplus {
       this->resize(NumTargets);
     }
 
-    void resetParameters(VarRegistry<RealType>& optVariables) 
+    void resetParameters(OptimizableSetType& optVariables) 
     {
       //reset each unique basis functions
-      for(int i=0; i<LOBasisSet.size(); i++) LOBasisSet[i]->resetParameters(optVariables);
+      for(int i=0; i<LOBasisSet.size(); i++)
+        LOBasisSet[i]->resetParameters(optVariables);
     }
     
     /** reset the distance table with a new target P
@@ -139,38 +142,39 @@ namespace qmcplusplus {
     }
 
     inline void 
-    evaluateForWalkerMove(const ParticleSet& P) {
-      for(int c=0; c<NumCenters;c++) {
-        LOBasis[c]->evaluateForWalkerMove(c,0,P.getTotalNum(),BasisOffset[c],Y,dY,d2Y);
-      }
+    evaluateForWalkerMove(const ParticleSet& P) 
+    {
+      for(int c=0; c<NumCenters;c++) 
+        LOBasis[c]->evaluateForWalkerMove(c,0,NumTargets,BasisOffset[c],Y,dY,d2Y);
     }
 
     inline void 
-    evaluateForWalkerMove(const ParticleSet& P, int iat) {
-      for(int c=0; c<NumCenters;c++) {
+    evaluateForWalkerMove(const ParticleSet& P, int iat) 
+    {
+      for(int c=0; c<NumCenters;c++) 
 	LOBasis[c]->evaluateForWalkerMove(c,iat,BasisOffset[c],Phi,dPhi,d2Phi);
-      }
     }
 
     inline void 
-    evaluateForPtclMove(const ParticleSet& P, int iat)  {
-      for(int c=0; c<NumCenters;c++) {
+    evaluateForPtclMove(const ParticleSet& P, int iat)  
+    {
+      for(int c=0; c<NumCenters;c++) 
 	LOBasis[c]->evaluateForPtclMove(c,iat,BasisOffset[c],Phi);
-      }
     }
 
     inline void 
-    evaluateAllForPtclMove(const ParticleSet& P, int iat)  {
-      for(int c=0; c<NumCenters;c++) {
+    evaluateAllForPtclMove(const ParticleSet& P, int iat)  
+    {
+      for(int c=0; c<NumCenters;c++) 
 	LOBasis[c]->evaluateAllForPtclMove(c,iat,BasisOffset[c],Phi,dPhi,d2Phi);
-      }
     }
 
     /** add a new set of Centered Atomic Orbitals
      * @param icenter the index of the center
      * @param aos a set of Centered Atomic Orbitals
      */
-    void add(int icenter, COT* aos) {
+    void add(int icenter, COT* aos) 
+    {
       aos->setTable(myTable);
       LOBasisSet[icenter]=aos;
       for(int i=0; i<NumCenters; i++) {
@@ -178,7 +182,6 @@ namespace qmcplusplus {
       }
     }
   };
-
 }
 #endif
 
