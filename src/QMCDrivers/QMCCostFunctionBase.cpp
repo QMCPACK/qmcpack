@@ -638,7 +638,7 @@ namespace qmcplusplus {
       }
       xmlXPathFreeObject(result);
 
-      result = xmlXPathEvalExpression((const xmlChar*)"//coefficients",acontext);
+      result = xmlXPathEvalExpression((const xmlChar*)"//coefficient",acontext);
       for(int iparam=0; iparam<result->nodesetval->nodeNr; iparam++) {
         xmlNodePtr cur= result->nodesetval->nodeTab[iparam];
         OhmmsAttributeSet cAttrib;
