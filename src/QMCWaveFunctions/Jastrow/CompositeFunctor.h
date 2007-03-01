@@ -219,7 +219,7 @@ namespace qmcplusplus {
       string ID_E;
 
       ///default constructor not to have nan
-      CuspCorrectionFunctor():E(1.0),Rmax(1) Rcut(0), RmaxFixed(10){}
+      CuspCorrectionFunctor():E(1.0),Rmax(1),Rcut(0), RmaxFixed(10){}
       /** constructor
        * @param c Cusp condition, i.e., the first derivative at r=0
        * @param e exponent or scaling factor
