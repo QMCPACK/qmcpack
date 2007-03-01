@@ -536,7 +536,6 @@ namespace qmcplusplus {
 		ParticleSet::ParticleGradient_t& dG, 
 		ParticleSet::ParticleLaplacian_t& dL,
 		int iat) {
-      cout << "What is going on here?" << endl;
     }
 
   AGPDeterminant::ValueType AGPDeterminant::evaluate(ParticleSet& P, PooledData<RealType>& buf) 

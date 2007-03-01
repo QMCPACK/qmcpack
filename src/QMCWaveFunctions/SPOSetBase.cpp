@@ -172,7 +172,6 @@ namespace qmcplusplus {
 	}
       }
 
-      cout << C << endl;
 #else
       ERRORMSG("HDF5 is disabled. Using identity")
 #endif

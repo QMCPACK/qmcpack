@@ -133,19 +133,19 @@ namespace qmcplusplus {
       }
       BasisSetSize = BasisOffset[NumCenters];
 
-      for(int ig=0; ig<NumGroups; ig++)
-      {
-        if(LOBasisSet[ig])
-        {
-          cout << "### SparseLOBasis " << ig << " : ";
-          const vector<int>& plist(LOBasisSet[ig]->myP);
-          for(int i=0; i<plist.size(); i++)
-          {
-            cout << plist[i] << "[" << BasisOffset[plist[i]] << "] ";
-          }
-          cout << endl;
-        }
-      }
+      //for(int ig=0; ig<NumGroups; ig++)
+      //{
+      //  if(LOBasisSet[ig])
+      //  {
+      //    cout << "### SparseLOBasis " << ig << " : ";
+      //    const vector<int>& plist(LOBasisSet[ig]->myP);
+      //    for(int i=0; i<plist.size(); i++)
+      //    {
+      //      cout << plist[i] << "[" << BasisOffset[plist[i]] << "] ";
+      //    }
+      //    cout << endl;
+      //  }
+      //}
 
       this->resize(NumTargets);
     }
