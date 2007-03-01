@@ -41,7 +41,6 @@ ENDIF(HAVE_MPI)
 
 
 IF(NOT QMCPLUSPLUS_RELEASE)
-
   SET(QMCDRIVERS ${QMCDRIVERS}
     PolymerEstimator.cpp
     RQMCMultiple.cpp
@@ -53,6 +52,7 @@ IF(NOT QMCPLUSPLUS_RELEASE)
     VMC/VMCMultipleWarp.cpp
     VMC/VMCPbyPMultiWarp.cpp
   )
+ENDIF(NOT QMCPLUSPLUS_RELEASE)
 
 ####################################
 # create libqmc 
