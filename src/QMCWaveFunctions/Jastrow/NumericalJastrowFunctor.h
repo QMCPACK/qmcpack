@@ -132,7 +132,7 @@ namespace qmcplusplus {
       void print(ostream& os) {
         const typename FNOUT::grid_type& grid = OutFunc->grid();
         for(int i=0; i<grid.size(); i++) {
-          cout << grid(i) << " " << (*OutFunc)(i) << endl;
+          os << grid(i) << " " << (*OutFunc)(i) << endl;
         }
       }
 

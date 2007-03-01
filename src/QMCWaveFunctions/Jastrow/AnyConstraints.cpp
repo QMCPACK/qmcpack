@@ -41,7 +41,6 @@ namespace qmcplusplus {
 
   void AnyConstraints::resetParameters(OptimizableSetType& optVariables) 
   {
-    cout << "What is going on " << endl;
     map<string,BasisGroupType*>::iterator it(BasisGroups.begin()),it_end(BasisGroups.end());
     while(it != it_end) {
       (*it).second->Out_->resetParameters(optVariables);

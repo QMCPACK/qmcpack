@@ -88,7 +88,6 @@ class CubicBsplineGroup: public CubicBsplineGrid<T,GRIDTYPE,FIRSTDERIV_CONSTRAIN
    */
   void setGridManager(bool manage)
   {
-    cout << "CubicBsplineGroup::setGridManager set " << manage << endl;
     GridManager=manage;
   }
 
