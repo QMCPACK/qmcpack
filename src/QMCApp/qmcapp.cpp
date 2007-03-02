@@ -18,6 +18,8 @@
 #include "Configuration.h"
 #include "Message/Communicate.h"
 #include "Utilities/OhmmsInfo.h"
+#include "OhmmsData/FileUtility.h"
+#include "Utilities/SimpleParser.h"
 #include "QMCApp/QMCMain.h"
 
 
@@ -52,10 +54,36 @@ int main(int argc, char **argv) {
   }
 #else
   if(argc>1) {
-    if(qmc.parse(argv[1])) {
-      qmc.execute();
+    string fext=getExtension(argv[1]);
+    bool validInput=false;
+    if(fext == "xml")
+    {
+      validInput=qmc.parse(argv[1]);
     }
-    //xmlFreeDoc(m_doc);
+    else
+    {
+      ifstream fin(argv[1]);
+      vector<string> fgroup;
+      bool valid=true;
+      do {
+        vector<string> words;
+        getwords(words,fin);
+        if(words.size())
+          fgroup.push_back(words[0]);
+        else
+          valid=false;
+      } while(valid);
+#if defined(HAVE_MPI)
+      qmc.qmcComm = new Communicate(*OHMMS::Controller,fgroup.size());
+      cout << qmc.qmcComm->mycontext() << " belongs to " << qmcComm->getGroupID()
+        << " using " << fgroup[qmcComm->getGroupID()] << endl;
+      validInput=false;
+      validInput=qmc.parse(fgroup[qmc.qmcComm->getGroupID()]);
+#else
+      validInput=qmc.parse(fgroup[0]);
+#endif
+    }
+    if(validInput) qmc.execute();
   } else {
     ERRORMSG("No input file is given.")
     ERRORMSG("usage: qmcapp input-file")
