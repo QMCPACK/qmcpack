@@ -75,9 +75,8 @@ int main(int argc, char **argv) {
       } while(valid);
 #if defined(HAVE_MPI)
       qmc.qmcComm = new Communicate(*OHMMS::Controller,fgroup.size());
-      cout << qmc.qmcComm->mycontext() << " belongs to " << qmcComm->getGroupID()
-        << " using " << fgroup[qmcComm->getGroupID()] << endl;
-      validInput=false;
+      cout << qmc.qmcComm->mycontext() << " belongs to " << qmc.qmcComm->getGroupID()
+        << " using " << fgroup[qmc.qmcComm->getGroupID()] << endl;
       validInput=qmc.parse(fgroup[qmc.qmcComm->getGroupID()]);
 #else
       validInput=qmc.parse(fgroup[0]);
