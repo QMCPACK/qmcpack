@@ -6,6 +6,7 @@
 #include <sstream>
 #include "OhmmsData/OhmmsElementBase.h"
 #include "SandBox/TestFunc.h"
+#include "Optimize/VarList.h"
 #include "Numerics/OneDimGridBase.h"
 #include "Numerics/TricubicBsplineSet.h"
 
