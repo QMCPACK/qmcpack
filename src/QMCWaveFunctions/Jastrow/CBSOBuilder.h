@@ -17,7 +17,6 @@
 
 #include "Configuration.h"
 #include "QMCWaveFunctions/Jastrow/SplineFunctors.h"
-//#include "QMCWaveFunctions/Jastrow/CubicBsplineGroup.h"
 #include "QMCWaveFunctions/SphericalBasisSet.h"
 
 namespace qmcplusplus {
@@ -26,52 +25,53 @@ namespace qmcplusplus {
    *
    * CBSO stands for CubicBSplineOrbitals
    * For a center,
-   *   - only one grid is used
+   *   - only one linear grid is used
    *   - any number of radial orbitals  of CubicBsplineSingle
-   *
    * Will test the group function later using CubicBsplineGroup<T,GRIDTYPE>
    */
   class CBSOBuilder: public QMCTraits 
   {
-
-    public:
-      typedef CubicBsplineGrid<RealType,LINEAR_1DGRID,FIRSTDERIV_CONSTRAINTS> GridType;
-      typedef CubicBsplineSingle<RealType> RadialOrbitalType;
       //typedef CubicBsplineGroup<RealType,LINEAR_1DGRID> RadialOrbitalType;
-      typedef SphericalBasisSet<RadialOrbitalType>      CenteredOrbitalType;
+    public:
+      ///spline engine
+      typedef CubicBspline<RealType,LINEAR_1DGRID,FIRSTDERIV_CONSTRAINTS> SplineEngineType;
+      ///numerical functor
+      typedef CubicSplineSingle<RealType,SplineEngineType> RadialOrbitalType;
+      ///spherical basis set using splines
+      typedef SphericalBasisSet<RadialOrbitalType>         CenteredOrbitalType;
 
-    ///true, if the RadialOrbitalType is normalized
-    bool Normalized;
-    ///number of grid points [0,Npts]
-    int NumGridPoints;
-    ///maximum cutoff
-    RealType m_rcut;
-    ///the quantum number of this node
-    QuantumNumberType m_nlms;
-    ///the radial orbitals
-    CenteredOrbitalType* m_orbitals;
-    ///the species
-    std::string m_species;
+      ///true, if the RadialOrbitalType is normalized
+      bool Normalized;
+      ///number of grid points [0,Npts]
+      int NumGridPoints;
+      ///maximum cutoff
+      RealType m_rcut;
+      ///the quantum number of this node
+      QuantumNumberType m_nlms;
+      ///the radial orbitals
+      CenteredOrbitalType* m_orbitals;
+      ///the species
+      std::string m_species;
 
-    ///constructor
-    CBSOBuilder(xmlNodePtr cur=NULL);
+      ///constructor
+      CBSOBuilder(xmlNodePtr cur=NULL);
 
-    ///assign a CenteredOrbitalType to work on
-    void setOrbitalSet(CenteredOrbitalType* oset, const std::string& acenter);
+      ///assign a CenteredOrbitalType to work on
+      void setOrbitalSet(CenteredOrbitalType* oset, const std::string& acenter);
 
-    ///add a grid
-    bool addGrid(xmlNodePtr cur);
+      ///add a grid
+      bool addGrid(xmlNodePtr cur);
 
-    /** add a radial functor
-     * @param cur xml element
-     * @param nlms quantum number
-     */
-    bool addRadialOrbital(xmlNodePtr cur, const QuantumNumberType& nlms);
+      /** add a radial functor
+       * @param cur xml element
+       * @param nlms quantum number
+       */
+      bool addRadialOrbital(xmlNodePtr cur, const QuantumNumberType& nlms);
 
-    /** put common element
-     * @param cur xml element
-     */
-    bool putCommon(xmlNodePtr cur);
+      /** put common element
+       * @param cur xml element
+       */
+      bool putCommon(xmlNodePtr cur);
 
     private:
   };

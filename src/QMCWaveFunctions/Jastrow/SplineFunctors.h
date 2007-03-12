@@ -26,258 +26,14 @@ namespace qmcplusplus {
 
   /** A numerical functor
    *
-   * implements interfaces to be used for Jastrow functions
-   * - OneBodyJastrow<NumericalJastrow>
-   * - TwoBodyJastrow<NumericalJastrow>
+   * implements interfaces to be used for Jastrow functions and replaces  CubicBsplineSingle.
+   * Template parameters
+   * - RT real data type
+   * - FNOUT final numerical functor
+   *  An example is in CBSOBuilder.h which uses CubicBspline
+   *  typedef CubicBspline<RealType,LINEAR_1DGRID,FIRSTDERIV_CONSTRAINTS> SplineEngineType;
+   *  typedef CubicSplineSingle<RealType,SplineEngineType> RadialOrbitalType;
    */
-  template <typename RT>
-    struct CubicBsplineSingle: public OptimizableFunctorBase<RT> {
-
-      ///typedef of the source functor
-      typedef OptimizableFunctorBase<RT> FNIN;
-      ///typedef for the argument
-      typedef typename FNIN::real_type real_type;
-      ///typedef for OptimizableSetType
-      typedef typename FNIN::OptimizableSetType OptimizableSetType;
-      ///typedef for the argument
-      typedef CubicBspline<RT,LINEAR_1DGRID,FIRSTDERIV_CONSTRAINTS> FNOUT;
-      ///typedef for the grid
-      typedef OneDimGridBase<real_type> grid_type;
-
-      FNIN *InFunc;
-      FNOUT *OutFunc;
-      int NumGridPoints;
-      real_type Rmax;
-      real_type GridDelta;
-      real_type Y;
-      real_type dY;
-      real_type d2Y;
-
-
-      ///constructor
-      CubicBsplineSingle(): InFunc(0), OutFunc(0) { }
-      ///constructor with arguments
-      CubicBsplineSingle(FNIN* in_, grid_type* agrid): InFunc(0), OutFunc(0) {
-        initialize(in_,agrid);
-      }
-      ///constructor with arguments
-      CubicBsplineSingle(FNIN* in_, real_type rc, int npts):InFunc(0), OutFunc(0){
-        initialize(in_,rc,npts);
-      }
-      ///set the input, analytic function
-      void setInFunc(FNIN* in_) { InFunc=in_;}
-      ///set the output numerical function
-      void setOutFunc(FNOUT* out_) { OutFunc=out_;}
-
-      /** evaluate everything: value, first and second derivaties
-       */
-      inline real_type evaluate(real_type r, real_type& dudr, real_type& d2udr2) {
-        return OutFunc->splint(r,dudr,d2udr2);
-      }
-
-      /** evaluate value only
-       */
-      inline real_type evaluate(real_type r) {
-        return OutFunc->splint(r);
-      }
-      
-      /** evaluate value only
-       *
-       * Function required for SphericalBasisSet
-       */
-      inline real_type evaluate(real_type r, real_type rinv) 
-      {
-        return Y=OutFunc->splint(r);
-      }
-
-      /** evaluate everything: value, first and second derivaties
-       * 
-       * Function required for SphericalBasisSet
-       */
-      inline real_type evaluateAll(real_type r, real_type rinv) 
-      {
-        return Y=OutFunc->splint(r,dY,d2Y);
-      }
-
-      /** implement the virtual function of OptimizableFunctorBase */
-      inline real_type f(real_type r) 
-      {
-        return OutFunc->splint(r);
-      }
-
-      /** implement the virtual function of OptimizableFunctorBase  */
-      inline real_type df(real_type r) {
-        real_type dudr,d2udr2;
-        OutFunc->splint(r,dudr,d2udr2);
-        return dudr;
-      }
-
-      bool put(xmlNodePtr cur) 
-      {
-        if(InFunc)
-          return InFunc->put(cur);
-        else
-          return false;
-      }
-
-      void addOptimizables(OptimizableSetType& vlist)
-      {
-        if(InFunc) 
-          InFunc->addOptimizables(vlist);
-      }
-
-      ///reset the input/output function
-      void resetParameters(OptimizableSetType& optVariables) 
-      {
-        if(!InFunc)
-        {
-          app_error() << "  CubicSplineJastrow::reset failed due to null input function " << endl;
-          OHMMS::Controller->abort();
-        }
-        InFunc->resetParameters(optVariables);
-        resetInternals();
-      }
-
-      void print(ostream& os) {
-        real_type r=0;
-        for(int i=0; i<NumGridPoints; i++, r+=GridDelta) 
-          os << r << " " << OutFunc->splint(r) << endl;
-      }
-
-      ///set the input, analytic function
-      void initialize(FNIN* in_, grid_type* agrid) { 
-        initialize(in_,agrid->rmax(),agrid->size());
-      }
-      void initialize(FNIN* in_, real_type rmax, int npts) 
-      { 
-        InFunc=in_;
-        Rmax=rmax;
-        NumGridPoints=npts;
-        GridDelta=Rmax/static_cast<real_type>(NumGridPoints-1);
-        resetInternals();
-      }
-
-      void resetInternals()
-      {
-        if(!OutFunc) OutFunc = new FNOUT;
-        typename FNOUT::container_type datain(NumGridPoints);
-        real_type r=0;
-        for(int i=0; i<NumGridPoints; i++, r+=GridDelta) 
-        {
-          datain[i] = InFunc->f(r);
-        }
-        OutFunc->Init(0.0,Rmax,datain,true,InFunc->df(0.0),0.0);
-      }
-
-    };
-
-  /** A numerical functor
-   *
-   * implements interfaces to be used for Jastrow functions
-   * - OneBodyJastrow<NumericalJastrow>
-   * - TwoBodyJastrow<NumericalJastrow>
-   */
-  template <typename RT>
-    struct CubicSplineBasisSet: public OptimizableFunctorBase<RT> {
-
-      ///typedef of the source functor
-      typedef OptimizableFunctorBase<RT> FNIN;
-      ///typedef for the argument
-      typedef typename FNIN::real_type real_type;
-      ///typedef for OptimizableSetType
-      typedef typename FNIN::OptimizableSetType OptimizableSetType;
-      ///typedef for the argument
-      typedef CubicBspline<RT,LINEAR_1DGRID,FIRSTDERIV_CONSTRAINTS> FNOUT;
-      ///typedef for the grid
-      typedef OneDimGridBase<real_type> grid_type;
-
-      FNIN *InFunc;
-      FNOUT *OutFunc;
-      int NumGridPoints;
-      real_type Rmax;
-      real_type GridDelta;
-
-      ///constructor
-      CubicSplineBasisSet(): InFunc(0), OutFunc(0) { }
-      ///constructor with arguments
-      CubicSplineBasisSet(FNIN* in_, grid_type* agrid){
-        initialize(in_,agrid);
-      }
-      ///set the input, analytic function
-      void setInFunc(FNIN* in_) { InFunc=in_;}
-      ///set the output numerical function
-      void setOutFunc(FNOUT* out_) { OutFunc=out_;}
-      ///reset the input/output function
-      void resetParameters(OptimizableSetType& optVariables) 
-      {
-        if(!InFunc)
-        {
-          app_error() << "  CubicSplineJastrow::reset failed due to null input function " << endl;
-          OHMMS::Controller->abort();
-        }
-        InFunc->resetParameters(optVariables);
-        resetInternals();
-      }
-
-      void resetInternals()
-      {
-        if(!OutFunc) OutFunc = new FNOUT;
-        typename FNOUT::container_type datain(NumGridPoints);
-        real_type r=0;
-        for(int i=0; i<NumGridPoints; i++, r+=GridDelta) datain[i] = InFunc->f(r);
-        OutFunc->Init(0.0,Rmax,datain,true,InFunc->df(0.0),0.0);
-      }
-
-      /** evaluate everything: value, first and second derivaties
-      */
-      inline real_type evaluate(real_type r, real_type& dudr, real_type& d2udr2) {
-        return OutFunc->splint(r,dudr,d2udr2);
-      }
-
-      /** evaluate value only
-      */
-      inline real_type evaluate(real_type r) {
-        return OutFunc->splint(r);
-      }
-
-      /** implement the virtual function of OptimizableFunctorBase */
-      real_type f(real_type r) {
-        return OutFunc->splint(r);
-      }
-
-      /** implement the virtual function of OptimizableFunctorBase  */
-      real_type df(real_type r) {
-        real_type dudr,d2udr2;
-        OutFunc->splint(r,dudr,d2udr2);
-        return dudr;
-      }
-
-      bool put(xmlNodePtr cur) 
-      {
-        return InFunc->put(cur);
-      }
-
-      void addOptimizables( VarRegistry<real_type>& vlist)
-      {
-        InFunc->addOptimizables(vlist);
-      }
-
-      void print(ostream& os) {
-        real_type r=0;
-        for(int i=0; i<NumGridPoints; i++, r+=GridDelta) 
-          os << r << " " << OutFunc->splint(r) << endl;
-      }
-
-      ///set the input, analytic function
-      void initialize(FNIN* in_, grid_type* agrid) { 
-        Rmax=agrid->rmax();
-        NumGridPoints=agrid->size();
-        GridDelta=Rmax/static_cast<real_type>(NumGridPoints-1);
-        InFunc=in_;
-        resetInternals();
-      }
-    };
-
   template <typename RT, typename FNOUT>
     struct CubicSplineSingle: public OptimizableFunctorBase<RT> {
 
@@ -418,6 +174,253 @@ namespace qmcplusplus {
       }
     };
 
+
+  template <typename RT>
+    struct CubicSplineBasisSet: public OptimizableFunctorBase<RT> {
+
+      ///typedef of the source functor
+      typedef OptimizableFunctorBase<RT> FNIN;
+      ///typedef for the argument
+      typedef typename FNIN::real_type real_type;
+      ///typedef for OptimizableSetType
+      typedef typename FNIN::OptimizableSetType OptimizableSetType;
+      ///typedef for the argument
+      typedef CubicBspline<RT,LINEAR_1DGRID,FIRSTDERIV_CONSTRAINTS> FNOUT;
+      ///typedef for the grid
+      typedef OneDimGridBase<real_type> grid_type;
+
+      FNIN *InFunc;
+      FNOUT *OutFunc;
+      int NumGridPoints;
+      real_type Rmax;
+      real_type GridDelta;
+
+      ///constructor
+      CubicSplineBasisSet(): InFunc(0), OutFunc(0) { }
+      ///constructor with arguments
+      CubicSplineBasisSet(FNIN* in_, grid_type* agrid){
+        initialize(in_,agrid);
+      }
+      ///set the input, analytic function
+      void setInFunc(FNIN* in_) { InFunc=in_;}
+      ///set the output numerical function
+      void setOutFunc(FNOUT* out_) { OutFunc=out_;}
+      ///reset the input/output function
+      void resetParameters(OptimizableSetType& optVariables) 
+      {
+        if(!InFunc)
+        {
+          app_error() << "  CubicSplineJastrow::reset failed due to null input function " << endl;
+          OHMMS::Controller->abort();
+        }
+        InFunc->resetParameters(optVariables);
+        resetInternals();
+      }
+
+      void resetInternals()
+      {
+        if(!OutFunc) OutFunc = new FNOUT;
+        typename FNOUT::container_type datain(NumGridPoints);
+        real_type r=0;
+        for(int i=0; i<NumGridPoints; i++, r+=GridDelta) datain[i] = InFunc->f(r);
+        OutFunc->Init(0.0,Rmax,datain,true,InFunc->df(0.0),0.0);
+      }
+
+      /** evaluate everything: value, first and second derivaties
+      */
+      inline real_type evaluate(real_type r, real_type& dudr, real_type& d2udr2) {
+        return OutFunc->splint(r,dudr,d2udr2);
+      }
+
+      /** evaluate value only
+      */
+      inline real_type evaluate(real_type r) {
+        return OutFunc->splint(r);
+      }
+
+      /** implement the virtual function of OptimizableFunctorBase */
+      real_type f(real_type r) {
+        return OutFunc->splint(r);
+      }
+
+      /** implement the virtual function of OptimizableFunctorBase  */
+      real_type df(real_type r) {
+        real_type dudr,d2udr2;
+        OutFunc->splint(r,dudr,d2udr2);
+        return dudr;
+      }
+
+      bool put(xmlNodePtr cur) 
+      {
+        return InFunc->put(cur);
+      }
+
+      void addOptimizables( VarRegistry<real_type>& vlist)
+      {
+        InFunc->addOptimizables(vlist);
+      }
+
+      void print(ostream& os) {
+        real_type r=0;
+        for(int i=0; i<NumGridPoints; i++, r+=GridDelta) 
+          os << r << " " << OutFunc->splint(r) << endl;
+      }
+
+      ///set the input, analytic function
+      void initialize(FNIN* in_, grid_type* agrid) { 
+        Rmax=agrid->rmax();
+        NumGridPoints=agrid->size();
+        GridDelta=Rmax/static_cast<real_type>(NumGridPoints-1);
+        InFunc=in_;
+        resetInternals();
+      }
+    };
+
+//  /** A numerical functor using cubic bspline
+//   *
+//   * This class is replaced by CubicSplineSingle<RT,FNOUT>
+//   */
+//  template <typename RT>
+//    struct CubicBsplineSingle: public OptimizableFunctorBase<RT> {
+//
+//      ///typedef of the source functor
+//      typedef OptimizableFunctorBase<RT> FNIN;
+//      ///typedef for the argument
+//      typedef typename FNIN::real_type real_type;
+//      ///typedef for OptimizableSetType
+//      typedef typename FNIN::OptimizableSetType OptimizableSetType;
+//      ///typedef for the argument
+//      typedef CubicBspline<RT,LINEAR_1DGRID,FIRSTDERIV_CONSTRAINTS> FNOUT;
+//      ///typedef for the grid
+//      typedef OneDimGridBase<real_type> grid_type;
+//
+//      FNIN *InFunc;
+//      FNOUT *OutFunc;
+//      int NumGridPoints;
+//      real_type Rmax;
+//      real_type GridDelta;
+//      real_type Y;
+//      real_type dY;
+//      real_type d2Y;
+//
+//
+//      ///constructor
+//      CubicBsplineSingle(): InFunc(0), OutFunc(0) { }
+//      ///constructor with arguments
+//      CubicBsplineSingle(FNIN* in_, grid_type* agrid): InFunc(0), OutFunc(0) {
+//        initialize(in_,agrid);
+//      }
+//      ///constructor with arguments
+//      CubicBsplineSingle(FNIN* in_, real_type rc, int npts):InFunc(0), OutFunc(0){
+//        initialize(in_,rc,npts);
+//      }
+//      ///set the input, analytic function
+//      void setInFunc(FNIN* in_) { InFunc=in_;}
+//      ///set the output numerical function
+//      void setOutFunc(FNOUT* out_) { OutFunc=out_;}
+//
+//      /** evaluate everything: value, first and second derivaties
+//       */
+//      inline real_type evaluate(real_type r, real_type& dudr, real_type& d2udr2) {
+//        return OutFunc->splint(r,dudr,d2udr2);
+//      }
+//
+//      /** evaluate value only
+//       */
+//      inline real_type evaluate(real_type r) {
+//        return OutFunc->splint(r);
+//      }
+//      
+//      /** evaluate value only
+//       *
+//       * Function required for SphericalBasisSet
+//       */
+//      inline real_type evaluate(real_type r, real_type rinv) 
+//      {
+//        return Y=OutFunc->splint(r);
+//      }
+//
+//      /** evaluate everything: value, first and second derivaties
+//       * 
+//       * Function required for SphericalBasisSet
+//       */
+//      inline real_type evaluateAll(real_type r, real_type rinv) 
+//      {
+//        return Y=OutFunc->splint(r,dY,d2Y);
+//      }
+//
+//      /** implement the virtual function of OptimizableFunctorBase */
+//      inline real_type f(real_type r) 
+//      {
+//        return OutFunc->splint(r);
+//      }
+//
+//      /** implement the virtual function of OptimizableFunctorBase  */
+//      inline real_type df(real_type r) {
+//        real_type dudr,d2udr2;
+//        OutFunc->splint(r,dudr,d2udr2);
+//        return dudr;
+//      }
+//
+//      bool put(xmlNodePtr cur) 
+//      {
+//        if(InFunc)
+//          return InFunc->put(cur);
+//        else
+//          return false;
+//      }
+//
+//      void addOptimizables(OptimizableSetType& vlist)
+//      {
+//        if(InFunc) 
+//          InFunc->addOptimizables(vlist);
+//      }
+//
+//      ///reset the input/output function
+//      void resetParameters(OptimizableSetType& optVariables) 
+//      {
+//        if(!InFunc)
+//        {
+//          app_error() << "  CubicSplineJastrow::reset failed due to null input function " << endl;
+//          OHMMS::Controller->abort();
+//        }
+//        InFunc->resetParameters(optVariables);
+//        resetInternals();
+//      }
+//
+//      void print(ostream& os) {
+//        real_type r=0;
+//        for(int i=0; i<NumGridPoints; i++, r+=GridDelta) 
+//          os << r << " " << OutFunc->splint(r) << endl;
+//      }
+//
+//      ///set the input, analytic function
+//      void initialize(FNIN* in_, grid_type* agrid) { 
+//        initialize(in_,agrid->rmax(),agrid->size());
+//      }
+//      void initialize(FNIN* in_, real_type rmax, int npts) 
+//      { 
+//        InFunc=in_;
+//        Rmax=rmax;
+//        NumGridPoints=npts;
+//        GridDelta=Rmax/static_cast<real_type>(NumGridPoints-1);
+//        resetInternals();
+//      }
+//
+//      void resetInternals()
+//      {
+//        if(!OutFunc) OutFunc = new FNOUT;
+//        typename FNOUT::container_type datain(NumGridPoints);
+//        real_type r=0;
+//        for(int i=0; i<NumGridPoints; i++, r+=GridDelta) 
+//        {
+//          datain[i] = InFunc->f(r);
+//        }
+//        OutFunc->Init(0.0,Rmax,datain,true,InFunc->df(0.0),0.0);
+//      }
+//
+//    };
+//
 //  /** A numerical functor
 //   *
 //   * implements interfaces to be used for Jastrow functions
