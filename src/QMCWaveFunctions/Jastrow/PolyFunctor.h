@@ -49,6 +49,9 @@ namespace qmcplusplus {
       std::vector<T> d2C;
       ///id
       std::vector<string> ID_C;
+      ///default constructor
+      inline PolyFunctor(): L(10.0), K(0), N(0), OneOverL(0),KOverL(0), KKOverL2(0) 
+      {}
       ///constructor
       inline PolyFunctor(real_type rc, int k): L(rc), K(k), N(0)
       { 
@@ -109,6 +112,10 @@ namespace qmcplusplus {
        */
       bool put(xmlNodePtr cur) 
       {
+        OhmmsAttributeSet aAttrib;
+        aAttrib.add(K,"n");
+        aAttrib.put(cur);
+
         map<int,pair<real_type,string> > ctemp;
         cur=cur->children;
         N=0;
@@ -132,17 +139,21 @@ namespace qmcplusplus {
           cur=cur->next; 
         }
 
+        N++;
         C.resize(N,0.0);
         ID_C.resize(N,"0");
         typename map<int,pair<real_type,string> >::iterator it(ctemp.begin());
         typename map<int,pair<real_type,string> >::iterator it_end(ctemp.end());
+        app_log() << "    PolyFunctor [(r-L)/L]^K  K=" << K << " L=" << L << endl;
         while(it != it_end)
         {
           int i=(*it).first;
           C[i]=(*it).second.first;
           ID_C[i]=(*it).second.second;
+          app_log() << "      i="<< i << " "  << ID_C[i] << "=" << C[i] << endl;
           ++it;
         }
+        resetInternals();
         return true;
       }
 
@@ -167,8 +178,17 @@ namespace qmcplusplus {
         resetInternals();
       }
 
+      inline void setL(real_type rc)
+      {
+        L=rc;
+      }
+
+
       inline void resetInternals()
       {
+        OneOverL=1.0/L;
+        KOverL=static_cast<real_type>(K)/L;
+        KKOverL2=static_cast<real_type>(K*(K-1))/L/L;
         dC.resize(N,0.0);
         d2C.resize(N,0.0);
         for(int i=1; i<N; i++) dC[i]=static_cast<T>(i)*C[i];
