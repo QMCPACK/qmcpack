@@ -31,10 +31,12 @@ namespace qmcplusplus {
   class WaveFunctionPool;
   class HamiltonianPool;
 
-  struct QMCDriverFactory {
-
+  struct QMCDriverFactory 
+  {
     /*! enum for QMC Run Type */
-    enum QMCRunType {DUMMY_RUN, /*!< dummy */
+    enum QMCRunType 
+    {
+      DUMMY_RUN, /*!< dummy */
       VMC_RUN, /**< VMC type: vmc, vmc-ptcl, vmc-multiple, vmc-ptcl-multiple */
       DMC_RUN, /**< DMC type: dmc, dmc-ptcl*/
       RMC_RUN, /**< RMC type: rmc, rmc-ptcl */
@@ -43,7 +45,8 @@ namespace qmcplusplus {
     };
 
     /*! enum to set the bit to determine the QMC mode */
-    enum QMCModeEnum {
+    enum QMCModeEnum 
+    {
       UPDATE_MODE,  /**< bit for move: walker or pbyp */
       MULTIPLE_MODE, /**< bit for multple configuration */
       SPACEWARP_MODE /**< bit for space-warping */

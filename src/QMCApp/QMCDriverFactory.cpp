@@ -8,7 +8,6 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
@@ -61,8 +60,7 @@ namespace qmcplusplus {
     delete psiPool;
     delete ptclPool;
 
-    if(qmcComm)
-      delete qmcComm;
+    if(qmcComm) delete qmcComm;
   }
 
   void QMCDriverFactory::putCommunicator(xmlNodePtr cur)
@@ -110,9 +108,6 @@ namespace qmcplusplus {
     int nchars=qmc_mode.size();
     if(qmc_mode.find("opt") < nchars)
     {
-      //if(qmc_mode.find("vmc")<nchars) 
-      //  newRunType=VMC_OPT_RUN;
-      //else
       newRunType=OPTIMIZE_RUN;
     }
     else
@@ -154,12 +149,10 @@ namespace qmcplusplus {
       }
     }
 
-    if(curSeries == 0) 
-      append_run = false;
+    if(curSeries == 0) append_run = false;
 
     //carryon with the existing qmcDriver
-    if(qmcDriver) 
-      return append_run;
+    if(qmcDriver) return append_run;
 
     //need to create a qmcDriver
     curRunType = newRunType;
@@ -178,8 +171,8 @@ namespace qmcplusplus {
     return append_run;
   }
 
-  void QMCDriverFactory::createQMCDriver(xmlNodePtr cur) {
-
+  void QMCDriverFactory::createQMCDriver(xmlNodePtr cur) 
+  {
     ///////////////////////////////////////////////
     // get primaryPsi and primaryH
     ///////////////////////////////////////////////
@@ -189,19 +182,27 @@ namespace qmcplusplus {
     queue<QMCHamiltonian*> targetH;//FIFO
 
     xmlNodePtr tcur=cur->children;
-    while(tcur != NULL) {
-      if(xmlStrEqual(tcur->name,(const xmlChar*)"qmcsystem")) {
+    while(tcur != NULL) 
+    {
+      if(xmlStrEqual(tcur->name,(const xmlChar*)"qmcsystem")) 
+      {
         const xmlChar* t= xmlGetProp(tcur,(const xmlChar*)"wavefunction");
-        if(t != NULL) {
+        if(t != NULL) 
+        {
           targetPsi.push(psiPool->getWaveFunction((const char*)t));
-        } else {
+        } 
+        else 
+        {
           app_warning() << " qmcsystem does not have wavefunction. Assign 0" << endl;
           targetPsi.push(0);
         }
         t= xmlGetProp(tcur,(const xmlChar*)"hamiltonian");
-        if(t != NULL) {
+        if(t != NULL) 
+        {
           targetH.push(hamPool->getHamiltonian((const char*)t));
-        } else {
+        } 
+        else 
+        {
           app_warning() << " qmcsystem does not have hamiltonian. Assign 0" << endl;
           targetH.push(0);
         }
@@ -210,10 +211,13 @@ namespace qmcplusplus {
     }
 
     //mark the first targetPsi and targetH as the primaries
-    if(targetH.empty()) {
+    if(targetH.empty()) 
+    {
       primaryPsi=psiPool->getPrimary();
       primaryH=hamPool->getPrimary();
-    } else { 
+    } 
+    else 
+    { 
       primaryPsi=targetPsi.front(); targetPsi.pop();
       primaryH=targetH.front();targetH.pop();
     }
@@ -222,10 +226,13 @@ namespace qmcplusplus {
     primaryH->setPrimary(true);
 
     //flux is evaluated only with single-configuration VMC
-    if(curRunType == VMC_RUN && !curQmcModeBits[MULTIPLE_MODE]) {
+    if(curRunType == VMC_RUN && !curQmcModeBits[MULTIPLE_MODE]) 
+    {
       QMCHamiltonianBase* flux=primaryH->getHamiltonian("Flux");
       if(flux == 0) primaryH->addOperator(new ConservedEnergy,"Flux");
-    } else {
+    } 
+    else 
+    {
       primaryH->remove("Flux");
     }
 
@@ -273,7 +280,6 @@ namespace qmcplusplus {
       }
     }
   }
-
 }
 /***********************************************************************
  * $RCSfilMCMain.cpp,v $   $Author$
