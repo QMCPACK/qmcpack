@@ -16,6 +16,7 @@
 #include "QMCWaveFunctions/Jastrow/JastrowBuilder.h"
 #include "QMCWaveFunctions/Jastrow/JastrowBasisBuilder.h"
 #include "QMCWaveFunctions/Jastrow/AnyConstraints.h"
+#include "QMCWaveFunctions/Jastrow/PolyConstraints.h"
 #include "QMCWaveFunctions/Jastrow/PadeConstraints.h"
 #include "QMCWaveFunctions/Jastrow/RPAConstraints.h"
 #include "QMCWaveFunctions/Jastrow/JAABuilder.h"
@@ -94,10 +95,13 @@ namespace qmcplusplus {
     }
 
     ParticleSet* sourcePtcl= (*pa_it).second;
-
-    if(funcOpt == "any")
+    if(funcOpt == "any" || funcOpt == "poly")
     {
-      AnyConstraints* control=new AnyConstraints(targetPtcl,targetPsi);
+      OrbitalConstraintsBase* control=0;
+      if(funcOpt == "any")
+        control = new AnyConstraints(targetPtcl,targetPsi);
+      else
+        control = new PolyConstraints(targetPtcl,targetPsi,true);
       control->put(cur);
       OrbitalBase* j=control->createOneBody(*sourcePtcl);
       if(j)
@@ -148,6 +152,11 @@ namespace qmcplusplus {
       else 
         control = new RPAConstraints(targetPtcl,targetPsi,ignoreSpin);
     } 
+    else if(funcOpt ==  "poly")
+    {
+      app_log() << "    Using analytic Polynomial expansion Jastrow Functor " <<endl;
+      control = new PolyConstraints(targetPtcl,targetPsi,ignoreSpin);
+    }
     else if(funcOpt == "scaledpade") 
     {
       app_log() << "    Using analytic Scaled Pade Jastrow Functor " <<endl;

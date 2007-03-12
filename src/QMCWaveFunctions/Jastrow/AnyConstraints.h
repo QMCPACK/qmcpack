@@ -25,9 +25,10 @@ namespace qmcplusplus {
   struct AnyConstraints: public OrbitalConstraintsBase {
     ///analytic functor
     typedef OptimizableFunctorBase<RealType> InFuncType;
-    //typedef ComboFunctor<RealType> InFuncType;
+    ///spline engine
+    typedef CubicBspline<RealType,LINEAR_1DGRID,FIRSTDERIV_CONSTRAINTS> SplineEngineType;
     ///numerical functor
-    typedef CubicBsplineSingle<RealType> OutFuncType;
+    typedef CubicSplineSingle<RealType,SplineEngineType> OutFuncType;
     /** class to define a basisGroup to represent a radial function
      */
     struct BasisGroupType
