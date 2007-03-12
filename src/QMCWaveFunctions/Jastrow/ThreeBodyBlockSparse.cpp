@@ -367,7 +367,7 @@ namespace qmcplusplus {
     {//read from an input nodes
       char coeffname[16];
       string aname("j3g");
-      string datatype("no");
+      string datatype("lambda");
       string sameblocks("yes");
       IndexOffSet=1;
       OhmmsAttributeSet attrib;
@@ -381,7 +381,7 @@ namespace qmcplusplus {
       SameBlocksForGroup = (sameblocks == "yes");
       ID_Lambda=aname;
 
-      if(datatype == "Array")
+      if(datatype.find("rray")<datatype.size())
       {
         putContent(Lambda,cur);
         addOptimizables(varlist);

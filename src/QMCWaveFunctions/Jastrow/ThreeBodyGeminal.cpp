@@ -366,7 +366,7 @@ namespace qmcplusplus {
 
       ID_Lambda=aname;
 
-      if(datatype == "Array")
+      if(datatype.find("rray")<datatype.size())
       {
         putContent(Lambda,cur);
         addOptimizables(varlist);
