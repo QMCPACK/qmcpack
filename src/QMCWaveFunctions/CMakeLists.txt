@@ -13,6 +13,7 @@ SET(JASTROW_SRCS
   Jastrow/PadeConstraints.cpp
   Jastrow/RPAConstraints.cpp
   Jastrow/AnyConstraints.cpp
+  Jastrow/PolyConstraints.cpp
   Jastrow/CBSOBuilder.cpp
   Jastrow/JastrowBasisBuilder.cpp
   Jastrow/JastrowBuilder.cpp
