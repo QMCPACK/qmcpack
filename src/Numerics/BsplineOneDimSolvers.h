@@ -144,11 +144,11 @@ struct SolveFirstDerivInterp1D<double>
     double al=0.25*bcLower[0];
     double bl=0.25*bcLower[1];
     double cl=0.25*bcLower[2];
-    double dl=1.25*bcLower[3];
+    double dl=1.5*bcLower[3];
     double ar=0.25*bcUpper[0];
     double br=0.25*bcUpper[1];
     double cr=0.25*bcUpper[2];
-    double dr=1.25*bcUpper[3];
+    double dr=1.5*bcUpper[3];
 
     // First, eliminate leading coefficients
     double alInv = 1.0/al;
