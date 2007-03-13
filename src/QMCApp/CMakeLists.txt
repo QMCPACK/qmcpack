@@ -67,11 +67,12 @@ ENDIF(INTEL_MKL)
 ####################################
 ADD_EXECUTABLE(qmcapp ${QMCMAIN})
 
-IF(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+IF(MAC_VECLIB)
   TARGET_LINK_LIBRARIES(qmcapp qmc qmcdriver qmcham qmcwfs qmcbase qmcutil)
-ELSE(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+ELSE(MAC_VECLIB)
   TARGET_LINK_LIBRARIES(qmcapp qmc qmcdriver qmcham qmcwfs qmcbase qmcutil 
   ${LAPACK_LIBRARY}
-  ${BLAS_LIBRARY} ${FORTRAN_LIBS})
-ENDIF(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+  ${BLAS_LIBRARY} 
+  ${FORTRAN_LIBS})
+ENDIF(MAC_VECLIB)
 
