@@ -159,7 +159,9 @@ namespace qmcplusplus {
   // right now this only does a numerical two body short range jastrow
   // based on the short range part from the breakup handled by the LRHandler
   OrbitalBase* RPAPBCConstraints::createSRTwoBody() {
-    typedef CubicBsplineSingle<RealType> FuncType;
+
+    typedef CubicBspline<RealType,LINEAR_1DGRID,FIRSTDERIV_CONSTRAINTS> SplineEngineType;
+    typedef CubicSplineSingle<RealType,SplineEngineType> FuncType;
     typedef LinearGrid<RealType> GridType;
     
     //setRadialGrid(target);
