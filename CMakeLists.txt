@@ -85,6 +85,7 @@ SET(HAVE_LIBSPRNG 0)
 SET(HAVE_LIBBLITZ 0)
 SET(HAVE_LIBGSL 0)
 SET(INTEL_COMPILER 0)
+SET(MAC_VECLIB 0)
 
 ######################################################
 # Directory where customize cmake files reside
