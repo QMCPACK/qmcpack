@@ -19,9 +19,9 @@
  *
  * Framework for Quantum Monte Carlo simulations.
  *
- * Home Page: http://www.mcc.uiuc.edu/qmcpack
+ * Home Page: http://www.mcc.uiuc.edu/qmcpack/
  *
- * Developers' Page: https://mccweb1.mcc.uiuc.edu/qmcpack/
+ * Developers' Page: http://cms.mcc.uiuc.edu/qmcdev/
  *
  * \section Major changes
  *
