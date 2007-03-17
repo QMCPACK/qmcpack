@@ -69,8 +69,7 @@ namespace qmcplusplus {
       bool put(xmlNodePtr cur) 
       {
         OhmmsAttributeSet rAttrib;
-        rAttrib.add(ID_B,"id"); 
-        rAttrib.add(ID_B,"ref"); 
+        rAttrib.add(ID_B,"id"); rAttrib.add(ID_B,"ref"); 
         rAttrib.add(B0,"exponent"); 
         rAttrib.put(cur);
         ID_B.append("_E");
@@ -119,7 +118,7 @@ namespace qmcplusplus {
       ///name of B-attribute
       string attribName;
       ///constructor
-      WMFunctor(real_type b, real_type rc=7.5, const std::string& bname="exponent"): 
+      D2WMDB2Functor(real_type b, real_type rc=7.5, const std::string& bname="exponent"): 
         attribName(bname)
       {
         reset(b,rc);
@@ -152,8 +151,7 @@ namespace qmcplusplus {
       bool put(xmlNodePtr cur) 
       {
         OhmmsAttributeSet rAttrib;
-        rAttrib.add(ID_B,"id"); 
-        rAttrib.add(ID_B,"ref"); 
+        rAttrib.add(ID_B,"id"); rAttrib.add(ID_B,"ref"); 
         rAttrib.add(B0,"exponent"); 
         rAttrib.put(cur);
         ID_B.append("_E");

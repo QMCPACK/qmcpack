@@ -66,7 +66,7 @@ namespace qmcplusplus {
       bool put(xmlNodePtr cur) 
       {
         OhmmsAttributeSet rAttrib;
-        rAttrib.add(ID_B,"id"); 
+        rAttrib.add(ID_B,"id"); rAttrib.add(ID_B,"ref"); 
         rAttrib.add(B0,"exponent"); 
         rAttrib.put(cur);
         ID_B.append("_E");
