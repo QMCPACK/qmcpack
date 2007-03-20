@@ -71,9 +71,14 @@ namespace qmcplusplus {
       }
       else if(cname == "agp") 
       {
+#if defined(QMC_COMPLEX)
+        app_error() << "  AGPDeterminant cannot be used with QMC_COMPLEX=1" << endl;
+        return false;
+#else
         AGPDeterminantBuilder* agpbuilder = new AGPDeterminantBuilder(*targetPtcl,*targetPsi,ptclPool);
         success = agpbuilder->put(cur);
         addNode(agpbuilder,cur);
+#endif
       } 
       if(attach2Node) xmlAddChild(myNode,xmlCopyNode(cur,1));
       cur = cur->next;
