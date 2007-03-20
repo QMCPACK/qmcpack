@@ -102,18 +102,18 @@ namespace qmcplusplus {
     ///offset of the index
     int IndexOffSet;
     /** temporary value for update */
-    ValueType diffVal;
+    RealType diffVal;
     ///root name for Lambda compoenents
     string ID_Lambda;
     /** Y(iat,ibasis) value of the iat-th ortbial, the basis index ibasis
      */
-    Matrix<ValueType> Y;
+    Matrix<RealType> Y;
     /** dY(iat,ibasis) value of the iat-th ortbial, the basis index ibasis
      */
-    Matrix<GradType>  dY;
+    Matrix<PosType>  dY;
     /** d2Y(iat,ibasis) value of the iat-th ortbial, the basis index ibasis
      */
-    Matrix<ValueType> d2Y;
+    Matrix<RealType> d2Y;
     /** V(i,j) = Lambda(k,kk) U(i,kk)
      */
     Matrix<RealType> V;
@@ -125,26 +125,26 @@ namespace qmcplusplus {
     Vector<RealType> Uk;
 
     /** Gradient for update mode */
-    Matrix<GradType> dUk;
+    Matrix<PosType> dUk;
 
     /** Laplacian for update mode */
     Matrix<RealType> d2Uk;
 
     /** temporary Laplacin for update */
-    Vector<ValueType> curLap, tLap;
+    Vector<RealType> curLap, tLap;
     /** temporary Gradient for update */
-    Vector<GradType> curGrad, tGrad;
+    Vector<PosType> curGrad, tGrad;
     /** tempory Lambda*newY for update */
-    Vector<ValueType> curV;
+    Vector<RealType> curV;
     /** tempory Lambda*(newY-Y(iat)) for update */
-    Vector<ValueType> delV;
+    Vector<RealType> delV;
     /** tempory Lambda*(newY-Y(iat)) for update */
-    Vector<ValueType> curVal;
+    Vector<RealType> curVal;
 
-    ValueType *FirstAddressOfdY;
-    ValueType *LastAddressOfdY;
-    ValueType *FirstAddressOfgU;
-    ValueType *LastAddressOfgU;
+    RealType *FirstAddressOfdY;
+    RealType *LastAddressOfdY;
+    RealType *FirstAddressOfgU;
+    RealType *LastAddressOfgU;
 
     /** Geminal basis function */
     BasisSetType *GeminalBasis;

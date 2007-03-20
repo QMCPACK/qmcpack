@@ -85,7 +85,7 @@ namespace qmcplusplus {
     for(int i=0; i< NumPtcls-1; i++) {
       const RealType* restrict yptr=GeminalBasis->Y[i];
       for(int j=i+1; j<NumPtcls; j++) {
-        ValueType x= dot(V[j],yptr,BasisSize);
+        RealType x= dot(V[j],yptr,BasisSize);
         LogValue += x;
         Uk[i]+= x;
         Uk[j]+= x;
@@ -145,9 +145,9 @@ namespace qmcplusplus {
     //const ValueType* restrict y_ptr=GeminalBasis->y(0);
     //const GradType* restrict  dy_ptr=GeminalBasis->dy(0);
     //const ValueType* restrict d2y_ptr=GeminalBasis->d2y(0);
-    const ValueType* restrict y_ptr=GeminalBasis->Phi.data();
-    const GradType* restrict  dy_ptr=GeminalBasis->dPhi.data();
-    const ValueType* restrict d2y_ptr=GeminalBasis->d2Phi.data();
+    const BasisSetType::RealType* restrict y_ptr=GeminalBasis->Phi.data();
+    const BasisSetType::GradType* restrict  dy_ptr=GeminalBasis->dPhi.data();
+    const BasisSetType::RealType* restrict d2y_ptr=GeminalBasis->d2Phi.data();
 
     for(int k=0; k<BasisSize; k++) {
       curV[k] = BLAS::dot(BasisSize,y_ptr,Lambda[k]);
@@ -155,8 +155,8 @@ namespace qmcplusplus {
     }
 
     diffVal=0.0;
-    GradType dg_acc(0.0);
-    ValueType dl_acc(0.0);
+    BasisSetType::GradType dg_acc(0.0);
+    BasisSetType::ValueType dl_acc(0.0);
     const RealType* restrict vptr=V[0];
     for(int j=0; j<NumPtcls; j++, vptr+=BasisSize) {
       if(j == iat) {
@@ -260,7 +260,7 @@ namespace qmcplusplus {
     for(int i=0; i< NumPtcls-1; i++) {
       const RealType* restrict yptr=GeminalBasis->Y[i];
       for(int j=i+1; j<NumPtcls; j++) {
-        ValueType x= dot(V[j],yptr,BasisSize);
+        RealType x= dot(V[j],yptr,BasisSize);
         LogValue += x;
         Uk[i]+= x;
         Uk[j]+= x;
@@ -271,8 +271,8 @@ namespace qmcplusplus {
       const PosType* restrict dptr=GeminalBasis->dY[i];
       const RealType* restrict d2ptr=GeminalBasis->d2Y[i];
       const RealType* restrict vptr=V[0];
-      GradType grad(0.0);
-      ValueType lap(0.0);
+      BasisSetType::GradType grad(0.0);
+      BasisSetType::ValueType lap(0.0);
       for(int j=0; j<NumPtcls; j++, vptr+=BasisSize) {
         if(j==i) {
           dUk(i,j) = 0.0;

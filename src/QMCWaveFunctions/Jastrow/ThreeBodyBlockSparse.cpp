@@ -55,9 +55,9 @@ namespace qmcplusplus {
 
     LogValue=ValueType();
     for(int i=0; i< NumPtcls-1; i++) {
-      const RealType* restrict yptr=GeminalBasis->Y[i];
+      const BasisSetType::RealType* restrict yptr=GeminalBasis->Y[i];
       for(int j=i+1; j<NumPtcls; j++) {
-        ValueType x= dot(V[j],yptr,BasisSize);
+        RealType x= dot(V[j],yptr,BasisSize);
         LogValue += x;
         Uk[i]+= x;
         Uk[j]+= x;
@@ -65,11 +65,11 @@ namespace qmcplusplus {
     }
 
     for(int i=0; i<NumPtcls; i++)  {
-      const PosType* restrict dptr=GeminalBasis->dY[i];
-      const RealType* restrict d2ptr=GeminalBasis->d2Y[i];
-      const RealType* restrict vptr=V[0];
-      GradType grad(0.0);
-      ValueType lap(0.0);
+      const BasisSetType::GradType* restrict dptr=GeminalBasis->dY[i];
+      const BasisSetType::ValueType* restrict d2ptr=GeminalBasis->d2Y[i];
+      const BasisSetType::ValueType* restrict vptr=V[0];
+      BasisSetType::GradType grad(0.0);
+      BasisSetType::ValueType lap(0.0);
       for(int j=0; j<NumPtcls; j++, vptr+=BasisSize) {
         if(j!=i) {
           grad += dot(vptr,dptr,BasisSize);
@@ -111,9 +111,9 @@ namespace qmcplusplus {
 
     GeminalBasis->evaluateAllForPtclMove(P,iat);
 
-    const ValueType* restrict y_ptr=GeminalBasis->Phi.data();
-    const GradType* restrict  dy_ptr=GeminalBasis->dPhi.data();
-    const ValueType* restrict d2y_ptr=GeminalBasis->d2Phi.data();
+    const BasisSetType::ValueType* restrict y_ptr=GeminalBasis->Phi.data();
+    const BasisSetType::GradType* restrict  dy_ptr=GeminalBasis->dPhi.data();
+    const BasisSetType::ValueType* restrict d2y_ptr=GeminalBasis->d2Phi.data();
 
     //This is the only difference from ThreeBodyGeminal
     RealType* restrict cv_ptr = curV.data();
@@ -236,7 +236,7 @@ namespace qmcplusplus {
     for(int i=0; i< NumPtcls-1; i++) {
       const RealType* restrict yptr=GeminalBasis->Y[i];
       for(int j=i+1; j<NumPtcls; j++) {
-        ValueType x= dot(V[j],yptr,BasisSize);
+        RealType x= dot(V[j],yptr,BasisSize);
         LogValue += x;
         Uk[i]+= x;
         Uk[j]+= x;
@@ -244,11 +244,11 @@ namespace qmcplusplus {
     }
 
     for(int i=0; i<NumPtcls; i++)  {
-      const PosType* restrict dptr=GeminalBasis->dY[i];
-      const RealType* restrict d2ptr=GeminalBasis->d2Y[i];
+      const BasisSetType::GradType* restrict dptr=GeminalBasis->dY[i];
+      const BasisSetType::ValueType* restrict d2ptr=GeminalBasis->d2Y[i];
       const RealType* restrict vptr=V[0];
-      GradType grad(0.0);
-      ValueType lap(0.0);
+      BasisSetType::GradType grad(0.0);
+      BasisSetType::ValueType lap(0.0);
       for(int j=0; j<NumPtcls; j++, vptr+=BasisSize) {
         if(j==i) {
           dUk(i,j) = 0.0;
