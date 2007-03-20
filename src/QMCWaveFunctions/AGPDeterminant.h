@@ -14,15 +14,15 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
+/** @file AGPDeterminant.h
+ * @brief Declaration of AGPDeterminant for pairing orbitals.
+ */
 #ifndef QMCPLUSPLUS_AGP_DIRACDETERMINANT_H
 #define QMCPLUSPLUS_AGP_DIRACDETERMINANT_H
 #include "QMCWaveFunctions/OrbitalBase.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "QMCWaveFunctions/BasisSetBase.h"
-//#include "QMCWaveFunctions/MolecularOrbitals/GridMolecularOrbitals.h"
-//#include "QMCWaveFunctions/MolecularOrbitals/STOMolecularOrbitals.h"
-//#include "QMCWaveFunctions/MolecularOrbitals/GTOMolecularOrbitals.h"
 
 namespace qmcplusplus {
 
@@ -31,9 +31,7 @@ namespace qmcplusplus {
 
   public:
 
-    //typedef GridMolecularOrbitals::BasisSetType BasisSetType;
-    //typedef STOMolecularOrbitals::BasisSetType BasisSetType;
-    //typedef GTOMolecularOrbitals::BasisSetType BasisSetType;
+    ///define BasisSetType with RealType
     typedef BasisSetBase<RealType> BasisSetType;
     typedef BasisSetType::IndexVector_t IndexVector_t;
     typedef BasisSetType::ValueVector_t ValueVector_t;
@@ -214,23 +212,26 @@ namespace qmcplusplus {
     ValueVector_t WorkSpace;
     IndexVector_t Pivot;
 
-    ValueType curRatio,cumRatio;
+    ///current ratio
+    RealType curRatio;
+    ///cummulate ratio for particle-by-particle update
+    RealType cumRatio;
     ///address of  dpsiU[0][0]
-    ValueType *FirstAddressOfdVU;
+    BasisSetType::ValueType *FirstAddressOfdVU;
     ///address of FirstAddressOfdVU+OHMMS_DIM*Nup*Nup
-    ValueType *LastAddressOfdVU;
+    BasisSetType::ValueType *LastAddressOfdVU;
     ///address of  dpsiD[0][0]
-    ValueType *FirstAddressOfdVD;
+    BasisSetType::ValueType *FirstAddressOfdVD;
     ///address of FirstAddressOfdVD+OHMMS_DIM*Ndown*Nup
-    ValueType *LastAddressOfdVD;
+    BasisSetType::ValueType *LastAddressOfdVD;
     ///address of myG[0][0]
     ValueType *FirstAddressOfG;
     ///address of FirstAddressOfG+OHMMS_DIM*NumPtcls
     ValueType *LastAddressOfG;
     ///address of dY[0][0]
-    ValueType *FirstAddressOfdY;
+    BasisSetType::ValueType *FirstAddressOfdY;
     ///address of FirstAddressOfdY+NumPtcls*BasisSize
-    ValueType *LastAddressOfdY;
+    BasisSetType::ValueType *LastAddressOfdY;
 
     ParticleSet::ParticleGradient_t myG, myG_temp;
     ParticleSet::ParticleLaplacian_t myL, myL_temp;

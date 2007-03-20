@@ -75,7 +75,6 @@ namespace qmcplusplus {
       FirstAddressOfG = &myG[0][0];
       LastAddressOfG = FirstAddressOfG + DIM*NumPtcls;
     }
-
   }
 
   void AGPDeterminant::resetTargetParticleSet(ParticleSet& P) 
@@ -257,7 +256,8 @@ namespace qmcplusplus {
       buf.add(d2Y.begin(),d2Y.end());
       buf.add(FirstAddressOfdY,LastAddressOfdY);
       buf.add(FirstAddressOfG,LastAddressOfG);
-      buf.add(myL.begin(), myL.end());
+      buf.add(myL.first_address(), myL.last_address());
+      //buf.add(myL.begin(), myL.end());
     }
 
     return LogValue = evaluateLogAndPhase(CurrentDet,PhaseValue);
@@ -282,7 +282,8 @@ namespace qmcplusplus {
       buf.put(d2Y.begin(),d2Y.end());
       buf.put(FirstAddressOfdY,LastAddressOfdY);
       buf.put(FirstAddressOfG,LastAddressOfG);
-      buf.put(myL.begin(), myL.end());
+      buf.put(myL.first_address(), myL.last_address());
+      //buf.put(myL.begin(), myL.end());
     }
 
     return CurrentDet;
@@ -300,7 +301,8 @@ namespace qmcplusplus {
       buf.get(d2Y.begin(),d2Y.end());
       buf.get(FirstAddressOfdY,LastAddressOfdY);
       buf.get(FirstAddressOfG,LastAddressOfG);
-      buf.get(myL.begin(), myL.end());
+      buf.get(myL.first_address(), myL.last_address());
+      //buf.get(myL.begin(), myL.end());
       //copy current inverse of the determinant
       psiM_temp = psiM;
     }
@@ -323,12 +325,13 @@ namespace qmcplusplus {
       //BLAS::gemv(Lambda.rows(),Lambda.cols(), Lambda.data(), GeminalBasis->y(0), phiT[iat]);
 
       //const ValueType* restrict y_ptr=GeminalBasis->y(0);
-      const ValueType* restrict y_ptr=GeminalBasis->Phi.data();//@@
+      const BasisSetType::ValueType* restrict y_ptr=GeminalBasis->Phi.data();//@@
       if(iat<Nup) 
       {
         for(int d=0,jat=Nup; d<Ndown; d++,jat++) 
         {
-          psiU[d]=BLAS::dot(BasisSize,y_ptr,phiT[jat]);
+          psiU[d]=dot(y_ptr,phiT[jat],BasisSize);
+          //psiU[d]=BLAS::dot(BasisSize,y_ptr,phiT[jat]);
         }
         //unpaired block Ndown x unpaired
         for(int d=Ndown,unpaired=0; d<Nup; d++,unpaired++) 
@@ -404,14 +407,16 @@ namespace qmcplusplus {
     void AGPDeterminant::ratioUp(ParticleSet& P, int iat) 
     {
       //const ValueType* restrict y_ptr=GeminalBasis->y(0);
-      const ValueType* restrict y_ptr=GeminalBasis->Phi.data();//@@
+      const BasisSetType::ValueType* restrict y_ptr=GeminalBasis->Phi.data();//@@
 
       for(int d=0,jat=Nup; d<Ndown; d++,jat++) {
-        psiU[d]=BLAS::dot(BasisSize,y_ptr,phiT[jat]);
+        psiU[d]=dot(y_ptr,phiT[jat],BasisSize);
+        //psiU[d]=BLAS::dot(BasisSize,y_ptr,phiT[jat]);
       }
       //unpaired block Ndown x unpaired
       for(int d=Ndown,unpaired=0; d<Nup; d++,unpaired++) {
-        psiU[d] = BLAS::dot(BasisSize,LambdaUP[unpaired],y_ptr);
+        psiU[d] =dot(LambdaUP[unpaired],y_ptr,BasisSize);
+        //psiU[d] = BLAS::dot(BasisSize,LambdaUP[unpaired],y_ptr);
       }
 
       curRatio = DetRatio(psiM_temp, psiU.data(),iat);
@@ -422,8 +427,8 @@ namespace qmcplusplus {
 
       //const GradType* restrict  dy_ptr = GeminalBasis->dy(0);
       //const ValueType* restrict d2y_ptr = GeminalBasis->d2y(0);
-      const GradType* restrict  dy_ptr = GeminalBasis->dPhi.data();//@@
-      const ValueType* restrict d2y_ptr = GeminalBasis->d2Phi.data();//@@
+      const BasisSetType::GradType* restrict  dy_ptr = GeminalBasis->dPhi.data();//@@
+      const BasisSetType::ValueType* restrict d2y_ptr = GeminalBasis->d2Phi.data();//@@
       for(int d=0, jat=Nup; d<Ndown; d++,jat++) 
       {
         dpsiU(iat,d)=dot(phiT[jat],dy_ptr,BasisSize);
@@ -448,11 +453,12 @@ namespace qmcplusplus {
     void AGPDeterminant::ratioDown(ParticleSet& P, int iat) 
     {
       //const ValueType* restrict y_ptr=GeminalBasis->y(0);
-      const ValueType* restrict y_ptr=GeminalBasis->Phi.data();//@@
+      const BasisSetType::ValueType* restrict y_ptr=GeminalBasis->Phi.data();//@@
       int d=iat-Nup;
       for(int u=0; u<Nup; u++) 
       {
-        psiD[u]=BLAS::dot(BasisSize,y_ptr,phiT[u]);
+        psiD[u]=dot(y_ptr,phiT[u],BasisSize);
+        //psiD[u]=BLAS::dot(BasisSize,y_ptr,phiT[u]);
       }
 
       curRatio = DetRatioTranspose(psiM_temp, psiD.data(),d);
@@ -463,8 +469,8 @@ namespace qmcplusplus {
 
       //const GradType* restrict dy_ptr = GeminalBasis->dy(0);
       //const ValueType* restrict d2y_ptr = GeminalBasis->d2y(0);
-      const GradType* restrict dy_ptr = GeminalBasis->dPhi.data();//@@
-      const ValueType* restrict d2y_ptr = GeminalBasis->d2Phi.data();//@@
+      const BasisSetType::GradType* restrict dy_ptr = GeminalBasis->dPhi.data();//@@
+      const BasisSetType::ValueType* restrict d2y_ptr = GeminalBasis->d2Phi.data();//@@
       for(int u=0; u<Nup; u++) 
       {
         dpsiD(d,u)=dot(phiT[u],dy_ptr,BasisSize);
@@ -552,7 +558,8 @@ namespace qmcplusplus {
       buf.put(d2Y.begin(),d2Y.end());
       buf.put(FirstAddressOfdY,LastAddressOfdY);
       buf.put(FirstAddressOfG,LastAddressOfG);
-      buf.put(myL.begin(), myL.end());
+      buf.put(myL.first_address(), myL.last_address());
+      //buf.put(myL.begin(), myL.end());
     }
     return CurrentDet;
   }
