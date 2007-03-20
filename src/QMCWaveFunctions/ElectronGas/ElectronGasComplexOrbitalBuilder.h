@@ -29,6 +29,7 @@ namespace qmcplusplus {
 
     ///constructor
     ElectronGasComplexOrbitalBuilder(ParticleSet& els, TrialWaveFunction& wfs);
+    typedef VarRegistry<RealType> OptimizableSetType;
 
     ///implement vritual function
     bool put(xmlNodePtr cur);
@@ -43,7 +44,7 @@ namespace qmcplusplus {
 
       EGOSet(const vector<PosType>& k, const vector<RealType>& k2);
 
-      inline void reset() { }
+      inline void resetParameters(OptimizableSetType& vlist) { }
       inline void resetTargetParticleSet(ParticleSet& P) { }
 
       inline ValueType
