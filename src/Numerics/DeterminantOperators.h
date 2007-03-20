@@ -245,6 +245,22 @@ dot(const T* restrict a, const T* restrict b, int n) {
   return res;
 }
 
+template<class T>
+inline std::complex<T> 
+dot(const std::complex<T>* restrict a, const T* restrict b, int n) {
+  std::complex<T> res = 0.0;
+  for(int i=0; i<n; i++) res += a[i]*b[i];
+  return res;
+}
+
+template<class T>
+inline std::complex<T> 
+dot(const T* restrict a, const std::complex<T>* restrict b, int n) {
+  std::complex<T> res = 0.0;
+  for(int i=0; i<n; i++) res += a[i]*b[i];
+  return res;
+}
+
 // template<class T1, class T2>
 // inline T2
 // dot(const T1* restrict a, const T2* restrict b, int n) {
