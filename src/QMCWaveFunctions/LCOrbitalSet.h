@@ -198,9 +198,9 @@ namespace qmcplusplus {
       myBasisSet->evaluateAllForPtclMove(P,iat);
       //optimal on tungsten
       const ValueType* restrict cptr=C.data();
-      const ValueType* restrict pptr=myBasisSet->Phi.data();
-      const ValueType* restrict d2ptr=myBasisSet->d2Phi.data();
-      const GradType* restrict dptr=myBasisSet->dPhi.data();
+      const typename BS::ValueType* restrict pptr=myBasisSet->Phi.data();
+      const typename BS::ValueType* restrict d2ptr=myBasisSet->d2Phi.data();
+      const typename BS::GradType* restrict dptr=myBasisSet->dPhi.data();
 #pragma ivdep
       for(int j=0; j<OrbitalSetSize; j++) {
         register ValueType res=0.0, d2res=0.0;
@@ -239,9 +239,9 @@ namespace qmcplusplus {
       for(int i=0, iat=first; iat<last; i++,iat++){
         myBasisSet->evaluateForWalkerMove(P,iat);
         const ValueType* restrict cptr=C.data();
-        const ValueType* restrict pptr=myBasisSet->Phi.data();
-        const ValueType* restrict d2ptr=myBasisSet->d2Phi.data();
-        const GradType* restrict dptr=myBasisSet->dPhi.data();
+        const typename BS::ValueType* restrict pptr=myBasisSet->Phi.data();
+        const typename BS::ValueType* restrict d2ptr=myBasisSet->d2Phi.data();
+        const typename BS::GradType* restrict dptr=myBasisSet->dPhi.data();
         for(int j=0; j<OrbitalSetSize; j++) {
           register ValueType res=0.0, d2res=0.0;
           register GradType dres;
