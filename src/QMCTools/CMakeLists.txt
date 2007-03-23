@@ -17,7 +17,7 @@ SET(CASINO
   CasinoParser.cpp
   BParser.cpp
   BMakeFunc.cpp
-  parse.cpp
+  convert4qmc.cpp
 )
 
 LINK_LIBRARIES(${FORTRAN_LIBS} 
