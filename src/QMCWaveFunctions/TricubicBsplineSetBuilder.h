@@ -68,6 +68,8 @@ namespace qmcplusplus {
     ParticleSet& targetPtcl;
     ///reference to a ParticleSetPool
     PtclPoolType& ptclPool;
+    ///current hdf5 file name
+    std::string curH5Fname;
     ///save xml node
     xmlNodePtr rootNode;
     PosType LowerBox;

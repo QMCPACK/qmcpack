@@ -28,7 +28,8 @@ namespace qmcplusplus {
   map<string,TricubicBsplineSetBuilder::StorageType*> TricubicBsplineSetBuilder::BigDataSet;
 
   TricubicBsplineSetBuilder::TricubicBsplineSetBuilder(ParticleSet& p, PtclPoolType& psets, xmlNodePtr cur):
-    targetPtcl(p),ptclPool(psets),rootNode(cur), LowerBox(0.0),UpperBox(1.0),BoxGrid(2){
+    targetPtcl(p),ptclPool(psets),rootNode(cur), LowerBox(0.0),UpperBox(1.0),BoxGrid(2)
+    {
       for(int idim=0; idim<DIM; idim++)
         UpperBox[idim]=targetPtcl.Lattice.R(idim,idim);
       myParam=new PWParameterSet;
@@ -43,7 +44,14 @@ namespace qmcplusplus {
    */
   bool TricubicBsplineSetBuilder::put(xmlNodePtr cur){
 
-    OpenEndGrid=true;
+    curH5Fname.clear();
+
+    //save the name of current HDF5 file name
+    OhmmsAttributeSet aAttrib;
+    aAttrib.add(curH5Fname,"href");
+    aAttrib.put(rootNode);
+
+    OpenEndGrid=false;
     cur=cur->children;
     while(cur != NULL)
     {
@@ -83,25 +91,32 @@ namespace qmcplusplus {
    */
   SPOSetBase*
   TricubicBsplineSetBuilder::createSPOSet(xmlNodePtr cur){
-#if !defined(DEBUG_BSPLINE_EG)
-    string hrefname("NONE");
+//    return createSPOSetWithEG();
+
+    //string hrefname("NONE");
     int norb(0);
     int degeneracy(1);
     OhmmsAttributeSet aAttrib;
-    aAttrib.add(norb,"orbitals");
+    aAttrib.add(norb,"orbitals"); aAttrib.add(norb,"size");
     aAttrib.add(degeneracy,"degeneracy");
-    aAttrib.add(hrefname,"href");
+    aAttrib.add(curH5Fname,"href"); //can be overwritten
     aAttrib.put(cur);
 
+    if(curH5Fname.empty())
+    {
+      app_error() << "No Valid HDF5 is provided for TricubicBsplineSetBuilder." << endl;
+      app_error() << "Abort TricubicBsplineSetBuilder::createSPOSet(xmlNodePtr cur)" << endl;
+      abort(); //FIXABORT
+    }
     if(norb ==0) {
       app_error() << "TricubicBsplineSetBuilder::createSPOSet failed. Check the attribte orbitals." << endl;
-      return 0;
+      abort(); //FIXABORT
     }
 
-    app_log() << "    Only valid for spin-unpolarized cases " << endl;
+    app_log() << "    HDF5 File = " << curH5Fname << endl;
     app_log() << "    Degeneracy = " << degeneracy << endl;
 
-    hid_t h_file = H5Fopen(hrefname.c_str(),H5F_ACC_RDWR,H5P_DEFAULT);
+    hid_t h_file = H5Fopen(curH5Fname.c_str(),H5F_ACC_RDWR,H5P_DEFAULT);
     //check the version
     myParam->checkVersion(h_file);
     //check htag multiple times
@@ -115,13 +130,16 @@ namespace qmcplusplus {
     char hroot[128];
     sprintf(hroot,"/%s/%s%d",myParam->eigTag.c_str(),myParam->twistTag.c_str(),myParam->twistIndex);
 
+    int spinIndex=0;
     cur=cur->children;
     while(cur != NULL) {
       string cname((const char*)(cur->name));
       if(cname == "occupation") {
         string occ_mode("ground");
-        const xmlChar* o=xmlGetProp(cur,(const xmlChar*)"mode");  
-        if(o!= NULL) occ_mode = (const char*)o;
+        OhmmsAttributeSet oAttrib;
+        oAttrib.add(occ_mode,"mode");
+        oAttrib.add(spinIndex,"spindataset");
+        oAttrib.put(cur);
         //Do nothing if mode == ground
         if(occ_mode == "excited") {
           vector<int> occ_in, occRemoved;
@@ -147,8 +165,12 @@ namespace qmcplusplus {
     if(git == myBasis.end())
     {
       abasis = new OrbitalGroupType;
-      abasis->setGrid(LowerBox[0],UpperBox[0],LowerBox[1],UpperBox[1],LowerBox[2],UpperBox[2],
-          BoxGrid[0]-1,BoxGrid[1]-1,BoxGrid[2]-1);
+      if(OpenEndGrid)
+        abasis->setGrid(LowerBox[0],UpperBox[0], LowerBox[1],UpperBox[1],LowerBox[2],UpperBox[2],
+            BoxGrid[0],BoxGrid[1],BoxGrid[2]);
+      else//need to offset for closed end
+        abasis->setGrid(LowerBox[0],UpperBox[0],LowerBox[1],UpperBox[1],LowerBox[2],UpperBox[2],
+            BoxGrid[0]-1,BoxGrid[1]-1,BoxGrid[2]-1);
       myBasis["0"]=abasis;
     } 
     else
@@ -157,54 +179,67 @@ namespace qmcplusplus {
     }
 
     StorageType inData(BoxGrid[0],BoxGrid[1],BoxGrid[2]);
+    SPOSetType* psi= new SPOSetType(norb);
+
+    bool complex2real = myParam->hasComplexData(h_file);
+
 #if defined(QMC_COMPLEX)
-    SPOSetType* psi= new SPOSetType(norb);
-    char wfname[128],wfshortname[16];
-    for(int iorb=0; iorb<norb; iorb++) {
-      sprintf(wfname,"%s/%s%d/eigenvector", hroot, myParam->bandTag.c_str(), occSet[iorb]/degeneracy);
-      sprintf(wfshortname,"%s#%d",hrefname.c_str(),occSet[iorb]/degeneracy);
-      map<string,StorageType*>::iterator it(BigDataSet.find(wfshortname));
-      if(it == BigDataSet.end()) {
-        app_log() << "   Reading spline function " << wfname << " (" << wfshortname  << ")" << endl;
-        StorageType* newP=new StorageType;
-        HDFAttribIO<StorageType> dummy(inData);
-        dummy.read(h_file,wfname);
-        BigDataSet[wfshortname]=newP;
-        abasis->add(iorb,inData,newP);
-      } else {
-        app_log() << "   Reusing spline function " << wfname << " (" << wfshortname  << ")" << endl;
-        abasis->add(iorb,(*it).second);
-      }
-    } 
-#else
-    Array<ComplexType,3> inTemp(BoxGrid[0],BoxGrid[1],BoxGrid[2]);
-    SPOSetType* psi= new SPOSetType(norb);
-    char wfname[128],wfshortname[16];
-    for(int iorb=0; iorb<norb; iorb++) {
-      sprintf(wfname,"%s/%s%d/eigenvector", hroot, myParam->bandTag.c_str(), occSet[iorb]/degeneracy);
-      sprintf(wfshortname,"%s#%d",hrefname.c_str(),occSet[iorb]/degeneracy);
-      map<string,StorageType*>::iterator it(BigDataSet.find(wfshortname));
-      if(it == BigDataSet.end()) {
-        app_log() << "   Reading spline function " << wfname << " (" << wfshortname  << ")" << endl;
-        StorageType* newP =new StorageType;
-        HDFAttribIO<Array<ComplexType,3> > dummy(inTemp);
-        dummy.read(h_file,wfname);
-        BLAS::copy(inTemp.size(),inTemp.data(),inData.data());
-        BigDataSet[wfshortname]=newP;
-        abasis->add(iorb,inData,newP);
-      } else {
-        app_log() << "   Reusing spline function " << wfname << " (" << wfshortname  << ")" << endl;
-        abasis->add(iorb,(*it).second);
-      }
-    } 
+    if(!complex2real) 
+    {
+      app_error() << "  Real wavefunctions cannot be used with QMC_COMPLEX=1" << endl;
+      abort(); //FIXABORT
+    }
+    complex2real = false;//reset to false
 #endif
+
+    if(complex2real)
+    {
+      Array<ComplexType,3> inTemp(BoxGrid[0],BoxGrid[1],BoxGrid[2]);
+      for(int iorb=0; iorb<norb; iorb++) 
+      {
+        ostringstream wnshort;
+        string eigvName=myParam->getEigVectorName(hroot,occSet[iorb]/degeneracy,spinIndex);
+        wnshort<<curH5Fname << "#"<<occSet[iorb]/degeneracy << "#" << spinIndex;
+        map<string,StorageType*>::iterator it(BigDataSet.find(wnshort.str()));
+        if(it == BigDataSet.end()) {
+          app_log() << "   Reading spline function " << eigvName << " (" << wnshort.str()  << ")" << endl;
+          StorageType* newP =new StorageType;
+          HDFAttribIO<Array<ComplexType,3> > dummy(inTemp);
+          dummy.read(h_file,eigvName.c_str());
+          BLAS::copy(inTemp.size(),inTemp.data(),inData.data());
+          BigDataSet[wnshort.str()]=newP;
+          abasis->add(iorb,inData,newP);
+        } else {
+          app_log() << "   Reusing spline function " << eigvName << " (" << wnshort.str()  << ")" << endl;
+          abasis->add(iorb,(*it).second);
+        }
+      } 
+    }
+    else 
+    {
+      for(int iorb=0; iorb<norb; iorb++) {
+        ostringstream wnshort;
+        string eigvName=myParam->getEigVectorName(hroot,occSet[iorb]/degeneracy,spinIndex);
+        wnshort<<curH5Fname << "#"<<occSet[iorb]/degeneracy << "#" << spinIndex;
+        map<string,StorageType*>::iterator it(BigDataSet.find(wnshort.str()));
+        if(it == BigDataSet.end()) {
+          app_log() << "   Reading spline function " << eigvName << " (" << wnshort.str()  << ")" << endl;
+          StorageType* newP=new StorageType;
+          HDFAttribIO<StorageType> dummy(inData);
+          dummy.read(h_file,eigvName.c_str());
+          BigDataSet[wnshort.str()]=newP;
+          abasis->add(iorb,inData,newP);
+        } else {
+          app_log() << "   Reusing spline function " << eigvName << " (" << wnshort.str()  << ")" << endl;
+          abasis->add(iorb,(*it).second);
+        }
+      } 
+    }
+
     psi->add(abasis);
     H5Fclose(h_file);
 
     return psi;
-#else
-    return createSPOSetWithEG();
-#endif
   }
 
   /** Create B-spline for the electron-gas wavefunctions

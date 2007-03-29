@@ -53,7 +53,11 @@ ENDIF(QMC_COMPLEX)
 ####################################
 # create libqmcwfs
 ####################################
-ADD_LIBRARY(qmcwfs ${WFBASE_SRCS} ${JASTROW_SRCS} ${FERMION_SRCS})
+IF(QMC_BUILD_STATIC)
+  ADD_LIBRARY(qmcwfs STATIC ${WFBASE_SRCS} ${JASTROW_SRCS} ${FERMION_SRCS})
+ELSE(QMC_BUILD_STATIC)
+  ADD_LIBRARY(qmcwfs SHARED ${WFBASE_SRCS} ${JASTROW_SRCS} ${FERMION_SRCS})
+ENDIF(QMC_BUILD_STATIC)
 
 ## THESE ARE NOT USED ANYMORE
 #  Jastrow/ThreeBodyGeminalBuilder.cpp
