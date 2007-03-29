@@ -70,7 +70,7 @@ namespace qmcplusplus {
   public:
     Vector<RealType> Fk_0; 
     Vector<RealType> Fk_1; 
-    ///Coefficients
+    ///Coefficients = Fk_0 + Fk_1
     Vector<RealType> Fk; 
     ///A unique Fk sorted by |k|
     Vector<RealType> Fk_symm;

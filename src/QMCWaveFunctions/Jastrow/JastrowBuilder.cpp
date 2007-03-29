@@ -200,11 +200,11 @@ namespace qmcplusplus {
           if(j1) jcombo->Psi.push_back(j1);
         }
       }
-      //if(control->JComponent[LONGRANGE])
-      //{
-      //  app_log() << "    Adding long-range component of " << funcOpt << "  Jastrow function "<< endl;
-      //  control->addExtra2ComboOrbital(jcombo);
-      //}
+      if(control->JComponent[LONGRANGE])
+      {
+        app_log() << "    Adding long-range component of " << funcOpt << "  Jastrow function "<< endl;
+        control->addExtra2ComboOrbital(jcombo);
+      }
       targetPsi.addOrbital(jcombo);
     }
     else

@@ -57,13 +57,14 @@ namespace qmcplusplus {
   }
   
   
-  /**
-   * update Fk using the handler
+  /** update Fk using the handler
    */
   void LRTwoBodyJastrow::resetInternals() 
   {
-    Fk.resize(handler->Fk.size());
-    Fk = -1.0 * handler->Fk;
+    Fk_0.resize(handler->Fk.size());
+    Fk_0 = -1.0 * handler->Fk;
+    Fk.resize(Fk_0.size());
+    Fk=Fk_0;
   }
   
   void LRTwoBodyJastrow::resetParameters(OptimizableSetType& optVariables) 
@@ -268,25 +269,28 @@ namespace qmcplusplus {
       Fk_symm.resize(kpts_sorted.size());
       
       bool foundCoeff=false;
-      xmlNodePtr tcur=cur->children;
-      while(tcur != NULL) {
-        string cname((const char*)(tcur->name));
-        if(cname == "parameter") {
-          const xmlChar* kptr=xmlGetProp(tcur,(const xmlChar *)"name");
-          const xmlChar* idptr=xmlGetProp(tcur,(const xmlChar *)"id");
-          if(idptr!= NULL && kptr != NULL) {
-            int ik=atoi((const char*)kptr);
-            if(ik<Fk_symm.size()) { // only accept valid ik 
-              RealType x;
-              putContent(x,tcur);
-              Fk_symm[ik]=x;
-              vlist[(const char*)idptr]=x;
-              //vlist.add((const char*)idptr,Fk_symm.data()+ik);
+      if(cur != NULL)
+      {
+        xmlNodePtr tcur=cur->children;
+        while(tcur != NULL) {
+          string cname((const char*)(tcur->name));
+          if(cname == "parameter") {
+            const xmlChar* kptr=xmlGetProp(tcur,(const xmlChar *)"name");
+            const xmlChar* idptr=xmlGetProp(tcur,(const xmlChar *)"id");
+            if(idptr!= NULL && kptr != NULL) {
+              int ik=atoi((const char*)kptr);
+              if(ik<Fk_symm.size()) { // only accept valid ik 
+                RealType x;
+                putContent(x,tcur);
+                Fk_symm[ik]=x;
+                vlist[(const char*)idptr]=x;
+                //vlist.add((const char*)idptr,Fk_symm.data()+ik);
+              }
+              foundCoeff=true;
             }
-            foundCoeff=true;
           }
+          tcur=tcur->next;
         }
-        tcur=tcur->next;
       }
       
       Fk.resize(NumKpts);
@@ -322,7 +326,7 @@ namespace qmcplusplus {
           xmlNewProp(p_ptr,(const xmlChar*)"name",(const xmlChar*)kname.str().c_str());
         }
       }
-      
+    
       app_log() << "  Long-range Two-Body Jastrow coefficients " << endl;
       for(int ikpt=0; ikpt<NumKpts; ikpt++) {
         app_log() <<  skRef->KLists.ksq[ikpt] << " " << Fk[ikpt] << endl;

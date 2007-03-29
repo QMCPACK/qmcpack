@@ -23,6 +23,8 @@
 
 namespace qmcplusplus {
 
+  class LRTwoBodyJastrow;
+
   struct RPAConstraints: public OrbitalConstraintsBase {
     typedef RPAJastrow<RealType> FuncType;
     bool IgnoreSpin;
@@ -67,6 +69,7 @@ namespace qmcplusplus {
     OrbitalBase* createLRTwoBody();
      
   private:
+    LRTwoBodyJastrow* LongRangeRPA;
   };
 
   template<class T>

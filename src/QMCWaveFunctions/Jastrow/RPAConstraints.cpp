@@ -76,7 +76,7 @@ namespace qmcplusplus {
     if(Rs<0) {
       if(targetPtcl.Lattice.BoxBConds[0]) {
         Rs=std::pow(3.0/4.0/M_PI*targetPtcl.Lattice.Volume/static_cast<RealType>(targetPtcl.getTotalNum()),1.0/3.0);
-      } else {
+      } else { 
         Rs=1.0;
       }
     }
@@ -119,14 +119,17 @@ namespace qmcplusplus {
   //RPAPBCConstraints definitions
   ////////////////////////////////////////
   RPAPBCConstraints::RPAPBCConstraints(ParticleSet& p, TrialWaveFunction& psi, bool nospin):
-    OrbitalConstraintsBase(p,psi),IgnoreSpin(nospin)
+    OrbitalConstraintsBase(p,psi),IgnoreSpin(nospin),LongRangeRPA(0)
     {
       JComponent.set(MULTIPLE);
       JComponent.set(TWOBODY);
       JComponent.set(LONGRANGE);
     }
 
-  RPAPBCConstraints::~RPAPBCConstraints() {  }
+  RPAPBCConstraints::~RPAPBCConstraints() 
+  {  
+    //may delete LongRangeRPA
+  }
 
   bool RPAPBCConstraints::put(xmlNodePtr cur) {
     bool success=getVariables(cur);
@@ -148,6 +151,7 @@ namespace qmcplusplus {
   void RPAPBCConstraints::addOptimizables(OptimizableSetType& outVars) {
     //potentially add Rcut
     outVars[ID_Rs]=Rs;
+    if(LongRangeRPA) LongRangeRPA->put(NULL,outVars);
   }
 
   void RPAPBCConstraints::resetParameters(OptimizableSetType& optVariables) 
@@ -190,8 +194,12 @@ namespace qmcplusplus {
   }
      
   OrbitalBase* RPAPBCConstraints::createLRTwoBody() {
-    HandlerType* handler = LRJastrowSingleton::getHandler(targetPtcl);
-    return new LRTwoBodyJastrow(targetPtcl, handler);
+    if(LongRangeRPA==0)
+    {
+      HandlerType* handler = LRJastrowSingleton::getHandler(targetPtcl);
+      LongRangeRPA = new LRTwoBodyJastrow(targetPtcl, handler);
+    }
+    return LongRangeRPA;
   }
 
   OrbitalBase* RPAPBCConstraints::createTwoBody() 
