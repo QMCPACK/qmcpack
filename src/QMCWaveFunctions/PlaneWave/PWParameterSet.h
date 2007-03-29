@@ -67,6 +67,8 @@ namespace qmcplusplus {
 
     double getEcut(double ecut);
 
+    bool hasComplexData(hid_t h);
+
     string getTwistAngleName();
 
     string getTwistName();
@@ -78,6 +80,8 @@ namespace qmcplusplus {
     string getBandName(int ib);
 
     string getSpinName(int ispin);
+
+    string getEigVectorName(const string& hg, int ib, int ispin);
   };
 }
 #endif

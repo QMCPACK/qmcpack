@@ -53,9 +53,13 @@ namespace qmcplusplus {
     //
     RealType ecut=-1.0;
     
+    //close it if open
     if(hfileID>0) H5Fclose(hfileID);
 
+    //check the current href
     hfileID = getH5(cur,"href");
+    //no file, check the root
+    if(hfileID<0) hfileID = getH5(rootNode,"href");
 
     bool success=true;
     //Move through the XML tree and read basis information
@@ -69,11 +73,12 @@ namespace qmcplusplus {
       } 
       else if(cname == "coefficients")
       {
+        //close
+        if(hfileID>0) H5Fclose(hfileID);
         hfileID=getH5(cur,"hdata");
       } 
       else if(cname == "slaterdeterminant") {
-        if(hfileID<0)
-          hfileID=getH5(cur,"href");
+        if(hfileID<0) hfileID=getH5(cur,"href");
 
         if(hfileID<0)
         {
@@ -187,6 +192,7 @@ namespace qmcplusplus {
     hdfint.read(grp_id,"num_twists");
     int nkpts = idata; 
 
+
     hdfint.read(grp_id,"num_bands");
     int nbands = idata;
     myParam->numBands = nbands;
@@ -199,6 +205,7 @@ namespace qmcplusplus {
     RealType ecut = ddata;
     
     H5Gclose(grp_id);
+
     //end of parameters
 
     //check if input parameters are valid

@@ -55,6 +55,16 @@ namespace qmcplusplus {
     return Ecut;
   }
 
+  bool PWParameterSet::hasComplexData(hid_t h_file) 
+  {
+    ostringstream oss;
+    oss << paramTag << "/complex_coefficients";
+    int iscomplex=0;
+    HDFAttribIO<int> creader(iscomplex);
+    creader.read(h_file,oss.str().c_str());
+    return iscomplex;
+  }
+
   string PWParameterSet::getTwistAngleName()
   {
     ostringstream oss;
@@ -82,6 +92,18 @@ namespace qmcplusplus {
     {
       oss << "/" << spinTag << ispin;
     }
+    return oss.str();
+  }
+
+  string PWParameterSet::getEigVectorName(const string& hg, int ib, int ispin)
+  {
+    ostringstream oss;
+    oss << hg << "/"<< bandTag << ib;
+    if(version[1]==10)
+    {
+      oss << "/" << spinTag << ispin;
+    }
+    oss << "/eigenvector";
     return oss.str();
   }
 
