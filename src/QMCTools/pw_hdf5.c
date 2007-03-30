@@ -32,7 +32,6 @@ static int h_ngrid[3];
 static int h_ngridtot=0;
 /* check for gamma */
 static int is_gamma=0;
-
 void F77_FUNC_(pwhdf_open_file,PWHDF_OPEN_FILE)(const char* fname, const int* length)
 {
   char * hfname = ( char * ) malloc( (*length) + 1 ) ;
@@ -87,7 +86,7 @@ void F77_FUNC_(pwhdf_write_basis,PWHDF_WRITE_BASIS)(const double* g, const int* 
   dims[0] = ng;
   dims[1] = 3;
   dataspace  = H5Screate_simple(2, dims, NULL);
-  dataset =  H5Dcreate(h_basis, "planewave", H5T_NATIVE_INT, dataspace, H5P_DEFAULT);
+  dataset =  H5Dcreate(h_basis, "planewaves", H5T_NATIVE_INT, dataspace, H5P_DEFAULT);
   ret = H5Dwrite(dataset, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT,ig);
   H5Sclose(dataspace);
   H5Dclose(dataset);
@@ -281,7 +280,6 @@ void F77_FUNC_(pwhdf_write_wfr,PWHDF_WRITE_WFR)(const int* ibnd,
   dims[1] = h_ngrid[1];
   dims[2] = h_ngrid[2];
   dims[3] = 2;
-
 
   dataspace  = H5Screate_simple(4, dims, NULL);
   dataset =  H5Dcreate(h_spin, "eigenvector", H5T_NATIVE_DOUBLE, dataspace, H5P_DEFAULT);

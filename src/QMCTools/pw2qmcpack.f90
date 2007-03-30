@@ -78,7 +78,8 @@ SUBROUTINE compute_qmcpack
   USE io_files, ONLY: nd_nmbr, nwordwfc, iunwfc, iun => iunsat, tmp_dir, prefix
   USE wavefunctions_module, ONLY : evc, psic
   use gsmooth,         only: nls, nrxxs, nr1s, nr2s, nr3s, nrx1s, nrx2s, nrx3s
-  USE iotk_module
+  use iotk_module
+  use iotk_xtox_interf
   IMPLICIT NONE
   INTEGER :: ig, ibnd, ik, io, na, j, ispin, nbndup, nbnddown, &
        nk, ngtot, ig7, ikk, nt, ijkb0, ikb, ih, jh, jkb, at_num, &
@@ -91,7 +92,7 @@ SUBROUTINE compute_qmcpack
   INTEGER, EXTERNAL :: atomic_number
   REAL (DP), EXTERNAL :: ewald
 
-  CHARACTER(256)          :: tmp,h5name
+  CHARACTER(256)          :: tmp,h5name,eigname
   CHARACTER(iotk_attlenx) :: attr
 
   CALL init_us_1
@@ -186,6 +187,7 @@ SUBROUTINE compute_qmcpack
   nelec_tot= NINT(nelec)
 
   h5name = TRIM( prefix ) // '.pwscf.h5'
+  eigname = "eigenstates_"//trim(iotk_itoa(nr1s))//'_'//trim(iotk_itoa(nr2s))//'_'//trim(iotk_itoa(nr3s))
 
   ! create a xml input file for each k-point
   DO ik = 0, nk-1
@@ -280,18 +282,32 @@ SUBROUTINE compute_qmcpack
   
      ! <wavefunction name="psi0">
      CALL iotk_write_attr (attr,"name","psi0",first=.true.)
-     CALL iotk_write_attr (attr,"type","PW")
      CALL iotk_write_attr (attr,"target","e")
      CALL iotk_write_begin(iun, "wavefunction",ATTR=attr)
-       CALL iotk_write_attr (attr,"version","0.10",first=.true.)
+       CALL iotk_write_attr (attr,"type","bspline",first=.true.)
+       CALL iotk_write_attr (attr,"href",TRIM(h5name))
+       CALL iotk_write_attr (attr,"version","0.10")
        CALL iotk_write_begin(iun, "determinantset",ATTR=attr)
           CALL iotk_write_attr (attr,"ecut",ecutwfc/2,first=.true.)
+          ! basisset to overwrite cutoff to a smaller value
           CALL iotk_write_begin(iun, "basisset",ATTR=attr)
+             ! add grid to use spline on FFT grid
+             CALL iotk_write_attr (attr,"dir","0",first=.true.)
+             CALL iotk_write_attr (attr,"npts",nr1s)
+             CALL iotk_write_attr (attr,"closed","no")
+             CALL iotk_write_empty(iun, "grid",ATTR=attr)
+             CALL iotk_write_attr (attr,"dir","1",first=.true.)
+             CALL iotk_write_attr (attr,"npts",nr2s)
+             CALL iotk_write_attr (attr,"closed","no")
+             CALL iotk_write_empty(iun, "grid",ATTR=attr)
+             CALL iotk_write_attr (attr,"dir","2",first=.true.)
+             CALL iotk_write_attr (attr,"npts",nr3s)
+             CALL iotk_write_attr (attr,"closed","no")
+             CALL iotk_write_empty(iun, "grid",ATTR=attr)
           CALL iotk_write_end(iun, "basisset")
           
-          CALL iotk_write_attr (attr,"href",TRIM(h5name),first=.true.)
-          CALL iotk_write_begin(iun, "coefficients",ATTR=attr)
-          CALL iotk_write_end(iun, "coefficients")
+          !CALL iotk_write_attr (attr,"href",TRIM(h5name),first=.true.)
+          !CALL iotk_write_empty(iun, "coefficients",ATTR=attr)
   
           ! write the index of the twist angle
           CALL iotk_write_attr (attr,"name","twistIndex",first=.true.)
@@ -303,6 +319,13 @@ SUBROUTINE compute_qmcpack
           CALL iotk_write_begin(iun, "h5tag",ATTR=attr)
           write(iun,100) xk(1,ik+1),xk(2,ik+1),xk(3,ik+1)
           CALL iotk_write_end(iun, "h5tag")
+          !write(iun,'(a)') '<!-- Uncomment this out for plinae wavefunctions '
+          CALL iotk_write_attr (attr,"name","eigenstates",first=.true.)
+          CALL iotk_write_begin(iun, "h5tag",ATTR=attr)
+          write(iun,'(a)') TRIM(eigname)
+          CALL iotk_write_end(iun, "h5tag")
+          !write(iun,'(a)') '--> '
+
   
           CALL iotk_write_begin(iun, "slaterdeterminant")
              ! build determinant for up electrons
@@ -398,16 +421,6 @@ SUBROUTINE compute_qmcpack
            psic(:)=(0.d0,0.d0)
            psic(nls(igk(1:npw)))=evc(1:npw,ibnd)
            call cft3s (psic, nr1s, nr2s, nr3s, nrx1s, nrx2s, nrx3s, 2)
-
-           !! is this correct????
-           !aux_ext(1:nr1s,  1:nr2s,1:nr3s)=psic(1:nr1s,1:nr2s,1:nr3s)
-           !aux_ext(knr1s+1, 1:nr2s,1:nr3s)=psic(1,     1:nr2s,1:nr3s)
-           !aux_ext(1:nr1s,  nr2s+1,1:nr3s)=psic(1:nr1s,1,     1:nr3s)
-           !aux_ext(1:nr1s,  1:nr2s, nr3s+1)=psic(1:nr1s,1:nr2s,1)
-           !aux_ext(nr1s+1,nr2s+1,1:nr3s)=psic(1,     1,     1:nr3s)
-           !aux_ext(nr1s+1,1:nr2s,nr3s+1)=psic(1,     1:nr2s,1)
-           !aux_ext(1:nr1s,nr2s+1,nr3s+1)=psic(1:nr1s,1,     1)
-
            CALL pwhdf_write_wfr(ibnd,ispin,et(ibnd,ikk)/2,psic)
         ENDDO
      ENDDO
