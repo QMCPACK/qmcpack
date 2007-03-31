@@ -29,6 +29,12 @@ TARGET_LINK_LIBRARIES(cubicspline1 qmcbase qmcutil)
 ADD_EXECUTABLE(bspline bspline.cpp)
 TARGET_LINK_LIBRARIES(bspline qmc qmcbase)
 
+ADD_EXECUTABLE(tribsplineComplex tribsplineComplex.cpp)
+TARGET_LINK_LIBRARIES(tribsplineComplex qmc qmcbase)
+ADD_EXECUTABLE(tribsplineReal tribsplineReal.cpp)
+TARGET_LINK_LIBRARIES(tribsplineReal qmc qmcbase)
+
+
 #INCLUDE(${PROJECT_CMAKE}/FindBlitz++.cmake)
 #INCLUDE_DIRECTORIES(${BLITZ_INCLUDE_DIR})
 #ADD_EXECUTABLE(bspline_blitz bspline_blitz.cpp)
