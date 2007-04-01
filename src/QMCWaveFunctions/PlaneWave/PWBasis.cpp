@@ -85,6 +85,8 @@ namespace qmcplusplus {
     NumPlaneWaves = gvecs.size();
     inputmap.resize(NumPlaneWaves);
 
+    app_log() << "  PWBasis::TwistAngle (unit) =" << twist << endl;
+    app_log() << "  PWBasis::TwistAngle (cart) =" << twist_cart << endl;
     app_log() << "  PWBasis::trimforecut NumPlaneWaves (before) =" << NumPlaneWaves << endl;
 
     //make a copy of input to gvecCopy
