@@ -43,6 +43,7 @@ namespace qmcplusplus {
        OHMMS::Controller->abort();
      }
 
+     //drop G points for the given TwistAngle
      const vector<int> &inputmap(myBasisSet->inputmap);
      for(int ig=0; ig<ng; ig++)
      {

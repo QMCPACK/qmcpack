@@ -345,6 +345,7 @@ namespace qmcplusplus {
     while(ib<nb) 
     {
       string bname(myParam->getBandName(occBand[ib],spinIndex));
+      app_log() << "  Reading " << myParam->eigTag << "/" << tname <<"/"<< bname << endl;
       hid_t band_grp_id =  H5Gopen(twist_grp_id,bname.c_str());
       hdfobj_coefs.read(band_grp_id,myParam->eigvecTag.c_str());
       psi->addVector(coefs,ib);
@@ -464,10 +465,10 @@ namespace qmcplusplus {
     for(int ib=0; ib<nb; ib++)
       inData.push_back(new StorageType(nG[0],nG[1],nG[2]));
 
+    PosType tAngle=targetPtcl.Lattice.k_cart(TwistAngle);
     PWOrbitalSet::ValueVector_t phi(nb);
     for(int ig=0; ig<nG[0]; ig++)
     {
-      cout << " ig = " << ig << endl;
       RealType x=ig*dx;
       for(int jg=0; jg<nG[1]; jg++)
       {
@@ -476,8 +477,10 @@ namespace qmcplusplus {
         {
           targetPtcl.R[0]=lattice.toCart(PosType(x,y,kg*dz));
           pwFunc.evaluate(targetPtcl,0,phi);
+          RealType x(dot(targetPtcl.R[0],tAngle));
+          ValueType phase(std::cos(x),-std::sin(x)); 
           for(int ib=0; ib<nb; ib++)
-              (*inData[ib])(ig,jg,kg)=phi[ib];
+             (*inData[ib])(ig,jg,kg)=phase*phi[ib];
         }
       }
     }
@@ -523,6 +526,9 @@ namespace qmcplusplus {
 #endif
     H5Gclose(twist_grp_id);
     H5Gclose(es_grp_id);
+
+    //die badly
+    abort();
   }
 
   hid_t PWOrbitalBuilder::getH5(xmlNodePtr cur, const char* aname)
