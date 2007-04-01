@@ -18,8 +18,8 @@
 #define QMCPLUSPLUS_TRICUBIC_BSPLINESETBUILDER_H
 
 #include "QMCWaveFunctions/BasisSetBase.h"
-#include "QMCWaveFunctions/GroupedOrbitalSet.h"
-#include "Numerics/TricubicBsplineSet.h"
+#include "Numerics/HDFNumericAttrib.h"
+#include "Numerics/TricubicBsplineGrid.h"
 
 namespace qmcplusplus {
 
@@ -32,9 +32,8 @@ namespace qmcplusplus {
 
   public:
 
-    typedef TricubicBsplineSet<ValueType>              OrbitalGroupType;      
-    typedef TricubicBsplineSet<ValueType>::StorageType StorageType;
-    typedef GroupedOrbitalSet<OrbitalGroupType>        SPOSetType;             
+    typedef TricubicBsplineTraits<ValueType>              BsplineBasisType;
+    typedef TricubicBsplineTraits<ValueType>::StorageType StorageType;
     typedef map<string,ParticleSet*>                   PtclPoolType;
 
     /** constructor
@@ -64,6 +63,8 @@ namespace qmcplusplus {
     bool DebugWithEG;
     ///if true, grid is open-ended [0,nx) x [0,ny) x [0, nz)
     bool OpenEndGrid;
+    ///twist angle
+    PosType TwistAngle;
     ///target ParticleSet
     ParticleSet& targetPtcl;
     ///reference to a ParticleSetPool
@@ -76,13 +77,27 @@ namespace qmcplusplus {
     PosType UpperBox;
     TinyVector<IndexType,DIM> BoxGrid;
     ///set of WFSetType*
-    map<string,OrbitalGroupType*> myBasis;
+    map<string,BsplineBasisType*> myBasis;
     ///single-particle orbital sets
-    map<string,SPOSetType*> mySPOSet;
+    map<string,SPOSetBase*> mySPOSet;
     ///a function to test with EG
     SPOSetBase* createSPOSetWithEG();
     ///parameter set for h5 tags
     PWParameterSet* myParam;
+
+    ///hdf5 handler to clean up
+    hid_t hfileID;
+    /** create a SPOSetBase of GroupedOrbitalSet<OGT> type
+     *
+     * The final single-particle orbital set is GroupedOrbitalSet<OGT> where
+     * OGT is a set of bspline functions sharing a grid. Currently,
+     * the TricubicBspline functions at Gamma are represented by
+     * TricubicBsplineSet while those at non-Gamma points are by
+     * TricubicBsplineTwistSet which apply the phase to the periodic
+     * real-space wavefunctions.
+     */
+    template<typename OGT>
+    SPOSetBase* createBsplineBasisSet(xmlNodePtr cur, OGT* abasis);
   };
 }
 #endif
