@@ -82,6 +82,7 @@ namespace qmcplusplus {
     string getSpinName(int ispin);
 
     string getEigVectorName(const string& hg, int ib, int ispin);
+    string getEigVectorName(int ib, int ispin);
   };
 }
 #endif

@@ -107,6 +107,18 @@ namespace qmcplusplus {
     return oss.str();
   }
 
+  string PWParameterSet::getEigVectorName(int ib, int ispin)
+  {
+    ostringstream oss;
+    oss << "/" << eigTag << "/" << twistTag<<twistIndex << "/"<< bandTag << ib;
+    if(version[1]==10)
+    {
+      oss << "/" << spinTag << ispin;
+    }
+    oss << "/eigenvector";
+    return oss.str();
+  }
+
   string PWParameterSet::getBandName(int ib)
   {
     ostringstream oss;
