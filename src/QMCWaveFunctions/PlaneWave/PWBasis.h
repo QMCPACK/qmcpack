@@ -7,7 +7,6 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by
 //   National Center for Supercomputing Applications, UIUC
@@ -26,6 +25,10 @@
 #include "Numerics/HDFNumericAttrib.h"
 #include "Message/Communicate.h"
 #include <complex>
+
+//use recursive method to build the basis set for each position
+//performance improvement is questionable: load vs sin/cos
+#define PWBASIS_USE_RECURSIVE
 
 namespace qmcplusplus {
 
@@ -104,12 +107,13 @@ namespace qmcplusplus {
       maxmaxg(0), twist(twistangle), NumPlaneWaves(0){
     }
 
-
     ~PWBasis()
     {
     }
 
-    inline IndexType getBasisSetSize() const {
+    ///basis size
+    inline IndexType getBasisSetSize() const 
+    {
       return NumPlaneWaves;
     }
 
@@ -138,6 +142,7 @@ namespace qmcplusplus {
      */
     void trimforecut();
 
+#if defined(PWBASIS_USE_RECURSIVE)
     /** Fill the recursion coefficients matrix.
      *
      * @todo Generalize to non-orthorohmbic cells
@@ -147,11 +152,10 @@ namespace qmcplusplus {
       // Cartesian of twist for 1,1,1 (reduced coordinates)
       PosType G111(1.0,1.0,1.0); 
       G111 = Lattice.k_cart(G111); 
-      //G111 = P.Lattice.k_cart(G111); 
-      //PosType redP=P.Lattice.toUnit(P.R[iat]);
 
       //Precompute a small number of complex factors (PWs along b1,b2,b3 lines)
       //using a fast recursion algorithm
+#pragma ivdep 
       for(int idim=0; idim<3; idim++){
         //start the recursion with the 111 vector.
         RealType phi = pos[idim] * G111[idim];
@@ -160,7 +164,6 @@ namespace qmcplusplus {
         ComplexType* restrict cp_ptr=C[idim]+ng;
         ComplexType* restrict cn_ptr=C[idim]+ng-1;
         *cp_ptr=1.0;
-        //add INTEL vectorization
         for(int n=1; n<=ng; n++,cn_ptr--){
           ComplexType t(Ctemp*(*cp_ptr++));
           *cp_ptr = t;
@@ -168,39 +171,6 @@ namespace qmcplusplus {
         }
       }
     }
-
-    /** Fill the recursion coefficients matrix.
-     *
-     * @todo Generalize to non-orthorohmbic cells
-     */
-    void BuildRecursionCoefsByAdd(const PosType& pos) 
-    {
-      // Cartesian of twist for 1,1,1 (reduced coordinates)
-      PosType G111(1.0,1.0,1.0); 
-      G111 = Lattice.k_cart(G111); 
-      //PosType redP=P.Lattice.toUnit(P.R[iat]);
-      //Precompute a small number of complex factors (PWs along b1,b2,b3 lines)
-      for(int idim=0; idim<3; idim++){
-        //start the recursion with the 111 vector.
-        RealType phi = pos[idim] * G111[idim];
-        int ng(maxg[idim]);
-        RealType* restrict cp_ptr=logC[idim]+ng;
-        RealType* restrict cn_ptr=logC[idim]+ng-1;
-        *cp_ptr=0.0;
-        //add INTEL vectorization
-        for(int n=1; n<=ng; n++,cn_ptr--){
-          RealType t(phi+*cp_ptr++);
-          *cp_ptr = t;
-          *cn_ptr = -t;
-        }
-      }
-    }
-
-    //inline void 
-    //evaluate(const ParticleSet& P, int iat) 
-    //{
-    //  evaluate(P.R[iat]);
-    //}
 
     inline void 
     evaluate(const PosType& pos)
@@ -221,25 +191,7 @@ namespace qmcplusplus {
         Zv[ig]= negative[ig]*pw.real() + (1-negative[ig])*pw.imag();
 #endif
       }
-// complex additions: JK does not understand why it does not work
-//      BuildRecursionCoefsByAdd(P,iat);
-//      RealType twistdotr = dot(twist_cart,P.R[iat]);
-//      ComplexType pw0(std::cos(twistdotr),std::sin(twistdotr));
-//      //Evaluate the planewaves for particle iat.
-//      for(int ig=0; ig<NumPlaneWaves; ig++) {
-//        //PW is initialized as exp(i*twist.r) so that the final basis evaluations
-//        //are for (twist+G).r
-//        RealType phi(twistdotr);
-//        for(int idim=0; idim<3; idim++)
-//          phi += logC(idim,gvecs[ig][idim]+maxg[idim]);
-//#if defined(QMC_COMPLEX)
-//        Zv[ig]= ComplexType(std::cos(phi),std::sin(phi));
-//#else
-//        Zv[ig]= negative[ig]*pw.real() + (1-negative[ig])*pw.imag();
-//#endif
-//      }
     }
-
     /** Evaluate all planewaves and derivatives for the iat-th particle
      *
      * The basis functions are evaluated for particles iat: first <= iat < last
@@ -248,8 +200,8 @@ namespace qmcplusplus {
      * These can be "dotted" with coefficients later to complete orbital evaluations.
      */
     inline void 
-    evaluateAll(const ParticleSet& P, int iat) {
-      //BuildRecursionCoefs(P,iat);
+    evaluateAll(const ParticleSet& P, int iat) 
+    {
       BuildRecursionCoefs(P.R[iat]);
       RealType twistdotr = dot(twist_cart,P.R[iat]);
       ComplexType pw0(std::cos(twistdotr),std::sin(twistdotr));
@@ -265,38 +217,78 @@ namespace qmcplusplus {
 #if defined(QMC_COMPLEX)
         zptr[0]= pw;
         zptr[1]= minusModKplusG2[ig]*pw;
-        zptr[2]= pw*ComplexType(0.0,kplusgvecs_cart[ig][0]);
-        zptr[3]= pw*ComplexType(0.0,kplusgvecs_cart[ig][1]);
-        zptr[4]= pw*ComplexType(0.0,kplusgvecs_cart[ig][2]);
+        zptr[2]= kplusgvecs_cart[ig][0]*ComplexType(-pw.imag(),pw.real());
+        zptr[3]= kplusgvecs_cart[ig][1]*ComplexType(-pw.imag(),pw.real());
+        zptr[4]= kplusgvecs_cart[ig][2]*ComplexType(-pw.imag(),pw.real());
+        //zptr[2]= pw*ComplexType(0.0,kplusgvecs_cart[ig][0]);
+        //zptr[3]= pw*ComplexType(0.0,kplusgvecs_cart[ig][1]);
+        //zptr[4]= pw*ComplexType(0.0,kplusgvecs_cart[ig][2]);
 #else
         app_error() << "DO NOT USE THIS UNTIL TESTED" << endl;
         OHMMS::Controller->abort();
 #endif
       }
-
-//      BuildRecursionCoefsByAdd(P,iat);
-//      RealType twistdotr = dot(twist_cart,P.R[iat]);
-//      ComplexType* restrict zptr=Z.data();
-//      for(int ig=0; ig<NumPlaneWaves; ig++,zptr+=5) {
-//        //PW is initialized as exp(i*twist.r) so that the final basis evaluations
-//        //are for (twist+G).r
-//        RealType phi(twistdotr); //std::cos(twistdotr),std::sin(twistdotr));
-//        for(int idim=0; idim<3; idim++)
-//          phi += logC(idim,gvecs[ig][idim]+maxg[idim]);
-//        ComplexType pw(std::cos(phi),std::sin(phi));
-//#if defined(QMC_COMPLEX)
-//        zptr[0]= pw;
-//        zptr[1]= minusModKplusG2[ig]*pw;
-//        zptr[2]= pw*ComplexType(0.0,kplusgvecs_cart[ig][0]);
-//        zptr[3]= pw*ComplexType(0.0,kplusgvecs_cart[ig][1]);
-//        zptr[4]= pw*ComplexType(0.0,kplusgvecs_cart[ig][2]);
-//#else
-//        cout << "DO NOT USE THIS UNTIL TESTED" << endl;
-//        abort();
-//        //ERROR_MSG("DO NOT USE THIS UNTIL TESTED")
-//#endif
-//      }
     }
+#else
+    inline void 
+    evaluate(const PosType& pos)
+    {
+      //Evaluate the planewaves for particle iat.
+      for(int ig=0; ig<NumPlaneWaves; ig++) {
+        RealType phi(dot(kplusgvecs_cart[ig],pos));
+#if defined(QMC_COMPLEX)
+        Zv[ig]=ComplexType(std::cos(phi),std::sin(phi)); 
+#else
+        Zv[ig]=negative[ig]*std::cos(phi) + (1-negative[ig])*std::sin(phi);
+#endif
+      }
+    }
+    inline void 
+    evaluateAll(const ParticleSet& P, int iat) 
+    {
+      ComplexType* restrict zptr=Z.data();
+      for(int ig=0; ig<NumPlaneWaves; ig++,zptr+=5) {
+        //PW is initialized as exp(i*twist.r) so that the final basis evaluations
+        //are for (twist+G).r
+        RealType phi(dot(kplusgvecs_cart[ig],P.R[iat]));
+        ComplexType pw(std::cos(phi),std::sin(phi));
+#if defined(QMC_COMPLEX)
+        zptr[0]= pw;
+        zptr[1]= minusModKplusG2[ig]*pw;
+        zptr[2]= kplusgvecs_cart[ig][0]*ComplexType(-pw.imag(),pw.real());
+        zptr[3]= kplusgvecs_cart[ig][1]*ComplexType(-pw.imag(),pw.real());
+        zptr[4]= kplusgvecs_cart[ig][2]*ComplexType(-pw.imag(),pw.real());
+#endif
+      }
+     }
+#endif
+//    /** Fill the recursion coefficients matrix.
+//     *
+//     * @todo Generalize to non-orthorohmbic cells
+//     */
+//    void BuildRecursionCoefsByAdd(const PosType& pos) 
+//    {
+//      // Cartesian of twist for 1,1,1 (reduced coordinates)
+//      PosType G111(1.0,1.0,1.0); 
+//      G111 = Lattice.k_cart(G111); 
+//      //PosType redP=P.Lattice.toUnit(P.R[iat]);
+//      //Precompute a small number of complex factors (PWs along b1,b2,b3 lines)
+//      for(int idim=0; idim<3; idim++){
+//        //start the recursion with the 111 vector.
+//        RealType phi = pos[idim] * G111[idim];
+//        int ng(maxg[idim]);
+//        RealType* restrict cp_ptr=logC[idim]+ng;
+//        RealType* restrict cn_ptr=logC[idim]+ng-1;
+//        *cp_ptr=0.0;
+//        //add INTEL vectorization
+//        for(int n=1; n<=ng; n++,cn_ptr--){
+//          RealType t(phi+*cp_ptr++);
+//          *cp_ptr = t;
+//          *cn_ptr = -t;
+//        }
+//      }
+//    }
+
   };
 }
 #endif

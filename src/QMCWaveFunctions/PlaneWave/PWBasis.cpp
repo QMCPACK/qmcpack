@@ -34,6 +34,7 @@ namespace qmcplusplus {
     HDFAttribIO<std::vector<GIndex_t> >hdfvtv(gvecs);
     hdfvtv.read(h5basisgroup,pwname.c_str()); //"planewaves");
     NumPlaneWaves=gvecs.size();
+    
     //Now remove elements outside Ecut. At the same time, fill k+G and |k+G| lists.
     //Also keep track of the original index ordering (using indexmap[]) so that
     //orbital coefficients can be ordered and trimmed for ecut in the same way.
