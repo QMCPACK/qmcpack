@@ -18,14 +18,13 @@
 #ifndef TRICUBIC_B_SPLINE_SET_H
 #define TRICUBIC_B_SPLINE_SET_H
 
-#include "QMCWaveFunctions/OrbitalTraits.h"
 #include "Numerics/TricubicBsplineGrid.h"
 #include <map>
 
 namespace qmcplusplus {
 
   template<typename T>
-    class TricubicBspline
+    class TricubicBspline: public TricubicBsplineTraits<T>
     {
       public:
         typedef typename TricubicBsplineTraits<T>::real_type   real_type;
@@ -80,7 +79,7 @@ namespace qmcplusplus {
    * Assume a linear order of the bspline sets.
    */
   template<typename T>
-    class TricubicBsplineVector
+    class TricubicBsplineVector: public TricubicBsplineTraits<T> 
     {
       public:
         typedef typename TricubicBsplineTraits<T>::real_type   real_type;
@@ -203,7 +202,7 @@ namespace qmcplusplus {
   /** A group of bspline functions stored in a map<int,StorageType*>
    */
   template<typename T>
-    class TricubicBsplineSet
+    class TricubicBsplineSet: public TricubicBsplineTraits<T> 
     {
       public:
         typedef typename TricubicBsplineTraits<T>::real_type   real_type;
@@ -220,6 +219,10 @@ namespace qmcplusplus {
         }
 
         ~TricubicBsplineSet() { 
+        }
+
+        inline void setTwistAngle(const PosType& tangle)
+        {
         }
 
         inline void setGrid(const GridType& knots)

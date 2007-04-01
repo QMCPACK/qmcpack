@@ -84,6 +84,8 @@ namespace qmcplusplus {
       typedef TinyVector<real_type,3> PosType;
       typedef TricubicBsplineGrid<T> GridType;
       typedef Array<T,3>             StorageType;
+      int ObjectID;
+      virtual ~TricubicBsplineTraits() {}
     };
 }
 #endif
