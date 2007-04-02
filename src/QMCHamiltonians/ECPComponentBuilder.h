@@ -33,6 +33,7 @@ namespace qmcplusplus {
     int NumNonLocal;
     int Lmax, Llocal, Nrule;
     RealType Zeff;
+    RealType RcutMax;
     string Species;
     GridType* grid_inp;
     RadialPotentialType* pp_loc;
@@ -41,7 +42,7 @@ namespace qmcplusplus {
 
     ECPComponentBuilder(const string& aname);
 
-    bool parse(const string& fname);
+    bool parse(const string& fname, xmlNodePtr cur);
     bool put(xmlNodePtr cur);
     void addSemiLocal(xmlNodePtr cur);
     void buildLocal(xmlNodePtr cur);

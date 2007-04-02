@@ -26,13 +26,16 @@
 namespace qmcplusplus {
 
   ECPComponentBuilder::ECPComponentBuilder(const string& aname):
-    NumNonLocal(0), Lmax(0), Zeff(0), Species(aname), Nrule(4),
+    RcutMax(-1), NumNonLocal(0), Lmax(0), Zeff(0), Species(aname), Nrule(4),
     grid_inp(0), pp_loc(0), pp_nonloc(0) {
     angMon["s"]=0; angMon["p"]=1; angMon["d"]=2; angMon["f"]=3; angMon["g"]=4;
     angMon["0"]=0; angMon["1"]=1; angMon["2"]=2; angMon["3"]=3; angMon["4"]=4;
   }
 
-  bool ECPComponentBuilder::parse(const string& fname) {
+  bool ECPComponentBuilder::parse(const string& fname, xmlNodePtr cur) 
+  {
+    const xmlChar* rptr=xmlGetProp(cur,(const xmlChar*)"cutoff");
+    if(rptr != NULL) RcutMax = atof((const char*)rptr);
 
     // build an XML tree from a the file;
     xmlDocPtr m_doc = xmlParseFile(fname.c_str());
@@ -42,7 +45,7 @@ namespace qmcplusplus {
       OHMMS::Controller->abort();
     }    
     // Check the document is of the right kind
-    xmlNodePtr cur = xmlDocGetRootElement(m_doc);
+    cur = xmlDocGetRootElement(m_doc);
     if (cur == NULL) {
       xmlFreeDoc(m_doc);
       app_error() << "Empty document" << endl;

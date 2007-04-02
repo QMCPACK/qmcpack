@@ -122,7 +122,7 @@ namespace qmcplusplus {
             if(href == "none") {
               success=ecp.put(cur);
             } else {
-              success=ecp.parse(href);
+              success=ecp.parse(href,cur);
             }
           } 
           else if(format == "casino")
