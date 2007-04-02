@@ -12,6 +12,7 @@ SET(HAMSRCS
   ECPComponentBuilder.1.cpp
   ECPComponentBuilder.2.cpp
   NonLocalTOperator.cpp
+  FSAtomPseudoPot.cpp
 )
 
 IF(HAVE_LIBFFTW)
@@ -21,4 +22,8 @@ IF(HAVE_LIBFFTW)
 )
 ENDIF(HAVE_LIBFFTW)
 
-ADD_LIBRARY(qmcham ${HAMSRCS})
+IF(QMC_BUILD_STATIC)
+  ADD_LIBRARY(qmcham STATIC ${HAMSRCS})
+ELSE(QMC_BUILD_STATIC)
+  ADD_LIBRARY(qmcham SHARED ${HAMSRCS})
+ENDIF(QMC_BUILD_STATIC)

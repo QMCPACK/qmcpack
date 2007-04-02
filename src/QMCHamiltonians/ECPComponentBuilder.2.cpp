@@ -24,9 +24,9 @@
 namespace qmcplusplus {
 
   void ECPComponentBuilder::buildSemiLocalAndLocal(vector<xmlNodePtr>& semiPtr) {
-#if defined(__IBM_CPP__)
-    app_error() << "  Compiler error with IBM Compilers. Use other pseudo potential format." << endl;
-#else
+//#if defined(__IBM_CPP__)
+//    app_error() << "  Compiler error with IBM Compilers. Use other pseudo potential format." << endl;
+//#else
     if(grid_inp==0)
     {
       app_error() << "  Pseudopotential file does not defined a global grid. vps/grid is disabled." << endl;
@@ -89,7 +89,7 @@ namespace qmcplusplus {
 
     // We cannot construct the potentials as we construct them since
     // we may not know which one is local yet.
-    typedef FSAtomPseudoPot<RealType> InFuncType;
+    typedef FSAtomPseudoPot InFuncType;
     vector<InFuncType*> Vls;
     int iLocal=-1;
     // Now read vps sections
@@ -146,7 +146,7 @@ namespace qmcplusplus {
     delete_iter(Vls.begin(),Vls.end());
     pp_nonloc->lmax=Lmax;
     pp_nonloc->Rmax=rmax;
-#endif
+//#endif
   }
 
 } // namespace qmcPlusPlus
