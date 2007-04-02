@@ -367,6 +367,7 @@ namespace qmcplusplus {
 
   void PWOrbitalBuilder::transform2GridData(PWBasis::GIndex_t& nG, int spinIndex, PWOrbitalSet& pwFunc)
   {
+#if defined(QMC_COMPLEX)
     ostringstream splineTag;
     splineTag << "eigenstates_"<<nG[0]<<"_"<<nG[1]<<"_"<<nG[2];
     herr_t status = H5Eset_auto(NULL, NULL);
@@ -527,6 +528,9 @@ namespace qmcplusplus {
     H5Gclose(twist_grp_id);
     H5Gclose(es_grp_id);
 
+#else
+    app_error() << "  PWOrbitalBuilder::transform2GridData Invalid for QMC_COMPLEX=0" << endl;
+#endif
     //die badly
     abort();
   }
