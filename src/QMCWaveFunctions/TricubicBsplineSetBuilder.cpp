@@ -274,7 +274,7 @@ namespace qmcplusplus {
 #else
       app_error() << "  Twist-angle other than Gamma point cannot work with real wavefunctions." << endl;
       abort(); //FIXABORT
-      retrun 0;
+      return 0;
 #endif
     }
   }
