@@ -392,7 +392,8 @@ struct NumericalGrid: public OneDimGridBase<T,CT> {
   inline void locate(T r){
     int k;
     int klo=0;
-    int khi=this->size()-1;
+    int khi=num_points-1;
+    //int khi=this->size()-1;
     while(khi-klo > 1){
       k=(khi+klo) >> 1;
       if(X[k] > r) khi=k;
