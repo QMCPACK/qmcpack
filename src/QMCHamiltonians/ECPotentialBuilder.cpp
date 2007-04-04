@@ -132,6 +132,9 @@ namespace qmcplusplus {
           }
 
           if(success) {
+#if !defined(HAVE_MPI)
+            ecp.printECPTable();
+#endif
             if(ecp.pp_loc) {
               localPot[speciesIndex]=ecp.pp_loc;
               localZeff[speciesIndex]=ecp.Zeff;

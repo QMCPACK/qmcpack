@@ -34,6 +34,7 @@ namespace qmcplusplus {
   }
 
   void NonLocalECPComponent::resize_warrays(int n,int m,int l){
+    app_log() << "  NonLocalECPComponent::resize_warrays " << endl;
      psiratio.resize(n);
      vrad.resize(m);
      wvec.resize(m);

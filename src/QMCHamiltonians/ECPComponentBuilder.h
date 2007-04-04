@@ -35,7 +35,8 @@ namespace qmcplusplus {
     RealType Zeff;
     RealType RcutMax;
     string Species;
-    GridType* grid_inp;
+    GridType *grid_global;
+    map<string,GridType*> grid_inp;
     RadialPotentialType* pp_loc;
     NonLocalECPComponent* pp_nonloc;
     map<string,int> angMon;
@@ -65,7 +66,13 @@ namespace qmcplusplus {
     void CheckQuadratureRule(int lexact);
 
     GridType* createGrid(xmlNodePtr cur, bool useLinear=false);
-    RadialPotentialType* createVr(xmlNodePtr cur, GridType* agrid);
+    RadialPotentialType* createVrWithBasisGroup(xmlNodePtr cur, GridType* agrid);
+    RadialPotentialType* createVrWithData(xmlNodePtr cur, GridType* agrid, int rCorrection=0);
+
+    void doBreakUp(const vector<int>& angList, const Matrix<RealType>& vnn, 
+        RealType rmax, RealType Vprefactor=1.0);
+
+    void printECPTable();
   };
 
 }

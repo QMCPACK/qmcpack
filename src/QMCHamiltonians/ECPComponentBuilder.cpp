@@ -27,7 +27,7 @@ namespace qmcplusplus {
 
   ECPComponentBuilder::ECPComponentBuilder(const string& aname):
     RcutMax(-1), NumNonLocal(0), Lmax(0), Zeff(0), Species(aname), Nrule(4),
-    grid_inp(0), pp_loc(0), pp_nonloc(0) {
+    grid_global(0),pp_loc(0), pp_nonloc(0) {
     angMon["s"]=0; angMon["p"]=1; angMon["d"]=2; angMon["f"]=3; angMon["g"]=4;
     angMon["0"]=0; angMon["1"]=1; angMon["2"]=2; angMon["3"]=3; angMon["4"]=4;
   }
@@ -71,13 +71,8 @@ namespace qmcplusplus {
       } 
       else if(cname == "grid")
       {
-        if(grid_inp) {
-          app_warning() << "   Only one global grid is accepted. Ignore this grid" << endl;
-        }
-        else 
-        {
-          grid_inp = createGrid(cur);
-        }
+        //capture the global grid
+        grid_global = createGrid(cur);
       }
       else if(cname == "semilocal") 
       {
@@ -108,31 +103,47 @@ namespace qmcplusplus {
 
     if(pp_nonloc) {
       SetQuadratureRule(Nrule);
+      app_log() << "    Non-local pseudopotential parameters" <<endl;
       pp_nonloc->print(app_log());
-//       if(nk == 0) { //assign default
-//         RealType w=1.0/12.0;
-//         pp_nonloc->addknot(PosType( 0.000000, 0.525731, 0.850651),w);
-//         pp_nonloc->addknot(PosType( 0.000000,-0.525731,-0.850651),w);
-//         pp_nonloc->addknot(PosType( 0.000000,-0.525731, 0.850651),w);
-//         pp_nonloc->addknot(PosType( 0.000000, 0.525731,-0.850651),w);
-//         pp_nonloc->addknot(PosType(-0.850651, 0.000000, 0.525731),w);
-//         pp_nonloc->addknot(PosType( 0.850651, 0.000000,-0.525731),w);
-//         pp_nonloc->addknot(PosType( 0.850651, 0.000000, 0.525731),w);
-//         pp_nonloc->addknot(PosType(-0.850651, 0.000000,-0.525731),w);
-//         pp_nonloc->addknot(PosType(-0.525731, 0.850651, 0.000000),w);
-//         pp_nonloc->addknot(PosType( 0.525731,-0.850651, 0.000000),w);
-//         pp_nonloc->addknot(PosType( 0.525731, 0.850651, 0.000000),w);
-//         pp_nonloc->addknot(PosType(-0.525731,-0.850651, 0.000000),w);
-//         pp_nonloc->resize_warrays(12,NumNonLocal,Lmax);
-//       } 
-//       else {
-//         for(int ik=0, kk=0; ik<nk; ik++, kk+=4) 
-//           pp_nonloc->addknot(PosType(kpts[kk],kpts[kk+1],kpts[kk+2]),kpts[kk+3]);
-//         pp_nonloc->resize_warrays(nk,NumNonLocal,Lmax);
-//       }
-    }
 
+    }
     return true;
+  }
+
+  void ECPComponentBuilder::printECPTable() 
+  {
+    char fname[12];
+    sprintf(fname,"%s.pp.dat",Species.c_str());
+    ofstream fout(fname);
+    fout.setf(std::ios::scientific, std::ios::floatfield);
+    fout.precision(12);
+    int nl=pp_nonloc?pp_nonloc->nlpp_m.size():0;
+    RealType d=1.7e-2;
+    RealType rt=0.13*d;
+    if(nl)
+    {
+      fout << "#  Lmax = " << Lmax+1 << " nonlocal L channels" << nl << endl;
+      fout << "#  Units = bohr hartree " << endl;
+      fout << "#  r  -r*V/zeff   Vnl ... " << endl;
+      while(rt<5)
+      {
+        fout << rt << setw(25) << pp_loc->splint(rt);
+        for(int l=0; l<nl; l++)
+          fout << setw(25) << pp_nonloc->nlpp_m[l]->splint(rt);
+        fout << endl; 
+        rt+=d;
+      }
+    }
+    else
+    {
+      fout << "#  Units = bohr hartree " << endl;
+      fout << "#  r  -r*V/zeff " << endl;
+      while(rt<5)
+      {
+        fout << rt << setw(25) << pp_loc->splint(rt) << endl;;
+        rt+=d;
+      }
+    }
   }
 
   void ECPComponentBuilder::SetQuadratureRule(int rule) {

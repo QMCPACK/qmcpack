@@ -18,7 +18,16 @@
  * @brief Xml Parser Definition for FSAtom Pseudopotential Standard
  */
 #include "QMCHamiltonians/FSAtomPseudoPot.h"
+#include <fstream>
 namespace qmcplusplus {
+
+  void FSAtomPseudoPot::convert2HartreeBohr(RealType sc, bool is_r_times_v)
+  {
+    if(is_r_times_v)
+      for(int i=0; i<myFunc.size(); i++) myFunc(i) *= sc;
+    else
+      for(int i=0; i<myFunc.size(); i++) myFunc(i) *= sc*myFunc.r(i);
+  }
 
   FSAtomPseudoPot::RealType FSAtomPseudoPot::getCutOff(RealType v0)
   {
@@ -38,17 +47,20 @@ namespace qmcplusplus {
    * @param sc scaling factor
    * @return a LinearSpline<RealType> on a LinearGrid
    */
-  FSAtomPseudoPot::return_type* FSAtomPseudoPot::getLocalPot(RealType sc)
+  FSAtomPseudoPot::return_type* 
+    FSAtomPseudoPot::getLocalPot(RealType zeff)
   {
     myFunc.spline();
 
     const RealType del=1.0e-3;
-    int ng=static_cast<int>(2*Rcut/del)+1;
-    app_log() << "  FSAtomPseudoPot::getLocalPot grid = [0," << 2*Rcut << "] npts=" << ng << endl;
+    //int ng=static_cast<int>(2*Rcut/del)+1;
+    int ng=static_cast<int>(Rcut/del)+1;
+    app_log() << "  FSAtomPseudoPot::getLocalPot grid = [0," << Rcut << "] npts=" << ng << endl;
 
     LinearGrid<RealType> *agrid=new LinearGrid<RealType>;
-    agrid->set(0.0,2*Rcut,ng);
+    agrid->set(0.0,Rcut,ng);
 
+    RealType sc=-1.0/zeff;
     return_type* newFunc=new return_type(agrid);
     (*newFunc)(0) = 0.0;
     for(int i=1; i<ng-1; i++)
@@ -59,11 +71,24 @@ namespace qmcplusplus {
 
     RealType y_prime=((*newFunc)(1)-(*newFunc)(0))/del;
     newFunc->spline(0,y_prime,ng-1,0.0);
+
+    ofstream fout("pp.loc.dat");
+    fout << "#  Local pseudopotential -rV(r)/Zeff 1 beyond 2*Rcut " << endl;
+    fout.setf(std::ios::scientific, std::ios::floatfield);
+    fout.precision(12);
+    for(int i=1; i<ng; i++)
+      fout << (*agrid)[i] << " " << (*newFunc)(i) << endl;
+    fout << endl;
+    for(int i=0; i<myFunc.size(); i++)
+      fout << myFunc.r(i) << " " <<sc*myFunc.m_Y[i] << endl;
+
     return newFunc;
   }
 
-  FSAtomPseudoPot::return_type* FSAtomPseudoPot::getNonLocalPot(FSAtomPseudoPot& vloc, RealType vFac)
+  FSAtomPseudoPot::return_type* 
+    FSAtomPseudoPot::getNonLocalPot(FSAtomPseudoPot& vloc)
   {
+    //remove local part
     myFunc.m_Y -= vloc.myFunc.m_Y;
     //RealType y_prime=(m_Y[1]-m_Y[0])/m_grid->dr(0);
     RealType y_prime=(myFunc(1)-myFunc(0))/myFunc.dr(0);
@@ -77,17 +102,25 @@ namespace qmcplusplus {
     return_type* newFunc=new return_type(agrid);
     for(int i=1; i<ng-1; i++)
     {
-      (*newFunc)(i)=vFac*myFunc.splintNG((*agrid)[i])/(*agrid)[i];
+      (*newFunc)(i)=myFunc.splintNG((*agrid)[i])/(*agrid)[i];
     }
+    //force the boudary conditions
     (*newFunc)(0) =(*newFunc)(1);
-    //(*newFunc)(0) = 2.0*(*newFunc)(1) - (*newFunc)(2);
     (*newFunc)(ng-1)=0.0;
 
-    //for(int i=0; i<ng; i++)
-    //  cout << (*agrid)[i] << " " << (*newFunc)(i) << endl;
-    //for(int i=1; i<m_Y.size(); i++)
-    //  cout << (*m_grid)[i] << " " << m_Y[i]/(*m_grid)[i] << endl;
     newFunc->spline();
+
+//    char fname[32];
+//    sprintf(fname,"pp.L%d.dat",AngL);
+//    ofstream fout(fname);
+//    fout.setf(std::ios::scientific, std::ios::floatfield);
+//    fout.precision(12);
+//    for(int i=0; i<ng; i++)
+//      fout << (*agrid)[i] << " " << (*newFunc)(i) << endl;
+//    fout <<  endl;
+//    for(int i=0; i<myFunc.size(); i++)
+//      fout << myFunc.r(i) << " " <<vFac*myFunc.m_Y[i]/myFunc.r(i) << endl;
+
     return newFunc;
   }
 

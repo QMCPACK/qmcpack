@@ -45,15 +45,17 @@ namespace qmcplusplus {
       for(int i=0; i<myFunc.size(); i++) myFunc(i) *= myFunc.r(i);
     }
 
+    void convert2HartreeBohr(RealType sc, bool is_r_times_v);
+
     RealType getCutOff(RealType v0);
 
     /** create a LinearSpline<RealType>
      * @param sc scaling factor
      * @return a LinearSpline<RealType> on a LinearGrid
      */
-    return_type* getLocalPot(RealType sc);
+    return_type* getLocalPot(RealType zeff);
 
-    return_type* getNonLocalPot(FSAtomPseudoPot& vloc, RealType vFac);
+    return_type* getNonLocalPot(FSAtomPseudoPot& vloc);
 
     bool put(xmlNodePtr cur);
 

@@ -12,8 +12,8 @@ SET(HAMSRCS
   ECPComponentBuilder.1.cpp
   ECPComponentBuilder.2.cpp
   NonLocalTOperator.cpp
-  FSAtomPseudoPot.cpp
 )
+#  FSAtomPseudoPot.cpp
 
 IF(HAVE_LIBFFTW)
   SET(HAMSRCS ${HAMSRCS}
