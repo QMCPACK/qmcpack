@@ -30,7 +30,6 @@ SET(FERMION_SRCS
   Fermion/SlaterDet.cpp
   Fermion/SlaterDetBuilder.cpp
   PlaneWave/PWBasis.cpp
-  PlaneWave/PWOrbitalSet.cpp
   PlaneWave/PWParameterSet.cpp
   PlaneWave/PWOrbitalBuilder.cpp
   MolecularOrbitals/STOBuilder.cpp
@@ -41,12 +40,14 @@ SET(FERMION_SRCS
 IF(QMC_COMPLEX)
   SET(FERMION_SRCS ${FERMION_SRCS}
     ElectronGas/ElectronGasComplexOrbitalBuilder.cpp
+    PlaneWave/PWOrbitalSet.cpp
   )
 ELSE(QMC_COMPLEX)
   SET(FERMION_SRCS ${FERMION_SRCS}
     ElectronGas/ElectronGasOrbitalBuilder.cpp
     AGPDeterminant.cpp
     AGPDeterminantBuilder.cpp
+    PlaneWave/PWRealOrbitalSet.cpp
   )
 ENDIF(QMC_COMPLEX)
 
