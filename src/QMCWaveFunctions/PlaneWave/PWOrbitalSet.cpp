@@ -35,7 +35,24 @@ namespace qmcplusplus {
     app_log() << "  PWOrbitalSet::resize OrbitalSetSize =" << OrbitalSetSize << " BasisSetSize = " << BasisSetSize << endl;
   }
 
-  void PWOrbitalSet::addVector(const std::vector<ValueType>& coefs,int jorb)
+  void PWOrbitalSet::addVector(const std::vector<ComplexType>& coefs,int jorb)
+  {
+     int ng=myBasisSet->inputmap.size();
+     if(ng != coefs.size()) {
+       app_error() << "  Input G map does not match the basis size of wave functions " << endl;
+       OHMMS::Controller->abort();
+     }
+
+     //drop G points for the given TwistAngle
+     const vector<int> &inputmap(myBasisSet->inputmap);
+     for(int ig=0; ig<ng; ig++)
+     {
+       if(inputmap[ig]>-1) 
+         C[jorb][inputmap[ig]]=coefs[ig];
+     }
+  }
+
+  void PWOrbitalSet::addVector(const std::vector<RealType>& coefs,int jorb)
   {
      int ng=myBasisSet->inputmap.size();
      if(ng != coefs.size()) {

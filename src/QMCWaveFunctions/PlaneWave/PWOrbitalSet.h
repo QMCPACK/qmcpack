@@ -66,7 +66,8 @@ namespace qmcplusplus {
 
       /** Builder class takes care of the assertion
       */
-      void addVector(const std::vector<ValueType>& coefs,int jorb);
+      void addVector(const std::vector<ComplexType>& coefs,int jorb);
+      void addVector(const std::vector<RealType>& coefs,int jorb);
 
       void resetParameters(OptimizableSetType& optVariables);
 
@@ -77,11 +78,7 @@ namespace qmcplusplus {
       inline ValueType evaluate(int ib, const PosType& pos)
       {
         myBasisSet->evaluate(pos);
-#if defined(QMC_COMPLEX)
         return BLAS::dot(BasisSetSize,C[ib],myBasisSet->Zv.data());
-#else
-        return 1.0;
-#endif
       }
 
       void 
