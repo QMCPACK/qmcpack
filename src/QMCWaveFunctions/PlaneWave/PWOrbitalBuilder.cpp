@@ -323,8 +323,8 @@ namespace qmcplusplus {
     hid_t es_grp_id = H5Gopen(hfileID,myParam->eigTag.c_str());
     hid_t twist_grp_id = H5Gopen(es_grp_id,tname.c_str());
 
-    ///create PWOrbital
-    PWOrbitalSet* psi=new PWOrbitalSet;
+    //create a single-particle orbital set 
+    SPOSetType* psi=new SPOSetType;
 
     if(transform2grid)
     {
@@ -337,37 +337,60 @@ namespace qmcplusplus {
     //going to take care of occ
     psi->resize(myBasisSet,nb,true);
 
-    typedef std::vector<ValueType> TempVecType;
-    TempVecType coefs(myBasisSet->inputmap.size());
-    HDFAttribIO<TempVecType> hdfobj_coefs(coefs);
-
-    int ib=0;
-    while(ib<nb) 
+    if(myParam->hasComplexData(hfileID))//input is complex
     {
-      string bname(myParam->getBandName(occBand[ib],spinIndex));
-      app_log() << "  Reading " << myParam->eigTag << "/" << tname <<"/"<< bname << endl;
-      hid_t band_grp_id =  H5Gopen(twist_grp_id,bname.c_str());
-      hdfobj_coefs.read(band_grp_id,myParam->eigvecTag.c_str());
-      psi->addVector(coefs,ib);
-      H5Gclose(band_grp_id);
-      ++ib;
+      app_log() << "  PW coefficients are complex." << endl;
+      typedef std::vector<complex<RealType> > TempVecType;
+      TempVecType coefs(myBasisSet->inputmap.size());
+      HDFAttribIO<TempVecType> hdfobj_coefs(coefs);
+      int ib=0;
+      while(ib<nb) 
+      {
+        string bname(myParam->getBandName(occBand[ib],spinIndex));
+        app_log() << "  Reading " << myParam->eigTag << "/" << tname <<"/"<< bname << endl;
+        hid_t band_grp_id =  H5Gopen(twist_grp_id,bname.c_str());
+        hdfobj_coefs.read(band_grp_id,myParam->eigvecTag.c_str());
+        psi->addVector(coefs,ib);
+        H5Gclose(band_grp_id);
+        ++ib;
+      }
+    }
+    else
+    {
+      app_log() << "  PW coefficients are real." << endl;
+      typedef std::vector<RealType> TempVecType;
+      TempVecType coefs(myBasisSet->inputmap.size());
+      HDFAttribIO<TempVecType> hdfobj_coefs(coefs);
+      int ib=0;
+      while(ib<nb) 
+      {
+        string bname(myParam->getBandName(occBand[ib],spinIndex));
+        app_log() << "  Reading " << myParam->eigTag << "/" << tname <<"/"<< bname << endl;
+        hid_t band_grp_id =  H5Gopen(twist_grp_id,bname.c_str());
+        hdfobj_coefs.read(band_grp_id,myParam->eigvecTag.c_str());
+        psi->addVector(coefs,ib);
+        H5Gclose(band_grp_id);
+        ++ib;
+      }
     }
 
     H5Gclose(twist_grp_id);
     H5Gclose(es_grp_id);
 
+#if defined(QMC_COMPLEX)
     if(transform2grid)
     {
       app_warning() << "  Going to transform on grid " << endl;
       transform2GridData(nG,spinIndex,*psi);
     }
+#endif
 
     return psi;
   }
 
+#if defined(QMC_COMPLEX)
   void PWOrbitalBuilder::transform2GridData(PWBasis::GIndex_t& nG, int spinIndex, PWOrbitalSet& pwFunc)
   {
-#if defined(QMC_COMPLEX)
     ostringstream splineTag;
     splineTag << "eigenstates_"<<nG[0]<<"_"<<nG[1]<<"_"<<nG[2];
     herr_t status = H5Eset_auto(NULL, NULL);
@@ -527,13 +550,8 @@ namespace qmcplusplus {
 #endif
     H5Gclose(twist_grp_id);
     H5Gclose(es_grp_id);
-
-#else
-    app_error() << "  PWOrbitalBuilder::transform2GridData Invalid for QMC_COMPLEX=0" << endl;
-#endif
-    //die badly
-    abort();
   }
+#endif
 
   hid_t PWOrbitalBuilder::getH5(xmlNodePtr cur, const char* aname)
   {
@@ -554,6 +572,7 @@ namespace qmcplusplus {
     myParam->put(rootNode);
     return h;
   }
+
 }
 /***************************************************************************
  * $RCSfile$   $Author$

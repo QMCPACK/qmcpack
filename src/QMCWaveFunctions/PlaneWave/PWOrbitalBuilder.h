@@ -21,7 +21,11 @@
 #ifndef QMCPLUSPLUS_PLANEWAVE_ORBITALBUILD_V0_H
 #define QMCPLUSPLUS_PLANEWAVE_ORBITALBUILD_V0_H
 #include "QMCWaveFunctions/OrbitalBuilderBase.h"
+#if defined(QMC_COMPLEX)
 #include "QMCWaveFunctions/PlaneWave/PWOrbitalSet.h"
+#else
+#include "QMCWaveFunctions/PlaneWave/PWRealOrbitalSet.h"
+#endif
 namespace qmcplusplus {
 
   class PWParameterSet;
@@ -32,7 +36,13 @@ namespace qmcplusplus {
 
   private:
 
+#if defined(QMC_COMPLEX)    
+    typedef PWOrbitalSet             SPOSetType;
     typedef PWOrbitalSet::PWBasisPtr PWBasisPtr;
+#else
+    typedef PWRealOrbitalSet             SPOSetType;
+    typedef PWRealOrbitalSet::PWBasisPtr PWBasisPtr;
+#endif
 
     ///Read routine for HDF wavefunction file version 0.10
     void ReadHDFWavefunction(hid_t hfile);
@@ -64,7 +74,9 @@ namespace qmcplusplus {
     bool putSlaterDet(xmlNodePtr cur);
     bool createPWBasis(xmlNodePtr cur);
     SPOSetBase* createPW(xmlNodePtr cur, int spinIndex);
+#if defined(QMC_COMPLEX)
     void transform2GridData(PWBasis::GIndex_t& nG, int spinIndex, PWOrbitalSet& pwFunc);
+#endif
   };
 }
 #endif
