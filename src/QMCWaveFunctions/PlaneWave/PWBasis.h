@@ -26,8 +26,10 @@
 #include "Message/Communicate.h"
 #include <complex>
 
-//use recursive method to build the basis set for each position
-//performance improvement is questionable: load vs sin/cos
+/** If defined, use recursive method to build the basis set for each position
+ *
+ * performance improvement is questionable: load vs sin/cos 
+ */
 #define PWBASIS_USE_RECURSIVE
 
 namespace qmcplusplus {
@@ -59,7 +61,6 @@ namespace qmcplusplus {
     vector<GIndex_t> gvecs; //Reduced coordinates
     vector<PosType> kplusgvecs_cart; //Cartesian.
     Matrix<ComplexType> C;
-    Matrix<RealType> logC;
     //Real wavefunctions here. Now the basis states are cos(Gr) or sin(Gr), not exp(iGr) 
     //We need a way of switching between them for G -> -G, otherwise the
     //determinant will have multiple rows that are equal (to within a constant factor) 
@@ -185,11 +186,7 @@ namespace qmcplusplus {
         ComplexType pw(pw0); //std::cos(twistdotr),std::sin(twistdotr));
         for(int idim=0; idim<3; idim++)
           pw *= C(idim,gvecs[ig][idim]+maxg[idim]);
-#if defined(QMC_COMPLEX)
-        Zv[ig]=pw; 
-#else
-        Zv[ig]= negative[ig]*pw.real() + (1-negative[ig])*pw.imag();
-#endif
+        Zv[ig]=pw;
       }
     }
     /** Evaluate all planewaves and derivatives for the iat-th particle
@@ -214,19 +211,11 @@ namespace qmcplusplus {
         // THE INDEX ORDER OF C DOESN'T LOOK TOO GOOD: this could be fixed
         for(int idim=0; idim<3; idim++)
           pw *= C(idim,gvecs[ig][idim]+maxg[idim]);
-#if defined(QMC_COMPLEX)
         zptr[0]= pw;
         zptr[1]= minusModKplusG2[ig]*pw;
         zptr[2]= kplusgvecs_cart[ig][0]*ComplexType(-pw.imag(),pw.real());
         zptr[3]= kplusgvecs_cart[ig][1]*ComplexType(-pw.imag(),pw.real());
         zptr[4]= kplusgvecs_cart[ig][2]*ComplexType(-pw.imag(),pw.real());
-        //zptr[2]= pw*ComplexType(0.0,kplusgvecs_cart[ig][0]);
-        //zptr[3]= pw*ComplexType(0.0,kplusgvecs_cart[ig][1]);
-        //zptr[4]= pw*ComplexType(0.0,kplusgvecs_cart[ig][2]);
-#else
-        app_error() << "DO NOT USE THIS UNTIL TESTED" << endl;
-        OHMMS::Controller->abort();
-#endif
       }
     }
 #else
@@ -236,11 +225,7 @@ namespace qmcplusplus {
       //Evaluate the planewaves for particle iat.
       for(int ig=0; ig<NumPlaneWaves; ig++) {
         RealType phi(dot(kplusgvecs_cart[ig],pos));
-#if defined(QMC_COMPLEX)
         Zv[ig]=ComplexType(std::cos(phi),std::sin(phi)); 
-#else
-        Zv[ig]=negative[ig]*std::cos(phi) + (1-negative[ig])*std::sin(phi);
-#endif
       }
     }
     inline void 
@@ -252,13 +237,11 @@ namespace qmcplusplus {
         //are for (twist+G).r
         RealType phi(dot(kplusgvecs_cart[ig],P.R[iat]));
         ComplexType pw(std::cos(phi),std::sin(phi));
-#if defined(QMC_COMPLEX)
         zptr[0]= pw;
         zptr[1]= minusModKplusG2[ig]*pw;
         zptr[2]= kplusgvecs_cart[ig][0]*ComplexType(-pw.imag(),pw.real());
         zptr[3]= kplusgvecs_cart[ig][1]*ComplexType(-pw.imag(),pw.real());
         zptr[4]= kplusgvecs_cart[ig][2]*ComplexType(-pw.imag(),pw.real());
-#endif
       }
      }
 #endif
