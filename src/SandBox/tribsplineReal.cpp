@@ -5,6 +5,7 @@
 #include <iomanip>
 #include <sstream>
 #include "OhmmsData/OhmmsElementBase.h"
+#include "Optimize/VarList.h"
 #include "Numerics/TricubicBsplineSet.h"
 #include "Numerics/OneDimGridBase.h"
 #include "SandBox/TestFunc.h"
