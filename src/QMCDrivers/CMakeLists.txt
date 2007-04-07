@@ -6,6 +6,8 @@ SET(QMCDRIVERS
   ../Estimators/ScalarEstimatorManager.cpp
   ../Estimators/MultipleEnergyEstimator.cpp
   ../Estimators/RQMCMultipleEstimator.cpp
+  ../Estimators/PairCorrEstimator.cpp
+  ../Estimators/CompositeEstimatorManager.cpp
   SimpleFixedNodeBranch.cpp
   QMCDriver.cpp
   QMCOptimize.cpp
@@ -58,3 +60,8 @@ ENDIF(NOT QMCPLUSPLUS_RELEASE)
 # create libqmc 
 ####################################
 ADD_LIBRARY(qmcdriver ${QMCDRIVERS})
+#IF(QMC_BUILD_STATIC)
+#  ADD_LIBRARY(qmcdriver STATIC ${QMCDRIVERS})
+#ELSE(QMC_BUILD_STATIC)
+#  ADD_LIBRARY(qmcdriver SHARED ${QMCDRIVERS})
+#ENDIF(QMC_BUILD_STATIC)

@@ -15,6 +15,11 @@ SET(QMCAPPDIR
 # create libqmc 
 ####################################
 ADD_LIBRARY(qmc ${QMCAPPDIR})
+#IF(QMC_BUILD_STATIC)
+#  ADD_LIBRARY(qmc STATIC ${QMCAPPDIR})
+#ELSE(QMC_BUILD_STATIC)
+#  ADD_LIBRARY(qmc SHARED ${QMCAPPDIR})
+#ENDIF(QMC_BUILD_STATIC)
 
 ####################################
 #sources for new qmcapp, general QMC code to handle multiple
