@@ -18,7 +18,27 @@
 #define QMCPLUSPLUS_COMPOSITE_ESTIMATORBASE_H
 #include "Configuration.h"
 #include "OhmmsData/RecordProperty.h"
+#include "OhmmsData/HDFAttribIO.h"
 #include "Particle/MCWalkerConfiguration.h"
+
+/* accumulate weighted squares
+ * @param first starting iterator of input data
+ * @param last ending iterator for input data
+ * @param target starting iterator of the accumulation
+ * @param w weight
+ *
+ * target[i] += w*soure[i]*source[i];
+ */
+template<typename IT1, typename IT2, typename T>
+inline void accumulate2(IT1 first, IT1 last, IT2 target, T w)
+{
+  while(first != last)
+  {
+    *target += w*(*first)*(*first); 
+    ++target; ++first;
+  }
+}
+
 
 namespace qmcplusplus {
 
@@ -26,16 +46,24 @@ namespace qmcplusplus {
    */
   struct CompositeEstimatorBase: public QMCTraits {
 
-    bool CollectSum;
-
+    ///hdf5 handle of the object
+    hid_t GroupID;
+    ///name of the object
+    string Title;
     /** default constructor */
-    CompositeEstimatorBase(): CollectSum(false){}
+    CompositeEstimatorBase(): GroupID(-1){}
 
     /** virtal destrctor */
     virtual ~CompositeEstimatorBase() {}
 
     /** reassign the target particleset */
     virtual void resetTargetParticleSet(ParticleSet& p) = 0;
+
+    /** initialize the estimator */
+    virtual void open(hid_t hroot)=0;
+
+    /** finalize the estimator */
+    virtual void close()=0;
 
     /** start accumulate */
     virtual void startAccumulate()=0;
@@ -49,8 +77,11 @@ namespace qmcplusplus {
     /** start a block */
     virtual void startBlock(int steps)=0;
 
-    /** stop a block */
-    virtual void stopBlock(RealType wgtnorm)=0;
+    /** stop a block 
+     * @param wgtnorm for average
+     * @param errnorm for error normalization 1.0/(samples-1)
+     */
+    virtual void stopBlock(RealType wgtnorm, RealType errnorm)=0;
   };
 
   /**Class to manage a set of ScalarEstimators */
@@ -62,9 +93,9 @@ namespace qmcplusplus {
     CompositeEstimatorSet(ParticleSet& p);
     ~CompositeEstimatorSet();
 
-    ///implement virutal functions
     void resetTargetParticleSet(ParticleSet& p);
-
+    void open(hid_t hroot);
+    void close();
     void startAccumulate();
     void accumulate(ParticleSet& P, RealType wgt);
     void stopAccumulate(RealType wgtnorm);
@@ -73,7 +104,7 @@ namespace qmcplusplus {
     void reset();
 
     void startBlock(int steps);
-    void stopBlock(RealType wgtnorm);
+    void stopBlock(RealType wgtnorm, RealType errnorm);
     ///number of steps per block
     int totSteps;
     ///current step
@@ -86,6 +117,7 @@ namespace qmcplusplus {
     ParticleSet& targetPtcl;
     ///estimators
     vector<EstimatorType*> Estimators;
+
   };
 }
 

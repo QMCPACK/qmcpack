@@ -38,6 +38,28 @@ namespace qmcplusplus {
     delete_iter(Estimators.begin(), Estimators.end());
   }
 
+  void CompositeEstimatorSet::open(hid_t hroot)
+  {
+    if(hroot<0)
+    {
+      if(GroupID>=0) H5Fclose(GroupID);
+      GroupID = hroot 
+        = H5Fcreate("stuff.h5",H5F_ACC_TRUNC,H5P_DEFAULT,H5P_DEFAULT);
+    }
+    for(int i=0; i< Estimators.size(); i++) Estimators[i]->open(hroot);
+  }
+
+  void CompositeEstimatorSet::close()
+  {
+    for(int i=0; i< Estimators.size(); i++) 
+      Estimators[i]->close();
+    if(GroupID>=0)
+    {//responsible to close it
+      H5Fclose(GroupID);
+      GroupID=-1;
+    }
+  }
+
   void CompositeEstimatorSet::resetTargetParticleSet(ParticleSet& p)
   {
     for(int i=0; i< Estimators.size(); i++) 
@@ -73,11 +95,10 @@ namespace qmcplusplus {
    */
   void CompositeEstimatorSet::stopAccumulate(RealType wgtnorm)
   {
-    wgtnorm=1.0/curWeight;
+    wgtnorm=(wgtnorm>0)? wgtnorm :1.0/curWeight;
     for(int i=0; i< Estimators.size(); i++) 
       Estimators[i]->stopAccumulate(wgtnorm);
   }
-
 
   /** reset the internal data of all the estimators for new averages
   */
@@ -91,13 +112,13 @@ namespace qmcplusplus {
       Estimators[i]->startBlock(steps);
   }
 
-  void CompositeEstimatorSet::stopBlock(RealType wgtnorm)
+  void CompositeEstimatorSet::stopBlock(RealType wgtnorm, RealType errnorm)
   {
-    cout << " Block: steps =" << totSteps << " walker =" << curWeight << endl;
     //need to correct by the number of steps per block
     wgtnorm=1.0/static_cast<RealType>(totSteps);
+    errnorm=1.0/static_cast<RealType>(totSteps-1);
     for(int i=0; i< Estimators.size(); i++) 
-      Estimators[i]->stopBlock(wgtnorm);
+      Estimators[i]->stopBlock(wgtnorm,errnorm);
   }
 
   //bool CompositeEstimatorSet::put(xmlNodePtr cur) 

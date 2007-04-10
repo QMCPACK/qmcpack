@@ -23,6 +23,9 @@
 
 namespace qmcplusplus {
 
+  //temporary
+  class AppendData;
+
   class PairCorrEstimator: public CompositeEstimatorBase 
   {
     ///typedef for the storage
@@ -47,11 +50,18 @@ namespace qmcplusplus {
     /** local copy of pair index */
     vector<int> PairID;
     /** histogram of the distances per measurement*/
-    StorageType dCInst;
-    /** histogram of the distances per block */
-    StorageType dCBlock;
+    StorageType gofrInst;
+    /** gofr */
+    StorageType gofr;
+    /** (gofr)^2 */
+    StorageType gofr2;
+    /** running error of gofr */
+    StorageType gofrerr;
     ///debug only
     vector<ofstream*> fout;
+
+    AppendData* v_h;
+    AppendData* v2_h;
     public:
 
     /** constructor
@@ -69,6 +79,8 @@ namespace qmcplusplus {
     ~PairCorrEstimator();
 
     void resetTargetParticleSet(ParticleSet& p);
+    void open(hid_t hroot);
+    void close();
     /** prepare data collect */
     void startAccumulate();
     /** accumulate the observables */
@@ -76,8 +88,7 @@ namespace qmcplusplus {
     /** reweight of the current cummulative  values */
     void stopAccumulate(RealType wgtinv);
     void startBlock(int steps);
-    void stopBlock(RealType wgtinv);
-
+    void stopBlock(RealType wgtnorm, RealType errnorm);
     void setBound(RealType rmax, RealType dr);
 
     private:
