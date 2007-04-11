@@ -6,8 +6,8 @@ SET(QMCDRIVERS
   ../Estimators/ScalarEstimatorManager.cpp
   ../Estimators/MultipleEnergyEstimator.cpp
   ../Estimators/RQMCMultipleEstimator.cpp
+  ../Estimators/CompositeEstimators.cpp
   ../Estimators/PairCorrEstimator.cpp
-  ../Estimators/CompositeEstimatorManager.cpp
   SimpleFixedNodeBranch.cpp
   QMCDriver.cpp
   QMCOptimize.cpp

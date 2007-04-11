@@ -32,7 +32,7 @@ namespace qmcplusplus {
     ///destructor
     ~DMCUpdatePbyPWithRejection();
 
-    void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end);
+    void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
 
   private:
 
@@ -53,7 +53,7 @@ namespace qmcplusplus {
     ///destructor
     ~DMCUpdatePbyPWithKill();
 
-    void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end);
+    void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
 
   private:
 

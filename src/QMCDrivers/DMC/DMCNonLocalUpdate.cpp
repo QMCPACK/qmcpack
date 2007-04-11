@@ -35,7 +35,9 @@ namespace qmcplusplus {
    * When killnode==no, any move resulting in node-crossing is treated
    * as a normal rejection.
    */
-  void DMCNonLocalUpdate::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end) {
+  void DMCNonLocalUpdate::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end,
+      bool measure) 
+  {
 
     //RealType plusFactor(Tau*Gamma);
     //RealType minusFactor(-Tau*(1.0-Alpha*(1.0+Gamma)));
@@ -110,10 +112,6 @@ namespace qmcplusplus {
     }
   }
 
-  bool DMCNonLocalUpdate::put(xmlNodePtr cur) {
-    return nonLocalOps.put(cur);
-  }
-
   /// Constructor.
   DMCNonLocalUpdatePbyP::DMCNonLocalUpdatePbyP(ParticleSet& w, TrialWaveFunction& psi, QMCHamiltonian& h,
       RandomGenerator_t& rg): QMCUpdateBase(w,psi,h,rg)
@@ -128,7 +126,9 @@ namespace qmcplusplus {
    * When killnode==no, any move resulting in node-crossing is treated
    * as a normal rejection.
    */
-  void DMCNonLocalUpdatePbyP::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end) {
+  void DMCNonLocalUpdatePbyP::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end,
+      bool measure) 
+  {
 
     while(it != it_end) {
       Walker_t& thisWalker(**it);
@@ -231,10 +231,6 @@ namespace qmcplusplus {
       nReject += nRejectTemp;
       ++it;
     }
-  }
-
-  bool DMCNonLocalUpdatePbyP::put(xmlNodePtr cur) {
-    return nonLocalOps.put(cur);
   }
 }
 

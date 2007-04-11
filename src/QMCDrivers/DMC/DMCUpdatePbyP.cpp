@@ -42,7 +42,9 @@ namespace qmcplusplus {
    * When killnode==no, any move resulting in node-crossing is treated
    * as a normal rejection.
    */
-  void DMCUpdatePbyPWithRejection::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end) {
+  void DMCUpdatePbyPWithRejection::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end,
+      bool measure) 
+  {
     int item=0;
     while(it != it_end) {
       //MCWalkerConfiguration::WalkerData_t& w_buffer = *(W.DataSet[iwalker]);
@@ -159,7 +161,9 @@ namespace qmcplusplus {
    * When killnode==no, any move resulting in node-crossing is treated
    * as a normal rejection.
    */
-  void DMCUpdatePbyPWithKill::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end) {
+  void DMCUpdatePbyPWithKill::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end,
+      bool measure) 
+  {
     app_error() << "  DMCUpdatePbyPWithKill::advanceWalkers in not implemented." << endl;
   }
 }

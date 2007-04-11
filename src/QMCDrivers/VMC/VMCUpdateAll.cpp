@@ -24,21 +24,18 @@ namespace qmcplusplus {
       QMCHamiltonian& h, RandomGenerator_t& rg):
     QMCUpdateBase(w,psi,h,rg), nSubSteps(1)
     { 
+      myParams.add(nSubSteps,"subSteps","int"); 
+      myParams.add(nSubSteps,"substeps","int");
     }
 
   VMCUpdateAll::~VMCUpdateAll()
   {
   }
 
-  bool VMCUpdateAll::put(xmlNodePtr cur)
+  void VMCUpdateAll::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure) 
   {
-    ParameterSet params;
-    params.add(nSubSteps,"subSteps","int"); params.add(nSubSteps,"substeps","int");
-    return params.put(cur);
-  }
-
-  void VMCUpdateAll::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end) 
-  {
+    measure &= (compEstimator != 0);
+    if(measure) compEstimator->startAccumulate();
     while(it != it_end) 
     {
       MCWalkerConfiguration::Walker_t& thisWalker(**it);
@@ -50,6 +47,11 @@ namespace qmcplusplus {
       if(RandomGen() > g) {
         thisWalker.Age++;
 	++nReject; 
+        if(measure)
+        {//evaluate the old value
+          W.R = thisWalker.R;
+          W.update();
+        }
       } else {
         RealType eloc=H.evaluate(W);
 	thisWalker.R = W.R;
@@ -57,8 +59,11 @@ namespace qmcplusplus {
 	H.saveProperty(thisWalker.getPropertyBase());
 	++nAccept;
       }
+
+      if(measure) compEstimator->accumulate(W,1.0);
       ++it; 
     }
+    if(measure) compEstimator->stopAccumulate(-1);
   }
   
   /// Constructor.
@@ -72,8 +77,11 @@ namespace qmcplusplus {
   {
   }
 
-  void VMCUpdateAllWithDrift::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end) 
+  void VMCUpdateAllWithDrift::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure) 
   {
+    measure &= (compEstimator != 0);
+    if(measure) compEstimator->startAccumulate();
+
     while(it != it_end) 
     {
       MCWalkerConfiguration::Walker_t& thisWalker(**it);
@@ -98,6 +106,11 @@ namespace qmcplusplus {
       if(RandomGen() > g) {
         thisWalker.Age++;
 	++nReject; 
+        if(measure)
+        {//evaluate the old value
+          W.R = thisWalker.R;
+          W.update();
+        }
       } else {
         RealType eloc=H.evaluate(W);
 	thisWalker.R = W.R;
@@ -106,8 +119,10 @@ namespace qmcplusplus {
 	H.saveProperty(thisWalker.getPropertyBase());
 	++nAccept;
       }
+      if(measure) compEstimator->accumulate(W,1.0);
       ++it; 
     }
+    if(measure) compEstimator->stopAccumulate(-1);
   }
 }
 

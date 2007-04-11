@@ -18,6 +18,7 @@
 #include "ParticleBase/ParticleUtility.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "QMCDrivers/DriftOperators.h"
+#include "OhmmsData/AttributeSet.h"
 #include "Message/CommCreate.h"
 #include "Message/OpenMP.h"
 
@@ -26,11 +27,48 @@ namespace qmcplusplus {
   /// Constructor.
   QMCUpdateBase::QMCUpdateBase(ParticleSet& w, TrialWaveFunction& psi, QMCHamiltonian& h,
       RandomGenerator_t& rg): W(w),Psi(psi),H(h), 
-      RandomGen(rg), MaxAge(0)
+      RandomGen(rg), MaxAge(0),  branchEngine(0), compEstimator(0)
       { }
-  
+
   /// destructor
-  QMCUpdateBase::~QMCUpdateBase() { }
+  QMCUpdateBase::~QMCUpdateBase() 
+  { 
+    if(compEstimator) delete compEstimator;
+  }
+
+  bool QMCUpdateBase::put(xmlNodePtr cur)
+  {
+    //nonlocal operator is very light
+    bool s= nonLocalOps.put(cur);
+    s=myParams.put(cur);
+
+    if(compEstimator == 0)
+    {
+      //check if estimator needs to be constructed
+      cur=cur->children;
+      vector<string> elist;
+      while(cur != NULL)
+      {
+        string cname((const char*)(cur->name));
+        if(cname == "estimator") {
+          string ename("0");
+          OhmmsAttributeSet att;
+          att.add(ename,"name");
+          att.put(cur);
+          if(ename == "gofr" || ename == "sk") //only accept gofr/sk
+          {
+            elist.push_back(ename);
+          }
+        }
+        cur=cur->next;
+      }
+      if(elist.size())
+      {
+        compEstimator = new CompositeEstimatorSet(W);
+      }
+    }
+    return s;
+  }
 
   void QMCUpdateBase::resetRun(BranchEngineType* brancher) {
     branchEngine=brancher;
@@ -48,12 +86,29 @@ namespace qmcplusplus {
     branchEngine->flush(0);
   }
 
-  void QMCUpdateBase::startBlock() {
+  void QMCUpdateBase::startRun() 
+  {
+    if(compEstimator) {
+      compEstimator->open(-1);
+    }
+  }
+
+  void QMCUpdateBase::stopRun() 
+  {
+    if(compEstimator) compEstimator->close();
+  }
+
+  void QMCUpdateBase::startBlock(int steps) {
     nAccept = 0; 
     nReject=0;
     nAllRejected=0;
     nNodeCrossing=0;
     NonLocalMoveAccepted=0;
+    if(compEstimator) compEstimator->startBlock(steps);
+  }
+
+  void QMCUpdateBase::stopBlock() {
+    if(compEstimator) compEstimator->stopBlock(-1,-1);
   }
 
   void QMCUpdateBase::initWalkers(WalkerIter_t it, WalkerIter_t it_end) 

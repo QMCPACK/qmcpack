@@ -21,6 +21,7 @@
 
 namespace qmcplusplus {
 
+
   /** @ingroup QMCDrivers  ParticleByParticle
    *@brief Implements the VMC algorithm using particle-by-particle move. 
    */
@@ -32,9 +33,7 @@ namespace qmcplusplus {
 
     ~VMCUpdatePbyP();
 
-    void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end);
- 
-    bool put(xmlNodePtr cur);
+    void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
 
   private:
     ///sub steps
@@ -56,7 +55,7 @@ namespace qmcplusplus {
 
     ~VMCUpdatePbyPWithDrift();
 
-    void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end);
+    void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
  
   private:
     /// Copy Constructor (disabled)

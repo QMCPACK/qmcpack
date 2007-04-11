@@ -18,7 +18,6 @@
 #ifndef QMCPLUSPLUS_DMC_NONLOCAL_UPDATE_PARTICLEBYPARTCLE_H
 #define QMCPLUSPLUS_DMC_NONLOCAL_UPDATE_PARTICLEBYPARTCLE_H
 #include "QMCDrivers/QMCUpdateBase.h"
-#include "QMCHamiltonians/NonLocalTOperator.h"
 namespace qmcplusplus {
 
   class DMCNonLocalUpdate: public QMCUpdateBase {
@@ -31,14 +30,9 @@ namespace qmcplusplus {
     ///destructor
     ~DMCNonLocalUpdate();
 
-    void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end);
-
-    bool put(xmlNodePtr cur);
+    void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
 
   private:
-
-    NonLocalTOperator nonLocalOps;
-
     /// Copy Constructor (disabled)
     DMCNonLocalUpdate(const DMCNonLocalUpdate& a): QMCUpdateBase(a){ }
     /// Copy operator (disabled).
@@ -56,13 +50,9 @@ namespace qmcplusplus {
     ///destructor
     ~DMCNonLocalUpdatePbyP();
 
-    void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end);
-
-    bool put(xmlNodePtr cur);
+    void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
 
   private:
-
-    NonLocalTOperator nonLocalOps;
     /// Copy Constructor (disabled)
     DMCNonLocalUpdatePbyP(const DMCNonLocalUpdatePbyP& a): QMCUpdateBase(a){ }
     /// Copy operator (disabled).

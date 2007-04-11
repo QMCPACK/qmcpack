@@ -22,8 +22,10 @@
 #include "Particle/MCWalkerConfiguration.h" 
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
-#include "Utilities/OhmmsInfo.h"
+#include "QMCHamiltonians/NonLocalTOperator.h"
 #include "QMCDrivers/SimpleFixedNodeBranch.h"
+#include "Estimators/CompositeEstimators.h"
+//#include "Utilities/OhmmsInfo.h"
 
 namespace qmcplusplus {
 
@@ -70,12 +72,21 @@ namespace qmcplusplus {
      */
     void resetRun(BranchEngineType* brancher);
 
+    /** start a run */
+    void startRun();
+    /** stop a run */
+    void stopRun();
     /** reset the trial energy */
     void resetEtrial(RealType et);
 
     /** prepare to start a block
+     * @param steps number of steps within the block
      */
-    void startBlock();
+    void startBlock(int steps);
+
+    /** stop a block
+     */
+    void stopBlock();
 
     /** set the multiplicity of the walkers to branch */
     void setMultiplicity(WalkerIter_t it, WalkerIter_t it_end);
@@ -96,19 +107,16 @@ namespace qmcplusplus {
      */
     void benchMark(WalkerIter_t it, WalkerIter_t it_end, int ip);
 
-    /** virtual function to get options for the update engine
+    /**  process options 
      */
-    virtual bool put(xmlNodePtr cur)
-    {
-      return true;
-    }
+    bool put(xmlNodePtr cur);
 
     /** advance walkers executed at each step
      *
      * Derived classes implement how to move walkers and accept/reject
      * moves. 
      */
-    virtual void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end)=0;
+    virtual void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure)=0;
 
   protected:
     ///number of particles
@@ -129,6 +137,12 @@ namespace qmcplusplus {
     RandomGenerator_t& RandomGen;
     ///branch engine
     BranchEngineType* branchEngine;
+    ///parameters
+    ParameterSet myParams;
+    ///composite estimator
+    CompositeEstimatorSet* compEstimator;
+    ///non local operator
+    NonLocalTOperator nonLocalOps;
     ///temporary storage for drift
     ParticleSet::ParticlePos_t drift;
     ///temporary storage for random displacement

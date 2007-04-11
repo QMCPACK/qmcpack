@@ -110,20 +110,22 @@ namespace qmcplusplus {
     IndexType block = 0;
     do {
       Estimators->startBlock();
-      for(int ip=0; ip<NumThreads; ip++) Movers[ip]->startBlock();
+      for(int ip=0; ip<NumThreads; ip++) Movers[ip]->startBlock(nSteps);
 
       IndexType step = 0;
       do 
       {
+        ++step;
+        ++CurrentStep;
 #pragma omp parallel
         {
           int ip = omp_get_thread_num();
-          Movers[ip]->advanceWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
+          Movers[ip]->advanceWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1],
+              step==nSteps);
         }
-        ++step;
-        ++CurrentStep;
         Estimators->accumulate(W);
       } while(step<nSteps);
+
 
       IndexType nAcceptTot=0;
       IndexType nRejectTot=0;
@@ -133,6 +135,11 @@ namespace qmcplusplus {
       }
 
       Estimators->stopBlock(static_cast<RealType>(nAcceptTot)/static_cast<RealType>(nAcceptTot+nRejectTot));
+
+      //suggestion
+      //MasterMover->stopBlock();
+      for(int ip=0; ip<NumThreads; ip++) Movers[ip]->stopBlock();
+
       ++block;
 
       //record the current configuration

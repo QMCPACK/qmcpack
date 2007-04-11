@@ -58,24 +58,27 @@ namespace qmcplusplus {
     do // block
     {
       Estimators->startBlock();
-      Mover->startBlock();
+      Mover->startBlock(nSteps);
       IndexType step = 0;
       do  //step
       {
         IndexType interval = 0;
+        //Mover->startAccumulate();
         do // interval
         {
-          Mover->advanceWalkers(W.begin(),W.end());
           ++interval;
+          Mover->advanceWalkers(W.begin(),W.end(), interval == BranchInterval);
         } while(interval<BranchInterval);
         Mover->setMultiplicity(W.begin(),W.end());
         Estimators->accumulate(W);
         branchEngine->branch(CurrentStep,W);
+        //Mover->stopAccumulate();
         ++step; 
         CurrentStep+=BranchInterval;
       } while(step<nSteps);
 
       Estimators->stopBlock(Mover->acceptRatio());
+      Mover->stopBlock();
 
       block++;
       recordBlock(block);

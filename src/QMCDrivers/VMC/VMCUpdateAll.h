@@ -32,10 +32,8 @@ namespace qmcplusplus {
 
     ~VMCUpdateAll();
 
-    void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end);
+    void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
  
-    bool put(xmlNodePtr cur);
-
   private:
     ///sub steps
     int nSubSteps;
@@ -56,7 +54,7 @@ namespace qmcplusplus {
 
     ~VMCUpdateAllWithDrift();
 
-    void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end);
+    void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
  
   private:
     /// Copy Constructor (disabled)

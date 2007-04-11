@@ -56,6 +56,10 @@ namespace qmcplusplus {
       Mover->initWalkers(W.begin(),W.end());
 
     Mover->put(qmcNode);
+
+    //TESTING ESTIMATOR: for hdf5 slab only
+    Mover->startRun();
+
     Estimators->reportHeader(AppendRun);
     Estimators->reset();
 
@@ -64,17 +68,18 @@ namespace qmcplusplus {
     IndexType nRejectTot = 0;
 
     do {
+
       Estimators->startBlock();
-      Mover->startBlock();
+      Mover->startBlock(nSteps);
       IndexType step = 0;
       do
       {
-        Mover->advanceWalkers(W.begin(),W.end());
         ++step;++CurrentStep;
+        Mover->advanceWalkers(W.begin(),W.end(),true); //step==nSteps);
         Estimators->accumulate(W);
       } while(step<nSteps);
-      
       Estimators->stopBlock(Mover->acceptRatio());
+      Mover->stopBlock();
 
       nAcceptTot += Mover->nAccept;
       nRejectTot += Mover->nReject;
@@ -87,6 +92,9 @@ namespace qmcplusplus {
         Mover->updateWalkers(W.begin(),W.end());
 
     } while(block<nBlocks);
+
+    //TESTING ESTIMATOR: for hdf5 slab only
+    Mover->stopRun();
 
     //finalize a qmc section
     return finalize(block);

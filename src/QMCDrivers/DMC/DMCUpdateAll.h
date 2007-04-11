@@ -31,9 +31,9 @@ namespace qmcplusplus {
     ///destructor
     ~DMCUpdateAllWithRejection();
 
-    void initWalkers(WalkerIter_t it, WalkerIter_t it_end);
-    void updateWalkers(WalkerIter_t it, WalkerIter_t it_end);
-    void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end);
+    //void initWalkers(WalkerIter_t it, WalkerIter_t it_end);
+    //void updateWalkers(WalkerIter_t it, WalkerIter_t it_end);
+    void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
   private:
     /// Copy Constructor (disabled)
     DMCUpdateAllWithRejection(const DMCUpdateAllWithRejection& a): QMCUpdateBase(a){}
@@ -50,9 +50,9 @@ namespace qmcplusplus {
     ///destructor
     ~DMCUpdateAllWithKill();
 
-    void initWalkers(WalkerIter_t it, WalkerIter_t it_end);
-    void updateWalkers(WalkerIter_t it, WalkerIter_t it_end);
-    void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end);
+    //void initWalkers(WalkerIter_t it, WalkerIter_t it_end);
+    //void updateWalkers(WalkerIter_t it, WalkerIter_t it_end);
+    void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
   private:
     /// Copy Constructor (disabled)
     DMCUpdateAllWithKill(const DMCUpdateAllWithKill& a): QMCUpdateBase(a){}

@@ -19,6 +19,7 @@
 // -*- C++ -*-
 #include "QMCDrivers/VMC/VMCUpdatePbyP.h"
 #include "QMCDrivers/DriftOperators.h"
+#include "Estimators/ScalarEstimatorManager.h"
 #include "Message/OpenMP.h"
 
 namespace qmcplusplus { 
@@ -27,21 +28,18 @@ namespace qmcplusplus {
       QMCHamiltonian& h, RandomGenerator_t& rg):
     QMCUpdateBase(w,psi,h,rg), nSubSteps(1)
     { 
+      myParams.add(nSubSteps,"subSteps","int"); 
+      myParams.add(nSubSteps,"substeps","int");
     }
 
   VMCUpdatePbyP::~VMCUpdatePbyP()
   {
   }
 
-  bool VMCUpdatePbyP::put(xmlNodePtr cur)
+  void VMCUpdatePbyP::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure) 
   {
-    ParameterSet params;
-    params.add(nSubSteps,"subSteps","int"); params.add(nSubSteps,"substeps","int");
-    return params.put(cur);
-  }
-
-  void VMCUpdatePbyP::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end) 
-  {
+    measure &= (compEstimator != 0);
+    if(measure) compEstimator->startAccumulate();
 
     while(it != it_end) 
     {
@@ -52,6 +50,7 @@ namespace qmcplusplus {
       w_buffer.rewind();
       W.copyFromBuffer(w_buffer);
       Psi.copyFromBuffer(W,w_buffer);
+
 
       RealType psi_old = thisWalker.Properties(SIGN);
       RealType psi = psi_old;
@@ -94,11 +93,14 @@ namespace qmcplusplus {
 
       thisWalker.resetProperty(logpsi,Psi.getPhase(),eloc);
       H.saveProperty(thisWalker.getPropertyBase());
+
+      if(measure) compEstimator->accumulate(W,1.0);
       ++it;
     }
+    //sum over walkers
+    if(measure) compEstimator->stopAccumulate(-1);
   }
 
-  
   /// Constructor.
   VMCUpdatePbyPWithDrift::VMCUpdatePbyPWithDrift(ParticleSet& w, TrialWaveFunction& psi, 
       QMCHamiltonian& h, RandomGenerator_t& rg):
@@ -110,8 +112,10 @@ namespace qmcplusplus {
   {
   }
 
-  void VMCUpdatePbyPWithDrift::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end) 
+  void VMCUpdatePbyPWithDrift::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure) 
   {
+    measure &= (compEstimator != 0);
+    if(measure) compEstimator->startAccumulate();
 
     while(it != it_end) 
     {
@@ -182,11 +186,14 @@ namespace qmcplusplus {
         thisWalker.resetProperty(log(abs(psi)), psi,eloc);
         H.saveProperty(thisWalker.getPropertyBase());
       }
-      else {
+      else 
+      { 
         ++nAllRejected;
       }
+      if(measure) compEstimator->accumulate(W,1.0);
       ++it;
     }
+    if(measure) compEstimator->stopAccumulate(-1);
   }
 }
 

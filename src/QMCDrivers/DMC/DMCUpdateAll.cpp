@@ -33,11 +33,11 @@ namespace qmcplusplus {
   /// destructor
   DMCUpdateAllWithRejection::~DMCUpdateAllWithRejection() { }
 
-  void DMCUpdateAllWithRejection::initWalkers(WalkerIter_t it, WalkerIter_t it_end){
-  }
+  //void DMCUpdateAllWithRejection::initWalkers(WalkerIter_t it, WalkerIter_t it_end){
+  //}
 
-  void DMCUpdateAllWithRejection::updateWalkers(WalkerIter_t it, WalkerIter_t it_end){
-  }
+  //void DMCUpdateAllWithRejection::updateWalkers(WalkerIter_t it, WalkerIter_t it_end){
+  //}
 
   /** advance all the walkers with killnode==no
    * @param nat number of particles to move
@@ -45,8 +45,9 @@ namespace qmcplusplus {
    * When killnode==no, any move resulting in node-crossing is treated
    * as a normal rejection.
    */
-  void DMCUpdateAllWithRejection::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end) {
-
+  void DMCUpdateAllWithRejection::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, 
+      bool measure) 
+  {
     while(it != it_end) {
       Walker_t& thisWalker(**it);
       
@@ -117,14 +118,16 @@ namespace qmcplusplus {
   /// destructor
   DMCUpdateAllWithKill::~DMCUpdateAllWithKill() { }
 
-  void DMCUpdateAllWithKill::initWalkers(WalkerIter_t it, WalkerIter_t it_end){
-  }
+  //void DMCUpdateAllWithKill::initWalkers(WalkerIter_t it, WalkerIter_t it_end){
+  //}
 
-  void DMCUpdateAllWithKill::updateWalkers(WalkerIter_t it, WalkerIter_t it_end){
-  }
+  //void DMCUpdateAllWithKill::updateWalkers(WalkerIter_t it, WalkerIter_t it_end){
+  //}
   /** advance all the walkers with killnode==yes
    */
-  void DMCUpdateAllWithKill::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end) {
+  void DMCUpdateAllWithKill::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end,
+      bool measure) 
+  {
     while(it != it_end) {
       
       Walker_t& thisWalker(**it);

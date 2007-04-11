@@ -166,11 +166,13 @@ namespace qmcplusplus {
         {
           int ip = omp_get_thread_num();
           IndexType interval = 0;
+          IndexType bi=BranchInterval;
           do // interval
           {
-            Movers[ip]->advanceWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
             ++interval;
-          } while(interval<BranchInterval);
+            Movers[ip]->advanceWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1],
+                interval == bi);
+          } while(interval<bi);
         }//#pragma omp parallel
 
         Movers[0]->setMultiplicity(W.begin(),W.end());
