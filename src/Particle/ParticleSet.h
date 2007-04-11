@@ -57,6 +57,9 @@ namespace qmcplusplus {
     ///Structure factor
     StructFact *SK;
 
+    ///distance tables that need to be updated by moving this ParticleSet
+    vector<DistanceTableData*> DistTables;
+
     ///spherical-grids for non-local PP
     vector<ParticlePos_t*> Sphere;
 
@@ -174,8 +177,6 @@ namespace qmcplusplus {
     ///the position of the active particle for particle-by-particle moves
     SingleParticlePos_t activePos;
 
-    ///distance tables that need to be updated by moving this ParticleSet
-    vector<DistanceTableData*> DistTables;
 
     /** name-value map of Walker Properties
      *
