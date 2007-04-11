@@ -21,25 +21,6 @@
 #include "OhmmsData/HDFAttribIO.h"
 #include "Particle/MCWalkerConfiguration.h"
 
-/* accumulate weighted squares
- * @param first starting iterator of input data
- * @param last ending iterator for input data
- * @param target starting iterator of the accumulation
- * @param w weight
- *
- * target[i] += w*soure[i]*source[i];
- */
-template<typename IT1, typename IT2, typename T>
-inline void accumulate2(IT1 first, IT1 last, IT2 target, T w)
-{
-  while(first != last)
-  {
-    *target += w*(*first)*(*first); 
-    ++target; ++first;
-  }
-}
-
-
 namespace qmcplusplus {
 
   /** Abstract class for an estimator of an operator.
@@ -82,10 +63,32 @@ namespace qmcplusplus {
      * @param errnorm for error normalization 1.0/(samples-1)
      */
     virtual void stopBlock(RealType wgtnorm, RealType errnorm)=0;
+
+    /* accumulate weighted squares
+     * @param first starting iterator of input data
+     * @param last ending iterator for input data
+     * @param v starting iterator for the sum
+     * @param v2 starting iterator for the squred sum
+     * @param w weight
+     *
+     * v[i] += w*soure[i];
+     * v2[i] += w*soure[i]*source[i];
+     */
+    template<typename IT1, typename IT2, typename T>
+      inline void collect(IT1 first, IT1 last, IT2 v, IT2 v2, T w)
+      {
+        while(first != last)
+        {
+          *v2++ += w*(*first)*(*first); 
+          *v++  += w*(*first++);
+        }
+      }
+
   };
 
-  /**Class to manage a set of ScalarEstimators */
-  struct CompositeEstimatorSet: public CompositeEstimatorBase
+  /**Class to manage a set of CompositeEstimatorBase
+   */
+  struct CompositeEstimatorSet: public QMCTraits
   {
 
     typedef CompositeEstimatorBase EstimatorType;

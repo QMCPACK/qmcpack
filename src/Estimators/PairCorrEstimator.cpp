@@ -202,8 +202,8 @@ namespace qmcplusplus {
   /** add gofrInst which contains sum over walkers */
   void PairCorrEstimator::stopAccumulate(RealType wgtinv)
   {
-    gofr += wgtinv*gofrInst;
-    accumulate2(gofrInst.begin(),gofrInst.end(),gofr2.begin(),wgtinv);
+    //gofr += wgtinv*gofrInst;
+    collect(gofrInst.begin(),gofrInst.end(),gofr.begin(),gofr2.begin(),wgtinv);
   }
 
   /** save the block average */
