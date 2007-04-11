@@ -118,6 +118,10 @@ namespace qmcplusplus {
     RealType curWeight;
     ///target particles
     ParticleSet& targetPtcl;
+    ///hdf5 handle of the object
+    hid_t GroupID;
+    ///name of the object
+    string Title;
     ///estimators
     vector<EstimatorType*> Estimators;
 

@@ -22,7 +22,7 @@
 
 namespace qmcplusplus {
 
-  CompositeEstimatorSet::CompositeEstimatorSet(ParticleSet& p): targetPtcl(p)
+  CompositeEstimatorSet::CompositeEstimatorSet(ParticleSet& p): targetPtcl(p), GroupID(-1)
   {
     for(int i=0; i<p.DistTables.size(); i++)
     {
