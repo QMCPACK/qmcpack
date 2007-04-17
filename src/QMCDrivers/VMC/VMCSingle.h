@@ -43,6 +43,8 @@ namespace qmcplusplus {
     VMCSingle(const VMCSingle& a): QMCDriver(a) { }
     /// Copy operator (disabled).
     VMCSingle& operator=(const VMCSingle&) { return *this;}
+    ///hide initialization from the main function
+    void resetRun();
   };
 }
 

@@ -30,6 +30,48 @@ namespace qmcplusplus {
   }
   
   bool VMCSingle::run() { 
+
+    resetRun();
+    Estimators->start(nBlocks);
+
+    IndexType block = 0;
+    IndexType nAcceptTot = 0;
+    IndexType nRejectTot = 0;
+    do {
+      Estimators->startBlock(nSteps);
+      Mover->startBlock(nSteps);
+      IndexType step = 0;
+      do
+      {
+        ++step;++CurrentStep;
+        Mover->advanceWalkers(W.begin(),W.end(),true); //step==nSteps);
+        Estimators->accumulate(W);
+      } while(step<nSteps);
+
+      Estimators->stopBlock(Mover->acceptRatio());
+      Mover->stopBlock();
+
+      nAcceptTot += Mover->nAccept;
+      nRejectTot += Mover->nReject;
+      ++block;
+
+      recordBlock(block);
+
+      //periodically re-evaluate everything for pbyp
+      if(QMCDriverMode[QMC_UPDATE_MODE] && CurrentStep%100 == 0) 
+        Mover->updateWalkers(W.begin(),W.end());
+
+    } while(block<nBlocks);
+
+    //TESTING ESTIMATOR: for hdf5 slab only
+    Mover->stopRun();
+
+    //finalize a qmc section
+    return finalize(block);
+  }
+
+  void VMCSingle::resetRun()
+  {
     if(Mover ==0)
     {
       if(QMCDriverMode[QMC_UPDATE_MODE])
@@ -54,50 +96,7 @@ namespace qmcplusplus {
       Mover->initWalkersForPbyP(W.begin(),W.end());
     else
       Mover->initWalkers(W.begin(),W.end());
-
     Mover->put(qmcNode);
-
-    //TESTING ESTIMATOR: for hdf5 slab only
-    Mover->startRun();
-
-    Estimators->reportHeader(AppendRun);
-    Estimators->reset();
-
-    IndexType block = 0;
-    IndexType nAcceptTot = 0;
-    IndexType nRejectTot = 0;
-
-    do {
-
-      Estimators->startBlock();
-      Mover->startBlock(nSteps);
-      IndexType step = 0;
-      do
-      {
-        ++step;++CurrentStep;
-        Mover->advanceWalkers(W.begin(),W.end(),true); //step==nSteps);
-        Estimators->accumulate(W);
-      } while(step<nSteps);
-      Estimators->stopBlock(Mover->acceptRatio());
-      Mover->stopBlock();
-
-      nAcceptTot += Mover->nAccept;
-      nRejectTot += Mover->nReject;
-
-      ++block;
-
-      recordBlock(block);
-
-      if(QMCDriverMode[QMC_UPDATE_MODE] && CurrentStep%100 == 0) 
-        Mover->updateWalkers(W.begin(),W.end());
-
-    } while(block<nBlocks);
-
-    //TESTING ESTIMATOR: for hdf5 slab only
-    Mover->stopRun();
-
-    //finalize a qmc section
-    return finalize(block);
   }
 
   bool 
