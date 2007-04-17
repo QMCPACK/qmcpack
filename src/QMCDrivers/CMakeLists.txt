@@ -20,7 +20,6 @@ SET(QMCDRIVERS
   VMC/VMCUpdatePbyP.cpp
   VMC/VMCUpdateAll.cpp
   VMC/VMCSingle.cpp
-  VMC/VMCSingleOMP.cpp
   VMC/VMCFactory.cpp
   DMC/DMCUpdateAll.cpp
   DMC/DMCUpdatePbyP.cpp
@@ -32,7 +31,10 @@ SET(QMCDRIVERS
 )
 
 IF(ENABLE_OPENMP) 
-  SET(QMCDRIVERS ${QMCDRIVERS} DMC/DMCOMP.cpp)
+  SET(QMCDRIVERS ${QMCDRIVERS} 
+      VMC/VMCSingleOMP.cpp
+      DMC/DMCOMP.cpp
+     )
 ENDIF(ENABLE_OPENMP) 
 
 IF(HAVE_MPI) 

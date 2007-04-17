@@ -55,6 +55,7 @@ namespace qmcplusplus {
    */
 
   class MCWalkerConfiguration;
+  class HDFWalkerOutput;
   /** @ingroup QMCDrivers
    * @{
    * @brief abstract base class for QMC engines 
@@ -69,7 +70,6 @@ namespace qmcplusplus {
     typedef MCWalkerConfiguration::Walker_t Walker_t;
     typedef Walker_t::Buffer_t              Buffer_t;
     typedef SimpleFixedNodeBranch           BranchEngineType;
-    //typedef MolecuFixedNodeBranch<RealType> BranchEngineType;
 
     /// Constructor.
     QMCDriver(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h);
@@ -112,10 +112,8 @@ namespace qmcplusplus {
      */
     void add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi);
 
-    /** initialize all the walkers
+    /** initialize with xmlNode
      */
-    void initialize();
-
     void process(xmlNodePtr cur);
 
     /** return a xmlnode with update **/
@@ -127,7 +125,8 @@ namespace qmcplusplus {
     
     virtual bool put(xmlNodePtr cur) = 0;
 
-    inline string getEngineName() const { 
+    inline string getEngineName() const 
+    { 
       return  QMCType;
     }
 
@@ -238,7 +237,8 @@ namespace qmcplusplus {
 
     ///communicator
     Communicate* qmcComm;
-
+    ///record engine for walkers
+    HDFWalkerOutput* wOut;
     ///walker ensemble
     MCWalkerConfiguration& W;
 

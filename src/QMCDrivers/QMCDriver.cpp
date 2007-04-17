@@ -28,17 +28,16 @@
 
 namespace qmcplusplus {
 
-  QMCDriver::QMCDriver(MCWalkerConfiguration& w, 
-      TrialWaveFunction& psi, 
-      QMCHamiltonian& h):
+  QMCDriver::QMCDriver(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h):
     branchEngine(0), ResetRandom(false), AppendRun(false),
-  MyCounter(0), RollBackBlocks(0),
-  Period4CheckPoint(1), Period4WalkerDump(0),
-  CurrentStep(0), nBlocks(100), nSteps(1000), 
-  nAccept(0), nReject(0), nTargetWalkers(0),
-  Tau(0.001), qmcNode(NULL),
-  QMCType("invalid"), 
-  qmcComm(0), W(w), Psi(psi), H(h), Estimators(0)
+    MyCounter(0), RollBackBlocks(0),
+    Period4CheckPoint(1), Period4WalkerDump(0),
+    CurrentStep(0), nBlocks(100), nSteps(1000), 
+    nAccept(0), nReject(0), nTargetWalkers(0),
+    Tau(0.001), qmcNode(NULL),
+    QMCType("invalid"), 
+    qmcComm(0), wOut(0),
+    W(w), Psi(psi), H(h), Estimators(0)
   { 
     m_param.add(nSteps,"steps","int");
     m_param.add(nBlocks,"blocks","int");
@@ -56,22 +55,11 @@ namespace qmcplusplus {
 
   void QMCDriver::setCommunicator(Communicate* c) 
   {
-    if(c)
-    {
-      qmcComm=c;
-    }
-    else
-    {
-      qmcComm=OHMMS::Controller;
-    }
+    qmcComm = c ? c : OHMMS::Controller;
   }
 
   QMCDriver::~QMCDriver() 
   { 
-    if(Estimators) {
-      //if(Estimators->size()) W.setLocalEnergy(Estimators->average(0));
-      delete Estimators;
-    }
   }
 
   void QMCDriver::add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi) {
@@ -88,34 +76,29 @@ namespace qmcplusplus {
    * -- resize deltaR and drift with the number of particles
    * -- assign cur to qmcNode
    * - process input file
-   *   -- putQMCInfo: <parameter/> s for QMC
+   *   -- putQMCInfo: <parameter/> s for generic QMC
    *   -- put : extra data by derived classes
    * - initialize branchEngine to accumulate energies
    * - initialize Estimators
    * - initialize Walkers
-   * The virtual function put(xmlNodePtr cur) is where QMC algorithm-dependent
-   * data are registered and initialized.
    */
   void QMCDriver::process(xmlNodePtr cur) {
-
-    ////first-time with this  QMCDriver, clear the buffer so
-    //if(MyCounter == 0) { 
-    //  app_log() << "  Clearing buffer of all the walkers " << endl;
-    //  W.clearAuxDataSet();
-    //}
 
     deltaR.resize(W.getTotalNum());
     drift.resize(W.getTotalNum());
 
     qmcNode=cur;
-    putQMCInfo(qmcNode);
 
-    bool firstTime = (branchEngine == 0);
-    if(firstTime) {
+    putQMCInfo(cur);
+
+    //need to initialize properties
+    int numCopies= (H1.empty())?1:H1.size();
+    W.resetWalkerProperty(numCopies);
+
+    if(branchEngine==0) 
       branchEngine = new BranchEngineType(Tau,W.getActiveWalkers());
-    }
 
-    put(qmcNode);
+    put(cur);
 
     if(h5FileRoot.size() && RollBackBlocks>1) {
       HDFWalkerInputManager W_in(W);
@@ -123,41 +106,24 @@ namespace qmcplusplus {
       RollBackBlocks=0;
     }
 
-    branchEngine->put(qmcNode);
-
-    if(firstTime && h5FileRoot.size()) 
+    Estimators = branchEngine->getEstimatorManager();
+    if(Estimators==0)
     {
-      app_log() << "  Initializing BranchEngine with " << h5FileRoot << endl;
-      branchEngine->read(h5FileRoot);
+      Estimators = new ScalarEstimatorManager(H,qmcComm);
+      branchEngine->setEstimatorManager(Estimators);
+      if(h5FileRoot.size()) branchEngine->read(h5FileRoot);
     }
-    
-    //create estimator if not allocated
-    if(!Estimators) 
-      Estimators =new ScalarEstimatorManager(H);
-    //set the communicator only once
-    if(!MyCounter) 
-      Estimators->setCommunicator(qmcComm);
+    branchEngine->put(cur);
 
-    //reset the Properties of all the walkers
-    int numCopies= (H1.empty())?1:H1.size();
-    W.resetWalkerProperty(numCopies);
-
-    Estimators->put(qmcNode);
-
-    //set branchEngine->MyEstimator 
-    branchEngine->setEstimatorManager(Estimators);
-
-    //A new run, branchEngine needs to be flushed
-    if(!AppendRun) 
-      branchEngine->flush(0);
-
-    //set the collection mode
-    //Estimators->setPeriod(nSteps);
-    Estimators->setCollectionMode(branchEngine->SwapMode);
-    Estimators->resetReportSettings(RootName, AppendRun);
-
-    //initialize the walkers before moving: can be moved to run
-    initialize();
+    if(wOut==0) {
+      wOut = new HDFWalkerOutput(W,RootName);
+      wOut->open();
+      branchEngine->write(wOut->getConfigID(),false);
+      wOut->close();
+      branchEngine->start(RootName,true);
+    }
+    else
+      branchEngine->start(RootName,false);
 
     //use new random seeds
     if(ResetRandom) {
@@ -209,42 +175,20 @@ namespace qmcplusplus {
     wset.clear();
   }
 
-  /** Initialize QMCDriver
-   *
-   * Evaluate the Properties of Walkers when a QMC starts
-   */
-  void QMCDriver::initialize() {
-
-    //For optimization, do nothing
-    if(QMCDriverMode[QMC_OPTIMIZE]) return;
-
-    //For multiple+particle-by-particle, do nothing
-    if(QMCDriverMode[QMC_MULTIPLE] && QMCDriverMode[QMC_UPDATE_MODE]) return;
-
-  }
-
   void QMCDriver::recordBlock(int block) {
 
     //estimator writes
-    Estimators->report(CurrentStep);
-
+    //Estimators->report(CurrentStep);
     //if Period4WalkerDump>0, record works as the checkpoint
-    if(Period4WalkerDump>0) {
-      if(block%Period4WalkerDump == 0) {
-        int now=block/Period4WalkerDump-1;
-        bool appendWalker= AppendRun || now>0;
-        //HDFWalkerOutput WO(RootName,appendWalker, block-1);
-        HDFWalkerOutput WO(RootName,appendWalker, now);
-        WO.get(W);
-        WO.write(*branchEngine);
-      }
-    } else {
-      if(block%Period4CheckPoint == 0) {
-        HDFWalkerOutput WO(RootName,false,0);
-        WO.get(W);
-        WO.write(*branchEngine);
-      }
-    }
+    
+    wOut->open();
+    if(Period4WalkerDump>0) 
+      wOut->append(W,block-1); //block has been incremened already
+    else 
+      wOut->dump(W);
+    const bool overwrite=true;
+    branchEngine->write(wOut->getConfigID(),overwrite);
+    wOut->close();
 
     //flush the ostream
     OhmmsInfo::flush();
@@ -256,10 +200,17 @@ namespace qmcplusplus {
     //Estimators->finalize(*branchEngine);
     //branchEngine->update(W.getActiveWalkers(), Estimators->average(0));
 
-    int nconf= (Period4WalkerDump>0) ? block/Period4WalkerDump:1;
-    HDFWalkerOutput WOextra(RootName,true,nconf);
-    WOextra.write(*branchEngine);
+    //int nconf= (Period4WalkerDump>0) ? block/Period4WalkerDump:1;
+    //HDFWalkerOutput WOextra(RootName,true,nconf);
+    //WOextra.write(*branchEngine);
 
+    wOut->open();
+    const bool overwrite=true;
+    branchEngine->write(wOut->getConfigID(),overwrite);
+    wOut->close();
+    
+    delete wOut;
+    wOut=0;
     //Estimators->finalize();
 
     //set the target walkers
@@ -274,23 +225,8 @@ namespace qmcplusplus {
   }
 
   /** Add walkers to the end of the ensemble of walkers.  
-   *@param nwalkers number of walkers to add
-   *@return true, if the walker configuration is not empty.
-   *
-   * Assign positions to any new 
-   * walkers \f[ {\bf R}[i] = {\bf R}[i-1] + g{\bf \chi}, \f]
-   * where \f$ g \f$ is a constant and \f$ {\bf \chi} \f$
-   * is a 3N-dimensional gaussian.
-   * As a last step, for each walker calculate 
-   * the properties given the new configuration
-   <ul>
-   <li> Local Energy \f$ E_L({\bf R} \f$
-   <li> wavefunction \f$ \Psi({\bf R}) \f$
-   <li> wavefunction squared \f$ \Psi^2({\bf R}) \f$
-   <li> weight\f$ w({\bf R}) = 1.0\f$  
-   <li> drift velocity \f$ {\bf v_{drift}}({\bf R})) \f$
-   </ul>
-  */
+   * @param nwalkers number of walkers to add
+   */
   void 
   QMCDriver::addWalkers(int nwalkers) {
 
@@ -319,25 +255,6 @@ namespace qmcplusplus {
 
   
   /** Parses the xml input file for parameter definitions for a single qmc simulation.
-   * \param cur current xmlNode
-   *
-   Available parameters added to the ParameterSeet
-   <ul>
-   <li> blocks: number of blocks, default 100
-   <li> steps: number of steps per block, default 1000
-   <li> walkers: target population of walkers, default 100
-   <li> Tau: the timestep, default 0.001
-   <li> stride: flag for printing the ensemble of walkers,  default false
-   <ul>
-   <li> true: print every block
-   <li> false: print at the end of the run
-   </ul>
-   </ul>
-   In addition, sets the stride for the scalar estimators
-   such that the scalar estimators flush and print to
-   file every block and calls the function to initialize
-   the walkers.
-   *Derived classes can add their parameters.
    */
   bool 
   QMCDriver::putQMCInfo(xmlNodePtr cur) {
@@ -402,7 +319,6 @@ namespace qmcplusplus {
   xmlNodePtr QMCDriver::getQMCNode() {
 
     xmlNodePtr newqmc = xmlCopyNode(qmcNode,1);
-
     //update current
     xmlNodePtr current_ptr=NULL;
     xmlNodePtr cur=newqmc->children;
