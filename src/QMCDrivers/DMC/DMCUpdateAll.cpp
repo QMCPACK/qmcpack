@@ -82,7 +82,7 @@ namespace qmcplusplus {
         deltaR = (*it)->R - W.R - drift;
         RealType logGb = -m_oneover2tau*Dot(deltaR,deltaR);
 
-        RealType prob= std::min(exp(logGb-logGf +2.0*(logpsi-thisWalker.Properties(LOGPSI))),1.0);
+        RealType prob= std::min(std::exp(logGb-logGf +2.0*(logpsi-thisWalker.Properties(LOGPSI))),1.0);
         if(RandomGen() > prob){
           thisWalker.Age++;
         } else {
@@ -164,7 +164,7 @@ namespace qmcplusplus {
         deltaR = (*it)->R - W.R - drift;
         RealType logGb = -m_oneover2tau*Dot(deltaR,deltaR);
 
-        RealType prob= std::min(exp(logGb-logGf +2.0*(logpsi-thisWalker.Properties(LOGPSI))),1.0);
+        RealType prob= std::min(std::exp(logGb-logGf +2.0*(logpsi-thisWalker.Properties(LOGPSI))),1.0);
         if(RandomGen() > prob){
           thisWalker.Age++;
         } else {
