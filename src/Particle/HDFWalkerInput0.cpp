@@ -23,6 +23,7 @@
 #endif
 #include "Utilities/OhmmsInfo.h"
 #include "Utilities/RandomGenerator.h"
+#include "Utilities/RandomGeneratorIO.h"
 #include "OhmmsData/FileUtility.h"
 using namespace qmcplusplus;
 
@@ -254,8 +255,10 @@ void  HDFWalkerInput0::getRandomState(bool restart){
     hid_t h_random = H5Gopen(h_file,"random_state");
     if(h_random>-1) {
       LOGMSG("Reading the state of the random number generator from the configuration file")
-      Random.read(h_random);
-      H5Gclose(h_random);
+      HDFAttribIO<RandomGenerator_t> r(Random);
+      r.read(h_random,"dummy");
+      //Random.read(h_random);
+      //H5Gclose(h_random);
     }
   }
 }

@@ -24,8 +24,9 @@
 #include "Utilities/OhmmsInfo.h"
 #include "Utilities/RandomGenerator.h"
 #include "OhmmsData/FileUtility.h"
-using namespace qmcplusplus;
+#include "Utilities/RandomGeneratorIO.h"
 
+using namespace qmcplusplus;
 
 /** Open the HDF5 file "aroot.config.h5" for reading. 
  *@param aroot the root file name
@@ -88,9 +89,11 @@ void HDFWalkerInputCollect::readRandomState() {
     if(prevNContexts == curNContexts) {
       app_log() << "    Restart with the random states" << endl;
       sprintf(rname,"context%04d/random_state",OHMMS::Controller->mycontext());
-      hid_t ranIn = H5Gopen(fileID,rname);
-      Random.read(ranIn);
-      H5Gclose(ranIn);
+      hid_t h_random = H5Gopen(fileID,rname);
+      HDFAttribIO<RandomGenerator_t> r(Random);
+      r.read(h_random,"dummy");
+      //Random.read(h_random);
+      //H5Gclose(h_random);
     } else {
       app_warning() << "The number of processors has changed.\n"
         << "New random seeds are generated." << endl;
@@ -100,8 +103,10 @@ void HDFWalkerInputCollect::readRandomState() {
       hid_t h_random = H5Gopen(fileID,"random_state");
       if(h_random>-1) {
         app_log() << "Using serial random seed" << endl;
-        Random.read(h_random);
-        H5Gclose(h_random);
+        HDFAttribIO<RandomGenerator_t> r(Random);
+        r.read(h_random,"dummy");
+        //Random.read(h_random);
+        //H5Gclose(h_random);
       }
     }
   }
