@@ -21,10 +21,11 @@
 //#define USE_MEMORYSAVEMODE
 
 namespace qmcplusplus {
-/** Perform One-Dimensional Cubic Spline Interpolation with fixed first-derivatives at the ends
+/** Perform One-Dimensional linear spline Interpolation.
  *
- * Using m-relationship and the first-order derivaties.
- * Each funtor checks the bounds r_min and r_max.
+ * Only valid with linear grid.
+ * @todo Have to prevent OneDimLinearSpline<T> being used with other than
+ * linear grid!!
  */
 template <class Td, 
 	  class Tg = Td, 
@@ -57,10 +58,16 @@ public:
   point_type delta_inv;
   data_type m_Y1;
 
-  OneDimLinearSpline(grid_type* gt = 0): base_type(gt){ }
+  OneDimLinearSpline(grid_type* gt = 0): base_type(gt){ 
+    if(gt) 
+    {
+      r_min=m_grid->rmin();
+      r_max=m_grid->rmax();
+    }
+  }
 
   template<class VV>
-  OneDimLinearSpline(grid_type* gt, const VV& nv, bool pbc=true): base_type(gt)
+  OneDimLinearSpline(grid_type* gt, const VV& nv, bool pbc=false): base_type(gt)
   {
     assign(nv.begin(), nv.end());
   }
@@ -86,18 +93,6 @@ public:
     delta_inv=1.0/delta;
   }
 
-  template<class IT1, class IT2>
-  void assign(IT1 g_first, IT1 g_last, IT2 d_first, IT2 d_last)
-  {
-    if(m_grid ==0)
-    {
-      NumericalGrid<Td> *agrid=new NumericalGrid<Td>;
-      agrid->assign(g_first,g_last);
-      m_grid=agrid;
-    }
-    assign(d_first,d_last);
-  }
-
 
   inline point_type rmax() const
   {
@@ -121,20 +116,33 @@ public:
 #endif
   }
 
-  /** evaluate the value at r using a binary search on a grid
-   * @param r distance
-   */
-  inline value_type splintNG(point_type r) const
-  {
-    if(r>=r_max) return ConstValue;
-    int k=m_grid->getIndex(r); 
-    //int k = static_cast<int>((r-r_min)*delta_inv);
-#if defined(USE_MEMORYSAVEMODE)
-    return m_Y[k]+(m_Y[k+1]-m_Y[k])*(r*delta_inv-k);
-#else
-    return m_Y[k]+m_Y1[k]*(r-(*m_grid)[k]);
-#endif
-  }
+  //template<class IT1, class IT2>
+  //void assign(IT1 g_first, IT1 g_last, IT2 d_first, IT2 d_last)
+  //{
+  //  if(m_grid ==0)
+  //  {
+  //    NumericalGrid<Td> *agrid=new NumericalGrid<Td>;
+  //    agrid->assign(g_first,g_last);
+  //    m_grid=agrid;
+  //  }
+  //  assign(d_first,d_last);
+  //}
+
+
+//  /** evaluate the value at r using a binary search on a grid
+//   * @param r distance
+//   */
+//  inline value_type splintNG(point_type r) const
+//  {
+//    if(r>=r_max) return ConstValue;
+//    int k=m_grid->getIndex(r); 
+//    //int k = static_cast<int>((r-r_min)*delta_inv);
+//#if defined(USE_MEMORYSAVEMODE)
+//    return m_Y[k]+(m_Y[k+1]-m_Y[k])*(r*delta_inv-k);
+//#else
+//    return m_Y[k]+m_Y1[k]*(r-(*m_grid)[k]);
+//#endif
+//  }
 
   /** evaluate the index and the linear coefficient
    * @param r distance
