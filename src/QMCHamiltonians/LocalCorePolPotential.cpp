@@ -110,7 +110,7 @@ namespace qmcplusplus {
       for(int iat=0; iat<nCenters; iat++) {
         for(int nn=d_ii->M[iat]; nn<d_ii->M[iat+1]; nn++) { 
           int jat(d_ii->J[nn]);
-          RealType rinv3 = pow(d_ii->rinv(nn),3);//(1/R_{JI}^3) R_{JI} = R_J-R_I
+          RealType rinv3 = std::pow(d_ii->rinv(nn),3);//(1/R_{JI}^3) R_{JI} = R_J-R_I
           PosType dipole(rinv3*d_ii->dr(nn));//(\vec{R_{JI}}/R_{JI}^3)
           //Sign and the charge of the paired ion are taken into account here 
           CoreCoreDipole[iat] -= dipole*Species(iz,IonConfig.GroupID[jat]);
@@ -135,7 +135,7 @@ namespace qmcplusplus {
         PosType cc(CoreCoreDipole[iat]);
         for(int nn=d_ie->M[iat]; nn<d_ie->M[iat+1]; nn++){
           int eid(d_ie->J[nn]);
-          RealType rinv3 = pow(d_ie->rinv(nn),3);//(1/r^3)
+          RealType rinv3 = std::pow(d_ie->rinv(nn),3);//(1/r^3)
           PosType dipole = rinv3*d_ie->dr(nn);//(\vec{r}/r^3)
           //cc +=  dipole*fcpp(d_ie->r(nn)*r_binv); 
           cc += dipole*((*Centers[iat])(d_ie->r(nn)));
