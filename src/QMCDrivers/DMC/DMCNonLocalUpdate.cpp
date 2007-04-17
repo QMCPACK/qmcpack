@@ -76,7 +76,7 @@ namespace qmcplusplus {
         deltaR = (*it)->R - W.R - drift;
         RealType logGb = -m_oneover2tau*Dot(deltaR,deltaR);
 
-        RealType prob= std::min(exp(logGb-logGf +2.0*(logpsi-thisWalker.Properties(LOGPSI))),1.0);
+        RealType prob= std::min(std::exp(logGb-logGf +2.0*(logpsi-thisWalker.Properties(LOGPSI))),1.0);
         if(RandomGen() > prob){
           thisWalker.Age++;
           ++nReject;
@@ -170,7 +170,7 @@ namespace qmcplusplus {
           RealType logGf = -0.5*dot(deltaR[iat],deltaR[iat]);
           dr = thisWalker.R[iat]-newpos-Tau*real(G[iat]); 
           RealType logGb = -m_oneover2tau*dot(dr,dr);
-          RealType prob = std::min(1.0,ratio*ratio*exp(logGb-logGf));
+          RealType prob = std::min(1.0,ratio*ratio*std::exp(logGb-logGf));
           if(RandomGen() < prob) { 
             ++nAcceptTemp;
             W.acceptMove(iat);
@@ -194,7 +194,7 @@ namespace qmcplusplus {
         W.copyToBuffer(w_buffer);
         RealType psi = Psi.evaluate(W,w_buffer);
         enew= H.evaluate(W,nonLocalOps.Txy);
-        thisWalker.resetProperty(log(abs(psi)),psi,enew);
+        thisWalker.resetProperty(std::log(abs(psi)),psi,enew);
         H.saveProperty(thisWalker.getPropertyBase());
         emixed = (eold+enew)*0.5e0;
       } else {

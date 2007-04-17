@@ -148,13 +148,13 @@ int WalkerReconfigurationMPI::swapWalkers(MCWalkerConfiguration& W) {
   //surviving walkers
   int icdiff=0;
   for(iw=0; iw<nw; iw++) {
-    RealType tryp=wCur+fabs(wConf[iw]);
+    RealType tryp=wCur+abs(wConf[iw]);
     int ni=0;
     while(Zeta[ind]<tryp && Zeta[ind] >= wCur) {
       ind++;
       ni++;
     }
-    wCur+=fabs(wConf[iw]);
+    wCur+=abs(wConf[iw]);
     if(ni) {
       icdiff++;
     } 
