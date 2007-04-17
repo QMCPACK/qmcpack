@@ -90,7 +90,7 @@ public:
   }
 
   This_t& operator=(const T rhs) {
-    for(int i=0; i<X.size(); i++) X[i] = rhs;
+    std::fill(X.begin(),X.end(),rhs);
     return *this;
   }
 
@@ -140,23 +140,20 @@ Array<T,D>::Array(const Array<T,D>& rhs) {
   resize(rhs.X.size());
   // assign the D-dimension indices
   for(int i=0; i<D; i++) Length[i] = rhs.Length[i];
-  // assign the value
-  for(int i=0; i<X.size(); i++) X[i] = rhs.X[i];
+  std::copy(rhs.begin(),rhs.end(),X.begin());
 }
 
 template<class T, unsigned D>
 void Array<T,D>::resize(unsigned n) { 
   Length[0] = n;
-  X.resize(n);
-  for(int i=0; i<X.size(); i++) X[i] = T();
+  X.resize(n,T());
 }
 
 template<class T, unsigned D>
 void Array<T,D>::resize(unsigned n, unsigned m) {
   Length[0] = n;
   Length[1] = m;
-  X.resize(m*n);
-  for(int i=0; i<X.size(); i++) X[i] = T();
+  X.resize(n*m,T());
 }
 
 template<class T, unsigned D>
@@ -164,8 +161,7 @@ void Array<T,D>::resize(unsigned l, unsigned m, unsigned n) {
   Length[0] = l;
   Length[1] = m;
   Length[2] = n;
-  X.resize(l*m*n);
-  for(int i=0; i<X.size(); i++) X[i] = T();
+  X.resize(l*m*n,T());
 }
 #endif //OHMMS_PETE_ARRAY_H
 
