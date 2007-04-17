@@ -466,7 +466,10 @@ namespace qmcplusplus {
 
   bool RQMCMultiWarp::run() { 
 
-    Estimators->reportHeader(AppendRun);
+    //TEST CACHE
+    //Estimators->reportHeader(AppendRun);
+    Estimators->start(nBlocks);
+    //TEST CACHE
 
     //Check if we need to update the norm of the wave functions
 
@@ -500,8 +503,7 @@ namespace qmcplusplus {
       IndexType step = 0;
       NumTurns = 0;
 
-      Estimators->startBlock();
-
+      Estimators->startBlock(nSteps);
 
       for(int ipsi=0; ipsi<nPsi; ipsi++){
         AveEloc[ipsi]=0.0;
@@ -564,11 +566,15 @@ namespace qmcplusplus {
 
   void RQMCMultiWarp::recordBlock(int block) {
     //Write stuff
-    Estimators->report(CurrentStep);
-    HDFWalkerOutput WO(RootName,false,0);
-    WO.get(W);
-    WO.write(*branchEngine);
-    Reptile->write(WO.getFileID());
+    //TEST CACHE
+    //Estimators->report(CurrentStep);
+    //TEST CACHE
+    
+    app_error() << " BROKEN RQMCMultiWarp::recordBlock(int block) HDFWalkerOutput as 2007-04-16 " << endl;
+    //HDFWalkerOutput WO(RootName,false,0);
+    //WO.get(W);
+    //WO.write(*branchEngine);
+    //Reptile->write(WO.getFileID());
   }
 
   bool RQMCMultiWarp::put(xmlNodePtr q){

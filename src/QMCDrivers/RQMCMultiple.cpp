@@ -351,7 +351,10 @@ namespace qmcplusplus {
     if(MyCounter==0)initReptile();
 
     multiEstimator->initialize(Reptile, Directionless, Tau, nSteps);
-    Estimators->reportHeader(AppendRun);
+    //TEST CACHE
+    //Estimators->reportHeader(AppendRun);
+    Estimators->start(nBlocks);
+    //TEST CACHE
 
     IndexType block = 0;
     IndexType nAcceptTot = 0;
@@ -380,7 +383,7 @@ namespace qmcplusplus {
       IndexType step = 0;
       NumTurns = 0;
 
-      Estimators->startBlock();
+      Estimators->startBlock(nSteps);
 
       for(int ipsi=0; ipsi<nPsi; ipsi++){
 				AveEloc[ipsi]=0.0;
@@ -447,11 +450,15 @@ namespace qmcplusplus {
 
   void RQMCMultiple::recordBlock(int block) {
     //Write stuff
-    Estimators->report(CurrentStep);
-    HDFWalkerOutput WO(RootName,false,0);
-    WO.get(W);
-    WO.write(*branchEngine);
-    Reptile->write(WO.getFileID());
+    //TEST CACHE
+    //Estimators->report(CurrentStep);
+    //TEST CACHE
+    
+    app_error() << " BROKEN RQMCMultiple::recordBlock(int block) HDFWalkerOutput as 2007-04-16 " << endl;
+    //HDFWalkerOutput WO(RootName,false,0);
+    //WO.get(W);
+    //WO.write(*branchEngine);
+    //Reptile->write(WO.getFileID());
   }
 
   bool RQMCMultiple::put(xmlNodePtr q){
