@@ -32,6 +32,66 @@ namespace qmcplusplus {
     m_param.add(UseDrift,"useDrift","string"); m_param.add(UseDrift,"usedrift","string");
   }
   
+  /** execute the main body
+   *
+   * There exist one branchEngine and Estimators which is managed by the branchEngine
+   * for a process. 
+   */
+  bool VMCSingleOMP::run() 
+  { 
+    resetRun();
+
+    Estimators->start(nBlocks);
+    IndexType block = 0;
+    do {
+      Estimators->startBlock(nSteps);
+      for(int ip=0; ip<NumThreads; ip++) Movers[ip]->startBlock(nSteps);
+      IndexType step = 0;
+      do 
+      {
+        ++step;
+        ++CurrentStep;
+#pragma omp parallel
+        {
+          int ip = omp_get_thread_num();
+          Movers[ip]->advanceWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1],
+              step==nSteps);
+        }
+        //collect the data
+        Estimators->accumulate(W);
+      } while(step<nSteps);
+
+      IndexType nAcceptTot=0;
+      IndexType nRejectTot=0;
+      for(int ip=0; ip<NumThreads; ip++) {
+        nAcceptTot+=Movers[ip]->nAccept;
+        nRejectTot+=Movers[ip]->nReject; 
+        Movers[ip]->stopBlock();
+      }
+
+      Estimators->stopBlock(static_cast<RealType>(nAcceptTot)/static_cast<RealType>(nAcceptTot+nRejectTot));
+
+      ++block;
+
+      //record the current configuration
+      recordBlock(block);
+
+      if(QMCDriverMode[QMC_UPDATE_MODE] && CurrentStep%100 == 0) 
+      {
+#pragma omp parallel  
+        {
+          int ip = omp_get_thread_num();
+          Movers[ip]->updateWalkers(W.begin()+wPerNode[ip], W.begin()+wPerNode[ip+1]);
+        }
+      }
+    } while(block<nBlocks);
+
+    for(int ip=0; ip<NumThreads; ip++) Movers[ip]->stopRun();
+
+    //finalize a qmc section
+    return finalize(block);
+  }
+
   void VMCSingleOMP::resetRun() 
   {
 
@@ -92,71 +152,11 @@ namespace qmcplusplus {
     }
 
     //Used to debug and benchmark opnemp
-//#pragma omp parallel for
-//    for(int ip=0; ip<NumThreads; ip++)
-//    {
-//      Movers[ip]->benchMark(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1],ip);
-//    }
-  }
-
-  bool VMCSingleOMP::run() 
-  { 
-
-    resetRun();
-
-    Estimators->reportHeader(AppendRun);
-    Estimators->reset();
-
-    IndexType block = 0;
-    do {
-      Estimators->startBlock();
-      for(int ip=0; ip<NumThreads; ip++) Movers[ip]->startBlock(nSteps);
-
-      IndexType step = 0;
-      do 
-      {
-        ++step;
-        ++CurrentStep;
-#pragma omp parallel
-        {
-          int ip = omp_get_thread_num();
-          Movers[ip]->advanceWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1],
-              step==nSteps);
-        }
-        Estimators->accumulate(W);
-      } while(step<nSteps);
-
-
-      IndexType nAcceptTot=0;
-      IndexType nRejectTot=0;
-      for(int ip=0; ip<NumThreads; ip++) {
-        nAcceptTot+=Movers[ip]->nAccept;
-        nRejectTot+=Movers[ip]->nReject;
-      }
-
-      Estimators->stopBlock(static_cast<RealType>(nAcceptTot)/static_cast<RealType>(nAcceptTot+nRejectTot));
-
-      //suggestion
-      //MasterMover->stopBlock();
-      for(int ip=0; ip<NumThreads; ip++) Movers[ip]->stopBlock();
-
-      ++block;
-
-      //record the current configuration
-      recordBlock(block);
-
-      if(QMCDriverMode[QMC_UPDATE_MODE] && CurrentStep%100 == 0) 
-      {
-#pragma omp parallel  
-        {
-          int ip = omp_get_thread_num();
-          Movers[ip]->updateWalkers(W.begin()+wPerNode[ip], W.begin()+wPerNode[ip+1]);
-        }
-      }
-    } while(block<nBlocks);
-
-    //finalize a qmc section
-    return finalize(block);
+    //#pragma omp parallel for
+    //    for(int ip=0; ip<NumThreads; ip++)
+    //    {
+    //      Movers[ip]->benchMark(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1],ip);
+    //    }
   }
 
   bool 
