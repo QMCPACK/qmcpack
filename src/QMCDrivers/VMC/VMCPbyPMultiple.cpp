@@ -73,7 +73,8 @@ namespace qmcplusplus {
     else
       app_log() << "  VMCPbyPMultiple::run useDrift=no" << endl;
 
-    Estimators->reportHeader(AppendRun);
+    //TEST CACHE
+    //Estimators->reportHeader(AppendRun);
       
     //going to add routines to calculate how much we need
     bool require_register =  W.createAuxDataSet();
@@ -85,17 +86,20 @@ namespace qmcplusplus {
         tmpNorm[ipsi]=0.0;
       }
     }else{
-      for(int ipsi=0; ipsi< nPsi; ipsi++) Norm[ipsi]=exp(branchEngine->LogNorm[ipsi]);
+      for(int ipsi=0; ipsi< nPsi; ipsi++) Norm[ipsi]=std::exp(branchEngine->LogNorm[ipsi]);
     }
 
     multiEstimator->initialize(W,H1,Psi1,Tau,Norm,require_register);
 
-    Estimators->reset();
+    //TEST CACHE
+    //Estimators->reset();
+    Estimators->start(nBlocks);
+    //TEST CACHE
 
     IndexType block = 0;
     
     m_oneover2tau = 0.5/Tau;
-    m_sqrttau = sqrt(Tau);
+    m_sqrttau = std::sqrt(Tau);
     RealType nPsi_minus_one = nPsi-1;
 
     ParticleSet::ParticleGradient_t dG(W.getTotalNum());
@@ -110,7 +114,7 @@ namespace qmcplusplus {
       nAccept = 0; nReject=0;
       IndexType nAllRejected = 0;
 
-      Estimators->startBlock();
+      Estimators->startBlock(nSteps);
       do {  //Steps loop
         it = W.begin();	 
         int iwalker=0; 
@@ -151,7 +155,7 @@ namespace qmcplusplus {
 	    for(int ipsi=0; ipsi<nPsi; ipsi++){
 	      // Compute ratios before and after the move
 	      ratio[ipsi] = Psi1[ipsi]->ratio(W,iat,dG,*dL[ipsi]); 
-              logpsi2[ipsi]=log(ratio[ipsi]*ratio[ipsi]);
+              logpsi2[ipsi]=std::log(ratio[ipsi]*ratio[ipsi]);
 	      // Compute Gradient in new position
               *G[ipsi]=Psi1[ipsi]->G + dG;
 	      // Initialize: sumratio[i]=(Psi[i]/Psi[i])^2=1.0
@@ -163,7 +167,7 @@ namespace qmcplusplus {
 	    for(int ipsi=0; ipsi< nPsi_minus_one; ipsi++){
 	      for(int jpsi=ipsi+1; jpsi < nPsi; jpsi++, indexij++){
                 // Ratio between norms is already included in ratioijPtr from initialize.
-                RealType rji=exp(logpsi2[jpsi]-logpsi2[ipsi])*ratioijPtr[indexij];
+                RealType rji=std::exp(logpsi2[jpsi]-logpsi2[ipsi])*ratioijPtr[indexij];
 		ratioij[indexij]=rji;
 		sumratio[ipsi] += rji;
 		sumratio[jpsi] += 1.0/rji;
@@ -188,7 +192,7 @@ namespace qmcplusplus {
               RealType logGf = -0.5*dot(deltaR[iat],deltaR[iat]);
               dr = thisWalker.R[iat]-newpos-drift[iat];
               RealType logGb = -m_oneover2tau*dot(dr,dr);
-              td *=exp(logGb-logGf);
+              td *=std::exp(logGb-logGf);
             }
 	    // td = Target Density ratio
 	    //RealType td=pow(ratio[0],2)*sumratio[0]/(*it)->Properties(SUMRATIO);
@@ -218,7 +222,7 @@ namespace qmcplusplus {
 		//Update G and L in Psi1[i]
 		Psi1[ipsi]->G = *G[ipsi];
 		Psi1[ipsi]->L += *dL[ipsi];
-                thisWalker.Properties(ipsi,LOGPSI)+=log(abs(ratio[ipsi]));
+                thisWalker.Properties(ipsi,LOGPSI)+=std::log(abs(ratio[ipsi]));
 	      }
 	      // Update Drift
 	      if(useDrift) (*it)->Drift = drift;
@@ -273,7 +277,7 @@ namespace qmcplusplus {
           for(int ipsi=0; ipsi< nPsi; ipsi++) SumNorm+=tmpNorm[ipsi];
           for(int ipsi=0; ipsi< nPsi; ipsi++){
             Norm[ipsi]=tmpNorm[ipsi]/SumNorm;
-            branchEngine->LogNorm[ipsi]=log(Norm[ipsi]);
+            branchEngine->LogNorm[ipsi]=std::log(Norm[ipsi]);
           }
         }
       }

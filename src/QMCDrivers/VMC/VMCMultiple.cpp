@@ -87,7 +87,8 @@ namespace qmcplusplus {
    * Similar to VMC::run 
    */
   bool VMCMultiple::run() {
-    Estimators->reportHeader(AppendRun);
+    //TEST CACHE
+    //Estimators->reportHeader(AppendRun);
 
     bool require_register=false;
 
@@ -99,12 +100,15 @@ namespace qmcplusplus {
         tmpNorm[ipsi]=0.0;
       }
     }else{
-      for(int ipsi=0; ipsi< nPsi; ipsi++) Norm[ipsi]=exp(branchEngine->LogNorm[ipsi]);
+      for(int ipsi=0; ipsi< nPsi; ipsi++) Norm[ipsi]=std::exp(branchEngine->LogNorm[ipsi]);
     }
     //this is where the first values are evaulated
     multiEstimator->initialize(W,H1,Psi1,Tau,Norm,require_register);
    
-    Estimators->reset();
+    //TEST CACHE
+    //Estimators->reset();
+    Estimators->start(nBlocks);
+    //TEST CACHE
 
     IndexType block = 0;
     
@@ -117,7 +121,7 @@ namespace qmcplusplus {
       IndexType step = 0;
       nAccept = 0; nReject=0;
 
-      Estimators->startBlock();
+      Estimators->startBlock(nSteps);
       do {
         advanceWalkerByWalker();
         step++;CurrentStep++;
@@ -134,7 +138,7 @@ namespace qmcplusplus {
           for(int ipsi=0; ipsi< nPsi; ipsi++) SumNorm+=tmpNorm[ipsi];
           for(int ipsi=0; ipsi< nPsi; ipsi++){
             Norm[ipsi]=tmpNorm[ipsi]/SumNorm;
-            branchEngine->LogNorm[ipsi]=log(Norm[ipsi]);
+            branchEngine->LogNorm[ipsi]=std::log(Norm[ipsi]);
           }
         }
       }
@@ -166,7 +170,7 @@ namespace qmcplusplus {
   VMCMultiple::advanceWalkerByWalker() {
     
     m_oneover2tau = 0.5/Tau;
-    m_sqrttau = sqrt(Tau);
+    m_sqrttau = std::sqrt(Tau);
     
     //MCWalkerConfiguration::PropertyContainer_t Properties;
     
@@ -200,7 +204,7 @@ namespace qmcplusplus {
       // Compute the sum over j of Psi^2[j]/Psi^2[i] for each i	   
       for(int ipsi=0; ipsi< nPsi_minus_one; ipsi++) {			  
 	for(int jpsi=ipsi+1; jpsi< nPsi; jpsi++){     		  
-	  RealType ratioij=Norm[ipsi]/Norm[jpsi]*exp(2.0*(logpsi[jpsi]-logpsi[ipsi]));  
+	  RealType ratioij=Norm[ipsi]/Norm[jpsi]*std::exp(2.0*(logpsi[jpsi]-logpsi[ipsi]));  
 	  sumratio[ipsi] += ratioij;                              
 	  sumratio[jpsi] += 1.0/ratioij;			  
 	}                                                         
@@ -240,7 +244,7 @@ namespace qmcplusplus {
       //	exp(logGb-logGf+2.0*(Properties(LOGPSI)-thisWalker.Properties(LOGPSI)));	
       //Reuse Multiplicity to store the sumratio[0]
       RealType g = sumratio[0]/thisWalker.Multiplicity*   		
-       	exp(logGb-logGf+2.0*(logpsi[0]-thisWalker.Properties(LOGPSI)));	
+       	std::exp(logGb-logGf+2.0*(logpsi[0]-thisWalker.Properties(LOGPSI)));	
 
       if(Random() > g) {
 	thisWalker.Age++;     

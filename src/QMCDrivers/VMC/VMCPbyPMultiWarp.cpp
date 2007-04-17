@@ -53,7 +53,8 @@ namespace qmcplusplus {
 
     vector<RealType> new_Jacobian(nPsi);
 
-    Estimators->reportHeader(AppendRun);
+    //TEST CACHE
+    //Estimators->reportHeader(AppendRun);
       
     //going to add routines to calculate how much we need
     bool require_register =  W.createAuxDataSet();
@@ -65,17 +66,20 @@ namespace qmcplusplus {
         tmpNorm[ipsi]=0.0;
       }
     }else{
-      for(int ipsi=0; ipsi< nPsi; ipsi++) Norm[ipsi]=exp(branchEngine->LogNorm[ipsi]);
+      for(int ipsi=0; ipsi< nPsi; ipsi++) Norm[ipsi]=std::exp(branchEngine->LogNorm[ipsi]);
     }
 
     multiEstimator->initialize(W,WW,PtclWarp,H1,Psi1,Tau,Norm,require_register);
 
-    Estimators->reset();
+    //TEST CACHE
+    //Estimators->reset();
+    Estimators->start(nBlocks);
+    //TEST CACHE
 
     IndexType block = 0;
     
     m_oneover2tau = 0.5/Tau;
-    m_sqrttau = sqrt(Tau);
+    m_sqrttau = std::sqrt(Tau);
     RealType nPsi_minus_one = nPsi-1;
 
     //ParticleSet::ParticleGradient_t dG(W.getTotalNum());
@@ -92,7 +96,7 @@ namespace qmcplusplus {
       nAccept = 0; nReject=0;
       IndexType nAllRejected = 0;
 
-      Estimators->startBlock();
+      Estimators->startBlock(nSteps);
       do {  //Steps loop
         it = W.begin();	 
         int iwalker=0; 
@@ -146,7 +150,7 @@ namespace qmcplusplus {
               //WW[ipsi]->R[iat]=W.R[iat]+PtclWarp.get_displacement(ipsi);
 	      // Compute ratios before and after the move
 	      ratio[ipsi] = Psi1[ipsi]->ratio(*WW[ipsi],iat,dG,*dL[ipsi]); 
-              logpsi2[ipsi]=log(ratio[ipsi]*ratio[ipsi]);
+              logpsi2[ipsi]=std::log(ratio[ipsi]*ratio[ipsi]);
 	      // Compute Gradient in new position
               *G[ipsi]=Psi1[ipsi]->G + dG;
 	      // Initialize: sumratio[i]=(Psi[i]/Psi[i])^2=1.0
@@ -168,7 +172,7 @@ namespace qmcplusplus {
 	    for(int ipsi=0; ipsi< nPsi_minus_one; ipsi++){
 	      for(int jpsi=ipsi+1; jpsi < nPsi; jpsi++, indexij++){
                 //Ratio between Norm already in ratioijPtr from MultiEstimator->initialize.
-                ratioij[indexij]=exp(logpsi2[jpsi]-logpsi2[ipsi])*ratioijPtr[indexij];
+                ratioij[indexij]=std::exp(logpsi2[jpsi]-logpsi2[ipsi])*ratioijPtr[indexij];
                 RealType rji=ratioij[indexij]*new_Jacobian[jpsi]/new_Jacobian[ipsi];
 		sumratio[ipsi] += rji;
 		sumratio[jpsi] += 1.e0/rji;
@@ -244,7 +248,7 @@ namespace qmcplusplus {
 	    RealType td=ratio[0]*ratio[0]*
               new_Jacobian[0]/thisWalker.Properties(0,JACOBIAN)* //This two are 1 when reference system is system 0
               sumratio[0]/(*it)->Multiplicity;
-	    RealType prob = td*exp(logGb-logGf);
+	    RealType prob = td*std::exp(logGb-logGf);
 
 	    if(Random() < prob) { 
               //cout << "ACCEPTED" << endl << endl;
@@ -276,7 +280,7 @@ namespace qmcplusplus {
 		// Update G and L in Psi1[i]
 		Psi1[ipsi]->G = *G[ipsi];
 		Psi1[ipsi]->L += *dL[ipsi];
-                thisWalker.Properties(ipsi,LOGPSI)+=log(abs(ratio[ipsi]));
+                thisWalker.Properties(ipsi,LOGPSI)+=std::log(abs(ratio[ipsi]));
                 thisWalker.Properties(ipsi,JACOBIAN)=new_Jacobian[ipsi];
 	      }
 	      // Update Drift
@@ -318,7 +322,7 @@ namespace qmcplusplus {
               //Properties is used for UmbrellaWeight and UmbrellaEnergy
               thisWalker.Properties(ipsi,UMBRELLAWEIGHT)=UmbrellaWeight[ipsi];
               thisWalker.Properties(ipsi,LOCALENERGY)=et;
-              thisWalker.Properties(ipsi,LOGPSI)=log(abs(psi));
+              thisWalker.Properties(ipsi,LOGPSI)=std::log(abs(psi));
 
               H1[ipsi]->saveProperty(thisWalker.getPropertyBase(ipsi));
 	    }
@@ -343,7 +347,7 @@ namespace qmcplusplus {
           for(int ipsi=0; ipsi< nPsi; ipsi++) SumNorm+=tmpNorm[ipsi];
           for(int ipsi=0; ipsi< nPsi; ipsi++){
             Norm[ipsi]=tmpNorm[ipsi]/SumNorm;
-            branchEngine->LogNorm[ipsi]=log(Norm[ipsi]);
+            branchEngine->LogNorm[ipsi]=std::log(Norm[ipsi]);
             //cout << "LOGNORM VMC " << branchEngine->LogNorm[ipsi] << endl;
           }
         }

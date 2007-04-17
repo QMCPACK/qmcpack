@@ -148,7 +148,8 @@ namespace qmcplusplus {
 
     int JACCOL=Estimators->addColumn("LogJacob");
       
-    Estimators->reportHeader(AppendRun);
+    //TEST CACHE
+    //Estimators->reportHeader(AppendRun);
 
     bool require_register=false;
 
@@ -166,7 +167,10 @@ namespace qmcplusplus {
     // Have to generalize to WW
     multiEstimator->initialize(W,WW,PtclWarp,H1,Psi1,Tau,Norm,require_register);
     
-    Estimators->reset();
+    //TEST CACHE
+    //Estimators->reset();
+    Estimators->start(nBlocks);
+    //TEST CACHE
 
     IndexType block = 0;
     
@@ -181,13 +185,13 @@ namespace qmcplusplus {
       IndexType step = 0;
       nAccept = 0; nReject=0;
 
-      Estimators->startBlock();
+      Estimators->startBlock(nSteps);
       RealType Jacblk=0.e0;
       do {
         advanceWalkerByWalker();
         step++;CurrentStep++;
         Estimators->accumulate(W);
-        Jacblk+=std::log(fabs((*W.begin())->Properties(1,JACOBIAN)));
+        Jacblk+=std::log(abs((*W.begin())->Properties(1,JACOBIAN)));
       } while(step<nSteps);
 
       //Modify Norm. 
@@ -273,7 +277,7 @@ namespace qmcplusplus {
   VMCMultipleWarp::advanceWalkerByWalker() {
     
     m_oneover2tau = 0.5/Tau;
-    m_sqrttau = sqrt(Tau);
+    m_sqrttau = std::sqrt(Tau);
     
     //MCWalkerConfiguration::PropertyContainer_t Properties;
     
