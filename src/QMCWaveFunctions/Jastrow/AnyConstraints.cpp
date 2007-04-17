@@ -73,6 +73,8 @@ namespace qmcplusplus {
     gAttrib.add(npts,"npts");
     gAttrib.add(step,"step");
 
+    string tpname(targetPtcl.getName());
+
     BasisGroupType* curBG=0;
     cur=cur->children;
     while(cur != NULL)
@@ -84,6 +86,9 @@ namespace qmcplusplus {
       aAttrib.put(cur);
       if(cname == "atomicBasisSet")
       {
+        //replace elementType for clones 
+        if(tpname.find(elementType)<tpname.size()) elementType=tpname;
+
         xmlNodePtr cur1=cur->children;
         while(cur1 != NULL)
         {
@@ -101,6 +106,9 @@ namespace qmcplusplus {
       }
       else if(cname == "basisGroup")
       {
+        //replace elementType for clones 
+        if(tpname.find(elementType)<tpname.size()) elementType=tpname;
+
         curBG=createBasisGroup(cur,elementType);
         curBG->setGrid(rcut,npts);
         add2BasisGroup(curBG,cur);
@@ -209,7 +217,6 @@ namespace qmcplusplus {
     }
 
     BasisGroupType* curGroup=0;
-   
     BGContainerType::iterator it(BasisGroups.find(targetPtcl.getName()));
     if(it == BasisGroups.end())
     {
