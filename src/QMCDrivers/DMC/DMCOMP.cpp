@@ -18,7 +18,6 @@
 #include "QMCDrivers/DMC/DMCUpdatePbyP.h"
 #include "QMCDrivers/DMC/DMCNonLocalUpdate.h"
 #include "QMCDrivers/DMC/DMCUpdateAll.h"
-#include "Estimators/DMCEnergyEstimator.h"
 #include "QMCApp/HamiltonianPool.h"
 #include "Message/Communicate.h"
 #include "Message/OpenMP.h"
@@ -41,9 +40,6 @@ namespace qmcplusplus {
     m_param.add(BenchMarkRun,"benchmark","string");
     m_param.add(Reconfiguration,"reconfiguration","string");
     m_param.add(BranchInterval,"branchInterval","string");
-
-    Estimators = new ScalarEstimatorManager(H);
-    Estimators->add(new DMCEnergyEstimator,"elocal");
   }
 
   void DMCOMP::resetUpdateEngines() {
@@ -148,17 +144,14 @@ namespace qmcplusplus {
 
     bool variablePop = (Reconfiguration == "no");
     resetUpdateEngines();
-    //set the collection mode for the estimator
-    Estimators->setCollectionMode(branchEngine->SwapMode);
-    Estimators->reportHeader(AppendRun);
-    Estimators->reset();
+    Estimators->start(nBlocks);
 
     IndexType block = 0;
 
     do // block
     {
-      Estimators->startBlock();
-      for(int ip=0; ip<NumThreads; ip++) Movers[ip]->startBlock();
+      Estimators->startBlock(nSteps);
+      for(int ip=0; ip<NumThreads; ip++) Movers[ip]->startBlock(nSteps);
       IndexType step = 0;
       do  //step
       {
@@ -199,6 +192,8 @@ namespace qmcplusplus {
 
     } while(block<nBlocks);
 
+    for(int ip=0; ip<NumThreads; ip++) Movers[ip]->stopRun();
+
     return finalize(block);
   }
 
@@ -209,8 +204,8 @@ namespace qmcplusplus {
 
     IndexType PopIndex = Estimators->addColumn("Population");
     IndexType EtrialIndex = Estimators->addColumn("Etrial");
-    Estimators->reportHeader(AppendRun);
-    Estimators->reset();
+    //Estimators->reportHeader(AppendRun);
+    //Estimators->reset();
 
     IndexType block = 0;
     RealType Eest = branchEngine->E_T;

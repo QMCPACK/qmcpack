@@ -18,7 +18,6 @@
 #include "QMCDrivers/DMC/DMCUpdateAll.h"
 #include "QMCDrivers/DMC/DMCUpdatePbyP.h"
 #include "QMCDrivers/DMC/DMCNonLocalUpdate.h"
-#include "Estimators/DMCEnergyEstimator.h"
 #include "QMCApp/HamiltonianPool.h"
 #include "Message/Communicate.h"
 #include "Message/OpenMP.h"
@@ -39,25 +38,19 @@ namespace qmcplusplus {
     m_param.add(BenchMarkRun,"benchmark","string");
     m_param.add(Reconfiguration,"reconfiguration","string");
     m_param.add(BranchInterval,"branchInterval","string");
-
-    Estimators = new ScalarEstimatorManager(H);
-    Estimators->add(new DMCEnergyEstimator,"elocal");
   }
 
   bool DMC::run() {
 
     resetUpdateEngine();
 
-    //set the collection mode for the estimator
-    Estimators->setCollectionMode(branchEngine->SwapMode);
-    Estimators->reportHeader(AppendRun);
-    Estimators->reset();
+    Estimators->start(nBlocks);
 
     IndexType block = 0;
     CurrentStep = 0;
     do // block
     {
-      Estimators->startBlock();
+      Estimators->startBlock(nSteps);
       Mover->startBlock(nSteps);
       IndexType step = 0;
       do  //step
