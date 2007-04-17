@@ -71,7 +71,7 @@ namespace qmcplusplus {
     ParticleSet::ParticlePos_t chi(els->getTotalNum());
     makeGaussRandom(chi);
 
-    double q=sqrt(static_cast<double>(els->getTotalNum()))*0.5;
+    double q=std::sqrt(static_cast<double>(els->getTotalNum()))*0.5;
     int nel(els->getTotalNum()), items(0);
     while(nel) {
       els->R[items]=q*chi[items]; 
