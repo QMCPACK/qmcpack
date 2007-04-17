@@ -39,6 +39,7 @@ int main(int argc, char **argv) {
   OhmmsInfo Welcome(argc,argv,OHMMS::Controller->mycontext());
 
   qmcplusplus::QMCMain qmc(argc,argv);
+  qmc.qmcComm = OHMMS::Controller;
 
 #if defined(MPIRUN_EXTRA_ARGUMENTS)
   char fname[128];
@@ -75,8 +76,8 @@ int main(int argc, char **argv) {
       } while(valid);
 #if defined(HAVE_MPI)
       qmc.qmcComm = new Communicate(*OHMMS::Controller,fgroup.size());
-      cout << qmc.qmcComm->mycontext() << " belongs to " << qmc.qmcComm->getGroupID()
-        << " using " << fgroup[qmc.qmcComm->getGroupID()] << endl;
+      //cout << qmc.qmcComm->mycontext() << " belongs to " << qmc.qmcComm->getGroupID()
+      //  << " using " << fgroup[qmc.qmcComm->getGroupID()] << endl;
       validInput=qmc.parse(fgroup[qmc.qmcComm->getGroupID()]);
 #else
       validInput=qmc.parse(fgroup[0]);
@@ -88,6 +89,7 @@ int main(int argc, char **argv) {
     ERRORMSG("usage: qmcapp input-file")
   }
 #endif
+
   LOGMSG("Bye")
   OHMMS::Controller->finalize();
   return 0;
