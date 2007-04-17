@@ -18,31 +18,40 @@
 #define QMCPLUSPLUS_WALKER_OUTPUT_H
 
 #include "OhmmsData/HDFAttribIO.h"
+#include "Particle/MCWalkerConfiguration.h"
 
 namespace qmcplusplus {
 
   /** Writes a set of walker configurations to an HDF5 file. */
-
   class HDFWalkerOutput {
-
-    bool AppendMode;
     ///number of times file has been written to
-    int Counter;
+    int NumOfWalkers;
     ///id for HDF5 file 
     hid_t h_file;
     ///id for HDF5 main group 
     hid_t h_config;
-    ///id for the random number generator
-    hid_t h_random;
+    ///save file name
+    string h5FileName;
   public:
 
-    HDFWalkerOutput(const string& fname, bool append=false, int count=0);
+    HDFWalkerOutput(MCWalkerConfiguration& W, const string& fname);
     ~HDFWalkerOutput();
-    bool get(MCWalkerConfiguration&);
+    //bool get(MCWalkerConfiguration&);
+
+    /** dump configurations
+     * @param w walkers
+     */
+    bool dump(MCWalkerConfiguration& w);
+
+    /** append configurations
+     * @param w walkers
+     * @param c counter
+     */
+    bool append(MCWalkerConfiguration& w, int c);
 
     template<class CT>
     void write(CT& anything) {
-      anything.write(h_config,AppendMode);
+      anything.write(h_config,false);
     }
 
     /** return the file ID **/
@@ -50,6 +59,22 @@ namespace qmcplusplus {
 
     /** return the config_collection file ID **/
     hid_t getConfigID() { return h_config;}
+
+#if defined(HAVE_LIBHDF5)
+    inline void open()
+    {
+      h_file =  H5Fopen(h5FileName.c_str(),H5F_ACC_RDWR,H5P_DEFAULT);
+      h_config = H5Gopen(h_file,"config_collection");
+    }
+    inline void close()
+    {
+      H5Gclose(h_config); h_config=-1;
+      H5Fclose(h_file); h_file=-1;
+    }
+#else
+    inline void open(){}
+    inline void close(){}
+#endif
   };
 
 }
