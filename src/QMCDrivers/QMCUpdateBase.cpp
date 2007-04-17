@@ -27,13 +27,18 @@ namespace qmcplusplus {
   /// Constructor.
   QMCUpdateBase::QMCUpdateBase(ParticleSet& w, TrialWaveFunction& psi, QMCHamiltonian& h,
       RandomGenerator_t& rg): W(w),Psi(psi),H(h), 
-      RandomGen(rg), MaxAge(0),  branchEngine(0), compEstimator(0)
+      RandomGen(rg), MaxAge(0),  branchEngine(0)
+#if defined(ENABLE_COMPOSITE_ESTIMATOR)
+        , compEstimator(0)
+#endif
       { }
 
   /// destructor
   QMCUpdateBase::~QMCUpdateBase() 
   { 
+#if defined(ENABLE_COMPOSITE_ESTIMATOR)
     if(compEstimator) delete compEstimator;
+#endif
   }
 
   bool QMCUpdateBase::put(xmlNodePtr cur)
@@ -42,6 +47,7 @@ namespace qmcplusplus {
     bool s= nonLocalOps.put(cur);
     s=myParams.put(cur);
 
+#if defined(ENABLE_COMPOSITE_ESTIMATOR)
     if(compEstimator == 0)
     {
       //check if estimator needs to be constructed
@@ -67,6 +73,9 @@ namespace qmcplusplus {
         compEstimator = new CompositeEstimatorSet(W);
       }
     }
+
+    if(compEstimator)  compEstimator->open(-1);
+#endif
     return s;
   }
 
@@ -78,7 +87,7 @@ namespace qmcplusplus {
 
     Tau=brancher->Tau;
     m_oneover2tau = 0.5/Tau;
-    m_sqrttau = sqrt(Tau);
+    m_sqrttau = std::sqrt(Tau);
   }
 
   void QMCUpdateBase::resetEtrial(RealType et) {
@@ -86,16 +95,18 @@ namespace qmcplusplus {
     branchEngine->flush(0);
   }
 
-  void QMCUpdateBase::startRun() 
-  {
-    if(compEstimator) {
-      compEstimator->open(-1);
-    }
-  }
+//  void QMCUpdateBase::startRun() 
+//  {
+//    if(compEstimator) {
+//      compEstimator->open(-1);
+//    }
+//  }
 
   void QMCUpdateBase::stopRun() 
   {
+#if defined(ENABLE_COMPOSITE_ESTIMATOR)
     if(compEstimator) compEstimator->close();
+#endif
   }
 
   void QMCUpdateBase::startBlock(int steps) {
@@ -104,11 +115,15 @@ namespace qmcplusplus {
     nAllRejected=0;
     nNodeCrossing=0;
     NonLocalMoveAccepted=0;
+#if defined(ENABLE_COMPOSITE_ESTIMATOR)
     if(compEstimator) compEstimator->startBlock(steps);
+#endif
   }
 
   void QMCUpdateBase::stopBlock() {
+#if defined(ENABLE_COMPOSITE_ESTIMATOR)
     if(compEstimator) compEstimator->stopBlock(-1,-1);
+#endif
   }
 
   void QMCUpdateBase::initWalkers(WalkerIter_t it, WalkerIter_t it_end) 

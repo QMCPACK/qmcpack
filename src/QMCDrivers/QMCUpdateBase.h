@@ -24,8 +24,8 @@
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "QMCHamiltonians/NonLocalTOperator.h"
 #include "QMCDrivers/SimpleFixedNodeBranch.h"
+//#define ENABLE_COMPOSITE_ESTIMATOR
 #include "Estimators/CompositeEstimators.h"
-//#include "Utilities/OhmmsInfo.h"
 
 namespace qmcplusplus {
 
@@ -72,8 +72,8 @@ namespace qmcplusplus {
      */
     void resetRun(BranchEngineType* brancher);
 
-    /** start a run */
-    void startRun();
+    ///** start a run */
+    //void startRun();
     /** stop a run */
     void stopRun();
     /** reset the trial energy */
@@ -139,8 +139,10 @@ namespace qmcplusplus {
     BranchEngineType* branchEngine;
     ///parameters
     ParameterSet myParams;
+#if defined(ENABLE_COMPOSITE_ESTIMATOR)
     ///composite estimator
     CompositeEstimatorSet* compEstimator;
+#endif
     ///non local operator
     NonLocalTOperator nonLocalOps;
     ///temporary storage for drift
