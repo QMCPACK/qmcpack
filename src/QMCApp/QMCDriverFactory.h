@@ -18,6 +18,7 @@
 #ifndef QMCPLUSPLUS_QMCDRIVER_FACTORY_H
 #define QMCPLUSPLUS_QMCDRIVER_FACTORY_H
 #include "OhmmsData/OhmmsElementBase.h"
+#include "QMCApp/ParticleSetPool.h"
 #include <bitset>
 
 class Communicate;
@@ -27,7 +28,6 @@ namespace qmcplusplus {
   //forward declaration
   class MCWalkerConfiguration;
   class QMCDriver;
-  class ParticleSetPool;
   class WaveFunctionPool;
   class HamiltonianPool;
 
@@ -76,7 +76,7 @@ namespace qmcplusplus {
 
     /** ParticleSet Pool
      */
-    ParticleSetPool* ptclPool;
+    static ParticleSetPool* ptclPool;
 
     /** TrialWaveFunction Pool
      */

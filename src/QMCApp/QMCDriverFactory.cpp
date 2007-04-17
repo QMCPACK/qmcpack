@@ -18,7 +18,6 @@
  * @brief Implments QMCMain operators.
  */
 #include "QMCApp/QMCDriverFactory.h"
-#include "QMCApp/ParticleSetPool.h"
 #include "QMCApp/WaveFunctionPool.h"
 #include "QMCApp/HamiltonianPool.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
@@ -39,10 +38,13 @@ using namespace std;
 
 namespace qmcplusplus {
 
+  ///initialize the static data member
+  ParticleSetPool* QMCDriverFactory::ptclPool = new ParticleSetPool;
+
   QMCDriverFactory::QMCDriverFactory(): qmcComm(0), qmcSystem(0), qmcDriver(0) 
   {
-    //create ParticleSetPool
-    ptclPool = new ParticleSetPool;
+    ////create ParticleSetPool
+    //ptclPool = new ParticleSetPool;
 
     //create WaveFunctionPool
     psiPool = new WaveFunctionPool;
@@ -58,8 +60,8 @@ namespace qmcplusplus {
   {
     delete hamPool;
     delete psiPool;
-    delete ptclPool;
-
+    //delete ptclPool;
+    
     if(qmcComm) delete qmcComm;
   }
 
