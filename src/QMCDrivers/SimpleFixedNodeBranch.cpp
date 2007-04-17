@@ -23,11 +23,13 @@
 #include "QMCDrivers/WalkerControlBase.h"
 #include "Estimators/ScalarEstimatorManager.h"
 #include "Estimators/DMCEnergyEstimator.h"
+#include "Numerics/HDFNumericAttrib.h"
+#include "Numerics/HDFSTLAttrib.h"
 
 namespace qmcplusplus {
 
 SimpleFixedNodeBranch::SimpleFixedNodeBranch(RealType tau, int nideal): 
-FixedNumWalkers(false), QMCCounter(-1), SwapMode(0), Counter(0), 
+  FixedNumWalkers(false), QMCCounter(-1), SwapMode(0), Counter(0), 
   Nideal(nideal), NumGeneration(50), 
   Tau(tau), E_T(0.0), EavgSum(0.0), WgtSum(0.0), PopControl(0.1), 
   WalkerController(0), MyEstimator(0), SwapWalkers("yes")
@@ -70,8 +72,12 @@ void SimpleFixedNodeBranch::registerParameters() {
   m_param.add(SwapWalkers,"swap_walkers","string");
 }
 
-void SimpleFixedNodeBranch::setEstimatorManager(ScalarEstimatorManager* est) {
-  MyEstimator=est;
+void 
+SimpleFixedNodeBranch::start(const string& froot, bool append) 
+{
+  RootName=froot;
+  MyEstimator->RootName=froot;
+  MyEstimator->reset();
 }
 
 void SimpleFixedNodeBranch::initWalkerController(RealType tau, bool fixW) {
@@ -84,24 +90,25 @@ void SimpleFixedNodeBranch::initWalkerController(RealType tau, bool fixW) {
         SwapMode, Nideal, Nmax, Nmin, WalkerController,MyEstimator->getCommunicator());
     Nmax=WalkerController->Nmax;
     Nmin=WalkerController->Nmin;
+
+    //use DMCEnergyEstimator
+    DMCEnergyEstimator* dmcE=new DMCEnergyEstimator;
+    dmcE->setWalkerControl(WalkerController);
+    MyEstimator->add(dmcE);
   }
+
+  MyEstimator->reset();
   //update the simulation parameters
   WalkerController->put(myNode);
   //assign current E_T and a large number for variance
   WalkerController->setEnergyAndVariance(E_T,10);
-
+  //reset
+  WalkerController->reset();
   if(fixW) {
     ETrialIndex=-1;
     E_T=0.0;
   } else {
     ETrialIndex = MyEstimator->addColumn("Etrial");
-  }
-
-  DMCEnergyEstimator* dmcE= dynamic_cast<DMCEnergyEstimator*>(MyEstimator->getMainEstimator());
-  if(dmcE) {
-    dmcE->setWalkerControl(WalkerController);
-  } else {
-    OHMMS::Controller->abort("SimpleFixedNodeBranch::initWalkerController failed."); 
   }
 
   app_log() << "  QMC counter      = " << QMCCounter << endl;
@@ -130,7 +137,7 @@ SimpleFixedNodeBranch::branch(int iter, MCWalkerConfiguration& w) {
   WgtSum+=WalkerController->getCurrentValue(WalkerControlBase::WALKERSIZE_INDEX);
   if(ETrialIndex>0) {
     //E_T = (EavgSum/WgtSum+E_T)*0.5-Feed*log(static_cast<RealType>(pop_now))+logN;
-    RealType delEt=(EavgSum/WgtSum-E_T)*0.5-Feed*log(static_cast<RealType>(pop_now))+logN;
+    RealType delEt=(EavgSum/WgtSum-E_T)*0.5-Feed*std::log(static_cast<RealType>(pop_now))+logN;
     if(delEt<-sigma) 
       E_T -= sigma;
     else if(delEt>sigma) 
@@ -152,15 +159,17 @@ SimpleFixedNodeBranch::branch(int iter, MCWalkerConfiguration& w,
   for(int i=0; i<clones.size(); i++) clones[i]->E_T=E_T;
 }
 
-void SimpleFixedNodeBranch::reset() {
+void SimpleFixedNodeBranch::reset() 
+{
   Feed = 1.0/(static_cast<RealType>(NumGeneration)*Tau);
-  logN = Feed*log(static_cast<RealType>(Nideal));
+  logN = Feed*std::log(static_cast<RealType>(Nideal));
   app_log() << "  Current Counter = " << Counter << "\n  Trial Energy = " << E_T << endl;
   app_log() << "  Feedback parameter = " << Feed <<endl;
 }
 
 void SimpleFixedNodeBranch::finalize() {
-  MyEstimator->finalize();
+  MyEstimator->stop();
+  //MyEstimator->finalize();
   if(!WalkerController || ETrialIndex<0) {
     MyEstimator->getEnergyAndWeight(EavgSum,WgtSum);
     E_T=EavgSum/WgtSum;
@@ -204,75 +213,38 @@ bool SimpleFixedNodeBranch::put(xmlNodePtr cur){
   }
 
   reset();
-
+  //flush(0);
+  MyEstimator->put(myNode);
+  MyEstimator->setCollectionMode(SwapMode);
   return true;
 }
 
 #if defined(HAVE_LIBHDF5)
 void SimpleFixedNodeBranch::write(hid_t grp, bool append) {
-
-  ////This is the case with the VMC.
-  //if(!WalkerController) {
-  //  MyEstimator->getEnergyAndWeight(EavgSum,WgtSum);
-  //  E_T=EavgSum/WgtSum;
-  //}
-  hsize_t dim=3;
-  vector<RealType> esave(dim);
-  /** stupid gnu compiler bug */
-  //esave[0] = (fabs(E_T) < numeric_limits<RealType>::epsilon())?  EavgSum/WgtSum:E_T;
-  esave[0] = E_T;
-  esave[1] = EavgSum; 
-  esave[2] = WgtSum;
-  
-  if(append) {
-    hid_t dataset = H5Dopen(grp,"Summary");
-    hid_t ret = 
-      H5Dwrite(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT,&esave[0]);
-    H5Dclose(dataset);
-
-    if(LogNorm.size()){
-      //lognorm
-      dataset = H5Dopen(grp,"LogNorm");
-      ret = H5Dwrite(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT,&LogNorm[0]);
-      H5Dclose(dataset);
-    }
-  } else {
-    hid_t dataspace  = H5Screate_simple(1, &dim, NULL);
-    hid_t dataset =  H5Dcreate(grp, "Summary", H5T_NATIVE_DOUBLE, dataspace, H5P_DEFAULT);
-    hid_t ret = 
-      H5Dwrite(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT,&esave[0]);
-    H5Dclose(dataset);
-    H5Sclose(dataspace);
-
-    //create lognrom
-    if(LogNorm.size()){
-      dim=LogNorm.size();
-      dataspace  = H5Screate_simple(1, &dim, NULL);
-      dataset =  H5Dcreate(grp, "LogNorm", H5T_NATIVE_DOUBLE, dataspace, H5P_DEFAULT);
-      ret = H5Dwrite(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT,&LogNorm[0]);
-      H5Dclose(dataset);
-      H5Sclose(dataspace);
-    }
+  TinyVector<RealType,3> esave(E_T,EavgSum,WgtSum);
+  HDFAttribIO<TinyVector<RealType,3> > eh(esave,append);
+  eh.write(grp,"Summary");
+  if(LogNorm.size())
+  {
+    HDFAttribIO<vector<RealType> > lh(LogNorm,append);
+    lh.write(grp,"LogNorm");
   }
 }
 
 void SimpleFixedNodeBranch::read(hid_t grp) {
   herr_t status = H5Eset_auto(NULL, NULL);
   status = H5Gget_objinfo (grp, "Summary", 0, NULL);
+
   if(status == 0) {
-    hid_t dataset = H5Dopen(grp, "Summary");
-    vector<RealType> esave(3);
-    hsize_t ret = H5Dread(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, &esave[0]);
-    H5Dclose(dataset);
-
+    TinyVector<RealType,3> esave(E_T,EavgSum,WgtSum);
+    HDFAttribIO<TinyVector<RealType,3> > eh(esave);
+    eh.read(grp,"Summary");
     E_T=esave[0]; EavgSum=esave[1]; WgtSum=esave[2];
-
-    //Will add reading LogNorm
+    
     bool normFound(0);
     if(LogNorm.size()) {
-      dataset = H5Dopen(grp, "LogNorm");
-      ret = H5Dread(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, &LogNorm[0]);
-      H5Dclose(dataset);
+      HDFAttribIO<vector<RealType> > lh(LogNorm);
+      lh.read(grp,"LogNorm");
       normFound=1;
     }
     app_log() << "  Summary is found. BranchEngine is initialized"
@@ -283,7 +255,6 @@ void SimpleFixedNodeBranch::read(hid_t grp) {
   } else {
     app_log() << "  Summary is not found. Starting from scratch" << endl;
   }
-  
 }
 
 void SimpleFixedNodeBranch::read(const string& fname) {

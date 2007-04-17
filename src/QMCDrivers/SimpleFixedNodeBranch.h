@@ -85,13 +85,14 @@ namespace qmcplusplus {
       RealType LogJacobRef;
       ///save xml element
       xmlNodePtr myNode;
-
       ///LogNorm
       vector<RealType> LogNorm;
       ///WalkerController
       WalkerControlBase* WalkerController;
       ///EstimatorManager
       ScalarEstimatorManager*  MyEstimator;
+      ///root name
+      string RootName;
       ///(yes|no) string to determine SwapMode
       string SwapWalkers;
       ///set of parameters
@@ -101,12 +102,6 @@ namespace qmcplusplus {
 
       ///copy constructor
       SimpleFixedNodeBranch(const SimpleFixedNodeBranch& abranch);
-
-      ///return true if the nodal surface is crossed
-      //inline bool operator()(RealType psi0, RealType psi1) const { return psi0*psi1 < 0;}
-      //inline bool operator()(complex<RealType>& psi0, complex<RealType>& psi1) const { 
-      //  return true;
-      //}
 
       inline bool phaseChanged(RealType psi0, RealType psi1) const { 
         return abs(psi0-psi1) > numeric_limits<RealType>::epsilon();
@@ -118,8 +113,19 @@ namespace qmcplusplus {
        */
       inline void advanceQMCCounter() { QMCCounter++;}
 
-      /** set the ScalarEstimatorManager*/
-      void setEstimatorManager(ScalarEstimatorManager* est);
+      /** get the ScalarEstimatorManager */
+      ScalarEstimatorManager* getEstimatorManager()
+      {
+        return MyEstimator;
+      }
+
+      /** set the ScalarEstimatorManager
+       * @param est estimator created by the first QMCDriver
+       * */
+      void setEstimatorManager(ScalarEstimatorManager* est)
+      {
+        MyEstimator=est;
+      }
 
       /** initialize  the WalkerController 
        * @param fixW true, if reconfiguration with the fixed number of walkers is used
@@ -138,7 +144,7 @@ namespace qmcplusplus {
        */
       inline RealType branchGF(RealType tau, RealType emixed, RealType reject) const { 
         //return min(0.5/(reject+1e-12),exp(-tau*(emix-E_T)));
-        return exp(-tau*(emixed-E_T));
+        return std::exp(-tau*(emixed-E_T));
       }
 
       /** set the trial energy \f$ <E_G> = eg \f$
@@ -184,6 +190,8 @@ namespace qmcplusplus {
       /** create map between the parameter name and variables */
       void registerParameters();
 
+      ///start a run
+      void start(const string& froot, bool append);
       ///finalize the simulation
       void finalize();
 
