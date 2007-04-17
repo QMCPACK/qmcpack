@@ -30,9 +30,14 @@
 #include "Particle/DistanceTable.h"
 #include "QMCDrivers/QMCDriver.h"
 #include "Message/Communicate.h"
+#include "Message/OpenMP.h"
 #include <queue>
 using namespace std;
 #include "OhmmsData/AttributeSet.h"
+#if defined(HAVE_LIBBOOST)
+#include <boost/date_time/posix_time/posix_time.hpp>
+#endif
+
 
 namespace qmcplusplus {
 
@@ -78,6 +83,8 @@ namespace qmcplusplus {
     ptclPool->get(app_log());
     hamPool->get(app_log());
 
+    boost::posix_time::ptime t1(boost::posix_time::second_clock::local_time());
+
     curMethod = string("invalid");
     //xmlNodePtr cur=m_root->children;
     xmlNodePtr cur=XmlDocStack.top()->getRoot()->children;
@@ -94,6 +101,8 @@ namespace qmcplusplus {
       }
       cur=cur->next;
     }
+
+    boost::posix_time::time_duration td = boost::posix_time::second_clock::local_time()-t1;
 
     if(OHMMS::Controller->master()) {
       int nproc=OHMMS::Controller->ncontexts();
@@ -119,6 +128,11 @@ namespace qmcplusplus {
       }
       saveXml();
     }
+
+    app_log() << "  MPI Nodes            =" << OHMMS::Controller->ncontexts() << endl;
+    app_log() << "  MPI Nodes per group  =" << qmcComm->ncontexts() << endl;
+    app_log() << "  OMP_NUM_THREADS      =" << omp_get_max_threads() << endl;
+    app_log() << "  Total Execution time =" << td << endl;
     return true;
   }
 
@@ -308,10 +322,6 @@ namespace qmcplusplus {
 
     if(qmcDriver) {
 
-      app_log() << endl;
-      myProject.get(app_log());
-      app_log() << endl;
-
       //advance the project id 
       //if it is NOT the first qmc node and qmc/@append!='yes'
       if(!FirstQMC && !append_run) myProject.advance();
@@ -320,7 +330,10 @@ namespace qmcplusplus {
       qmcDriver->putWalkers(m_walkerset_in);
       qmcDriver->process(cur);
 
+      boost::posix_time::ptime t1(boost::posix_time::second_clock::local_time());
       qmcDriver->run();
+      boost::posix_time::time_duration td = boost::posix_time::second_clock::local_time()-t1;
+      app_log() << "  QMC Execution time =" << td << endl;
 
       //keeps track of the configuration file
       PrevConfigFile = myProject.CurrentRoot();
