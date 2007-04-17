@@ -8,13 +8,10 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
-//   Department of Physics, Ohio State University
-//   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 #ifndef OHMMS_HDF_NUMERICATTRIBIO_H
@@ -61,21 +58,30 @@ struct HDFAttribIO<hsize_t>: public HDFAttribIOBase {
 /** Specialization for int */
 template<>
 struct HDFAttribIO<int>: public HDFAttribIOBase {
-
   int& ref;
+  bool replace;
 
-  HDFAttribIO<int>(int& a):ref(a) { }
+  HDFAttribIO<int>(int& a, bool reuse=false):ref(a),replace(reuse) { }
 
   inline void write(hid_t grp, const char* name) {
-    hsize_t dim = 1;
-    hid_t dataspace  = H5Screate_simple(1, &dim, NULL);
-    hid_t dataset =  
-      H5Dcreate(grp, name, H5T_NATIVE_INT, dataspace, H5P_DEFAULT);
-    hid_t ret = 
-      H5Dwrite(dataset, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT,&ref);
-    H5Sclose(dataspace);
-
-    H5Dclose(dataset);
+    if(replace)
+    //herr_t status = H5Eset_auto(NULL, NULL);
+    //status = H5Gget_objinfo (grp, name, 0, NULL);
+    //if(status == 0)
+    {
+      hid_t h1 = H5Dopen(grp, name);
+      hid_t ret = H5Dwrite(h1, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT,&ref);
+      H5Dclose(h1);
+    }
+    else
+    {
+      hsize_t dim = 1;
+      hid_t dataspace  = H5Screate_simple(1, &dim, NULL);
+      hid_t dataset =  H5Dcreate(grp, name, H5T_NATIVE_INT, dataspace, H5P_DEFAULT);
+      hid_t ret = H5Dwrite(dataset, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT,&ref);
+      H5Sclose(dataspace);
+      H5Dclose(dataset);
+    }
   }
 
   inline void read(hid_t grp, const char* name) {
@@ -83,6 +89,7 @@ struct HDFAttribIO<int>: public HDFAttribIOBase {
     hid_t ret = H5Dread(h1, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, &ref);
     H5Dclose(h1);
   }
+
 };
 
 
@@ -116,28 +123,36 @@ struct HDFAttribIO<double>: public HDFAttribIOBase {
 template<unsigned D>
 struct HDFAttribIO<TinyVector<double,D> >: public HDFAttribIOBase {
 
-typedef TinyVector<double,D> data_type;
+  typedef TinyVector<double,D> data_type;
 
-data_type& ref;
+  data_type& ref;
+  bool replace;
 
-HDFAttribIO<data_type>(data_type& a):ref(a) { }
+  inline HDFAttribIO<data_type>(data_type& a, bool over=false):ref(a),replace(over) { }
 
-inline void write(hid_t grp, const char* name) {
-hsize_t dim = D;
-hid_t dataspace  = H5Screate_simple(1, &dim, NULL);
-hid_t dataset =  
-H5Dcreate(grp, name, H5T_NATIVE_DOUBLE, dataspace, H5P_DEFAULT);
-hid_t ret = 
-H5Dwrite(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT,&(ref[0]));
-H5Sclose(dataspace);
-H5Dclose(dataset);
-}
+  inline void write(hid_t grp, const char* name) {
+    if(replace)
+    {
+      hid_t dataset = H5Dopen(grp,name);
+      hid_t ret = H5Dwrite(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT,&(ref[0]));
+      H5Dclose(dataset);
+    }
+    else
+    {
+      hsize_t dim = D;
+      hid_t dataspace  = H5Screate_simple(1, &dim, NULL);
+      hid_t dataset =  H5Dcreate(grp, name, H5T_NATIVE_DOUBLE, dataspace, H5P_DEFAULT);
+      hid_t ret = H5Dwrite(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT,&(ref[0]));
+      H5Sclose(dataspace);
+      H5Dclose(dataset);
+    } 
+  }
 
-inline void read(hid_t  grp, const char* name) {
-hid_t h1 = H5Dopen(grp, name);
-hid_t ret = H5Dread(h1, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, &(ref[0]));
-H5Dclose(h1);
-}
+  inline void read(hid_t  grp, const char* name) {
+    hid_t h1 = H5Dopen(grp, name);
+    hid_t ret = H5Dread(h1, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, &(ref[0]));
+    H5Dclose(h1);
+  }
 };
 
 template<unsigned D>
@@ -322,18 +337,33 @@ struct HDFAttribIO<Matrix<double> >: public HDFAttribIOBase {
 
   typedef Matrix<double> ArrayType_t;
   ArrayType_t&  ref;
+  bool replace;
 
-  HDFAttribIO<ArrayType_t>(ArrayType_t& a):ref(a) { }
+  HDFAttribIO<ArrayType_t>(ArrayType_t& a, bool reuse=false):ref(a),replace(reuse){ }
 
   inline void write(hid_t grp, const char* name) {
-    hsize_t dim = ref.size();
-    hid_t dataspace  = H5Screate_simple(1, &dim, NULL);
-    hid_t dataset =  
-      H5Dcreate(grp, name, H5T_NATIVE_DOUBLE, dataspace, H5P_DEFAULT);
-    hid_t ret = 
-      H5Dwrite(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT,ref.data());
-    H5Sclose(dataspace);
-    H5Dclose(dataset);
+    if(replace)
+  //  herr_t status = H5Eset_auto(NULL, NULL);
+  //  status = H5Gget_objinfo (grp, name, 0, NULL);
+  //  if(status == 0)
+    {
+      hid_t h1 = H5Dopen(grp, name);
+      hid_t ret= H5Dwrite(h1, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT,ref.data());
+      H5Dclose(h1);
+    }
+    else
+    {
+      hsize_t dims[2];
+      dims[0]=ref.rows();
+      dims[1]=ref.cols();
+      hid_t dataspace  = H5Screate_simple(2, dims, NULL);
+      hid_t dataset =  
+        H5Dcreate(grp, name, H5T_NATIVE_DOUBLE, dataspace, H5P_DEFAULT);
+      hid_t ret = 
+        H5Dwrite(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT,ref.data());
+      H5Sclose(dataspace);
+      H5Dclose(dataset);
+    }
   }
 
   inline void read(hid_t grp, const char* name) {
@@ -341,7 +371,6 @@ struct HDFAttribIO<Matrix<double> >: public HDFAttribIOBase {
     hid_t ret = H5Dread(h1, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, ref.data());
     H5Dclose(h1);
   }
-
 };
 
 /** Specialization for Matrix<TinyVector<double,D>> */
@@ -351,22 +380,59 @@ struct HDFAttribIO<Matrix<TinyVector<double,D> > >: public HDFAttribIOBase {
   typedef TinyVector<double,D> Component_t;
   typedef Matrix<Component_t>  ArrayType_t;
   ArrayType_t&  ref;
+  bool replace;
 
-  HDFAttribIO<ArrayType_t>(ArrayType_t& a):ref(a) { }
+  HDFAttribIO<ArrayType_t>(ArrayType_t& a, bool reuse=false):ref(a), replace(reuse) { }
 
   inline void write(hid_t grp, const char* name) {
     const int rank = 3;
-    hsize_t dim[rank];
-    dim[0] = ref.rows();
-    dim[1] = ref.cols();
-    dim[2] = D;
-    hid_t dataspace  = H5Screate_simple(rank, dim, NULL);
-    hid_t dataset =  
-      H5Dcreate(grp, name, H5T_NATIVE_DOUBLE, dataspace, H5P_DEFAULT);
-    hid_t ret = 
-      H5Dwrite(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT,ref.data());
-    H5Sclose(dataspace);
-    H5Dclose(dataset);
+    hsize_t dims[rank], maxdims[rank];
+    dims[0] = ref.rows(); dims[1] = ref.cols(); dims[2] = D;
+    maxdims[0]=H5S_UNLIMITED; maxdims[1] = ref.cols(); maxdims[2] = D;
+    if(replace)
+    {
+      hid_t dataset =  H5Dopen(grp, name);
+      herr_t status=H5Dextend(dataset,dims);
+      hid_t memspace = H5Screate_simple(rank, dims, NULL);
+      hid_t ret = H5Dwrite(dataset, H5T_NATIVE_DOUBLE, memspace, H5S_ALL, H5P_DEFAULT,ref.data());
+      H5Sclose(memspace);
+      H5Dclose(dataset);
+    }
+    else
+    {
+      hid_t dataspace  = H5Screate_simple(rank, dims, maxdims);
+      hid_t p = H5Pcreate (H5P_DATASET_CREATE);
+      H5Pset_chunk(p,rank,dims);
+      hid_t dataset =  H5Dcreate(grp, name, H5T_NATIVE_DOUBLE, dataspace, p);
+      hid_t memspace = H5Screate_simple(rank, dims, NULL);
+      hid_t ret = H5Dwrite(dataset, H5T_NATIVE_DOUBLE, memspace, dataspace, H5P_DEFAULT,ref.data());
+      H5Sclose(memspace);
+      H5Sclose(dataspace);
+      H5Dclose(dataset);
+      H5Pclose(p);
+    }
+    /*
+    if(replace)
+    {
+      hid_t dataset =  H5Dopen(grp, name);
+      hid_t ret = 
+        H5Dwrite(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT,ref.data());
+      H5Dclose(dataset);
+    } 
+    else
+    {
+      const int rank = 3;
+      hsize_t dims[rank];
+      dims[0] = ref.rows(); dims[1] = ref.cols(); dims[2] = D;
+      hid_t dataspace  = H5Screate_simple(rank, dims, NULL);
+      hid_t dataset =  
+        H5Dcreate(grp, name, H5T_NATIVE_DOUBLE, dataspace, H5P_DEFAULT);
+      hid_t ret = 
+        H5Dwrite(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT,ref.data());
+      H5Sclose(dataspace);
+      H5Dclose(dataset);
+    }
+    */
   }
 
   inline void read(hid_t grp, const char* name) {
@@ -381,50 +447,6 @@ struct HDFAttribIO<Matrix<TinyVector<double,D> > >: public HDFAttribIOBase {
     hid_t ret = H5Dread(h1, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, ref.data());
     H5Dclose(h1);
   }
-};
-
-
-/** Specialization for string */
-template<>
-struct HDFAttribIO<string>: public HDFAttribIOBase {
-
-  typedef string ArrayType_t;
-  ArrayType_t& ref;
-  hid_t str80; 
-
-  HDFAttribIO<ArrayType_t>(ArrayType_t& a): ref(a) {
-    str80 = H5Tcopy(H5T_C_S1);
-    H5Tset_size(str80,80);
-  }
-  
-  inline void write(hid_t grp, const char* name) {
-
-    hsize_t dim = 1;
-    hid_t dataspace  = H5Screate_simple(1, &dim, NULL);
-    hid_t dataset =  
-      //    H5Dcreate(grp, name, H5T_NATIVE_CHAR, dataspace, H5P_DEFAULT);
-      H5Dcreate(grp, name, str80, dataspace, H5P_DEFAULT);
-    hid_t ret = 
-      //   H5Dwrite(dataset, H5T_NATIVE_CHAR, H5S_ALL, H5S_ALL, H5P_DEFAULT,ref.data());
-      H5Dwrite(dataset, str80, H5S_ALL, H5S_ALL, H5P_DEFAULT,ref.data());
-    H5Sclose(dataspace);
-    H5Dclose(dataset);
-  }
-
-  inline void read(hid_t grp, const char* name) {
-    hid_t h1 = H5Dopen(grp, name);
-    hid_t dataspace = H5Dget_space(h1);
-    hsize_t dims_out[1];
-    //    int rank = H5Sget_simple_extent_ndims(dataspace);
-    //    int status_n = H5Sget_simple_extent_dims(dataspace, dims_out, NULL);
-    // if(ref.size() != (unsigned long)dims_out[0]){
-    //   cout << "dimensions not equal" << endl;
-    //    ref.resize(dims_out[0]);
-    //  }
-    hid_t ret = H5Dread(h1, str80, H5S_ALL, H5S_ALL, H5P_DEFAULT, &ref);
-    H5Dclose(h1);
-  }
-
 };
 
 #ifdef HAVE_LIBBLITZ
