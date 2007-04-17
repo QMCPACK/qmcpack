@@ -129,10 +129,10 @@ namespace qmcplusplus {
       saveXml();
     }
 
-    app_log() << "  MPI Nodes            =" << OHMMS::Controller->ncontexts() << endl;
-    app_log() << "  MPI Nodes per group  =" << qmcComm->ncontexts() << endl;
-    app_log() << "  OMP_NUM_THREADS      =" << omp_get_max_threads() << endl;
-    app_log() << "  Total Execution time =" << td << endl;
+    app_log() << "  MPI Nodes            = " << OHMMS::Controller->ncontexts() << endl;
+    app_log() << "  MPI Nodes per group  = " << qmcComm->ncontexts() << endl;
+    app_log() << "  OMP_NUM_THREADS      = " << omp_get_max_threads() << endl;
+    app_log() << "  Total Execution time = " << td.total_seconds() << " secs" << endl;
     return true;
   }
 
@@ -333,7 +333,7 @@ namespace qmcplusplus {
       boost::posix_time::ptime t1(boost::posix_time::second_clock::local_time());
       qmcDriver->run();
       boost::posix_time::time_duration td = boost::posix_time::second_clock::local_time()-t1;
-      app_log() << "  QMC Execution time =" << td << endl;
+      app_log() << "  QMC Execution time = " << td.total_seconds() << " secs " << endl;
 
       //keeps track of the configuration file
       PrevConfigFile = myProject.CurrentRoot();
