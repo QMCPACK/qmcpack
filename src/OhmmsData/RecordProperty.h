@@ -112,6 +112,12 @@ struct RecordNamedProperty: public RecordProperty {
   inline T operator[](int i) const { return Values[i];}
   inline T& operator[](int i) { return Values[i];}
 
+  ///iterators to use std algorithms
+  inline typename std::vector<T>::iterator begin() { return Values.begin();}
+  inline typename std::vector<T>::iterator end() { return Values.end();}
+  inline typename std::vector<T>::const_iterator begin() const { return Values.begin();}
+  inline typename std::vector<T>::const_iterator end() const { return Values.end();}
+
   inline int add(const char* aname) {
     int i=0;
     while(i<Name.size()) {
