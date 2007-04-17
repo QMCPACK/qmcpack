@@ -34,8 +34,10 @@ namespace qmcplusplus {
 
   void VMCUpdateAll::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure) 
   {
+#if defined(ENABLE_COMPOSITE_ESTIMATOR)
     measure &= (compEstimator != 0);
     if(measure) compEstimator->startAccumulate();
+#endif
     while(it != it_end) 
     {
       MCWalkerConfiguration::Walker_t& thisWalker(**it);
@@ -43,27 +45,33 @@ namespace qmcplusplus {
       W.R = m_sqrttau*deltaR + thisWalker.R;
       W.update();
       RealType logpsi(Psi.evaluateLog(W));
-      RealType g= exp(2.0*(logpsi-thisWalker.Properties(LOGPSI)));
+      RealType g= std::exp(2.0*(logpsi-thisWalker.Properties(LOGPSI)));
       if(RandomGen() > g) {
         thisWalker.Age++;
 	++nReject; 
+#if defined(ENABLE_COMPOSITE_ESTIMATOR)
         if(measure)
         {//evaluate the old value
           W.R = thisWalker.R;
           W.update();
+          compEstimator->accumulate(W,1.0);
         }
+#endif
       } else {
         RealType eloc=H.evaluate(W);
 	thisWalker.R = W.R;
         thisWalker.resetProperty(logpsi,Psi.getPhase(),eloc);
 	H.saveProperty(thisWalker.getPropertyBase());
+#if defined(ENABLE_COMPOSITE_ESTIMATOR)
+        if(measure) compEstimator->accumulate(W,1.0);
+#endif
 	++nAccept;
       }
-
-      if(measure) compEstimator->accumulate(W,1.0);
       ++it; 
     }
+#if defined(ENABLE_COMPOSITE_ESTIMATOR)
     if(measure) compEstimator->stopAccumulate(-1);
+#endif
   }
   
   /// Constructor.
@@ -79,8 +87,10 @@ namespace qmcplusplus {
 
   void VMCUpdateAllWithDrift::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure) 
   {
+#if defined(ENABLE_COMPOSITE_ESTIMATOR)
     measure &= (compEstimator != 0);
     if(measure) compEstimator->startAccumulate();
+#endif
 
     while(it != it_end) 
     {
@@ -102,27 +112,34 @@ namespace qmcplusplus {
       deltaR = thisWalker.R - W.R - drift;
       RealType logGb = -m_oneover2tau*Dot(deltaR,deltaR);
       
-      RealType g= exp(logGb-logGf+2.0*(logpsi-thisWalker.Properties(LOGPSI)));
+      RealType g= std::exp(logGb-logGf+2.0*(logpsi-thisWalker.Properties(LOGPSI)));
       if(RandomGen() > g) {
         thisWalker.Age++;
 	++nReject; 
+#if defined(ENABLE_COMPOSITE_ESTIMATOR)
         if(measure)
         {//evaluate the old value
           W.R = thisWalker.R;
           W.update();
+          compEstimator->accumulate(W,1.0);
         }
+#endif
       } else {
         RealType eloc=H.evaluate(W);
 	thisWalker.R = W.R;
 	thisWalker.Drift = drift;
         thisWalker.resetProperty(logpsi,Psi.getPhase(),eloc);
 	H.saveProperty(thisWalker.getPropertyBase());
+#if defined(ENABLE_COMPOSITE_ESTIMATOR)
+        if(measure) compEstimator->accumulate(W,1.0);
+#endif
 	++nAccept;
       }
-      if(measure) compEstimator->accumulate(W,1.0);
       ++it; 
     }
+#if defined(ENABLE_COMPOSITE_ESTIMATOR)
     if(measure) compEstimator->stopAccumulate(-1);
+#endif
   }
 }
 

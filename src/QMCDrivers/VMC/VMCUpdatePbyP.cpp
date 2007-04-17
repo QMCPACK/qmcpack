@@ -38,8 +38,11 @@ namespace qmcplusplus {
 
   void VMCUpdatePbyP::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure) 
   {
+
+#if defined(ENABLE_COMPOSITE_ESTIMATOR)
     measure &= (compEstimator != 0);
     if(measure) compEstimator->startAccumulate();
+#endif
 
     while(it != it_end) 
     {
@@ -94,11 +97,15 @@ namespace qmcplusplus {
       thisWalker.resetProperty(logpsi,Psi.getPhase(),eloc);
       H.saveProperty(thisWalker.getPropertyBase());
 
+#if defined(ENABLE_COMPOSITE_ESTIMATOR)
       if(measure) compEstimator->accumulate(W,1.0);
+#endif
       ++it;
     }
+#if defined(ENABLE_COMPOSITE_ESTIMATOR)
     //sum over walkers
     if(measure) compEstimator->stopAccumulate(-1);
+#endif
   }
 
   /// Constructor.
@@ -114,8 +121,10 @@ namespace qmcplusplus {
 
   void VMCUpdatePbyPWithDrift::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure) 
   {
+#if defined(ENABLE_COMPOSITE_ESTIMATOR)
     measure &= (compEstimator != 0);
     if(measure) compEstimator->startAccumulate();
+#endif
 
     while(it != it_end) 
     {
@@ -156,7 +165,7 @@ namespace qmcplusplus {
 
         RealType logGb = -m_oneover2tau*dot(dr,dr);
 
-        RealType prob = std::min(1.0e0,ratio*ratio*exp(logGb-logGf));
+        RealType prob = std::min(1.0e0,ratio*ratio*std::exp(logGb-logGf));
 
         //alternatively
         if(RandomGen() < prob) { 
@@ -183,17 +192,21 @@ namespace qmcplusplus {
 
         thisWalker.R = W.R;
         RealType eloc=H.evaluate(W);
-        thisWalker.resetProperty(log(abs(psi)), psi,eloc);
+        thisWalker.resetProperty(std::log(abs(psi)), psi,eloc);
         H.saveProperty(thisWalker.getPropertyBase());
       }
       else 
       { 
         ++nAllRejected;
       }
+#if defined(ENABLE_COMPOSITE_ESTIMATOR)
       if(measure) compEstimator->accumulate(W,1.0);
+#endif
       ++it;
     }
+#if defined(ENABLE_COMPOSITE_ESTIMATOR)
     if(measure) compEstimator->stopAccumulate(-1);
+#endif
   }
 }
 
