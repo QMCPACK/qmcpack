@@ -156,9 +156,10 @@ namespace qmcplusplus {
      *\param record a container class for storing scalar records (name,value)
      *\param wgtinv the inverse weight
      */
+    void report(RecordNamedProperty<RealType>& record, RealType wgtinv);
     void report(RecordNamedProperty<RealType>& record, RealType wgtinv, BufferType& msg);
 
-  	void initialize(MultiChain* reptileRef, int setDirect, double setTau, int setSteps);
+    void initialize(MultiChain* reptileRef, int setDirect, double setTau, int setSteps);
     /** initialize the multi-configuration data
      *
      * @param W MCWalkerConfiguration

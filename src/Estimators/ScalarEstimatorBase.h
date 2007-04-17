@@ -25,7 +25,13 @@
 
 namespace qmcplusplus {
 
-  /** Abstract class for an estimator of an operator.
+  /** Abstract class for an estimator of a scalar operator.
+   *
+   * ScalarEstimators derived from ScalarEstimatorBase  implement three main functions
+   * - reset : reset the internal values so that observables can be accumulated
+   * - accumulate : measure and accumulate its value and the square of the value
+   * - report : evaluate the block average and variance
+   * ScalarEstimatorBase and its derived classes do not perform any I/O function.
    */
   struct ScalarEstimatorBase: public QMCTraits {
 
@@ -34,15 +40,23 @@ namespace qmcplusplus {
     typedef RecordNamedProperty<RealType>   RecordListType;
     typedef PooledData<RealType>            BufferType;
 
-    bool CollectSum;
+    ///sum of a scalar observable
+    RealType d_sum;
+    ///sum of a scalar observable squared
+    RealType d_sumsq;
+    ///average 
+    RealType d_average;
+    ///variance
+    RealType d_variance;
 
-    RealType b_average;
-    RealType b_variance;
+    inline ScalarEstimatorBase(): 
+      d_sum(RealType()), d_sumsq(RealType()), d_average(RealType()), d_variance(RealType()){}
+    virtual ~ScalarEstimatorBase(){}
 
-    ScalarEstimatorBase(): CollectSum(false), b_average(RealType()), b_variance(RealType()){}
-
-    inline RealType average() const { return b_average;}
-    inline RealType variance() const { return b_variance;}
+    ///retrun average
+    inline RealType average() const { return d_average;}
+    ///retrun variance
+    inline RealType variance() const { return d_variance;}
 
     /** add the content of the scalar estimator to the record
      *\param record scalar data list 
@@ -65,6 +79,15 @@ namespace qmcplusplus {
      *@param wgtinv inverse of the weight
      *
      *Evalaute the block-average and flush the internal data for new averages
+     */
+    virtual void report(RecordListType&, RealType wgtinv) = 0;
+
+    /** a virtual function to report the scalar estimator
+     * @param record 
+     * @param wgtinv inverse of the weight
+     * @param msg temporary buffer for MPI
+     *
+     * Evalaute the block-average and flush the internal data for new averages
      */
     virtual void report(RecordListType&, RealType wgtinv, BufferType& msg) = 0;
 

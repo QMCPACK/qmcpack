@@ -88,8 +88,8 @@ namespace qmcplusplus {
     inline void accumulate(const Walker_t& awalker, RealType wgt) {
       const RealType* restrict ePtr = awalker.getPropertyBase();
       RealType e = ePtr[LOCALENERGY];
-      elocal[ENERGY_INDEX] += wgt*e;
-      elocal[ENERGY_SQ_INDEX] += wgt*e*e;
+      d_sum=elocal[ENERGY_INDEX] += wgt*e;
+      d_sumsq=elocal[ENERGY_SQ_INDEX] += wgt*e*e;
       elocal[POTENTIAL_INDEX] += wgt*ePtr[LOCALPOTENTIAL];
       for(int i=0, target=LE_MAX, source=FirstHamiltonian; i<SizeOfHamiltonians; 
           i++,target++,source++) {
@@ -120,6 +120,20 @@ namespace qmcplusplus {
     ///copy the value to a message buffer
     inline void copy2Buffer(BufferType& msg) {
       msg.put(elocal.begin(),elocal.end());
+    }
+
+    inline void report(RecordListType& record, RealType wgtinv)
+    {
+      register int ir=LocalEnergyIndex;
+      d_average =  elocal[ENERGY_INDEX]*wgtinv;
+      d_variance = elocal[ENERGY_SQ_INDEX]*wgtinv-d_average*d_average;
+      record[ir++] = d_average;
+      record[ir++] = d_variance;
+      record[ir++] = elocal[POTENTIAL_INDEX]*wgtinv;
+      for(int i=0, ii=LE_MAX; i<SizeOfHamiltonians; i++,ii++) {
+        record[ir++] = elocal[ii]*wgtinv;
+      }
+      std::fill(elocal.begin(), elocal.end(),0.0);
     }
 
     /** calculate the averages and reset to zero

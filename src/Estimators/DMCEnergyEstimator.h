@@ -8,7 +8,6 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
@@ -27,8 +26,7 @@ namespace qmcplusplus {
    *
    * This is a fake ScalarEstimatorBase<T> in that nothing is accumulated by
    * this object. However, it uses WalkerControlBase* which performs 
-   * the functions of an estimator and more.
-   * The enum should be identical to WalkerControlBase
+   * the functions of an estimator and more. 
    */
   struct DMCEnergyEstimator: public ScalarEstimatorBase {
 
@@ -40,8 +38,9 @@ namespace qmcplusplus {
     int varianceIndex;
     ///index for number of walkers
     int popIndex;
-
+    ///current index
     int Current;
+    ///WalkerControlBase* which actually performs accumulation
     WalkerControlBase* walkerControl;
     
     /** constructor
@@ -96,21 +95,25 @@ namespace qmcplusplus {
      * @param record a container class for storing scalar records (name,value)
      * @param wgtinv the inverse weight
      *
-     * The weight is overwritten by 1.0/Current, since the weight has been already
+     * The weight is overwritten by 1.0/Current, since the normalized weight over
+     * an ensemble, i.e., over the walkers, has been already
      * included by WalkerControlBase::branch operation.
      */
-    inline void report(RecordListType& record, RealType wgtinv, BufferType& msg) {
+    inline void report(RecordListType& record, RealType wgtinv) {
       wgtinv=1.0/static_cast<RealType>(Current);
-      record[averageIndex]= b_average =  wgtinv*walkerControl->getValue(ENERGY_INDEX);
-      record[varianceIndex]= b_variance = wgtinv*walkerControl->getValue(ENERGY_SQ_INDEX)-b_average*b_average;
+      d_sum=walkerControl->getValue(ENERGY_INDEX);
+      d_sumsq=walkerControl->getValue(ENERGY_SQ_INDEX);
+      record[averageIndex]= d_average =  wgtinv*d_sum;
+      record[varianceIndex]= d_variance = wgtinv*d_sumsq-d_average*d_average;
       record[popIndex]= wgtinv*walkerControl->getValue(WALKERSIZE_INDEX);
       walkerControl->reset();
       Current=0;
-
-      walkerControl->setEnergyAndVariance(b_average,b_variance);
-
+      walkerControl->setEnergyAndVariance(d_average,d_variance);
     }
 
+    inline void report(RecordListType& record, RealType wgtinv, BufferType& msg) {
+      report(record,wgtinv);
+    }
   };
 
 }

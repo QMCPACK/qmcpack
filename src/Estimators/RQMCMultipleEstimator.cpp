@@ -379,40 +379,38 @@ namespace qmcplusplus {
   { 
     msg.put(esum.begin(),esum.end());
   }
-    /** calculate the averages and reset to zero
-     *@param record a container class for storing scalar records (name,value)
-     *@param wgtinv the inverse weight
-     *
-     * Disable collection. RQMCEstimator does not need to communiate at all.
-     */
-  void RQMCEstimator::report(RecordNamedProperty<RealType>& record, RealType wgtinv,
-      BufferType& msg) {
 
-    msg.get(esum.begin(),esum.end());
-
-		// taken from RQMCMultiple.cpp
+  /** calculate the averages and reset to zero
+   * @param record a container class for storing scalar records (name,value)
+   * @param wgtinv the inverse weight
+   *
+   * Disable collection. RQMCEstimator does not need to communiate at all.
+   */
+  void RQMCEstimator::report(RecordNamedProperty<RealType>& record, RealType wgtinv)
+  {
+    // taken from RQMCMultiple.cpp
     int ir(FirstColumnIndex);
     for(int ipsi=0; ipsi<NumCopies; ipsi++)
-			AveEloc[ipsi]/=(AveWeight[ipsi]*Tau+numeric_limits<RealType>::epsilon());
-	
-		// not sure if this is the correct format for more than 2 correlated samples
+      AveEloc[ipsi]/=(AveWeight[ipsi]*Tau+numeric_limits<RealType>::epsilon());
+
+    // not sure if this is the correct format for more than 2 correlated samples
     for(int ipsi=0; ipsi<NumCopies-1; ipsi++)
-			for(int jpsi=ipsi+1; jpsi<NumCopies; jpsi++)
-				record[ir++] = AveEloc[jpsi] - AveEloc[ipsi];
+      for(int jpsi=ipsi+1; jpsi<NumCopies; jpsi++)
+        record[ir++] = AveEloc[jpsi] - AveEloc[ipsi];
 
     for(int ipsi=0; ipsi<NumCopies; ipsi++)
-			record[ir++] = AveEloc[ipsi];
+      record[ir++] = AveEloc[ipsi];
 
     for(int ipsi=0; ipsi<NumCopies; ipsi++)
-			record[ir++] = 0.0;
+      record[ir++] = 0.0;
 
     for(int ipsi=0; ipsi<NumCopies; ipsi++)
-			record[ir++] = AveWeight[ipsi]/nSteps;
+      record[ir++] = AveWeight[ipsi]/nSteps;
 
-		// reset containers
+    // reset containers
     for(int ipsi=0; ipsi<NumCopies; ipsi++){
-			AveEloc[ipsi]=0.0;
-			AveWeight[ipsi]=0.0;
+      AveEloc[ipsi]=0.0;
+      AveWeight[ipsi]=0.0;
     }
 
     //for(int i=0; i<NumCopies; i++) {
@@ -427,7 +425,7 @@ namespace qmcplusplus {
     //int ir(FirstColumnIndex);
     //for(int i=0; i<NumCopies-1; i++) {
     //  for(int j=i+1; j<NumCopies; j++) {
-		/// this was changed...
+    /// this was changed...
     //    record[ir++]=AveEloc[i];
     //  }
     //}
@@ -447,7 +445,7 @@ namespace qmcplusplus {
     //}
     /*for(int i=0; i<elocal.size(); i++, ir++) {
       record[ir]=wgtinv*elocal(i);
-    }*/
+      }*/
     //int n(elocal.size());
     //const RealType* restrict eit(elocal.data());
     //while(n) {record[ir++]=wgtinv*(*eit++);--n;}
@@ -457,6 +455,11 @@ namespace qmcplusplus {
     //b_variance = esum(0,ENERGY_SQ_INDEX);
 
     reset();
+  }
+  void RQMCEstimator::report(RecordNamedProperty<RealType>& record, RealType wgtinv,
+      BufferType& msg) {
+    msg.get(esum.begin(),esum.end());
+    report(record,wgtinv);
   }
 }
 /***************************************************************************

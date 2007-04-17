@@ -120,7 +120,7 @@ namespace qmcplusplus {
       RealType *rPtr=RatioIJ[iw];
       for(int ipsi=0; ipsi< NumCopies-1; ipsi++) {			  
         for(int jpsi=ipsi+1; jpsi< NumCopies; jpsi++){     		 
-          RealType r=exp(2.0*(logpsi[jpsi]-logpsi[ipsi])); 
+          RealType r=std::exp(2.0*(logpsi[jpsi]-logpsi[ipsi])); 
           rPtr[indexij++]=r*Norm[ipsi]/Norm[jpsi];
           sumratio[ipsi] += r;                            
           sumratio[jpsi] += 1.0/r;		
@@ -238,7 +238,7 @@ namespace qmcplusplus {
       RealType *rPtr=RatioIJ[iw];
       for(int ipsi=0; ipsi< NumCopies-1; ipsi++) {			  
         for(int jpsi=ipsi+1; jpsi< NumCopies; jpsi++){     		 
-          RealType r=exp(2.0*(logpsi[jpsi]-logpsi[ipsi]))*Norm[ipsi]/Norm[jpsi];
+          RealType r=std::exp(2.0*(logpsi[jpsi]-logpsi[ipsi]))*Norm[ipsi]/Norm[jpsi];
           //BEWARE: RatioIJ DOES NOT INCLUDE THE JACOBIANS!
           rPtr[indexij++]=r;
 	  r*=(Jacobian[jpsi]/Jacobian[ipsi]);
@@ -353,19 +353,8 @@ namespace qmcplusplus {
     msg.put(esum.begin(),esum.end());
   }
 
-  /** calculate the averages and reset to zero
-   *@param record a container class for storing scalar records (name,value)
-   *@param wgtinv the inverse weight
-   *
-   * Disable collection. MultipleEnergyEstimator does not need to communiate at all.
-   */
-  void MultipleEnergyEstimator::report(RecordNamedProperty<RealType>& record, RealType wgtinv,
-      BufferType& msg) {
-
-    msg.get(esum.begin(),esum.end());
-
-    //if(CollectSum) gsum(esum,0);
-
+  void MultipleEnergyEstimator::report(RecordNamedProperty<RealType>& record, RealType wgtinv)
+  {
     for(int i=0; i<NumCopies; i++) {
       RealType r = 1.0/esum(i,WEIGHT_INDEX);
       RealType e = esum(i,ENERGY_INDEX)*r;
@@ -390,25 +379,23 @@ namespace qmcplusplus {
         record[ir++]=esum(i,l);
     }
 
-    ////(each hamiltonian term)*
-    //int iloc=0;
-    //for(int i=0; i<NumCopies; i++) {
-    //  for(int j=0; j<NumOperators; j++, ir++) {
-    //    record[ir]=elocal(iloc++)*wgtinv/esum(i,WEIGHT_INDEX);
-    //  }
-    //}
-    /*for(int i=0; i<elocal.size(); i++, ir++) {
-      record[ir]=wgtinv*elocal(i);
-    }*/
-    //int n(elocal.size());
-    //const RealType* restrict eit(elocal.data());
-    //while(n) {record[ir++]=wgtinv*(*eit++);--n;}
-
     //set the ScalarEstimator<T>::b_average and b_variace
-    b_average = esum(0,ENERGY_INDEX);
-    b_variance = esum(0,ENERGY_SQ_INDEX);
-
+    d_average = esum(0,ENERGY_INDEX);
+    d_variance = esum(0,ENERGY_SQ_INDEX);
     reset();
+  }
+
+  /** calculate the averages and reset to zero
+   * @param record a container class for storing scalar records (name,value)
+   * @param wgtinv the inverse weight
+   *
+   * Disable collection. MultipleEnergyEstimator does not need to communiate at all.
+   */
+  void MultipleEnergyEstimator::report(RecordNamedProperty<RealType>& record, 
+      RealType wgtinv, BufferType& msg) 
+  {
+    msg.get(esum.begin(),esum.end());
+    report(record,wgtinv);
   }
 }
 /***************************************************************************

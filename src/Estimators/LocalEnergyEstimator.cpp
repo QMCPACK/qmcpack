@@ -34,25 +34,14 @@ namespace qmcplusplus {
     for(int i=0; i < SizeOfHamiltonians; i++) elocal_name[ii++] = h.getName(i);
   }
 
-
   /** calculate the averages and reset to zero
    *\param record a container class for storing scalar records (name,value)
    *\param wgtinv the inverse weight
    */
   void LocalEnergyEstimator::report(RecordListType& record, RealType wgtinv, BufferType& msg) {
     msg.get(elocal.begin(),elocal.end());
-    register int ir=LocalEnergyIndex;
-    b_average =  elocal[ENERGY_INDEX]*wgtinv;
-    b_variance = elocal[ENERGY_SQ_INDEX]*wgtinv-b_average*b_average;
-    record[ir++] = b_average;
-    record[ir++] = b_variance;
-    record[ir++] = elocal[POTENTIAL_INDEX]*wgtinv;
-    for(int i=0, ii=LE_MAX; i<SizeOfHamiltonians; i++,ii++) {
-      record[ir++] = elocal[ii]*wgtinv;
-    }
-    reset();
+    report(record,wgtinv);
   }
-
 }
 /***************************************************************************
  * $RCSfile$   $Author$

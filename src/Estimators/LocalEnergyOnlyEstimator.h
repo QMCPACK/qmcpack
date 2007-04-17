@@ -25,9 +25,11 @@ namespace qmcplusplus {
   class LocalEnergyOnlyEstimator: public ScalarEstimatorBase {
 
     enum {ENERGY_INDEX, ENERGY_SQ_INDEX, LE_MAX};
-
+    ///index of local energy
     int LocalEnergyIndex;
+    ///sum of local energy 
     RealType eSum;
+    ///sum of local energy squared
     RealType e2Sum;
 
   public:
@@ -35,7 +37,7 @@ namespace qmcplusplus {
     /** constructor
      * @param h QMCHamiltonian to define the components
      */
-    inline LocalEnergyOnlyEstimator() {}
+    inline LocalEnergyOnlyEstimator(): eSum(0),e2Sum(0) {}
 
     /**  add the local energy, variance and all the Hamiltonian components to the scalar record container
      * @param record storage of scalar records (name,value)
@@ -91,18 +93,24 @@ namespace qmcplusplus {
      *\param record a container class for storing scalar records (name,value)
      *\param wgtinv the inverse weight
      */
+    inline void report(RecordListType& record, RealType wgtinv) 
+    {
+      record[LocalEnergyIndex] =d_average = eSum*wgtinv;
+      record[LocalEnergyIndex+1] =d_variance = e2Sum*wgtinv-d_average*d_average;
+      d_sum=eSum; eSum=0.0;
+      d_sumsq=e2Sum; e2Sum=0.0;
+    }
+
+    /** calculate the averages and reset to zero
+     *\param record a container class for storing scalar records (name,value)
+     *\param wgtinv the inverse weight
+     */
     inline void report(RecordListType& record, RealType wgtinv, BufferType& msg) {
-      msg.get(eSum);
-      msg.get(e2Sum);
-      b_average =  eSum*wgtinv;
-      b_variance = e2Sum*wgtinv-b_average*b_average;
-      record[LocalEnergyIndex]=b_average;
-      record[LocalEnergyIndex+1]=b_variance;
-      eSum=0.0;
-      e2Sum=0.0;
+      msg.put(eSum);
+      msg.put(e2Sum);
+      report(record,wgtinv);
     }
   };
-
 }
 #endif
 /***************************************************************************
