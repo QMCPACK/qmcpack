@@ -62,7 +62,7 @@ namespace qmcplusplus {
       W.L += dL;
 
       eloc_new=H_KE.evaluate(W)+saved[ENERGY_FIXED];
-      Return_t weight = UseWeight?exp(2.0*(logpsi-saved[LOGPSI_FREE])):1.0;
+      Return_t weight = UseWeight?std::exp(2.0*(logpsi-saved[LOGPSI_FREE])):1.0;
 
       saved[ENERGY_NEW]=eloc_new;
       saved[REWEIGHT]=weight;
@@ -86,7 +86,7 @@ namespace qmcplusplus {
       Return_t eloc_new=saved[ENERGY_NEW];
 
       weight = (weight>wgt_max)? wgt_max:weight;
-      Return_t delE=pow(abs(eloc_new-EtargetEff),PowerE);
+      Return_t delE=std::pow(abs(eloc_new-EtargetEff),PowerE);
       SumValue[SUM_E_BARE] += eloc_new;
       SumValue[SUM_ESQ_BARE] += eloc_new*eloc_new;
       SumValue[SUM_ABSE_BARE] += delE;
