@@ -109,6 +109,12 @@ struct RecordNamedProperty: public RecordProperty {
     if(OutStream) delete OutStream;
   }
 
+  void clear()
+  {
+    Name.clear();
+    Values.clear();
+  }
+
   inline T operator[](int i) const { return Values[i];}
   inline T& operator[](int i) { return Values[i];}
 
