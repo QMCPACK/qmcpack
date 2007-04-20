@@ -154,9 +154,9 @@ namespace qmcplusplus {
       int firstW=wpart[ip];
       int lastW=wpart[ip+1];
 
-      char fname[16];
-      sprintf(fname,"debug.%d",ip);
-      ofstream fout(fname);
+      //char fname[16];
+      //sprintf(fname,"debug.%d",ip);
+      //ofstream fout(fname);
       
       if(QMCDriverMode[QMC_UPDATE_MODE])
         Movers[ip]->initWalkersForPbyP(W.begin()+firstW,W.begin()+lastW);
@@ -179,6 +179,7 @@ namespace qmcplusplus {
             Movers[ip]->advanceWalkers(W.begin()+firstW,W.begin()+lastW);
           } while(interval<bi);
           Movers[ip]->setMultiplicity(W.begin()+firstW,W.begin()+lastW);
+
 #pragma omp barrier
 
 #pragma omp master
@@ -186,8 +187,8 @@ namespace qmcplusplus {
             //branchEngine->branch(CurrentStep,W, branchClones);
             branchEngine->branch(CurrentStep,W);
           }
-#pragma omp flush 
 
+#pragma omp barrier
           branchClones[ip]->E_T=branchEngine->E_T;
           if(variablePop) {
             FairDivideLow(W.getActiveWalkers(),np,wpart);
@@ -195,9 +196,7 @@ namespace qmcplusplus {
             lastW=wpart[ip+1];
           }
           ++step; 
-
-          fout << " step=" << step << " first=" << firstW << " last=" << lastW 
-            << " total=" << W.getActiveWalkers() << " Et=" << branchClones[ip]->E_T << endl;
+//fout <<  step << " " << firstW << " " << lastW << " " << W.getActiveWalkers() << " " << branchClones[ip]->E_T << endl;
 
           CurrentStep+=BranchInterval;
         } while(step<nSteps);
@@ -213,7 +212,6 @@ namespace qmcplusplus {
         {
           Movers[ip]->updateWalkers(W.begin()+firstW, W.begin()+lastW);
         }
-#pragma omp flush 
 
       } while(block<nBlocks);
       Movers[ip]->stopRun();
