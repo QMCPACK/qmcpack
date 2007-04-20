@@ -27,7 +27,7 @@ namespace qmcplusplus {
   /// Constructor.
   QMCUpdateBase::QMCUpdateBase(ParticleSet& w, TrialWaveFunction& psi, QMCHamiltonian& h,
       RandomGenerator_t& rg): W(w),Psi(psi),H(h), 
-      RandomGen(rg), MaxAge(0),  branchEngine(0)
+      RandomGen(rg), MaxAge(0),  branchEngine(0), Estimators(0)
 #if defined(ENABLE_COMPOSITE_ESTIMATOR)
         , compEstimator(0)
 #endif
@@ -79,8 +79,13 @@ namespace qmcplusplus {
     return s;
   }
 
-  void QMCUpdateBase::resetRun(BranchEngineType* brancher) {
+  void QMCUpdateBase::resetRun(BranchEngineType* brancher,
+      ScalarEstimatorManager* est) {
+
+    Estimators=est;
     branchEngine=brancher;
+    branchEngine->setEstimatorManager(est);
+
     NumPtcl = W.getTotalNum();
     deltaR.resize(NumPtcl);
     drift.resize(NumPtcl);
@@ -95,21 +100,26 @@ namespace qmcplusplus {
     branchEngine->flush(0);
   }
 
-//  void QMCUpdateBase::startRun() 
-//  {
-//    if(compEstimator) {
-//      compEstimator->open(-1);
-//    }
-//  }
+  void QMCUpdateBase::startRun(int blocks, bool record) 
+  {
+    Estimators->start(blocks,record);
+#if defined(ENABLE_COMPOSITE_ESTIMATOR)
+    if(compEstimator) {
+      compEstimator->open(-1);
+    }
+#endif
+  }
 
   void QMCUpdateBase::stopRun() 
   {
+    Estimators->stop();
 #if defined(ENABLE_COMPOSITE_ESTIMATOR)
     if(compEstimator) compEstimator->close();
 #endif
   }
 
   void QMCUpdateBase::startBlock(int steps) {
+    Estimators->startBlock(steps);
     nAccept = 0; 
     nReject=0;
     nAllRejected=0;
@@ -121,6 +131,7 @@ namespace qmcplusplus {
   }
 
   void QMCUpdateBase::stopBlock() {
+    Estimators->stopBlock(acceptRatio());
 #if defined(ENABLE_COMPOSITE_ESTIMATOR)
     if(compEstimator) compEstimator->stopBlock(-1,-1);
 #endif

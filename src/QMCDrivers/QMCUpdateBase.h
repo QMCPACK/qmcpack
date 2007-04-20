@@ -26,6 +26,7 @@
 #include "QMCDrivers/SimpleFixedNodeBranch.h"
 //#define ENABLE_COMPOSITE_ESTIMATOR
 #include "Estimators/CompositeEstimators.h"
+#include "Estimators/ScalarEstimatorManager.h"
 
 namespace qmcplusplus {
 
@@ -70,10 +71,10 @@ namespace qmcplusplus {
      *
      * Update time-step variables to move walkers
      */
-    void resetRun(BranchEngineType* brancher);
+    void resetRun(BranchEngineType* brancher, ScalarEstimatorManager* est);
 
     ///** start a run */
-    //void startRun();
+    void startRun(int blocks, bool record);
     /** stop a run */
     void stopRun();
     /** reset the trial energy */
@@ -111,12 +112,17 @@ namespace qmcplusplus {
      */
     bool put(xmlNodePtr cur);
 
+    inline void accumulate(WalkerIter_t it, WalkerIter_t it_end)
+    {
+      Estimators->accumulate(it,it_end);
+    }
+
     /** advance walkers executed at each step
      *
      * Derived classes implement how to move walkers and accept/reject
      * moves. 
      */
-    virtual void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure)=0;
+    virtual void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure=false)=0;
 
   protected:
     ///number of particles
@@ -137,6 +143,8 @@ namespace qmcplusplus {
     RandomGenerator_t& RandomGen;
     ///branch engine
     BranchEngineType* branchEngine;
+    ///estimator
+    ScalarEstimatorManager* Estimators;
     ///parameters
     ParameterSet myParams;
 #if defined(ENABLE_COMPOSITE_ESTIMATOR)
