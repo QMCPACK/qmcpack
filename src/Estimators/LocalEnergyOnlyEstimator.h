@@ -27,17 +27,21 @@ namespace qmcplusplus {
     enum {ENERGY_INDEX, ENERGY_SQ_INDEX, LE_MAX};
     ///index of local energy
     int LocalEnergyIndex;
-    ///sum of local energy 
-    RealType eSum;
-    ///sum of local energy squared
-    RealType e2Sum;
 
   public:
 
     /** constructor
      * @param h QMCHamiltonian to define the components
      */
-    inline LocalEnergyOnlyEstimator(): eSum(0),e2Sum(0) {}
+    inline LocalEnergyOnlyEstimator() 
+    {
+      d_data.resize(LE_MAX,0);
+    }
+
+    ScalarEstimatorBase* clone()
+    {
+      return new LocalEnergyOnlyEstimator();
+    }
 
     /**  add the local energy, variance and all the Hamiltonian components to the scalar record container
      * @param record storage of scalar records (name,value)
@@ -45,48 +49,41 @@ namespace qmcplusplus {
      */
     inline void add2Record(RecordListType& record, BufferType& msg) {
       LocalEnergyIndex = record.add("LocalEnergy");
-      int VarianceIndex = record.add("Variance");
-      msg.add(eSum);
-      msg.add(e2Sum);
+      int VarianceIndex = record.add("LocalEnergy2");
+      msg.add(d_data[0]);
+      msg.add(d_data[1]);
     }
 
     inline void accumulate(const Walker_t& awalker, RealType wgt) {
       RealType e(awalker.Properties(LOCALENERGY));
-      eSum += wgt*e;
-      e2Sum += wgt*e*e;
+      d_data[0] += wgt*e;
+      d_data[1] += wgt*e*e;
+      d_wgt+=wgt;
     }
 
     inline void accumulate(ParticleSet& P, MCWalkerConfiguration::Walker_t& awalker) 
     {
       RealType e(awalker.Properties(LOCALENERGY));
       RealType wgt(awalker.Weight);
-      eSum += wgt*e;
-      e2Sum += wgt*e*e;
+      d_data[0] += wgt*e;
+      d_data[1] += wgt*e*e;
+      d_wgt+=wgt;
     }
 
-    inline RealType accumulate(WalkerIterator first, WalkerIterator last) {
-      //RealType deltaE = Href.getEnsembleAverage();
-      int wsum=0;
+    inline void accumulate(WalkerIterator first, WalkerIterator last) {
       while(first != last) {
         RealType e((*first)->Properties(LOCALENERGY));
-        eSum += e;
-        e2Sum += e*e;
-        ++first; wsum++;
+        d_data[0] += e;
+        d_data[1] += e*e;
+        ++first; 
+        d_wgt+=1.0;
       }
-      return wsum;
-      //elocal[ENERGY_INDEX] += static_cast<RealType>(wsum)*deltaE;
     }
 
-    ///reset all the cumulative sums to zero
-    inline void reset() { 
-      eSum=0.0;
-      e2Sum=0.0;
-    }
-
-    ///copy the value to a message buffer
-    inline void copy2Buffer(BufferType& msg) {
-      msg.put(eSum);
-      msg.put(e2Sum);
+    void reset()
+    {
+      d_wgt=0.0;
+      std::fill(d_data.begin(), d_data.end(),0.0);
     }
 
     /** calculate the averages and reset to zero
@@ -95,10 +92,10 @@ namespace qmcplusplus {
      */
     inline void report(RecordListType& record, RealType wgtinv) 
     {
-      record[LocalEnergyIndex] =d_average = eSum*wgtinv;
-      record[LocalEnergyIndex+1] =d_variance = e2Sum*wgtinv-d_average*d_average;
-      d_sum=eSum; eSum=0.0;
-      d_sumsq=e2Sum; e2Sum=0.0;
+      record[LocalEnergyIndex] =d_average = d_data[0]*wgtinv;
+      record[LocalEnergyIndex+1] =d_variance = d_data[1]*wgtinv-d_average*d_average;
+      d_sum=d_data[0]; d_data[0]=0.0;
+      d_sumsq=d_data[1]; d_data[1]=0.0;
     }
 
     /** calculate the averages and reset to zero
@@ -106,8 +103,8 @@ namespace qmcplusplus {
      *\param wgtinv the inverse weight
      */
     inline void report(RecordListType& record, RealType wgtinv, BufferType& msg) {
-      msg.put(eSum);
-      msg.put(e2Sum);
+      msg.put(d_data[0]);
+      msg.put(d_data[1]);
       report(record,wgtinv);
     }
   };

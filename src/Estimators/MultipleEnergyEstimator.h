@@ -108,6 +108,8 @@ namespace qmcplusplus {
      * @param hcopy number of copies of QMCHamiltonians
      */
     MultipleEnergyEstimator(QMCHamiltonian& h, int hcopy=1); 
+    MultipleEnergyEstimator(const MultipleEnergyEstimator& mest);
+    ScalarEstimatorBase* clone();
 
     /**  add the local energy, variance and all the Hamiltonian components to the scalar record container
      *@param record storage of scalar records (name,value)
@@ -121,13 +123,11 @@ namespace qmcplusplus {
     inline void accumulate(ParticleSet& P, MCWalkerConfiguration::Walker_t& awalker) {
     }
 
-    RealType accumulate(WalkerIterator first, WalkerIterator last) {
-      int nw=0;
+    void accumulate(WalkerIterator first, WalkerIterator last) {
       while(first != last) {
         accumulate(**first,(*first)->Weight);
-        ++first;++nw;
+        ++first;
       }
-      return nw;
     }
 
     void copy2Buffer(BufferType& msg);

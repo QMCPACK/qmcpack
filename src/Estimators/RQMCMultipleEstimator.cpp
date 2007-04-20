@@ -64,7 +64,18 @@ namespace qmcplusplus {
     }
   }
 
+  RQMCEstimator::RQMCEstimator(const RQMCEstimator& rest): 
+    ScalarEstimatorBase(rest),
+  NumCopies(rest.NumCopies), NumOperators(rest.NumOperators),
+  FirstHamiltonian(rest.FirstHamiltonian), esum(rest.esum),
+  elocal(rest.elocal),elocal_name(rest.elocal_name)
+  {
+  }
 
+  ScalarEstimatorBase* RQMCEstimator::clone()
+  {
+    return new RQMCEstimator(*this);
+  }
 	// new initialize
   void 
   RQMCEstimator

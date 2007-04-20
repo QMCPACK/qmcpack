@@ -65,6 +65,20 @@ namespace qmcplusplus {
     }
   }
 
+  MultipleEnergyEstimator::MultipleEnergyEstimator(const MultipleEnergyEstimator& mest): 
+    ScalarEstimatorBase(mest),
+  NumCopies(mest.NumCopies), 
+  FirstHamiltonian(mest.FirstHamiltonian), 
+  esum(mest.esum),esum_name(mest.esum_name),
+  elocal(mest.elocal),elocal_name(mest.elocal_name)
+  {
+  }
+
+  ScalarEstimatorBase* MultipleEnergyEstimator::clone()
+  {
+    return new MultipleEnergyEstimator(*this);
+  }
+
   void 
   MultipleEnergyEstimator
   ::initialize(MCWalkerConfiguration& W, 

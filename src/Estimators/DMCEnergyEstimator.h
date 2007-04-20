@@ -45,7 +45,18 @@ namespace qmcplusplus {
     
     /** constructor
      */
-    DMCEnergyEstimator():walkerControl(0),Current(0) {}
+    DMCEnergyEstimator():walkerControl(0),Current(0) 
+    {
+      //this handles three scalars: LocalEnergy, LocalEnergy2, and Population
+      d_data.resize(3);
+    }
+
+    ScalarEstimatorBase* clone()
+    {
+      DMCEnergyEstimator *d = new DMCEnergyEstimator();
+      d->walkerControl=walkerControl;
+      return d;
+    }
 
     void setWalkerControl(WalkerControlBase* wc) { 
       walkerControl=wc;
@@ -59,7 +70,7 @@ namespace qmcplusplus {
      */
     void add2Record(RecordListType& record, BufferType& msg) {
       averageIndex = record.add("LocalEnergy");
-      varianceIndex= record.add("Variance");
+      varianceIndex= record.add("LocalEnergy2");
       popIndex     = record.add("Population");
     }
 
@@ -75,21 +86,20 @@ namespace qmcplusplus {
      *
      * walkerControl accumulate the local energy and other quantities.
      */
-    inline RealType accumulate(WalkerIterator first, WalkerIterator last) { 
+    inline void accumulate(WalkerIterator first, WalkerIterator last) { 
       Current++;
-      return walkerControl->getValue(WEIGHT_INDEX); 
+      d_data[0]+= walkerControl->getCurrentValue(ENERGY_INDEX);
+      d_data[1]+= walkerControl->getCurrentValue(ENERGY_SQ_INDEX);
+      d_data[2]+= walkerControl->getCurrentValue(WALKERSIZE_INDEX);
+      d_wgt += walkerControl->getCurrentValue(WEIGHT_INDEX);
     }
 
     ///reset all the cumulative sums to zero
     inline void reset() { 
+      d_wgt=0.0;
+      std::fill(d_data.begin(), d_data.end(),0.0);
       walkerControl->reset();
     }
-
-    /** copy the value to a message buffer
-     *
-     * msg buffer is used to collect data over MPI. There is nothing to be collected.
-     */
-    inline void copy2Buffer(BufferType& msg) { }
 
     /** calculate the averages and reset to zero
      * @param record a container class for storing scalar records (name,value)

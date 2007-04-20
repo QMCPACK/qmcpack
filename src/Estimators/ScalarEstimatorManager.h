@@ -43,7 +43,7 @@ namespace qmcplusplus {
 
     typedef ScalarEstimatorBase           EstimatorType;
     typedef EstimatorType::BufferType     BufferType;
-    enum { WEIGHT_INDEX=0, BLOCK_CPU_INDEX, ACCEPT_RATIO_INDEX, TOTAL_INDEX};
+    //enum { WEIGHT_INDEX=0, BLOCK_CPU_INDEX, ACCEPT_RATIO_INDEX, TOTAL_INDEX};
 
     ///name of the primary estimator name
     std::string MainEstimatorName;
@@ -51,6 +51,7 @@ namespace qmcplusplus {
     std::string RootName;
 
     ScalarEstimatorManager(QMCHamiltonian& h, Communicate* c=0);
+    ScalarEstimatorManager(ScalarEstimatorManager& em, QMCHamiltonian& h);
     virtual ~ScalarEstimatorManager();
 
     /** set the communicator */
@@ -70,10 +71,11 @@ namespace qmcplusplus {
      * @param aname name of the column
      * @return the column index
      *
-     * Append a named column. 
+     * Append a named column. BlockProperties do not contain any meaning data
+     * but manages the name to index map for PropertyCache.
      */
     inline int addColumn(const char* aname) {
-      return BlockAverages.add(aname);
+      return BlockProperties.add(aname);
     }
 
     /** set the value of the i-th column with a value v
@@ -81,11 +83,11 @@ namespace qmcplusplus {
      * @param v value 
      */
     inline void setColumn(int i, RealType v) {
-      BlockAverages[i] = v;
+      PropertyCache(RecordCount,i)=v;
     }
 
     inline RealType getColumn(int i) const {
-      return  BlockAverages[i];
+      return PropertyCache(RecordCount,i);
     }
 
     int addObservable(const char* aname);
@@ -147,15 +149,19 @@ namespace qmcplusplus {
     void reset();
     /** start a run
      * @param blocks number of blocks
+     * @param record if true, will write to a file
      *
      * Replace reportHeader and reset functon.
      */
-    void start(int blocks);
+    void start(int blocks, bool record=true);
     /** stop a qmc run
      *
      * Replace finalize();
      */
     void stop();
+    /** stop a qmc run
+     */
+    void stop(const vector<ScalarEstimatorManager*> m);
 
     /** start  a block
      * @param steps number of steps in a block
@@ -165,10 +171,21 @@ namespace qmcplusplus {
      * @param accept acceptance rate of this block
      */
     void stopBlock(RealType accept);
+    /** stop a block
+     * @param m list of estimator which has been collecting data independently
+     */
+    void stopBlock(const vector<ScalarEstimatorManager*> m);
+
+    void accumulate(MCWalkerConfiguration::iterator it,
+        MCWalkerConfiguration::iterator it_end);
 
     /** accumulate the scalar observables
      */
-    void accumulate(MCWalkerConfiguration& W);
+    void accumulate(MCWalkerConfiguration& W)
+    {
+      accumulate(W.begin(),W.end());
+    }
+
     /** accumulate the scalar observables
      */
     void accumulate(ParticleSet& P, MCWalkerConfiguration::Walker_t& awalker);
@@ -176,6 +193,7 @@ namespace qmcplusplus {
     /** set the cummulative energy and weight
      */
     void getEnergyAndWeight(RealType& e, RealType& w);
+
 
   protected:
     ///if true, responsible for reduction operation, broadcast of EPSum, and printout text file
@@ -186,30 +204,36 @@ namespace qmcplusplus {
     bool AppendRecord;
     ///if true, record is collected. 
     bool Collected;
+    ///size of multiple estimator
+    int ThreadCount;
     ///number of records in a block
     int RecordCount;
+    ///index for the weight PropertyCache(*,weightInd) 
+    int weightInd;
+    ///index for the block cpu PropertyCache(*,cpuInd) 
+    int cpuInd;
+    ///index for the acceptance rate PropertyCache(*,acceptInd) 
+    int acceptInd;
     ///hdf5 file handler
     hid_t h_file;
+    ///observables handler
     hid_t h_obs;
     ///communicator to handle communication
     Communicate* myComm;
-    ///Index map for the data maintained by this object
-    TinyVector<IndexType,TOTAL_INDEX>  MyIndex;
-    ///Data maintained by this object
-    TinyVector<RealType,TOTAL_INDEX>  MyData;
-    ///Cummulative energy and weight
+    //Cummulative energy and weight
     TinyVector<RealType,2>  EPSum;
-    ///ostream for the output
-    ostream* OutStream;
     ///ostream for the output
     QMCHamiltonian& H;
     ///pointer to the primary ScalarEstimatorBase
     ScalarEstimatorBase* MainEstimator;
-    ///save scalar data to Cache and dump it when it stop 
-    Matrix<RealType> Cache;
-    Matrix<RealType> CacheTrans;
-    ///block averages
+    ///save block averages (scalar data) to Cache 
+    Matrix<RealType> AverageCache;
+    ///save property data to Cache 
+    Matrix<RealType> PropertyCache;
+    ///manager of scalar data
     RecordNamedProperty<RealType> BlockAverages;
+    ///manager of property data
+    RecordNamedProperty<RealType> BlockProperties;
     ///block averages: name to value
     RecordNamedProperty<RealType> TotalAverages;
     ///data accumulated over the blocks

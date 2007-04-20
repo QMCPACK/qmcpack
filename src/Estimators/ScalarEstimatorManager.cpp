@@ -29,20 +29,42 @@
 
 namespace qmcplusplus {
 
-  //initialize the name of the primary estimator
+  template<typename IT>
+    inline void FastAccumulate(IT first, IT last, IT result)
+    {
+      while(first != last) *result++ += *first++;
+    }
 
-  ScalarEstimatorManager::ScalarEstimatorManager(QMCHamiltonian& h, Communicate* c): 
+  //initialize the name of the primary estimator
+  ScalarEstimatorManager::ScalarEstimatorManager(QMCHamiltonian& h, 
+      Communicate* c): 
     MainEstimatorName("elocal"),
   Manager(false), CollectSum(true), AppendRecord(false), Collected(false), 
-  h_file(-1), h_obs(-1), myComm(0), OutStream(0), H(h),MainEstimator(0)
+  ThreadCount(1), h_file(-1), h_obs(-1), myComm(0), H(h),MainEstimator(0)
   { 
     //Block2Total.resize(0); 
+  }
+
+  ScalarEstimatorManager::ScalarEstimatorManager(ScalarEstimatorManager& em, 
+      QMCHamiltonian& h):
+    MainEstimatorName("elocal"),
+  Manager(false), AppendRecord(false), Collected(false), 
+  ThreadCount(1),h_file(-1), h_obs(-1), H(h), 
+  EstimatorMap(em.EstimatorMap)
+  {
+    CollectSum=em.CollectSum, 
+    //inherit communicator
+    setCommunicator(em.myComm);
+    for(int i=0; i<em.Estimators.size(); i++) 
+    {
+      Estimators.push_back(em.Estimators[i]->clone());
+    }
+    MainEstimator=Estimators[EstimatorMap[MainEstimatorName]];
   }
 
   ScalarEstimatorManager::~ScalarEstimatorManager()
   { 
     delete_iter(Estimators.begin(), Estimators.end());
-    if(OutStream) delete OutStream;
   }
 
   void ScalarEstimatorManager::setCommunicator(Communicate* c) 
@@ -64,72 +86,110 @@ namespace qmcplusplus {
     //for(int i=0; i< Estimators.size(); i++) Estimators[i]->CollectSum = CollectSum;
   }
 
-  ////reset when a new driver is used
-  //void ScalarEstimatorManager::reset(const string& aname, bool append)
-  //{
-  //  RootName = aname;
-  //  AppendRecord=append;
-  //}
-
+  /** reset names of the properties 
+   *
+   * The number of estimators and their order can vary from the previous state.
+   * Clear properties before setting up a new BlockAverage data list.
+   */
   void ScalarEstimatorManager::reset()
   {
 
     if(Estimators.empty()) 
       add(new LocalEnergyOnlyEstimator(),MainEstimatorName);
 
+    BlockAverages.clear();
     //no need for RemoteData. We don't collect anything during a run
     BufferType tmp;
     for(int i=0; i<Estimators.size(); i++) 
+    {
       Estimators[i]->add2Record(BlockAverages,tmp);
+      Estimators[i]->reset();
+    }
 
-    MyIndex[WEIGHT_INDEX] = BlockAverages.add("WeightSum");
-    MyIndex[BLOCK_CPU_INDEX] = BlockAverages.add("BlockCPU");
-    MyIndex[ACCEPT_RATIO_INDEX] = BlockAverages.add("AcceptRatio");
+    weightInd = BlockProperties.add("WeightSum");
+    cpuInd = BlockProperties.add("BlockCPU");
+    acceptInd = BlockProperties.add("AcceptRatio");
   }
 
-  void ScalarEstimatorManager::start(int blocks)
+  void ScalarEstimatorManager::start(int blocks, bool record)
   {
+    reset();
+
     Collected= false;
     RecordCount=0;
     BlockAverages.setValues(0.0);
-    Cache.resize(blocks,BlockAverages.size());
+    AverageCache.resize(blocks,BlockAverages.size());
+    PropertyCache.resize(blocks,BlockProperties.size());
 
-    //open obsevables and allocate spaces 
-    string h5file=RootName+".config.h5";
-    h_file =  H5Fopen(h5file.c_str(),H5F_ACC_RDWR,H5P_DEFAULT);
-    h_obs = H5Gcreate(h_file,"observables",0);
-    HDFAttribIO<int> i(RecordCount);
+    AverageCache=0.0;
+
+    if(record)
+    {
+      //open obsevables and allocate spaces 
+      string h5file=RootName+".config.h5";
+      h_file =  H5Fopen(h5file.c_str(),H5F_ACC_RDWR,H5P_DEFAULT);
+      h_obs = H5Gcreate(h_file,"observables",0);
+      HDFAttribIO<int> i(RecordCount);
+      i.write(h_obs,"count");
+      HDFAttribIO<int> t(ThreadCount);
+      t.write(h_obs,"threads");
+      HDFAttribIO<Matrix<RealType> > m(AverageCache);
+      m.write(h_obs,"scalars");
+
+      ostringstream o;
+      for(int i=0; i<BlockAverages.size()-1; i++) o << BlockAverages.Name[i] << ":";
+      o<<BlockAverages.Name.back();
+      string banner(o.str());
+      HDFAttribIO<string> so(banner);
+      so.write(h_obs,"scalar_ids");
+
+      //H5Gclose(h_obs);
+      H5Fclose(h_file);
+    }
+  }
+
+  void ScalarEstimatorManager::stop(const vector<ScalarEstimatorManager*> est)
+  {
+    RecordCount=est[0]->RecordCount;
+    AverageCache=est[0]->AverageCache;
+    for(int i=1; i<ThreadCount; i++)
+    {
+      AverageCache+=est[i]->AverageCache;
+    }
+
+    RealType wgt=1.0/static_cast<RealType>(ThreadCount);
+    AverageCache*=wgt;
+
+    //reset to 1 to indicate that scalars do not have the count
+    HDFAttribIO<int> i(RecordCount,true);
     i.write(h_obs,"count");
-    HDFAttribIO<Matrix<RealType> > m(Cache);
+    ThreadCount=1;
+    HDFAttribIO<int> t(ThreadCount,true);
+    t.write(h_obs,"threads");
+    HDFAttribIO<Matrix<RealType> > m(AverageCache,true);
     m.write(h_obs,"scalars");
 
-    ostringstream o;
-    for(int i=0; i<BlockAverages.size()-1; i++) o << BlockAverages.Name[i] << ":";
-    o<<BlockAverages.Name.back();
-    string t(o.str());
-    HDFAttribIO<string> so(t);
-    so.write(h_obs,"scalar_ids");
-
-    //H5Gclose(h_obs);
-    H5Fclose(h_file);
+    stop();
   }
 
   /** Stop a run
    *
-   * Collect data in Cache and print out
+   * Collect data in Cache and print out data into hdf5 and ascii file.
+   * This should not be called in a OpenMP parallel region or should
+   * be guarded by master/single.
    * Keep the ascii output for now
    */
   void ScalarEstimatorManager::stop() 
   {
     if(CollectSum)
     {
-      Matrix<RealType> c(Cache);
-      myComm->reduce(c.data(),Cache.data(),Cache.size());
+      Matrix<RealType> c(AverageCache);
+      myComm->reduce(c.data(),AverageCache.data(),AverageCache.size());
       RealType norm=1.0/static_cast<RealType>(myComm->ncontexts());
-      Cache *= norm;
+      AverageCache *= norm;
       if(Manager)
       {//write scalars_gsum 
-        HDFAttribIO<Matrix<RealType> > m(Cache);
+        HDFAttribIO<Matrix<RealType> > m(AverageCache);
         m.write(h_obs,"scalars_gsum");
       }
     }
@@ -143,10 +203,10 @@ namespace qmcplusplus {
 
     if(Manager) 
     {
-      int nc=Cache.cols();
+      int nc=AverageCache.cols();
       EPSum[0]=0.0;
       EPSum[1]=RecordCount;
-      const RealType* restrict eptr=Cache.data()+BlockAverages.add("LocalEnergy");
+      const RealType* restrict eptr=AverageCache.data();
       for(int i=0; i<RecordCount; i++, eptr+=nc) EPSum[0] += *eptr;
 
       //This will go away with hdf5 record and utility
@@ -154,15 +214,19 @@ namespace qmcplusplus {
       fname.append(".scalar.dat");
       ofstream fout(fname.c_str());
       fout.setf(ios::scientific, ios::floatfield);
-      const RealType* restrict rptr=Cache.data();
+      const RealType* restrict rptr=AverageCache.data();
+      const RealType* restrict pptr=PropertyCache.data();
+      int pc=PropertyCache.cols();
       fout << "#   index ";
       for(int i=0; i<BlockAverages.size(); i++) fout << setw(16) << BlockAverages.Name[i];
+      for(int i=0; i<BlockProperties.size(); i++) fout << setw(16) << BlockProperties.Name[i];
       fout << endl;
       fout.setf(ios::right,ios::adjustfield);
       for(int i=0; i<RecordCount; i++)
       {
         fout << setw(10) << i;
         for(int j=0; j<nc; j++) fout << setw(16) << *rptr++;
+        for(int j=0; j<pc; j++) fout << setw(16) << *pptr++;
         fout << endl;
       }
     }
@@ -170,34 +234,57 @@ namespace qmcplusplus {
     Collected=true;
   }
 
-
   void ScalarEstimatorManager::stopBlock(RealType accept)
   {
-    BlockAverages[MyIndex[WEIGHT_INDEX]]=MyData[WEIGHT_INDEX];
-    BlockAverages[MyIndex[BLOCK_CPU_INDEX]] = MyTimer.elapsed();
-    BlockAverages[MyIndex[ACCEPT_RATIO_INDEX]] = accept;
-    RealType wgtinv = 1.0/MyData[WEIGHT_INDEX];
+    PropertyCache(RecordCount,weightInd) = Estimators[0]->d_wgt;
+    PropertyCache(RecordCount,cpuInd)    = MyTimer.elapsed();
+    PropertyCache(RecordCount,acceptInd) = accept;
+
     for(int i=0; i<Estimators.size(); i++) 
-      Estimators[i]->report(BlockAverages,wgtinv);
-    MyData=0.0;
-    std::copy(BlockAverages.begin(),BlockAverages.end(),Cache[RecordCount]);
+      Estimators[i]->takeBlockAverage(AverageCache[RecordCount]);
+
     RecordCount++;
+
+    //group is closed. Do not save it to hdf
+    if(h_obs<-1) return;
 
     HDFAttribIO<int> i(RecordCount,true);
     i.write(h_obs,"count");
-    HDFAttribIO<Matrix<RealType> > m(Cache,true);
+    HDFAttribIO<Matrix<RealType> > m(AverageCache,true);
     m.write(h_obs,"scalars");
   }
 
-  /** accumulate data for all the estimators
-  */
-  void ScalarEstimatorManager::accumulate(MCWalkerConfiguration& W) 
+  void ScalarEstimatorManager::stopBlock(const vector<ScalarEstimatorManager*> est)
   {
-    RealType wgt=0.0;
-    for(int i=0; i< Estimators.size(); i++) 
-      wgt += Estimators[i]->accumulate(W.begin(),W.end());
-    //increment BinSize
-    MyData[WEIGHT_INDEX]+=wgt;
+    ThreadCount=est.size();
+    //RecordCount=est[0]->RecordCount;
+    //AverageCache=est[0]->AverageCache;
+    //for(int i=1; i<est.size(); i++)
+    //{
+    //  AverageCache+=est[i]->AverageCache;
+    //}
+    RecordCount=est[0]->RecordCount;
+    for(int i=0; i<ThreadCount; i++)
+    {
+      int rc=est[i]->RecordCount-1;
+      FastAccumulate(est[i]->AverageCache[rc], est[i]->AverageCache[rc+1],AverageCache[rc]);
+    }
+
+    if(h_obs<-1) return;
+
+    PropertyCache=est[0]->PropertyCache;
+    HDFAttribIO<int> i(RecordCount,true);
+    i.write(h_obs,"count");
+    HDFAttribIO<int> t(ThreadCount,true);
+    t.write(h_obs,"threads");
+    HDFAttribIO<Matrix<RealType> > m(AverageCache,true);
+    m.write(h_obs,"scalars");
+  }
+
+  void ScalarEstimatorManager::accumulate(MCWalkerConfiguration::iterator it,
+      MCWalkerConfiguration::iterator it_end)
+  {
+    for(int i=0; i< Estimators.size(); i++) Estimators[i]->accumulate(it,it_end);
   }
 
   void ScalarEstimatorManager::accumulate(ParticleSet& P, 

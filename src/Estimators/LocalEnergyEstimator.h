@@ -52,20 +52,15 @@ namespace qmcplusplus {
   class LocalEnergyEstimator: public ScalarEstimatorBase {
 
     //typedef PooledData<T>                            BufferType;
-    enum {ENERGY_INDEX, ENERGY_SQ_INDEX, POTENTIAL_INDEX, LE_MAX};
+    //enum {ENERGY_INDEX, ENERGY_SQ_INDEX, POTENTIAL_INDEX, LE_MAX};
+    enum {ENERGY_INDEX, POTENTIAL_INDEX, LE_MAX};
 
-    ///locator of the first data this object handles
-    int LocalEnergyIndex;
-    int LocalPotentialIndex;
+    //int LocalPotentialIndex;
     int FirstHamiltonian;
     int SizeOfHamiltonians;
-    QMCHamiltonian& Href;
 
     ///vector to contain the names of all the constituents of the local energy
     std::vector<string> elocal_name;
-
-    ///vector to contain all the constituents of the local energy
-    std::vector<RealType>  elocal;
 
   public:
 
@@ -73,67 +68,70 @@ namespace qmcplusplus {
      * @param h QMCHamiltonian to define the components
      */
     LocalEnergyEstimator(QMCHamiltonian& h);
+    LocalEnergyEstimator(const LocalEnergyEstimator& est);
 
+    /** implement virtual function
+     */
+    ScalarEstimatorBase* clone();
     /**  add the local energy, variance and all the Hamiltonian components to the scalar record container
      * @param record storage of scalar records (name,value)
      * @param msg buffer for message passing
      */
     void add2Record(RecordListType& record, BufferType& msg) {
-      LocalEnergyIndex = record.add(elocal_name[ENERGY_INDEX].c_str());
+      FirstIndex = record.add(elocal_name[0].c_str());
       for(int i=1; i<elocal_name.size(); i++) record.add(elocal_name[i].c_str());
+      LastIndex=FirstIndex + elocal_name.size();
       //add elocal to the message buffer
-      msg.add(elocal.begin(),elocal.end());
+      msg.add(d_data.begin(),d_data.end());
     }
 
     inline void accumulate(const Walker_t& awalker, RealType wgt) {
       const RealType* restrict ePtr = awalker.getPropertyBase();
-      RealType e = ePtr[LOCALENERGY];
-      d_sum=elocal[ENERGY_INDEX] += wgt*e;
-      d_sumsq=elocal[ENERGY_SQ_INDEX] += wgt*e*e;
-      elocal[POTENTIAL_INDEX] += wgt*ePtr[LOCALPOTENTIAL];
-      for(int i=0, target=LE_MAX, source=FirstHamiltonian; i<SizeOfHamiltonians; 
-          i++,target++,source++) {
-        elocal[target] += wgt*ePtr[source];
+      //RealType e = ePtr[LOCALENERGY];
+      int target=0;
+      d_sum=d_data[target++] += wgt*ePtr[LOCALENERGY];
+      d_sumsq=d_data[target++] += wgt*ePtr[LOCALENERGY]*ePtr[LOCALENERGY];
+      d_data[target++] += wgt*ePtr[LOCALPOTENTIAL];
+      d_data[target++] += wgt*ePtr[LOCALPOTENTIAL]*ePtr[LOCALPOTENTIAL];
+      for(int i=0, source=FirstHamiltonian; i<SizeOfHamiltonians; i++,source++) {
+        d_data[target++] += wgt*ePtr[source];
+        d_data[target++] += wgt*ePtr[source]*ePtr[source];
       }
+      d_wgt+=wgt;
     }
 
     inline void accumulate(ParticleSet& P, MCWalkerConfiguration::Walker_t& awalker) {
       accumulate(awalker,awalker.Weight);
     }
 
-    inline RealType accumulate(WalkerIterator first, WalkerIterator last) {
-      //RealType deltaE = Href.getEnsembleAverage();
-      int wsum=0;
+    inline void accumulate(WalkerIterator first, WalkerIterator last) {
       while(first != last) {
         accumulate(**first,(*first)->Weight);
-        ++first; wsum++;
+        ++first;
       }
-      return wsum;
       //elocal[ENERGY_INDEX] += static_cast<RealType>(wsum)*deltaE;
-    }
-
-    ///reset all the cumulative sums to zero
-    inline void reset() { 
-      std::fill(elocal.begin(), elocal.end(),0.0);
-    }
-
-    ///copy the value to a message buffer
-    inline void copy2Buffer(BufferType& msg) {
-      msg.put(elocal.begin(),elocal.end());
     }
 
     inline void report(RecordListType& record, RealType wgtinv)
     {
-      register int ir=LocalEnergyIndex;
-      d_average =  elocal[ENERGY_INDEX]*wgtinv;
-      d_variance = elocal[ENERGY_SQ_INDEX]*wgtinv-d_average*d_average;
-      record[ir++] = d_average;
-      record[ir++] = d_variance;
-      record[ir++] = elocal[POTENTIAL_INDEX]*wgtinv;
-      for(int i=0, ii=LE_MAX; i<SizeOfHamiltonians; i++,ii++) {
-        record[ir++] = elocal[ii]*wgtinv;
-      }
-      std::fill(elocal.begin(), elocal.end(),0.0);
+      //for(int i=0; i<d_data.size(); i++) d_data[i] *= wgtinv;
+      //std::copy(d_data.begin(),d_data.end(),record.begin()+FirstIndex);
+      d_average =  d_data[0]*wgtinv;
+      d_variance = d_data[1]*wgtinv-d_average*d_average;
+      cout << "Average = " << d_average << " variance = " << d_variance << endl;
+      //record[ir++] = d_average;
+      //record[ir++] = d_variance;
+      //record[ir++] = d_data[POTENTIAL_INDEX]*wgtinv;
+      //for(int i=0, ii=LE_MAX; i<SizeOfHamiltonians; i++,ii++) {
+      //  record[ir++] = d_data[ii]*wgtinv;
+      //}
+      std::fill(d_data.begin(), d_data.end(),0.0);
+    }
+
+    void reset()
+    {
+      d_wgt=0.0;
+      std::fill(d_data.begin(), d_data.end(),0.0);
     }
 
     /** calculate the averages and reset to zero

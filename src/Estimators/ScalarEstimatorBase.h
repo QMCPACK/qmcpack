@@ -40,6 +40,10 @@ namespace qmcplusplus {
     typedef RecordNamedProperty<RealType>   RecordListType;
     typedef PooledData<RealType>            BufferType;
 
+    ///first index within an record of the first element handled by an object
+    int FirstIndex;
+    ///last index within an record of the first element handled by an object
+    int LastIndex;
     ///sum of a scalar observable
     RealType d_sum;
     ///sum of a scalar observable squared
@@ -48,9 +52,20 @@ namespace qmcplusplus {
     RealType d_average;
     ///variance
     RealType d_variance;
+    ///current weight
+    RealType d_wgt;
+    ///current accumulative data before reporting
+    vector<RealType> d_data;
 
     inline ScalarEstimatorBase(): 
-      d_sum(RealType()), d_sumsq(RealType()), d_average(RealType()), d_variance(RealType()){}
+      d_sum(RealType()), d_sumsq(RealType()), d_average(RealType()), d_variance(RealType()),
+    d_wgt(RealType()){}
+
+    /** copy constructor */
+    ScalarEstimatorBase(const ScalarEstimatorBase& est):
+      FirstIndex(est.FirstIndex),LastIndex(est.LastIndex),d_data(est.d_data)
+    {}
+
     virtual ~ScalarEstimatorBase(){}
 
     ///retrun average
@@ -58,6 +73,26 @@ namespace qmcplusplus {
     ///retrun variance
     inline RealType variance() const { return d_variance;}
 
+    template<typename IT>
+    inline void takeBlockAverage(IT first)
+    {
+      RealType norm = 1.0/d_wgt;
+      first += FirstIndex;
+      vector<RealType>::iterator it(d_data.begin());
+      while(it != d_data.end())
+      {
+        *first++ = norm*(*it++);
+      }
+      d_sum += d_data[0];
+      d_sumsq += d_data[1];
+      d_average =  d_data[0]*norm;
+      d_variance = d_data[1]*norm-d_average*d_average;
+      std::fill(d_data.begin(), d_data.end(),0.0);
+      d_wgt=0.0;
+    }
+
+    ///clone the object
+    virtual ScalarEstimatorBase* clone()=0;
     /** add the content of the scalar estimator to the record
      *\param record scalar data list 
      *
@@ -70,8 +105,7 @@ namespace qmcplusplus {
      *\param wgt the weight
      */
     virtual void accumulate(const Walker_t& awalker, RealType wgt) = 0;
-
-    virtual RealType accumulate(WalkerIterator first, WalkerIterator last) = 0;
+    virtual void accumulate(WalkerIterator first, WalkerIterator last) = 0;
     virtual void accumulate(ParticleSet& P, MCWalkerConfiguration::Walker_t& awalker)=0;
 
     /** a virtual function to report the scalar estimator
@@ -92,10 +126,13 @@ namespace qmcplusplus {
     virtual void report(RecordListType&, RealType wgtinv, BufferType& msg) = 0;
 
     /** update the message buffer */
-    virtual void copy2Buffer(BufferType& msg)=0;
+    void copy2Buffer(BufferType& msg)
+    {
+      msg.put(d_data.begin(),d_data.end());
+    }
 
     /// a virtual function to flush the internal data to start a new block average
-    virtual void reset() = 0;
+    virtual void reset()=0;
   };
 }
 

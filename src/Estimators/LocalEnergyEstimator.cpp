@@ -21,17 +21,37 @@
 
 namespace qmcplusplus {
 
-  LocalEnergyEstimator::LocalEnergyEstimator(QMCHamiltonian& h):Href(h) { 
+  LocalEnergyEstimator::LocalEnergyEstimator(QMCHamiltonian& h)
+  { 
     int hterms(h.size());
     SizeOfHamiltonians = hterms;
     FirstHamiltonian = h.startIndex();
-    elocal.resize(SizeOfHamiltonians+LE_MAX);
-    elocal_name.resize(SizeOfHamiltonians+LE_MAX);
-    elocal_name[ENERGY_INDEX] = "LocalEnergy";
-    elocal_name[ENERGY_SQ_INDEX] = "Variance";
-    elocal_name[POTENTIAL_INDEX] = "LocalPotential";
-    int ii(LE_MAX);
-    for(int i=0; i < SizeOfHamiltonians; i++) elocal_name[ii++] = h.getName(i);
+    d_data.resize((SizeOfHamiltonians+LE_MAX)*2);
+    elocal_name.resize((SizeOfHamiltonians+LE_MAX)*2);
+
+    int target=0;
+    elocal_name[target++] = "LocalEnergy";
+    elocal_name[target++] = "LocalEnergy2";
+    elocal_name[target++] = "LocalPotential";
+    elocal_name[target++] = "LocalPotential2";
+    for(int i=0; i < SizeOfHamiltonians; i++) 
+    {
+      elocal_name[target++] = h.getName(i);
+      elocal_name[target++] = h.getName(i)+"2";
+    }
+  }
+
+  LocalEnergyEstimator::LocalEnergyEstimator(const LocalEnergyEstimator& est):
+    ScalarEstimatorBase(est),
+  SizeOfHamiltonians(est.SizeOfHamiltonians),
+  FirstHamiltonian(est.FirstHamiltonian),
+  elocal_name(est.elocal_name)
+  {
+  }
+
+  ScalarEstimatorBase* LocalEnergyEstimator::clone()
+  {
+    return new LocalEnergyEstimator(*this);
   }
 
   /** calculate the averages and reset to zero
@@ -39,7 +59,7 @@ namespace qmcplusplus {
    *\param wgtinv the inverse weight
    */
   void LocalEnergyEstimator::report(RecordListType& record, RealType wgtinv, BufferType& msg) {
-    msg.get(elocal.begin(),elocal.end());
+    msg.get(d_data.begin(),d_data.end());
     report(record,wgtinv);
   }
 }
