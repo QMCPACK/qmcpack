@@ -146,6 +146,7 @@ SimpleFixedNodeBranch::branch(int iter, MCWalkerConfiguration& w) {
       E_T += delEt;
     MyEstimator->setColumn(ETrialIndex,E_T);
   }
+  MyEstimator->accumulate(w);
 }
 
 /** perform branching
@@ -168,7 +169,8 @@ void SimpleFixedNodeBranch::reset()
 }
 
 void SimpleFixedNodeBranch::finalize() {
-  MyEstimator->stop();
+  //Estimator now is handled by Mover classs
+  //MyEstimator->stop();
   //MyEstimator->finalize();
   if(!WalkerController || ETrialIndex<0) {
     MyEstimator->getEnergyAndWeight(EavgSum,WgtSum);

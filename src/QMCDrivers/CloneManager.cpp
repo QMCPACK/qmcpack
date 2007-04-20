@@ -36,11 +36,13 @@ namespace qmcplusplus {
     wPerNode.resize(NumThreads+1,0);
   }
 
+  ///clenup non-static data members
   CloneManager::~CloneManager()
   {
     delete_iter(Rng.begin(),Rng.end());
     delete_iter(Movers.begin(),Movers.end());
     delete_iter(branchClones.begin(),branchClones.end());
+    delete_iter(estimatorClones.begin(),estimatorClones.end());
   }
 
   void CloneManager::makeClones(MCWalkerConfiguration& w, 

@@ -65,6 +65,8 @@ namespace qmcplusplus {
     vector<RandomGenerator_t*> Rng;
     ///update engines
     vector<QMCUpdateBase*> Movers;
+    ///update engines
+    vector<ScalarEstimatorManager*> estimatorClones;;
     ///Brnach engines
     vector<SimpleFixedNodeBranch*> branchClones;
     ///Walkers per node
