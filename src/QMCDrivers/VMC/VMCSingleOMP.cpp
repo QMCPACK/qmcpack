@@ -41,55 +41,55 @@ namespace qmcplusplus {
   { 
     resetRun();
 
+    //start the main estimator
     Estimators->start(nBlocks);
-    IndexType block = 0;
-    do {
-      Estimators->startBlock(nSteps);
-      for(int ip=0; ip<NumThreads; ip++) Movers[ip]->startBlock(nSteps);
-      IndexType step = 0;
-      do 
-      {
-        ++step;
-        ++CurrentStep;
-#pragma omp parallel
-        {
-          int ip = omp_get_thread_num();
-          Movers[ip]->advanceWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1],
-              step==nSteps);
-        }
-        //collect the data
-        Estimators->accumulate(W);
-      } while(step<nSteps);
 
-      IndexType nAcceptTot=0;
-      IndexType nRejectTot=0;
-      for(int ip=0; ip<NumThreads; ip++) {
-        nAcceptTot+=Movers[ip]->nAccept;
-        nRejectTot+=Movers[ip]->nReject; 
-        Movers[ip]->stopBlock();
-      }
-
-      Estimators->stopBlock(static_cast<RealType>(nAcceptTot)/static_cast<RealType>(nAcceptTot+nRejectTot));
-
-      ++block;
-
-      //record the current configuration
-      recordBlock(block);
-
-      if(QMCDriverMode[QMC_UPDATE_MODE] && CurrentStep%100 == 0) 
-      {
+    //start a parallel region
 #pragma omp parallel  
+    {
+      int ip = omp_get_thread_num();
+      if(QMCDriverMode[QMC_UPDATE_MODE])
+        Movers[ip]->initWalkersForPbyP(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
+      else
+        Movers[ip]->initWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
+
+      //disable recording function
+      Movers[ip]->startRun(nBlocks,false);
+      IndexType block = 0;
+      do {
+        Movers[ip]->startBlock(nSteps);
+        IndexType step = 0;
+        do 
         {
-          int ip = omp_get_thread_num();
+          ++step;
+          ++CurrentStep;
+          Movers[ip]->advanceWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
+          Movers[ip]->accumulate(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
+        } while(step<nSteps);
+
+        ++block;
+        Movers[ip]->stopBlock();
+        //need a barrier???? 
+//#pragma omp barrier
+#pragma omp master
+        {
+          Estimators->stopBlock(estimatorClones);
+          recordBlock(block);
+        }
+
+        if(QMCDriverMode[QMC_UPDATE_MODE] && CurrentStep%100 == 0) 
+        {
           Movers[ip]->updateWalkers(W.begin()+wPerNode[ip], W.begin()+wPerNode[ip+1]);
         }
-      }
-    } while(block<nBlocks);
+      } while(block<nBlocks);
 
-    for(int ip=0; ip<NumThreads; ip++) Movers[ip]->stopRun();
+      Movers[ip]->stopRun();
+    }
+
+    Estimators->stop(estimatorClones);
 
     //finalize a qmc section
-    return finalize(block);
+    return finalize(nBlocks);
   }
 
   void VMCSingleOMP::resetRun() 
@@ -101,6 +101,7 @@ namespace qmcplusplus {
     {
       Movers.resize(NumThreads,0);
       branchClones.resize(NumThreads,0);
+      estimatorClones.resize(NumThreads,0);
       Rng.resize(NumThreads,0);
       FairDivideLow(W.getActiveWalkers(),NumThreads,wPerNode);
 
@@ -111,9 +112,8 @@ namespace qmcplusplus {
 #pragma omp parallel  
       {
         int ip = omp_get_thread_num();
-        if(ip) {
-          hClones[ip]->add2WalkerProperty(*wClones[ip]);
-        }
+        if(ip) hClones[ip]->add2WalkerProperty(*wClones[ip]);
+        estimatorClones[ip]= new ScalarEstimatorManager(*Estimators,*hClones[ip]);  
         Rng[ip]=new RandomGenerator_t();
         Rng[ip]->init(ip,NumThreads,-1);
         hClones[ip]->setRandomGenerator(Rng[ip]);
@@ -126,7 +126,7 @@ namespace qmcplusplus {
             Movers[ip]=new VMCUpdatePbyPWithDrift(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]); 
           else
             Movers[ip]=new VMCUpdatePbyP(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]); 
-          Movers[ip]->resetRun(branchClones[ip]);
+          Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip]);
           //Movers[ip]->initWalkersForPbyP(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
         }
         else
@@ -135,20 +135,10 @@ namespace qmcplusplus {
             Movers[ip]=new VMCUpdateAllWithDrift(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]); 
           else
             Movers[ip]=new VMCUpdateAll(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]); 
-          Movers[ip]->resetRun(branchClones[ip]);
+          Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip]);
           //Movers[ip]->initWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
         }
       }
-    }
-
-#pragma omp parallel  
-    {
-      int ip = omp_get_thread_num();
-      if(QMCDriverMode[QMC_UPDATE_MODE])
-        Movers[ip]->initWalkersForPbyP(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
-      else
-        Movers[ip]->initWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
-      Movers[ip]->put(qmcNode);
     }
 
     //Used to debug and benchmark opnemp

@@ -32,13 +32,14 @@ namespace qmcplusplus {
   bool VMCSingle::run() { 
 
     resetRun();
-    Estimators->start(nBlocks);
+
+    Mover->startRun(nBlocks,true);
 
     IndexType block = 0;
     IndexType nAcceptTot = 0;
     IndexType nRejectTot = 0;
     do {
-      Estimators->startBlock(nSteps);
+      //Estimators->startBlock(nSteps);
       Mover->startBlock(nSteps);
       IndexType step = 0;
       do
@@ -48,7 +49,7 @@ namespace qmcplusplus {
         Estimators->accumulate(W);
       } while(step<nSteps);
 
-      Estimators->stopBlock(Mover->acceptRatio());
+      //Estimators->stopBlock(Mover->acceptRatio());
       Mover->stopBlock();
 
       nAcceptTot += Mover->nAccept;
@@ -63,7 +64,6 @@ namespace qmcplusplus {
 
     } while(block<nBlocks);
 
-    //TESTING ESTIMATOR: for hdf5 slab only
     Mover->stopRun();
 
     //finalize a qmc section
@@ -80,7 +80,7 @@ namespace qmcplusplus {
           Mover=new VMCUpdatePbyPWithDrift(W,Psi,H,Random);
         else
           Mover=new VMCUpdatePbyP(W,Psi,H,Random);
-        Mover->resetRun(branchEngine);
+        Mover->resetRun(branchEngine,Estimators);
       }
       else
       {
@@ -88,7 +88,7 @@ namespace qmcplusplus {
           Mover=new VMCUpdateAllWithDrift(W,Psi,H,Random);
         else
           Mover=new VMCUpdateAll(W,Psi,H,Random);
-        Mover->resetRun(branchEngine);
+        Mover->resetRun(branchEngine,Estimators);
       }
     }
 
