@@ -44,42 +44,38 @@ namespace qmcplusplus {
 
     resetUpdateEngine();
 
-    Estimators->start(nBlocks);
+    Mover->startRun(nBlocks,true);
 
     IndexType block = 0;
     CurrentStep = 0;
     do // block
     {
-      Estimators->startBlock(nSteps);
       Mover->startBlock(nSteps);
       IndexType step = 0;
       do  //step
       {
         IndexType interval = 0;
-        //Mover->startAccumulate();
         do // interval
         {
           ++interval;
           Mover->advanceWalkers(W.begin(),W.end(), interval == BranchInterval);
         } while(interval<BranchInterval);
         Mover->setMultiplicity(W.begin(),W.end());
-        Estimators->accumulate(W);
         branchEngine->branch(CurrentStep,W);
-        //Mover->stopAccumulate();
         ++step; 
         CurrentStep+=BranchInterval;
       } while(step<nSteps);
 
-      Estimators->stopBlock(Mover->acceptRatio());
-      Mover->stopBlock();
-
       block++;
+
+      Mover->stopBlock();
       recordBlock(block);
 
       if(QMCDriverMode[QMC_UPDATE_MODE] && CurrentStep%100 == 0) 
         Mover->updateWalkers(W.begin(), W.end());
-
     } while(block<nBlocks);
+
+    Mover->stopRun();
 
     return finalize(block);
   }
@@ -104,7 +100,7 @@ namespace qmcplusplus {
         {
           Mover= new DMCUpdatePbyPWithRejection(W,Psi,H,Random); 
         }
-        Mover->resetRun(branchEngine);
+        Mover->resetRun(branchEngine,Estimators);
         Mover->initWalkersForPbyP(W.begin(),W.end());
       } 
       else
@@ -121,7 +117,7 @@ namespace qmcplusplus {
             Mover = new DMCUpdateAllWithRejection(W,Psi,H,Random);
           }
         }
-        Mover->resetRun(branchEngine);
+        Mover->resetRun(branchEngine,Estimators);
         Mover->initWalkers(W.begin(),W.end());
       }
     }

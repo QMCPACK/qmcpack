@@ -56,6 +56,7 @@ namespace qmcplusplus {
       Movers.resize(NumThreads,0);
       branchClones.resize(NumThreads,0);
       Rng.resize(NumThreads,0);
+      estimatorClones.resize(NumThreads,0);
       FairDivideLow(W.getActiveWalkers(),NumThreads,wPerNode);
       app_log() << "  Initial partition of walkers ";
       std::copy(wPerNode.begin(),wPerNode.end(),ostream_iterator<int>(app_log()," "));
@@ -64,9 +65,8 @@ namespace qmcplusplus {
 #pragma omp parallel  
       {
         int ip = omp_get_thread_num();
-        if(ip) {
-          hClones[ip]->add2WalkerProperty(*wClones[ip]);
-        }
+        if(ip) hClones[ip]->add2WalkerProperty(*wClones[ip]);
+        estimatorClones[ip]= new ScalarEstimatorManager(*Estimators,*hClones[ip]);  
 
         Rng[ip]=new RandomGenerator_t();
         Rng[ip]->init(ip,NumThreads,-1);
@@ -86,7 +86,7 @@ namespace qmcplusplus {
           {
             Movers[ip]= new DMCUpdatePbyPWithRejection(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]); 
           }
-          Movers[ip]->resetRun(branchClones[ip]);
+          Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip]);
           Movers[ip]->initWalkersForPbyP(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
         } 
         else
@@ -103,7 +103,7 @@ namespace qmcplusplus {
               Movers[ip] = new DMCUpdateAllWithRejection(W,Psi,H,Random);
             }
           }
-          Movers[ip]->resetRun(branchClones[ip]);
+          Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip]);
           Movers[ip]->initWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
         }
       } 
@@ -145,9 +145,9 @@ namespace qmcplusplus {
     bool variablePop = (Reconfiguration == "no");
     resetUpdateEngines();
     Estimators->start(nBlocks);
+    for(int ip=0; ip<NumThreads; ip++) Movers[ip]->startRun(nBlocks,false);
 
     IndexType block = 0;
-
     do // block
     {
       Estimators->startBlock(nSteps);
@@ -163,13 +163,13 @@ namespace qmcplusplus {
           do // interval
           {
             ++interval;
-            Movers[ip]->advanceWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1],
-                interval == bi);
+            Movers[ip]->advanceWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
           } while(interval<bi);
+          Movers[ip]->setMultiplicity(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
         }//#pragma omp parallel
 
-        Movers[0]->setMultiplicity(W.begin(),W.end());
-        Estimators->accumulate(W);
+        //Movers[0]->setMultiplicity(W.begin(),W.end());
+        //Estimators->accumulate(W);
         branchEngine->branch(CurrentStep,W, branchClones);
         if(variablePop) FairDivideLow(W.getActiveWalkers(),NumThreads,wPerNode);
         ++step; 
@@ -194,6 +194,7 @@ namespace qmcplusplus {
 
     for(int ip=0; ip<NumThreads; ip++) Movers[ip]->stopRun();
 
+    Estimators->stop();
     return finalize(block);
   }
 
