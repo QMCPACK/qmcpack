@@ -30,6 +30,7 @@
 namespace qmcplusplus {
 
   class ParticleSet;
+  class MCWalkerConfiguration;
   class ParticleSetPool;
   class WaveFunctionPool;
   class Libxml2Document;
@@ -99,8 +100,8 @@ namespace qmcplusplus {
      * @param olist array containing the original and cloned TrialWaveFunctions
      * @param hlist array containing the original and cloned QMCHamiltonians
      */
-    void clone(const ParticleSet& qp, const TrialWaveFunction& psi, const QMCHamiltonian& h,
-        vector<ParticleSet*>& plist, vector<TrialWaveFunction*>& olist, 
+    void clone(const MCWalkerConfiguration& qp, const TrialWaveFunction& psi, const QMCHamiltonian& h,
+        vector<MCWalkerConfiguration*>& plist, vector<TrialWaveFunction*>& olist, 
         vector<QMCHamiltonian*>& hlist);
 
 

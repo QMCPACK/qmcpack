@@ -71,8 +71,8 @@ namespace qmcplusplus {
     return success;
   }
 
-  void HamiltonianPool::clone(const ParticleSet& qp, const TrialWaveFunction& psi, const QMCHamiltonian& h,
-        vector<ParticleSet*>& plist, vector<TrialWaveFunction*>& olist, vector<QMCHamiltonian*>& hlist) {
+  void HamiltonianPool::clone(const MCWalkerConfiguration& qp, const TrialWaveFunction& psi, const QMCHamiltonian& h,
+        vector<MCWalkerConfiguration*>& plist, vector<TrialWaveFunction*>& olist, vector<QMCHamiltonian*>& hlist) {
 
     //clone ParticleSet and TrialWaveFunction
     WaveFunctionFactory* psiFac=psiPool->getWaveFunctionFactory(psi.getName());
@@ -91,15 +91,15 @@ namespace qmcplusplus {
       omp_int_t ip=omp_get_thread_num();
 #pragma omp critical 
       {
-      if(ip) {
-        char pname[16],oname[16];
-        sprintf(pname,"%s.c%i",qp.getName().c_str(),ip);
-        plist[ip]=new ParticleSet(qp);
-        plist[ip]->setName(pname);
+        if(ip) {
+          char pname[16],oname[16];
+          sprintf(pname,"%s.c%i",qp.getName().c_str(),ip);
+          plist[ip]=new MCWalkerConfiguration(qp);
+          plist[ip]->setName(pname);
 
-        sprintf(oname,"%s.c%i",psi.getName().c_str(),ip);
-        otemp[ip]= psiFac->clone(plist[ip],ip,oname);
-      }
+          sprintf(oname,"%s.c%i",psi.getName().c_str(),ip);
+          otemp[ip]= psiFac->clone(plist[ip],ip,oname);
+        }
       }
     }
     
