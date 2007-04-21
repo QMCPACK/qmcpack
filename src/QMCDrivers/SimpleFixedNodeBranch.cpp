@@ -109,6 +109,7 @@ void SimpleFixedNodeBranch::initWalkerController(RealType tau, bool fixW) {
     E_T=0.0;
   } else {
     ETrialIndex = MyEstimator->addColumn("Etrial");
+    MyEstimator->addColumn("Popupation");
   }
 
   app_log() << "  QMC counter      = " << QMCCounter << endl;
@@ -145,7 +146,9 @@ SimpleFixedNodeBranch::branch(int iter, MCWalkerConfiguration& w) {
     else 
       E_T += delEt;
     MyEstimator->setColumn(ETrialIndex,E_T);
+    MyEstimator->setColumn(ETrialIndex+1,pop_now);
   }
+
   MyEstimator->accumulate(w);
 }
 
