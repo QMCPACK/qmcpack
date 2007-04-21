@@ -53,6 +53,7 @@ void MCWalkerConfiguration::createWalkers(int n) {
   }
 }
 
+
 void MCWalkerConfiguration::resize(int numWalkers, int numPtcls) {
 
   WARNMSG("MCWalkerConfiguration::resize cleans up the walker list.")
@@ -92,6 +93,16 @@ MCWalkerConfiguration::destroyWalkers(iterator first, iterator last) {
   return WalkerList.erase(first,last);
 }
 
+void MCWalkerConfiguration::createWalkers(iterator first, iterator last)
+{
+  destroyWalkers(WalkerList.begin(),WalkerList.end());
+  OwnWalkers=true;
+  while(first != last) {
+    WalkerList.push_back(new Walker_t(**first));
+    ++first;
+  }
+}
+
 void
 MCWalkerConfiguration::destroyWalkers(int nw) {
   if(WalkerList.size() == 1 || nw >= WalkerList.size()) {
@@ -105,6 +116,15 @@ MCWalkerConfiguration::destroyWalkers(int nw) {
   }
   WalkerList.erase(WalkerList.begin()+nw,WalkerList.end());
 }
+
+void MCWalkerConfiguration::copyWalkers(iterator first, iterator last, iterator it)
+{
+  while(first != last) {
+    (*it)->assign(**first);
+    ++it;++first;
+  }
+}
+
 
 void 
 MCWalkerConfiguration::copyWalkerRefs(Walker_t* head, Walker_t* tail) {

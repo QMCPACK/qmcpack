@@ -76,6 +76,19 @@ namespace qmcplusplus {
      * Append Walkers to WalkerList.
      */
     void createWalkers(int numWalkers);
+    /** create walkers
+     * @param first walker iterator
+     * @param last walker iterator
+     */
+    void createWalkers(iterator first, iterator last);
+    /** copy walkers
+     * @param first input walker iterator
+     * @param last input walker iterator
+     * @param start first target iterator 
+     *
+     * No memory allocation is allowed.
+     */
+    void copyWalkers(iterator first, iterator last, iterator start);
 
     /** destroy Walkers from itstart to itend
      *@param first starting iterator of the walkers
