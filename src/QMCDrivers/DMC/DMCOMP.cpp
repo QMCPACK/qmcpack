@@ -148,48 +148,41 @@ namespace qmcplusplus {
     for(int ip=0; ip<NumThreads; ip++) Movers[ip]->startRun(nBlocks,false);
 
     IndexType block = 0;
+
     do // block
     {
       Estimators->startBlock(nSteps);
       for(int ip=0; ip<NumThreads; ip++) Movers[ip]->startBlock(nSteps);
       IndexType step = 0;
+
       do  //step
       {
-#pragma omp parallel  
+#pragma omp parallel 
         {
+          bool pbyp=QMCDriverMode[QMC_UPDATE_MODE];
+          int now = CurrentStep;
           int ip = omp_get_thread_num();
-          IndexType interval = 0;
-          IndexType bi=BranchInterval;
+          int interval = 0;
+          MCWalkerConfiguration::iterator 
+            wit(W.begin()+wPerNode[ip]), wit_end(W.begin()+wPerNode[ip+1]);
+          if(pbyp && now%100 == 99) Movers[ip]->updateWalkers(wit, wit_end);
           do // interval
           {
-            ++interval;
-            Movers[ip]->advanceWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
-          } while(interval<bi);
-          Movers[ip]->setMultiplicity(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
+            Movers[ip]->advanceWalkers(wit,wit_end);
+            ++now;
+          } while(++interval<BranchInterval);
+          Movers[ip]->setMultiplicity(wit,wit_end);
         }//#pragma omp parallel
 
-        //Movers[0]->setMultiplicity(W.begin(),W.end());
-        //Estimators->accumulate(W);
+        CurrentStep+=BranchInterval;
         branchEngine->branch(CurrentStep,W, branchClones);
         if(variablePop) FairDivideLow(W.getActiveWalkers(),NumThreads,wPerNode);
         ++step; 
-        CurrentStep+=BranchInterval;
       } while(step<nSteps);
 
       Estimators->stopBlock(acceptRatio());
-
       block++;
       recordBlock(block);
-
-      if(QMCDriverMode[QMC_UPDATE_MODE] && CurrentStep%100 == 0) 
-      {
-#pragma omp parallel  
-        {
-          int ip = omp_get_thread_num();
-          Movers[ip]->updateWalkers(W.begin()+wPerNode[ip], W.begin()+wPerNode[ip+1]);
-        }
-      }
-
     } while(block<nBlocks);
 
     for(int ip=0; ip<NumThreads; ip++) Movers[ip]->stopRun();
