@@ -69,7 +69,7 @@ namespace qmcplusplus {
      * Nothing to be added to msg.
      */
     void add2Record(RecordListType& record, BufferType& msg) {
-      averageIndex = record.add("LocalEnergy");
+      FirstIndex = record.add("LocalEnergy");
       varianceIndex= record.add("LocalEnergy2");
       popIndex     = record.add("Population");
     }
@@ -113,7 +113,7 @@ namespace qmcplusplus {
       wgtinv=1.0/static_cast<RealType>(Current);
       d_sum=walkerControl->getValue(ENERGY_INDEX);
       d_sumsq=walkerControl->getValue(ENERGY_SQ_INDEX);
-      record[averageIndex]= d_average =  wgtinv*d_sum;
+      record[FirstIndex]= d_average =  wgtinv*d_sum;
       record[varianceIndex]= d_variance = wgtinv*d_sumsq-d_average*d_average;
       record[popIndex]= wgtinv*walkerControl->getValue(WALKERSIZE_INDEX);
       walkerControl->reset();

@@ -58,7 +58,8 @@ namespace qmcplusplus {
     vector<RealType> d_data;
 
     inline ScalarEstimatorBase(): 
-      d_sum(RealType()), d_sumsq(RealType()), d_average(RealType()), d_variance(RealType()),
+      FirstIndex(0), LastIndex(0),
+    d_sum(RealType()), d_sumsq(RealType()), d_average(RealType()), d_variance(RealType()),
     d_wgt(RealType()){}
 
     /** copy constructor */

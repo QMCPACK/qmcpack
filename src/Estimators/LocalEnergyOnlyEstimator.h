@@ -22,20 +22,14 @@
 #include "Estimators/ScalarEstimatorBase.h"
 namespace qmcplusplus {
 
-  class LocalEnergyOnlyEstimator: public ScalarEstimatorBase {
-
-    enum {ENERGY_INDEX, ENERGY_SQ_INDEX, LE_MAX};
-    ///index of local energy
-    int LocalEnergyIndex;
-
-  public:
+  struct LocalEnergyOnlyEstimator: public ScalarEstimatorBase {
 
     /** constructor
      * @param h QMCHamiltonian to define the components
      */
     inline LocalEnergyOnlyEstimator() 
     {
-      d_data.resize(LE_MAX,0);
+      d_data.resize(2,0);
     }
 
     ScalarEstimatorBase* clone()
@@ -48,8 +42,9 @@ namespace qmcplusplus {
      * @param msg buffer for message passing
      */
     inline void add2Record(RecordListType& record, BufferType& msg) {
-      LocalEnergyIndex = record.add("LocalEnergy");
-      int VarianceIndex = record.add("LocalEnergy2");
+      FirstIndex = record.add("LocalEnergy");
+      LastIndex = record.add("LocalEnergy2");
+      LastIndex=FirstIndex+2;
       msg.add(d_data[0]);
       msg.add(d_data[1]);
     }
@@ -92,8 +87,8 @@ namespace qmcplusplus {
      */
     inline void report(RecordListType& record, RealType wgtinv) 
     {
-      record[LocalEnergyIndex] =d_average = d_data[0]*wgtinv;
-      record[LocalEnergyIndex+1] =d_variance = d_data[1]*wgtinv-d_average*d_average;
+      record[FirstIndex] =d_average = d_data[0]*wgtinv;
+      record[FirstIndex+1] =d_variance = d_data[1]*wgtinv-d_average*d_average;
       d_sum=d_data[0]; d_data[0]=0.0;
       d_sumsq=d_data[1]; d_data[1]=0.0;
     }

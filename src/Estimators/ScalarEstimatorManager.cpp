@@ -241,8 +241,9 @@ namespace qmcplusplus {
     PropertyCache(RecordCount,acceptInd) = accept;
 
     for(int i=0; i<Estimators.size(); i++) 
+    {
       Estimators[i]->takeBlockAverage(AverageCache[RecordCount]);
-
+    }
     RecordCount++;
 
     //group is closed. Do not save it to hdf
