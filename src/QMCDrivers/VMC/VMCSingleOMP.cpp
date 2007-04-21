@@ -38,6 +38,8 @@ namespace qmcplusplus {
    * are created at resetRun once during the life time of this object.
    * Master clause is used to collect estimators and perform file IO.
    */
+#if defined(HAVE_MPI)
+  //play safe with mpi
   bool VMCSingleOMP::run() 
   { 
     resetRun();
@@ -45,11 +47,68 @@ namespace qmcplusplus {
     //start the main estimator
     Estimators->start(nBlocks);
 
-    //start a parallel region
-#pragma omp parallel  
-    {
-      int ip = omp_get_thread_num();
+    for(int ip=0; ip<NumThreads; ip++) Movers[ip]->startRun(nBlocks,false);
 
+    IndexType block = 0;
+    do {
+      //start a parallel region
+#pragma omp parallel 
+      {
+        bool pbyp=QMCDriverMode[QMC_UPDATE_MODE];
+        int ip = omp_get_thread_num();
+        int now=CurrentStep;
+
+        //assign the iterators and resuse them
+        MCWalkerConfiguration::iterator 
+          wit(W.begin()+wPerNode[ip]), wit_end(W.begin()+wPerNode[ip+1]);
+        if(block ==0)
+        {
+          if(pbyp)
+            Movers[ip]->initWalkersForPbyP(wit,wit_end);
+          else
+            Movers[ip]->initWalkers(wit,wit_end);
+        }
+
+        if(pbyp && now%100 == 99) Movers[ip]->updateWalkers(wit,wit_end);
+        Movers[ip]->startBlock(nSteps);
+        IndexType step = 0;
+        do 
+        {
+          ++step;
+          ++now;
+          Movers[ip]->advanceWalkers(wit,wit_end);
+          Movers[ip]->accumulate(wit,wit_end);
+        } while(step<nSteps);
+        Movers[ip]->stopBlock();
+      }//end-of-parallel region
+
+      CurrentStep+=nSteps;
+      ++block;
+      Estimators->stopBlock(estimatorClones);
+      recordBlock(block);
+
+    } while(block<nBlocks);
+
+    for(int ip=0; ip<NumThreads; ip++) Movers[ip]->stopRun();
+    Estimators->stop(estimatorClones);
+
+    //finalize a qmc section
+    return finalize(nBlocks);
+  }
+#else
+  bool VMCSingleOMP::run() 
+  { 
+    resetRun();
+
+    //start the main estimator
+    Estimators->start(nBlocks);
+
+    //start a parallel region 
+#pragma omp parallel 
+    {
+      int now=CurrentStep;
+      int ip = omp_get_thread_num();
+      bool pbyp=QMCDriverMode[QMC_UPDATE_MODE];
       //assign the iterators and resuse them
       MCWalkerConfiguration::iterator 
         wit(W.begin()+wPerNode[ip]), wit_end(W.begin()+wPerNode[ip+1]);
@@ -67,8 +126,7 @@ namespace qmcplusplus {
       //  wit=W.begin();
       //  wit_end=W.begin()+wPerNode[1];
       //}
-
-      if(QMCDriverMode[QMC_UPDATE_MODE])
+      if(pbyp)
         Movers[ip]->initWalkersForPbyP(wit,wit_end);
       else
         Movers[ip]->initWalkers(wit,wit_end);
@@ -82,7 +140,7 @@ namespace qmcplusplus {
         do 
         {
           ++step;
-          ++CurrentStep;
+          ++now;
           Movers[ip]->advanceWalkers(wit,wit_end);
           Movers[ip]->accumulate(wit,wit_end);
         } while(step<nSteps);
@@ -96,7 +154,7 @@ namespace qmcplusplus {
           recordBlock(block);
         }
 
-        if(QMCDriverMode[QMC_UPDATE_MODE] && CurrentStep%100 == 0) 
+        if(pbyp && now%100 == 0) 
         {
           Movers[ip]->updateWalkers(wit,wit_end);
         }
@@ -105,11 +163,12 @@ namespace qmcplusplus {
       Movers[ip]->stopRun();
     }
 
+    CurrentStep+=nSteps*nBlocks;
     Estimators->stop(estimatorClones);
-
     //finalize a qmc section
     return finalize(nBlocks);
   }
+#endif
 
   void VMCSingleOMP::resetRun() 
   {
