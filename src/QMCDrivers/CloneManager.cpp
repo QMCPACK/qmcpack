@@ -23,7 +23,7 @@
 namespace qmcplusplus { 
 
   //initialization of the static wClones
-  vector<ParticleSet*> CloneManager::wClones;
+  vector<MCWalkerConfiguration*> CloneManager::wClones;
   //initialization of the static psiClones
   vector<TrialWaveFunction*> CloneManager::psiClones;
   //initialization of the static hClones

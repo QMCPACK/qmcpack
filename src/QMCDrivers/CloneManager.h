@@ -56,7 +56,7 @@ namespace qmcplusplus {
     ///number of threads
     IndexType NumThreads;
     ///walkers
-    static vector<ParticleSet*> wClones;
+    static vector<MCWalkerConfiguration*> wClones;
     ///trial wavefunctions
     static vector<TrialWaveFunction*> psiClones;
     ///Hamiltonians
