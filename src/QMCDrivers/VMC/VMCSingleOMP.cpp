@@ -34,8 +34,9 @@ namespace qmcplusplus {
   
   /** execute the main body
    *
-   * There exist one branchEngine and Estimators which is managed by the branchEngine
-   * for a process. 
+   * For eacth thread, cloned objects for branch, estimator and mover engines
+   * are created at resetRun once during the life time of this object.
+   * Master clause is used to collect estimators and perform file IO.
    */
   bool VMCSingleOMP::run() 
   { 
@@ -48,10 +49,29 @@ namespace qmcplusplus {
 #pragma omp parallel  
     {
       int ip = omp_get_thread_num();
+
+      //assign the iterators and resuse them
+      MCWalkerConfiguration::iterator 
+        wit(W.begin()+wPerNode[ip]), wit_end(W.begin()+wPerNode[ip+1]);
+
+      //Creating active copy is not necessary
+      //if(ip)
+      //{
+      //  if(wClones[ip]->getActiveWalkers() != (wPerNode[ip+1]-wPerNode[ip])) 
+      //    wClones[ip]->createWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
+      //  wit=wClones[ip]->begin();
+      //  wit_end=wClones[ip]->end();
+      //}
+      //else
+      //{
+      //  wit=W.begin();
+      //  wit_end=W.begin()+wPerNode[1];
+      //}
+
       if(QMCDriverMode[QMC_UPDATE_MODE])
-        Movers[ip]->initWalkersForPbyP(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
+        Movers[ip]->initWalkersForPbyP(wit,wit_end);
       else
-        Movers[ip]->initWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
+        Movers[ip]->initWalkers(wit,wit_end);
 
       //disable recording function
       Movers[ip]->startRun(nBlocks,false);
@@ -63,14 +83,13 @@ namespace qmcplusplus {
         {
           ++step;
           ++CurrentStep;
-          Movers[ip]->advanceWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
-          Movers[ip]->accumulate(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
+          Movers[ip]->advanceWalkers(wit,wit_end);
+          Movers[ip]->accumulate(wit,wit_end);
         } while(step<nSteps);
 
         ++block;
         Movers[ip]->stopBlock();
-        //need a barrier???? 
-//#pragma omp barrier
+#pragma omp barrier
 #pragma omp master
         {
           Estimators->stopBlock(estimatorClones);
@@ -79,7 +98,7 @@ namespace qmcplusplus {
 
         if(QMCDriverMode[QMC_UPDATE_MODE] && CurrentStep%100 == 0) 
         {
-          Movers[ip]->updateWalkers(W.begin()+wPerNode[ip], W.begin()+wPerNode[ip+1]);
+          Movers[ip]->updateWalkers(wit,wit_end);
         }
       } while(block<nBlocks);
 
@@ -127,7 +146,6 @@ namespace qmcplusplus {
           else
             Movers[ip]=new VMCUpdatePbyP(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]); 
           Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip]);
-          //Movers[ip]->initWalkersForPbyP(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
         }
         else
         {
@@ -136,7 +154,6 @@ namespace qmcplusplus {
           else
             Movers[ip]=new VMCUpdateAll(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]); 
           Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip]);
-          //Movers[ip]->initWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
         }
       }
     }
