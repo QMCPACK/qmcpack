@@ -48,7 +48,7 @@ namespace qmcplusplus {
     DMCEnergyEstimator():walkerControl(0),Current(0) 
     {
       //this handles three scalars: LocalEnergy, LocalEnergy2, and Population
-      d_data.resize(3);
+      d_data.resize(2);
     }
 
     ScalarEstimatorBase* clone()
@@ -71,7 +71,7 @@ namespace qmcplusplus {
     void add2Record(RecordListType& record, BufferType& msg) {
       FirstIndex = record.add("LocalEnergy");
       varianceIndex= record.add("LocalEnergy2");
-      popIndex     = record.add("Population");
+      //popIndex     = record.add("Population");
     }
 
     inline void accumulate(const Walker_t& awalker, RealType wgt) {
@@ -90,7 +90,7 @@ namespace qmcplusplus {
       Current++;
       d_data[0]+= walkerControl->getCurrentValue(ENERGY_INDEX);
       d_data[1]+= walkerControl->getCurrentValue(ENERGY_SQ_INDEX);
-      d_data[2]+= walkerControl->getCurrentValue(WALKERSIZE_INDEX);
+      //d_data[2]+= walkerControl->getCurrentValue(WALKERSIZE_INDEX);
       d_wgt += walkerControl->getCurrentValue(WEIGHT_INDEX);
     }
 
