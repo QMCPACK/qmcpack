@@ -153,21 +153,15 @@ namespace qmcplusplus {
     RecordCount=est[0]->RecordCount;
     AverageCache=est[0]->AverageCache;
     for(int i=1; i<ThreadCount; i++)
-    {
       AverageCache+=est[i]->AverageCache;
-    }
 
+    //normalize by the number of threads per node
     RealType wgt=1.0/static_cast<RealType>(ThreadCount);
     AverageCache*=wgt;
 
-    //reset to 1 to indicate that scalars do not have the count
-    HDFAttribIO<int> i(RecordCount,true);
-    i.write(h_obs,"count");
-    ThreadCount=1;
-    HDFAttribIO<int> t(ThreadCount,true);
-    t.write(h_obs,"threads");
-    HDFAttribIO<Matrix<RealType> > m(AverageCache,true);
-    m.write(h_obs,"scalars");
+    PropertyCache=est[0]->PropertyCache;
+    for(int i=1; i<ThreadCount; i++)
+      PropertyCache+=est[i]->PropertyCache;
 
     stop();
   }
@@ -183,45 +177,74 @@ namespace qmcplusplus {
   {
     if(CollectSum)
     {
-      Matrix<RealType> c(AverageCache);
-      myComm->reduce(c.data(),AverageCache.data(),AverageCache.size());
-      RealType norm=1.0/static_cast<RealType>(myComm->ncontexts());
-      AverageCache *= norm;
-      if(Manager)
-      {//write scalars_gsum 
+      //save the local data to scalars_node so that we can trace it back to the node
+      if(h_obs>-1)
+      {
         HDFAttribIO<Matrix<RealType> > m(AverageCache);
-        m.write(h_obs,"scalars_gsum");
+        m.write(h_obs,"scalars_node");
+
+        HDFAttribIO<Matrix<RealType> > p(PropertyCache);
+        p.write(h_obs,"run_properties_node");
       }
+
+      //we will use serialization
+      int n1=AverageCache.size(), n2=PropertyCache.size();
+      vector<RealType> c(n1+n2);
+      std::copy(AverageCache.begin(),AverageCache.end(),c.begin());
+      std::copy(PropertyCache.begin(),PropertyCache.end(),c.begin()+n1);
+
+      //use allreduce
+      myComm->allreduce(c);
+
+      std::copy(c.begin(),c.begin()+n1,AverageCache.begin());
+      std::copy(c.begin()+n1,c.begin()+n1+n2,PropertyCache.begin());
+      RealType norm=1.0/static_cast<RealType>(myComm->ncontexts());
+      AverageCache *=norm;
+      PropertyCache *=norm;
     }
 
     //close the group
     if(h_obs>-1)
     {
+      //reset to 1 to indicate that scalars do not have the count
+      HDFAttribIO<int> i(RecordCount,true);
+      i.write(h_obs,"count");
+      HDFAttribIO<int> t(ThreadCount,true);
+      t.write(h_obs,"threads");
+      HDFAttribIO<Matrix<RealType> > m(AverageCache,true);
+      m.write(h_obs,"scalars");
+
+      //save the run-time properties
+      ostringstream o;
+      for(int i=0; i<BlockProperties.size()-1; i++) o << BlockProperties.Name[i] << ":";
+      o<<BlockProperties.Name.back();
+      string banner(o.str());
+      HDFAttribIO<string> so(banner);
+      so.write(h_obs,"run_properties_ids");
+
+      HDFAttribIO<Matrix<RealType> > p(PropertyCache);
+      p.write(h_obs,"run_properties");
+
       H5Gclose(h_obs); 
       h_obs=-1;
     }
 
-    if(Manager) 
+    if(Manager) //write to a ascii file. Plan to disable it entirely.
     {
-      int nc=AverageCache.cols();
-      EPSum[0]=0.0;
-      EPSum[1]=RecordCount;
-      const RealType* restrict eptr=AverageCache.data();
-      for(int i=0; i<RecordCount; i++, eptr+=nc) EPSum[0] += *eptr;
-
-      //This will go away with hdf5 record and utility
       string fname(RootName);
       fname.append(".scalar.dat");
       ofstream fout(fname.c_str());
       fout.setf(ios::scientific, ios::floatfield);
-      const RealType* restrict rptr=AverageCache.data();
-      const RealType* restrict pptr=PropertyCache.data();
-      int pc=PropertyCache.cols();
+      fout.setf(ios::left,ios::adjustfield);
       fout << "#   index ";
       for(int i=0; i<BlockAverages.size(); i++) fout << setw(16) << BlockAverages.Name[i];
       for(int i=0; i<BlockProperties.size(); i++) fout << setw(16) << BlockProperties.Name[i];
       fout << endl;
       fout.setf(ios::right,ios::adjustfield);
+      const RealType* restrict rptr=AverageCache.data();
+      const RealType* restrict pptr=PropertyCache.data();
+      int pc=PropertyCache.cols();
+      int nc=AverageCache.cols();
       for(int i=0; i<RecordCount; i++)
       {
         fout << setw(10) << i;
@@ -268,12 +291,12 @@ namespace qmcplusplus {
     for(int i=0; i<ThreadCount; i++)
     {
       int rc=est[i]->RecordCount-1;
+      FastAccumulate(est[i]->PropertyCache[rc],est[i]->PropertyCache[rc+1],PropertyCache[rc]);
       FastAccumulate(est[i]->AverageCache[rc], est[i]->AverageCache[rc+1],AverageCache[rc]);
     }
 
     if(h_obs<-1) return;
 
-    PropertyCache=est[0]->PropertyCache;
     HDFAttribIO<int> i(RecordCount,true);
     i.write(h_obs,"count");
     HDFAttribIO<int> t(ThreadCount,true);
@@ -298,9 +321,14 @@ namespace qmcplusplus {
   void 
     ScalarEstimatorManager::getEnergyAndWeight(RealType& e, RealType& w) 
   {
-#if defined(HAVE_MPI)
-    MPI_Bcast(EPSum.begin(),2,MPI_DOUBLE,0,myComm->getMPI());
-#endif
+    int nc=AverageCache.cols();
+    EPSum[0]=0.0;
+    EPSum[1]=RecordCount;
+    const RealType* restrict eptr=AverageCache.data();
+    for(int i=0; i<RecordCount; i++, eptr+=nc) EPSum[0] += *eptr;
+//#if defined(HAVE_MPI)
+//    MPI_Bcast(EPSum.begin(),2,MPI_DOUBLE,0,myComm->getMPI());
+//#endif
     e=EPSum[0];
     w=EPSum[1];
   }
