@@ -255,6 +255,7 @@ namespace qmcplusplus {
       fout.setf(ios::left,ios::adjustfield);
       fout << "#   index    ";
       for(int i=0; i<BlockAverages.size(); i++) fout << setw(16) << BlockAverages.Name[i];
+      fout << setw(16) << "WeightSum";
       for(int i=0; i<BlockProperties.size(); i++) fout << setw(16) << BlockProperties.Name[i];
       fout << endl;
       fout.setf(ios::right,ios::adjustfield);
