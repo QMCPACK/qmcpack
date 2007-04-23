@@ -21,6 +21,25 @@
 #ifndef QMCPLUSPLUS_TIMER_H
 #define QMCPLUSPLUS_TIMER_H
 
+#include "Message/OpenMP.h"
+
+#if defined(ENABLE_OPENMP)
+namespace qmcplusplus  {
+  /** Timer using omp_get_wtime 
+   */
+  struct Timer
+  {
+    double now;
+    inline Timer() { now=omp_get_wtime();}
+    inline void restart() {now=omp_get_wtime();}
+    inline double elapsed() {
+       double old=now;
+       now=omp_get_wtime();
+       return now-old;
+    }
+  };
+}
+#else /* use boost or pooma */
 #if defined(HAVE_LIBBOOST)
 #include <boost/timer.hpp>
 namespace qmcplusplus {
@@ -40,5 +59,6 @@ namespace qmcplusplus {
     }
   };
 }
+#endif
 #endif
 #endif
