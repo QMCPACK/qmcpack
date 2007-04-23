@@ -25,6 +25,7 @@
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Utilities/OhmmsInfo.h"
+#include "Utilities/Timer.h"
 #include "Particle/HDFWalkerIO.h"
 #include "QMCApp/InitMolecularSystem.h"
 #include "Particle/DistanceTable.h"
@@ -34,10 +35,6 @@
 #include <queue>
 using namespace std;
 #include "OhmmsData/AttributeSet.h"
-#if defined(HAVE_LIBBOOST)
-#include <boost/date_time/posix_time/posix_time.hpp>
-#endif
-
 
 namespace qmcplusplus {
 
@@ -83,7 +80,7 @@ namespace qmcplusplus {
     ptclPool->get(app_log());
     hamPool->get(app_log());
 
-    boost::posix_time::ptime t1(boost::posix_time::second_clock::local_time());
+    Timer t1;
 
     curMethod = string("invalid");
     //xmlNodePtr cur=m_root->children;
@@ -102,7 +99,10 @@ namespace qmcplusplus {
       cur=cur->next;
     }
 
-    boost::posix_time::time_duration td = boost::posix_time::second_clock::local_time()-t1;
+    app_log() << "  MPI Nodes            = " << OHMMS::Controller->ncontexts() << endl;
+    app_log() << "  MPI Nodes per group  = " << qmcComm->ncontexts() << endl;
+    app_log() << "  OMP_NUM_THREADS      = " << omp_get_max_threads() << endl;
+    app_log() << "  Total Execution time = " << t1.elapsed() << " secs" << endl;
 
     if(OHMMS::Controller->master()) {
       int nproc=OHMMS::Controller->ncontexts();
@@ -129,10 +129,6 @@ namespace qmcplusplus {
       saveXml();
     }
 
-    app_log() << "  MPI Nodes            = " << OHMMS::Controller->ncontexts() << endl;
-    app_log() << "  MPI Nodes per group  = " << qmcComm->ncontexts() << endl;
-    app_log() << "  OMP_NUM_THREADS      = " << omp_get_max_threads() << endl;
-    app_log() << "  Total Execution time = " << td.total_seconds() << " secs" << endl;
     return true;
   }
 
@@ -330,10 +326,9 @@ namespace qmcplusplus {
       qmcDriver->putWalkers(m_walkerset_in);
       qmcDriver->process(cur);
 
-      boost::posix_time::ptime t1(boost::posix_time::second_clock::local_time());
+      Timer qmcTimer;
       qmcDriver->run();
-      boost::posix_time::time_duration td = boost::posix_time::second_clock::local_time()-t1;
-      app_log() << "  QMC Execution time = " << td.total_seconds() << " secs " << endl;
+      app_log() << "  QMC Execution time = " << qmcTimer.elapsed() << " secs " << endl;
 
       //keeps track of the configuration file
       PrevConfigFile = myProject.CurrentRoot();

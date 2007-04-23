@@ -39,12 +39,12 @@ using namespace std;
 namespace qmcplusplus {
 
   ///initialize the static data member
-  ParticleSetPool* QMCDriverFactory::ptclPool = new ParticleSetPool;
+  //ParticleSetPool* QMCDriverFactory::ptclPool = new ParticleSetPool;
 
   QMCDriverFactory::QMCDriverFactory(): qmcComm(0), qmcSystem(0), qmcDriver(0) 
   {
     ////create ParticleSetPool
-    //ptclPool = new ParticleSetPool;
+    ptclPool = new ParticleSetPool;
 
     //create WaveFunctionPool
     psiPool = new WaveFunctionPool;
@@ -60,7 +60,7 @@ namespace qmcplusplus {
   {
     delete hamPool;
     delete psiPool;
-    //delete ptclPool;
+    delete ptclPool;
     
     if(qmcComm) delete qmcComm;
   }

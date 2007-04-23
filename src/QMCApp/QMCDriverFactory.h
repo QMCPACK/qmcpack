@@ -76,7 +76,7 @@ namespace qmcplusplus {
 
     /** ParticleSet Pool
      */
-    static ParticleSetPool* ptclPool;
+    ParticleSetPool* ptclPool;
 
     /** TrialWaveFunction Pool
      */
