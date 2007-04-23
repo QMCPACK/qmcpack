@@ -106,7 +106,7 @@ namespace qmcplusplus {
       Estimators[i]->reset();
     }
 
-    weightInd = BlockProperties.add("WeightSum");
+    //weightInd = BlockProperties.add("WeightSum");
     cpuInd = BlockProperties.add("BlockCPU");
     acceptInd = BlockProperties.add("AcceptRatio");
   }
@@ -118,10 +118,14 @@ namespace qmcplusplus {
     Collected= false;
     RecordCount=0;
     BlockAverages.setValues(0.0);
-    AverageCache.resize(blocks,BlockAverages.size());
-    PropertyCache.resize(blocks,BlockProperties.size());
 
+    //resize does not reset the value
+    TotalWeight.resize(blocks);
+
+    AverageCache.resize(blocks,BlockAverages.size());
     AverageCache=0.0;
+
+    PropertyCache.resize(blocks,BlockProperties.size());
 
     if(record)
     {
@@ -151,6 +155,11 @@ namespace qmcplusplus {
   void ScalarEstimatorManager::stop(const vector<ScalarEstimatorManager*> est)
   {
     RecordCount=est[0]->RecordCount;
+
+    TotalWeight=est[0]->TotalWeight;
+    for(int i=1; i<ThreadCount; i++)
+      TotalWeight+=est[i]->TotalWeight;
+
     AverageCache=est[0]->AverageCache;
     for(int i=1; i<ThreadCount; i++)
       AverageCache+=est[i]->AverageCache;
@@ -162,6 +171,8 @@ namespace qmcplusplus {
     PropertyCache=est[0]->PropertyCache;
     for(int i=1; i<ThreadCount; i++)
       PropertyCache+=est[i]->PropertyCache;
+
+    PropertyCache*=wgt;
 
     stop();
   }
@@ -188,16 +199,19 @@ namespace qmcplusplus {
       }
 
       //we will use serialization
-      int n1=AverageCache.size(), n2=PropertyCache.size();
-      vector<RealType> c(n1+n2);
+      int n1=AverageCache.size(), n2=PropertyCache.size(), n3=TotalWeight.size();
+      vector<RealType> c(n1+n2+n3);
       std::copy(AverageCache.begin(),AverageCache.end(),c.begin());
       std::copy(PropertyCache.begin(),PropertyCache.end(),c.begin()+n1);
+      std::copy(TotalWeight.begin(),TotalWeight.end(),c.begin()+n1+n2);
 
       //use allreduce
       myComm->allreduce(c);
 
       std::copy(c.begin(),c.begin()+n1,AverageCache.begin());
       std::copy(c.begin()+n1,c.begin()+n1+n2,PropertyCache.begin());
+      std::copy(c.begin()+n1+n2,c.end(),TotalWeight.begin());
+
       RealType norm=1.0/static_cast<RealType>(myComm->ncontexts());
       AverageCache *=norm;
       PropertyCache *=norm;
@@ -225,6 +239,9 @@ namespace qmcplusplus {
       HDFAttribIO<Matrix<RealType> > p(PropertyCache);
       p.write(h_obs,"run_properties");
 
+      HDFAttribIO<Vector<RealType> > w(TotalWeight);
+      p.write(h_obs,"weights");
+
       H5Gclose(h_obs); 
       h_obs=-1;
     }
@@ -236,7 +253,7 @@ namespace qmcplusplus {
       ofstream fout(fname.c_str());
       fout.setf(ios::scientific, ios::floatfield);
       fout.setf(ios::left,ios::adjustfield);
-      fout << "#   index ";
+      fout << "#   index    ";
       for(int i=0; i<BlockAverages.size(); i++) fout << setw(16) << BlockAverages.Name[i];
       for(int i=0; i<BlockProperties.size(); i++) fout << setw(16) << BlockProperties.Name[i];
       fout << endl;
@@ -249,6 +266,7 @@ namespace qmcplusplus {
       {
         fout << setw(10) << i;
         for(int j=0; j<nc; j++) fout << setw(16) << *rptr++;
+        fout << setw(16) << TotalWeight[i];
         for(int j=0; j<pc; j++) fout << setw(16) << *pptr++;
         fout << endl;
       }
@@ -259,7 +277,8 @@ namespace qmcplusplus {
 
   void ScalarEstimatorManager::stopBlock(RealType accept)
   {
-    PropertyCache(RecordCount,weightInd) = Estimators[0]->d_wgt;
+    TotalWeight[RecordCount]=Estimators[0]->d_wgt;
+    //PropertyCache(RecordCount,weightInd) = Estimators[0]->d_wgt;
     PropertyCache(RecordCount,cpuInd)    = MyTimer.elapsed();
     PropertyCache(RecordCount,acceptInd) = accept;
 

@@ -28,6 +28,7 @@
 #include "Utilities/Timer.h"
 #include "Message/Communicate.h"
 #include "Estimators/ScalarEstimatorBase.h"
+#include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsData/HDFAttribIO.h"
 
 namespace qmcplusplus {
@@ -208,8 +209,6 @@ namespace qmcplusplus {
     int ThreadCount;
     ///number of records in a block
     int RecordCount;
-    ///index for the weight PropertyCache(*,weightInd) 
-    int weightInd;
     ///index for the block cpu PropertyCache(*,cpuInd) 
     int cpuInd;
     ///index for the acceptance rate PropertyCache(*,acceptInd) 
@@ -226,6 +225,8 @@ namespace qmcplusplus {
     QMCHamiltonian& H;
     ///pointer to the primary ScalarEstimatorBase
     ScalarEstimatorBase* MainEstimator;
+    ///save the weights
+    Vector<RealType> TotalWeight;
     ///save block averages (scalar data) to Cache 
     Matrix<RealType> AverageCache;
     ///save property data to Cache 
