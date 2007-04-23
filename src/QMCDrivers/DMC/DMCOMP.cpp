@@ -67,9 +67,11 @@ namespace qmcplusplus {
         int ip = omp_get_thread_num();
         if(ip) hClones[ip]->add2WalkerProperty(*wClones[ip]);
         estimatorClones[ip]= new ScalarEstimatorManager(*Estimators,*hClones[ip]);  
+        estimatorClones[ip]->setCollectionMode(false);
 
         Rng[ip]=new RandomGenerator_t();
-        Rng[ip]->init(ip,NumThreads,-1);
+        Rng[ip]->init(OHMMS::Controller->mycontext()*NumThreads+ip,
+            NumThreads*OHMMS::Controller->ncontexts(),-1);
         hClones[ip]->setRandomGenerator(Rng[ip]);
 
         branchClones[ip] = new BranchEngineType(*branchEngine);
@@ -144,6 +146,8 @@ namespace qmcplusplus {
 
     bool variablePop = (Reconfiguration == "no");
     resetUpdateEngines();
+    //estimator does not need to collect data
+    Estimators->setCollectionMode(false);
     Estimators->start(nBlocks);
     for(int ip=0; ip<NumThreads; ip++) Movers[ip]->startRun(nBlocks,false);
 
