@@ -26,6 +26,8 @@
 #include "Numerics/OneDimIntegration.h"
 #include "OhmmsPETE/TinyVector.h"
 
+using namespace std;
+using namespace APPNAMESPACE;
 /**@defgroup QuantumNumber
    @brief quantum numbers n, l, m and s
    *

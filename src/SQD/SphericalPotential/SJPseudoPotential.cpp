@@ -34,8 +34,10 @@ namespace ohmmshf {
 				       value_type zeff, value_type r_c, 
 				       value_type lambda): 
     Zeff(zeff), rc(r_c), SJ_lambda(lambda) {
-    vreg.add("SJ_lambda",&SJ_lambda);
-    vreg.add("r_core",&rc); 
+    vreg["SJ_lambda"]=SJ_lambda;
+    vreg["r_core"]=rc;
+    //vreg.add("SJ_lambda",&SJ_lambda);
+    //vreg.add("r_core",&rc); 
   }
 
   /**
