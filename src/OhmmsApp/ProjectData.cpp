@@ -7,7 +7,6 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
@@ -24,7 +23,7 @@ using namespace std;
 #include "OhmmsApp/ProjectData.h"
 #include "Message/Communicate.h"
 #include "Platforms/sysutil.h"
-#if defined(HAVE_LIBBOOST)
+#if defined(HAVE_LIBBOOST) && !defined(__xlC__)
 #include <boost/date_time/posix_time/posix_time.hpp>
 #endif
 
@@ -48,9 +47,8 @@ namespace OHMMS {
   {
     //os << "<Project ID=\""<<m_title << "\" series=\"" << m_series << "/>" << endl;
     os << "  Project = " << m_title << "\n";
-#if defined(HAVE_LIBBOOST)
+#if defined(HAVE_LIBBOOST) && !defined(__xlC__)
     using namespace boost::posix_time;
-    //ptime today(second_clock::local_time());
     os << "  date    = " << boost::posix_time::second_clock::local_time() << "\n";
 #endif
     os << "  host    = " << m_host << "\n";
