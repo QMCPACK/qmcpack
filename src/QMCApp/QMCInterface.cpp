@@ -29,7 +29,7 @@
 #include "QMCApp/InitMolecularSystem.h"
 #include "Particle/DistanceTable.h"
 #include "QMCDrivers/QMCDriver.h"
-#include "QMCDrivers/VMC/VMC.h"
+#include "QMCDrivers/VMC/VMCSingle.h"
 #include "QMCDrivers/VMC/VMCMultiple.h"
 #include "QMCDrivers/RQMCMultiple.h"
 #include "Message/Communicate.h"
@@ -99,7 +99,7 @@ namespace qmcplusplus {
       //cerr << "qmcpack: deleting previous driver" << endl;
       delete qmcDriver;
     }
-    qmcDriver = new VMC(*ptclPool->getWalkerSet("e"),*psiPool->getPrimary(),*hamPool->getPrimary());
+    qmcDriver = new VMCSingle(*ptclPool->getWalkerSet("e"),*psiPool->getPrimary(),*hamPool->getPrimary());
     //cerr << " done." << endl;
 
     bool append_run = false;

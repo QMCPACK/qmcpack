@@ -76,7 +76,7 @@ namespace qmcplusplus {
 
     //clone ParticleSet and TrialWaveFunction
     WaveFunctionFactory* psiFac=psiPool->getWaveFunctionFactory(psi.getName());
-    omp_int_t np=omp_get_max_threads();
+    int np=omp_get_max_threads();
     psiFac->setCloneSize(np);
 
     //capture cloned WaveFunctionFactory*
@@ -88,7 +88,7 @@ namespace qmcplusplus {
 //    for(int ip=0; ip<np; ip++) {
 #pragma omp parallel 
     {
-      omp_int_t ip=omp_get_thread_num();
+      int ip=omp_get_thread_num();
 #pragma omp critical 
       {
         if(ip) {
@@ -127,7 +127,7 @@ namespace qmcplusplus {
 //    for(int ip=0; ip<np; ip++) {
 #pragma omp parallel 
     {
-      omp_int_t ip=omp_get_thread_num();
+      int ip=omp_get_thread_num();
 #pragma omp critical 
       {
         if(ip) {
