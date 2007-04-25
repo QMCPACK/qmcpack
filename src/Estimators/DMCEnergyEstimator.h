@@ -32,23 +32,15 @@ namespace qmcplusplus {
 
     enum {ENERGY_INDEX=0, ENERGY_SQ_INDEX, WALKERSIZE_INDEX, WEIGHT_INDEX, EREF_INDEX, LE_MAX};
 
-    ///index for LocalEnergy
-    int averageIndex;
-    ///index for Variance
-    int varianceIndex;
-    ///index for number of walkers
-    int popIndex;
-    ///current index
-    int Current;
     ///WalkerControlBase* which actually performs accumulation
     WalkerControlBase* walkerControl;
     
     /** constructor
      */
-    DMCEnergyEstimator():walkerControl(0),Current(0) 
+    DMCEnergyEstimator():walkerControl(0)
     {
-      //this handles three scalars: LocalEnergy, LocalEnergy2, and Population
-      d_data.resize(2);
+      //this handles three scalars: LocalEnergy, LocalEnergy2, Weight, Weight2
+      d_data.resize(4);
     }
 
     ScalarEstimatorBase* clone()
@@ -70,28 +62,38 @@ namespace qmcplusplus {
      */
     void add2Record(RecordListType& record, BufferType& msg) {
       FirstIndex = record.add("LocalEnergy");
-      varianceIndex= record.add("LocalEnergy2");
+      int dummy=record.add("LocalEnergy2");
+      dummy=record.add("Weight");
+      dummy=record.add("Weight2");
+      LastIndex = FirstIndex+4;
       //popIndex     = record.add("Population");
     }
 
-    inline void accumulate(const Walker_t& awalker, RealType wgt) {
+    inline void accumulate(const Walker_t& awalker, RealType wgt) 
+    {
       app_error() << "Disabled DMCEnergyEstimator::accumulate(const Walker_t& awalker, T wgt) " << endl;
     }
 
-    inline void accumulate(ParticleSet& P, MCWalkerConfiguration::Walker_t& awalker) {
-      //Current counter is not correctly implemented. 
+    inline void accumulate(ParticleSet& P, MCWalkerConfiguration::Walker_t& awalker) 
+    {
     }
 
     /** accumulate a Current counter for normalizations. 
      *
-     * walkerControl accumulate the local energy and other quantities.
+     * walkerControl accumulate the local energy and weights 
      */
     inline void accumulate(WalkerIterator first, WalkerIterator last) { 
-      Current++;
-      d_data[0]+= walkerControl->getCurrentValue(ENERGY_INDEX);
-      d_data[1]+= walkerControl->getCurrentValue(ENERGY_SQ_INDEX);
-      //d_data[2]+= walkerControl->getCurrentValue(WALKERSIZE_INDEX);
-      d_wgt += walkerControl->getCurrentValue(WEIGHT_INDEX);
+      RealType wgt(walkerControl->getCurrentValue(WEIGHT_INDEX));
+      RealType norm=1.0/wgt;
+      d_data[0] += norm*walkerControl->getCurrentValue(ENERGY_INDEX);
+      d_data[1] += norm*walkerControl->getCurrentValue(ENERGY_SQ_INDEX);
+      d_data[2] += wgt;
+      d_data[3] += wgt*wgt;
+      d_wgt += 1.0;
+      //d_data[0]+= walkerControl->getCurrentValue(ENERGY_INDEX);
+      //d_data[1]+= walkerControl->getCurrentValue(ENERGY_SQ_INDEX);
+      ////d_data[2]+= walkerControl->getCurrentValue(WALKERSIZE_INDEX);
+      //d_wgt += walkerControl->getCurrentValue(WEIGHT_INDEX);
     }
 
     ///reset all the cumulative sums to zero
@@ -110,14 +112,13 @@ namespace qmcplusplus {
      * included by WalkerControlBase::branch operation.
      */
     inline void report(RecordListType& record, RealType wgtinv) {
-      wgtinv=1.0/static_cast<RealType>(Current);
+      wgtinv=1.0/d_wgt;
       d_sum=walkerControl->getValue(ENERGY_INDEX);
       d_sumsq=walkerControl->getValue(ENERGY_SQ_INDEX);
       record[FirstIndex]= d_average =  wgtinv*d_sum;
-      record[varianceIndex]= d_variance = wgtinv*d_sumsq-d_average*d_average;
-      record[popIndex]= wgtinv*walkerControl->getValue(WALKERSIZE_INDEX);
+      record[FirstIndex+1]= d_variance = wgtinv*d_sumsq-d_average*d_average;
+      record[FirstIndex+2]= wgtinv*walkerControl->getValue(WALKERSIZE_INDEX);
       walkerControl->reset();
-      Current=0;
       walkerControl->setEnergyAndVariance(d_average,d_variance);
     }
 
