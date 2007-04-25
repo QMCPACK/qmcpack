@@ -1,0 +1,874 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- edited with XMLSPY v5 rel. 4 U (http://www.xmlspy.com) by Jeongnim Kim (University of Illinois) -->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" attributeFormDefault="unqualified">
+	<xs:complexType name="parameterType">
+		<xs:annotation>
+			<xs:documentation>named parameter. The data type of the parameter can be any atomic data, e.g.,  int, double, fixed-length vector. Any datatype which implements io operators is valid. </xs:documentation>
+		</xs:annotation>
+		<xs:simpleContent>
+			<xs:extension base="xs:string">
+				<xs:attribute name="id" type="xs:ID" use="optional">
+					<xs:annotation>
+						<xs:documentation>ID of the parameter.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+				<xs:attribute name="ref" type="xs:IDREF" use="optional">
+					<xs:annotation>
+						<xs:documentation>Reference to other parameter
+</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+				<xs:attribute name="name" type="xs:string" use="required">
+					<xs:annotation>
+						<xs:documentation>The name of the parameter.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+				<xs:attribute name="unit" type="xs:string" use="optional"/>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:complexType name="attribType">
+		<xs:annotation>
+			<xs:documentation>Generic attribute of an object which is a 
+				collection of atomic components. For example, particleset consists of
+				1 to any number of particles and each particle has attributes, e.g.,
+				position, id, velocity etc. The particles that belong to a particleset
+				have the same number of attributes. 
+				 </xs:documentation>
+		</xs:annotation>
+		<xs:simpleContent>
+			<xs:extension base="xs:string">
+				<xs:attribute name="name" type="xs:string" use="required">
+					<xs:annotation>
+						<xs:documentation>Name of the attribute type.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+				<xs:attribute name="datatype" use="required">
+					<xs:annotation>
+						<xs:documentation>Data type of the attribType. </xs:documentation>
+					</xs:annotation>
+					<xs:simpleType>
+						<xs:restriction base="xs:NMTOKEN">
+							<xs:enumeration value="posArray"/>
+							<xs:enumeration value="indexArray"/>
+							<xs:enumeration value="scalarArray"/>
+							<xs:enumeration value="stringArray"/>
+							<xs:enumeration value="tensorArray"/>
+						</xs:restriction>
+					</xs:simpleType>
+				</xs:attribute>
+				<xs:attribute name="units" type="xs:anySimpleType" use="optional" default="none"/>
+				<xs:attribute name="condition" use="optional" default="0">
+					<xs:annotation>
+						<xs:documentation>True if the values are in the unit. 
+							An example is posArray which can be in the unit of a supercell 
+							or Cartesian unit.</xs:documentation>
+					</xs:annotation>
+					<xs:simpleType>
+						<xs:restriction base="xs:NMTOKEN">
+							<xs:enumeration value="0"/>
+							<xs:enumeration value="1"/>
+						</xs:restriction>
+					</xs:simpleType>
+				</xs:attribute>
+				<xs:attribute name="size" type="xs:int" use="optional" default="0">
+					<xs:annotation>
+						<xs:documentation>The size of this attribute.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:complexType name="arrayDataType">
+		<xs:annotation>
+			<xs:documentation>Class to encapsulate array types. Attributes are used to define the dimensionality and the datatype of the array.</xs:documentation>
+		</xs:annotation>
+		<xs:simpleContent>
+			<xs:extension base="xs:string">
+				<xs:attribute name="id" type="xs:ID" use="optional"/>
+				<xs:attribute name="name" type="xs:string" use="optional"/>
+				<xs:attribute name="datatype" type="xs:string" use="required">
+					<xs:annotation>
+						<xs:documentation>Type of the array elements. Intrisic data types of C++ and user classes which implement the basic I/O operators, e.g. TinyVector of a fixed dimension of any type.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+				<xs:attribute name="dims" type="xs:string" use="optional" default="1">
+					<xs:annotation>
+						<xs:documentation>The dimension of an array. The dimensions of a multi-dimensional array are given by integers separated by commas.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+				<xs:attribute name="dataset" type="xs:string" use="optional">
+					<xs:annotation>
+						<xs:documentation>Link to an external data source, e.g., the full path of a hdf5 dataset. </xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+			</xs:extension>
+		</xs:simpleContent>
+		<!--
+		<xs:sequence>
+			<xs:element name="data">
+				<xs:complexType>
+					<xs:complexContent>
+						<xs:extension base="xs:anyType">
+							<xs:attribute name="dataset" type="xs:string" use="optional"/>
+						</xs:extension>
+					</xs:complexContent>
+				</xs:complexType>
+			</xs:element>
+		</xs:sequence>
+	-->
+	</xs:complexType>
+	<xs:complexType name="groupType">
+		<xs:annotation>
+			<xs:documentation>A group to which any number of components of an object belong.     </xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="parameter" type="parameterType" minOccurs="0" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>Common properties of the elements in this group. The reserved names of the parameters are charge, valencecharge, and mass.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="attrib" type="attribType" minOccurs="0" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>Attributes of the elements of this group. The reserved names are position, id, and ionid. </xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<!--
+			<xs:element name="array" type="arrayDataType" minOccurs="0" maxOccurs="unbounded"/>
+				-->
+		</xs:sequence>
+		<xs:attribute name="name" type="xs:string" use="required"/>
+		<xs:attribute name="size" type="xs:int" use="optional" default="0"/>
+	</xs:complexType>
+	<xs:complexType name="applicationType">
+		<xs:annotation>
+			<xs:documentation>Describe the application including the version of an application and special features of the application.</xs:documentation>
+		</xs:annotation>
+		<xs:simpleContent>
+			<xs:extension base="xs:string">
+				<xs:attribute name="name" type="xs:string" default="qmcpack"/>
+				<xs:attribute name="role" type="xs:string"/>
+				<xs:attribute name="class" type="xs:string"/>
+				<xs:attribute name="version" type="xs:string"/>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:complexType name="projectType">
+		<xs:annotation>
+			<xs:documentation>Define a project</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="id" type="xs:string" use="required"/>
+		<xs:attribute name="series" type="xs:string" use="required"/>
+	</xs:complexType>
+	<xs:complexType name="randomType">
+		<xs:attribute name="parallel" type="xs:string" default="true"/>
+		<xs:attribute name="seed" type="xs:string" default="-1"/>
+	</xs:complexType>
+	<xs:complexType name="hdfFileType">
+		<xs:annotation>
+			<xs:documentation>Define a hdf5 file</xs:documentation>
+		</xs:annotation>
+	</xs:complexType>
+	<xs:complexType name="unitcellType">
+		<xs:annotation>
+			<xs:documentation>Define the unit cell of a simulation.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="parameter" type="parameterType" minOccurs="0" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="ParticleSetType">
+		<xs:annotation>
+			<xs:documentation>Define a set of particles. Typically used to give an input configuration. UnitCell is optional.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence minOccurs="0">
+			<xs:element name="unitcell" type="unitcellType" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Define the unit cell of a simulation.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="group" type="groupType" minOccurs="0" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>Define distinct groups of the particles in this particleset.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="attrib" type="attribType" minOccurs="0" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>Add generic particle attributes. The number of data per attribute is defined by num of ParticleSetType. Reserved names are position, id and ionid. </xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<!--
+			<xs:element name="array" type="arrayDataType" minOccurs="0" maxOccurs="unbounded"/>
+			-->
+		</xs:sequence>
+		<xs:attribute name="id" type="xs:ID" use="optional"/>
+		<xs:attribute name="name" type="xs:string" use="required"/>
+		<xs:attribute name="size" type="xs:int" use="optional" default="0">
+			<xs:annotation>
+				<xs:documentation>The number of particles contained in a ParticleSet. If it is non-zero integer, ohmms assumes that the input attributes (attribType) contain the same number of data.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="src" type="xs:string" use="optional"/>
+		<xs:attribute name="type">
+			<xs:annotation>
+				<xs:documentation>Keyword/enumeration to describe a particleset.</xs:documentation>
+			</xs:annotation>
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="quantum"/>
+					<xs:enumeration value="molecule"/>
+					<xs:enumeration value="crystal"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="qmcHamiltonianType">
+		<xs:annotation>
+			<xs:documentation>Hamiltonian</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="pairpot" type="hamiltonianType" minOccurs="0" maxOccurs="unbounded"/>
+			<xs:element name="constant" type="hamiltonianType" minOccurs="0" maxOccurs="unbounded"/>
+		</xs:sequence>
+		<xs:attribute name="name" type="xs:string" use="optional"/>
+		<xs:attribute name="type" use="optional" default="generic">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="generic"/>
+					<xs:enumeration value="molecule"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute name="target" type="xs:string" use="optional" default="e"/>
+	</xs:complexType>
+	<xs:complexType name="hamiltonianType">
+		<xs:annotation>
+			<xs:documentation>Operators that make up a Hamiltonian</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="name" type="xs:string" use="required"/>
+		<xs:attribute name="type" type="xs:NMTOKEN" use="required"/>
+		<xs:attribute name="source" type="xs:string" use="optional" default="i"/>
+		<xs:attribute name="target" type="xs:string" use="optional" default="e"/>
+	</xs:complexType>
+	<xs:complexType name="basisGroupType">
+		<xs:sequence>
+			<xs:element name="radfunc" type="radfuncType" minOccurs="0" maxOccurs="unbounded"/>
+		</xs:sequence>
+		<xs:attribute name="rid" type="xs:string" use="required"/>
+		<xs:attribute name="n" type="xs:integer"/>
+		<xs:attribute name="l" type="xs:integer" default="0"/>
+		<xs:attribute name="m" type="xs:integer" default="0"/>
+		<xs:attribute name="type" default="Gaussian">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="Gaussian"/>
+					<xs:enumeration value="Slater"/>
+					<xs:enumeration value="Pade"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="atomicBasisSetType">
+		<xs:sequence>
+			<xs:element name="grid" type="gridType" minOccurs="0"/>
+			<xs:element name="basisGroup" type="basisGroupType" maxOccurs="unbounded"/>
+		</xs:sequence>
+		<xs:attribute name="name" type="xs:string" use="optional"/>
+		<xs:attribute name="type" use="optional" default="Any">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="Any"/>
+					<xs:enumeration value="Numerical"/>
+					<xs:enumeration value="Gaussian"/>
+					<xs:enumeration value="STO"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute name="elementType" type="xs:string" use="required"/>
+		<xs:attribute name="normalized" use="optional" default="no">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="yes"/>
+					<xs:enumeration value="no"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute name="angular" use="optional" default="spherical">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="spherical"/>
+					<xs:enumeration value="explicit"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute name="expandYlm" use="optional" default="yes">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="yes"/>
+					<xs:enumeration value="no"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="detType">
+		<xs:sequence>
+			<xs:element name="occupation" type="occupationType" minOccurs="0"/>
+			<xs:element name="coefficient" type="arrayDataType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attribute name="id" type="xs:ID" use="optional"/>
+		<xs:attribute name="spin" type="xs:integer" use="optional"/>
+		<xs:attribute name="orbitals" type="xs:integer" use="required"/>
+		<xs:attribute name="href" type="xs:string" use="optional"/>
+		<!-- this should be idref -->
+	</xs:complexType>
+	<xs:complexType name="basissetType">
+		<xs:sequence>
+			<xs:element name="atomicBasisSet" type="atomicBasisSetType" minOccurs="0" maxOccurs="unbounded"/>
+			<xs:element name="planewaveBasisSet" minOccurs="0"/>
+			<!--
+			<xs:element name="distancetable" type="distanceTableType" minOccurs="0" maxOccurs="unbounded"/>
+-->
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="slaterDetType">
+		<xs:sequence>
+			<xs:element name="coefficient" type="xs:double" default="1.0" minOccurs="0"/>
+			<xs:element name="determinant" type="detType" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="jastrowFuncType">
+		<xs:annotation>
+			<xs:documentation>jastrow functor</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="parameter" type="parameterType" minOccurs="0" maxOccurs="unbounded"/>
+		</xs:sequence>
+		<xs:attribute name="speciesA" type="xs:string" use="required"/>
+		<xs:attribute name="speciesB" type="xs:string" use="required"/>
+		<xs:attribute name="type" type="xs:string" use="optional"/>
+	</xs:complexType>
+	<xs:complexType name="jastrowType">
+		<xs:annotation>
+			<xs:documentation>Jastrow correlation function</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="distancetable" type="distanceTableType" minOccurs="0" maxOccurs="unbounded"/>
+			<xs:element name="correlation" type="jastrowFuncType" maxOccurs="unbounded"/>
+		</xs:sequence>
+		<xs:attribute name="name" type="xs:string" use="required"/>
+		<xs:attribute name="type" use="required">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKENS">
+					<xs:enumeration value="Two-Body"/>
+					<xs:enumeration value="Two-Body-Spin"/>
+					<xs:enumeration value="One-Body"/>
+					<xs:enumeration value="Polarization"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute name="spin" use="optional" default="no">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKENS">
+					<xs:enumeration value="yes"/>
+					<xs:enumeration value="no"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute name="transform" use="optional" default="no">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKENS">
+					<xs:enumeration value="yes"/>
+					<xs:enumeration value="no"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute name="function" use="required">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKENS">
+					<xs:enumeration value="pade"/>
+					<xs:enumeration value="pade2"/>
+					<xs:enumeration value="no-cusp"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="detSetType">
+		<xs:sequence>
+			<xs:element name="basisSet" type="basissetType" minOccurs="0"/>
+			<xs:element name="slaterDeterminant" type="slaterDetType" maxOccurs="unbounded"/>
+		</xs:sequence>
+		<xs:attribute name="type">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="MolecularOrbital"/>
+					<xs:enumeration value="NumericalOrbital"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute name="source" type="xs:string" use="optional" default="i"/>
+		<xs:attribute name="transform" use="optional" default="no">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="yes"/>
+					<xs:enumeration value="no"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="wavefunctionType">
+		<xs:annotation>
+			<xs:documentation>A many-body trial wave function</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="jastrow" minOccurs="0" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>Any number of correlation functions</xs:documentation>
+				</xs:annotation>
+				<xs:complexType>
+					<xs:complexContent>
+						<xs:extension base="jastrowType">
+							<xs:attribute name="source" type="xs:string" use="optional" default="ion"/>
+						</xs:extension>
+					</xs:complexContent>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="determinantSet" type="detSetType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attribute name="id" type="xs:ID" use="optional"/>
+		<xs:attribute name="name" type="xs:string" use="optional" default="psi0"/>
+		<xs:attribute name="target" type="xs:string" use="optional" default="e"/>
+	</xs:complexType>
+	<xs:complexType name="radfuncType">
+		<xs:annotation>
+			<xs:documentation>Generic one-dimensional function with respect to an origin</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="id" type="xs:ID" use="optional"/>
+		<xs:attribute name="exponent" type="xs:double" use="required"/>
+		<xs:attribute name="contraction" type="xs:double" use="optional" default="1.0"/>
+		<xs:attribute name="node" type="xs:integer" use="optional" default="1"/>
+	</xs:complexType>
+	<xs:complexType name="gridType">
+		<xs:annotation>
+			<xs:documentation>One-dimensional grid</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="id" type="xs:ID" use="optional"/>
+		<xs:attribute name="ri" type="xs:double" use="optional" default="1e-6"/>
+		<xs:attribute name="rf" type="xs:double" use="optional" default="100"/>
+		<xs:attribute name="type" use="optional" default="log">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="log"/>
+					<xs:enumeration value="linear"/>
+					<xs:enumeration value="numerical"/>
+					<xs:enumeration value="log0"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute name="npts" type="xs:integer" use="optional" default="1001"/>
+	</xs:complexType>
+	<xs:complexType name="distanceTableType">
+		<xs:attribute name="id" type="xs:ID" use="optional"/>
+		<xs:attribute name="source" type="xs:string" use="required"/>
+		<xs:attribute name="target" type="xs:string" use="required"/>
+	</xs:complexType>
+	<xs:complexType name="occupationType">
+		<xs:attribute name="id" type="xs:ID" use="optional"/>
+		<xs:attribute name="mode" use="optional" default="ground">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="ground"/>
+					<xs:enumeration value="excited"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute name="size" type="xs:integer" use="optional" default="1"/>
+	</xs:complexType>
+	<xs:complexType name="qmcSystemType">
+		<xs:annotation>
+			<xs:documentation>a complex type defining a system for a QMC simulation</xs:documentation>
+		</xs:annotation>
+		<xs:choice minOccurs="0" maxOccurs="unbounded">
+			<xs:element name="particleset" type="ParticleSetType"/>
+			<xs:element name="wavefunction" type="wavefunctionType"/>
+			<xs:element name="hamiltonian" type="qmcHamiltonianType"/>
+		</xs:choice>
+		<xs:attribute name="id" type="xs:ID" use="optional"/>
+		<xs:attribute name="name" type="xs:string" use="optional"/>
+	</xs:complexType>
+	<xs:attributeGroup name="qmcAttribGroup">
+		<xs:annotation>
+			<xs:documentation>Common attributes for qmc drivers</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="title" type="xs:string">
+			<xs:annotation>
+				<xs:documentation>A title of this qmc secton.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="target" type="xs:string" use="optional" default="e"/>
+		<xs:attribute name="move" use="optional" default="walker">
+			<xs:annotation>
+				<xs:documentation>Update mode of a qmc driver.
+pbyp: particle-by-particle update
+walker: walker-by-walker update</xs:documentation>
+			</xs:annotation>
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="pbyp"/>
+					<xs:enumeration value="walker"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute name="append" use="optional" default="no">
+			<xs:annotation>
+				<xs:documentation>If yes, the section is appended to a preceeding qmc section.</xs:documentation>
+			</xs:annotation>
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="yes"/>
+					<xs:enumeration value="no"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:attributeGroup>
+	<xs:attributeGroup name="multipleAttribGroup">
+		<xs:annotation>
+			<xs:documentation>Attributes for umbrella sampling</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="multiple" use="optional" default="no">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="yes"/>
+					<xs:enumeration value="no"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute name="warp" use="optional" default="no">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="yes"/>
+					<xs:enumeration value="no"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:attributeGroup>
+	<xs:complexType name="qmcSystemRefType">
+		<xs:annotation>
+			<xs:documentation>reference to a set of particleset, wavefunction and hamiltonian for correlated sampling</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="wavefunction" type="xs:string" use="required">
+			<xs:annotation>
+				<xs:documentation>The name of wavefunction. </xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="hamiltonian" type="xs:string" use="required">
+			<xs:annotation>
+				<xs:documentation>The name of hamiltonian.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:group name="qmcParameterGroup">
+		<xs:annotation>
+			<xs:documentation>common parameters for qmcdrivers</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:choice minOccurs="0" maxOccurs="unbounded">
+				<xs:element name="walkers" type="xs:integer" default="100"/>
+				<xs:element name="blocks" type="xs:integer" default="100"/>
+				<xs:element name="steps" type="xs:integer" default="100"/>
+				<xs:element name="timeStep">
+					<xs:complexType>
+						<xs:simpleContent>
+							<xs:extension base="xs:double">
+								<xs:attribute name="units"/>
+							</xs:extension>
+						</xs:simpleContent>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="refresh" type="xs:integer" default="100"/>
+				<xs:element name="collect" type="xs:string" default="yes"/>
+				<xs:element name="refEnergy" default="0.0">
+					<xs:complexType>
+						<xs:simpleContent>
+							<xs:extension base="xs:double">
+								<xs:attribute name="unit" use="optional" default="hartree"/>
+							</xs:extension>
+						</xs:simpleContent>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="parameter" type="xs:int"/>
+				<xs:element name="parameter" type="xs:int"/>
+			</xs:choice>
+		</xs:sequence>
+	</xs:group>
+	<xs:complexType name="qmcType">
+		<xs:annotation>
+			<xs:documentation>QMC section</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="qmcsystem" type="qmcSystemRefType" minOccurs="0" maxOccurs="unbounded"/>
+			<xs:element name="parameter" type="parameterType" minOccurs="0" maxOccurs="unbounded"/>
+			<xs:element name="cost" type="parameterType" minOccurs="0" maxOccurs="unbounded"/>
+			<xs:element name="optimize" minOccurs="0">
+				<xs:complexType>
+					<xs:simpleContent>
+						<xs:extension base="xs:string"/>
+					</xs:simpleContent>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="optimizer" minOccurs="0">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element name="parameter" type="parameterType" minOccurs="0" maxOccurs="unbounded"/>
+					</xs:sequence>
+					<xs:attribute name="method"/>
+				</xs:complexType>
+			</xs:element>
+		</xs:sequence>
+		<xs:attributeGroup ref="qmcAttribGroup"/>
+		<xs:attribute name="method" use="optional" default="test">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="vmc"/>
+					<xs:enumeration value="dmc"/>
+					<xs:enumeration value="rmc"/>
+					<xs:enumeration value="optimize"/>
+					<xs:enumeration value="test"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="vmcType">
+		<xs:annotation>
+			<xs:documentation>VMC section</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="qmcsystem" type="qmcSystemRefType" minOccurs="0" maxOccurs="unbounded"/>
+			<xs:group ref="qmcParameterGroup"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="qmcAttribGroup"/>
+		<xs:attributeGroup ref="multipleAttribGroup"/>
+	</xs:complexType>
+	<xs:complexType name="dmcType">
+		<xs:annotation>
+			<xs:documentation>DMC section</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:group ref="qmcParameterGroup"/>
+			<xs:choice minOccurs="0" maxOccurs="unbounded">
+				<xs:element name="popControl" type="xs:integer" default="100"/>
+				<xs:element name="targetWalkers" type="xs:integer" default="100"/>
+				<xs:element name="swapTrigger" type="xs:double" default="0.9"/>
+				<xs:element name="reconfiguration" type="xs:string" default="no"/>
+				<xs:element name="branchInterval" type="xs:integer" default="1"/>
+			</xs:choice>
+		</xs:sequence>
+		<xs:attributeGroup ref="qmcAttribGroup"/>
+	</xs:complexType>
+	<xs:complexType name="rmcType">
+		<xs:annotation>
+			<xs:documentation>RMC section</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="qmcsystem" type="qmcSystemRefType" minOccurs="0" maxOccurs="unbounded"/>
+			<xs:group ref="qmcParameterGroup"/>
+			<xs:element name="chains" type="xs:integer" default="21" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="qmcAttribGroup"/>
+		<xs:attributeGroup ref="multipleAttribGroup"/>
+	</xs:complexType>
+	<xs:complexType name="optType">
+		<xs:annotation>
+			<xs:documentation>Optimization secton</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:choice maxOccurs="unbounded">
+				<xs:element name="variables" type="xs:string"/>
+				<xs:element name="refEnergy" type="xs:double"/>
+				<xs:element name="useWeight" type="xs:string" default="yes">
+					<xs:annotation>
+						<xs:documentation>if no, set the weight=1</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="minWalkers" type="xs:double" default="0.9">
+					<xs:annotation>
+						<xs:documentation>Minimum fraction of the walkers by correlated sampling</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="power" type="xs:integer" default="2">
+					<xs:annotation>
+						<xs:documentation>Cost function for energy minimization |E-E_T|^power</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="correlation" type="xs:double" default="0.0">
+					<xs:annotation>
+						<xs:documentation>Additional correlation energy added to the target energy</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="cost">
+					<xs:complexType>
+						<xs:simpleContent>
+							<xs:extension base="xs:double">
+								<xs:attribute name="name" use="required">
+									<xs:simpleType>
+										<xs:restriction base="xs:NMTOKEN">
+											<xs:enumeration value="energy"/>
+											<xs:enumeration value="variance"/>
+											<xs:enumeration value="difference"/>
+										</xs:restriction>
+									</xs:simpleType>
+								</xs:attribute>
+							</xs:extension>
+						</xs:simpleContent>
+					</xs:complexType>
+				</xs:element>
+			</xs:choice>
+			<xs:element name="optimizer">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:choice minOccurs="0" maxOccurs="unbounded">
+							<xs:element name="costTol" type="xs:double" default="1e-6">
+								<xs:annotation>
+									<xs:documentation>Tolerance of a cost value</xs:documentation>
+								</xs:annotation>
+							</xs:element>
+							<xs:element name="gradTol" type="xs:double" default="1.0e-6">
+								<xs:annotation>
+									<xs:documentation>Tolerance of |g|</xs:documentation>
+								</xs:annotation>
+							</xs:element>
+							<xs:element name="cgTol" type="xs:double" default="1.0e-4">
+								<xs:annotation>
+									<xs:documentation>Tolerance of |g,cg|</xs:documentation>
+								</xs:annotation>
+							</xs:element>
+							<xs:element name="maxSteps" type="xs:integer" default="100">
+								<xs:annotation>
+									<xs:documentation>Maximum number of steps</xs:documentation>
+								</xs:annotation>
+							</xs:element>
+							<xs:element name="epsilon" type="xs:double" default="1.0e-6">
+								<xs:annotation>
+									<xs:documentation>Displacement for the numerical gradient</xs:documentation>
+								</xs:annotation>
+							</xs:element>
+							<xs:element name="stepSize" type="xs:double" default="0.02">
+								<xs:annotation>
+									<xs:documentation>Initial mixing of CG for a lineminimization; time step for annealing</xs:documentation>
+								</xs:annotation>
+							</xs:element>
+							<xs:element name="maxLineMin" type="xs:integer" default="100">
+								<xs:annotation>
+									<xs:documentation>Maxmimum  number of line minimization</xs:documentation>
+								</xs:annotation>
+							</xs:element>
+							<xs:element name="friction" type="xs:double" default="0.5">
+								<xs:annotation>
+									<xs:documentation>Friction coefficient for the damped dynamics</xs:documentation>
+								</xs:annotation>
+							</xs:element>
+							<xs:element name="mass" type="xs:double" default="10.">
+								<xs:annotation>
+									<xs:documentation>Fictitious mass for the damped dynamics</xs:documentation>
+								</xs:annotation>
+							</xs:element>
+						</xs:choice>
+					</xs:sequence>
+					<xs:attribute name="method" use="optional" default="cg">
+						<xs:simpleType>
+							<xs:restriction base="xs:NMTOKEN">
+								<xs:enumeration value="cg"/>
+								<xs:enumeration value="anneal"/>
+							</xs:restriction>
+						</xs:simpleType>
+					</xs:attribute>
+				</xs:complexType>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:element name="simulation">
+		<xs:annotation>
+			<xs:documentation>root of qmc simulation</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="project" type="projectType">
+					<xs:annotation>
+						<xs:documentation>Describe a project. id and series are used to group the runs.</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="application" type="applicationType" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation>Comments on the application used for a run.
+</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="random" type="randomType" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation>Set the seeds for the random number generators. Default is to assign parallel random numbers based on the date and time of a run.</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:choice minOccurs="0" maxOccurs="unbounded">
+					<xs:element name="particleset" type="ParticleSetType">
+						<xs:annotation>
+							<xs:documentation>Define a particleset.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="wavefunction" type="wavefunctionType">
+						<xs:annotation>
+							<xs:documentation>Define a trial wavefunction.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="hamiltonian" type="qmcHamiltonianType">
+						<xs:annotation>
+							<xs:documentation>Define a hamiltonian.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="qmcsystem">
+						<xs:annotation>
+							<xs:documentation>A composite class which can have particlesets, wavefunction and hamiltonian.</xs:documentation>
+						</xs:annotation>
+						<xs:complexType>
+							<xs:complexContent>
+								<xs:extension base="qmcSystemType">
+									<xs:attribute name="href" type="xs:string" use="optional"/>
+								</xs:extension>
+							</xs:complexContent>
+						</xs:complexType>
+					</xs:element>
+					<xs:element name="include">
+						<xs:annotation>
+							<xs:documentation>Interface to include an external xml file.</xs:documentation>
+						</xs:annotation>
+						<xs:complexType>
+							<xs:attribute name="href" type="xs:string" use="required"/>
+						</xs:complexType>
+					</xs:element>
+				</xs:choice>
+				<xs:choice minOccurs="0" maxOccurs="unbounded">
+					<xs:element name="qmc" type="qmcType">
+						<xs:annotation>
+							<xs:documentation>Execution qmc sections.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="loop" type="loopType"/>
+					<!--
+					<xs:element name="vmc" type="vmcType"/>
+					<xs:element name="dmc" type="dmcType"/>
+					<xs:element name="rmc" type="rmcType"/>
+					<xs:element name="optimize" type="optType"/>
+						-->
+				</xs:choice>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:complexType name="loopType">
+		<xs:sequence>
+			<xs:element name="qmc" type="qmcType" maxOccurs="unbounded"/>
+		</xs:sequence>
+		<xs:attribute name="max" type="xs:int" use="optional" default="1">
+			<xs:annotation>
+				<xs:documentation>Maximum number of iterations of this loop. The state, parameters and execution orders are preserved within a loop.  project/@series is automatically increted whenever a loop is completed.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+	</xs:complexType>
+</xs:schema>
