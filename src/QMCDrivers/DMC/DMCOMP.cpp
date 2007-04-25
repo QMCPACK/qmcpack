@@ -189,7 +189,7 @@ namespace qmcplusplus {
       recordBlock(block);
     } while(block<nBlocks);
 
-    for(int ip=0; ip<NumThreads; ip++) Movers[ip]->stopRun();
+    //for(int ip=0; ip<NumThreads; ip++) Movers[ip]->stopRun();
 
     Estimators->stop();
     return finalize(block);

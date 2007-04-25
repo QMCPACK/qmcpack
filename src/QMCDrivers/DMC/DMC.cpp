@@ -44,6 +44,9 @@ namespace qmcplusplus {
 
     resetUpdateEngine();
 
+    //collect is disabled since it is handled by branchEngine->WalkerController
+    Estimators->setCollectionMode(false);
+
     Mover->startRun(nBlocks,true);
 
     IndexType block = 0;
