@@ -3,7 +3,7 @@
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" attributeFormDefault="unqualified">
 	<xs:complexType name="parameterType">
 		<xs:annotation>
-			<xs:documentation>named parameter.</xs:documentation>
+			<xs:documentation>named parameter. The data type of the parameter can be any atomic data, e.g.,  int, double, fixed-length vector. Any datatype which implements io operators is valid. </xs:documentation>
 		</xs:annotation>
 		<xs:simpleContent>
 			<xs:extension base="xs:string">
@@ -12,19 +12,29 @@
 						<xs:documentation>ID of the parameter.</xs:documentation>
 					</xs:annotation>
 				</xs:attribute>
-				<xs:attribute name="name" type="xs:string" use="required"/>
+				<xs:attribute name="ref" type="xs:IDREF" use="optional">
+					<xs:annotation>
+						<xs:documentation>Reference to other parameter
+</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+				<xs:attribute name="name" type="xs:string" use="required">
+					<xs:annotation>
+						<xs:documentation>The name of the parameter.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
 				<xs:attribute name="unit" type="xs:string" use="optional"/>
 			</xs:extension>
 		</xs:simpleContent>
 	</xs:complexType>
 	<xs:complexType name="attribType">
 		<xs:annotation>
-			<xs:documentation>Generic attribute type of a class or object which is a 
-				collectio of atomic components. For example, particleset consists of
+			<xs:documentation>Generic attribute of an object which is a 
+				collection of atomic components. For example, particleset consists of
 				1 to any number of particles and each particle has attributes, e.g.,
 				position, id, velocity etc. The particles that belong to a particleset
-				have the same number of attributes. This type is used to give the values
-			    of an attribute in a vectorized way. </xs:documentation>
+				have the same number of attributes. 
+				 </xs:documentation>
 		</xs:annotation>
 		<xs:simpleContent>
 			<xs:extension base="xs:string">
@@ -47,11 +57,7 @@
 						</xs:restriction>
 					</xs:simpleType>
 				</xs:attribute>
-				<xs:attribute name="units" use="optional" default="none">
-					<xs:annotation>
-						The units of the data. This attribute is not required to be enforced 
-						by applications. It is reserved for clarity and for xslt transformations.
-					</xs:annotation></xs:attribute>
+				<xs:attribute name="units" type="xs:anySimpleType" use="optional" default="none"/>
 				<xs:attribute name="condition" use="optional" default="0">
 					<xs:annotation>
 						<xs:documentation>True if the values are in the unit. 
@@ -65,17 +71,37 @@
 						</xs:restriction>
 					</xs:simpleType>
 				</xs:attribute>
+				<xs:attribute name="size" type="xs:int" use="optional" default="0">
+					<xs:annotation>
+						<xs:documentation>The size of this attribute.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
 			</xs:extension>
 		</xs:simpleContent>
 	</xs:complexType>
 	<xs:complexType name="arrayDataType">
+		<xs:annotation>
+			<xs:documentation>Class to encapsulate array types. Attributes are used to define the dimensionality and the datatype of the array.</xs:documentation>
+		</xs:annotation>
 		<xs:simpleContent>
 			<xs:extension base="xs:string">
-				<xs:attribute name="id" type="xs:ID"/>
-				<xs:attribute name="name" type="xs:string"/>
-				<xs:attribute name="type" type="xs:string" use="optional" default="double"/>
-				<xs:attribute name="dims" type="xs:string" use="optional"/>
-				<xs:attribute name="dataset" type="xs:string" use="optional"/>
+				<xs:attribute name="id" type="xs:ID" use="optional"/>
+				<xs:attribute name="name" type="xs:string" use="optional"/>
+				<xs:attribute name="datatype" type="xs:string" use="required">
+					<xs:annotation>
+						<xs:documentation>Type of the array elements. Intrisic data types of C++ and user classes which implement the basic I/O operators, e.g. TinyVector of a fixed dimension of any type.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+				<xs:attribute name="dims" type="xs:string" use="optional" default="1">
+					<xs:annotation>
+						<xs:documentation>The dimension of an array. The dimensions of a multi-dimensional array are given by integers separated by commas.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+				<xs:attribute name="dataset" type="xs:string" use="optional">
+					<xs:annotation>
+						<xs:documentation>Link to an external data source, e.g., the full path of a hdf5 dataset. </xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
 			</xs:extension>
 		</xs:simpleContent>
 		<!--
@@ -94,32 +120,33 @@
 	</xs:complexType>
 	<xs:complexType name="groupType">
 		<xs:annotation>
-			<xs:documentation>A type to group atomic components of an object. 
-			An example is a species of a particleset to represent molecular or solid
-			systems. </xs:documentation>
+			<xs:documentation>A group to which any number of components of an object belong.     </xs:documentation>
 		</xs:annotation>
 		<xs:sequence>
-			<xs:element name="parameter" type="parameterType" minOccurs="0" maxOccurs="unbounded"/>
-			<xs:element name="attrib" type="attribType" minOccurs="0" maxOccurs="unbounded"/>
+			<xs:element name="parameter" type="parameterType" minOccurs="0" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>Common properties of the elements in this group. The reserved names of the parameters are charge, valencecharge, and mass.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="attrib" type="attribType" minOccurs="0" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>Attributes of the elements of this group. The reserved names are position, id, and ionid. </xs:documentation>
+				</xs:annotation>
+			</xs:element>
 			<!--
 			<xs:element name="array" type="arrayDataType" minOccurs="0" maxOccurs="unbounded"/>
 				-->
 		</xs:sequence>
-		<xs:attribute name="name" type="xs:string" use="required">
-			<xs:annotation>
-			The name of a group.
-			</xs:annotation>
-		</xs:attribute>
-		<xs:attribute name="size" type="xs:int" use="optional" default="0">
-			<xs:annotation>
-				The number of elements which belong to this group.
-			</xs:annotation>
-		</xs:attribute>
+		<xs:attribute name="name" type="xs:string" use="required"/>
+		<xs:attribute name="size" type="xs:int" use="optional" default="0"/>
 	</xs:complexType>
 	<xs:complexType name="applicationType">
+		<xs:annotation>
+			<xs:documentation>Describe the application including the version of an application and special features of the application.</xs:documentation>
+		</xs:annotation>
 		<xs:simpleContent>
 			<xs:extension base="xs:string">
-				<xs:attribute name="name" type="xs:string"/>
+				<xs:attribute name="name" type="xs:string" default="qmcpack"/>
 				<xs:attribute name="role" type="xs:string"/>
 				<xs:attribute name="class" type="xs:string"/>
 				<xs:attribute name="version" type="xs:string"/>
@@ -130,10 +157,6 @@
 		<xs:annotation>
 			<xs:documentation>Define a project</xs:documentation>
 		</xs:annotation>
-		<xs:sequence>
-			<xs:element name="application" type="applicationType" minOccurs="0"/>
-			<xs:element name="summary" minOccurs="0"/>
-		</xs:sequence>
 		<xs:attribute name="id" type="xs:string" use="required"/>
 		<xs:attribute name="series" type="xs:string" use="required"/>
 	</xs:complexType>
@@ -188,11 +211,11 @@
 		</xs:attribute>
 		<xs:attribute name="src" type="xs:string" use="optional"/>
 		<xs:attribute name="type">
-		<xs:simpleType>
+			<xs:simpleType>
 				<xs:restriction base="xs:NMTOKEN">
 					<xs:enumeration value="quantum"/>
 					<xs:enumeration value="molecule"/>
-				    <xs:enumeration value="crystal"/>
+					<xs:enumeration value="crystal"/>
 				</xs:restriction>
 			</xs:simpleType>
 		</xs:attribute>
@@ -764,13 +787,42 @@ walker: walker-by-walker update</xs:documentation>
 		</xs:annotation>
 		<xs:complexType>
 			<xs:sequence>
-				<xs:element name="project" type="projectType"/>
-				<xs:element name="random" type="randomType" minOccurs="0"/>
+				<xs:element name="project" type="projectType">
+					<xs:annotation>
+						<xs:documentation>Describe a project. id and series are used to group the runs.</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="application" type="applicationType" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation>Comments on the application used for a run.
+</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="random" type="randomType" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation>Set the seeds for the random number generators. Default is to assign parallel random numbers based on the date and time of a run.</xs:documentation>
+					</xs:annotation>
+				</xs:element>
 				<xs:choice minOccurs="0" maxOccurs="unbounded">
-					<xs:element name="particleset" type="ParticleSetType"/>
-					<xs:element name="wavefunction" type="wavefunctionType"/>
-					<xs:element name="hamiltonian" type="qmcHamiltonianType"/>
+					<xs:element name="particleset" type="ParticleSetType">
+						<xs:annotation>
+							<xs:documentation>Define a particleset.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="wavefunction" type="wavefunctionType">
+						<xs:annotation>
+							<xs:documentation>Define a trial wavefunction.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="hamiltonian" type="qmcHamiltonianType">
+						<xs:annotation>
+							<xs:documentation>Define a hamiltonian.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
 					<xs:element name="qmcsystem">
+						<xs:annotation>
+							<xs:documentation>A composite class which can have particlesets, wavefunction and hamiltonian.</xs:documentation>
+						</xs:annotation>
 						<xs:complexType>
 							<xs:complexContent>
 								<xs:extension base="qmcSystemType">
@@ -780,13 +832,21 @@ walker: walker-by-walker update</xs:documentation>
 						</xs:complexType>
 					</xs:element>
 					<xs:element name="include">
+						<xs:annotation>
+							<xs:documentation>Interface to include an external xml file.</xs:documentation>
+						</xs:annotation>
 						<xs:complexType>
 							<xs:attribute name="href" type="xs:string" use="required"/>
 						</xs:complexType>
 					</xs:element>
 				</xs:choice>
 				<xs:choice minOccurs="0" maxOccurs="unbounded">
-					<xs:element name="qmc" type="qmcType"/>
+					<xs:element name="qmc" type="qmcType">
+						<xs:annotation>
+							<xs:documentation>Execution qmc sections.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="loop" type="loopType"/>
 					<!--
 					<xs:element name="vmc" type="vmcType"/>
 					<xs:element name="dmc" type="dmcType"/>
@@ -797,4 +857,14 @@ walker: walker-by-walker update</xs:documentation>
 			</xs:sequence>
 		</xs:complexType>
 	</xs:element>
+	<xs:complexType name="loopType">
+		<xs:sequence>
+			<xs:element name="qmc" type="qmcType" maxOccurs="unbounded"/>
+		</xs:sequence>
+		<xs:attribute name="max" type="xs:int" use="optional" default="1">
+			<xs:annotation>
+				<xs:documentation>Maximum number of iterations of this loop. The state, parameters and execution orders are preserved within a loop.  project/@series is automatically increted whenever a loop is completed.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+	</xs:complexType>
 </xs:schema>
