@@ -34,6 +34,7 @@ IF(ENABLE_OPENMP)
   SET(QMCDRIVERS ${QMCDRIVERS} 
       VMC/VMCSingleOMP.cpp
       DMC/DMCOMP.cpp
+      QMCCostFunctionOMP.cpp
      )
 ENDIF(ENABLE_OPENMP) 
 

@@ -27,6 +27,7 @@ namespace qmcplusplus {
 
   ///forward declaration of a cost function
   class QMCCostFunctionBase;
+  class HamiltonianPool;
 
   /** @ingroup QMCDrivers
    * @brief Implements wave-function optimization
@@ -41,7 +42,7 @@ namespace qmcplusplus {
 
     ///Constructor.
     QMCOptimize(MCWalkerConfiguration& w, TrialWaveFunction& psi, 
-	    QMCHamiltonian& h);
+	    QMCHamiltonian& h, HamiltonianPool& hpool);
     
     ///Destructor
     ~QMCOptimize();
@@ -65,6 +66,8 @@ namespace qmcplusplus {
     int WarmupBlocks;
     ///yes/no applicable only first time
     string SkipSampleGeneration;
+    ///need to know HamiltonianPool to use OMP
+    HamiltonianPool& hamPool;
     ///target cost function to optimize
     //QMCCostFunction* optTarget;
     QMCCostFunctionBase* optTarget;
@@ -81,7 +84,7 @@ namespace qmcplusplus {
     ///list of files storing configurations  
     vector<string> ConfigFile;
     ///Copy Constructor (disabled).
-    QMCOptimize(const QMCOptimize& a): QMCDriver(a) { }  
+    QMCOptimize(const QMCOptimize& a): QMCDriver(a),hamPool(a.hamPool) { }  
     ///Copy operator (disabled).
     QMCOptimize& operator=(const QMCOptimize&) { return *this;}
 

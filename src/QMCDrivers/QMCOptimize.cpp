@@ -24,14 +24,19 @@
 #include "Optimize/DampedDynamics.h"
 #include "QMCDrivers/VMC/VMCSingle.h"
 #include "QMCDrivers/QMCCostFunctionSingle.h"
+#if defined(ENABLE_OPENMP)
+#include "QMCDrivers/VMC/VMCSingleOMP.h"
+#include "QMCDrivers/QMCCostFunctionOMP.h"
+#endif
+#include "QMCApp/HamiltonianPool.h"
 
 namespace qmcplusplus {
 
   QMCOptimize::QMCOptimize(MCWalkerConfiguration& w,
-      TrialWaveFunction& psi, QMCHamiltonian& h):
+      TrialWaveFunction& psi, QMCHamiltonian& h, HamiltonianPool& hpool):
   QMCDriver(w,psi,h), 
   PartID(0), NumParts(1), WarmupBlocks(10), 
-  SkipSampleGeneration("no"),
+  SkipSampleGeneration("no"), hamPool(hpool),
   optTarget(0), optSolver(0), vmcEngine(0),
   wfNode(NULL), optNode(NULL)
   { 
@@ -85,18 +90,24 @@ namespace qmcplusplus {
 
     app_log() << "   Reading configurations from h5FileRoot " << endl;
     //get configuration from the previous run
+    Timer t1;
+
     optTarget->getConfigurations(h5FileRoot);
     optTarget->checkConfigurations();
+
+    app_log() << "  Execution time = " << t1.elapsed() << endl;
     app_log() << "  </log>"<<endl;
     app_log() << "</opt>" << endl;
 
-    app_log() << "<opt stage=\"main\" walkers=\""<< W.getActiveWalkers() << "\">" << endl;
+    app_log() << "<opt stage=\"main\" walkers=\""<< optTarget->getNumSamples() << "\">" << endl;
     app_log() << "  <log>" << endl;
 
     //branchEngine->E_T=vmcEngine->getBranchEngine()->E_T;
     optTarget->setTargetEnergy(branchEngine->E_T);
 
+    t1.restart();
     bool success=optSolver->optimize(optTarget);
+    app_log() << "  Execution time = " << t1.elapsed() << endl;;
     app_log() << "  </log>" << endl;
     optTarget->reportParameters();
     app_log() << "</opt>" << endl;
@@ -109,6 +120,7 @@ namespace qmcplusplus {
 
   void QMCOptimize::generateSamples() 
   {
+    Timer t1;
     app_log() << "<optimization-report>" << endl;
     if(WarmupBlocks) 
     {
@@ -116,13 +128,16 @@ namespace qmcplusplus {
       vmcEngine->setValue("blocks",WarmupBlocks);
       vmcEngine->run();
       vmcEngine->setValue("blocks",nBlocks);
+      app_log() << "  Execution time = " << t1.elapsed() << endl;
       app_log() << "</vmc>" << endl;
     }
 
     vmcEngine->setValue("recordWalkers",1);//set record 
     vmcEngine->setValue("current",0);//reset CurrentStep
     app_log() << "<vmc stage=\"main\" blocks=\"" << nBlocks << "\">" << endl;
+    t1.restart();
     vmcEngine->run();
+    app_log() << "  Execution time = " << t1.elapsed() << endl;
     app_log() << "</vmc>" << endl;
 
     branchEngine->E_T=vmcEngine->getBranchEngine()->E_T;
@@ -161,7 +176,14 @@ namespace qmcplusplus {
     //create VMC engine
     if(vmcEngine ==0)
     {
+#if defined(ENABLE_OPENMP)
+      if(omp_get_max_threads()>1)
+        vmcEngine = new VMCSingleOMP(W,Psi,H,hamPool);
+      else
+        vmcEngine = new VMCSingle(W,Psi,H);
+#else
       vmcEngine = new VMCSingle(W,Psi,H);
+#endif
       vmcEngine->setCommunicator(qmcComm);
     }
 
@@ -191,7 +213,16 @@ namespace qmcplusplus {
 
     if(optTarget == 0) 
     {
-      optTarget = new QMCCostFunctionSingle(W,Psi,H);
+#if defined(ENABLE_OPENMP)
+      if(omp_get_max_threads()>1)
+      {
+        optTarget = new QMCCostFunctionOMP(W,Psi,H,hamPool);
+      }
+      else
+        optTarget = new QMCCostFunctionSingle(W,Psi,H);
+#else
+        optTarget = new QMCCostFunctionSingle(W,Psi,H);
+#endif
       optTarget->setStream(&app_log());
     }
     return optTarget->put(q);

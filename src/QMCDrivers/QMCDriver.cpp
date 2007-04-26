@@ -177,6 +177,14 @@ namespace qmcplusplus {
 
   void QMCDriver::recordBlock(int block) {
 
+    if(wOut ==0)
+    {
+      wOut = new HDFWalkerOutput(W,RootName);
+      wOut->open();
+      branchEngine->write(wOut->getConfigID(),false);
+      wOut->close();
+      branchEngine->start(RootName,true);
+    }
     //estimator writes
     //Estimators->report(CurrentStep);
     //if Period4WalkerDump>0, record works as the checkpoint

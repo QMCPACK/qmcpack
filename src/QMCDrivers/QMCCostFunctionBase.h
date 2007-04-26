@@ -64,7 +64,9 @@ namespace qmcplusplus {
     ///return the cost value for CGMinimization
     Return_t Cost();
     ///return the number of optimizable parameters
-    int NumParams() { return OptParams.size(); }
+    inline int NumParams() { return OptParams.size(); }
+    ///return the number of optimizable parameters
+    inline int getNumSamples() { return NumSamples; }
     ///dump the current parameters and other report
     void Report();
     ///report  parameters at the end
