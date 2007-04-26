@@ -42,6 +42,7 @@ namespace qmcplusplus {
   Manager(false), CollectSum(true), AppendRecord(false), Collected(false), 
   ThreadCount(1), h_file(-1), h_obs(-1), myComm(0), H(h),MainEstimator(0)
   { 
+    setCommunicator(c);
     //Block2Total.resize(0); 
   }
 
