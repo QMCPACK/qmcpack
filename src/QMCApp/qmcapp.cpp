@@ -8,7 +8,6 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
@@ -34,61 +33,62 @@
  */
 int main(int argc, char **argv) {
 
+  if(argc<=1)
+  {
+    ERRORMSG("No input file is given.")
+    ERRORMSG("usage: qmcapp input-file")
+    return 1;
+  }
+
   OHMMS::Controller->initialize(argc,argv);
 
   OhmmsInfo Welcome(argc,argv,OHMMS::Controller->mycontext());
 
   qmcplusplus::QMCMain qmc(argc,argv);
-  qmc.qmcComm = OHMMS::Controller;
+
+  string fname=argv[1];
 
 #if defined(MPIRUN_EXTRA_ARGUMENTS)
-  char fname[128];
-  if(OHMMS::Controller->master()) {
-    sprintf(fname,"%s",argv[1]);
-  }
-
   //broadcast the input file name to other nodes
-  MPI_Bcast(fname,128,MPI_CHAR,0,OHMMS::Controller->getID());
+  MPI_Bcast(fname.c_str(),fname.size(),MPI_CHAR,0,OHMMS::Controller->getID());
+#endif
 
-  if(qmc.parse(fname)) {
-    qmc.execute();
+  string fext=getExtension(fname);
+  bool validInput=false;
+
+  if(fext == "xml")
+  {
+    qmc.qmcComm = OHMMS::Controller;
+    validInput=qmc.parse(fname);
   }
-#else
-  if(argc>1) {
-    string fext=getExtension(argv[1]);
-    bool validInput=false;
-    if(fext == "xml")
+  else
+  {
+    ifstream fin(fname.c_str());
+    vector<string> fgroup;
+    bool valid=true;
+    do 
     {
-      validInput=qmc.parse(argv[1]);
+      vector<string> words;
+      getwords(words,fin);
+      if(words.size())
+        fgroup.push_back(words[0]);
+      else
+        valid=false;
+    } while(valid);
+
+    if(OHMMS::Controller->ncontexts()==1)
+    {
+      qmc.qmcComm = OHMMS::Controller;
+      validInput=qmc.parse(fgroup[0]);
     }
     else
     {
-      ifstream fin(argv[1]);
-      vector<string> fgroup;
-      bool valid=true;
-      do {
-        vector<string> words;
-        getwords(words,fin);
-        if(words.size())
-          fgroup.push_back(words[0]);
-        else
-          valid=false;
-      } while(valid);
-#if defined(HAVE_MPI)
       qmc.qmcComm = new Communicate(*OHMMS::Controller,fgroup.size());
-      //cout << qmc.qmcComm->mycontext() << " belongs to " << qmc.qmcComm->getGroupID()
-      //  << " using " << fgroup[qmc.qmcComm->getGroupID()] << endl;
       validInput=qmc.parse(fgroup[qmc.qmcComm->getGroupID()]);
-#else
-      validInput=qmc.parse(fgroup[0]);
-#endif
     }
-    if(validInput) qmc.execute();
-  } else {
-    ERRORMSG("No input file is given.")
-    ERRORMSG("usage: qmcapp input-file")
   }
-#endif
+
+  if(validInput) qmc.execute();
 
   LOGMSG("Bye")
   OHMMS::Controller->finalize();
@@ -99,5 +99,3 @@ int main(int argc, char **argv) {
  * $Revision$   $Date$
  * $Id$ 
  ***************************************************************************/
-
-
