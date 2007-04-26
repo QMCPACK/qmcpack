@@ -128,11 +128,21 @@ namespace qmcplusplus {
 
     PropertyCache.resize(blocks,BlockProperties.size());
 
+
     if(record)
     {
       //open obsevables and allocate spaces 
       string h5file=RootName+".config.h5";
       h_file =  H5Fopen(h5file.c_str(),H5F_ACC_RDWR,H5P_DEFAULT);
+
+      herr_t status = H5Eset_auto(NULL, NULL);
+      status = H5Gget_objinfo (h_file, "observables", 0, NULL);
+      if(status ==0) //observables are already there. remove them
+      {
+        cout << "Unlink observables " << blocks << endl;
+        h_obs = H5Gunlink(h_file,"observables");
+      }
+
       h_obs = H5Gcreate(h_file,"observables",0);
       HDFAttribIO<int> i(RecordCount);
       i.write(h_obs,"count");
