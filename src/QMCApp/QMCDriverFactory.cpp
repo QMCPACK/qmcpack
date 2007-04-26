@@ -262,7 +262,7 @@ namespace qmcplusplus {
     } 
     else if(curRunType == OPTIMIZE_RUN)
     {
-      QMCOptimize *opt = new QMCOptimize(*qmcSystem,*primaryPsi,*primaryH);
+      QMCOptimize *opt = new QMCOptimize(*qmcSystem,*primaryPsi,*primaryH,*hamPool);
       opt->setWaveFunctionNode(psiPool->getWaveFunctionNode("null"));
       qmcDriver=opt;
     } 
