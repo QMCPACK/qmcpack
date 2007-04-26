@@ -89,7 +89,7 @@ namespace qmcplusplus {
             Movers[ip]= new DMCUpdatePbyPWithRejection(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]); 
           }
           Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip]);
-          Movers[ip]->initWalkersForPbyP(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
+          //Movers[ip]->initWalkersForPbyP(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
         } 
         else
         {
@@ -106,9 +106,20 @@ namespace qmcplusplus {
             }
           }
           Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip]);
-          Movers[ip]->initWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
+          //Movers[ip]->initWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
         }
       } 
+    }
+
+#pragma omp parallel 
+    {
+      int ip = omp_get_thread_num();
+      MCWalkerConfiguration::iterator 
+        wit(W.begin()+wPerNode[ip]), wit_end(W.begin()+wPerNode[ip+1]);
+      if(QMCDriverMode[QMC_UPDATE_MODE])
+        Movers[ip]->initWalkersForPbyP(wit,wit_end);
+      else
+        Movers[ip]->initWalkers(wit,wit_end);
     }
 
     if(fixW) 
@@ -153,6 +164,7 @@ namespace qmcplusplus {
 
     IndexType block = 0;
 
+
     do // block
     {
       Estimators->startBlock(nSteps);
@@ -169,6 +181,7 @@ namespace qmcplusplus {
           int interval = 0;
           MCWalkerConfiguration::iterator 
             wit(W.begin()+wPerNode[ip]), wit_end(W.begin()+wPerNode[ip+1]);
+
           if(pbyp && now%100 == 99) Movers[ip]->updateWalkers(wit, wit_end);
           do // interval
           {
