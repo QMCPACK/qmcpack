@@ -131,6 +131,9 @@ namespace qmcplusplus {
 
     if(record)
     {
+      if(h_obs>-1)  H5Gclose(h_obs);
+      if(h_file>-1)  H5Fclose(h_file);
+
       //open obsevables and allocate spaces 
       string h5file=RootName+".config.h5";
       h_file =  H5Fopen(h5file.c_str(),H5F_ACC_RDWR,H5P_DEFAULT);
@@ -139,7 +142,6 @@ namespace qmcplusplus {
       status = H5Gget_objinfo (h_file, "observables", 0, NULL);
       if(status ==0) //observables are already there. remove them
       {
-        cout << "Unlink observables " << blocks << endl;
         h_obs = H5Gunlink(h_file,"observables");
       }
 
@@ -159,7 +161,7 @@ namespace qmcplusplus {
       so.write(h_obs,"scalar_ids");
 
       //H5Gclose(h_obs);
-      H5Fclose(h_file);
+      //H5Fclose(h_file);
     }
   }
 
@@ -255,6 +257,12 @@ namespace qmcplusplus {
 
       H5Gclose(h_obs); 
       h_obs=-1;
+    }
+
+    if(h_file>-1)
+    {
+      H5Fclose(h_file); 
+      h_file=-1;
     }
 
     if(Manager) //write to a ascii file. Plan to disable it entirely.
@@ -353,6 +361,7 @@ namespace qmcplusplus {
     EstimatorManager::getEnergyAndWeight(RealType& e, RealType& w) 
   {
     int nc=AverageCache.cols();
+    if(nc==0) return;
     EPSum[0]=0.0;
     EPSum[1]=RecordCount;
     const RealType* restrict eptr=AverageCache.data();
