@@ -473,7 +473,7 @@ namespace qmcplusplus {
 
 		// taken from VMCMultiple
     if(Estimators == 0) {
-      Estimators = new ScalarEstimatorManager(H);
+      Estimators = new EstimatorManager(H);
       multiEstimator = new RQMCEstimator(H,nPsi);
       Estimators->add(multiEstimator,"elocal");
     }

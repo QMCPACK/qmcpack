@@ -26,7 +26,7 @@
 #include "QMCDrivers/SimpleFixedNodeBranch.h"
 //#define ENABLE_COMPOSITE_ESTIMATOR
 #include "Estimators/CompositeEstimators.h"
-#include "Estimators/ScalarEstimatorManager.h"
+#include "Estimators/EstimatorManager.h"
 
 namespace qmcplusplus {
 
@@ -71,7 +71,7 @@ namespace qmcplusplus {
      *
      * Update time-step variables to move walkers
      */
-    void resetRun(BranchEngineType* brancher, ScalarEstimatorManager* est);
+    void resetRun(BranchEngineType* brancher, EstimatorManager* est);
 
     ///** start a run */
     void startRun(int blocks, bool record);
@@ -144,7 +144,7 @@ namespace qmcplusplus {
     ///branch engine
     BranchEngineType* branchEngine;
     ///estimator
-    ScalarEstimatorManager* Estimators;
+    EstimatorManager* Estimators;
     ///parameters
     ParameterSet myParams;
 #if defined(ENABLE_COMPOSITE_ESTIMATOR)

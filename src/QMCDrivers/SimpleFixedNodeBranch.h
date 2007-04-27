@@ -26,7 +26,7 @@
 namespace qmcplusplus {
 
   class WalkerControlBase;
-  class ScalarEstimatorManager;
+  class EstimatorManager;
 
   /** Implements branching algorithm for the fixed-node Diffusion Monte Carlo
    *
@@ -90,7 +90,7 @@ namespace qmcplusplus {
       ///WalkerController
       WalkerControlBase* WalkerController;
       ///EstimatorManager
-      ScalarEstimatorManager*  MyEstimator;
+      EstimatorManager*  MyEstimator;
       ///root name
       string RootName;
       ///(yes|no) string to determine SwapMode
@@ -113,16 +113,16 @@ namespace qmcplusplus {
        */
       inline void advanceQMCCounter() { QMCCounter++;}
 
-      /** get the ScalarEstimatorManager */
-      ScalarEstimatorManager* getEstimatorManager()
+      /** get the EstimatorManager */
+      EstimatorManager* getEstimatorManager()
       {
         return MyEstimator;
       }
 
-      /** set the ScalarEstimatorManager
+      /** set the EstimatorManager
        * @param est estimator created by the first QMCDriver
        * */
-      void setEstimatorManager(ScalarEstimatorManager* est)
+      void setEstimatorManager(EstimatorManager* est)
       {
         MyEstimator=est;
       }

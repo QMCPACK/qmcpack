@@ -187,7 +187,7 @@ namespace qmcplusplus {
       {
         int ip = omp_get_thread_num();
         if(ip) hClones[ip]->add2WalkerProperty(*wClones[ip]);
-        estimatorClones[ip]= new ScalarEstimatorManager(*Estimators,*hClones[ip]);  
+        estimatorClones[ip]= new EstimatorManager(*Estimators,*hClones[ip]);  
         estimatorClones[ip]->setCollectionMode(false);
 
         Rng[ip]=new RandomGenerator_t();

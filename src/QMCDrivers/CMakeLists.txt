@@ -3,11 +3,11 @@
 ####################################
 SET(QMCDRIVERS 
   ../Estimators/LocalEnergyEstimator.cpp
-  ../Estimators/ScalarEstimatorManager.cpp
   ../Estimators/MultipleEnergyEstimator.cpp
   ../Estimators/RQMCMultipleEstimator.cpp
   ../Estimators/CompositeEstimators.cpp
   ../Estimators/PairCorrEstimator.cpp
+  ../Estimators/EstimatorManager.cpp
   SimpleFixedNodeBranch.cpp
   QMCDriver.cpp
   QMCOptimize.cpp

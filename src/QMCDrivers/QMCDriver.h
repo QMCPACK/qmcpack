@@ -26,7 +26,7 @@
 #include "Utilities/PooledData.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
-#include "Estimators/ScalarEstimatorManager.h"
+#include "Estimators/EstimatorManager.h"
 #include "Utilities/OhmmsInfo.h"
 #include "QMCDrivers/SimpleFixedNodeBranch.h"
 
@@ -157,7 +157,7 @@ namespace qmcplusplus {
     }
 
     ///Observables manager
-    ScalarEstimatorManager* Estimators;
+    EstimatorManager* Estimators;
 
   protected:
 

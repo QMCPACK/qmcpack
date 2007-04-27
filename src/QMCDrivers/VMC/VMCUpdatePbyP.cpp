@@ -19,7 +19,6 @@
 // -*- C++ -*-
 #include "QMCDrivers/VMC/VMCUpdatePbyP.h"
 #include "QMCDrivers/DriftOperators.h"
-#include "Estimators/ScalarEstimatorManager.h"
 #include "Message/OpenMP.h"
 
 namespace qmcplusplus { 

@@ -79,8 +79,7 @@ namespace qmcplusplus {
     return s;
   }
 
-  void QMCUpdateBase::resetRun(BranchEngineType* brancher,
-      ScalarEstimatorManager* est) {
+  void QMCUpdateBase::resetRun(BranchEngineType* brancher, EstimatorManager* est) {
 
     Estimators=est;
     branchEngine=brancher;

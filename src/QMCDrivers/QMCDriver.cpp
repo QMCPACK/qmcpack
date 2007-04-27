@@ -109,7 +109,7 @@ namespace qmcplusplus {
     Estimators = branchEngine->getEstimatorManager();
     if(Estimators==0)
     {
-      Estimators = new ScalarEstimatorManager(H,qmcComm);
+      Estimators = new EstimatorManager(H,qmcComm);
       branchEngine->setEstimatorManager(Estimators);
       if(h5FileRoot.size()) branchEngine->read(h5FileRoot);
     }
