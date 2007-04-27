@@ -15,7 +15,7 @@
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 #include "Particle/MCWalkerConfiguration.h"
-#include "Estimators/ScalarEstimatorManager.h"
+#include "Estimators/EstimatorManager.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Message/Communicate.h"
 #include "Message/CommOperators.h"
@@ -36,7 +36,7 @@ namespace qmcplusplus {
     }
 
   //initialize the name of the primary estimator
-  ScalarEstimatorManager::ScalarEstimatorManager(QMCHamiltonian& h, 
+  EstimatorManager::EstimatorManager(QMCHamiltonian& h, 
       Communicate* c): 
     MainEstimatorName("elocal"),
   Manager(false), CollectSum(true), AppendRecord(false), Collected(false), 
@@ -46,7 +46,7 @@ namespace qmcplusplus {
     //Block2Total.resize(0); 
   }
 
-  ScalarEstimatorManager::ScalarEstimatorManager(ScalarEstimatorManager& em, 
+  EstimatorManager::EstimatorManager(EstimatorManager& em, 
       QMCHamiltonian& h):
     MainEstimatorName("elocal"),
   Manager(false), AppendRecord(false), Collected(false), 
@@ -63,12 +63,12 @@ namespace qmcplusplus {
     MainEstimator=Estimators[EstimatorMap[MainEstimatorName]];
   }
 
-  ScalarEstimatorManager::~ScalarEstimatorManager()
+  EstimatorManager::~EstimatorManager()
   { 
     delete_iter(Estimators.begin(), Estimators.end());
   }
 
-  void ScalarEstimatorManager::setCommunicator(Communicate* c) 
+  void EstimatorManager::setCommunicator(Communicate* c) 
   {
     if(myComm && myComm == c) return;
     myComm = c ? c:OHMMS::Controller;
@@ -79,7 +79,7 @@ namespace qmcplusplus {
   /** set CollectSum
    * @param collect if true, global sum is done over the values
    */
-  void ScalarEstimatorManager::setCollectionMode(bool collect) 
+  void EstimatorManager::setCollectionMode(bool collect) 
   {
     if(!myComm) setCommunicator(0);
     //force to be false for serial runs
@@ -92,7 +92,7 @@ namespace qmcplusplus {
    * The number of estimators and their order can vary from the previous state.
    * Clear properties before setting up a new BlockAverage data list.
    */
-  void ScalarEstimatorManager::reset()
+  void EstimatorManager::reset()
   {
 
     if(Estimators.empty()) 
@@ -112,7 +112,7 @@ namespace qmcplusplus {
     acceptInd = BlockProperties.add("AcceptRatio");
   }
 
-  void ScalarEstimatorManager::start(int blocks, bool record)
+  void EstimatorManager::start(int blocks, bool record)
   {
     reset();
 
@@ -163,7 +163,7 @@ namespace qmcplusplus {
     }
   }
 
-  void ScalarEstimatorManager::stop(const vector<ScalarEstimatorManager*> est)
+  void EstimatorManager::stop(const vector<EstimatorManager*> est)
   {
     RecordCount=est[0]->RecordCount;
 
@@ -195,7 +195,7 @@ namespace qmcplusplus {
    * be guarded by master/single.
    * Keep the ascii output for now
    */
-  void ScalarEstimatorManager::stop() 
+  void EstimatorManager::stop() 
   {
     if(CollectSum)
     {
@@ -287,7 +287,7 @@ namespace qmcplusplus {
     Collected=true;
   }
 
-  void ScalarEstimatorManager::stopBlock(RealType accept)
+  void EstimatorManager::stopBlock(RealType accept)
   {
     TotalWeight[RecordCount]=Estimators[0]->d_wgt;
     //PropertyCache(RecordCount,weightInd) = Estimators[0]->d_wgt;
@@ -309,7 +309,7 @@ namespace qmcplusplus {
     m.write(h_obs,"scalars");
   }
 
-  void ScalarEstimatorManager::stopBlock(const vector<ScalarEstimatorManager*> est)
+  void EstimatorManager::stopBlock(const vector<EstimatorManager*> est)
   {
     ThreadCount=est.size();
     //RecordCount=est[0]->RecordCount;
@@ -336,13 +336,13 @@ namespace qmcplusplus {
     m.write(h_obs,"scalars");
   }
 
-  void ScalarEstimatorManager::accumulate(MCWalkerConfiguration::iterator it,
+  void EstimatorManager::accumulate(MCWalkerConfiguration::iterator it,
       MCWalkerConfiguration::iterator it_end)
   {
     for(int i=0; i< Estimators.size(); i++) Estimators[i]->accumulate(it,it_end);
   }
 
-  void ScalarEstimatorManager::accumulate(ParticleSet& P, 
+  void EstimatorManager::accumulate(ParticleSet& P, 
       MCWalkerConfiguration::Walker_t& awalker) 
   {
     for(int i=0; i< Estimators.size(); i++) 
@@ -350,7 +350,7 @@ namespace qmcplusplus {
   }
 
   void 
-    ScalarEstimatorManager::getEnergyAndWeight(RealType& e, RealType& w) 
+    EstimatorManager::getEnergyAndWeight(RealType& e, RealType& w) 
   {
     int nc=AverageCache.cols();
     EPSum[0]=0.0;
@@ -364,16 +364,16 @@ namespace qmcplusplus {
     w=EPSum[1];
   }
 
-  ScalarEstimatorManager::EstimatorType* 
-    ScalarEstimatorManager::getMainEstimator() 
+  EstimatorManager::EstimatorType* 
+    EstimatorManager::getMainEstimator() 
     {
       if(MainEstimator==0) 
         add(new LocalEnergyOnlyEstimator(),MainEstimatorName);
       return MainEstimator;
     }
 
-  ScalarEstimatorManager::EstimatorType* 
-    ScalarEstimatorManager::getEstimator(const string& a) 
+  EstimatorManager::EstimatorType* 
+    EstimatorManager::getEstimator(const string& a) 
     {
       std::map<string,int>::iterator it = EstimatorMap.find(a);
       if(it == EstimatorMap.end()) 
@@ -383,7 +383,7 @@ namespace qmcplusplus {
     }
 
   /** This should be moved to branch engine */
-  bool ScalarEstimatorManager::put(xmlNodePtr cur) 
+  bool EstimatorManager::put(xmlNodePtr cur) 
   {
     vector<string> extra;
     cur = cur->children;
@@ -415,7 +415,7 @@ namespace qmcplusplus {
     return true;
   }
 
-  int ScalarEstimatorManager::add(EstimatorType* newestimator, const string& aname) 
+  int EstimatorManager::add(EstimatorType* newestimator, const string& aname) 
   { 
 
     std::map<string,int>::iterator it = EstimatorMap.find(aname);
@@ -428,7 +428,7 @@ namespace qmcplusplus {
     else 
     {
       n=(*it).second;
-      app_log() << "  ScalarEstimatorManager::add replace " << aname << " estimator." << endl;
+      app_log() << "  EstimatorManager::add replace " << aname << " estimator." << endl;
       delete Estimators[n]; 
       Estimators[n]=newestimator;
     }
@@ -438,7 +438,7 @@ namespace qmcplusplus {
     return n;
   }
 
-  int ScalarEstimatorManager::addObservable(const char* aname) 
+  int EstimatorManager::addObservable(const char* aname) 
   {
     int mine = BlockAverages.add(aname);
     int add = TotalAverages.add(aname);
@@ -449,7 +449,7 @@ namespace qmcplusplus {
     return mine;
   }
 
-  void ScalarEstimatorManager::getData(int i, vector<RealType>& values)
+  void EstimatorManager::getData(int i, vector<RealType>& values)
   {
     int entries = TotalAveragesData.rows();
     values.resize(entries);

@@ -8,21 +8,18 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
-//   Department of Physics, Ohio State University
-//   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-/** @file ScalarEstimatorManager.h
+/** @file EstimatorManager.h
  * @brief Manager class of scalar estimators
  * @authors J. Kim and J. Vincent
  */
-#ifndef QMCPLUSPLUS_SCALAR_ESTIMATORMANAGER_H
-#define QMCPLUSPLUS_SCALAR_ESTIMATORMANAGER_H
+#ifndef QMCPLUSPLUS_ESTIMATORMANAGER_H
+#define QMCPLUSPLUS_ESTIMATORMANAGER_H
 
 #include "Configuration.h"
 #include "Utilities/Timer.h"
@@ -37,7 +34,7 @@ namespace qmcplusplus {
   class QMCHamiltonian;
 
   /**Class to manage a set of ScalarEstimators */
-  class ScalarEstimatorManager: public QMCTraits
+  class EstimatorManager: public QMCTraits
   {
 
   public:
@@ -51,9 +48,9 @@ namespace qmcplusplus {
     ///the root file name
     std::string RootName;
 
-    ScalarEstimatorManager(QMCHamiltonian& h, Communicate* c=0);
-    ScalarEstimatorManager(ScalarEstimatorManager& em, QMCHamiltonian& h);
-    virtual ~ScalarEstimatorManager();
+    EstimatorManager(QMCHamiltonian& h, Communicate* c=0);
+    EstimatorManager(EstimatorManager& em, QMCHamiltonian& h);
+    virtual ~EstimatorManager();
 
     /** set the communicator */
     void setCommunicator(Communicate* c);
@@ -162,7 +159,7 @@ namespace qmcplusplus {
     void stop();
     /** stop a qmc run
      */
-    void stop(const vector<ScalarEstimatorManager*> m);
+    void stop(const vector<EstimatorManager*> m);
 
     /** start  a block
      * @param steps number of steps in a block
@@ -175,7 +172,7 @@ namespace qmcplusplus {
     /** stop a block
      * @param m list of estimator which has been collecting data independently
      */
-    void stopBlock(const vector<ScalarEstimatorManager*> m);
+    void stopBlock(const vector<EstimatorManager*> m);
 
     void accumulate(MCWalkerConfiguration::iterator it,
         MCWalkerConfiguration::iterator it_end);
