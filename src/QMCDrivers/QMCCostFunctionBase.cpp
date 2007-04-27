@@ -357,8 +357,10 @@ namespace qmcplusplus {
       sprintf(newxml,"%s.opt.%d.xml", RootName.c_str(),ReportCounter);
       xmlSaveFormatFile(newxml,m_doc_out,1);
       if(msg_stream) {
+        msg_stream->precision(8);
         *msg_stream << " curCost " 
-          << setw(5) << ReportCounter << setw(16) << CostValue << setw(15) << NumWalkersEff 
+          << setw(5) << ReportCounter << setw(16) << CostValue 
+          << setw(16) << NumWalkersEff 
           << setw(16) << curAvg_w << setw(16) << curAvg 
           << setw(16) << curVar_w << setw(16) << curVar 
           << setw(16) << curVar_abs << endl;
@@ -583,7 +585,6 @@ namespace qmcplusplus {
 
     if(msg_stream) {
       msg_stream->setf(ios::scientific, ios::floatfield);
-      msg_stream->precision(8);
     }
 
     resetPsi();
