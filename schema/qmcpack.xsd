@@ -247,8 +247,12 @@
       <xs:annotation>
         <xs:documentation>project</xs:documentation>
       </xs:annotation>
-      <xs:attribute name="id" type="xs:string" use="required"/>
-      <xs:attribute name="series" type="xs:string" use="required"/>
+	  <xs:simpleContent>
+        <xs:extension base="xs:string">
+           <xs:attribute name="id" type="xs:string" use="required"/>
+           <xs:attribute name="series" type="xs:string" use="required"/>
+		</xs:extension>
+	  </xs:simpleContent>
     </xs:complexType>
     <xs:complexType name="randomType">
       <xs:annotation>
