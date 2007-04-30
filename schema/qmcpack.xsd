@@ -337,17 +337,17 @@
       <xs:annotation>
         <xs:documentation>Operators that make up a Hamiltonian</xs:documentation>
       </xs:annotation>
-	  <xs:sequence>
-		  <xs:element name="pseudo" type="pseudopotType" minOccurs="0" maxOccurs="unbounded"/>
-	  </xs:sequence>
+      <xs:sequence>
+        <xs:element name="pseudo" type="pseudopotType" minOccurs="0" maxOccurs="unbounded"/>
+      </xs:sequence>
       <xs:attribute name="name" type="xs:string" use="required"/> 
       <xs:attribute name="type" type="PairPotEnum" use="required"/>
       <xs:attribute name="source" type="xs:string" use="optional" default="i"/>
       <xs:attribute name="target" type="xs:string" use="optional" default="e"/>
-	  <xs:attribute name="format" type="xs:string" use="optional" default="xml"/>
+      <xs:attribute name="format" type="xs:string" use="optional" default="xml"/>
       <xs:attribute name="wavefunction" type="xs:string" use="optional" default="psi0"/>
     </xs:complexType>
-	<xs:complexType name="pseudopotType">
+    <xs:complexType name="pseudopotType">
       <xs:annotation>
         <xs:documentation>Pseudopotential for a species</xs:documentation>
       </xs:annotation>
@@ -568,7 +568,7 @@
       <xs:annotation>
         <xs:documentation>QMC section</xs:documentation>
       </xs:annotation>
-      <xs:sequence>
+      <xs:choice minOccurs="0" maxOccurs="unbounded">
         <xs:element name="qmcsystem" type="qmcSystemRefType" minOccurs="0" maxOccurs="unbounded"/>
         <xs:element name="parameter" type="parameterType" minOccurs="0" maxOccurs="unbounded"/>
         <xs:element name="cost" type="parameterType" minOccurs="0" maxOccurs="unbounded"/>
@@ -587,7 +587,7 @@
             <xs:attribute name="method"/>
           </xs:complexType>
         </xs:element>
-      </xs:sequence>
+      </xs:choice>
       <xs:attributeGroup ref="qmcAttribGroup"/>
       <xs:attribute name="method" type="QMCEngineEnum" use="optional" default="test"/>
     </xs:complexType>
