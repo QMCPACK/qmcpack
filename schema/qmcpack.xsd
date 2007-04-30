@@ -258,8 +258,12 @@
       <xs:annotation>
         <xs:documentation> random generator.</xs:documentation>
       </xs:annotation>
+      <xs:simpleContent>
+        <xs:extension base="xs:string">
       <xs:attribute name="parallel" type="xs:string" default="true"/>
       <xs:attribute name="seed" type="xs:string" default="-1"/>
+		</xs:extension>
+	  </xs:simpleContent>
     </xs:complexType>
     <xs:complexType name="hdfFileType">
       <xs:annotation>
@@ -333,10 +337,21 @@
       <xs:annotation>
         <xs:documentation>Operators that make up a Hamiltonian</xs:documentation>
       </xs:annotation>
+	  <xs:sequence>
+		  <xs:element name="pseudo" type="pseudopotType" minOccurs="0" maxOccurs="unbounded"/>
+	  </xs:sequence>
       <xs:attribute name="name" type="xs:string" use="required"/> 
       <xs:attribute name="type" type="PairPotEnum" use="required"/>
       <xs:attribute name="source" type="xs:string" use="optional" default="i"/>
       <xs:attribute name="target" type="xs:string" use="optional" default="e"/>
+      <xs:attribute name="wavefunction" type="xs:string" use="optional" default="psi0"/>
+    </xs:complexType>
+	<xs:complexType name="pseudopotType">
+      <xs:annotation>
+        <xs:documentation>Pseudopotential for a species</xs:documentation>
+      </xs:annotation>
+      <xs:attribute name="elementType" type="xs:string" use="required"/> 
+      <xs:attribute name="href" type="xs:string" use="optional"/>
     </xs:complexType>
     <xs:complexType name="basisGroupType">
       <xs:annotation>
