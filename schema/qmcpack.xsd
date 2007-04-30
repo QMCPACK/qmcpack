@@ -344,6 +344,7 @@
       <xs:attribute name="type" type="PairPotEnum" use="required"/>
       <xs:attribute name="source" type="xs:string" use="optional" default="i"/>
       <xs:attribute name="target" type="xs:string" use="optional" default="e"/>
+	  <xs:attribute name="format" type="xs:string" use="optional" default="xml"/>
       <xs:attribute name="wavefunction" type="xs:string" use="optional" default="psi0"/>
     </xs:complexType>
 	<xs:complexType name="pseudopotType">
