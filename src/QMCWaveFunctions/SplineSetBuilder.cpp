@@ -105,7 +105,8 @@ namespace qmcplusplus {
             neworb=new SPOType(GridXYZ);
             HDFAttribIO<std::vector<RealType> > dummy(inData,npts);
             dummy.read(h_file,wfname);
-            neworb->reset(inData.begin(), inData.end(), targetPtcl.Lattice.BoxBConds[0]);
+            //neworb->reset(inData.begin(), inData.end(), targetPtcl.Lattice.BoxBConds[0]);
+            neworb->reset(inData.begin(), inData.end(), targetPtcl.Lattice.SuperCellEnum);
             NumericalOrbitals[wfshortname]=neworb;
             app_log() << "   Reading spline function " << wfname << endl;
           } else {

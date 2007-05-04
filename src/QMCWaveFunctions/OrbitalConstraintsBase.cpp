@@ -85,9 +85,9 @@ namespace qmcplusplus {
       xmlNewProp(gridPtr,(const xmlChar*)"type",(const xmlChar*)"log");
       xmlNewProp(gridPtr,(const xmlChar*)"ri",(const xmlChar*)"1.0e-6");
       std::ostringstream rf;
-      if(targetPtcl.Lattice.BoxBConds[0])
-        rf << targetPtcl.Lattice.R(0,0)*0.48;
-      else 
+      if(targetPtcl.Lattice.SuperCellEnum)
+        rf << targetPtcl.Lattice.LR_rc;
+      else
         rf << 100.;
       xmlNewProp(gridPtr,(const xmlChar*)"rf",(const xmlChar*)rf.str().c_str());
       xmlNewProp(gridPtr,(const xmlChar*)"npts",(const xmlChar*)"101");

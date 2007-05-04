@@ -74,7 +74,7 @@ namespace qmcplusplus {
   OrbitalBase* RPAConstraints::createTwoBody() {
 
     if(Rs<0) {
-      if(targetPtcl.Lattice.BoxBConds[0]) {
+      if(targetPtcl.Lattice.SuperCellEnum) {
         Rs=std::pow(3.0/4.0/M_PI*targetPtcl.Lattice.Volume/static_cast<RealType>(targetPtcl.getTotalNum()),1.0/3.0);
       } else { 
         Rs=1.0;
@@ -205,7 +205,7 @@ namespace qmcplusplus {
   OrbitalBase* RPAPBCConstraints::createTwoBody() 
   {
     if(Rs<0) {
-      if(targetPtcl.Lattice.BoxBConds[0]) {
+      if(targetPtcl.Lattice.SuperCellEnum) {
         Rs=std::pow(3.0/4.0/M_PI*targetPtcl.Lattice.Volume/static_cast<RealType>(targetPtcl.getTotalNum()),1.0/3.0);
       } else {
         Rs=1.0;
