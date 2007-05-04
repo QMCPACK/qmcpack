@@ -148,19 +148,13 @@ namespace qmcplusplus {
      *
      * @todo Generalize to non-orthorohmbic cells
      */
-    inline void BuildRecursionCoefs(const PosType& pos) { //const ParticleSet &P, int iat) {
-
-      // Cartesian of twist for 1,1,1 (reduced coordinates)
-      PosType G111(1.0,1.0,1.0); 
-      G111 = Lattice.k_cart(G111); 
-
-      //Precompute a small number of complex factors (PWs along b1,b2,b3 lines)
-      //using a fast recursion algorithm
+    inline void BuildRecursionCoefs(const PosType& pos) 
+    { 
+      PosType tau_red(Lattice.toUnit(pos));
 #pragma ivdep 
       for(int idim=0; idim<3; idim++){
-        //start the recursion with the 111 vector.
-        RealType phi = pos[idim] * G111[idim];
-        register ComplexType Ctemp(std::cos(phi), std::sin(phi));
+        RealType phi=TWOPI*tau_red[idim];
+        ComplexType Ctemp(std::cos(phi),std::sin(phi));
         register int ng=maxg[idim];
         ComplexType* restrict cp_ptr=C[idim]+ng;
         ComplexType* restrict cn_ptr=C[idim]+ng-1;
@@ -171,6 +165,28 @@ namespace qmcplusplus {
           *cn_ptr = conj(t);
         }
       }
+      //Not valid for general supercell
+      //      // Cartesian of twist for 1,1,1 (reduced coordinates)
+      //      PosType G111(1.0,1.0,1.0); 
+      //      G111 = Lattice.k_cart(G111); 
+      //
+      //      //Precompute a small number of complex factors (PWs along b1,b2,b3 lines)
+      //      //using a fast recursion algorithm
+      //#pragma ivdep 
+      //      for(int idim=0; idim<3; idim++){
+      //        //start the recursion with the 111 vector.
+      //        RealType phi = pos[idim] * G111[idim];
+      //        register ComplexType Ctemp(std::cos(phi), std::sin(phi));
+      //        register int ng=maxg[idim];
+      //        ComplexType* restrict cp_ptr=C[idim]+ng;
+      //        ComplexType* restrict cn_ptr=C[idim]+ng-1;
+      //        *cp_ptr=1.0;
+      //        for(int n=1; n<=ng; n++,cn_ptr--){
+      //          ComplexType t(Ctemp*(*cp_ptr++));
+      //          *cp_ptr = t;
+      //          *cn_ptr = conj(t);
+      //        }
+      //      }
     }
 
     inline void 
