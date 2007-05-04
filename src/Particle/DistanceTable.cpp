@@ -21,6 +21,7 @@
 #include "Particle/SymmetricDistanceTableData.h"
 #include "Particle/AsymmetricDistanceTableData.h"
 #include "ParticleIO/ParticleLayoutIO.h"
+#include "Lattice/SuperCellTraits.h"
 using namespace qmcplusplus;
 
 /**@{instantiation of static data members*/
@@ -28,49 +29,28 @@ map<string,DistanceTableData*>  DistanceTable::TableMap;
 ParticleSet::ParticleLayout_t* DistanceTable::SimulationCell=0;
 /**@}*/
 
-/** dummy class to detemine the supercell type **/
-template<unsigned D>
-struct SuperCellType {};
-
-/** specialization of SuperCellType for 3-dimensional cell
- */
-template<>
-struct SuperCellType<3> {
-  /** convert box to an integer
-   * @param box 3-dimensional boolean vector
-   *
-   * When all the directions are open, returns 0.
-   * - 7 (1,1,1) bulk system
-   * - 3 (1,1,0) slab system
-   * - 1 (1,0,0) wire system
-   */
-  inline static int apply(const TinyVector<int,3>& box) {
-    return box[0]+2*(box[1]+box[2]*2);
-  }
-};
-
 template<class T, unsigned D, int SC>
 struct DTD_BConds {};
 
 template<class T>
-struct DTD_BConds<T,3,0> {
+struct DTD_BConds<T,3,SUPERCELL_OPEN> {
   inline static T apply(const CrystalLattice<T,3>& lat, TinyVector<T,3>& a) {
     return a[0]*a[0]+a[1]*a[1]+a[2]*a[2];
   }
 };
 
 template<class T>
-struct DTD_BConds<T,3,7> {
+struct DTD_BConds<T,3,SUPERCELL_BULK> {
   inline static T apply(const CrystalLattice<T,3>& lat, TinyVector<T,3>& a) {
     TinyVector<T,3> ar(lat.toUnit(a));
     /*
-    if(ar[0]<-0.5) ar[0]+=1.0; 
-    else if(ar[0]>=0.5) ar[0]-=1.0;
-    if(ar[1]<-0.5) ar[1]+=1.0; 
-    else if(ar[1]>=0.5) ar[1]-=1.0;
-    if(ar[2]<-0.5) ar[2]+=1.0; 
-    else if(ar[2]>=0.5) ar[2]-=1.0;
-    */
+       if(ar[0]<-0.5) ar[0]+=1.0; 
+       else if(ar[0]>=0.5) ar[0]-=1.0;
+       if(ar[1]<-0.5) ar[1]+=1.0; 
+       else if(ar[1]>=0.5) ar[1]-=1.0;
+       if(ar[2]<-0.5) ar[2]+=1.0; 
+       else if(ar[2]>=0.5) ar[2]-=1.0;
+       */
     T x=fmod(ar[0],1.0);
     T y=fmod(ar[1],1.0);
     T z=fmod(ar[2],1.0);
@@ -150,10 +130,11 @@ DistanceTable::add(ParticleSet& s, const char* aname) {
   if(it == TableMap.end()) {
     //LOGMSG("Distance table " << newname << " is created.")
     DistanceTableData* dt=0;
-    if(SuperCellType<OHMMS_DIM>::apply(s.Lattice.BoxBConds) == SUPERCELL_OPEN) 
-      dt = new SymmetricDTD<DTD_BConds<OHMMS_PRECISION,OHMMS_DIM,0> >(s,s);
+    //if(SuperCellType<OHMMS_DIM>::apply(s.Lattice.BoxBConds) == SUPERCELL_OPEN) 
+    if(s.Lattice.SuperCellEnum == SUPERCELL_OPEN)
+      dt = new SymmetricDTD<DTD_BConds<OHMMS_PRECISION,OHMMS_DIM,SUPERCELL_OPEN> >(s,s);
     else
-      dt = new SymmetricDTD<DTD_BConds<OHMMS_PRECISION,OHMMS_DIM,7> >(s,s);
+      dt = new SymmetricDTD<DTD_BConds<OHMMS_PRECISION,OHMMS_DIM,SUPERCELL_BULK> >(s,s);
 
     //set the name of the table
     dt->setName(newname);
@@ -189,10 +170,11 @@ DistanceTable::add(const ParticleSet& s, ParticleSet& t, const char* aname) {
   ///the named pair does not exist, add a new asymmetric metrics
   if(it == TableMap.end()) {
     DistanceTableData* dt=0;
-    if(SuperCellType<OHMMS_DIM>::apply(s.Lattice.BoxBConds) == SUPERCELL_OPEN) 
-      dt = new AsymmetricDTD<DTD_BConds<OHMMS_PRECISION,OHMMS_DIM,0> >(s,t);
+    //if(SuperCellType<OHMMS_DIM>::apply(s.Lattice.BoxBConds) == SUPERCELL_OPEN) 
+    if(s.Lattice.SuperCellEnum == SUPERCELL_OPEN)
+      dt = new AsymmetricDTD<DTD_BConds<OHMMS_PRECISION,OHMMS_DIM,SUPERCELL_OPEN> >(s,t);
     else 
-      dt = new AsymmetricDTD<DTD_BConds<OHMMS_PRECISION,OHMMS_DIM,7> >(s,t);
+      dt = new AsymmetricDTD<DTD_BConds<OHMMS_PRECISION,OHMMS_DIM,SUPERCELL_BULK> >(s,t);
 
     //set the name of the table
     dt->setName(newname);

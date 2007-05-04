@@ -42,9 +42,6 @@ namespace qmcplusplus {
     typedef ParticleSet::Scalar_t            RealType;
     typedef ParticleSet::SingleParticlePos_t PosType;
 
-    enum {SUPERCELL_OPEN=0, SUPERCELL_WIRE=1, 
-      SUPERCELL_SLAB=3, SUPERCELL_BULK=7};
-
     ///add a named DistanceTableData_t of Symmectric type
     static DistanceTableData* add(ParticleSet& s, const char* aname = NULL);
     
