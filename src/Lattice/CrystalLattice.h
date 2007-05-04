@@ -49,6 +49,7 @@ struct PosUnit {
        };
 };
 
+
 /** a class that defines a supercell in D-dimensional Euclean space.
  *
  *CrystalLattice handles the physical properties of a supercell, such
@@ -77,6 +78,10 @@ struct CrystalLattice{
   typedef Tensor<T,D>                  Tensor_t;
   //@}
 
+  ///supercell enumeration
+  int SuperCellEnum;
+  ///The boundary condition in each direction.
+  TinyVector<int,D> BoxBConds;
   //@{ 
   /**@brief Physcial properties of a supercell*/
   /// Volume of a supercell
@@ -111,8 +116,6 @@ struct CrystalLattice{
   /**@brief Parameters defining boundary Conditions */
   ///Functors that apply boundary conditions on the position vectors
   ParticleBConds<T,D> BConds;
-  ///The boundary condition in each direction.
-  TinyVector<int,D> BoxBConds;
   //@}
 
   ///default constructor, assign a huge supercell

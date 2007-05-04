@@ -20,6 +20,7 @@
  *@brief Member function definitions of CrystalLattice<T,D>, included by CrystalLattice.h
  */
 #include "Lattice/MakeCrystalLattice.h"
+#include "Lattice/SuperCellTraits.h"
 
 namespace APPNAMESPACE {
 /*! \fn CrystalLattice::CrystalLattice()
@@ -120,6 +121,8 @@ void CrystalLattice<T,D,ORTHO>::reset() {
   ABC[0] = rad_to_deg*std::acos(dot(Rv[0],Rv[1])*a0*a1);
   ABC[1] = rad_to_deg*std::acos(dot(Rv[1],Rv[2])*a1*a2);
   ABC[2] = rad_to_deg*std::acos(dot(Rv[2],Rv[0])*a2*a0);
+
+  SuperCellEnum = SuperCellType<D>::apply(BoxBConds);
 }
 
 /*! \fn  CrystalLattice<T,D>::operator=(const CrystalLattice<T,D>& rhs)
