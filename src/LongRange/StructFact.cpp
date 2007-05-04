@@ -1,19 +1,25 @@
 #include "LongRange/StructFact.h"
+#define SK_USE_RECURSIVE
 
 using namespace qmcplusplus;
 
 //Constructor - pass arguments to KLists' constructor
-StructFact::StructFact(ParticleSet& ref, RealType kc): PtclRef(ref), KLists(ref.Lattice) {
+StructFact::StructFact(ParticleSet& ref, RealType kc): PtclRef(ref), KLists(ref.Lattice) 
+{
   //Update Rhok with new "Lattice" information.
   UpdateNewCell(kc);
 }
 
-//Copy Constructor
-StructFact::StructFact(const StructFact &ref): PtclRef(ref.PtclRef), KLists(ref.PtclRef.Lattice) {
-  // Lattices are forced to match in PtclRef initialization.
-  // The KLists constructor doesn't generate the lists. It merely sets the lattice reference.
-  // "=" is defined for all data members that need to be copied.
+/** Copy Constructor
+ *
+ * Lattices are forced to match in PtclRef initialization.
+ * The KLists constructor doesn't generate the lists. It merely sets the lattice reference.
+ * "=" is defined for all data members that need to be copied.
+ */
+StructFact::StructFact(const StructFact &ref): PtclRef(ref.PtclRef), KLists(ref.PtclRef.Lattice) 
+{
   KLists = ref.KLists; //= checks for same cutoff and returns with no cost if equal.
+  resize();
   rhok = ref.rhok;
 }
 
@@ -34,6 +40,7 @@ StructFact::operator=(const StructFact &ref) {
     }
     // "=" is defined for all data members that need to be copied.
     KLists = ref.KLists; //= checks for same cutoff and returns with no cost if equal.
+    resize();
     rhok = ref.rhok;
   }
   return *this; //Allows assignment chaining 
@@ -47,8 +54,21 @@ void
 StructFact::UpdateNewCell(RealType kc) {
   //Generate the lists of k-vectors
   KLists.UpdateKLists(PtclRef.Lattice,kc);
+  //resize any arrary
+  resize();
   //Compute the entire Rhok 
   FillRhok();
+}
+
+void StructFact::resize()
+{
+  SpeciesSet& tspecies(PtclRef.getSpeciesSet());
+  rhok.resize(tspecies.TotalNum,KLists.numk);
+  eikr.resize(PtclRef.getTotalNum(),KLists.numk);
+  eikr_new.resize(KLists.numk);
+  delta_eikr.resize(KLists.numk);
+  int maxdim = std::max(KLists.mmax[0],std::max(KLists.mmax[1],KLists.mmax[2]));
+  C.resize(3,2*maxdim+1);
 }
 
 void 
@@ -61,74 +81,79 @@ StructFact::UpdateAllPart() {
   FillRhok();
 }
 
-//Private Methods
-// FillRhok
-// UpdateRhok
+/** evaluate rok per species, eikr  per particle
+ */
 void 
 StructFact::FillRhok() {
-  SpeciesSet& tspecies(PtclRef.getSpeciesSet());
-	
-  //Evaluate "Rho_k" using fast method
-  //Ken's breakup doc., section 5.1.
-  //This is the structure-factor of the ion coordinates.
-  //rhok.resize(KLists.numk,tspecies.TotalNum);
-  rhok.resize(tspecies.TotalNum,KLists.numk);
-  eikr.resize(PtclRef.getTotalNum(),KLists.numk);
-  eikr_new.resize(KLists.numk);
-  delta_eikr.resize(KLists.numk);
-
-  //Zero out rhok
-  for(int ki=0; ki<KLists.numk; ki++) 
-    for(int t=0; t<tspecies.TotalNum; t++)
-      rhok(t,ki) = complex<RealType>(0.0,0.0);
-     
-  TinyVector<double,3> k111; //k=1*b1 + 1*b2 + 1*b3
-  //Convert to Cartesian  
-  for(int idim=0; idim<3; idim++){
-    k111[idim] = 0.0;
-    for(int idir=0; idir<3; idir++){
-      k111[idim] += PtclRef.Lattice.b(idir)[idim];
-    }
-    k111[idim] *= TWOPI;
-  }
-  
-  
-  //Allocate the 'C' arrays.
-  //C needs to be allocated from [0..2][-max..max]
-  //Actually, map -max..max to 0..2max
-  //where max is the largest of KLists.mmax[3]
-  int maxdim = max(KLists.mmax[0],max(KLists.mmax[1],KLists.mmax[2]));
-  Matrix<complex<double> > C;
-  C.resize(3,2*maxdim+1);
-  
+  rhok=0.0;
   int npart = PtclRef.getTotalNum();
-  for(int i=0; i<npart; i++){
-    for(int idim=0; idim<3; idim++){
-      complex<double> Ctemp;
-      //start the recursion with the 111 vector.
-      double phi = (PtclRef.R[i])[idim] * k111[idim];
-      Ctemp = complex<double>(std::cos(phi), std::sin(phi));
-      C(idim,KLists.mmax[idim]) = 1.0; // K=0 term
-      //Recursively generate all Cs.
+#if defined(SK_USE_RECURSIVE)
+  for(int i=0; i<npart; i++)
+  {
+    //operate with a reduced positon
+    PosType tau_red=PtclRef.Lattice.toUnit(PtclRef.R[i]);
+    for(int idim=0; idim<3; idim++)
+    {
+      RealType phi=TWOPI*tau_red[idim];
+      ComplexType ctemp(std::cos(phi),std::sin(phi));
+      C(idim,KLists.mmax[idim])=1.0;
       for(int n=1; n<=KLists.mmax[idim]; n++){
-	C(idim,KLists.mmax[idim]+n) = Ctemp*C(idim,KLists.mmax[idim]+n-1);
-	C(idim,KLists.mmax[idim]-n) = conj(C(idim,KLists.mmax[idim]+n));
+        C(idim,KLists.mmax[idim]+n) = ctemp*C(idim,KLists.mmax[idim]+n-1);
+        C(idim,KLists.mmax[idim]-n) = conj(C(idim,KLists.mmax[idim]+n));
       }
     }
-    
-    //Now add the contribution to Rhok for this particle
-    for(int ki=0; ki<KLists.numk; ki++){
-      eikr(i,ki) = complex<RealType>(1.0,0.0); //Initialize 
-      for(int idim=0; idim<3; idim++)
-	eikr(i,ki) *= C(idim,KLists.kpts[ki][idim]+KLists.mmax[idim]);
-      rhok(PtclRef.GroupID[i],ki) += eikr(i,ki);
+    ComplexType* restrict eikr_ref=eikr[i];
+    ComplexType* restrict rhok_ref=rhok[PtclRef.GroupID[i]];
+    for(int ki=0; ki<KLists.numk; ki++)
+    {
+      eikr_ref[ki]=C(0,KLists.kpts[ki][0]+KLists.mmax[0])
+        *C(1,KLists.kpts[ki][1]+KLists.mmax[1])
+        *C(2,KLists.kpts[ki][2]+KLists.mmax[2]);
+      rhok_ref[ki]+=eikr_ref[ki];
     }
+
+    //valid version only with orthorohmbic cell, generalized to any cell
+    //  for(int idim=0; idim<3; idim++){
+    //    complex<double> Ctemp;
+    //    //start the recursion with the 111 vector.
+    //    double phi = (PtclRef.R[i])[idim] * k111[idim];
+    //    Ctemp = complex<double>(std::cos(phi), std::sin(phi));
+    //    C(idim,KLists.mmax[idim]) = 1.0; // K=0 term
+    //    //Recursively generate all Cs.
+    //    for(int n=1; n<=KLists.mmax[idim]; n++){
+    //      C(idim,KLists.mmax[idim]+n) = Ctemp*C(idim,KLists.mmax[idim]+n-1);
+    //      C(idim,KLists.mmax[idim]-n) = conj(C(idim,KLists.mmax[idim]+n));
+    //    }
+    //  }
+    //Now add the contribution to Rhok for this particle
+    //for(int ki=0; ki<KLists.numk; ki++){
+    //  eikr(i,ki) = ComplexType(1.0,0.0); //Initialize 
+    //  for(int idim=0; idim<3; idim++)
+    //    eikr(i,ki) *= C(idim,KLists.kpts[ki][idim]+KLists.mmax[idim]);
+    //  rhok(PtclRef.GroupID[i],ki) += eikr(i,ki);
+    //}
   } //End particle loop
+#else
+  for(int i=0; i<npart; i++)
+  {
+    PosType pos(PtclRef.R[i]);
+    ComplexType* restrict eikr_ref=eikr[i];
+    ComplexType* restrict rhok_ref=rhok[PtclRef.GroupID[i]];
+    for(int ki=0; ki<KLists.numk; ki++)
+    {
+      RealType phi(dot(KLists.kpts_cart[ki],pos));
+      eikr_ref[ki] = ComplexType(std::cos(phi),std::sin(phi));
+      rhok_ref[ki]+= eikr_ref[ki];
+    }
+  }
+#endif
 }
 
 
 void 
 StructFact::UpdateRhok(const PosType& rold,const PosType& rnew,int iat,int GroupID){
+
+  cout << "##### StructFact::UpdateRhok(const PosType& rold,const PosType& rnew USED" << endl;
   TinyVector<double,3> k111; //k=1*b1 + 1*b2 + 1*b3
   //Convert to Cartesian
   
@@ -139,12 +164,6 @@ StructFact::UpdateRhok(const PosType& rold,const PosType& rnew,int iat,int Group
     }
     k111[idim] *= TWOPI;
   }
-
-  //Allocate the 'C' arrays.
-  //C needs to be allocated from [0..2][-max..max]
-  //Actually, map -max..max to 0..2max
-  Matrix<complex<double> > C;
-  C.resize(3,2*KLists.mmax[3]+1);
 
   //Prepare for subtracting old position
   for(unsigned int idim=0; idim<3; idim++){
@@ -194,11 +213,32 @@ StructFact::UpdateRhok(const PosType& rold,const PosType& rnew,int iat,int Group
 
 void StructFact::makeMove(int iat, const PosType& pos) {
   const ComplexType* restrict eikr0(eikr[iat]);
+#if defined(SK_USE_RECURSIVE)
+  PosType tau_red=PtclRef.Lattice.toUnit(pos);
+  for(int idim=0; idim<3; idim++)
+  {
+    RealType phi=TWOPI*tau_red[idim];
+    ComplexType ctemp(std::cos(phi),std::sin(phi));
+    C(idim,KLists.mmax[idim])=1.0;
+    for(int n=1; n<=KLists.mmax[idim]; n++){
+      C(idim,KLists.mmax[idim]+n) = ctemp*C(idim,KLists.mmax[idim]+n-1);
+      C(idim,KLists.mmax[idim]-n) = conj(C(idim,KLists.mmax[idim]+n));
+    }
+  }
+  for(int ki=0; ki<KLists.numk; ki++)
+  {
+    eikr_new[ki]=C(0,KLists.kpts[ki][0]+KLists.mmax[0])
+      *C(1,KLists.kpts[ki][1]+KLists.mmax[1])
+      *C(2,KLists.kpts[ki][2]+KLists.mmax[2]);
+    delta_eikr[ki]=eikr_new[ki]-eikr0[ki];
+  }
+#else
   for(int ki=0; ki<KLists.numk; ki++){
     RealType kdotr(dot(KLists.kpts_cart[ki],pos));
     eikr_new[ki]=ComplexType(std::cos(kdotr),std::sin(kdotr));
     delta_eikr[ki]=eikr_new[ki]-eikr0[ki];
   }
+#endif
 }
 
 void StructFact::acceptMove(int iat) {

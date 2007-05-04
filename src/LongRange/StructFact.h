@@ -98,13 +98,15 @@ namespace qmcplusplus {
     }
 
   private:
-    //Private Methods
+    ///data for recursive evaluation for a given position
+    Matrix<ComplexType> C;
     ///Compute all rhok elements from the start
     void FillRhok();
     ///Smart update of rhok for 1-particle move. Simply supply old+new position
     void UpdateRhok(const PosType& rold,
         const PosType& rnew,int iat,int GroupID);
-
+    ///resize the internal data
+    void resize();
   };
 }
 
