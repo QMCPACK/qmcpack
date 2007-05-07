@@ -185,7 +185,7 @@ namespace qmcplusplus {
           if(pbyp && now%100 == 99) Movers[ip]->updateWalkers(wit, wit_end);
           do // interval
           {
-            Movers[ip]->advanceWalkers(wit,wit_end);
+            Movers[ip]->advanceWalkers(wit,wit_end,false);
             ++now;
           } while(++interval<BranchInterval);
           Movers[ip]->setMultiplicity(wit,wit_end);

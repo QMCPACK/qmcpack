@@ -122,9 +122,11 @@ namespace qmcplusplus {
      * Derived classes implement how to move walkers and accept/reject
      * moves. 
      */
-    virtual void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure=false)=0;
+    virtual void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure)=0;
 
   protected:
+    ///update particle-by-particle
+    bool UpdatePbyP;
     ///number of particles
     IndexType NumPtcl;
     ///timestep

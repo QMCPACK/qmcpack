@@ -84,7 +84,7 @@ namespace qmcplusplus {
         {
           ++step;
           ++now;
-          Movers[ip]->advanceWalkers(wit,wit_end);
+          Movers[ip]->advanceWalkers(wit,wit_end,false);
           Movers[ip]->accumulate(wit,wit_end);
         } while(step<nSteps);
 
@@ -146,7 +146,7 @@ namespace qmcplusplus {
         {
           ++step;
           ++now;
-          Movers[ip]->advanceWalkers(wit,wit_end);
+          Movers[ip]->advanceWalkers(wit,wit_end,false);
           Movers[ip]->accumulate(wit,wit_end);
         } while(step<nSteps);
         Movers[ip]->stopBlock();

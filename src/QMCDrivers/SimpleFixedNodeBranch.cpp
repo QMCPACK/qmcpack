@@ -133,7 +133,9 @@ void
 SimpleFixedNodeBranch::branch(int iter, MCWalkerConfiguration& w) {
   //evaluate a safe bound for the trial energy.
   RealType sigma=WalkerController->getSigmaBound();
+  //collect the total weights and redistribute the walkers accordingly
   int pop_now = WalkerController->branch(iter,w,PopControl);
+  //trial energy is updated to regulate the number of walkers if it is allowed to flunctuate
   EavgSum+=WalkerController->getCurrentValue(WalkerControlBase::EREF_INDEX);
   WgtSum+=WalkerController->getCurrentValue(WalkerControlBase::WALKERSIZE_INDEX);
   if(ETrialIndex>0) {
@@ -149,6 +151,7 @@ SimpleFixedNodeBranch::branch(int iter, MCWalkerConfiguration& w) {
     MyEstimator->setColumn(ETrialIndex+1,pop_now);
   }
 
+  //evaluate everything else
   MyEstimator->accumulate(w);
 }
 

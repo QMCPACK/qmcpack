@@ -26,7 +26,7 @@ namespace qmcplusplus {
 
   /// Constructor.
   QMCUpdateBase::QMCUpdateBase(ParticleSet& w, TrialWaveFunction& psi, QMCHamiltonian& h,
-      RandomGenerator_t& rg): W(w),Psi(psi),H(h), 
+      RandomGenerator_t& rg): W(w),Psi(psi),H(h), UpdatePbyP(true),
       RandomGen(rg), MaxAge(0),  branchEngine(0), Estimators(0)
 #if defined(ENABLE_COMPOSITE_ESTIMATOR)
         , compEstimator(0)
@@ -138,6 +138,7 @@ namespace qmcplusplus {
 
   void QMCUpdateBase::initWalkers(WalkerIter_t it, WalkerIter_t it_end) 
   {
+    UpdatePbyP=false;
     while(it != it_end) {
       W.R = (*it)->R;
       W.update();
@@ -152,6 +153,7 @@ namespace qmcplusplus {
 
   void QMCUpdateBase::initWalkersForPbyP(WalkerIter_t it, WalkerIter_t it_end) 
   {
+    UpdatePbyP=true;
     NumPtcl=(*it)->size();//resize it always
     G.resize(NumPtcl);
     dG.resize(NumPtcl);
