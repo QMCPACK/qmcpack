@@ -1,6 +1,4 @@
 #include "LongRange/StructFact.h"
-#define SK_USE_RECURSIVE
-
 using namespace qmcplusplus;
 
 //Constructor - pass arguments to KLists' constructor
@@ -87,7 +85,7 @@ void
 StructFact::FillRhok() {
   rhok=0.0;
   int npart = PtclRef.getTotalNum();
-#if defined(SK_USE_RECURSIVE)
+#if defined(QMC_SK_USE_RECURSIVE)
   for(int i=0; i<npart; i++)
   {
     //operate with a reduced positon
@@ -111,8 +109,7 @@ StructFact::FillRhok() {
         *C(2,KLists.kpts[ki][2]+KLists.mmax[2]);
       rhok_ref[ki]+=eikr_ref[ki];
     }
-
-    //valid version only with orthorohmbic cell, generalized to any cell
+    //valid version only with orthorohmbic cell, generalized to any cell above
     //  for(int idim=0; idim<3; idim++){
     //    complex<double> Ctemp;
     //    //start the recursion with the 111 vector.
@@ -213,7 +210,7 @@ StructFact::UpdateRhok(const PosType& rold,const PosType& rnew,int iat,int Group
 
 void StructFact::makeMove(int iat, const PosType& pos) {
   const ComplexType* restrict eikr0(eikr[iat]);
-#if defined(SK_USE_RECURSIVE)
+#if defined(QMC_SK_USE_RECURSIVE)
   PosType tau_red=PtclRef.Lattice.toUnit(pos);
   for(int idim=0; idim<3; idim++)
   {
