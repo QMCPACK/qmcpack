@@ -71,6 +71,9 @@
 /* Define to 1 if using AYSNC comm for estimator */
 #cmakedefine QMC_ASYNC_COLLECT @QMC_ASYNC_COLLECT@
 
+/* Define to 1 if using recursive SK evaluation */
+#cmakedefine QMC_SK_USE_RECURSIVE @QMC_SK_USE_RECURSIVE@
+
 /* Define if the code is specialized for orthorhombic supercell */
 #define OHMMS_ORTHO @OHMMS_ORTHO@
 
