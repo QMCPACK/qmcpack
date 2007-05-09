@@ -46,6 +46,12 @@ SET(BUILD_SANDBOX 0)
 SET(MPIP_PROFILE 0)
 
 ######################################################################
+# Performance-related macros
+# QMC_SK_USE_RECURSIVE enable/disable recursive evalaution of SK
+######################################################################
+SET(QMC_SK_USE_RECURSIVE 0)
+
+######################################################################
 # Overwrite with environments if they differ from the set values
 ######################################################################
 IF(NOT $ENV{QMC_MPI} MATCHES QMC_MPI)
