@@ -20,6 +20,7 @@
 #include "QMCHamiltonians/CoulombPBCABTemp.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Numerics/OneDimNumGridFunctor.h"
+#include "Lattice/SuperCellTraits.h"
 
 namespace qmcplusplus {
   /** constructor
@@ -59,19 +60,35 @@ namespace qmcplusplus {
 
     ///create LocalECPotential
     if(hasLocalPot) {
-      if(IonConfig.Lattice.BoxBConds[0]) {
-        CoulombPBCABTemp* apot=new CoulombPBCABTemp(IonConfig,targetPtcl);
-        for(int i=0; i<localPot.size(); i++) {
-          if(localPot[i]) apot->add(i,localPot[i]);
-        }
-        targetH.addOperator(apot,"LocalECP");
-      } else {
+      if(IonConfig.Lattice.SuperCellEnum == SUPERCELL_OPEN) 
+      {
         LocalECPotential* apot = new LocalECPotential(IonConfig,targetPtcl);
         for(int i=0; i<localPot.size(); i++) {
           if(localPot[i]) apot->add(i,localPot[i],localZeff[i]);
         }
         targetH.addOperator(apot,"LocalECP");
       }
+      else
+      {
+        CoulombPBCABTemp* apot=new CoulombPBCABTemp(IonConfig,targetPtcl);
+        for(int i=0; i<localPot.size(); i++) {
+          if(localPot[i]) apot->add(i,localPot[i]);
+        }
+        targetH.addOperator(apot,"LocalECP");
+      }
+      //if(IonConfig.Lattice.BoxBConds[0]) {
+      //  CoulombPBCABTemp* apot=new CoulombPBCABTemp(IonConfig,targetPtcl);
+      //  for(int i=0; i<localPot.size(); i++) {
+      //    if(localPot[i]) apot->add(i,localPot[i]);
+      //  }
+      //  targetH.addOperator(apot,"LocalECP");
+      //} else {
+      //  LocalECPotential* apot = new LocalECPotential(IonConfig,targetPtcl);
+      //  for(int i=0; i<localPot.size(); i++) {
+      //    if(localPot[i]) apot->add(i,localPot[i],localZeff[i]);
+      //  }
+      //  targetH.addOperator(apot,"LocalECP");
+      //}
     }
 
     if(hasNonLocalPot) {

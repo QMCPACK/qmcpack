@@ -40,7 +40,7 @@ namespace qmcplusplus {
   ptclPool(pset),psiPool(oset), myNode(NULL), psiName("psi0") 
   {
     //PBCType is zero or 1 but should be generalized 
-    PBCType=targetPtcl->Lattice.BoxBConds[0];
+    PBCType=targetPtcl->Lattice.SuperCellEnum;
   }
 
   /** main hamiltonian build function
