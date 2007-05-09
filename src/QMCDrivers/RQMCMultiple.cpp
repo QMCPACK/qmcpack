@@ -348,7 +348,7 @@ namespace qmcplusplus {
 
   bool RQMCMultiple::run() {
 
-    if(MyCounter==0)initReptile();
+    if(MyCounter==0) initReptile();
 
     multiEstimator->initialize(Reptile, Directionless, Tau, nSteps);
     //TEST CACHE
@@ -386,8 +386,8 @@ namespace qmcplusplus {
       Estimators->startBlock(nSteps);
 
       for(int ipsi=0; ipsi<nPsi; ipsi++){
-				AveEloc[ipsi]=0.0;
-				AveWeight[ipsi]=0.0;
+        AveEloc[ipsi]=0.0;
+        AveWeight[ipsi]=0.0;
       }
 
       do { //Loop over steps
@@ -410,19 +410,14 @@ namespace qmcplusplus {
 	//reptileReport.accumulate();
       } while(step<nSteps);
 
-//      if(block < equilBlocks){
-//        for(int ipsi=0; ipsi< nPsi; ipsi++){
-//        }
-//			}
-
       RealType acceptedR = static_cast<RealType>(nAccept)/static_cast<RealType>(nAccept+nReject); 
       Estimators->stopBlock(acceptedR);
 
       *OutEnergy << block << " " ;
       for(int ipsi=0; ipsi<nPsi; ipsi++){
-				AveEloc[ipsi]/=(AveWeight[ipsi]*Tau+numeric_limits<RealType>::epsilon());
-				*OutEnergy << AveEloc[ipsi] << " ";
-				*OutEnergy << AveWeight[ipsi]/nSteps << " ";
+        AveEloc[ipsi]/=(AveWeight[ipsi]*Tau+numeric_limits<RealType>::epsilon());
+        *OutEnergy << AveEloc[ipsi] << " ";
+        *OutEnergy << AveWeight[ipsi]/nSteps << " ";
       }
       *OutEnergy << endl;
       OutEnergy->flush();
