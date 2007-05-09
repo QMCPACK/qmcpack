@@ -104,6 +104,12 @@ void WaveFunctionTester::runBasicTest() {
 
   W.update();
   ValueType psi = Psi.evaluate(W);
+  RealType eloc=H.evaluate(W);
+
+  app_log() << "  HamTest " << "  Total " <<  eloc << endl;
+  for(int i=0; i<H.size(); i++)
+    app_log() << "  HamTest " << H.getName(i) << " " << H[i] << endl;
+
   //RealType psi = Psi.evaluateLog(W);
   ParticleSet::ParticleGradient_t G(nat), G1(nat);
   ParticleSet::ParticleLaplacian_t L(nat), L1(nat);
@@ -155,6 +161,7 @@ void WaveFunctionTester::runBasicTest() {
 	 << "  Error       = " << setw(12) << L[iat]-L1[iat] << endl << endl;
   }
 
+
   makeGaussRandom(deltaR);
   //testing ratio alone
   for(int iat=0; iat<nat; iat++) {
@@ -198,6 +205,10 @@ void WaveFunctionTester::runRatioTest() {
     (*it)->resetProperty(logpsi,Psi.getPhase(),ene);
     H.saveProperty((*it)->getPropertyBase());
     ++it;
+
+    app_log() << "  HamTest " << "  Total " <<  ene << endl;
+    for(int i=0; i<H.size(); i++)
+      app_log() << "  HamTest " << H.getName(i) << " " << H[i] << endl;
   } 
 
   it=W.begin();
