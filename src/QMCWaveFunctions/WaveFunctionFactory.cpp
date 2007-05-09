@@ -113,7 +113,7 @@ namespace qmcplusplus {
       detbuilder = new ElectronGasOrbitalBuilder(*targetPtcl,*targetPsi);
     } 
 #endif
-    else if(orbtype == "PWBasis" || orbtype == "PW") 
+    else if(orbtype == "PWBasis" || orbtype == "PW" || orbtype == "pw") 
     {
       detbuilder = new PWOrbitalBuilder(*targetPtcl,*targetPsi);
     } 
