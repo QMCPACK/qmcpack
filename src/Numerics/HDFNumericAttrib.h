@@ -218,6 +218,43 @@ HDFAttribIO<data_type>(data_type& a):ref(a) { }
   }
 };
 
+//Specialization for std::vector<TinyVector<double,D> >
+template<unsigned D>
+struct HDFAttribIO<std::vector<TinyVector<double,D> > >: public HDFAttribIOBase {
+  
+typedef std::vector<TinyVector<double,D> > data_type;
+
+data_type& ref;
+
+HDFAttribIO<data_type>(data_type& a):ref(a) { }
+
+  inline void write(hid_t grp, const char* name) {
+    hsize_t dim[2] = {ref.size(), D};
+    hid_t dataspace  = H5Screate_simple(2, dim, NULL);
+    hid_t dataset =  
+      H5Dcreate(grp, name, H5T_NATIVE_DOUBLE, dataspace, H5P_DEFAULT);
+    hid_t ret = 
+      H5Dwrite(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT,&(ref[0][0]));
+    H5Sclose(dataspace);
+    H5Dclose(dataset);
+  }
+  
+  inline void read(hid_t  grp, const char* name) {
+    hid_t h1 = H5Dopen(grp, name);
+    hid_t dataspace = H5Dget_space(h1);
+    hsize_t dim[2]={0,D};
+    int rank = H5Sget_simple_extent_ndims(dataspace);
+    int status_n = H5Sget_simple_extent_dims(dataspace, dim, NULL);
+    cout << "What is the dimension = " << dim[0] << " " << dim[1] << endl;
+    //Resize storage if not equal
+    if(ref.size() != (unsigned long)dim[0]){
+      ref.resize(dim[0]);
+    }
+    hid_t ret = H5Dread(h1, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT,&(ref[0][0]));
+    H5Dclose(h1);
+  }
+};
+
 
 /** Specialization for Vector<double> */
 template<>
