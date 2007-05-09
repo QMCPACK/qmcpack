@@ -241,7 +241,8 @@ namespace qmcplusplus {
 
     grp_id = H5Gopen(hfileID,myParam->basisTag.c_str());
     //create at least one basis set but do resize the containers
-    int nh5gvecs=myBasisSet->readbasis(grp_id,real_ecut,targetPtcl.Lattice,myParam->pwTag);
+    int nh5gvecs=myBasisSet->readbasis(grp_id,real_ecut,targetPtcl.Lattice,
+        myParam->pwTag, myParam->pwMultTag);
     H5Gclose(grp_id); //Close PW Basis group
 
     app_log() << "  num_twist = " << nkpts << endl;

@@ -24,16 +24,50 @@
 namespace qmcplusplus {
 
   int PWBasis::readbasis(hid_t h5basisgroup, RealType ecutoff, ParticleLayout_t &lat,
-      const string& pwname, bool resizeContainer) 
+      const string& pwname, 
+      const string& pwmultname, 
+      bool resizeContainer) 
   {
     ///make a local copy
     Lattice=lat;
 
     ecut = ecutoff;
 
-    HDFAttribIO<std::vector<GIndex_t> >hdfvtv(gvecs);
-    hdfvtv.read(h5basisgroup,pwname.c_str()); //"planewaves");
-    NumPlaneWaves=gvecs.size();
+    if(pwmultname != "missing")
+    {
+      app_log() << "  PWBasis::" << pwmultname << " is found " << endl;
+      HDFAttribIO<std::vector<GIndex_t> >hdfvtv(gvecs);
+      hdfvtv.read(h5basisgroup,pwmultname.c_str());
+    }
+
+    if(pwname != "missing")
+    {
+      app_log() << "  PWBasis::" << pwname << " is found " << endl;
+      HDFAttribIO<vector<PosType> > hdfg(kplusgvecs_cart);
+      hdfg.read(h5basisgroup,pwname.c_str()); //"planewaves");
+    }
+
+    //hdfvtv.read(h5basisgroup,pwname.c_str()); //"planewaves");
+    NumPlaneWaves=std::max(gvecs.size(),kplusgvecs_cart.size());
+
+    if(NumPlaneWaves ==0)
+    {
+      app_error() << "  PWBasis::readbasis Basis is missing. Abort " << endl;
+      abort();//FIX_ABORT
+    }
+
+    if(kplusgvecs_cart.empty())
+    {
+      kplusgvecs_cart.resize(NumPlaneWaves);
+      for(int i=0; i<NumPlaneWaves; i++)
+        kplusgvecs_cart[i]=Lattice.k_cart(gvecs[i]);
+    }
+
+    //app_log() << "  Gx Gy Gz " << endl;
+    //for(int i=0; i<kplusgvecs_cart.size(); i++)
+    //{
+    //  app_log() << kplusgvecs_cart[i] << endl;
+    //}
     
     //Now remove elements outside Ecut. At the same time, fill k+G and |k+G| lists.
     //Also keep track of the original index ordering (using indexmap[]) so that
@@ -58,15 +92,19 @@ namespace qmcplusplus {
   void PWBasis::reset() 
   {
     trimforecut();
+
+#if defined(PWBASIS_USE_RECURSIVE)
     //Store the maximum number of translations, within ecut, of any reciprocal cell vector.
     for(int ig=0; ig<NumPlaneWaves; ig++)
       for(int i=0; i<3; i++)
         if(abs(gvecs[ig][i]) > maxg[i]) 
           maxg[i] = abs(gvecs[ig][i]);
     maxmaxg = max(maxg[0],max(maxg[1],maxg[2]));
-
     //changes the order????
     C.resize(3,2*maxmaxg+1);
+#else
+    maxmaxg=1;
+#endif
     //logC.resize(3,2*maxmaxg+1);
 
     Z.resize(NumPlaneWaves,2+DIM);
@@ -81,55 +119,73 @@ namespace qmcplusplus {
     //Convert the twist angle to Cartesian coordinates.
     twist_cart = Lattice.k_cart(twist);
 
-    //resize inputmap
-    NumPlaneWaves = gvecs.size();
     inputmap.resize(NumPlaneWaves);
 
     app_log() << "  PWBasis::TwistAngle (unit) =" << twist << endl;
     app_log() << "  PWBasis::TwistAngle (cart) =" << twist_cart << endl;
     app_log() << "  PWBasis::trimforecut NumPlaneWaves (before) =" << NumPlaneWaves << endl;
 
-    //make a copy of input to gvecCopy
     vector<GIndex_t> gvecCopy(gvecs);
+    vector<PosType> gcartCopy(kplusgvecs_cart);
     gvecs.clear();
-    gvecs.reserve(gvecCopy.size());
+    kplusgvecs_cart.clear();
+    minusModKplusG2.reserve(NumPlaneWaves);
 
     RealType kcutoff2 = 2.0*ecut; //std::sqrt(2.0*ecut);
     int ngIn=NumPlaneWaves;
     for(int ig=0, newig=0; ig<ngIn; ig++) {
-      //Check size of this g-vector
-      PosType tempvec = Lattice.k_cart(gvecCopy[ig]+twist);
+      //PosType tempvec = Lattice.k_cart(gvecCopy[ig]+twist);
+      PosType tempvec = gcartCopy[ig]+twist_cart;
       RealType mod2 = dot(tempvec,tempvec);
-      if(mod2<=kcutoff2){ //Keep this element
+      if(mod2<=kcutoff2)
+      {
         gvecs.push_back(gvecCopy[ig]);
         kplusgvecs_cart.push_back(tempvec);
         minusModKplusG2.push_back(-mod2);
         //Remember which position in the HDF5 file this came from...for coefficients
         inputmap[ig] = newig++;
-#if !defined(QMC_COMPLEX)
-        //Build the negative vector. See comment at declaration (above) for details.
-        if(gvecCopy[ig][0] < 0)
-          negative.push_back(0);
-        else if(gvecCopy[ig][0] > 0)
-          negative.push_back(1);
-        else { //gx == 0, test gy
-          if(gvecCopy[ig][1] < 0)
-            negative.push_back(0);
-          else if(gvecCopy[ig][1] > 0)
-            negative.push_back(1);
-          else { //gx == gy == 0; test gz. If gz==0 also, take negative=1 (arbitrary)
-            if(gvecCopy[ig][2] < 0)
-              negative.push_back(0);
-            else
-              negative.push_back(1);
-          }
-        }
-#endif
-      } else {
+      }
+      else
+      {
         inputmap[ig] = -1; //Temporary value...need to know final NumPlaneWaves.
         NumPlaneWaves--;
       }
     }
+//    //make a copy of input to gvecCopy
+////    for(int ig=0, newig=0; ig<ngIn; ig++) {
+//      //Check size of this g-vector
+//      PosType tempvec = Lattice.k_cart(gvecCopy[ig]+twist);
+//      RealType mod2 = dot(tempvec,tempvec);
+//      if(mod2<=kcutoff2){ //Keep this element
+//        gvecs.push_back(gvecCopy[ig]);
+//        kplusgvecs_cart.push_back(tempvec);
+//        minusModKplusG2.push_back(-mod2);
+//        //Remember which position in the HDF5 file this came from...for coefficients
+//        inputmap[ig] = newig++;
+////#if !defined(QMC_COMPLEX)
+////        //Build the negative vector. See comment at declaration (above) for details.
+////        if(gvecCopy[ig][0] < 0)
+////          negative.push_back(0);
+////        else if(gvecCopy[ig][0] > 0)
+////          negative.push_back(1);
+////        else { //gx == 0, test gy
+////          if(gvecCopy[ig][1] < 0)
+////            negative.push_back(0);
+////          else if(gvecCopy[ig][1] > 0)
+////            negative.push_back(1);
+////          else { //gx == gy == 0; test gz. If gz==0 also, take negative=1 (arbitrary)
+////            if(gvecCopy[ig][2] < 0)
+////              negative.push_back(0);
+////            else
+////              negative.push_back(1);
+////          }
+////        }
+////#endif
+//      } else {
+//        inputmap[ig] = -1; //Temporary value...need to know final NumPlaneWaves.
+//        NumPlaneWaves--;
+//      }
+//    }
     //Finalize the basis. Fix temporary values of inputmap.
     //for(int ig=0; ig<inputmap.size(); ig++) 
     //  if(inputmap[ig] == -1)

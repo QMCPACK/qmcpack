@@ -30,6 +30,7 @@ namespace qmcplusplus {
   paramTag("parameters"),
   basisTag("basis"),
   pwTag("planewaves"),
+  pwMultTag("multipliers"),
   eigTag("eigenstates"), 
   twistTag("twist"), 
   bandTag("band"), 
@@ -41,6 +42,7 @@ namespace qmcplusplus {
     m_param.add(paramTag,"parameters","string");
     m_param.add(basisTag,"basis","string");
     m_param.add(pwTag,"planewaves","string");
+    m_param.add(pwMultTag,"multiplers","string");
     m_param.add(eigTag,"eigenstates","string");
     m_param.add(twistTag,"twist","string");
     m_param.add(bandTag,"band","string");
@@ -99,7 +101,8 @@ namespace qmcplusplus {
   {
     ostringstream oss;
     oss << hg << "/"<< bandTag << ib;
-    if(version[1]==10)
+    //if(version[1]==10)
+    if(hasSpin)
     {
       oss << "/" << spinTag << ispin;
     }
@@ -111,7 +114,8 @@ namespace qmcplusplus {
   {
     ostringstream oss;
     oss << "/" << eigTag << "/" << twistTag<<twistIndex << "/"<< bandTag << ib;
-    if(version[1]==10)
+    //if(version[1]==10)
+    if(hasSpin)
     {
       oss << "/" << spinTag << ispin;
     }
@@ -161,16 +165,26 @@ namespace qmcplusplus {
     }
 
     app_log() << "\tWavefunction HDF version: " << version[0] << "." << version[1] << endl;
-    if(version[1] == 11)
-    {
-      hasSpin=false;
-      paramTag="parameters_0";
-      basisTag="basis_1";
-      pwTag="multipliers";
-      eigTag="eigenstates_3"; 
-      twistTag="twist_";
-      bandTag="band_";
+    if(version[0] == 0)
+    { 
+      if(version[1] == 11)
+      {
+        hasSpin=false;
+        paramTag="parameters_0";
+        basisTag="basis_1";
+        pwTag="planewaves";
+        pwMultTag="multipliers";
+        eigTag="eigenstates_3"; 
+        twistTag="twist_";
+        bandTag="band_";
+      }
+      else if(version[1] == 10)
+      {
+        pwMultTag="planewaves";
+        pwTag="missing";
+      }
     }
+
   }
 }
 /***************************************************************************

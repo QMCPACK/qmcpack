@@ -30,7 +30,7 @@
  *
  * performance improvement is questionable: load vs sin/cos 
  */
-#define PWBASIS_USE_RECURSIVE
+//#define PWBASIS_USE_RECURSIVE
 
 namespace qmcplusplus {
 
@@ -135,6 +135,7 @@ namespace qmcplusplus {
     readbasis(hid_t h5basisgroup,RealType ecutoff,
               ParticleLayout_t &lat, 
               const string& pwname="planewaves",
+              const string& pwmultname="multipliers",
               bool resizeContainer=true);
 
     /** Remove basis elements if kinetic energy > ecut.

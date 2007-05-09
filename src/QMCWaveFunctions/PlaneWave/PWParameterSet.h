@@ -43,6 +43,8 @@ namespace qmcplusplus {
     std::string basisTag;
     ///tag for the planewaves
     std::string pwTag;
+    ///tag for the multipliers of the planewaves
+    std::string pwMultTag;
     ///tag for eigentstates
     std::string eigTag;
     ///tag for twist angles
