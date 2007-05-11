@@ -111,6 +111,11 @@ namespace qmcplusplus {
     MultipleEnergyEstimator(const MultipleEnergyEstimator& mest);
     ScalarEstimatorBase* clone();
 
+    inline RealType getUmbrellaWeight(int ipsi)
+    {
+      return esum(ipsi,WEIGHT_INDEX);
+    }
+
     /**  add the local energy, variance and all the Hamiltonian components to the scalar record container
      *@param record storage of scalar records (name,value)
      */
