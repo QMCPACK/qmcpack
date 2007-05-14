@@ -475,6 +475,8 @@ namespace qmcplusplus {
 
     if(MyCounter==0) initReptile();
 
+    Reptile->open(RootName);
+
     IndexType block = 0;
     IndexType nAcceptTot = 0;
     IndexType nRejectTot = 0;
@@ -531,6 +533,7 @@ namespace qmcplusplus {
         //reptileReport.accumulate();
       } while(step<nSteps);
 
+      //multiEstimator->evaluateDiff();
       RealType acceptedR = static_cast<RealType>(nAccept)/static_cast<RealType>(nAccept+nReject); 
       Estimators->stopBlock(acceptedR);
 
@@ -549,7 +552,8 @@ namespace qmcplusplus {
       nAccept = 0; nReject = 0;
       block++;
 
-      recordBlock(block);
+      Reptile->record();
+      //recordBlock(block);
 
     } while(block<nBlocks);
 
@@ -560,8 +564,8 @@ namespace qmcplusplus {
       << static_cast<double>(nAcceptTot)/static_cast<double>(nAcceptTot+nRejectTot)
       << endl;
 
-    branchEngine->finalize();
-    return true;
+    Reptile->close();
+    return finalize(nBlocks);
   }
 
   void RQMCMultiWarp::recordBlock(int block) {
@@ -570,11 +574,13 @@ namespace qmcplusplus {
     //Estimators->report(CurrentStep);
     //TEST CACHE
     
-    app_error() << " BROKEN RQMCMultiWarp::recordBlock(int block) HDFWalkerOutput as 2007-04-16 " << endl;
+    //app_error() << " BROKEN RQMCMultiWarp::recordBlock(int block) HDFWalkerOutput as 2007-04-16 " << endl;
     //HDFWalkerOutput WO(RootName,false,0);
     //WO.get(W);
     //WO.write(*branchEngine);
     //Reptile->write(WO.getFileID());
+    
+    //Reptile->write(RootName);
   }
 
   bool RQMCMultiWarp::put(xmlNodePtr q){

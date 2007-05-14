@@ -33,6 +33,7 @@ SET(QMCDRIVERS
   CorrelatedSampling/CSVMCUpdateAll.cpp
   CorrelatedSampling/CSVMCUpdatePbyP.cpp
   ../Estimators/CSEnergyEstimator.cpp
+  ../Estimators/CSPolymerEstimator.cpp
 )
 
 IF(ENABLE_OPENMP) 

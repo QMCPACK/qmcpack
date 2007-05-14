@@ -8,13 +8,10 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
-//   Department of Physics, Ohio State University
-//   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 #ifndef QMCPLUSPLUS_REPMULTIPLE_H
@@ -22,13 +19,13 @@
 
 #include "QMCDrivers/QMCDriver.h" 
 #include "OhmmsPETE/OhmmsVector.h" 
-#include "Estimators/RQMCMultipleEstimator.h"
+//#include "Estimators/RQMCMultipleEstimator.h"
 
 namespace qmcplusplus {
 
   class Bead;
-  
   class MultiChain;
+  class CSPolymerEstimator;
 
   /** @ingroup QMCDrivers MultiplePsi
    * @brief Implements the RMC algorithm for energy differences
@@ -36,6 +33,8 @@ namespace qmcplusplus {
   class RQMCMultiple: public QMCDriver {
 
   public:
+
+    enum { MinusDirection=0, PlusDirection=1, Directionless=2};
 
     /// Constructor.
     RQMCMultiple(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h);
@@ -59,10 +58,8 @@ namespace qmcplusplus {
     ///The length of polymers
     int ReptileLength;
 
-    RQMCEstimator *multiEstimator;
+    CSPolymerEstimator *multiEstimator;
 
-    ///
-    int MinusDirection,PlusDirection,Directionless;
     ///
     int forward,backward,itail,inext;
 

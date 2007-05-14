@@ -192,6 +192,9 @@ namespace qmcplusplus {
     ///The number of H/Psi pairs
     int nPsi;
 
+    ///hdf5 handle to multichain
+    hid_t h_config;
+
     RealType GlobalWgt;
 
     Vector<RealType> GlobalAction,UmbrellaWeight;
@@ -206,27 +209,13 @@ namespace qmcplusplus {
      * @param npsi number of Psi/H pairs
      */
     //MultiChain(Walker_t* awalker,int len, int direction, int npsi): 
-    MultiChain(Bead* abead,int len, int direction, int npsi): 
-      GrowthDirection(direction), nPsi(npsi){
-      //always add number of beads
-      Middle = len/2;
-      Last = len-1;
-      for(int i=0; i<len; i++) {
-        Beads.push_back(new Bead(*abead));
-      }
-      GlobalAction.resize(npsi);   GlobalAction=0.0;
-      UmbrellaWeight.resize(npsi); UmbrellaWeight=1.0;
-      GlobalSignWgt.resize(npsi);  GlobalSignWgt=0;
-      RefSign.resize(npsi); RefSign=0;
-    }
+    MultiChain(Bead* abead,int len, int direction, int npsi);
     
     /** destructor
      *
      * Need to clean up the walkers in the repository and the polymer chain
      */
-    ~MultiChain() {
-      delete_iter(Beads.begin(),Beads.end());
-    }
+    ~MultiChain();
 
     inline reference operator[](int n) { return Beads[n];}
     inline const_reference operator[](int n) const { return Beads[n];}
@@ -261,40 +250,14 @@ namespace qmcplusplus {
     /** copy the restart data from buf 
      * @param buf buffer to read from
      */
-    inline void copyFromBuffer(Buffer_t& buf) {
-      int n(Beads.size());
-      buf.get(n);
-      buf.get(GrowthDirection);
-      buf.get(Middle);
-      buf.get(Last);
-      buf.get(nPsi);
-      buf.get(GlobalWgt);
-      buf.get(GlobalAction.begin(),GlobalAction.end());
-      buf.get(UmbrellaWeight.begin(),UmbrellaWeight.end());
-      for(int i=0; i<GlobalSignWgt.size(); i++) buf.get(GlobalSignWgt[i]);
-      for(int i=0; i<RefSign.size(); i++) buf.get(RefSign[i]);
-      //buf.get(GlobalSignWgt.begin(),GlobalSignWgt.end());
-      //buf.get(RefSign.begin(),RefSign.end());
-    }
+    void copyFromBuffer(Buffer_t& buf);
 
     /** add the restart data to buf 
      * @param buf buffer to write
      *
      * add takes care of memory allocation and assignment
      */
-    inline void copyToBuffer(Buffer_t& buf) {
-      double n= static_cast<double>(Beads.size());
-      buf.add(n);
-      buf.add(GrowthDirection);
-      buf.add(Middle);
-      buf.add(Last);
-      buf.add(nPsi);
-      buf.add(GlobalWgt);
-      buf.add(GlobalAction.begin(),GlobalAction.end());
-      buf.add(UmbrellaWeight.begin(),UmbrellaWeight.end());
-      buf.add(GlobalSignWgt.begin(),GlobalSignWgt.end());
-      buf.add(RefSign.begin(),RefSign.end());
-    }
+    void copyToBuffer(Buffer_t& buf);
 
     /** read multi-chain configuration from a file
      * @param aroot root name
@@ -310,12 +273,14 @@ namespace qmcplusplus {
      */
     bool read(hid_t grp);
 
-    /** write MultiChain tree to a group
-     * @param grp hdf5 group
-     *
-     * Typically, grp is the file id
+    /** open hdf5 and initialize the dataspace
+     * @param aroot root name of hdf5 output
      */
-    void write(hid_t grp);
+    void open(const string& aroot);
+    /** record the data for restart */
+    void record();
+    /** close the file */
+    void close();
 
   };
 }

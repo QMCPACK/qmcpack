@@ -23,6 +23,7 @@
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "Message/Communicate.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
+#include "Estimators/CSPolymerEstimator.h"
 
 namespace qmcplusplus { 
   RQMCMultiple::RQMCMultiple(MCWalkerConfiguration& w, 
@@ -32,7 +33,7 @@ namespace qmcplusplus {
   NumTurns(0), Reptile(0), NewBead(0),
   multiEstimator(0) 
   { 
-    RootName = "rmc-multi";
+    RootName = "rmc";
     QMCType ="RQMCMultiple";
     m_param.add(ReptileLength,"chains","int");
 
@@ -45,6 +46,49 @@ namespace qmcplusplus {
   RQMCMultiple::~RQMCMultiple() {
     if(Reptile) delete Reptile;
     delete NewBead;
+  }
+
+  /** main function to perform RQMC
+   */
+  bool RQMCMultiple::run() {
+
+    if(MyCounter==0) initReptile();
+
+    Reptile->open(RootName);
+
+    multiEstimator->setTau(Tau);
+
+    //multiEstimator->initialize(Reptile, Directionless, Tau, nSteps);
+    Estimators->start(nBlocks,true);
+    IndexType block = 0;
+    do 
+    { //Loop over Blocks
+      IndexType step = 0;
+      NumTurns = 0;
+      Estimators->startBlock(nSteps);
+      do 
+      { //Loop over steps
+        moveReptile();
+        step++; CurrentStep++;
+        Estimators->accumulate(W);
+      } while(step<nSteps);
+
+      multiEstimator->evaluateDiff();
+      Estimators->stopBlock(static_cast<RealType>(nAccept)/static_cast<RealType>(nAccept+nReject));
+
+      nAccept = 0; 
+      nReject = 0;
+      block++;
+
+      Reptile->record();
+      //recordBlock(block);
+    } while(block<nBlocks);
+
+    Estimators->stop();
+
+    Reptile->close();
+
+    return finalize(nBlocks);
   }
 
   /** initialize Reptile
@@ -91,16 +135,21 @@ namespace qmcplusplus {
     if(Reptile==0){
       reuseReptile=false;
       Reptile=new MultiChain(NewBead,ReptileLength,InitialGrowthDirection,nPsi);
-      if(h5FileRoot != "invalid") {
+      if(h5FileRoot.size() && (h5FileRoot != "invalid"))
+      {
         app_log() << "Reading the previous multi-chain configurations" << endl;
         restartmode = Reptile->read(h5FileRoot);
       }
       W.setPolymer(Reptile);
     }
 
+    multiEstimator->setPolymer(Reptile);
+
     if(!restartmode){
-      if(reuseReptile)checkReptileProperties();
-      else setReptileProperties();
+      if(reuseReptile)
+        checkReptileProperties();
+      else 
+        setReptileProperties();
     }
   } // END OF InitReptile
 
@@ -292,25 +341,34 @@ namespace qmcplusplus {
 
     //Compute the Global Action
     bead=first_bead;
-    for(int ipsi=0; ipsi<nPsi; ipsi++) {Reptile->GlobalAction[ipsi]=(*bead)->Properties(ipsi,LOGPSI);
-      cout << " WF : " << ipsi << " " << Reptile->GlobalAction[ipsi] << endl;
+    for(int ipsi=0; ipsi<nPsi; ipsi++) 
+    {
+      Reptile->GlobalAction[ipsi]=(*bead)->Properties(ipsi,LOGPSI);
+      //cout << " WF : " << ipsi << " " << Reptile->GlobalAction[ipsi] << endl;
     }
-    while(bead != last_bead){
-      for(int ipsi=0; ipsi<nPsi; ipsi++){
+
+    while(bead != last_bead)
+    {
+      for(int ipsi=0; ipsi<nPsi; ipsi++)
+      {
         Reptile->GlobalAction[ipsi]-=
           ( (*bead)->Action(ipsi,PlusDirection) + (*(bead+1))->Action(ipsi,MinusDirection)+
             (*bead)->Action(ipsi,Directionless) + (*(bead+1))->Action(ipsi,Directionless)   );
       } 
       bead++;
     }
-    for(int ipsi=0; ipsi<nPsi; ipsi++){ Reptile->GlobalAction[ipsi]+=(*bead)->Properties(ipsi,LOGPSI);
-      cout << " WF : " << ipsi << " " << Reptile->GlobalAction[ipsi] << endl;
+    for(int ipsi=0; ipsi<nPsi; ipsi++)
+    { 
+      Reptile->GlobalAction[ipsi]+=(*bead)->Properties(ipsi,LOGPSI);
+      //cout << " WF : " << ipsi << " " << Reptile->GlobalAction[ipsi] << endl;
     }
 
     //Compute Global Sign weight (need to be initialized somewhere)
     bead=first_bead;
-    while(bead != bead_end){
-      for(int ipsi=0; ipsi<nPsi; ipsi++){ 
+    while(bead != bead_end)
+    {
+      for(int ipsi=0; ipsi<nPsi; ipsi++)
+      { 
         Reptile->GlobalSignWgt[ipsi] += (*bead)->BeadSignWgt[ipsi];
       }
       ++bead;
@@ -318,155 +376,70 @@ namespace qmcplusplus {
 
     //Compute reference action
     RealType RefAction(-10.0e20);
-    for(int ipsi=0; ipsi<nPsi; ipsi++){
+    for(int ipsi=0; ipsi<nPsi; ipsi++)
+    {
       WeightSign[ipsi]=std::max(0,Reptile->GlobalSignWgt[ipsi]-Reptile->Last);
       if(WeightSign[ipsi])RefAction=max(RefAction,Reptile->GlobalAction[ipsi]);
     }
 
     //Compute Total Weight
     Reptile->GlobalWgt=0.0e0;
-    for(int ipsi=0; ipsi<nPsi; ipsi++){
+    for(int ipsi=0; ipsi<nPsi; ipsi++)
+    {
       RealType DeltaAction(Reptile->GlobalAction[ipsi]-RefAction);
-      if((WeightSign[ipsi]>0) && (DeltaAction > -30)) Reptile->GlobalWgt += std::exp(DeltaAction);
+      if((WeightSign[ipsi]>0) && (DeltaAction > -30)) 
+        Reptile->GlobalWgt += std::exp(DeltaAction);
     }
     Reptile->GlobalWgt=std::log(Reptile->GlobalWgt)+RefAction;
 
     //Compute Umbrella Weight 
-    for(int ipsi=0; ipsi<nPsi; ipsi++){
+    for(int ipsi=0; ipsi<nPsi; ipsi++)
+    {
       RealType DeltaAction(Reptile->GlobalAction[ipsi]-Reptile->GlobalWgt);
       if((WeightSign[ipsi]>0) && (DeltaAction > -30)) Reptile->UmbrellaWeight[ipsi] = std::exp(DeltaAction);
       else Reptile->UmbrellaWeight[ipsi] = 0.0e0;
-      cout << "GA " << ipsi <<  " : " << Reptile->GlobalAction[ipsi] << endl;
-      cout << "UW " << ipsi <<  " : " << Reptile->UmbrellaWeight[ipsi] << endl;
+      app_log() << "GA " << ipsi <<  " : " << Reptile->GlobalAction[ipsi] << endl;
+      app_log() << "UW " << ipsi <<  " : " << Reptile->UmbrellaWeight[ipsi] << endl;
     }
-    cout << "GW " <<  " : " << Reptile->GlobalWgt << endl;
+    app_log() << "GW " <<  " : " << Reptile->GlobalWgt << endl;
   }
 
-  bool RQMCMultiple::run() {
-
-    if(MyCounter==0) initReptile();
-
-    multiEstimator->initialize(Reptile, Directionless, Tau, nSteps);
-    //TEST CACHE
-    //Estimators->reportHeader(AppendRun);
-    Estimators->start(nBlocks);
-    //TEST CACHE
-
-    IndexType block = 0;
-    IndexType nAcceptTot = 0;
-    IndexType nRejectTot = 0;
-
-    int ipsi(0);
-
-    std::vector<double>AveEloc,AveWeight;
-    AveEloc.resize(nPsi);
-    AveWeight.resize(nPsi);
-    std::string filename(RootName);
-    filename=RootName+".Eloc.dat";
-    ofstream *OutEnergy;
-    OutEnergy=new ofstream(filename.c_str());
-
-    //PolymerEstimator reptileReport(*Reptile,nPsi);
-    //reptileReport.resetReportSettings(RootName);
-    //accumulate configuration: probably need to reorder
-    //HDFWalkerOutput WO(RootName);
-
-    RealType oneoversteps=1.0/static_cast<RealType>(nSteps);
-
-
-    do { //Loop over Blocks
-
-      IndexType step = 0;
-      NumTurns = 0;
-
-      Estimators->startBlock(nSteps);
-
-      for(int ipsi=0; ipsi<nPsi; ipsi++){
-        AveEloc[ipsi]=0.0;
-        AveWeight[ipsi]=0.0;
-      }
-
-      do { //Loop over steps
-
-        moveReptile();
-        step++; CurrentStep++;
-
-        //Copy the front and back to W to take average report
-        //W.copyWalkerRefs(Reptile->front(),Reptile->back());
-        for(int ipsi=0; ipsi<nPsi; ipsi++){
-          double WeightedEloc=Reptile->UmbrellaWeight[ipsi]*
-            ( Reptile->front()->Action(ipsi,Directionless)
-              +Reptile->back()->Action(ipsi,Directionless) );
-          AveEloc[ipsi]+=WeightedEloc;
-          AveWeight[ipsi]+=Reptile->UmbrellaWeight[ipsi];
-        }
-        Estimators->accumulate(W);
-        //use the first energy for the branch
-        //branchEngine->accumulate(AveEloc[0],1.0);
-        //reptileReport.accumulate();
-      } while(step<nSteps);
-
-      RealType acceptedR = static_cast<RealType>(nAccept)/static_cast<RealType>(nAccept+nReject); 
-      Estimators->stopBlock(acceptedR);
-
-      *OutEnergy << block << " " ;
-      for(int ipsi=0; ipsi<nPsi; ipsi++){
-        AveEloc[ipsi]/=(AveWeight[ipsi]*Tau+numeric_limits<RealType>::epsilon());
-        *OutEnergy << AveEloc[ipsi] << " ";
-        *OutEnergy << AveWeight[ipsi]/nSteps << " ";
-      }
-      *OutEnergy << endl;
-      OutEnergy->flush();
-
-      nAcceptTot += nAccept;
-      nRejectTot += nReject;
-
-      nAccept = 0; nReject = 0;
-      block++;
-
-      recordBlock(block);
-
-    } while(block<nBlocks);
-
-    delete OutEnergy;
-
-    //Need MPI-IO
-    app_log() << "ratio = " 
-      << static_cast<double>(nAcceptTot)/static_cast<double>(nAcceptTot+nRejectTot)
-      << endl;
-
-    branchEngine->finalize();
-    return true;
-  }
 
   void RQMCMultiple::recordBlock(int block) {
+    Reptile->record();
     //Write stuff
     //TEST CACHE
     //Estimators->report(CurrentStep);
     //TEST CACHE
 
-    app_error() << " BROKEN RQMCMultiple::recordBlock(int block) HDFWalkerOutput as 2007-04-16 " << endl;
+    //app_error() << " BROKEN RQMCMultiple::recordBlock(int block) HDFWalkerOutput as 2007-04-16 " << endl;
     //HDFWalkerOutput WO(RootName,false,0);
     //WO.get(W);
     //WO.write(*branchEngine);
     //Reptile->write(WO.getFileID());
   }
 
-  bool RQMCMultiple::put(xmlNodePtr q){
-    MinusDirection=0;
-    PlusDirection=1;
-    Directionless=2;
+  bool RQMCMultiple::put(xmlNodePtr q)
+  {
+    //Using enumeration
+    //MinusDirection=0;
+    //PlusDirection=1;
+    //Directionless=2;
     nPsi=H1.size();
-    if(branchEngine->LogNorm.size()!=nPsi){
+    if(branchEngine->LogNorm.size()!=nPsi)
+    {
       branchEngine->LogNorm.resize(nPsi);
-      for(int i=0; i<nPsi; i++)branchEngine->LogNorm[i]=0.e0;
+      for(int i=0; i<nPsi; i++) branchEngine->LogNorm[i]=0.e0;
     }
 
-    // taken from VMCMultiple
-    if(Estimators == 0) {
+    Estimators = branchEngine->getEstimatorManager();
+    if(Estimators == 0) 
+    {
       Estimators = new EstimatorManager(H);
-      multiEstimator = new RQMCEstimator(H,nPsi);
-      Estimators->add(multiEstimator,"elocal");
+      multiEstimator = new CSPolymerEstimator(H,nPsi);
+      //multiEstimator = new RQMCEstimator(H,nPsi);
+      Estimators->add(multiEstimator,Estimators->MainEstimatorName);
+      branchEngine->setEstimatorManager(Estimators);
     }
     return true;
   }
@@ -479,13 +452,16 @@ namespace qmcplusplus {
     int ihead,inext,itail;
 
     //Depending on the growth direction initialize growth variables
-    if(Reptile->GrowthDirection==MinusDirection){
+    if(Reptile->GrowthDirection==MinusDirection)
+    {
       forward=MinusDirection;
       backward=PlusDirection;
       ihead = 0; 
       itail = Reptile->Last;
       inext = itail-1;
-    }else{
+    }
+    else
+    {
       forward=PlusDirection;
       backward=MinusDirection;
       ihead = Reptile->Last;
