@@ -241,7 +241,8 @@ namespace qmcplusplus {
     //(SPACEWARP_MODE,MULTIPE_MODE,UPDATE_MODE)
     if(curRunType == VMC_RUN) 
     {
-      VMCFactory fac(curQmcModeBits[UPDATE_MODE],cur);
+      //VMCFactory fac(curQmcModeBits[UPDATE_MODE],cur);
+      VMCFactory fac(curQmcModeBits.to_ulong(),cur);
       qmcDriver = fac.create(*qmcSystem,*primaryPsi,*primaryH,*ptclPool,*hamPool);
     } 
     else if(curRunType == DMC_RUN) 
