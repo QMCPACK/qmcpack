@@ -8,13 +8,10 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
-//   Department of Physics, Ohio State University
-//   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 #ifndef QMCPLUSPLUS_RQMC_ESTIMATOR_H
@@ -38,7 +35,7 @@ namespace qmcplusplus {
 
     ///total number of walkers
     int NumWalkers;
-    
+
     ///starting column index of this estimator 
     int FirstColumnIndex;
 
@@ -59,14 +56,14 @@ namespace qmcplusplus {
      */ 
     int NumOperators;
 
-		// containers for observables (copied from RQMCMultiple.cpp)
+    // containers for observables (copied from RQMCMultiple.cpp)
     std::vector<double>AveEloc,AveWeight;
 
     ///The Reptile: a chain of beads
     MultiChain* Reptile;
 
-		int Directionless, nSteps;
-		double Tau;
+    int Directionless, nSteps;
+    double Tau;
 
     ///the index of weight
     //int WeightIndex;
@@ -75,11 +72,11 @@ namespace qmcplusplus {
      * 
      * NumCols = NumOperators+2
      * 2 is for the local energy and weight
-    int NumCols;
+     int NumCols;
      */
 
     /** local energy data for each walker. 
-     */
+    */
     //Matrix<RealType> UmbrellaEnergy, UmbrellaWeight, RatioIJ;
     Matrix<RealType> RatioIJ;
 
@@ -101,7 +98,7 @@ namespace qmcplusplus {
      * of the same field are bunched together.
      */
     Matrix<string> esum_name;
-    
+
     /** the names of elocal
      *
      * The dimension of elocal_name is NumOperators by NumCopies. The columns
@@ -110,7 +107,7 @@ namespace qmcplusplus {
     Matrix<string> elocal_name;
 
     /** the names of energy differences
-     */
+    */
     vector<string> ediff_name;
 
     /** constructor
@@ -130,7 +127,7 @@ namespace qmcplusplus {
     void accumulate(const Walker_t& awalker, RealType wgt);
 
     /** @warning Incomplete. Only to avoid compiler problems
-     */
+    */
     inline void accumulate(ParticleSet& P, MCWalkerConfiguration::Walker_t& awalker) {
     }
 
@@ -177,11 +174,11 @@ namespace qmcplusplus {
      * @param ipsi H/Psi index
      * @param e local energy of the iw-th walker for H[ipsi]/Psi[ipsi]
      * @param r umbrella weight
-    inline void updateSample(int iw, int ipsi, RealType e, RealType invr) {
-      //UmbrellaEnergy(iw,ipsi)=e;
-      //UmbrellaWeight(iw,ipsi)=invr;
+     inline void updateSample(int iw, int ipsi, RealType e, RealType invr) {
+    //UmbrellaEnergy(iw,ipsi)=e;
+    //UmbrellaWeight(iw,ipsi)=invr;
     }
-     */
+    */
 
     void initialize(MCWalkerConfiguration& W, vector<ParticleSet*>& WW, SpaceWarp& Warp,
         vector<QMCHamiltonian*>& h, vector<TrialWaveFunction*>& psi,
