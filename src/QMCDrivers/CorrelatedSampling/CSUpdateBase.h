@@ -58,7 +58,7 @@ namespace qmcplusplus {
       void updateNorms();
       void initCSWalkers(WalkerIter_t it, WalkerIter_t it_end, bool resetNorms);
       void initCSWalkersForPbyP(WalkerIter_t it, WalkerIter_t it_end, bool resetNorms);
-      void updateWalkers(WalkerIter_t it, WalkerIter_t it_end);
+      void updateCSWalkers(WalkerIter_t it, WalkerIter_t it_end);
   };
 }
 

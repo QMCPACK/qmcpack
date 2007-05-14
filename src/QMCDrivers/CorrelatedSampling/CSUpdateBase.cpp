@@ -8,13 +8,10 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
-//   Department of Physics, Ohio State University
-//   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 #include "QMCDrivers/CorrelatedSampling/CSUpdateBase.h"
@@ -42,6 +39,9 @@ namespace qmcplusplus {
     cumNorm.resize(nPsi,0.0);	
     instRij.resize(nPsi*(nPsi-1)/2);
     ratioIJ.resize(nw,nPsi*(nPsi-1)/2);
+
+    dG.resize(nptcls);
+
     for(int ipsi=0; ipsi<nPsi; ipsi++)
     {
       Psi1[ipsi]->G.resize(nptcls);
@@ -132,6 +132,14 @@ namespace qmcplusplus {
   void CSUpdateBase::initCSWalkersForPbyP(WalkerIter_t it, WalkerIter_t it_end,
       bool resetNorms)
   {
+    nPsi=Psi1.size();
+    
+    if(nPsi ==0)
+    {
+      app_error() << "  CSUpdateBase::initCSWalkers fails. Empyty Psi/H pairs" << endl;
+      abort();//FIX_ABORT
+    }
+
     int nw = it_end-it;//W.getActiveWalkers();
     resizeWorkSpace(nw,W.getTotalNum());
 
@@ -190,7 +198,7 @@ namespace qmcplusplus {
     }
   }
 
-  void CSUpdateBase::updateWalkers(WalkerIter_t it, WalkerIter_t it_end) 
+  void CSUpdateBase::updateCSWalkers(WalkerIter_t it, WalkerIter_t it_end) 
   {
 
     int iw=0;

@@ -8,24 +8,15 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
-//   Department of Physics, Ohio State University
-//   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 #include "QMCDrivers/CorrelatedSampling/CSVMC.h"
 #include "QMCDrivers/CorrelatedSampling/CSVMCUpdateAll.h"
-#include "Utilities/OhmmsInfo.h"
-#include "Particle/MCWalkerConfiguration.h"
-#include "Particle/HDFWalkerIO.h"
-#include "ParticleBase/ParticleUtility.h"
-#include "ParticleBase/RandomSeqGenerator.h"
-#include "ParticleBase/ParticleAttribOps.h"
-#include "Message/Communicate.h"
+#include "QMCDrivers/CorrelatedSampling/CSVMCUpdatePbyP.h"
 #include "Estimators/CSEnergyEstimator.h"
 #include "QMCDrivers/DriftOperators.h"
 
@@ -38,7 +29,6 @@ namespace qmcplusplus {
     QMCType ="CSVMC";
     equilBlocks=-1;
     m_param.add(equilBlocks,"equilBlocks","int");
-    cout << "EquilBlocks " << equilBlocks << endl;
 
     QMCDriverMode.set(QMC_MULTIPLE,1);
     //Add the primary h and psi, extra H and Psi pairs will be added by QMCMain
@@ -67,8 +57,6 @@ namespace qmcplusplus {
       branchEngine->setEstimatorManager(Estimators);
     }
 
-    app_log() << "Number of H and Psi " << nPsi << endl;
-
     H1[0]->setPrimary(true);
     for(int ipsi=1; ipsi<nPsi; ipsi++) H1[ipsi]->setPrimary(false);
     return true;
@@ -82,14 +70,28 @@ namespace qmcplusplus {
 
     if(Mover==0)
     {
-      Mover=new CSVMCUpdateAll(W,Psi,H,Random);
+      if(QMCDriverMode[QMC_UPDATE_MODE])
+      {
+        app_log() << "  Using particle-by-particle update " << endl;
+        Mover=new CSVMCUpdatePbyP(W,Psi,H,Random);
+      }
+      else
+      {
+        app_log() << "  Using walker-by-walker update " << endl;
+        Mover=new CSVMCUpdateAll(W,Psi,H,Random);
+      }
+
       Mover->Psi1=Psi1;
       Mover->H1=H1;
       Mover->multiEstimator=multiEstimator;
+      Mover->resetRun(branchEngine,Estimators);
     }
 
-    Mover->resetRun(branchEngine,Estimators);
-    Mover->initCSWalkers(W.begin(),W.end(), equilBlocks>0);
+    if(QMCDriverMode[QMC_UPDATE_MODE])
+      Mover->initCSWalkersForPbyP(W.begin(),W.end(),equilBlocks>0);
+    else
+      Mover->initCSWalkers(W.begin(),W.end(), equilBlocks>0);
+
     Mover->startRun(nBlocks,true);
 
     IndexType block = 0;
@@ -115,6 +117,9 @@ namespace qmcplusplus {
 
       //record the current configuration
       recordBlock(block);
+
+      //if(QMCDriverMode[QMC_UPDATE_MODE] && CurrentStep%100 == 0) 
+      //  Mover->updateCSWalkers(W.begin(),W.end());
 
     } while(block<nBlocks);
 

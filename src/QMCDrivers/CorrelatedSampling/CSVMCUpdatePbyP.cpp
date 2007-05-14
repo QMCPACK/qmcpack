@@ -77,10 +77,10 @@ namespace qmcplusplus {
         for(int ipsi=0; ipsi<nPsi; ipsi++)
         {
          // Compute ratios before and after the move
-          ratio[ipsi] = Psi1[ipsi]->ratio(W,iat,dG,*L1[ipsi]); 
+          ratio[ipsi] = Psi1[ipsi]->ratio(W,iat,*G1[ipsi],*L1[ipsi]); 
           logpsi[ipsi]=std::log(ratio[ipsi]*ratio[ipsi]);
           // Compute Gradient in new position
-          *G1[ipsi]=Psi1[ipsi]->G + dG;
+          //*G1[ipsi]=Psi1[ipsi]->G + dG;
           // Initialize: sumratio[i]=(Psi[i]/Psi[i])^2=1.0
           sumratio[ipsi]=1.0;
         }
@@ -129,7 +129,8 @@ namespace qmcplusplus {
             //Update local Psi1[i] buffer for the next move
             Psi1[ipsi]->acceptMove(W,iat);  
             //Update G and L in Psi1[i]
-            Psi1[ipsi]->G = *G1[ipsi];
+            //Psi1[ipsi]->G = *G1[ipsi];
+            Psi1[ipsi]->G += *G1[ipsi];
             Psi1[ipsi]->L += *L1[ipsi];
             thisWalker.Properties(ipsi,LOGPSI)+=std::log(abs(ratio[ipsi]));
           }
