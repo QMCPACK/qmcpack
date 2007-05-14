@@ -34,7 +34,7 @@ namespace qmcplusplus {
   VMCMultiple::VMCMultiple(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h):
     QMCDriver(w,psi,h), multiEstimator(0) { 
     RootName = "vmc";
-    QMCType ="vmc-multi";
+    QMCType ="VMCMultiple";
     equilBlocks=-1;
     m_param.add(equilBlocks,"equilBlocks","int");
     cout << "EquilBlocks " << equilBlocks << endl;
@@ -67,10 +67,14 @@ namespace qmcplusplus {
     for(int ipsi=0; ipsi<nPsi; ipsi++) 
       H1[ipsi]->add2WalkerProperty(W);
 
-    if(Estimators == 0) {
+    Estimators = branchEngine->getEstimatorManager();
+    if(Estimators == 0) 
+    {
       Estimators = new EstimatorManager(H);
       multiEstimator = new MultipleEnergyEstimator(H,nPsi);
-      Estimators->add(multiEstimator,"elocal");
+
+      Estimators->add(multiEstimator,Estimators->MainEstimatorName);
+      branchEngine->setEstimatorManager(Estimators);
     }
 
     app_log() << "Number of H and Psi " << nPsi << endl;
