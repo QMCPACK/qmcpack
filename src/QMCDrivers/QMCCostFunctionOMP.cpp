@@ -222,13 +222,13 @@ namespace qmcplusplus {
         wRef.registerData(thisWalker,thisWalker.DataSet);
 
         Return_t* restrict saved=(*RecordsOnNode[ip])[iw];
-//#if defined(QMC_COMPLEX)
-//        app_error() << " Optimization is not working with complex wavefunctions yet" << endl;
-//        app_error() << "  Needs to fix TrialWaveFunction::evaluateDeltaLog " << endl;
-//#else
+#if defined(QMC_COMPLEX)
+        app_error() << " Optimization is not working with complex wavefunctions yet" << endl;
+        app_error() << "  Needs to fix TrialWaveFunction::evaluateDeltaLog " << endl;
+#else
         psiClones[ip]->evaluateDeltaLog(wRef, 
             saved[LOGPSI_FIXED], saved[LOGPSI_FREE], thisWalker.Drift, dl);
-//#endif
+#endif
         thisWalker.DataSet.add(dl.first_address(),dl.last_address());
         e0 += saved[ENERGY_TOT] = hClones[ip]->evaluate(wRef);
         saved[ENERGY_FIXED] = hClones[ip]->getInvariantEnergy();

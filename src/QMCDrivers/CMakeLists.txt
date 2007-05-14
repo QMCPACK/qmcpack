@@ -28,6 +28,11 @@ SET(QMCDRIVERS
   DMC/DMCFactory.cpp
   DMC/WalkerControlFactory.cpp
   DMC/WalkerReconfiguration.cpp
+  CorrelatedSampling/CSUpdateBase.cpp
+  CorrelatedSampling/CSVMC.cpp
+  CorrelatedSampling/CSVMCUpdateAll.cpp
+  CorrelatedSampling/CSVMCUpdatePbyP.cpp
+  ../Estimators/CSEnergyEstimator.cpp
 )
 
 IF(ENABLE_OPENMP) 
@@ -52,8 +57,6 @@ IF(NOT QMCPLUSPLUS_RELEASE)
     MultiChain.cpp
     SpaceWarp.cpp
     RQMCMultiWarp.cpp
-    VMC/VMCMultiple.cpp
-    VMC/VMCPbyPMultiple.cpp
     VMC/VMCMultipleWarp.cpp
     VMC/VMCPbyPMultiWarp.cpp
   )

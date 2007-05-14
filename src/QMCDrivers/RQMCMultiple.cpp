@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////
-// (c) Copyright 2003- by Jeongnim Kim
+// (c) Copyright 2003- by Jeongnim Kim and Simone Chiesa
 //////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////
 //   Jeongnim Kim
@@ -8,13 +8,10 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
-//   Department of Physics, Ohio State University
-//   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 #include "QMCDrivers/RQMCMultiple.h"
@@ -27,14 +24,13 @@
 #include "Message/Communicate.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 
-using namespace std;
 namespace qmcplusplus { 
   RQMCMultiple::RQMCMultiple(MCWalkerConfiguration& w, 
       TrialWaveFunction& psi, QMCHamiltonian& h):
     QMCDriver(w,psi,h),
-    ReptileLength(21),
-    NumTurns(0), Reptile(0), NewBead(0),
-		multiEstimator(0) 
+  ReptileLength(21),
+  NumTurns(0), Reptile(0), NewBead(0),
+  multiEstimator(0) 
   { 
     RootName = "rmc-multi";
     QMCType ="RQMCMultiple";
@@ -144,7 +140,7 @@ namespace qmcplusplus {
     for(int ipsi=0; ipsi<nPsi; ipsi++){
       RealType LinkAction( 2*((*bead)->Action(ipsi,MinusDirection)+ (*bead)->Action(ipsi,Directionless) ));
       Reptile->GlobalAction[ipsi]= 2*(*bead)->Properties(ipsi,LOGPSI) + spring_norm
-                                 - Reptile->Last*LinkAction - branchEngine->LogNorm[ipsi] ;
+        - Reptile->Last*LinkAction - branchEngine->LogNorm[ipsi] ;
     } 
 
     //Compute Global Sign weight (need to be initialized somewhere)
@@ -185,8 +181,8 @@ namespace qmcplusplus {
     MultiChain::iterator bead(first_bead),last_bead(bead_end-1);
 
     ///Loop over beads to initialize action and WF
-		// just for debugging
-		int beadCount = 0;
+    // just for debugging
+    int beadCount = 0;
     while(bead != bead_end){
 
       ///Pointer to the current walker
@@ -238,7 +234,7 @@ namespace qmcplusplus {
       }
 
       ++bead;
-			beadCount++;
+      beadCount++;
     }// End Loop over beads
 
     //Assign Reference Sign as the majority Sign
@@ -376,7 +372,7 @@ namespace qmcplusplus {
     //HDFWalkerOutput WO(RootName);
 
     RealType oneoversteps=1.0/static_cast<RealType>(nSteps);
-   
+
 
     do { //Loop over Blocks
 
@@ -392,22 +388,22 @@ namespace qmcplusplus {
 
       do { //Loop over steps
 
-	moveReptile();
-	step++; CurrentStep++;
+        moveReptile();
+        step++; CurrentStep++;
 
-	//Copy the front and back to W to take average report
-	//W.copyWalkerRefs(Reptile->front(),Reptile->back());
-	for(int ipsi=0; ipsi<nPsi; ipsi++){
-	  double WeightedEloc=Reptile->UmbrellaWeight[ipsi]*
-	    ( Reptile->front()->Action(ipsi,Directionless)
-	      +Reptile->back()->Action(ipsi,Directionless) );
-	 	AveEloc[ipsi]+=WeightedEloc;
-	 	AveWeight[ipsi]+=Reptile->UmbrellaWeight[ipsi];
-	}
-	Estimators->accumulate(W);
+        //Copy the front and back to W to take average report
+        //W.copyWalkerRefs(Reptile->front(),Reptile->back());
+        for(int ipsi=0; ipsi<nPsi; ipsi++){
+          double WeightedEloc=Reptile->UmbrellaWeight[ipsi]*
+            ( Reptile->front()->Action(ipsi,Directionless)
+              +Reptile->back()->Action(ipsi,Directionless) );
+          AveEloc[ipsi]+=WeightedEloc;
+          AveWeight[ipsi]+=Reptile->UmbrellaWeight[ipsi];
+        }
+        Estimators->accumulate(W);
         //use the first energy for the branch
         //branchEngine->accumulate(AveEloc[0],1.0);
-	//reptileReport.accumulate();
+        //reptileReport.accumulate();
       } while(step<nSteps);
 
       RealType acceptedR = static_cast<RealType>(nAccept)/static_cast<RealType>(nAccept+nReject); 
@@ -448,7 +444,7 @@ namespace qmcplusplus {
     //TEST CACHE
     //Estimators->report(CurrentStep);
     //TEST CACHE
-    
+
     app_error() << " BROKEN RQMCMultiple::recordBlock(int block) HDFWalkerOutput as 2007-04-16 " << endl;
     //HDFWalkerOutput WO(RootName,false,0);
     //WO.get(W);
@@ -466,7 +462,7 @@ namespace qmcplusplus {
       for(int i=0; i<nPsi; i++)branchEngine->LogNorm[i]=0.e0;
     }
 
-		// taken from VMCMultiple
+    // taken from VMCMultiple
     if(Estimators == 0) {
       Estimators = new EstimatorManager(H);
       multiEstimator = new RQMCEstimator(H,nPsi);
@@ -565,22 +561,22 @@ namespace qmcplusplus {
       for(int ipsi=0; ipsi<nPsi; ipsi++) {
 
         DeltaG[ipsi]= - head->Action(ipsi,forward)       - NewBead->Action(ipsi,backward)
-                      + tail->Action(ipsi,forward)       + next->Action(ipsi,backward)
-                      - head->Action(ipsi,Directionless) - NewBead->Action(ipsi,Directionless)
-                      + tail->Action(ipsi,Directionless) + next->Action(ipsi,Directionless)
-                      - head->Properties(ipsi,LOGPSI)    + NewBead->Properties(ipsi,LOGPSI)
-                      - tail->Properties(ipsi,LOGPSI)    + next->Properties(ipsi,LOGPSI);
+          + tail->Action(ipsi,forward)       + next->Action(ipsi,backward)
+          - head->Action(ipsi,Directionless) - NewBead->Action(ipsi,Directionless)
+          + tail->Action(ipsi,Directionless) + next->Action(ipsi,Directionless)
+          - head->Properties(ipsi,LOGPSI)    + NewBead->Properties(ipsi,LOGPSI)
+          - tail->Properties(ipsi,LOGPSI)    + next->Properties(ipsi,LOGPSI);
 
         NewGlobalAction[ipsi]=Reptile->GlobalAction[ipsi]+DeltaG[ipsi];
         //Compute the new sign
         NewGlobalSignWgt[ipsi]=Reptile->GlobalSignWgt[ipsi]+
-                               NewBead->BeadSignWgt[ipsi]-tail->BeadSignWgt[ipsi];
+          NewBead->BeadSignWgt[ipsi]-tail->BeadSignWgt[ipsi];
         //Weight: 1 if all beads have the same sign. 0 otherwise.
         WeightSign[ipsi]=std::max(0,NewGlobalSignWgt[ipsi]-Reptile->Last);
         // Assign Reference Action
         if(WeightSign[ipsi]>0)RefAction=max(RefAction,NewGlobalAction[ipsi]);
       }
-  
+
       //Compute Log of global Wgt
       for(int ipsi=0; ipsi<nPsi; ipsi++) {
         RealType DeltaAction(NewGlobalAction[ipsi]-RefAction);
@@ -593,7 +589,7 @@ namespace qmcplusplus {
     }
 
     if(Random() < AcceptProb){
-   
+
       //Update Reptile information
       Reptile->GlobalWgt=NewGlobalWgt;
       for(int ipsi=0; ipsi<nPsi; ipsi++) {
