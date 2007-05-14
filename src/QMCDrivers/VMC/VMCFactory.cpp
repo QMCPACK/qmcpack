@@ -16,13 +16,16 @@
 // -*- C++ -*-
 #include "QMCDrivers/VMC/VMCFactory.h" 
 #include "QMCDrivers/VMC/VMCSingle.h"
+#if defined(ENABLE_OPENMP)
 #include "QMCDrivers/VMC/VMCSingleOMP.h"
-#include "QMCDrivers/VMC/VMCMultiple.h"
-#include "QMCDrivers/VMC/VMCPbyPMultiple.h"
+#endif
+//#include "QMCDrivers/VMC/VMCMultiple.h"
+//#include "QMCDrivers/VMC/VMCPbyPMultiple.h"
 #if !defined(QMC_COMPLEX)
 #include "QMCDrivers/VMC/VMCMultipleWarp.h"
 #include "QMCDrivers/VMC/VMCPbyPMultiWarp.h"
 #endif
+#include "QMCDrivers/CorrelatedSampling/CSVMC.h"
 #include "Message/OpenMP.h"
 
 namespace qmcplusplus {
@@ -35,19 +38,25 @@ namespace qmcplusplus {
     QMCDriver* qmc=0;
     if(VMCMode == 0 || VMCMode == 1) //(0,0,0) (0,0,1)
     {
+#if defined(ENABLE_OPENMP)
       if(np>1)
         qmc = new VMCSingleOMP(w,psi,h,hpool);
       else
+#endif
         qmc = new VMCSingle(w,psi,h);
     } 
-    else if(VMCMode == 2) //(0,1,0)
+    //else if(VMCMode == 2) //(0,1,0)
+    //{
+    //  qmc = new VMCMultiple(w,psi,h);
+    //} 
+    //else if(VMCMode == 3) //(0,1,1)
+    //{
+    //  qmc = new VMCPbyPMultiple(w,psi,h);
+    //} 
+    else if(VMCMode ==2 || VMCMode ==3)
     {
-      qmc = new VMCMultiple(w,psi,h);
-    } 
-    else if(VMCMode == 3) //(0,1,1)
-    {
-      qmc = new VMCPbyPMultiple(w,psi,h);
-    } 
+      qmc = new CSVMC(w,psi,h);
+    }
 #if !defined(QMC_COMPLEX)
     else if(VMCMode == 6) //(1,1,0)
     {
