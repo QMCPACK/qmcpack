@@ -33,16 +33,16 @@
  */
 int main(int argc, char **argv) {
 
+  OHMMS::Controller->initialize(argc,argv);
+
+  OhmmsInfo Welcome(argc,argv,OHMMS::Controller->mycontext());
+
   if(argc<=1)
   {
     ERRORMSG("No input file is given.")
     ERRORMSG("usage: qmcapp input-file")
     return 1;
   }
-
-  OHMMS::Controller->initialize(argc,argv);
-
-  OhmmsInfo Welcome(argc,argv,OHMMS::Controller->mycontext());
 
   qmcplusplus::QMCMain qmc(argc,argv);
 
