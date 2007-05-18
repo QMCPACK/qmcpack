@@ -97,16 +97,23 @@ namespace qmcplusplus {
     //Store the maximum number of translations, within ecut, of any reciprocal cell vector.
     for(int ig=0; ig<NumPlaneWaves; ig++)
       for(int i=0; i<3; i++)
-        if(abs(gvecs[ig][i]) > maxg[i]) 
-          maxg[i] = abs(gvecs[ig][i]);
-    maxmaxg = max(maxg[0],max(maxg[1],maxg[2]));
-    //changes the order????
-    C.resize(3,2*maxmaxg+1);
+      {
+        if(abs(gvecs[ig][i]) > maxg[i]) maxg[i] = abs(gvecs[ig][i]);
+      }
+
+    gvecs_shifted.resize(NumPlaneWaves);
+    for(int ig=0; ig<NumPlaneWaves; ig++)
+      gvecs_shifted[ig]=gvecs[ig]+maxg;
+    //     for(int i=0; i<3; i++)
+    //       gvecs_shifted[ig][i]=gvecs[ig][i]+maxg[i];
+
+    maxmaxg = std::max(maxg[0],std::max(maxg[1],maxg[2]));
+    //changes the order???? ok
+    C.resize(3,2*maxmaxg+2);
 #else
     maxmaxg=1;
 #endif
     //logC.resize(3,2*maxmaxg+1);
-
     Z.resize(NumPlaneWaves,2+DIM);
     Zv.resize(NumPlaneWaves);
   }

@@ -30,7 +30,7 @@
  *
  * performance improvement is questionable: load vs sin/cos 
  */
-//#define PWBASIS_USE_RECURSIVE
+#define PWBASIS_USE_RECURSIVE
 
 namespace qmcplusplus {
 
@@ -57,9 +57,14 @@ namespace qmcplusplus {
     ///twist angle in cartesian
     PosType twist_cart; //Twist angle in reduced and Cartesian.
 
+    ///gvecs in reduced coordiates
+    vector<GIndex_t> gvecs; 
+    ///Reduced coordinates with offset gvecs_shifted[][idim]=gvecs[][idim]+maxg[idim]
+    vector<GIndex_t> gvecs_shifted; 
+
     vector<RealType> minusModKplusG2;
-    vector<GIndex_t> gvecs; //Reduced coordinates
-    vector<PosType> kplusgvecs_cart; //Cartesian.
+    vector<PosType>  kplusgvecs_cart; //Cartesian.
+
     Matrix<ComplexType> C;
     //Real wavefunctions here. Now the basis states are cos(Gr) or sin(Gr), not exp(iGr) 
     //We need a way of switching between them for G -> -G, otherwise the
@@ -152,20 +157,58 @@ namespace qmcplusplus {
     inline void BuildRecursionCoefs(const PosType& pos) 
     { 
       PosType tau_red(Lattice.toUnit(pos));
+
+//      RealType phi=TWOPI*tau_red[0];
+//      RealType nphi=maxg0*phi;
+//      ComplexType ct0(std::cos(phi),std::sin(phi));
+//      ComplexType t(std::cos(nphi),-std::sin(nphi));
+//      C0[0]=t;
+//      for(int n=1; n<=2*maxg0; n++) C0[n] = (t *= ct0);
+//
+//      phi=TWOPI*tau_red[1];
+//      nphi=maxg1*phi;
+//      ct0=ComplexType(std::cos(phi),std::sin(phi));
+//      t=ComplexType(std::cos(nphi),-std::sin(nphi));
+//      C1[0]=t;
+//      for(int n=1; n<=2*maxg1; n++) C1[n] = (t *= ct0);
+//
+//      phi=TWOPI*tau_red[2];
+//      nphi=maxg2*phi;
+//      ct0=ComplexType(std::cos(phi),std::sin(phi));
+//      t=ComplexType(std::cos(nphi),-std::sin(nphi));
+//      C2[0]=t;
+//      for(int n=1; n<=2*maxg2; n++) C2[n] = (t *= ct0);
+
 #pragma ivdep 
       for(int idim=0; idim<3; idim++){
+        int ng=maxg[idim];
         RealType phi=TWOPI*tau_red[idim];
+        RealType nphi=ng*phi;
         ComplexType Ctemp(std::cos(phi),std::sin(phi));
-        register int ng=maxg[idim];
-        ComplexType* restrict cp_ptr=C[idim]+ng;
-        ComplexType* restrict cn_ptr=C[idim]+ng-1;
-        *cp_ptr=1.0;
-        for(int n=1; n<=ng; n++,cn_ptr--){
-          ComplexType t(Ctemp*(*cp_ptr++));
-          *cp_ptr = t;
-          *cn_ptr = conj(t);
+        ComplexType t(std::cos(nphi),-std::sin(nphi));
+        ComplexType* restrict cp_ptr=C[idim];
+        *cp_ptr++ = t;
+        for(int n=1; n<=2*ng; n++){
+          *cp_ptr++ = (t *= Ctemp);
         }
       }
+
+
+      //Base version
+//#pragma ivdep 
+//      for(int idim=0; idim<3; idim++){
+//        RealType phi=TWOPI*tau_red[idim];
+//        ComplexType Ctemp(std::cos(phi),std::sin(phi));
+//        register int ng=maxg[idim];
+//        ComplexType* restrict cp_ptr=C[idim]+ng;
+//        ComplexType* restrict cn_ptr=C[idim]+ng-1;
+//        *cp_ptr=1.0;
+//        for(int n=1; n<=ng; n++,cn_ptr--){
+//          ComplexType t(Ctemp*(*cp_ptr++));
+//          *cp_ptr = t;
+//          *cn_ptr = conj(t);
+//        }
+//      }
       //Not valid for general supercell
       //      // Cartesian of twist for 1,1,1 (reduced coordinates)
       //      PosType G111(1.0,1.0,1.0); 
@@ -198,11 +241,12 @@ namespace qmcplusplus {
       ComplexType pw0(std::cos(twistdotr),std::sin(twistdotr));
       //Evaluate the planewaves for particle iat.
       for(int ig=0; ig<NumPlaneWaves; ig++) {
-        //PW is initialized as exp(i*twist.r) so that the final basis evaluations
-        //are for (twist+G).r
+        //PW is initialized as exp(i*twist.r) so that the final basis evaluations are for (twist+G).r
         ComplexType pw(pw0); //std::cos(twistdotr),std::sin(twistdotr));
-        for(int idim=0; idim<3; idim++)
-          pw *= C(idim,gvecs[ig][idim]+maxg[idim]);
+        for(int idim=0; idim<3; idim++) pw *= C(idim,gvecs_shifted[ig][idim]);
+        //pw *= C0[gvecs_shifted[ig][0]];
+        //pw *= C1[gvecs_shifted[ig][1]];
+        //pw *= C2[gvecs_shifted[ig][2]];
         Zv[ig]=pw;
       }
     }
@@ -226,8 +270,10 @@ namespace qmcplusplus {
         //are for (twist+G).r
         ComplexType pw(pw0);
         // THE INDEX ORDER OF C DOESN'T LOOK TOO GOOD: this could be fixed
-        for(int idim=0; idim<3; idim++)
-          pw *= C(idim,gvecs[ig][idim]+maxg[idim]);
+        for(int idim=0; idim<3; idim++) pw *= C(idim,gvecs_shifted[ig][idim]);
+        //pw *= C0[gvecs_shifted[ig][0]];
+        //pw *= C1[gvecs_shifted[ig][1]];
+        //pw *= C2[gvecs_shifted[ig][2]];
         zptr[0]= pw;
         zptr[1]= minusModKplusG2[ig]*pw;
         zptr[2]= kplusgvecs_cart[ig][0]*ComplexType(-pw.imag(),pw.real());
