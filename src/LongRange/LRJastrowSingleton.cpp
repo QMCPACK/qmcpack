@@ -26,6 +26,8 @@ namespace qmcplusplus {
   LRJastrowSingleton::LRHandlerType*
     LRJastrowSingleton::getHandler(ParticleSet& ref) {
       if(JastrowHandler ==0) {
+        app_log() << "  LRJastrowSingleton::getHanlder " << endl;
+        //JastrowHandler=new LRHandlerType(ref,2.0);
         JastrowHandler=new LRHandlerType(ref);
         JastrowHandler->initBreakup(ref);
       }

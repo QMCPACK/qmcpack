@@ -40,13 +40,16 @@ namespace qmcplusplus {
     typedef ParticleSet::ParticleLayout_t ParticleLayout_t;
     typedef BreakupBasis BreakupBasisType;
 
+    /** Dimensionless cutoff to determine the maxium cutoff */
+    RealType  LR_dim_cutoff;
     BreakupBasis Basis; //This needs a Lattice for the constructor...
     Vector<RealType> coefs; 
     Vector<RealType> Fk; 
     Func myFunc;
 
     //Constructor
-    LRHandlerTemp(ParticleSet& ref): Basis(ref.Lattice) {
+    LRHandlerTemp(ParticleSet& ref, RealType lrcut=-1.0): Basis(ref.Lattice), LR_dim_cutoff(lrcut) 
+    {
       myFunc.reset(ref);
     }
       
@@ -123,7 +126,8 @@ namespace qmcplusplus {
       LRBreakup<BreakupBasis> breakuphandler(Basis);
 
       //Find size of basis from cutoffs
-      RealType kc(ref.LR_kc); //User cutoff parameter...
+      RealType kc = (LR_dim_cutoff<0)?ref.LR_kc:LR_dim_cutoff/ref.LR_rc;
+      //RealType kc(ref.LR_kc); //User cutoff parameter...
 
       //kcut is the cutoff for switching to approximate k-point degeneracies for
       //better performance in making the breakup. A good bet is 30*K-spacing so that
