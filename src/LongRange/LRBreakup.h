@@ -42,9 +42,7 @@ namespace qmcplusplus {
     RealType DoBreakup(RealType *Fk, RealType *t, RealType *adjust);
 
     RealType DoBreakup(RealType *Fk, RealType *t) {
-      const RealType tolerance = 1.0e-16;
-
-
+      const RealType tolerance = numeric_limits<RealType>::epsilon();
       //t must be allocated up to Basis.NumBasisElem();
       //Fk must be allocated and filled up to KList.size();
 
@@ -359,8 +357,9 @@ template<class BreakupBasis>
 typename LRBreakup<BreakupBasis>::RealType
 LRBreakup<BreakupBasis>::DoBreakup(RealType *Fk, 
 				   RealType *t,
-				   RealType *adjust) {
-  const RealType tolerance = 1.0e-16;
+				   RealType *adjust) 
+{
+  const RealType tolerance = numeric_limits<RealType>::epsilon();
 
   //t and adjust must be allocated up to Basis.NumBasisElem();
   //Fk must be allocated and filled up to KList.size();
