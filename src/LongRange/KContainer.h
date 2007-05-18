@@ -32,6 +32,10 @@ namespace qmcplusplus {
     typedef vector<PosType>  VContainer_t;
     ///typedef of scalar containers
     typedef vector<RealType> SContainer_t;
+
+    ///number of k-points
+    int numk;
+
     //Maximum integer translations of reciprocal cell within kc.
     //Last index is max. of first 3.
     TinyVector<int,4> mmax;
@@ -48,15 +52,15 @@ namespace qmcplusplus {
     /** Given a k index, return index to -k
      */
     vector<int> minusk; 
-
-    int numk;
+    /** kpts which belong to the ith-shell [kshell[i], kshell[i+1]) */
+    vector<int> kshell; 
 
     /** k points sorted by the |k|  excluding |k|=0
      *
      * The first for |k|
      * The second for a map to the full index. The size of the second is the degeneracy.
      */
-    std::map<int,std::vector<int>*>  kpts_sorted;
+    //std::map<int,std::vector<int>*>  kpts_sorted;
 
     //A copy of the lattice, so that we have the cell-vectors
     ParticleLayout_t& Lattice;

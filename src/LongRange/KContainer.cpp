@@ -42,8 +42,8 @@ KContainer::UpdateKLists(ParticleLayout_t& ref, RealType kc, bool useSphere) {
   kcut2 = kc*kc;
   Lattice = ref;
 
+  LOGMSG("  KContainer initialised with cutoff " << kcutoff);
   if(kcutoff <= 0.0){
-    LOGMSG("KContainer initialised with cutoff " << kcutoff);
     OHMMS::Controller->abort();
   }
 
@@ -56,9 +56,9 @@ void
 KContainer::UpdateKLists(RealType kc, bool useSphere) {
   kcutoff = kc;
   kcut2 = kc*kc;
+  LOGMSG("  KContainer initialised with cutoff " << kcutoff);
 
   if(kcutoff <= 0.0){
-    LOGMSG("KContainer initialised with cutoff " << kcutoff);
     OHMMS::Controller->abort();
   }
 
@@ -114,15 +114,15 @@ KContainer::FindApproxMMax() {
 void 
 KContainer::BuildKLists(bool useSphere) {
 
-  kpts.clear();
-  kpts_cart.clear();
+  //kpts.clear();
+  //kpts_cart.clear();
+  //ksq.clear();
 
   // reserve the space for memory efficiency
   int numGuess=(2*mmax[0]+1)*(2*mmax[1]+1)*(2*mmax[2]+1);
-  kpts.reserve(numGuess);
-  kpts_cart.reserve(numGuess);
-  ksq.reserve(numGuess);  
-
+  //kpts.reserve(numGuess);
+  //kpts_cart.reserve(numGuess);
+  //ksq.reserve(numGuess);  
 
   TinyVector<int,4> TempActualMax;
   TinyVector<int,3> kvec;
@@ -130,6 +130,10 @@ KContainer::BuildKLists(bool useSphere) {
   RealType modk2;
   for(int i=0; i <4; i++) 
     TempActualMax[i] = 0;
+
+  vector<TinyVector<int,3> > kpts_tmp;
+  VContainer_t kpts_cart_tmp;
+  SContainer_t ksq_tmp;
 
   if(useSphere) {
     //Loop over guesses for valid k-points.
@@ -155,16 +159,15 @@ KContainer::BuildKLists(bool useSphere) {
 	  */
 	  kvec_cart = Lattice.k_cart(kvec);
 	
-
 	  //Find modk
 	  modk2 = dot(kvec_cart,kvec_cart);
 
-	  if(modk2>kcut2)continue; //Inside cutoff?
+	  if(modk2>kcut2) continue; //Inside cutoff?
 
 	  //This k-point should be added to the list
-	  kpts.push_back(kvec);
-	  kpts_cart.push_back(kvec_cart);
-	  ksq.push_back(modk2);
+	  kpts_tmp.push_back(kvec);
+	  kpts_cart_tmp.push_back(kvec_cart);
+	  ksq_tmp.push_back(modk2);
 	
 	  //Update record of the allowed maximum translation.
 	  for(int idim=0; idim<3; idim++)
@@ -196,9 +199,9 @@ KContainer::BuildKLists(bool useSphere) {
           modk2 = dot(kvec_cart, kvec_cart);
 
           // add k-point to lists
-          kpts.push_back(kvec);
-          kpts_cart.push_back(kvec_cart);
-          ksq.push_back(modk2);
+          kpts_tmp.push_back(kvec);
+          kpts_cart_tmp.push_back(kvec_cart);
+          ksq_tmp.push_back(modk2);
         }
       }
     }
@@ -208,7 +211,44 @@ KContainer::BuildKLists(bool useSphere) {
     TempActualMax[2] = mmax[2];
 
   }
-  
+ 
+  //Update a record of the number of k vectors
+  numk = kpts_tmp.size();
+
+  std::map<int,std::vector<int>*>  kpts_sorted;
+ //create the map: use simple integer with resolution of 0.001 in ksq
+  for(int ik=0; ik<numk; ik++) {
+    int k_ind=static_cast<int>(ksq_tmp[ik]*1000);
+    std::map<int,std::vector<int>*>::iterator it(kpts_sorted.find(k_ind));
+    if(it == kpts_sorted.end()) {
+      std::vector<int>* newSet=new std::vector<int>;
+      kpts_sorted[k_ind]=newSet;
+      newSet->push_back(ik);
+    } else {
+      (*it).second->push_back(ik);
+    }
+  }
+
+  std::map<int,std::vector<int>*>::iterator it(kpts_sorted.begin());
+  kpts.resize(numk);
+  kpts_cart.resize(numk);
+  ksq.resize(numk);
+  kshell.resize(kpts_sorted.size()+1,0);
+  int ok=0, ish=0;
+  while(it != kpts_sorted.end()) {
+    std::vector<int>::iterator vit((*it).second->begin());
+    while(vit != (*it).second->end()) {
+      int ik=(*vit);
+      kpts[ok]=kpts_tmp[ik];
+      kpts_cart[ok]=kpts_cart_tmp[ik];
+      ksq[ok]=ksq_tmp[ik];
+      //cout << "   " << ik <<  " " << kpts[ik] << " " << ksq[ik] << endl;
+      ++vit;++ok;
+    }
+    kshell[ish+1]=kshell[ish]+(*it).second->size();
+    ++it;++ish;
+  }
+
   //Finished searching k-points. Copy list of maximum translations.
   mmax[3] = 0;
   for(int idim=0; idim<3; idim++) {
@@ -217,9 +257,6 @@ KContainer::BuildKLists(bool useSphere) {
       mmax[3] = mmax[idim];
   }
 
-  //Update a record of the number of k vectors
-  numk = kpts.size();
-  
   //Now fill the array that returns the index of -k when given the index of k.
   minusk.resize(numk);
 
@@ -233,31 +270,5 @@ KContainer::BuildKLists(bool useSphere) {
   for(int ki=0; ki<numk; ki++) {
     minusk[ki] = hashToIndex[ GetHashOfVec(-1 * kpts[ki], numk) ];
   }
-
-  //create the map: use simple integer with resolution of 0.001 in ksq
-  for(int ik=0; ik<kpts.size(); ik++) {
-    int k_ind=static_cast<int>(ksq[ik]*1000);
-    std::map<int,std::vector<int>*>::iterator it(kpts_sorted.find(k_ind));
-    if(it == kpts_sorted.end()) {
-      std::vector<int>* newSet=new std::vector<int>;
-      kpts_sorted[k_ind]=newSet;
-      newSet->push_back(ik);
-    } else {
-      (*it).second->push_back(ik);
-    }
-  }
-
- // std::map<int,std::vector<int>*>::iterator it(kpts_sorted.begin());
- // cout << "<<<<< sorted kpts " << endl;
- // while(it != kpts_sorted.end()) {
- //   cout << (*it).first << " " << (*it).second->size() << endl;
- //   std::vector<int>::iterator vit((*it).second->begin());
- //   while(vit != (*it).second->end()) {
- //     int ik=(*vit);
- //     cout << "   " << ik <<  " " << kpts[ik] << " " << ksq[ik] << endl;
- //     ++vit;
- //   }
- //   ++it;
- // }
 }
 
