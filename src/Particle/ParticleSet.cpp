@@ -163,7 +163,8 @@ namespace qmcplusplus {
     } 
     
     R[iat]=newpos;
-    if(SK) SK->makeMove(iat,newpos);
+    //Do not change SK: 2007-05-18
+    //if(SK) SK->makeMove(iat,newpos);
     return newpos;
   }
 
@@ -186,14 +187,16 @@ namespace qmcplusplus {
       for(int i=0; i< DistTables.size(); i++) {
         DistTables[i]->update(iat);
       }
-      if(SK) SK->acceptMove(iat);
+      //Do not change SK: 2007-05-18
+      //if(SK) SK->acceptMove(iat);
     }
   }
 
   void ParticleSet::rejectMove(Index_t iat) {
     //restore the position by the saved activePos
     R[iat]=activePos;
-    if(SK) SK->rejectMove(iat);
+    //Do not change SK: 2007-05-18
+    //if(SK) SK->rejectMove(iat);
   }
 
   /** resize Sphere by the LocalNum
@@ -210,11 +213,13 @@ namespace qmcplusplus {
   void 
   ParticleSet::registerData(Walker_t& awalker, PooledData<RealType>& buf) {
     R = awalker.R;
-    for(int i=0; i< DistTables.size(); i++) {
+    for(int i=0; i< DistTables.size(); i++) 
+    {
       DistTables[i]->evaluate(*this);
       DistTables[i]->registerData(buf);
     }
-    if(SK){
+    if(SK)
+    {
       SK->UpdateAllPart();
       SK->registerData(buf);
     }
@@ -222,11 +227,13 @@ namespace qmcplusplus {
 
   void 
   ParticleSet::registerData(PooledData<RealType>& buf) {
-    for(int i=0; i< DistTables.size(); i++) {
+    for(int i=0; i< DistTables.size(); i++) 
+    {
       DistTables[i]->evaluate(*this);
       DistTables[i]->registerData(buf);
     }
-    if(SK){
+    if(SK)
+    {
       SK->UpdateAllPart();
       SK->registerData(buf);
     }
@@ -235,11 +242,13 @@ namespace qmcplusplus {
   void 
   ParticleSet::updateBuffer(Walker_t& awalker, PooledData<RealType>& buf) {
     R = awalker.R;
-    for(int i=0; i< DistTables.size(); i++) {
+    for(int i=0; i< DistTables.size(); i++) 
+    {
       DistTables[i]->evaluate(*this);
       DistTables[i]->updateBuffer(buf);
     }
-    if(SK){
+    if(SK)
+    {
       SK->UpdateAllPart();
       SK->updateBuffer(buf);
     }
@@ -247,11 +256,13 @@ namespace qmcplusplus {
     
   void 
   ParticleSet::updateBuffer(PooledData<RealType>& buf) {
-    for(int i=0; i< DistTables.size(); i++) {
+    for(int i=0; i< DistTables.size(); i++) 
+    {
       DistTables[i]->evaluate(*this);
       DistTables[i]->updateBuffer(buf);
     }
-    if(SK){
+    if(SK)
+    {
       SK->UpdateAllPart();
       SK->updateBuffer(buf);
     }
@@ -259,17 +270,19 @@ namespace qmcplusplus {
     
   void 
   ParticleSet::copyToBuffer(PooledData<RealType>& buf) {
-    for(int i=0; i< DistTables.size(); i++) {
-      DistTables[i]->copyToBuffer(buf);
+    for(int i=0; i< DistTables.size(); i++) DistTables[i]->copyToBuffer(buf);
+    //Do not change SK: 2007-05-18
+    //if(SK) SK->copyToBuffer(buf);
+    if(SK)
+    {//need to calculate the Sk with the current position
+      SK->UpdateAllPart();
+      SK->copyToBuffer(buf);
     }
-    if(SK) SK->copyToBuffer(buf);
   }
   
   void 
   ParticleSet::copyFromBuffer(PooledData<RealType>& buf) {
-    for(int i=0; i< DistTables.size(); i++) {
-      DistTables[i]->copyFromBuffer(buf);
-    }
+    for(int i=0; i< DistTables.size(); i++) DistTables[i]->copyFromBuffer(buf);
     if(SK) SK->copyFromBuffer(buf);
   }
 
@@ -284,9 +297,7 @@ namespace qmcplusplus {
 
   void ParticleSet::clearDistanceTables() {
     //Physically remove the tables
-    for(int i=0; i< DistTables.size(); i++) {
-      DistanceTable::removeTable(DistTables[i]->getName());
-    }
+    for(int i=0; i< DistTables.size(); i++) DistanceTable::removeTable(DistTables[i]->getName());
     DistTables.erase(DistTables.begin(),DistTables.end());
   }
 }
