@@ -27,10 +27,16 @@ namespace qmcplusplus {
   LRCoulombSingleton::LRHandlerType*
     LRCoulombSingleton::getHandler(ParticleSet& ref) {
       if(CoulombHandler ==0) {
+        app_log() << "  Create CoulombHandler. " << endl;
         CoulombHandler=new LRHandlerType(ref);
         CoulombHandler->initBreakup(ref);
+        return CoulombHandler;
       }
-      return CoulombHandler;
+      else
+      {
+        app_log() << "  Copy CoulombHandler. " << endl;
+        return new LRHandlerType(*CoulombHandler,ref);
+      }
     }
 
   LRCoulombSingleton::RadFunctorType*

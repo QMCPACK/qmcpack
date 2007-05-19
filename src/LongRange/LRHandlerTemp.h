@@ -48,9 +48,25 @@ namespace qmcplusplus {
     Func myFunc;
 
     //Constructor
-    LRHandlerTemp(ParticleSet& ref, RealType lrcut=-1.0): Basis(ref.Lattice), LR_dim_cutoff(lrcut) 
+    LRHandlerTemp(ParticleSet& ref, RealType lrcut=-1.0): 
+      Basis(ref.Lattice), LR_dim_cutoff(lrcut) 
     {
       myFunc.reset(ref);
+    }
+
+    /** "copy" constructor 
+     * @param aLR LRHandlerTemp
+     * @param ref Particleset
+     * 
+     * Copy the content of aLR 
+     * References to ParticleSet or ParticleLayoutout_t are not copied.
+     */
+    LRHandlerTemp(const LRHandlerTemp& aLR, ParticleSet& ref):
+      Basis(aLR.Basis, ref.Lattice), 
+    LR_dim_cutoff(aLR.LR_dim_cutoff), coefs(aLR.coefs), Fk(aLR.coefs)
+    {
+      myFunc.reset(ref);
+      fillFk(ref.SK->KLists);
     }
       
     void initBreakup(ParticleSet& ref) {

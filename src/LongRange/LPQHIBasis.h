@@ -19,6 +19,7 @@ namespace qmcplusplus {
     Matrix<RealType> S1; //First derivatives
     Matrix<RealType> S2; //Second derivatives
     RealType Mfactor[3];
+    vector<RealType> tvec; //Coefficients
 
     //Helper functions for computing FT of basis functions (used in c(n,k))
     inline complex<RealType> Eplus(int i, RealType k, int n);
@@ -26,10 +27,18 @@ namespace qmcplusplus {
     inline RealType Dplus(int i, RealType k, int n);
     inline RealType Dminus(int i, RealType k, int n);
 
-    vector<RealType> tvec; //Coefficients
-      
-
   public:
+
+    LPQHIBasis(const LPQHIBasis& b,ParticleLayout_t& ref):
+      LRBasis(ref), 
+    NumKnots(b.NumKnots), delta(b.delta), deltainv(b.deltainv),
+    S(b.S),S1(b.S1), S2(b.S2), tvec(b.tvec)
+    {
+      Mfactor[0]=1.0; Mfactor[1]=-1.0; Mfactor[2]=1.0;
+      BasisSize=b.BasisSize;
+      m_rc=b.m_rc;
+    }
+
     inline RealType get_delta() const { return delta; }
     //inline int NumBasisElem() const {return 3*NumKnots;}
     void set_NumKnots(int n); // n >= 2 required
