@@ -33,7 +33,7 @@ namespace qmcplusplus {
   CoulombPBCAATemp::CoulombPBCAATemp(const CoulombPBCAATemp& c): 
     PtclRef(c.PtclRef),d_aa(c.d_aa),myGrid(0),rVs(0), FirstTime(true), myConst(0.0)
     {
-      AA = new LRHandlerType(*PtclRef);
+      //AA = new LRHandlerType(*PtclRef);
       initBreakup();
     }
     
