@@ -40,6 +40,8 @@ namespace qmcplusplus {
     IndexType NumPtcls;
     IndexType NumSpecies;
     IndexType NumKpts;
+    ///maximum K-point
+    IndexType MaxK;
     /// 1/Cell Volume
     RealType OneOverCellVolume;
     ///Omega 
@@ -66,6 +68,11 @@ namespace qmcplusplus {
     // handler used to do evalFk
     typedef LRJastrowSingleton::LRHandlerType HandlerType;    
     HandlerType* handler;
+
+    //Matrix<ComplexType> rhok;
+    Matrix<ComplexType> eikr;
+    Vector<ComplexType> eikr_new;
+    Vector<ComplexType> delta_eikr;
     
   public:
     Vector<RealType> Fk_0; 

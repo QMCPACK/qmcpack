@@ -21,7 +21,7 @@ namespace qmcplusplus {
 
   LRTwoBodyJastrow::LRTwoBodyJastrow(ParticleSet& p, HandlerType* inHandler):
   NumPtcls(0), NumSpecies(0), skRef(0) {
-    Optimizable=true;
+    Optimizable=false;
     handler=inHandler;
     NumSpecies=p.groups();
     skRef=p.SK;
@@ -87,7 +87,7 @@ namespace qmcplusplus {
       Rhok=0.0;
       for(int spec1=0; spec1<NumSpecies; spec1++) {
         const ComplexType* restrict rhok(P.SK->rhok[spec1]);
-        for(int ki=0; ki<NumKpts; ki++) {
+        for(int ki=0; ki<MaxK; ki++) {
           Rhok[ki] += rhok[ki];
         }
       }
@@ -100,7 +100,7 @@ namespace qmcplusplus {
         ValueType res(0.0),l(0.0);
         GradType g;
         const ComplexType* restrict eikr(P.SK->eikr[iat]);
-        for(int ki=0; ki<NumKpts; ki++) {
+        for(int ki=0; ki<MaxK; ki++) {
           ComplexType skp((Fk[ki]*conj(eikr[ki])*Rhok[ki]));
 #if defined(QMC_COMPLEX)
           res +=  skp;
@@ -126,19 +126,20 @@ namespace qmcplusplus {
       //restore, if called should do nothing
       NeedToRestore=false;
       curVal=0.0;
-      const KContainer::VContainer_t& kpts(P.SK->KLists.kpts_cart);
-      const Vector<ComplexType>& eikr1(P.SK->eikr_new);
-      const Vector<ComplexType>& del_eikr(P.SK->delta_eikr);
-      //Rhok += del_eikr;
-      for(int ki=0; ki<NumKpts; ki++) {
-        //ComplexType skp((Fk[ki]*conj(eikr1[ki])*Rhok[ki]));
-        ComplexType skp((Fk[ki]*conj(eikr1[ki])*(Rhok[ki]+del_eikr[ki])));
-#if defined(QMC_COMPLEX)
-        curVal +=  skp;
-#else
-        curVal +=  skp.real();
-#endif
-      }
+
+//      const KContainer::VContainer_t& kpts(P.SK->KLists.kpts_cart);
+//      const Vector<ComplexType>& eikr1(P.SK->eikr_new);
+//      const Vector<ComplexType>& del_eikr(P.SK->delta_eikr);
+//      //Rhok += del_eikr;
+//      for(int ki=0; ki<MaxK; ki++) {
+//        //ComplexType skp((Fk[ki]*conj(eikr1[ki])*Rhok[ki]));
+//        ComplexType skp((Fk[ki]*conj(eikr1[ki])*(Rhok[ki]+del_eikr[ki])));
+//#if defined(QMC_COMPLEX)
+//        curVal +=  skp;
+//#else
+//        curVal +=  skp.real();
+//#endif
+//      }
       return std::exp(curVal-U[iat]);
     }
   
@@ -158,44 +159,104 @@ namespace qmcplusplus {
       Rhok += del_eikr;
       
       curVal=0.0; curLap=0.0; curGrad=0.0;
-      for(int jat=0;jat<NumPtcls; jat++) {
-        if(iat==jat) {
-          for(int ki=0; ki<NumKpts; ki++) {
-            //ComplexType rhok_new(Rhok[ki]+del_eikr[ki]);
-            //ComplexType skp((Fk[ki]*conj(eikr1[ki])*rhok_new));
-            ComplexType skp((Fk[ki]*conj(eikr1[ki])*Rhok[ki]));
+      for(int ki=0; ki<MaxK; ki++) {
 #if defined(QMC_COMPLEX)
-            curVal +=  skp;
-            curGrad += ComplexType(skp.imag(),-skp.real())*kpts[ki];
-            curLap += ksq[ki]*(Fk[ki]-skp);
+        ComplexType skp((Fk[ki]*conj(eikr1[ki])*Rhok[ki]));
+        curVal +=  skp;
+        curGrad += ComplexType(skp.imag(),-skp.real())*kpts[ki];
+        curLap += ksq[ki]*(Fk[ki]-skp);
 #else
-            curVal +=  skp.real();
-            curGrad += kpts[ki]*skp.imag();
-            curLap += ksq[ki]*(Fk[ki]-skp.real());
+        RealType skp_r=Fk[ki]*(eikr1[ki].real()*Rhok[ki].real()+eikr1[ki].imag()*Rhok[ki].imag());
+        RealType skp_i=Fk[ki]*(eikr1[ki].real()*Rhok[ki].imag()-eikr1[ki].imag()*Rhok[ki].real());
+        curVal +=  skp_r;
+        curLap += ksq[ki]*(Fk[ki]-skp_r);
+        curGrad += kpts[ki]*skp_i;
 #endif
-          }
-        } else {
-          const ComplexType* restrict eikrj(P.SK->eikr[jat]);
-          GradType g;
-          ValueType l(0.0), v(0.0);
-          for(int ki=0; ki<NumKpts; ki++) {
-            ComplexType skp(Fk[ki]*del_eikr[ki]*conj(eikrj[ki]));
-            GradType dg(skp.imag()*kpts[ki]);
-            ValueType dl(skp.real()*ksq[ki]);
-            v += skp.real();
-            g +=dg;
-            l -= dl;
-            //dG[jat] += Fk[ki]*skp.imag()*kpts[ki];
-            //dL[jat] -= Fk[ki]*skp.real()*ksq[ki];
-          }
-          offU[jat]=v;
-          offdU[jat]=g;
-          offd2U[jat]=l;
-          dG[jat] += g;
-          dL[jat] += l;
-        }
       }
-      
+
+      for(int jat=0;jat<NumPtcls; jat++) 
+      {
+        if(jat == iat) continue;
+        const ComplexType* restrict eikrj(P.SK->eikr[jat]);
+        GradType g;
+        ValueType l(0.0), v(0.0);
+        for(int ki=0; ki<MaxK; ki++) {
+#if defined(QMC_COMPLEX)
+          ComplexType skp(Fk[ki]*del_eikr[ki]*conj(eikrj[ki]));
+          GradType dg(skp.imag()*kpts[ki]);
+          ValueType dl(skp.real()*ksq[ki]);
+          v += skp.real();
+          g +=dg;
+          l -= dl;
+#else
+          ComplexType skp(Fk[ki]*del_eikr[ki]*conj(eikrj[ki]));
+          //GradType dg(skp.imag()*kpts[ki]);
+          //ValueType dl(skp.real()*ksq[ki]);
+          v += skp.real();
+          l -= skp.real()*ksq[ki];
+          g += skp.imag()*kpts[ki];
+#endif
+          //dG[jat] += Fk[ki]*skp.imag()*kpts[ki];
+          //dL[jat] -= Fk[ki]*skp.real()*ksq[ki];
+        }
+        offU[jat]=v;
+        offdU[jat]=g;
+        offd2U[jat]=l;
+        dG[jat] += g;
+        dL[jat] += l;
+      }
+//      for(int jat=0;jat<NumPtcls; jat++) {
+//        if(iat==jat) {
+//          for(int ki=0; ki<MaxK; ki++) {
+//            //ComplexType rhok_new(Rhok[ki]+del_eikr[ki]);
+//            //ComplexType skp((Fk[ki]*conj(eikr1[ki])*rhok_new));
+//#if defined(QMC_COMPLEX)
+//            ComplexType skp((Fk[ki]*conj(eikr1[ki])*Rhok[ki]));
+//            curVal +=  skp;
+//            curGrad += ComplexType(skp.imag(),-skp.real())*kpts[ki];
+//            curLap += ksq[ki]*(Fk[ki]-skp);
+//#else
+//            RealType skp_r=Fk[ki]*(eikr1[ki].real()*Rhok[ki].real()+eikr1[ki].imag()*Rhok[ki].imag());
+//            RealType skp_i=Fk[ki]*(eikr1[ki].real()*Rhok[ki].imag()-eikr1[ki].imag()*Rhok[ki].real());
+//            curVal +=  skp_r;
+//            curLap += ksq[ki]*(Fk[ki]-skp_r);
+//            curGrad += kpts[ki]*skp_i;
+//            //curVal +=  skp.real();
+//            //curLap += ksq[ki]*(Fk[ki]-skp.real());
+//            //curGrad += skp.imag()*kpts[ki];
+//#endif
+//          }
+//        } else {
+//          const ComplexType* restrict eikrj(P.SK->eikr[jat]);
+//          GradType g;
+//          ValueType l(0.0), v(0.0);
+//          for(int ki=0; ki<MaxK; ki++) {
+//#if defined(QMC_COMPLEX)
+//            ComplexType skp(Fk[ki]*del_eikr[ki]*conj(eikrj[ki]));
+//            GradType dg(skp.imag()*kpts[ki]);
+//            ValueType dl(skp.real()*ksq[ki]);
+//            v += skp.real();
+//            g +=dg;
+//            l -= dl;
+//#else
+//            ComplexType skp(Fk[ki]*del_eikr[ki]*conj(eikrj[ki]));
+//            //GradType dg(skp.imag()*kpts[ki]);
+//            //ValueType dl(skp.real()*ksq[ki]);
+//            v += skp.real();
+//            l -= skp.real()*ksq[ki];
+//            g += skp.imag()*kpts[ki];
+//#endif
+//            //dG[jat] += Fk[ki]*skp.imag()*kpts[ki];
+//            //dL[jat] -= Fk[ki]*skp.real()*ksq[ki];
+//          }
+//          offU[jat]=v;
+//          offdU[jat]=g;
+//          offd2U[jat]=l;
+//          dG[jat] += g;
+//          dL[jat] += l;
+//        }
+//      }
+//      
       dG[iat] += offdU[iat] = curGrad-dU[iat];
       dL[iat] += offd2U[iat] = curLap-d2U[iat];
       return offU[iat] = curVal-U[iat];
@@ -265,8 +326,8 @@ namespace qmcplusplus {
         return false;
       }
       
-      std::map<int,std::vector<int>*>& kpts_sorted(skRef->KLists.kpts_sorted);
-      Fk_symm.resize(kpts_sorted.size());
+      int nkshells=skRef->KLists.kshell.size()-1;
+      Fk_symm.resize(nkshells);
       
       bool foundCoeff=false;
       if(cur != NULL)
@@ -292,42 +353,40 @@ namespace qmcplusplus {
           tcur=tcur->next;
         }
       }
-      
       Fk.resize(NumKpts);
       if(foundCoeff) {
         resetInternals();
       } else {
-        std::map<int,std::vector<int>*>::iterator it(kpts_sorted.begin());
-        int uniqueK=0;
-        while(it != kpts_sorted.end()) {
-          std::vector<int>::iterator vit((*it).second->begin());
-          int ik=(*vit);
-          Fk_symm[uniqueK]=Fk[ik]=-1.0*handler->Fk[ik];
-          ++vit;
-          while(vit != (*it).second->end()) {
-            int ik=(*vit);
-            Fk[ik]=-1.0*handler->Fk[ik];
-            ++vit;
-          }
-          ++it;++uniqueK;
-        }
+        int ki=0; 
         char coeffname[128];
-        for(int ik=0; ik<Fk_symm.size(); ik++) {
-          sprintf(coeffname,"rpa_k%d",ik);
-          vlist[coeffname]=Fk_symm[ik];
+        MaxK=0;
+        int ish=0;
+        //RealType kc2=(skRef->KLists.Lattice.LR_kc)*(skRef->KLists.Lattice.LR_kc);
+        RealType kc2=2.0;
+        while(ish<nkshells && ki<NumKpts)
+        {
+          Fk_symm[ish]=-1.0*handler->Fk[ki];
+          sprintf(coeffname,"rpa_k%d",ish);
+          vlist[coeffname]=Fk_symm[ish];
           //vlist.add(coeffname,Fk_symm.data()+ik);
-	  
           std::ostringstream kname,val;
-          kname << ik;
-          val<<Fk_symm[ik];
+          kname << ish;
+          val<<Fk_symm[ish];
           xmlNodePtr p_ptr = xmlNewTextChild(cur,NULL,(const xmlChar*)"parameter",
-					     (const xmlChar*)val.str().c_str());
+              (const xmlChar*)val.str().c_str());
           xmlNewProp(p_ptr,(const xmlChar*)"id",(const xmlChar*)coeffname);
           xmlNewProp(p_ptr,(const xmlChar*)"name",(const xmlChar*)kname.str().c_str());
+
+          if(skRef->KLists.ksq[ki]<kc2) MaxK=skRef->KLists.kshell[ish+1];;
+          for(; ki<skRef->KLists.kshell[ish+1]; ki++) Fk[ki]=Fk_symm[ish];
+
+          if(abs(Fk_symm[ish])>1e-3) MaxK=ki;
+          ++ish;
         }
       }
     
       app_log() << "  Long-range Two-Body Jastrow coefficients " << endl;
+      app_log() << "  MaxK = " << MaxK << " NumKpts = " << NumKpts << endl;
       for(int ikpt=0; ikpt<NumKpts; ikpt++) {
         app_log() <<  skRef->KLists.ksq[ikpt] << " " << Fk[ikpt] << endl;
       }

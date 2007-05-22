@@ -184,13 +184,20 @@ namespace qmcplusplus {
     ofstream fout("rpa.short.dat");
     for (int i = 0; i < myGrid->size(); i++) {
       RealType r=(*myGrid)(i);
-      fout << r << "   " << nfunc->evaluate(r) << "   " << handler->evaluate(r,1.0/r) << " " << handler->evaluateLR(r) << endl;
+      fout << r << "   " << nfunc->evaluate(r) << "   " << handler->evaluate(r,1.0/r) << " " 
+        << handler->evaluateLR(r) << endl;
     }
-    
-    TwoBodyJastrowOrbital<FuncType> *J2 = new TwoBodyJastrowOrbital<FuncType>(targetPtcl);
-    for (int i=0; i<4; i++) J2->addFunc(nfunc);
 
-    return J2;
+    if(LongRangeRPA==0)
+    {
+      HandlerType* handler = LRJastrowSingleton::getHandler(targetPtcl);
+      LongRangeRPA = new LRTwoBodyJastrow(targetPtcl, handler);
+    }
+    return LongRangeRPA;
+    
+    //TwoBodyJastrowOrbital<FuncType> *J2 = new TwoBodyJastrowOrbital<FuncType>(targetPtcl);
+    //for (int i=0; i<4; i++) J2->addFunc(nfunc);
+    //return J2;
   }
      
   OrbitalBase* RPAPBCConstraints::createLRTwoBody() {
@@ -218,7 +225,8 @@ namespace qmcplusplus {
 
   void RPAPBCConstraints::addExtra2ComboOrbital(ComboOrbital* jcombo)
   {
-    jcombo->Psi.push_back(createLRTwoBody());
+    app_log() << "   Diable  RPAPBCConstraints::addExtra2ComboOrbital for LR " << endl;
+    //jcombo->Psi.push_back(createLRTwoBody());
   }
 
   //void RPAPBCConstraints::addTwoBodyPart(ComboOrbital* jcombo) {
