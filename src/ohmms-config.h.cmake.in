@@ -80,4 +80,7 @@
 /* Define the index of the walker iterator. NOT USED */
 #cmakedefine QMC_FASTWALKER @QMC_FASTWALKER@
 
+/* Define if sincos function exists */
+#cmakedefine HAVE_SINCOS
+
 #endif // QMCPLUSPLUS_CONFIGURATION_H

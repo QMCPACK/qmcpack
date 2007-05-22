@@ -34,6 +34,12 @@ SET(QMC_OMP 0)
 SET(QMC_BITS 32)
 
 ######################################################################
+# Standard test
+######################################################################
+INCLUDE(${CMAKE_ROOT}/Modules/CheckFunctionExists.cmake)
+CHECK_FUNCTION_EXISTS(sincos HAVE_SINCOS)
+
+######################################################################
 # Build options
 # QMC_BUILD_STATIC build static/dynamic  libraries
 # BUILD_QMCTOOLS   build utility programs
@@ -174,7 +180,7 @@ IF(FOUND_HDF5)
   INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIR})
   LINK_LIBRARIES(${HDF5_LIBRARY})
   #zlib
-  INCLUDE(${CMAKE_ROOT}/Modules/FindZLIB.cmake)
+  NCLUDE(${PROJECT_CMAKE}/FindZLIB.cmake)
   IF(ZLIB_FOUND)
     LINK_LIBRARIES(${ZLIB_LIBRARY})
   ENDIF(ZLIB_FOUND)
