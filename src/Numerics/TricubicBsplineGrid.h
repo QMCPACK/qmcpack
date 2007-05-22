@@ -72,6 +72,15 @@ namespace qmcplusplus {
     void Init(const Array<T,3>& data, Array<T,3>& P);
     void SolvePeriodicInterp (const Array<T,3> &data, Array<T,3>& P);
     void MakePeriodic(Array<T,3>& P);
+
+    /* return the distance between the center with PBC */
+    inline T getSep2(real_type x, real_type y, real_type z)
+    {
+      x-=nearbyint(x*LxInv)*Lx;
+      y-=nearbyint(y*LyInv)*Ly;
+      z-=nearbyint(z*LzInv)*Lz;
+      return x*x+y*y+z*z;
+    }
   };
 
 #include "Numerics/TricubicBsplineGrid.cpp"

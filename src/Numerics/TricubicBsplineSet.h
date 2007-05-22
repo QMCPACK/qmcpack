@@ -127,10 +127,11 @@ namespace qmcplusplus {
 
         /** add a orbital
          * @param i index of the orbital
+         * @param c center dummy argument to work with truncated case
          * @param data input data
          * @param curP interpolated data
          */
-        void add(int i, const StorageType& data, StorageType* curP)
+        void add(int i, const PosType& c, const StorageType& data, StorageType* curP)
         {
           if(i<OffSet) OffSet=i;
           DeleteP.push_back(false);
@@ -140,11 +141,12 @@ namespace qmcplusplus {
 
         /** add a orbital
          * @param i index of the orbital
+         * @param c center dummy argument to work with truncated case
          * @param data input data
          *
          * New interpolated data is created and will be deleted by the constructor.
          */
-        void add(int i, const StorageType& data)
+        void add(int i,const PosType& c, const StorageType& data)
         {
           if(i<OffSet) OffSet=i;
           StorageType *curP=new StorageType;
@@ -249,7 +251,7 @@ namespace qmcplusplus {
          * @param data input data
          * @param curP interpolated data
          */
-        void add(int i, const StorageType& data, StorageType* curP)
+        void add(int i, const PosType& c, const StorageType& data, StorageType* curP)
         {
           IteratorType pit(P.find(i));
           if(pit == P.end())
@@ -259,7 +261,7 @@ namespace qmcplusplus {
           }
         }
 
-        void add(int i, StorageType* curP)
+        void add(int i,const PosType& c,  StorageType* curP)
         {
           IteratorType pit(P.find(i));
           if(pit == P.end())
