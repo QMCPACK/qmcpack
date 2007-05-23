@@ -35,15 +35,15 @@ namespace qmcplusplus {
         typedef typename TricubicBsplineTraits<T>::StorageType StorageType;
         typedef typename std::map<int,const StorageType*>::iterator  IteratorType;
 
-        real_type Rcut2;
+        using TricubicBsplineTraits<T>::Rcut2;
         vector<PosType> Centers;
 
         /** default constructure
          *
          * Set Rcut2 to a large number so that everything counts
          */
-        TricubicBsplineLOSet():Rcut2(1e6)
-        { Centers.reserve(256);}
+        TricubicBsplineLOSet()
+        { Rcut2=1e6;}
 
         ~TricubicBsplineLOSet() 
         { 
@@ -56,11 +56,6 @@ namespace qmcplusplus {
         inline void setGrid(const GridType& knots)
         {
           bKnots=knots;
-        }
-
-        inline void setRcut(real_type rc)
-        {
-          Rcut2=rc*rc;
         }
 
         ///empty reset
@@ -93,6 +88,8 @@ namespace qmcplusplus {
 
         void add(int i, const PosType& c, StorageType* curP)
         {
+          //Already exists
+          if(i<Centers.size()) return;
           Centers.push_back(c);
           P.push_back(curP);
         }
@@ -103,7 +100,7 @@ namespace qmcplusplus {
           bKnots.Find(r[0],r[1],r[2]);
           for(int j=0; j<Centers.size(); j++) {
             if(bKnots.getSep2(r[0]-Centers[j][0],r[1]-Centers[j][1],r[2]-Centers[j][2])>Rcut2) 
-              vals[j]=0.0;
+              vals[j]=0.0;//numeric_limits<T>::epsilon();
             else
               vals[j]=bKnots.evaluate(*P[j]);
           }
@@ -117,7 +114,8 @@ namespace qmcplusplus {
             for(int j=0; j<Centers.size(); j++) {
               if(bKnots.getSep2(r[0]-Centers[j][0],r[1]-Centers[j][1],r[2]-Centers[j][2])>Rcut2) 
               {
-                vals[j]=0.0;grads[j]=0.0;laps[j]=0.0;
+                vals[j]=0.0;//numeric_limits<T>::epsilon();
+                grads[j]=0.0;laps[j]=0.0;
               }
               else
                 vals[j]=bKnots.evaluate(*P[j],grads[j],laps[j]);
@@ -132,10 +130,12 @@ namespace qmcplusplus {
             for(int j=0; j<Centers.size(); j++) {
               if(bKnots.getSep2(r[0]-Centers[j][0],r[1]-Centers[j][1],r[2]-Centers[j][2])>Rcut2) 
               {
-                vals(j,i)=0.0;grads(i,j)=0.0;laps(i,j)=0.0;
+                vals(j,i)=0.0; //numeric_limits<T>::epsilon();
+                grads(i,j)=0.0;
+                laps(i,j)=0.0;
               }
               else
-              vals(j,i)=bKnots.evaluate(*P[j],grads(i,j),laps(i,j));
+                vals(j,i)=bKnots.evaluate(*P[j],grads(i,j),laps(i,j));
             }
           }
 

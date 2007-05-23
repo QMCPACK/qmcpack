@@ -94,6 +94,11 @@ namespace qmcplusplus {
       typedef TricubicBsplineGrid<T> GridType;
       typedef Array<T,3>             StorageType;
       int ObjectID;
+      real_type Rcut2;
+      inline void setRcut(real_type rc)
+      {
+        Rcut2=rc*rc;
+      }
       virtual ~TricubicBsplineTraits() {}
     };
 }
