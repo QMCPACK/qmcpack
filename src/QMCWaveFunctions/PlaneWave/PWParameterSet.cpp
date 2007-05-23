@@ -27,6 +27,7 @@ namespace qmcplusplus {
   twistIndex(0),
   numBands(0),
   Ecut(-1),
+  Rcut(-1),
   paramTag("parameters"),
   basisTag("basis"),
   pwTag("planewaves"),
@@ -39,6 +40,7 @@ namespace qmcplusplus {
   { 
     m_param.setName("h5tag");
     m_param.add(twistIndex,"twistIndex","int");
+    m_param.add(Rcut,"rcut","double");
     m_param.add(paramTag,"parameters","string");
     m_param.add(basisTag,"basis","string");
     m_param.add(pwTag,"planewaves","string");
@@ -107,6 +109,13 @@ namespace qmcplusplus {
       oss << "/" << spinTag << ispin;
     }
     oss << "/eigenvector";
+    return oss.str();
+  }
+
+  string PWParameterSet::getCenterName(const string& hg,int ib)
+  {
+    ostringstream oss;
+    oss << hg << "/"<< bandTag << ib << "/center";
     return oss.str();
   }
 

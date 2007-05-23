@@ -18,6 +18,7 @@
 #include "QMCWaveFunctions/TricubicBsplineSetBuilder.h"
 #include "Numerics/TricubicBsplineSet.h"
 #include "Numerics/TricubicBsplineGCSet.h"
+#include "Numerics/TricubicBsplineLOSet.h"
 #include "QMCWaveFunctions/GroupedOrbitalSet.h"
 #include "QMCWaveFunctions/ElectronGas/ElectronGasOrbitalBuilder.h"
 #include "QMCWaveFunctions/ElectronGas/HEGGrid.h"
@@ -95,6 +96,8 @@ namespace qmcplusplus {
     aAttrib.add(degeneracy,"degeneracy");
     aAttrib.put(cur);
 
+    bool truncate = (myParam->Rcut>0.0);
+
     vector<int> occSet(norb);
     for(int i=0; i<norb; i++) occSet[i]=i;
 
@@ -149,6 +152,7 @@ namespace qmcplusplus {
       abasis=dynamic_cast<OGT*>((*git).second);
     }
 
+
     abasis->setTwistAngle(targetPtcl.Lattice.k_cart(TwistAngle));
     typedef GroupedOrbitalSet<OGT>        SPOSetType;             
     StorageType inData(BoxGrid[0],BoxGrid[1],BoxGrid[2]);
@@ -164,49 +168,73 @@ namespace qmcplusplus {
     complex2real = false;//reset to false
 #endif
 
+    ///add the dummy center
+    PosType center(0.0);
+
     if(complex2real)
     {
       Array<ComplexType,3> inTemp(BoxGrid[0],BoxGrid[1],BoxGrid[2]);
       for(int iorb=0; iorb<norb; iorb++) 
       {
+        if(truncate)
+        {
+          string centerName=myParam->getCenterName(hroot,occSet[iorb]);
+          HDFAttribIO<PosType > cdummy(center);
+          cdummy.read(hfileID,centerName.c_str());
+        }
         ostringstream wnshort;
         string eigvName=myParam->getEigVectorName(hroot,occSet[iorb]/degeneracy,spinIndex);
         wnshort<<curH5Fname << "#"<<occSet[iorb]/degeneracy << "#" << spinIndex;
         map<string,StorageType*>::iterator it(BigDataSet.find(wnshort.str()));
         if(it == BigDataSet.end()) {
-          app_log() << "   Reading spline function " << eigvName << " (" << wnshort.str()  << ")" << endl;
+          app_log() << "   Reading spline function " << eigvName << " (" << wnshort.str()  << ")"  << endl;
+          if(truncate) app_log() << "     center=" << center << endl;
           StorageType* newP =new StorageType;
           HDFAttribIO<Array<ComplexType,3> > dummy(inTemp);
           dummy.read(hfileID,eigvName.c_str());
           BLAS::copy(inTemp.size(),inTemp.data(),inData.data());
           BigDataSet[wnshort.str()]=newP;
-          abasis->add(iorb,inData,newP);
+          abasis->add(iorb,center,inData,newP);
         } else {
           app_log() << "   Reusing spline function " << eigvName << " (" << wnshort.str()  << ")" << endl;
-          abasis->add(iorb,(*it).second);
+          if(truncate) app_log() << "     center=" << center << endl;
+          abasis->add(iorb,center,(*it).second);
         }
       } 
     }
     else 
     {
       for(int iorb=0; iorb<norb; iorb++) {
+        if(truncate)
+        {
+          string centerName=myParam->getCenterName(hroot,occSet[iorb]);
+          HDFAttribIO<PosType > cdummy(center);
+          cdummy.read(hfileID,centerName.c_str());
+        }
         ostringstream wnshort;
         string eigvName=myParam->getEigVectorName(hroot,occSet[iorb]/degeneracy,spinIndex);
         wnshort<<curH5Fname << "#"<<occSet[iorb]/degeneracy << "#" << spinIndex;
         map<string,StorageType*>::iterator it(BigDataSet.find(wnshort.str()));
         if(it == BigDataSet.end()) {
-          app_log() << "   Reading spline function " << eigvName << " (" << wnshort.str()  << ")" << endl;
+          app_log() << "   Reading spline function " << eigvName << " (" << wnshort.str()  << ")"  << endl;
+          if(truncate) app_log() << "     center=" << center << endl;
           StorageType* newP=new StorageType;
           HDFAttribIO<StorageType> dummy(inData);
           dummy.read(hfileID,eigvName.c_str());
           BigDataSet[wnshort.str()]=newP;
-          abasis->add(iorb,inData,newP);
+          abasis->add(iorb,center,inData,newP);
         } else {
           app_log() << "   Reusing spline function " << eigvName << " (" << wnshort.str()  << ")" << endl;
-          abasis->add(iorb,(*it).second);
+          if(truncate) app_log() << "     center=" << center << endl;
+          abasis->add(iorb,center,(*it).second);
         }
       } 
     }
+    if(truncate) {
+      app_log() << "   Truncating orbitals at Rcut= " << myParam->Rcut << endl;
+      abasis->setRcut(myParam->Rcut);
+    }
+
     psi->add(abasis);
 
     H5Fclose(hfileID);
@@ -261,9 +289,18 @@ namespace qmcplusplus {
     //here, we can also check if the cell is orthorohmbic or not 
     if(t2<numeric_limits<RealType>::epsilon()) //gamma point
     {
-      app_log() << "  Gamma point. Using TricubicBsplineSet<ValueType> " << endl;
-      TricubicBsplineSet<ValueType>* abasis=0;
-      return createBsplineBasisSet(cur,abasis);
+      if(myParam->Rcut<0)
+      {
+        app_log() << "  Gamma point. Using TricubicBsplineSet<ValueType> " << endl;
+        TricubicBsplineSet<ValueType>* abasis=0;
+        return createBsplineBasisSet(cur,abasis);
+      } 
+      else
+      {
+        app_log() << "  Gamma point. Using TricubicBsplineLOSet<ValueType> " << endl;
+        TricubicBsplineLOSet<ValueType>* abasis=0;
+        return createBsplineBasisSet(cur,abasis);
+      }
     }
     else
     {

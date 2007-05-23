@@ -37,6 +37,8 @@ namespace qmcplusplus {
     int numBands;
     ///energy cutoff for QMC wavefunction
     double Ecut;
+    ///cutoff radius for truncated orbitals
+    double Rcut;
     ///tag for the parameters
     std::string paramTag;
     ///tag for the basis
@@ -85,6 +87,7 @@ namespace qmcplusplus {
 
     string getEigVectorName(const string& hg, int ib, int ispin);
     string getEigVectorName(int ib, int ispin);
+    string getCenterName(const string& hg,int ib);
   };
 }
 #endif
