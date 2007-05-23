@@ -112,7 +112,8 @@ namespace qmcplusplus {
     if(Reptile==0){
       reuseReptile=false;
       Reptile=new MultiChain(NewBead,ReptileLength,InitialGrowthDirection,nPsi);
-      if( h5FileRoot != "invalid") {
+      if(h5FileRoot.size() && (h5FileRoot != "invalid"))
+      {
         app_log() << "Reading the previous multi-chain configurations" << endl;
         restartmode = Reptile->read(h5FileRoot);
       }
@@ -602,10 +603,10 @@ namespace qmcplusplus {
       if(cname == "qmcsystem") {
         OhmmsAttributeSet aAttrib;
         string source_name("i");
-        aAttrib.add(curH5Fname,"source");
+        aAttrib.add(source_name,"source");
         aAttrib.put(cur);
         ParticleSet* ions=PtclPool.getParticleSet(source_name);
-        if(ions) ionSets.push_back(ion);
+        if(ions) ionSets.push_back(ions);
 	//string source_name((const char*)xmlGetProp(cur,(const xmlChar*)"source"));
         //ionSets.push_back(PtclPool.getParticleSet(source_name));
       }
