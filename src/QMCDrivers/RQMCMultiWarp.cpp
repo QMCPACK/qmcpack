@@ -27,6 +27,7 @@
 #include "Message/Communicate.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "QMCApp/ParticleSetPool.h"
+#include "OhmmsData/AttributeSet.h"
 namespace qmcplusplus { 
   RQMCMultiWarp::RQMCMultiWarp(MCWalkerConfiguration& w, 
       TrialWaveFunction& psi, QMCHamiltonian& h,
@@ -599,8 +600,14 @@ namespace qmcplusplus {
     while(cur != NULL) {
       string cname((const char*)(cur->name));
       if(cname == "qmcsystem") {
-	string source_name((const char*)xmlGetProp(cur,(const xmlChar*)"source"));
-        ionSets.push_back(PtclPool.getParticleSet(source_name));
+        OhmmsAttributeSet aAttrib;
+        string source_name("i");
+        aAttrib.add(curH5Fname,"source");
+        aAttrib.put(cur);
+        ParticleSet* ions=PtclPool.getParticleSet(source_name);
+        if(ions) ionSets.push_back(ion);
+	//string source_name((const char*)xmlGetProp(cur,(const xmlChar*)"source"));
+        //ionSets.push_back(PtclPool.getParticleSet(source_name));
       }
       cur=cur->next;
     }
