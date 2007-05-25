@@ -42,6 +42,8 @@ namespace qmcplusplus {
     IndexType NumKpts;
     ///maximum K-point
     IndexType MaxK;
+    ///number of k-shells
+    IndexType MaxKshell;
     /// 1/Cell Volume
     RealType OneOverCellVolume;
     ///Omega 
@@ -54,25 +56,32 @@ namespace qmcplusplus {
     RealType Rs;
     ///Normalization Constant
     RealType NormConstant;
-    ValueType curVal, curLap;
-    GradType curGrad;
-    ValueVectorType U,d2U;
-    GradVectorType dU;
-    ValueType *FirstAddressOfdU, *LastAddressOfdU;
-    Matrix<ComplexType> rokbyF;
-    Vector<ComplexType> Rhok;
-    ValueVectorType offU, offd2U;
-    GradVectorType offdU;
+    RealType curVal, curLap;
+    PosType curGrad;
 
+    RealType *FirstAddressOfdU; 
+    RealType *LastAddressOfdU;
     StructFact* skRef;
     // handler used to do evalFk
     typedef LRJastrowSingleton::LRHandlerType HandlerType;    
     HandlerType* handler;
 
-    //Matrix<ComplexType> rhok;
+    Vector<RealType> U,d2U;
+    Vector<PosType> dU;
+    Vector<RealType> offU, offd2U;
+    Vector<PosType> offdU;
+
+    Matrix<ComplexType> rokbyF;
+    Vector<ComplexType> Rhok;
+
+    ////Matrix<ComplexType> rhok;
     Matrix<ComplexType> eikr;
     Vector<ComplexType> eikr_new;
     Vector<ComplexType> delta_eikr;
+
+    vector<int> Kshell;
+    vector<RealType> FkbyKK;
+    //vector<PosType>  Kcart;
     
   public:
     Vector<RealType> Fk_0; 
