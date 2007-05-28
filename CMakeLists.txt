@@ -101,6 +101,7 @@ SET(HAVE_LIBBLITZ 0)
 SET(HAVE_LIBGSL 0)
 SET(INTEL_COMPILER 0)
 SET(MAC_VECLIB 0)
+SET(ENABLE_GTK_GUI 0)
 
 ######################################################
 # Directory where customize cmake files reside
@@ -193,6 +194,28 @@ IF(FOUND_HDF5)
 #    LINK_LIBRARIES(${SZLIB_LIBRARY})
 #  ENDIF(SZLIB_FOUND)
 ENDIF(FOUND_HDF5)
+
+######################################################################
+# Manage GTK+ and GTKMM packages for GUI
+# search headers and libraries
+#   1) -lXYZ-${XYZ_VERSION} 
+#   2) -lXYZ
+# example: -lgtk-${GTK_VERSION} | -lgtk
+######################################################################
+SET(GTK_VERSION 2.0)
+SET(PANGO_VERSION 1.0)
+
+SET(GTKMM_VERSION 2.4)
+SET(PANGOMM_VERSION 1.4)
+SET(SIGCPP_VERSION 2.0)
+IF(ENABLE_GTK_GUI)
+  INCLUDE(${PROJECT_CMAKE}/FindGTK.cmake)
+  #THIS SHOULD GO TO the directory where GUI is built
+  IF(GTKMM_FOUND)
+   INCLUDE_DIRECTORIES(${GTKMM_INCLUDE_DIR})
+   LINK_LIBRARIES(${GTKMM_LIBRARIES})
+  ENDIF(GTKMM_FOUND)
+ENDIF(ENABLE_GTK_GUI)
 
 INCLUDE_DIRECTORIES(
   ${qmcpack_SOURCE_DIR}/src
