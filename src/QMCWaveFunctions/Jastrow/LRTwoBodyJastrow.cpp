@@ -153,6 +153,9 @@ namespace qmcplusplus {
     }
   
   
+  /* evaluate the ratio with P.R[iat]
+   *
+   */
   LRTwoBodyJastrow::ValueType 
     LRTwoBodyJastrow::ratio(ParticleSet& P, int iat) {
       //restore, if called should do nothing
@@ -425,7 +428,6 @@ namespace qmcplusplus {
                 putContent(x,tcur);
                 Fk_symm[ik]=x;
                 vlist[(const char*)idptr]=x;
-                //vlist.add((const char*)idptr,Fk_symm.data()+ik);
               }
               foundCoeff=true;
             }
@@ -480,14 +482,14 @@ namespace qmcplusplus {
 
       app_log() << "  Long-range Two-Body Jastrow coefficients K-shell = " << MaxKshell << endl;
       app_log() << "  MaxK = " << MaxK << " NumKpts = " << NumKpts << endl;
+      app_log() << "   Kshell degneracy Fk " << endl;
       for(int ks=0; ks<MaxKshell; ks++) 
-        app_log() <<  " " << Kshell[ks+1]-Kshell[ks];
+        app_log() << setw(4) << ks << setw(4) << Kshell[ks+1]-Kshell[ks] 
+          << setw(20) << Fk_symm[ks] << endl;
       app_log() << endl;
-      for(int ikpt=0; ikpt<MaxK; ikpt++) 
-        app_log() <<  skRef->KLists.ksq[ikpt] << " " << Fk[ikpt] << endl;
-
+      //for(int ikpt=0; ikpt<MaxK; ikpt++) 
+      //  app_log() <<  skRef->KLists.ksq[ikpt] << " " << Fk[ikpt] << endl;
       Rhok.resize(MaxK);
-
       return true;
     }
 }
