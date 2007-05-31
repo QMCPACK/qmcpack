@@ -48,14 +48,14 @@ CHECK_FUNCTION_EXISTS(sincos HAVE_SINCOS)
 ######################################################################
 SET(QMC_BUILD_STATIC 0)
 SET(BUILD_QMCTOOLS 0)
-SET(BUILD_SANDBOX 1)
+SET(BUILD_SANDBOX 0)
 SET(MPIP_PROFILE 0)
 
 ######################################################################
 # Performance-related macros
 # QMC_SK_USE_RECURSIVE enable/disable recursive evalaution of SK
 ######################################################################
-SET(QMC_SK_USE_RECURSIVE 1)
+SET(QMC_SK_USE_RECURSIVE 0)
 IF(NOT $ENV{QMC_SK_RECURSIVE} MATCHES QMC_SK_USE_RECURSIVE)
   SET(QMC_SK_USE_RECURSIVE $ENV{QMC_SK_RECURSIVE}) 
 ENDIF(NOT $ENV{QMC_SK_RECURSIVE} MATCHES QMC_SK_USE_RECURSIVE)
