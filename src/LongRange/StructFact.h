@@ -15,7 +15,6 @@ namespace qmcplusplus {
    *
    * The structure-factor is species-dependent - access with GroupID
    */
-
   class StructFact: public QMCTraits {
     //Type is hard-wired. Rhok must be complex
     //First index: k-point (ordered as per kpts and kptscart)
@@ -24,21 +23,23 @@ namespace qmcplusplus {
     typedef PooledData<RealType>  BufferType;
 
   public:
-    Matrix<ComplexType> rhok;
-    Matrix<ComplexType> eikr;
-    Vector<ComplexType> eikr_new;
-    Vector<ComplexType> delta_eikr;
-    //Maximum reciprocal cell translations in kc.
-    //Last index is max. of first 3.
-    //    TinyVector<int,4> mmax; 
+    ///reference particle set
     ParticleSet& PtclRef;
-    //K-Vector List.
-    //    vector<TinyVector<int,3> > kpts;
-    //    vector<TinyVector<RealType,3> > kpts_cart;
+    /** Rhok[alpha][k]
+     *
+     * Structure factor Rhok[alpha][k] \f$ \equiv \rho_{k}^{\alpha} = \sum_{i}e^{i{\bf k}\cdot{\bf r_i}}\f$
+     */
+    Matrix<ComplexType> rhok;
+    ///eikr[particle-index][K]
+    Matrix<ComplexType> eikr;
+    /// K-Vector List.
     KContainer KLists;
     
   public:
-    //Constructor - copy ParticleSet and init. k-shells
+    /** Constructor - copy ParticleSet and init. k-shells
+     * @param ref Reference particle set
+     * @param kc cutoff for k
+     */
     StructFact(ParticleSet& ref, RealType kc);
     //Copy Constructor
     StructFact(const StructFact& ref);
@@ -48,17 +49,19 @@ namespace qmcplusplus {
     //Default doesn't work because we have non-static reference members.
     StructFact& operator=(const StructFact& ref);
       
-    //Public Methods:
-    ///Recompute Rhok if lattice changed
+    /** Recompute Rhok if lattice changed
+     * @param kc cut-off K
+     */
     void UpdateNewCell(RealType kc);
-    /// Update Rhok if 1 particle moved
-    void Update1Part(const PosType& rold, const PosType& rnew,int iat,int GroupID);
-    /// Update Rhok if all particles moved
+    /**  Update Rhok if all particles moved
+     */
     void UpdateAllPart();
 
-    void makeMove(int iat, const PosType& pos);
-    void acceptMove(int iat);
-    void rejectMove(int iat);
+    /// Update Rhok if 1 particle moved
+    //void Update1Part(const PosType& rold, const PosType& rnew,int iat,int GroupID);
+    //void makeMove(int iat, const PosType& pos);
+    //void acceptMove(int iat);
+    //void rejectMove(int iat);
 
     //Buffer methods. For PbyP MC where data must be stored in an anonymous
     //buffer between iterations

@@ -63,21 +63,20 @@ void StructFact::resize()
   SpeciesSet& tspecies(PtclRef.getSpeciesSet());
   rhok.resize(tspecies.TotalNum,KLists.numk);
   eikr.resize(PtclRef.getTotalNum(),KLists.numk);
-  eikr_new.resize(KLists.numk);
-  delta_eikr.resize(KLists.numk);
   int maxdim = std::max(KLists.mmax[0],std::max(KLists.mmax[1],KLists.mmax[2]));
   C.resize(3,2*maxdim+1);
 }
 
-void 
-StructFact::Update1Part(const PosType& rold,const PosType& rnew,int iat,int GroupID) {
-  UpdateRhok(rold,rnew,iat,GroupID);
-}
+//void 
+//StructFact::Update1Part(const PosType& rold,const PosType& rnew,int iat,int GroupID) {
+//  UpdateRhok(rold,rnew,iat,GroupID);
+//}
 
 void 
 StructFact::UpdateAllPart() {
   FillRhok();
 }
+
 
 /** evaluate rok per species, eikr  per particle
  */
@@ -101,14 +100,13 @@ StructFact::FillRhok() {
       }
     }
     ComplexType* restrict eikr_ref=eikr[i];
-    ComplexType* restrict rhok_ref=rhok[PtclRef.GroupID[i]];
     for(int ki=0; ki<KLists.numk; ki++)
     {
       eikr_ref[ki]=C(0,KLists.kpts[ki][0]+KLists.mmax[0])
         *C(1,KLists.kpts[ki][1]+KLists.mmax[1])
         *C(2,KLists.kpts[ki][2]+KLists.mmax[2]);
-      rhok_ref[ki]+=eikr_ref[ki];
     }
+    accumulate_elements(eikr_ref,eikr_ref+Lists.numk,rhok[PtclRef.GroupID[i]]);
     //valid version only with orthorohmbic cell, generalized to any cell above
     //  for(int idim=0; idim<3; idim++){
     //    complex<double> Ctemp;
@@ -139,7 +137,14 @@ StructFact::FillRhok() {
     for(int ki=0; ki<KLists.numk; ki++)
     {
       RealType phi(dot(KLists.kpts_cart[ki],pos));
-      eikr_ref[ki] = ComplexType(std::cos(phi),std::sin(phi));
+//#if defined(HAVE_SINCOS)
+//      sincos(phi,&(eikr_ref[ki].imag()),&(eikr_ref[ki].real()));
+//#else
+//      eikr_ref[ki] = ComplexType(std::cos(phi),std::sin(phi));
+//#endif
+      //eikr_ref[ki] = ComplexType(std::cos(phi),std::sin(phi));
+      eikr_ref[ki].real() = std::cos(phi);
+      eikr_ref[ki].imag() = std::sin(phi);
       rhok_ref[ki]+= eikr_ref[ki];
     }
   }
@@ -208,44 +213,45 @@ StructFact::UpdateRhok(const PosType& rold,const PosType& rnew,int iat,int Group
   }
 }
 
-void StructFact::makeMove(int iat, const PosType& pos) {
-  const ComplexType* restrict eikr0(eikr[iat]);
-#if defined(QMC_SK_USE_RECURSIVE)
-  PosType tau_red=PtclRef.Lattice.toUnit(pos);
-  for(int idim=0; idim<3; idim++)
-  {
-    RealType phi=TWOPI*tau_red[idim];
-    ComplexType ctemp(std::cos(phi),std::sin(phi));
-    C(idim,KLists.mmax[idim])=1.0;
-    for(int n=1; n<=KLists.mmax[idim]; n++){
-      C(idim,KLists.mmax[idim]+n) = ctemp*C(idim,KLists.mmax[idim]+n-1);
-      C(idim,KLists.mmax[idim]-n) = conj(C(idim,KLists.mmax[idim]+n));
-    }
-  }
-  for(int ki=0; ki<KLists.numk; ki++)
-  {
-    eikr_new[ki]=C(0,KLists.kpts[ki][0]+KLists.mmax[0])
-      *C(1,KLists.kpts[ki][1]+KLists.mmax[1])
-      *C(2,KLists.kpts[ki][2]+KLists.mmax[2]);
-    delta_eikr[ki]=eikr_new[ki]-eikr0[ki];
-  }
-#else
-  for(int ki=0; ki<KLists.numk; ki++){
-    RealType kdotr(dot(KLists.kpts_cart[ki],pos));
-    eikr_new[ki]=ComplexType(std::cos(kdotr),std::sin(kdotr));
-    delta_eikr[ki]=eikr_new[ki]-eikr0[ki];
-  }
-#endif
-}
-
-void StructFact::acceptMove(int iat) {
-  std::copy(eikr_new.begin(),eikr_new.end(),eikr[iat]);
-  ComplexType* restrict rhok_ptr(rhok[PtclRef.GroupID[iat]]);
-  for(int ki=0; ki<KLists.numk; ki++){
-    rhok_ptr[ki]+= delta_eikr[ki];
-  }
-}
-
-void StructFact::rejectMove(int iat) {
-  //do nothing
-}
+//void StructFact::makeMove(int iat, const PosType& pos) {
+//  cout << "Nobody should call this! " << endl;
+//  const ComplexType* restrict eikr0(eikr[iat]);
+//#if defined(QMC_SK_USE_RECURSIVE)
+//  PosType tau_red=PtclRef.Lattice.toUnit(pos);
+//  for(int idim=0; idim<3; idim++)
+//  {
+//    RealType phi=TWOPI*tau_red[idim];
+//    ComplexType ctemp(std::cos(phi),std::sin(phi));
+//    C(idim,KLists.mmax[idim])=1.0;
+//    for(int n=1; n<=KLists.mmax[idim]; n++){
+//      C(idim,KLists.mmax[idim]+n) = ctemp*C(idim,KLists.mmax[idim]+n-1);
+//      C(idim,KLists.mmax[idim]-n) = conj(C(idim,KLists.mmax[idim]+n));
+//    }
+//  }
+//  for(int ki=0; ki<KLists.numk; ki++)
+//  {
+//    eikr_new[ki]=C(0,KLists.kpts[ki][0]+KLists.mmax[0])
+//      *C(1,KLists.kpts[ki][1]+KLists.mmax[1])
+//      *C(2,KLists.kpts[ki][2]+KLists.mmax[2]);
+//    delta_eikr[ki]=eikr_new[ki]-eikr0[ki];
+//  }
+//#else
+//  for(int ki=0; ki<KLists.numk; ki++){
+//    RealType kdotr(dot(KLists.kpts_cart[ki],pos));
+//    eikr_new[ki]=ComplexType(std::cos(kdotr),std::sin(kdotr));
+//    delta_eikr[ki]=eikr_new[ki]-eikr0[ki];
+//  }
+//#endif
+//}
+//
+//void StructFact::acceptMove(int iat) {
+//  std::copy(eikr_new.begin(),eikr_new.end(),eikr[iat]);
+//  ComplexType* restrict rhok_ptr(rhok[PtclRef.GroupID[iat]]);
+//  for(int ki=0; ki<KLists.numk; ki++){
+//    rhok_ptr[ki]+= delta_eikr[ki];
+//  }
+//}
+//
+//void StructFact::rejectMove(int iat) {
+//  //do nothing
+//}
