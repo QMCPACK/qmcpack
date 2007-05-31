@@ -43,14 +43,8 @@ namespace qmcplusplus {
     IndexType MaxK;
     ///number of k-shells
     IndexType MaxKshell;
-    /// 1/Cell Volume
-    RealType OneOverCellVolume;
-    ///Omega 
-    RealType Omega;
-    ///4*pi*Omega 
-    RealType FourPiOmega;
-    ///1.0/Omega 
-    RealType OneOverOmega;
+    /// Cell Volume
+    RealType CellVolume;
     ///Rs 
     RealType Rs;
     ///Normalization Constant

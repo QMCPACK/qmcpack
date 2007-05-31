@@ -7,7 +7,6 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
@@ -21,8 +20,38 @@
 #include "QMCWaveFunctions/Jastrow/SplineFunctors.h"
 #include "Utilities/IteratorUtility.h"
 #include "LongRange/LRJastrowSingleton.h"
+#include "OhmmsData/AttributeSet.h"
 
 namespace qmcplusplus {
+
+  template<class T>
+  struct ShortRangePartAdapter : OptimizableFunctorBase<T> {
+  private:
+    typedef LRJastrowSingleton::LRHandlerType HandlerType;
+    T Uconst;
+    HandlerType* myHandler;
+  public:
+    typedef typename OptimizableFunctorBase<T>::real_type real_type;  
+    typedef typename OptimizableFunctorBase<T>::OptimizableSetType OptimizableSetType;  
+    
+    explicit ShortRangePartAdapter(HandlerType* inhandler): Uconst(0) {
+      myHandler = inhandler;
+    }
+    inline void setRmax(real_type rm) { Uconst=myHandler->evaluate(rm,1.0/rm);}
+    inline real_type evaluate(real_type r) { return f(r); }
+    inline real_type f(real_type r) 
+    { 
+      return myHandler->evaluate(r, 1.0/r)-Uconst; 
+    }
+    inline real_type df(real_type r) 
+    {
+      return myHandler->srDf(r, 1.0/r);
+    }
+    void resetParameters(OptimizableSetType& optVariables) { }
+    bool put(xmlNodePtr cur) {return true;}
+    void addOptimizables(OptimizableSetType& vlist){}
+  };
+
 
   ////////////////////////////////////////
   //RPAConstraints definitions
@@ -119,7 +148,8 @@ namespace qmcplusplus {
   //RPAPBCConstraints definitions
   ////////////////////////////////////////
   RPAPBCConstraints::RPAPBCConstraints(ParticleSet& p, TrialWaveFunction& psi, bool nospin):
-    OrbitalConstraintsBase(p,psi),IgnoreSpin(nospin),LongRangeRPA(0)
+    OrbitalConstraintsBase(p,psi),IgnoreSpin(nospin), Rs(-1.0), Kc(-1.0),
+  myHandler(0), LongRangeRPA(0)
     {
       JComponent.set(MULTIPLE);
       JComponent.set(TWOBODY);
@@ -132,6 +162,16 @@ namespace qmcplusplus {
   }
 
   bool RPAPBCConstraints::put(xmlNodePtr cur) {
+    string useL="yes";
+    string useS="yes";
+    OhmmsAttributeSet aAttrib;
+    aAttrib.add(useL,"longrange");
+    aAttrib.add(useS,"shortrange");
+    aAttrib.add(Kc,"kc");
+    aAttrib.put(cur);
+
+    DropLongRange = (useL=="no");
+    DropShortRange = (useS=="no");
     bool success=getVariables(cur);
     map<string,pair<string,RealType> >::iterator vit(inVars.find("A"));
     if(vit == inVars.end()) {
@@ -160,55 +200,8 @@ namespace qmcplusplus {
     if(it != optVariables.end()) Rs=(*it).second;
   }
 
-  // right now this only does a numerical two body short range jastrow
-  // based on the short range part from the breakup handled by the LRHandler
-  OrbitalBase* RPAPBCConstraints::createSRTwoBody() {
-
-    typedef CubicBspline<RealType,LINEAR_1DGRID,FIRSTDERIV_CONSTRAINTS> SplineEngineType;
-    typedef CubicSplineSingle<RealType,SplineEngineType> FuncType;
-    typedef LinearGrid<RealType> GridType;
-    
-    //setRadialGrid(target);
-    HandlerType* handler = LRJastrowSingleton::getHandler(targetPtcl);
-    //RealType Rcut = 0.999999999 * handler->Basis.get_rc();
-    RealType Rcut = handler->Basis.get_rc();
-    myGrid = new GridType;
-    int npts=static_cast<int>(Rcut/0.05)+1;
-    myGrid->set(0,Rcut,npts);
-  
-    //create the numerical functor
-    FuncType* nfunc = new FuncType;
-    ShortRangePartAdapter<RealType>* sra = new ShortRangePartAdapter<RealType>(handler);
-    nfunc->initialize(sra, myGrid);
-
-    ofstream fout("rpa.short.dat");
-    for (int i = 0; i < myGrid->size(); i++) {
-      RealType r=(*myGrid)(i);
-      fout << r << "   " << nfunc->evaluate(r) << "   " << handler->evaluate(r,1.0/r) << " " 
-        << handler->evaluateLR(r) << endl;
-    }
-
-    if(LongRangeRPA==0)
-    {
-      HandlerType* handler = LRJastrowSingleton::getHandler(targetPtcl);
-      LongRangeRPA = new LRTwoBodyJastrow(targetPtcl, handler);
-    }
-    return LongRangeRPA;
-    
-    //TwoBodyJastrowOrbital<FuncType> *J2 = new TwoBodyJastrowOrbital<FuncType>(targetPtcl);
-    //for (int i=0; i<4; i++) J2->addFunc(nfunc);
-    //return J2;
-  }
-     
-  OrbitalBase* RPAPBCConstraints::createLRTwoBody() {
-    if(LongRangeRPA==0)
-    {
-      HandlerType* handler = LRJastrowSingleton::getHandler(targetPtcl);
-      LongRangeRPA = new LRTwoBodyJastrow(targetPtcl, handler);
-    }
-    return LongRangeRPA;
-  }
-
+  /** create TwoBody Jastrow using LR breakup method
+   */
   OrbitalBase* RPAPBCConstraints::createTwoBody() 
   {
     if(Rs<0) {
@@ -218,34 +211,80 @@ namespace qmcplusplus {
         Rs=1.0;
       }
     }
-    app_log() << "  RPAPBCConstraints::addTwoBodyPart Rs " << Rs << endl;
-    OrbitalBase* srp=createSRTwoBody();
-    return srp;
+    if(Kc<0) Kc=1.0/std::sqrt(Rs);
+
+    app_log() << "    RPAPBCConstraints::addTwoBodyPart Rs = " << Rs <<  "  Kc= " << Kc << endl;
+
+    if(myHandler==0)
+        myHandler = LRJastrowSingleton::getHandler(targetPtcl,Kc);
+
+    if(DropShortRange)
+    {
+      DropLongRange=true;//prevent adding twice
+      app_log() << "    Disable Short-Range RPA. Return the Long-Range RPA." << endl;
+      if(LongRangeRPA==0)
+      {
+        LongRangeRPA = new LRTwoBodyJastrow(targetPtcl, myHandler);
+      }
+      return LongRangeRPA;
+    }
+    else
+    {
+      typedef CubicBspline<RealType,LINEAR_1DGRID,FIRSTDERIV_CONSTRAINTS> SplineEngineType;
+      typedef CubicSplineSingle<RealType,SplineEngineType> FuncType;
+      typedef LinearGrid<RealType> GridType;
+
+      RealType Rcut = myHandler->Basis.get_rc()-0.1;
+      myGrid = new GridType;
+      int npts=static_cast<int>(Rcut/0.01)+1;
+      myGrid->set(0,Rcut,npts);
+
+      //create the numerical functor
+      FuncType* nfunc = new FuncType;
+      ShortRangePartAdapter<RealType>* sra = new ShortRangePartAdapter<RealType>(myHandler);
+      sra->setRmax(Rcut);
+      nfunc->initialize(sra, myGrid);
+
+#if !defined(HAVE_MPI)
+      ofstream fout("rpa.short.dat");
+      for (int i = 0; i < myGrid->size(); i++) {
+        RealType r=(*myGrid)(i);
+        fout << r << "   " << nfunc->evaluate(r) << "   "
+          << myHandler->evaluate(r,1.0/r) << " " 
+          << myHandler->evaluateLR(r) << endl;
+      }
+#endif
+
+      TwoBodyJastrowOrbital<FuncType> *J2 = new TwoBodyJastrowOrbital<FuncType>(targetPtcl);
+      for (int i=0; i<4; i++) J2->addFunc(nfunc);
+      return J2;
+    }
   }
+     
+  //OrbitalBase* RPAPBCConstraints::createLRTwoBody() {
+  //  if(LongRangeRPA==0)
+  //    LongRangeRPA = new LRTwoBodyJastrow(targetPtcl, myHandler);
+  //  return LongRangeRPA;
+  //}
+
 
   void RPAPBCConstraints::addExtra2ComboOrbital(ComboOrbital* jcombo)
   {
-    app_log() << "   Diable  RPAPBCConstraints::addExtra2ComboOrbital for LR " << endl;
-    //jcombo->Psi.push_back(createLRTwoBody());
+    if(DropLongRange)
+    {
+      app_log() << "    Disable Long-Range RPA Jastrow " << endl;
+    }
+    else
+    {
+      app_log() << "    Add Long-Range RPA Jastrow " << endl;
+      if(LongRangeRPA==0)
+      {
+        //HandlerType* handler = LRJastrowSingleton::getHandler(targetPtcl,1.0/std::sqrt(Rs));
+        LongRangeRPA = new LRTwoBodyJastrow(targetPtcl, myHandler);
+      }
+      jcombo->Psi.push_back(LongRangeRPA);
+    }
   }
-
-  //void RPAPBCConstraints::addTwoBodyPart(ComboOrbital* jcombo) {
-  //  
-  //  if(Rs<0) {
-  //    if(targetPtcl.Lattice.BoxBConds[0]) {
-  //      Rs=std::pow(3.0/4.0/M_PI*targetPtcl.Lattice.Volume/static_cast<RealType>(targetPtcl.getTotalNum()),1.0/3.0);
-  //    } else {
-  //      Rs=1.0;
-  //    }
-  //  }
-
-  //  app_log() << "  RPAPBCConstraints::addTwoBodyPart Rs " << Rs << endl;
-
-  //  OrbitalBase* sr = createSRTwoBody();
-  //  if (sr) jcombo->Psi.push_back(sr);
-  //  //OrbitalBase* lr = createLRTwoBody(target);
-  //  //if (lr) jcombo->Psi.push_back(lr);
-  //} 
      
   OrbitalBase* RPAPBCConstraints::createOneBody(ParticleSet& source) {
     return 0;

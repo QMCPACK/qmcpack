@@ -25,18 +25,12 @@ namespace qmcplusplus {
     handler=inHandler;
     NumSpecies=p.groups();
     skRef=p.SK;
-    handler = LRJastrowSingleton::getHandler(p);
     if(skRef) {
-      //Rs  = Omega
-      OneOverCellVolume = 1.0 / p.Lattice.Volume;
-      Omega = std::pow(3.0/(4.0*M_PI)*p.Lattice.Volume/static_cast<RealType>(p.getTotalNum()),1.0/3.0);
-      //Rs=std::pow(3.0/4.0/M_PI*p.Lattice.Volume/static_cast<RealType>(p.getTotalNum()),1.0/3.0);
-      //Omega=std::sqrt(4.0*M_PI*static_cast<RealType>(p.getTotalNum())/p.Lattice.Volume);
-      OneOverOmega=1.0/Omega;
-      FourPiOmega=4.0*M_PI*Omega;
+      CellVolume = p.Lattice.Volume;
+      Rs =std::pow(3.0/4.0/M_PI*p.Lattice.Volume/static_cast<RealType>(p.getTotalNum()),1.0/3.0);
+      NormConstant=4.0*M_PI*Rs*NumPtcls*(NumPtcls-1)*0.5;
       NumPtcls=p.getTotalNum();
       NumKpts=skRef->KLists.numk;
-      NormConstant=FourPiOmega*NumPtcls*(NumPtcls-1)*0.5;
       resize();
       resetInternals();
     }
@@ -408,10 +402,11 @@ namespace qmcplusplus {
         return false;
       }
       
-      int nkshells=skRef->KLists.kshell.size()-1;
-      Fk_symm.resize(nkshells);
-      FkbyKK.resize(nkshells);
-      
+      ///[0,MaxKshell)
+      MaxKshell= handler->MaxKshell;
+      Fk_symm.resize(MaxKshell);
+      FkbyKK.resize(MaxKshell);
+
       bool foundCoeff=false;
       if(cur != NULL)
       {
@@ -443,10 +438,8 @@ namespace qmcplusplus {
         char coeffname[128];
         MaxK=0;
         int ish=0;
-        MaxKshell=0;
-        //RealType kc2=(skRef->KLists.Lattice.LR_kc)*(skRef->KLists.Lattice.LR_kc);
-        RealType kc2=2.0;
-        while(ish<nkshells && ki<NumKpts)
+        //use kc=1.0/sqrt(Rs)
+        while(ish<MaxKshell && ki<NumKpts)
         {
           Fk_symm[ish]=-1.0*handler->Fk[ki];
           sprintf(coeffname,"rpa_k%d",ish);
@@ -462,30 +455,27 @@ namespace qmcplusplus {
 
           //save Fk*KK for laplacians
           FkbyKK[ish]=Fk_symm[ish]*skRef->KLists.ksq[ki];
-          //if(skRef->KLists.ksq[ki]<kc2) MaxK=skRef->KLists.kshell[ish+1];;
           for(; ki<skRef->KLists.kshell[ish+1]; ki++) Fk[ki]=Fk_symm[ish];
-
-          //needs to modify this: use MaxKshell
-          if(abs(Fk_symm[ish])>1e-3) {MaxKshell=ish+1; MaxK=ki;}
-
           ++ish;
         }
 
+        MaxK=skRef->KLists.kshell[MaxKshell];
         Kshell.resize(MaxKshell+1);
-        std::copy(skRef->KLists.kshell.begin(),skRef->KLists.kshell.begin()+MaxKshell+1,
-            Kshell.begin());
+        std::copy(skRef->KLists.kshell.begin(),skRef->KLists.kshell.begin()+MaxKshell+1, Kshell.begin());
       }
     
-      //Kcart.resize(MaxK);
-      //std::copy(skRef->KLists.kpts_cart.begin(), skRef->KLists.kpts_cart.begin()+MaxK,
-      //    Kcart.begin());
-
       app_log() << "  Long-range Two-Body Jastrow coefficients K-shell = " << MaxKshell << endl;
-      app_log() << "  MaxK = " << MaxK << " NumKpts = " << NumKpts << endl;
-      app_log() << "   Kshell degneracy Fk " << endl;
+      app_log() << "  MaxK = " << MaxK << " NumKpts = " << NumKpts << " Kc^2 = " << 1.0/Rs << endl;
+      app_log() << "   Kshell degneracy        k        Fk (breakup)     Fk (rpa)    " << endl;
+      
+      double u0 = -4.0*M_PI*Rs/CellVolume;
       for(int ks=0; ks<MaxKshell; ks++) 
-        app_log() << setw(4) << ks << setw(4) << Kshell[ks+1]-Kshell[ks] 
-          << setw(20) << Fk_symm[ks] << endl;
+      {
+        app_log() << setw(10) << ks << setw(4) << Kshell[ks+1]-Kshell[ks] 
+          << setw(20) << std::sqrt(skRef->KLists.ksq[Kshell[ks]])
+          << setw(20) << Fk_symm[ks] 
+          << setw(20) << u0/skRef->KLists.ksq[Kshell[ks]] << endl;
+      }
       app_log() << endl;
       //for(int ikpt=0; ikpt<MaxK; ikpt++) 
       //  app_log() <<  skRef->KLists.ksq[ikpt] << " " << Fk[ikpt] << endl;
