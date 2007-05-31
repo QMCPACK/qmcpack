@@ -76,6 +76,7 @@ namespace qmcplusplus {
     {
       if(QMCDriverMode[QMC_UPDATE_MODE])
       {
+        app_log() << "  Update particle by particle " << endl;
         if(UseDrift == "yes")
           Mover=new VMCUpdatePbyPWithDrift(W,Psi,H,Random);
         else
@@ -84,6 +85,7 @@ namespace qmcplusplus {
       }
       else
       {
+        app_log() << "  Update walker by walker " << endl;
         if(UseDrift == "yes")
           Mover=new VMCUpdateAllWithDrift(W,Psi,H,Random);
         else
