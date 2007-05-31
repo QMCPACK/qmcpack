@@ -178,7 +178,7 @@ namespace qmcplusplus {
       //Use 3000/LMax here...==6000/rc for non-ortho cells
       RealType kmax(6000.0/ref.LR_rc);
 
-      MaxKshell = breakuphandler.SetupKVecs(kc,kcut,kmax);
+      MaxKshell = static_cast<int>(breakuphandler.SetupKVecs(kc,kcut,kmax));
       app_log() << "  LRBreakp parameter Kc =" << kc << endl;
       app_log() << "    Continuum approximation in k = [" << kcut << "," << kmax << ")" << endl;
 

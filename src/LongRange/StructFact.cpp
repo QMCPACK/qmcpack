@@ -142,9 +142,7 @@ StructFact::FillRhok() {
 //#else
 //      eikr_ref[ki] = ComplexType(std::cos(phi),std::sin(phi));
 //#endif
-      //eikr_ref[ki] = ComplexType(std::cos(phi),std::sin(phi));
-      eikr_ref[ki].real() = std::cos(phi);
-      eikr_ref[ki].imag() = std::sin(phi);
+      eikr_ref[ki] = ComplexType(std::cos(phi),std::sin(phi));
       rhok_ref[ki]+= eikr_ref[ki];
     }
   }
