@@ -5,7 +5,7 @@
 #include "Utilities/PooledData.h"
 #include "Utilities/OhmmsInfo.h"
 #if !defined(HAVE_SINCOS)
-template<typename T> inline sincos(T a, T* restrict s, T*  restrict c)
+template<typename T> inline void sincos(T a, T* restrict s, T*  restrict c)
 {
   *s=std::sin(a);
   *c=std::cos(a);
