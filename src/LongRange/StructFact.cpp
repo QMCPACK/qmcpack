@@ -106,7 +106,7 @@ StructFact::FillRhok() {
         *C(1,KLists.kpts[ki][1]+KLists.mmax[1])
         *C(2,KLists.kpts[ki][2]+KLists.mmax[2]);
     }
-    accumulate_elements(eikr_ref,eikr_ref+Lists.numk,rhok[PtclRef.GroupID[i]]);
+    accumulate_elements(eikr_ref,eikr_ref+KLists.numk,rhok[PtclRef.GroupID[i]]);
     //valid version only with orthorohmbic cell, generalized to any cell above
     //  for(int idim=0; idim<3; idim++){
     //    complex<double> Ctemp;
