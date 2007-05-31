@@ -165,7 +165,8 @@ namespace qmcplusplus {
       for(int i=0; i<NumSpeciesA; i++) {
         RealType esum=0.0;
         for(int j=0; j<NumSpeciesB; j++) {
-          esum += Qspec[j]*AB->evaluate(RhoKA.KLists.minusk, RhoKA.rhok[i],RhoKB.rhok[j]);
+          //esum += Qspec[j]*AB->evaluate(RhoKA.KLists.minusk, RhoKA.rhok[i],RhoKB.rhok[j]);
+          esum += Qspec[j]*AB->evaluate(RhoKA.KLists.kshell, RhoKA.rhok[i],RhoKB.rhok[j]);
         } //speceln
         LR += Zspec[i]*esum;
       }//specion

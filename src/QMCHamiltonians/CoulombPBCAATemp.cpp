@@ -97,7 +97,8 @@ namespace qmcplusplus {
         RealType Z1 = Zspec[spec1];
         for(int spec2=spec1; spec2<NumSpecies; spec2++) {
           RealType Z2 = Zspec[spec2];
-          RealType temp=AA->evaluate(PtclRhoK.KLists.minusk, PtclRhoK.rhok[spec1], PtclRhoK.rhok[spec2]);
+          //RealType temp=AA->evaluate(PtclRhoK.KLists.minusk, PtclRhoK.rhok[spec1], PtclRhoK.rhok[spec2]);
+          RealType temp=AA->evaluate(PtclRhoK.KLists.kshell, PtclRhoK.rhok[spec1], PtclRhoK.rhok[spec2]);
           if(spec2==spec1)
             LR += 0.5*Z1*Z2*temp;    
           else
