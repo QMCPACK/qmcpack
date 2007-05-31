@@ -22,14 +22,17 @@ namespace qmcplusplus {
     void AddKToList(RealType k, RealType degeneracy=1.0);
 
   public:
-    //The basis to be used for breakup.
+    ///The basis to be used for breakup.
     BreakupBasis& Basis;
-
+    /// For each k,  KList[k][0] = |k| and KList[k][1] = degeneracy
     vector<TinyVector<RealType,2> > KList;
-    //kc = k-space cutoff for long-range sums
-    //kmax = largest k used for performing the breakup
-    //kcont = k at which approximate (spherical shell) degeneracies are used.
-    void SetupKVecs(RealType kc, RealType kcont, RealType kmax);
+    /** setup KList 
+     * @param kc k-space cutoff for long-range sums
+     * @param kcont  k at which approximate (spherical shell) degeneracies are used.
+     * @param kmax largest k used for performing the breakup
+     * @return the maximum kshell for the given kc
+     */
+    IndexType SetupKVecs(RealType kc, RealType kcont, RealType kmax);
 
     //Fk is FT of F_full(r) up to kmax
     //adjust is used for constraining values in the breakup
@@ -185,24 +188,42 @@ LRBreakup<BreakupBasis>::AddKToList(RealType k,
 
 
 template<class BreakupBasis>
-void
-LRBreakup<BreakupBasis>::SetupKVecs(RealType kc, RealType kcont, 
-				     RealType kmax) {
+typename LRBreakup<BreakupBasis>::IndexType
+LRBreakup<BreakupBasis>::SetupKVecs(RealType kc, RealType kcont, RealType kmax) 
+{
+
   //Add low |k| ( < kcont) k-points with exact degeneracy
   KContainer kexact(Basis.get_Lattice());
   kexact.UpdateKLists(Basis.get_Lattice(),kcont);
 
-  RealType numk = 0.0;
+  bool findK=true;
+  RealType kc2=kc*kc;
+  //use at least one shell
+  size_t ks=0; 
+  kc2 = std::max(kc2,kexact.ksq[kexact.kshell[ks]]);
+  while(findK)
+  {
+    if(kexact.ksq[kexact.kshell[ks]]>kc2) 
+      findK=false;
+    else    
+      ks++;
+  } 
 
-  //Add these vectors to the internal list
-  RealType modk2;
-  for(int ki=0; ki<kexact.numk; ki++) {
-    modk2 = dot(kexact.kpts_cart[ki],kexact.kpts_cart[ki]);
-    if(modk2 > (kc*kc)) { //Breakup needs kc < k < kcont.
-      AddKToList(std::sqrt(modk2));
-      numk++;
-    } 
-  }
+  size_t maxkshell=ks;
+  int numk =kexact.numk-kexact.kshell[ks];
+  for(; ks<kexact.kshell.size()-1; ks++)
+    AddKToList(std::sqrt(kexact.ksq[kexact.kshell[ks]]), kexact.kshell[ks+1]-kexact.kshell[ks]);
+
+  ////Add these vectors to the internal list
+  //int numk=0;
+  //RealType modk2;
+  //for(int ki=0; ki<kexact.numk; ki++) {
+  //  modk2 = dot(kexact.kpts_cart[ki],kexact.kpts_cart[ki]);
+  //  if(modk2 > (kc*kc)) { //Breakup needs kc < k < kcont.
+  //    AddKToList(std::sqrt(modk2));
+  //    numk++;
+  //  } 
+  //}
 
   //Add high |k| ( >kcont, <kmax) k-points with approximate degeneracy
   //Volume of 1 K-point is (2pi)^3/(a1.a2^a3)
@@ -221,6 +242,7 @@ LRBreakup<BreakupBasis>::SetupKVecs(RealType kc, RealType kcont,
     numk += degeneracy;
   }
 
+  return maxkshell;
   //numk now contains the total number of vectors. 
   //this->klist.size() contains the number of unique vectors.
 }

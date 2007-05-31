@@ -24,14 +24,18 @@ namespace qmcplusplus {
   LRJastrowSingleton::LRHandlerType* LRJastrowSingleton::JastrowHandler=0;
 
   LRJastrowSingleton::LRHandlerType*
-    LRJastrowSingleton::getHandler(ParticleSet& ref) {
+    LRJastrowSingleton::getHandler(ParticleSet& ref, double kc) {
       if(JastrowHandler ==0) {
         app_log() << "  LRJastrowSingleton::getHanlder " << endl;
-        //JastrowHandler=new LRHandlerType(ref,2.0);
-        JastrowHandler=new LRHandlerType(ref);
+        JastrowHandler=new LRHandlerType(ref,kc);
         JastrowHandler->initBreakup(ref);
+        return JastrowHandler;
       }
-      return JastrowHandler;
+      else
+      {
+        app_log() << "  Copy JastrowHandler. " << endl;
+        return new LRHandlerType(*JastrowHandler,ref);
+      }
     }
 }
 /***************************************************************************

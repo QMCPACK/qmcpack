@@ -24,6 +24,7 @@
 #include "Numerics/OneDimGridBase.h"
 #include "Numerics/OneDimGridFunctor.h"
 #include "Numerics/OneDimCubicSpline.h"
+#include <limits>
 
 namespace qmcplusplus {
   /** JastrowFunctor
@@ -39,8 +40,9 @@ namespace qmcplusplus {
 
   template<class T=double>
   struct JastrowFunctor {
-    T OneOverSqrtRs;
     T Rs;
+    T SqrtRs;
+    T OneOverSqrtRs;
     T NormFactor;
     inline JastrowFunctor(){}
     
@@ -48,7 +50,8 @@ namespace qmcplusplus {
       NormFactor=4.0*M_PI/ref.Lattice.Volume;
       T Density=ref.getTotalNum()/ref.Lattice.Volume;
       Rs = std::pow(3.0/(4.0*M_PI*Density), 1.0/3.0);
-      OneOverSqrtRs = 1.0 / std::sqrt(Rs);
+      SqrtRs=std::sqrt(Rs);
+      OneOverSqrtRs = 1.0 / SqrtRs;
     }
      
     void reset(ParticleSet& ref, T rs) {
@@ -58,16 +61,22 @@ namespace qmcplusplus {
     }
      
     inline T operator()(T r, T rinv) { 
-      if (r > 1e-10) return Rs*rinv*(1.0 - std::exp(-r*OneOverSqrtRs));
-      return 1.0 / OneOverSqrtRs - 0.5 * r;
+      if(r< numeric_limits<T>::epsilon())
+        return SqrtRs-0.5*r;
+      else
+        return Rs*rinv*(1.0-std::exp(-r*OneOverSqrtRs));
+      //if (r > 1e-10) return Rs*rinv*(1.0 - std::exp(-r*OneOverSqrtRs));
+      //return 1.0 / OneOverSqrtRs - 0.5 * r;
     }
     
     inline T df(T r, T rinv) {
-      if (r > 1e-10) {
-	T exponential = std::exp(-r*OneOverSqrtRs);
-	return -Rs*rinv*rinv*(1.0 - exponential) + exponential*rinv / OneOverSqrtRs;
+      if(r< numeric_limits<T>::epsilon())
+        return -0.5+r*OneOverSqrtRs/3.0;
+      else
+      {
+        T exponential = std::exp(-r*OneOverSqrtRs);
+        return -Rs*rinv*rinv*(1.0 - exponential) + exponential*rinv*SqrtRs;
       }
-      return -0.5+r*OneOverSqrtRs/3.0;
     }
     
     inline T Fk(T k, T rc) {
@@ -79,8 +88,8 @@ namespace qmcplusplus {
        T sinkr = std::sin(k*rc);
        T oneOverK = 1.0/k;
        return -NormFactor * Rs * 
-	  ( coskr*oneOverK*oneOverK - std::exp(-rc*OneOverSqrtRs) * 
-	        (coskr - OneOverSqrtRs * sinkr * oneOverK) / (k*k + 1 / Rs) );
+         (coskr*oneOverK*oneOverK 
+         - std::exp(-rc*OneOverSqrtRs)*(coskr - OneOverSqrtRs * sinkr * oneOverK)/(k*k+1.0/Rs));
     }
   };
 
@@ -91,7 +100,7 @@ namespace qmcplusplus {
     
     static LRHandlerType* JastrowHandler;
 
-    static LRHandlerType* getHandler(ParticleSet& ref);
+    static LRHandlerType* getHandler(ParticleSet& ref, double kc);
   };
 }
 #endif

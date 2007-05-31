@@ -7,7 +7,6 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
@@ -40,16 +39,18 @@ namespace qmcplusplus {
     typedef ParticleSet::ParticleLayout_t ParticleLayout_t;
     typedef BreakupBasis BreakupBasisType;
 
-    /** Dimensionless cutoff to determine the maxium cutoff */
-    RealType  LR_dim_cutoff;
-    BreakupBasis Basis; //This needs a Lattice for the constructor...
+    /// Maxkimum Kshell for the given Kc
+    IndexType MaxKshell;
+    /// Maximum k cutoff 
+    RealType  LR_kc;
     Vector<RealType> coefs; 
     Vector<RealType> Fk; 
+    Vector<RealType> Fk_symm; 
+    BreakupBasis Basis; //This needs a Lattice for the constructor...
     Func myFunc;
 
     //Constructor
-    LRHandlerTemp(ParticleSet& ref, RealType lrcut=-1.0): 
-      Basis(ref.Lattice), LR_dim_cutoff(lrcut) 
+    LRHandlerTemp(ParticleSet& ref, RealType kc=-1.0): Basis(ref.Lattice), LR_kc(kc) 
     {
       myFunc.reset(ref);
     }
@@ -63,7 +64,8 @@ namespace qmcplusplus {
      */
     LRHandlerTemp(const LRHandlerTemp& aLR, ParticleSet& ref):
       Basis(aLR.Basis, ref.Lattice), 
-    LR_dim_cutoff(aLR.LR_dim_cutoff), coefs(aLR.coefs), Fk(aLR.coefs)
+    MaxKshell(aLR.MaxKshell), LR_kc(aLR.LR_kc), 
+    coefs(aLR.coefs), Fk(aLR.Fk)
     {
       myFunc.reset(ref);
       fillFk(ref.SK->KLists);
@@ -83,7 +85,12 @@ namespace qmcplusplus {
       for(int n=0; n<coefs.size(); n++) v -= coefs[n]*Basis.h(n,r);
       return v;
     }
-    // get the radial derivative of the short range part
+
+    /**  evaluate the first derivative of the short range part at r
+     *
+     * @param r  radius
+     * @param rinv 1/r
+     */
     inline RealType srDf(RealType r, RealType rinv) {
       RealType df = myFunc.df(r, rinv);
       for(int n=0; n<coefs.size(); n++) df -= coefs[n]*Basis.df(n,r);
@@ -91,19 +98,35 @@ namespace qmcplusplus {
     }
     
 
-    ///a utility function for spline
+    /** evaluate the contribution from the long-range part for for spline
+     */
     inline RealType evaluateLR(RealType r) {
       RealType v=0.0;
       for(int n=0; n<coefs.size(); n++) v -= coefs[n]*Basis.h(n,r);
       return v;
     }
 
-    inline RealType evaluate(const vector<int>& minusk, 
+    /** evaluate \f$\sum_k F_{k} \rho^1_{-{\bf k} \rho^2_{\bf k}\f$
+     * @param kshell degeneracies of the vectors
+     * @param rk1 starting address of \f$\rho^1_{{\bf k}\f$
+     * @param rk2 starting address of \f$\rho^2_{{\bf k}\f$
+     * 
+     * Valid for the strictly ordered k and \f$F_{k}\f$.
+     */
+    inline RealType evaluate(const vector<int>& kshell, 
         const ComplexType* restrict rk1, const ComplexType* restrict rk2) {
       RealType vk=0.0;
-      for(int ki=0; ki<Fk.size(); ki++) {
-	vk += (rk1[ki]*rk2[minusk[ki]]).real()*Fk[ki];
-      } //ki
+      for(int ks=0,ki=0; ks<MaxKshell; ks++)
+      {
+        RealType u=0;
+        for(;ki<kshell[ks+1]; ki++,rk1++,rk2++)
+          u += ((*rk1).real()*(*rk2).real()+(*rk1).imag()*(*rk2).imag());
+        vk += Fk_symm[ks]*u;
+      }
+      //for(int ki=0; ki<Fk.size(); ki++) {
+      //  //vk += (rk1[ki]*rk2[minusk[ki]]).real()*Fk[ki];
+      //  vk += (rk1[ki].real()*rk2[ki].real()+rk1[ki].imag()*rk2[ki].imag())*Fk[ki];
+      //} //ki
       return vk;
     }
 
@@ -122,13 +145,14 @@ namespace qmcplusplus {
       return myFunc.Xk(k,Basis.get_rc());
     }
 
+    /** Initialise the basis and coefficients for the long-range beakup. 
+     *
+     * We loocally create a breakup handler and pass in the basis
+     * that has been initialised here. We then discard the handler, leaving
+     * basis and coefs in a usable state.
+     * This method can be re-called later if lattice changes shape.
+     */
     void InitBreakup(ParticleLayout_t& ref,int NumFunctions) {
-      //Here we initialise the basis and coefficients for the long-range 
-      //beakup. We loocally create a breakup handler and pass in the basis
-      //that has been initialised here. We then discard the handler, leaving
-      //basis and coefs in a usable state.
-      //This method can be re-called later if lattice changes shape.
-
       //First we send the new Lattice to the Basis, in case it has been updated.
       Basis.set_Lattice(ref);
 
@@ -142,7 +166,7 @@ namespace qmcplusplus {
       LRBreakup<BreakupBasis> breakuphandler(Basis);
 
       //Find size of basis from cutoffs
-      RealType kc = (LR_dim_cutoff<0)?ref.LR_kc:LR_dim_cutoff/ref.LR_rc;
+      RealType kc = (LR_kc<0)?ref.LR_kc:LR_kc;
       //RealType kc(ref.LR_kc); //User cutoff parameter...
 
       //kcut is the cutoff for switching to approximate k-point degeneracies for
@@ -153,7 +177,10 @@ namespace qmcplusplus {
       RealType kcut = 60*M_PI*std::pow(Basis.get_CellVolume(),-1.0/3.0); 
       //Use 3000/LMax here...==6000/rc for non-ortho cells
       RealType kmax(6000.0/ref.LR_rc);
-      breakuphandler.SetupKVecs(kc,kcut,kmax);
+
+      MaxKshell = breakuphandler.SetupKVecs(kc,kcut,kmax);
+      app_log() << "  LRBreakp parameter Kc =" << kc << endl;
+      app_log() << "    Continuum approximation in k = [" << kcut << "," << kmax << ")" << endl;
 
       //Set up x_k
       //This is the FT of -V(r) from r_c to infinity.
@@ -178,11 +205,20 @@ namespace qmcplusplus {
 
     void fillFk(KContainer& KList) {
       Fk.resize(KList.kpts_cart.size());
-      for(int ki=0; ki<KList.kpts_cart.size(); ki++){
-        RealType k=dot(KList.kpts_cart[ki],KList.kpts_cart[ki]);
-        k=std::sqrt(k);
-        Fk[ki] = evalFk(k); //Call derived fn.
+      const vector<int>& kshell(KList.kshell);
+      if(MaxKshell >= kshell.size()) MaxKshell=kshell.size()-1;
+      Fk_symm.resize(MaxKshell);
+      for(int ks=0,ki=0; ks<Fk_symm.size(); ks++)
+      {
+        RealType uk=evalFk(std::sqrt(KList.ksq[ki]));
+        Fk_symm[ks]=uk;
+        while(ki<KList.kshell[ks+1] && ki<Fk.size()) Fk[ki++]=uk;
       }
+      //for(int ki=0; ki<KList.kpts_cart.size(); ki++){
+      //  RealType k=dot(KList.kpts_cart[ki],KList.kpts_cart[ki]);
+      //  k=std::sqrt(k);
+      //  Fk[ki] = evalFk(k); //Call derived fn.
+      //}
     }
   };
 }
