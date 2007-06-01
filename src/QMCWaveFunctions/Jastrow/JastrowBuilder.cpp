@@ -147,10 +147,13 @@ namespace qmcplusplus {
     } 
     else if(funcOpt == "rpa") 
     {
-      if(useSpline) 
-        control = new RPAPBCConstraints(targetPtcl,targetPsi,ignoreSpin);
+      if(targetPtcl.Lattice.SuperCellEnum == SUPERCELL_OPEN)
+      {
+        app_warning() << "   RPA is requested for an open system. Please choose other functors." << endl;
+        return false;
+      }
       else 
-        control = new RPAConstraints(targetPtcl,targetPsi,ignoreSpin);
+        control = new RPAPBCConstraints(targetPtcl,targetPsi,ignoreSpin);
     } 
     else if(funcOpt ==  "poly")
     {

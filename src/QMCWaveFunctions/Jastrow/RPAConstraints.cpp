@@ -18,9 +18,9 @@
 #include "QMCWaveFunctions/Jastrow/OneBodyJastrowFunction.h"
 #include "QMCWaveFunctions/Jastrow/LRTwoBodyJastrow.h"
 #include "QMCWaveFunctions/Jastrow/SplineFunctors.h"
-#include "Utilities/IteratorUtility.h"
 #include "LongRange/LRJastrowSingleton.h"
-#include "OhmmsData/AttributeSet.h"
+#include "Utilities/IteratorUtility.h"
+#include "OhmmsData/ParameterSet.h"
 
 namespace qmcplusplus {
 
@@ -164,11 +164,11 @@ namespace qmcplusplus {
   bool RPAPBCConstraints::put(xmlNodePtr cur) {
     string useL="yes";
     string useS="yes";
-    OhmmsAttributeSet aAttrib;
-    aAttrib.add(useL,"longrange");
-    aAttrib.add(useS,"shortrange");
-    aAttrib.add(Kc,"kc");
-    aAttrib.put(cur);
+    ParameterSet params;
+    params.add(useL,"longrange","string");
+    params.add(useS,"shortrange","string");
+    params.add(Kc,"kc","double");
+    params.put(cur);
 
     DropLongRange = (useL=="no");
     DropShortRange = (useS=="no");
