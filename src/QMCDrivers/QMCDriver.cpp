@@ -25,6 +25,7 @@
 #include "QMCDrivers/DriftOperators.h"
 #include "QMCWaveFunctions/OrbitalTraits.h"
 #include "Message/Communicate.h"
+#include "Message/CommOperators.h"
 
 namespace qmcplusplus {
 
@@ -134,6 +135,7 @@ namespace qmcplusplus {
 
     //flush the ostreams
     OhmmsInfo::flush();
+
 
     //increment QMCCounter of the branch engine
     branchEngine->advanceQMCCounter();
@@ -259,6 +261,10 @@ namespace qmcplusplus {
       app_log() << "  Using the current " << W.getActiveWalkers() << " walkers." <<  endl;
     }
 
+    //update the global number of walkers
+    int nw=W.getActiveWalkers();
+    qmcComm->allreduce(nw);
+    W.setGlobalNumWalkers(nw);
   }
 
   

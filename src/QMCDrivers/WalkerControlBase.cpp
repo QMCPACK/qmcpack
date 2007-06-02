@@ -53,6 +53,9 @@ namespace qmcplusplus {
       ++it;
     }
 
+    //set the global number of walkers
+    W.setGlobalNumWalkers(nw_tot);
+
     return nw_tot;
   }
 
