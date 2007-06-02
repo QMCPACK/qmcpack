@@ -190,7 +190,7 @@ namespace qmcplusplus {
       else if(version[1] == 10)
       {
         pwMultTag="planewaves";
-        pwTag="missing";
+        pwTag="0";
       }
     }
 
