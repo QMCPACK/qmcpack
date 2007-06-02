@@ -33,14 +33,14 @@ namespace qmcplusplus {
 
     ecut = ecutoff;
 
-    if(pwmultname != "missing")
+    if(pwmultname[0] != '0')
     {
       app_log() << "  PWBasis::" << pwmultname << " is found " << endl;
       HDFAttribIO<std::vector<GIndex_t> >hdfvtv(gvecs);
       hdfvtv.read(h5basisgroup,pwmultname.c_str());
     }
 
-    if(pwname != "missing")
+    if(pwname[0] != '0')
     {
       app_log() << "  PWBasis::" << pwname << " is found " << endl;
       HDFAttribIO<vector<PosType> > hdfg(kplusgvecs_cart);
@@ -93,26 +93,6 @@ namespace qmcplusplus {
   {
     trimforecut();
 
-#if defined(PWBASIS_USE_RECURSIVE)
-    //Store the maximum number of translations, within ecut, of any reciprocal cell vector.
-    for(int ig=0; ig<NumPlaneWaves; ig++)
-      for(int i=0; i<3; i++)
-      {
-        if(abs(gvecs[ig][i]) > maxg[i]) maxg[i] = abs(gvecs[ig][i]);
-      }
-
-    gvecs_shifted.resize(NumPlaneWaves);
-    for(int ig=0; ig<NumPlaneWaves; ig++)
-      gvecs_shifted[ig]=gvecs[ig]+maxg;
-    //     for(int i=0; i<3; i++)
-    //       gvecs_shifted[ig][i]=gvecs[ig][i]+maxg[i];
-
-    maxmaxg = std::max(maxg[0],std::max(maxg[1],maxg[2]));
-    //changes the order???? ok
-    C.resize(3,2*maxmaxg+2);
-#else
-    maxmaxg=1;
-#endif
     //logC.resize(3,2*maxmaxg+1);
     Z.resize(NumPlaneWaves,2+DIM);
     Zv.resize(NumPlaneWaves);
@@ -158,6 +138,23 @@ namespace qmcplusplus {
         NumPlaneWaves--;
       }
     }
+
+#if defined(PWBASIS_USE_RECURSIVE)
+    //Store the maximum number of translations, within ecut, of any reciprocal cell vector.
+    for(int ig=0; ig<NumPlaneWaves; ig++)
+      for(int i=0; i<OHMMS_DIM; i++)
+        if(abs(gvecs[ig][i]) > maxg[i]) maxg[i] = abs(gvecs[ig][i]);
+
+    gvecs_shifted.resize(NumPlaneWaves);
+    for(int ig=0; ig<NumPlaneWaves; ig++)
+      gvecs_shifted[ig]=gvecs[ig]+maxg;
+
+    maxmaxg = std::max(maxg[0],std::max(maxg[1],maxg[2]));
+    //changes the order???? ok
+    C.resize(3,2*maxmaxg+2);
+#else
+    maxmaxg=1;
+#endif
 //    //make a copy of input to gvecCopy
 ////    for(int ig=0, newig=0; ig<ngIn; ig++) {
 //      //Check size of this g-vector
