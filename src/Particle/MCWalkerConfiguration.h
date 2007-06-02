@@ -121,7 +121,10 @@ namespace qmcplusplus {
 
     ///return the number of active walkers
     inline int getActiveWalkers() const { return WalkerList.size();}
-
+    ///return the total number of active walkers among a MPI group
+    inline int getGlobalNumWalkers() const { return GlobalNumWalkers;}
+    ///return the total number of active walkers among a MPI group
+    inline void setGlobalNumWalkers(int nw) { GlobalNumWalkers=nw;}
     ///return the number of particles per walker
     inline int getParticleNum() const { return R.size();}
 
@@ -212,10 +215,15 @@ namespace qmcplusplus {
 
   protected:
 
+    ///boolean for cleanup
     bool OwnWalkers;
-
+    ///true if the buffer is ready for particle-by-particle updates
     bool ReadyForPbyP;
-
+    ///number of walkers on a node
+    int LocalNumWalkers;
+    ///number of walkers shared by a MPI group
+    int GlobalNumWalkers;
+    ///update-mode index
     int UpdateMode;
 
     RealType LocalEnergy;
