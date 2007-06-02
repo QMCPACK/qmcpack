@@ -3,6 +3,7 @@
 
 #include "Particle/ParticleSet.h"
 #include "Utilities/PooledData.h"
+#include "Utilities/IteratorUtility.h"
 #include "Utilities/OhmmsInfo.h"
 #if !defined(HAVE_SINCOS)
 template<typename T> inline void sincos(T a, T* restrict s, T*  restrict c)
@@ -13,13 +14,6 @@ template<typename T> inline void sincos(T a, T* restrict s, T*  restrict c)
 #endif
 
 namespace qmcplusplus {
-
-  template<typename IT>
-    inline void accumulate_elements(IT first, IT last, IT res)
-    {
-      while(first != last) *res++ += *first++;
-    }
-
 
   /** @ingroup longrange
    *\brief A handler class for generating and storing lists of
