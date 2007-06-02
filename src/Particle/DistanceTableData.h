@@ -268,7 +268,7 @@ namespace qmcplusplus {
     /*@{*/
     /** Cartesian distance \f$r(i,j) = |R(j)-R(i)|\f$ */
     std::vector<RealType> r_m;
-    /** Cartesian distance \f$rr(i,j) = |R(j)-R(i)|^2\f$ */
+    /** Cartesian distance \f$rinv(i,j) = 1/r(i,j)\f$ */
     std::vector<RealType> rinv_m;
     /** displacement vectors \f$dr(i,j) = R(j)-R(i)\f$  */
     std::vector<PosType> dr_m;
@@ -281,7 +281,7 @@ namespace qmcplusplus {
      *@param npairs number of pairs which is evaluated by a derived class
      *@param nw number of copies
      *
-     * The data for the pair distances, normalized displacements
+     * The data for the pair distances, displacements
      *and the distance inverses are stored in a linear storage.
      * The logical view of these storages is (ipair,iwalker),
      * where 0 <= ipair < M[N[SourceIndex]] and 0 <= iwalker < N[WalkerIndex]
