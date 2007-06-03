@@ -6,7 +6,8 @@ SET(QMCDRIVERS
   ../Estimators/MultipleEnergyEstimator.cpp
   ../Estimators/RQMCMultipleEstimator.cpp
   ../Estimators/CompositeEstimators.cpp
-  ../Estimators/PairCorrEstimator.cpp
+  ../Estimators/GofREstimator.cpp
+  ../Estimators/SkEstimator.cpp
   ../Estimators/EstimatorManager.cpp
   SimpleFixedNodeBranch.cpp
   QMCDriver.cpp
@@ -35,6 +36,7 @@ SET(QMCDRIVERS
   ../Estimators/CSEnergyEstimator.cpp
   ../Estimators/CSPolymerEstimator.cpp
 )
+#  ../Estimators/PairCorrEstimator.cpp
 
 IF(ENABLE_OPENMP) 
   SET(QMCDRIVERS ${QMCDRIVERS} 
