@@ -239,7 +239,7 @@ LRBreakup<BreakupBasis>::SetupKVecs(RealType kc, RealType kcont, RealType kmax)
     RealType shellvol = 4.0*M_PI*(k2*k2*k2-k1*k1*k1)/3.0;
     RealType degeneracy = shellvol/kelemvol;
     AddKToList(kmid,degeneracy);
-    numk += staitc_cast<int>(degeneracy);
+    numk += static_cast<int>(degeneracy);
   }
 
   return maxkshell;
