@@ -50,7 +50,7 @@ namespace qmcplusplus {
     virtual void startAccumulate()=0;
 
     /** accumulate the observables */
-    virtual void accumulate(ParticleSet& p, RealType wgt)=0;
+    virtual void accumulate(ParticleSet& p)=0;
 
     /** stop accumulate for an ensemble and reweight the data */
     virtual void stopAccumulate(RealType wgtnorm)=0;
@@ -86,28 +86,15 @@ namespace qmcplusplus {
 
   };
 
-  /**Class to manage a set of CompositeEstimatorBase
+  /** Class to manage a set of CompositeEstimatorBase
    */
   struct CompositeEstimatorSet: public QMCTraits
   {
 
+    ///typedef estimator type is CompositeEstimatorBase
     typedef CompositeEstimatorBase EstimatorType;
-
-    CompositeEstimatorSet(ParticleSet& p);
-    ~CompositeEstimatorSet();
-
-    void resetTargetParticleSet(ParticleSet& p);
-    void open(hid_t hroot);
-    void close();
-    void startAccumulate();
-    void accumulate(ParticleSet& P, RealType wgt);
-    void stopAccumulate(RealType wgtnorm);
-
-    void report(int iter);
-    void reset();
-
-    void startBlock(int steps);
-    void stopBlock(RealType wgtnorm, RealType errnorm);
+    ///true if the move was particle by particle
+    bool PbyP;
     ///number of steps per block
     int totSteps;
     ///current step
@@ -125,6 +112,27 @@ namespace qmcplusplus {
     ///estimators
     vector<EstimatorType*> Estimators;
 
+    ///constructor
+    CompositeEstimatorSet(ParticleSet& p);
+    ///destructor
+    ~CompositeEstimatorSet();
+    ///reset the target particle set
+    void resetTargetParticleSet(ParticleSet& p);
+
+    ///open a h5group to record the estimators.
+    void open(hid_t hroot);
+    ///close GroupID;
+    void close();
+
+    /** start a block to record
+     * @param steps number of steps for a block
+     */
+    void startBlock(int steps);
+    /** accumulate the measurements */
+    void accumulate(MCWalkerConfiguration& W);
+    /** stop recording the block */
+    void stopBlock();
+    void reset();
   };
 }
 
