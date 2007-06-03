@@ -39,6 +39,12 @@ namespace qmcplusplus {
       return &(a[0][0])+D*a.size();
     }
 
+  template<typename IT>
+    inline void accumulate_elements(IT first, IT last, IT res)
+    {
+      while(first != last) *res++ += *first++;
+    }
+
 }
 #endif
 /***************************************************************************
