@@ -16,6 +16,8 @@
 // -*- C++ -*-
 #ifndef QMCPLUSPLUS_VECTOR_ESTIMATO_IMPL_H
 #define QMCPLUSPLUS_VECTOR_ESTIMATO_IMPL_H
+#include "OhmmsPETE/OhmmsVector.h"
+#include "OhmmsData/HDFAttribIO.h"
 
 namespace qmcplusplus {
 
@@ -36,11 +38,11 @@ namespace qmcplusplus {
      * - d_data[2*i] += \f$= \sum_{s} O_i^s\f$
      * - d_data[2*i+1] += \f$= \sum_{s} O_i^s O_i^s\f$
      */
-    vector<T> d_data;
+    Vector<T> d_data;
     ///d_sum[i] block sum
-    vector<T> d_sum;
+    Vector<T> d_sum;
     ///d_sum2[i] block sum of squared
-    vector<T> d_sum2;
+    Vector<T> d_sum2;
 
     ///default constructor
     inline VectorEstimatorImpl(){}
@@ -62,22 +64,23 @@ namespace qmcplusplus {
      */
     inline void resize(int n)
     {
-      d_data.resize(2*n,T());
-      d_sum.resize(n,T());
-      d_sum2.resize(n,T());
+      d_data.resize(2*n);
+      d_sum.resize(n);
+      d_sum2.resize(n);
     }
 
+    inline size_t size() const { return d_sum.size();}
     inline void init()
     {
-      std::fill(d_data.begin(),d_data.end(),T());
-      std::fill(d_sum.begin(),d_sum.end(),T());
-      std::fill(d_sum2.begin(),d_sum2.end(),T());
+      d_data=T();
+      d_sum=T();
+      d_sum2=T();
     }
 
     /// zero the active data
     inline void reset()
     {
-      std::fill(d_data.begin(),d_data.end(),T());
+      d_data=T();
     }
 
     /** accumulate expectation values
@@ -144,6 +147,69 @@ namespace qmcplusplus {
         (*s2it++)=wgtnorm*(*it++);
       }
     }
+  };
+
+  /** specialization for VectorTempImpl<double> */
+  template<>
+  struct HDFAttribIO<VectorEstimatorImpl<double> >
+  {
+    typedef VectorEstimatorImpl<double> DataType_t;
+    hid_t datasetID;
+    hid_t dataspaceID;
+    hsize_t maxdims[2];
+    hsize_t curdims[2];
+    hsize_t dims[2];
+    hsize_t offset[2];
+    DataType_t&  ref;
+
+    HDFAttribIO(DataType_t& a): datasetID(-1),ref(a)
+    { 
+      maxdims[0] = H5S_UNLIMITED; maxdims[1] = a.size();
+      curdims[0] = 1; curdims[1] = a.size();
+      dims[0] = 1; dims[1] = a.size();
+      offset[0]=0; offset[1]=0;
+    }
+
+    ~HDFAttribIO()
+    {
+      if(datasetID>-1)  {
+        H5Sclose(dataspaceID);
+        H5Dclose(datasetID);
+      }
+    }
+
+    inline void write(hid_t grp, const char* name) {
+
+      const hsize_t RANK=2;
+      if(datasetID<0)
+      {
+        dataspaceID=H5Screate_simple(RANK, dims, maxdims);
+        hid_t p = H5Pcreate (H5P_DATASET_CREATE);
+        H5Pset_chunk(p,RANK,dims);
+        datasetID= H5Dcreate(grp,name,H5T_NATIVE_DOUBLE,dataspaceID,p);
+        hid_t memspace = H5Screate_simple(RANK, dims, NULL);
+        hid_t ret = H5Dwrite(datasetID, H5T_NATIVE_DOUBLE, memspace, dataspaceID, H5P_DEFAULT, ref.d_sum.data());
+        H5Sclose(memspace);
+        H5Pclose(p);
+      }
+      else
+      {
+        H5Dextend(datasetID,curdims);
+        H5Sset_extent_simple(dataspaceID,RANK,curdims,maxdims);
+        H5Sselect_hyperslab(dataspaceID, H5S_SELECT_SET, offset, NULL, dims, NULL);
+        hid_t memspace = H5Screate_simple(RANK, dims, NULL);
+        hid_t ret = H5Dwrite(datasetID, H5T_NATIVE_DOUBLE, memspace, dataspaceID, H5P_DEFAULT, ref.d_sum.data());
+        H5Sclose(memspace);
+      }
+
+      curdims[0]++;
+      offset[0]++;
+    }
+
+    inline void read(hid_t grp, const char* name) 
+    {
+    }
+
   };
 }
 
