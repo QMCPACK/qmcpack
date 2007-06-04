@@ -43,6 +43,8 @@ namespace qmcplusplus {
     MCWalkerConfiguration::iterator it_end(W.end()); 
     Return_t eloc_new;
     int iw=0;
+    int totalElements=W.getTotalNum()*DIM;
+
     Return_t wgt_tot=0.0;
 
     while(it != it_end) {
@@ -56,9 +58,16 @@ namespace qmcplusplus {
 
       Return_t logpsi=0.0;
       //copy dL from Buffer
+#if defined(QMC_COMPLEX)
+      thisWalker.DataSet.get(&(dG[0][0]),&(dG[0][0])+totalElements);
+      thisWalker.DataSet.get(dL.begin(),dL.end());
+      logpsi=Psi.evaluateDeltaLog(W);
+      W.G += dG;
+#else
       thisWalker.DataSet.get(dL.begin(),dL.end());
       logpsi=Psi.evaluateDeltaLog(W);
       W.G += thisWalker.Drift;
+#endif
       W.L += dL;
 
       eloc_new=H_KE.evaluate(W)+saved[ENERGY_FIXED];
@@ -152,6 +161,7 @@ namespace qmcplusplus {
   void 
   QMCCostFunctionSingle::checkConfigurations() {
 
+    dG.resize(W.getTotalNum());
     dL.resize(W.getTotalNum());
     int numLocWalkers=W.getActiveWalkers();
     Records.resize(numLocWalkers,6);
@@ -161,6 +171,7 @@ namespace qmcplusplus {
     MCWalkerConfiguration::iterator it_end(W.end()); 
     int nat = W.getTotalNum();
     int iw=0;
+    int totalElements=W.getTotalNum()*DIM;
     Etarget=0.0;
     while(it != it_end) {
 
@@ -177,6 +188,8 @@ namespace qmcplusplus {
 #if defined(QMC_COMPLEX)
       app_error() << " Optimization is not working with complex wavefunctions yet" << endl;
       app_error() << "  Needs to fix TrialWaveFunction::evaluateDeltaLog " << endl;
+      Psi.evaluateDeltaLog(W, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], dG, dL);
+      thisWalker.DataSet.add(&(dG[0][0]),&(dG[0][0])+totalElements);
 #else
       Psi.evaluateDeltaLog(W, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], thisWalker.Drift, dL);
 #endif
