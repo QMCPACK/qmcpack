@@ -103,7 +103,7 @@ namespace qmcplusplus {
       H1[ipsi]->add2WalkerProperty(W);
 
     if(Estimators == 0) {
-      Estimators = new EstimatorManager(H);
+      Estimators = new EstimatorManager(qmcComm);
       multiEstimator = new MultipleEnergyEstimator(H,nPsi);
       Estimators->add(multiEstimator,"elocal");
     }

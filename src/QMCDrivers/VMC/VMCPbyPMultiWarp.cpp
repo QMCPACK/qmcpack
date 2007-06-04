@@ -445,8 +445,9 @@ namespace qmcplusplus {
     for(int ipsi=0; ipsi<nPsi; ipsi++) H1[ipsi]->add2WalkerProperty(W);
       //H1[ipsi]->add2WalkerProperty(W);
 
+    Estimators = branchEngine->getEstimatorManager();
     if(Estimators == 0) {
-      Estimators = new EstimatorManager(H);
+      Estimators = new EstimatorManager(qmcComm);
       multiEstimator = new MultipleEnergyEstimator(H,nPsi);
       Estimators->add(multiEstimator,"elocal");
     }

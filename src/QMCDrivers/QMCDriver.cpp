@@ -99,6 +99,7 @@ namespace qmcplusplus {
     if(branchEngine==0) 
       branchEngine = new BranchEngineType(Tau,W.getActiveWalkers());
 
+    //execute the put function implemented by the derived classes
     put(cur);
 
     if(h5FileRoot.size() && RollBackBlocks>1) {
@@ -107,14 +108,17 @@ namespace qmcplusplus {
       RollBackBlocks=0;
     }
 
+    //create and initialize estimator
     Estimators = branchEngine->getEstimatorManager();
     if(Estimators==0)
     {
-      Estimators = new EstimatorManager(H,qmcComm);
+      Estimators = new EstimatorManager(qmcComm);
       branchEngine->setEstimatorManager(Estimators);
       if(h5FileRoot.size()) branchEngine->read(h5FileRoot);
     }
+
     branchEngine->put(cur);
+    Estimators->put(W,H,cur);
 
     if(wOut==0) {
       wOut = new HDFWalkerOutput(W,RootName);

@@ -50,7 +50,7 @@ namespace qmcplusplus {
     Estimators = branchEngine->getEstimatorManager();
     if(Estimators == 0) 
     {
-      Estimators = new EstimatorManager(H);
+      Estimators = new EstimatorManager(qmcComm);
       multiEstimator = new CSEnergyEstimator(H,nPsi);
 
       Estimators->add(multiEstimator,Estimators->MainEstimatorName);

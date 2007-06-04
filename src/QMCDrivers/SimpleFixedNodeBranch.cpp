@@ -207,7 +207,8 @@ bool SimpleFixedNodeBranch::put(xmlNodePtr cur){
   /* \warning{backward compatability qmc/@collect="yes|no"}
    */
   const xmlChar* t=xmlGetProp(cur,(const xmlChar*)"collect");
-  if(t != NULL) {
+  if(t != NULL) 
+  {
     SwapMode = xmlStrEqual(t,(const xmlChar*)"yes");
   } 
 
@@ -222,7 +223,7 @@ bool SimpleFixedNodeBranch::put(xmlNodePtr cur){
 
   reset();
   //flush(0);
-  MyEstimator->put(myNode);
+  //MyEstimator->put(myNode);
   MyEstimator->setCollectionMode(SwapMode);
   return true;
 }
