@@ -93,7 +93,8 @@ namespace qmcplusplus {
     //sum over species
     std::copy(p.SK->rhok[0],p.SK->rhok[0]+NumK,RhokTot.begin());
     for(int i=1; i<NumSpecies; i++)
-      accumulate_elements(p.SK->rhok[i],RhokTot.begin(),NumK);
+      accumulate_elements(p.SK->rhok[i],p.SK->rhok[i]+NumK,RhokTot.begin());
+      //accumulate_elements(p.SK->rhok[i],RhokTot.begin(),NumK);
 
     Vector<ComplexType>::const_iterator iit(RhokTot.begin());
     Vector<RealType>::iterator oit(SkInst.begin());
