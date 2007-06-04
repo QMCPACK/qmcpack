@@ -45,11 +45,11 @@ namespace qmcplusplus {
       while(first != last) *res++ += *first++;
     }
 
-  template<typename IT1, typename IT2>
-    inline void accumulate_elements(IT1 first, IT2 res, int n)
-    {
-      for(;n>0; n--) *res++ += *first++;
-    }
+//  template<typename IT1, typename IT2, typename INT>
+//    inline void accumulate_elements(IT1 first, IT2 res, INT n)
+//    {
+//      for(;n>0; n--) *res++ += *first++;
+//    }
 
 }
 #endif
