@@ -18,7 +18,6 @@
 #define QMCPLUSPLUS_STRUCTUREFACTOR_ESTIMATOR_H
 #include "Estimators/CompositeEstimators.h"
 #include "Estimators/VectorEstimatorImpl.h"
-#include "OhmmsPETE/OhmmsVector.h"
 //#include <boost/numeric/ublas/matrix.hpp>
 
 namespace qmcplusplus {
@@ -46,6 +45,8 @@ namespace qmcplusplus {
     Vector<RealType> SkInst;
     /** Structrue factor estimator */
     VectorEstimatorType Sk;
+    /** hdf5 handler for Sk */
+    HDFAttribIO<VectorEstimatorType>* Sk_h;
     public:
 
     /** constructor

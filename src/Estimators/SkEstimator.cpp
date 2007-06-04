@@ -24,8 +24,9 @@
 namespace qmcplusplus {
 
 
-  SkEstimator::SkEstimator(ParticleSet& source) 
+  SkEstimator::SkEstimator(ParticleSet& source): Sk_h(0)
   {
+    Title="sk_"+source.getName();
     NumSpecies=source.getSpeciesSet().getTotalNum();
     NumK=source.SK->KLists.numk;
     OneOverN=1.0/static_cast<RealType>(source.getTotalNum());
@@ -51,31 +52,32 @@ namespace qmcplusplus {
 
   SkEstimator::~SkEstimator()
   {
+    close();//make sure everything is closed
   }
 
   void SkEstimator::resetTargetParticleSet(ParticleSet& p)
-  { }
+  { 
+    Title="sk_"+p.getName();
+  }
 
   void SkEstimator::open(hid_t hroot)
   {
-  //  if(GroupID<0)
-  //  {
-  //    Title="pc_"+myTable->Name;
-  //    GroupID = H5Gcreate(hroot,Title.c_str(),0);
-  //    v_h = new AppendData(gofr);
-  //    v2_h = new AppendData(gofr2);
-  //  }
+    if(GroupID<0)
+    {
+      GroupID = H5Gcreate(hroot,Title.c_str(),0);
+      Sk_h = new HDFAttribIO<VectorEstimatorType>(Sk);
+    }
   }
 
   void SkEstimator::close()
   {
-//    if(GroupID>-1)
-//    {
-//      delete v_h;
-//      delete v2_h;
-//      H5Gclose(GroupID);
-//      GroupID=-1;
-//    }
+    if(GroupID>-1)
+    {
+      delete Sk_h;
+      Sk_h=0;
+      H5Gclose(GroupID);
+      GroupID=-1;
+    }
   }
 
   /** ready to accumulate the measurements over the walkers
@@ -109,7 +111,6 @@ namespace qmcplusplus {
 
   void SkEstimator::startBlock(int steps)
   {
-    Sk.reset();
   }
 
   /** save the block average */
@@ -126,8 +127,8 @@ namespace qmcplusplus {
     }
     fout << endl;
 #endif
-//    v_h->write(GroupID,"v");
-//    v2_h->write(GroupID,"v2");
+    if(Sk_h) Sk_h->write(GroupID,"v");
+    Sk.reset();
   }
 }
 
