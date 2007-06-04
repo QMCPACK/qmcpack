@@ -32,6 +32,7 @@ namespace qmcplusplus {
 
   class MCWalkerConifugration;
   class QMCHamiltonian;
+  class CompositeEstimatorSet;
 
   /**Class to manage a set of ScalarEstimators */
   class EstimatorManager: public QMCTraits
@@ -48,8 +49,7 @@ namespace qmcplusplus {
     ///the root file name
     std::string RootName;
 
-    EstimatorManager(QMCHamiltonian& h, Communicate* c=0);
-    EstimatorManager(EstimatorManager& em, QMCHamiltonian& h);
+    EstimatorManager(Communicate* c=0);
     virtual ~EstimatorManager();
 
     /** set the communicator */
@@ -132,7 +132,8 @@ namespace qmcplusplus {
     //void setAccumulateMode (bool setAccum) {AccumulateBlocks = setAccum;};
 
     ///process xml tag associated with estimators
-    bool put(xmlNodePtr cur);
+    //bool put(xmlNodePtr cur);
+    bool put(MCWalkerConfiguration& W, QMCHamiltonian& H, xmlNodePtr cur);
 
     ///** reset the estimator
     // * @param aname root file name
@@ -164,7 +165,11 @@ namespace qmcplusplus {
     /** start  a block
      * @param steps number of steps in a block
      */
-    inline void startBlock(int steps) { MyTimer.restart();}
+    inline void startBlock(int steps)
+    { 
+      MyTimer.restart();
+    }
+
     /** stop a block
      * @param accept acceptance rate of this block
      */
@@ -177,12 +182,9 @@ namespace qmcplusplus {
     void accumulate(MCWalkerConfiguration::iterator it,
         MCWalkerConfiguration::iterator it_end);
 
-    /** accumulate the scalar observables
+    /** accumulate the measurements
      */
-    void accumulate(MCWalkerConfiguration& W)
-    {
-      accumulate(W.begin(),W.end());
-    }
+    void accumulate(MCWalkerConfiguration& W);
 
     /** accumulate the scalar observables
      */
@@ -219,7 +221,7 @@ namespace qmcplusplus {
     //Cummulative energy and weight
     TinyVector<RealType,2>  EPSum;
     ///ostream for the output
-    QMCHamiltonian& H;
+    //QMCHamiltonian& H;
     ///pointer to the primary ScalarEstimatorBase
     ScalarEstimatorBase* MainEstimator;
     ///save the weights
@@ -240,10 +242,15 @@ namespace qmcplusplus {
     vector<int> Block2Total;
     ///column map
     std::map<string,int> EstimatorMap;
-    ///estimators
+    ///estimators of simple scalars
     vector<EstimatorType*> Estimators;
+    ///estimators of composite data
+    CompositeEstimatorSet* CompEstimators;
     ///Timer
     Timer MyTimer;
+prviate:
+    ///prevent copying
+    EstimatorManager(const EstimatorManager& em) {}
   };
 }
 #endif

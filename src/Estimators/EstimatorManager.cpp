@@ -21,6 +21,9 @@
 #include "Message/CommOperators.h"
 #include "Estimators/LocalEnergyEstimator.h"
 #include "Estimators/LocalEnergyOnlyEstimator.h"
+#include "Estimators/CompositeEstimators.h"
+#include "Estimators/GofREstimator.h"
+#include "Estimators/SkEstimator.h"
 #include "QMCDrivers/SimpleFixedNodeBranch.h"
 //#include "Estimators/PolarizationEstimator.h"
 #include "Utilities/IteratorUtility.h"
@@ -29,43 +32,21 @@
 
 namespace qmcplusplus {
 
-  template<typename IT>
-    inline void FastAccumulate(IT first, IT last, IT result)
-    {
-      while(first != last) *result++ += *first++;
-    }
-
   //initialize the name of the primary estimator
-  EstimatorManager::EstimatorManager(QMCHamiltonian& h, 
-      Communicate* c): 
+  EstimatorManager::EstimatorManager(Communicate* c): 
     MainEstimatorName("elocal"),
   Manager(false), CollectSum(true), AppendRecord(false), Collected(false), 
-  ThreadCount(1), h_file(-1), h_obs(-1), myComm(0), H(h),MainEstimator(0)
+  ThreadCount(1), h_file(-1), h_obs(-1), myComm(0), //H(h),
+  MainEstimator(0), CompEstimators(0)
   { 
     setCommunicator(c);
     //Block2Total.resize(0); 
   }
 
-  EstimatorManager::EstimatorManager(EstimatorManager& em, 
-      QMCHamiltonian& h):
-    MainEstimatorName("elocal"),
-  Manager(false), AppendRecord(false), Collected(false), 
-  ThreadCount(1),h_file(-1), h_obs(-1), H(h), 
-  EstimatorMap(em.EstimatorMap)
-  {
-    CollectSum=em.CollectSum, 
-    //inherit communicator
-    setCommunicator(em.myComm);
-    for(int i=0; i<em.Estimators.size(); i++) 
-    {
-      Estimators.push_back(em.Estimators[i]->clone());
-    }
-    MainEstimator=Estimators[EstimatorMap[MainEstimatorName]];
-  }
-
   EstimatorManager::~EstimatorManager()
   { 
     delete_iter(Estimators.begin(), Estimators.end());
+    if(CompEstimators) delete CompEstimators;
   }
 
   void EstimatorManager::setCommunicator(Communicate* c) 
@@ -128,7 +109,6 @@ namespace qmcplusplus {
 
     PropertyCache.resize(blocks,BlockProperties.size());
 
-
     if(record)
     {
       if(h_obs>-1)  H5Gclose(h_obs);
@@ -159,6 +139,8 @@ namespace qmcplusplus {
       string banner(o.str());
       HDFAttribIO<string> so(banner);
       so.write(h_obs,"scalar_ids");
+
+      if(CompEstimators) CompEstimators->open(h_obs);
 
       //H5Gclose(h_obs);
       //H5Fclose(h_file);
@@ -255,6 +237,8 @@ namespace qmcplusplus {
       HDFAttribIO<Vector<RealType> > w(TotalWeight);
       p.write(h_obs,"weights");
 
+      if(CompEstimators) CompEstimators->close();
+
       H5Gclose(h_obs); 
       h_obs=-1;
     }
@@ -315,6 +299,8 @@ namespace qmcplusplus {
     i.write(h_obs,"count");
     HDFAttribIO<Matrix<RealType> > m(AverageCache,true);
     m.write(h_obs,"scalars");
+
+    if(CompEstimators) CompEstimators->stopBlock();
   }
 
   void EstimatorManager::stopBlock(const vector<EstimatorManager*> est)
@@ -330,8 +316,10 @@ namespace qmcplusplus {
     for(int i=0; i<ThreadCount; i++)
     {
       int rc=est[i]->RecordCount-1;
-      FastAccumulate(est[i]->PropertyCache[rc],est[i]->PropertyCache[rc+1],PropertyCache[rc]);
-      FastAccumulate(est[i]->AverageCache[rc], est[i]->AverageCache[rc+1],AverageCache[rc]);
+      accumulate_elements(est[i]->PropertyCache[rc],est[i]->PropertyCache[rc+1],PropertyCache[rc]);
+      accumulate_elements(est[i]->AverageCache[rc], est[i]->AverageCache[rc+1],AverageCache[rc]);
+      //FastAccumulate(est[i]->PropertyCache[rc],est[i]->PropertyCache[rc+1],PropertyCache[rc]);
+      //FastAccumulate(est[i]->AverageCache[rc], est[i]->AverageCache[rc+1],AverageCache[rc]);
     }
 
     if(h_obs<-1) return;
@@ -342,6 +330,12 @@ namespace qmcplusplus {
     t.write(h_obs,"threads");
     HDFAttribIO<Matrix<RealType> > m(AverageCache,true);
     m.write(h_obs,"scalars");
+  }
+
+  void EstimatorManager::accumulate(MCWalkerConfiguration& W);
+  {
+    for(int i=0; i< Estimators.size(); i++) Estimators[i]->accumulate(it,it_end);
+    if(CompEstimators) CompEstimators->accumulate(W);
   }
 
   void EstimatorManager::accumulate(MCWalkerConfiguration::iterator it,
@@ -392,7 +386,7 @@ namespace qmcplusplus {
     }
 
   /** This should be moved to branch engine */
-  bool EstimatorManager::put(xmlNodePtr cur) 
+  bool EstimatorManager::put(MCWalkerConfiguration& W, QMCHamiltonian& H, xmlNodePtr cur) 
   {
     vector<string> extra;
     cur = cur->children;
@@ -420,6 +414,16 @@ namespace qmcplusplus {
       add(new LocalEnergyOnlyEstimator(),MainEstimatorName);
     } 
 
+    string SkName("sk");
+    for(int i=0; i< extra.size(); i++)
+    {
+      if(extra[i] == SkName && W.Lattice.SuperCellEnum)
+      {
+        if(CompEstimators == 0) CompEstimators = new CompositeEstimatorSet;
+        if(CompEstimators->missing(SkName))
+          CompEstimators->add(new SkEstimator(W),SkName);
+      }
+    }
     //add extra
     return true;
   }
