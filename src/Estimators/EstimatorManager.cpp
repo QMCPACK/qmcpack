@@ -47,6 +47,7 @@ namespace qmcplusplus {
     MainEstimatorName("elocal"),
   Manager(false), AppendRecord(false), Collected(false), 
   ThreadCount(1),h_file(-1), h_obs(-1), 
+  MainEstimator(0), CompEstimators(0),
   EstimatorMap(em.EstimatorMap)
   {
     CollectSum=em.CollectSum, 
