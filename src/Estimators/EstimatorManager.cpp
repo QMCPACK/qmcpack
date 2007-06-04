@@ -43,6 +43,22 @@ namespace qmcplusplus {
     //Block2Total.resize(0); 
   }
 
+  EstimatorManager::EstimatorManager(EstimatorManager& em):
+    MainEstimatorName("elocal"),
+  Manager(false), AppendRecord(false), Collected(false), 
+  ThreadCount(1),h_file(-1), h_obs(-1), 
+  EstimatorMap(em.EstimatorMap)
+  {
+    CollectSum=em.CollectSum, 
+    //inherit communicator
+    setCommunicator(em.myComm);
+    for(int i=0; i<em.Estimators.size(); i++) 
+    {
+      Estimators.push_back(em.Estimators[i]->clone());
+    }
+    MainEstimator=Estimators[EstimatorMap[MainEstimatorName]];
+  }
+
   EstimatorManager::~EstimatorManager()
   { 
     delete_iter(Estimators.begin(), Estimators.end());
@@ -332,9 +348,9 @@ namespace qmcplusplus {
     m.write(h_obs,"scalars");
   }
 
-  void EstimatorManager::accumulate(MCWalkerConfiguration& W);
+  void EstimatorManager::accumulate(MCWalkerConfiguration& W)
   {
-    for(int i=0; i< Estimators.size(); i++) Estimators[i]->accumulate(it,it_end);
+    for(int i=0; i< Estimators.size(); i++) Estimators[i]->accumulate(W.begin(),W.end());
     if(CompEstimators) CompEstimators->accumulate(W);
   }
 

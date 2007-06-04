@@ -49,7 +49,11 @@ namespace qmcplusplus {
     ///the root file name
     std::string RootName;
 
+    ///default constructor
     EstimatorManager(Communicate* c=0);
+    ///copy constructor
+    EstimatorManager(EstimatorManager& em);
+    ///destructor
     virtual ~EstimatorManager();
 
     /** set the communicator */
@@ -248,9 +252,7 @@ namespace qmcplusplus {
     CompositeEstimatorSet* CompEstimators;
     ///Timer
     Timer MyTimer;
-prviate:
-    ///prevent copying
-    EstimatorManager(const EstimatorManager& em) {}
+private:
   };
 }
 #endif
