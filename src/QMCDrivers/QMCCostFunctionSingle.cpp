@@ -43,7 +43,7 @@ namespace qmcplusplus {
     MCWalkerConfiguration::iterator it_end(W.end()); 
     Return_t eloc_new;
     int iw=0;
-    int totalElements=W.getTotalNum()*DIM;
+    int totalElements=W.getTotalNum()*OHMMS_DIM;
 
     Return_t wgt_tot=0.0;
 
@@ -171,7 +171,7 @@ namespace qmcplusplus {
     MCWalkerConfiguration::iterator it_end(W.end()); 
     int nat = W.getTotalNum();
     int iw=0;
-    int totalElements=W.getTotalNum()*DIM;
+    int totalElements=W.getTotalNum()*OHMMS_DIM;
     Etarget=0.0;
     while(it != it_end) {
 
