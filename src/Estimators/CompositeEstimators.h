@@ -103,19 +103,32 @@ namespace qmcplusplus {
     RealType totWeight;
     ///weight during a step
     RealType curWeight;
-    ///target particles
-    ParticleSet& targetPtcl;
     ///hdf5 handle of the object
     hid_t GroupID;
     ///name of the object
     string Title;
     ///estimators
     vector<EstimatorType*> Estimators;
+    ///name map
+    map<string,int> EstimatorMap;
 
     ///constructor
-    CompositeEstimatorSet(ParticleSet& p);
+    //CompositeEstimatorSet(ParticleSet& p);
+    CompositeEstimatorSet();
     ///destructor
     ~CompositeEstimatorSet();
+
+    /** return true if aname does not exisit
+     */
+    bool missing(const string& aname)
+    {
+      return EstimatorMap.find(aname) == EstimatorMap.end();
+    }
+    /** add estimator
+     * @param est a new estimator
+     * @param aname the name of the new estimator
+     */
+    void add(EstimatorType* est, const string& aname) ;
     ///reset the target particle set
     void resetTargetParticleSet(ParticleSet& p);
 

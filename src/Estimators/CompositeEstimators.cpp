@@ -15,15 +15,11 @@
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 #include "Estimators/CompositeEstimators.h"
-//#include "Estimators/PairCorrEstimator.h"
-#include "Estimators/GofREstimator.h"
-#include "Estimators/SkEstimator.h"
-#include "Particle/DistanceTableData.h"
 #include "Utilities/IteratorUtility.h"
 
 namespace qmcplusplus {
 
-  CompositeEstimatorSet::CompositeEstimatorSet(ParticleSet& p): targetPtcl(p), GroupID(-1)
+  CompositeEstimatorSet::CompositeEstimatorSet():GroupID(-1)
   {
     //Disable gofr for th moment
     //for(int i=0; i<p.DistTables.size(); i++)
@@ -33,8 +29,8 @@ namespace qmcplusplus {
     //  else
     //    Estimators.push_back(new GofREstimator(p.DistTables[i]->origin(),targetPtcl));
     //}
-    if(p.Lattice.SuperCellEnum) 
-      Estimators.push_back(new SkEstimator(p));
+    //if(p.Lattice.SuperCellEnum) 
+    //  Estimators.push_back(new SkEstimator(p));
   }
 
   CompositeEstimatorSet::~CompositeEstimatorSet()
@@ -42,26 +38,26 @@ namespace qmcplusplus {
     delete_iter(Estimators.begin(), Estimators.end());
   }
 
+  ///not checking the map again, assuming that missing function
+  void CompositeEstimatorSet::add(EstimatorType* est,const string& aname)
+  {
+    //map<strin,int>::iterator it(EstimatorMap.find(aname));
+    //if(it == EstimatorMap.end())
+    //{
+      EstimatorMap[aname]=Estimators.size();
+      Estimators.push_back(est);
+    //}
+  }
+
   void CompositeEstimatorSet::open(hid_t hroot)
   {
-    if(hroot<0)
-    {
-      if(GroupID>=0) H5Fclose(GroupID);
-      GroupID = hroot 
-        = H5Fcreate("stuff.h5",H5F_ACC_TRUNC,H5P_DEFAULT,H5P_DEFAULT);
-    }
+    GroupID=hroot;
     for(int i=0; i< Estimators.size(); i++) Estimators[i]->open(hroot);
   }
 
   void CompositeEstimatorSet::close()
   {
-    for(int i=0; i< Estimators.size(); i++) 
-      Estimators[i]->close();
-    if(GroupID>=0)
-    {//responsible to close it
-      H5Fclose(GroupID);
-      GroupID=-1;
-    }
+    for(int i=0; i< Estimators.size(); i++) Estimators[i]->close();
   }
 
   void CompositeEstimatorSet::resetTargetParticleSet(ParticleSet& p)
