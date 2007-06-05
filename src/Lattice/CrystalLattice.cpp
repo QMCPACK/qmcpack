@@ -115,9 +115,9 @@ void CrystalLattice<T,D,ORTHO>::reset() {
       Gv[i][j] = G(j,i);
 
   const T rad_to_deg = 180.0/M_PI;
-  T a0=std::sqrt(dot(Rv[0],Rv[0]));
-  T a1=std::sqrt(dot(Rv[1],Rv[1]));
-  T a2=std::sqrt(dot(Rv[2],Rv[2]));
+  T a0=1.0/std::sqrt(dot(Rv[0],Rv[0]));
+  T a1=1.0/std::sqrt(dot(Rv[1],Rv[1]));
+  T a2=1.0/std::sqrt(dot(Rv[2],Rv[2]));
   ABC[0] = rad_to_deg*std::acos(dot(Rv[0],Rv[1])*a0*a1);
   ABC[1] = rad_to_deg*std::acos(dot(Rv[1],Rv[2])*a1*a2);
   ABC[2] = rad_to_deg*std::acos(dot(Rv[2],Rv[0])*a2*a0);
