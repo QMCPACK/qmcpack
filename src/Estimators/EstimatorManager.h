@@ -169,10 +169,7 @@ namespace qmcplusplus {
     /** start  a block
      * @param steps number of steps in a block
      */
-    inline void startBlock(int steps)
-    { 
-      MyTimer.restart();
-    }
+    void startBlock(int steps);
 
     /** stop a block
      * @param accept acceptance rate of this block

@@ -95,10 +95,10 @@ namespace qmcplusplus {
     typedef CompositeEstimatorBase EstimatorType;
     ///true if the move was particle by particle
     bool PbyP;
-    ///number of steps per block
+    ///total number of steps
     int totSteps;
-    ///current step
-    int curStep;
+    ///current step in a block
+    int curSteps;
     ///total weight during a block
     RealType totWeight;
     ///weight during a step

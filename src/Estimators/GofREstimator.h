@@ -53,6 +53,10 @@ namespace qmcplusplus {
     Matrix<RealType> gofrInst;
     /** name of the pair */
     vector<string> PairName;
+    /** hdf5 handlers */
+    vector<hid_t>  gofr_hid;
+    /** hdf5 IO engines */
+    vector<HDFAttribIO<VectorEstimatorType>*> gofr_h;
     //vector<ostream*> fout;
     public:
 

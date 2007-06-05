@@ -18,7 +18,7 @@
 #include "Particle/DistanceTable.h"
 #include "Particle/DistanceTableData.h"
 #include "Utilities/IteratorUtility.h"
-#define PRINT_DEBUG
+//#define PRINT_DEBUG
 
 namespace qmcplusplus {
 
@@ -93,24 +93,34 @@ namespace qmcplusplus {
 
   void GofREstimator::open(hid_t hroot)
   {
-  //  if(GroupID<0)
-  //  {
-  //    Title="pc_"+myTable->Name;
-  //    GroupID = H5Gcreate(hroot,Title.c_str(),0);
-  //    v_h = new AppendData(gofr);
-  //    v2_h = new AppendData(gofr2);
-  //  }
+    if(GroupID<0)
+    {
+      gofr_hid.resize(NumPairTypes);
+      gofr_h.resize(NumPairTypes,0);
+      for(int p=0; p<NumPairTypes; p++) 
+      {
+        hid_t gid = H5Gcreate(hroot,PairName[p].c_str(),0);
+        gofr_h[p] = new HDFAttribIO<VectorEstimatorType>(*gofr[p]);
+        gofr_h[p]->reserve(gid);
+        gofr_hid[p]=gid;
+      }
+      GroupID=1;
+    }
   }
 
   void GofREstimator::close()
   {
-//    if(GroupID>-1)
-//    {
-//      delete v_h;
-//      delete v2_h;
-//      H5Gclose(GroupID);
-//      GroupID=-1;
-//    }
+    if(GroupID>-1)
+    {
+      for(int p=0; p<NumPairTypes; p++) 
+      {
+        H5Gclose(gofr_hid[p]);
+        delete gofr_h[p];
+      }
+      gofr_hid.clear();
+      gofr_h.clear();
+      GroupID=-1;
+    }
   }
 
   /** ready to accumulate the measurements over the walkers
@@ -140,7 +150,7 @@ namespace qmcplusplus {
     for(int p=0; p<NumPairTypes; p++) 
     {
       //gofr[p]->accumulate(gofrInst[p],wgtinv);
-      gofr[p]->accumulate(gofrInst[p],normFactor.begin());
+      gofr[p]->accumulate(gofrInst[p],gofrInst[p]+NumBins,normFactor.begin());
     }
   }
 
@@ -168,6 +178,12 @@ namespace qmcplusplus {
       }
     }
 #endif
+    for(int p=0; p<NumPairTypes; p++) 
+    {
+      gofr[p]->takeBlockAverage(wgtnorm);
+      gofr_h[p]->write(gofr_hid[p],0);
+      gofr[p]->reset();
+    }
 //    v_h->write(GroupID,"v");
 //    v2_h->write(GroupID,"v2");
   }

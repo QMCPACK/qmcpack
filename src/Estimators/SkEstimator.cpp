@@ -19,7 +19,7 @@
 #include "Particle/DistanceTableData.h"
 #include "Utilities/IteratorUtility.h"
 #include "LongRange/StructFact.h"
-#define PRINT_DEBUG
+//#define PRINT_DEBUG
 
 namespace qmcplusplus {
 
@@ -66,6 +66,7 @@ namespace qmcplusplus {
     {
       GroupID = H5Gcreate(hroot,Title.c_str(),0);
       Sk_h = new HDFAttribIO<VectorEstimatorType>(Sk);
+      Sk_h->reserve(GroupID);
     }
   }
 
@@ -117,8 +118,8 @@ namespace qmcplusplus {
   /** save the block average */
   void SkEstimator::stopBlock(RealType wgtnorm, RealType errnorm)
   {
-#if defined(PRINT_DEBUG)
     Sk.takeBlockAverage(wgtnorm);
+#if defined(PRINT_DEBUG)
     ofstream fout("Sk.dat",ios::app);
     for(int ks=0, k=0; ks<MaxKshell; ks++)
     {
@@ -128,7 +129,7 @@ namespace qmcplusplus {
     }
     fout << endl;
 #endif
-    if(Sk_h) Sk_h->write(GroupID,"v");
+    if(Sk_h) Sk_h->write(GroupID,0);
     Sk.reset();
   }
 }

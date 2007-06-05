@@ -296,6 +296,12 @@ namespace qmcplusplus {
     Collected=true;
   }
 
+  void EstimatorManager::startBlock(int steps)
+  { 
+    MyTimer.restart();
+    //if(CompEstimators) CompEstimators->startBlock(steps);
+  }
+
   void EstimatorManager::stopBlock(RealType accept)
   {
     TotalWeight[RecordCount]=Estimators[0]->d_wgt;
@@ -419,7 +425,7 @@ namespace qmcplusplus {
           if(aname == "LocalEnergy") 
             add(new LocalEnergyEstimator(H),MainEstimatorName);
           else 
-            extra.push_back(cname);
+            extra.push_back(aname);
         }
       } 
       cur = cur->next;
@@ -432,13 +438,25 @@ namespace qmcplusplus {
     } 
 
     string SkName("sk");
+    string GofRName("gofr");
     for(int i=0; i< extra.size(); i++)
     {
       if(extra[i] == SkName && W.Lattice.SuperCellEnum)
       {
         if(CompEstimators == 0) CompEstimators = new CompositeEstimatorSet;
         if(CompEstimators->missing(SkName))
+        {
+          app_log() << "  EstimatorManager::add " << SkName << endl;
           CompEstimators->add(new SkEstimator(W),SkName);
+        }
+      } else if(extra[i] == GofRName)
+      {
+        if(CompEstimators == 0) CompEstimators = new CompositeEstimatorSet;
+        if(CompEstimators->missing(GofRName))
+        {
+          app_log() << "  EstimatorManager::add " << GofRName << endl;
+          CompEstimators->add(new GofREstimator(W),GofRName);
+        }
       }
     }
     //add extra

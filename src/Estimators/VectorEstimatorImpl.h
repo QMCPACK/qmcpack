@@ -88,11 +88,10 @@ namespace qmcplusplus {
      * @param first2 weight data
      */
     template<typename IT1, typename IT2>
-    inline void accumulate(IT1 first1, IT2 first2)
+    inline void accumulate(IT1 first1, IT1 last1, IT2 first2)
     {
       typename vector<T>::iterator it(d_data.begin());
-      typename vector<T>::iterator it_end(d_data.end());
-      while(it != it_end)
+      while(first1 != last1)
       {
         T v=(*first1)*(*first2++);//w[i]*v[i]
         (*it++)+=v;
@@ -154,15 +153,15 @@ namespace qmcplusplus {
   struct HDFAttribIO<VectorEstimatorImpl<double> >
   {
     typedef VectorEstimatorImpl<double> DataType_t;
-    hid_t datasetID;
-    hid_t dataspaceID;
+    hid_t vsetID, vspaceID;
+    hid_t v2setID, v2spaceID;
     hsize_t maxdims[2];
     hsize_t curdims[2];
     hsize_t dims[2];
     hsize_t offset[2];
     DataType_t&  ref;
 
-    HDFAttribIO(DataType_t& a): datasetID(-1),ref(a)
+    HDFAttribIO(DataType_t& a): vsetID(-1),ref(a)
     { 
       maxdims[0] = H5S_UNLIMITED; maxdims[1] = a.size();
       curdims[0] = 1; curdims[1] = a.size();
@@ -172,35 +171,52 @@ namespace qmcplusplus {
 
     ~HDFAttribIO()
     {
-      if(datasetID>-1)  {
-        H5Sclose(dataspaceID);
-        H5Dclose(datasetID);
+      if(vsetID>-1)  {
+        H5Sclose(v2spaceID);
+        H5Dclose(v2setID);
+        H5Sclose(vspaceID);
+        H5Dclose(vsetID);
       }
     }
 
+    inline void reserve(hid_t grp) 
+    {
+      const hsize_t RANK=2;
+      vspaceID=H5Screate_simple(RANK, dims, maxdims);
+      hid_t p = H5Pcreate (H5P_DATASET_CREATE);
+      H5Pset_chunk(p,RANK,dims);
+      vsetID= H5Dcreate(grp,"value",H5T_NATIVE_DOUBLE,vspaceID,p);
+      hid_t memspace = H5Screate_simple(RANK, dims, NULL);
+      hid_t ret = H5Dwrite(vsetID, H5T_NATIVE_DOUBLE, memspace, vspaceID, H5P_DEFAULT, ref.d_sum.data());
+      H5Sclose(memspace);
+      H5Pclose(p);
+
+      v2spaceID=H5Screate_simple(RANK, dims, maxdims);
+      p = H5Pcreate (H5P_DATASET_CREATE);
+      H5Pset_chunk(p,RANK,dims);
+      v2setID= H5Dcreate(grp,"value2",H5T_NATIVE_DOUBLE,v2spaceID,p);
+      memspace = H5Screate_simple(RANK, dims, NULL);
+      ret = H5Dwrite(v2setID, H5T_NATIVE_DOUBLE, memspace, v2spaceID, H5P_DEFAULT, ref.d_sum2.data());
+      H5Sclose(memspace);
+      H5Pclose(p);
+    }
     inline void write(hid_t grp, const char* name) {
 
       const hsize_t RANK=2;
-      if(datasetID<0)
-      {
-        dataspaceID=H5Screate_simple(RANK, dims, maxdims);
-        hid_t p = H5Pcreate (H5P_DATASET_CREATE);
-        H5Pset_chunk(p,RANK,dims);
-        datasetID= H5Dcreate(grp,name,H5T_NATIVE_DOUBLE,dataspaceID,p);
-        hid_t memspace = H5Screate_simple(RANK, dims, NULL);
-        hid_t ret = H5Dwrite(datasetID, H5T_NATIVE_DOUBLE, memspace, dataspaceID, H5P_DEFAULT, ref.d_sum.data());
-        H5Sclose(memspace);
-        H5Pclose(p);
-      }
-      else
-      {
-        H5Dextend(datasetID,curdims);
-        H5Sset_extent_simple(dataspaceID,RANK,curdims,maxdims);
-        H5Sselect_hyperslab(dataspaceID, H5S_SELECT_SET, offset, NULL, dims, NULL);
-        hid_t memspace = H5Screate_simple(RANK, dims, NULL);
-        hid_t ret = H5Dwrite(datasetID, H5T_NATIVE_DOUBLE, memspace, dataspaceID, H5P_DEFAULT, ref.d_sum.data());
-        H5Sclose(memspace);
-      }
+
+      H5Dextend(vsetID,curdims);
+      H5Sset_extent_simple(vspaceID,RANK,curdims,maxdims);
+      H5Sselect_hyperslab(vspaceID, H5S_SELECT_SET, offset, NULL, dims, NULL);
+      hid_t memspace = H5Screate_simple(RANK, dims, NULL);
+      hid_t ret = H5Dwrite(vsetID, H5T_NATIVE_DOUBLE, memspace, vspaceID, H5P_DEFAULT, ref.d_sum.data());
+      H5Sclose(memspace);
+
+      H5Dextend(v2setID,curdims);
+      H5Sset_extent_simple(v2spaceID,RANK,curdims,maxdims);
+      H5Sselect_hyperslab(v2spaceID, H5S_SELECT_SET, offset, NULL, dims, NULL);
+      memspace = H5Screate_simple(RANK, dims, NULL);
+      ret = H5Dwrite(v2setID, H5T_NATIVE_DOUBLE, memspace, v2spaceID, H5P_DEFAULT, ref.d_sum2.data());
+      H5Sclose(memspace);
 
       curdims[0]++;
       offset[0]++;
