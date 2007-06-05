@@ -7,7 +7,6 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
@@ -18,8 +17,8 @@
 #define QMCPLUSPLUS_TRICUBIC_BSPLINESETBUILDER_H
 
 #include "QMCWaveFunctions/BasisSetBase.h"
-#include "Numerics/HDFNumericAttrib.h"
 #include "Numerics/TricubicBsplineGrid.h"
+#include "Numerics/HDFNumericAttrib.h"
 
 namespace qmcplusplus {
 
@@ -34,7 +33,7 @@ namespace qmcplusplus {
 
     typedef TricubicBsplineTraits<ValueType>              BsplineBasisType;
     typedef TricubicBsplineTraits<ValueType>::StorageType StorageType;
-    typedef map<string,ParticleSet*>                   PtclPoolType;
+    typedef map<string,ParticleSet*>                      PtclPoolType;
 
     /** constructor
      * @param p target ParticleSet
@@ -80,8 +79,6 @@ namespace qmcplusplus {
     map<string,BsplineBasisType*> myBasis;
     ///single-particle orbital sets
     map<string,SPOSetBase*> mySPOSet;
-    ///a function to test with EG
-    SPOSetBase* createSPOSetWithEG();
     ///parameter set for h5 tags
     PWParameterSet* myParam;
 
@@ -98,6 +95,9 @@ namespace qmcplusplus {
      */
     template<typename OGT>
     SPOSetBase* createBsplineBasisSet(xmlNodePtr cur, OGT* abasis);
+
+    ///a function to test with EG
+    //SPOSetBase* createSPOSetWithEG();
   };
 }
 #endif

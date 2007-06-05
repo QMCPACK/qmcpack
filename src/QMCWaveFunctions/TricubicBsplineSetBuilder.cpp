@@ -7,21 +7,18 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
-#include "OhmmsData/AttributeSet.h"
 #include "QMCWaveFunctions/PlaneWave/PWParameterSet.h"
-#include "QMCWaveFunctions/TricubicBsplineSetBuilder.h"
-#include "Numerics/TricubicBsplineSet.h"
-#include "Numerics/TricubicBsplineGCSet.h"
-#include "Numerics/TricubicBsplineLOSet.h"
+#include "QMCWaveFunctions/TricubicBsplineSPOSet.h"
 #include "QMCWaveFunctions/GroupedOrbitalSet.h"
+#include "QMCWaveFunctions/TricubicBsplineSetBuilder.h"
 #include "QMCWaveFunctions/ElectronGas/ElectronGasOrbitalBuilder.h"
 #include "QMCWaveFunctions/ElectronGas/HEGGrid.h"
+#include "OhmmsData/AttributeSet.h"
 #include "Numerics/OhmmsBlas.h"
 #include "Message/Communicate.h"
 //#define DEBUG_BSPLINE_EG
@@ -146,12 +143,12 @@ namespace qmcplusplus {
         abasis->setGrid(LowerBox[0],UpperBox[0],LowerBox[1],UpperBox[1],LowerBox[2],UpperBox[2],
             BoxGrid[0]-1,BoxGrid[1]-1,BoxGrid[2]-1);
       myBasis["0"]=abasis;
+      abasis->setLattice(targetPtcl.Lattice);
     } 
     else
     {
       abasis=dynamic_cast<OGT*>((*git).second);
     }
-
 
     abasis->setTwistAngle(targetPtcl.Lattice.k_cart(TwistAngle));
     typedef GroupedOrbitalSet<OGT>        SPOSetType;             
@@ -284,25 +281,58 @@ namespace qmcplusplus {
     hdfobj_twist.read(hfileID,tname.c_str());
     app_log() << "  Twist-angle " << TwistAngle << endl;
 
-    RealType t2=dot(TwistAngle,TwistAngle);
+    bool atGamma= (dot(TwistAngle,TwistAngle)<numeric_limits<RealType>::epsilon());
+    bool localize = myParam->Rcut>0.0;
 
-    //here, we can also check if the cell is orthorohmbic or not 
-    if(t2<numeric_limits<RealType>::epsilon()) //gamma point
-    {
-      if(myParam->Rcut<0)
+    //check if the cell is orthorohmbic or not 
+    RealType offdiag=0.0;
+    for(int idim=0; idim<OHMMS_DIM; idim++)
+      for(int jdim=0; jdim<OHMMS_DIM; jdim++)
       {
-        app_log() << "  Gamma point. Using TricubicBsplineSet<ValueType> " << endl;
-        TricubicBsplineSet<ValueType>* abasis=0;
-        return createBsplineBasisSet(cur,abasis);
+        if(idim != jdim) offdiag+=abs(targetPtcl.Lattice.R(idim,jdim));
+      }
+    bool orthorhombic=(offdiag< numeric_limits<RealType>::epsilon());
+
+    //constants for template instantiations
+    const bool ORTHO=true;
+    const bool NONORTHO=false;
+    const bool TRUNC=true;
+    const bool NOTRUNC=false;
+
+    if(atGamma) //gamma point
+    {
+      if(localize)
+      {
+        if(orthorhombic)
+        {
+          app_log() << "    Orthorhombic cell\n    Gamma point\n    Using BsplineSPOSet<ValueType,ORTHO=true,TRUC=true> " << endl;
+          TricubicBsplineSPOSet<ValueType,ORTHO,TRUNC>* abasis=0;
+          return createBsplineBasisSet(cur,abasis);
+        }
+        else
+        {
+          app_log() << "    Non-Orthorhombic cell\n    Gamma point\n    Using BsplineSPOSet<ValueType,ORTHO=false,TRUC=true> " << endl;
+          TricubicBsplineSPOSet<ValueType,NONORTHO,TRUNC>* abasis=0;
+          return createBsplineBasisSet(cur,abasis);
+        }
       } 
       else
       {
-        app_log() << "  Gamma point. Using TricubicBsplineLOSet<ValueType> " << endl;
-        TricubicBsplineLOSet<ValueType>* abasis=0;
-        return createBsplineBasisSet(cur,abasis);
+        if(orthorhombic)
+        {
+          app_log() << "    Orthorhombic cell\n    Gamma point\n    Using BsplineSPOSet<ValueType,ORTHO=true,TRUC=false> " << endl;
+          TricubicBsplineSPOSet<ValueType,ORTHO,NOTRUNC>* abasis=0;
+          return createBsplineBasisSet(cur,abasis);
+        }
+        else
+        {
+          app_log() << "    Non-Orthorhombic cell\n    Gamma point\n    Using BsplineSPOSet<ValueType,ORTHO=false,TRUC=false> " << endl;
+          TricubicBsplineSPOSet<ValueType,NONORTHO,NOTRUNC>* abasis=0;
+          return createBsplineBasisSet(cur,abasis);
+        }
       }
     }
-    else
+    else //any k-point
     {
 #if defined(QMC_COMPLEX)
       app_log() << "  Non-gamma point. Using TricubicBsplineTwistSet<ValueType> " << endl;
@@ -316,14 +346,14 @@ namespace qmcplusplus {
     }
   }
 
-  /** Create B-spline for the electron-gas wavefunctions
-   *
-   * This function is to test bspline against analytic electron-gas
-   * single-particle orbitals.
-   */
-  SPOSetBase* TricubicBsplineSetBuilder::createSPOSetWithEG()
-  {
-    return 0; //disable
+//  /** Create B-spline for the electron-gas wavefunctions
+//   *
+//   * This function is to test bspline against analytic electron-gas
+//   * single-particle orbitals.
+//   */
+//  SPOSetBase* TricubicBsplineSetBuilder::createSPOSetWithEG()
+//  {
+//    return 0; //disable
 //#if defined(QMC_COMPLEX)
 //    app_error() << " TricubicBsplineSetBuilder::createSPOSetWithEG cannot be used for QMC_COMPLEX=1" << endl;
 //    OHMMS::Controller->abort();
@@ -392,7 +422,7 @@ namespace qmcplusplus {
 //    psi->add(abasis);
 //    return psi;
 //#endif
-  }
+//  }
 }
 /***************************************************************************
  * $RCSfile$   $Author$
