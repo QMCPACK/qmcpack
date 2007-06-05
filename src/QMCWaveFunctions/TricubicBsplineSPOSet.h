@@ -20,8 +20,8 @@
  * Use specialization
  * TricubicBsplineSPOSet<T,true,false> : orthorhombic unit cell
  * TricubicBsplineSPOSet<T,false,false> : non-orthorhombic unit cell
- * TricubicBsplineSPOSet<T,true,trunc> : orthorhombic unit cell with localized orbitals
- * TricubicBsplineSPOSet<T,false,trunc> : non-orthorhombic unit cell with localized orbitals
+ * TricubicBsplineSPOSet<T,true,true> : orthorhombic unit cell with localized orbitals
+ * TricubicBsplineSPOSet<T,false,true> : non-orthorhombic unit cell with localized orbitals
  */
 #ifndef TRICUBIC_BSPLINE_SINGLEORBITALSET_WITHSPECIALIZATION_H
 #define TRICUBIC_BSPLINE_SINGLEORBITALSET_WITHSPECIALIZATION_H
