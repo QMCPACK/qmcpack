@@ -21,6 +21,7 @@
 #include "OhmmsPETE/TinyVector.h"
 #include "OhmmsPETE/Tensor.h"
 #include "OhmmsPETE/OhmmsArray.h"
+#include "Lattice/CrystalLattice.h"
 #include "QMCWaveFunctions/OrbitalTraits.h"
 //#include <blitz/array.h>
 //#include <blitz/tinymat.h>
@@ -95,11 +96,21 @@ namespace qmcplusplus {
       typedef Array<T,3>             StorageType;
       int ObjectID;
       real_type Rcut2;
+      Tensor<real_type,3> GGt;
+      CrystalLattice<real_type,3> Lattice;
+
       inline void setRcut(real_type rc)
       {
         Rcut2=rc*rc;
       }
       virtual ~TricubicBsplineTraits() {}
+
+      void setLattice(const CrystalLattice<real_type,3>& lat)
+      {
+        Lattice.set(lat);
+        Lattice.print(cout);
+        GGt=dot(Lattice.G,transpose(Lattice.G));
+      }
     };
 }
 #endif

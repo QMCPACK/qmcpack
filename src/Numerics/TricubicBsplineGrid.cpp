@@ -286,7 +286,7 @@ inline T TricubicBsplineGrid<T>::evaluate(const Array<T,3>& P,
   TinyVector<T,4> p33(P(ix3,iy3,iz0),P(ix3,iy3,iz1),P(ix3,iy3,iz2),P(ix3,iy3,iz3));
 
   // Save some operations by factorizing computation.
-  TinyMatrix<T,4,4> cP, dcP;
+  Tensor<T,4> cP, dcP;
   cP(0,0) = dot(c, p00);
   cP(0,1) = dot(c, p01);
   cP(0,2) = dot(c, p02);
