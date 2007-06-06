@@ -545,7 +545,7 @@ namespace qmcplusplus {
         *OutEnergy << AveEloc[ipsi] << " ";
         *OutEnergy << AveWeight[ipsi]/nSteps << " ";
       }
-      *OutEnergy << endl;
+      *OutEnergy << acceptedR << endl;
       OutEnergy->flush();
 
       nAcceptTot += nAccept;
