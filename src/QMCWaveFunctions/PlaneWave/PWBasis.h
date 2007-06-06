@@ -30,7 +30,7 @@
  *
  * performance improvement is questionable: load vs sin/cos 
  */
-#define PWBASIS_USE_RECURSIVE
+//#define PWBASIS_USE_RECURSIVE
 
 namespace qmcplusplus {
 
