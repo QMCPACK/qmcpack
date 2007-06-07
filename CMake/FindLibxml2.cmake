@@ -25,6 +25,7 @@ ELSE(Libxml2_INCLUDE_DIRS)
   ) 
   SET(TRIAL_INCLUDE_PATHS
     $ENV{LIBXML2_HOME}/include/libxml2
+    $ENV{LIBXML2_HOME}/include
     /usr/include/libxml2
     /usr/local/include/libxml2
     /sw/include/libxml2
