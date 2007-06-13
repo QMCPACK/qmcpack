@@ -37,6 +37,11 @@ namespace qmcplusplus {
         typedef typename std::map<int,const StorageType*>::iterator  IteratorType;
         typedef TinyVector<value_type,3> GradType;
 
+        //going to use GGt=dot(Lattice.G,transpose(Lattice.G))
+        using TricubicBsplineTraits<T>::GGt;
+        //going to use Lattice
+        using TricubicBsplineTraits<T>::Lattice;
+
         /** default constructure
          */
         TricubicBsplineTwistSet()
@@ -81,7 +86,7 @@ namespace qmcplusplus {
          * @param data input data
          * @param curP interpolated data
          */
-        void add(int i, const StorageType& data, StorageType* curP)
+        void add(int i, const PosType& c, const StorageType& data, StorageType* curP)
         {
           IteratorType pit(P.find(i));
           if(pit == P.end())
@@ -91,7 +96,7 @@ namespace qmcplusplus {
           }
         }
 
-        void add(int i, StorageType* curP)
+        void add(int i, const PosType& c, StorageType* curP)
         {
           IteratorType pit(P.find(i));
           if(pit == P.end())
@@ -103,8 +108,9 @@ namespace qmcplusplus {
         template<typename PV>
         inline void evaluate(const PosType& r, PV& vals) 
         {
+          PosType ru(Lattice.toUnit(r));
+          bKnots.Find(ru[0],ru[1],ru[2]);
           real_type phi(dot(TwistAngle,r));
-          bKnots.Find(r[0],r[1],r[2]);
           value_type phase(std::cos(phi),std::sin(phi));
           IteratorType pit(P.begin()), pit_end(P.end());
           while(pit != pit_end)
@@ -118,21 +124,24 @@ namespace qmcplusplus {
         inline void
           evaluate(const PosType& r, PV& vals, GV& grads, PV& laps)
           {
+            PosType ru(Lattice.toUnit(r));
+            bKnots.FindAll(ru[0],ru[1],ru[2]);
+
             real_type phi(dot(TwistAngle,r));
-            bKnots.FindAll(r[0],r[1],r[2]);
             real_type c=std::cos(phi),s=std::sin(phi);
             value_type phase(c,s);
             GradType dk(value_type(-TwistAngle[0]*s,TwistAngle[0]*c),
                         value_type(-TwistAngle[1]*s,TwistAngle[1]*c),
                         value_type(-TwistAngle[2]*s,TwistAngle[2]*c));
-
+            TinyVector<value_type,3> gu;
+            Tensor<value_type,3> hess;
             IteratorType pit(P.begin()), pit_end(P.end());
             while(pit != pit_end)
             {
               int j((*pit).first);
-              GradType g;
-              value_type l;
-              value_type v=bKnots.evaluate(*((*pit).second),g,l);
+              value_type v=bKnots.evaluate(*((*pit).second),gu,hess);
+              GradType g=dot(Lattice.G,gu);
+              value_type l=trace(hess,GGt);
               vals[j]=phase*v;
               grads[j]=v*dk+phase*g;
               laps[j]=phase*(mK2*v+l)+2.0*dot(dk,g);
@@ -144,23 +153,27 @@ namespace qmcplusplus {
         inline void
           evaluate(const PosType& r, int i, PM& vals, GM& grads, PM& laps)
           {
-            bKnots.FindAll(r[0],r[1],r[2]);
+            PosType ru(Lattice.toUnit(r));
+            bKnots.FindAll(ru[0],ru[1],ru[2]);
+
             real_type phi(dot(TwistAngle,r));
             real_type c=std::cos(phi),s=std::sin(phi);
             value_type phase(c,s);
             GradType dk(value_type(-TwistAngle[0]*s,TwistAngle[0]*c),
                         value_type(-TwistAngle[1]*s,TwistAngle[1]*c),
                         value_type(-TwistAngle[2]*s,TwistAngle[2]*c));
+            TinyVector<value_type,3> gu;
+            Tensor<value_type,3> hess;
             IteratorType pit(P.begin()), pit_end(P.end());
             while(pit != pit_end)
             {
               int j((*pit).first);
-              GradType g;
-              value_type l;
-              value_type v=bKnots.evaluate(*((*pit).second),g,l);
+              value_type v=bKnots.evaluate(*((*pit).second),gu,hess);
+              GradType g=dot(Lattice.G,gu);
+              value_type l=trace(hess,GGt);
               vals(j,i)=phase*v;
               grads(i,j)=v*dk+phase*g;
-              laps(i,j)=phase*(mK2*v+l)+2.0*(dk[0]*g[0]+dk[1]*g[1]+dk[2]*g[2]);//dot(dk,g);
+              laps(i,j)=phase*(mK2*v+l)+2.0*dot(dk,g);
               ++pit;
             }
           }
