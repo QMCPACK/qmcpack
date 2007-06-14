@@ -41,6 +41,9 @@ namespace qmcplusplus {
     typedef TrialWaveFunction::GradType  GradType;    
     typedef map<string,ParticleSet*> PtclPoolType;
 
+    ///level of printing
+    static int print_level;
+
     /** \ingroup XMLTags 
      *@{
      *@brief reserved tags for the elements associated with the many-body wavefunctions

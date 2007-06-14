@@ -84,8 +84,15 @@ namespace qmcplusplus {
       cur = cur->next;
     }
 
-    app_log() << "  List of optimizable variables " << endl;
-    targetPsi->VarList.print(app_log());
+    if(OrbitalBuilderBase::print_level>0)
+    {
+      app_log() << "  List of optimizable variables " << endl;
+      targetPsi->VarList.print(app_log());
+
+      //set to zero so that nothing is written again
+      OrbitalBuilderBase::print_level=0;
+    }
+
     return success;
   }
 

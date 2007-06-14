@@ -23,27 +23,30 @@
   *tags defined here.
   */
 namespace qmcplusplus {
-string OrbitalBuilderBase::wfs_tag="wavefunction";  
 
-string OrbitalBuilderBase::param_tag="parameter";  
+  int OrbitalBuilderBase::print_level=1;
 
-string OrbitalBuilderBase::dtable_tag="distancetable";  
+  string OrbitalBuilderBase::wfs_tag="wavefunction";  
 
-string OrbitalBuilderBase::jastrow_tag="jastrow";
+  string OrbitalBuilderBase::param_tag="parameter";  
 
-string OrbitalBuilderBase::detset_tag="determinantset";
+  string OrbitalBuilderBase::dtable_tag="distancetable";  
 
-string OrbitalBuilderBase::sd_tag="slaterdeterminant";
+  string OrbitalBuilderBase::jastrow_tag="jastrow";
 
-string OrbitalBuilderBase::det_tag="determinant";
+  string OrbitalBuilderBase::detset_tag="determinantset";
 
-string OrbitalBuilderBase::spo_tag="psi";
+  string OrbitalBuilderBase::sd_tag="slaterdeterminant";
 
-string OrbitalBuilderBase::basisset_tag="basisset";
+  string OrbitalBuilderBase::det_tag="determinant";
 
-string OrbitalBuilderBase::basis_tag="basis";
+  string OrbitalBuilderBase::spo_tag="psi";
 
-string OrbitalBuilderBase::basisfunc_tag="phi";
+  string OrbitalBuilderBase::basisset_tag="basisset";
+
+  string OrbitalBuilderBase::basis_tag="basis";
+
+  string OrbitalBuilderBase::basisfunc_tag="phi";
 }
 /***************************************************************************
  * $RCSfile$   $Author$
