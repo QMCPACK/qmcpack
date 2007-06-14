@@ -8,15 +8,14 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef TRICUBIC_B_SPLINE_SET_GENERAL_SUPERCELL_H
-#define TRICUBIC_B_SPLINE_SET_GENERAL_SUPERCELL_H
+#ifndef QMCPLUSPLUS_TRICUBIC_B_SPLINE_TWISTSET_H
+#define QMCPLUSPLUS_TRICUBIC_B_SPLINE_TWISTSET_H
 
 #include "Numerics/TricubicBsplineGrid.h"
 #include <map>
