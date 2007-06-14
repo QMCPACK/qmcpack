@@ -16,8 +16,10 @@
 #include "QMCWaveFunctions/TricubicBsplineSPOSet.h"
 #include "QMCWaveFunctions/GroupedOrbitalSet.h"
 #include "QMCWaveFunctions/TricubicBsplineSetBuilder.h"
-#include "QMCWaveFunctions/ElectronGas/ElectronGasOrbitalBuilder.h"
-#include "QMCWaveFunctions/ElectronGas/HEGGrid.h"
+#include "QMCWaveFunctions/TricubicBsplineTwistSet.h"
+#include "QMCWaveFunctions/OrbitalBuilderBase.h"
+//#include "QMCWaveFunctions/ElectronGas/ElectronGasOrbitalBuilder.h"
+//#include "QMCWaveFunctions/ElectronGas/HEGGrid.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Numerics/OhmmsBlas.h"
 #include "Message/Communicate.h"
@@ -33,6 +35,7 @@ namespace qmcplusplus {
       for(int idim=0; idim<DIM; idim++)
         UpperBox[idim]=targetPtcl.Lattice.R(idim,idim);
       myParam=new PWParameterSet;
+      print_log = OrbitalBuilderBase::print_level>0;
   }   
 
   TricubicBsplineSetBuilder::~TricubicBsplineSetBuilder()
@@ -76,10 +79,13 @@ namespace qmcplusplus {
       }
       cur=cur->next;
     }
-    app_log() << "  TricubicBsplineSetBuilder set a global box " << endl;
-    app_log() << "    Lower box " << LowerBox << endl;
-    app_log() << "    Upper box " << UpperBox << endl;
-    app_log() << "    Box grid "  << BoxGrid << endl;
+    if(print_log)
+    {
+      app_log() << "  TricubicBsplineSetBuilder set a global box " << endl;
+      app_log() << "    Lower box " << LowerBox << endl;
+      app_log() << "    Upper box " << UpperBox << endl;
+      app_log() << "    Box grid "  << BoxGrid << endl;
+    }
     return true;
   }
 
@@ -184,8 +190,11 @@ namespace qmcplusplus {
         wnshort<<curH5Fname << "#"<<occSet[iorb]/degeneracy << "#" << spinIndex;
         map<string,StorageType*>::iterator it(BigDataSet.find(wnshort.str()));
         if(it == BigDataSet.end()) {
-          app_log() << "   Reading spline function " << eigvName << " (" << wnshort.str()  << ")"  << endl;
-          if(truncate) app_log() << "     center=" << center << endl;
+          if(print_log)
+          {
+            app_log() << "   Reading spline function " << eigvName << " (" << wnshort.str()  << ")"  << endl;
+            if(truncate) app_log() << "     center=" << center << endl;
+          }
           StorageType* newP =new StorageType;
           HDFAttribIO<Array<ComplexType,3> > dummy(inTemp);
           dummy.read(hfileID,eigvName.c_str());
@@ -193,8 +202,11 @@ namespace qmcplusplus {
           BigDataSet[wnshort.str()]=newP;
           abasis->add(iorb,center,inData,newP);
         } else {
-          app_log() << "   Reusing spline function " << eigvName << " (" << wnshort.str()  << ")" << endl;
-          if(truncate) app_log() << "     center=" << center << endl;
+          if(print_log)
+          {
+            app_log() << "   Reusing spline function " << eigvName << " (" << wnshort.str()  << ")" << endl;
+            if(truncate) app_log() << "     center=" << center << endl;
+          }
           abasis->add(iorb,center,(*it).second);
         }
       } 
@@ -213,22 +225,31 @@ namespace qmcplusplus {
         wnshort<<curH5Fname << "#"<<occSet[iorb]/degeneracy << "#" << spinIndex;
         map<string,StorageType*>::iterator it(BigDataSet.find(wnshort.str()));
         if(it == BigDataSet.end()) {
-          app_log() << "   Reading spline function " << eigvName << " (" << wnshort.str()  << ")"  << endl;
-          if(truncate) app_log() << "     center=" << center << endl;
+          if(print_log)
+          {
+            app_log() << "   Reading spline function " << eigvName << " (" << wnshort.str()  << ")"  << endl;
+            if(truncate) app_log() << "     center=" << center << endl;
+          }
           StorageType* newP=new StorageType;
           HDFAttribIO<StorageType> dummy(inData);
           dummy.read(hfileID,eigvName.c_str());
           BigDataSet[wnshort.str()]=newP;
           abasis->add(iorb,center,inData,newP);
         } else {
-          app_log() << "   Reusing spline function " << eigvName << " (" << wnshort.str()  << ")" << endl;
-          if(truncate) app_log() << "     center=" << center << endl;
+          if(print_log)
+          {
+            app_log() << "   Reusing spline function " << eigvName << " (" << wnshort.str()  << ")" << endl;
+            if(truncate) app_log() << "     center=" << center << endl;
+          }
           abasis->add(iorb,center,(*it).second);
         }
       } 
     }
     if(truncate) {
-      app_log() << "   Truncating orbitals at Rcut= " << myParam->Rcut << endl;
+      if(print_log)
+      {
+        app_log() << "   Truncating orbitals at Rcut= " << myParam->Rcut << endl;
+      }
       abasis->setRcut(myParam->Rcut);
     }
 
@@ -267,7 +288,7 @@ namespace qmcplusplus {
       abort(); //FIXABORT
     }
 
-    app_log() << "    HDF5 File = " << curH5Fname << endl;
+    if(print_log) app_log() << "    HDF5 File = " << curH5Fname << endl;
 
     hfileID = H5Fopen(curH5Fname.c_str(),H5F_ACC_RDWR,H5P_DEFAULT);
     //check the version
@@ -279,7 +300,7 @@ namespace qmcplusplus {
     string tname=myParam->getTwistAngleName();
     HDFAttribIO<PosType> hdfobj_twist(TwistAngle);
     hdfobj_twist.read(hfileID,tname.c_str());
-    app_log() << "  Twist-angle " << TwistAngle << endl;
+   if(print_log)  app_log() << "  Twist-angle " << TwistAngle << endl;
 
     bool atGamma= (dot(TwistAngle,TwistAngle)<numeric_limits<RealType>::epsilon());
     bool localize = myParam->Rcut>0.0;
@@ -305,13 +326,15 @@ namespace qmcplusplus {
       {
         if(orthorhombic)
         {
-          app_log() << "    Orthorhombic cell\n    Gamma point\n    Using BsplineSPOSet<ValueType,ORTHO=true,TRUC=true> " << endl;
+          if(print_log)  
+            app_log() << "    Orthorhombic cell\n    Gamma point\n    Using BsplineSPOSet<ValueType,ORTHO=true,TRUC=true> " << endl;
           TricubicBsplineSPOSet<ValueType,ORTHO,TRUNC>* abasis=0;
           return createBsplineBasisSet(cur,abasis);
         }
         else
         {
-          app_log() << "    Non-Orthorhombic cell\n    Gamma point\n    Using BsplineSPOSet<ValueType,ORTHO=false,TRUC=true> " << endl;
+          if(print_log)  
+            app_log() << "    Non-Orthorhombic cell\n    Gamma point\n    Using BsplineSPOSet<ValueType,ORTHO=false,TRUC=true> " << endl;
           TricubicBsplineSPOSet<ValueType,NONORTHO,TRUNC>* abasis=0;
           return createBsplineBasisSet(cur,abasis);
         }
@@ -320,13 +343,15 @@ namespace qmcplusplus {
       {
         if(orthorhombic)
         {
-          app_log() << "    Orthorhombic cell\n    Gamma point\n    Using BsplineSPOSet<ValueType,ORTHO=true,TRUC=false> " << endl;
+          if(print_log)  
+            app_log() << "    Orthorhombic cell\n    Gamma point\n    Using BsplineSPOSet<ValueType,ORTHO=true,TRUC=false> " << endl;
           TricubicBsplineSPOSet<ValueType,ORTHO,NOTRUNC>* abasis=0;
           return createBsplineBasisSet(cur,abasis);
         }
         else
         {
-          app_log() << "    Non-Orthorhombic cell\n    Gamma point\n    Using BsplineSPOSet<ValueType,ORTHO=false,TRUC=false> " << endl;
+          if(print_log)  
+            app_log() << "    Non-Orthorhombic cell\n    Gamma point\n    Using BsplineSPOSet<ValueType,ORTHO=false,TRUC=false> " << endl;
           TricubicBsplineSPOSet<ValueType,NONORTHO,NOTRUNC>* abasis=0;
           return createBsplineBasisSet(cur,abasis);
         }
@@ -335,11 +360,13 @@ namespace qmcplusplus {
     else //any k-point
     {
 #if defined(QMC_COMPLEX)
-      app_log() << "  Non-gamma point. Using TricubicBsplineTwistSet<ValueType> " << endl;
+      if(print_log) 
+        app_log() << "  Non-gamma point. Using TricubicBsplineTwistSet<ValueType> " << endl;
       TricubicBsplineTwistSet<ValueType>* abasis=0;
       return createBsplineBasisSet(cur,abasis);
 #else
-      app_error() << "  Twist-angle other than Gamma point cannot work with real wavefunctions." << endl;
+      if(print_log) 
+        app_error() << "  Twist-angle other than Gamma point cannot work with real wavefunctions." << endl;
       abort(); //FIXABORT
       return 0;
 #endif

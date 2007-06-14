@@ -62,6 +62,8 @@ namespace qmcplusplus {
     bool DebugWithEG;
     ///if true, grid is open-ended [0,nx) x [0,ny) x [0, nz)
     bool OpenEndGrid;
+    ///if true, write stuff
+    bool print_log;
     ///twist angle
     PosType TwistAngle;
     ///target ParticleSet
