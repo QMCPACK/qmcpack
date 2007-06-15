@@ -77,7 +77,8 @@ namespace qmcplusplus {
             int nx, int ny, int nz, 
             bool interp=true, bool periodic=true,bool openend=true)
         {
-          bKnots.setGrid(xi,xf,yi,yf,zi,zf,nx,ny,nz,interp,periodic,openend);
+          //bKnots.setGrid(xi,xf,yi,yf,zi,zf,nx,ny,nz,interp,periodic,openend);
+          bKnots.setGrid(0.0,1.0,0.0,1.0,0.0,1.0,nx,ny,nz,interp,periodic,openend);
         }
 
         /** add a orbital
