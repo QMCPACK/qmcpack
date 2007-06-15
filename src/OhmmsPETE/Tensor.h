@@ -303,9 +303,9 @@ inline Tensor<T,D> transpose(const Tensor<T,D>& rhs) {
   return result;
 }
 
-template <class T, unsigned D>
-inline T trace(const Tensor<T,D>& a, const Tensor<T,D>& b) {
-  T result = 0.0;
+template <class T1, class T2, unsigned D>
+inline T1 trace(const Tensor<T1,D>& a, const Tensor<T2,D>& b) {
+  T1 result = 0.0;
   for (int i = 0 ; i < D ; i++ )
     for(int j=0; j<D; j++) result += a(i,j)*b(j,i);
   return result;
