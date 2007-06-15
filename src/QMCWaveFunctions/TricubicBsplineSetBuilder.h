@@ -77,17 +77,30 @@ namespace qmcplusplus {
     PosType LowerBox;
     PosType UpperBox;
     TinyVector<IndexType,DIM> BoxGrid;
-    ///set of WFSetType*
-    map<string,BsplineBasisType*> myBasis;
-    ///single-particle orbital sets
-    map<string,SPOSetBase*> mySPOSet;
     ///parameter set for h5 tags
     PWParameterSet* myParam;
     ///hdf5 handler to clean up
     hid_t hfileID;
+    ///pointer to the BsplineBasisType use
+    BsplineBasisType* activeBasis;
+    ///set of WFSetType*
+    map<string,BsplineBasisType*> myBasis;
+    ///single-particle orbital sets
+    map<string,SPOSetBase*> mySPOSet;
 
     ///set Bspline functions
-    void setBsplineBasisSet(xmlNodePtr cur, BsplineBasisType* abasis);
+    void setBsplineBasisSet(xmlNodePtr cur);
+
+    ///read numerical orbitals and spline them
+    void readData(const char* hroot, const vector<int>& occSet, 
+        int spinIndex, int degeneracy);
+
+    /** read numerical orbitals and spline them
+     * 
+     * With QMC_COPMLEX=0, convert the complex data in hdf5 to real.
+     */
+    void readComplex2RealData(const char* hroot, const vector<int>& occSet,
+        int spinIndex, int degeneracy);
 
     ///a function to test with EG
     //SPOSetBase* createSPOSetWithEG();

@@ -15,7 +15,6 @@
 //This will go to cmake file
 //template functions are slightly better with icpc/g++
 //#define USE_BSPLINE_TEMP 1
-
 #include "QMCWaveFunctions/PlaneWave/PWParameterSet.h"
 #include "QMCWaveFunctions/Bspline3DSetTemp.h"
 #include "QMCWaveFunctions/Bspline3DSet.h"
@@ -91,9 +90,8 @@ namespace qmcplusplus {
     return true;
   }
 
-  void 
-    TricubicBsplineSetBuilder::setBsplineBasisSet(xmlNodePtr cur, BsplineBasisType* abasis)
-    {
+  void TricubicBsplineSetBuilder::setBsplineBasisSet(xmlNodePtr cur)
+  {
     int norb(0);
     int degeneracy(1);
     OhmmsAttributeSet aAttrib;
@@ -101,14 +99,13 @@ namespace qmcplusplus {
     aAttrib.add(degeneracy,"degeneracy");
     aAttrib.put(cur);
 
-    bool truncate = (myParam->Rcut>0.0);
-
     vector<int> occSet(norb);
     for(int i=0; i<norb; i++) occSet[i]=i;
 
-    //set the root name
+    //set the root name, e.g., /eigenstates/twist0
     char hroot[128];
-    sprintf(hroot,"/%s/%s%d",myParam->eigTag.c_str(),myParam->twistTag.c_str(),myParam->twistIndex);
+    sprintf(hroot,"/%s/%s%d",
+        myParam->eigTag.c_str(), myParam->twistTag.c_str(), myParam->twistIndex);
 
     int spinIndex=0;
     cur=cur->children;
@@ -140,102 +137,106 @@ namespace qmcplusplus {
       cur=cur->next;
     }
 
-    abasis->setTwistAngle(targetPtcl.Lattice.k_cart(TwistAngle));
-    StorageType inData(BoxGrid[0],BoxGrid[1],BoxGrid[2]);
     bool complex2real = myParam->hasComplexData(hfileID);
-
 #if defined(QMC_COMPLEX)
     if(!complex2real) 
     {
       app_error() << "  Real wavefunctions cannot be used with QMC_COMPLEX=1" << endl;
       abort(); //FIXABORT
     }
-    complex2real = false;//reset to false
 #endif
 
+    if(complex2real)
+      readComplex2RealData(hroot,occSet,spinIndex,degeneracy);
+    else
+      readData(hroot,occSet,spinIndex,degeneracy);
+  }
+
+  void TricubicBsplineSetBuilder::readComplex2RealData(const char* hroot, const vector<int>& occSet,
+      int spinIndex, int degeneracy)
+  {
+    bool truncate = (myParam->Rcut>0.0);
+    int norb=occSet.size();
     ///add the dummy center
     PosType center(0.0);
 
-    if(complex2real)
+    StorageType inData(BoxGrid[0],BoxGrid[1],BoxGrid[2]);
+    Array<ComplexType,3> inTemp(BoxGrid[0],BoxGrid[1],BoxGrid[2]);
+    for(int iorb=0; iorb<norb; iorb++) 
     {
-      Array<ComplexType,3> inTemp(BoxGrid[0],BoxGrid[1],BoxGrid[2]);
-      for(int iorb=0; iorb<norb; iorb++) 
+      if(truncate)
       {
-        if(truncate)
-        {
-          string centerName=myParam->getCenterName(hroot,occSet[iorb]);
-          HDFAttribIO<PosType > cdummy(center);
-          cdummy.read(hfileID,centerName.c_str());
-        }
-        ostringstream wnshort;
-        string eigvName=myParam->getEigVectorName(hroot,occSet[iorb]/degeneracy,spinIndex);
-        wnshort<<curH5Fname << "#"<<occSet[iorb]/degeneracy << "#" << spinIndex;
-        map<string,StorageType*>::iterator it(BigDataSet.find(wnshort.str()));
-        if(it == BigDataSet.end()) {
-          if(print_log)
-          {
-            app_log() << "   Reading spline function " << eigvName << " (" << wnshort.str()  << ")"  << endl;
-            if(truncate) app_log() << "     center=" << center << endl;
-          }
-          StorageType* newP =new StorageType;
-          HDFAttribIO<Array<ComplexType,3> > dummy(inTemp);
-          dummy.read(hfileID,eigvName.c_str());
-          BLAS::copy(inTemp.size(),inTemp.data(),inData.data());
-          BigDataSet[wnshort.str()]=newP;
-          abasis->add(iorb,center,inData,newP);
-        } else {
-          if(print_log)
-          {
-            app_log() << "   Reusing spline function " << eigvName << " (" << wnshort.str()  << ")" << endl;
-            if(truncate) app_log() << "     center=" << center << endl;
-          }
-          abasis->add(iorb,center,(*it).second);
-        }
-      } 
-    }
-    else 
-    {
-      for(int iorb=0; iorb<norb; iorb++) {
-        if(truncate)
-        {
-          string centerName=myParam->getCenterName(hroot,occSet[iorb]);
-          HDFAttribIO<PosType > cdummy(center);
-          cdummy.read(hfileID,centerName.c_str());
-        }
-        ostringstream wnshort;
-        string eigvName=myParam->getEigVectorName(hroot,occSet[iorb]/degeneracy,spinIndex);
-        wnshort<<curH5Fname << "#"<<occSet[iorb]/degeneracy << "#" << spinIndex;
-        map<string,StorageType*>::iterator it(BigDataSet.find(wnshort.str()));
-        if(it == BigDataSet.end()) {
-          if(print_log)
-          {
-            app_log() << "   Reading spline function " << eigvName << " (" << wnshort.str()  << ")"  << endl;
-            if(truncate) app_log() << "     center=" << center << endl;
-          }
-          StorageType* newP=new StorageType;
-          HDFAttribIO<StorageType> dummy(inData);
-          dummy.read(hfileID,eigvName.c_str());
-          BigDataSet[wnshort.str()]=newP;
-          abasis->add(iorb,center,inData,newP);
-        } else {
-          if(print_log)
-          {
-            app_log() << "   Reusing spline function " << eigvName << " (" << wnshort.str()  << ")" << endl;
-            if(truncate) app_log() << "     center=" << center << endl;
-          }
-          abasis->add(iorb,center,(*it).second);
-        }
-      } 
-    }
-    if(truncate) {
-      if(print_log)
-      {
-        app_log() << "   Truncating orbitals at Rcut= " << myParam->Rcut << endl;
+        string centerName=myParam->getCenterName(hroot,occSet[iorb]);
+        HDFAttribIO<PosType > cdummy(center);
+        cdummy.read(hfileID,centerName.c_str());
       }
-      abasis->setRcut(myParam->Rcut);
-    }
+      ostringstream wnshort;
+      string eigvName=myParam->getEigVectorName(hroot,occSet[iorb]/degeneracy,spinIndex);
+      wnshort<<curH5Fname << "#"<<occSet[iorb]/degeneracy << "#" << spinIndex;
+      map<string,StorageType*>::iterator it(BigDataSet.find(wnshort.str()));
+      if(it == BigDataSet.end()) {
+        if(print_log)
+        {
+          app_log() << "   Reading spline function " << eigvName << " (" << wnshort.str()  << ")"  << endl;
+          if(truncate) app_log() << "     center=" << center << endl;
+        }
+        StorageType* newP =new StorageType;
+        HDFAttribIO<Array<ComplexType,3> > dummy(inTemp);
+        dummy.read(hfileID,eigvName.c_str());
+        BLAS::copy(inTemp.size(),inTemp.data(),inData.data());
+        BigDataSet[wnshort.str()]=newP;
+        activeBasis->add(iorb,center,inData,newP);
+      } else {
+        if(print_log)
+        {
+          app_log() << "   Reusing spline function " << eigvName << " (" << wnshort.str()  << ")" << endl;
+          if(truncate) app_log() << "     center=" << center << endl;
+        }
+        activeBasis->add(iorb,center,(*it).second);
+      }
+    } 
   }
 
+  void TricubicBsplineSetBuilder::readData(const char* hroot, const vector<int>& occSet,
+      int spinIndex, int degeneracy)
+  {
+    bool truncate = (myParam->Rcut>0.0);
+    int norb=occSet.size();
+    StorageType inData(BoxGrid[0],BoxGrid[1],BoxGrid[2]);
+
+    PosType center(0.0);
+    for(int iorb=0; iorb<norb; iorb++) {
+      if(truncate)
+      {
+        string centerName=myParam->getCenterName(hroot,occSet[iorb]);
+        HDFAttribIO<PosType > cdummy(center);
+        cdummy.read(hfileID,centerName.c_str());
+      }
+      ostringstream wnshort;
+      string eigvName=myParam->getEigVectorName(hroot,occSet[iorb]/degeneracy,spinIndex);
+      wnshort<<curH5Fname << "#"<<occSet[iorb]/degeneracy << "#" << spinIndex;
+      map<string,StorageType*>::iterator it(BigDataSet.find(wnshort.str()));
+      if(it == BigDataSet.end()) {
+        if(print_log)
+        {
+          app_log() << "   Reading spline function " << eigvName << " (" << wnshort.str()  << ")"  << endl;
+          if(truncate) app_log() << "     center=" << center << endl;
+        }
+        StorageType* newP=new StorageType;
+        HDFAttribIO<StorageType> dummy(inData);
+        dummy.read(hfileID,eigvName.c_str());
+        BigDataSet[wnshort.str()]=newP;
+        activeBasis->add(iorb,center,inData,newP);
+      } else {
+        if(print_log)
+        {
+          app_log() << "   Reusing spline function " << eigvName << " (" << wnshort.str()  << ")" << endl;
+          if(truncate) app_log() << "     center=" << center << endl;
+        }
+        activeBasis->add(iorb,center,(*it).second);
+      }
+    } 
+  }
   /** create a SingleParticleSetBase
    * @param cur xmlnode containing \<slaterdeterminant\>
    * @return a SlaterDeterminant
@@ -294,7 +295,9 @@ namespace qmcplusplus {
     const bool NONORTHO=false;
     const bool TRUNC=true;
     const bool NOTRUNC=false;
-    BsplineBasisType* bsplineBasis=0;
+
+    //determine activeBasis
+    activeBasis=0;
     map<string,BsplineBasisType*>::iterator git(myBasis.find("0"));
     if(git == myBasis.end())
     {
@@ -306,20 +309,20 @@ namespace qmcplusplus {
           {
 #if defined(USE_BSPLINE_TEMP)
             if(print_log)  app_log() << "    Bspline3DSet<ORTHO=true,TRUC=true> " << endl;
-            bsplineBasis = new Bspline3DSet<ORTHO,TRUNC>;
+            activeBasis = new Bspline3DSet<ORTHO,TRUNC>;
 #else
             if(print_log)  app_log() << "    Bspline3DSet_Ortho_Trunc" << endl;
-            bsplineBasis = new Bspline3DSet_Ortho_Trunc;
+            activeBasis = new Bspline3DSet_Ortho_Trunc;
 #endif
           }
           else
           {
 #if defined(USE_BSPLINE_TEMP)
             if(print_log) app_log() << "    Bspline3DSet<ORTHO=false,TRUC=true> " << endl;
-            bsplineBasis = new  Bspline3DSet<NONORTHO,TRUNC>;
+            activeBasis = new  Bspline3DSet<NONORTHO,TRUNC>;
 #else
             if(print_log) app_log() << "    Bspline3DSet_Gen_Trunc " << endl;
-            bsplineBasis = new Bspline3DSet_Gen_Trunc;
+            activeBasis = new Bspline3DSet_Gen_Trunc;
 #endif
           } 
         }
@@ -329,20 +332,20 @@ namespace qmcplusplus {
           {
 #if defined(USE_BSPLINE_TEMP)
             if(print_log)  app_log() << "    Bspline3DSet<ORTHO=true,TRUC=false> " << endl;
-            bsplineBasis = new Bspline3DSet<ORTHO,NOTRUNC>;
+            activeBasis = new Bspline3DSet<ORTHO,NOTRUNC>;
 #else
             if(print_log)  app_log() << "    Bspline3DSet_Ortho " << endl;
-            bsplineBasis = new Bspline3DSet_Ortho;
+            activeBasis = new Bspline3DSet_Ortho;
 #endif
           }
           else
           {
 #if defined(USE_BSPLINE_TEMP)
             if(print_log)  app_log() << "    Bspline3DSet<ORTHO=false,TRUC=false> " << endl;
-            bsplineBasis = new Bspline3DSet<NONORTHO,NOTRUNC>;
+            activeBasis = new Bspline3DSet<NONORTHO,NOTRUNC>;
 #else
             if(print_log)  app_log() << "    Bspline3DSet_Gen " << endl;
-            bsplineBasis = new Bspline3DSet_Gen;
+            activeBasis = new Bspline3DSet_Gen;
 #endif
           }
         }
@@ -351,39 +354,41 @@ namespace qmcplusplus {
       else //any k-point
       {
         if(print_log) app_log() << "    Bspline3DSet_Twist" << endl;
-        bsplineBasis = new Bspline3DSet_Twist;
+        activeBasis = new Bspline3DSet_Twist;
       }
 #endif
 
-      if(bsplineBasis == 0) 
+      if(activeBasis == 0) 
       {
         app_error() << "  Failed to create a Bspline functon. Abort. " << endl;
         abort(); //FIXABORT
       }
 
       if(OpenEndGrid)
-        bsplineBasis->setGrid(LowerBox[0],UpperBox[0], LowerBox[1],UpperBox[1],LowerBox[2],UpperBox[2],
+        activeBasis->setGrid(LowerBox[0],UpperBox[0], LowerBox[1],UpperBox[1],LowerBox[2],UpperBox[2],
             BoxGrid[0],BoxGrid[1],BoxGrid[2]);
       else//need to offset for closed end
-        bsplineBasis->setGrid(LowerBox[0],UpperBox[0],LowerBox[1],UpperBox[1],LowerBox[2],UpperBox[2],
+        activeBasis->setGrid(LowerBox[0],UpperBox[0],LowerBox[1],UpperBox[1],LowerBox[2],UpperBox[2],
             BoxGrid[0]-1,BoxGrid[1]-1,BoxGrid[2]-1);
 
-      myBasis["0"]=bsplineBasis;
-      bsplineBasis->setLattice(targetPtcl.Lattice);
-      bsplineBasis->setOrbitalSetSize(norb);
+      myBasis["0"]=activeBasis;
+      activeBasis->setOrbitalSetSize(norb);
+      activeBasis->setLattice(targetPtcl.Lattice);
+      activeBasis->setTwistAngle(targetPtcl.Lattice.k_cart(TwistAngle));
+      if(localize) activeBasis->setRcut(myParam->Rcut);
     } 
     else
     {
-      bsplineBasis=(*git).second;
+      activeBasis=(*git).second;
     }
 
     //now parse everything else
-    setBsplineBasisSet(cur,bsplineBasis);
+    setBsplineBasisSet(cur);
 
     H5Fclose(hfileID);
     hfileID=-1;
 
-    return bsplineBasis;
+    return activeBasis;
   }
 
 //  /** Create B-spline for the electron-gas wavefunctions
