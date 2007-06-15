@@ -17,7 +17,7 @@
 #include "OhmmsData/AttributeSet.h"
 #include "Numerics/OhmmsBlas.h"
 #include "Message/Communicate.h"
-//#define DEBUG_BSPLINE_EG
+#include "Message/OpenMP.h"
 namespace qmcplusplus {
 
   void TricubicBsplineSetBuilder::setBsplineBasisSet(xmlNodePtr cur)
@@ -165,6 +165,59 @@ namespace qmcplusplus {
         }
         activeBasis->add(iorb,center,(*it).second);
       }
+    } 
+  }
+
+  void TricubicBsplineSetBuilder::readComplex2RealDataOMP(const char* hroot, const vector<int>& occSet,
+      int spinIndex, int degeneracy)
+  {
+
+    if(BigDataSet.size()) //data exist, use the standard one
+    {
+      readComplex2RealData(hroot,occSet,spinIndex,degeneracy);
+      return;
+    }
+
+    int norb=occSet.size();
+
+    vector<StorageType*> bsset(norb);
+    vector<int> odist(omp_get_max_threads()+1);
+    FairDivideLow(norb,omp_get_max_threads(),odist);
+
+#pragma omp parallel
+    {
+      bool truncate = (myParam->Rcut>0.0);
+      PosType center;
+      StorageType inData(BoxGrid[0],BoxGrid[1],BoxGrid[2]);
+      Array<ComplexType,3> inTemp(BoxGrid[0],BoxGrid[1],BoxGrid[2]);
+
+      int ip=omp_get_thread_num();
+      for(int iorb=odist[ip]; iorb<odist[ip+1]; iorb++)
+      {
+#pragma omp critical
+        {
+          string eigvName=myParam->getEigVectorName(hroot,occSet[iorb]/degeneracy,spinIndex);
+          HDFAttribIO<Array<ComplexType,3> > dummy(inTemp);
+          dummy.read(hfileID,eigvName.c_str());
+        }
+        StorageType* newP =new StorageType;
+        BLAS::copy(inTemp.size(),inTemp.data(),inData.data());
+        bsset[iorb]=newP;
+        activeBasis->add(iorb,center,inData,newP);
+      }
+    }
+
+    for(int iorb=0; iorb<norb; iorb++) 
+    {
+      if(truncate)
+      {
+        string centerName=myParam->getCenterName(hroot,occSet[iorb]);
+        HDFAttribIO<PosType > cdummy(activeBasis->Centers[iorb]);
+        cdummy.read(hfileID,centerName.c_str());
+      }
+      ostringstream wnshort;
+      wnshort<<curH5Fname << "#"<<occSet[iorb]/degeneracy << "#" << spinIndex;
+      BigDataSet[wnshort.str()]=bsset[iorb];
     } 
   }
 }

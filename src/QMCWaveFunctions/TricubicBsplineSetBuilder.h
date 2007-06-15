@@ -102,6 +102,9 @@ namespace qmcplusplus {
     void readComplex2RealData(const char* hroot, const vector<int>& occSet,
         int spinIndex, int degeneracy);
 
+    void readComplex2RealDataOMP(const char* hroot, const vector<int>& occSet,
+        int spinIndex, int degeneracy);
+
     ///a function to test with EG
     //SPOSetBase* createSPOSetWithEG();
   };
