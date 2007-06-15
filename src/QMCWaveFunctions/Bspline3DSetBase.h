@@ -34,24 +34,11 @@ namespace qmcplusplus {
 
   /** base class for Bspline3DSet<bool ORTHO, bool TRUNC> and Bspline3DSet_XYZ
   */
-#if defined(QMC_COMPLEX)
-  struct Bspline3DSetBase: public OrbitalTraits<std::complex<OHMMS_PRECISION> >
-#else
-  struct Bspline3DSetBase: public OrbitalTraits<OHMMS_PRECISION>
-#endif
+  struct Bspline3DSetBase: public SPOSetBase
   {
 
-    typedef TinyVector<real_type,OHMMS_DIM>  PosType;
-    typedef TinyVector<value_type,OHMMS_DIM> GradType;
-    typedef TricubicBsplineGrid<value_type>  GridType;
-    typedef Array<value_type,OHMMS_DIM>      StorageType;
-
-    typedef SPOSetBase::IndexVector_t IndexVector_t;
-    typedef SPOSetBase::ValueVector_t ValueVector_t;
-    typedef SPOSetBase::ValueMatrix_t ValueMatrix_t;
-    typedef SPOSetBase::GradVector_t  GradVector_t;
-    typedef SPOSetBase::GradMatrix_t  GradMatrix_t;
-
+    typedef TricubicBsplineGrid<ValueType>  GridType;
+    typedef Array<ValueType,OHMMS_DIM>      StorageType;
     ///boolean 
     bool Orthorhombic;
     ///number of orbitals
@@ -59,17 +46,17 @@ namespace qmcplusplus {
     ///index to keep track this object
     int ObjectID;
     ///cutoff radius
-    real_type Rcut2;
+    RealType Rcut2;
     ///-|K|^2
-    real_type mK2;
+    RealType mK2;
     ///TwistAngle in Cartesian Coordinate
     PosType TwistAngle;
     ///number of copies for each direction: only valid with localized orbitals
     TinyVector<int,OHMMS_DIM> Ncopy;
     ///metric tensor to handle generic unitcell
-    Tensor<real_type,OHMMS_DIM> GGt;
+    Tensor<RealType,OHMMS_DIM> GGt;
     ///Lattice
-    CrystalLattice<real_type,OHMMS_DIM> Lattice;
+    CrystalLattice<RealType,OHMMS_DIM> Lattice;
     ///grid
     GridType bKnots;
     ///centers
@@ -83,13 +70,13 @@ namespace qmcplusplus {
     ///virtual destructor
     virtual ~Bspline3DSetBase();
 
-    inline void setRcut(real_type rc)
+    inline void setRcut(RealType rc)
     {
       Rcut2=rc*rc;
     }
 
     /** set the lattice of the spline sets */
-    void setLattice(const CrystalLattice<real_type,OHMMS_DIM>& lat);
+    void setLattice(const CrystalLattice<RealType,OHMMS_DIM>& lat);
     /** resize the internal storage P and Centers
      * @param norbs number of orbitals of this set
      */
@@ -104,13 +91,10 @@ namespace qmcplusplus {
     void setGrid(const GridType& knots);
     /** set the grid
      */
-    void setGrid(real_type xi, real_type xf, 
-        real_type yi, real_type yf, real_type zi, real_type zf, 
+    void setGrid(RealType xi, RealType xf, 
+        RealType yi, RealType yf, RealType zi, RealType zf, 
         int nx, int ny, int nz, 
         bool interp=true, bool periodic=true,bool openend=true);
-    /** reset optimizable variables. 
-     */
-    void resetParameters(VarRegistry<real_type>& vlist);
 
     /** add a bspline orbital
      * @param i index of the orbital
@@ -124,6 +108,12 @@ namespace qmcplusplus {
      * @param curP interpolated data
      */
     void add(int i,const PosType& c,  StorageType* curP);
+
+    /** reset optimizable variables. 
+     */
+    void resetParameters(VarRegistry<RealType>& vlist);
+    void resetTargetParticleSet(ParticleSet& e);
+    void setOrbitalSetSize(int norbs);
 
   };
 }

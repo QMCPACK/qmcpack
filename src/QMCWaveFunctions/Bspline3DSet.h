@@ -35,13 +35,11 @@ namespace qmcplusplus {
     Bspline3DSet_Ortho() {} 
     ~Bspline3DSet_Ortho() { }
 
-    void evaluate(const PosType& r, ValueVector_t& vals); 
-
-    void evaluate(const PosType& r, ValueVector_t& vals, 
-        GradVector_t& grads, ValueVector_t& laps);
-
-    void evaluate(const PosType& r, int i, ValueMatrix_t& vals, 
-        GradMatrix_t& grads, ValueMatrix_t& laps);
+    void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi);
+    void evaluate(const ParticleSet& P, int iat, 
+        ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi);
+    void evaluate(const ParticleSet& P, int first, int last,
+        ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet);
   };
 
   /** Specialized for Orthorhombic cell and no truncation*/
@@ -51,13 +49,11 @@ namespace qmcplusplus {
     Bspline3DSet_Gen() {Orthorhombic=false;}
     ~Bspline3DSet_Gen() { }
 
-    void evaluate(const PosType& r, ValueVector_t& vals); 
-
-    void evaluate(const PosType& r, ValueVector_t& vals, 
-        GradVector_t& grads, ValueVector_t& laps);
-
-    void evaluate(const PosType& r, int i, ValueMatrix_t& vals, 
-        GradMatrix_t& grads, ValueMatrix_t& laps);
+    void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi);
+    void evaluate(const ParticleSet& P, int iat, 
+        ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi);
+    void evaluate(const ParticleSet& P, int first, int last,
+        ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet);
   };
 
   /** Specialized for Orthorhombic cell and truncation*/
@@ -66,13 +62,11 @@ namespace qmcplusplus {
     Bspline3DSet_Ortho_Trunc() {} 
     ~Bspline3DSet_Ortho_Trunc() { }
 
-    void evaluate(const PosType& r, ValueVector_t& vals); 
-
-    void evaluate(const PosType& r, ValueVector_t& vals, 
-        GradVector_t& grads, ValueVector_t& laps);
-
-    void evaluate(const PosType& r, int i, ValueMatrix_t& vals, 
-        GradMatrix_t& grads, ValueMatrix_t& laps);
+    void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi);
+    void evaluate(const ParticleSet& P, int iat, 
+        ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi);
+    void evaluate(const ParticleSet& P, int first, int last,
+        ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet);
   };
 
   /** Specialized for non-Orthorhombic cell no truncation*/
@@ -82,29 +76,24 @@ namespace qmcplusplus {
     Bspline3DSet_Gen_Trunc() {Orthorhombic=false;}
     ~Bspline3DSet_Gen_Trunc() { }
 
-    void evaluate(const PosType& r, ValueVector_t& vals); 
-
-    void evaluate(const PosType& r, ValueVector_t& vals, 
-        GradVector_t& grads, ValueVector_t& laps);
-
-    void evaluate(const PosType& r, int i, ValueMatrix_t& vals, 
-        GradMatrix_t& grads, ValueMatrix_t& laps);
+    void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi);
+    void evaluate(const ParticleSet& P, int iat, 
+        ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi);
+    void evaluate(const ParticleSet& P, int first, int last,
+        ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet);
   };
 
 #if defined(QMC_COMPLEX)
   struct Bspline3DSet_Twist: public Bspline3DSetBase
   {
-    typedef TinyVector<value_type,OHMMS_DIM> GradType;
     Bspline3DSet_Twist() {Orthorhombic=false;}
     ~Bspline3DSet_Twist() { }
 
-    void evaluate(const PosType& r, ValueVector_t& vals); 
-
-    void evaluate(const PosType& r, ValueVector_t& vals, 
-        GradVector_t& grads, ValueVector_t& laps);
-
-    void evaluate(const PosType& r, int i, ValueMatrix_t& vals, 
-        GradMatrix_t& grads, ValueMatrix_t& laps);
+    void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi);
+    void evaluate(const ParticleSet& P, int iat, 
+        ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi);
+    void evaluate(const ParticleSet& P, int first, int last,
+        ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet);
   };
 #endif
 

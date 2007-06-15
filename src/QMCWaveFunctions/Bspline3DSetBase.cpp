@@ -29,7 +29,7 @@ namespace qmcplusplus {
   {
   }
 
-  void Bspline3DSetBase::setLattice(const CrystalLattice<real_type,OHMMS_DIM>& lat)
+  void Bspline3DSetBase::setLattice(const CrystalLattice<RealType,OHMMS_DIM>& lat)
   {
     Lattice.set(lat);
     //Lattice.print(cout);
@@ -38,16 +38,21 @@ namespace qmcplusplus {
 
   void Bspline3DSetBase::resize(int norbs)
   {
-    if(NumOrbitals==0)
+    if(P.empty())
     {
+      //remove this
       NumOrbitals=norbs;
       Centers.resize(norbs);
       P.resize(norbs,0);
+
+      OrbitalSetSize=norbs;
+      BasisSetSize=norbs;
+      Identity=true;
     }
   }
 
-  void Bspline3DSetBase::setGrid(real_type xi, real_type xf, 
-      real_type yi, real_type yf, real_type zi, real_type zf, 
+  void Bspline3DSetBase::setGrid(RealType xi, RealType xf, 
+      RealType yi, RealType yf, RealType zi, RealType zf, 
       int nx, int ny, int nz, 
       bool interp, bool periodic,bool openend)
   {
@@ -63,9 +68,17 @@ namespace qmcplusplus {
     mK2=-dot(tangle,tangle);
   }
 
-  void Bspline3DSetBase::resetParameters(VarRegistry<real_type>& vlist)
+  void Bspline3DSetBase::resetParameters(VarRegistry<RealType>& vlist)
   {
   }
+
+  void Bspline3DSetBase::setOrbitalSetSize(int norbs) { 
+    if(norbs == OrbitalSetSize ) return;
+    resize(norbs);
+    //OrbitalSetSize=norbs;
+    //BasisSetSize=norbs;
+  }
+  void Bspline3DSetBase::resetTargetParticleSet(ParticleSet& e) { }
 
   void Bspline3DSetBase::add(int i, const PosType& c, 
       const StorageType& data, StorageType* curP)
