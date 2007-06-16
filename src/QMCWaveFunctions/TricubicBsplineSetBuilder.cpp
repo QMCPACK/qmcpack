@@ -22,6 +22,7 @@
 #include "QMCWaveFunctions/TricubicBsplineSetBuilder.h"
 #include "QMCWaveFunctions/OrbitalBuilderBase.h"
 #include "OhmmsData/AttributeSet.h"
+#include "Utilities/Timer.h"
 #include "Message/Communicate.h"
 //#define DEBUG_BSPLINE_EG
 namespace qmcplusplus {
@@ -148,6 +149,8 @@ namespace qmcplusplus {
     const bool TRUNC=true;
     const bool NOTRUNC=false;
 
+    Timer t1;
+
     //determine activeBasis
     activeBasis=0;
     map<string,BsplineBasisType*>::iterator git(myBasis.find("0"));
@@ -239,6 +242,8 @@ namespace qmcplusplus {
 
     H5Fclose(hfileID);
     hfileID=-1;
+
+    app_log() << "  Bspline Input = " << t1.elapsed() << " secs " << endl;
 
     return activeBasis;
   }

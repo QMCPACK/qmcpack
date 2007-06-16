@@ -76,6 +76,7 @@ namespace qmcplusplus {
     }
 #endif
 
+
     if(complex2real)
       readComplex2RealData(hroot,occSet,spinIndex,degeneracy);
     else
@@ -197,19 +198,21 @@ namespace qmcplusplus {
 #pragma omp critical
         {
           string eigvName=myParam->getEigVectorName(hroot,occSet[iorb]/degeneracy,spinIndex);
+          app_log() << "   Reading spline function " << ip << " "  << eigvName << endl;
           HDFAttribIO<Array<ComplexType,3> > dummy(inTemp);
           dummy.read(hfileID,eigvName.c_str());
         }
-        StorageType* newP =new StorageType;
         BLAS::copy(inTemp.size(),inTemp.data(),inData.data());
+        StorageType* newP =new StorageType;
         bsset[iorb]=newP;
         activeBasis->add(iorb,center,inData,newP);
       }
     }
 
+    bool localize=myParam->Rcut>0.0;
     for(int iorb=0; iorb<norb; iorb++) 
     {
-      if(truncate)
+      if(localize)
       {
         string centerName=myParam->getCenterName(hroot,occSet[iorb]);
         HDFAttribIO<PosType > cdummy(activeBasis->Centers[iorb]);
