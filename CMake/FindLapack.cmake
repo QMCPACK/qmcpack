@@ -26,6 +26,7 @@ SET(MKL_PATHS "")
   ENDIF($ENV{MKL} MATCHES "mkl")
   
   SET(MKL_PATHS ${MKL_PATHS} 
+      $ENV{MKL_HOME}/lib/em${QMC_BITS}t
       $ENV{MKL_HOME}/lib/${QMC_BITS}
       $ENV{MKL_HOME}/lib
       /usr/local/intel/mkl60/mkl60/lib/64
@@ -79,11 +80,20 @@ IF(NOT INTEL_MKL)
   IF(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     SET(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS} -framework vecLib")
     SET(LAPACK_LIBRARY_INIT 1 CACHE BOOL "use Mac Framework")
-    SET(BLAS_LIBRARY_INIT 1 CACHE BOOL "use Mac Framework")
     SET(MAC_VECLIB 1 CACHE BOOL "use Mac Framework")
     SET(LAPACK_LIBRARY "")
-    SET(BLAS_LIBRARY "")
     MESSAGE(STATUS "Using Framework on Darwin.")
+
+    ## check goto library: does not work so well
+    #FIND_LIBRARY(BLAS_LIBRARY NAMES goto
+    #    PATHS 
+    #    $ENV{GOTOBLAS_HOME}
+    #    /usr/lib
+    #    /usr/local/lib
+    #    /sw/lib
+    #    )
+    SET(BLAS_LIBRARY "")
+    SET(BLAS_LIBRARY_INIT 1 CACHE BOOL "use Mac Framework")
   ENDIF(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 ENDIF(NOT INTEL_MKL)
 
@@ -112,12 +122,12 @@ IF(${CMAKE_SYSTEM_NAME} MATCHES "AIX")
   ENDIF(ENABLE_OMP)
    
   IF(NOT LAPACK_LIBRARY_INIT)
-    SET(LLIB lapack-SP4_32 lapack)
+    SET(LLIB lapack-SP4_${QMC_BITS} lapack)
     FIND_LIBRARY(LAPACK_LIBRARY  
-                 NAMES ${LLIB}
-                 PATHS /usr/apps/math/lapack/LAPACK
-                 lib
-                )
+      NAMES ${LLIB}
+      PATHS /usr/apps/math/lapack/LAPACK
+      lib
+      )
     FIND_LIBRARY(BLAS_LIBRARY ${ELIB}
                  /usr/lib
                 )
@@ -128,15 +138,14 @@ IF(${CMAKE_SYSTEM_NAME} MATCHES "AIX")
   MESSAGE(STATUS "Found lapack/blas on AIX system")
 ENDIF(${CMAKE_SYSTEM_NAME} MATCHES "AIX")
 
-
 IF(NOT LAPACK_LIBRARY_INIT)
   FIND_LIBRARY(LAPACK_LIBRARY NAMES lapack lapack_gnu
     PATHS /usr/apps/math/lapack
-          /usr/lib
-          /opt/lib
-          /usr/local/lib
-          /sw/lib
-  )
+    /usr/lib
+    /opt/lib
+    /usr/local/lib
+    /sw/lib
+    )
   IF(LAPACK_LIBRARY)
     MESSAGE(STATUS "Found netlib lapack library")
     SET(LAPACK_LIBRARY_INIT 1 CACHE BOOL "lapack is initialized")
@@ -144,13 +153,15 @@ IF(NOT LAPACK_LIBRARY_INIT)
 ENDIF(NOT LAPACK_LIBRARY_INIT)
 
 IF(NOT BLAS_LIBRARY_INIT)
-  FIND_LIBRARY(BLAS_LIBRARY NAMES blas blas_gnu
-    PATHS /usr/apps/math/lapack
-          /usr/lib
-          /opt/lib
-          /usr/local/lib
-          /sw/lib
-  )
+  FIND_LIBRARY(BLAS_LIBRARY NAMES goto blas blas_gnu
+    PATHS 
+    $ENV{GOTOBLAS_HOME}
+    /usr/apps/math/lapack
+    /usr/lib
+    /opt/lib
+    /usr/local/lib
+    /sw/lib
+    )
   IF(BLAS_LIBRARY)
     MESSAGE(STATUS "Found netlib blas is found")
     SET(BLAS_LIBRARY_INIT 1 CACHE BOOL "lapack is initialized")
