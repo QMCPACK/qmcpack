@@ -25,7 +25,7 @@ using namespace std;
 template<class T>
 class PooledData: public std::vector<T> {
 
-  size_t Current;
+  int Current;
 
 public:
   
