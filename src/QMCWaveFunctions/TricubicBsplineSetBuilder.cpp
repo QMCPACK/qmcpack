@@ -31,7 +31,7 @@ namespace qmcplusplus {
   map<string,TricubicBsplineSetBuilder::StorageType*> TricubicBsplineSetBuilder::BigDataSet;
 
   TricubicBsplineSetBuilder::TricubicBsplineSetBuilder(ParticleSet& p, PtclPoolType& psets, xmlNodePtr cur):
-    targetPtcl(p),ptclPool(psets),rootNode(cur), LowerBox(0.0),UpperBox(1.0),BoxGrid(2)
+    targetPtcl(p),ptclPool(psets),rootNode(cur), LowerBox(0.0),UpperBox(1.0),BoxGrid(2),BoxDup(1)
     {
       for(int idim=0; idim<DIM; idim++)
         UpperBox[idim]=targetPtcl.Lattice.R(idim,idim);
@@ -60,7 +60,8 @@ namespace qmcplusplus {
     while(cur != NULL)
     {
       std::string cname((const char*)(cur->name));
-      if(cname == "grid") {
+      if(cname == "grid") 
+      {
         string closedEnd("yes");
         int idir=0,npts=2; 
         RealType ri=0,rf=-1.0;
@@ -77,6 +78,10 @@ namespace qmcplusplus {
         LowerBox[idir]=ri;
         BoxGrid[idir]=npts;
         OpenEndGrid = (closedEnd != "yes");
+      } 
+      else if(cname == "expand")//expand
+      {
+        putContent(BoxDup,cur);//
       }
       cur=cur->next;
     }

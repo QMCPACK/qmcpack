@@ -24,9 +24,11 @@ namespace qmcplusplus {
   {
     int norb(0);
     int degeneracy(1);
+    string ompIn("no");
     OhmmsAttributeSet aAttrib;
     aAttrib.add(norb,"orbitals"); aAttrib.add(norb,"size");
-    aAttrib.add(degeneracy,"degeneracy");
+    aAttrib.add(ompIn,"omp"); 
+    //aAttrib.add(degeneracy,"degeneracy");
     aAttrib.put(cur);
 
     vector<int> occSet(norb);
@@ -67,6 +69,9 @@ namespace qmcplusplus {
       cur=cur->next;
     }
 
+    //calculate degeneracy with BoxDup
+    degeneracy=BoxDup[0]*BoxDup[1]*BoxDup[2];
+
     bool complex2real = myParam->hasComplexData(hfileID);
 #if defined(QMC_COMPLEX)
     if(!complex2real) 
@@ -76,21 +81,38 @@ namespace qmcplusplus {
     }
 #endif
 
-
     if(complex2real)
-      readComplex2RealData(hroot,occSet,spinIndex,degeneracy);
+    {
+      if(ompIn == "yes")
+        readComplex2RealDataOMP(hroot,occSet,spinIndex,degeneracy);
+      else
+        readComplex2RealData(hroot,occSet,spinIndex,degeneracy);
+    }
     else
       readData(hroot,occSet,spinIndex,degeneracy);
+
+    if(degeneracy>1)
+    { 
+      if(myParam->Rcut>0.0)//duplicate only the localized orbitals
+      {
+        if(print_log)
+          app_log() << "  Tiling localized orbitals by " << BoxDup << endl;
+        activeBasis->tileOrbitals(BoxDup);
+      }
+      else
+      {
+        app_error() << "  Tiling is not allowed with non-localized orbitals." << endl;
+        abort(); //FIXABORT
+      }
+    }
   }
 
   void TricubicBsplineSetBuilder::readComplex2RealData(const char* hroot, const vector<int>& occSet,
       int spinIndex, int degeneracy)
   {
     bool truncate = (myParam->Rcut>0.0);
-    int norb=occSet.size();
-    ///add the dummy center
     PosType center(0.0);
-
+    int norb=occSet.size()/degeneracy;
     StorageType inData(BoxGrid[0],BoxGrid[1],BoxGrid[2]);
     Array<ComplexType,3> inTemp(BoxGrid[0],BoxGrid[1],BoxGrid[2]);
     for(int iorb=0; iorb<norb; iorb++) 
@@ -102,8 +124,8 @@ namespace qmcplusplus {
         cdummy.read(hfileID,centerName.c_str());
       }
       ostringstream wnshort;
-      string eigvName=myParam->getEigVectorName(hroot,occSet[iorb]/degeneracy,spinIndex);
-      wnshort<<curH5Fname << "#"<<occSet[iorb]/degeneracy << "#" << spinIndex;
+      string eigvName=myParam->getEigVectorName(hroot,occSet[iorb],spinIndex);
+      wnshort<<curH5Fname << "#"<<occSet[iorb] << "#" << spinIndex;
       map<string,StorageType*>::iterator it(BigDataSet.find(wnshort.str()));
       if(it == BigDataSet.end()) {
         if(print_log)
@@ -126,47 +148,7 @@ namespace qmcplusplus {
         activeBasis->add(iorb,center,(*it).second);
       }
     } 
-  }
 
-  void TricubicBsplineSetBuilder::readData(const char* hroot, const vector<int>& occSet,
-      int spinIndex, int degeneracy)
-  {
-    bool truncate = (myParam->Rcut>0.0);
-    int norb=occSet.size();
-    StorageType inData(BoxGrid[0],BoxGrid[1],BoxGrid[2]);
-
-    PosType center(0.0);
-    for(int iorb=0; iorb<norb; iorb++) {
-      if(truncate)
-      {
-        string centerName=myParam->getCenterName(hroot,occSet[iorb]);
-        HDFAttribIO<PosType > cdummy(center);
-        cdummy.read(hfileID,centerName.c_str());
-      }
-      ostringstream wnshort;
-      string eigvName=myParam->getEigVectorName(hroot,occSet[iorb]/degeneracy,spinIndex);
-      wnshort<<curH5Fname << "#"<<occSet[iorb]/degeneracy << "#" << spinIndex;
-      map<string,StorageType*>::iterator it(BigDataSet.find(wnshort.str()));
-      if(it == BigDataSet.end()) {
-        if(print_log)
-        {
-          app_log() << "   Reading spline function " << eigvName << " (" << wnshort.str()  << ")"  << endl;
-          if(truncate) app_log() << "     center=" << center << endl;
-        }
-        StorageType* newP=new StorageType;
-        HDFAttribIO<StorageType> dummy(inData);
-        dummy.read(hfileID,eigvName.c_str());
-        BigDataSet[wnshort.str()]=newP;
-        activeBasis->add(iorb,center,inData,newP);
-      } else {
-        if(print_log)
-        {
-          app_log() << "   Reusing spline function " << eigvName << " (" << wnshort.str()  << ")" << endl;
-          if(truncate) app_log() << "     center=" << center << endl;
-        }
-        activeBasis->add(iorb,center,(*it).second);
-      }
-    } 
   }
 
   void TricubicBsplineSetBuilder::readComplex2RealDataOMP(const char* hroot, const vector<int>& occSet,
@@ -179,8 +161,7 @@ namespace qmcplusplus {
       return;
     }
 
-    int norb=occSet.size();
-
+    int norb=occSet.size()/degeneracy;
     vector<StorageType*> bsset(norb);
     vector<int> odist(omp_get_max_threads()+1);
     FairDivideLow(norb,omp_get_max_threads(),odist);
@@ -203,6 +184,102 @@ namespace qmcplusplus {
           dummy.read(hfileID,eigvName.c_str());
         }
         BLAS::copy(inTemp.size(),inTemp.data(),inData.data());
+        StorageType* newP =new StorageType;
+        bsset[iorb]=newP;
+        activeBasis->add(iorb,center,inData,newP);
+      }
+    }
+
+    bool localize=myParam->Rcut>0.0;
+    for(int iorb=0; iorb<norb; iorb++) 
+    {
+      if(localize)
+      {
+        string centerName=myParam->getCenterName(hroot,occSet[iorb]);
+        HDFAttribIO<PosType > cdummy(activeBasis->Centers[iorb]);
+        cdummy.read(hfileID,centerName.c_str());
+      }
+      ostringstream wnshort;
+      wnshort<<curH5Fname << "#"<<occSet[iorb]/degeneracy << "#" << spinIndex;
+      BigDataSet[wnshort.str()]=bsset[iorb];
+    } 
+  }
+
+  void TricubicBsplineSetBuilder::readData(const char* hroot, const vector<int>& occSet,
+      int spinIndex, int degeneracy)
+  {
+    bool truncate = (myParam->Rcut>0.0);
+    int norb=occSet.size()/degeneracy;
+    StorageType inData(BoxGrid[0],BoxGrid[1],BoxGrid[2]);
+
+    PosType center(0.0);
+    for(int iorb=0; iorb<norb; iorb++) 
+    {
+      if(truncate)
+      {
+        string centerName=myParam->getCenterName(hroot,occSet[iorb]);
+        HDFAttribIO<PosType > cdummy(activeBasis->Centers[iorb]);
+        cdummy.read(hfileID,centerName.c_str());
+      }
+      ostringstream wnshort;
+      string eigvName=myParam->getEigVectorName(hroot,occSet[iorb]/degeneracy,spinIndex);
+      wnshort<<curH5Fname << "#"<<occSet[iorb]/degeneracy << "#" << spinIndex;
+      map<string,StorageType*>::iterator it(BigDataSet.find(wnshort.str()));
+      if(it == BigDataSet.end()) 
+      {
+        if(print_log)
+        {
+          app_log() << "   Reading spline function " << eigvName << " (" << wnshort.str()  << ")"  << endl;
+          if(truncate) app_log() << "     center=" << center << endl;
+        }
+        StorageType* newP=new StorageType;
+        HDFAttribIO<StorageType> dummy(inData);
+        dummy.read(hfileID,eigvName.c_str());
+        BigDataSet[wnshort.str()]=newP;
+        activeBasis->add(iorb,center,inData,newP);
+      } 
+      else 
+      {
+        if(print_log)
+        {
+          app_log() << "   Reusing spline function " << eigvName << " (" << wnshort.str()  << ")" << endl;
+          if(truncate) app_log() << "     center=" << center << endl;
+        }
+        activeBasis->add(iorb,center,(*it).second);
+      }
+    } 
+  }
+
+  void TricubicBsplineSetBuilder::readDataOMP(const char* hroot, const vector<int>& occSet,
+      int spinIndex, int degeneracy)
+  {
+
+    if(BigDataSet.size()) //data exist, use the standard one
+    {
+      readData(hroot,occSet,spinIndex,degeneracy);
+      return;
+    }
+
+    int norb=occSet.size()/degeneracy;
+    vector<StorageType*> bsset(norb);
+    vector<int> odist(omp_get_max_threads()+1);
+    FairDivideLow(norb,omp_get_max_threads(),odist);
+
+#pragma omp parallel
+    {
+      bool truncate = (myParam->Rcut>0.0);
+      PosType center;
+      StorageType inData(BoxGrid[0],BoxGrid[1],BoxGrid[2]);
+      int ip=omp_get_thread_num();
+      for(int iorb=odist[ip]; iorb<odist[ip+1]; iorb++)
+      {
+#pragma omp critical
+        {
+          string eigvName=myParam->getEigVectorName(hroot,occSet[iorb]/degeneracy,spinIndex);
+          app_log() << "   Reading spline function " << ip << " "  << eigvName << endl;
+          HDFAttribIO<StorageType> dummy(inData);
+          dummy.read(hfileID,eigvName.c_str());
+        }
         StorageType* newP =new StorageType;
         bsset[iorb]=newP;
         activeBasis->add(iorb,center,inData,newP);

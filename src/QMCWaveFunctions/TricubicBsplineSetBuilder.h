@@ -76,7 +76,10 @@ namespace qmcplusplus {
     xmlNodePtr rootNode;
     PosType LowerBox;
     PosType UpperBox;
+    ///number of grid points for each direction
     TinyVector<IndexType,DIM> BoxGrid;
+    ///number of copies of the lattice for tiling
+    TinyVector<IndexType,DIM> BoxDup;
     ///parameter set for h5 tags
     PWParameterSet* myParam;
     ///hdf5 handler to clean up
@@ -93,6 +96,8 @@ namespace qmcplusplus {
 
     ///read numerical orbitals and spline them
     void readData(const char* hroot, const vector<int>& occSet, 
+        int spinIndex, int degeneracy);
+    void readDataOMP(const char* hroot, const vector<int>& occSet, 
         int spinIndex, int degeneracy);
 
     /** read numerical orbitals and spline them
