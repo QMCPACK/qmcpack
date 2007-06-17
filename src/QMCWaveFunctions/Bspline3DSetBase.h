@@ -39,6 +39,7 @@ namespace qmcplusplus {
 
     typedef TricubicBsplineGrid<ValueType>  GridType;
     typedef Array<ValueType,OHMMS_DIM>      StorageType;
+    typedef CrystalLattice<RealType,OHMMS_DIM> UnitCellType;
     ///boolean 
     bool Orthorhombic;
     ///number of orbitals
@@ -56,7 +57,9 @@ namespace qmcplusplus {
     ///metric tensor to handle generic unitcell
     Tensor<RealType,OHMMS_DIM> GGt;
     ///Lattice
-    CrystalLattice<RealType,OHMMS_DIM> Lattice;
+    UnitCellType Lattice;
+    ///unitcell for tiling
+    UnitCellType UnitLattice;
     ///grid
     GridType bKnots;
     ///centers
@@ -115,6 +118,13 @@ namespace qmcplusplus {
     void resetTargetParticleSet(ParticleSet& e);
     void setOrbitalSetSize(int norbs);
 
+    /** tile localized orbitals
+     * @param boxdup duplication of the unitcell for the localized orbitals
+     *
+     * Added to build a super set of localized orbitals. Centers are displaced
+     * by the UnitLattice times integer multiples.
+     */
+    void tileOrbitals(const TinyVector<int,3>& boxdup);
   };
 }
 #endif

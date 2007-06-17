@@ -32,7 +32,8 @@ namespace qmcplusplus {
   void Bspline3DSetBase::setLattice(const CrystalLattice<RealType,OHMMS_DIM>& lat)
   {
     Lattice.set(lat);
-    //Lattice.print(cout);
+    UnitLattice.set(lat);
+
     GGt=dot(Lattice.G,transpose(Lattice.G));
   }
 
@@ -92,6 +93,37 @@ namespace qmcplusplus {
   {
     Centers[i]=c;
     P[i]=curP;
+  }
+
+  void Bspline3DSetBase::tileOrbitals(const TinyVector<int,3>& boxdup)
+  {
+    TensorType uc(
+        Lattice.R(0,0)/static_cast<RealType>(boxdup[0]),
+        Lattice.R(0,1)/static_cast<RealType>(boxdup[0]),
+        Lattice.R(0,2)/static_cast<RealType>(boxdup[0]),
+        Lattice.R(1,0)/static_cast<RealType>(boxdup[1]),
+        Lattice.R(1,1)/static_cast<RealType>(boxdup[1]),
+        Lattice.R(1,2)/static_cast<RealType>(boxdup[1]),
+        Lattice.R(2,0)/static_cast<RealType>(boxdup[2]),
+        Lattice.R(2,1)/static_cast<RealType>(boxdup[2]),
+        Lattice.R(2,2)/static_cast<RealType>(boxdup[2]));
+    UnitLattice.set(uc);
+
+    int norb=OrbitalSetSize/(boxdup[0]*boxdup[1]*boxdup[2]);
+    int i=norb;
+    for(int ic=0; ic<boxdup[0]; ic++)
+      for(int jc=0; jc<boxdup[1]; jc++)
+        for(int kc=0; kc<boxdup[2]; kc++)
+        {
+          if(ic == 0 && jc == 0 && kc == 0) continue;
+          PosType c(ic,jc,kc);
+          PosType displ=UnitLattice.toCart(c);
+          for(int o=0; o<norb; o++, i++)
+          {
+            P[i]=P[o];
+            Centers[i]=Centers[o]+displ;
+          }
+        }
   }
 
 //  void TricubicBsplineSetBuilder::createBsplineBasisSet(xmlNodePtr cur, 
