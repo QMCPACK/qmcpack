@@ -216,7 +216,8 @@ class GUI:
         idText = "\n        "
         ids = self.GeometryFrame.AtomPos.get_atom_types()
         for id in ids:
-            idText = idText + id + " "
+            if (id != None):
+                idText = idText + id + " "
         idText = idText + "\n      "
         idElem.appendChild(doc.createTextNode(idText))
         particleSetElem.appendChild(idElem)
@@ -246,7 +247,8 @@ class GUI:
                 if (data[3] == "Nonlocal PP"):
                     pElem = doc.createElement ("pseudo")
                     pElem.setAttribute("elementType", data[0])
-                    pElem.setAttribute("href", relativeto(filename,data[4]))
+                    if (data[4] != None):
+                        pElem.setAttribute("href", relativeto(filename,data[4]))
                     pseudoElem.appendChild (pElem)
             hamElem.appendChild(pseudoElem)
         if (bareIons):
