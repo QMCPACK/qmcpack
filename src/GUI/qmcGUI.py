@@ -247,8 +247,11 @@ class GUI:
                 if (data[3] == "Nonlocal PP"):
                     pElem = doc.createElement ("pseudo")
                     pElem.setAttribute("elementType", data[0])
-                    if (data[4] != None):
-                        pElem.setAttribute("href", relativeto(filename,data[4]))
+                    if (data[4] == None):
+                        print "Warning: nonlocal pseudopotential file not set."
+                    else:
+                        pElem.setAttribute("href", \
+                                           relativeto(filename,data[4]))
                     pseudoElem.appendChild (pElem)
             hamElem.appendChild(pseudoElem)
         if (bareIons):
