@@ -6,13 +6,22 @@ import gtk
 import pango
 from Geometry import *
 from Wavefunction import *
-from StructViewer import *
 from Run import *
 from xml.dom import getDOMImplementation
 from xml.dom.ext import PrettyPrint
 from os.path import basename
 import os.path
 
+viewerOkay = True
+try:
+    import gtk.gtkgl
+    from OpenGL.GL import *
+    from OpenGL.GLU import *
+except ImportError:
+    viewerOkay = False
+
+if (viewerOkay):
+    from StructViewer import *
 
 class MainManager (gtk.UIManager):
     def __init__(self):
@@ -118,7 +127,7 @@ class GUI:
         notebook.append_page (self.GeometryFrame, gtk.Label("Geometry"))
         notebook.append_page (self.WavefunctionFrame, gtk.Label("Wave function"))
         notebook.append_page (self.RunFrame, gtk.Label("Run"))
-        if (ViewerOkay()):
+        if (viewerOkay):
             self.Viewer = StructureViewer()
             notebook.append_page(self.Viewer, gtk.Label("Viewer"))
         mainBox.pack_start (notebook, False, False, 5)
