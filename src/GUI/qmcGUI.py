@@ -82,12 +82,36 @@ class GUIAboutDialog(gtk.AboutDialog):
 
 #############################################################
 # function relativeto                                       #
-# return a the name of file1 relative to the path of file2  #
+# return a the name of file2 relative to the path of file1  #
 # Example:                                                  #
 #  file1 = "/home/kesler/BN/abc.xml"                        #
 #  file2 = "/home/kesler/pseudo/B.xml"                      #
 #  print relativeto (file1, file2) yields "../pseudo/B.xml" #
 #############################################################
+
+def relative2 (file1, file2):
+    dir1 = os.path.dirname(file1)
+    dir2 = os.path.dirname(file2)
+    dirlist1 = dir1.split ('/')
+    dirlist2 = dir2.split ('/')
+    common = "/"
+    i = 0
+    mindirs = min (len(dirlist1), len(dirlist2))
+    while ((i < mindirs) and (dirlist1[i] == dirlist2[i])):
+        common = common + '/' + dirlist1[i]
+        i = i+1
+    dirstrip  = dir1.lstrip(common)
+    filestrip = file2.lstrip(common)
+    striplist = dirstrip.split('/')
+    print "striplist = " + repr(striplist)
+    rel = ""
+    for d in striplist:
+        if (d != ""):
+            rel = rel + "../"
+    rel = rel + filestrip
+    return rel
+    
+
 def relativeto (file1, file2):
     dir = os.path.dirname (file2)
     common = os.path.commonprefix((file1, dir))
@@ -260,7 +284,7 @@ class GUI:
                         print "Warning: nonlocal pseudopotential file not set."
                     else:
                         pElem.setAttribute("href", \
-                                           relativeto(filename,data[4]))
+                                           relative2(filename,data[4]))
                     pseudoElem.appendChild (pElem)
             hamElem.appendChild(pseudoElem)
         if (bareIons):
