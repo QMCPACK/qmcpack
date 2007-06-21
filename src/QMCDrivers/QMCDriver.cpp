@@ -33,7 +33,7 @@ namespace qmcplusplus {
     branchEngine(0), ResetRandom(false), AppendRun(false),
     MyCounter(0), RollBackBlocks(0),
     Period4CheckPoint(1), Period4WalkerDump(0),
-    CurrentStep(0), nBlocks(100), nSteps(1000), 
+    CurrentStep(0), nBlocks(100), nSteps(10), 
     nAccept(0), nReject(0), nTargetWalkers(0),
     Tau(0.001), qmcNode(NULL),
     QMCType("invalid"), 
