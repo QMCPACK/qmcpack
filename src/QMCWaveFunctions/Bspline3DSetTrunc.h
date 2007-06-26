@@ -1,0 +1,97 @@
+/////////////////////////////////////////////////////////////////
+// (c) Copyright 2007-  Jeongnim Kim
+//////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////
+//   Modified by Jeongnim Kim for qmcpack
+//   National Center for Supercomputing Applications &
+//   Materials Computation Center
+//   University of Illinois, Urbana-Champaign
+//   Urbana, IL 61801
+//   e-mail: jnkim@ncsa.uiuc.edu
+//
+// Supported by 
+//   National Center for Supercomputing Applications, UIUC
+//   Materials Computation Center, UIUC
+//////////////////////////////////////////////////////////////////
+// -*- C++ -*-
+/** @file Bspline3DSet.h
+ * @brief Define Bspline3DSetBase and its derived classes
+ *
+ * - Bspline3DSet_Ortho : orthorhombic unit cell
+ * - Bspline3DSet_Gen : non-orthorhombic unit cell
+ * - Bspline3DSet_Ortho_Trunc: orthorhombic unit cell with localized orbitals
+ * - Bspline3DSet_Gen_Trunc : non-orthorhombic unit cell with localized orbitals
+ */
+#ifndef QMCPLUSPLUS_BSPLINE3DSET_TRUCATEDANDTRANSLATED_H
+#define QMCPLUSPLUS_BSPLINE3DSET_TRUCATEDANDTRANSLATED_H
+
+#include "QMCWaveFunctions/Bspline3DSetBase.h"
+
+namespace qmcplusplus {
+
+  /** Specialized for Maximally Localized Wavetions 
+   * 
+   * Grids for localized orbitals are truncated.
+   */
+  struct Bspline3DSet_MLW: public Bspline3DSetBase
+  {
+    Bspline3DSet_MLW();
+    ~Bspline3DSet_MLW();
+
+    RealType Lx,LxInv;
+    RealType Ly,LyInv;
+    RealType Lz,LzInv;
+    RealType LxSq, LySq, LzSq;
+
+    inline PosType translate(const PosType& r, int j)
+    {
+      PosType rtr=r-Origins[j]; // first shift it by the origin
+      rtr[0]-=std::floor(rtr[0]*Lattice.G[0])*Lattice.R[0];
+      rtr[1]-=std::floor(rtr[1]*Lattice.G[4])*Lattice.R[4];
+      rtr[2]-=std::floor(rtr[2]*Lattice.G[8])*Lattice.R[8];
+      //rtr[0]-=std::floor(rtr[0]*LxInv)*Lx;
+      //rtr[1]-=std::floor(rtr[1]*LyInv)*Ly;
+      //rtr[2]-=std::floor(rtr[2]*LzInv)*Lz;
+      return rtr;
+    }
+
+    /* return the distance between the center with PBC */
+    inline RealType getSep2(RealType x, RealType y, RealType z)
+    {
+      x-=nearbyint(x*Lattice.G[0])*Lattice.R[0];
+      y-=nearbyint(y*Lattice.G[4])*Lattice.R[4];
+      z-=nearbyint(z*Lattice.G[8])*Lattice.R[8];
+      //x-=nearbyint(x*LxInv)*Lx;
+      //y-=nearbyint(y*LyInv)*Ly;
+      //z-=nearbyint(z*LzInv)*Lz;
+      return x*x+y*y+z*z;
+    }
+
+    void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi);
+    void evaluate(const ParticleSet& P, int iat, 
+        ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi);
+    void evaluate(const ParticleSet& P, int first, int last,
+        ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet);
+  };
+
+//  /** Specialized for non-Orthorhombic cell no truncation*/
+//  struct Bspline3DSet_Gen_Trunc: public Bspline3DSetBase
+//  {
+//
+//    Bspline3DSet_Gen_Trunc() {Orthorhombic=false;}
+//    ~Bspline3DSet_Gen_Trunc() { }
+//
+//    void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi);
+//    void evaluate(const ParticleSet& P, int iat, 
+//        ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi);
+//    void evaluate(const ParticleSet& P, int first, int last,
+//        ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet);
+//  };
+
+}
+#endif
+/***************************************************************************
+ * $RCSfile$   $Author: jnkim $
+ * $Revision: 2013 $   $Date: 2007-05-22 16:47:09 -0500 (Tue, 22 May 2007) $
+ * $Id: TricubicBsplineSet.h 2013 2007-05-22 21:47:09Z jnkim $
+ ***************************************************************************/
