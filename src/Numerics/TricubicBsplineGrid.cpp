@@ -424,10 +424,56 @@ TricubicBsplineGrid<T>::MakePeriodic(Array<T,3>& P)
 }
 
 template<typename T> void
+TricubicBsplineGrid<T>::SolveFirstDerivInterp(const Array<T,3>& data, Array<T,3>& P)
+{
+  real_type bcLower[]={-3.0,0.0,3.0,0.0};
+  real_type bcUpper[]={-3.0,0.0,3.0,0.0};
+  int Mx=Nx+2;
+  int My=Ny+2;
+  int Mz=Nz+2;
+  // Do X direction
+  vector<T> dTemp(Mx),pTemp(Mx);
+  for (int iy=0; iy<Ny; iy++)
+    for (int iz=0; iz<Nz; iz++)  
+    {
+      for(int ix=0; ix<Nx;ix++) dTemp[ix]=data(ix,iy,iz);
+      SolveFirstDerivInterp1D<T>::apply(dTemp,pTemp,Nx,bcLower,bcUpper);
+      for(int ix=0; ix<Nx;ix++) P(ix,iy+1,iz+1)=pTemp[ix];
+      //SolveDerivInterp1D(data(Range::all(), iy, iz),  P(Range::all(), iy+1, iz+1), BC, BC);
+    }
+  
+
+  // Do Y direction
+  dTemp.resize(My);
+  pTemp.resize(My);
+  for (int ix=0; ix<Mx; ix++)
+    for (int iz=0; iz<Mz; iz++) 
+    {
+      for(int iy=0;iy<Ny; iy++) dTemp[iy]=P(ix,iy+1,iz);
+      SolveFirstDerivInterp1D<T>::apply(dTemp,pTemp,Ny,bcLower,bcUpper);
+      for(int iy=0;iy<My; iy++) P(ix,iy,iz)=pTemp[iy];
+      //SolveDerivInterp1D(P(ix,Range(1,Ny), iz),  P(ix, Range::all(), iz), BC, BC);
+    }
+  
+  // Do z direction
+  dTemp.resize(Mz);
+  pTemp.resize(Mz);
+  for (int ix=0; ix<Mx; ix++)
+    for (int iy=0; iy<My; iy++) 
+    {
+      for(int iz=0; iz<Nz; iz++) dTemp[iz]=P(ix,iy,iz+1);
+      SolveFirstDerivInterp1D<T>::apply(dTemp,pTemp,Nz,bcLower,bcUpper);
+      for(int iz=0; iz<Mz; iz++) P(ix,iy,iz)=pTemp[iz];
+      //SolveDerivInterp1D(P(ix, iy, Range(1,Nz)),  P(ix, iy, Range::all()), BC, BC);
+    }
+
+}
+
+template<typename T> void
 TricubicBsplineGrid<T>::Init(const Array<T,3>& data, Array<T,3>& P)
 {
-  P.resize(Nx+3,Ny+3,Nz+3);
   if (Periodic) {
+    P.resize(Nx+3,Ny+3,Nz+3);
     if (Interpolating)
       SolvePeriodicInterp(data,P);
     else
@@ -441,8 +487,10 @@ TricubicBsplineGrid<T>::Init(const Array<T,3>& data, Array<T,3>& P)
     MakePeriodic(P);
   }
   else {
-    cerr << "Nonperiodic Tricubic B-splines not yet supported.\n";
-    abort();
+    P.resize(Nx+2,Ny+2,Nz+2);
+    SolveFirstDerivInterp(data,P);
+   //cerr << "Nonperiodic Tricubic B-splines not yet supported.\n";
+   //abort();
   }
 }
 /***************************************************************************

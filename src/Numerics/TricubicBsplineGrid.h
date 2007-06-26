@@ -72,6 +72,7 @@ namespace qmcplusplus {
 
     void Init(const Array<T,3>& data, Array<T,3>& P);
     void SolvePeriodicInterp (const Array<T,3> &data, Array<T,3>& P);
+    void SolveFirstDerivInterp (const Array<T,3> &data, Array<T,3>& P);
     void MakePeriodic(Array<T,3>& P);
 
     /* return the distance between the center with PBC */
@@ -86,32 +87,32 @@ namespace qmcplusplus {
 
 #include "Numerics/TricubicBsplineGrid.cpp"
 
-  template<typename T>
-    struct TricubicBsplineTraits: public OrbitalTraits<T>
-    {
-      typedef typename OrbitalTraits<T>::real_type real_type;
-      typedef typename OrbitalTraits<T>::value_type value_type;
-      typedef TinyVector<real_type,3> PosType;
-      typedef TricubicBsplineGrid<T> GridType;
-      typedef Array<T,3>             StorageType;
-      int ObjectID;
-      real_type Rcut2;
-      Tensor<real_type,3> GGt;
-      CrystalLattice<real_type,3> Lattice;
+ // template<typename T>
+ //   struct TricubicBsplineTraits: public OrbitalTraits<T>
+ //   {
+ //     typedef typename OrbitalTraits<T>::real_type real_type;
+ //     typedef typename OrbitalTraits<T>::value_type value_type;
+ //     typedef TinyVector<real_type,3> PosType;
+ //     typedef TricubicBsplineGrid<T> GridType;
+ //     typedef Array<T,3>             StorageType;
+ //     int ObjectID;
+ //     real_type Rcut2;
+ //     Tensor<real_type,3> GGt;
+ //     CrystalLattice<real_type,3> Lattice;
 
-      inline void setRcut(real_type rc)
-      {
-        Rcut2=rc*rc;
-      }
-      virtual ~TricubicBsplineTraits() {}
+ //     inline void setRcut(real_type rc)
+ //     {
+ //       Rcut2=rc*rc;
+ //     }
+ //     virtual ~TricubicBsplineTraits() {}
 
-      void setLattice(const CrystalLattice<real_type,3>& lat)
-      {
-        Lattice.set(lat);
-        Lattice.print(cout);
-        GGt=dot(Lattice.G,transpose(Lattice.G));
-      }
-    };
+ //     void setLattice(const CrystalLattice<real_type,3>& lat)
+ //     {
+ //       Lattice.set(lat);
+ //       Lattice.print(cout);
+ //       GGt=dot(Lattice.G,transpose(Lattice.G));
+ //     }
+ //   };
 }
 #endif
 /***************************************************************************
