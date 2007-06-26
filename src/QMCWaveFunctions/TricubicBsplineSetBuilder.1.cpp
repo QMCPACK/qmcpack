@@ -72,6 +72,9 @@ namespace qmcplusplus {
     //calculate degeneracy with BoxDup
     degeneracy=BoxDup[0]*BoxDup[1]*BoxDup[2];
 
+    //always translate grid 
+    if(degeneracy>1) TranslateGrid=true;
+
     bool complex2real = myParam->hasComplexData(hfileID);
 #if defined(QMC_COMPLEX)
     if(!complex2real) 
@@ -86,7 +89,16 @@ namespace qmcplusplus {
       if(ompIn == "yes")
         readComplex2RealDataOMP(hroot,occSet,spinIndex,degeneracy);
       else
-        readComplex2RealData(hroot,occSet,spinIndex,degeneracy);
+      {
+        if(TranslateGrid)
+        {
+          readComplex2RealDataWithTruncation(hroot,occSet,spinIndex,degeneracy);
+        }
+        else
+        {
+          readComplex2RealData(hroot,occSet,spinIndex,degeneracy);
+        }
+      }
     }
     else
       readData(hroot,occSet,spinIndex,degeneracy);
@@ -107,45 +119,67 @@ namespace qmcplusplus {
     }
   }
 
+  void TricubicBsplineSetBuilder::getCenterAndOrigin(const char* hroot, const vector<int>& occSet, int norb)
+  {
+    if(myParam->Rcut>0.0)
+    {
+      for(int iorb=0; iorb<norb; iorb++) 
+      {
+        string centerName=myParam->getCenterName(hroot,occSet[iorb]);
+        HDFAttribIO<PosType > cdummy(activeBasis->Centers[iorb]);
+        cdummy.read(hfileID,centerName.c_str());
+      }
+    }
+    if(FloatingGrid)
+    {
+      for(int iorb=0; iorb<norb; iorb++) 
+      {
+        string originName=myParam->getOriginName(hroot,occSet[iorb]);
+        HDFAttribIO<PosType > cdummy(activeBasis->Origins[iorb]);
+        cdummy.read(hfileID,originName.c_str());
+      }
+    }
+  }
+
   void TricubicBsplineSetBuilder::readComplex2RealData(const char* hroot, const vector<int>& occSet,
       int spinIndex, int degeneracy)
   {
     bool truncate = (myParam->Rcut>0.0);
-    PosType center(0.0);
+    //PosType center(0.0),origin(0.0);
     int norb=occSet.size()/degeneracy;
     StorageType inData(BoxGrid[0],BoxGrid[1],BoxGrid[2]);
     Array<ComplexType,3> inTemp(BoxGrid[0],BoxGrid[1],BoxGrid[2]);
+
+    //first obtain centers and origins
+    getCenterAndOrigin(hroot,occSet,norb);
+
     for(int iorb=0; iorb<norb; iorb++) 
     {
-      if(truncate)
-      {
-        string centerName=myParam->getCenterName(hroot,occSet[iorb]);
-        HDFAttribIO<PosType > cdummy(center);
-        cdummy.read(hfileID,centerName.c_str());
-      }
       ostringstream wnshort;
       string eigvName=myParam->getEigVectorName(hroot,occSet[iorb],spinIndex);
       wnshort<<curH5Fname << "#"<<occSet[iorb] << "#" << spinIndex;
-      map<string,StorageType*>::iterator it(BigDataSet.find(wnshort.str()));
+      map<string,RSOType*>::iterator it(BigDataSet.find(wnshort.str()));
       if(it == BigDataSet.end()) {
         if(print_log)
         {
           app_log() << "   Reading spline function " << eigvName << " (" << wnshort.str()  << ")"  << endl;
-          if(truncate) app_log() << "     center=" << center << endl;
+          if(truncate) 
+            app_log() << "     center=" << activeBasis->Centers[iorb] << endl;
         }
         StorageType* newP =new StorageType;
         HDFAttribIO<Array<ComplexType,3> > dummy(inTemp);
         dummy.read(hfileID,eigvName.c_str());
         BLAS::copy(inTemp.size(),inTemp.data(),inData.data());
-        BigDataSet[wnshort.str()]=newP;
-        activeBasis->add(iorb,center,inData,newP);
+        BigDataSet[wnshort.str()]=new RSOType(activeBasis->Centers[iorb],activeBasis->Origins[iorb],newP);
+        activeBasis->add(iorb,inData,newP);
       } else {
         if(print_log)
         {
           app_log() << "   Reusing spline function " << eigvName << " (" << wnshort.str()  << ")" << endl;
-          if(truncate) app_log() << "     center=" << center << endl;
+          if(truncate) 
+            app_log() << "     center=" << activeBasis->Centers[iorb] << endl;
         }
-        activeBasis->add(iorb,center,(*it).second);
+        activeBasis->add(iorb,(*it).second->Coeffs);
       }
     } 
 
@@ -169,7 +203,6 @@ namespace qmcplusplus {
 #pragma omp parallel
     {
       bool truncate = (myParam->Rcut>0.0);
-      PosType center;
       StorageType inData(BoxGrid[0],BoxGrid[1],BoxGrid[2]);
       Array<ComplexType,3> inTemp(BoxGrid[0],BoxGrid[1],BoxGrid[2]);
 
@@ -186,22 +219,17 @@ namespace qmcplusplus {
         BLAS::copy(inTemp.size(),inTemp.data(),inData.data());
         StorageType* newP =new StorageType;
         bsset[iorb]=newP;
-        activeBasis->add(iorb,center,inData,newP);
+        activeBasis->add(iorb,inData,newP);
       }
     }
 
-    bool localize=myParam->Rcut>0.0;
+    //first obtain centers and origins
+    getCenterAndOrigin(hroot,occSet,norb);
     for(int iorb=0; iorb<norb; iorb++) 
     {
-      if(localize)
-      {
-        string centerName=myParam->getCenterName(hroot,occSet[iorb]);
-        HDFAttribIO<PosType > cdummy(activeBasis->Centers[iorb]);
-        cdummy.read(hfileID,centerName.c_str());
-      }
       ostringstream wnshort;
       wnshort<<curH5Fname << "#"<<occSet[iorb]/degeneracy << "#" << spinIndex;
-      BigDataSet[wnshort.str()]=bsset[iorb];
+      BigDataSet[wnshort.str()]=new RSOType(activeBasis->Centers[iorb],activeBasis->Origins[iorb],bsset[iorb]);
     } 
   }
 
@@ -212,40 +240,36 @@ namespace qmcplusplus {
     int norb=occSet.size()/degeneracy;
     StorageType inData(BoxGrid[0],BoxGrid[1],BoxGrid[2]);
 
-    PosType center(0.0);
+    getCenterAndOrigin(hroot,occSet,norb);
     for(int iorb=0; iorb<norb; iorb++) 
     {
-      if(truncate)
-      {
-        string centerName=myParam->getCenterName(hroot,occSet[iorb]);
-        HDFAttribIO<PosType > cdummy(activeBasis->Centers[iorb]);
-        cdummy.read(hfileID,centerName.c_str());
-      }
       ostringstream wnshort;
       string eigvName=myParam->getEigVectorName(hroot,occSet[iorb]/degeneracy,spinIndex);
       wnshort<<curH5Fname << "#"<<occSet[iorb]/degeneracy << "#" << spinIndex;
-      map<string,StorageType*>::iterator it(BigDataSet.find(wnshort.str()));
+      map<string,RSOType*>::iterator it(BigDataSet.find(wnshort.str()));
       if(it == BigDataSet.end()) 
       {
         if(print_log)
         {
           app_log() << "   Reading spline function " << eigvName << " (" << wnshort.str()  << ")"  << endl;
-          if(truncate) app_log() << "     center=" << center << endl;
+          if(truncate) 
+            app_log() << "     center=" << activeBasis->Centers[iorb] << endl;
         }
         StorageType* newP=new StorageType;
         HDFAttribIO<StorageType> dummy(inData);
         dummy.read(hfileID,eigvName.c_str());
-        BigDataSet[wnshort.str()]=newP;
-        activeBasis->add(iorb,center,inData,newP);
+        BigDataSet[wnshort.str()]=new RSOType(activeBasis->Centers[iorb],activeBasis->Origins[iorb],newP);
+        activeBasis->add(iorb,inData,newP);
       } 
       else 
       {
         if(print_log)
         {
           app_log() << "   Reusing spline function " << eigvName << " (" << wnshort.str()  << ")" << endl;
-          if(truncate) app_log() << "     center=" << center << endl;
+          if(truncate) 
+            app_log() << "     center=" << activeBasis->Centers[iorb] << endl;
         }
-        activeBasis->add(iorb,center,(*it).second);
+        activeBasis->add(iorb,(*it).second->Coeffs);
       }
     } 
   }
@@ -268,7 +292,6 @@ namespace qmcplusplus {
 #pragma omp parallel
     {
       bool truncate = (myParam->Rcut>0.0);
-      PosType center;
       StorageType inData(BoxGrid[0],BoxGrid[1],BoxGrid[2]);
       int ip=omp_get_thread_num();
       for(int iorb=odist[ip]; iorb<odist[ip+1]; iorb++)
@@ -282,22 +305,16 @@ namespace qmcplusplus {
         }
         StorageType* newP =new StorageType;
         bsset[iorb]=newP;
-        activeBasis->add(iorb,center,inData,newP);
+        activeBasis->add(iorb,inData,newP);
       }
     }
 
-    bool localize=myParam->Rcut>0.0;
+    getCenterAndOrigin(hroot,occSet,norb);
     for(int iorb=0; iorb<norb; iorb++) 
     {
-      if(localize)
-      {
-        string centerName=myParam->getCenterName(hroot,occSet[iorb]);
-        HDFAttribIO<PosType > cdummy(activeBasis->Centers[iorb]);
-        cdummy.read(hfileID,centerName.c_str());
-      }
       ostringstream wnshort;
       wnshort<<curH5Fname << "#"<<occSet[iorb]/degeneracy << "#" << spinIndex;
-      BigDataSet[wnshort.str()]=bsset[iorb];
+      BigDataSet[wnshort.str()]=new RSOType(activeBasis->Centers[iorb],activeBasis->Origins[iorb],bsset[iorb]);
     } 
   }
 }

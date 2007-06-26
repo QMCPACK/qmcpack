@@ -18,6 +18,7 @@
 #include "QMCWaveFunctions/PlaneWave/PWParameterSet.h"
 #include "QMCWaveFunctions/Bspline3DSetTemp.h"
 #include "QMCWaveFunctions/Bspline3DSet.h"
+#include "QMCWaveFunctions/Bspline3DSetTrunc.h"
 #include "QMCWaveFunctions/GroupedOrbitalSet.h"
 #include "QMCWaveFunctions/TricubicBsplineSetBuilder.h"
 #include "QMCWaveFunctions/OrbitalBuilderBase.h"
@@ -28,15 +29,18 @@
 namespace qmcplusplus {
 
   //initialize the static data member
-  map<string,TricubicBsplineSetBuilder::StorageType*> TricubicBsplineSetBuilder::BigDataSet;
+  //map<string,TricubicBsplineSetBuilder::StorageType*> TricubicBsplineSetBuilder::BigDataSet;
+  map<string,TricubicBsplineSetBuilder::RSOType*> TricubicBsplineSetBuilder::BigDataSet;
 
   TricubicBsplineSetBuilder::TricubicBsplineSetBuilder(ParticleSet& p, PtclPoolType& psets, xmlNodePtr cur):
-    targetPtcl(p),ptclPool(psets),rootNode(cur), LowerBox(0.0),UpperBox(1.0),BoxGrid(2),BoxDup(1)
-    {
-      for(int idim=0; idim<DIM; idim++)
-        UpperBox[idim]=targetPtcl.Lattice.R(idim,idim);
-      myParam=new PWParameterSet;
-      print_log = OrbitalBuilderBase::print_level>0;
+    targetPtcl(p),ptclPool(psets),OpenEndGrid(false),TranslateGrid(false),FloatingGrid(false),print_log(false),
+  BoxGrid(2),BoxDup(1),LowerBox(0.0),UpperBox(1.0),
+  rootNode(cur)
+  {
+    for(int idim=0; idim<DIM; idim++)
+      UpperBox[idim]=targetPtcl.Lattice.R(idim,idim);
+    myParam=new PWParameterSet;
+    print_log = OrbitalBuilderBase::print_level>0;
   }   
 
   TricubicBsplineSetBuilder::~TricubicBsplineSetBuilder()
@@ -79,10 +83,17 @@ namespace qmcplusplus {
         BoxGrid[idir]=npts;
         OpenEndGrid = (closedEnd != "yes");
       } 
-      else if(cname == "expand")//expand
-      {
-        putContent(BoxDup,cur);//
-      }
+      //else if(cname == "expand")//expand
+      //{
+      //  putContent(BoxDup,cur);//
+      //  TranslateGrid = true;
+      //}
+      //else if(cname == "center")//move center of the grid
+      //{
+      //  string move("no");
+      //  putContent(move,cur);
+      //  TranslateGrid = (move =="yes");
+      //}
       cur=cur->next;
     }
     if(print_log)
@@ -147,7 +158,14 @@ namespace qmcplusplus {
       }
     bool orthorhombic=(offdiag< numeric_limits<RealType>::epsilon());
 
-    //stage 3: create one of the derived classes from BsplineBasisType (Bspline3DSetBase)
+    //stage 3: check if the grid needs to be modified
+    BoxDup=myParam->BoxDup;
+    if(BoxDup[0]*BoxDup[1]*BoxDup[2]>1)
+      TranslateGrid=true;
+    else
+      TranslateGrid=(myParam->BufferRadius>0.0)? true:false;
+
+    //stage 4: create one of the derived classes from BsplineBasisType (Bspline3DSetBase)
     //constants for template instantiations
     const bool ORTHO=true;
     const bool NONORTHO=false;
@@ -165,26 +183,34 @@ namespace qmcplusplus {
       {
         if(localize)
         {
-          if(orthorhombic)
+          if(TranslateGrid)
           {
-#if defined(USE_BSPLINE_TEMP)
-            if(print_log)  app_log() << "    Bspline3DSet<ORTHO=true,TRUC=true> " << endl;
-            activeBasis = new Bspline3DSet<ORTHO,TRUNC>;
-#else
-            if(print_log)  app_log() << "    Bspline3DSet_Ortho_Trunc" << endl;
-            activeBasis = new Bspline3DSet_Ortho_Trunc;
-#endif
+            if(print_log) app_log() << "   Bspline3DSet_MLW with truncated grid" << endl;
+            activeBasis=new Bspline3DSet_MLW;
           }
-          else
+          else 
           {
+            if(orthorhombic)
+            {
 #if defined(USE_BSPLINE_TEMP)
-            if(print_log) app_log() << "    Bspline3DSet<ORTHO=false,TRUC=true> " << endl;
-            activeBasis = new  Bspline3DSet<NONORTHO,TRUNC>;
+              if(print_log)  app_log() << "    Bspline3DSet<ORTHO=true,TRUC=true> " << endl;
+              activeBasis = new Bspline3DSet<ORTHO,TRUNC>;
 #else
-            if(print_log) app_log() << "    Bspline3DSet_Gen_Trunc " << endl;
-            activeBasis = new Bspline3DSet_Gen_Trunc;
+              if(print_log)  app_log() << "    Bspline3DSet_Ortho_Trunc" << endl;
+              activeBasis = new Bspline3DSet_Ortho_Trunc;
 #endif
-          } 
+            }
+            else
+            {
+#if defined(USE_BSPLINE_TEMP)
+              if(print_log) app_log() << "    Bspline3DSet<ORTHO=false,TRUC=true> " << endl;
+              activeBasis = new  Bspline3DSet<NONORTHO,TRUNC>;
+#else
+              if(print_log) app_log() << "    Bspline3DSet_Gen_Trunc " << endl;
+              activeBasis = new Bspline3DSet_Gen_Trunc;
+#endif
+            } 
+          }
         }
         else
         {
@@ -224,12 +250,8 @@ namespace qmcplusplus {
         abort(); //FIXABORT
       }
 
-      if(OpenEndGrid)
-        activeBasis->setGrid(LowerBox[0],UpperBox[0], LowerBox[1],UpperBox[1],LowerBox[2],UpperBox[2],
-            BoxGrid[0],BoxGrid[1],BoxGrid[2]);
-      else//need to offset for closed end
-        activeBasis->setGrid(LowerBox[0],UpperBox[0],LowerBox[1],UpperBox[1],LowerBox[2],UpperBox[2],
-            BoxGrid[0]-1,BoxGrid[1]-1,BoxGrid[2]-1);
+      //initialize the grid
+      initGrid();
 
       myBasis["0"]=activeBasis;
       activeBasis->setOrbitalSetSize(norb);
@@ -251,6 +273,58 @@ namespace qmcplusplus {
     app_log() << "  Bspline Input = " << t1.elapsed() << " secs " << endl;
 
     return activeBasis;
+  }
+
+  void TricubicBsplineSetBuilder::initGrid()
+  {
+    //check the grid here
+    herr_t status = H5Eset_auto(NULL, NULL);
+    char gname[64];
+    sprintf(gname,"/%s/grid",myParam->eigTag.c_str());
+    status = H5Gget_objinfo (hfileID, gname, 0, NULL);
+    if(status == 0) {
+      hid_t g_in=H5Gopen(hfileID,gname);
+      HDFAttribIO<TinyVector<int,DIM> > box_in(BoxGrid);
+      box_in.read(g_in,"dimensions");
+      PosType spacing;
+      HDFAttribIO<PosType> spacing_in(spacing);
+      spacing_in.read(g_in,"spacing");
+
+      int yes=1;
+      HDFAttribIO<int> tg(yes);
+      tg.read(g_in,"translated");
+      if(yes) 
+      {
+        TranslateGrid=false;
+        FloatingGrid=true;
+      }
+
+      tg.read(g_in,"closed");
+      if(yes) 
+      {
+        OpenEndGrid=false;
+        UpperBox[0]=spacing[0]*(BoxGrid[0]-1);
+        UpperBox[1]=spacing[1]*(BoxGrid[1]-1);
+        UpperBox[2]=spacing[2]*(BoxGrid[2]-1);
+      }
+      else
+      {
+        OpenEndGrid=true;
+        UpperBox[0]=spacing[0]*BoxGrid[0];
+        UpperBox[1]=spacing[1]*BoxGrid[1];
+        UpperBox[2]=spacing[2]*BoxGrid[2];
+      }
+    }
+
+    if(OpenEndGrid)
+      activeBasis->setGrid(LowerBox[0],UpperBox[0], LowerBox[1],UpperBox[1],LowerBox[2],UpperBox[2],
+          BoxGrid[0],BoxGrid[1],BoxGrid[2]);
+    else//need to offset for closed end
+      activeBasis->setGrid(LowerBox[0],UpperBox[0],LowerBox[1],UpperBox[1],LowerBox[2],UpperBox[2],
+          BoxGrid[0]-1,BoxGrid[1]-1,BoxGrid[2]-1);
+
+    //copy the input grid
+    dataKnot=activeBasis->bKnots;
   }
 
 //  /** Create B-spline for the electron-gas wavefunctions

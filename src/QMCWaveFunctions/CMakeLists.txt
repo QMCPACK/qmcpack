@@ -26,8 +26,10 @@ SET(FERMION_SRCS
   BasisSetFactory.cpp
   Bspline3DSetBase.cpp
   Bspline3DSet.cpp
+  Bspline3DSetTrunc.cpp
   TricubicBsplineSetBuilder.cpp
   TricubicBsplineSetBuilder.1.cpp
+  TricubicBsplineSetBuilder.2.cpp
   Fermion/DiracDeterminantBase.cpp
   Fermion/SlaterDet.cpp
   Fermion/SlaterDetBuilder.cpp

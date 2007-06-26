@@ -35,6 +35,16 @@ namespace qmcplusplus {
     typedef Bspline3DSetBase::StorageType StorageType;
     typedef map<string,ParticleSet*>      PtclPoolType;
 
+    /** real-space orbital type
+     */
+    struct RSOType {
+      PosType Center;
+      PosType Origin;
+      StorageType* Coeffs;
+      RSOType():Coeffs(0){}
+      RSOType(const PosType& c, const PosType o, StorageType* d): Center(c),Origin(o),Coeffs(d){}
+    };
+
     /** constructor
      * @param p target ParticleSet
      * @param psets a set of ParticleSet objects
@@ -53,39 +63,49 @@ namespace qmcplusplus {
     SPOSetBase* createSPOSet(xmlNodePtr cur);
 
   private:
+
     /** set of StorageType*
      *
      * Key is $1#$2 where $1 is the hdf5 file name and $2 is the band indenx
      */
-    static map<string,StorageType*> BigDataSet;
-    ///boolean to enable debug with EG
-    bool DebugWithEG;
+    //static map<string,StorageType*> BigDataSet;
+    static map<string,RSOType*> BigDataSet;
     ///if true, grid is open-ended [0,nx) x [0,ny) x [0, nz)
     bool OpenEndGrid;
+    ///if true, a grid is translated so that the center of localized orbitals conincides with the cell center
+    bool TranslateGrid;
+    ///if true, the input grid is not fixed. 
+    bool FloatingGrid;
     ///if true, write stuff
     bool print_log;
+    ///boolean to enable debug with EG
+    bool DebugWithEG;
     ///twist angle
     PosType TwistAngle;
     ///target ParticleSet
     ParticleSet& targetPtcl;
     ///reference to a ParticleSetPool
     PtclPoolType& ptclPool;
-    ///current hdf5 file name
-    std::string curH5Fname;
-    ///save xml node
-    xmlNodePtr rootNode;
-    PosType LowerBox;
-    PosType UpperBox;
     ///number of grid points for each direction
     TinyVector<IndexType,DIM> BoxGrid;
     ///number of copies of the lattice for tiling
     TinyVector<IndexType,DIM> BoxDup;
+    ///coordiate of the box origin
+    PosType LowerBox;
+    ///coordiate of the box bound 
+    PosType UpperBox;
     ///parameter set for h5 tags
     PWParameterSet* myParam;
+    ///save xml node
+    xmlNodePtr rootNode;
     ///hdf5 handler to clean up
     hid_t hfileID;
     ///pointer to the BsplineBasisType use
     BsplineBasisType* activeBasis;
+    ///grid of the orinal grid
+    Bspline3DSetBase::GridType dataKnot;
+    ///current hdf5 file name
+    std::string curH5Fname;
     ///set of WFSetType*
     map<string,BsplineBasisType*> myBasis;
     ///single-particle orbital sets
@@ -93,6 +113,12 @@ namespace qmcplusplus {
 
     ///set Bspline functions
     void setBsplineBasisSet(xmlNodePtr cur);
+
+    ///initialize the grid of the spline orbitals
+    void initGrid();
+
+    ///initialize the center and origin of orbitals
+    void getCenterAndOrigin(const char* hroot, const vector<int>& occSet, int norb);
 
     ///read numerical orbitals and spline them
     void readData(const char* hroot, const vector<int>& occSet, 
@@ -108,6 +134,9 @@ namespace qmcplusplus {
         int spinIndex, int degeneracy);
 
     void readComplex2RealDataOMP(const char* hroot, const vector<int>& occSet,
+        int spinIndex, int degeneracy);
+
+    void readComplex2RealDataWithTruncation(const char* hroot, const vector<int>& occSet,
         int spinIndex, int degeneracy);
 
     ///a function to test with EG
