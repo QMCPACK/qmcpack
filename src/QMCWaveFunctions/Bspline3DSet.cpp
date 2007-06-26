@@ -151,7 +151,9 @@ namespace qmcplusplus {
           laps(i,j)=0.0;
         }
         else
+        {
           vals(j,i)=bKnots.evaluate(*P[j],grads(i,j),laps(i,j));
+        }
       }
     }
   }
