@@ -44,8 +44,8 @@ namespace qmcplusplus {
       //remove this
       NumOrbitals=norbs;
       Centers.resize(norbs);
+      Origins.resize(norbs);
       P.resize(norbs,0);
-
       OrbitalSetSize=norbs;
       BasisSetSize=norbs;
       Identity=true;
@@ -81,17 +81,14 @@ namespace qmcplusplus {
   }
   void Bspline3DSetBase::resetTargetParticleSet(ParticleSet& e) { }
 
-  void Bspline3DSetBase::add(int i, const PosType& c, 
-      const StorageType& data, StorageType* curP)
+  void Bspline3DSetBase::add(int i, const StorageType& data, StorageType* curP)
   {
     bKnots.Init(data,*curP);
-    Centers[i]=c;
     P[i]=curP;
   }
 
-  void Bspline3DSetBase::add(int i, const PosType& c, StorageType* curP)
+  void Bspline3DSetBase::add(int i, StorageType* curP)
   {
-    Centers[i]=c;
     P[i]=curP;
   }
 
@@ -122,8 +119,12 @@ namespace qmcplusplus {
           {
             P[i]=P[o];
             Centers[i]=Centers[o]+displ;
+            Origins[i]=Origins[o]+displ;
           }
         }
+
+    //for(i=0; i<OrbitalSetSize; i++)
+    //  app_log() << Centers[i] << endl;
   }
 
 //  void TricubicBsplineSetBuilder::createBsplineBasisSet(xmlNodePtr cur, 

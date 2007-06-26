@@ -60,10 +60,12 @@ namespace qmcplusplus {
     UnitCellType Lattice;
     ///unitcell for tiling
     UnitCellType UnitLattice;
-    ///grid
+    ///grid for orbitals
     GridType bKnots;
     ///centers
     vector<PosType> Centers;
+    ///displacement vectors for the grid of localized orbitals
+    vector<PosType> Origins;
     ///bspline data
     std::vector<const StorageType*> P;
 
@@ -104,13 +106,13 @@ namespace qmcplusplus {
      * @param data input data
      * @param curP interpolated data
      */
-    void add(int i, const PosType& c, const StorageType& data, StorageType* curP);
+    void add(int i, const StorageType& data, StorageType* curP);
 
     /** add a bspline orbital
      * @param i index of the orbital
      * @param curP interpolated data
      */
-    void add(int i,const PosType& c,  StorageType* curP);
+    void add(int i, StorageType* curP);
 
     /** reset optimizable variables. 
      */
