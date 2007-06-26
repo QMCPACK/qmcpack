@@ -39,6 +39,10 @@ namespace qmcplusplus {
     double Ecut;
     ///cutoff radius for truncated orbitals
     double Rcut;
+    ///radius of buffer layer for truncated orbitals
+    double BufferRadius;
+    ///cell multiplications
+    TinyVector<int,OHMMS_DIM> BoxDup;
     ///tag for the parameters
     std::string paramTag;
     ///tag for the basis
@@ -88,6 +92,9 @@ namespace qmcplusplus {
     string getEigVectorName(const string& hg, int ib, int ispin);
     string getEigVectorName(int ib, int ispin);
     string getCenterName(const string& hg,int ib);
+    string getOriginName(const string& hg,int ib);
+
+    void writeParameters(hid_t gid);
   };
 }
 #endif

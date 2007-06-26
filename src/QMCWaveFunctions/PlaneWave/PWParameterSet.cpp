@@ -28,6 +28,8 @@ namespace qmcplusplus {
   numBands(0),
   Ecut(-1),
   Rcut(-1),
+  BufferRadius(-1),
+  BoxDup(1),
   paramTag("parameters"),
   basisTag("basis"),
   pwTag("planewaves"),
@@ -41,6 +43,8 @@ namespace qmcplusplus {
     m_param.setName("h5tag");
     m_param.add(twistIndex,"twistIndex","int");
     m_param.add(Rcut,"rcut","double");
+    m_param.add(BufferRadius,"bufferLayer","double");
+    m_param.add(BoxDup,"expand","int3");
     m_param.add(paramTag,"parameters","string");
     m_param.add(basisTag,"basis","string");
     m_param.add(pwTag,"planewaves","string");
@@ -119,6 +123,13 @@ namespace qmcplusplus {
     return oss.str();
   }
 
+  string PWParameterSet::getOriginName(const string& hg,int ib)
+  {
+    ostringstream oss;
+    oss << hg << "/"<< bandTag << ib << "/origin";
+    return oss.str();
+  }
+
   string PWParameterSet::getEigVectorName(int ib, int ispin)
   {
     ostringstream oss;
@@ -194,6 +205,22 @@ namespace qmcplusplus {
       }
     }
 
+  }
+
+  void PWParameterSet::writeParameters(hid_t gid)
+  {
+#if defined(QMC_COMPLEX)
+    int iscomplex=1;
+#else
+    int iscomplex=0;
+#endif
+    hid_t h1= H5Gcreate(gid,"parameters",0);
+    HDFAttribIO<int> i1(iscomplex);
+    i1.write(h1,"complex_coefficients");
+    TinyVector<int,2> v1(0,10);
+    HDFAttribIO<TinyVector<int,2> > i2(v1);
+    i2.write(gid,"version");
+    H5Gclose(h1);
   }
 }
 /***************************************************************************
