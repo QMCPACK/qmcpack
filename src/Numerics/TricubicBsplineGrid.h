@@ -78,9 +78,15 @@ namespace qmcplusplus {
     /* return the distance between the center with PBC */
     inline real_type getSep2(real_type x, real_type y, real_type z)
     {
-      x-=nearbyint(x*LxInv)*Lx;
-      y-=nearbyint(y*LyInv)*Ly;
-      z-=nearbyint(z*LzInv)*Lz;
+      //x-=nearbyint(x*LxInv)*Lx;
+      //y-=nearbyint(y*LyInv)*Ly;
+      //z-=nearbyint(z*LzInv)*Lz;
+      real_type x1=std::fmod(x*LxInv,1.0);
+      real_type y1=std::fmod(y*LyInv,1.0);
+      real_type z1=std::fmod(z*LzInv,1.0);
+      x=Lx*(x1-static_cast<int>(2.0*x1));
+      y=Ly*(y1-static_cast<int>(2.0*y1));
+      z=Lz*(z1-static_cast<int>(2.0*z1));
       return x*x+y*y+z*z;
     }
   };
