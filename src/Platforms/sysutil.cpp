@@ -20,8 +20,18 @@
 
 #include <string>
 using std::string;
-
 #include <time.h>
+
+#if defined(XT_CATAMOUNT)
+string getUserName()
+{
+  return "auser";
+}
+string getHostName()
+{
+  return "jaguar";
+}
+#else
 #include <unistd.h>
 #include <sys/utsname.h>
 #include <pwd.h>
@@ -34,16 +44,16 @@ string getUserName() {
   return "auser";
 }
 
-string getDateAndTime() {
-  time_t now;
-  time(&now);
-  return ctime(&now);
-}
-
 string getHostName() {
   utsname mysys;
   uname(&mysys);
   return string(mysys.nodename);
+}
+#endif
+string getDateAndTime() {
+  time_t now;
+  time(&now);
+  return ctime(&now);
 }
 
 /***************************************************************************
