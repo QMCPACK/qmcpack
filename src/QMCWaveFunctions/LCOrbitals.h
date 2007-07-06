@@ -257,7 +257,11 @@ namespace qmcplusplus {
      *@param cur the current xmlNode
      */
     bool put(xmlNodePtr cur) {
-      int norb=atoi((const char*)(xmlGetProp(cur, (const xmlChar *)"orbitals")));
+      int norb=0;
+      OhmmsAttributeSet aAttrib;
+      aAttrib.add(norb,"orbitals"); aAttrib.add(norb,"size");
+      aAttrib.put(cur);
+      //int norb=atoi((const char*)(xmlGetProp(cur, (const xmlChar *)"orbitals")));
       const xmlChar* h=xmlGetProp(cur, (const xmlChar*)"href");
       xmlNodePtr occ_ptr=NULL;
       xmlNodePtr coeff_ptr=NULL;

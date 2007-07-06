@@ -18,6 +18,7 @@
 #if defined(HAVE_LIBHDF5)
 #include "Numerics/HDFNumericAttrib.h"
 #endif
+#include "OhmmsData/AttributeSet.h"
 #include "Message/Communicate.h"
 #include <limits>
 
@@ -29,10 +30,14 @@ namespace qmcplusplus {
   bool SPOSetBase::put(xmlNodePtr cur) {
     //initialize the number of orbital by the basis set size
     int norb= BasisSetSize;
-    const xmlChar* norb_ptr=xmlGetProp(cur, (const xmlChar *)"orbitals");
-    if(norb_ptr != NULL) { 
-      norb=atoi((const char*)norb_ptr);
-    }
+
+    OhmmsAttributeSet aAttrib;
+    aAttrib.add(norb,"orbitals"); aAttrib.add(norb,"size");
+    aAttrib.put(cur);
+    //const xmlChar* norb_ptr=xmlGetProp(cur, (const xmlChar *)"orbitals");
+    //if(norb_ptr != NULL) { 
+    //  norb=atoi((const char*)norb_ptr);
+    //}
 
     setOrbitalSetSize(norb);
 
