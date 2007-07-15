@@ -48,7 +48,10 @@ namespace qmcplusplus {
     std::string MainEstimatorName;
     ///the root file name
     std::string RootName;
-
+    ///energy
+    TinyVector<RealType,4> RefEnergy;
+   // //Cummulative energy, weight and variance
+   // TinyVector<RealType,4>  EPSum;
     ///default constructor
     EstimatorManager(Communicate* c=0);
     ///copy constructor
@@ -191,11 +194,9 @@ namespace qmcplusplus {
      */
     void accumulate(ParticleSet& P, MCWalkerConfiguration::Walker_t& awalker);
 
-    /** set the cummulative energy and weight
-     */
-    void getEnergyAndWeight(RealType& e, RealType& w);
-
-
+    ///** set the cummulative energy and weight
+    // */
+    //void getEnergyAndWeight(RealType& e, RealType& w);
   protected:
     ///if true, responsible for reduction operation, broadcast of EPSum, and printout text file
     bool Manager;
@@ -219,12 +220,10 @@ namespace qmcplusplus {
     hid_t h_obs;
     ///communicator to handle communication
     Communicate* myComm;
-    //Cummulative energy and weight
-    TinyVector<RealType,2>  EPSum;
-    ///ostream for the output
-    //QMCHamiltonian& H;
     ///pointer to the primary ScalarEstimatorBase
     ScalarEstimatorBase* MainEstimator;
+    ///cummulative energy
+    TinyVector<RealType,4> CumEnergy;
     ///save the weights
     Vector<RealType> TotalWeight;
     ///save block averages (scalar data) to Cache 

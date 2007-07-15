@@ -117,6 +117,8 @@ namespace qmcplusplus {
     Collected= false;
     RecordCount=0;
     BlockAverages.setValues(0.0);
+    RefEnergy=0.0;
+    CumEnergy=0.0;
 
     //resize does not reset the value
     TotalWeight.resize(blocks);
@@ -149,13 +151,28 @@ namespace qmcplusplus {
       t.write(h_obs,"threads");
       HDFAttribIO<Matrix<RealType> > m(AverageCache);
       m.write(h_obs,"scalars");
+      HDFAttribIO<TinyVector<RealType,4> > e0(RefEnergy);
+      e0.write(h_obs,"energy");
+      HDFAttribIO<TinyVector<RealType,4> > e1(CumEnergy);
+      e1.write(h_obs,"energy_cum");
 
+      //write headers so that we can keep track of what we are writing
       ostringstream o;
       for(int i=0; i<BlockAverages.size()-1; i++) o << BlockAverages.Name[i] << ":";
       o<<BlockAverages.Name.back();
       string banner(o.str());
       HDFAttribIO<string> so(banner);
       so.write(h_obs,"scalar_ids");
+
+      ostringstream oe;
+      oe << "AverageEnergy:VarianceSquared:EstimatedError:AverageVariance";
+      banner=oe.str();
+      so.write(h_obs,"energy_ids");
+
+      ostringstream oc;
+      oc << "Energy:EnergySquared:Variance:Samples";
+      banner=oc.str();
+      so.write(h_obs,"energy_cum_ids");
 
       if(CompEstimators) CompEstimators->open(h_obs);
 
@@ -229,6 +246,21 @@ namespace qmcplusplus {
       PropertyCache *=norm;
     }
 
+    CumEnergy=0.0;
+    int eind=MainEstimator->FirstIndex;
+    for(int i=0; i<AverageCache.rows(); i++)
+    {
+      RealType et=AverageCache(i,eind);
+      CumEnergy[1]+=et;
+      CumEnergy[2]+=et*et;
+    }
+    CumEnergy[0]=AverageCache.rows();
+    RealType wgtnorm=1.0/CumEnergy[0];
+    RefEnergy[0]=CumEnergy[1]*wgtnorm;
+    RefEnergy[1]=CumEnergy[2]*wgtnorm-RefEnergy[0]*RefEnergy[0];
+    RefEnergy[2]=std::sqrt(RefEnergy[1]/(CumEnergy[0]-1.0));
+    RefEnergy[3]=CumEnergy[3]*wgtnorm;//average block variance
+
     //close the group
     if(h_obs>-1)
     {
@@ -239,6 +271,10 @@ namespace qmcplusplus {
       t.write(h_obs,"threads");
       HDFAttribIO<Matrix<RealType> > m(AverageCache,true);
       m.write(h_obs,"scalars");
+      HDFAttribIO<TinyVector<RealType,4> > e0(RefEnergy,true);
+      e0.write(h_obs,"energy");
+      HDFAttribIO<TinyVector<RealType,4> > e1(CumEnergy,true);
+      e1.write(h_obs,"energy_cum");
 
       //save the run-time properties
       ostringstream o;
@@ -273,6 +309,11 @@ namespace qmcplusplus {
       ofstream fout(fname.c_str());
       fout.setf(ios::scientific, ios::floatfield);
       fout.setf(ios::left,ios::adjustfield);
+      //fout << "#   Main energy analysis without autocorrelation time estimation " << endl;
+      //fout << "#     AverageEnergy        = " << RefEnergy[0] << endl;  
+      //fout << "#     VarianceSquared      = " << RefEnergy[1] << endl;  
+      //fout << "#     EstimatedError       = " << RefEnergy[2] << endl;  
+      //fout << "#     AverageBlockVariance = " << RefEnergy[3] << endl;  
       fout << "#   index    ";
       for(int i=0; i<BlockAverages.size(); i++) fout << setw(16) << BlockAverages.Name[i];
       fout << setw(16) << "WeightSum";
@@ -313,46 +354,69 @@ namespace qmcplusplus {
     {
       Estimators[i]->takeBlockAverage(AverageCache[RecordCount]);
     }
+
     RecordCount++;
 
-    //group is closed. Do not save it to hdf
     if(h_obs<-1) return;
+
+    //wrte current cummulative and average/error
+    CumEnergy[0]+=1.0;
+    RealType et=AverageCache(RecordCount-1,MainEstimator->FirstIndex);
+    CumEnergy[1]+=et;
+    CumEnergy[2]+=et*et;
+    CumEnergy[3]+=std::sqrt(MainEstimator->d_variance);
+
+    RealType wgtnorm=1.0/CumEnergy[0];
+    RefEnergy[0]=CumEnergy[1]*wgtnorm;
+    RefEnergy[1]=CumEnergy[2]*wgtnorm-RefEnergy[0]*RefEnergy[0];
+    if(CumEnergy[0]>1) 
+      RefEnergy[2]=std::sqrt(RefEnergy[1]*wgtnorm/(CumEnergy[0]-1.0));
+    RefEnergy[3]=CumEnergy[3]*wgtnorm;//average block variance
 
     HDFAttribIO<int> i(RecordCount,true);
     i.write(h_obs,"count");
     HDFAttribIO<Matrix<RealType> > m(AverageCache,true);
     m.write(h_obs,"scalars");
-
+    HDFAttribIO<TinyVector<RealType,4> > e0(RefEnergy,true);
+    e0.write(h_obs,"energy");
+    HDFAttribIO<TinyVector<RealType,4> > e1(CumEnergy,true);
+    e1.write(h_obs,"energy_cum");
     if(CompEstimators) CompEstimators->stopBlock();
   }
 
   void EstimatorManager::stopBlock(const vector<EstimatorManager*> est)
   {
     ThreadCount=est.size();
-    //RecordCount=est[0]->RecordCount;
-    //AverageCache=est[0]->AverageCache;
-    //for(int i=1; i<est.size(); i++)
-    //{
-    //  AverageCache+=est[i]->AverageCache;
-    //}
     RecordCount=est[0]->RecordCount;
+    CumEnergy[0]+=ThreadCount;
     for(int i=0; i<ThreadCount; i++)
     {
       int rc=est[i]->RecordCount-1;
+      RealType et=est[i]->AverageCache[rc][0];
       accumulate_elements(est[i]->PropertyCache[rc],est[i]->PropertyCache[rc+1],PropertyCache[rc]);
       accumulate_elements(est[i]->AverageCache[rc], est[i]->AverageCache[rc+1],AverageCache[rc]);
-      //FastAccumulate(est[i]->PropertyCache[rc],est[i]->PropertyCache[rc+1],PropertyCache[rc]);
-      //FastAccumulate(est[i]->AverageCache[rc], est[i]->AverageCache[rc+1],AverageCache[rc]);
     }
 
+    //group is closed. Do not save it to hdf
     if(h_obs<-1) return;
 
+    CumEnergy[0]+=1.0;
+    RealType et=AverageCache(RecordCount-1,MainEstimator->FirstIndex);
+    RealType tnorm=1.0/static_cast<RealType>(ThreadCount);
+    CumEnergy[1]+=et*tnorm;
+    CumEnergy[2]+=et*et*tnorm;
+    RealType wgtnorm=1.0/CumEnergy[0];
+    RefEnergy[0]=CumEnergy[1]*wgtnorm;
+    RefEnergy[1]=CumEnergy[2]*wgtnorm-RefEnergy[0]*RefEnergy[0];
+    if(CumEnergy[0]>1) RefEnergy[2]=std::sqrt(RefEnergy[1]/(CumEnergy[0]-1.0));
     HDFAttribIO<int> i(RecordCount,true);
     i.write(h_obs,"count");
-    HDFAttribIO<int> t(ThreadCount,true);
-    t.write(h_obs,"threads");
     HDFAttribIO<Matrix<RealType> > m(AverageCache,true);
     m.write(h_obs,"scalars");
+    HDFAttribIO<TinyVector<RealType,4> > e0(RefEnergy,true);
+    e0.write(h_obs,"energy");
+    HDFAttribIO<TinyVector<RealType,4> > e1(CumEnergy,true);
+    e1.write(h_obs,"energy_cum");
   }
 
   void EstimatorManager::accumulate(MCWalkerConfiguration& W)
@@ -374,21 +438,26 @@ namespace qmcplusplus {
       Estimators[i]->accumulate(P,awalker);
   }
 
-  void 
-    EstimatorManager::getEnergyAndWeight(RealType& e, RealType& w) 
-  {
-    int nc=AverageCache.cols();
-    if(nc==0) return;
-    EPSum[0]=0.0;
-    EPSum[1]=RecordCount;
-    const RealType* restrict eptr=AverageCache.data();
-    for(int i=0; i<RecordCount; i++, eptr+=nc) EPSum[0] += *eptr;
-//#if defined(HAVE_MPI)
-//    MPI_Bcast(EPSum.begin(),2,MPI_DOUBLE,0,myComm->getMPI());
-//#endif
-    e=EPSum[0];
-    w=EPSum[1];
-  }
+//  void 
+//    EstimatorManager::getEnergyAndWeight(RealType& e, RealType& w) 
+//  {
+//    int nc=AverageCache.cols();
+//    if(nc==0) return;
+//    EPSum[0]=0.0;
+//    EPSum[1]=RecordCount;
+//    RealType e2cum=0.0;
+//    const RealType* restrict eptr=AverageCache.data();
+//    //for(int i=0; i<RecordCount; i++, eptr+=nc) EPSum[0] += *eptr;
+//    for(int i=0; i<RecordCount; i++, eptr+=nc) 
+//    {
+//      EPSum[0] +=*eptr;
+//    }
+////#if defined(HAVE_MPI)
+////    MPI_Bcast(EPSum.begin(),2,MPI_DOUBLE,0,myComm->getMPI());
+////#endif
+//    e=EPSum[0];
+//    w=EPSum[1];
+//  }
 
   EstimatorManager::EstimatorType* 
     EstimatorManager::getMainEstimator() 
@@ -504,6 +573,23 @@ namespace qmcplusplus {
     for (int a=0; a<entries; a++)
       values[a] = TotalAveragesData(a,Block2Total[i]);
   }
+
+  //void EstimatorManager::updateRefEnergy()
+  //{
+  //  CumEnergy[0]+=1.0;
+  //  RealType et=AverageCache(RecordCount-1,0);
+  //  CumEnergy[1]+=et;
+  //  CumEnergy[2]+=et*et;
+  //  CumEnergy[3]+=std::sqrt(MainEstimator->d_variance);
+
+  //  RealType wgtnorm=1.0/CumEnergy[0];
+  //  RefEnergy[0]=CumEnergy[1]*wgtnorm;
+  //  RefEnergy[1]=CumEnergy[2]*wgtnorm-RefEnergy[0]*RefEnergy[0];
+  //  if(CumEnergy[0]>1) 
+  //    RefEnergy[2]=std::sqrt(RefEnergy[1]*wgtnorm/(CumEnergy[0]-1.0));
+  //  RefEnergy[3]=CumEnergy[3]*wgtnorm;//average block variance
+  //}
+
 }
 
 /***************************************************************************
