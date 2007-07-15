@@ -22,6 +22,7 @@
 #include "OhmmsData/ParameterSet.h"
 #include "OhmmsData/HDFAttribIO.h"
 #include "Particle/MCWalkerConfiguration.h"
+#include <queue>
 
 namespace qmcplusplus {
 
@@ -65,6 +66,8 @@ namespace qmcplusplus {
       int Nmin;
       ///control population fluctutaions
       int NumGeneration;
+      ///number of previous energy to evaluate the trial energy
+      int NumEnergyHistory;
       ///index of the trial energy
       int ETrialIndex;
       ///the timestep
@@ -73,8 +76,14 @@ namespace qmcplusplus {
       RealType Feed;
       ///energy offset to control branching
       RealType E_T;
+      ///variance of the reference energy
+      RealType DeltaE;
       ///Feed*log(N)
       RealType logN;
+      ///variables to control branching 
+      RealType branchMax;
+      RealType branchCutoff;
+      RealType branchFilter;
       ///Accumulation of the energy
       RealType EavgSum;
       ///Accumulation of the weight
@@ -99,6 +108,8 @@ namespace qmcplusplus {
       ParameterSet m_param;
       ///Constructor
       SimpleFixedNodeBranch(RealType tau, int nideal);
+      ///history of energy
+      queue<RealType> Ehist;
 
       ///copy constructor
       SimpleFixedNodeBranch(const SimpleFixedNodeBranch& abranch);
@@ -145,6 +156,22 @@ namespace qmcplusplus {
       inline RealType branchGF(RealType tau, RealType emixed, RealType reject) const { 
         //return min(0.5/(reject+1e-12),exp(-tau*(emix-E_T)));
         return std::exp(-tau*(emixed-E_T));
+      }
+
+      inline RealType branchWeight(RealType tau, RealType enew, RealType eold) const { 
+        RealType taueff=tau*0.5;
+        //return min(0.5/(reject+1e-12),exp(-tau*(emix-E_T)));
+        RealType x=std::max(E_T-enew,E_T-eold);
+        if(x>branchMax)
+        {
+          taueff=0.0;
+        } 
+        else if(x>branchCutoff)
+        {
+          taueff *=(1.0-(x-branchCutoff)*branchFilter);
+        }
+
+        return std::exp(taueff*(E_T*2.0-enew-eold));
       }
 
       /** set the trial energy \f$ <E_G> = eg \f$
