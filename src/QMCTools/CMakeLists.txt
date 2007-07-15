@@ -41,6 +41,10 @@ ADD_EXECUTABLE(convert4qmc ${CASINO})
 TARGET_LINK_LIBRARIES(convert4qmc qmc qmcbase qmcutil
 ${LAPACK_LIBRARY}
 ${BLAS_LIBRARY} ${FORTRAN_LIBS})
+
+ADD_EXECUTABLE(density2D densityplot.cpp)
+TARGET_LINK_LIBRARIES(density2D qmc qmcbase qmcutil)
+
 #ADD_EXECUTABLE(spline spline.cpp)
 #TARGET_LINK_LIBRARIES(spline qmc qmcbase)
 #ADD_EXECUTABLE(spline3d spline3.cpp)
@@ -49,5 +53,5 @@ ${BLAS_LIBRARY} ${FORTRAN_LIBS})
 #TARGET_LINK_LIBRARIES(spline3d_io qmc qmcbase)
 #ADD_EXECUTABLE(molinit ../QMCWaveFunctions/OrbitalBuilderBase.cpp Assign.cpp)
 #TARGET_LINK_LIBRARIES(molinit qmc qmcbase)
-ADD_EXECUTABLE(h5merge HDFWalkerMerger h5merge.cpp)
-TARGET_LINK_LIBRARIES(h5merge qmc qmcbase qmcutil)
+#ADD_EXECUTABLE(h5merge HDFWalkerMerger h5merge.cpp)
+#TARGET_LINK_LIBRARIES(h5merge qmc qmcbase qmcutil)
