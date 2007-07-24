@@ -196,7 +196,7 @@ namespace qmcplusplus {
 
     ///** set the cummulative energy and weight
     // */
-    //void getEnergyAndWeight(RealType& e, RealType& w);
+    void getEnergyAndWeight(RealType& e, RealType& w);
   protected:
     ///if true, responsible for reduction operation, broadcast of EPSum, and printout text file
     bool Manager;

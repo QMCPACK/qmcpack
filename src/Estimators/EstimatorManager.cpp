@@ -438,9 +438,15 @@ namespace qmcplusplus {
       Estimators[i]->accumulate(P,awalker);
   }
 
-//  void 
-//    EstimatorManager::getEnergyAndWeight(RealType& e, RealType& w) 
-//  {
+  void 
+    EstimatorManager::getEnergyAndWeight(RealType& e, RealType& w) 
+  {
+    int nc=AverageCache.cols();
+    if(nc==0) return;
+    e=0.0;
+    w=RecordCount;
+    const RealType* restrict eptr=AverageCache.data();
+    for(int i=0; i<RecordCount; i++, eptr+=nc) e[0] +=*eptr;
 //    int nc=AverageCache.cols();
 //    if(nc==0) return;
 //    EPSum[0]=0.0;
@@ -457,7 +463,7 @@ namespace qmcplusplus {
 ////#endif
 //    e=EPSum[0];
 //    w=EPSum[1];
-//  }
+  }
 
   EstimatorManager::EstimatorType* 
     EstimatorManager::getMainEstimator() 
