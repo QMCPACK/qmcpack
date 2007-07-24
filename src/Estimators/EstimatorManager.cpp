@@ -446,7 +446,7 @@ namespace qmcplusplus {
     e=0.0;
     w=RecordCount;
     const RealType* restrict eptr=AverageCache.data();
-    for(int i=0; i<RecordCount; i++, eptr+=nc) e[0] +=*eptr;
+    for(int i=0; i<RecordCount; i++, eptr+=nc) e +=*eptr;
 //    int nc=AverageCache.cols();
 //    if(nc==0) return;
 //    EPSum[0]=0.0;
