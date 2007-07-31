@@ -47,13 +47,22 @@ namespace qmcplusplus {
     ///default constructor
     inline VectorEstimatorImpl(){}
     
-    ///default constructor
+    /** constructor
+     * @param n size of the data
+     */
     explicit inline VectorEstimatorImpl(int n)
     { resize(n);}
 
+    /** constructor
+     * @param a name of this data
+     * @param n size of this data
+     */
+    VectorEstimatorImpl(const string& a, int n):Name(a)
+    { resize(n);}
+
     ///copy constructor
-    VectorEstimatorImpl(const VectorEstimatorImpl& est): d_data(est.d_data), 
-    d_sum(est.d_sum), d_sum2(est.d_sum2)
+    VectorEstimatorImpl(const VectorEstimatorImpl& est): 
+      d_data(est.d_data), d_sum(est.d_sum), d_sum2(est.d_sum2)
     {}
 
     ///destructo
