@@ -17,14 +17,14 @@
 #ifndef QMCPLUSPLUS_PAIRCORRELATION_ESTIMATOR_H
 #define QMCPLUSPLUS_PAIRCORRELATION_ESTIMATOR_H
 #include "Estimators/CompositeEstimators.h"
-#include "Estimators/VectorEstimatorImpl.h"
+//#include "Estimators/VectorEstimatorImpl.h"
 //#include <boost/numeric/ublas/matrix.hpp>
 
 namespace qmcplusplus {
 
   class GofREstimator: public CompositeEstimatorBase 
   {
-    typedef VectorEstimatorImpl<RealType> VectorEstimatorType;
+    //typedef VectorEstimatorImpl<RealType> VectorEstimatorType;
     ///true if source == target
     bool Symmetric;
     /** number of centers */
@@ -40,24 +40,17 @@ namespace qmcplusplus {
     /** one of bin size */
     RealType DeltaInv;
     ///save the source particleset
-    const ParticleSet& sourcePtcl;
+    ParticleSet* sourcePtcl;
+    ///save the target particleset
+    ParticleSet* targetPtcl;
     /** distance table */
     const DistanceTableData*  myTable;
     /** local copy of pair index */
     vector<int> PairID;
     /** normalization factor for each bin*/
     vector<RealType> normFactor;
-    /** gofr[i] = gofr of i pair relations */
-    vector<VectorEstimatorType*> gofr;
     /** instantaneous gofr */
     Matrix<RealType> gofrInst;
-    /** name of the pair */
-    vector<string> PairName;
-    /** hdf5 handlers */
-    vector<hid_t>  gofr_hid;
-    /** hdf5 IO engines */
-    vector<HDFAttribIO<VectorEstimatorType>*> gofr_h;
-    //vector<ostream*> fout;
     public:
 
     /** constructor
@@ -69,24 +62,22 @@ namespace qmcplusplus {
      * @param source particleset
      * @param target particleset
      */
-    GofREstimator(const ParticleSet& source, ParticleSet& target);
+    GofREstimator(ParticleSet& source, ParticleSet& target);
 
     /** virtal destrctor */
     ~GofREstimator();
 
     void resetTargetParticleSet(ParticleSet& p);
-    void open(hid_t hroot);
-    void close();
     /** prepare data collect */
     void startAccumulate();
     /** accumulate the observables */
     void accumulate(ParticleSet& p);
     /** reweight of the current cummulative  values */
-    void stopAccumulate(RealType wgtinv);
-    void startBlock(int steps);
-    void stopBlock(RealType wgtnorm, RealType errnorm);
+    void stopAccumulate();
     void setBound(RealType dr);
 
+    CompositeEstimatorBase* clone();
+    
     private:
     GofREstimator(const GofREstimator& pc): sourcePtcl(pc.sourcePtcl) {}
   };

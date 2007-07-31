@@ -18,16 +18,17 @@
 #include "Particle/DistanceTable.h"
 #include "Particle/DistanceTableData.h"
 #include "Utilities/IteratorUtility.h"
-//#define PRINT_DEBUG
+//#define PRINT_DEBUG_GOFR
 
 namespace qmcplusplus {
 
-
   GofREstimator::GofREstimator(ParticleSet& source): 
-    Symmetric(true),sourcePtcl(source)
+    Symmetric(true),sourcePtcl(&source),targetPtcl(0)
   {
     myTable = DistanceTable::add(source);
-    int ns=sourcePtcl.groups();
+    int ns=sourcePtcl->groups();
+    
+    nList.clear();
 
     vector<int> mask(ns*ns,-1);
     int ij=0;
@@ -37,11 +38,11 @@ namespace qmcplusplus {
         mask[j+i*ns]=ij;
         char fname[32];
         sprintf(fname,"%s_%d_%d",myTable->Name.c_str(),i,j);
-        PairName.push_back(fname);
+        nList.push_back(fname);
       }
 
     NumPairTypes=ij;
-    Centers=sourcePtcl.getTotalNum();
+    Centers=sourcePtcl->getTotalNum();
 
     PairID.resize(myTable->getTotNadj());
     for(int iat=0; iat<Centers; iat++) {
@@ -54,24 +55,24 @@ namespace qmcplusplus {
     setBound(0.1);
   }
 
-  GofREstimator::GofREstimator(const ParticleSet& source, ParticleSet& target):
-    Symmetric(false),sourcePtcl(source)
+  GofREstimator::GofREstimator(ParticleSet& source,ParticleSet& target):
+    Symmetric(false),sourcePtcl(&source),targetPtcl(&target)
   {
     myTable = DistanceTable::add(source,target);
-    NumPairTypes=sourcePtcl.getSpeciesSet().getTotalNum(); 
+    NumPairTypes=sourcePtcl->getSpeciesSet().getTotalNum(); 
     for(int i=0; i<NumPairTypes; i++) 
     {
       char fname[32];
       sprintf(fname,"%s_%s",myTable->Name.c_str(),
-          sourcePtcl.getSpeciesSet().speciesName[i].c_str());
-      PairName.push_back(fname);
+          sourcePtcl->getSpeciesSet().speciesName[i].c_str());
+      nList.push_back(fname);
     }
-    Centers=sourcePtcl.getTotalNum();
+    Centers=sourcePtcl->getTotalNum();
     PairID.resize(myTable->getTotNadj());
     for(int iat=0; iat<Centers; iat++) {
       for(int nn=myTable->M[iat]; nn<myTable->M[iat+1]; nn++)
       {
-        PairID[nn]=sourcePtcl.GroupID[iat];
+        PairID[nn]=sourcePtcl->GroupID[iat];
       }
     }
 
@@ -80,47 +81,23 @@ namespace qmcplusplus {
 
   GofREstimator::~GofREstimator()
   {
-    delete_iter(gofr.begin(),gofr.end());
   }
+
+  CompositeEstimatorBase* GofREstimator::clone()
+  {
+    if(Symmetric)
+      return new GofREstimator(*sourcePtcl);
+    else
+      return new GofREstimator(*sourcePtcl,*targetPtcl);
+  }
+
 
   void GofREstimator::resetTargetParticleSet(ParticleSet& p)
   {
     if(Symmetric)
       myTable=DistanceTable::add(p);
     else
-      myTable=DistanceTable::add(sourcePtcl,p);
-  }
-
-  void GofREstimator::open(hid_t hroot)
-  {
-    if(GroupID<0)
-    {
-      gofr_hid.resize(NumPairTypes);
-      gofr_h.resize(NumPairTypes,0);
-      for(int p=0; p<NumPairTypes; p++) 
-      {
-        hid_t gid = H5Gcreate(hroot,PairName[p].c_str(),0);
-        gofr_h[p] = new HDFAttribIO<VectorEstimatorType>(*gofr[p]);
-        gofr_h[p]->reserve(gid);
-        gofr_hid[p]=gid;
-      }
-      GroupID=1;
-    }
-  }
-
-  void GofREstimator::close()
-  {
-    if(GroupID>-1)
-    {
-      for(int p=0; p<NumPairTypes; p++) 
-      {
-        H5Gclose(gofr_hid[p]);
-        delete gofr_h[p];
-      }
-      gofr_hid.clear();
-      gofr_h.clear();
-      GroupID=-1;
-    }
+      myTable=DistanceTable::add(*sourcePtcl,p);
   }
 
   /** ready to accumulate the measurements over the walkers
@@ -145,58 +122,24 @@ namespace qmcplusplus {
   }
 
   /** add gofrInst which contains sum over walkers */
-  void GofREstimator::stopAccumulate(RealType wgtinv)
+  void GofREstimator::stopAccumulate()
   {
+    //add gofrInst to dList->d_data
     for(int p=0; p<NumPairTypes; p++) 
     {
-      //gofr[p]->accumulate(gofrInst[p],wgtinv);
-      gofr[p]->accumulate(gofrInst[p],gofrInst[p]+NumBins,normFactor.begin());
+      dList[p]->accumulate(gofrInst[p],gofrInst[p]+NumBins,normFactor.begin());
     }
-  }
-
-  void GofREstimator::startBlock(int steps)
-  {
-    for(int p=0; p<NumPairTypes; p++) gofr[p]->reset();
-  }
-
-  /** save the block average */
-  void GofREstimator::stopBlock(RealType wgtnorm, RealType errnorm)
-  {
-#if defined(PRINT_DEBUG)
-    for(int p=0; p<NumPairTypes; p++) 
-    {
-      gofr[p]->takeBlockAverage(wgtnorm);
-      ofstream fout(PairName[p].c_str());
-      RealType r=0;
-      for(int i=0; i< NumBins; i++, r+=Delta)
-      {
-        RealType a=gofr[p]->d_sum[i]*wgtnorm;
-        fout << r << " " 
-          << gofr[p]->d_data[2*i] << " " 
-          << a << " " 
-          << (gofr[p]->d_sum2[i]*errnorm-a*a) << endl;;
-      }
-    }
-#endif
-    for(int p=0; p<NumPairTypes; p++) 
-    {
-      gofr[p]->takeBlockAverage(wgtnorm);
-      gofr_h[p]->write(gofr_hid[p],0);
-      gofr[p]->reset();
-    }
-//    v_h->write(GroupID,"v");
-//    v2_h->write(GroupID,"v2");
   }
 
   void GofREstimator::setBound(RealType dr)
   {
     RealType vnorm=1.0;
-    if(sourcePtcl.Lattice.SuperCellEnum) 
+    if(sourcePtcl->Lattice.SuperCellEnum) 
     {
-      Dmax=sourcePtcl.Lattice.LR_rc;
+      Dmax=sourcePtcl->Lattice.LR_rc;
       /** normalizaton factor */
       vnorm=4.0*M_PI*myTable->size(DistanceTableData::SourceIndex)*myTable->size(DistanceTableData::VisitorIndex);
-      vnorm=sourcePtcl.Lattice.Volume/vnorm;
+      vnorm=sourcePtcl->Lattice.Volume/vnorm;
     }
     else
     {
@@ -213,13 +156,11 @@ namespace qmcplusplus {
     for(int i=1; i<NumBins; i++, r+=Delta) normFactor[i]=vnorm/(r*r); 
 
     gofrInst.resize(NumPairTypes,NumBins);
-    delete_iter(gofr.begin(),gofr.end());
-    gofr.resize(NumPairTypes,0);
+
+    //clean up the data before using
+    delete_iter(dList.begin(),dList.end());
     for(int i=0; i<NumPairTypes; i++)
-    {
-      gofr[i]=new VectorEstimatorType(NumBins);
-      gofr[i]->Name=PairName[i];
-    }
+      dList.push_back(new VectorEstimatorType(nList[i],NumBins));
   }
 }
 
