@@ -24,7 +24,7 @@
 namespace qmcplusplus {
 
 
-  SkEstimator::SkEstimator(ParticleSet& source): Sk_h(0)
+  SkEstimator::SkEstimator(ParticleSet& source)
   {
     Title="sk_"+source.getName();
     NumSpecies=source.getSpeciesSet().getTotalNum();
@@ -34,7 +34,6 @@ namespace qmcplusplus {
     MaxKshell=Kshell.size()-1;
     SkInst.resize(NumK);
     RhokTot.resize(NumK);
-    Sk.resize(NumK);
 
     Kmag.resize(MaxKshell);
     OneOverDnk.resize(MaxKshell);
@@ -44,15 +43,30 @@ namespace qmcplusplus {
       OneOverDnk[ks]=1.0/static_cast<RealType>(Kshell[ks+1]-Kshell[ks]);
     }
 
+    nList.push_back(Title);
+    dList.push_back(new VectorEstimatorType(Title,NumK));
+
 #if defined(PRINT_DEBUG)
     ofstream fout("Sk.dat");
 #endif
   }
 
+  SkEstimator::SkEstimator(const SkEstimator& a):
+    NumSpecies(a.NumSpecies),NumK(a.NumK),MaxKshell(a.MaxKshell),
+    OneOverN(a.OneOverN),Kshell(a.Kshell),Kmag(a.Kmag),
+    OneOverDnk(a.OneOverDnk),RhokTot(a.RhokTot),SkInst(a.SkInst)
+  {
+    nList.push_back(Title);
+    dList.push_back(new VectorEstimatorType(Title,NumK));
+  }
+
+  CompositeEstimatorBase* SkEstimator::clone()
+  {
+    return new SkEstimator(*this);
+  }
 
   SkEstimator::~SkEstimator()
   {
-    close();//make sure everything is closed
   }
 
   void SkEstimator::resetTargetParticleSet(ParticleSet& p)
@@ -60,26 +74,26 @@ namespace qmcplusplus {
     Title="sk_"+p.getName();
   }
 
-  void SkEstimator::open(hid_t hroot)
-  {
-    if(GroupID<0)
-    {
-      GroupID = H5Gcreate(hroot,Title.c_str(),0);
-      Sk_h = new HDFAttribIO<VectorEstimatorType>(Sk);
-      Sk_h->reserve(GroupID);
-    }
-  }
+ // void SkEstimator::open(hid_t hroot)
+ // {
+ //   if(GroupID<0)
+ //   {
+ //     GroupID = H5Gcreate(hroot,Title.c_str(),0);
+ //     Sk_h = new HDFAttribIO<VectorEstimatorType>(Sk);
+ //     Sk_h->reserve(GroupID);
+ //   }
+ // }
 
-  void SkEstimator::close()
-  {
-    if(GroupID>-1)
-    {
-      delete Sk_h;
-      Sk_h=0;
-      H5Gclose(GroupID);
-      GroupID=-1;
-    }
-  }
+ // void SkEstimator::close()
+ // {
+ //   if(GroupID>-1)
+ //   {
+ //     delete Sk_h;
+ //     Sk_h=0;
+ //     H5Gclose(GroupID);
+ //     GroupID=-1;
+ //   }
+ // }
 
   /** ready to accumulate the measurements over the walkers
    */
@@ -106,31 +120,10 @@ namespace qmcplusplus {
   }
 
   /** add gofrInst which contains sum over walkers */
-  void SkEstimator::stopAccumulate(RealType wgtinv)
+  void SkEstimator::stopAccumulate()
   {
-    Sk.accumulate(SkInst.begin(),wgtinv*OneOverN);
-  }
-
-  void SkEstimator::startBlock(int steps)
-  {
-  }
-
-  /** save the block average */
-  void SkEstimator::stopBlock(RealType wgtnorm, RealType errnorm)
-  {
-    Sk.takeBlockAverage(wgtnorm);
-#if defined(PRINT_DEBUG)
-    ofstream fout("Sk.dat",ios::app);
-    for(int ks=0, k=0; ks<MaxKshell; ks++)
-    {
-      RealType s=0.0;
-      for(;k<Kshell[ks+1]; k++) s += Sk.d_sum[k]; 
-      fout << Kmag[ks] << " " << s*OneOverDnk[ks] << endl;
-    }
-    fout << endl;
-#endif
-    if(Sk_h) Sk_h->write(GroupID,0);
-    Sk.reset();
+    dList[0]->accumulate(SkInst.begin(),OneOverN);
+    //Sk.accumulate(SkInst.begin(),wgtinv*OneOverN);
   }
 }
 

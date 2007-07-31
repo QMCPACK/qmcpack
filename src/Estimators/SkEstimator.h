@@ -24,7 +24,6 @@ namespace qmcplusplus {
 
   class SkEstimator: public CompositeEstimatorBase 
   {
-    typedef VectorEstimatorImpl<RealType> VectorEstimatorType;
     /** number of species */
     int NumSpecies;
     /** number of kpoints */
@@ -43,10 +42,6 @@ namespace qmcplusplus {
     Vector<ComplexType> RhokTot;
     /** instantaneous structure factor  */
     Vector<RealType> SkInst;
-    /** Structrue factor estimator */
-    VectorEstimatorType Sk;
-    /** hdf5 handler for Sk */
-    HDFAttribIO<VectorEstimatorType>* Sk_h;
     public:
 
     /** constructor
@@ -54,23 +49,21 @@ namespace qmcplusplus {
      */
     SkEstimator(ParticleSet& source);
 
+    /** copy constructor
+     */
+    SkEstimator(const SkEstimator& a);
+
     /** virtal destrctor */
     ~SkEstimator();
 
     //@{
     ///implement virtual functions
     void resetTargetParticleSet(ParticleSet& p);
-    void open(hid_t hroot);
-    void close();
     void startAccumulate();
     void accumulate(ParticleSet& p);
-    void stopAccumulate(RealType wgtinv);
-    void startBlock(int steps);
-    void stopBlock(RealType wgtnorm, RealType errnorm);
-    //@}
-
-    private:
-    SkEstimator(const SkEstimator& pc) {}
+    void stopAccumulate();
+    ///TODO: not implemented
+    CompositeEstimatorBase* clone(); 
   };
 }
 
