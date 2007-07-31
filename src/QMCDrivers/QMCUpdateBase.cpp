@@ -102,19 +102,11 @@ namespace qmcplusplus {
   void QMCUpdateBase::startRun(int blocks, bool record) 
   {
     Estimators->start(blocks,record);
-#if defined(ENABLE_COMPOSITE_ESTIMATOR)
-    if(compEstimator) {
-      compEstimator->open(-1);
-    }
-#endif
   }
 
   void QMCUpdateBase::stopRun() 
   {
     Estimators->stop();
-#if defined(ENABLE_COMPOSITE_ESTIMATOR)
-    if(compEstimator) compEstimator->close();
-#endif
   }
 
   void QMCUpdateBase::startBlock(int steps) {
@@ -124,16 +116,10 @@ namespace qmcplusplus {
     nAllRejected=0;
     nNodeCrossing=0;
     NonLocalMoveAccepted=0;
-#if defined(ENABLE_COMPOSITE_ESTIMATOR)
-    if(compEstimator) compEstimator->startBlock(steps);
-#endif
   }
 
   void QMCUpdateBase::stopBlock() {
     Estimators->stopBlock(acceptRatio());
-#if defined(ENABLE_COMPOSITE_ESTIMATOR)
-    if(compEstimator) compEstimator->stopBlock(-1,-1);
-#endif
   }
 
   void QMCUpdateBase::initWalkers(WalkerIter_t it, WalkerIter_t it_end) 
