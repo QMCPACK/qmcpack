@@ -80,12 +80,12 @@ namespace qmcplusplus {
     }
   }
 
-  ///add measurements
-  void CompositeEstimatorBase::addMeasurements(int n)
-  {
-    delete_iter(dList.begin(), dList.end());
-    dList.resize(n,0);
-  }
+//  ///add measurements
+//  void CompositeEstimatorBase::addMeasurements(int n)
+//  {
+//    delete_iter(dList.begin(), dList.end());
+//    dList.resize(n,0);
+//  }
 
   ///add block
   void CompositeEstimatorBase::collectBlock(CompositeEstimatorBase* eth)
