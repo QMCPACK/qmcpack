@@ -20,6 +20,7 @@
 #include "OhmmsData/RecordProperty.h"
 #include "OhmmsData/HDFAttribIO.h"
 #include "Particle/MCWalkerConfiguration.h"
+#include "Estimators/VectorEstimatorImpl.h"
 
 namespace qmcplusplus {
 
@@ -27,24 +28,31 @@ namespace qmcplusplus {
    */
   struct CompositeEstimatorBase: public QMCTraits {
 
+    typedef VectorEstimatorImpl<RealType> VectorEstimatorType;
+
     ///hdf5 handle of the object
     hid_t GroupID;
     ///name of the object
     string Title;
+    ///name of associated data
+    vector<string>                            nList;
+    ///VectorEstimatorType
+    vector<VectorEstimatorType*>              dList;
+    ///h5 group handler
+    vector<hid_t>                             hList;
+    ///h5 engine 
+    vector<HDFAttribIO<VectorEstimatorType>*> oList;
+
     /** default constructor */
     CompositeEstimatorBase(): GroupID(-1){}
 
     /** virtal destrctor */
-    virtual ~CompositeEstimatorBase() {}
+    virtual ~CompositeEstimatorBase();
 
+    /** virtual function to enable deep copy for threaded applications*/
+    virtual CompositeEstimatorBase* clone() = 0;
     /** reassign the target particleset */
     virtual void resetTargetParticleSet(ParticleSet& p) = 0;
-
-    /** initialize the estimator */
-    virtual void open(hid_t hroot)=0;
-
-    /** finalize the estimator */
-    virtual void close()=0;
 
     /** start accumulate */
     virtual void startAccumulate()=0;
@@ -53,16 +61,30 @@ namespace qmcplusplus {
     virtual void accumulate(ParticleSet& p)=0;
 
     /** stop accumulate for an ensemble and reweight the data */
-    virtual void stopAccumulate(RealType wgtnorm)=0;
+    virtual void stopAccumulate()=0;
+
+    /** initialize the estimator IO */
+    void open(hid_t hroot);
+
+    /** finalize the estimator */
+    void close();
 
     /** start a block */
-    virtual void startBlock(int steps)=0;
+    void startBlock(int steps);
 
     /** stop a block 
      * @param wgtnorm for average
      * @param errnorm for error normalization 1.0/(samples-1)
      */
-    virtual void stopBlock(RealType wgtnorm, RealType errnorm)=0;
+    void stopBlock(RealType wgtnorm);
+
+    ///record block
+    void recordBlock();
+
+    /** collect data from eth
+     * @param eth CompositeEstimatorBase on the data collected by a thread
+     */
+    void collectBlock(CompositeEstimatorBase* eth);
 
     /* accumulate weighted squares
      * @param first starting iterator of input data
@@ -115,6 +137,8 @@ namespace qmcplusplus {
     ///constructor
     //CompositeEstimatorSet(ParticleSet& p);
     CompositeEstimatorSet();
+    ///copy constructor
+    CompositeEstimatorSet(const CompositeEstimatorSet& ce);
     ///destructor
     ~CompositeEstimatorSet();
 
@@ -139,12 +163,30 @@ namespace qmcplusplus {
 
     /** start a block to record
      * @param steps number of steps for a block
+     * @param wgtnorm normalization factor
      */
     void startBlock(int steps);
-    /** accumulate the measurements */
+    /** accumulate measurements */
     void accumulate(MCWalkerConfiguration& W);
-    /** stop recording the block */
-    void stopBlock();
+    /** accumulate measurements
+     * @param W particleset to evaluate quantities
+     * @param it first walker
+     * @param it_end last walker
+     */
+    void accumulate(ParticleSet& W,
+        MCWalkerConfiguration::iterator it, MCWalkerConfiguration::iterator it_end);
+    /** stop recording the block 
+     * @param wgtnorm normalization factor
+     */
+    void stopBlock(RealType wgtnorm);
+    /** collect blocks from other estimators
+     * @param eth estimator to be added
+     * @param wgtnorm normalization factor
+     *
+     * For threaded applications.
+     */
+    void collectBlock(CompositeEstimatorSet* eth);
+    void recordBlock();
     void reset();
   };
 }
