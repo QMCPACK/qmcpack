@@ -357,7 +357,7 @@ namespace qmcplusplus {
 
     RecordCount++;
 
-    if(h_obs<-1) return;
+    if(h_obs<0) return;
 
     //wrte current cummulative and average/error
     CumEnergy[0]+=1.0;
@@ -388,7 +388,6 @@ namespace qmcplusplus {
   {
     ThreadCount=est.size();
     RecordCount=est[0]->RecordCount;
-    CumEnergy[0]+=ThreadCount;
     for(int i=0; i<ThreadCount; i++)
     {
       int rc=est[i]->RecordCount-1;
@@ -397,8 +396,7 @@ namespace qmcplusplus {
       accumulate_elements(est[i]->AverageCache[rc], est[i]->AverageCache[rc+1],AverageCache[rc]);
     }
 
-    //group is closed. Do not save it to hdf
-    if(h_obs<-1) return;
+    if(h_obs<0) return;
 
     CumEnergy[0]+=1.0;
     RealType et=AverageCache(RecordCount-1,MainEstimator->FirstIndex);
@@ -409,8 +407,11 @@ namespace qmcplusplus {
     RefEnergy[0]=CumEnergy[1]*wgtnorm;
     RefEnergy[1]=CumEnergy[2]*wgtnorm-RefEnergy[0]*RefEnergy[0];
     if(CumEnergy[0]>1) RefEnergy[2]=std::sqrt(RefEnergy[1]/(CumEnergy[0]-1.0));
+
     HDFAttribIO<int> i(RecordCount,true);
     i.write(h_obs,"count");
+    HDFAttribIO<int> t(ThreadCount,true);
+    t.write(h_obs,"threads");
     HDFAttribIO<Matrix<RealType> > m(AverageCache,true);
     m.write(h_obs,"scalars");
     HDFAttribIO<TinyVector<RealType,4> > e0(RefEnergy,true);
