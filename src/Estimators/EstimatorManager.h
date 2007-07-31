@@ -142,6 +142,8 @@ namespace qmcplusplus {
     //bool put(xmlNodePtr cur);
     bool put(MCWalkerConfiguration& W, QMCHamiltonian& H, xmlNodePtr cur);
 
+    void resetTargetParticleSet(ParticleSet& p);
+
     ///** reset the estimator
     // * @param aname root file name
     // * @param append if yes, the data should be appended.
@@ -183,7 +185,7 @@ namespace qmcplusplus {
      */
     void stopBlock(const vector<EstimatorManager*> m);
 
-    void accumulate(MCWalkerConfiguration::iterator it,
+    void accumulate(ParticleSet& P, MCWalkerConfiguration::iterator it,
         MCWalkerConfiguration::iterator it_end);
 
     /** accumulate the measurements
