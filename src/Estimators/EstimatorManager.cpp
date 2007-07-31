@@ -58,6 +58,12 @@ namespace qmcplusplus {
       Estimators.push_back(em.Estimators[i]->clone());
     }
     MainEstimator=Estimators[EstimatorMap[MainEstimatorName]];
+
+    if(em.CompEstimators)
+    {//copy composite estimator
+      CompEstimators = new CompositeEstimatorSet(*(em.CompEstimators));
+    }
+
   }
 
   EstimatorManager::~EstimatorManager()
@@ -108,6 +114,11 @@ namespace qmcplusplus {
     //weightInd = BlockProperties.add("WeightSum");
     cpuInd = BlockProperties.add("BlockCPU");
     acceptInd = BlockProperties.add("AcceptRatio");
+  }
+
+  void EstimatorManager::resetTargetParticleSet(ParticleSet& p)
+  {
+    if(CompEstimators) CompEstimators->resetTargetParticleSet(p);
   }
 
   void EstimatorManager::start(int blocks, bool record)
@@ -173,6 +184,7 @@ namespace qmcplusplus {
       oc << "Energy:EnergySquared:Variance:Samples";
       banner=oc.str();
       so.write(h_obs,"energy_cum_ids");
+
 
       if(CompEstimators) CompEstimators->open(h_obs);
 
@@ -288,7 +300,7 @@ namespace qmcplusplus {
       p.write(h_obs,"run_properties");
 
       HDFAttribIO<Vector<RealType> > w(TotalWeight);
-      p.write(h_obs,"weights");
+      w.write(h_obs,"weights");
 
       if(CompEstimators) CompEstimators->close();
 
@@ -309,11 +321,6 @@ namespace qmcplusplus {
       ofstream fout(fname.c_str());
       fout.setf(ios::scientific, ios::floatfield);
       fout.setf(ios::left,ios::adjustfield);
-      //fout << "#   Main energy analysis without autocorrelation time estimation " << endl;
-      //fout << "#     AverageEnergy        = " << RefEnergy[0] << endl;  
-      //fout << "#     VarianceSquared      = " << RefEnergy[1] << endl;  
-      //fout << "#     EstimatedError       = " << RefEnergy[2] << endl;  
-      //fout << "#     AverageBlockVariance = " << RefEnergy[3] << endl;  
       fout << "#   index    ";
       for(int i=0; i<BlockAverages.size(); i++) fout << setw(16) << BlockAverages.Name[i];
       fout << setw(16) << "WeightSum";
@@ -340,21 +347,20 @@ namespace qmcplusplus {
   void EstimatorManager::startBlock(int steps)
   { 
     MyTimer.restart();
-    //if(CompEstimators) CompEstimators->startBlock(steps);
+    if(CompEstimators) CompEstimators->startBlock(steps);
   }
 
   void EstimatorManager::stopBlock(RealType accept)
   {
+    //take block averages and update properties per block
     TotalWeight[RecordCount]=Estimators[0]->d_wgt;
-    //PropertyCache(RecordCount,weightInd) = Estimators[0]->d_wgt;
     PropertyCache(RecordCount,cpuInd)    = MyTimer.elapsed();
     PropertyCache(RecordCount,acceptInd) = accept;
-
     for(int i=0; i<Estimators.size(); i++) 
-    {
       Estimators[i]->takeBlockAverage(AverageCache[RecordCount]);
-    }
+    if(CompEstimators) CompEstimators->stopBlock(1.0/TotalWeight[RecordCount]);
 
+    //increment RecordCount
     RecordCount++;
 
     if(h_obs<0) return;
@@ -381,26 +387,45 @@ namespace qmcplusplus {
     e0.write(h_obs,"energy");
     HDFAttribIO<TinyVector<RealType,4> > e1(CumEnergy,true);
     e1.write(h_obs,"energy_cum");
-    if(CompEstimators) CompEstimators->stopBlock();
+
+    //record data
+    if(CompEstimators) CompEstimators->recordBlock();
   }
 
   void EstimatorManager::stopBlock(const vector<EstimatorManager*> est)
   {
     ThreadCount=est.size();
     RecordCount=est[0]->RecordCount;
+    int rc=RecordCount-1;
+
+    //update the weight
+    RealType wgtnow=0.0;
+    for(int i=0; i<ThreadCount; i++) wgtnow+=est[i]->TotalWeight[rc];
+    TotalWeight[rc]=wgtnow;
+
+    //global sum of weight???
+   
     for(int i=0; i<ThreadCount; i++)
     {
-      int rc=est[i]->RecordCount-1;
-      RealType et=est[i]->AverageCache[rc][0];
+      //int rc=est[i]->RecordCount-1;
       accumulate_elements(est[i]->PropertyCache[rc],est[i]->PropertyCache[rc+1],PropertyCache[rc]);
       accumulate_elements(est[i]->AverageCache[rc], est[i]->AverageCache[rc+1],AverageCache[rc]);
     }
 
+    if(CompEstimators) 
+    {
+      //simply clean this up
+      CompEstimators->startBlock(1);
+      for(int i=0; i<ThreadCount; i++) 
+        CompEstimators->collectBlock(est[i]->CompEstimators);
+    }
+
+    //group is closed. Do not save it to hdf
     if(h_obs<0) return;
 
     CumEnergy[0]+=1.0;
-    RealType et=AverageCache(RecordCount-1,MainEstimator->FirstIndex);
     RealType tnorm=1.0/static_cast<RealType>(ThreadCount);
+    RealType et=AverageCache(RecordCount-1,MainEstimator->FirstIndex);
     CumEnergy[1]+=et*tnorm;
     CumEnergy[2]+=et*et*tnorm;
     RealType wgtnorm=1.0/CumEnergy[0];
@@ -418,18 +443,25 @@ namespace qmcplusplus {
     e0.write(h_obs,"energy");
     HDFAttribIO<TinyVector<RealType,4> > e1(CumEnergy,true);
     e1.write(h_obs,"energy_cum");
+
+    if(CompEstimators) CompEstimators->recordBlock();
   }
 
+  //NOTE: weights are not handled nicely.
+  //weight should be done carefully, not valid for DMC
+  //will add a function to MCWalkerConfiguration to track total weight
   void EstimatorManager::accumulate(MCWalkerConfiguration& W)
   {
     for(int i=0; i< Estimators.size(); i++) Estimators[i]->accumulate(W.begin(),W.end());
     if(CompEstimators) CompEstimators->accumulate(W);
   }
 
-  void EstimatorManager::accumulate(MCWalkerConfiguration::iterator it,
+  void EstimatorManager::accumulate(ParticleSet& W, 
+      MCWalkerConfiguration::iterator it,
       MCWalkerConfiguration::iterator it_end)
   {
     for(int i=0; i< Estimators.size(); i++) Estimators[i]->accumulate(it,it_end);
+    if(CompEstimators) CompEstimators->accumulate(W,it,it_end);
   }
 
   void EstimatorManager::accumulate(ParticleSet& P, 
