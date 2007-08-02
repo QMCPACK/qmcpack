@@ -8,20 +8,17 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
-//   Department of Physics, Ohio State University
-//   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 #include <vector>
 #include <iostream>
-#include "QMCTools/HDFWalkerMerger.h"
-#include "Utilities/RandomGenerator.h"
 using namespace std;
+#include "QMCTools/HDFWalkerMerger.h"
+#include "Utilities/RandomGeneratorIO.h"
 using namespace qmcplusplus;
 
 
@@ -201,16 +198,17 @@ void HDFWalkerMerger::merge() {
 
     sprintf(GrpName,"context%04d",ip);
     hid_t mycontext = H5Gcreate(masterfile,GrpName,0);
-    hid_t ranIn = H5Gopen(h0,"random_state");
+    hid_t ranIn = H5Gopen(h0,"random_state");               
 
-    Random.read(ranIn);
-    H5Gclose(ranIn);
-    ranIn = H5Gcreate(mycontext, "random_state",0);
-    Random.write(ranIn,false); //do not append
-    H5Gclose(ranIn);
+    HDFAttribIO<RandomGenerator_t> r(Random);               
+    r.read(ranIn,"dummy");                                  
+    H5Gclose(ranIn);                                        
+
+    hid_t ranOut=H5Gcreate(mycontext, "random_state",0);    
+    r.write(ranOut,"dummy");
+    H5Gclose(ranOut);
+
     H5Gclose(mycontext);
-
-
     H5Fclose(h0);
   }
 
