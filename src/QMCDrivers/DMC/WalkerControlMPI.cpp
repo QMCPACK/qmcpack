@@ -69,11 +69,16 @@ WalkerControlMPI::branch(int iter, MCWalkerConfiguration& W, RealType trigger) {
 
   myComm->allreduce(curData);
 
+  //update the samples and weights
+  W.EnsembleProperty.NumSamples=curData[WALKERSIZE_INDEX];
+  W.EnsembleProperty.Weight=curData[WEIGHT_INDEX];
+
   RealType wgtInv(1.0/curData[WEIGHT_INDEX]);
   accumData[ENERGY_INDEX]     += curData[ENERGY_INDEX]*wgtInv;
   accumData[ENERGY_SQ_INDEX]  += curData[ENERGY_SQ_INDEX]*wgtInv;
   accumData[WALKERSIZE_INDEX] += curData[WALKERSIZE_INDEX];
   accumData[WEIGHT_INDEX]     += curData[WEIGHT_INDEX];
+
 
   Cur_pop=0;
   for(int i=0, j=LE_MAX; i<NumContexts; i++,j++) {

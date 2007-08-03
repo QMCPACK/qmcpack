@@ -132,6 +132,9 @@ namespace qmcplusplus {
     curData[WEIGHT_INDEX]=wsum;
     curData[EREF_INDEX]=ecum;
     
+    W.EnsembleProperty.NumSamples=curData[WALKERSIZE_INDEX];
+    W.EnsembleProperty.Weight=curData[WEIGHT_INDEX];
+
     //remove bad walkers empty the container
     for(int i=0; i<bad.size(); i++) delete bad[i];
 

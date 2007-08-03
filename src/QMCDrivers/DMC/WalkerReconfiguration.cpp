@@ -157,6 +157,10 @@ WalkerReconfiguration::branch(int iter, MCWalkerConfiguration& W, RealType trigg
 
   int nwkept = getIndexPermutation(W);
 
+  //update EnsembleProperty
+  W.EnsembleProperty.NumSamples=curData[WALKERSIZE_INDEX];
+  W.EnsembleProperty.Weight=curData[WEIGHT_INDEX];
+
   RealType wgtInv(1.0/curData[WEIGHT_INDEX]);
   accumData[ENERGY_INDEX]     += curData[ENERGY_INDEX]*wgtInv;
   accumData[ENERGY_SQ_INDEX]  += curData[ENERGY_SQ_INDEX]*wgtInv;

@@ -269,6 +269,9 @@ namespace qmcplusplus {
     int nw=W.getActiveWalkers();
     qmcComm->allreduce(nw);
     W.setGlobalNumWalkers(nw);
+
+    app_log() << "  Total number of walkers: " << W.EnsembleProperty.NumSamples  <<  endl;
+    app_log() << "  Total weight: " << W.EnsembleProperty.Weight  <<  endl;
   }
 
   

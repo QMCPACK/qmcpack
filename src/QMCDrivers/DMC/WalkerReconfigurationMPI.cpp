@@ -123,6 +123,10 @@ int WalkerReconfigurationMPI::swapWalkers(MCWalkerConfiguration& W) {
   //collect everything
   myComm->allreduce(curData);
 
+  //update EnsembleProperty
+  W.EnsembleProperty.NumSamples=curData[WALKERSIZE_INDEX];
+  W.EnsembleProperty.Weight=curData[WEIGHT_INDEX];
+
   //wOffset[ip] is the partial sum update to ip
   wOffset[0]=0;
   //for(int ip=0; ip<NumContexts; ip++) wOffset[ip+1]=wOffset[ip]+wSum[ip];
