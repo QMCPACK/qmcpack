@@ -58,10 +58,11 @@ namespace qmcplusplus {
 
     //@{
     ///implement virtual functions
+    void writeHeaders(hid_t gid);
     void resetTargetParticleSet(ParticleSet& p);
     void startAccumulate();
     void accumulate(ParticleSet& p);
-    void stopAccumulate();
+    void stopAccumulate(RealType wgtnorm);
     ///TODO: not implemented
     CompositeEstimatorBase* clone(); 
   };

@@ -61,8 +61,9 @@ namespace qmcplusplus {
     virtual void accumulate(ParticleSet& p)=0;
 
     /** stop accumulate for an ensemble and reweight the data */
-    virtual void stopAccumulate()=0;
+    virtual void stopAccumulate(RealType wgtnorm)=0;
 
+    virtual void writeHeaders(hid_t gid)=0;
     /** initialize the estimator IO */
     void open(hid_t hroot);
 
@@ -117,14 +118,18 @@ namespace qmcplusplus {
     typedef CompositeEstimatorBase EstimatorType;
     ///true if the move was particle by particle
     bool PbyP;
-    ///total number of steps
-    int totSteps;
-    ///current step in a block
-    int curSteps;
-    ///total weight during a block
-    RealType totWeight;
-    ///weight during a step
-    RealType curWeight;
+    ///number of steps for block average
+    int NumSteps;
+    /////total number of steps
+    //int totSteps;
+    /////current step in a block
+    //int curSteps;
+    ///1.0/NumSteps
+    RealType OneOverNumSteps;
+    /////total weight during a block
+    //RealType totWeight;
+    /////weight during a step
+    //RealType curWeight;
     ///hdf5 handle of the object
     hid_t GroupID;
     ///name of the object
@@ -167,18 +172,18 @@ namespace qmcplusplus {
      */
     void startBlock(int steps);
     /** accumulate measurements */
-    void accumulate(MCWalkerConfiguration& W);
+    void accumulate(MCWalkerConfiguration& W, RealType wgtnorm);
     /** accumulate measurements
      * @param W particleset to evaluate quantities
      * @param it first walker
      * @param it_end last walker
      */
     void accumulate(ParticleSet& W,
-        MCWalkerConfiguration::iterator it, MCWalkerConfiguration::iterator it_end);
+        MCWalkerConfiguration::iterator it, MCWalkerConfiguration::iterator it_end, RealType wgtnorm);
     /** stop recording the block 
      * @param wgtnorm normalization factor
      */
-    void stopBlock(RealType wgtnorm);
+    void stopBlock();
     /** collect blocks from other estimators
      * @param eth estimator to be added
      * @param wgtnorm normalization factor

@@ -18,6 +18,8 @@
 #include "Particle/DistanceTable.h"
 #include "Particle/DistanceTableData.h"
 #include "Utilities/IteratorUtility.h"
+#include "Numerics/HDFNumericAttrib.h"
+#include "OhmmsData/HDFStringAttrib.h"
 //#define PRINT_DEBUG_GOFR
 
 namespace qmcplusplus {
@@ -122,12 +124,11 @@ namespace qmcplusplus {
   }
 
   /** add gofrInst which contains sum over walkers */
-  void GofREstimator::stopAccumulate()
+  void GofREstimator::stopAccumulate(RealType wgtnorm)
   {
-    //add gofrInst to dList->d_data
     for(int p=0; p<NumPairTypes; p++) 
     {
-      dList[p]->accumulate(gofrInst[p],gofrInst[p]+NumBins,normFactor.begin());
+      dList[p]->accumulate(gofrInst[p],gofrInst[p]+NumBins,normFactor.begin(),wgtnorm);
     }
   }
 
@@ -151,7 +152,7 @@ namespace qmcplusplus {
     DeltaInv=1.0/dr;
     NumBins=static_cast<int>((Dmax)*DeltaInv+1);
 
-    normFactor.resize(NumBins,0.0);
+    normFactor.resize(NumBins);
     RealType r=Delta;
     for(int i=1; i<NumBins; i++, r+=Delta) normFactor[i]=vnorm/(r*r); 
 
@@ -159,8 +160,29 @@ namespace qmcplusplus {
 
     //clean up the data before using
     delete_iter(dList.begin(),dList.end());
-    for(int i=0; i<NumPairTypes; i++)
-      dList.push_back(new VectorEstimatorType(nList[i],NumBins));
+    for(int p=0; p<NumPairTypes; p++)
+    {
+      dList.push_back(new VectorEstimatorType(nList[p],NumBins));
+    }
+  }
+
+  void GofREstimator::writeHeaders(hid_t gid)
+  {
+    hid_t h1 = H5Gcreate(gid,"gofr",0);
+    Vector<RealType> rv(NumBins);
+    RealType r=0;
+    for(int i=0; i<NumBins;i++,r+=Delta) rv[i]=r;
+    HDFAttribIO<Vector<RealType> > ro(rv);
+    ro.write(h1,"distances");
+
+    ostringstream o;
+    for(int i=0; i<NumPairTypes-1; i++) o << nList[i] <<":";
+    o<<nList.back();
+    string banner(o.str());
+    HDFAttribIO<string> so(banner);
+    so.write(h1,"pair_ids");
+
+    H5Gclose(h1);
   }
 }
 

@@ -120,10 +120,16 @@ namespace qmcplusplus {
   }
 
   /** add gofrInst which contains sum over walkers */
-  void SkEstimator::stopAccumulate()
+  void SkEstimator::stopAccumulate(RealType wgtnorm)
   {
-    dList[0]->accumulate(SkInst.begin(),OneOverN);
-    //Sk.accumulate(SkInst.begin(),wgtinv*OneOverN);
+    dList[0]->accumulate(SkInst.begin(),wgtnorm*OneOverN);
+  }
+
+  void SkEstimator::writeHeaders(hid_t gid)
+  {
+    hid_t h1 = H5Gcreate(gid,"sk",0);
+    //save k vector and kshell
+    H5Gclose(h1);
   }
 }
 

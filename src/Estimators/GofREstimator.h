@@ -48,7 +48,7 @@ namespace qmcplusplus {
     /** local copy of pair index */
     vector<int> PairID;
     /** normalization factor for each bin*/
-    vector<RealType> normFactor;
+    Vector<RealType> normFactor;
     /** instantaneous gofr */
     Matrix<RealType> gofrInst;
     public:
@@ -67,13 +67,14 @@ namespace qmcplusplus {
     /** virtal destrctor */
     ~GofREstimator();
 
+    void writeHeaders(hid_t gid);
     void resetTargetParticleSet(ParticleSet& p);
     /** prepare data collect */
     void startAccumulate();
     /** accumulate the observables */
     void accumulate(ParticleSet& p);
     /** reweight of the current cummulative  values */
-    void stopAccumulate();
+    void stopAccumulate(RealType wgtnorm);
     void setBound(RealType dr);
 
     CompositeEstimatorBase* clone();

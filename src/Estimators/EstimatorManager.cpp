@@ -358,7 +358,8 @@ namespace qmcplusplus {
     PropertyCache(RecordCount,acceptInd) = accept;
     for(int i=0; i<Estimators.size(); i++) 
       Estimators[i]->takeBlockAverage(AverageCache[RecordCount]);
-    if(CompEstimators) CompEstimators->stopBlock(1.0/TotalWeight[RecordCount]);
+
+    if(CompEstimators) CompEstimators->stopBlock();
 
     //increment RecordCount
     RecordCount++;
@@ -453,7 +454,7 @@ namespace qmcplusplus {
   void EstimatorManager::accumulate(MCWalkerConfiguration& W)
   {
     for(int i=0; i< Estimators.size(); i++) Estimators[i]->accumulate(W.begin(),W.end());
-    if(CompEstimators) CompEstimators->accumulate(W);
+    if(CompEstimators) CompEstimators->accumulate(W,1.0/W.getTotalWeight());
   }
 
   void EstimatorManager::accumulate(ParticleSet& W, 
@@ -461,7 +462,7 @@ namespace qmcplusplus {
       MCWalkerConfiguration::iterator it_end)
   {
     for(int i=0; i< Estimators.size(); i++) Estimators[i]->accumulate(it,it_end);
-    if(CompEstimators) CompEstimators->accumulate(W,it,it_end);
+    if(CompEstimators) CompEstimators->accumulate(W,it,it_end,1.0/W.getTotalWeight());
   }
 
   void EstimatorManager::accumulate(ParticleSet& P, 

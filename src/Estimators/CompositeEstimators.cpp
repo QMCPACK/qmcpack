@@ -64,7 +64,8 @@ namespace qmcplusplus {
         oList[p]->reserve(gid);
         hList[p]=gid;
       }
-      GroupID=1;
+      GroupID=hroot;
+      writeHeaders(hroot);
     }
   }
 
@@ -101,12 +102,12 @@ namespace qmcplusplus {
   // definitions of CompositeEstimatorSet
   ///////////////////////////////////////////////////////////////
   CompositeEstimatorSet::CompositeEstimatorSet():
-    GroupID(-1), totSteps(0), curSteps(0)
+    GroupID(-1), NumSteps(1),OneOverNumSteps(1.0)
   {
   }
 
   CompositeEstimatorSet::CompositeEstimatorSet(const CompositeEstimatorSet& ce):
-    GroupID(-1), totSteps(0), curSteps(0)
+    GroupID(-1), NumSteps(1),OneOverNumSteps(1.0)
   {
     map<string,int>::const_iterator it(ce.EstimatorMap.begin());
     map<string,int>::const_iterator it_end(ce.EstimatorMap.end());
@@ -154,14 +155,15 @@ namespace qmcplusplus {
    * @param W MCWalkerConfiguration
    * @param wgt weight
    */
-  void CompositeEstimatorSet::accumulate(MCWalkerConfiguration& W) 
+  void CompositeEstimatorSet::accumulate(MCWalkerConfiguration& W, RealType wgtnorm) 
   {
-    accumulate(W,W.begin(),W.end());
+    accumulate(W,W.begin(),W.end(),wgtnorm);
   }
 
   void CompositeEstimatorSet::accumulate(ParticleSet& W,
       MCWalkerConfiguration::iterator wit, 
-      MCWalkerConfiguration::iterator wit_end)
+      MCWalkerConfiguration::iterator wit_end,
+      RealType wgtnorm)
   {
     //initialize temporary data
     for(int i=0; i< Estimators.size(); i++) Estimators[i]->startAccumulate();
@@ -191,31 +193,33 @@ namespace qmcplusplus {
       }
     }
 
-    for(int i=0; i< Estimators.size(); i++) Estimators[i]->stopAccumulate();
-    curSteps++;
+    for(int i=0; i< Estimators.size(); i++) Estimators[i]->stopAccumulate(wgtnorm);
+    //curSteps++;
   }
 
   /** reset the internal data of all the estimators for new averages
    */
   void CompositeEstimatorSet::startBlock(int steps) 
   {
-    totSteps=steps;
-    curSteps=0;
-    totWeight=0.0;
-    curWeight=0.0;
+    NumSteps=steps;
+    OneOverNumSteps=1.0/static_cast<RealType>(steps);
+    //  curSteps=0;
+    //  totSteps=0;
+    //  totWeight=0.0;
+    //  curWeight=0.0;
     for(int i=0; i< Estimators.size(); i++) Estimators[i]->startBlock(steps);
   }
 
-  void CompositeEstimatorSet::stopBlock(RealType wgtnorm)
+  void CompositeEstimatorSet::stopBlock()
   {
-    totSteps += curSteps;
-    for(int i=0; i< Estimators.size(); i++) Estimators[i]->stopBlock(wgtnorm);
-    curSteps=0;
+    //  totSteps += curSteps;
+    for(int i=0; i< Estimators.size(); i++) Estimators[i]->stopBlock(OneOverNumSteps);
+  //  curSteps=0;
   }
 
   void CompositeEstimatorSet::collectBlock(CompositeEstimatorSet* eth)
   {
-    curSteps+=eth->curSteps;
+  //  curSteps+=eth->curSteps;
     for(int i=0; i< Estimators.size(); i++) 
     {
       Estimators[i]->collectBlock(eth->Estimators[i]);

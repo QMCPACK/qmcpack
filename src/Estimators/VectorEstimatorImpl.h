@@ -93,7 +93,8 @@ namespace qmcplusplus {
     }
 
     /** accumulate expectation values
-     * @param first1 vector data
+     * @param first1 start of vector data
+     * @param last1 end of vector data
      * @param first2 weight data
      */
     template<typename IT1, typename IT2>
@@ -105,6 +106,24 @@ namespace qmcplusplus {
         T v=(*first1)*(*first2++);//w[i]*v[i]
         (*it++)+=v;
         (*it++)+=v*(*first1++);//w[i]*v[i]*v[i]
+      }
+    }
+
+    /** accumulate expectation values
+     * @param first1 start of vector data
+     * @param last1 end of vector data
+     * @param first2 weight data
+     * @param wm normalization factor
+     */
+    template<typename IT1, typename IT2>
+    inline void accumulate(IT1 first1, IT1 last1, IT2 first2, T wm)
+    {
+      typename vector<T>::iterator it(d_data.begin());
+      while(first1 != last1)
+      {
+        T v=wm*(*first1)*(*first2++);
+        (*it++)+=v;
+        (*it++)+=v*(*first1++);
       }
     }
 
@@ -209,6 +228,7 @@ namespace qmcplusplus {
       H5Sclose(memspace);
       H5Pclose(p);
     }
+
     inline void write(hid_t grp, const char* name) {
 
       const hsize_t RANK=2;
