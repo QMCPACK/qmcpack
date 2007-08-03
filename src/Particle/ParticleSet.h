@@ -28,6 +28,23 @@ namespace qmcplusplus {
 
   class StructFact;
 
+  /** Monte Carlo Data of an ensemble
+   *
+   * The quantities are shared by all the nodes in a group
+   * - NumSamples number of samples
+   * - Weight     total weight of a sample
+   * - Energy     average energy of a sample
+   * - Variance   variance
+   */
+  template<typename T>
+  struct MCDataType
+  {
+    T NumSamples;
+    T Weight;
+    T Energy;
+    T Variance;
+  };
+
   /** Specialized paritlce class for atomistic simulations
    *
    *Derived from QMCTraits, ParticleBase<PtclOnLatticeTraits> and OhmmsElementBase.
@@ -43,8 +60,11 @@ namespace qmcplusplus {
    
   public:
     
+    ///define a Walker_t
     typedef Walker<RealType,ParticlePos_t> Walker_t;
-    
+    ///property of an ensemble represented by this ParticleSet
+    MCDataType<RealType> EnsembleProperty;
+
     ///gradients of the particles
     ParticleGradient_t G;
     
@@ -115,6 +135,9 @@ namespace qmcplusplus {
     ///return the id
     inline int parent() const { return ParentTag;}
     
+    inline RealType getTotalWeight() const {
+      return EnsembleProperty.Weight;
+    }
     
     /**move a particle
      *@param iat the index of the particle to be moved
