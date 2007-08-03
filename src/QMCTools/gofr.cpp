@@ -11,12 +11,6 @@
 using namespace qmcplusplus;
 using namespace std;
 
-  template<typename IT1, typename IT2>
-inline void accumulate_squaredelements(IT1 first, IT1 last, IT2 res)
-{
-  while(first != last) {*res++ += (*first)*(*first);++first;}
-}
-
 int print_help()
 {
   cout << "Usage: gofr --fileroot string --np int " << endl;
@@ -25,6 +19,7 @@ int print_help()
 
 struct GofRObserver {
   int NumSamples;
+  int NumNodes;
   string DataSetName;
   Vector<double> gofr;
   Vector<double> gofr2;
@@ -45,21 +40,19 @@ struct GofRObserver {
         gofr[k] += *dptr;
         gofr2[k] += (*dptr)*(*dptr);
       }
-      //accumulate_elements(gofr_dat[i],gofr_dat[i]+nbin,gofr.begin());
-      //accumulate_squaredelements(gofr_dat[i],gofr_dat[i]+nbin,gofr2.begin());
     }
-    NumSamples += count;
+    NumSamples = count;
   }
 
-  inline void resize(int nbin)
+  inline void resize(int ns, int nbin)
   {
-    if(gofr.size()<nbin)
-    {
-      gofr.resize(nbin);
-      gofr2.resize(nbin);
-      gofr=0.0;
-      gofr2=0.0;
-    }
+    NumSamples=ns;
+    gofr_dat.resize(ns,nbin);
+    gofr_dat=0.0;
+    gofr.resize(nbin);
+    gofr2.resize(nbin);
+    gofr=0.0;
+    gofr2=0.0;
   }
 
   void getData(const char* fname, int nproc);
@@ -71,6 +64,7 @@ struct GofRObserver {
     fout.setf(ios::left,ios::adjustfield);
     fout.precision(6);
 
+    //double norm=static_cast<double>(NumNodes)/static_cast<double>(NumSamples);
     double norm=1.0/static_cast<double>(NumSamples);
     double sqrtnorm=sqrt(norm);
     for(int i=0; i<gofr.size(); i++)
@@ -122,7 +116,9 @@ int main(int argc, char** argv) {
 
 void GofRObserver::getData(const char* froot, int nproc)
 {
+  NumNodes=nproc;
   char fname[128];
+  int count_max=1000000;
   for(int ip=0; ip<nproc; ip++)
   {
     if(nproc>1)
@@ -138,6 +134,7 @@ void GofRObserver::getData(const char* froot, int nproc)
     int count=0;
     HDFAttribIO<int> i(count);
     i.read(obsid,"count");
+    count_max = std::min(count_max,count);
 
     string gname(DataSetName);
     gname.append("/value");
@@ -149,17 +146,22 @@ void GofRObserver::getData(const char* froot, int nproc)
     int status_n = H5Sget_simple_extent_dims(dataspace, dims_out, NULL);
     H5Dclose(h1);
 
-    gofr_dat.resize(dims_out[0],dims_out[1]);
-    HDFAttribIO<Matrix<double> > o(gofr_dat);
-    resize(dims_out[1]);
+    if(gofr_dat.size() ==0) {
+      resize(dims_out[0],dims_out[1]);
+    }
+
+    Matrix<double> tmp(dims_out[0],dims_out[1]);
+    HDFAttribIO<Matrix<double> > o(tmp);
     o.read(obsid,gname.c_str());
-    accumulate(count);
+    gofr_dat += tmp;
 
     H5Gclose(obsid);
     H5Fclose(fileid);
   }
 
+  cout << "Number of blocks " << count_max << endl;
+  accumulate(count_max);
   string outfname(froot);
-  outfname.append(".gofr.dat");
+  outfname += "."+ DataSetName+".dat";
   print(outfname.c_str());
 }
