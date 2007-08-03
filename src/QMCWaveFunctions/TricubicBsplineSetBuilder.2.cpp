@@ -177,23 +177,24 @@ namespace qmcplusplus {
           }
         }
 
-        char newoname[8];
-        sprintf(newoname,"band%d",iorb);
-        hid_t h1= H5Gcreate(htwist,newoname,0);
-        sprintf(newoname,"spin%d",spinIndex);
-        hid_t s1= H5Gcreate(h1,newoname,0);
-        HDFAttribIO<PosType> w1(centerIn[iorb]);
-        w1.write(s1,"center");
-        HDFAttribIO<PosType> w2(activeBasis->Origins[iorb]);
-        w2.write(s1,"origin");
-        HDFAttribIO<Array<ValueType,3> > w3(inTrunc);
-        w3.write(s1,"eigenvector");
-        HDFAttribIO<Array<ValueType,3> > w4(inCopy);
+        ///skip writing
+        //char newoname[8];
+        //sprintf(newoname,"band%d",iorb);
+        //hid_t h1= H5Gcreate(htwist,newoname,0);
+        //sprintf(newoname,"spin%d",spinIndex);
+        //hid_t s1= H5Gcreate(h1,newoname,0);
+        //HDFAttribIO<PosType> w1(centerIn[iorb]);
+        //w1.write(s1,"center");
+        //HDFAttribIO<PosType> w2(activeBasis->Origins[iorb]);
+        //w2.write(s1,"origin");
+        //HDFAttribIO<Array<ValueType,3> > w3(inTrunc);
+        //w3.write(s1,"eigenvector");
+        //HDFAttribIO<Array<ValueType,3> > w4(inCopy);
 
-        //BLAS::copy(inTemp.size(),inTemp.data(),inCopy.data());
-        //w4.write(h1,"eigenvector_full");
-        H5Gclose(s1);
-        H5Gclose(h1);
+        ////BLAS::copy(inTemp.size(),inTemp.data(),inCopy.data());
+        ////w4.write(h1,"eigenvector_full");
+        //H5Gclose(s1);
+        //H5Gclose(h1);
         StorageType* newP =new StorageType;
         BigDataSet[wnshort.str()]=new RSOType(center,origin,newP);
         activeBasis->add(iorb,inTrunc,newP);

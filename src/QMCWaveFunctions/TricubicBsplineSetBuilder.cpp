@@ -83,11 +83,12 @@ namespace qmcplusplus {
         BoxGrid[idir]=npts;
         OpenEndGrid = (closedEnd != "yes");
       } 
-      //else if(cname == "expand")//expand
-      //{
-      //  putContent(BoxDup,cur);//
-      //  TranslateGrid = true;
-      //}
+      else if(cname == "expand")//expand
+      {
+        putContent(BoxDup,cur);//
+        myParam->BoxDup=BoxDup;
+        TranslateGrid = true;
+      }
       //else if(cname == "center")//move center of the grid
       //{
       //  string move("no");
@@ -102,6 +103,7 @@ namespace qmcplusplus {
       app_log() << "    Lower box " << LowerBox << endl;
       app_log() << "    Upper box " << UpperBox << endl;
       app_log() << "    Box grid "  << BoxGrid << endl;
+      app_log() << "    Box Expansion "  << BoxDup << endl;
     }
     return true;
   }
@@ -160,10 +162,16 @@ namespace qmcplusplus {
 
     //stage 3: check if the grid needs to be modified
     BoxDup=myParam->BoxDup;
+
     if(BoxDup[0]*BoxDup[1]*BoxDup[2]>1)
+    {
       TranslateGrid=true;
+    }
     else
+    {
       TranslateGrid=(myParam->BufferRadius>0.0)? true:false;
+    }
+
 
     //stage 4: create one of the derived classes from BsplineBasisType (Bspline3DSetBase)
     //constants for template instantiations
