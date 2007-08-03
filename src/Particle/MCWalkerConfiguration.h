@@ -124,7 +124,12 @@ namespace qmcplusplus {
     ///return the total number of active walkers among a MPI group
     inline int getGlobalNumWalkers() const { return GlobalNumWalkers;}
     ///return the total number of active walkers among a MPI group
-    inline void setGlobalNumWalkers(int nw) { GlobalNumWalkers=nw;}
+    inline void setGlobalNumWalkers(int nw) { 
+      GlobalNumWalkers=nw;
+      EnsembleProperty.NumSamples=nw;
+      EnsembleProperty.Weight=nw;
+    }
+
     ///return the number of particles per walker
     inline int getParticleNum() const { return R.size();}
 
