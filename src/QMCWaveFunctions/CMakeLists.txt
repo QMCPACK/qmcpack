@@ -39,10 +39,15 @@ SET(FERMION_SRCS
   MolecularOrbitals/STOBuilder.cpp
   MolecularOrbitals/GTOBuilder.cpp
   MolecularOrbitals/NGOBuilder.cpp
-  EinsplineSet.h
-  EinsplineSet.cpp
 )
 
+IF(HAVE_EINSPLINE)
+  SET(FERMION_SRCS 
+      ${FERMION_SRCS}
+      EinsplineSet.cpp
+  )
+ENDIF(HAVE_EINSPLINE)
+    
 IF(QMC_COMPLEX)
   SET(FERMION_SRCS ${FERMION_SRCS}
     ElectronGas/ElectronGasComplexOrbitalBuilder.cpp
