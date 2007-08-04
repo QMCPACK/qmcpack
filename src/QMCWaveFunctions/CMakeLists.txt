@@ -39,6 +39,8 @@ SET(FERMION_SRCS
   MolecularOrbitals/STOBuilder.cpp
   MolecularOrbitals/GTOBuilder.cpp
   MolecularOrbitals/NGOBuilder.cpp
+  EinsplineSet.h
+  EinsplineSet.cpp
 )
 
 IF(QMC_COMPLEX)
