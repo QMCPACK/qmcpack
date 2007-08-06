@@ -24,10 +24,12 @@
 #include "Optimize/VarList.h"
 #include "QMCWaveFunctions/EinsplineOrb.h"
 
+class EinsplineSetBuilder;
 
 namespace qmcplusplus {
   class EinsplineSetBase : public SPOSetBase
   {
+    friend class EinsplineSetBuilder;
   protected:
     //////////////////////
     // Type definitions //

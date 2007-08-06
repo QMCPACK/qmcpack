@@ -19,6 +19,7 @@
 
 #include <einspline/bspline.h>
 #include "Configuration.h"
+#include "OhmmsData/HDFAttribIO.h"
 
 namespace qmcplusplus {
 
@@ -27,12 +28,13 @@ namespace qmcplusplus {
   {
   public:
     PosType Center;
-    RealType Radius;
+    RealType Radius, Energy;
     
     inline void evaluate (PosType r, T &psi);
     inline void evaluate (PosType r, T &psi, TinyVector<T,N> &grad, T &lapl);  
     inline void evaluate (PosType r, T &psi, TinyVector<T,N> &grad,
 			  Tensor<T,N> &hess);
+    void Read (hid_t h5file, string baseName);
   };
   
   
@@ -42,7 +44,7 @@ namespace qmcplusplus {
   {
   public:
     PosType Center;
-    RealType Radius;
+    RealType Radius, Energy;
     UBspline_2d_d *Spline;
     
     inline void evaluate (PosType r, double &psi) 
@@ -59,6 +61,7 @@ namespace qmcplusplus {
     {
       eval_UBspline_2d_d_vgh (Spline, r[0], r[1], &psi, &(grad[0]), &(hess(0,0)));
     }
+    void read (hid_t h5file, string baseName);
   };
   
   template<>
@@ -66,7 +69,7 @@ namespace qmcplusplus {
   {
   public:
     PosType Center;
-    RealType Radius;
+    RealType Radius, Energy;
     UBspline_2d_z *Spline;
     
     inline void evaluate (PosType r, complex<double> &psi) 
@@ -87,6 +90,7 @@ namespace qmcplusplus {
       eval_UBspline_2d_z_vgh (Spline, r[0], r[1],
 			      &psi, &(grad[0]), &(hess(0,0)));
     }
+    void read (hid_t h5file, string baseName);
   };
   
   
@@ -96,7 +100,7 @@ namespace qmcplusplus {
   {
   public:
     PosType Center;
-    RealType Radius;
+    RealType Radius, Energy;
     UBspline_3d_d *Spline;
     
     inline void evaluate (PosType r, double &psi) 
@@ -115,6 +119,7 @@ namespace qmcplusplus {
       eval_UBspline_3d_d_vgh (Spline, r[0], r[1], r[2], 
 			      &psi, &(grad[0]), &(hess(0,0)));
     }
+    void read (hid_t h5file, string baseName);
   };
   
   template<>
@@ -122,7 +127,7 @@ namespace qmcplusplus {
   {
   public:
     PosType Center;
-    RealType Radius;
+    RealType Radius, Energy;
     UBspline_3d_z *Spline;
     
     inline void evaluate (PosType r, complex<double> &psi) 
@@ -143,6 +148,7 @@ namespace qmcplusplus {
       eval_UBspline_3d_z_vgh (Spline, r[0], r[1], r[2], 
 			      &psi, &(grad[0]), &(hess(0,0)));
     }
+    void read (hid_t h5file, string baseName);
   };
 }
 

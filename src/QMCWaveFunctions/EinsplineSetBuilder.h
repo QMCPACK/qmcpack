@@ -41,14 +41,38 @@ namespace qmcplusplus {
     SPOSetBase* createSPOSet(xmlNodePtr cur);
     
   protected:
+    // Helper needed for TwistMap
+    struct Int3less
+    {
+      bool operator()(TinyVector<int,3> a, TinyVector<int,3> b) const
+      {
+	if (a[0] > b[0]) return false;
+	if (a[0] < b[0]) return true;
+	if (a[1] > b[1]) return false;
+	if (a[1] < b[1]) return true;
+	if (a[2] > b[2]) return false;
+	if (a[2] < b[2]) return true;	
+	return false;
+      }
+    };
+
+    // The actual orbital set we're building
+    EinsplineSetBase *OrbitalSet;
+
     xmlNodePtr XMLRoot;
     hid_t H5FileID;
     string H5FileName;
-    Tensor<double,OHMMS_DIM> Lattice, RecipLattice;
+    Tensor<double,OHMMS_DIM> Lattice, RecipLattice, LatticeInv;
     int NumBands, NumElectrons, NumSpins, NumTwists;
-    TinyVector<int,OHMMS_DIM> Tile;
     Vector<int> IonTypes;
     Vector<TinyVector<double,OHMMS_DIM> > IonPos;
+    // Twist angle information
+    Vector<PosType> TwistAngles;
+    TinyVector<int,OHMMS_DIM> Tile;
+    TinyVector<int,OHMMS_DIM> TwistMesh;
+    // This maps a 3-integer twist index into the twist number in the file
+    map <TinyVector<int,OHMMS_DIM>,int,Int3less> TwistMap;
+    void AnalyzeTwists();
 
   };
 

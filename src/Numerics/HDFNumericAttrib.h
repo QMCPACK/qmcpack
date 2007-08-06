@@ -596,6 +596,9 @@ struct HDFAttribIO<blitz::Array<TinyVector<double,D>,2> >: public HDFAttribIOBas
         npts[2]=ref.size(2);
         hid_t h1 = H5Dopen(grp, name);
         hid_t dataspace = H5Dget_space(h1);
+	hsize_t dims[3];
+	H5Sget_simple_extent_dims(dataspace, dims, NULL);
+	ref.resize(dims[0], dims[1], dims[2]);
         hid_t ret = H5Dread(h1, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, ref.data());
         H5Sclose(dataspace);
         H5Dclose(h1);
@@ -635,6 +638,11 @@ struct HDFAttribIO<blitz::Array<TinyVector<double,D>,2> >: public HDFAttribIOBas
         npts[3]=2;
         hid_t h1 = H5Dopen(grp, name);
         hid_t dataspace = H5Dget_space(h1);
+
+	hsize_t dims[4];
+	H5Sget_simple_extent_dims(dataspace, dims, NULL);
+	ref.resize(dims[0], dims[1], dims[2]);
+
         hid_t ret = H5Dread(h1, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, ref.data());
         H5Sclose(dataspace);
         H5Dclose(h1);
