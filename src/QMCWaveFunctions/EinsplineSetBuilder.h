@@ -24,6 +24,11 @@ namespace qmcplusplus {
   
   class EinsplineSetBuilder : public BasisSetBuilder {
   public:
+    //////////////////////
+    // Type definitions //
+    //////////////////////
+    typedef map<string,ParticleSet*> PtclPoolType;
+
     EinsplineSetBuilder(ParticleSet& p, PtclPoolType& psets, xmlNodePtr cur);
     
     ~EinsplineSetBuilder();

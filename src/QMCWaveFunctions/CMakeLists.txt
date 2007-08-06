@@ -45,6 +45,7 @@ IF(HAVE_EINSPLINE)
   SET(FERMION_SRCS 
       ${FERMION_SRCS}
       EinsplineSet.cpp
+      EinsplineSetBuilder.cpp
   )
 ENDIF(HAVE_EINSPLINE)
     

@@ -21,6 +21,9 @@
 #include "QMCWaveFunctions/MolecularOrbitals/MolecularBasisBuilder.h"
 //#include "QMCWaveFunctions/SplineSetBuilder.h"
 #include "QMCWaveFunctions/TricubicBsplineSetBuilder.h"
+#ifdef HAVE_EINSPLINE
+#include "QMCWaveFunctions/EinsplineSetBuilder.h"
+#endif
 #include "Message/Communicate.h"
 #include "OhmmsData/AttributeSet.h"
 
@@ -63,6 +66,11 @@ namespace qmcplusplus {
     {
       app_log() << "  TricubicBsplineSetBuilder: b-spline on 3D TriCubicGrid " << endl;
       bb = new TricubicBsplineSetBuilder(targetPtcl,ptclPool,rootNode);
+    }
+    else if (typeOpt == "einspline") 
+    {
+      app_log() << "  EinsplineSetBuilder:  using libeinspline for B-spline orbitals." << endl;
+      bb = new EinsplineSetBuilder(targetPtcl,ptclPool,rootNode);
     }
     else if(typeOpt == "MolecularOrbital" || typeOpt == "MO") 
     {
