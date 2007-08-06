@@ -156,6 +156,43 @@ struct HDFAttribIO<TinyVector<double,D> >: public HDFAttribIOBase {
 };
 
 template<unsigned D>
+struct HDFAttribIO<Tensor<double,D> >: public HDFAttribIOBase {
+
+  typedef Tensor<double,D> data_type;
+
+  data_type& ref;
+  bool replace;
+
+  inline HDFAttribIO<data_type>(data_type& a, bool over=false):ref(a),replace(over) { }
+
+  inline void write(hid_t grp, const char* name) {
+    if(replace)
+    {
+      hid_t dataset = H5Dopen(grp,name);
+      hid_t ret = H5Dwrite(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT,&(ref(0,0)));
+      H5Dclose(dataset);
+    }
+    else
+    {
+      hsize_t dim[2] = {D, D};
+      hid_t dataspace  = H5Screate_simple(2, dim, NULL);
+      hid_t dataset =  H5Dcreate(grp, name, H5T_NATIVE_DOUBLE, dataspace, H5P_DEFAULT);
+      hid_t ret = H5Dwrite(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT,&(ref(0,0)));
+      H5Sclose(dataspace);
+      H5Dclose(dataset);
+    } 
+  }
+
+  inline void read(hid_t  grp, const char* name) {
+    hid_t h1 = H5Dopen(grp, name);
+    hid_t ret = H5Dread(h1, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, &(ref(0,0)));
+    H5Dclose(h1);
+  }
+};
+
+
+
+template<unsigned D>
 struct HDFAttribIO<TinyVector<int,D> >: public HDFAttribIOBase {
 
 typedef TinyVector<int,D> data_type;

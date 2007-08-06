@@ -67,11 +67,13 @@ namespace qmcplusplus {
       app_log() << "  TricubicBsplineSetBuilder: b-spline on 3D TriCubicGrid " << endl;
       bb = new TricubicBsplineSetBuilder(targetPtcl,ptclPool,rootNode);
     }
+#ifdef HAVE_EINSPLINE
     else if (typeOpt == "einspline") 
     {
       app_log() << "  EinsplineSetBuilder:  using libeinspline for B-spline orbitals." << endl;
       bb = new EinsplineSetBuilder(targetPtcl,ptclPool,rootNode);
     }
+#endif
     else if(typeOpt == "MolecularOrbital" || typeOpt == "MO") 
     {
       ParticleSet* ions=0;

@@ -41,7 +41,14 @@ namespace qmcplusplus {
     SPOSetBase* createSPOSet(xmlNodePtr cur);
     
   protected:
-    
+    xmlNodePtr XMLRoot;
+    hid_t H5FileID;
+    string H5FileName;
+    Tensor<double,OHMMS_DIM> Lattice, RecipLattice;
+    int NumBands, NumElectrons, NumSpins, NumTwists;
+    TinyVector<int,OHMMS_DIM> Tile;
+    Vector<int> IonTypes;
+    Vector<TinyVector<double,OHMMS_DIM> > IonPos;
 
   };
 
