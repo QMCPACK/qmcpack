@@ -36,13 +36,16 @@ namespace qmcplusplus {
   void
   EinsplineSetBase:: setOrbitalSetSize(int norbs)
   {
+    OrbitalSetSize = norbs;
   }
   
   void 
   EinsplineSetExtended::evaluate (const ParticleSet& P, int iat, 
 				  ValueVector_t& psi)
   {
-    
+    PosType ru(PrimLattice.toUnit(P.R[iat]));
+    for(int j=0; j<OrbitalSetSize; j++) 
+      Orbitals[j].evaluate(ru, psi[j]); 
   }
   
   void 
@@ -50,14 +53,35 @@ namespace qmcplusplus {
 				  ValueVector_t& psi, GradVector_t& dpsi, 
 				  ValueVector_t& d2psi)
   {
+    PosType ru(PrimLattice.toUnit(P.R[iat]));
+    ValueType val;
+    TinyVector<ValueType,3> gu;
+    Tensor<ValueType,3> hess;
+    for(int j=0; j<OrbitalSetSize; j++) {
+      Orbitals[j].evaluate(ru, val, gu, hess);
+      psi[j]   = val;
+      dpsi[j]  = dot(PrimLattice.G, gu);
+      d2psi[j] = trace(hess, GGt);
+    }
   }
   
   void 
   EinsplineSetExtended::evaluate (const ParticleSet& P, int first, int last,
-				  ValueMatrix_t& logdet, GradMatrix_t& dlogdet, 
-				  ValueMatrix_t& d2logdet)
+				  ValueMatrix_t& vals, GradMatrix_t& grads, 
+				  ValueMatrix_t& lapls)
   {
-    
+    for(int iat=first,i=0; iat<last; iat++,i++) {
+      PosType ru(PrimLattice.toUnit(P.R[iat]));
+      ValueType val;
+      TinyVector<ValueType,3> gu;
+      Tensor<ValueType,3> hess;
+      for(int j=0; j<OrbitalSetSize; j++) {
+	Orbitals[j].evaluate(ru, val, gu, hess);
+	vals(j,i)  = val;
+	grads(i,j) = dot(PrimLattice.G, gu);
+	lapls(i,j) = trace(hess, GGt);
+      }
+    }
   }
   
   void 

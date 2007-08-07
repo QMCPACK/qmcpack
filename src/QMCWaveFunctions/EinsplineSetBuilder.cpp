@@ -43,11 +43,20 @@ namespace qmcplusplus {
   SPOSetBase*
   EinsplineSetBuilder::createSPOSet(xmlNodePtr cur) {
     OhmmsAttributeSet attribs;
+    int numOrbs = 0;
     attribs.add (H5FileName, "href");
-    attribs.add (Tile, "tile");
     attribs.put (XMLRoot);
-//     cerr << "In EinsplineSetBuilder::createSPOSet().  href=\"" 
-// 	 << H5FileName << "\".\n";
+    attribs.add (Tile,       "tile");
+    attribs.add (numOrbs,    "size");
+    attribs.add (numOrbs,    "norbs");
+    attribs.put (cur);
+    if (numOrbs == 0) {
+      app_error() << "You must specify the number of orbitals in the input file.\n";
+      abort();
+    }
+    else 
+      cerr << "  Reading " << numOrbs << " orbitals from HDF5 file.\n";
+
     H5FileID = H5Fopen(H5FileName.c_str(),H5F_ACC_RDWR,H5P_DEFAULT);
     if (H5FileID < 0) {
       app_error() << "Could not open HDF5 file \"" << H5FileName 
@@ -60,6 +69,7 @@ namespace qmcplusplus {
     //////////////////////////////////////////////////
     HDFAttribIO<Tensor<double,3> > h_Lattice(Lattice), h_RecipLattice(RecipLattice);
     h_Lattice.read      (H5FileID, "/parameters_0/lattice");
+    
     h_RecipLattice.read (H5FileID, "/parameters_0/reciprocal_lattice");
     fprintf (stderr, 
 	     "  Lattice = \n    [ %8.5f %8.5f %8.5f\n"
@@ -120,9 +130,17 @@ namespace qmcplusplus {
     /////////////////////////
     // Setup internal data //
     /////////////////////////
+
+    // Lattice information
     OrbitalSet->TileFactor = Tile;
     OrbitalSet->Tiling = Tile[0]!=1 || Tile[1]!=1 || Tile[2]!=1;
-    
+    Tensor<double,3> superLattice;
+    for (int i=0; i<3; i++)
+      for (int j=0; j<3; j++)
+	superLattice(i,j) = (double)Tile[i]*Lattice(i,j);
+    OrbitalSet->PrimLattice  = Lattice;
+    OrbitalSet->SuperLattice = superLattice;
+        
     // For now, just try reading k=0 data
     OrbitalSet->Orbitals.resize(NumBands);
     for (int bi=0; bi<NumBands; bi++) {
@@ -131,7 +149,7 @@ namespace qmcplusplus {
       OrbitalSet->Orbitals[bi].read(H5FileID, groupPath.str());
     }
     OrbitalSet->BasisSetSize   = NumBands;
-    OrbitalSet->OrbitalSetSize = NumBands;
+    OrbitalSet->setOrbitalSetSize (numOrbs);
 
     return OrbitalSet;
   }
