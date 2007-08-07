@@ -24,12 +24,13 @@
 #include "Optimize/VarList.h"
 #include "QMCWaveFunctions/EinsplineOrb.h"
 
-class EinsplineSetBuilder;
 
 namespace qmcplusplus {
+
+  class EinsplineSetBuilder;
+
   class EinsplineSetBase : public SPOSetBase
   {
-    friend class EinsplineSetBuilder;
   protected:
     //////////////////////
     // Type definitions //
@@ -70,6 +71,8 @@ namespace qmcplusplus {
     void resetParameters(VarRegistry<RealType>& vlist);
     void resetTargetParticleSet(ParticleSet& e);
     void setOrbitalSetSize(int norbs);
+
+    friend class EinsplineSetBuilder;
   };
   
   class EinsplineSetExtended : public EinsplineSetBase
