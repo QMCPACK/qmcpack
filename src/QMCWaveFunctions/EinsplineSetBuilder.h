@@ -62,17 +62,28 @@ namespace qmcplusplus {
     xmlNodePtr XMLRoot;
     hid_t H5FileID;
     string H5FileName;
+    // HDF5 orbital file version
+    TinyVector<int,2> Version;
+
     Tensor<double,OHMMS_DIM> Lattice, RecipLattice, LatticeInv;
     int NumBands, NumElectrons, NumSpins, NumTwists;
     Vector<int> IonTypes;
     Vector<TinyVector<double,OHMMS_DIM> > IonPos;
-    // Twist angle information
+    /////////////////////////////
+    // Twist angle information //
+    /////////////////////////////
+    // This stores which "true" twist number I am using
+    int TwistNum;
     Vector<PosType> TwistAngles;
-    TinyVector<int,OHMMS_DIM> Tile;
+    TinyVector<int,OHMMS_DIM> TileFactor;
     TinyVector<int,OHMMS_DIM> TwistMesh;
+    // This vector stores which twist indices will be used by this
+    // clone 
+    vector<TinyVector<int,OHMMS_DIM> > UseTwists;
     // This maps a 3-integer twist index into the twist number in the file
     map <TinyVector<int,OHMMS_DIM>,int,Int3less> TwistMap;
     void AnalyzeTwists();
+    void OccupyAndReadBands();
 
   };
 

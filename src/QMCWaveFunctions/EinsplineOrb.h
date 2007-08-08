@@ -29,6 +29,7 @@ namespace qmcplusplus {
   public:
     PosType Center;
     RealType Radius, Energy;
+    vector<PosType> kVecs;
     bool Localized;
     
     inline void evaluate (PosType r, T &psi);
@@ -46,6 +47,7 @@ namespace qmcplusplus {
   public:
     PosType Center;
     RealType Radius, Energy;
+    vector<PosType> kVecs;
     bool Localized;
     UBspline_2d_d *Spline;
     
@@ -75,6 +77,7 @@ namespace qmcplusplus {
   public:
     PosType Center;
     RealType Radius, Energy;
+    vector<PosType> kVecs;
     bool Localized;
     UBspline_2d_z *Spline;
     
@@ -112,6 +115,7 @@ namespace qmcplusplus {
   public:
     PosType Center;
     RealType Radius, Energy;
+    vector<PosType> kVecs;
     bool Localized;
     UBspline_3d_d *Spline;
     
@@ -144,6 +148,7 @@ namespace qmcplusplus {
   public:
     PosType Center;
     RealType Radius, Energy;
+    vector<PosType> kVecs;
     bool Localized;
     UBspline_3d_z *Spline;
     

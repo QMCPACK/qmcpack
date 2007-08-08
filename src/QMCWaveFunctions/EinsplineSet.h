@@ -31,6 +31,7 @@ namespace qmcplusplus {
 
   class EinsplineSetBase : public SPOSetBase
   {
+    friend class EinsplineSetBuilder;
   protected:
     //////////////////////
     // Type definitions //
@@ -55,6 +56,9 @@ namespace qmcplusplus {
     /// The "Twist" variables are in reduced coords, i.e. from 0 to1.
     /// The "k" variables are in Cartesian coordinates.
     PosType TwistVector, kVector;
+    /// This stores which "true" twist vector this clone is using.
+    /// "True" indicates the physical twist angle after untiling
+    int TwistNum;
     /// metric tensor to handle generic unitcell
     Tensor<RealType,OHMMS_DIM> GGt;
     
@@ -71,8 +75,9 @@ namespace qmcplusplus {
     void resetParameters(VarRegistry<RealType>& vlist);
     void resetTargetParticleSet(ParticleSet& e);
     void setOrbitalSetSize(int norbs);
-
-    friend class EinsplineSetBuilder;
+    EinsplineSetBase() :  TwistNum(0)
+    {
+    }
   };
   
   class EinsplineSetExtended : public EinsplineSetBase

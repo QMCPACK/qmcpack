@@ -19,10 +19,11 @@
 #include "OhmmsData/AttributeSet.h"
 #include "Utilities/Timer.h"
 #include "Message/Communicate.h"
+#include <vector>
 
 namespace qmcplusplus {
   EinsplineSetBuilder::EinsplineSetBuilder(ParticleSet& p, PtclPoolType& psets, xmlNodePtr cur) 
-    : XMLRoot(cur), Tile(1,1,1)
+    : XMLRoot(cur), TileFactor(1,1,1), TwistNum(0)
   {
   }
 
@@ -45,8 +46,8 @@ namespace qmcplusplus {
     OhmmsAttributeSet attribs;
     int numOrbs = 0;
     attribs.add (H5FileName, "href");
+    attribs.add (TileFactor, "tile");
     attribs.put (XMLRoot);
-    attribs.add (Tile,       "tile");
     attribs.add (numOrbs,    "size");
     attribs.add (numOrbs,    "norbs");
     attribs.put (cur);
@@ -57,7 +58,7 @@ namespace qmcplusplus {
     }
     else 
       cerr << "  Reading " << numOrbs << " orbitals from HDF5 file.\n";
-
+    
     H5FileID = H5Fopen(H5FileName.c_str(),H5F_ACC_RDWR,H5P_DEFAULT);
     if (H5FileID < 0) {
       app_error() << "Could not open HDF5 file \"" << H5FileName 
@@ -69,26 +70,25 @@ namespace qmcplusplus {
     // Read basic parameters from the orbital file. //
     //////////////////////////////////////////////////
     // Check the version
-    TinyVector<int,2> version;
-    HDFAttribIO<TinyVector<int,2> > h_version(version);
-    h_version.read (H5FileID, "/version");
+    HDFAttribIO<TinyVector<int,2> > h_Version(Version);
+    h_Version.read (H5FileID, "/version");
     string parameterGroup, ionsGroup, eigenstatesGroup;
-    if (version[0]==0 && version[1]== 11) {
+    if (Version[0]==0 && Version[1]== 11) {
       parameterGroup  = "/parameters_0";
       ionsGroup       = "/ions_2";
       eigenstatesGroup = "/eigenstates_3";
     }
-    else if (version[0]==0 && version[1]==20) {
+    else if (Version[0]==0 && Version[1]==20) {
       parameterGroup  = "/parameters";
       ionsGroup       = "/ions";
       eigenstatesGroup = "/eigenstates";
     }
     else {
       cerr << "Unknown HDF5 orbital file version " 
-	   << version[0] << "." << version[1] << "\n";
+	   << Version[0] << "." << Version[1] << "\n";
       abort();
     }
-    fprintf (stderr, "  HDF5 orbital file version %d.%d.\n", version[0], version[1]);
+    fprintf (stderr, "  HDF5 orbital file version %d.%d.\n", Version[0], Version[1]);
     HDFAttribIO<Tensor<double,3> > h_Lattice(Lattice), h_RecipLattice(RecipLattice);
     h_Lattice.read      (H5FileID, (parameterGroup+"/lattice").c_str());
     
@@ -111,9 +111,9 @@ namespace qmcplusplus {
     h_NumTwists.read    (H5FileID, (parameterGroup+"/num_twists").c_str());
     fprintf (stderr, "  bands = %d, elecs = %d, spins = %d, twists = %d\n",
 	     NumBands, NumElectrons, NumSpins, NumTwists);
-    if (Tile[0]!=1 || Tile[1]!=1 || Tile[2]!=1)
+    if (TileFactor[0]!=1 || TileFactor[1]!=1 || TileFactor[2]!=1)
       fprintf (stderr, "  Using a %dx%dx%d tiling factor.\n", 
-	       Tile[0], Tile[1], Tile[2]);
+	       TileFactor[0], TileFactor[1], TileFactor[2]);
 
     //////////////////////////////////
     // Read ion types and locations //
@@ -129,7 +129,7 @@ namespace qmcplusplus {
     TwistAngles.resize(NumTwists);
     for (int ti=0; ti<NumTwists; ti++) {
       ostringstream path;
-      if ((version[0]==0 && version[1]==11) || NumTwists > 0)
+      if ((Version[0]==0 && Version[1]==11) || NumTwists > 0)
 	path << eigenstatesGroup << "/twist_" << ti << "/twist_angle";
       else
 	path << eigenstatesGroup << "/twist/twist_angle";
@@ -139,7 +139,7 @@ namespace qmcplusplus {
 	       TwistAngles[ti][0], TwistAngles[ti][1], TwistAngles[ti][2]);
     }
     AnalyzeTwists();
-    fprintf (stderr, "  Found a valid %dx%dx%x twist mesh.\n", 
+    fprintf (stderr, "  Found a valid %dx%dx%d twist mesh.\n", 
 	     TwistMesh[0], TwistMesh[1], TwistMesh[2]);
 
     //////////////////////////////////
@@ -157,27 +157,33 @@ namespace qmcplusplus {
     /////////////////////////
 
     // Lattice information
-    OrbitalSet->TileFactor = Tile;
-    OrbitalSet->Tiling = Tile[0]!=1 || Tile[1]!=1 || Tile[2]!=1;
+    OrbitalSet->TileFactor = TileFactor;
+    OrbitalSet->Tiling = TileFactor[0]!=1 || TileFactor[1]!=1 || TileFactor[2]!=1;
     Tensor<double,3> superLattice;
     for (int i=0; i<3; i++)
       for (int j=0; j<3; j++)
-	superLattice(i,j) = (double)Tile[i]*Lattice(i,j);
+	superLattice(i,j) = (double)TileFactor[i]*Lattice(i,j);
     OrbitalSet->PrimLattice  = Lattice;
     OrbitalSet->SuperLattice = superLattice;
         
-    // For now, just try reading k=0 data
-    OrbitalSet->Orbitals.resize(NumBands);
-    for (int bi=0; bi<NumBands; bi++) {
-      ostringstream groupPath;
-      if ((version[0]==0 && version[1]==11) || NumTwists > 0)
-	groupPath << eigenstatesGroup << "/twist_0/band_" << bi << "/";
-      else
-	groupPath << eigenstatesGroup << "/twist/band_" << bi << "/";
-      OrbitalSet->Orbitals[bi].read(H5FileID, groupPath.str());
-    }
-    OrbitalSet->BasisSetSize   = NumBands;
+//     OrbitalSet->Orbitals.resize(UseTwists.size()*NumBands);
+//     for (int ti=0; ti<UseTwists.size(); ti++) {
+//       int tindex = TwistMap[UseTwists[ti]];
+//       for (int bi=0; bi<NumBands; bi++) {
+// 	ostringstream groupPath;
+// 	if ((Version[0]==0 && Version[1]==11) || NumTwists > 0)
+// 	  groupPath << eigenstatesGroup << "/twist_" 
+// 		    << tindex << "/band_" << bi << "/";
+// 	else
+// 	  groupPath << eigenstatesGroup << "/twist/band_" << bi << "/";
+// 	OrbitalSet->Orbitals[bi].read(H5FileID, groupPath.str());
+//       }
+//     }
+    
     OrbitalSet->setOrbitalSetSize (numOrbs);
+    // Now, figure out occupation for the bands and read them
+    OccupyAndReadBands();
+    OrbitalSet->BasisSetSize   = numOrbs;
 
     return OrbitalSet;
   }
@@ -246,12 +252,108 @@ namespace qmcplusplus {
     
     // If we got this far, we have a valid twist mesh.  Now check to
     // see if the mesh is commensurate with the titling factor
-    if (((TwistMesh[0] % Tile[0]) != 0) || ((TwistMesh[1] % Tile[1]) != 0) ||
-	((TwistMesh[2] % Tile[2]) != 0)) {
-      app_error() << "The tiling factor, " << Tile[0] << "x" << Tile[1] << "x" << Tile[2] 
+    if (((TwistMesh[0] % TileFactor[0]) != 0) || 
+	((TwistMesh[1] % TileFactor[1]) != 0) ||
+	((TwistMesh[2] % TileFactor[2]) != 0)) {
+      app_error() << "The tiling factor, " 
+		  << TileFactor[0] << "x" << TileFactor[1] << "x" << TileFactor[2] 
 		  << " is not commensurate with the k-point mesh, " 
 		  << TwistMesh[0] << "x" << TwistMesh[1] << "x" << TwistMesh[2] << ".\n";
       abort();
+    }
+
+    TinyVector<int,3> untiledMesh (TwistMesh[0]/TileFactor[0], 
+				   TwistMesh[1]/TileFactor[1], 
+				   TwistMesh[2]/TileFactor[2]);
+    // Finally, let's decide which twist vectors we're supposed to
+    // read
+    fprintf (stderr, "  After untiling by %dx%dx%d, we are left with a %dx%dx%d k-point mesh.\n",
+	     TileFactor[0], TileFactor[1], TileFactor[2],
+	     untiledMesh[0], untiledMesh[1], untiledMesh[2]);
+    TinyVector<int,3> offset;
+    offset[0] = TwistNum/(untiledMesh[2]*untiledMesh[1]);
+    offset[1] = (TwistNum%(untiledMesh[2]*untiledMesh[1])) / untiledMesh[1];
+    offset[2] = (TwistNum%(untiledMesh[2]*untiledMesh[1])) % untiledMesh[1];
+//     map<TinyVector<int,3>, int>::iterator iter;
+//     for (iter = TwistMap.begin(); iter!=TwistMap.end(); iter++)
+//       cerr << "TwistMap = " << (*iter).first 
+// 	   << ", " << (*iter).second << endl;
+    
+    fprintf (stderr, "  Including twist vectors:\n");
+    UseTwists.clear();
+    for (int tx=0; tx<TileFactor[0]; tx++)
+      for (int ty=0; ty<TileFactor[1]; ty++)
+	for (int tz=0; tz<TileFactor[2]; tz++) {
+	  TinyVector<int,3> tIndex;
+	  tIndex = offset;
+	  tIndex[0] += tx*untiledMesh[0];
+	  tIndex[1] += ty*untiledMesh[1];
+	  tIndex[2] += tz*untiledMesh[2];
+	  UseTwists.push_back(tIndex);
+	  int ti = TwistMap[tIndex];
+ 	  fprintf (stderr, "tIndex = (%d, %d, %d)  ti = %d\n", 
+ 		   tIndex[0], tIndex[1], tIndex[2], ti);
+	    
+	  fprintf (stderr, "    (%6.3f %6.3f %6.3f)\n", 
+		   TwistAngles[ti][0], TwistAngles[ti][1], TwistAngles[ti][2]);
+	}
+  }
+  
+
+  class BandInfo {
+  public:
+    int TwistIndex, BandIndex;
+    double Energy;
+    inline bool operator<(BandInfo other) const
+    { return Energy < other.Energy; }
+  };
+
+  void
+  EinsplineSetBuilder::OccupyAndReadBands()
+  {
+    string eigenstatesGroup;
+    if (Version[0]==0 && Version[1]== 11) 
+      eigenstatesGroup = "/eigenstates_3";
+    else if (Version[0]==0 && Version[1]==20) 
+      eigenstatesGroup = "/eigenstates";
+
+    std::vector<BandInfo> SortBands;
+    for (int ti=0; ti<UseTwists.size(); ti++) {
+      int tindex = TwistMap[UseTwists[ti]];
+      for (int bi=0; bi<NumBands; bi++) {
+	BandInfo band;
+	band.TwistIndex = ti;
+	band.BandIndex  = bi;
+	
+	// Read eigenenergy from file
+	ostringstream ePath;
+	if ((Version[0]==0 && Version[1]==11) || NumTwists > 0)
+	  ePath << eigenstatesGroup << "/twist_" 
+		    << tindex << "/band_" << bi << "/eigenvalue";
+	else
+	  ePath << eigenstatesGroup << "/twist/band_" << bi << "/eigenvalue";
+	
+	HDFAttribIO<double> h_energy(band.Energy);
+	h_energy.read (H5FileID, ePath.str().c_str());
+	SortBands.push_back(band);
+      }
+    }
+    // Now sort the bands by energy
+    sort (SortBands.begin(), SortBands.end());
+    // Read in the occupied bands
+    OrbitalSet->Orbitals.resize(OrbitalSet->getOrbitalSetSize());
+    for (int i=0; i<OrbitalSet->getOrbitalSetSize(); i++) {
+      int ti   = SortBands[i].TwistIndex;
+      int bi   = SortBands[i].BandIndex;
+      double e = SortBands[i].Energy;
+      fprintf (stderr, "  ti=%d  bi=%d energy=%8.5f.\n", ti, bi, e);
+      ostringstream groupPath;
+      if ((Version[0]==0 && Version[1]==11) || NumTwists > 0)
+	groupPath << eigenstatesGroup << "/twist_" 
+		  << ti << "/band_" << bi << "/";
+      else
+	groupPath << eigenstatesGroup << "/twist/band_" << bi << "/";
+      OrbitalSet->Orbitals[bi].read(H5FileID, groupPath.str());
     }
   }
 }

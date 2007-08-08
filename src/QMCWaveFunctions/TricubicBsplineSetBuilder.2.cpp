@@ -122,7 +122,7 @@ namespace qmcplusplus {
     HDFAttribIO<PosType> hta(TwistAngle);
     hta.write(htwist,"twist_angle");
 
-    inTrunc=0.0; 
+    inTrunc = ValueType(); 
     for(int iorb=0; iorb<norb; iorb++) 
     {
       ostringstream wnshort;
