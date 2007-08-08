@@ -29,6 +29,7 @@ namespace qmcplusplus {
   public:
     PosType Center;
     RealType Radius, Energy;
+    bool Localized;
     
     inline void evaluate (PosType r, T &psi);
     inline void evaluate (PosType r, T &psi, TinyVector<T,N> &grad, T &lapl);  
@@ -45,6 +46,7 @@ namespace qmcplusplus {
   public:
     PosType Center;
     RealType Radius, Energy;
+    bool Localized;
     UBspline_2d_d *Spline;
     
     inline void evaluate (PosType r, double &psi) 
@@ -62,6 +64,9 @@ namespace qmcplusplus {
       eval_UBspline_2d_d_vgh (Spline, r[0], r[1], &psi, &(grad[0]), &(hess(0,0)));
     }
     void read (hid_t h5file, string baseName);
+    EinsplineOrb() : Center(PosType()), Radius(0.0), Energy(0.0), Localized(false)
+    {
+    }
   };
   
   template<>
@@ -70,6 +75,7 @@ namespace qmcplusplus {
   public:
     PosType Center;
     RealType Radius, Energy;
+    bool Localized;
     UBspline_2d_z *Spline;
     
     inline void evaluate (PosType r, complex<double> &psi) 
@@ -91,6 +97,11 @@ namespace qmcplusplus {
 			      &psi, &(grad[0]), &(hess(0,0)));
     }
     void read (hid_t h5file, string baseName);
+
+    EinsplineOrb() : Center(PosType()), Radius(0.0), Energy(0.0), Localized(false)
+    {
+    }
+
   };
   
   
@@ -101,6 +112,7 @@ namespace qmcplusplus {
   public:
     PosType Center;
     RealType Radius, Energy;
+    bool Localized;
     UBspline_3d_d *Spline;
     
     inline void evaluate (PosType r, double &psi) 
@@ -120,6 +132,10 @@ namespace qmcplusplus {
 			      &psi, &(grad[0]), &(hess(0,0)));
     }
     void read (hid_t h5file, string baseName);
+
+    EinsplineOrb() : Center(PosType()), Radius(0.0), Energy(0.0), Localized(false)
+    {
+    }
   };
   
   template<>
@@ -128,6 +144,7 @@ namespace qmcplusplus {
   public:
     PosType Center;
     RealType Radius, Energy;
+    bool Localized;
     UBspline_3d_z *Spline;
     
     inline void evaluate (PosType r, complex<double> &psi) 
@@ -149,6 +166,10 @@ namespace qmcplusplus {
 			      &psi, &(grad[0]), &(hess(0,0)));
     }
     void read (hid_t h5file, string baseName);
+
+    EinsplineOrb() : Center(PosType()), Radius(0.0), Energy(0.0), Localized(false)
+    {
+    }
   };
 }
 

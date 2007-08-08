@@ -50,6 +50,7 @@ namespace qmcplusplus {
     attribs.add (numOrbs,    "size");
     attribs.add (numOrbs,    "norbs");
     attribs.put (cur);
+
     if (numOrbs == 0) {
       app_error() << "You must specify the number of orbitals in the input file.\n";
       abort();
@@ -67,10 +68,31 @@ namespace qmcplusplus {
     //////////////////////////////////////////////////
     // Read basic parameters from the orbital file. //
     //////////////////////////////////////////////////
+    // Check the version
+    TinyVector<int,2> version;
+    HDFAttribIO<TinyVector<int,2> > h_version(version);
+    h_version.read (H5FileID, "/version");
+    string parameterGroup, ionsGroup, eigenstatesGroup;
+    if (version[0]==0 && version[1]== 11) {
+      parameterGroup  = "/parameters_0";
+      ionsGroup       = "/ions_2";
+      eigenstatesGroup = "/eigenstates_3";
+    }
+    else if (version[0]==0 && version[1]==20) {
+      parameterGroup  = "/parameters";
+      ionsGroup       = "/ions";
+      eigenstatesGroup = "/eigenstates";
+    }
+    else {
+      cerr << "Unknown HDF5 orbital file version " 
+	   << version[0] << "." << version[1] << "\n";
+      abort();
+    }
+    fprintf (stderr, "  HDF5 orbital file version %d.%d.\n", version[0], version[1]);
     HDFAttribIO<Tensor<double,3> > h_Lattice(Lattice), h_RecipLattice(RecipLattice);
-    h_Lattice.read      (H5FileID, "/parameters_0/lattice");
+    h_Lattice.read      (H5FileID, (parameterGroup+"/lattice").c_str());
     
-    h_RecipLattice.read (H5FileID, "/parameters_0/reciprocal_lattice");
+    h_RecipLattice.read (H5FileID, (parameterGroup+"/reciprocal_lattice").c_str());
     fprintf (stderr, 
 	     "  Lattice = \n    [ %8.5f %8.5f %8.5f\n"
 	     "      %8.5f %8.5f %8.5f\n"
@@ -83,10 +105,10 @@ namespace qmcplusplus {
 	LatticeInv(i,j) = RecipLattice(i,j)/(2.0*M_PI);
     HDFAttribIO<int> h_NumBands(NumBands), h_NumElectrons(NumElectrons), 
       h_NumSpins(NumSpins), h_NumTwists(NumTwists);
-    h_NumBands.read     (H5FileID, "/parameters_0/num_bands");
-    h_NumElectrons.read (H5FileID, "/parameters_0/num_electrons");
-    h_NumSpins.read     (H5FileID, "/parameters_0/num_spins");
-    h_NumTwists.read    (H5FileID, "/parameters_0/num_twists");
+    h_NumBands.read     (H5FileID, (parameterGroup+"/num_bands").c_str());
+    h_NumElectrons.read (H5FileID, (parameterGroup+"/num_electrons").c_str());
+    h_NumSpins.read     (H5FileID, (parameterGroup+"/num_spins").c_str());
+    h_NumTwists.read    (H5FileID, (parameterGroup+"/num_twists").c_str());
     fprintf (stderr, "  bands = %d, elecs = %d, spins = %d, twists = %d\n",
 	     NumBands, NumElectrons, NumSpins, NumTwists);
     if (Tile[0]!=1 || Tile[1]!=1 || Tile[2]!=1)
@@ -98,8 +120,8 @@ namespace qmcplusplus {
     //////////////////////////////////
     HDFAttribIO<Vector<int> >                 h_IonTypes(IonTypes);
     HDFAttribIO<Vector<TinyVector<double,3> > > h_IonPos(IonPos);
-    h_IonTypes.read (H5FileID, "/ions_2/atom_types");
-    h_IonPos.read   (H5FileID, "/ions_2/pos");
+    h_IonTypes.read (H5FileID, (ionsGroup+"/atom_types").c_str());
+    h_IonPos.read   (H5FileID, (ionsGroup+"/pos").c_str());
 
     ///////////////////////////
     // Read the twist angles //
@@ -107,7 +129,10 @@ namespace qmcplusplus {
     TwistAngles.resize(NumTwists);
     for (int ti=0; ti<NumTwists; ti++) {
       ostringstream path;
-      path << "eigenstates_3/twist_" << ti << "/twist_angle";
+      if ((version[0]==0 && version[1]==11) || NumTwists > 0)
+	path << eigenstatesGroup << "/twist_" << ti << "/twist_angle";
+      else
+	path << eigenstatesGroup << "/twist/twist_angle";
       HDFAttribIO<PosType> h_Twist(TwistAngles[ti]);
       h_Twist.read (H5FileID, path.str().c_str());
       fprintf (stderr, "  Found twist angle (%5.3f, %5.3f, %5.3f)\n", 
@@ -145,7 +170,10 @@ namespace qmcplusplus {
     OrbitalSet->Orbitals.resize(NumBands);
     for (int bi=0; bi<NumBands; bi++) {
       ostringstream groupPath;
-      groupPath << "/eigenstates_3/twist_0/band_" << bi << "/";
+      if ((version[0]==0 && version[1]==11) || NumTwists > 0)
+	groupPath << eigenstatesGroup << "/twist_0/band_" << bi << "/";
+      else
+	groupPath << eigenstatesGroup << "/twist/band_" << bi << "/";
       OrbitalSet->Orbitals[bi].read(H5FileID, groupPath.str());
     }
     OrbitalSet->BasisSetSize   = NumBands;

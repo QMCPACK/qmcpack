@@ -24,6 +24,7 @@ namespace qmcplusplus
     h_Center.read(h5file, centerName.c_str());
     h_Radius.read(h5file, radiusName.c_str());
     h_Energy.read(h5file,  valueName.c_str());
+    Localized = Radius > 0.0;
 
     Array<complex<double>,3> rawData;
     Array<double,3> realData;
@@ -47,8 +48,12 @@ namespace qmcplusplus
     y_grid.start = 0.0;  y_grid.end = 1.0;  y_grid.num = ny-1;
     z_grid.start = 0.0;  z_grid.end = 1.0;  z_grid.num = nz-1;
     
-    fprintf (stderr, "  Center = (%8.5f, %8.5f %8.5f)    Mesh = %dx%dx%d\n", 
-	     Center[0], Center[1], Center[2], nx, ny, nz);
+    if (Localized)
+      fprintf (stderr, "  Center = (%8.5f, %8.5f %8.5f)   Radius = %8.5f  Mesh = %dx%dx%d\n", 
+	       Center[0], Center[1], Center[2], Radius, nx, ny, nz);
+    else
+      fprintf (stderr, "  Mesh = %dx%dx%d\n", 
+	       nx, ny, nz);
 
     Spline = create_UBspline_3d_d (x_grid, y_grid, z_grid,
 				   xBC, yBC, zBC, &realData(0,0,0));
@@ -74,8 +79,7 @@ namespace qmcplusplus
     h_Center.read(h5file, centerName.c_str());
     h_Radius.read(h5file, radiusName.c_str());
     h_Energy.read(h5file,  valueName.c_str());
-    fprintf (stderr, "Center = (%8.5f, %8.5f %8.5f)\n", 
-	     Center[0], Center[1], Center[2]);
+    Localized = Radius > 0.0;
 
     Array<complex<double>,3> rawData, splineData;
     HDFAttribIO<Array<complex<double>,3> > h_rawData(rawData);
@@ -97,9 +101,13 @@ namespace qmcplusplus
     x_grid.start = 0.0;  x_grid.end = 1.0;  x_grid.num = nx-1;
     y_grid.start = 0.0;  y_grid.end = 1.0;  y_grid.num = ny-1;
     z_grid.start = 0.0;  z_grid.end = 1.0;  z_grid.num = nz-1;
-    
-    fprintf (stderr, "  Center = (%8.5f, %8.5f %8.5f)    Mesh = %dx%dx%d\n", 
-	     Center[0], Center[1], Center[2], nx, ny, nz);
+
+    if (Localized)
+      fprintf (stderr, "  Center = (%8.5f, %8.5f %8.5f)   Radius = %8.5f  Mesh = %dx%dx%d\n", 
+	       Center[0], Center[1], Center[2], Radius, nx, ny, nz);
+    else
+      fprintf (stderr, "  Mesh = %dx%dx%d\n", 
+	       nx, ny, nz);
 
     Spline = create_UBspline_3d_z (x_grid, y_grid, z_grid,
 				   xBC, yBC, zBC, &splineData(0,0,0));
