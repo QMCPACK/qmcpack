@@ -165,6 +165,8 @@ namespace qmcplusplus {
 	superLattice(i,j) = (double)TileFactor[i]*Lattice(i,j);
     OrbitalSet->PrimLattice  = Lattice;
     OrbitalSet->SuperLattice = superLattice;
+    OrbitalSet->GGt=dot(OrbitalSet->PrimLattice.G,
+			transpose(OrbitalSet->PrimLattice.G));
         
 //     OrbitalSet->Orbitals.resize(UseTwists.size()*NumBands);
 //     for (int ti=0; ti<UseTwists.size(); ti++) {
