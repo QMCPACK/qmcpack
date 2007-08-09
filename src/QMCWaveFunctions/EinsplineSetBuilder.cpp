@@ -359,17 +359,18 @@ namespace qmcplusplus {
       PosType twist, k;
       twist = TwistAngles[ti];
       Tensor<double,3> G = OrbitalSet->PrimLattice.G;
-      k = 2.0*M_PI*(twist[0]*OrbitalSet->PrimLattice.Gv[0] +
-		    twist[1]*OrbitalSet->PrimLattice.Gv[1] +
-		    twist[2]*OrbitalSet->PrimLattice.Gv[2]);
-	
+      k = OrbitalSet->PrimLattice.k_cart(twist);
+//       k = 2.0*M_PI*(twist[0]*OrbitalSet->PrimLattice.Gv[0] +
+// 		    twist[1]*OrbitalSet->PrimLattice.Gv[1] +
+// 		    twist[2]*OrbitalSet->PrimLattice.Gv[2]);
+      
 //       k[0] = twist[0]*G(0,0) + twist[1]*G(0,1) + twist[2]*G(0,2);
 //       k[1] = twist[0]*G(1,0) + twist[1]*G(1,1) + twist[2]*G(1,2);
 //       k[2] = twist[0]*G(2,0) + twist[1]*G(2,1) + twist[2]*G(2,2);
       fprintf (stderr, "  ti=%d  bi=%d energy=%8.5f k=(%6.4f, %6.4f, %6.4f)\n", 
 	       ti, bi, e, k[0], k[1], k[2]);
       
-      OrbitalSet->Orbitals[i].kVec = k;
+      OrbitalSet->Orbitals[i].kVec = 1.0*k;
       OrbitalSet->Orbitals[i].read(H5FileID, groupPath.str());
     }
   }

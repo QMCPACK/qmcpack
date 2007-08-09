@@ -76,7 +76,7 @@ namespace qmcplusplus {
     complex<double> eye (0.0, 1.0);
     for(int j=0; j<OrbitalSetSize; j++) {
       Orbitals[j].evaluate(ru, val, gu, hess);
-      complex<double> u(val);
+      complex<double> u;
       TinyVector<complex<double>,3> gradu;
       complex<double> laplu;
       u     = val;
@@ -90,7 +90,7 @@ namespace qmcplusplus {
       complex<double> e_mikr (c,s);
       psi[j]   = e_mikr * u;
       dpsi[j]  = e_mikr*(-eye * k * u + gradu);
-      d2psi[j] = e_mikr*(dot(k,k)*u - 2.0*eye*dot(k,gradu) + laplu);
+      d2psi[j] = e_mikr*(-dot(k,k)*u - 2.0*eye*dot(k,gradu) + laplu);
     }
   }
   
@@ -130,8 +130,8 @@ namespace qmcplusplus {
 	sincos (phase, &s, &c);
 	complex<double> e_mikr (c,s);
 	vals(j,i)  = e_mikr * u;
-	grads(i,j) = e_mikr*(-eye * k * u + gradu);
-	lapls(i,j) = e_mikr*(dot(k,k)*u - 2.0*eye*dot(k,gradu) + laplu);
+	grads(i,j) = e_mikr*(-eye*u*k + gradu);
+	lapls(i,j) = e_mikr*(-dot(k,k)*u - 2.0*eye*dot(k,gradu) + laplu);
       }
     }
   }
