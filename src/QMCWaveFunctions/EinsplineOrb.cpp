@@ -51,9 +51,9 @@ namespace qmcplusplus
     if (Localized)
       fprintf (stderr, "  Center = (%8.5f, %8.5f %8.5f)   Radius = %8.5f  Mesh = %dx%dx%d\n", 
 	       Center[0], Center[1], Center[2], Radius, nx, ny, nz);
-    else
-      fprintf (stderr, "  Mesh = %dx%dx%d\n", 
-	       nx, ny, nz);
+//     else
+//       fprintf (stderr, "  Mesh = %dx%dx%d\n", 
+// 	       nx, ny, nz);
 
     Spline = create_UBspline_3d_d (x_grid, y_grid, z_grid,
 				   xBC, yBC, zBC, &realData(0,0,0));
@@ -105,9 +105,9 @@ namespace qmcplusplus
     if (Localized)
       fprintf (stderr, "  Center = (%8.5f, %8.5f %8.5f)   Radius = %8.5f  Mesh = %dx%dx%d\n", 
 	       Center[0], Center[1], Center[2], Radius, nx, ny, nz);
-    else
-      fprintf (stderr, "  Mesh = %dx%dx%d\n", 
-	       nx, ny, nz);
+//     else
+//       fprintf (stderr, "  Mesh = %dx%dx%d\n", 
+// 	       nx, ny, nz);
 
     Spline = create_UBspline_3d_z (x_grid, y_grid, z_grid,
 				   xBC, yBC, zBC, &splineData(0,0,0));

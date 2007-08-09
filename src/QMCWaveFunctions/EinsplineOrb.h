@@ -29,8 +29,8 @@ namespace qmcplusplus {
   public:
     PosType Center;
     RealType Radius, Energy;
-    vector<PosType> kVecs;
     bool Localized;
+    PosType kVec;
     
     inline void evaluate (PosType r, T &psi);
     inline void evaluate (PosType r, T &psi, TinyVector<T,N> &grad, T &lapl);  
@@ -47,9 +47,9 @@ namespace qmcplusplus {
   public:
     PosType Center;
     RealType Radius, Energy;
-    vector<PosType> kVecs;
     bool Localized;
     UBspline_2d_d *Spline;
+    PosType kVec;
     
     inline void evaluate (PosType r, double &psi) 
     {
@@ -77,10 +77,10 @@ namespace qmcplusplus {
   public:
     PosType Center;
     RealType Radius, Energy;
-    vector<PosType> kVecs;
     bool Localized;
     UBspline_2d_z *Spline;
-    
+    PosType kVec;
+
     inline void evaluate (PosType r, complex<double> &psi) 
     {
       eval_UBspline_2d_z (Spline, r[0], r[1], &psi);
@@ -115,10 +115,10 @@ namespace qmcplusplus {
   public:
     PosType Center;
     RealType Radius, Energy;
-    vector<PosType> kVecs;
     bool Localized;
     UBspline_3d_d *Spline;
-    
+    PosType kVec;
+
     inline void evaluate (PosType r, double &psi) 
     {
       eval_UBspline_3d_d (Spline, r[0], r[1], r[2], &psi);
@@ -148,10 +148,10 @@ namespace qmcplusplus {
   public:
     PosType Center;
     RealType Radius, Energy;
-    vector<PosType> kVecs;
     bool Localized;
     UBspline_3d_z *Spline;
-    
+    PosType kVec;
+
     inline void evaluate (PosType r, complex<double> &psi) 
     {
       eval_UBspline_3d_z (Spline, r[0], r[1], r[2], &psi);

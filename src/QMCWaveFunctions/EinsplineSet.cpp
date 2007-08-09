@@ -44,8 +44,19 @@ namespace qmcplusplus {
 				  ValueVector_t& psi)
   {
     PosType ru(PrimLattice.toUnit(P.R[iat]));
-    for(int j=0; j<OrbitalSetSize; j++) 
+    ru[0] -= std::floor (ru[0]);
+    ru[1] -= std::floor (ru[1]);
+    ru[2] -= std::floor (ru[2]);
+//     fprintf (stderr, "  1:  ru = (%8.5f, %8.5f, %8.5f)\n",
+// 	     ru[0], ru[1], ru[2]);
+    for(int j=0; j<OrbitalSetSize; j++) {
       Orbitals[j].evaluate(ru, psi[j]); 
+      double s,c;
+      double phase = -dot(P.R[iat], Orbitals[j].kVec);
+      sincos (phase, &s, &c);
+      complex<double> e_mikr (c,s);
+      psi *= e_mikr;
+    }
   }
   
   void 
@@ -54,14 +65,32 @@ namespace qmcplusplus {
 				  ValueVector_t& d2psi)
   {
     PosType ru(PrimLattice.toUnit(P.R[iat]));
+    ru[0] -= std::floor (ru[0]);
+    ru[1] -= std::floor (ru[1]);
+    ru[2] -= std::floor (ru[2]);
+//     fprintf (stderr, "  2:  ru = (%8.5f, %8.5f, %8.5f)\n",
+// 	     ru[0], ru[1], ru[2]);
     ValueType val;
     TinyVector<ValueType,3> gu;
     Tensor<ValueType,3> hess;
+    complex<double> eye (0.0, 1.0);
     for(int j=0; j<OrbitalSetSize; j++) {
       Orbitals[j].evaluate(ru, val, gu, hess);
-      psi[j]   = val;
-      dpsi[j]  = dot(PrimLattice.G, gu);
-      d2psi[j] = trace(hess, GGt);
+      complex<double> u(val);
+      TinyVector<complex<double>,3> gradu;
+      complex<double> laplu;
+      u     = val;
+      gradu = dot(PrimLattice.G, gu);
+      laplu = trace(hess, GGt);
+
+      PosType k = Orbitals[j].kVec;
+      double s,c;
+      double phase = -dot(P.R[iat], k);
+      sincos (phase, &s, &c);
+      complex<double> e_mikr (c,s);
+      psi[j]   = e_mikr * u;
+      dpsi[j]  = e_mikr*(-eye * k * u + gradu);
+      d2psi[j] = e_mikr*(dot(k,k)*u - 2.0*eye*dot(k,gradu) + laplu);
     }
   }
   
@@ -72,14 +101,37 @@ namespace qmcplusplus {
   {
     for(int iat=first,i=0; iat<last; iat++,i++) {
       PosType ru(PrimLattice.toUnit(P.R[iat]));
+//       fprintf (stderr, "  3:  ru = (%8.5f, %8.5f, %8.5f)\n",
+// 	       ru[0], ru[1], ru[2]);
+      ru[0] -= std::floor (ru[0]);
+      ru[1] -= std::floor (ru[1]);
+      ru[2] -= std::floor (ru[2]);
       ValueType val;
       TinyVector<ValueType,3> gu;
       Tensor<ValueType,3> hess;
+      complex<double> eye (0.0, 1.0);
       for(int j=0; j<OrbitalSetSize; j++) {
+// 	Orbitals[j].evaluate(ru, val, gu, hess);
+// 	vals(j,i)  = val;
+// 	grads(i,j) = dot(PrimLattice.G, gu);
+// 	lapls(i,j) = trace(hess, GGt);
+
 	Orbitals[j].evaluate(ru, val, gu, hess);
-	vals(j,i)  = val;
-	grads(i,j) = dot(PrimLattice.G, gu);
-	lapls(i,j) = trace(hess, GGt);
+	complex<double> u(val);
+	TinyVector<complex<double>,3> gradu;
+	complex<double> laplu;
+	u     = val;
+	gradu = dot(PrimLattice.G, gu);
+	laplu = trace(hess, GGt);
+	
+	PosType k = Orbitals[j].kVec;
+	double s,c;
+	double phase = -dot(P.R[iat], k);
+	sincos (phase, &s, &c);
+	complex<double> e_mikr (c,s);
+	vals(j,i)  = e_mikr * u;
+	grads(i,j) = e_mikr*(-eye * k * u + gradu);
+	lapls(i,j) = e_mikr*(dot(k,k)*u - 2.0*eye*dot(k,gradu) + laplu);
       }
     }
   }
