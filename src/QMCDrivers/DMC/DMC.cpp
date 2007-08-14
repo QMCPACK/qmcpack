@@ -37,7 +37,7 @@ namespace qmcplusplus {
     m_param.add(KillWalker,"killnode","string");
     m_param.add(BenchMarkRun,"benchmark","string");
     m_param.add(Reconfiguration,"reconfiguration","string");
-    m_param.add(BranchInterval,"branchInterval","string");
+    m_param.add(BranchInterval,"branchInterval","int");
   }
 
   bool DMC::run() {
@@ -142,7 +142,7 @@ namespace qmcplusplus {
       {
         BranchInterval=nSteps;
       }
-      nSteps=1;
+      //nSteps=1;
     } 
     else 
     {

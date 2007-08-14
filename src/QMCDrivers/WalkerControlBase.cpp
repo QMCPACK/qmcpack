@@ -85,19 +85,19 @@ namespace qmcplusplus {
     NumWalkers=0;
     MCWalkerConfiguration::iterator it_end(W.end());
     RealType esum=0.0,e2sum=0.0,wsum=0.0,ecum=0.0;
-    RealType sigma=std::max(5.0*targetVar,targetEnergyBound);
-    RealType ebar= targetAvg;
+    //RealType sigma=std::max(5.0*targetVar,targetEnergyBound);
+    //RealType ebar= targetAvg;
     while(it != it_end) {
       RealType e((*it)->Properties(LOCALENERGY));
       int nc= std::min(static_cast<int>((*it)->Multiplicity),MaxCopy);
-      if(fabs(ebar-e) < sigma)//exclude extreme energies 
-      {
+      //if(fabs(ebar-e) < sigma)//exclude extreme energies 
+      //{
         RealType wgt((*it)->Weight);
         esum += wgt*e;
         e2sum += wgt*e*e;
         wsum += wgt;
         ecum += e;
-      }
+      //}
       if(nc) {
         NumWalkers += nc;
         good_w.push_back(*it);
@@ -112,18 +112,21 @@ namespace qmcplusplus {
     std::fill(curData.begin(),curData.end(),0);
 
     //evaluate variance of this block
-    curVar=(e2sum-esum*esum/wsum)/wsum;
-//    if(curVar>sigma) {
-//      app_error() << "Unphysical block variance is detected. Stop simulations." << endl;
-//      Write2XYZ(W);
-//      //Does not work some reason
-//      //OHMMS::Controller->abort();
-//#if defined(HAVE_MPI)
-//      OOMPI_COMM_WORLD.Abort();
-//#else
-//      abort();
-//#endif
-//    }
+    //curVar=(e2sum-esum*esum/wsum)/wsum;
+
+    //THIS IS NOT USED ANYMORE:BELOW
+    //if(curVar>sigma) {
+    //  app_error() << "Unphysical block variance is detected. Stop simulations." << endl;
+    //  Write2XYZ(W);
+    //  //Does not work some reason
+    //  //OHMMS::Controller->abort();
+    //#if defined(HAVE_MPI)
+    //      OOMPI_COMM_WORLD.Abort();
+    //#else
+    //      abort();
+    //#endif
+    //    }
+    //THIS IS NOT USED ANYMORE:ABOVE
 
     //update curData
     curData[ENERGY_INDEX]=esum;

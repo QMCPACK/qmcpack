@@ -68,12 +68,16 @@ namespace qmcplusplus {
       int NumGeneration;
       ///number of previous energy to evaluate the trial energy
       int NumEnergyHistory;
+      ///number of steps before branching
+      int BranchInterval;
       ///index of the trial energy
       int ETrialIndex;
       ///the timestep
       RealType Tau;
       ///feedback parameter to control the population
       RealType Feed;
+      ///feedback parameter to control the population
+      RealType Feedback;
       ///energy offset to control branching
       RealType E_T;
       ///variance of the reference energy

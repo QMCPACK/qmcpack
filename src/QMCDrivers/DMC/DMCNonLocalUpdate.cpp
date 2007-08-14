@@ -48,7 +48,7 @@ namespace qmcplusplus {
       //save old local energy
       RealType eold    = thisWalker.Properties(LOCALENERGY);
       RealType signold = thisWalker.Properties(SIGN);
-      RealType emixed  = eold;
+      RealType enew  = eold;
 
       //create a 3N-Dimensional Gaussian with variance=1
       makeGaussRandomWithEngine(deltaR,RandomGen);
@@ -69,7 +69,8 @@ namespace qmcplusplus {
         thisWalker.Age++;
         ++nReject;
       } else {
-        RealType enew(H.evaluate(W,nonLocalOps.Txy));
+        //RealType enew(H.evaluate(W,nonLocalOps.Txy));
+        enew=H.evaluate(W,nonLocalOps.Txy);
         RealType logGf = -0.5*Dot(deltaR,deltaR);
         setScaledDrift(Tau,W.G,drift);
 
@@ -80,14 +81,15 @@ namespace qmcplusplus {
         if(RandomGen() > prob){
           thisWalker.Age++;
           ++nReject;
+          enew=eold;
         } else {
           accepted=true;  
           thisWalker.R = W.R;
           thisWalker.Drift = drift;
           thisWalker.resetProperty(logpsi,Psi.getPhase(),enew);
           H.saveProperty(thisWalker.getPropertyBase());
-          emixed = (emixed+enew)*0.5;
-          eold=enew;
+          //emixed = (emixed+enew)*0.5;
+          //eold=enew;
           ++nAccept;
         }
       }
@@ -106,7 +108,8 @@ namespace qmcplusplus {
         ++NonLocalMoveAccepted;
       } 
 
-      thisWalker.Weight *= branchEngine->branchGF(Tau,emixed,0.0);
+      //thisWalker.Weight *= branchEngine->branchGF(Tau,emixed,0.0);
+      thisWalker.Weight *= branchEngine->branchWeight(Tau,eold,enew);
       //branchEngine->accumulate(eold,1);
       ++it;
     }
@@ -135,7 +138,8 @@ namespace qmcplusplus {
       Walker_t::Buffer_t& w_buffer(thisWalker.DataSet);
 
       RealType eold(thisWalker.Properties(LOCALENERGY));
-      RealType emixed(eold), enew(eold);
+      //RealType emixed(eold), enew(eold);
+      RealType enew(eold);
 
       W.R = thisWalker.R;
       w_buffer.rewind();
@@ -196,11 +200,12 @@ namespace qmcplusplus {
         enew= H.evaluate(W,nonLocalOps.Txy);
         thisWalker.resetProperty(std::log(abs(psi)),psi,enew);
         H.saveProperty(thisWalker.getPropertyBase());
-        emixed = (eold+enew)*0.5e0;
+        //emixed = (eold+enew)*0.5e0;
       } else {
         thisWalker.Age++;
         ++nAllRejected;
         rr_accepted=0.0;
+        enew=eold;//copy back old energy
       }
 
       int ibar = nonLocalOps.selectMove(RandomGen());
@@ -224,9 +229,9 @@ namespace qmcplusplus {
         ++NonLocalMoveAccepted;
       } 
 
-      thisWalker.Weight *= branchEngine->branchGF(Tau*rr_accepted/rr_proposed,emixed,0.0);
+      //thisWalker.Weight *= branchEngine->branchGF(Tau*rr_accepted/rr_proposed,emixed,0.0);
+      thisWalker.Weight *= branchEngine->branchWeight(Tau*rr_accepted/rr_proposed,eold,enew);
       //branchEngine->accumulate(eold,1);
-      
       nAccept += nAcceptTemp;
       nReject += nRejectTemp;
       ++it;

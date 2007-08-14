@@ -52,7 +52,7 @@ namespace qmcplusplus {
       //thisWalker.Multiplicity=1.0e0;
       //save old local energy
       RealType eold(thisWalker.Properties(LOCALENERGY));
-      RealType emixed(eold), enew(eold);
+      RealType enew(eold);
 
       W.R = thisWalker.R;
       w_buffer.rewind();
@@ -118,15 +118,17 @@ namespace qmcplusplus {
         enew= H.evaluate(W);
         thisWalker.resetProperty(std::log(abs(psi)),psi,enew);
         H.saveProperty(thisWalker.getPropertyBase());
-        emixed = (eold+enew)*0.5e0;
+        //emixed = (eold+enew)*0.5e0;
       } else {
         thisWalker.Age++;
         ++nAllRejected;
         rr_accepted=0.0;
+        enew=eold;//copy back old energy
       }
 
-      //branchEngine->setWeight(thisWalker,Tau*rr_accepted/rr_proposed,emixed,RandomGen());
-      thisWalker.Weight *= branchEngine->branchGF(Tau*rr_accepted/rr_proposed,emixed,0.0);
+      //thisWalker.Weight *= branchEngine->branchGF(Tau*rr_accepted/rr_proposed,(eold+enew)*0.5,0.0);
+      thisWalker.Weight *= branchEngine->branchWeight(Tau*rr_accepted/rr_proposed,eold,enew);
+
       //if(MaxAge) {
       //  RealType M=thisWalker.Weight;
       //  if(thisWalker.Age > MaxAge) M = std::min(0.5,M);

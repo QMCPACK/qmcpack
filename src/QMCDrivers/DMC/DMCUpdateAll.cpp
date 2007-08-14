@@ -133,9 +133,10 @@ namespace qmcplusplus {
       Walker_t& thisWalker(**it);
       
       //save old local energy
-      RealType eold    = thisWalker.Properties(LOCALENERGY);
+      RealType eold = thisWalker.Properties(LOCALENERGY);
+      RealType enew = eold;
       RealType signold = thisWalker.Properties(SIGN);
-      RealType emixed  = eold;
+      //RealType emixed  = eold;
 
       //create a 3N-Dimensional Gaussian with variance=1
       makeGaussRandomWithEngine(deltaR,RandomGen);
@@ -154,7 +155,7 @@ namespace qmcplusplus {
         thisWalker.Age++;
         thisWalker.willDie();
       } else {
-        RealType enew(H.evaluate(W));
+        enew=H.evaluate(W);
         RealType logGf = -0.5*Dot(deltaR,deltaR);
         //converting gradients to drifts, D = tau*G (reuse G)
         //RealType scale=getDriftScale(Tau,W.G);
@@ -166,6 +167,7 @@ namespace qmcplusplus {
 
         RealType prob= std::min(std::exp(logGb-logGf +2.0*(logpsi-thisWalker.Properties(LOGPSI))),1.0);
         if(RandomGen() > prob){
+          enew=eold;
           thisWalker.Age++;
         } else {
           accepted=true;  
@@ -173,11 +175,12 @@ namespace qmcplusplus {
           thisWalker.Drift = drift;
           thisWalker.resetProperty(logpsi,Psi.getPhase(),enew);
           H.saveProperty(thisWalker.getPropertyBase());
-          emixed = (emixed+enew)*0.5;
-          eold=enew;
+          //emixed = (emixed+enew)*0.5;
+          //eold=enew;
         }
 
-        thisWalker.Weight *= branchEngine->branchGF(Tau,emixed,0.0);
+        //thisWalker.Weight *= branchEngine->branchGF(Tau,emixed,0.0);
+        thisWalker.Weight *= branchEngine->branchWeight(Tau,eold,enew);
         //if(MaxAge) {
         //  RealType M=thisWalker.Weight;
         //  if(thisWalker.Age > MaxAge) M = std::min(0.5,M);
