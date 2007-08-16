@@ -12,11 +12,30 @@ int main(int argc, char **argv) {
   APPNAMESPACE::Random.init(0,1,-1);
 
   if(argc<2) {
-    std::cerr << " Usage: h5merge rootname number-of-processor " << std::endl;
+    std::cerr << " Usage: h5merge <rootname> -n <number-of-processor> -o[utfile] <outfile> " << std::endl;
     return 1;
   }
 
-  qmcplusplus::HDFWalkerMerger merger(argv[1],atoi(argv[2]));
-  merger.merge();
+  int ic=0;
+  int np=1;
+  string ofile(argv[1]);
+  while(ic<argc)
+  {
+    string w(argv[ic]);
+    if(w.find("-n")<w.size())
+    {
+      np=atoi(argv[++ic]);
+    }
+    else if(w.find("-o")<w.size())
+    {
+      ofile=argv[++ic];
+    }
+    ++ic;
+  }
+
+  cout << "Number of processors = " << np << endl;
+  //qmcplusplus::HDFWalkerMerger merger(argv[1],atoi(argv[2]));
+  //qmcplusplus::HDFWalkerMerger merger(argv[1],np);
+  //merger.merge();
   return 0;
 }
