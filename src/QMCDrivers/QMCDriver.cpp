@@ -169,12 +169,16 @@ namespace qmcplusplus {
     if(wset.empty()) return;
     int nfile=wset.size();
 
-    if(QMCDriverMode[QMC_OPTIMIZE]) {//for optimization, simply add to ConfigFile
+    if(QMCDriverMode[QMC_OPTIMIZE]) 
+    {//for optimization, simply add to ConfigFile
       for(int ifile=0; ifile<nfile; ifile++) 
         mcwalkerNodePtr.push_back(wset[ifile]);
-    } else {
+    } 
+    else 
+    {
       HDFWalkerInputManager W_in(W);
-      if(W_in.put(wset)) h5FileRoot = W_in.getLastFile();
+      if(W_in.put(wset,qmcComm->mycontext())) 
+        h5FileRoot = W_in.getLastFile();
     }
 
     //clear the walker set
