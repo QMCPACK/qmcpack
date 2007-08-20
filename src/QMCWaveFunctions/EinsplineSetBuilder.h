@@ -57,7 +57,7 @@ namespace qmcplusplus {
     };
 
     // The actual orbital set we're building
-    EinsplineSetBase *OrbitalSet;
+    EinsplineSetBase *OrbitalSet, *LastOrbitalSet;
 
     xmlNodePtr XMLRoot;
     hid_t H5FileID;
@@ -83,8 +83,14 @@ namespace qmcplusplus {
     // This maps a 3-integer twist index into the twist number in the file
     map <TinyVector<int,OHMMS_DIM>,int,Int3less> TwistMap;
     void AnalyzeTwists();
-    void OccupyAndReadBands();
+    void OccupyAndReadBands(int spin);
+    void CopyBands(int numOrbs);
 
+    /////////////////////////////////////////////////////////////
+    // Information to avoid storing the same orbitals twice in //
+    // spin-restricted calculations.                           //
+    /////////////////////////////////////////////////////////////
+    int LastSpinSet, NumOrbitalsRead;
   };
 
 }

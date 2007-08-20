@@ -23,7 +23,7 @@
 
 namespace qmcplusplus {
   EinsplineSetBuilder::EinsplineSetBuilder(ParticleSet& p, PtclPoolType& psets, xmlNodePtr cur) 
-    : XMLRoot(cur), TileFactor(1,1,1), TwistNum(0)
+    : XMLRoot(cur), TileFactor(1,1,1), TwistNum(0), LastSpinSet(-1), NumOrbitalsRead(-1)
   {
   }
 
@@ -58,6 +58,30 @@ namespace qmcplusplus {
     }
     else 
       cerr << "  Reading " << numOrbs << " orbitals from HDF5 file.\n";
+
+    ///////////////////////////////////////////////
+    // Read occupation information from XML file //
+    ///////////////////////////////////////////////
+    cur = cur->children;
+    int spinSet = -1;
+    while (cur != NULL) {
+      string cname((const char*)(cur->name));
+      if(cname == "occupation") {
+	string occ_mode("ground");
+        OhmmsAttributeSet oAttrib;
+        oAttrib.add(occ_mode,"mode");
+        oAttrib.add(spinSet,"spindataset");
+        oAttrib.put(cur);
+	if(occ_mode != "ground") {
+	  app_error() << "Only ground state occupation currently supported "
+		      << "in EinsplineSetBuilder.\n";
+	  abort();
+	}
+      }
+      cur = cur->next;
+    }
+
+
     
     H5FileID = H5Fopen(H5FileName.c_str(),H5F_ACC_RDWR,H5P_DEFAULT);
     if (H5FileID < 0) {
@@ -158,7 +182,8 @@ namespace qmcplusplus {
 
     // Lattice information
     OrbitalSet->TileFactor = TileFactor;
-    OrbitalSet->Tiling = TileFactor[0]!=1 || TileFactor[1]!=1 || TileFactor[2]!=1;
+    OrbitalSet->Tiling = 
+      TileFactor[0]!=1 || TileFactor[1]!=1 || TileFactor[2]!=1;
     Tensor<double,3> superLattice;
     for (int i=0; i<3; i++)
       for (int j=0; j<3; j++)
@@ -178,14 +203,23 @@ namespace qmcplusplus {
 // 		    << tindex << "/band_" << bi << "/";
 // 	else
 // 	  groupPath << eigenstatesGroup << "/twist/band_" << bi << "/";
-// 	OrbitalSet->Orbitals[bi].read(H5FileID, groupPath.str());
+// 	OrbitalSet->Orbitals[bi]->read(H5FileID, groupPath.str());
 //       }
 //     }
     
     OrbitalSet->setOrbitalSetSize (numOrbs);
-    // Now, figure out occupation for the bands and read them
-    OccupyAndReadBands();
+
+    if ((spinSet == LastSpinSet) && (numOrbs <= NumOrbitalsRead))
+      CopyBands(numOrbs);
+    else
+      // Now, figure out occupation for the bands and read them
+      OccupyAndReadBands(spinSet);
     OrbitalSet->BasisSetSize   = numOrbs;
+
+    // Now, store what we have read
+    LastOrbitalSet = OrbitalSet;
+    LastSpinSet = spinSet;
+    NumOrbitalsRead = numOrbs;
 
     return OrbitalSet;
   }
@@ -311,7 +345,7 @@ namespace qmcplusplus {
   };
 
   void
-  EinsplineSetBuilder::OccupyAndReadBands()
+  EinsplineSetBuilder::OccupyAndReadBands(int spin)
   {
     string eigenstatesGroup;
     if (Version[0]==0 && Version[1]== 11) 
@@ -370,10 +404,18 @@ namespace qmcplusplus {
       fprintf (stderr, "  ti=%d  bi=%d energy=%8.5f k=(%6.4f, %6.4f, %6.4f)\n", 
 	       ti, bi, e, k[0], k[1], k[2]);
       
-      OrbitalSet->Orbitals[i].kVec = 1.0*k;
-      OrbitalSet->Orbitals[i].read(H5FileID, groupPath.str());
+      OrbitalSet->Orbitals[i] = new EinsplineOrb<ValueType,OHMMS_DIM>;
+      OrbitalSet->Orbitals[i]->kVec = k;
+      OrbitalSet->Orbitals[i]->read(H5FileID, groupPath.str());
     }
   }
+
+
+  void
+  EinsplineSetBuilder::CopyBands(int numOrbs) 
+  {
+    OrbitalSet->Orbitals.resize(numOrbs);
+    for (int i=0; i<numOrbs; i++) 
+      OrbitalSet->Orbitals[i] = LastOrbitalSet->Orbitals[i];
+  }
 }
-
-

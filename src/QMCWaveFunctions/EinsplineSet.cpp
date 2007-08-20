@@ -50,12 +50,12 @@ namespace qmcplusplus {
 //     fprintf (stderr, "  1:  ru = (%8.5f, %8.5f, %8.5f)\n",
 // 	     ru[0], ru[1], ru[2]);
     for(int j=0; j<OrbitalSetSize; j++) {
-      Orbitals[j].evaluate(ru, psi[j]); 
+      Orbitals[j]->evaluate(ru, psi[j]); 
       double s,c;
-      double phase = -dot(P.R[iat], Orbitals[j].kVec);
+      double phase = -dot(P.R[iat], Orbitals[j]->kVec);
       sincos (phase, &s, &c);
       complex<double> e_mikr (c,s);
-      psi *= e_mikr;
+      psi[j] *= e_mikr;
     }
   }
   
@@ -75,7 +75,7 @@ namespace qmcplusplus {
     Tensor<ValueType,3> hess;
     complex<double> eye (0.0, 1.0);
     for(int j=0; j<OrbitalSetSize; j++) {
-      Orbitals[j].evaluate(ru, val, gu, hess);
+      Orbitals[j]->evaluate(ru, val, gu, hess);
       complex<double> u;
       TinyVector<complex<double>,3> gradu;
       complex<double> laplu;
@@ -83,14 +83,16 @@ namespace qmcplusplus {
       gradu = dot(PrimLattice.G, gu);
       laplu = trace(hess, GGt);
 
-      PosType k = Orbitals[j].kVec;
+      PosType k = Orbitals[j]->kVec;
+      TinyVector<complex<double>,3> ck;
+      ck[0]=k[0];  ck[1]=k[1];  ck[2]=k[2];
       double s,c;
       double phase = -dot(P.R[iat], k);
       sincos (phase, &s, &c);
       complex<double> e_mikr (c,s);
       psi[j]   = e_mikr * u;
-      dpsi[j]  = e_mikr*(-eye * k * u + gradu);
-      d2psi[j] = e_mikr*(-dot(k,k)*u - 2.0*eye*dot(k,gradu) + laplu);
+      dpsi[j]  = e_mikr*(-eye * ck * u + gradu);
+      d2psi[j] = e_mikr*(-dot(k,k)*u - 2.0*eye*dot(ck,gradu) + laplu);
     }
   }
   
@@ -111,12 +113,12 @@ namespace qmcplusplus {
       Tensor<ValueType,3> hess;
       complex<double> eye (0.0, 1.0);
       for(int j=0; j<OrbitalSetSize; j++) {
-// 	Orbitals[j].evaluate(ru, val, gu, hess);
+// 	Orbitals[j]->evaluate(ru, val, gu, hess);
 // 	vals(j,i)  = val;
 // 	grads(i,j) = dot(PrimLattice.G, gu);
 // 	lapls(i,j) = trace(hess, GGt);
 
-	Orbitals[j].evaluate(ru, val, gu, hess);
+	Orbitals[j]->evaluate(ru, val, gu, hess);
 	complex<double> u(val);
 	TinyVector<complex<double>,3> gradu;
 	complex<double> laplu;
@@ -124,14 +126,16 @@ namespace qmcplusplus {
 	gradu = dot(PrimLattice.G, gu);
 	laplu = trace(hess, GGt);
 	
-	PosType k = Orbitals[j].kVec;
+	PosType k = Orbitals[j]->kVec;
+	TinyVector<complex<double>,3> ck;
+	ck[0]=k[0];  ck[1]=k[1];  ck[2]=k[2];
 	double s,c;
 	double phase = -dot(P.R[iat], k);
 	sincos (phase, &s, &c);
 	complex<double> e_mikr (c,s);
 	vals(j,i)  = e_mikr * u;
-	grads(i,j) = e_mikr*(-eye*u*k + gradu);
-	lapls(i,j) = e_mikr*(-dot(k,k)*u - 2.0*eye*dot(k,gradu) + laplu);
+	grads(i,j) = e_mikr*(-eye*u*ck + gradu);
+	lapls(i,j) = e_mikr*(-dot(k,k)*u - 2.0*eye*dot(ck,gradu) + laplu);
       }
     }
   }
