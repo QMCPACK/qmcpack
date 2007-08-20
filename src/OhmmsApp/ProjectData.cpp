@@ -14,11 +14,11 @@
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 
-#include <iostream>
-#include <vector>
-#include <string>
-#include <sstream>
-using namespace std;
+//#include <iostream>
+//#include <vector>
+//#include <string>
+//#include <sstream>
+//using namespace std;
 
 #include "OhmmsApp/ProjectData.h"
 #include "Message/Communicate.h"
@@ -40,7 +40,14 @@ namespace OHMMS {
     m_host("none"), 
     m_date("none"),
     m_series(0),
-    m_cur(0){ 
+    m_cur(0)
+  { 
+    myComm=Controller;
+  }
+
+  void  ProjectData::setCommunicator(Communicate* c)
+  {
+    myComm=c;
   }
 
   bool ProjectData::get(ostream& os) const
@@ -114,8 +121,10 @@ namespace OHMMS {
     sprintf(fileroot,"%s.s%03d",m_title.c_str(),m_series);
     m_projectmain=fileroot;
 
-    int nproc = Controller->ncontexts();
-    int nodeid = Controller->mycontext(); 
+    int nproc = myComm->ncontexts();
+    int nodeid = myComm->mycontext(); 
+    //int nproc = Controller->ncontexts();
+    //int nodeid = Controller->mycontext(); 
     if(nproc > 1) {
       sprintf(fileroot,".s%03d.p%03d", m_series,nodeid);
       sprintf(nextroot,".s%03d.p%03d", m_series+1,nodeid);
@@ -140,8 +149,10 @@ namespace OHMMS {
     oldroot.erase(oldroot.begin(), oldroot.end());
     if(m_series) {
       char fileroot[128];
-      int nproc = Controller->ncontexts();
-      int nodeid = Controller->mycontext(); 
+      int nproc = myComm->ncontexts();
+      int nodeid = myComm->mycontext(); 
+      //int nproc = Controller->ncontexts();
+      //int nodeid = Controller->mycontext(); 
       if(nproc > 1) {
 	sprintf(fileroot,".s%03d.p%03d", m_series-1,nodeid);
       } else {

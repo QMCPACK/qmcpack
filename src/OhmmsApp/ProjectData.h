@@ -18,10 +18,11 @@
 #define OHHMS_PROJECTDATA_H__
 
 #include "OhmmsData/OhmmsElementBase.h"
-#include <vector>
-#include <string>
-#include <iostream>
+//#include <vector>
+//#include <string>
+//#include <iostream>
 using namespace std;
+#include "Message/Communicate.h"
 
 namespace OHMMS {
 
@@ -53,6 +54,8 @@ namespace OHMMS {
       m_title=atitle;
       reset();
     }
+
+    void  setCommunicator(Communicate* c);
 
     ///returns the name of the project
     inline const char* CurrentMainRoot() const { return m_projectmain.c_str();}
@@ -91,6 +94,9 @@ namespace OHMMS {
 
     ///series index
     int m_series;
+
+    ///communicator
+    Communicate* myComm;
 
     ///the xml node for <Project/>
     xmlNodePtr m_cur;
