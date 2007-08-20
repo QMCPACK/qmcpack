@@ -33,7 +33,7 @@ namespace qmcplusplus {
       HDFWalkerInputManager(MCWalkerConfiguration& w);
       ~HDFWalkerInputManager();
       bool put(xmlNodePtr cur);
-      bool put(std::vector<xmlNodePtr> mset);
+      bool put(std::vector<xmlNodePtr>& mset, int pid);
       std::string getLastFile() { return CurrentFileRoot;}
 
       void rewind(const std::string& h5root, int blocks);

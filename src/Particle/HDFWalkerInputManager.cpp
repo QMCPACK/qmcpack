@@ -23,48 +23,76 @@
 namespace qmcplusplus {
 
   HDFWalkerInputManager::HDFWalkerInputManager(MCWalkerConfiguration& w):
-  Wref(w), CurrentFileRoot("invalid") {
-  }
-  HDFWalkerInputManager::~HDFWalkerInputManager() {
+  Wref(w), CurrentFileRoot("invalid") 
+  {
   }
 
-  bool HDFWalkerInputManager::put(xmlNodePtr cur) {
+  HDFWalkerInputManager::~HDFWalkerInputManager() 
+  {
+  }
+
+  bool HDFWalkerInputManager::put(xmlNodePtr cur) 
+  {
 
     app_error() << "HDFWalkerInputManager::put(xmlNodePtr cur) "
       << " is not implemented." << endl;
     return false;
   }
 
-  bool HDFWalkerInputManager::put(std::vector<xmlNodePtr> wset) {
-    int pid=OHMMS::Controller->mycontext(); 
+  bool HDFWalkerInputManager::put(std::vector<xmlNodePtr>& wset, int pid) 
+  {
+    //int pid=OHMMS::Controller->mycontext(); 
     int nfile=wset.size();
-    for(int ifile=0; ifile<nfile; ifile++) {
-      string cfile("invalid"), target("e"), collect("no");
-      int anode=-1, nwalkers=-1, nblocks=1;
+    for(int ifile=0; ifile<nfile; ifile++) 
+    {
+      string froot("0"), cfile("0"), target("e"), collect("no");
+      int anode=-1, nwalkers=-1, nblocks=1, nprocs=1;
+
       OhmmsAttributeSet pAttrib;
       pAttrib.add(cfile,"href"); pAttrib.add(cfile,"file"); 
       pAttrib.add(target,"target"); pAttrib.add(target,"ref"); 
+      pAttrib.add(froot,"fileroot");
       pAttrib.add(anode,"node");
+      pAttrib.add(nprocs,"nprocs");
       pAttrib.add(nwalkers,"walkers");
       pAttrib.add(nblocks,"rewind");
       pAttrib.add(collect,"collect");
       pAttrib.put(wset[ifile]);
 
-      if(collect == "no") { // use old method
-        int pid_target= (anode<0)?pid:anode;
-        if(pid_target == pid && cfile != "invalid") {
+      if(froot[0] != '0')//use nprocs
+      {
+        anode=pid;
+        if(nprocs==1)
+        {
+          cfile=froot;
+        }
+        else
+        {
+          char *h5name=new char[froot.size()+10];
+          sprintf(h5name,"%s.p%03d",froot.c_str(),pid);
+          cfile=h5name;
+          delete [] h5name;
+        }
+      }
+
+
+      if(collect == "no") // use old method
+      { 
+        int pid_target= (anode<0)? pid:anode;
+        if(pid_target == pid && cfile[0] != '0') 
+        {
+          cout << "#### " << pid << " " << cfile << endl;
           HDFWalkerInput0 WO(cfile); 
           WO.append(Wref,nblocks);
-          //WO.append(Wref,nwalkers);
-          //read random state
           WO.getRandomState(true);
-          CurrentFileRoot = cfile;
         }
-      } else {
+      } 
+      else 
+      {
         HDFWalkerInputCollect WO(cfile);
         WO.put(Wref,nblocks);
-        CurrentFileRoot = cfile;
       }
+      CurrentFileRoot = cfile;
     }
     return true;
   }
