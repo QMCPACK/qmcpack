@@ -65,7 +65,8 @@ namespace qmcplusplus {
   void QMCAppBase::saveXml() {
 
     if(!XmlDocStack.empty()) {
-      string newxml(myProject.CurrentRoot());
+      string newxml(myProject.CurrentMainRoot());
+      //string newxml(myProject.CurrentRoot());
       //myProject.PreviousRoot(newxml);
       //myProject.rewind();
       newxml.append(".cont.xml");

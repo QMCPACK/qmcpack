@@ -38,7 +38,8 @@ using namespace std;
 
 namespace qmcplusplus {
 
-  QMCMain::QMCMain(int argc, char** argv): QMCAppBase(argc,argv), FirstQMC(true) { 
+  QMCMain::QMCMain(int argc, char** argv): QMCAppBase(argc,argv), FirstQMC(true) 
+  { 
 
     app_log() << "\n=====================================================\n"
               <<   "                   qmcpack 0.2                       \n"
@@ -85,15 +86,18 @@ namespace qmcplusplus {
     curMethod = string("invalid");
     //xmlNodePtr cur=m_root->children;
     xmlNodePtr cur=XmlDocStack.top()->getRoot()->children;
+    xmlNodePtr firstqmc=NULL;//save the first qmc section
     while(cur != NULL) 
     {
       string cname((const char*)cur->name);
       if(cname == "qmc" || cname == "optimize")
       {
+        if(firstqmc == NULL) firstqmc=cur;
         executeQMCSection(cur);
       }
       else if(cname == "loop")
       {
+        if(firstqmc == NULL) firstqmc=cur;
         executeLoop(cur);
       }
       cur=cur->next;
@@ -104,28 +108,44 @@ namespace qmcplusplus {
     app_log() << "  OMP_NUM_THREADS      = " << omp_get_max_threads() << endl;
     app_log() << "  Total Execution time = " << t1.elapsed() << " secs" << endl;
 
-    if(OHMMS::Controller->master()) {
-      int nproc=OHMMS::Controller->ncontexts();
-      if(nproc>1) {
-        xmlNodePtr t=m_walkerset.back();
-        xmlSetProp(t, (const xmlChar*)"node",(const xmlChar*)"0");
-        string fname((const char*)xmlGetProp(t,(const xmlChar*)"href"));
-        string::size_type ending=fname.find(".p");
-        string froot;
-        if(ending<fname.size()) 
-          froot = string(fname.begin(),fname.begin()+ending);
-        else
-          froot=fname;
-        char pfile[128];
-        for(int ip=1; ip<nproc; ip++) {
-	  sprintf(pfile,"%s.p%03d",froot.c_str(),ip);
-          std::ostringstream ip_str;
-          ip_str<<ip;
-          t = xmlAddNextSibling(t,xmlCopyNode(t,1));
-          xmlSetProp(t, (const xmlChar*)"node",(const xmlChar*)ip_str.str().c_str());
-          xmlSetProp(t, (const xmlChar*)"href",(const xmlChar*)pfile);
-        }
+    //if(OHMMS::Controller->master()) {
+    if(firstqmc != NULL && qmcComm->master()) { //generate multiple files
+      //remove input mcwalkerset
+      for(int i=0; i<m_walkerset.size(); i++)
+      {
+        xmlUnlinkNode(m_walkerset[i]);
+        xmlFreeNode(m_walkerset[i]);
       }
+      m_walkerset.clear();
+
+      std::ostringstream np_str;
+      np_str<<qmcComm->ncontexts();
+      xmlNodePtr mcptr = xmlNewNode(NULL,(const xmlChar*)"mcwalkerset");
+      xmlNewProp(mcptr,(const xmlChar*)"fileroot",(const xmlChar*)myProject.CurrentMainRoot());
+      xmlNewProp(mcptr,(const xmlChar*)"node",(const xmlChar*)"-1");
+      xmlNewProp(mcptr,(const xmlChar*)"nprocs",(const xmlChar*)np_str.str().c_str());
+      xmlAddPrevSibling(firstqmc,mcptr);
+      //int nproc=OHMMS::Controller->ncontexts();
+      //if(nproc>1) {
+      //  xmlNodePtr t=m_walkerset.back();
+      //  xmlSetProp(t, (const xmlChar*)"node",(const xmlChar*)"0");
+      //  string fname((const char*)xmlGetProp(t,(const xmlChar*)"href"));
+      //  string::size_type ending=fname.find(".p");
+      //  string froot;
+      //  if(ending<fname.size()) 
+      //    froot = string(fname.begin(),fname.begin()+ending);
+      //  else
+      //    froot=fname;
+      //  char pfile[128];
+      //  for(int ip=1; ip<nproc; ip++) {
+      //    sprintf(pfile,"%s.p%03d",froot.c_str(),ip);
+      //    std::ostringstream ip_str;
+      //    ip_str<<ip;
+      //    t = xmlAddNextSibling(t,xmlCopyNode(t,1));
+      //    xmlSetProp(t, (const xmlChar*)"node",(const xmlChar*)ip_str.str().c_str());
+      //    xmlSetProp(t, (const xmlChar*)"href",(const xmlChar*)pfile);
+      //  }
+      //}
       saveXml();
     }
 
@@ -166,33 +186,35 @@ namespace qmcplusplus {
     string target("e");
     const xmlChar* t=xmlGetProp(cur,(const xmlChar*)"target");
     if(t) target = (const char*)t;
+    //bool toRunQMC=true;
+    //t=xmlGetProp(cur,(const xmlChar*)"completed");
+    //if(t != NULL) 
+    //{
+    //  if(xmlStrEqual(t,(const xmlChar*)"yes")) 
+    //  {
+    //    app_log() << "  This qmc section is already executed." << endl;
+    //    toRunQMC=false;
+    //  }
+    //} 
+    //else 
+    //{
+    //  xmlAttrPtr t1=xmlNewProp(cur,(const xmlChar*)"completed", (const xmlChar*)"no");
+    //}
 
-    bool toRunQMC=true;
-    t=xmlGetProp(cur,(const xmlChar*)"completed");
-    if(t != NULL) 
-    {
-      if(xmlStrEqual(t,(const xmlChar*)"yes")) 
-      {
-        app_log() << "  This qmc section is already executed." << endl;
-        toRunQMC=false;
-      }
-    } 
-    else 
-    {
-      xmlAttrPtr t1=xmlNewProp(cur,(const xmlChar*)"completed", (const xmlChar*)"no");
-    }
-
-    bool success=true;
-    if(toRunQMC) 
-    {
-      qmcSystem = ptclPool->getWalkerSet(target);
-      success = runQMC(cur);
-      if(success && noloop) 
-      {
-        xmlAttrPtr t1=xmlSetProp(cur,(const xmlChar*)"completed", (const xmlChar*)"yes");
-      } 
-      FirstQMC=false;
-    }
+    //bool success=true;
+    //if(toRunQMC) 
+    //{
+    //  qmcSystem = ptclPool->getWalkerSet(target);
+    //  success = runQMC(cur);
+    //  if(success && noloop) 
+    //  {
+    //    xmlAttrPtr t1=xmlSetProp(cur,(const xmlChar*)"completed", (const xmlChar*)"yes");
+    //  } 
+    //  FirstQMC=false;
+    //}
+    qmcSystem = ptclPool->getWalkerSet(target);
+    bool success = runQMC(cur);
+    FirstQMC=false;
     return success;
   }
 
@@ -215,7 +237,10 @@ namespace qmcplusplus {
 
     OhmmsXPathObject result("//project",m_context);
 
-    if(result.empty()) {
+    myProject.setCommunicator(qmcComm);
+
+    if(result.empty()) 
+    {
       app_warning() << "Project is not defined" << endl;
       myProject.reset();
     } else {
@@ -333,20 +358,20 @@ namespace qmcplusplus {
       //keeps track of the configuration file
       PrevConfigFile = myProject.CurrentRoot();
 
-      //do not change the input href
-      //change the content of mcwalkerset/@file attribute
-#if defined(HAVE_MPI)
-      for(int i=0; i<m_walkerset.size(); i++) {
-        char fileroot[128];
-        sprintf(fileroot,"%s.s%03d.p%03d",myProject.CurrentMainRoot(),myProject.m_series,i);
-        xmlSetProp(m_walkerset[i],(const xmlChar*)"href", (const xmlChar*)fileroot);
-      }
-#else
-      for(int i=0; i<m_walkerset.size(); i++) {
-        xmlSetProp(m_walkerset[i],
-            (const xmlChar*)"href", (const xmlChar*)myProject.CurrentRoot());
-      }
-#endif
+//      //do not change the input href
+//      //change the content of mcwalkerset/@file attribute
+//#if defined(HAVE_MPI)
+//      for(int i=0; i<m_walkerset.size(); i++) {
+//        char fileroot[128];
+//        sprintf(fileroot,"%s.s%03d.p%03d",myProject.CurrentMainRoot(),myProject.m_series,i);
+//        xmlSetProp(m_walkerset[i],(const xmlChar*)"href", (const xmlChar*)fileroot);
+//      }
+//#else
+//      for(int i=0; i<m_walkerset.size(); i++) {
+//        xmlSetProp(m_walkerset[i],
+//            (const xmlChar*)"href", (const xmlChar*)myProject.CurrentRoot());
+//      }
+//#endif
 
       //curMethod = what;
       return true;
@@ -358,24 +383,25 @@ namespace qmcplusplus {
   bool QMCMain::setMCWalkers(xmlXPathContextPtr context_) {
 
     OhmmsXPathObject result("/simulation/mcwalkerset",context_);
-    if(result.empty()) {
-      if(m_walkerset.empty()) {
-        result.put("/simulation/qmc",context_);
-        xmlNodePtr newnode_ptr = xmlNewNode(NULL,(const xmlChar*)"mcwalkerset");
-        if(result.empty()){
-          xmlAddChild(XmlDocStack.top()->getRoot(),newnode_ptr);
-        } else {
-          xmlAddPrevSibling(result[0],newnode_ptr);
-        }
-        m_walkerset.push_back(newnode_ptr);
-      }
-    } else {
-      for(int iconf=0; iconf<result.size(); iconf++) {
-        xmlNodePtr mc_ptr = result[iconf];
-        m_walkerset.push_back(mc_ptr);
-        m_walkerset_in.push_back(mc_ptr);
-      }
+    //if(!result.empty()) {
+    //  if(m_walkerset.empty()) {
+    //    result.put("/simulation/qmc",context_);
+    //    xmlNodePtr newnode_ptr = xmlNewNode(NULL,(const xmlChar*)"mcwalkerset");
+    //    if(result.empty()){
+    //      xmlAddChild(XmlDocStack.top()->getRoot(),newnode_ptr);
+    //    } else {
+    //      xmlAddPrevSibling(result[0],newnode_ptr);
+    //    }
+    //    m_walkerset.push_back(newnode_ptr);
+    //  }
+    //} else {
+    for(int iconf=0; iconf<result.size(); iconf++) 
+    {
+      xmlNodePtr mc_ptr = result[iconf];
+      m_walkerset.push_back(mc_ptr);
+      m_walkerset_in.push_back(mc_ptr);
     }
+    //}
     return true;
   }
 }
