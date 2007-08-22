@@ -121,7 +121,7 @@ namespace qmcplusplus {
     Estimators->put(W,H,cur);
 
     if(wOut==0) {
-      wOut = new HDFWalkerOutput(W,RootName);
+      wOut = new HDFWalkerOutput(W,RootName,qmcComm);
       wOut->open();
       branchEngine->write(wOut->getConfigID(),false);
       wOut->close();
@@ -189,7 +189,7 @@ namespace qmcplusplus {
 
     if(wOut ==0)
     {
-      wOut = new HDFWalkerOutput(W,RootName);
+      wOut = new HDFWalkerOutput(W,RootName,qmcComm);
       wOut->open();
       branchEngine->write(wOut->getConfigID(),false);
       wOut->close();
@@ -215,12 +215,6 @@ namespace qmcplusplus {
   bool QMCDriver::finalize(int block) {
 
     branchEngine->finalize();
-    //Estimators->finalize(*branchEngine);
-    //branchEngine->update(W.getActiveWalkers(), Estimators->average(0));
-
-    //int nconf= (Period4WalkerDump>0) ? block/Period4WalkerDump:1;
-    //HDFWalkerOutput WOextra(RootName,true,nconf);
-    //WOextra.write(*branchEngine);
 
     wOut->open();
     const bool overwrite=true;
@@ -270,9 +264,15 @@ namespace qmcplusplus {
     }
 
     //update the global number of walkers
-    int nw=W.getActiveWalkers();
+    //int nw=W.getActiveWalkers();
+    //qmcComm->allreduce(nw);
+    vector<int> nw(qmcComm->ncontexts(),0),nwoff(qmcComm->ncontexts()+1,0);
+    nw[qmcComm->mycontext()]=W.getActiveWalkers();
     qmcComm->allreduce(nw);
-    W.setGlobalNumWalkers(nw);
+
+    for(int ip=0; ip<qmcComm->ncontexts(); ip++) nwoff[ip+1]=nwoff[ip]+nw[ip];
+    W.setGlobalNumWalkers(nwoff[qmcComm->ncontexts()]);
+    W.setWalkerOffsets(nwoff);
 
     app_log() << "  Total number of walkers: " << W.EnsembleProperty.NumSamples  <<  endl;
     app_log() << "  Total weight: " << W.EnsembleProperty.Weight  <<  endl;
