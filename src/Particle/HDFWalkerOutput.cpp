@@ -23,7 +23,10 @@
 #include "Utilities/RandomGenerator.h"
 #include "Utilities/RandomGeneratorIO.h"
 #include "OhmmsData/FileUtility.h"
+#include "Message/Communicate.h"
+//#define ENABLE_PHDFLIB
 using namespace qmcplusplus;
+
 
 /** specialized HDFAttribIOBase to write the positions of all the walkers.
  *
@@ -81,10 +84,196 @@ struct WalkerPackedWriter: public HDFAttribIOBase {
     }
   }
 
-  inline void read(hid_t grp, const char* name) {
+  inline void read(hid_t grp, const char* name) 
+  {
   }
+
+#if defined(HAVE_MPI)
+  //collective writing: not working yet
+  inline void writeAll(hid_t grp, const char* name, Communicate* myComm) 
+  {
+    int mynode=myComm->mycontext();
+    int nwloc=W.getActiveWalkers();
+    if(nwloc != W.WalkerOffsets[mynode+1]-W.WalkerOffsets[mynode])
+    {
+      app_error() << " Fatal Error: inconsident number of walkers per node " << endl;
+      abort();//FIXABORT
+    }
+
+    typedef MCWalkerConfiguration::PosType PosType;
+    Matrix<PosType> tp(nwloc,W.R.size());
+    //store walkers in a temporary array and pack them
+    int item(0);
+    MCWalkerConfiguration::const_iterator it(W.begin());
+    MCWalkerConfiguration::const_iterator it_end(W.end());
+    while(it != it_end) 
+    {
+      std::copy((*it)->R.begin(),(*it)->R.end(),tp[item++]);
+      ++it; 
+    }
+
+
+    //now save to grp as a named object
+    const int rank = 3;
+    hsize_t start[rank],count[rank],stride[]={1,1,1};
+    start[0] = W.WalkerOffsets[mynode]; start[1] = 0; start[2] = 0;
+    count[0] = tp.rows(); count[1] = tp.cols(); count[2] = OHMMS_DIM;
+
+
+    hid_t dataset1;
+    hsize_t gcount[rank];
+    gcount[0] = W.getGlobalNumWalkers(); gcount[1] = tp.cols(); gcount[2] = OHMMS_DIM;
+
+    hid_t sid1  = H5Screate_simple(rank,gcount,NULL);
+    if(replace)
+    {
+      dataset1 =  H5Dopen(grp, name);
+    }
+    else
+    {
+      dataset1=H5Dcreate(grp,name,H5T_NATIVE_DOUBLE,sid1,H5P_DEFAULT);
+    }
+
+    hid_t file_dataspace=H5Dget_space(dataset1);
+    herr_t  ret=H5Sselect_hyperslab(file_dataspace,H5S_SELECT_SET,start,stride,count,NULL);
+
+    hid_t mem_dataspace = H5Screate_simple(rank, count, NULL);
+    //hid_t xfer_plist = H5Pcreate(H5P_DATASET_XFER);
+    //ret = H5Pset_dxpl_mpio(xfer_plist,H5FD_MPIO_COLLECTIVE);
+    //ret = H5Dwrite(dataset1, H5T_NATIVE_DOUBLE, memspace, file_dataspace, xfer_plist, tp.data());
+    ret = H5Dwrite(dataset1, H5T_NATIVE_DOUBLE, mem_dataspace, file_dataspace, H5P_DEFAULT, &(tp(0,0)[0]));
+
+    H5Sclose(mem_dataspace);
+    H5Sclose(file_dataspace);
+    H5Dclose(dataset1);
+    H5Sclose(sid1);
+
+    //H5Pclose(xfer_plist);
+  }
+#endif
 };
 
+#if defined(ENABLE_PHDFLIB)
+
+HDFWalkerOutput::HDFWalkerOutput(MCWalkerConfiguration& W,
+    const string& aroot,Communicate* c): 
+  NumOfWalkers(0), h_file(-1), h_config(-1), myComm(c)
+{
+
+  myComm = OHMMS::Controller;
+
+  //h5FileName=aroot+".config.h5";
+  h5FileName="phdftest.h5";
+
+  MPI_Info info=MPI_INFO_NULL;
+  hid_t acc_tpl1=H5Pcreate(H5P_FILE_ACCESS);
+  herr_t ret=H5Pset_fapl_mpio(acc_tpl1,myComm->getMPI(),info);
+  h_file = H5Fcreate(h5FileName.c_str(), H5F_ACC_TRUNC,H5P_DEFAULT,acc_tpl1);
+  h_config = H5Gcreate(h_file,"config_collection",0); 
+  ret=H5Pclose(acc_tpl1);
+
+  if(myComm->master())
+  {
+    int nc(1); 
+    HDFAttribIO<int> i(nc);
+    i.write(h_config,"NumOfConfigurations");
+  }
+
+  //////create config0000 
+  //char GrpName[128];
+  //sprintf(GrpName,"config%04d",0);
+  //hid_t group_id = H5Gcreate(h_config,GrpName,0);
+  //WalkerPackedWriter wo(W);
+  //wo.writeAll(group_id,"coord",myComm);
+  //H5Gclose(group_id);
+
+  //hid_t h_random = H5Gcreate(h_file,"random_state",0);
+  //HDFAttribIO<RandomGenerator_t> r(Random);
+  //r.write(h_random,"dummy");
+  //H5Gclose(h_random);
+  //H5Gclose(h_config);
+  //H5Fclose(h_file); 
+}
+
+void HDFWalkerOutput::open()
+{
+  //MPI_Info info=MPI_INFO_NULL;
+  //hid_t acc_tpl1=H5Pcreate(H5P_FILE_ACCESS);
+  //herr_t ret=H5Pset_fapl_mpio(acc_tpl1,myComm->getMPI(),info);
+  //h_file =  H5Fopen(h5FileName.c_str(),H5F_ACC_RDWR,acc_tpl1);
+  //h_config = H5Gopen(h_file,"config_collection");
+  //ret=H5Pclose(acc_tpl1);
+}
+
+/** Destructor writes the state of random numbers and close the file */
+HDFWalkerOutput::~HDFWalkerOutput() {
+  //if(h_file<0)
+  //  h_file =  H5Fopen(h5FileName.c_str(),H5F_ACC_RDWR,H5P_DEFAULT);
+  //hid_t h_random = H5Gopen(h_file,"random_state");
+  //HDFAttribIO<RandomGenerator_t> r(Random);
+  //r.write(h_random,"dummy");
+  //H5Fclose(h_file);
+  //
+  if(h_config>-1) H5Gclose(h_config); 
+  if(h_file>-1) H5Fclose(h_file); 
+}
+
+/** Write the set of walker configurations to the HDF5 file.  
+ * @param W set of walker configurations
+ */
+bool HDFWalkerOutput::dump(MCWalkerConfiguration& W) {
+
+  return true;
+  const bool replace=true;
+  char GrpName[128];
+  sprintf(GrpName,"config%04d",0);
+
+  hid_t group_id = H5Gopen(h_config,GrpName);
+  if(NumOfWalkers != W.getGlobalNumWalkers())//need resize of the data
+  {
+    herr_t status=H5Gunlink(group_id,"coord");
+    WalkerPackedWriter wo(W);
+    wo.writeAll(group_id,"coord",myComm);
+    NumOfWalkers=W.getGlobalNumWalkers();
+  } 
+  else
+  {//simply overwrite it
+    WalkerPackedWriter wo(W,replace);
+    wo.writeAll(group_id,"coord",myComm);
+  }
+  H5Gclose(group_id);
+
+  int c(1); 
+  HDFAttribIO<int> i(c,replace);
+  i.write(h_config,"NumOfConfigurations");
+
+  return true;
+}
+
+/** Write the set of walker configurations to the HDF5 file.  
+ * @param W set of walker configurations
+ * @param block index for the block
+ */
+bool  HDFWalkerOutput::append(MCWalkerConfiguration& W, int block) {
+
+  if(block==0) {
+    return dump(W);
+  }
+
+  char GrpName[128];
+  sprintf(GrpName,"config%04d",block);
+  hid_t group_id = H5Gcreate(h_config,GrpName,0);
+  WalkerPackedWriter wo(W);
+  wo.write(group_id,"coord");
+  H5Gclose(group_id);
+
+  block++;
+  
+  HDFAttribIO<int> i(block,true);
+  i.write(h_config,"NumOfConfigurations");
+  return true;
+}
+#else
 /** Create the HDF5 file "aroot.config.h5" for output. 
  * @param W walkers to operate on
  * @param aroot the root file name
@@ -103,7 +292,8 @@ struct WalkerPackedWriter: public HDFAttribIOBase {
  * to unclosed hdf5.
  */
 HDFWalkerOutput::HDFWalkerOutput(MCWalkerConfiguration& W,
-    const string& aroot): NumOfWalkers(0), h_file(-1), h_config(-1)
+    const string& aroot,Communicate* c): 
+  NumOfWalkers(0), h_file(-1), h_config(-1), myComm(c)
 {
   h5FileName=aroot+".config.h5";
   h_file = H5Fcreate(h5FileName.c_str(),H5F_ACC_TRUNC,H5P_DEFAULT,H5P_DEFAULT);
@@ -111,8 +301,8 @@ HDFWalkerOutput::HDFWalkerOutput(MCWalkerConfiguration& W,
   //create space in advance
   h_config = H5Gcreate(h_file,"config_collection",0); 
 
-  int c(0); 
-  HDFAttribIO<int> i(c);
+  int c0(0); 
+  HDFAttribIO<int> i(c0);
   i.write(h_config,"NumOfConfigurations");
 
   //create config0000 
@@ -128,6 +318,12 @@ HDFWalkerOutput::HDFWalkerOutput(MCWalkerConfiguration& W,
   r.write(h_random,"dummy");
   H5Gclose(h_random);
   H5Fclose(h_file);
+}
+
+void HDFWalkerOutput::open()
+{
+  h_file =  H5Fopen(h5FileName.c_str(),H5F_ACC_RDWR,H5P_DEFAULT);
+  h_config = H5Gopen(h_file,"config_collection");
 }
 
 /** Destructor writes the state of random numbers and close the file */
@@ -194,7 +390,7 @@ bool  HDFWalkerOutput::append(MCWalkerConfiguration& W, int block) {
   i.write(h_config,"NumOfConfigurations");
   return true;
 }
-
+#endif
 ///** Write the set of walker configurations to the HDF5 file.  
 // *@param W set of walker configurations
 // */

@@ -32,9 +32,11 @@ namespace qmcplusplus {
     hid_t h_config;
     ///save file name
     string h5FileName;
+    ///communicator
+    Communicate* myComm;
   public:
 
-    HDFWalkerOutput(MCWalkerConfiguration& W, const string& fname);
+    HDFWalkerOutput(MCWalkerConfiguration& W, const string& fname, Communicate* c);
     ~HDFWalkerOutput();
     //bool get(MCWalkerConfiguration&);
 
@@ -60,12 +62,9 @@ namespace qmcplusplus {
     /** return the config_collection file ID **/
     hid_t getConfigID() { return h_config;}
 
+
 #if defined(HAVE_LIBHDF5)
-    inline void open()
-    {
-      h_file =  H5Fopen(h5FileName.c_str(),H5F_ACC_RDWR,H5P_DEFAULT);
-      h_config = H5Gopen(h_file,"config_collection");
-    }
+    void open();
     inline void close()
     {
       H5Gclose(h_config); h_config=-1;
