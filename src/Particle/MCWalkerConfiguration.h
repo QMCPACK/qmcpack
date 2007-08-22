@@ -61,6 +61,14 @@ namespace qmcplusplus {
     typedef WalkerList_t::iterator         iterator;
     ///const_iterator of Walker container
     typedef WalkerList_t::const_iterator   const_iterator;
+    /** starting index of the walkers in a processor group
+     *
+     * WalkerOffsets[0]=0 and WalkerOffsets[WalkerOffsets.size()-1]=total number of walkers in a group
+     * WalkerOffsets[processorid+1]-WalkerOffsets[processorid] is equal to the number of walkers on a processor,
+     * i.e., W.getActiveWalkers().
+     * WalkerOffsets is added to handle parallel I/O with hdf5
+     */
+    vector<int> WalkerOffsets;
 
     ///default constructor
     MCWalkerConfiguration();
@@ -128,6 +136,11 @@ namespace qmcplusplus {
       GlobalNumWalkers=nw;
       EnsembleProperty.NumSamples=nw;
       EnsembleProperty.Weight=nw;
+    }
+
+    inline void setWalkerOffsets(const vector<int>& o)
+    {
+      WalkerOffsets=o;
     }
 
     ///return the number of particles per walker
