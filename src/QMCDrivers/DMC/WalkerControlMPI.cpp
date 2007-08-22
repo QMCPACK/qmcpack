@@ -111,8 +111,10 @@ WalkerControlMPI::branch(int iter, MCWalkerConfiguration& W, RealType trigger) {
     ++it;
   }
 
-  //update the global number of walkers
+  //update the global number of walkers and offsets
   W.setGlobalNumWalkers(Cur_pop);
+  W.setWalkerOffsets(FairOffSet);
+
   return Cur_pop;
 }
 
