@@ -30,7 +30,8 @@ namespace qmcplusplus {
   SimpleFixedNodeBranch::SimpleFixedNodeBranch(RealType tau, int nideal): 
     FixedNumWalkers(false), QMCCounter(-1), SwapMode(0), Counter(0), 
   Nideal(nideal), NumGeneration(-1), BranchInterval(1),
-  Tau(tau), Feedback(1.0),E_T(0.0), DeltaE(1.0),EavgSum(0.0), WgtSum(0.0), PopControl(0.1), 
+  Tau(tau), Feedback(1.0), 
+  Eref(0.0),Etrial(0.0), DeltaE(1.0),EavgSum(0.0), WgtSum(0.0), PopControl(0.1), 
   WalkerController(0), MyEstimator(0), SwapWalkers("yes")
   {
     registerParameters();
@@ -53,7 +54,8 @@ namespace qmcplusplus {
       BranchInterval=abranch.BranchInterval;
       Tau=abranch.Tau;
       Feedback=abranch.Feedback;
-      E_T=abranch.E_T;
+      Eref=abranch.Eref;
+      Etrial=abranch.Etrial;
       DeltaE=abranch.DeltaE;
       EavgSum=abranch.EavgSum;
       WgtSum=abranch.WgtSum;
@@ -68,7 +70,7 @@ namespace qmcplusplus {
 
   void SimpleFixedNodeBranch::registerParameters() {
     m_param.add(Feedback,"feedback","double"); 
-    m_param.add(E_T,"refEnergy","AU");
+    m_param.add(Etrial,"refEnergy","AU");
     m_param.add(DeltaE,"refVariance","AU");
     m_param.add(NumGeneration,"popControl","int"); 
     m_param.add(Nideal,"targetWalkers","int"); 
@@ -80,7 +82,7 @@ namespace qmcplusplus {
     m_param.add(BranchInterval,"branchInterval","int");
 
     //backward compatability
-    m_param.add(E_T,"ref_energy","AU"); m_param.add(E_T,"en_ref","AU");
+    m_param.add(Etrial,"ref_energy","AU"); m_param.add(Etrial,"en_ref","AU");
     m_param.add(NumGeneration,"pop_control","int"); 
     m_param.add(NumGeneration,"num_gen","int"); 
     m_param.add(Nideal,"target_walkers","int");
@@ -101,7 +103,11 @@ namespace qmcplusplus {
     reset();
     if(WalkerController == 0) {
       FixedNumWalkers=fixW;
-      //if(fixW) {Feed=0.0;logN=0.0;}
+      if(fixW) 
+      {
+        if(WgtSum<5) Eref-= DeltaE; 
+        Etrial=0.0;Feedback=0.0;logN=0.0;
+      }
       WalkerController = CreateWalkerController(FixedNumWalkers, 
           SwapMode, Nideal, Nmax, Nmin, WalkerController,MyEstimator->getCommunicator());
       Nmax=WalkerController->Nmax;
@@ -116,8 +122,8 @@ namespace qmcplusplus {
     MyEstimator->reset();
     //update the simulation parameters
     WalkerController->put(myNode);
-    //assign current E_T and a large number for variance
-    WalkerController->setEnergyAndVariance(E_T,DeltaE);
+    //assign current Eref and a large number for variance
+    WalkerController->setEnergyAndVariance(Eref,DeltaE);
 
     //determine the branch cutoff to limit wild weights
     branchCutoff=DeltaE*WalkerController->targetSigma;
@@ -126,25 +132,21 @@ namespace qmcplusplus {
 
     //reset
     WalkerController->reset();
-    //if(fixW) {
-    //  ETrialIndex=-1;
-    //  E_T=0.0;
-    //} else {
-    ETrialIndex = MyEstimator->addColumn("Etrial");
-    MyEstimator->addColumn("Popupation");
-    //}
+
+    if(!FixedNumWalkers)
+    {
+      EtrialIndex = MyEstimator->addColumn("Etrial");
+      MyEstimator->addColumn("Popupation");
+    }
 
     app_log() << "  QMC counter      = " << QMCCounter << endl;
-    app_log() << "  reference energy = " << E_T << endl;
+    app_log() << "  reference energy = " << Eref << endl;
+    app_log() << "  trial energy     = " << Etrial << endl;
     app_log() << "  reference variance = " << DeltaE << endl;
     app_log() << "  branch cutoff = " << branchCutoff << " " << branchMax << endl;
-    //if(!fixW) {
     app_log() << "  target_walkers = " << Nideal << endl;
     app_log() << "  Max and mimum walkers per node= " << Nmax << " " << Nmin << endl;
     app_log() << "  Feedback = " << Feedback <<  endl;
-     // app_log() << "  number of generations (feedback) = " << NumGeneration << " ("<< Feed << ")"<< endl;
-    //}
-
   }
 
   void SimpleFixedNodeBranch::flush(int counter) 
@@ -155,23 +157,22 @@ namespace qmcplusplus {
   }
 
   void
-    SimpleFixedNodeBranch::branch(int iter, MCWalkerConfiguration& w) {
-      //evaluate a safe bound for the trial energy.
-      //RealType sigma=WalkerController->getSigmaBound();
+    SimpleFixedNodeBranch::branch(int iter, MCWalkerConfiguration& w) 
+    {
       //collect the total weights and redistribute the walkers accordingly
       int pop_now = WalkerController->branch(iter,w,PopControl);
-      //trial energy is updated to regulate the number of walkers if it is allowed to flunctuate
-      //EavgSum+=WalkerController->getCurrentValue(WalkerControlBase::EREF_INDEX);
-      //WgtSum+=WalkerController->getCurrentValue(WalkerControlBase::WALKERSIZE_INDEX);
       RealType enecur=WalkerController->getCurrentValue(WalkerControlBase::EREF_INDEX);
       RealType wgtcur=WalkerController->getCurrentValue(WalkerControlBase::WEIGHT_INDEX);
-      EavgSum+= enecur;
-      WgtSum += wgtcur;
-      //use an average: instantenous energy is good, too
-      E_T = EavgSum/WgtSum-Feedback*std::log(static_cast<RealType>(wgtcur))+logN;
-      //E_T = enecur/wgtcur-Feed*std::log(static_cast<RealType>(wgtcur))+logN;
-      MyEstimator->setColumn(ETrialIndex,E_T);
-      MyEstimator->setColumn(ETrialIndex+1,wgtcur);
+      EavgSum += enecur/wgtcur;
+      WgtSum += 1.0;
+      if(!FixedNumWalkers)
+      {
+        //use an average: instantenous energy is good, too
+        Etrial=Eref= EavgSum/WgtSum-Feedback*std::log(static_cast<RealType>(wgtcur))+logN;
+        //E_T = enecur/wgtcur-Feed*std::log(static_cast<RealType>(wgtcur))+logN;
+        MyEstimator->setColumn(EtrialIndex,Etrial);
+        MyEstimator->setColumn(EtrialIndex+1,wgtcur);
+      }
 
       //evaluate everything else
       MyEstimator->accumulate(w);
@@ -182,10 +183,14 @@ namespace qmcplusplus {
    * Set the trial energy of clones
    */
   void 
-    SimpleFixedNodeBranch::branch(int iter, MCWalkerConfiguration& w, 
-        vector<ThisType*>& clones) {
+    SimpleFixedNodeBranch::branch(int iter, MCWalkerConfiguration& w, vector<ThisType*>& clones) 
+    {
       branch(iter,w);
-      for(int i=0; i<clones.size(); i++) clones[i]->E_T=E_T;
+      for(int i=0; i<clones.size(); i++) 
+      { 
+        clones[i]->Eref=Eref;
+        clones[i]->Etrial=Etrial; 
+      }
     }
 
   void SimpleFixedNodeBranch::reset() 
@@ -194,17 +199,21 @@ namespace qmcplusplus {
     //Feed = 1.0/(static_cast<RealType>(NumGeneration*BranchInterval)*Tau);
     //logN = Feed*std::log(static_cast<RealType>(Nideal));
     logN = Feedback*std::log(static_cast<RealType>(Nideal));
-    app_log() << "  Current Counter = " << Counter << "\n  Trial Energy = " << E_T << endl;
-    app_log() << "  Feedback parameter = " << Feedback <<endl;
   }
 
   void SimpleFixedNodeBranch::finalize() {
     //Estimator now is handled by Mover classs
     //MyEstimator->stop();
     //MyEstimator->finalize();
-    if(!WalkerController || ETrialIndex<0) {
+    if(!WalkerController || EtrialIndex<0) 
+    {//running VMC
       MyEstimator->getEnergyAndWeight(EavgSum,WgtSum);
-      E_T=EavgSum/WgtSum;
+      EavgSum/=WgtSum;
+      WgtSum=1;
+      Etrial=Eref=EavgSum;
+      //E_T=EavgSum/WgtSum;
+      //EavgSum=E_T;
+      //WgtSum=1;
     }
   }
 
@@ -254,7 +263,7 @@ namespace qmcplusplus {
 
 #if defined(HAVE_LIBHDF5)
   void SimpleFixedNodeBranch::write(hid_t grp, bool append) {
-    TinyVector<RealType,3> esave(E_T,EavgSum,WgtSum);
+    TinyVector<RealType,3> esave(Eref,EavgSum,WgtSum);
     HDFAttribIO<TinyVector<RealType,3> > eh(esave,append);
     eh.write(grp,"Summary");
     if(LogNorm.size())
@@ -269,21 +278,16 @@ namespace qmcplusplus {
     status = H5Gget_objinfo (grp, "Summary", 0, NULL);
 
     if(status == 0) {
-      TinyVector<RealType,3> esave(E_T,EavgSum,WgtSum);
+      TinyVector<RealType,3> esave(Eref,EavgSum,WgtSum);
       HDFAttribIO<TinyVector<RealType,3> > eh(esave);
       eh.read(grp,"Summary");
-      E_T=esave[0]; EavgSum=esave[1]; WgtSum=esave[2];
-
+      Etrial=Eref=esave[0]; EavgSum=esave[1]; WgtSum=esave[2];
       bool normFound(0);
       if(LogNorm.size()) {
         HDFAttribIO<vector<RealType> > lh(LogNorm);
         lh.read(grp,"LogNorm");
         normFound=1;
       }
-      app_log() << "  Summary is found. BranchEngine is initialized"
-        << "\n    E_T     = " << E_T 
-        << "\n    EavgSum = " << EavgSum 
-        << "\n    WgtSum  = " << WgtSum << endl;
       if(normFound)app_log() << " Normalization factor defined from previous calculation " << endl;
     } else {
       app_log() << "  Summary is not found. Starting from scratch" << endl;

@@ -71,7 +71,7 @@ namespace qmcplusplus {
       ///number of steps before branching
       int BranchInterval;
       ///index of the trial energy
-      int ETrialIndex;
+      int EtrialIndex;
       ///the timestep
       RealType Tau;
       ///feedback parameter to control the population
@@ -79,7 +79,9 @@ namespace qmcplusplus {
       ///feedback parameter to control the population
       RealType Feedback;
       ///energy offset to control branching
-      RealType E_T;
+      RealType Eref;
+      ///actual trial energy
+      RealType Etrial;
       ///variance of the reference energy
       RealType DeltaE;
       ///Feed*log(N)
@@ -158,14 +160,14 @@ namespace qmcplusplus {
        * \f[ G_{branch} = \min \left(\frac{1}{2q},G_{branch}\right). \f]
        */
       inline RealType branchGF(RealType tau, RealType emixed, RealType reject) const { 
-        //return min(0.5/(reject+1e-12),exp(-tau*(emix-E_T)));
-        return std::exp(-tau*(emixed-E_T));
+        //return min(0.5/(reject+1e-12),exp(-tau*(emix-Etrial)));
+        return std::exp(-tau*(emixed-Etrial));
       }
 
       inline RealType branchWeight(RealType tau, RealType enew, RealType eold) const { 
         RealType taueff=tau*0.5;
-        //return min(0.5/(reject+1e-12),exp(-tau*(emix-E_T)));
-        RealType x=std::max(E_T-enew,E_T-eold);
+        //return min(0.5/(reject+1e-12),exp(-tau*(emix-trial)));
+        RealType x=std::max(Eref-enew,Eref-eold);
         if(x>branchMax)
         {
           taueff=0.0;
@@ -175,18 +177,20 @@ namespace qmcplusplus {
           taueff *=(1.0-(x-branchCutoff)*branchFilter);
         }
 
-        return std::exp(taueff*(E_T*2.0-enew-eold));
+        return std::exp(taueff*(Etrial*2.0-enew-eold));
       }
 
       /** set the trial energy \f$ <E_G> = eg \f$
        * @param eg input trial energy
        */
-      inline void setEguess(RealType eg){ E_T = eg; } 
+      inline void setEguess(RealType eg)
+      { Eref = Etrial = eg; } 
 
-      inline void setTrialEnergy(RealType etot, RealType wtot) {
+      inline void setTrialEnergy(RealType etot, RealType wtot) 
+      {
         EavgSum=etot;
         WgtSum=wtot;
-        E_T=etot/wtot;
+        Eref=Etrial=etot/wtot;
       }
 
       /** perform branching
