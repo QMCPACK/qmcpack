@@ -95,7 +95,8 @@ namespace qmcplusplus {
   }
 
   void QMCUpdateBase::resetEtrial(RealType et) {
-    branchEngine->E_T=et;
+    //branchEngine->E_T=et;
+    branchEngine->setTrialEnergy(et,1.0);
     branchEngine->flush(0);
   }
 

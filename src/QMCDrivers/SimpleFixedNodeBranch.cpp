@@ -100,16 +100,23 @@ namespace qmcplusplus {
 
   void SimpleFixedNodeBranch::initWalkerController(RealType tau, bool fixW) {
     Tau=tau;
+
+    //reset Feedback pararmeter
     reset();
-    if(WalkerController == 0) {
+
+    if(WalkerController == 0) 
+    {
       FixedNumWalkers=fixW;
       if(fixW) 
       {
-        if(WgtSum<5) Eref-= DeltaE; 
+        if(WgtSum<5) Eref-= DeltaE;
         Etrial=0.0;Feedback=0.0;logN=0.0;
       }
-      WalkerController = CreateWalkerController(FixedNumWalkers, 
-          SwapMode, Nideal, Nmax, Nmin, WalkerController,MyEstimator->getCommunicator());
+
+      WalkerController 
+        = CreateWalkerController(FixedNumWalkers, SwapMode, 
+            Nideal, Nmax, Nmin, WalkerController,MyEstimator->getCommunicator());
+
       Nmax=WalkerController->Nmax;
       Nmin=WalkerController->Nmin;
 
@@ -151,8 +158,8 @@ namespace qmcplusplus {
 
   void SimpleFixedNodeBranch::flush(int counter) 
   {
-    if(counter==0) 
-      if(WalkerController) WalkerController->reset();
+    if(counter==0 && WalkerController) 
+      WalkerController->reset();
     Counter=counter;
   }
 

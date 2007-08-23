@@ -219,7 +219,7 @@ namespace qmcplusplus {
     //Estimators->reset();
 
     IndexType block = 0;
-    RealType Eest = branchEngine->E_T;
+    RealType Eest = branchEngine->Eref;
 
     //resetRun();
 

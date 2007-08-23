@@ -102,8 +102,7 @@ namespace qmcplusplus {
     app_log() << "<opt stage=\"main\" walkers=\""<< optTarget->getNumSamples() << "\">" << endl;
     app_log() << "  <log>" << endl;
 
-    //branchEngine->E_T=vmcEngine->getBranchEngine()->E_T;
-    optTarget->setTargetEnergy(branchEngine->E_T);
+    optTarget->setTargetEnergy(branchEngine->Eref);
 
     t1.restart();
     bool success=optSolver->optimize(optTarget);
@@ -140,7 +139,8 @@ namespace qmcplusplus {
     app_log() << "  Execution time = " << t1.elapsed() << endl;
     app_log() << "</vmc>" << endl;
 
-    branchEngine->E_T=vmcEngine->getBranchEngine()->E_T;
+    //branchEngine->Eref=vmcEngine->getBranchEngine()->Eref;
+    branchEngine->setTrialEnergy(vmcEngine->getBranchEngine()->Eref);
     //set the h5File to the current RootName
     h5FileRoot=RootName;
   }

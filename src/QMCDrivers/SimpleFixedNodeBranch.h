@@ -180,13 +180,13 @@ namespace qmcplusplus {
         return std::exp(taueff*(Etrial*2.0-enew-eold));
       }
 
-      /** set the trial energy \f$ <E_G> = eg \f$
-       * @param eg input trial energy
-       */
-      inline void setEguess(RealType eg)
-      { Eref = Etrial = eg; } 
+      ///** set the trial energy \f$ <E_G> = eg \f$
+      // * @param eg input trial energy
+      // */
+      //inline void setEguess(RealType eg)
+      //{ Eref = Etrial = eg; } 
 
-      inline void setTrialEnergy(RealType etot, RealType wtot) 
+      inline void setTrialEnergy(RealType etot, RealType wtot=1.0) 
       {
         EavgSum=etot;
         WgtSum=wtot;
