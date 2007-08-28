@@ -22,7 +22,8 @@
 #include <vector>
 
 namespace qmcplusplus {
-  EinsplineSetBuilder::EinsplineSetBuilder(ParticleSet& p, PtclPoolType& psets, xmlNodePtr cur) 
+  EinsplineSetBuilder::EinsplineSetBuilder(ParticleSet& p, 
+      PtclPoolType& psets, xmlNodePtr cur) 
     : XMLRoot(cur), TileFactor(1,1,1), TwistNum(0), LastSpinSet(-1), NumOrbitalsRead(-1)
   {
   }
@@ -38,7 +39,7 @@ namespace qmcplusplus {
     string hdfName;
     OhmmsAttributeSet attribs;
     attribs.add (hdfName, "href");
-    attribs.put(XMLRoot);
+    return attribs.put(XMLRoot);
   }
 
   SPOSetBase*

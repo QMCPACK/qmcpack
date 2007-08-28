@@ -17,8 +17,7 @@
 #ifndef QMCPLUSPLUS_EINSPLINE_SET_H
 #define QMCPLUSPLUS_EINSPLINE_SET_H
 
-#include <einspline/bspline.h>
-#include "Configuration.h"
+//#include <einspline/bspline.h>
 #include "QMCWaveFunctions/BasisSetBase.h"
 #include "QMCWaveFunctions/SPOSetBase.h"
 #include "Optimize/VarList.h"

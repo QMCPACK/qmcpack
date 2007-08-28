@@ -17,10 +17,11 @@
 #include "QMCWaveFunctions/EinsplineSet.h"
 
 namespace qmcplusplus {
+
   EinsplineSetBase::UnitCellType
   EinsplineSetBase::GetLattice()
   {
-    
+    return SuperLattice;
   }
   
   void
