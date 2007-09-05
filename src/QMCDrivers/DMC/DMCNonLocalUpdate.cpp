@@ -172,7 +172,8 @@ namespace qmcplusplus {
         } else {
           G = W.G+dG;
           RealType logGf = -0.5*dot(deltaR[iat],deltaR[iat]);
-          dr = thisWalker.R[iat]-newpos-Tau*real(G[iat]); 
+          RealType scale=getDriftScale(Tau,G);
+          dr = thisWalker.R[iat]-newpos-scale*real(G[iat]); 
           RealType logGb = -m_oneover2tau*dot(dr,dr);
           RealType prob = std::min(1.0,ratio*ratio*std::exp(logGb-logGf));
           if(RandomGen() < prob) { 
@@ -181,7 +182,7 @@ namespace qmcplusplus {
             Psi.acceptMove(W,iat);
             W.G = G;
             W.L += dL;
-            assignDrift(Tau,G,thisWalker.Drift);
+            assignDrift(scale,G,thisWalker.Drift);
             rr_accepted+=rr;
           } else {
             ++nRejectTemp; 
@@ -219,7 +220,7 @@ namespace qmcplusplus {
         Psi.acceptMove(W,iat);
         W.G += dG;
         W.L += dL;
-        assignDrift(Tau,W.G,thisWalker.Drift);
+        setScaledDrift(Tau,W.G,thisWalker.Drift);
 
         thisWalker.R[iat]=W.R[iat];
         w_buffer.rewind();

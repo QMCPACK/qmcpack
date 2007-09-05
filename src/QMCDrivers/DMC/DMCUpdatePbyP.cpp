@@ -85,7 +85,7 @@ namespace qmcplusplus {
         } else {
           G = W.G+dG;
           RealType logGf = -0.5*dot(deltaR[iat],deltaR[iat]);
-          RealType scale=Tau;
+          RealType scale=getDriftScale(Tau,G);
           //ValueType vsq = Dot(G,G);
           //ValueType scale = ((-1.0+sqrt(1.0+2.0*Tau*vsq))/vsq);
           dr = thisWalker.R[iat]-newpos-scale*real(G[iat]); 

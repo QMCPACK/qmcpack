@@ -38,6 +38,7 @@ namespace qmcplusplus {
     m_param.add(BenchMarkRun,"benchmark","string");
     m_param.add(Reconfiguration,"reconfiguration","string");
     m_param.add(BranchInterval,"branchInterval","int");
+    m_param.add(NonLocalMove,"nonlocalmove","string");
   }
 
   bool DMC::run() {
@@ -95,6 +96,7 @@ namespace qmcplusplus {
       {
         if(NonLocalMove == "yes")
         {
+          app_log() << "  Non-local update is used." << endl;
           DMCNonLocalUpdatePbyP* nlocMover= new DMCNonLocalUpdatePbyP(W,Psi,H,Random); 
           nlocMover->put(qmcNode);
           Mover=nlocMover;
