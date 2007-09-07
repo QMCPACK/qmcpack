@@ -30,7 +30,8 @@
 #include "Particle/DistanceTable.h"
 #include "QMCDrivers/QMCDriver.h"
 #include "QMCDrivers/VMC/VMCSingle.h"
-#include "QMCDrivers/VMC/VMCMultiple.h"
+#include "QMCDrivers/CorrelatedSampling/CSVMC.h"
+//#include "QMCDrivers/VMC/VMCMultiple.h"
 #include "QMCDrivers/RQMCMultiple.h"
 #include "Message/Communicate.h"
 #include <queue>
@@ -125,7 +126,8 @@ namespace qmcplusplus {
       //cerr << "qmcpack: deleting previous driver" << endl;
       delete qmcDriver;
     }
-    qmcDriver = new VMCMultiple(*ptclPool->getWalkerSet("e"),*psiPool->getPrimary(),*hamPool->getPrimary());
+    qmcDriver = new CSVMC(*ptclPool->getWalkerSet("e"),*psiPool->getPrimary(),*hamPool->getPrimary());
+    //qmcDriver = new VMCMultiple(*ptclPool->getWalkerSet("e"),*psiPool->getPrimary(),*hamPool->getPrimary());
     //cerr << " done." << endl;
 
     // get second psi, hamiltonian
