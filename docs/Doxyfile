@@ -4,8 +4,8 @@
 # General configuration options
 #---------------------------------------------------------------------------
 PROJECT_NAME           = QMCPACK
-PROJECT_NUMBER         = 0.2
-OUTPUT_DIRECTORY       = ../..
+PROJECT_NUMBER         = 0.4
+OUTPUT_DIRECTORY       = /Users/jnkim/Sites/docs/qmcpack/doxygen/
 OUTPUT_LANGUAGE        = English
 EXTRACT_ALL            = YES
 EXTRACT_PRIVATE        = YES
@@ -34,7 +34,7 @@ INHERIT_DOCS           = YES
 INLINE_INFO            = YES
 SORT_MEMBER_DOCS       = YES
 DISTRIBUTE_GROUP_DOC   = NO
-TAB_SIZE               = 8
+TAB_SIZE               = 2
 GENERATE_TODOLIST      = YES
 GENERATE_TESTLIST      = YES
 GENERATE_BUGLIST       = YES
@@ -58,6 +58,7 @@ WARN_LOGFILE           =
 #---------------------------------------------------------------------------
 INPUT                  = \
 ohmms-config.h \
+../src/Configuration.h \
 ../src/ParticleTags.h \
 ../src/ParticleTags.cpp \
 ../src/ParticleBase \
@@ -124,12 +125,9 @@ EXCLUDE                = \
 ../src/QMCWaveFunctions/RadialOrbitalManager.cpp \
 ../src/QMCWaveFunctions/RadialOrbitalManager.h \
 ../src/QMCTools/GridMolecularOrbitals.cpp \
-../src/QMCTools/GridMolecularOrbitals.h  \
-../src/QMCWaveFunctions/Experimental \
-../src/QMCWaveFunctions/Jastrow/Experimental \
-../src/QMCDrivers/Experimental 
+../src/QMCTools/GridMolecularOrbitals.h  
 EXCLUDE_SYMLINKS       = NO
-EXCLUDE_PATTERNS       = 
+EXCLUDE_PATTERNS       =  */Experimental/*
 EXAMPLE_PATH           = 
 EXAMPLE_PATTERNS       = *.h \
                          *.cc
@@ -156,8 +154,8 @@ IGNORE_PREFIX          =
 GENERATE_HTML          = YES
 HTML_OUTPUT            = html
 HTML_FILE_EXTENSION    = .html
-HTML_HEADER            = 
-HTML_FOOTER            = 
+HTML_HEADER            = myheader.html
+HTML_FOOTER            = myfooter.html
 HTML_STYLESHEET        = 
 HTML_ALIGN_MEMBERS     = YES
 GENERATE_HTMLHELP      = NO

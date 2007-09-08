@@ -7,7 +7,6 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-244-4971 (MCC)
 //
 // Supported by
 //   National Center for Supercomputing Applications, UIUC
@@ -21,11 +20,12 @@
  *
  * Home Page: http://www.mcc.uiuc.edu/qmcpack/
  *
- * Developers' Page: http://cms.mcc.uiuc.edu/qmcdev/
- *
  * \section Major changes
  *
  * \htmlonly
+  <ul> 2007-09-07
+    <li> A new update
+  </ul>    
   <ul> 2005-07-25
    <li> updated doxygen documentations
    <ul>
