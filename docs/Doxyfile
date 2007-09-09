@@ -5,7 +5,7 @@
 #---------------------------------------------------------------------------
 PROJECT_NAME           = QMCPACK
 PROJECT_NUMBER         = 0.4
-OUTPUT_DIRECTORY       = /Users/jnkim/Sites/docs/qmcpack/doxygen/
+OUTPUT_DIRECTORY       = /Library/WebServer/apache2/htdocs/qmcdev/docs
 OUTPUT_LANGUAGE        = English
 EXTRACT_ALL            = YES
 EXTRACT_PRIVATE        = YES
@@ -59,11 +59,13 @@ WARN_LOGFILE           =
 INPUT                  = \
 ohmms-config.h \
 ../src/Configuration.h \
+../src/Utilities \
+../src/Message \
 ../src/ParticleTags.h \
 ../src/ParticleTags.cpp \
+../src/Lattice \
 ../src/ParticleBase \
 ../src/Particle \
-../src/Utilities \
 ../src/OhmmsData \
 ../src/OhmmsPETE \
 ../src/OhmmsApp \
@@ -106,9 +108,13 @@ EXCLUDE                = \
 ../src/Numerics/CubicSpline3DGridSet.cpp \
 ../src/Numerics/Spline3D \
 ../src/Numerics/Numerov.h \
+../src/Message/ReplicaControl.h \
+../src/Message/ReplicaControl.cpp \
+../src/Message/ReplicaDummy.cpp \
 ../src/ParticleBase/PtclPairListBase.h \
 ../src/ParticleBase/LinkedCell.h \
 ../src/ParticleBase/DuplicateSuperCell.h \
+../src/ParticleBase/ParticleAttribOps.h \
 ../src/Particle/DistanceTableData.walker.h \
 ../src/Particle/DistanceTableData.walker.cpp \
 ../src/Particle/WalkerSetRef.h \
@@ -127,7 +133,7 @@ EXCLUDE                = \
 ../src/QMCTools/GridMolecularOrbitals.cpp \
 ../src/QMCTools/GridMolecularOrbitals.h  
 EXCLUDE_SYMLINKS       = NO
-EXCLUDE_PATTERNS       =  */Experimental/*
+EXCLUDE_PATTERNS       =  */Experimental/* */QMCTools/* */Spline3D/*
 EXAMPLE_PATH           = 
 EXAMPLE_PATTERNS       = *.h \
                          *.cc
@@ -247,10 +253,12 @@ MAX_DOT_GRAPH_WIDTH    = 1024
 MAX_DOT_GRAPH_HEIGHT   = 1024
 GENERATE_LEGEND        = YES
 DOT_CLEANUP            = YES
+DIRECTORY_GRAPH        = YES
+SHOW_DIRECTORIES       = YES
 #---------------------------------------------------------------------------
 # Configuration::addtions related to the search engine   
 #---------------------------------------------------------------------------
-#SEARCHENGINE           = NO
+SEARCHENGINE           = YES
 #CGI_NAME               = search.cgi
 #CGI_URL                = 
 #DOC_URL                = 
