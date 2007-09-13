@@ -444,7 +444,7 @@ namespace qmcplusplus {
   bool
   QMCCostFunctionBase::put(xmlNodePtr q) {
 
-    string useWeightStr("yes");
+    string useWeightStr("no");
     ParameterSet m_param;
     m_param.add(useWeightStr,"useWeight","string");
     m_param.add(PowerE,"power","int");
