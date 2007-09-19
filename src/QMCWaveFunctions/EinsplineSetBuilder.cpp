@@ -71,6 +71,11 @@ namespace qmcplusplus {
 	for (int j=0; j<3; j++)
 	  TileMatrix(i,j) = (i==j) ? TileFactor(i) : 0;
 
+    fprintf (stderr, " [ %2d %2d %2d\n   %2d %2d %2d\n   %2d %2d %2d ]\n",
+	     TileMatrix(0,0), TileMatrix(0,1), TileMatrix(0,2),
+	     TileMatrix(1,0), TileMatrix(1,1), TileMatrix(1,2),
+	     TileMatrix(2,0), TileMatrix(2,1), TileMatrix(2,2));
+
     if (numOrbs == 0) {
       app_error() << "You must specify the number of orbitals in the input file.\n";
       abort();
@@ -137,6 +142,11 @@ namespace qmcplusplus {
     h_Lattice.read      (H5FileID, (parameterGroup+"/lattice").c_str());
     
     h_RecipLattice.read (H5FileID, (parameterGroup+"/reciprocal_lattice").c_str());
+//     for (int i=0; i<3; i++)
+//       for (int j=0; j<3; j++)
+// 	superLattice(i,j) = (double)TileFactor[i]*Lattice(i,j);
+    SuperLattice = dot(TileMatrix, Lattice);
+
     fprintf (stderr, 
 	     "  Lattice = \n    [ %8.5f %8.5f %8.5f\n"
 	     "      %8.5f %8.5f %8.5f\n"
@@ -144,6 +154,13 @@ namespace qmcplusplus {
 	     Lattice(0,0), Lattice(0,1), Lattice(0,2), 
 	     Lattice(1,0), Lattice(1,1), Lattice(1,2), 
 	     Lattice(2,0), Lattice(2,1), Lattice(2,2));
+    fprintf (stderr, 
+	     "  SuperLattice = \n    [ %8.5f %8.5f %8.5f\n"
+	     "      %8.5f %8.5f %8.5f\n"
+	     "      %8.5f %8.5f %8.5f ]\n", 
+	     SuperLattice(0,0), SuperLattice(0,1), SuperLattice(0,2), 
+	     SuperLattice(1,0), SuperLattice(1,1), SuperLattice(1,2), 
+	     SuperLattice(2,0), SuperLattice(2,1), SuperLattice(2,2));
     for (int i=0; i<3; i++) 
       for (int j=0; j<3; j++)
 	LatticeInv(i,j) = RecipLattice(i,j)/(2.0*M_PI);
@@ -179,12 +196,9 @@ namespace qmcplusplus {
 	path << eigenstatesGroup << "/twist/twist_angle";
       HDFAttribIO<PosType> h_Twist(TwistAngles[ti]);
       h_Twist.read (H5FileID, path.str().c_str());
-      fprintf (stderr, "  Found twist angle (%5.3f, %5.3f, %5.3f)\n", 
+      fprintf (stderr, "  Found twist angle (%6.3f, %6.3f, %6.3f)\n", 
 	       TwistAngles[ti][0], TwistAngles[ti][1], TwistAngles[ti][2]);
     }
-    AnalyzeTwists();
-    fprintf (stderr, "  Found a valid %dx%dx%d twist mesh.\n", 
-	     TwistMesh[0], TwistMesh[1], TwistMesh[2]);
 
     //////////////////////////////////
     // Create the OrbitalSet object //
@@ -204,14 +218,14 @@ namespace qmcplusplus {
     OrbitalSet->TileFactor = TileFactor;
     OrbitalSet->Tiling = 
       TileFactor[0]!=1 || TileFactor[1]!=1 || TileFactor[2]!=1;
-//     for (int i=0; i<3; i++)
-//       for (int j=0; j<3; j++)
-// 	superLattice(i,j) = (double)TileFactor[i]*Lattice(i,j);
-    SuperLattice = dot(TileMatrix, Lattice);
     OrbitalSet->PrimLattice  = Lattice;
     OrbitalSet->SuperLattice = SuperLattice;
     OrbitalSet->GGt=dot(OrbitalSet->PrimLattice.G,
 			transpose(OrbitalSet->PrimLattice.G));
+
+    AnalyzeTwists2();
+    fprintf (stderr, "  Found a valid %dx%dx%d twist mesh.\n", 
+	     TwistMesh[0], TwistMesh[1], TwistMesh[2]);
         
 //     OrbitalSet->Orbitals.resize(UseTwists.size()*NumBands);
 //     for (int ti=0; ti<UseTwists.size(); ti++) {
@@ -233,7 +247,7 @@ namespace qmcplusplus {
       CopyBands(numOrbs);
     else
       // Now, figure out occupation for the bands and read them
-      OccupyAndReadBands(spinSet);
+      OccupyAndReadBands2(spinSet);
     OrbitalSet->BasisSetSize   = numOrbs;
 
     // Now, store what we have read
@@ -469,7 +483,7 @@ namespace qmcplusplus {
 
   class BandInfo {
   public:
-    int TwistIndex, BandIndex;
+    int TwistIndex, BandIndex, Spin;
     double Energy;
     inline bool operator<(BandInfo other) const
     { return Energy < other.Energy; }
@@ -493,16 +507,24 @@ namespace qmcplusplus {
 	band.BandIndex  = bi;
 	
 	// Read eigenenergy from file
-	ostringstream ePath;
-	if ((Version[0]==0 && Version[1]==11) || NumTwists > 0)
+	ostringstream ePath, sPath;
+	if ((Version[0]==0 && Version[1]==11) || NumTwists > 0) {
 	  ePath << eigenstatesGroup << "/twist_" 
 		    << tindex << "/band_" << bi << "/eigenvalue";
-	else
+	  sPath << eigenstatesGroup << "/twist_" 
+		    << tindex << "/band_" << bi << "/spin";
+	}
+	else {
 	  ePath << eigenstatesGroup << "/twist/band_" << bi << "/eigenvalue";
+	  sPath << eigenstatesGroup << "/twist/band_" << bi << "/spin";
+	}
 	
 	HDFAttribIO<double> h_energy(band.Energy);
+	HDFAttribIO<int> h_spin(band.Spin);
 	h_energy.read (H5FileID, ePath.str().c_str());
-	SortBands.push_back(band);
+	h_spin.read   (H5FileID, sPath.str().c_str());
+	if (band.Spin == spin)
+	  SortBands.push_back(band);
       }
     }
     // Now sort the bands by energy
@@ -559,16 +581,24 @@ void
 	band.BandIndex  = bi;
 	
 	// Read eigenenergy from file
-	ostringstream ePath;
-	if ((Version[0]==0 && Version[1]==11) || NumTwists > 0)
+	ostringstream ePath, sPath;
+	if ((Version[0]==0 && Version[1]==11) || NumTwists > 0) {
 	  ePath << eigenstatesGroup << "/twist_" 
 		    << tindex << "/band_" << bi << "/eigenvalue";
-	else
+	  sPath << eigenstatesGroup << "/twist_" 
+		    << tindex << "/band_" << bi << "/spin";
+	}
+	else {
 	  ePath << eigenstatesGroup << "/twist/band_" << bi << "/eigenvalue";
+	  sPath << eigenstatesGroup << "/twist/band_" << bi << "/spin";
+	}
 	
 	HDFAttribIO<double> h_energy(band.Energy);
+	HDFAttribIO<int> h_spin(band.Spin);
 	h_energy.read (H5FileID, ePath.str().c_str());
-	SortBands.push_back(band);
+	h_spin.read   (H5FileID, sPath.str().c_str());
+	if (band.Spin == spin)
+	  SortBands.push_back(band);
       }
     }
     // Now sort the bands by energy
