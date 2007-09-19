@@ -51,6 +51,7 @@ namespace qmcplusplus {
     // Lattice and geometry //
     //////////////////////////
     TinyVector<int,3> TileFactor;
+    Tensor<int,OHMMS_DIM> TileMatrix;
     UnitCellType SuperLattice, PrimLattice, PrimLatticeInv;
     /// The "Twist" variables are in reduced coords, i.e. from 0 to1.
     /// The "k" variables are in Cartesian coordinates.

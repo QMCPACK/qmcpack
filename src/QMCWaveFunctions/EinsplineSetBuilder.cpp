@@ -26,6 +26,9 @@ namespace qmcplusplus {
       PtclPoolType& psets, xmlNodePtr cur) 
     : XMLRoot(cur), TileFactor(1,1,1), TwistNum(0), LastSpinSet(-1), NumOrbitalsRead(-1)
   {
+    for (int i=0; i<3; i++)
+      for (int j=0; j<3; j++)
+	TileMatrix(i,j) = 0;
   }
 
   EinsplineSetBuilder::~EinsplineSetBuilder()
@@ -48,10 +51,25 @@ namespace qmcplusplus {
     int numOrbs = 0;
     attribs.add (H5FileName, "href");
     attribs.add (TileFactor, "tile");
+    attribs.add (TileMatrix, "tilematrix");
     attribs.put (XMLRoot);
     attribs.add (numOrbs,    "size");
     attribs.add (numOrbs,    "norbs");
     attribs.put (cur);
+
+    // The tiling can be set by a simple vector, (e.g. 2x2x2), or by a
+    // full 3x3 matrix of integers.  If the tilematrix was not set in
+    // the input file... 
+    bool matrixNotSet = true;
+    for (int i=0; i<3; i++)
+      for (int j=0; j<3; j++)
+	matrixNotSet = matrixNotSet && (TileMatrix(i,j) == 0);
+    // then set the matrix to what may have been specified in the
+    // tiling vector
+    if (matrixNotSet) 
+      for (int i=0; i<3; i++)
+	for (int j=0; j<3; j++)
+	  TileMatrix(i,j) = (i==j) ? TileFactor(i) : 0;
 
     if (numOrbs == 0) {
       app_error() << "You must specify the number of orbitals in the input file.\n";
@@ -97,6 +115,7 @@ namespace qmcplusplus {
     // Check the version
     HDFAttribIO<TinyVector<int,2> > h_Version(Version);
     h_Version.read (H5FileID, "/version");
+    fprintf (stderr, "  HDF5 orbital file version %d.%d\n", Version[0], Version[1]);
     string parameterGroup, ionsGroup, eigenstatesGroup;
     if (Version[0]==0 && Version[1]== 11) {
       parameterGroup  = "/parameters_0";
@@ -185,12 +204,12 @@ namespace qmcplusplus {
     OrbitalSet->TileFactor = TileFactor;
     OrbitalSet->Tiling = 
       TileFactor[0]!=1 || TileFactor[1]!=1 || TileFactor[2]!=1;
-    Tensor<double,3> superLattice;
-    for (int i=0; i<3; i++)
-      for (int j=0; j<3; j++)
-	superLattice(i,j) = (double)TileFactor[i]*Lattice(i,j);
+//     for (int i=0; i<3; i++)
+//       for (int j=0; j<3; j++)
+// 	superLattice(i,j) = (double)TileFactor[i]*Lattice(i,j);
+    SuperLattice = dot(TileMatrix, Lattice);
     OrbitalSet->PrimLattice  = Lattice;
-    OrbitalSet->SuperLattice = superLattice;
+    OrbitalSet->SuperLattice = SuperLattice;
     OrbitalSet->GGt=dot(OrbitalSet->PrimLattice.G,
 			transpose(OrbitalSet->PrimLattice.G));
         
@@ -225,6 +244,117 @@ namespace qmcplusplus {
     return OrbitalSet;
   }
   
+
+  inline TinyVector<double,3>
+  IntPart (TinyVector<double,3> twist)
+  {
+    return TinyVector<double,3> (round(twist[0]), round(twist[1]), round(twist[2]));
+  }
+  
+  inline TinyVector<double,3>
+  FracPart (TinyVector<double,3> twist)
+  {
+    return twist - IntPart (twist);
+  }
+  
+  void
+  EinsplineSetBuilder::AnalyzeTwists2()
+  {
+    Tensor<double,3> S;
+    for (int i=0; i<3; i++)
+      for (int j=0; j<3; j++)
+	S(i,j) = (double)TileMatrix(i,j);
+    
+    vector<PosType> superFracs;
+    // This holds to which supercell kpoint each primitive k-point belongs
+    vector<int> superIndex;
+
+    int numPrimTwists = TwistAngles.size();
+
+    for (int ki=0; ki<numPrimTwists; ki++) {
+      PosType primTwist = TwistAngles[ki];
+      PosType superTwist = dot (S, primTwist);
+      PosType kp = OrbitalSet->PrimLattice.k_cart(primTwist);
+      PosType ks = OrbitalSet->SuperLattice.k_cart(superTwist);
+      if (dot(ks-kp, ks-kp) > 1.0e-12) {
+	app_error() << "Primitive and super k-points do not agree.  Error in coding.\n";
+	abort();
+      }
+      PosType frac = FracPart (superTwist);
+      bool found = false;
+      for (int j=0; j<superFracs.size(); j++) {
+	PosType diff = frac - superFracs[j];
+	if (dot(diff,diff)<1.0e-12) {
+	  found = true;
+	  superIndex.push_back(j);
+	}
+      }
+      if (!found) {
+	superIndex.push_back(superFracs.size());
+	superFracs.push_back(frac);
+      }
+    }
+    int numSuperTwists = superFracs.size();
+    cerr << "Found " << numSuperTwists << " distinct supercell twists.\n";
+
+    // For each supercell twist, create a list of primitive twists which
+    // belong to it.
+    vector<vector<int> > superSets;
+    superSets.resize(numSuperTwists);
+    for (int ki=0; ki<numPrimTwists; ki++)
+      superSets[superIndex[ki]].push_back(ki);
+
+    for (int si=0; si<numSuperTwists; si++) {
+      fprintf (stderr, "Super twist #%d:  [ %9.5f %9.5f %9.5f ]\n",
+	       si, superFracs[si][0], superFracs[si][1], superFracs[si][2]);
+      fprintf (stderr, "  Using k-points: ");
+      for (int i=0; i<superSets[si].size(); i++) 
+	fprintf (stderr, " %d", superSets[si][i]);
+      fprintf (stderr, "\n");
+    }
+
+    // Now check to see that each supercell twist has the right twists
+    // to tile the primitive cell orbitals.
+    int numTwistsNeeded = abs(TileMatrix.det());
+    for (int si=0; si<numSuperTwists; si++) {
+      // First make sure we have enough points
+      if (superSets[si].size() != numTwistsNeeded) {
+	fprintf (stderr, "Super twist %d should own %d k-points, but owns %d.\n",
+		 si, numTwistsNeeded, superSets[si].size());
+	abort();
+      }
+      // Now, make sure they are all distinct
+      int N = superSets[si].size();
+      for (int i=0; i<N; i++) {
+	PosType twistPrim_i  = TwistAngles[superSets[si][i]];
+	PosType twistSuper_i = dot (S, twistPrim_i);
+	PosType superInt_i   = IntPart (twistSuper_i);
+	for (int j=i+1; j<N; j++) {
+	  PosType twistPrim_j  = TwistAngles[superSets[si][j]];
+	  PosType twistSuper_j = dot (S, twistPrim_j);
+	  PosType superInt_j   = IntPart (twistSuper_j);
+	  if (dot(superInt_i-superInt_j, superInt_i-superInt_j) < 1.0e-6) {
+	    cerr << "Identical k-points detected in super twist set "
+		 << si << endl;
+	    abort();
+	  }
+	}
+      }
+    }
+    if (TwistNum >= superSets.size()) {
+      app_error() << "Trying to use supercell twist " << TwistNum
+		  << " when only " << superSets.size() << " sets exist.\n"
+		  << "Please select a twist number between 0 and "
+		  << superSets.size()-1 << ".\n";
+      abort();
+    }
+
+    // Finally, record which k-points to include on this group of
+    // processors, which have been assigned supercell twist TwistNum
+    IncludeTwists.clear();
+    for (int i=0; i<superSets[TwistNum].size(); i++)
+      IncludeTwists.push_back(superSets[TwistNum][i]);
+  }
   
   // This function analyzes the twist vectors to see if they lay on a
   // valid k-point mesh.  It flags errors an aborts if they do not.
@@ -288,7 +418,7 @@ namespace qmcplusplus {
 	}
     
     // If we got this far, we have a valid twist mesh.  Now check to
-    // see if the mesh is commensurate with the titling factor
+    // see if the mesh is commensurate with the tiling factor
     if (((TwistMesh[0] % TileFactor[0]) != 0) || 
 	((TwistMesh[1] % TileFactor[1]) != 0) ||
 	((TwistMesh[2] % TileFactor[2]) != 0)) {
@@ -402,6 +532,65 @@ namespace qmcplusplus {
 //       k[0] = twist[0]*G(0,0) + twist[1]*G(0,1) + twist[2]*G(0,2);
 //       k[1] = twist[0]*G(1,0) + twist[1]*G(1,1) + twist[2]*G(1,2);
 //       k[2] = twist[0]*G(2,0) + twist[1]*G(2,1) + twist[2]*G(2,2);
+      fprintf (stderr, "  ti=%d  bi=%d energy=%8.5f k=(%6.4f, %6.4f, %6.4f)\n", 
+	       ti, bi, e, k[0], k[1], k[2]);
+      
+      OrbitalSet->Orbitals[i] = new EinsplineOrb<ValueType,OHMMS_DIM>;
+      OrbitalSet->Orbitals[i]->kVec = k;
+      OrbitalSet->Orbitals[i]->read(H5FileID, groupPath.str());
+    }
+  }
+
+void
+  EinsplineSetBuilder::OccupyAndReadBands2(int spin)
+  {
+    string eigenstatesGroup;
+    if (Version[0]==0 && Version[1]== 11) 
+      eigenstatesGroup = "/eigenstates_3";
+    else if (Version[0]==0 && Version[1]==20) 
+      eigenstatesGroup = "/eigenstates";
+
+    std::vector<BandInfo> SortBands;
+    for (int ti=0; ti<IncludeTwists.size(); ti++) {
+      int tindex = IncludeTwists[ti];
+      for (int bi=0; bi<NumBands; bi++) {
+	BandInfo band;
+	band.TwistIndex = tindex;
+	band.BandIndex  = bi;
+	
+	// Read eigenenergy from file
+	ostringstream ePath;
+	if ((Version[0]==0 && Version[1]==11) || NumTwists > 0)
+	  ePath << eigenstatesGroup << "/twist_" 
+		    << tindex << "/band_" << bi << "/eigenvalue";
+	else
+	  ePath << eigenstatesGroup << "/twist/band_" << bi << "/eigenvalue";
+	
+	HDFAttribIO<double> h_energy(band.Energy);
+	h_energy.read (H5FileID, ePath.str().c_str());
+	SortBands.push_back(band);
+      }
+    }
+    // Now sort the bands by energy
+    sort (SortBands.begin(), SortBands.end());
+    // Read in the occupied bands
+    OrbitalSet->Orbitals.resize(OrbitalSet->getOrbitalSetSize());
+    cerr << "Orbitals size = " << OrbitalSet->Orbitals.size() << endl;
+    for (int i=0; i<OrbitalSet->getOrbitalSetSize(); i++) {
+      int ti   = SortBands[i].TwistIndex;
+      int bi   = SortBands[i].BandIndex;
+      double e = SortBands[i].Energy;
+      ostringstream groupPath;
+      if ((Version[0]==0 && Version[1]==11) || NumTwists > 0)
+	groupPath << eigenstatesGroup << "/twist_" 
+		  << ti << "/band_" << bi << "/";
+      else
+	groupPath << eigenstatesGroup << "/twist/band_" << bi << "/";
+      
+      PosType twist, k;
+      twist = TwistAngles[ti];
+      Tensor<double,3> G = OrbitalSet->PrimLattice.G;
+      k = OrbitalSet->PrimLattice.k_cart(twist);
       fprintf (stderr, "  ti=%d  bi=%d energy=%8.5f k=(%6.4f, %6.4f, %6.4f)\n", 
 	       ti, bi, e, k[0], k[1], k[2]);
       

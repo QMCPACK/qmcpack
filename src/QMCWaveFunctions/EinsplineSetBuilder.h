@@ -65,7 +65,7 @@ namespace qmcplusplus {
     // HDF5 orbital file version
     TinyVector<int,2> Version;
 
-    Tensor<double,OHMMS_DIM> Lattice, RecipLattice, LatticeInv;
+    Tensor<double,OHMMS_DIM> Lattice, RecipLattice, LatticeInv, SuperLattice;
     int NumBands, NumElectrons, NumSpins, NumTwists;
     Vector<int> IonTypes;
     Vector<TinyVector<double,OHMMS_DIM> > IonPos;
@@ -76,14 +76,18 @@ namespace qmcplusplus {
     int TwistNum;
     Vector<PosType> TwistAngles;
     TinyVector<int,OHMMS_DIM> TileFactor;
+    Tensor<int,OHMMS_DIM> TileMatrix;
     TinyVector<int,OHMMS_DIM> TwistMesh;
     // This vector stores which twist indices will be used by this
     // clone 
     vector<TinyVector<int,OHMMS_DIM> > UseTwists;
+    vector<int> IncludeTwists;
     // This maps a 3-integer twist index into the twist number in the file
     map <TinyVector<int,OHMMS_DIM>,int,Int3less> TwistMap;
     void AnalyzeTwists();
+    void AnalyzeTwists2();
     void OccupyAndReadBands(int spin);
+    void OccupyAndReadBands2(int spin);
     void CopyBands(int numOrbs);
 
     /////////////////////////////////////////////////////////////
