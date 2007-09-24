@@ -21,6 +21,7 @@
 #include "QMCApp/HamiltonianPool.h"
 #include "Message/Communicate.h"
 #include "Message/OpenMP.h"
+#include "Utilities/Timer.h"
 
 namespace qmcplusplus { 
 
@@ -164,45 +165,46 @@ namespace qmcplusplus {
     Estimators->start(nBlocks);
     for(int ip=0; ip<NumThreads; ip++) Movers[ip]->startRun(nBlocks,false);
 
+    Timer myclock;
+    RealType runtime=0.0;
     IndexType block = 0;
-
-
     do // block
     {
       Estimators->startBlock(nSteps);
       for(int ip=0; ip<NumThreads; ip++) Movers[ip]->startBlock(nSteps);
       IndexType step = 0;
 
-      do  //step
+      for(IndexType step=0; step< nSteps; step++, CurrentStep+=BranchInterval)
       {
 #pragma omp parallel 
         {
           bool pbyp=QMCDriverMode[QMC_UPDATE_MODE];
-          int now = CurrentStep;
           int ip = omp_get_thread_num();
-          int interval = 0;
+          int now=CurrentStep;
           MCWalkerConfiguration::iterator 
             wit(W.begin()+wPerNode[ip]), wit_end(W.begin()+wPerNode[ip+1]);
 
+          //recalculate everything every 100 steps
           if(pbyp && now%100 == 99) Movers[ip]->updateWalkers(wit, wit_end);
-          do // interval
+
+          for(int interval = 0;interval<BranchInterval; interval++,now++)
           {
             Movers[ip]->advanceWalkers(wit,wit_end,false);
-            ++now;
-          } while(++interval<BranchInterval);
+          } 
           Movers[ip]->setMultiplicity(wit,wit_end);
         }//#pragma omp parallel
 
-        CurrentStep+=BranchInterval;
         branchEngine->branch(CurrentStep,W, branchClones);
         if(variablePop) FairDivideLow(W.getActiveWalkers(),NumThreads,wPerNode);
-        ++step; 
-      } while(step<nSteps);
+      } 
 
       Estimators->stopBlock(acceptRatio());
       block++;
       recordBlock(block);
-    } while(block<nBlocks);
+
+      runtime +=  myclock.elapsed();
+
+    } while(block<nBlocks && runtime<MaxCPUSecs);
 
     //for(int ip=0; ip<NumThreads; ip++) Movers[ip]->stopRun();
 

@@ -21,6 +21,7 @@
 #include "QMCApp/HamiltonianPool.h"
 #include "Message/Communicate.h"
 #include "Message/OpenMP.h"
+#include "Utilities/Timer.h"
 
 namespace qmcplusplus { 
 
@@ -50,25 +51,24 @@ namespace qmcplusplus {
 
     Mover->startRun(nBlocks,true);
 
+
+    Timer myclock;
+    RealType runtime=0.0;
+
     IndexType block = 0;
     CurrentStep = 0;
     do // block
     {
       Mover->startBlock(nSteps);
-      IndexType step = 0;
-      do  //step
+      for(IndexType step=0; step< nSteps; step++, CurrentStep+=BranchInterval)
       {
-        IndexType interval = 0;
-        do // interval
+        for(IndexType interval=0; interval<BranchInterval; interval++)
         {
-          ++interval;
           Mover->advanceWalkers(W.begin(),W.end(), interval == BranchInterval);
-        } while(interval<BranchInterval);
+        } 
         Mover->setMultiplicity(W.begin(),W.end());
         branchEngine->branch(CurrentStep,W);
-        ++step; 
-        CurrentStep+=BranchInterval;
-      } while(step<nSteps);
+      } 
 
       block++;
 
@@ -77,7 +77,9 @@ namespace qmcplusplus {
 
       if(QMCDriverMode[QMC_UPDATE_MODE] && CurrentStep%100 == 0) 
         Mover->updateWalkers(W.begin(), W.end());
-    } while(block<nBlocks);
+
+      runtime +=  myclock.elapsed();
+    } while(block<nBlocks &&  runtime<MaxCPUSecs);
 
     Mover->stopRun();
 
