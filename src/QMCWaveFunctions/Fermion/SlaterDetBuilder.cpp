@@ -92,22 +92,26 @@ namespace qmcplusplus {
     aAttrib.add(refname,"ref");
     aAttrib.put(cur);
 
-    xmlNodePtr c_ptr = NULL, o_ptr=NULL;
-
-    Det_t* adet=0;
-
     //index of the last SlaterDeterminant
     int dIndex=DetSet.size();
-
     if(refname == "NONE") { //create one and use detname
       if(detname =="NONE") { //no id is given, assign one
         char newname[8];
         sprintf(newname,"det%d",dIndex);
         detname=newname;
+        //add attributed id and ref
+        xmlNewProp(cur,(const xmlChar*)"id",(const xmlChar*)newname);
+        xmlNewProp(cur,(const xmlChar*)"ref",(const xmlChar*)newname);
+      }
+      else
+      {
+        //add reference name
+        xmlNewProp(cur,(const xmlChar*)"ref",(const xmlChar*)detname.c_str());
       }
     }
 
     map<string,SPOSetBasePtr>::iterator lit(SPOSet.find(detname));
+    Det_t* adet=0;
     SPOSetBasePtr psi;
     if(lit == SPOSet.end()) {
 #if defined(ENABLE_SMARTPOINTER)
