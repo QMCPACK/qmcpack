@@ -26,6 +26,7 @@
 #include "QMCWaveFunctions/OrbitalTraits.h"
 #include "Message/Communicate.h"
 #include "Message/CommOperators.h"
+#include <limits>
 
 namespace qmcplusplus {
 
@@ -35,11 +36,15 @@ namespace qmcplusplus {
     Period4CheckPoint(1), Period4WalkerDump(0),
     CurrentStep(0), nBlocks(100), nSteps(10), 
     nAccept(0), nReject(0), nTargetWalkers(0),
-    Tau(0.001), qmcNode(NULL),
+    Tau(0.01), qmcNode(NULL),
     QMCType("invalid"), 
     qmcComm(0), wOut(0),
     W(w), Psi(psi), H(h), Estimators(0)
   { 
+
+    //use maximum double
+    MaxCPUSecs=numeric_limits<RealType>::max();
+
     m_param.add(nSteps,"steps","int");
     m_param.add(nBlocks,"blocks","int");
     m_param.add(nTargetWalkers,"walkers","int");
@@ -49,6 +54,7 @@ namespace qmcplusplus {
     m_param.add(Tau,"timestep","AU");
     m_param.add(RollBackBlocks,"rewind","int");
     m_param.add(Period4WalkerDump,"recordWalkers","int");
+    m_param.add(MaxCPUSecs,"maxcpusecs","real");
 
     //add each QMCHamiltonianBase to W.PropertyList so that averages can be taken
     H.add2WalkerProperty(W);
@@ -233,6 +239,7 @@ namespace qmcplusplus {
 
     //flush the ostream
     OhmmsInfo::flush();
+
     return true;
   }
 

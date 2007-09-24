@@ -217,6 +217,9 @@ namespace qmcplusplus {
     ///timestep
     RealType Tau;
 
+    ///maximum cpu in secs
+    RealType MaxCPUSecs;
+
     ///Time-step factor \f$ 1/(2\Tau)\f$
     RealType m_oneover2tau;
     ///Time-step factor \f$ \sqrt{\Tau}\f$
