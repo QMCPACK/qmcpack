@@ -80,6 +80,8 @@ namespace qmcplusplus {
     bool print_log;
     ///boolean to enable debug with EG
     bool DebugWithEG;
+    ///number of SPOs created by this buidlder
+    int CurSPOSize;
     ///twist angle
     PosType TwistAngle;
     ///target ParticleSet

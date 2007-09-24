@@ -34,7 +34,7 @@ namespace qmcplusplus {
 
   TricubicBsplineSetBuilder::TricubicBsplineSetBuilder(ParticleSet& p, PtclPoolType& psets, xmlNodePtr cur):
     targetPtcl(p),ptclPool(psets),OpenEndGrid(false),TranslateGrid(false),FloatingGrid(false),print_log(false),
-  BoxGrid(2),BoxDup(1),LowerBox(0.0),UpperBox(1.0),
+    CurSPOSize(0),BoxGrid(2),BoxDup(1),LowerBox(0.0),UpperBox(1.0),
   rootNode(cur)
   {
     for(int idim=0; idim<DIM; idim++)
@@ -119,9 +119,11 @@ namespace qmcplusplus {
     //return createSPOSetWithEG();
     //stage 1: get the general parameters, e.g., source, twist angle
     int norb(0);
+    string detname("0");
     OhmmsAttributeSet aAttrib;
     aAttrib.add(norb,"orbitals"); aAttrib.add(norb,"size");
     aAttrib.add(curH5Fname,"href"); 
+    aAttrib.add(detname,"id"); 
     aAttrib.put(cur);
 
     if(curH5Fname.empty())
@@ -132,8 +134,12 @@ namespace qmcplusplus {
     }
 
     if(norb ==0) {
-      app_error() << "TricubicBsplineSetBuilder::createSPOSet failed. Check the attribte orbitals." << endl;
-      abort(); //FIXABORT
+      norb=targetPtcl.last(CurSPOSize)-targetPtcl.first(CurSPOSize);
+      app_log() << "TricubicBsplineSetBuilder::createSPOSet missing size of the determinant. ";
+      app_log() << "Overwrite by the particle groups. " << norb << endl;
+      std::ostringstream norb_size;
+      norb_size << norb;
+      xmlNewProp(cur,(const xmlChar*)"size",(const xmlChar*)norb_size.str().c_str());
     }
 
     if(print_log) app_log() << "    HDF5 File = " << curH5Fname << endl;
@@ -184,7 +190,7 @@ namespace qmcplusplus {
 
     //determine activeBasis
     activeBasis=0;
-    map<string,BsplineBasisType*>::iterator git(myBasis.find("0"));
+    map<string,BsplineBasisType*>::iterator git(myBasis.find(detname));
     if(git == myBasis.end())
     {
       if(atGamma) //gamma point
@@ -261,24 +267,26 @@ namespace qmcplusplus {
       //initialize the grid
       initGrid();
 
-      myBasis["0"]=activeBasis;
+      myBasis[detname]=activeBasis;
       activeBasis->setOrbitalSetSize(norb);
       activeBasis->setLattice(targetPtcl.Lattice);
       activeBasis->setTwistAngle(targetPtcl.Lattice.k_cart(TwistAngle));
       if(localize) activeBasis->setRcut(myParam->Rcut);
+
+      //now parse everything else
+      setBsplineBasisSet(cur);
     } 
     else
-    {
+    {//nothing to do, reuse an existing one
       activeBasis=(*git).second;
     }
 
-    //now parse everything else
-    setBsplineBasisSet(cur);
-
     H5Fclose(hfileID);
     hfileID=-1;
-
     app_log() << "  Bspline Input = " << t1.elapsed() << " secs " << endl;
+
+    //incremenet SPOSize
+    CurSPOSize++;
 
     return activeBasis;
   }
