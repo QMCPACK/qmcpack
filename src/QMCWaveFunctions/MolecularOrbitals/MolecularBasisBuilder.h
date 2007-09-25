@@ -94,7 +94,15 @@ namespace qmcplusplus {
     }
 
     SPOSetBase* createSPOSet(xmlNodePtr cur) {
-      return new LCOrbitalSet<ThisBasisSetType,false>(thisBasisSet);
+      cur = cur->xmlChildrenNode;
+      while(cur!=NULL) {
+        string cname((const char*)(cur->name));
+        if(cname.find("coeff") < cname.size()) {
+          return new LCOrbitalSet<ThisBasisSetType,false>(thisBasisSet);
+        }
+        cur=cur->next;
+      }
+      return new LCOrbitalSet<ThisBasisSetType,true>(thisBasisSet);
     }
 
   private:

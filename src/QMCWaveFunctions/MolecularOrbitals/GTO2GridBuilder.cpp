@@ -37,7 +37,7 @@ namespace qmcplusplus {
    * @param nlms Quantum Numbers
    * @return true when successful
    *
-   * cur is the basisGroup node, basisGroup := (radfunc)+.</BR>
+   * cur is the basisGroup node, basisGroup := (radfunc)+
    * For basisGroup with l=0 and multiple radfunc (contracted S), 
    * the exponent of a Slater-type orbital is provided as an alternative.
    */
