@@ -69,18 +69,29 @@ namespace qmcplusplus
   void
   EinsplineOrb<complex<double>,3>::read (hid_t h5file, string groupPath)
   {
+    uMin   = PosType(0.0, 0.0, 0.0);
+    uMax   = PosType(1.0, 1.0, 1.0);
+    Center = PosType(0.5, 0.5, 0.5);
+    
     string centerName = groupPath + "center";
     string vectorName = groupPath + "eigenvector";
     string  valueName = groupPath + "eigenvalue";
     string radiusName = groupPath + "radius";
+    string   uminName = groupPath + "umin";
+    string   umaxName = groupPath + "umax";
     HDFAttribIO<PosType> h_Center(Center);
+    HDFAttribIO<PosType> h_uMin(uMin);
+    HDFAttribIO<PosType> h_uMax(uMax);
     HDFAttribIO<double>  h_Radius(Radius);
     HDFAttribIO<double>  h_Energy(Energy);
     h_Center.read(h5file, centerName.c_str());
+    uCenter = Lattice.toUnit (Center);
     h_Radius.read(h5file, radiusName.c_str());
     h_Energy.read(h5file,  valueName.c_str());
+    h_uMax.read(h5file, umaxName.c_str());
+    h_Radius.read(h5file, radiusName.c_str());
     Localized = Radius > 0.0;
-
+    
     Array<complex<double>,3> rawData, splineData;
     HDFAttribIO<Array<complex<double>,3> > h_rawData(rawData);
     h_rawData.read(h5file, vectorName.c_str());
@@ -91,26 +102,28 @@ namespace qmcplusplus
       for (int iy=0; iy<ny-1; iy++)
 	for (int iz=0; iz<nz-1; iz++)
 	  splineData(ix,iy,iz) = rawData(ix,iy,iz);
-
+    
     Ugrid x_grid, y_grid, z_grid;
     BCtype_z xBC, yBC, zBC;
-
-    xBC.lCode = PERIODIC;    xBC.rCode = PERIODIC;
-    yBC.lCode = PERIODIC;    yBC.rCode = PERIODIC;
-    zBC.lCode = PERIODIC;    zBC.rCode = PERIODIC;
-    x_grid.start = 0.0;  x_grid.end = 1.0;  x_grid.num = nx-1;
-    y_grid.start = 0.0;  y_grid.end = 1.0;  y_grid.num = ny-1;
-    z_grid.start = 0.0;  z_grid.end = 1.0;  z_grid.num = nz-1;
-
-    if (Localized)
-      fprintf (stderr, "  Center = (%8.5f, %8.5f %8.5f)   Radius = %8.5f  Mesh = %dx%dx%d\n", 
-	       Center[0], Center[1], Center[2], Radius, nx, ny, nz);
-//     else
-//       fprintf (stderr, "  Mesh = %dx%dx%d\n", 
-// 	       nx, ny, nz);
-
-    Spline = create_UBspline_3d_z (x_grid, y_grid, z_grid,
-				   xBC, yBC, zBC, &splineData(0,0,0));
+    
+    if (Localized) {
+      xBC.lCode = NATURAL;    xBC.rCode = NATURAL;
+      yBC.lCode = NATURAL;    yBC.rCode = NATURAL;
+      zBC.lCode = NATURAL;    zBC.rCode = NATURAL;
+      x_grid.start = uMin[0];  x_grid.end = uMax[0];  x_grid.num = nx;
+      y_grid.start = uMin[1];  y_grid.end = uMax[1];  y_grid.num = ny;
+      z_grid.start = uMin[2];  z_grid.end = uMax[2];  z_grid.num = nz;
+      Spline = create_UBspline_3d_z (x_grid, y_grid, z_grid, xBC, yBC, zBC, rawData.data());
+    }
+    else {
+      xBC.lCode = PERIODIC;    xBC.rCode = PERIODIC;
+      yBC.lCode = PERIODIC;    yBC.rCode = PERIODIC;
+      zBC.lCode = PERIODIC;    zBC.rCode = PERIODIC;
+      x_grid.start = 0.0;  x_grid.end = 1.0;  x_grid.num = nx-1;
+      y_grid.start = 0.0;  y_grid.end = 1.0;  y_grid.num = ny-1;
+      z_grid.start = 0.0;  z_grid.end = 1.0;  z_grid.num = nz-1;
+      Spline = create_UBspline_3d_z (x_grid, y_grid, z_grid, xBC, yBC, zBC, splineData.data());
+    }
   }
 }
 

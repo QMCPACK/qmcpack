@@ -44,16 +44,16 @@ namespace qmcplusplus {
   EinsplineSetExtended::evaluate (const ParticleSet& P, int iat, 
 				  ValueVector_t& psi)
   {
+    PosType r (P.R[iat]);
     PosType ru(PrimLattice.toUnit(P.R[iat]));
     ru[0] -= std::floor (ru[0]);
     ru[1] -= std::floor (ru[1]);
     ru[2] -= std::floor (ru[2]);
-//     fprintf (stderr, "  1:  ru = (%8.5f, %8.5f, %8.5f)\n",
-// 	     ru[0], ru[1], ru[2]);
     for(int j=0; j<OrbitalSetSize; j++) {
       Orbitals[j]->evaluate(ru, psi[j]); 
+      
       double s,c;
-      double phase = -dot(P.R[iat], Orbitals[j]->kVec);
+      double phase = -dot(r, Orbitals[j]->kVec);
       sincos (phase, &s, &c);
       complex<double> e_mikr (c,s);
       psi[j] *= e_mikr;
@@ -65,25 +65,26 @@ namespace qmcplusplus {
 				  ValueVector_t& psi, GradVector_t& dpsi, 
 				  ValueVector_t& d2psi)
   {
+    PosType r (P.R[iat]);
     PosType ru(PrimLattice.toUnit(P.R[iat]));
     ru[0] -= std::floor (ru[0]);
     ru[1] -= std::floor (ru[1]);
     ru[2] -= std::floor (ru[2]);
-//     fprintf (stderr, "  2:  ru = (%8.5f, %8.5f, %8.5f)\n",
-// 	     ru[0], ru[1], ru[2]);
     ValueType val;
     TinyVector<ValueType,3> gu;
     Tensor<ValueType,3> hess;
     complex<double> eye (0.0, 1.0);
     for(int j=0; j<OrbitalSetSize; j++) {
-      Orbitals[j]->evaluate(ru, val, gu, hess);
       complex<double> u;
       TinyVector<complex<double>,3> gradu;
       complex<double> laplu;
-      u     = val;
-      gradu = dot(PrimLattice.G, gu);
-      laplu = trace(hess, GGt);
 
+      Orbitals[j]->evaluate(ru, val, gu, hess);
+      u  = val;
+      // Compute gradient in cartesian coordinates
+      gradu = dot(PrimLattice.G, gu);
+      laplu = trace(hess, GGt);      
+      
       PosType k = Orbitals[j]->kVec;
       TinyVector<complex<double>,3> ck;
       ck[0]=k[0];  ck[1]=k[1];  ck[2]=k[2];
@@ -103,9 +104,8 @@ namespace qmcplusplus {
 				  ValueMatrix_t& lapls)
   {
     for(int iat=first,i=0; iat<last; iat++,i++) {
-      PosType ru(PrimLattice.toUnit(P.R[iat]));
-//       fprintf (stderr, "  3:  ru = (%8.5f, %8.5f, %8.5f)\n",
-// 	       ru[0], ru[1], ru[2]);
+      PosType r (P.R[iat]);
+      PosType ru(PrimLattice.toUnit(r));
       ru[0] -= std::floor (ru[0]);
       ru[1] -= std::floor (ru[1]);
       ru[2] -= std::floor (ru[2]);
@@ -114,16 +114,12 @@ namespace qmcplusplus {
       Tensor<ValueType,3> hess;
       complex<double> eye (0.0, 1.0);
       for(int j=0; j<OrbitalSetSize; j++) {
-// 	Orbitals[j]->evaluate(ru, val, gu, hess);
-// 	vals(j,i)  = val;
-// 	grads(i,j) = dot(PrimLattice.G, gu);
-// 	lapls(i,j) = trace(hess, GGt);
-
-	Orbitals[j]->evaluate(ru, val, gu, hess);
-	complex<double> u(val);
+	complex<double> u;
 	TinyVector<complex<double>,3> gradu;
 	complex<double> laplu;
-	u     = val;
+
+	Orbitals[j]->evaluate(ru, val, gu, hess);
+	u  = val;
 	gradu = dot(PrimLattice.G, gu);
 	laplu = trace(hess, GGt);
 	
@@ -131,7 +127,7 @@ namespace qmcplusplus {
 	TinyVector<complex<double>,3> ck;
 	ck[0]=k[0];  ck[1]=k[1];  ck[2]=k[2];
 	double s,c;
-	double phase = -dot(P.R[iat], k);
+	double phase = -dot(r, k);
 	sincos (phase, &s, &c);
 	complex<double> e_mikr (c,s);
 	vals(j,i)  = e_mikr * u;

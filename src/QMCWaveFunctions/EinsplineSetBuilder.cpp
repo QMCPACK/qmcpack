@@ -224,23 +224,6 @@ namespace qmcplusplus {
 			transpose(OrbitalSet->PrimLattice.G));
 
     AnalyzeTwists2();
-    fprintf (stderr, "  Found a valid %dx%dx%d twist mesh.\n", 
-	     TwistMesh[0], TwistMesh[1], TwistMesh[2]);
-        
-//     OrbitalSet->Orbitals.resize(UseTwists.size()*NumBands);
-//     for (int ti=0; ti<UseTwists.size(); ti++) {
-//       int tindex = TwistMap[UseTwists[ti]];
-//       for (int bi=0; bi<NumBands; bi++) {
-// 	ostringstream groupPath;
-// 	if ((Version[0]==0 && Version[1]==11) || NumTwists > 0)
-// 	  groupPath << eigenstatesGroup << "/twist_" 
-// 		    << tindex << "/band_" << bi << "/";
-// 	else
-// 	  groupPath << eigenstatesGroup << "/twist/band_" << bi << "/";
-// 	OrbitalSet->Orbitals[bi]->read(H5FileID, groupPath.str());
-//       }
-//     }
-    
     OrbitalSet->setOrbitalSetSize (numOrbs);
 
     if ((spinSet == LastSpinSet) && (numOrbs <= NumOrbitalsRead))
@@ -547,13 +530,6 @@ namespace qmcplusplus {
       twist = TwistAngles[ti];
       Tensor<double,3> G = OrbitalSet->PrimLattice.G;
       k = OrbitalSet->PrimLattice.k_cart(twist);
-//       k = 2.0*M_PI*(twist[0]*OrbitalSet->PrimLattice.Gv[0] +
-// 		    twist[1]*OrbitalSet->PrimLattice.Gv[1] +
-// 		    twist[2]*OrbitalSet->PrimLattice.Gv[2]);
-      
-//       k[0] = twist[0]*G(0,0) + twist[1]*G(0,1) + twist[2]*G(0,2);
-//       k[1] = twist[0]*G(1,0) + twist[1]*G(1,1) + twist[2]*G(1,2);
-//       k[2] = twist[0]*G(2,0) + twist[1]*G(2,1) + twist[2]*G(2,2);
       fprintf (stderr, "  ti=%d  bi=%d energy=%8.5f k=(%6.4f, %6.4f, %6.4f)\n", 
 	       ti, bi, e, k[0], k[1], k[2]);
       
@@ -563,7 +539,7 @@ namespace qmcplusplus {
     }
   }
 
-void
+  void
   EinsplineSetBuilder::OccupyAndReadBands2(int spin)
   {
     string eigenstatesGroup;
@@ -582,7 +558,7 @@ void
 	
 	// Read eigenenergy from file
 	ostringstream ePath, sPath;
-	if ((Version[0]==0 && Version[1]==11) || NumTwists > 0) {
+	if ((Version[0]==0 && Version[1]==11) || NumTwists > 1) {
 	  ePath << eigenstatesGroup << "/twist_" 
 		    << tindex << "/band_" << bi << "/eigenvalue";
 	  sPath << eigenstatesGroup << "/twist_" 
@@ -602,7 +578,8 @@ void
       }
     }
     // Now sort the bands by energy
-    sort (SortBands.begin(), SortBands.end());
+    cerr << "Before sort bands.\n";
+    //sort (SortBands.begin(), SortBands.end());
     // Read in the occupied bands
     OrbitalSet->Orbitals.resize(OrbitalSet->getOrbitalSetSize());
     cerr << "Orbitals size = " << OrbitalSet->Orbitals.size() << endl;
@@ -611,7 +588,7 @@ void
       int bi   = SortBands[i].BandIndex;
       double e = SortBands[i].Energy;
       ostringstream groupPath;
-      if ((Version[0]==0 && Version[1]==11) || NumTwists > 0)
+      if ((Version[0]==0 && Version[1]==11) || NumTwists > 1)
 	groupPath << eigenstatesGroup << "/twist_" 
 		  << ti << "/band_" << bi << "/";
       else
@@ -626,6 +603,7 @@ void
       
       OrbitalSet->Orbitals[i] = new EinsplineOrb<ValueType,OHMMS_DIM>;
       OrbitalSet->Orbitals[i]->kVec = k;
+      OrbitalSet->Orbitals[i]->Lattice = SuperLattice;
       OrbitalSet->Orbitals[i]->read(H5FileID, groupPath.str());
     }
   }
