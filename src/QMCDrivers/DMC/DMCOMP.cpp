@@ -166,7 +166,6 @@ namespace qmcplusplus {
     for(int ip=0; ip<NumThreads; ip++) Movers[ip]->startRun(nBlocks,false);
 
     Timer myclock;
-    RealType runtime=0.0;
     IndexType block = 0;
     do // block
     {
@@ -202,9 +201,7 @@ namespace qmcplusplus {
       block++;
       recordBlock(block);
 
-      runtime +=  myclock.elapsed();
-
-    } while(block<nBlocks && runtime<MaxCPUSecs);
+    } while(block<nBlocks && myclock.elapsed()<MaxCPUSecs);
 
     //for(int ip=0; ip<NumThreads; ip++) Movers[ip]->stopRun();
 

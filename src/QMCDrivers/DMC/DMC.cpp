@@ -53,8 +53,6 @@ namespace qmcplusplus {
 
 
     Timer myclock;
-    RealType runtime=0.0;
-
     IndexType block = 0;
     CurrentStep = 0;
     do // block
@@ -78,8 +76,7 @@ namespace qmcplusplus {
       if(QMCDriverMode[QMC_UPDATE_MODE] && CurrentStep%100 == 0) 
         Mover->updateWalkers(W.begin(), W.end());
 
-      runtime +=  myclock.elapsed();
-    } while(block<nBlocks &&  runtime<MaxCPUSecs);
+    } while(block<nBlocks &&  myclock.elapsed()<MaxCPUSecs);
 
     Mover->stopRun();
 
