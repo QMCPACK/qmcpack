@@ -29,13 +29,11 @@ namespace qmcplusplus  {
    */
   struct Timer
   {
-    double now;
-    inline Timer() { now=omp_get_wtime();}
-    inline void restart() {now=omp_get_wtime();}
-    inline double elapsed() {
-       double old=now;
-       now=omp_get_wtime();
-       return now-old;
+    double start_time;
+    inline Timer() { start_time=omp_get_wtime();}
+    inline void restart() {start_time=omp_get_wtime();}
+    inline double elapsed() const {
+      return omp_get_wtime()-start_time;
     }
   };
 }
