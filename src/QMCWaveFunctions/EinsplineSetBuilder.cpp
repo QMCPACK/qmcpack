@@ -582,10 +582,12 @@ namespace qmcplusplus {
     // Read in the occupied bands
     OrbitalSet->Orbitals.resize(OrbitalSet->getOrbitalSetSize());
     cerr << "Orbitals size = " << OrbitalSet->Orbitals.size() << endl;
-    for (int i=0; i<OrbitalSet->getOrbitalSetSize(); i++) {
-      int ti   = SortBands[i].TwistIndex;
-      int bi   = SortBands[i].BandIndex;
-      double e = SortBands[i].Energy;
+    int iorb  = 0;
+    int iband = 0;
+    while (iorb < OrbitalSet->getOrbitalSetSize()) {
+      int ti   = SortBands[iband].TwistIndex;
+      int bi   = SortBands[iband].BandIndex;
+      double e = SortBands[iband].Energy;
       ostringstream groupPath;
       if ((Version[0]==0 && Version[1]==11) || NumTwists > 1)
 	groupPath << eigenstatesGroup << "/twist_" 
@@ -600,13 +602,30 @@ namespace qmcplusplus {
       fprintf (stderr, "  ti=%d  bi=%d energy=%8.5f k=(%6.4f, %6.4f, %6.4f)\n", 
 	       ti, bi, e, k[0], k[1], k[2]);
       
-      OrbitalSet->Orbitals[i] = new EinsplineOrb<ValueType,OHMMS_DIM>;
-      OrbitalSet->Orbitals[i]->kVec = k;
-      OrbitalSet->Orbitals[i]->Lattice = SuperLattice;
-      OrbitalSet->Orbitals[i]->read(H5FileID, groupPath.str());
+      EinsplineOrb<ValueType,OHMMS_DIM> &orb = *(new EinsplineOrb<ValueType,OHMMS_DIM>);
+      OrbitalSet->Orbitals[iorb] = &orb;
+      orb.kVec = k;
+      orb.Lattice = SuperLattice;
+      orb.read(H5FileID, groupPath.str());
+      iorb++;
+      if (orb.uCenters.size() > 1) 
+	cerr << "Making " << orb.uCenters.size() << " copies of band "
+	     << iband << endl;
+      // If the orbital has more than one center associated with it,
+      // make copies of the orbital, changing only the center
+      // associated with it.
+      for (int icopy=1; icopy<orb.uCenters.size(); icopy++) {
+	EinsplineOrb<ValueType,OHMMS_DIM> &orbCopy = 
+	  *(new EinsplineOrb<ValueType,OHMMS_DIM>(orb));
+	OrbitalSet->Orbitals[iorb] = &orbCopy;
+	orbCopy.uCenter = orbCopy.uCenters[icopy];
+	orbCopy.Center  = orb.Lattice.toCart(orbCopy.uCenter);
+	iorb++;
+      }
+      iband++;      
     }
   }
-
+  
 
   void
   EinsplineSetBuilder::CopyBands(int numOrbs) 
