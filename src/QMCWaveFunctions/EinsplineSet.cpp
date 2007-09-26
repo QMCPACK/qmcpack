@@ -52,11 +52,13 @@ namespace qmcplusplus {
     for(int j=0; j<OrbitalSetSize; j++) {
       Orbitals[j]->evaluate(ru, psi[j]); 
       
-      double s,c;
+#ifdef QMC_COMPLEX
       double phase = -dot(r, Orbitals[j]->kVec);
+      double s,c;
       sincos (phase, &s, &c);
       complex<double> e_mikr (c,s);
-      psi[j] *= e_mikr;
+      psi[j] *= e_mikr;      
+#endif
     }
   }
   
@@ -92,9 +94,16 @@ namespace qmcplusplus {
       double phase = -dot(P.R[iat], k);
       sincos (phase, &s, &c);
       complex<double> e_mikr (c,s);
+#ifdef QMC_COMPLEX
       psi[j]   = e_mikr * u;
       dpsi[j]  = e_mikr*(-eye * ck * u + gradu);
       d2psi[j] = e_mikr*(-dot(k,k)*u - 2.0*eye*dot(ck,gradu) + laplu);
+#else
+      psi[j]   = real(e_mikr * u);
+      dpsi[j]  = real(e_mikr*(-eye * ck * u + gradu));
+      d2psi[j] = real(e_mikr*(-dot(k,k)*u - 2.0*eye*dot(ck,gradu) + laplu));
+#endif
+
     }
   }
   
@@ -130,9 +139,16 @@ namespace qmcplusplus {
 	double phase = -dot(r, k);
 	sincos (phase, &s, &c);
 	complex<double> e_mikr (c,s);
+#ifdef QMC_COMPLEX
 	vals(j,i)  = e_mikr * u;
 	grads(i,j) = e_mikr*(-eye*u*ck + gradu);
 	lapls(i,j) = e_mikr*(-dot(k,k)*u - 2.0*eye*dot(ck,gradu) + laplu);
+#else
+	vals(j,i)  = real(e_mikr * u);
+	grads(i,j) = real(e_mikr*(-eye*u*ck + gradu));
+	lapls(i,j) = real(e_mikr*(-dot(k,k)*u - 2.0*eye*dot(ck,gradu) + laplu));
+#endif
+
       }
     }
   }

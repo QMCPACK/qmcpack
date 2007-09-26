@@ -300,8 +300,8 @@ namespace qmcplusplus {
 	  eval_UBspline_3d_z (Spline, udiff[0], udiff[1], udiff[2], &psi);
 	}
 	else 
-	  psi = 1.0e-10;
-	//psi = complex<double>();
+	  //psi = 1.0e-10;
+	  psi = complex<double>();
       }
       else 
 	eval_UBspline_3d_z (Spline, u[0], u[1], u[2], &psi);
@@ -324,8 +324,8 @@ namespace qmcplusplus {
 				  &psi, &(grad[0]), &(hess(0,0)));
 	}
 	else {
-	  psi = 1.0e-10;
-	  // psi = complex<double>();
+	  //psi = 1.0e-10;
+	  psi = complex<double>();
 	  grad[0] = grad[1] = grad[2] = complex<double>();
 	  hess(0,0) = hess(0,1) = hess(0,2) = complex<double>();
 	  hess(1,0) = hess(1,1) = hess(1,2) = complex<double>();
