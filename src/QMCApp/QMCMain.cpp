@@ -85,23 +85,40 @@ namespace qmcplusplus {
 
     curMethod = string("invalid");
     //xmlNodePtr cur=m_root->children;
-    xmlNodePtr cur=XmlDocStack.top()->getRoot()->children;
-    xmlNodePtr firstqmc=NULL;//save the first qmc section
-    while(cur != NULL) 
+    for(int qa=0; qa<m_qmcaction.size(); qa++)
     {
+      xmlNodePtr cur=m_qmcaction[qa].first;
       string cname((const char*)cur->name);
       if(cname == "qmc" || cname == "optimize")
       {
-        if(firstqmc == NULL) firstqmc=cur;
         executeQMCSection(cur);
       }
       else if(cname == "loop")
       {
-        if(firstqmc == NULL) firstqmc=cur;
         executeLoop(cur);
       }
-      cur=cur->next;
+      //external node, need to free
+      //if(m_qmcaction[qa].second) xmlFreeNode(cur); 
     }
+
+    m_qmcaction.clear();
+
+    //xmlNodePtr cur=XmlDocStack.top()->getRoot()->children;
+    //while(cur != NULL) 
+    //{
+    //  string cname((const char*)cur->name);
+    //  if(cname == "qmc" || cname == "optimize")
+    //  {
+    //    if(firstqmc == NULL) firstqmc=cur;
+    //    executeQMCSection(cur);
+    //  }
+    //  else if(cname == "loop")
+    //  {
+    //    if(firstqmc == NULL) firstqmc=cur;
+    //    executeLoop(cur);
+    //  }
+    //  cur=cur->next;
+    //}
 
     app_log() << "  MPI Nodes            = " << OHMMS::Controller->ncontexts() << endl;
     app_log() << "  MPI Nodes per group  = " << qmcComm->ncontexts() << endl;
@@ -109,43 +126,35 @@ namespace qmcplusplus {
     app_log() << "  Total Execution time = " << t1.elapsed() << " secs" << endl;
 
     //if(OHMMS::Controller->master()) {
-    if(firstqmc != NULL && qmcComm->master()) { //generate multiple files
-      //remove input mcwalkerset
-      for(int i=0; i<m_walkerset.size(); i++)
+    //if(firstqmc != NULL && qmcComm->master()) { //generate multiple files
+    if(qmcComm->master()) { //generate multiple files
+
+      xmlNodePtr mcptr = NULL;
+      if(m_walkerset.size()) mcptr=m_walkerset[0];
+      //remove input mcwalkerset but one
+      for(int i=1; i<m_walkerset.size(); i++)
       {
         xmlUnlinkNode(m_walkerset[i]);
         xmlFreeNode(m_walkerset[i]);
       }
-      m_walkerset.clear();
+      m_walkerset.clear();//empty the container
 
       std::ostringstream np_str;
       np_str<<qmcComm->ncontexts();
-      xmlNodePtr mcptr = xmlNewNode(NULL,(const xmlChar*)"mcwalkerset");
-      xmlNewProp(mcptr,(const xmlChar*)"fileroot",(const xmlChar*)myProject.CurrentMainRoot());
-      xmlNewProp(mcptr,(const xmlChar*)"node",(const xmlChar*)"-1");
-      xmlNewProp(mcptr,(const xmlChar*)"nprocs",(const xmlChar*)np_str.str().c_str());
-      xmlAddPrevSibling(firstqmc,mcptr);
-      //int nproc=OHMMS::Controller->ncontexts();
-      //if(nproc>1) {
-      //  xmlNodePtr t=m_walkerset.back();
-      //  xmlSetProp(t, (const xmlChar*)"node",(const xmlChar*)"0");
-      //  string fname((const char*)xmlGetProp(t,(const xmlChar*)"href"));
-      //  string::size_type ending=fname.find(".p");
-      //  string froot;
-      //  if(ending<fname.size()) 
-      //    froot = string(fname.begin(),fname.begin()+ending);
-      //  else
-      //    froot=fname;
-      //  char pfile[128];
-      //  for(int ip=1; ip<nproc; ip++) {
-      //    sprintf(pfile,"%s.p%03d",froot.c_str(),ip);
-      //    std::ostringstream ip_str;
-      //    ip_str<<ip;
-      //    t = xmlAddNextSibling(t,xmlCopyNode(t,1));
-      //    xmlSetProp(t, (const xmlChar*)"node",(const xmlChar*)ip_str.str().c_str());
-      //    xmlSetProp(t, (const xmlChar*)"href",(const xmlChar*)pfile);
-      //  }
-      //}
+      xmlNodePtr newmcptr = xmlNewNode(NULL,(const xmlChar*)"mcwalkerset");
+      xmlNewProp(newmcptr,(const xmlChar*)"fileroot",(const xmlChar*)myProject.CurrentMainRoot());
+      xmlNewProp(newmcptr,(const xmlChar*)"node",(const xmlChar*)"-1");
+      xmlNewProp(newmcptr,(const xmlChar*)"nprocs",(const xmlChar*)np_str.str().c_str());
+
+      if(mcptr == NULL)
+      {
+        xmlAddNextSibling(lastInputNode,newmcptr);
+      }
+      else
+      {
+        xmlReplaceNode(mcptr,newmcptr);
+      }
+
       saveXml();
     }
 
@@ -258,6 +267,7 @@ namespace qmcplusplus {
     xmlNodePtr cur=XmlDocStack.top()->getRoot()->children;
     while(cur != NULL) {
       string cname((const char*)cur->name);
+      bool inputnode=true;
       if(cname == "parallel")
       {
         putCommunicator(cur);
@@ -265,23 +275,40 @@ namespace qmcplusplus {
       else if(cname == "particleset") 
       {
         ptclPool->put(cur);
-      } else if(cname == "wavefunction") {
+      } 
+      else if(cname == "wavefunction") 
+      {
         psiPool->put(cur);
-      } else if(cname == "hamiltonian") {
+      } 
+      else if(cname == "hamiltonian") 
+      {
         hamPool->put(cur);
-      } else if(cname == "include") {//file is provided
+      } 
+      else if(cname == "include") 
+      {//file is provided
         const xmlChar* a=xmlGetProp(cur,(const xmlChar*)"href");
         if(a) {
           pushDocument((const char*)a);
-          processPWH(XmlDocStack.top()->getRoot());
+          inputnode = processPWH(XmlDocStack.top()->getRoot());
           popDocument();
         }
-      } else if(cname == "qmcsystem") {
+      } 
+      else if(cname == "qmcsystem") 
+      {
         processPWH(cur);
-      } else if(cname == "init") {
+      } 
+      else if(cname == "init") 
+      {
         InitMolecularSystem moinit(ptclPool);
         moinit.put(cur);
       }
+      else
+      { //everything else goes to m_qmcaction
+        m_qmcaction.push_back(pair<xmlNodePtr,bool>(cur,true));
+        inputnode=false;
+      }
+
+      if(inputnode) lastInputNode=cur;
       cur=cur->next;
     }
 
@@ -313,10 +340,12 @@ namespace qmcplusplus {
    * Recursive search  all the xml elements with particleset, wavefunction and hamiltonian
    * tags
    */
-  void QMCMain::processPWH(xmlNodePtr cur) {
+  bool QMCMain::processPWH(xmlNodePtr cur) {
 
-    if(cur == NULL) return;
+    //return true and will be ignored
+    if(cur == NULL) return true;
 
+    bool inputnode=true;
     cur=cur->children;
     while(cur != NULL) {
       string cname((const char*)cur->name);
@@ -328,9 +357,13 @@ namespace qmcplusplus {
         psiPool->put(cur);
       } else if(cname == "hamiltonian") {
         hamPool->put(cur);
+      } else { //add to m_qmcaction
+        inputnode=false;
+        m_qmcaction.push_back(pair<xmlNodePtr,bool>(xmlCopyNode(cur,1),false));
       }
       cur=cur->next;
     }
+    return inputnode;
   }
 
   /** prepare for a QMC run
@@ -357,23 +390,6 @@ namespace qmcplusplus {
 
       //keeps track of the configuration file
       PrevConfigFile = myProject.CurrentRoot();
-
-//      //do not change the input href
-//      //change the content of mcwalkerset/@file attribute
-//#if defined(HAVE_MPI)
-//      for(int i=0; i<m_walkerset.size(); i++) {
-//        char fileroot[128];
-//        sprintf(fileroot,"%s.s%03d.p%03d",myProject.CurrentMainRoot(),myProject.m_series,i);
-//        xmlSetProp(m_walkerset[i],(const xmlChar*)"href", (const xmlChar*)fileroot);
-//      }
-//#else
-//      for(int i=0; i<m_walkerset.size(); i++) {
-//        xmlSetProp(m_walkerset[i],
-//            (const xmlChar*)"href", (const xmlChar*)myProject.CurrentRoot());
-//      }
-//#endif
-
-      //curMethod = what;
       return true;
     } else {
       return false;
@@ -383,18 +399,6 @@ namespace qmcplusplus {
   bool QMCMain::setMCWalkers(xmlXPathContextPtr context_) {
 
     OhmmsXPathObject result("/simulation/mcwalkerset",context_);
-    //if(!result.empty()) {
-    //  if(m_walkerset.empty()) {
-    //    result.put("/simulation/qmc",context_);
-    //    xmlNodePtr newnode_ptr = xmlNewNode(NULL,(const xmlChar*)"mcwalkerset");
-    //    if(result.empty()){
-    //      xmlAddChild(XmlDocStack.top()->getRoot(),newnode_ptr);
-    //    } else {
-    //      xmlAddPrevSibling(result[0],newnode_ptr);
-    //    }
-    //    m_walkerset.push_back(newnode_ptr);
-    //  }
-    //} else {
     for(int iconf=0; iconf<result.size(); iconf++) 
     {
       xmlNodePtr mc_ptr = result[iconf];

@@ -61,7 +61,10 @@ namespace qmcplusplus {
     vector<xmlNodePtr> m_walkerset;
     ///xml mcwalkerset read-in elements 
     vector<xmlNodePtr> m_walkerset_in;
-
+    ///qmc sections
+    vector<pair<xmlNodePtr,bool> > m_qmcaction;
+    ///pointer to the last node of the main inputfile
+    xmlNodePtr lastInputNode;
     ///execute <qmc/> element
     bool runQMC(xmlNodePtr cur);
 
@@ -69,8 +72,10 @@ namespace qmcplusplus {
     bool setMCWalkers(xmlXPathContextPtr cur);
 
     /** add unique ParticleSet, TrialWaveFunction and QMCHamiltonian elements to Pool objects
+     * @param cur xml node
+     * @return false, if contains qmc actions
      */
-    void processPWH(xmlNodePtr cur);
+    bool processPWH(xmlNodePtr cur);
 
     /** execute loop **/
     void executeLoop(xmlNodePtr cur);
