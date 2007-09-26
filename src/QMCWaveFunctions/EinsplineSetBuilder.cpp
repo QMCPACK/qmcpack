@@ -578,8 +578,7 @@ namespace qmcplusplus {
       }
     }
     // Now sort the bands by energy
-    cerr << "Before sort bands.\n";
-    //sort (SortBands.begin(), SortBands.end());
+    sort (SortBands.begin(), SortBands.end());
     // Read in the occupied bands
     OrbitalSet->Orbitals.resize(OrbitalSet->getOrbitalSetSize());
     cerr << "Orbitals size = " << OrbitalSet->Orbitals.size() << endl;
