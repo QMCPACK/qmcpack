@@ -325,8 +325,8 @@ namespace qmcplusplus {
 	}
 	else {
 	  //psi = 1.0e-10;
-	  psi = complex<double>();
-	  grad[0] = grad[1] = grad[2] = complex<double>();
+	  psi       = complex<double>();
+	  grad[0]   = grad[1]   = grad[2]   = complex<double>();
 	  hess(0,0) = hess(0,1) = hess(0,2) = complex<double>();
 	  hess(1,0) = hess(1,1) = hess(1,2) = complex<double>();
 	  hess(2,0) = hess(2,1) = hess(2,2) = complex<double>();
@@ -370,16 +370,11 @@ namespace qmcplusplus {
       for (int i=0; i<centers.size(); i++)
 	uCenters[i] = Lattice.toUnit (centers[i]);
 
-      Array<complex<double>,3> rawData, splineData;
+      Array<complex<double>,3> rawData;
       HDFAttribIO<Array<complex<double>,3> > h_rawData(rawData);
       h_rawData.read(h5file, vectorName.c_str());
       int nx, ny, nz;
       nx = rawData.size(0); ny=rawData.size(1); nz=rawData.size(2);
-      splineData.resize(nx-1,ny-1,nz-1);
-      for (int ix=0; ix<nx-1; ix++)
-        for (int iy=0; iy<ny-1; iy++)
-          for (int iz=0; iz<nz-1; iz++)
-            splineData(ix,iy,iz) = rawData(ix,iy,iz);
 
       Ugrid x_grid, y_grid, z_grid;
       BCtype_z xBC, yBC, zBC;
@@ -395,6 +390,11 @@ namespace qmcplusplus {
 				       xBC, yBC, zBC, rawData.data());
       }
       else {
+	Array<complex<double>,3> splineData(nx-1,ny-1,nz-1);
+	for (int ix=0; ix<nx-1; ix++)
+	  for (int iy=0; iy<ny-1; iy++)
+	    for (int iz=0; iz<nz-1; iz++)
+	      splineData(ix,iy,iz) = rawData(ix,iy,iz);
 	xBC.lCode = PERIODIC;    xBC.rCode = PERIODIC;
 	yBC.lCode = PERIODIC;    yBC.rCode = PERIODIC;
 	zBC.lCode = PERIODIC;    zBC.rCode = PERIODIC;

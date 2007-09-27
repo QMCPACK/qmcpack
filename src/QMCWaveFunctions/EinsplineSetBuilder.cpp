@@ -571,10 +571,13 @@ namespace qmcplusplus {
 	
 	HDFAttribIO<double> h_energy(band.Energy);
 	HDFAttribIO<int> h_spin(band.Spin);
+	band.Energy = -1.01e100;
 	h_energy.read (H5FileID, ePath.str().c_str());
-	h_spin.read   (H5FileID, sPath.str().c_str());
-	if (band.Spin == spin)
-	  SortBands.push_back(band);
+	if (band.Energy > -1.0e100) {
+	  h_spin.read   (H5FileID, sPath.str().c_str());
+	  if (band.Spin == spin)
+	    SortBands.push_back(band);
+	}
       }
     }
     // Now sort the bands by energy
