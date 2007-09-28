@@ -186,7 +186,7 @@ namespace qmcplusplus {
     hsize_t maxdims[2];
     hsize_t curdims[2];
     hsize_t dims[2];
-    hssize_t offset[2];
+    hsize_t offset[2];
     DataType_t&  ref;
 
     HDFAttribIO(DataType_t& a): vsetID(-1),ref(a)
