@@ -22,12 +22,12 @@
 
 namespace qmcplusplus {
 
-  NonLocalTOperator::NonLocalTOperator():Tau(0.001),Alpha(0.9),Gamma(0.0) {
+  NonLocalTOperator::NonLocalTOperator():Tau(0.001),Alpha(0.0),Gamma(0.0) {
   }
 
   bool NonLocalTOperator::put(xmlNodePtr cur) {
     ParameterSet m_param;
-    m_param.add(Tau,"timeStep","double"); m_param.add(Tau,"timestep","double");
+    m_param.add(Tau,"timeStep","double"); m_param.add(Tau,"timestep","double"); m_param.add(Tau,"Tau","double"); 
     m_param.add(Alpha,"alpha","double");
     m_param.add(Gamma,"gamma","double");
     bool success = m_param.put(cur);
