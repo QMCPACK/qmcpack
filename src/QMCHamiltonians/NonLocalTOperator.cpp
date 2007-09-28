@@ -22,7 +22,7 @@
 
 namespace qmcplusplus {
 
-  NonLocalTOperator::NonLocalTOperator():Tau(0.001),Alpha(0.0),Gamma(0.0) {
+  NonLocalTOperator::NonLocalTOperator():Tau(0.01),Alpha(0.0),Gamma(0.0) {
   }
 
   bool NonLocalTOperator::put(xmlNodePtr cur) {
