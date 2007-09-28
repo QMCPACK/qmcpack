@@ -203,7 +203,8 @@ namespace qmcplusplus {
       h_uMax.read(h5file, umaxName.c_str());
       h_Radius.read(h5file, radiusName.c_str());
       h_Energy.read(h5file,  valueName.c_str());
-      Localized = Radius > 0.0;
+      // Localized = Radius > 0.0;
+      Localized = (uMin[0] > 0.0); 
 
       uCenter = Lattice.toUnit (Center);
       uCenters.resize(centers.size());
@@ -363,8 +364,8 @@ namespace qmcplusplus {
       h_uMin.read(h5file, uminName.c_str());
       h_uMax.read(h5file, umaxName.c_str());
       h_Radius.read(h5file, radiusName.c_str());
-      Localized = Radius > 0.0;
-
+      // Localized = Radius > 0.0;
+      Localized = (uMin[0] > 0.0); 
       uCenter = Lattice.toUnit (Center);
       uCenters.resize(centers.size());
       for (int i=0; i<centers.size(); i++)
