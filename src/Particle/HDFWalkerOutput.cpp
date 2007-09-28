@@ -115,7 +115,8 @@ struct WalkerPackedWriter: public HDFAttribIOBase {
 
     //now save to grp as a named object
     const int rank = 3;
-    hsize_t start[rank],count[rank],stride[]={1,1,1};
+    hssize_t start[rank];
+    hsize_t count[rank],stride[]={1,1,1};
     start[0] = W.WalkerOffsets[mynode]; start[1] = 0; start[2] = 0;
     count[0] = tp.rows(); count[1] = tp.cols(); count[2] = OHMMS_DIM;
 
