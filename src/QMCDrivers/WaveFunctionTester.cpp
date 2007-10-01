@@ -139,7 +139,7 @@ void WaveFunctionTester::runBasicTest() {
       lap += std::log(psi_m*psi_p);
       g0[idim] = std::log(psi_p/psi_m);
 #else
-      lap += std::log(std::abs(psi_m*psi_p));
+      lap += std::log(std::abs(psi_m)) + std::log(abs(psi_p));
       g0[idim] = std::log(std::abs(psi_p/psi_m));
 #endif
       W.R[iat] = r0;
