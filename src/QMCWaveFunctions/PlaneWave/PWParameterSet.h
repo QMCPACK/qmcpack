@@ -75,6 +75,12 @@ namespace qmcplusplus {
 
     double getEcut(double ecut);
 
+    /** get the dimensions of the eigenvectors
+     * @param h fileid
+     * @return true, if the data is complex
+     */
+    bool getEigVectorType(hid_t h);
+
     bool hasComplexData(hid_t h);
 
     string getTwistAngleName();
@@ -95,6 +101,7 @@ namespace qmcplusplus {
     string getOriginName(const string& hg,int ib);
 
     void writeParameters(hid_t gid);
+
   };
 }
 #endif

@@ -63,6 +63,22 @@ namespace qmcplusplus {
     return Ecut;
   }
 
+  bool PWParameterSet::getEigVectorType(hid_t h)
+  {
+    ostringstream oss;
+    oss << "/"<<eigTag << "/"<<twistTag<<twistIndex << "/"<< bandTag << 0;
+    //if(version[1]==10)
+    if(hasSpin) oss << "/" << spinTag << 0;
+    oss << "/eigenvector";
+
+    hsize_t dimTot[4];
+    hid_t dataset = H5Dopen(h,oss.str().c_str());
+    hid_t dataspace = H5Dget_space(dataset);
+    int rank = H5Sget_simple_extent_ndims(dataspace);
+    int status_n = H5Sget_simple_extent_dims(dataspace, dimTot, NULL);
+    return rank==4;
+  }
+
   bool PWParameterSet::hasComplexData(hid_t h_file) 
   {
     ostringstream oss;
