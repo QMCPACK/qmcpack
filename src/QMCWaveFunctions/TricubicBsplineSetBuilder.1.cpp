@@ -75,7 +75,9 @@ namespace qmcplusplus {
     //always translate grid 
     if(degeneracy>1) TranslateGrid=true;
 
-    bool complex2real = myParam->hasComplexData(hfileID);
+    //bool complex2real = myParam->hasComplexData(hfileID);
+    bool complex2real = myParam->getEigVectorType(hfileID);
+
 #if defined(QMC_COMPLEX)
     if(!complex2real) 
     {
