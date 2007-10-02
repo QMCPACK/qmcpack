@@ -142,7 +142,7 @@ namespace qmcplusplus {
       for(int ig=1; ig<ng-1; ig++) {
         RealType r=(*myGrid)[ig];
         //need to multiply r for the LR
-        v[ig]=r*AB->evaluateLR(r)+ppot->splint(r);;
+        v[ig]=r*AB->evaluateLR(r)+ppot->splint(r);
       }
       v[ng-1]=0.0;
 
@@ -194,10 +194,10 @@ namespace qmcplusplus {
     CoulombPBCABTemp::evalConsts() {
       LRHandlerType::BreakupBasisType &Basis(AB->Basis);
       const Vector<RealType> &coefs(AB->coefs);
-      RealType V0 = Basis.get_rc()*Basis.get_rc()*0.5;
+      RealType v0_ = Basis.get_rc()*Basis.get_rc()*0.5;
       for(int n=0; n<coefs.size(); n++)
-        V0 -= coefs[n]*Basis.hintr2(n);
-      V0 *= 2.0*TWOPI/Basis.get_CellVolume(); //For charge q1=q2=1
+        v0_ -= coefs[n]*Basis.hintr2(n);
+      v0_ *= 2.0*TWOPI/Basis.get_CellVolume(); //For charge q1=q2=1
 
       //Can simplify this if we know a way to get number of particles with each
       //groupID.
@@ -205,7 +205,7 @@ namespace qmcplusplus {
       for(int i=0; i<NumSpeciesA; i++) {
         RealType q=Zspec[i]*NofSpeciesA[i];
         for(int j=0; j<NumSpeciesB; j++) {
-          Consts += -V0*Qspec[j]*NofSpeciesB[j]*q;
+          Consts += -v0_*Qspec[j]*NofSpeciesB[j]*q;
         }
       }
 
