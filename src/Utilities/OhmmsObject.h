@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////
-// (c) Copyright 1998-2002 by Jeongnim Kim
+// (c) Copyright 1998- by Jeongnim Kim
 //////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////
 //   National Center for Supercomputing Applications &
@@ -7,7 +7,6 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
@@ -19,7 +18,7 @@
 #ifndef OHMMS_OHMMSOBJECT_H
 #define OHMMS_OHMMSOBJECT_H
 #ifdef HAVE_CONFIG_H
-#include "ohmms-config.h"
+#include "config.h"
 #endif
 #include "OhmmsData/OhmmsElementBase.h"
 #include <string>

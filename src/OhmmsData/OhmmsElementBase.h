@@ -26,7 +26,7 @@
 #include <map>
 
 #ifdef HAVE_CONFIG_H
-#include "ohmms-config.h"
+#include "config.h"
 #endif
 
 #ifdef HAVE_LIBXML2

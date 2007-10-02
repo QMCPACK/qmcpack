@@ -7,7 +7,6 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
@@ -20,7 +19,7 @@
 #ifndef OHMMS_COMMUNICATE_H
 #define OHMMS_COMMUNICATE_H
 #ifdef HAVE_CONFIG_H
-#include "ohmms-config.h"
+#include "config.h"
 #endif
 
 #ifdef HAVE_OOMPI

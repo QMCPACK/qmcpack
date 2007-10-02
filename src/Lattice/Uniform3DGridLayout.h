@@ -20,7 +20,7 @@
 #define OHMMS_UNIFORMGRIDLAYOUT_3D_NONTEMP_H
 
 #ifdef HAVE_CONFIG_H
-#include "ohmms-config.h"
+#include "config.h"
 #endif
 #include <vector>
 #include <iostream>

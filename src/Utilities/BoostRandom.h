@@ -17,7 +17,7 @@
 #define OHMMS_BOOSTRANDOM_H
 
 #ifdef HAVE_CONFIG_H
-#include "ohmms-config.h"
+#include "config.h"
 #endif
 
 #include <ctime>        

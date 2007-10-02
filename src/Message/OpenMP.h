@@ -20,7 +20,7 @@
 #define OHMMS_OPENMP_H
 
 #ifdef HAVE_CONFIG_H
-#include "ohmms-config.h"
+#include "config.h"
 #endif
 
 #if defined(ENABLE_OPENMP)

@@ -1,7 +1,7 @@
 #CONFIGURE_FILE(${qmcpack_SOURCE_DIR}/src/Configuration.h.in
 #               ${qmcpack_BINARY_DIR}/src/Configuration.h)
-CONFIGURE_FILE(${qmcpack_SOURCE_DIR}/src/ohmms-config.h.cmake.in
-               ${qmcpack_BINARY_DIR}/src/ohmms-config.h)
+CONFIGURE_FILE(${qmcpack_SOURCE_DIR}/src/config.h.cmake.in
+               ${qmcpack_BINARY_DIR}/src/config.h)
 
 ####################################
 # create libqmcutil

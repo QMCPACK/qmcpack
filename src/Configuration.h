@@ -17,7 +17,7 @@
 #ifndef QMCPLUSPLUS_TRAITS_H
 #define QMCPLUSPLUS_TRAITS_H
 
-#include "ohmms-config.h"
+#include "config.h"
 #include <string>
 #include <vector>
 #include <map>
