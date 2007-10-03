@@ -601,6 +601,8 @@ namespace qmcplusplus {
       xmlDocSetRootElement(m_doc_out, qm_root);
 
       xmlXPathContextPtr acontext = xmlXPathNewContext(m_doc_out);
+
+      //check parameter
       xmlXPathObjectPtr result = xmlXPathEvalExpression((const xmlChar*)"//parameter",acontext);
       for(int iparam=0; iparam<result->nodesetval->nodeNr; iparam++) {
         xmlNodePtr cur= result->nodesetval->nodeTab[iparam];
@@ -615,6 +617,7 @@ namespace qmcplusplus {
       }
       xmlXPathFreeObject(result);
 
+      //check radfunc
       result = xmlXPathEvalExpression((const xmlChar*)"//radfunc",acontext);
       for(int iparam=0; iparam<result->nodesetval->nodeNr; iparam++) {
         xmlNodePtr cur= result->nodesetval->nodeTab[iparam];
@@ -639,58 +642,12 @@ namespace qmcplusplus {
       }
       xmlXPathFreeObject(result);
 
-      result = xmlXPathEvalExpression((const xmlChar*)"//coefficient",acontext);
-      for(int iparam=0; iparam<result->nodesetval->nodeNr; iparam++) {
-        xmlNodePtr cur= result->nodesetval->nodeTab[iparam];
-        OhmmsAttributeSet cAttrib;
-        string aname("0");
-        cAttrib.add(aname,"id");
-        cAttrib.add(aname,"name");
-        cAttrib.put(cur);
-        if(aname[0] == '0') continue;
-
-        //check if any optimizables contains the id of coefficients
-        bool notlisted=true;
-        OptimizableSetType::iterator oit(OptVariablesForPsi.begin()),oit_end(OptVariablesForPsi.end());
-        while(notlisted && oit != oit_end)
-        {
-          const string& oname((*oit).first);
-          notlisted=(oname.find(aname)>=oname.size());
-          ++oit;
-        }
-        if(!notlisted)
-        {
-          coeffNodes[aname]=cur;
-        }
-      }
-      xmlXPathFreeObject(result);
+      addCoefficients(acontext, "//coefficient");
+      addCoefficients(acontext, "//coefficients");
 
       xmlXPathFreeContext(acontext);
     }
 
-    //OptimizableSetType::iterator oit(OptVariablesForPsi.begin()),oit_end(OptVariablesForPsi.end());
-    //while(oit != oit_end)
-    //{
-    //  string aname((*oit).first);
-    //  Return_t v((*oit).second);
-    //  //check parameter
-    //  map<string,xmlNodePtr>::iterator pit(paramNodes.find(aname));
-    //  if(pit != paramNodes.end())
-    //  {
-    //    getContent(v,(*pit).second);
-    //  } else {
-    //    map<string,pair<xmlNodePtr,string> >::iterator ait(attribNodes.find(aname));
-    //    if(ait != attribNodes.end())
-    //    {
-    //      std::ostringstream vout;
-    //      vout.setf(ios::scientific, ios::floatfield);
-    //      vout.precision(8);
-    //      vout << v;
-    //      xmlSetProp((*ait).second.first, (const xmlChar*)(*ait).second.second.c_str(),(const xmlChar*)vout.str().c_str());
-    //    }
-    //  }
-    //  ++oit;
-    //}
     map<string,xmlNodePtr>::iterator pit(paramNodes.begin()), pit_end(paramNodes.end());
     while(pit != pit_end)
     {
@@ -745,6 +702,40 @@ namespace qmcplusplus {
       ++cit;
     }
   }
+
+  /** add coefficient or coefficients
+   * @param acontext context from which xpath cname is searched
+   * @param cname xpath
+   */
+  void QMCCostFunctionBase::addCoefficients(xmlXPathContextPtr acontext, const char* cname)
+  {
+    xmlXPathObjectPtr result = xmlXPathEvalExpression((const xmlChar*)cname,acontext);
+    for(int iparam=0; iparam<result->nodesetval->nodeNr; iparam++) {
+      xmlNodePtr cur= result->nodesetval->nodeTab[iparam];
+      OhmmsAttributeSet cAttrib;
+      string aname("0");
+      cAttrib.add(aname,"id");
+      cAttrib.add(aname,"name");
+      cAttrib.put(cur);
+      if(aname[0] == '0') continue;
+
+      //check if any optimizables contains the id of coefficients
+      bool notlisted=true;
+      OptimizableSetType::iterator oit(OptVariablesForPsi.begin()),oit_end(OptVariablesForPsi.end());
+      while(notlisted && oit != oit_end)
+      {
+        const string& oname((*oit).first);
+        notlisted=(oname.find(aname)>=oname.size());
+        ++oit;
+      }
+      if(!notlisted)
+      {
+        coeffNodes[aname]=cur;
+      }
+    }
+    xmlXPathFreeObject(result);
+  }
+
 }
 /***************************************************************************
  * $RCSfile$   $Author: jnkim $
