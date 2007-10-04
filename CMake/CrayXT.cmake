@@ -1,0 +1,59 @@
+# Cmake for cray XT
+SET(ENABLE_CATAMOUNT 1)
+
+IF($ENV{PE_ENV} MATCHES "PGI")
+  # pgi environments: no reason to use it !!
+  ADD_DEFINITIONS(-DADD_ -DINLINE_ALL=inline)
+  SET(CMAKE_CXX_FLAGS "--restrict -fastsse -Minline=levels:10 --no_exceptions -DBOOST_NO_EXCEPTIONS")
+
+  # link ACML library
+  FIND_LIBRARY(BLAS_LIBRARY acml $ENV{ACML_BASE_DIR}/pgi64/lib)
+  SET(LAPACK_LIBRARY "")
+
+ELSE($ENV{PE_ENV} MATCHES "PGI")
+  ADD_DEFINITIONS(-Drestrict=__restrict__ -DADD_ -DINLINE_ALL=inline)
+  SET(CMAKE_CXX_FLAGS "-O6 -ftemplate-depth-60 -Drestrict=__restrict__ -fstrict-aliasing -funroll-all-loops   -finline-limit=1000 -ffast-math -Wno-deprecated ")
+
+  FIND_LIBRARY(BLAS_LIBRARY acml $ENV{ACML_BASE_DIR}/gnu64/lib)
+  SET(LAPACK_LIBRARY "/opt/pgi/6.2.5/linux86-64/6.2/lib/libpgc.a")
+  SET(FORTRAN_LIBS "-lg2c")
+ENDIF($ENV{PE_ENV} MATCHES "PGI")
+
+IF($ENV{CXX} MATCHES "CC")
+  # always link statically
+  SET(CMAKE_CXX_LINK_FLAGS " -static")
+  SET(HAVE_MPI 1)
+  SET(HAVE_OOMPI 1)
+  ADD_DEFINITIONS(-DMPICH_SKIP_MPICXX)
+ELSE($ENV{CXX} MATCHES "CC")
+  SET(ENABLE_CATAMOUNT 0)
+ENDIF($ENV{CXX} MATCHES "CC")
+
+# targeting CATAMOUNT
+IF(ENABLE_CATAMOUNT)
+  ADD_DEFINITIONS(-DXT_CATAMOUNT)
+ENDIF(ENABLE_CATAMOUNT)
+
+MARK_AS_ADVANCED(
+  LAPACK_LIBRARY 
+  BLAS_LIBRARY 
+)
+
+##CRAY XT3 CATAMOUNT 
+#IF($ENV{CATAMOUNT_DIR} MATCHES "catamount")
+#      INCLUDE(${PROJECT_CMAKE}/CrayXTPgi.cmake)
+#    ENDIF($ENV{PE_ENV} MATCHES "PGI")
+#    IF($ENV{PE_ENV} MATCHES "GNU")
+#       INCLUDE(${PROJECT_CMAKE}/GNUCompilers.cmake)
+#       IF($ENV{CXX} MATCHES "CC")
+#    ENDIF($ENV{PE_ENV} MATCHES "GNU")
+#    SET(HAVE_MPI 1)
+#    SET(HAVE_OOMPI 1)
+#    SET(FOUND_CXXENV 1)
+#  ENDIF($ENV{CXX} MATCHES "CC")
+#  LINK_LIBRARIES  (/opt/acml/3.6/gnu64/lib/libacml.a;/usr/lib64/libg2c.a)
+#ENDIF($ENV{CATAMOUNT_DIR} MATCHES "catamount")
+
+#SET(CMAKE_CXX_FLAGS " --restrict -fast --target=catamount ")
+#SET(CMAKE_CXX_FLAGS " --restrict -fast --target=catamount ")
+#SET(CMAKE_CXX_FLAGS " --restrict -fastsse -Mipa -Minline=levels:10 --no_exceptions -DBOOST_NO_EXCEPTIONS")
