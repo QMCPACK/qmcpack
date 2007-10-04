@@ -121,6 +121,7 @@ void WaveFunctionTester::runBasicTest() {
 #else
   ValueType logpsi(std::log(std::abs(psi)));
 #endif
+  cerr << "logpsi = " << logpsi << endl;
 
   for(int iat=0; iat<nat; iat++) {
     PosType r0 = W.R[iat];
@@ -136,17 +137,18 @@ void WaveFunctionTester::runBasicTest() {
       W.update();
       ValueType psi_m = Psi.evaluate(W);
 #if defined(QMC_COMPLEX)
-      lap += std::log(psi_m*psi_p);
-      g0[idim] = std::log(psi_p/psi_m);
+      lap += std::log(psi_m) + std::log(psi_p);
+      g0[idim] = std::log(psi_p)-std::log(psi_m);
 #else
       lap += std::log(std::abs(psi_m)) + std::log(abs(psi_p));
       g0[idim] = std::log(std::abs(psi_p/psi_m));
 #endif
       W.R[iat] = r0;
     }
-
     G1[iat] = c1*g0;
     L1[iat] = c2*(lap-6.0*logpsi);
+    cerr << "G1 = " << G1[iat] << endl;
+    cerr << "L1 = " << L1[iat] << endl;
   }
   
   cout.precision(15);

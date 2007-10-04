@@ -19,24 +19,39 @@
 #include "QMCWaveFunctions/BasisSetBase.h"
 #include "QMCWaveFunctions/EinsplineSet.h"
 #include "Numerics/HDFNumericAttrib.h"
+#include <map>
+
 
 namespace qmcplusplus {
-    // Helper needed for TwistMap
-    struct Int3less
-    {
-      bool operator()(const TinyVector<int,3>& a, const TinyVector<int,3> &b) const
-      {
-	if (a[0] > b[0]) return false;
-	if (a[0] < b[0]) return true;
-	if (a[1] > b[1]) return false;
-	if (a[1] < b[1]) return true;
-	if (a[2] > b[2]) return false;
-	if (a[2] < b[2]) return true;	
-	return false;
-      }
-    };
 
+  // Helper needed for TwistMap
+  struct Int3less
+  {
+    bool operator()(const TinyVector<int,3>& a, const TinyVector<int,3> &b) const
+    {
+      if (a[0] > b[0]) return false;
+      if (a[0] < b[0]) return true;
+      if (a[1] > b[1]) return false;
+      if (a[1] < b[1]) return true;
+      if (a[2] > b[2]) return false;
+      if (a[2] < b[2]) return true;	
+      return false;
+    }
+  };
+  struct Int4less
+  { 
+    bool operator()(const TinyVector<int,4>& a, const TinyVector<int,4>&b) 
+      const
+    {
+      for (int i=0; i<4; i++) {
+	if (a[i] > b[i]) return false;
+	if (a[i] < b[i]) return true;
+      }
+      return false;
+    }
+  };
   
+
   class EinsplineSetBuilder : public BasisSetBuilder {
   public:
     //////////////////////
@@ -58,6 +73,9 @@ namespace qmcplusplus {
   protected:
     // The actual orbital set we're building
     EinsplineSetBase *OrbitalSet, *LastOrbitalSet;
+    typedef EinsplineOrb<ValueType,OHMMS_DIM> OrbType;
+    // The map key is (spin, twist, band, center)
+    static std::map<TinyVector<int,4>,OrbType*,Int4less> OrbitalMap;
 
     xmlNodePtr XMLRoot;
     hid_t H5FileID;
@@ -87,7 +105,7 @@ namespace qmcplusplus {
     void AnalyzeTwists();
     void AnalyzeTwists2();
     void OccupyAndReadBands(int spin);
-    void OccupyAndReadBands2(int spin);
+    void OccupyAndReadBands2(int spin, bool sortBands);
     void CopyBands(int numOrbs);
 
     /////////////////////////////////////////////////////////////

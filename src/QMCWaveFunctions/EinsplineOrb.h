@@ -228,6 +228,7 @@ namespace qmcplusplus {
 
       Ugrid x_grid, y_grid, z_grid;
       BCtype_d xBC, yBC, zBC;
+      double dx, dy, dz;
 
       if (Localized) {
 	xBC.lCode = NATURAL;    xBC.rCode = NATURAL;
@@ -236,14 +237,22 @@ namespace qmcplusplus {
 	x_grid.start = uMin[0];  x_grid.end = uMax[0];  x_grid.num = nx;
 	y_grid.start = uMin[1];  y_grid.end = uMax[1];  y_grid.num = ny;
 	z_grid.start = uMin[2];  z_grid.end = uMax[2];  z_grid.num = nz;
+	dx = (uMax[0] - uMin[0]) / (double)(nx-1);
+	dy = (uMax[1] - uMin[1]) / (double)(ny-1);
+	dz = (uMax[2] - uMin[2]) / (double)(nz-1);
       }
       else {
+	uMin[0] = uMin[1] = uMin[2] = 0.0;
+	uMax[0] = uMax[1] = uMax[2] = 1.0;
 	xBC.lCode = PERIODIC;    xBC.rCode = PERIODIC;
 	yBC.lCode = PERIODIC;    yBC.rCode = PERIODIC;
 	zBC.lCode = PERIODIC;    zBC.rCode = PERIODIC;
 	x_grid.start = 0.0;  x_grid.end = 1.0;  x_grid.num = nx;
 	y_grid.start = 0.0;  y_grid.end = 1.0;  y_grid.num = ny;
 	z_grid.start = 0.0;  z_grid.end = 1.0;  z_grid.num = nz;
+	dx = 1.0 / (double)nx;
+	dy = 1.0 / (double)ny;
+	dz = 1.0 / (double)nz;
       }
 
       if (Localized)
@@ -252,6 +261,20 @@ namespace qmcplusplus {
       
       Spline = create_UBspline_3d_d (x_grid, y_grid, z_grid, 
 				     xBC, yBC, zBC, realData.data());
+      // Now test spline to make sure it interpolates the data
+      for (int ix=0; ix<nx-1; ix++)
+	for (int iy=0; iy<ny-1; iy++)
+	  for (int iz=0; iz<nz-1; iz++) {
+	    double ux = uMin[0] + dx*(double)ix;
+	    double uy = uMin[1] + dy*(double)iy;
+	    double uz = uMin[2] + dz*(double)iz;
+	    double val;
+	    eval_UBspline_3d_d (Spline, ux, uy, uz, &val);
+	    if (std::fabs((val - realData(ix,iy,iz))) > 1.0e-12) {
+	      cerr << "Error in spline interpolation at ix=" << ix 
+		   << " iy=" << iy << " iz=" << iz << endl;
+	    }
+	  }
     }
 
     EinsplineOrb() : Center(PosType()), Radius(0.0), Energy(0.0), Localized(false)
