@@ -96,6 +96,8 @@ namespace qmcplusplus {
       myComm=c;
     }
 
+    void addCoefficients(xmlXPathContextPtr acontext, const char* cname);
+
     virtual void getConfigurations(const string& aroot)=0;
     virtual void checkConfigurations()=0;
 
