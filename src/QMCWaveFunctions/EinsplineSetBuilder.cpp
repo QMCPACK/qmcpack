@@ -620,7 +620,6 @@ namespace qmcplusplus {
       else { // The orbital has not yet been read, so read it now
 	orb = new EinsplineOrb<ValueType,OHMMS_DIM>;
 	OrbitalMap[TinyVector<int,4>(spin, ti, bi, 0)] = orb;
-	OrbitalSet->Orbitals[iorb] = orb;
 	orb->kVec = k;
 	orb->Lattice = SuperLattice;
 	ostringstream groupPath;
@@ -633,6 +632,7 @@ namespace qmcplusplus {
 	
 	orb->read(H5FileID, groupPath.str());
       }
+      OrbitalSet->Orbitals[iorb] = orb;
       iorb++;
       if (orb->uCenters.size() > 1) 
 	cerr << "Making " << orb->uCenters.size() << " copies of band "
@@ -641,12 +641,17 @@ namespace qmcplusplus {
       // make copies of the orbital, changing only the center
       // associated with it.
       for (int icopy=1; icopy<orb->uCenters.size(); icopy++) {
-	EinsplineOrb<ValueType,OHMMS_DIM> &orbCopy = 
-	  *(new EinsplineOrb<ValueType,OHMMS_DIM>(*orb));
-	OrbitalSet->Orbitals[iorb] = &orbCopy;
-	OrbitalMap[TinyVector<int,4>(spin, ti, bi, icopy)] = &orbCopy;
-	orbCopy.uCenter = orbCopy.uCenters[icopy];
-	orbCopy.Center  = orb->Lattice.toCart(orbCopy.uCenter);
+	iter = OrbitalMap.find(TinyVector<int,4>(spin,ti,bi,icopy));
+	EinsplineOrb<ValueType,OHMMS_DIM> *orbCopy;
+	if (iter != OrbitalMap.end()) 
+	  orbCopy = iter->second;
+	else {
+	  orbCopy = new EinsplineOrb<ValueType,OHMMS_DIM>(*orb);
+	  OrbitalMap[TinyVector<int,4>(spin, ti, bi, icopy)] = orbCopy;
+	  orbCopy->uCenter = orbCopy->uCenters[icopy];
+	  orbCopy->Center  = orb->Lattice.toCart(orbCopy->uCenter);
+	}
+	OrbitalSet->Orbitals[iorb] = orbCopy;
 	iorb++;
       }
       iband++;      
