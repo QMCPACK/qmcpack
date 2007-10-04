@@ -24,6 +24,8 @@
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "Numerics/HDFSTLAttrib.h"
 
+class Communicate;
+
 namespace qmcplusplus {
 
   /** Writes a set of walker configurations to an HDF5 file. */
@@ -38,6 +40,8 @@ namespace qmcplusplus {
     int NumConfig;
     ///the number of particles
     int NumPtcl;
+    ///communicator
+    Communicate* myComm;
 
     ///maxmimum number of walkers for any config
     hsize_t MaxNumWalkers;
@@ -61,10 +65,15 @@ namespace qmcplusplus {
 
     /** initialize sizes */
     void init();
+
+
   public:
 
     HDFWalkerMerger(const std::string& froot, int ncopy);
     ~HDFWalkerMerger();
+
+    /** set communicator */
+    void setCommunicator(Communicate* c);
 
     void merge();
   };
