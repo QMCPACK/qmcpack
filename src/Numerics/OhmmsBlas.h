@@ -215,22 +215,27 @@ struct BLAS {
   }
 
   inline static
-  float dot(int n, const float* a, const float* b) {
+  float dot(int n, const float* restrict a, const float* restrict b) {
     return sdot(n,a,INCX,b,INCY);
   }
 
   inline static
-  void copy(int n, const double* a, double* b) {
+  void copy(int n, const double* restrict a, double* restrict b) {
     dcopy(n,a,INCX,b,INCY);
   }
 
   inline static
-  void copy(int n, const complex<double>* a, double* b) {
+  void copy(int n, const complex<double>* restrict a, double* restrict b) {
     for(int i=0; i<n; i++) b[i]=a[i].real();
   }
 
   inline static
-  void copy(int n, const double* a, int ia, double* b, int ib) {
+  void copy(int n, const double* restrict a, complex<double>* restrict b) {
+    std::copy(a,a+n,b);
+  }
+
+  inline static
+  void copy(int n, const double* restrict a, int ia, double* restrict b, int ib) {
     dcopy(n,a,ia,b,ib);
   }
 
@@ -242,12 +247,12 @@ struct BLAS {
 */
 
   inline static
-  void copy(int n, const complex<double>* a, complex<double>* b) {
+  void copy(int n, const complex<double>* restrict a, complex<double>* restrict b) {
     zcopy(n,a,INCX,b,INCY);
   }
 
   inline static
-  void copy(int n, const complex<double>* a, int ia, complex<double>* b, int ib) {
+  void copy(int n, const complex<double>* restrict a, int ia, complex<double>* restrict b, int ib) {
     zcopy(n,a,ia,b,ib);
   }
 };
