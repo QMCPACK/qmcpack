@@ -123,20 +123,12 @@ namespace qmcplusplus {
     void getCenterAndOrigin(const char* hroot, const vector<int>& occSet, int norb);
 
     ///read numerical orbitals and spline them
-    void readData(const char* hroot, const vector<int>& occSet, 
-        int spinIndex, int degeneracy);
-    void readDataOMP(const char* hroot, const vector<int>& occSet, 
-        int spinIndex, int degeneracy);
+    template<typename Tin, typename Tout>
+    void readData(const char* hroot, const vector<int>& occSet, int spinIndex, int degeneracy);
 
-    /** read numerical orbitals and spline them
-     * 
-     * With QMC_COPMLEX=0, convert the complex data in hdf5 to real.
-     */
-    void readComplex2RealData(const char* hroot, const vector<int>& occSet,
-        int spinIndex, int degeneracy);
-
-    void readComplex2RealDataOMP(const char* hroot, const vector<int>& occSet,
-        int spinIndex, int degeneracy);
+    ///read numerical orbitals and spline them in parallel
+    template<typename Tin, typename Tout>
+    void readDataOMP(const char* hroot, const vector<int>& occSet, int spinIndex, int degeneracy);
 
     void readComplex2RealDataWithTruncation(const char* hroot, const vector<int>& occSet,
         int spinIndex, int degeneracy);
