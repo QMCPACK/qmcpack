@@ -1,5 +1,6 @@
 # Cmake for cray XT
 SET(ENABLE_CATAMOUNT 1)
+SET(QMC_BITS 64)
 
 IF($ENV{PE_ENV} MATCHES "PGI")
   # pgi environments: no reason to use it !!
