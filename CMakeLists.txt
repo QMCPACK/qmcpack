@@ -47,7 +47,7 @@ CHECK_FUNCTION_EXISTS(sincos HAVE_SINCOS)
 # MPIP_PROFILE     profile mpi performance
 ######################################################################
 SET(QMC_BUILD_STATIC 0)
-SET(BUILD_QMCTOOLS 1)
+SET(BUILD_QMCTOOLS 0)
 SET(BUILD_SANDBOX 0)
 SET(MPIP_PROFILE 0)
 
@@ -116,6 +116,14 @@ SET (PROJECT_CMAKE ${qmcpack_SOURCE_DIR}/CMake)
 #upto COMPILER MANUAL SELECTION and use one of the customized cmake file.
 ######################################################
 SET(FOUND_CXXENV 0)
+INCLUDE(${CMAKE_ROOT}/Modules/TestCXXAcceptsFlag.cmake)
+
+### On Jaguar use CrayXT.cmake
+IF($ENV{HOST} MATCHES "jaguar")
+  INCLUDE(${PROJECT_CMAKE}/CrayXT.cmake)
+  SET(FOUND_CXXENV 1)
+ENDIF($ENV{HOST} MATCHES "jaguar")
+
 IF($ENV{CXX} MATCHES "icpc")
   INCLUDE(${PROJECT_CMAKE}/Intel8.cmake)
   SET(FOUND_CXXENV 1)
