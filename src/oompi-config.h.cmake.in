@@ -8,7 +8,7 @@
 #ifndef OHMMS_OOMPI_CONFIGURATION_H
 #define OHMMS_OOMPI_CONFIGURATION_H
 
-#include "ohmms-config.h"
+#include "config.h"
 
 #if SIZEOF_INT != SIZEOF_BOOL
 #define OOMPI_BOOL_NE_INT 1
