@@ -279,8 +279,17 @@ namespace qmcplusplus {
 
       NumNonLocal=Lmax;
       Lmax--;
-      pp_nonloc->lmax=Lmax;
-      pp_nonloc->Rmax=rmax;
+      if(NumNonLocal)
+      {
+        pp_nonloc->lmax=Lmax;
+        pp_nonloc->Rmax=rmax;
+      }
+      else 
+      {
+        //only one component, remove non-local potentials
+        delete pp_nonloc;
+        pp_nonloc=0;
+      }
 
       {
         app_log() << "   Making L=" << iLmax << " a local potential." << endl;
