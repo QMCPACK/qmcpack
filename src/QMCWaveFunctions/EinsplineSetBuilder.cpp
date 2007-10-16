@@ -649,6 +649,8 @@ namespace qmcplusplus {
 	  orbCopy = new EinsplineOrb<ValueType,OHMMS_DIM>(*orb);
 	  OrbitalMap[TinyVector<int,4>(spin, ti, bi, icopy)] = orbCopy;
 	  orbCopy->uCenter = orbCopy->uCenters[icopy];
+	  if (orb->Reflections.size() > icopy)
+	    orbCopy->Reflection = orbCopy->Reflections[icopy];
 	  orbCopy->Center  = orb->Lattice.toCart(orbCopy->uCenter);
 	}
 	OrbitalSet->Orbitals[iorb] = orbCopy;

@@ -41,7 +41,10 @@ namespace qmcplusplus {
 
     typedef TinyVector<double,2> PosType;
     PosType Center, uCenter, uMin, uMax;
-    vector<PosType> uCenters;
+    // Reflection controls whether or not to reflect the orbital
+    // across each axis.  
+    PosType Reflection;
+    vector<PosType> uCenters, Reflections;
     double Radius, Energy;
     bool Localized;
     UBspline_2d_d *Spline;
@@ -68,7 +71,7 @@ namespace qmcplusplus {
     {
     }
     EinsplineOrb() : Center(PosType()), Radius(0.0), Energy(0.0), 
-		     Localized(false)
+		     Localized(false), Reflection(1.0, 1.0)
     {
     }
   };
@@ -81,7 +84,10 @@ namespace qmcplusplus {
 
     typedef TinyVector<double,2> PosType;
     PosType Center, uCenter, uMin, uMax;
-    vector<PosType> uCenters;
+    // Reflection controls whether or not to reflect the orbital
+    // across each axis. 
+    PosType Reflection;
+    vector<PosType> uCenters, Reflections;
     double Radius, Energy;
     bool Localized;
     UBspline_2d_z *Spline;
@@ -109,7 +115,9 @@ namespace qmcplusplus {
     {
     }
 
-    EinsplineOrb() : Center(PosType()), Radius(0.0), Energy(0.0), Localized(false)
+    EinsplineOrb() : 
+      Center(PosType()), Radius(0.0), Energy(0.0), Localized(false),
+      Reflection(1.0, 1.0)
     {
     }
 
@@ -125,7 +133,10 @@ namespace qmcplusplus {
 
     typedef TinyVector<double,3> PosType;
     PosType Center, uCenter, uMin, uMax;
-    vector<PosType> uCenters;
+    // Reflection controls whether or not to reflect the orbital
+    // across each axis.  
+    PosType Reflection;
+    vector<PosType> uCenters, Reflections;
     double Radius, Energy;
     bool Localized;
     UBspline_3d_d *Spline;
@@ -140,6 +151,7 @@ namespace qmcplusplus {
 	udiff[2] -= round (udiff[2]);
 	PosType rdiff = Lattice.toCart (udiff);
 	if (dot (rdiff,rdiff) < Radius*Radius) {
+	  udiff = Reflection * udiff;
 	  udiff[0]+=0.5;  udiff[1]+=0.5;  udiff[2]+=0.5;
 	  eval_UBspline_3d_d (Spline, udiff[0], udiff[1], udiff[2], &psi);
 	}
@@ -161,9 +173,14 @@ namespace qmcplusplus {
 	PosType rdiff = Lattice.toCart (udiff);
 	if (dot (rdiff,rdiff) < Radius*Radius) {
 	  PosType uBox = uMax - uMin;
+	  udiff = Reflection * udiff;
 	  udiff[0]+=0.5;  udiff[1]+=0.5;  udiff[2]+=0.5;
 	  eval_UBspline_3d_d_vgh (Spline, udiff[0], udiff[1], udiff[2], 
 				  &psi, &(grad[0]), &(hess(0,0)));
+	  grad *= Reflection;
+	  for (int i=0; i<3; i++)
+	    for (int j=0; j<3; j++)
+	      hess(i,j) *= Reflection[i]*Reflection[j];
 	}
 	else {
 	  psi = grad[0] = grad[1] = grad[2] = 0.0;
@@ -185,6 +202,7 @@ namespace qmcplusplus {
       vector<PosType> centers;
       string centerName = groupPath + "center";
       string centersName = groupPath + "centers";
+      string reflectName = groupPath + "reflections";
       string vectorName = groupPath + "eigenvector";
       string  valueName = groupPath + "eigenvalue";
       string radiusName = groupPath + "radius";
@@ -196,9 +214,15 @@ namespace qmcplusplus {
       HDFAttribIO<double>  h_Radius(Radius);
       HDFAttribIO<double>  h_Energy(Energy);
       HDFAttribIO<vector<PosType> > h_Centers(centers);
+      HDFAttribIO<vector<PosType> > h_Reflections (Reflections);
       h_Center.read (h5file, centerName.c_str());
       h_Centers.read(h5file, centersName.c_str());
       uCenter = Lattice.toUnit (Center);
+      h_Reflections.read (h5file, reflectName.c_str());
+      if (Reflections.size() > 0)
+	Reflection = Reflections[0];
+      else
+	Reflection = PosType (1.0, 1.0, 1.0);
       h_uMin.read(h5file, uminName.c_str());
       h_uMax.read(h5file, umaxName.c_str());
       h_Radius.read(h5file, radiusName.c_str());
@@ -277,7 +301,9 @@ namespace qmcplusplus {
 	  }
     }
 
-    EinsplineOrb() : Center(PosType()), Radius(0.0), Energy(0.0), Localized(false)
+    EinsplineOrb() : 
+      Center(PosType()), Radius(0.0), Energy(0.0), Localized(false),
+      Reflection(1.0, 1.0, 1.0)
     {
     }
 
@@ -295,6 +321,10 @@ namespace qmcplusplus {
       Localized = orb.Localized;
       Spline    = orb.Spline;
       kVec      = orb.kVec;
+      Reflection = orb.Reflection;      
+      Reflections.resize(orb.Reflections.size());
+      Reflections = orb.Reflections;
+
     }
   };
   
@@ -305,7 +335,10 @@ namespace qmcplusplus {
     CrystalLattice<double,OHMMS_DIM> Lattice;
     typedef TinyVector<double,3> PosType;
     PosType Center, uCenter, uMin, uMax;
-    vector<PosType> uCenters;
+    // Reflection controls whether or not to reflect the orbital
+    // across each axis.  
+    PosType Reflection;
+    vector<PosType> uCenters, Reflections;
     double Radius, Energy;
     bool Localized;
     UBspline_3d_z *Spline;
@@ -320,6 +353,7 @@ namespace qmcplusplus {
 	udiff[2] -= round (udiff[2]);
 	PosType rdiff = Lattice.toCart (udiff);
 	if (dot (rdiff,rdiff) <= Radius*Radius) {
+	  udiff = Reflection * udiff;
 	  udiff[0]+=0.5;  udiff[1]+=0.5;  udiff[2]+=0.5;
 	  eval_UBspline_3d_z (Spline, udiff[0], udiff[1], udiff[2], &psi);
 	}
@@ -369,6 +403,7 @@ namespace qmcplusplus {
 
       string centerName  = groupPath + "center";
       string centersName = groupPath + "centers";
+      string reflectName = groupPath + "reflections";
       string vectorName  = groupPath + "eigenvector";
       string  valueName  = groupPath + "eigenvalue";
       string radiusName  = groupPath + "radius";
@@ -380,6 +415,7 @@ namespace qmcplusplus {
       HDFAttribIO<double>  h_Radius(Radius);
       HDFAttribIO<double>  h_Energy(Energy);
       HDFAttribIO<vector<PosType> > h_Centers(centers);
+      HDFAttribIO<vector<PosType> > h_Reflections(Reflections);
       h_Center.read (h5file, centerName.c_str());
       h_Centers.read(h5file, centersName.c_str());
       h_Radius.read(h5file, radiusName.c_str());
@@ -393,6 +429,12 @@ namespace qmcplusplus {
       uCenters.resize(centers.size());
       for (int i=0; i<centers.size(); i++)
 	uCenters[i] = Lattice.toUnit (centers[i]);
+      h_Reflections.read (h5file, reflectName.c_str());
+      if (Reflections.size() > 0)
+	Reflection = Reflections[0];
+      else
+	Reflection = PosType (1.0, 1.0, 1.0);
+
 
       Array<complex<double>,3> rawData;
       HDFAttribIO<Array<complex<double>,3> > h_rawData(rawData);
@@ -451,6 +493,9 @@ namespace qmcplusplus {
       Localized = orb.Localized;
       Spline    = orb.Spline;
       kVec      = orb.kVec;
+      Reflection = orb.Reflection;      
+      Reflections.resize(orb.Reflections.size());
+      Reflections = orb.Reflections;
     }
   };
 }
