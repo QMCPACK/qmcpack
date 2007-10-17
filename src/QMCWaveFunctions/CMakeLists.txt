@@ -19,6 +19,7 @@ SET(JASTROW_SRCS
   Jastrow/JastrowBuilder.cpp
   Jastrow/ThreeBodyGeminal.cpp
   Jastrow/ThreeBodyBlockSparse.cpp
+  Jastrow/BsplineFunctor.cpp
 )
 
 SET(FERMION_SRCS

@@ -20,6 +20,7 @@
 #include "QMCWaveFunctions/Jastrow/PadeFunctors.h"
 #include "QMCWaveFunctions/Jastrow/NoCuspFunctor.h"
 #include "QMCWaveFunctions/Jastrow/ModPadeFunctor.h"
+#include "QMCWaveFunctions/Jastrow/BsplineFunctor.h"
 #include "QMCWaveFunctions/Jastrow/OneBodyJastrowFunction.h"
 
 namespace qmcplusplus {
@@ -109,6 +110,14 @@ namespace qmcplusplus {
     } else if(jastfunction == "short") {
       ModPadeFunctor<RealType> *dummy = 0;
       success = createJAB(cur,dummy);
+    }
+    else if (jastfunction == "Bspline") {
+      BsplineFunctor<RealType> *dummy = 0;
+      success = createJAB(cur,dummy);
+    }
+    else {
+      app_error() << "Unknown one body function: "
+		  << jastfunction << ".\n";
     }
     return success;
   }
