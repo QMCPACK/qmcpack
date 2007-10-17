@@ -300,11 +300,19 @@ namespace qmcplusplus {
       curRatio= DetRatio(psiM_temp, psiV.begin(),WorkingIndex);
 #endif
 
+#ifdef QMC_COMPLEX
+      if(norm(curRatio)<numeric_limits<RealType>::epsilon()) 
+      {
+        UseRatioOnly=true;
+        return 0.0;
+      }
+#else
       if(curRatio<numeric_limits<RealType>::epsilon()) 
       {
         UseRatioOnly=true;
         return 0.0;
       }
+#endif
 
       //update psiM_temp with the row substituted
       DetUpdate(psiM_temp,psiV,workV1,workV2,WorkingIndex,curRatio);
