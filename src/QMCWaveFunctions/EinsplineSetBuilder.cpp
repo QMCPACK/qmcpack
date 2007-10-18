@@ -505,9 +505,13 @@ namespace qmcplusplus {
 	  sPath << eigenstatesGroup << "/twist_" 
 		    << tindex << "/band_" << bi << "/spin";
 	}
-	else {
+	else if (NumBands > 1) {
 	  ePath << eigenstatesGroup << "/twist/band_" << bi << "/eigenvalue";
 	  sPath << eigenstatesGroup << "/twist/band_" << bi << "/spin";
+	}
+	else {
+	  ePath << eigenstatesGroup << "/twist/band/eigenvalue";
+	  sPath << eigenstatesGroup << "/twist/band/spin";
 	}
 	
 	HDFAttribIO<double> h_energy(band.Energy);
@@ -531,8 +535,10 @@ namespace qmcplusplus {
       if ((Version[0]==0 && Version[1]==11) || NumTwists > 0)
 	groupPath << eigenstatesGroup << "/twist_" 
 		  << ti << "/band_" << bi << "/";
-      else
+      else if (NumBands > 1)
 	groupPath << eigenstatesGroup << "/twist/band_" << bi << "/";
+      else
+	groupPath << eigenstatesGroup << "/twist/band/";
       
       PosType twist, k;
       twist = TwistAngles[ti];
@@ -573,9 +579,13 @@ namespace qmcplusplus {
 	  sPath << eigenstatesGroup << "/twist_" 
 		    << tindex << "/band_" << bi << "/spin";
 	}
-	else {
+	else if (NumBands > 1) {
 	  ePath << eigenstatesGroup << "/twist/band_" << bi << "/eigenvalue";
 	  sPath << eigenstatesGroup << "/twist/band_" << bi << "/spin";
+	}
+	else {
+	  ePath << eigenstatesGroup << "/twist/band/eigenvalue";
+	  sPath << eigenstatesGroup << "/twist/band/spin";
 	}
 	
 	HDFAttribIO<double> h_energy(band.Energy);
@@ -627,8 +637,10 @@ namespace qmcplusplus {
 	if ((Version[0]==0 && Version[1]==11) || NumTwists > 1)
 	  groupPath << eigenstatesGroup << "/twist_" 
 		    << ti << "/band_" << bi << "/";
-	else
+	else if (NumBands > 1)
 	  groupPath << eigenstatesGroup << "/twist/band_" << bi << "/";
+	else 
+	  groupPath << eigenstatesGroup << "/twist/band/";
 	
 	orb->read(H5FileID, groupPath.str());
       }

@@ -21,6 +21,7 @@
 #include "QMCWaveFunctions/Jastrow/RPAConstraints.h"
 #include "QMCWaveFunctions/Jastrow/JAABuilder.h"
 #include "QMCWaveFunctions/Jastrow/JABBuilder.h"
+#include "QMCWaveFunctions/Jastrow/BsplineJastrowBuilder.h"
 #include "QMCWaveFunctions/Jastrow/ThreeBodyGeminal.h"
 #include "QMCWaveFunctions/Jastrow/ThreeBodyBlockSparse.h"
 #include "OhmmsData/AttributeSet.h"
@@ -116,6 +117,12 @@ namespace qmcplusplus {
         delete control;
         return false;
       }
+    }
+    else if (funcOpt == "Bspline" ) {
+      app_log() << "\n  Using BsplineBuilder for one-body jatrow with analytic functions" << endl;
+      OrbitalBuilderBase* sBuilder = new BsplineJastrowBuilder (targetPtcl, targetPsi, *sourcePtcl);
+      Children.push_back(sBuilder);
+      return sBuilder->put(cur);
     }
     else
     {

@@ -17,6 +17,7 @@
 #include "Particle/DistanceTableData.h"
 #include "Particle/DistanceTable.h"
 #include "QMCWaveFunctions/Jastrow/JABBuilder.h"
+#include "QMCWaveFunctions/Jastrow/BsplineJastrowBuilder.h"
 #include "QMCWaveFunctions/Jastrow/PadeFunctors.h"
 #include "QMCWaveFunctions/Jastrow/NoCuspFunctor.h"
 #include "QMCWaveFunctions/Jastrow/ModPadeFunctor.h"

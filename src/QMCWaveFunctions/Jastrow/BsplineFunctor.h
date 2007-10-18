@@ -27,30 +27,30 @@ namespace qmcplusplus {
     typedef typename OptimizableFunctorBase<T>::real_type real_type;
     typedef typename OptimizableFunctorBase<T>::OptimizableSetType OptimizableSetType;
     
+    std::string elementType;
     std::vector<double> SplineCoefs;
     std::vector<double> Parameters;
     std::vector<std::string> ParameterNames;
     double Rcut, DeltaR, DeltaRInv;
-    static const double A[16], dA[16], d2A[16];
+    static const real_type A[16], dA[16], d2A[16];
     double CuspValue;
     int NumParams;
 
     ///constructor
-    BsplineFunctor() : NumParams(0), Rcut(0.0)
+    BsplineFunctor() : NumParams(0), Rcut(0.0), CuspValue(0.0)
     {
-      reset();
     }
 
     void resize(int n) 
     { 
-      ParameterNames.resize(n);
+      NumParams = n;
+      int numCoefs = NumParams + 4;
+      int numKnots = numCoefs - 2;
+      DeltaR = Rcut / (double)(numKnots - 1);
+      DeltaRInv = 1.0/DeltaR;
+
       Parameters.resize(n);
       SplineCoefs.resize(n+4);
-      for (int i=0; i< n; i++) {
-	std::stringstream sstr;
-	sstr << "P" << i;
-	ParameterNames[i] = sstr.str();
-      }
     }
     
     void reset() 
@@ -66,6 +66,8 @@ namespace qmcplusplus {
     }
     
     inline real_type evaluate(real_type r) {
+      if (r >= Rcut)
+	return 0.0;
       r *= DeltaRInv;
 
       double ipart, t;
@@ -85,6 +87,10 @@ namespace qmcplusplus {
 
     inline real_type 
     evaluate(real_type r, real_type& dudr, real_type& d2udr2) {
+      if (r >= Rcut) {
+	dudr = d2udr2 = 0.0;
+	return 0.0;
+      }
       r *= DeltaRInv;
       double ipart, t;
       t = modf (r, &ipart);
@@ -124,17 +130,52 @@ namespace qmcplusplus {
     
     bool put(xmlNodePtr cur) 
     {
+      CuspValue = 0.0;
+      NumParams = 0;
+      Rcut = 0.0;
       OhmmsAttributeSet rAttrib;
-      rAttrib.add(NumParams,"n");
-      rAttrib.add(CuspValue, "cusp");
-      rAttrib.add(Rcut, "Rcut");
+      rAttrib.add(elementType, "elementType");
+      rAttrib.add(NumParams,   "size");
+      rAttrib.add(CuspValue,   "cusp");
+      rAttrib.add(Rcut,        "Rcut");
       rAttrib.put(cur);
       if (NumParams == 0) {
 	app_error() << "You must specify a positive number of parameters for the "
 		    << "one-body spline jastrow function.\n";
 	abort();
       }
-      resize(NumParams);
+      resize (NumParams);
+      // Now read coefficents
+      xmlNodePtr xmlCoefs = cur->xmlChildrenNode;
+      bool haveCoefs = false;
+      while (xmlCoefs != NULL) {
+	if ((char*)xmlCoefs->name == std::string("coefficients")) {
+	  haveCoefs = true;
+	  std::stringstream sstr;
+	  sstr << (char*)xmlCoefs->xmlChildrenNode->content;
+	  for (int i=0; i<NumParams; i++)
+	    sstr >> Parameters[i];
+	  
+	  // Setup parameter names
+	  OhmmsAttributeSet cAttrib;
+	  string id;
+	  cAttrib.add(id, "id");
+	  cAttrib.put(xmlCoefs);
+	  for (int i=0; i< NumParams; i++) {
+	    std::stringstream sstr;
+	    sstr << id << "_" << i;
+	    ParameterNames.push_back(sstr.str());
+	  }
+
+	  cerr << "Parameter     Name      Value\n";
+	  for (int i=0; i<ParameterNames.size(); i++)
+	    cerr << "    " << i << "         " << ParameterNames[i] 
+		 << "       " << Parameters[i] << endl;
+	}
+	xmlCoefs = xmlCoefs->next;
+      }
+
+      reset();
       return true;
     }
     
