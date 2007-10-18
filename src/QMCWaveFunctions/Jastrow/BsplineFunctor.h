@@ -55,7 +55,14 @@ namespace qmcplusplus {
     
     void reset() 
     {
-
+      // Ensure that cusp conditions is satsified at the origin
+      SplineCoefs[1] = Parameters[0];
+      SplineCoefs[2] = Parameters[1];
+      SplineCoefs[0] = Parameters[1] - 2.0*DeltaR * CuspValue;
+      for (int i=2; i<Parameters.size(); i++)
+	SplineCoefs[i+i] = Parameters[i];
+      for (int i=Parameters.size()+1; i<SplineCoefs.size(); i++)
+	SplineCoefs[i] = 0.0;
     }
     
     inline real_type evaluate(real_type r) {
