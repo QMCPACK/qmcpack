@@ -1,0 +1,38 @@
+//////////////////////////////////////////////////////////////////
+// (c) Copyright 2003-  by Ken Esler
+//////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////
+//   National Center for Supercomputing Applications &
+//   Materials Computation Center
+//   University of Illinois, Urbana-Champaign
+//   Urbana, IL 61801
+//   e-mail: kesler@ciw.edu
+//   Tel:    
+//
+// Supported by 
+//   National Center for Supercomputing Applications, UIUC
+//   Materials Computation Center, UIUC
+//////////////////////////////////////////////////////////////////
+// -*- C++ -*-
+#ifndef QMCPLUSPLUS_BSPLINE_JASTROW_BUILDER_H
+#define QMCPLUSPLUS_BSPLINE_JASTROW_BUILDER_H
+#include "QMCWaveFunctions/OrbitalBuilderBase.h"
+
+namespace qmcplusplus {
+  //forward declaration
+  class ParticleSet;
+
+  struct BsplineJastrowBuilder: public OrbitalBuilderBase {
+    ParticleSet &sourcePtcl;
+    BsplineJastrowBuilder(ParticleSet& target, TrialWaveFunction& psi,
+			  ParticleSet& source) : 
+      OrbitalBuilderBase(target,psi), sourcePtcl(source)
+    {
+      // nothing for now
+    }
+    
+    bool put(xmlNodePtr cur);
+  };
+
+}
+#endif
