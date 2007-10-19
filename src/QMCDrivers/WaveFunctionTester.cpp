@@ -121,7 +121,6 @@ void WaveFunctionTester::runBasicTest() {
 #else
   ValueType logpsi(std::log(std::abs(psi)));
 #endif
-  cerr << "logpsi = " << logpsi << endl;
 
   for(int iat=0; iat<nat; iat++) {
     PosType r0 = W.R[iat];

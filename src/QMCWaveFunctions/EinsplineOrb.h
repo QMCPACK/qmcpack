@@ -151,7 +151,8 @@ namespace qmcplusplus {
 	udiff[2] -= round (udiff[2]);
 	PosType rdiff = Lattice.toCart (udiff);
 	if (dot (rdiff,rdiff) < Radius*Radius) {
-	  udiff = Reflection * udiff;
+	  for (int i=0; i<3; i++)
+	    udiff[i] *= Reflection[i]; 
 	  udiff[0]+=0.5;  udiff[1]+=0.5;  udiff[2]+=0.5;
 	  eval_UBspline_3d_d (Spline, udiff[0], udiff[1], udiff[2], &psi);
 	}
@@ -173,14 +174,17 @@ namespace qmcplusplus {
 	PosType rdiff = Lattice.toCart (udiff);
 	if (dot (rdiff,rdiff) < Radius*Radius) {
 	  PosType uBox = uMax - uMin;
-	  udiff = Reflection * udiff;
+	  for (int i=0; i<3; i++)
+	    udiff[i] *= Reflection[i]; 
 	  udiff[0]+=0.5;  udiff[1]+=0.5;  udiff[2]+=0.5;
 	  eval_UBspline_3d_d_vgh (Spline, udiff[0], udiff[1], udiff[2], 
 				  &psi, &(grad[0]), &(hess(0,0)));
-	  grad *= Reflection;
-	  for (int i=0; i<3; i++)
+
+	  for (int i=0; i<3; i++) {
+	    grad[i] *= Reflection[i];
 	    for (int j=0; j<3; j++)
 	      hess(i,j) *= Reflection[i]*Reflection[j];
+	  }
 	}
 	else {
 	  psi = grad[0] = grad[1] = grad[2] = 0.0;
@@ -286,21 +290,21 @@ namespace qmcplusplus {
       Spline = create_UBspline_3d_d (x_grid, y_grid, z_grid, 
 				     xBC, yBC, zBC, realData.data());
       // Now test spline to make sure it interpolates the data
-      for (int ix=0; ix<nx-1; ix++)
-	for (int iy=0; iy<ny-1; iy++)
-	  for (int iz=0; iz<nz-1; iz++) {
-	    double ux = uMin[0] + dx*(double)ix;
-	    double uy = uMin[1] + dy*(double)iy;
-	    double uz = uMin[2] + dz*(double)iz;
-	    double val;
-	    eval_UBspline_3d_d (Spline, ux, uy, uz, &val);
-	    if (std::fabs((val - realData(ix,iy,iz))) > 1.0e-12) {
-	      cerr << "Error in spline interpolation at ix=" << ix 
-		   << " iy=" << iy << " iz=" << iz << endl;
-	    }
-	  }
+      // for (int ix=0; ix<nx-1; ix++)
+      //   for (int iy=0; iy<ny-1; iy++)
+      //     for (int iz=0; iz<nz-1; iz++) {
+      //       double ux = uMin[0] + dx*(double)ix;
+      //       double uy = uMin[1] + dy*(double)iy;
+      //       double uz = uMin[2] + dz*(double)iz;
+      //       double val;
+      //       eval_UBspline_3d_d (Spline, ux, uy, uz, &val);
+      //       if (std::fabs((val - realData(ix,iy,iz))) > 1.0e-12) {
+      //         cerr << "Error in spline interpolation at ix=" << ix 
+      //	        << " iy=" << iy << " iz=" << iz << endl;
+      //       }
+      //    }
     }
-
+    
     EinsplineOrb() : 
       Center(PosType()), Radius(0.0), Energy(0.0), Localized(false),
       Reflection(1.0, 1.0, 1.0)
@@ -324,7 +328,6 @@ namespace qmcplusplus {
       Reflection = orb.Reflection;      
       Reflections.resize(orb.Reflections.size());
       Reflections = orb.Reflections;
-
     }
   };
   
