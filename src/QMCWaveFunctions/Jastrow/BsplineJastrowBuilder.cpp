@@ -18,6 +18,7 @@ namespace qmcplusplus {
 
 
     OneBodyJastrow<BsplineFunctor<double> >* J1 = new OneBodyJastrow<BsplineFunctor<double> >(sourcePtcl, targetPtcl);
+    J1->setOptimizable(true);
 
     while (kids != NULL) {
       std::string kidsname = (char*)kids->name;

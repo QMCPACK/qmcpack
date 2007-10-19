@@ -18,6 +18,7 @@
 #include "Numerics/OptimizableFunctorBase.h"
 #include "OhmmsData/AttributeSet.h"
 #include <sstream>
+#include <cstdio>
 
 namespace qmcplusplus {
 
@@ -44,25 +45,30 @@ namespace qmcplusplus {
     void resize(int n) 
     { 
       NumParams = n;
-      int numCoefs = NumParams + 4;
-      int numKnots = numCoefs - 2;
+      int numCoefs = NumParams + 5;
+      int numKnots = numCoefs - 1;
       DeltaR = Rcut / (double)(numKnots - 1);
       DeltaRInv = 1.0/DeltaR;
 
       Parameters.resize(n);
-      SplineCoefs.resize(n+4);
+      SplineCoefs.resize(numCoefs);
     }
     
     void reset() 
     {
+      for (int i=0; i<SplineCoefs.size(); i++)
+	SplineCoefs[i] = 0.0;
+
       // Ensure that cusp conditions is satsified at the origin
       SplineCoefs[1] = Parameters[0];
       SplineCoefs[2] = Parameters[1];
       SplineCoefs[0] = Parameters[1] - 2.0*DeltaR * CuspValue;
       for (int i=2; i<Parameters.size(); i++)
 	SplineCoefs[i+i] = Parameters[i];
-      for (int i=Parameters.size()+1; i<SplineCoefs.size(); i++)
-	SplineCoefs[i] = 0.0;
+      FILE *fout = fopen ((elementType + ".dat").c_str(), "w");
+      for (double r=0.0; r<Rcut; r+=0.01)
+	fprintf (fout, "%1.10e %1.10e\n", r, evaluate(r));
+      fclose (fout);
     }
     
     inline real_type evaluate(real_type r) {
@@ -137,7 +143,7 @@ namespace qmcplusplus {
       rAttrib.add(elementType, "elementType");
       rAttrib.add(NumParams,   "size");
       rAttrib.add(CuspValue,   "cusp");
-      rAttrib.add(Rcut,        "Rcut");
+      rAttrib.add(Rcut,        "rcut");
       rAttrib.put(cur);
       if (NumParams == 0) {
 	app_error() << "You must specify a positive number of parameters for the "
@@ -191,10 +197,15 @@ namespace qmcplusplus {
      */
     void resetParameters(OptimizableSetType& optVariables) 
     {
+      cerr << "In resetParameters.\n";
       for (int i=0; i<ParameterNames.size(); i++) {
 	typename OptimizableSetType::iterator it(optVariables.find(ParameterNames[i]));
-	if(it != optVariables.end()) 
+	if(it != optVariables.end()) {
+	  cerr << "Resetting " << ParameterNames[i] << " to " 
+	       << it->second << endl;
 	  Parameters[i] = it->second;
+	}
+	reset();
       }
     }
   };
