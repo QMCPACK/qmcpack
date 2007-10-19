@@ -45,8 +45,8 @@ namespace qmcplusplus {
     void resize(int n) 
     { 
       NumParams = n;
-      int numCoefs = NumParams + 5;
-      int numKnots = numCoefs - 1;
+      int numCoefs = NumParams + 4;
+      int numKnots = numCoefs - 2;
       DeltaR = Rcut / (double)(numKnots - 1);
       DeltaRInv = 1.0/DeltaR;
 
@@ -64,11 +64,15 @@ namespace qmcplusplus {
       SplineCoefs[2] = Parameters[1];
       SplineCoefs[0] = Parameters[1] - 2.0*DeltaR * CuspValue;
       for (int i=2; i<Parameters.size(); i++)
-	SplineCoefs[i+i] = Parameters[i];
+	SplineCoefs[i+1] = Parameters[i];
       FILE *fout = fopen ((elementType + ".dat").c_str(), "w");
       for (double r=0.0; r<Rcut; r+=0.01)
 	fprintf (fout, "%1.10e %1.10e\n", r, evaluate(r));
       fclose (fout);
+//       cerr << "SplineCoefs = ";
+//       for (int i=0; i<SplineCoefs.size(); i++)
+// 	cerr << SplineCoefs[i] << " ";
+//       cerr << endl;
     }
     
     inline real_type evaluate(real_type r) {
@@ -197,12 +201,11 @@ namespace qmcplusplus {
      */
     void resetParameters(OptimizableSetType& optVariables) 
     {
-      cerr << "In resetParameters.\n";
       for (int i=0; i<ParameterNames.size(); i++) {
 	typename OptimizableSetType::iterator it(optVariables.find(ParameterNames[i]));
 	if(it != optVariables.end()) {
-	  cerr << "Resetting " << ParameterNames[i] << " to " 
-	       << it->second << endl;
+// 	  cerr << "Resetting " << ParameterNames[i] << " to " 
+// 	       << it->second << endl;
 	  Parameters[i] = it->second;
 	}
 	reset();
