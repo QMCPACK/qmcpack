@@ -24,8 +24,8 @@
  * D2PadeDABFunctor = DPadeDBFunctor(A=1)
  * D2PadeDA2Functor = 0.0
  */
-#ifndef QMCPLUSPLUS_PADEFUNCTORS_H
-#define QMCPLUSPLUS_PADEFUNCTORS_H
+#ifndef QMCPLUSPLUS_DERIV_PADEFUNCTORS_H
+#define QMCPLUSPLUS_DERIV_PADEFUNCTORS_H
 #include "Numerics/OptimizableFunctorBase.h"
 #include "QMCWaveFunctions/Jastrow/PadeFunctors.h"
 
