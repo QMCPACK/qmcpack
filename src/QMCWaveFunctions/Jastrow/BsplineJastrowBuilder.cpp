@@ -22,7 +22,7 @@ namespace qmcplusplus {
 
     while (kids != NULL) {
       std::string kidsname = (char*)kids->name;
-      if (kidsname == "function") {
+      if (kidsname == "correlation") {
 	BsplineFunctor<double> *functor = new BsplineFunctor<double>();
 	functor->put (kids);
 	functor->addOptimizables(targetPsi.VarList);

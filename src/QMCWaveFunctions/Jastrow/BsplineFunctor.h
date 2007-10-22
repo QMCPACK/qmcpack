@@ -149,6 +149,7 @@ namespace qmcplusplus {
       rAttrib.add(CuspValue,   "cusp");
       rAttrib.add(Rcut,        "rcut");
       rAttrib.put(cur);
+
       if (NumParams == 0) {
 	app_error() << "You must specify a positive number of parameters for the "
 		    << "one-body spline jastrow function.\n";
@@ -160,6 +161,20 @@ namespace qmcplusplus {
       bool haveCoefs = false;
       while (xmlCoefs != NULL) {
 	if ((char*)xmlCoefs->name == std::string("coefficients")) {
+	  string type, id;
+	  OhmmsAttributeSet cAttrib;
+	  cAttrib.add(id, "id");
+	  cAttrib.add(type, "type");
+	  cAttrib.put(xmlCoefs);
+	  
+	  if (type != "Array") {
+	    app_error() << "Unknown correlation type """ << type 
+			<< """ in BsplineFunctor.\n"
+			<< "Resetting to ""Array"".\n";
+	    xmlNewProp (xmlCoefs, (const xmlChar*) "type", 
+			(const xmlChar*) "Array");
+	  }
+	  
 	  haveCoefs = true;
 	  std::stringstream sstr;
 	  sstr << (char*)xmlCoefs->xmlChildrenNode->content;
@@ -167,10 +182,6 @@ namespace qmcplusplus {
 	    sstr >> Parameters[i];
 	  
 	  // Setup parameter names
-	  OhmmsAttributeSet cAttrib;
-	  string id;
-	  cAttrib.add(id, "id");
-	  cAttrib.put(xmlCoefs);
 	  for (int i=0; i< NumParams; i++) {
 	    std::stringstream sstr;
 	    sstr << id << "_" << i;
