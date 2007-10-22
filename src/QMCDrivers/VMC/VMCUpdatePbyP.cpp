@@ -38,13 +38,9 @@ namespace qmcplusplus {
   void VMCUpdatePbyP::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure) 
   {
 
-#if defined(ENABLE_COMPOSITE_ESTIMATOR)
-    measure &= (compEstimator != 0);
-    if(measure) compEstimator->startAccumulate();
-#endif
-
-    while(it != it_end) 
+    for(; it != it_end;) 
     {
+
       Walker_t& thisWalker(**it);
       Walker_t::Buffer_t& w_buffer(thisWalker.DataSet);
 
@@ -67,7 +63,8 @@ namespace qmcplusplus {
           PosType newpos = W.makeMove(iat,dr);
 
           RealType ratio = Psi.ratio(W,iat);
-          RealType prob = std::min(1.0e0,ratio*ratio);
+          RealType prob = ratio*ratio;
+          //RealType prob = std::min(1.0e0,ratio*ratio);
           if(RandomGen() < prob) { 
             stucked=false;
             ++nAccept;
@@ -96,15 +93,8 @@ namespace qmcplusplus {
       thisWalker.resetProperty(logpsi,Psi.getPhase(),eloc);
       H.saveProperty(thisWalker.getPropertyBase());
 
-#if defined(ENABLE_COMPOSITE_ESTIMATOR)
-      if(measure) compEstimator->accumulate(W,1.0);
-#endif
       ++it;
     }
-#if defined(ENABLE_COMPOSITE_ESTIMATOR)
-    //sum over walkers
-    if(measure) compEstimator->stopAccumulate(-1);
-#endif
   }
 
   /// Constructor.
@@ -120,12 +110,7 @@ namespace qmcplusplus {
 
   void VMCUpdatePbyPWithDrift::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure) 
   {
-#if defined(ENABLE_COMPOSITE_ESTIMATOR)
-    measure &= (compEstimator != 0);
-    if(measure) compEstimator->startAccumulate();
-#endif
-
-    while(it != it_end) 
+    for( ;it != it_end; ) 
     {
       Walker_t& thisWalker(**it);
       Walker_t::Buffer_t& w_buffer(thisWalker.DataSet);
@@ -149,6 +134,15 @@ namespace qmcplusplus {
 
         //RealType ratio = Psi.ratio(W,iat);
         RealType ratio = Psi.ratio(W,iat,dG,dL);
+        RealType prob = ratio*ratio;
+
+        //zero is always rejected
+        if(prob<numeric_limits<RealType>::epsilon()) 
+        {
+          ++nReject; 
+          W.rejectMove(iat); Psi.rejectMove(iat);
+          continue; 
+        }
 
         G = W.G+dG;
 
@@ -164,10 +158,9 @@ namespace qmcplusplus {
 
         RealType logGb = -m_oneover2tau*dot(dr,dr);
 
-        RealType prob = std::min(1.0e0,ratio*ratio*std::exp(logGb-logGf));
-
-        //alternatively
-        if(RandomGen() < prob) { 
+        //RealType prob = std::min(1.0e0,ratio*ratio*std::exp(logGb-logGf));
+        if(RandomGen() < prob*std::exp(logGb-logGf)) 
+        { 
           moved = true;
           ++nAccept;
           W.acceptMove(iat);
@@ -198,14 +191,8 @@ namespace qmcplusplus {
       { 
         ++nAllRejected;
       }
-#if defined(ENABLE_COMPOSITE_ESTIMATOR)
-      if(measure) compEstimator->accumulate(W,1.0);
-#endif
       ++it;
     }
-#if defined(ENABLE_COMPOSITE_ESTIMATOR)
-    if(measure) compEstimator->stopAccumulate(-1);
-#endif
   }
 }
 
