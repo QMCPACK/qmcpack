@@ -670,34 +670,62 @@ namespace qmcplusplus {
     while(cit != cit_end)
     {
       string rname((*cit).first);
-      xmlNodePtr cur=(*cit).second->children;
-      while(cur != NULL)
-      {
-        string cname((const char*)(cur->name));
-        if(cname == "lambda")
+      OhmmsAttributeSet cAttrib;
+      string datatype("none");
+      string aname("0");
+      cAttrib.add(datatype,"type");
+      cAttrib.add(aname,"id");
+      cAttrib.put((*cit).second);
+
+      if(datatype == "Array")
+      { // 
+        aname.append("_");
+        OptimizableSetType::iterator vit(OptVariablesForPsi.begin());
+        vector<OHMMS_PRECISION> c;
+        while(vit != OptVariablesForPsi.end())
         {
-          int i=0;
-          int j=-1;
-          OhmmsAttributeSet pAttrib;
-          pAttrib.add(i,"i");
-          pAttrib.add(j,"j");
-          pAttrib.put(cur);
-          char lambda_id[32];
-          if(j<0)
-            sprintf(lambda_id,"%s_%d",rname.c_str(),i);
-          else
-            sprintf(lambda_id,"%s_%d_%d",rname.c_str(),i,j);
-          OptimizableSetType::iterator vTarget(OptVariablesForPsi.find(lambda_id));
-          if(vTarget != OptVariablesForPsi.end())
+          if((*vit).first.find(aname) == 0)
           {
-            std::ostringstream vout;
-            vout.setf(ios::scientific, ios::floatfield);
-            vout.precision(8);
-            vout <<  (*vTarget).second;
-            xmlSetProp(cur, (const xmlChar*)"c",(const xmlChar*)vout.str().c_str());
+            c.push_back((*vit).second);
           }
+          ++vit;
         }
-        cur=cur->next;
+	xmlNodePtr contentPtr = cit->second;
+	if (xmlNodeIsText(contentPtr->children))
+	  contentPtr = contentPtr->children;
+        getContent(c,contentPtr);
+      }
+      else
+      {
+        xmlNodePtr cur=(*cit).second->children;
+        while(cur != NULL)
+        {
+          string cname((const char*)(cur->name));
+          if(cname == "lambda")
+          {
+            int i=0;
+            int j=-1;
+            OhmmsAttributeSet pAttrib;
+            pAttrib.add(i,"i");
+            pAttrib.add(j,"j");
+            pAttrib.put(cur);
+            char lambda_id[32];
+            if(j<0)
+              sprintf(lambda_id,"%s_%d",rname.c_str(),i);
+            else
+              sprintf(lambda_id,"%s_%d_%d",rname.c_str(),i,j);
+            OptimizableSetType::iterator vTarget(OptVariablesForPsi.find(lambda_id));
+            if(vTarget != OptVariablesForPsi.end())
+            {
+              std::ostringstream vout;
+              vout.setf(ios::scientific, ios::floatfield);
+              vout.precision(8);
+              vout <<  (*vTarget).second;
+              xmlSetProp(cur, (const xmlChar*)"c",(const xmlChar*)vout.str().c_str());
+            }
+          }
+          cur=cur->next;
+        }
       }
       ++cit;
     }
@@ -714,23 +742,33 @@ namespace qmcplusplus {
       xmlNodePtr cur= result->nodesetval->nodeTab[iparam];
       OhmmsAttributeSet cAttrib;
       string aname("0");
+      string datatype("none");
       cAttrib.add(aname,"id");
       cAttrib.add(aname,"name");
+      cAttrib.add(datatype,"type");
       cAttrib.put(cur);
       if(aname[0] == '0') continue;
 
-      //check if any optimizables contains the id of coefficients
-      bool notlisted=true;
-      OptimizableSetType::iterator oit(OptVariablesForPsi.begin()),oit_end(OptVariablesForPsi.end());
-      while(notlisted && oit != oit_end)
-      {
-        const string& oname((*oit).first);
-        notlisted=(oname.find(aname)>=oname.size());
-        ++oit;
-      }
-      if(!notlisted)
+
+      if(datatype == "Array")
       {
         coeffNodes[aname]=cur;
+      }
+      else 
+      {
+        //check if any optimizables contains the id of coefficients
+        bool notlisted=true;
+        OptimizableSetType::iterator oit(OptVariablesForPsi.begin()),oit_end(OptVariablesForPsi.end());
+        while(notlisted && oit != oit_end)
+        {
+          const string& oname((*oit).first);
+          notlisted=(oname.find(aname)>=oname.size());
+          ++oit;
+        }
+        if(!notlisted)
+        {
+          coeffNodes[aname]=cur;
+        }
       }
     }
     xmlXPathFreeObject(result);
