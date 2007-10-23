@@ -109,7 +109,6 @@ namespace qmcplusplus {
   template<typename T>
   struct GridBCond<T,FIXED_GBC>
   {
-    enum {is_periodic=0};
     /// number of grid points
     int Ng;
     /// lower bound of a grid
@@ -172,7 +171,6 @@ namespace qmcplusplus {
   template<typename T>
   struct GridBCond<T,PERIODIC_GBC>
   {
-    enum {is_periodic=1};
     int Ng;
     T Lower;
     T L;
