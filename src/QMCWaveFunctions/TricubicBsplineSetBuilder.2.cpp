@@ -78,7 +78,7 @@ namespace qmcplusplus {
 
     //reset the grid with [0,bc*delta] and zero-boudary conditions 
     activeBasis->setGrid(0.0,bc[0]*dataKnot.dx, 0.0,bc[1]*dataKnot.dy, 0.0,bc[2]*dataKnot.dz,
-        bc[0],bc[1],bc[2],true,false,true); 
+        bc[0],bc[1],bc[2],false,false,false,true);
 
     if(print_log) 
     {

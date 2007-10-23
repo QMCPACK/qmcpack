@@ -99,7 +99,7 @@ namespace qmcplusplus {
     void setGrid(RealType xi, RealType xf, 
         RealType yi, RealType yf, RealType zi, RealType zf, 
         int nx, int ny, int nz, 
-        bool interp=true, bool periodic=true,bool openend=true);
+        bool pbcx, bool pbcy, bool pbcz, bool openend);
 
     /** add a bspline orbital
      * @param i index of the orbital

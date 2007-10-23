@@ -206,23 +206,13 @@ namespace qmcplusplus {
           {
             if(orthorhombic)
             {
-#if defined(USE_BSPLINE_TEMP)
-              if(print_log)  app_log() << "    Bspline3DSet<ORTHO=true,TRUC=true> " << endl;
-              activeBasis = new Bspline3DSet<ORTHO,TRUNC>;
-#else
               if(print_log)  app_log() << "    Bspline3DSet_Ortho_Trunc" << endl;
               activeBasis = new Bspline3DSet_Ortho_Trunc;
-#endif
             }
             else
             {
-#if defined(USE_BSPLINE_TEMP)
-              if(print_log) app_log() << "    Bspline3DSet<ORTHO=false,TRUC=true> " << endl;
-              activeBasis = new  Bspline3DSet<NONORTHO,TRUNC>;
-#else
               if(print_log) app_log() << "    Bspline3DSet_Gen_Trunc " << endl;
               activeBasis = new Bspline3DSet_Gen_Trunc;
-#endif
             } 
           }
         }
@@ -230,23 +220,13 @@ namespace qmcplusplus {
         {
           if(orthorhombic)
           {
-#if defined(USE_BSPLINE_TEMP)
-            if(print_log)  app_log() << "    Bspline3DSet<ORTHO=true,TRUC=false> " << endl;
-            activeBasis = new Bspline3DSet<ORTHO,NOTRUNC>;
-#else
             if(print_log)  app_log() << "    Bspline3DSet_Ortho " << endl;
             activeBasis = new Bspline3DSet_Ortho;
-#endif
           }
           else
           {
-#if defined(USE_BSPLINE_TEMP)
-            if(print_log)  app_log() << "    Bspline3DSet<ORTHO=false,TRUC=false> " << endl;
-            activeBasis = new Bspline3DSet<NONORTHO,NOTRUNC>;
-#else
             if(print_log)  app_log() << "    Bspline3DSet_Gen " << endl;
             activeBasis = new Bspline3DSet_Gen;
-#endif
           }
         }
       }
@@ -334,10 +314,14 @@ namespace qmcplusplus {
 
     if(OpenEndGrid)
       activeBasis->setGrid(LowerBox[0],UpperBox[0], LowerBox[1],UpperBox[1],LowerBox[2],UpperBox[2],
-          BoxGrid[0],BoxGrid[1],BoxGrid[2]);
+          BoxGrid[0],BoxGrid[1],BoxGrid[2],
+          targetPtcl.Lattice.BoxBConds[0],targetPtcl.Lattice.BoxBConds[1],targetPtcl.Lattice.BoxBConds[2],
+          OpenEndGrid);
     else//need to offset for closed end
       activeBasis->setGrid(LowerBox[0],UpperBox[0],LowerBox[1],UpperBox[1],LowerBox[2],UpperBox[2],
-          BoxGrid[0]-1,BoxGrid[1]-1,BoxGrid[2]-1);
+          BoxGrid[0]-1,BoxGrid[1]-1,BoxGrid[2]-1,
+          targetPtcl.Lattice.BoxBConds[0],targetPtcl.Lattice.BoxBConds[1],targetPtcl.Lattice.BoxBConds[2],
+          OpenEndGrid);
 
     //copy the input grid
     dataKnot=activeBasis->bKnots;

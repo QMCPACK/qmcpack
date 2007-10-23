@@ -55,12 +55,15 @@ namespace qmcplusplus {
   void Bspline3DSetBase::setGrid(RealType xi, RealType xf, 
       RealType yi, RealType yf, RealType zi, RealType zf, 
       int nx, int ny, int nz, 
-      bool interp, bool periodic,bool openend)
+      bool pbcx, bool pbcy, bool pbcz, bool openend)
   {
+    cout << "### Bspline3DSetBase::setGrid " 
+      << xf << " " << yf << " " << zf << " " 
+      << Orthorhombic << " " << pbcx << " " << pbcy << " " << pbcz << endl;
     if(Orthorhombic)
-      bKnots.setGrid(xi,xf,yi,yf,zi,zf,nx,ny,nz,interp,periodic,openend);
+      bKnots.setGrid(xi,xf,yi,yf,zi,zf,nx,ny,nz,pbcx,pbcy,pbcz,openend);
     else
-      bKnots.setGrid(0.0,1.0,0.0,1.0,0.0,1.0,nx,ny,nz,interp,periodic,openend);
+      bKnots.setGrid(0.0,1.0,0.0,1.0,0.0,1.0,nx,ny,nz,pbcx,pbcy,pbcz,openend);
   }
 
   void Bspline3DSetBase::setTwistAngle(const PosType& tangle)

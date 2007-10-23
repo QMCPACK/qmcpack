@@ -43,6 +43,14 @@ namespace qmcplusplus {
       StorageType inData(BoxGrid[0],BoxGrid[1],BoxGrid[2]);
 
       getCenterAndOrigin(hroot,occSet,norb);
+      if(print_log)
+      { 
+        if(bspline_data_check<Tin,Tout>::is_same)
+          app_log() << "  TBSB::readData No data conversion is needed." << endl;
+        else
+          app_log() << "  TBSB::readData Data conversion is done. " << endl;
+      }
+      
 
       for(int iorb=0; iorb<norb; iorb++) 
       {

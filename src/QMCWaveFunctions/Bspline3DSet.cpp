@@ -26,20 +26,32 @@ namespace qmcplusplus {
   ////////////////////////////////////////////////////////////
   void Bspline3DSet_Ortho::evaluate(const ParticleSet& e, int iat, ValueVector_t& vals)
   {
-    bKnots.Find(e.R[iat][0],e.R[iat][1],e.R[iat][2]);
+    if(bKnots.Find(e.R[iat][0],e.R[iat][1],e.R[iat][2]))
+    {
 #pragma ivdep
-    for(int j=0; j<NumOrbitals; j++) 
-      vals[j]=bKnots.evaluate(*P[j]);
+      for(int j=0; j<NumOrbitals; j++) 
+        vals[j]=bKnots.evaluate(*P[j]);
+    }
+    else
+    {
+      vals=0.0;
+    }
   }
 
   void
     Bspline3DSet_Ortho::evaluate(const ParticleSet& e, int iat, 
             ValueVector_t& vals, GradVector_t& grads, ValueVector_t& laps)
     {
-      bKnots.FindAll(e.R[iat][0],e.R[iat][1],e.R[iat][2]);
+      if(bKnots.FindAll(e.R[iat][0],e.R[iat][1],e.R[iat][2]))
+      {
 #pragma ivdep
-      for(int j=0; j<NumOrbitals; j++) 
-        vals[j]=bKnots.evaluate(*P[j],grads[j],laps[j]);
+        for(int j=0; j<NumOrbitals; j++) 
+          vals[j]=bKnots.evaluate(*P[j],grads[j],laps[j]);
+      }
+      else
+      {
+        vals=0.0; grads=0.0; laps=0.0;
+      }
     }
 
   void
@@ -48,10 +60,17 @@ namespace qmcplusplus {
     {
       for(int iat=first,i=0; iat<last; iat++,i++)
       {
-        bKnots.FindAll(e.R[iat][0],e.R[iat][1],e.R[iat][2]);
+        if(bKnots.FindAll(e.R[iat][0],e.R[iat][1],e.R[iat][2]))
+        {
 #pragma ivdep
-        for(int j=0; j<OrbitalSetSize; j++) 
-          vals(j,i)=bKnots.evaluate(*P[j],grads(i,j),laps(i,j));
+          for(int j=0; j<OrbitalSetSize; j++) 
+            vals(j,i)=bKnots.evaluate(*P[j],grads(i,j),laps(i,j));
+        }
+        else
+        {
+          for(int j=0; j<OrbitalSetSize; j++) 
+          {vals(j,i)=0.0;grads(i,j)=0.0;laps(i,j)=0.0;}
+        }
       }
     }
 
@@ -61,8 +80,10 @@ namespace qmcplusplus {
   void Bspline3DSet_Gen::evaluate(const ParticleSet& e, int iat, ValueVector_t& vals)
   {
     PosType ru(Lattice.toUnit(e.R[iat]));
-    bKnots.Find(ru[0],ru[1],ru[2]);
-    for(int j=0; j<OrbitalSetSize; j++) vals[j]=bKnots.evaluate(*P[j]);
+    if(bKnots.Find(ru[0],ru[1],ru[2]))
+      for(int j=0; j<OrbitalSetSize; j++) vals[j]=bKnots.evaluate(*P[j]);
+    else
+      vals=0.0;
   }
 
   void
@@ -70,15 +91,21 @@ namespace qmcplusplus {
             ValueVector_t& vals, GradVector_t& grads, ValueVector_t& laps)
     {
       PosType ru(Lattice.toUnit(e.R[iat]));
-      TinyVector<ValueType,3> gu;
-      Tensor<ValueType,3> hess;
-      bKnots.FindAll(ru[0],ru[1],ru[2]);
-#pragma ivdep
-      for(int j=0; j<OrbitalSetSize; j++)
+      if(bKnots.FindAll(ru[0],ru[1],ru[2]))
       {
-        vals[j]=bKnots.evaluate(*P[j],gu,hess);
-        grads[j]=dot(Lattice.G,gu);
-        laps[j]=trace(hess,GGt);
+        TinyVector<ValueType,3> gu;
+        Tensor<ValueType,3> hess;
+#pragma ivdep
+        for(int j=0; j<OrbitalSetSize; j++)
+        {
+          vals[j]=bKnots.evaluate(*P[j],gu,hess);
+          grads[j]=dot(Lattice.G,gu);
+          laps[j]=trace(hess,GGt);
+        }
+      }
+      else
+      {
+        vals=0.0; grads=0.0; laps=0.0;
       }
     }
 
@@ -89,15 +116,25 @@ namespace qmcplusplus {
       for(int iat=first,i=0; iat<last; iat++,i++)
       {
         PosType ru(Lattice.toUnit(e.R[iat]));
-        TinyVector<ValueType,3> gu;
-        Tensor<ValueType,3> hess;
-        bKnots.FindAll(ru[0],ru[1],ru[2]);
-#pragma ivdep
-        for(int j=0; j<OrbitalSetSize; j++)
+        if(bKnots.FindAll(ru[0],ru[1],ru[2]))
         {
-          vals(j,i)=bKnots.evaluate(*P[j],gu,hess);
-          grads(i,j)=dot(Lattice.G,gu);
-          laps(i,j)=trace(hess,GGt);
+          TinyVector<ValueType,3> gu;
+          Tensor<ValueType,3> hess;
+#pragma ivdep
+          for(int j=0; j<OrbitalSetSize; j++)
+          {
+            vals(j,i)=bKnots.evaluate(*P[j],gu,hess);
+            grads(i,j)=dot(Lattice.G,gu);
+            laps(i,j)=trace(hess,GGt);
+          }
+        }
+        else
+        {
+          for(int j=0; j<OrbitalSetSize; j++) 
+          {vals(j,i)=0.0;grads(i,j)=0.0;laps(i,j)=0.0;}
+          //for(int j=0; j<OrbitalSetSize; j++) vals(j,i)=0.0;
+          //std::copy(grads[i],grads[i]+OrbitalSetSize,0.0);
+          //std::copy(laps[i],laps[i]+OrbitalSetSize,0.0);
         }
       }
     }
@@ -237,12 +274,16 @@ namespace qmcplusplus {
   {
     PosType r(e.R[iat]);
     PosType ru(Lattice.toUnit(r));
-    bKnots.Find(ru[0],ru[1],ru[2]);
-    RealType phi(dot(TwistAngle,r));
-    ValueType phase(std::cos(phi),std::sin(phi));
+    if(bKnots.Find(ru[0],ru[1],ru[2]))
+    {
+      RealType phi(dot(TwistAngle,r));
+      ValueType phase(std::cos(phi),std::sin(phi));
 #pragma ivdep
-    for(int j=0; j <OrbitalSetSize; j++)
-      vals[j]=phase*bKnots.evaluate(*P[j]);
+      for(int j=0; j <OrbitalSetSize; j++)
+        vals[j]=phase*bKnots.evaluate(*P[j]);
+    }
+    else
+      vals=0.0;
   }
 
   void
@@ -251,28 +292,31 @@ namespace qmcplusplus {
     {
       PosType r(e.R[iat]);
       PosType ru(Lattice.toUnit(r));
-      bKnots.FindAll(ru[0],ru[1],ru[2]);
-
-      RealType phi(dot(TwistAngle,r));
-      RealType c=std::cos(phi),s=std::sin(phi);
-      ValueType phase(c,s);
-
-      //ik e^{i{\bf k}\cdot {\bf r}}
-      GradType dk(ValueType(-TwistAngle[0]*s,TwistAngle[0]*c),
-          ValueType(-TwistAngle[1]*s,TwistAngle[1]*c),
-          ValueType(-TwistAngle[2]*s,TwistAngle[2]*c));
-      TinyVector<ValueType,3> gu;
-      Tensor<ValueType,3> hess;
-#pragma ivdep
-      for(int j=0; j<OrbitalSetSize; j++) 
+      if(bKnots.FindAll(ru[0],ru[1],ru[2]))
       {
-        ValueType v= bKnots.evaluate(*P[j],gu,hess);
-        GradType g= dot(Lattice.G,gu);
-        ValueType l=trace(hess,GGt);
-        vals[j]=phase*v;
-        grads[j]=v*dk+phase*g;
-        laps[j]=phase*(mK2*v+l)+2.0*dot(dk,g);
+        RealType phi(dot(TwistAngle,r));
+        RealType c=std::cos(phi),s=std::sin(phi);
+        ValueType phase(c,s);
+
+        //ik e^{i{\bf k}\cdot {\bf r}}
+        GradType dk(ValueType(-TwistAngle[0]*s,TwistAngle[0]*c),
+            ValueType(-TwistAngle[1]*s,TwistAngle[1]*c),
+            ValueType(-TwistAngle[2]*s,TwistAngle[2]*c));
+        TinyVector<ValueType,3> gu;
+        Tensor<ValueType,3> hess;
+#pragma ivdep
+        for(int j=0; j<OrbitalSetSize; j++) 
+        {
+          ValueType v= bKnots.evaluate(*P[j],gu,hess);
+          GradType g= dot(Lattice.G,gu);
+          ValueType l=trace(hess,GGt);
+          vals[j]=phase*v;
+          grads[j]=v*dk+phase*g;
+          laps[j]=phase*(mK2*v+l)+2.0*dot(dk,g);
+        }
       }
+      else
+      { vals=0.0; grads=0.0; laps=0.0;}
     }
 
   void
@@ -283,26 +327,32 @@ namespace qmcplusplus {
       {
         PosType r(e.R[iat]);
         PosType ru(Lattice.toUnit(r));
-        bKnots.FindAll(ru[0],ru[1],ru[2]);
-
-        RealType phi(dot(TwistAngle,r));
-        RealType c=std::cos(phi),s=std::sin(phi);
-        ValueType phase(c,s);
-
-        GradType dk(ValueType(-TwistAngle[0]*s,TwistAngle[0]*c),
-            ValueType(-TwistAngle[1]*s,TwistAngle[1]*c),
-            ValueType(-TwistAngle[2]*s,TwistAngle[2]*c));
-        TinyVector<ValueType,3> gu;
-        Tensor<ValueType,3> hess;
-#pragma ivdep
-        for(int j=0; j<OrbitalSetSize; j++) 
+        if(bKnots.FindAll(ru[0],ru[1],ru[2]))
         {
-          ValueType v=bKnots.evaluate(*P[j],gu,hess);
-          GradType g=dot(Lattice.G,gu);
-          ValueType l=trace(hess,GGt);
-          vals(j,i)=phase*v;
-          grads(i,j)=v*dk+phase*g;
-          laps(i,j)=phase*(mK2*v+l)+2.0*dot(dk,g);
+          RealType phi(dot(TwistAngle,r));
+          RealType c=std::cos(phi),s=std::sin(phi);
+          ValueType phase(c,s);
+
+          GradType dk(ValueType(-TwistAngle[0]*s,TwistAngle[0]*c),
+              ValueType(-TwistAngle[1]*s,TwistAngle[1]*c),
+              ValueType(-TwistAngle[2]*s,TwistAngle[2]*c));
+          TinyVector<ValueType,3> gu;
+          Tensor<ValueType,3> hess;
+#pragma ivdep
+          for(int j=0; j<OrbitalSetSize; j++) 
+          {
+            ValueType v=bKnots.evaluate(*P[j],gu,hess);
+            GradType g=dot(Lattice.G,gu);
+            ValueType l=trace(hess,GGt);
+            vals(j,i)=phase*v;
+            grads(i,j)=v*dk+phase*g;
+            laps(i,j)=phase*(mK2*v+l)+2.0*dot(dk,g);
+          }
+        } 
+        else
+        {
+          for(int j=0; j<OrbitalSetSize; j++) 
+          {vals(j,i)=0.0;grads(i,j)=0.0;laps(i,j)=0.0;}
         }
       }
     }
