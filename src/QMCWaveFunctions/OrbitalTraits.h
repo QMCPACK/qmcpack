@@ -70,12 +70,13 @@ namespace qmcplusplus {
     inline T
     evaluateLogAndPhase(const std::complex<T>& psi, T& phase) {
       phase = std::arg(psi);
+      if(phase<0.0) phase += 2.0*M_PI;
       return 0.5*std::log(psi.real()*psi.real()+psi.imag()*psi.imag());
       //return std::log(psi);
     }
 
     inline double evaluatePhase(const double psi) {
-      return (psi<0.0)?M_PI:0.0;
+      return (psi<numeric_limits<double>::epsilon())?M_PI:0.0;
     }
 
     inline double evaluatePhase(const std::complex<double>& psi) {
