@@ -16,9 +16,11 @@
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 
-template<typename T>
-inline TricubicBsplineGrid<T>::TricubicBsplineGrid()
+template<typename T, int BC0, int BC1, int BC2>
+inline TricubicBsplineGrid<T,BC0,BC1,BC2>::TricubicBsplineGrid()
 {
+  px[3] = 1.0;    py[3] = 1.0;   pz[3] = 1.0;
+
   A(0,0) = -1.0/6.0; A(0,1) =  3.0/6.0; A(0,2) = -3.0/6.0; A(0,3) = 1.0/6.0;
   A(1,0) =  3.0/6.0; A(1,1) = -6.0/6.0; A(1,2) =  3.0/6.0; A(1,3) = 0.0/6.0;
   A(2,0) = -3.0/6.0; A(2,1) =  0.0/6.0; A(2,2) =  3.0/6.0; A(2,3) = 0.0/6.0;
@@ -40,114 +42,117 @@ inline TricubicBsplineGrid<T>::TricubicBsplineGrid()
   d3A(3,0)=-1.0; d3A(3,1)= 3.0; d3A(3,2)=-3.0; d3A(3,3)= 1.0;
 }
 
-template<typename T>
-inline TricubicBsplineGrid<T>::TricubicBsplineGrid(const TricubicBsplineGrid<T>& rhs)
+template<typename T, int BC0, int BC1, int BC2>
+inline TricubicBsplineGrid<T,BC0,BC1,BC2>::TricubicBsplineGrid(const TricubicBsplineGrid<T,BC0,BC1,BC2>& rhs)
+  :Periodic(rhs.Periodic)
 {
-  setGrid(rhs.xStart,rhs.xEnd,rhs.yStart,rhs.yEnd,rhs.zStart,rhs.zEnd,
-      rhs.Nx, rhs.Ny, rhs.Nz, rhs.Interpolating, rhs.Periodic);
+  setGrid(rhs.gridX,rhs.gridY,rhs.gridZ);
+//  setGrid(rhs.xStart,rhs.xEnd,rhs.yStart,rhs.yEnd,rhs.zStart,rhs.zEnd,
+//      rhs.Nx, rhs.Ny, rhs.Nz, rhs.Interpolating, rhs.Periodic);
 }
 
-template<typename T>
-inline TricubicBsplineGrid<T>&
-TricubicBsplineGrid<T>::operator=(const TricubicBsplineGrid<T>& rhs)
+template<typename T, int BC0, int BC1, int BC2>
+inline TricubicBsplineGrid<T,BC0,BC1,BC2>&
+TricubicBsplineGrid<T,BC0,BC1,BC2>::operator=(const TricubicBsplineGrid<T,BC0,BC1,BC2>& rhs)
 {
-  setGrid(rhs.xStart,rhs.xEnd,rhs.yStart,rhs.yEnd,rhs.zStart,rhs.zEnd,
-      rhs.Nx, rhs.Ny, rhs.Nz, rhs.Interpolating, rhs.Periodic);
+  Periodic=rhs.Periodic;
+  setGrid(rhs.gridX,rhs.gridY,rhs.gridZ);
+  //setGrid(rhs.xStart,rhs.xEnd,rhs.yStart,rhs.yEnd,rhs.zStart,rhs.zEnd,
+  //    rhs.Nx, rhs.Ny, rhs.Nz, rhs.Interpolating, rhs.Periodic);
   return *this;
 }
 
-template<typename T>
-inline void TricubicBsplineGrid<T>::setGrid(real_type xi, real_type xf, 
-    real_type yi, real_type yf, real_type zi, real_type zf, 
-    int nx, int ny, int nz, bool interp, bool periodic, bool openend)
+template<typename T, int BC0, int BC1, int BC2>
+inline void
+TricubicBsplineGrid<T,BC0,BC1,BC2>::setGrid(const GridBCond<real_type,BC0>& g0,
+    const GridBCond<real_type,BC1>& g1,
+    const GridBCond<real_type,BC2>& g2)
 {
-  Interpolating=interp;
-  Periodic=periodic;
-  xStart=xi;  xEnd=xf;  yStart=yi;  yEnd=yf;  zStart=zi; zEnd=zf;
-  Lx    = xf-xi;  Ly    = yf-yi;  Lz    = zf-zi;
-  LxInv = 1.0/Lx; LyInv = 1.0/Ly; LzInv = 1.0/Lz;
+  gridX=g0; Nx=gridX.Ng; dx=gridX.Delta; dxInv=gridX.OneOverDelta;
+  gridY=g1; Ny=gridY.Ng; dy=gridY.Delta; dyInv=gridY.OneOverDelta;
+  gridZ=g2; Nz=gridZ.Ng; dz=gridZ.Delta; dzInv=gridZ.OneOverDelta;
+}
+
+template<typename T, int BC0, int BC1, int BC2>
+inline void TricubicBsplineGrid<T,BC0,BC1,BC2>::setGrid(real_type xi, real_type xf, 
+    real_type yi, real_type yf, real_type zi, real_type zf, int nx, int ny, int nz, 
+    bool pbcx, bool pbcy, bool pbcz, bool openend)
+{
+  Interpolating=true;//always interpolate
+  Periodic = pbcx||pbcy||pbcz;//periodic if any direction is periodic
   if(openend) {
     Nx=nx; Ny=ny; Nz=nz;
   } else {
     Nx=nx-1; Ny=ny-1; Nz=nz-1;
   }
-  dx = Lx/static_cast<real_type>(Nx); dxInv = 1.0/dx;
-  dy = Ly/static_cast<real_type>(Ny); dyInv = 1.0/dy;
-  dz = Lz/static_cast<real_type>(Nz); dzInv = 1.0/dz;
+  gridX.init(Nx,xi,xf,pbcx); dx=gridX.Delta; dxInv=gridX.OneOverDelta;
+  gridY.init(Ny,yi,yf,pbcy); dy=gridY.Delta; dyInv=gridY.OneOverDelta;
+  gridZ.init(Nz,zi,zf,pbcz); dz=gridZ.Delta; dzInv=gridZ.OneOverDelta;
 }
 
-template<typename T>
-inline void TricubicBsplineGrid<T>::Find(real_type x, real_type y, real_type z)
+template<typename T, int BC0, int BC1, int BC2>
+inline bool TricubicBsplineGrid<T,BC0,BC1,BC2>::Find(real_type x, real_type y, real_type z)
 {
-  real_type xDelta = x - xStart;
-  real_type yDelta = y - yStart;
-  real_type zDelta = z - zStart;
-
-  if (Periodic) {
-    //     xDelta -= nearbyint(xDelta*LxInv)*Lx;
-    //     yDelta -= nearbyint(yDelta*LyInv)*Ly;
-    //     zDelta -= nearbyint(zDelta*LzInv)*Lz;
-    xDelta -= std::floor(xDelta*LxInv)*Lx;
-    yDelta -= std::floor(yDelta*LyInv)*Ly;
-    zDelta -= std::floor(zDelta*LzInv)*Lz;
+  if(gridX.outofbound(x,ix0) || gridY.outofbound(y,iy0) || gridZ.outofbound(z,iz0))
+  {
+    return false;
   }
+  //this is going to go away
+  ix1=ix0+1; ix2=ix0+2; ix3=ix0+3;
+  iy1=iy0+1; iy2=iy0+2; iy3=iy0+3;
+  iz1=iz0+1; iz2=iz0+2; iz3=iz0+3;
 
-  real_type xInt, yInt, zInt;
-  real_type tx = modf (xDelta*dxInv, &xInt);
-  real_type ty = modf (yDelta*dyInv, &yInt);
-  real_type tz = modf (zDelta*dzInv, &zInt);
-  int ix = (int)xInt;
-  int iy = (int)yInt;
-  int iz = (int)zInt;
-  ix0=ix; ix1=ix+1; ix2=ix+2; ix3=ix+3;
-  iy0=iy; iy1=iy+1; iy2=iy+2; iy3=iy+3;
-  iz0=iz; iz1=iz+1; iz2=iz+2; iz3=iz+3;
-
-  px[0] = tx*tx*tx;  py[0] = ty*ty*ty; pz[0] = tz*tz*tz;
-  px[1] = tx*tx;     py[1] = ty*ty;    pz[1] = tz*tz;
-  px[2] = tx;        py[2] = ty;       pz[2] = tz;
-  px[3] = 1.0;       py[3] = 1.0;      pz[3] = 1.0;
+  px[0] = x*x*x;  py[0] = y*y*y; pz[0] = z*z*z;
+  px[1] = x*x;    py[1] = y*y;   pz[1] = z*z;
+  px[2] = x;      py[2] = y;     pz[2] = z;
+  //px[3] = 1.0;    py[3] = 1.0;   pz[3] = 1.0;
 
   a=dot(px,A);
   b=dot(py,A);
   c=dot(pz,A);
+  return true;
 }
 
-template<typename T>
-inline void TricubicBsplineGrid<T>::FindAll(real_type x, real_type y, real_type z) {
-  Find(x,y,z);
-  //da=dot(px,dA);
-  //db=dot(py,dA);
-  //dc=dot(pz,dA);
-  //// First derivatives;
-  da[0] = dA(1,0)*px[1]; da[1] =dA(1,1)*px[1]; da[2] =dA(1,2)*px[1]; da[3] =dA(1,3)*px[1];
-  da[0]+= dA(2,0)*px[2]; da[1]+=dA(2,1)*px[2]; da[2]+=dA(2,2)*px[2]; da[3]+=dA(2,3)*px[2];
-  da[0]+= dA(3,0)*px[3]; da[1]+=dA(3,1)*px[3]; da[2]+=dA(3,2)*px[3]; da[3]+=dA(3,3)*px[3];  
+template<typename T, int BC0, int BC1, int BC2>
+inline bool TricubicBsplineGrid<T,BC0,BC1,BC2>::FindAll(real_type x, real_type y, real_type z) {
+  if(Find(x,y,z)) 
+  {
+    //da=dot(px,dA);
+    //db=dot(py,dA);
+    //dc=dot(pz,dA);
+    //// First derivatives;
+    da[0] = dA(1,0)*px[1]; da[1] =dA(1,1)*px[1]; da[2] =dA(1,2)*px[1]; da[3] =dA(1,3)*px[1];
+    da[0]+= dA(2,0)*px[2]; da[1]+=dA(2,1)*px[2]; da[2]+=dA(2,2)*px[2]; da[3]+=dA(2,3)*px[2];
+    da[0]+= dA(3,0)*px[3]; da[1]+=dA(3,1)*px[3]; da[2]+=dA(3,2)*px[3]; da[3]+=dA(3,3)*px[3];  
 
-  db[0] = dA(1,0)*py[1]; db[1] =dA(1,1)*py[1]; db[2] =dA(1,2)*py[1]; db[3] =dA(1,3)*py[1];
-  db[0]+= dA(2,0)*py[2]; db[1]+=dA(2,1)*py[2]; db[2]+=dA(2,2)*py[2]; db[3]+=dA(2,3)*py[2];
-  db[0]+= dA(3,0)*py[3]; db[1]+=dA(3,1)*py[3]; db[2]+=dA(3,2)*py[3]; db[3]+=dA(3,3)*py[3];  
+    db[0] = dA(1,0)*py[1]; db[1] =dA(1,1)*py[1]; db[2] =dA(1,2)*py[1]; db[3] =dA(1,3)*py[1];
+    db[0]+= dA(2,0)*py[2]; db[1]+=dA(2,1)*py[2]; db[2]+=dA(2,2)*py[2]; db[3]+=dA(2,3)*py[2];
+    db[0]+= dA(3,0)*py[3]; db[1]+=dA(3,1)*py[3]; db[2]+=dA(3,2)*py[3]; db[3]+=dA(3,3)*py[3];  
 
-  dc[0] = dA(1,0)*pz[1]; dc[1] =dA(1,1)*pz[1]; dc[2] =dA(1,2)*pz[1]; dc[3] =dA(1,3)*pz[1];
-  dc[0]+= dA(2,0)*pz[2]; dc[1]+=dA(2,1)*pz[2]; dc[2]+=dA(2,2)*pz[2]; dc[3]+=dA(2,3)*pz[2];
-  dc[0]+= dA(3,0)*pz[3]; dc[1]+=dA(3,1)*pz[3]; dc[2]+=dA(3,2)*pz[3]; dc[3]+=dA(3,3)*pz[3];  
+    dc[0] = dA(1,0)*pz[1]; dc[1] =dA(1,1)*pz[1]; dc[2] =dA(1,2)*pz[1]; dc[3] =dA(1,3)*pz[1];
+    dc[0]+= dA(2,0)*pz[2]; dc[1]+=dA(2,1)*pz[2]; dc[2]+=dA(2,2)*pz[2]; dc[3]+=dA(2,3)*pz[2];
+    dc[0]+= dA(3,0)*pz[3]; dc[1]+=dA(3,1)*pz[3]; dc[2]+=dA(3,2)*pz[3]; dc[3]+=dA(3,3)*pz[3];  
 
-  // Second derivatives
-  //d2a=dot(px,d2A);
-  //d2b=dot(py,d2A);
-  //d2c=dot(pz,d2A);
-  d2a[0] = d2A(2,0)*px[2]; d2a[1] =d2A(2,1)*px[2]; d2a[2] =d2A(2,2)*px[2]; d2a[3] =d2A(2,3)*px[2];
-  d2a[0]+= d2A(3,0)*px[3]; d2a[1]+=d2A(3,1)*px[3]; d2a[2]+=d2A(3,2)*px[3]; d2a[3]+=d2A(3,3)*px[3];  
+    // Second derivatives
+    //d2a=dot(px,d2A);
+    //d2b=dot(py,d2A);
+    //d2c=dot(pz,d2A);
+    d2a[0] = d2A(2,0)*px[2]; d2a[1] =d2A(2,1)*px[2]; d2a[2] =d2A(2,2)*px[2]; d2a[3] =d2A(2,3)*px[2];
+    d2a[0]+= d2A(3,0)*px[3]; d2a[1]+=d2A(3,1)*px[3]; d2a[2]+=d2A(3,2)*px[3]; d2a[3]+=d2A(3,3)*px[3];  
 
-  d2b[0] = d2A(2,0)*py[2]; d2b[1] =d2A(2,1)*py[2]; d2b[2] =d2A(2,2)*py[2]; d2b[3] =d2A(2,3)*py[2];
-  d2b[0]+= d2A(3,0)*py[3]; d2b[1]+=d2A(3,1)*py[3]; d2b[2]+=d2A(3,2)*py[3]; d2b[3]+=d2A(3,3)*py[3];  
+    d2b[0] = d2A(2,0)*py[2]; d2b[1] =d2A(2,1)*py[2]; d2b[2] =d2A(2,2)*py[2]; d2b[3] =d2A(2,3)*py[2];
+    d2b[0]+= d2A(3,0)*py[3]; d2b[1]+=d2A(3,1)*py[3]; d2b[2]+=d2A(3,2)*py[3]; d2b[3]+=d2A(3,3)*py[3];  
 
-  d2c[0] = d2A(2,0)*pz[2]; d2c[1] =d2A(2,1)*pz[2]; d2c[2] =d2A(2,2)*pz[2]; d2c[3] =d2A(2,3)*pz[2];
-  d2c[0]+= d2A(3,0)*pz[3]; d2c[1]+=d2A(3,1)*pz[3]; d2c[2]+=d2A(3,2)*pz[3]; d2c[3]+=d2A(3,3)*pz[3];  
+    d2c[0] = d2A(2,0)*pz[2]; d2c[1] =d2A(2,1)*pz[2]; d2c[2] =d2A(2,2)*pz[2]; d2c[3] =d2A(2,3)*pz[2];
+    d2c[0]+= d2A(3,0)*pz[3]; d2c[1]+=d2A(3,1)*pz[3]; d2c[2]+=d2A(3,2)*pz[3]; d2c[3]+=d2A(3,3)*pz[3];  
+    return true;
+  }
+  else 
+    return false;
 }
 
-template<typename T>
-inline T TricubicBsplineGrid<T>::evaluate(const Array<T,3>& P) const
+template<typename T, int BC0, int BC1, int BC2>
+inline T TricubicBsplineGrid<T,BC0,BC1,BC2>::evaluate(const Array<T,3>& P) const
 {
   return 
     (a[0]*(b[0]*(c[0]*P(ix0,iy0,iz0)+c[1]*P(ix0,iy0,iz1)+c[2]*P(ix0,iy0,iz2)+c[3]*P(ix0,iy0,iz3))+
@@ -168,8 +173,8 @@ inline T TricubicBsplineGrid<T>::evaluate(const Array<T,3>& P) const
            b[3]*(c[0]*P(ix3,iy3,iz0)+c[1]*P(ix3,iy3,iz1)+c[2]*P(ix3,iy3,iz2)+c[3]*P(ix3,iy3,iz3))));
 }
 
-template<typename T>
-inline T TricubicBsplineGrid<T>::evaluate(const Array<T,3>& P,
+template<typename T, int BC0, int BC1, int BC2>
+inline T TricubicBsplineGrid<T,BC0,BC1,BC2>::evaluate(const Array<T,3>& P,
      TinyVector<T,3>& grad, T& laplacian) const
 { 
   //put the blocks in cache
@@ -263,8 +268,8 @@ inline T TricubicBsplineGrid<T>::evaluate(const Array<T,3>& P,
   return dot(a,bcP);
 }
 
-template<typename T> 
-inline T TricubicBsplineGrid<T>::evaluate(const Array<T,3>& P,
+template<typename T, int BC0, int BC1, int BC2>
+inline T TricubicBsplineGrid<T,BC0,BC1,BC2>::evaluate(const Array<T,3>& P,
      TinyVector<T,3>& grad, Tensor<T,3>& secDerivs) const
 {
   //put the blocks in cache
@@ -372,8 +377,9 @@ inline T TricubicBsplineGrid<T>::evaluate(const Array<T,3>& P,
 
 #include "Numerics/BsplineOneDimSolvers.h"
 
-template<typename T> void
-TricubicBsplineGrid<T>::SolvePeriodicInterp(const Array<T,3>& data, Array<T,3>& P)
+template<typename T, int BC0, int BC1, int BC2>
+void
+TricubicBsplineGrid<T,BC0,BC1,BC2>::SolvePeriodicInterp(const Array<T,3>& data, Array<T,3>& P)
 {
   vector<T> dTemp(Nx),pTemp(Nx);
   // Do X direction
@@ -413,8 +419,9 @@ TricubicBsplineGrid<T>::SolvePeriodicInterp(const Array<T,3>& data, Array<T,3>& 
 
 }
 
-template<typename T> void
-TricubicBsplineGrid<T>::MakePeriodic(Array<T,3>& P)
+template<typename T, int BC0, int BC1, int BC2>
+void
+TricubicBsplineGrid<T,BC0,BC1,BC2>::MakePeriodic(Array<T,3>& P)
 {
   // Now, make periodic
   for (int ix=0; ix<(Nx+3); ix++)
@@ -423,8 +430,9 @@ TricubicBsplineGrid<T>::MakePeriodic(Array<T,3>& P)
 	P(ix, iy, iz) = P((ix+Nx-1)%Nx+1, (iy+Ny-1)%Ny+1, (iz+Nz-1)%Nz+1);
 }
 
-template<typename T> void
-TricubicBsplineGrid<T>::SolveFirstDerivInterp(const Array<T,3>& data, Array<T,3>& P)
+template<typename T, int BC0, int BC1, int BC2>
+void
+TricubicBsplineGrid<T,BC0,BC1,BC2>::SolveFirstDerivInterp(const Array<T,3>& data, Array<T,3>& P)
 {
   real_type bcLower[]={-3.0,0.0,3.0,0.0};
   real_type bcUpper[]={-3.0,0.0,3.0,0.0};
@@ -469,8 +477,9 @@ TricubicBsplineGrid<T>::SolveFirstDerivInterp(const Array<T,3>& data, Array<T,3>
 
 }
 
-template<typename T> void
-TricubicBsplineGrid<T>::Init(const Array<T,3>& data, Array<T,3>& P)
+template<typename T, int BC0, int BC1, int BC2>
+void
+TricubicBsplineGrid<T,BC0,BC1,BC2>::Init(const Array<T,3>& data, Array<T,3>& P)
 {
   if (Periodic) {
     P.resize(Nx+3,Ny+3,Nz+3);

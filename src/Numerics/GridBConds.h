@@ -1,8 +1,7 @@
 //////////////////////////////////////////////////////////////////
-// (c) Copyright 2006-  Kenneth Esler  and Jeongnim Kim
+// (c) Copyright 2007-  Jeongnim Kim
 //////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////
-//   Modified by Jeongnim Kim for qmcpack
 //   National Center for Supercomputing Applications &
 //   Materials Computation Center
 //   University of Illinois, Urbana-Champaign
@@ -24,12 +23,16 @@ namespace qmcplusplus {
 
   /** enumeration for the template parameter BC to handle GridBCHanlder
    */
-  enum {FIXED_GBC=0, PERIODDIC_GBC, NO_GBC};
+  enum {FIXED_GBC=0, PERIODIC_GBC, NO_GBC};
 
-  /** grid handler to be specialized */
+  /** general grid handler 
+   *
+   * boolean member is_periodic is used to swith on/off periodic boundary conditions
+   */ 
   template<typename T, unsigned BC=NO_GBC> 
     struct GridBCond { 
-      bool is_periodic;
+      ///true, if periodic
+      bool periodic;
       /// number of grid points
       int Ng;
       /// lower bound of a grid
@@ -46,7 +49,10 @@ namespace qmcplusplus {
       T Delta;
 
       ///default constructor
-      inline GridBCond(): is_periodic(true),Lower(0.0), Upper(1.0){}
+      inline GridBCond(): periodic(true),Lower(0.0), Upper(1.0){}
+
+      ///return periodic
+      inline bool is_periodic() const { return periodic;}
 
       /** initialize the grid
        * @param ng number of grid points
@@ -55,13 +61,13 @@ namespace qmcplusplus {
        */
       inline void init(int ng, T xmin, T xmax, bool pbc)
       {
-        is_periodic=pbc;
+        periodic=pbc;
         Ng=ng;
         Lower=xmin;
         Upper=xmax;
         L=xmax-xmin; 
         OneOverL=1.0/L;
-        Delta=L/static_cast<int>(Ng);
+        Delta=L/static_cast<T>(Ng);
         OneOverDelta=1.0/Delta;
       }
 
@@ -69,7 +75,7 @@ namespace qmcplusplus {
        * @param x a separation of two points
        */
       inline void applyBC(T& x) const {
-        if(is_periodic)
+        if(periodic)
         {
           T x1=std::fmod(x*OneOverL,1.0);
           x=L*(x1-static_cast<int>(2.0*x1));
@@ -84,10 +90,11 @@ namespace qmcplusplus {
       inline bool outofbound(T& x, int& i) const 
       {
         x -=Lower;
-        if(is_periodic)
+        if(periodic)
           x -= std::floor(x*OneOverL)*L;
         else
-          if(x<Lower || x>=Upper) {return true;}
+          if(x<0.0 || x>=L) {return true;}
+
         T xi;
         x = modf (x*OneOverDelta, &xi);
         i = static_cast<int>(xi);
@@ -102,7 +109,7 @@ namespace qmcplusplus {
   template<typename T>
   struct GridBCond<T,FIXED_GBC>
   {
-    const bool is_periodic=false;
+    enum {is_periodic=0};
     /// number of grid points
     int Ng;
     /// lower bound of a grid
@@ -121,6 +128,9 @@ namespace qmcplusplus {
     ///default constructor
     inline GridBCond(): Lower(0.0), Upper(1.0){}
 
+    ///return false
+    inline bool is_periodic() const { return false;}
+
     /** initialize the grid
      * @param ng number of grid points
      * @param xmin lower bound
@@ -134,7 +144,7 @@ namespace qmcplusplus {
       Upper=xmax;
       L=xmax-xmin; 
       OneOverL=1.0/L;
-      Delta=L/static_cast<int>(Ng);
+      Delta=L/static_cast<T>(Ng);
       OneOverDelta=1.0/Delta;
     }
 
@@ -150,10 +160,9 @@ namespace qmcplusplus {
      */
     inline bool outofbound(T& x, int& i) const 
     {
-      x -=Lower;
       if(x<Lower || x>=Upper) {return true;}
       T xi;
-      x = modf (x*OneOverDelta, &xi);
+      x = modf ((x-Lower)*OneOverDelta, &xi);
       i = static_cast<int>(xi);
       return false;
     }
@@ -163,7 +172,7 @@ namespace qmcplusplus {
   template<typename T>
   struct GridBCond<T,PERIODIC_GBC>
   {
-    const bool is_periodic=true;
+    enum {is_periodic=1};
     int Ng;
     T Lower;
     T L;
@@ -171,7 +180,12 @@ namespace qmcplusplus {
     T OneOverDelta;
     T Delta;
     T Upper;
+
     inline GridBCond(): L(1.0),OneOverL(1.0){}
+
+    ///return true
+    inline bool is_periodic() const { return true;}
+
     inline void init(int ng, T xmin, T xmax, bool pbc) 
     {
       Ng=ng;
@@ -179,7 +193,7 @@ namespace qmcplusplus {
       Upper=xmax;
       L=xmax-xmin; 
       OneOverL=1.0/L;
-      Delta=L/static_cast<int>(Ng);
+      Delta=L/static_cast<T>(Ng);
       OneOverDelta=1.0/Delta;
     }
 
@@ -190,9 +204,9 @@ namespace qmcplusplus {
      */
     inline bool outofbound(T& x, int& i) const 
     { 
-      x-=Lower;
-      x -= std::floor(x*OneOverL)*L;
       T xi;
+      x -= Lower;
+      x -= std::floor(x*OneOverL)*L;
       x = modf (x*OneOverDelta, &xi);
       i = static_cast<int>(xi);
       return false;
