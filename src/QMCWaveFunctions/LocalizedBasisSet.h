@@ -49,6 +49,8 @@ namespace qmcplusplus {
     typedef typename BasisSetType::GradMatrix_t  GradMatrix_t;
     typedef typename BasisSetType::OptimizableSetType OptimizableSetType;
 
+    using BasisSetType::ActivePtcl;
+    using BasisSetType::Counter;
     using BasisSetType::BasisSetSize;
     using BasisSetType::Phi;
     using BasisSetType::dPhi;
@@ -146,6 +148,7 @@ namespace qmcplusplus {
     {
       for(int c=0; c<NumCenters;c++) 
         LOBasis[c]->evaluateForWalkerMove(c,0,NumTargets,BasisOffset[c],Y,dY,d2Y);
+      Counter++; // increment a conter
     }
 
     inline void 
@@ -153,6 +156,8 @@ namespace qmcplusplus {
     {
       for(int c=0; c<NumCenters;c++) 
 	LOBasis[c]->evaluateForWalkerMove(c,iat,BasisOffset[c],Phi,dPhi,d2Phi);
+      Counter++;
+      ActivePtcl=iat;
     }
 
     inline void 
@@ -160,6 +165,8 @@ namespace qmcplusplus {
     {
       for(int c=0; c<NumCenters;c++) 
 	LOBasis[c]->evaluateForPtclMove(c,iat,BasisOffset[c],Phi);
+      Counter++;
+      ActivePtcl=iat;
     }
 
     inline void 
@@ -167,6 +174,8 @@ namespace qmcplusplus {
     {
       for(int c=0; c<NumCenters;c++) 
 	LOBasis[c]->evaluateAllForPtclMove(c,iat,BasisOffset[c],Phi,dPhi,d2Phi);
+      Counter++;
+      ActivePtcl=iat;
     }
 
     /** add a new set of Centered Atomic Orbitals

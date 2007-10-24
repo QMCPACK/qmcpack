@@ -46,7 +46,11 @@ namespace qmcplusplus {
     ///number of Single-particle orbtials
     IndexType OrbitalSetSize;
     ///number of Single-particle orbtials
-    int BasisSetSize;
+    IndexType BasisSetSize;
+    ///index of the particle
+    IndexType ActivePtcl;
+    ///counter to keep track 
+    unsigned long Counter;
     ///matrix containing the coefficients
     ValueMatrix_t C;
     ///occupation number
@@ -54,7 +58,7 @@ namespace qmcplusplus {
 
     /** constructor
      */
-    SPOSetBase():Identity(false),OrbitalSetSize(0),BasisSetSize(0) {}
+    SPOSetBase():Identity(false),OrbitalSetSize(0),BasisSetSize(0), ActivePtcl(-1), Counter(0) {}
 
     /** destructor
      */

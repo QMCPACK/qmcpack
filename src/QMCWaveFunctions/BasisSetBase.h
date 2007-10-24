@@ -49,6 +49,10 @@ namespace qmcplusplus {
 
     ///size of the basis set
     IndexType BasisSetSize;
+    ///index of the particle
+    IndexType ActivePtcl;
+    ///counter to keep track 
+    unsigned long Counter;
     ///phi[i] the value of the i-th basis set 
     ValueVector_t Phi;
     ///dphi[i] the gradient of the i-th basis set 
@@ -63,7 +67,7 @@ namespace qmcplusplus {
     ValueMatrix_t d2Y;
 
     ///default constructor
-    BasisSetBase():BasisSetSize(0) { }
+    BasisSetBase():BasisSetSize(0), ActivePtcl(-1), Counter(0){ }
     ///virtual destructor
     virtual ~BasisSetBase() { }
     /** resize the container */
