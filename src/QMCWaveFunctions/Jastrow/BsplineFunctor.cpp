@@ -1,4 +1,6 @@
-#include "BsplineFunctor.h"
+
+#include "Configuration.h"
+#include "QMCWaveFunctions/Jastrow/BsplineFunctor.h"
 
 namespace qmcplusplus {
 
