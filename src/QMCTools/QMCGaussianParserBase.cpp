@@ -8,7 +8,7 @@
 #include <set>
 #include <map>
 using namespace std;
-#include "QMCWaveFunctions/MolecularOrbitals/GTO2GridBuilder.h"
+#include "QMCTools/GTO2GridBuilder.h"
 #include "QMCApp/InitMolecularSystem.h"
 
 //std::vector<std::string> QMCGaussianParserBase::IonName;

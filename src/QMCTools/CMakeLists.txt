@@ -2,14 +2,14 @@ PROJECT(qmctools)
 
 SET(QMCTOOLS
   ../QMCWaveFunctions/OrbitalBuilderBase.cpp
-  ../QMCWaveFunctions/MolecularOrbitals/RGFBuilderBase.cpp
-  ../QMCWaveFunctions/MolecularOrbitals/GTO2GridBuilder.cpp
+  RGFBuilderBase.cpp
+  GTO2GridBuilder.cpp
 )
 
 SET(CASINO
   ../QMCWaveFunctions/OrbitalBuilderBase.cpp
-  ../QMCWaveFunctions/MolecularOrbitals/RGFBuilderBase.cpp
-  ../QMCWaveFunctions/MolecularOrbitals/GTO2GridBuilder.cpp
+  RGFBuilderBase.cpp
+  GTO2GridBuilder.cpp
   ../QMCApp/InitMolecularSystem.cpp
   QMCGaussianParserBase.cpp
   GaussianFCHKParser.cpp
