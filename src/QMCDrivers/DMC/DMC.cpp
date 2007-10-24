@@ -40,6 +40,7 @@ namespace qmcplusplus {
     m_param.add(Reconfiguration,"reconfiguration","string");
     m_param.add(BranchInterval,"branchInterval","int");
     m_param.add(NonLocalMove,"nonlocalmove","string");
+    m_param.add(NonLocalMove,"nonlocalmoves","string");
   }
 
   bool DMC::run() {

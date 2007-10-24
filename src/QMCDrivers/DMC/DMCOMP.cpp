@@ -42,6 +42,7 @@ namespace qmcplusplus {
     m_param.add(Reconfiguration,"reconfiguration","string");
     m_param.add(BranchInterval,"branchInterval","string");
     m_param.add(NonLocalMove,"nonlocalmove","string");
+    m_param.add(NonLocalMove,"nonlocalmoves","string");
   }
 
   void DMCOMP::resetUpdateEngines() {

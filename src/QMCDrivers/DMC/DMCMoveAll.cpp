@@ -35,6 +35,7 @@ namespace qmcplusplus {
     m_param.add(Reconfiguration,"reconfiguration","string");
     m_param.add(BranchInterval,"branchInterval","int"); 
     m_param.add(BranchInterval,"branch_interval","int");
+    m_param.add(NonLocalMove,"nonlocalmove","string");
     m_param.add(NonLocalMove,"nonlocalmoves","string");
 
     //create a ScalarEstimator and add DMCEnergyEstimator
