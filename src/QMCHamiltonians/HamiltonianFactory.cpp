@@ -24,6 +24,7 @@
 #include "QMCHamiltonians/IonIonPotential.h"
 #include "QMCHamiltonians/LocalCorePolPotential.h"
 #include "QMCHamiltonians/ECPotentialBuilder.h"
+#include "QMCHamiltonians/NumericalRadialPotential.h"
 #if defined(HAVE_LIBFFTW)
 #include "QMCHamiltonians/ModInsKineticEnergy.h"
 #include "QMCHamiltonians/MomentumDistribution.h"
@@ -97,12 +98,14 @@ namespace qmcplusplus {
     while(cur != NULL) {
       string cname((const char*)cur->name);
       string potType("0");
+      string potName("any");
       string sourceInp(targetPtcl->getName());
       string targetInp(targetPtcl->getName());
       OhmmsAttributeSet attrib;
       attrib.add(sourceInp,"source");
       attrib.add(targetInp,"target");
       attrib.add(potType,"type");
+      attrib.add(potName,"name");
       attrib.put(cur);
       renameProperty(sourceInp);
       renameProperty(targetInp);
@@ -119,6 +122,15 @@ namespace qmcplusplus {
           addPseudoPotential(cur);
         } else if(potType == "cpp") {
           addCorePolPotential(cur);
+        }
+        else if(potType.find("num") < potType.size())
+        {
+          if(sourceInp == targetInp)//only accept the pair-potential for now
+          {
+            NumericalRadialPotential* apot=new NumericalRadialPotential(*targetPtcl);
+            apot->put(cur);
+            targetH->addOperator(apot,potName);
+          }
         }
       } 
       else if(cname == "constant") 
