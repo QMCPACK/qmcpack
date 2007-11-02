@@ -12,6 +12,7 @@ SET(HAMSRCS
   ECPComponentBuilder.1.cpp
   ECPComponentBuilder.2.cpp
   NonLocalTOperator.cpp
+  NumericalRadialPotential.cpp
 )
 #  FSAtomPseudoPot.cpp
 
