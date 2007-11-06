@@ -23,6 +23,7 @@ extern "C"
 }
 #include "Numerics/HDFNumericAttrib.h"
 #include "Lattice/CrystalLattice.h"
+#include "EinsplineWrapper.h"
 #include <cmath>
 
 namespace qmcplusplus {
@@ -139,6 +140,7 @@ namespace qmcplusplus {
     vector<PosType> uCenters, Reflections;
     double Radius, Energy;
     bool Localized;
+    BsplineClass_3d_d *Bspline;
     UBspline_3d_d *Spline;
     PosType kVec;
 
@@ -344,6 +346,7 @@ namespace qmcplusplus {
     vector<PosType> uCenters, Reflections;
     double Radius, Energy;
     bool Localized;
+    BsplineClass_3d_z *Bspline;
     UBspline_3d_z *Spline;
     PosType kVec;
 
