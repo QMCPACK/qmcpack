@@ -28,10 +28,6 @@ namespace qmcplusplus {
    */
   struct WalkerReconfigurationMPI: public WalkerControlBase {
 
-    ///number of mpi contexts
-    int NumContexts;
-    /// context on a node
-    int MyContext;
     ///total number of walkers 
     int TotalWalkers;
     ///starting index of the local walkers
@@ -44,8 +40,6 @@ namespace qmcplusplus {
     RealType DeltaStep;
     ///1/(total number of walkers)
     RealType nwInv;
-    ///pointer to the Communicator
-    Communicate* myComm;
     ///the number of extra/missing walkers
     vector<IndexType> dN;
     //weight per walker

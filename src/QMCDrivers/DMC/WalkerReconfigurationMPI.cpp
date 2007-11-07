@@ -26,44 +26,47 @@ using namespace qmcplusplus;
  * set SwapMode
  */
 WalkerReconfigurationMPI::WalkerReconfigurationMPI(Communicate* c): 
-TotalWalkers(0) {
+WalkerControlBase(c), TotalWalkers(0) {
   SwapMode=1;
-  setCommunicator(c);
-  accumData.resize(LE_MAX);
-  curData.resize(LE_MAX+NumContexts);
-
   //ostringstream o;
   //o << "check." << MyContext << ".dat";
   //ofstream fout(o.str().c_str());
   //fout << "UnitZeta " << UnitZeta << endl;
-}
-
-void WalkerReconfigurationMPI::setCommunicator(Communicate* c)
-{
-  if(c) 
-    myComm=c;
-  else
-    myComm = OHMMS::Controller;
-
-  NumContexts=myComm->ncontexts();
-  MyContext=myComm->mycontext();
   UnitZeta=Random();
   myComm->bcast(&UnitZeta,1);
   //MPI_Bcast(&UnitZeta,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
   app_log() << "  First weight [0,1) for reconfiguration =" << UnitZeta << endl;
 }
 
+//void WalkerReconfigurationMPI::setCommunicator(Communicate* c)
+//{
+//  if(c) 
+//    myComm=c;
+//  else
+//    myComm = OHMMS::Controller;
+//
+//  NumContexts=myComm->ncontexts();
+//  MyContext=myComm->mycontext();
+//  UnitZeta=Random();
+//  myComm->bcast(&UnitZeta,1);
+//  //MPI_Bcast(&UnitZeta,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
+//  app_log() << "  First weight [0,1) for reconfiguration =" << UnitZeta << endl;
+//}
+
 int 
 WalkerReconfigurationMPI::branch(int iter, MCWalkerConfiguration& W, RealType trigger) {
 
   int nwkept = swapWalkers(W);
 
-  RealType wgtInv(1.0/curData[WEIGHT_INDEX]);
-  accumData[ENERGY_INDEX]     += curData[ENERGY_INDEX]*wgtInv;
-  accumData[ENERGY_SQ_INDEX]  += curData[ENERGY_SQ_INDEX]*wgtInv;
-  accumData[WALKERSIZE_INDEX] += nwkept;
-  //accumData[WALKERSIZE_INDEX] += curData[WALKERSIZE_INDEX];
-  accumData[WEIGHT_INDEX]     += curData[WEIGHT_INDEX];
+  measureProperties(iter);
+  W.EnsembleProperty=EnsembleProperty;
+
+  //RealType wgtInv(1.0/curData[WEIGHT_INDEX]);
+  //accumData[ENERGY_INDEX]     += curData[ENERGY_INDEX]*wgtInv;
+  //accumData[ENERGY_SQ_INDEX]  += curData[ENERGY_SQ_INDEX]*wgtInv;
+  //accumData[WALKERSIZE_INDEX] += nwkept;
+  ////accumData[WALKERSIZE_INDEX] += curData[WALKERSIZE_INDEX];
+  //accumData[WEIGHT_INDEX]     += curData[WEIGHT_INDEX];
 
   //set Weight and Multiplicity to default values
   MCWalkerConfiguration::iterator it(W.begin()),it_end(W.end());

@@ -25,6 +25,60 @@
 namespace qmcplusplus {
 
 #if defined(HAVE_MPI)
+
+  WalkerControlBase* createWalkerController(int nwtot, Communicate* comm, xmlNodePtr cur) 
+  {
+
+    app_log() << "  Creating WalkerController: current number of walkers = " << nwtot << endl;
+
+    ///set of parameters
+    int nmax=0;
+    int nmin=0;
+    string reconfig("no");
+    ParameterSet m_param;
+    m_param.add(nwtot,"targetWalkers","int"); 
+    m_param.add(nwtot,"targetwalkers","int"); 
+    m_param.add(reconfig,"reconfiguration","string");
+    m_param.put(cur);
+
+    //if(nmax<0) nmax=2*nideal;
+    //if(nmin<0) nmin=nideal/2;
+    WalkerControlBase* wc=0;
+    int ncontexts = comm->ncontexts();
+    bool fixw= (reconfig == "yes");
+
+    if(fixw) {
+      nmax=nwtot/ncontexts;
+      nmin=nwtot/ncontexts;
+    } else {
+      int npernode=nwtot/ncontexts;
+      nmax=2*npernode+1;
+      nmin=npernode/5+1;
+    }
+
+    if(ncontexts>1) {
+      if(fixw) {
+        app_log() << "  Using WalkerReconfigurationMPI for population control." << endl;
+        wc = new WalkerReconfigurationMPI(comm);
+      } else {
+        app_log() << "  Using WalkerControlMPI for dynamic population control." << endl;
+        wc = new WalkerControlMPI(comm);
+      }
+    } else {
+      if(fixw)  {
+        app_log() << "  Using WalkerReconfiguration for population control." << endl;
+        wc = new WalkerReconfiguration(comm);
+      } else {
+        app_log() << "  Using WalkerControlBase for dynamic population control." << endl;
+        wc = new WalkerControlBase(comm);
+      }
+    }
+
+    wc->Nmin=nmin;
+    wc->Nmax=nmax;
+    return wc;
+  }
+
   WalkerControlBase* CreateWalkerController(
       bool reconfig, int& swapmode, int nideal,
       int nmax, int nmin, WalkerControlBase* wc,
@@ -68,10 +122,10 @@ namespace qmcplusplus {
         } else {
           if(reconfig)  {
             app_log() << "  Using WalkerReconfiguration for population control." << endl;
-            wc = new WalkerReconfiguration;
+            wc = new WalkerReconfiguration(comm);
           } else {
             app_log() << "  Using WalkerControlBase for dynamic population control." << endl;
-            wc = new WalkerControlBase;
+            wc = new WalkerControlBase(comm);
           }
         }
       }

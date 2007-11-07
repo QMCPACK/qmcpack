@@ -124,6 +124,8 @@ namespace qmcplusplus {
       Nmax=WalkerController->Nmax;
       Nmin=WalkerController->Nmin;
 
+      WalkerController->start();
+
       //use DMCEnergyEstimator
       //DMCEnergyEstimator* dmcE=new DMCEnergyEstimator;
       //dmcE->setWalkerControl(WalkerController);

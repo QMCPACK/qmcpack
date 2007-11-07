@@ -30,22 +30,14 @@ namespace qmcplusplus {
   struct WalkerControlMPI: public WalkerControlBase {
 
     int NumSwaps;
-    int MyContext;
-    int NumContexts;
     int Cur_max;
     int Cur_min;
     int Cur_pop;
-    Communicate* myComm;
-    vector<int> NumPerNode;
-    vector<int> OffSet;
-    vector<int> FairOffSet;
     /** default constructor
      *
      * Set the SwapMode to zero so that instantiation can be done
      */
     WalkerControlMPI(Communicate* c=0);
-
-    void setCommunicator(Communicate* c=0);
 
     /** perform branch and swap walkers as required */
     int branch(int iter, MCWalkerConfiguration& W, RealType trigger);
