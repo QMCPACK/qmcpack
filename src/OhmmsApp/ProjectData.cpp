@@ -121,6 +121,9 @@ namespace OHMMS {
     sprintf(fileroot,"%s.s%03d",m_title.c_str(),m_series);
     m_projectmain=fileroot;
 
+    //set the communicator name
+    myComm->setName(fileroot);
+
     int nproc = myComm->ncontexts();
     int nodeid = myComm->mycontext(); 
     //int nproc = Controller->ncontexts();
