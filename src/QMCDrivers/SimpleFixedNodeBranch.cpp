@@ -25,6 +25,8 @@
 #include "Numerics/HDFNumericAttrib.h"
 #include "Numerics/HDFSTLAttrib.h"
 
+//#include <boost/archive/text_oarchive.hpp>
+
 namespace qmcplusplus {
 
   SimpleFixedNodeBranch::SimpleFixedNodeBranch(RealType tau, int nideal): 
@@ -101,30 +103,35 @@ namespace qmcplusplus {
   void SimpleFixedNodeBranch::initWalkerController(RealType tau, bool fixW) {
     Tau=tau;
 
-    //reset Feedback pararmeter
-    reset();
+    ////reset Feedback pararmeter
+    //reset();
 
     if(WalkerController == 0) 
     {
       FixedNumWalkers=fixW;
-      if(fixW) 
-      {
-        if(WgtSum<5) Eref-= DeltaE;
-        Etrial=0.0;Feedback=0.0;logN=0.0;
-      }
+      //moved these to reset
+      //if(fixW) 
+      //{
+      //  if(WgtSum<5) Eref-= DeltaE;
+      //  Etrial=0.0;Feedback=0.0;logN=0.0;
+      //}
 
-      WalkerController 
-        = CreateWalkerController(FixedNumWalkers, SwapMode, 
-            Nideal, Nmax, Nmin, WalkerController,MyEstimator->getCommunicator());
+      WalkerController = createWalkerController(Nideal, MyEstimator->getCommunicator(), myNode);
+      //WalkerController 
+      //  = CreateWalkerController(FixedNumWalkers, SwapMode, 
+      //      Nideal, Nmax, Nmin, WalkerController,MyEstimator->getCommunicator());
 
       Nmax=WalkerController->Nmax;
       Nmin=WalkerController->Nmin;
 
       //use DMCEnergyEstimator
-      DMCEnergyEstimator* dmcE=new DMCEnergyEstimator;
-      dmcE->setWalkerControl(WalkerController);
-      MyEstimator->add(dmcE);
+      //DMCEnergyEstimator* dmcE=new DMCEnergyEstimator;
+      //dmcE->setWalkerControl(WalkerController);
+      //MyEstimator->add(dmcE);
     }
+
+    //reset Feedback pararmeter
+    this->reset();
 
     MyEstimator->reset();
     //update the simulation parameters
@@ -140,11 +147,11 @@ namespace qmcplusplus {
     //reset
     WalkerController->reset();
 
-    if(!FixedNumWalkers)
-    {
-      EtrialIndex = MyEstimator->addColumn("Etrial");
-      MyEstimator->addColumn("Popupation");
-    }
+    //if(!FixedNumWalkers)
+    //{
+    //  EtrialIndex = MyEstimator->addColumn("Etrial");
+    //  MyEstimator->addColumn("Popupation");
+    //}
 
     app_log() << "  QMC counter      = " << QMCCounter << endl;
     app_log() << "  reference energy = " << Eref << endl;
@@ -164,25 +171,31 @@ namespace qmcplusplus {
   }
 
   void
-    SimpleFixedNodeBranch::branch(int iter, MCWalkerConfiguration& w) 
+    SimpleFixedNodeBranch::branch(int iter, MCWalkerConfiguration& Walkers) 
     {
+      int pop_old= Walkers.getGlobalNumWalkers();
       //collect the total weights and redistribute the walkers accordingly
-      int pop_now = WalkerController->branch(iter,w,PopControl);
-      RealType enecur=WalkerController->getCurrentValue(WalkerControlBase::EREF_INDEX);
-      RealType wgtcur=WalkerController->getCurrentValue(WalkerControlBase::WEIGHT_INDEX);
-      EavgSum += enecur/wgtcur;
+      int pop_now = WalkerController->branch(iter,Walkers,PopControl);
+
+      //a smarter average may work better but now simply add one
+      EavgSum += WalkerController->EnsembleProperty.Energy; 
       WgtSum += 1.0;
-      if(!FixedNumWalkers)
+
+      if(FixedNumWalkers)
       {
-        //use an average: instantenous energy is good, too
-        Etrial=Eref= EavgSum/WgtSum-Feedback*std::log(static_cast<RealType>(wgtcur))+logN;
-        //E_T = enecur/wgtcur-Feed*std::log(static_cast<RealType>(wgtcur))+logN;
-        MyEstimator->setColumn(EtrialIndex,Etrial);
-        MyEstimator->setColumn(EtrialIndex+1,wgtcur);
+        WalkerController->setTrialEnergy(EavgSum/WgtSum);
+      }
+      else
+      {//use an average: instantenous energy is good, too
+        Etrial=Eref= EavgSum/WgtSum-Feedback*std::log(static_cast<RealType>(pop_now))+logN;
+        WalkerController->setTrialEnergy(Etrial);
+        //MyEstimator->setColumn(EtrialIndex,Etrial);
+        //MyEstimator->setColumn(EtrialIndex+1,wgt_cur);
       }
 
+
       //evaluate everything else
-      MyEstimator->accumulate(w);
+      MyEstimator->accumulate(Walkers);
     }
 
   /** perform branching
@@ -205,14 +218,26 @@ namespace qmcplusplus {
     //use effective time step of BranchInterval*Tau
     //Feed = 1.0/(static_cast<RealType>(NumGeneration*BranchInterval)*Tau);
     //logN = Feed*std::log(static_cast<RealType>(Nideal));
-    logN = Feedback*std::log(static_cast<RealType>(Nideal));
+    if(WalkerController)
+    {
+      if(FixedNumWalkers)
+      {
+        if(WgtSum<5) Eref-= DeltaE;
+        Etrial=0.0;Feedback=0.0;logN=0.0;
+      }
+      else
+        logN = Feedback*std::log(static_cast<RealType>(Nideal));
+
+      WalkerController->start();
+    }
   }
 
   void SimpleFixedNodeBranch::finalize() {
+
     //Estimator now is handled by Mover classs
     //MyEstimator->stop();
     //MyEstimator->finalize();
-    if(!WalkerController || EtrialIndex<0) 
+    if(!WalkerController) // || EtrialIndex<0) 
     {//running VMC
       MyEstimator->getEnergyAndWeight(EavgSum,WgtSum);
       EavgSum/=WgtSum;
