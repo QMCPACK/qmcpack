@@ -49,7 +49,7 @@ namespace qmcplusplus {
     double Radius, Energy;
     bool Localized;
     BsplineClass_2d_d *Bspline;
-    UBspline_2d_d *Spline;
+    // UBspline_2d_d *Spline;
     PosType kVec;
     
     inline void evaluate (const PosType& r, double &psi) 
@@ -96,7 +96,7 @@ namespace qmcplusplus {
     double Radius, Energy;
     bool Localized;
     BsplineClass_2d_z *Bspline;
-    UBspline_2d_z *Spline;
+    // UBspline_2d_z *Spline;
     PosType kVec;
 
     inline void evaluate (const PosType& r, complex<double> &psi) 
@@ -149,7 +149,7 @@ namespace qmcplusplus {
     double Radius, Energy;
     bool Localized;
     BsplineClass_3d_d *Bspline;
-    UBspline_3d_d *Spline;
+    // UBspline_3d_d *Spline;
     PosType kVec;
 
     inline void evaluate (const PosType& u, double &psi) 
@@ -338,7 +338,8 @@ namespace qmcplusplus {
       Radius    = orb.Radius;
       Energy    = orb.Energy;
       Localized = orb.Localized;
-      Spline    = orb.Spline;
+      // Spline    = orb.Spline;
+      Bspline      = orb.Bspline;
       kVec      = orb.kVec;
       Reflection = orb.Reflection;      
       Reflections.resize(orb.Reflections.size());
@@ -360,7 +361,7 @@ namespace qmcplusplus {
     double Radius, Energy;
     bool Localized;
     BsplineClass_3d_z *Bspline;
-    UBspline_3d_z *Spline;
+    // UBspline_3d_z *Spline;
     PosType kVec;
 
     inline void evaluate (const PosType& u, complex<double> &psi) 
@@ -518,7 +519,8 @@ namespace qmcplusplus {
       Radius    = orb.Radius;
       Energy    = orb.Energy;
       Localized = orb.Localized;
-      Spline    = orb.Spline;
+      // Spline    = orb.Spline;
+      Bspline      = orb.Bspline;
       kVec      = orb.kVec;
       Reflection = orb.Reflection;      
       Reflections.resize(orb.Reflections.size());
