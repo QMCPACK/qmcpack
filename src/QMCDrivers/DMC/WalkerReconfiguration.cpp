@@ -25,13 +25,10 @@ using namespace qmcplusplus;
  *
  * set SwapMode
  */
-WalkerReconfiguration::WalkerReconfiguration() {
+WalkerReconfiguration::WalkerReconfiguration(Communicate* c) :WalkerControlBase(c)
+{
   SwapMode=1;
-  NumContexts=OHMMS::Controller->ncontexts();
-  MyContext=OHMMS::Controller->mycontext();
-
   UnitZeta=Random();
-
   //ofstream fout("check.dat");
 }
 
@@ -158,15 +155,18 @@ WalkerReconfiguration::branch(int iter, MCWalkerConfiguration& W, RealType trigg
   int nwkept = getIndexPermutation(W);
 
   //update EnsembleProperty
-  W.EnsembleProperty.NumSamples=curData[WALKERSIZE_INDEX];
-  W.EnsembleProperty.Weight=curData[WEIGHT_INDEX];
+  measureProperties(iter);
+  W.EnsembleProperty=EnsembleProperty;
 
-  RealType wgtInv(1.0/curData[WEIGHT_INDEX]);
-  accumData[ENERGY_INDEX]     += curData[ENERGY_INDEX]*wgtInv;
-  accumData[ENERGY_SQ_INDEX]  += curData[ENERGY_SQ_INDEX]*wgtInv;
-  accumData[WALKERSIZE_INDEX] += nwkept;
-  //accumData[WALKERSIZE_INDEX] += curData[WALKERSIZE_INDEX];
-  accumData[WEIGHT_INDEX]     += curData[WEIGHT_INDEX];
+  //W.EnsembleProperty.NumSamples=curData[WALKERSIZE_INDEX];
+  //W.EnsembleProperty.Weight=curData[WEIGHT_INDEX];
+
+  //RealType wgtInv(1.0/curData[WEIGHT_INDEX]);
+  //accumData[ENERGY_INDEX]     += curData[ENERGY_INDEX]*wgtInv;
+  //accumData[ENERGY_SQ_INDEX]  += curData[ENERGY_SQ_INDEX]*wgtInv;
+  //accumData[WALKERSIZE_INDEX] += nwkept;
+  ////accumData[WALKERSIZE_INDEX] += curData[WALKERSIZE_INDEX];
+  //accumData[WEIGHT_INDEX]     += curData[WEIGHT_INDEX];
 
   //set Weight and Multiplicity to default values
   MCWalkerConfiguration::iterator it(W.begin()),it_end(W.end());

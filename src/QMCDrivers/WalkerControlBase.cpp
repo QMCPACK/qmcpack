@@ -20,12 +20,80 @@
 
 namespace qmcplusplus {
 
-  WalkerControlBase::WalkerControlBase(): 
+  WalkerControlBase::WalkerControlBase(Communicate* c): 
   SwapMode(0), Nmin(1), Nmax(10), MaxCopy(5), 
-  targetEnergyBound(20), targetVar(2), targetSigma(10)
+  targetEnergyBound(20), targetVar(2), targetSigma(10), dmcStream(0)
   {
+    setCommunicator(c);
+
+  }
+
+  WalkerControlBase::~WalkerControlBase()
+  {
+    if(dmcStream) delete dmcStream;
+  }
+
+ 
+  void WalkerControlBase::setCommunicator(Communicate* c)
+  {
+    if(c) 
+      myComm=c;
+    else
+      myComm = OHMMS::Controller;
+
+    NumContexts=myComm->ncontexts();
+    MyContext=myComm->mycontext();
+
+    curData.resize(LE_MAX+NumContexts);
+    NumPerNode.resize(NumContexts);
+    OffSet.resize(NumContexts+1);
+    FairOffSet.resize(NumContexts+1);
     accumData.resize(LE_MAX);
-    curData.resize(LE_MAX);
+  }
+
+  void WalkerControlBase::start()
+  {
+    if(MyContext == 0)
+    {
+      if(dmcStream) delete dmcStream;
+      string hname(myComm->getName());
+      hname.append(".dmc.dat");
+      dmcStream= new ofstream(hname.c_str());
+      //oa = new boost::archive::binary_oarchive (*dmcStream);
+      dmcStream->setf(ios::scientific, ios::floatfield);
+      dmcStream->precision(10);
+      (*dmcStream) << setw(10) << "# Index "
+        << setw(14) << "Energy"
+        << setw(22) << "Weight "
+        << setw(20) << "Variance" 
+        << setw(20) << "NumOfWalkers" 
+        << setw(20) << "TrialEnergy " 
+        << endl;
+    }
+  }
+
+  void WalkerControlBase::measureProperties(int iter)
+  {
+    //taking average over the walkers
+    RealType wgtInv(1.0/curData[WEIGHT_INDEX]);
+    RealType eavg=curData[ENERGY_INDEX]*wgtInv;
+    EnsembleProperty.Energy=eavg;
+    EnsembleProperty.Weight=curData[WEIGHT_INDEX];
+    EnsembleProperty.Variance=(curData[ENERGY_SQ_INDEX]*wgtInv-eavg*eavg);
+    EnsembleProperty.NumSamples=curData[WALKERSIZE_INDEX];
+
+    if(dmcStream) 
+    {
+      //boost::archive::text_oarchive oa(*dmcStream);
+      //(*oa) & iter  & eavg_cur & wgt_cur & Etrial  & pop_old;
+      (*dmcStream) << setw(10) << iter 
+        << setw(20) << EnsembleProperty.Energy
+        << setw(20) << EnsembleProperty.Weight
+        << setw(20) << EnsembleProperty.Variance
+        << setw(20) << EnsembleProperty.NumSamples
+        << setw(20) << trialEnergy 
+        << endl;
+    }
   }
 
   void WalkerControlBase::reset() 
@@ -37,11 +105,17 @@ namespace qmcplusplus {
 
     sortWalkers(W);
 
-    RealType wgtInv(1.0/curData[WEIGHT_INDEX]);
-    accumData[ENERGY_INDEX]     += curData[ENERGY_INDEX]*wgtInv;
-    accumData[ENERGY_SQ_INDEX]  += curData[ENERGY_SQ_INDEX]*wgtInv;
-    accumData[WALKERSIZE_INDEX] += curData[WALKERSIZE_INDEX];
-    accumData[WEIGHT_INDEX]     += curData[WEIGHT_INDEX];
+    measureProperties(iter);
+    W.EnsembleProperty=EnsembleProperty;
+
+    //un-biased variance but we use the saimple one
+    //W.EnsembleProperty.Variance=(e2sum*wsum-esum*esum)/(wsum*wsum-w2sum);
+
+    ////add to the accumData for block average: REMOVE THIS
+    //accumData[ENERGY_INDEX]     += curData[ENERGY_INDEX]*wgtInv;
+    //accumData[ENERGY_SQ_INDEX]  += curData[ENERGY_SQ_INDEX]*wgtInv;
+    //accumData[WALKERSIZE_INDEX] += curData[WALKERSIZE_INDEX];
+    //accumData[WEIGHT_INDEX]     += curData[WEIGHT_INDEX];
 
     int nw_tot = copyWalkers(W);
 
@@ -84,21 +158,23 @@ namespace qmcplusplus {
     vector<Walker_t*> bad;
     NumWalkers=0;
     MCWalkerConfiguration::iterator it_end(W.end());
-    RealType esum=0.0,e2sum=0.0,wsum=0.0,ecum=0.0;
+    RealType esum=0.0,e2sum=0.0,wsum=0.0,ecum=0.0, w2sum=0.0;
     //RealType sigma=std::max(5.0*targetVar,targetEnergyBound);
     //RealType ebar= targetAvg;
-    while(it != it_end) {
+    while(it != it_end) 
+    {
       RealType e((*it)->Properties(LOCALENERGY));
       int nc= std::min(static_cast<int>((*it)->Multiplicity),MaxCopy);
-      //if(fabs(ebar-e) < sigma)//exclude extreme energies 
-      //{
-        RealType wgt((*it)->Weight);
-        esum += wgt*e;
-        e2sum += wgt*e*e;
-        wsum += wgt;
-        ecum += e;
-      //}
-      if(nc) {
+      RealType wgt((*it)->Weight);
+
+      esum += wgt*e;
+      e2sum += wgt*e*e;
+      wsum += wgt;
+      w2sum += wgt*wgt;
+      ecum += e;
+
+      if(nc) 
+      {
         NumWalkers += nc;
         good_w.push_back(*it);
         ncopy_w.push_back(nc-1);
@@ -113,7 +189,6 @@ namespace qmcplusplus {
 
     //evaluate variance of this block
     //curVar=(e2sum-esum*esum/wsum)/wsum;
-
     //THIS IS NOT USED ANYMORE:BELOW
     //if(curVar>sigma) {
     //  app_error() << "Unphysical block variance is detected. Stop simulations." << endl;
@@ -135,8 +210,12 @@ namespace qmcplusplus {
     curData[WEIGHT_INDEX]=wsum;
     curData[EREF_INDEX]=ecum;
     
-    W.EnsembleProperty.NumSamples=curData[WALKERSIZE_INDEX];
-    W.EnsembleProperty.Weight=curData[WEIGHT_INDEX];
+    ////this should be move
+    //W.EnsembleProperty.NumSamples=curData[WALKERSIZE_INDEX];
+    //W.EnsembleProperty.Weight=curData[WEIGHT_INDEX];
+    //W.EnsembleProperty.Energy=(esum/=wsum);
+    //W.EnsembleProperty.Variance=(e2sum/wsum-esum*esum);
+    //W.EnsembleProperty.Variance=(e2sum*wsum-esum*esum)/(wsum*wsum-w2sum);
 
     //remove bad walkers empty the container
     for(int i=0; i<bad.size(); i++) delete bad[i];

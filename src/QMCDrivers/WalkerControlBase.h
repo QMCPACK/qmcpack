@@ -8,7 +8,6 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
@@ -22,6 +21,7 @@
 #include "Particle/MCWalkerConfiguration.h"
 #include "Message/Communicate.h"
 #include "Message/CommOperators.h"
+//#include <boost/archive/binary_oarchive.hpp>
 
 namespace qmcplusplus {
 
@@ -36,14 +36,21 @@ namespace qmcplusplus {
    *   current walker sample correctly. 
    * -- removes an extra global reduction.
    *   --- curData should be used for global reductions
+   * - 2007/11/07
+   * -- added functions to dump dmc histograms
    */
-  struct WalkerControlBase: public QMCTraits {
+  class WalkerControlBase: public QMCTraits {
 
+    public:
     ///typedef of Walker_t
     typedef MCWalkerConfiguration::Walker_t Walker_t;
 
     enum {ENERGY_INDEX=0, ENERGY_SQ_INDEX, WALKERSIZE_INDEX, WEIGHT_INDEX, EREF_INDEX, LE_MAX};
 
+    ///context id
+    IndexType MyContext;
+    ///number of contexts
+    IndexType NumContexts;
     ///0 is default
     IndexType SwapMode;
     ///minimum number of walkers
@@ -56,6 +63,8 @@ namespace qmcplusplus {
     IndexType NumWalkers;
     ///a dummy integer
     IndexType DummyIndex;
+    ///trial energy energy
+    RealType trialEnergy;
     ///target average energy
     RealType targetAvg;
     ///target average variance
@@ -66,6 +75,24 @@ namespace qmcplusplus {
     RealType targetEnergyBound;
     ///current variance
     RealType curVar;
+    ///own the communicator
+    Communicate* myComm;
+
+    ///number of particle per node
+    vector<int> NumPerNode;
+    ///offset of the particle index
+    vector<int> OffSet;
+    ///offset of the particle index for a fair distribution
+    vector<int> FairOffSet;
+    
+    ///ensenble properties
+    MCDataType<RealType> EnsembleProperty;
+
+    ///file to save energy histogram
+    ofstream* dmcStream;
+    ///archive
+    //boost::archive::binary_oarchive *oa;
+
     ///any accumulated data over a block
     vector<RealType> accumData;
     ///any temporary data
@@ -79,7 +106,27 @@ namespace qmcplusplus {
      *
      * Set the SwapMode to zero so that instantiation can be done
      */
-    WalkerControlBase();
+    WalkerControlBase(Communicate* c);
+
+    /** empty destructor to clean up the derived classes */
+    virtual ~WalkerControlBase();
+
+    /** set communicator 
+     */
+    void setCommunicator(Communicate* c);
+
+    /** start controller */
+    void start();
+
+    /** take averages and writes to a file */
+    void measureProperties(int iter);
+
+    /** set the trial energy
+     */
+    inline void setTrialEnergy(RealType et)
+    {
+      trialEnergy=et;
+    }
 
     /** return a value accumulated during a block
      * @param i index of the data
@@ -102,6 +149,7 @@ namespace qmcplusplus {
     /** set the target average and variance
      */
     inline void setEnergyAndVariance(RealType e, RealType v) {
+      trialEnergy=e;
       targetAvg=e;
       targetVar=v;
     }
@@ -121,9 +169,6 @@ namespace qmcplusplus {
     /** copy good walkers to W
      */
     int copyWalkers(MCWalkerConfiguration& W);
-
-    /** empty destructor to clean up the derived classes */
-    virtual ~WalkerControlBase() {}
 
     /** reset to accumulate data */
     virtual void reset();

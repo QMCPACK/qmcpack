@@ -15,6 +15,7 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
+#include "OhmmsData/ParameterSet.h"
 #include "QMCDrivers/DMC/WalkerControlFactory.h"
 #include "QMCDrivers/DMC/WalkerReconfiguration.h"
 #if defined(HAVE_MPI)
@@ -93,16 +94,53 @@ namespace qmcplusplus {
     if(wc== 0) {
       if(reconfig) {
         app_log() << "  Using a fixed number of walkers by reconfiguration." << endl;
-        wc = new WalkerReconfiguration;
+        wc = new WalkerReconfiguration(comm);
         wc->Nmax=nideal;
         wc->Nmin=nideal;
       } else {
         app_log() << "  Using a WalkerControlBase with population fluctations." << endl;
-        wc = new WalkerControlBase;
+        wc = new WalkerControlBase(comm);
         wc->Nmax=2*nideal;
         wc->Nmin=nideal/2;
       }
     }
+    return wc;
+  }
+
+  WalkerControlBase* createWalkerController(int nwtot, Communicate* comm, xmlNodePtr cur) 
+  {
+
+    app_log() << "  Creating WalkerController: current number of walkers = " << nwtot << endl;
+
+    ///set of parameters
+    int nmax=0;
+    int nmin=0;
+    string reconfig("no");
+    ParameterSet m_param;
+    m_param.add(nwtot,"targetWalkers","int"); 
+    m_param.add(nwtot,"targetwalkers","int"); 
+    m_param.add(reconfig,"reconfiguration","string");
+    m_param.put(cur);
+
+    //if(nmax<0) nmax=2*nideal;
+    //if(nmin<0) nmin=nideal/2;
+
+    WalkerControlBase* wc=0;
+
+    //if(wc== 0) wc= new WalkerControlBase;
+    if(reconfig == "yes") {
+      app_log() << "  Using a fixed number of walkers by reconfiguration." << endl;
+      wc = new WalkerReconfiguration(comm);
+      wc->Nmax=nwtot;
+      wc->Nmin=nwtot;
+    } else {
+      app_log() << "  Using a WalkerControlBase with population fluctations." << endl;
+      app_log() << "  Target number of walkers = " << nwtot << endl;
+      wc = new WalkerControlBase(comm);
+      wc->Nmax=2*nwtot;
+      wc->Nmin=nwtot/2;
+    }
+
     return wc;
   }
 #endif

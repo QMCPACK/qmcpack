@@ -28,10 +28,6 @@ namespace qmcplusplus {
    */
   struct WalkerReconfiguration: public WalkerControlBase {
 
-    ///number of mpi contexts
-    int NumContexts;
-    /// context on a node
-    int MyContext;
     //random number [0,1)
     RealType UnitZeta;
 
@@ -44,7 +40,7 @@ namespace qmcplusplus {
      *
      * Set the SwapMode to zero so that instantiation can be done
      */
-    WalkerReconfiguration();
+    WalkerReconfiguration(Communicate* c);
 
     /** perform branch and swap walkers as required */
     int branch(int iter, MCWalkerConfiguration& W, RealType trigger);

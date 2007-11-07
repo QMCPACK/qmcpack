@@ -36,6 +36,12 @@ namespace qmcplusplus {
       int& swapmode, int nideal, int nmax, int nmin, 
       WalkerControlBase* wc,
       Communicate* comm);
+
+  /** function to create WalkerControlBase
+   * @param current number of walkers
+   */
+  WalkerControlBase* createWalkerController(int nwtot,
+      Communicate* comm, xmlNodePtr cur);
 }
 #endif
 /***************************************************************************
