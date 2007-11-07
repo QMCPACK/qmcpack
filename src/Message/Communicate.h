@@ -39,6 +39,8 @@ struct CommunicatorTraits {
 };
 #endif
 
+#include <string>
+
 
 /**@class Communicate
  * @ingroup Message
@@ -101,10 +103,14 @@ public:
   inline void setNumNodes(int n) { d_ncontexts = n;}
   void barrier();
 
+  inline void setName(const std::string& aname) { myName=aname;}
+  inline const std::string& getName() const { return myName;}
+
 protected:
 
   mpi_comm_type myMPI;
   intra_comm_type myComm;
+  std::string myName;
   int d_mycontext; 
   int d_ncontexts;
   int d_groupid;
