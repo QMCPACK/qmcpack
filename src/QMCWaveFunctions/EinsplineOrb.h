@@ -217,6 +217,9 @@ namespace qmcplusplus {
       uMin   = PosType(0.0, 0.0, 0.0);
       uMax   = PosType(1.0, 1.0, 1.0);
       Center = PosType(0.5, 0.5, 0.5);
+      // This controls the relative grid spacing at the edges versus
+      // the center for nonuniform grids
+      PosType clusterfactor(0.0, 0.0, 0.0);
       vector<PosType> centers;
       string centerName = groupPath + "center";
       string centersName = groupPath + "centers";
@@ -226,6 +229,9 @@ namespace qmcplusplus {
       string radiusName = groupPath + "radius";
       string   uminName = groupPath + "umin";
       string   umaxName = groupPath + "umax";
+      string xfactorName = groupPath + "xgrid/clusterfactor";
+      string yfactorName = groupPath + "ygrid/clusterfactor";
+      string zfactorName = groupPath + "zgrid/clusterfactor";
       HDFAttribIO<PosType> h_Center(Center);
       HDFAttribIO<PosType> h_uMin(uMin);
       HDFAttribIO<PosType> h_uMax(uMax);
@@ -233,20 +239,33 @@ namespace qmcplusplus {
       HDFAttribIO<double>  h_Energy(Energy);
       HDFAttribIO<vector<PosType> > h_Centers(centers);
       HDFAttribIO<vector<PosType> > h_Reflections (Reflections);
+      HDFAttribIO<double>  h_xfactor (clusterfactor[0]);
+      HDFAttribIO<double>  h_yfactor (clusterfactor[1]);
+      HDFAttribIO<double>  h_zfactor (clusterfactor[2]);
       h_Center.read (h5file, centerName.c_str());
       h_Centers.read(h5file, centersName.c_str());
       uCenter = Lattice.toUnit (Center);
       h_Reflections.read (h5file, reflectName.c_str());
+
+      h_Center.read  (h5file,  centerName.c_str());
+      h_Centers.read (h5file, centersName.c_str());
+      h_Radius.read  (h5file,  radiusName.c_str());
+      h_Energy.read  (h5file,   valueName.c_str());
+      h_uMin.read    (h5file,    uminName.c_str());
+      h_uMax.read    (h5file,    umaxName.c_str());
+      h_Radius.read  (h5file,  radiusName.c_str());
+      h_xfactor.read (h5file, xfactorName.c_str());
+      h_yfactor.read (h5file, yfactorName.c_str());
+      h_zfactor.read (h5file, zfactorName.c_str());
       if (Reflections.size() > 0)
 	Reflection = Reflections[0];
       else
 	Reflection = PosType (1.0, 1.0, 1.0);
-      h_uMin.read(h5file, uminName.c_str());
-      h_uMax.read(h5file, umaxName.c_str());
-      h_Radius.read(h5file, radiusName.c_str());
-      h_Energy.read(h5file,  valueName.c_str());
       // Localized = Radius > 0.0;
       Localized = (uMin[0] > 0.0); 
+      bool nonuniform = ((clusterfactor[0] > 0.0) && 
+			 (clusterfactor[1] > 0.0) &&
+			 (clusterfactor[2] > 0.0));
 
       uCenter = Lattice.toUnit (Center);
       uCenters.resize(centers.size());
@@ -300,8 +319,10 @@ namespace qmcplusplus {
       if (Localized)
         fprintf(stderr, "  Center = (%8.5f, %8.5f %8.5f)   Radius = %8.5f  Mesh = %dx%dx%d\n", 
 		Center[0], Center[1], Center[2], Radius, nx, ny, nz);
-      
-      Bspline = new UBsplineClass_3d_d (uMin, uMax, xBC, yBC, zBC, realData);
+      if (nonuniform) 
+	Bspline = new NUBsplineClass_3d_d (uMin, uMax, clusterfactor, xBC, yBC, zBC, realData);
+      else 
+	Bspline = new UBsplineClass_3d_d (uMin, uMax, xBC, yBC, zBC, realData);
 //       Spline = create_UBspline_3d_d (x_grid, y_grid, z_grid, 
 // 				     xBC, yBC, zBC, realData.data());
       // Now test spline to make sure it interpolates the data
@@ -424,6 +445,7 @@ namespace qmcplusplus {
       uMax   = PosType(1.0, 1.0, 1.0);
       Center = PosType(0.5, 0.5, 0.5);
       vector<PosType> centers;
+      PosType clusterfactor (0.0, 0.0, 0.0);
 
       string centerName  = groupPath + "center";
       string centersName = groupPath + "centers";
@@ -433,6 +455,9 @@ namespace qmcplusplus {
       string radiusName  = groupPath + "radius";
       string   uminName  = groupPath + "umin";
       string   umaxName  = groupPath + "umax";
+      string xfactorName = groupPath + "xgrid/clusterfactor";
+      string yfactorName = groupPath + "ygrid/clusterfactor";
+      string zfactorName = groupPath + "zgrid/clusterfactor";
       HDFAttribIO<PosType> h_Center(Center);
       HDFAttribIO<PosType> h_uMin(uMin);
       HDFAttribIO<PosType> h_uMax(uMax);
@@ -440,15 +465,24 @@ namespace qmcplusplus {
       HDFAttribIO<double>  h_Energy(Energy);
       HDFAttribIO<vector<PosType> > h_Centers(centers);
       HDFAttribIO<vector<PosType> > h_Reflections(Reflections);
-      h_Center.read (h5file, centerName.c_str());
-      h_Centers.read(h5file, centersName.c_str());
-      h_Radius.read(h5file, radiusName.c_str());
-      h_Energy.read(h5file,  valueName.c_str());
-      h_uMin.read(h5file, uminName.c_str());
-      h_uMax.read(h5file, umaxName.c_str());
-      h_Radius.read(h5file, radiusName.c_str());
+      HDFAttribIO<double>  h_xfactor (clusterfactor[0]);
+      HDFAttribIO<double>  h_yfactor (clusterfactor[1]);
+      HDFAttribIO<double>  h_zfactor (clusterfactor[2]);
+      h_Center.read  (h5file,  centerName.c_str());
+      h_Centers.read (h5file, centersName.c_str());
+      h_Radius.read  (h5file,  radiusName.c_str());
+      h_Energy.read  (h5file,   valueName.c_str());
+      h_uMin.read    (h5file,    uminName.c_str());
+      h_uMax.read    (h5file,    umaxName.c_str());
+      h_Radius.read  (h5file,  radiusName.c_str());
+      h_xfactor.read (h5file, xfactorName.c_str());
+      h_yfactor.read (h5file, yfactorName.c_str());
+      h_zfactor.read (h5file, zfactorName.c_str());
       // Localized = Radius > 0.0;
-      Localized = (uMin[0] > 0.0); 
+      Localized = (uMin[0] > 0.0);
+      bool nonuniform = ((clusterfactor[0] > 0.0) && 
+			 (clusterfactor[1] > 0.0) &&
+			 (clusterfactor[2] > 0.0));
       uCenter = Lattice.toUnit (Center);
       uCenters.resize(centers.size());
       for (int i=0; i<centers.size(); i++)
@@ -473,7 +507,10 @@ namespace qmcplusplus {
 	xBC.lCode = NATURAL;    xBC.rCode = NATURAL;
 	yBC.lCode = NATURAL;    yBC.rCode = NATURAL;
 	zBC.lCode = NATURAL;    zBC.rCode = NATURAL;
-	Bspline = new UBsplineClass_3d_z (uMin, uMax, xBC, yBC, zBC, rawData);
+	if (nonuniform)
+	  Bspline = new NUBsplineClass_3d_z (uMin, uMax, clusterfactor, xBC, yBC, zBC, rawData);
+	else 
+	  Bspline = new UBsplineClass_3d_z (uMin, uMax, xBC, yBC, zBC, rawData);
 // 	x_grid.start = uMin[0];  x_grid.end = uMax[0];  x_grid.num = nx;
 // 	y_grid.start = uMin[1];  y_grid.end = uMax[1];  y_grid.num = ny;
 // 	z_grid.start = uMin[2];  z_grid.end = uMax[2];  z_grid.num = nz;
@@ -509,20 +546,20 @@ namespace qmcplusplus {
     }
     EinsplineOrb(EinsplineOrb &orb)
     {
-      Lattice   = orb.Lattice;
-      Center    = orb.Center;
-      uCenter   = orb.uCenter;
-      uMin      = orb.uMin;
-      uMax      = orb.uMax;
+      Lattice     = orb.Lattice;
+      Center      = orb.Center;
+      uCenter     = orb.uCenter;
+      uMin        = orb.uMin;
+      uMax        = orb.uMax;
       uCenters.resize(orb.uCenters.size());
-      uCenters  = orb.uCenters;
-      Radius    = orb.Radius;
-      Energy    = orb.Energy;
-      Localized = orb.Localized;
+      uCenters    = orb.uCenters;
+      Radius      = orb.Radius;
+      Energy      = orb.Energy;
+      Localized   = orb.Localized;
       // Spline    = orb.Spline;
-      Bspline      = orb.Bspline;
-      kVec      = orb.kVec;
-      Reflection = orb.Reflection;      
+      Bspline     = orb.Bspline;
+      kVec        = orb.kVec;
+      Reflection  = orb.Reflection;      
       Reflections.resize(orb.Reflections.size());
       Reflections = orb.Reflections;
     }
