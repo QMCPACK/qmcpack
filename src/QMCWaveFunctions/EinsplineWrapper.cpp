@@ -198,6 +198,14 @@ namespace qmcplusplus {
     Spline = create_NUBspline_2d_z (xGrid, yGrid, xBC, yBC, data.data());
   }
   
+  complex<double>
+  NUBsplineClass_2d_z::operator()(TinyVector<double,2> r)
+  {
+    complex<double> val;
+    eval_NUBspline_2d_z (Spline, r[0], r[1], &val);
+    return val;
+  }
+
   void 
   NUBsplineClass_2d_z::evaluate (TinyVector<double,2> r, complex<double> &val, 
 				 TinyVector<complex<double>,2> &grad)

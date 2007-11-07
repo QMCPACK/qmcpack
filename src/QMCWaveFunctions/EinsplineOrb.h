@@ -48,25 +48,29 @@ namespace qmcplusplus {
     vector<PosType> uCenters, Reflections;
     double Radius, Energy;
     bool Localized;
+    BsplineClass_2d_d *Bspline;
     UBspline_2d_d *Spline;
     PosType kVec;
     
     inline void evaluate (const PosType& r, double &psi) 
     {
-      eval_UBspline_2d_d (Spline, r[0], r[1], &psi);
+      psi = (*Bspline)(r);
+      // eval_UBspline_2d_d (Spline, r[0], r[1], &psi);
     }
     inline void evaluate (const PosType& r, double &psi, 
 			  TinyVector<double,2> &grad,
 			  double &lapl)
     {
-      eval_UBspline_2d_d_vgl (Spline, r[0], r[1], &psi, &(grad[0]), &lapl);
+      Bspline->evaluate (r, psi, grad, lapl);
+      // eval_UBspline_2d_d_vgl (Spline, r[0], r[1], &psi, &(grad[0]), &lapl);
     }
     inline void evaluate (const PosType& r, double &psi, 
 			  TinyVector<double,2> &grad,
 			  Tensor<double,2> &hess)
     {
-      eval_UBspline_2d_d_vgh (Spline, r[0], r[1], &psi, 
-			      &(grad[0]), &(hess(0,0)));
+      Bspline->evaluate (r, psi, grad, hess);
+//       eval_UBspline_2d_d_vgh (Spline, r[0], r[1], &psi, 
+// 			      &(grad[0]), &(hess(0,0)));
     }
     void read (hid_t h5file, string baseName)
     {
@@ -91,26 +95,30 @@ namespace qmcplusplus {
     vector<PosType> uCenters, Reflections;
     double Radius, Energy;
     bool Localized;
+    BsplineClass_2d_z *Bspline;
     UBspline_2d_z *Spline;
     PosType kVec;
 
     inline void evaluate (const PosType& r, complex<double> &psi) 
     {
-      eval_UBspline_2d_z (Spline, r[0], r[1], &psi);
+      psi = (*Bspline)(r);
+//       eval_UBspline_2d_z (Spline, r[0], r[1], &psi);
     }
     inline void evaluate (const PosType& r, complex<double> &psi, 
-			  TinyVector<complex<double>,3> &grad,
+			  TinyVector<complex<double>,2> &grad,
 			  complex<double> &lapl)
     {
-      eval_UBspline_2d_z_vgl (Spline, r[0], r[1],
-			      &psi, &(grad[0]), &lapl);
+      Bspline->evaluate (r, psi, grad, lapl);
+//       eval_UBspline_2d_z_vgl (Spline, r[0], r[1],
+// 			      &psi, &(grad[0]), &lapl);
     }
     inline void evaluate (const PosType& r, complex<double> &psi, 
 			  TinyVector<complex<double>,2> &grad,
 			  Tensor<complex<double>,2> &hess)
     {
-      eval_UBspline_2d_z_vgh (Spline, r[0], r[1],
-			      &psi, &(grad[0]), &(hess(0,0)));
+      Bspline->evaluate (r, psi, grad, hess);
+//       eval_UBspline_2d_z_vgh (Spline, r[0], r[1],
+// 			      &psi, &(grad[0]), &(hess(0,0)));
     }
     void read (hid_t h5file, const string& baseName)
     {
@@ -156,13 +164,15 @@ namespace qmcplusplus {
 	  for (int i=0; i<3; i++)
 	    udiff[i] *= Reflection[i]; 
 	  udiff[0]+=0.5;  udiff[1]+=0.5;  udiff[2]+=0.5;
-	  eval_UBspline_3d_d (Spline, udiff[0], udiff[1], udiff[2], &psi);
+	  psi = (*Bspline)(udiff);
+	  // eval_UBspline_3d_d (Spline, udiff[0], udiff[1], udiff[2], &psi);
 	}
 	else 
 	  psi = 0.0;
       }
       else 
-	eval_UBspline_3d_d (Spline, u[0], u[1], u[2], &psi);
+	psi = (*Bspline)(u);
+	// eval_UBspline_3d_d (Spline, u[0], u[1], u[2], &psi);
     }
     inline void evaluate (const PosType& u, double &psi, TinyVector<double,3> &grad,
 			  Tensor<double,3> &hess)
@@ -179,8 +189,9 @@ namespace qmcplusplus {
 	  for (int i=0; i<3; i++)
 	    udiff[i] *= Reflection[i]; 
 	  udiff[0]+=0.5;  udiff[1]+=0.5;  udiff[2]+=0.5;
-	  eval_UBspline_3d_d_vgh (Spline, udiff[0], udiff[1], udiff[2], 
-				  &psi, &(grad[0]), &(hess(0,0)));
+	  Bspline->evaluate (udiff, psi, grad, hess);
+// 	  eval_UBspline_3d_d_vgh (Spline, udiff[0], udiff[1], udiff[2], 
+// 				  &psi, &(grad[0]), &(hess(0,0)));
 
 	  for (int i=0; i<3; i++) {
 	    grad[i] *= Reflection[i];
@@ -196,8 +207,9 @@ namespace qmcplusplus {
 	}
       }
       else 
-	eval_UBspline_3d_d_vgh (Spline, u[0], u[1], u[2], 
-				&psi, &(grad[0]), &(hess(0,0)));
+	Bspline->evaluate (u, psi, grad, hess);
+// 	eval_UBspline_3d_d_vgh (Spline, u[0], u[1], u[2], 
+// 				&psi, &(grad[0]), &(hess(0,0)));
     }
 
     void read (hid_t h5file, const string& groupPath)
@@ -289,8 +301,9 @@ namespace qmcplusplus {
         fprintf(stderr, "  Center = (%8.5f, %8.5f %8.5f)   Radius = %8.5f  Mesh = %dx%dx%d\n", 
 		Center[0], Center[1], Center[2], Radius, nx, ny, nz);
       
-      Spline = create_UBspline_3d_d (x_grid, y_grid, z_grid, 
-				     xBC, yBC, zBC, realData.data());
+      Bspline = new UBsplineClass_3d_d (uMin, uMax, xBC, yBC, zBC, realData);
+//       Spline = create_UBspline_3d_d (x_grid, y_grid, z_grid, 
+// 				     xBC, yBC, zBC, realData.data());
       // Now test spline to make sure it interpolates the data
       // for (int ix=0; ix<nx-1; ix++)
       //   for (int iy=0; iy<ny-1; iy++)
@@ -361,14 +374,16 @@ namespace qmcplusplus {
 	if (dot (rdiff,rdiff) <= Radius*Radius) {
 	  udiff = Reflection * udiff;
 	  udiff[0]+=0.5;  udiff[1]+=0.5;  udiff[2]+=0.5;
-	  eval_UBspline_3d_z (Spline, udiff[0], udiff[1], udiff[2], &psi);
+	  psi = (*Bspline)(udiff);
+	  // eval_UBspline_3d_z (Spline, udiff[0], udiff[1], udiff[2], &psi);
 	}
 	else 
 	  //psi = 1.0e-10;
 	  psi = complex<double>();
       }
       else 
-	eval_UBspline_3d_z (Spline, u[0], u[1], u[2], &psi);
+	psi = (*Bspline)(u);
+// 	eval_UBspline_3d_z (Spline, u[0], u[1], u[2], &psi);
     }
     inline void evaluate (const PosType& u, complex<double> &psi, 
 			  TinyVector<complex<double>,3> &grad,
@@ -383,9 +398,10 @@ namespace qmcplusplus {
 	if (dot (rdiff,rdiff) <= Radius*Radius) {
 	  PosType uBox = uMax - uMin;
 	  udiff[0]+=0.5;  udiff[1]+=0.5;  udiff[2]+=0.5;
-
-	  eval_UBspline_3d_z_vgh (Spline, udiff[0], udiff[1], udiff[2], 
-				  &psi, &(grad[0]), &(hess(0,0)));
+	  
+	  Bspline->evaluate (udiff, psi, grad, hess);
+// 	  eval_UBspline_3d_z_vgh (Spline, udiff[0], udiff[1], udiff[2], 
+// 				  &psi, &(grad[0]), &(hess(0,0)));
 	}
 	else {
 	  //psi = 1.0e-10;
@@ -397,8 +413,9 @@ namespace qmcplusplus {
 	}
       }
       else 
-	eval_UBspline_3d_z_vgh (Spline, u[0], u[1], u[2], 
-				&psi, &(grad[0]), &(hess(0,0)));
+	Bspline->evaluate (u, psi, grad, hess);
+// 	eval_UBspline_3d_z_vgh (Spline, u[0], u[1], u[2], 
+// 				&psi, &(grad[0]), &(hess(0,0)));
     }
     void read (hid_t h5file, const string& groupPath)
     {      
@@ -455,11 +472,12 @@ namespace qmcplusplus {
 	xBC.lCode = NATURAL;    xBC.rCode = NATURAL;
 	yBC.lCode = NATURAL;    yBC.rCode = NATURAL;
 	zBC.lCode = NATURAL;    zBC.rCode = NATURAL;
-	x_grid.start = uMin[0];  x_grid.end = uMax[0];  x_grid.num = nx;
-	y_grid.start = uMin[1];  y_grid.end = uMax[1];  y_grid.num = ny;
-	z_grid.start = uMin[2];  z_grid.end = uMax[2];  z_grid.num = nz;
-	Spline = create_UBspline_3d_z (x_grid, y_grid, z_grid, 
-				       xBC, yBC, zBC, rawData.data());
+	Bspline = new UBsplineClass_3d_z (uMin, uMax, xBC, yBC, zBC, rawData);
+// 	x_grid.start = uMin[0];  x_grid.end = uMax[0];  x_grid.num = nx;
+// 	y_grid.start = uMin[1];  y_grid.end = uMax[1];  y_grid.num = ny;
+// 	z_grid.start = uMin[2];  z_grid.end = uMax[2];  z_grid.num = nz;
+// 	Spline = create_UBspline_3d_z (x_grid, y_grid, z_grid, 
+// 				       xBC, yBC, zBC, rawData.data());
       }
       else {
 	Array<complex<double>,3> splineData(nx-1,ny-1,nz-1);
@@ -470,11 +488,14 @@ namespace qmcplusplus {
 	xBC.lCode = PERIODIC;    xBC.rCode = PERIODIC;
 	yBC.lCode = PERIODIC;    yBC.rCode = PERIODIC;
 	zBC.lCode = PERIODIC;    zBC.rCode = PERIODIC;
-	x_grid.start = 0.0;  x_grid.end = 1.0;  x_grid.num = nx-1;
-	y_grid.start = 0.0;  y_grid.end = 1.0;  y_grid.num = ny-1;
-	z_grid.start = 0.0;  z_grid.end = 1.0;  z_grid.num = nz-1;
-	Spline = create_UBspline_3d_z (x_grid, y_grid, z_grid, 
-				       xBC, yBC, zBC, splineData.data());
+	TinyVector<double,3> start (0.0, 0.0, 0.0), end (1.0, 1.0, 1.0);
+	Bspline = new UBsplineClass_3d_z (start, end, xBC, yBC, zBC,
+					  splineData);
+// 	x_grid.start = 0.0;  x_grid.end = 1.0;  x_grid.num = nx-1;
+// 	y_grid.start = 0.0;  y_grid.end = 1.0;  y_grid.num = ny-1;
+// 	z_grid.start = 0.0;  z_grid.end = 1.0;  z_grid.num = nz-1;
+// 	Spline = create_UBspline_3d_z (x_grid, y_grid, z_grid, 
+// 				       xBC, yBC, zBC, splineData.data());
       }
 
       if (Localized)
