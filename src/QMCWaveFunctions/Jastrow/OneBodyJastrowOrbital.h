@@ -63,13 +63,13 @@ namespace qmcplusplus {
    + \frac{d^2u}{dr_{iI}^2}\right)
    \f]
    *
-   *A generic OneBodyJastrow function uses a distance table.
+   *A generic OneBodyJastrowOrbital function uses a distance table.
    *The indices I(sources) and i(targets) are distinct. In general, the source 
    *particles are fixed, e.g., the nuclei, while the target particles are updated
    *by MC methods.
    */
   template<class FT>
-  class OneBodyJastrow: public OrbitalBase {
+  class OneBodyJastrowOrbital: public OrbitalBase {
 
     const ParticleSet& CenterRef;
     const DistanceTableData* d_table;
@@ -88,13 +88,13 @@ namespace qmcplusplus {
 
 
     ///constructor
-    OneBodyJastrow(const ParticleSet& centers, ParticleSet& els)
+    OneBodyJastrowOrbital(const ParticleSet& centers, ParticleSet& els)
       : CenterRef(centers), d_table(0), FirstAddressOfdU(0), LastAddressOfdU(0){ 
       U.resize(els.getTotalNum());
       d_table = DistanceTable::add(CenterRef,els);
     }
 
-    ~OneBodyJastrow(){ }
+    ~OneBodyJastrowOrbital(){ }
 
     //evaluate the distance table with P
     void resetTargetParticleSet(ParticleSet& P) {

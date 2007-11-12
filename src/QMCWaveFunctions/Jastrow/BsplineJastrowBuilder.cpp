@@ -2,7 +2,7 @@
 #include "Particle/DistanceTable.h"
 #include "BsplineJastrowBuilder.h"
 #include "BsplineFunctor.h"
-#include "OneBodyJastrowFunction.h"
+#include "OneBodyJastrowOrbital.h"
 
 namespace qmcplusplus {
 
@@ -17,7 +17,7 @@ namespace qmcplusplus {
     //  }
 
 
-    OneBodyJastrow<BsplineFunctor<double> >* J1 = new OneBodyJastrow<BsplineFunctor<double> >(sourcePtcl, targetPtcl);
+    OneBodyJastrowOrbital<BsplineFunctor<double> >* J1 = new OneBodyJastrowOrbital<BsplineFunctor<double> >(sourcePtcl, targetPtcl);
     J1->setOptimizable(true);
 
     while (kids != NULL) {

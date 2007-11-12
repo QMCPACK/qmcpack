@@ -17,7 +17,7 @@
 #include "QMCWaveFunctions/Jastrow/LinearCombinationFunctor.h"
 #include "QMCWaveFunctions/Jastrow/CompositeFunctor.h"
 #include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbital.h"
-#include "QMCWaveFunctions/Jastrow/OneBodyJastrowFunction.h"
+#include "QMCWaveFunctions/Jastrow/OneBodyJastrowOrbital.h"
 #include "Utilities/IteratorUtility.h"
 
 namespace qmcplusplus {
@@ -260,7 +260,7 @@ namespace qmcplusplus {
 
     int nSpecies = source.getSpeciesSet().getTotalNum();
 
-    typedef OneBodyJastrow<OutFuncType> JneType;
+    typedef OneBodyJastrowOrbital<OutFuncType> JneType;
     JneType* jne=new JneType(source,targetPtcl);
 
     BGContainerType::iterator jit(BasisGroups.begin()), jit_end(BasisGroups.end());

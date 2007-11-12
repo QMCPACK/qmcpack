@@ -64,7 +64,8 @@ namespace qmcplusplus {
         }
         if(!(jastrow[iab])) {
           //create the new Jastrow function
-          FN *j2= new FN(ia==ib);
+          //FN *j2= new FN(ia==ib);
+          FN *j2= new FN;
           if(targetPtcl.Lattice.BoxBConds[0])
             j2->setDensity(targetPtcl.getTotalNum()/targetPtcl.Lattice.Volume);
           if(idptr == NULL) {

@@ -22,7 +22,7 @@
 #include "QMCWaveFunctions/Jastrow/NoCuspFunctor.h"
 #include "QMCWaveFunctions/Jastrow/ModPadeFunctor.h"
 #include "QMCWaveFunctions/Jastrow/BsplineFunctor.h"
-#include "QMCWaveFunctions/Jastrow/OneBodyJastrowFunction.h"
+#include "QMCWaveFunctions/Jastrow/OneBodyJastrowOrbital.h"
 
 namespace qmcplusplus {
 
@@ -75,7 +75,7 @@ namespace qmcplusplus {
       return false;
     }
 
-    typedef OneBodyJastrow<FN> JneType;
+    typedef OneBodyJastrowOrbital<FN> JneType;
     JneType* J1 = new JneType(*sourcePtcl,targetPtcl);
     for(int ig=0; ig<ng; ig++) {
       J1->addFunc(ig,jastrow[ig]);

@@ -15,7 +15,7 @@
 // -*- C++ -*-
 #include "QMCWaveFunctions/Jastrow/RPAConstraints.h"
 #include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbital.h"
-#include "QMCWaveFunctions/Jastrow/OneBodyJastrowFunction.h"
+//#include "QMCWaveFunctions/Jastrow/OneBodyJastrowOrbital.h"
 #include "QMCWaveFunctions/Jastrow/LRTwoBodyJastrow.h"
 #include "QMCWaveFunctions/Jastrow/SplineFunctors.h"
 #include "LongRange/LRJastrowSingleton.h"

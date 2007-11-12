@@ -16,7 +16,7 @@
 // -*- C++ -*-
 #include "QMCWaveFunctions/Jastrow/PadeConstraints.h"
 #include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbital.h"
-#include "QMCWaveFunctions/Jastrow/OneBodyJastrowFunction.h"
+#include "QMCWaveFunctions/Jastrow/OneBodyJastrowOrbital.h"
 #include "Utilities/IteratorUtility.h"
 
 namespace qmcplusplus {
@@ -94,7 +94,7 @@ namespace qmcplusplus {
 
   OrbitalBase* PadeConstraints::createOneBody(ParticleSet& source) {
     app_log() << "  PadeBuilder::Adding Pade One-Body Jastrow with effective ionic charges." << endl;
-    typedef OneBodyJastrow<FuncType> JneType;
+    typedef OneBodyJastrowOrbital<FuncType> JneType;
     JneType* J1 = new JneType(source,targetPtcl);
     SpeciesSet& Species(source.getSpeciesSet());
     int ng=Species.getTotalNum();
