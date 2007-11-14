@@ -16,29 +16,45 @@
 // -*- C++ -*-
 #include "Utilities/OhmmsInfo.h"
 #include "Particle/DistanceTable.h"
-//#include "Particle/WalkerSetRef.h"
 #include "Particle/DistanceTableData.h"
 #include "Particle/SymmetricDistanceTableData.h"
 #include "Particle/AsymmetricDistanceTableData.h"
 #include "ParticleIO/ParticleLayoutIO.h"
 #include "Lattice/SuperCellTraits.h"
-using namespace qmcplusplus;
+
+namespace qmcplusplus
+{
 
 /**@{instantiation of static data members*/
 map<string,DistanceTableData*>  DistanceTable::TableMap;
 ParticleSet::ParticleLayout_t* DistanceTable::SimulationCell=0;
 /**@}*/
 
-template<class T, unsigned D, int SC>
-struct DTD_BConds {};
+const int TwoPowerD=8;
 
-template<class T>
-struct DTD_BConds<T,3,SUPERCELL_OPEN> {
+/** common definition of a distance 
+ *
+ * @param lat supercell
+ * @param a in/out displacement
+ * @return dot(a,a)
+ */
+template<class T, unsigned D, int SC>
+struct DTD_BConds 
+{
   inline static T apply(const CrystalLattice<T,3>& lat, TinyVector<T,3>& a) {
-    return a[0]*a[0]+a[1]*a[1]+a[2]*a[2];
+    return dot(a,a);
   }
 };
 
+//template<class T>
+//struct DTD_BConds<T,3,SUPERCELL_OPEN> {
+//  inline static T apply(const CrystalLattice<T,3>& lat, TinyVector<T,3>& a) {
+//    return a[0]*a[0]+a[1]*a[1]+a[2]*a[2];
+//  }
+//};
+
+/** specialization for a periodic 3D cell
+ */
 template<class T>
 struct DTD_BConds<T,3,SUPERCELL_BULK> {
   inline static T apply(const CrystalLattice<T,3>& lat, TinyVector<T,3>& a) {
@@ -51,13 +67,40 @@ struct DTD_BConds<T,3,SUPERCELL_BULK> {
        if(ar[2]<-0.5) ar[2]+=1.0; 
        else if(ar[2]>=0.5) ar[2]-=1.0;
        */
-    T x=fmod(ar[0],1.0);
-    T y=fmod(ar[1],1.0);
-    T z=fmod(ar[2],1.0);
-    ar[0]=x-static_cast<int>(x*2.0);
-    ar[1]=y-static_cast<int>(y*2.0);
-    ar[2]=z-static_cast<int>(z*2.0);
+    //T x=fmod(ar[0],1.0); ar[0]=x-static_cast<int>(x*2.0);
+    //T y=fmod(ar[1],1.0); ar[1]=y-static_cast<int>(y*2.0);
+    //T z=fmod(ar[2],1.0); ar[2]=z-static_cast<int>(z*2.0);
+#if defined(HAVE_STD_ROUND)
+    ar[0]=ar[0]-round(ar[0]);
+    ar[1]=ar[1]-round(ar[1]);
+    ar[2]=ar[2]-round(ar[2]);
+#else
+    T dmy0,dmy1,dmy2;
+    T x=modf(ar[0],&dmy0); ar[0]=x-static_cast<int>(x*2.0);
+    T y=modf(ar[1],&dmy1); ar[1]=y-static_cast<int>(y*2.0);
+    T z=modf(ar[2],&dmy2); ar[2]=z-static_cast<int>(z*2.0);
+#endif
     a=lat.toCart(ar);
+    return a[0]*a[0]+a[1]*a[1]+a[2]*a[2];
+  }
+};
+
+/** specialization for a periodic 3D orthorombic cell
+ */
+template<class T>
+struct DTD_BConds<T,3,SUPERCELL_BULK+TwoPowerD> {
+  inline static T apply(const CrystalLattice<T,3>& lat, TinyVector<T,3>& a) 
+  {
+#if defined(HAVE_STD_ROUND)
+    T x=a[0]*lat.OneOverLength[0]; a[0]=lat.Length[0]*(x-round(x));
+    T y=a[1]*lat.OneOverLength[1]; a[1]=lat.Length[1]*(y-round(y));
+    T z=a[2]*lat.OneOverLength[2]; a[2]=lat.Length[2]*(z-round(z));
+#else
+    T dmy0,dmy1,dmy2;
+    T x=modf(a[0]*lat.OneOverLength[0],&dmy0); a[0]=lat.Length[0]*(x-static_cast<int>(x*2.0));
+    T y=modf(a[1]*lat.OneOverLength[1],&dmy1); a[1]=lat.Length[1]*(y-static_cast<int>(y*2.0));
+    T z=modf(a[2]*lat.OneOverLength[2],&dmy2); a[2]=lat.Length[2]*(z-static_cast<int>(z*2.0));
+#endif
     return a[0]*a[0]+a[1]*a[1]+a[2]*a[2];
   }
 };
@@ -134,7 +177,12 @@ DistanceTable::add(ParticleSet& s, const char* aname) {
     if(s.Lattice.SuperCellEnum == SUPERCELL_OPEN)
       dt = new SymmetricDTD<DTD_BConds<OHMMS_PRECISION,OHMMS_DIM,SUPERCELL_OPEN> >(s,s);
     else
-      dt = new SymmetricDTD<DTD_BConds<OHMMS_PRECISION,OHMMS_DIM,SUPERCELL_BULK> >(s,s);
+    {
+      if(s.Lattice.DiagonalOnly)
+        dt = new SymmetricDTD<DTD_BConds<OHMMS_PRECISION,OHMMS_DIM,SUPERCELL_BULK+TwoPowerD> >(s,s);
+      else
+        dt = new SymmetricDTD<DTD_BConds<OHMMS_PRECISION,OHMMS_DIM,SUPERCELL_BULK> >(s,s);
+    }
 
     //set the name of the table
     dt->setName(newname);
@@ -166,7 +214,6 @@ DistanceTable::add(const ParticleSet& s, ParticleSet& t, const char* aname) {
   }
 
   map<string,DistanceTableData*>::iterator it = TableMap.find(newname);
-
   ///the named pair does not exist, add a new asymmetric metrics
   if(it == TableMap.end()) {
     DistanceTableData* dt=0;
@@ -174,7 +221,12 @@ DistanceTable::add(const ParticleSet& s, ParticleSet& t, const char* aname) {
     if(s.Lattice.SuperCellEnum == SUPERCELL_OPEN)
       dt = new AsymmetricDTD<DTD_BConds<OHMMS_PRECISION,OHMMS_DIM,SUPERCELL_OPEN> >(s,t);
     else 
-      dt = new AsymmetricDTD<DTD_BConds<OHMMS_PRECISION,OHMMS_DIM,SUPERCELL_BULK> >(s,t);
+    {
+      if(s.Lattice.DiagonalOnly)
+        dt = new AsymmetricDTD<DTD_BConds<OHMMS_PRECISION,OHMMS_DIM,SUPERCELL_BULK+TwoPowerD> >(s,t);
+      else
+        dt = new AsymmetricDTD<DTD_BConds<OHMMS_PRECISION,OHMMS_DIM,SUPERCELL_BULK> >(s,t);
+    }
 
     //set the name of the table
     dt->setName(newname);
@@ -221,6 +273,7 @@ void DistanceTable::reset() {
 // };
 // ///instantiate the singleton
 // DistanceTable<TinyVector<double,3> > DistanceTableSingleton::ref_;
+} //namespace qmcplusplus
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$
