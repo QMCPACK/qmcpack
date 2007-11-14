@@ -78,6 +78,8 @@ struct CrystalLattice{
   typedef Tensor<T,D>                  Tensor_t;
   //@}
 
+  ///true, if off-diagonal elements are zero so that other classes can take advantage of this
+  bool DiagonalOnly;
   ///supercell enumeration
   int SuperCellEnum;
   ///The boundary condition in each direction.
@@ -95,6 +97,10 @@ struct CrystalLattice{
   ///Metric tensor for G vectors
   Tensor_t Mg;
 
+  ///Length[idim] length of the idim-th lattice vector
+  SingleParticlePos_t Length;
+  ///OneOverLength[idim] 1/length of the idim-th lattice vector
+  SingleParticlePos_t OneOverLength;
   /**@brief Real-space unit vectors. 
    *
    *Introduced to efficiently return one vector at a time.
