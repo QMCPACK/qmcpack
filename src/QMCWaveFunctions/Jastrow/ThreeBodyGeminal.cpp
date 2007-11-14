@@ -69,7 +69,7 @@ namespace qmcplusplus {
 		                 ParticleSet::ParticleGradient_t& G, 
 		                 ParticleSet::ParticleLaplacian_t& L) {
     //GeminalBasis->evaluate(P);
-    GeminalBasis->evaluateForWalkerMove(P,0,NumPtcls);
+    GeminalBasis->evaluateForWalkerMove(P);
 
     MatrixOperators::product(GeminalBasis->Y, Lambda, V);
 
@@ -247,7 +247,7 @@ namespace qmcplusplus {
 
   void 
   ThreeBodyGeminal::evaluateLogAndStore(ParticleSet& P) {
-    GeminalBasis->evaluateForWalkerMove(P, 0, NumPtcls);
+    GeminalBasis->evaluateForWalkerMove(P);
 
     MatrixOperators::product(GeminalBasis->Y, Lambda, V);
     
