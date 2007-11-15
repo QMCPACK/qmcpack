@@ -75,6 +75,7 @@ public:
   void abort(const char* msg);
 
   template<class T> void allreduce(T&);
+  template<class T> void reduce(T&);
   template<class T> void reduce(T* restrict, T* restrict, int n);
   template<class T> void bcast(T* restrict, int n);
 

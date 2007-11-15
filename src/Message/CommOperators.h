@@ -33,6 +33,12 @@ Communicate::allreduce(T& )
 {
 }
 
+template<class T> 
+inline void 
+Communicate::reduce(T& ) 
+{
+}
+
 /** dummy declaration to be specialized */
 template<class T> 
 inline void 
@@ -159,6 +165,15 @@ Communicate::allreduce(std::vector<double>& g)
   MPI_Allreduce(&(g[0]),&(gt[0]),g.size(),MPI_DOUBLE,MPI_SUM,
       myMPI);
   g = gt;
+}
+
+template<>
+inline void 
+Communicate::reduce(std::vector<double>& g) 
+{
+  std::vector<double> gt(g.size(), 0);
+  MPI_Reduce(&(g[0]),&(gt[0]),g.size(),MPI_DOUBLE,MPI_SUM,0,myMPI);
+  if(master()) g = gt;
 }
 
 template<>
