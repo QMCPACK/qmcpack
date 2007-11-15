@@ -27,7 +27,7 @@ namespace qmcplusplus {
   class VMCUpdateAll: public QMCUpdateBase {
   public:
     /// Constructor.
-    VMCUpdateAll(ParticleSet& w, TrialWaveFunction& psi, 
+    VMCUpdateAll(MCWalkerConfiguration& w, TrialWaveFunction& psi, 
         QMCHamiltonian& h, RandomGenerator_t& rg);
 
     ~VMCUpdateAll();
@@ -49,7 +49,7 @@ namespace qmcplusplus {
   class VMCUpdateAllWithDrift: public QMCUpdateBase {
   public:
     /// Constructor.
-    VMCUpdateAllWithDrift(ParticleSet& w, TrialWaveFunction& psi, 
+    VMCUpdateAllWithDrift(MCWalkerConfiguration& w, TrialWaveFunction& psi, 
         QMCHamiltonian& h, RandomGenerator_t& rg);
 
     ~VMCUpdateAllWithDrift();

@@ -25,7 +25,7 @@
 namespace qmcplusplus { 
 
   /// Constructor.
-  DMCUpdateAllWithRejection::DMCUpdateAllWithRejection(ParticleSet& w, 
+  DMCUpdateAllWithRejection::DMCUpdateAllWithRejection(MCWalkerConfiguration& w, 
       TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator_t& rg): 
     QMCUpdateBase(w,psi,h,rg)
     { }
@@ -111,7 +111,7 @@ namespace qmcplusplus {
   * DMCUpdateAllWithKill member functions
   */
   /// Constructor.
-  DMCUpdateAllWithKill::DMCUpdateAllWithKill(ParticleSet& w, 
+  DMCUpdateAllWithKill::DMCUpdateAllWithKill(MCWalkerConfiguration& w, 
       TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator_t& rg): QMCUpdateBase(w,psi,h,rg)
     { }
   

@@ -63,9 +63,9 @@ namespace qmcplusplus {
       dmcStream->setf(ios::scientific, ios::floatfield);
       dmcStream->precision(10);
       (*dmcStream) << setw(10) << "# Index "
-        << setw(14) << "Energy"
-        << setw(22) << "Weight "
+        << setw(14) << "LocalEnergy"
         << setw(20) << "Variance" 
+        << setw(22) << "Weight "
         << setw(20) << "NumOfWalkers" 
         << setw(20) << "TrialEnergy " 
         << endl;
@@ -88,8 +88,8 @@ namespace qmcplusplus {
       //(*oa) & iter  & eavg_cur & wgt_cur & Etrial  & pop_old;
       (*dmcStream) << setw(10) << iter 
         << setw(20) << EnsembleProperty.Energy
-        << setw(20) << EnsembleProperty.Weight
         << setw(20) << EnsembleProperty.Variance
+        << setw(20) << EnsembleProperty.Weight
         << setw(20) << EnsembleProperty.NumSamples
         << setw(20) << trialEnergy 
         << endl;

@@ -25,7 +25,7 @@ namespace qmcplusplus {
   public:
 
     /// Constructor.
-    DMCNonLocalUpdate(ParticleSet& w, TrialWaveFunction& psi, 
+    DMCNonLocalUpdate(MCWalkerConfiguration& w, TrialWaveFunction& psi, 
         QMCHamiltonian& h, RandomGenerator_t& rg);
     ///destructor
     ~DMCNonLocalUpdate();
@@ -45,7 +45,7 @@ namespace qmcplusplus {
   public:
 
     /// Constructor.
-    DMCNonLocalUpdatePbyP(ParticleSet& w, TrialWaveFunction& psi, 
+    DMCNonLocalUpdatePbyP(MCWalkerConfiguration& w, TrialWaveFunction& psi, 
         QMCHamiltonian& h, RandomGenerator_t& rg);
     ///destructor
     ~DMCNonLocalUpdatePbyP();

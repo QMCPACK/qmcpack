@@ -29,7 +29,7 @@ namespace qmcplusplus {
   {
     public:
 
-      CSUpdateBase(ParticleSet& w, TrialWaveFunction& psi, QMCHamiltonian& h, 
+      CSUpdateBase(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, 
           RandomGenerator_t& rg): QMCUpdateBase(w,psi,h,rg), nPsi(0)
       {}
       virtual ~CSUpdateBase();

@@ -20,7 +20,7 @@
 
 namespace qmcplusplus { 
 
-  VMCUpdateAll::VMCUpdateAll(ParticleSet& w, TrialWaveFunction& psi, 
+  VMCUpdateAll::VMCUpdateAll(MCWalkerConfiguration& w, TrialWaveFunction& psi, 
       QMCHamiltonian& h, RandomGenerator_t& rg):
     QMCUpdateBase(w,psi,h,rg), nSubSteps(1)
     { 
@@ -75,7 +75,7 @@ namespace qmcplusplus {
   }
   
   /// Constructor.
-  VMCUpdateAllWithDrift::VMCUpdateAllWithDrift(ParticleSet& w, TrialWaveFunction& psi, 
+  VMCUpdateAllWithDrift::VMCUpdateAllWithDrift(MCWalkerConfiguration& w, TrialWaveFunction& psi, 
       QMCHamiltonian& h, RandomGenerator_t& rg):
     QMCUpdateBase(w,psi,h,rg) 
     { 

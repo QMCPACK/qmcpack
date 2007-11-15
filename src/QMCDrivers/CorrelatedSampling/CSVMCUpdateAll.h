@@ -34,7 +34,7 @@ namespace qmcplusplus {
 
   public:
     /// Constructor.
-    CSVMCUpdateAll(ParticleSet& w, TrialWaveFunction& psi, QMCHamiltonian& h, 
+    CSVMCUpdateAll(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, 
         RandomGenerator_t& rg);
 
     void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);

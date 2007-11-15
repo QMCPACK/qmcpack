@@ -215,8 +215,8 @@ namespace qmcplusplus {
     //set the collection mode for the estimator
     Estimators->setCollectionMode(branchEngine->SwapMode);
 
-    IndexType PopIndex = Estimators->addColumn("Population");
-    IndexType EtrialIndex = Estimators->addColumn("Etrial");
+    IndexType PopIndex = Estimators->addProperty("Population");
+    IndexType EtrialIndex = Estimators->addProperty("Etrial");
     //Estimators->reportHeader(AppendRun);
     //Estimators->reset();
 

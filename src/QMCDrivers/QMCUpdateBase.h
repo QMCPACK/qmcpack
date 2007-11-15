@@ -57,7 +57,7 @@ namespace qmcplusplus {
     ///Total numer of non-local moves accepted
     IndexType NonLocalMoveAccepted;
     /// Constructor.
-    QMCUpdateBase(ParticleSet& w, TrialWaveFunction& psi, QMCHamiltonian& h, 
+    QMCUpdateBase(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, 
         RandomGenerator_t& rg);
     ///destructor
     virtual ~QMCUpdateBase();
@@ -136,7 +136,7 @@ namespace qmcplusplus {
     ///Time-step factor \f$ \sqrt{\Tau}\f$
     RealType m_sqrttau;
     ///walker ensemble
-    ParticleSet& W;
+    MCWalkerConfiguration& W;
     ///trial function
     TrialWaveFunction& Psi;
     ///Hamiltonian

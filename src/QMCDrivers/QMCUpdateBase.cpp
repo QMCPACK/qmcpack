@@ -25,7 +25,7 @@
 namespace qmcplusplus { 
 
   /// Constructor.
-  QMCUpdateBase::QMCUpdateBase(ParticleSet& w, TrialWaveFunction& psi, QMCHamiltonian& h,
+  QMCUpdateBase::QMCUpdateBase(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
       RandomGenerator_t& rg): W(w),Psi(psi),H(h), UpdatePbyP(true),
       RandomGen(rg), MaxAge(0),  branchEngine(0), Estimators(0)
 #if defined(ENABLE_COMPOSITE_ESTIMATOR)

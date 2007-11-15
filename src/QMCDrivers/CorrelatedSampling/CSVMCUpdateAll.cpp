@@ -31,7 +31,7 @@
 namespace qmcplusplus { 
 
   /// Constructor.
-  CSVMCUpdateAll::CSVMCUpdateAll(ParticleSet& w, 
+  CSVMCUpdateAll::CSVMCUpdateAll(MCWalkerConfiguration& w, 
       TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator_t& rg):
     CSUpdateBase(w,psi,h,rg) { 
   }

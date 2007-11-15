@@ -27,7 +27,7 @@ namespace qmcplusplus {
   public:
 
     /// Constructor.
-    DMCUpdatePbyPWithRejection(ParticleSet& w, TrialWaveFunction& psi, 
+    DMCUpdatePbyPWithRejection(MCWalkerConfiguration& w, TrialWaveFunction& psi, 
         QMCHamiltonian& h, RandomGenerator_t& rg);
     ///destructor
     ~DMCUpdatePbyPWithRejection();
@@ -48,7 +48,7 @@ namespace qmcplusplus {
   public:
 
     /// Constructor.
-    DMCUpdatePbyPWithKill(ParticleSet& w, TrialWaveFunction& psi, 
+    DMCUpdatePbyPWithKill(MCWalkerConfiguration& w, TrialWaveFunction& psi, 
         QMCHamiltonian& h, RandomGenerator_t& rg);
     ///destructor
     ~DMCUpdatePbyPWithKill();
