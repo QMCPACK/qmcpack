@@ -23,7 +23,7 @@
 #include "OhmmsApp/ProjectData.h"
 #include "Message/Communicate.h"
 #include "Platforms/sysutil.h"
-#if defined(HAVE_LIBBOOST) && !defined(__xlC__)
+#if defined(HAVE_LIBBOOST) && !defined(__xlC__) && !defined(__PGI)
 #include <boost/date_time/posix_time/posix_time.hpp>
 #endif
 
@@ -54,10 +54,10 @@ namespace OHMMS {
   {
     //os << "<Project ID=\""<<m_title << "\" series=\"" << m_series << "/>" << endl;
     os << "  Project = " << m_title << "\n";
-//#if defined(HAVE_LIBBOOST) && !defined(__xlC__)
-//    using namespace boost::posix_time;
-//    os << "  date    = " << boost::posix_time::second_clock::local_time() << "\n";
-//#endif
+#if defined(HAVE_LIBBOOST) && !defined(__xlC__) && !defined(__PGI)
+    using namespace boost::posix_time;
+    os << "  date    = " << boost::posix_time::second_clock::local_time() << "\n";
+#endif
     os << "  host    = " << m_host << "\n";
     os << "  user    = " << m_user << "\n";
     return true;
