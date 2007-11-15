@@ -21,7 +21,7 @@
 #include "Utilities/RandomGenerator.h"
 #include "QMCDrivers/WalkerControlBase.h"
 #include "Estimators/EstimatorManager.h"
-#include "Estimators/DMCEnergyEstimator.h"
+//#include "Estimators/DMCEnergyEstimator.h"
 #include "Numerics/HDFNumericAttrib.h"
 #include "Numerics/HDFSTLAttrib.h"
 
