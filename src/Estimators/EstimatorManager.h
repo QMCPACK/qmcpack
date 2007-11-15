@@ -79,7 +79,7 @@ namespace qmcplusplus {
      * Append a named column. BlockProperties do not contain any meaning data
      * but manages the name to index map for PropertyCache.
      */
-    inline int addColumn(const char* aname) {
+    inline int addProperty(const char* aname) {
       return BlockProperties.add(aname);
     }
 
@@ -87,11 +87,11 @@ namespace qmcplusplus {
      * @param i column index
      * @param v value 
      */
-    inline void setColumn(int i, RealType v) {
+    inline void setProperty(int i, RealType v) {
       PropertyCache(RecordCount,i)=v;
     }
 
-    inline RealType getColumn(int i) const {
+    inline RealType getProperty(int i) const {
       return PropertyCache(RecordCount,i);
     }
 

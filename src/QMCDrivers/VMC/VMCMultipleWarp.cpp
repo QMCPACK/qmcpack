@@ -146,7 +146,7 @@ namespace qmcplusplus {
    */
   bool VMCMultipleWarp::run() { 
 
-    int JACCOL=Estimators->addColumn("LogJacob");
+    int JACCOL=Estimators->addProperty("LogJacob");
       
     //TEST CACHE
     //Estimators->reportHeader(AppendRun);
@@ -212,7 +212,7 @@ namespace qmcplusplus {
 
       Estimators->stopBlock(nAccept/static_cast<RealType>(nAccept+nReject));
       RealType AveJacobLog=Jacblk/static_cast<RealType>(nSteps);
-      Estimators->setColumn(JACCOL,AveJacobLog);
+      Estimators->setProperty(JACCOL,AveJacobLog);
 
       nAcceptTot += nAccept; 
       nRejectTot += nReject;
