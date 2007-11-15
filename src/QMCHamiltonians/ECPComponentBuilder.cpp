@@ -105,6 +105,7 @@ namespace qmcplusplus {
       SetQuadratureRule(Nrule);
       app_log() << "    Non-local pseudopotential parameters" <<endl;
       pp_nonloc->print(app_log());
+      app_log() << "    Maximum cutoff radius " << pp_nonloc->Rmax << endl;
 
     }
     return true;
