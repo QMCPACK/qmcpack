@@ -227,16 +227,16 @@ namespace qmcplusplus {
     //set primaryH->Primary
     primaryH->setPrimary(true);
 
-    //flux is evaluated only with single-configuration VMC
-    if(curRunType == VMC_RUN && !curQmcModeBits[MULTIPLE_MODE]) 
-    {
-      QMCHamiltonianBase* flux=primaryH->getHamiltonian("Flux");
-      if(flux == 0) primaryH->addOperator(new ConservedEnergy,"Flux");
-    } 
-    else 
-    {
-      primaryH->remove("Flux");
-    }
+    ////flux is evaluated only with single-configuration VMC
+    //if(curRunType == VMC_RUN && !curQmcModeBits[MULTIPLE_MODE]) 
+    //{
+    //  QMCHamiltonianBase* flux=primaryH->getHamiltonian("Flux");
+    //  if(flux == 0) primaryH->addOperator(new ConservedEnergy,"Flux");
+    //} 
+    //else 
+    //{
+    //  primaryH->remove("Flux");
+    //}
 
     //(SPACEWARP_MODE,MULTIPE_MODE,UPDATE_MODE)
     if(curRunType == VMC_RUN) 
