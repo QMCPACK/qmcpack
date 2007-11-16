@@ -19,7 +19,7 @@
 #ifndef QMCPLUSPLUS_LRHANLDERTEMP_H
 #define QMCPLUSPLUS_LRHANLDERTEMP_H
 
-#include "LongRange/StructFact.h"
+#include "LongRange/LRHandlerBase.h"
 #include "LongRange/LPQHIBasis.h"
 #include "LongRange/LRBreakup.h"
 
@@ -27,30 +27,24 @@ namespace qmcplusplus {
 
   /* Templated LRHandler class
    *
-   * LRHandlerTemp<Func,BreakupBasis> is a modification of LRHandler.
+   * LRHandlerTemp<Func,BreakupBasis> is a modification of LRHandler
+   * and a derived class from LRHanlderBase.
    * The first template parameter Func is a generic functor, e.g., CoulombFunctor.
    * The second template parameter is a BreakupBasis and the default is set to LPQHIBasis.
+   * LRHandlerBase is introduced to enable run-time options. See RPAContstraints.h
    */
   template<class Func, class BreakupBasis=LPQHIBasis>
-  class LRHandlerTemp: public QMCTraits {
+  class LRHandlerTemp: public LRHandlerBase {
 
   public:
     //Typedef for the lattice-type.
     typedef ParticleSet::ParticleLayout_t ParticleLayout_t;
     typedef BreakupBasis BreakupBasisType;
 
-    /// Maxkimum Kshell for the given Kc
-    IndexType MaxKshell;
-    /// Maximum k cutoff 
-    RealType  LR_kc;
-    Vector<RealType> coefs; 
-    Vector<RealType> Fk; 
-    Vector<RealType> Fk_symm; 
-    BreakupBasis Basis; //This needs a Lattice for the constructor...
+    BreakupBasisType Basis; //This needs a Lattice for the constructor...
     Func myFunc;
-
     //Constructor
-    LRHandlerTemp(ParticleSet& ref, RealType kc=-1.0): Basis(ref.Lattice), LR_kc(kc) 
+    LRHandlerTemp(ParticleSet& ref, RealType kc=-1.0): LRHandlerBase(kc), Basis(ref.Lattice)
     {
       myFunc.reset(ref);
     }
@@ -63,9 +57,7 @@ namespace qmcplusplus {
      * References to ParticleSet or ParticleLayoutout_t are not copied.
      */
     LRHandlerTemp(const LRHandlerTemp& aLR, ParticleSet& ref):
-      Basis(aLR.Basis, ref.Lattice), 
-    MaxKshell(aLR.MaxKshell), LR_kc(aLR.LR_kc), 
-    coefs(aLR.coefs), Fk(aLR.Fk)
+      LRHandlerBase(aLR), Basis(aLR.Basis, ref.Lattice) 
     {
       myFunc.reset(ref);
       fillFk(ref.SK->KLists);
@@ -74,6 +66,7 @@ namespace qmcplusplus {
     void initBreakup(ParticleSet& ref) {
       InitBreakup(ref.Lattice,1); 
       fillFk(ref.SK->KLists);
+      LR_rc=Basis.get_rc();
     }
 
     void resetTargetParticleSet(ParticleSet& ref) {
@@ -92,7 +85,8 @@ namespace qmcplusplus {
      * @param rinv 1/r
      */
     inline RealType srDf(RealType r, RealType rinv) {
-      RealType df = myFunc.df(r, rinv);
+      RealType df = myFunc.df(r);
+      //RealType df = myFunc.df(r, rinv);
       for(int n=0; n<coefs.size(); n++) df -= coefs[n]*Basis.df(n,r);
       return df;
     }
