@@ -83,6 +83,13 @@ namespace qmcplusplus {
     ///spherical-grids for non-local PP
     vector<ParticlePos_t*> Sphere;
 
+     /** name-value map of Walker Properties
+     *
+     * PropertyMap is used to keep the name-value mapping of
+     * Walker_t::Properties.
+     */ 
+    RecordNamedProperty<RealType> PropertyList;
+    
     ///default constructor
     ParticleSet();
 
@@ -201,12 +208,7 @@ namespace qmcplusplus {
     SingleParticlePos_t activePos;
 
 
-    /** name-value map of Walker Properties
-     *
-     * PropertyMap is used to keep the name-value mapping of
-     * Walker_t::Properties.
-     */ 
-    RecordNamedProperty<RealType> PropertyList;
+
 
     void initParticleSet();
   };

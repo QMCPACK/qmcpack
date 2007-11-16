@@ -112,6 +112,8 @@ QMCHamiltonian::evaluate(ParticleSet& P) {
     Hvalue[i]=(*hit)->Value; 
     ++hit;++i;
   }
+  P.PropertyList[LOCALENERGY]=LocalEnergy;
+  P.PropertyList[LOCALPOTENTIAL]=LocalEnergy-Hvalue[0];
   return LocalEnergy;
 }
 

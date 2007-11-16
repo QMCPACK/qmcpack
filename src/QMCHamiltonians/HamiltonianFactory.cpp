@@ -33,6 +33,10 @@
 #include "QMCHamiltonians/CoulombPBCAATemp.h"
 #include "QMCHamiltonians/CoulombPBCABTemp.h"
 #include "OhmmsData/AttributeSet.h"
+#include "QMCHamiltonians/BarePressure.h"
+// #include "QMCHamiltonians/RPAPressureCorrection.h"
+
+
 
 namespace qmcplusplus {
   HamiltonianFactory::HamiltonianFactory(ParticleSet* qp, 
@@ -141,6 +145,23 @@ namespace qmcplusplus {
       {
         addModInsKE(cur);
       }
+      else if(cname == "estimator")
+      {
+        if(potType == "BarePressure")
+        {
+          targetH->addOperator(new BarePressure,"BarePressure");
+        }
+        if(potType == "RPAZBPressure")
+        {
+          targetH->addOperator(new BarePressure,"BarePressure");
+//           targetH->addOperator(new RPAPressureCorrection(*targetPtcl),"BPCor");
+        }
+      }
+      
+      
+      
+
+      
       //else if(cname == "harmonic") 
       //{
       //  PtclPoolType::iterator pit(ptclPool.find(sourceInp));
@@ -229,6 +250,8 @@ namespace qmcplusplus {
         else targetH->addOperator(new IonIonPotential(*ion),"IonIon");
       }
     }
+
+
 
     return true;
   }
