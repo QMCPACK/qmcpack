@@ -64,7 +64,6 @@ SET(PARTICLE
   LongRange/StructFact.cpp
   LongRange/LPQHIBasis.cpp			      	
   LongRange/LRCoulombSingleton.cpp
-  LongRange/LRJastrowSingleton.cpp
 )
 
 SET(PARTICLEIO
@@ -86,6 +85,7 @@ SUBDIRS(QMCWaveFunctions)
 SUBDIRS(QMCHamiltonians)
 SUBDIRS(QMCDrivers)
 SUBDIRS(QMCApp)
+#SUBDIRS(einspline)
 
 IF(BUILD_QMCTOOLS)
   SUBDIRS(QMCTools)
