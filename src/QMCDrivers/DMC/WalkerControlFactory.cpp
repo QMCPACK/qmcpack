@@ -44,7 +44,7 @@ namespace qmcplusplus {
     //if(nmax<0) nmax=2*nideal;
     //if(nmin<0) nmin=nideal/2;
     WalkerControlBase* wc=0;
-    int ncontexts = comm->ncontexts();
+    int ncontexts = comm->size();
     bool fixw= (reconfig == "yes");
 
     if(fixw) {
@@ -84,7 +84,7 @@ namespace qmcplusplus {
       int nmax, int nmin, WalkerControlBase* wc,
       Communicate* comm) {
 
-      int ncontexts = comm->ncontexts();
+      int ncontexts = comm->size();
 
       //overwrite the SwapMode for a single-node run
       if(ncontexts == 1) {swapmode=0;}
