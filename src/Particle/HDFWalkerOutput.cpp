@@ -92,7 +92,7 @@ struct WalkerPackedWriter: public HDFAttribIOBase {
   //collective writing: not working yet
   inline void writeAll(hid_t grp, const char* name, Communicate* myComm) 
   {
-    int mynode=myComm->mycontext();
+    int mynode=myComm->rank();
     int nwloc=W.getActiveWalkers();
     if(nwloc != W.WalkerOffsets[mynode+1]-W.WalkerOffsets[mynode])
     {

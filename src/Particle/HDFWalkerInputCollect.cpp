@@ -60,7 +60,7 @@ HDFWalkerInputCollect::open(const string& aroot) {
   }
 
   app_log() << "  HDFWalkerInputCollect::open " << h5file<< endl;
-  curNContexts = OHMMS::Controller->ncontexts();
+  curNContexts = OHMMS::Controller->size();
   OffSet.resize(curNContexts+1);
 
   return true;
@@ -88,7 +88,7 @@ void HDFWalkerInputCollect::readRandomState() {
     char rname[128];
     if(prevNContexts == curNContexts) {
       app_log() << "    Restart with the random states" << endl;
-      sprintf(rname,"context%04d/random_state",OHMMS::Controller->mycontext());
+      sprintf(rname,"context%04d/random_state",OHMMS::Controller->rank());
       hid_t h_random = H5Gopen(fileID,rname);
       HDFAttribIO<RandomGenerator_t> r(Random);
       r.read(h_random,"dummy");
@@ -195,7 +195,7 @@ HDFWalkerInputCollect::rewind(MCWalkerConfiguration& W, int rollback) {
 bool 
 HDFWalkerInputCollect::read(MCWalkerConfiguration& W, int firstConf, int lastConf) {
 
-  int myID = OHMMS::Controller->mycontext();
+  int myID = OHMMS::Controller->rank();
   hid_t mastercf = H5Gopen(fileID,"config_collection");
 
   char confName[128];

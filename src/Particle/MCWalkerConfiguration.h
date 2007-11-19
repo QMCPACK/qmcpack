@@ -231,6 +231,8 @@ namespace qmcplusplus {
 
     void resetWalkerProperty(int ncopy=1);
 
+    inline bool updatePbyP() const { return ReadyForPbyP;}
+
   protected:
 
     ///boolean for cleanup
