@@ -33,7 +33,10 @@ public:
   inline PooledData(): Current(0) { }
 
   //copy constructor
-  inline PooledData(const PooledData& a): std::vector<T>(a) { }
+  inline PooledData(const PooledData& a): std::vector<T>(a),Current(0) { }
+
+  //constructor with a size
+  explicit inline PooledData(int n): std::vector<T>(n) , Current(0){}
 
   //assignement operator
   PooledData<T>& operator=(const PooledData<T>& a) {
