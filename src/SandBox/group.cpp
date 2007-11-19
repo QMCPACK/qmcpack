@@ -13,8 +13,8 @@ int main(int argc, char** argv) {
 
   OHMMS::Controller->initialize(argc,argv);
 
-  OhmmsInfo welcome(argc,argv,OHMMS::Controller->mycontext());
-  Random.init(OHMMS::Controller->mycontext(),OHMMS::Controller->ncontexts(),-1);
+  OhmmsInfo welcome(argc,argv,OHMMS::Controller->rank());
+  Random.init(OHMMS::Controller->rank(),OHMMS::Controller->size(),-1);
 
   std::cout.setf(std::ios::scientific, std::ios::floatfield);
   std::cout.setf(std::ios::right,std::ios::adjustfield);
@@ -26,8 +26,8 @@ int main(int argc, char** argv) {
   int ndiv=atoi(argv[1]);
   cout << "Group = " << ndiv << endl;
   Communicate newComm(*OHMMS::Controller,ndiv);
-  std::cout << OHMMS::Controller->mycontext() << " Rank = " 
-    << newComm.mycontext() << " Size = " << newComm.ncontexts() << " " << sumL << std::endl;
+  std::cout << OHMMS::Controller->rank() << " Rank = " 
+    << newComm.rank() << " Size = " << newComm.size() << " " << sumL << std::endl;
   sumG=sumL;
   newComm.allreduce(sumG);
 
@@ -43,7 +43,7 @@ int main(int argc, char** argv) {
   //std::cout << OHMMS::Controller->mycontext() << " Rank = " << new_rank << " Size = " << new_size << " " << sumL << std::endl;
   //MPI_Allreduce(&(sumL), &(sumG), 1, MPI_DOUBLE, MPI_SUM, row);
  
-  std::cout << OHMMS::Controller->mycontext() << " Local sum = " << sumL << " Global sum " << sumG << std::endl;
+  std::cout << OHMMS::Controller->rank() << " Local sum = " << sumL << " Global sum " << sumG << std::endl;
   //const int ndims=2;
   //int dims[]={2,2};
   //int coords[ndims];
