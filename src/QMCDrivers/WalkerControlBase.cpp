@@ -41,8 +41,8 @@ namespace qmcplusplus {
     else
       myComm = OHMMS::Controller;
 
-    NumContexts=myComm->ncontexts();
-    MyContext=myComm->mycontext();
+    NumContexts=myComm->size();
+    MyContext=myComm->rank();
 
     curData.resize(LE_MAX+NumContexts);
     NumPerNode.resize(NumContexts);

@@ -183,7 +183,7 @@ namespace qmcplusplus {
     //else 
     //{
       HDFWalkerInputManager W_in(W);
-      if(W_in.put(wset,qmcComm->mycontext())) 
+      if(W_in.put(wset,qmcComm->rank())) 
         h5FileRoot = W_in.getLastFile();
     //}
 
@@ -273,12 +273,12 @@ namespace qmcplusplus {
     //update the global number of walkers
     //int nw=W.getActiveWalkers();
     //qmcComm->allreduce(nw);
-    vector<int> nw(qmcComm->ncontexts(),0),nwoff(qmcComm->ncontexts()+1,0);
-    nw[qmcComm->mycontext()]=W.getActiveWalkers();
+    vector<int> nw(qmcComm->size(),0),nwoff(qmcComm->size()+1,0);
+    nw[qmcComm->rank()]=W.getActiveWalkers();
     qmcComm->allreduce(nw);
 
-    for(int ip=0; ip<qmcComm->ncontexts(); ip++) nwoff[ip+1]=nwoff[ip]+nw[ip];
-    W.setGlobalNumWalkers(nwoff[qmcComm->ncontexts()]);
+    for(int ip=0; ip<qmcComm->size(); ip++) nwoff[ip+1]=nwoff[ip]+nw[ip];
+    W.setGlobalNumWalkers(nwoff[qmcComm->size()]);
     W.setWalkerOffsets(nwoff);
 
     app_log() << "  Total number of walkers: " << W.EnsembleProperty.NumSamples  <<  endl;

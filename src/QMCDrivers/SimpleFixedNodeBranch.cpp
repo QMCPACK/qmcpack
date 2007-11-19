@@ -280,7 +280,7 @@ namespace qmcplusplus {
     } 
 
     //overwrite the SwapMode with the number of contexts
-    SwapMode = (SwapMode && (OHMMS::Controller->ncontexts()>1));
+    SwapMode = (SwapMode && (OHMMS::Controller->size()>1));
 
     if(SwapMode) {
       app_log() << "  Collective handling of Average/walkers" << endl;

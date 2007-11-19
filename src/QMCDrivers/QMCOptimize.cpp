@@ -159,7 +159,7 @@ namespace qmcplusplus {
 
     xmlNodePtr qsave=q;
     xmlNodePtr cur=qsave->children;
-    int pid=OHMMS::Controller->mycontext();
+    int pid=OHMMS::Controller->rank();
     while(cur != NULL) {
       string cname((const char*)(cur->name));
       if(cname == "mcwalkerset") {

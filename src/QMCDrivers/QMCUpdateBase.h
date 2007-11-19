@@ -25,7 +25,7 @@
 #include "QMCHamiltonians/NonLocalTOperator.h"
 #include "QMCDrivers/SimpleFixedNodeBranch.h"
 //#define ENABLE_COMPOSITE_ESTIMATOR
-#include "Estimators/CompositeEstimators.h"
+//#include "Estimators/CompositeEstimators.h"
 #include "Estimators/EstimatorManager.h"
 
 namespace qmcplusplus {

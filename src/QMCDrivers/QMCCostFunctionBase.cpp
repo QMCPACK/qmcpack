@@ -351,7 +351,7 @@ namespace qmcplusplus {
     //reset the wavefunction for with the new variables
     resetPsi();
 
-    if(myComm->master()) {
+    if(!myComm->rank()) {
       updateXmlNodes();
       char newxml[128];
       sprintf(newxml,"%s.opt.%d.xml", RootName.c_str(),ReportCounter);
@@ -396,7 +396,7 @@ namespace qmcplusplus {
 
     resetPsi();
 
-    if(myComm->master())
+    if(!myComm->rank())
     {
       char newxml[128];
       sprintf(newxml,"%s.opt.xml", RootName.c_str());
@@ -460,7 +460,7 @@ namespace qmcplusplus {
     //Estimators.put(q);
     vector<xmlNodePtr> oset,cset;
     xmlNodePtr cur=qsave->children;
-    int pid=OHMMS::Controller->mycontext();
+    int pid=OHMMS::Controller->rank();
     while(cur != NULL) {
       string cname((const char*)(cur->name));
       if(cname == "optimize") {
