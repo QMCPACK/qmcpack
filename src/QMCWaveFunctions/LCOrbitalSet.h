@@ -23,7 +23,7 @@
 
 namespace qmcplusplus {
 
-  /** class to be specialized **/
+  /** decalaration of generic class to handle a linear-combination of basis function*/
   template<class BS, bool IDENTITY>
   class LCOrbitalSet: public SPOSetBase {
   };

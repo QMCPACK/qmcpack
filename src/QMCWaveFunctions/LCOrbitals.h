@@ -270,7 +270,7 @@ namespace qmcplusplus {
         string cname((const char*)(cur->name));
         if(cname == "occupation") {
           occ_ptr=cur;
-        } else if(cname == "coefficient" || cname == "parameter" || cname == "Var") {
+        } else if(cname.find("coeff")<cname.size()|| cname == "parameter" || cname == "Var") {
           coeff_ptr=cur;
         }
         cur=cur->next;
