@@ -120,14 +120,14 @@ namespace qmcplusplus {
     //  cur=cur->next;
     //}
 
-    app_log() << "  MPI Nodes            = " << OHMMS::Controller->ncontexts() << endl;
-    app_log() << "  MPI Nodes per group  = " << qmcComm->ncontexts() << endl;
+    app_log() << "  MPI Nodes            = " << OHMMS::Controller->size() << endl;
+    app_log() << "  MPI Nodes per group  = " << qmcComm->size() << endl;
     app_log() << "  OMP_NUM_THREADS      = " << omp_get_max_threads() << endl;
     app_log() << "  Total Execution time = " << t1.elapsed() << " secs" << endl;
 
     //if(OHMMS::Controller->master()) {
     //if(firstqmc != NULL && qmcComm->master()) { //generate multiple files
-    if(qmcComm->master()) { //generate multiple files
+    if(!qmcComm->rank()) { //generate multiple files
 
       xmlNodePtr mcptr = NULL;
       if(m_walkerset.size()) mcptr=m_walkerset[0];
@@ -140,7 +140,7 @@ namespace qmcplusplus {
       m_walkerset.clear();//empty the container
 
       std::ostringstream np_str;
-      np_str<<qmcComm->ncontexts();
+      np_str<<qmcComm->size();
       xmlNodePtr newmcptr = xmlNewNode(NULL,(const xmlChar*)"mcwalkerset");
       xmlNewProp(newmcptr,(const xmlChar*)"fileroot",(const xmlChar*)myProject.CurrentMainRoot());
       xmlNewProp(newmcptr,(const xmlChar*)"node",(const xmlChar*)"-1");

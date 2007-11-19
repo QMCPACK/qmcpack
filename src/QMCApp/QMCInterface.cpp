@@ -69,7 +69,7 @@ namespace qmcplusplus {
     OHMMS::Controller->setNodeID(myProc);
     OHMMS::Controller->setNumNodes(numProcs);
     ostringstream newTitle;
-    newTitle << myProject.m_title << "." << OHMMS::Controller->getNodeID();
+    newTitle << myProject.m_title << "." << OHMMS::Controller->rank();
     myProject.setTitle(newTitle.str());
 
     //validate the input file

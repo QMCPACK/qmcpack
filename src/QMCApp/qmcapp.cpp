@@ -35,7 +35,7 @@ int main(int argc, char **argv) {
 
   OHMMS::Controller->initialize(argc,argv);
 
-  OhmmsInfo Welcome(argc,argv,OHMMS::Controller->mycontext());
+  OhmmsInfo Welcome(argc,argv,OHMMS::Controller->rank());
 
   if(argc<=1)
   {
@@ -76,7 +76,7 @@ int main(int argc, char **argv) {
         valid=false;
     } while(valid);
 
-    if(OHMMS::Controller->ncontexts()==1)
+    if(OHMMS::Controller->size()==1)
     {
       qmc.qmcComm = OHMMS::Controller;
       validInput=qmc.parse(fgroup[0]);
