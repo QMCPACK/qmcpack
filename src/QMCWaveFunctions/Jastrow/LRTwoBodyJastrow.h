@@ -29,7 +29,7 @@
 #include "OhmmsData/libxmldefs.h"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
-#include "LongRange/LRJastrowSingleton.h"
+#include "LongRange/LRHandlerBase.h"
 
 namespace qmcplusplus {
 
@@ -56,7 +56,8 @@ namespace qmcplusplus {
     RealType *LastAddressOfdU;
     StructFact* skRef;
     // handler used to do evalFk
-    typedef LRJastrowSingleton::LRHandlerType HandlerType;    
+    //typedef RPALRHandler<RealType>::HandlerType HandlerType;    
+    typedef LRHandlerBase HandlerType;    
     HandlerType* handler;
 
     Vector<RealType> U,d2U;
@@ -75,22 +76,25 @@ namespace qmcplusplus {
     vector<int> Kshell;
     vector<RealType> FkbyKK;
     //vector<PosType>  Kcart;
-    
-  public:
+   
+    void resetInternals();
+    void resetByHandler();
+    void resize();
+    ///fixed components of Fk
     Vector<RealType> Fk_0; 
+    ///variable components of Fk
     Vector<RealType> Fk_1; 
-    ///Coefficients = Fk_0 + Fk_1
+  public:
+    ///Fk[kindex] 
     Vector<RealType> Fk; 
     ///A unique Fk sorted by |k|
     Vector<RealType> Fk_symm;
 
-    LRTwoBodyJastrow(ParticleSet& p, HandlerType* inhandler);
+    LRTwoBodyJastrow(ParticleSet& p, HandlerType* inhandler=0);
 
     void resetParameters(OptimizableSetType& optVariables);
 
-    void resetInternals();
-
-    void resize();
+    void resetByFunction(RealType kc, int functype);
 
     //evaluate the distance table with els
     void resetTargetParticleSet(ParticleSet& P);
@@ -98,6 +102,42 @@ namespace qmcplusplus {
     ValueType evaluateLog(ParticleSet& P,
 		         ParticleSet::ParticleGradient_t& G, 
 		         ParticleSet::ParticleLaplacian_t& L);
+    /** reset the coefficients by a function
+    */
+    template<typename FUNC>
+    void resetByFunction(RealType kc)
+    {
+      RealType kcsq=kc*kc;
+      int maxshell=skRef->KLists.kshell.size()-1;
+      const KContainer::SContainer_t& kk(skRef->KLists.ksq);
+
+      int ksh=0,ik=0;
+      while(ksh<maxshell)
+      {
+        if(kk[ik]>kcsq) break; //exit
+        ik=skRef->KLists.kshell[++ksh];
+      }
+      MaxKshell=ksh;
+
+      Fk_symm.resize(MaxKshell);
+      FkbyKK.resize(MaxKshell);
+      Fk.resize(ik);
+      Fk_0.resize(ik);
+
+      //create a function
+      FUNC uk(Rs);
+
+      //- sign is for the form of two-body Jastrow
+      RealType u0 = -4.0*M_PI/CellVolume;
+      for(ksh=0,ik=0; ksh<MaxKshell; ksh++, ik++)
+      {
+        RealType v=u0*uk(kk[ik]);//rpa=u0/kk[ik];
+        Fk_symm[ksh]=v;
+        FkbyKK[ksh]=kk[ik]*v;
+        for(; ik<skRef->KLists.kshell[ksh+1]; ik++) Fk[ik]=v;
+      }
+      Fk_0=Fk;
+    }
 
     inline ValueType evaluate(ParticleSet& P,
 			      ParticleSet::ParticleGradient_t& G, 

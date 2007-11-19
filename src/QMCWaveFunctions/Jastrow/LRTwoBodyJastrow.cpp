@@ -20,9 +20,8 @@
 namespace qmcplusplus {
 
   LRTwoBodyJastrow::LRTwoBodyJastrow(ParticleSet& p, HandlerType* inHandler):
-  NumPtcls(0), NumSpecies(0), skRef(0) {
+  NumPtcls(0), NumSpecies(0), skRef(0), handler(inHandler) {
     Optimizable=false;
-    handler=inHandler;
     NumSpecies=p.groups();
     skRef=p.SK;
     if(skRef) {
@@ -31,12 +30,14 @@ namespace qmcplusplus {
       NormConstant=4.0*M_PI*Rs*NumPtcls*(NumPtcls-1)*0.5;
       NumPtcls=p.getTotalNum();
       NumKpts=skRef->KLists.numk;
+      MaxKshell=skRef->KLists.kshell.size()-1;
       resize();
-      resetInternals();
+      //resetInternals();
     }
   }
   
   void LRTwoBodyJastrow::resize() {
+    //set the  maximum k-shell
     Rhok.resize(NumKpts);
     rokbyF.resize(NumPtcls,NumKpts);
     U.resize(NumPtcls);
@@ -55,12 +56,16 @@ namespace qmcplusplus {
    */
   void LRTwoBodyJastrow::resetInternals() 
   {
-    Fk_0.resize(handler->Fk.size());
-    Fk_0 = -1.0 * handler->Fk;
-    Fk.resize(Fk_0.size());
-    Fk=Fk_0;
+    if(handler)
+    {
+      Fk_0.resize(handler->Fk.size());
+      Fk_0 = -1.0 * handler->Fk;
+      Fk.resize(Fk_0.size());
+      Fk=Fk_0;
+    }
   }
   
+
   void LRTwoBodyJastrow::resetParameters(OptimizableSetType& optVariables) 
   {
     ///DO NOTHING FOR NOW
@@ -69,8 +74,12 @@ namespace qmcplusplus {
   void LRTwoBodyJastrow::resetTargetParticleSet(ParticleSet& P) {
     // update handler as well, should there also be a reset?
     skRef=P.SK;
-    handler->initBreakup(P);
-    resetInternals();
+    //Do not update handler and breakup
+    //if(handler)
+    //{
+    //  handler->initBreakup(P);
+    //  resetInternals();
+    //}
   }
   
   LRTwoBodyJastrow::ValueType 
@@ -403,13 +412,13 @@ namespace qmcplusplus {
       }
       
       ///[0,MaxKshell)
-      MaxKshell= handler->MaxKshell;
-      Fk_symm.resize(MaxKshell);
-      FkbyKK.resize(MaxKshell);
+      if(handler) MaxKshell=handler->MaxKshell; 
 
       bool foundCoeff=false;
       if(cur != NULL)
       {
+        Fk_symm.resize(MaxKshell);
+        FkbyKK.resize(MaxKshell);
         xmlNodePtr tcur=cur->children;
         while(tcur != NULL) {
           string cname((const char*)(tcur->name));
@@ -429,19 +438,17 @@ namespace qmcplusplus {
           }
           tcur=tcur->next;
         }
-      }
+      }//check if coeff is proided externally
+
       Fk.resize(NumKpts);
       if(foundCoeff) {
         resetInternals();
       } else {
-        int ki=0; 
-        char coeffname[128];
-        MaxK=0;
-        int ish=0;
-        //use kc=1.0/sqrt(Rs)
-        while(ish<MaxKshell && ki<NumKpts)
+        if(handler) resetByHandler();
+        //add the names for optimization
+        for(int ish=0; ish<MaxKshell; ish++)
         {
-          Fk_symm[ish]=-1.0*handler->Fk[ki];
+          char coeffname[128];
           sprintf(coeffname,"rpa_k%d",ish);
           vlist[coeffname]=Fk_symm[ish];
           //vlist.add(coeffname,Fk_symm.data()+ik);
@@ -452,11 +459,6 @@ namespace qmcplusplus {
               (const xmlChar*)val.str().c_str());
           xmlNewProp(p_ptr,(const xmlChar*)"id",(const xmlChar*)coeffname);
           xmlNewProp(p_ptr,(const xmlChar*)"name",(const xmlChar*)kname.str().c_str());
-
-          //save Fk*KK for laplacians
-          FkbyKK[ish]=Fk_symm[ish]*skRef->KLists.ksq[ki];
-          for(; ki<skRef->KLists.kshell[ish+1]; ki++) Fk[ki]=Fk_symm[ish];
-          ++ish;
         }
 
         MaxK=skRef->KLists.kshell[MaxKshell];
@@ -473,8 +475,11 @@ namespace qmcplusplus {
       {
         app_log() << setw(10) << ks << setw(4) << Kshell[ks+1]-Kshell[ks] 
           << setw(20) << std::sqrt(skRef->KLists.ksq[Kshell[ks]])
-          << setw(20) << Fk_symm[ks] 
-          << setw(20) << u0/skRef->KLists.ksq[Kshell[ks]] << endl;
+          << setw(20) << Fk_symm[ks];
+        //if(handler) 
+        //  app_log() << setw(20) << -handler->myFunc.Uk(skRef->KLists.ksq[Kshell[ks]]);
+        //else 
+          app_log()  << setw(20) << u0/skRef->KLists.ksq[Kshell[ks]] << endl;
       }
       app_log() << endl;
       //for(int ikpt=0; ikpt<MaxK; ikpt++) 
@@ -482,9 +487,61 @@ namespace qmcplusplus {
       Rhok.resize(MaxK);
       return true;
     }
+
+  void LRTwoBodyJastrow::resetByHandler()
+  {
+    Fk_symm.resize(MaxKshell);
+    FkbyKK.resize(MaxKshell);
+
+    Fk_0.resize(handler->Fk.size());
+    Fk_0 = -1.0 * handler->Fk;
+    Fk.resize(Fk_0.size());
+    Fk=Fk_0;
+
+    int ki=0; 
+    int ish=0;
+    while(ish<MaxKshell && ki<NumKpts)
+    {
+      Fk_symm[ish]=Fk[ki];//-1.0*handler->Fk[ki];
+      FkbyKK[ish]=Fk_symm[ish]*skRef->KLists.ksq[ki];
+      for(; ki<skRef->KLists.kshell[ish+1]; ki++) Fk[ki]=Fk_symm[ish];
+      ++ish;
+    }
+  } 
+
+ // /** reset the coefficients by a function
+ //  */
+ // void LRTwoBodyJastrow::resetByFunction(RealType kc, int functype)
+ // {
+ //   RealType kcsq=kc*kc;
+ //   int maxshell=skRef->KLists.kshell.size()-1;
+ //   const KContainer::SContainer_t& kk(skRef->KLists.ksq);
+
+ //   int ksh=0,ik=0;
+ //   while(ksh<maxshell)
+ //   {
+ //     if(kk[ik]>kcsq) break; //exit
+ //     ik=skRef->KLists.kshell[++ksh];
+ //     cout << "Starting a new ksh  " << ksh << " " << ik << endl;
+ //   }
+ //   MaxKshell=ksh;
+
+ //   cout << "Maximum kshell " << MaxKshell << endl;
+ //   Fk_symm.resize(MaxKshell);
+ //   FkbyKK.resize(MaxKshell);
+ //   Fk.resize(ik);
+ //   Fk_0.resize(ik);
+
+ //   //hard code RPA stuff
+ //   RealType u0 = -4.0*M_PI*Rs/CellVolume;
+ //   for(ksh=0,ik=0; ksh<MaxKshell; ksh++, ik++)
+ //   {
+ //     RealType rpa=u0/kk[ik];
+ //     Fk_symm[ksh]=rpa;
+ //     FkbyKK[ksh]=kk[ik]*rpa;
+ //     for(; ik<skRef->KLists.kshell[ksh+1]; ik++) Fk[ik]=rpa;
+ //   }
+ //   Fk_0=Fk;
+ // }
 }
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$ 
- ***************************************************************************/
+
