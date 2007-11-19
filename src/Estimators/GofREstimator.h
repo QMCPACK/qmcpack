@@ -67,7 +67,9 @@ namespace qmcplusplus {
     /** virtal destrctor */
     ~GofREstimator();
 
-    void writeHeaders(hid_t gid);
+    /** create gofr group */
+    hid_t createGroup(hid_t gid);
+    //void writeHeaders(hid_t gid);
     void resetTargetParticleSet(ParticleSet& p);
     /** prepare data collect */
     void startAccumulate();

@@ -47,7 +47,7 @@ namespace qmcplusplus {
    */
   void CompositeEstimatorBase::recordBlock()
   {
-    for(int p=0; p<hList.size(); p++) oList[p]->write(hList[p],0);
+    for(int p=0; p<oList.size(); p++) oList[p]->write(GroupID,0);
   }
 
   void CompositeEstimatorBase::open(hid_t hroot)
@@ -56,16 +56,13 @@ namespace qmcplusplus {
     {
       int n=nList.size();
       oList.resize(n,0);
-      hList.resize(n);
+      GroupID=createGroup(hroot);
       for(int p=0; p<n; p++) 
       {
-        hid_t gid = H5Gcreate(hroot,nList[p].c_str(),0);
+        hid_t gid = H5Gcreate(GroupID,nList[p].c_str(),0);
         oList[p]= new HDFAttribIO<VectorEstimatorType>(*dList[p]);
         oList[p]->reserve(gid);
-        hList[p]=gid;
       }
-      GroupID=hroot;
-      writeHeaders(hroot);
     }
   }
 
@@ -73,10 +70,11 @@ namespace qmcplusplus {
   {
     if(GroupID>-1)
     {
-      for(int p=0; p<hList.size(); p++) H5Gclose(hList[p]);
+      //for(int p=0; p<hList.size(); p++) H5Gclose(hList[p]);
       delete_iter(oList.begin(),oList.end());
       oList.clear();
-      hList.clear();
+      //hList.clear();
+      H5Gclose(GroupID);//close all the group
       GroupID=-1;
     }
   }
@@ -94,7 +92,7 @@ namespace qmcplusplus {
     for(int i=0; i<dList.size(); i++)
     {
       dList[i]->d_sum += eth->dList[i]->d_sum;
-      dList[i]->d_sum2 += eth->dList[i]->d_sum2;
+      //dList[i]->d_sum2 += eth->dList[i]->d_sum2;
     }
   }
 
@@ -129,6 +127,7 @@ namespace qmcplusplus {
     //map<strin,int>::iterator it(EstimatorMap.find(aname));
     //if(it == EstimatorMap.end())
     //{
+      est->Title=aname; //assign the title
       EstimatorMap[aname]=Estimators.size();
       Estimators.push_back(est);
     //}
@@ -160,7 +159,7 @@ namespace qmcplusplus {
     accumulate(W,W.begin(),W.end(),wgtnorm);
   }
 
-  void CompositeEstimatorSet::accumulate(ParticleSet& W,
+  void CompositeEstimatorSet::accumulate(MCWalkerConfiguration& W,
       MCWalkerConfiguration::iterator wit, 
       MCWalkerConfiguration::iterator wit_end,
       RealType wgtnorm)
@@ -169,7 +168,7 @@ namespace qmcplusplus {
     for(int i=0; i< Estimators.size(); i++) Estimators[i]->startAccumulate();
 
     typedef MCWalkerConfiguration::Walker_t Walker_t;
-    if(PbyP)
+    if(W.updatePbyP())
     {
       while(wit != wit_end)
       {

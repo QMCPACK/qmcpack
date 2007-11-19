@@ -1,4 +1,4 @@
-//////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////
 // (c) Copyright 2003- by Jeongnim Kim
 //////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////
@@ -19,6 +19,7 @@
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Message/Communicate.h"
 #include "Message/CommOperators.h"
+#include "Message/CommUtilities.h"
 #include "Estimators/LocalEnergyEstimator.h"
 #include "Estimators/LocalEnergyOnlyEstimator.h"
 #include "Estimators/CompositeEstimators.h"
@@ -29,55 +30,67 @@
 #include "Utilities/IteratorUtility.h"
 #include "Numerics/HDFNumericAttrib.h"
 #include "OhmmsData/HDFStringAttrib.h"
+#define QMC_ASYNC_COLLECT
+//leave it for serialization debug
+//#define DEBUG_ESTIMATOR_ARCHIVE
 
 namespace qmcplusplus {
 
+  /** enumeration for EstimatorManager.Options
+   */
+  enum {COLLECT=0, 
+  MANAGE,
+  RECORD, 
+  POSTIRECV, 
+  APPEND};
+
   //initialize the name of the primary estimator
-  EstimatorManager::EstimatorManager(Communicate* c): 
-    MainEstimatorName("elocal"),
-  Manager(false), CollectSum(true), AppendRecord(false), Collected(false), 
-  ThreadCount(1), h_file(-1), h_obs(-1), myComm(0), //H(h),
-  MainEstimator(0), CompEstimators(0)
+  EstimatorManager::EstimatorManager(Communicate* c): RecordCount(0),h_file(-1),
+  MainEstimatorName("elocal"), Archive(0), DebugArchive(0),
+  myComm(0), MainEstimator(0), CompEstimators(0), pendingRequests(0)
   { 
     setCommunicator(c);
-    //Block2Total.resize(0); 
   }
 
-  EstimatorManager::EstimatorManager(EstimatorManager& em):
-    MainEstimatorName("elocal"),
-  Manager(false), AppendRecord(false), Collected(false), 
-  ThreadCount(1),h_file(-1), h_obs(-1), 
-  MainEstimator(0), CompEstimators(0),
-  EstimatorMap(em.EstimatorMap)
+  EstimatorManager::EstimatorManager(EstimatorManager& em): RecordCount(0),h_file(-1),
+  MainEstimatorName("elocal"),
+  Options(em.Options), Archive(0), DebugArchive(0),MainEstimator(0), CompEstimators(0), 
+  EstimatorMap(em.EstimatorMap), pendingRequests(0)
   {
-    CollectSum=em.CollectSum, 
     //inherit communicator
     setCommunicator(em.myComm);
     for(int i=0; i<em.Estimators.size(); i++) 
-    {
       Estimators.push_back(em.Estimators[i]->clone());
-    }
+
     MainEstimator=Estimators[EstimatorMap[MainEstimatorName]];
 
-    if(em.CompEstimators)
-    {//copy composite estimator
+    if(em.CompEstimators)//copy composite estimator
+    {
       CompEstimators = new CompositeEstimatorSet(*(em.CompEstimators));
     }
-
   }
 
   EstimatorManager::~EstimatorManager()
   { 
     delete_iter(Estimators.begin(), Estimators.end());
     if(CompEstimators) delete CompEstimators;
+    delete_iter(RemoteData.begin(), RemoteData.end());
   }
 
   void EstimatorManager::setCommunicator(Communicate* c) 
   {
     if(myComm && myComm == c) return;
     myComm = c ? c:OHMMS::Controller;
-    Manager = myComm->master();
-    CollectSum = (myComm->ncontexts()>1);
+
+    //set the default options
+    Options.set(COLLECT,myComm->size()>1);
+    Options.set(MANAGE,myComm->rank() == 0);
+
+    myRequest.resize(2);
+    if(Options[COLLECT] && Options[MANAGE]) myRequest.resize(myComm->size()-1);
+
+    if(RemoteData.empty())
+      for(int i=0; i<myComm->size(); i++) RemoteData.push_back(new BufferType);
   }
 
   /** set CollectSum
@@ -86,9 +99,9 @@ namespace qmcplusplus {
   void EstimatorManager::setCollectionMode(bool collect) 
   {
     if(!myComm) setCommunicator(0);
+    Options.set(COLLECT,(myComm->size() == 1)? false:collect);
     //force to be false for serial runs
-    CollectSum = (myComm->ncontexts() == 1)? false:collect;
-    //for(int i=0; i< Estimators.size(); i++) Estimators[i]->CollectSum = CollectSum;
+    //CollectSum = (myComm->size() == 1)? false:collect;
   }
 
   /** reset names of the properties 
@@ -99,21 +112,14 @@ namespace qmcplusplus {
   void EstimatorManager::reset()
   {
 
-    if(Estimators.empty()) 
-      add(new LocalEnergyOnlyEstimator(),MainEstimatorName);
-
-    BlockAverages.clear();
-    //no need for RemoteData. We don't collect anything during a run
-    BufferType tmp;
-    for(int i=0; i<Estimators.size(); i++) 
-    {
-      Estimators[i]->add2Record(BlockAverages,tmp);
-      Estimators[i]->reset();
-    }
-
-    //weightInd = BlockProperties.add("WeightSum");
+    weightInd = BlockProperties.add("BlockWeight");
     cpuInd = BlockProperties.add("BlockCPU");
     acceptInd = BlockProperties.add("AcceptRatio");
+
+    BlockAverages.clear();//cleaup the records
+    for(int i=0; i<Estimators.size(); i++) 
+      Estimators[i]->add2Record(BlockAverages);
+
   }
 
   void EstimatorManager::resetTargetParticleSet(ParticleSet& p)
@@ -121,98 +127,94 @@ namespace qmcplusplus {
     if(CompEstimators) CompEstimators->resetTargetParticleSet(p);
   }
 
+  void EstimatorManager::addHeader(ostream& o)
+  {
+    o.setf(ios::scientific, ios::floatfield);
+    o.setf(ios::left,ios::adjustfield);
+    o << "#   index    ";
+    for(int i=0; i<BlockAverages.size(); i++) o << setw(16) << BlockAverages.Name[i];
+    //(*Archive) << setw(16) << "WeightSum";
+    for(int i=0; i<BlockProperties.size(); i++) o << setw(16) << BlockProperties.Name[i];
+    o << endl;
+    o.setf(ios::right,ios::adjustfield);
+  }
+
   void EstimatorManager::start(int blocks, bool record)
   {
+
     reset();
-
-    Collected= false;
     RecordCount=0;
+    energyAccumulator.clear();
     BlockAverages.setValues(0.0);
-    RefEnergy=0.0;
-    CumEnergy=0.0;
+    AverageCache.resize(BlockAverages.size());
+    PropertyCache.resize(BlockProperties.size());
 
-    //resize does not reset the value
-    TotalWeight.resize(blocks);
+    //count the buffer size for message
+    BufferSize=AverageCache.size()+PropertyCache.size();
+    if(CompEstimators) BufferSize += CompEstimators->size();
 
-    AverageCache.resize(blocks,BlockAverages.size());
-    AverageCache=0.0;
+    //allocate buffer for data collection
+    for(int i=0; i<myComm->size(); i++) RemoteData[i]->resize(BufferSize);
 
-    PropertyCache.resize(blocks,BlockProperties.size());
-
-    if(record)
+#if defined(DEBUG_ESTIMATOR_ARCHIVE)
+    if(record && DebugArchive ==0)
     {
-      if(h_obs>-1)  H5Gclose(h_obs);
-      if(h_file>-1)  H5Fclose(h_file);
+      char fname[128];
+      sprintf(fname,"%s.p%03d.scalar.dat",myComm->getName().c_str(), myComm->rank());
+      DebugArchive = new ofstream(fname);
+      addHeader(*DebugArchive);
+    }
+#endif
 
-      //open obsevables and allocate spaces 
-      string h5file=RootName+".config.h5";
-      h_file =  H5Fopen(h5file.c_str(),H5F_ACC_RDWR,H5P_DEFAULT);
+    //set Options[RECORD] to enable/disable output 
+    Options.set(RECORD,record&&Options[MANAGE]);
 
-      herr_t status = H5Eset_auto(NULL, NULL);
-      status = H5Gget_objinfo (h_file, "observables", 0, NULL);
-      if(status ==0) //observables are already there. remove them
+    if(Options[RECORD])
+    {
+      if(Archive) delete Archive;
+      string fname(myComm->getName());
+      fname.append(".scalar.dat");
+      Archive = new ofstream(fname.c_str());
+      addHeader(*Archive);
+
+      //open hdf5 file
+      if(CompEstimators) 
       {
-        h_obs = H5Gunlink(h_file,"observables");
+        if(h_file>-1) H5Fclose(h_file);
+        string h5file(myComm->getName());
+        h5file.append(".stat.h5");
+        h_file = H5Fcreate(h5file.c_str(),H5F_ACC_TRUNC,H5P_DEFAULT,H5P_DEFAULT);
+        CompEstimators->open(h_file);
       }
 
-      h_obs = H5Gcreate(h_file,"observables",0);
-      HDFAttribIO<int> i(RecordCount);
-      i.write(h_obs,"count");
-      HDFAttribIO<int> t(ThreadCount);
-      t.write(h_obs,"threads");
-      HDFAttribIO<Matrix<RealType> > m(AverageCache);
-      m.write(h_obs,"scalars");
-      HDFAttribIO<TinyVector<RealType,4> > e0(RefEnergy);
-      e0.write(h_obs,"energy");
-      HDFAttribIO<TinyVector<RealType,4> > e1(CumEnergy);
-      e1.write(h_obs,"energy_cum");
-
-      //write headers so that we can keep track of what we are writing
-      ostringstream o;
-      for(int i=0; i<BlockAverages.size()-1; i++) o << BlockAverages.Name[i] << ":";
-      o<<BlockAverages.Name.back();
-      string banner(o.str());
-      HDFAttribIO<string> so(banner);
-      so.write(h_obs,"scalar_ids");
-
-      ostringstream oe;
-      oe << "AverageEnergy:VarianceSquared:EstimatedError:AverageVariance";
-      banner=oe.str();
-      so.write(h_obs,"energy_ids");
-
-      ostringstream oc;
-      oc << "Energy:EnergySquared:Variance:Samples";
-      banner=oc.str();
-      so.write(h_obs,"energy_cum_ids");
-
-
-      if(CompEstimators) CompEstimators->open(h_obs);
-
-      //H5Gclose(h_obs);
-      //H5Fclose(h_file);
+#if defined(QMC_ASYNC_COLLECT)
+      if(Options[COLLECT])
+      {//issue a irecv
+        pendingRequests=0;
+        for(int i=1,is=0; i<myComm->size(); i++,is++) 
+        {
+          myRequest[is]=myComm->irecv(i,i,*RemoteData[i]);//request only has size-1
+          pendingRequests++;
+        }
+      }
+#endif
     }
   }
 
   void EstimatorManager::stop(const vector<EstimatorManager*> est)
   {
-    RecordCount=est[0]->RecordCount;
+    BlockWeight=est[0]->BlockWeight;
 
-    TotalWeight=est[0]->TotalWeight;
-    for(int i=1; i<ThreadCount; i++)
-      TotalWeight+=est[i]->TotalWeight;
+    int num_threads=est.size();
+    //normalize by the number of threads per node
+    RealType wgt=1.0/static_cast<RealType>(num_threads);
 
     AverageCache=est[0]->AverageCache;
-    for(int i=1; i<ThreadCount; i++)
-      AverageCache+=est[i]->AverageCache;
-
-    //normalize by the number of threads per node
-    RealType wgt=1.0/static_cast<RealType>(ThreadCount);
+    for(int i=1; i<num_threads; i++) AverageCache+=est[i]->AverageCache;
     AverageCache*=wgt;
 
     PropertyCache=est[0]->PropertyCache;
-    for(int i=1; i<ThreadCount; i++)
-      PropertyCache+=est[i]->PropertyCache;
-
+    for(int i=1; i<num_threads; i++) PropertyCache+=est[i]->PropertyCache;
     PropertyCache*=wgt;
 
     stop();
@@ -227,225 +229,139 @@ namespace qmcplusplus {
    */
   void EstimatorManager::stop() 
   {
-    if(CollectSum)
+    //clean up pending messages
+    if(pendingRequests) 
     {
-      //save the local data to scalars_node so that we can trace it back to the node
-      if(h_obs>-1)
-      {
-        HDFAttribIO<Matrix<RealType> > m(AverageCache);
-        m.write(h_obs,"scalars_node");
-
-        HDFAttribIO<Matrix<RealType> > p(PropertyCache);
-        p.write(h_obs,"run_properties_node");
-      }
-
-      //we will use serialization
-      int n1=AverageCache.size(), n2=PropertyCache.size(), n3=TotalWeight.size();
-      vector<RealType> c(n1+n2+n3);
-      std::copy(AverageCache.begin(),AverageCache.end(),c.begin());
-      std::copy(PropertyCache.begin(),PropertyCache.end(),c.begin()+n1);
-      std::copy(TotalWeight.begin(),TotalWeight.end(),c.begin()+n1+n2);
-
-      //use allreduce
-      myComm->allreduce(c);
-
-      std::copy(c.begin(),c.begin()+n1,AverageCache.begin());
-      std::copy(c.begin()+n1,c.begin()+n1+n2,PropertyCache.begin());
-      std::copy(c.begin()+n1+n2,c.end(),TotalWeight.begin());
-
-      RealType norm=1.0/static_cast<RealType>(myComm->ncontexts());
-      AverageCache *=norm;
-      PropertyCache *=norm;
+      cancel(myRequest);
+      pendingRequests=0;
     }
 
-    CumEnergy=0.0;
-    int eind=MainEstimator->FirstIndex;
-    for(int i=0; i<AverageCache.rows(); i++)
+    //close any open files
+    if(Archive) 
     {
-      RealType et=AverageCache(i,eind);
-      CumEnergy[1]+=et;
-      CumEnergy[2]+=et*et;
-    }
-    CumEnergy[0]=AverageCache.rows();
-    RealType wgtnorm=1.0/CumEnergy[0];
-    RefEnergy[0]=CumEnergy[1]*wgtnorm;
-    RefEnergy[1]=CumEnergy[2]*wgtnorm-RefEnergy[0]*RefEnergy[0];
-    RefEnergy[2]=std::sqrt(RefEnergy[1]/(CumEnergy[0]-1.0));
-    RefEnergy[3]=CumEnergy[3]*wgtnorm;//average block variance
-
-    //close the group
-    if(h_obs>-1)
-    {
-      //reset to 1 to indicate that scalars do not have the count
-      HDFAttribIO<int> i(RecordCount,true);
-      i.write(h_obs,"count");
-      HDFAttribIO<int> t(ThreadCount,true);
-      t.write(h_obs,"threads");
-      HDFAttribIO<Matrix<RealType> > m(AverageCache,true);
-      m.write(h_obs,"scalars");
-      HDFAttribIO<TinyVector<RealType,4> > e0(RefEnergy,true);
-      e0.write(h_obs,"energy");
-      HDFAttribIO<TinyVector<RealType,4> > e1(CumEnergy,true);
-      e1.write(h_obs,"energy_cum");
-
-      //save the run-time properties
-      ostringstream o;
-      for(int i=0; i<BlockProperties.size()-1; i++) o << BlockProperties.Name[i] << ":";
-      o<<BlockProperties.Name.back();
-      string banner(o.str());
-      HDFAttribIO<string> so(banner);
-      so.write(h_obs,"run_properties_ids");
-
-      HDFAttribIO<Matrix<RealType> > p(PropertyCache);
-      p.write(h_obs,"run_properties");
-
-      HDFAttribIO<Vector<RealType> > w(TotalWeight);
-      w.write(h_obs,"weights");
-
-      if(CompEstimators) CompEstimators->close();
-
-      H5Gclose(h_obs); 
-      h_obs=-1;
+      delete Archive; Archive=0;
     }
 
+    //cleaup file
     if(h_file>-1)
     {
-      H5Fclose(h_file); 
-      h_file=-1;
+      H5Fclose(h_file); h_file=-1;
     }
-
-    if(Manager) //write to a ascii file. Plan to disable it entirely.
-    {
-      string fname(RootName);
-      fname.append(".scalar.dat");
-      ofstream fout(fname.c_str());
-      fout.setf(ios::scientific, ios::floatfield);
-      fout.setf(ios::left,ios::adjustfield);
-      fout << "#   index    ";
-      for(int i=0; i<BlockAverages.size(); i++) fout << setw(16) << BlockAverages.Name[i];
-      fout << setw(16) << "WeightSum";
-      for(int i=0; i<BlockProperties.size(); i++) fout << setw(16) << BlockProperties.Name[i];
-      fout << endl;
-      fout.setf(ios::right,ios::adjustfield);
-      const RealType* restrict rptr=AverageCache.data();
-      const RealType* restrict pptr=PropertyCache.data();
-      int pc=PropertyCache.cols();
-      int nc=AverageCache.cols();
-      for(int i=0; i<RecordCount; i++)
-      {
-        fout << setw(10) << i;
-        for(int j=0; j<nc; j++) fout << setw(16) << *rptr++;
-        fout << setw(16) << TotalWeight[i];
-        for(int j=0; j<pc; j++) fout << setw(16) << *pptr++;
-        fout << endl;
-      }
-    }
-
-    Collected=true;
   }
 
   void EstimatorManager::startBlock(int steps)
   { 
     MyTimer.restart();
+    BlockWeight=0.0;
     if(CompEstimators) CompEstimators->startBlock(steps);
   }
 
   void EstimatorManager::stopBlock(RealType accept)
   {
     //take block averages and update properties per block
-    TotalWeight[RecordCount]=Estimators[0]->d_wgt;
-    PropertyCache(RecordCount,cpuInd)    = MyTimer.elapsed();
-    PropertyCache(RecordCount,acceptInd) = accept;
+    PropertyCache[cpuInd] = MyTimer.elapsed();
+    PropertyCache[acceptInd] = accept;
+
     for(int i=0; i<Estimators.size(); i++) 
-      Estimators[i]->takeBlockAverage(AverageCache[RecordCount]);
+      Estimators[i]->takeBlockAverage(AverageCache.begin());
 
     if(CompEstimators) CompEstimators->stopBlock();
 
-    //increment RecordCount
-    RecordCount++;
-
-    if(h_obs<0) return;
-
-    //wrte current cummulative and average/error
-    CumEnergy[0]+=1.0;
-    RealType et=AverageCache(RecordCount-1,MainEstimator->FirstIndex);
-    CumEnergy[1]+=et;
-    CumEnergy[2]+=et*et;
-    CumEnergy[3]+=std::sqrt(MainEstimator->d_variance);
-
-    RealType wgtnorm=1.0/CumEnergy[0];
-    RefEnergy[0]=CumEnergy[1]*wgtnorm;
-    RefEnergy[1]=CumEnergy[2]*wgtnorm-RefEnergy[0]*RefEnergy[0];
-    if(CumEnergy[0]>1) 
-      RefEnergy[2]=std::sqrt(RefEnergy[1]*wgtnorm/(CumEnergy[0]-1.0));
-    RefEnergy[3]=CumEnergy[3]*wgtnorm;//average block variance
-
-    HDFAttribIO<int> i(RecordCount,true);
-    i.write(h_obs,"count");
-    HDFAttribIO<Matrix<RealType> > m(AverageCache,true);
-    m.write(h_obs,"scalars");
-    HDFAttribIO<TinyVector<RealType,4> > e0(RefEnergy,true);
-    e0.write(h_obs,"energy");
-    HDFAttribIO<TinyVector<RealType,4> > e1(CumEnergy,true);
-    e1.write(h_obs,"energy_cum");
-
-    //record data
-    if(CompEstimators) CompEstimators->recordBlock();
+    collectBlockAverages();
   }
 
   void EstimatorManager::stopBlock(const vector<EstimatorManager*> est)
   {
-    ThreadCount=est.size();
-    RecordCount=est[0]->RecordCount;
-    int rc=RecordCount-1;
 
-    //update the weight
-    RealType wgtnow=0.0;
-    for(int i=0; i<ThreadCount; i++) wgtnow+=est[i]->TotalWeight[rc];
-    TotalWeight[rc]=wgtnow;
+    BlockWeight=est[0]->BlockWeight;
 
-    //global sum of weight???
-   
-    for(int i=0; i<ThreadCount; i++)
-    {
-      //int rc=est[i]->RecordCount-1;
-      accumulate_elements(est[i]->PropertyCache[rc],est[i]->PropertyCache[rc+1],PropertyCache[rc]);
-      accumulate_elements(est[i]->AverageCache[rc], est[i]->AverageCache[rc+1],AverageCache[rc]);
-    }
+    //normalized it by the thread
+    int num_threads=est.size();
+    RealType tnorm=1.0/num_threads;
+    AverageCache=0.0;
+    for(int i=0; i<num_threads; i++) AverageCache+=est[i]->AverageCache;
+    AverageCache *= tnorm;
+    PropertyCache=0.0;
+    for(int i=0; i<num_threads; i++) PropertyCache+=est[i]->PropertyCache;
+    PropertyCache *= tnorm;
 
     if(CompEstimators) 
-    {
-      //simply clean this up
+    { //simply clean this up
       CompEstimators->startBlock(1);
-      for(int i=0; i<ThreadCount; i++) 
+      for(int i=0; i<num_threads; i++) 
         CompEstimators->collectBlock(est[i]->CompEstimators);
     }
 
-    //group is closed. Do not save it to hdf
-    if(h_obs<0) return;
+    collectBlockAverages();
+  }
 
-    CumEnergy[0]+=1.0;
-    RealType tnorm=1.0/static_cast<RealType>(ThreadCount);
-    RealType et=AverageCache(RecordCount-1,MainEstimator->FirstIndex);
-    CumEnergy[1]+=et*tnorm;
-    CumEnergy[2]+=et*et*tnorm;
-    RealType wgtnorm=1.0/CumEnergy[0];
-    RefEnergy[0]=CumEnergy[1]*wgtnorm;
-    RefEnergy[1]=CumEnergy[2]*wgtnorm-RefEnergy[0]*RefEnergy[0];
-    if(CumEnergy[0]>1) RefEnergy[2]=std::sqrt(RefEnergy[1]/(CumEnergy[0]-1.0));
+  void EstimatorManager::collectBlockAverages()
+  {
 
-    HDFAttribIO<int> i(RecordCount,true);
-    i.write(h_obs,"count");
-    HDFAttribIO<int> t(ThreadCount,true);
-    t.write(h_obs,"threads");
-    HDFAttribIO<Matrix<RealType> > m(AverageCache,true);
-    m.write(h_obs,"scalars");
-    HDFAttribIO<TinyVector<RealType,4> > e0(RefEnergy,true);
-    e0.write(h_obs,"energy");
-    HDFAttribIO<TinyVector<RealType,4> > e1(CumEnergy,true);
-    e1.write(h_obs,"energy_cum");
+    PropertyCache[weightInd]=BlockWeight;
 
-    if(CompEstimators) CompEstimators->recordBlock();
+#if defined(DEBUG_ESTIMATOR_ARCHIVE)
+    if(DebugArchive)
+    {
+     if(CompEstimators) CompEstimators->print(*DebugArchive);
+      *DebugArchive << setw(10) << RecordCount;
+      for(int j=0; j<AverageCache.size(); j++) *DebugArchive << setw(16) << AverageCache[j];
+      for(int j=0; j<PropertyCache.size(); j++) *DebugArchive << setw(16) << PropertyCache[j];
+      *DebugArchive << endl;
+    }
+#endif
+
+    if(Options[COLLECT])
+    { //copy cached data to RemoteData[0]
+      BufferType::iterator cur(RemoteData[0]->begin());
+      std::copy(AverageCache.begin(),AverageCache.end(),cur);
+      cur+=AverageCache.size();
+      std::copy(PropertyCache.begin(),PropertyCache.end(),cur);
+      cur+=PropertyCache.size();
+      if(CompEstimators)
+        CompEstimators->putMessage(cur);
+
+#if defined(QMC_ASYNC_COLLECT)
+      if(Options[MANAGE]) 
+      { //wait all the message but we can choose to wait one-by-one with a timer
+        wait_all(myRequest.size(),&myRequest[0]);
+        for(int is=1; is<myComm->size(); is++) 
+          accumulate_elements(RemoteData[is]->begin(),RemoteData[is]->end(), RemoteData[0]->begin());
+      } 
+      else //not a master, pack and send the data
+        myRequest[0]=myComm->isend(0,myComm->rank(),*RemoteData[0]);
+#else
+      myComm->reduce(*RemoteData[0]);
+#endif
+
+      if(Options[MANAGE])
+      {
+        int n1=AverageCache.size();
+        int n2=AverageCache.size()+PropertyCache.size();
+        std::copy(RemoteData[0]->begin(),RemoteData[0]->begin()+n1, AverageCache.begin());
+        std::copy(RemoteData[0]->begin()+n1,RemoteData[0]->begin()+n2, PropertyCache.begin());
+        if(CompEstimators) CompEstimators->getMessage(RemoteData[0]->begin()+n2);
+
+        RealType nth=1.0/static_cast<RealType>(myComm->size());
+        AverageCache *= nth;
+        //do not weight weightInd
+        for(int i=1; i<PropertyCache.size(); i++) PropertyCache[i] *= nth;
+      }
+    }
+
+    //add the block average to summarize
+    energyAccumulator(AverageCache[0]);
+
+    if(Archive)
+    {
+      *Archive << setw(10) << RecordCount;
+      for(int j=0; j<AverageCache.size(); j++) *Archive << setw(16) << AverageCache[j];
+      for(int j=0; j<PropertyCache.size(); j++) *Archive << setw(16) << PropertyCache[j];
+      *Archive << endl;
+      if(CompEstimators) CompEstimators->recordBlock();
+    }
+
+    RecordCount++;
   }
 
   //NOTE: weights are not handled nicely.
@@ -453,50 +369,42 @@ namespace qmcplusplus {
   //will add a function to MCWalkerConfiguration to track total weight
   void EstimatorManager::accumulate(MCWalkerConfiguration& W)
   {
-    for(int i=0; i< Estimators.size(); i++) Estimators[i]->accumulate(W.begin(),W.end());
-    if(CompEstimators) CompEstimators->accumulate(W,1.0/W.getTotalWeight());
+    BlockWeight += W.getActiveWalkers();
+    RealType norm=1.0/W.getGlobalNumWalkers();
+    for(int i=0; i< Estimators.size(); i++) 
+      Estimators[i]->accumulate(W.begin(),W.end(),norm);
+    if(CompEstimators) CompEstimators->accumulate(W,norm);
   }
 
-  void EstimatorManager::accumulate(ParticleSet& W, 
+  void EstimatorManager::accumulate(MCWalkerConfiguration& W, 
       MCWalkerConfiguration::iterator it,
       MCWalkerConfiguration::iterator it_end)
   {
-    for(int i=0; i< Estimators.size(); i++) Estimators[i]->accumulate(it,it_end);
-    if(CompEstimators) CompEstimators->accumulate(W,it,it_end,1.0/W.getTotalWeight());
-  }
-
-  void EstimatorManager::accumulate(ParticleSet& P, 
-      MCWalkerConfiguration::Walker_t& awalker) 
-  {
+    BlockWeight += it_end-it;
+    RealType norm=1.0/W.getGlobalNumWalkers();
     for(int i=0; i< Estimators.size(); i++) 
-      Estimators[i]->accumulate(P,awalker);
+      Estimators[i]->accumulate(it,it_end,norm);
+    if(CompEstimators) 
+      CompEstimators->accumulate(W,it,it_end,norm);
   }
 
   void 
     EstimatorManager::getEnergyAndWeight(RealType& e, RealType& w) 
   {
-    int nc=AverageCache.cols();
-    if(nc==0) return;
-    e=0.0;
-    w=RecordCount;
-    const RealType* restrict eptr=AverageCache.data();
-    for(int i=0; i<RecordCount; i++, eptr+=nc) e +=*eptr;
-//    int nc=AverageCache.cols();
-//    if(nc==0) return;
-//    EPSum[0]=0.0;
-//    EPSum[1]=RecordCount;
-//    RealType e2cum=0.0;
-//    const RealType* restrict eptr=AverageCache.data();
-//    //for(int i=0; i<RecordCount; i++, eptr+=nc) EPSum[0] += *eptr;
-//    for(int i=0; i<RecordCount; i++, eptr+=nc) 
-//    {
-//      EPSum[0] +=*eptr;
-//    }
-////#if defined(HAVE_MPI)
-////    MPI_Bcast(EPSum.begin(),2,MPI_DOUBLE,0,myComm->getMPI());
-////#endif
-//    e=EPSum[0];
-//    w=EPSum[1];
+    if(Options[COLLECT])//need to broadcast the value
+    {
+      RealType tmp[2];
+      tmp[0]= energyAccumulator.result();
+      tmp[1]= energyAccumulator.count();
+      myComm->bcast(tmp,2);
+      e=tmp[0];
+      w=tmp[1];
+    }
+    else
+    {
+      e= energyAccumulator.result();
+      w= energyAccumulator.count();
+    }
   }
 
   EstimatorManager::EstimatorType* 

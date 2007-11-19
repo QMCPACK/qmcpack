@@ -87,10 +87,13 @@ namespace qmcplusplus {
 
   CompositeEstimatorBase* GofREstimator::clone()
   {
+    CompositeEstimatorBase* est=0;
     if(Symmetric)
-      return new GofREstimator(*sourcePtcl);
+      est= new GofREstimator(*sourcePtcl);
     else
-      return new GofREstimator(*sourcePtcl,*targetPtcl);
+      est= new GofREstimator(*sourcePtcl,*targetPtcl);
+    est->Title=this->Title;
+    return est;
   }
 
 
@@ -166,24 +169,34 @@ namespace qmcplusplus {
     }
   }
 
-  void GofREstimator::writeHeaders(hid_t gid)
+  hid_t GofREstimator::createGroup(hid_t gid)
   {
-    hid_t h1 = H5Gcreate(gid,"gofr",0);
+    hid_t h1=H5Gcreate(gid,this->Title.c_str(),0);
     Vector<RealType> rv(NumBins);
     RealType r=0;
     for(int i=0; i<NumBins;i++,r+=Delta) rv[i]=r;
     HDFAttribIO<Vector<RealType> > ro(rv);
-    ro.write(h1,"distances");
-
-    ostringstream o;
-    for(int i=0; i<NumPairTypes-1; i++) o << nList[i] <<":";
-    o<<nList.back();
-    string banner(o.str());
-    HDFAttribIO<string> so(banner);
-    so.write(h1,"pair_ids");
-
-    H5Gclose(h1);
+    ro.write(h1,"distance_table");
+    return h1;
   }
+
+//  void GofREstimator::writeHeaders(hid_t gid)
+//  {
+//    //hid_t h1 = H5Gcreate(gid,"gofr",0);
+//    Vector<RealType> rv(NumBins);
+//    RealType r=0;
+//    for(int i=0; i<NumBins;i++,r+=Delta) rv[i]=r;
+//    HDFAttribIO<Vector<RealType> > ro(rv);
+//    ro.write(gid,"distances");
+//    ostringstream o;
+//    for(int i=0; i<NumPairTypes-1; i++) o << nList[i] <<":";
+//    o<<nList.back();
+//    string banner(o.str());
+//    HDFAttribIO<string> so(banner);
+//    so.write(h1,"pair_ids");
+//
+//    H5Gclose(h1);
+//  }
 }
 
 /***************************************************************************

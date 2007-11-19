@@ -23,10 +23,12 @@
 
 #include "Configuration.h"
 #include "Utilities/Timer.h"
+#include "Utilities/PooledData.h"
 #include "Message/Communicate.h"
 #include "Estimators/ScalarEstimatorBase.h"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsData/HDFAttribIO.h"
+#include <bitset>
 
 namespace qmcplusplus {
 
@@ -40,8 +42,8 @@ namespace qmcplusplus {
 
   public:
 
-    typedef ScalarEstimatorBase           EstimatorType;
-    typedef EstimatorType::BufferType     BufferType;
+    typedef ScalarEstimatorBase  EstimatorType;
+    typedef vector<RealType>     BufferType;
     //enum { WEIGHT_INDEX=0, BLOCK_CPU_INDEX, ACCEPT_RATIO_INDEX, TOTAL_INDEX};
 
     ///name of the primary estimator name
@@ -72,9 +74,9 @@ namespace qmcplusplus {
     ///return the number of ScalarEstimators
     inline int size() const { return Estimators.size();}
 
-    /** add a column with the name
+    /** add a property with a name
      * @param aname name of the column
-     * @return the column index
+     * @return the property index so that its value can be set by setProperty(i)
      *
      * Append a named column. BlockProperties do not contain any meaning data
      * but manages the name to index map for PropertyCache.
@@ -88,11 +90,11 @@ namespace qmcplusplus {
      * @param v value 
      */
     inline void setProperty(int i, RealType v) {
-      PropertyCache(RecordCount,i)=v;
+      PropertyCache[i]=v;
     }
 
     inline RealType getProperty(int i) const {
-      return PropertyCache(RecordCount,i);
+      return PropertyCache[i];
     }
 
     int addObservable(const char* aname);
@@ -144,17 +146,10 @@ namespace qmcplusplus {
 
     void resetTargetParticleSet(ParticleSet& p);
 
-    ///** reset the estimator
-    // * @param aname root file name
-    // * @param append if yes, the data should be appended.
-    // *
-    // * Replace resetReportSettings. 
-    // */
-    //void reset(const string& aname, bool append);
-    
     /** reset the estimator
      */
     void reset();
+
     /** start a run
      * @param blocks number of blocks
      * @param record if true, will write to a file
@@ -185,54 +180,54 @@ namespace qmcplusplus {
      */
     void stopBlock(const vector<EstimatorManager*> m);
 
-    void accumulate(ParticleSet& P, MCWalkerConfiguration::iterator it,
+    void accumulate(MCWalkerConfiguration& W, MCWalkerConfiguration::iterator it,
         MCWalkerConfiguration::iterator it_end);
 
     /** accumulate the measurements
      */
     void accumulate(MCWalkerConfiguration& W);
 
-    /** accumulate the scalar observables
-     */
-    void accumulate(ParticleSet& P, MCWalkerConfiguration::Walker_t& awalker);
-
     ///** set the cummulative energy and weight
     // */
     void getEnergyAndWeight(RealType& e, RealType& w);
   protected:
-    ///if true, responsible for reduction operation, broadcast of EPSum, and printout text file
-    bool Manager;
-    ///if true, the averages are collected over mpi nodes
-    bool CollectSum;
-    ///if true, record is appened to an exisiting data
-    bool AppendRecord;
-    ///if true, record is collected. 
-    bool Collected;
-    ///size of multiple estimator
-    int ThreadCount;
+    ///use bitset to handle options
+    bitset<8> Options;
+    ///size of the message buffer
+    int BufferSize;
     ///number of records in a block
     int RecordCount;
-    ///index for the block cpu PropertyCache(*,cpuInd) 
+    ///index for the block weight PropertyCache(weightInd)
+    int weightInd;
+    ///index for the block cpu PropertyCache(cpuInd) 
     int cpuInd;
-    ///index for the acceptance rate PropertyCache(*,acceptInd) 
+    ///index for the acceptance rate PropertyCache(acceptInd) 
     int acceptInd;
-    ///hdf5 file handler
+    ///hdf5 handler
     hid_t h_file;
-    ///observables handler
-    hid_t h_obs;
+    ///total weight accumulated in a block
+    RealType BlockWeight;
+    ///file handler to write data
+    ofstream* Archive;
+    ///file handler to write data for debugging
+    ofstream* DebugArchive;
     ///communicator to handle communication
     Communicate* myComm;
-    ///pointer to the primary ScalarEstimatorBase
+    /** pointer to the primary ScalarEstimatorBase
+     *
+     * To be removed 
+     */
     ScalarEstimatorBase* MainEstimator;
-    ///cummulative energy
-    TinyVector<RealType,4> CumEnergy;
-    ///save the weights
-    Vector<RealType> TotalWeight;
-    ///save block averages (scalar data) to Cache 
-    Matrix<RealType> AverageCache;
-    ///save property data to Cache 
-    Matrix<RealType> PropertyCache;
-    ///manager of scalar data
+    /** accumulator for the energy
+     *
+     * @todo expand it for all the scalar observables to report the final results
+     */
+    ScalarEstimatorBase::accumulator_type energyAccumulator;
+    //save block averages (scalar data) to Cache 
+    Vector<RealType> AverageCache;
+    //save property data to Cache 
+    Vector<RealType> PropertyCache;
+    //manager of scalar data
     RecordNamedProperty<RealType> BlockAverages;
     ///manager of property data
     RecordNamedProperty<RealType> BlockProperties;
@@ -251,6 +246,16 @@ namespace qmcplusplus {
     ///Timer
     Timer MyTimer;
 private:
+    ///number of requests
+    int pendingRequests;
+    //Data for communication
+    vector<BufferType*> RemoteData;
+     //storage for MPI_Request
+    vector<Communicate::request> myRequest;
+    ///collect data and write
+    void collectBlockAverages();
+    ///add header to an ostream
+    void addHeader(ostream& o);
   };
 }
 #endif

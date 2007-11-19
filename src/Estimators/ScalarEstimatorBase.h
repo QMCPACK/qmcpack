@@ -19,9 +19,9 @@
 // -*- C++ -*-
 #ifndef QMCPLUSPLUS_SCALAR_ESTIMATORBASE_H
 #define QMCPLUSPLUS_SCALAR_ESTIMATORBASE_H
-#include "Configuration.h"
-#include "OhmmsData/RecordProperty.h"
 #include "Particle/MCWalkerConfiguration.h"
+#include "OhmmsData/RecordProperty.h"
+#include "Estimators/accumulators.h"
 
 namespace qmcplusplus {
 
@@ -35,105 +35,79 @@ namespace qmcplusplus {
    */
   struct ScalarEstimatorBase: public QMCTraits {
 
+    typedef accumulator_set<RealType> accumulator_type;
     typedef MCWalkerConfiguration::Walker_t Walker_t;
     typedef MCWalkerConfiguration::iterator WalkerIterator;
     typedef RecordNamedProperty<RealType>   RecordListType;
-    typedef PooledData<RealType>            BufferType;
 
     ///first index within an record of the first element handled by an object
     int FirstIndex;
     ///last index within an record of the first element handled by an object
     int LastIndex;
-    ///sum of a scalar observable
-    RealType d_sum;
-    ///sum of a scalar observable squared
-    RealType d_sumsq;
-    ///average 
-    RealType d_average;
-    ///variance
-    RealType d_variance;
-    ///current weight
-    RealType d_wgt;
-    ///current accumulative data before reporting
-    vector<RealType> d_data;
+    ///scalars to be measured
+    vector<accumulator_type> scalars; 
+    ///scalars saved
+    vector<accumulator_type> scalars_saved;
 
-    inline ScalarEstimatorBase(): 
-      FirstIndex(0), LastIndex(0),
-    d_sum(RealType()), d_sumsq(RealType()), d_average(RealType()), d_variance(RealType()),
-    d_wgt(RealType()){}
+    inline ScalarEstimatorBase(): FirstIndex(0), LastIndex(0) {}
 
     /** copy constructor */
     ScalarEstimatorBase(const ScalarEstimatorBase& est):
-      FirstIndex(est.FirstIndex),LastIndex(est.LastIndex),d_data(est.d_data)
+      FirstIndex(est.FirstIndex),LastIndex(est.LastIndex),
+    scalars(est.scalars), scalars_saved(est.scalars_saved)
     {}
 
     virtual ~ScalarEstimatorBase(){}
 
-    ///retrun average
-    inline RealType average() const { return d_average;}
-    ///retrun variance
-    inline RealType variance() const { return d_variance;}
+    ///retrun average of the
+    inline RealType average(int i=0) const { return scalars_saved[i].mean();}
+    ///return a variance
+    inline RealType variance(int i=0) const { return scalars_saved[i].variance();}
+    ///retrun mean and variance
+    inline pair<RealType,RealType> operator[](int i) const
+    { return scalars[i].mean_and_variance();}
 
+    ///clear the scalars to collect
+    inline void clear() 
+    {
+      for(int i=0; i<scalars.size(); i++) scalars[i].clear();
+    }
+
+    /** take block average and write to a common container */
     template<typename IT>
     inline void takeBlockAverage(IT first)
     {
-      RealType norm = 1.0/d_wgt;
       first += FirstIndex;
-      vector<RealType>::iterator it(d_data.begin());
-      while(it != d_data.end())
-      {
-        *first++ = norm*(*it++);
+      for(int i=0; i<scalars.size(); i++)
+      {  
+        *first++ = scalars[i].mean(); 
+        scalars_saved[i]=scalars[i]; //save current block
+        scalars[i].clear();
       }
-      d_sum += d_data[0];
-      d_sumsq += d_data[1];
-      d_average =  d_data[0]*norm;
-      d_variance = d_data[1]*norm-d_average*d_average;
-      std::fill(d_data.begin(), d_data.end(),0.0);
-      d_wgt=0.0;
     }
 
     ///clone the object
     virtual ScalarEstimatorBase* clone()=0;
+
     /** add the content of the scalar estimator to the record
-     *\param record scalar data list 
+     * @param record scalar data list 
      *
-     *Each ScalarEstimatorBase object adds a number of scalar data to record.
+     * Each ScalarEstimatorBase object adds 1 to many accumulator_type 
      */
-    virtual void add2Record(RecordNamedProperty<RealType>& record, BufferType& msg) = 0;
+    virtual void add2Record(RecordNamedProperty<RealType>& record) = 0;
 
     /** a virtual function to accumulate expectation values
      *\param awalker a single walker
      *\param wgt the weight
      */
     virtual void accumulate(const Walker_t& awalker, RealType wgt) = 0;
-    virtual void accumulate(WalkerIterator first, WalkerIterator last) = 0;
-    virtual void accumulate(ParticleSet& P, MCWalkerConfiguration::Walker_t& awalker)=0;
-
-    /** a virtual function to report the scalar estimator
-     *@param record 
-     *@param wgtinv inverse of the weight
-     *
-     *Evalaute the block-average and flush the internal data for new averages
+    /** a virtual function to accumulate expectatio values 
+     * @param first iterator for the first walker
+     * @param last iterafor for the last walker
+     * @param wgt weight
      */
-    virtual void report(RecordListType&, RealType wgtinv) = 0;
+    virtual void accumulate(WalkerIterator first, WalkerIterator last, RealType wgt) = 0;
 
-    /** a virtual function to report the scalar estimator
-     * @param record 
-     * @param wgtinv inverse of the weight
-     * @param msg temporary buffer for MPI
-     *
-     * Evalaute the block-average and flush the internal data for new averages
-     */
-    virtual void report(RecordListType&, RealType wgtinv, BufferType& msg) = 0;
-
-    /** update the message buffer */
-    void copy2Buffer(BufferType& msg)
-    {
-      msg.put(d_data.begin(),d_data.end());
-    }
-
-    /// a virtual function to flush the internal data to start a new block average
-    virtual void reset()=0;
   };
 }
 

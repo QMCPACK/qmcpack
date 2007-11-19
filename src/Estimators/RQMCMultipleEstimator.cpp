@@ -315,7 +315,7 @@ namespace qmcplusplus {
    *@param record storage of scalar records (name,value)
    */
   void 
-    RQMCEstimator::add2Record(RecordNamedProperty<RealType>& record, BufferType& msg) {
+    RQMCEstimator::add2Record(RecordNamedProperty<RealType>& record) {
       if(ediff_name.size()) {
         FirstColumnIndex = record.add(ediff_name[0].c_str());
         for(int i=1; i<ediff_name.size(); i++) record.add(ediff_name[i].c_str());
@@ -325,8 +325,6 @@ namespace qmcplusplus {
         for(int i=1; i<esum_name.size(); i++) record.add(esum_name(i).c_str());
       }
       for(int i=0; i<elocal_name.size(); i++) record.add(elocal_name(i).c_str());
-
-      msg.add(esum.begin(),esum.end());
 
       //FirstColumnIndex = record.add(esum_name(0).c_str());
       //for(int i=1; i<esum_name.size(); i++) record.add(esum_name(i).c_str());
@@ -380,98 +378,98 @@ namespace qmcplusplus {
       //cerr << "Leaving accumulate" << endl;
     }
 
-  ///Set CurrentWalker to zero so that accumulation is done in a vectorized way
-  void RQMCEstimator::reset() { 
-    CurrentWalker=0;
-    elocal=0.0; esum=0.0;
-  }
+//  ///Set CurrentWalker to zero so that accumulation is done in a vectorized way
+//  void RQMCEstimator::reset() { 
+//    CurrentWalker=0;
+//    elocal=0.0; esum=0.0;
+//  }
 
-  void RQMCEstimator::copy2Buffer(BufferType& msg) 
-  { 
-    msg.put(esum.begin(),esum.end());
-  }
-
-  /** calculate the averages and reset to zero
-   * @param record a container class for storing scalar records (name,value)
-   * @param wgtinv the inverse weight
-   *
-   * Disable collection. RQMCEstimator does not need to communiate at all.
-   */
-  void RQMCEstimator::report(RecordNamedProperty<RealType>& record, RealType wgtinv)
-  {
-    // taken from RQMCMultiple.cpp
-    int ir(FirstColumnIndex);
-    for(int ipsi=0; ipsi<NumCopies; ipsi++)
-      AveEloc[ipsi]/=(AveWeight[ipsi]*Tau+numeric_limits<RealType>::epsilon());
-
-    // not sure if this is the correct format for more than 2 correlated samples
-    for(int ipsi=0; ipsi<NumCopies-1; ipsi++)
-      for(int jpsi=ipsi+1; jpsi<NumCopies; jpsi++)
-        record[ir++] = AveEloc[jpsi] - AveEloc[ipsi];
-
-    for(int ipsi=0; ipsi<NumCopies; ipsi++)
-      record[ir++] = AveEloc[ipsi];
-
-    for(int ipsi=0; ipsi<NumCopies; ipsi++)
-      record[ir++] = 0.0;
-
-    for(int ipsi=0; ipsi<NumCopies; ipsi++)
-      record[ir++] = AveWeight[ipsi]/nSteps;
-
-    // reset containers
-    for(int ipsi=0; ipsi<NumCopies; ipsi++){
-      AveEloc[ipsi]=0.0;
-      AveWeight[ipsi]=0.0;
-    }
-
-    //for(int i=0; i<NumCopies; i++) {
-    //  RealType r = 1.0/esum(i,WEIGHT_INDEX);
-    //  RealType e = esum(i,ENERGY_INDEX)*r;
-    //  esum(i,ENERGY_INDEX)=e;
-    //  esum(i,ENERGY_SQ_INDEX)=esum(i,ENERGY_SQ_INDEX)*r-e*e;
-    //  esum(i,WEIGHT_INDEX)*=wgtinv; 
-    //}
-
-    //ediff
-    //int ir(FirstColumnIndex);
-    //for(int i=0; i<NumCopies-1; i++) {
-    //  for(int j=i+1; j<NumCopies; j++) {
-    /// this was changed...
-    //    record[ir++]=AveEloc[i];
-    //  }
-    //}
-    //+(localenergy, variance, weight)* 
-    //swap the row/column indices for (localenergy*, variance*, weight*)
-    //for(int l=0; l<LE_INDEX;l++) {
-    //  for(int i=0; i<NumCopies; i++) 
-    //    record[ir++]=esum(i,l);
-    //}
-
-    //(each hamiltonian term)*
-    //int iloc=0;
-    //for(int i=0; i<NumCopies; i++) {
-    //  for(int j=0; j<NumOperators; j++, ir++) {
-    //    record[ir]=elocal(iloc++)*wgtinv/esum(i,WEIGHT_INDEX);
-    //  }
-    //}
-    /*for(int i=0; i<elocal.size(); i++, ir++) {
-      record[ir]=wgtinv*elocal(i);
-      }*/
-    //int n(elocal.size());
-    //const RealType* restrict eit(elocal.data());
-    //while(n) {record[ir++]=wgtinv*(*eit++);--n;}
-
-    //set the ScalarEstimator<T>::b_average and b_variace
-    //b_average = esum(0,ENERGY_INDEX);
-    //b_variance = esum(0,ENERGY_SQ_INDEX);
-
-    reset();
-  }
-  void RQMCEstimator::report(RecordNamedProperty<RealType>& record, RealType wgtinv,
-      BufferType& msg) {
-    msg.get(esum.begin(),esum.end());
-    report(record,wgtinv);
-  }
+//  void RQMCEstimator::copy2Buffer(BufferType& msg) 
+//  { 
+//    msg.put(esum.begin(),esum.end());
+//  }
+//
+//  /** calculate the averages and reset to zero
+//   * @param record a container class for storing scalar records (name,value)
+//   * @param wgtinv the inverse weight
+//   *
+//   * Disable collection. RQMCEstimator does not need to communiate at all.
+//   */
+//  void RQMCEstimator::report(RecordNamedProperty<RealType>& record, RealType wgtinv)
+//  {
+//    // taken from RQMCMultiple.cpp
+//    int ir(FirstColumnIndex);
+//    for(int ipsi=0; ipsi<NumCopies; ipsi++)
+//      AveEloc[ipsi]/=(AveWeight[ipsi]*Tau+numeric_limits<RealType>::epsilon());
+//
+//    // not sure if this is the correct format for more than 2 correlated samples
+//    for(int ipsi=0; ipsi<NumCopies-1; ipsi++)
+//      for(int jpsi=ipsi+1; jpsi<NumCopies; jpsi++)
+//        record[ir++] = AveEloc[jpsi] - AveEloc[ipsi];
+//
+//    for(int ipsi=0; ipsi<NumCopies; ipsi++)
+//      record[ir++] = AveEloc[ipsi];
+//
+//    for(int ipsi=0; ipsi<NumCopies; ipsi++)
+//      record[ir++] = 0.0;
+//
+//    for(int ipsi=0; ipsi<NumCopies; ipsi++)
+//      record[ir++] = AveWeight[ipsi]/nSteps;
+//
+//    // reset containers
+//    for(int ipsi=0; ipsi<NumCopies; ipsi++){
+//      AveEloc[ipsi]=0.0;
+//      AveWeight[ipsi]=0.0;
+//    }
+//
+//    //for(int i=0; i<NumCopies; i++) {
+//    //  RealType r = 1.0/esum(i,WEIGHT_INDEX);
+//    //  RealType e = esum(i,ENERGY_INDEX)*r;
+//    //  esum(i,ENERGY_INDEX)=e;
+//    //  esum(i,ENERGY_SQ_INDEX)=esum(i,ENERGY_SQ_INDEX)*r-e*e;
+//    //  esum(i,WEIGHT_INDEX)*=wgtinv; 
+//    //}
+//
+//    //ediff
+//    //int ir(FirstColumnIndex);
+//    //for(int i=0; i<NumCopies-1; i++) {
+//    //  for(int j=i+1; j<NumCopies; j++) {
+//    /// this was changed...
+//    //    record[ir++]=AveEloc[i];
+//    //  }
+//    //}
+//    //+(localenergy, variance, weight)* 
+//    //swap the row/column indices for (localenergy*, variance*, weight*)
+//    //for(int l=0; l<LE_INDEX;l++) {
+//    //  for(int i=0; i<NumCopies; i++) 
+//    //    record[ir++]=esum(i,l);
+//    //}
+//
+//    //(each hamiltonian term)*
+//    //int iloc=0;
+//    //for(int i=0; i<NumCopies; i++) {
+//    //  for(int j=0; j<NumOperators; j++, ir++) {
+//    //    record[ir]=elocal(iloc++)*wgtinv/esum(i,WEIGHT_INDEX);
+//    //  }
+//    //}
+//    /*for(int i=0; i<elocal.size(); i++, ir++) {
+//      record[ir]=wgtinv*elocal(i);
+//      }*/
+//    //int n(elocal.size());
+//    //const RealType* restrict eit(elocal.data());
+//    //while(n) {record[ir++]=wgtinv*(*eit++);--n;}
+//
+//    //set the ScalarEstimator<T>::b_average and b_variace
+//    //b_average = esum(0,ENERGY_INDEX);
+//    //b_variance = esum(0,ENERGY_SQ_INDEX);
+//
+//    reset();
+//  }
+//  void RQMCEstimator::report(RecordNamedProperty<RealType>& record, RealType wgtinv,
+//      BufferType& msg) {
+//    msg.get(esum.begin(),esum.end());
+//    report(record,wgtinv);
+//  }
 }
 /***************************************************************************
  * $RCSfile$   $Author$

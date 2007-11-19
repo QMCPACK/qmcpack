@@ -38,8 +38,6 @@ namespace qmcplusplus {
     vector<string>                            nList;
     ///VectorEstimatorType
     vector<VectorEstimatorType*>              dList;
-    ///h5 group handler
-    vector<hid_t>                             hList;
     ///h5 engine 
     vector<HDFAttribIO<VectorEstimatorType>*> oList;
 
@@ -63,7 +61,9 @@ namespace qmcplusplus {
     /** stop accumulate for an ensemble and reweight the data */
     virtual void stopAccumulate(RealType wgtnorm)=0;
 
-    virtual void writeHeaders(hid_t gid)=0;
+    /** create a group for a st of estimators */
+    virtual hid_t createGroup(hid_t gid)=0;
+    //virtual void writeHeaders(hid_t gid)=0;
     /** initialize the estimator IO */
     void open(hid_t hroot);
 
@@ -87,26 +87,34 @@ namespace qmcplusplus {
      */
     void collectBlock(CompositeEstimatorBase* eth);
 
-    /* accumulate weighted squares
-     * @param first starting iterator of input data
-     * @param last ending iterator for input data
-     * @param v starting iterator for the sum
-     * @param v2 starting iterator for the squred sum
-     * @param w weight
-     *
-     * v[i] += w*soure[i];
-     * v2[i] += w*soure[i]*source[i];
+    /** return size of the data handled by this estimator
      */
-    template<typename IT1, typename IT2, typename T>
-      inline void collect(IT1 first, IT1 last, IT2 v, IT2 v2, T w)
+    inline int size() const 
+    {
+      int n=0;
+      for(int i=0; i<dList.size(); i++) n += dList[i]->size();
+      return n;
+    }
+
+    template<typename ForwardIterator>
+      ForwardIterator putMessage(ForwardIterator cur) const
       {
-        while(first != last)
-        {
-          *v2++ += w*(*first)*(*first); 
-          *v++  += w*(*first++);
-        }
+        for(int i=0; i<dList.size(); i++) cur=dList[i]->putMessage(cur);
+        return cur;
       }
 
+    template<typename ForwardIterator>
+      ForwardIterator getMessage(ForwardIterator cur)
+      {
+        for(int i=0; i<dList.size(); i++) cur=dList[i]->getMessage(cur);
+        return cur;
+      }
+
+    void print(ostream& os)
+    {
+      for(int i=0; i<dList.size(); i++) 
+      {os << setw(3) << i; dList[i]->print(os);}
+    }
   };
 
   /** Class to manage a set of CompositeEstimatorBase
@@ -116,8 +124,6 @@ namespace qmcplusplus {
 
     ///typedef estimator type is CompositeEstimatorBase
     typedef CompositeEstimatorBase EstimatorType;
-    ///true if the move was particle by particle
-    bool PbyP;
     ///number of steps for block average
     int NumSteps;
     /////total number of steps
@@ -171,6 +177,15 @@ namespace qmcplusplus {
      * @param wgtnorm normalization factor
      */
     void startBlock(int steps);
+
+    /** return size of the data handled by this estimator
+     */
+    inline int size() const 
+    {
+      int n=0;
+      for(int i=0; i<Estimators.size(); i++) n+= Estimators[i]->size();
+      return n;
+    }
     /** accumulate measurements */
     void accumulate(MCWalkerConfiguration& W, RealType wgtnorm);
     /** accumulate measurements
@@ -178,7 +193,7 @@ namespace qmcplusplus {
      * @param it first walker
      * @param it_end last walker
      */
-    void accumulate(ParticleSet& W,
+    void accumulate(MCWalkerConfiguration& W,
         MCWalkerConfiguration::iterator it, MCWalkerConfiguration::iterator it_end, RealType wgtnorm);
     /** stop recording the block 
      * @param wgtnorm normalization factor
@@ -193,6 +208,25 @@ namespace qmcplusplus {
     void collectBlock(CompositeEstimatorSet* eth);
     void recordBlock();
     void reset();
+
+    template<typename ForwardIterator>
+      ForwardIterator putMessage(ForwardIterator cur) const
+      {
+        for(int i=0; i<Estimators.size(); i++) cur=Estimators[i]->putMessage(cur);
+        return cur;
+      }
+
+    template<typename ForwardIterator>
+      ForwardIterator getMessage(ForwardIterator cur)
+      {
+        for(int i=0; i<Estimators.size(); i++) cur=Estimators[i]->getMessage(cur);
+        return cur;
+      }
+
+    void print(ostream& os)
+    {
+      for(int i=0; i<Estimators.size(); i++) Estimators[i]->print(os);
+    }
   };
 }
 

@@ -58,7 +58,8 @@ namespace qmcplusplus {
 
     //@{
     ///implement virtual functions
-    void writeHeaders(hid_t gid);
+    /** create gofr group */
+    hid_t createGroup(hid_t gid);
     void resetTargetParticleSet(ParticleSet& p);
     void startAccumulate();
     void accumulate(ParticleSet& p);

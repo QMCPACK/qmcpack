@@ -8,13 +8,10 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
-//   Department of Physics, Ohio State University
-//   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 #include "Estimators/LocalEnergyEstimator.h"
@@ -26,19 +23,13 @@ namespace qmcplusplus {
     int hterms(h.size());
     SizeOfHamiltonians = hterms;
     FirstHamiltonian = h.startIndex();
-    d_data.resize((SizeOfHamiltonians+LE_MAX)*2);
-    elocal_name.resize((SizeOfHamiltonians+LE_MAX)*2);
+    scalars.resize(SizeOfHamiltonians+LE_MAX);
+    scalars_saved.resize(SizeOfHamiltonians+LE_MAX);
 
-    int target=0;
-    elocal_name[target++] = "LocalEnergy";
-    elocal_name[target++] = "LocalEnergy2";
-    elocal_name[target++] = "LocalPotential";
-    elocal_name[target++] = "LocalPotential2";
+    elocal_name.push_back("LocalEnergy");
+    elocal_name.push_back("LocalPotential");
     for(int i=0; i < SizeOfHamiltonians; i++) 
-    {
-      elocal_name[target++] = h.getName(i);
-      elocal_name[target++] = h.getName(i)+"2";
-    }
+      elocal_name.push_back(h.getName(i));
   }
 
   LocalEnergyEstimator::LocalEnergyEstimator(const LocalEnergyEstimator& est):
@@ -54,14 +45,16 @@ namespace qmcplusplus {
     return new LocalEnergyEstimator(*this);
   }
 
-  /** calculate the averages and reset to zero
-   *\param record a container class for storing scalar records (name,value)
-   *\param wgtinv the inverse weight
+  /**  add the local energy, variance and all the Hamiltonian components to the scalar record container
+   * @param record storage of scalar records (name,value)
    */
-  void LocalEnergyEstimator::report(RecordListType& record, RealType wgtinv, BufferType& msg) {
-    msg.get(d_data.begin(),d_data.end());
-    report(record,wgtinv);
+  void LocalEnergyEstimator::add2Record(RecordListType& record) {
+    FirstIndex = record.add(elocal_name[0].c_str());
+    for(int i=1; i<elocal_name.size(); i++) record.add(elocal_name[i].c_str());
+    LastIndex=FirstIndex + elocal_name.size();
+    clear();
   }
+
 }
 /***************************************************************************
  * $RCSfile$   $Author$

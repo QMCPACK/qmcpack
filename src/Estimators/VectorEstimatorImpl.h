@@ -41,8 +41,8 @@ namespace qmcplusplus {
     Vector<T> d_data;
     ///d_sum[i] block sum
     Vector<T> d_sum;
-    ///d_sum2[i] block sum of squared
-    Vector<T> d_sum2;
+    /////d_sum2[i] block sum of squared
+    //Vector<T> d_sum2;
 
     ///default constructor
     inline VectorEstimatorImpl(){}
@@ -62,7 +62,7 @@ namespace qmcplusplus {
 
     ///copy constructor
     VectorEstimatorImpl(const VectorEstimatorImpl& est): 
-      d_data(est.d_data), d_sum(est.d_sum), d_sum2(est.d_sum2)
+      d_data(est.d_data), d_sum(est.d_sum),// d_sum2(est.d_sum2)
     {}
 
     ///destructo
@@ -73,9 +73,9 @@ namespace qmcplusplus {
      */
     inline void resize(int n)
     {
-      d_data.resize(2*n);
+      d_data.resize(n);
       d_sum.resize(n);
-      d_sum2.resize(n);
+      //d_sum2.resize(n);
     }
 
     inline size_t size() const { return d_sum.size();}
@@ -83,7 +83,7 @@ namespace qmcplusplus {
     {
       d_data=T();
       d_sum=T();
-      d_sum2=T();
+      //d_sum2=T();
     }
 
     /// zero the active data
@@ -93,37 +93,38 @@ namespace qmcplusplus {
     }
 
     /** accumulate expectation values
-     * @param first1 start of vector data
-     * @param last1 end of vector data
-     * @param first2 weight data
+     * @param first start of vector data
+     * @param last end of vector data
+     * @param wit start of weight data
      */
-    template<typename IT1, typename IT2>
-    inline void accumulate(IT1 first1, IT1 last1, IT2 first2)
+    template<typename InputIterator, typename WeightIterator>
+    inline void accumulate(InputIterator first, InputIterator last, WeightIterator wit, T norm)
     {
       typename vector<T>::iterator it(d_data.begin());
-      while(first1 != last1)
+      while(first != last)
       {
-        T v=(*first1)*(*first2++);//w[i]*v[i]
-        (*it++)+=v;
-        (*it++)+=v*(*first1++);//w[i]*v[i]*v[i]
+        *it++ += norm*(*first++)*(*wit++);
+        //T v=(*first1)*(*first2++);//w[i]*v[i]
+        //(*it++)+=v;
+        //(*it++)+=v*(*first1++);//w[i]*v[i]*v[i]
       }
     }
 
     /** accumulate expectation values
-     * @param first1 start of vector data
-     * @param last1 end of vector data
-     * @param first2 weight data
+     * @param first start of vector data
+     * @param last end of vector data
      * @param wm normalization factor
      */
-    template<typename IT1, typename IT2>
-    inline void accumulate(IT1 first1, IT1 last1, IT2 first2, T wm)
+    template<typename InputIterator, typename T1>
+    inline void accumulate(InputIterator first, InputIterator last,  T1 wm)
     {
       typename vector<T>::iterator it(d_data.begin());
-      while(first1 != last1)
+      while(first != last)
       {
-        T v=wm*(*first1)*(*first2++);
-        (*it++)+=v;
-        (*it++)+=v*(*first1++);
+        *it++  += wm*(*first++);
+        //T v=wm*(*first1)*(*first2++);
+        //(*it++)+=v;
+        //(*it++)+=v*(*first1++);
       }
     }
 
@@ -131,16 +132,17 @@ namespace qmcplusplus {
      *\param awalker a single walker
      *\param wgt the weight
      */
-    template<typename IT>
-    inline void accumulate(IT first, T wgt)
+    template<typename InputIterator, typename T1>
+    inline void accumulate(InputIterator first, T1 wgt)
     {
       typename vector<T>::iterator it(d_data.begin());
       typename vector<T>::iterator it_end(d_data.end());
       while(it != it_end)
       {
-        (*it++)+=wgt*(*first);
-        (*it++)+=wgt*(*first)*(*first);
-        ++first;
+        (*it++) += wgt*(*first++);
+        //(*it++)+=wgt*(*first);
+        //(*it++)+=wgt*(*first)*(*first);
+        //++first;
       }
     }
 
@@ -148,31 +150,53 @@ namespace qmcplusplus {
      *\param awalker a single walker
      *\param wgt the weight
      */
-    template<typename IT>
-    inline void accumulate(IT first)
+    template<typename InputIterator>
+    inline void accumulate(InputIterator first)
     {
       typename vector<T>::iterator it(d_data.begin());
       typename vector<T>::iterator it_end(d_data.end());
       while(it != it_end)
       {
-        (*it++)+=(*first);
-        (*it++)+=(*first)*(*first);
-        ++first;
+        *it+++ += *first++;
+        //(*it++)+=(*first)*(*first);
+        //++first;
       }
     }
 
 
-    inline void takeBlockAverage(double wgtnorm)
+    template<typename T1>
+    inline void takeBlockAverage(T1 wgtnorm)
     {
       typename vector<T>::const_iterator it(d_data.begin());
       typename vector<T>::const_iterator it_end(d_data.end());
       typename vector<T>::iterator sit(d_sum.begin());
-      typename vector<T>::iterator s2it(d_sum2.begin());
+      //typename vector<T>::iterator s2it(d_sum2.begin());
       while(it != it_end)
       {
         (*sit++)=wgtnorm*(*it++);
-        (*s2it++)=wgtnorm*(*it++);
+        //(*s2it++)=wgtnorm*(*it++);
       }
+    }
+
+    template<typename ForwardIterator>
+      ForwardIterator putMessage(ForwardIterator cur) const
+      {
+        std::copy(d_sum.begin(), d_sum.end(),cur);
+        return cur+d_sum.size();
+      }
+
+    template<typename ForwardIterator>
+      ForwardIterator getMessage(ForwardIterator cur)
+      {
+        ForwardIterator last=cur+d_sum.size();
+        std::copy(cur,last,d_sum.begin());
+        return last;
+      }
+
+    void print(ostream& os)
+    {
+      for(int i=0; i<d_sum.size(); i++) os << setw(20) << d_sum[i];
+      os << endl;
     }
   };
 
@@ -181,8 +205,9 @@ namespace qmcplusplus {
   struct HDFAttribIO<VectorEstimatorImpl<double> >
   {
     typedef VectorEstimatorImpl<double> DataType_t;
+    hid_t groupID;
     hid_t vsetID, vspaceID;
-    hid_t v2setID, v2spaceID;
+    //hid_t v2setID, v2spaceID;
     hsize_t maxdims[2];
     hsize_t curdims[2];
     hsize_t dims[2];
@@ -200,8 +225,8 @@ namespace qmcplusplus {
     ~HDFAttribIO()
     {
       if(vsetID>-1)  {
-        H5Sclose(v2spaceID);
-        H5Dclose(v2setID);
+        //H5Sclose(v2spaceID);
+        //H5Dclose(v2setID);
         H5Sclose(vspaceID);
         H5Dclose(vsetID);
       }
@@ -213,26 +238,26 @@ namespace qmcplusplus {
       vspaceID=H5Screate_simple(RANK, dims, maxdims);
       hid_t p = H5Pcreate (H5P_DATASET_CREATE);
       H5Pset_chunk(p,RANK,dims);
+      //vsetID= H5Dcreate(grp,name,H5T_NATIVE_DOUBLE,vspaceID,p);
       vsetID= H5Dcreate(grp,"value",H5T_NATIVE_DOUBLE,vspaceID,p);
       hid_t memspace = H5Screate_simple(RANK, dims, NULL);
       hid_t ret = H5Dwrite(vsetID, H5T_NATIVE_DOUBLE, memspace, vspaceID, H5P_DEFAULT, ref.d_sum.data());
       H5Sclose(memspace);
       H5Pclose(p);
 
-      v2spaceID=H5Screate_simple(RANK, dims, maxdims);
-      p = H5Pcreate (H5P_DATASET_CREATE);
-      H5Pset_chunk(p,RANK,dims);
-      v2setID= H5Dcreate(grp,"value2",H5T_NATIVE_DOUBLE,v2spaceID,p);
-      memspace = H5Screate_simple(RANK, dims, NULL);
-      ret = H5Dwrite(v2setID, H5T_NATIVE_DOUBLE, memspace, v2spaceID, H5P_DEFAULT, ref.d_sum2.data());
-      H5Sclose(memspace);
-      H5Pclose(p);
+      //v2spaceID=H5Screate_simple(RANK, dims, maxdims);
+      //p = H5Pcreate (H5P_DATASET_CREATE);
+      //H5Pset_chunk(p,RANK,dims);
+      //v2setID= H5Dcreate(grp,"value2",H5T_NATIVE_DOUBLE,v2spaceID,p);
+      //memspace = H5Screate_simple(RANK, dims, NULL);
+      //ret = H5Dwrite(v2setID, H5T_NATIVE_DOUBLE, memspace, v2spaceID, H5P_DEFAULT, ref.d_sum2.data());
+      //H5Sclose(memspace);
+      //H5Pclose(p);
     }
 
     inline void write(hid_t grp, const char* name) {
 
       const hsize_t RANK=2;
-
       H5Dextend(vsetID,curdims);
       H5Sset_extent_simple(vspaceID,RANK,curdims,maxdims);
       H5Sselect_hyperslab(vspaceID, H5S_SELECT_SET, offset, NULL, dims, NULL);
@@ -240,12 +265,12 @@ namespace qmcplusplus {
       hid_t ret = H5Dwrite(vsetID, H5T_NATIVE_DOUBLE, memspace, vspaceID, H5P_DEFAULT, ref.d_sum.data());
       H5Sclose(memspace);
 
-      H5Dextend(v2setID,curdims);
-      H5Sset_extent_simple(v2spaceID,RANK,curdims,maxdims);
-      H5Sselect_hyperslab(v2spaceID, H5S_SELECT_SET, offset, NULL, dims, NULL);
-      memspace = H5Screate_simple(RANK, dims, NULL);
-      ret = H5Dwrite(v2setID, H5T_NATIVE_DOUBLE, memspace, v2spaceID, H5P_DEFAULT, ref.d_sum2.data());
-      H5Sclose(memspace);
+      //H5Dextend(v2setID,curdims);
+      //H5Sset_extent_simple(v2spaceID,RANK,curdims,maxdims);
+      //H5Sselect_hyperslab(v2spaceID, H5S_SELECT_SET, offset, NULL, dims, NULL);
+      //memspace = H5Screate_simple(RANK, dims, NULL);
+      //ret = H5Dwrite(v2setID, H5T_NATIVE_DOUBLE, memspace, v2spaceID, H5P_DEFAULT, ref.d_sum2.data());
+      //H5Sclose(memspace);
 
       curdims[0]++;
       offset[0]++;

@@ -125,12 +125,19 @@ namespace qmcplusplus {
     dList[0]->accumulate(SkInst.begin(),wgtnorm*OneOverN);
   }
 
-  void SkEstimator::writeHeaders(hid_t gid)
+  hid_t SkEstimator::createGroup(hid_t gid)
   {
-    hid_t h1 = H5Gcreate(gid,"sk",0);
+    hid_t h1 = H5Gcreate(gid,this->Title.c_str(),0);
     //save k vector and kshell
-    H5Gclose(h1);
+    return h1;
   }
+
+ // void SkEstimator::writeHeaders(hid_t gid)
+ // {
+ //   hid_t h1 = H5Gcreate(gid,"sk",0);
+ //   //save k vector and kshell
+ //   H5Gclose(h1);
+ // }
 }
 
 /***************************************************************************

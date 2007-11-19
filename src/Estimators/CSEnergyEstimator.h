@@ -44,39 +44,25 @@ namespace qmcplusplus {
 
     inline RealType getUmbrellaWeight(int ipsi)
     {
-      return d_data[ipsi*LE_INDEX+WEIGHT_INDEX];
+      return scalars_saved[ipsi*LE_INDEX+WEIGHT_INDEX].result();
+      //return d_data[ipsi*LE_INDEX+WEIGHT_INDEX];
     }
 
     /**  add the local energy, variance and all the Hamiltonian components to the scalar record container
      *@param record storage of scalar records (name,value)
      */
-    void add2Record(RecordNamedProperty<RealType>& record, BufferType& msg);
+    void add2Record(RecordNamedProperty<RealType>& record);
 
     void accumulate(const Walker_t& awalker, RealType wgt);
 
-    /** @warning Incomplete. Only to avoid compiler problems
-     */
-    inline void accumulate(ParticleSet& P, MCWalkerConfiguration::Walker_t& awalker) {
-    }
-
-    inline void accumulate(WalkerIterator first, WalkerIterator last) 
+    inline void accumulate(WalkerIterator first, WalkerIterator last, RealType wgt) 
     {
       //accumulate  the number of times accumulation has occurred.
-      d_wgt+=last-first;
+      //d_wgt+=last-first;
       while(first != last) {
-        accumulate(**first++,1.0);
+        accumulate(**first++,wgt);
       }
     }
-
-    ///reset all the cumulative sums to zero
-    void reset();
-
-    /** calculate the averages and reset to zero
-     *\param record a container class for storing scalar records (name,value)
-     *\param wgtinv the inverse weight
-     */
-    void report(RecordNamedProperty<RealType>& record, RealType wgtinv);
-    void report(RecordNamedProperty<RealType>& record, RealType wgtinv, BufferType& msg);
 
     void evaluateDiff();
   };

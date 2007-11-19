@@ -73,74 +73,27 @@ namespace qmcplusplus {
     /** implement virtual function
      */
     ScalarEstimatorBase* clone();
-    /**  add the local energy, variance and all the Hamiltonian components to the scalar record container
-     * @param record storage of scalar records (name,value)
-     * @param msg buffer for message passing
-     */
-    void add2Record(RecordListType& record, BufferType& msg) {
-      FirstIndex = record.add(elocal_name[0].c_str());
-      for(int i=1; i<elocal_name.size(); i++) record.add(elocal_name[i].c_str());
-      LastIndex=FirstIndex + elocal_name.size();
-      //add elocal to the message buffer
-      msg.add(d_data.begin(),d_data.end());
-    }
+
+    void add2Record(RecordListType& record);
 
     inline void accumulate(const Walker_t& awalker, RealType wgt) {
       const RealType* restrict ePtr = awalker.getPropertyBase();
-      //RealType e = ePtr[LOCALENERGY];
-      int target=0;
-      d_sum=d_data[target++] += wgt*ePtr[LOCALENERGY];
-      d_sumsq=d_data[target++] += wgt*ePtr[LOCALENERGY]*ePtr[LOCALENERGY];
-      d_data[target++] += wgt*ePtr[LOCALPOTENTIAL];
-      d_data[target++] += wgt*ePtr[LOCALPOTENTIAL]*ePtr[LOCALPOTENTIAL];
-      for(int i=0, source=FirstHamiltonian; i<SizeOfHamiltonians; i++,source++) {
-        d_data[target++] += wgt*ePtr[source];
-        d_data[target++] += wgt*ePtr[source]*ePtr[source];
-      }
-      d_wgt+=wgt;
+      scalars[0](ePtr[LOCALENERGY],wgt);
+      scalars[1](ePtr[LOCALPOTENTIAL],wgt);
+      for(int target=2, source=FirstHamiltonian; 
+          target<scalars.size(); 
+          target++, source++)
+        scalars[target](ePtr[source],wgt);
     }
 
-    inline void accumulate(ParticleSet& P, MCWalkerConfiguration::Walker_t& awalker) {
-      accumulate(awalker,awalker.Weight);
-    }
-
-    inline void accumulate(WalkerIterator first, WalkerIterator last) {
+    inline void accumulate(WalkerIterator first, WalkerIterator last, RealType wgt) {
       while(first != last) {
-        accumulate(**first,(*first)->Weight);
+        accumulate(**first,wgt);
         ++first;
       }
-      //elocal[ENERGY_INDEX] += static_cast<RealType>(wsum)*deltaE;
     }
 
-    inline void report(RecordListType& record, RealType wgtinv)
-    {
-      //for(int i=0; i<d_data.size(); i++) d_data[i] *= wgtinv;
-      //std::copy(d_data.begin(),d_data.end(),record.begin()+FirstIndex);
-      d_average =  d_data[0]*wgtinv;
-      d_variance = d_data[1]*wgtinv-d_average*d_average;
-      cout << "Average = " << d_average << " variance = " << d_variance << endl;
-      //record[ir++] = d_average;
-      //record[ir++] = d_variance;
-      //record[ir++] = d_data[POTENTIAL_INDEX]*wgtinv;
-      //for(int i=0, ii=LE_MAX; i<SizeOfHamiltonians; i++,ii++) {
-      //  record[ir++] = d_data[ii]*wgtinv;
-      //}
-      std::fill(d_data.begin(), d_data.end(),0.0);
-    }
-
-    void reset()
-    {
-      d_wgt=0.0;
-      std::fill(d_data.begin(), d_data.end(),0.0);
-    }
-
-    /** calculate the averages and reset to zero
-     *\param record a container class for storing scalar records (name,value)
-     *\param wgtinv the inverse weight
-     */
-    void report(RecordListType& record, RealType wgtinv, BufferType& msg);
   };
-
 }
 #endif
 /***************************************************************************
