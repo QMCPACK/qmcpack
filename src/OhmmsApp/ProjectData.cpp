@@ -124,8 +124,8 @@ namespace OHMMS {
     //set the communicator name
     myComm->setName(fileroot);
 
-    int nproc = myComm->ncontexts();
-    int nodeid = myComm->mycontext(); 
+    int nproc = myComm->size();
+    int nodeid = myComm->rank(); 
     //int nproc = Controller->ncontexts();
     //int nodeid = Controller->mycontext(); 
     if(nproc > 1) {
@@ -152,8 +152,8 @@ namespace OHMMS {
     oldroot.erase(oldroot.begin(), oldroot.end());
     if(m_series) {
       char fileroot[128];
-      int nproc = myComm->ncontexts();
-      int nodeid = myComm->mycontext(); 
+      int nproc = myComm->size();
+      int nodeid = myComm->rank(); 
       //int nproc = Controller->ncontexts();
       //int nodeid = Controller->mycontext(); 
       if(nproc > 1) {

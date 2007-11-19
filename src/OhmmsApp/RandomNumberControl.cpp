@@ -44,7 +44,7 @@ namespace OHMMS{
   void RandomNumberControl::reset() {
     if(NeverBeenInitialized) {
       LOGMSG("\tInitialize random number generator: seed will be generated")
-      qmcplusplus::Random.init(Controller->mycontext(), Controller->ncontexts(),-1);
+      qmcplusplus::Random.init(Controller->rank(), Controller->size(),-1);
       NeverBeenInitialized = false;
     }
   }
@@ -103,8 +103,8 @@ namespace OHMMS{
       int nproc = 1;
       int id = 0;
       if(init_mpi) {
-	id = Controller->mycontext();
-	nproc = Controller->ncontexts();
+	id = Controller->rank();
+	nproc = Controller->size();
       }
       qmcplusplus::Random.init(id,nproc,iseed);
       NeverBeenInitialized = false; 
