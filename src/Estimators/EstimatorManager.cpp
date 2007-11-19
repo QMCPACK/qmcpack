@@ -30,7 +30,7 @@
 #include "Utilities/IteratorUtility.h"
 #include "Numerics/HDFNumericAttrib.h"
 #include "OhmmsData/HDFStringAttrib.h"
-#define QMC_ASYNC_COLLECT
+//#define QMC_ASYNC_COLLECT
 //leave it for serialization debug
 //#define DEBUG_ESTIMATOR_ARCHIVE
 

@@ -62,7 +62,7 @@ namespace qmcplusplus {
 
     ///copy constructor
     VectorEstimatorImpl(const VectorEstimatorImpl& est): 
-      d_data(est.d_data), d_sum(est.d_sum),// d_sum2(est.d_sum2)
+      d_data(est.d_data), d_sum(est.d_sum)
     {}
 
     ///destructo
@@ -157,7 +157,7 @@ namespace qmcplusplus {
       typename vector<T>::iterator it_end(d_data.end());
       while(it != it_end)
       {
-        *it+++ += *first++;
+        *it++ += *first++;
         //(*it++)+=(*first)*(*first);
         //++first;
       }
