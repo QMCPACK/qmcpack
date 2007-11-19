@@ -22,35 +22,41 @@
 #include "OhmmsPETE/TinyVector.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 
-template<class T> 
-inline void gsum(T&, int) 
+///dummy declarations to be specialized
+template<typename T> inline void gsum(T&, int) { }
+
+template<typename T> inline void Communicate::allreduce(T& ) { }
+
+template<typename T> inline void Communicate::reduce(T& ) { }
+
+template<typename T> 
+inline void 
+Communicate::reduce(T* restrict , T* restrict, int n) { }
+
+template<typename T> inline void Communicate::bcast(T* restrict ,int n) { }
+
+template<typename T> inline Communicate::request
+Communicate::irecv(int source, int tag, T& ) 
 { 
+  return 1;
 }
 
-template<class T> 
-inline void 
-Communicate::allreduce(T& ) 
+template<typename T> inline Communicate::request
+Communicate::isend(int dest, int tag, T&)
 {
+  return 1;
 }
 
-template<class T> 
-inline void 
-Communicate::reduce(T& ) 
-{
+template<typename T> inline Communicate::request
+Communicate::irecv(int source, int tag, T* , int n) 
+{ 
+  return 1;
 }
 
-/** dummy declaration to be specialized */
-template<class T> 
-inline void 
-Communicate::reduce(T* restrict , T* restrict, int n) 
+template<typename T> inline Communicate::request
+Communicate::isend(int dest, int tag, T*, int n)
 {
-}
-
-/** dummy declaration to be specialized */
-template<class T> 
-inline void 
-Communicate::bcast(T* restrict ,int n) 
-{
+  return 1;
 }
 
 #ifdef HAVE_MPI
@@ -173,7 +179,7 @@ Communicate::reduce(std::vector<double>& g)
 {
   std::vector<double> gt(g.size(), 0);
   MPI_Reduce(&(g[0]),&(gt[0]),g.size(),MPI_DOUBLE,MPI_SUM,0,myMPI);
-  if(master()) g = gt;
+  if(!d_mycontext) g = gt;
 }
 
 template<>
@@ -215,8 +221,23 @@ Communicate::bcast(int* restrict x, int n)
   MPI_Bcast(x,n,MPI_INT,0,myMPI);
 }
 
-#endif
 
+template<> inline Communicate::request
+Communicate::isend(int dest, int tag, vector<double>& g)
+{
+  request r;
+  MPI_Isend(&(g[0]),g.size(),MPI_DOUBLE,dest,tag, myMPI,&r);
+  return r;
+}
+
+template<> inline Communicate::request
+Communicate::irecv(int source, int tag, vector<double>& g)
+{
+  request r;
+  MPI_Irecv(&(g[0]),g.size(),MPI_DOUBLE,source,tag, myMPI,&r);
+  return r;
+}
+#endif
 #endif
 
 /***************************************************************************

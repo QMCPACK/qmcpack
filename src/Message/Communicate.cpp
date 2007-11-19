@@ -46,9 +46,9 @@ Communicate::Communicate(const Communicate& comm, int nparts)
   //this is a workaround due to the OOMPI bug with split
   if(nparts>1) {
     MPI_Comm row;
-    int n=comm.ncontexts()/nparts;
-    int p=comm.mycontext()/n;
-    int q=comm.mycontext()%n;
+    int n=comm.size()/nparts;
+    int p=comm.rank()/n;
+    int q=comm.rank()%n;
     MPI_Comm_split(comm.getMPI(),p,q,&row);
     myComm=OOMPI_Intra_comm(row);
     d_groupid=p;
@@ -61,6 +61,7 @@ Communicate::Communicate(const Communicate& comm, int nparts)
   d_mycontext=myComm.Rank();
   d_ncontexts=myComm.Size();
 }
+
 
 //================================================================
 // Implements Communicate with OOMPI library

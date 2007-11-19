@@ -26,20 +26,22 @@
 #include "oompi.h"
 struct CommunicatorTraits {
   typedef MPI_Comm         mpi_comm_type;
-  typedef MPI_Status       mpi_status_type;
-  typedef MPI_Request      mpi_request_type;
+  typedef MPI_Status       status;
+  typedef MPI_Request      request;
   typedef OOMPI_Intra_comm intra_comm_type;
 };
 #else
 struct CommunicatorTraits {
   typedef int  mpi_comm_type;
-  typedef int  mpi_status_type;
-  typedef int  mpi_request_type;
+  typedef int  status;
+  typedef int  request;
   typedef int  intra_comm_type;
 };
 #endif
 
 #include <string>
+#include <vector>
+#include <utility>
 
 
 /**@class Communicate
@@ -74,10 +76,6 @@ public:
   void abort();
   void abort(const char* msg);
 
-  template<class T> void allreduce(T&);
-  template<class T> void reduce(T&);
-  template<class T> void reduce(T* restrict, T* restrict, int n);
-  template<class T> void bcast(T* restrict, int n);
 
   ///return the Communicator ID (typically MPI_WORLD_COMM)
   inline mpi_comm_type getMPI() const { return myMPI;}
@@ -85,18 +83,19 @@ public:
   inline intra_comm_type& getComm() { return myComm;}
   inline const intra_comm_type& getComm() const { return myComm;}
 
+  inline int rank() const {return d_mycontext;}
+  inline int size() const {return d_ncontexts;}
   ///return the rank of this node
-  inline int getNodeID() const { return d_mycontext;}
-  inline int mycontext() const { return d_mycontext;}
+  //inline int getNodeID() const { return d_mycontext;}
+  //inline int mycontext() const { return d_mycontext;}
 
   ///return the number of nodes
-  inline int getNumNodes() const { return d_ncontexts;}
-  inline int ncontexts() const { return d_ncontexts;}
-
+  //inline int getNumNodes() const { return d_ncontexts;}
+  //inline int ncontexts() const { return d_ncontexts;}
   ///return the group id
   inline int getGroupID() const {return d_groupid;}
 
-  inline bool master() const { return (d_mycontext == 0);}
+  //inline bool master() const { return (d_mycontext == 0);}
 
   //intra_comm_type split(int n);
   void cleanupMessage(void*);
@@ -107,6 +106,15 @@ public:
   inline void setName(const std::string& aname) { myName=aname;}
   inline const std::string& getName() const { return myName;}
 
+  template<typename T> void allreduce(T&);
+  template<typename T> void reduce(T&);
+  template<typename T> void reduce(T* restrict, T* restrict, int n);
+  template<typename T> void bcast(T* restrict, int n);
+  template<typename T> request irecv(int source, int tag, T&);
+  template<typename T> request isend(int dest, int tag, T&);
+  template<typename T> request irecv(int source, int tag, T*, int n);
+  template<typename T> request isend(int dest, int tag, T*, int n);
+
 protected:
 
   mpi_comm_type myMPI;
@@ -115,7 +123,6 @@ protected:
   int d_mycontext; 
   int d_ncontexts;
   int d_groupid;
-
 };
 
 
@@ -124,6 +131,7 @@ namespace OHMMS {
    */
   extern Communicate* Controller;
 }
+
 #endif // OHMMS_COMMUNICATE_H
 /***************************************************************************
  * $RCSfile$   $Author$
