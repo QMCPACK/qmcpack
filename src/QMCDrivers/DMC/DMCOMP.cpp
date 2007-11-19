@@ -73,8 +73,8 @@ namespace qmcplusplus {
         estimatorClones[ip]->setCollectionMode(false);
 
         Rng[ip]=new RandomGenerator_t();
-        Rng[ip]->init(OHMMS::Controller->mycontext()*NumThreads+ip,
-            NumThreads*OHMMS::Controller->ncontexts(),-1);
+        Rng[ip]->init(OHMMS::Controller->rank()*NumThreads+ip,
+            NumThreads*OHMMS::Controller->size(),-1);
         hClones[ip]->setRandomGenerator(Rng[ip]);
 
         branchClones[ip] = new BranchEngineType(*branchEngine);
@@ -162,7 +162,7 @@ namespace qmcplusplus {
     bool variablePop = (Reconfiguration == "no");
     resetUpdateEngines();
     //estimator does not need to collect data
-    Estimators->setCollectionMode(false);
+    Estimators->setCollectionMode(true);
     Estimators->start(nBlocks);
     for(int ip=0; ip<NumThreads; ip++) Movers[ip]->startRun(nBlocks,false);
 
