@@ -28,7 +28,7 @@ namespace qmcplusplus {
 
   class EinsplineSetBuilder;
 
-  class EinsplineSetBase : public SPOSetBase
+  class EinsplineSet : public SPOSetBase
   {
     friend class EinsplineSetBuilder;
   protected:
@@ -71,37 +71,20 @@ namespace qmcplusplus {
     
   public:  
     UnitCellType GetLattice();
+
+    void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi);
+    void evaluate(const ParticleSet& P, int iat, 
+		  ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi);
+    void evaluate(const ParticleSet& P, int first, int last,
+		  ValueMatrix_t& logdet, GradMatrix_t& dlogdet, 
+		  ValueMatrix_t& d2logdet);
     
     void resetParameters(VarRegistry<RealType>& vlist);
     void resetTargetParticleSet(ParticleSet& e);
     void setOrbitalSetSize(int norbs);
-    EinsplineSetBase() :  TwistNum(0)
+    EinsplineSet() :  TwistNum(0)
     {
     }
   };
-  
-  class EinsplineSetExtended : public EinsplineSetBase
-  {
-  public:
-    void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi);
-    void evaluate(const ParticleSet& P, int iat, 
-		  ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi);
-    void evaluate(const ParticleSet& P, int first, int last,
-		  ValueMatrix_t& logdet, GradMatrix_t& dlogdet, 
-		  ValueMatrix_t& d2logdet);
-  };
-
-  
-  class EinsplineSetLocalized : public EinsplineSetBase
-  {
-  public:
-    void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi);
-    void evaluate(const ParticleSet& P, int iat, 
-		  ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi);
-    void evaluate(const ParticleSet& P, int first, int last,
-		  ValueMatrix_t& logdet, GradMatrix_t& dlogdet, 
-		  ValueMatrix_t& d2logdet);
-  };
-  
 }
 #endif

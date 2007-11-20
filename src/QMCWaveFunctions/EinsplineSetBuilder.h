@@ -72,7 +72,7 @@ namespace qmcplusplus {
     
   protected:
     // The actual orbital set we're building
-    EinsplineSetBase *OrbitalSet, *LastOrbitalSet;
+    EinsplineSet *OrbitalSet, *LastOrbitalSet;
     typedef EinsplineOrb<ValueType,OHMMS_DIM> OrbType;
     // The map key is (spin, twist, band, center)
     static std::map<TinyVector<int,4>,OrbType*,Int4less> OrbitalMap;

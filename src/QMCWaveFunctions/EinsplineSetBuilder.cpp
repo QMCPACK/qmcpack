@@ -208,12 +208,7 @@ namespace qmcplusplus {
     //////////////////////////////////
     // Create the OrbitalSet object //
     //////////////////////////////////
-    // HACK HACK HACK, for now
-    bool localized = false;
-    if (localized)
-      OrbitalSet = new EinsplineSetLocalized;
-    else
-      OrbitalSet = new EinsplineSetExtended;
+    OrbitalSet = new EinsplineSet;
 
     /////////////////////////
     // Setup internal data //

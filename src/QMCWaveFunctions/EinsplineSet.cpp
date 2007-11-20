@@ -18,31 +18,31 @@
 
 namespace qmcplusplus {
 
-  EinsplineSetBase::UnitCellType
-  EinsplineSetBase::GetLattice()
+  EinsplineSet::UnitCellType
+  EinsplineSet::GetLattice()
   {
     return SuperLattice;
   }
   
   void
-  EinsplineSetBase::resetParameters(VarRegistry<RealType>& vlist)
+  EinsplineSet::resetParameters(VarRegistry<RealType>& vlist)
   {
   }
   
   void
-  EinsplineSetBase::resetTargetParticleSet(ParticleSet& e)
+  EinsplineSet::resetTargetParticleSet(ParticleSet& e)
   {
   }
   
   void
-  EinsplineSetBase:: setOrbitalSetSize(int norbs)
+  EinsplineSet::setOrbitalSetSize(int norbs)
   {
     OrbitalSetSize = norbs;
   }
   
   void 
-  EinsplineSetExtended::evaluate (const ParticleSet& P, int iat, 
-				  ValueVector_t& psi)
+  EinsplineSet::evaluate (const ParticleSet& P, int iat, 
+			  ValueVector_t& psi)
   {
     PosType r (P.R[iat]);
     PosType ru(PrimLattice.toUnit(P.R[iat]));
@@ -63,9 +63,9 @@ namespace qmcplusplus {
   }
   
   void 
-  EinsplineSetExtended::evaluate (const ParticleSet& P, int iat, 
-				  ValueVector_t& psi, GradVector_t& dpsi, 
-				  ValueVector_t& d2psi)
+  EinsplineSet::evaluate (const ParticleSet& P, int iat, 
+			  ValueVector_t& psi, GradVector_t& dpsi, 
+			  ValueVector_t& d2psi)
   {
     PosType r (P.R[iat]);
     PosType ru(PrimLattice.toUnit(P.R[iat]));
@@ -108,9 +108,9 @@ namespace qmcplusplus {
   }
   
   void 
-  EinsplineSetExtended::evaluate (const ParticleSet& P, int first, int last,
-				  ValueMatrix_t& vals, GradMatrix_t& grads, 
-				  ValueMatrix_t& lapls)
+  EinsplineSet::evaluate (const ParticleSet& P, int first, int last,
+			  ValueMatrix_t& vals, GradMatrix_t& grads, 
+			  ValueMatrix_t& lapls)
   {
     for(int iat=first,i=0; iat<last; iat++,i++) {
       PosType r (P.R[iat]);
@@ -151,28 +151,5 @@ namespace qmcplusplus {
 
       }
     }
-  }
-  
-  void 
-  EinsplineSetLocalized::evaluate (const ParticleSet& P, int iat, 
-				   ValueVector_t& psi)
-  {
-    
-  }
-  
-  void 
-  EinsplineSetLocalized::evaluate (const ParticleSet& P, int iat, 
-				   ValueVector_t& psi, GradVector_t& dpsi, 
-				   ValueVector_t& d2psi)
-  {
-
-  }
-    
-  void 
-  EinsplineSetLocalized::evaluate (const ParticleSet& P, int first, int last,
-				   ValueMatrix_t& logdet, GradMatrix_t& dlogdet, 
-				   ValueMatrix_t& d2logdet)
-  {
-    
   }
 }
