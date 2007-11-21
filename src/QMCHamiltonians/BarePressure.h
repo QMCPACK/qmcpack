@@ -24,18 +24,23 @@
 namespace qmcplusplus {
 
   /** @ingroup hamiltonian
-   @brief Evaluate the Bare Pressure
+   @brief Evaluate the Bare Pressure.
+   P=/frac{2T+V}{d* /Omega}
+   where d is the dimension of space and /Omega is the volume.
   **/
 
   struct BarePressure: public QMCHamiltonianBase {
-
+    double pNorm;
 
     /** constructor
      *
      * Pressure operators need to be re-evaluated during optimization.
      */
-    BarePressure() { 
+    BarePressure(ParticleSet& P) { 
       UpdateMode.set(OPTIMIZABLE,1);
+      //for 3-D. For 2-D this should be 1.0/(2.0*P.getTotalNum())
+      pNorm = 1.0/(3.0*P.Lattice.Volume);
+
     }
     ///destructor
     ~BarePressure() { }
@@ -44,9 +49,9 @@ namespace qmcplusplus {
 
     inline Return_t 
     evaluate(ParticleSet& P) {
-      Value=2.0*P.PropertyList[LOCALENERGY]-3.0*P.PropertyList[LOCALPOTENTIAL];
-      //Should really be 1/Dim where Dim is the Dimension of space
-      Value*=(1.0/3.0);
+      Value=2.0*P.PropertyList[LOCALENERGY]-P.PropertyList[LOCALPOTENTIAL];
+      //for 3-D
+      Value*=pNorm;
       return 0.0;
     }
 
@@ -70,7 +75,7 @@ namespace qmcplusplus {
 
     QMCHamiltonianBase* clone(ParticleSet& qp, TrialWaveFunction& psi)
     {
-      return new BarePressure();
+      return new BarePressure( qp);
     }
 
   };
