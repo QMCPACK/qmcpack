@@ -44,7 +44,9 @@ namespace qmcplusplus {
 
     inline Return_t 
     evaluate(ParticleSet& P) {
-      Value=2.0*P.PropertyList[LOCALENERGY]-P.PropertyList[LOCALPOTENTIAL];
+      Value=2.0*P.PropertyList[LOCALENERGY]-3.0*P.PropertyList[LOCALPOTENTIAL];
+      //Should really be 1/Dim where Dim is the Dimension of space
+      Value*=(1.0/3.0);
       return 0.0;
     }
 

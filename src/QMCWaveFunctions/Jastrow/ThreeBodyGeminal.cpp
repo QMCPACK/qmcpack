@@ -70,6 +70,7 @@ namespace qmcplusplus {
 		                 ParticleSet::ParticleLaplacian_t& L) {
     //GeminalBasis->evaluate(P);
     GeminalBasis->evaluateForWalkerMove(P);
+    
 
     MatrixOperators::product(GeminalBasis->Y, Lambda, V);
 
