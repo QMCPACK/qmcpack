@@ -39,7 +39,7 @@ namespace qmcplusplus {
     BarePressure(ParticleSet& P) { 
       UpdateMode.set(OPTIMIZABLE,1);
       //for 3-D. For 2-D this should be 1.0/(2.0*P.getTotalNum())
-      pNorm = 1.0/(3.0*P.Lattice.Volume);
+      pNorm = 1.0/(P.Lattice.DIM*P.Lattice.Volume);
 
     }
     ///destructor

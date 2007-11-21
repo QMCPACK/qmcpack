@@ -149,11 +149,11 @@ namespace qmcplusplus {
       {
         if(potType == "BarePressure")
         {
-          targetH->addOperator(new BarePressure,"BarePressure");
+          targetH->addOperator(new BarePressure(*targetPtcl),"BarePressure");
         }
         if(potType == "RPAZBPressure")
         {
-          targetH->addOperator(new BarePressure,"BarePressure");
+          targetH->addOperator(new BarePressure(*targetPtcl),"BarePressure");
 //           targetH->addOperator(new RPAPressureCorrection(*targetPtcl),"BPCor");
         }
       }
