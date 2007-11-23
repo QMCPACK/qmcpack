@@ -56,9 +56,6 @@ SET(PARTICLE
   Particle/ParticleSet.BC.cpp 
   Particle/MCWalkerConfiguration.cpp 
   Particle/DistanceTable.cpp
-  Particle/HDFWalkerOutput.cpp
-  Particle/HDFWalkerInput0.cpp
-  Particle/HDFWalkerInputCollect.cpp
   Particle/HDFWalkerInputManager.cpp
   LongRange/KContainer.cpp
   LongRange/StructFact.cpp
@@ -70,8 +67,17 @@ SET(PARTICLEIO
   ParticleTags.cpp 
   ParticleIO/ParticleLayoutIO.cpp 
   ParticleIO/XMLParticleIO.cpp 
-  ParticleIO/HDFParticleIO.cpp 
 )
+
+IF(HAVE_LIBHDF5)
+  SET(PARTICLEIO ${PARTICLEIO}
+      Particle/HDFWalkerIOEngine.cpp 
+      Particle/HDFWalkerOutput.cpp
+      Particle/HDFWalkerInput_0_0.cpp
+      Particle/HDFWalkerInput_0_4.cpp
+      ParticleIO/HDFParticleIO.cpp 
+     )
+ENDIF(HAVE_LIBHDF5)
 
 ADD_LIBRARY(qmcbase ${PARTICLE}  ${PARTICLEIO})
 #IF(QMC_BUILD_STATIC)
