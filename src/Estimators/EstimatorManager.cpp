@@ -120,7 +120,6 @@ namespace qmcplusplus {
     BlockAverages.clear();//cleaup the records
     for(int i=0; i<Estimators.size(); i++) 
       Estimators[i]->add2Record(BlockAverages);
-
   }
 
   void EstimatorManager::resetTargetParticleSet(ParticleSet& p)
@@ -276,7 +275,9 @@ namespace qmcplusplus {
     PropertyCache[acceptInd] = accept;
 
     for(int i=0; i<Estimators.size(); i++) 
+    {
       Estimators[i]->takeBlockAverage(AverageCache.begin());
+    }
 
     if(CompEstimators) CompEstimators->stopBlock();
 
@@ -291,6 +292,7 @@ namespace qmcplusplus {
     //normalized it by the thread
     int num_threads=est.size();
     RealType tnorm=1.0/num_threads;
+
     AverageCache=0.0;
     for(int i=0; i<num_threads; i++) AverageCache+=est[i]->AverageCache;
     AverageCache *= tnorm;
@@ -398,8 +400,7 @@ namespace qmcplusplus {
     RealType norm=1.0/W.getGlobalNumWalkers();
     for(int i=0; i< Estimators.size(); i++) 
       Estimators[i]->accumulate(it,it_end,norm);
-    if(CompEstimators) 
-      CompEstimators->accumulate(W,it,it_end,norm);
+    if(CompEstimators) CompEstimators->accumulate(W,it,it_end,norm);
   }
 
   void 
