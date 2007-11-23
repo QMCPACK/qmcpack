@@ -22,7 +22,7 @@ int main(int argc, char **argv) {
 
   OHMMS::Controller->initialize(argc,argv);
 
-  OhmmsInfo welcome(argc,argv,OHMMS::Controller->mycontext());
+  OhmmsInfo welcome(argc,argv,OHMMS::Controller->rank());
   Random.init(0,1,-1);
 
   std::cout.setf(std::ios::scientific, std::ios::floatfield);

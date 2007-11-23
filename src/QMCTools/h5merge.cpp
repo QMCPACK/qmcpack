@@ -8,7 +8,7 @@ int main(int argc, char **argv) {
 
   OHMMS::Controller->initialize(argc,argv);
 
-  OhmmsInfo welcome(argc,argv,OHMMS::Controller->mycontext());
+  OhmmsInfo welcome(argc,argv,OHMMS::Controller->rank());
   APPNAMESPACE::Random.init(0,1,-1);
 
   if(argc<2) {
