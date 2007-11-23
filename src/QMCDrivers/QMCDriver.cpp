@@ -209,15 +209,6 @@ namespace qmcplusplus {
 
     branchEngine->finalize();
 
-    //if(!qmcComm->rank())
-    //{
-    //  hid_t fid =  H5Fopen(wOut->FileName.c_str(),H5F_ACC_RDWR,H5P_DEFAULT);
-    //  hid_t h1 =  H5Gopen(fid,hdf::main_state);
-    //  branchEngine->write(h1,true);
-    //  H5Gclose(h1);
-    //  H5Fclose(fid);
-    //}
-
     delete wOut;
     wOut=0;
 
