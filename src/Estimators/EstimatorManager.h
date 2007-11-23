@@ -71,6 +71,12 @@ namespace qmcplusplus {
       return myComm;
     }
 
+    /** return true if the rank == 0
+     */
+    inline bool is_manager() const {
+      return !myComm->rank();
+    }
+
     ///return the number of ScalarEstimators
     inline int size() const { return Estimators.size();}
 
@@ -190,6 +196,13 @@ namespace qmcplusplus {
     ///** set the cummulative energy and weight
     // */
     void getEnergyAndWeight(RealType& e, RealType& w);
+
+    template<class CT>
+    void write(CT& anything, bool doappend) 
+    {
+      anything.write(h_file,doappend);
+    }
+
   protected:
     ///use bitset to handle options
     bitset<8> Options;

@@ -30,6 +30,7 @@
 #include "Utilities/IteratorUtility.h"
 #include "Numerics/HDFNumericAttrib.h"
 #include "OhmmsData/HDFStringAttrib.h"
+#include "HDFVersion.h"
 //#define QMC_ASYNC_COLLECT
 //leave it for serialization debug
 //#define DEBUG_ESTIMATOR_ARCHIVE
@@ -151,7 +152,18 @@ namespace qmcplusplus {
 
     //count the buffer size for message
     BufferSize=AverageCache.size()+PropertyCache.size();
-    if(CompEstimators) BufferSize += CompEstimators->size();
+
+    if(CompEstimators) 
+    {
+      int comp_size = CompEstimators->size();
+      if(comp_size) 
+        BufferSize += comp_size;
+      else
+      {
+        delete CompEstimators;
+        CompEstimators=0;
+      }
+    }
 
     //allocate buffer for data collection
     for(int i=0; i<myComm->size(); i++) RemoteData[i]->resize(BufferSize);
@@ -177,14 +189,15 @@ namespace qmcplusplus {
       Archive = new ofstream(fname.c_str());
       addHeader(*Archive);
 
-      //open hdf5 file
+      //open/close hdf5 file
       if(CompEstimators) 
       {
-        if(h_file>-1) H5Fclose(h_file);
-        string h5file(myComm->getName());
-        h5file.append(".stat.h5");
-        h_file = H5Fcreate(h5file.c_str(),H5F_ACC_TRUNC,H5P_DEFAULT,H5P_DEFAULT);
-        CompEstimators->open(h_file);
+        RootName=myComm->getName()+".stat.h5";
+        hid_t fid = H5Fcreate(RootName.c_str(),H5F_ACC_TRUNC,H5P_DEFAULT,H5P_DEFAULT);
+        HDFVersion cur_version;
+        cur_version.write(fid,hdf::version);
+        CompEstimators->open(fid);
+        H5Fclose(fid);
       }
 
 #if defined(QMC_ASYNC_COLLECT)
@@ -242,11 +255,11 @@ namespace qmcplusplus {
       delete Archive; Archive=0;
     }
 
-    //cleaup file
-    if(h_file>-1)
-    {
-      H5Fclose(h_file); h_file=-1;
-    }
+  //  //cleaup file
+  //  if(h_file>-1)
+  //  {
+  //    H5Fclose(h_file); h_file=-1;
+  //  }
   }
 
   void EstimatorManager::startBlock(int steps)
@@ -358,6 +371,7 @@ namespace qmcplusplus {
       for(int j=0; j<AverageCache.size(); j++) *Archive << setw(16) << AverageCache[j];
       for(int j=0; j<PropertyCache.size(); j++) *Archive << setw(16) << PropertyCache[j];
       *Archive << endl;
+
       if(CompEstimators) CompEstimators->recordBlock();
     }
 
