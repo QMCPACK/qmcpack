@@ -71,6 +71,15 @@ namespace qmcplusplus {
     typedef Walker_t::Buffer_t              Buffer_t;
     typedef SimpleFixedNodeBranch           BranchEngineType;
 
+    /** bits to classify QMCDriver
+     *
+     * - QMCDriverMode[QMC_UPDATE_MODE]? particle-by-particle: walker-by-walker
+     * - QMCDriverMode[QMC_MULTIPLE]? multiple H/Psi : single H/Psi
+     * - QMCDriverMode[QMC_OPTIMIZE]? optimization : vmc/dmc/rmc
+     */
+    bitset<4> QMCDriverMode;
+
+
     /// Constructor.
     QMCDriver(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h);
 
@@ -187,14 +196,6 @@ namespace qmcplusplus {
      * Default is 0 indicating that only the last configuration will be saved.
      */
     int Period4WalkerDump;
-
-    /** bits to classify QMCDriver
-     *
-     * - QMCDriverMode[0]? particle-by-particle: walker-by-walker
-     * - QMCDriverMode[1]? multiple H/Psi : single H/Psi
-     * Other bits are unused.
-     */
-    bitset<4> QMCDriverMode;
 
     ///current step
     IndexType CurrentStep;
