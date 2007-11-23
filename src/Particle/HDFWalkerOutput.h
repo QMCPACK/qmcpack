@@ -19,26 +19,40 @@
 
 #include "OhmmsData/HDFAttribIO.h"
 #include "Particle/MCWalkerConfiguration.h"
+#include <utility>
 
 namespace qmcplusplus {
 
   /** Writes a set of walker configurations to an HDF5 file. */
   class HDFWalkerOutput {
-    ///number of times file has been written to
-    int NumOfWalkers;
+    ///if true, keep it in memory
+    bool DoNotAppend;
+    ///number of blocks for append
+    int appended_blocks;
+    /** number of walkers when a state is dumped
+     *
+     * When the number of walkers per state has changed, NumOfWalkers is used
+     * to reallocate the hdf5 group.
+     */
+    int number_of_walkers;
     ///id for HDF5 file 
     hid_t h_file;
+    ///handler for parallel I/O
+    hid_t h_plist;
     ///id for HDF5 main group 
-    hid_t h_config;
-    ///save file name
-    string h5FileName;
+    hid_t h_state;
+    ///id for debug HDF5 file 
+    hid_t h_debug_file;
     ///communicator
     Communicate* myComm;
   public:
+    ///save file name
+    string FileName;
 
+    ///constructor
     HDFWalkerOutput(MCWalkerConfiguration& W, const string& fname, Communicate* c);
+    ///destructor
     ~HDFWalkerOutput();
-    //bool get(MCWalkerConfiguration&);
 
     /** dump configurations
      * @param w walkers
@@ -49,31 +63,37 @@ namespace qmcplusplus {
      * @param w walkers
      * @param c counter
      */
-    bool append(MCWalkerConfiguration& w, int c);
+    bool append(MCWalkerConfiguration& w);
 
     template<class CT>
-    void write(CT& anything) {
-      anything.write(h_config,false);
+    void write(CT& anything, bool doappend) 
+    {
+      anything.write(h_state,doappend);
     }
 
-    /** return the file ID **/
-    hid_t getFileID() { return h_file;}
-
-    /** return the config_collection file ID **/
-    hid_t getConfigID() { return h_config;}
-
+    inline hid_t getFileNode() const { return h_file;}
+    inline hid_t getStateNode() const { return h_state;}
 
 #if defined(HAVE_LIBHDF5)
     void open();
     inline void close()
     {
-      H5Gclose(h_config); h_config=-1;
+      H5Gclose(h_state); h_state=-1;
       H5Fclose(h_file); h_file=-1;
     }
 #else
     inline void open(){}
     inline void close(){}
 #endif
+
+  private:
+    /** create hdf5 file for a node and return hanlder for a file and configuration
+     * @param fname name of a hdf5 file
+     * @param w wakler ensemble
+     */
+    std::pair<hid_t,hid_t> createH5FileSingle(const string& fname, MCWalkerConfiguration& w);
+    ///dump content to a group
+    bool dumpSingle(hid_t gid, MCWalkerConfiguration& w);
   };
 
 }

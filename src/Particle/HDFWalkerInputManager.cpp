@@ -15,15 +15,18 @@
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 #include "Particle/HDFWalkerInputManager.h"
-#include "Message/Communicate.h"
 #include "OhmmsData/AttributeSet.h"
-#include "Particle/HDFWalkerInput0.h"
-#include "Particle/HDFWalkerInputCollect.h"
+#if defined(HAVE_LIBHDF5)
+#include "Particle/HDFWalkerInput_0_0.h"
+#include "Particle/HDFWalkerInput_0_4.h"
+#endif
+#include "Message/Communicate.h"
+#include "HDFVersion.h"
 
 namespace qmcplusplus {
 
-  HDFWalkerInputManager::HDFWalkerInputManager(MCWalkerConfiguration& w):
-  Wref(w), CurrentFileRoot("invalid") 
+  HDFWalkerInputManager::HDFWalkerInputManager(MCWalkerConfiguration& w, Communicate* c): 
+    targetW(w),myComm(c)
   {
   }
 
@@ -31,41 +34,42 @@ namespace qmcplusplus {
   {
   }
 
+#if defined(HAVE_LIBHDF5)
   bool HDFWalkerInputManager::put(xmlNodePtr cur) 
   {
 
-    app_error() << "HDFWalkerInputManager::put(xmlNodePtr cur) "
-      << " is not implemented." << endl;
-    return false;
-  }
+    //reference revision number 
+    HDFVersion start_version(0,4);
+    //current node
+    int pid=myComm->rank();
 
-  bool HDFWalkerInputManager::put(std::vector<xmlNodePtr>& wset, int pid) 
-  {
-    //int pid=OHMMS::Controller->mycontext(); 
-    int nfile=wset.size();
-    for(int ifile=0; ifile<nfile; ifile++) 
+    string froot("0"), cfile("0");
+    //string  target("e"), collect("no");
+    int anode=-1, nblocks=1, nprocs=1;
+
+    HDFVersion in_version(0,1); //set to be old version
+    OhmmsAttributeSet pAttrib;
+    pAttrib.add(cfile,"href"); pAttrib.add(cfile,"file"); 
+    pAttrib.add(froot,"fileroot");
+    pAttrib.add(anode,"node");
+    pAttrib.add(nprocs,"nprocs");
+    //pAttrib.add(collect,"collected");
+    pAttrib.add(in_version,"version");
+    pAttrib.put(cur);
+
+    bool success=false;
+    if(in_version>=start_version)
     {
-      string froot("0"), cfile("0"), target("e"), collect("no");
-      int anode=-1, nwalkers=-1, nblocks=1, nprocs=1;
-
-      OhmmsAttributeSet pAttrib;
-      pAttrib.add(cfile,"href"); pAttrib.add(cfile,"file"); 
-      pAttrib.add(target,"target"); pAttrib.add(target,"ref"); 
-      pAttrib.add(froot,"fileroot");
-      pAttrib.add(anode,"node");
-      pAttrib.add(nprocs,"nprocs");
-      pAttrib.add(nwalkers,"walkers");
-      pAttrib.add(nblocks,"rewind");
-      pAttrib.add(collect,"collect");
-      pAttrib.put(wset[ifile]);
-
+      HDFWalkerInput_0_4 win(targetW,myComm,in_version);
+      success= win.put(cur);
+      cfile=win.FileName;
+    }
+    else
+    {//missing version or old file
       if(froot[0] != '0')//use nprocs
       {
         anode=pid;
-        if(nprocs==1)
-        {
-          cfile=froot;
-        }
+        if(nprocs==1) cfile=froot;
         else
         {
           char *h5name=new char[froot.size()+10];
@@ -74,32 +78,26 @@ namespace qmcplusplus {
           delete [] h5name;
         }
       }
-
-
-      if(collect == "no") // use old method
-      { 
-        int pid_target= (anode<0)? pid:anode;
-        if(pid_target == pid && cfile[0] != '0') 
-        {
-          cout << "#### " << pid << " " << cfile << endl;
-          HDFWalkerInput0 WO(cfile); 
-          WO.append(Wref,nblocks);
-          WO.getRandomState(true);
-        }
-      } 
-      else 
+      int pid_target= (anode<0)? pid:anode;
+      if(pid_target == pid && cfile[0] != '0') 
       {
-        HDFWalkerInputCollect WO(cfile);
-        WO.put(Wref,nblocks);
+        HDFWalkerInput_0_0 win(targetW,cfile); 
+        success= win.put(cur);
       }
-      CurrentFileRoot = cfile;
-    }
-    return true;
+    } 
+    if(success) CurrentFileRoot = cfile;
+    return success;
   }
+#else
+  bool HDFWalkerInputManager::put(xmlNodePtr cur) 
+  {
+    return false;
+  }
+#endif
 
   void HDFWalkerInputManager::rewind(const std::string& h5root, int blocks) {
-    HDFWalkerInputCollect WO(h5root);
-    WO.rewind(Wref,blocks);
+ //   HDFWalkerInputCollect WO(h5root);
+ //   WO.rewind(targetW,blocks);
   }
 }
 /***************************************************************************
