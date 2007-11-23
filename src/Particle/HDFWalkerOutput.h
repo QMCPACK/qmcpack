@@ -35,6 +35,10 @@ namespace qmcplusplus {
      * to reallocate the hdf5 group.
      */
     int number_of_walkers;
+    ///current number of backups
+    int number_of_backups;
+    ///current number of backups
+    int max_number_of_backups;
     ///id for HDF5 file 
     hid_t h_file;
     ///handler for parallel I/O
