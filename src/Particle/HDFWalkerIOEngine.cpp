@@ -49,9 +49,9 @@ namespace qmcplusplus
     if(replace)
     {
       hid_t dataset =  H5Dopen(grp, name);
-      //herr_t status=H5Dextend(dataset,dims);
+      //herr_t ret=H5Dextend(dataset,dims); //use dynamic resizing
       hid_t memspace = H5Screate_simple(rank, dims, NULL);
-      hid_t ret = H5Dwrite(dataset, H5T_NATIVE_DOUBLE, memspace, H5S_ALL, H5P_DEFAULT,tp.data());
+      herr_t ret = H5Dwrite(dataset, H5T_NATIVE_DOUBLE, memspace, H5S_ALL, H5P_DEFAULT,tp.data());
       H5Sclose(memspace);
       H5Dclose(dataset);
     }
