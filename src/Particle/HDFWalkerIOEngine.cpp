@@ -114,14 +114,21 @@ namespace qmcplusplus
     hid_t filespace=H5Dget_space(dset_id);
     herr_t ret=H5Sselect_hyperslab(filespace,H5S_SELECT_SET,offset,stride,count,NULL);
 
+#if defined(H5_HAVE_PARALLEL)
     hid_t xfer_plist = H5Pcreate(H5P_DATASET_XFER);
     ret = H5Pset_dxpl_mpio(xfer_plist,H5FD_MPIO_COLLECTIVE);
+#else
+    hid_t  xfer_plist =  H5P_DEFAULT;
+#endif
     ret = H5Dwrite(dset_id,H5T_NATIVE_DOUBLE,memspace,filespace,xfer_plist,tp.data());
 
     H5Sclose(filespace);
     H5Sclose(memspace);
     H5Dclose(dset_id);
     H5Pclose(xfer_plist);
+#if defined(H5_HAVE_PARALLEL)
+    H5Pclose(xfer_plist);
+#endif
 
   }
 
