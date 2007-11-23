@@ -78,8 +78,8 @@ namespace qmcplusplus {
     //generate samples
     generateSamples();
 
-    ////cleanup walkers
-    //W.destroyWalkers(W.begin(), W.end());
+    //cleanup walkers
+    W.destroyWalkers(W.begin(), W.end());
 
     app_log() << "<opt stage=\"setup\">" << endl;
     app_log() << "  <log>"<<endl;
@@ -92,7 +92,7 @@ namespace qmcplusplus {
     //get configuration from the previous run
     Timer t1;
 
-    //optTarget->getConfigurations(h5FileRoot);
+    optTarget->getConfigurations(h5FileRoot);
     optTarget->checkConfigurations();
 
     app_log() << "  Execution time = " << t1.elapsed() << endl;
