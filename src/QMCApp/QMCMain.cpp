@@ -33,6 +33,7 @@
 #include "Message/Communicate.h"
 #include "Message/OpenMP.h"
 #include <queue>
+#include "HDFVersion.h"
 using namespace std;
 #include "OhmmsData/AttributeSet.h"
 
@@ -139,12 +140,20 @@ namespace qmcplusplus {
       }
       m_walkerset.clear();//empty the container
 
-      std::ostringstream np_str;
+      std::ostringstream np_str, v_str;
       np_str<<qmcComm->size();
+      HDFVersion cur_version;
+      v_str << cur_version[0] << " " << cur_version[1];
       xmlNodePtr newmcptr = xmlNewNode(NULL,(const xmlChar*)"mcwalkerset");
       xmlNewProp(newmcptr,(const xmlChar*)"fileroot",(const xmlChar*)myProject.CurrentMainRoot());
       xmlNewProp(newmcptr,(const xmlChar*)"node",(const xmlChar*)"-1");
       xmlNewProp(newmcptr,(const xmlChar*)"nprocs",(const xmlChar*)np_str.str().c_str());
+      xmlNewProp(newmcptr,(const xmlChar*)"version",(const xmlChar*)v_str.str().c_str());
+#if defined(H5_HAVE_PARALLEL)
+      xmlNewProp(newmcptr,(const xmlChar*)"collected",(const xmlChar*)"yes");
+#else
+      xmlNewProp(newmcptr,(const xmlChar*)"collected",(const xmlChar*)"no");
+#endif
 
       if(mcptr == NULL)
       {
