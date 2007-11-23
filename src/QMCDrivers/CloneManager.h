@@ -39,7 +39,7 @@ namespace qmcplusplus {
 
     void makeClones(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& ham);
 
-    RealType acceptRatio() const 
+    inline RealType acceptRatio() const 
     {
       IndexType nAcceptTot=0;
       IndexType nRejectTot=0;
