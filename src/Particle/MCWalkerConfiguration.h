@@ -233,6 +233,14 @@ namespace qmcplusplus {
 
     inline bool updatePbyP() const { return ReadyForPbyP;}
 
+    //@{save/load/clear function for optimization
+    ///save the position of current walkers to SampleStack
+    void saveEnsemble();
+    ///load SampleStack data to current walkers
+    void loadEnsemble();
+    ///clear the ensemble
+    void clearEnsemble();
+    //@}
   protected:
 
     ///boolean for cleanup
@@ -254,6 +262,9 @@ namespace qmcplusplus {
    private:
 
      MultiChain *Polymer;
+     
+     //add samples
+     list<ParticlePos_t*> SampleStack;
 
     /** initialize the PropertyList
      *
