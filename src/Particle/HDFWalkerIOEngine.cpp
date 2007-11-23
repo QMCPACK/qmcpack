@@ -125,7 +125,6 @@ namespace qmcplusplus
     H5Sclose(filespace);
     H5Sclose(memspace);
     H5Dclose(dset_id);
-    H5Pclose(xfer_plist);
 #if defined(H5_HAVE_PARALLEL)
     H5Pclose(xfer_plist);
 #endif
