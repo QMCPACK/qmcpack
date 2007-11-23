@@ -26,6 +26,7 @@
 #include "QMCWaveFunctions/OrbitalTraits.h"
 #include "Message/Communicate.h"
 #include "Message/CommOperators.h"
+#include "HDFVersion.h"
 #include <limits>
 
 namespace qmcplusplus {
@@ -96,23 +97,19 @@ namespace qmcplusplus {
 
     qmcNode=cur;
 
+    //process common parameters
     putQMCInfo(cur);
 
     //need to initialize properties
     int numCopies= (H1.empty())?1:H1.size();
     W.resetWalkerProperty(numCopies);
 
+    //create branchEngine first
     if(branchEngine==0) 
       branchEngine = new BranchEngineType(Tau,W.getActiveWalkers());
 
     //execute the put function implemented by the derived classes
     put(cur);
-
-    if(h5FileRoot.size() && RollBackBlocks>1) {
-      HDFWalkerInputManager W_in(W);
-      W_in.rewind(h5FileRoot,RollBackBlocks);
-      RollBackBlocks=0;
-    }
 
     //create and initialize estimator
     Estimators = branchEngine->getEstimatorManager();
@@ -128,10 +125,8 @@ namespace qmcplusplus {
 
     if(wOut==0) {
       wOut = new HDFWalkerOutput(W,RootName,qmcComm);
-      wOut->open();
-      branchEngine->write(wOut->getConfigID(),false);
-      wOut->close();
       branchEngine->start(RootName,true);
+      branchEngine->write(wOut->FileName,false);
     }
     else
       branchEngine->start(RootName,false);
@@ -175,17 +170,9 @@ namespace qmcplusplus {
     if(wset.empty()) return;
     int nfile=wset.size();
 
-    //if(QMCDriverMode[QMC_OPTIMIZE]) 
-    //{//for optimization, simply add to ConfigFile
-    //  for(int ifile=0; ifile<nfile; ifile++) 
-    //    mcwalkerNodePtr.push_back(wset[ifile]);
-    //} 
-    //else 
-    //{
-      HDFWalkerInputManager W_in(W);
-      if(W_in.put(wset,qmcComm->rank())) 
-        h5FileRoot = W_in.getLastFile();
-    //}
+    HDFWalkerInputManager W_in(W,qmcComm);
+    for(int i=0; i<wset.size(); i++)
+      if(W_in.put(wset[i])) h5FileRoot = W_in.getFileRoot();
 
     //clear the walker set
     wset.clear();
@@ -193,26 +180,32 @@ namespace qmcplusplus {
 
   void QMCDriver::recordBlock(int block) {
 
+    //first dump the data for restart
     if(wOut ==0)
-    {
+    {//this does not happen but just make sure there is no memory fault 
       wOut = new HDFWalkerOutput(W,RootName,qmcComm);
-      wOut->open();
-      branchEngine->write(wOut->getConfigID(),false);
-      wOut->close();
       branchEngine->start(RootName,true);
+      branchEngine->write(wOut->FileName,false);
+      //if(!qmcComm->rank())
+      //{
+      //  hid_t fid =  H5Fopen(wOut->FileName.c_str(),H5F_ACC_RDWR,H5P_DEFAULT);
+      //  hid_t h1 =  H5Gopen(fid,hdf::main_state);
+      //  branchEngine->write(h1,false);
+      //  H5Gclose(h1);
+      //  H5Fclose(fid);
+      //}
     }
+    else
+     wOut->dump(W);
+
+    //save positions for optimization
+    if(QMCDriverMode[QMC_OPTIMIZE]) W.saveEnsemble();
+
     //estimator writes
     //Estimators->report(CurrentStep);
     //if Period4WalkerDump>0, record works as the checkpoint
-    
-    wOut->open();
-    if(Period4WalkerDump>0) 
-      wOut->append(W,block-1); //block has been incremened already
-    else 
-      wOut->dump(W);
-    const bool overwrite=true;
-    branchEngine->write(wOut->getConfigID(),overwrite);
-    wOut->close();
+    //branchEngine->write(wOut->getConfigID(),true);
+    if(Period4WalkerDump>0) wOut->append(W);
 
     //flush the ostream
     OhmmsInfo::flush();
@@ -222,13 +215,18 @@ namespace qmcplusplus {
 
     branchEngine->finalize();
 
-    wOut->open();
-    const bool overwrite=true;
-    branchEngine->write(wOut->getConfigID(),overwrite);
-    wOut->close();
-    
+    //if(!qmcComm->rank())
+    //{
+    //  hid_t fid =  H5Fopen(wOut->FileName.c_str(),H5F_ACC_RDWR,H5P_DEFAULT);
+    //  hid_t h1 =  H5Gopen(fid,hdf::main_state);
+    //  branchEngine->write(h1,true);
+    //  H5Gclose(h1);
+    //  H5Fclose(fid);
+    //}
+
     delete wOut;
     wOut=0;
+
     //Estimators->finalize();
 
     //set the target walkers
@@ -294,25 +292,28 @@ namespace qmcplusplus {
     int defaultw = 100;
     int targetw = 0;
 
+    //these options are reset for each block
     Period4WalkerDump=0;
     Period4CheckPoint=1;
      
-    if(cur) {
+    //construct a set of attributes
+    OhmmsAttributeSet rAttrib;
+    rAttrib.add(Period4WalkerDump,"stride");
+    rAttrib.add(Period4WalkerDump,"period");
+    rAttrib.add(Period4CheckPoint,"period");
+
+    if(cur != NULL) {
+
       //initialize the parameter set
       m_param.put(cur);
-
       xmlNodePtr tcur=cur->children;
       //determine how often to print walkers to hdf5 file
       while(tcur != NULL) {
 	string cname((const char*)(tcur->name));
 	if(cname == "record") {
-          const xmlChar* aptr=xmlGetProp(tcur,(const xmlChar*)"stride");
-          if(aptr) Period4WalkerDump = atoi((const char*)aptr);
-          aptr=xmlGetProp(tcur,(const xmlChar*)"period");
-          if(aptr) Period4WalkerDump = atoi((const char*)aptr);
+          rAttrib.put(tcur);
 	} else if(cname == "checkpoint") {
-          const xmlChar* aptr=xmlGetProp(tcur,(const xmlChar*)"period");
-          if(aptr) Period4CheckPoint = atoi((const char*)aptr);
+          rAttrib.put(tcur);
         } else if(cname == "random") {
           ResetRandom = true;
         }
