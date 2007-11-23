@@ -56,13 +56,22 @@ namespace APPNAMESPACE
       MPI_Cancel(&(*first));++first;
     }
   }
+
+  template<typename T>
+  inline void bcast(T& a, Communicate* comm)
+  { 
+    comm->bcast(a);
+  }
+
 }
 #else
 namespace APPNAMESPACE
 {
   template<typename CT>
-  inline void cancel(CT& r)
-  { }
+  inline void cancel(CT& r) { } 
+  
+  template<typename T>
+  inline void bcast(T& a, Communicate* comm) { }
 }
 #endif
 #endif

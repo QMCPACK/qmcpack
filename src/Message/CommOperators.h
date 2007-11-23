@@ -33,7 +33,11 @@ template<typename T>
 inline void 
 Communicate::reduce(T* restrict , T* restrict, int n) { }
 
-template<typename T> inline void Communicate::bcast(T* restrict ,int n) { }
+template<typename T> inline void 
+Communicate::bcast(T& ) { }
+
+template<typename T> inline void 
+Communicate::bcast(T* restrict ,int n) { }
 
 template<typename T> inline Communicate::request
 Communicate::irecv(int source, int tag, T& ) 
@@ -208,6 +212,41 @@ Communicate::reduce(double* restrict g, double* restrict res, int n)
 }
 
 template<>
+inline void 
+Communicate::bcast(APPNAMESPACE::TinyVector<double,2>& g) 
+{
+  MPI_Bcast(g.begin(),2,MPI_DOUBLE,0,myMPI);
+}
+
+template<>
+inline void 
+Communicate::bcast(APPNAMESPACE::TinyVector<double,3>& g) 
+{
+  MPI_Bcast(g.begin(),3,MPI_DOUBLE,0,myMPI);
+}
+
+template<>
+inline void 
+Communicate::bcast(APPNAMESPACE::TinyVector<double,4>& g) 
+{
+  MPI_Bcast(g.begin(),4,MPI_DOUBLE,0,myMPI);
+}
+
+template<>
+inline void 
+Communicate::bcast(std::vector<double>& g) 
+{
+  MPI_Bcast(&(g[0]),g.size(),MPI_DOUBLE,0,myMPI);
+}
+
+template<>
+inline void 
+Communicate::bcast(std::vector<int>& g) 
+{
+  MPI_Bcast(&(g[0]),g.size(),MPI_INT,0,myMPI);
+}
+
+template<>
 inline void
 Communicate::bcast(double* restrict x, int n) 
 {
@@ -220,7 +259,6 @@ Communicate::bcast(int* restrict x, int n)
 {
   MPI_Bcast(x,n,MPI_INT,0,myMPI);
 }
-
 
 template<> inline Communicate::request
 Communicate::isend(int dest, int tag, vector<double>& g)
