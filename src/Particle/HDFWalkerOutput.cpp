@@ -82,10 +82,10 @@ namespace qmcplusplus
    */
   HDFWalkerOutput::HDFWalkerOutput(MCWalkerConfiguration& W, const string& aroot,Communicate* c): 
     appended_blocks(0), number_of_walkers(0), 
-  h_file(-1), h_plist(-1), h_state(-1), myComm(c)
+  h_file(-1), h_plist(H5P_DEFAULT), h_state(-1), myComm(c)
   {
-#if defined(H5_HAVE_PARALLEL)
     FileName=myComm->getName()+hdf::config_ext;
+#if defined(H5_HAVE_PARALLEL)
     if(myComm->size()>1)
     { //open file collectively
       MPI_Info info=MPI_INFO_NULL;
@@ -117,7 +117,12 @@ namespace qmcplusplus
       h_state=h_pair.second;
     }
 #else
-    FileName=aroot+hdf::config_ext;
+    if(myComm->size()>1)
+    {
+      char fname[128];
+      sprintf(fname,"%s.p%03d%s",myComm->getName().c_str(), myComm->rank(),hdf::config_ext);
+      FileName=fname;
+    }
     std::pair<hid_t,hid_t> h_pair= createH5FileSingle(FileName,W);
     number_of_walkers = W.getActiveWalkers();
     h_file=h_pair.first;
@@ -128,6 +133,7 @@ namespace qmcplusplus
     nwo.write(h_state,hdf::num_walkers);
     H5Gclose(h_state);
     H5Fclose(h_file);
+
   }
 
   /** Write the set of walker configurations to the HDF5 file.  
@@ -135,24 +141,22 @@ namespace qmcplusplus
    */
   bool HDFWalkerOutput::dump(MCWalkerConfiguration& W) {
     bool success=true;
-    if(h_plist<0) 
-    {// serial file
-      h_file =  H5Fopen(FileName.c_str(),H5F_ACC_RDWR,H5P_DEFAULT);
-      h_state = H5Gopen(h_file,hdf::main_state);
+    h_file =  H5Fopen(FileName.c_str(),H5F_ACC_RDWR,h_plist);
+    h_state = H5Gopen(h_file,hdf::main_state);
+    //try backup but not working
+    //char newstate[16];
+    //sprintf(newstate, "%s_%d",hdf::main_state,appended_blocks);
+    //H5Gmove(h_state,hdf::main_state,newstate);
+    //h_state = H5Gcreate(h_file,hdf::main_state,0);
+    //HDFWalkerIOEngine wo(W);
+    //wo.writeAll(h_state,hdf::walkers,myComm);
+    //appended_blocks++;
+    if(h_plist== H5P_DEFAULT) // serial file
+    {
       success= dumpSingle(h_state,W);
     }
     else
     {//parallel file
-      h_file =  H5Fopen(FileName.c_str(),H5F_ACC_RDWR,h_plist);
-      h_state = H5Gopen(h_file,hdf::main_state);
-      //try backup but not working
-      //char newstate[16];
-      //sprintf(newstate, "%s_%d",hdf::main_state,appended_blocks);
-      //H5Gmove(h_state,hdf::main_state,newstate);
-      //h_state = H5Gcreate(h_file,hdf::main_state,0);
-      //HDFWalkerIOEngine wo(W);
-      //wo.writeAll(h_state,hdf::walkers,myComm);
-      //appended_blocks++;
       if(number_of_walkers != W.getGlobalNumWalkers())
       {
         herr_t status=H5Gunlink(h_state,hdf::walkers);
@@ -215,6 +219,7 @@ namespace qmcplusplus
     int nw=W.getActiveWalkers();
     if(number_of_walkers != nw)
     {//need resize of the data: unlink and create a walkers group
+        cerr << " number_of_walkers  " << number_of_walkers  << " " << nw << endl;
       herr_t status=H5Gunlink(gid,hdf::walkers);
       HDFWalkerIOEngine wo(W);
       wo.write(gid,hdf::walkers);
