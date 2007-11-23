@@ -33,6 +33,8 @@ MCWalkerConfiguration::MCWalkerConfiguration(const MCWalkerConfiguration& mcw)
 : ParticleSet(mcw), OwnWalkers(true),
   UpdateMode(Update_Walker), ReadyForPbyP(false), Polymer(0)
 {
+  GlobalNumWalkers=mcw.GlobalNumWalkers;
+  WalkerOffsets=mcw.WalkerOffsets;
   //initPropertyList();
 }
 
