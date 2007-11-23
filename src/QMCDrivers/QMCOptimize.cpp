@@ -78,8 +78,8 @@ namespace qmcplusplus {
     //generate samples
     generateSamples();
 
-    //cleanup walkers
-    W.destroyWalkers(W.begin(), W.end());
+    ////cleanup walkers
+    //W.destroyWalkers(W.begin(), W.end());
 
     app_log() << "<opt stage=\"setup\">" << endl;
     app_log() << "  <log>"<<endl;
@@ -92,7 +92,7 @@ namespace qmcplusplus {
     //get configuration from the previous run
     Timer t1;
 
-    optTarget->getConfigurations(h5FileRoot);
+    //optTarget->getConfigurations(h5FileRoot);
     optTarget->checkConfigurations();
 
     app_log() << "  Execution time = " << t1.elapsed() << endl;
@@ -124,6 +124,8 @@ namespace qmcplusplus {
     if(WarmupBlocks) 
     {
       app_log() << "<vmc stage=\"warm-up\" blocks=\"" << WarmupBlocks << "\">" << endl;
+      //turn off QMC_OPTIMIZE
+      vmcEngine->QMCDriverMode.set(QMC_OPTIMIZE,0);
       vmcEngine->setValue("blocks",WarmupBlocks);
       vmcEngine->run();
       vmcEngine->setValue("blocks",nBlocks);
@@ -131,7 +133,8 @@ namespace qmcplusplus {
       app_log() << "</vmc>" << endl;
     }
 
-    vmcEngine->setValue("recordWalkers",1);//set record 
+    vmcEngine->QMCDriverMode.set(QMC_OPTIMIZE,1);
+    //vmcEngine->setValue("recordWalkers",1);//set record 
     vmcEngine->setValue("current",0);//reset CurrentStep
     app_log() << "<vmc stage=\"main\" blocks=\"" << nBlocks << "\">" << endl;
     t1.restart();
@@ -225,10 +228,8 @@ namespace qmcplusplus {
         optTarget = new QMCCostFunctionOMP(W,Psi,H,hamPool);
       }
       else
-        optTarget = new QMCCostFunctionSingle(W,Psi,H);
-#else
-        optTarget = new QMCCostFunctionSingle(W,Psi,H);
 #endif
+        optTarget = new QMCCostFunctionSingle(W,Psi,H);
       optTarget->setStream(&app_log());
     }
     return optTarget->put(q);

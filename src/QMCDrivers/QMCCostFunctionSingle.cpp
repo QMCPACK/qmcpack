@@ -114,11 +114,15 @@ namespace qmcplusplus {
 
   void 
   QMCCostFunctionSingle::getConfigurations(const string& aroot) {
-    if(aroot.size() && aroot != "invalid") {
-      app_log() << "  Reading configurations from the previous qmc block" << endl;
-      HDFWalkerInputCollect wReader(aroot);
-      wReader.putSingle(W);
-    }
+    app_log() << "  Loading configuration from MCWalkerConfiguration::SampleStack " << endl;
+    app_log() << "    number of walkers before load" << W.getActiveWalkers() << endl;
+    W.loadEnsemble();
+    app_log() << "    number of walkers after load" << W.getActiveWalkers() << endl;
+    //if(aroot.size() && aroot != "invalid") {
+    //  app_log() << "  Reading configurations from the previous qmc block" << endl;
+    //  HDFWalkerInputCollect wReader(aroot);
+    //  wReader.putSingle(W);
+    //}
 
 #if defined(QMCCOSTFUNCTION_DEBUG)
     if(debug_stream) delete debug_stream;
