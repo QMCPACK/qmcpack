@@ -307,8 +307,10 @@ namespace qmcplusplus {
     {
       hid_t fid =  H5Fopen(fname.c_str(),H5F_ACC_RDWR,H5P_DEFAULT);
       hid_t h1 =  H5Gopen(fid,hdf::main_state);
-
+      herr_t status = H5Eset_auto(NULL, NULL);
+      status = H5Gget_objinfo(h1,hdf::energy_history,0,NULL);
       TinyVector<RealType,3> esave(Eref,EavgSum,WgtSum);
+      overwrite=(status == 0);
       HDFAttribIO<TinyVector<RealType,3> > eh(esave,overwrite);
       eh.write(h1,hdf::energy_history);
       if(LogNorm.size())//check if collection is done correctly
@@ -321,16 +323,16 @@ namespace qmcplusplus {
     }
   }
 
-  void SimpleFixedNodeBranch::write(hid_t grp, bool overwrite) {
-    TinyVector<RealType,3> esave(Eref,EavgSum,WgtSum);
-    HDFAttribIO<TinyVector<RealType,3> > eh(esave,overwrite);
-    eh.write(grp,hdf::energy_history);
-    if(LogNorm.size())
-    {
-      HDFAttribIO<vector<RealType> > lh(LogNorm,overwrite);
-      lh.write(grp,hdf::norm_history);
-    }
-  }
+//  void SimpleFixedNodeBranch::write(hid_t grp, bool overwrite) {
+//    TinyVector<RealType,3> esave(Eref,EavgSum,WgtSum);
+//    HDFAttribIO<TinyVector<RealType,3> > eh(esave,overwrite);
+//    eh.write(grp,hdf::energy_history);
+//    if(LogNorm.size())
+//    {
+//      HDFAttribIO<vector<RealType> > lh(LogNorm,overwrite);
+//      lh.write(grp,hdf::norm_history);
+//    }
+//  }
 
 
   void SimpleFixedNodeBranch::read(const string& fname) {
@@ -365,7 +367,6 @@ namespace qmcplusplus {
       //if(status == 0)//version exists after (0,4)
       if(in_version>=res_version)
       {
-        cout << "  In Version " << in_version << endl;
         //in_version.read(h_file,hdf::version);
         hid_t h1=H5Gopen(h_file,hdf::main_state);
         //get the history
@@ -408,14 +409,14 @@ namespace qmcplusplus {
     EavgSum=esave[1];
     WgtSum=esave[2];
 
-    cout << " Rank " << MyEstimator->getCommunicator()->rank()
-      << "  Eref=" << Eref 
-      << "  EavgSum=" << EavgSum 
-      << "  WhtSum= " << WgtSum << endl;
+    //cout << " Rank " << MyEstimator->getCommunicator()->rank()
+    //  << "  Eref=" << Eref 
+    //  << "  EavgSum=" << EavgSum 
+    //  << "  WgtSum= " << WgtSum << endl;
   }
 
-  void SimpleFixedNodeBranch::read(hid_t grp) {
-    //Disable this
+//  void SimpleFixedNodeBranch::read(hid_t grp) {
+//    //Disable this
 //    app_log() << "  Missing version. Using old format " << endl;
 //    hid_t h_config = H5Gopen(grp,"config_collection");
 //    herr_t status = H5Eset_auto(NULL, NULL);
@@ -436,7 +437,7 @@ namespace qmcplusplus {
 //      app_log() << "  Summary is not found. Starting from scratch" << endl;
 //    }
 //    H5Gclose(h_config);
-  }
+//  }
 
 #else
   void SimpleFixedNodeBranch::write(hid_t grp, bool append) { }

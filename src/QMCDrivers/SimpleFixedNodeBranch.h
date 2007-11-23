@@ -232,9 +232,8 @@ namespace qmcplusplus {
       SimpleFixedNodeBranch(){}
 
       ///disable use by external users
-      void write(hid_t grp, bool append=false);
-
-      void read(hid_t grp);
+      //void write(hid_t grp, bool append=false);
+      //void read(hid_t grp);
 
   };
 
