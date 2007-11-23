@@ -216,10 +216,7 @@ namespace qmcplusplus {
 
       bool put(xmlNodePtr cur);
 
-      void write(hid_t grp, bool append=false);
-
-      void read(hid_t grp);
-
+      void write(const string& fname, bool overwrite);
       void read(const string& fname);
 
       /** create map between the parameter name and variables */
@@ -233,6 +230,12 @@ namespace qmcplusplus {
     private:
       ///default constructor (disabled)
       SimpleFixedNodeBranch(){}
+
+      ///disable use by external users
+      void write(hid_t grp, bool append=false);
+
+      void read(hid_t grp);
+
   };
 
 }

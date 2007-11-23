@@ -24,6 +24,8 @@
 //#include "Estimators/DMCEnergyEstimator.h"
 #include "Numerics/HDFNumericAttrib.h"
 #include "Numerics/HDFSTLAttrib.h"
+#include "Message/CommUtilities.h"
+#include "HDFVersion.h"
 
 //#include <boost/archive/text_oarchive.hpp>
 
@@ -249,6 +251,8 @@ namespace qmcplusplus {
       //EavgSum=E_T;
       //WgtSum=1;
     }
+    //write to a file
+    write(RootName,true);
   }
 
   /**  Parse the xml file for parameters
@@ -296,50 +300,144 @@ namespace qmcplusplus {
   }
 
 #if defined(HAVE_LIBHDF5)
-  void SimpleFixedNodeBranch::write(hid_t grp, bool append) {
+  void SimpleFixedNodeBranch::write(const string& fname, bool overwrite) 
+  {
+    RootName=fname;
+    if(MyEstimator->is_manager())
+    {
+      hid_t fid =  H5Fopen(fname.c_str(),H5F_ACC_RDWR,H5P_DEFAULT);
+      hid_t h1 =  H5Gopen(fid,hdf::main_state);
+
+      TinyVector<RealType,3> esave(Eref,EavgSum,WgtSum);
+      HDFAttribIO<TinyVector<RealType,3> > eh(esave,overwrite);
+      eh.write(h1,hdf::energy_history);
+      if(LogNorm.size())//check if collection is done correctly
+      {
+        HDFAttribIO<vector<RealType> > lh(LogNorm,overwrite);
+        lh.write(h1,hdf::norm_history);
+      }
+      H5Gclose(h1);
+      H5Fclose(fid);
+    }
+  }
+
+  void SimpleFixedNodeBranch::write(hid_t grp, bool overwrite) {
     TinyVector<RealType,3> esave(Eref,EavgSum,WgtSum);
-    HDFAttribIO<TinyVector<RealType,3> > eh(esave,append);
-    eh.write(grp,"Summary");
+    HDFAttribIO<TinyVector<RealType,3> > eh(esave,overwrite);
+    eh.write(grp,hdf::energy_history);
     if(LogNorm.size())
     {
-      HDFAttribIO<vector<RealType> > lh(LogNorm,append);
-      lh.write(grp,"LogNorm");
+      HDFAttribIO<vector<RealType> > lh(LogNorm,overwrite);
+      lh.write(grp,hdf::norm_history);
     }
+  }
+
+
+  void SimpleFixedNodeBranch::read(const string& fname) {
+
+    //esave is used for communication
+    TinyVector<RealType,3> esave(Eref,EavgSum,WgtSum);
+
+    RootName=fname;
+    if(RootName.find(hdf::config_ext)>=RootName.size())
+    {
+      RootName.append(hdf::config_ext);
+    }
+    //string ext=getExtension(fname);
+    //if(ext != "h5") { //if the filename does not h5 extension, add the extension
+    //  RootName.append(".config.h5");
+    //}
+    if(MyEstimator->is_manager())
+    {
+      hid_t h_file =  H5Fopen(RootName.c_str(),H5F_ACC_RDONLY,H5P_DEFAULT);
+      if(h_file<0)
+      {
+        app_error() << "  Failed to open " << RootName << endl;
+        return;
+      }
+
+      //start using major=0 and minor=4
+      HDFVersion res_version(0,4);
+      HDFVersion in_version(0,1);
+      herr_t status = H5Eset_auto(NULL, NULL);
+      in_version.read(h_file,hdf::version);
+      //status = H5Gget_objinfo (h_file, hdf::version, 0, NULL);
+      //if(status == 0)//version exists after (0,4)
+      if(in_version>=res_version)
+      {
+        cout << "  In Version " << in_version << endl;
+        //in_version.read(h_file,hdf::version);
+        hid_t h1=H5Gopen(h_file,hdf::main_state);
+        //get the history
+        HDFAttribIO<TinyVector<RealType,3> > eh(esave);
+        eh.read(h1,hdf::energy_history);
+        if(LogNorm.size()) 
+        {
+          HDFAttribIO<vector<RealType> > lh(LogNorm);
+          lh.read(h1,hdf::norm_history);
+        }
+        H5Gclose(h1);
+      }
+      else 
+      { 
+        app_log() << "  Missing version. Using old format " << endl;
+        hid_t h1 = H5Gopen(h_file,"config_collection");
+        herr_t status = H5Eset_auto(NULL, NULL);
+        status = H5Gget_objinfo (h1, "Summary", 0, NULL);
+        if(status == 0) {
+          HDFAttribIO<TinyVector<RealType,3> > eh(esave);
+          eh.read(h1,"Summary");
+          if(LogNorm.size()) 
+          {
+            HDFAttribIO<vector<RealType> > lh(LogNorm);
+            lh.read(h1,"LogNorm");
+            app_log() << " Normalization factor defined from previous calculation " << endl;
+          }
+        } else {
+          app_log() << "  Summary is not found. Starting from scratch" << endl;
+        }
+        H5Gclose(h1);
+      }
+      H5Fclose(h_file);
+    }
+
+    //broadcast to the nodes : need to add a namespace mpi::
+    bcast(esave,MyEstimator->getCommunicator());
+
+    Eref=esave[0];
+    EavgSum=esave[1];
+    WgtSum=esave[2];
+
+    cout << " Rank " << MyEstimator->getCommunicator()->rank()
+      << "  Eref=" << Eref 
+      << "  EavgSum=" << EavgSum 
+      << "  WhtSum= " << WgtSum << endl;
   }
 
   void SimpleFixedNodeBranch::read(hid_t grp) {
-    herr_t status = H5Eset_auto(NULL, NULL);
-    status = H5Gget_objinfo (grp, "Summary", 0, NULL);
-
-    if(status == 0) {
-      TinyVector<RealType,3> esave(Eref,EavgSum,WgtSum);
-      HDFAttribIO<TinyVector<RealType,3> > eh(esave);
-      eh.read(grp,"Summary");
-      Etrial=Eref=esave[0]; EavgSum=esave[1]; WgtSum=esave[2];
-      bool normFound(0);
-      if(LogNorm.size()) {
-        HDFAttribIO<vector<RealType> > lh(LogNorm);
-        lh.read(grp,"LogNorm");
-        normFound=1;
-      }
-      if(normFound)app_log() << " Normalization factor defined from previous calculation " << endl;
-    } else {
-      app_log() << "  Summary is not found. Starting from scratch" << endl;
-    }
+    //Disable this
+//    app_log() << "  Missing version. Using old format " << endl;
+//    hid_t h_config = H5Gopen(grp,"config_collection");
+//    herr_t status = H5Eset_auto(NULL, NULL);
+//    status = H5Gget_objinfo (h_config, "Summary", 0, NULL);
+//    if(status == 0) {
+//      TinyVector<RealType,3> esave(Eref,EavgSum,WgtSum);
+//      HDFAttribIO<TinyVector<RealType,3> > eh(esave);
+//      eh.read(h_config,"Summary");
+//      Etrial=Eref=esave[0]; EavgSum=esave[1]; WgtSum=esave[2];
+//      bool normFound(0);
+//      if(LogNorm.size()) {
+//        HDFAttribIO<vector<RealType> > lh(LogNorm);
+//        lh.read(h_config,"LogNorm");
+//        normFound=1;
+//      }
+//      if(normFound)app_log() << " Normalization factor defined from previous calculation " << endl;
+//    } else {
+//      app_log() << "  Summary is not found. Starting from scratch" << endl;
+//    }
+//    H5Gclose(h_config);
   }
 
-  void SimpleFixedNodeBranch::read(const string& fname) {
-    string h5file = fname;
-    string ext=getExtension(h5file);
-    if(ext != "h5") { //if the filename does not h5 extension, add the extension
-      h5file.append(".config.h5");
-    }
-    hid_t h_file =  H5Fopen(h5file.c_str(),H5F_ACC_RDWR,H5P_DEFAULT);
-    hid_t h_config = H5Gopen(h_file,"config_collection");
-    read(h_config);
-    H5Gclose(h_config);
-    H5Fclose(h_file);
-  }
 #else
   void SimpleFixedNodeBranch::write(hid_t grp, bool append) { }
   void SimpleFixedNodeBranch::read(hid_t grp) {}
