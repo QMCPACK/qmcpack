@@ -185,18 +185,12 @@ namespace qmcplusplus {
     {//this does not happen but just make sure there is no memory fault 
       wOut = new HDFWalkerOutput(W,RootName,qmcComm);
       branchEngine->start(RootName,true);
-      branchEngine->write(wOut->FileName,false);
-      //if(!qmcComm->rank())
-      //{
-      //  hid_t fid =  H5Fopen(wOut->FileName.c_str(),H5F_ACC_RDWR,H5P_DEFAULT);
-      //  hid_t h1 =  H5Gopen(fid,hdf::main_state);
-      //  branchEngine->write(h1,false);
-      //  H5Gclose(h1);
-      //  H5Fclose(fid);
-      //}
     }
     else
      wOut->dump(W);
+
+    //save energy_history
+    branchEngine->write(wOut->FileName,false);
 
     //save positions for optimization
     if(QMCDriverMode[QMC_OPTIMIZE]) W.saveEnsemble();
