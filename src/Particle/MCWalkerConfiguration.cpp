@@ -226,14 +226,19 @@ void MCWalkerConfiguration::saveEnsemble()
 
 void MCWalkerConfiguration::loadEnsemble()
 {
-  if(SampleStack.size()>WalkerList.size())
-    createWalkers(SampleStack.size()-WalkerList.size());
+  //if(SampleStack.size()>WalkerList.size())
+  //  createWalkers(SampleStack.size()-WalkerList.size());
 
-  int iw=0;
   while(SampleStack.size()) {
+
     ParticlePos_t* pos(SampleStack.front());
-    WalkerList[iw++]->R=*pos;
-    delete pos;
+    Walker_t* awalker=new Walker_t(GlobalNum);
+    awalker->R = *pos;
+    awalker->Drift = 0.0;
+    WalkerList.push_back(awalker);
+
+    //cleanup
+    delete pos; 
     SampleStack.pop_front();
   }
 }
