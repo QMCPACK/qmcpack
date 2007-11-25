@@ -394,7 +394,7 @@ struct ApplyBConds<ParticleAttrib<TinyVector<T,3> >, Tensor<T,3>, false> {
   inline static void
   Unit2Cart(const Array_t& pin, const Transformer_t& R, Array_t& pout, int first, int last) {
     SUPERCELL_BOUNDARY_LIMITS(T)
-    register T r00=R[0],r01=R[1],r02=R[2], r10=R[3],r11=R[4],r12=R[5], r20=R[0],r21=R[7],r22=R[8];
+    register T r00=R[0],r01=R[1],r02=R[2], r10=R[3],r11=R[4],r12=R[5], r20=R[6],r21=R[7],r22=R[8];
 #pragma ivdep
     for(int i=first; i<last; i++) {
       T x(pin[i][0]), y(pin[i][1]),z(pin[i][2]);
@@ -430,8 +430,8 @@ struct ApplyBConds<ParticleAttrib<TinyVector<T,3> >, Tensor<T,3>, false> {
   inline static void
   Cart2Cart(Array_t& pinout, const Transformer_t& G, const Transformer_t& R, int first, int last) {
     SUPERCELL_BOUNDARY_LIMITS(T)
-    register T g00=G[0],g01=G[1],g02=G[2], g10=G[3],g11=G[4],g12=G[5], g20=G[0],g21=G[7],g22=G[8];
-    register T r00=R[0],r01=R[1],r02=R[2], r10=R[3],r11=R[4],r12=R[5], r20=R[0],r21=R[7],r22=R[8];
+    register T g00=G[0],g01=G[1],g02=G[2], g10=G[3],g11=G[4],g12=G[5], g20=G[6],g21=G[7],g22=G[8];
+    register T r00=R[0],r01=R[1],r02=R[2], r10=R[3],r11=R[4],r12=R[5], r20=R[6],r21=R[7],r22=R[8];
 #pragma ivdep
     for(int i=first; i<last; i++) {
       T x(pinout[i][0]*g00+pinout[i][1]*g10+pinout[i][2]*g20);
