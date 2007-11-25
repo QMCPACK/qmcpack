@@ -63,8 +63,9 @@ void StructFact::resize()
   SpeciesSet& tspecies(PtclRef.getSpeciesSet());
   rhok.resize(tspecies.TotalNum,KLists.numk);
   eikr.resize(PtclRef.getTotalNum(),KLists.numk);
-  int maxdim = std::max(KLists.mmax[0],std::max(KLists.mmax[1],KLists.mmax[2]));
-  C.resize(3,2*maxdim+1);
+  //int maxdim = std::max(KLists.mmax[0],std::max(KLists.mmax[1],KLists.mmax[2]));
+  int maxdim=KLists.mmax[DIM];
+  C.resize(DIM,2*maxdim+1);
 }
 
 //void 
@@ -89,7 +90,7 @@ StructFact::FillRhok() {
   {
     //operate with a reduced positon
     PosType tau_red=PtclRef.Lattice.toUnit(PtclRef.R[i]);
-    for(int idim=0; idim<3; idim++)
+    for(int idim=0; idim<DIM; idim++)
     {
       RealType phi=TWOPI*tau_red[idim];
       ComplexType ctemp(std::cos(phi),std::sin(phi));
@@ -102,9 +103,9 @@ StructFact::FillRhok() {
     ComplexType* restrict eikr_ref=eikr[i];
     for(int ki=0; ki<KLists.numk; ki++)
     {
-      eikr_ref[ki]=C(0,KLists.kpts[ki][0]+KLists.mmax[0])
-        *C(1,KLists.kpts[ki][1]+KLists.mmax[1])
-        *C(2,KLists.kpts[ki][2]+KLists.mmax[2]);
+      eikr_ref[ki]=C(0,KLists.kpts[ki][0]+KLists.mmax[0]);
+      for(idim=1;idim<DIM; id++)
+        eikr_ref[ki] *= C(idim,KLists.kpts[ki][idim]+KLists.mmax[idim]);
     }
     accumulate_elements(eikr_ref,eikr_ref+KLists.numk,rhok[PtclRef.GroupID[i]]);
     //valid version only with orthorohmbic cell, generalized to any cell above
@@ -132,17 +133,15 @@ StructFact::FillRhok() {
   for(int i=0; i<npart; i++)
   {
     PosType pos(PtclRef.R[i]);
+    RealType s,c;//get sin and cos
     ComplexType* restrict eikr_ref=eikr[i];
     ComplexType* restrict rhok_ref=rhok[PtclRef.GroupID[i]];
     for(int ki=0; ki<KLists.numk; ki++)
     {
-      RealType phi(dot(KLists.kpts_cart[ki],pos));
-//#if defined(HAVE_SINCOS)
-//      sincos(phi,&(eikr_ref[ki].imag()),&(eikr_ref[ki].real()));
-//#else
-//      eikr_ref[ki] = ComplexType(std::cos(phi),std::sin(phi));
-//#endif
-      eikr_ref[ki] = ComplexType(std::cos(phi),std::sin(phi));
+      //RealType phi(dot(KLists.kpts_cart[ki],pos));
+      //eikr_ref[ki] = ComplexType(std::cos(phi),std::sin(phi));
+      sincos(dot(KLists.kpts_cart[ki],pos),&s,&c);
+      eikr_ref[ki]=ComplexType(c,s);
       rhok_ref[ki]+= eikr_ref[ki];
     }
   }
@@ -154,19 +153,19 @@ void
 StructFact::UpdateRhok(const PosType& rold,const PosType& rnew,int iat,int GroupID){
 
   cout << "##### StructFact::UpdateRhok(const PosType& rold,const PosType& rnew USED" << endl;
-  TinyVector<double,3> k111; //k=1*b1 + 1*b2 + 1*b3
+  TinyVector<double,DIM> k111; //k=1*b1 + 1*b2 + 1*b3
   //Convert to Cartesian
   
-  for(int idim=0; idim<3; idim++){
+  for(int idim=0; idim<DIM; idim++){
     k111[idim] = 0.0;
-    for(int idir=0; idir<3; idir++){
+    for(int idir=0; idir<DIM; idir++){
       k111[idim] += PtclRef.Lattice.b(idir)[idim];
     }
     k111[idim] *= TWOPI;
   }
 
   //Prepare for subtracting old position
-  for(unsigned int idim=0; idim<3; idim++){
+  for(unsigned int idim=0; idim<DIM; idim++){
     complex<double> Ctemp;
     //start the recursion with the 111 vector.
     double phi = rold[idim] * k111[idim];
@@ -182,13 +181,13 @@ StructFact::UpdateRhok(const PosType& rold,const PosType& rnew,int iat,int Group
   //Subtract old position
   for(int ki=0; ki<KLists.numk; ki++){
     complex<double> temp = 1.0;
-    for(int idim=0; idim<3; idim++)
+    for(int idim=0; idim<DIM; idim++)
       temp *= C(idim,KLists.kpts[ki][idim]+KLists.mmax[idim]);
     rhok(GroupID,ki) -= temp;
   }
 
   //Prepare for adding new position
-  for(unsigned int idim=0; idim<3; idim++){
+  for(unsigned int idim=0; idim<DIM; idim++){
     complex<double> Ctemp;
     //start the recursion with the 111 vector.
     double phi = rnew[idim] * k111[idim];
@@ -204,7 +203,7 @@ StructFact::UpdateRhok(const PosType& rold,const PosType& rnew,int iat,int Group
   //Add new position
   for(int ki=0; ki<KLists.numk; ki++){
     complex<double> temp = 1.0;
-    for(int idim=0; idim<3; idim++)
+    for(int idim=0; idim<DIM; idim++)
       temp *= C(idim,KLists.kpts[ki][idim]+KLists.mmax[idim]);
     rhok(GroupID,ki) += temp;
     eikr(iat,ki) = temp;
