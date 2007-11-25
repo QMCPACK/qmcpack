@@ -215,19 +215,20 @@ namespace qmcplusplus {
 
   void EstimatorManager::stop(const vector<EstimatorManager*> est)
   {
-    BlockWeight=est[0]->BlockWeight;
 
     int num_threads=est.size();
     //normalize by the number of threads per node
-    RealType wgt=1.0/static_cast<RealType>(num_threads);
+    RealType tnorm=1.0/static_cast<RealType>(num_threads);
 
+    //add averages and divide them by the number of threads
     AverageCache=est[0]->AverageCache;
     for(int i=1; i<num_threads; i++) AverageCache+=est[i]->AverageCache;
-    AverageCache*=wgt;
+    AverageCache*=tnorm;
 
+    //add properties and divide them by the number of threads except for the weight
     PropertyCache=est[0]->PropertyCache;
     for(int i=1; i<num_threads; i++) PropertyCache+=est[i]->PropertyCache;
-    PropertyCache*=wgt;
+    for(int i=1; i<PropertyCache.size(); i++) PropertyCache[i] *= tnorm;
 
     stop();
   }
@@ -271,8 +272,10 @@ namespace qmcplusplus {
   void EstimatorManager::stopBlock(RealType accept)
   {
     //take block averages and update properties per block
+    PropertyCache[weightInd]=BlockWeight;
     PropertyCache[cpuInd] = MyTimer.elapsed();
     PropertyCache[acceptInd] = accept;
+
 
     for(int i=0; i<Estimators.size(); i++) 
     {
@@ -286,19 +289,20 @@ namespace qmcplusplus {
 
   void EstimatorManager::stopBlock(const vector<EstimatorManager*> est)
   {
-
-    BlockWeight=est[0]->BlockWeight;
-
     //normalized it by the thread
     int num_threads=est.size();
     RealType tnorm=1.0/num_threads;
 
-    AverageCache=0.0;
-    for(int i=0; i<num_threads; i++) AverageCache+=est[i]->AverageCache;
+    //BlockWeight=est[0]->BlockWeight;
+    //for(int i=1; i<num_threads; i++) BlockWeight += est[i]->BlockWeight;
+
+    AverageCache=est[0]->AverageCache;
+    for(int i=1; i<num_threads; i++) AverageCache +=est[i]->AverageCache;
     AverageCache *= tnorm;
-    PropertyCache=0.0;
-    for(int i=0; i<num_threads; i++) PropertyCache+=est[i]->PropertyCache;
-    PropertyCache *= tnorm;
+
+    PropertyCache=est[0]->PropertyCache;
+    for(int i=1; i<num_threads; i++) PropertyCache+=est[i]->PropertyCache;
+    for(int i=1; i<PropertyCache.size(); i++) PropertyCache[i] *= tnorm;
 
     if(CompEstimators) 
     { //simply clean this up
@@ -312,9 +316,6 @@ namespace qmcplusplus {
 
   void EstimatorManager::collectBlockAverages()
   {
-
-    PropertyCache[weightInd]=BlockWeight;
-
 #if defined(DEBUG_ESTIMATOR_ARCHIVE)
     if(DebugArchive)
     {
