@@ -40,7 +40,8 @@ namespace qmcplusplus {
     LRHandlerBase(RealType kc):LR_kc(kc){}
     //copy constructor
     LRHandlerBase(const LRHandlerBase& rh):
-      LR_kc(rh.LR_kc), LR_rc(rh.LR_rc), coefs(rh.coefs), Fk(rh.Fk), Fk_symm(rh.Fk_symm)
+      MaxKshell(rh.MaxKshell), LR_kc(rh.LR_kc), LR_rc(rh.LR_rc), 
+    coefs(rh.coefs), Fk(rh.Fk), Fk_symm(rh.Fk_symm)
     {}
 
     //return r cutoff
