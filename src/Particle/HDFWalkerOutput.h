@@ -43,6 +43,8 @@ namespace qmcplusplus {
     hid_t h_file;
     ///handler for parallel I/O
     hid_t h_plist;
+    ///data transfer mode
+    hid_t xfer_plist;
     ///id for HDF5 main group 
     hid_t h_state;
     ///id for debug HDF5 file 

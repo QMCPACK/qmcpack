@@ -83,7 +83,7 @@ namespace qmcplusplus
   HDFWalkerOutput::HDFWalkerOutput(MCWalkerConfiguration& W, const string& aroot,Communicate* c): 
     appended_blocks(0), number_of_walkers(0), 
   number_of_backups(0), max_number_of_backups(4),
-  h_file(-1), h_plist(H5P_DEFAULT), h_state(-1), myComm(c)
+  h_file(-1), h_plist(H5P_DEFAULT), xfer_plist(H5P_DEFAULT), h_state(-1), myComm(c)
   {
     FileName=myComm->getName()+hdf::config_ext;
 #if defined(H5_HAVE_PARALLEL)
@@ -93,6 +93,11 @@ namespace qmcplusplus
       h_plist = H5Pcreate(H5P_FILE_ACCESS);
       H5Pset_fapl_mpio(h_plist,myComm->getMPI(),info);
       h_file = H5Fcreate(FileName.c_str(),H5F_ACC_TRUNC,H5P_DEFAULT,h_plist);
+
+      //use_collective
+      xfer_plist = H5Pcreate(H5P_DATASET_XFER);
+      H5Pset_dxpl_mpio(xfer_plist,H5FD_MPIO_COLLECTIVE);
+      //H5Pset_dxpl_mpio(xfer_plist,H5FD_MPIO_INDEPENDENT);
 
       //write the version
       HDFVersion cur_version;
@@ -181,6 +186,7 @@ namespace qmcplusplus
       {
         herr_t status=H5Gunlink(h_state,hdf::walkers);
         HDFWalkerIOEngine wo(W);
+        wo.setTransferProperty(xfer_plist);
         wo.writeAll(h_state,hdf::walkers,myComm);
 
         // overwrite number of walkers
@@ -191,6 +197,7 @@ namespace qmcplusplus
       else
       {
         HDFWalkerIOEngine wo(W,true);
+        wo.setTransferProperty(xfer_plist);
         wo.writeAll(h_state,hdf::walkers,myComm);
       }
     }
@@ -257,6 +264,7 @@ namespace qmcplusplus
   /** Destructor writes the state of random numbers and close the file */
   HDFWalkerOutput::~HDFWalkerOutput() 
   {
+    if(xfer_plist!= H5P_DEFAULT) H5Pclose(xfer_plist);
     if(h_plist!= H5P_DEFAULT) H5Pclose(h_plist);
   }
 
