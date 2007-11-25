@@ -108,33 +108,22 @@ KContainer::FindApproxMMax() {
   }
   */
   // see rmm, Electronic Structure, p. 85 for details
-  for (int i = 0; i < 3; i++) 
+  for (int i = 0; i < DIM; i++) 
     mmax[i] = static_cast<int>(floor(sqrt(dot(Lattice.a(i),Lattice.a(i))) * kcutoff / (2 * M_PI))) + 1;
 }
 void 
 KContainer::BuildKLists(bool useSphere) {
 
-  //kpts.clear();
-  //kpts_cart.clear();
-  //ksq.clear();
-
-  // reserve the space for memory efficiency
-  int numGuess=(2*mmax[0]+1)*(2*mmax[1]+1)*(2*mmax[2]+1);
-  //kpts.reserve(numGuess);
-  //kpts_cart.reserve(numGuess);
-  //ksq.reserve(numGuess);  
-
-  TinyVector<int,4> TempActualMax;
-  TinyVector<int,3> kvec;
-  TinyVector<RealType,3> kvec_cart;
+  TinyVector<int,DIM+1> TempActualMax;
+  TinyVector<int,DIM> kvec;
+  TinyVector<RealType,DIM> kvec_cart;
   RealType modk2;
-  for(int i=0; i <4; i++) 
-    TempActualMax[i] = 0;
-
-  vector<TinyVector<int,3> > kpts_tmp;
+  vector<TinyVector<int,DIM> > kpts_tmp;
   VContainer_t kpts_cart_tmp;
   SContainer_t ksq_tmp;
-
+  // reserve the space for memory efficiency
+#if OHMMS_DIM ==3
+  int numGuess=(2*mmax[0]+1)*(2*mmax[1]+1)*(2*mmax[2]+1);
   if(useSphere) {
     //Loop over guesses for valid k-points.
     for(int i=-mmax[0]; i<=mmax[0]; i++){
@@ -148,15 +137,6 @@ KContainer::BuildKLists(bool useSphere) {
 	  if(i==0 && j==0 && k==0)continue;
 
 	  //Convert kvec to Cartesian
-	  /*
-      	  for(int idim=0; idim<3; idim++){
-	    kvec_cart[idim] = 0.0;
-	    for(int idir=0; idir<3; idir++){
-	      kvec_cart[idim]+=kvec[idir]*Lattice.b(idir)[idim];
-	    }
-	    kvec_cart[idim]*=TWOPI;
-	  }
-	  */
 	  kvec_cart = Lattice.k_cart(kvec);
 	
 	  //Find modk
@@ -209,8 +189,74 @@ KContainer::BuildKLists(bool useSphere) {
     TempActualMax[0] = mmax[0];
     TempActualMax[1] = mmax[1];
     TempActualMax[2] = mmax[2];
-
   }
+#elif OHMMS_DIM == 2
+  int numGuess=(2*mmax[0]+1)*(2*mmax[1]+1);
+  if(useSphere) {
+    //Loop over guesses for valid k-points.
+    for(int i=-mmax[0]; i<=mmax[0]; i++)
+    {
+      kvec[0] = i;
+      for(int j=-mmax[1]; j<=mmax[1]; j++)
+      {
+        kvec[1] = j;
+        //Do not include k=0 in evaluations.
+        if(i==0 && j==0)continue;
+
+        //Convert kvec to Cartesian
+        kvec_cart = Lattice.k_cart(kvec);
+
+        //Find modk
+        modk2 = dot(kvec_cart,kvec_cart);
+
+        if(modk2>kcut2) continue; //Inside cutoff?
+
+        //This k-point should be added to the list
+        kpts_tmp.push_back(kvec);
+        kpts_cart_tmp.push_back(kvec_cart);
+        ksq_tmp.push_back(modk2);
+	
+        //Update record of the allowed maximum translation.
+        for(int idim=0; idim<3; idim++)
+          if(abs(kvec[idim]) > TempActualMax[idim])
+            TempActualMax[idim] = abs(kvec[idim]);
+      }
+    }
+  } else {
+    // Loop over all k-points in the parallelpiped and add them to kcontainer
+    // note layout is for interfacing with fft, so for each dimension, the 
+    // positive indexes come first then the negative indexes backwards
+    // e.g.    0, 1, .... mmax, -mmax+1, -mmax+2, ... -1
+    const int idimsize = mmax[0]*2;
+    const int jdimsize = mmax[1]*2;
+    for (int i = 0; i < idimsize; i++) 
+    {
+      kvec[0] = i;
+      if (kvec[0] > mmax[0]) kvec[0] -= idimsize;
+      for (int j = 0; j < jdimsize; j++) 
+      {
+        kvec[1] = j;
+        if (kvec[1] > mmax[1]) kvec[1] -= jdimsize;
+
+        // get cartesian location and modk2
+        kvec_cart = Lattice.k_cart(kvec);
+        modk2 = dot(kvec_cart, kvec_cart);
+
+        // add k-point to lists
+        kpts_tmp.push_back(kvec);
+        kpts_cart_tmp.push_back(kvec_cart);
+        ksq_tmp.push_back(modk2);
+      }
+    }
+    // set allowed maximum translation
+    TempActualMax[0] = mmax[0];
+    TempActualMax[1] = mmax[1];
+  }
+//#elif OHMMS_DIM == 1
+//add one-dimension
+#else
+   cout << "  Add compiler error " << endl; 
+#endif
  
   //Update a record of the number of k vectors
   numk = kpts_tmp.size();
@@ -250,11 +296,11 @@ KContainer::BuildKLists(bool useSphere) {
   }
 
   //Finished searching k-points. Copy list of maximum translations.
-  mmax[3] = 0;
-  for(int idim=0; idim<3; idim++) {
+  mmax[DIM] = 0;
+  for(int idim=0; idim<DIM; idim++) {
     mmax[idim] = TempActualMax[idim];
-    if(mmax[idim] > mmax[3])
-      mmax[3] = mmax[idim];
+    mmax[DIM]=std::max(mmax[idim],mmax[DIM]);
+    //if(mmax[idim] > mmax[DIM]) mmax[DIM] = mmax[idim];
   }
 
   //Now fill the array that returns the index of -k when given the index of k.
