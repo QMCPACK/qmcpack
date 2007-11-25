@@ -25,8 +25,16 @@ namespace qmcplusplus {
   private:
 
     //Function to return a unique number for each kVector
-    long GetHashOfVec(const TinyVector<int,3>& inpv, int hashparam) {
+    inline long GetHashOfVec(const TinyVector<int,3>& inpv, int hashparam) {
       return inpv[2] + hashparam * (inpv[1] + hashparam * inpv[0]);
+    }
+
+    inline long GetHashOfVec(const TinyVector<int,2>& inpv, int hashparam) {
+      return (inpv[1] + hashparam * inpv[0]);
+    }
+
+    inline long GetHashOfVec(const TinyVector<int,1>& inpv, int hashparam) {
+      return inpv[0];
     }
     
     //The cutoff up to which k-vectors are generated.
@@ -45,12 +53,12 @@ namespace qmcplusplus {
     int numk;
 
     //Maximum integer translations of reciprocal cell within kc.
-    //Last index is max. of first 3.
-    TinyVector<int,4> mmax;
+    //Last index is max. of first dimension+1
+    TinyVector<int,DIM+1> mmax;
 
     /** K-vector in reduced coordinates 
      */
-    vector<TinyVector<int,3> > kpts; 
+    vector<TinyVector<int,DIM> > kpts; 
     /** K-vector in Cartesian coordinates 
      */
     VContainer_t kpts_cart; 
