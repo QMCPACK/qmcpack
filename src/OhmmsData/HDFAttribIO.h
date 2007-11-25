@@ -26,6 +26,7 @@
 #else
 typedef int hid_t;
 typedef std::size_t hsize_t;
+const int H5P_DEFAULT=0;
 #endif
 
 namespace qmcplusplus {
@@ -33,6 +34,22 @@ namespace qmcplusplus {
  *\brief Base class to write/read ParticleAttrib using hdf5
  */
 struct HDFAttribIOBase {
+
+  ///hdf node to which a dataset belongs
+  hid_t my_loc;
+
+  ///default tranfer method
+  hid_t xfer_plist;
+
+  ///default constructor
+  HDFAttribIOBase():my_loc(-1),xfer_plist(H5P_DEFAULT){}
+
+  virtual ~HDFAttribIOBase() { }
+
+  inline void setTransferProperty(hid_t xfer_mode)
+  {
+    xfer_plist=xfer_mode;
+  }
 
   //\fn void write(fileid, name)
   //\param fileid hid_t, file id
