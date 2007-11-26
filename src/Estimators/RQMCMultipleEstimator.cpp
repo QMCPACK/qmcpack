@@ -167,7 +167,7 @@ namespace qmcplusplus {
           thisWalker.Properties(ipsi,UMBRELLAWEIGHT)=wgt;
 
           //thisWalker.Drift += wgt*psi[ipsi]->G;
-          PAOps<RealType,OHMMS_DIM>::axpy(wgt,psi[ipsi]->G,thisWalker.Drift);
+          PAOps<RealType,DIM>::axpy(wgt,psi[ipsi]->G,thisWalker.Drift);
         }
         thisWalker.Drift *= tau;
         ++it;++iw;
