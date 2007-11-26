@@ -7,7 +7,6 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
@@ -25,7 +24,11 @@
 #include "OhmmsPETE/TinyVector.h"
 #include "OhmmsPETE/Tensor.h"
 #include "OhmmsData/OhmmsElementBase.h"
+#if OHMMS_DIM==3
 #include "Lattice/Uniform3DGridLayout.h"
+#else
+#include "Lattice/UniformGridLayout.h"
+#endif
 #include "ParticleBase/ParticleAttrib.h"
 #include "ParticleBase/ParticleBase.h"
 #include "Utilities/OhmmsInfo.h"
@@ -72,8 +75,11 @@ namespace qmcplusplus {
    */
   struct PtclOnLatticeTraits{
 
-    //typedef UniformGridLayout<OHMMS_PRECISION,OHMMS_DIM> ParticleLayout_t;
+#if OHMMS_DIM==3
     typedef Uniform3DGridLayout                          ParticleLayout_t;
+#else
+    typedef UniformGridLayout<OHMMS_PRECISION,OHMMS_DIM> ParticleLayout_t;
+#endif
 
     typedef int                                          Index_t;
     typedef OHMMS_PRECISION                              Scalar_t;
