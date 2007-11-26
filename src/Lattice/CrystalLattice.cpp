@@ -126,9 +126,12 @@ void CrystalLattice<T,D,ORTHO>::reset() {
   //ABC[0] = rad_to_deg*std::acos(dot(Rv[0],Rv[1])*a0*a1);
   //ABC[1] = rad_to_deg*std::acos(dot(Rv[1],Rv[2])*a1*a2);
   //ABC[2] = rad_to_deg*std::acos(dot(Rv[2],Rv[0])*a2*a0);
-  ABC[0] = rad_to_deg*std::acos(dot(Rv[0],Rv[1])*OneOverLength[0]*OneOverLength[1]);
-  ABC[1] = rad_to_deg*std::acos(dot(Rv[1],Rv[2])*OneOverLength[1]*OneOverLength[2]);
-  ABC[2] = rad_to_deg*std::acos(dot(Rv[2],Rv[0])*OneOverLength[2]*OneOverLength[0]);
+  if(DIM==3)
+  {
+    ABC[0] = rad_to_deg*std::acos(dot(Rv[0],Rv[1])*OneOverLength[0]*OneOverLength[1]);
+    ABC[1] = rad_to_deg*std::acos(dot(Rv[1],Rv[2])*OneOverLength[1]*OneOverLength[2]);
+    ABC[2] = rad_to_deg*std::acos(dot(Rv[2],Rv[0])*OneOverLength[2]*OneOverLength[0]);
+  }
 
   T offdiag=0.0;
   for(int i=0; i<D; i++)
