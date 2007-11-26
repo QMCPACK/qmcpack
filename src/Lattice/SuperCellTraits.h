@@ -23,9 +23,14 @@ namespace qmcplusplus
   */
   enum {SUPERCELL_OPEN=0, SUPERCELL_WIRE=1, SUPERCELL_SLAB=3, SUPERCELL_BULK=7};
 
-  /** dummy class to detemine the supercell type **/
+  /** dummy class to detemine the supercell type 
+   *
+   * Should fail to compile for non-physical dimensions.
+   */
   template<unsigned D>
-    struct SuperCellType {};
+    struct SuperCellType 
+    {
+    };
 
   /** specialization of SuperCellType for 3-dimensional cell
   */
@@ -41,6 +46,30 @@ namespace qmcplusplus
        */
       inline static int apply(const TinyVector<int,3>& box) {
         return box[0]+2*(box[1]+box[2]*2);
+      }
+    };
+
+  /** specialization of SuperCellType for 2-dimensional cell
+  */
+  template<>
+    struct SuperCellType<2> {
+      /** convert box to an integer
+       * @param box 2-dimensional boolean vector
+       */
+      inline static int apply(const TinyVector<int,2>& box) {
+        return box[0]+2*box[1]+4;
+      }
+    };
+
+  /** specialization of SuperCellType for 2-dimensional cell
+  */
+  template<>
+    struct SuperCellType<1> {
+      /** convert box to an integer
+       * @param box 2-dimensional boolean vector
+       */
+      inline static int apply(const TinyVector<int,2>& box) {
+        return box[0]+6;
       }
     };
 
