@@ -49,6 +49,21 @@ namespace qmcplusplus {
     return TinyVector<double,3>(a[0].real(),a[1].real(),a[2].real());
   }
 
+  inline TinyVector<double,2> real(const TinyVector<double,2>& a) { 
+    return a;
+  }
+
+  inline TinyVector<double,2> real(const TinyVector<std::complex<double>,2>& a) { 
+    return TinyVector<double,2>(a[0].real(),a[1].real());
+  }
+
+  inline TinyVector<double,1> real(const TinyVector<double,1>& a) { 
+    return a;
+  }
+
+  inline TinyVector<double,1> real(const TinyVector<std::complex<double>,1>& a) { 
+    return TinyVector<double,1>(a[0].real());
+  }
 
   /** evaluate the log(|psi|) and phase
    * @param psi real/complex value
