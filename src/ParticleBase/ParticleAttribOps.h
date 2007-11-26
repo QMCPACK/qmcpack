@@ -197,6 +197,21 @@ namespace APPNAMESPACE {
     typedef TinyVector<T,2>          rpos_type;
     typedef TinyVector<complex<T>,2> cpos_type;
 
+    static inline 
+      void scale(T a, const ParticleAttrib<cpos_type>& pa, 
+          ParticleAttrib<rpos_type>& pb) {
+        for(int i=0; i<pa.size(); i++) {
+          pb[i][0]=a*pa[i][0].real();
+          pb[i][1]=a*pa[i][1].real();
+        }
+      }
+
+    static inline 
+      void scale(T a, const ParticleAttrib<rpos_type>& pa, 
+          ParticleAttrib<rpos_type>& pb) {
+        pb=a*pa;
+      }
+
 
     static inline 
       void axpy(T a, const ParticleAttrib<cpos_type>& pa, ParticleAttrib<rpos_type>& pb) {
