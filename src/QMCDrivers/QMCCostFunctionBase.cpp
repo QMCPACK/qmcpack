@@ -681,7 +681,7 @@ namespace qmcplusplus {
       { // 
         aname.append("_");
         OptimizableSetType::iterator vit(OptVariablesForPsi.begin());
-        vector<OHMMS_PRECISION> c;
+        vector<Return_t> c;
         while(vit != OptVariablesForPsi.end())
         {
           if((*vit).first.find(aname) == 0)

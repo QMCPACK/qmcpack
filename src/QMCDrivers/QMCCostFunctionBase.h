@@ -37,12 +37,11 @@ namespace qmcplusplus {
    * generated from VMC.
    */
 
-  class QMCCostFunctionBase: public CostFunctionBase<OHMMS_PRECISION>
+  class QMCCostFunctionBase: public CostFunctionBase<QMCTraits::RealType>
   {
   public:
 
     typedef VarRegistry<Return_t> OptimizableSetType;
-    //    typedef OHMMS_PRECISION RealType;
 
     enum FieldIndex_OPT {LOGPSI_FIXED=0, LOGPSI_FREE=1, ENERGY_TOT=2, ENERGY_FIXED=3, ENERGY_NEW=4, REWEIGHT=5};
     enum SumIndex_OPT {SUM_E_BARE=0, SUM_ESQ_BARE, SUM_ABSE_BARE,
