@@ -17,6 +17,7 @@
 #include "QMCWaveFunctions/ElectronGas/ElectronGasComplexOrbitalBuilder.h"
 #include "QMCWaveFunctions/ElectronGas/HEGGrid.h"
 #include "QMCWaveFunctions/SlaterDeterminant.h"
+#include "OhmmsData/AttributeSet.h"
 
 namespace qmcplusplus {
 
@@ -38,21 +39,12 @@ namespace qmcplusplus {
 
 
   bool ElectronGasComplexOrbitalBuilder::put(xmlNodePtr cur){
-
-    //can use generic AttributeSet but leave it for now
     int nc=0;
-    const xmlChar* nc_ptr=xmlGetProp(cur,(const xmlChar*)"shell");
-    if(nc_ptr) {
-      nc = atoi((const char*)nc_ptr);
-    }
-
-    PosType twistAngle;
-    nc_ptr=xmlGetProp(cur,(const xmlChar*)"twist");
-    if(nc_ptr) {
-      //putAttribute(shift,nc_ptr);
-      std::istringstream stream((const char*)nc_ptr);
-      stream >> twistAngle;
-    }
+    PosType twist(0.0);
+    OhmmsAttributeSet aAttrib;
+    aAttrib.add(nc,"shell");
+    aAttrib.add(twist,"twist");
+    aAttrib.put(cur);
 
     typedef DiracDeterminant<EGOSet>  Det_t;
     typedef SlaterDeterminant<EGOSet> SlaterDeterminant_t;
@@ -61,9 +53,7 @@ namespace qmcplusplus {
     int nup=nat/2;
 
     HEGGrid<RealType,OHMMS_DIM> egGrid(targetPtcl.Lattice);
-    if(nc == 0) {
-      nc = egGrid.getNC(nup);
-    }
+    if(nc == 0) nc = egGrid.getShellIndex(nup);
 
     //number of kpoints in a half sphere at zero twist
     int nkpts=(nup-1)/2;
