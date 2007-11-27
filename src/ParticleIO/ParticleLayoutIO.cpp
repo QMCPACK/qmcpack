@@ -26,19 +26,22 @@
 using namespace std;
 #include "Utilities/OhmmsInfo.h"
 #include "ParticleIO/ParticleLayoutIO.h"
+#include "OhmmsData/AttributeSet.h"
+#include "QMCWaveFunctions/ElectronGas/HEGGrid.h"
 
 namespace qmcplusplus {
 
   bool LatticeParser::put(xmlNodePtr cur){
 
+    const int DIM=ParticleLayout_t::SingleParticlePos_t::Size;
     double a0 = 1.0;
 
     double rs=-1.0;
 
     typedef ParticleLayout_t::SingleParticleIndex_t SingleParticleIndex_t;
-    vector<SingleParticleIndex_t> grid(3,SingleParticleIndex_t(1));
+    vector<SingleParticleIndex_t> grid(DIM,SingleParticleIndex_t(1));
 
-    TinyVector<string,OHMMS_DIM> bconds("p");
+    TinyVector<string,DIM> bconds("p");
     std::size_t finegrid =  ParticleLayout_t::SPATIAL_GRID;
     std::size_t ompgrid = ParticleLayout_t::OMP_GRID;
     std::size_t mpigrid = ParticleLayout_t::MPI_GRID;
@@ -60,7 +63,7 @@ namespace qmcplusplus {
 	  putContent(ref_.Grid[mpigrid],cur);
 	} else if(aname == "bconds") {
 	  putContent(bconds,cur);
-          for(int idir=0;idir<OHMMS_DIM; idir++) {
+          for(int idir=0;idir<DIM; idir++) {
             char b = bconds[idir][0];
             if(b == 'n' || b == 'N') {
               ref_.BoxBConds[idir] = false;
@@ -71,15 +74,27 @@ namespace qmcplusplus {
 	} else if(aname == "LR_dim_cutoff") {
 	  putContent(ref_.LR_dim_cutoff,cur);
 	} else if(aname == "rs") {
+          int nptcl=0;
+          int nsh=0;
+          OhmmsAttributeSet rAttrib;
+          rAttrib.add(nptcl,"condition");
+          rAttrib.add(nsh,"shell");
+          rAttrib.put(cur);
 	  putContent(rs,cur);
-          double nrs=14;
-          const xmlChar* n_ptr=xmlGetProp(cur,(const xmlChar*)"condition");
-          if(n_ptr) { nrs = atof((const char*)n_ptr);}
-          double acubic=pow(4.0*M_PI*nrs/3.0,1.0/3.0)*rs;
+          HEGGrid<double,OHMMS_DIM> heg(ref_);
+          if(nsh>0)
+            nptcl=2*heg.getNumberOfKpoints(nsh);
+          else
+            nsh=heg.getShellIndex(nptcl/2);
+          double acubic=heg.getCellLength(nptcl,rs);
+          //double acubic=pow(4.0*M_PI*nptcl/3.0,1.0/3.0)*rs;
+          app_log() << "  " << OHMMS_DIM << "D HEG system"
+            << "\n     rs  = " << rs
+            << "\n     number of particles = " << nptcl 
+            << "\n     filled kshells      = " << nsh 
+            << "\n     lattice constant    = " << acubic << " bohr"<< endl;
           ref_.R=0.0;
-          ref_.R(0,0)=acubic;
-          ref_.R(1,1)=acubic;
-          ref_.R(2,2)=acubic;
+          for(int idim=0; idim<DIM; idim++) ref_.R(idim,idim)=acubic;
           a0=1.0;
         }
       } 
@@ -98,7 +113,8 @@ namespace qmcplusplus {
     os<< "<parameter name=\"lattice\" datatype=\"tensor\">" << endl;
     os << ref_.R << "</parameter>" << endl;
     os << "<parameter name=\"bconds\">";
-    for(int idir=0; idir<OHMMS_DIM; idir++) {
+    const int DIM=ParticleLayout_t::SingleParticlePos_t::Size;
+    for(int idir=0; idir<DIM; idir++) {
       if(ref_.BoxBConds[idir])
 	os << "p ";
       else
@@ -108,7 +124,7 @@ namespace qmcplusplus {
     ///only write the spatial grid but may choose to write mpi and openmp
     std::size_t finegrid =  ParticleLayout_t::SPATIAL_GRID;
     os << "<parameter name=\"grid\">";
-    for(int idir=0; idir<OHMMS_DIM; idir++) {
+    for(int idir=0; idir<DIM; idir++) {
       os <<ref_.getGrid(finegrid)->size(idir) << " "; 
     }
     os << "</parameter>" << endl;
