@@ -22,8 +22,10 @@
 #include "QMCWaveFunctions/Jastrow/JAABuilder.h"
 #include "QMCWaveFunctions/Jastrow/JABBuilder.h"
 #include "QMCWaveFunctions/Jastrow/BsplineJastrowBuilder.h"
+#if OHMMS_DIM ==3
 #include "QMCWaveFunctions/Jastrow/ThreeBodyGeminal.h"
 #include "QMCWaveFunctions/Jastrow/ThreeBodyBlockSparse.h"
+#endif
 #include "OhmmsData/AttributeSet.h"
 
 namespace qmcplusplus {
@@ -228,6 +230,7 @@ namespace qmcplusplus {
 
   bool JastrowBuilder::addThreeBody(xmlNodePtr cur) 
   {
+#if OHMMS_DIM==3
     if(sourceOpt == targetPtcl.getName()) 
     {
       app_warning() << "  Three-Body Jastrow Function needs a source different from " << targetPtcl.getName() << endl;
@@ -289,6 +292,10 @@ namespace qmcplusplus {
       J3->put(coeffPtr,targetPsi.VarList);
       targetPsi.addOrbital(J3);
     }
+#else
+    app_error() << "  Three-body Jastrow function is not supported for DIM != 3." << endl;
+//#error "  Three-body Jastrow is disabled for QMC_DIM != 3\n "
+#endif
 
     //if(jbuilder)
     //{
