@@ -8,7 +8,6 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
@@ -24,6 +23,8 @@
 #include <fstream>
 using namespace std;
 #include "OhmmsData/FileUtility.h"
+#include "OhmmsData/AttributeSet.h"
+#include "OhmmsData/ParameterSet.h"
 #include "Utilities/OhmmsInfo.h"
 #include "ParticleIO/ParticleLayoutIO.h"
 #include "ParticleIO/XMLParticleIO.h"
@@ -52,7 +53,6 @@ bool XMLParticleParser::put(const string& fname_in,
 
   xmlDocPtr doc=NULL;
   xmlNsPtr ns;
-  xmlNodePtr cur;
       
   // build an XML tree from a the file;
   doc = xmlParseFile(fname_in.c_str());
@@ -68,40 +68,28 @@ bool XMLParticleParser::put(const string& fname_in,
   result = xmlXPathEvalExpression((const xmlChar*)"//particleset",context);
   
   if(xmlXPathNodeSetIsEmpty(result->nodesetval)) {
-
-    ERRORMSG(fname_in << " does not contain any ParticleSet")
-
+    app_error() << fname_in << " does not contain any ParticleSet" << endl;
   } else {
+    xmlNodePtr cur=result->nodesetval->nodeTab[0];
+    string fname, pformat;
+    OhmmsAttributeSet pAttrib;
+    pAttrib.add(fname,"src"); pAttrib.add(fname,"href");
+    pAttrib.add(pformat,"srctype");
+    pAttrib.put(cur);
 
-    cur = result->nodesetval->nodeTab[0];
-    string fname_ext(null_tag), pformat(null_tag);
+    if(fname.size()) pformat=getExtension(fname);
 
-    bool use_ext = false;
-    ///process attributes: type or format
-    xmlAttrPtr att = cur->properties;
-    while(!use_ext && att != NULL) {
-      string aname((const char*)(att->name));
-      if(aname == "src" || aname=="href") {
-	fname_ext = (const char*)(att->children->content);
-	pformat = getExtension(fname_ext);
-	use_ext = true;
-      } else if(aname == "srctype") {
-	pformat =(const char*)(att->children->content);
-	use_ext = true;
-      }
-      att = att->next;
-    }
-
-    if(use_ext) {
+    if(pformat.empty())
+      putSpecial(cur);
+    else
+    {
       if(pformat == "h5") {
 	HDFParticleParser ahandle(ref_);
 	ahandle.put(cur);
       } else {
-	ERRORMSG("Unknown file extension " << pformat << " of " << fname_ext)
+	app_error() << "  Unknown file extension " << pformat << endl;
       }
-    } else {
-      putSpecial(cur);
-    }
+    } 
   }
 
   //free local objects
@@ -120,23 +108,20 @@ bool XMLParticleParser::put(const string& fname_in,
 bool XMLParticleParser::put(xmlNodePtr cur) {
 
   ///process attributes: type or format
-  string fname("none"), pformat("xml");
-  xmlAttrPtr att = cur->properties;
-  while(att != NULL) {
-    string aname((const char*)(att->name));
-    if(aname == "src" || aname=="href") {
-      fname = (const char*)(att->children->content);
-      pformat = getExtension(fname);
-    } else if(aname == "srctype") {
-      pformat =(const char*)(att->children->content);
-    }
-    att = att->next;
-  }
+  string fname, pformat("xml");
+  OhmmsAttributeSet pAttrib;
+  pAttrib.add(fname,"src");
+  pAttrib.add(fname,"href");
+  pAttrib.add(pformat,"srctype");
+  pAttrib.put(cur);
 
-  if(fname == "none") 
+  if(fname.empty()) 
     return putSpecial(cur);
   else
+  {//overwrite the format
+    pformat = getExtension(fname);
     return put(fname,pformat);
+  }
 }
 
 
@@ -147,26 +132,17 @@ bool XMLParticleParser::put(xmlNodePtr cur) {
 bool XMLParticleParser::putSpecial(xmlNodePtr cur) {
 
   string pname("none");
-  xmlDocPtr doc = cur->doc;
+  //xmlDocPtr doc = cur->doc;
 
   //the number of particles that are initialized by <attrib/>
   int nat = 0;
-
   string randomizeR("no");
-  //process attributes of particleset
-  xmlAttrPtr att = cur->properties;
-  while(att != NULL) {
-    string aname((const char*)(att->name));
-    if(aname == "name") {
-      pname = (const char*)(att->children->content);
-    } else if(aname == "num" || aname == "size") {
-      nat = atoi((const char*)(att->children->content));
-    } else if(aname == "random") {
-      randomizeR = (const char*)(att->children->content);
-    }
-    att = att->next;
-  }
-  
+  OhmmsAttributeSet pAttrib;
+  pAttrib.add(randomizeR,"random");
+  pAttrib.add(nat,"size");
+  pAttrib.add(pname,"name");
+  pAttrib.put(cur);
+
   ///count the number of atom added one by one
   xmlNodePtr cur0 = cur->xmlChildrenNode;
 
@@ -184,21 +160,23 @@ bool XMLParticleParser::putSpecial(xmlNodePtr cur) {
       ntot++;	
       atom_ptr.push_back(cur0);
     } else if(cname == "group") {
-      nat_group.push_back(0);
-      if(xmlHasProp(cur0, (const xmlChar *) "size")) {
-	nat_group[ng] = atoi((const char*)(xmlGetProp(cur0, (const xmlChar *) "size")));  
-        ng_in += nat_group[ng];
-	ntot += nat_group[ng];
-      }
+      int nat_per_group=0;
+      OhmmsAttributeSet gAttrib;
+      gAttrib.add(nat_per_group,"size");
+      gAttrib.put(cur0);
+      nat_group.push_back(nat_per_group);
+      ng_in += nat_per_group;
+      ntot += nat_per_group;
       ng++;
     } else if(cname == attrib_tag) {
       int size_att = 0;
-      if(xmlHasProp(cur0, (const xmlChar *) "size")) {
-	size_att = atoi((const char*)(xmlGetProp(cur0, (const xmlChar *) "size")));  
-      }
+      OhmmsAttributeSet aAttrib;
+      aAttrib.add(size_att,"size");
+      aAttrib.put(cur0);
       if(size_att) {
 	if(size_att != nat) {
-	  WARNMSG("\tOverwriting the size of the particle by //particleset/attrib/@size=" << size_att)
+	  app_warning() << "\tOverwriting the size of the particle by //particleset/attrib/@size=" 
+            << size_att << endl;
 	  nat = size_att;
 	}
       }
@@ -218,7 +196,6 @@ bool XMLParticleParser::putSpecial(xmlNodePtr cur) {
   }
    
   if(ntot) {
-    //LOGMSG("\tCreating " << ntot << " particles for " << pname << " set")
     if(ng_in) {
       ref_.create(nat_group);
     } else {
@@ -229,97 +206,100 @@ bool XMLParticleParser::putSpecial(xmlNodePtr cur) {
     for(int iat=0;iat<ntot; iat++,nloci++) ref_.ID[iat]=nloci;
   }
   
-  bool expand = false;
   TinyVector<int,OHMMS_DIM> uc_grid(1);      
   
   SpeciesSet& tspecies(ref_.getSpeciesSet()); //SpeciesCollection::getSpecies();
-  cur = cur->xmlChildrenNode;
 
+  cur = cur->xmlChildrenNode;
   //reset the group counter
   ng = 0;  
   while (cur != NULL) {
     string cname((const char*)(cur->name));
     if(cname == "UnitCell" || cname == "unitcell") {
       LatticeParser lat(ref_.Lattice);
-      xmlNodePtr tcur = cur->xmlChildrenNode;
-      while(tcur != NULL) {
-	if (!xmlStrcmp(tcur->name, (const xmlChar *)"parameter") &&
-	    !xmlStrcmp(xmlGetProp(tcur, (const xmlChar *) "name"),
-		       (const xmlChar*)"uc_grid")) {
-	  expand = true;
-	  putContent(uc_grid,tcur);
-	}
-	tcur = tcur->next;
-      }
       lat.put(cur);
+      ParameterSet params;
+      params.add(uc_grid,"uc_grid","int");
+      params.put(cur);
     } else if (cname == attrib_tag) {
       getPtclAttrib(cur,nat,nloc);
-    } else  if (cname == "group") {
-      //adding a group consiting of a number of atoms of the same species
-      int sid
-	= tspecies.addSpecies((const char*)
-			       (xmlGetProp(cur, (const xmlChar *)"name")));
-
-      xmlNodePtr tcur = cur->xmlChildrenNode;
-      while(tcur != NULL) {
-	string tcname((const char*)tcur->name);
-	if(tcname == "parameter") {
-	  int iproperty 
-	    = tspecies.addAttribute((const char*)(xmlGetProp(tcur,(const xmlChar*)"name")));
-	  double ap;
-	  putContent(ap,tcur);
-	  tspecies(iproperty,sid) = ap;
-	} else if(nat_group[ng] && tcname == attrib_tag) { 
-	  getPtclAttrib(tcur,nat_group[ng],nloc);
-	}
-	tcur = tcur->next;
+    } else  if (cname == "group") { //found group
+      string sname;
+      OhmmsAttributeSet gAttrib;
+      gAttrib.add(sname,"name");
+      gAttrib.put(cur);
+      if(sname.size()) //only if name is found
+      {
+        int sid=tspecies.addSpecies(sname);
+        xmlNodePtr tcur = cur->xmlChildrenNode;
+        while(tcur != NULL) {
+          string tcname((const char*)tcur->name);
+          if(tcname == "parameter") {
+            string pname;
+            OhmmsAttributeSet pAttrib;
+            pAttrib.add(pname,"name");
+            pAttrib.put(tcur);
+            if(pname.size())
+            {
+              int iproperty=tspecies.addAttribute(pname);
+              double ap;
+              putContent(ap,tcur);
+              tspecies(iproperty,sid) = ap;
+            }
+          } else if(nat_group[ng] && tcname == attrib_tag) { 
+            getPtclAttrib(tcur,nat_group[ng],nloc);
+          }
+          tcur = tcur->next;
+        }
+        for(int iat=0; iat<nat_group[ng]; iat++, nloc++)  ref_.GroupID[nloc] = sid;
+        ng++;
       }
-      for(int iat=0; iat<nat_group[ng]; iat++, nloc++)  ref_.GroupID[nloc] = sid;
-      ng++;
     }
     cur = cur->next;
   }
 
-  //have read from <attrib/>'s and <group/>'s. Time to add <atom/>'s
-  nloc += nat;
-  for(int ia=0; ia<atom_ptr.size(); ia++,nloc++) {
-    cur = atom_ptr[ia];
-    int sid
-      = tspecies.addSpecies((const char*)
-			      (xmlGetProp(cur, (const xmlChar *)"name")));
-    att = cur->properties;
-    int inunit = 0; //ref_.R.getUnit();
-    while(att!= NULL) {
-      string aname((const char*)(att->name));
-      if(aname == condition_tag) {
-	inunit =atoi((const char*)(att->children->content));
-      }
-      att = att->next;
-    }
-    
-    Particle_t::SingleParticlePos_t pos;
-    istringstream stream((const char*)
-			 (xmlNodeListGetString(doc, cur->xmlChildrenNode, 1)));
-    if(inunit == ref_.R.getUnit()) {
-      stream >> ref_.R[nloc]; 
-    } else {
-      stream >> pos;
-      if(inunit) 
-	ref_.R[nloc] = ref_.Lattice.toCart(pos);
-      else 
-	ref_.R[nloc] = ref_.Lattice.toUnit(pos);
-    }
-    ref_.ID[nloc] = nloc; 
-    ref_.GroupID[nloc] = sid;
-  }
+  //Disable atom 
+  ////have read from <attrib/>'s and <group/>'s. Time to add <atom/>'s
+  //nloc += nat;
+  //for(int ia=0; ia<atom_ptr.size(); ia++,nloc++) {
+  //  cur = atom_ptr[ia];
+  //  int inunit=0;
+  //  string sname;
+  //  OhmmsAttributeSet aAttrib;
+  //  aAttrib.add(inunit,condition_tag);
+  //  aAttrib.add(sname,"name");
+  //  aAttrib.put(cur);
+  //  if(sname.empty())
+  //  {
+  //    app_error() << "  Missing atom/@name. Fatal error." << endl;
+  //    return false;
+  //  }
+  //  int sid= tspecies.addSpecies(sname);
+  //  ParticleSet::SingleParticlePos_t pos;
+  //  putContent(pos,cur);
+  //  if(inunit == ref_.R.getUnit())
+  //    ref_.R[nloc]=pos;
+  //  else
+  //  {
+  //    if(inunit) 
+  //      ref_.R[nloc]=ref_.Lattice.toCart(pos);
+  //    else
+  //      ref_.R[nloc]=ref_.Lattice.toUnit(pos);
+  //  }
+  //  ref_.ID[nloc] = nloc; 
+  //  ref_.GroupID[nloc] = sid;
+  //}
 
-  if(expand) {
+  int ngtot=uc_grid[0];
+  for(int idim=1; idim<OHMMS_DIM; idim++) ngtot*=uc_grid[idim];
+  if(ngtot>1) {
     ExpandSuperCell(ref_,uc_grid);
     //ref_.Lattice.print(cout);
   }
   
   if(randomizeR == "yes") {
-    if(ref_.Lattice.BoxBConds[0]) {
+    if(ref_.Lattice.SuperCellEnum)
+    { 
       makeUniformRandom(ref_.R);
       ref_.R.setUnit(PosUnit::LatticeUnit);
       ref_.convert2Cart(ref_.R);
@@ -344,61 +324,66 @@ bool XMLParticleParser::putSpecial(xmlNodePtr cur) {
   return true;
 }
 
+template<typename PAT>
+struct ParticleAttribXmlNode
+{
+  PAT& ref_;
+
+  inline ParticleAttribXmlNode(PAT& a):ref_(a){}
+  bool put(xmlNodePtr cur, int n_in, int start)
+  {
+    typedef typename PAT::Type_t data_type;
+    std::vector<data_type> data_in(n_in);
+    putContent(data_in,cur);
+    std::copy(data_in.begin(),data_in.end(),ref_.begin()+start);
+    return true;
+  }
+};
+
 void XMLParticleParser::getPtclAttrib(xmlNodePtr cur, int nat, int nloc) {
 
-  xmlDocPtr doc = cur->doc;
   string oname, otype;
-  int utype = 0;
-  xmlAttrPtr att = cur->properties;
-  while(att != NULL) {
-    string aname((const char*)(att->name));
-    const char* vname = (const char*)(att->children->content);
-    if(aname == "name") { oname = vname;} 
-    else if(aname == datatype_tag) {otype = vname;}
-    else if(aname == condition_tag) {utype = atoi(vname);}
-    att = att->next;
-  }
+  int utype=0;
+  int size_in=0;
+  OhmmsAttributeSet pAttrib;
+  pAttrib.add(otype,datatype_tag);//datatype
+  pAttrib.add(oname,"name");//name
+  pAttrib.add(utype,condition_tag);//condition
+  pAttrib.add(size_in,"size");//size
+  pAttrib.put(cur);
+
   if(oname.empty() || otype.empty()) {
-    ERRORMSG("No default value is set for name and type attributes")
+    app_error() << "   Missing attrib/@name or attrib/@datatype " << endl;
+    app_error() << "     <attrib name=\"aname\"  datatype=\"atype\"/>" << endl;
     return;
   }
-      
-  istringstream  stream((const char*)
-			(xmlNodeListGetString(doc, cur->xmlChildrenNode, 1)));
+
   int t_id = ref_.getAttribType(otype);
   if(oname == ionid_tag) { 
     if(otype == stringtype_tag) {
       int nloci = nloc;
-      string a;   
-      for(int iat=0; iat<nat; iat++,nloci++) {
-	stream >> a;
-	ref_.GroupID[nloci] = ref_.getSpeciesSet().addSpecies(a);
+      vector<string> d_in(nat);
+      putContent(d_in,cur);
+      for(int iat=0; iat<d_in.size(); iat++,nloci++) {
+        ref_.GroupID[nloci] = ref_.getSpeciesSet().addSpecies(d_in[iat]);
       }
     } else {
-      int nloci = nloc;
-      for(int iat=0; iat<nat; iat++,nloci++) stream >> ref_.GroupID[nloci];
+      ParticleAttribXmlNode<ParticleIndex_t> a(ref_.GroupID);
+      a.put(cur,nat,nloc);
     }
   } else {
     if(t_id == PA_IndexType) {
-      ParticleIndex_t& itmp = *(ref_.getIndexAttrib(oname));
-      itmp.setUnit(utype);
-      int nloci = nloc;
-      for(int iat=0; iat<nat; iat++,nloci++) stream >> itmp[nloci];
+      ParticleAttribXmlNode<ParticleIndex_t> a(*(ref_.getIndexAttrib(oname)));
+      a.put(cur,nat,nloc);
     } else if(t_id == PA_ScalarType) {
-      ParticleScalar_t& stmp = *(ref_.getScalarAttrib(oname));
-      stmp.setUnit(utype);
-      int nloci = nloc;
-      for(int iat=0; iat<nat; iat++,nloci++) stream >> stmp[nloci];
+      ParticleAttribXmlNode<ParticleScalar_t> a(*(ref_.getScalarAttrib(oname)));
+      a.put(cur,nat,nloc);
     } else if(t_id == PA_PositionType) {
-      ParticlePos_t& ptmp = *(ref_.getVectorAttrib(oname));
-      ptmp.setUnit(utype);
-      int nloci = nloc;
-      for(int iat=0; iat<nat; iat++,nloci++) stream >> ptmp[nloci];
+      ParticleAttribXmlNode<ParticlePos_t> a(*(ref_.getVectorAttrib(oname)));
+      a.put(cur,nat,nloc);
     } else if(t_id == PA_TensorType) {
-      ParticleTensor_t& itmp = *(ref_.getTensorAttrib(oname));
-      itmp.setUnit(utype);
-      int nloci = nloc;
-      for(int iat=0; iat<nat; iat++,nloci++) stream >> itmp[nloci];
+      ParticleAttribXmlNode<ParticleTensor_t> a(*(ref_.getTensorAttrib(oname)));
+      a.put(cur,nat,nloc);
     }
   }
 }
