@@ -84,7 +84,7 @@ namespace qmcplusplus {
     enum {WalkerIndex=0, SourceIndex, VisitorIndex, PairIndex};
 
     typedef std::vector<IndexType>       IndexVectorType;
-    typedef TempDisplacement<RealType,3> TempDistType;
+    typedef TempDisplacement<RealType,DIM> TempDistType;
     typedef PooledData<RealType>         BufferType;
 
     /** status of the distance table
@@ -100,7 +100,7 @@ namespace qmcplusplus {
     IndexType activePtcl;
 
     ///size of indicies
-    TinyVector<IndexType,3> N;
+    TinyVector<IndexType,DIM> N;
 
     std::string Name;
 

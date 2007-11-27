@@ -38,6 +38,8 @@ namespace qmcplusplus {
     
   public:
     
+    enum {DIM=ParticleSet::DIM};
+
     typedef ParticleSet::ParticleLayout_t    ParticleLayout_t;
     typedef ParticleSet::Scalar_t            RealType;
     typedef ParticleSet::SingleParticlePos_t PosType;
