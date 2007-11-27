@@ -106,7 +106,15 @@ namespace qmcplusplus {
     for(int j=0; j< OrbitalSetSize; j++, tptr+=PW_MAXINDEX) {
       psi[j]   =tptr[PW_VALUE].real();
       d2psi[j] =tptr[PW_LAP].real();
+#if OHMMS_DIM==3
       dpsi[j]  =GradType(tptr[PW_GRADX].real(),tptr[PW_GRADY].real(),tptr[PW_GRADZ].real());
+#elif OHMMS_DIM==2
+      dpsi[j]  =GradType(tptr[PW_GRADX].real(),tptr[PW_GRADY].real());
+#elif OHMMS_DIM==1
+      dpsi[j]  =GradType(tptr[PW_GRADX].real());
+#else
+  #error "Only physical dimensions 1/2/3 are supported."
+#endif
     }
   }
     
@@ -121,7 +129,15 @@ namespace qmcplusplus {
       for(int j=0; j< OrbitalSetSize; j++,tptr+=PW_MAXINDEX) {
         logdet(j,i)  = tptr[PW_VALUE].real();
         d2logdet(i,j)= tptr[PW_LAP].real();
+#if OHMMS_DIM==3
         dlogdet(i,j) = GradType(tptr[PW_GRADX].real(),tptr[PW_GRADY].real(),tptr[PW_GRADZ].real());
+#elif OHMMS_DIM==2
+        dlogdet(i,j) = GradType(tptr[PW_GRADX].real(),tptr[PW_GRADY].real());
+#elif OHMMS_DIM==1
+        dlogdet(i,j) = GradType(tptr[PW_GRADX].real());
+#else
+  #error "Only physical dimensions 1/2/3 are supported."
+#endif
       }
     }
   }
