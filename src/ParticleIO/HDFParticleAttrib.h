@@ -78,24 +78,24 @@ typedef ParticleAttrib<double> ArrayType_t;
 };
 
 // specialization for ParticleAttrib<double,3> vector type
-template<>
-struct HDFAttribIO<ParticleAttrib<TinyVector<double,3> > >: public HDFAttribIOBase 
+template<unsigned D>
+struct HDFAttribIO<ParticleAttrib<TinyVector<double,D> > >: public HDFAttribIOBase 
 {
 
-  typedef TinyVector<double,3> SingleParticlePos_t;
+  typedef TinyVector<double,D> SingleParticlePos_t;
   typedef ParticleAttrib<SingleParticlePos_t> ArrayType_t;
 
   ArrayType_t&  ref;
 
   HDFAttribIO<ArrayType_t>(ArrayType_t& a):ref(a) { }
 
-  ~HDFAttribIO<ParticleAttrib<TinyVector<double,3> > > () { }
+  ~HDFAttribIO<ParticleAttrib<TinyVector<double,D> > > () { }
 
   void write(hid_t  hdfFile, const char* name) {
 
     hsize_t dims[2];
     dims[0] = ref.size();
-    dims[1] = 3;
+    dims[1] = D;
     hid_t dataspace  = H5Screate_simple(2, dims, NULL);
     hid_t dataset =  
       H5Dcreate(hdfFile, name, H5T_NATIVE_DOUBLE, dataspace, H5P_DEFAULT);
