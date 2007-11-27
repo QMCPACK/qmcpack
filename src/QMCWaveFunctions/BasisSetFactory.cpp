@@ -15,14 +15,15 @@
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 #include "QMCWaveFunctions/BasisSetFactory.h"
-#include "QMCWaveFunctions/MolecularOrbitals/NGOBuilder.h"
-#include "QMCWaveFunctions/MolecularOrbitals/GTOBuilder.h"
-#include "QMCWaveFunctions/MolecularOrbitals/STOBuilder.h"
-#include "QMCWaveFunctions/MolecularOrbitals/MolecularBasisBuilder.h"
-//#include "QMCWaveFunctions/SplineSetBuilder.h"
-#include "QMCWaveFunctions/TricubicBsplineSetBuilder.h"
-#ifdef HAVE_EINSPLINE
-#include "QMCWaveFunctions/EinsplineSetBuilder.h"
+#if OHMMS_DIM==3
+  #include "QMCWaveFunctions/MolecularOrbitals/NGOBuilder.h"
+  #include "QMCWaveFunctions/MolecularOrbitals/GTOBuilder.h"
+  #include "QMCWaveFunctions/MolecularOrbitals/STOBuilder.h"
+  #include "QMCWaveFunctions/MolecularOrbitals/MolecularBasisBuilder.h"
+  #include "QMCWaveFunctions/TricubicBsplineSetBuilder.h"
+  #ifdef HAVE_EINSPLINE
+  #include "QMCWaveFunctions/EinsplineSetBuilder.h"
+  #endif
 #endif
 #include "Message/Communicate.h"
 #include "OhmmsData/AttributeSet.h"
@@ -62,6 +63,7 @@ namespace qmcplusplus {
     //  bb = new SplineSetBuilder(targetPtcl,ptclPool);
     //} 
     //else if(typeOpt == "bspline")
+#if OHMMS_DIM==3
     if(typeOpt == "bspline" || typeOpt== "spline")
     {
       app_log() << "  TricubicBsplineSetBuilder: b-spline on 3D TriCubicGrid " << endl;
@@ -109,7 +111,6 @@ namespace qmcplusplus {
         }
       }
     }
-
     if(bb) {
       bb->put(cur);
       basisBuilder.push_back(bb);
@@ -118,6 +119,7 @@ namespace qmcplusplus {
       app_error() << "  Failed to create a basis set. Stop at BasisSetFactory::createBasisSet" << endl;
       OHMMS::Controller->abort();
     }
+#endif
   }
 
   SPOSetBase* BasisSetFactory::createSPOSet(xmlNodePtr cur) {

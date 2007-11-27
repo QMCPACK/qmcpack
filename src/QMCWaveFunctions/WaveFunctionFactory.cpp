@@ -21,13 +21,18 @@
 #include "QMCWaveFunctions/WaveFunctionFactory.h"
 #include "QMCWaveFunctions/Jastrow/JastrowBuilder.h"
 #include "QMCWaveFunctions/Fermion/SlaterDetBuilder.h"
+
 #include "QMCWaveFunctions/PlaneWave/PWOrbitalBuilder.h"
 #if defined(QMC_COMPLEX)
 #include "QMCWaveFunctions/ElectronGas/ElectronGasComplexOrbitalBuilder.h"
 #else
 #include "QMCWaveFunctions/ElectronGas/ElectronGasOrbitalBuilder.h"
+#endif
+
+#if OHMMS_DIM==3 && !defined(QMC_COMPLEX)
 #include "QMCWaveFunctions/AGPDeterminantBuilder.h"
 #endif
+
 #include "OhmmsData/AttributeSet.h"
 namespace qmcplusplus {
   WaveFunctionFactory::WaveFunctionFactory(ParticleSet* qp, PtclPoolType& pset): 
@@ -69,6 +74,7 @@ namespace qmcplusplus {
         success = jbuilder->put(cur);
         addNode(jbuilder,cur);
       }
+#if OHMMS_DIM==3
       else if(cname == "agp") 
       {
 #if defined(QMC_COMPLEX)
@@ -80,6 +86,7 @@ namespace qmcplusplus {
         addNode(agpbuilder,cur);
 #endif
       } 
+#endif
       if(attach2Node) xmlAddChild(myNode,xmlCopyNode(cur,1));
       cur = cur->next;
     }
