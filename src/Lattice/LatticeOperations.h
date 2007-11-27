@@ -8,7 +8,6 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
@@ -170,6 +169,7 @@ struct CartesianNorm2<TinyVector<T1,3>,Tensor<T2,3>,true>
     return a[0]*X[0]*b[0]+a[1]*X[4]*b[1]+a[2]*X[8]*b[2];
   }
 };
+
 
 }
 
