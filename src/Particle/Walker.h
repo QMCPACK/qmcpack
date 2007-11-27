@@ -47,6 +47,8 @@ namespace qmcplusplus {
   template<class T, class PA, class GA=PA>
   struct Walker {
     
+    enum {DIM=PA::Type_t::Size};
+
     ///typedef for the property container, fixed size
     typedef Matrix<T>      PropertyContainer_t;
     typedef PooledData<T>  Buffer_t;
@@ -199,7 +201,7 @@ namespace qmcplusplus {
      * ID, Age, Properties, R, Drift, DataSet is packed
      */
     inline int byteSize() {
-      return 2*sizeof(int)+(Properties.size()+OHMMS_DIM*2*R.size()+DataSet.size())*sizeof(T);
+      return 2*sizeof(int)+(Properties.size()+DIM*2*R.size()+DataSet.size())*sizeof(T);
     }
 
     template<class Msg>
