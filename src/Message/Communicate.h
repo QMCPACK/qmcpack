@@ -30,6 +30,9 @@ struct CommunicatorTraits {
   typedef MPI_Request      request;
   typedef OOMPI_Intra_comm intra_comm_type;
 };
+#define APP_ABORT(msg) \
+  cerr << "Fatal Error. Aborting at " << msg << endl; OOMPI_COMM_WORLD.Abort()
+
 #else
 struct CommunicatorTraits {
   typedef int  mpi_comm_type;
@@ -37,6 +40,10 @@ struct CommunicatorTraits {
   typedef int  request;
   typedef int  intra_comm_type;
 };
+
+#define APP_ABORT(msg) \
+  cerr << "Fatal Error. Aborting at " << msg << endl; abort()
+
 #endif
 
 #include <string>
