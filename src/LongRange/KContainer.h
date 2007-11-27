@@ -5,14 +5,6 @@
 #include "Utilities/PooledData.h"
 #include "Utilities/IteratorUtility.h"
 #include "Utilities/OhmmsInfo.h"
-#if !defined(HAVE_SINCOS)
-template<typename T> inline void sincos(T a, T* restrict s, T*  restrict c)
-{
-  *s=std::sin(a);
-  *c=std::cos(a);
-}
-#endif
-
 namespace qmcplusplus {
 
   /** @ingroup longrange
