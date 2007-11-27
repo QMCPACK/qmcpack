@@ -159,8 +159,8 @@ namespace qmcplusplus {
     bool atGamma= (dot(TwistAngle,TwistAngle)<numeric_limits<RealType>::epsilon());
     bool localize = myParam->Rcut>0.0;
     RealType offdiag=0.0;
-    for(int idim=0; idim<OHMMS_DIM; idim++)
-      for(int jdim=0; jdim<OHMMS_DIM; jdim++)
+    for(int idim=0; idim<DIM; idim++)
+      for(int jdim=0; jdim<DIM; jdim++)
       {
         if(idim != jdim) offdiag+=abs(targetPtcl.Lattice.R(idim,jdim));
       }
@@ -312,6 +312,7 @@ namespace qmcplusplus {
       }
     }
 
+    //TESTING BC
     if(OpenEndGrid)
       activeBasis->setGrid(LowerBox[0],UpperBox[0], LowerBox[1],UpperBox[1],LowerBox[2],UpperBox[2],
           BoxGrid[0],BoxGrid[1],BoxGrid[2],
@@ -364,7 +365,7 @@ namespace qmcplusplus {
 //      int nc=1;
 //      int nat=targetPtcl.getTotalNum();
 //      int nup=nat/2;
-//      HEGGrid<RealType,OHMMS_DIM> egGrid(targetPtcl.Lattice);
+//      HEGGrid<RealType,DIM> egGrid(targetPtcl.Lattice);
 //      int nkpts=(nup-1)/2;
 //
 //      app_log() << "Number of kpoints " << nkpts << endl;

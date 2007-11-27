@@ -277,7 +277,7 @@ namespace qmcplusplus {
 
     //append current gradients and laplacians to the buffer
     NumPtcls = P.getTotalNum();
-    TotalDim = OHMMS_DIM*NumPtcls;
+    TotalDim = PosType::Size*NumPtcls;
 
     buf.add(&(P.G[0][0]), &(P.G[0][0])+TotalDim);
     buf.add(&(P.L[0]), &(P.L[P.getTotalNum()]));

@@ -38,8 +38,8 @@ namespace qmcplusplus {
   {
 
     typedef TricubicBsplineGrid<ValueType>  GridType;
-    typedef Array<ValueType,OHMMS_DIM>      StorageType;
-    typedef CrystalLattice<RealType,OHMMS_DIM> UnitCellType;
+    typedef Array<ValueType,DIM>      StorageType;
+    typedef CrystalLattice<RealType,DIM> UnitCellType;
     ///boolean 
     bool Orthorhombic;
     ///number of orbitals
@@ -53,9 +53,9 @@ namespace qmcplusplus {
     ///TwistAngle in Cartesian Coordinate
     PosType TwistAngle;
     ///number of copies for each direction: only valid with localized orbitals
-    TinyVector<int,OHMMS_DIM> Ncopy;
+    TinyVector<int,DIM> Ncopy;
     ///metric tensor to handle generic unitcell
-    Tensor<RealType,OHMMS_DIM> GGt;
+    Tensor<RealType,DIM> GGt;
     ///Lattice
     UnitCellType Lattice;
     ///unitcell for tiling
@@ -81,7 +81,7 @@ namespace qmcplusplus {
     }
 
     /** set the lattice of the spline sets */
-    void setLattice(const CrystalLattice<RealType,OHMMS_DIM>& lat);
+    void setLattice(const CrystalLattice<RealType,DIM>& lat);
     /** resize the internal storage P and Centers
      * @param norbs number of orbitals of this set
      */

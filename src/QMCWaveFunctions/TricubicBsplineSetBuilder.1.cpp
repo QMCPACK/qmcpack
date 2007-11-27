@@ -38,7 +38,7 @@ namespace qmcplusplus {
     {
       bool truncate = (myParam->Rcut>0.0);
       int norb=occSet.size()/degeneracy;
-      typedef Array<Tin,OHMMS_DIM> InArrayType;
+      typedef Array<Tin,DIM> InArrayType;
       InArrayType inTemp(BoxGrid[0],BoxGrid[1],BoxGrid[2]);
       StorageType inData(BoxGrid[0],BoxGrid[1],BoxGrid[2]);
 
@@ -111,7 +111,7 @@ namespace qmcplusplus {
 
 #pragma omp parallel
     {
-      typedef Array<Tin,OHMMS_DIM> InArrayType;
+      typedef Array<Tin,DIM> InArrayType;
       InArrayType inTemp(BoxGrid[0],BoxGrid[1],BoxGrid[2]);
       StorageType inData(BoxGrid[0],BoxGrid[1],BoxGrid[2]);
 

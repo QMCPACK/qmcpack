@@ -65,7 +65,7 @@ namespace qmcplusplus {
     typedef typename OrbitalSetTraits<value_type>::GradVector_t  GradVector_t;
     typedef typename OrbitalSetTraits<value_type>::GradMatrix_t  GradMatrix_t;
     typedef SphericalTensor<RealType,PosType>           SphericalHarmonics_t;
-    typedef VarRegistry<OHMMS_PRECISION>                         OptimizableSetType;
+    typedef VarRegistry<RealType>                       OptimizableSetType;
 
     ///size of the basis set
     IndexType BasisSetSize;

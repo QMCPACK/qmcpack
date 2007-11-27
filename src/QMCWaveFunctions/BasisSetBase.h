@@ -45,7 +45,7 @@ namespace qmcplusplus {
     typedef typename OrbitalSetTraits<T>::ValueMatrix_t ValueMatrix_t;
     typedef typename OrbitalSetTraits<T>::GradVector_t  GradVector_t;
     typedef typename OrbitalSetTraits<T>::GradMatrix_t  GradMatrix_t;
-    typedef VarRegistry<OHMMS_PRECISION> OptimizableSetType;
+    typedef VarRegistry<RealType> OptimizableSetType;
 
     ///size of the basis set
     IndexType BasisSetSize;
