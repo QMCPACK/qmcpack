@@ -2,19 +2,24 @@ SET(HAMSRCS
   QMCHamiltonian.cpp
   CoulombPBCAATemp.cpp
   CoulombPBCABTemp.cpp
-  LocalCorePolPotential.cpp
   HamiltonianFactory.cpp
-  LocalECPotential.cpp
-  NonLocalECPComponent.cpp
-  NonLocalECPotential.cpp
-  ECPotentialBuilder.cpp
-  ECPComponentBuilder.cpp
-  ECPComponentBuilder.1.cpp
-  ECPComponentBuilder.2.cpp
   NonLocalTOperator.cpp
   NumericalRadialPotential.cpp
 )
 #  FSAtomPseudoPot.cpp
+
+IF(OHMMS_DIM MATCHES 3)
+  SET(HAMSRCS ${HAMSRCS}
+      LocalCorePolPotential.cpp
+      LocalECPotential.cpp
+      NonLocalECPComponent.cpp
+      NonLocalECPotential.cpp
+      ECPotentialBuilder.cpp
+      ECPComponentBuilder.cpp
+      ECPComponentBuilder.1.cpp
+      ECPComponentBuilder.2.cpp
+     )
+ENDIF(OHMMS_DIM MATCHES 3)
 
 IF(HAVE_LIBFFTW)
   SET(HAMSRCS ${HAMSRCS}

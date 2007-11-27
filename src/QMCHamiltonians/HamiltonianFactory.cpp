@@ -22,9 +22,11 @@
 #include "QMCHamiltonians/BareKineticEnergy.h"
 #include "QMCHamiltonians/CoulombPotential.h"
 #include "QMCHamiltonians/IonIonPotential.h"
+#include "QMCHamiltonians/NumericalRadialPotential.h"
+#if OHMMS_DIM == 3
 #include "QMCHamiltonians/LocalCorePolPotential.h"
 #include "QMCHamiltonians/ECPotentialBuilder.h"
-#include "QMCHamiltonians/NumericalRadialPotential.h"
+#endif
 #if defined(HAVE_LIBFFTW)
 #include "QMCHamiltonians/ModInsKineticEnergy.h"
 #include "QMCHamiltonians/MomentumDistribution.h"
@@ -301,6 +303,7 @@ namespace qmcplusplus {
   void 
   HamiltonianFactory::addPseudoPotential(xmlNodePtr cur) {
 
+#if OHMMS_DIM == 3
     string src("i"),title("PseudoPot"),wfname("invalid"),format("xml");
 
     OhmmsAttributeSet pAttrib;
@@ -348,12 +351,13 @@ namespace qmcplusplus {
     app_log() << endl << "  ECPotential builder for pseudopotential "<< endl;
     ECPotentialBuilder ecp(*targetH,*ion,*targetPtcl,*psi);
     ecp.put(cur);
+#endif
     //}
   }
 
   void 
   HamiltonianFactory::addCorePolPotential(xmlNodePtr cur) {
-
+#if OHMMS_DIM == 3
     string src("i"),title("CorePol");
 
     OhmmsAttributeSet pAttrib;
@@ -371,6 +375,7 @@ namespace qmcplusplus {
     QMCHamiltonianBase* cpp=(new LocalCorePolPotential(*ion,*targetPtcl));
     cpp->put(cur); 
     targetH->addOperator(cpp, title);
+#endif
   }
 
   void 
