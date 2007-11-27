@@ -43,6 +43,11 @@ namespace qmcplusplus {
       makeCopyBead(a); 
     }
 
+    inline ~Bead()
+    {
+      delete_iter(Gradients.begin(),Gradients.end());
+    }
+
     inline Bead(const Walker_t& a){
       makeCopy(a);
       int rows=Properties.rows();
