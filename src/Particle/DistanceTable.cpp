@@ -30,7 +30,19 @@ map<string,DistanceTableData*>  DistanceTable::TableMap;
 ParticleSet::ParticleLayout_t* DistanceTable::SimulationCell=0;
 /**@}*/
 
-const int TwoPowerD=8;
+template<int N,unsigned D>
+  struct PowerOfN
+  {
+    enum {value=N*PowerOfN<N,D-1>::value};
+  };
+
+template<int N>
+  struct PowerOfN<N,0>
+  {
+    enum {value=1};
+  };
+
+const int TwoPowerD=PowerOfN<2,OHMMS_DIM>::value;
 
 /** common definition of a distance 
  *
@@ -41,17 +53,10 @@ const int TwoPowerD=8;
 template<class T, unsigned D, int SC>
 struct DTD_BConds 
 {
-  inline static T apply(const CrystalLattice<T,3>& lat, TinyVector<T,3>& a) {
+  inline static T apply(const CrystalLattice<T,D>& lat, TinyVector<T,D>& a) {
     return dot(a,a);
   }
 };
-
-//template<class T>
-//struct DTD_BConds<T,3,SUPERCELL_OPEN> {
-//  inline static T apply(const CrystalLattice<T,3>& lat, TinyVector<T,3>& a) {
-//    return a[0]*a[0]+a[1]*a[1]+a[2]*a[2];
-//  }
-//};
 
 /** specialization for a periodic 3D cell
  */
@@ -102,6 +107,43 @@ struct DTD_BConds<T,3,SUPERCELL_BULK+TwoPowerD> {
     T z=modf(a[2]*lat.OneOverLength[2],&dmy2); a[2]=lat.Length[2]*(z-static_cast<int>(z*2.0));
 #endif
     return a[0]*a[0]+a[1]*a[1]+a[2]*a[2];
+  }
+};
+
+/** specialization for a periodic 2D cell
+ */
+template<class T>
+struct DTD_BConds<T,2,SUPERCELL_BULK> {
+  inline static T apply(const CrystalLattice<T,2>& lat, TinyVector<T,2>& a) {
+    TinyVector<T,2> ar(lat.toUnit(a));
+#if defined(HAVE_STD_ROUND)
+    ar[0]=ar[0]-round(ar[0]);
+    ar[1]=ar[1]-round(ar[1]);
+#else
+    T dmy0,dmy1;
+    T x=modf(ar[0],&dmy0); ar[0]=x-static_cast<int>(x*2.0);
+    T y=modf(ar[1],&dmy1); ar[1]=y-static_cast<int>(y*2.0);
+#endif
+    a=lat.toCart(ar);
+    return a[0]*a[0]+a[1]*a[1];
+  }
+};
+
+/** specialization for a periodic 2D orthorombic cell
+ */
+template<class T>
+struct DTD_BConds<T,2,SUPERCELL_BULK+TwoPowerD> {
+  inline static T apply(const CrystalLattice<T,2>& lat, TinyVector<T,2>& a) 
+  {
+#if defined(HAVE_STD_ROUND)
+    T x=a[0]*lat.OneOverLength[0]; a[0]=lat.Length[0]*(x-round(x));
+    T y=a[1]*lat.OneOverLength[1]; a[1]=lat.Length[1]*(y-round(y));
+#else
+    T dmy0,dmy1;
+    T x=modf(a[0]*lat.OneOverLength[0],&dmy0); a[0]=lat.Length[0]*(x-static_cast<int>(x*2.0));
+    T y=modf(a[1]*lat.OneOverLength[1],&dmy1); a[1]=lat.Length[1]*(y-static_cast<int>(y*2.0));
+#endif
+    return a[0]*a[0]+a[1]*a[1];
   }
 };
 
@@ -173,15 +215,15 @@ DistanceTable::add(ParticleSet& s, const char* aname) {
   if(it == TableMap.end()) {
     //LOGMSG("Distance table " << newname << " is created.")
     DistanceTableData* dt=0;
-    //if(SuperCellType<OHMMS_DIM>::apply(s.Lattice.BoxBConds) == SUPERCELL_OPEN) 
+    //if(SuperCellType<DIM>::apply(s.Lattice.BoxBConds) == SUPERCELL_OPEN) 
     if(s.Lattice.SuperCellEnum == SUPERCELL_OPEN)
-      dt = new SymmetricDTD<DTD_BConds<OHMMS_PRECISION,OHMMS_DIM,SUPERCELL_OPEN> >(s,s);
+      dt = new SymmetricDTD<DTD_BConds<RealType,DIM,SUPERCELL_OPEN> >(s,s);
     else
     {
       if(s.Lattice.DiagonalOnly)
-        dt = new SymmetricDTD<DTD_BConds<OHMMS_PRECISION,OHMMS_DIM,SUPERCELL_BULK+TwoPowerD> >(s,s);
+        dt = new SymmetricDTD<DTD_BConds<RealType,DIM,SUPERCELL_BULK+TwoPowerD> >(s,s);
       else
-        dt = new SymmetricDTD<DTD_BConds<OHMMS_PRECISION,OHMMS_DIM,SUPERCELL_BULK> >(s,s);
+        dt = new SymmetricDTD<DTD_BConds<RealType,DIM,SUPERCELL_BULK> >(s,s);
     }
 
     //set the name of the table
@@ -217,15 +259,15 @@ DistanceTable::add(const ParticleSet& s, ParticleSet& t, const char* aname) {
   ///the named pair does not exist, add a new asymmetric metrics
   if(it == TableMap.end()) {
     DistanceTableData* dt=0;
-    //if(SuperCellType<OHMMS_DIM>::apply(s.Lattice.BoxBConds) == SUPERCELL_OPEN) 
+    //if(SuperCellType<DIM>::apply(s.Lattice.BoxBConds) == SUPERCELL_OPEN) 
     if(s.Lattice.SuperCellEnum == SUPERCELL_OPEN)
-      dt = new AsymmetricDTD<DTD_BConds<OHMMS_PRECISION,OHMMS_DIM,SUPERCELL_OPEN> >(s,t);
+      dt = new AsymmetricDTD<DTD_BConds<RealType,DIM,SUPERCELL_OPEN> >(s,t);
     else 
     {
       if(s.Lattice.DiagonalOnly)
-        dt = new AsymmetricDTD<DTD_BConds<OHMMS_PRECISION,OHMMS_DIM,SUPERCELL_BULK+TwoPowerD> >(s,t);
+        dt = new AsymmetricDTD<DTD_BConds<RealType,DIM,SUPERCELL_BULK+TwoPowerD> >(s,t);
       else
-        dt = new AsymmetricDTD<DTD_BConds<OHMMS_PRECISION,OHMMS_DIM,SUPERCELL_BULK> >(s,t);
+        dt = new AsymmetricDTD<DTD_BConds<RealType,DIM,SUPERCELL_BULK> >(s,t);
     }
 
     //set the name of the table
