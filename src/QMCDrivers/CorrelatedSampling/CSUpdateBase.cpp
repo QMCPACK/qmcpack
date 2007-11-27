@@ -122,7 +122,7 @@ namespace qmcplusplus {
         RealType wgt=1.0/sumratio[ipsi];
         thisWalker.Properties(ipsi,UMBRELLAWEIGHT)=wgt;
         //thisWalker.Drift += wgt*psi[ipsi]->G;
-        PAOps<RealType,OHMMS_DIM>::axpy(wgt,Psi1[ipsi]->G,thisWalker.Drift);
+        PAOps<RealType,DIM>::axpy(wgt,Psi1[ipsi]->G,thisWalker.Drift);
       }
       thisWalker.Drift *= Tau;
       ++it;++iw;
@@ -191,7 +191,7 @@ namespace qmcplusplus {
         RealType wgt=1.0/sumratio[ipsi];
         thisWalker.Properties(ipsi,UMBRELLAWEIGHT)=wgt;
         //thisWalker.Drift += wgt*psi[ipsi]->G;
-        PAOps<RealType,OHMMS_DIM>::axpy(wgt,Psi1[ipsi]->G,thisWalker.Drift);
+        PAOps<RealType,DIM>::axpy(wgt,Psi1[ipsi]->G,thisWalker.Drift);
       }
       thisWalker.Drift *= Tau;
       ++it;++iw;
@@ -239,7 +239,7 @@ namespace qmcplusplus {
         RealType wgt=1.0/sumratio[ipsi];
         thisWalker.Properties(ipsi,UMBRELLAWEIGHT)=wgt;
         //thisWalker.Drift += wgt*psi[ipsi]->G;
-        PAOps<RealType,OHMMS_DIM>::axpy(wgt,Psi1[ipsi]->G,thisWalker.Drift);
+        PAOps<RealType,DIM>::axpy(wgt,Psi1[ipsi]->G,thisWalker.Drift);
       }
       thisWalker.Drift *= Tau;
       ++it;++iw;
