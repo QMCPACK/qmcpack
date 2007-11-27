@@ -89,7 +89,7 @@ namespace qmcplusplus {
      */
     inline T getCellLength(int nptcl, T rs_in) const
     {
-      return pow(4.0*M_PI*nptcl/3.0,1.0/3.0)*rs_in;
+      return std::pow(4.0*M_PI*nptcl/3.0,1.0/3.0)*rs_in;
     }
 
     void sortGrid(int nc) {
@@ -236,7 +236,7 @@ namespace qmcplusplus {
 
     inline T getCellLength(int nptcl, T rs_in)
     {
-      return sqrt(M_PI*nptcl)*rs_in;
+      return std::sqrt(M_PI*nptcl)*rs_in;
     }
 
     void sortGrid(int nc) {
