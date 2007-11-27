@@ -29,7 +29,7 @@ namespace qmcplusplus {
   {
   }
 
-  void Bspline3DSetBase::setLattice(const CrystalLattice<RealType,OHMMS_DIM>& lat)
+  void Bspline3DSetBase::setLattice(const CrystalLattice<RealType,DIM>& lat)
   {
     Lattice.set(lat);
     UnitLattice.set(lat);
