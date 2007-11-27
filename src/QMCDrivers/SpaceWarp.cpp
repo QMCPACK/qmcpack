@@ -104,7 +104,7 @@ namespace qmcplusplus {
 
   void SpaceWarp::registerData(vector<ParticleSet*>& plist, PooledData<RealType>& buf) {
     if(PtclRefs.empty()) {
-      SizeOfR=plist[0]->getTotalNum()*OHMMS_DIM;
+      SizeOfR=plist[0]->getTotalNum()*DIM;
       for(int ipsi=0; ipsi<npsi; ipsi++){
         PtclRefs.push_back(plist[ipsi]);
       }
