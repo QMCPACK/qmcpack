@@ -44,8 +44,8 @@ namespace qmcplusplus
     //now save to grp as a named object
     const int rank = 3;
     hsize_t dims[rank], maxdims[rank];
-    dims[0] = tp.rows(); dims[1] = tp.cols(); dims[2] = OHMMS_DIM;
-    maxdims[0] = H5S_UNLIMITED; maxdims[1] = tp.cols(); maxdims[2] = OHMMS_DIM;
+    dims[0] = tp.rows(); dims[1] = tp.cols(); dims[2] = PosType::Size;
+    maxdims[0] = H5S_UNLIMITED; maxdims[1] = tp.cols(); maxdims[2] = PosType::Size;
     if(replace)
     {
       hid_t dataset =  H5Dopen(grp, name);
@@ -94,8 +94,8 @@ namespace qmcplusplus
 
     const int RANK = 3;
     hsize_t offset[RANK],gcount[RANK],count[RANK],stride[]={1,1,1};
-    count[0] = nwloc; count[1] = W.getTotalNum(); count[2] = OHMMS_DIM;
-    gcount[0] = W.getGlobalNumWalkers(); gcount[1] = W.getTotalNum(); gcount[2] = OHMMS_DIM;
+    count[0] = nwloc; count[1] = W.getTotalNum(); count[2] = PosType::Size;
+    gcount[0] = W.getGlobalNumWalkers(); gcount[1] = W.getTotalNum(); gcount[2] = PosType::Size;
     offset[0] = W.WalkerOffsets[mynode]; offset[1] = 0; offset[2] = 0;
 
     hid_t dset_id;
