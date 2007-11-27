@@ -302,6 +302,228 @@ public:
   std::vector<int> CellKey;
 };
 
+template<class T>
+class UniformCartesianGrid<T,2> {
+
+public:
+
+  typedef DistributedIndex::iterator iterator;
+  typedef DistributedIndex::const_iterator const_iterator;
+
+  ///default constructor
+  inline UniformCartesianGrid() { 
+    NumGrids = 1;
+    NP[0] = 1; NP[1] = 1; 
+    Delta[0] = 1; Delta[1] = 1;
+    InvDelta[0] = 1; InvDelta[1] = 1; 
+  }
+
+  ///copy constructor
+  inline UniformCartesianGrid(const UniformCartesianGrid<T,2>& gr) { 
+    makeCopy(gr);
+  }
+
+  /**constructor 
+   *@param ng a 3-Dim index vector that sets the partition
+   */
+  template<class IV>
+  inline UniformCartesianGrid(const IV& ng) {setGrid(ng);}
+
+
+  ///destructor
+  virtual inline ~UniformCartesianGrid() { }
+
+  ///copy operator
+  UniformCartesianGrid<T,2>& operator=(const  UniformCartesianGrid<T,2>& gr) {
+    makeCopy(gr);
+    return *this;
+  }
+
+  ///copy function
+  inline void makeCopy(const  UniformCartesianGrid<T,2>& gr) {
+    setGrid(gr.NP);
+  }
+
+  ///return the number of grid in the i-th direction
+  inline int size(int i) const { return NP[i];}
+
+  /**set the parameters to partition a 3-Dim domain
+   *@param ng a 3-Dim index vector that sets the partition
+   */
+  template<class IV>
+  void setGrid(const IV& ng) {
+    NumGrids = ng[0]*ng[1];
+    NP[0] = ng[0];    NP[1] = ng[1]; 
+    InvDelta[0] =static_cast<T>(ng[0]);
+    InvDelta[1] =static_cast<T>(ng[1]);
+    Delta[0] =1./InvDelta[0];
+    Delta[1] =1./InvDelta[1];
+  }
+
+  ///return the total number of sub domains/grids
+  inline int getTotalNum() const { return NumGrids;}
+
+  /**get a unique key for a domain(i,j,k)
+     @param i the index of the first dimension
+     @param j the index of the second dimension
+     @param k the index of the third dimension
+     @return the key for a domain(i,j,k)
+     *
+     *@warning broken. Should fail.
+  */
+  inline int key(int i, int j) const {
+    return CellKey(j+NP[1]*i);
+  }
+
+  /**get a index of a domain(i,j)
+     @param i the index of the first dimension
+     @param j the index of the second dimension
+     @param k the index of the third dimension
+     @return the storage index of a domain(i,j,k)
+  */
+  inline int loc(int i, int j) const {
+    if(i<0) i+=NP[0];
+    if(i>=NP[0]) i-= NP[0];
+    if(j<0) j+=NP[1];
+    if(j>=NP[1]) j-= NP[1];
+    return j+NP[1]*i;
+  }
+
+  /**get a domain index of a 3-D vector v(x,y,z)
+   @param x the position in the first dimension
+   @param y the position in the second dimension
+   @param z the position in the third dimension
+   @return the storage index of a domain whose position is p(x,y,z)
+   */
+  inline int loc(T x, T y) const {
+    return (int(y*InvDelta[1])+NP[1]*int(x*InvDelta[0]));
+  }
+
+  /**get a domain index of a 3-D vector p
+   @param p a 3-D vector with operator[]
+   @return the storage index of a domain whose position is p
+   */
+  template<class Pos_t>
+  inline 
+  int loc(const Pos_t& p) const {
+    return (int(p[1]*InvDelta[1])+NP[1]*int(p[0]*InvDelta[0]));
+  }
+
+  /**get a 3-D index vector for a position r
+   *@param r the position
+   *@return a index vector containing the cell indices in the three directions
+   */
+  inline TinyVector<int,2> index(const TinyVector<T,2>& r) {
+    return TinyVector<int,2>(static_cast<int>(r[0]*InvDelta[0]),
+			     static_cast<int>(r[1]*InvDelta[1]));
+  }
+
+  /**get a center position of a domain(i,j)
+     @param i the index of the first dimension
+     @param j the index of the second dimension
+     @param k the index of the third dimension
+     @return the position of the domain(i,j,k)
+   */
+  inline TinyVector<T,2> center(int i, int j) const {
+    return TinyVector<T,2>((static_cast<T>(i)+0.5)*Delta[0],
+			   (static_cast<T>(j)+0.5)*Delta[1]);
+  }
+
+  /**get a center position of a domain(i,j)
+     @param i the index of the first dimension
+     @param j the index of the second dimension
+     @param k the index of the third dimension
+     @return the position of the domain(i,j,k)
+   */
+  inline TinyVector<T,2> vertex(int i, int j) const {
+    return TinyVector<T,2>((static_cast<T>(i))*Delta[0],
+			   (static_cast<T>(j))*Delta[1]);
+  }
+
+  /**distribute the domains over the processors
+   *@param ntot the total number of processors
+   *
+   *The processor can be a MPI node or an OpenMP thread.
+   *The domains are distributed over the processors as evenly as possible.
+   *However, the computataionl nodes are not factored in for load balancing.
+   */
+  inline void distribute(int ntot) {
+    I.distribute(ntot,NumGrids);
+  }
+
+  /**distribute the domains over the processors [first, last)
+   *@param first iterator for the starting node
+   *@param last iterator for the ending node
+   *
+   *A similar function to the void distribute(int ntot).
+   */
+  template <class _InputIterator>
+  void distribute(_InputIterator first, _InputIterator last) { 
+    I.distribute(first,last);
+  }
+
+  /**print the domain partition information
+   *@param os ostream to write to
+   *
+   *This is for debug/test only.
+   */
+  void printGrid(std::ostream& os) const { 
+    const int nw = 15;
+    os << "number of sub regions " << NumGrids << std::endl;
+    os << "Attribute distribution  = " << std::endl;
+    os << "grid spacing = " << setw(nw) << Delta[0] << setw(nw) << Delta[1]
+       << std::endl;
+    TinyVector<T,2> origin;
+    for(int ig=0; ig<NP[0]; ig++) {
+      origin[0] = static_cast<T>(ig)*Delta[0];
+      for(int jg=0; jg<NP[1]; jg++) {
+	origin[1] = static_cast<T>(jg)*Delta[1];
+        os << setw(nw) << origin[0] << " | " << setw(nw) << origin[0]+Delta[0]
+          << setw(nw) << origin[1] << " | " << setw(nw) << origin[1]+Delta[1]
+          << std::endl;
+      }
+    }
+  }
+
+  /** resize the grouping of domains
+   *@param ng the number of groups
+   */
+  inline void resizeGroup(int ng) { PID.resize(ng);}
+
+  ///return the processor ID of the group ig 
+  inline int group(int ig) const { return PID[ig]; }
+  ///assign the processor ID of the group ig 
+  inline int& group(int ig) { return PID[ig];}
+
+  inline void createData() { I.create(NumGrids);}
+  inline void clearData() { I.clear(); }
+  inline void addData(int ig, int iat) {I.add(ig,iat);}
+
+  inline DistributedIndex& getDataSets() { return I;}
+  inline const DistributedIndex& getDataSets() const { return I;}
+
+  inline int getNumData() const {return I.getNumData();}
+  inline int getMaxDataPerGrid() const {return I.capacity();}
+  inline int getNumDataSets() const { return I.getNumDataSets();}
+  inline int getNumData(int i) const { return I.size(i);}
+  inline int firstData(int i) const { return I.M[i];}
+  inline int lastData(int i) const { return I.M[i+1];}
+  inline iterator beginData(int i) { return I.begin(i);}
+  inline iterator endData(int i) { return I.end(i);}
+  inline const_iterator beginData(int i) const { return I.begin(i);}
+  inline const_iterator endData(int i) const  { return I.end(i);}
+
+  void printData(std::ostream& os) const {
+    I.print(os);
+  }
+
+  int NumGrids, NP[2];
+  T Delta[2],InvDelta[2];
+  DistributedIndex I;
+  std::vector<int> PID;
+  std::vector<int> CellKey;
+};
+
 }
 #endif
   
