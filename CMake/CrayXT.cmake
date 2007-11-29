@@ -16,7 +16,8 @@ ELSE($ENV{PE_ENV} MATCHES "PGI")
   SET(CMAKE_CXX_FLAGS "-O6 -ftemplate-depth-60 -Drestrict=__restrict__ -fstrict-aliasing -funroll-all-loops   -finline-limit=1000 -ffast-math -Wno-deprecated ")
 
   FIND_LIBRARY(BLAS_LIBRARY acml $ENV{ACML_BASE_DIR}/gnu64/lib)
-  SET(LAPACK_LIBRARY "/opt/pgi/6.2.5/linux86-64/6.2/lib/libpgc.a")
+  #SET(LAPACK_LIBRARY "/opt/pgi/6.2.5/linux86-64/6.2/lib/libpgc.a")
+  SET(LAPACK_LIBRARY "")
   SET(FORTRAN_LIBS "-lg2c")
 ENDIF($ENV{PE_ENV} MATCHES "PGI")
 
