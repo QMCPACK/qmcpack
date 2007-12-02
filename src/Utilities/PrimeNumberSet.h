@@ -1,0 +1,115 @@
+// -*- C++ -*-
+/** @file PrimeNumberSet.h
+ * @brief define a class to generate prime numbers for random number generators
+ */
+#ifndef QMCPLUSPLUS_PRIME_NUMBER_SET_H
+#define QMCPLUSPLUS_PRIME_NUMBER_SET_H
+#include <vector>
+#include <limits>
+
+///dummy declaration 
+template<typename UIntType>
+struct PrimeConstants {};
+
+///specialization for uint32_t
+template<>
+struct PrimeConstants<uint32_t> 
+{
+  enum {max_prime=11863285, min_prime=3444, max_prime_offset=779156};
+};
+
+///specialization for uint64_t
+template<>
+struct PrimeConstants<uint64_t> 
+{
+  enum {max_prime=3037000501, min_prime=55108, max_prime_offset=146138719};
+};
+
+/** class to generate prime numbers
+ */
+template<typename UIntType>
+struct PrimeNumberSet: public PrimeConstants<UIntType>
+{
+  typedef UIntType result_type;
+  std::vector<UIntType> primes;
+  using PrimeConstants<UIntType>::max_prime;
+  using PrimeConstants<UIntType>::min_prime;
+  using PrimeConstants<UIntType>::max_prime_offset;
+
+  /** default constructor
+   *
+   * Reserve space for primes and construct min_prime-lowest  prime numbers
+   * excluding 2
+   */
+  inline PrimeNumberSet()
+  {
+    primes.reserve(max_prime_offset);
+    for(int i=3; i<min_prime; i+=2)
+    {
+      bool is_prime=true;
+      for(int j=0; j<primes.size(); j++)
+      {
+        if(i%primes[j]==0) {is_prime=false; break;}
+        else if(primes[j]*primes[j]>i) break;
+      }
+      if(is_prime) primes.push_back(i);
+    }
+  }
+
+  inline result_type operator[](size_t i) const 
+  {
+    return primes[i];
+  }
+
+  inline size_t size() const { return primes.size();}
+
+  /** add n new primes starting with an offset
+   * @param offset offset of a set
+   * @param n number of primes requested
+   * @param primes_add contains n prime numbers if successful
+   * @return true, if successful
+   *
+   * For i=[0,n), primes_add[i]=primes[offset+i]
+   */
+  inline bool get(int offset, int n, std::vector<UIntType>& primes_add)
+  {
+    if(offset>max_prime_offset) offset%=max_prime_offset; //roll back
+
+    //have enough prime numbers, assign them in an array
+    if(n+offset<primes.size())
+    {
+      primes_add.insert(primes_add.end(), primes.begin()+offset,primes.begin()+offset+n);
+      return true;
+    }
+
+    UIntType largest=primes.back();
+    int n2add=offset+n-primes.size();
+    while(n2add && largest<max_prime) 
+    {
+      largest+=2;
+      bool is_prime=true;
+      for(UIntType j=0; j<primes.size(); j++)
+      {
+        if(largest%primes[j]==0) {is_prime=false; break;}
+      }
+      if(is_prime) { 
+        primes.push_back(largest);
+        n2add--;
+      }
+    }
+
+    if(n2add)
+    {
+      std::ostringstream o;
+      o << "  PrimeNumberSet::get Failed to generate " << n2add << " prime numbers among " 
+        << n << " requested.\n";
+      APP_ABORT(o.str());
+      return false; //to make compiler happy
+    }
+
+    primes_add.insert(primes_add.end(),primes.begin()+offset, primes.begin()+offset+n);
+    return true;
+  }
+  
+};
+#endif
