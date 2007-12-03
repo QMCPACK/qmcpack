@@ -71,7 +71,7 @@ public:
    *
    * Initialize generator with the seed. 
    */
-  void init(int i, int nstr, int iseed_in, int offset) 
+  void init(int i, int nstr, int iseed_in, int offset=1) 
   {
     uint_type baseSeed=iseed_in;
     myContext=i;
