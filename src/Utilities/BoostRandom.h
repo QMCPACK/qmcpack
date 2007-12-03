@@ -19,33 +19,50 @@
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
-
 #include <ctime>        
 #include <sstream>        
 #include <boost/random.hpp>
-#include "Message/Communicate.h"
 
-template<class T>
+inline uint32_t make_seed(int i, int n)
+{
+  return static_cast<uint32_t>(std::time(0))%10474949+(i+1)*n+i;
+}
+
+/** random number generator using boost::random
+ *
+ * A wrapper of boost::random class to work with applicatoins.
+ */
+template<typename T, typename RNG=boost::mt19937>
 class BoostRandom {
 
 public:
-
-  typedef T Return_t;
-  typedef boost::minstd_rand      base_generator_type;
-  typedef boost::mt19937          generator_type;
-  typedef boost::variate_generator<generator_type,boost::uniform_real<T> > uniform_generator_type;
+  /// real result type
+  typedef T result_type;
+  /// randmon number generator [0,max) where max depends on the generator type
+  typedef RNG generator_type;
+  /// unsigned integer type
+  typedef typename generator_type::result_type uint_type;
+  /// real random generator [0,1)
+  typedef boost::variate_generator<generator_type, boost::uniform_real<T> > uniform_generator_type;
 
   std::string ClassName;
   std::string EngineName;
 
-  explicit BoostRandom(int iseed=0): ClassName("boost"), EngineName("mt19937"), 
-  baseSeed(iseed),  unit_dist(0,1), generator(0), uni(0) 
-  { }
-
-  ~BoostRandom() {
-    if(uni) delete uni;
-    if(generator) delete generator;
+  ///default constructor
+  explicit BoostRandom(uint_type iseed=911, const std::string& aname="mt19937"): ClassName("boost"), EngineName(aname), 
+  myContext(0), nContexts(1), baseOffset(0),
+  uni(generator_type(iseed),boost::uniform_real<T>(0,1))
+  { 
   }
+
+  ///copy constructor
+  BoostRandom(const BoostRandom& rng): ClassName(rng.ClassName), EngineName(rng.EngineName),  
+  myContext(rng.myContext), nContexts(rng.nContexts), baseOffset(rng.baseOffset), 
+  uni(rng.uni)
+  { 
+  }
+
+  ~BoostRandom() { }
 
   /** initialize the generator
    * @param i thread index
@@ -54,71 +71,73 @@ public:
    *
    * Initialize generator with the seed. 
    */
-  void init(int i, int nstr, int iseed_in) 
+  void init(int i, int nstr, int iseed_in, int offset) 
   {
-    baseSeed=iseed_in;
+    uint_type baseSeed=iseed_in;
     myContext=i;
     nContexts=nstr;
-    if(iseed_in<=0) 
-      baseSeed=static_cast<uint32_t>(std::time(0))%16081+(i+1)*nstr+i;
-
-    //use the constructor with the seed
-    //generator->seed(baseSeed) is not working!!!
-    if(generator == 0) 
-    {
-      generator = new generator_type(baseSeed);
-      uni = new uniform_generator_type(*generator,unit_dist);
-      std::cout << "  BoostRandom::init " << myContext << " " << baseSeed << std::endl;
-    }
+    if(iseed_in<=0) baseSeed=make_seed(i,nstr);
+    baseOffset=offset;
+    uni.engine().seed(baseSeed);
   }
 
-  //randomize again
-  void reset() 
-  {
-    delete uni;
-    delete generator;
-    baseSeed=static_cast<uint32_t>(std::time(0))%16081+(myContext+1)*nContexts+myContext;
-    generator = new generator_type(baseSeed);
-    uni = new uniform_generator_type(*generator,unit_dist);
-    std::cout << "  BoostRandom::reset " << myContext << " " << baseSeed << std::endl;
-  }
+  ///get baseOffset
+  inline int offset() const {return baseOffset;}
+  ///assign baseOffset
+  inline int& offset() {return baseOffset;}
 
-  inline uniform_generator_type& getGenerator() { return *uni;}
+  ///assign seed
+  inline void seed(uint_type aseed) { uni.engine().seed(aseed); }
 
-  //!< return [0,1)
-  inline T getRandom() { return (*uni)(); }
+  uniform_generator_type& engine() { return uni; }
+  /////reset the seed
+  //inline void reset() 
+  //{
+  //  uni.engine().seed(make_seed(myContext,nContexts,baseOffset));
+  //}
 
-  inline Return_t operator()() { return (*uni)();} 
-  inline int irand() { return 1;}
+  /** return a random number [0,1)
+   */
+  inline result_type rand() { return uni(); }
 
-  inline void bivariate(Return_t& g1, Return_t &g2) {
-    Return_t v1, v2, r;
-    do {
-    v1 = 2.0e0*((*uni)()) - 1.0e0;
-    v2 = 2.0e0*((*uni)()) - 1.0e0;
-    r = v1*v1+v2*v2;
-    } while(r > 1.0e0);
-    Return_t fac = sqrt(-2.0e0*log(r)/r);
-    g1 = v1*fac;
-    g2 = v2*fac;
-  }
+  /** return a random number [0,1)
+   */
+  inline result_type operator()() { return uni();} 
+
+  /** return a random integer
+   */
+  inline uint_type irand() 
+  { return uni.engine()()%numeric_limits<uint_type>::max();}
+
+  //inline void bivariate(resul_type& g1, resul_type &g2) {
+  //  resul_type v1, v2, r;
+  //  do {
+  //  v1 = 2.0e0*uni() - 1.0e0;
+  //  v2 = 2.0e0*uni() - 1.0e0;
+  //  r = v1*v1+v2*v2;
+  //  } while(r > 1.0e0);
+  //  resul_type fac = sqrt(-2.0e0*log(r)/r);
+  //  g1 = v1*fac;
+  //  g2 = v2*fac;
+  //}
 
   inline void read(std::istream& rin) {
-    rin >> uni->engine();
+    rin >> uni.engine();
   }
 
   inline void write(std::ostream& rout) const {
-    rout << uni->engine();
+    rout << uni.engine();
   }
 
 private:
-  uint32_t baseSeed;
+  ///context number
   int myContext;
+  ///number of contexts
   int nContexts;
-  base_generator_type    base_generator;
-  boost::uniform_real<T> unit_dist;
-  generator_type         *generator;
-  uniform_generator_type *uni;
+  ///offset of the random seed
+  int baseOffset;
+  ///random number generator [0,1) 
+  uniform_generator_type uni;
 };
 #endif
 
