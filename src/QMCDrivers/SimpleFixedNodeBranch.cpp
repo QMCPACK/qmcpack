@@ -345,6 +345,7 @@ namespace qmcplusplus {
     {
       RootName.append(hdf::config_ext);
     }
+
     //string ext=getExtension(fname);
     //if(ext != "h5") { //if the filename does not h5 extension, add the extension
     //  RootName.append(".config.h5");
@@ -405,14 +406,9 @@ namespace qmcplusplus {
     //broadcast to the nodes : need to add a namespace mpi::
     bcast(esave,MyEstimator->getCommunicator());
 
-    Eref=esave[0];
+    Etrial=Eref=esave[0];
     EavgSum=esave[1];
     WgtSum=esave[2];
-
-    //cout << " Rank " << MyEstimator->getCommunicator()->rank()
-    //  << "  Eref=" << Eref 
-    //  << "  EavgSum=" << EavgSum 
-    //  << "  WgtSum= " << WgtSum << endl;
   }
 
 //  void SimpleFixedNodeBranch::read(hid_t grp) {
