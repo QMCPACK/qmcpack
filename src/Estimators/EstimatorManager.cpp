@@ -165,7 +165,10 @@ namespace qmcplusplus {
     }
 
     //allocate buffer for data collection
-    for(int i=0; i<myComm->size(); i++) RemoteData[i]->resize(BufferSize);
+    if(RemoteData.empty())
+      for(int i=0; i<myComm->size(); i++) RemoteData.push_back(new BufferType(BufferSize));
+    else
+      for(int i=0; i<myComm->size(); i++) RemoteData[i]->resize(BufferSize);
 
 #if defined(DEBUG_ESTIMATOR_ARCHIVE)
     if(record && DebugArchive ==0)
