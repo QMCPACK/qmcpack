@@ -35,6 +35,7 @@ namespace qmcplusplus {
     VMCPbyPMultiWarp(MCWalkerConfiguration& w, 
 			  TrialWaveFunction& psi, 
 			  QMCHamiltonian& h, 
+                          RandomNumberControl& rc,
                           ParticleSetPool& ptclPool);
     ~VMCPbyPMultiWarp();
 

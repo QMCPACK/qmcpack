@@ -30,7 +30,8 @@ namespace qmcplusplus {
   class VMCSingle: public QMCDriver {
   public:
     /// Constructor.
-    VMCSingle(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h);
+    VMCSingle(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
+        RandomNumberControl& rc);
     bool run();
     bool put(xmlNodePtr cur);
  

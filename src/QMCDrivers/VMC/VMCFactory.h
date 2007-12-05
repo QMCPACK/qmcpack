@@ -21,13 +21,14 @@
 namespace qmcplusplus {
   class ParticleSetPool;
   class HamiltonianPool;
+  class RandomNumberControl;
 
   struct VMCFactory {
     int VMCMode;
     xmlNodePtr myNode;
     VMCFactory(int vmode, xmlNodePtr cur):VMCMode(vmode), myNode(cur){}
     QMCDriver* create(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, 
-        ParticleSetPool& ptclpool, HamiltonianPool& hpool);
+        RandomNumberControl& rc, ParticleSetPool& ptclpool, HamiltonianPool& hpool);
   };
 }
 
