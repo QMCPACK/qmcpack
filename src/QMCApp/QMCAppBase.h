@@ -69,10 +69,10 @@ namespace qmcplusplus {
     std::stack<Libxml2Document*> XmlDocStack;
 
     ///project description
-    OHMMS::ProjectData myProject;
+    ProjectData myProject;
 
     ///random number controller
-    OHMMS::RandomNumberControl myRandomControl;
+    RandomNumberControl myRandomControl;
 
     ///open a new document
     bool pushDocument(const string& infile);
