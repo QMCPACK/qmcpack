@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////
-// (c) Copyright 1998-2002 by Jeongnim Kim
+// (c) Copyright 1998-2002, 2003- by Jeongnim Kim
 //////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////
 //   Jeongnim Kim
@@ -8,7 +8,6 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
@@ -19,35 +18,61 @@
 // -*- C++ -*-
 #ifndef OHMMS_RANDOMNUMBERCONTROL_H__
 #define OHMMS_RANDOMNUMBERCONTROL_H__
-
 #include "OhmmsData/OhmmsElementBase.h"
+#include "Utilities/RandomGenerator.h"
+#include "Utilities/PrimeNumberSet.h"
 
-namespace OHMMS {
+class Communicate;
+
+namespace APPNAMESPACE 
+{
 
   /**class RandomNumberControl
    *\brief Encapsulate data to initialize and save the status of the random number generator
    *
    * Default:  myName = "random"
-   *
+   * 2007-12-01
+   *   Use PrimeNumbers to generate random seeds.
    */
-  class RandomNumberControl: public OhmmsElementBase {
+  class RandomNumberControl : public OhmmsElementBase 
+  {
 
-  public:
+    public:
 
-    /// constructors and destructors
-    RandomNumberControl(const char* aname="random");
-    
-    bool get(std::ostream& os) const;
-    bool put(std::istream& is);
-    bool put(xmlNodePtr cur);
-    void reset();
+      typedef RandomGenerator_t::uint_type uint_type;
+      PrimeNumberSet<uint_type> PrimeNumbers;
+      //children random number generator
+      std::vector<RandomGenerator_t*>  Children;
 
-    xmlNodePtr initialize(xmlXPathContextPtr);
+      /// constructors and destructors
+      RandomNumberControl(const char* aname="random");
 
-  private:
+      bool get(std::ostream& os) const;
+      bool put(std::istream& is);
+      bool put(xmlNodePtr cur);
+      void reset();
 
-    bool NeverBeenInitialized;
-    xmlNodePtr myCur;
+      void make_seeds();
+
+      xmlNodePtr initialize(xmlXPathContextPtr);
+
+      /** read random state from a hdf file 
+       * @param fname file name 
+       * @param comm communicator so that everyone reads its own data
+       */
+      void read(const string& fname, Communicate* comm);
+      /** write random state to a hdf file 
+       * @param fname file name 
+       * @param comm communicator so that everyone writes its own data
+       */
+      void write(const string& fname, Communicate* comm);
+
+    private:
+
+      bool NeverBeenInitialized;
+      xmlNodePtr myCur;
+      int Offset;
+      void make_children();
   };
 }
 
