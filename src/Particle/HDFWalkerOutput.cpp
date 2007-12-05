@@ -182,8 +182,7 @@ namespace qmcplusplus
       else
       {
         HDFWalkerIOEngine wo(W,overwrite);
-        wo.setTransferProperty(xfer_plist);
-        wo.writeAll(h_state,hdf::walkers,myComm);
+        wo.write(h_state,hdf::walkers);
       }
     }
     else
