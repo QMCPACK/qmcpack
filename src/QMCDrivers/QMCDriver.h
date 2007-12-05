@@ -34,6 +34,7 @@ class Communicate;
 
 namespace qmcplusplus {
 
+  class RandomNumberControl;
 
   /** @defgroup QMCDrivers QMC Driver group
    * QMC drivers that implement QMC algorithms
@@ -81,7 +82,8 @@ namespace qmcplusplus {
 
 
     /// Constructor.
-    QMCDriver(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h);
+    QMCDriver(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
+        RandomNumberControl& rc);
 
     virtual ~QMCDriver();
 
@@ -252,6 +254,9 @@ namespace qmcplusplus {
     ///Hamiltonian
     QMCHamiltonian& H;
 
+    ///reference to RandomNumberControl for parallel random generators
+    RandomNumberControl& rngControl;
+
     ///a list of TrialWaveFunctions for multiple method
     vector<TrialWaveFunction*> Psi1;
 
@@ -276,7 +281,8 @@ namespace qmcplusplus {
     //PooledData<RealType> HamPool;
 
     ///Copy Constructor (disabled).
-    QMCDriver(const QMCDriver& a): W(a.W), Psi(a.Psi), H(a.H), Estimators(0){}
+    QMCDriver(const QMCDriver& a): W(a.W), Psi(a.Psi), H(a.H), rngControl(a.rngControl),
+    Estimators(0){}
  
     bool putQMCInfo(xmlNodePtr cur);
 
