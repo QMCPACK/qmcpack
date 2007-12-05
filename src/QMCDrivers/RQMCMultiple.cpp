@@ -27,8 +27,8 @@
 
 namespace qmcplusplus { 
   RQMCMultiple::RQMCMultiple(MCWalkerConfiguration& w, 
-      TrialWaveFunction& psi, QMCHamiltonian& h):
-    QMCDriver(w,psi,h),
+      TrialWaveFunction& psi, QMCHamiltonian& h, RandomNumberControl& rc):
+    QMCDriver(w,psi,h,rc),
   ReptileLength(21),
   NumTurns(0), Reptile(0), NewBead(0),
   multiEstimator(0) 
