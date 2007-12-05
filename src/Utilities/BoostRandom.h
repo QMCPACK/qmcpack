@@ -21,6 +21,7 @@
 #endif
 #include <ctime>        
 #include <sstream>        
+#include <limits>
 #include <boost/random.hpp>
 
 inline uint32_t make_seed(int i, int n)
@@ -60,6 +61,18 @@ public:
   myContext(rng.myContext), nContexts(rng.nContexts), baseOffset(rng.baseOffset), 
   uni(rng.uni)
   { 
+  }
+
+  ///copy operator (unnecessary but why not)
+  BoostRandom<T,RNG>& operator=(const BoostRandom& r)
+  {
+    ClassName=r.ClassName;
+    EngineName=r.EngineName;
+    myContext=r.myContext;
+    nContexts=r.nContexts;
+    baseOffset=r.baseOffset, 
+    uni=r.uni;
+    return *this;
   }
 
   ~BoostRandom() { }
@@ -107,7 +120,7 @@ public:
   /** return a random integer
    */
   inline uint_type irand() 
-  { return uni.engine()()%numeric_limits<uint_type>::max();}
+  { return uni.engine()()%std::numeric_limits<uint_type>::max();}
 
   //inline void bivariate(resul_type& g1, resul_type &g2) {
   //  resul_type v1, v2, r;
