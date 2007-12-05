@@ -18,14 +18,15 @@
 #include "QMCDrivers/VMC/VMCUpdatePbyP.h"
 #include "QMCDrivers/VMC/VMCUpdateAll.h"
 #include "Message/OpenMP.h"
+#include "OhmmsApp/RandomNumberControl.h"
 //#define ENABLE_VMC_OMP_MASTER
 
 namespace qmcplusplus { 
 
   /// Constructor.
   VMCSingleOMP::VMCSingleOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
-      HamiltonianPool& hpool):
-    QMCDriver(w,psi,h),  CloneManager(hpool), UseDrift("yes") 
+     RandomNumberControl& rc,  HamiltonianPool& hpool):
+    QMCDriver(w,psi,h,rc),  CloneManager(hpool), UseDrift("yes") 
     { 
     RootName = "vmc";
     QMCType ="VMCSingleOMP";
@@ -80,6 +81,9 @@ namespace qmcplusplus {
     }//end of parallel
     Estimators->stop(estimatorClones);
 
+    //copy back the random number states
+    for(int ip=0; ip<NumThreads; ip++) *(rngControl.Children[ip]) = *(Rng[ip]);
+
     //finalize a qmc section
     return finalize(nBlocks);
   }
@@ -101,22 +105,20 @@ namespace qmcplusplus {
       app_log() << "  Initial partition of walkers ";
       std::copy(wPerNode.begin(),wPerNode.end(),ostream_iterator<int>(app_log()," "));
       app_log() << endl;
-
-#pragma omp parallel  
+    }
+    
+#pragma  omp parallel for
+    for(int ip=0; ip<NumThreads; ip++)
+    {
+      if(Rng[ip]==0)  // use random number generator to allocate data
       {
-        int ip = omp_get_thread_num();
         if(ip) hClones[ip]->add2WalkerProperty(*wClones[ip]);
         estimatorClones[ip]= new EstimatorManager(*Estimators);//,*hClones[ip]);  
         estimatorClones[ip]->resetTargetParticleSet(*wClones[ip]);
         estimatorClones[ip]->setCollectionMode(false);
-
-        Rng[ip]=new RandomGenerator_t();
-        Rng[ip]->init(OHMMS::Controller->rank()*NumThreads+ip,
-            NumThreads*OHMMS::Controller->size(),-1);
+        Rng[ip]=new RandomGenerator_t(*(rngControl.Children[ip]));
         hClones[ip]->setRandomGenerator(Rng[ip]);
-
         branchClones[ip] = new BranchEngineType(*branchEngine);
-
         if(QMCDriverMode[QMC_UPDATE_MODE])
         {
           if(UseDrift == "yes")
@@ -134,16 +136,21 @@ namespace qmcplusplus {
           Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip]);
         }
       }
-    }
-
-#pragma omp parallel  for
-    for(int ip=0; ip<NumThreads; ip++)
-    {
       if(QMCDriverMode[QMC_UPDATE_MODE])
         Movers[ip]->initWalkersForPbyP(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
       else
         Movers[ip]->initWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
     }
+
+//#pragma omp parallel  for
+//    for(int ip=0; ip<NumThreads; ip++)
+//    {
+//      if(QMCDriverMode[QMC_UPDATE_MODE])
+//        Movers[ip]->initWalkersForPbyP(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
+//      else
+//        Movers[ip]->initWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
+//    }
+// 
     //Used to debug and benchmark opnemp
     //#pragma omp parallel for
     //    for(int ip=0; ip<NumThreads; ip++)
