@@ -213,6 +213,20 @@ Communicate::reduce(double* restrict g, double* restrict res, int n)
 
 template<>
 inline void 
+Communicate::bcast(int& g) 
+{
+  MPI_Bcast(&g,1,MPI_INT,0,myMPI);
+}
+
+template<>
+inline void 
+Communicate::bcast(double& g) 
+{
+  MPI_Bcast(&g,1,MPI_DOUBLE,0,myMPI);
+}
+
+template<>
+inline void 
 Communicate::bcast(APPNAMESPACE::TinyVector<double,2>& g) 
 {
   MPI_Bcast(g.begin(),2,MPI_DOUBLE,0,myMPI);
