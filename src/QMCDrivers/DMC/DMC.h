@@ -31,7 +31,8 @@ namespace qmcplusplus {
   public:
 
     /// Constructor.
-    DMC(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h);
+    DMC(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
+        RandomNumberControl& rc);
 
     bool run();
     bool put(xmlNodePtr cur);

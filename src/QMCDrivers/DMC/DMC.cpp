@@ -26,8 +26,9 @@
 namespace qmcplusplus { 
 
   /// Constructor.
-  DMC::DMC(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h):
-    QMCDriver(w,psi,h), KillNodeCrossing(0), Reconfiguration("no"), Mover(0), BranchInterval(-1)
+  DMC::DMC(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
+      RandomNumberControl& rc):
+    QMCDriver(w,psi,h,rc), KillNodeCrossing(0), Reconfiguration("no"), Mover(0), BranchInterval(-1)
   {
     RootName = "dummy";
     QMCType ="DMC";
