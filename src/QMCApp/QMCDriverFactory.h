@@ -30,6 +30,7 @@ namespace qmcplusplus {
   class QMCDriver;
   class WaveFunctionPool;
   class HamiltonianPool;
+  class RandomNumberControl;
 
   struct QMCDriverFactory 
   {
@@ -93,11 +94,11 @@ namespace qmcplusplus {
     void putCommunicator(xmlNodePtr cur);
 
     /** set the active qmcDriver */
-    bool setQMCDriver(int curSeries, xmlNodePtr cur);
+    bool setQMCDriver(int curSeries, xmlNodePtr cur, RandomNumberControl& rc);
 
     /** create a new QMCDriver 
      */
-    void createQMCDriver(xmlNodePtr cur);
+    void createQMCDriver(xmlNodePtr cur, RandomNumberControl& rc);
 
     /** virtual destructor **/
     virtual ~QMCDriverFactory();

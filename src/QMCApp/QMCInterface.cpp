@@ -100,7 +100,8 @@ namespace qmcplusplus {
       //cerr << "qmcpack: deleting previous driver" << endl;
       delete qmcDriver;
     }
-    qmcDriver = new VMCSingle(*ptclPool->getWalkerSet("e"),*psiPool->getPrimary(),*hamPool->getPrimary());
+    qmcDriver = new VMCSingle(*ptclPool->getWalkerSet("e"),*psiPool->getPrimary(),*hamPool->getPrimary(),
+        myRandomControl);
     //cerr << " done." << endl;
 
     bool append_run = false;
@@ -126,7 +127,8 @@ namespace qmcplusplus {
       //cerr << "qmcpack: deleting previous driver" << endl;
       delete qmcDriver;
     }
-    qmcDriver = new CSVMC(*ptclPool->getWalkerSet("e"),*psiPool->getPrimary(),*hamPool->getPrimary());
+    qmcDriver = new CSVMC(*ptclPool->getWalkerSet("e"),*psiPool->getPrimary(),*hamPool->getPrimary(),
+        myRandomControl);
     //qmcDriver = new VMCMultiple(*ptclPool->getWalkerSet("e"),*psiPool->getPrimary(),*hamPool->getPrimary());
     //cerr << " done." << endl;
 
@@ -155,7 +157,8 @@ namespace qmcplusplus {
     bool isNewDriver = false;
     if(qmcDriver == NULL){
       //cerr << "Creating new RQMC driver" << endl;
-      qmcDriver = new RQMCMultiple(*ptclPool->getWalkerSet("e"),*psiPool->getPrimary(),*hamPool->getPrimary());
+      qmcDriver = new RQMCMultiple(*ptclPool->getWalkerSet("e"),*psiPool->getPrimary(),*hamPool->getPrimary(),
+          myRandomControl);
       // get second psi, hamiltonian
       QMCHamiltonian* secondHam = hamPool->getHamiltonian("h1");
 
@@ -385,7 +388,7 @@ void QMCInterface::processPWH(xmlNodePtr cur) {
 bool QMCInterface::runQMC(xmlNodePtr cur) {
 
   OHMMS::Controller->barrier();
-  bool append_run = setQMCDriver(myProject.m_series,cur);
+  bool append_run = setQMCDriver(myProject.m_series,cur, myRandomControl);
 
   if(qmcDriver) {
     app_log() << endl;
