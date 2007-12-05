@@ -15,14 +15,14 @@ struct PrimeConstants {};
 template<>
 struct PrimeConstants<uint32_t> 
 {
-  enum {max_prime=11863285, min_prime=3444, max_prime_offset=779156};
+  enum {max_prime=11863285, min_num_primes=4096, max_prime_offset=779156};
 };
 
 ///specialization for uint64_t
 template<>
 struct PrimeConstants<uint64_t> 
 {
-  enum {max_prime=3037000501, min_prime=55108, max_prime_offset=146138719};
+  enum {max_prime=3037000501, min_num_primes=55108, max_prime_offset=146138719};
 };
 
 /** class to generate prime numbers
@@ -33,7 +33,7 @@ struct PrimeNumberSet: public PrimeConstants<UIntType>
   typedef UIntType result_type;
   std::vector<UIntType> primes;
   using PrimeConstants<UIntType>::max_prime;
-  using PrimeConstants<UIntType>::min_prime;
+  using PrimeConstants<UIntType>::min_num_primes;
   using PrimeConstants<UIntType>::max_prime_offset;
 
   /** default constructor
@@ -43,16 +43,23 @@ struct PrimeNumberSet: public PrimeConstants<UIntType>
    */
   inline PrimeNumberSet()
   {
-    primes.reserve(max_prime_offset);
-    for(int i=3; i<min_prime; i+=2)
+    primes.reserve(2*min_num_primes);
+    primes.push_back(3);
+    result_type largest=3;
+    int n=min_num_primes;
+    while(n)
     {
+      largest+=2;
       bool is_prime=true;
       for(int j=0; j<primes.size(); j++)
       {
-        if(i%primes[j]==0) {is_prime=false; break;}
-        else if(primes[j]*primes[j]>i) break;
+        if(largest%primes[j]==0) {is_prime=false; break;}
+        else if(primes[j]*primes[j]>largest) {break;}
       }
-      if(is_prime) primes.push_back(i);
+      if(is_prime) { 
+        primes.push_back(largest);
+        n--;
+      }
     }
   }
 
@@ -76,7 +83,7 @@ struct PrimeNumberSet: public PrimeConstants<UIntType>
     if(offset>max_prime_offset) offset%=max_prime_offset; //roll back
 
     //have enough prime numbers, assign them in an array
-    if(n+offset<primes.size())
+    if(n+offset+1<primes.size())
     {
       primes_add.insert(primes_add.end(), primes.begin()+offset,primes.begin()+offset+n);
       return true;
@@ -88,9 +95,10 @@ struct PrimeNumberSet: public PrimeConstants<UIntType>
     {
       largest+=2;
       bool is_prime=true;
-      for(UIntType j=0; j<primes.size(); j++)
+      for(int j=0; j<primes.size(); j++)
       {
         if(largest%primes[j]==0) {is_prime=false; break;}
+        else if(primes[j]*primes[j]>largest) {break;}
       }
       if(is_prime) { 
         primes.push_back(largest);
@@ -102,7 +110,7 @@ struct PrimeNumberSet: public PrimeConstants<UIntType>
     {
       std::ostringstream o;
       o << "  PrimeNumberSet::get Failed to generate " << n2add << " prime numbers among " 
-        << n << " requested.\n";
+        << n << " requested.";
       APP_ABORT(o.str());
       return false; //to make compiler happy
     }
