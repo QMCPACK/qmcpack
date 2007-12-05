@@ -134,7 +134,7 @@ namespace qmcplusplus {
     //use new random seeds
     if(ResetRandom) {
       app_log() << "  Regenerate random seeds." << endl;
-      Random.reset();
+      //Random.reset();
       ResetRandom=false;
     }
 
