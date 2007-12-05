@@ -34,7 +34,8 @@ namespace qmcplusplus {
   class CSVMC: public QMCDriver {
   public:
     /// Constructor.
-    CSVMC(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h);
+    CSVMC(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, 
+        RandomNumberControl& rc);
 
     bool run();
     bool put(xmlNodePtr cur);
