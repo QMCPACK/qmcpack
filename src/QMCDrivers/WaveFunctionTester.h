@@ -32,7 +32,8 @@ namespace qmcplusplus {
     /// Constructor.
     WaveFunctionTester(MCWalkerConfiguration& w, 
 		       TrialWaveFunction& psi, 
-		       QMCHamiltonian& h);
+		       QMCHamiltonian& h,
+                       RandomNumberControl& rc);
 
     bool run();
     bool put(xmlNodePtr q);
