@@ -42,7 +42,7 @@ namespace qmcplusplus {
 
     ///Constructor.
     QMCOptimize(MCWalkerConfiguration& w, TrialWaveFunction& psi, 
-	    QMCHamiltonian& h, HamiltonianPool& hpool);
+	    QMCHamiltonian& h, RandomNumberControl& rc, HamiltonianPool& hpool);
     
     ///Destructor
     ~QMCOptimize();
@@ -84,7 +84,7 @@ namespace qmcplusplus {
     ///list of files storing configurations  
     vector<string> ConfigFile;
     ///Copy Constructor (disabled).
-    QMCOptimize(const QMCOptimize& a): QMCDriver(a),hamPool(a.hamPool) { }  
+    QMCOptimize(const QMCOptimize& a): QMCDriver(a),hamPool(a.hamPool){ }  
     ///Copy operator (disabled).
     QMCOptimize& operator=(const QMCOptimize&) { return *this;}
 

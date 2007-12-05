@@ -32,14 +32,12 @@
 
 namespace qmcplusplus {
 
-  QMCOptimize::QMCOptimize(MCWalkerConfiguration& w,
-      TrialWaveFunction& psi, QMCHamiltonian& h, HamiltonianPool& hpool):
-  QMCDriver(w,psi,h), 
-  PartID(0), NumParts(1), WarmupBlocks(10), 
-  SkipSampleGeneration("no"), hamPool(hpool),
-  optTarget(0), optSolver(0), vmcEngine(0),
-  wfNode(NULL), optNode(NULL)
-  { 
+  QMCOptimize::QMCOptimize(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, 
+      RandomNumberControl& rc,     HamiltonianPool& hpool ): QMCDriver(w,psi,h,rc), 
+      PartID(0), NumParts(1), WarmupBlocks(10), 
+      SkipSampleGeneration("no"), hamPool(hpool),
+      optTarget(0), optSolver(0), vmcEngine(0), wfNode(NULL), optNode(NULL)
+      { 
     //set the optimization flag
     QMCDriverMode.set(QMC_OPTIMIZE,1);
     //read to use vmc output (just in case)
@@ -186,11 +184,11 @@ namespace qmcplusplus {
     {
 #if defined(ENABLE_OPENMP)
       if(omp_get_max_threads()>1)
-        vmcEngine = new VMCSingleOMP(W,Psi,H,hamPool);
+        vmcEngine = new VMCSingleOMP(W,Psi,H,rngControl,hamPool);
       else
-        vmcEngine = new VMCSingle(W,Psi,H);
+        vmcEngine = new VMCSingle(W,Psi,H,rngControl);
 #else
-      vmcEngine = new VMCSingle(W,Psi,H);
+      vmcEngine = new VMCSingle(W,Psi,H,rngControl);
 #endif
       vmcEngine->setUpdateMode(vmcMove[0] == 'p');
       vmcEngine->setCommunicator(qmcComm);
