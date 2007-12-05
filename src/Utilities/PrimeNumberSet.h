@@ -22,7 +22,7 @@ struct PrimeConstants<uint32_t>
 template<>
 struct PrimeConstants<uint64_t> 
 {
-  enum {max_prime=3037000501, min_num_primes=55108, max_prime_offset=146138719};
+  enum {max_prime=3037000501U, min_num_primes=55108, max_prime_offset=146138719U};
 };
 
 /** class to generate prime numbers
