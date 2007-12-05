@@ -27,7 +27,7 @@
 #include <boost/date_time/posix_time/posix_time.hpp>
 #endif
 
-namespace OHMMS {
+namespace APPNAMESPACE {
 
   //----------------------------------------------------------------------------
   // ProjectData
@@ -42,7 +42,7 @@ namespace OHMMS {
     m_series(0),
     m_cur(0)
   { 
-    myComm=Controller;
+    myComm=OHMMS::Controller;
   }
 
   void  ProjectData::setCommunicator(Communicate* c)

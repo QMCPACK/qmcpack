@@ -24,7 +24,7 @@
 using namespace std;
 #include "Message/Communicate.h"
 
-namespace OHMMS {
+namespace APPNAMESPACE {
 
   /**class ProjectData
    *\brief Encapsulate data for a project
