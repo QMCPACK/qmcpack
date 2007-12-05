@@ -146,10 +146,6 @@ namespace qmcplusplus
    * @param W set of walker configurations
    */
   bool HDFWalkerOutput::dump(MCWalkerConfiguration& W) {
-    bool success=true;
-    h_file =  H5Fopen(FileName.c_str(),H5F_ACC_RDWR,h_plist);
-    h_state =  H5Gopen(h_file,hdf::main_state);
-
     //backup problem with phdf5
     //vector<string> backups;
     //backups.push_back(hdf::main_state);
@@ -170,37 +166,68 @@ namespace qmcplusplus
     //  b--;
     //}
     //if(number_of_backups<max_number_of_backups) number_of_backups++;
-
+    bool success=true;
+    const bool overwrite=true;
     if(h_plist== H5P_DEFAULT) // serial file
-    { 
-      success= dumpSingle(h_state,W);
-      //HDFWalkerIOEngine wo(W);
-      //wo.write(h_state,hdf::walkers);
-      //number_of_walkers=W.getActiveWalkers();
-      //HDFAttribIO<int> nwo(number_of_walkers);
-      //nwo.write(h_state,hdf::num_walkers);
+    {
+      if(number_of_walkers != W.getActiveWalkers())
+      {
+        std::pair<hid_t,hid_t> h_pair= createH5FileSingle(FileName,W);
+        h_file=h_pair.first;
+        h_state=h_pair.second;
+        number_of_walkers = W.getActiveWalkers();
+        HDFAttribIO<int> nwo(number_of_walkers);
+        nwo.write(h_state,hdf::num_walkers);
+      } 
+      else
+      {
+        HDFWalkerIOEngine wo(W,overwrite);
+        wo.setTransferProperty(xfer_plist);
+        wo.writeAll(h_state,hdf::walkers,myComm);
+      }
     }
     else
     {//parallel file
       if(number_of_walkers != W.getGlobalNumWalkers())
       {
-        herr_t status=H5Gunlink(h_state,hdf::walkers);
-        HDFWalkerIOEngine wo(W);
-        wo.setTransferProperty(xfer_plist);
-        wo.writeAll(h_state,hdf::walkers,myComm);
+        h_file = H5Fcreate(FileName.c_str(),H5F_ACC_TRUNC,H5P_DEFAULT,h_plist);
+        HDFVersion cur_version;
+        cur_version.write(h_file,hdf::version);
 
-        // overwrite number of walkers
-        number_of_walkers=W.getGlobalNumWalkers();
+        //create a state
+        h_state = H5Gcreate(h_file,hdf::main_state,0);
+        HDFWalkerIOEngine wo(W);
+        wo.writeAll(h_state,hdf::walkers,myComm);
+        number_of_walkers = W.getGlobalNumWalkers();
+
         HDFAttribIO<int> nwo(number_of_walkers);
         nwo.write(h_state,hdf::num_walkers);
       }
       else
       {
-        HDFWalkerIOEngine wo(W,true);
+        h_file =  H5Fopen(FileName.c_str(),H5F_ACC_RDWR,h_plist);
+        h_state =  H5Gopen(h_file,hdf::main_state);
+        //if(number_of_walkers != W.getGlobalNumWalkers())
+        //{
+        //  herr_t status=H5Gunlink(h_state,hdf::walkers);
+        //  HDFWalkerIOEngine wo(W);
+        //  wo.setTransferProperty(xfer_plist);
+        //  wo.writeAll(h_state,hdf::walkers,myComm);
+
+        //  // overwrite number of walkers
+        //  number_of_walkers=W.getGlobalNumWalkers();
+        //  HDFAttribIO<int> nwo(number_of_walkers,true);
+        //  nwo.write(h_state,hdf::num_walkers);
+        //}
+        //else
+        //{
+        HDFWalkerIOEngine wo(W,overwrite);
         wo.setTransferProperty(xfer_plist);
         wo.writeAll(h_state,hdf::walkers,myComm);
+        //}
       }
     }
+
     H5Gclose(h_state);
     H5Fclose(h_file);
 
@@ -245,12 +272,13 @@ namespace qmcplusplus
     int nw=W.getActiveWalkers();
     if(number_of_walkers != nw)
     {//need resize of the data: unlink and create a walkers group
+      number_of_walkers=nw;
+      HDFAttribIO<int> nwo(number_of_walkers,true);
+      nwo.write(h_state,hdf::num_walkers);
+
       herr_t status=H5Gunlink(gid,hdf::walkers);
       HDFWalkerIOEngine wo(W);
       wo.write(gid,hdf::walkers);
-      number_of_walkers=nw;
-      HDFAttribIO<int> nwo(number_of_walkers);
-      nwo.write(h_state,hdf::num_walkers);
     } 
     else
     {//simply overwrite it
