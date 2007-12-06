@@ -1,6 +1,7 @@
 #compiler flags for intel 8.x
 SET(INTEL_COMPILER 1)
-ADD_DEFINITIONS(-DADD_ -DINLINE_ALL=inline)
+#ADD_DEFINITIONS(-DADD_ -DINLINE_ALL=inline)
+ADD_DEFINITIONS(-DADD_ -DINLINE_ALL=inline -DMPICH_SKIP_MPICXX)
 
 #enable Interprocedural (IP) Optimizations
 #-ipo_obj force generation of real object files (requires -ipo)
@@ -14,8 +15,18 @@ ADD_DEFINITIONS(-DADD_ -DINLINE_ALL=inline)
 #SET(CMAKE_CXX_FLAGS "-restrict -unroll -fno-alias -O3 -Ob=2 -qp")
 #SET(CMAKE_CXX_FLAGS "-restrict -unroll -fno-alias -O3 -Ob=2 -cxxlib-icc")
 #SET(CMAKE_CXX_FLAGS "-restrict -unroll -fno-alias -O3")
-# for Mac OS X
-SET(CMAKE_CXX_FLAGS "-restrict -unroll -fno-alias -O3 -ip -xT")
+IF(${CMAKE_SYSTEM_PROCESSOR} MATCHES "ia64")
+  SET(CMAKE_CXX_FLAGS "-restrict -unroll -fno-alias -O3 -ftz")
+ENDIF(${CMAKE_SYSTEM_PROCESSOR} MATCHES "ia64")
+
+IF(${CMAKE_SYSTEM_PROCESSOR} MATCHES "x86_64")
+  SET(CMAKE_CXX_FLAGS "-restrict -unroll -fno-alias -O3 -ip -xT")
+ENDIF(${CMAKE_SYSTEM_PROCESSOR} MATCHES "x86_64")
+
+IF(${CMAKE_SYSTEM_PROCESSOR} MATCHES "i386")
+  SET(CMAKE_CXX_FLAGS "-restrict -unroll -fno-alias -O3")
+ENDIF(${CMAKE_SYSTEM_PROCESSOR} MATCHES "i386")
+
 #SET(CMAKE_CXX_FLAGS "-restrict -unroll -fno-alias -g")
 SET(CMAKE_CC_FLAGS "-restrict -unroll -fno-alias -O3")
 
@@ -24,7 +35,8 @@ IF(QMC_OMP)
   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -openmp")
 ENDIF(QMC_OMP)
 
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated")
+SET(CMAKE_CXX_FLAGS "$ENV{CXX_FLAGS} ${CMAKE_CXX_FLAGS} -Wno-deprecated")
+MESSAGE("-- CXX compiler flags: ${CMAKE_CXX_FLAGS}")
 
 #IF(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 #  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated")
