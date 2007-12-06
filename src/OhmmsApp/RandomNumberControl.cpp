@@ -225,6 +225,8 @@ struct HDFAttribIO<std::vector<uint32_t> >: public HDFAttribIOBase {
         offset_in=static_cast<int>(std::time(0))%4096;
         OHMMS::Controller->bcast(offset_in);//broadcast the seed
       }
+      else
+        offset_in%=4096;
 
       Offset=offset_in;
       vector<uint_type> mySeeds;
