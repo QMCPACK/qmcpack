@@ -120,28 +120,36 @@ INCLUDE(${CMAKE_ROOT}/Modules/TestCXXAcceptsFlag.cmake)
 
 ### On Jaguar use CrayXT.cmake
 IF($ENV{HOST} MATCHES "jaguar")
+  MESSAGE("  Working on jaguar. Using CMake/CrayXT.cmake")	 
   INCLUDE(${PROJECT_CMAKE}/CrayXT.cmake)
   SET(FOUND_CXXENV 1)
 ENDIF($ENV{HOST} MATCHES "jaguar")
 
-IF($ENV{CXX} MATCHES "icpc")
-  INCLUDE(${PROJECT_CMAKE}/Intel8.cmake)
-  SET(FOUND_CXXENV 1)
-ENDIF($ENV{CXX} MATCHES "icpc")
-IF($ENV{CXX} MATCHES "cmpic")
-  INCLUDE(${PROJECT_CMAKE}/Intel8.cmake)
-  SET(FOUND_CXXENV 1)
-ENDIF($ENV{CXX} MATCHES "cmpic")
+### Check if using IBM compilers
 IF($ENV{CXX} MATCHES "xlC")
   INCLUDE(${PROJECT_CMAKE}/IBMCompilers.cmake)
   SET(FOUND_CXXENV 1)
 ENDIF($ENV{CXX} MATCHES "xlC")
 
+### check if Intel compilers work using -restrict
+IF(NOT FOUND_CXXENV)
+  SET(CMAKE_TRY_INTEL_CXX_FLAGS "-restrict")
+  CHECK_CXX_ACCEPTS_FLAG(${CMAKE_TRY_INTEL_CXX_FLAGS} INTEL_CXX_FLAS)
+  IF(INTEL_CXX_FLAS)
+    MESSAGE("-- Intel compilers are found.")
+    INCLUDE(${PROJECT_CMAKE}/Intel8.cmake)
+    SET(FOUND_CXXENV 1)
+  ENDIF(INTEL_CXX_FLAS)
+ENDIF(NOT FOUND_CXXENV)
+
+### most likely GNU, use GNU options
 IF(NOT FOUND_CXXENV)
   INCLUDE(${PROJECT_CMAKE}/GNUCompilers.cmake)
   #disable MPI if one has to use gnu compilers
-  SET(QMC_MPI 0)
+  #SET(QMC_MPI 0)
 ENDIF(NOT FOUND_CXXENV)
+
+MESSAGE("-- CXX compiler flags: ${CMAKE_CXX_FLAGS}")
 
 #COMPIELR MANUAL SELECTION
 #INCLUDE(${PROJECT_CMAKE}/GNUCompilers.cmake)
@@ -180,6 +188,7 @@ INCLUDE(${PROJECT_CMAKE}/FindPkgConfig.cmake)
 #   # Can't find pkg-config -- have to find libeinspline somehow else
 #ENDIF ( CMAKE_PKGCONFIG_EXECUTABLE )
 
+ADD_DEFINITIONS(-DMPICH_SKIP_MPICXX)
 
 IF(QMC_MPI)
   IF(MPIP_PROFILE)
