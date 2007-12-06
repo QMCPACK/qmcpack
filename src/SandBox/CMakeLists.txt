@@ -20,19 +20,19 @@ TARGET_LINK_LIBRARIES(mpi_group qmc qmcbase qmcutil)
 #ADD_EXECUTABLE(serialization serialization.cpp)
 #TARGET_LINK_LIBRARIES(serialization boost)
 
-ADD_EXECUTABLE(cubicspline cubicspline.cpp)
-TARGET_LINK_LIBRARIES(cubicspline qmcbase qmcutil)
-
-ADD_EXECUTABLE(cubicspline1 cubicspline1.cpp)
-TARGET_LINK_LIBRARIES(cubicspline1 qmcbase qmcutil)
-
-ADD_EXECUTABLE(bspline bspline.cpp)
-TARGET_LINK_LIBRARIES(bspline qmc qmcbase)
-
-ADD_EXECUTABLE(tribsplineComplex tribsplineComplex.cpp)
-TARGET_LINK_LIBRARIES(tribsplineComplex qmc qmcbase)
-ADD_EXECUTABLE(tribsplineReal tribsplineReal.cpp)
-TARGET_LINK_LIBRARIES(tribsplineReal qmc qmcbase)
+#ADD_EXECUTABLE(cubicspline cubicspline.cpp)
+#TARGET_LINK_LIBRARIES(cubicspline qmcbase qmcutil)
+#
+#ADD_EXECUTABLE(cubicspline1 cubicspline1.cpp)
+#TARGET_LINK_LIBRARIES(cubicspline1 qmcbase qmcutil)
+#
+#ADD_EXECUTABLE(bspline bspline.cpp)
+#TARGET_LINK_LIBRARIES(bspline qmc qmcbase)
+#
+#ADD_EXECUTABLE(tribsplineComplex tribsplineComplex.cpp)
+#TARGET_LINK_LIBRARIES(tribsplineComplex qmc qmcbase)
+#ADD_EXECUTABLE(tribsplineReal tribsplineReal.cpp)
+#TARGET_LINK_LIBRARIES(tribsplineReal qmc qmcbase)
 
 
 #INCLUDE(${PROJECT_CMAKE}/FindBlitz++.cmake)
