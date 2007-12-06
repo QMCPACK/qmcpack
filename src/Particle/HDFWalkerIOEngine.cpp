@@ -76,7 +76,7 @@ namespace qmcplusplus
     int nwloc=W.getActiveWalkers();
     if(nwloc != W.WalkerOffsets[mynode+1]-W.WalkerOffsets[mynode])
     {
-      app_error() << " Fatal Error: inconsident number of walkers per node " << endl;
+      app_error() << " Fatal Error: inconsistent number of walkers per node " << endl;
       abort();//FIXABORT
     }
 
