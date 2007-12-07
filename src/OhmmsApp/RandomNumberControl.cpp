@@ -30,6 +30,11 @@
 namespace APPNAMESPACE
 {
 
+  ///initialize the static data members
+  PrimeNumberSet<RandomGenerator_t::uint_type> RandomNumberControl::PrimeNumbers;
+  std::vector<RandomGenerator_t*>  RandomNumberControl::Children;
+  int RandomNumberControl::Offset=11;
+
 template<>
 struct HDFAttribIO<std::vector<uint32_t> >: public HDFAttribIOBase {
 
@@ -112,7 +117,7 @@ struct HDFAttribIO<std::vector<uint32_t> >: public HDFAttribIOBase {
 
   /// constructors and destructors
   RandomNumberControl::RandomNumberControl(const char* aname)
-    :OhmmsElementBase(aname), NeverBeenInitialized(true), myCur(NULL), Offset(5)
+    :OhmmsElementBase(aname), NeverBeenInitialized(true), myCur(NULL)//, Offset(5)
   { }
     
   /// generic output
@@ -151,7 +156,7 @@ struct HDFAttribIO<std::vector<uint32_t> >: public HDFAttribIOBase {
 
     Offset=iseed;
     vector<uint_type> mySeeds;
-    PrimeNumbers.get(Offset,nprocs*(omp_get_max_threads()+2), mySeeds);
+    RandomNumberControl::PrimeNumbers.get(Offset,nprocs*(omp_get_max_threads()+2), mySeeds);
     Random.init(pid,nprocs,mySeeds[pid],Offset+pid);
 
     //change children as well
@@ -283,34 +288,39 @@ struct HDFAttribIO<std::vector<uint32_t> >: public HDFAttribIOBase {
     if(in_version >= res_version)
     {
       hid_t h1 =  H5Gopen(fid,hdf::main_state);
-      hid_t h2 = H5Gopen(h1,"random");
-
-      int nthreads=omp_get_max_threads();
-      TinyVector<int,2> gDims(comm->size()*nthreads,1);
-      TinyVector<int,2> Dims(nthreads,1);
-      TinyVector<int,2> offsets(comm->rank()*nthreads,0);
-
-      vector<uint_type> vt;
-      HDFAttribIO<std::vector<uint_type> > hin(vt,gDims,Dims,offsets);
-      hin.setTransferProperty(xfer_plist);
-      hin.read(h2,Random.EngineName.c_str());
-      if(vt.size())
+      status = H5Eset_auto(NULL, NULL);
+      status = H5Gget_objinfo(h1,"random",0,NULL);
+      if(status ==0)
       {
-        char fname[128];
-        sprintf(fname,"random.p%i",comm->rank());
-        ofstream fout(fname);
-        std::copy(vt.begin(),vt.end(),ostream_iterator<uint_type>(fout,"\n"));
+        hid_t h2 = H5Gopen(h1,"random");
 
-        std::stringstream otemp;
-        std::copy(vt.begin(),vt.end(),ostream_iterator<uint_type>(otemp," "));
-        if(nthreads>1)
+        int nthreads=omp_get_max_threads();
+        TinyVector<int,2> gDims(comm->size()*nthreads,1);
+        TinyVector<int,2> Dims(nthreads,1);
+        TinyVector<int,2> offsets(comm->rank()*nthreads,0);
+
+        vector<uint_type> vt;
+        HDFAttribIO<std::vector<uint_type> > hin(vt,gDims,Dims,offsets);
+        hin.setTransferProperty(xfer_plist);
+        hin.read(h2,Random.EngineName.c_str());
+        if(vt.size())
         {
-          for(int ip=0; ip<nthreads; ip++) Children[ip]->read(otemp);
+          char fname[128];
+          sprintf(fname,"random.p%i",comm->rank());
+          ofstream fout(fname);
+          std::copy(vt.begin(),vt.end(),ostream_iterator<uint_type>(fout,"\n"));
+
+          std::stringstream otemp;
+          std::copy(vt.begin(),vt.end(),ostream_iterator<uint_type>(otemp," "));
+          if(nthreads>1)
+          {
+            for(int ip=0; ip<nthreads; ip++) Children[ip]->read(otemp);
+          }
+          else
+            Random.read(otemp);
         }
-        else
-          Random.read(otemp);
+        H5Gclose(h2);
       }
-      H5Gclose(h2);
       H5Gclose(h1);
     }
     else

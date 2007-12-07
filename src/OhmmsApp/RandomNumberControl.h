@@ -40,9 +40,9 @@ namespace APPNAMESPACE
     public:
 
       typedef RandomGenerator_t::uint_type uint_type;
-      PrimeNumberSet<uint_type> PrimeNumbers;
+      static PrimeNumberSet<uint_type> PrimeNumbers;
       //children random number generator
-      std::vector<RandomGenerator_t*>  Children;
+      static std::vector<RandomGenerator_t*>  Children;
 
       /// constructors and destructors
       RandomNumberControl(const char* aname="random");
@@ -52,7 +52,8 @@ namespace APPNAMESPACE
       bool put(xmlNodePtr cur);
       void reset();
 
-      void make_seeds();
+      static void make_seeds();
+      static void make_children();
 
       xmlNodePtr initialize(xmlXPathContextPtr);
 
@@ -60,19 +61,18 @@ namespace APPNAMESPACE
        * @param fname file name 
        * @param comm communicator so that everyone reads its own data
        */
-      void read(const string& fname, Communicate* comm);
+      static void read(const string& fname, Communicate* comm);
       /** write random state to a hdf file 
        * @param fname file name 
        * @param comm communicator so that everyone writes its own data
        */
-      void write(const string& fname, Communicate* comm);
+      static void write(const string& fname, Communicate* comm);
 
     private:
 
       bool NeverBeenInitialized;
       xmlNodePtr myCur;
-      int Offset;
-      void make_children();
+      static int Offset;
   };
 }
 
