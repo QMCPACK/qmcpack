@@ -28,7 +28,7 @@ namespace qmcplusplus {
   public:
     /// Constructor.
     VMCSingleOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
-        RandomNumberControl& rc,HamiltonianPool& hpool);
+        HamiltonianPool& hpool);
     bool run();
     bool put(xmlNodePtr cur);
   private:

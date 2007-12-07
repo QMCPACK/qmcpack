@@ -27,21 +27,20 @@
 namespace qmcplusplus {
 
   QMCDriver* DMCFactory::create(MCWalkerConfiguration& w, TrialWaveFunction& psi, 
-      QMCHamiltonian& h, RandomNumberControl& rc, HamiltonianPool& hpool) 
-  {
+      QMCHamiltonian& h, HamiltonianPool& hpool) {
     QMCDriver* qmc=0;
 #if defined(ENABLE_OPENMP)
     int np=omp_get_max_threads();
     if(np>1) {
       app_log() << "Creating DMCMP for the qmc driver" << endl;
-      qmc = new DMCOMP(w,psi,h,rc,hpool);
+      qmc = new DMCOMP(w,psi,h,hpool);
     } else {
       app_log() << "Creating DMC for the qmc driver" << endl;
-      qmc = new DMC(w,psi,h,rc); 
+      qmc = new DMC(w,psi,h); 
     }
 #else
     app_log() << "Creating DMC for the qmc driver" << endl;
-    qmc = new DMC(w,psi,h,rc); 
+    qmc = new DMC(w,psi,h); 
 #endif
     qmc->setUpdateMode(PbyPUpdate);
 

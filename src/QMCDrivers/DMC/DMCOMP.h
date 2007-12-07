@@ -33,7 +33,7 @@ namespace qmcplusplus {
 
     /// Constructor.
     DMCOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
-        RandomNumberControl& rc,HamiltonianPool& hpool);
+        HamiltonianPool& hpool);
 
     bool run();
     bool put(xmlNodePtr cur);

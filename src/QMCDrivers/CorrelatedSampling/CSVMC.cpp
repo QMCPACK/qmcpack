@@ -23,9 +23,8 @@
 namespace qmcplusplus { 
 
   /// Constructor.
-  CSVMC::CSVMC(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
-      RandomNumberControl& rc):
-    QMCDriver(w,psi,h,rc), multiEstimator(0), Mover(0) { 
+  CSVMC::CSVMC(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h):
+    QMCDriver(w,psi,h), multiEstimator(0), Mover(0) { 
     RootName = "csvmc";
     QMCType ="CSVMC";
     equilBlocks=-1;

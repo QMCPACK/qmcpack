@@ -40,7 +40,7 @@ namespace qmcplusplus {
 
     /// Constructor.
     RQMCMultiWarp(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
-        RandomNumberControl& rc, ParticleSetPool& ptclPool);
+        ParticleSetPool& ptclPool);
 
     /// Destructor
     ~RQMCMultiWarp();

@@ -31,9 +31,8 @@ namespace qmcplusplus {
 
 
   /// Constructor.
-  VMCMultipleWarp::VMCMultipleWarp(MCWalkerConfiguration& w, TrialWaveFunction& psi, 
-      QMCHamiltonian& h, RandomNumberControl& rc, ParticleSetPool& ptclPool):
-    QMCDriver(w,psi,h,rc), PtclPool(ptclPool), multiEstimator(0) { 
+  VMCMultipleWarp::VMCMultipleWarp(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, ParticleSetPool& ptclPool):
+    QMCDriver(w,psi,h), PtclPool(ptclPool), multiEstimator(0) { 
     RootName = "vmc-warp";
     QMCType ="vmc-warp";
     equilBlocks=-1;

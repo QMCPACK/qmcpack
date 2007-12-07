@@ -31,9 +31,7 @@
 namespace qmcplusplus {
 
   QMCDriver* VMCFactory::create(MCWalkerConfiguration& w, TrialWaveFunction& psi, 
-      QMCHamiltonian& h,RandomNumberControl& rc, 
-      ParticleSetPool& ptclpool, HamiltonianPool& hpool) 
-  {
+      QMCHamiltonian& h, ParticleSetPool& ptclpool, HamiltonianPool& hpool) {
     int np=omp_get_max_threads();
 
     //(SPACEWARP_MODE,MULTIPE_MODE,UPDATE_MODE)
@@ -42,10 +40,10 @@ namespace qmcplusplus {
     {
 #if defined(ENABLE_OPENMP)
       if(np>1)
-        qmc = new VMCSingleOMP(w,psi,h,rc,hpool);
+        qmc = new VMCSingleOMP(w,psi,h,hpool);
       else
 #endif
-        qmc = new VMCSingle(w,psi,h,rc);
+        qmc = new VMCSingle(w,psi,h);
     } 
     //else if(VMCMode == 2) //(0,1,0)
     //{
@@ -57,16 +55,16 @@ namespace qmcplusplus {
     //} 
     else if(VMCMode ==2 || VMCMode ==3)
     {
-      qmc = new CSVMC(w,psi,h,rc);
+      qmc = new CSVMC(w,psi,h);
     }
 #if !defined(QMC_COMPLEX)
     else if(VMCMode == 6) //(1,1,0)
     {
-      qmc = new VMCMultipleWarp(w,psi,h, rc,ptclpool);
+      qmc = new VMCMultipleWarp(w,psi,h, ptclpool);
     } 
     else if(VMCMode == 7) //(1,1,1)
     {
-      qmc = new VMCPbyPMultiWarp(w,psi,h,rc, ptclpool);
+      qmc = new VMCPbyPMultiWarp(w,psi,h, ptclpool);
     }
 #endif
     qmc->setUpdateMode(VMCMode&1);

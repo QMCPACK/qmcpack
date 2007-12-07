@@ -32,9 +32,8 @@ namespace qmcplusplus {
 
 WaveFunctionTester::WaveFunctionTester(MCWalkerConfiguration& w, 
 				       TrialWaveFunction& psi, 
-				       QMCHamiltonian& h,
-                                       RandomNumberControl& rc):
-  QMCDriver(w,psi,h,rc),checkRatio("no") { 
+				       QMCHamiltonian& h):
+  QMCDriver(w,psi,h),checkRatio("no") { 
     m_param.add(checkRatio,"ratio","string");
   }
 

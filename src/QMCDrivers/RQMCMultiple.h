@@ -37,8 +37,7 @@ namespace qmcplusplus {
     enum { MinusDirection=0, PlusDirection=1, Directionless=2};
 
     /// Constructor.
-    RQMCMultiple(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
-        RandomNumberControl& rc);
+    RQMCMultiple(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h);
 
     /// Destructor
     ~RQMCMultiple();

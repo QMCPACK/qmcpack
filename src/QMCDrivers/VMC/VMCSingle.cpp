@@ -21,9 +21,8 @@
 namespace qmcplusplus { 
 
   /// Constructor.
-  VMCSingle::VMCSingle(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
-      RandomNumberControl& rc):
-    QMCDriver(w,psi,h,rc), Mover(0), UseDrift("yes") { 
+  VMCSingle::VMCSingle(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h):
+    QMCDriver(w,psi,h), Mover(0), UseDrift("yes") { 
     RootName = "vmc";
     QMCType ="VMPSingle";
     QMCDriverMode.set(QMC_UPDATE_MODE,1);

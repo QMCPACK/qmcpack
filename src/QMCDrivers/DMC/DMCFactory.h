@@ -20,18 +20,14 @@
 #ifndef QMCPLUSPLUS_DMC_FACTORY_H
 #define QMCPLUSPLUS_DMC_FACTORY_H
 #include "QMCDrivers/QMCDriver.h" 
+#include "QMCApp/HamiltonianPool.h" 
 
 namespace qmcplusplus {
-
-  class HamiltonianPool;
-  class RandomNumberControl;
-
   struct DMCFactory {
     bool PbyPUpdate;
     xmlNodePtr myNode;
     DMCFactory(bool pbyp, xmlNodePtr cur):PbyPUpdate(pbyp), myNode(cur){}
-    QMCDriver* create(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, 
-        RandomNumberControl& rc, HamiltonianPool& hpool);
+    QMCDriver* create(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, HamiltonianPool& hpool);
   };
 }
 

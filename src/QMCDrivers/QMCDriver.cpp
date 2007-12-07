@@ -26,14 +26,13 @@
 #include "QMCWaveFunctions/OrbitalTraits.h"
 #include "Message/Communicate.h"
 #include "Message/CommOperators.h"
-#include "HDFVersion.h"
 #include "OhmmsApp/RandomNumberControl.h"
+#include "HDFVersion.h"
 #include <limits>
 
 namespace qmcplusplus {
 
-  QMCDriver::QMCDriver(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
-      RandomNumberControl& rc):
+  QMCDriver::QMCDriver(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h):
     branchEngine(0), ResetRandom(false), AppendRun(false),
     MyCounter(0), RollBackBlocks(0),
     Period4CheckPoint(1), Period4WalkerDump(0),
@@ -42,7 +41,7 @@ namespace qmcplusplus {
     Tau(0.01), qmcNode(NULL),
     QMCType("invalid"), 
     qmcComm(0), wOut(0),
-    W(w), Psi(psi), H(h), rngControl(rc), Estimators(0)
+    W(w), Psi(psi), H(h), Estimators(0)
   { 
 
     //use maximum double
@@ -113,7 +112,6 @@ namespace qmcplusplus {
     //execute the put function implemented by the derived classes
     put(cur);
 
-
     //create and initialize estimator
     Estimators = branchEngine->getEstimatorManager();
     if(Estimators==0)
@@ -137,7 +135,7 @@ namespace qmcplusplus {
     //use new random seeds
     if(ResetRandom) {
       app_log() << "  Regenerate random seeds." << endl;
-      rngControl.reset();
+      RandomNumberControl::make_seeds();
       ResetRandom=false;
     }
 
@@ -175,10 +173,7 @@ namespace qmcplusplus {
 
     HDFWalkerInputManager W_in(W,qmcComm);
     for(int i=0; i<wset.size(); i++)
-      if(W_in.put(wset[i])) 
-      {
-        h5FileRoot = W_in.getFileRoot();
-      }
+      if(W_in.put(wset[i])) h5FileRoot = W_in.getFileRoot();
 
     //clear the walker set
     wset.clear();
@@ -214,7 +209,9 @@ namespace qmcplusplus {
   bool QMCDriver::finalize(int block) {
 
     branchEngine->finalize();
-    rngControl.write(wOut->FileName,qmcComm);
+
+    RandomNumberControl::write(wOut->FileName,qmcComm);
+
     delete wOut;
     wOut=0;
 
@@ -288,6 +285,10 @@ namespace qmcplusplus {
     Period4CheckPoint=1;
      
     //construct a set of attributes
+    OhmmsAttributeSet rAttrib;
+    rAttrib.add(Period4WalkerDump,"stride");
+    rAttrib.add(Period4WalkerDump,"period");
+    rAttrib.add(Period4CheckPoint,"period");
 
     if(cur != NULL) {
 
@@ -298,14 +299,8 @@ namespace qmcplusplus {
       while(tcur != NULL) {
 	string cname((const char*)(tcur->name));
 	if(cname == "record") {
-          OhmmsAttributeSet rAttrib;
-          rAttrib.add(Period4WalkerDump,"stride");
-          rAttrib.add(Period4WalkerDump,"period");
           rAttrib.put(tcur);
 	} else if(cname == "checkpoint") {
-          OhmmsAttributeSet rAttrib;
-          rAttrib.add(Period4CheckPoint,"stride");
-          rAttrib.add(Period4CheckPoint,"period");
           rAttrib.put(tcur);
         } else if(cname == "random") {
           ResetRandom = true;

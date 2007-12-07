@@ -31,9 +31,8 @@ namespace qmcplusplus {
   VMCPbyPMultiWarp::VMCPbyPMultiWarp(MCWalkerConfiguration& w, 
 					       TrialWaveFunction& psi, 
 					       QMCHamiltonian& h,
-                                               RandomNumberControl& rc,
                                                ParticleSetPool& ptclPool):
-    QMCDriver(w,psi,h,rc), PtclPool(ptclPool){ 
+    QMCDriver(w,psi,h), PtclPool(ptclPool){ 
     RootName = "vmc-PbyP-warp";
     QMCType ="vmc-PbyP-warp";
     QMCDriverMode.set(QMC_UPDATE_MODE,1);

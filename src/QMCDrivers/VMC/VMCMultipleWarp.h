@@ -38,8 +38,7 @@ namespace qmcplusplus {
   class VMCMultipleWarp: public QMCDriver {
   public:
     /// Constructor.
-    VMCMultipleWarp(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, 
-        RandomNumberControl& rc, ParticleSetPool& ptclPool);
+    VMCMultipleWarp(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, ParticleSetPool& ptclPool);
 
     void advanceWalkerByWalker();
     bool run();

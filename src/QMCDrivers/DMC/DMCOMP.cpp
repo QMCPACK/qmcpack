@@ -28,8 +28,8 @@ namespace qmcplusplus {
 
   /// Constructor.
   DMCOMP::DMCOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
-      RandomNumberControl& rc, HamiltonianPool& hpool):
-    QMCDriver(w,psi,h,rc), CloneManager(hpool),
+      HamiltonianPool& hpool):
+    QMCDriver(w,psi,h), CloneManager(hpool),
     KillNodeCrossing(0),
     Reconfiguration("no"), BenchMarkRun("no"), BranchInterval(-1){
     RootName = "dummy";
@@ -55,6 +55,8 @@ namespace qmcplusplus {
     if(Movers.empty()) 
     {
       branchEngine->initWalkerController(Tau,fixW);
+
+      //if(QMCDriverMode[QMC_UPDATE_MODE]) W.clearAuxDataSet();
       Movers.resize(NumThreads,0);
       branchClones.resize(NumThreads,0);
       Rng.resize(NumThreads,0);
@@ -63,18 +65,19 @@ namespace qmcplusplus {
       app_log() << "  Initial partition of walkers ";
       std::copy(wPerNode.begin(),wPerNode.end(),ostream_iterator<int>(app_log()," "));
       app_log() << endl;
-    }
 
-#pragma omp parallel  for
-    for(int ip=0;ip<NumThreads; ip++)
-    {
-      if(Rng[ip]==0)
+#pragma omp parallel  
       {
+        int ip = omp_get_thread_num();
         if(ip) hClones[ip]->add2WalkerProperty(*wClones[ip]);
         estimatorClones[ip]= new EstimatorManager(*Estimators);//,*hClones[ip]);  
         estimatorClones[ip]->setCollectionMode(false);
-        Rng[ip]=new RandomGenerator_t(*(rngControl.Children[ip]));
+
+        Rng[ip]=new RandomGenerator_t(*RandomNumberControl::Children[ip]);
+        Rng[ip]->init(OHMMS::Controller->rank()*NumThreads+ip,
+            NumThreads*OHMMS::Controller->size(),-1);
         hClones[ip]->setRandomGenerator(Rng[ip]);
+
         branchClones[ip] = new BranchEngineType(*branchEngine);
         if(QMCDriverMode[QMC_UPDATE_MODE])
         {
@@ -111,24 +114,18 @@ namespace qmcplusplus {
           //Movers[ip]->initWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
         }
       } 
+    }
 
-      MCWalkerConfiguration::iterator wit(W.begin()+wPerNode[ip]), wit_end(W.begin()+wPerNode[ip+1]);
+#pragma omp parallel 
+    {
+      int ip = omp_get_thread_num();
+      MCWalkerConfiguration::iterator 
+        wit(W.begin()+wPerNode[ip]), wit_end(W.begin()+wPerNode[ip+1]);
       if(QMCDriverMode[QMC_UPDATE_MODE])
         Movers[ip]->initWalkersForPbyP(wit,wit_end);
       else
         Movers[ip]->initWalkers(wit,wit_end);
     }
-
-//#pragma omp parallel 
-//    {
-//      int ip = omp_get_thread_num();
-//      MCWalkerConfiguration::iterator 
-//        wit(W.begin()+wPerNode[ip]), wit_end(W.begin()+wPerNode[ip+1]);
-//      if(QMCDriverMode[QMC_UPDATE_MODE])
-//        Movers[ip]->initWalkersForPbyP(wit,wit_end);
-//      else
-//        Movers[ip]->initWalkers(wit,wit_end);
-//    }
 
     if(fixW) 
     {
@@ -209,12 +206,10 @@ namespace qmcplusplus {
     } while(block<nBlocks && myclock.elapsed()<MaxCPUSecs);
 
     //for(int ip=0; ip<NumThreads; ip++) Movers[ip]->stopRun();
+    for(int ip=0; ip<NumThreads; ip++) 
+      *(RandomNumberControl::Children[ip])=*(Rng[ip]);
+
     Estimators->stop();
-
-    ////Clones are synchronized
-    //synchronize(RootName, qmcComm);
-    for(int ip=0; ip<NumThreads; ip++) *(rngControl.Children[ip]) = *(Rng[ip]);
-
     return finalize(block);
   }
 

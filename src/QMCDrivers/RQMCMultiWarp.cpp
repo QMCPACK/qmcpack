@@ -31,8 +31,8 @@
 namespace qmcplusplus { 
   RQMCMultiWarp::RQMCMultiWarp(MCWalkerConfiguration& w, 
       TrialWaveFunction& psi, QMCHamiltonian& h,
-      RandomNumberControl& rc, ParticleSetPool& ptclPool):
-    QMCDriver(w,psi,h,rc), PtclPool(ptclPool),
+      ParticleSetPool& ptclPool):
+    QMCDriver(w,psi,h), PtclPool(ptclPool),
     ReptileLength(21),
     NumTurns(0), Reptile(0), NewBead(0)
   { 
