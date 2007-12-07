@@ -381,7 +381,7 @@ namespace qmcplusplus {
    */
   bool QMCMain::runQMC(xmlNodePtr cur) {
 
-    bool append_run = setQMCDriver(myProject.m_series,cur,myRandomControl);
+    bool append_run = setQMCDriver(myProject.m_series,cur);
 
     if(qmcDriver) {
 
@@ -422,9 +422,8 @@ namespace qmcplusplus {
       OhmmsAttributeSet a;
       a.add(fname,"fileroot"); a.add(fname,"href"); a.add(fname,"src");
       a.put(result[result.size()-1]);
-      if(fname.size()) myRandomControl.read(fname,qmcComm);
+      if(fname.size()) RandomNumberControl::read(fname,qmcComm);
     }
-
     return true;
   }
 }
