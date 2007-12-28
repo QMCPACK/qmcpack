@@ -329,8 +329,12 @@ struct ParticleAttribXmlNode
 {
   PAT& ref_;
 
-  inline ParticleAttribXmlNode(PAT& a):ref_(a){}
-  bool put(xmlNodePtr cur, int n_in, int start)
+  inline ParticleAttribXmlNode(PAT& a, int utype):ref_(a)
+  {
+    ref_.InUnit=utype;
+  }
+
+  inline bool put(xmlNodePtr cur, int n_in, int start)
   {
     typedef typename PAT::Type_t data_type;
     std::vector<data_type> data_in(n_in);
@@ -351,7 +355,7 @@ void XMLParticleParser::getPtclAttrib(xmlNodePtr cur, int nat, int nloc) {
   pAttrib.add(utype,condition_tag);//condition
   pAttrib.add(size_in,"size");//size
   pAttrib.put(cur);
-
+  
   if(oname.empty() || otype.empty()) {
     app_error() << "   Missing attrib/@name or attrib/@datatype " << endl;
     app_error() << "     <attrib name=\"aname\"  datatype=\"atype\"/>" << endl;
@@ -368,21 +372,21 @@ void XMLParticleParser::getPtclAttrib(xmlNodePtr cur, int nat, int nloc) {
         ref_.GroupID[nloci] = ref_.getSpeciesSet().addSpecies(d_in[iat]);
       }
     } else {
-      ParticleAttribXmlNode<ParticleIndex_t> a(ref_.GroupID);
+      ParticleAttribXmlNode<ParticleIndex_t> a(ref_.GroupID,utype);
       a.put(cur,nat,nloc);
     }
   } else {
     if(t_id == PA_IndexType) {
-      ParticleAttribXmlNode<ParticleIndex_t> a(*(ref_.getIndexAttrib(oname)));
+      ParticleAttribXmlNode<ParticleIndex_t> a(*(ref_.getIndexAttrib(oname)),utype);
       a.put(cur,nat,nloc);
     } else if(t_id == PA_ScalarType) {
-      ParticleAttribXmlNode<ParticleScalar_t> a(*(ref_.getScalarAttrib(oname)));
+      ParticleAttribXmlNode<ParticleScalar_t> a(*(ref_.getScalarAttrib(oname)),utype);
       a.put(cur,nat,nloc);
     } else if(t_id == PA_PositionType) {
-      ParticleAttribXmlNode<ParticlePos_t> a(*(ref_.getVectorAttrib(oname)));
+      ParticleAttribXmlNode<ParticlePos_t> a(*(ref_.getVectorAttrib(oname)),utype);
       a.put(cur,nat,nloc);
     } else if(t_id == PA_TensorType) {
-      ParticleAttribXmlNode<ParticleTensor_t> a(*(ref_.getTensorAttrib(oname)));
+      ParticleAttribXmlNode<ParticleTensor_t> a(*(ref_.getTensorAttrib(oname)),utype);
       a.put(cur,nat,nloc);
     }
   }
