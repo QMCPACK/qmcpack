@@ -36,24 +36,36 @@ void Uniform3DGridLayout::SetLRCutoffs() {
 
     for(int i=0; i<3; i++) 
     {
-      b = cross(a(Cyclic(i,1)),a(Cyclic(i,2)));
-      value_type binv=1.0/std::sqrt(dot(b,b));
-      b *= binv;
-      ////Unit vector normal to surface i. Cyclic permutations of i.
-      //b = cross(a(i-2<0?i-2+3:i-2),a(i-1<0?i-1+3:i-1));
-      //b = b/std::sqrt(b[0]*b[0] + b[1]*b[1] + b[2]*b[2]);
-      //Now find multiple of 'b' that moves to centre of box
-      //d = 0.5*(a(i-2<0?i-2+3:i-2)+a(i-1<0?i-1+3:i-1))-c;
-      d = 0.5*(a(Cyclic(i,1))+a(Cyclic(i,2)))-c;
+      TinyVector<value_type,3> v1 = a(Cyclic(i,1));
+      TinyVector<value_type,3> v2 = a(Cyclic(i,2));
 
-      x[i]=1.e+6;
-      for(int l=0;l<3;l++){
-	if(std::abs(d[l]*b[l]) < 1.e-6) continue; //Don't treat 0 elements.
-	d[l] = d[l]/b[l];
-	x[i] = std::min(x[i],std::abs(d[l]));
-      }
-      //Real-space cutoff is minimal x[i] => sphere fits entirely inside cell.
-      LR_rc = std::min(LR_rc,x[i]);
+      value_type beta1 = (dot(v2,v2)*dot(c,v1) - dot (v1,v2)*dot(c,v2))/
+	(dot(v1,v1)*dot(v2,v2) - dot(v1,v2)*dot(v1,v2));
+      value_type beta2 = (dot(v1,v1)*dot(c,v2) - dot (v1,v2)*dot(c,v1))/
+	(dot(v1,v1)*dot(v2,v2) - dot(v1,v2)*dot(v1,v2));
+      
+      TinyVector<value_type,3> p = beta1*v1 + beta2 * v2;
+      double dist = sqrt (dot(p-c,p-c));
+      LR_rc = std::min(LR_rc,dist);
+
+//       b = cross(a(Cyclic(i,1)),a(Cyclic(i,2)));
+//       value_type binv=1.0/std::sqrt(dot(b,b));
+//       b *= binv;
+//       ////Unit vector normal to surface i. Cyclic permutations of i.
+//       //b = cross(a(i-2<0?i-2+3:i-2),a(i-1<0?i-1+3:i-1));
+//       //b = b/std::sqrt(b[0]*b[0] + b[1]*b[1] + b[2]*b[2]);
+//       //Now find multiple of 'b' that moves to centre of box
+//       //d = 0.5*(a(i-2<0?i-2+3:i-2)+a(i-1<0?i-1+3:i-1))-c;
+//       d = 0.5*(a(Cyclic(i,1))+a(Cyclic(i,2)))-c;
+
+//       x[i]=1.e+6;
+//       for(int l=0;l<3;l++){
+// 	if(std::abs(d[l]*b[l]) < 1.e-6) continue; //Don't treat 0 elements.
+// 	d[l] = d[l]/b[l];
+// 	x[i] = std::min(x[i],std::abs(d[l]));
+//       }
+//       //Real-space cutoff is minimal x[i] => sphere fits entirely inside cell.
+//       LR_rc = std::min(LR_rc,x[i]);
     }
 
     //Set KC for structure-factor and LRbreakups.
