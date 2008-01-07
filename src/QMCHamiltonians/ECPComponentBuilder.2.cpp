@@ -46,7 +46,7 @@ namespace qmcplusplus {
     int ndown=1; 
     int nup=0;
     int nrule=4;//default quadrature
-    int Llocal = -1;
+    Llocal = -1;
 
     OhmmsAttributeSet aAttrib;
     aAttrib.add(eunits,"units");
@@ -244,19 +244,19 @@ namespace qmcplusplus {
 
       int ngIn=vnn.cols()-2;
 
+      if (Llocal == -1)
+	Llocal = Lmax;
       //find the index of local 
-      int iLmax=-1;
+      int iLlocal=-1;
       for(int l=0; l<angList.size(); l++)
-      {
-        if(angList[l] == Lmax) iLmax=l;
-      }
+        if(angList[l] == Llocal) iLlocal=l;
 
       vector<RealType> newP(ng),newPin(ngIn);
       for(int l=0; l<angList.size(); l++)
       {
-        if(angList[l] == Lmax) continue;
+        if(angList[l] == Llocal) continue;
         const RealType* restrict vp=vnn[angList[l]];
-        const RealType* restrict vpLoc=vnn[iLmax];
+        const RealType* restrict vpLoc=vnn[iLlocal];
         int ll=angList[l];
         for(int i=0; i<ngIn; i++)
           newPin[i]=Vprefactor*(vp[i]-vpLoc[i]);
@@ -278,7 +278,8 @@ namespace qmcplusplus {
       }
 
       NumNonLocal=Lmax;
-      Lmax--;
+      if (Llocal == Lmax)
+	Lmax--;
       if(NumNonLocal)
       {
         pp_nonloc->lmax=Lmax;
@@ -292,10 +293,10 @@ namespace qmcplusplus {
       }
 
       {
-        app_log() << "   Making L=" << iLmax << " a local potential." << endl;
+        app_log() << "   Making L=" << Llocal << " a local potential." << endl;
         newPin[0]=0.0;
         RealType vfac=-Vprefactor/Zeff;
-        const RealType* restrict vpLoc=vnn[iLmax];
+        const RealType* restrict vpLoc=vnn[iLlocal];
         for(int i=0; i<ngIn; i++) newPin[i]=vfac*vpLoc[i];
 
         OneDimCubicSpline<RealType> infunc(grid_global,newPin);
