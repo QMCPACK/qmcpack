@@ -51,7 +51,8 @@ namespace qmcplusplus {
     void reset(ParticleSet& ref, T rs) {
        NormFactor=4.0*M_PI/ref.Lattice.Volume;
        Rs = rs;
-       OneOverSqrtRs = 1.0 / std::sqrt(Rs);
+       SqrtRs=std::sqrt(Rs);
+       OneOverSqrtRs = 1.0 / SqrtRs;
     }
      
     inline T operator()(T r, T rinv) { 
