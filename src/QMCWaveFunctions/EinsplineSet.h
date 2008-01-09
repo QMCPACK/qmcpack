@@ -67,7 +67,9 @@ namespace qmcplusplus {
     /////////////////////
     /// Store the orbital objects.  Using template class allows us to
     /// avoid making separate real and complex versions of this class.
-    std::vector<EinsplineOrb<ValueType,OHMMS_DIM>*> Orbitals;
+    //std::vector<EinsplineOrb<ValueType,OHMMS_DIM>*> Orbitals;
+    std::vector<EinsplineOrb<complex<double>,OHMMS_DIM>*> Orbitals;
+    
     
   public:  
     UnitCellType GetLattice();

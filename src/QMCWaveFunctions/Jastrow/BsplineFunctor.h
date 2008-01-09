@@ -28,7 +28,7 @@ namespace qmcplusplus {
     typedef typename OptimizableFunctorBase<T>::real_type real_type;
     typedef typename OptimizableFunctorBase<T>::OptimizableSetType OptimizableSetType;
     
-    std::string elementType;
+    std::string elementType, pairType;
     std::vector<double> SplineCoefs;
     std::vector<double> Parameters;
     std::vector<std::string> ParameterNames;
@@ -65,10 +65,22 @@ namespace qmcplusplus {
       SplineCoefs[0] = Parameters[1] - 2.0*DeltaR * CuspValue;
       for (int i=2; i<Parameters.size(); i++)
 	SplineCoefs[i+1] = Parameters[i];
-      FILE *fout = fopen ((elementType + ".dat").c_str(), "w");
-      for (double r=0.0; r<Rcut; r+=0.01)
-	fprintf (fout, "%1.10e %1.10e\n", r, evaluate(r));
-      fclose (fout);
+//       string fname = (elementType != "") ? elementType : pairType;
+//       fname = fname + ".dat";
+//       fprintf (stderr, "Writing %s file.\n", fname.c_str());
+//       FILE *fout = fopen (fname.c_str(), "w");
+//       for (double r=1.0e-5; r<Rcut; r+=0.01) {
+// 	double eps = 1.0e-6;
+// 	real_type du, d2u, du_FD, d2u_FD;
+// 	double u = evaluate (r, du, d2u);
+// 	double uplus  = evaluate(r+eps);
+// 	double uminus = evaluate(r-eps);
+// 	du_FD  = (uplus-uminus)/(2.0*eps);
+// 	d2u_FD = (uplus+uminus-2.0*u)/(eps*eps);
+//  	fprintf (fout, "%1.10e %1.10e %1.10e %1.10e %1.10e %1.10e\n", r, evaluate(r),
+// 		 du, du_FD, d2u, d2u_FD);
+//       }
+//       fclose (fout);
 //       cerr << "SplineCoefs = ";
 //       for (int i=0; i<SplineCoefs.size(); i++)
 // 	cerr << SplineCoefs[i] << " ";
@@ -101,6 +113,10 @@ namespace qmcplusplus {
 	dudr = d2udr2 = 0.0;
 	return 0.0;
       }
+//       double eps = 1.0e-5;
+//       double dudr_FD = (evaluate(r+eps)-evaluate(r-eps))/(2.0*eps);
+//       double d2udr2_FD = (evaluate(r+eps)+evaluate(r-eps)-2.0*evaluate(r))/(eps*eps);
+
       r *= DeltaRInv;
       double ipart, t;
       t = modf (r, &ipart);
@@ -109,16 +125,24 @@ namespace qmcplusplus {
       double tp[4];
       tp[0] = t*t*t;  tp[1] = t*t;  tp[2] = t;  tp[3] = 1.0;
 
-      dudr = DeltaRInv * 
-	(SplineCoefs[i+0]*(dA[ 0]*tp[0] + dA[ 1]*tp[1] + dA[ 2]*tp[2] + dA[ 3]*tp[3])+
-	 SplineCoefs[i+1]*(dA[ 4]*tp[0] + dA[ 5]*tp[1] + dA[ 6]*tp[2] + dA[ 7]*tp[3])+
-	 SplineCoefs[i+2]*(dA[ 8]*tp[0] + dA[ 9]*tp[1] + dA[10]*tp[2] + dA[11]*tp[3])+
-	 SplineCoefs[i+3]*(dA[12]*tp[0] + dA[13]*tp[1] + dA[14]*tp[2] + dA[15]*tp[3]));
       d2udr2 = DeltaRInv * DeltaRInv *
 	(SplineCoefs[i+0]*(d2A[ 0]*tp[0] + d2A[ 1]*tp[1] + d2A[ 2]*tp[2] + d2A[ 3]*tp[3])+
 	 SplineCoefs[i+1]*(d2A[ 4]*tp[0] + d2A[ 5]*tp[1] + d2A[ 6]*tp[2] + d2A[ 7]*tp[3])+
 	 SplineCoefs[i+2]*(d2A[ 8]*tp[0] + d2A[ 9]*tp[1] + d2A[10]*tp[2] + d2A[11]*tp[3])+
 	 SplineCoefs[i+3]*(d2A[12]*tp[0] + d2A[13]*tp[1] + d2A[14]*tp[2] + d2A[15]*tp[3]));
+      dudr = DeltaRInv * 
+	(SplineCoefs[i+0]*(dA[ 0]*tp[0] + dA[ 1]*tp[1] + dA[ 2]*tp[2] + dA[ 3]*tp[3])+
+	 SplineCoefs[i+1]*(dA[ 4]*tp[0] + dA[ 5]*tp[1] + dA[ 6]*tp[2] + dA[ 7]*tp[3])+
+	 SplineCoefs[i+2]*(dA[ 8]*tp[0] + dA[ 9]*tp[1] + dA[10]*tp[2] + dA[11]*tp[3])+
+	 SplineCoefs[i+3]*(dA[12]*tp[0] + dA[13]*tp[1] + dA[14]*tp[2] + dA[15]*tp[3]));
+
+//       if (std::fabs(dudr_FD-dudr) > 1.0e-8) 
+// 	cerr << "Error in BsplineFunction:  dudr = " << dudr 
+// 	     << "  dudr_FD = " << dudr_FD << endl;
+
+//       if (std::fabs(d2udr2_FD-d2udr2) > 1.0e-4) 
+// 	cerr << "Error in BsplineFunction:  r = " << r << "  d2udr2 = " << dudr 
+// 	     << "  d2udr2_FD = " << d2udr2_FD << "  rcut = " << Rcut << endl;
       return 
 	(SplineCoefs[i+0]*(A[ 0]*tp[0] + A[ 1]*tp[1] + A[ 2]*tp[2] + A[ 3]*tp[3])+
 	 SplineCoefs[i+1]*(A[ 4]*tp[0] + A[ 5]*tp[1] + A[ 6]*tp[2] + A[ 7]*tp[3])+
@@ -140,19 +164,30 @@ namespace qmcplusplus {
     
     bool put(xmlNodePtr cur) 
     {
-      CuspValue = 0.0;
+      CuspValue = -1.0e10;
       NumParams = 0;
       Rcut = 0.0;
       OhmmsAttributeSet rAttrib;
       rAttrib.add(elementType, "elementType");
+      rAttrib.add(pairType, "pairType");
       rAttrib.add(NumParams,   "size");
       rAttrib.add(CuspValue,   "cusp");
       rAttrib.add(Rcut,        "rcut");
       rAttrib.put(cur);
 
+      // If the cusp value is not explicitly set, set it from the pair type. 
+      if (CuspValue < -1.0e9) {
+	if ((pairType=="uu") || (pairType=="dd"))
+	  CuspValue = -0.25;
+	else if ((pairType=="ud") || (pairType=="du"))
+	  CuspValue = -0.5;
+	else
+	  CuspValue = 0.0;
+      }
+
       if (NumParams == 0) {
 	app_error() << "You must specify a positive number of parameters for the "
-		    << "one-body spline jastrow function.\n";
+		    << "Bspline jastrow function.\n";
 	abort();
       }
       resize (NumParams);

@@ -23,13 +23,22 @@ namespace qmcplusplus {
   class ParticleSet;
 
   struct BsplineJastrowBuilder: public OrbitalBuilderBase {
-    ParticleSet &sourcePtcl;
+    ParticleSet *sourcePtcl;
+    // One-body constructor
     BsplineJastrowBuilder(ParticleSet& target, TrialWaveFunction& psi,
 			  ParticleSet& source) : 
-      OrbitalBuilderBase(target,psi), sourcePtcl(source)
+      OrbitalBuilderBase(target,psi), sourcePtcl(&source)
     {
       // nothing for now
     }
+    // Two-body constructor
+    BsplineJastrowBuilder(ParticleSet& target, TrialWaveFunction& psi) :
+      OrbitalBuilderBase(target,psi), sourcePtcl(NULL)
+    {
+      // nothing for now
+    }
+
+
     
     bool put(xmlNodePtr cur);
   };

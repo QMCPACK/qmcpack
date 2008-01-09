@@ -121,14 +121,14 @@ namespace qmcplusplus {
       }
     }
     else if (funcOpt == "Bspline" ) {
-      app_log() << "\n  Using BsplineBuilder for one-body jatrow with analytic functions" << endl;
+      app_log() << "\n  Using BsplineBuilder for one-body jastrow with analytic functions" << endl;
       OrbitalBuilderBase* sBuilder = new BsplineJastrowBuilder (targetPtcl, targetPsi, *sourcePtcl);
       Children.push_back(sBuilder);
       return sBuilder->put(cur);
     }
     else
     {
-      app_log() << "\n  Using JABBuilder for one-body jatrow with analytic functions" << endl;
+      app_log() << "\n  Using JABBuilder for one-body jastrow with analytic functions" << endl;
       OrbitalBuilderBase* jb = new JABBuilder(targetPtcl,targetPsi,ptclPool);
       Children.push_back(jb);
       return jb->put(cur);
@@ -152,6 +152,11 @@ namespace qmcplusplus {
     else if(funcOpt == "pade") 
     {
       app_log() << "    Using analytic Pade Jastrow Functor " <<endl;
+      if (targetPtcl.Lattice.SuperCellEnum != SUPERCELL_OPEN) {
+	app_warning() << "   Pade Jastrow is requested for a periodic system. Please choose other functors." << endl;
+	return false;
+      }	
+
       control = new PadeConstraints(targetPtcl,targetPsi,ignoreSpin);
     } 
     else if(funcOpt == "rpa") 
@@ -174,6 +179,12 @@ namespace qmcplusplus {
       app_log() << "    Using analytic Scaled Pade Jastrow Functor " <<endl;
       control = new ScaledPadeConstraints(targetPtcl,targetPsi,ignoreSpin);
     } 
+    else if (funcOpt == "Bspline" ) {
+      app_log() << "\n  Using BsplineBuilder for two-body jastrow with analytic functions" << endl;
+      OrbitalBuilderBase* sBuilder = new BsplineJastrowBuilder (targetPtcl, targetPsi);
+      Children.push_back(sBuilder);
+      return sBuilder->put(cur);
+    }
     else //known analytic function
     {
       OrbitalBuilderBase* jbuilder=0;

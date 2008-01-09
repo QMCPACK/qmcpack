@@ -542,7 +542,7 @@ namespace qmcplusplus {
       fprintf (stderr, "  ti=%d  bi=%d energy=%8.5f k=(%6.4f, %6.4f, %6.4f)\n", 
 	       ti, bi, e, k[0], k[1], k[2]);
       
-      OrbitalSet->Orbitals[i] = new EinsplineOrb<ValueType,OHMMS_DIM>;
+      OrbitalSet->Orbitals[i] = new EinsplineOrb<complex<double>,OHMMS_DIM>;
       OrbitalSet->Orbitals[i]->kVec = k;
       OrbitalSet->Orbitals[i]->read(H5FileID, groupPath.str());
     }
@@ -615,7 +615,7 @@ namespace qmcplusplus {
       fprintf (stderr, "  ti=%3d  bi=%3d energy=%8.5f k=(%6.4f, %6.4f, %6.4f)\n", 
 	       ti, bi, e, k[0], k[1], k[2]);
       
-      EinsplineOrb<ValueType,OHMMS_DIM> *orb;
+      EinsplineOrb<complex<double>,OHMMS_DIM> *orb;
       // Check to see if we have already read this orbital, perhaps on
       // another processor in this OpenMP node.
       std::map<TinyVector<int,4>,OrbType*,Int4less>::iterator iter =
@@ -623,7 +623,7 @@ namespace qmcplusplus {
       if (iter != OrbitalMap.end()) 
 	orb = iter->second;
       else { // The orbital has not yet been read, so read it now
-	orb = new EinsplineOrb<ValueType,OHMMS_DIM>;
+	orb = new EinsplineOrb<complex<double>,OHMMS_DIM>;
 	OrbitalMap[TinyVector<int,4>(spin, ti, bi, 0)] = orb;
 	orb->kVec = k;
 	orb->Lattice = SuperLattice;
@@ -649,11 +649,11 @@ namespace qmcplusplus {
       // associated with it.
       for (int icopy=1; icopy<orb->uCenters.size(); icopy++) {
 	iter = OrbitalMap.find(TinyVector<int,4>(spin,ti,bi,icopy));
-	EinsplineOrb<ValueType,OHMMS_DIM> *orbCopy;
+	EinsplineOrb<complex<double>,OHMMS_DIM> *orbCopy;
 	if (iter != OrbitalMap.end()) 
 	  orbCopy = iter->second;
 	else {
-	  orbCopy = new EinsplineOrb<ValueType,OHMMS_DIM>(*orb);
+	  orbCopy = new EinsplineOrb<complex<double>,OHMMS_DIM>(*orb);
 	  OrbitalMap[TinyVector<int,4>(spin, ti, bi, icopy)] = orbCopy;
 	  orbCopy->uCenter = orbCopy->uCenters[icopy];
 	  if (orb->Reflections.size() > icopy)

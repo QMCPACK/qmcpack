@@ -50,14 +50,18 @@ namespace qmcplusplus {
     ru[1] -= std::floor (ru[1]);
     ru[2] -= std::floor (ru[2]);
     for(int j=0; j<OrbitalSetSize; j++) {
-      Orbitals[j]->evaluate(ru, psi[j]); 
-      
-#ifdef QMC_COMPLEX
+      complex<double> val;
+      Orbitals[j]->evaluate(ru, val);
+
       double phase = -dot(r, Orbitals[j]->kVec);
       double s,c;
       sincos (phase, &s, &c);
       complex<double> e_mikr (c,s);
-      psi[j] *= e_mikr;      
+      val *= e_mikr;
+#ifdef QMC_COMPLEX
+      psi[j] = val;
+#else
+      psi[j] = real(val);
 #endif
     }
   }
@@ -72,9 +76,9 @@ namespace qmcplusplus {
     ru[0] -= std::floor (ru[0]);
     ru[1] -= std::floor (ru[1]);
     ru[2] -= std::floor (ru[2]);
-    ValueType val;
-    TinyVector<ValueType,3> gu;
-    Tensor<ValueType,3> hess;
+    complex<double> val;
+    TinyVector<complex<double>,3> gu;
+    Tensor<complex<double>,3> hess;
     complex<double> eye (0.0, 1.0);
     for(int j=0; j<OrbitalSetSize; j++) {
       complex<double> u;
@@ -118,9 +122,9 @@ namespace qmcplusplus {
       ru[0] -= std::floor (ru[0]);
       ru[1] -= std::floor (ru[1]);
       ru[2] -= std::floor (ru[2]);
-      ValueType val;
-      TinyVector<ValueType,3> gu;
-      Tensor<ValueType,3> hess;
+      complex<double> val;
+      TinyVector<complex<double>,3> gu;
+      Tensor<complex<double>,3> hess;
       complex<double> eye (0.0, 1.0);
       for(int j=0; j<OrbitalSetSize; j++) {
 	complex<double> u;

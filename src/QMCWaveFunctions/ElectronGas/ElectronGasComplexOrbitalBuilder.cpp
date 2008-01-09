@@ -60,7 +60,7 @@ namespace qmcplusplus {
 
     //create k-points ordered wrt the k^2
     egGrid.createGrid(nc,nkpts);
-    egGrid.createGrid(twistAngle);
+    //egGrid.createGrid(twistAngle);
 
     //create a E(lectron)G(as)O(rbital)Set
     EGOSet* psi=new EGOSet(egGrid.kpt,egGrid.mk2); 
