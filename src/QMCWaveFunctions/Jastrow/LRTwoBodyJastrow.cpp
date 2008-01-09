@@ -68,7 +68,7 @@ namespace qmcplusplus {
 
   void LRTwoBodyJastrow::resetParameters(OptimizableSetType& optVariables) 
   {
-    ///DO NOTHING FOR NOW
+    if(handler) resetByHandler();
   }
 
   void LRTwoBodyJastrow::resetTargetParticleSet(ParticleSet& P) {
@@ -451,14 +451,14 @@ namespace qmcplusplus {
           char coeffname[128];
           sprintf(coeffname,"rpa_k%d",ish);
           vlist[coeffname]=Fk_symm[ish];
-          //vlist.add(coeffname,Fk_symm.data()+ik);
-          std::ostringstream kname,val;
-          kname << ish;
-          val<<Fk_symm[ish];
-          xmlNodePtr p_ptr = xmlNewTextChild(cur,NULL,(const xmlChar*)"parameter",
-              (const xmlChar*)val.str().c_str());
-          xmlNewProp(p_ptr,(const xmlChar*)"id",(const xmlChar*)coeffname);
-          xmlNewProp(p_ptr,(const xmlChar*)"name",(const xmlChar*)kname.str().c_str());
+          ////vlist.add(coeffname,Fk_symm.data()+ik);
+          //std::ostringstream kname,val;
+          //kname << ish;
+          //val<<Fk_symm[ish];
+          //xmlNodePtr p_ptr = xmlNewTextChild(cur,NULL,(const xmlChar*)"parameter",
+          //    (const xmlChar*)val.str().c_str());
+          //xmlNewProp(p_ptr,(const xmlChar*)"id",(const xmlChar*)coeffname);
+          //xmlNewProp(p_ptr,(const xmlChar*)"name",(const xmlChar*)kname.str().c_str());
         }
 
         MaxK=skRef->KLists.kshell[MaxKshell];
