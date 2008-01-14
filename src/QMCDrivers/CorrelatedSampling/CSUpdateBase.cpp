@@ -21,6 +21,12 @@
 #include <numeric>
 
 namespace qmcplusplus { 
+  CSUpdateBase::CSUpdateBase(MCWalkerConfiguration& w, 
+      TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator_t& rg): 
+    QMCUpdateBase(w,psi,h,rg), nPsi(0), useDriftOption("no")
+    { 
+      myParams.add(useDriftOption,"useDrift","string"); 
+    }
 
   CSUpdateBase::~CSUpdateBase()
   {
@@ -70,7 +76,8 @@ namespace qmcplusplus {
       bool resetNorms)
   {
     nPsi=Psi1.size();
-    
+    useDrift=(useDriftOption=="yes");
+
     if(nPsi ==0)
     {
       app_error() << "  CSUpdateBase::initCSWalkers fails. Empyty Psi/H pairs" << endl;
@@ -95,7 +102,7 @@ namespace qmcplusplus {
         logpsi[ipsi]=Psi1[ipsi]->evaluateLog(W); 		 
         Psi1[ipsi]->G=W.G;
         thisWalker.Properties(ipsi,LOGPSI)=logpsi[ipsi];
-        thisWalker.Properties(ipsi,LOCALENERGY)=H1[ipsi]->evaluate(W);
+        RealType e=thisWalker.Properties(ipsi,LOCALENERGY)=H1[ipsi]->evaluate(W);
         H1[ipsi]->saveProperty(thisWalker.getPropertyBase(ipsi));
         sumratio[ipsi]=1.0;
       } 							
@@ -103,7 +110,7 @@ namespace qmcplusplus {
       //Check SIMONE's note
       //Compute the sum over j of Psi^2[j]/Psi^2[i] for each i
       int indexij(0);
-      RealType *rPtr=ratioIJ[iw];
+      RealType* restrict rPtr=ratioIJ[iw];
       for(int ipsi=0; ipsi< nPsi-1; ipsi++) {			  
         for(int jpsi=ipsi+1; jpsi< nPsi; jpsi++){     		 
           RealType r=std::exp(2.0*(logpsi[jpsi]-logpsi[ipsi])); 
@@ -115,16 +122,21 @@ namespace qmcplusplus {
 
       //Re-use Multiplicity as the sumratio
       thisWalker.Multiplicity=sumratio[0];
+      for(int ipsi=0; ipsi< nPsi; ipsi++) 
+      {
+        thisWalker.Properties(ipsi,UMBRELLAWEIGHT)
+          = invsumratio[ipsi] =1.0/sumratio[ipsi];
+      }
+
       //DON't forget DRIFT!!!
       thisWalker.Drift=0.0;
-
-      for(int ipsi=0; ipsi< nPsi; ipsi++) {
-        RealType wgt=1.0/sumratio[ipsi];
-        thisWalker.Properties(ipsi,UMBRELLAWEIGHT)=wgt;
-        //thisWalker.Drift += wgt*psi[ipsi]->G;
-        PAOps<RealType,DIM>::axpy(wgt,Psi1[ipsi]->G,thisWalker.Drift);
+      if(useDrift)
+      {
+        for(int ipsi=0; ipsi< nPsi; ipsi++) 
+          PAOps<RealType,DIM>::axpy(invsumratio[ipsi],Psi1[ipsi]->G,thisWalker.Drift);
+        setScaledDrift(Tau,thisWalker.Drift);
       }
-      thisWalker.Drift *= Tau;
+
       ++it;++iw;
     }
   }
@@ -133,6 +145,7 @@ namespace qmcplusplus {
       bool resetNorms)
   {
     nPsi=Psi1.size();
+    useDrift=(useDriftOption=="yes");
     
     if(nPsi ==0)
     {
@@ -174,9 +187,10 @@ namespace qmcplusplus {
       int indexij(0);
       RealType *rPtr=ratioIJ[iw];
       for(int ipsi=0; ipsi< nPsi-1; ipsi++) {			  
-        for(int jpsi=ipsi+1; jpsi< nPsi; jpsi++){     		 
+        for(int jpsi=ipsi+1; jpsi< nPsi; jpsi++, indexij++){     		 
           RealType r=std::exp(2.0*(logpsi[jpsi]-logpsi[ipsi])); 
-          rPtr[indexij++]=r*avgNorm[ipsi]/avgNorm[jpsi];
+          //rPtr[indexij++]=r*avgNorm[ipsi]/avgNorm[jpsi];
+          rPtr[indexij]=r*avgNorm[ipsi]/avgNorm[jpsi];
           sumratio[ipsi] += r;                            
           sumratio[jpsi] += 1.0/r;		
         }                                              
@@ -184,16 +198,21 @@ namespace qmcplusplus {
 
       //Re-use Multiplicity as the sumratio
       thisWalker.Multiplicity=sumratio[0];
+      for(int ipsi=0; ipsi< nPsi; ipsi++) 
+      {
+        thisWalker.Properties(ipsi,UMBRELLAWEIGHT)
+          = invsumratio[ipsi] =1.0/sumratio[ipsi];
+      }
+
       //DON't forget DRIFT!!!
       thisWalker.Drift=0.0;
-
-      for(int ipsi=0; ipsi< nPsi; ipsi++) {
-        RealType wgt=1.0/sumratio[ipsi];
-        thisWalker.Properties(ipsi,UMBRELLAWEIGHT)=wgt;
-        //thisWalker.Drift += wgt*psi[ipsi]->G;
-        PAOps<RealType,DIM>::axpy(wgt,Psi1[ipsi]->G,thisWalker.Drift);
+      if(useDrift)
+      {
+        for(int ipsi=0; ipsi< nPsi; ipsi++) 
+          PAOps<RealType,DIM>::axpy(invsumratio[ipsi],Psi1[ipsi]->G,thisWalker.Drift);
+        setScaledDrift(Tau,thisWalker.Drift);
       }
-      thisWalker.Drift *= Tau;
+
       ++it;++iw;
     }
   }
@@ -232,16 +251,22 @@ namespace qmcplusplus {
       }                                               
       //Re-use Multiplicity as the sumratio
       thisWalker.Multiplicity=sumratio[0];
+
+      for(int ipsi=0; ipsi< nPsi; ipsi++) 
+      {
+        thisWalker.Properties(ipsi,UMBRELLAWEIGHT)
+          = invsumratio[ipsi] =1.0/sumratio[ipsi];
+      }
+
       //DON't forget DRIFT!!!
       thisWalker.Drift=0.0;
-
-      for(int ipsi=0; ipsi< nPsi; ipsi++) {
-        RealType wgt=1.0/sumratio[ipsi];
-        thisWalker.Properties(ipsi,UMBRELLAWEIGHT)=wgt;
-        //thisWalker.Drift += wgt*psi[ipsi]->G;
-        PAOps<RealType,DIM>::axpy(wgt,Psi1[ipsi]->G,thisWalker.Drift);
+      if(useDrift)
+      {
+        for(int ipsi=0; ipsi< nPsi; ipsi++) 
+          PAOps<RealType,DIM>::axpy(invsumratio[ipsi],Psi1[ipsi]->G,thisWalker.Drift);
+        setScaledDrift(Tau,thisWalker.Drift);
       }
-      thisWalker.Drift *= Tau;
+
       ++it;++iw;
     }
   }

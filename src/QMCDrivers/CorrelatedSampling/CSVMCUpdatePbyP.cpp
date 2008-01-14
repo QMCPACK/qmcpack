@@ -63,7 +63,9 @@ namespace qmcplusplus {
       makeGaussRandomWithEngine(deltaR,RandomGen);
 
       for(int ipsi=0; ipsi<nPsi; ipsi++)
+      {
         uw[ipsi]= thisWalker.Properties(ipsi,UMBRELLAWEIGHT);
+      }
 
       // Point to the correct walker in the ratioij buffer
       RealType* restrict ratioijPtr=ratioIJ[iwalker];
@@ -74,10 +76,11 @@ namespace qmcplusplus {
         PosType dr = m_sqrttau*deltaR[iat];
         PosType newpos = W.makeMove(iat,dr);
 
+        RealType ratio_check=1.0;
         for(int ipsi=0; ipsi<nPsi; ipsi++)
         {
          // Compute ratios before and after the move
-          ratio[ipsi] = Psi1[ipsi]->ratio(W,iat,*G1[ipsi],*L1[ipsi]); 
+          ratio_check *= ratio[ipsi] = Psi1[ipsi]->ratio(W,iat,*G1[ipsi],*L1[ipsi]); 
           logpsi[ipsi]=std::log(ratio[ipsi]*ratio[ipsi]);
           // Compute Gradient in new position
           //*G1[ipsi]=Psi1[ipsi]->G + dG;
@@ -85,28 +88,33 @@ namespace qmcplusplus {
           sumratio[ipsi]=1.0;
         }
 
-        // Compute new (Psi[i]/Psi[j])^2 and their sum
-        for(int ipsi=0, indexij=0; ipsi< nPsi-1; ipsi++)
+        bool accept_move=false;
+        if(ratio_check>1e-12)//if any ratio is too small, reject the move automatically
         {
-          for(int jpsi=ipsi+1; jpsi < nPsi; jpsi++, indexij++)
+          int indexij(0);
+          // Compute new (Psi[i]/Psi[j])^2 and their sum
+          for(int ipsi=0; ipsi< nPsi-1; ipsi++)
           {
-            // Ratio between norms is already included in ratioijPtr from initialize.
-            RealType rji=std::exp(logpsi[jpsi]-logpsi[ipsi])*ratioijPtr[indexij];
-            instRij[indexij]=rji;
-            //ratioij[indexij]=rji;
-            sumratio[ipsi] += rji;
-            sumratio[jpsi] += 1.0/rji;
+            for(int jpsi=ipsi+1; jpsi < nPsi; jpsi++, indexij++)
+            {
+              // Ratio between norms is already included in ratioijPtr from initialize.
+              RealType rji=std::exp(logpsi[jpsi]-logpsi[ipsi])*ratioijPtr[indexij];
+              instRij[indexij]=rji;
+              //ratioij[indexij]=rji;
+              sumratio[ipsi] += rji;
+              sumratio[jpsi] += 1.0/rji;
+            }
           }
+
+          // Evaluate new Umbrella Weight
+          for(int ipsi=0; ipsi< nPsi ;ipsi++) invsumratio[ipsi]=1.0/sumratio[ipsi];
+
+          RealType td=ratio[0]*ratio[0]*sumratio[0]/(*it)->Multiplicity;
+          accept_move=Random()<std::min(1.0,td);
         }
-
-        // Evaluate new Umbrella Weight
-        for(int ipsi=0; ipsi< nPsi ;ipsi++) 
-          invsumratio[ipsi]=1.0/sumratio[ipsi];
-
-        RealType td=ratio[0]*ratio[0]*sumratio[0]/(*it)->Multiplicity;
-
-        RealType prob = std::min(1.0,td);
-        if(Random() < prob) 
+        //RealType prob = std::min(1.0,td);
+        //if(Random() < prob) 
+        if(accept_move)
         { 
           /* Electron move is accepted. Update:
              -ratio (Psi[i]/Psi[j])^2 for this walker

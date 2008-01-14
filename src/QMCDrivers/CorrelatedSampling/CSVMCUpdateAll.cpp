@@ -33,8 +33,8 @@ namespace qmcplusplus {
   /// Constructor.
   CSVMCUpdateAll::CSVMCUpdateAll(MCWalkerConfiguration& w, 
       TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator_t& rg):
-    CSUpdateBase(w,psi,h,rg) { 
-  }
+    CSUpdateBase(w,psi,h,rg) 
+    { }
 
   /**  Advance all the walkers one timstep. 
    */
@@ -44,14 +44,18 @@ namespace qmcplusplus {
     int iwlk(0); 
     int nPsi_minus_one(nPsi-1);
 
-    while(it != it_end) {
+    while(it != it_end) 
+    {
 
       MCWalkerConfiguration::Walker_t &thisWalker(**it);
 
       //create a 3N-Dimensional Gaussian with variance=1
       makeGaussRandomWithEngine(deltaR,RandomGen);
       
-      W.R = m_sqrttau*deltaR + thisWalker.R + thisWalker.Drift;
+      if(useDrift)
+        W.R = m_sqrttau*deltaR + thisWalker.R + thisWalker.Drift;
+      else
+        W.R = m_sqrttau*deltaR + thisWalker.R;
       
       //update the distance table associated with W
       //DistanceTable::update(W);
@@ -75,41 +79,33 @@ namespace qmcplusplus {
 	}                                                         
       }                                                           
 
-      for(int ipsi=0; ipsi< nPsi; ipsi++)			  
-	invsumratio[ipsi]=1.0/sumratio[ipsi];			  
+      for(int ipsi=0; ipsi<nPsi; ipsi++)
+        invsumratio[ipsi]=1.0/sumratio[ipsi];			  
 
-      // Only these properties need to be updated                 
-      // Using the sum of the ratio Psi^2[j]/Psi^2[iwref]	 
-      // because these are number of order 1. Potentially	 
-      // the sum of Psi^2[j] can get very big			 
-      //Properties(LOGPSI) =logpsi[0];		   		 
-      //Properties(SUMRATIO) = sumratio[0];			 
- 
-      RealType logGf = -0.5*Dot(deltaR,deltaR);
-      //RealType scale = Tau; // ((-1.0+sqrt(1.0+2.0*Tau*vsq))/vsq);	
+      RealType g = sumratio[0]/thisWalker.Multiplicity*   		
+       	std::exp(2.0*(logpsi[0]-thisWalker.Properties(LOGPSI)));	
 
-      //accumulate the weighted drift: using operators in ParticleBase/ParticleAttribOps.h
-      //to handle complex-to-real assignment and axpy operations.
-      //drift = invsumratio[0]*Psi1[0]->G;
-      //for(int ipsi=1; ipsi< nPsi ;ipsi++) {               		
-      //  drift += invsumratio[ipsi]*Psi1[ipsi]->G;  
-      //} 							    	
-      PAOps<RealType,DIM>::scale(invsumratio[0],Psi1[0]->G,drift);
-      for(int ipsi=1; ipsi< nPsi ;ipsi++) {               		
-        PAOps<RealType,DIM>::axpy(invsumratio[ipsi],Psi1[ipsi]->G,drift);
-      } 							    	
-      //drift *= scale; 						   	
-      setScaledDrift(Tau,drift);
-
-      deltaR = thisWalker.R - W.R - drift;
-      RealType logGb = -m_oneover2tau*Dot(deltaR,deltaR);
-      
+      if(useDrift)
+      {
+        //forward green function
+        RealType logGf = -0.5*Dot(deltaR,deltaR);
+        PAOps<RealType,DIM>::scale(invsumratio[0],Psi1[0]->G,drift);
+        for(int ipsi=1; ipsi< nPsi ;ipsi++) {               		
+          PAOps<RealType,DIM>::axpy(invsumratio[ipsi],Psi1[ipsi]->G,drift);
+        } 							    	
+        setScaledDrift(Tau,drift);
+        //backward green function
+        deltaR = thisWalker.R - W.R - drift;
+        RealType logGb = -m_oneover2tau*Dot(deltaR,deltaR);
+        g *= std::exp(logGb-logGf);
+      }
       //Original
       //RealType g = Properties(SUMRATIO)/thisWalker.Properties(SUMRATIO)*   		
       //	exp(logGb-logGf+2.0*(Properties(LOGPSI)-thisWalker.Properties(LOGPSI)));	
       //Reuse Multiplicity to store the sumratio[0]
-      RealType g = sumratio[0]/thisWalker.Multiplicity*   		
-       	std::exp(logGb-logGf+2.0*(logpsi[0]-thisWalker.Properties(LOGPSI)));	
+      //This is broken up into two pieces
+      //RealType g = sumratio[0]/thisWalker.Multiplicity*   		
+      // 	std::exp(logGb-logGf+2.0*(logpsi[0]-thisWalker.Properties(LOGPSI)));	
 
       if(Random() > g) {
 	thisWalker.Age++;     

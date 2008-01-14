@@ -40,7 +40,8 @@ namespace qmcplusplus {
    *
    * See QMCDriver::process
    */
-  bool CSVMC::put(xmlNodePtr q){
+  bool CSVMC::put(xmlNodePtr q)
+  {
 
     int nPsi=H1.size();
 
@@ -81,6 +82,7 @@ namespace qmcplusplus {
         Mover=new CSVMCUpdateAll(W,Psi,H,Random);
       }
 
+      Mover->put(qmcNode);
       Mover->Psi1=Psi1;
       Mover->H1=H1;
       Mover->multiEstimator=multiEstimator;

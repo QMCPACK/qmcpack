@@ -30,11 +30,12 @@ namespace qmcplusplus {
     public:
 
       CSUpdateBase(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, 
-          RandomGenerator_t& rg): QMCUpdateBase(w,psi,h,rg), nPsi(0)
-      {}
+          RandomGenerator_t& rg);
+
       virtual ~CSUpdateBase();
 
       int nPsi;
+      bool useDrift;
       vector<RealType> logpsi;		
       vector<RealType> sumratio;		
       vector<RealType> invsumratio;	
@@ -43,6 +44,8 @@ namespace qmcplusplus {
       vector<RealType> cumNorm;	
       vector<RealType> instRij;
       Matrix<RealType> ratioIJ;
+
+      string useDriftOption;
 
       ///multiple estimator
       CSEnergyEstimator* multiEstimator;
