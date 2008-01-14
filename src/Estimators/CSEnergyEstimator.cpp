@@ -34,8 +34,8 @@ namespace qmcplusplus {
   {
     NumCopies=hcopy;
     NumObservables = h.size();
-    scalars.resize(NumCopies+NumCopies*(NumCopies-1)/2);
-    scalars_saved.resize(NumCopies+NumCopies*(NumCopies-1)/2);
+    scalars.resize(2*NumCopies+NumCopies*(NumCopies-1)/2);
+    scalars_saved.resize(2*NumCopies+NumCopies*(NumCopies-1)/2);
     //d_data.resize(NumCopies*3+NumCopies*(NumCopies-1)/2);
   }
 
@@ -57,15 +57,15 @@ namespace qmcplusplus {
   void 
   CSEnergyEstimator::add2Record(RecordNamedProperty<RealType>& record) {
     FirstIndex = record.add("LE0");
-    int dummy=record.add("LESQ0");
-    dummy=record.add("WPsi0");
+    //int dummy=record.add("LESQ0");
+    int dummy=record.add("WPsi0");
     char aname[32];
     for(int i=1; i<NumCopies; i++)
     {
       sprintf(aname,"LE%i",i);   
       dummy=record.add(aname);
-      sprintf(aname,"LESQ%i",i);   
-      dummy=record.add(aname);
+      //sprintf(aname,"LESQ%i",i);   
+      //dummy=record.add(aname);
       sprintf(aname,"WPsi%i",i);   
       dummy=record.add(aname);
     }
@@ -77,6 +77,7 @@ namespace qmcplusplus {
       }
     }
     LastIndex=dummy+1;
+    clear();
 
     //msg.add(d_data.begin(),d_data.end());
   }
@@ -85,33 +86,25 @@ namespace qmcplusplus {
   CSEnergyEstimator::accumulate(const Walker_t& awalker, RealType wgt) 
   {
     int ii=0;
+    vector<RealType> e(NumCopies),uw(NumCopies);
     for(int i=0; i<NumCopies; i++) 
     {
       //get the pointer to the i-th row
       const RealType* restrict prop=awalker.getPropertyBase(i);
-      scalars[ii++](prop[LOCALENERGY],prop[UMBRELLAWEIGHT]);
+      e[i]=prop[LOCALENERGY];
+      uw[i]=prop[UMBRELLAWEIGHT];
+      scalars[ii++](e[i],uw[i]);
+      scalars[ii++](uw[i],1.0);
       //    RealType uw = prop[UMBRELLAWEIGHT];
       //    RealType e = prop[LOCALENERGY];
       //    d_data[ii++]+=uw*e;
       //    d_data[ii++]+=uw*e*e;
       //    d_data[ii++]+=uw;
     }
-
-    //TinyVector<RealType,4> e,uw;
-    //for(int i=0; i<NumCopies; i++) 
-    //{
-    //  //get the pointer to the i-th row
-    //  const RealType* restrict prop=awalker.getPropertyBase(i);
-    //  uw[i] = prop[UMBRELLAWEIGHT];
-    //  e[i] = prop[LOCALENERGY];
-    //  d_data[ii++]+=uw[i]*e[i];
-    //  d_data[ii++]+=uw[i]*e[i]*e[i];
-    //  d_data[ii++]+=uw[i];
-    //}
-
-    //for(int i=0; i<NumCopies-1; i++) 
-    //  for(int j=i+1; j<NumCopies; j++)
-    //    d_data[ii++]+=uw[i]*e[i]-uw[j]*e[j];
+    for(int i=0; i<NumCopies-1; i++) 
+      for(int j=i+1; j<NumCopies; j++)
+        scalars[ii++](uw[i]*e[i]-uw[j]*e[j],1.0);
+        //d_data[ii++]+=uw[i]*e[i]-uw[j]*e[j];
   }
 
   void 
