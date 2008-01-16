@@ -59,6 +59,8 @@ namespace qmcplusplus {
   {
      os << "    Maximum angular mementum = "<<  lmax << endl;
      os << "    Number of non-local channels = " << nchannel << endl;
+     for(int l=0; l <nchannel; l++) 
+       os << "       l(" << l << ")=" << angpp_m[l] <<endl;
      os << "    Cutoff radius = " << Rmax << endl;
      os << "    Spherical grids and weights: " << endl;
      for(int ik=0;ik<nknot; ik++)
