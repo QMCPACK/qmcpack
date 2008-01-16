@@ -88,6 +88,8 @@ namespace qmcplusplus {
     ParticleSet& targetPtcl;
     ///reference to a ParticleSetPool
     PtclPoolType& ptclPool;
+    ///base lattice for the numerical grids
+    ParticleSet::ParticleLayout_t basisLattice;
     ///number of grid points for each direction
     TinyVector<IndexType,DIM> BoxGrid;
     ///number of copies of the lattice for tiling

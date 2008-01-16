@@ -23,6 +23,7 @@
 #include "QMCWaveFunctions/TricubicBsplineSetBuilder.h"
 #include "QMCWaveFunctions/OrbitalBuilderBase.h"
 #include "OhmmsData/AttributeSet.h"
+#include "ParticleIO/ParticleLayoutIO.h"
 #include "Utilities/Timer.h"
 #include "Message/Communicate.h"
 //#define DEBUG_BSPLINE_EG
@@ -37,8 +38,8 @@ namespace qmcplusplus {
     CurSPOSize(0),BoxGrid(2),BoxDup(1),LowerBox(0.0),UpperBox(1.0),
   rootNode(cur)
   {
-    for(int idim=0; idim<DIM; idim++)
-      UpperBox[idim]=targetPtcl.Lattice.R(idim,idim);
+    basisLattice=p.Lattice;
+    for(int idim=0; idim<DIM; idim++) UpperBox[idim]=targetPtcl.Lattice.R(idim,idim);
     myParam=new PWParameterSet;
     print_log = OrbitalBuilderBase::print_level>0;
   }   
@@ -54,6 +55,7 @@ namespace qmcplusplus {
 
     curH5Fname.clear();
 
+
     //save the name of current HDF5 file name
     OhmmsAttributeSet aAttrib;
     aAttrib.add(curH5Fname,"href");
@@ -64,7 +66,15 @@ namespace qmcplusplus {
     while(cur != NULL)
     {
       std::string cname((const char*)(cur->name));
-      if(cname == "grid") 
+      if(cname.find("cell")<cname.size())// == "supercell")
+      {
+        LatticeParser a(basisLattice);
+        a.put(cur);
+        for(int idim=0; idim<DIM; idim++) 
+          UpperBox[idim]=basisLattice.R(idim,idim);
+      }
+      else if(cname == "grid") 
+      //if(cname == "grid") 
       {
         string closedEnd("yes");
         int idir=0,npts=2; 
@@ -158,13 +168,14 @@ namespace qmcplusplus {
     //stage 2: analyze the supercell to choose a specialized bspline function
     bool atGamma= (dot(TwistAngle,TwistAngle)<numeric_limits<RealType>::epsilon());
     bool localize = myParam->Rcut>0.0;
-    RealType offdiag=0.0;
-    for(int idim=0; idim<DIM; idim++)
-      for(int jdim=0; jdim<DIM; jdim++)
-      {
-        if(idim != jdim) offdiag+=abs(targetPtcl.Lattice.R(idim,jdim));
-      }
-    bool orthorhombic=(offdiag< numeric_limits<RealType>::epsilon());
+    //RealType offdiag=0.0;
+    //for(int idim=0; idim<DIM; idim++)
+    //  for(int jdim=0; jdim<DIM; jdim++)
+    //  {
+    //    if(idim != jdim) offdiag+=abs(targetPtcl.Lattice.R(idim,jdim));
+    //  }
+    //bool orthorhombic=(offdiag< numeric_limits<RealType>::epsilon());
+    bool orthorhombic=basisLattice.DiagonalOnly;
 
     //stage 3: check if the grid needs to be modified
     BoxDup=myParam->BoxDup;
@@ -249,7 +260,8 @@ namespace qmcplusplus {
 
       myBasis[detname]=activeBasis;
       activeBasis->setOrbitalSetSize(norb);
-      activeBasis->setLattice(targetPtcl.Lattice);
+      //activeBasis->setLattice(targetPtcl.Lattice);
+      activeBasis->setLattice(basisLattice);
       activeBasis->setTwistAngle(targetPtcl.Lattice.k_cart(TwistAngle));
       if(localize) activeBasis->setRcut(myParam->Rcut);
 
@@ -313,15 +325,25 @@ namespace qmcplusplus {
     }
 
     //TESTING BC
+    //if(OpenEndGrid)
+    //  activeBasis->setGrid(LowerBox[0],UpperBox[0], LowerBox[1],UpperBox[1],LowerBox[2],UpperBox[2],
+    //      BoxGrid[0],BoxGrid[1],BoxGrid[2],
+    //      targetPtcl.Lattice.BoxBConds[0],targetPtcl.Lattice.BoxBConds[1],targetPtcl.Lattice.BoxBConds[2],
+    //      OpenEndGrid);
+    //else//need to offset for closed end
+    //  activeBasis->setGrid(LowerBox[0],UpperBox[0],LowerBox[1],UpperBox[1],LowerBox[2],UpperBox[2],
+    //      BoxGrid[0]-1,BoxGrid[1]-1,BoxGrid[2]-1,
+    //      targetPtcl.Lattice.BoxBConds[0],targetPtcl.Lattice.BoxBConds[1],targetPtcl.Lattice.BoxBConds[2],
+    //      OpenEndGrid);
     if(OpenEndGrid)
       activeBasis->setGrid(LowerBox[0],UpperBox[0], LowerBox[1],UpperBox[1],LowerBox[2],UpperBox[2],
           BoxGrid[0],BoxGrid[1],BoxGrid[2],
-          targetPtcl.Lattice.BoxBConds[0],targetPtcl.Lattice.BoxBConds[1],targetPtcl.Lattice.BoxBConds[2],
+          basisLattice.BoxBConds[0],basisLattice.BoxBConds[1],basisLattice.BoxBConds[2],
           OpenEndGrid);
     else//need to offset for closed end
       activeBasis->setGrid(LowerBox[0],UpperBox[0],LowerBox[1],UpperBox[1],LowerBox[2],UpperBox[2],
           BoxGrid[0]-1,BoxGrid[1]-1,BoxGrid[2]-1,
-          targetPtcl.Lattice.BoxBConds[0],targetPtcl.Lattice.BoxBConds[1],targetPtcl.Lattice.BoxBConds[2],
+          basisLattice.BoxBConds[0],basisLattice.BoxBConds[1],basisLattice.BoxBConds[2],
           OpenEndGrid);
 
     //copy the input grid
