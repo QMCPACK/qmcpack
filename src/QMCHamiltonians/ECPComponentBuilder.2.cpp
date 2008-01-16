@@ -20,7 +20,6 @@
 //#include "QMCHamiltonians/FSAtomPseudoPot.h"
 //#include "Utilities/IteratorUtility.h"
 
-#define QMCPACK_ABORT abort();
 
 namespace qmcplusplus {
   //this is abinit/siesta format
@@ -29,13 +28,13 @@ namespace qmcplusplus {
     if(grid_global == 0)
     {
       app_error() << "    Global grid needs to be defined." << endl;
-      abort(); //FIXABORT
+      APP_ABORT("ECPComponentBuilder::buildSemiLocalAndLocal");
     }
     // There should only be one semilocal tag
     if (semiPtr.size()> 1) 
     {
       app_error() << "    We have more than one semilocal sections in the PP xml file." << endl;
-      abort(); //FIXABORT
+      APP_ABORT("ECPComponentBuilder::buildSemiLocalAndLocal");
     }
 
     RealType rmax = -1;
@@ -77,7 +76,7 @@ namespace qmcplusplus {
       is_r_times_V = false;
     else {
       app_error() << "Unrecognized format \"" << format << "\" in PP file." << endl;
-      abort(); //FIXABORT
+      APP_ABORT("ECPComponentBuilder::buildSemiLocalAndLocal");
     }
 
     // We cannot construct the potentials as we construct them since
@@ -156,8 +155,16 @@ namespace qmcplusplus {
 
     app_log() << "   Start ECPComponentBuilder::parseCasino" << endl;
     RealType rmax=2.0;
-    const xmlChar* rptr=xmlGetProp(cur,(const xmlChar*)"cutoff");
-    if(rptr != NULL) rmax = atof((const char*)rptr);
+    Llocal=-1;
+    Lmax=-1;
+    OhmmsAttributeSet aAttrib;
+    aAttrib.add(rmax,"cutoff");
+    aAttrib.add(Llocal,"l-local");
+    aAttrib.add(Lmax,"lmax");
+    aAttrib.put(cur);
+    //const xmlChar* rptr=xmlGetProp(cur,(const xmlChar*)"cutoff");
+    //if(rptr != NULL) rmax = atof((const char*)rptr);
+
 
     //app_log() << "   Creating a Linear Grid Rmax=" << rmax << endl;
     //const RealType d=5e-4;
@@ -169,14 +176,14 @@ namespace qmcplusplus {
     if(!fin)
     {
       app_error() << "Could not open file " << fname << endl;
-      OHMMS::Controller->abort();
+      APP_ABORT("ECPComponentBuilder::parseCasino");
     }      
 
     if(pp_nonloc==0) pp_nonloc=new NonLocalECPComponent; 
 
     OhmmsAsciiParser aParser;
     int atomNumber=0;
-    int npts=0;
+    int npts=0, idummy;
     string eunits("rydberg");
 
     app_log() << "    ECPComponentBuilder::parseCasino" <<endl;
@@ -190,7 +197,8 @@ namespace qmcplusplus {
     RealType Vprefactor = (eunits == "rydberg")?0.5:1.0;
 
     aParser.skiplines(fin,1);//Angular momentum of local component (0=s,1=p,2=d..)
-    aParser.getValue(fin,Lmax);
+    aParser.getValue(fin,idummy);
+    if(Lmax<0) Lmax=idummy;
     aParser.skiplines(fin,1);//NLRULE override (1) VMC/DMC (2) config gen (0 ==> input/default value)
     aParser.skiplines(fin,1);//0 0, not sure what to do yet
     aParser.skiplines(fin,1);//Number of grid points
@@ -244,12 +252,12 @@ namespace qmcplusplus {
 
       int ngIn=vnn.cols()-2;
 
-      if (Llocal == -1)
-	Llocal = Lmax;
+      if (Llocal == -1) Llocal = Lmax;
       //find the index of local 
       int iLlocal=-1;
       for(int l=0; l<angList.size(); l++)
         if(angList[l] == Llocal) iLlocal=l;
+
 
       vector<RealType> newP(ng),newPin(ngIn);
       for(int l=0; l<angList.size(); l++)
@@ -278,8 +286,9 @@ namespace qmcplusplus {
       }
 
       NumNonLocal=Lmax;
-      if (Llocal == Lmax)
-	Lmax--;
+     
+      if (Llocal == Lmax) Lmax--;
+
       if(NumNonLocal)
       {
         pp_nonloc->lmax=Lmax;
