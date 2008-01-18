@@ -30,7 +30,7 @@ OwnWalkers(true),ReadyForPbyP(false),UpdateMode(Update_Walker),Polymer(0) {
 }
 
 MCWalkerConfiguration::MCWalkerConfiguration(const MCWalkerConfiguration& mcw)
-: ParticleSet(mcw), OwnWalkers(true),
+: ParticleSet(mcw), OwnWalkers(true), GlobalNumWalkers(mcw.GlobalNumWalkers),
   UpdateMode(Update_Walker), ReadyForPbyP(false), Polymer(0)
 {
   GlobalNumWalkers=mcw.GlobalNumWalkers;
