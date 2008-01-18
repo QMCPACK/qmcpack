@@ -38,6 +38,7 @@ SET(QMC_BITS 32)
 ######################################################################
 INCLUDE(${CMAKE_ROOT}/Modules/CheckFunctionExists.cmake)
 CHECK_FUNCTION_EXISTS(sincos HAVE_SINCOS)
+CHECK_FUNCTION_EXISTS(round HAVE_STD_ROUND)
 
 ######################################################################
 # Build options
