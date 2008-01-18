@@ -81,6 +81,9 @@
 #cmakedefine QMC_FASTWALKER @QMC_FASTWALKER@
 
 /* Define if sincos function exists */
-#cmakedefine HAVE_SINCOS
+#cmakedefine HAVE_SINCOS @HAVE_SINCOS@
+
+/* Define if std::round function exists */
+#cmakedefine HAVE_STD_ROUND @HAVE_STD_ROUND@
 
 #endif // QMCPLUSPLUS_CONFIGURATION_H
