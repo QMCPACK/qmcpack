@@ -77,8 +77,15 @@ namespace qmcplusplus {
       inline void applyBC(T& x) const {
         if(periodic)
         {
-          T x1=std::fmod(x*OneOverL,1.0);
+#if defined(HAVE_STD_ROUND)
+          T x1=x*OneOverL;
+          x=L*(x1-round(x1));
+#else
+          //T x1=std::fmod(x*OneOverL,1.0);
+          T dmy;
+          T x1=std::modf(x*OneOverL,&dmy);
           x=L*(x1-static_cast<int>(2.0*x1));
+#endif
         }
       }
 
@@ -212,7 +219,9 @@ namespace qmcplusplus {
 
     inline void applyBC(T& x) const 
     {
-      T x1=std::fmod(x*OneOverL,1.0);
+      T dmy;
+      T x1=std::modf(x*OneOverL,&dmy);
+      //T x1=std::fmod(x*OneOverL,1.0);
       x=L*(x1-static_cast<int>(2.0*x1));
     }
   };
