@@ -46,13 +46,13 @@ namespace qmcplusplus {
       int now=1;
 
 #pragma omp for  nowait
-      for(int ip=0; ip<NumThreads; ip++) 
+      for(int ip=0; ip<NumThreads; ++ip) 
         Movers[ip]->startRun(nBlocks,false);
 
-      for(int block=0;block<nBlocks; block++)
+      for(int block=0;block<nBlocks; ++block)
       {
 #pragma omp for 
-        for(int ip=0; ip<NumThreads; ip++)
+        for(int ip=0; ip<NumThreads; ++ip)
         {
           //assign the iterators and resuse them
           MCWalkerConfiguration::iterator wit(W.begin()+wPerNode[ip]), wit_end(W.begin()+wPerNode[ip+1]);
@@ -75,14 +75,14 @@ namespace qmcplusplus {
         {
           CurrentStep+=nSteps;
           Estimators->stopBlock(estimatorClones);
-          recordBlock(block);
+          recordBlock(block+1);
         }//end of mater
       }//block
     }//end of parallel
     Estimators->stop(estimatorClones);
 
     //copy back the random states
-    for(int ip=0; ip<NumThreads; ip++) 
+    for(int ip=0; ip<NumThreads; ++ip) 
       *(RandomNumberControl::Children[ip])=*(Rng[ip]);
 
     //finalize a qmc section
@@ -142,7 +142,7 @@ namespace qmcplusplus {
     }
 
 #pragma omp parallel  for
-    for(int ip=0; ip<NumThreads; ip++)
+    for(int ip=0; ip<NumThreads; ++ip)
     {
       if(QMCDriverMode[QMC_UPDATE_MODE])
         Movers[ip]->initWalkersForPbyP(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
