@@ -181,29 +181,25 @@ namespace qmcplusplus {
 
   void QMCDriver::recordBlock(int block) {
 
-    //first dump the data for restart
+    ////first dump the data for restart
     if(wOut ==0)
     {//this does not happen but just make sure there is no memory fault 
       wOut = new HDFWalkerOutput(W,RootName,qmcComm);
       branchEngine->start(RootName,true);
     }
-    else
-     wOut->dump(W);
 
-    //save energy_history
-    branchEngine->write(wOut->FileName,false);
+    if(block%Period4CheckPoint == 0)
+    {
+      wOut->dump(W);
+      branchEngine->write(wOut->FileName,false); //save energy_history
+    }
 
     //save positions for optimization
     if(QMCDriverMode[QMC_OPTIMIZE]) W.saveEnsemble();
-
-    //estimator writes
-    //Estimators->report(CurrentStep);
-    //if Period4WalkerDump>0, record works as the checkpoint
-    //branchEngine->write(wOut->getConfigID(),true);
-    if(Period4WalkerDump>0) wOut->append(W);
+    //if(Period4WalkerDump>0) wOut->append(W);
 
     //flush the ostream
-    OhmmsInfo::flush();
+    //OhmmsInfo::flush();
   }
 
   bool QMCDriver::finalize(int block) {
@@ -283,15 +279,12 @@ namespace qmcplusplus {
     //these options are reset for each block
     Period4WalkerDump=0;
     Period4CheckPoint=1;
+
+    OhmmsAttributeSet aAttrib;
+    aAttrib.add(Period4CheckPoint,"checkpoint");
+    aAttrib.put(cur);
      
-    //construct a set of attributes
-    OhmmsAttributeSet rAttrib;
-    rAttrib.add(Period4WalkerDump,"stride");
-    rAttrib.add(Period4WalkerDump,"period");
-    rAttrib.add(Period4CheckPoint,"period");
-
     if(cur != NULL) {
-
       //initialize the parameter set
       m_param.put(cur);
       xmlNodePtr tcur=cur->children;
@@ -299,8 +292,15 @@ namespace qmcplusplus {
       while(tcur != NULL) {
 	string cname((const char*)(tcur->name));
 	if(cname == "record") {
+          //construct a set of attributes
+          OhmmsAttributeSet rAttrib;
+          rAttrib.add(Period4WalkerDump,"stride");
+          rAttrib.add(Period4WalkerDump,"period");
           rAttrib.put(tcur);
 	} else if(cname == "checkpoint") {
+          OhmmsAttributeSet rAttrib;
+          rAttrib.add(Period4CheckPoint,"stride");
+          rAttrib.add(Period4CheckPoint,"period");
           rAttrib.put(tcur);
         } else if(cname == "random") {
           ResetRandom = true;
