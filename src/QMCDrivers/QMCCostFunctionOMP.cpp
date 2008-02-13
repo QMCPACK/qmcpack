@@ -198,7 +198,8 @@ namespace qmcplusplus {
   QMCCostFunctionOMP::checkConfigurations() {
 
     RealType et_tot=0.0;
-#pragma omp parallel reduction(+:et_tot)
+    RealType e2_tot=0.0;
+#pragma omp parallel reduction(+:et_tot,e2_tot)
     {
       int ip = omp_get_thread_num();
       MCWalkerConfiguration& wRef(*wClones[ip]);
@@ -214,6 +215,7 @@ namespace qmcplusplus {
       int nat = wRef.getTotalNum();
       int iw=0;
       Return_t e0=0.0;
+      Return_t e2=0.0;
       while(it != it_end) {
 
         Walker_t& thisWalker(**it);
@@ -234,7 +236,10 @@ namespace qmcplusplus {
             saved[LOGPSI_FIXED], saved[LOGPSI_FREE], thisWalker.Drift, dl);
 #endif
         thisWalker.DataSet.add(dl.first_address(),dl.last_address());
-        e0 += saved[ENERGY_TOT] = hClones[ip]->evaluate(wRef);
+        //e0 += saved[ENERGY_TOT] = hClones[ip]->evaluate(wRef);
+        Return_t x= hClones[ip]->evaluate(wRef);
+        e0 += saved[ENERGY_TOT] = x;
+        e2 += x*x;
         saved[ENERGY_FIXED] = hClones[ip]->getInvariantEnergy();
 
         ++it;
@@ -242,18 +247,21 @@ namespace qmcplusplus {
       }
       //add them all
       et_tot+=e0;
+      e2_tot+=e2;
     }
 
     //Need to sum over the processors
-    vector<Return_t> etemp(2);
+    vector<Return_t> etemp(3);
     etemp[0]=et_tot;
     etemp[1]=static_cast<Return_t>(wPerNode[NumThreads]);
-
-    cout << "energy " << etemp[0] << " " << etemp[1] << endl;
+    etemp[2]=e2_tot;
 
     myComm->allreduce(etemp);
     Etarget = static_cast<Return_t>(etemp[0]/etemp[1]);
     NumSamples = static_cast<int>(etemp[1]);
+
+    app_log() << "  VMC Eavg = " << Etarget << endl;
+    app_log() << "  VMC Evar = " << etemp[2]/etemp[1]-Etarget*Etarget << endl;
 
     setTargetEnergy(Etarget);
 
