@@ -177,6 +177,7 @@ namespace qmcplusplus {
     int iw=0;
     int totalElements=W.getTotalNum()*OHMMS_DIM;
     Etarget=0.0;
+    Return_t e2sum=0.0;
     while(it != it_end) {
 
       Walker_t& thisWalker(**it);
@@ -198,7 +199,9 @@ namespace qmcplusplus {
       Psi.evaluateDeltaLog(W, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], thisWalker.Drift, dL);
 #endif
       thisWalker.DataSet.add(dL.first_address(),dL.last_address());
-      Etarget += saved[ENERGY_TOT] = H.evaluate(W);
+      Return_t e=H.evaluate(W);
+      e2sum += e*e;
+      Etarget += saved[ENERGY_TOT] = e;
       saved[ENERGY_FIXED] = H.getInvariantEnergy();
 
       ++it;
@@ -206,12 +209,17 @@ namespace qmcplusplus {
     }
 
     //Need to sum over the processors
-    vector<Return_t> etemp(2);
+    vector<Return_t> etemp(3);
     etemp[0]=Etarget;
     etemp[1]=static_cast<Return_t>(numLocWalkers);
+    etemp[2]=e2sum;
+
     myComm->allreduce(etemp);
     Etarget = static_cast<Return_t>(etemp[0]/etemp[1]);
     NumSamples = static_cast<int>(etemp[1]);
+
+    app_log() << "  VMC Eavg = " << Etarget << endl;
+    app_log() << "  VMC Evar = " << etemp[2]/etemp[1]-Etarget*Etarget << endl;
 
     setTargetEnergy(Etarget);
 
