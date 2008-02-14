@@ -44,10 +44,16 @@ namespace qmcplusplus {
     }
 
     string ecpFormat("table");
-    const xmlChar* t=xmlGetProp(cur,(const xmlChar*)"format");
-    if(t != NULL) {
-      ecpFormat= (const char*)t;
-    } 
+    string pbc("yes");
+    OhmmsAttributeSet pAttrib;
+    pAttrib.add(ecpFormat,"format");
+    pAttrib.add(pbc,"pbc");
+    pAttrib.put(cur);
+
+    //const xmlChar* t=xmlGetProp(cur,(const xmlChar*)"format");
+    //if(t != NULL) {
+    //  ecpFormat= (const char*)t;
+    //} 
 
     if(ecpFormat == "xml")  
     {
@@ -60,7 +66,7 @@ namespace qmcplusplus {
 
     ///create LocalECPotential
     if(hasLocalPot) {
-      if(IonConfig.Lattice.SuperCellEnum == SUPERCELL_OPEN) 
+      if(IonConfig.Lattice.SuperCellEnum == SUPERCELL_OPEN || pbc =="no") 
       {
         LocalECPotential* apot = new LocalECPotential(IonConfig,targetPtcl);
         for(int i=0; i<localPot.size(); i++) {
