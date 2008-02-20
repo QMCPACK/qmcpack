@@ -45,6 +45,9 @@ Communicate::irecv(int source, int tag, T& )
   return 1;
 }
 
+template<typename T> inline void
+Communicate::send(int dest, int tag, T&) { }
+
 template<typename T> inline Communicate::request
 Communicate::isend(int dest, int tag, T&)
 {
@@ -272,6 +275,12 @@ inline void
 Communicate::bcast(int* restrict x, int n) 
 {
   MPI_Bcast(x,n,MPI_INT,0,myMPI);
+}
+
+template<> inline void
+Communicate::send(int dest, int tag, vector<double>& g)
+{
+  MPI_Send(&(g[0]),g.size(),MPI_DOUBLE,dest,tag, myMPI);
 }
 
 template<> inline Communicate::request
