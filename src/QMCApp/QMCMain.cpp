@@ -82,8 +82,9 @@ namespace qmcplusplus {
     ptclPool->get(app_log());
     hamPool->get(app_log());
 
-    Timer t1;
+    OHMMS::Controller->barrier();
 
+    Timer t1;
     curMethod = string("invalid");
     //xmlNodePtr cur=m_root->children;
     for(int qa=0; qa<m_qmcaction.size(); qa++)
