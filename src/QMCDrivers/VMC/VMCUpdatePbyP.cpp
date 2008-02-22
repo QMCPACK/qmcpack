@@ -53,7 +53,7 @@ namespace qmcplusplus {
       RealType psi_old = thisWalker.Properties(SIGN);
       RealType psi = psi_old;
 
-      for(int iter=0; iter<nSubSteps; iter++) {
+      for(int iter=0; iter<nSubSteps; ++iter) {
 
         makeGaussRandomWithEngine(deltaR,RandomGen);
         bool stucked=true;
