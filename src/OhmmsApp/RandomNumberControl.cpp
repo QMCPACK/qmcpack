@@ -359,11 +359,13 @@ namespace APPNAMESPACE
     vector<uint_type> vt,vt_tot;
     std::copy(istream_iterator<uint_type>(otemp), istream_iterator<uint_type>(),back_inserter(vt));
 
+#if defined(HAVE_MPI)
     if(comm->size()>1)
     {
       if(comm->rank()==0) vt_tot.resize(vt.size()*comm->size());
       comm->gather(vt,vt_tot,0);
     }
+#endif
 
     if(comm->rank()==0)
     {
