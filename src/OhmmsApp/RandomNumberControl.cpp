@@ -27,6 +27,19 @@
 #include "OhmmsData/HDFAttribIO.h"
 #include <fstream>
 
+/** gather operations 
+ * will be moved to Message directory 
+ */
+#define QMCPP_GATHER(CONTAINER,CppType, MPIType)                                     \
+template<>                                                                           \
+inline void                                                                          \
+Communicate::gather(CONTAINER< CppType >&sb, CONTAINER< CppType >& rb, int dest)     \
+{                                                                                    \
+  MPI_Gather(&(sb[0]),sb.size(),MPI_UNSIGNED, &(rb[0]),sb.size(),MPIType,dest,myMPI);\
+}                                                                                    \
+
+QMCPP_GATHER(vector,uint32_t,MPI_UNSIGNED);
+
 namespace APPNAMESPACE
 {
 
@@ -35,85 +48,85 @@ namespace APPNAMESPACE
   std::vector<RandomGenerator_t*>  RandomNumberControl::Children;
   int RandomNumberControl::Offset=11;
 
-template<>
-struct HDFAttribIO<std::vector<uint32_t> >: public HDFAttribIOBase {
+  template<>
+    struct HDFAttribIO<std::vector<uint32_t> >: public HDFAttribIOBase {
 
-  typedef std::vector<uint32_t> arraytype_t;
-  std::vector<hsize_t> dimsL,dimsG,offset;
-  arraytype_t&  ref;
-  bool replace;
+      typedef std::vector<uint32_t> arraytype_t;
+      std::vector<hsize_t> dimsL,dimsG,offset;
+      arraytype_t&  ref;
+      bool replace;
 
-  HDFAttribIO<arraytype_t>(arraytype_t& a, bool over=false): ref(a),replace(over)
-  { 
-    dimsL.resize(1,a.size());
-    dimsG.resize(1,a.size());
-    offset.resize(1,0);
-  }
+      HDFAttribIO<arraytype_t>(arraytype_t& a, vector<int>& shape, bool overwrite=false): 
+        ref(a), replace(overwrite)
+        { 
+          dimsG.resize(shape.size());
+          for(int i=0; i<dimsG.size(); i++) dimsG[i]=static_cast<hsize_t>(shape[i]);
+        }
 
-  template<unsigned D>
-    HDFAttribIO<arraytype_t>(arraytype_t& a, TinyVector<int,D>& gcount, 
-        TinyVector<int,D>& count, TinyVector<int,D>& start, bool overwrite=false): 
-    ref(a), replace(overwrite)
-    { 
-      dimsG.resize(D);
-      dimsL.resize(D);
-      offset.resize(D);
-      for(int i=0; i<D; i++) dimsG[i]=static_cast<hsize_t>(gcount[i]);
-      for(int i=0; i<D; i++) dimsL[i]=static_cast<hsize_t>(count[i]);
-      for(int i=0; i<D; i++) offset[i]=static_cast<hsize_t>(start[i]);
-    }
+      template<unsigned D>
+        HDFAttribIO<arraytype_t>(arraytype_t& a, TinyVector<int,D>& gcount, 
+            TinyVector<int,D>& count, TinyVector<int,D>& start, bool overwrite=false): 
+        ref(a), replace(overwrite)
+        { 
+          dimsG.resize(D);
+          dimsL.resize(D);
+          offset.resize(D);
+          for(int i=0; i<D; i++) dimsG[i]=static_cast<hsize_t>(gcount[i]);
+          for(int i=0; i<D; i++) dimsL[i]=static_cast<hsize_t>(count[i]);
+          for(int i=0; i<D; i++) offset[i]=static_cast<hsize_t>(start[i]);
+        }
 
-  inline void write(hid_t grp, const char* name) {
+      inline void write(hid_t grp, const char* name) {
 
-    int shape=dimsG.size();
-    hid_t dset_id;
+        int shape=dimsG.size();
+        hid_t dset_id;
 
-    if(replace)
-    {
-      dset_id=H5Dopen(grp,name);
-    }
-    else
-    {
-      hid_t sid1  = H5Screate_simple(shape,&dimsG[0],NULL);
-      dset_id=H5Dcreate(grp,name,H5T_NATIVE_UINT,sid1,H5P_DEFAULT);
-      H5Sclose(sid1);
-    }
+        if(replace)
+        {
+          dset_id=H5Dopen(grp,name);
+        }
+        else
+        {
+          hid_t sid1  = H5Screate_simple(shape,&dimsG[0],NULL);
+          dset_id=H5Dcreate(grp,name,H5T_NATIVE_UINT,sid1,H5P_DEFAULT);
+          H5Sclose(sid1);
+        }
 
-    hsize_t stride[]={1,1,1,1};
-    hid_t memspace=H5Screate_simple(shape,&dimsL[0],NULL);
-    hid_t filespace=H5Dget_space(dset_id);
-    herr_t ret=H5Sselect_hyperslab(filespace,H5S_SELECT_SET,&offset[0],stride,&dimsL[0],NULL);
-    ret = H5Dwrite(dset_id,H5T_NATIVE_UINT,memspace,filespace,xfer_plist,&ref[0]);
-    H5Sclose(filespace);
-    H5Sclose(memspace);
-    H5Dclose(dset_id);
-  }
+        hsize_t stride[]={1,1,1,1};
+        hid_t memspace=H5Screate_simple(shape,&dimsL[0],NULL);
+        hid_t filespace=H5Dget_space(dset_id);
+        herr_t ret=H5Sselect_hyperslab(filespace,H5S_SELECT_SET,&offset[0],stride,&dimsL[0],NULL);
+        ret = H5Dwrite(dset_id,H5T_NATIVE_UINT,memspace,filespace,xfer_plist,&ref[0]);
+        H5Sclose(filespace);
+        H5Sclose(memspace);
+        H5Dclose(dset_id);
+      }
 
-  inline void read(hid_t grp, const char* name) {
-    hid_t dataset = H5Dopen(grp,name);
-    hid_t dataspace = H5Dget_space(dataset);
+      inline void read(hid_t grp, const char* name) {
+        hid_t dataset = H5Dopen(grp,name);
+        hid_t dataspace = H5Dget_space(dataset);
 
-    vector<hsize_t> gcount(dimsG.size());
-    int rank_in = H5Sget_simple_extent_ndims(dataspace);
-    int status_n = H5Sget_simple_extent_dims(dataspace, &gcount[0], NULL);
+        vector<hsize_t> gcount(dimsG.size());
+        int rank_in = H5Sget_simple_extent_ndims(dataspace);
+        int status_n = H5Sget_simple_extent_dims(dataspace, &gcount[0], NULL);
 
-    //check the dimensions, accept only if the dimensions match
-    if(rank_in == dimsG.size() && gcount[0] == dimsG[0]) 
-    {
-      for(int i=1;i<dimsG.size(); i++) dimsG[i]=gcount[i];
-      hsize_t mreq=dimsL[0];
-      for(int i=1;i<dimsG.size(); i++) {mreq *= (dimsL[i]=gcount[i]);}
+        //check the dimensions, accept only if the dimensions match
+        if(rank_in == dimsG.size() && gcount[0] == dimsG[0]) 
+        {
+          for(int i=1;i<dimsG.size(); i++) dimsG[i]=gcount[i];
+          hsize_t mreq=dimsL[0];
+          for(int i=1;i<dimsG.size(); i++) {mreq *= (dimsL[i]=gcount[i]);}
 
-      ref.resize(mreq);//resize it
-      hid_t memspace = H5Screate_simple(rank_in, &dimsL[0], NULL);
-      herr_t status = H5Sselect_hyperslab(dataspace,H5S_SELECT_SET, &offset[0],NULL,&dimsL[0],NULL);
-      status = H5Dread(dataset, H5T_NATIVE_UINT, memspace, dataspace, xfer_plist, &(ref[0]));
-      H5Sclose(memspace);
-    }
-    H5Sclose(dataspace);
-    H5Dclose(dataset);
-  }
-};
+          ref.resize(mreq);//resize it
+          hid_t memspace = H5Screate_simple(rank_in, &dimsL[0], NULL);
+          herr_t status = H5Sselect_hyperslab(dataspace,H5S_SELECT_SET, &offset[0],NULL,&dimsL[0],NULL);
+          status = H5Dread(dataset, H5T_NATIVE_UINT, memspace, dataspace, xfer_plist, &(ref[0]));
+          H5Sclose(memspace);
+        }
+        H5Sclose(dataspace);
+        H5Dclose(dataset);
+      }
+    };
 
   /// constructors and destructors
   RandomNumberControl::RandomNumberControl(const char* aname)
@@ -305,11 +318,10 @@ struct HDFAttribIO<std::vector<uint32_t> >: public HDFAttribIOBase {
         hin.read(h2,Random.EngineName.c_str());
         if(vt.size())
         {
-          char fname[128];
-          sprintf(fname,"random.p%i",comm->rank());
-          ofstream fout(fname);
-          std::copy(vt.begin(),vt.end(),ostream_iterator<uint_type>(fout,"\n"));
-
+          //char fname[128];
+          //sprintf(fname,"random.p%i",comm->rank());
+          //ofstream fout(fname);
+          //std::copy(vt.begin(),vt.end(),ostream_iterator<uint_type>(fout,"\n"));
           std::stringstream otemp;
           std::copy(vt.begin(),vt.end(),ostream_iterator<uint_type>(otemp," "));
           if(nthreads>1)
@@ -341,42 +353,80 @@ struct HDFAttribIO<std::vector<uint32_t> >: public HDFAttribIOBase {
       for(int ip=0; ip<nthreads; ip++) Children[ip]->write(otemp);
     else
       Random.write(otemp);
-    vector<uint_type> vt;
+
+    vector<uint_type> vt,vt_tot;
     std::copy(istream_iterator<uint_type>(otemp), istream_iterator<uint_type>(),back_inserter(vt));
 
-    string h5name(fname);
-    //append .config.h5 if missing
-    if(fname.find("config.h5")>= fname.size()) h5name.append(".config.h5");
-    hid_t h_plist=H5P_DEFAULT;
-    hid_t xfer_plist=H5P_DEFAULT;
-#if defined(H5_HAVE_PARALLEL)
     if(comm->size()>1)
     {
-      MPI_Info info=MPI_INFO_NULL;
-      h_plist = H5Pcreate(H5P_FILE_ACCESS);
-      H5Pset_fapl_mpio(h_plist,comm->getMPI(),info);
-      xfer_plist = H5Pcreate(H5P_DATASET_XFER);
-      H5Pset_dxpl_mpio(xfer_plist,H5FD_MPIO_COLLECTIVE);
+      if(comm->rank()==0) vt_tot.resize(vt.size()*comm->size());
+      comm->gather(vt,vt_tot,0);
     }
-#endif
-    hid_t fid =  H5Fopen(h5name.c_str(),H5F_ACC_RDWR,h_plist);
-    hid_t h1 =  H5Gopen(fid,hdf::main_state);
-    hid_t h2 = H5Gcreate(h1,"random",0);
 
-    TinyVector<int,2> gDims(comm->size()*nthreads,vt.size()/nthreads);
-    TinyVector<int,2> Dims(nthreads,vt.size()/nthreads);
-    TinyVector<int,2> offsets(pid*nthreads,0);
+    if(comm->rank()==0)
+    {
+      string h5name(fname);
+      //append .config.h5 if missing
+      if(fname.find("config.h5")>= fname.size()) h5name.append(".config.h5");
 
-    HDFAttribIO<std::vector<uint_type> > hout(vt,gDims,Dims,offsets);
-    hout.setTransferProperty(xfer_plist);
-    hout.write(h2,Random.EngineName.c_str());
+      hid_t fid =  H5Fopen(h5name.c_str(),H5F_ACC_RDWR,H5P_DEFAULT);
+      hid_t h1 =  H5Gopen(fid,hdf::main_state);
+      hid_t h2 = H5Gcreate(h1,"random",0);
 
-    //cleanup H5P
-    if(xfer_plist != H5P_DEFAULT) H5Pclose(xfer_plist);
-    if(h_plist != H5P_DEFAULT) H5Pclose(h_plist);
-    H5Gclose(h2);
-    H5Gclose(h1);
-    H5Fclose(fid);
+      TinyVector<int,2> gDims(comm->size()*nthreads,vt.size()/nthreads);
+      TinyVector<int,2> Dims(gDims);
+      TinyVector<int,2> offsets(0,0);
+      std::vector<uint_type>& vref=(comm->size()>1)?vt_tot:vt;
+      HDFAttribIO<std::vector<uint_type> > hout(vref,gDims,Dims,offsets);
+      hout.write(h2,Random.EngineName.c_str());
+      H5Gclose(h2);
+      H5Gclose(h1);
+      H5Fclose(fid);
+    }
+
+//    int pid=comm->rank();
+//    int nthreads=omp_get_max_threads();
+//    std::stringstream otemp;
+//    if(nthreads>1)
+//      for(int ip=0; ip<nthreads; ip++) Children[ip]->write(otemp);
+//    else
+//      Random.write(otemp);
+//    vector<uint_type> vt;
+//    std::copy(istream_iterator<uint_type>(otemp), istream_iterator<uint_type>(),back_inserter(vt));
+//
+//    string h5name(fname);
+//    //append .config.h5 if missing
+//    if(fname.find("config.h5")>= fname.size()) h5name.append(".config.h5");
+//    hid_t h_plist=H5P_DEFAULT;
+//    hid_t xfer_plist=H5P_DEFAULT;
+//#if defined(H5_HAVE_PARALLEL)
+//    if(comm->size()>1)
+//    {
+//      MPI_Info info=MPI_INFO_NULL;
+//      h_plist = H5Pcreate(H5P_FILE_ACCESS);
+//      H5Pset_fapl_mpio(h_plist,comm->getMPI(),info);
+//      xfer_plist = H5Pcreate(H5P_DATASET_XFER);
+//      H5Pset_dxpl_mpio(xfer_plist,H5FD_MPIO_COLLECTIVE);
+//    }
+//#endif
+//    hid_t fid =  H5Fopen(h5name.c_str(),H5F_ACC_RDWR,h_plist);
+//    hid_t h1 =  H5Gopen(fid,hdf::main_state);
+//    hid_t h2 = H5Gcreate(h1,"random",0);
+//
+//    TinyVector<int,2> gDims(comm->size()*nthreads,vt.size()/nthreads);
+//    TinyVector<int,2> Dims(nthreads,vt.size()/nthreads);
+//    TinyVector<int,2> offsets(pid*nthreads,0);
+//
+//    HDFAttribIO<std::vector<uint_type> > hout(vt,gDims,Dims,offsets);
+//    hout.setTransferProperty(xfer_plist);
+//    hout.write(h2,Random.EngineName.c_str());
+//
+//    //cleanup H5P
+//    if(xfer_plist != H5P_DEFAULT) H5Pclose(xfer_plist);
+//    if(h_plist != H5P_DEFAULT) H5Pclose(h_plist);
+//    H5Gclose(h2);
+//    H5Gclose(h1);
+//    H5Fclose(fid);
   }
 }
 /***************************************************************************
