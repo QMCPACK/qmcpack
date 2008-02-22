@@ -48,6 +48,12 @@ Communicate::irecv(int source, int tag, T& )
 template<typename T> inline void
 Communicate::send(int dest, int tag, T&) { }
 
+template<typename T> inline void Communicate::gather(T& sb, T& rb, int dest)
+{ }
+
+template<typename T> inline void Communicate::scatter(T& sb, T& rb, int dest)
+{ }
+
 template<typename T> inline Communicate::request
 Communicate::isend(int dest, int tag, T&)
 {
@@ -131,6 +137,7 @@ template<>
 inline void 
 Communicate::allreduce(int& g) 
 {
+  if(d_ncontexts==1) return;
   int gt = g;
   MPI_Allreduce(&(gt), &(g), 1, MPI_INT, MPI_SUM, myMPI);
 }
@@ -139,6 +146,7 @@ template<>
 inline void 
 Communicate::allreduce(double& g) 
 {
+  if(d_ncontexts==1) return;
   double gt = g;
   MPI_Allreduce(&(gt), &(g), 1, MPI_DOUBLE, MPI_SUM, myMPI);
 }
@@ -147,6 +155,7 @@ template<>
 inline void 
 Communicate::allreduce(APPNAMESPACE::TinyVector<double,OHMMS_DIM>& g) 
 {
+  if(d_ncontexts==1) return;
   APPNAMESPACE::TinyVector<double,OHMMS_DIM> gt(g);
   MPI_Allreduce(g.begin(), gt.begin(), OHMMS_DIM, MPI_DOUBLE, MPI_SUM, myMPI);
   g = gt;
@@ -156,6 +165,7 @@ template<>
 inline void 
 Communicate::allreduce(APPNAMESPACE::TinyVector<int,OHMMS_DIM>& g) 
 {
+  if(d_ncontexts==1) return;
   APPNAMESPACE::TinyVector<int,OHMMS_DIM> gt(g);
   MPI_Allreduce(g.begin(), gt.begin(), OHMMS_DIM, MPI_INT, MPI_SUM, myMPI);
   g = gt;
@@ -165,6 +175,7 @@ template<>
 inline void 
 Communicate::allreduce(std::vector<int>& g) 
 {
+  if(d_ncontexts==1) return;
   std::vector<int> gt(g.size(), 0);
   MPI_Allreduce(&(g[0]),&(gt[0]),g.size(),MPI_INT,MPI_SUM,myMPI);
   g = gt;
