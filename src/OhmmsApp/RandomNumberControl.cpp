@@ -27,6 +27,7 @@
 #include "OhmmsData/HDFAttribIO.h"
 #include <fstream>
 
+#if defined(HAVE_MPI)
 /** gather operations 
  * will be moved to Message directory 
  */
@@ -39,6 +40,7 @@ Communicate::gather(CONTAINER< CppType >&sb, CONTAINER< CppType >& rb, int dest)
 }                                                                                    \
 
 QMCPP_GATHER(vector,uint32_t,MPI_UNSIGNED);
+#endif
 
 namespace APPNAMESPACE
 {
