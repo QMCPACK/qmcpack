@@ -316,6 +316,7 @@ namespace qmcplusplus
 
   bool  HDFWalkerOutput::dumpCollect(MCWalkerConfiguration& W) 
   {
+#if defined(HAVE_MPI)
     int wb=OHMMS_DIM*W.getTotalNum();
     //could use gatherv but use send/irecv for now
     //int nw_max=W.WalkerOffSets[myComm->size()]-W.WalkerOffsets[myComm->size()-1];
@@ -362,6 +363,7 @@ namespace qmcplusplus
       H5Gclose(d2);
       H5Fclose(d1);
     }
+#endif
 
     return true;
   }
