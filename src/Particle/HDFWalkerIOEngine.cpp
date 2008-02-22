@@ -62,7 +62,7 @@ namespace qmcplusplus
       H5Pset_chunk(p,rank,dims);
       hid_t dataset =  H5Dcreate(grp, name, H5T_NATIVE_DOUBLE, dataspace, p);
       hid_t memspace = H5Screate_simple(rank, dims, NULL);
-      hid_t ret = H5Dwrite(dataset, H5T_NATIVE_DOUBLE, memspace, dataspace, H5P_DEFAULT,tp.data());
+      herr_t ret = H5Dwrite(dataset, H5T_NATIVE_DOUBLE, memspace, dataspace, H5P_DEFAULT,tp.data());
       H5Sclose(memspace);
       H5Sclose(dataspace);
       H5Dclose(dataset);
@@ -193,10 +193,10 @@ namespace qmcplusplus
     herr_t status = H5Sselect_hyperslab(dataspace,H5S_SELECT_SET, offset,NULL,count,NULL);
 
 #if defined(H5_HAVE_PARALLEL)
-    hid_t  xfer_plist = H5Pcreate(H5P_DATASET_XFER);
+    xfer_plist = H5Pcreate(H5P_DATASET_XFER);
     H5Pset_dxpl_mpio(xfer_plist,H5FD_MPIO_COLLECTIVE);
 #else
-    hid_t  xfer_plist =  H5P_DEFAULT;
+    xfer_plist =  H5P_DEFAULT;
 #endif
     //status = H5Dread(dataset, H5T_NATIVE_DOUBLE, memspace, dataspace, H5P_DEFAULT, &(posIn[0][0]));
     status = H5Dread(dataset, H5T_NATIVE_DOUBLE, memspace, dataspace, xfer_plist, &(posIn[0][0]));

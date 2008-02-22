@@ -100,6 +100,14 @@ namespace qmcplusplus {
     std::pair<hid_t,hid_t> createH5FileSingle(const string& fname, MCWalkerConfiguration& w);
     ///dump content to a group
     bool dumpSingle(hid_t gid, MCWalkerConfiguration& w);
+
+    bool dumpCollect(MCWalkerConfiguration& w);
+
+    //typedef PooledData<OHMMS_PRECISION> BufferType;
+    typedef vector<OHMMS_PRECISION> BufferType;
+    vector<Communicate::request> myRequest;
+    vector<BufferType*> RemoteData;
+
   };
 
 }
