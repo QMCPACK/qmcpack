@@ -150,11 +150,11 @@ namespace qmcplusplus {
       xmlNewProp(newmcptr,(const xmlChar*)"node",(const xmlChar*)"-1");
       xmlNewProp(newmcptr,(const xmlChar*)"nprocs",(const xmlChar*)np_str.str().c_str());
       xmlNewProp(newmcptr,(const xmlChar*)"version",(const xmlChar*)v_str.str().c_str());
-#if defined(H5_HAVE_PARALLEL)
+//#if defined(H5_HAVE_PARALLEL)
       xmlNewProp(newmcptr,(const xmlChar*)"collected",(const xmlChar*)"yes");
-#else
-      xmlNewProp(newmcptr,(const xmlChar*)"collected",(const xmlChar*)"no");
-#endif
+//#else
+//      xmlNewProp(newmcptr,(const xmlChar*)"collected",(const xmlChar*)"no");
+//#endif
 
       if(mcptr == NULL)
       {
