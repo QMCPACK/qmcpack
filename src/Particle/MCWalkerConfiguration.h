@@ -20,6 +20,7 @@
 #define QMCPLUSPLUS_MCWALKERCONFIGURATION_H
 #include "Particle/ParticleSet.h"
 #include "Particle/Walker.h"
+#include "Utilities/IteratorUtility.h"
 
 namespace qmcplusplus {
 
@@ -241,6 +242,17 @@ namespace qmcplusplus {
     ///clear the ensemble
     void clearEnsemble();
     //@}
+    
+    template<typename ForwardIter>
+    inline void putConfigurations(ForwardIter target)
+    {
+      int ds=OHMMS_DIM*GlobalNum;
+      for(iterator it=WalkerList.begin(); it!= WalkerList.end(); ++it,target+=ds)
+      {
+        std::copy(get_first_address((*it)->R),get_last_address((*it)->R),target);
+      }
+    }
+
   protected:
 
     ///boolean for cleanup
