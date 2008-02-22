@@ -29,6 +29,9 @@
 /* Define to 1 if you have the `hdf5' library (-lhdf5). */
 #cmakedefine HAVE_LIBHDF5 @HAVE_LIBHDF5@
 
+/* Define to 1 if you want to use parallel hdf5 for frequent output */
+#cmakedefine ENABLE_PHDF5 @ENABLE_PHDF5@
+
 /* Define to 1 if you have the `boost' library */
 #cmakedefine HAVE_LIBBOOST @HAVE_LIBBOOST@
 
