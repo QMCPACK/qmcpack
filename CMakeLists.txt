@@ -91,6 +91,7 @@ SET(OHMMS_ORTHO 0)
 ######################################################################
 SET(INTEL_COMPILER 0)
 SET(ENABLE_OPENMP 0)
+SET(ENABLE_PHDF5 0 CACHE BOOL "Enable phdf5 for output")
 SET(HAVE_MPI 0)
 SET(HAVE_OOMPI 0)
 SET(HAVE_LIBXML2 1)
@@ -193,7 +194,7 @@ INCLUDE(${PROJECT_CMAKE}/FindPkgConfig.cmake)
 #   # Can't find pkg-config -- have to find libeinspline somehow else
 #ENDIF ( CMAKE_PKGCONFIG_EXECUTABLE )
 
-ADD_DEFINITIONS(-DMPICH_SKIP_MPICXX)
+#ADD_DEFINITIONS(-DMPICH_SKIP_MPICXX)
 
 IF(QMC_MPI)
   IF(MPIP_PROFILE)
