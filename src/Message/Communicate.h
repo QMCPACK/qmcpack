@@ -119,6 +119,8 @@ public:
   template<typename T> void bcast(T&);
   template<typename T> void bcast(T* restrict, int n);
   template<typename T> void send(int dest, int tag, T&);
+  template<typename T> void gather(T& sb, T& rb, int dest=0);
+  template<typename T> void scatter(T& sb, T& rb, int dest=0);
   template<typename T> request irecv(int source, int tag, T&);
   template<typename T> request isend(int dest, int tag, T&);
   template<typename T> request irecv(int source, int tag, T*, int n);
