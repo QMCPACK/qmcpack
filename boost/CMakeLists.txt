@@ -63,5 +63,18 @@ set(WSOURCES
     ${BOOST_LIBS}/serialization/src/xml_woarchive.cpp
     )
 
-ADD_LIBRARY(boost ${SOURCES} ${WSOURCES})
+set(POSRCS
+    ${BOOST_LIBS}/program_options/src/winmain.cpp
+    ${BOOST_LIBS}/program_options/src/variables_map.cpp
+    ${BOOST_LIBS}/program_options/src/value_semantic.cpp
+    ${BOOST_LIBS}/program_options/src/utf8_codecvt_facet.cpp
+    ${BOOST_LIBS}/program_options/src/positional_options.cpp
+    ${BOOST_LIBS}/program_options/src/parsers.cpp
+    ${BOOST_LIBS}/program_options/src/options_description.cpp
+    ${BOOST_LIBS}/program_options/src/convert.cpp
+    ${BOOST_LIBS}/program_options/src/config_file.cpp
+    ${BOOST_LIBS}/program_options/src/cmdline.cpp
+)
+
+ADD_LIBRARY(boost ${SOURCES} ${WSOURCES} ${POSRCS})
 #SUBDIRS(serialization)
