@@ -1,4 +1,4 @@
-#compiler flags for intel 8.x
+#compiler flags for intel 8.x, 9.x, 10.x
 SET(INTEL_COMPILER 1)
 #ADD_DEFINITIONS(-DADD_ -DINLINE_ALL=inline)
 ADD_DEFINITIONS(-DADD_ -DINLINE_ALL=inline -DMPICH_SKIP_MPICXX)
@@ -36,7 +36,6 @@ IF(QMC_OMP)
 ENDIF(QMC_OMP)
 
 SET(CMAKE_CXX_FLAGS "$ENV{CXX_FLAGS} ${CMAKE_CXX_FLAGS} -Wno-deprecated")
-MESSAGE("-- CXX compiler flags: ${CMAKE_CXX_FLAGS}")
 
 #IF(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 #  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated")
