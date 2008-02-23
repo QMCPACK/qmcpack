@@ -42,8 +42,8 @@ void F77_FUNC_(pwhdf_open_file,PWHDF_OPEN_FILE)(const char* fname, const int* le
 
   h_file = H5Fcreate(hfname,H5F_ACC_TRUNC,H5P_DEFAULT,H5P_DEFAULT);
 
-  /* impelements version 0.10 hdf5 format */
-  int version[]={0,10};
+  /* impelements version 1.00 hdf5 format */
+  int version[]={1,10};
   hsize_t dim=2;
   hid_t dataspace= H5Screate_simple(1, &dim, NULL);
   hid_t dataset= H5Dcreate(h_file, "version", H5T_NATIVE_INT, dataspace, H5P_DEFAULT);
@@ -61,10 +61,43 @@ void F77_FUNC_(pwhdf_close_file,PWHDF_CLOSE_FILE)()
 
 /** write basisset: number of plane waves, plane wave coefficients
  */
+void F77_FUNC_(pwhdf_write_basis,PWHDF_WRITE_BASIS)(const int* ig, 
+    const double* gcart, const int* ngtot)
+{
+  int ng=*ngtot;
+
+  hid_t h_basis = H5Gcreate(h_file,"basis",0);
+  hsize_t dim=1;
+  hid_t dataspace= H5Screate_simple(1, &dim, NULL);
+  hid_t dataset= H5Dcreate(h_basis, "num_planewaves", H5T_NATIVE_INT, dataspace, H5P_DEFAULT);
+  hid_t ret = H5Dwrite(dataset, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT,ngtot);
+  H5Sclose(dataspace);
+  H5Dclose(dataset);
+
+  hsize_t dims[2];
+  dims[0] = ng;
+  dims[1] = 3;
+  dataspace  = H5Screate_simple(2, dims, NULL);
+
+  dataset =  H5Dcreate(h_basis, "multipliers", H5T_NATIVE_INT, dataspace, H5P_DEFAULT);
+  ret = H5Dwrite(dataset, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT,ig);
+  H5Dclose(dataset);
+  H5Sclose(dataspace);
+
+  dataspace  = H5Screate_simple(2, dims, NULL);
+  dataset =  H5Dcreate(h_basis, "planewaves", H5T_NATIVE_DOUBLE, dataspace, H5P_DEFAULT);
+  ret = H5Dwrite(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT,gcart);
+
+  H5Sclose(dataspace);
+  H5Dclose(dataset);
+  H5Gclose(h_basis);
+}
+
+
+/** write basisset: number of plane waves, plane wave coefficients
 void F77_FUNC_(pwhdf_write_basis,PWHDF_WRITE_BASIS)(const double* g, const int* igtog, const int* ngtot)
 {
   int ng=*ngtot;
-  /* convert to integer */
   int *ig=(int*)malloc(3*ng*sizeof(int));
   for(int i=0,i3=0; i<ng; i++)
   {
@@ -95,6 +128,7 @@ void F77_FUNC_(pwhdf_write_basis,PWHDF_WRITE_BASIS)(const double* g, const int* 
 
   free(ig);
 }
+ */
 void F77_FUNC_(pwhdf_write_parameters,PWHDF_WRITE_PARAMETERS)(
     const int* nelec, const int* nspin, const int* nband, const int* nk,
     const double* ecut, const double* alat, const double* at)
@@ -241,9 +275,9 @@ void F77_FUNC_(pwhdf_write_band,PWHDF_WRITE_BAND)(const int* ibnd,
 void F77_FUNC_(pwhdf_open_eigr,PWHDF_OPEN_EIGR)(const int* nr1, const int* nr2, const int*nr3)
 {
   /* swap the order : CHECK THIS! */
-  h_ngrid[0]=*nr3;
+  h_ngrid[0]=*nr1;
   h_ngrid[1]=*nr2;
-  h_ngrid[2]=*nr1;
+  h_ngrid[2]=*nr3;
   h_ngridtot=(*nr1)*(*nr2)*(*nr3);
   char wfrname[16];
   sprintf(wfrname,"eigenstates_%i_%i_%i",h_ngrid[0],h_ngrid[1],h_ngrid[2]);
@@ -260,10 +294,11 @@ void F77_FUNC_(pwhdf_close_eigr,PWHDF_CLOSE_EIGR)()
 /* write eigen value and eigen vector for (ibnd, ispin) */
 void F77_FUNC_(pwhdf_write_wfr,PWHDF_WRITE_WFR)(const int* ibnd,
     const int* ispin, const double* e,
-    const double* eigr)
+    const double* eigr, const int* use_complex)
 {
   char spinname[16];
   sprintf(spinname,"band%i/spin%i",(*ibnd)-1,(*ispin)-1);
+  /*sprintf(spinname,"band_%i",(*ibnd)-1);*/
   hid_t h_spin = H5Gopen(h_twist,spinname);
 
   /* write eigenvalue */
@@ -274,47 +309,19 @@ void F77_FUNC_(pwhdf_write_wfr,PWHDF_WRITE_WFR)(const int* ibnd,
   H5Sclose(dataspace);
   H5Dclose(dataset);
 
-  /* write eigenvector */
+  hsize_t dims_out=(*use_complex)?4:3;
   hsize_t dims[4];
   dims[0] = h_ngrid[0];
   dims[1] = h_ngrid[1];
   dims[2] = h_ngrid[2];
   dims[3] = 2;
-
-  dataspace  = H5Screate_simple(4, dims, NULL);
+  dataspace  = H5Screate_simple(dims_out, dims, NULL);
   dataset =  H5Dcreate(h_spin, "eigenvector", H5T_NATIVE_DOUBLE, dataspace, H5P_DEFAULT);
   ret = H5Dwrite(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT,eigr);
+
   H5Sclose(dataspace);
   H5Dclose(dataset);
   H5Gclose(h_spin);
-
-  /* testing with paraview/vtk
-  if(is_gamma)
-  {
-    char vtkname[32];
-    sprintf(vtkname,"band%i.vtk",(*ibnd)-1);
-    FILE *vtk=fopen(vtkname,"w");
-
-    fprintf(vtk,"# vtk DataFile Version 3.0\n");
-    fprintf(vtk,"vtk output\n");
-    fprintf(vtk,"ASCII\n");
-    fprintf(vtk,"DATASET STRUCTURED_POINTS\n");
-    fprintf(vtk,"DIMENSIONS %i %i %i\n",h_ngrid[0],h_ngrid[1],h_ngrid[2]);
-    fprintf(vtk,"ORIGIN 0 0 0\n");
-    fprintf(vtk,"SPACING 1 1 1\n");
-    fprintf(vtk,"\nPOINT_DATA %i\n",h_ngridtot);
-    fprintf(vtk,"SCALARS scalars float\n");
-    fprintf(vtk,"LOOKUP_TABLE default\n");
-
-    for(int i=0,i2=0; i<h_ngridtot;i+=10)
-    { 
-      for(int j=0; j<10; j++,i2+=2) fprintf(vtk,"%12.6e ",eigr[i2]*eigr[i2]);
-      fprintf(vtk,"\n");
-    }
-    fprintf(vtk,"\n");
-    fclose(vtk);
-  }
-  */
 }
 
 /* write eigen value and eigen vector for (ibnd, ispin) */
