@@ -47,10 +47,10 @@ CHECK_FUNCTION_EXISTS(round HAVE_STD_ROUND)
 # BUILD_SANDBOX    build test programs
 # MPIP_PROFILE     profile mpi performance
 ######################################################################
-SET(QMC_BUILD_STATIC 0)
-SET(BUILD_QMCTOOLS 0)
-SET(BUILD_SANDBOX 0)
-SET(MPIP_PROFILE 0)
+SET(QMC_BUILD_STATIC 0 CACHE BOOL "Build static libraries and binary")
+SET(BUILD_QMCTOOLS 0 CACHE BOOL "Build tools for QMCPACK")
+SET(BUILD_SANDBOX 0 CACHE BOOL "Build snadbox for testing")
+SET(MPIP_PROFILE 0 CACHE BOOL "Build with mpip for mpi profile")
 
 ######################################################################
 # Performance-related macros
@@ -133,26 +133,19 @@ IF($ENV{CXX} MATCHES "xlC")
   SET(FOUND_CXXENV 1)
 ENDIF($ENV{CXX} MATCHES "xlC")
 
-### check if Intel compilers work using -restrict
+### most likely *unix with gnu or intel compilers
 IF(NOT FOUND_CXXENV)
-  SET(CMAKE_TRY_INTEL_CXX_FLAGS "-restrict")
-  CHECK_CXX_ACCEPTS_FLAG(${CMAKE_TRY_INTEL_CXX_FLAGS} INTEL_CXX_FLAS)
-  IF(INTEL_CXX_FLAS)
-    MESSAGE("-- Intel compilers are found.")
-    INCLUDE(${PROJECT_CMAKE}/Intel8.cmake)
-    SET(FOUND_CXXENV 1)
-  ENDIF(INTEL_CXX_FLAS)
-ENDIF(NOT FOUND_CXXENV)
-
-IF(CYGWIN)
-  INCLUDE(${PROJECT_CMAKE}/GNUCompilers.cmake)
-ENDIF(CYGWIN)
-
-### most likely GNU, use GNU options
-IF(NOT FOUND_CXXENV)
-  INCLUDE(${PROJECT_CMAKE}/GNUCompilers.cmake)
-  #disable MPI if one has to use gnu compilers
-  #SET(QMC_MPI 0)
+  IF(CMAKE_COMPILER_IS_GNUCXX)
+    INCLUDE(${PROJECT_CMAKE}/GNUCompilers.cmake)
+  ELSE(CMAKE_COMPILER_IS_GNUCXX)
+    SET(CMAKE_TRY_INTEL_CXX_FLAGS "-restrict")
+    CHECK_CXX_ACCEPTS_FLAG(${CMAKE_TRY_INTEL_CXX_FLAGS} INTEL_CXX_FLAGS)
+    IF(INTEL_CXX_FLAGS)
+      MESSAGE("-- Intel compilers are found. ${INTEL_CXX_FLAGS}")
+      INCLUDE(${PROJECT_CMAKE}/Intel8.cmake)
+      SET(FOUND_CXXENV 1)
+    ENDIF(INTEL_CXX_FLAGS)
+  ENDIF(CMAKE_COMPILER_IS_GNUCXX)
 ENDIF(NOT FOUND_CXXENV)
 
 MESSAGE("-- CXX compiler flags: ${CMAKE_CXX_FLAGS}")
@@ -269,5 +262,9 @@ INCLUDE_DIRECTORIES(
   ${qmcpack_BINARY_DIR}/src
 )
 ADD_DEFINITIONS(-DHAVE_CONFIG_H -DAPPNAMESPACE=qmcplusplus)
+
+IF(BUILD_QMCTOOLS)
+  SUBDIRS(boost)
+ENDIF(BUILD_QMCTOOLS)
 
 SUBDIRS(src)
