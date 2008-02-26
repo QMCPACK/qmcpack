@@ -190,7 +190,22 @@ namespace qmcplusplus {
     eval_multi_UBspline_3d_d (spline, r[0], r[1], r[2], psi.data());
   }
 
-  // Complex evaluation functions
+  inline void
+  EinsplineMultiEval (multi_UBspline_3d_d *restrict spline,
+		      TinyVector<double,3> r,
+		      Vector<double> &psi,
+		      Vector<TinyVector<double,3> > &grad,
+		      Vector<Tensor<double,3> > &hess)
+  {
+    eval_multi_UBspline_3d_d_vgh (spline, r[0], r[1], r[2],
+				  psi.data(), 
+				  (double*)grad.data(), 
+				  (double*)hess.data());
+  }
+
+  //////////////////////////////////
+  // Complex evaluation functions //
+  //////////////////////////////////
   inline void 
   EinsplineMultiEval (multi_UBspline_3d_z *restrict spline,
 		      TinyVector<double,3> r, 
@@ -200,7 +215,18 @@ namespace qmcplusplus {
   }
 
 
-
+ inline void
+  EinsplineMultiEval (multi_UBspline_3d_z *restrict spline,
+		      TinyVector<double,3> r,
+		      Vector<complex<double> > &psi,
+		      Vector<TinyVector<complex<double>,3> > &grad,
+		      Vector<Tensor<complex<double>,3> > &hess)
+  {
+    eval_multi_UBspline_3d_z_vgh (spline, r[0], r[1], r[2],
+				  psi.data(), 
+				  (complex<double>*)grad.data(), 
+				  (complex<double>*)hess.data());
+  }
 			   
 
   template<typename StorageType, typename ReturnType> void
@@ -218,7 +244,9 @@ namespace qmcplusplus {
   template<typename StorageType, typename ReturnType> void
   EinsplineSetExtended<StorageType, ReturnType>::setOrbitalSetSize(int norbs)
   {
-    
+    StorageValueVector.resize(norbs);
+    StorageGradVector.resize(norbs);
+    StorageHessVector.resize(norbs);
   }
 
   // Specialization for ReturnType = StorageType
@@ -269,7 +297,7 @@ namespace qmcplusplus {
     EinsplineMultiEval (MultiSpline, ru, psi);
   }
 
-  // Vale, gradient, and laplacian
+  // Value, gradient, and laplacian
   template<typename StorageType, typename ReturnType> void
   EinsplineSetExtended<StorageType, ReturnType>::evaluate
   (const ParticleSet& P, int iat, ValueVector_t& psi, 
@@ -279,8 +307,27 @@ namespace qmcplusplus {
     PosType ru(PrimLattice.toUnit(P.R[iat]));
     for (int i=0; i<OHMMS_DIM; i++)
       ru[i] -= std::floor (ru[i]);
-    EinsplineMultiEval (MultiSpline, ru, StorageValueVector);
+    EinsplineMultiEval (MultiSpline, ru, StorageValueVector,
+			StorageGradVector, StorageHessVector);
   }
+
+  void
+  EinsplineSetExtended<double, double>::evaluate
+  (const ParticleSet& P, int iat, ValueVector_t& psi, 
+   GradVector_t& dpsi, ValueVector_t& d2psi)
+  {
+    PosType r (P.R[iat]);
+    PosType ru(PrimLattice.toUnit(P.R[iat]));
+    for (int i=0; i<OHMMS_DIM; i++)
+      ru[i] -= std::floor (ru[i]);
+    EinsplineMultiEval (MultiSpline, ru, psi, StorageGradVector, 
+			StorageHessVector);
+    for (int i=0; i<psi.size(); i++) {
+      dpsi[i]  = dot(PrimLattice.G, StorageGradVector[i]);
+      d2psi[i] = trace(StorageHessVector[i], GGt);
+    }
+  }
+
 
   template<typename StorageType, typename ReturnType> void
   EinsplineSetExtended<StorageType, ReturnType>::evaluate

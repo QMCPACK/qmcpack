@@ -47,14 +47,15 @@ namespace qmcplusplus {
     typedef int                            IndexType;
     typedef TinyVector<RealType,DIM>       PosType;
     typedef TinyVector<ValueType,DIM>      GradType;
+    typedef Tensor<ValueType,DIM>          HessType;
     typedef Tensor<RealType,DIM>           TensorType;
     typedef Vector<IndexType>     IndexVector_t;
     typedef Vector<ValueType>     ValueVector_t;
     typedef Matrix<ValueType>     ValueMatrix_t;
     typedef Vector<GradType>      GradVector_t;
     typedef Matrix<GradType>      GradMatrix_t;
-    typedef Vector<TensorType>    HessVector_t;
-    typedef Matrix<TensorType>    HessMatrix_t;
+    typedef Vector<HessType>      HessVector_t;
+    typedef Matrix<HessType>      HessMatrix_t;
   };
 }
 

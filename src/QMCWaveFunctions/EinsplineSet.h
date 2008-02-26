@@ -186,7 +186,7 @@ namespace qmcplusplus {
     void resetTargetParticleSet(ParticleSet& e);
     void setOrbitalSetSize(int norbs);
 
-    EinsplineSetExtended() 
+    EinsplineSetExtended() : TwistNum(0)
     {
     }
   };
