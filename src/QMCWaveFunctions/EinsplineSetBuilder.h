@@ -71,6 +71,9 @@ namespace qmcplusplus {
     SPOSetBase* createSPOSet(xmlNodePtr cur);
     
   protected:
+    // Type definitions
+    typedef CrystalLattice<RealType,OHMMS_DIM> UnitCellType;
+
     // The actual orbital set we're building
     EinsplineSet *OrbitalSet, *LastOrbitalSet;
     typedef EinsplineOrb<complex<double>,OHMMS_DIM> OrbType;
@@ -84,6 +87,7 @@ namespace qmcplusplus {
     TinyVector<int,2> Version;
 
     Tensor<double,OHMMS_DIM> Lattice, RecipLattice, LatticeInv, SuperLattice;
+    UnitCellType SuperCell, PrimCell, PrimCellInv;
     int NumBands, NumElectrons, NumSpins, NumTwists;
     Vector<int> IonTypes;
     Vector<TinyVector<double,OHMMS_DIM> > IonPos;

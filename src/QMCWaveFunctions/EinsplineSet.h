@@ -79,8 +79,8 @@ namespace qmcplusplus {
     void evaluate(const ParticleSet& P, int iat, 
 		  ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi);
     void evaluate(const ParticleSet& P, int first, int last,
-		  ValueMatrix_t& logdet, GradMatrix_t& dlogdet, 
-		  ValueMatrix_t& d2logdet);
+		  ValueMatrix_t& psi, GradMatrix_t& dpsi, 
+		  ValueMatrix_t& d2psi);
     
     void resetParameters(VarRegistry<RealType>& vlist);
     void resetTargetParticleSet(ParticleSet& e);
@@ -179,8 +179,8 @@ namespace qmcplusplus {
     void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, 
 		  GradVector_t& dpsi, ValueVector_t& d2psi);
     void evaluate(const ParticleSet& P, int first, int last,
-		  ValueMatrix_t& logdet, GradMatrix_t& dlogdet, 
-		  ValueMatrix_t& d2logdet);
+		  ValueMatrix_t& psi, GradMatrix_t& dpsi, 
+		  ValueMatrix_t& d2psi);
     
     void resetParameters(VarRegistry<RealType>& vlist);
     void resetTargetParticleSet(ParticleSet& e);

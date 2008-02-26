@@ -181,6 +181,13 @@ namespace qmcplusplus {
   convert (double a, double &b)
   { b = a; }
 
+  template<typename T1, typename T2> void
+  convertVec (TinyVector<T1,3> a, TinyVector<T2,3> &b)
+  {
+    for (int i=0; i<3; i++)
+      convert (a[i], b[i]);
+  }
+
   // Real evaluation functions
   inline void 
   EinsplineMultiEval (multi_UBspline_3d_d *restrict spline,
@@ -309,6 +316,26 @@ namespace qmcplusplus {
       ru[i] -= std::floor (ru[i]);
     EinsplineMultiEval (MultiSpline, ru, StorageValueVector,
 			StorageGradVector, StorageHessVector);
+    complex<double> eye (0.0, 1.0);
+    for (int j=0; j<psi.size(); j++) {
+      complex<double> u, laplu;
+      TinyVector<complex<double>, OHMMS_DIM> gradu;
+      
+      gradu = dot(PrimLattice.G, StorageGradVector[j]);
+      laplu = trace(StorageHessVector[j], GGt);
+	
+      PosType k = kPoints[j];
+      TinyVector<complex<double>,OHMMS_DIM> ck;
+      for (int n=0; n<OHMMS_DIM; n++)	
+	ck[n] = k[n];
+      double s,c;
+      double phase = -dot(r, k);
+      sincos (phase, &s, &c);
+      complex<double> e_mikr (c,s);
+      convert(e_mikr * u, psi[j]);
+      convertVec(e_mikr*(-eye*u*ck + gradu), dpsi[j]);
+      convert(e_mikr*(-dot(k,k)*u - 2.0*eye*dot(ck,gradu) + laplu), d2psi[j]);
+    }
   }
 
   void
@@ -331,10 +358,58 @@ namespace qmcplusplus {
 
   template<typename StorageType, typename ReturnType> void
   EinsplineSetExtended<StorageType, ReturnType>::evaluate
-  (const ParticleSet& P, int first, int last, ValueMatrix_t& logdet, 
-   GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet)
+  (const ParticleSet& P, int first, int last, ValueMatrix_t& psi, 
+   GradMatrix_t& dpsi, ValueMatrix_t& d2psi)
   {
+    for(int iat=first,i=0; iat<last; iat++,i++) {
+      PosType r (P.R[iat]);
+      PosType ru(PrimLattice.toUnit(P.R[iat]));
+      for (int n=0; n<OHMMS_DIM; n++)
+	ru[n] -= std::floor (ru[n]);
+      EinsplineMultiEval (MultiSpline, ru, StorageValueVector,
+			  StorageGradVector, StorageHessVector);
+      complex<double> eye (0.0, 1.0);
+      for (int j=0; j<OrbitalSetSize; j++) {
+	complex<double> u, laplu;
+	TinyVector<complex<double>, OHMMS_DIM> gradu;
+	
+	gradu = dot(PrimLattice.G, StorageGradVector[j]);
+	laplu = trace(StorageHessVector[j], GGt);
+	
+	PosType k = kPoints[j];
+	TinyVector<complex<double>,OHMMS_DIM> ck;
+	for (int n=0; n<OHMMS_DIM; n++)	
+	  ck[n] = k[n];
+	double s,c;
+	double phase = -dot(r, k);
+	sincos (phase, &s, &c);
+	complex<double> e_mikr (c,s);
+	convert(e_mikr * u, psi(j,i));
+	convertVec(e_mikr*(-eye*u*ck + gradu), dpsi(i,j));
+	convert(e_mikr*(-dot(k,k)*u - 2.0*eye*dot(ck,gradu) + laplu), d2psi(i,j));
+      } 
+    }
+  }
 
+  void
+  EinsplineSetExtended<double, double>::evaluate
+  (const ParticleSet& P, int first, int last, ValueMatrix_t& psi, 
+   GradMatrix_t& dpsi, ValueMatrix_t& d2psi)
+  {
+    for(int iat=first,i=0; iat<last; iat++,i++) {
+      PosType r (P.R[iat]);
+      PosType ru(PrimLattice.toUnit(P.R[iat]));
+      for (int n=0; n<OHMMS_DIM; n++)
+	ru[n] -= std::floor (ru[n]);
+      EinsplineMultiEval (MultiSpline, ru, StorageValueVector,
+			  StorageGradVector, StorageHessVector);
+      complex<double> eye (0.0, 1.0);
+      for (int j=0; j<OrbitalSetSize; j++) {
+        psi(j,i)   = StorageValueVector(j);
+	dpsi(i,j)  = dot(PrimLattice.G, StorageGradVector[j]);
+	d2psi(i,j) = trace(StorageHessVector[j], GGt);
+      }
+    }
   }
 
 

@@ -218,6 +218,8 @@ namespace qmcplusplus {
     OrbitalSet->TileFactor = TileFactor;
     OrbitalSet->Tiling = 
       TileFactor[0]!=1 || TileFactor[1]!=1 || TileFactor[2]!=1;
+    PrimCell = Lattice;
+    SuperCell = SuperLattice;
     OrbitalSet->PrimLattice  = Lattice;
     OrbitalSet->SuperLattice = SuperLattice;
     OrbitalSet->GGt=dot(OrbitalSet->PrimLattice.G,
@@ -274,8 +276,8 @@ namespace qmcplusplus {
     for (int ki=0; ki<numPrimTwists; ki++) {
       PosType primTwist = TwistAngles[ki];
       PosType superTwist = dot (S, primTwist);
-      PosType kp = OrbitalSet->PrimLattice.k_cart(primTwist);
-      PosType ks = OrbitalSet->SuperLattice.k_cart(superTwist);
+      PosType kp = PrimCell.k_cart(primTwist);
+      PosType ks = SuperCell.k_cart(superTwist);
       if (dot(ks-kp, ks-kp) > 1.0e-12) {
 	app_error() << "Primitive and super k-points do not agree.  Error in coding.\n";
 	abort();
