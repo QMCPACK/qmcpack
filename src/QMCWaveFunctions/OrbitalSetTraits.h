@@ -53,6 +53,8 @@ namespace qmcplusplus {
     typedef Matrix<ValueType>     ValueMatrix_t;
     typedef Vector<GradType>      GradVector_t;
     typedef Matrix<GradType>      GradMatrix_t;
+    typedef Vector<TensorType>    HessVector_t;
+    typedef Matrix<TensorType>    HessMatrix_t;
   };
 }
 

@@ -15,6 +15,7 @@
 //////////////////////////////////////////////////////////////////
 
 #include "QMCWaveFunctions/EinsplineSet.h"
+#include <einspline/multi_bspline.h>
 
 namespace qmcplusplus {
 
@@ -156,4 +157,142 @@ namespace qmcplusplus {
       }
     }
   }
+
+
+
+
+  ///////////////////////////////////////////
+  // EinsplineSetExtended Member functions //
+  ///////////////////////////////////////////
+
+  inline void
+  convert (complex<double> a, complex<double> &b)
+  { b = a;  }
+
+  inline void
+  convert (complex<double> a, double &b)
+  { b = real(a);  }
+
+  inline void
+  convert (double a, complex<double>&b)
+  { b = complex<double>(a,0.0); }
+
+  inline void
+  convert (double a, double &b)
+  { b = a; }
+
+  // Real evaluation functions
+  inline void 
+  EinsplineMultiEval (multi_UBspline_3d_d *restrict spline,
+		      TinyVector<double,3> r, 
+		      Vector<double> &psi)
+  {
+    eval_multi_UBspline_3d_d (spline, r[0], r[1], r[2], psi.data());
+  }
+
+  // Complex evaluation functions
+  inline void 
+  EinsplineMultiEval (multi_UBspline_3d_z *restrict spline,
+		      TinyVector<double,3> r, 
+		      Vector<complex<double> > &psi)
+  {
+    eval_multi_UBspline_3d_z (spline, r[0], r[1], r[2], psi.data());
+  }
+
+
+
+			   
+
+  template<typename StorageType, typename ReturnType> void
+  EinsplineSetExtended<StorageType, ReturnType>::resetParameters
+  (VarRegistry<RealType>& vlist) 
+  {
+
+  }
+
+  template<typename StorageType, typename ReturnType> void
+  EinsplineSetExtended<StorageType, ReturnType>::resetTargetParticleSet(ParticleSet& e)
+  {
+  }
+
+  template<typename StorageType, typename ReturnType> void
+  EinsplineSetExtended<StorageType, ReturnType>::setOrbitalSetSize(int norbs)
+  {
+    
+  }
+
+  // Specialization for ReturnType = StorageType
+//   template<typename StorageType>
+//   EinsplineSetExtended<StorageType, StorageType>::evaluate
+//   (const ParticleSet& P, int iat, ValueVector_t& psi)
+//   {
+//     PosType r (P.R[iat]);
+//     PosType ru(PrimLattice.toUnit(P.R[iat]));
+//     ru[0] -= std::floor (ru[0]);
+//     ru[1] -= std::floor (ru[1]);
+//     ru[2] -= std::floor (ru[2]);
+//     EinsplineMultiEval (MultiSpline, ru, psi);
+//   }
+
+  template<typename StorageType, typename ReturnType> void
+  EinsplineSetExtended<StorageType, ReturnType>::evaluate
+  (const ParticleSet& P, int iat, ValueVector_t& psi)
+  {
+    PosType r (P.R[iat]);
+    PosType ru(PrimLattice.toUnit(P.R[iat]));
+    for (int i=0; i<OHMMS_DIM; i++)
+      ru[i] -= std::floor (ru[i]);
+    EinsplineMultiEval (MultiSpline, ru, StorageValueVector);
+    for (int i=0; i<psi.size(); i++) {
+      PosType k = kPoints[i];
+      TinyVector<complex<double>,3> ck;
+      ck[0]=k[0];  ck[1]=k[1];  ck[2]=k[2];
+      double s,c;
+      double phase = -dot(r, k);
+      sincos (phase, &s, &c);
+      complex<double> e_mikr (c,s);
+      convert (e_mikr*StorageValueVector[i], psi[i]);
+    }
+  }
+
+  // This is an explicit specialization of the above for real orbitals
+  // with a real return value, i.e. simulations at the gamma or L 
+  // point.
+  void
+  EinsplineSetExtended<double,double>::evaluate
+  (const ParticleSet &P, int iat, ValueVector_t& psi)
+  {
+    PosType r (P.R[iat]);
+    PosType ru(PrimLattice.toUnit(P.R[iat]));
+    for (int i=0; i<OHMMS_DIM; i++)
+      ru[i] -= std::floor (ru[i]);
+    EinsplineMultiEval (MultiSpline, ru, psi);
+  }
+
+  // Vale, gradient, and laplacian
+  template<typename StorageType, typename ReturnType> void
+  EinsplineSetExtended<StorageType, ReturnType>::evaluate
+  (const ParticleSet& P, int iat, ValueVector_t& psi, 
+   GradVector_t& dpsi, ValueVector_t& d2psi)
+  {
+    PosType r (P.R[iat]);
+    PosType ru(PrimLattice.toUnit(P.R[iat]));
+    for (int i=0; i<OHMMS_DIM; i++)
+      ru[i] -= std::floor (ru[i]);
+    EinsplineMultiEval (MultiSpline, ru, StorageValueVector);
+  }
+
+  template<typename StorageType, typename ReturnType> void
+  EinsplineSetExtended<StorageType, ReturnType>::evaluate
+  (const ParticleSet& P, int first, int last, ValueMatrix_t& logdet, 
+   GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet)
+  {
+
+  }
+
+
+  template class EinsplineSetExtended<complex<double>,complex<double> >;
+  template class EinsplineSetExtended<complex<double>,        double  >;
+  template class EinsplineSetExtended<        double ,        double  >;
+
 }
