@@ -171,12 +171,12 @@ namespace qmcplusplus {
     Vector<TinyVector<double,OHMMS_DIM> > kPoints;
    
   public:
-    void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi);
-    void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, 
-		  GradVector_t& dpsi, ValueVector_t& d2psi);
+    void evaluate(const ParticleSet& P, int iat, ReturnValueVector_t& psi);
+    void evaluate(const ParticleSet& P, int iat, ReturnValueVector_t& psi, 
+		  ReturnGradVector_t& dpsi, ReturnValueVector_t& d2psi);
     void evaluate(const ParticleSet& P, int first, int last,
-		  ValueMatrix_t& psi, GradMatrix_t& dpsi, 
-		  ValueMatrix_t& d2psi);
+		  ReturnValueMatrix_t& psi, ReturnGradMatrix_t& dpsi, 
+		  ReturnValueMatrix_t& d2psi);
     
     void resetParameters(VarRegistry<RealType>& vlist);
     void resetTargetParticleSet(ParticleSet& e);

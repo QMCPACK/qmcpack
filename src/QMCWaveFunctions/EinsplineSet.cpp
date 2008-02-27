@@ -291,7 +291,7 @@ namespace qmcplusplus {
   
   template<typename StorageType, typename ReturnType> void
   EinsplineSetExtended<StorageType, ReturnType>::evaluate
-  (const ParticleSet& P, int iat, ValueVector_t& psi)
+  (const ParticleSet& P, int iat, ReturnValueVector_t& psi)
   {
     PosType r (P.R[iat]);
     PosType ru(PrimLattice.toUnit(P.R[iat]));
@@ -315,7 +315,7 @@ namespace qmcplusplus {
   // point.
   void
   EinsplineSetExtended<double,double>::evaluate
-  (const ParticleSet &P, int iat, ValueVector_t& psi)
+  (const ParticleSet &P, int iat, ReturnValueVector_t& psi)
   {
     PosType r (P.R[iat]);
     PosType ru(PrimLattice.toUnit(P.R[iat]));
@@ -327,8 +327,8 @@ namespace qmcplusplus {
   // Value, gradient, and laplacian
   template<typename StorageType, typename ReturnType> void
   EinsplineSetExtended<StorageType, ReturnType>::evaluate
-  (const ParticleSet& P, int iat, ValueVector_t& psi, 
-   GradVector_t& dpsi, ValueVector_t& d2psi)
+  (const ParticleSet& P, int iat, ReturnValueVector_t& psi, 
+   ReturnGradVector_t& dpsi, ReturnValueVector_t& d2psi)
   {
     PosType r (P.R[iat]);
     PosType ru(PrimLattice.toUnit(P.R[iat]));
@@ -360,8 +360,8 @@ namespace qmcplusplus {
 
   void
   EinsplineSetExtended<double, double>::evaluate
-  (const ParticleSet& P, int iat, ValueVector_t& psi, 
-   GradVector_t& dpsi, ValueVector_t& d2psi)
+  (const ParticleSet& P, int iat, ReturnValueVector_t& psi, 
+   ReturnGradVector_t& dpsi, ReturnValueVector_t& d2psi)
   {
     PosType r (P.R[iat]);
     PosType ru(PrimLattice.toUnit(P.R[iat]));
@@ -378,8 +378,8 @@ namespace qmcplusplus {
 
   template<typename StorageType, typename ReturnType> void
   EinsplineSetExtended<StorageType, ReturnType>::evaluate
-  (const ParticleSet& P, int first, int last, ValueMatrix_t& psi, 
-   GradMatrix_t& dpsi, ValueMatrix_t& d2psi)
+  (const ParticleSet& P, int first, int last, ReturnValueMatrix_t& psi, 
+   ReturnGradMatrix_t& dpsi, ReturnValueMatrix_t& d2psi)
   {
     for(int iat=first,i=0; iat<last; iat++,i++) {
       PosType r (P.R[iat]);
@@ -413,8 +413,8 @@ namespace qmcplusplus {
 
   void
   EinsplineSetExtended<double, double>::evaluate
-  (const ParticleSet& P, int first, int last, ValueMatrix_t& psi, 
-   GradMatrix_t& dpsi, ValueMatrix_t& d2psi)
+  (const ParticleSet& P, int first, int last, ReturnValueMatrix_t& psi, 
+   ReturnGradMatrix_t& dpsi, ReturnValueMatrix_t& d2psi)
   {
     for(int iat=first,i=0; iat<last; iat++,i++) {
       PosType r (P.R[iat]);
