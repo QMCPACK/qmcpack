@@ -42,8 +42,34 @@ namespace qmcplusplus {
   }
   
   void 
+  EinsplineSet::evaluate (const ParticleSet& P, int iat, ValueVector_t& psi)
+  {
+    fprintf (stderr, "Should never instantiate EinsplineSet.\n");
+    abort();
+  }
+
+  void 
   EinsplineSet::evaluate (const ParticleSet& P, int iat, 
-			  ValueVector_t& psi)
+			  ValueVector_t& psi, GradVector_t& dpsi, 
+			  ValueVector_t& d2psi)
+  {
+    fprintf (stderr, "Should never instantiate EinsplineSet.\n");
+    abort();
+  }
+
+  
+  void 
+  EinsplineSet::evaluate (const ParticleSet& P, int first, int last,
+			  ValueMatrix_t& vals, GradMatrix_t& grads, 
+			  ValueMatrix_t& lapls)
+  {
+    fprintf (stderr, "Should never instantiate EinsplineSet.\n");
+    abort();
+  }
+
+  void 
+  EinsplineSetLocal::evaluate (const ParticleSet& P, int iat, 
+			       ValueVector_t& psi)
   {
     PosType r (P.R[iat]);
     PosType ru(PrimLattice.toUnit(P.R[iat]));
@@ -68,9 +94,9 @@ namespace qmcplusplus {
   }
   
   void 
-  EinsplineSet::evaluate (const ParticleSet& P, int iat, 
-			  ValueVector_t& psi, GradVector_t& dpsi, 
-			  ValueVector_t& d2psi)
+  EinsplineSetLocal::evaluate (const ParticleSet& P, int iat, 
+			       ValueVector_t& psi, GradVector_t& dpsi, 
+			       ValueVector_t& d2psi)
   {
     PosType r (P.R[iat]);
     PosType ru(PrimLattice.toUnit(P.R[iat]));
@@ -113,9 +139,9 @@ namespace qmcplusplus {
   }
   
   void 
-  EinsplineSet::evaluate (const ParticleSet& P, int first, int last,
-			  ValueMatrix_t& vals, GradMatrix_t& grads, 
-			  ValueMatrix_t& lapls)
+  EinsplineSetLocal::evaluate (const ParticleSet& P, int first, int last,
+			       ValueMatrix_t& vals, GradMatrix_t& grads, 
+			       ValueMatrix_t& lapls)
   {
     for(int iat=first,i=0; iat<last; iat++,i++) {
       PosType r (P.R[iat]);
@@ -156,6 +182,12 @@ namespace qmcplusplus {
 
       }
     }
+  }
+
+  string 
+  EinsplineSet::Type()
+  {
+    return "EinsplineSet";
   }
 
 
@@ -251,24 +283,12 @@ namespace qmcplusplus {
   template<typename StorageType, typename ReturnType> void
   EinsplineSetExtended<StorageType, ReturnType>::setOrbitalSetSize(int norbs)
   {
+    OrbitalSetSize = norbs;
     StorageValueVector.resize(norbs);
     StorageGradVector.resize(norbs);
     StorageHessVector.resize(norbs);
   }
-
-  // Specialization for ReturnType = StorageType
-//   template<typename StorageType>
-//   EinsplineSetExtended<StorageType, StorageType>::evaluate
-//   (const ParticleSet& P, int iat, ValueVector_t& psi)
-//   {
-//     PosType r (P.R[iat]);
-//     PosType ru(PrimLattice.toUnit(P.R[iat]));
-//     ru[0] -= std::floor (ru[0]);
-//     ru[1] -= std::floor (ru[1]);
-//     ru[2] -= std::floor (ru[2]);
-//     EinsplineMultiEval (MultiSpline, ru, psi);
-//   }
-
+  
   template<typename StorageType, typename ReturnType> void
   EinsplineSetExtended<StorageType, ReturnType>::evaluate
   (const ParticleSet& P, int iat, ValueVector_t& psi)
@@ -410,6 +430,12 @@ namespace qmcplusplus {
 	d2psi(i,j) = trace(StorageHessVector[j], GGt);
       }
     }
+  }
+
+  template<typename StorageType, typename ReturnType> string
+  EinsplineSetExtended<StorageType, ReturnType>::Type()
+  {
+    return "EinsplineSetExtended";
   }
 
 

@@ -69,7 +69,7 @@ namespace qmcplusplus {
     /// Store the orbital objects.  Using template class allows us to
     /// avoid making separate real and complex versions of this class.
     //std::vector<EinsplineOrb<ValueType,OHMMS_DIM>*> Orbitals;
-    std::vector<EinsplineOrb<complex<double>,OHMMS_DIM>*> Orbitals;
+    //std::vector<EinsplineOrb<complex<double>,OHMMS_DIM>*> Orbitals;
     
     
   public:  
@@ -85,10 +85,33 @@ namespace qmcplusplus {
     void resetParameters(VarRegistry<RealType>& vlist);
     void resetTargetParticleSet(ParticleSet& e);
     void setOrbitalSetSize(int norbs);
+    string Type();
     EinsplineSet() :  TwistNum(0)
     {
     }
   };
+
+  class EinsplineSetLocal : public EinsplineSet
+  {
+    friend class EinsplineSetBuilder;
+  protected:
+    /////////////////////
+    // Orbital storage //
+    /////////////////////
+    /// Store the orbital objects.  Using template class allows us to
+    /// avoid making separate real and complex versions of this class.
+    //std::vector<EinsplineOrb<ValueType,OHMMS_DIM>*> Orbitals;
+    std::vector<EinsplineOrb<complex<double>,OHMMS_DIM>*> Orbitals;
+
+  public:
+    void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi);
+    void evaluate(const ParticleSet& P, int iat, 
+		  ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi);
+    void evaluate(const ParticleSet& P, int first, int last,
+		  ValueMatrix_t& psi, GradMatrix_t& dpsi, 
+		  ValueMatrix_t& d2psi);
+  };
+
 
 
   ////////////////////////////////////////////////////////////////////
@@ -116,14 +139,14 @@ namespace qmcplusplus {
   // quickly.  Currently uses einspline library.                    //
   ////////////////////////////////////////////////////////////////////
   template<typename StorageType, typename ReturnType>
-  class EinsplineSetExtended : public SPOSetBase
+  class EinsplineSetExtended : public EinsplineSet
   {
-        friend class EinsplineSetBuilder;
+    friend class EinsplineSetBuilder;
   protected:
     //////////////////////
     // Type definitions //
     //////////////////////
-    typedef CrystalLattice<RealType,OHMMS_DIM> UnitCellType;
+    //typedef CrystalLattice<RealType,OHMMS_DIM> UnitCellType;
     typedef typename MultiOrbitalTraits<StorageType,OHMMS_DIM>::SplineType SplineType; 
     typedef typename OrbitalSetTraits<StorageType>::ValueVector_t StorageValueVector_t;
     typedef typename OrbitalSetTraits<StorageType>::GradVector_t  StorageGradVector_t;
@@ -135,32 +158,7 @@ namespace qmcplusplus {
     typedef typename OrbitalSetTraits<ReturnType >::ValueMatrix_t ReturnValueMatrix_t;
     typedef typename OrbitalSetTraits<ReturnType >::GradMatrix_t  ReturnGradMatrix_t;
     typedef typename OrbitalSetTraits<ReturnType >::HessMatrix_t  ReturnHessMatrix_t;
-   
-    ///////////
-    // Flags //
-    ///////////
-    /// True if all Lattice is diagonal, i.e. 90 degree angles
-    bool Orthorhombic;
-    /// True if we are using localize orbitals
-    bool Localized;
-    /// True if we are tiling the primitive cell
-    bool Tiling;
-
-    //////////////////////////
-    // Lattice and geometry //
-    //////////////////////////
-    TinyVector<int,3> TileFactor;
-    Tensor<int,OHMMS_DIM> TileMatrix;
-    UnitCellType SuperLattice, PrimLattice, PrimLatticeInv;
-    /// The "Twist" variables are in reduced coords, i.e. from 0 to1.
-    /// The "k" variables are in Cartesian coordinates.
-    PosType TwistVector, kVector;
-    /// This stores which "true" twist vector this clone is using.
-    /// "True" indicates the physical twist angle after untiling
-    int TwistNum;
-    /// metric tensor to handle generic unitcell
-    Tensor<RealType,OHMMS_DIM> GGt;
-    
+       
     /////////////////////////////
     /// Orbital storage object //
     /////////////////////////////
@@ -173,8 +171,6 @@ namespace qmcplusplus {
     Vector<TinyVector<double,OHMMS_DIM> > kPoints;
    
   public:
-    UnitCellType GetLattice();
-
     void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi);
     void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, 
 		  GradVector_t& dpsi, ValueVector_t& d2psi);
@@ -185,8 +181,9 @@ namespace qmcplusplus {
     void resetParameters(VarRegistry<RealType>& vlist);
     void resetTargetParticleSet(ParticleSet& e);
     void setOrbitalSetSize(int norbs);
+    string Type();
 
-    EinsplineSetExtended() : TwistNum(0)
+    EinsplineSetExtended() 
     {
     }
   };

@@ -205,45 +205,81 @@ namespace qmcplusplus {
 	       TwistAngles[ti][0], TwistAngles[ti][1], TwistAngles[ti][2]);
     }
 
-    //////////////////////////////////
-    // Create the OrbitalSet object //
-    //////////////////////////////////
-    OrbitalSet = new EinsplineSet;
-
-    /////////////////////////
-    // Setup internal data //
-    /////////////////////////
-
-    // Lattice information
-    OrbitalSet->TileFactor = TileFactor;
-    OrbitalSet->Tiling = 
-      TileFactor[0]!=1 || TileFactor[1]!=1 || TileFactor[2]!=1;
-    PrimCell = Lattice;
-    SuperCell = SuperLattice;
-    OrbitalSet->PrimLattice  = Lattice;
-    OrbitalSet->SuperLattice = SuperLattice;
-    OrbitalSet->GGt=dot(OrbitalSet->PrimLattice.G,
-			transpose(OrbitalSet->PrimLattice.G));
-
-    AnalyzeTwists2();
-    OrbitalSet->setOrbitalSetSize (numOrbs);
-
-#pragma omp critical(read_einspline_orbs)
-    {
-      if ((spinSet == LastSpinSet) && (numOrbs <= NumOrbitalsRead))
-	CopyBands(numOrbs);
-      else
-	// Now, figure out occupation for the bands and read them
-	OccupyAndReadBands2(spinSet, sortBands);
+    ////////////////////////////////////////////////////////////////
+    // Determine whether we need comp //
+    ////////////////////////////////////////////////////////////////
+    bool HaveLocalizedOrbs = false;
+    for (int ti=0; ti<NumTwists; ti++) {
+      for (int bi=0; bi<NumBands; bi++) {
+	double radius = 0.0;
+	ostringstream path;
+	if ((Version[0]==0 && Version[1]==11) || NumTwists > 0)
+	  path << eigenstatesGroup << "/twist_" << ti << "/band_"
+	       << bi << "/radius";
+	else
+	  path << eigenstatesGroup << "/twist/band" << bi << "/radius";
+	HDFAttribIO<double>  h_radius(radius);
+	h_radius.read(H5FileID, path.str().c_str());
+	HaveLocalizedOrbs = HaveLocalizedOrbs || (radius > 0.0);
+      }
     }
-    OrbitalSet->BasisSetSize   = numOrbs;
 
-    // Now, store what we have read
-    LastOrbitalSet = OrbitalSet;
-    LastSpinSet = spinSet;
-    NumOrbitalsRead = numOrbs;
+    //////////////////////////////////////////////////////////////////////////////
+    // Now, analyze the k-point mesh to figure out the what k-points are needed //
+    //////////////////////////////////////////////////////////////////////////////
+    AnalyzeTwists2();
 
-    return OrbitalSet;
+    if (HaveLocalizedOrbs) {
+      //////////////////////////////////
+      // Create the OrbitalSet object //
+      //////////////////////////////////
+      EinsplineSetLocal *restrict orbitalSet = new EinsplineSetLocal;
+      OrbitalSet = orbitalSet;
+
+      /////////////////////////
+      // Setup internal data //
+      /////////////////////////
+      
+      // Lattice information
+      OrbitalSet->TileFactor = TileFactor;
+      OrbitalSet->Tiling = 
+	TileFactor[0]!=1 || TileFactor[1]!=1 || TileFactor[2]!=1;
+      PrimCell = Lattice;
+      SuperCell = SuperLattice;
+      OrbitalSet->PrimLattice  = Lattice;
+      OrbitalSet->SuperLattice = SuperLattice;
+      OrbitalSet->GGt=dot(OrbitalSet->PrimLattice.G,
+			  transpose(OrbitalSet->PrimLattice.G));
+      
+      OrbitalSet->setOrbitalSetSize (numOrbs);
+      
+#pragma omp critical(read_einspline_orbs)
+      {
+	if ((spinSet == LastSpinSet) && (numOrbs <= NumOrbitalsRead))
+	  CopyBands(numOrbs);
+	else {
+	  // Now, figure out occupation for the bands and read them
+	  OccupyBands(spinSet, sortBands);
+	  ReadBands (spinSet, orbitalSet);
+	}
+      }
+      OrbitalSet->BasisSetSize   = numOrbs;
+      
+      // Now, store what we have read
+      LastOrbitalSet = OrbitalSet;
+      LastSpinSet = spinSet;
+      NumOrbitalsRead = numOrbs;
+      
+      return OrbitalSet;
+    }
+    // Otherwise, use EinsplineSetExtended
+    else {
+      fprintf (stderr, "Using EinsplineSetExtended.\n");
+      EinsplineSetExtended<complex<double>,ValueType> *restrict orbitalSet = 
+	new EinsplineSetExtended<complex<double>,ValueType>;
+      
+      return orbitalSet;
+    }
   }
   
 
@@ -469,16 +505,8 @@ namespace qmcplusplus {
   }
   
 
-  class BandInfo {
-  public:
-    int TwistIndex, BandIndex, Spin;
-    double Energy;
-    inline bool operator<(BandInfo other) const
-    { return Energy < other.Energy; }
-  };
-
   void
-  EinsplineSetBuilder::OccupyAndReadBands(int spin)
+  EinsplineSetBuilder::OccupyBands(int spin, bool sortBands)
   {
     string eigenstatesGroup;
     if (Version[0]==0 && Version[1]== 11) 
@@ -486,81 +514,7 @@ namespace qmcplusplus {
     else if (Version[0]==0 && Version[1]==20) 
       eigenstatesGroup = "/eigenstates";
 
-    std::vector<BandInfo> SortBands;
-    for (int ti=0; ti<UseTwists.size(); ti++) {
-      int tindex = TwistMap[UseTwists[ti]];
-      for (int bi=0; bi<NumBands; bi++) {
-	BandInfo band;
-	band.TwistIndex = tindex;
-	band.BandIndex  = bi;
-	
-	// Read eigenenergy from file
-	ostringstream ePath, sPath;
-	if ((Version[0]==0 && Version[1]==11) || NumTwists > 0) {
-	  ePath << eigenstatesGroup << "/twist_" 
-		    << tindex << "/band_" << bi << "/eigenvalue";
-	  sPath << eigenstatesGroup << "/twist_" 
-		    << tindex << "/band_" << bi << "/spin";
-	}
-	else if (NumBands > 1) {
-	  ePath << eigenstatesGroup << "/twist/band_" << bi << "/eigenvalue";
-	  sPath << eigenstatesGroup << "/twist/band_" << bi << "/spin";
-	}
-	else {
-	  ePath << eigenstatesGroup << "/twist/band/eigenvalue";
-	  sPath << eigenstatesGroup << "/twist/band/spin";
-	}
-	
-	HDFAttribIO<double> h_energy(band.Energy);
-	HDFAttribIO<int> h_spin(band.Spin);
-	h_energy.read (H5FileID, ePath.str().c_str());
-	h_spin.read   (H5FileID, sPath.str().c_str());
-	if (band.Spin == spin)
-	  SortBands.push_back(band);
-      }
-    }
-    // Now sort the bands by energy
-    sort (SortBands.begin(), SortBands.end());
-    // Read in the occupied bands
-    OrbitalSet->Orbitals.resize(OrbitalSet->getOrbitalSetSize());
-    cerr << "Orbitals size = " << OrbitalSet->Orbitals.size() << endl;
-    for (int i=0; i<OrbitalSet->getOrbitalSetSize(); i++) {
-      int ti   = SortBands[i].TwistIndex;
-      int bi   = SortBands[i].BandIndex;
-      double e = SortBands[i].Energy;
-      ostringstream groupPath;
-      if ((Version[0]==0 && Version[1]==11) || NumTwists > 0)
-	groupPath << eigenstatesGroup << "/twist_" 
-		  << ti << "/band_" << bi << "/";
-      else if (NumBands > 1)
-	groupPath << eigenstatesGroup << "/twist/band_" << bi << "/";
-      else
-	groupPath << eigenstatesGroup << "/twist/band/";
-      
-      PosType twist, k;
-      twist = TwistAngles[ti];
-      Tensor<double,3> G = OrbitalSet->PrimLattice.G;
-      k = OrbitalSet->PrimLattice.k_cart(twist);
-      fprintf (stderr, "  ti=%d  bi=%d energy=%8.5f k=(%6.4f, %6.4f, %6.4f)\n", 
-	       ti, bi, e, k[0], k[1], k[2]);
-      
-      OrbitalSet->Orbitals[i] = new EinsplineOrb<complex<double>,OHMMS_DIM>;
-      OrbitalSet->Orbitals[i]->kVec = k;
-      OrbitalSet->Orbitals[i]->read(H5FileID, groupPath.str());
-    }
-  }
-
-  void
-  EinsplineSetBuilder::OccupyAndReadBands2(int spin, 
-					   bool sortBands)
-  {
-    string eigenstatesGroup;
-    if (Version[0]==0 && Version[1]== 11) 
-      eigenstatesGroup = "/eigenstates_3";
-    else if (Version[0]==0 && Version[1]==20) 
-      eigenstatesGroup = "/eigenstates";
-
-    std::vector<BandInfo> SortBands;
+    SortBands.clear();
     for (int ti=0; ti<IncludeTwists.size(); ti++) {
       int tindex = IncludeTwists[ti];
       for (int bi=0; bi<NumBands; bi++) {
@@ -601,80 +555,97 @@ namespace qmcplusplus {
       cerr << "Sorting the bands now:\n";
       sort (SortBands.begin(), SortBands.end());
     }
+  }
+
+  void
+  EinsplineSetBuilder::ReadBands (int spin, EinsplineSetLocal* orbitalSet)
+  {
+    string eigenstatesGroup;
+    if (Version[0]==0 && Version[1]== 11) 
+      eigenstatesGroup = "/eigenstates_3";
+    else if (Version[0]==0 && Version[1]==20) 
+      eigenstatesGroup = "/eigenstates";
+
     // Read in the occupied bands
-    OrbitalSet->Orbitals.resize(OrbitalSet->getOrbitalSetSize());
-    cerr << "Orbitals size = " << OrbitalSet->Orbitals.size() << endl;
-    int iorb  = 0;
-    int iband = 0;
-    while (iorb < OrbitalSet->getOrbitalSetSize()) {
-      int ti   = SortBands[iband].TwistIndex;
-      int bi   = SortBands[iband].BandIndex;
-      double e = SortBands[iband].Energy;
-      PosType twist, k;
-      twist = TwistAngles[ti];
-      Tensor<double,3> G = OrbitalSet->PrimLattice.G;
-      k = OrbitalSet->PrimLattice.k_cart(twist);
-      fprintf (stderr, "  ti=%3d  bi=%3d energy=%8.5f k=(%6.4f, %6.4f, %6.4f)\n", 
-	       ti, bi, e, k[0], k[1], k[2]);
-      
-      EinsplineOrb<complex<double>,OHMMS_DIM> *orb;
-      // Check to see if we have already read this orbital, perhaps on
-      // another processor in this OpenMP node.
-      std::map<TinyVector<int,4>,OrbType*,Int4less>::iterator iter =
-	OrbitalMap.find(TinyVector<int,4>(spin,ti,bi,0));      
-      if (iter != OrbitalMap.end()) 
-	orb = iter->second;
-      else { // The orbital has not yet been read, so read it now
-	orb = new EinsplineOrb<complex<double>,OHMMS_DIM>;
-	OrbitalMap[TinyVector<int,4>(spin, ti, bi, 0)] = orb;
-	orb->kVec = k;
-	orb->Lattice = SuperLattice;
-	ostringstream groupPath;
+    orbitalSet->Orbitals.resize(orbitalSet->getOrbitalSetSize());
+      cerr << "Orbitals size = " << orbitalSet->Orbitals.size() << endl;
+      int iorb  = 0;
+      int iband = 0;
+      while (iorb < orbitalSet->getOrbitalSetSize()) {
+	int ti   = SortBands[iband].TwistIndex;
+	int bi   = SortBands[iband].BandIndex;
+	double e = SortBands[iband].Energy;
+	PosType twist, k;
+	twist = TwistAngles[ti];
+	Tensor<double,3> G = orbitalSet->PrimLattice.G;
+	k = orbitalSet->PrimLattice.k_cart(twist);
+	fprintf (stderr, "  ti=%3d  bi=%3d energy=%8.5f k=(%7.4f, %7.4f, %7.4f)\n", 
+		 ti, bi, e, k[0], k[1], k[2]);
 	
-	if ((Version[0]==0 && Version[1]==11) || NumTwists > 1)
-	  groupPath << eigenstatesGroup << "/twist_" 
-		    << ti << "/band_" << bi << "/";
-	else if (NumBands > 1)
-	  groupPath << eigenstatesGroup << "/twist/band_" << bi << "/";
-	else 
-	  groupPath << eigenstatesGroup << "/twist/band/";
-	
-	orb->read(H5FileID, groupPath.str());
-      }
-      OrbitalSet->Orbitals[iorb] = orb;
-      iorb++;
-      if (orb->uCenters.size() > 1) 
-	cerr << "Making " << orb->uCenters.size() << " copies of band "
-	     << iband << endl;
-      // If the orbital has more than one center associated with it,
-      // make copies of the orbital, changing only the center
-      // associated with it.
-      for (int icopy=1; icopy<orb->uCenters.size(); icopy++) {
-	iter = OrbitalMap.find(TinyVector<int,4>(spin,ti,bi,icopy));
-	EinsplineOrb<complex<double>,OHMMS_DIM> *orbCopy;
+	EinsplineOrb<complex<double>,OHMMS_DIM> *orb;
+	// Check to see if we have already read this orbital, perhaps on
+	// another processor in this OpenMP node.
+	std::map<TinyVector<int,4>,OrbType*,Int4less>::iterator iter =
+	  OrbitalMap.find(TinyVector<int,4>(spin,ti,bi,0));      
 	if (iter != OrbitalMap.end()) 
-	  orbCopy = iter->second;
-	else {
-	  orbCopy = new EinsplineOrb<complex<double>,OHMMS_DIM>(*orb);
-	  OrbitalMap[TinyVector<int,4>(spin, ti, bi, icopy)] = orbCopy;
-	  orbCopy->uCenter = orbCopy->uCenters[icopy];
-	  if (orb->Reflections.size() > icopy)
-	    orbCopy->Reflection = orbCopy->Reflections[icopy];
-	  orbCopy->Center  = orb->Lattice.toCart(orbCopy->uCenter);
+	  orb = iter->second;
+	else { // The orbital has not yet been read, so read it now
+	  orb = new EinsplineOrb<complex<double>,OHMMS_DIM>;
+	  OrbitalMap[TinyVector<int,4>(spin, ti, bi, 0)] = orb;
+	  orb->kVec = k;
+	  orb->Lattice = SuperLattice;
+	  ostringstream groupPath;
+	  
+	  if ((Version[0]==0 && Version[1]==11) || NumTwists > 1)
+	    groupPath << eigenstatesGroup << "/twist_" 
+		      << ti << "/band_" << bi << "/";
+	  else if (NumBands > 1)
+	    groupPath << eigenstatesGroup << "/twist/band_" << bi << "/";
+	  else 
+	    groupPath << eigenstatesGroup << "/twist/band/";
+	  
+	  orb->read(H5FileID, groupPath.str());
 	}
-	OrbitalSet->Orbitals[iorb] = orbCopy;
+	orbitalSet->Orbitals[iorb] = orb;
 	iorb++;
+	if (orb->uCenters.size() > 1) 
+	  cerr << "Making " << orb->uCenters.size() << " copies of band "
+	       << iband << endl;
+	// If the orbital has more than one center associated with it,
+	// make copies of the orbital, changing only the center
+	// associated with it.
+	for (int icopy=1; icopy<orb->uCenters.size(); icopy++) {
+	  iter = OrbitalMap.find(TinyVector<int,4>(spin,ti,bi,icopy));
+	  EinsplineOrb<complex<double>,OHMMS_DIM> *orbCopy;
+	  if (iter != OrbitalMap.end()) 
+	    orbCopy = iter->second;
+	  else {
+	    orbCopy = new EinsplineOrb<complex<double>,OHMMS_DIM>(*orb);
+	    OrbitalMap[TinyVector<int,4>(spin, ti, bi, icopy)] = orbCopy;
+	    orbCopy->uCenter = orbCopy->uCenters[icopy];
+	    if (orb->Reflections.size() > icopy)
+	      orbCopy->Reflection = orbCopy->Reflections[icopy];
+	    orbCopy->Center  = orb->Lattice.toCart(orbCopy->uCenter);
+	  }
+	  orbitalSet->Orbitals[iorb] = orbCopy;
+	  iorb++;
+	}
+	iband++;      
       }
-      iband++;      
-    }
   }
   
 
   void
   EinsplineSetBuilder::CopyBands(int numOrbs) 
   {
-    OrbitalSet->Orbitals.resize(numOrbs);
-    for (int i=0; i<numOrbs; i++) 
-      OrbitalSet->Orbitals[i] = LastOrbitalSet->Orbitals[i];
+    if (dynamic_cast<EinsplineSetLocal*>(OrbitalSet)) {
+      EinsplineSetLocal *restrict locOrbitalSet = 
+	dynamic_cast<EinsplineSetLocal*>(OrbitalSet);
+      EinsplineSetLocal *restrict lastOrbitalSet =
+	dynamic_cast<EinsplineSetLocal*>(LastOrbitalSet);
+      locOrbitalSet->Orbitals.resize(numOrbs);
+      for (int i=0; i<numOrbs; i++) 
+	locOrbitalSet->Orbitals[i] = lastOrbitalSet->Orbitals[i];
+    }
   }
 }

@@ -52,6 +52,13 @@ namespace qmcplusplus {
   };
   
 
+  struct BandInfo {
+    int TwistIndex, BandIndex, Spin;
+    double Energy;
+    inline bool operator<(BandInfo other) const
+    { return Energy < other.Energy; }
+  };
+
   class EinsplineSetBuilder : public BasisSetBuilder {
   public:
     //////////////////////
@@ -73,6 +80,9 @@ namespace qmcplusplus {
   protected:
     // Type definitions
     typedef CrystalLattice<RealType,OHMMS_DIM> UnitCellType;
+
+    // Helper vector for sorting bands
+    std::vector<BandInfo> SortBands;
 
     // The actual orbital set we're building
     EinsplineSet *OrbitalSet, *LastOrbitalSet;
@@ -108,8 +118,10 @@ namespace qmcplusplus {
     map <TinyVector<int,OHMMS_DIM>,int,Int3less> TwistMap;
     void AnalyzeTwists();
     void AnalyzeTwists2();
-    void OccupyAndReadBands(int spin);
-    void OccupyAndReadBands2(int spin, bool sortBands);
+    void OccupyBands(int spin, bool sortBands);
+    void ReadBands (int spin, EinsplineSetLocal* orbitalSet);
+    void ReadBands (int spin, 
+		    EinsplineSetExtended<complex<double>, ValueType>* orbitalSet);
     void CopyBands(int numOrbs);
 
     /////////////////////////////////////////////////////////////

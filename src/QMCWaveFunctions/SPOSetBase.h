@@ -123,6 +123,8 @@ namespace qmcplusplus {
     virtual void evaluate(const ParticleSet& P, int first, int last,
         ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet)=0;
 
+    virtual string Type() { return "unknown"; }
+
 protected:
     bool putOccupation(xmlNodePtr occ_ptr);
     bool putFromXML(xmlNodePtr coeff_ptr);
