@@ -43,19 +43,13 @@ struct ltnlm {
   bool operator()(const TinyVector<int,3>& a, 
 		  const TinyVector<int,3>& b) const {
 
-    if(a[0] > b[0]) 
-      return false;
-    else if(a[0] == b[0]){
-      //   return a[1] < b[1];
-      if (a[1] < b[1]) return true;
-      else if(a[1] == b[1])
-	return a[2] < b[2];
-      else return true;
-    } 
-    else {
-      return true;
-    }
+    if(a[0] > b[0]) return false;
+    if(a[0] < b[0]) return true;
 
+    if(a[1]> b[1]) return false;
+    if(a[1]< b[1]) return true;
+
+    return a[2]<b[2];
   }
 };
 
@@ -66,14 +60,9 @@ struct ltnlm {
 struct ltnl {
   bool operator()(const TinyVector<int,2>& a, 
 		  const TinyVector<int,2>& b) const {
-    if(a[0] > b[0]) 
-      return false;
-    else if(a[0] == b[0]){
-      return a[1] < b[1];
-    } 
-    else {
-      return true;
-    }
+    if(a[0] > b[0]) return false;
+    if(a[0] < b[0]) return true;
+    return a[1]<b[1];
   }
 };
 
