@@ -66,7 +66,7 @@ namespace qmcplusplus {
           if(eptr == NULL) {
             app_error() << "   Missing elementType attribute of atomicBasisSet.\n"
               << " Abort at MOBasisBuilder::put " << endl;
-            OHMMS::Controller->abort();
+            APP_ABORT("MolecularBasisBuilder::put");
           }
           string elementType((const char*)eptr);
 
