@@ -21,7 +21,10 @@
 #include "SQD/SphericalPotential/HarmonicPotential.h"
 #include "SQD/SphericalPotential/StepPotential.h"
 #include "SQD/SphericalPotential/SJPseudoPotential.h"
+#include "SQD/SphericalPotential/SHEGPotential.h"
 #include "SQD/HartreeFock.h"
+#include "OhmmsData/ParameterSet.h"
+#include "OhmmsData/AttributeSet.h"
 
 namespace ohmmshf {
 
@@ -30,14 +33,14 @@ namespace ohmmshf {
    * @param psi the wavefunction
    */
   HartreeFock::HartreeFock(RadialPotentialSet& pot, 
-			   SphericalOrbitalTraits::BasisSetType& psi):
+      SphericalOrbitalTraits::BasisSetType& psi):
     Pot(pot), Psi(psi), 
-    num_closed_shells(0),
-    maxiter(1000), eig_tol(1e-12),
-    scf_tol(1e-8), ratio(0.35), 
-    GridType("none"),
-    grid_ptr(NULL), orb_ptr(NULL), 
-    pot_ptr(NULL), myGrid(NULL) { }
+  num_closed_shells(0),
+  maxiter(1000), eig_tol(1e-12),
+  scf_tol(1e-8), ratio(0.35), 
+  GridType("none"),
+  grid_ptr(NULL), orb_ptr(NULL), 
+  pot_ptr(NULL), myGrid(0) { }
 
   /** Sets the root for all output files.
    *@param aroot the root for all output files
@@ -51,16 +54,16 @@ namespace ohmmshf {
   /** Set the parameters for the eigen solver
    *@param q the current xml node which contains the parameter definitions for the eigen solver
    *@return true if successful
-     *
-     *Available parameters
-     <ul>
-     <li> max_iter, the maximum self-consistent iterations, default=1000
-     <li> eig_tol, the eigen-value tolerance, default = \f$1 e^{-12}\f$
-     <li> en_tol, the tolerance of the self-consistent loops, 
-     default = \f$1 e^{-8}\f$
-     <li> mix_ratio, the mixing ratio of the charge density, default = 0.35
-     </ul>
-  */
+   *
+   *Available parameters
+   <ul>
+   <li> max_iter, the maximum self-consistent iterations, default=1000
+   <li> eig_tol, the eigen-value tolerance, default = \f$1 e^{-12}\f$
+   <li> en_tol, the tolerance of the self-consistent loops, 
+   default = \f$1 e^{-8}\f$
+   <li> mix_ratio, the mixing ratio of the charge density, default = 0.35
+   </ul>
+   */
   bool HartreeFock::put(xmlNodePtr d_root){
 
     xmlNodePtr cur = NULL;
@@ -72,63 +75,60 @@ namespace ohmmshf {
     xmlXPathObjectPtr result = xmlXPathEvalExpression((const xmlChar*)"//atom",m_context);
     if(xmlXPathNodeSetIsEmpty(result->nodesetval)) {
       ERRORMSG("Missing Atom information. Exit")
-	return false;
+        return false;
     } else {
       cur = result->nodesetval->nodeTab[0];
       xmlAttrPtr att = cur->properties;
       while(att != NULL) {
-	string aname((const char*)(att->name));
-	const char *avalue = (const char*)(att->children->content);
-	if(aname == "name") {
-	  AtomName = avalue;
-	} else if (aname == "num_closed_shells") {
-	  num_closed_shells = atoi(avalue);
-	}
-	att = att->next;
+        string aname((const char*)(att->name));
+        const char *avalue = (const char*)(att->children->content);
+        if(aname == "name") {
+          AtomName = avalue;
+        } else if (aname == "num_closed_shells") {
+          num_closed_shells = atoi(avalue);
+        }
+        att = att->next;
       }
 
-      XMLReport("Atom name = " << AtomName)
-	XMLReport("Number of closed shells = " << num_closed_shells)
-	//initialize xmlNode pointers for the grid, wavefunction and potential
-	xmlNodePtr cur1 = cur->xmlChildrenNode;
+      XMLReport("Atom name = " << AtomName);
+      XMLReport("Number of closed shells = " << num_closed_shells);
+      //initialize xmlNode pointers for the grid, wavefunction and potential
+      xmlNodePtr cur1 = cur->xmlChildrenNode;
       while(cur1 != NULL) {
-	string cname1((const char*)(cur1->name));
-	if(cname1 == "grid") {
-	  grid_ptr = cur1;
-	} else if(cname1 == "orbitalset") {
-	  orb_ptr = cur1;
-	} else if(cname1 == "hamiltonian") {
-	  pot_ptr = cur1;
-	  if(xmlHasProp(cur1,(const xmlChar*)"type")) {
-	    PotType = (const char*)(xmlGetProp(cur1, (const xmlChar *) "type"));
-	    XMLReport("The type of external potential " << PotType)
-	      } else {
-		ERRORMSG("Potential type is undefined. Exit")
-		  return false;
-	      }
-	}
-	cur1 = cur1->next;
+        string cname1((const char*)(cur1->name));
+        if(cname1 == "grid") {
+          grid_ptr = cur1;
+        } else if(cname1 == "orbitalset") {
+          orb_ptr = cur1;
+        } else if(cname1 == "hamiltonian") {
+          pot_ptr = cur1;
+          OhmmsAttributeSet aAttrib;
+          aAttrib.add(PotType,"type");
+          aAttrib.put(cur1);
+        }
+        cur1 = cur1->next;
       }
     }
     if(orb_ptr == NULL || pot_ptr == NULL || grid_ptr == NULL) {
-      ERRORMSG("Missing one of nodes: <grid/>, <orbitalset/> or <hamiltonian/>. Exit")
-	return false;
+      ERRORMSG("Missing one of nodes: <grid/>, <orbitalset/> or <hamiltonian/>. Exit");
+      return false;
     }
     xmlXPathFreeObject(result);
 
     //initialize the grid
     bool success = initGrid();
+
     if(!success) {
-      ERRORMSG("Failed to create a grid")
-	return false;
+      ERRORMSG("Failed to create a grid");
+      return false;
     }
 
     Psi.m_grid = myGrid;
     //initialize the wavefunction
     success = initOrbitalSet();
     if(!success) {
-      ERRORMSG("Failed to create/initialiaze orbitals")
-	return false;
+      ERRORMSG("Failed to create/initialiaze orbitals");
+      return false;
     }
 
     //initialize the internal storage for a potential
@@ -137,130 +137,95 @@ namespace ohmmshf {
     //initialize the Hamiltonian
     success = initHamiltonian();
     if(!success) {
-      ERRORMSG("Failed to create/initialiaze hamiltonian")
-	return false;
+      ERRORMSG("Failed to create/initialiaze hamiltonian");
+      return false;
     }
-   
+
     //initialize the eigen solver
     result = xmlXPathEvalExpression((const xmlChar*)"//eigensolve",m_context);
     if(xmlXPathNodeSetIsEmpty(result->nodesetval)) {
-      WARNMSG("Using default values for eigen solver")
-	} else {
-	  cur = result->nodesetval->nodeTab[0]->children;
-	  while(cur != NULL) {
-	    string cname((const char*)(cur->name));
-	    if(cname == "parameter") {
-	      xmlAttrPtr att = cur->properties;
-	      while(att != NULL) {
-		string aname((const char*)(att->name));
-		string vname((const char*)(att->children->content));
-		if(aname == "name") {
-		  if(vname == "max_iter"){
-		    putContent(maxiter,cur);
-		  } else if(vname == "eig_tol"){
-		    putContent(eig_tol,cur);
-		  } else if(vname == "etot_tol"){
-		    putContent(scf_tol,cur);
-		  } else if(vname == "mix_ratio"){
-		    putContent(ratio,cur); 
-		  }
-		}
-		att = att->next;
-	      }
-	    }
-	    cur = cur->next;
-	  }
-	}   
+      WARNMSG("Using default values for eigen solver");
+    } else {
+      ParameterSet params;
+      params.add(maxiter,"max_iter","int");
+      params.add(eig_tol,"eig_tol","double");
+      params.add(scf_tol,"etot_tol","double");
+      params.add(ratio,"mix_ratio","double");
+      params.put(result->nodesetval->nodeTab[0]);
+    }   
     xmlXPathFreeObject(result);
-    XMLReport("maximum iterations = " << maxiter) 
-      XMLReport("eigentolerance = " << eig_tol)
-      XMLReport("scftolerance = " << scf_tol)
-      XMLReport("ratio = " << ratio)
+    XMLReport("maximum iterations = " << maxiter);
+    XMLReport("eigentolerance = " << eig_tol);
+    XMLReport("scftolerance = " << scf_tol);
+    XMLReport("ratio = " << ratio);
 
-      xmlXPathFreeContext(m_context);
+    xmlXPathFreeContext(m_context);
 
     return true;
   }
 
   /** Initialize the radial grid.
-     *
-     *Available parameters
-     <ul>
-     <li> type: the grid type (log or linear)
-     <li> scale: the scaling factor, default 1.0
-     <li> min: the minimum value of the grid, default 0.001
-     <li> max: the maximum value of the grid, default 1000.0
-     <li> npts: the number of grid points, default 2001
-     </ul>
-  */
+   *
+   *Available parameters
+   <ul>
+   <li> type: the grid type (log or linear)
+   <li> scale: the scaling factor, default 1.0
+   <li> min: the minimum value of the grid, default 0.001
+   <li> max: the maximum value of the grid, default 1000.0
+   <li> npts: the number of grid points, default 2001
+   </ul>
+   */
 
   bool HartreeFock::initGrid() {
 
     xmlNodePtr cur = grid_ptr;
     double scale = 1.0;
-    double min = 0.001;
-    double max = 1000.0;
+    double rmin = 0.001;
+    double rmax = 1000.0;
     int npts = 2001;
-    xmlAttrPtr att = cur->properties;
-    while(att != NULL) {
-      string aname((const char*)(att->name));
-      const char *avalue = (const char*)(att->children->content);
-      if(aname == "type") {
-	GridType = avalue;
-      } else if(aname == "scale") {
-	scale = atof(avalue);
-      }
-      att= att->next;
-    }
 
-    XMLReport("Grid type = " << GridType)
-      xmlNodePtr cur1 = cur->xmlChildrenNode;	  
-    while(cur1 != NULL) {
-      if(!xmlStrcmp(cur1->name, (const xmlChar*)"parameter")) {
-	att = cur1->properties;
-	while(att != NULL) {
-	  string aname((const char*)(att->name));
-	  if(aname == "name") {
-	    string vname((const char*)(att->children->content));
-	    if(vname == "min") {
-	      putContent(min,cur1);
-	    } else if(vname == "max") { 
-	      putContent(max,cur1);
-	    } else if(vname == "npts") {
-	      putContent(npts,cur1);
-	    }
-	  }
-	  att=att->next;
-	}
-      }
-      cur1 = cur1->next;
-    }
+    //use common method
+    OhmmsAttributeSet aAttrib;
+    aAttrib.add(scale,"scale");
+    aAttrib.add(GridType,"type");
+    aAttrib.add(rmin,"ri");
+    aAttrib.add(rmax,"rf");
+    aAttrib.add(npts,"npts");
+    aAttrib.put(cur);
+
+    //use old method via <parameter/>
+    XMLReport("Grid type = " << GridType);
+    ParameterSet params;
+    params.add(rmin,"min","double");
+    params.add(rmax,"max","double");
+    params.add(npts,"npts","int");
+    params.put(cur->xmlChildrenNode);
     if(GridType == "log"){
       myGrid = new LogGrid<double>;
-      min/=scale;
-      max/=sqrt(scale);
-      myGrid->set(min,max,npts);
+      rmin/=scale;
+      rmax/=sqrt(scale);
+      myGrid->set(rmin,rmax,npts);
     } else if(GridType == "linear"){
       myGrid = new LinearGrid<double>;
-      min/=scale;
-      max/=sqrt(scale);
-      myGrid->set(min,max,npts);
+      rmin/=scale;
+      rmax/=sqrt(scale);
+      myGrid->set(rmin,rmax,npts);
     } else {
-      ERRORMSG("Grid Type Options: Log or Linear.")
-	return false;
+      ERRORMSG("Grid Type Options: Log or Linear.");
+      return false;
     }
     XMLReport("Radial Grid: type " << GridType << " rmin = " 
-	      << min << ", rmax = " << max << ", npts = " << npts) 
-      //     << ", dh = " << myGrid->dh() << ", npts = " << npts) 
-      return myGrid != NULL;
+        << rmin << ", rmax = " << rmax << ", npts = " << npts);
+    //     << ", dh = " << myGrid->dh() << ", npts = " << npts) 
+    return myGrid != 0;
   }
 
   /** Initialize the wavefunction.
    *
    *Available parameters
-     <ul>
-     <li> rest_type: the restriction type (spin, spin_space, none)
-     </ul>
+   <ul>
+   <li> rest_type: the restriction type (spin, spin_space, none)
+   </ul>
    */
 
   bool HartreeFock::initOrbitalSet() {
@@ -269,27 +234,38 @@ namespace ohmmshf {
     xmlNodePtr cur = orb_ptr;
     if(xmlHasProp(cur,(const xmlChar*)"condition")) {
       Psi.Restriction = (const char*)(xmlGetProp(cur, (const xmlChar *) "condition"));
-      XMLReport("Orbital restriction type = " << Psi.Restriction)
+      XMLReport("Orbital restriction type = " << Psi.Restriction);
     }
 
     //fill the closed shells (shell filling depends of potential)
     if(num_closed_shells) {
-      if(PotType == "harmonic" || PotType == "step"){
-	FillShellsHarmPot(Psi,num_closed_shells);
-      } else { 
-	FillShellsNucPot(Psi,num_closed_shells);
+      if(PotType.find("nuclear")<PotType.size())
+      {
+        FillShellsNucPot(Psi,num_closed_shells);
       }
+      if(PotType == "harmonic" || PotType == "step" || PotType == "heg"){
+        FillShellsHarmPot(Psi,num_closed_shells);
+      } 
+      //if(PotType == "heg") {
+      //  FillShellsHarmPot(Psi,num_closed_shells,1);
+      //} 
     }
     //pass the xmlNode to Psi
     Psi.put(cur);
 
     LOGMSG("Total number of orbitals = " << Psi.size()); 
+    LOGMSG("Total number of unique radial orbitals = " <<  Psi.NumUniqueOrb);
 
-    LOGMSG("(Orbital index, Number of Orbitals)")
-      for(int j=0; j < Psi.size(); j++){
-	int id = Psi.ID[j];
-	LOGMSG("(" << id << ", " << Psi.IDcount[id] << ")");
-      }
+    LOGMSG("(Orbital index, Number of Orbitals, n,l,m,s)");
+    for(int j=0; j < Psi.size(); j++){
+      int id = Psi.ID[j];
+      LOGMSG("(" << id << ", " << Psi.IDcount[id] 
+          << ", " << Psi.N[j]
+          << ", " << Psi.L[j]
+          << ", " << Psi.M[j]
+          << ", " << Psi.S[j]
+          << ")");
+    }
 
     //return false if there is no wave functions
     return Psi.size() != 0;
@@ -298,195 +274,100 @@ namespace ohmmshf {
   /** Initialize the Hamiltonian.
    *
    *Available Hamiltonians
-     <ul>
-     <li> Nuclear
-     <li> Harmonic
-     <li> Step
-     <li> Pseudo
-     <li> Nuclear Scalar Relativistic
-     </ul>
-  */
+   <ul>
+   <li> Nuclear
+   <li> Harmonic
+   <li> Step
+   <li> Pseudo
+   <li> Nuclear Scalar Relativistic
+   </ul>
+   */
   bool HartreeFock::initHamiltonian() {
 
-    //class to generate Clebsh Gordan coeff.
-    Clebsch_Gordan* CG_coeff = NULL;
+    if(PotType.find("nuclear")<PotType.size())
+    {
+      XMLReport("Creating a Nuclear Potential.");
+      double Z = Psi.size();
+      ParameterSet params;
+      params.add(Z,"z","double");
+      params.put(pot_ptr);
 
-    if(PotType == "nuclear"){
-      XMLReport("Creating a Nuclear Potential.")
-	double Z = Psi.size();
-
-      xmlNodePtr cur = pot_ptr->children;
-      while(cur != NULL) {
-	string cname((const char*)(cur->name));
-	if(cname == "parameter") {
-	  xmlAttrPtr att = cur->properties;
-	  while(att != NULL) {
-	    string vname((const char*)(att->children->content));
-	    if(vname == "z") {
-	      putContent(Z,cur);
-	    }
-	    att= att->next;
-	  }
-	}
-	cur = cur->next;
-      }
-      XMLReport("Potential Paramter: Z = " << Z)
-	// determine maximum angular momentum
-	int lmax = 0;  int norb = Psi.size();
-      for(int i=0; i<norb; i++)
-	if(Psi.L[i] > lmax) lmax = Psi.L[i]; 
-      XMLReport("Maximum Angular Momentum = " << lmax)
-	CG_coeff = new Clebsch_Gordan(lmax);
-
+      XMLReport("Potential Paramter: Z = " << Z);
       Pot.add(new ZOverRPotential(Z), true);
-      Pot.add(new HartreePotential(CG_coeff,norb));
-      Pot.add(new ExchangePotential(CG_coeff,norb));
       Psi.CuspParam = Z;
-    } // if Nuclear
-    else if(PotType == "nuclear_scalar_rel"){
-      XMLReport("Creating a Nuclear Scalar Relativistic Potential.")
-	double Z = Psi.size();
+    } // Z/r potential
+    else if(PotType=="heg")
+    {
+      XMLReport("Creating a Spherical Jellium potential.");
 
-      xmlNodePtr cur = pot_ptr->children;
-      while(cur != NULL) {
-	string cname((const char*)(cur->name));
-	if(cname == "parameter") {
-	  xmlAttrPtr att = cur->properties;
-	  while(att != NULL) {
-	    string vname((const char*)(att->children->content));
-	    if(vname == "z") {
-	      putContent(Z,cur);
-	    }
-	    att= att->next;
-	  }
-	}
-	cur = cur->next;
-      }
-      XMLReport("Potential Paramter: Z = " << Z)
-	int lmax = 0;  int norb = Psi.size();
-      for(int i=0; i<norb; i++)
-	if(Psi.L[i] > lmax) lmax = Psi.L[i]; 
-      XMLReport("Maximum Angular Momentum = " << lmax)
-	CG_coeff = new Clebsch_Gordan(lmax);
-      
-      Pot.add(new ZOverRPotential(Z),true);
-      Pot.add(new HartreePotential(CG_coeff,norb));
-      Pot.add(new ExchangePotential(CG_coeff,norb));
-      Psi.CuspParam = Z;
-    } // if Nuclear Scalar Relativistic
-    else if(PotType == "harmonic"){
-      XMLReport("Creating a Harmonic Potential.")
-	double Omega=0.5;
+      SHEGPotential* ap=new SHEGPotential(Psi.size());
+      ap->put(pot_ptr);
 
-      xmlNodePtr cur = pot_ptr->children;
-      while(cur != NULL) {
-	string cname((const char*)(cur->name));
-	if(cname == "parameter") {
-	  xmlAttrPtr att = cur->properties;
-	  while(att != NULL) {
-	    string vname((const char*)(att->children->content));
-	    if(vname == "omega" || vname == "z") {
-	      putContent(Omega,cur);
-	    }
-	    att= att->next;
-	  }
-	}
-	cur = cur->next;
-      }
-      XMLReport("Potential Parameter: Omega = " << Omega)
-	//determine maximum angular momentum
-	int lmax = 0;  int norb = Psi.size();
-      for(int i=0; i<norb; i++)
-	if(Psi.L[i] > lmax) lmax = Psi.L[i]; 
-      lmax++; // increment by 1
-      XMLReport("Maximum Angular Momentum = " << lmax)
-	CG_coeff = new Clebsch_Gordan(lmax);
+      Pot.add(ap);
+      Psi.CuspParam = 0.0;//set cusp to zero
+    }//spherical Jellium
+    else if(PotType == "harmonic")
+    {
+      XMLReport("Creating a Harmonic Potential.");
+      double Omega=0.5;
+      ParameterSet params;
+      params.add(Omega,"z","double");
+      params.add(Omega,"omega","double");
+      params.put(pot_ptr);
 
+      XMLReport("Potential Parameter: Omega = " << Omega);
       Pot.add(new HarmonicPotential(Omega),true);
-      Pot.add(new HartreePotential(CG_coeff,norb));
-      Pot.add(new ExchangePotential(CG_coeff,norb));
       Psi.CuspParam = 0.0;
-    } // if Harmonic
-    else if(PotType == "step"){
-      XMLReport("Creating a Step-Function Potential.")
-	//determine maximum angular momentum
-	int lmax = 0;  int norb = Psi.size();
-      for(int i=0; i<norb; i++)
-	if(Psi.L[i] > lmax) lmax = Psi.L[i];
-      lmax++; // increment by 1
-      XMLReport("Maximum Angular Momentum = " << lmax)
-	CG_coeff = new Clebsch_Gordan(lmax);
-
+    } //Harmonic
+    else if(PotType == "step")
+    {
+      XMLReport("Creating a Step-Function Potential.");
       StepPotential* apot = new StepPotential;
       apot->put(pot_ptr);
       Pot.add(apot,true);
-      Pot.add(new HartreePotential(CG_coeff,norb));
-      Pot.add(new ExchangePotential(CG_coeff,norb));
       Psi.CuspParam = 0.0;
-    } // if Step
-    else if(PotType == "pseudo"){
-      XMLReport("Creating a Starkloff-Joannopoulos Pseudo-Potential.")
-	double rc, lambda, Zeff;
+    } //step potential
+    else if(PotType == "pseudo")
+    {
+      XMLReport("Creating a Starkloff-Joannopoulos Pseudo-Potential.");
+      double rc, lambda, Zeff;
+      ParameterSet params;
+      params.add(rc,"rc","double");
+      params.add(lambda,"lambda","double");
+      params.add(Zeff,"zeff","double");
+      params.put(pot_ptr);
 
-      xmlNodePtr cur = pot_ptr->children;
-      while(cur != NULL) {
-	string cname((const char*)(cur->name));
-	if(cname == "parameter") {
-	  xmlAttrPtr att = cur->properties;
-	  while(att != NULL) {
-	    string vname((const char*)(att->children->content));
-	    if(vname == "rc") {
-	      putContent(rc,cur);
-	    } else if(vname == "lambda") {
-	      putContent(lambda,cur);
-	    } else if(vname == "zeff") {
-	      putContent(Zeff,cur);
-	    }
-	    att= att->next;
-	  }
-	}
-	cur = cur->next;
-      }
-      XMLReport("Potential Parameter: Effective Charge = " << Zeff)
-	XMLReport("Potential Parameter: Core Radius = " << rc)
-	XMLReport("Potential Parameter: Lambda = " << lambda)
-	// determine maximum angular momentum
-	int lmax = 0;  int norb = Psi.size();
-      for(int i=0; i<norb; i++)
-	if(Psi.L[i] > lmax) lmax = Psi.L[i]; 
-      lmax++; // increment by 1
-      XMLReport("Maximum Angular Momentum = " << lmax)
-	CG_coeff = new Clebsch_Gordan(lmax);
+      XMLReport("Potential Parameter: Effective Charge = " << Zeff);
+      XMLReport("Potential Parameter: Core Radius = " << rc);
+      XMLReport("Potential Parameter: Lambda = " << lambda);
 
       Pot.add(new SJPseudoPotential(Zeff,rc,lambda));
-      Pot.add(new HartreePotential(CG_coeff,norb));
-      Pot.add(new ExchangePotential(CG_coeff,norb));
       Psi.CuspParam = 0.0;
     } // if Pseudo
-    else {
-      ERRORMSG("Unknown potential type" << PotType)
-	return false;
+    else 
+    {
+      ERRORMSG("Unknown potential type" << PotType);
+      return false;
     }
 
+    //determine maximum angular momentum
+    int lmax = 0;  int norb = Psi.size();
+    for(int i=0; i<norb; i++)
+      if(Psi.L[i] > lmax) lmax = Psi.L[i]; 
+    XMLReport("Maximum Angular Momentum = " << lmax);
 
-    xmlNodePtr cur_sub = pot_ptr->xmlChildrenNode;
-    while(cur_sub != NULL) {
-      string pname((const char*)(cur_sub->name));
-      if(pname == "parameter") {
-	xmlAttrPtr att=cur_sub->properties;
-	while(att != NULL) {
-	  string vname((const char*)(att->children->content));
-	  if(vname == "mass") {
-	    double m=1.0;
-	    putContent(m,cur_sub);
-	    Pot.setMass(m);
-	    XMLReport("The effective mass is set to " << Pot.getMass())
-	      }
-	  att = att->next;
-	}
-      }
-      cur_sub = cur_sub->next;
-    }
+    //add Hartree and Exchange common to all
+    Clebsch_Gordan* CG_coeff = new Clebsch_Gordan(lmax);
+    Pot.add(new HartreePotential(CG_coeff,norb));
+    Pot.add(new ExchangePotential(CG_coeff,norb));
+
+    double m=1.0;
+    ParameterSet params1;
+    params1.add(m,"mass","double");
+    params1.put(pot_ptr);
+    Pot.setMass(m);
+    XMLReport("Effective mass = " << Pot.getMass());
+
     return true;
   }
 
@@ -502,17 +383,16 @@ namespace ohmmshf {
     ofstream fout(fileforplot.c_str());
 
     fout << "#Results for " << AtomName << " with " << PotType 
-	 << " potential on " << GridType << " grid." <<endl;
+      << " potential on " << GridType << " grid." <<endl;
     fout << "#Eigen values " << endl;
     fout.precision(10);
     fout.setf(ios::scientific,ios::floatfield);
     for(int orb=0; orb<eigVal.size(); orb++) {
       fout << "# n=" << Psi.N[orb] << " " <<  " l=" << Psi.L[orb] 
-	   << setw(25) << eigVal[orb] << " " << endl;
+        << setw(25) << eigVal[orb] << " " << endl;
     }
 
-    fout << "#The number of unique radial orbitals " << Psi.NumUniqueOrb 
-	 << endl;
+    fout << "#The number of unique radial orbitals " << Psi.NumUniqueOrb << endl;
     //find the maximum radius for the orbital set
     int max_rad_all = 0;
     int orbindex = 0;
@@ -528,8 +408,8 @@ namespace ohmmshf {
       fout << setw(22) << myGrid->r(ig);
       orbindex=0;
       for(int orb=0; orb<Psi.NumUniqueOrb; orb++){
-	fout << setw(22) << Psi(orbindex,ig);
-	orbindex += Psi.IDcount[orb];  
+        fout << setw(22) << Psi(orbindex,ig);
+        orbindex += Psi.IDcount[orb];  
       }
       fout << endl;
     }
@@ -546,5 +426,5 @@ namespace ohmmshf {
  * $Id$ 
  ***************************************************************************/
 
-  
-  
+
+

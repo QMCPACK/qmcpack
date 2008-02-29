@@ -224,7 +224,6 @@ template<class GT>
 bool YlmRnlSet<GT>::print_basis(const std::string& elementName,
 				const std::string& RootName,
 				const std::string& GridType){
-
   using namespace std;
 
   //matrices for spin-up and down orbitals
@@ -248,80 +247,153 @@ bool YlmRnlSet<GT>::print_basis(const std::string& elementName,
   string fnameXML = RootName + ".basis.xml";
   string fnameHDF5 = RootName + ".h5";
 
-  ofstream osXML(fnameXML.c_str());
-  osXML << "<determinantset type=\"MolecularOrbital\">" << std::endl;
-  osXML << "<basisset>" << std::endl;
-  osXML << "<basis type=\"HFNG\" species=\"" << elementName 
-	<< "\" file=\"" << fnameHDF5 << "\">" << std::endl;
+  //construct xml tree
+  xmlDocPtr doc = xmlNewDoc((const xmlChar*)"1.0");
+  xmlNodePtr qmc_root = xmlNewNode(NULL, BAD_CAST "qmcsystem"); 
 
-  //if there is no restriction all the orbitals are basis functions
-  if(Restriction == "none"){
-    int nup = 0; int ndown = 0;
-    for(int orb=0; orb<size(); orb++){
-      if(S[orb] == 1) Mup(nup++,orb) = 1.0;
-      else Mdown(ndown++,orb) = 1.0;
-      char idname[128];
-      sprintf(idname,"R%03d",ID[orb]);
-      if(fabs(psi[orb](0)) > 0.0){ 
-	osXML << "<phi id=\"" << idname << "\" n=\"" << N[orb] 
-	      << "\" l=\"" << L[orb] << "\" m=\"" << M[orb] 
-	      << "\" s=\"" << S[orb] << "\" zeta=\"1\"/>" << std::endl;
-      } else {
-      osXML << "<phi id=\"" << idname << "\" n=\"" << N[orb] 
-	    << "\" l=\"" << L[orb] << "\" m=\"" << M[orb] 
-	    << "\" s=\"" << S[orb] << "\" zeta=\"1\" imin=\"1\"/>" << std::endl;
-      }
-    }
-  } else {
-    /*if there is a restriction then the basis consists of one orbital 
-      for each unique (n,l,m), since for a given (n,l,m) spin-up is equal 
-      to spin-down, assign each basis function an up spin*/
-    int nup = 0; int ndown = 0; int nbasis = -1;   
-    for(int orb=0; orb<size(); orb++){
-      NLMIndex nlm(N[orb],L[orb],M[orb]);
-      NLM_Map_t::iterator it = NLM.find(nlm); 
-      if(it == NLM.end()) {
-	NLM[nlm] = nbasis;
-	nbasis++;
-	char idname[128];
-	sprintf(idname,"R%03d",ID[orb]);
-	if(fabs(psi[orb](0)) > 0.0){ 
-	  osXML << "<phi id=\"" << idname << "\" n=\"" << N[orb] 
-		<< "\" l=\"" << L[orb] << "\" m=\"" << M[orb] 
-		<< "\" s=\"1\" zeta=\"1\"/>" << std::endl;
-	} else {
-	  osXML << "<phi id=\"" << idname << "\" n=\"" << N[orb] 
-		<< "\" l=\"" << L[orb] << "\" m=\"" << M[orb] 
-		<< "\" s=\"" << S[orb] << "\" zeta=\"1\" imin=\"1\"/>" << std::endl;
-	}
-	nbasis++;
-      }
-    }
+  {//particleset for atom
+    xmlNodePtr p1 = xmlNewNode(NULL,(const xmlChar*)"particleset");
+    xmlNewProp(p1,(const xmlChar*)"name",(const xmlChar*)"atom");
+    xmlNewProp(p1,(const xmlChar*)"size",(const xmlChar*)"1");
 
-    for(int i=0; i<Mup.rows(); i++) Mup(i,i) = 1.0;
-    for(int i=0; i<Mdown.rows(); i++) Mdown(i,i) = 1.0;
+    xmlNodePtr p2 = xmlNewNode(NULL,(const xmlChar*)"group");
+    xmlNewProp(p2,(const xmlChar*)"name",(const xmlChar*)elementName.c_str());
 
+    std::ostringstream c;
+    c<<Nup+Ndown;
+    xmlNodePtr p3 =xmlNewTextChild(p2,NULL,
+        (const xmlChar*)"parameter", (const xmlChar*)c.str().c_str());
+    xmlNewProp(p3,(const xmlChar*)"name",(const xmlChar*)"charge");
+
+    xmlAddChild(p1,p2);
+    xmlAddChild(qmc_root,p1);
   }
- 
-  osXML << "</basis>" << std::endl;
-  osXML << "</basisset>" << std::endl;
-  osXML << "<slaterdeterminant>" << std::endl;
-  osXML << "<determinant spin=\"1\" orbitals=\"" << Mup.rows() 
-	<< "\">" << std::endl;
-  osXML << "<parameter id=\"1cu\" type=\"Array\">" << std::endl;
-  osXML << Mup;
-  osXML << "</parameter>" << std::endl;
-  osXML << "</determinant>" << std::endl;
-  osXML << "<determinant spin=\"-1\" orbitals=\"" << Mdown.rows() 
-	<< "\">" << std::endl;
-  osXML << "<parameter id=\"1cd\" type=\"Array\">" << std::endl;
-  osXML << Mdown;
-  osXML << "</parameter>" << std::endl;
-  osXML << "</determinant>" << std::endl;
-  osXML << "</slaterdeterminant>" << std::endl;
-  osXML << "</determinantset>" << std::endl;
 
-  osXML.close(); 
+  {//particleset for electrons
+    xmlNodePtr p1 = xmlNewNode(NULL,(const xmlChar*)"particleset");
+    xmlNewProp(p1,(const xmlChar*)"name",(const xmlChar*)"e");
+
+    if(Nup>0)
+    {
+      xmlNodePtr p2 = xmlNewNode(NULL,(const xmlChar*)"group");
+      xmlNewProp(p2,(const xmlChar*)"name",(const xmlChar*)"u");
+      std::ostringstream s; s << Nup;
+      xmlNewProp(p2,(const xmlChar*)"size",(const xmlChar*)s.str().c_str());
+
+      xmlNodePtr p3 =xmlNewTextChild(p2,NULL, (const xmlChar*)"parameter", (const xmlChar*)"-1");
+      xmlNewProp(p3,(const xmlChar*)"name",(const xmlChar*)"charge");
+      xmlAddChild(p2,p3);
+
+      xmlAddChild(p1,p2);
+    }
+
+    if(Ndown>0)
+    {
+      //down electrons
+      xmlNodePtr p2 = xmlNewNode(NULL,(const xmlChar*)"group");
+      xmlNewProp(p2,(const xmlChar*)"name",(const xmlChar*)"d");
+      std::ostringstream s; s << Ndown;
+      xmlNewProp(p2,(const xmlChar*)"size",(const xmlChar*)s.str().c_str());
+
+      xmlNodePtr p3 =xmlNewTextChild(p2,NULL, (const xmlChar*)"parameter", (const xmlChar*)"-1");
+      xmlNewProp(p3,(const xmlChar*)"name",(const xmlChar*)"charge");
+      xmlAddChild(p2,p3);
+
+      xmlAddChild(p1,p2);
+    }
+
+    xmlAddChild(qmc_root,p1);
+  }
+
+  {//wavefunction
+    xmlNodePtr p1 = xmlNewNode(NULL,(const xmlChar*)"wavefunction");
+    xmlNewProp(p1,(const xmlChar*)"name",(const xmlChar*)"psi0");
+    xmlNewProp(p1,(const xmlChar*)"target",(const xmlChar*)"e");
+
+    //determinantset
+    xmlNodePtr p2 = xmlNewNode(NULL, (const xmlChar*) "determinantset");
+    xmlNewProp(p2,(const xmlChar*)"type",(const xmlChar*)"MO");
+    xmlNewProp(p2,(const xmlChar*)"transform",(const xmlChar*)"yes");
+    xmlNewProp(p2,(const xmlChar*)"source",(const xmlChar*)"atom");
+
+    {//basiset
+      xmlNodePtr p3 = xmlNewNode(NULL, (const xmlChar*) "basisset");
+      xmlNodePtr p4 = xmlNewNode(NULL, (const xmlChar*) "atomicBasisSet");
+      xmlNewProp(p4,(const xmlChar*)"type",(const xmlChar*)"Numerical");
+      xmlNewProp(p4,(const xmlChar*)"elementType",(const xmlChar*)elementName.c_str());
+      xmlNewProp(p4,(const xmlChar*)"expandYlm",(const xmlChar*)"no");
+      xmlNewProp(p4,(const xmlChar*)"href",(const xmlChar*)fnameHDF5.c_str());
+
+      {//grid
+        std::ostringstream s1,s2,s3; 
+        s1<<m_grid->rmin(); s2<<m_grid->rmax(); s3<< m_grid->size();
+        xmlNodePtr p5 = xmlNewNode(NULL, (const xmlChar*) "grid");
+        xmlNewProp(p5,(const xmlChar*)"type",(const xmlChar*)GridType.c_str());
+        xmlNewProp(p5,(const xmlChar*)"ri",(const xmlChar*)s1.str().c_str());
+        xmlNewProp(p5,(const xmlChar*)"rf",(const xmlChar*)s2.str().c_str());
+        xmlNewProp(p5,(const xmlChar*)"npts",(const xmlChar*)s3.str().c_str());
+        xmlAddChild(p4,p5);
+      }
+
+      //basisGroups
+      int nup = 0; int ndown = 0; int nbasis = -1;   
+      for(int orb=0; orb<size(); orb++){
+        NLMIndex nlm(N[orb],L[orb],M[orb]);
+        NLM_Map_t::iterator it = NLM.find(nlm); 
+        if(it == NLM.end()) {
+          NLM[nlm] = ++nbasis;
+          char idname[128];
+          char dsname[128];
+          sprintf(idname,"R%03d",ID[orb]);
+          sprintf(dsname,"orbital%04d",ID[orb]);
+          xmlNodePtr p5 = xmlNewNode(NULL, (const xmlChar*) "basisGroup");
+          xmlNewProp(p5,(const xmlChar*)"rid",(const xmlChar*)idname);
+          xmlNewProp(p5,(const xmlChar*)"ds",(const xmlChar*)dsname);
+
+          std::ostringstream s1,s2,s3; 
+          s1 << N[orb]; s2<< L[orb]; s3 << M[orb];
+          xmlNewProp(p5,(const xmlChar*)"n",(const xmlChar*)s1.str().c_str());
+          xmlNewProp(p5,(const xmlChar*)"l",(const xmlChar*)s2.str().c_str());
+          xmlNewProp(p5,(const xmlChar*)"m",(const xmlChar*)s3.str().c_str());
+          xmlNewProp(p5,(const xmlChar*)"zeta",(const xmlChar*)"1");
+
+          xmlAddChild(p4,p5);
+        }
+      }
+      xmlAddChild(p3,p4);//add atomicBasisSet to basiset
+      xmlAddChild(p2,p3);//basisset to determinantset
+    }
+
+    {
+      xmlNodePtr p3 = xmlNewNode(NULL, (const xmlChar*) "slaterdeterminant");
+      if(Nup>0)
+      {
+        std::ostringstream s; s << Nup;
+        xmlNodePtr p4 = xmlNewNode(NULL,(const xmlChar*)"determinant");
+        xmlNewProp(p4,(const xmlChar*)"spin",(const xmlChar*)"1");
+        xmlNewProp(p4,(const xmlChar*)"id",(const xmlChar*)"detu");
+        xmlNewProp(p4,(const xmlChar*)"size",(const xmlChar*)s.str().c_str());
+        xmlAddChild(p3,p4);
+      }
+
+      if(Ndown>0)
+      {
+        std::ostringstream s; s << Ndown;
+        xmlNodePtr p4 = xmlNewNode(NULL,(const xmlChar*)"determinant");
+        xmlNewProp(p4,(const xmlChar*)"spin",(const xmlChar*)"-1");
+        xmlNewProp(p4,(const xmlChar*)"id",(const xmlChar*)"detd");
+        xmlNewProp(p4,(const xmlChar*)"size",(const xmlChar*)s.str().c_str());
+        xmlAddChild(p3,p4);
+      }
+      xmlAddChild(p2,p3);//slaterdeterminant to determinantset
+    }
+
+    xmlAddChild(p1,p2);//determinantset to wavefunction
+    xmlAddChild(qmc_root,p1);//wavefunction to qmcsystem
+  }
+  xmlDocSetRootElement(doc, qmc_root);
+  xmlSaveFormatFile(fnameXML.c_str(),doc,1);
+  xmlFreeDoc(doc);
 
   return true;
 

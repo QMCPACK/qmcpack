@@ -122,7 +122,7 @@ namespace ohmmshf {
    */
   bool HartreeFock::solve() {
     int norb = Psi.size();
-    if(PotType == "harmonic" || PotType == "step" || PotType == "pseudo"){
+    if(PotType == "harmonic" || PotType == "step" || PotType == "pseudo" || PotType == "heg"){
       if(GridType == "linear"){
 	RegularLinearTransform<RadialOrbital_t> *afake=NULL;
 	run(afake,norb);
