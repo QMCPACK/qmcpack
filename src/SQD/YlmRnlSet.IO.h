@@ -356,6 +356,8 @@ bool YlmRnlSet<GT>::print_basis(const std::string& elementName,
           xmlNewProp(p5,(const xmlChar*)"l",(const xmlChar*)s2.str().c_str());
           xmlNewProp(p5,(const xmlChar*)"m",(const xmlChar*)s3.str().c_str());
           xmlNewProp(p5,(const xmlChar*)"zeta",(const xmlChar*)"1");
+          if((*m_grid)(0)<numeric_limits<value_type>::epsilon())
+            xmlNewProp(p5,(const xmlChar*)"imin",(const xmlChar*)"1");
 
           xmlAddChild(p4,p5);
         }
