@@ -15,6 +15,7 @@
 //////////////////////////////////////////////////////////////////
 #include "Utilities/OhmmsInfo.h"
 #include "Numerics/LibxmlNumericIO.h"
+#include "Numerics/HDFNumericAttrib.h"
 #include "Numerics/GaussianBasisSet.h"
 #include "Numerics/SlaterBasisSet.h"
 #include "Numerics/Transform2GridFunctor.h"
@@ -24,20 +25,36 @@
 namespace qmcplusplus {
 
   NGOBuilder::NGOBuilder(xmlNodePtr cur): 
-    Normalized(true),m_rcut(-1.0){
+    Normalized(true),m_rcut(-1.0), m_infunctype("Gaussian"), m_fileid(-1){
       if(cur != NULL) {
         putCommon(cur);
       }
   }
+  NGOBuilder::~NGOBuilder()
+  {
+    if(m_fileid>-1) H5Fclose(m_fileid);
+  }
 
   bool 
     NGOBuilder::putCommon(xmlNodePtr cur) {
-    const xmlChar* a=xmlGetProp(cur,(const xmlChar*)"normalized");
-    if(a) {
-      if(xmlStrEqual(a,(const xmlChar*)"no")) Normalized=false;
+      string normin("yes");
+      string afilename("0");
+      OhmmsAttributeSet aAttrib;
+      aAttrib.add(normin,"normalized");
+      aAttrib.add(m_infunctype,"type");
+      aAttrib.add(afilename,"href"); aAttrib.add(afilename,"src");
+      bool success=aAttrib.put(cur);
+
+      //set the noramlization
+      Normalized=(normin=="yes");
+
+      if(afilename.find("h5")<afilename.size())
+        m_fileid = H5Fopen(afilename.c_str(),H5F_ACC_RDWR,H5P_DEFAULT);
+      else
+        m_fileid=-1;
+
+      return success;
     }
-    return true;
-  }
 
   void 
     NGOBuilder::setOrbitalSet(CenteredOrbitalType* oset, const std::string& acenter) { 
@@ -51,6 +68,7 @@ namespace qmcplusplus {
       ERRORMSG("m_orbitals, SphericalOrbitals<ROT,GT>*, is not initialized")
       return false;
     }
+
     GridType *agrid = OneDimGridFactory::createGrid(cur);
     m_orbitals->Grids.push_back(agrid);
     return true;
@@ -75,12 +93,20 @@ namespace qmcplusplus {
       return false;
     }
 
-    const xmlChar *tptr = xmlGetProp(cur,(const xmlChar*)"type");
-    string radtype("Gaussian");
-    if(tptr) radtype = (const char*)tptr;
+    string radtype(m_infunctype);
+    string dsname("0");
 
-    tptr = xmlGetProp(cur,(const xmlChar*)"rmax");
-    if(tptr) m_rcut = atof((const char*)tptr);
+    OhmmsAttributeSet aAttrib;
+    aAttrib.add(radtype,"type");
+    aAttrib.add(m_rcut,"rmax");
+    aAttrib.add(dsname,"ds");
+    aAttrib.put(cur);
+
+    //const xmlChar *tptr = xmlGetProp(cur,(const xmlChar*)"type");
+    //if(tptr) radtype = (const char*)tptr;
+
+    //tptr = xmlGetProp(cur,(const xmlChar*)"rmax");
+    //if(tptr) m_rcut = atof((const char*)tptr);
 
     int lastRnl = m_orbitals->Rnl.size();
 
@@ -91,9 +117,13 @@ namespace qmcplusplus {
       addSlater(cur);
     } else if(radtype == "Pade") {
       app_error() << "  Any2GridBuilder::addPade is disabled." << endl;
-      abort();
+      APP_ABORT("NGOBuilder::addRadialOrbital");
       //addPade(cur);
+    } else 
+    {
+      addNumerical(cur,dsname);
     }
+
 
     if(lastRnl && m_orbitals->Rnl.size()> lastRnl) {
       //LOGMSG("\tSetting GridManager of " << lastRnl << " radial orbital to false")
@@ -137,6 +167,60 @@ namespace qmcplusplus {
     m_orbitals->Rnl.push_back(radorb);
     m_orbitals->RnlID.push_back(m_nlms);
 
+  }
+
+  void NGOBuilder::addNumerical(xmlNodePtr cur, const string& dsname) 
+  {
+    char grpname[128];
+    sprintf(grpname,"radial_basis_states/%s",dsname.c_str());
+    hid_t group_id_orb=H5Gopen(m_fileid,grpname);
+    int rinv_p=0;
+    HDFAttribIO<int> ir(rinv_p);
+    ir.read(group_id_orb,"power");
+
+    Vector<double> rad_orb;
+    HDFAttribIO<Vector<double> > rin(rad_orb);
+    rin.read(group_id_orb,"radial_orbital");
+
+    H5Gclose(group_id_orb);
+
+    GridType* agrid = m_orbitals->Grids[0];
+    if(rinv_p != 0)
+      for(int ig=0; ig<rad_orb.size(); ig++) 
+        rad_orb[ig] *= std::pow(agrid->r(ig),-rinv_p);
+
+    //last valid index for radial grid
+    int imin = 0;
+    int imax = rad_orb.size()-1;
+    RadialOrbitalType *radorb = new OneDimCubicSpline<RealType>(agrid,rad_orb);
+    //calculate boundary condition, assume derivates at endpoint are 0.0
+    RealType yprime_i = rad_orb[imin+1]-rad_orb[imin];
+    if(std::abs(yprime_i)<1e-10)  yprime_i = 0.0;
+    yprime_i /= (agrid->r(imin+1)-agrid->r(imin)); 
+    //set up 1D-Cubic Spline
+    radorb->spline(imin,yprime_i,imax,0.0);
+
+    m_orbitals->Rnl.push_back(radorb);
+    m_orbitals->RnlID.push_back(m_nlms);
+
+    //ofstream dfile("spline.dat");
+    //dfile.setf(std::ios::scientific, std::ios::floatfield);
+    //for(int ig=imin; ig<radorb->size(); ig++) {
+    //  RealType dr = (radorb->r(ig+1)- radorb->r(ig))/5.0;
+    //  RealType _r = radorb->r(ig),y,dy,d2y;
+    //  while(_r<radorb->r(ig+1)) {
+    //    //Do not need this anymore
+    //    //radorb->setgrid(_r);
+    //    y = radorb->evaluate(_r,1.0/_r,dy,d2y);
+    //    dfile << setw(15) << _r << setw(20) << setprecision(12) << y 
+    //          << setw(20) << dy << setw(20) << d2y
+    //          << endl;
+    //    _r+=dr;
+    //  }
+    //}
+
+    //cout << " Power " << rinv_p << " size=" << rad_orb.size() << endl;
+    //APP_ABORT("NGOBuilder::addNumerical");
   }
 
   template<class T>

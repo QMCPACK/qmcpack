@@ -17,6 +17,7 @@
 #define QMCPLUSPLUS_NUMERICALGRIDORBITALBUILDER_H
 
 #include "Configuration.h"
+#include "OhmmsData/HDFAttribIO.h"
 #include "Numerics/OneDimGridFunctor.h"
 #include "QMCWaveFunctions/SphericalBasisSet.h"
 
@@ -39,15 +40,19 @@ namespace qmcplusplus {
     bool Normalized;
     ///the radial orbitals
     CenteredOrbitalType* m_orbitals;
-    ///the species
-    std::string m_species;
     ///maximum cutoff
     RealType m_rcut;
     ///the quantum number of this node
     QuantumNumberType m_nlms;
+    ///the species
+    std::string m_species;
+    ///type of input function
+    std::string m_infunctype;
 
     ///constructor
     NGOBuilder(xmlNodePtr cur=NULL);
+    ///destructor
+    ~NGOBuilder();
 
     ///assign a CenteredOrbitalType to work on
     void setOrbitalSet(CenteredOrbitalType* oset, const std::string& acenter);
@@ -69,7 +74,9 @@ namespace qmcplusplus {
     private:
     void addGaussian(xmlNodePtr cur);
     void addSlater(xmlNodePtr cur);
+    void addNumerical(xmlNodePtr cur, const string& dsname);
     void addPade(xmlNodePtr cur);
+    hid_t m_fileid;
   };
 
 }
