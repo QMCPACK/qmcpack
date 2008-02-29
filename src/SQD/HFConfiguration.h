@@ -96,7 +96,7 @@
 #define XMLReport(msg) {std::cout<< "XML " << msg << std::endl;}
 #endif
 
-#include "ohmms-config.h"
+#include "config.h"
 #include "SQD/YlmRnlSet.h"
 /**@namespace ohmmshf
  *@brief  Define basic data types for the applications.
