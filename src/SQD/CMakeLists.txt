@@ -19,13 +19,13 @@ LINK_LIBRARIES(${QWT_LIBRARY} ${QT_LIBRARIES} ${OPENGL_LIBRARIES})
 ENDIF(QT_FOUND) 
 
 SET(HFSRCS 
-  ../OhmmsApp/ProjectData.cpp
   ../Numerics/Clebsch_Gordan.cpp
-  ../SQD/SphericalPotential/RadialPotential.cpp
-  ../SQD/SphericalPotential/ZOverRPotential.cpp
-  ../SQD/SphericalPotential/HarmonicPotential.cpp
-  ../SQD/SphericalPotential/StepPotential.cpp
-  ../SQD/SphericalPotential/SJPseudoPotential.cpp
+  SphericalPotential/RadialPotential.cpp
+  SphericalPotential/ZOverRPotential.cpp
+  SphericalPotential/HarmonicPotential.cpp
+  SphericalPotential/StepPotential.cpp
+  SphericalPotential/SJPseudoPotential.cpp
+  SphericalPotential/SHEGPotential.cpp
   HartreeFock.cpp
   HartreeFock.IO.cpp
   HFApp.cpp
@@ -48,9 +48,9 @@ QT_WRAP_CPP(sqd_MOC_SRCS qwtsources qwtheaders)
 
 LINK_LIBRARIES(${FORTRAN_LIBS})
 ADD_EXECUTABLE(sqd ${HFSRCS} ${qwtsources})
-TARGET_LINK_LIBRARIES(sqd qmcbase)
+TARGET_LINK_LIBRARIES(sqd qmcbase qmcutil)
 ELSE(QT_FOUND)
 SET(HFSRCS ${HFSRCS} SQDFrame.cpp)
 ADD_EXECUTABLE(sqd ${HFSRCS})
-TARGET_LINK_LIBRARIES(sqd qmcbase)
+TARGET_LINK_LIBRARIES(sqd qmcbase qmcutil)
 ENDIF(QT_FOUND)
