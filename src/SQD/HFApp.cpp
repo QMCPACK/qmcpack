@@ -96,7 +96,7 @@ SQDFrame::solve(const char* fname) {
   }
 
   //project description, assign id and series
-  OHMMS::ProjectData myProject;
+  APPNAMESPACE::ProjectData myProject;
   
   xmlXPathObjectPtr result
     = xmlXPathEvalExpression((const xmlChar*)"//project",m_context);
