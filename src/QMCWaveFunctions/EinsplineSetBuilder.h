@@ -120,9 +120,11 @@ namespace qmcplusplus {
     void AnalyzeTwists2();
     void OccupyBands(int spin, bool sortBands);
     void ReadBands (int spin, EinsplineSetLocal* orbitalSet);
-    void ReadBands (int spin, 
-		    EinsplineSetExtended<complex<double>, ValueType>* orbitalSet);
+    void ReadBands (int spin, EinsplineSetExtended<complex<double> >* orbitalSet);
+    void ReadBands (int spin, EinsplineSetExtended<        double  >* orbitalSet);
     void CopyBands(int numOrbs);
+    
+    string OrbitalPath (int ti, int bi);
 
     /////////////////////////////////////////////////////////////
     // Information to avoid storing the same orbitals twice in //

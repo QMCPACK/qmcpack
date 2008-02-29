@@ -23,6 +23,7 @@
 #include "Optimize/VarList.h"
 #include "QMCWaveFunctions/EinsplineOrb.h"
 #include <einspline/multi_bspline_structs.h>
+#include "Configuration.h"
 
 
 namespace qmcplusplus {
@@ -138,7 +139,7 @@ namespace qmcplusplus {
   // Template class for evaluating multiple extended Bloch orbitals // 
   // quickly.  Currently uses einspline library.                    //
   ////////////////////////////////////////////////////////////////////
-  template<typename StorageType, typename ReturnType>
+  template<typename StorageType>
   class EinsplineSetExtended : public EinsplineSet
   {
     friend class EinsplineSetBuilder;
@@ -151,13 +152,23 @@ namespace qmcplusplus {
     typedef typename OrbitalSetTraits<StorageType>::ValueVector_t StorageValueVector_t;
     typedef typename OrbitalSetTraits<StorageType>::GradVector_t  StorageGradVector_t;
     typedef typename OrbitalSetTraits<StorageType>::HessVector_t  StorageHessVector_t;
-    typedef typename OrbitalSetTraits<ReturnType >::ValueVector_t ReturnValueVector_t;
-    typedef typename OrbitalSetTraits<ReturnType >::GradVector_t  ReturnGradVector_t;
-    typedef typename OrbitalSetTraits<ReturnType >::HessVector_t  ReturnHessVector_t;
+    typedef Vector<double>                                        RealValueVector_t;
+    typedef Vector<complex<double> >                              ComplexValueVector_t;
+    typedef Vector<TinyVector<double,OHMMS_DIM> >                 RealGradVector_t;
+    typedef Vector<TinyVector<complex<double>,OHMMS_DIM> >        ComplexGradVector_t;
+    typedef Vector<Tensor<double,OHMMS_DIM> >                     RealHessVector_t;
+    typedef Vector<Tensor<complex<double>,OHMMS_DIM> >            ComplexHessVector_t;
+    typedef Matrix<double>                                        RealValueMatrix_t;
+    typedef Matrix<complex<double> >                              ComplexValueMatrix_t;
+    typedef Matrix<TinyVector<double,OHMMS_DIM> >                 RealGradMatrix_t;
+    typedef Matrix<TinyVector<complex<double>,OHMMS_DIM> >        ComplexGradMatrix_t;
+//     typedef typename OrbitalSetTraits<ReturnType >::ValueVector_t ReturnValueVector_t;
+//     typedef typename OrbitalSetTraits<ReturnType >::GradVector_t  ReturnGradVector_t;
+//     typedef typename OrbitalSetTraits<ReturnType >::HessVector_t  ReturnHessVector_t;
 
-    typedef typename OrbitalSetTraits<ReturnType >::ValueMatrix_t ReturnValueMatrix_t;
-    typedef typename OrbitalSetTraits<ReturnType >::GradMatrix_t  ReturnGradMatrix_t;
-    typedef typename OrbitalSetTraits<ReturnType >::HessMatrix_t  ReturnHessMatrix_t;
+//     typedef typename OrbitalSetTraits<ReturnType >::ValueMatrix_t ReturnValueMatrix_t;
+//     typedef typename OrbitalSetTraits<ReturnType >::GradMatrix_t  ReturnGradMatrix_t;
+//     typedef typename OrbitalSetTraits<ReturnType >::HessMatrix_t  ReturnHessMatrix_t;
        
     /////////////////////////////
     /// Orbital storage object //
@@ -171,12 +182,21 @@ namespace qmcplusplus {
     Vector<TinyVector<double,OHMMS_DIM> > kPoints;
    
   public:
-    void evaluate(const ParticleSet& P, int iat, ReturnValueVector_t& psi);
-    void evaluate(const ParticleSet& P, int iat, ReturnValueVector_t& psi, 
-		  ReturnGradVector_t& dpsi, ReturnValueVector_t& d2psi);
+    // Real return values
+    void evaluate(const ParticleSet& P, int iat,    RealValueVector_t& psi);
+    void evaluate(const ParticleSet& P, int iat, RealValueVector_t& psi, 
+		  RealGradVector_t& dpsi, RealValueVector_t& d2psi);
     void evaluate(const ParticleSet& P, int first, int last,
-		  ReturnValueMatrix_t& psi, ReturnGradMatrix_t& dpsi, 
-		  ReturnValueMatrix_t& d2psi);
+		  RealValueMatrix_t& psi, RealGradMatrix_t& dpsi, 
+		  RealValueMatrix_t& d2psi);
+
+    // Complex return values
+    void evaluate(const ParticleSet& P, int iat, ComplexValueVector_t& psi);
+    void evaluate(const ParticleSet& P, int iat, ComplexValueVector_t& psi, 
+		  ComplexGradVector_t& dpsi, ComplexValueVector_t& d2psi);
+    void evaluate(const ParticleSet& P, int first, int last,
+		  ComplexValueMatrix_t& psi, ComplexGradMatrix_t& dpsi, 
+		  ComplexValueMatrix_t& d2psi);
     
     void resetParameters(VarRegistry<RealType>& vlist);
     void resetTargetParticleSet(ParticleSet& e);
