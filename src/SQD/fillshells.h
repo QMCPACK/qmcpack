@@ -319,7 +319,7 @@ namespace ohmmshf {
 
   inline 
   void FillShellsHarmPot(SphericalOrbitalTraits::BasisSetType& mo, 
-			 int nmax) {
+			 int nmax, int np_offset=0) {
      
     int up=1;
     int dn=-1;
@@ -337,15 +337,15 @@ namespace ohmmshf {
       
     case(2):
       //add 8 orbitals
-      mo.add(0,0,0,up,1.0);
-      mo.add(0,0,0,dn,1.0);
+      mo.add(np_offset,0,0,up,1.0);
+      mo.add(np_offset,0,0,dn,1.0);
       
-      mo.add(0,1,-1,up,1.0);
-      mo.add(0,1,-1,dn,1.0);
-      mo.add(0,1, 0,up,1.0);
-      mo.add(0,1, 0,dn,1.0);
-      mo.add(0,1, 1,up,1.0);
-      mo.add(0,1, 1,dn,1.0);
+      mo.add(np_offset,1,-1,up,1.0);
+      mo.add(np_offset,1,-1,dn,1.0);
+      mo.add(np_offset,1, 0,up,1.0);
+      mo.add(np_offset,1, 0,dn,1.0);
+      mo.add(np_offset,1, 1,up,1.0);
+      mo.add(np_offset,1, 1,dn,1.0);
       
       mo.Nup += 4;
       mo.Ndown += 4;
@@ -353,87 +353,113 @@ namespace ohmmshf {
       break;
 
     case(3):
-      //add 20 orbitals
-      mo.add(0,0,0,up,1.0);
-      mo.add(0,0,0,dn,1.0);
+      //add 18 orbitals
+      mo.add(np_offset,0,0,up,1.0);
+      mo.add(np_offset,0,0,dn,1.0);
+      mo.add(np_offset,1,-1,up,1.0);
+      mo.add(np_offset,1,-1,dn,1.0);
+      mo.add(np_offset,1, 0,up,1.0);
+      mo.add(np_offset,1, 0,dn,1.0);
+      mo.add(np_offset,1, 1,up,1.0);
+      mo.add(np_offset,1, 1,dn,1.0);
+      mo.add(np_offset,2,-2,up,1.0);
+      mo.add(np_offset,2,-2,dn,1.0);
+      mo.add(np_offset,2,-1,up,1.0);
+      mo.add(np_offset,2,-1,dn,1.0);
+      mo.add(np_offset,2, 0,up,1.0);
+      mo.add(np_offset,2, 0,dn,1.0);
+      mo.add(np_offset,2, 1,up,1.0);
+      mo.add(np_offset,2, 1,dn,1.0);
+      mo.add(np_offset,2, 2,up,1.0);
+      mo.add(np_offset,2, 2,dn,1.0);
+     
+      mo.Nup += 9;
+      mo.Ndown+= 9;
 
-      mo.add(0,1,-1,up,1.0);
-      mo.add(0,1,-1,dn,1.0);
-      mo.add(0,1, 0,up,1.0);
-      mo.add(0,1, 0,dn,1.0);
-      mo.add(0,1, 1,up,1.0);
-      mo.add(0,1, 1,dn,1.0);
+      break;
 
-      mo.add(0,2,-2,up,1.0);
-      mo.add(0,2,-2,dn,1.0);
-      mo.add(0,2,-1,up,1.0);
-      mo.add(0,2,-1,dn,1.0);
-      mo.add(0,2, 0,up,1.0);
-      mo.add(0,2, 0,dn,1.0);
-      mo.add(0,2, 1,up,1.0);
-      mo.add(0,2, 1,dn,1.0);
-      mo.add(0,2, 2,up,1.0);
-      mo.add(0,2, 2,dn,1.0);
-      mo.add(1,0, 0,up,1.0);
-      mo.add(1,0, 0,dn,1.0);
+    case(4):
+      //add 18 orbitals
+      mo.add(np_offset,0,0,up,1.0);
+      mo.add(np_offset,0,0,dn,1.0);
+      mo.add(np_offset,1,-1,up,1.0);
+      mo.add(np_offset,1,-1,dn,1.0);
+      mo.add(np_offset,1, 0,up,1.0);
+      mo.add(np_offset,1, 0,dn,1.0);
+      mo.add(np_offset,1, 1,up,1.0);
+      mo.add(np_offset,1, 1,dn,1.0);
+      mo.add(np_offset,2,-2,up,1.0);
+      mo.add(np_offset,2,-2,dn,1.0);
+      mo.add(np_offset,2,-1,up,1.0);
+      mo.add(np_offset,2,-1,dn,1.0);
+      mo.add(np_offset,2, 0,up,1.0);
+      mo.add(np_offset,2, 0,dn,1.0);
+      mo.add(np_offset,2, 1,up,1.0);
+      mo.add(np_offset,2, 1,dn,1.0);
+      mo.add(np_offset,2, 2,up,1.0);
+      mo.add(np_offset,2, 2,dn,1.0);
+      mo.add(np_offset+1,0,0,up,1.0);
+      mo.add(np_offset+1,0,0,dn,1.0);
      
       mo.Nup += 10;
       mo.Ndown+= 10;
 
       break;
     
-    case(4):
-      //add 40 orbitals
-      mo.add(0,0,0,up,1.0);
-      mo.add(0,0,0,dn,1.0);
+    case(5):
+      //add 34 orbitals
+      mo.add(np_offset,0,0,up,1.0);
+      mo.add(np_offset,0,0,dn,1.0);
 
-      mo.add(0,1,-1,up,1.0);
-      mo.add(0,1,-1,dn,1.0);
-      mo.add(0,1, 0,up,1.0);
-      mo.add(0,1, 0,dn,1.0);
-      mo.add(0,1, 1,up,1.0);
-      mo.add(0,1, 1,dn,1.0);
+      mo.add(np_offset,1,-1,up,1.0);
+      mo.add(np_offset,1,-1,dn,1.0);
+      mo.add(np_offset,1, 0,up,1.0);
+      mo.add(np_offset,1, 0,dn,1.0);
+      mo.add(np_offset,1, 1,up,1.0);
+      mo.add(np_offset,1, 1,dn,1.0);
 
-      mo.add(0,2,-2,up,1.0);
-      mo.add(0,2,-2,dn,1.0);
-      mo.add(0,2,-1,up,1.0);
-      mo.add(0,2,-1,dn,1.0);
-      mo.add(0,2, 0,up,1.0);
-      mo.add(0,2, 0,dn,1.0);
-      mo.add(0,2, 1,up,1.0);
-      mo.add(0,2, 1,dn,1.0);
-      mo.add(0,2, 2,up,1.0);
-      mo.add(0,2, 2,dn,1.0);
-      mo.add(1,0, 0,up,1.0);
-      mo.add(1,0, 0,dn,1.0);
+      mo.add(np_offset,2,-2,up,1.0);
+      mo.add(np_offset,2,-2,dn,1.0);
+      mo.add(np_offset,2,-1,up,1.0);
+      mo.add(np_offset,2,-1,dn,1.0);
+      mo.add(np_offset,2, 0,up,1.0);
+      mo.add(np_offset,2, 0,dn,1.0);
+      mo.add(np_offset,2, 1,up,1.0);
+      mo.add(np_offset,2, 1,dn,1.0);
+      mo.add(np_offset,2, 2,up,1.0);
+      mo.add(np_offset,2, 2,dn,1.0);
+      mo.add(np_offset+1,0,0,up,1.0);
+      mo.add(np_offset+1,0,0,dn,1.0);
 
-      mo.add(0,3,-3,up,1.0);
-      mo.add(0,3,-3,dn,1.0);
-      mo.add(0,3,-2,up,1.0);
-      mo.add(0,3,-2,dn,1.0);
-      mo.add(0,3,-1,up,1.0);
-      mo.add(0,3,-1,dn,1.0);
-      mo.add(0,3, 0,up,1.0);
-      mo.add(0,3, 0,dn,1.0);
-      mo.add(0,3, 1,up,1.0);
-      mo.add(0,3, 1,dn,1.0);
-      mo.add(0,3, 2,up,1.0);
-      mo.add(0,3, 2,dn,1.0);
-      mo.add(0,3, 3,up,1.0);
-      mo.add(0,3, 3,dn,1.0);    
-      mo.add(1,1,-1,up,1.0);
-      mo.add(1,1,-1,dn,1.0);
-      mo.add(1,1, 0,up,1.0);
-      mo.add(1,1, 0,dn,1.0);
-      mo.add(1,1, 1,up,1.0);
-      mo.add(1,1, 1,dn,1.0);
+      mo.add(np_offset,3,-3,up,1.0);
+      mo.add(np_offset,3,-3,dn,1.0);
+      mo.add(np_offset,3,-2,up,1.0);
+      mo.add(np_offset,3,-2,dn,1.0);
+      mo.add(np_offset,3,-1,up,1.0);
+      mo.add(np_offset,3,-1,dn,1.0);
+      mo.add(np_offset,3, 0,up,1.0);
+      mo.add(np_offset,3, 0,dn,1.0);
+      mo.add(np_offset,3, 1,up,1.0);
+      mo.add(np_offset,3, 1,dn,1.0);
+      mo.add(np_offset,3, 2,up,1.0);
+      mo.add(np_offset,3, 2,dn,1.0);
+      mo.add(np_offset,3, 3,up,1.0);
+      mo.add(np_offset,3, 3,dn,1.0);    
 
-      mo.Nup += 20;
-      mo.Ndown += 20;
+      mo.add(np_offset+1,1,-1,up,1.0);
+      mo.add(np_offset+1,1,-1,dn,1.0);
+      mo.add(np_offset+1,1, 0,up,1.0);
+      mo.add(np_offset+1,1, 0,dn,1.0);
+      mo.add(np_offset+1,1, 1,up,1.0);
+      mo.add(np_offset+1,1, 1,dn,1.0);
+
+      mo.Nup += 17;
+      mo.Ndown += 17;
 
       break;
     
-    case(5):
+    case(6):
+      //not doing this for now
       //add 70 orbitals
       mo.add(0,0,0,up,1.0);
       mo.add(0,0,0,dn,1.0);
@@ -516,7 +542,7 @@ namespace ohmmshf {
       mo.Ndown += 35;
       break;
 
-    case(6):
+    case(7):
       //add 112 orbitals
       mo.add(0,0,0,up,1.0);
       mo.add(0,0,0,dn,1.0);
@@ -645,5 +671,6 @@ namespace ohmmshf {
       break;
     }
   }
+
 }
 #endif
