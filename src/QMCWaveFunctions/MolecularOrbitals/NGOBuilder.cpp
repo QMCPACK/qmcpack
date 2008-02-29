@@ -171,6 +171,11 @@ namespace qmcplusplus {
 
   void NGOBuilder::addNumerical(xmlNodePtr cur, const string& dsname) 
   {
+    int imin = 0;
+    OhmmsAttributeSet aAttrib;
+    aAttrib.add(imin,"imin");
+    aAttrib.put(cur);
+
     char grpname[128];
     sprintf(grpname,"radial_basis_states/%s",dsname.c_str());
     hid_t group_id_orb=H5Gopen(m_fileid,grpname);
@@ -190,7 +195,6 @@ namespace qmcplusplus {
         rad_orb[ig] *= std::pow(agrid->r(ig),-rinv_p);
 
     //last valid index for radial grid
-    int imin = 0;
     int imax = rad_orb.size()-1;
     RadialOrbitalType *radorb = new OneDimCubicSpline<RealType>(agrid,rad_orb);
     //calculate boundary condition, assume derivates at endpoint are 0.0
