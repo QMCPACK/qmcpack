@@ -21,6 +21,84 @@
 #include "Numerics/RadialFunctorUtility.h"
 namespace ohmmshf {
 
+  void RadialPotentialBase::getStorage(const BasisSetType& psi, 
+      const std::string& RootFileName)
+  {
+
+    string fname = RootFileName + ".Vext.xml";
+    xmlDocPtr doc = xmlNewDoc((const xmlChar*)"1.0");
+    xmlNodePtr p0 = xmlNewNode(NULL, BAD_CAST "pseudo"); 
+
+    {
+      xmlNodePtr p1 = xmlNewNode(NULL,(const xmlChar*)"header");
+      xmlNewProp(p1,(const xmlChar*)"symbol",(const xmlChar*)"H");
+      xmlNewProp(p1,(const xmlChar*)"atomic-number",(const xmlChar*)"1");
+      std::ostringstream s; s << Qinfty;
+      xmlNewProp(p1,(const xmlChar*)"zval",(const xmlChar*)s.str().c_str());//this is important
+      xmlNewProp(p1,(const xmlChar*)"creator",(const xmlChar*)"atomichf");
+      xmlNewProp(p1,(const xmlChar*)"flavor",(const xmlChar*)"HF");
+      xmlNewProp(p1,(const xmlChar*)"relativistic",(const xmlChar*)"no");
+      xmlNewProp(p1,(const xmlChar*)"polarized",(const xmlChar*)"no");
+      xmlNewProp(p1,(const xmlChar*)"core-correction",(const xmlChar*)"no");
+      xmlNewProp(p1,(const xmlChar*)"xc-functional-type",(const xmlChar*)"HF");
+      xmlNewProp(p1,(const xmlChar*)"xc-functional-parameterizaton",(const xmlChar*)"NA");
+      xmlAddChild(p0,p1);
+    }
+
+    {
+      xmlNodePtr p1 = xmlNewNode(NULL,(const xmlChar*)"grid");
+      xmlNewProp(p1,(const xmlChar*)"grid_id",(const xmlChar*)"global");
+      xmlNewProp(p1,(const xmlChar*)"type",(const xmlChar*)"numerical");
+      xmlNewProp(p1,(const xmlChar*)"units",(const xmlChar*)"bohr");
+      std::ostringstream s; s << psi.m_grid->size();
+      xmlNewProp(p1,(const xmlChar*)"npts",(const xmlChar*)s.str().c_str());
+
+      std::ostringstream gr;
+      gr.setf(ios_base::scientific);
+      gr.precision(15);
+      gr <<"\n";
+      for(int ig=0; ig<psi.m_grid->size();++ig) gr<<(*psi.m_grid)[ig]<< endl;
+      xmlNodePtr posPtr=xmlNewTextChild(p1,NULL,
+          (const xmlChar*)"data", (const xmlChar*)gr.str().c_str());
+
+      xmlAddChild(p0,p1);
+    }
+
+    {
+      xmlNodePtr p1 = xmlNewNode(NULL,(const xmlChar*)"semilocal");
+      xmlNewProp(p1,(const xmlChar*)"units",(const xmlChar*)"hartree");
+      xmlNewProp(p1,(const xmlChar*)"format",(const xmlChar*)"r*V");
+      xmlNewProp(p1,(const xmlChar*)"npots-down",(const xmlChar*)"1");
+      xmlNewProp(p1,(const xmlChar*)"npots-up",(const xmlChar*)"0");
+
+      xmlNodePtr p2 = xmlNewNode(NULL,(const xmlChar*)"vps");
+      xmlNewProp(p2,(const xmlChar*)"principal-n",(const xmlChar*)"100");
+      xmlNewProp(p2,(const xmlChar*)"l",(const xmlChar*)"s");
+      std::ostringstream s; s << Rcut;
+      xmlNewProp(p2,(const xmlChar*)"cutoff",(const xmlChar*)s.str().c_str());
+      xmlNewProp(p2,(const xmlChar*)"occupation",(const xmlChar*)"1");
+      xmlNewProp(p2,(const xmlChar*)"spin",(const xmlChar*)"-1");
+
+      xmlNodePtr p3 = xmlNewNode(NULL,(const xmlChar*)"radfunc");
+      xmlNewProp(p3,(const xmlChar*)"grid_def",(const xmlChar*)"global");
+
+      std::ostringstream gr;
+      gr.setf(ios_base::scientific);
+      gr.precision(15);
+      gr <<"\n";
+      for(int ig=0; ig<psi.m_grid->size();++ig) gr<<((*Vext)(ig))*((*psi.m_grid)[ig])<< endl;
+      xmlNodePtr posPtr=xmlNewTextChild(p3,NULL,
+          (const xmlChar*)"data", (const xmlChar*)gr.str().c_str());
+
+      xmlAddChild(p2,p3);
+      xmlAddChild(p1,p2);
+      xmlAddChild(p0,p1);
+    }
+    xmlDocSetRootElement(doc, p0);
+    xmlSaveFormatFile(fname.c_str(),doc,1);
+    xmlFreeDoc(doc);
+  }
+
   /**
    *@param cg The Clebsch-Gordan matrix elements
    *@param norb the number of orbitals

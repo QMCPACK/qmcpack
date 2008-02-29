@@ -53,11 +53,16 @@ namespace ohmmshf {
     ///upper-bound for eigenvalues
     value_type MaxEigenValue;
 
+    ///the core charge at infinity
+    value_type Qinfty;
+    ///the cutoff radius
+    value_type Rcut;
+
     ///storage for an external potential
     RadialOrbital_t* Vext;
 
     ///constructor
-    RadialPotentialBase():MinEigenValue(0.0), MaxEigenValue(0.0), Vext(NULL) {}
+    RadialPotentialBase():MinEigenValue(0.0), MaxEigenValue(0.0), Qinfty(0.0), Rcut(1.0), Vext(NULL) {}
 
     ///destructor
     virtual ~RadialPotentialBase() { }
@@ -93,7 +98,7 @@ namespace ohmmshf {
      *@note Only applies for the Hartree and Exchange potentials.
      */
     virtual void getStorage(const BasisSetType& psi, 
-			    const std::string& RootFileName) { return; }
+			    const std::string& RootFileName);
 
     /**
      *@param ig the grid index

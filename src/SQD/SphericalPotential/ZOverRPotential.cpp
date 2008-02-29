@@ -24,6 +24,7 @@ namespace ohmmshf {
    * \param z the charge of the Nuclear Potential
    */
   ZOverRPotential::ZOverRPotential(value_type z): Z(z) { 
+    Qinfty=Z;
   }
 
   RadialPotentialBase::value_type
