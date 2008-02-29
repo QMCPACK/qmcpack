@@ -218,7 +218,7 @@ bool YlmRnlSet<GT>::print_HDF5(const std::string& RootName,
  *@param GridType the type of grid
  *@return true if succeeds
  *@brief Prints the basis information to an xml file named
- *"RootName.basis.xml" for use in qmcPlusPlus.
+ *"RootName.qmc.xml" for use in qmcPlusPlus.
  */
 template<class GT>
 bool YlmRnlSet<GT>::print_basis(const std::string& elementName,
@@ -244,7 +244,7 @@ bool YlmRnlSet<GT>::print_basis(const std::string& elementName,
   
   Mup = 0.0;  Mdown = 0.0;
 
-  string fnameXML = RootName + ".basis.xml";
+  string fnameXML = RootName + ".qmc.xml";
   string fnameHDF5 = RootName + ".h5";
 
   //construct xml tree
