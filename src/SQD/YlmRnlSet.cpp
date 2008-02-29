@@ -66,7 +66,7 @@ bool YlmRnlSet<GT>::add(int n, int l, int m, int s, value_type occ) {
       M.insert(M.begin()+IDmap[(*it).second],m);
       S.insert(S.begin()+IDmap[(*it).second],s);
       Occ.insert(Occ.begin()+IDmap[(*it).second],occ);
-      IDmap.clear();
+      //IDmap.clear();
     }
   } 
 
