@@ -255,7 +255,7 @@ namespace qmcplusplus {
   }
 
 
- inline void
+  inline void
   EinsplineMultiEval (multi_UBspline_3d_z *restrict spline,
 		      TinyVector<double,3> r,
 		      Vector<complex<double> > &psi,
@@ -323,8 +323,6 @@ namespace qmcplusplus {
     EinsplineMultiEval (MultiSpline, ru, StorageValueVector);
     for (int i=0; i<psi.size(); i++) {
       PosType k = kPoints[i];
-      TinyVector<complex<double>,3> ck;
-      ck[0]=k[0];  ck[1]=k[1];  ck[2]=k[2];
       double s,c;
       double phase = -dot(r, k);
       sincos (phase, &s, &c);
@@ -363,7 +361,7 @@ namespace qmcplusplus {
     for (int j=0; j<psi.size(); j++) {
       complex<double> u, laplu;
       TinyVector<complex<double>, OHMMS_DIM> gradu;
-      
+      u = StorageValueVector[j];
       gradu = dot(PrimLattice.G, StorageGradVector[j]);
       laplu = trace(StorageHessVector[j], GGt);
 	
@@ -380,7 +378,7 @@ namespace qmcplusplus {
       convert(e_mikr*(-dot(k,k)*u - 2.0*eye*dot(ck,gradu) + laplu), d2psi[j]);
     }
   }
-
+  
   // Value, gradient, and laplacian
   template<typename StorageType> void
   EinsplineSetExtended<StorageType>::evaluate
@@ -397,10 +395,10 @@ namespace qmcplusplus {
     for (int j=0; j<psi.size(); j++) {
       complex<double> u, laplu;
       TinyVector<complex<double>, OHMMS_DIM> gradu;
-      
+      u = StorageValueVector[j];
       gradu = dot(PrimLattice.G, StorageGradVector[j]);
       laplu = trace(StorageHessVector[j], GGt);
-	
+      
       PosType k = kPoints[j];
       TinyVector<complex<double>,OHMMS_DIM> ck;
       for (int n=0; n<OHMMS_DIM; n++)	
@@ -414,8 +412,8 @@ namespace qmcplusplus {
       convert(e_mikr*(-dot(k,k)*u - 2.0*eye*dot(ck,gradu) + laplu), d2psi[j]);
     }
   }
-
-
+  
+  
   void
   EinsplineSetExtended<double>::evaluate
   (const ParticleSet& P, int iat, RealValueVector_t& psi, 
@@ -432,14 +430,14 @@ namespace qmcplusplus {
       d2psi[i] = trace(StorageHessVector[i], GGt);
     }
   }
-
-
+  
+  
   template<typename StorageType> void
   EinsplineSetExtended<StorageType>::evaluate
   (const ParticleSet& P, int first, int last, RealValueMatrix_t& psi, 
    RealGradMatrix_t& dpsi, RealValueMatrix_t& d2psi)
   {
-    for(int iat=first,i=0; iat<last; iat++,i++) {
+    for (int iat=first,i=0; iat<last; iat++,i++) {
       PosType r (P.R[iat]);
       PosType ru(PrimLattice.toUnit(P.R[iat]));
       for (int n=0; n<OHMMS_DIM; n++)
@@ -450,7 +448,7 @@ namespace qmcplusplus {
       for (int j=0; j<OrbitalSetSize; j++) {
 	complex<double> u, laplu;
 	TinyVector<complex<double>, OHMMS_DIM> gradu;
-	
+	u = StorageValueVector[j];
 	gradu = dot(PrimLattice.G, StorageGradVector[j]);
 	laplu = trace(StorageHessVector[j], GGt);
 	
@@ -468,8 +466,9 @@ namespace qmcplusplus {
       } 
     }
   }
-
-
+  
+  
+  
   template<typename StorageType> void
   EinsplineSetExtended<StorageType>::evaluate
   (const ParticleSet& P, int first, int last, ComplexValueMatrix_t& psi, 
@@ -486,7 +485,7 @@ namespace qmcplusplus {
       for (int j=0; j<OrbitalSetSize; j++) {
 	complex<double> u, laplu;
 	TinyVector<complex<double>, OHMMS_DIM> gradu;
-	
+	u = StorageValueVector[j];
 	gradu = dot(PrimLattice.G, StorageGradVector[j]);
 	laplu = trace(StorageHessVector[j], GGt);
 	
@@ -504,9 +503,9 @@ namespace qmcplusplus {
       } 
     }
   }
-
-
-
+  
+  
+  
   void
   EinsplineSetExtended<double>::evaluate
   (const ParticleSet& P, int first, int last, RealValueMatrix_t& psi, 
@@ -521,13 +520,13 @@ namespace qmcplusplus {
 			  StorageGradVector, StorageHessVector);
       complex<double> eye (0.0, 1.0);
       for (int j=0; j<OrbitalSetSize; j++) {
-        psi(j,i)   = StorageValueVector(j);
+        psi(j,i)   = StorageValueVector[j];
 	dpsi(i,j)  = dot(PrimLattice.G, StorageGradVector[j]);
 	d2psi(i,j) = trace(StorageHessVector[j], GGt);
       }
     }
   }
-
+  
   template<typename StorageType> string
   EinsplineSetExtended<StorageType>::Type()
   {
