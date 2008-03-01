@@ -167,7 +167,7 @@ public:
 
     r_min=m_grid->r(imin);
     r_max=m_grid->r(imax);
-    data_type m_Y2(npts);
+    data_type m_y2(npts);
 
     NRCubicSplineFirst(m_grid->data()+imin, m_Y.data(), npts, m_Y1.data(), m_Y2.data()); 
 
@@ -419,6 +419,10 @@ public:
   value_type first_deriv;
   value_type last_deriv;
 
+  OneDimCubicSpline(const OneDimCubicSpline<Td,Tg,CTd,CTg>& rhs):
+    base_type(rhs), m_Y2(rhs.m_Y2)
+    { }
+
   OneDimCubicSpline(grid_type* gt = 0):base_type(gt) { }
 
   template<class VV>
@@ -428,6 +432,16 @@ public:
     m_Y.resize(nv.size());
     std::copy(nv.begin(), nv.end(), m_Y.data());
   }
+
+  const OneDimCubicSpline<Td,Tg,CTd,CTg>& 
+    operator=(const OneDimCubicSpline<Td,Tg,CTd,CTg>& a) 
+    {
+      GridManager=false;
+      m_grid = a.m_grid;
+      m_Y = a.m_Y;
+      m_Y2=a.m_Y2;
+      return *this;
+    }
 
   //void setgrid(point_type r) {
   //  m_grid->locate(r);
