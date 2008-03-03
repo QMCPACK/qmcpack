@@ -25,7 +25,9 @@ namespace qmcplusplus {
   std::map<TinyVector<int,4>,EinsplineSetBuilder::OrbType*,Int4less> 
   EinsplineSetBuilder::OrbitalMap;
   std::map<H5OrbSet,multi_UBspline_3d_z*,H5OrbSet>
-  EinsplineSetBuilder::ExtendedMap;
+  EinsplineSetBuilder::ExtendedMap_z;
+  std::map<H5OrbSet,multi_UBspline_3d_d*,H5OrbSet>
+  EinsplineSetBuilder::ExtendedMap_d;
 
   EinsplineSetBuilder::EinsplineSetBuilder(ParticleSet& p, 
       PtclPoolType& psets, xmlNodePtr cur) 
@@ -648,12 +650,99 @@ namespace qmcplusplus {
   EinsplineSetBuilder::ReadBands 
   (int spin, EinsplineSetExtended<double>* orbitalSet)
   {
+    int N = orbitalSet->getOrbitalSetSize();
+    // Read in k-points
+    orbitalSet->kPoints.resize(orbitalSet->getOrbitalSetSize());
+    for (int iorb=0; iorb<N; iorb++) {
+      int ti = SortBands[iorb].TwistIndex;
+      PosType twist  = TwistAngles[ti];
+      orbitalSet->kPoints[iorb] = orbitalSet->PrimLattice.k_cart(twist);
+    }
+    
+    // First, check to see if we have already read this in
+    H5OrbSet set(H5FileName, spin, N);
+    std::map<H5OrbSet,multi_UBspline_3d_d*>::iterator iter;
+    iter = ExtendedMap_d.find (set);
+    if (iter != ExtendedMap_d.end()) {
+      cerr << "Using existing copy of multi_UBspline_3d_d for "
+	   << "thread number " << omp_get_thread_num() << ".\n";
+      orbitalSet->MultiSpline = iter->second;
+      return;
+    }
+    
     string eigenstatesGroup;
     if (Version[0]==0 && Version[1]== 11) 
       eigenstatesGroup = "/eigenstates_3";
     else if (Version[0]==0 && Version[1]==20) 
       eigenstatesGroup = "/eigenstates";
-    
+
+    // Find the orbital mesh size
+    int ti   = SortBands[0].TwistIndex;
+    int bi   = SortBands[0].BandIndex;
+    Array<complex<double>,3> rawData;
+    Array<double,3> splineData;
+    string vectorName = OrbitalPath (ti, bi) + "eigenvector";
+    HDFAttribIO<Array<complex<double>,3> > h_rawData(rawData);
+    h_rawData.read(H5FileID, vectorName.c_str());
+
+    Ugrid x_grid, y_grid, z_grid;
+    BCtype_d xBC, yBC, zBC;
+
+    int nx, ny, nz;
+    nx = rawData.size(0); 
+    ny = rawData.size(1);
+    nz = rawData.size(2);
+    xBC.lCode = PERIODIC;    xBC.rCode = PERIODIC;
+    yBC.lCode = PERIODIC;    yBC.rCode = PERIODIC;
+    zBC.lCode = PERIODIC;    zBC.rCode = PERIODIC;
+    x_grid.start = 0.0;  x_grid.end = 1.0;  x_grid.num = nx-1;
+    y_grid.start = 0.0;  y_grid.end = 1.0;  y_grid.num = ny-1;
+    z_grid.start = 0.0;  z_grid.end = 1.0;  z_grid.num = nz-1;
+
+    // Create the multiUBspline object
+    orbitalSet->MultiSpline = 
+      create_multi_UBspline_3d_d (x_grid, y_grid, z_grid, xBC, yBC, zBC, N);
+    splineData.resize(nx-1, ny-1, nz-1);
+    for (int ix=0; ix<(nx-1); ix++)
+      for (int iy=0; iy<(ny-1); iy++)
+	for (int iz=0; iz<(nz-1); iz++)
+	  splineData(ix,iy,iz) = real(rawData(ix,iy,iz));
+
+    set_multi_UBspline_3d_d (orbitalSet->MultiSpline, 0, splineData.data());
+    orbitalSet->kPoints.resize(orbitalSet->getOrbitalSetSize());
+        
+    int iorb  = 1;    
+    while (iorb < N) {
+      int ti   = SortBands[iorb].TwistIndex;
+      int bi   = SortBands[iorb].BandIndex;
+      double e = SortBands[iorb].Energy;
+      PosType twist, k;
+      twist = TwistAngles[ti];
+      k = orbitalSet->PrimLattice.k_cart(twist);
+      orbitalSet->kPoints[iorb] = k;
+      fprintf (stderr, "  ti=%3d  bi=%3d energy=%8.5f k=(%7.4f, %7.4f, %7.4f)\n", 
+	       ti, bi, e, k[0], k[1], k[2]);
+      
+      vectorName = OrbitalPath (ti, bi) + "eigenvector";
+      HDFAttribIO<Array<complex<double>,3> > h_rawData(rawData);
+      h_rawData.read(H5FileID, vectorName.c_str());
+      if ((rawData.size(0) != nx) ||
+	  (rawData.size(1) != ny) ||
+	  (rawData.size(2) != nz)) {
+	fprintf (stderr, "Error in EinsplineSetBuilder::ReadBands.\n");
+	fprintf (stderr, "Extended orbitals should all have the same dimensions\n");
+	abort();
+      }
+
+      for (int ix=0; ix<(nx-1); ix++)
+	for (int iy=0; iy<(ny-1); iy++)
+	  for (int iz=0; iz<(nz-1); iz++)
+	    splineData(ix,iy,iz) = real(rawData(ix,iy,iz));
+      set_multi_UBspline_3d_d (orbitalSet->MultiSpline, iorb, splineData.data());
+     
+      iorb++;
+    }
+    ExtendedMap_d[set] = orbitalSet->MultiSpline;
   }
 
   string
@@ -694,8 +783,8 @@ namespace qmcplusplus {
     // First, check to see if we have already read this in
     H5OrbSet set(H5FileName, spin, N);
     std::map<H5OrbSet,multi_UBspline_3d_z*>::iterator iter;
-    iter = ExtendedMap.find (set);
-    if (iter != ExtendedMap.end()) {
+    iter = ExtendedMap_z.find (set);
+    if (iter != ExtendedMap_z.end()) {
       cerr << "Using existing copy of multi_UBspline_3d_z for "
 	   << "thread number " << omp_get_thread_num() << ".\n";
       orbitalSet->MultiSpline = iter->second;
@@ -773,7 +862,7 @@ namespace qmcplusplus {
      
       iorb++;
     }
-    ExtendedMap[set] = orbitalSet->MultiSpline;
+    ExtendedMap_z[set] = orbitalSet->MultiSpline;
   }
   
 

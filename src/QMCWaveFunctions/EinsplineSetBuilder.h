@@ -115,7 +115,8 @@ namespace qmcplusplus {
     // The map key is (spin, twist, band, center)
     static std::map<TinyVector<int,4>,OrbType*,Int4less> OrbitalMap;
     
-    static std::map<H5OrbSet,multi_UBspline_3d_z*,H5OrbSet> ExtendedMap;
+    static std::map<H5OrbSet,multi_UBspline_3d_d*,H5OrbSet> ExtendedMap_d;
+    static std::map<H5OrbSet,multi_UBspline_3d_z*,H5OrbSet> ExtendedMap_z;
 
     xmlNodePtr XMLRoot;
     hid_t H5FileID;
