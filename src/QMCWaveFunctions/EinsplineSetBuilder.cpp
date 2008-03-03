@@ -24,6 +24,8 @@
 namespace qmcplusplus {
   std::map<TinyVector<int,4>,EinsplineSetBuilder::OrbType*,Int4less> 
   EinsplineSetBuilder::OrbitalMap;
+  std::map<H5OrbSet,multi_UBspline_3d_z*,H5OrbSet>
+  EinsplineSetBuilder::ExtendedMap;
 
   EinsplineSetBuilder::EinsplineSetBuilder(ParticleSet& p, 
       PtclPoolType& psets, xmlNodePtr cur) 
@@ -280,7 +282,10 @@ namespace qmcplusplus {
       EinsplineSetExtended<complex<double> > *restrict orbitalSet = 
 	dynamic_cast<EinsplineSetExtended<complex<double> >*>(OrbitalSet);
       OccupyBands(spinSet, sortBands);
-      ReadBands(spinSet, orbitalSet);
+#pragma omp critical(read_extended_orbs)
+      {
+	ReadBands(spinSet, orbitalSet);
+      }
     }
     return OrbitalSet;
   }
@@ -677,6 +682,26 @@ namespace qmcplusplus {
   EinsplineSetBuilder::ReadBands 
   (int spin, EinsplineSetExtended<complex<double> >* orbitalSet)
   {
+    int N = orbitalSet->getOrbitalSetSize();
+    // Read in k-points
+    orbitalSet->kPoints.resize(orbitalSet->getOrbitalSetSize());
+    for (int iorb=0; iorb<N; iorb++) {
+      int ti = SortBands[iorb].TwistIndex;
+      PosType twist  = TwistAngles[ti];
+      orbitalSet->kPoints[iorb] = orbitalSet->PrimLattice.k_cart(twist);
+    }
+    
+    // First, check to see if we have already read this in
+    H5OrbSet set(H5FileName, spin, N);
+    std::map<H5OrbSet,multi_UBspline_3d_z*>::iterator iter;
+    iter = ExtendedMap.find (set);
+    if (iter != ExtendedMap.end()) {
+      cerr << "Using existing copy of multi_UBspline_3d_z for "
+	   << "thread number " << omp_get_thread_num() << ".\n";
+      orbitalSet->MultiSpline = iter->second;
+      return;
+    }
+    
     string eigenstatesGroup;
     if (Version[0]==0 && Version[1]== 11) 
       eigenstatesGroup = "/eigenstates_3";
@@ -706,9 +731,8 @@ namespace qmcplusplus {
     z_grid.start = 0.0;  z_grid.end = 1.0;  z_grid.num = nz-1;
 
     // Create the multiUBspline object
-    cerr << "OrbitalSetSize = " << orbitalSet->getOrbitalSetSize() << endl;
-    orbitalSet->MultiSpline = create_multi_UBspline_3d_z (x_grid, y_grid, z_grid, xBC, yBC, zBC,
-							  orbitalSet->getOrbitalSetSize());
+    orbitalSet->MultiSpline = 
+      create_multi_UBspline_3d_z (x_grid, y_grid, z_grid, xBC, yBC, zBC, N);
     splineData.resize(nx-1, ny-1, nz-1);
     for (int ix=0; ix<(nx-1); ix++)
       for (int iy=0; iy<(ny-1); iy++)
@@ -719,7 +743,7 @@ namespace qmcplusplus {
     orbitalSet->kPoints.resize(orbitalSet->getOrbitalSetSize());
         
     int iorb  = 1;    
-    while (iorb < orbitalSet->getOrbitalSetSize()) {
+    while (iorb < N) {
       int ti   = SortBands[iorb].TwistIndex;
       int bi   = SortBands[iorb].BandIndex;
       double e = SortBands[iorb].Energy;
@@ -749,6 +773,7 @@ namespace qmcplusplus {
      
       iorb++;
     }
+    ExtendedMap[set] = orbitalSet->MultiSpline;
   }
   
 

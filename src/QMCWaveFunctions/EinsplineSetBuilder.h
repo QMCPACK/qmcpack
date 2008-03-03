@@ -52,6 +52,31 @@ namespace qmcplusplus {
   };
   
 
+  struct H5OrbSet {
+    string FileName;
+    int SpinSet;
+    int NumOrbs;
+    bool operator()(const H5OrbSet &a, const H5OrbSet &b)
+    {
+      if (a.FileName == b.FileName) {
+	if (a.SpinSet == b.SpinSet) 
+	  return a.NumOrbs < b.NumOrbs;
+	else
+	  return a.SpinSet < b.SpinSet;
+      }
+      else
+	return a.FileName < b.FileName;
+    }
+    H5OrbSet (const H5OrbSet &a) :
+      FileName(a.FileName), SpinSet(a.SpinSet), NumOrbs(a.NumOrbs)
+    { }
+    H5OrbSet (string name, int spinSet, int numOrbs) :
+      FileName(name), SpinSet(spinSet), NumOrbs(numOrbs)
+    { }
+    H5OrbSet() 
+    { }
+  };
+
   struct BandInfo {
     int TwistIndex, BandIndex, Spin;
     double Energy;
@@ -89,6 +114,8 @@ namespace qmcplusplus {
     typedef EinsplineOrb<complex<double>,OHMMS_DIM> OrbType;
     // The map key is (spin, twist, band, center)
     static std::map<TinyVector<int,4>,OrbType*,Int4less> OrbitalMap;
+    
+    static std::map<H5OrbSet,multi_UBspline_3d_z*,H5OrbSet> ExtendedMap;
 
     xmlNodePtr XMLRoot;
     hid_t H5FileID;
@@ -131,8 +158,7 @@ namespace qmcplusplus {
     // spin-restricted calculations.                           //
     /////////////////////////////////////////////////////////////
     int LastSpinSet, NumOrbitalsRead;
-  };
-
+  }; 
 }
 
 
