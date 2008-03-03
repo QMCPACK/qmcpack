@@ -8,7 +8,6 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
@@ -238,13 +237,13 @@ namespace qmcplusplus {
       app_log() << "  Adding " << nwalkers << " walkers to " << nold << " existing sets" << endl;
 
       W.createWalkers(nwalkers);
-      
-      ParticleSet::ParticlePos_t rv(W.getTotalNum());
-      MCWalkerConfiguration::iterator it(W.begin()), it_end(W.end());
-      while(it != it_end) {
-	(*it)->R=W.R;
-	++it;
+      if(nold)
+      {
+        int iw=nold;
+        for(MCWalkerConfiguration::iterator it=W.begin()+nold; it != W.end(); ++it,++iw)
+          (*it)->R=W[iw%nold]->R;//assign existing walker configurations when the number of walkers change
       }
+
     } else if(nwalkers<0) {
       W.destroyWalkers(-nwalkers);
       app_log() << "  Removed " << -nwalkers << " walkers. Current number of walkers =" << W.getActiveWalkers() << endl;
