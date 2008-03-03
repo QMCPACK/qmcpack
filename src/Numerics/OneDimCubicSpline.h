@@ -169,7 +169,7 @@ public:
     r_max=m_grid->r(imax);
     data_type m_y2(npts);
 
-    NRCubicSplineFirst(m_grid->data()+imin, m_Y.data(), npts, m_Y1.data(), m_Y2.data()); 
+    NRCubicSplineFirst(m_grid->data()+imin, m_Y.data(), npts, m_Y1.data(), m_y2.data()); 
 
     FirstAddress[0]=m_Y.data()+imin;
     FirstAddress[1]=m_Y1.data();
