@@ -618,7 +618,7 @@ namespace qmcplusplus {
       p=PtclPool.getParticleSet(refSetName);
       if(p==0){
         cout << "The specified reference cannot be found. Stop." << endl;
-        abort();
+        APP_ABORT("RQMCMultiWarp::put");
       }
     }else{
        refSetName=ionSets[0]->getName().c_str();
