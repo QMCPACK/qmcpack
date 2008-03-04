@@ -126,7 +126,8 @@ namespace qmcplusplus {
   void QMCUpdateBase::initWalkers(WalkerIter_t it, WalkerIter_t it_end) 
   {
     UpdatePbyP=false;
-    while(it != it_end) {
+    for(;it != it_end; ++it)
+    {
       W.R = (*it)->R;
       W.update();
       RealType logpsi(Psi.evaluateLog(W));
@@ -134,7 +135,6 @@ namespace qmcplusplus {
       RealType ene = H.evaluate(W);
       (*it)->resetProperty(logpsi,Psi.getPhase(),ene);
       H.saveProperty((*it)->getPropertyBase());
-      ++it;
     }
   }
 
@@ -147,11 +147,12 @@ namespace qmcplusplus {
     L.resize(NumPtcl);
     dL.resize(NumPtcl);
 
-    while(it != it_end) {
-      (*it)->DataSet.clear();
-      (*it)->DataSet.rewind();
-      W.registerData(**it,(*it)->DataSet);
-      RealType logpsi=Psi.registerData(W,(*it)->DataSet);
+    for(;it != it_end; ++it)
+    {
+      Walker_t::Buffer_t tbuffer;
+      W.registerData(**it,tbuffer);
+      RealType logpsi=Psi.registerData(W,tbuffer);
+      (*it)->DataSet=tbuffer;
 
       //RealType scale=getDriftScale(Tau,W.G);
       //(*it)->Drift = scale*W.G;
@@ -160,13 +161,13 @@ namespace qmcplusplus {
       RealType ene = H.evaluate(W);
       (*it)->resetProperty(logpsi,Psi.getPhase(),ene);
       H.saveProperty((*it)->getPropertyBase());
-
-      ++it;
     } 
+
   }
 
   void QMCUpdateBase::updateWalkers(WalkerIter_t it, WalkerIter_t it_end) {
-    while(it != it_end) {
+    for(;it != it_end; ++it)
+    {
       Walker_t::Buffer_t& w_buffer((*it)->DataSet);
       w_buffer.rewind();
       W.updateBuffer(**it,w_buffer);
@@ -178,20 +179,18 @@ namespace qmcplusplus {
       //RealType scale=getDriftScale(Tau,W.G);
       //(*it)->Drift = scale*W.G;
       setScaledDrift(Tau,W.G,(*it)->Drift);
-
-      ++it;
     }
   }
 
   void QMCUpdateBase::setMultiplicity(WalkerIter_t it, WalkerIter_t it_end) {
-    while(it != it_end) {
+    for(;it != it_end; ++it)
+    {
       RealType M=(*it)->Weight;
       if((*it)->Age>MaxAge) 
         M = std::min(0.5,M);
       else if((*it)->Age > 0) 
         M = std::min(1.0,M);
       (*it)->Multiplicity = M + RandomGen();
-      ++it;
     }
   }
 
@@ -201,7 +200,8 @@ namespace qmcplusplus {
     ofstream fout(fname,ios::app);
     int i=0;
     fout << "benchMark started." << endl;
-    while(it != it_end) {
+    for(;it != it_end; ++it,++i)
+    {
       Walker_t& thisWalker(**it);
       makeGaussRandomWithEngine(deltaR,RandomGen); 
       W.R = m_sqrttau*deltaR+ thisWalker.R;
@@ -210,7 +210,6 @@ namespace qmcplusplus {
       RealType e = H.evaluate(W);
       fout << W.R[0] << W.G[0] << endl;
       fout <<  i << " " << logpsi << " " << e << endl;
-      ++it;++i;
     }
     fout << "benchMark completed." << endl;
   }
