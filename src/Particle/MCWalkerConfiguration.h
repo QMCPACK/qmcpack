@@ -223,12 +223,8 @@ namespace qmcplusplus {
      *@param awalker the reference to the walker to be loaded
      */
     void loadWalker(Walker_t& awalker);
-    void clearAuxDataSet();
-    bool createAuxDataSet(int nfield=256);
-    //void registerData(Walker_t& awalker, PooledData<RealType>& buf);
-    //void updateBuffer(Walker_t& awalker, PooledData<RealType>& buf);
-    //void copyToBuffer(PooledData<RealType>& buf);
-    //void copyFromBuffer(PooledData<RealType>& buf);
+    //void clearAuxDataSet();
+    //bool createAuxDataSet(int nfield=256);
 
     void resetWalkerProperty(int ncopy=1);
 

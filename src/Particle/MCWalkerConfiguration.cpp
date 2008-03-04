@@ -90,7 +90,10 @@ MCWalkerConfiguration::iterator
 MCWalkerConfiguration::destroyWalkers(iterator first, iterator last) {
   if(OwnWalkers) {
     iterator it = first;
-    while(it != last) { delete *it++;}
+    while(it != last) {
+      cout << "## destroy walkers " << endl;
+      delete *it++;
+    }
   }
   return WalkerList.erase(first,last);
 }
@@ -167,35 +170,36 @@ void MCWalkerConfiguration::reset() {
   }
 }
 
-void MCWalkerConfiguration::clearAuxDataSet() {
-  UpdateMode=Update_Particle;
-  int nbytes=128*GlobalNum*sizeof(RealType);//could be pagesize
-  if(WalkerList.size())//check if capacity is bigger than the estimated one
-    nbytes = (WalkerList[0]->DataSet.capacity()>nbytes)?WalkerList[0]->DataSet.capacity():nbytes;
-  iterator it(WalkerList.begin());
-  iterator it_end(WalkerList.end());
-  while(it!=it_end) {
-    (*it)->DataSet.clear(); 
-    (*it)->DataSet.reserve(nbytes);
-    ++it;
-  }
-  ReadyForPbyP = true;
-}
-
-bool MCWalkerConfiguration::createAuxDataSet(int nfield) {
-
-  if(ReadyForPbyP) return false;
-
-  ReadyForPbyP=true;
-  UpdateMode=Update_Particle;
-  iterator it(WalkerList.begin());
-  iterator it_end(WalkerList.end());
-  while(it!=it_end) {
-    (*it)->DataSet.reserve(nfield); ++it;
-  }
-
-  return true;
-}
+//void MCWalkerConfiguration::clearAuxDataSet() {
+//  UpdateMode=Update_Particle;
+//  int nbytes=128*GlobalNum*sizeof(RealType);//could be pagesize
+//  if(WalkerList.size())//check if capacity is bigger than the estimated one
+//    nbytes = (WalkerList[0]->DataSet.capacity()>nbytes)?WalkerList[0]->DataSet.capacity():nbytes;
+//  iterator it(WalkerList.begin());
+//  iterator it_end(WalkerList.end());
+//  while(it!=it_end) {
+//    (*it)->DataSet.clear(); 
+//    //CHECK THIS WITH INTEL 10.1
+//    //(*it)->DataSet.reserve(nbytes);
+//    ++it;
+//  }
+//  ReadyForPbyP = true;
+//}
+//
+//bool MCWalkerConfiguration::createAuxDataSet(int nfield) {
+//
+//  if(ReadyForPbyP) return false;
+//
+//  ReadyForPbyP=true;
+//  UpdateMode=Update_Particle;
+//  iterator it(WalkerList.begin());
+//  iterator it_end(WalkerList.end());
+//  while(it!=it_end) {
+//    (*it)->DataSet.reserve(nfield); ++it;
+//  }
+//
+//  return true;
+//}
 
 void MCWalkerConfiguration::loadWalker(Walker_t& awalker) {
   R = awalker.R;
