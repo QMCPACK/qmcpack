@@ -222,7 +222,7 @@ namespace qmcplusplus {
 
     if(good_w.empty()) {
       app_error() << "All the walkers have died. Abort. " << endl;
-      OHMMS::Controller->abort();
+      APP_ABORT("WalkerControlBase::sortWalkers");
     }
 
     int sizeofgood = good_w.size();
