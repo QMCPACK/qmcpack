@@ -334,7 +334,7 @@ namespace qmcplusplus {
   // This is an explicit specialization of the above for real orbitals
   // with a real return value, i.e. simulations at the gamma or L 
   // point.
-  void
+  template<> void
   EinsplineSetExtended<double>::evaluate
   (const ParticleSet &P, int iat, RealValueVector_t& psi)
   {
@@ -414,7 +414,7 @@ namespace qmcplusplus {
   }
   
   
-  void
+  template<> void
   EinsplineSetExtended<double>::evaluate
   (const ParticleSet& P, int iat, RealValueVector_t& psi, 
    RealGradVector_t& dpsi, RealValueVector_t& d2psi)
@@ -506,7 +506,7 @@ namespace qmcplusplus {
   
   
   
-  void
+  template<> void
   EinsplineSetExtended<double>::evaluate
   (const ParticleSet& P, int first, int last, RealValueMatrix_t& psi, 
    RealGradMatrix_t& dpsi, RealValueMatrix_t& d2psi)
