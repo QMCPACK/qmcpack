@@ -57,7 +57,8 @@ namespace qmcplusplus {
     //Estimators->reportHeader(AppendRun);
       
     //going to add routines to calculate how much we need
-    bool require_register =  W.createAuxDataSet();
+    //bool require_register =  W.createAuxDataSet();
+    bool require_register =  W[0]->DataSet.size();
 
     vector<RealType>  Norm(nPsi),tmpNorm(nPsi);
     if(equilBlocks > 0){
