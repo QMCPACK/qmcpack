@@ -52,6 +52,7 @@ public:
   {
     this->clear();
     if(a.size()) {
+      this->reserve(a.size());
       this->insert(this->begin(), a.begin(), a.end());
     }
     return *this;
@@ -198,6 +199,7 @@ public:
   PooledData<T>& operator=(const PooledData<T>& a) {
     this->clear();
     if(a.size()) {
+      this->reserve(a.size());
       this->insert(this->begin(), a.begin(), a.end());
     }
     return *this;
@@ -213,24 +215,30 @@ public:
 
   inline void add(T x) { Current++; this->push_back(x);}
 
-  inline void add(complex<T>& x) { Current+=2; 
+  inline void add(complex<T>& x) { 
+    Current+=2; 
     this->push_back(x.real()); 
     this->push_back(x.imag());
   }
 
   template<class _InputIterator>
   inline void add(_InputIterator first, _InputIterator last) {
-    while(first != last) {
-      Current++; this->push_back(*first++);
-    }
+    Current += last-first;
+    this->insert(this->end(),first,last);
+    //while(first != last) {
+    //  Current++; this->push_back(*first++);
+    //}
   }
 
   inline void add(std::complex<T>* first,std::complex<T>* last) {
-    while(first != last) {
-      this->push_back((*first).real()); 
-      this->push_back((*first).imag());
-      Current+=2; ++first;
-    }
+    int dn=2*(last-first);
+    this->insert(this->end(),&(first->real()),&(first->real())+dn);
+    Current += dn;
+    //while(first != last) {
+    //  this->push_back((*first).real()); 
+    //  this->push_back((*first).imag());
+    //  Current+=2; ++first;
+    //}
   }
 
   template<class T1>
@@ -246,9 +254,12 @@ public:
 
   template<class _OutputIterator>
   inline void get(_OutputIterator first, _OutputIterator last) {
-    while(first != last) {
-      *first++ = (*this)[Current++];
-    }
+    int now=Current;
+    Current+=last-first;
+    std::copy(this->begin()+now,this->begin()+Current,first);
+    //while(first != last) {
+    //  *first++ = (*this)[Current++];
+    //}
   }
 
   inline void get(std::complex<T>* first, std::complex<T>* last){
@@ -266,9 +277,11 @@ public:
 
   template<class _InputIterator>
   inline void put(_InputIterator first, _InputIterator last){
-    while(first != last) {
-      (*this)[Current++] = *first++;
-    }
+    std::copy(first,last,this->begin()+Current);
+    Current+=last-first;
+    //while(first != last) {
+    //  (*this)[Current++] = *first++;
+    //}
   }
 
   inline void put(std::complex<T>* first, std::complex<T>* last) {
