@@ -67,15 +67,15 @@ namespace qmcplusplus {
      */
     T Multiplicity;
 
-    ///scalar properties of a walker
-    PropertyContainer_t  Properties;
-
     /**the configuration vector (3N-dimensional vector to store
        the positions of all the particles for a single walker)*/
     PA R;
     
     ///drift of the walker \f$ Drift({\bf R}) = \tau v_{drift}({\bf R}) \f$
     GA Drift;
+
+    ///scalar properties of a walker
+    PropertyContainer_t  Properties;
 
     ///buffer for the data for particle-by-particle update
     Buffer_t DataSet;
