@@ -25,65 +25,79 @@
 #include <vector>
 #include <complex>
 
+//#define USE_POOLED_DATA_ITERATOR 1
+
 #if defined(USE_POOLED_DATA_ITERATOR)
 template<class T>
-class PooledData: public std::vector<T> {
-
-  typename std::vector<T>::iterator Anchor;
-
-public:
+struct PooledData {
   
+  //typedef for iterator
+  typedef typename  std::vector<T>::size_type size_type;
+  typedef typename  std::vector<T>::iterator iterator;
+  typedef typename  std::vector<T>::const_iterator const_iterator;
+
   //default constructor
-  inline PooledData() { }
+  inline PooledData() { Anchor=myData.begin();}
 
   //copy constructor
-  inline PooledData(const PooledData& a): std::vector<T>(a) { 
-    Anchor=this->begin();
+  inline PooledData(const PooledData& a): myData(a.myData) { 
+    Anchor=myData.begin();
   }
 
   //constructor with a size
-  explicit inline PooledData(int n): std::vector<T>(n)
+  explicit inline PooledData(int n): myData(n)
   {
-    Anchor=this->begin();
+    Anchor=myData.begin();
   }
 
   //assignement operator
   PooledData<T>& operator=(const PooledData<T>& a) 
   {
-    this->clear();
+    myData.clear();
     if(a.size()) {
-      this->reserve(a.size());
-      this->insert(this->begin(), a.begin(), a.end());
+      myData.reserve(a.size());
+      myData.insert(myData.begin(), a.begin(), a.end());
     }
     return *this;
   }
 
+  inline size_type size() const { return myData.size();}
+  inline size_type capacity() const { return myData.capacity();}
+
   ///return the location of the Anchor
-  inline int current() const { return Anchor-this->begin();}
+  inline int current() const { return Anchor-myData.begin();}
 
   ///set the Anchor at the first iterator
-  inline void rewind() { Anchor=this->begin();}
+  inline void rewind() { Anchor=myData.begin();}
+
+  inline iterator begin() { return myData.begin();}
+  inline iterator end() { return myData.end();}
+  inline const_iterator begin() const { return myData.begin();}
+  inline const_iterator end() const { return myData.end();}
+
+  inline void reserve(size_type n) { myData.reserve(n);}
+  inline void clear() { myData.clear();}
 
   ///@{Add data to the pool
   template<class T1>
-  inline void add(T1 x) { this->push_back(static_cast<T>(x));}
+  inline void add(T1 x) { myData.push_back(static_cast<T>(x));}
 
-  inline void add(T x) { this->push_back(x);}
+  inline void add(T x) { myData.push_back(x);}
 
   inline void add(complex<T>& x) { 
-    this->push_back(x.real()); 
-    this->push_back(x.imag());
+    myData.push_back(x.real()); 
+    myData.push_back(x.imag());
   }
 
   template<class _InputIterator>
     inline void add(_InputIterator first, _InputIterator last) {
-      this->insert(this->end(),first,last);
+      myData.insert(myData.end(),first,last);
     }
 
   inline void add(std::complex<T>* first,std::complex<T>* last) {
     while(first != last) {
-      this->push_back((*first).real()); 
-      this->push_back((*first).imag());
+      myData.push_back((*first).real()); 
+      myData.push_back((*first).imag());
       ++first;
     }
   }
@@ -105,9 +119,10 @@ public:
 
   template<class _ForwardIterator>
     inline void get(_ForwardIterator first, _ForwardIterator last) {
-      typename std::vector<T>::iterator here=Anchor;
-      Anchor += last-first;
-      std::copy(here,Anchor,first);
+      //typename std::vector<T>::iterator here=Anchor;
+      size_type dn=last-first;
+      std::copy(Anchor,Anchor+dn,first);
+      Anchor += dn;
     }
 
   inline void get(std::complex<T>* first, std::complex<T>* last)
@@ -160,23 +175,26 @@ public:
 
 
   /** return the address of the first element **/
-  inline T* data() { return &((*this)[0]);}
+  inline T* data() { return &(myData[0]);}
 
   inline void print(std::ostream& os) {
-    std::copy(this->begin(), this->end(), ostream_iterator<T>(os," "));
+    std::copy(myData.begin(), myData.end(), ostream_iterator<T>(os," "));
   }
 
   template<class Msg>
   inline Msg& putMessage(Msg& m) {
-    m.Pack(&((*this)[0]),this->size());
+    m.Pack(&(myData[0]),myData.size());
     return m;
   }
 
   template<class Msg>
   inline Msg& getMessage(Msg& m) {
-    m.Unpack(&((*this)[0]),this->size());
+    m.Unpack(&(myData[0]),myData.size());
     return m;
   }
+
+  iterator Anchor;
+  std::vector<T> myData;
 };
 #else
 template<class T>
