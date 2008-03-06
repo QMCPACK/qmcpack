@@ -199,7 +199,7 @@ namespace qmcplusplus {
         HDFVersion cur_version;
         cur_version.write(fid,hdf::version);
         CompEstimators->open(fid);
-        H5Fclose(fid);
+        //H5Fclose(fid);
       }
 
 #if defined(QMC_ASYNC_COLLECT)
