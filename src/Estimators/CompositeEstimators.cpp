@@ -119,6 +119,8 @@ namespace qmcplusplus {
   CompositeEstimatorSet::~CompositeEstimatorSet()
   { 
     delete_iter(Estimators.begin(), Estimators.end());
+    //close the file
+    if(GroupID>=-1) H5Fclose(GroupID);
   }
 
   ///not checking the map again, assuming that missing function
@@ -228,6 +230,7 @@ namespace qmcplusplus {
   void CompositeEstimatorSet::recordBlock()
   {
     for(int i=0; i< Estimators.size(); i++) Estimators[i]->recordBlock();
+    H5Fflush(GroupID,H5F_SCOPE_LOCAL);
   }
 }
 
