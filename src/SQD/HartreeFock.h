@@ -58,7 +58,13 @@ namespace ohmmshf {
     bool initGrid();
     bool initHamiltonian();
     bool initOrbitalSet();
-    template<class Transform_t> void run(Transform_t* fake, int norb);
+
+    /** exceute HF-SCF calculations
+     * @param norb number of orbitals
+     *
+     * Transform_t handles boundary (cusp) conditions 
+     */
+    template<typename Transform_t> void run(int norb);
 
   };
 

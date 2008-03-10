@@ -30,18 +30,12 @@
 namespace ohmmshf {
 
   /** Solve a HF eigen problem for a spherically-symmetric external potential.
-     @param fake Transformation object
-     @param norb the number of eigen vectors to be obtained
-     @brief Perform self-consistent Hartree-Fock calculations.
-     *
-     *The first argument is used to tell the compiler which transform
-     *object is used but is not meaningful for the calculations. 
-     *This is to force the compiler to inline everything possible. 
-     *A better solution could be implemented using traits.
-     */
-  template<class Transform_t> 
+   * @param norb the number of eigen vectors to be obtained
+   */
+  template<typename Transform_t> 
   inline void 
-  HartreeFock::run(Transform_t* fake, int norb) {
+  HartreeFock::run(int norb) 
+  {
     typedef Numerov<Transform_t, RadialOrbital_t> Numerov_t;
     value_type Vtotal,KEnew, KEold,E; 
     value_type lowerbound, upperbound;
@@ -122,30 +116,28 @@ namespace ohmmshf {
    */
   bool HartreeFock::solve() {
     int norb = Psi.size();
-    if(PotType == "harmonic" || PotType == "step" || PotType == "pseudo" || PotType == "heg"){
-      if(GridType == "linear"){
-	RegularLinearTransform<RadialOrbital_t> *afake=NULL;
-	run(afake,norb);
+    if(PotType == "nuclear")
+    {
+      if(GridType == "linear")
+      {
+        run<NuclearLinearTransform<RadialOrbital_t> >(norb);
       } else if(GridType == "log"){
-	RegularLogTransform<RadialOrbital_t> *afake=NULL;
-	run(afake,norb);
+        run<NuclearLogTransform<RadialOrbital_t> >(norb);
       }
-    } else if(PotType == "nuclear"){
-      if(GridType == "linear"){
-	NuclearLinearTransform<RadialOrbital_t> *afake=NULL;
-	run(afake,norb);
-      } else if(GridType == "log"){
-	NuclearLogTransform<RadialOrbital_t> *afake=NULL;
-	run(afake,norb);
-      }
-    } else if(PotType == "nuclear_scalar_rel"){
+    } 
+    else if(PotType == "nuclear_scalar_rel")
+    {
       if(GridType == "log"){
-	NuclearRelLogTransform<RadialOrbital_t> *afake=NULL;
-	run(afake,norb);
+        run<NuclearRelLogTransform<RadialOrbital_t> >(norb);
       }
-    } else {
-      ERRORMSG("The potential and grid do not have proper transformation for numerov")
-	return false;
+    } 
+    else 
+    {
+      if(GridType == "linear"){
+        run<RegularLinearTransform<RadialOrbital_t> >(norb);
+      } else if(GridType == "log"){
+        run<RegularLogTransform<RadialOrbital_t> >(norb);
+      }
     }
     return true;
   }  
