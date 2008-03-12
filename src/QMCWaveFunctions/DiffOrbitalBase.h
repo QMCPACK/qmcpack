@@ -38,7 +38,7 @@ namespace qmcplusplus {
     typedef OrbitalBase::RealType           RealType;
     typedef OrbitalBase::ValueType          ValueType;
     typedef OrbitalBase::GradVectorType     GradVectorType;
-    typedef OrbitalBase::ValueVectorTypet   ValueVectorType;
+    typedef OrbitalBase::ValueVectorType   ValueVectorType;
     typedef OrbitalBase::OptimizableSetType OptimizableSetType;
     //@}
     //
@@ -54,7 +54,8 @@ namespace qmcplusplus {
      *
      * OptimizableSetType is derived from a map and data_type is pair<string,T>
      */
-    OptimizableSetType::data_type targetParam;
+    pair<string,RealType> targetParam;
+    //OptimizableSetType::data_type targetParam;
 
     /// default constructor
     inline DiffOrbitalBase(){ }
@@ -85,7 +86,7 @@ namespace qmcplusplus {
 
     /** reset the parameters during optimizations
      */
-    void resetParameters(OptimizableSetType& optVariables)=0;
+    virtual void resetParameters(OptimizableSetType& optVariables)=0;
 
     /** reset properties, e.g., distance tables, for a new target ParticleSet
      * @param P ParticleSet
@@ -122,7 +123,7 @@ namespace qmcplusplus {
   struct AnalyticDiffOrbital: public DiffOrbitalBase
   {
 
-    AnalyticlDiffOrbital(OrbitalBase* orb=0): refOrbital(orb) {}
+    AnalyticDiffOrbital(OrbitalBase* orb=0): refOrbital(orb) {}
 
     void resetParameters(OptimizableSetType& optVariables);
     void resetTargetParticleSet(ParticleSet& P);

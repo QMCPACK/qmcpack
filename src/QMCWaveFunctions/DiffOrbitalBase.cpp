@@ -14,6 +14,7 @@
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 #include "QMCWaveFunctions/DiffOrbitalBase.h"
+#include "ParticleBase/ParticleAttribOps.h"
 
 /**@file DiffOrbitalBase.cpp
  *@brief Definition of NumericalDiffOrbital
@@ -23,8 +24,8 @@ namespace qmcplusplus {
   //@{implementation of the base class of DiffOrbitalBase
   void DiffOrbitalBase::resize(int nptcls)
   {
-    dLogPsi.resize(nptcls);
-    d2LogPsi.resize(nptcls);
+    gradLogPsi.resize(nptcls);
+    lapLogPsi.resize(nptcls);
   }
 
   void DiffOrbitalBase::setParameter(const string& a, RealType v)
@@ -35,7 +36,7 @@ namespace qmcplusplus {
 
   bool DiffOrbitalBase::isOptimizable(OptimizableSetType& optVariables)
   {
-    return optVariables.find(target.first) != optiVariables.end();
+    return optVariables.find(targetParam.first) != optVariables.end();
   }
 
   void DiffOrbitalBase::evaluateDerivatives(ParticleSet& P, RealType ke0)
@@ -43,7 +44,7 @@ namespace qmcplusplus {
     gradLogPsi=0.0;
     lapLogPsi=0.0;
 
-    dLogPsi=differenciate(P);
+    dLogPsi=differentiate(P);
 
     dHPsi=Sum(lapLogPsi)+2.0*Dot(P.G,gradLogPsi)+dLogPsi*ke0;
   }
@@ -52,10 +53,10 @@ namespace qmcplusplus {
   //@{implementation of NumericalDiffOrbital
   void NumericalDiffOrbital::resetParameters(OptimizableSetType& optVariables)
   {
-    OptimizableSetType::iterator oit(optVariables.find(target.first));
+    OptimizableSetType::iterator oit(optVariables.find(targetParam.first));
     if(oit!=optVariables.end())
     {
-      target.second=(*oit).second;
+      targetParam.second=(*oit).second;
     }
   }
 
@@ -80,12 +81,12 @@ namespace qmcplusplus {
     //reset reference orbital with +
     v[targetParam.first]=curvar+delta;
     refOrbital->resetParameters(v);
-    RealType plus=evaluateLog(P,dg_p,dl_p);
+    RealType plus=refOrbital->evaluateLog(P,dg_p,dl_p);
 
     //reset reference orbital with -
     v[targetParam.first]=curvar-delta;
     refOrbital->resetParameters(v);
-    RealType minus=evaluateLog(P,dg_m,dl_m);
+    RealType minus=refOrbital->evaluateLog(P,dg_m,dl_m);
 
     //restore the variable to the original state
     v[targetParam.first]=curvar;
@@ -101,10 +102,10 @@ namespace qmcplusplus {
   //@{implementation of AnalyticDiffOrbital
   void AnalyticDiffOrbital::resetParameters(OptimizableSetType& optVariables)
   {
-    OptimizableSetType::iterator oit(optVariables.find(target.first));
+    OptimizableSetType::iterator oit(optVariables.find(targetParam.first));
     if(oit!=optVariables.end())
     {
-      target.second=(*oit).second;
+      targetParam.second=(*oit).second;
       refOrbital->resetParameters(optVariables);
     }
   }
