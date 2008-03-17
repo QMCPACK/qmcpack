@@ -58,7 +58,7 @@ namespace qmcplusplus {
     //OptimizableSetType::data_type targetParam;
 
     /// default constructor
-    inline DiffOrbitalBase(){ }
+    inline DiffOrbitalBase():dLogPsi(1.0),dHPsi(0.0){ }
 
     ///default destructor
     virtual ~DiffOrbitalBase(){ }

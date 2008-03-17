@@ -45,8 +45,7 @@ namespace qmcplusplus {
     lapLogPsi=0.0;
 
     dLogPsi=differentiate(P);
-
-    dHPsi=Sum(lapLogPsi)+2.0*Dot(P.G,gradLogPsi)+dLogPsi*ke0;
+    dHPsi=-0.5*Sum(lapLogPsi)-Dot(P.G,gradLogPsi)-dLogPsi*ke0;
   }
   //@}
 
