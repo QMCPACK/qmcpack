@@ -132,9 +132,9 @@ namespace qmcplusplus {
     o.setf(ios::scientific, ios::floatfield);
     o.setf(ios::left,ios::adjustfield);
     o << "#   index    ";
-    for(int i=0; i<BlockAverages.size(); i++) o << setw(16) << BlockAverages.Name[i];
+    for(int i=0; i<BlockAverages.size(); i++) o << setw(16) << BlockAverages.Names[i];
     //(*Archive) << setw(16) << "WeightSum";
-    for(int i=0; i<BlockProperties.size(); i++) o << setw(16) << BlockProperties.Name[i];
+    for(int i=0; i<BlockProperties.size(); i++) o << setw(16) << BlockProperties.Names[i];
     o << endl;
     o.setf(ios::right,ios::adjustfield);
   }
