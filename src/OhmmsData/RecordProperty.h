@@ -151,7 +151,7 @@ struct RecordNamedProperty: public RecordProperty {
     Values.resize(n,T()); 
     for(int i=0; i<a.size(); i++) Values[i] = a[i];
     //std::copy_n(a.begin(), a.size(), Values.begin());
-    Name.resize(n);  
+    Names.resize(n);  
     for(int i=0; i<a.size(); i++) Names[i] = b[i];
     //std::copy_n(b.begin(), b.size(), Name.begin());
   }
