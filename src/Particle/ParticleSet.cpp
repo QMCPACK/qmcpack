@@ -42,7 +42,7 @@ namespace qmcplusplus {
       createSK();
     }
 
-    PropertyList.Name=p.PropertyList.Name;
+    PropertyList.Names=p.PropertyList.Names;
     PropertyList.Values=p.PropertyList.Values;
   }
 
