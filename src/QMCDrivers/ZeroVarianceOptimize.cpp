@@ -26,7 +26,7 @@ namespace qmcplusplus {
 
   /// Constructor.
   ZeroVarianceOptimize::ZeroVarianceOptimize(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h):
-    QMCDriver(w,psi,h), WarmupBlock(1), Mover(0), UseDrift("yes")  
+    QMCDriver(w,psi,h), WarmupBlocks(1), Mover(0), UseDrift("yes")  
     {
       RootName = "opt";
       QMCType ="ZeroVarianceOptimize";
@@ -47,7 +47,7 @@ namespace qmcplusplus {
     Mover->startRun(nBlocks,true);
 
     //do the warmup blocks
-    for(int block; block<WarmupBlocks; ++block)
+    for(int block=0; block<WarmupBlocks; ++block)
     {
       for(int step=0; step<nSteps; ++step)
         Mover->advanceWalkers(W.begin(),W.end(),true);
@@ -105,12 +105,12 @@ namespace qmcplusplus {
 
 
     //finalize a qmc section
-    return finalize(block);
+    return finalize(nBlocks);
   }
 
   void ZeroVarianceOptimize::accumulate(WalkerIter_t it, WalkerIter_t it_end)
   {
-    while(;it != it_end; ++it)
+    for(;it != it_end; ++it)
     {
       Walker_t& thisWalker(**it);
 
@@ -168,13 +168,13 @@ namespace qmcplusplus {
       //push an dummy AnalyticDiffOrbital
       dPsi.push_back(new AnalyticDiffOrbital(0));
       RealType p0=Psi.VarList["jee_b"];
-      DPadeDBFunctor<RealType>* dpade = new DPadeDBFunctor(-0.5,p0);
-      OrbitalBase *J2=new TwoBodyJastrowOrbital<DPadeDBFunctor<RealType> >(W);
+      DPadeDBFunctor<RealType>* dpade = new DPadeDBFunctor<RealType>(-0.5,p0);
+      TwoBodyJastrowOrbital<DPadeDBFunctor<RealType> > *J2=new TwoBodyJastrowOrbital<DPadeDBFunctor<RealType> >(W);
       dpade->ID_B="jee_b";
       J2->insert("j2",dpade);
       for(int i=0; i<4; i++) J2->addFunc(dpade);
       DiffOrbitalBase *o= new AnalyticDiffOrbital(J2);
-      o->resize(nat);
+      o->resize(W.getTotalNum());
       o->setParameter("jee_b",p0);
       dPsi.push_back(o);
 

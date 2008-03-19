@@ -22,9 +22,10 @@
 
 #include "QMCDrivers/QMCDriver.h" 
 #include "QMCDrivers/CloneManager.h" 
-#include "QMCDrivers/DiffOrbitalBase.h" 
 
 namespace qmcplusplus {
+
+  class DiffOrbitalBase;
 
   /** @ingroup QMCDrivers
    * @brief Implements wave-function optimization based on the zero-variance method
@@ -77,7 +78,7 @@ namespace qmcplusplus {
     ///hide initialization from the main function
     void resetRun();
     ///accumulate matrix elements
-    void accumulate(WalkerIter_t it, WalkerIter_t it_end) 
+    void accumulate(WalkerIter_t it, WalkerIter_t it_end);
 
     ///Copy Constructor (disabled).
     ZeroVarianceOptimize(const ZeroVarianceOptimize& a): QMCDriver(a){ }  
