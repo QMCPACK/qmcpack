@@ -59,7 +59,7 @@ namespace qmcplusplus {
       {
         reset(a, b);
       }
-      PPadeDBFunctor(const PadeFunctor<T>& pade): ID_A(pade.ID_A), ID_B(pade.ID_B)
+      DPadeDBFunctor(const PadeFunctor<T>& pade): ID_A(pade.ID_A), ID_B(pade.ID_B)
       {
         reset(pade.A,pade.B);
       }
@@ -179,7 +179,7 @@ namespace qmcplusplus {
       {
         reset(a, b);
       }
-      P2PadeDB2Functor(const PadeFunctor<T>& pade): ID_A(pade.ID_A), ID_B(pade.ID_B)
+      D2PadeDB2Functor(const PadeFunctor<T>& pade): ID_A(pade.ID_A), ID_B(pade.ID_B)
       {
         reset(pade.A,pade.B);
       }
