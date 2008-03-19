@@ -62,6 +62,7 @@ struct ParameterSet: public OhmmsElementBase {
    *@return true, if any valid parameter is processed.
    */
   inline bool put(xmlNodePtr cur) {
+    if(cur == NULL) return true;//handle empty node
     cur = cur->xmlChildrenNode;
     bool something = false;
     while(cur != NULL) {
