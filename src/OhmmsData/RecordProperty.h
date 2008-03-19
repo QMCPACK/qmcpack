@@ -93,17 +93,21 @@ struct RecordNamedProperty: public RecordProperty {
 
   std::ostream *OutStream;
   std::vector<T> Values;
-  std::vector<std::string> Name;
+  std::vector<std::string> Names;
 
-  RecordNamedProperty(): OutStream(NULL) {
+  RecordNamedProperty(): OutStream(0) {
     Values.reserve(20); 
-    Name.reserve(20);
+    Names.reserve(20);
   }
 
   explicit RecordNamedProperty(int n) { 
     Values.resize(n,T());
-    Name.resize(n);
+    Names.resize(n);
   }
+
+  RecordNamedProperty(const RecordNamedProperty<T>& a): 
+    OutStream(0),Values(a.Values),Names(a.Names) 
+    { }
 
   ~RecordNamedProperty() { 
     if(OutStream) delete OutStream;
@@ -111,7 +115,7 @@ struct RecordNamedProperty: public RecordProperty {
 
   void clear()
   {
-    Name.clear();
+    Names.clear();
     Values.clear();
   }
 
@@ -126,16 +130,16 @@ struct RecordNamedProperty: public RecordProperty {
 
   inline int add(const char* aname) {
     int i=0;
-    while(i<Name.size()) {
-      if(Name[i]== aname) return i;
+    while(i<Names.size()) {
+      if(Names[i]== aname) return i;
       i++;
     }
-    Name.push_back(aname);
+    Names.push_back(aname);
     Values.push_back(T());
-    return Name.size()-1;
+    return Names.size()-1;
   }
 
-  inline int size() const { return Name.size();}
+  inline int size() const { return Names.size();}
 
   inline void setValues(T v) {
     for(int i=0; i<Values.size(); i++) Values[i] = v;
@@ -143,12 +147,12 @@ struct RecordNamedProperty: public RecordProperty {
 
   inline void resize(int n) {
     std::vector<T> a = Values;
-    std::vector<std::string> b = Name;
+    std::vector<std::string> b = Names;
     Values.resize(n,T()); 
     for(int i=0; i<a.size(); i++) Values[i] = a[i];
     //std::copy_n(a.begin(), a.size(), Values.begin());
     Name.resize(n);  
-    for(int i=0; i<a.size(); i++) Name[i] = b[i];
+    for(int i=0; i<a.size(); i++) Names[i] = b[i];
     //std::copy_n(b.begin(), b.size(), Name.begin());
   }
 
@@ -156,14 +160,15 @@ struct RecordNamedProperty: public RecordProperty {
   inline void reset(const char* fileroot, bool append=false) { 
     if(OutStream) delete OutStream;
     if(append) {
-      OutStream = new std::ofstream(fileroot,ios_base::app);
+      OutStream = new std::ofstream(fileroot,std::ios_base::app);
     } else {
       OutStream = new std::ofstream(fileroot);
     }
     if(!append) {
       OutStream->setf(std::ios::left,std::ios::adjustfield);
       *OutStream << "#   ";
-      for(int i=0; i<Name.size(); i++) (*OutStream) << setw(15) << Name[i].c_str();
+      for(int i=0; i<Names.size(); i++) 
+        (*OutStream) << setw(15) << Names[i].c_str();
       (*OutStream) << endl;
     }
     OutStream->setf(std::ios::scientific, std::ios::floatfield);
