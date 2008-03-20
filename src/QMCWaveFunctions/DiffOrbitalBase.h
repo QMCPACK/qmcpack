@@ -31,6 +31,11 @@ namespace qmcplusplus {
    * - \f$\fraction{\partial \log\Psi}{\partial \alpha}\$
    * - \f$\nabla \fraction{\partial \log\Psi}{\partial \alpha}\$
    * - \f$\nabla^2 \fraction{\partial \log\Psi}{\partial \alpha}\$
+   * Each object handles one or more parameters during the optimiation.
+   * The data type of refOrbital, vector<OrbitalBase*> is intended for the cases 
+   * when a common variable is used by several OrbitalBase class, e.g., 
+   * TwoBodyJastrowOrbital<PadeFunctor> and OneBodyJastrowOrbital<PadeFunctor>
+   * with one scaling parameter. 
    */
   struct DiffOrbitalBase
   {
@@ -38,99 +43,96 @@ namespace qmcplusplus {
     typedef OrbitalBase::RealType           RealType;
     typedef OrbitalBase::ValueType          ValueType;
     typedef OrbitalBase::GradVectorType     GradVectorType;
-    typedef OrbitalBase::ValueVectorType   ValueVectorType;
+    typedef OrbitalBase::ValueVectorType    ValueVectorType;
     typedef OrbitalBase::OptimizableSetType OptimizableSetType;
     //@}
-    //
-    ///\f$\frac{\partial_{\alpha}\Psi}{\Psi} = \partial_{\alpha}\log\Psi\f$
-    RealType dLogPsi;
-    ///\f$\frac{H\partial_{\alpha}\Psi}{\Psi} = \partial_{\alpha}\nabla^2 \log\Psi\f$
-    RealType dHPsi;
-    ///\f$\nabla \partial_{\alpha} log\Psi\f$
-    GradVectorType gradLogPsi;
-    ///\f$\nabla^2 \partial_{\alpha} log\Psi\f$
-    ValueVectorType lapLogPsi;
-    /** target parameter
-     *
-     * OptimizableSetType is derived from a map and data_type is pair<string,T>
+    ///firs tindex of the optimizable parameters
+    int FirstIndex;
+    ///last index of the optimizable parameters
+    int LastIndex;
+    /** list of reference orbitals which contribute to the derivatives
      */
-    pair<string,RealType> targetParam;
-    //OptimizableSetType::data_type targetParam;
+    vector<OrbitalBase*> refOrbital;
 
     /// default constructor
-    inline DiffOrbitalBase():dLogPsi(1.0),dHPsi(0.0){ }
+    DiffOrbitalBase(OrbitalBase* orb=0);
 
     ///default destructor
     virtual ~DiffOrbitalBase(){ }
 
-    /** resize internal container
-     * @param nptcls the number of particles
+    /** set the index bounds for derivatives
+     * @param first locator for the first optimizable parameter
+     * @param last locator for the last parameter
+     *
+     * The derived classes should evaluate derivatives and assign them
+     * to optVars.derivatives in [first,last) range.
      */
-    void resize(int nptcls);
+    inline void setBounds(int first, int last=-1) 
+    {
+      FirstIndex=first;
+      LastIndex=(last>first)?last:first+1;
+    }
 
-    /**  set the name of the optimizable variable 
-     * @param a name of the variable
-     * @param v initial value of the variable
+    /** add an OrbitalBase*
      */
-    void setParameter(const string& a, RealType v);
+    inline void addOrbital(OrbitalBase* psi)
+    {
+      refOrbital.push_back(psi);
+    }
 
-    /** true, if optVariables has this object as active variables
+    /** initialize the object
+     *
+     * Only those that need extra checks and resizing implement this function
      */
-    bool isOptimizable(OptimizableSetType& optVariables);
+    virtual void initialize() {}
+
+    ///prepare internal data for a new particle sets
+    virtual void resetTargetParticleSet(ParticleSet& P)=0;
 
     /** evaluate derivatives at \f$\{R\}\f$
      * @param P current configuration
      * @param ke0 current kinetic energy
      */
-    void evaluateDerivatives(ParticleSet& P, RealType ke0);
+    virtual void evaluateDerivatives(ParticleSet& P, RealType ke0, OptimizableSetType& optVars)=0;
 
     /** reset the parameters during optimizations
      */
-    virtual void resetParameters(OptimizableSetType& optVariables)=0;
-
-    /** reset properties, e.g., distance tables, for a new target ParticleSet
-     * @param P ParticleSet
-     */
-    virtual void resetTargetParticleSet(ParticleSet& P)=0;
-
-    /** evaluate the value of the orbital
-     * @param P active ParticleSet
-     * @return \f$\partial_{\alpha}\log\Psi\f$
-     */
-    virtual RealType differentiate(ParticleSet& P) = 0;
-
+    virtual void resetParameters(OptimizableSetType& optVars)=0;
   };
 
-  /** a generic DiffOrbitalBase using a finite-difference method
+  /** a generic DiffOrbitalBase using a finite-difference method for a single optimizable parameter.
    *
    * This class handles any orbital whose analytic derivatives are not implemented nor easily available.
    */
   struct NumericalDiffOrbital: public DiffOrbitalBase
   {
 
-    NumericalDiffOrbital(OrbitalBase* orb=0): refOrbital(orb) {}
+    NumericalDiffOrbital(OrbitalBase* orb=0): DiffOrbitalBase(orb) {}
 
-    void resetParameters(OptimizableSetType& optVariables);
     void resetTargetParticleSet(ParticleSet& P);
-    RealType differentiate(ParticleSet& P);
+    void evaluateDerivatives(ParticleSet& P, RealType ke0,  OptimizableSetType& optVars);
+    void resetParameters(OptimizableSetType& optVariables);
 
-    ///pointer to the reference orbital
-    OrbitalBase* refOrbital;
+    ///\f$\nabla \partial_{\alpha} log\Psi\f$
+    GradVectorType gradLogPsi, dg_p, dg_m;
+    ///\f$\nabla^2 \partial_{\alpha} log\Psi\f$
+    ValueVectorType lapLogPsi, dl_p, dl_m;
   };
 
-  /** a generic DiffOrbitalBase using analytic derivates
+  /** a generic DiffOrbitalBase using analytic derivates for a single optimizable parameter
    */
   struct AnalyticDiffOrbital: public DiffOrbitalBase
   {
 
-    AnalyticDiffOrbital(OrbitalBase* orb=0): refOrbital(orb) {}
+    AnalyticDiffOrbital(OrbitalBase* orb=0): DiffOrbitalBase(orb) {}
 
-    void resetParameters(OptimizableSetType& optVariables);
     void resetTargetParticleSet(ParticleSet& P);
-    RealType differentiate(ParticleSet& P);
-
-    ///pointer to the reference orbital
-    OrbitalBase* refOrbital;
+    void evaluateDerivatives(ParticleSet& P, RealType ke0, OptimizableSetType& optVars);
+    void resetParameters(OptimizableSetType& optVariables);
+    ///\f$\nabla \partial_{\alpha} log\Psi\f$
+    GradVectorType gradLogPsi;
+    ///\f$\nabla^2 \partial_{\alpha} log\Psi\f$
+    ValueVectorType lapLogPsi;
   };
 }
 #endif
