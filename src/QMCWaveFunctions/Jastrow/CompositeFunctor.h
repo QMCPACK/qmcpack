@@ -215,6 +215,8 @@ namespace qmcplusplus {
       real_type R12;
       ///temporary data for derivative
       real_type dCosFac;
+      ///temporary data for second-derivative
+      real_type d2CosFac;
       ///ID for variable E 
       string ID_E;
 
@@ -226,29 +228,25 @@ namespace qmcplusplus {
        */
       inline CuspCorrectionFunctor(real_type e, real_type rc)
       {
-        E=e; 
-        RmaxFixed=rc;
+        real_type rin=0.5*rc;
+        E=(rin)<e?4.0/rin:e;
+        Rmax=rc;
+        //E=e; 
         resetInternals();
       }
 
       inline void resetInternals()
       {
         mOneOverE=-1.0/E;
-        Rmax=10.0/E;
-        Rmax=(Rmax>RmaxFixed)? RmaxFixed:Rmax;
-        Rcut=0.9*Rmax;
-        R12=1.0/(Rmax-Rcut);
-        dCosFac=-0.5*M_PI*R12;
+        Rcut=0.7*Rmax;
+        R12=M_PI/(Rmax-Rcut);
+        dCosFac=0.5*R12/E;
+        d2CosFac=0.5*R12*R12/E;
       }
 
       inline real_type f(real_type r)
       {
-        if(r>Rmax) return 0.0;
-        real_type v=mOneOverE*std::exp(-E*r);
-        if(r>=Rcut)
-          return v*0.5*(1.0+std::cos(M_PI*(r-Rcut)*R12));
-        else
-          return v;
+        return evaluate(r);
       }
 
       inline real_type df(real_type r) {
@@ -260,8 +258,173 @@ namespace qmcplusplus {
         else
         {
           //this may be wrong but should never be used.
-          real_type rfac=M_PI*(r-Rcut)*R12;
-          return std::exp(-E*r)*(mOneOverE*dCosFac*std::sin(rfac)+0.5*(1.0+std::cos(rfac)));
+          real_type sine,cosine;
+          sincos((r-Rcut)*R12,&sine,&cosine);
+          return std::exp(-E*r)*(dCosFac*sine+0.5*(1.0+cosine));
+        }
+      }
+
+      inline real_type evaluate(real_type r)
+      {
+        if(r>Rmax) return 0.0;
+        if(r<Rcut)
+          return mOneOverE*std::exp(-E*r);
+        else
+          return mOneOverE*std::exp(-E*r)*0.5*(1.0+std::cos((r-Rcut)*R12));
+      }
+
+      inline real_type evaluate(real_type r, real_type& du, real_type& d2u)
+      {
+        if(r>Rmax) {du=0.0; d2u=0.0;return 0.0;}
+        real_type u=std::exp(-E*r);
+        if(r<Rcut)
+        {
+          du=u;
+          d2u=-E*u;
+          return mOneOverE*u;
+        }
+        else
+        {
+          real_type sine,cosine;
+          sincos((r-Rcut)*R12,&sine,&cosine);
+          real_type fc=0.5*(1+cosine);
+          du=u*(dCosFac*sine+fc);
+          d2u=u*(d2CosFac*cosine+2.0*dCosFac*sine-E*fc);
+          return u*fc;
+        }
+      }
+
+      bool put(xmlNodePtr cur) 
+      {
+        OhmmsAttributeSet rAttrib;
+        rAttrib.add(ID_E,"id"); 
+        rAttrib.add(E,"exponent"); 
+        rAttrib.put(cur);
+        ID_E.append("_E");
+        return true;
+      }
+
+      //cannot be optimized
+      void addOptimizables(OptimizableSetType& vlist) 
+      {
+        //vlist.addVariable(ID_E,E);
+      }
+
+      //cannot be optimized
+      void resetParameters(OptimizableSetType& optVariables) 
+      { 
+        //typename OptimizableSetType::iterator it_b(optVariables.find(ID_E));
+        //if(it_b != optVariables.end()) {
+        //  E=(*it_b).second;
+        //  //only change the exponent: leave the cutoff fixed
+        //  mOneOverE=-1.0/E;
+        //  dCosFac=0.5*R12/E;
+        //  d2CosFac=0.5*R12*R12/E;
+        //  //resetInternals();
+        //}
+      }
+    };
+
+  /** Implements \f$ u(r) = A*(-\frac{1}{B} exp(-Br))*f_c(r)\f$ with a cutoff function.
+   * 
+   * This functor is not optimized and should be used only as a temporary functor
+   * for a final numerical functor to correct the cusp condition.
+   */
+  template<class T>
+    struct DCuspCorrectionDEFunctor: public OptimizableFunctorBase<T> {
+
+      typedef OptimizableFunctorBase<T> ThisBaseType;
+      typedef typename ThisBaseType::real_type real_type;
+      typedef typename ThisBaseType::OptimizableSetType OptimizableSetType;
+
+      ///scaling function or exponent
+      real_type E;
+      ///1/E
+      real_type OneOverE;
+      ///maxium cutoff radius
+      real_type Rmax;
+      ///starting cutoff radius
+      real_type Rcut;
+      ///temporary data
+      real_type R12;
+      ///temporary data for derivative
+      real_type dCosFac;
+      ///temporary data for derivative
+      real_type d2CosFac;
+      ///ID for variable E 
+      string ID_E;
+
+      ///default constructor not to have nan
+      DCuspCorrectionDEFunctor():E(1.0),Rmax(1),Rcut(0), RmaxFixed(10){}
+      /** constructor
+       * @param c Cusp condition, i.e., the first derivative at r=0
+       * @param e exponent or scaling factor
+       */
+      inline DCuspCorrectionDEFunctor(real_type e, real_type rc)
+      {
+        E=e; 
+        Rmax=rc;
+        resetInternals();
+      }
+
+      inline void resetInternals()
+      {
+        OneOverE=1.0/E;
+        Rcut=0.7*Rmax;
+        R12=M_PI/(Rmax-Rcut);
+        dCosFac=0.5*R12;
+        d2CosFac=0.5*R12*R12;
+      }
+
+      inline real_type f(real_type r)
+      {
+        return evaluate(r);
+      }
+
+      inline real_type df(real_type r) {
+        if(r>Rmax) return 0.0;
+        real_type expr=std::exp(-E*r);
+        if(r<Rcut)
+        {
+          return -r*expr;
+        }
+        else
+        {
+          real_type sine,cosine;
+          sincos((r-Rcut)*R12,&sine,&cosine);
+          return expr*(dCosFac*sine*OneOverE*(r+OneOverE)-r*0.5*(1+cosine));
+        }
+      }
+
+      inline real_type evaluate(real_type r)
+      {
+        if(r>Rmax) return 0.0;
+        real_type u=std::exp(-E*r)*OneOverE*(r+OneOverE);
+        if(r<Rcut)
+          return u;
+        else
+          return u*0.5*(1.0+std::cos((r-Rcut)*R12));
+      }
+
+      inline real_type evaluate(real_type r, real_type& du, real_type& d2u)
+      {
+        if(r>Rmax) {du=0.0; d2u=0.0;return 0.0;}
+        real_type expr=std::exp(-E*r);
+        real_type u=expr*OneOverE*(r+OneOverE);
+        if(r<Rcut)
+        {
+          du=-r*expr;
+          d2u=expr*(E*r-1.0);
+          return u;
+        }
+        else
+        {
+          real_type sine,cosine;
+          sincos((r-Rcut)*R12,&sine,&cosine);
+          real_type fc=0.5*(1+cosine);
+          du=u*dCosFac*sine-r*expr*fc;
+          d2u=expr*((E*r-1.0)+2.0*r*sine*dCosFac)+d2CosFac*sine*u;
+          return u*fc;
         }
       }
 
@@ -277,7 +440,7 @@ namespace qmcplusplus {
 
       void addOptimizables(OptimizableSetType& vlist) 
       {
-        vlist[ID_E]=E;
+        vlist.addVariable(ID_E,E);
       }
 
       void resetParameters(OptimizableSetType& optVariables) 
@@ -286,7 +449,9 @@ namespace qmcplusplus {
         if(it_b != optVariables.end()) {
           E=(*it_b).second;
           //only change the exponent: leave the cutoff fixed
-          mOneOverE=-1.0/E;
+          OneOverE=1.0/E;
+          dCosFac=0.5*R12/E;
+          d2CosFac=0.5*R12*R12/E;
           //resetInternals();
         }
       }
