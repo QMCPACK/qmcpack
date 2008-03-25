@@ -30,6 +30,9 @@ namespace qmcplusplus {
     
     std::string elementType, pairType;
     std::vector<double> SplineCoefs;
+    // Stores the derivatives w.r.t. SplineCoefs 
+    // of the u, du/dr, and d2u/dr2
+    std::vector<TinyVector<real_type,3> > SplineDerivs;
     std::vector<double> Parameters;
     std::vector<std::string> ParameterNames;
     double Rcut, DeltaR, DeltaRInv;
@@ -52,6 +55,7 @@ namespace qmcplusplus {
 
       Parameters.resize(n);
       SplineCoefs.resize(numCoefs);
+      SplineDerivs.resize(numCoefs);
     }
     
     void reset() 
@@ -149,6 +153,52 @@ namespace qmcplusplus {
 	 SplineCoefs[i+2]*(A[ 8]*tp[0] + A[ 9]*tp[1] + A[10]*tp[2] + A[11]*tp[3])+
 	 SplineCoefs[i+3]*(A[12]*tp[0] + A[13]*tp[1] + A[14]*tp[2] + A[15]*tp[3]));
 
+    }
+
+    inline bool
+    evaluate (real_type r, vector<TinyVector<real_type,3> >& derivs)
+    {
+      if (r >= Rcut) 
+	return false;
+
+      r *= DeltaRInv;
+      double ipart, t;
+      t = modf (r, &ipart);
+      int i = (int) ipart;
+      
+      double tp[4];
+      tp[0] = t*t*t;  tp[1] = t*t;  tp[2] = t;  tp[3] = 1.0;
+
+      // d/dp_i u(r)
+      SplineDerivs[i+0][0] = A[ 0]*tp[0] + A[ 1]*tp[1] + A[ 2]*tp[2] + A[ 3]*tp[3];
+      SplineDerivs[i+1][0] = A[ 4]*tp[0] + A[ 5]*tp[1] + A[ 6]*tp[2] + A[ 7]*tp[3];
+      SplineDerivs[i+2][0] = A[ 8]*tp[0] + A[ 9]*tp[1] + A[10]*tp[2] + A[11]*tp[3];
+      SplineDerivs[i+3][0] = A[12]*tp[0] + A[13]*tp[1] + A[14]*tp[2] + A[15]*tp[3];
+
+      // d/dp_i du/dr
+      SplineDerivs[i+0][1] = DeltaRInv * (dA[ 1]*tp[1] + dA[ 2]*tp[2] + dA[ 3]*tp[3]);
+      SplineDerivs[i+1][1] = DeltaRInv * (dA[ 5]*tp[1] + dA[ 6]*tp[2] + dA[ 7]*tp[3]);
+      SplineDerivs[i+2][1] = DeltaRInv * (dA[ 9]*tp[1] + dA[10]*tp[2] + dA[11]*tp[3]);
+      SplineDerivs[i+3][1] = DeltaRInv * (dA[13]*tp[1] + dA[14]*tp[2] + dA[15]*tp[3]);
+
+      // d/dp_i d2u/dr2
+      SplineDerivs[i+0][2] = DeltaRInv * DeltaRInv * (d2A[ 2]*tp[2] + d2A[ 3]*tp[3]);
+      SplineDerivs[i+1][2] = DeltaRInv * DeltaRInv * (d2A[ 6]*tp[2] + d2A[ 7]*tp[3])
+      SplineDerivs[i+2][2] = DeltaRInv * DeltaRInv * (d2A[10]*tp[2] + d2A[11]*tp[3]);
+      SplineDerivs[i+3][2] = DeltaRInv * DeltaRInv * (d2A[14]*tp[2] + d2A[15]*tp[3]);
+      
+      if (i == 0) 
+	for (int j=0; j<3; j++) {
+	  derivs[0][j] = SplineDerivs[1][j];
+	  derivs[1][j] = SplineDerivs[0][j] + SplineDerivs[2][j];
+	  derivs[2][j] = SplineDerivs[3][j];
+	  derivs[3][j] = SplineDerivs[4][j];
+	}
+      else 
+	for (int n=1; n<i+4; n++) 
+	  for (int j=0; j<3; j++) 
+	    derivs[n-1][j] = SplineDerivs[n][j];
+      return true;
     }
 
     inline real_type f(real_type r) {
