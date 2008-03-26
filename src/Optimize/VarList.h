@@ -39,6 +39,13 @@ struct VarRegistry: public std::map<std::string,T> {
     }
   }
 
+  //add an function not 
+  inline int addVariable(const std::string& vname, T val)
+  {
+    this->operator[](vname)=val;
+    return this->size();
+  }
+
 };
 #endif
 /***************************************************************************
