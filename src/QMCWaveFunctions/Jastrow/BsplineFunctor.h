@@ -195,7 +195,7 @@ namespace qmcplusplus {
 	  derivs[3][j] = SplineDerivs[4][j];
 	}
       else 
-	for (int n=1; n<i+4; n++) 
+	for (int n=i; n<i+4; n++) 
 	  for (int j=0; j<3; j++) 
 	    derivs[n-1][j] = SplineDerivs[n][j];
       return true;
