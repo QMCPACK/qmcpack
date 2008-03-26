@@ -59,7 +59,7 @@ namespace qmcplusplus {
     bool sortBands = true;
     attribs.add (H5FileName, "href");
     attribs.add (TileFactor, "tile");
-    attribs.add (sortBands, "sort");
+    attribs.add (sortBands,  "sort");
     attribs.add (TileMatrix, "tilematrix");
     attribs.put (XMLRoot);
     attribs.add (numOrbs,    "size");
@@ -252,6 +252,8 @@ namespace qmcplusplus {
       TileFactor[0]!=1 || TileFactor[1]!=1 || TileFactor[2]!=1;
     PrimCell = Lattice;
     SuperCell = SuperLattice;
+    TileIons();
+
     OrbitalSet->PrimLattice  = Lattice;
     OrbitalSet->SuperLattice = SuperLattice;
     OrbitalSet->GGt=dot(OrbitalSet->PrimLattice.G,
@@ -292,11 +294,58 @@ namespace qmcplusplus {
     return OrbitalSet;
   }
   
+  ////////////////////////////////////////////////////
+  // Tile the ion positions according to TileMatrix //
+  ////////////////////////////////////////////////////
+  void 
+  EinsplineSetBuilder::TileIons()
+  {
+    Vector<TinyVector<double, OHMMS_DIM> > primPos   = IonPos;
+    Vector<int>                            primTypes = IonTypes;
+    int numCopies = abs(TileMatrix.det());
+    IonTypes.resize(primPos.size()*numCopies);
+    IonPos.resize  (primPos.size()*numCopies);
+
+    int maxCopies = 10;
+
+    typedef TinyVector<double,3> Vec3;
+
+    int index=0;
+
+    for (int i0=-maxCopies; i0<=maxCopies; i0++)    
+      for (int i1=-maxCopies; i1<=maxCopies; i1++)
+	for (int i2=-maxCopies; i2<=maxCopies; i2++) 
+	  for (int iat=0; iat < primPos.size(); iat++) {
+	    Vec3 r     = primPos[iat];
+	    Vec3 uPrim = PrimCell.toUnit(r);
+	    for (int i=0; i<3; i++)   uPrim[i] -= std::floor(uPrim[i]);
+	    r = PrimCell.toCart(uPrim) + (double)i0*PrimCell.a(0) + 
+	      (double)i1*PrimCell.a(1) + (double)i2*PrimCell.a(2);
+	    Vec3 uSuper = SuperCell.toUnit(r);
+	    if ((uSuper[0] >= -1.0e-6) && (uSuper[0] < 0.9999) &&
+		(uSuper[1] >= -1.0e-6) && (uSuper[1] < 0.9999) &&
+		(uSuper[2] >= -1.0e-6) && (uSuper[2] < 0.9999)) {
+	      IonPos[index]= r;
+	      IonTypes[index]= primTypes[iat];
+	      index++;
+	    }
+	  }
+    if (index != primPos.size()*numCopies) {
+      app_error() << "The number of tiled ions, " << IonPos.size() 
+		  << ", does not match the expected number of "
+		  << primPos.size()*numCopies << ".  Aborting.\n";
+      abort();
+    }
+    fprintf (stderr, "Supercell ion positions = \n");
+    for (int i=0; i<IonPos.size(); i++)
+      fprintf (stderr, "   [%12.6f %12.6f %12.6f]\n",
+	       IonPos[i][0], IonPos[i][1], IonPos[i][2]);
+  }
 
   inline TinyVector<double,3>
   IntPart (TinyVector<double,3> twist)
   {
-    return TinyVector<double,3> (round(twist[0]), round(twist[1]), round(twist[2]));
+    return TinyVector<double,3> (round(twist[0]-1.0e-10), round(twist[1]-1.0e-10), round(twist[2]-1.0e-10));
   }
   
   inline TinyVector<double,3>
@@ -710,7 +759,14 @@ namespace qmcplusplus {
 
     set_multi_UBspline_3d_d (orbitalSet->MultiSpline, 0, splineData.data());
     orbitalSet->kPoints.resize(orbitalSet->getOrbitalSetSize());
-        
+
+    PosType twist, k;
+    twist = TwistAngles[ti];
+    k = orbitalSet->PrimLattice.k_cart(twist);
+    orbitalSet->kPoints[0] = k;
+    double e = SortBands[0].Energy;
+    fprintf (stderr, "  ti=%3d  bi=%3d energy=%8.5f k=(%7.4f, %7.4f, %7.4f)\n", 
+	     ti, bi, e, k[0], k[1], k[2]);   
     int iorb  = 1;    
     while (iorb < N) {
       int ti   = SortBands[iorb].TwistIndex;
@@ -829,8 +885,14 @@ namespace qmcplusplus {
 	  splineData(ix,iy,iz) = rawData(ix,iy,iz);
 
     set_multi_UBspline_3d_z (orbitalSet->MultiSpline, 0, splineData.data());
-    orbitalSet->kPoints.resize(orbitalSet->getOrbitalSetSize());
-        
+       
+    PosType twist, k;
+    twist = TwistAngles[ti];
+    k = orbitalSet->PrimLattice.k_cart(twist);
+    double e = SortBands[0].Energy;
+    fprintf (stderr, "  ti=%3d  bi=%3d energy=%8.5f k=(%7.4f, %7.4f, %7.4f)\n", 
+	     ti, bi, e, k[0], k[1], k[2]);   
+ 
     int iorb  = 1;    
     while (iorb < N) {
       int ti   = SortBands[iorb].TwistIndex;
@@ -839,7 +901,6 @@ namespace qmcplusplus {
       PosType twist, k;
       twist = TwistAngles[ti];
       k = orbitalSet->PrimLattice.k_cart(twist);
-      orbitalSet->kPoints[iorb] = k;
       fprintf (stderr, "  ti=%3d  bi=%3d energy=%8.5f k=(%7.4f, %7.4f, %7.4f)\n", 
 	       ti, bi, e, k[0], k[1], k[2]);
       

@@ -146,6 +146,7 @@ namespace qmcplusplus {
     map <TinyVector<int,OHMMS_DIM>,int,Int3less> TwistMap;
     void AnalyzeTwists();
     void AnalyzeTwists2();
+    void TileIons();
     void OccupyBands(int spin, bool sortBands);
     void ReadBands (int spin, EinsplineSetLocal* orbitalSet);
     void ReadBands (int spin, EinsplineSetExtended<complex<double> >* orbitalSet);
