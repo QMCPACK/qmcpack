@@ -345,6 +345,8 @@ namespace qmcplusplus {
       real_type Rmax;
       ///starting cutoff radius
       real_type Rcut;
+      ///fixed maxmium cutoff provided by the user class
+      real_type RmaxFixed;
       ///temporary data
       real_type R12;
       ///temporary data for derivative
