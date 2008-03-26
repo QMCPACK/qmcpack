@@ -187,17 +187,10 @@ namespace qmcplusplus {
       SplineDerivs[i+2][2] = DeltaRInv * DeltaRInv * (d2A[10]*tp[2] + d2A[11]*tp[3]);
       SplineDerivs[i+3][2] = DeltaRInv * DeltaRInv * (d2A[14]*tp[2] + d2A[15]*tp[3]);
       
-      if (i == 0) 
-	for (int j=0; j<3; j++) {
-	  derivs[0][j] = SplineDerivs[1][j];
-	  derivs[1][j] = SplineDerivs[0][j] + SplineDerivs[2][j];
-	  derivs[2][j] = SplineDerivs[3][j];
-	  derivs[3][j] = SplineDerivs[4][j];
-	}
-      else 
-	for (int n=i; n<i+4; n++) 
-	  for (int j=0; j<3; j++) 
-	    derivs[n-1][j] = SplineDerivs[n][j];
+      for (int n=i; n<i+4; n++)
+	  derivs[n-1] = SplineDerivs[n];
+      derivs[1] += SplineDerivs[0];
+
       return true;
     }
 
