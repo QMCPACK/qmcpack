@@ -50,6 +50,28 @@ struct OptimizableFunctorBase: public NumericTraits<T> {
   ///define the type of Optimizable Sets
   typedef VarRegistry<real_type>                OptimizableSetType;
 
+  ///index of the first optimizable variable
+  int FirstIndex;
+  ///index of the last optimizable variable
+  int LastIndex;
+  ///default constructor
+  OptimizableFunctorBase():FirstIndex(0),LastIndex(1) {}
+  ///virtual destrutor
+  virtual ~OptimizableFunctorBase(){}
+
+  ///return the total number of variables to optimize
+  inline int getNumOfVariables() const {return LastIndex-FirstIndex;}
+
+  /** set the index bounds of the variables to optimize
+   *
+   * This is to utilize the vectorized container of variables.
+   */
+  inline void setBounds(int first, int last=-1)
+  {
+    FirstIndex=first;
+    LastIndex=(last>first)?last:first+1;
+  }
+
   /** evaluate the value at r
    * @param r distance
    *
