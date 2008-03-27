@@ -27,18 +27,20 @@ namespace qmcplusplus {
     ///typedef of real values
     typedef typename OptimizableFunctorBase<T>::real_type real_type;
     typedef typename OptimizableFunctorBase<T>::OptimizableSetType OptimizableSetType;
-    
-    std::string elementType, pairType;
-    std::vector<double> SplineCoefs;
+
+    using OptimizableFunctorBase<T>::FirstIndex;
+    using OptimizableFunctorBase<T>::LastIndex;
+    int NumParams;
+    static const real_type A[16], dA[16], d2A[16];
+    real_type Rcut, DeltaR, DeltaRInv;
+    real_type CuspValue;
+    std::vector<real_type> SplineCoefs;
     // Stores the derivatives w.r.t. SplineCoefs 
     // of the u, du/dr, and d2u/dr2
     std::vector<TinyVector<real_type,3> > SplineDerivs;
-    std::vector<double> Parameters;
+    std::vector<real_type> Parameters;
     std::vector<std::string> ParameterNames;
-    double Rcut, DeltaR, DeltaRInv;
-    static const real_type A[16], dA[16], d2A[16];
-    double CuspValue;
-    int NumParams;
+    std::string elementType, pairType;
 
     ///constructor
     BsplineFunctor() : NumParams(0), Rcut(0.0), CuspValue(0.0)
@@ -50,7 +52,7 @@ namespace qmcplusplus {
       NumParams = n;
       int numCoefs = NumParams + 4;
       int numKnots = numCoefs - 2;
-      DeltaR = Rcut / (double)(numKnots - 1);
+      DeltaR = Rcut / (real_type)(numKnots - 1);
       DeltaRInv = 1.0/DeltaR;
 
       Parameters.resize(n);
@@ -73,12 +75,12 @@ namespace qmcplusplus {
 //       fname = fname + ".dat";
 //       // fprintf (stderr, "Writing %s file.\n", fname.c_str());
 //       FILE *fout = fopen (fname.c_str(), "w");
-//       for (double r=1.0e-5; r<Rcut; r+=0.01) {
-// 	double eps = 1.0e-6;
+//       for (real_type r=1.0e-5; r<Rcut; r+=0.01) {
+// 	real_type eps = 1.0e-6;
 // 	real_type du, d2u, du_FD, d2u_FD;
-// 	double u = evaluate (r, du, d2u);
-// 	double uplus  = evaluate(r+eps);
-// 	double uminus = evaluate(r-eps);
+// 	real_type u = evaluate (r, du, d2u);
+// 	real_type uplus  = evaluate(r+eps);
+// 	real_type uminus = evaluate(r-eps);
 // 	du_FD  = (uplus-uminus)/(2.0*eps);
 // 	d2u_FD = (uplus+uminus-2.0*u)/(eps*eps);
 //  	fprintf (fout, "%1.10e %1.10e %1.10e %1.10e %1.10e %1.10e\n", 
@@ -96,11 +98,11 @@ namespace qmcplusplus {
 	return 0.0;
       r *= DeltaRInv;
 
-      double ipart, t;
+      real_type ipart, t;
       t = modf (r, &ipart);
       int i = (int) ipart;
       
-      double tp[4];
+      real_type tp[4];
       tp[0] = t*t*t;  tp[1] = t*t;  tp[2] = t;  tp[3] = 1.0;
 
       return 
@@ -117,16 +119,16 @@ namespace qmcplusplus {
 	dudr = d2udr2 = 0.0;
 	return 0.0;
       }
-//       double eps = 1.0e-5;
-//       double dudr_FD = (evaluate(r+eps)-evaluate(r-eps))/(2.0*eps);
-//       double d2udr2_FD = (evaluate(r+eps)+evaluate(r-eps)-2.0*evaluate(r))/(eps*eps);
+//       real_type eps = 1.0e-5;
+//       real_type dudr_FD = (evaluate(r+eps)-evaluate(r-eps))/(2.0*eps);
+//       real_type d2udr2_FD = (evaluate(r+eps)+evaluate(r-eps)-2.0*evaluate(r))/(eps*eps);
 
       r *= DeltaRInv;
-      double ipart, t;
+      real_type ipart, t;
       t = modf (r, &ipart);
       int i = (int) ipart;
       
-      double tp[4];
+      real_type tp[4];
       tp[0] = t*t*t;  tp[1] = t*t;  tp[2] = t;  tp[3] = 1.0;
 
       d2udr2 = DeltaRInv * DeltaRInv *
@@ -156,17 +158,17 @@ namespace qmcplusplus {
     }
 
     inline bool
-    evaluate (real_type r, vector<TinyVector<real_type,3> >& derivs)
+    evaluateDerivatives (real_type r, vector<TinyVector<real_type,3> >& derivs)
     {
       if (r >= Rcut) 
 	return false;
 
       r *= DeltaRInv;
-      double ipart, t;
+      real_type ipart, t;
       t = modf (r, &ipart);
       int i = (int) ipart;
-      
-      double tp[4];
+
+      real_type tp[4];
       tp[0] = t*t*t;  tp[1] = t*t;  tp[2] = t;  tp[3] = 1.0;
 
       // d/dp_i u(r)
@@ -187,9 +189,18 @@ namespace qmcplusplus {
       SplineDerivs[i+2][2] = DeltaRInv * DeltaRInv * (d2A[10]*tp[2] + d2A[11]*tp[3]);
       SplineDerivs[i+3][2] = DeltaRInv * DeltaRInv * (d2A[14]*tp[2] + d2A[15]*tp[3]);
       
-      for (int n=i; n<i+4; n++)
-	  derivs[n-1] = SplineDerivs[n];
-      derivs[1] += SplineDerivs[0];
+      int imax=std::min(i+4,NumParams+1);
+      if(i)
+      {
+        for (int n=i; n<imax; n++)
+          derivs[n-1] = SplineDerivs[n];
+      }
+      else
+      {
+        for (int n=1; n<imax; n++)
+          derivs[n-1] = SplineDerivs[n];
+        derivs[1]+=SplineDerivs[0];
+      }
 
       return true;
     }
@@ -200,7 +211,7 @@ namespace qmcplusplus {
     }
     inline real_type df(real_type r) {
       if(r>Rcut) return 0.0;
-      double du, d2u;
+      real_type du, d2u;
       evaluate (r, du, d2u);
       return du;
     }
@@ -231,8 +242,14 @@ namespace qmcplusplus {
       if (NumParams == 0) {
 	app_error() << "You must specify a positive number of parameters for the "
 		    << "Bspline jastrow function.\n";
-	abort();
+	APP_ABORT("BsplineFunctor::put failed. No parameters are given");
+
       }
+      else
+      {
+        app_log() << "   Adding " << NumParams << " parameters " << endl;
+      }
+
       resize (NumParams);
       // Now read coefficents
       xmlNodePtr xmlCoefs = cur->xmlChildrenNode;
@@ -280,8 +297,13 @@ namespace qmcplusplus {
     
     void addOptimizables(OptimizableSetType& vlist)
     {
-      for (int i=0; i<ParameterNames.size(); i++)
-	vlist[ParameterNames[i]] = Parameters[i];
+      //capture FirstIndex in the vlist
+      FirstIndex=vlist.addVariable(ParameterNames[0],Parameters[0]);
+      for (int i=1; i<ParameterNames.size(); i++)
+       int loc=vlist.addVariable(ParameterNames[i],Parameters[i]);
+      LastIndex=FirstIndex+ParameterNames.size();
+//      for (int i=0; i<ParameterNames.size(); i++)
+//	vlist[ParameterNames[i]] = Parameters[i];
     }
     
     /** reset the internal variables.
