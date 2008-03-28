@@ -49,6 +49,8 @@ namespace qmcplusplus {
     //return k cutoff
     inline RealType get_kc() const { return LR_kc;}
     virtual void initBreakup(ParticleSet& ref)=0;
+    virtual void Breakup(ParticleSet& ref, RealType rs_in)=0;
+
     virtual RealType evaluate(RealType r, RealType rinv)=0;
     virtual RealType evaluateLR(RealType r)=0;
     virtual RealType srDf(RealType r, RealType rinv)=0;

@@ -43,6 +43,9 @@ namespace qmcplusplus {
     void reset(ParticleSet& ref) {
       NormFactor=4.0*M_PI/ref.Lattice.Volume;
     }
+    void reset(ParticleSet& ref, T rs) {
+      NormFactor=4.0*M_PI/ref.Lattice.Volume;
+    }
     inline T operator()(T r, T rinv) { return rinv;}
     inline T df(T r) { return -1.0/(r*r); }
     inline T Fk(T k, T rc) {

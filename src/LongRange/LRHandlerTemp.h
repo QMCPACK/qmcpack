@@ -41,14 +41,24 @@ namespace qmcplusplus {
     typedef ParticleSet::ParticleLayout_t ParticleLayout_t;
     typedef BreakupBasis BreakupBasisType;
 
+    bool FirstTime;
+    RealType rs;
+    //RealType kc;
     BreakupBasisType Basis; //This needs a Lattice for the constructor...
     Func myFunc;
+    
     //Constructor
-    LRHandlerTemp(ParticleSet& ref, RealType kc=-1.0): LRHandlerBase(kc), Basis(ref.Lattice)
+    LRHandlerTemp(ParticleSet& ref, RealType kc_in=-1.0): 
+      LRHandlerBase(kc_in),FirstTime(true), Basis(ref.Lattice)
     {
       myFunc.reset(ref);
     }
-
+    
+    //LRHandlerTemp(ParticleSet& ref, RealType rs, RealType kc=-1.0): LRHandlerBase(kc), Basis(ref.Lattice)
+    //{
+    //  myFunc.reset(ref,rs);
+    //}
+    
     /** "copy" constructor 
      * @param aLR LRHandlerTemp
      * @param ref Particleset
@@ -57,7 +67,7 @@ namespace qmcplusplus {
      * References to ParticleSet or ParticleLayoutout_t are not copied.
      */
     LRHandlerTemp(const LRHandlerTemp& aLR, ParticleSet& ref):
-      LRHandlerBase(aLR), Basis(aLR.Basis, ref.Lattice) 
+      LRHandlerBase(aLR), FirstTime(true), Basis(aLR.Basis, ref.Lattice) 
     {
       myFunc.reset(ref);
       fillFk(ref.SK->KLists);
@@ -68,11 +78,24 @@ namespace qmcplusplus {
       fillFk(ref.SK->KLists);
       LR_rc=Basis.get_rc();
     }
-
+    
+    void Breakup(ParticleSet& ref, RealType rs_ext) {
+      //ref.Lattice.Volume=ref.getTotalNum()*4.0*M_PI/3.0*rs*rs*rs;
+      rs=rs_ext;
+      myFunc.reset(ref,rs);
+      InitBreakup(ref.Lattice,1); 
+      fillFk(ref.SK->KLists);
+      LR_rc=Basis.get_rc();
+    }
+    
     void resetTargetParticleSet(ParticleSet& ref) {
       myFunc.reset(ref);
     }
 
+    void resetTargetParticleSet(ParticleSet& ref, RealType rs) {
+      myFunc.reset(ref,rs);
+    }
+    
     inline RealType evaluate(RealType r, RealType rinv) {
       RealType v=myFunc(r,rinv);
       for(int n=0; n<coefs.size(); n++) v -= coefs[n]*Basis.h(n,r);
@@ -173,8 +196,14 @@ namespace qmcplusplus {
       RealType kmax(6000.0/ref.LR_rc);
 
       MaxKshell = static_cast<int>(breakuphandler.SetupKVecs(kc,kcut,kmax));
-      app_log() << "  LRBreakp parameter Kc =" << kc << endl;
-      app_log() << "    Continuum approximation in k = [" << kcut << "," << kmax << ")" << endl;
+
+      if(FirstTime)
+      {
+        app_log() <<" finding kc:  "<<ref.LR_kc<<" , "<<LR_kc<<endl;
+        app_log() << "  LRBreakp parameter Kc =" << kc << endl;
+        app_log() << "    Continuum approximation in k = [" << kcut << "," << kmax << ")" << endl;
+        FirstTime=false;
+      }
 
       //Set up x_k
       //This is the FT of -V(r) from r_c to infinity.
