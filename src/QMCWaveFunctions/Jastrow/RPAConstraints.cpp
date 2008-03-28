@@ -19,8 +19,10 @@
 #include "QMCWaveFunctions/Jastrow/LRTwoBodyJastrow.h"
 #include "QMCWaveFunctions/Jastrow/SplineFunctors.h"
 #include "LongRange/LRHandlerTemp.h"
+//#include "LongRange/DummyLRHandler.h"
 #include "Utilities/IteratorUtility.h"
 #include "OhmmsData/ParameterSet.h"
+#include "OhmmsData/AttributeSet.h"
 
 namespace qmcplusplus {
 
@@ -31,20 +33,27 @@ namespace qmcplusplus {
     {
       T Rs;
       T OneOverRsSq;
-      RPA0(T rs=1):Rs(rs){OneOverRsSq=1.0/Rs/Rs;}
+      RPA0(T rs=1):Rs(rs){OneOverRsSq=1.0/(Rs*Rs);}
       inline T operator()(T kk) 
       {
-        return Rs/(kk*(kk+OneOverRsSq));
+        T k2=std::sqrt(kk);
+        return Rs/(k2*(k2+OneOverRsSq));
+        //return (-0.5+0.5*std::pow(1.0+12.0*OneOverRs3/kk/kk,0.5));
       }
     };
 
+
+  ///initialize the static member
+  map<string,RPAPBCConstraints::HandlerType*> RPAPBCConstraints::handlerSet;
 
   ////////////////////////////////////////
   //RPAPBCConstraints definitions
   ////////////////////////////////////////
   RPAPBCConstraints::RPAPBCConstraints(ParticleSet& p, TrialWaveFunction& psi, bool nospin):
-    OrbitalConstraintsBase(p,psi),IgnoreSpin(nospin), LongRangeForm(0),
-  Rs(-1.0), Kc(-1.0), ID_Rs("rs"), MyName("rpa"),
+    OrbitalConstraintsBase(p,psi),
+  IgnoreSpin(nospin), DropLongRange(false), DropShortRange(false), OwnHandler(false),
+  LongRangeForm(0),
+  Rs(-1.0), Kc(-1.0), Rcut(0.0), ID_Rs("rs"),
   myHandler(0), realHandler(0), kspaceHandler(0), 
   LongRangeRPA(0), ShortRangeRPA(0)
     {
@@ -60,6 +69,13 @@ namespace qmcplusplus {
 
   bool RPAPBCConstraints::put(xmlNodePtr cur) {
 
+    //capture attribute jastrow/@name
+    MyName="Jee";
+    OhmmsAttributeSet a;
+    a.add(MyName,"name");
+    a.put(cur);
+
+    //xmlNodePtr tcur = cur->children;
     string useL="yes";
     string useS="yes";
     ParameterSet params;
@@ -70,22 +86,26 @@ namespace qmcplusplus {
     params.add(rpafunc,"function","string");
     params.put(cur);
 
+    //THIS IS NOT GOOD for consistency.
     //set the form of long-range term
     if(rpafunc == "breakup") 
       LongRangeForm=USE_BREAKUP;
     else if(rpafunc == "rpa") 
       LongRangeForm=USE_RPA;
-
+    
+    app_log() <<endl<<"   LongRangeForm is "<<rpafunc<<endl;
+    
     DropLongRange = (useL == "no");
     DropShortRange = (useS=="no");
 
     bool success=getVariables(cur);
-    map<string,pair<string,RealType> >::iterator vit(inVars.find("A"));
-    if(vit == inVars.end()) {
-      vit=inVars.find("rs");
-      if(vit == inVars.end()) {
-        ID_Rs="rs"; Rs=-1.0;
-      }
+
+    //<parameter name="rs" id="rs_id"></parameter>
+    map<string,pair<string,RealType> >::iterator vit(inVars.find("rs"));
+    if(vit == inVars.end()) 
+    {
+      ID_Rs="rs"; 
+      Rs=-1.0;
     }
     else
     {
@@ -93,36 +113,54 @@ namespace qmcplusplus {
       Rs=(*vit).second.second;
     }
 
-    //do not this again
-    if(myHandler) return true;
-
+    app_log() << "    Rs can be optimized using ID=" << ID_Rs << endl;
+    RealType tlen = std::pow(3.0/4.0/M_PI*targetPtcl.Lattice.Volume/ static_cast<RealType>(targetPtcl.getTotalNum()) ,1.0/3.0);
+    
     if(Rs<0) {
       if(targetPtcl.Lattice.SuperCellEnum) {
-        Rs=std::pow(3.0/4.0/M_PI*targetPtcl.Lattice.Volume/static_cast<RealType>(targetPtcl.getTotalNum()),1.0/3.0);
+        Rs=tlen;
       } else {
         Rs=1.0;
       }
     }
-    if(Kc<0) Kc=1.0/std::sqrt(Rs);
+    if(Kc<0) Kc=1.0/std::sqrt(tlen);
+
+    //do not this again
+    if(myHandler) return true;
+
+    map<string,HandlerType*>::iterator hit(handlerSet.find(MyName));
+    if(hit != handlerSet.end())//reuse the handler
+    {
+      OwnHandler=false;
+      myHandler=realHandler=(*hit).second;
+      return true;
+    }
 
     app_log() << "    RPAPBCConstraints::addTwoBodyPart Rs = " << Rs <<  "  Kc= " << Kc << endl;
+
+    OwnHandler=true;
     realHandler= new LRHandlerTemp<RPABreakup<RealType>,LPQHIBasis>(targetPtcl,Kc);
-    realHandler->initBreakup(targetPtcl);
+    realHandler->Breakup(targetPtcl,Rs);
 
     //assign realHandler to myHandler
     myHandler=realHandler;
 
-    //show how to overwrite  the kspace
-    if(LongRangeForm!=USE_BREAKUP && kspaceHandler==0)
-    {
-      if(LongRangeForm == USE_RPA)
-      { //example of rpa
-        DummyLRHandler<RPA0<RealType> > *dummy= new DummyLRHandler<RPA0<RealType> >(Kc);
-        dummy->myFunc=RPA0<RealType>(Rs);
-        dummy->initBreakup(targetPtcl);
-        myHandler=kspaceHandler=dummy;
-      }
-    }
+    //add the handler to the set so that we can reuse it
+    handlerSet[MyName]=myHandler;
+
+    //JK 2008-01-08: Disable overwriting kspace handler
+    ////show how to overwrite  the kspace
+    //if(LongRangeForm!=USE_BREAKUP && kspaceHandler==0)
+    //{
+    //  if(LongRangeForm == USE_RPA)
+    //  { //example of rpa
+    //    std::cout<<endl<<"   using RPA for the k-space part"<<endl;
+    //    DummyLRHandler<RPA0<RealType> > *dummy= new DummyLRHandler<RPA0<RealType> >(Kc);
+    //    dummy->myFunc=RPA0<RealType>(Rs);
+    //    dummy->initBreakup(targetPtcl);
+    //    myHandler=kspaceHandler=dummy;
+    //  }
+    //}
 
     return true;
   }
@@ -135,8 +173,40 @@ namespace qmcplusplus {
 
   void RPAPBCConstraints::resetParameters(OptimizableSetType& optVariables) 
   { 
+    
     OptimizableSetType::iterator it(optVariables.find(ID_Rs));
-    if(it != optVariables.end()) Rs=(*it).second;
+    if(it != optVariables.end()){ 
+      //targetPtcl.Lattice.LR_rc *= ((*it).second) / rs;
+      Rs=(*it).second;
+      //std::cout<<"resetting a parameter: "<<(*it).first<<" to: "<<(*it).second<<endl;
+      //myHandler->Breakup(targetPtcl,(*it).second);
+      if(OwnHandler) realHandler->Breakup(targetPtcl,(*it).second);
+      //JK: Don't know why we need this
+      //myHandler=realHandler;
+
+      //realHandler->resetTargetParticleSet(targetPtcl,(*it).second);
+      if(LongRangeRPA) LongRangeRPA->resetParameters(optVariables);
+    
+      //reset the numerical functor
+      nfunc->initialize(sra, myGrid);
+
+#if !defined(HAVE_MPI)
+      ofstream fout("rpa.short.dat");
+      for (int i = 0; i < myGrid->size(); i++) {
+        RealType r=(*myGrid)(i);
+        fout << r << "   " << nfunc->evaluate(r) << "   "
+          << realHandler->evaluate(r,1.0/r) << " " 
+          << realHandler->evaluateLR(r) << endl;
+      }
+#endif
+    }
+
+//     std::cout<<" RPAPBCConstraints::createTwoBody() "<<endl;
+//     j2 = TwoBodyJastrowOrbital<FuncType>(targetPtcl);
+//     for (int i=0; i<4; i++) j2->addFunc(nfunc);
+//     //j2->insert("spline",nfunc);
+//     ShortRangeRPA=j2;
+
   }
 
   /** create TwoBody Jastrow using LR breakup method
@@ -152,24 +222,26 @@ namespace qmcplusplus {
     }
     else
     {
-      typedef CubicBspline<RealType,LINEAR_1DGRID,FIRSTDERIV_CONSTRAINTS> SplineEngineType;
-      typedef CubicSplineSingle<RealType,SplineEngineType> FuncType;
-      typedef LinearGrid<RealType> GridType;
+      //return existing ShortRangeRPA
+      if(ShortRangeRPA) return ShortRangeRPA;
 
       //short-range uses realHandler
-      RealType Rcut = realHandler->get_rc()-0.1;
+      Rcut = realHandler->get_rc()-0.1;
       myGrid = new GridType;
       int npts=static_cast<int>(Rcut/0.01)+1;
       myGrid->set(0,Rcut,npts);
 
       //create the numerical functor
-      FuncType* nfunc = new FuncType;
-      ShortRangePartAdapter<RealType>* sra = new ShortRangePartAdapter<RealType>(myHandler);
+      nfunc = new FuncType;
+      sra = new ShortRangePartAdapter<RealType>(myHandler);
       sra->setRmax(Rcut);
       nfunc->initialize(sra, myGrid);
 
 #if !defined(HAVE_MPI)
-      ofstream fout("rpa.short.dat");
+      static  int counter=0;
+      char fname[32];
+      sprintf(fname,"%s.%d.dat",MyName.c_str(),counter++);
+      ofstream fout(fname);
       for (int i = 0; i < myGrid->size(); i++) {
         RealType r=(*myGrid)(i);
         fout << r << "   " << nfunc->evaluate(r) << "   "
@@ -177,9 +249,9 @@ namespace qmcplusplus {
           << realHandler->evaluateLR(r) << endl;
       }
 #endif
-
-      TwoBodyJastrowOrbital<FuncType>* j2= new TwoBodyJastrowOrbital<FuncType>(targetPtcl);
+      TwoBodyJastrowOrbital<FuncType> *j2 = new TwoBodyJastrowOrbital<FuncType>(targetPtcl);
       for (int i=0; i<4; i++) j2->addFunc(nfunc);
+      //j2->insert("spline",nfunc);
       return ShortRangeRPA=j2;
     }
   }
@@ -188,6 +260,7 @@ namespace qmcplusplus {
   {
     //if DropShortRange is true, LongRangeRPA is already used
     if(DropShortRange) return;
+    if(DropLongRange) return;
 
     if(LongRangeRPA==0)
       LongRangeRPA = new LRTwoBodyJastrow(targetPtcl, myHandler);
@@ -195,7 +268,8 @@ namespace qmcplusplus {
   }
 
 
-  OrbitalBase* RPAPBCConstraints::createOneBody(ParticleSet& source) {
+  OrbitalBase* RPAPBCConstraints::createOneBody(ParticleSet& source) 
+  {
     return 0;
   }
 
