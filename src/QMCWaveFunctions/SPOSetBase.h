@@ -19,8 +19,6 @@
 
 #include "Particle/ParticleSet.h"
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
-#include "QMCWaveFunctions/OrbitalSetTraits.h"
-//#define ENABLE_SMARTPOINTER
 #if defined(ENABLE_SMARTPOINTER)
 #include <boost/shared_ptr.hpp>
 #endif
