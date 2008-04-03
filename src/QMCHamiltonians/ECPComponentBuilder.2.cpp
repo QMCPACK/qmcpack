@@ -44,7 +44,7 @@ namespace qmcplusplus {
     string lloc;
     int ndown=1; 
     int nup=0;
-    int nrule=4;//default quadrature
+    //int nrule=4;//default quadrature
     Llocal = -1;
 
     OhmmsAttributeSet aAttrib;
@@ -53,7 +53,7 @@ namespace qmcplusplus {
     aAttrib.add(ndown,"npots-down");
     aAttrib.add(nup,"npots-up");
     aAttrib.add(Llocal,"l-local");
-    aAttrib.add(nrule,"nrule");
+    aAttrib.add(Nrule,"nrule");
 
     xmlNodePtr cur_semilocal = semiPtr[0];
     aAttrib.put(cur_semilocal);
@@ -161,6 +161,7 @@ namespace qmcplusplus {
     aAttrib.add(rmax,"cutoff");
     aAttrib.add(Llocal,"l-local");
     aAttrib.add(Lmax,"lmax");
+    aAttrib.add(Nrule,"nrule");
     aAttrib.put(cur);
     //const xmlChar* rptr=xmlGetProp(cur,(const xmlChar*)"cutoff");
     //if(rptr != NULL) rmax = atof((const char*)rptr);
