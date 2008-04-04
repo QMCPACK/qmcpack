@@ -26,7 +26,7 @@
 
 
 inline void
-e2iphi (std::vector<double> phi, std::vector<std::complex<double> > z)
+eval_e2iphi (std::vector<double> phi, std::vector<std::complex<double> > z)
 {
 #ifdef HAVE_ACML
   int n = phi.size();
@@ -44,7 +44,7 @@ e2iphi (std::vector<double> phi, std::vector<std::complex<double> > z)
 
 
 inline void
-e2iphi (std::vector<float> phi, std::vector<std::complex<float> > z)
+eval_e2iphi (std::vector<float> phi, std::vector<std::complex<float> > z)
 {
 #ifdef HAVE_ACML
   int n = phi.size();
