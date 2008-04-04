@@ -354,6 +354,18 @@ namespace qmcplusplus {
     return twist - IntPart (twist);
   }
   
+  inline bool 
+  EinsplineSetBuilder::TwistPair (PosType a, PosType b)
+  {
+    bool pair = true;
+    for (int n=0; n<OHMMS_DIM; n++) {
+      double d = a[n] + b[n];
+      if (std::fabs(d - round(d)) > 1.0e-8)
+	pair = false;
+    }
+    return pair;
+  }
+
   void
   EinsplineSetBuilder::AnalyzeTwists2()
   {
@@ -451,6 +463,44 @@ namespace qmcplusplus {
     IncludeTwists.clear();
     for (int i=0; i<superSets[TwistNum].size(); i++)
       IncludeTwists.push_back(superSets[TwistNum][i]);
+
+    vector<int> copyTwists;
+    // Now, find out which twists are distinct
+    for (int i=0; i<IncludeTwists.size(); i++) {
+      int ti        = IncludeTwists[i];
+      PosType twist_i = TwistAngles[ti];
+      bool distinct=true;
+      for (int j=i+1; j<IncludeTwists.size(); j++) {
+	int tj = IncludeTwists[j];
+	PosType twist_j = TwistAngles[tj];
+	PosType sum  = twist_i + twist_j;
+	PosType diff = twist_i - twist_j;
+	if (TwistPair (twist_i, twist_j)) {
+	  cerr << "twist " << twist_i << " is paired with twist "
+	       << twist_j << endl;
+	  distinct = false;
+	}
+      }
+      if (distinct)
+	DistinctTwists.push_back(ti);
+      else
+	copyTwists.push_back(ti);
+    }
+    // Now determine which distinct twists require two copies
+    MakeTwoCopies.resize(DistinctTwists.size());
+    for (int i=0; i<DistinctTwists.size(); i++) {
+      MakeTwoCopies[i] = false;
+      int ti = DistinctTwists[i];
+      PosType twist_i = TwistAngles[ti];
+      for (int j=0; j<copyTwists.size(); j++) {
+	int tj = copyTwists[j];
+	PosType twist_j = TwistAngles[tj];
+	if (TwistPair(twist_i, twist_j))
+	  MakeTwoCopies[i] = true;
+      }
+      fprintf (stderr, "Using %d copies of twist angle [%6.3f, %6.3f, %6.3f]\n",
+	       MakeTwoCopies[i] ? 2 : 1, twist_i[0], twist_i[1], twist_i[2]);
+    }
   }
   
   // This function analyzes the twist vectors to see if they lay on a
@@ -758,7 +808,6 @@ namespace qmcplusplus {
 	  splineData(ix,iy,iz) = real(rawData(ix,iy,iz));
 
     set_multi_UBspline_3d_d (orbitalSet->MultiSpline, 0, splineData.data());
-    orbitalSet->kPoints.resize(orbitalSet->getOrbitalSetSize());
 
     PosType twist, k;
     twist = TwistAngles[ti];

@@ -141,7 +141,12 @@ namespace qmcplusplus {
     // This vector stores which twist indices will be used by this
     // clone 
     vector<TinyVector<int,OHMMS_DIM> > UseTwists;
-    vector<int> IncludeTwists;
+    vector<int> IncludeTwists, DistinctTwists;
+    // This is true if the corresponding twist in DistinctTwists should
+    // should be used to generate two distinct orbitals from the real and 
+    // imaginary parts.
+    vector<bool> MakeTwoCopies;
+    inline bool TwistPair (PosType a, PosType b);
     // This maps a 3-integer twist index into the twist number in the file
     map <TinyVector<int,OHMMS_DIM>,int,Int3less> TwistMap;
     void AnalyzeTwists();
