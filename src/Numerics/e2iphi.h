@@ -42,4 +42,23 @@ e2iphi (std::vector<double> phi, std::vector<std::complex<double> > z)
 #endif
 }
 
+
+inline void
+e2iphi (std::vector<float> phi, std::vector<std::complex<float> > z)
+{
+#ifdef HAVE_ACML
+  int n = phi.size();
+  float c[n], s[n];
+  vrsa_sincosf(n, &(phi[0]), s, c);
+  for (int i=0; i<n; i++)
+    z[i] = std::complex<float>(c[i],s[i]);
+#elifdef HAVE_MKL
+  vcCIS (n, &(phi[0]), (float*) &(z[0]));
+#else
+  for (int i=0; i<n; i++)
+    sincos (phi[i], &(z[i].imag()), &(z[i].real()));
+#endif
+}
+
+
 #endif
