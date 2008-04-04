@@ -80,6 +80,9 @@ namespace qmcplusplus {
   struct BandInfo {
     int TwistIndex, BandIndex, Spin;
     double Energy;
+    // This is true if we should make distinct copies 
+    // represeninting a +k, -k pair
+    bool MakeTwoCopies;
     inline bool operator<(BandInfo other) const
     { return Energy < other.Energy; }
   };
@@ -142,6 +145,7 @@ namespace qmcplusplus {
     // clone 
     vector<TinyVector<int,OHMMS_DIM> > UseTwists;
     vector<int> IncludeTwists, DistinctTwists;
+    int NumDistinctOrbitals;
     // This is true if the corresponding twist in DistinctTwists should
     // should be used to generate two distinct orbitals from the real and 
     // imaginary parts.

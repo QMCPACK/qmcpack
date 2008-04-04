@@ -288,11 +288,6 @@ namespace qmcplusplus {
   EinsplineSetExtended<StorageType>::setOrbitalSetSize(int norbs)
   {
     OrbitalSetSize = norbs;
-    eikr.resize(norbs);
-    phase.resize(norbs);
-    StorageValueVector.resize(norbs);
-    StorageGradVector.resize(norbs);
-    StorageHessVector.resize(norbs);
   }
   
   template<typename StorageType> void
@@ -304,14 +299,23 @@ namespace qmcplusplus {
     for (int i=0; i<OHMMS_DIM; i++)
       ru[i] -= std::floor (ru[i]);
     EinsplineMultiEval (MultiSpline, ru, StorageValueVector);
-    computePhaseFactors(r);
-    for (int i=0; i<psi.size(); i++) {
+    //computePhaseFactors(r);
+    int N = StorageValueVector.size();
+    int psiIndex = 0;
+    for (int i=0; i<N; i++) {
       PosType k = kPoints[i];
       double s,c;
       double phase = -dot(r, k);
       sincos (phase, &s, &c);
       complex<double> e_mikr (c,s);
-      convert (e_mikr*StorageValueVector[i], psi[i]);
+      complex<double> psi_val = e_mikr*StorageValueVector[i];
+      psi[psiIndex] = real(psi_val);
+      psiIndex++;
+      if (MakeTwoCopies[i]) {
+	psi[psiIndex] = imag(psi_val);
+	psiIndex++;
+      }
+      //convert (e_mikr*StorageValueVector[i], psi[i]);
     }
   }
 
@@ -325,7 +329,7 @@ namespace qmcplusplus {
     for (int i=0; i<OHMMS_DIM; i++)
       ru[i] -= std::floor (ru[i]);
     EinsplineMultiEval (MultiSpline, ru, StorageValueVector);
-    computePhaseFactors(r);
+    //computePhaseFactors(r);
     for (int i=0; i<psi.size(); i++) {
       PosType k = kPoints[i];
       double s,c;
@@ -362,7 +366,7 @@ namespace qmcplusplus {
       ru[i] -= std::floor (ru[i]);
     EinsplineMultiEval (MultiSpline, ru, StorageValueVector,
 			StorageGradVector, StorageHessVector);
-    computePhaseFactors(r);
+    //computePhaseFactors(r);
     complex<double> eye (0.0, 1.0);
     for (int j=0; j<psi.size(); j++) {
       complex<double> u, laplu;
@@ -397,7 +401,7 @@ namespace qmcplusplus {
       ru[i] -= std::floor (ru[i]);
     EinsplineMultiEval (MultiSpline, ru, StorageValueVector,
 			StorageGradVector, StorageHessVector);
-    computePhaseFactors(r);
+    //computePhaseFactors(r);
     complex<double> eye (0.0, 1.0);
     for (int j=0; j<psi.size(); j++) {
       complex<double> u, laplu;
@@ -451,9 +455,11 @@ namespace qmcplusplus {
 	ru[n] -= std::floor (ru[n]);
       EinsplineMultiEval (MultiSpline, ru, StorageValueVector,
 			  StorageGradVector, StorageHessVector);
-      computePhaseFactors(r);
+      //computePhaseFactors(r);
       complex<double> eye (0.0, 1.0);
-      for (int j=0; j<OrbitalSetSize; j++) {
+      int N = StorageValueVector.size();
+      int psiIndex = 0;
+      for (int j=0; j<N; j++) {
 	complex<double> u, laplu;
 	TinyVector<complex<double>, OHMMS_DIM> gradu;
 	u = StorageValueVector[j];
@@ -467,14 +473,35 @@ namespace qmcplusplus {
 	double phase = -dot(r, k);
 	sincos (phase, &s, &c);
 	complex<double> e_mikr (c,s);
-	psi(j,i) = real(e_mikr*u);
+
+	complex<double> psi_val = e_mikr*u;
+	TinyVector<complex<double>,OHMMS_DIM> psi_grad =
+	  e_mikr*(-eye*u*ck + gradu);
+	complex<double> psi_lapl = e_mikr*(-dot(k,k)*u - 2.0*eye*dot(ck,gradu) + laplu);
+	
+	psi(psiIndex,i) = real(psi_val);
 	for (int n=0; n<3; n++)
-	  dpsi(i,j) = real(e_mikr*(-eye*u*ck + gradu));
-	d2psi(i,j) = real(e_mikr*(-dot(k,k)*u - 2.0*eye*dot(ck,gradu) + laplu));
+	  dpsi(i,psiIndex)[n] = real(psi_grad[n]);
+	d2psi(i,psiIndex) = real(psi_lapl);
+	psiIndex++;
+
+	if (MakeTwoCopies[j]) {
+	  psi(psiIndex,i) = imag(psi_val);
+	  for (int n=0; n<3; n++)
+	    dpsi(i,psiIndex)[n] = imag(psi_grad[n]);
+	  d2psi(i,psiIndex) = imag(psi_lapl);
+	  psiIndex++;
+	}
+
+	// psi(j,i) = real(e_mikr*u);
+	// for (int n=0; n<3; n++)
+	//   dpsi(i,j)[n] = real(e_mikr*(-eye*u*ck + gradu));
+	// d2psi(i,j) = real(e_mikr*(-dot(k,k)*u - 2.0*eye*dot(ck,gradu) + laplu));
 	//convert(e_mikr * u, psi(j,i));
 	//convertVec(e_mikr*(-eye*u*ck + gradu), dpsi(i,j));
 	//convert(e_mikr*(-dot(k,k)*u - 2.0*eye*dot(ck,gradu) + laplu), d2psi(i,j));
       } 
+      //cerr << "VGH psiIndex = " << psiIndex << endl;
     }
   }
   
@@ -492,7 +519,7 @@ namespace qmcplusplus {
 	ru[n] -= std::floor (ru[n]);
       EinsplineMultiEval (MultiSpline, ru, StorageValueVector,
 			  StorageGradVector, StorageHessVector);
-      computePhaseFactors(r);
+      //computePhaseFactors(r);
       complex<double> eye (0.0, 1.0);
       for (int j=0; j<OrbitalSetSize; j++) {
 	complex<double> u, laplu;

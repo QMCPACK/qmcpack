@@ -464,8 +464,10 @@ namespace qmcplusplus {
     for (int i=0; i<superSets[TwistNum].size(); i++)
       IncludeTwists.push_back(superSets[TwistNum][i]);
 
-    vector<int> copyTwists;
     // Now, find out which twists are distinct
+    DistinctTwists.clear();
+#ifndef QMC_COMPLEX
+    vector<int> copyTwists;
     for (int i=0; i<IncludeTwists.size(); i++) {
       int ti        = IncludeTwists[i];
       PosType twist_i = TwistAngles[ti];
@@ -475,11 +477,8 @@ namespace qmcplusplus {
 	PosType twist_j = TwistAngles[tj];
 	PosType sum  = twist_i + twist_j;
 	PosType diff = twist_i - twist_j;
-	if (TwistPair (twist_i, twist_j)) {
-	  cerr << "twist " << twist_i << " is paired with twist "
-	       << twist_j << endl;
+	if (TwistPair (twist_i, twist_j)) 
 	  distinct = false;
-	}
       }
       if (distinct)
 	DistinctTwists.push_back(ti);
@@ -501,6 +500,15 @@ namespace qmcplusplus {
       fprintf (stderr, "Using %d copies of twist angle [%6.3f, %6.3f, %6.3f]\n",
 	       MakeTwoCopies[i] ? 2 : 1, twist_i[0], twist_i[1], twist_i[2]);
     }
+#else
+    DistinctTwists.resize(IncludeTwists.size());
+    MakeTwoCopies.resize(IncludeTwists.size());
+    for (int i=0; i<IncludeTwists.size(); i++) {
+      DistinctTwists[i] = IncludeTwists[i];
+      MakeTwoCopies[i] = false;
+    }
+
+#endif
   }
   
   // This function analyzes the twist vectors to see if they lay on a
@@ -624,12 +632,13 @@ namespace qmcplusplus {
       eigenstatesGroup = "/eigenstates";
 
     SortBands.clear();
-    for (int ti=0; ti<IncludeTwists.size(); ti++) {
-      int tindex = IncludeTwists[ti];
+    for (int ti=0; ti<DistinctTwists.size(); ti++) {
+      int tindex = DistinctTwists[ti];
       for (int bi=0; bi<NumBands; bi++) {
 	BandInfo band;
 	band.TwistIndex = tindex;
 	band.BandIndex  = bi;
+	band.MakeTwoCopies = MakeTwoCopies[ti];
 	
 	// Read eigenenergy from file
 	ostringstream ePath, sPath;
@@ -664,6 +673,18 @@ namespace qmcplusplus {
       cerr << "Sorting the bands now:\n";
       sort (SortBands.begin(), SortBands.end());
     }
+    
+    int orbIndex = 0;
+    int numOrbs = 0;
+    while (numOrbs < OrbitalSet->getOrbitalSetSize()) {
+      if (SortBands[orbIndex].MakeTwoCopies)
+	numOrbs += 2;
+      else
+	numOrbs++;
+      orbIndex++;
+    }
+    NumDistinctOrbitals = orbIndex;
+    cerr << "We will read " << NumDistinctOrbitals << " distinct orbitals.\n";
   }
 
 
@@ -749,13 +770,21 @@ namespace qmcplusplus {
   EinsplineSetBuilder::ReadBands 
   (int spin, EinsplineSetExtended<double>* orbitalSet)
   {
-    int N = orbitalSet->getOrbitalSetSize();
+    //int N = orbitalSet->getOrbitalSetSize();
+    int N = NumDistinctOrbitals;
+    orbitalSet->kPoints.resize(N);
+    orbitalSet->MakeTwoCopies.resize(N);
+    orbitalSet->StorageValueVector.resize(N);
+    orbitalSet->StorageGradVector.resize(N);
+    orbitalSet->StorageHessVector.resize(N);
+    orbitalSet->phase.resize(N);
+    orbitalSet->eikr.resize(N);
     // Read in k-points
-    orbitalSet->kPoints.resize(orbitalSet->getOrbitalSetSize());
     for (int iorb=0; iorb<N; iorb++) {
       int ti = SortBands[iorb].TwistIndex;
       PosType twist  = TwistAngles[ti];
       orbitalSet->kPoints[iorb] = orbitalSet->PrimLattice.k_cart(twist);
+      orbitalSet->MakeTwoCopies[iorb] = SortBands[iorb].MakeTwoCopies;
     }
     
     // First, check to see if we have already read this in
@@ -876,13 +905,22 @@ namespace qmcplusplus {
   EinsplineSetBuilder::ReadBands 
   (int spin, EinsplineSetExtended<complex<double> >* orbitalSet)
   {
-    int N = orbitalSet->getOrbitalSetSize();
+    // int N = orbitalSet->getOrbitalSetSize();
+    int N = NumDistinctOrbitals;
+    cerr << "NumDistinctOrbitals = " << N << endl;
+    orbitalSet->kPoints.resize(N);
+    orbitalSet->MakeTwoCopies.resize(N);
+    orbitalSet->StorageValueVector.resize(N);
+    orbitalSet->StorageGradVector.resize(N);
+    orbitalSet->StorageHessVector.resize(N);
+    orbitalSet->phase.resize(N);
+    orbitalSet->eikr.resize(N);
     // Read in k-points
-    orbitalSet->kPoints.resize(orbitalSet->getOrbitalSetSize());
     for (int iorb=0; iorb<N; iorb++) {
       int ti = SortBands[iorb].TwistIndex;
       PosType twist  = TwistAngles[ti];
       orbitalSet->kPoints[iorb] = orbitalSet->PrimLattice.k_cart(twist);
+      orbitalSet->MakeTwoCopies[iorb] = SortBands[iorb].MakeTwoCopies;
     }
     
     // First, check to see if we have already read this in

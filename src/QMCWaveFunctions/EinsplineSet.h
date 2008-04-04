@@ -179,7 +179,7 @@ namespace qmcplusplus {
     StorageGradVector_t  StorageGradVector;
     StorageHessVector_t  StorageHessVector;
     // True if we should unpack this orbital into two copies
-    Vector<bool>         MakeTwoCopies;
+    vector<bool>         MakeTwoCopies;
     // k-points for each orbital
     Vector<TinyVector<double,OHMMS_DIM> > kPoints;
 
@@ -221,12 +221,12 @@ namespace qmcplusplus {
   inline void EinsplineSetExtended<StorageType>::computePhaseFactors(TinyVector<double,OHMMS_DIM> r)
   {
 #ifdef HAVE_MKL
-    for (int i=0; i<OrbitalSetSize; i++) 
+    for (int i=0; i<kPoints.size(); i++) 
       phase[i] = -dot(r, kPoints[i]);
     vzCIS(OrbitalSetSize, phase, (double*)eikr.data());
 #else
     double s, c;
-    for (int i=0; i<OrbitalSetSize; i++) {
+    for (int i=0; i<kPoints.size(); i++) {
       phase[i] = -dot(r, kPoints[i]);
       sincos (phase[i], &s, &c);
       eikr[i] = complex<double>(c,s);
