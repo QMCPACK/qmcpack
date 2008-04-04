@@ -25,13 +25,13 @@ SET (EXECUTABLE_OUTPUT_PATH ${qmcpack_BINARY_DIR}/bin CACHE PATH "Single output 
 # QMC_OMP = enable OMP 
 # QMC_BITS = 32/64 bit
 ######################################################################
-SET(OHMMS_DIM 3)
+SET(OHMMS_DIM 3 CACHE INTEGER "Select physical dimension")
 SET(OHMMS_INDEXTYPE int)
 SET(OHMMS_PRECISION double)
-SET(QMC_COMPLEX 0)
-SET(QMC_MPI 1)
-SET(QMC_OMP 0)
-SET(QMC_BITS 32)
+SET(QMC_COMPLEX 0 CACHE BOOL "Build for complex binary")
+SET(QMC_MPI 1 CACHE BOOL "Enable/disable MPI")
+SET(QMC_OMP 0 CACHE BOOL "Enable/disable OpenMP")
+SET(QMC_BITS 32 CACHE INTEGER "Select OS bit")
 
 ######################################################################
 # Standard test
