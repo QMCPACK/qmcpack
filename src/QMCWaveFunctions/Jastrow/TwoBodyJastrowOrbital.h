@@ -19,6 +19,7 @@
 #include "Configuration.h"
 #include  <map>
 #include "QMCWaveFunctions/OrbitalBase.h"
+#include "QMCWaveFunctions/DiffOrbitalBase.h"
 #include "Particle/DistanceTableData.h"
 #include "Particle/DistanceTable.h"
 
@@ -37,6 +38,7 @@ namespace qmcplusplus {
     const DistanceTableData* d_table;
 
     int N,NN;
+    int NumGroups;
     RealType DiffVal, DiffValSum;
     ParticleAttrib<RealType> U,d2U,curLap,curVal;
     ParticleAttrib<PosType> dU,curGrad;
@@ -78,18 +80,38 @@ namespace qmcplusplus {
       LastAddressOfdU = FirstAddressOfdU + dU.size()*DIM;
 
       PairID.resize(N,N);
-      int nsp=p.groups();
-      for(int i=0; i<N; i++)
-	for(int j=0; j<N; j++) 
+      int nsp=NumGroups=p.groups();
+      for(int i=0; i<N; ++i)
+	for(int j=0; j<N; ++j) 
 	  PairID(i,j) = p.GroupID[i]*nsp+p.GroupID[j];
+      F.resize(nsp*nsp,0);
     }
 
-    void insert(const string& aname, FT* j) {
+    void addFunc(const string& aname, int ia, int ib, FT* j)
+    {
+      if(ia==ib)
+      {
+        if(ia==0)//first time, assign everything
+        {
+          int ij=0;
+          for(int ig=0; ig<NumGroups; ++ig) 
+            for(int jg=0; jg<NumGroups; ++jg, ++ij) 
+              if(F[ij]==0) F[ij]=j;
+        }
+      }
+      else 
+      {
+        F[ia*NumGroups+ib]=j;
+        if(ia<ib) F[ib*NumGroups+ia]=j; 
+      }
+
       J2Unique[aname]=j;
     }
 
-    void insert(std::map<std::string,FT*>& j2unique) {
-      J2Unique.insert(j2unique.begin(),j2unique.end());
+    //evaluate the distance table with els
+    void resetTargetParticleSet(ParticleSet& P) 
+    {
+      d_table = DistanceTable::add(P);
     }
 
     ///reset the value of all the unique Two-Body Jastrow functions
@@ -100,14 +122,8 @@ namespace qmcplusplus {
         (*it).second->resetParameters(optVariables); 
         ++it;
       }
-    }
 
-    //Add a functor
-    void addFunc(FT* afunc) { F.push_back(afunc); }
-
-    //evaluate the distance table with els
-    void resetTargetParticleSet(ParticleSet& P) {
-      d_table = DistanceTable::add(P);
+      if(dPsi) dPsi->resetParameters(optVariables);
     }
 
     /** 
