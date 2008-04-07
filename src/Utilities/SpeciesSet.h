@@ -54,9 +54,12 @@ public:
   //! Destructor
   virtual ~SpeciesSet();
 
+  ///return the number of species
+  inline int size() const { return TotalNum;}
+  ///return the number of species
   inline int getTotalNum() const { return TotalNum; }
+  ///set the number of species
   inline void setTotalNum(const unsigned n) { TotalNum = n;}
-
   //! return the number of attributes in our list
   inline int numAttributes() const { return d_attrib.size();}
 
