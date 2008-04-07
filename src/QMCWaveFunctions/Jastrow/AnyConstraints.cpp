@@ -18,7 +18,8 @@
 #include "QMCWaveFunctions/Jastrow/CompositeFunctor.h"
 #include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbital.h"
 #include "QMCWaveFunctions/Jastrow/OneBodyJastrowOrbital.h"
-#include "Utilities/IteratorUtility.h"
+//#include "QMCWaveFunctions/Jastrow/DiffTwoBodyJastrowOrbital.h"
+//#include "QMCWaveFunctions/Jastrow/DiffOneBodyJastrowOrbital.h"
 
 namespace qmcplusplus {
   AnyConstraints::AnyConstraints(ParticleSet& p, TrialWaveFunction& psi):
@@ -42,7 +43,8 @@ namespace qmcplusplus {
   void AnyConstraints::resetParameters(OptimizableSetType& optVariables) 
   {
     map<string,BasisGroupType*>::iterator it(BasisGroups.begin()),it_end(BasisGroups.end());
-    while(it != it_end) {
+    while(it != it_end) 
+    {
       (*it).second->Out_->resetParameters(optVariables);
       ++it;
     }
@@ -50,11 +52,13 @@ namespace qmcplusplus {
 
   void AnyConstraints::addOptimizables(OptimizableSetType& outVars) 
   {
-    map<string,BasisGroupType*>::iterator it(BasisGroups.begin()),it_end(BasisGroups.end());
-    while(it != it_end) {
-      (*it).second->In_->addOptimizables(outVars);
-      ++it;
-    }
+    //createBasis will take care of this. Do not add again
+    //map<string,BasisGroupType*>::iterator it(BasisGroups.begin()),it_end(BasisGroups.end());
+    //while(it != it_end) 
+    //{
+    //  (*it).second->In_->addOptimizables(outVars);
+    //  ++it;
+    //}
   }
 
   void AnyConstraints::addSingleBasisPerSpecies(xmlNodePtr cur) 
@@ -125,8 +129,10 @@ namespace qmcplusplus {
  {
     string type("WM");
 
+    RealType cusp=0.0;
     OhmmsAttributeSet aAttrib;
     aAttrib.add(type,"type");
+    aAttrib.add(cusp,"cusp");
     aAttrib.put(cur);
 
     BGContainerType::iterator it(BasisGroups.find(elementType));
@@ -141,6 +147,8 @@ namespace qmcplusplus {
       curBG=(*it).second;
     }
 
+    //overwrite a cusp
+    curBG->Cusp=cusp;
     return curBG;
  }
 
@@ -150,12 +158,14 @@ namespace qmcplusplus {
     ComboFuncType* acombo=new ComboFuncType;
     curBG->In_ = acombo; 
 
+    DerivFuncType* aderiv=new DerivFuncType(curBG->Rcut);
+
+    string radID("0");
     cur=cur->children;
     while(cur != NULL) {
       string cname((const char*)(cur->name));
       if(cname == "radfunc") {
         OhmmsAttributeSet rAttrib;
-        string radID("0");
         string rfuncName("WM");
         RealType exponent=1.0;
         RealType contraction=1.0;
@@ -164,38 +174,59 @@ namespace qmcplusplus {
         rAttrib.add(radID,"id"); //rAttrib.add(a->B0,"b");
         rAttrib.add(exponent,"exponent"); 
         rAttrib.add(contraction,"contraction"); 
-        rAttrib.add(rpower,"node"); 
+        //rAttrib.add(rpower,"node"); 
         rAttrib.add(rcut,"rcut"); 
         rAttrib.add(rfuncName,"type"); 
         rAttrib.put(cur);
 
-        OptimizableFunctorBase<RealType>* a=0;
+
+        OptimizableFunctorBase<RealType> *a=0, *da=0;
         if(rfuncName == "cusp")
         {
-          a= new CuspCorrectionFunctor<RealType>(exponent,rcut);
+          //a= new CuspCorrectionFunctor<RealType>(exponent,rcut);
+          curBG->Cusp=contraction;
           rpower=0;//overwrite the power
         }
         else
         {
           a= new WMFunctor<RealType>(exponent,rcut);
+          a->put(cur);
+          string id_c=radID+"_C";
+          acombo->addComponent(a,contraction,id_c);
+          //add a component to the derivative
+          aderiv->addComponent(contraction,exponent,radID);
         }
-        a->put(cur);
-        string id_c=radID+"_C";
-        if(rpower == 0)
-        {
-          acombo->addComponent(a,contraction,id_c,cur);
-        }
-        else
-        {
-          AnyTimesRnFunctor<RealType>* awrap=new AnyTimesRnFunctor<RealType>(a,rpower);
-          acombo->addComponent(awrap,contraction,id_c,cur);
-        }
+        //else
+        //{//this is useless
+        //  AnyTimesRnFunctor<RealType>* awrap=new AnyTimesRnFunctor<RealType>(a,rpower);
+        //  acombo->addComponent(awrap,contraction,id_c,cur);
+        //}
         app_log()  << "<radfunc id=\"" << radID << "\" exponent=\""<< exponent 
           << "\" contraction=\"" << contraction 
           << "\" node=\"" << rpower << "\" rcut=\"" << rcut << "\"/>" << endl;
       }
       cur=cur->next;
     }
+
+    //add variables to the optimization list
+    aderiv->addOptimizables(targetPsi.VarList);
+
+    //for(int i=0; i<targetPsi.VarList.size(); ++i)
+    //{
+    //  cout << targetPsi.VarList.getName(i) << " " << targetPsi.VarList.getValue(i) << endl;
+    //}
+    //non-zero cusp
+    if(abs(curBG->Cusp)>numeric_limits<RealType>::epsilon())
+    {
+      CuspCorrectionFunctor<RealType> *a  = new CuspCorrectionFunctor<RealType>(2.0,curBG->Rcut);
+      app_log() << "  Adding a cusp term: " << curBG->Cusp << "* (-1/b exp(-br)), b=" << a->E << endl;
+      string cusp_tag=radID+"_cusp"; //non optimizable
+      acombo->addComponent(a,curBG->Cusp,cusp_tag,false);//this cannot be modified
+    }
+
+    curBG->Deriv_ = aderiv;
+    //add optimizable values now
+    aderiv->addOptimizables(targetPsi.VarList);
  }
 
   OrbitalBase* AnyConstraints::createTwoBody() {
@@ -230,19 +261,31 @@ namespace qmcplusplus {
     InFuncType* infunc=curGroup->In_;
     OutFuncType* nfunc= new OutFuncType(infunc, curGroup->Rcut, curGroup->NumGridPoints);
     curGroup->Out_ = nfunc;
+
 #if !defined(HAVE_MPI)
-    if(PrintTables) {
+    if(PrintTables) 
+    {
       ofstream fout("J2.dat");
       fout.setf(ios::scientific, ios::floatfield);
       fout << "# Two-body Jastrow generated by AnyContraints::createTwoBody" << endl;
       nfunc->print(fout);
     }
 #endif
+
     //create a Jastrow function
     typedef TwoBodyJastrowOrbital<OutFuncType> JeeType;
     JeeType *J2 = new JeeType(targetPtcl);
-    J2->insert("Jee",nfunc);
-    for(int i=0; i<4; i++) J2->addFunc(nfunc);
+    J2->addFunc("Jee",0,0,nfunc);
+
+    //2008-04-07 derivatives not complete
+    //typedef DiffTwoBodyJastrowOrbital<DerivFuncType> dJeeType;
+    //dJeeType *dJ2 = new dJeeType(targetPtcl);
+    //dJ2->addFunc("Jee",0,0,curGroup->Deriv_);
+    //dJ2->initialize();
+
+    ////add a derivative function
+    //J2->setDiffOrbital(dJ2);
+
     return J2;
   }
 
@@ -263,16 +306,26 @@ namespace qmcplusplus {
     typedef OneBodyJastrowOrbital<OutFuncType> JneType;
     JneType* jne=new JneType(source,targetPtcl);
 
+    //typedef DiffOneBodyJastrowOrbital<DerivFuncType> dJneType;
+    //dJneType *djne = new dJneType(source,targetPtcl);
+
+    bool foundit=false;
     BGContainerType::iterator jit(BasisGroups.begin()), jit_end(BasisGroups.end());
     while(jit != jit_end)
     {
       int ig=source.getSpeciesSet().findSpecies((*jit).first);
       if(ig < nSpecies) //should not add any species here
       {
+        foundit=true;
         BasisGroupType* curG((*jit).second);
+
         OutFuncType* nfunc= new OutFuncType(curG->In_,curG->Rcut, curG->NumGridPoints);
         jne->addFunc(ig,nfunc);
         curG->Out_ = nfunc;
+
+        //add derivatives
+        //djne->addFunc(ig,curG->Deriv_);
+
 #if !defined(HAVE_MPI)
         if(PrintTables) {
           char fname[16];
@@ -282,11 +335,23 @@ namespace qmcplusplus {
           fout << "# One-body Jastrow " << source.getSpeciesSet().speciesName[ig] 
             << " generated by AnyContraints::createOneBody" << endl;
           nfunc->print(fout);
+
         }
 #endif
       }
       ++jit;
     }
+
+    //if(foundit) 
+    //{
+    //  djne->initialize();
+    //  jne->setDiffOrbital(djne);
+    //}
+    //else
+    //{
+    //  delete jne; jne=0;
+    //  delete djne;
+    //}
 
     return jne;
   }
