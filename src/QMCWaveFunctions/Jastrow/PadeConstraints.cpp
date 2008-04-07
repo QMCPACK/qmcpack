@@ -17,7 +17,10 @@
 #include "QMCWaveFunctions/Jastrow/PadeConstraints.h"
 #include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbital.h"
 #include "QMCWaveFunctions/Jastrow/OneBodyJastrowOrbital.h"
+#include "QMCWaveFunctions/DiffOrbitalBase.h"
 #include "Utilities/IteratorUtility.h"
+#include "QMCWaveFunctions/Jastrow/DiffTwoBodyJastrowOrbital.h"
+#include "QMCWaveFunctions/Jastrow/DiffOneBodyJastrowOrbital.h"
 
 namespace qmcplusplus {
 
@@ -30,10 +33,12 @@ namespace qmcplusplus {
       JComponent.set(MULTIPLE);
       JComponent.set(ONEBODY);
       JComponent.set(TWOBODY);
+      //dPsi=new AnalyticDiffOrbital(p.getTotalNum(),0);
     }
    
   PadeConstraints::~PadeConstraints() {
     delete_iter(FuncList.begin(), FuncList.end());
+    delete_iter(dFuncList.begin(), dFuncList.end());
   }
 
   bool PadeConstraints::put(xmlNodePtr cur) 
@@ -49,7 +54,9 @@ namespace qmcplusplus {
 
   void PadeConstraints::addOptimizables(OptimizableSetType& outVars) 
   {
-    outVars[ID_B]=B;
+    //outVars[ID_B]=B;
+    int loc=outVars.addVariable(ID_B,B);
+    //dPsi->setBounds(loc);
   }
 
   void PadeConstraints::resetParameters(OptimizableSetType& optVariables)
@@ -58,9 +65,15 @@ namespace qmcplusplus {
     if(it != optVariables.end()) 
     {
       B=(*it).second;
-      for(int i=0; i<FuncList.size(); i++) {
+      for(int i=0; i<FuncList.size(); i++) 
+      {
         FuncList[i]->B0=B;
         FuncList[i]->resetParameters(optVariables);
+      }
+      for(int i=0; i<dFuncList.size(); i++) 
+      {
+        dFuncList[i]->B0=B;
+        dFuncList[i]->resetParameters(optVariables);
       }
     }
   }
@@ -69,26 +82,62 @@ namespace qmcplusplus {
   {
     typedef TwoBodyJastrowOrbital<FuncType> JeeType;
     JeeType *J2 = new JeeType(targetPtcl);
-    if(IgnoreSpin) {
-      app_log() << "  PadeConstraints::Adding Spin-independent Pade Two-Body Jastrow " << endl;
-      FuncType *func=new FuncType(-0.5,B);
-      for(int i=0; i<4; i++) {
-        J2->addFunc(func);
-      }
-      FuncList.push_back(func);
-    } else {
-      app_log() << "  PadeConstraints::Adding Spin-dependent Pade Two-Body Jastrow " << endl;
-      FuncType *funcUU=new FuncType(-0.25,B);
-      FuncType *funcUD=new FuncType(-0.5,B);
-      J2->addFunc(funcUU);
-      J2->addFunc(funcUD);
-      J2->addFunc(funcUD);
-      J2->addFunc(funcUU);
 
+    //typedef DPadeDBFunctor<RealType> DerivFuncType;
+    //typedef TwoBodyJastrowOrbital<DerivFuncType> DerivJeeType;
+    //DerivJeeType *dJ2= new DerivJeeType(targetPtcl);
+
+    SpeciesSet& species(targetPtcl.getSpeciesSet());
+    RealType q=species(0,species.addAttribute("charge"));
+    app_log() << endl << "  PadeConstraints::createTwoBody " << endl;
+
+    if(IgnoreSpin) 
+    {
+      RealType cusp=0.5*q;
+      FuncType *func=new FuncType(cusp,B);
+
+      J2->addFunc("pade_uu",0,0,func);
+      FuncList.push_back(func);
+
+      //DerivFuncType *dfunc=new DerivFuncType(cusp,B);
+      //dJ2->addFunc("pade_uu",0,0,dfunc);
+      //dFuncList.push_back(dfunc);
+      app_log() << "    Adding Spin-independent Pade Two-Body Jastrow Cusp " << cusp<< endl;
+    } else {
+      RealType cusp_uu=0.25*q;
+      RealType cusp_ud=0.5*q;
+      FuncType *funcUU=new FuncType(cusp_uu,B);
+      FuncType *funcUD=new FuncType(cusp_ud,B);
+      J2->addFunc("pade_uu",0,0,funcUU);
+      J2->addFunc("pade_ud",0,1,funcUD);
       FuncList.push_back(funcUU);
       FuncList.push_back(funcUD);
+
+      //DerivFuncType *dfuncUU=new DerivFuncType(cusp_uu,B);
+      //DerivFuncType *dfuncUD=new DerivFuncType(cusp_ud,B);
+      //dJ2->addFunc("pade_uu",0,0,dfuncUU);
+      //dJ2->addFunc("pade_ud",0,1,dfuncUD);
+      //dFuncList.push_back(dfuncUU);
+      //dFuncList.push_back(dfuncUD);
+
+      app_log() << "    Adding Spin-dependent Pade Two-Body Jastrow " << endl;
+      app_log() << "      parallel spin     " << cusp_uu << endl;
+      app_log() << "      antiparallel spin " << cusp_ud << endl;
     }
-    app_log() << "  PadeConstraints:: B = " << B <<endl;
+
+//#if defined(ENABLE_SMARTPOINTER)
+//    if(!dPsi.get())
+//      dPsi = DiffOrbitalBasePtr(new AnalyticDiffOrbital(targetPtcl.getTotalNum(),dJ2));
+//#else
+//    if(dPsi==0) 
+//      dPsi=new AnalyticDiffOrbital(targetPtcl.getTotalNum(),dJ2);
+//#endif
+//    else
+//      dPsi->addOrbital(dJ2);
+//
+//    dPsi->resetTargetParticleSet(targetPtcl);
+
+    app_log() << "  PadeConstraints:: B = " << B <<endl << endl;
     return J2;
   }
 
@@ -96,16 +145,30 @@ namespace qmcplusplus {
     app_log() << "  PadeBuilder::Adding Pade One-Body Jastrow with effective ionic charges." << endl;
     typedef OneBodyJastrowOrbital<FuncType> JneType;
     JneType* J1 = new JneType(source,targetPtcl);
+
+    //typedef OneBodyJastrowOrbital<DerivFuncType> DerivJneType;
+    //DerivJneType* dJ1=new DerivJneType(source,targetPtcl);
+
     SpeciesSet& Species(source.getSpeciesSet());
     int ng=Species.getTotalNum();
     int icharge = Species.addAttribute("charge");
     for(int ig=0; ig<ng; ig++) {
       RealType zeff=Species(icharge,ig);
-      app_log() << "    " << Species.speciesName[ig] <<  " Zeff = " << zeff << endl;
-      FuncType *func=new FuncType(-zeff,B,std::pow(2*zeff,0.25));
+      RealType sc=std::pow(2*zeff,0.25);
+      //RealType sc=1.0;
+      FuncType *func=new FuncType(-zeff,B,sc);
       J1->addFunc(ig,func);
       FuncList.push_back(func);
+
+      //DerivFuncType *dfunc=new DerivFuncType(-zeff,B,sc);
+      //dJ1->addFunc(ig,dfunc);
+      //dFuncList.push_back(dfunc);
+
+      app_log() << "    " << Species.speciesName[ig] <<  " Zeff = " << zeff << " B= " << B*sc << endl;
     }
+
+    //add dJ1 to dPsi
+    //dPsi->addOrbital(dJ1);
     return J1;
   }
 
@@ -167,18 +230,16 @@ namespace qmcplusplus {
     if(IgnoreSpin) {
       app_log() << "  ScaledPadeConstraints::Adding Spin-independent Pade Two-Body Jastrow " << endl;
       FuncType *func=new FuncType(-0.5,B,C);
-      for(int i=0; i<4; i++) {
-        J2->addFunc(func);
-      }
+
+      J2->addFunc("pade_uu",0,0,func);
+      //dJ2->addFunc("pade_uu",0,0,dfunc);
       FuncList.push_back(func); 
     } else {
       app_log() << "  ScaledPadeConstraints::Adding Spin-dependent Pade Two-Body Jastrow " << endl;
       FuncType *funcUU=new FuncType(-0.25,B,C);
       FuncType *funcUD=new FuncType(-0.5,B,C);
-      J2->addFunc(funcUU);
-      J2->addFunc(funcUD);
-      J2->addFunc(funcUD);
-      J2->addFunc(funcUU);
+      J2->addFunc("pade_uu",0,0,funcUU);
+      J2->addFunc("pade_ud",0,1,funcUD);
 
       FuncList.push_back(funcUU);
       FuncList.push_back(funcUD);
@@ -187,10 +248,10 @@ namespace qmcplusplus {
     return J2;
   }
 
-  OrbitalBase* 
+  OrbitalBase*
     ScaledPadeConstraints::createOneBody(ParticleSet& source) {
     //return 0 for now
-    return 0;
+      return 0;
   }
 
   //////////////////////////////////////////
