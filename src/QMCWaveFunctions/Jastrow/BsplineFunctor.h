@@ -31,6 +31,7 @@ namespace qmcplusplus {
     using OptimizableFunctorBase<T>::FirstIndex;
     using OptimizableFunctorBase<T>::LastIndex;
     int NumParams;
+    int Dummy;
     static const real_type A[16], dA[16], d2A[16];
     real_type Rcut, DeltaR, DeltaRInv;
     real_type CuspValue;
@@ -43,7 +44,8 @@ namespace qmcplusplus {
     std::string elementType, pairType;
 
     ///constructor
-    BsplineFunctor() : NumParams(0), Rcut(0.0), CuspValue(0.0)
+    BsplineFunctor(real_type cusp=0.0) : 
+      NumParams(0), Rcut(0.0), CuspValue(cusp)
     {
     }
 
@@ -189,18 +191,10 @@ namespace qmcplusplus {
       SplineDerivs[i+2][2] = DeltaRInv * DeltaRInv * (d2A[10]*tp[2] + d2A[11]*tp[3]);
       SplineDerivs[i+3][2] = DeltaRInv * DeltaRInv * (d2A[14]*tp[2] + d2A[15]*tp[3]);
       
+      int imin=std::max(i,1);
       int imax=std::min(i+4,NumParams+1);
-      if(i)
-      {
-        for (int n=i; n<imax; n++)
-          derivs[n-1] = SplineDerivs[n];
-      }
-      else
-      {
-        for (int n=1; n<imax; n++)
-          derivs[n-1] = SplineDerivs[n];
-        derivs[1]+=SplineDerivs[0];
-      }
+      for (int n=imin; n<imax; ++n) derivs[n-1] = SplineDerivs[n];
+      derivs[1]+=SplineDerivs[0];
 
       return true;
     }
@@ -218,32 +212,18 @@ namespace qmcplusplus {
     
     bool put(xmlNodePtr cur) 
     {
-      CuspValue = -1.0e10;
+      //CuspValue = -1.0e10;
       NumParams = 0;
       Rcut = 0.0;
       OhmmsAttributeSet rAttrib;
-      rAttrib.add(elementType, "elementType");
-      rAttrib.add(pairType, "pairType");
       rAttrib.add(NumParams,   "size");
-      rAttrib.add(CuspValue,   "cusp");
       rAttrib.add(Rcut,        "rcut");
       rAttrib.put(cur);
-
-      // If the cusp value is not explicitly set, set it from the pair type. 
-      if (CuspValue < -1.0e9) {
-	if ((pairType=="uu") || (pairType=="dd"))
-	  CuspValue = -0.25;
-	else if ((pairType=="ud") || (pairType=="du"))
-	  CuspValue = -0.5;
-	else
-	  CuspValue = 0.0;
-      }
 
       if (NumParams == 0) {
 	app_error() << "You must specify a positive number of parameters for the "
 		    << "Bspline jastrow function.\n";
 	APP_ABORT("BsplineFunctor::put failed. No parameters are given");
-
       }
       else
       {
@@ -251,44 +231,43 @@ namespace qmcplusplus {
       }
 
       resize (NumParams);
+
       // Now read coefficents
       xmlNodePtr xmlCoefs = cur->xmlChildrenNode;
-      bool haveCoefs = false;
-      while (xmlCoefs != NULL) {
-	if ((char*)xmlCoefs->name == std::string("coefficients")) {
-	  string type, id;
-	  OhmmsAttributeSet cAttrib;
-	  cAttrib.add(id, "id");
-	  cAttrib.add(type, "type");
-	  cAttrib.put(xmlCoefs);
-	  
-	  if (type != "Array") {
-	    app_error() << "Unknown correlation type """ << type 
-			<< """ in BsplineFunctor.\n"
-			<< "Resetting to ""Array"".\n";
-	    xmlNewProp (xmlCoefs, (const xmlChar*) "type", 
-			(const xmlChar*) "Array");
-	  }
-	  
-	  haveCoefs = true;
-	  std::stringstream sstr;
-	  sstr << (char*)xmlCoefs->xmlChildrenNode->content;
-	  for (int i=0; i<NumParams; i++)
-	    sstr >> Parameters[i];
-	  
-	  // Setup parameter names
-	  for (int i=0; i< NumParams; i++) {
-	    std::stringstream sstr;
-	    sstr << id << "_" << i;
-	    ParameterNames.push_back(sstr.str());
-	  }
+      while (xmlCoefs != NULL) 
+      {
+        string cname((const char*)xmlCoefs->name);
+        if (cname == "coefficients") 
+        {
+          string type("0"), id("0");
+          OhmmsAttributeSet cAttrib;
+          cAttrib.add(id, "id");
+          cAttrib.add(type, "type");
+          cAttrib.put(xmlCoefs);
 
-	  cerr << "Parameter     Name      Value\n";
-	  for (int i=0; i<ParameterNames.size(); i++)
-	    cerr << "    " << i << "         " << ParameterNames[i] 
-		 << "       " << Parameters[i] << endl;
-	}
-	xmlCoefs = xmlCoefs->next;
+          if (type != "Array") {
+            app_error() << "Unknown correlation type """ << type 
+              << """ in BsplineFunctor.\n"
+              << "Resetting to ""Array"".\n";
+            xmlNewProp (xmlCoefs, (const xmlChar*) "type", (const xmlChar*) "Array");
+          }
+
+          //vector<T> can be read by this
+          putContent(Parameters,xmlCoefs);
+
+          // Setup parameter names
+          for (int i=0; i< NumParams; i++) {
+            std::stringstream sstr;
+            sstr << id << "_" << i;
+            ParameterNames.push_back(sstr.str());
+          }
+
+          app_log() << "Parameter     Name      Value\n";
+          for (int i=0; i<ParameterNames.size(); i++)
+            app_log() << "    " << i << "         " << ParameterNames[i] 
+              << "       " << Parameters[i] << endl;
+        }
+        xmlCoefs = xmlCoefs->next;
       }
 
       reset();
@@ -320,6 +299,21 @@ namespace qmcplusplus {
 	  Parameters[i] = it->second;
 	}
 	reset();
+      }
+    }
+
+
+    void print(std::ostream& os)
+    {
+      int n=100;
+      T d=Rcut/100.,r=0;
+      T u,du,d2du;
+      for(int i=0; i<n; ++i)
+      {
+        u=evaluate(r,du,d2du);
+        os << setw(22) << r << setw(22) << u << setw(22) << du
+          << setw(22) << d2du << std::endl;
+        r+=d;
       }
     }
   };
