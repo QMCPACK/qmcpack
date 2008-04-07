@@ -19,6 +19,7 @@
 #include "QMCWaveFunctions/Jastrow/LRTwoBodyJastrow.h"
 #include "QMCWaveFunctions/Jastrow/SplineFunctors.h"
 #include "LongRange/LRHandlerTemp.h"
+//#include "QMCWaveFunctions/DiffOrbitalBase.h"
 //#include "LongRange/DummyLRHandler.h"
 #include "Utilities/IteratorUtility.h"
 #include "OhmmsData/ParameterSet.h"
@@ -142,11 +143,17 @@ namespace qmcplusplus {
     realHandler= new LRHandlerTemp<RPABreakup<RealType>,LPQHIBasis>(targetPtcl,Kc);
     realHandler->Breakup(targetPtcl,Rs);
 
+    //For derivatives, commented out 2008-04-07
+    //derivHandler= new LRHandlerTemp<DerivRPABreakup<RealType>,LPQHIBasis>(targetPtcl,Kc);
+    //derivHandler->Breakup(targetPtcl,Rs);
+
     //assign realHandler to myHandler
     myHandler=realHandler;
 
     //add the handler to the set so that we can reuse it
     handlerSet[MyName]=myHandler;
+    string dname="d"+MyName;
+    handlerSet[dname]=derivHandler;
 
     //JK 2008-01-08: Disable overwriting kspace handler
     ////show how to overwrite  the kspace
@@ -166,8 +173,9 @@ namespace qmcplusplus {
   }
 
   void RPAPBCConstraints::addOptimizables(OptimizableSetType& outVars) {
+    //outVars.addVariable(ID_Rs,Rs);
     //potentially add Rcut
-    outVars[ID_Rs]=Rs;
+    //outVars[ID_Rs]=Rs;
     if(LongRangeRPA) LongRangeRPA->put(NULL,outVars);
   }
 
@@ -180,15 +188,15 @@ namespace qmcplusplus {
       Rs=(*it).second;
       //std::cout<<"resetting a parameter: "<<(*it).first<<" to: "<<(*it).second<<endl;
       //myHandler->Breakup(targetPtcl,(*it).second);
-      if(OwnHandler) realHandler->Breakup(targetPtcl,(*it).second);
+      if(OwnHandler) realHandler->Breakup(targetPtcl,Rs);
       //JK: Don't know why we need this
       //myHandler=realHandler;
 
-      //realHandler->resetTargetParticleSet(targetPtcl,(*it).second);
+      realHandler->resetTargetParticleSet(targetPtcl,Rs);
       if(LongRangeRPA) LongRangeRPA->resetParameters(optVariables);
     
       //reset the numerical functor
-      nfunc->initialize(sra, myGrid);
+      nfunc->initialize(SRA, myGrid);
 
 #if !defined(HAVE_MPI)
       ofstream fout("rpa.short.dat");
@@ -200,13 +208,6 @@ namespace qmcplusplus {
       }
 #endif
     }
-
-//     std::cout<<" RPAPBCConstraints::createTwoBody() "<<endl;
-//     j2 = TwoBodyJastrowOrbital<FuncType>(targetPtcl);
-//     for (int i=0; i<4; i++) j2->addFunc(nfunc);
-//     //j2->insert("spline",nfunc);
-//     ShortRangeRPA=j2;
-
   }
 
   /** create TwoBody Jastrow using LR breakup method
@@ -233,9 +234,9 @@ namespace qmcplusplus {
 
       //create the numerical functor
       nfunc = new FuncType;
-      sra = new ShortRangePartAdapter<RealType>(myHandler);
-      sra->setRmax(Rcut);
-      nfunc->initialize(sra, myGrid);
+      SRA = new ShortRangePartAdapter<RealType>(myHandler);
+      SRA->setRmax(Rcut);
+      nfunc->initialize(SRA, myGrid);
 
 #if !defined(HAVE_MPI)
       static  int counter=0;
@@ -250,8 +251,48 @@ namespace qmcplusplus {
       }
 #endif
       TwoBodyJastrowOrbital<FuncType> *j2 = new TwoBodyJastrowOrbital<FuncType>(targetPtcl);
-      for (int i=0; i<4; i++) j2->addFunc(nfunc);
-      //j2->insert("spline",nfunc);
+      j2->addFunc("rpa",0,0,nfunc);
+
+    //For derivatives, commented out 2008-04-07
+//      //create the numerical functor for the derivatives
+//      ndfunc = new FuncType;
+//      dSRA = new ShortRangePartAdapter<RealType>(derivHandler);
+//      dSRA->setRmax(Rcut);
+//      ndfunc->initialize(dSRA, myGrid);
+
+//      TwoBodyJastrowOrbital<FuncType> *dj2 = new TwoBodyJastrowOrbital<FuncType>(targetPtcl);
+//      dj2->addFunc("rpa",0,0,ndfunc);
+//
+//#if defined(ENABLE_SMARTPOINTER)
+//      if(!dPsi.get())
+//        dPsi= DiffOrbitalBasePtr(new AnalyticDiffOrbital(targetPtcl.getTotalNum(),dj2));
+//#else
+//      if(dPsi==0) 
+//        dPsi= new AnalyticDiffOrbital(targetPtcl.getTotalNum(),dj2);
+//#endif
+//      else
+//        dPsi->addOrbital(dj2);
+
+//      LRTwoBodyJastrow *dLong=new LRTwoBodyJastrow(targetPtcl,derivHandler);
+//      dLong->put(NULL,targetPsi.VarList);//resize
+//      dPsi->addOrbital(dLong);
+//
+//      //dPsi->resetTargetParticleSet(targetPtcl);
+//      int irpa=targetPsi.VarList.addVariable(ID_Rs,Rs);
+//      dPsi->setBounds(irpa);
+
+#if !defined(HAVE_MPI)
+      ofstream dfout("drpa.short.dat");
+      for (int i = 0; i < myGrid->size(); i++) {
+        RealType r=(*myGrid)(i);
+        dfout << r << "   " << ndfunc->evaluate(r) << "   "
+          << derivHandler->evaluate(r,1.0/r) << " " 
+          << derivHandler->evaluateLR(r) << " "
+          << nfunc->evaluate(r)-ndfunc->evaluate(r)
+          << endl;
+      }
+#endif
+
       return ShortRangeRPA=j2;
     }
   }
