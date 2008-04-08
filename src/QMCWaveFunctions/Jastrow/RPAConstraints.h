@@ -81,7 +81,7 @@ namespace qmcplusplus {
       ///numerical function owned by ShortRangeRPA
       FuncType* nfunc;
       ///adaptor function to initialize nfunc
-      ShortRangePartAdapter<RealType>* sra;
+      ShortRangePartAdapter<RealType>* SRA;
       ///@}
       
       /** container to keep track unique instantiations of HandlerType 

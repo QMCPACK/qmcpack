@@ -153,7 +153,7 @@ namespace qmcplusplus {
     //add the handler to the set so that we can reuse it
     handlerSet[MyName]=myHandler;
     string dname="d"+MyName;
-    handlerSet[dname]=derivHandler;
+    //handlerSet[dname]=derivHandler;
 
     //JK 2008-01-08: Disable overwriting kspace handler
     ////show how to overwrite  the kspace
@@ -192,11 +192,12 @@ namespace qmcplusplus {
       //JK: Don't know why we need this
       //myHandler=realHandler;
 
-      realHandler->resetTargetParticleSet(targetPtcl,Rs);
+      //2008-04-07 Longrange is not committed yet.
+      //realHandler->resetTargetParticleSet(targetPtcl,Rs);
       if(LongRangeRPA) LongRangeRPA->resetParameters(optVariables);
     
       //reset the numerical functor
-      nfunc->initialize(SRA, myGrid);
+      //nfunc->initialize(SRA, myGrid);
 
 #if !defined(HAVE_MPI)
       ofstream fout("rpa.short.dat");

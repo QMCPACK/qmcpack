@@ -123,7 +123,7 @@ namespace qmcplusplus {
         ++it;
       }
 
-      if(dPsi) dPsi->resetParameters(optVariables);
+      //if(dPsi) dPsi->resetParameters(optVariables);
     }
 
     /** 

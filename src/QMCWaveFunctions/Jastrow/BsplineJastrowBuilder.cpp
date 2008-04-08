@@ -4,8 +4,8 @@
 #include "QMCWaveFunctions/Jastrow/BsplineFunctor.h"
 #include "QMCWaveFunctions/Jastrow/OneBodyJastrowOrbital.h"
 #include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbital.h"
-#include "QMCWaveFunctions/Jastrow/DiffTwoBodyJastrowOrbital.h"
-#include "QMCWaveFunctions/Jastrow/DiffOneBodyJastrowOrbital.h"
+//#include "QMCWaveFunctions/Jastrow/DiffTwoBodyJastrowOrbital.h"
+//#include "QMCWaveFunctions/Jastrow/DiffOneBodyJastrowOrbital.h"
 
 
 namespace qmcplusplus {
@@ -21,10 +21,10 @@ namespace qmcplusplus {
     if (sourcePtcl) 
     {
       typedef OneBodyJastrowOrbital<RadFuncType> J1Type;
-      typedef DiffOneBodyJastrowOrbital<RadFuncType> dJ1Type;
+      //typedef DiffOneBodyJastrowOrbital<RadFuncType> dJ1Type;
 
       J1Type *J1 = new J1Type(*sourcePtcl, targetPtcl);
-      dJ1Type *dJ1 = new dJ1Type(*sourcePtcl, targetPtcl);
+      //dJ1Type *dJ1 = new dJ1Type(*sourcePtcl, targetPtcl);
 
       // Find the number of the source species
       SpeciesSet &sSet = sourcePtcl->getSpeciesSet();
@@ -49,7 +49,7 @@ namespace qmcplusplus {
             functor->put (kids);
             functor->addOptimizables(targetPsi.VarList);
             J1->addFunc (ig,functor);
-            dJ1->addFunc(ig,functor);
+            //dJ1->addFunc(ig,functor);
             success=true;
 #if !defined(HAVE_MPI)
             if(PrintTables) 
@@ -80,7 +80,7 @@ namespace qmcplusplus {
       {
         app_warning() << "  BsplineJastrowBuilder failed to add an One-Body Jastrow." << endl;
         delete J1;
-        delete dJ1;
+        //delete dJ1;
       }
     } 
     // Create a two-body Jastrow

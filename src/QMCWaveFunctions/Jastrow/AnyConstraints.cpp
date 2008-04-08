@@ -194,7 +194,7 @@ namespace qmcplusplus {
           string id_c=radID+"_C";
           acombo->addComponent(a,contraction,id_c);
           //add a component to the derivative
-          aderiv->addComponent(contraction,exponent,radID);
+          //aderiv->addComponent(contraction,exponent,radID);
         }
         //else
         //{//this is useless

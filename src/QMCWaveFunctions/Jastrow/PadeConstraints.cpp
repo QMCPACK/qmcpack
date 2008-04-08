@@ -19,8 +19,8 @@
 #include "QMCWaveFunctions/Jastrow/OneBodyJastrowOrbital.h"
 #include "QMCWaveFunctions/DiffOrbitalBase.h"
 #include "Utilities/IteratorUtility.h"
-#include "QMCWaveFunctions/Jastrow/DiffTwoBodyJastrowOrbital.h"
-#include "QMCWaveFunctions/Jastrow/DiffOneBodyJastrowOrbital.h"
+//#include "QMCWaveFunctions/Jastrow/DiffTwoBodyJastrowOrbital.h"
+//#include "QMCWaveFunctions/Jastrow/DiffOneBodyJastrowOrbital.h"
 
 namespace qmcplusplus {
 
@@ -38,7 +38,7 @@ namespace qmcplusplus {
    
   PadeConstraints::~PadeConstraints() {
     delete_iter(FuncList.begin(), FuncList.end());
-    delete_iter(dFuncList.begin(), dFuncList.end());
+    //delete_iter(dFuncList.begin(), dFuncList.end());
   }
 
   bool PadeConstraints::put(xmlNodePtr cur) 
@@ -70,11 +70,11 @@ namespace qmcplusplus {
         FuncList[i]->B0=B;
         FuncList[i]->resetParameters(optVariables);
       }
-      for(int i=0; i<dFuncList.size(); i++) 
-      {
-        dFuncList[i]->B0=B;
-        dFuncList[i]->resetParameters(optVariables);
-      }
+      //for(int i=0; i<dFuncList.size(); i++) 
+      //{
+      //  dFuncList[i]->B0=B;
+      //  dFuncList[i]->resetParameters(optVariables);
+      //}
     }
   }
 
