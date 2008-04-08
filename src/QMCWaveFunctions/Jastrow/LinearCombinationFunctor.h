@@ -37,6 +37,8 @@ struct LinearCombinationFunctor: public OptimizableFunctorBase<T>
 
   ///number of ComponentType*
   int NumComponents;
+  ///fixed C
+  std::vector<bool> Active;
   ///list of linear coefficients
   std::vector<real_type> C;
   ///list of component functors
@@ -46,6 +48,7 @@ struct LinearCombinationFunctor: public OptimizableFunctorBase<T>
 
   LinearCombinationFunctor(): NumComponents(0)
   { 
+    Active.reserve(8);
     C.reserve(8);
     Phi.reserve(8);
     ID.reserve(8);
@@ -53,8 +56,10 @@ struct LinearCombinationFunctor: public OptimizableFunctorBase<T>
 
   int size() const { return NumComponents;}
 
-  void addComponent(ComponentType* func, real_type c,  const std::string& id, xmlNodePtr cur) 
+  void addComponent(ComponentType* func, real_type c,  const std::string& id, 
+      bool canchange=true) 
   {
+    Active.push_back(canchange);
     C.push_back(c);
     Phi.push_back(func);
     ID.push_back(id);
@@ -80,10 +85,10 @@ struct LinearCombinationFunctor: public OptimizableFunctorBase<T>
 
   void addOptimizables(OptimizableSetType& vlist) 
   {
-    for(int i=0; i<NumComponents; i++) 
-      vlist[ID[i]]=C[i];
-    for(int i=0; i<NumComponents; i++) 
-      Phi[i]->addOptimizables(vlist);
+    for(int i=0; i<NumComponents; ++i) 
+    { 
+      if(Active[i]) int loc=vlist.addVariable(ID[i],C[i]);
+    }
   }
 
   /** reset the coefficients
