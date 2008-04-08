@@ -841,7 +841,6 @@ namespace qmcplusplus {
     PosType twist, k;
     twist = TwistAngles[ti];
     k = orbitalSet->PrimLattice.k_cart(twist);
-    orbitalSet->kPoints[0] = k;
     double e = SortBands[0].Energy;
     fprintf (stderr, "  ti=%3d  bi=%3d energy=%8.5f k=(%7.4f, %7.4f, %7.4f)\n", 
 	     ti, bi, e, k[0], k[1], k[2]);   
@@ -853,7 +852,6 @@ namespace qmcplusplus {
       PosType twist, k;
       twist = TwistAngles[ti];
       k = orbitalSet->PrimLattice.k_cart(twist);
-      orbitalSet->kPoints[iorb] = k;
       fprintf (stderr, "  ti=%3d  bi=%3d energy=%8.5f k=(%7.4f, %7.4f, %7.4f)\n", 
 	       ti, bi, e, k[0], k[1], k[2]);
       
@@ -907,7 +905,6 @@ namespace qmcplusplus {
   {
     // int N = orbitalSet->getOrbitalSetSize();
     int N = NumDistinctOrbitals;
-    cerr << "NumDistinctOrbitals = " << N << endl;
     orbitalSet->kPoints.resize(N);
     orbitalSet->MakeTwoCopies.resize(N);
     orbitalSet->StorageValueVector.resize(N);
