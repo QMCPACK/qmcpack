@@ -16,6 +16,7 @@
 #ifndef QMCPLUSPLUS_WMFUNCTOR_WITHPADECORRECTION_H
 #define QMCPLUSPLUS_WMFUNCTOR_WITHPADECORRECTION_H
 #include "Numerics/OptimizableFunctorBase.h"
+#include "OhmmsPETE/TinyVector.h"
 #include "OhmmsData/AttributeSet.h"
 
 namespace qmcplusplus {
@@ -35,10 +36,14 @@ namespace qmcplusplus {
       real_type Rcut;
       ///1/Rcut
       real_type OneOverRc;
+      ///12/Rcut
+      real_type DxDr;
+      ///12/Rcut/Rcut
+      real_type D2xDr2;
       ///id
-      string ID_B;
+      std::string ID_B;
       ///name of B-attribute
-      string attribName;
+      std::string attribName;
       ///constructor
       WMFunctor(real_type b, real_type rc=7.5, const std::string& bname="exponent"): 
         attribName(bname)
@@ -48,20 +53,43 @@ namespace qmcplusplus {
       void reset(real_type b, real_type rc) { 
         B0=b; Rcut=rc; 
         OneOverRc=1.0/Rcut; 
+        DxDr=12*OneOverRc;
+        D2xDr2=OneOverRc*DxDr;
       }
 
       inline real_type f(real_type r) {
-        if(r>Rcut) return 0.0;
-        real_type x=r*OneOverRc;
-        real_type z=x*x*(6.0-8*x+3.0*x*x);
-        return (1-z)/(1+B0*z);
+        return evaluate(r);
       }
+
       inline real_type df(real_type r) {
         if(r>Rcut) return 0.0;
         real_type x=r*OneOverRc;
         real_type z=x*x*(6.0-8*x+3.0*x*x);
         return -(1+B0)/(1+B0*z)/(1+B0*z)*OneOverRc*12*x*(1-2.0*x+x*x);
       }
+
+      inline real_type evaluate(real_type r) 
+      {
+        if(r>Rcut) return 0.0;
+        real_type x=r*OneOverRc;
+        real_type z=x*x*(6.0-8*x+3.0*x*x);
+        return (1-z)/(1+B0*z);
+      }
+
+      inline real_type 
+        evaluate(real_type r, real_type& dudr, real_type& d2udr2) 
+        {
+          if(r>Rcut) {dudr=0.0; d2udr2=0.0; return 0.0;}
+          real_type x=r*OneOverRc;
+          real_type xx=x*x;
+          real_type z=xx*(6.0-8*x+3.0*xx);
+          real_type u=1.0/(1+B0*z);
+          real_type du=(1.0+B0)*u*u;
+          real_type dzdr=DxDr*x*(1.0-2.0*x+xx);
+          dudr=-du*dzdr;
+          d2udr2=du*(2.0*B0*u*dzdr*dzdr-D2xDr2*(1.0-4.0*x+3.0*xx));
+          return (1.0-z)*u;
+        }
 
       bool put(xmlNodePtr cur) 
       {
@@ -75,7 +103,7 @@ namespace qmcplusplus {
 
       void addOptimizables(OptimizableSetType& vlist)
       {
-        vlist[ID_B]=B0;
+        int loc=vlist.addVariable(ID_B,B0);
       }
 
       /** reset the internal variables.
@@ -87,6 +115,164 @@ namespace qmcplusplus {
         typename OptimizableSetType::iterator it_b(optVariables.find(ID_B));
         if(it_b != optVariables.end()) {
           B0=(*it_b).second;
+        }
+      }
+    };
+
+  template<class T>
+    struct WMFunctorSet: public OptimizableFunctorBase<T> {
+      typedef typename OptimizableFunctorBase<T>::real_type real_type;
+      typedef typename OptimizableFunctorBase<T>::OptimizableSetType OptimizableSetType;
+      typedef TinyVector<real_type,2>  variable_type;
+
+      using OptimizableFunctorBase<T>::FirstIndex;
+      using OptimizableFunctorBase<T>::LastIndex;
+      ///input Rcut
+      real_type Rcut;
+      ///1/Rcut
+      real_type OneOverRc;
+      ///12/Rcut
+      real_type DxDr;
+      ///12/Rcut/Rcut
+      real_type D2xDr2;
+      ///input  Param[i][0]=B; Param[i][1]=C for i-th component
+      vector<variable_type> Params;
+      ///name of the parameters
+      vector<pair<string,string> > IDs;
+
+      WMFunctorSet(real_type rc=7.5):Rcut(rc)
+      {
+        OneOverRc=1.0/Rcut; 
+        DxDr=12*OneOverRc;
+        D2xDr2=OneOverRc*DxDr;
+        Params.reserve(8);//limit to 8
+      }
+
+      inline void addComponent(real_type c, real_type b, const string& aname)
+      {
+        Params.push_back(variable_type(c,b));
+        string cname=aname+"_C";
+        string ename=aname+"_E";
+        IDs.push_back(pair<string,string>(cname,ename));
+      }
+
+      inline real_type evaluate(real_type r)
+      {
+        if(r>Rcut) return 0.0;
+        real_type x=r*OneOverRc;
+        real_type xx=x*x;
+        real_type z=xx*(6.0-8*x+3.0*xx);
+        real_type value=0.0;
+        for(int i=0; i<Params.size(); ++i)
+          value += Params[i][0]*(1.0-z)/(1+Params[i][1]*z);
+        return value;
+      }
+
+      inline real_type evaluate(real_type r, real_type& dv, real_type& d2v)
+      {
+        dv=0.0; d2v=0.0;
+        if(r>Rcut) return 0.0;
+        real_type x=r*OneOverRc;
+        real_type xx=x*x;
+        real_type z=xx*(6.0-8*x+3.0*xx);
+        real_type dzdr=DxDr*x*(1.0-2.0*x+xx);
+        real_type dzdrsq=dzdr*dzdr;
+        real_type d2zdr2=D2xDr2*(1.0-4.0*x+3.0*xx);
+        real_type v=0.0;
+        for(int i=0; i<Params.size(); ++i)
+        {
+          real_type c=Params[i][0];
+          real_type b=Params[i][1];
+          real_type u=1.0/(1+b*z);
+          real_type du=c*(1.0+b)*u*u;
+          v  += c*(1.0-z)*u;
+          dv -= du*dzdr;
+          d2v+= du*(2.0*b*u*dzdrsq-d2zdr2);
+        }
+        return v;
+      }
+
+      inline bool
+        evaluateDerivatives(real_type r, vector<TinyVector<real_type,3> >& derivs)
+        {
+          if(r>=Rcut) return false;
+          real_type x=r*OneOverRc;
+          real_type xx=x*x;
+          real_type z=xx*(6.0-8*x+3.0*xx);
+          real_type dzdr=DxDr*x*(1.0-2.0*x+xx);
+          real_type dzdrsq=dzdr*dzdr;
+          real_type d2zdr2=D2xDr2*(1.0-4.0*x+3.0*xx);
+
+          typedef TinyVector<real_type,3> e_type;
+          typename vector<e_type>::iterator dit(derivs.begin());
+          for(int i=0,ii=0; i<Params.size(); ++i)
+          {
+            real_type c=Params[i][0];
+            real_type b=Params[i][1];
+            real_type u=1.0/(1+b*z);
+            real_type uu=u*u;
+            real_type du=(1.0+b)*uu;
+            (*dit++)=e_type((1.0-z)*u,-du*dzdr,du*(2.0*b*u*dzdrsq-d2zdr2));
+            //Disable derivatives with respect to exponents: incorrect and unstable
+            //real_type dudz=(z*(b+2)-1.0)*uu*u;
+            //(*dit++)=e_type(c*z*(z-1)*uu,c*dudz*dzdr,c*uu*uu*((b+2)*(1.0-2*b*z)+3*b)*dzdrsq+dudz*d2zdr2);
+          }
+          return true;
+        }
+
+      inline real_type f(real_type r) {return evaluate(r);}
+      inline real_type df(real_type r) 
+      {
+        if(r>Rcut) return 0.0;
+        real_type x=r*OneOverRc;
+        real_type xx=x*x;
+        real_type z=xx*(6.0-8*x+3.0*xx);
+        real_type dzdr=DxDr*x*(1.0-2.0*x+xx);
+        real_type dv=0.0;
+        for(int i=0; i<Params.size(); ++i)
+        {
+          real_type c=Params[i][0];
+          real_type b=Params[i][1];
+          real_type u=1.0/(1+b*z);
+          dv -= c*(1.0+b)*u*u*dzdr;
+        }
+        return dv;
+      }
+
+      void addOptimizables(OptimizableSetType& vlist)
+      {
+        //only add the C's not E's
+        //get the first index using the IDs
+        FirstIndex=vlist.addVariable(IDs[0].first,Params[0][0]);
+        //int loc=vlist.addVariable(IDs[0].second,Params[0][1]);
+        for(int i=1; i<IDs.size(); ++i)
+        {
+          int loc=vlist.addVariable(IDs[i].first,Params[i][0]);
+          //loc=vlist.addVariable(IDs[i].second,Params[i][1]);
+        }
+        //LastIndex=FirstIndex+Params.size()*2;
+        LastIndex=FirstIndex+Params.size();
+      }
+
+      bool put(xmlNodePtr cur) 
+      {
+        return true;
+      }
+
+      void resetParameters(OptimizableSetType& optVariables) 
+      {
+        for(int i=0; i<IDs.size(); ++i)
+        {
+          typename OptimizableSetType::iterator it_c(optVariables.find(IDs[i].first));
+          if(it_c != optVariables.end()) 
+          {
+            Params[i][0]=(*it_c).second;
+          }
+          //Disable exponent optimization
+          //typename OptimizableSetType::iterator it_b(optVariables.find(IDs[i].second));
+          //if(it_b != optVariables.end()) {
+          //  Params[i][1]=(*it_b).second;
+          //}
         }
       }
     };
