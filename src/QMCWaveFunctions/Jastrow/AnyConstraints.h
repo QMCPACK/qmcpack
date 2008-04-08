@@ -29,15 +29,19 @@ namespace qmcplusplus {
     typedef CubicBspline<RealType,LINEAR_1DGRID,FIRSTDERIV_CONSTRAINTS> SplineEngineType;
     ///numerical functor
     typedef CubicSplineSingle<RealType,SplineEngineType> OutFuncType;
+    /////derivative functor type
+    //typedef WMFunctorSet<RealType> DerivFuncType;
     /** class to define a basisGroup to represent a radial function
      */
     struct BasisGroupType
     {
       InFuncType* In_;
+      DerivFuncType* Deriv_;
       OutFuncType* Out_;
       int NumGridPoints;
       RealType Rcut;
-      BasisGroupType():In_(0),Out_(0),Rcut(10.0),NumGridPoints(101){}
+      RealType Cusp;
+      BasisGroupType():In_(0),Deriv_(0),Out_(0),NumGridPoints(81),Rcut(8.0),Cusp(0.0){}
       void setGrid(RealType rc, int npts)
       {
         Rcut=rc;
