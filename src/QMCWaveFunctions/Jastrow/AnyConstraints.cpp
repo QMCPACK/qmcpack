@@ -158,7 +158,7 @@ namespace qmcplusplus {
     ComboFuncType* acombo=new ComboFuncType;
     curBG->In_ = acombo; 
 
-    DerivFuncType* aderiv=new DerivFuncType(curBG->Rcut);
+    //DerivFuncType* aderiv=new DerivFuncType(curBG->Rcut);
 
     string radID("0");
     cur=cur->children;
@@ -209,7 +209,7 @@ namespace qmcplusplus {
     }
 
     //add variables to the optimization list
-    aderiv->addOptimizables(targetPsi.VarList);
+    //aderiv->addOptimizables(targetPsi.VarList);
 
     //for(int i=0; i<targetPsi.VarList.size(); ++i)
     //{
@@ -224,9 +224,9 @@ namespace qmcplusplus {
       acombo->addComponent(a,curBG->Cusp,cusp_tag,false);//this cannot be modified
     }
 
-    curBG->Deriv_ = aderiv;
+    //curBG->Deriv_ = aderiv;
     //add optimizable values now
-    aderiv->addOptimizables(targetPsi.VarList);
+    //aderiv->addOptimizables(targetPsi.VarList);
  }
 
   OrbitalBase* AnyConstraints::createTwoBody() {
