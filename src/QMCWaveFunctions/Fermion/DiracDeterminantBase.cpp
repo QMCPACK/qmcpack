@@ -127,7 +127,7 @@ namespace qmcplusplus {
       ValueType y=1.0/CurrentDet;
       psiM(0,0)=y;
       GradType rv = y*dpsiM(0,0);
-      melocyG(FirstIndex) += rv;
+      myG(FirstIndex) += rv;
       myL(FirstIndex) += y*d2psiM(0,0) - dot(rv,rv);
     } else {
       const ValueType* restrict yptr=psiM.data();
