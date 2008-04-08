@@ -309,13 +309,13 @@ namespace qmcplusplus {
       sincos (phase, &s, &c);
       complex<double> e_mikr (c,s);
       complex<double> psi_val = e_mikr*StorageValueVector[i];
+
       psi[psiIndex] = real(psi_val);
       psiIndex++;
       if (MakeTwoCopies[i]) {
 	psi[psiIndex] = imag(psi_val);
 	psiIndex++;
       }
-      //convert (e_mikr*StorageValueVector[i], psi[i]);
     }
   }
 
@@ -367,8 +367,10 @@ namespace qmcplusplus {
     EinsplineMultiEval (MultiSpline, ru, StorageValueVector,
 			StorageGradVector, StorageHessVector);
     //computePhaseFactors(r);
+    int N = StorageValueVector.size();
     complex<double> eye (0.0, 1.0);
-    for (int j=0; j<psi.size(); j++) {
+    int psiIndex = 0;
+    for (int j=0; j<N; j++) {
       complex<double> u, laplu;
       TinyVector<complex<double>, OHMMS_DIM> gradu;
       u = StorageValueVector[j];
@@ -383,9 +385,27 @@ namespace qmcplusplus {
       double phase = -dot(r, k);
       sincos (phase, &s, &c);
       complex<double> e_mikr (c,s);
-      convert(e_mikr * u, psi[j]);
-      convertVec(e_mikr*(-eye*u*ck + gradu), dpsi[j]);
-      convert(e_mikr*(-dot(k,k)*u - 2.0*eye*dot(ck,gradu) + laplu), d2psi[j]);
+      complex<double> psi_val, psi_lapl;
+      TinyVector<complex<double>,OHMMS_DIM> psi_grad;
+      psi_val = e_mikr*u;
+      psi_grad = e_mikr*(-eye*u*ck + gradu);
+      psi_lapl = e_mikr*(-dot(k,k)*u - 2.0*eye*dot(ck,gradu) + laplu);
+
+      psi[psiIndex] = real(psi_val);
+      for (int n=0; n<OHMMS_DIM; n++)
+	dpsi[psiIndex][n] = real(psi_grad[n]);
+      d2psi[psiIndex] = real(psi_lapl);
+      psiIndex++;
+      if (MakeTwoCopies[j]) {
+	psi[psiIndex] = imag(psi_val);
+	for (int n=0; n<OHMMS_DIM; n++)
+	  dpsi[psiIndex][n] = imag(psi_grad[n]);
+	d2psi[psiIndex] = imag(psi_lapl);
+	psiIndex++;
+      }
+      // convert(e_mikr * u, psi[j]);
+      // convertVec(e_mikr*(-eye*u*ck + gradu), dpsi[j]);
+      // convert(e_mikr*(-dot(k,k)*u - 2.0*eye*dot(ck,gradu) + laplu), d2psi[j]);
     }
   }
   
@@ -477,8 +497,9 @@ namespace qmcplusplus {
 	complex<double> psi_val = e_mikr*u;
 	TinyVector<complex<double>,OHMMS_DIM> psi_grad =
 	  e_mikr*(-eye*u*ck + gradu);
-	complex<double> psi_lapl = e_mikr*(-dot(k,k)*u - 2.0*eye*dot(ck,gradu) + laplu);
-	
+	complex<double> psi_lapl = 
+	  e_mikr*(-dot(k,k)*u - 2.0*eye*dot(ck,gradu) + laplu);
+
 	psi(psiIndex,i) = real(psi_val);
 	for (int n=0; n<3; n++)
 	  dpsi(i,psiIndex)[n] = real(psi_grad[n]);
@@ -501,7 +522,6 @@ namespace qmcplusplus {
 	//convertVec(e_mikr*(-eye*u*ck + gradu), dpsi(i,j));
 	//convert(e_mikr*(-dot(k,k)*u - 2.0*eye*dot(ck,gradu) + laplu), d2psi(i,j));
       } 
-      //cerr << "VGH psiIndex = " << psiIndex << endl;
     }
   }
   
