@@ -286,11 +286,11 @@ namespace qmcplusplus {
       ofstream dfout("drpa.short.dat");
       for (int i = 0; i < myGrid->size(); i++) {
         RealType r=(*myGrid)(i);
-        dfout << r << "   " << ndfunc->evaluate(r) << "   "
-          << derivHandler->evaluate(r,1.0/r) << " " 
-          << derivHandler->evaluateLR(r) << " "
-          << nfunc->evaluate(r)-ndfunc->evaluate(r)
-          << endl;
+        //dfout << r << "   " << ndfunc->evaluate(r) << "   "
+          //<< derivHandler->evaluate(r,1.0/r) << " " 
+          //<< derivHandler->evaluateLR(r) << " "
+          //<< nfunc->evaluate(r)-ndfunc->evaluate(r)
+          //<< endl;
       }
 #endif
 

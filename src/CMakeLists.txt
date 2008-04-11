@@ -14,6 +14,7 @@ SET(UTILITIES
   Utilities/SimpleParser.cpp 
   Utilities/OhmmsInform.cpp 
   Utilities/OhmmsInfo.cpp 
+  Utilities/NewTimer.cpp
   OhmmsData/Libxml2Doc.cpp
   OhmmsApp/ProjectData.cpp
   OhmmsApp/RandomNumberControl.cpp

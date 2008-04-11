@@ -121,7 +121,7 @@ namespace qmcplusplus {
       }
     }
     else if (funcOpt == "Bspline" ) {
-      app_log() << "\n  Using BsplineBuilder for one-body jastrow with analytic functions" << endl;
+      app_log() << "\n  Using BsplineBuilder for one-body jastrow with B-spline functions" << endl;
       OrbitalBuilderBase* sBuilder = new BsplineJastrowBuilder (targetPtcl, targetPsi, *sourcePtcl);
       Children.push_back(sBuilder);
       return sBuilder->put(cur);

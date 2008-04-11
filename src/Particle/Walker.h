@@ -21,7 +21,6 @@
 
 namespace qmcplusplus {
 
-
   /** an enum denoting index of physical properties */
   enum {LOGPSI=0,       /*!< log(fabs(psi)) instead of square of the many-body wavefunction \f$|\Psi|^2\f$ */
 	SIGN,           /*!< value of the many-body wavefunction \f$\Psi(\{R\})\f$ */

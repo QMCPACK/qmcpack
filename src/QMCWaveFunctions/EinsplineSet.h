@@ -22,6 +22,7 @@
 #include "QMCWaveFunctions/SPOSetBase.h"
 #include "Optimize/VarList.h"
 #include "QMCWaveFunctions/EinsplineOrb.h"
+#include "Utilities/NewTimer.h"
 #include <einspline/multi_bspline_structs.h>
 #include "Configuration.h"
 
@@ -189,6 +190,11 @@ namespace qmcplusplus {
     Vector<double> phase;
     Vector<complex<double> > eikr;
     inline void computePhaseFactors(TinyVector<double,OHMMS_DIM> r);
+
+    ////////////
+    // Timers //
+    ////////////
+    NewTimer ValueTimer, VGLTimer;
    
   public:
     // Real return values
@@ -212,7 +218,9 @@ namespace qmcplusplus {
     void setOrbitalSetSize(int norbs);
     string Type();
 
-    EinsplineSetExtended() 
+    EinsplineSetExtended() : 
+      ValueTimer("EinsplineSetExtended::ValueOnly"),
+      VGLTimer  ("EinsplineSetExtended::VGL")
     {
     }
   };

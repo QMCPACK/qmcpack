@@ -27,6 +27,7 @@
 #include "Message/CommOperators.h"
 #include "OhmmsApp/RandomNumberControl.h"
 #include "HDFVersion.h"
+#include "Utilities/NewTimer.h"
 #include <limits>
 
 namespace qmcplusplus {
@@ -202,7 +203,8 @@ namespace qmcplusplus {
   }
 
   bool QMCDriver::finalize(int block) {
-
+    TimerManager.print();
+    
     branchEngine->finalize();
 
     RandomNumberControl::write(wOut->FileName,qmcComm);
