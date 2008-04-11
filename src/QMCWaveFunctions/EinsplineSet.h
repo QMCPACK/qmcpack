@@ -195,7 +195,7 @@ namespace qmcplusplus {
     // Timers //
     ////////////
     NewTimer ValueTimer, VGLTimer, VGLMatTimer;
-   
+    NewTimer EinsplineTimer;
   public:
     // Real return values
     void evaluate(const ParticleSet& P, int iat,    RealValueVector_t& psi);
@@ -221,11 +221,13 @@ namespace qmcplusplus {
     EinsplineSetExtended() : 
       ValueTimer  ("EinsplineSetExtended::ValueOnly"),
       VGLTimer    ("EinsplineSetExtended::VGL"),
-      VGLMatTimer ("EinsplineSetExtended::VGLMatrix")
+      VGLMatTimer ("EinsplineSetExtended::VGLMatrix"),
+      EinsplineTimer("libeinspline")
     {
       TimerManager.addTimer (&ValueTimer);
       TimerManager.addTimer (&VGLTimer);
       TimerManager.addTimer (&VGLMatTimer);
+      TimerManager.addTimer (&EinsplineTimer);
     }
   };
 
