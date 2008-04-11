@@ -294,6 +294,7 @@ namespace qmcplusplus {
   EinsplineSetExtended<StorageType>::evaluate
   (const ParticleSet& P, int iat, RealValueVector_t& psi)
   {
+    ValueTimer.start();
     PosType r (P.R[iat]);
     PosType ru(PrimLattice.toUnit(P.R[iat]));
     for (int i=0; i<OHMMS_DIM; i++)
@@ -317,6 +318,7 @@ namespace qmcplusplus {
 	psiIndex++;
       }
     }
+    ValueTimer.stop();
   }
 
 
@@ -324,6 +326,7 @@ namespace qmcplusplus {
   EinsplineSetExtended<StorageType>::evaluate
   (const ParticleSet& P, int iat, ComplexValueVector_t& psi)
   {
+    ValueTimer.start();
     PosType r (P.R[iat]);
     PosType ru(PrimLattice.toUnit(P.R[iat]));
     for (int i=0; i<OHMMS_DIM; i++)
@@ -338,6 +341,7 @@ namespace qmcplusplus {
       complex<double> e_mikr (c,s);
       convert (e_mikr*StorageValueVector[i], psi[i]);
     }
+    ValueTimer.stop();
   }
 
   // This is an explicit specialization of the above for real orbitals
@@ -347,11 +351,13 @@ namespace qmcplusplus {
   EinsplineSetExtended<double>::evaluate
   (const ParticleSet &P, int iat, RealValueVector_t& psi)
   {
+    ValueTimer.start();
     PosType r (P.R[iat]);
     PosType ru(PrimLattice.toUnit(P.R[iat]));
     for (int i=0; i<OHMMS_DIM; i++)
       ru[i] -= std::floor (ru[i]);
     EinsplineMultiEval (MultiSpline, ru, psi);
+    ValueTimer.stop();
   }
 
   // Value, gradient, and laplacian
@@ -360,6 +366,7 @@ namespace qmcplusplus {
   (const ParticleSet& P, int iat, RealValueVector_t& psi, 
    RealGradVector_t& dpsi, RealValueVector_t& d2psi)
   {
+    VGLTimer.start();
     PosType r (P.R[iat]);
     PosType ru(PrimLattice.toUnit(P.R[iat]));
     for (int i=0; i<OHMMS_DIM; i++)
@@ -407,6 +414,7 @@ namespace qmcplusplus {
       // convertVec(e_mikr*(-eye*u*ck + gradu), dpsi[j]);
       // convert(e_mikr*(-dot(k,k)*u - 2.0*eye*dot(ck,gradu) + laplu), d2psi[j]);
     }
+    VGLTimer.stop();
   }
   
   // Value, gradient, and laplacian
@@ -415,6 +423,7 @@ namespace qmcplusplus {
   (const ParticleSet& P, int iat, ComplexValueVector_t& psi, 
    ComplexGradVector_t& dpsi, ComplexValueVector_t& d2psi)
   {
+    VGLTimer.start();
     PosType r (P.R[iat]);
     PosType ru(PrimLattice.toUnit(P.R[iat]));
     for (int i=0; i<OHMMS_DIM; i++)
@@ -442,6 +451,7 @@ namespace qmcplusplus {
       convertVec(e_mikr*(-eye*u*ck + gradu), dpsi[j]);
       convert(e_mikr*(-dot(k,k)*u - 2.0*eye*dot(ck,gradu) + laplu), d2psi[j]);
     }
+    VGLTimer.stop();
   }
   
   
@@ -450,6 +460,7 @@ namespace qmcplusplus {
   (const ParticleSet& P, int iat, RealValueVector_t& psi, 
    RealGradVector_t& dpsi, RealValueVector_t& d2psi)
   {
+    VGLTimer.start();
     PosType r (P.R[iat]);
     PosType ru(PrimLattice.toUnit(P.R[iat]));
     for (int i=0; i<OHMMS_DIM; i++)
@@ -460,6 +471,7 @@ namespace qmcplusplus {
       dpsi[i]  = dot(PrimLattice.G, StorageGradVector[i]);
       d2psi[i] = trace(StorageHessVector[i], GGt);
     }
+    VGLTimer.stop();
   }
   
   
@@ -468,6 +480,7 @@ namespace qmcplusplus {
   (const ParticleSet& P, int first, int last, RealValueMatrix_t& psi, 
    RealGradMatrix_t& dpsi, RealValueMatrix_t& d2psi)
   {
+    VGLMatTimer.start();
     for (int iat=first,i=0; iat<last; iat++,i++) {
       PosType r (P.R[iat]);
       PosType ru(PrimLattice.toUnit(P.R[iat]));
@@ -523,6 +536,7 @@ namespace qmcplusplus {
 	//convert(e_mikr*(-dot(k,k)*u - 2.0*eye*dot(ck,gradu) + laplu), d2psi(i,j));
       } 
     }
+    VGLMatTimer.stop();
   }
   
   
@@ -532,6 +546,7 @@ namespace qmcplusplus {
   (const ParticleSet& P, int first, int last, ComplexValueMatrix_t& psi, 
    ComplexGradMatrix_t& dpsi, ComplexValueMatrix_t& d2psi)
   {
+    VGLMatTimer.start();
     for(int iat=first,i=0; iat<last; iat++,i++) {
       PosType r (P.R[iat]);
       PosType ru(PrimLattice.toUnit(P.R[iat]));
@@ -561,6 +576,7 @@ namespace qmcplusplus {
 	convert(e_mikr*(-dot(k,k)*u - 2.0*eye*dot(ck,gradu) + laplu), d2psi(i,j));
       } 
     }
+    VGLMatTimer.stop();
   }
   
   
@@ -570,6 +586,7 @@ namespace qmcplusplus {
   (const ParticleSet& P, int first, int last, RealValueMatrix_t& psi, 
    RealGradMatrix_t& dpsi, RealValueMatrix_t& d2psi)
   {
+    VGLMatTimer.start();
     for(int iat=first,i=0; iat<last; iat++,i++) {
       PosType r (P.R[iat]);
       PosType ru(PrimLattice.toUnit(P.R[iat]));
@@ -584,6 +601,7 @@ namespace qmcplusplus {
 	d2psi(i,j) = trace(StorageHessVector[j], GGt);
       }
     }
+    VGLMatTimer.stop();
   }
   
   template<typename StorageType> string

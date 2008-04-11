@@ -194,7 +194,7 @@ namespace qmcplusplus {
     ////////////
     // Timers //
     ////////////
-    NewTimer ValueTimer, VGLTimer;
+    NewTimer ValueTimer, VGLTimer, VGLMatTimer;
    
   public:
     // Real return values
@@ -219,9 +219,13 @@ namespace qmcplusplus {
     string Type();
 
     EinsplineSetExtended() : 
-      ValueTimer("EinsplineSetExtended::ValueOnly"),
-      VGLTimer  ("EinsplineSetExtended::VGL")
+      ValueTimer  ("EinsplineSetExtended::ValueOnly"),
+      VGLTimer    ("EinsplineSetExtended::VGL"),
+      VGLMatTimer ("EinsplineSetExtended::VGLMatrix")
     {
+      TimerManager.addTimer (&ValueTimer);
+      TimerManager.addTimer (&VGLTimer);
+      TimerManager.addTimer (&VGLMatTimer);
     }
   };
 

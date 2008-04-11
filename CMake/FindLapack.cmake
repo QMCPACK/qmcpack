@@ -32,6 +32,7 @@ SET(MKL_PATHS "")
       /usr/local/intel/mkl60/mkl60/lib/64
       /usr/local/intel/mkl/lib/32 
       /opt/intel/mkl/lib/32
+      /opt/intel/mkl/10.0.2.018/lib/em64t
      ) 
   MESSAGE(STATUS "Looking for intel/mkl library in ${MKL_PATHS}")
 

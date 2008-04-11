@@ -44,7 +44,6 @@ namespace qmcplusplus {
     string lloc;
     int ndown=1; 
     int nup=0;
-    //int nrule=4;//default quadrature
     Llocal = -1;
 
     OhmmsAttributeSet aAttrib;

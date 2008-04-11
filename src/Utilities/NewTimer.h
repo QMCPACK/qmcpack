@@ -137,13 +137,13 @@ namespace qmcplusplus  {
 	  nameList.push_back(timer.get_name());
 	  timeList.push_back(timer.get_total());
 	  callList.push_back(timer.get_num_calls());
-	  lastName == timer.get_name();
+	  lastName = timer.get_name();
 	  numDistinct++;
 	}
       }
-      fprintf (stderr, "Routine name                   Total time    Num Calls    Time per call\n");
+      fprintf (stderr, "Routine name                             Total time      Num Calls     Time per call\n");
       for (int i=0; i<numDistinct; i++) {
-	fprintf (stderr, "%30s  %5.3f  %ld  %5.9f\n", nameList[i].c_str(),
+	fprintf (stderr, "%-40s  %9.4f  %13ld  %16.9f\n", nameList[i].c_str(),
 		 timeList[i], callList[i], timeList[i]/(double)callList[i]);
       }
     }

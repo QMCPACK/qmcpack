@@ -58,7 +58,11 @@ namespace qmcplusplus {
         //rewind the buffer to get the data from buffer
         thisWalker.DataSet.rewind();
         //W is updated by thisWalker
-        wRef.copyFromBuffer(thisWalker.DataSet);
+        //BEGIN:MEMORY FIX
+        //wRef.copyFromBuffer(thisWalker.DataSet);
+        wRef.R=thisWalker.R;
+        wRef.update();
+        //END:MEMORY FIX
 
         Return_t logpsi=0.0;
         //copy dL from Buffer
@@ -225,7 +229,11 @@ namespace qmcplusplus {
         //rewind the counter
         thisWalker.DataSet.rewind();
         //MCWalkerConfiguraton::registerData add distance-table data
-        wRef.registerData(thisWalker,thisWalker.DataSet);
+        //BEGIN:MEMORY FIX
+        //wRef.registerData(thisWalker,thisWalker.DataSet);
+        wRef.R=thisWalker.R;
+        wRef.update();
+        //END:MEMORY FIX
 
         Return_t* restrict saved=(*RecordsOnNode[ip])[iw];
 #if defined(QMC_COMPLEX)
