@@ -151,13 +151,13 @@ struct CrystalLattice{
   }
 
   inline T WignerSeitzRadius () const {
-    T rMin = 1.0e50.0;
+    T rMin = 1.0e50;
     for (int i=0; i<D; i++) {
       SingleParticlePos_t A = a(i);
       SingleParticlePos_t B = a((i+1)%3);    
       SingleParticlePos_t C = a((i+2)%3);
       SingleParticlePos_t BxC = cross(B,C);
-      dist = 0.5*std::fabs(dot(A,BxC))/std::sqrt(dot(BxC,BxC));
+      double dist = 0.5*std::fabs(dot(A,BxC))/std::sqrt(dot(BxC,BxC));
       rMin = std::min(rMin, dist);
     }
     return rMin;
