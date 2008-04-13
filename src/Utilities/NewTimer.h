@@ -1,10 +1,9 @@
 //////////////////////////////////////////////////////////////////
-// (c) Copyright 2003- by Jeongnim Kim
+// (c) Copyright 2008- by Ken Esler
 //////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////
-//   Jeongnim Kim
+//   Ken Esler
 //   National Center for Supercomputing Applications &
-//   Materials Computation Center
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
@@ -15,8 +14,8 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-/** @file Timer.h
- * @brief Timer class using boost::timer
+/** @file NewTimer.h
+ * @brief NewTimer class various high-resolution timers.
  */
 #ifndef QMCPLUSPLUS_NEW_TIMER_H
 #define QMCPLUSPLUS_NEW_TIMER_H
@@ -25,6 +24,8 @@
 #include <vector>
 #include <string>
 #include <algorithm>
+
+class Communicate;
 
 namespace qmcplusplus  {
 
@@ -94,7 +95,7 @@ namespace qmcplusplus  {
 
     inline void reset()          { num_calls = 0; total_time=0.0; }
 
-    NewTimer(string myname) : 
+    NewTimer(std::string myname) : 
       total_time(0.0), num_calls(0.0), name(myname)
     { }
   };
@@ -108,6 +109,7 @@ namespace qmcplusplus  {
     }
   };
 
+
   class TimerManagerClass
   {
   protected:
@@ -118,35 +120,7 @@ namespace qmcplusplus  {
       TimerList.push_back(timer);
     }
 
-    void print () 
-    {
-      TimerComparator comp;
-      std::sort(TimerList.begin(), TimerList.end(), comp);
-      std::vector<std::string> nameList;
-      std::vector<double> timeList;
-      std::vector<long>   callList;
-      std::string lastName = "";
-      int numDistinct = 0;
-      for (int i=0; i<TimerList.size(); i++) {
-	NewTimer &timer = *TimerList[i];
-	if (timer.get_name() == lastName && lastName != "") {
-	  timeList[numDistinct-1]  += timer.get_total();
-	  callList[numDistinct-1] += timer.get_num_calls();
-	}
-	else {
-	  nameList.push_back(timer.get_name());
-	  timeList.push_back(timer.get_total());
-	  callList.push_back(timer.get_num_calls());
-	  lastName = timer.get_name();
-	  numDistinct++;
-	}
-      }
-      fprintf (stderr, "Routine name                             Total time      Num Calls     Time per call\n");
-      for (int i=0; i<numDistinct; i++) {
-	fprintf (stderr, "%-40s  %9.4f  %13ld  %16.9f\n", nameList[i].c_str(),
-		 timeList[i], callList[i], timeList[i]/(double)callList[i]);
-      }
-    }
+    void print (Communicate* comm);
   };
 
   extern TimerManagerClass TimerManager;

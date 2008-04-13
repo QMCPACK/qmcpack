@@ -203,7 +203,7 @@ namespace qmcplusplus {
   }
 
   bool QMCDriver::finalize(int block) {
-    TimerManager.print();
+    TimerManager.print(qmcComm);
     
     branchEngine->finalize();
 
