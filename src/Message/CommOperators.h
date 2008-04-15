@@ -124,7 +124,7 @@ inline void gsum(APPNAMESPACE::Matrix<double>& g, int gid)
 {
   //TinyVector<double,N> gt = g;
   //MPI_Allreduce(gt.begin(), g.begin(), N, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-  vector<double> gt(g.size());
+  std::vector<double> gt(g.size());
   std::copy(g.begin(),g.end(),gt.begin());
   MPI_Allreduce(g.data(), &gt[0], g.size(), MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
   std::copy(gt.begin(),gt.end(),g.data());
@@ -204,7 +204,7 @@ template<>
 inline void 
 Communicate::allreduce(APPNAMESPACE::Matrix<double>& g) 
 {
-  vector<double> gt(g.size());
+  std::vector<double> gt(g.size());
   std::copy(g.begin(),g.end(),gt.begin());
   MPI_Allreduce(g.data(), &gt[0], g.size(), MPI_DOUBLE, MPI_SUM, 
       myMPI);
@@ -289,13 +289,13 @@ Communicate::bcast(int* restrict x, int n)
 }
 
 template<> inline void
-Communicate::send(int dest, int tag, vector<double>& g)
+Communicate::send(int dest, int tag, std::vector<double>& g)
 {
   MPI_Send(&(g[0]),g.size(),MPI_DOUBLE,dest,tag, myMPI);
 }
 
 template<> inline Communicate::request
-Communicate::isend(int dest, int tag, vector<double>& g)
+Communicate::isend(int dest, int tag, std::vector<double>& g)
 {
   request r;
   MPI_Isend(&(g[0]),g.size(),MPI_DOUBLE,dest,tag, myMPI,&r);
@@ -303,7 +303,7 @@ Communicate::isend(int dest, int tag, vector<double>& g)
 }
 
 template<> inline Communicate::request
-Communicate::irecv(int source, int tag, vector<double>& g)
+Communicate::irecv(int source, int tag, std::vector<double>& g)
 {
   request r;
   MPI_Irecv(&(g[0]),g.size(),MPI_DOUBLE,source,tag, myMPI,&r);
