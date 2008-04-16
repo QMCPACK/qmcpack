@@ -130,7 +130,7 @@ namespace qmcplusplus {
       myG(FirstIndex) += rv;
       myL(FirstIndex) += y*d2psiM(0,0) - dot(rv,rv);
     } else {
-      const ValueType* restrict yptr=psiM_temp.data();
+      const ValueType* restrict yptr=psiM.data();
       const ValueType* restrict d2yptr=d2psiM.data();
       const GradType* restrict dyptr=dpsiM.data();
       for(int i=0, iat=FirstIndex; i<NumPtcls; i++, iat++) 
