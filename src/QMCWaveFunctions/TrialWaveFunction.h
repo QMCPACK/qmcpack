@@ -146,6 +146,8 @@ namespace qmcplusplus {
     /** evalaute the values of the wavefunction, gradient and laplacian  for all the walkers */
     //void evaluate(WalkerSetRef& W, OrbitalBase::ValueVectorType& psi);
 
+    void reverse();
+
   private:
 
     ///the size of ParticleSet

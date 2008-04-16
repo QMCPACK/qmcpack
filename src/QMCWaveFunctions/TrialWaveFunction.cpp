@@ -416,6 +416,13 @@ namespace qmcplusplus {
   void TrialWaveFunction::reset() 
   {
   }
+
+  void TrialWaveFunction::reverse() 
+  {
+    vector<OrbitalBase*> zcopy(Z);
+    int n=Z.size()-1;
+    for(int i=0; i<Z.size(); ++i) Z[n-i]=zcopy[i]; 
+  }
 }
 /***************************************************************************
  * $RCSfile$   $Author$
