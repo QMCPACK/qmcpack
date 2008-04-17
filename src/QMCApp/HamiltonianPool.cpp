@@ -108,7 +108,7 @@ namespace qmcplusplus {
       ptclPool->addParticleSet(plist[ip]);
       psiPool->addFactory(otemp[ip]);
       olist[ip]=otemp[ip]->targetPsi;
-      if(ip%2==1) olist[ip].reverse();
+      //if(ip%2==1) olist[ip]->reverse();
     }
 
     //find the HamiltonianFactory* to be cloned
