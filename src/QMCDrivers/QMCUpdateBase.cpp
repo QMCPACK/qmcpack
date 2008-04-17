@@ -171,7 +171,7 @@ namespace qmcplusplus {
       Walker_t::Buffer_t& w_buffer((*it)->DataSet);
       w_buffer.rewind();
       W.updateBuffer(**it,w_buffer);
-      RealType logpsi=Psi.updateBuffer(W,w_buffer);
+      RealType logpsi=Psi.updateBuffer(W,w_buffer,true);
       RealType enew= H.evaluate(W);
       (*it)->resetProperty(logpsi,Psi.getPhase(),enew);
       H.saveProperty((*it)->getPropertyBase());
