@@ -115,34 +115,39 @@ namespace qmcplusplus {
     return CurrentDet;
   }
 
-  DiracDeterminantBase::ValueType DiracDeterminantBase::updateBuffer(ParticleSet& P, PooledData<RealType>& buf) {
+  DiracDeterminantBase::ValueType DiracDeterminantBase::updateBuffer(ParticleSet& P, 
+      PooledData<RealType>& buf, bool fromscratch) {
 
     myG=0.0;
     myL=0.0;
 
-    //ValueType x=evaluate(P,myG,myL);
-    Phi->evaluate(P, FirstIndex, LastIndex, psiM_temp,dpsiM, d2psiM);    
-    if(NumPtcls==1) {
-      CurrentDet=psiM_temp(0,0);
-      ValueType y=1.0/CurrentDet;
-      psiM(0,0)=y;
-      GradType rv = y*dpsiM(0,0);
-      myG(FirstIndex) += rv;
-      myL(FirstIndex) += y*d2psiM(0,0) - dot(rv,rv);
-    } else {
-      const ValueType* restrict yptr=psiM.data();
-      const ValueType* restrict d2yptr=d2psiM.data();
-      const GradType* restrict dyptr=dpsiM.data();
-      for(int i=0, iat=FirstIndex; i<NumPtcls; i++, iat++) 
-      {
-        GradType rv;
-        ValueType lap=0.0;
-        for(int j=0; j<NumOrbitals; j++,yptr++) {
-          rv += *yptr * *dyptr++;
-          lap += *yptr * *d2yptr++;
+    if(fromscratch)
+      ValueType x=evaluate(P,myG,myL);
+    else
+    {
+      Phi->evaluate(P, FirstIndex, LastIndex, psiM_temp,dpsiM, d2psiM);    
+      if(NumPtcls==1) {
+        CurrentDet=psiM_temp(0,0);
+        ValueType y=1.0/CurrentDet;
+        psiM(0,0)=y;
+        GradType rv = y*dpsiM(0,0);
+        myG(FirstIndex) += rv;
+        myL(FirstIndex) += y*d2psiM(0,0) - dot(rv,rv);
+      } else {
+        const ValueType* restrict yptr=psiM.data();
+        const ValueType* restrict d2yptr=d2psiM.data();
+        const GradType* restrict dyptr=dpsiM.data();
+        for(int i=0, iat=FirstIndex; i<NumPtcls; i++, iat++) 
+        {
+          GradType rv;
+          ValueType lap=0.0;
+          for(int j=0; j<NumOrbitals; j++,yptr++) {
+            rv += *yptr * *dyptr++;
+            lap += *yptr * *d2yptr++;
+          }
+          myG(iat) += rv;
+          myL(iat) += lap - dot(rv,rv);
         }
-        myG(iat) += rv;
-        myL(iat) += lap - dot(rv,rv);
       }
     }
 

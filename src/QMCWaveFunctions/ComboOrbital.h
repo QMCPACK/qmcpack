@@ -91,7 +91,7 @@ namespace qmcplusplus {
       registerData(ParticleSet& P, BufferType& buf);
 
     ValueType 
-      updateBuffer(ParticleSet& P, BufferType& buf);
+      updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch=false);
 
     void 
       copyFromBuffer(ParticleSet& P, BufferType& buf);

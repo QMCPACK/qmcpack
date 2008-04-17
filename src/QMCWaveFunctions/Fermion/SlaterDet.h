@@ -58,7 +58,7 @@ namespace qmcplusplus {
     inline int size(int i) const { return Dets[i]->cols();}
 
     ValueType registerData(ParticleSet& P, PooledData<RealType>& buf);
-    ValueType updateBuffer(ParticleSet& P, PooledData<RealType>& buf);
+    ValueType updateBuffer(ParticleSet& P, PooledData<RealType>& buf, bool fromscratch=false);
     void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf);
     void dumpToBuffer(ParticleSet& P, PooledData<RealType>& buf);
     void dumpFromBuffer(ParticleSet& P, PooledData<RealType>& buf);

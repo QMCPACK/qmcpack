@@ -290,7 +290,7 @@ namespace qmcplusplus {
       return LogValue;
     }
 
-    ValueType updateBuffer(ParticleSet& P, BufferType& buf)  {
+    ValueType updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch=false)  {
       evaluateLogAndStore(P,P.G,P.L);
       //LogValue = 0.0;
       //U=0.0; dU=0.0; d2U=0.0;

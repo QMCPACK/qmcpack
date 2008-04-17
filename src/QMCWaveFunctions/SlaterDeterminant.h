@@ -139,7 +139,8 @@ namespace qmcplusplus {
       return LogValue = evaluateLogAndPhase(psi,PhaseValue);
     }
     
-    ValueType updateBuffer(ParticleSet& P, PooledData<RealType>& buf){
+    ValueType updateBuffer(ParticleSet& P, PooledData<RealType>& buf,
+        bool fromscratch=false){
       ValueType psi = 1.0;
       for(int i=0; i<Dets.size(); i++) psi *= Dets[i]->updateBuffer(P,buf);
       return LogValue = evaluateLogAndPhase(psi,PhaseValue);

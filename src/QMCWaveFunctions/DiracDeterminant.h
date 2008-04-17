@@ -216,7 +216,8 @@ namespace qmcplusplus {
       return CurrentDet;
     }
 
-    ValueType updateBuffer(ParticleSet& P, PooledData<RealType>& buf) {
+    ValueType updateBuffer(ParticleSet& P, PooledData<RealType>& buf,
+        bool fromscratch=false) {
 
       myG=0.0;
       myL=0.0;

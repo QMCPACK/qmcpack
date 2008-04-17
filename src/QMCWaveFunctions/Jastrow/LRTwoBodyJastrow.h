@@ -167,7 +167,7 @@ namespace qmcplusplus {
 
 
     ValueType registerData(ParticleSet& P, PooledData<RealType>& buf);
-    ValueType updateBuffer(ParticleSet& P, PooledData<RealType>& buf);
+    ValueType updateBuffer(ParticleSet& P, PooledData<RealType>& buf, bool fromscratch=false);
     void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf);
     ValueType evaluate(ParticleSet& P, PooledData<RealType>& buf);
 

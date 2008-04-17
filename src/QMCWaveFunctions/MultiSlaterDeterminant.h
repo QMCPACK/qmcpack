@@ -141,7 +141,8 @@ public:
     return 0.0;
   }
   
-  ValueType updateBuffer(ParticleSet& P, PooledData<RealType>& buf){
+  ValueType updateBuffer(ParticleSet& P, PooledData<RealType>& buf,
+      bool fromscratch=false){
     std::cerr << "MultiSlaterDeterminant::updateBuffer is empty" << std::endl;
     return 0.0;
   }

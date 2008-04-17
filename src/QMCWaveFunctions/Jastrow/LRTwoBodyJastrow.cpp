@@ -370,7 +370,8 @@ namespace qmcplusplus {
     }
 
   LRTwoBodyJastrow::ValueType 
-    LRTwoBodyJastrow::updateBuffer(ParticleSet& P, PooledData<RealType>& buf) {
+    LRTwoBodyJastrow::updateBuffer(ParticleSet& P, PooledData<RealType>& buf,
+        bool fromscratch) {
       LogValue=evaluateLog(P,P.G,P.L); 
 
       for(int iat=0; iat<NumPtcls; iat++)

@@ -81,10 +81,11 @@ namespace qmcplusplus {
     return LogValue = evaluateLogAndPhase(psi,PhaseValue);
   }
 
-  SlaterDet::ValueType SlaterDet::updateBuffer(ParticleSet& P, PooledData<RealType>& buf)
+  SlaterDet::ValueType SlaterDet::updateBuffer(ParticleSet& P, PooledData<RealType>& buf,
+      bool fromscratch)
   {
     ValueType psi = 1.0;
-    for(int i=0; i<Dets.size(); i++) psi *= Dets[i]->updateBuffer(P,buf);
+    for(int i=0; i<Dets.size(); i++) psi *= Dets[i]->updateBuffer(P,buf,fromscratch);
     return LogValue = evaluateLogAndPhase(psi,PhaseValue);
   }
 

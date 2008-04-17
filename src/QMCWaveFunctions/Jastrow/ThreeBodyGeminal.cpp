@@ -319,7 +319,8 @@ namespace qmcplusplus {
   }
 
   OrbitalBase::ValueType 
-  ThreeBodyGeminal::updateBuffer(ParticleSet& P, PooledData<RealType>& buf) {
+  ThreeBodyGeminal::updateBuffer(ParticleSet& P, PooledData<RealType>& buf,
+      bool fromscratch) {
     evaluateLogAndStore(P);
     buf.put(LogValue);
     buf.put(V.begin(), V.end());

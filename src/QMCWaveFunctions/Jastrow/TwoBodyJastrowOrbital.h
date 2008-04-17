@@ -368,7 +368,8 @@ namespace qmcplusplus {
       return LogValue;
     }
 
-    inline ValueType updateBuffer(ParticleSet& P, PooledData<RealType>& buf){
+    inline ValueType updateBuffer(ParticleSet& P, PooledData<RealType>& buf,
+        bool fromscratch=false){
       evaluateLogAndStore(P,P.G,P.L);
       //RealType dudr, d2udr2,u;
       //LogValue=0.0;

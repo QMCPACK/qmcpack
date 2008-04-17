@@ -294,7 +294,8 @@ namespace qmcplusplus {
   }
 
   OrbitalBase::ValueType 
-  ThreeBodyBlockSparse::updateBuffer(ParticleSet& P, PooledData<RealType>& buf) {
+  ThreeBodyBlockSparse::updateBuffer(ParticleSet& P, PooledData<RealType>& buf,
+      bool fromscratch) {
     evaluateLogAndStore(P);
     buf.put(LogValue);
     buf.put(V.begin(), V.end());

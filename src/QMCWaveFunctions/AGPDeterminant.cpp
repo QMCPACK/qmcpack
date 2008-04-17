@@ -264,7 +264,8 @@ namespace qmcplusplus {
   }
 
   AGPDeterminant::ValueType 
-  AGPDeterminant::updateBuffer(ParticleSet& P, PooledData<RealType>& buf) {
+  AGPDeterminant::updateBuffer(ParticleSet& P, PooledData<RealType>& buf,
+      bool fromscratch) {
 
     evaluateLogAndStore(P);
 

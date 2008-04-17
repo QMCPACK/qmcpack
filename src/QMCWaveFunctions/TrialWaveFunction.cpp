@@ -290,7 +290,8 @@ namespace qmcplusplus {
   }
 
   TrialWaveFunction::RealType
-  TrialWaveFunction::updateBuffer(ParticleSet& P, PooledData<RealType>& buf) {
+  TrialWaveFunction::updateBuffer(ParticleSet& P, PooledData<RealType>& buf,
+      bool fromscratch) {
     P.G = 0.0;
     P.L = 0.0;
 
@@ -299,7 +300,7 @@ namespace qmcplusplus {
     vector<OrbitalBase*>::iterator it(Z.begin());
     vector<OrbitalBase*>::iterator it_end(Z.end());
     while(it != it_end) {
-      logpsi += (*it)->updateBuffer(P,buf);
+      logpsi += (*it)->updateBuffer(P,buf,fromscratch);
       PhaseValue += (*it)->PhaseValue;
       ++it;
     }

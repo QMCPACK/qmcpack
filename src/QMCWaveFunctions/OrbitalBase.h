@@ -203,7 +203,7 @@ namespace qmcplusplus {
      *
      * This function is introduced to update the data periodically for particle-by-particle move.
      */
-    virtual ValueType updateBuffer(ParticleSet& P, BufferType& buf) =0;
+    virtual ValueType updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch=false) =0;
 
     /** copy the internal data saved for particle-by-particle move.*/
     virtual void copyFromBuffer(ParticleSet& P, BufferType& buf)=0;

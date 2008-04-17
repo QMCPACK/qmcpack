@@ -101,10 +101,10 @@ namespace qmcplusplus {
     }
 
   ComboOrbital::ValueType 
-    ComboOrbital::updateBuffer(ParticleSet& P, BufferType& buf) {
+    ComboOrbital::updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch) {
       LogValue=0.0;
       for(int i=0; i<Psi.size(); i++) 
-        LogValue += Psi[i]->updateBuffer(P,buf);
+        LogValue += Psi[i]->updateBuffer(P,buf,fromscratch);
       return LogValue;
     }
 
