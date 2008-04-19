@@ -19,6 +19,7 @@
 #include "OhmmsData/AttributeSet.h"
 #include "Utilities/Timer.h"
 #include "Message/Communicate.h"
+#include "Message/CommOperators.h"
 #include <vector>
 
 namespace qmcplusplus {
@@ -50,6 +51,147 @@ namespace qmcplusplus {
     OhmmsAttributeSet attribs;
     attribs.add (hdfName, "href");
     return attribs.put(XMLRoot);
+  }
+
+  bool
+  EinsplineSetBuilder::ReadOrbitalInfo()
+  {
+    H5FileID = H5Fopen(H5FileName.c_str(),H5F_ACC_RDWR,H5P_DEFAULT);
+    if (H5FileID < 0) {
+      app_error() << "Could not open HDF5 file \"" << H5FileName 
+		  << "\" in EinsplineSetBuilder::createSPOSet.  Aborting.\n";
+      abort();
+    }
+
+    //////////////////////////////////////////////////
+    // Read basic parameters from the orbital file. //
+    //////////////////////////////////////////////////
+    // Check the version
+    HDFAttribIO<TinyVector<int,2> > h_Version(Version);
+    h_Version.read (H5FileID, "/version");
+    fprintf (stderr, "  HDF5 orbital file version %d.%d\n", Version[0], Version[1]);
+    if (Version[0]==0 && Version[1]== 11) {
+      parameterGroup  = "/parameters_0";
+      ionsGroup       = "/ions_2";
+      eigenstatesGroup = "/eigenstates_3";
+    }
+    else if (Version[0]==0 && Version[1]==20) {
+      parameterGroup  = "/parameters";
+      ionsGroup       = "/ions";
+      eigenstatesGroup = "/eigenstates";
+    }
+    else {
+      cerr << "Unknown HDF5 orbital file version " 
+	   << Version[0] << "." << Version[1] << "\n";
+      abort();
+    }
+    fprintf (stderr, "  HDF5 orbital file version %d.%d.\n", Version[0], Version[1]);
+    HDFAttribIO<Tensor<double,3> > h_Lattice(Lattice), h_RecipLattice(RecipLattice);
+    h_Lattice.read      (H5FileID, (parameterGroup+"/lattice").c_str());
+    
+    h_RecipLattice.read (H5FileID, (parameterGroup+"/reciprocal_lattice").c_str());
+    SuperLattice = dot(TileMatrix, Lattice);
+
+    fprintf (stderr, 
+	     "  Lattice = \n    [ %8.5f %8.5f %8.5f\n"
+	     "      %8.5f %8.5f %8.5f\n"
+	     "      %8.5f %8.5f %8.5f ]\n", 
+	     Lattice(0,0), Lattice(0,1), Lattice(0,2), 
+	     Lattice(1,0), Lattice(1,1), Lattice(1,2), 
+	     Lattice(2,0), Lattice(2,1), Lattice(2,2));
+    fprintf (stderr, 
+	     "  SuperLattice = \n    [ %8.5f %8.5f %8.5f\n"
+	     "      %8.5f %8.5f %8.5f\n"
+	     "      %8.5f %8.5f %8.5f ]\n", 
+	     SuperLattice(0,0), SuperLattice(0,1), SuperLattice(0,2), 
+	     SuperLattice(1,0), SuperLattice(1,1), SuperLattice(1,2), 
+	     SuperLattice(2,0), SuperLattice(2,1), SuperLattice(2,2));
+    for (int i=0; i<3; i++) 
+      for (int j=0; j<3; j++)
+	LatticeInv(i,j) = RecipLattice(i,j)/(2.0*M_PI);
+    HDFAttribIO<int> h_NumBands(NumBands), h_NumElectrons(NumElectrons), 
+      h_NumSpins(NumSpins), h_NumTwists(NumTwists);
+    h_NumBands.read     (H5FileID, (parameterGroup+"/num_bands").c_str());
+    h_NumElectrons.read (H5FileID, (parameterGroup+"/num_electrons").c_str());
+    h_NumSpins.read     (H5FileID, (parameterGroup+"/num_spins").c_str());
+    h_NumTwists.read    (H5FileID, (parameterGroup+"/num_twists").c_str());
+    fprintf (stderr, "  bands = %d, elecs = %d, spins = %d, twists = %d\n",
+	     NumBands, NumElectrons, NumSpins, NumTwists);
+    if (TileFactor[0]!=1 || TileFactor[1]!=1 || TileFactor[2]!=1)
+      fprintf (stderr, "  Using a %dx%dx%d tiling factor.\n", 
+	       TileFactor[0], TileFactor[1], TileFactor[2]);
+
+    //////////////////////////////////
+    // Read ion types and locations //
+    //////////////////////////////////
+    HDFAttribIO<Vector<int> >                 h_IonTypes(IonTypes);
+    HDFAttribIO<Vector<TinyVector<double,3> > > h_IonPos(IonPos);
+    h_IonTypes.read (H5FileID, (ionsGroup+"/atom_types").c_str());
+    h_IonPos.read   (H5FileID, (ionsGroup+"/pos").c_str());
+
+    ///////////////////////////
+    // Read the twist angles //
+    ///////////////////////////
+    TwistAngles.resize(NumTwists);
+    for (int ti=0; ti<NumTwists; ti++) {
+      ostringstream path;
+      if ((Version[0]==0 && Version[1]==11) || NumTwists > 1)
+	path << eigenstatesGroup << "/twist_" << ti << "/twist_angle";
+      else
+	path << eigenstatesGroup << "/twist/twist_angle";
+      HDFAttribIO<PosType> h_Twist(TwistAngles[ti]);
+      h_Twist.read (H5FileID, path.str().c_str());
+      fprintf (stderr, "  Found twist angle (%6.3f, %6.3f, %6.3f)\n", 
+	       TwistAngles[ti][0], TwistAngles[ti][1], TwistAngles[ti][2]);
+    }
+
+    /////////////////////////////////////////////////////////
+    // Determine whether we need to use localized orbitals //
+    /////////////////////////////////////////////////////////
+    HaveLocalizedOrbs = false;
+    for (int ti=0; ti<NumTwists; ti++) {
+      for (int bi=0; bi<NumBands; bi++) {
+	double radius = 0.0;
+	ostringstream path;
+	if ((Version[0]==0 && Version[1]==11) || NumTwists > 1)
+	  path << eigenstatesGroup << "/twist_" << ti << "/band_"
+	       << bi << "/radius";
+	else
+	  path << eigenstatesGroup << "/twist/band_" << bi << "/radius";
+	HDFAttribIO<double>  h_radius(radius);
+	h_radius.read(H5FileID, path.str().c_str());
+	HaveLocalizedOrbs = HaveLocalizedOrbs || (radius > 0.0);
+      }
+    }
+
+    return true;
+  }
+
+  void
+  EinsplineSetBuilder::BroadcastOrbitalInfo()
+  {
+    GroupComm->bcast(Version);
+    GroupComm->bcast(Lattice);
+    GroupComm->bcast(RecipLattice);
+    GroupComm->bcast(SuperLattice);
+    GroupComm->bcast(LatticeInv);
+    GroupComm->bcast(NumBands);
+    GroupComm->bcast(NumElectrons);
+    GroupComm->bcast(NumSpins);
+    GroupComm->bcast(NumTwists);
+    int numIons = IonTypes.size();
+    GroupComm->bcast(numIons);
+    if (IonTypes.size() != numIons) {
+      IonTypes.resize(numIons);
+      IonPos.resize(numIons);
+    }
+    GroupComm->bcast(IonTypes);
+    GroupComm->bcast(IonPos);
+    if (TwistAngles.size() != NumTwists)
+      TwistAngles.resize(NumTwists);
+    GroupComm->bcast(TwistAngles);
+    
+    GroupComm->bcast(HaveLocalizedOrbs);
   }
 
   SPOSetBase*
@@ -114,120 +256,17 @@ namespace qmcplusplus {
       cur = cur->next;
     }
 
-
-    
-    H5FileID = H5Fopen(H5FileName.c_str(),H5F_ACC_RDWR,H5P_DEFAULT);
-    if (H5FileID < 0) {
-      app_error() << "Could not open HDF5 file \"" << H5FileName 
-		  << "\" in EinsplineSetBuilder::createSPOSet.  Aborting.\n";
-      abort();
-    }
-
-    //////////////////////////////////////////////////
-    // Read basic parameters from the orbital file. //
-    //////////////////////////////////////////////////
-    // Check the version
-    HDFAttribIO<TinyVector<int,2> > h_Version(Version);
-    h_Version.read (H5FileID, "/version");
-    fprintf (stderr, "  HDF5 orbital file version %d.%d\n", Version[0], Version[1]);
-    string parameterGroup, ionsGroup, eigenstatesGroup;
-    if (Version[0]==0 && Version[1]== 11) {
-      parameterGroup  = "/parameters_0";
-      ionsGroup       = "/ions_2";
-      eigenstatesGroup = "/eigenstates_3";
-    }
-    else if (Version[0]==0 && Version[1]==20) {
-      parameterGroup  = "/parameters";
-      ionsGroup       = "/ions";
-      eigenstatesGroup = "/eigenstates";
-    }
-    else {
-      cerr << "Unknown HDF5 orbital file version " 
-	   << Version[0] << "." << Version[1] << "\n";
-      abort();
-    }
-    fprintf (stderr, "  HDF5 orbital file version %d.%d.\n", Version[0], Version[1]);
-    HDFAttribIO<Tensor<double,3> > h_Lattice(Lattice), h_RecipLattice(RecipLattice);
-    h_Lattice.read      (H5FileID, (parameterGroup+"/lattice").c_str());
-    
-    h_RecipLattice.read (H5FileID, (parameterGroup+"/reciprocal_lattice").c_str());
-//     for (int i=0; i<3; i++)
-//       for (int j=0; j<3; j++)
-// 	superLattice(i,j) = (double)TileFactor[i]*Lattice(i,j);
-    SuperLattice = dot(TileMatrix, Lattice);
-
-    fprintf (stderr, 
-	     "  Lattice = \n    [ %8.5f %8.5f %8.5f\n"
-	     "      %8.5f %8.5f %8.5f\n"
-	     "      %8.5f %8.5f %8.5f ]\n", 
-	     Lattice(0,0), Lattice(0,1), Lattice(0,2), 
-	     Lattice(1,0), Lattice(1,1), Lattice(1,2), 
-	     Lattice(2,0), Lattice(2,1), Lattice(2,2));
-    fprintf (stderr, 
-	     "  SuperLattice = \n    [ %8.5f %8.5f %8.5f\n"
-	     "      %8.5f %8.5f %8.5f\n"
-	     "      %8.5f %8.5f %8.5f ]\n", 
-	     SuperLattice(0,0), SuperLattice(0,1), SuperLattice(0,2), 
-	     SuperLattice(1,0), SuperLattice(1,1), SuperLattice(1,2), 
-	     SuperLattice(2,0), SuperLattice(2,1), SuperLattice(2,2));
-    for (int i=0; i<3; i++) 
-      for (int j=0; j<3; j++)
-	LatticeInv(i,j) = RecipLattice(i,j)/(2.0*M_PI);
-    HDFAttribIO<int> h_NumBands(NumBands), h_NumElectrons(NumElectrons), 
-      h_NumSpins(NumSpins), h_NumTwists(NumTwists);
-    h_NumBands.read     (H5FileID, (parameterGroup+"/num_bands").c_str());
-    h_NumElectrons.read (H5FileID, (parameterGroup+"/num_electrons").c_str());
-    h_NumSpins.read     (H5FileID, (parameterGroup+"/num_spins").c_str());
-    h_NumTwists.read    (H5FileID, (parameterGroup+"/num_twists").c_str());
-    fprintf (stderr, "  bands = %d, elecs = %d, spins = %d, twists = %d\n",
-	     NumBands, NumElectrons, NumSpins, NumTwists);
-    if (TileFactor[0]!=1 || TileFactor[1]!=1 || TileFactor[2]!=1)
-      fprintf (stderr, "  Using a %dx%dx%d tiling factor.\n", 
-	       TileFactor[0], TileFactor[1], TileFactor[2]);
-
-    //////////////////////////////////
-    // Read ion types and locations //
-    //////////////////////////////////
-    HDFAttribIO<Vector<int> >                 h_IonTypes(IonTypes);
-    HDFAttribIO<Vector<TinyVector<double,3> > > h_IonPos(IonPos);
-    h_IonTypes.read (H5FileID, (ionsGroup+"/atom_types").c_str());
-    h_IonPos.read   (H5FileID, (ionsGroup+"/pos").c_str());
-
-    ///////////////////////////
-    // Read the twist angles //
-    ///////////////////////////
-    TwistAngles.resize(NumTwists);
-    for (int ti=0; ti<NumTwists; ti++) {
-      ostringstream path;
-      if ((Version[0]==0 && Version[1]==11) || NumTwists > 1)
-	path << eigenstatesGroup << "/twist_" << ti << "/twist_angle";
-      else
-	path << eigenstatesGroup << "/twist/twist_angle";
-      HDFAttribIO<PosType> h_Twist(TwistAngles[ti]);
-      h_Twist.read (H5FileID, path.str().c_str());
-      fprintf (stderr, "  Found twist angle (%6.3f, %6.3f, %6.3f)\n", 
-	       TwistAngles[ti][0], TwistAngles[ti][1], TwistAngles[ti][2]);
-    }
-
-    ////////////////////////////////////////////////////////////////
-    // Determine whether we need comp //
-    ////////////////////////////////////////////////////////////////
-    bool HaveLocalizedOrbs = false;
-    
-    for (int ti=0; ti<NumTwists; ti++) {
-      for (int bi=0; bi<NumBands; bi++) {
-	double radius = 0.0;
-	ostringstream path;
-	if ((Version[0]==0 && Version[1]==11) || NumTwists > 1)
-	  path << eigenstatesGroup << "/twist_" << ti << "/band_"
-	       << bi << "/radius";
-	else
-	  path << eigenstatesGroup << "/twist/band_" << bi << "/radius";
-	HDFAttribIO<double>  h_radius(radius);
-	h_radius.read(H5FileID, path.str().c_str());
-	HaveLocalizedOrbs = HaveLocalizedOrbs || (radius > 0.0);
+    /////////////////////////////////////////////////////////////////
+    // Read the basic orbital information, without reading all the //
+    // orbitals themselves.                                        //
+    /////////////////////////////////////////////////////////////////
+    if (GroupComm->rank() == 0) 
+      if (!ReadOrbitalInfo()) {
+	app_error() << "Error reading orbital info from HDF5 file.  Aborting.\n";
+	abort();
       }
-    }
+    
+    BroadcastOrbitalInfo();
 
     //////////////////////////////////////////////////////////////////////////////
     // Now, analyze the k-point mesh to figure out the what k-points are needed //

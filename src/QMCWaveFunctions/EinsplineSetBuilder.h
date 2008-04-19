@@ -21,6 +21,7 @@
 #include "Numerics/HDFNumericAttrib.h"
 #include <map>
 
+class Communicate;
 
 namespace qmcplusplus {
 
@@ -106,6 +107,9 @@ namespace qmcplusplus {
     SPOSetBase* createSPOSet(xmlNodePtr cur);
     
   protected:
+    // HACK:  This should be inherited
+    Communicate* GroupComm;
+
     // Type definitions
     typedef CrystalLattice<RealType,OHMMS_DIM> UnitCellType;
 
@@ -122,10 +126,19 @@ namespace qmcplusplus {
     static std::map<H5OrbSet,multi_UBspline_3d_z*,H5OrbSet> ExtendedMap_z;
 
     xmlNodePtr XMLRoot;
+
+    //////////////////////////////////////
+    // HDF5-related data  and functions //
+    //////////////////////////////////////
     hid_t H5FileID;
     string H5FileName;
     // HDF5 orbital file version
     TinyVector<int,2> Version;
+    string parameterGroup, ionsGroup, eigenstatesGroup;
+    bool HaveLocalizedOrbs;
+    bool ReadOrbitalInfo ();
+    void BroadcastOrbitalInfo();
+
 
     Tensor<double,OHMMS_DIM> Lattice, RecipLattice, LatticeInv, SuperLattice;
     UnitCellType SuperCell, PrimCell, PrimCellInv;
