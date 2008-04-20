@@ -163,9 +163,9 @@ namespace qmcplusplus {
     createQMCDriver(cur);
 
     if(qmcComm)
-      qmcDriver->setCommunicator(qmcComm);
+      qmcDriver->initCommunicator(qmcComm);
     else
-      qmcDriver->setCommunicator(OHMMS::Controller);
+      qmcDriver->initCommunicator(OHMMS::Controller);
 
     //branchEngine has to be transferred to a new QMCDriver
     if(branchEngine) qmcDriver->setBranchEngine(branchEngine);
