@@ -82,6 +82,7 @@ public:
   void finalize();
   void abort();
   void abort(const char* msg);
+  void set_world();
 
 
   ///return the Communicator ID (typically MPI_WORLD_COMM)

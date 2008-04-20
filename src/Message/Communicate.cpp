@@ -29,8 +29,17 @@ Communicate* OHMMS::Controller = new Communicate;
 
 //default constructor: ready for a serial execution
 Communicate::Communicate():
-myMPI(MPI_COMM_WORLD), d_mycontext(0), d_ncontexts(1), d_groupid(0)
+myMPI(0), d_mycontext(0), d_ncontexts(1), d_groupid(0)
 {
+}
+
+void
+Communicate::set_world()
+{
+  myComm = OOMPI_COMM_WORLD;
+  myMPI = myComm.Get_mpi();
+  d_mycontext = OOMPI_COMM_WORLD.Rank();
+  d_ncontexts = OOMPI_COMM_WORLD.Size();
 }
 
 Communicate::Communicate(int argc, char **argv)

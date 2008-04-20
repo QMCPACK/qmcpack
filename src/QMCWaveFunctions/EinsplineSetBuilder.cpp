@@ -197,6 +197,7 @@ namespace qmcplusplus {
   EinsplineSetBuilder::createSPOSet(xmlNodePtr cur) {
     // HACK HACK HACK
     GroupComm = new Communicate;
+    GroupComm->set_world();
     OhmmsAttributeSet attribs;
     int numOrbs = 0;
     bool sortBands = true;
