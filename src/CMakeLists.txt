@@ -22,6 +22,7 @@ SET(UTILITIES
   Platforms/sysutil.cpp
   QMCFactory/OneDimGridFactory.cpp
   Message/Communicate.cpp 
+  Message/MPIObjectBase.cpp 
 )
 
 ##gsl library will be optional
