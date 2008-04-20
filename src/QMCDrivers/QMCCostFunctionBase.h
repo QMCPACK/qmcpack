@@ -22,6 +22,7 @@
 #include "Optimize/OptimizeBase.h"
 #include "Optimize/VarList.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
+#include "Message/MPIObjectBase.h"
 #include <deque>
 #include <set>
 
@@ -37,7 +38,7 @@ namespace qmcplusplus {
    * generated from VMC.
    */
 
-  class QMCCostFunctionBase: public CostFunctionBase<QMCTraits::RealType>
+  class QMCCostFunctionBase: public CostFunctionBase<QMCTraits::RealType>, public MPIObjectBase
   {
   public:
 
@@ -87,14 +88,6 @@ namespace qmcplusplus {
     void setRootName(const string& aroot) { RootName=aroot;}
 
     void setStream(ostream* os) { msg_stream = os;}
-
-    /** set myComm 
-     * @param c Communicate*
-     */
-    void setCommunicator(Communicate* c)
-    {
-      myComm=c;
-    }
 
     void addCoefficients(xmlXPathContextPtr acontext, const char* cname);
 
@@ -184,8 +177,6 @@ namespace qmcplusplus {
     std::map<string,set<string>*> equalConstraints;
     ///list of constraint variables for negative relations
     std::map<string,set<string>*> negateConstraints;
-    ///communicator
-    Communicate* myComm;
     ///stream to which progress is sent
     ostream* msg_stream;
     ///xml node to be dumped
