@@ -30,9 +30,9 @@ using namespace std;
 
 namespace qmcplusplus {
 
-  HamiltonianPool::HamiltonianPool(const char* aname):
-    OhmmsElementBase(aname), curH(0), ptclPool(0), psiPool(0),
-  curDoc(0){ }
+  HamiltonianPool::HamiltonianPool(Communicate* c, const char* aname): MPIObjectBase(c), OhmmsElementBase(aname), 
+  curH(0), ptclPool(0), psiPool(0), curDoc(0)
+  { }
 
   bool HamiltonianPool::put(xmlNodePtr cur) {
 

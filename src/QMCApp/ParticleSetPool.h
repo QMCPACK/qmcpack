@@ -8,13 +8,10 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
-//   Department of Physics, Ohio State University
-//   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 /**@file ParticleSetPool.h
@@ -25,6 +22,7 @@
 
 #include "OhmmsData/OhmmsElementBase.h"
 #include "Particle/MCWalkerConfiguration.h"
+#include "Message/MPIObjectBase.h"
 
 namespace qmcplusplus {
 
@@ -34,7 +32,7 @@ namespace qmcplusplus {
    * This object handles \<particleset\> elements and
    * functions as a builder class for ParticleSet objects.
    */
-  class ParticleSetPool : public OhmmsElementBase {
+  class ParticleSetPool : public MPIObjectBase, public OhmmsElementBase {
 
   public:
 
@@ -43,7 +41,7 @@ namespace qmcplusplus {
     /** constructor
      * @param aname xml tag
      */
-    ParticleSetPool(const char* aname = "particleset");
+    ParticleSetPool(Communicate* c, const char* aname = "particleset");
 
     //implements virtual functions of OhmmsElementBase
     bool get(std::ostream& os) const;

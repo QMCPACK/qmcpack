@@ -8,13 +8,10 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
-//   Department of Physics, Ohio State University
-//   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 /**@file ParticleSetPool.cpp
@@ -28,12 +25,14 @@
 
 namespace qmcplusplus {
   
-  ParticleSetPool::ParticleSetPool(const char* aname):
-    OhmmsElementBase(aname){ }
+  ParticleSetPool::ParticleSetPool(Communicate* c, const char* aname): 
+    MPIObjectBase(c), OhmmsElementBase(aname)
+    { }
 
   void  ParticleSetPool::addParticleSet(ParticleSet* p) {
     PoolType::iterator pit(myPool.find(p->getName()));
-    if(pit == myPool.end()) {
+    if(pit == myPool.end()) 
+    {
       LOGMSG("  Adding " << p->getName() << " ParticleSet to the pool")
       myPool[p->getName()]=p;
     } else {

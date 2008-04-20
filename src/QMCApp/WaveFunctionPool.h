@@ -24,6 +24,7 @@
 #define QMCPLUSPLUS_WAVEFUNCTIONPOOL_H
 
 #include "OhmmsData/OhmmsElementBase.h"
+#include "Message/MPIObjectBase.h"
 #include "QMCWaveFunctions/WaveFunctionFactory.h"
 #include <map>
 #include <string>
@@ -39,14 +40,14 @@ namespace qmcplusplus {
    * This object handles \<wavefunction\> elements and
    * functions as a builder class for TrialWaveFunction objects.
    */
-  class WaveFunctionPool : public OhmmsElementBase {
-
+  class WaveFunctionPool : public MPIObjectBase, public OhmmsElementBase
+  {
 
   public:
 
     typedef std::map<std::string,WaveFunctionFactory*> PoolType;
 
-    WaveFunctionPool(const char* aname = "wavefunction");
+    WaveFunctionPool(Communicate* c, const char* aname = "wavefunction");
 
     bool get(std::ostream& os) const;
     bool put(std::istream& is);

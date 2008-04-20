@@ -29,7 +29,9 @@ using namespace std;
 namespace qmcplusplus {
   
 
-  WaveFunctionPool::WaveFunctionPool(const char* aname):OhmmsElementBase(aname){ }
+  WaveFunctionPool::WaveFunctionPool(Communicate* c, const char* aname):
+    MPIObjectBase(c), OhmmsElementBase(aname)
+    { }
 
   bool WaveFunctionPool::put(xmlNodePtr cur) {
 
@@ -49,8 +51,9 @@ namespace qmcplusplus {
     std::map<std::string,WaveFunctionFactory*>::iterator pit(myPool.find(id));
     WaveFunctionFactory* psiFactory=0;
     bool isPrimary=true;
-    if(pit == myPool.end()) {
-      psiFactory=new WaveFunctionFactory(qp,ptclPool->getPool());
+    if(pit == myPool.end()) 
+    {
+      psiFactory=new WaveFunctionFactory(qp,ptclPool->getPool(),myComm);
       psiFactory->setName(id);
       isPrimary = (myPool.empty() || role == "primary");
       myPool[id]=psiFactory;

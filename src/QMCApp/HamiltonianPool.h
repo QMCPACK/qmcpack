@@ -25,6 +25,7 @@
 
 #include "QMCHamiltonians/HamiltonianFactory.h"
 #include "OhmmsData/OhmmsElementBase.h"
+#include "Message/MPIObjectBase.h"
 #include <map>
 
 namespace qmcplusplus {
@@ -41,13 +42,14 @@ namespace qmcplusplus {
    * This object handles \<hamiltonian\> elements and
    * functions as a builder class for QMCHamiltonian objects.
    */
-  class HamiltonianPool : public OhmmsElementBase {
+  class HamiltonianPool : public MPIObjectBase, public OhmmsElementBase
+  {
 
   public:
 
     typedef std::map<std::string,HamiltonianFactory*> PoolType;
 
-    HamiltonianPool(const char* aname = "hamiltonian");
+    HamiltonianPool(Communicate* c, const char* aname = "hamiltonian");
 
     bool get(std::ostream& os) const;
     bool put(std::istream& is);
