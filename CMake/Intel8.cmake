@@ -16,11 +16,12 @@ ADD_DEFINITIONS(-DADD_ -DINLINE_ALL=inline -DMPICH_SKIP_MPICXX)
 #SET(CMAKE_CXX_FLAGS "-restrict -unroll -fno-alias -O3 -Ob=2 -cxxlib-icc")
 #SET(CMAKE_CXX_FLAGS "-restrict -unroll -fno-alias -O3")
 IF(${CMAKE_SYSTEM_PROCESSOR} MATCHES "ia64")
+  ADD_DEFINITIONS(-DSGI_IA64)
   SET(CMAKE_CXX_FLAGS "-restrict -unroll -fno-alias -O3 -ftz")
 ENDIF(${CMAKE_SYSTEM_PROCESSOR} MATCHES "ia64")
 
 IF(${CMAKE_SYSTEM_PROCESSOR} MATCHES "x86_64")
-  SET(CMAKE_CXX_FLAGS "-g -restrict -unroll -fno-alias -O3 -ip -xS -Wno-deprecated")
+  SET(CMAKE_CXX_FLAGS "-restrict -unroll -fno-alias -O3 -ip -xS -Wno-deprecated")
 ENDIF(${CMAKE_SYSTEM_PROCESSOR} MATCHES "x86_64")
 
 IF(${CMAKE_SYSTEM_PROCESSOR} MATCHES "i386")
