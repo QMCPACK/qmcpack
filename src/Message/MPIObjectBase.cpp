@@ -20,7 +20,7 @@
 namespace APPNAMESPACE
 {
 
-  MPIObjectBase::MPIObjectBase(Communicate* c)
+  MPIObjectBase::MPIObjectBase(Communicate* c): myComm(0)
   {
     initCommunicator(c);
   }

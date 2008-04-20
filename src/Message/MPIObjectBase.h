@@ -13,6 +13,9 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
+/** @file MPIObjectBase.h
+ * @brief declaration of MPIObjectBase
+ */
 
 #ifndef QMCPLUSPLUS_MPIOBJECTBASE_H
 #define QMCPLUSPLUS_MPIOBJECTBASE_H
@@ -21,6 +24,8 @@
 namespace APPNAMESPACE
 {
 
+  /** Base class for any object which needs to know about a MPI communicator.
+   */
   class MPIObjectBase
   {
     public:
@@ -39,14 +44,16 @@ namespace APPNAMESPACE
        */
       void initCommunicator(Communicate* c);
 
-      ///return the rank of this node
+      ///return the rank of the communicator
       inline int rank() const {return myComm->rank();}
 
+      ///return myComm
       inline Communicate* getCommunicator() const 
       {
         return myComm;
       }
 
+      ///return MPI communicator if one wants to use MPI directly
       inline mpi_comm_type getMPI() const 
       { 
         return myComm->getMPI();
