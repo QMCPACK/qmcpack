@@ -40,18 +40,18 @@ namespace qmcplusplus {
 
   ///initialize the static data member
   //ParticleSetPool* QMCDriverFactory::ptclPool = new ParticleSetPool;
-
-  QMCDriverFactory::QMCDriverFactory(): qmcComm(0), qmcSystem(0), qmcDriver(0) 
+  QMCDriverFactory::QMCDriverFactory(Communicate* c): MPIObjectBase(c), 
+  qmcSystem(0), qmcDriver(0) 
   {
     ////create ParticleSetPool
-    ptclPool = new ParticleSetPool;
+    ptclPool = new ParticleSetPool(myComm);
 
     //create WaveFunctionPool
-    psiPool = new WaveFunctionPool;
+    psiPool = new WaveFunctionPool(myComm);
     psiPool->setParticleSetPool(ptclPool);
 
     //create HamiltonianPool
-    hamPool = new HamiltonianPool;
+    hamPool = new HamiltonianPool(myComm);
     hamPool->setParticleSetPool(ptclPool);
     hamPool->setWaveFunctionPool(psiPool);
   }
@@ -61,14 +61,12 @@ namespace qmcplusplus {
     delete hamPool;
     delete psiPool;
     delete ptclPool;
-    
-    if(qmcComm) delete qmcComm;
   }
 
   void QMCDriverFactory::putCommunicator(xmlNodePtr cur)
   {
-    //this should be done only once
-    if(qmcComm) return;
+    //BROKEN: myComm is ALWAYS initialized by the constructor
+    if(myComm) return;
     ParameterSet params;
     int nparts=1;
     params.add(nparts,"groups","int");
@@ -77,7 +75,7 @@ namespace qmcplusplus {
     if(nparts>1) 
     {
       app_log() << "  Communiator groups = " << nparts << endl;
-      qmcComm = new Communicate(*OHMMS::Controller,nparts);
+      myComm = new Communicate(*OHMMS::Controller,nparts);
     }
   }
 
@@ -136,8 +134,10 @@ namespace qmcplusplus {
     //initialize to 0
     QMCDriver::BranchEngineType* branchEngine=0;
 
-    if(qmcDriver) {
-      if(newRunType != curRunType || newQmcMode != curQmcMode) {
+    if(qmcDriver) 
+    {
+      if(newRunType != curRunType || newQmcMode != curQmcMode) 
+      {
         //copy the pointer of the BranchEngine 
         branchEngine=qmcDriver->getBranchEngine();
         //remove the qmcDriver
@@ -146,27 +146,27 @@ namespace qmcplusplus {
         qmcDriver = 0;
         //if the current qmc method is different from the previous one, append_run is set to false
         append_run = false;
-      } else { 
+      } 
+      else 
+      { 
         app_log() << "  Reusing " << qmcDriver->getEngineName() << endl;
       }
     }
 
     if(curSeries == 0) append_run = false;
 
-    //carryon with the existing qmcDriver
+    //continue with the existing qmcDriver
     if(qmcDriver) return append_run;
 
     //need to create a qmcDriver
     curRunType = newRunType;
     curQmcMode = newQmcMode;
     curQmcModeBits = WhatToDo;
+
+    //create a driver
     createQMCDriver(cur);
-
-    if(qmcComm)
-      qmcDriver->initCommunicator(qmcComm);
-    else
-      qmcDriver->initCommunicator(OHMMS::Controller);
-
+    //initialize QMCDriver::myComm
+    qmcDriver->initCommunicator(myComm);
     //branchEngine has to be transferred to a new QMCDriver
     if(branchEngine) qmcDriver->setBranchEngine(branchEngine);
 

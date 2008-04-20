@@ -18,6 +18,7 @@
 #ifndef QMCPLUSPLUS_QMCDRIVER_FACTORY_H
 #define QMCPLUSPLUS_QMCDRIVER_FACTORY_H
 #include "OhmmsData/OhmmsElementBase.h"
+#include "Message/MPIObjectBase.h"
 #include "QMCApp/ParticleSetPool.h"
 #include <bitset>
 
@@ -31,7 +32,7 @@ namespace qmcplusplus {
   class WaveFunctionPool;
   class HamiltonianPool;
 
-  struct QMCDriverFactory 
+  struct QMCDriverFactory: public MPIObjectBase
   {
     /*! enum for QMC Run Type */
     enum QMCRunType 
@@ -64,8 +65,6 @@ namespace qmcplusplus {
     ///name of the current QMCriver
     std::string curMethod;
 
-    ///communicator
-    Communicate* qmcComm;
     /** current MCWalkerConfiguration
      */
     MCWalkerConfiguration *qmcSystem;
@@ -87,7 +86,7 @@ namespace qmcplusplus {
     HamiltonianPool* hamPool;
 
     /** default constructor **/
-    QMCDriverFactory();
+    QMCDriverFactory(Communicate* c);
 
     /** set the active qmcDriver */
     void putCommunicator(xmlNodePtr cur);
