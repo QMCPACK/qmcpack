@@ -44,7 +44,6 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  qmcplusplus::QMCMain qmc(argc,argv);
 
   string fname=argv[1];
 
@@ -56,10 +55,12 @@ int main(int argc, char **argv) {
   string fext=getExtension(fname);
   bool validInput=false;
 
+  qmcplusplus::QMCMain *qmc=0;
+
   if(fext == "xml")
   {
-    qmc.qmcComm = OHMMS::Controller;
-    validInput=qmc.parse(fname);
+    qmc=new qmcplusplus::QMCMain(OHMMS::Controller);
+    validInput=qmc->parse(fname);
   }
   else
   {
@@ -78,19 +79,20 @@ int main(int argc, char **argv) {
 
     if(OHMMS::Controller->size()==1)
     {
-      qmc.qmcComm = OHMMS::Controller;
-      validInput=qmc.parse(fgroup[0]);
+      qmc=new qmcplusplus::QMCMain(OHMMS::Controller);
+      validInput=qmc->parse(fgroup[0]);
     }
     else
     {
-      qmc.qmcComm = new Communicate(*OHMMS::Controller,fgroup.size());
-      validInput=qmc.parse(fgroup[qmc.qmcComm->getGroupID()]);
+      Communicate* qmcComm=new Communicate(*OHMMS::Controller,fgroup.size());
+      qmc = new qmcplusplus::QMCMain(qmcComm);
+      validInput=qmc->parse(fgroup[qmcComm->getGroupID()]);
     }
   }
 
-  if(validInput) qmc.execute();
+  if(validInput) qmc->execute();
+  delete qmc;
 
-  LOGMSG("Bye")
   OHMMS::Controller->finalize();
   return 0;
 }

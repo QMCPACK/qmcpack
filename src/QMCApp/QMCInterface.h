@@ -40,7 +40,7 @@ namespace qmcplusplus {
   public:
 
     ///constructor
-    QMCInterface(int argc, char** argv);
+    QMCInterface(Communicate* c);
 
     ///destructor
     ~QMCInterface();

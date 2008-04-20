@@ -39,9 +39,8 @@ namespace qmcplusplus {
 
   public:
 
-
     ///constructor
-    QMCMain(int argc, char** argv);
+    QMCMain(Communicate* c);
 
     ///destructor
     ~QMCMain();

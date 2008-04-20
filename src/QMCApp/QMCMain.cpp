@@ -39,13 +39,14 @@ using namespace std;
 
 namespace qmcplusplus {
 
-  QMCMain::QMCMain(int argc, char** argv): QMCAppBase(argc,argv), FirstQMC(true) 
+  QMCMain::QMCMain(Communicate* c): QMCDriverFactory(c), QMCAppBase(), 
+  FirstQMC(true) 
   { 
 
     app_log() << "\n=====================================================\n"
-              <<   "                   qmcpack 0.2                       \n"
-              << "\n  (c) Copyright 2003-  qmcpack developers            \n"
-              <<   "=====================================================\n";
+      <<   "                   qmcpack 0.2                       \n"
+      << "\n  (c) Copyright 2003-  qmcpack developers            \n"
+      <<   "=====================================================\n";
 
     app_log().flush();
   }
@@ -66,7 +67,8 @@ namespace qmcplusplus {
     //validate the input file
     bool success = validateXML();
 
-    if(!success) {
+    if(!success) 
+    {
       ERRORMSG("Input document does not contain valid objects")
       return false;
     }
@@ -123,13 +125,14 @@ namespace qmcplusplus {
     //}
 
     app_log() << "  MPI Nodes            = " << OHMMS::Controller->size() << endl;
-    app_log() << "  MPI Nodes per group  = " << qmcComm->size() << endl;
+    app_log() << "  MPI Nodes per group  = " << myComm->size() << endl;
     app_log() << "  OMP_NUM_THREADS      = " << omp_get_max_threads() << endl;
     app_log() << "  Total Execution time = " << t1.elapsed() << " secs" << endl;
 
     //if(OHMMS::Controller->master()) {
-    //if(firstqmc != NULL && qmcComm->master()) { //generate multiple files
-    if(!qmcComm->rank()) { //generate multiple files
+    //if(firstqmc != NULL && myComm->master()) { //generate multiple files
+    if(is_manager()) 
+    { //generate multiple files
 
       xmlNodePtr mcptr = NULL;
       if(m_walkerset.size()) mcptr=m_walkerset[0];
@@ -142,7 +145,7 @@ namespace qmcplusplus {
       m_walkerset.clear();//empty the container
 
       std::ostringstream np_str, v_str;
-      np_str<<qmcComm->size();
+      np_str<<myComm->size();
       HDFVersion cur_version;
       v_str << cur_version[0] << " " << cur_version[1];
       xmlNodePtr newmcptr = xmlNewNode(NULL,(const xmlChar*)"mcwalkerset");
@@ -256,7 +259,7 @@ namespace qmcplusplus {
 
     OhmmsXPathObject result("//project",m_context);
 
-    myProject.setCommunicator(qmcComm);
+    myProject.setCommunicator(myComm);
 
     if(result.empty()) 
     {
@@ -423,7 +426,7 @@ namespace qmcplusplus {
       OhmmsAttributeSet a;
       a.add(fname,"fileroot"); a.add(fname,"href"); a.add(fname,"src");
       a.put(result[result.size()-1]);
-      if(fname.size()) RandomNumberControl::read(fname,qmcComm);
+      if(fname.size()) RandomNumberControl::read(fname,myComm);
     }
     return true;
   }

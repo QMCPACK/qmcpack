@@ -43,7 +43,9 @@ namespace qmcplusplus {
 
   typedef std::map<std::string,HamiltonianFactory*> PoolType;
 
-  QMCInterface::QMCInterface(int argc, char** argv): QMCAppBase(argc,argv), FirstQMC(true) { 
+  QMCInterface::QMCInterface(Communicate* c): QMCDriverFactory(c), QMCAppBase(), 
+  FirstQMC(true) 
+  { 
 
     app_log() << "\n=========================================================\n"
       <<   "                   qmcplusplus 0.2                       \n"
