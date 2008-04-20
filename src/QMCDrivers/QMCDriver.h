@@ -60,7 +60,8 @@ namespace qmcplusplus {
    * @{
    * @brief abstract base class for QMC engines 
    */
-  class QMCDriver: public QMCTraits {
+  class QMCDriver: public QMCTraits, public MPIObjectBase 
+  {
 
   public:
 
@@ -108,10 +109,6 @@ namespace qmcplusplus {
      */
     void setStatus(const string& aname, const string& h5name, bool append);
 
-    /** set qmcComm 
-     * @param c Communicate*
-     */
-    void setCommunicator(Communicate* c=0);
     /** add QMCHamiltonian/TrialWaveFunction pair for multiple
      * @param h QMCHamiltonian
      * @param psi TrialWaveFunction
@@ -239,8 +236,6 @@ namespace qmcplusplus {
     ///store any parameter that has to be read from a file
     ParameterSet m_param;
 
-    ///communicator
-    Communicate* qmcComm;
     ///record engine for walkers
     HDFWalkerOutput* wOut;
     ///walker ensemble

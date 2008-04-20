@@ -32,16 +32,15 @@
 
 namespace qmcplusplus {
 
-  QMCDriver::QMCDriver(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h):
-    branchEngine(0), ResetRandom(false), AppendRun(false),
-    MyCounter(0), RollBackBlocks(0),
-    Period4CheckPoint(1), Period4WalkerDump(0),
-    CurrentStep(0), nBlocks(100), nSteps(10), 
-    nAccept(0), nReject(0), nTargetWalkers(0),
-    Tau(0.01), qmcNode(NULL),
-    QMCType("invalid"), 
-    qmcComm(0), wOut(0),
-    W(w), Psi(psi), H(h), Estimators(0)
+  QMCDriver::QMCDriver(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h): MPIObjectBase(0),
+  branchEngine(0), ResetRandom(false), AppendRun(false),
+  MyCounter(0), RollBackBlocks(0),
+  Period4CheckPoint(1), Period4WalkerDump(0),
+  CurrentStep(0), nBlocks(100), nSteps(10), 
+  nAccept(0), nReject(0), nTargetWalkers(0),
+  Tau(0.01), qmcNode(NULL),
+  QMCType("invalid"), wOut(0),
+  W(w), Psi(psi), H(h), Estimators(0)
   { 
 
     //use maximum double
@@ -60,11 +59,6 @@ namespace qmcplusplus {
 
     //add each QMCHamiltonianBase to W.PropertyList so that averages can be taken
     H.add2WalkerProperty(W);
-  }
-
-  void QMCDriver::setCommunicator(Communicate* c) 
-  {
-    qmcComm = c ? c : OHMMS::Controller;
   }
 
   QMCDriver::~QMCDriver() 
@@ -116,7 +110,7 @@ namespace qmcplusplus {
     Estimators = branchEngine->getEstimatorManager();
     if(Estimators==0)
     {
-      Estimators = new EstimatorManager(qmcComm);
+      Estimators = new EstimatorManager(myComm);
       branchEngine->setEstimatorManager(Estimators);
       if(h5FileRoot.size()) branchEngine->read(h5FileRoot);
     }
@@ -125,7 +119,7 @@ namespace qmcplusplus {
     Estimators->put(W,H,cur);
 
     if(wOut==0) {
-      wOut = new HDFWalkerOutput(W,RootName,qmcComm);
+      wOut = new HDFWalkerOutput(W,RootName,myComm);
       branchEngine->start(RootName,true);
       branchEngine->write(wOut->FileName,false);
     }
@@ -171,7 +165,7 @@ namespace qmcplusplus {
     if(wset.empty()) return;
     int nfile=wset.size();
 
-    HDFWalkerInputManager W_in(W,qmcComm);
+    HDFWalkerInputManager W_in(W,myComm);
     for(int i=0; i<wset.size(); i++)
       if(W_in.put(wset[i])) h5FileRoot = W_in.getFileRoot();
 
@@ -184,7 +178,7 @@ namespace qmcplusplus {
     ////first dump the data for restart
     if(wOut ==0)
     {//this does not happen but just make sure there is no memory fault 
-      wOut = new HDFWalkerOutput(W,RootName,qmcComm);
+      wOut = new HDFWalkerOutput(W,RootName,myComm);
       branchEngine->start(RootName,true);
     }
 
@@ -203,11 +197,11 @@ namespace qmcplusplus {
   }
 
   bool QMCDriver::finalize(int block) {
-    TimerManager.print(qmcComm);
+    TimerManager.print(myComm);
     
     branchEngine->finalize();
 
-    RandomNumberControl::write(wOut->FileName,qmcComm);
+    RandomNumberControl::write(wOut->FileName,myComm);
 
     delete wOut;
     wOut=0;
@@ -255,13 +249,13 @@ namespace qmcplusplus {
 
     //update the global number of walkers
     //int nw=W.getActiveWalkers();
-    //qmcComm->allreduce(nw);
-    vector<int> nw(qmcComm->size(),0),nwoff(qmcComm->size()+1,0);
-    nw[qmcComm->rank()]=W.getActiveWalkers();
-    qmcComm->allreduce(nw);
+    //myComm->allreduce(nw);
+    vector<int> nw(myComm->size(),0),nwoff(myComm->size()+1,0);
+    nw[myComm->rank()]=W.getActiveWalkers();
+    myComm->allreduce(nw);
 
-    for(int ip=0; ip<qmcComm->size(); ip++) nwoff[ip+1]=nwoff[ip]+nw[ip];
-    W.setGlobalNumWalkers(nwoff[qmcComm->size()]);
+    for(int ip=0; ip<myComm->size(); ip++) nwoff[ip+1]=nwoff[ip]+nw[ip];
+    W.setGlobalNumWalkers(nwoff[myComm->size()]);
     W.setWalkerOffsets(nwoff);
 
     app_log() << "  Total number of walkers: " << W.EnsembleProperty.NumSamples  <<  endl;
