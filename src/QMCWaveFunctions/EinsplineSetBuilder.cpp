@@ -1003,6 +1003,13 @@ namespace qmcplusplus {
 	for (int iy=0; iy<(ny-1); iy++)
 	  for (int iz=0; iz<(nz-1); iz++)
 	    splineData(ix,iy,iz) = rawData(ix,iy,iz);
+
+      PosType twist, k;
+      twist = TwistAngles[ti];
+      k = orbitalSet->PrimLattice.k_cart(twist);
+      double e = SortBands[0].Energy;
+      fprintf (stderr, "  ti=%3d  bi=%3d energy=%8.5f k=(%7.4f, %7.4f, %7.4f)\n", 
+	       ti, bi, e, k[0], k[1], k[2]);   
     }
     GroupComm->bcast(nx);
     GroupComm->bcast(ny);
@@ -1025,16 +1032,7 @@ namespace qmcplusplus {
       create_multi_UBspline_3d_z (x_grid, y_grid, z_grid, xBC, yBC, zBC, N);
 
     set_multi_UBspline_3d_z (orbitalSet->MultiSpline, 0, splineData.data());
-       
-    if (root) {
-      PosType twist, k;
-      twist = TwistAngles[ti];
-      k = orbitalSet->PrimLattice.k_cart(twist);
-      double e = SortBands[0].Energy;
-      fprintf (stderr, "  ti=%3d  bi=%3d energy=%8.5f k=(%7.4f, %7.4f, %7.4f)\n", 
-	       ti, bi, e, k[0], k[1], k[2]);   
-    }
-    
+           
     int iorb  = 1;    
     while (iorb < N) {
       if (root) {
@@ -1057,14 +1055,14 @@ namespace qmcplusplus {
 	  fprintf (stderr, "Extended orbitals should all have the same dimensions\n");
 	  abort();
 	}
+	for (int ix=0; ix<(nx-1); ix++)
+	  for (int iy=0; iy<(ny-1); iy++)
+	    for (int iz=0; iz<(nz-1); iz++)
+	      splineData(ix,iy,iz) = rawData(ix,iy,iz);
       }
-      for (int ix=0; ix<(nx-1); ix++)
-	for (int iy=0; iy<(ny-1); iy++)
-	  for (int iz=0; iz<(nz-1); iz++)
-	    splineData(ix,iy,iz) = rawData(ix,iy,iz);
       GroupComm->bcast(splineData);
       set_multi_UBspline_3d_z (orbitalSet->MultiSpline, iorb, splineData.data());
-     
+      
       iorb++;
     }
     ExtendedMap_z[set] = orbitalSet->MultiSpline;
