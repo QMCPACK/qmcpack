@@ -37,25 +37,6 @@ WalkerControlMPI::WalkerControlMPI(Communicate* c): WalkerControlBase(c) {
 #endif
 }
 
-//THIS IS MOVED UP TO THE BASE CLASS
-//void WalkerControlMPI::setCommunicator(Communicate* c)
-//{
-//  if(c) 
-//    myComm=c;
-//  else
-//    myComm = OHMMS::Controller;
-//
-//  NumContexts=myComm->ncontexts();
-//  MyContext=myComm->mycontext();
-//
-//  NumPerNode.resize(NumContexts);
-//  OffSet.resize(NumContexts+1);
-//  FairOffSet.resize(NumContexts+1);
-//  accumData.resize(LE_MAX);
-//  curData.resize(LE_MAX+NumContexts);
-//}
-
-
 int 
 WalkerControlMPI::branch(int iter, MCWalkerConfiguration& W, RealType trigger) {
 

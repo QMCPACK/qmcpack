@@ -38,21 +38,6 @@ WalkerControlBase(c), TotalWalkers(0) {
   app_log() << "  First weight [0,1) for reconfiguration =" << UnitZeta << endl;
 }
 
-//void WalkerReconfigurationMPI::setCommunicator(Communicate* c)
-//{
-//  if(c) 
-//    myComm=c;
-//  else
-//    myComm = OHMMS::Controller;
-//
-//  NumContexts=myComm->ncontexts();
-//  MyContext=myComm->mycontext();
-//  UnitZeta=Random();
-//  myComm->bcast(&UnitZeta,1);
-//  //MPI_Bcast(&UnitZeta,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
-//  app_log() << "  First weight [0,1) for reconfiguration =" << UnitZeta << endl;
-//}
-
 int 
 WalkerReconfigurationMPI::branch(int iter, MCWalkerConfiguration& W, RealType trigger) {
 

@@ -57,8 +57,6 @@ namespace qmcplusplus {
      */
     WalkerReconfigurationMPI(Communicate* c=0);
 
-    void setCommunicator(Communicate* c=0);
-
     /** perform branch and swap walkers as required */
     int branch(int iter, MCWalkerConfiguration& W, RealType trigger);
 
