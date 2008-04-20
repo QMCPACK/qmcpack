@@ -1008,8 +1008,8 @@ namespace qmcplusplus {
       twist = TwistAngles[ti];
       k = orbitalSet->PrimLattice.k_cart(twist);
       double e = SortBands[0].Energy;
-      fprintf (stderr, "  ti=%3d  bi=%3d energy=%8.5f k=(%7.4f, %7.4f, %7.4f)\n", 
-	       ti, bi, e, k[0], k[1], k[2]);   
+      fprintf (stderr, "  ti=%3d  bi=%3d energy=%8.5f k=(%7.4f, %7.4f, %7.4f) rank=%d\n", 
+	       ti, bi, e, k[0], k[1], k[2], GroupComm->rank());   
     }
     GroupComm->bcast(nx);
     GroupComm->bcast(ny);
@@ -1042,8 +1042,8 @@ namespace qmcplusplus {
 	PosType twist, k;
 	twist = TwistAngles[ti];
 	k = orbitalSet->PrimLattice.k_cart(twist);
-	fprintf (stderr, "  ti=%3d  bi=%3d energy=%8.5f k=(%7.4f, %7.4f, %7.4f)\n", 
-		 ti, bi, e, k[0], k[1], k[2]);
+	fprintf (stderr, "  ti=%3d  bi=%3d energy=%8.5f k=(%7.4f, %7.4f, %7.4f) rank=%d\n", 
+		 ti, bi, e, k[0], k[1], k[2], GroupComm->rank());
 	
 	string vectorName = OrbitalPath (ti, bi) + "eigenvector";
 	HDFAttribIO<Array<complex<double>,3> > h_rawData(rawData);
