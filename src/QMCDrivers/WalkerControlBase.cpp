@@ -20,12 +20,17 @@
 
 namespace qmcplusplus {
 
-  WalkerControlBase::WalkerControlBase(Communicate* c): 
+  WalkerControlBase::WalkerControlBase(Communicate* c): MPIObjectBase(c),
   SwapMode(0), Nmin(1), Nmax(10), MaxCopy(5), 
   targetEnergyBound(20), targetVar(2), targetSigma(10), dmcStream(0)
   {
-    setCommunicator(c);
-
+    NumContexts=myComm->size();
+    MyContext=myComm->rank();
+    curData.resize(LE_MAX+NumContexts);
+    NumPerNode.resize(NumContexts);
+    OffSet.resize(NumContexts+1);
+    FairOffSet.resize(NumContexts+1);
+    accumData.resize(LE_MAX);
   }
 
   WalkerControlBase::~WalkerControlBase()
@@ -34,22 +39,18 @@ namespace qmcplusplus {
   }
 
  
-  void WalkerControlBase::setCommunicator(Communicate* c)
-  {
-    if(c) 
-      myComm=c;
-    else
-      myComm = OHMMS::Controller;
-
-    NumContexts=myComm->size();
-    MyContext=myComm->rank();
-
-    curData.resize(LE_MAX+NumContexts);
-    NumPerNode.resize(NumContexts);
-    OffSet.resize(NumContexts+1);
-    FairOffSet.resize(NumContexts+1);
-    accumData.resize(LE_MAX);
-  }
+  //disable it: everything is done by a constructor
+  //void WalkerControlBase::setCommunicator(Communicate* c)
+  //{
+  //  initCommunicator(c);
+  //  NumContexts=myComm->size();
+  //  MyContext=myComm->rank();
+  //  curData.resize(LE_MAX+NumContexts);
+  //  NumPerNode.resize(NumContexts);
+  //  OffSet.resize(NumContexts+1);
+  //  FairOffSet.resize(NumContexts+1);
+  //  accumData.resize(LE_MAX);
+  //}
 
   void WalkerControlBase::start()
   {

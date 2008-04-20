@@ -19,7 +19,7 @@
 
 #include "Configuration.h"
 #include "Particle/MCWalkerConfiguration.h"
-#include "Message/Communicate.h"
+#include "Message/MPIObjectBase.h"
 #include "Message/CommOperators.h"
 //#include <boost/archive/binary_oarchive.hpp>
 
@@ -39,7 +39,8 @@ namespace qmcplusplus {
    * - 2007/11/07
    * -- added functions to dump dmc histograms
    */
-  class WalkerControlBase: public QMCTraits {
+  class WalkerControlBase: public QMCTraits, public MPIObjectBase
+  {
 
     public:
     ///typedef of Walker_t
@@ -75,9 +76,6 @@ namespace qmcplusplus {
     RealType targetEnergyBound;
     ///current variance
     RealType curVar;
-    ///own the communicator
-    Communicate* myComm;
-
     ///number of particle per node
     vector<int> NumPerNode;
     ///offset of the particle index
@@ -110,10 +108,6 @@ namespace qmcplusplus {
 
     /** empty destructor to clean up the derived classes */
     virtual ~WalkerControlBase();
-
-    /** set communicator 
-     */
-    void setCommunicator(Communicate* c);
 
     /** start controller */
     void start();
