@@ -169,6 +169,8 @@ namespace qmcplusplus {
   void
   EinsplineSetBuilder::BroadcastOrbitalInfo()
   {
+    cerr << "Start BroadcastOrbitalInfo.  rank = " 
+	 << GroupComm->rank() <<"\n";
     GroupComm->bcast(Version);
     GroupComm->bcast(Lattice);
     GroupComm->bcast(RecipLattice);
@@ -184,13 +186,15 @@ namespace qmcplusplus {
       IonTypes.resize(numIons);
       IonPos.resize(numIons);
     }
-    GroupComm->bcast(IonTypes);
-    GroupComm->bcast(IonPos);
+    GroupComm->bcast(IonTypes.data(), numIons);
+    GroupComm->bcast(IonPos.data(), 3*numIons);
     if (TwistAngles.size() != NumTwists)
       TwistAngles.resize(NumTwists);
     GroupComm->bcast(TwistAngles);
     
     GroupComm->bcast(HaveLocalizedOrbs);
+    cerr << "End BroadcastOrbitalInfo. rank = " 
+	 << GroupComm->rank() <<"\n";
   }
 
   SPOSetBase*
@@ -270,9 +274,13 @@ namespace qmcplusplus {
     
     BroadcastOrbitalInfo();
 
-    //////////////////////////////////////////////////////////////////////////////
-    // Now, analyze the k-point mesh to figure out the what k-points are needed //
-    //////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////
+    // Now, analyze the k-point mesh to figure out the what k-points //
+    // are needed                                                    //
+    ///////////////////////////////////////////////////////////////////
+    PrimCell = Lattice;
+    SuperCell = SuperLattice;
+
     AnalyzeTwists2();
 
     //////////////////////////////////
@@ -291,9 +299,6 @@ namespace qmcplusplus {
     OrbitalSet->TileFactor = TileFactor;
     OrbitalSet->Tiling = 
       TileFactor[0]!=1 || TileFactor[1]!=1 || TileFactor[2]!=1;
-    PrimCell = Lattice;
-    SuperCell = SuperLattice;
-    TileIons();
 
     OrbitalSet->PrimLattice  = Lattice;
     OrbitalSet->SuperLattice = SuperLattice;
@@ -301,7 +306,9 @@ namespace qmcplusplus {
 			transpose(OrbitalSet->PrimLattice.G));
     OrbitalSet->setOrbitalSetSize (numOrbs);
     OrbitalSet->BasisSetSize   = numOrbs;
-    
+    cerr << "Before TileIons, rank() = " << GroupComm->rank() << endl;
+    TileIons();
+    cerr << "After TileIons, rank() = " << GroupComm->rank() << endl;
     
     if (HaveLocalizedOrbs) {
       EinsplineSetLocal *restrict orbitalSet = 
@@ -414,6 +421,10 @@ namespace qmcplusplus {
     for (int i=0; i<3; i++)
       for (int j=0; j<3; j++)
 	S(i,j) = (double)TileMatrix(i,j);
+
+//     if (GroupComm->rank() == 1)
+//       for (int i=0; i<TwistAngles.size(); i++)
+// 	cerr << "TwistAngles[" << i << "] = " << TwistAngles[i] << endl;
     
     vector<PosType> superFracs;
     // This holds to which supercell kpoint each primitive k-point belongs

@@ -150,7 +150,7 @@ namespace qmcplusplus {
     /////////////////////////////
     // This stores which "true" twist number I am using
     int TwistNum;
-    Vector<PosType> TwistAngles;
+    std::vector<PosType> TwistAngles;
     TinyVector<int,OHMMS_DIM> TileFactor;
     Tensor<int,OHMMS_DIM> TileMatrix;
     TinyVector<int,OHMMS_DIM> TwistMesh;
