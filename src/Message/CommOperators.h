@@ -20,7 +20,10 @@
 #define OHMMS_COMMUNICATION_OPERATORS_H
 #include "Message/Communicate.h"
 #include "OhmmsPETE/TinyVector.h"
+#include "OhmmsPETE/Tensor.h"
+#include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
+#include "OhmmsPETE/OhmmsArray.h"
 
 ///dummy declarations to be specialized
 template<typename T> inline void gsum(T&, int) { }
@@ -262,10 +265,77 @@ Communicate::bcast(APPNAMESPACE::TinyVector<double,4>& g)
 
 template<>
 inline void 
+Communicate::bcast(APPNAMESPACE::Tensor<double,3>& g) 
+{
+  MPI_Bcast(&(g[0]),9,MPI_DOUBLE,0,myMPI);
+}
+
+template<>
+inline void
+Communicate::bcast(APPNAMESPACE::Vector<double>& g)
+{
+  MPI_Bcast(&(g[0]),g.size(),MPI_DOUBLE,0,myMPI);
+}
+
+template<>
+inline void
+Communicate::bcast(APPNAMESPACE::Vector<int>& g)
+{
+  MPI_Bcast(&(g[0]),g.size(),MPI_INT,0,myMPI);
+}
+
+template<>
+inline void
+Communicate::bcast(APPNAMESPACE::Vector<APPNAMESPACE::TinyVector<double,2> >& g)
+{
+  MPI_Bcast(&(g[0]),2*g.size(),MPI_DOUBLE,0,myMPI);
+}
+
+template<>
+inline void
+Communicate::bcast(APPNAMESPACE::Vector<APPNAMESPACE::TinyVector<double,3> >& g)
+{
+  MPI_Bcast(&(g[0]),3*g.size(),MPI_DOUBLE,0,myMPI);
+}
+
+template<>
+inline void
+Communicate::bcast(Array<double,3> &g)
+{
+  MPI_Bcast(g.data(), g.size(), MPI_DOUBLE, 0, myMPI);
+}
+
+template<>
+inline void
+Communicate::bcast(Array<complex<double>,3> &g)
+{
+  MPI_Bcast(g.data(), 2*g.size(), MPI_DOUBLE, 0, myMPI);
+}
+
+
+template<>
+inline void 
 Communicate::bcast(std::vector<double>& g) 
 {
   MPI_Bcast(&(g[0]),g.size(),MPI_DOUBLE,0,myMPI);
 }
+
+
+template<>
+inline void
+Communicate::bcast(std::vector<APPNAMESPACE::TinyVector<double,2> > &g)
+{
+  MPI_Bcast(&(g[0][0]), 2*g.size(), MPI_DOUBLE, 0, myMPI);
+}
+
+template<>
+inline void
+Communicate::bcast(std::vector<APPNAMESPACE::TinyVector<double,3> > &g)
+{
+  std::cerr << "vector<TinyVector<double,3> bcast.\n";
+  MPI_Bcast(&(g[0][0]), 3*g.size(), MPI_DOUBLE, 0, myMPI);
+}
+
 
 template<>
 inline void 
