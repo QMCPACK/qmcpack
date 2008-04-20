@@ -448,7 +448,7 @@ namespace qmcplusplus {
 
     Estimators = branchEngine->getEstimatorManager();
     if(Estimators == 0) {
-      Estimators = new EstimatorManager(qmcComm);
+      Estimators = new EstimatorManager(myComm);
       multiEstimator = new MultipleEnergyEstimator(H,nPsi);
       Estimators->add(multiEstimator,"elocal");
     }
