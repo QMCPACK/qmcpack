@@ -169,8 +169,6 @@ namespace qmcplusplus {
   void
   EinsplineSetBuilder::BroadcastOrbitalInfo()
   {
-    cerr << "Start BroadcastOrbitalInfo.  rank = " 
-	 << GroupComm->rank() <<"\n";
     GroupComm->bcast(Version);
     GroupComm->bcast(Lattice);
     GroupComm->bcast(RecipLattice);
@@ -193,8 +191,6 @@ namespace qmcplusplus {
     GroupComm->bcast(TwistAngles);
     
     GroupComm->bcast(HaveLocalizedOrbs);
-    cerr << "End BroadcastOrbitalInfo. rank = " 
-	 << GroupComm->rank() <<"\n";
   }
 
   SPOSetBase*
@@ -306,9 +302,7 @@ namespace qmcplusplus {
 			transpose(OrbitalSet->PrimLattice.G));
     OrbitalSet->setOrbitalSetSize (numOrbs);
     OrbitalSet->BasisSetSize   = numOrbs;
-    cerr << "Before TileIons, rank() = " << GroupComm->rank() << endl;
     TileIons();
-    cerr << "After TileIons, rank() = " << GroupComm->rank() << endl;
     
     if (HaveLocalizedOrbs) {
       EinsplineSetLocal *restrict orbitalSet = 
@@ -384,10 +378,12 @@ namespace qmcplusplus {
 		  << primPos.size()*numCopies << ".  Aborting.\n";
       abort();
     }
-    fprintf (stderr, "Supercell ion positions = \n");
-    for (int i=0; i<IonPos.size(); i++)
-      fprintf (stderr, "   [%12.6f %12.6f %12.6f]\n",
-	       IonPos[i][0], IonPos[i][1], IonPos[i][2]);
+    if (GroupComm->rank() == 0) {
+      fprintf (stderr, "Supercell ion positions = \n");
+      for (int i=0; i<IonPos.size(); i++)
+	fprintf (stderr, "   [%12.6f %12.6f %12.6f]\n",
+		 IonPos[i][0], IonPos[i][1], IonPos[i][2]);
+    }
   }
 
   inline TinyVector<double,3>
@@ -421,10 +417,6 @@ namespace qmcplusplus {
     for (int i=0; i<3; i++)
       for (int j=0; j<3; j++)
 	S(i,j) = (double)TileMatrix(i,j);
-
-//     if (GroupComm->rank() == 1)
-//       for (int i=0; i<TwistAngles.size(); i++)
-// 	cerr << "TwistAngles[" << i << "] = " << TwistAngles[i] << endl;
     
     vector<PosType> superFracs;
     // This holds to which supercell kpoint each primitive k-point belongs
@@ -456,7 +448,7 @@ namespace qmcplusplus {
       }
     }
     int numSuperTwists = superFracs.size();
-    cerr << "Found " << numSuperTwists << " distinct supercell twists.\n";
+    app_log() << "Found " << numSuperTwists << " distinct supercell twists.\n";
 
     // For each supercell twist, create a list of primitive twists which
     // belong to it.
@@ -465,14 +457,15 @@ namespace qmcplusplus {
     for (int ki=0; ki<numPrimTwists; ki++)
       superSets[superIndex[ki]].push_back(ki);
 
-    for (int si=0; si<numSuperTwists; si++) {
-      fprintf (stderr, "Super twist #%d:  [ %9.5f %9.5f %9.5f ]\n",
-	       si, superFracs[si][0], superFracs[si][1], superFracs[si][2]);
-      fprintf (stderr, "  Using k-points: ");
-      for (int i=0; i<superSets[si].size(); i++) 
-	fprintf (stderr, " %d", superSets[si][i]);
-      fprintf (stderr, "\n");
-    }
+    if (GroupComm->rank() == 0) 
+      for (int si=0; si<numSuperTwists; si++) {
+	fprintf (stderr, "Super twist #%d:  [ %9.5f %9.5f %9.5f ]\n",
+		 si, superFracs[si][0], superFracs[si][1], superFracs[si][2]);
+	fprintf (stderr, "  Using k-points: ");
+	for (int i=0; i<superSets[si].size(); i++) 
+	  fprintf (stderr, " %d", superSets[si][i]);
+	fprintf (stderr, "\n");
+      }
 
     // Now check to see that each supercell twist has the right twists
     // to tile the primitive cell orbitals.
@@ -549,8 +542,9 @@ namespace qmcplusplus {
 	if (TwistPair(twist_i, twist_j))
 	  MakeTwoCopies[i] = true;
       }
-      fprintf (stderr, "Using %d copies of twist angle [%6.3f, %6.3f, %6.3f]\n",
-	       MakeTwoCopies[i] ? 2 : 1, twist_i[0], twist_i[1], twist_i[2]);
+      if (GroupComm->rank() == 0)
+	fprintf (stderr, "Using %d copies of twist angle [%6.3f, %6.3f, %6.3f]\n",
+		 MakeTwoCopies[i] ? 2 : 1, twist_i[0], twist_i[1], twist_i[2]);
     }
 #else
     DistinctTwists.resize(IncludeTwists.size());
@@ -755,7 +749,6 @@ namespace qmcplusplus {
 
     // Read in the occupied bands
     orbitalSet->Orbitals.resize(orbitalSet->getOrbitalSetSize());
-    cerr << "Orbitals size = " << orbitalSet->Orbitals.size() << endl;
     int iorb  = 0;
     int iband = 0;
     while (iorb < orbitalSet->getOrbitalSetSize()) {
@@ -995,12 +988,6 @@ namespace qmcplusplus {
     int nx, ny, nz, bi, ti;
     Array<complex<double>,3> splineData, rawData;
     if (root) {
-      string eigenstatesGroup;
-      if (Version[0]==0 && Version[1]== 11) 
-	eigenstatesGroup = "/eigenstates_3";
-      else if (Version[0]==0 && Version[1]==20) 
-	eigenstatesGroup = "/eigenstates";
-      
       // Find the orbital mesh size
       ti   = SortBands[0].TwistIndex;
       bi   = SortBands[0].BandIndex;

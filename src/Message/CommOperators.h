@@ -332,7 +332,6 @@ template<>
 inline void
 Communicate::bcast(std::vector<APPNAMESPACE::TinyVector<double,3> > &g)
 {
-  std::cerr << "vector<TinyVector<double,3> bcast.\n";
   MPI_Bcast(&(g[0][0]), 3*g.size(), MPI_DOUBLE, 0, myMPI);
 }
 
