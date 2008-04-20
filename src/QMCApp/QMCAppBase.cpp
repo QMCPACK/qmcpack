@@ -19,7 +19,7 @@
 
 namespace qmcplusplus {
 
-  QMCAppBase::QMCAppBase(int argc, char** argv)
+  QMCAppBase::QMCAppBase()
   {
   }
 

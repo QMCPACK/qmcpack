@@ -41,7 +41,7 @@ namespace qmcplusplus {
   public:
 
     ///constructor
-    QMCAppBase(int argc, char** argv);
+    QMCAppBase();
 
     ///destructor
     ~QMCAppBase();
