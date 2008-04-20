@@ -35,10 +35,12 @@
 
 #include "OhmmsData/AttributeSet.h"
 namespace qmcplusplus {
-  WaveFunctionFactory::WaveFunctionFactory(ParticleSet* qp, PtclPoolType& pset): 
-    targetPtcl(qp),ptclPool(pset),targetPsi(0), myNode(NULL) {
-      myName="psi0";
-    }
+
+  WaveFunctionFactory::WaveFunctionFactory(ParticleSet* qp, PtclPoolType& pset, Communicate* c):
+    MPIObjectBase(c), OhmmsElementBase("psi0"),
+  targetPtcl(qp),ptclPool(pset),targetPsi(0), myNode(NULL) 
+  {
+  }
 
   bool WaveFunctionFactory::build(xmlNodePtr cur, bool buildtree) {
 
@@ -54,15 +56,17 @@ namespace qmcplusplus {
     }
 
 
-    if(targetPsi==0) {//allocate targetPsi and set the name
-      targetPsi  = new TrialWaveFunction;
+    if(targetPsi==0) //allocate targetPsi and set the name
+    {
+      targetPsi  = new TrialWaveFunction(myComm);
       targetPsi->setName(myName);
       app_log() << "  Creating a trial wavefunction " << myName << endl;
     }
 
     cur = cur->children;
     bool success=true;
-    while(cur != NULL) {
+    while(cur != NULL) 
+    {
       string cname((const char*)(cur->name));
       if (cname == OrbitalBuilderBase::detset_tag) 
       {
@@ -141,7 +145,8 @@ namespace qmcplusplus {
       detbuilder = new SlaterDetBuilder(*targetPtcl,*targetPsi,ptclPool);
     }
 
-    if(detbuilder) {//valid determinant set
+    if(detbuilder) 
+    {//valid determinant set
       detbuilder->put(cur);
       addNode(detbuilder,cur);
       return true;
@@ -165,8 +170,9 @@ namespace qmcplusplus {
   }
 
   WaveFunctionFactory*
-  WaveFunctionFactory::clone(ParticleSet* qp, int ip, const string& aname) {
-    WaveFunctionFactory* aCopy= new WaveFunctionFactory(qp,ptclPool);
+  WaveFunctionFactory::clone(ParticleSet* qp, int ip, const string& aname) 
+  {
+    WaveFunctionFactory* aCopy= new WaveFunctionFactory(qp,ptclPool,myComm);
     aCopy->setName(aname);
     aCopy->build(myNode,false);
     myClones[ip]=aCopy;

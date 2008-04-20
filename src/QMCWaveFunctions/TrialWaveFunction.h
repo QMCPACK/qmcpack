@@ -20,6 +20,7 @@
 #ifndef QMCPLUSPLUS_TRIALWAVEFUNCTION_H
 #define QMCPLUSPLUS_TRIALWAVEFUNCTION_H
 
+#include "Message/MPIObjectBase.h"
 #include "QMCWaveFunctions/OrbitalBase.h"
 /**@defgroup MBWfs Many-body wave function group
  * @brief Classes to handle many-body trial wave functions
@@ -40,7 +41,8 @@ namespace qmcplusplus {
    *Each OrbitalBase should provide proper evaluate functions
    *for the value, gradient and laplacian values.
    */
-  class TrialWaveFunction: public OhmmsElementBase {
+  class TrialWaveFunction: public MPIObjectBase, public OhmmsElementBase 
+  {
 
   public:
 
@@ -51,6 +53,10 @@ namespace qmcplusplus {
     typedef OrbitalBase::BufferType         BufferType;
     typedef OrbitalBase::OptimizableSetType OptimizableSetType;
 
+    ///differential gradients
+    ParticleSet::ParticleGradient_t G;
+    ///differential laplacians
+    ParticleSet::ParticleLaplacian_t L;
     /**a list of real variables to be optimized
      *
      * Each builder for a trial wavefuncion is responsible for registering
@@ -58,13 +64,7 @@ namespace qmcplusplus {
      */
     OptimizableSetType VarList;
 
-    ///differential gradients
-    ParticleSet::ParticleGradient_t G;
-
-    ///differential laplacians
-    ParticleSet::ParticleLaplacian_t L;
-
-    TrialWaveFunction();
+    TrialWaveFunction(Communicate* c);
 
     ~TrialWaveFunction();
 
@@ -150,6 +150,8 @@ namespace qmcplusplus {
 
   private:
 
+    ///control how ratio is calculated
+    bool Ordered;
     ///the size of ParticleSet
     int NumPtcls;
 
@@ -179,6 +181,8 @@ namespace qmcplusplus {
 
     ///cannot use copy constructor
     TrialWaveFunction(const TrialWaveFunction&) {}
+
+    TrialWaveFunction();
     
   };
   /**@}*/

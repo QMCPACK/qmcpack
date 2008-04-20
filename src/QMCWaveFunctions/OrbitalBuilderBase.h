@@ -31,7 +31,8 @@ namespace qmcplusplus {
   /**@ingroup WFSBuilder
    * @brief An abstract class for wave function builders
    */
-  class OrbitalBuilderBase {
+  class OrbitalBuilderBase: public MPIObjectBase
+  {
     
   public:
 
@@ -80,9 +81,9 @@ namespace qmcplusplus {
      * targetPsi. The position of targetPtcl is related to targetPsi's 
      * capability to return a value and derivatives \f$\Psi = $[\{R\}]\f$ .
      */
-    OrbitalBuilderBase(ParticleSet& p, TrialWaveFunction& psi): targetPtcl(p), targetPsi(psi), myNode(NULL)
-    { }
+    OrbitalBuilderBase(ParticleSet& p, TrialWaveFunction& psi);
 
+    virtual ~OrbitalBuilderBase();
     /// process a xml node at cur
     virtual bool put(xmlNodePtr cur) = 0;
 

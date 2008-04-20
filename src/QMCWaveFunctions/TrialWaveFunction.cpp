@@ -22,8 +22,15 @@
 
 namespace qmcplusplus {
 
-  TrialWaveFunction::TrialWaveFunction():PhaseValue(0.0),LogValue(0.0) {
-    myName="psi0";
+  TrialWaveFunction::TrialWaveFunction(Communicate* c): MPIObjectBase(c), OhmmsElementBase("psi0"), 
+  Ordered(true), NumPtcls(0), PhaseValue(0.0),LogValue(0.0) 
+  {
+  }
+
+  ///private and cannot be used
+  TrialWaveFunction::TrialWaveFunction(): MPIObjectBase(0),OhmmsElementBase("psi0"),
+    PhaseValue(0.0),LogValue(0.0) 
+  {
   }
 
   /** Destructor
@@ -66,10 +73,10 @@ namespace qmcplusplus {
     vector<OrbitalBase*>::iterator it_end(Z.end());
 
     //WARNING: multiplication for PhaseValue is not correct, fix this!!
-    while(it != it_end) {
+    for(; it!=it_end; ++it)
+    {
       logpsi += (*it)->evaluateLog(P, P.G, P.L); 
       PhaseValue += (*it)->PhaseValue;
-      ++it;
     }
     return LogValue=real(logpsi);
   }
@@ -97,12 +104,12 @@ namespace qmcplusplus {
     PhaseValue=0.0;
     vector<OrbitalBase*>::iterator it(Z.begin());
     vector<OrbitalBase*>::iterator it_end(Z.end());
-    while(it != it_end) {
+    for(; it!=it_end; ++it)
+    {
       if((*it)->Optimizable) {
         logpsi += (*it)->evaluateLog(P, P.G, P.L); 
         PhaseValue += (*it)->PhaseValue;
       }
-      ++it;
     }
     return LogValue=real(logpsi);
   }
@@ -137,12 +144,12 @@ namespace qmcplusplus {
     ValueType logpsi_opt(0.0);
     vector<OrbitalBase*>::iterator it(Z.begin());
     vector<OrbitalBase*>::iterator it_end(Z.end());
-    while(it != it_end) {
+    for(; it!=it_end; ++it)
+    {
       if((*it)->Optimizable) 
         logpsi_opt += (*it)->evaluateLog(P, P.G, P.L); 
       else
         logpsi_fixed += (*it)->evaluateLog(P, fixedG, fixedL); 
-      ++it;
     }
     P.G += fixedG; 
     P.L += fixedL;
@@ -267,10 +274,10 @@ namespace qmcplusplus {
     PhaseValue=0.0;
     vector<OrbitalBase*>::iterator it(Z.begin());
     vector<OrbitalBase*>::iterator it_end(Z.end());
-    while(it != it_end) {
+    for(;it!=it_end; ++it)
+    {
       logpsi += (*it)->registerData(P,buf);
       PhaseValue += (*it)->PhaseValue;
-      ++it;
     }
 
     LogValue=real(logpsi);
@@ -299,10 +306,10 @@ namespace qmcplusplus {
     PhaseValue=0.0;
     vector<OrbitalBase*>::iterator it(Z.begin());
     vector<OrbitalBase*>::iterator it_end(Z.end());
-    while(it != it_end) {
+    for(; it!=it_end; ++it)
+    {
       logpsi += (*it)->updateBuffer(P,buf,fromscratch);
       PhaseValue += (*it)->PhaseValue;
-      ++it;
     }
 
     LogValue=real(logpsi);
@@ -337,9 +344,9 @@ namespace qmcplusplus {
   TrialWaveFunction::dumpToBuffer(ParticleSet& P, BufferType& buf) {
     vector<OrbitalBase*>::iterator it(Z.begin());
     vector<OrbitalBase*>::iterator it_end(Z.end());
-    while(it != it_end) {
+    for(; it!=it_end; ++it)
+    {
       (*it)->dumpToBuffer(P,buf);
-      ++it;
     }
   }
 
@@ -355,10 +362,8 @@ namespace qmcplusplus {
   TrialWaveFunction::dumpFromBuffer(ParticleSet& P, BufferType& buf) {
     vector<OrbitalBase*>::iterator it(Z.begin());
     vector<OrbitalBase*>::iterator it_end(Z.end());
-    while(it != it_end) {
+    for(; it!=it_end; ++it)
       (*it)->dumpFromBuffer(P,buf);
-      ++it;
-    }
   }
 
   TrialWaveFunction::RealType
@@ -420,9 +425,10 @@ namespace qmcplusplus {
 
   void TrialWaveFunction::reverse() 
   {
-    vector<OrbitalBase*> zcopy(Z);
-    int n=Z.size()-1;
-    for(int i=0; i<Z.size(); ++i) Z[n-i]=zcopy[i]; 
+    Ordered=false;
+    //vector<OrbitalBase*> zcopy(Z);
+    //int n=Z.size()-1;
+    //for(int i=0; i<Z.size(); ++i) Z[n-i]=zcopy[i]; 
   }
 }
 /***************************************************************************

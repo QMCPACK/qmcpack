@@ -7,7 +7,6 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
@@ -21,8 +20,8 @@
 #define QMCPLUSPLUS_BASISSETBASE_H
 
 #include "Particle/ParticleSet.h"
+#include "Message/MPIObjectBase.h"
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
-#include "Optimize/VarList.h"
 
 namespace qmcplusplus {
 
@@ -34,7 +33,8 @@ namespace qmcplusplus {
    * provides  a minimal set of interfaces to get/set BasisSetSize.
    */
   template<typename T>
-  struct BasisSetBase: public OrbitalSetTraits<T> {
+  struct BasisSetBase: public OrbitalSetTraits<T> 
+  {
 
     enum {MAXINDEX=2+OHMMS_DIM};
     typedef typename OrbitalSetTraits<T>::RealType      RealType;
@@ -119,9 +119,10 @@ namespace qmcplusplus {
    * the user classes {\bf KNOW} what they need to use.
    * }
    */
-  struct BasisSetBuilder: public QMCTraits {
+  struct BasisSetBuilder: public QMCTraits, public MPIObjectBase
+  {
     BasisSetBase<RealType>* myBasisSet;
-    BasisSetBuilder():myBasisSet(0) {}
+    BasisSetBuilder(): MPIObjectBase(0), myBasisSet(0) {}
     virtual ~BasisSetBuilder(){}
     virtual bool put(xmlNodePtr cur)=0;
     virtual SPOSetBase* createSPOSet(xmlNodePtr cur)=0;

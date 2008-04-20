@@ -21,11 +21,13 @@
 
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCWaveFunctions/OrbitalBuilderBase.h"
+#include "Message/MPIObjectBase.h"
 namespace qmcplusplus {
 
   /** Factory class to build a many-body wavefunction 
    */
-  struct WaveFunctionFactory: public OhmmsElementBase {
+  struct WaveFunctionFactory: public MPIObjectBase, public OhmmsElementBase 
+  {
 
     typedef map<string,ParticleSet*> PtclPoolType;
     ///target ParticleSet
@@ -39,7 +41,12 @@ namespace qmcplusplus {
     ///builder tree
     std::vector<OrbitalBuilderBase*> psiBuilder;
 
-    WaveFunctionFactory(ParticleSet* qp, PtclPoolType& pset);
+    /** constructor
+     * @param qp quantum particleset
+     * @param pset pool of particlesets
+     * @param c  communicator
+     */
+    WaveFunctionFactory(ParticleSet* qp, PtclPoolType& pset, Communicate* c);
 
     ~WaveFunctionFactory();
 

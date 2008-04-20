@@ -36,7 +36,8 @@ namespace qmcplusplus {
    * \param ions reference to the ions
    */
   BasisSetFactory::BasisSetFactory(ParticleSet& els, TrialWaveFunction& psi, PtclPoolType& psets):
-  OrbitalBuilderBase(els,psi), ptclPool(psets){
+  OrbitalBuilderBase(els,psi), ptclPool(psets)
+  {
 
   }
 
@@ -84,7 +85,7 @@ namespace qmcplusplus {
       PtclPoolType::iterator pit(ptclPool.find(sourceOpt));
       if(pit == ptclPool.end()) 
       {
-        OHMMS::Controller->abort("Molecular orbital cannot be created.\n Missing/incorrect source attribute. Abort at BasisSetFactory::createBasisSet.");
+        APP_ABORT("BasisSetFactory::createBasisSet Missing basisset/@source.");
       } 
       else 
       {
@@ -111,23 +112,28 @@ namespace qmcplusplus {
         }
       }
     }
-    if(bb) {
+
+    if(bb) 
+    {
+      bb->initCommunicator(myComm);
       bb->put(cur);
       basisBuilder.push_back(bb);
-    } else {
-      app_log() << endl;
-      app_error() << "  Failed to create a basis set. Stop at BasisSetFactory::createBasisSet" << endl;
-      OHMMS::Controller->abort();
+    } 
+    else 
+    {
+      APP_ABORT("BasisSetFactory::createBasisSet Failed to create a basis set.");
     }
 #endif
   }
 
   SPOSetBase* BasisSetFactory::createSPOSet(xmlNodePtr cur) {
-    if(basisBuilder.size()) {
+    if(basisBuilder.size()) 
+    {
       return basisBuilder.back()->createSPOSet(cur);
-    } else {
-      app_error() << "  Failed to create a SPOSet. Stop at BasisSetFactory::createBasisSet" << endl;
-      OHMMS::Controller->abort();
+    } 
+    else 
+    {
+      APP_ABORT("BasisSetFactory::createSPOSet Failed to create a SPOSet. basisBuilder is empty.");
       return 0;
     }
   }

@@ -47,6 +47,16 @@ namespace qmcplusplus {
   string OrbitalBuilderBase::basis_tag="basis";
 
   string OrbitalBuilderBase::basisfunc_tag="phi";
+
+  OrbitalBuilderBase::OrbitalBuilderBase(ParticleSet& p, TrialWaveFunction& psi): 
+    MPIObjectBase(psi.getCommunicator()),
+  targetPtcl(p), targetPsi(psi), myNode(NULL)
+  { 
+  }
+
+  OrbitalBuilderBase::~OrbitalBuilderBase()
+  {
+  }
 }
 /***************************************************************************
  * $RCSfile$   $Author$
