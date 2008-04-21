@@ -37,7 +37,7 @@ inline void
 Communicate::reduce(T* restrict , T* restrict, int n) { }
 
 template<typename T> inline void 
-Communicate::bcast(T& ) { }
+Communicate::bcast(T& ) {  }
 
 template<typename T> inline void 
 Communicate::bcast(T* restrict ,int n) { }
@@ -243,10 +243,26 @@ Communicate::bcast(double& g)
 }
 
 template<>
+inline void
+Communicate::bcast(bool &g)
+{
+  int val = g ? 1 : 0;
+  MPI_Bcast(&val,1,MPI_INT,0,myMPI);
+  g = val != 0;
+}
+
+template<>
 inline void 
 Communicate::bcast(APPNAMESPACE::TinyVector<double,2>& g) 
 {
   MPI_Bcast(g.begin(),2,MPI_DOUBLE,0,myMPI);
+}
+
+template<>
+inline void 
+Communicate::bcast(APPNAMESPACE::TinyVector<int,2>& g) 
+{
+  MPI_Bcast(g.begin(),2,MPI_INT,0,myMPI);
 }
 
 template<>
