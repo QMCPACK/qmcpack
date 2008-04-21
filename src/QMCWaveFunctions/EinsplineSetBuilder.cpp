@@ -184,8 +184,8 @@ namespace qmcplusplus {
       IonTypes.resize(numIons);
       IonPos.resize(numIons);
     }
-    myComm->bcast(IonTypes.data(), numIons);
-    myComm->bcast(IonPos.data(), 3*numIons);
+    myComm->bcast(IonTypes);
+    myComm->bcast(IonPos);
     if (TwistAngles.size() != NumTwists)
       TwistAngles.resize(NumTwists);
     myComm->bcast(TwistAngles);
@@ -971,7 +971,6 @@ namespace qmcplusplus {
     }
     myComm->bcast(orbitalSet->kPoints);
     myComm->bcast(orbitalSet->MakeTwoCopies);
-    
     // First, check to see if we have already read this in
     H5OrbSet set(H5FileName, spin, N);
     std::map<H5OrbSet,multi_UBspline_3d_z*>::iterator iter;
@@ -982,7 +981,7 @@ namespace qmcplusplus {
       orbitalSet->MultiSpline = iter->second;
       return;
     }
-    
+
     int nx, ny, nz, bi, ti;
     Array<complex<double>,3> splineData, rawData;
     if (root) {
@@ -1012,7 +1011,8 @@ namespace qmcplusplus {
     myComm->bcast(ny);
     myComm->bcast(nz);
     if (!root)
-      splineData.resize(nx,ny,nz);
+      splineData.resize(nx-1,ny-1,nz-1);
+
     myComm->bcast(splineData);
     Ugrid x_grid, y_grid, z_grid;
     BCtype_z xBC, yBC, zBC;
