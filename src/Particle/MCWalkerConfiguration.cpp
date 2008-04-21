@@ -90,8 +90,8 @@ MCWalkerConfiguration::iterator
 MCWalkerConfiguration::destroyWalkers(iterator first, iterator last) {
   if(OwnWalkers) {
     iterator it = first;
-    while(it != last) {
-      cout << "## destroy walkers " << endl;
+    while(it != last) 
+    {
       delete *it++;
     }
   }
