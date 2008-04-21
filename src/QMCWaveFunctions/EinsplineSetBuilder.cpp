@@ -169,35 +169,32 @@ namespace qmcplusplus {
   void
   EinsplineSetBuilder::BroadcastOrbitalInfo()
   {
-    GroupComm->bcast(Version);
-    GroupComm->bcast(Lattice);
-    GroupComm->bcast(RecipLattice);
-    GroupComm->bcast(SuperLattice);
-    GroupComm->bcast(LatticeInv);
-    GroupComm->bcast(NumBands);
-    GroupComm->bcast(NumElectrons);
-    GroupComm->bcast(NumSpins);
-    GroupComm->bcast(NumTwists);
+    myComm->bcast(Version);
+    myComm->bcast(Lattice);
+    myComm->bcast(RecipLattice);
+    myComm->bcast(SuperLattice);
+    myComm->bcast(LatticeInv);
+    myComm->bcast(NumBands);
+    myComm->bcast(NumElectrons);
+    myComm->bcast(NumSpins);
+    myComm->bcast(NumTwists);
     int numIons = IonTypes.size();
-    GroupComm->bcast(numIons);
+    myComm->bcast(numIons);
     if (IonTypes.size() != numIons) {
       IonTypes.resize(numIons);
       IonPos.resize(numIons);
     }
-    GroupComm->bcast(IonTypes.data(), numIons);
-    GroupComm->bcast(IonPos.data(), 3*numIons);
+    myComm->bcast(IonTypes.data(), numIons);
+    myComm->bcast(IonPos.data(), 3*numIons);
     if (TwistAngles.size() != NumTwists)
       TwistAngles.resize(NumTwists);
-    GroupComm->bcast(TwistAngles);
+    myComm->bcast(TwistAngles);
     
-    GroupComm->bcast(HaveLocalizedOrbs);
+    myComm->bcast(HaveLocalizedOrbs);
   }
 
   SPOSetBase*
   EinsplineSetBuilder::createSPOSet(xmlNodePtr cur) {
-    // HACK HACK HACK
-    GroupComm = new Communicate;
-    GroupComm->set_world();
     OhmmsAttributeSet attribs;
     int numOrbs = 0;
     bool sortBands = true;
@@ -262,7 +259,7 @@ namespace qmcplusplus {
     // Read the basic orbital information, without reading all the //
     // orbitals themselves.                                        //
     /////////////////////////////////////////////////////////////////
-    if (GroupComm->rank() == 0) 
+    if (myComm->rank() == 0) 
       if (!ReadOrbitalInfo()) {
 	app_error() << "Error reading orbital info from HDF5 file.  Aborting.\n";
 	abort();
@@ -378,7 +375,7 @@ namespace qmcplusplus {
 		  << primPos.size()*numCopies << ".  Aborting.\n";
       abort();
     }
-    if (GroupComm->rank() == 0) {
+    if (myComm->rank() == 0) {
       fprintf (stderr, "Supercell ion positions = \n");
       for (int i=0; i<IonPos.size(); i++)
 	fprintf (stderr, "   [%12.6f %12.6f %12.6f]\n",
@@ -457,7 +454,7 @@ namespace qmcplusplus {
     for (int ki=0; ki<numPrimTwists; ki++)
       superSets[superIndex[ki]].push_back(ki);
 
-    if (GroupComm->rank() == 0) 
+    if (myComm->rank() == 0) 
       for (int si=0; si<numSuperTwists; si++) {
 	fprintf (stderr, "Super twist #%d:  [ %9.5f %9.5f %9.5f ]\n",
 		 si, superFracs[si][0], superFracs[si][1], superFracs[si][2]);
@@ -542,7 +539,7 @@ namespace qmcplusplus {
 	if (TwistPair(twist_i, twist_j))
 	  MakeTwoCopies[i] = true;
       }
-      if (GroupComm->rank() == 0)
+      if (myComm->rank() == 0)
 	fprintf (stderr, "Using %d copies of twist angle [%6.3f, %6.3f, %6.3f]\n",
 		 MakeTwoCopies[i] ? 2 : 1, twist_i[0], twist_i[1], twist_i[2]);
     }
@@ -671,7 +668,7 @@ namespace qmcplusplus {
   void
   EinsplineSetBuilder::OccupyBands(int spin, bool sortBands)
   {
-    if (GroupComm->rank() != 0) 
+    if (myComm->rank() != 0) 
       return;
 
     string eigenstatesGroup;
@@ -952,8 +949,8 @@ namespace qmcplusplus {
   EinsplineSetBuilder::ReadBands 
   (int spin, EinsplineSetExtended<complex<double> >* orbitalSet)
   {
-    bool root = GroupComm->rank()==0;
-    GroupComm->bcast(NumDistinctOrbitals);
+    bool root = myComm->rank()==0;
+    myComm->bcast(NumDistinctOrbitals);
     int N = NumDistinctOrbitals;
 
     orbitalSet->kPoints.resize(N);
@@ -971,8 +968,8 @@ namespace qmcplusplus {
 	orbitalSet->MakeTwoCopies[iorb] = SortBands[iorb].MakeTwoCopies;
       }
     }
-    GroupComm->bcast(orbitalSet->kPoints);
-    GroupComm->bcast(orbitalSet->MakeTwoCopies);
+    myComm->bcast(orbitalSet->kPoints);
+    myComm->bcast(orbitalSet->MakeTwoCopies);
     
     // First, check to see if we have already read this in
     H5OrbSet set(H5FileName, spin, N);
@@ -1008,14 +1005,14 @@ namespace qmcplusplus {
       k = orbitalSet->PrimLattice.k_cart(twist);
       double e = SortBands[0].Energy;
       fprintf (stderr, "  ti=%3d  bi=%3d energy=%8.5f k=(%7.4f, %7.4f, %7.4f) rank=%d\n", 
-	       ti, bi, e, k[0], k[1], k[2], GroupComm->rank());   
+	       ti, bi, e, k[0], k[1], k[2], myComm->rank());   
     }
-    GroupComm->bcast(nx);
-    GroupComm->bcast(ny);
-    GroupComm->bcast(nz);
+    myComm->bcast(nx);
+    myComm->bcast(ny);
+    myComm->bcast(nz);
     if (!root)
       splineData.resize(nx,ny,nz);
-    GroupComm->bcast(splineData);
+    myComm->bcast(splineData);
     Ugrid x_grid, y_grid, z_grid;
     BCtype_z xBC, yBC, zBC;
 
@@ -1042,7 +1039,7 @@ namespace qmcplusplus {
 	twist = TwistAngles[ti];
 	k = orbitalSet->PrimLattice.k_cart(twist);
 	fprintf (stderr, "  ti=%3d  bi=%3d energy=%8.5f k=(%7.4f, %7.4f, %7.4f) rank=%d\n", 
-		 ti, bi, e, k[0], k[1], k[2], GroupComm->rank());
+		 ti, bi, e, k[0], k[1], k[2], myComm->rank());
 	
 	string vectorName = OrbitalPath (ti, bi) + "eigenvector";
 	HDFAttribIO<Array<complex<double>,3> > h_rawData(rawData);
@@ -1059,7 +1056,7 @@ namespace qmcplusplus {
 	    for (int iz=0; iz<(nz-1); iz++)
 	      splineData(ix,iy,iz) = rawData(ix,iy,iz);
       }
-      GroupComm->bcast(splineData);
+      myComm->bcast(splineData);
       set_multi_UBspline_3d_z (orbitalSet->MultiSpline, iorb, splineData.data());
       
       iorb++;

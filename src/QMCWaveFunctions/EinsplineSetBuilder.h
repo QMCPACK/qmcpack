@@ -107,9 +107,6 @@ namespace qmcplusplus {
     SPOSetBase* createSPOSet(xmlNodePtr cur);
     
   protected:
-    // HACK:  This should be inherited
-    Communicate* GroupComm;
-
     // Type definitions
     typedef CrystalLattice<RealType,OHMMS_DIM> UnitCellType;
 

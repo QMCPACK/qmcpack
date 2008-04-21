@@ -33,6 +33,15 @@ myMPI(0), d_mycontext(0), d_ncontexts(1), d_groupid(0)
 {
 }
 
+
+Communicate::Communicate(int argc, char **argv)
+{
+  initialize(argc,argv);
+}
+
+//exclusive:  OOMPI, MPI or Serial
+#ifdef HAVE_OOMPI
+
 void
 Communicate::set_world()
 {
@@ -42,13 +51,6 @@ Communicate::set_world()
   d_ncontexts = OOMPI_COMM_WORLD.Size();
 }
 
-Communicate::Communicate(int argc, char **argv)
-{
-  initialize(argc,argv);
-}
-
-//exclusive:  OOMPI, MPI or Serial
-#ifdef HAVE_OOMPI
 
 Communicate::Communicate(const Communicate& comm, int nparts)
 {
@@ -119,6 +121,10 @@ void Communicate::abort(const char* msg)
 
 Communicate::~Communicate(){}
 void Communicate::initialize(int argc, char **argv)
+{ 
+}
+
+void Communicate::set_world()
 { 
 }
 
