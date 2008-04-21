@@ -344,6 +344,18 @@ Communicate::bcast(std::vector<int>& g)
 }
 
 template<>
+inline void 
+Communicate::bcast(std::vector<bool>& g) 
+{
+  std::vector<int> intVec(g.size());
+  for (int i=0; i<g.size(); i++)
+    intVec[i] = g[i] ? 1 : 0;
+  MPI_Bcast(&(intVec[0]),g.size(),MPI_INT,0,myMPI);
+  for (int i=0; i<g.size(); i++)
+    g[i] = intVec[i] != 0;
+}
+
+template<>
 inline void
 Communicate::bcast(double* restrict x, int n) 
 {

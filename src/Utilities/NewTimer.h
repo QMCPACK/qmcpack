@@ -58,7 +58,7 @@ namespace qmcplusplus  {
     { num_calls = 0; total_time=0.0; }
         
     NewTimer(std::string myname) : 
-      total_time(0.0), num_calls(0.0), name(myname)
+      total_time(0.0), num_calls(0), name(myname)
     { }
   };
 #else /* use boost or pooma */
