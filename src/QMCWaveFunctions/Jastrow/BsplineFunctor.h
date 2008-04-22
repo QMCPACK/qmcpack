@@ -73,26 +73,22 @@ namespace qmcplusplus {
       SplineCoefs[0] = Parameters[1] - 2.0*DeltaR * CuspValue;
       for (int i=2; i<Parameters.size(); i++)
 	SplineCoefs[i+1] = Parameters[i];
-      string fname = (elementType != "") ? elementType : pairType;
-      fname = fname + ".dat";
-      // fprintf (stderr, "Writing %s file.\n", fname.c_str());
-      FILE *fout = fopen (fname.c_str(), "w");
-      for (real_type r=1.0e-5; r<Rcut; r+=0.01) {
-	real_type eps = 1.0e-6;
-	real_type du, d2u, du_FD, d2u_FD;
-	real_type u = evaluate (r, du, d2u);
-	real_type uplus  = evaluate(r+eps);
-	real_type uminus = evaluate(r-eps);
-	du_FD  = (uplus-uminus)/(2.0*eps);
-	d2u_FD = (uplus+uminus-2.0*u)/(eps*eps);
- 	fprintf (fout, "%1.10e %1.10e %1.10e %1.10e %1.10e %1.10e\n", 
-		 r, evaluate(r), du, du_FD, d2u, d2u_FD);
-      }
-      fclose (fout);
-      cerr << "SplineCoefs = ";
-      for (int i=0; i<SplineCoefs.size(); i++)
-	cerr << SplineCoefs[i] << " ";
-      cerr << endl;
+      // string fname = (elementType != "") ? elementType : pairType;
+      // fname = fname + ".dat";
+      // // fprintf (stderr, "Writing %s file.\n", fname.c_str());
+      // FILE *fout = fopen (fname.c_str(), "w");
+      // for (real_type r=1.0e-5; r<Rcut; r+=0.01) {
+      // 	real_type eps = 1.0e-6;
+      // 	real_type du, d2u, du_FD, d2u_FD;
+      // 	real_type u = evaluate (r, du, d2u);
+      // 	real_type uplus  = evaluate(r+eps);
+      // 	real_type uminus = evaluate(r-eps);
+      // 	du_FD  = (uplus-uminus)/(2.0*eps);
+      // 	d2u_FD = (uplus+uminus-2.0*u)/(eps*eps);
+      // 	fprintf (fout, "%1.10e %1.10e %1.10e %1.10e %1.10e %1.10e\n", 
+      // 		 r, evaluate(r), du, du_FD, d2u, d2u_FD);
+      // }
+      // fclose (fout);
     }
     
     inline real_type evaluate(real_type r) {
