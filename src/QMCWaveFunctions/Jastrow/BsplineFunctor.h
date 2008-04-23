@@ -65,50 +65,56 @@ namespace qmcplusplus {
     void reset() 
     {
       for (int i=0; i<SplineCoefs.size(); i++)
-	SplineCoefs[i] = 0.0;
+        SplineCoefs[i] = 0.0;
 
       // Ensure that cusp conditions is satsified at the origin
       SplineCoefs[1] = Parameters[0];
       SplineCoefs[2] = Parameters[1];
       SplineCoefs[0] = Parameters[1] - 2.0*DeltaR * CuspValue;
       for (int i=2; i<Parameters.size(); i++)
-	SplineCoefs[i+1] = Parameters[i];
-      // string fname = (elementType != "") ? elementType : pairType;
-      // fname = fname + ".dat";
-      // // fprintf (stderr, "Writing %s file.\n", fname.c_str());
-      // FILE *fout = fopen (fname.c_str(), "w");
-      // for (real_type r=1.0e-5; r<Rcut; r+=0.01) {
-      // 	real_type eps = 1.0e-6;
-      // 	real_type du, d2u, du_FD, d2u_FD;
-      // 	real_type u = evaluate (r, du, d2u);
-      // 	real_type uplus  = evaluate(r+eps);
-      // 	real_type uminus = evaluate(r-eps);
-      // 	du_FD  = (uplus-uminus)/(2.0*eps);
-      // 	d2u_FD = (uplus+uminus-2.0*u)/(eps*eps);
-      // 	fprintf (fout, "%1.10e %1.10e %1.10e %1.10e %1.10e %1.10e\n", 
-      // 		 r, evaluate(r), du, du_FD, d2u, d2u_FD);
-      // }
-      // fclose (fout);
+        SplineCoefs[i+1] = Parameters[i];
+#if !defined(HAVE_MPI)
+      string fname = (elementType != "") ? elementType : pairType;
+      fname = fname + ".dat";
+      // fprintf (stderr, "Writing %s file.\n", fname.c_str());
+      FILE *fout = fopen (fname.c_str(), "w");
+      for (real_type r=1.0e-5; r<Rcut; r+=0.01) {
+        real_type eps = 1.0e-6;
+        real_type du, d2u, du_FD, d2u_FD;
+        real_type u = evaluate (r, du, d2u);
+        real_type uplus  = evaluate(r+eps);
+        real_type uminus = evaluate(r-eps);
+        du_FD  = (uplus-uminus)/(2.0*eps);
+        d2u_FD = (uplus+uminus-2.0*u)/(eps*eps);
+        fprintf (fout, "%1.10e %1.10e %1.10e %1.10e %1.10e %1.10e\n", 
+            r, evaluate(r), du, du_FD, d2u, d2u_FD);
+      }
+      fclose (fout);
+      cerr << "SplineCoefs = ";
+      for (int i=0; i<SplineCoefs.size(); i++)
+        cerr << SplineCoefs[i] << " ";
+      cerr << endl;
+#endif
     }
-    
+
     inline real_type evaluate(real_type r) {
       if (r >= Rcut)
-	return 0.0;
+        return 0.0;
       r *= DeltaRInv;
 
       real_type ipart, t;
       t = modf (r, &ipart);
       int i = (int) ipart;
-      
+
       real_type tp[4];
       tp[0] = t*t*t;  tp[1] = t*t;  tp[2] = t;  tp[3] = 1.0;
 
       return 
-	(SplineCoefs[i+0]*(A[ 0]*tp[0] + A[ 1]*tp[1] + A[ 2]*tp[2] + A[ 3]*tp[3])+
-	 SplineCoefs[i+1]*(A[ 4]*tp[0] + A[ 5]*tp[1] + A[ 6]*tp[2] + A[ 7]*tp[3])+
-	 SplineCoefs[i+2]*(A[ 8]*tp[0] + A[ 9]*tp[1] + A[10]*tp[2] + A[11]*tp[3])+
-	 SplineCoefs[i+3]*(A[12]*tp[0] + A[13]*tp[1] + A[14]*tp[2] + A[15]*tp[3]));
-		
+        (SplineCoefs[i+0]*(A[ 0]*tp[0] + A[ 1]*tp[1] + A[ 2]*tp[2] + A[ 3]*tp[3])+
+         SplineCoefs[i+1]*(A[ 4]*tp[0] + A[ 5]*tp[1] + A[ 6]*tp[2] + A[ 7]*tp[3])+
+         SplineCoefs[i+2]*(A[ 8]*tp[0] + A[ 9]*tp[1] + A[10]*tp[2] + A[11]*tp[3])+
+         SplineCoefs[i+3]*(A[12]*tp[0] + A[13]*tp[1] + A[14]*tp[2] + A[15]*tp[3]));
+
     }
 
     inline real_type 
