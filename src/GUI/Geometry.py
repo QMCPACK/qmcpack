@@ -430,7 +430,7 @@ class TypeRow(gobject.GObject):
             charge = header.getAttribute("zval")
             self.Widgets[0].set_label(elem)
             self.Widgets[1].set_label(Z)
-            self.Charge = int(charge)
+            self.Charge = int(float(charge))
             self.emit("changed")
             return True
         else:
@@ -447,7 +447,7 @@ class TypeRow(gobject.GObject):
         return self.Widgets[0].get_label()
 
     def get_atomic_number(self):
-        return int(self.Widgets[1].get_label())
+        return int(float(self.Widgets[1].get_label()))
 
     def get_valence_charge(self):
         return self.Charge

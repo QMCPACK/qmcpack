@@ -94,16 +94,22 @@ def relative2 (file1, file2):
     dir2 = os.path.dirname(file2)
     dirlist1 = dir1.split ('/')
     dirlist2 = dir2.split ('/')
-    common = "/"
+    if (dirlist1[0] == ''):
+        dirlist1.remove('')
+    if (dirlist2[0] == ''):
+        dirlist2.remove('')
+    print "dirlist1 = " + repr(dirlist1)
+    common = ""
+    
     i = 0
     mindirs = min (len(dirlist1), len(dirlist2))
     while ((i < mindirs) and (dirlist1[i] == dirlist2[i])):
         common = common + '/' + dirlist1[i]
         i = i+1
-    dirstrip  = dir1.lstrip(common)
-    filestrip = file2.lstrip(common)
+    common = common 
+    dirstrip  = dir1.replace(common,'',1)
+    filestrip = file2.replace(common+'/','',1)
     striplist = dirstrip.split('/')
-    print "striplist = " + repr(striplist)
     rel = ""
     for d in striplist:
         if (d != ""):
