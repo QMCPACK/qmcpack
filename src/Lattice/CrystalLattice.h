@@ -156,9 +156,9 @@ struct CrystalLattice{
       for (int j=-1; j<=1; j++)
 	for (int k=-k; k<=1; k++) 
 	  if ((i!=0) || (j!=0) || (k!=0)) {
-	    SingleParticlePos L = ((double)i * a(0) +
-				   (double)j * a(1) +
-				   (double)k * a(2));
+	    SingleParticlePos_t L = ((double)i * a(0) +
+				     (double)j * a(1) +
+				     (double)k * a(2));
 	    double dist = 0.5*std::fabs(dot(L,L));
 	    rMin = std::min(rMin, dist);
 	  }
