@@ -147,6 +147,16 @@ Communicate::allreduce(int& g)
 
 template<>
 inline void 
+Communicate::allreduce(long& g) 
+{
+  if(d_ncontexts==1) return;
+  long gt = g;
+  MPI_Allreduce(&(gt), &(g), 1, MPI_LONG, MPI_SUM, myMPI);
+}
+
+
+template<>
+inline void 
 Communicate::allreduce(double& g) 
 {
   if(d_ncontexts==1) return;
