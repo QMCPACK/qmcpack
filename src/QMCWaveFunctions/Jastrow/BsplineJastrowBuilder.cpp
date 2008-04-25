@@ -132,7 +132,7 @@ namespace qmcplusplus {
             else cusp=0.5*q;
           }
 
-          app_log() << "  BspilneJastrowBuilder adds a functor with cusp = " << cusp << endl;
+          app_log() << "  BsplineJastrowBuilder adds a functor with cusp = " << cusp << endl;
 	  RadFuncType *functor = new RadFuncType(cusp);
 	  functor->put (kids);
 	  functor->addOptimizables(targetPsi.VarList);
