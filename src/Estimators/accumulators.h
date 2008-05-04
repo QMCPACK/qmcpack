@@ -64,7 +64,8 @@ class accumulator_set
       return norm*(valsq-val*val*norm);
     }
 
-    inline void clear(){
+    inline void clear()
+    {
       val=value_type();valsq=value_type();weight=value_type();
     }
 
