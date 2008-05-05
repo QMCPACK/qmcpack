@@ -216,7 +216,7 @@ namespace qmcplusplus {
   void DMCOMP::benchMark() { 
     
     //set the collection mode for the estimator
-    Estimators->setCollectionMode(branchEngine->SwapMode);
+    Estimators->setCollectionMode(true);
 
     IndexType PopIndex = Estimators->addProperty("Population");
     IndexType EtrialIndex = Estimators->addProperty("Etrial");
@@ -224,7 +224,7 @@ namespace qmcplusplus {
     //Estimators->reset();
 
     IndexType block = 0;
-    RealType Eest = branchEngine->Eref;
+    RealType Eest = branchEngine->getEref();
 
     //resetRun();
 
