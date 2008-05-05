@@ -69,6 +69,7 @@ namespace qmcplusplus {
         << setw(22) << "Weight "
         << setw(20) << "NumOfWalkers" 
         << setw(20) << "TrialEnergy " 
+        << setw(20) << "DiffEff " 
         << endl;
     }
   }
@@ -82,6 +83,8 @@ namespace qmcplusplus {
     EnsembleProperty.Weight=curData[WEIGHT_INDEX];
     EnsembleProperty.Variance=(curData[ENERGY_SQ_INDEX]*wgtInv-eavg*eavg);
     EnsembleProperty.NumSamples=curData[WALKERSIZE_INDEX];
+    EnsembleProperty.R2Accepted=curData[R2ACCEPTED_INDEX];
+    EnsembleProperty.R2Proposed=curData[R2PROPOSED_INDEX];
 
     if(dmcStream) 
     {
@@ -93,6 +96,7 @@ namespace qmcplusplus {
         << setw(20) << EnsembleProperty.Weight
         << setw(20) << EnsembleProperty.NumSamples
         << setw(20) << trialEnergy 
+        << setw(20) << EnsembleProperty.R2Accepted/EnsembleProperty.R2Proposed
         << endl;
     }
   }
@@ -160,10 +164,13 @@ namespace qmcplusplus {
     NumWalkers=0;
     MCWalkerConfiguration::iterator it_end(W.end());
     RealType esum=0.0,e2sum=0.0,wsum=0.0,ecum=0.0, w2sum=0.0;
+    RealType r2_accepted=0.0,r2_proposed=0.0;
     //RealType sigma=std::max(5.0*targetVar,targetEnergyBound);
     //RealType ebar= targetAvg;
     while(it != it_end) 
     {
+      r2_accepted+=(*it)->Properties(R2ACCEPTED);
+      r2_proposed+=(*it)->Properties(R2PROPOSED);
       RealType e((*it)->Properties(LOCALENERGY));
       int nc= std::min(static_cast<int>((*it)->Multiplicity),MaxCopy);
       RealType wgt((*it)->Weight);
@@ -210,6 +217,8 @@ namespace qmcplusplus {
     curData[WALKERSIZE_INDEX]=W.getActiveWalkers();
     curData[WEIGHT_INDEX]=wsum;
     curData[EREF_INDEX]=ecum;
+    curData[R2ACCEPTED_INDEX]=r2_accepted;
+    curData[R2PROPOSED_INDEX]=r2_proposed;
     
     ////this should be move
     //W.EnsembleProperty.NumSamples=curData[WALKERSIZE_INDEX];
