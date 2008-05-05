@@ -53,7 +53,7 @@ public:
    * @param group groupd rank
    * @param multi_run true, open one ostream per group
    */
-  OhmmsInfo(const std::string& fin_name, int rank=0, int gid=0, bool multi_run=false);
+  OhmmsInfo(const std::string& fin_name, int rank=0, int gid=0, int num_groups=1);
   ~OhmmsInfo(); 
 private:
   OhmmsInfo(){ }
