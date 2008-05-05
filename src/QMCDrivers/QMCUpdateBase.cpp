@@ -93,6 +93,9 @@ namespace qmcplusplus {
     Tau=brancher->getTau();
     m_oneover2tau = 0.5/Tau;
     m_sqrttau = std::sqrt(Tau);
+    m_r2max = W.Lattice.LR_rc* W.Lattice.LR_rc;
+
+    app_log() << "  Setting the bound for the displacement max(r^2) = " <<  m_r2max << endl;
   }
 
   void QMCUpdateBase::resetEtrial(RealType et) {
