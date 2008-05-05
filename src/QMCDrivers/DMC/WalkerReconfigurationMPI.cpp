@@ -8,7 +8,6 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
@@ -26,15 +25,11 @@ using namespace qmcplusplus;
  * set SwapMode
  */
 WalkerReconfigurationMPI::WalkerReconfigurationMPI(Communicate* c): 
-WalkerControlBase(c), TotalWalkers(0) {
+WalkerControlBase(c), TotalWalkers(0) 
+{
   SwapMode=1;
-  //ostringstream o;
-  //o << "check." << MyContext << ".dat";
-  //ofstream fout(o.str().c_str());
-  //fout << "UnitZeta " << UnitZeta << endl;
   UnitZeta=Random();
-  myComm->bcast(&UnitZeta,1);
-  //MPI_Bcast(&UnitZeta,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
+  myComm->bcast(UnitZeta);
   app_log() << "  First weight [0,1) for reconfiguration =" << UnitZeta << endl;
 }
 
@@ -55,7 +50,8 @@ WalkerReconfigurationMPI::branch(int iter, MCWalkerConfiguration& W, RealType tr
 
   //set Weight and Multiplicity to default values
   MCWalkerConfiguration::iterator it(W.begin()),it_end(W.end());
-  while(it != it_end) {
+  while(it != it_end) 
+  {
     (*it)->Weight= 1.0;
     (*it)->Multiplicity=1.0;
     ++it;
@@ -70,7 +66,8 @@ int WalkerReconfigurationMPI::swapWalkers(MCWalkerConfiguration& W) {
   //ofstream fout(o.str().c_str(),ios::app);
 
   int nw=W.getActiveWalkers();
-  if(TotalWalkers ==0) {
+  if(TotalWalkers ==0) 
+  {
     FirstWalker=nw*MyContext;
     LastWalker=FirstWalker+nw;
     TotalWalkers = nw*NumContexts;
@@ -89,7 +86,11 @@ int WalkerReconfigurationMPI::swapWalkers(MCWalkerConfiguration& W) {
   MCWalkerConfiguration::iterator it(W.begin()), it_end(W.end());
   int iw=0;
   RealType esum=0.0,e2sum=0.0,wtot=0.0,ecum=0.0;
-  while(it != it_end) {
+  RealType r2_accepted=0.0,r2_proposed=0.0;
+  while(it != it_end) 
+  {
+    r2_accepted+=(*it)->Properties(R2ACCEPTED);
+    r2_proposed+=(*it)->Properties(R2PROPOSED);
     RealType wgt((*it)->Weight);
     RealType e((*it)->Properties(LOCALENERGY));
     esum += wgt*e;
@@ -105,6 +106,9 @@ int WalkerReconfigurationMPI::swapWalkers(MCWalkerConfiguration& W) {
   curData[WALKERSIZE_INDEX]=nw;
   curData[WEIGHT_INDEX]=wtot;
   curData[EREF_INDEX]=ecum;
+  curData[R2ACCEPTED_INDEX]=r2_accepted;
+  curData[R2PROPOSED_INDEX]=r2_proposed;
+
   std::fill(curData.begin()+LE_MAX,curData.end(),0.0);
   curData[LE_MAX+MyContext]=wtot;
 
@@ -129,7 +133,8 @@ int WalkerReconfigurationMPI::swapWalkers(MCWalkerConfiguration& W) {
   int nb=maxIndex-minIndex+1;
   vector<RealType> Zeta(nb);
 
-  for(int i=minIndex, ii=0; i<maxIndex; i++,ii++) {
+  for(int i=minIndex, ii=0; i<maxIndex; i++,ii++) 
+  {
     Zeta[ii]= wtot*(DeltaStep+static_cast<RealType>(i)*nwInv);
   }
 

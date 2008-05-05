@@ -45,7 +45,10 @@ int WalkerReconfiguration::getIndexPermutation(MCWalkerConfiguration& W) {
   //accumulate the energies
   RealType esum=0.0,e2sum=0.0,wtot=0.0,ecum=0.0;
   MCWalkerConfiguration::iterator it(W.begin());
+  RealType r2_accepted=0.0,r2_proposed=0.0;
   for(int iw=0; iw<nw; iw++) {
+    r2_accepted+=(*it)->Properties(R2ACCEPTED);
+    r2_proposed+=(*it)->Properties(R2PROPOSED);
     RealType wgt((*it)->Weight);
     RealType e((*it)->Properties(LOCALENERGY));
     esum += wgt*e;
@@ -59,6 +62,8 @@ int WalkerReconfiguration::getIndexPermutation(MCWalkerConfiguration& W) {
   curData[WALKERSIZE_INDEX]=nw;
   curData[WEIGHT_INDEX]=wtot;
   curData[EREF_INDEX]=ecum;
+  curData[R2ACCEPTED_INDEX]=r2_accepted;
+  curData[R2PROPOSED_INDEX]=r2_proposed;
 
   RealType nwInv=1.0/static_cast<RealType>(nw);
   RealType dstep=UnitZeta*nwInv;
