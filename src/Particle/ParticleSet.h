@@ -43,6 +43,8 @@ namespace qmcplusplus {
     T Weight;
     T Energy;
     T Variance;
+    T R2Accepted;
+    T R2Proposed;
   };
 
   /** Specialized paritlce class for atomistic simulations

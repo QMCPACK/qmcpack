@@ -286,13 +286,24 @@ namespace qmcplusplus {
     if(SK) SK->copyFromBuffer(buf);
   }
 
-  void ParticleSet::initPropertyList() {
+  void ParticleSet::initPropertyList() 
+  {
     //Need to add the default Properties according to the enumeration
     PropertyList.add("LogPsi");
     PropertyList.add("SignPsi");
     PropertyList.add("UmbrellaWeight");
     PropertyList.add("LocalEnergy");
     PropertyList.add("LocalPotential");
+    PropertyList.add("R2Accepted");
+    PropertyList.add("R2Proposed");
+    PropertyList.add("DriftScale");
+
+    if(PropertyList.size() != NUMPROPERTIES)
+    {
+      app_error() << "The number of default properties for walkers  is not consistent." << endl;
+      app_error() << "NUMPROPERTIES " << NUMPROPERTIES << " size of PropertyList " << PropertyList.size() << endl;
+      APP_ABORT("ParticleSet::initPropertyList");
+    }
   }
 
   void ParticleSet::clearDistanceTables() {

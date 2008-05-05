@@ -27,6 +27,9 @@ namespace qmcplusplus {
         UMBRELLAWEIGHT, /*!< sum of wavefunction ratios for multiple H and Psi */
 	LOCALENERGY,    /*!< local energy, the sum of all the components */
 	LOCALPOTENTIAL, /*!< local potential energy = local energy - kinetic energy */
+        R2ACCEPTED,     /*!< r^2 for accepted moves */
+        R2PROPOSED,     /*!< r^2 for proposed moves */
+        DRIFTSCALE,     /*!< scaling value for the drift */
 	NUMPROPERTIES   /*!< the number of properties */
        };
   
@@ -44,7 +47,8 @@ namespace qmcplusplus {
    * - DataSet : anonymous container. 
    */
   template<class T, class PA, class GA=PA>
-  struct Walker {
+  struct Walker 
+  {
     
     enum {DIM=PA::Type_t::Size};
 
@@ -54,7 +58,7 @@ namespace qmcplusplus {
 
     ///id reserved for forward walking
     int ID;
-    ///Age of this walker.
+    ///Age of this walker age is incremented when a walker is not moved after a sweep
     int Age;
 
     ///Weight of the walker
@@ -158,6 +162,7 @@ namespace qmcplusplus {
       return Properties[i];
     }
 
+
     /** reset the property of a walker
      *@param logpsi \f$\log |\Psi|\f$
      *@param sigN  sign of the trial wavefunction
@@ -166,7 +171,8 @@ namespace qmcplusplus {
      *Assign the values and reset the age
      * but leave the weight and multiplicity 
      */
-    inline void resetProperty(T logpsi, T sigN, T ene) {
+    inline void resetProperty(T logpsi, T sigN, T ene) 
+    {
       Age=0;
       //Weight=1.0;
       Properties(LOGPSI)=logpsi;
@@ -174,6 +180,28 @@ namespace qmcplusplus {
       Properties(LOCALENERGY) = ene;
     }
 
+    /** reset the property of a walker
+     * @param logpsi \f$\log |\Psi|\f$
+     * @param sigN  sign of the trial wavefunction
+     * @param ene the local energy
+     * @param r2a \f$r^2\f$ for the accepted moves
+     * @param r2p \f$r^2\f$ for the proposed moves
+     * @param vq \f$\bar{V}/V\f$ scaling to control node divergency in JCP 93
+     *
+     *Assign the values and reset the age
+     * but leave the weight and multiplicity 
+     */
+    inline void resetProperty(T logpsi, T sigN, T ene, T r2a, T r2p, T vq) 
+    {
+      Age=0;
+      //Weight=1.0;
+      Properties(LOGPSI)=logpsi;
+      Properties(SIGN)=sigN;
+      Properties(LOCALENERGY) = ene;
+      Properties(R2ACCEPTED) = r2a;
+      Properties(R2PROPOSED) = r2p;
+      Properties(DRIFTSCALE) = vq;
+    }
     /** marked to die
      *
      * Multiplicity and weight are set to zero.
