@@ -40,6 +40,28 @@ OhmmsInfo::~OhmmsInfo() {
 
 }
 
+OhmmsInfo::OhmmsInfo(const std::string& fin_name, int rank, int gid, int num_groups)
+{
+  
+  Writeable = (rank == 0);
+
+  if(Log==0)//check if this is the first time
+  {
+    Warn = new OhmmsInform("WARNING",false,Writeable);
+    Error = new OhmmsInform("ERROR",false,Writeable);
+    Log = new OhmmsInform(" ",false,Writeable);
+  }
+
+  if(Writeable && num_groups>1)
+  {
+    char fn[128];
+    sprintf(fn,"%s.g%03d.log.xml",fin_name.c_str(),gid);
+    Log->set(fin_name.c_str());
+    Warn->set(*Log,"WARNING");
+    Error->set(*Log,"ERROR");
+  }
+}
+
 void OhmmsInfo::initialize(const char* froot, int master){
 
   if(master > 0) 
@@ -51,6 +73,8 @@ void OhmmsInfo::initialize(const char* froot, int master){
   Warn = new OhmmsInform("WARNING",false,Writeable);
   Error = new OhmmsInform("ERROR",false,Writeable);
   Log = new OhmmsInform(" ",false,Writeable);
+
+  Error->setStdError();
 #ifdef PRINT_DEBUG
   Debug = new OhmmsInform("DEBUG",false,Writeable);
 #endif
@@ -58,6 +82,7 @@ void OhmmsInfo::initialize(const char* froot, int master){
   Log->getStream().setf(std::ios::scientific, std::ios::floatfield);
   Log->getStream().precision(6);
 
+  Log->getStream() << "<?xml version=\"1.0\"?>\n";
 //    bool useone = true; //always share the std
 //    if(useone) 
 //    {
@@ -95,14 +120,14 @@ void OhmmsInfo::die(const char* msg) {
  */
 void OhmmsInfo::flush() {
 
-  if(!Writeable) {
+  //if(!Writeable) {
     Log->getStream().flush();
     Error->getStream().flush();
     Warn->getStream().flush();
 #ifdef PRINT_DEBUG
     Debug->getStream().flush();
 #endif
-  }
+  //}
 }
 //std::ostream& app_log(){ return OhmmsInfo::Log->getStream();}
 //std::ostream& app_error(){ return OhmmsInfo::Error->getStream();}

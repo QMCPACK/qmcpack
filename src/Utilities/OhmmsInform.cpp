@@ -24,70 +24,115 @@
 #include <fstream>
 using namespace std;
 
-OhmmsInform::OhmmsInform(bool allcanwrite, bool writenode) 
-:thisStream(0), OwnStream(false) 
+OhmmsInform::OhmmsInform(bool allcanwrite, bool writenode):bgStream(0),myPrompt("qmc>")
 { 
-  thisPrompt = string("ohmms>");
-  if(allcanwrite || writenode) { 
-    thisStream = &cout;
-    CanWrite = true;
+  if(allcanwrite || writenode) 
+  { 
+    myStream = &cout;
+    OwnStream =false;
   } else {
-    thisStream = new ostringstream();
-    CanWrite = false;
+    myStream = new ostringstream();
+    OwnStream=true;
   }
+  Blanks=0;
 }
 
-OhmmsInform::OhmmsInform(const char* prompt, bool allcanwrite, bool writenode)
-:thisStream(0), thisPrompt(prompt), OwnStream(false)
+  OhmmsInform::OhmmsInform(const char* prompt, bool allcanwrite, bool writenode):myStream(0),bgStream(0),myPrompt(prompt)
 { 
-  if(allcanwrite || writenode) { 
-    thisStream = &cout;
-    CanWrite = true;
-  } else {
-    thisStream = new ostringstream();
-    CanWrite = false;
+  if(allcanwrite || writenode) 
+  { 
+    myStream = &cout;
+    OwnStream=false;
+  } 
+  else 
+  {
+    myStream = new ostringstream();
+    OwnStream=true;
   }
+  Blanks=0;
 }
 
-OhmmsInform::OhmmsInform(const char* prompt, const char* fname, int appmode)
-  :thisPrompt(prompt), OwnStream(true), CanWrite(true) 
+OhmmsInform::OhmmsInform(const char* prompt, const char* fname, int appmode):OwnStream(true), bgStream(0),myPrompt(prompt) 
 { 
   // file mode
   if(appmode == OVERWRITE) 
-    thisStream = new ofstream(fname);
+    myStream = new ofstream(fname);
   else
-    thisStream = new ofstream(fname,ios::app);
+    myStream = new ofstream(fname,ios::app);
+  Blanks=0;
 }
 
 
 OhmmsInform::OhmmsInform(const char* prompt, ostream& o)
-  :thisPrompt(prompt), thisStream(&o), CanWrite(true)
+:OwnStream(false),myStream(&o),myPrompt(prompt)
 {
-  OwnStream = false;
+  Blanks=0;
 }
 
 
 void OhmmsInform::set(const char* fname, int appmode)
 {
-  if(OwnStream && thisStream) delete thisStream;
+  if(OwnStream && myStream) delete myStream;
   OwnStream = true;
   if(appmode == OVERWRITE)
-    thisStream = new ofstream(fname);
+    myStream = new ofstream(fname);
   else
-    thisStream = new ofstream(fname,ios::app);
+    myStream = new ofstream(fname,ios::app);
 }
+
 
 void OhmmsInform::set(OhmmsInform& o)
 {
   if(OwnStream) {
-    if(thisStream) delete thisStream;
+    if(myStream) delete myStream;
   }
-  thisStream = o.thisStream;
+  myStream =o.myStream;
+  myPrompt=o.myPrompt;
   OwnStream = false;
 }
 
+void OhmmsInform::set(OhmmsInform& o, const string& s)
+{
+  if(OwnStream) {
+    if(myStream) delete myStream;
+  }
+  myStream =o.myStream;
+  myPrompt=s;
+  OwnStream = false;
+}
+void OhmmsInform::setPrompt(const string& s)
+{
+  myPrompt=s;
+}
+
+void OhmmsInform::setStdError()
+{
+  if(OwnStream) 
+  {
+    if(myStream) delete myStream;
+  }
+  myStream=&cerr;
+  OwnStream=false;
+}
+
+void OhmmsInform::turnoff()
+{
+  bgStream=myStream;
+  myStream = new ostringstream();
+}
+
+void OhmmsInform::reset()
+{
+  if(bgStream)
+  {
+    delete myStream;
+    myStream=bgStream;
+    bgStream=0;
+  }
+}
+
 OhmmsInform::~OhmmsInform() {
-  if(OwnStream) delete thisStream;
+  if(OwnStream) delete myStream;
 }
 
 /***************************************************************************

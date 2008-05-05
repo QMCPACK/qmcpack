@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////
-// (c) Copyright 1998-2002 by Jeongnim Kim
+// (c) Copyright 1998-2002, 2003 - by Jeongnim Kim
 //////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////
 //   Jeongnim Kim
@@ -8,7 +8,6 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
@@ -37,14 +36,27 @@ public:
   static OhmmsInform *Warn;
   static OhmmsInform *Error;
   static OhmmsInform *Log;
+
   static void initialize(const char* froot, int master);
   static void die(const char*);
   static void flush();
   
+  /** constructor using command-line arguments 
+   * @param argc number of arguments
+   * @param argv arguments
+   * @param master selects an ostream that does writing
+   */
   OhmmsInfo(int argc, char** argv, int master=-1); 
+  /** constructor
+   * @param fin_name input file name
+   * @param rank node rank
+   * @param group groupd rank
+   * @param multi_run true, open one ostream per group
+   */
+  OhmmsInfo(const std::string& fin_name, int rank=0, int gid=0, bool multi_run=false);
   ~OhmmsInfo(); 
+private:
   OhmmsInfo(){ }
-
 };
 
 //extern std::ostream& app_log();

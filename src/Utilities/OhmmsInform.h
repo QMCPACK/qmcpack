@@ -51,16 +51,39 @@ public:
 
   void set(const char* fname, int appmode = OVERWRITE);
   void set(OhmmsInform&);
-  inline void flush() { thisStream->flush();}
+  void set(OhmmsInform&,const std::string& s);
+  void setPrompt(const std::string& s);
+  inline void flush() { myStream->flush();}
 
-  inline std::ostream& getStream() { 
-    return *thisStream;
+  inline std::ostream& getStream() 
+  { 
+    if(Blanks) (*myStream) << std::setw(Blanks) << ' ';
+    return *myStream;
   }
-  inline bool open() const { return CanWrite;}
+
+  ///switch to std::cerr
+  void setStdError();
+  ///incremenet indentation
+  inline void pushd() { Blanks+=2;}
+  ///decrease indentation
+  inline void popd() { if(Blanks) Blanks-=2;}
+
+  //inline bool open() const { return CanWrite;}
+
+  /** temporarily turn off the stream
+   */
+  void turnoff(); 
+
+  /** reset the stream to the original
+   */
+  void reset(); 
+
 private:
-  std::string   thisPrompt;
-  std::ostream* thisStream;
-  bool OwnStream, CanWrite;
+  bool OwnStream;
+  int Blanks;
+  std::ostream* myStream;
+  std::ostream* bgStream;
+  std::string   myPrompt;
 };
 
 // templated version of operator<< for Inform objects
@@ -72,7 +95,8 @@ OhmmsInform& operator<<(OhmmsInform& o, const T& val) {
 }
 
 // specialized function for sending strings to Inform object
-inline OhmmsInform& operator<<(OhmmsInform& o, const std::string& s) {
+inline OhmmsInform& operator<<(OhmmsInform& o, const std::string& s) 
+{
   o.getStream() << s.c_str();
   return o;
 }
