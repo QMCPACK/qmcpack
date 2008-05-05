@@ -79,7 +79,8 @@ namespace qmcplusplus {
     return s;
   }
 
-  void QMCUpdateBase::resetRun(BranchEngineType* brancher, EstimatorManager* est) {
+  void QMCUpdateBase::resetRun(BranchEngineType* brancher, EstimatorManager* est) 
+  {
 
     Estimators=est;
     branchEngine=brancher;
@@ -89,7 +90,7 @@ namespace qmcplusplus {
     deltaR.resize(NumPtcl);
     drift.resize(NumPtcl);
 
-    Tau=brancher->Tau;
+    Tau=brancher->getTau();
     m_oneover2tau = 0.5/Tau;
     m_sqrttau = std::sqrt(Tau);
   }
@@ -166,6 +167,8 @@ namespace qmcplusplus {
   }
 
   void QMCUpdateBase::updateWalkers(WalkerIter_t it, WalkerIter_t it_end) {
+
+    RealType tauinv=1.0/Tau;
     for(;it != it_end; ++it)
     {
       Walker_t::Buffer_t& w_buffer((*it)->DataSet);
@@ -173,12 +176,15 @@ namespace qmcplusplus {
       W.updateBuffer(**it,w_buffer);
       RealType logpsi=Psi.updateBuffer(W,w_buffer,true);
       RealType enew= H.evaluate(W);
-      (*it)->resetProperty(logpsi,Psi.getPhase(),enew);
-      H.saveProperty((*it)->getPropertyBase());
 
-      //RealType scale=getDriftScale(Tau,W.G);
-      //(*it)->Drift = scale*W.G;
-      setScaledDrift(Tau,W.G,(*it)->Drift);
+      //calculate the scaling factor
+      RealType scale=getDriftScale(Tau,W.G);
+
+      (*it)->resetProperty(logpsi,Psi.getPhase(),enew,1.0,1.0,1.0);
+
+      H.saveProperty((*it)->getPropertyBase());
+      assignDrift(scale,W.G,(*it)->Drift);
+      //setScaledDrift(Tau,W.G,(*it)->Drift);
     }
   }
 

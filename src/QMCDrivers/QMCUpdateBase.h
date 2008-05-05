@@ -62,7 +62,8 @@ namespace qmcplusplus {
     ///destructor
     virtual ~QMCUpdateBase();
 
-    inline RealType acceptRatio() const {
+    inline RealType acceptRatio() const 
+    {
       return static_cast<RealType>(nAccept)/static_cast<RealType>(nAccept+nReject);
     }
 
