@@ -144,7 +144,7 @@ namespace qmcplusplus {
               W.copyToBuffer(w_buffer);
               RealType psi = Psi.evaluate(W,w_buffer);
               enew= H.evaluate(W);
-              thisWalker.resetProperty(std::log(abs(psi)),psi,enew);
+              thisWalker.resetProperty(std::log(abs(psi)),psi,enew,rr_accepted,rr_proposed,1.0);
               H.saveProperty(thisWalker.getPropertyBase());
             } 
             else 
@@ -154,7 +154,7 @@ namespace qmcplusplus {
               enew=eold;//copy back old energy
             }
 
-            thisWalker.Weight *= branchEngine->branchWeight(Tau*rr_accepted/rr_proposed,eold,enew);
+            thisWalker.Weight *= branchEngine->branchWeight(eold,enew);
 
             nAccept += nAcceptTemp;
             nReject += nRejectTemp;

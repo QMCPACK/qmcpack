@@ -42,7 +42,8 @@ namespace qmcplusplus {
     //RealType plusFactor(Tau*Gamma);
     //RealType minusFactor(-Tau*(1.0-Alpha*(1.0+Gamma)));
 
-    while(it != it_end) {
+    for(; it!=it_end; ++it)
+    {
       Walker_t& thisWalker(**it);
 
       //save old local energy
@@ -108,10 +109,8 @@ namespace qmcplusplus {
         ++NonLocalMoveAccepted;
       } 
 
-      //thisWalker.Weight *= branchEngine->branchGF(Tau,emixed,0.0);
-      thisWalker.Weight *= branchEngine->branchWeight(Tau,eold,enew);
+      thisWalker.Weight *= branchEngine->branchWeight(eold,enew);
       //branchEngine->accumulate(eold,1);
-      ++it;
     }
   }
 
@@ -133,11 +132,13 @@ namespace qmcplusplus {
       bool measure) 
   {
 
-    while(it != it_end) {
+    for(; it!=it_end; ++it)
+    {
       Walker_t& thisWalker(**it);
       Walker_t::Buffer_t& w_buffer(thisWalker.DataSet);
 
       RealType eold(thisWalker.Properties(LOCALENERGY));
+      RealType vqold(thisWalker.Properties(DRIFTSCALE));
       //RealType emixed(eold), enew(eold);
       RealType enew(eold);
 
@@ -165,18 +166,22 @@ namespace qmcplusplus {
         rr_proposed+=rr;
 
         //if(ratio < 0.0) {//node is crossed reject the move
-        if(Psi.getPhase() > numeric_limits<RealType>::epsilon()) {
+        if(Psi.getPhase() > numeric_limits<RealType>::epsilon()) 
+        {
           ++nRejectTemp;
           ++nNodeCrossing;
           W.rejectMove(iat); Psi.rejectMove(iat);
-        } else {
+        } 
+        else 
+        {
           G = W.G+dG;
           RealType logGf = -0.5*dot(deltaR[iat],deltaR[iat]);
           RealType scale=getDriftScale(Tau,G);
           dr = thisWalker.R[iat]-newpos-scale*real(G[iat]); 
           RealType logGb = -m_oneover2tau*dot(dr,dr);
           RealType prob = std::min(1.0,ratio*ratio*std::exp(logGb-logGf));
-          if(RandomGen() < prob) { 
+          if(RandomGen() < prob) 
+          { 
             ++nAcceptTemp;
             W.acceptMove(iat);
             Psi.acceptMove(W,iat);
@@ -184,7 +189,9 @@ namespace qmcplusplus {
             W.L += dL;
             assignDrift(scale,G,thisWalker.Drift);
             rr_accepted+=rr;
-          } else {
+          } 
+          else 
+          {
             ++nRejectTemp; 
             W.rejectMove(iat); Psi.rejectMove(iat);
           }
@@ -193,26 +200,32 @@ namespace qmcplusplus {
       }//end of drift+diffusion
 
       nonLocalOps.reset();
-      if(nAcceptTemp>0) {//need to overwrite the walker properties
+      if(nAcceptTemp>0) 
+      {//need to overwrite the walker properties
         thisWalker.R = W.R;
         w_buffer.rewind();
         W.copyToBuffer(w_buffer);
         RealType psi = Psi.evaluate(W,w_buffer);
         enew= H.evaluate(W,nonLocalOps.Txy);
-        thisWalker.resetProperty(std::log(abs(psi)),psi,enew);
+
+        thisWalker.resetProperty(std::log(abs(psi)),psi,enew,rr_accepted,rr_proposed,1.0);
+
         H.saveProperty(thisWalker.getPropertyBase());
         //emixed = (eold+enew)*0.5e0;
-      } else {
+      } 
+      else 
+      {
         thisWalker.Age++;
+        thisWalker.Properties(R2ACCEPTED)=0.0;
         ++nAllRejected;
-        rr_accepted=0.0;
         enew=eold;//copy back old energy
       }
 
       int ibar = nonLocalOps.selectMove(RandomGen());
 
       //make a non-local move
-      if(ibar) {
+      if(ibar) 
+      {
         int iat=nonLocalOps.id(ibar);
         PosType newpos(W.makeMove(iat, nonLocalOps.delta(ibar)));
         RealType ratio=Psi.ratio(W,iat,dG,dL);
@@ -230,12 +243,10 @@ namespace qmcplusplus {
         ++NonLocalMoveAccepted;
       } 
 
-      //thisWalker.Weight *= branchEngine->branchGF(Tau*rr_accepted/rr_proposed,emixed,0.0);
-      thisWalker.Weight *= branchEngine->branchWeight(Tau*rr_accepted/rr_proposed,eold,enew);
-      //branchEngine->accumulate(eold,1);
+      thisWalker.Weight *= branchEngine->branchWeight(eold,enew);
+
       nAccept += nAcceptTemp;
       nReject += nRejectTemp;
-      ++it;
     }
   }
 }

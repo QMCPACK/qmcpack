@@ -43,6 +43,8 @@ namespace qmcplusplus {
   void DMCUpdatePbyPWithRejection::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end,
       bool measure) 
   {
+
+    RealType tauinv =2.0*m_oneover2tau;
 #if defined(TEST_INNERBRANCH)
     for(;it != it_end;) 
     {
@@ -76,11 +78,14 @@ namespace qmcplusplus {
           rr_proposed+=rr;
 
           //if(ratio < 0.0) {//node is crossed reject the move
-          if(Psi.getPhase() > numeric_limits<RealType>::epsilon()) {
+          if(Psi.getPhase() > numeric_limits<RealType>::epsilon()) 
+          {
             ++nRejectTemp;
             ++nNodeCrossing;
             W.rejectMove(iat); Psi.rejectMove(iat);
-          } else {
+          } 
+          else 
+          {
             G = W.G+dG;
             RealType logGf = -0.5*dot(deltaR[iat],deltaR[iat]);
             RealType scale=getDriftScale(Tau,G);
@@ -106,23 +111,24 @@ namespace qmcplusplus {
           } 
         }
 
-        if(nAcceptTemp>0) {//need to overwrite the walker properties
+        if(nAcceptTemp>0) 
+        {//need to overwrite the walker properties
           thisWalker.R = W.R;
           w_buffer.rewind();
           W.copyToBuffer(w_buffer);
           RealType psi = Psi.evaluate(W,w_buffer);
           enew= H.evaluate(W);
-          thisWalker.resetProperty(std::log(abs(psi)),psi,enew);
+          thisWalker.resetProperty(std::log(abs(psi)),psi,enew,rr_accepted,rr_proposed,1.0);
           H.saveProperty(thisWalker.getPropertyBase());
           //emixed = (eold+enew)*0.5e0;
         } else {
           thisWalker.Age++;
-          ++nAllRejected;
-          rr_accepted=0.0;
+          thisWalker.Properties(R2ACCEPTED)=0.0;
           enew=eold;//copy back old energy
+          ++nAllRejected;
         }
 
-        thisWalker.Weight *= branchEngine->branchWeight(Tau*rr_accepted/rr_proposed,eold,enew);
+        thisWalker.Weight *= branchEngine->branchWeight(eold,enew);
         eold=enew;
         nAccept += nAcceptTemp;
         nReject += nRejectTemp;
@@ -145,7 +151,9 @@ namespace qmcplusplus {
       makeGaussRandomWithEngine(deltaR,RandomGen);
       int nAcceptTemp(0);
       int nRejectTemp(0);
+      //copy the old energy and scale factor of drift
       RealType eold(thisWalker.Properties(LOCALENERGY));
+      RealType vqold(thisWalker.Properties(DRIFTSCALE));
       RealType enew(eold);
       RealType rr_proposed=0.0;
       RealType rr_accepted=0.0;
@@ -160,11 +168,14 @@ namespace qmcplusplus {
         rr_proposed+=rr;
 
         //if(ratio < 0.0) {//node is crossed reject the move
-        if(Psi.getPhase() > numeric_limits<RealType>::epsilon()) {
+        if(Psi.getPhase() > numeric_limits<RealType>::epsilon()) 
+        {
           ++nRejectTemp;
           ++nNodeCrossing;
           W.rejectMove(iat); Psi.rejectMove(iat);
-        } else {
+        } 
+        else 
+        {
           G = W.G+dG;
           RealType logGf = -0.5*dot(deltaR[iat],deltaR[iat]);
           RealType scale=getDriftScale(Tau,G);
@@ -173,7 +184,8 @@ namespace qmcplusplus {
           dr = thisWalker.R[iat]-newpos-scale*real(G[iat]); 
           RealType logGb = -m_oneover2tau*dot(dr,dr);
           RealType prob = std::min(1.0,ratio*ratio*std::exp(logGb-logGf));
-          if(RandomGen() < prob) { 
+          if(RandomGen() < prob) 
+          { 
             ++nAcceptTemp;
             W.acceptMove(iat);
             Psi.acceptMove(W,iat);
@@ -181,33 +193,39 @@ namespace qmcplusplus {
             W.L += dL;
 
             assignDrift(scale,G,thisWalker.Drift);
-            
             rr_accepted+=rr;
-          } else {
+
+          } 
+          else 
+          {
             ++nRejectTemp; 
             W.rejectMove(iat); Psi.rejectMove(iat);
           }
         } 
       }
 
-      if(nAcceptTemp>0) {//need to overwrite the walker properties
+      if(nAcceptTemp>0) 
+      {//need to overwrite the walker properties
         thisWalker.R = W.R;
         w_buffer.rewind();
         W.copyToBuffer(w_buffer);
         RealType psi = Psi.evaluate(W,w_buffer);
         enew= H.evaluate(W);
-        thisWalker.resetProperty(std::log(abs(psi)),psi,enew);
+
+        thisWalker.resetProperty(std::log(abs(psi)),psi,enew,rr_accepted,rr_proposed,1.0);
+
         H.saveProperty(thisWalker.getPropertyBase());
         //emixed = (eold+enew)*0.5e0;
-      } else {
+      } 
+      else 
+      {
         thisWalker.Age++;
+        thisWalker.Properties(R2ACCEPTED)=0.0;
         ++nAllRejected;
-        rr_accepted=0.0;
         enew=eold;//copy back old energy
       }
 
-      //thisWalker.Weight *= branchEngine->branchGF(Tau*rr_accepted/rr_proposed,(eold+enew)*0.5,0.0);
-      thisWalker.Weight *= branchEngine->branchWeight(Tau*rr_accepted/rr_proposed,eold,enew);
+      thisWalker.Weight *= branchEngine->branchWeight(eold,enew);
 
       nAccept += nAcceptTemp;
       nReject += nRejectTemp;

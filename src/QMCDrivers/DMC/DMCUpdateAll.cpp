@@ -54,7 +54,7 @@ namespace qmcplusplus {
       //save old local energy
       RealType eold    = thisWalker.Properties(LOCALENERGY);
       RealType signold = thisWalker.Properties(SIGN);
-      RealType emixed  = eold;
+      RealType enew  = eold;
 
       //create a 3N-Dimensional Gaussian with variance=1
       makeGaussRandomWithEngine(deltaR,RandomGen);
@@ -72,7 +72,7 @@ namespace qmcplusplus {
       if(branchEngine->phaseChanged(Psi.getPhase(),thisWalker.Properties(SIGN))) {
         thisWalker.Age++;
       } else {
-        RealType enew(H.evaluate(W));
+        enew=H.evaluate(W);
         RealType logGf = -0.5*Dot(deltaR,deltaR);
         //converting gradients to drifts, D = tau*G (reuse G)
         //RealType scale=getDriftScale(Tau,W.G);
@@ -85,18 +85,18 @@ namespace qmcplusplus {
         RealType prob= std::min(std::exp(logGb-logGf +2.0*(logpsi-thisWalker.Properties(LOGPSI))),1.0);
         if(RandomGen() > prob){
           thisWalker.Age++;
+          enew=eold;
         } else {
           accepted=true;  
           thisWalker.R = W.R;
           thisWalker.Drift = drift;
           thisWalker.resetProperty(logpsi,Psi.getPhase(),enew);
           H.saveProperty(thisWalker.getPropertyBase());
-          emixed = (emixed+enew)*0.5;
-          eold=enew;
         }
       }
 
-      thisWalker.Weight *= branchEngine->branchGF(Tau,emixed,0.0);
+      thisWalker.Weight *= branchEngine->branchWeight(eold,enew);
+
       //branchEngine->accumulate(eold,1);
 
       if(accepted) 
@@ -178,18 +178,7 @@ namespace qmcplusplus {
           //emixed = (emixed+enew)*0.5;
           //eold=enew;
         }
-
-        //thisWalker.Weight *= branchEngine->branchGF(Tau,emixed,0.0);
-        thisWalker.Weight *= branchEngine->branchWeight(Tau,eold,enew);
-        //if(MaxAge) {
-        //  RealType M=thisWalker.Weight;
-        //  if(thisWalker.Age > MaxAge) M = std::min(0.5,M);
-        //  else if(thisWalker.Age > 0) M = std::min(1.0,M);
-        //  thisWalker.Multiplicity = M + RandomGen();
-        //  branchEngine->accumulate(eold,M);
-        //} else {
-        //  branchEngine->accumulate(eold,1);
-        //}
+        thisWalker.Weight *= branchEngine->branchWeight(eold,enew);
       }
 
       if(accepted) 
