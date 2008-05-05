@@ -51,7 +51,7 @@ namespace qmcplusplus
     R2Proposed(1.0e-10);
 
     //set the default values for integer parameters
-    iParam[B_WARMUPSTEPS]=100;
+    iParam[B_WARMUPSTEPS]=1000;
     iParam[B_ENERGYUPDATEINTERVAL]=1;
     iParam[B_BRANCHINTERVAL]=1;
     iParam[B_TARGETWALKERS]=nideal;
@@ -212,6 +212,8 @@ namespace qmcplusplus
           app_log() << "\n TauEff proposed   = " << Tau*R2Accepted.result()/R2Proposed.result();
 
         app_log()  << "\n Etrial     = " << Etrial << endl;
+        app_log() << "\n Running average of energy = " << EnergyHist.mean() << endl;
+        app_log() << "\n            sqrt(variance) = " << std::sqrt(EnergyHist.variance()) << endl;
 
         ToDoSteps = iParam[B_ENERGYUPDATEINTERVAL]-1;
         BranchMode.set(B_DMCSTAGE,1); //set BranchModex to main stage
