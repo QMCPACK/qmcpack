@@ -27,6 +27,7 @@ using namespace std;
 #include "OhmmsData/AttributeSet.h"
 #include "Utilities/OhmmsInfo.h"
 #include "Message/OpenMP.h"
+#include "Utilities/ProgressReportEngine.h"
 
 namespace qmcplusplus {
 
@@ -34,8 +35,9 @@ namespace qmcplusplus {
   curH(0), ptclPool(0), psiPool(0), curDoc(0)
   { }
 
-  bool HamiltonianPool::put(xmlNodePtr cur) {
-
+  bool HamiltonianPool::put(xmlNodePtr cur) 
+  {
+    ReportEngine PRE("HamiltonianPool","put");
     string id("h0"), target("e"),role("extra");
     OhmmsAttributeSet hAttrib;
     hAttrib.add(id,"id"); hAttrib.add(id,"name"); 
@@ -44,17 +46,20 @@ namespace qmcplusplus {
     hAttrib.put(cur);
 
     ParticleSet* qp=ptclPool->getParticleSet(target);
-    if(qp == 0) {
-      ERRORMSG("No target particle " << target << " exists.")
+    if(qp == 0) 
+    {//never a good thing
+      PRE.error("No target particle "+ target+ " exists.");
       return false;
     }
 
     bool set2Primary=false;
-    if(myPool.empty() || role == "primary" ) { set2Primary=true;}
+    //first Hamiltonian is set to the primary Hamiltonian
+    if(myPool.empty() || role == "primary" ) set2Primary=true;
 
     HamiltonianFactory *curH=0;
     PoolType::iterator hit(myPool.find(id));
-    if(hit == myPool.end()) {
+    if(hit == myPool.end()) 
+    {
       curH= new HamiltonianFactory(qp, ptclPool->getPool(), psiPool->getPool());
       curH->setName(id);
       myPool[id]=curH;
@@ -64,19 +69,28 @@ namespace qmcplusplus {
 
     bool success= curH->put(cur);
     
-    if(set2Primary) {
-      primaryH=curH->targetH;
-    }
+    if(set2Primary) primaryH=curH->targetH;
 
     return success;
   }
 
   void HamiltonianPool::clone(const MCWalkerConfiguration& qp, const TrialWaveFunction& psi, const QMCHamiltonian& h,
-        vector<MCWalkerConfiguration*>& plist, vector<TrialWaveFunction*>& olist, vector<QMCHamiltonian*>& hlist) {
+      vector<MCWalkerConfiguration*>& plist, 
+      vector<TrialWaveFunction*>& olist, 
+      vector<QMCHamiltonian*>& hlist) 
+  {
+    int np=omp_get_max_threads();
+    {
+      ReportEngine PRE("HamiltonianPool","clone");
+      app_log() << "Number of threads = " << np << endl;
+    }
+
+    //temporarily turnoff stream buffer for the clones
+    OhmmsInfo::Log->turnoff();
+    OhmmsInfo::Warn->turnoff();
 
     //clone ParticleSet and TrialWaveFunction
     WaveFunctionFactory* psiFac=psiPool->getWaveFunctionFactory(psi.getName());
-    int np=omp_get_max_threads();
     psiFac->setCloneSize(np);
 
     //capture cloned WaveFunctionFactory*
@@ -104,7 +118,8 @@ namespace qmcplusplus {
     }
     
     //add the Clones to the pools
-    for(int ip=1; ip<np; ip++) {
+    for(int ip=1; ip<np; ip++) 
+    {
       ptclPool->addParticleSet(plist[ip]);
       psiPool->addFactory(otemp[ip]);
       olist[ip]=otemp[ip]->targetPsi;
@@ -143,6 +158,11 @@ namespace qmcplusplus {
       myPool[htemp[ip]->getName()]=htemp[ip];
       hlist[ip]=htemp[ip]->targetH;
     }
+
+    //restore stream buffer to the original state
+    OhmmsInfo::Log->reset();
+    OhmmsInfo::Warn->reset();
+
   }
 
   bool HamiltonianPool::put(std::istream& is) {
