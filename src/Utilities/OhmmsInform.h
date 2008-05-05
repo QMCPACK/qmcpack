@@ -57,7 +57,6 @@ public:
 
   inline std::ostream& getStream() 
   { 
-    if(Blanks) (*myStream) << std::setw(Blanks) << ' ';
     return *myStream;
   }
 
