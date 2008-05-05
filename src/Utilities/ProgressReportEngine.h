@@ -38,6 +38,7 @@ namespace APPNAMESPACE
       inline ReportEngine(const std::string& cname, const std::string& fname, int atype=1):
         ReportType(atype),ClassName(cname), FuncName(fname), LogBuffer(*OhmmsInfo::Log)
         { 
+          LogBuffer << "  " << ClassName << "::" << FuncName << "\n";
           //if(ReportType)
           //  LogBuffer << ("<echo className=\""+ClassName+"\" funcName=\""+FuncName+"\">\n");
           //else
