@@ -46,7 +46,7 @@ namespace qmcplusplus {
 
     RealType tauinv =2.0*m_oneover2tau;
 #if defined(TEST_INNERBRANCH)
-    for(;it != it_end;) 
+    for(;it != it_end;++it) 
     {
       //MCWalkerConfiguration::WalkerData_t& w_buffer = *(W.DataSet[iwalker]);
       Walker_t& thisWalker(**it);
@@ -57,7 +57,7 @@ namespace qmcplusplus {
       W.copyFromBuffer(w_buffer);
       Psi.copyFromBuffer(W,w_buffer);
 
-      for(int step=0; step<5; step++)
+      for(int step=0; step<5; ++step)
       {
         //create a 3N-Dimensional Gaussian with variance=1
         makeGaussRandomWithEngine(deltaR,RandomGen);
@@ -67,17 +67,21 @@ namespace qmcplusplus {
         RealType enew(eold);
         RealType rr_proposed=0.0;
         RealType rr_accepted=0.0;
-        for(int iat=0; iat<NumPtcl; iat++) 
+        for(int iat=0; iat<NumPtcl; ++iat) 
         {
           PosType dr(m_sqrttau*deltaR[iat]+thisWalker.Drift[iat]);
-          PosType newpos(W.makeMove(iat,dr));
-
-          RealType ratio=Psi.ratio(W,iat,dG,dL);
-
           RealType rr=dot(dr,dr);
           rr_proposed+=rr;
 
-          //if(ratio < 0.0) {//node is crossed reject the move
+          if(rr>m_r2max)//reject a big move
+          {
+            ++nRejectTemp; continue;
+          }
+
+          PosType newpos(W.makeMove(iat,dr));
+          RealType ratio=Psi.ratio(W,iat,dG,dL);
+
+          ///node is crossed reject the move
           if(Psi.getPhase() > numeric_limits<RealType>::epsilon()) 
           {
             ++nRejectTemp;
@@ -133,10 +137,9 @@ namespace qmcplusplus {
         nAccept += nAcceptTemp;
         nReject += nRejectTemp;
       }
-      ++it;
     }
 #else
-    for(;it != it_end;) 
+    for(;it != it_end;++it) 
     {
       //MCWalkerConfiguration::WalkerData_t& w_buffer = *(W.DataSet[iwalker]);
       Walker_t& thisWalker(**it);
@@ -157,15 +160,20 @@ namespace qmcplusplus {
       RealType enew(eold);
       RealType rr_proposed=0.0;
       RealType rr_accepted=0.0;
-      for(int iat=0; iat<NumPtcl; iat++) 
+      for(int iat=0; iat<NumPtcl; ++iat) 
       {
+        //get the displacement
         PosType dr(m_sqrttau*deltaR[iat]+thisWalker.Drift[iat]);
-        PosType newpos(W.makeMove(iat,dr));
-
-        RealType ratio=Psi.ratio(W,iat,dG,dL);
-
         RealType rr=dot(dr,dr);
         rr_proposed+=rr;
+
+        if(rr>m_r2max)
+        {
+          ++nRejectTemp; continue;
+        }
+
+        PosType newpos(W.makeMove(iat,dr));
+        RealType ratio=Psi.ratio(W,iat,dG,dL);
 
         //if(ratio < 0.0) {//node is crossed reject the move
         if(Psi.getPhase() > numeric_limits<RealType>::epsilon()) 
@@ -229,7 +237,6 @@ namespace qmcplusplus {
 
       nAccept += nAcceptTemp;
       nReject += nRejectTemp;
-      ++it;
     }
 #endif
   }

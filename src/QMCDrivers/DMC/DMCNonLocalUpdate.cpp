@@ -152,20 +152,22 @@ namespace qmcplusplus {
       bool notcrossed(true);
       int nAcceptTemp(0);
       int nRejectTemp(0);
-      int iat=0;
 
       RealType rr_proposed=0.0;
       RealType rr_accepted=0.0;
-      while(iat<NumPtcl) {//particle-by-particle move
+      for(int iat=0; iat<NumPtcl; ++iat)
+      {
         PosType dr(m_sqrttau*deltaR[iat]+thisWalker.Drift[iat]);
-        PosType newpos(W.makeMove(iat,dr));
-
-        RealType ratio=Psi.ratio(W,iat,dG,dL);
-
         RealType rr=dot(dr,dr);
         rr_proposed+=rr;
+        if(rr>m_r2max)//too big move
+        {
+          ++nRejectTemp; continue;
+        }
 
-        //if(ratio < 0.0) {//node is crossed reject the move
+        PosType newpos(W.makeMove(iat,dr));
+        RealType ratio=Psi.ratio(W,iat,dG,dL);
+        //node is crossed reject the move
         if(Psi.getPhase() > numeric_limits<RealType>::epsilon()) 
         {
           ++nRejectTemp;
@@ -196,8 +198,7 @@ namespace qmcplusplus {
             W.rejectMove(iat); Psi.rejectMove(iat);
           }
         } 
-        ++iat;
-      }//end of drift+diffusion
+      }//end of drift+diffusion for all the particles of a walker
 
       nonLocalOps.reset();
       if(nAcceptTemp>0) 
