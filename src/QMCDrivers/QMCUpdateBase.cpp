@@ -25,13 +25,15 @@
 namespace qmcplusplus { 
 
   /// Constructor.
-  QMCUpdateBase::QMCUpdateBase(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
-      RandomGenerator_t& rg): W(w),Psi(psi),H(h), UpdatePbyP(true),
-      RandomGen(rg), MaxAge(0),  branchEngine(0), Estimators(0)
+  QMCUpdateBase::QMCUpdateBase(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator_t& rg): 
+    W(w),Psi(psi),H(h), UpdatePbyP(true),
+    RandomGen(rg), MaxAge(0),  m_r2max(-1), branchEngine(0), Estimators(0)
 #if defined(ENABLE_COMPOSITE_ESTIMATOR)
-        , compEstimator(0)
+      , compEstimator(0)
 #endif
-      { }
+  { 
+    myParams.add(m_r2max,"maxDisplSq","double"); //maximum displacement
+  }
 
   /// destructor
   QMCUpdateBase::~QMCUpdateBase() 
@@ -93,7 +95,9 @@ namespace qmcplusplus {
     Tau=brancher->getTau();
     m_oneover2tau = 0.5/Tau;
     m_sqrttau = std::sqrt(Tau);
-    m_r2max = W.Lattice.LR_rc* W.Lattice.LR_rc;
+
+    if(m_r2max<0)
+      m_r2max = W.Lattice.LR_rc* W.Lattice.LR_rc;
 
     app_log() << "  Setting the bound for the displacement max(r^2) = " <<  m_r2max << endl;
   }
