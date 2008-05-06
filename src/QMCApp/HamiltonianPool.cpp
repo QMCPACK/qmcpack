@@ -98,28 +98,44 @@ namespace qmcplusplus {
     otemp.resize(np,0);
 
     //allocate the data on each thread
-//#pragma omp parallel for
-//    for(int ip=0; ip<np; ip++) {
-#pragma omp parallel 
-    {
-      int ip=omp_get_thread_num();
-#pragma omp critical 
-      {
-        if(ip) {
-          char pname[16],oname[16];
-          sprintf(pname,"%s.c%i",qp.getName().c_str(),ip);
-          plist[ip]=new MCWalkerConfiguration(qp);
-          plist[ip]->setName(pname);
-
-          sprintf(oname,"%s.c%i",psi.getName().c_str(),ip);
-          otemp[ip]= psiFac->clone(plist[ip],ip,oname);
-        }
-      }
-    }
+//#pragma omp parallel 
+//    {
+//      int ip=omp_get_thread_num();
+//#pragma omp critical 
+//      {
+//        if(ip) {
+//          char pname[16],oname[16];
+//          sprintf(pname,"%s.c%i",qp.getName().c_str(),ip);
+//          plist[ip]=new MCWalkerConfiguration(qp);
+//          plist[ip]->setName(pname);
+//
+//          sprintf(oname,"%s.c%i",psi.getName().c_str(),ip);
+//          otemp[ip]= psiFac->clone(plist[ip],ip,oname);
+//        }
+//      }
+//    }
+//    
+//    //add the Clones to the pools
+//    for(int ip=1; ip<np; ip++) 
+//    {
+//      ptclPool->addParticleSet(plist[ip]);
+//      psiPool->addFactory(otemp[ip]);
+//      olist[ip]=otemp[ip]->targetPsi;
+//      if(ip%2==1) olist[ip]->reverse();
+//    }
+//
     
     //add the Clones to the pools
-    for(int ip=1; ip<np; ip++) 
+    for(int ip=1; ip<np; ++ip) 
     {
+      char pname[16],oname[16];
+      sprintf(pname,"%s.c%i",qp.getName().c_str(),ip);
+      plist[ip]=new MCWalkerConfiguration(qp);
+      plist[ip]->setName(pname);
+
+      sprintf(oname,"%s.c%i",psi.getName().c_str(),ip);
+      otemp[ip]= psiFac->clone(plist[ip],ip,oname);
+
       ptclPool->addParticleSet(plist[ip]);
       psiPool->addFactory(otemp[ip]);
       olist[ip]=otemp[ip]->targetPsi;
@@ -139,22 +155,30 @@ namespace qmcplusplus {
     vector<HamiltonianFactory*> htemp;
     htemp.resize(np,0);
 
-//#pragma omp parallel for
-//    for(int ip=0; ip<np; ip++) {
-#pragma omp parallel 
-    {
-      int ip=omp_get_thread_num();
-#pragma omp critical 
-      {
-        if(ip) {
-          char hname[16];
-          sprintf(hname,"%s.c%i",h.getName().c_str(),ip);
-          htemp[ip]= hFac->clone(plist[ip],olist[ip],ip,hname);
-        }
-      }
-    }
+//#pragma omp parallel 
+//    {
+//      int ip=omp_get_thread_num();
+//#pragma omp critical 
+//      {
+//        if(ip) {
+//          char hname[16];
+//          sprintf(hname,"%s.c%i",h.getName().c_str(),ip);
+//          htemp[ip]= hFac->clone(plist[ip],olist[ip],ip,hname);
+//        }
+//      }
+//    }
+//
+//    for(int ip=1; ip<np; ip++) 
+//    {
+//      myPool[htemp[ip]->getName()]=htemp[ip];
+//      hlist[ip]=htemp[ip]->targetH;
+//    }
 
-    for(int ip=1; ip<np; ip++) {
+    for(int ip=1; ip<np; ip++) 
+    {
+      char hname[16];
+      sprintf(hname,"%s.c%i",h.getName().c_str(),ip);
+      htemp[ip]= hFac->clone(plist[ip],olist[ip],ip,hname);
       myPool[htemp[ip]->getName()]=htemp[ip];
       hlist[ip]=htemp[ip]->targetH;
     }
