@@ -120,6 +120,7 @@ namespace qmcplusplus  {
       TimerList.push_back(timer);
     }
 
+    void reset();
     void print (Communicate* comm);
   };
 

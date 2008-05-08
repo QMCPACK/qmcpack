@@ -5,6 +5,12 @@
 namespace qmcplusplus  {
   TimerManagerClass TimerManager;
 
+  void TimerManagerClass::reset()
+  {
+    for (int i=0; i<TimerList.size(); i++) 
+      TimerList[i]->reset();
+  }
+
   void
   TimerManagerClass::print(Communicate* comm) 
   {
