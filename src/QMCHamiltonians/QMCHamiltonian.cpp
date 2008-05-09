@@ -18,6 +18,7 @@
 #include "Particle/WalkerSetRef.h"
 #include "Particle/DistanceTableData.h"
 #include "Utilities/OhmmsInfo.h"
+#include "Utilities/NewTimer.h"
 using namespace qmcplusplus;
 
 /** constructor
@@ -29,13 +30,14 @@ QMCHamiltonian::QMCHamiltonian(const QMCHamiltonian& qh) {}
 
 /** destructor
  */
-QMCHamiltonian::~QMCHamiltonian() {
+QMCHamiltonian::~QMCHamiltonian() 
+{
   
   DEBUGMSG("QMCHamiltonian::~QMCHamiltonian")
-    
 }
 
-bool QMCHamiltonian::get(std::ostream& os) const {
+bool QMCHamiltonian::get(std::ostream& os) const 
+{
   for(int i=0; i<H.size(); i++) {
     os.setf(ios::left);
     os << "  " << setw(16) << Hname[i]; 
@@ -49,13 +51,21 @@ bool QMCHamiltonian::get(std::ostream& os) const {
  *@param aname the name of the Hamiltonian
  */
 void 
-QMCHamiltonian::addOperator(QMCHamiltonianBase* h, const string& aname) {
+QMCHamiltonian::addOperator(QMCHamiltonianBase* h, const string& aname) 
+{
   //check if already added, if not add at the end
   map<string,int>::iterator it = Hmap.find(aname);
-  if(it == Hmap.end()) {
+  if(it == Hmap.end()) 
+  {
     Hmap[aname] = H.size();
     Hname.push_back(aname);
     H.push_back(h);
+
+    //add timer for each Hamiltonian
+    string tname="Hamiltonian::"+aname;
+    NewTimer *atimer=new NewTimer(tname);
+    myTimers.push_back(atimer);
+    TimerManager.addTimer(atimer);
   }
   Hvalue.resize(H.size(),RealType());
 }
@@ -65,7 +75,8 @@ QMCHamiltonian::addOperator(QMCHamiltonianBase* h, const string& aname) {
  *@return true, if the request hamiltonian exists and is removed.
  */
 bool 
-QMCHamiltonian::remove(const string& aname) {
+QMCHamiltonian::remove(const string& aname) 
+{
   map<string,int>::iterator it = Hmap.find(aname);
   if(it != Hmap.end()) {
     int n = (*it).second;
@@ -103,14 +114,16 @@ QMCHamiltonian::add2WalkerProperty(ParticleSet& P) {
  *@return the local energy
  */
 QMCHamiltonian::Return_t 
-QMCHamiltonian::evaluate(ParticleSet& P) {
+QMCHamiltonian::evaluate(ParticleSet& P) 
+{
   LocalEnergy = 0.0;
   vector<QMCHamiltonianBase*>::iterator hit(H.begin()),hit_end(H.end());
-  int i(0);
-  while(hit != hit_end) {
+  for(int i=0; hit!=hit_end; ++hit,++i)
+  {
+    myTimers[i]->start();
     LocalEnergy += (*hit)->evaluate(P);
     Hvalue[i]=(*hit)->Value; 
-    ++hit;++i;
+    myTimers[i]->stop();
   }
   P.PropertyList[LOCALENERGY]=LocalEnergy;
   P.PropertyList[LOCALPOTENTIAL]=LocalEnergy-Hvalue[0];
@@ -118,14 +131,16 @@ QMCHamiltonian::evaluate(ParticleSet& P) {
 }
 
 QMCHamiltonian::Return_t 
-QMCHamiltonian::evaluate(ParticleSet& P, vector<NonLocalData>& Txy) {
+QMCHamiltonian::evaluate(ParticleSet& P, vector<NonLocalData>& Txy) 
+{
   LocalEnergy = 0.0;
   vector<QMCHamiltonianBase*>::iterator hit(H.begin()),hit_end(H.end());
-  int i(0);
-  while(hit != hit_end) {
+  for(int i=0; hit!=hit_end; ++hit,++i)
+  {
+    myTimers[i]->start();
     LocalEnergy += (*hit)->evaluate(P,Txy);
     Hvalue[i]=(*hit)->Value; 
-    ++hit;++i;
+    myTimers[i]->stop();
   }
   return LocalEnergy;
 }

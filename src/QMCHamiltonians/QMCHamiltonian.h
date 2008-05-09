@@ -23,6 +23,7 @@
 
 namespace qmcplusplus {
 
+  class NewTimer;
   /**  Collection of Local Energy Operators 
    *
    * Note that QMCHamiltonian is not derived from QMCHmailtonianBase.
@@ -168,6 +169,8 @@ namespace qmcplusplus {
     string myName;
     ///vector of Hamiltonians
     std::vector<QMCHamiltonianBase*> H;
+    ///timers
+    std::vector<NewTimer*> myTimers;
     ///vector containing the index of the Hamiltonians
     std::vector<int> Hindex;
     ///vector containing the values of the Hamiltonians
