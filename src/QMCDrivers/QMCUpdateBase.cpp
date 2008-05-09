@@ -184,13 +184,18 @@ namespace qmcplusplus {
       RealType logpsi=Psi.updateBuffer(W,w_buffer,true);
       RealType enew= H.evaluate(W);
 
-      //calculate the scaling factor
-      RealType scale=getDriftScale(Tau,W.G);
-
       (*it)->resetProperty(logpsi,Psi.getPhase(),enew,1.0,1.0,1.0);
-
       H.saveProperty((*it)->getPropertyBase());
-      assignDrift(scale,W.G,(*it)->Drift);
+
+      (*it)->Drift=W.G;//copy gradients to drift
+      //scaling factor per particle
+      //setScaledDriftPbyP(Tau,W.G,(*it)->Drift);
+      
+      ////calculate the scaling factor
+      //RealType scale=getDriftScale(Tau,W.G);
+      //assignDrift(scale,W.G,(*it)->Drift);
+      
+      ////This is the original
       //setScaledDrift(Tau,W.G,(*it)->Drift);
     }
   }
