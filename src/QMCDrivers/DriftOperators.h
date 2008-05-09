@@ -23,18 +23,50 @@
 namespace qmcplusplus {
 
   template<class T, unsigned D>
-  inline T getDriftScale(T tau, const ParticleAttrib<TinyVector<T,D> >& ga) {
+  inline T getDriftScale(T tau, const ParticleAttrib<TinyVector<T,D> >& ga) 
+  {
     T vsq=Dot(ga,ga);
     return (vsq<numeric_limits<T>::epsilon())? tau:((-1.0+std::sqrt(1.0+2.0*tau*vsq))/vsq);
   }
 
   template<class T, unsigned D>
-  inline T getDriftScale(T tau, 
-      const ParticleAttrib<TinyVector<complex<T>,D> >& ga) {
+  inline T getDriftScale(T tau, const ParticleAttrib<TinyVector<complex<T>,D> >& ga) 
+  {
     T vsq=Dot(ga,ga);
     return (vsq<numeric_limits<T>::epsilon())? tau:((-1.0+std::sqrt(1.0+2.0*tau*vsq))/vsq);
   }
 
+  template<class T, unsigned D>
+  inline T getDriftScale(T tau, const TinyVector<T,D>& qf)
+  {
+    T vsq=dot(qf,qf);
+    return (vsq<numeric_limits<T>::epsilon())? tau:((-1.0+std::sqrt(1.0+2.0*tau*vsq))/vsq);
+  }
+
+  template<class T, unsigned D>
+  inline T getDriftScale(T tau, const TinyVector<complex<T>,D>& qf)
+  {
+    T vsq=OTCDot<T,T,D>::apply(qf,qf);
+    return (vsq<numeric_limits<T>::epsilon())? tau:((-1.0+std::sqrt(1.0+2.0*tau*vsq))/vsq);
+  }
+    
+  /** evaluate drift using the scaling function by JCP93
+   * @param tau timestep
+   * @param qf quantum force
+   * @param drift drift
+   */
+  template<class T, unsigned D>
+  inline void setScaledDriftPbyP(T tau, 
+      const ParticleAttrib<TinyVector<T,D> >& qf,
+      ParticleAttrib<TinyVector<T,D> >& drift) 
+  {
+    for(int iat=0; iat<qf.size(); ++iat)
+    {
+      T vsq=dot(qf[iat],qf[iat]);
+      T sc=(vsq<numeric_limits<T>::epsilon())? tau:((-1.0+std::sqrt(1.0+2.0*tau*vsq))/vsq);
+      drift[iat]=sc*qf[iat];
+    }
+  }
   /** da = scaled(tau)*ga
    * @param tau time step
    * @param qf real quantum forces
@@ -101,6 +133,7 @@ namespace qmcplusplus {
       ParticleAttrib<TinyVector<T,D> >& da) {
     PAOps<T,D>::scale(s,ga,da);
   }
+
 }
 #endif
 /***************************************************************************
