@@ -36,7 +36,8 @@ namespace qmcplusplus {
    *spin-dependent Jastrow function,e.g., for electrons, two functions
    *are created for uu(dd) and ud(du).
    */
-  template<class FN> bool JAABuilder::createJAA(xmlNodePtr cur, FN* dummy) {
+  template<class FN> bool JAABuilder::createJAA(xmlNodePtr cur, const string& jname) 
+  {
 
     string corr_tag("correlation");
     int ng = targetPtcl.groups();
@@ -84,10 +85,10 @@ namespace qmcplusplus {
     if(pairs)
     {
       //set this jastrow function to be not optimizable
-      if(targetPsi.VarList.size() == cur_var) {
-        J2->setOptimizable(false);
-      }
-      targetPsi.addOrbital(J2);
+      if(targetPsi.VarList.size() == cur_var) J2->setOptimizable(false);
+
+      string j2name="J2_"+jname;
+      targetPsi.addOrbital(J2,j2name);
       return true;
     }
     else
@@ -99,22 +100,16 @@ namespace qmcplusplus {
 
   bool JAABuilder::put(xmlNodePtr cur) {
 
-    const xmlChar* spin=xmlGetProp(cur,(const xmlChar*)"spin");
-    if(spin != NULL) {
-      string a((const char*)spin);
-      if(a == "yes") IgnoreSpin=false;
-    }
-
-    string jasttype((const char*)(xmlGetProp(cur, (const xmlChar *)"type")));
-    if(jasttype == "Two-Body-Spin") {
-      //only for the backward compability
-      IgnoreSpin=false;
-    }
-
+    string spinOpt("no");
+    string typeOpt("Two-Body");
     string jastfunction("pade");
-    const xmlChar *ftype = xmlGetProp(cur, (const xmlChar *)"function");
-    if(ftype) jastfunction = (const char*) ftype;
+    OhmmsAttributeSet aAttrib;
+    aAttrib.add(spinOpt,"spin");
+    aAttrib.add(typeOpt,"type");
+    aAttrib.add(jastfunction,"function");
+    aAttrib.put(cur);
 
+    IgnoreSpin=(spinOpt=="no");
     bool success=false;
     //if(jastfunction == "pade") {
     //  app_log() << "  Two-Body Jastrow Function = " << jastfunction << endl;
@@ -124,8 +119,8 @@ namespace qmcplusplus {
     if(jastfunction == "short") {
       app_log() << "  Modified Jastrow function Two-Body Jastrow Function = " << jastfunction << endl;
       IgnoreSpin=true;
-      ModPadeFunctor<RealType> *dummy = 0;
-      success = createJAA(cur,dummy);
+      //ModPadeFunctor<RealType> *dummy = 0;
+      success = createJAA<ModPadeFunctor<RealType> >(cur,jastfunction);
     }
     //} else if(jastfunction == "rpa") {
     //  app_log() << "  Two-Body Jastrow Function = " << jastfunction << endl;

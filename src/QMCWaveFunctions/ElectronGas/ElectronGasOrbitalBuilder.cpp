@@ -94,7 +94,7 @@ namespace qmcplusplus {
     sdet->setBasisSet(new DummyBasisSet);
 
     //add Slater determinant to targetPsi
-    targetPsi.addOrbital(sdet);
+    targetPsi.addOrbital(sdet,"SlaterDet");
 
     return true;
   }

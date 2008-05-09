@@ -110,7 +110,7 @@ namespace qmcplusplus {
       if(j)
       {
         control->addOptimizables(targetPsi.VarList);
-        targetPsi.addOrbital(j);
+        targetPsi.addOrbital(j,"J1_WM");
         Children.push_back(control);
         return true;
       }
@@ -228,11 +228,12 @@ namespace qmcplusplus {
         app_log() << "    Adding long-range component of " << funcOpt << "  Jastrow function "<< endl;
         control->addExtra2ComboOrbital(jcombo);
       }
-      targetPsi.addOrbital(jcombo);
+      targetPsi.addOrbital(jcombo,"J2_LR");
     }
     else
     {
-      targetPsi.addOrbital(j2);
+      string j2name="J2_"+funcOpt;
+      targetPsi.addOrbital(j2,j2name);
     }
     control->addOptimizables(targetPsi.VarList);
     Children.push_back(control);
@@ -293,7 +294,7 @@ namespace qmcplusplus {
       J3->setBasisSet(basisBuilder->myBasisSet);
       J3->put(coeffPtr,targetPsi.VarList);
       J3->setBlocks(basisBuilder->SizeOfBasisPerCenter);
-      targetPsi.addOrbital(J3);
+      targetPsi.addOrbital(J3,"J3_block");
     } 
     else
     {
@@ -301,7 +302,7 @@ namespace qmcplusplus {
       ThreeBodyGeminal* J3 = new ThreeBodyGeminal(*sourcePtcl, targetPtcl);
       J3->setBasisSet(basisBuilder->myBasisSet);
       J3->put(coeffPtr,targetPsi.VarList);
-      targetPsi.addOrbital(J3);
+      targetPsi.addOrbital(J3,"J3_full");
     }
 #else
     app_error() << "  Three-body Jastrow function is not supported for DIM != 3." << endl;

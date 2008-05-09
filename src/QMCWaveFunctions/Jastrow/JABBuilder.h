@@ -34,7 +34,7 @@ namespace qmcplusplus {
 
     bool put(xmlNodePtr cur);
 
-    template<class FN> bool createJAB(xmlNodePtr cur, FN* dummy);
+    template<class FN> bool createJAB(xmlNodePtr cur, const string& jname);
 
 
     PtclPoolType& ptclPool;

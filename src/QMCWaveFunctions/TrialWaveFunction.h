@@ -22,6 +22,7 @@
 
 #include "Message/MPIObjectBase.h"
 #include "QMCWaveFunctions/OrbitalBase.h"
+#include "Utilities/NewTimer.h"
 /**@defgroup MBWfs Many-body wave function group
  * @brief Classes to handle many-body trial wave functions
  */
@@ -73,7 +74,8 @@ namespace qmcplusplus {
     inline RealType getLogPsi() const { return LogValue;}
 
     ///Add an OrbitalBase 
-    void addOrbital(OrbitalBase* aterm);
+    //void addOrbital(OrbitalBase* aterm);
+    void addOrbital(OrbitalBase* aterm, const string& aname);
 
     ///write to ostream
     bool get(std::ostream& ) const;
@@ -183,6 +185,8 @@ namespace qmcplusplus {
     TrialWaveFunction(const TrialWaveFunction&) {}
 
     TrialWaveFunction();
+
+    vector<NewTimer*> myTimers;
     
   };
   /**@}*/

@@ -27,7 +27,7 @@
 namespace qmcplusplus {
 
   template<class FN>
-  bool JABBuilder::createJAB(xmlNodePtr cur, FN* dummy) {
+  bool JABBuilder::createJAB(xmlNodePtr cur, const string& jname) {
 
     int cur_var = targetPsi.VarList.size();
     string corr_tag("correlation");
@@ -86,7 +86,8 @@ namespace qmcplusplus {
       J1->setOptimizable(false);
     }
 
-    targetPsi.addOrbital(J1);
+    string j1name="J1_"+jname;
+    targetPsi.addOrbital(J1,j1name);
     XMLReport("Added a One-Body Jastrow Function")
     return true;
   }
@@ -94,27 +95,31 @@ namespace qmcplusplus {
   bool JABBuilder::put(xmlNodePtr cur) {
 
     string jastfunction("pade");
-    const xmlChar *ftype = xmlGetProp(cur, (const xmlChar *)"function");
-    if(ftype) jastfunction = (const char*) ftype;
+    OhmmsAttributeSet aAttrib;
+    aAttrib.add(jastfunction,"function");
+    aAttrib.put(cur);
 
     bool success=false;
     app_log() << "  One-Body Jastrow Function = " << jastfunction << endl;
-    if(jastfunction == "nocusp") {
-      NoCuspFunctor<RealType> *dummy = 0;
-      success = createJAB(cur,dummy);
-    } else if(jastfunction == "pade") {
-      PadeFunctor<RealType> *dummy = 0;
-      success = createJAB(cur,dummy);
-    } else if(jastfunction == "pade2") {
-      Pade2ndOrderFunctor<RealType> *dummy = 0;
-      success = createJAB(cur,dummy);
-    } else if(jastfunction == "short") {
-      ModPadeFunctor<RealType> *dummy = 0;
-      success = createJAB(cur,dummy);
+    if(jastfunction == "nocusp") 
+    {
+      success = createJAB<NoCuspFunctor<RealType> >(cur,jastfunction);
+    } 
+    else if(jastfunction == "pade") 
+    {
+      success = createJAB<PadeFunctor<RealType> >(cur,jastfunction);
+    } 
+    else if(jastfunction == "pade2") 
+    {
+      success = createJAB<Pade2ndOrderFunctor<RealType> >(cur,jastfunction);
+    } 
+    else if(jastfunction == "short") 
+    {
+      success = createJAB<ModPadeFunctor<RealType> >(cur,jastfunction);
     }
-    else if (jastfunction == "Bspline") {
-      BsplineFunctor<RealType> *dummy = 0;
-      success = createJAB(cur,dummy);
+    else if (jastfunction == "Bspline") 
+    {
+      success = createJAB<BsplineFunctor<RealType> >(cur,jastfunction);
     }
     else {
       app_error() << "Unknown one body function: "

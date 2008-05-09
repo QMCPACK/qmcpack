@@ -73,7 +73,7 @@ namespace qmcplusplus {
         //J1->setDiffOrbital(dJ1);
         //J1->dPsi=dJ1;
 
-        targetPsi.addOrbital(J1);
+        targetPsi.addOrbital(J1,"J1_bspline");
         J1->setOptimizable(true);
       }
       else
@@ -157,7 +157,7 @@ namespace qmcplusplus {
       //dJ2->initialize();
       //J2->setDiffOrbital(dJ2);
 
-      targetPsi.addOrbital(J2);
+      targetPsi.addOrbital(J2,"J2_bspline");
       J2->setOptimizable(true);
     }
 

@@ -157,7 +157,7 @@ namespace qmcplusplus {
 
     if(sid)
     {
-      targetPsi.addOrbital(sdet);
+      targetPsi.addOrbital(sdet,"SlaterDet");
     }
     else
     {

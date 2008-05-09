@@ -184,7 +184,7 @@ namespace qmcplusplus {
       app_log() << agpDet->LambdaUP << endl;
     }
 
-    if(agpDet) targetPsi.addOrbital(agpDet);
+    if(agpDet) targetPsi.addOrbital(agpDet,"AGP");
     return success;
   }
 }

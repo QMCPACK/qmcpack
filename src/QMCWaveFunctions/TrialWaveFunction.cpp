@@ -18,6 +18,7 @@
 #include "Particle/Walker.h"
 #include "Particle/WalkerSetRef.h"
 #include "Utilities/OhmmsInfo.h"
+#include "Utilities/IteratorUtility.h"
 #include "QMCWaveFunctions/OrbitalTraits.h"
 
 namespace qmcplusplus {
@@ -40,8 +41,9 @@ namespace qmcplusplus {
    */
   TrialWaveFunction::~TrialWaveFunction(){
     DEBUGMSG("TrialWaveFunction::~TrialWaveFunction")
-    for(int i=0; i<Z.size(); i++) delete Z[i];
-    for(int i=0; i<SPOSet.size(); i++) delete SPOSet[i];
+    delete_iter(Z.begin(),Z.end());
+    delete_iter(SPOSet.begin(),SPOSet.end());
+    //delete_iter(myTimers.begin(),myTimers.end());
   }
   
   void 
@@ -53,8 +55,22 @@ namespace qmcplusplus {
    *@param aterm a many-body wavefunction 
    */
   void 
-  TrialWaveFunction::addOrbital(OrbitalBase* aterm) {
+  //TrialWaveFunction::addOrbital(OrbitalBase* aterm) 
+  TrialWaveFunction::addOrbital(OrbitalBase* aterm, const string& aname) 
+  {
+
     Z.push_back(aterm);
+    //int n=Z.size();
+    char name1[64],name2[64];
+    sprintf(name1,"WaveFunction::%s_V",aname.c_str());
+    sprintf(name2,"WaveFunction::%s_VGL",aname.c_str());
+    NewTimer *vtimer=new NewTimer(name1);
+    NewTimer *vgltimer=new NewTimer(name2);
+
+    myTimers.push_back(vtimer);
+    myTimers.push_back(vgltimer);
+    TimerManager.addTimer(vtimer);
+    TimerManager.addTimer(vgltimer);
   }
 
   
@@ -181,8 +197,11 @@ namespace qmcplusplus {
   TrialWaveFunction::RealType
   TrialWaveFunction::ratio(ParticleSet& P,int iat) {
     ValueType r(1.0);
-    for(int i=0; i<Z.size(); i++) {
+    for(int i=0,ii=0; i<Z.size(); ++i,ii+=2) 
+    {
+      myTimers[ii]->start();
       r *= Z[i]->ratio(P,iat);
+      myTimers[ii]->stop();
     }
 #if defined(QMC_COMPLEX)
     //return std::exp(evaluateLogAndPhase(r,PhaseValue));
@@ -195,7 +214,8 @@ namespace qmcplusplus {
   }
 
   void   
-  TrialWaveFunction::update(ParticleSet& P,int iat) {
+  TrialWaveFunction::update(ParticleSet& P,int iat) 
+  {
     //ready to collect "changes" in the gradients and laplacians by the move
     delta_G=0.0; delta_L=0.0;
     for(int i=0; i<Z.size(); i++) Z[i]->update(P,delta_G,delta_L,iat);
@@ -216,11 +236,17 @@ namespace qmcplusplus {
   TrialWaveFunction::RealType 
   TrialWaveFunction::ratio(ParticleSet& P, int iat, 
 			   ParticleSet::ParticleGradient_t& dG,
-			   ParticleSet::ParticleLaplacian_t& dL) {
+			   ParticleSet::ParticleLaplacian_t& dL) 
+  {
     dG = 0.0;
     dL = 0.0;
     ValueType r(1.0);
-    for(int i=0; i<Z.size(); i++) r *= Z[i]->ratio(P,iat,dG,dL);
+    for(int i=0, ii=1; i<Z.size(); ++i, ii+=2) 
+    {
+      myTimers[ii]->start();
+      r *= Z[i]->ratio(P,iat,dG,dL);
+      myTimers[ii]->stop();
+    }
 
 #if defined(QMC_COMPLEX)
     return std::exp(evaluateLogAndPhase(r,PhaseValue));
@@ -306,10 +332,12 @@ namespace qmcplusplus {
     PhaseValue=0.0;
     vector<OrbitalBase*>::iterator it(Z.begin());
     vector<OrbitalBase*>::iterator it_end(Z.end());
-    for(; it!=it_end; ++it)
+    for(int ii=1; it!=it_end; ++it,ii+=2)
     {
+      myTimers[ii]->start();
       logpsi += (*it)->updateBuffer(P,buf,fromscratch);
       PhaseValue += (*it)->PhaseValue;
+      myTimers[ii]->stop();
     }
 
     LogValue=real(logpsi);

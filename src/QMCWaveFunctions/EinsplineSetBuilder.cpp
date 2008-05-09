@@ -81,9 +81,10 @@ namespace qmcplusplus {
       eigenstatesGroup = "/eigenstates";
     }
     else {
-      cerr << "Unknown HDF5 orbital file version " 
-	   << Version[0] << "." << Version[1] << "\n";
-      abort();
+      ostringstream o;
+      o << "Unknown HDF5 orbital file version " << Version[0] << "." << Version[1] << "\n";
+      APP_ABORT(o.str());
+      //abort();
     }
     fprintf (stderr, "  HDF5 orbital file version %d.%d.\n", Version[0], Version[1]);
     HDFAttribIO<Tensor<double,3> > h_Lattice(Lattice), h_RecipLattice(RecipLattice);

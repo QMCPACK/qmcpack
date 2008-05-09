@@ -146,7 +146,7 @@ namespace qmcplusplus {
   void SlaterDetBuilder::buildSlaterDetermiant() {
     if(SlaterDetSet.empty()) return;
     //add a SlaterDeterminant to the trial wavefuntion
-    targetPsi.addOrbital(SlaterDetSet[0]);
+    targetPsi.addOrbital(SlaterDetSet[0],"SlaterDet");
   }
 
   void SlaterDetBuilder::buildMultiSlaterDetermiant() {

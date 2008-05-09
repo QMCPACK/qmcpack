@@ -22,6 +22,7 @@
 //#include "QMCWaveFunctions/DiffOrbitalBase.h"
 //#include "LongRange/DummyLRHandler.h"
 #include "Utilities/IteratorUtility.h"
+#include "Utilities/ProgressReportEngine.h"
 #include "OhmmsData/ParameterSet.h"
 #include "OhmmsData/AttributeSet.h"
 
@@ -68,7 +69,10 @@ namespace qmcplusplus {
     //may delete LongRangeRPA
   }
 
-  bool RPAPBCConstraints::put(xmlNodePtr cur) {
+  bool RPAPBCConstraints::put(xmlNodePtr cur) 
+  {
+
+    ReportEngine PRE("RPAPBCConstraints","put");
 
     //capture attribute jastrow/@name
     MyName="Jee";
@@ -142,6 +146,8 @@ namespace qmcplusplus {
     OwnHandler=true;
     realHandler= new LRHandlerTemp<RPABreakup<RealType>,LPQHIBasis>(targetPtcl,Kc);
     realHandler->Breakup(targetPtcl,Rs);
+    app_log() << "  Maximum K shell " << realHandler->MaxKshell << endl;
+    app_log() << "  Number of k vectors " << realHandler->Fk.size() << endl;
 
     //For derivatives, commented out 2008-04-07
     //derivHandler= new LRHandlerTemp<DerivRPABreakup<RealType>,LPQHIBasis>(targetPtcl,Kc);
