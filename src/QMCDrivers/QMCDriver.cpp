@@ -27,7 +27,6 @@
 #include "Message/CommOperators.h"
 #include "OhmmsApp/RandomNumberControl.h"
 #include "HDFVersion.h"
-#include "Utilities/NewTimer.h"
 #include <limits>
 
 namespace qmcplusplus {
