@@ -1,0 +1,39 @@
+\documentclass{article}
+\usepackage{amsmath}
+\newcommand{\vG}{\mathbf{G}}
+\newcommand{\vr}{\mathbf{r}}
+\title{Notes on Reciprocal-Space Jastrow Factors}
+\date{\today}
+\author{Ken Esler}
+\begin{document}
+\maketitle
+\section{Two-body Jastrow}
+\begin{equation}
+J_2 = \sum_{\vG\neq \mathbf{0}}\sum_{i\neq j} c_\vG e^{i\vG\cdot(\vr_i-\vr_j)}
+\end{equation}
+This may be rewritten as
+\begin{eqnarray}
+J_2 & = & \sum_{\vG\neq \mathbf{0}}\sum_{i\neq j} c_\vG e^{i\vG\cdot\vr_i}e^{-i\vG\cdot\vr_j} \\
+& = & \sum_{\vG\neq \mathbf{0}} c_\vG \left\{
+\underbrace{\left[\sum_i e^{i\vG\cdot\vr_i} \right]}_{\rho_\vG}
+\underbrace{\left[\sum_j e^{-j\vG\cdot\vr_j} \right]}_{\rho_{-\vG}}  -1 \right\}
+\end{eqnarray}
+The $-1$ is just a constant term and may be subsumed into the $c_\vG$
+coefficient a simple redefintion.  This leaves a simple, but general, form:
+\begin{equation}
+J_2 = \sum_{\vG\neq\mathbf{0}} c_\vG \rho_\vG \rho_{-\vG}
+\end{equation}
+We may not further constrain this on physical grounds.  First, we
+recognize that $J_2$ should be real.  Since $\rho_{-\vG} =
+\rho_\vG^*$, it follows that $\rho_{\vG}\rho_{-\vG} = |\rho_\vG|^2$ is
+real, so that $c_\vG$ must be real.  Furthermore, we group the $\vG$'s
+into $(+\vG, -\vG)$ pairs, and sum over only the positive vectors to
+save time.
+
+
+
+
+\section{One-body Jastrow}
+
+
+\end{document}
