@@ -40,6 +40,7 @@ namespace qmcplusplus {
     DMCUpdatePbyPWithRejection(const DMCUpdatePbyPWithRejection& a): QMCUpdateBase(a){ }
     /// Copy operator (disabled).
     DMCUpdatePbyPWithRejection& operator=(const DMCUpdatePbyPWithRejection&) { return *this;}
+    vector<NewTimer*> myTimers;
 
   };
 
@@ -61,6 +62,7 @@ namespace qmcplusplus {
     DMCUpdatePbyPWithKill(const DMCUpdatePbyPWithKill& a): QMCUpdateBase(a){ }
     /// Copy operator (disabled).
     DMCUpdatePbyPWithKill& operator=(const DMCUpdatePbyPWithKill&) { return *this;}
+    vector<NewTimer*> myTimers;
 
   };
 }

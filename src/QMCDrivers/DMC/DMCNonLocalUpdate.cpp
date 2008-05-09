@@ -66,10 +66,13 @@ namespace qmcplusplus {
       nonLocalOps.reset();
 
       bool accepted=false; 
-      if(branchEngine->phaseChanged(Psi.getPhase(),thisWalker.Properties(SIGN))) {
+      if(branchEngine->phaseChanged(Psi.getPhase(),thisWalker.Properties(SIGN))) 
+      {
         thisWalker.Age++;
         ++nReject;
-      } else {
+      } 
+      else 
+      {
         //RealType enew(H.evaluate(W,nonLocalOps.Txy));
         enew=H.evaluate(W,nonLocalOps.Txy);
         RealType logGf = -0.5*Dot(deltaR,deltaR);
@@ -157,9 +160,14 @@ namespace qmcplusplus {
       RealType rr_accepted=0.0;
       for(int iat=0; iat<NumPtcl; ++iat)
       {
-        PosType dr(m_sqrttau*deltaR[iat]+thisWalker.Drift[iat]);
-        RealType rr=dot(dr,dr);
+        //PosType dr(m_sqrttau*deltaR[iat]+thisWalker.Drift[iat]);
+        RealType sc=getDriftScale(Tau,W.G[iat]);
+        PosType dr(m_sqrttau*deltaR[iat]+sc*real(W.G[iat]));
+
+        //RealType rr=dot(dr,dr);
+        RealType rr=Tau*dot(deltaR[iat],deltaR[iat]);
         rr_proposed+=rr;
+
         if(rr>m_r2max)//too big move
         {
           ++nRejectTemp; continue;
@@ -167,6 +175,7 @@ namespace qmcplusplus {
 
         PosType newpos(W.makeMove(iat,dr));
         RealType ratio=Psi.ratio(W,iat,dG,dL);
+
         //node is crossed reject the move
         if(Psi.getPhase() > numeric_limits<RealType>::epsilon()) 
         {
@@ -178,8 +187,11 @@ namespace qmcplusplus {
         {
           G = W.G+dG;
           RealType logGf = -0.5*dot(deltaR[iat],deltaR[iat]);
-          RealType scale=getDriftScale(Tau,G);
+
+          //RealType scale=getDriftScale(Tau,G);
+          RealType scale=getDriftScale(Tau,G[iat]);
           dr = thisWalker.R[iat]-newpos-scale*real(G[iat]); 
+
           RealType logGb = -m_oneover2tau*dot(dr,dr);
           RealType prob = std::min(1.0,ratio*ratio*std::exp(logGb-logGf));
           if(RandomGen() < prob) 
@@ -189,7 +201,7 @@ namespace qmcplusplus {
             Psi.acceptMove(W,iat);
             W.G = G;
             W.L += dL;
-            assignDrift(scale,G,thisWalker.Drift);
+            //assignDrift(scale,G,thisWalker.Drift);
             rr_accepted+=rr;
           } 
           else 
@@ -208,11 +220,10 @@ namespace qmcplusplus {
         W.copyToBuffer(w_buffer);
         RealType psi = Psi.evaluate(W,w_buffer);
         enew= H.evaluate(W,nonLocalOps.Txy);
-
         thisWalker.resetProperty(std::log(abs(psi)),psi,enew,rr_accepted,rr_proposed,1.0);
-
         H.saveProperty(thisWalker.getPropertyBase());
-        //emixed = (eold+enew)*0.5e0;
+
+        thisWalker.Drift=W.G;
       } 
       else 
       {
@@ -234,7 +245,8 @@ namespace qmcplusplus {
         Psi.acceptMove(W,iat);
         W.G += dG;
         W.L += dL;
-        setScaledDrift(Tau,W.G,thisWalker.Drift);
+
+        PAOps<RealType,OHMMS_DIM>::copy(W.G,thisWalker.Drift);
 
         thisWalker.R[iat]=W.R[iat];
         w_buffer.rewind();
@@ -242,7 +254,7 @@ namespace qmcplusplus {
         RealType psi = Psi.evaluate(W,w_buffer);
 
         ++NonLocalMoveAccepted;
-      } 
+      }
 
       thisWalker.Weight *= branchEngine->branchWeight(eold,enew);
 

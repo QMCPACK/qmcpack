@@ -21,18 +21,23 @@
 #include "QMCDrivers/WalkerControlBase.h"
 
 
-namespace qmcplusplus {
+namespace qmcplusplus 
+{
+
+  class NewTimer;
 
   /** Class to handle walker controls with simple global sum
    *
    * Base class to handle serial mode with branching only
    */
-  struct WalkerControlMPI: public WalkerControlBase {
+  struct WalkerControlMPI: public WalkerControlBase 
+  {
 
     int NumSwaps;
     int Cur_max;
     int Cur_min;
     int Cur_pop;
+    vector<NewTimer*> myTimers;
     /** default constructor
      *
      * Set the SwapMode to zero so that instantiation can be done

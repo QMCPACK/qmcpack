@@ -29,7 +29,16 @@ namespace qmcplusplus {
   /// Constructor.
   DMCUpdatePbyPWithRejection::DMCUpdatePbyPWithRejection(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
       RandomGenerator_t& rg): QMCUpdateBase(w,psi,h,rg)
-    { }
+    { 
+      myTimers.push_back(new NewTimer("DMCUpdatePbyP::advance")); //timer for the walker loop
+      myTimers.push_back(new NewTimer("DMCUpdatePbyP::movePbyP")); //timer for MC, ratio etc
+      myTimers.push_back(new NewTimer("DMCUpdatePbyP::updateMBO")); //timer for measurements
+      myTimers.push_back(new NewTimer("DMCUpdatePbyP::energy")); //timer for measurements
+      TimerManager.addTimer(myTimers[0]);
+      TimerManager.addTimer(myTimers[1]);
+      TimerManager.addTimer(myTimers[2]);
+      TimerManager.addTimer(myTimers[3]);
+    }
   
   /// destructor
   DMCUpdatePbyPWithRejection::~DMCUpdatePbyPWithRejection() { }
@@ -44,7 +53,6 @@ namespace qmcplusplus {
       bool measure) 
   {
 
-    RealType tauinv =2.0*m_oneover2tau;
 #if defined(TEST_INNERBRANCH)
     for(;it != it_end;++it) 
     {
@@ -69,8 +77,12 @@ namespace qmcplusplus {
         RealType rr_accepted=0.0;
         for(int iat=0; iat<NumPtcl; ++iat) 
         {
-          PosType dr(m_sqrttau*deltaR[iat]+thisWalker.Drift[iat]);
-          RealType rr=dot(dr,dr);
+          //PosType dr(m_sqrttau*deltaR[iat]+thisWalker.Drift[iat]);
+          RealType sc=getDriftScale(Tau,W.G[iat]);
+          PosType dr(m_sqrttau*deltaR[iat]+sc*W.G[iat]);
+
+          //RealType rr=dot(dr,dr);
+          RealType rr=Tau*dot(deltaR[iat],deltaR[iat]);
           rr_proposed+=rr;
 
           if(rr>m_r2max)//reject a big move
@@ -92,20 +104,25 @@ namespace qmcplusplus {
           {
             G = W.G+dG;
             RealType logGf = -0.5*dot(deltaR[iat],deltaR[iat]);
-            RealType scale=getDriftScale(Tau,G);
-            //ValueType vsq = Dot(G,G);
-            //ValueType scale = ((-1.0+sqrt(1.0+2.0*Tau*vsq))/vsq);
+
+            //Scale is set by the total quantum force
+            //RealType scale=getDriftScale(Tau,G);
+            //dr = thisWalker.R[iat]-newpos-scale*real(G[iat]); 
+            RealType scale=getDriftScale(Tau,G[iat]);
             dr = thisWalker.R[iat]-newpos-scale*real(G[iat]); 
+
             RealType logGb = -m_oneover2tau*dot(dr,dr);
             RealType prob = std::min(1.0,ratio*ratio*std::exp(logGb-logGf));
-            if(RandomGen() < prob) { 
+            if(RandomGen() < prob) 
+            { 
               ++nAcceptTemp;
               W.acceptMove(iat);
               Psi.acceptMove(W,iat);
               W.G = G;
               W.L += dL;
 
-              assignDrift(scale,G,thisWalker.Drift);
+              //Checking pbyp drift
+              //assignDrift(scale,G,thisWalker.Drift);
 
               rr_accepted+=rr;
             } else {
@@ -124,7 +141,11 @@ namespace qmcplusplus {
           enew= H.evaluate(W);
           thisWalker.resetProperty(std::log(abs(psi)),psi,enew,rr_accepted,rr_proposed,1.0);
           H.saveProperty(thisWalker.getPropertyBase());
-          //emixed = (eold+enew)*0.5e0;
+
+          //update the drift: safe operator for QMC_COMPLEX=1
+          PAOps<RealType,OHMMS_DIM>::copy(W.G,thisWalker.Drift);
+          //thisWalker.Drift=W.G;
+          //setScaledDriftPbyP(Tau,W.G,thisWalker.Drift);
         } else {
           thisWalker.Age++;
           thisWalker.Properties(R2ACCEPTED)=0.0;
@@ -139,6 +160,7 @@ namespace qmcplusplus {
       }
     }
 #else
+    myTimers[0]->start();
     for(;it != it_end;++it) 
     {
       //MCWalkerConfiguration::WalkerData_t& w_buffer = *(W.DataSet[iwalker]);
@@ -160,11 +182,18 @@ namespace qmcplusplus {
       RealType enew(eold);
       RealType rr_proposed=0.0;
       RealType rr_accepted=0.0;
+
+      myTimers[1]->start();
       for(int iat=0; iat<NumPtcl; ++iat) 
       {
+
         //get the displacement
-        PosType dr(m_sqrttau*deltaR[iat]+thisWalker.Drift[iat]);
-        RealType rr=dot(dr,dr);
+        //PosType dr(m_sqrttau*deltaR[iat]+thisWalker.Drift[iat]);
+        RealType sc=getDriftScale(Tau,W.G[iat]);
+        PosType dr(m_sqrttau*deltaR[iat]+sc*real(W.G[iat]));
+
+        //RealType rr=dot(dr,dr);
+        RealType rr=Tau*dot(deltaR[iat],deltaR[iat]);
         rr_proposed+=rr;
 
         if(rr>m_r2max)
@@ -175,7 +204,7 @@ namespace qmcplusplus {
         PosType newpos(W.makeMove(iat,dr));
         RealType ratio=Psi.ratio(W,iat,dG,dL);
 
-        //if(ratio < 0.0) {//node is crossed reject the move
+        //node is crossed reject the move
         if(Psi.getPhase() > numeric_limits<RealType>::epsilon()) 
         {
           ++nRejectTemp;
@@ -186,10 +215,15 @@ namespace qmcplusplus {
         {
           G = W.G+dG;
           RealType logGf = -0.5*dot(deltaR[iat],deltaR[iat]);
-          RealType scale=getDriftScale(Tau,G);
-          //ValueType vsq = Dot(G,G);
-          //ValueType scale = ((-1.0+sqrt(1.0+2.0*Tau*vsq))/vsq);
+
+          //Scale is set by the total quantum force
+          //RealType scale=getDriftScale(Tau,G);
+          //dr = thisWalker.R[iat]-newpos-scale*real(G[iat]); 
+          
+          //Use the force of the particle iat
+          RealType scale=getDriftScale(Tau,G[iat]);
           dr = thisWalker.R[iat]-newpos-scale*real(G[iat]); 
+
           RealType logGb = -m_oneover2tau*dot(dr,dr);
           RealType prob = std::min(1.0,ratio*ratio*std::exp(logGb-logGf));
           if(RandomGen() < prob) 
@@ -199,8 +233,7 @@ namespace qmcplusplus {
             Psi.acceptMove(W,iat);
             W.G = G;
             W.L += dL;
-
-            assignDrift(scale,G,thisWalker.Drift);
+            //assignDrift(scale,G,thisWalker.Drift);
             rr_accepted+=rr;
 
           } 
@@ -211,19 +244,28 @@ namespace qmcplusplus {
           }
         } 
       }
-
+      myTimers[1]->stop();
+      
       if(nAcceptTemp>0) 
       {//need to overwrite the walker properties
+        myTimers[2]->start();
         thisWalker.R = W.R;
+
+        //copy the new Gradient to drift
+        PAOps<RealType,OHMMS_DIM>::copy(W.G,thisWalker.Drift);
+        //setScaledDriftPbyP(Tau,W.G,(*it)->Drift);
+
         w_buffer.rewind();
         W.copyToBuffer(w_buffer);
         RealType psi = Psi.evaluate(W,w_buffer);
+        myTimers[2]->stop();
+
+        myTimers[3]->start();
         enew= H.evaluate(W);
+        myTimers[3]->stop();
 
         thisWalker.resetProperty(std::log(abs(psi)),psi,enew,rr_accepted,rr_proposed,1.0);
-
         H.saveProperty(thisWalker.getPropertyBase());
-        //emixed = (eold+enew)*0.5e0;
       } 
       else 
       {
@@ -237,7 +279,9 @@ namespace qmcplusplus {
 
       nAccept += nAcceptTemp;
       nReject += nRejectTemp;
+
     }
+    myTimers[0]->stop();
 #endif
   }
 

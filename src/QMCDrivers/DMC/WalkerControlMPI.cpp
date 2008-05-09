@@ -8,7 +8,6 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
@@ -18,6 +17,7 @@
 #include "QMCDrivers/DMC/WalkerControlMPI.h"
 #include "Utilities/IteratorUtility.h"
 #include "Utilities/UtilityFunctions.h"
+#include "Utilities/NewTimer.h"
 using namespace qmcplusplus;
 //#define MCWALKERSET_MPI_DEBUG
 
@@ -25,7 +25,8 @@ using namespace qmcplusplus;
  *
  * set SwapMode
  */
-WalkerControlMPI::WalkerControlMPI(Communicate* c): WalkerControlBase(c) {
+WalkerControlMPI::WalkerControlMPI(Communicate* c): WalkerControlBase(c) 
+{
   SwapMode=1;
   NumSwaps=0;
   Cur_min=0;
@@ -35,11 +36,22 @@ WalkerControlMPI::WalkerControlMPI(Communicate* c): WalkerControlBase(c) {
   sprintf(fname,"test.%d",MyContext);
   ofstream fout(fname);
 #endif
+
+  myTimers.push_back(new NewTimer("WalkerControlMPI::branch")); //timer for the branch
+  myTimers.push_back(new NewTimer("WalkerControlMPI::pre-loadbalance")); //timer for the branch
+  myTimers.push_back(new NewTimer("WalkerControlMPI::loadbalance")); //timer for the branch
+  TimerManager.addTimer(myTimers[0]);
+  TimerManager.addTimer(myTimers[1]);
+  TimerManager.addTimer(myTimers[2]);
 }
 
 int 
-WalkerControlMPI::branch(int iter, MCWalkerConfiguration& W, RealType trigger) {
+WalkerControlMPI::branch(int iter, MCWalkerConfiguration& W, RealType trigger) 
+{
 
+  myTimers[0]->start();
+
+  myTimers[1]->start();
   std::fill(curData.begin(),curData.end(),0);
   //std::fill(NumPerNode.begin(),NumPerNode.end(),0);
   sortWalkers(W);
@@ -67,8 +79,11 @@ WalkerControlMPI::branch(int iter, MCWalkerConfiguration& W, RealType trigger) {
   for(int i=0, j=LE_MAX; i<NumContexts; i++,j++) {
     Cur_pop+= NumPerNode[i]=static_cast<int>(curData[j]);
   }
+  myTimers[1]->stop();
 
+  myTimers[2]->start();
   swapWalkersSimple(W); 
+  myTimers[2]->stop();
 
   //Do not need to use a trigger.
   //Cur_min=Nmax; 
@@ -98,6 +113,7 @@ WalkerControlMPI::branch(int iter, MCWalkerConfiguration& W, RealType trigger) {
   W.setGlobalNumWalkers(Cur_pop);
   W.setWalkerOffsets(FairOffSet);
 
+  myTimers[0]->stop();
   return Cur_pop;
 }
 
