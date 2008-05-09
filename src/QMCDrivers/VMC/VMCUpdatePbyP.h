@@ -42,6 +42,7 @@ namespace qmcplusplus {
     VMCUpdatePbyP(const VMCUpdatePbyP& a): QMCUpdateBase(a) { }
     /// Copy operator (disabled).
     VMCUpdatePbyP& operator=(const VMCUpdatePbyP&) { return *this;}
+    vector<NewTimer*> myTimers;
   };
 
   /** @ingroup QMCDrivers  ParticleByParticle
@@ -62,6 +63,7 @@ namespace qmcplusplus {
     VMCUpdatePbyPWithDrift(const VMCUpdatePbyPWithDrift& a): QMCUpdateBase(a) { }
     /// Copy operator (disabled).
     VMCUpdatePbyPWithDrift& operator=(const VMCUpdatePbyPWithDrift&) { return *this;}
+    vector<NewTimer*> myTimers;
   };
 }
 

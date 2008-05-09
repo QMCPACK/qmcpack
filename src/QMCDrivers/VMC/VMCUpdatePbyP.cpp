@@ -29,6 +29,15 @@ namespace qmcplusplus {
     { 
       myParams.add(nSubSteps,"subSteps","int"); 
       myParams.add(nSubSteps,"substeps","int");
+
+      myTimers.push_back(new NewTimer("VMCUpdatePbyP::advance")); //timer for the walker loop
+      myTimers.push_back(new NewTimer("VMCUpdatePbyP::movePbyP")); //timer for MC, ratio etc
+      myTimers.push_back(new NewTimer("VMCUpdatePbyP::updateMBO")); //timer for measurements
+      myTimers.push_back(new NewTimer("VMCUpdatePbyP::energy")); //timer for measurements
+      TimerManager.addTimer(myTimers[0]);
+      TimerManager.addTimer(myTimers[1]);
+      TimerManager.addTimer(myTimers[2]);
+      TimerManager.addTimer(myTimers[3]);
     }
 
   VMCUpdatePbyP::~VMCUpdatePbyP()
@@ -38,7 +47,8 @@ namespace qmcplusplus {
   void VMCUpdatePbyP::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure) 
   {
 
-    for(; it != it_end;) 
+    myTimers[0]->start();
+    for(; it != it_end;++it) 
     {
 
       Walker_t& thisWalker(**it);
@@ -53,8 +63,9 @@ namespace qmcplusplus {
       RealType psi_old = thisWalker.Properties(SIGN);
       RealType psi = psi_old;
 
-      for(int iter=0; iter<nSubSteps; ++iter) {
-
+      myTimers[1]->start();
+      for(int iter=0; iter<nSubSteps; ++iter) 
+      {
         makeGaussRandomWithEngine(deltaR,RandomGen);
         bool stucked=true;
         for(int iat=0; iat<W.getTotalNum(); iat++) {
@@ -80,21 +91,26 @@ namespace qmcplusplus {
           ++nAllRejected;
         }
       }
+      myTimers[1]->stop();
 
+      myTimers[2]->start();
       thisWalker.R = W.R;
       w_buffer.rewind();
       W.updateBuffer(w_buffer);
       RealType logpsi = Psi.updateBuffer(W,w_buffer);
       //W.copyToBuffer(w_buffer);
       //RealType logpsi = Psi.evaluate(W,w_buffer);
+      myTimers[2]->stop();
 
+      myTimers[3]->start();
       RealType eloc=H.evaluate(W);
+      myTimers[3]->stop();
 
       thisWalker.resetProperty(logpsi,Psi.getPhase(),eloc);
       H.saveProperty(thisWalker.getPropertyBase());
 
-      ++it;
     }
+    myTimers[0]->stop();
   }
 
   /// Constructor.
@@ -110,7 +126,7 @@ namespace qmcplusplus {
 
   void VMCUpdatePbyPWithDrift::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure) 
   {
-    for( ;it != it_end; ) 
+    for( ;it != it_end; ++it) 
     {
       Walker_t& thisWalker(**it);
       Walker_t::Buffer_t& w_buffer(thisWalker.DataSet);
@@ -127,12 +143,14 @@ namespace qmcplusplus {
 
       bool moved = false;
 
-      for(int iat=0; iat<W.getTotalNum(); iat++) {
+      for(int iat=0; iat<W.getTotalNum(); ++iat) 
+      {
 
-        PosType dr = m_sqrttau*deltaR[iat]+thisWalker.Drift[iat];
+        //PosType dr = m_sqrttau*deltaR[iat]+thisWalker.Drift[iat];
+        RealType sc=getDriftScale(Tau,W.G[iat]);
+        PosType dr(m_sqrttau*deltaR[iat]+sc*real(W.G[iat]));
+
         PosType newpos = W.makeMove(iat,dr);
-
-        //RealType ratio = Psi.ratio(W,iat);
         RealType ratio = Psi.ratio(W,iat,dG,dL);
         RealType prob = ratio*ratio;
 
@@ -151,9 +169,8 @@ namespace qmcplusplus {
         //RealType backwardGF = exp(-oneover2tau*dot(dr,dr));
         RealType logGf = -0.5e0*dot(deltaR[iat],deltaR[iat]);
 
-        RealType scale=getDriftScale(Tau,G);
-        //COMPLEX WARNING
-        //dr = thisWalker.R[iat]-newpos-scale*G[iat];
+        //RealType scale=getDriftScale(Tau,G);
+        RealType scale=getDriftScale(Tau,G[iat]);
         dr = thisWalker.R[iat]-newpos-scale*real(G[iat]);
 
         RealType logGb = -m_oneover2tau*dot(dr,dr);
@@ -168,8 +185,8 @@ namespace qmcplusplus {
           W.G = G;
           W.L += dL;
 
-          //thisWalker.Drift = scale*G;
-          assignDrift(scale,G,thisWalker.Drift);
+          //do not need to update Drift
+          //assignDrift(scale,G,thisWalker.Drift);
 
         } else {
           ++nReject; 
@@ -177,12 +194,14 @@ namespace qmcplusplus {
         }
       }
 
-      if(moved) {
+      if(moved) 
+      {
+        thisWalker.R = W.R;
+        PAOps<RealType,OHMMS_DIM>::copy(W.G,thisWalker.Drift);
+
         w_buffer.rewind();
         W.copyToBuffer(w_buffer);
         psi = Psi.evaluate(W,w_buffer);
-
-        thisWalker.R = W.R;
         RealType eloc=H.evaluate(W);
         thisWalker.resetProperty(std::log(abs(psi)), psi,eloc);
         H.saveProperty(thisWalker.getPropertyBase());
@@ -191,7 +210,6 @@ namespace qmcplusplus {
       { 
         ++nAllRejected;
       }
-      ++it;
     }
   }
 }
