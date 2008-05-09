@@ -151,7 +151,7 @@ namespace APPNAMESPACE {
 
     static inline 
       void axpy(T a, const ParticleAttrib<cpos_type>& pa, ParticleAttrib<rpos_type>& pb) {
-        for(int i=0; i<pa.size(); i++) {
+        for(int i=0; i<pa.size(); ++i) {
           pb[i][0]+=a*pa[i][0].real();
           pb[i][1]+=a*pa[i][1].real();
           pb[i][2]+=a*pa[i][2].real();
@@ -160,7 +160,7 @@ namespace APPNAMESPACE {
 
     static inline 
       void axpy(T a, const ParticleAttrib<rpos_type>& pa, ParticleAttrib<rpos_type>& pb) {
-        for(int i=0; i<pa.size(); i++) {
+        for(int i=0; i<pa.size(); ++i) {
           pb[i][0]+=a*pa[i][0];
           pb[i][1]+=a*pa[i][1];
           pb[i][2]+=a*pa[i][2];
@@ -170,7 +170,7 @@ namespace APPNAMESPACE {
     static inline 
       void axpy(T a, const ParticleAttrib<cpos_type>& pa, const ParticleAttrib<rpos_type>& pb,
           ParticleAttrib<rpos_type>& py) {
-        for(int i=0; i<pa.size(); i++) {
+        for(int i=0; i<pa.size(); ++i) {
           py[i][0]=a*pa[i][0].real()+pb[i][0];
           py[i][1]=a*pa[i][1].real()+pb[i][1];
           py[i][2]=a*pa[i][2].real()+pb[i][2];
@@ -180,10 +180,27 @@ namespace APPNAMESPACE {
     static inline 
       void axpy(T a, const ParticleAttrib<rpos_type>& pa, const ParticleAttrib<rpos_type>& pb,
           ParticleAttrib<rpos_type>& py) {
-        for(int i=0; i<pa.size(); i++) {
+        for(int i=0; i<pa.size(); ++i) {
           py[i][0]=a*pa[i][0]+pb[i][0];
           py[i][1]=a*pa[i][1]+pb[i][1];
           py[i][2]=a*pa[i][2]+pb[i][2];
+        }
+      }
+
+    static inline 
+      void copy(const ParticleAttrib<rpos_type>& px, ParticleAttrib<rpos_type>& py) 
+      {
+        py=px;
+      }
+
+    static inline 
+      void copy(const ParticleAttrib<cpos_type>& px, ParticleAttrib<rpos_type>& py) 
+      {
+        for(int i=0; i<px.size(); ++i) 
+        {
+          py[i][0]=px[i][0].real();
+          py[i][1]=px[i][1].real();
+          py[i][2]=px[i][2].real();
         }
       }
   };
