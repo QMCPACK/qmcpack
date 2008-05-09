@@ -6,7 +6,6 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
@@ -16,16 +15,18 @@
 #include "QMCHamiltonians/CoulombPBCAATemp.h"
 #include "Particle/DistanceTable.h"
 #include "Particle/DistanceTableData.h"
+#include "Utilities/ProgressReportEngine.h"
 
 namespace qmcplusplus {
 
   CoulombPBCAATemp::CoulombPBCAATemp(ParticleSet& ref): 
     PtclRef(&ref), AA(0), myGrid(0), rVs(0), FirstTime(true), myConst(0.0){
-      LOGMSG("    Performing long-range breakup for CoulombAATemp potential");
+      ReportEngine PRE("CoulombPBCAATemp","CoulombPBCAATemp");
       //AA = new LRHandlerType(ref);
       d_aa = DistanceTable::add(ref);
       initBreakup();
-      LOGMSG("    Done\n");
+      app_log() << "  Maximum K shell " << AA->MaxKshell << endl;
+      app_log() << "  Number of k vectors " << AA->Fk.size() << endl;
     }
 
 

@@ -17,17 +17,20 @@
 #include "Particle/DistanceTable.h"
 #include "Particle/DistanceTableData.h"
 #include "Message/Communicate.h"
+#include "Utilities/ProgressReportEngine.h"
 
 namespace qmcplusplus {
 
   CoulombPBCABTemp::CoulombPBCABTemp(ParticleSet& ions, ParticleSet& elns): 
-    PtclA(&ions), PtclB(&elns), FirstTime(true), myConst(0.0), myGrid(0),V0(0){
-      LOGMSG("    Performing long-range breakup for CoulombABTemp potential");
+    PtclA(&ions), PtclB(&elns), FirstTime(true), myConst(0.0), myGrid(0),V0(0)
+    {
+      ReportEngine PRE("CoulombPBCABTemp","CoulombPBCABTemp");
       //Use singleton pattern 
       //AB = new LRHandlerType(ions);
       d_ab = DistanceTable::add(ions,elns);
       initBreakup();
-      LOGMSG("    Done\n");
+      app_log() << "  Maximum K shell " << AB->MaxKshell << endl;
+      app_log() << "  Number of k vectors " << AB->Fk.size() << endl;
     }
 
   QMCHamiltonianBase* CoulombPBCABTemp::clone(ParticleSet& qp, TrialWaveFunction& psi)
