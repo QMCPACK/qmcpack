@@ -27,6 +27,7 @@
 #include "Particle/MCWalkerConfiguration.h"
 #include "Estimators/BlockHistogram.h"
 #include "Estimators/accumulators.h"
+#include "Utilities/NewTimer.h"
 #include <bitset>
 
 namespace qmcplusplus {
