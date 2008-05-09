@@ -256,6 +256,9 @@ namespace qmcplusplus {
     ///a list of mcwalkerset element
     vector<xmlNodePtr> mcwalkerNodePtr;
 
+    ///a list of timers
+    vector<NewTimer*> myTimers;
+
     ///temporary storage for drift
     ParticleSet::ParticlePos_t drift;
 
