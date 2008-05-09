@@ -14,9 +14,9 @@ KContainer::~KContainer() { }
 KContainer&
 KContainer::operator=(const KContainer& ref) {
   //Lattices should be equal. 
-  if(&Lattice != &ref.Lattice){
-    LOGMSG("ERROR: tried to copy KContainer with different lattices");
-    OHMMS::Controller->abort();
+  if(&Lattice != &ref.Lattice)
+  {
+    APP_ABORT("KContainer cannot assign itself");
   }
   //Now, if kcutoffs are the same then we can be sure that the lists are identical.
   //otherwise the STL containers must have contents copied.
@@ -56,14 +56,17 @@ void
 KContainer::UpdateKLists(RealType kc, bool useSphere) {
   kcutoff = kc;
   kcut2 = kc*kc;
-  LOGMSG("  KContainer initialised with cutoff " << kcutoff);
 
-  if(kcutoff <= 0.0){
-    OHMMS::Controller->abort();
+  if(kcutoff <= 0.0)
+  {
+    APP_ABORT("KContainer::UpdateKLists cannot have a negative Kcut");
   }
 
   FindApproxMMax();
   BuildKLists(useSphere);
+  app_log() << "  KContainer initialised with cutoff " << kcutoff << endl;
+  app_log() << "   # of K-shell  = " << kshell.size() << endl;
+  app_log() << "   # of K points = " << kpts.size() << endl;
 }
 
 //Private Methods:
