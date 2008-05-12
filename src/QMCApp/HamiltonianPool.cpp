@@ -187,6 +187,7 @@ namespace qmcplusplus {
     OhmmsInfo::Log->reset();
     OhmmsInfo::Warn->reset();
 
+    myComm->barrier();
   }
 
   bool HamiltonianPool::put(std::istream& is) {
