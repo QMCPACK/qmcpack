@@ -72,12 +72,10 @@ ENDIF(INTEL_MKL)
 ####################################
 ADD_EXECUTABLE(qmcapp ${QMCMAIN})
 
-IF(MAC_VECLIB)
-  TARGET_LINK_LIBRARIES(qmcapp qmc qmcdriver qmcham qmcwfs qmcbase qmcutil)
-ELSE(MAC_VECLIB)
-  TARGET_LINK_LIBRARIES(qmcapp qmc qmcdriver qmcham qmcwfs qmcbase qmcutil 
-  ${LAPACK_LIBRARY}
-  ${BLAS_LIBRARY} 
-  ${FORTRAN_LIBS})
-ENDIF(MAC_VECLIB)
-
+TARGET_LINK_LIBRARIES(qmcapp qmc qmcdriver qmcham qmcwfs qmcbase qmcutil)
+IF(HAVE_EINSPLINE)	
+  TARGET_LINK_LIBRARIES(qmcapp einspline)
+ENDIF(HAVE_EINSPLINE)	
+IF(NOT MAC_VECLIB)
+  TARGET_LINK_LIBRARIES(qmcapp ${LAPACK_LIBRARY} ${BLAS_LIBRARY} ${FORTRAN_LIBS})
+ENDIF(NOT MAC_VECLIB)
