@@ -167,6 +167,12 @@ namespace qmcplusplus {
      */
     void rejectMove(Index_t iat);
 
+
+    inline SingleParticlePos_t getOldPos() const
+    {
+      return activePos;
+    }
+
     void initPropertyList();
     inline int addProperty(const string& pname) {
       return PropertyList.add(pname.c_str());
@@ -208,9 +214,6 @@ namespace qmcplusplus {
 
     ///the position of the active particle for particle-by-particle moves
     SingleParticlePos_t activePos;
-
-
-
 
     void initParticleSet();
   };
