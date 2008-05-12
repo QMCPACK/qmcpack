@@ -107,7 +107,9 @@ void Communicate::abort()
 
 void Communicate::barrier()
 {
-  OOMPI_COMM_WORLD.Barrier();
+  //OOMPI_COMM_WORLD.Barrier();
+  myComm.Barrier();
+
 }
 
 void Communicate::abort(const char* msg)
