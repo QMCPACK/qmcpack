@@ -1,0 +1,57 @@
+#SET (EINSPLINE_DIR $ENV{EINSPLINE_HOME})
+
+SET(ESLIBSRC
+   ${EINSPLINE_DIR}/src/bspline_create.c      
+   ${EINSPLINE_DIR}/src/bspline_data.c        
+   ${EINSPLINE_DIR}/src/multi_bspline_create.c
+   ${EINSPLINE_DIR}/src/nubspline_create.c    
+   ${EINSPLINE_DIR}/src/nubasis.c             
+   ${EINSPLINE_DIR}/src/nugrid.c              
+   )
+
+ SET(ESLIBH
+   aligned_alloc.h                
+   bspline_base.h                 
+   bspline_create.h               
+   bspline_structs.h              
+   bspline_eval_std_s.h           
+   bspline_eval_sse_s.h           
+   bspline_eval_std_c.h           
+   bspline_eval_sse_c.h           
+   bspline_eval_std_d.h           
+   bspline_eval_sse_d.h           
+   bspline_eval_std_z.h           
+   bspline_eval_sse_z.h           
+   multi_bspline.h                
+   multi_bspline_create.h         
+   multi_bspline_eval_sse_c.h     
+   multi_bspline_eval_std_c.h     
+   multi_bspline_eval_sse_d.h     
+   multi_bspline_eval_std_d.h     
+   multi_bspline_eval_sse_s.h     
+   multi_bspline_eval_std_s.h     
+   multi_bspline_eval_sse_z.h     
+   multi_bspline_eval_std_z.h     
+   multi_bspline_structs.h        
+   nubspline_base.h               
+   nubspline_create.h             
+   nubspline_eval_sse_s.h         
+   nubspline_eval_std_s.h         
+   nubspline_eval_sse_c.h         
+   nubspline_eval_std_c.h         
+   nubspline_eval_sse_d.h         
+   nubspline_eval_std_d.h         
+   nubspline_eval_sse_z.h         
+   nubspline_eval_std_z.h         
+   nubspline_structs.h            
+   nubasis.h                      
+   nugrid.h                       
+   nubspline.h                       
+   bspline.h                       
+   )
+
+FOREACH(eh ${ESLIBH})
+  CONFIGURE_FILE(${EINSPLINE_DIR}/src/${eh} ${CMAKE_CURRENT_SOURCE_DIR}/${eh})
+ENDFOREACH(eh)
+
+ADD_LIBRARY(einspline ${ESLIBSRC})
