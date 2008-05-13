@@ -38,8 +38,46 @@ SET(QMC_BITS 32 CACHE INTEGER "Select OS bit")
 # Standard test
 ######################################################################
 INCLUDE(${CMAKE_ROOT}/Modules/CheckFunctionExists.cmake)
+INCLUDE(${CMAKE_ROOT}/Modules/CheckIncludeFile.cmake)
+INCLUDE(${CMAKE_ROOT}/Modules/CheckTypeSize.cmake)
 CHECK_FUNCTION_EXISTS(sincos HAVE_SINCOS)
 CHECK_FUNCTION_EXISTS(round HAVE_STD_ROUND)
+
+######################################################################
+# add einspline stuff
+######################################################################
+CHECK_FUNCTION_EXISTS(floor HAVE_FLOOR)
+CHECK_FUNCTION_EXISTS(posix_memalign HAVE_POSIX_MEMALIGN)
+CHECK_FUNCTION_EXISTS(pow HAVE_POW)
+CHECK_FUNCTION_EXISTS(sqrt HAVE_SQRT)
+
+CHECK_INCLUDE_FILE(dlfcn.h HAVE_DLFCN_H)
+CHECK_INCLUDE_FILE(inttypes.h HAVE_INTTYPES_H)
+CHECK_INCLUDE_FILE(memory.h HAVE_MEMORY_H)
+CHECK_INCLUDE_FILE(pmmintrin.h HAVE_PMMINTRIN_H)
+CHECK_INCLUDE_FILE(emmintrin.h HAVE_EMMINTRIN_H)
+CHECK_INCLUDE_FILE(sys/stat.h HAVE_SYS_STAT_H)
+CHECK_INCLUDE_FILE(sys/time.h HAVE_SYS_TIME_H)
+CHECK_INCLUDE_FILE(sys/types.h HAVE_SYS_TYPES_H)
+CHECK_INCLUDE_FILE(unistd.h HAVE_UNISTD_H)
+
+SET(HAVE_SSE3 0)
+SET(HAVE_SSE2 0)
+SET(HAVE_SSE 0)
+SET(USE_PREFETCH 0)
+SET(PREFETCH_AHEAD 12)
+SET(HAVE_C_VARARRAYS 1)
+
+#going to add automatic detection for cpu
+exec_program(grep  
+  ARGS flags /proc/cpuinfo
+  OUTPUT_VARIABLE CPUINFO_FLAGS
+  RETURN_VALUE CPUINFO
+  )
+
+IF(${CPUINFO_FLAGS} MATCHES msse2)
+  MESSAGE("  enable msse2")	 
+ENDIF(${CPUINFO_FLAGS} MATCHES msse2)
 
 ######################################################################
 # Build options
@@ -112,6 +150,16 @@ SET(HAVE_EINSPLINE 0)
 ######################################################
 SET (PROJECT_CMAKE ${qmcpack_SOURCE_DIR}/CMake)
 
+SET(QMCPLUSPLUS_SVN_LAST_CHANGED "2008-05-12")
+
+FIND_PACKAGE(Subversion) 
+IF(Subversion_FOUND) 
+  Subversion_WC_INFO(${PROJECT_SOURCE_DIR} Project) 
+  MESSAGE("-- Current revision : ${Project_WC_REVISION} modified on ${Project_WC_LAST_CHANGED_DATE}") 
+  SET(QMCPLUSPLUS_BRANCH ${Project_WC_REVISION})
+  SET(QMCPLUSPLUS_LAST_CHANGED_DATE ${Project_WC_LAST_CHANGED_DATE})
+ENDIF(Subversion_FOUND)
+
 ######################################################
 #COMPILER choose one of the cmake files to customize the compiler options
 #If nothing is chosen, default settings by cmake will  be used.
@@ -150,6 +198,7 @@ IF(NOT FOUND_CXXENV)
 ENDIF(NOT FOUND_CXXENV)
 
 MESSAGE("-- CXX compiler flags: ${CMAKE_CXX_FLAGS}")
+MESSAGE("-- CC  compiler flags: ${CMAKE_C_FLAGS}")
 
 #COMPIELR MANUAL SELECTION
 #INCLUDE(${PROJECT_CMAKE}/GNUCompilers.cmake)
@@ -169,28 +218,6 @@ INCLUDE(${PROJECT_CMAKE}/FindHDF5.cmake)
 INCLUDE(${PROJECT_CMAKE}/FindBoost.cmake)
 INCLUDE(${PROJECT_CMAKE}/FindPkgConfig.cmake)
 #INCLUDE(${PROJECT_CMAKE}/FindFFTW.cmake)
-
-#COMMENT OUT EINSPLINE 
-IF ( CMAKE_PKGCONFIG_EXECUTABLE )
-   # Find all the librtk stuff with pkg-config
-   PKGCONFIG( "einspline >= 0.7" HAVE_EINSPLINE EINSPLINE_INCLUDE_DIRS EINSPLINE_DEFINES EINSPLINE_LINK_DIRS EINSPLINE_LIBS )
-   FIND_LIBRARY(EINSPLINE_LIBRARY einspline ${EINSPLINE_LINK_DIRS})
-   IF(EINSPLINE_LIBRARY)	
-     INCLUDE_DIRECTORIES(${EINSPLINE_INCLUDE_DIRS})
-     ADD_DEFINITIONS (${EINSPLINE_DEFINES} -DHAVE_EINSPLINE)
-     SET(HAVE_EINSPLINE 1)
-     #LINK_DIRECTORIES(${EINSPLINE_LINK_DIRS})
-     #LINK_LIBRARIES  (${EINSPLINE_LINK_LIBS})
-     LINK_LIBRARIES(${EINSPLINE_LIBRARY})  
-     MESSAGE("-- Einspline library found at  ${EINSPLINE_LIBRARY}")	 
-   ELSE(EINSPLINE_LIBRARY)	
-     MESSAGE("-- Missing Einspline library. Disable Einspline option.")
-   ENDIF(EINSPLINE_LIBRARY)	
-ELSE  ( CMAKE_PKGCONFIG_EXECUTABLE )
-  MESSAGE("-- Missing pkgconfig. Disable Einspline library.")
-ENDIF ( CMAKE_PKGCONFIG_EXECUTABLE )
-
-#ADD_DEFINITIONS(-DMPICH_SKIP_MPICXX)
 
 IF(QMC_MPI)
   IF(MPIP_PROFILE)
@@ -259,6 +286,37 @@ IF(ENABLE_GTK_GUI)
    LINK_LIBRARIES(${GTKMM_LIBRARIES})
   ENDIF(GTKMM_FOUND)
 ENDIF(ENABLE_GTK_GUI)
+
+
+SET(HAVE_EINSPLINE 0)
+#Search libeinspline and build if not
+IF ( CMAKE_PKGCONFIG_EXECUTABLE )
+   # Find all the librtk stuff with pkg-config
+   PKGCONFIG( "einspline >= 0.7" HAVE_EINSPLINE EINSPLINE_INCLUDE_DIRS EINSPLINE_DEFINES EINSPLINE_LINK_DIRS EINSPLINE_LIBS )
+   CHECK_INCLUDE_FILE(${EINSPLINE_INCLUDE_DIRS}/config.h HAVE_EINSPLINE)
+   IF(HAVE_EINSPLINE)	
+     FIND_LIBRARY(EINSPLINE_LIBRARY einspline ${EINSPLINE_LINK_DIRS})
+     INCLUDE_DIRECTORIES(${EINSPLINE_INCLUDE_DIRS})
+     ADD_DEFINITIONS (${EINSPLINE_DEFINES} -DHAVE_EINSPLINE)
+     SET(HAVE_EINSPLINE 1)
+     LINK_LIBRARIES(${EINSPLINE_LIBRARY})  
+     MESSAGE("-- Einspline library found at  ${EINSPLINE_LIBRARY}")	 
+   ELSE(HAVE_EINSPLINE)	
+     MESSAGE("-- Missing pre-built Einspline library.")
+   ENDIF(HAVE_EINSPLINE)	
+ENDIF  ( CMAKE_PKGCONFIG_EXECUTABLE )
+
+IF(NOT HAVE_EINSPLINE)
+  FIND_PATH(EINSPLINE_DIR src/bspline.h $ENV{EINSPLINE_HOME})
+  IF(EINSPLINE_DIR)
+    MESSAGE("-- Try to build Einspline library. Source is found at ${EINSPLINE_DIR}.")
+    SET(HAVE_EINSPLINE 1)
+    SUBDIRS(src/einspline)
+  ELSE(EINSPLINE_DIR)
+    MESSAGE("-- EINSPLINE_HOME is not found. Disable Einspline library.")
+    MESSAGE("-- Download einspline library to utilize an optimized 3D-bspline library.")
+  ENDIF(EINSPLINE_DIR)
+ENDIF(NOT HAVE_EINSPLINE)
 
 INCLUDE_DIRECTORIES(
   ${qmcpack_SOURCE_DIR}/src
