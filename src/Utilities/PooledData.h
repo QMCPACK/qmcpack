@@ -250,13 +250,17 @@ public:
 
   inline void add(std::complex<T>* first,std::complex<T>* last) {
     int dn=2*(last-first);
+    //TEMPORARY FIX FOR SGI-IA64 
+#if defined(SGI_IA64)
+    for(;first != last; ++first)
+    {
+      this->push_back((*first).real()); 
+      this->push_back((*first).imag());
+    }
+#else
     this->insert(this->end(),&(first->real()),&(first->real())+dn);
+#endif
     Current += dn;
-    //while(first != last) {
-    //  this->push_back((*first).real()); 
-    //  this->push_back((*first).imag());
-    //  Current+=2; ++first;
-    //}
   }
 
   template<class T1>
