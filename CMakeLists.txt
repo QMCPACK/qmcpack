@@ -1,5 +1,7 @@
 PROJECT(qmcpack)
 
+CMAKE_MINIMUM_REQUIRED(VERSION 2.4)
+
 ######################################################################
 # Version 
 ######################################################################
@@ -182,6 +184,11 @@ IF($ENV{CXX} MATCHES "xlC")
   SET(FOUND_CXXENV 1)
 ENDIF($ENV{CXX} MATCHES "xlC")
 
+IF($ENV{CXX} MATCHES "icpc")
+  INCLUDE(${PROJECT_CMAKE}/Intel8.cmake)
+  SET(FOUND_CXXENV 1)
+ENDIF($ENV{CXX} MATCHES "icpc")
+
 ### most likely *unix with gnu or intel compilers
 IF(NOT FOUND_CXXENV)
   IF(CMAKE_COMPILER_IS_GNUCXX)
@@ -322,7 +329,7 @@ INCLUDE_DIRECTORIES(
   ${qmcpack_SOURCE_DIR}/src
   ${qmcpack_BINARY_DIR}/src
 )
-ADD_DEFINITIONS(-DHAVE_CONFIG_H -DAPPNAMESPACE=qmcplusplus)
+ADD_DEFINITIONS(-DHAVE_CONFIG_H -DH5_USE_16_API -DAPPNAMESPACE=qmcplusplus)
 
 IF(BUILD_QMCTOOLS)
   SUBDIRS(boost)
