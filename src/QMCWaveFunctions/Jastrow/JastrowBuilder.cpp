@@ -159,7 +159,7 @@ namespace qmcplusplus {
 
       control = new PadeConstraints(targetPtcl,targetPsi,ignoreSpin);
     } 
-    else if(funcOpt == "rpa") 
+    else if((funcOpt == "Yukawa") || (funcOpt == "RPA")) 
     {
       if(targetPtcl.Lattice.SuperCellEnum == SUPERCELL_OPEN)
       {
