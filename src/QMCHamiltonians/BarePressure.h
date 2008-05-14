@@ -38,7 +38,6 @@ namespace qmcplusplus {
      */
     BarePressure(ParticleSet& P) { 
       UpdateMode.set(OPTIMIZABLE,1);
-      //for 3-D. For 2-D this should be 1.0/(2.0*P.getTotalNum())
       pNorm = 1.0/(P.Lattice.DIM*P.Lattice.Volume);
 
     }
@@ -50,7 +49,6 @@ namespace qmcplusplus {
     inline Return_t 
     evaluate(ParticleSet& P) {
       Value=2.0*P.PropertyList[LOCALENERGY]-P.PropertyList[LOCALPOTENTIAL];
-      //for 3-D
       Value*=pNorm;
       return 0.0;
     }

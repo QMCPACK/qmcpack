@@ -35,7 +35,7 @@
 #include "QMCHamiltonians/CoulombPBCAATemp.h"
 #include "QMCHamiltonians/CoulombPBCABTemp.h"
 #include "OhmmsData/AttributeSet.h"
-#include "QMCHamiltonians/BarePressure.h"
+#include "QMCHamiltonians/Pressure.h"
 // #include "QMCHamiltonians/RPAPressureCorrection.h"
 
 
@@ -149,14 +149,12 @@ namespace qmcplusplus {
       }
       else if(cname == "estimator")
       {
-        if(potType == "BarePressure")
+        if(potType == "Pressure")
         {
-          targetH->addOperator(new BarePressure(*targetPtcl),"BarePressure");
-        }
-        if(potType == "RPAZBPressure")
-        {
-          targetH->addOperator(new BarePressure(*targetPtcl),"BarePressure");
-//           targetH->addOperator(new RPAPressureCorrection(*targetPtcl),"BPCor");
+          Pressure* BP = new Pressure(*targetPtcl);
+          BP-> put(cur, *targetPtcl,  targetH);
+          targetH->addOperator(BP,"Pressure");
+          
         }
       }
       

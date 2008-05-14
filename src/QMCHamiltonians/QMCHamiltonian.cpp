@@ -116,17 +116,17 @@ QMCHamiltonian::add2WalkerProperty(ParticleSet& P) {
 QMCHamiltonian::Return_t 
 QMCHamiltonian::evaluate(ParticleSet& P) 
 {
+  RecordNamedProperty<RealType>& prp(P.PropertyList);
   LocalEnergy = 0.0;
   vector<QMCHamiltonianBase*>::iterator hit(H.begin()),hit_end(H.end());
-  for(int i=0; hit!=hit_end; ++hit,++i)
-  {
+  for(int i=0; hit!=hit_end; ++hit,++i){
     myTimers[i]->start();
     LocalEnergy += (*hit)->evaluate(P);
     Hvalue[i]=(*hit)->Value; 
     myTimers[i]->stop();
-  }
-  P.PropertyList[LOCALENERGY]=LocalEnergy;
-  P.PropertyList[LOCALPOTENTIAL]=LocalEnergy-Hvalue[0];
+    prp[LOCALENERGY]=LocalEnergy;
+    prp[LOCALPOTENTIAL]=LocalEnergy-Hvalue[0];
+  };
   return LocalEnergy;
 }
 
