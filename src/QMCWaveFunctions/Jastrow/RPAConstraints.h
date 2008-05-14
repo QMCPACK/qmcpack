@@ -35,7 +35,7 @@ namespace qmcplusplus {
       typedef CubicBspline<RealType,LINEAR_1DGRID,FIRSTDERIV_CONSTRAINTS> SplineEngineType;
       typedef CubicSplineSingle<RealType,SplineEngineType> FuncType;
       typedef LinearGrid<RealType> GridType;
-      enum {USE_BREAKUP=0, USE_RPA, USE_NONE};
+      enum {USE_BREAKUP=0, USE_YUKAWA, USE_RPA, USE_NONE};
 
       RPAPBCConstraints(ParticleSet& p, TrialWaveFunction& psi, bool nospin=true);
       ~RPAPBCConstraints();
