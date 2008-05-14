@@ -171,25 +171,36 @@ ENDIF(Subversion_FOUND)
 SET(FOUND_CXXENV 0)
 INCLUDE(${CMAKE_ROOT}/Modules/TestCXXAcceptsFlag.cmake)
 
-### On Jaguar use CrayXT.cmake
+#------------------------------------
+# On Jaguar use CrayXT.cmake
+#------------------------------------
 IF($ENV{HOST} MATCHES "jaguar")
   MESSAGE("  Working on jaguar. Using CMake/CrayXT.cmake")	 
   INCLUDE(${PROJECT_CMAKE}/CrayXT.cmake)
   SET(FOUND_CXXENV 1)
 ENDIF($ENV{HOST} MATCHES "jaguar")
 
-### Check if using IBM compilers
+#------------------------------------
+# Check if using IBM compilers
+#------------------------------------
 IF($ENV{CXX} MATCHES "xlC")
   INCLUDE(${PROJECT_CMAKE}/IBMCompilers.cmake)
   SET(FOUND_CXXENV 1)
 ENDIF($ENV{CXX} MATCHES "xlC")
 
+#------------------------------------
+# Check if using Intel compilers
+#------------------------------------
 IF($ENV{CXX} MATCHES "icpc")
-  INCLUDE(${PROJECT_CMAKE}/Intel8.cmake)
+  INCLUDE(${PROJECT_CMAKE}/IntelCompilers.cmake)
   SET(FOUND_CXXENV 1)
 ENDIF($ENV{CXX} MATCHES "icpc")
 
-### most likely *unix with gnu or intel compilers
+#------------------------------------
+# other compilers, e.g., mpicxx 
+# most likely *unix with gnu or intel compilers
+# using "-restrict" option to find out if intel compilers are backend.
+#------------------------------------
 IF(NOT FOUND_CXXENV)
   IF(CMAKE_COMPILER_IS_GNUCXX)
     INCLUDE(${PROJECT_CMAKE}/GNUCompilers.cmake)
@@ -198,22 +209,24 @@ IF(NOT FOUND_CXXENV)
     CHECK_CXX_ACCEPTS_FLAG(${CMAKE_TRY_INTEL_CXX_FLAGS} INTEL_CXX_FLAGS)
     IF(INTEL_CXX_FLAGS)
       MESSAGE("-- Intel compilers are found. ${INTEL_CXX_FLAGS}")
-      INCLUDE(${PROJECT_CMAKE}/Intel8.cmake)
+      INCLUDE(${PROJECT_CMAKE}/IntelCompilers.cmake)
       SET(FOUND_CXXENV 1)
     ENDIF(INTEL_CXX_FLAGS)
   ENDIF(CMAKE_COMPILER_IS_GNUCXX)
 ENDIF(NOT FOUND_CXXENV)
 
-MESSAGE("-- CXX compiler flags: ${CMAKE_CXX_FLAGS}")
-MESSAGE("-- CC  compiler flags: ${CMAKE_C_FLAGS}")
-
+#-------------------------------------------------------------------
 #COMPIELR MANUAL SELECTION
+#If automatic detection does not work, comment out above and select one
+# of these files
+#-------------------------------------------------------------------
 #INCLUDE(${PROJECT_CMAKE}/GNUCompilers.cmake)
-#INCLUDE(${PROJECT_CMAKE}/Intel8.cmake)
+#INCLUDE(${PROJECT_CMAKE}/IntelCompilers.cmake)
 #INCLUDE(${PROJECT_CMAKE}/IBMCompilers.cmake)
 #INCLUDE(${PROJECT_CMAKE}/KCCCompilers.cmake)
-#INCLUDE(${PROJECT_CMAKE}/Intel7.cmake)
-#INCLUDE(${PROJECT_CMAKE}/IntelHarpertown.cmake)
+
+MESSAGE("-- CXX compiler flags: ${CMAKE_CXX_FLAGS}")
+MESSAGE("-- CC  compiler flags: ${CMAKE_C_FLAGS}")
 
 ######################################################
 # DO NOT MODIFY BELOW
@@ -294,9 +307,14 @@ IF(ENABLE_GTK_GUI)
   ENDIF(GTKMM_FOUND)
 ENDIF(ENABLE_GTK_GUI)
 
-
+######################################################################
+# Manage Einspline library
+# - check if libeinspline can be found using PKG_CONFIG_PATH
+# - if not found, try to build it from the source directory
+# - if everything fails, do not use it
+######################################################################
 SET(HAVE_EINSPLINE 0)
-#Search libeinspline and build if not
+
 IF ( CMAKE_PKGCONFIG_EXECUTABLE )
    # Find all the librtk stuff with pkg-config
    PKGCONFIG( "einspline >= 0.7" HAVE_EINSPLINE EINSPLINE_INCLUDE_DIRS EINSPLINE_DEFINES EINSPLINE_LINK_DIRS EINSPLINE_LIBS )
@@ -309,6 +327,7 @@ IF ( CMAKE_PKGCONFIG_EXECUTABLE )
      LINK_LIBRARIES(${EINSPLINE_LIBRARY})  
      MESSAGE("-- Einspline library found at  ${EINSPLINE_LIBRARY}")	 
    ELSE(HAVE_EINSPLINE)	
+     MESSAGE("-- Checked PKG_CONFIG_PATH=$ENV{PKG_CONFIG_PATH}")
      MESSAGE("-- Missing pre-built Einspline library.")
    ENDIF(HAVE_EINSPLINE)	
 ENDIF  ( CMAKE_PKGCONFIG_EXECUTABLE )
@@ -325,10 +344,16 @@ IF(NOT HAVE_EINSPLINE)
   ENDIF(EINSPLINE_DIR)
 ENDIF(NOT HAVE_EINSPLINE)
 
+###################################################
+# Done searching libraries. Start building qmcpack
+###################################################
+
+MESSAGE("-- Ready to build qmcpack")
+
 INCLUDE_DIRECTORIES(
   ${qmcpack_SOURCE_DIR}/src
   ${qmcpack_BINARY_DIR}/src
-)
+  )
 ADD_DEFINITIONS(-DHAVE_CONFIG_H -DH5_USE_16_API -DAPPNAMESPACE=qmcplusplus)
 
 IF(BUILD_QMCTOOLS)
