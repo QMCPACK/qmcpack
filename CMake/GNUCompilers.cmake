@@ -2,6 +2,7 @@
 IF(CMAKE_COMPILER_IS_GNUCXX) 
   ADD_DEFINITIONS(-Drestrict=__restrict__ -DADD_ -DINLINE_ALL=inline)
   SET(CMAKE_CXX_FLAGS "-O6 -ftemplate-depth-60 -Drestrict=__restrict__ -fstrict-aliasing -funroll-all-loops   -finline-limit=1000 -ffast-math -Wno-deprecated ")
+  SET(CMAKE_C_FLAGS "-O6 -ftemplate-depth-60 -Drestrict=__restrict__ -fstrict-aliasing -funroll-all-loops   -finline-limit=1000 -ffast-math -Wno-deprecated ")
 #  SET(CMAKE_CXX_FLAGS "-O6 -ftemplate-depth-60 -Drestrict=__restrict__ -fstrict-aliasing -funroll-all-loops   -finline-limit=1000 -ffast-math -Wno-deprecated -pg")
 #  SET(CMAKE_CXX_FLAGS "-g -ftemplate-depth-60 -Drestrict=__restrict__ -fstrict-aliasing -Wno-deprecated")
 
@@ -28,6 +29,9 @@ IF(CMAKE_COMPILER_IS_GNUCXX)
   IF(QMC_BUILD_STATIC)
     SET(CMAKE_CXX_LINK_FLAGS " -static")
   ENDIF(QMC_BUILD_STATIC)
+
+  SET(CMAKE_CXX_FLAGS "$ENV{CXX_FLAGS} ${CMAKE_CXX_FLAGS}")
+  SET(CMAKE_C_FLAGS "$ENV{CC_FLAGS} ${CMAKE_C_FLAGS}")
 
 ENDIF(CMAKE_COMPILER_IS_GNUCXX) 
 
