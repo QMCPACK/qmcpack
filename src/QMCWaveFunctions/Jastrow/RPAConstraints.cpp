@@ -19,6 +19,7 @@
 #include "QMCWaveFunctions/Jastrow/LRTwoBodyJastrow.h"
 #include "QMCWaveFunctions/Jastrow/SplineFunctors.h"
 #include "LongRange/LRHandlerTemp.h"
+#include "LongRange/LRRPAHandlerTemp.h"
 //#include "QMCWaveFunctions/DiffOrbitalBase.h"
 //#include "LongRange/DummyLRHandler.h"
 #include "Utilities/IteratorUtility.h"
@@ -83,20 +84,26 @@ namespace qmcplusplus {
     //xmlNodePtr tcur = cur->children;
     string useL="yes";
     string useS="yes";
-    ParameterSet params;
+//     ParameterSet params;
+    OhmmsAttributeSet params;
+    
     string rpafunc="breakup";
-    params.add(useL,"longrange","string");
-    params.add(useS,"shortrange","string");
-    params.add(Kc,"kc","double");
-    params.add(rpafunc,"function","string");
+    params.add(useL,"longrange");
+    params.add(useS,"shortrange");
+    params.add(Kc,"kc");
+    params.add(rpafunc,"function");
     params.put(cur);
 
     //THIS IS NOT GOOD for consistency.
     //set the form of long-range term
     if(rpafunc == "breakup") 
       LongRangeForm=USE_BREAKUP;
-    else if(rpafunc == "rpa") 
+    else if(rpafunc == "Yukawa") 
+      LongRangeForm=USE_YUKAWA;
+    else if(rpafunc == "RPA") {
       LongRangeForm=USE_RPA;
+//       std::cout<<"USING RPA FUNCTION"<<std::endl;
+    };
     
     app_log() <<endl<<"   LongRangeForm is "<<rpafunc<<endl;
     
@@ -128,7 +135,16 @@ namespace qmcplusplus {
         Rs=1.0;
       }
     }
-    if(Kc<0) Kc=1.0/std::sqrt(tlen);
+    int indx = targetPtcl.SK->KLists.ksq.size()-1;
+    double Kc_max=std::pow(targetPtcl.SK->KLists.ksq[indx],0.5);
+
+    if(Kc<0){ 
+      Kc = 2.0*  std::pow(2.25*M_PI,1.0/3.0)/tlen ;
+    };
+    if(Kc>Kc_max){
+      Kc=Kc_max;
+      app_log() << "    Kc set too high. Resetting to the maximum value"<<endl;
+    };
 
     //do not this again
     if(myHandler) return true;
@@ -144,8 +160,14 @@ namespace qmcplusplus {
     app_log() << "    RPAPBCConstraints::addTwoBodyPart Rs = " << Rs <<  "  Kc= " << Kc << endl;
 
     OwnHandler=true;
-    realHandler= new LRHandlerTemp<RPABreakup<RealType>,LPQHIBasis>(targetPtcl,Kc);
+    
+    if (LongRangeForm==USE_YUKAWA || LongRangeForm==USE_BREAKUP){
+      realHandler= new LRHandlerTemp<YukawaBreakup<RealType>,LPQHIBasis>(targetPtcl,Kc);
+    } else if (LongRangeForm==USE_RPA){
+      realHandler= new LRRPAHandlerTemp<RPABreakup<RealType>,LPQHIBasis>(targetPtcl,Kc);
+    };
     realHandler->Breakup(targetPtcl,Rs);
+    
     app_log() << "  Maximum K shell " << realHandler->MaxKshell << endl;
     app_log() << "  Number of k vectors " << realHandler->Fk.size() << endl;
 
@@ -158,7 +180,7 @@ namespace qmcplusplus {
 
     //add the handler to the set so that we can reuse it
     handlerSet[MyName]=myHandler;
-    string dname="d"+MyName;
+//     string dname="d"+MyName;
     //handlerSet[dname]=derivHandler;
 
     //JK 2008-01-08: Disable overwriting kspace handler
