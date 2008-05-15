@@ -24,6 +24,7 @@
 #if OHMMS_DIM ==3
 #include "QMCWaveFunctions/Jastrow/ThreeBodyGeminal.h"
 #include "QMCWaveFunctions/Jastrow/ThreeBodyBlockSparse.h"
+#include "QMCWaveFunctions/Jastrow/kSpaceJastrowBuilder.h"
 #endif
 #include "OhmmsData/AttributeSet.h"
 
@@ -76,7 +77,26 @@ namespace qmcplusplus {
     if(typeOpt.find("Three") < typeOpt.size()) 
       return addThreeBody(cur);
 
+    if(typeOpt.find("kSpace") < typeOpt.size())
+      return addkSpace(cur);
+
     return false;
+  }
+
+  bool JastrowBuilder::addkSpace(xmlNodePtr cur)
+  {
+    app_log() << "  JastrowBuilder::addkSpace(xmlNodePtr)" << endl;
+    map<string,ParticleSet*>::iterator pa_it(ptclPool.find(sourceOpt));
+    if(pa_it == ptclPool.end()) {
+      app_warning() << "  JastrowBuilder::addkSpace failed. " 
+		    << sourceOpt << " does not exist" << endl;
+      return false;
+    }
+    ParticleSet* sourcePtcl= (*pa_it).second;
+    app_log() << "\n  Using kSpaceJastrowBuilder for reciprocal-space Jastrows" << endl;
+    OrbitalBuilderBase* sBuilder = new kSpaceJastrowBuilder (targetPtcl, targetPsi, *sourcePtcl);
+    Children.push_back(sBuilder);
+    return sBuilder->put(cur);
   }
 
   bool JastrowBuilder::addOneBody(xmlNodePtr cur) 

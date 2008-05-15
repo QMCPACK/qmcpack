@@ -33,8 +33,9 @@
 
 namespace qmcplusplus {
   template<typename T>
-  struct kSpaceCoef
+  class kSpaceCoef
   {
+  public:
     // The coefficient
     T cG;
     // The first and last indices of the G-vectors to which this
@@ -44,12 +45,13 @@ namespace qmcplusplus {
       for (int i=firstIndex; i<=lastIndex; i++)
 	unpackeCoefs[i] = cG;
     }
-  }
+  };
 
   class kSpaceJastrow: public OrbitalBase {
   public:   
     typedef enum { CRYSTAL, ISOTROPIC, NOSYMM } SymmetryType;
   private:
+    typedef std::complex<RealType> ComplexType;
     RealType CellVolume, NormConstant;
     int NumElecs, NumSpins;
     int NumIons, NumIonSpecies;
@@ -61,8 +63,8 @@ namespace qmcplusplus {
     
     // Vectors of unique coefficients, one for each group of
     // symmetry-equivalent G-vectors
-    std::vector<kSpaceCoefs<ComplexType> > OneBodySymmCoefs;
-    std::vector<kSpaceCoefs<RealType   > > TwoBodySymmCoefs;
+    std::vector<kSpaceCoef<ComplexType> > OneBodySymmCoefs;
+    std::vector<kSpaceCoef<RealType   > > TwoBodySymmCoefs;
 
     // Vector of coefficients, one for each included G-vector
     // in OneBodyGvecs/TwoBodyGvecs
@@ -74,10 +76,18 @@ namespace qmcplusplus {
     // Enumerate G-vectors with nonzero structure factors
     void setupGvecs (RealType kcut, std::vector<PosType> &gvecs);
     void setupCoefs();
+
+    // Sort the G-vectors into appropriate symmtry groups
+    template<typename T> void
+    sortGvecs(std::vector<PosType> &gvecs,
+	      std::vector<kSpaceCoef<T> > &coefs,
+	      SymmetryType symm);
     
-    ComplexType StructureFactor(int speciesNum, PosType G);
+    // Returns true if G1 and G2 are equivalent by crystal symmetry
+    bool Equivalent (PosType G1, PosType G2);
+    void StructureFactor(PosType G, std::vector<ComplexType>& rho_G);
     
-    ParticleSet &Ions;
+    ParticleSet &Ions, &Elecs;
 
   public:
     kSpaceJastrow(ParticleSet& ions, ParticleSet& elecs,
@@ -127,7 +137,11 @@ namespace qmcplusplus {
 
     ///process input file
     bool put(xmlNodePtr cur, VarRegistry<RealType>& vlist);
-
+    
+    // Implements strict weak ordering with respect to the
+    // structure factors.  Used to sort the G-vectors according to
+    // crystal symmetry
+    bool operator()(PosType G1, PosType G2);
   };
 }
 #endif
