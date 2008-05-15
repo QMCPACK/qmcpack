@@ -25,7 +25,7 @@ namespace qmcplusplus {
   {
     for (int i=0; i<NumIonSpecies; i++)
       rho_G[i] = ComplexType();
-    for (int iat=0; iat<=Ions.getLocalNum(); iat++) {
+    for (int iat=0; iat<Ions.getLocalNum(); iat++) {
       PosType r(Ions.R[iat]);
       RealType phase = dot(r,G);
       int id = Ions.GroupID[iat];
@@ -74,7 +74,6 @@ namespace qmcplusplus {
 	    }
 	  }
 	}
-    cerr << "gvecs.size() is now " << gvecs.size() << endl;
   }
 
   struct magLess
@@ -88,34 +87,43 @@ namespace qmcplusplus {
   bool
   kSpaceJastrow::operator()(PosType G1, PosType G2)
   {
-    if (Equivalent(G1,G2)) return false;
     if (std::fabs(dot(G1,G1) - dot(G2,G2)) > 1.0e-8)
       return dot(G1,G1) < dot(G2,G2);
+    // if (Equivalent(G1,G2)) return false;
     vector<ComplexType> rho_G1(NumIonSpecies), rho_G2(NumIonSpecies);
     StructureFactor(G1, rho_G1);
     StructureFactor(G2, rho_G2);
-    for (int i=0; i<NumIonSpecies; i++) {
-      double SG1 = std::norm(rho_G1[i]);
-      double SG2 = std::norm(rho_G2[i]);
-      if (std::fabs(SG1 - SG2) > 1.0e-8)
-	return SG1 < SG2;
-    }
+    for (int i=0; i<NumIonSpecies; i++ ) 
+      for (int j=i+1; j<NumIonSpecies; j++) { 
+	ComplexType zG1 = rho_G1[i]*conj(rho_G1[j]);
+	ComplexType zG2 = rho_G2[i]*conj(rho_G2[j]);
+	double SG1  = std::real(zG1);
+	double SG2  = std::real(zG2);
+	if (std::fabs(SG1 - SG2) > 1.0e-8)
+	  return SG1 < SG2;
+      }
     return false;
   }
 
   bool
   kSpaceJastrow::Equivalent(PosType G1, PosType G2)
   {
+    return (!(*this)(G1,G2) && !(*this)(G2,G1));
+
     if (std::fabs(dot(G1,G1) - dot(G2,G2)) > 1.0e-8)
       return false;
     vector<ComplexType> rho_G1(NumIonSpecies), rho_G2(NumIonSpecies);
     StructureFactor(G1, rho_G1);
     StructureFactor(G2, rho_G2);
-    for (int i=0; i<NumIonSpecies; i++) {
-      double SG1 = std::norm(rho_G1[i]);
-      double SG2 = std::norm(rho_G2[i]);
-      if (std::fabs(SG1 - SG2) > 1.0e-8)
-	return false;
+    
+    for (int j=0; j<NumIonSpecies; j++) 
+      for (int i=j; i<NumIonSpecies; i++ ) {
+	ComplexType zG1 = rho_G1[i]*conj(rho_G1[j]);
+	ComplexType zG2 = rho_G2[i]*conj(rho_G2[j]);
+	double SG1  = std::real(zG1);
+	double SG2  = std::real(zG2);
+	if (std::fabs(SG1 - SG2) > 1.0e-8)
+	  return false;
     }
     return true;
   }
@@ -125,6 +133,8 @@ namespace qmcplusplus {
 			   std::vector<kSpaceCoef<T> > &coefs,
 			   SymmetryType symm)
   {
+    if (!gvecs.size())
+      return;
     if (symm == CRYSTAL) {
       // First pass:  sort all the G-vectors into equivalent groups
       std::sort(gvecs.begin(), gvecs.end(), *this);
@@ -166,7 +176,8 @@ namespace qmcplusplus {
 	coefs[i].firstIndex = coefs[i].lastIndex = i;
       }
     }
-    app_log() << "gvecs.size() = " << gvecs.size() << endl;
+    app_log() << "Using a total of " << gvecs.size() << " G-vectors in " << coefs.size()
+	      << " symmetry groups.\n";
     app_log() << "kSpace coefficent groups:\n";
     for (int i=0; i<coefs.size(); i++) {
       app_log() << "  Group " << i << ":\n";
