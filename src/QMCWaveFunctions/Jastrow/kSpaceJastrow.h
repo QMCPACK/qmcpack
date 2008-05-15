@@ -43,7 +43,7 @@ namespace qmcplusplus {
     int firstIndex, lastIndex;
     inline void set (std::vector<T> &unpackedCoefs) {
       for (int i=firstIndex; i<=lastIndex; i++)
-	unpackeCoefs[i] = cG;
+	unpackedCoefs[i] = cG;
     }
   };
 
@@ -73,6 +73,9 @@ namespace qmcplusplus {
     
     SymmetryType OneBodySymmType, TwoBodySymmType;
 
+    // Map of the optimizable variables:
+    std::map<std::string,RealType*> VarMap;
+
     // Enumerate G-vectors with nonzero structure factors
     void setupGvecs (RealType kcut, std::vector<PosType> &gvecs);
     void setupCoefs();
@@ -93,6 +96,9 @@ namespace qmcplusplus {
     kSpaceJastrow(ParticleSet& ions, ParticleSet& elecs,
 		  SymmetryType oneBodySymm, RealType oneBodyCutoff,
 		  SymmetryType twoBodySymm, RealType twoBodyCutoff);
+
+    // Optimization-related
+    void addOptimizables(OptimizableSetType& vlist);
 
     void resetParameters(OptimizableSetType& optVariables);
 

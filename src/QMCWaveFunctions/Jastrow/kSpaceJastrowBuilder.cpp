@@ -23,7 +23,6 @@ namespace qmcplusplus {
   bool
   kSpaceJastrowBuilder::put(xmlNodePtr cur)
   {
-    cerr << "In  kSpaceJastrowBuilder::put(xmlNodePtr cur).\n";
     xmlNodePtr kids = cur->xmlChildrenNode;
     kSpaceJastrow::SymmetryType oneBodySymm, twoBodySymm;
     RealType kc1, kc2;
@@ -72,6 +71,8 @@ namespace qmcplusplus {
     kSpaceJastrow *jastrow = new kSpaceJastrow(sourcePtcl, targetPtcl,
 					       oneBodySymm, kc1,
 					       twoBodySymm, kc2);
+    jastrow->addOptimizables(targetPsi.VarList);
+    targetPsi.addOrbital(jastrow,"kSpace");
     return true;
   }
 }

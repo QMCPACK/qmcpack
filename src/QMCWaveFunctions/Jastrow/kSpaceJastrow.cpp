@@ -16,6 +16,7 @@
 // -*- C++ -*-
 #include "QMCWaveFunctions/Jastrow/kSpaceJastrow.h"
 #include "LongRange/StructFact.h"
+#include <sstream>
 #include <algorithm>
 
 namespace qmcplusplus {
@@ -141,6 +142,7 @@ namespace qmcplusplus {
       
       // Now, look through the sorted G-vectors and group them
       kSpaceCoef<T> coef;
+      coef.cG = T();
       coef.firstIndex = coef.lastIndex = 0;
       for (int i=1; i<gvecs.size(); i++)
 	if (Equivalent(gvecs[i], gvecs[i-1]))
@@ -156,6 +158,7 @@ namespace qmcplusplus {
       std::sort(gvecs.begin(), gvecs.end(), comparator);
       double curMag2 = dot(gvecs[0], gvecs[0]);
       kSpaceCoef<T> coef;
+      coef.cG = T();
       coef.firstIndex = coef.lastIndex = 0;
       for (int i=1; i<gvecs.size(); i++) {
 	double mag2 = dot(gvecs[i],gvecs[i]);
@@ -195,24 +198,31 @@ namespace qmcplusplus {
     for (int iat=0; iat<ions.getLocalNum(); iat++) 
       NumIonSpecies = max(NumIonSpecies, ions.GroupID[iat]+1);
 
-    cerr << "NumIonsSpecies = " << NumIonSpecies << endl;
     if (oneBodyCutoff > 0.0) {
       setupGvecs(oneBodyCutoff, OneBodyGvecs);
       OneBodyCoefs.resize(OneBodyGvecs.size());
       sortGvecs (OneBodyGvecs, OneBodySymmCoefs, oneBodySymm);
+      for (int i=0; i<OneBodySymmCoefs.size(); i++) {
+	stringstream name_real, name_imag;
+	name_real << "cG1_" << 2*i;
+	name_imag << "cG1_" << 2*i+1;
+	VarMap[name_real.str()] = &(OneBodySymmCoefs[i].cG.real());
+	VarMap[name_imag.str()] = &(OneBodySymmCoefs[i].cG.real());
+      }
     }
     if (twoBodyCutoff > 0.0) {
       setupGvecs(twoBodyCutoff, TwoBodyGvecs);
       TwoBodyCoefs.resize(TwoBodyGvecs.size());
       sortGvecs (TwoBodyGvecs, TwoBodySymmCoefs, twoBodySymm);
+      for (int i=0; i<TwoBodySymmCoefs.size(); i++) {
+	stringstream name;
+	name << "cG2_" << i;
+	VarMap[name.str()] = &(TwoBodySymmCoefs[i].cG);
+      }
+
     }
   }
       
-
-  void kSpaceJastrow::resetParameters(OptimizableSetType& optVariables) 
-  { 
-  }
-
   void kSpaceJastrow::resetTargetParticleSet(ParticleSet& P) 
   {
   }
@@ -317,7 +327,33 @@ namespace qmcplusplus {
     return 0.0;
   }
   
-  
+  void
+  kSpaceJastrow::addOptimizables(OptimizableSetType& vlist)
+  {
+    std::map<std::string,RealType*>::iterator iter;
+    for (iter=VarMap.begin(); iter!=VarMap.end(); iter++) {
+      string name = iter->first;
+      RealType val = *(iter->second);
+      vlist[name] = val;
+    }
+  }
+
+  void 
+  kSpaceJastrow::resetParameters(OptimizableSetType& optVariables) 
+  { 
+    OptimizableSetType::iterator var;
+    for (var=optVariables.begin(); var!=optVariables.end(); var++) {
+      std::map<std::string,RealType*>::iterator myVar
+	= VarMap.find(var->first);
+      if (myVar != VarMap.end()) 
+	*(myVar->second) = var->second;
+    }
+    for (int i=0; i<OneBodySymmCoefs.size(); i++)
+      OneBodySymmCoefs[i].set(OneBodyCoefs);
+    for (int i=0; i<TwoBodySymmCoefs.size(); i++)
+      TwoBodySymmCoefs[i].set(TwoBodyCoefs);
+  }
+
   bool
   kSpaceJastrow::put(xmlNodePtr cur, VarRegistry<RealType>& vlist) 
   {
