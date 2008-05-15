@@ -17,6 +17,8 @@ SET(JASTROW_SRCS
   Jastrow/JastrowBuilder.cpp
   Jastrow/BsplineFunctor.cpp
   Jastrow/BsplineJastrowBuilder.cpp
+  Jastrow/kSpaceJastrow.cpp
+  Jastrow/kSpaceJastrowBuilder.cpp
 )
 
 # common ferminoic wavefunctions
