@@ -52,6 +52,9 @@ namespace qmcplusplus {
     typedef enum { CRYSTAL, ISOTROPIC, NOSYMM } SymmetryType;
   private:
     typedef std::complex<RealType> ComplexType;
+    ////////////////
+    // Basic data //
+    ////////////////
     RealType CellVolume, NormConstant;
     int NumElecs, NumSpins;
     int NumIons, NumIonSpecies;
@@ -70,11 +73,27 @@ namespace qmcplusplus {
     // in OneBodyGvecs/TwoBodyGvecs
     std::vector<ComplexType> OneBodyCoefs;
     std::vector<RealType>    TwoBodyCoefs;
-    
+
+    // Stores how we choose to group the G-vectors by symmetry
     SymmetryType OneBodySymmType, TwoBodySymmType;
+
+    // Rho_k data
+    // For the ions
+    std::vector<ComplexType> Ion_rhoG;
+    // For the electrons
+    std::vector<ComplexType> OneBody_rhoG, TwoBody_rhoG;
+    // Holds the phase for the electrons with size commensurate with
+    // OneBodyGvecs, and TwoBodyGvecs, respectively
+    std::vector<RealType> OneBodyPhase, TwoBodyPhase;
+    // 
+    std::vector<ComplexType> OneBody_e2iGr, TwoBody_e2iGr;
 
     // Map of the optimizable variables:
     std::map<std::string,RealType*> VarMap;
+
+    //////////////////////
+    // Member functions //
+    //////////////////////
 
     // Enumerate G-vectors with nonzero structure factors
     void setupGvecs (RealType kcut, std::vector<PosType> &gvecs);
@@ -106,8 +125,8 @@ namespace qmcplusplus {
     void resetTargetParticleSet(ParticleSet& P);
 
     ValueType evaluateLog(ParticleSet& P,
-		         ParticleSet::ParticleGradient_t& G, 
-		         ParticleSet::ParticleLaplacian_t& L);
+			  ParticleSet::ParticleGradient_t& G, 
+			  ParticleSet::ParticleLaplacian_t& L);
 
     inline ValueType evaluate(ParticleSet& P,
 			      ParticleSet::ParticleGradient_t& G, 
@@ -125,8 +144,8 @@ namespace qmcplusplus {
     }
 
     ValueType logRatio(ParticleSet& P, int iat,
-		    ParticleSet::ParticleGradient_t& dG,
-		    ParticleSet::ParticleLaplacian_t& dL);
+		       ParticleSet::ParticleGradient_t& dG,
+		       ParticleSet::ParticleLaplacian_t& dL);
 
     void restore(int iat);
     void acceptMove(ParticleSet& P, int iat);
@@ -135,9 +154,13 @@ namespace qmcplusplus {
 		ParticleSet::ParticleLaplacian_t& dL,
 		int iat);
 
-
+    // Allocate per-walker data in the PooledData buffer
     ValueType registerData(ParticleSet& P, PooledData<RealType>& buf);
-    ValueType updateBuffer(ParticleSet& P, PooledData<RealType>& buf, bool fromscratch=false);
+    // Walker move has been accepted -- update the buffer
+    ValueType updateBuffer(ParticleSet& P, PooledData<RealType>& buf, 
+			   bool fromscratch=false);
+    // Pull data from the walker buffer at the beginning of a block of
+    // single-particle moves
     void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf);
     ValueType evaluate(ParticleSet& P, PooledData<RealType>& buf);
 

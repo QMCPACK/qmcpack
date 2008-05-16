@@ -16,6 +16,7 @@
 // -*- C++ -*-
 #include "QMCWaveFunctions/Jastrow/kSpaceJastrow.h"
 #include "LongRange/StructFact.h"
+#include "Numerics/e2iphi.h"
 #include <sstream>
 #include <algorithm>
 
@@ -53,7 +54,6 @@ namespace qmcplusplus {
     gvecs.clear();
     int maxIndex[OHMMS_DIM];
     for (int i=0; i<OHMMS_DIM; i++)
-      //maxIndex[i] = (int)std::ceil(2.0*cut / 2.0*M_PI*std::sqrt(Ions.Lattice.Gv[0],Ions.Lattice.Gv[i]));
       maxIndex[i] = 1 + (int)std::floor
 	(std::sqrt(dot(Ions.Lattice.a(i), Ions.Lattice.a(i)))*kc / (2.0*M_PI));
     std::vector<ComplexType> rho_G(NumIonSpecies);
@@ -200,7 +200,6 @@ namespace qmcplusplus {
 
     if (oneBodyCutoff > 0.0) {
       setupGvecs(oneBodyCutoff, OneBodyGvecs);
-      OneBodyCoefs.resize(OneBodyGvecs.size());
       sortGvecs (OneBodyGvecs, OneBodySymmCoefs, oneBodySymm);
       for (int i=0; i<OneBodySymmCoefs.size(); i++) {
 	stringstream name_real, name_imag;
@@ -212,7 +211,6 @@ namespace qmcplusplus {
     }
     if (twoBodyCutoff > 0.0) {
       setupGvecs(twoBodyCutoff, TwoBodyGvecs);
-      TwoBodyCoefs.resize(TwoBodyGvecs.size());
       sortGvecs (TwoBodyGvecs, TwoBodySymmCoefs, twoBodySymm);
       for (int i=0; i<TwoBodySymmCoefs.size(); i++) {
 	stringstream name;
@@ -221,6 +219,30 @@ namespace qmcplusplus {
       }
 
     }
+    // Now resize all buffers
+    int nOne = OneBodyGvecs.size();
+    OneBodyCoefs.resize(nOne);
+    OneBody_rhoG.resize(nOne);
+    Ion_rhoG.resize(nOne);
+    OneBodyPhase.resize(nOne);
+    OneBody_e2iGr.resize(nOne);
+
+    int nTwo = TwoBodyGvecs.size();
+    TwoBodyCoefs.resize(nTwo);
+    TwoBody_rhoG.resize(nOne);
+    TwoBodyPhase.resize(nTwo);
+    TwoBody_e2iGr.resize(nTwo);
+
+    // Set Ion_rhoG
+    for (int i=0; i<OneBodyGvecs.size(); i++) {
+      Ion_rhoG[0] = ComplexType();
+      for (int iat=0; iat<ions.getLocalNum(); iat++) {
+	double phase = dot(OneBodyGvecs[i],ions.R[iat]);
+	Ion_rhoG[i] += ComplexType(std::cos(phase), std::sin(phase));
+      }
+      cerr << "Ion_rhoG[i] = " << Ion_rhoG[i] << endl;
+    }
+	
   }
       
   void kSpaceJastrow::resetTargetParticleSet(ParticleSet& P) 
@@ -232,7 +254,25 @@ namespace qmcplusplus {
 			       ParticleSet::ParticleGradient_t& G, 
 			       ParticleSet::ParticleLaplacian_t& L) 
   {
-    return 0.0;
+    RealType J1(0.0), J2(0.0);
+    int N = P.getTotalNum();
+    ComplexType eye(0.0, 1.0);
+    
+    for (int iat=0; iat<N; iat++) {
+      PosType r(P.R[iat]);
+      int nOne = OneBodyGvecs.size();
+      for (int i=0; i<nOne; i++) 
+	OneBodyPhase[i] = dot(OneBodyGvecs[i], r);
+      eval_e2iphi (OneBodyPhase, OneBody_e2iGr);
+      
+      for (int i=0; i<nOne; i++) {
+	ComplexType z = OneBodyCoefs[i]/* *Ion_rhoG[i] */ * conj(OneBody_e2iGr[i]);
+	J1 += real(z);
+	G[iat] += -real(z*eye)*OneBodyGvecs[i];
+	L[iat] += -dot(OneBodyGvecs[i],OneBodyGvecs[i])*real(z);
+      }
+    }
+    return J1 + J2;
   }
   
   
@@ -242,7 +282,25 @@ namespace qmcplusplus {
   kSpaceJastrow::ValueType 
   kSpaceJastrow::ratio(ParticleSet& P, int iat) 
   {
-    return 1.0;
+    RealType J1new(0.0), J1old(0.0), J2new(0.0), J2old(0.0);
+    PosType rnew(P.R[iat]), rold(P.getOldPos());
+    // Compute one-body contribution
+    int nOne = OneBodyGvecs.size();
+    for (int i=0; i<nOne; i++)
+      OneBodyPhase[i] = dot(OneBodyGvecs[i], rnew);
+    eval_e2iphi (OneBodyPhase, OneBody_e2iGr);
+
+    for (int i=0; i<nOne; i++) 
+      J1new += real(OneBodyCoefs[i] /* *Ion_rhoG[i] */ * conj(OneBody_e2iGr[i]));
+
+    for (int i=0; i<nOne; i++)
+      OneBodyPhase[i] = dot(OneBodyGvecs[i], rold);
+    eval_e2iphi (OneBodyPhase, OneBody_e2iGr);
+
+    for (int i=0; i<nOne; i++) 
+      J1old += real(OneBodyCoefs[i] /* *Ion_rhoG[i]*/  * conj(OneBody_e2iGr[i]));
+
+    return std::exp(J1new+J2new - (J1old + J2old));
   }
   
   
@@ -251,7 +309,34 @@ namespace qmcplusplus {
 			  ParticleSet::ParticleGradient_t& dG,
 			  ParticleSet::ParticleLaplacian_t& dL) 
   {
-    return 0.0;
+    RealType J1(0.0), J2(0.0);
+    PosType rnew(P.R[iat]), rold(P.getOldPos());
+    ComplexType eye(0.0, 1.0);
+
+    // Compute one-body contribution
+    int nOne = OneBodyGvecs.size();
+    for (int i=0; i<nOne; i++)
+      OneBodyPhase[i] = dot(OneBodyGvecs[i], rnew);
+    eval_e2iphi (OneBodyPhase, OneBody_e2iGr);
+
+    for (int i=0; i<nOne; i++) {
+      ComplexType z = OneBodyCoefs[i] /* *Ion_rhoG[i] */ * conj(OneBody_e2iGr[i]);
+      J1 += real(z);
+      dG[iat] += -real(z*eye) * OneBodyGvecs[i];
+      dL[iat] += -dot(OneBodyGvecs[i],OneBodyGvecs[i])*real(z);
+    }
+
+    for (int i=0; i<nOne; i++)
+      OneBodyPhase[i] = dot(OneBodyGvecs[i], rold);
+    eval_e2iphi (OneBodyPhase, OneBody_e2iGr);
+
+    for (int i=0; i<nOne; i++) {
+      ComplexType z = OneBodyCoefs[i] /* *Ion_rhoG[i] */ * conj(OneBody_e2iGr[i]);
+      J1 -= real(z);
+      dG[iat] -= -real(z*eye) * OneBodyGvecs[i];
+      dL[iat] -= -dot(OneBodyGvecs[i],OneBodyGvecs[i])*real(z);
+    }
+    return J1 + J2;
   }
   
   void 
@@ -324,7 +409,20 @@ namespace qmcplusplus {
   kSpaceJastrow::ValueType 
   kSpaceJastrow::evaluate(ParticleSet& P, PooledData<RealType>& buf) 
   {
-    return 0.0;
+    RealType J1(0.0), J2(0.0);
+    int N = P.getTotalNum();
+    for (int iat=0; iat<N; iat++) {
+      PosType r(P.R[iat]);
+      int nOne = OneBodyGvecs.size();
+      for (int i=0; i<nOne; i++) 
+	OneBodyPhase[i] = dot(OneBodyGvecs[i], r);
+      eval_e2iphi (OneBodyPhase, OneBody_e2iGr);
+      
+      for (int i=0; i<nOne; i++) {
+	J1 +=  real(OneBodyCoefs[i] /* *Ion_rhoG[i]*/  * conj(OneBody_e2iGr[i]));
+      }
+    }
+    return std::exp(J1 + J2);
   }
   
   void
@@ -345,8 +443,9 @@ namespace qmcplusplus {
     for (var=optVariables.begin(); var!=optVariables.end(); var++) {
       std::map<std::string,RealType*>::iterator myVar
 	= VarMap.find(var->first);
-      if (myVar != VarMap.end()) 
+      if (myVar != VarMap.end())  {
 	*(myVar->second) = var->second;
+      }
     }
     for (int i=0; i<OneBodySymmCoefs.size(); i++)
       OneBodySymmCoefs[i].set(OneBodyCoefs);
