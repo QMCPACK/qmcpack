@@ -340,6 +340,22 @@ namespace qmcplusplus {
     for (int i=0; i<nOne; i++) 
       J1old += real(OneBodyCoefs[i] /* *Ion_rhoG[i]*/  * conj(OneBody_e2iGr[i]));
 
+    // Now, do two-body part
+    int nTwo = TwoBodyGvecs.size();
+    for (int i=0; i<nTwo; i++)   TwoBodyPhase[i] = dot(TwoBodyGvecs[i], rold);
+    eval_e2iphi (TwoBodyPhase, TwoBody_e2iGr_old);
+    for (int i=0; i<nTwo; i++)   TwoBodyPhase[i] = dot(TwoBodyGvecs[i], rnew);
+    eval_e2iphi (TwoBodyPhase, TwoBody_e2iGr_new);
+
+    for (int i=0; i<nTwo; i++) {
+      ComplexType rho_G = TwoBody_rhoG[i];
+      J2old += TwoBodyCoefs[i]*std::norm(rho_G);
+    }
+    for (int i=0; i<nTwo; i++) {
+      ComplexType rho_G = TwoBody_rhoG[i] + TwoBody_e2iGr_new[i] - TwoBody_e2iGr_old[i];
+      J2new += TwoBodyCoefs[i]*std::norm(rho_G);
+    }
+
     return std::exp(J1new+J2new - (J1old + J2old));
   }
   
@@ -385,6 +401,20 @@ namespace qmcplusplus {
     eval_e2iphi(TwoBodyPhase, TwoBody_e2iGr_old);
 
 
+    for (int i=0; i<nTwo; i++) {
+      PosType Gvec(TwoBodyGvecs[i]);
+      ComplexType rhoG_old = TwoBody_rhoG[i];
+      ComplexType rhoG_new = rhoG_old + TwoBody_e2iGr_new[i] - TwoBody_e2iGr_old[i];
+      ComplexType zold = TwoBody_e2iGr_old[i];
+      ComplexType znew = TwoBody_e2iGr_new[i];
+      dG[iat] += -2.0*Gvec*TwoBodyCoefs[i]*imag(conj(rhoG_new)*znew);
+      dG[iat] -= -2.0*Gvec*TwoBodyCoefs[i]*imag(conj(rhoG_old)*zold);
+
+      dL[iat] += 2.0*TwoBodyCoefs[i]*dot(Gvec,Gvec)*(-real(znew*conj(rhoG_new)) + 1.0);
+      dL[iat] -= 2.0*TwoBodyCoefs[i]*dot(Gvec,Gvec)*(-real(zold*conj(rhoG_old)) + 1.0);
+
+      J2 += TwoBodyCoefs[i] * (norm(rhoG_new) - norm(rhoG_old));
+    }
     return J1 + J2;
   }
   
@@ -455,7 +485,16 @@ namespace qmcplusplus {
 
   void 
   kSpaceJastrow::copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf) 
-  {    
+  {
+    for (int i=0; i<TwoBodyCoefs.size(); i++) 
+      TwoBody_rhoG[i] = ComplexType();
+    for (int iat=0; iat<NumElecs; iat++) {
+      for (int i=0; i<TwoBodyCoefs.size(); i++) 
+	TwoBodyPhase[i] = dot(TwoBodyGvecs[i],P.R[iat]);
+      eval_e2iphi(TwoBodyPhase, TwoBody_e2iGr_new);
+      for (int i=0; i<TwoBodyCoefs.size(); i++)
+	TwoBody_rhoG[i] += TwoBody_e2iGr_new[i];
+    }
   }
   
   kSpaceJastrow::ValueType 
@@ -471,7 +510,7 @@ namespace qmcplusplus {
       eval_e2iphi (OneBodyPhase, OneBody_e2iGr);
       
       for (int i=0; i<nOne; i++) {
-	J1 +=  real(OneBodyCoefs[i] /* *Ion_rhoG[i]*/  * conj(OneBody_e2iGr[i]));
+	J1 +=  real(OneBodyCoefs[i]  * conj(OneBody_e2iGr[i]));
       }
     }
     return std::exp(J1 + J2);
