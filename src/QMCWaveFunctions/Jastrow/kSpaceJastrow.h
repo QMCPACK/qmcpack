@@ -86,7 +86,8 @@ namespace qmcplusplus {
     // OneBodyGvecs, and TwoBodyGvecs, respectively
     std::vector<RealType> OneBodyPhase, TwoBodyPhase;
     // 
-    std::vector<ComplexType> OneBody_e2iGr, TwoBody_e2iGr;
+    std::vector<ComplexType> OneBody_e2iGr, 
+      TwoBody_e2iGr_new, TwoBody_e2iGr_old;
 
     // Map of the optimizable variables:
     std::map<std::string,RealType*> VarMap;

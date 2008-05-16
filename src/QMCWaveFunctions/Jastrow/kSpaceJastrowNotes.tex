@@ -86,4 +86,25 @@ the supercell.  Note that this is not the case for the two-body term,
 since the exchange-correlation hole should not have the periodicity of
 the primitive cell.
 
+\section{Gradients and Laplacians}
+\begin{eqnarray}
+\nabla_{\vr_i} J_2 & = & \sum_{\vG \neq 0} a_\vG \left[\left(\nabla_{\vr_i}\rho_\vG\right) \rho_{-\vG} + \text{c.c.}\right] \\
+& = & \sum_{\vG\neq \mathbf{0}} 2\vG a_\vG \mathbf{Re}\left(i e^{i\vG\cdot\vr_i} \rho_{-\vG} \right) \\
+& = & \sum_{\vG\neq \mathbf{0}} -2\vG a_\vG\mathbf{Im}\left(e^{i\vG\cdot\vr_i} \rho_{-\vG} \right)
+\end{eqnarray}
+The Laplacian is then given by
+\begin{eqnarray}
+  \nabla^2 J_2 & = & \sum_{\vG\neq\mathbf{0}} a_\vG \left[\left(\nabla^2 \rho_\vG\right) \rho_{-\vG} + \text{c.c.} 
+  + 2\left(\nabla \rho_\vG)\cdot(\nabla \rho_{-\vG}\right)\right] \\
+& = & \sum_{\vG\neq\mathbf{0}} a_\vG \left[ -2G^2\mathbf{Re}(e^{i\vG\cdot\vr_i}\rho_{-\vG}) + 
+    2\left(i\vG e^{i\vG\cdot\vr_i}\right) \cdot \left(-i\vG e^{-i\vG\cdot\vr_i}\right)
+\right] \\
+& = & 2 \sum_{\vG\neq\mathbf{0}} G^2 a_\vG  \left[-\mathbf{Re}\left(e^{i\vG\cdot\vr_i}\rho_{-\vG}\right) + 1\right] 
+%  \nabla^2_{\vr_i} J_2 & = & \nabla_{\vr_i} \cdot \nabla_{\vr_i} J_2 \\
+%  & = & -2\sum_{\vG \neq \mathbf{0}} a_\vG \vG \cdot \nabla_{\vr_i} \mathbf{Im}\left(e^{i\vG\cdot\vr_i} \rho_{-\vG}\right)
+%  & = & -2\sum_{\vG \neq \mathbf{0}} a_\vG \vG \cdot \mathbf{Im}\left(i\vG e^{i\vG\cdot\vr_i}\rho_{-\vG} -i\vG \right)
+\end{eqnarray}
+
+
+
 \end{document}

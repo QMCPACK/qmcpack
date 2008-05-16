@@ -54,7 +54,7 @@ namespace qmcplusplus {
     gvecs.clear();
     int maxIndex[OHMMS_DIM];
     for (int i=0; i<OHMMS_DIM; i++)
-      maxIndex[i] = 1 + (int)std::floor
+      maxIndex[i] = 2 + (int)std::floor
 	(std::sqrt(dot(Ions.Lattice.a(i), Ions.Lattice.a(i)))*kc / (2.0*M_PI));
     std::vector<ComplexType> rho_G(NumIonSpecies);
     for (int i=0; i<=maxIndex[0]; i++)
@@ -195,6 +195,7 @@ namespace qmcplusplus {
     : Ions(ions), Elecs(elecs)
   {
     NumIonSpecies = 0;
+    NumElecs = elecs.getLocalNum();
     for (int iat=0; iat<ions.getLocalNum(); iat++) 
       NumIonSpecies = max(NumIonSpecies, ions.GroupID[iat]+1);
 
@@ -231,7 +232,8 @@ namespace qmcplusplus {
     TwoBodyCoefs.resize(nTwo);
     TwoBody_rhoG.resize(nOne);
     TwoBodyPhase.resize(nTwo);
-    TwoBody_e2iGr.resize(nTwo);
+    TwoBody_e2iGr_new.resize(nTwo);
+    TwoBody_e2iGr_old.resize(nTwo);
 
     // Set Ion_rhoG
     for (int i=0; i<OneBodyGvecs.size(); i++) {
@@ -240,27 +242,37 @@ namespace qmcplusplus {
 	double phase = dot(OneBodyGvecs[i],ions.R[iat]);
 	Ion_rhoG[i] += ComplexType(std::cos(phase), std::sin(phase));
       }
-      cerr << "Ion_rhoG[i] = " << Ion_rhoG[i] << endl;
     }
 	
   }
       
-  void kSpaceJastrow::resetTargetParticleSet(ParticleSet& P) 
+  void 
+  kSpaceJastrow::resetTargetParticleSet(ParticleSet& P) 
   {
+    cerr << "In kSpaceJastrow::resetTargetParticleSet(ParticleSet& P).\n";
+    for (int i=0; i<TwoBodyGvecs.size(); i++) {
+      TwoBody_rhoG[i] = ComplexType();
+      for (int iat=0; iat<NumElecs; iat++) {
+	double phase, s, c;
+	phase = dot (TwoBodyGvecs[i], P.R[iat]);
+	sincos(phase, &s, &c);
+	TwoBody_rhoG[i] += ComplexType(c,s);
+      }
+    }
   }
   
   kSpaceJastrow::ValueType 
-    kSpaceJastrow::evaluateLog(ParticleSet& P, 
-			       ParticleSet::ParticleGradient_t& G, 
-			       ParticleSet::ParticleLaplacian_t& L) 
+  kSpaceJastrow::evaluateLog(ParticleSet& P, 
+			     ParticleSet::ParticleGradient_t& G, 
+			     ParticleSet::ParticleLaplacian_t& L) 
   {
     RealType J1(0.0), J2(0.0);
     int N = P.getTotalNum();
     ComplexType eye(0.0, 1.0);
+    int nOne = OneBodyGvecs.size();
     
     for (int iat=0; iat<N; iat++) {
       PosType r(P.R[iat]);
-      int nOne = OneBodyGvecs.size();
       for (int i=0; i<nOne; i++) 
 	OneBodyPhase[i] = dot(OneBodyGvecs[i], r);
       eval_e2iphi (OneBodyPhase, OneBody_e2iGr);
@@ -272,6 +284,34 @@ namespace qmcplusplus {
 	L[iat] += -dot(OneBodyGvecs[i],OneBodyGvecs[i])*real(z);
       }
     }
+
+    // Do two-body part
+    int nTwo = OneBodyGvecs.size();
+    for (int i=0; i<nTwo; i++)
+      TwoBody_rhoG[i] = ComplexType();
+    for (int iat=0; iat<N; iat++) {
+      PosType r(P.R[iat]);
+      for (int i=0; i<nTwo; i++) 
+	TwoBodyPhase[i] = dot(TwoBodyGvecs[i], r);
+      eval_e2iphi (TwoBodyPhase, TwoBody_e2iGr_new);
+      for (int i=0; i<nTwo; i++)
+	TwoBody_rhoG[i] += TwoBody_e2iGr_new[i];
+    }
+    for (int i=0; i<nTwo; i++) {
+      J2 += TwoBodyCoefs[i]*norm(TwoBody_rhoG[i]);
+      for (int iat=0; iat<N; iat++) {
+	PosType Gvec(TwoBodyGvecs[i]);
+	PosType r(P.R[iat]);
+	double phase = dot(Gvec, r);
+	double s, c;
+	sincos(phase, &s, &c);
+	ComplexType z(c,s);
+	G[iat] += -2.0*Gvec*TwoBodyCoefs[i]*imag(conj(TwoBody_rhoG[i])*z);
+	L[iat] += 2.0*TwoBodyCoefs[i]*dot(Gvec,Gvec)*(-real(z*conj(TwoBody_rhoG[i])) + 1.0);
+      }
+    }
+    
+    
     return J1 + J2;
   }
   
@@ -336,6 +376,15 @@ namespace qmcplusplus {
       dG[iat] -= -real(z*eye) * OneBodyGvecs[i];
       dL[iat] -= -dot(OneBodyGvecs[i],OneBodyGvecs[i])*real(z);
     }
+
+    // Compute two-body contribution
+    int nTwo = TwoBodyGvecs.size();
+    for (int i=0; i<nTwo; i++)   TwoBodyPhase[i] = dot(TwoBodyGvecs[i], rnew);
+    eval_e2iphi(TwoBodyPhase, TwoBody_e2iGr_new);
+    for (int i=0; i<nTwo; i++)   TwoBodyPhase[i] = dot(TwoBodyGvecs[i], rold);
+    eval_e2iphi(TwoBodyPhase, TwoBody_e2iGr_old);
+
+
     return J1 + J2;
   }
   
@@ -349,6 +398,9 @@ namespace qmcplusplus {
   void 
   kSpaceJastrow::acceptMove(ParticleSet& P, int iat) 
   {
+    for (int i=0; i<TwoBody_e2iGr_new.size(); i++)
+      TwoBody_rhoG[i] += TwoBody_e2iGr_new[i] - TwoBody_e2iGr_old[i];
+
     // std::copy(eikr_new.data(),eikr_new.data()+MaxK,eikr[iat]);
     // U += offU;
     // dU += offdU;
