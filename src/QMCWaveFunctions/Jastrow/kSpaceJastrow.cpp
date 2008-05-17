@@ -262,7 +262,7 @@ namespace qmcplusplus {
 		    << "kSpaceJastrow's one-body coefficients.\n"
 		    << oneBodyCoefs.size() << " were specified.  Should have been "
 		    << 2*OneBodySymmCoefs.size() << endl;
-      for (int i=0; i<OneBodyCoefs.size(); i++) {
+      for (int i=0; i<OneBodySymmCoefs.size(); i++) {
 	OneBodySymmCoefs[i].cG = ComplexType();
 	OneBodySymmCoefs[i].set (OneBodyCoefs);
       }
@@ -280,7 +280,7 @@ namespace qmcplusplus {
 		    << "kSpaceJastrow's two-body coefficients.\n"
 		    << twoBodyCoefs.size() << " were specified.  Should have been "
 		    << TwoBodySymmCoefs.size() << endl;
-      for (int i=0; i<TwoBodyCoefs.size(); i++) {
+      for (int i=0; i<TwoBodySymmCoefs.size(); i++) {
 	TwoBodySymmCoefs[i].cG = 0.0;
 	TwoBodySymmCoefs[i].set (TwoBodyCoefs);
       }
