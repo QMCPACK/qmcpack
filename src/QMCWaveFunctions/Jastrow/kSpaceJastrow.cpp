@@ -190,8 +190,8 @@ namespace qmcplusplus {
   }
 
   kSpaceJastrow::kSpaceJastrow(ParticleSet& ions, ParticleSet& elecs,
-			       SymmetryType oneBodySymm, RealType oneBodyCutoff,
-			       SymmetryType twoBodySymm, RealType twoBodyCutoff)
+			       SymmetryType oneBodySymm, RealType oneBodyCutoff, string oneBodyID,
+			       SymmetryType twoBodySymm, RealType twoBodyCutoff, string twoBodyID)
     : Ions(ions), Elecs(elecs)
   {
     NumIonSpecies = 0;
@@ -204,10 +204,10 @@ namespace qmcplusplus {
       sortGvecs (OneBodyGvecs, OneBodySymmCoefs, oneBodySymm);
       for (int i=0; i<OneBodySymmCoefs.size(); i++) {
 	stringstream name_real, name_imag;
-	name_real << "cG1_" << 2*i;
-	name_imag << "cG1_" << 2*i+1;
+	name_real << oneBodyID << "_" << 2*i;
+	name_imag << oneBodyID << "_" << 2*i+1;
 	VarMap[name_real.str()] = &(OneBodySymmCoefs[i].cG.real());
-	VarMap[name_imag.str()] = &(OneBodySymmCoefs[i].cG.real());
+	VarMap[name_imag.str()] = &(OneBodySymmCoefs[i].cG.imag());
       }
     }
     if (twoBodyCutoff > 0.0) {
@@ -215,7 +215,7 @@ namespace qmcplusplus {
       sortGvecs (TwoBodyGvecs, TwoBodySymmCoefs, twoBodySymm);
       for (int i=0; i<TwoBodySymmCoefs.size(); i++) {
 	stringstream name;
-	name << "cG2_" << i;
+	name << twoBodyID << "_" << i;
 	VarMap[name.str()] = &(TwoBodySymmCoefs[i].cG);
       }
 
@@ -245,7 +245,42 @@ namespace qmcplusplus {
     }
 	
   }
-      
+  
+  void 
+  kSpaceJastrow::setCoefficients(std::vector<RealType> &oneBodyCoefs,
+				 std::vector<RealType> &twoBodyCoefs)
+  {
+    for (int i=0; i<oneBodyCoefs.size(); i++) 
+      cerr << "oneBodyCoefs[" << i << "] = " << oneBodyCoefs[i] << endl;
+    if (oneBodyCoefs.size() != 2*OneBodySymmCoefs.size()) {
+      app_warning() << "Warning!  Wrong number of coefficients specified in "
+		    << "kSpaceJastrow's one-body coefficients.\n"
+		    << oneBodyCoefs.size() << " were specified.  Should have been "
+		    << 2*OneBodySymmCoefs.size() << endl;
+    }
+    else {
+      for (int i=0; i<OneBodySymmCoefs.size(); i++) {
+	OneBodySymmCoefs[i].cG = ComplexType (oneBodyCoefs[2*i+0],
+					      oneBodyCoefs[2*i+1]);
+	OneBodySymmCoefs[i].set (OneBodyCoefs);
+      }
+    }
+
+    if (twoBodyCoefs.size() != TwoBodySymmCoefs.size()) {
+      app_warning() << "Warning!  Wrong number of coefficients specified in "
+		    << "kSpaceJastrow's two-body coefficients.\n"
+		    << twoBodyCoefs.size() << " were specified.  Should have been "
+		    << TwoBodySymmCoefs.size() << endl;
+    }
+    else {
+      for (int i=0; i<TwoBodySymmCoefs.size(); i++) {
+	TwoBodySymmCoefs[i].cG = twoBodyCoefs[i];
+	TwoBodySymmCoefs[i].set (TwoBodyCoefs);
+      }
+    }
+
+  }
+
   void 
   kSpaceJastrow::resetTargetParticleSet(ParticleSet& P) 
   {

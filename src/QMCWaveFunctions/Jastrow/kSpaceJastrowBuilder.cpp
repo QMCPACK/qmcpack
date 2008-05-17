@@ -19,6 +19,24 @@
 #include "OhmmsData/AttributeSet.h"
 
 namespace qmcplusplus {
+  template<class T>
+  inline bool 
+  putContent2(std::vector<T>& a, xmlNodePtr cur) {
+    std::istringstream 
+      stream((const char*)
+	     (xmlNodeListGetString(cur->doc, cur->xmlChildrenNode, 1)));
+    T temp;
+    a.clear();
+    while(!stream.eof()) { 
+      stream >> temp;
+      if (stream.fail() || stream.bad())
+	break;
+      else
+	a.push_back(temp);
+    }
+    return a.size() > 0;
+  }
+  
 
   bool
   kSpaceJastrowBuilder::put(xmlNodePtr cur)
@@ -26,13 +44,19 @@ namespace qmcplusplus {
     xmlNodePtr kids = cur->xmlChildrenNode;
     kSpaceJastrow::SymmetryType oneBodySymm, twoBodySymm;
     RealType kc1, kc2;
-    string symm1_opt, symm2_opt, kc1_opt, kc2_opt;
+    string symm1_opt, symm2_opt, id1_opt, id2_opt;
+    std::vector<RealType> oneBodyCoefs, twoBodyCoefs;
     // Initialize options
     kc1 = kc2 = 0.0;
     oneBodySymm = twoBodySymm = kSpaceJastrow::CRYSTAL;
     
+    id1_opt = "cG1";
+    id2_opt = "cG2";
+
     while (kids != NULL) {
       std::string kidsname = (char*)kids->name;
+      std::vector<RealType> *coefs(NULL);
+      string* id_opt(NULL);
       if (kidsname == "correlation") {
 	string type_opt;
 	OhmmsAttributeSet attrib;
@@ -41,15 +65,45 @@ namespace qmcplusplus {
 	if (type_opt == "One-Body") {
 	  attrib.add (symm1_opt, "symmetry");
 	  attrib.add (kc1, "kc");
+	  coefs = &oneBodyCoefs;
+	  id_opt = &id1_opt;
 	}
 	else if (type_opt == "Two-Body") {
 	  attrib.add (symm2_opt, "symmetry");
 	  attrib.add (kc2, "kc");
+	  coefs = &twoBodyCoefs;
+	  id_opt = &id2_opt;
 	}
 	else 
 	  app_warning() << "  Unrecognized kSpace type \"" << type_opt 
 			<< "\" in kSpaceJastrowBuilder::put(xmlNotPtr cur).\n";
 	attrib.put (kids);
+	// Read the coefficients
+	if (coefs) {
+	  xmlNodePtr xmlCoefs = kids->xmlChildrenNode;
+	  while (xmlCoefs != NULL) {
+	    string cname((const char*)xmlCoefs->name);
+	    if (cname == "coefficients")  {
+	      string type("0"), id("0");
+	      OhmmsAttributeSet cAttrib;
+	      cAttrib.add(*id_opt, "id");
+	      cAttrib.add(type, "type");
+	      cAttrib.put(xmlCoefs);
+	      
+	      if (type != "Array") {
+		app_error() << "Unknown coefficients type """ << type 
+			    << """ in kSpaceJastrowBuilder.\n"<< "Resetting to ""Array"".\n";
+		xmlNewProp (xmlCoefs, (const xmlChar*) "type", (const xmlChar*) "Array");
+	      }
+	      //vector<T> can be read by this
+	      putContent2(*coefs,xmlCoefs);
+	      app_log() << "  Read " << coefs->size() << " coefficients for type "
+			<< type_opt << endl;
+	    }
+	    xmlCoefs = xmlCoefs->next;
+	    
+	  }
+	}
       }
       else if (kidsname != "text") {
 	app_warning() << "Unrecognized section \"" << kidsname 
@@ -69,8 +123,9 @@ namespace qmcplusplus {
       twoBodySymm = symm2->second;
     
     kSpaceJastrow *jastrow = new kSpaceJastrow(sourcePtcl, targetPtcl,
-					       oneBodySymm, kc1,
-					       twoBodySymm, kc2);
+					       oneBodySymm, kc1, id1_opt,
+					       twoBodySymm, kc2, id2_opt);
+    jastrow->setCoefficients (oneBodyCoefs, twoBodyCoefs);
     jastrow->addOptimizables(targetPsi.VarList);
     targetPsi.addOrbital(jastrow,"kSpace");
     return true;

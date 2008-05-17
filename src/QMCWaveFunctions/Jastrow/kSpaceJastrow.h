@@ -114,8 +114,10 @@ namespace qmcplusplus {
 
   public:
     kSpaceJastrow(ParticleSet& ions, ParticleSet& elecs,
-		  SymmetryType oneBodySymm, RealType oneBodyCutoff,
-		  SymmetryType twoBodySymm, RealType twoBodyCutoff);
+		  SymmetryType oneBodySymm, RealType oneBodyCutoff, string oneBodyID,
+		  SymmetryType twoBodySymm, RealType twoBodyCutoff, string twoBodyID);
+    void setCoefficients (std::vector<RealType> &oneBodyCoefs,
+			  std::vector<RealType> &twoBodyCoefs);
 
     // Optimization-related
     void addOptimizables(OptimizableSetType& vlist);
