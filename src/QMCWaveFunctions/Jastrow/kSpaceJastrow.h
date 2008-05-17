@@ -88,6 +88,7 @@ namespace qmcplusplus {
     // 
     std::vector<ComplexType> OneBody_e2iGr, 
       TwoBody_e2iGr_new, TwoBody_e2iGr_old;
+    Matrix<ComplexType> Delta_e2iGr;
 
     // Map of the optimizable variables:
     std::map<std::string,RealType*> VarMap;

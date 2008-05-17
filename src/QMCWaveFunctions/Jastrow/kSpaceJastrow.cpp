@@ -229,11 +229,16 @@ namespace qmcplusplus {
     OneBody_e2iGr.resize(nOne);
 
     int nTwo = TwoBodyGvecs.size();
+    int nElecs = Elecs.getTotalNum();
     TwoBodyCoefs.resize(nTwo);
     TwoBody_rhoG.resize(nOne);
     TwoBodyPhase.resize(nTwo);
     TwoBody_e2iGr_new.resize(nTwo);
     TwoBody_e2iGr_old.resize(nTwo);
+    Delta_e2iGr.resize(nElecs,nTwo);
+    for (int iat=0; iat<nElecs; iat++)
+      for (int i=0; i<nTwo; i++)
+	Delta_e2iGr(iat,i) = ComplexType();
 
     // Set Ion_rhoG
     for (int i=0; i<OneBodyGvecs.size(); i++) {
@@ -257,6 +262,10 @@ namespace qmcplusplus {
 		    << "kSpaceJastrow's one-body coefficients.\n"
 		    << oneBodyCoefs.size() << " were specified.  Should have been "
 		    << 2*OneBodySymmCoefs.size() << endl;
+      for (int i=0; i<OneBodyCoefs.size(); i++) {
+	OneBodySymmCoefs[i].cG = ComplexType();
+	OneBodySymmCoefs[i].set (OneBodyCoefs);
+      }
     }
     else {
       for (int i=0; i<OneBodySymmCoefs.size(); i++) {
@@ -271,6 +280,10 @@ namespace qmcplusplus {
 		    << "kSpaceJastrow's two-body coefficients.\n"
 		    << twoBodyCoefs.size() << " were specified.  Should have been "
 		    << TwoBodySymmCoefs.size() << endl;
+      for (int i=0; i<TwoBodyCoefs.size(); i++) {
+	TwoBodySymmCoefs[i].cG = 0.0;
+	TwoBodySymmCoefs[i].set (TwoBodyCoefs);
+      }
     }
     else {
       for (int i=0; i<TwoBodySymmCoefs.size(); i++) {
@@ -284,7 +297,6 @@ namespace qmcplusplus {
   void 
   kSpaceJastrow::resetTargetParticleSet(ParticleSet& P) 
   {
-    cerr << "In kSpaceJastrow::resetTargetParticleSet(ParticleSet& P).\n";
     for (int i=0; i<TwoBodyGvecs.size(); i++) {
       TwoBody_rhoG[i] = ComplexType();
       for (int iat=0; iat<NumElecs; iat++) {
@@ -295,7 +307,11 @@ namespace qmcplusplus {
       }
     }
   }
-  
+
+  ///////////////////////////////////////////////////////////////
+  //                  Evaluation functions                     //
+  ///////////////////////////////////////////////////////////////
+
   kSpaceJastrow::ValueType 
   kSpaceJastrow::evaluateLog(ParticleSet& P, 
 			     ParticleSet::ParticleGradient_t& G, 
@@ -313,7 +329,7 @@ namespace qmcplusplus {
       eval_e2iphi (OneBodyPhase, OneBody_e2iGr);
       
       for (int i=0; i<nOne; i++) {
-	ComplexType z = OneBodyCoefs[i]/* *Ion_rhoG[i] */ * conj(OneBody_e2iGr[i]);
+	ComplexType z = OneBodyCoefs[i] * conj(OneBody_e2iGr[i]);
 	J1 += real(z);
 	G[iat] += -real(z*eye)*OneBodyGvecs[i];
 	L[iat] += -dot(OneBodyGvecs[i],OneBodyGvecs[i])*real(z);
@@ -321,7 +337,7 @@ namespace qmcplusplus {
     }
 
     // Do two-body part
-    int nTwo = OneBodyGvecs.size();
+    int nTwo = TwoBodyGvecs.size();
     for (int i=0; i<nTwo; i++)
       TwoBody_rhoG[i] = ComplexType();
     for (int iat=0; iat<N; iat++) {
@@ -332,21 +348,22 @@ namespace qmcplusplus {
       for (int i=0; i<nTwo; i++)
 	TwoBody_rhoG[i] += TwoBody_e2iGr_new[i];
     }
-    for (int i=0; i<nTwo; i++) {
+
+    for (int i=0; i<nTwo; i++) 
       J2 += TwoBodyCoefs[i]*norm(TwoBody_rhoG[i]);
-      for (int iat=0; iat<N; iat++) {
+    
+    for (int iat=0; iat<N; iat++) {
+      PosType r(P.R[iat]);
+      for (int i=0; i<nTwo; i++) 
+	TwoBodyPhase[i] = dot(TwoBodyGvecs[i], r);
+      eval_e2iphi (TwoBodyPhase, TwoBody_e2iGr_new);
+      for (int i=0; i<nTwo; i++) {
 	PosType Gvec(TwoBodyGvecs[i]);
-	PosType r(P.R[iat]);
-	double phase = dot(Gvec, r);
-	double s, c;
-	sincos(phase, &s, &c);
-	ComplexType z(c,s);
+	ComplexType z = TwoBody_e2iGr_new[i];
 	G[iat] += -2.0*Gvec*TwoBodyCoefs[i]*imag(conj(TwoBody_rhoG[i])*z);
 	L[iat] += 2.0*TwoBodyCoefs[i]*dot(Gvec,Gvec)*(-real(z*conj(TwoBody_rhoG[i])) + 1.0);
       }
     }
-    
-    
     return J1 + J2;
   }
   
@@ -366,14 +383,14 @@ namespace qmcplusplus {
     eval_e2iphi (OneBodyPhase, OneBody_e2iGr);
 
     for (int i=0; i<nOne; i++) 
-      J1new += real(OneBodyCoefs[i] /* *Ion_rhoG[i] */ * conj(OneBody_e2iGr[i]));
+      J1new += real(OneBodyCoefs[i] * conj(OneBody_e2iGr[i]));
 
     for (int i=0; i<nOne; i++)
       OneBodyPhase[i] = dot(OneBodyGvecs[i], rold);
     eval_e2iphi (OneBodyPhase, OneBody_e2iGr);
 
     for (int i=0; i<nOne; i++) 
-      J1old += real(OneBodyCoefs[i] /* *Ion_rhoG[i]*/  * conj(OneBody_e2iGr[i]));
+      J1old += real(OneBodyCoefs[i] * conj(OneBody_e2iGr[i]));
 
     // Now, do two-body part
     int nTwo = TwoBodyGvecs.size();
@@ -411,7 +428,7 @@ namespace qmcplusplus {
     eval_e2iphi (OneBodyPhase, OneBody_e2iGr);
 
     for (int i=0; i<nOne; i++) {
-      ComplexType z = OneBodyCoefs[i] /* *Ion_rhoG[i] */ * conj(OneBody_e2iGr[i]);
+      ComplexType z = OneBodyCoefs[i] * conj(OneBody_e2iGr[i]);
       J1 += real(z);
       dG[iat] += -real(z*eye) * OneBodyGvecs[i];
       dL[iat] += -dot(OneBodyGvecs[i],OneBodyGvecs[i])*real(z);
@@ -422,7 +439,7 @@ namespace qmcplusplus {
     eval_e2iphi (OneBodyPhase, OneBody_e2iGr);
 
     for (int i=0; i<nOne; i++) {
-      ComplexType z = OneBodyCoefs[i] /* *Ion_rhoG[i] */ * conj(OneBody_e2iGr[i]);
+      ComplexType z = OneBodyCoefs[i] * conj(OneBody_e2iGr[i]);
       J1 -= real(z);
       dG[iat] -= -real(z*eye) * OneBodyGvecs[i];
       dL[iat] -= -dot(OneBodyGvecs[i],OneBodyGvecs[i])*real(z);
@@ -435,20 +452,33 @@ namespace qmcplusplus {
     for (int i=0; i<nTwo; i++)   TwoBodyPhase[i] = dot(TwoBodyGvecs[i], rold);
     eval_e2iphi(TwoBodyPhase, TwoBody_e2iGr_old);
 
+    for (int jat=0; jat<NumElecs; jat++)
+      for (int i=0; i<nTwo; i++)
+	Delta_e2iGr(jat,i) = ComplexType();
+
+    for (int i=0; i<nTwo; i++)
+      Delta_e2iGr(iat,i) = TwoBody_e2iGr_new[i] - TwoBody_e2iGr_old[i];
 
     for (int i=0; i<nTwo; i++) {
-      PosType Gvec(TwoBodyGvecs[i]);
       ComplexType rhoG_old = TwoBody_rhoG[i];
-      ComplexType rhoG_new = rhoG_old + TwoBody_e2iGr_new[i] - TwoBody_e2iGr_old[i];
-      ComplexType zold = TwoBody_e2iGr_old[i];
-      ComplexType znew = TwoBody_e2iGr_new[i];
-      dG[iat] += -2.0*Gvec*TwoBodyCoefs[i]*imag(conj(rhoG_new)*znew);
-      dG[iat] -= -2.0*Gvec*TwoBodyCoefs[i]*imag(conj(rhoG_old)*zold);
-
-      dL[iat] += 2.0*TwoBodyCoefs[i]*dot(Gvec,Gvec)*(-real(znew*conj(rhoG_new)) + 1.0);
-      dL[iat] -= 2.0*TwoBodyCoefs[i]*dot(Gvec,Gvec)*(-real(zold*conj(rhoG_old)) + 1.0);
-
+      ComplexType rhoG_new = TwoBody_rhoG[i] + TwoBody_e2iGr_new[i] - TwoBody_e2iGr_old[i];
       J2 += TwoBodyCoefs[i] * (norm(rhoG_new) - norm(rhoG_old));
+      for (int jat=0; jat<NumElecs; jat++) {
+	PosType rj_new = P.R[jat];
+	PosType rj_old = rj_new;
+	if (iat == jat) 
+	  rj_old = P.getOldPos();
+	PosType Gvec(TwoBodyGvecs[i]);
+	ComplexType zold, znew;
+	sincos (dot(Gvec,rj_old), &(zold.imag()), &(zold.real()));
+	sincos (dot(Gvec,rj_new), &(znew.imag()), &(znew.real()));
+	dG[jat] += -2.0*Gvec*TwoBodyCoefs[i]*imag(conj(rhoG_new)*znew);
+	dG[jat] -= -2.0*Gvec*TwoBodyCoefs[i]*imag(conj(rhoG_old)*zold);
+
+	dL[jat] += 2.0*TwoBodyCoefs[i]*dot(Gvec,Gvec)*(-real(znew*conj(rhoG_new)) + 1.0);
+	dL[jat] -= 2.0*TwoBodyCoefs[i]*dot(Gvec,Gvec)*(-real(zold*conj(rhoG_old)) + 1.0);
+      }
+
     }
     return J1 + J2;
   }
@@ -463,8 +493,9 @@ namespace qmcplusplus {
   void 
   kSpaceJastrow::acceptMove(ParticleSet& P, int iat) 
   {
-    for (int i=0; i<TwoBody_e2iGr_new.size(); i++)
-      TwoBody_rhoG[i] += TwoBody_e2iGr_new[i] - TwoBody_e2iGr_old[i];
+    for (int i=0; i<TwoBody_e2iGr_new.size(); i++) 
+      TwoBody_rhoG[i] += Delta_e2iGr(iat,i);
+    //TwoBody_e2iGr_new[i] - TwoBody_e2iGr_old[i];
 
     // std::copy(eikr_new.data(),eikr_new.data()+MaxK,eikr[iat]);
     // U += offU;
@@ -485,7 +516,7 @@ namespace qmcplusplus {
   kSpaceJastrow::ValueType 
   kSpaceJastrow::registerData(ParticleSet& P, PooledData<RealType>& buf) 
   {
-    // LogValue=evaluateLog(P,P.G,P.L); 
+    LogValue=evaluateLog(P,P.G,P.L); 
     // eikr.resize(NumPtcls,MaxK);
     // eikr_new.resize(MaxK);
     // delta_eikr.resize(MaxK);
@@ -498,14 +529,14 @@ namespace qmcplusplus {
     // buf.add(d2U.first_address(), d2U.last_address());
     // buf.add(FirstAddressOfdU,LastAddressOfdU);
     // return LogValue;
-    return 0.0;
+    return LogValue;
   }
   
   kSpaceJastrow::ValueType 
   kSpaceJastrow::updateBuffer(ParticleSet& P, PooledData<RealType>& buf,
 			      bool fromscratch) 
   {
-    // LogValue=evaluateLog(P,P.G,P.L); 
+    LogValue=evaluateLog(P,P.G,P.L); 
     
     // for(int iat=0; iat<NumPtcls; iat++)
     //   std::copy(P.SK->eikr[iat],P.SK->eikr[iat]+MaxK,eikr[iat]);
@@ -515,7 +546,7 @@ namespace qmcplusplus {
     // buf.put(d2U.first_address(), d2U.last_address());
     // buf.put(FirstAddressOfdU,LastAddressOfdU);
     // return LogValue;
-    return 0.0;
+    return LogValue;
   }
 
   void 
@@ -548,6 +579,21 @@ namespace qmcplusplus {
 	J1 +=  real(OneBodyCoefs[i]  * conj(OneBody_e2iGr[i]));
       }
     }
+    
+    // Do two-body part
+    int nTwo = OneBodyGvecs.size();
+    for (int i=0; i<nTwo; i++)
+      TwoBody_rhoG[i] = ComplexType();
+    for (int iat=0; iat<N; iat++) {
+      PosType r(P.R[iat]);
+      for (int i=0; i<nTwo; i++) 
+	TwoBodyPhase[i] = dot(TwoBodyGvecs[i], r);
+      eval_e2iphi (TwoBodyPhase, TwoBody_e2iGr_new);
+      for (int i=0; i<nTwo; i++)
+	TwoBody_rhoG[i] += TwoBody_e2iGr_new[i];
+    }
+    for (int i=0; i<nTwo; i++) 
+      J2 += TwoBodyCoefs[i]*norm(TwoBody_rhoG[i]);
     return std::exp(J1 + J2);
   }
   
