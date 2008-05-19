@@ -28,8 +28,8 @@
 inline void
 eval_e2iphi (const std::vector<double> &phi, std::vector<std::complex<double> > &z)
 {
-#ifdef HAVE_ACML
   int n = phi.size();
+#ifdef HAVE_ACML
   double c[n], s[n];
   vrda_sincos(n, &(phi[0]), s, c);
   for (int i=0; i<n; i++)
@@ -46,8 +46,8 @@ eval_e2iphi (const std::vector<double> &phi, std::vector<std::complex<double> > 
 inline void
 eval_e2iphi (const std::vector<float> &phi, std::vector<std::complex<float> > &z)
 {
-#ifdef HAVE_ACML
   int n = phi.size();
+#ifdef HAVE_ACML
   float c[n], s[n];
   vrsa_sincosf(n, &(phi[0]), s, c);
   for (int i=0; i<n; i++)
@@ -56,7 +56,7 @@ eval_e2iphi (const std::vector<float> &phi, std::vector<std::complex<float> > &z
   vcCIS (n, &(phi[0]), (float*) &(z[0]));
 #else
   for (int i=0; i<n; i++)
-    sincos (phi[i], &(z[i].imag()), &(z[i].real()));
+    sincosf (phi[i], &(z[i].imag()), &(z[i].real()));
 #endif
 }
 
