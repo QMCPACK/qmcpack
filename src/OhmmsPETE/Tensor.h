@@ -244,6 +244,11 @@ public:
     return res;
   }
 
+  inline Type_t* begin(){ return  X; }
+  inline const Type_t* begin() const { return  X; }
+  inline Type_t* end(){ return  X+Size; }
+  inline const Type_t* end() const { return  X+Size; }
+
 //  Removed operator using std::pair
 //    Type_t operator()(const pair<int,int> i) const {
 //      PAssert ( (i.first>=0) && (i.second>=0) && (i.first<D) && (i.second<D) );
