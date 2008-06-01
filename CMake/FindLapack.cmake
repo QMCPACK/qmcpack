@@ -8,60 +8,52 @@
 # 3) search ENV ATLAS
 # 4) search lapack/blas
 # 5) give up
-# 
-SET(MKL_PATHS "")
 
-#use environment variables
-#use environment variables: e.g, module at OSC uses MKL
+SET(MKL_PATHS "/usr/local/lib /usr/lib")
+
 #IF(NOT QMC_BUILD_STATIC)
+IF($ENV{MKL} MATCHES "mkl")
+  MESSAGE(STATUS "Using intel/mkl library: $ENV{MKL}")
+  #look for the path where the mkl is installed
+  STRING(REGEX MATCHALL "[-][L]([^ ;])+" MKL_PATH_WITH_PREFIX  "$ENV{MKL}")
+  STRING(REGEX REPLACE "[-][L]" "" MKL_PATHS ${MKL_PATH_WITH_PREFIX})
+ENDIF($ENV{MKL} MATCHES "mkl")
 
-  IF($ENV{MKL} MATCHES "mkl")
-  
-    MESSAGE(STATUS "Using intel/mkl library: $ENV{MKL}")
-    
-    #look for the path where the mkl is installed
-    STRING(REGEX MATCHALL "[-][L]([^ ;])+" MKL_PATH_WITH_PREFIX  "$ENV{MKL}")
-    STRING(REGEX REPLACE "[-][L]" "" MKL_PATHS ${MKL_PATH_WITH_PREFIX})
-  
-  ENDIF($ENV{MKL} MATCHES "mkl")
-  
-  SET(MKL_PATHS ${MKL_PATHS} 
-      $ENV{MKL_HOME}/lib/em${QMC_BITS}t
-      $ENV{MKL_HOME}/lib/${QMC_BITS}
-      $ENV{MKL_HOME}/lib
-      /usr/local/intel/mkl60/mkl60/lib/64
-      /usr/local/intel/mkl/lib/32 
-      /opt/intel/mkl/lib/32
-      /opt/intel/mkl/10.0.2.018/lib/em64t
-     ) 
-  MESSAGE(STATUS "Looking for intel/mkl library in ${MKL_PATHS}")
+SET(MKL_PATHS 
+  $ENV{MKL_HOME}/lib/em${QMC_BITS}t
+  $ENV{MKL_HOME}/lib/${QMC_BITS}
+  $ENV{MKL_HOME}/lib
+  ${MKL_PATHS} 
+  ) 
+MESSAGE(STATUS "Looking for intel/mkl library in ${MKL_PATHS}")
 
-#ENDIF(NOT QMC_BUILD_STATIC)
+STRING(REGEX MATCH "[0-9]+\\.[0-9]+\\.[0-9]+" MKL_VERSION "$ENV{MKL_HOME}")
+SET(LINK_LAPACK_DEFAULT 1)
+IF(${MKL_VERSION} MATCHES "10\\.0\\.[0-2]")
+  SET(LINK_LAPACK_DEFAULT 0)
+ENDIF(${MKL_VERSION} MATCHES "10\\.0\\.[0-2]")
 
 IF(NOT LAPACK_LIBRARY_INIT)
-  IF(QMC_BITS MATCHES 64)
+  IF(${CMAKE_SYSTEM_PROCESSOR} MATCHES "x86_64")
+    IF(LINK_LAPACK_DEFAULT)
+      FIND_LIBRARY(LAPACK_LIBRARY NAMES mkl_lapack PATHS ${MKL_PATHS})
+      FIND_LIBRARY(BLAS_LIBRARY NAMES mkl PATHS ${MKL_PATHS})
+    ELSE(LINK_LAPACK_DEFAULT)
+      FIND_LIBRARY(LAPACK_LIBRARY STATIC NAMES mkl_lapack PATHS ${MKL_PATHS})
+      FIND_LIBRARY(BLAS_LIBRARY  NAMES mkl_em64t PATHS ${MKL_PATHS})
+      MESSAGE("-- mkl 10.0.[0-2] warning for EM64T")
+      MESSAGE("-- Replace libmkl_lapack.so in CMakeCache.txt by libmkl_lapack.a")
+    ENDIF(LINK_LAPACK_DEFAULT)
+  ELSE(${CMAKE_SYSTEM_PROCESSOR} MATCHES "x86_64")
     FIND_LIBRARY(LAPACK_LIBRARY 
-      NAMES mkl_lapack  mkl_ia64
+      NAMES mkl_lapack 
       PATHS ${MKL_PATHS}
       )
-  ELSE(QMC_BITS MATCHES 64)
-    FIND_LIBRARY(LAPACK_LIBRARY 
-      NAMES mkl_lapack mkl_ia32
-      PATHS ${MKL_PATHS}
-      )
-  ENDIF(QMC_BITS MATCHES 64)
-
-  IF(QMC_BUILD_STATIC) 
     FIND_LIBRARY(BLAS_LIBRARY
-      NAMES mkl mkl_ipf
+      NAMES mkl
       PATHS ${MKL_PATHS}
     )
-  ELSE(QMC_BUILD_STATIC) 
-    FIND_LIBRARY(BLAS_LIBRARY
-      NAMES mkl mkl_itp
-      PATHS ${MKL_PATHS}
-    )
-  ENDIF(QMC_BUILD_STATIC) 
+  ENDIF(${CMAKE_SYSTEM_PROCESSOR} MATCHES "x86_64")
 
   FIND_LIBRARY(INTEL_GUIDE_LIBRARY
     NAMES guide
