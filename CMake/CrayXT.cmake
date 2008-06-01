@@ -13,22 +13,34 @@ IF($ENV{PE_ENV} MATCHES "PGI")
 
 ELSE($ENV{PE_ENV} MATCHES "PGI")
   ADD_DEFINITIONS(-Drestrict=__restrict__ -DADD_ -DINLINE_ALL=inline)
-  SET(CMAKE_CXX_FLAGS "-O6 -march=opteron -msse3 -ftemplate-depth-60 -Drestrict=__restrict__ -fstrict-aliasing -funroll-all-loops   -finline-limit=1000 -ffast-math -Wno-deprecated ")
+
+  IF(CPU_IDENTITY MATCHES "barcelona")
+    SET(CMAKE_CXX_FLAGS "-O6 -march=barcelona -msse3 -ftemplate-depth-60 -Drestrict=__restrict__ -fstrict-aliasing -funroll-all-loops   -finline-limit=1000 -ffast-math -Wno-deprecated ")
+  ELSE(CPU_IDENTITY MATCHES "barcelona")
+    SET(CMAKE_CXX_FLAGS "-O6 -march=opteron -msse3 -ftemplate-depth-60 -Drestrict=__restrict__ -fstrict-aliasing -funroll-all-loops   -finline-limit=1000 -ffast-math -Wno-deprecated ")
+  ENDIF(CPU_IDENTITY MATCHES "barcelona")
+
+  SET(HAVE_SSE 1)
+  SET(HAVE_SSE2 1)
+  SET(HAVE_SSE3 1)
+  SET(HAVE_SSSE3 1)
+  SET(USE_PREFETCH 1)
+  SET(PREFETCH_AHEAD 12)
 
   FIND_LIBRARY(BLAS_LIBRARY acml $ENV{ACML_BASE_DIR}/gnu64/lib)
   #SET(LAPACK_LIBRARY "/opt/pgi/6.2.5/linux86-64/6.2/lib/libpgc.a")
   SET(LAPACK_LIBRARY "")
   SET(FORTRAN_LIBS "-lg2c")
-ENDIF($ENV{PE_ENV} MATCHES "PGI")
 
-IF(QMC_OMP)
+  #openmp is enabled
   SET(CMAKE_TRY_OPENMP_CXX_FLAGS "-fopenmp")
   CHECK_CXX_ACCEPTS_FLAG(${CMAKE_TRY_OPENMP_CXX_FLAGS} GNU_OPENMP_FLAGS)
   IF(GNU_OPENMP_FLAGS)
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_TRY_OPENMP_CXX_FLAGS}")
     SET(ENABLE_OPENMP 1)
   ENDIF(GNU_OPENMP_FLAGS)
-ENDIF(QMC_OMP)
+
+ENDIF($ENV{PE_ENV} MATCHES "PGI")
 
 IF($ENV{CXX} MATCHES "CC")
   # always link statically
@@ -40,10 +52,10 @@ ELSE($ENV{CXX} MATCHES "CC")
   SET(ENABLE_CATAMOUNT 0)
 ENDIF($ENV{CXX} MATCHES "CC")
 
-# targeting CATAMOUNT
-IF(ENABLE_CATAMOUNT)
-  ADD_DEFINITIONS(-DXT_CATAMOUNT)
-ENDIF(ENABLE_CATAMOUNT)
+## targeting CATAMOUNT
+#IF(ENABLE_CATAMOUNT)
+#  ADD_DEFINITIONS(-DXT_CATAMOUNT)
+#ENDIF(ENABLE_CATAMOUNT)
 
 MARK_AS_ADVANCED(
   LAPACK_LIBRARY 
