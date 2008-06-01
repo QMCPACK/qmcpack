@@ -143,6 +143,9 @@
 /* Define if sse3 support exists */
 #cmakedefine HAVE_SSE3 @HAVE_SSE3@
 
+/* Define if ssse3 support exists */
+#cmakedefine HAVE_SSSE3 @HAVE_SSSE3@
+
 /* Define if c variable array support exists */
 #cmakedefine HAVE_C_VARARRAYS @HAVE_C_VARARRAYS@
 
