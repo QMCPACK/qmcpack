@@ -46,7 +46,7 @@ CHECK_FUNCTION_EXISTS(sincos HAVE_SINCOS)
 CHECK_FUNCTION_EXISTS(round HAVE_STD_ROUND)
 
 ######################################################################
-# add einspline stuff
+# add macros to compile einspline if necessary
 ######################################################################
 CHECK_FUNCTION_EXISTS(floor HAVE_FLOOR)
 CHECK_FUNCTION_EXISTS(posix_memalign HAVE_POSIX_MEMALIGN)
@@ -63,23 +63,13 @@ CHECK_INCLUDE_FILE(sys/time.h HAVE_SYS_TIME_H)
 CHECK_INCLUDE_FILE(sys/types.h HAVE_SYS_TYPES_H)
 CHECK_INCLUDE_FILE(unistd.h HAVE_UNISTD_H)
 
-SET(HAVE_SSE3 0)
-SET(HAVE_SSE2 0)
 SET(HAVE_SSE 0)
+SET(HAVE_SSE2 0)
+SET(HAVE_SSE3 0)
+SET(HAVE_SSSE3 0)
 SET(USE_PREFETCH 0)
 SET(PREFETCH_AHEAD 12)
 SET(HAVE_C_VARARRAYS 1)
-
-#going to add automatic detection for cpu
-exec_program(grep  
-  ARGS flags /proc/cpuinfo
-  OUTPUT_VARIABLE CPUINFO_FLAGS
-  RETURN_VALUE CPUINFO
-  )
-
-IF(${CPUINFO_FLAGS} MATCHES msse2)
-  MESSAGE("  enable msse2")	 
-ENDIF(${CPUINFO_FLAGS} MATCHES msse2)
 
 ######################################################################
 # Build options
@@ -152,8 +142,10 @@ SET(HAVE_EINSPLINE 0)
 ######################################################
 SET (PROJECT_CMAKE ${qmcpack_SOURCE_DIR}/CMake)
 
+######################################################
+# Get the current SVN version
+######################################################
 SET(QMCPLUSPLUS_SVN_LAST_CHANGED "2008-05-12")
-
 FIND_PACKAGE(Subversion) 
 IF(Subversion_FOUND) 
   Subversion_WC_INFO(${PROJECT_SOURCE_DIR} Project) 
@@ -171,6 +163,12 @@ ENDIF(Subversion_FOUND)
 SET(FOUND_CXXENV 0)
 INCLUDE(${CMAKE_ROOT}/Modules/TestCXXAcceptsFlag.cmake)
 
+######################################################
+# Try to identify CPU identity
+######################################################
+SET(CPU_IDENTITY "generic")
+INCLUDE(${PROJECT_CMAKE}/CheckProcessorID.cmake)
+
 #------------------------------------
 # On Jaguar use CrayXT.cmake
 #------------------------------------
@@ -178,6 +176,7 @@ IF($ENV{HOST} MATCHES "jaguar")
   MESSAGE("  Working on jaguar. Using CMake/CrayXT.cmake")	 
   INCLUDE(${PROJECT_CMAKE}/CrayXT.cmake)
   SET(FOUND_CXXENV 1)
+  SET(CPU_IDENTITY "barcelona")
 ENDIF($ENV{HOST} MATCHES "jaguar")
 
 #------------------------------------
@@ -208,7 +207,6 @@ IF(NOT FOUND_CXXENV)
     SET(CMAKE_TRY_INTEL_CXX_FLAGS "-restrict")
     CHECK_CXX_ACCEPTS_FLAG(${CMAKE_TRY_INTEL_CXX_FLAGS} INTEL_CXX_FLAGS)
     IF(INTEL_CXX_FLAGS)
-      MESSAGE("-- Intel compilers are found. ${INTEL_CXX_FLAGS}")
       INCLUDE(${PROJECT_CMAKE}/IntelCompilers.cmake)
       SET(FOUND_CXXENV 1)
     ENDIF(INTEL_CXX_FLAGS)
@@ -231,6 +229,7 @@ MESSAGE("-- CC  compiler flags: ${CMAKE_C_FLAGS}")
 ######################################################
 # DO NOT MODIFY BELOW
 ######################################################
+
 INCLUDE(${CMAKE_ROOT}/Modules/FindThreads.cmake)
 INCLUDE(${PROJECT_CMAKE}/FindLibxml2.cmake)
 INCLUDE(${PROJECT_CMAKE}/FindLapack.cmake)
