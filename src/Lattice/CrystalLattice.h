@@ -24,6 +24,7 @@
 #include "Lattice/ParticleBConds.h"
 #include "Lattice/LatticeOperations.h"
 
+
 using namespace std;
 
 /**@file CrystalLattice.h
@@ -96,6 +97,8 @@ struct CrystalLattice{
   Tensor_t M;
   ///Metric tensor for G vectors
   Tensor_t Mg;
+  // Wigner-Seitz and simulation cell radii
+  Scalar_t WignerSeitzRadius, SimulationCellRadius;
 
   ///Length[idim] length of the idim-th lattice vector
   SingleParticlePos_t Length;
@@ -150,36 +153,37 @@ struct CrystalLattice{
     return Gv[i];
   }
 
-  inline T WignerSeitzRadius() const {
+  inline T calcWignerSeitzRadius(TinyVector<SingleParticlePos_t,2> a) const 
+  {
     T rMin = 1.0e50;
     for (int i=-1; i<=1; i++)
       for (int j=-1; j<=1; j++)
-	for (int k=-k; k<=1; k++) 
-	  if ((i!=0) || (j!=0) || (k!=0)) {
-	    SingleParticlePos_t L = ((double)i * a(0) +
-				     (double)j * a(1) +
-				     (double)k * a(2));
-	    double dist = 0.5*std::fabs(dot(L,L));
-	    rMin = std::min(rMin, dist);
-	  }
-  }
-	  
-	    
-
-
-  inline T CellRadius () const {
-    T rMin = 1.0e50;
-    for (int i=0; i<D; i++) {
-      SingleParticlePos_t A = a(i);
-      SingleParticlePos_t B = a((i+1)%3);    
-      SingleParticlePos_t C = a((i+2)%3);
-      SingleParticlePos_t BxC = cross(B,C);
-      double dist = 0.5*std::fabs(dot(A,BxC))/std::sqrt(dot(BxC,BxC));
-      rMin = std::min(rMin, dist);
-    }
+	if ((i!=0) || (j!=0)) {
+	  SingleParticlePos_t L = ((double)i * a[0] +
+				   (double)j * a[1]);
+	  double dist = 0.5*std::fabs(dot(L,L));
+	  rMin = std::min(rMin, dist);
+	}
     return rMin;
   }
 
+  inline T calcWignerSeitzRadius(TinyVector<SingleParticlePos_t,3> a) const 
+  {
+    T rMin = 1.0e50;
+    for (int i=-1; i<=1; i++)
+      for (int j=-1; j<=1; j++)
+	for (int k=-1; k<=1; k++) 
+	  if ((i!=0) || (j!=0) || (k!=0)) {
+	    SingleParticlePos_t L = ((double)i * a[0] +
+				     (double)j * a[1] +
+				     (double)k * a[2]);
+	    double dist = 0.5*std::sqrt(dot(L,L));
+	    rMin = std::min(rMin, dist);
+	  }
+    return rMin;
+  }
+	  
+	    
   /** Convert a cartesian vector to a unit vector.
    * Boundary conditions are not applied.
    */
