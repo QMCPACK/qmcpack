@@ -86,7 +86,30 @@ struct DTD_BConds<T,3,SUPERCELL_BULK> {
     T z=modf(ar[2],&dmy2); ar[2]=z-static_cast<int>(z*2.0);
 #endif
     a=lat.toCart(ar);
-    return a[0]*a[0]+a[1]*a[1]+a[2]*a[2];
+    T d2 = a[0]*a[0]+a[1]*a[1]+a[2]*a[2];
+    if (d2 < lat.SimulationCellRadius * lat.SimulationCellRadius)
+      return d2;
+    else 
+    {
+      T d2min = d2;
+      TinyVector<T,3> u = ar;
+      for (double i=-1.0; i<1.001; i+=1.0) {
+	u[0] = ar[0] + i;
+	for (double j=-1.0; j<1.001; j+=1.0) {
+	  u[1] = ar[1] + j;
+	  for (double k=-1.0; k<1.001; k+=1.0) {
+	    u[2] = ar[2] + k;
+	    TinyVector<T,3> anew = lat.toCart(u);
+	    d2 = anew[0]*anew[0] + anew[1]*anew[1] + anew[2]*anew[2];
+	    if (d2 < d2min) {
+	      a = anew;
+	      d2min = d2;
+	    }
+	  }
+	}
+      }
+      return d2min;
+    }
   }
 };
 
