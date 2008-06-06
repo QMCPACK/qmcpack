@@ -115,9 +115,12 @@ namespace qmcplusplus  {
   protected:
     std::vector<NewTimer*> TimerList;
   public:
-    void addTimer (NewTimer* timer)
+    inline void addTimer (NewTimer* t)
     {
-      TimerList.push_back(timer);
+#pragma omp critical
+      {
+        TimerList.push_back(t);
+      }
     }
 
     void reset();
