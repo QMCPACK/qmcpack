@@ -102,6 +102,17 @@ public:
     X[3] = x03;
    }
 
+  TinyVector(const T& x00, const T& x01, const T& x02, const T& x03,
+      const T& x10, const T& x11, const T& x12, const T& x13,
+      const T& x20, const T& x21, const T& x22, const T& x23,
+      const T& x30, const T& x31, const T& x32, const T& x33) 
+  {
+    X[0]  = x00; X[1]  = x01; X[2]  = x02; X[3]  = x03;
+    X[4]  = x10; X[5]  = x11; X[6]  = x12; X[7]  = x13;
+    X[8]  = x20; X[9]  = x21; X[10] = x22; X[11] = x23;
+    X[12] = x30; X[13] = x31; X[14] = x32; X[15] = x33;
+   }
+
   // Destructor 
   ~TinyVector() { }
 
