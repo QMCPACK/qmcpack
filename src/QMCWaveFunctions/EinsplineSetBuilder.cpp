@@ -1,4 +1,3 @@
-//////////////////////////////////////////////////////////////////
 // (c) Copyright 2003-  by Ken Esler and Jeongnim Kim
 //////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////
@@ -30,6 +29,7 @@ namespace qmcplusplus {
   std::map<H5OrbSet,multi_UBspline_3d_d*,H5OrbSet>
   EinsplineSetBuilder::ExtendedMap_d;
 
+
   EinsplineSetBuilder::EinsplineSetBuilder(ParticleSet& p, 
       PtclPoolType& psets, xmlNodePtr cur) 
     : XMLRoot(cur), TileFactor(1,1,1), TwistNum(0), LastSpinSet(-1), NumOrbitalsRead(-1)
@@ -60,7 +60,7 @@ namespace qmcplusplus {
     if (H5FileID < 0) {
       app_error() << "Could not open HDF5 file \"" << H5FileName 
 		  << "\" in EinsplineSetBuilder::createSPOSet.  Aborting.\n";
-      abort();
+      APP_ABORT("EinsplineSetBuilder::ReadOrbitalInfo");
     }
 
     //////////////////////////////////////////////////
@@ -170,28 +170,68 @@ namespace qmcplusplus {
   void
   EinsplineSetBuilder::BroadcastOrbitalInfo()
   {
-    myComm->bcast(Version);
-    myComm->bcast(Lattice);
-    myComm->bcast(RecipLattice);
-    myComm->bcast(SuperLattice);
-    myComm->bcast(LatticeInv);
-    myComm->bcast(NumBands);
-    myComm->bcast(NumElectrons);
-    myComm->bcast(NumSpins);
-    myComm->bcast(NumTwists);
+    if(myComm->size() == 1) return;
+
     int numIons = IonTypes.size();
-    myComm->bcast(numIons);
+    PooledData<RealType> abuffer;
+    abuffer.add(Version.begin(),Version.end()); //myComm->bcast(Version);
+    abuffer.add(Lattice.begin(),Lattice.end());//myComm->bcast(Lattice);
+    abuffer.add(RecipLattice.begin(),RecipLattice.end()); //myComm->bcast(RecipLattice);
+    abuffer.add(SuperLattice.begin(),SuperLattice.end()); //myComm->bcast(SuperLattice);
+    abuffer.add(LatticeInv.begin(),LatticeInv.end()); //myComm->bcast(LatticeInv);
+    abuffer.add(NumBands); //myComm->bcast(NumBands);
+    abuffer.add(NumElectrons); //myComm->bcast(NumElectrons);
+    abuffer.add(NumSpins); //myComm->bcast(NumSpins);
+    abuffer.add(NumTwists); //myComm->bcast(NumTwists);
+    abuffer.add(numIons); //myComm->bcast(numIons);
+
+    myComm->bcast(abuffer);
+
+    if(myComm->rank())
+    {
+      abuffer.rewind();
+      abuffer.get(Version.begin(),Version.end());
+      abuffer.get(Lattice.begin(),Lattice.end());
+      abuffer.get(RecipLattice.begin(),RecipLattice.end());
+      abuffer.get(SuperLattice.begin(),SuperLattice.end());
+      abuffer.get(LatticeInv.begin(),LatticeInv.end());
+      abuffer.get(NumBands);
+      abuffer.get(NumElectrons);
+      abuffer.get(NumSpins);
+      abuffer.get(NumTwists);
+      abuffer.get(numIons);
+    }
+
     if (IonTypes.size() != numIons) {
       IonTypes.resize(numIons);
       IonPos.resize(numIons);
     }
-    myComm->bcast(IonTypes);
-    myComm->bcast(IonPos);
-    if (TwistAngles.size() != NumTwists)
-      TwistAngles.resize(NumTwists);
-    myComm->bcast(TwistAngles);
+
+    //new buffer
+    PooledData<RealType> bbuffer;
+    for(int i=0; i<numIons; ++i) bbuffer.add(IonTypes[i]);
+    //myComm->bcast(IonTypes);
     
-    myComm->bcast(HaveLocalizedOrbs);
+    bbuffer.add(&IonPos[0][0],&IonPos[0][0]+OHMMS_DIM*numIons);
+    //myComm->bcast(IonPos);
+
+    if (TwistAngles.size() != NumTwists) TwistAngles.resize(NumTwists);
+    bbuffer.add(&TwistAngles[0][0],&TwistAngles[0][0]+OHMMS_DIM*NumTwists);
+    //myComm->bcast(TwistAngles);
+    
+    bbuffer.add(HaveLocalizedOrbs);
+    //myComm->bcast(HaveLocalizedOrbs);
+
+    myComm->bcast(bbuffer);
+
+    if(myComm->rank())
+    {
+      bbuffer.rewind();
+      for(int i=0; i<numIons; ++i) bbuffer.get(IonTypes[i]);
+      bbuffer.get(&IonPos[0][0],&IonPos[0][0]+OHMMS_DIM*numIons);
+      bbuffer.get(&TwistAngles[0][0],&TwistAngles[0][0]+OHMMS_DIM*NumTwists);
+      bbuffer.get(HaveLocalizedOrbs);
+    }
   }
 
   SPOSetBase*
@@ -230,7 +270,7 @@ namespace qmcplusplus {
     
     if (numOrbs == 0) {
       app_error() << "You must specify the number of orbitals in the input file.\n";
-      abort();
+      APP_ABORT("EinsplineSetBuilder::createSPOSet");
     }
     else 
       app_log() << "  Reading " << numOrbs << " orbitals from HDF5 file.\n";
@@ -251,7 +291,7 @@ namespace qmcplusplus {
 	if(occ_mode != "ground") {
 	  app_error() << "Only ground state occupation currently supported "
 		      << "in EinsplineSetBuilder.\n";
-	  abort();
+          APP_ABORT("EinsplineSetBuilder::createSPOSet");
 	}
       }
       cur = cur->next;
@@ -264,7 +304,7 @@ namespace qmcplusplus {
     if (myComm->rank() == 0) 
       if (!ReadOrbitalInfo()) {
 	app_error() << "Error reading orbital info from HDF5 file.  Aborting.\n";
-	abort();
+        APP_ABORT("EinsplineSetBuilder::createSPOSet");
       }
     
     BroadcastOrbitalInfo();
@@ -375,7 +415,7 @@ namespace qmcplusplus {
       app_error() << "The number of tiled ions, " << IonPos.size() 
 		  << ", does not match the expected number of "
 		  << primPos.size()*numCopies << ".  Aborting.\n";
-      abort();
+      APP_ABORT("EinsplineSetBuilder::TileIons()");
     }
     if (myComm->rank() == 0) {
       fprintf (stderr, "Supercell ion positions = \n");
@@ -385,20 +425,36 @@ namespace qmcplusplus {
     }
   }
 
-  inline TinyVector<double,3>
-  IntPart (TinyVector<double,3> twist)
+
+  //inline TinyVector<double,3>
+  //IntPart (TinyVector<double,3> twist)
+  //{
+  //  return TinyVector<double,3> (round(twist[0]-1.0e-10), round(twist[1]-1.0e-10), round(twist[2]-1.0e-10));
+  //}
+  //
+  //inline TinyVector<double,3>
+  //FracPart (TinyVector<double,3> twist)
+  //{
+  //  return twist - IntPart (twist);
+  //}
+  
+  template<typename T>
+  inline TinyVector<T,3>
+  IntPart (const TinyVector<T,3>& twist)
   {
-    return TinyVector<double,3> (round(twist[0]-1.0e-10), round(twist[1]-1.0e-10), round(twist[2]-1.0e-10));
+    return TinyVector<T,3> (round(twist[0]-numeric_limits<T>::epsilon()), 
+        round(twist[1]-numeric_limits<T>::epsilon()), 
+        round(twist[2]-numeric_limits<T>::epsilon()));
   }
   
-  inline TinyVector<double,3>
-  FracPart (TinyVector<double,3> twist)
+  template<typename T>
+  inline TinyVector<T,3>
+  FracPart (const TinyVector<T,3>& twist)
   {
     return twist - IntPart (twist);
   }
   
-  inline bool 
-  EinsplineSetBuilder::TwistPair (PosType a, PosType b)
+  bool EinsplineSetBuilder::TwistPair (PosType a, PosType b)
   {
     bool pair = true;
     for (int n=0; n<OHMMS_DIM; n++) {
@@ -952,6 +1008,7 @@ namespace qmcplusplus {
   (int spin, EinsplineSetExtended<complex<double> >* orbitalSet)
   {
     bool root = myComm->rank()==0;
+    //bcastwith other stuff
     myComm->bcast(NumDistinctOrbitals);
     int N = NumDistinctOrbitals;
 
@@ -962,6 +1019,7 @@ namespace qmcplusplus {
     orbitalSet->StorageHessVector.resize(N);
     orbitalSet->phase.resize(N);
     orbitalSet->eikr.resize(N);
+
     if (root) {
       for (int iorb=0; iorb<N; iorb++) {
 	int ti = SortBands[iorb].TwistIndex;
@@ -972,6 +1030,7 @@ namespace qmcplusplus {
     }
     myComm->bcast(orbitalSet->kPoints);
     myComm->bcast(orbitalSet->MakeTwoCopies);
+    
     // First, check to see if we have already read this in
     H5OrbSet set(H5FileName, spin, N);
     std::map<H5OrbSet,multi_UBspline_3d_z*>::iterator iter;
@@ -1008,11 +1067,12 @@ namespace qmcplusplus {
       fprintf (stderr, "  ti=%3d  bi=%3d energy=%8.5f k=(%7.4f, %7.4f, %7.4f) rank=%d\n", 
 	       ti, bi, e, k[0], k[1], k[2], myComm->rank());   
     }
-    myComm->bcast(nx);
-    myComm->bcast(ny);
-    myComm->bcast(nz);
-    if (!root)
-      splineData.resize(nx-1,ny-1,nz-1);
+
+    TinyVector<int,3> nxyz(nx,ny,nz);
+    myComm->bcast(nxyz);
+    nx=nxyz[0]; ny=nxyz[1]; nz=nxyz[2];
+
+    if (!root) splineData.resize(nx-1,ny-1,nz-1);
 
     myComm->bcast(splineData);
     Ugrid x_grid, y_grid, z_grid;
