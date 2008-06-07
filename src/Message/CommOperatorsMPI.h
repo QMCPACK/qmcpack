@@ -17,6 +17,7 @@
 // -*- C++ -*-
 #ifndef OHMMS_COMMUNICATION_OPERATORS_MPI_H
 #define OHMMS_COMMUNICATION_OPERATORS_MPI_H
+#include "Utilities/PooledData.h"
 ///dummy declarations to be specialized
 template<typename T> inline void gsum(T&, int) 
 { 
@@ -136,7 +137,8 @@ inline void gsum(APPNAMESPACE::TinyVector<int,N>& g, int gid)
 }
 
 template<>
-inline void gsum(std::vector<double>& g, int gid) {
+inline void gsum(std::vector<double>& g, int gid) 
+{
   std::vector<double> gt(g.size(), 0.0);
   MPI_Allreduce(&(g[0]),&(gt[0]),g.size(),MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
   g = gt;
@@ -153,9 +155,6 @@ inline void gsum(APPNAMESPACE::Matrix<double>& g, int gid)
   std::copy(gt.begin(),gt.end(),g.data());
 }
 
-////////////////////////////////
-//template Communicate functions
-////////////////////////////////
 template<>
 inline void 
 Communicate::allreduce(int& g) 
@@ -307,6 +306,13 @@ Communicate::bcast(APPNAMESPACE::TinyVector<int,2>& g)
 
 template<>
 inline void 
+Communicate::bcast(APPNAMESPACE::TinyVector<int,3>& g) 
+{
+  MPI_Bcast(g.begin(),3,MPI_INT,0,myMPI);
+}
+
+template<>
+inline void 
 Communicate::bcast(APPNAMESPACE::TinyVector<double,3>& g) 
 {
   MPI_Bcast(g.begin(),3,MPI_DOUBLE,0,myMPI);
@@ -376,6 +382,12 @@ Communicate::bcast(std::vector<double>& g)
   MPI_Bcast(&(g[0]),g.size(),MPI_DOUBLE,0,myMPI);
 }
 
+template<>
+inline void 
+Communicate::bcast(PooledData<double>& g) 
+{
+  MPI_Bcast(&(g[0]),g.size(),MPI_DOUBLE,0,myMPI);
+}
 
 template<>
 inline void
