@@ -23,6 +23,7 @@ namespace qmcplusplus  {
     std::vector<long>   callList;
     std::string lastName = "";
     int numDistinct = 0;
+
     for (int i=0; i<TimerList.size(); i++) {
       NewTimer &timer = *TimerList[i];
       if (timer.get_name() == lastName && lastName != "") {
@@ -40,24 +41,25 @@ namespace qmcplusplus  {
     // Now, we collect date from all nodes in the communicator, and
     // add it up.
     int numToSend = numDistinct;
-    comm->bcast(numToSend);
-    for (int i=0; i<numToSend; i++) {
-      std::string myName = nameList[i];
-      comm->bcast(myName);
-      double myTime = 0.0;
-      long myCalls = 0;
-      for (int j=0; j<nameList.size(); j++) 
-	if (nameList[j] == myName) {
-	  myTime  += timeList[j];
-	  myCalls += callList[j];
-	}
-      comm->allreduce(myTime);
-      comm->allreduce(myCalls);
-      if (comm->rank() == 0) {
-	timeList[i] = myTime;
-	callList[i] = myCalls;
-      }
-    }
+    comm->allreduce(timeList);
+    comm->allreduce(callList);
+    //for (int i=0; i<numToSend; i++) {
+    //  std::string myName = nameList[i];
+    //  comm->bcast(myName);
+    //  double myTime = 0.0;
+    //  long myCalls = 0;
+    //  for (int j=0; j<nameList.size(); j++) 
+    //    if (nameList[j] == myName) {
+    //      myTime  += timeList[j];
+    //      myCalls += callList[j];
+    //    }
+    //  comm->allreduce(myTime);
+    //  comm->allreduce(myCalls);
+    //  if (comm->rank() == 0) {
+    //    timeList[i] = myTime;
+    //    callList[i] = myCalls;
+    //  }
+    //}
     
     bool omp_rank0 = true;
 #ifdef ENABLE_OPENMP
