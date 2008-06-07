@@ -21,7 +21,6 @@
 #include "ParticleBase/ParticleUtility.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "QMCDrivers/DriftOperators.h"
-#include "Message/CommCreate.h"
 //#define TEST_INNERBRANCH
 
 namespace qmcplusplus { 

@@ -19,7 +19,6 @@
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "QMCDrivers/DriftOperators.h"
 #include "OhmmsData/AttributeSet.h"
-#include "Message/CommCreate.h"
 #include "Message/OpenMP.h"
 
 namespace qmcplusplus { 
