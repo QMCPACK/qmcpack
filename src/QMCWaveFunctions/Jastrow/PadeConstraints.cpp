@@ -19,6 +19,7 @@
 #include "QMCWaveFunctions/Jastrow/OneBodyJastrowOrbital.h"
 #include "QMCWaveFunctions/DiffOrbitalBase.h"
 #include "Utilities/IteratorUtility.h"
+#include "Utilities/ProgressReportEngine.h"
 //#include "QMCWaveFunctions/Jastrow/DiffTwoBodyJastrowOrbital.h"
 //#include "QMCWaveFunctions/Jastrow/DiffOneBodyJastrowOrbital.h"
 
@@ -30,6 +31,7 @@ namespace qmcplusplus {
   PadeConstraints::PadeConstraints(ParticleSet& p, TrialWaveFunction& psi, bool nospin):
     OrbitalConstraintsBase(p,psi),IgnoreSpin(nospin)
     {
+      ClassName="PadeConstraints";
       JComponent.set(MULTIPLE);
       JComponent.set(ONEBODY);
       JComponent.set(TWOBODY);
@@ -80,6 +82,9 @@ namespace qmcplusplus {
 
   OrbitalBase* PadeConstraints::createTwoBody() 
   {
+
+    ReportEngine PRE(ClassName,"createTwoBody()");
+
     typedef TwoBodyJastrowOrbital<FuncType> JeeType;
     JeeType *J2 = new JeeType(targetPtcl);
 
@@ -89,7 +94,6 @@ namespace qmcplusplus {
 
     SpeciesSet& species(targetPtcl.getSpeciesSet());
     RealType q=species(0,species.addAttribute("charge"));
-    app_log() << endl << "  PadeConstraints::createTwoBody " << endl;
 
     if(IgnoreSpin) 
     {
@@ -102,7 +106,7 @@ namespace qmcplusplus {
       //DerivFuncType *dfunc=new DerivFuncType(cusp,B);
       //dJ2->addFunc("pade_uu",0,0,dfunc);
       //dFuncList.push_back(dfunc);
-      app_log() << "    Adding Spin-independent Pade Two-Body Jastrow Cusp " << cusp<< endl;
+      app_log() << "    Adding Spin-independent Pade Two-Body Jastrow Cusp " << cusp<< "\n";
     } else {
       RealType cusp_uu=0.25*q;
       RealType cusp_ud=0.5*q;
@@ -120,9 +124,9 @@ namespace qmcplusplus {
       //dFuncList.push_back(dfuncUU);
       //dFuncList.push_back(dfuncUD);
 
-      app_log() << "    Adding Spin-dependent Pade Two-Body Jastrow " << endl;
-      app_log() << "      parallel spin     " << cusp_uu << endl;
-      app_log() << "      antiparallel spin " << cusp_ud << endl;
+      app_log() << "    Adding Spin-dependent Pade Two-Body Jastrow " << "\n";
+      app_log() << "      parallel spin     " << cusp_uu << "\n";
+      app_log() << "      antiparallel spin " << cusp_ud << "\n";
     }
 
 //#if defined(ENABLE_SMARTPOINTER)
@@ -137,7 +141,7 @@ namespace qmcplusplus {
 //
 //    dPsi->resetTargetParticleSet(targetPtcl);
 
-    app_log() << "  PadeConstraints:: B = " << B <<endl << endl;
+    app_log() << "  PadeConstraints:: B = " << B <<"\n";
     return J2;
   }
 

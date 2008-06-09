@@ -18,13 +18,14 @@
 #include "QMCWaveFunctions/Jastrow/CompositeFunctor.h"
 #include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbital.h"
 #include "QMCWaveFunctions/Jastrow/OneBodyJastrowOrbital.h"
-//#include "QMCWaveFunctions/Jastrow/DiffTwoBodyJastrowOrbital.h"
-//#include "QMCWaveFunctions/Jastrow/DiffOneBodyJastrowOrbital.h"
+#include "Utilities/ProgressReportEngine.h"
 
-namespace qmcplusplus {
+namespace qmcplusplus 
+{
   AnyConstraints::AnyConstraints(ParticleSet& p, TrialWaveFunction& psi):
     OrbitalConstraintsBase(p,psi)
     {
+      ClassName="AnyConstraints";
       //note MULTIPLE is false
       JComponent.set(ONEBODY);
       JComponent.set(TWOBODY);
@@ -127,6 +128,9 @@ namespace qmcplusplus {
   AnyConstraints::BasisGroupType* 
     AnyConstraints::createBasisGroup(xmlNodePtr cur, const string& elementType)
  {
+
+    ReportEngine PRE(ClassName,"createBasisGroup(...)");
+
     string type("WM");
 
     RealType cusp=0.0;
@@ -154,6 +158,7 @@ namespace qmcplusplus {
 
   void AnyConstraints::add2BasisGroup(BasisGroupType* curBG, xmlNodePtr cur)
   {
+    ReportEngine PRE(ClassName,"add2BasisGroup(...)");
     typedef LinearCombinationFunctor<RealType> ComboFuncType;
     ComboFuncType* acombo=new ComboFuncType;
     curBG->In_ = acombo; 

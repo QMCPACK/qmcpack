@@ -26,6 +26,7 @@
 #include "QMCWaveFunctions/Jastrow/ThreeBodyBlockSparse.h"
 #include "QMCWaveFunctions/Jastrow/kSpaceJastrowBuilder.h"
 #endif
+#include "Utilities/ProgressReportEngine.h"
 #include "OhmmsData/AttributeSet.h"
 
 namespace qmcplusplus {
@@ -34,6 +35,7 @@ namespace qmcplusplus {
     OrbitalBuilderBase(p,psi), ptclPool(psets)
   {
     resetOptions();
+    ClassName="JastrowBuilder";
   }
 
   void JastrowBuilder::resetOptions()
@@ -101,26 +103,29 @@ namespace qmcplusplus {
 
   bool JastrowBuilder::addOneBody(xmlNodePtr cur) 
   {
-    app_log() << "  JastrowBuilder::addOneBody "<< endl;
+    ReportEngine PRE(ClassName,"addOneBody(xmlNodePtr)");
 
     if(sourceOpt == targetPtcl.getName()) 
     {
-      app_warning() << "  One-Body Jastrow Function needs a source different from " << targetPtcl.getName() << endl;
-      app_warning() << "  Exit JastrowBuilder::addOneBody." << endl;
+      PRE.warning("One-Body Jastrow Function needs a source different from "+targetPtcl.getName()
+          +"\nExit JastrowBuilder::addOneBody.\n");
       return false;
     }
 
     map<string,ParticleSet*>::iterator pa_it(ptclPool.find(sourceOpt));
-    if(pa_it == ptclPool.end()) {
-      app_warning() << "  JastrowBuilder::addOneBody failed. " << sourceOpt << " does not exist" << endl;
+    if(pa_it == ptclPool.end()) 
+    {
+      PRE.warning("JastrowBuilder::addOneBody failed. "+sourceOpt+" does not exist.");
       return false;
     }
 
+    bool success=false;
     ParticleSet* sourcePtcl= (*pa_it).second;
     if(funcOpt == "any")// || funcOpt == "poly")
     {
       OrbitalConstraintsBase* control=0;
       control = new AnyConstraints(targetPtcl,targetPsi);
+      control->setReportLevel(ReportLevel);
       //if(funcOpt == "any")
       //  control = new AnyConstraints(targetPtcl,targetPsi);
       //else
@@ -132,32 +137,36 @@ namespace qmcplusplus {
         control->addOptimizables(targetPsi.VarList);
         targetPsi.addOrbital(j,"J1_WM");
         Children.push_back(control);
-        return true;
+        success=true;
       }
       else
       {
         delete control;
-        return false;
       }
     }
-    else if (funcOpt == "Bspline" ) {
+    else if (funcOpt == "Bspline" ) 
+    {
       app_log() << "\n  Using BsplineBuilder for one-body jastrow with B-spline functions" << endl;
-      OrbitalBuilderBase* sBuilder = new BsplineJastrowBuilder (targetPtcl, targetPsi, *sourcePtcl);
-      Children.push_back(sBuilder);
-      return sBuilder->put(cur);
+      OrbitalBuilderBase* jb = new BsplineJastrowBuilder (targetPtcl, targetPsi, *sourcePtcl);
+      jb->setReportLevel(ReportLevel);
+      Children.push_back(jb);
+      success= jb->put(cur);
     }
     else
     {
       app_log() << "\n  Using JABBuilder for one-body jastrow with analytic functions" << endl;
       OrbitalBuilderBase* jb = new JABBuilder(targetPtcl,targetPsi,ptclPool);
+      jb->setReportLevel(ReportLevel);
       Children.push_back(jb);
-      return jb->put(cur);
+      success=jb->put(cur);
     }
+
+    return success;
   }
 
   bool JastrowBuilder::addTwoBody(xmlNodePtr cur) 
   {
-    app_log() << "  JastrowBuilder::addTwoBody "<< endl;
+    ReportEngine PRE(ClassName,"addTwoBody(xmlNodePtr)");
 
     bool success=false;
     bool useSpline = (targetPtcl.Lattice.BoxBConds[0] && transformOpt == "yes");
@@ -166,24 +175,21 @@ namespace qmcplusplus {
     OrbitalConstraintsBase* control=0;
     if(funcOpt == "any")
     {
-      app_log() << "    Using generic Jastrow Function Builder " <<endl;
       control=new AnyConstraints(targetPtcl,targetPsi);
     }
     else if(funcOpt == "pade") 
     {
-      app_log() << "    Using analytic Pade Jastrow Functor " <<endl;
       if (targetPtcl.Lattice.SuperCellEnum != SUPERCELL_OPEN) {
-	app_warning() << "   Pade Jastrow is requested for a periodic system. Please choose other functors." << endl;
+        PRE.warning("Pade Jastrow is requested for a periodic system. Please choose other functors.");
 	return false;
       }	
-
       control = new PadeConstraints(targetPtcl,targetPsi,ignoreSpin);
     } 
     else if((funcOpt == "Yukawa") || (funcOpt == "RPA")) 
     {
       if(targetPtcl.Lattice.SuperCellEnum == SUPERCELL_OPEN)
       {
-        app_warning() << "   RPA is requested for an open system. Please choose other functors." << endl;
+        PRE.warning("RPA is requested for an open system. Please choose other functors.");
         return false;
       }
       else 
@@ -196,34 +202,38 @@ namespace qmcplusplus {
     //}
     else if(funcOpt == "scaledpade") 
     {
-      app_log() << "    Using analytic Scaled Pade Jastrow Functor " <<endl;
       control = new ScaledPadeConstraints(targetPtcl,targetPsi,ignoreSpin);
     } 
-    else if (funcOpt == "Bspline" ) {
-      app_log() << "\n  Using BsplineBuilder for two-body jastrow with analytic functions" << endl;
+    else if (funcOpt == "Bspline" ) 
+    {
       OrbitalBuilderBase* sBuilder = new BsplineJastrowBuilder (targetPtcl, targetPsi);
       Children.push_back(sBuilder);
-      return sBuilder->put(cur);
+      success=sBuilder->put(cur);
+
+      return success;
     }
-    else //known analytic function
+    else //try analytic functions
     {
-      OrbitalBuilderBase* jbuilder=0;
-      jbuilder = new JAABuilder(targetPtcl,targetPsi);
-      Children.push_back(jbuilder);
-      return jbuilder->put(cur);
+      OrbitalBuilderBase* jb=new JAABuilder(targetPtcl,targetPsi);
+      jb->setReportLevel(ReportLevel);
+      Children.push_back(jb);
+      success=jb->put(cur);
+      return success;
     }
 
+    control->setReportLevel(ReportLevel);
     success=control->put(cur);
     if(!success) {
-      app_error() << "   Failed to buld " << nameOpt << "  Jastrow function " << endl;  
+      PRE.error("Failed to build "+nameOpt+" Jastro function");
       delete control;
       return false;
     }
 
     OrbitalBase* j2=control->createTwoBody();
     if(j2== 0) {
-      app_error() << "     JastrowBuilder::addTwoBody failed to create a two body Jastrow" << endl;
+      PRE.error("No two body Jastrow is added.");
       delete control;
+      return false;
     }
 
     enum {MULTIPLE=0, LONGRANGE, ONEBODY, TWOBODY, THREEBODY, FOURBODY};
@@ -235,7 +245,7 @@ namespace qmcplusplus {
       jcombo->Psi.push_back(j2);
       if(control->JComponent[ONEBODY] && sourceOpt != targetPtcl.getName())
       {
-        app_log() << "    Adding one-body Jastrow function dependent upon two-body " << funcOpt << endl;
+        app_log() << ("Adding one-body Jastrow function dependent upon two-body " + funcOpt + " Jastrow function\n");
         map<string,ParticleSet*>::iterator pa_it(ptclPool.find(sourceOpt));
         if(pa_it != ptclPool.end()) 
         {
@@ -245,7 +255,7 @@ namespace qmcplusplus {
       }
       if(control->JComponent[LONGRANGE])
       {
-        app_log() << "    Adding long-range component of " << funcOpt << "  Jastrow function "<< endl;
+        app_log() << ("Adding  long-range component of " + funcOpt + " Jastrow function\n");
         control->addExtra2ComboOrbital(jcombo);
       }
       targetPsi.addOrbital(jcombo,"J2_LR");
@@ -257,6 +267,7 @@ namespace qmcplusplus {
     }
     control->addOptimizables(targetPsi.VarList);
     Children.push_back(control);
+
     return success;
   }
 
