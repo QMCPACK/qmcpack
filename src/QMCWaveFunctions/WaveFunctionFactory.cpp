@@ -7,7 +7,6 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
@@ -32,7 +31,7 @@
 #if OHMMS_DIM==3 && !defined(QMC_COMPLEX)
 #include "QMCWaveFunctions/AGPDeterminantBuilder.h"
 #endif
-
+#include "Utilities/ProgressReportEngine.h"
 #include "OhmmsData/AttributeSet.h"
 namespace qmcplusplus {
 
@@ -40,9 +39,12 @@ namespace qmcplusplus {
     MPIObjectBase(c), OhmmsElementBase("psi0"),
   targetPtcl(qp),ptclPool(pset),targetPsi(0), myNode(NULL) 
   {
+    ClassName="WaveFunctionFactory";
   }
 
   bool WaveFunctionFactory::build(xmlNodePtr cur, bool buildtree) {
+
+    ReportEngine PRE(ClassName,"build");
 
     if(cur == NULL) return false;
 
@@ -55,12 +57,10 @@ namespace qmcplusplus {
       }
     }
 
-
     if(targetPsi==0) //allocate targetPsi and set the name
     {
       targetPsi  = new TrialWaveFunction(myComm);
       targetPsi->setName(myName);
-      app_log() << "  Creating a trial wavefunction " << myName << endl;
     }
 
     cur = cur->children;
@@ -75,6 +75,7 @@ namespace qmcplusplus {
       else if (cname ==  OrbitalBuilderBase::jastrow_tag) 
       {
         OrbitalBuilderBase *jbuilder = new JastrowBuilder(*targetPtcl,*targetPsi,ptclPool);
+        jbuilder->setReportLevel(ReportLevel);
         success = jbuilder->put(cur);
         addNode(jbuilder,cur);
       }
@@ -82,7 +83,7 @@ namespace qmcplusplus {
       else if(cname == "agp") 
       {
 #if defined(QMC_COMPLEX)
-        app_error() << "  AGPDeterminant cannot be used with QMC_COMPLEX=1" << endl;
+        sendError("AGPDeterminant cannot be used with QMC_COMPLEX=1");
         return false;
 #else
         AGPDeterminantBuilder* agpbuilder = new AGPDeterminantBuilder(*targetPtcl,*targetPsi,ptclPool);
@@ -95,19 +96,17 @@ namespace qmcplusplus {
       cur = cur->next;
     }
 
-    if(OrbitalBuilderBase::print_level>0)
     {
-      app_log() << "  List of optimizable variables " << endl;
+      ReportEngine PREA("TrialWaveFunction","print");
       targetPsi->VarList.print(app_log());
-
-      //set to zero so that nothing is written again
-      OrbitalBuilderBase::print_level=0;
     }
 
     return success;
   }
 
   bool WaveFunctionFactory::addFermionTerm(xmlNodePtr cur) {
+    
+    ReportEngine PRE(ClassName,"addFermionTerm");
 
     OrbitalBuilderBase* detbuilder=0;
 
@@ -118,7 +117,7 @@ namespace qmcplusplus {
     oAttrib.add(nuclei,"source");
     oAttrib.put(cur);
 
-    app_log() << "\n  Slater determinant terms using " << orbtype << endl;
+    //app_log() << "\n  Slater determinant terms using " << orbtype << endl;
 
 #if defined(QMC_COMPLEX)
     if(orbtype == "electron-gas") 
@@ -141,12 +140,12 @@ namespace qmcplusplus {
     //} 
     else 
     {
-      app_log() << "  Creating concrete SlaterDeterminant class with SlaterDetBuilder." << endl;
       detbuilder = new SlaterDetBuilder(*targetPtcl,*targetPsi,ptclPool);
     }
 
     if(detbuilder) 
     {//valid determinant set
+      detbuilder->setReportLevel(ReportLevel);
       detbuilder->put(cur);
       addNode(detbuilder,cur);
       return true;
@@ -173,17 +172,21 @@ namespace qmcplusplus {
   WaveFunctionFactory::clone(ParticleSet* qp, int ip, const string& aname) 
   {
     WaveFunctionFactory* aCopy= new WaveFunctionFactory(qp,ptclPool,myComm);
+    //turn off the report for the clones
+    aCopy->setReportLevel(0);
     aCopy->setName(aname);
     aCopy->build(myNode,false);
     myClones[ip]=aCopy;
     return aCopy;
   }
 
-  WaveFunctionFactory::~WaveFunctionFactory() {
+  WaveFunctionFactory::~WaveFunctionFactory() 
+  {
     //clean up everything
   }
 
-  bool WaveFunctionFactory::get(std::ostream& ) const {
+  bool WaveFunctionFactory::get(std::ostream& ) const 
+  {
     return true;
   }
 
