@@ -16,8 +16,8 @@
 #ifndef QMCPLUSPLUS_BSPLINE_FUNCTOR_H
 #define QMCPLUSPLUS_BSPLINE_FUNCTOR_H
 #include "Numerics/OptimizableFunctorBase.h"
+#include "Utilities/ProgressReportEngine.h"
 #include "OhmmsData/AttributeSet.h"
-#include <sstream>
 #include <cstdio>
 
 namespace qmcplusplus {
@@ -73,24 +73,28 @@ namespace qmcplusplus {
       SplineCoefs[0] = Parameters[1] - 2.0*DeltaR * CuspValue;
       for (int i=2; i<Parameters.size(); i++)
         SplineCoefs[i+1] = Parameters[i];
-#if !defined(HAVE_MPI)
-      // string fname = (elementType != "") ? elementType : pairType;
-      // fname = fname + ".dat";
-      // // fprintf (stderr, "Writing %s file.\n", fname.c_str());
-      // FILE *fout = fopen (fname.c_str(), "w");
-      // for (real_type r=1.0e-5; r<Rcut; r+=0.01) {
-      //   real_type eps = 1.0e-6;
-      //   real_type du, d2u, du_FD, d2u_FD;
-      //   real_type u = evaluate (r, du, d2u);
-      //   real_type uplus  = evaluate(r+eps);
-      //   real_type uminus = evaluate(r-eps);
-      //   du_FD  = (uplus-uminus)/(2.0*eps);
-      //   d2u_FD = (uplus+uminus-2.0*u)/(eps*eps);
-      //   fprintf (fout, "%1.10e %1.10e %1.10e %1.10e %1.10e %1.10e\n", 
-      //       r, evaluate(r), du, du_FD, d2u, d2u_FD);
-      // }
-      // fclose (fout);
-#endif
+//#if !defined(HAVE_MPI)
+//      string fname = (elementType != "") ? elementType : pairType;
+//      fname = fname + ".dat";
+//      // fprintf (stderr, "Writing %s file.\n", fname.c_str());
+//      FILE *fout = fopen (fname.c_str(), "w");
+//      for (real_type r=1.0e-5; r<Rcut; r+=0.01) {
+//        real_type eps = 1.0e-6;
+//        real_type du, d2u, du_FD, d2u_FD;
+//        real_type u = evaluate (r, du, d2u);
+//        real_type uplus  = evaluate(r+eps);
+//        real_type uminus = evaluate(r-eps);
+//        du_FD  = (uplus-uminus)/(2.0*eps);
+//        d2u_FD = (uplus+uminus-2.0*u)/(eps*eps);
+//        fprintf (fout, "%1.10e %1.10e %1.10e %1.10e %1.10e %1.10e\n", 
+//            r, evaluate(r), du, du_FD, d2u, d2u_FD);
+//      }
+//      fclose (fout);
+//      //cerr << "SplineCoefs = ";
+//      //for (int i=0; i<SplineCoefs.size(); i++)
+//      //  cerr << SplineCoefs[i] << " ";
+//      //cerr << endl;
+//#endif
     }
 
     inline real_type evaluate(real_type r) {
@@ -210,6 +214,7 @@ namespace qmcplusplus {
     
     bool put(xmlNodePtr cur) 
     {
+      ReportEngine PRE("BsplineFunctor","put(xmlNodePtr)");
       //CuspValue = -1.0e10;
       NumParams = 0;
       Rcut = 0.0;
@@ -218,15 +223,13 @@ namespace qmcplusplus {
       rAttrib.add(Rcut,        "rcut");
       rAttrib.put(cur);
 
-      if (NumParams == 0) {
-	app_error() << "You must specify a positive number of parameters for the "
-		    << "Bspline jastrow function.\n";
-	APP_ABORT("BsplineFunctor::put failed. No parameters are given");
-      }
-      else
+      if (NumParams == 0) 
       {
-        app_log() << "   Adding " << NumParams << " parameters " << endl;
+        PRE.error("You must specify a positive number of parameters for the Bspline jastrow function.",true);
       }
+      app_log() << " size = " << NumParams << " parameters " << endl;
+      app_log() << " cusp = " << CuspValue << endl;
+      app_log() << " rcut = " << Rcut << endl;
 
       resize (NumParams);
 
@@ -243,10 +246,9 @@ namespace qmcplusplus {
           cAttrib.add(type, "type");
           cAttrib.put(xmlCoefs);
 
-          if (type != "Array") {
-            app_error() << "Unknown correlation type """ << type 
-              << """ in BsplineFunctor.\n"
-              << "Resetting to ""Array"".\n";
+          if (type != "Array") 
+          {
+            PRE.error( "Unknown correlation type " + type + " in BsplineFunctor." + "Resetting to \"Array\"");
             xmlNewProp (xmlCoefs, (const xmlChar*) "type", (const xmlChar*) "Array");
           }
 
