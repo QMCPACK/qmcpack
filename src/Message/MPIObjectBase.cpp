@@ -20,20 +20,40 @@
 namespace APPNAMESPACE
 {
 
-  MPIObjectBase::MPIObjectBase(Communicate* c): myComm(0)
+  MPIObjectBase::MPIObjectBase(Communicate* c): ReportLevel(1),
+  myComm(0), ClassName("MPIObjectBase")
   {
     initCommunicator(c);
+    if(myComm->rank()) ReportLevel=0;
   }
 
+  MPIObjectBase::MPIObjectBase(const MPIObjectBase& a): myComm(0) 
+  {}
+
   MPIObjectBase::~MPIObjectBase()
-  {
-  }
+  {}
 
   void MPIObjectBase::initCommunicator(Communicate* c)
   {
     if(myComm && myComm == c) return;
     myComm = c ? c:OHMMS::Controller;
   }
+
+  void MPIObjectBase::setReportLevel(int level)
+  {
+    //demote the level if not the head node
+    if(myComm->rank()) 
+      ReportLevel=0;
+    else 
+      ReportLevel=level;
+    //if(ReportLevel)
+    //{//inherit the global info streams
+    //  LogBuffer.set(*OhmmsInfo::Log,ClassName);
+    //  WarnBuffer.set(*OhmmsInfo::Warn);
+    //  ErrorBuffer.set(*OhmmsInfo::Error);
+    //}
+  }
+
 }
 /***************************************************************************
  * $RCSfile$   $Author: jnkim $
