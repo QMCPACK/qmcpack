@@ -24,7 +24,7 @@
   */
 namespace qmcplusplus {
 
-  int OrbitalBuilderBase::print_level=1;
+  //int OrbitalBuilderBase::print_level=1;
 
   string OrbitalBuilderBase::wfs_tag="wavefunction";  
 

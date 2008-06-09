@@ -42,8 +42,8 @@ namespace qmcplusplus {
     typedef TrialWaveFunction::GradType  GradType;    
     typedef map<string,ParticleSet*> PtclPoolType;
 
-    ///level of printing
-    static int print_level;
+    /////level of printing
+    //static int print_level;
 
     /** \ingroup XMLTags 
      *@{
@@ -88,7 +88,6 @@ namespace qmcplusplus {
     virtual bool put(xmlNodePtr cur) = 0;
 
   protected:
-
     /// reference to the particle set on which targetPsi is defined
     ParticleSet& targetPtcl;
 
