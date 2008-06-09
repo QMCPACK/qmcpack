@@ -21,7 +21,7 @@
 #include "QMCWaveFunctions/LocalizedBasisSet.h"
 #include "QMCWaveFunctions/MolecularOrbitals/AtomicBasisBuilder.h"
 #include "QMCWaveFunctions/LCOrbitalSet.h"
-#include "Message/Communicate.h"
+#include "Utilities/ProgressReportEngine.h"
 
 namespace qmcplusplus {
 
@@ -45,11 +45,19 @@ namespace qmcplusplus {
      * \param ions reference to the ions
      */
     MolecularBasisBuilder(ParticleSet& els, ParticleSet& ions):
-      targetPtcl(els), sourcePtcl(ions), thisBasisSet(0) { }   
+      targetPtcl(els), sourcePtcl(ions), thisBasisSet(0) 
+      { 
+        ClassName="MolecularBasisBuilder";
+      }   
 
-    bool put(xmlNodePtr cur) {
+    bool put(xmlNodePtr cur) 
+    {
 
       if(myBasisSet) return true;
+
+      ReportEngine PRE(ClassName,"put(xmlNodePtr)");
+
+      PRE.echo(cur);
 
       DistanceTableData* d_table=DistanceTable::add(sourcePtcl,targetPtcl);
 
@@ -63,16 +71,17 @@ namespace qmcplusplus {
         string cname((const char*)(cur->name));
         if(cname == "atomicBasisSet") {
           const xmlChar* eptr=xmlGetProp(cur,(const xmlChar*)"elementType");
-          if(eptr == NULL) {
-            app_error() << "   Missing elementType attribute of atomicBasisSet.\n"
-              << " Abort at MOBasisBuilder::put " << endl;
-            APP_ABORT("MolecularBasisBuilder::put");
+          if(eptr == NULL) 
+          {
+            //fatal error
+            PRE.error("Missing elementType attribute of atomicBasisSet.",true);
           }
           string elementType((const char*)eptr);
 
           map<string,BasisSetBuilder*>::iterator it = aoBuilders.find(elementType); 
           if(it == aoBuilders.end()) {
             AtomicBasisBuilder<RFB>* any = new AtomicBasisBuilder<RFB>(elementType);
+            any->setReportLevel(ReportLevel);
             any->put(cur);
             COT* aoBasis= any->createAOSet(cur);
             if(aoBasis) { //add the new atomic basis to the basis set
@@ -80,8 +89,10 @@ namespace qmcplusplus {
               thisBasisSet->add(activeCenter, aoBasis);
             }
             aoBuilders[elementType]=any;
-          } else {
-            WARNMSG("Species " << elementType << " is already initialized. Ignore the input.")
+          } 
+          else 
+          {
+            PRE.warning("Species "+elementType+" is already initialized. Ignore the input.");
           }
         }
         cur = cur->next;
@@ -90,19 +101,33 @@ namespace qmcplusplus {
       //resize the basis set
       thisBasisSet->setBasisSetSize(-1);
       myBasisSet=thisBasisSet;
+
       return true;
     }
 
     SPOSetBase* createSPOSet(xmlNodePtr cur) {
+
+      ReportEngine PRE(ClassName,"createSPO(xmlNodePtr)");
+
+      SPOSetBase *lcos=0;
       cur = cur->xmlChildrenNode;
       while(cur!=NULL) {
         string cname((const char*)(cur->name));
-        if(cname.find("coeff") < cname.size()) {
-          return new LCOrbitalSet<ThisBasisSetType,false>(thisBasisSet);
+        if(cname.find("coeff") < cname.size()) 
+        {
+          app_log() << "Creating LCOrbitalSet with the Identity coefficient" << endl;
+          lcos= new LCOrbitalSet<ThisBasisSetType,false>(thisBasisSet,ReportLevel);
         }
         cur=cur->next;
       }
-      return new LCOrbitalSet<ThisBasisSetType,true>(thisBasisSet);
+
+      if(lcos==0)
+      {
+        app_log() << "Creating LCOrbitalSet with the input coefficients" << endl;
+        lcos = new LCOrbitalSet<ThisBasisSetType,true>(thisBasisSet,ReportLevel);
+      }
+
+      return lcos;
     }
 
   private:

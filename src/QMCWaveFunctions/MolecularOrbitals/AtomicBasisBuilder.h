@@ -16,6 +16,7 @@
 #ifndef QMCPLUSPLUS_ATOMICORBITALBUILDER_H
 #define QMCPLUSPLUS_ATOMICORBITALBUILDER_H
 
+#include "Utilities/ProgressReportEngine.h"
 #include "OhmmsData/AttributeSet.h"
 
 namespace qmcplusplus {
@@ -67,7 +68,9 @@ namespace qmcplusplus {
   }
 
   template<class RFB>
-  bool AtomicBasisBuilder<RFB>::put(xmlNodePtr cur) {
+  bool AtomicBasisBuilder<RFB>::put(xmlNodePtr cur) 
+  {
+    ReportEngine PRE("AtomicBasisBuilder","put(xmlNodePtr)");
     //Register valid attributes attributes
     OhmmsAttributeSet aAttrib;
     //aAttrib.add(elementType,"elementType"); aAttrib.add(elementType,"species");
@@ -76,6 +79,8 @@ namespace qmcplusplus {
     aAttrib.add(addsignforM,"expM"); 
     aAttrib.add(Morder,"expandYlm"); 
     aAttrib.put(cur);
+
+    PRE.echo(cur);
 
     if(sph == "spherical") addsignforM=1; //include (-1)^m
     if(Morder == "gaussian") {
@@ -92,6 +97,8 @@ namespace qmcplusplus {
   template<class RFB>
   typename AtomicBasisBuilder<RFB>::COT*
   AtomicBasisBuilder<RFB>::createAOSet(xmlNodePtr cur) {
+
+    ReportEngine PRE("AtomicBasisBuilder","createAOSet(xmlNodePtr)");
 
     app_log() << "  AO BasisSet for " << elementType << "\n";
     if(addsignforM) 
@@ -218,7 +225,7 @@ namespace qmcplusplus {
           if(radFuncBuilder.addRadialOrbital(cur1,nlms)) {
             RnlID[rnl] = nl;
             int l = nlms[q_l];
-            LOGMSG("Adding " << 2*l+1 << " spherical orbitals")
+            app_log()<< "   Adding " << 2*l+1 << " spherical orbitals"<<endl;
             for(int tm=-l; tm<=l; tm++,num++) {
               aos->LM[num] = aos->Ylm.index(l,tm);  aos->NL[num] = nl;
             }
