@@ -76,8 +76,6 @@ namespace qmcplusplus {
     bool TranslateGrid;
     ///if true, the input grid is not fixed. 
     bool FloatingGrid;
-    ///if true, write stuff
-    bool print_log;
     ///boolean to enable debug with EG
     bool DebugWithEG;
     ///number of SPOs created by this buidlder

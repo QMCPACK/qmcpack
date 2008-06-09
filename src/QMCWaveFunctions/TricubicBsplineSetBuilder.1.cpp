@@ -16,8 +16,8 @@
 #include "QMCWaveFunctions/TricubicBsplineSetBuilder.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Numerics/OhmmsBlas.h"
-#include "Message/Communicate.h"
 #include "Message/OpenMP.h"
+#include "Utilities/ProgressReportEngine.h"
 namespace qmcplusplus {
 
   template<typename T1, typename T2>
@@ -36,6 +36,8 @@ namespace qmcplusplus {
     void 
     TricubicBsplineSetBuilder::readData(const char* hroot, const vector<int>& occSet, int spinIndex, int degeneracy)
     {
+      ReportEngine PRE(ClassName,"readData");
+
       bool truncate = (myParam->Rcut>0.0);
       int norb=occSet.size()/degeneracy;
       typedef Array<Tin,DIM> InArrayType;
@@ -43,13 +45,11 @@ namespace qmcplusplus {
       StorageType inData(BoxGrid[0],BoxGrid[1],BoxGrid[2]);
 
       getCenterAndOrigin(hroot,occSet,norb);
-      if(print_log)
-      { 
-        if(bspline_data_check<Tin,Tout>::is_same)
-          app_log() << "  TBSB::readData No data conversion is needed." << endl;
-        else
-          app_log() << "  TBSB::readData Data conversion is done. " << endl;
-      }
+
+      if(bspline_data_check<Tin,Tout>::is_same)
+        PRE<<"  No data conversion is needed.\n";
+      else
+        PRE<< "  Data conversion is done.\n";
       
 
       for(int iorb=0; iorb<norb; iorb++) 
@@ -60,12 +60,14 @@ namespace qmcplusplus {
         map<string,RSOType*>::iterator it(BigDataSet.find(wnshort.str()));
         if(it == BigDataSet.end()) 
         {
-          if(print_log)
+          if(ReportLevel)
           {
-            app_log() << "   Reading spline function " << eigvName << " (" << wnshort.str()  << ")"  << endl;
+            PRE << "   Reading spline function " << eigvName << " (" << wnshort.str()  << ")";
             if(truncate) 
-              app_log() << "     center=" << activeBasis->Centers[iorb] << endl;
+              PRE<< "\n     center=" << activeBasis->Centers[iorb];
+            PRE<<"\n";
           }
+
           StorageType* newP=new StorageType;
           BigDataSet[wnshort.str()]=new RSOType(activeBasis->Centers[iorb],activeBasis->Origins[iorb],newP);
           if(bspline_data_check<Tin,Tout>::is_same)
@@ -83,11 +85,12 @@ namespace qmcplusplus {
         } 
         else 
         {
-          if(print_log)
+          if(ReportLevel)
           {
-            app_log() << "   Reusing spline function " << eigvName << " (" << wnshort.str()  << ")" << endl;
+            PRE << "   Reusing spline function " << eigvName << " (" << wnshort.str()  << ")";
             if(truncate) 
-              app_log() << "     center=" << activeBasis->Centers[iorb] << endl;
+              PRE<< "\n     center=" << activeBasis->Centers[iorb];
+            PRE<<"\n";
           }
           activeBasis->add(iorb,(*it).second->Coeffs);
         }
@@ -98,6 +101,8 @@ namespace qmcplusplus {
   template<typename Tin, typename Tout>
   void TricubicBsplineSetBuilder::readDataOMP(const char* hroot, const vector<int>& occSet, int spinIndex, int degeneracy)
   {
+    ReportEngine PRE(ClassName,"readDataOMP");
+
     if(BigDataSet.size()) //data exist, use the standard one
     {
       readData<Tin,Tout>(hroot,occSet,spinIndex,degeneracy);
@@ -121,7 +126,7 @@ namespace qmcplusplus {
 #pragma omp critical
         {
           string eigvName=myParam->getEigVectorName(hroot,occSet[iorb]/degeneracy,spinIndex);
-          app_log() << "   Reading spline function " << ip << " "  << eigvName << endl;
+          PRE << "   Reading spline function " << ip << " "  << eigvName <<'\n';
           if(bspline_data_check<Tin,Tout>::is_same)
           {
             HDFAttribIO<StorageType> dummy(inData);
@@ -148,10 +153,13 @@ namespace qmcplusplus {
       wnshort<<curH5Fname << "#"<<occSet[iorb]/degeneracy << "#" << spinIndex;
       BigDataSet[wnshort.str()]=new RSOType(activeBasis->Centers[iorb],activeBasis->Origins[iorb],bsset[iorb]);
     } 
+
   }
 
   void TricubicBsplineSetBuilder::setBsplineBasisSet(xmlNodePtr cur)
   {
+    ReportEngine PRE(ClassName,"setBsplineBasisSet");
+
     int norb(0);
     int degeneracy(1);
     string ompIn("no");
@@ -245,16 +253,16 @@ namespace qmcplusplus {
     { 
       if(myParam->Rcut>0.0)//duplicate only the localized orbitals
       {
-        if(print_log)
-          app_log() << "  Tiling localized orbitals by " << BoxDup << endl;
+        PRE<<"Tiling localized orbitals by " << BoxDup << "\n";
         activeBasis->tileOrbitals(BoxDup);
       }
       else
       {
-        app_error() << "  Tiling is not allowed with non-localized orbitals." << endl;
-        abort(); //FIXABORT
+        //fatal
+        PRE.error("Tiling is not allowed with non-localized orbitals.",true);
       }
     }
+
   }
 
   void TricubicBsplineSetBuilder::getCenterAndOrigin(const char* hroot, const vector<int>& occSet, int norb)

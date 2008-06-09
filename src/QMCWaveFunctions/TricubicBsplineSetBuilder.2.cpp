@@ -16,16 +16,19 @@
 #include "QMCWaveFunctions/TricubicBsplineSetBuilder.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Numerics/OhmmsBlas.h"
-#include "Message/Communicate.h"
 #include "Message/OpenMP.h"
 #include "Utilities/IteratorUtility.h"
+#include "Utilities/ProgressReportEngine.h"
 namespace qmcplusplus {
 
   void TricubicBsplineSetBuilder::readComplex2RealDataWithTruncation(const char* hroot, 
       const vector<int>& occSet, int spinIndex, int degeneracy)
   {
 
-    if(BigDataSet.size()) {
+    ReportEngine PRE(ClassName,"readComplex2RealDataWithTruncation");
+
+    if(BigDataSet.size()) 
+    {
       int norb=occSet.size()/degeneracy;
       for(int iorb=0; iorb<norb; iorb++)
       {
@@ -36,9 +39,9 @@ namespace qmcplusplus {
         activeBasis->Centers[iorb]=phi.Center;
         activeBasis->Origins[iorb]=phi.Origin;
         activeBasis->add(iorb,phi.Coeffs);
-        app_log() << "   Reusing spline function " << wnshort.str()  <<  endl;
-        app_log() << "     center=" << activeBasis->Centers[iorb] << endl;
-        app_log() << "     origin=" << activeBasis->Origins[iorb] << endl;
+        PRE << "Reusing spline function " << wnshort.str()  <<  '\n';
+        PRE << "  center=" << activeBasis->Centers[iorb] << '\n';
+        PRE << "  origin=" << activeBasis->Origins[iorb] << '\n';
       }
       return;
     }
@@ -80,13 +83,10 @@ namespace qmcplusplus {
     activeBasis->setGrid(0.0,bc[0]*dataKnot.dx, 0.0,bc[1]*dataKnot.dy, 0.0,bc[2]*dataKnot.dz,
         bc[0],bc[1],bc[2],false,false,false,true);
 
-    if(print_log) 
-    {
-      app_log() << "    Truncated grid for localized orbitals " << bc << endl;
+    app_log() << "    Truncated grid for localized orbitals " << bc << "\n";
       //app_log() << "    Grid-spacing of the input grid " << dataKnot.dx << " " << dataKnot.dy << " " << dataKnot.dz << endl;
       //app_log() << "    Grid-spacing of the truncated grid " << activeBasis->bKnots.dx << " " 
       //  << activeBasis->bKnots.dy << " " << activeBasis->bKnots.dz << endl;
-    }
 
     vector<vector<int>* > gIndex;
     for(int idim=0; idim<DIM; idim++) gIndex.push_back(new vector<int>(bc[idim]));
@@ -199,9 +199,9 @@ namespace qmcplusplus {
         BigDataSet[wnshort.str()]=new RSOType(center,origin,newP);
         activeBasis->add(iorb,inTrunc,newP);
 
-        app_log() << "   Reading spline function " << eigvName << " (" << wnshort.str()  << ")"  << endl;
-        app_log() << "     center=" << activeBasis->Centers[iorb] << endl;
-        app_log() << "     origin=" << activeBasis->Origins[iorb] << endl;
+        app_log() << "Reading spline function " << eigvName << " (" << wnshort.str()  << ")"  << endl;
+        app_log() << "  center=" << activeBasis->Centers[iorb] << endl;
+        app_log() << "  origin=" << activeBasis->Origins[iorb] << endl;
       }
       else 
       {
@@ -209,9 +209,9 @@ namespace qmcplusplus {
         activeBasis->Centers[iorb]=phi.Center;
         activeBasis->Origins[iorb]=phi.Origin;
         activeBasis->add(iorb,phi.Coeffs);
-        app_log() << "   Reusing spline function " << eigvName << " (" << wnshort.str()  << ")"  << endl;
-        app_log() << "     center=" << activeBasis->Centers[iorb] << endl;
-        app_log() << "     origin=" << activeBasis->Origins[iorb] << endl;
+        app_log() << "Reusing spline function " << eigvName << " (" << wnshort.str()  << ")\n";
+        app_log() << "  center=" << activeBasis->Centers[iorb] << "\n";
+        app_log() << "  origin=" << activeBasis->Origins[iorb] << "\n";
       }
     }
 
@@ -219,6 +219,7 @@ namespace qmcplusplus {
     H5Gclose(heig);
     H5Fclose(h5out);
     delete_iter(gIndex.begin(),gIndex.end());
+
     //abort();
   }
 
