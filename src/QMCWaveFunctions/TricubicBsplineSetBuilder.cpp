@@ -24,8 +24,7 @@
 #include "QMCWaveFunctions/OrbitalBuilderBase.h"
 #include "OhmmsData/AttributeSet.h"
 #include "ParticleIO/ParticleLayoutIO.h"
-#include "Utilities/Timer.h"
-#include "Message/Communicate.h"
+#include "Utilities/ProgressReportEngine.h"
 //#define DEBUG_BSPLINE_EG
 namespace qmcplusplus {
 
@@ -34,14 +33,14 @@ namespace qmcplusplus {
   map<string,TricubicBsplineSetBuilder::RSOType*> TricubicBsplineSetBuilder::BigDataSet;
 
   TricubicBsplineSetBuilder::TricubicBsplineSetBuilder(ParticleSet& p, PtclPoolType& psets, xmlNodePtr cur):
-    targetPtcl(p),ptclPool(psets),OpenEndGrid(false),TranslateGrid(false),FloatingGrid(false),print_log(false),
+    targetPtcl(p),ptclPool(psets),OpenEndGrid(false),TranslateGrid(false),FloatingGrid(false),
     CurSPOSize(0),BoxGrid(2),BoxDup(1),LowerBox(0.0),UpperBox(1.0),
   rootNode(cur)
   {
+    ClassName="TricubicBsplineSetBuilder";
     basisLattice=p.Lattice;
     for(int idim=0; idim<DIM; idim++) UpperBox[idim]=targetPtcl.Lattice.R(idim,idim);
     myParam=new PWParameterSet;
-    print_log = OrbitalBuilderBase::print_level>0;
   }   
 
   TricubicBsplineSetBuilder::~TricubicBsplineSetBuilder()
@@ -53,8 +52,9 @@ namespace qmcplusplus {
    */
   bool TricubicBsplineSetBuilder::put(xmlNodePtr cur){
 
-    curH5Fname.clear();
+    ReportEngine PRE(ClassName,"put(xmlNodePtr)");
 
+    curH5Fname.clear();
 
     //save the name of current HDF5 file name
     OhmmsAttributeSet aAttrib;
@@ -107,14 +107,12 @@ namespace qmcplusplus {
       //}
       cur=cur->next;
     }
-    if(print_log)
-    {
-      app_log() << "  TricubicBsplineSetBuilder set a global box " << endl;
-      app_log() << "    Lower box " << LowerBox << endl;
-      app_log() << "    Upper box " << UpperBox << endl;
-      app_log() << "    Box grid "  << BoxGrid << endl;
-      app_log() << "    Box Expansion "  << BoxDup << endl;
-    }
+    PRE << "TricubicBsplineSetBuilder set a global box\n";
+    PRE << "Lower box =" << LowerBox << "\n";
+    PRE << "Upper box =" << UpperBox << "\n";
+    PRE << "Box grid ="  << BoxGrid << "\n";
+    PRE << "Box Expansion ="  << BoxDup << "\n";
+
     return true;
   }
 
@@ -126,6 +124,9 @@ namespace qmcplusplus {
    */
   SPOSetBase*
   TricubicBsplineSetBuilder::createSPOSet(xmlNodePtr cur){
+
+    ReportEngine PRE(ClassName, "createSPOSet");
+
     //return createSPOSetWithEG();
     //stage 1: get the general parameters, e.g., source, twist angle
     int norb(0);
@@ -138,21 +139,22 @@ namespace qmcplusplus {
 
     if(curH5Fname.empty())
     {
-      app_error() << "No Valid HDF5 is provided for TricubicBsplineSetBuilder." << endl;
-      app_error() << "Abort TricubicBsplineSetBuilder::createSPOSet(xmlNodePtr cur)" << endl;
-      abort(); //FIXABORT
+      //fatal
+      PRE.error("No Valid HDF5 is provided for TricubicBsplineSetBuilder.",true);
     }
 
     if(norb ==0) {
       norb=targetPtcl.last(CurSPOSize)-targetPtcl.first(CurSPOSize);
-      app_log() << "TricubicBsplineSetBuilder::createSPOSet missing size of the determinant. ";
-      app_log() << "Overwrite by the particle groups. " << norb << endl;
+      PRE <<"TricubicBsplineSetBuilder::createSPOSet missing size of the determinant.\n";
+      PRE <<"Overwrite by the particle groups. " << norb << "\n";
+
       std::ostringstream norb_size;
       norb_size << norb;
       xmlNewProp(cur,(const xmlChar*)"size",(const xmlChar*)norb_size.str().c_str());
     }
 
-    if(print_log) app_log() << "    HDF5 File = " << curH5Fname << endl;
+    PRE <<"HDF5 File = " << curH5Fname << "\n";
+
     hfileID = H5Fopen(curH5Fname.c_str(),H5F_ACC_RDWR,H5P_DEFAULT);
     //check the version
     myParam->checkVersion(hfileID);
@@ -163,7 +165,7 @@ namespace qmcplusplus {
     string tname=myParam->getTwistAngleName();
     HDFAttribIO<PosType> hdfobj_twist(TwistAngle);
     hdfobj_twist.read(hfileID,tname.c_str());
-    if(print_log)  app_log() << "    Twist-angle " << TwistAngle << endl;
+    PRE<<"Twist-angle " << TwistAngle << "\n";
 
     //stage 2: analyze the supercell to choose a specialized bspline function
     bool atGamma= (dot(TwistAngle,TwistAngle)<numeric_limits<RealType>::epsilon());
@@ -210,19 +212,19 @@ namespace qmcplusplus {
         {
           if(TranslateGrid)
           {
-            if(print_log) app_log() << "   Bspline3DSet_MLW with truncated grid" << endl;
+            PRE <<"Bspline3DSet_MLW with truncated grid\n";
             activeBasis=new Bspline3DSet_MLW;
           }
           else 
           {
             if(orthorhombic)
             {
-              if(print_log)  app_log() << "    Bspline3DSet_Ortho_Trunc" << endl;
+              PRE <<"Bspline3DSet_Ortho_Trunc\n";
               activeBasis = new Bspline3DSet_Ortho_Trunc;
             }
             else
             {
-              if(print_log) app_log() << "    Bspline3DSet_Gen_Trunc " << endl;
+              PRE <<"Bspline3DSet_Gen_Trunc\n";
               activeBasis = new Bspline3DSet_Gen_Trunc;
             } 
           }
@@ -231,12 +233,12 @@ namespace qmcplusplus {
         {
           if(orthorhombic)
           {
-            if(print_log)  app_log() << "    Bspline3DSet_Ortho " << endl;
+            PRE <<"Bspline3DSet_Ortho\n";
             activeBasis = new Bspline3DSet_Ortho;
           }
           else
           {
-            if(print_log)  app_log() << "    Bspline3DSet_Gen " << endl;
+            PRE <<"Bspline3DSet_Gen\n";
             activeBasis = new Bspline3DSet_Gen;
           }
         }
@@ -244,15 +246,14 @@ namespace qmcplusplus {
 #if defined(QMC_COMPLEX)
       else //any k-point
       {
-        if(print_log) app_log() << "    Bspline3DSet_Twist" << endl;
+        PRE <<"Bspline3DSet_Twist\n";
         activeBasis = new Bspline3DSet_Twist;
       }
 #endif
 
       if(activeBasis == 0) 
-      {
-        app_error() << "  Failed to create a Bspline functon. Abort. " << endl;
-        abort(); //FIXABORT
+      {//fatal error
+        PRE.error("Failed to create a Bspline functon.",true);
       }
 
       //initialize the grid
@@ -275,7 +276,7 @@ namespace qmcplusplus {
 
     H5Fclose(hfileID);
     hfileID=-1;
-    app_log() << "  Bspline Input = " << t1.elapsed() << " secs " << endl;
+    PRE << "Bspline Input = " << t1.elapsed() << " secs\n";
 
     //incremenet SPOSize
     CurSPOSize++;
