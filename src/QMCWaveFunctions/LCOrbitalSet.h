@@ -33,6 +33,8 @@ namespace qmcplusplus {
 
   public:
 
+    ///level of printing
+    int ReportLevel;
     ///pointer to the basis set
     BS* myBasisSet;
     ValueMatrix_t Temp;
@@ -42,7 +44,8 @@ namespace qmcplusplus {
      * @param bs pointer to the BasisSet
      * @param id identifier of this LCOrbitalSet
      */
-    LCOrbitalSet(BS* bs=0): myBasisSet(0) {
+    LCOrbitalSet(BS* bs=0,int rl=0): myBasisSet(0),ReportLevel(rl) 
+    {
       if(bs) setBasisSet(bs);
     }
 
@@ -129,6 +132,8 @@ namespace qmcplusplus {
 
   public:
 
+    ///level of printing
+    int ReportLevel;
     ///pointer to the basis set
     BS* myBasisSet;
 
@@ -138,7 +143,7 @@ namespace qmcplusplus {
      * @param bs pointer to the BasisSet
      * @param id identifier of this LCOrbitalSet
      */
-    LCOrbitalSet(BS* bs=0): myBasisSet(0) {
+    LCOrbitalSet(BS* bs=0,int rl=0): myBasisSet(0),ReportLevel(rl) {
       if(bs) setBasisSet(bs);
     }
 
