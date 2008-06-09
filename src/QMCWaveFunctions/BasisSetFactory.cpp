@@ -25,7 +25,7 @@
   #include "QMCWaveFunctions/EinsplineSetBuilder.h"
   #endif
 #endif
-#include "Message/Communicate.h"
+#include "Utilities/ProgressReportEngine.h"
 #include "OhmmsData/AttributeSet.h"
 
 namespace qmcplusplus {
@@ -38,7 +38,7 @@ namespace qmcplusplus {
   BasisSetFactory::BasisSetFactory(ParticleSet& els, TrialWaveFunction& psi, PtclPoolType& psets):
   OrbitalBuilderBase(els,psi), ptclPool(psets)
   {
-
+    ClassName="BasisSetFactory";
   }
 
   bool BasisSetFactory::put(xmlNodePtr cur) {
@@ -46,6 +46,8 @@ namespace qmcplusplus {
   }
 
   void BasisSetFactory::createBasisSet(xmlNodePtr cur, xmlNodePtr rootNode) {
+
+    ReportEngine PRE(ClassName,"createBasisSet");
 
     string sourceOpt("ion0");
     string typeOpt("MolecularOrbital");
@@ -59,6 +61,7 @@ namespace qmcplusplus {
     if(rootNode != NULL)  aAttrib.put(rootNode);
 
     BasisSetBuilder* bb=0;
+
     //if(typeOpt == "spline") {
     //  app_log() << "  SplineSetBuilder: spline on 3D TriCubicGrid " << endl;
     //  bb = new SplineSetBuilder(targetPtcl,ptclPool);
@@ -67,13 +70,13 @@ namespace qmcplusplus {
 #if OHMMS_DIM==3
     if(typeOpt == "bspline" || typeOpt== "spline")
     {
-      app_log() << "  TricubicBsplineSetBuilder: b-spline on 3D TriCubicGrid " << endl;
+      PRE << "TEMP  TricubicBsplineSetBuilder: b-spline on 3D TriCubicGrid.\n";
       bb = new TricubicBsplineSetBuilder(targetPtcl,ptclPool,rootNode);
     }
 #ifdef HAVE_EINSPLINE
     else if (typeOpt == "einspline") 
     {
-      app_log() << "  EinsplineSetBuilder:  using libeinspline for B-spline orbitals." << endl;
+      PRE << "TEMP  EinsplineSetBuilder:  using libeinspline for B-spline orbitals.\n";
       bb = new EinsplineSetBuilder(targetPtcl,ptclPool,rootNode);
     }
 #endif
@@ -85,43 +88,44 @@ namespace qmcplusplus {
       PtclPoolType::iterator pit(ptclPool.find(sourceOpt));
       if(pit == ptclPool.end()) 
       {
-        APP_ABORT("BasisSetFactory::createBasisSet Missing basisset/@source.");
+        //fatal error
+        PRE.error("Missing basisset/@source.",true);
       } 
       else 
       {
-        app_log() << "  Molecular orbital with " << sourceOpt;
         ions=(*pit).second; 
       }
 
       if(transformOpt == "yes") 
       {
-        app_log() << " by numerical radial functors." << endl;
         bb = new MolecularBasisBuilder<NGOBuilder>(targetPtcl,*ions);
       } 
       else 
       {
         if(keyOpt == "GTO") 
         {
-          app_log() << " by analytic GTO functors." << endl;
           bb = new MolecularBasisBuilder<GTOBuilder>(targetPtcl,*ions);
         } 
         else if(keyOpt == "STO") 
         {
-          app_log() << " by analytic STO functors." << endl;
           bb = new MolecularBasisBuilder<STOBuilder>(targetPtcl,*ions);
         }
       }
     }
 
+    PRE.flush();
+
     if(bb) 
     {
+      bb->setReportLevel(ReportLevel);
       bb->initCommunicator(myComm);
       bb->put(cur);
       basisBuilder.push_back(bb);
     } 
     else 
     {
-      APP_ABORT("BasisSetFactory::createBasisSet Failed to create a basis set.");
+      //fatal error
+      PRE.error("Failed to create a basis set.",true);
     }
 #endif
   }
