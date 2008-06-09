@@ -15,6 +15,7 @@ SET(UTILITIES
   Utilities/OhmmsInform.cpp 
   Utilities/OhmmsInfo.cpp 
   Utilities/NewTimer.cpp
+  Utilities/ProgressReportEngine.cpp
   OhmmsData/Libxml2Doc.cpp
   OhmmsApp/ProjectData.cpp
   OhmmsApp/RandomNumberControl.cpp
