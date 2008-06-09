@@ -20,6 +20,8 @@
 #ifndef QMCPLUSPLUS_MPIOBJECTBASE_H
 #define QMCPLUSPLUS_MPIOBJECTBASE_H
 #include "Message/Communicate.h"
+#include "Utilities/OhmmsInfo.h"
+#include <strstream>
 
 namespace APPNAMESPACE
 {
@@ -66,12 +68,24 @@ namespace APPNAMESPACE
         return !myComm->rank();
       }
 
+      /** default is 1 minal 
+       */
+      void setReportLevel(int level=1);
+
     protected:
+      ///level of report
+      int ReportLevel;
+      /** pointer to Communicate
+       * @todo use smart pointer
+       */
       Communicate* myComm;
+      /** class Name
+       */
+      std::string ClassName;
 
     private:
       //disable copy constructor for now
-      MPIObjectBase(const MPIObjectBase& a){}
+      MPIObjectBase(const MPIObjectBase& a);
   };
 
 }
