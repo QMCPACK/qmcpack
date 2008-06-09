@@ -29,13 +29,13 @@ namespace qmcplusplus {
 			  ParticleSet& source) : 
       OrbitalBuilderBase(target,psi), sourcePtcl(&source)
     {
-      // nothing for now
+      ClassName="BsplineJastrowBuilder";
     }
     // Two-body constructor
     BsplineJastrowBuilder(ParticleSet& target, TrialWaveFunction& psi) :
       OrbitalBuilderBase(target,psi), sourcePtcl(NULL)
     {
-      // nothing for now
+      ClassName="BsplineJastrowBuilder";
     }
 
 
