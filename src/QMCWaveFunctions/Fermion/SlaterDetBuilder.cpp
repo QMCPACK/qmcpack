@@ -15,6 +15,7 @@
 //////////////////////////////////////////////////////////////////
 #include "QMCWaveFunctions/Fermion/SlaterDetBuilder.h"
 #include "QMCWaveFunctions/BasisSetFactory.h"
+#include "Utilities/ProgressReportEngine.h"
 #include "OhmmsData/AttributeSet.h"
 
 namespace qmcplusplus {
@@ -25,10 +26,13 @@ namespace qmcplusplus {
     ptclPool(psets), 
     myBasisSetFactory(0)
   { 
+    ClassName="SlaterDetBuilder";
   }   
 
   bool SlaterDetBuilder::put(xmlNodePtr cur)
   {
+    ReportEngine PRE(ClassName,"put(xmlNodePtr)");
+
     ///save the current node
     xmlNodePtr curRoot=cur;
     bool success=true;
@@ -42,6 +46,7 @@ namespace qmcplusplus {
         if(myBasisSetFactory == 0) 
         {
           myBasisSetFactory = new BasisSetFactory(targetPtcl,targetPsi, ptclPool);
+          myBasisSetFactory->setReportLevel(ReportLevel);
         }
         myBasisSetFactory->createBasisSet(cur,curRoot);
         //Children.push_back(bsFactory);
@@ -69,8 +74,8 @@ namespace qmcplusplus {
     
     if(SlaterDetSet.empty()) 
     {
-      app_error() << "  Failed to create a SlaterDeterminant. Abort at SlaterDetBuilder::put " << endl;
-      OHMMS::Controller->abort();
+      //fatal
+      PRE.error("Failed to create a SlaterDeterminant.",true);
       return false;
     }
 
@@ -78,14 +83,17 @@ namespace qmcplusplus {
       buildMultiSlaterDetermiant();
     else
       buildSlaterDetermiant();
+
     return success;
   }
 
 
   int SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int firstIndex) {
 
+    ReportEngine PRE(ClassName,"putDeterminant(xmlNodePtr,int)");
+
     string basisName("invalid");
-    string detname("NONE"), refname("NONE");
+    string detname("0"), refname("0");
     OhmmsAttributeSet aAttrib;
     aAttrib.add(basisName,basisset_tag);
     aAttrib.add(detname,"id");
@@ -94,8 +102,8 @@ namespace qmcplusplus {
 
     //index of the last SlaterDeterminant
     int dIndex=DetSet.size();
-    if(refname == "NONE") { //create one and use detname
-      if(detname =="NONE") { //no id is given, assign one
+    if(refname[0] == '0') { //create one and use detname
+      if(detname[0] =='0') { //no id is given, assign one
         char newname[8];
         sprintf(newname,"det%d",dIndex);
         detname=newname;
@@ -140,6 +148,7 @@ namespace qmcplusplus {
 
     //only if a determinant is not 0
     if(adet) SlaterDetSet.back()->add(adet);
+
     return firstIndex;
   }
 
