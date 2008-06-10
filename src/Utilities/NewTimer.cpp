@@ -1,6 +1,25 @@
+//////////////////////////////////////////////////////////////////
+// (c) Copyright 2008- by Ken Esler
+//////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////
+//   Ken Esler
+//   National Center for Supercomputing Applications &
+//   University of Illinois, Urbana-Champaign
+//   Urbana, IL 61801
+//   e-mail: jnkim@ncsa.uiuc.edu
+//
+// Supported by 
+//   National Center for Supercomputing Applications, UIUC
+//   Materials Computation Center, UIUC
+//////////////////////////////////////////////////////////////////
+// -*- C++ -*-
+/** @file NewTimer.cpp
+ * @brief Implements TimerManager
+ */
 #include "Utilities/NewTimer.h"
 #include "Message/Communicate.h"
 #include "Message/CommOperators.h"
+#include <map>
 
 namespace qmcplusplus  {
   TimerManagerClass TimerManager;
@@ -14,66 +33,49 @@ namespace qmcplusplus  {
   void
   TimerManagerClass::print(Communicate* comm) 
   {
-    // Sort all the timers by name, and summing the ones
-    // with the same name into lists.
-    TimerComparator comp;
-    std::sort(TimerList.begin(), TimerList.end(), comp);
-    std::vector<std::string> nameList;
+    std::map<std::string,int> nameList;
     std::vector<double> timeList;
     std::vector<long>   callList;
-    std::string lastName = "";
-    int numDistinct = 0;
 
-    for (int i=0; i<TimerList.size(); i++) {
+    timeList.reserve(TimerList.size());
+    callList.reserve(TimerList.size());
+
+    for(int i=0; i<TimerList.size(); ++i)
+    {
       NewTimer &timer = *TimerList[i];
-      if (timer.get_name() == lastName && lastName != "") {
-	timeList[numDistinct-1]  += timer.get_total();
-	callList[numDistinct-1] += timer.get_num_calls();
+      std::map<std::string,int>::iterator it(nameList.find(timer.get_name()));
+      if(it == nameList.end())
+      {
+        int ind=nameList.size();
+        nameList[timer.get_name()]=ind;
+        timeList.push_back(timer.get_total());
+        callList.push_back(timer.get_num_calls());
       }
-      else {
-	nameList.push_back(timer.get_name());
-	timeList.push_back(timer.get_total());
-	callList.push_back(timer.get_num_calls());
-	lastName = timer.get_name();
-	numDistinct++;
+      else
+      {
+        int ind=(*it).second;
+        timeList[ind]+=timer.get_total();
+        callList[ind]+=timer.get_num_calls();
       }
     }
-    // Now, we collect date from all nodes in the communicator, and
-    // add it up.
-    int numToSend = numDistinct;
+
     comm->allreduce(timeList);
     comm->allreduce(callList);
-    //for (int i=0; i<numToSend; i++) {
-    //  std::string myName = nameList[i];
-    //  comm->bcast(myName);
-    //  double myTime = 0.0;
-    //  long myCalls = 0;
-    //  for (int j=0; j<nameList.size(); j++) 
-    //    if (nameList[j] == myName) {
-    //      myTime  += timeList[j];
-    //      myCalls += callList[j];
-    //    }
-    //  comm->allreduce(myTime);
-    //  comm->allreduce(myCalls);
-    //  if (comm->rank() == 0) {
-    //    timeList[i] = myTime;
-    //    callList[i] = myCalls;
-    //  }
-    //}
-    
-    bool omp_rank0 = true;
-#ifdef ENABLE_OPENMP
-    if (omp_get_thread_num() != 0)
-      omp_rank0 = false;
-#endif
-    if (omp_rank0 && comm->rank() == 0) {
-      fprintf (stderr, "Routine name                             Total time"
-	       "      Num Calls     Time per call\n");
-      for (int i=0; i<numDistinct; i++) {
-	fprintf (stderr, "%-40s  %9.4f  %13ld  %16.9f\n", nameList[i].c_str(),
-		 timeList[i], callList[i], timeList[i]/(double)callList[i]);
+
+    if(comm->rank() == 0)
+    {
+#pragma omp master
+      {
+        std::map<std::string,int>::iterator it(nameList.begin()), it_end(nameList.end());
+        while(it != it_end)
+        {
+          int i=(*it).second;
+          fprintf (stderr, "%-40s  %9.4f  %13ld  %16.9f\n", (*it).first.c_str(),
+              timeList[i], callList[i], 
+              timeList[i]/(static_cast<double>(callList[i])+numeric_limits<double>::epsilon()));
+          ++it;
+        }
       }
     }
   }
-  
 }
