@@ -215,7 +215,8 @@ bool XMLParticleParser::putSpecial(xmlNodePtr cur) {
   ng = 0;  
   while (cur != NULL) {
     string cname((const char*)(cur->name));
-    if(cname == "UnitCell" || cname == "unitcell") {
+    if(cname.find("ell")< cname.size())//accept UnitCell, unitcell, supercell
+    { //if(cname == "UnitCell" || cname == "unitcell") {
       LatticeParser lat(ref_.Lattice);
       lat.put(cur);
       ParameterSet params;
