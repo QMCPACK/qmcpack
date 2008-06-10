@@ -133,7 +133,14 @@ namespace qmcplusplus
 
       inline T calcSimulationCellRadius(TinyVector<SingleParticlePos_t,2>& a)
       {
-        return calcWignerSeitzRadius(a);
+	T a0mag  = std::sqrt(dot(a[0],a[0]));
+	T a1mag  = std::sqrt(dot(a[1],a[1]));
+	T theta1 = dot (a[0], a[1])/(a0mag*a1mag);
+        T theta2 = M_PI - theta1;
+	T theta  = std::min (theta1, theta2);
+	T dist   = std::min (a0mag, a1mag);
+	return 0.5*std::sin(theta)*dist;
+        // return calcWignerSeitzRadius(a);
       }
     };
 
