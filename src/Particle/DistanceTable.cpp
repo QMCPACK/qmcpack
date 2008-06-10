@@ -7,7 +7,6 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
@@ -20,7 +19,7 @@
 #include "Particle/SymmetricDistanceTableData.h"
 #include "Particle/AsymmetricDistanceTableData.h"
 #include "ParticleIO/ParticleLayoutIO.h"
-#include "Lattice/SuperCellTraits.h"
+#include "Lattice/ParticleBConds.h"
 
 namespace qmcplusplus
 {
@@ -30,181 +29,6 @@ map<string,DistanceTableData*>  DistanceTable::TableMap;
 ParticleSet::ParticleLayout_t* DistanceTable::SimulationCell=0;
 /**@}*/
 
-template<int N,unsigned D>
-  struct PowerOfN
-  {
-    enum {value=N*PowerOfN<N,D-1>::value};
-  };
-
-template<int N>
-  struct PowerOfN<N,0>
-  {
-    enum {value=1};
-  };
-
-const int TwoPowerD=PowerOfN<2,OHMMS_DIM>::value;
-
-/** common definition of a distance 
- *
- * @param lat supercell
- * @param a in/out displacement
- * @return dot(a,a)
- */
-template<class T, unsigned D, int SC>
-struct DTD_BConds 
-{
-  inline static T apply(const CrystalLattice<T,D>& lat, TinyVector<T,D>& a) {
-    return dot(a,a);
-  }
-};
-
-/** specialization for a periodic 3D cell
- */
-template<class T>
-struct DTD_BConds<T,3,SUPERCELL_BULK> {
-  inline static T apply(const CrystalLattice<T,3>& lat, TinyVector<T,3>& a) {
-    TinyVector<T,3> ar(lat.toUnit(a));
-    /*
-       if(ar[0]<-0.5) ar[0]+=1.0; 
-       else if(ar[0]>=0.5) ar[0]-=1.0;
-       if(ar[1]<-0.5) ar[1]+=1.0; 
-       else if(ar[1]>=0.5) ar[1]-=1.0;
-       if(ar[2]<-0.5) ar[2]+=1.0; 
-       else if(ar[2]>=0.5) ar[2]-=1.0;
-       */
-    //T x=fmod(ar[0],1.0); ar[0]=x-static_cast<int>(x*2.0);
-    //T y=fmod(ar[1],1.0); ar[1]=y-static_cast<int>(y*2.0);
-    //T z=fmod(ar[2],1.0); ar[2]=z-static_cast<int>(z*2.0);
-#if defined(HAVE_STD_ROUND)
-    ar[0]=ar[0]-round(ar[0]);
-    ar[1]=ar[1]-round(ar[1]);
-    ar[2]=ar[2]-round(ar[2]);
-#else
-    T dmy0,dmy1,dmy2;
-    T x=modf(ar[0],&dmy0); ar[0]=x-static_cast<int>(x*2.0);
-    T y=modf(ar[1],&dmy1); ar[1]=y-static_cast<int>(y*2.0);
-    T z=modf(ar[2],&dmy2); ar[2]=z-static_cast<int>(z*2.0);
-#endif
-    a=lat.toCart(ar);
-    T d2 = a[0]*a[0]+a[1]*a[1]+a[2]*a[2];
-    if (d2 < lat.SimulationCellRadius * lat.SimulationCellRadius)
-      return d2;
-    else 
-    {
-      T d2min = d2;
-      TinyVector<T,3> u = ar;
-      for (double i=-1.0; i<1.001; i+=1.0) {
-	u[0] = ar[0] + i;
-	for (double j=-1.0; j<1.001; j+=1.0) {
-	  u[1] = ar[1] + j;
-	  for (double k=-1.0; k<1.001; k+=1.0) {
-	    u[2] = ar[2] + k;
-	    TinyVector<T,3> anew = lat.toCart(u);
-	    d2 = anew[0]*anew[0] + anew[1]*anew[1] + anew[2]*anew[2];
-	    if (d2 < d2min) {
-	      a = anew;
-	      d2min = d2;
-	    }
-	  }
-	}
-      }
-      return d2min;
-    }
-  }
-};
-
-/** specialization for a periodic 3D orthorombic cell
- */
-template<class T>
-struct DTD_BConds<T,3,SUPERCELL_BULK+TwoPowerD> {
-  inline static T apply(const CrystalLattice<T,3>& lat, TinyVector<T,3>& a) 
-  {
-#if defined(HAVE_STD_ROUND)
-    T x=a[0]*lat.OneOverLength[0]; a[0]=lat.Length[0]*(x-round(x));
-    T y=a[1]*lat.OneOverLength[1]; a[1]=lat.Length[1]*(y-round(y));
-    T z=a[2]*lat.OneOverLength[2]; a[2]=lat.Length[2]*(z-round(z));
-#else
-    T dmy0,dmy1,dmy2;
-    T x=modf(a[0]*lat.OneOverLength[0],&dmy0); a[0]=lat.Length[0]*(x-static_cast<int>(x*2.0));
-    T y=modf(a[1]*lat.OneOverLength[1],&dmy1); a[1]=lat.Length[1]*(y-static_cast<int>(y*2.0));
-    T z=modf(a[2]*lat.OneOverLength[2],&dmy2); a[2]=lat.Length[2]*(z-static_cast<int>(z*2.0));
-#endif
-    return a[0]*a[0]+a[1]*a[1]+a[2]*a[2];
-  }
-};
-
-/** specialization for a periodic 2D cell
- */
-template<class T>
-struct DTD_BConds<T,2,SUPERCELL_BULK> {
-  inline static T apply(const CrystalLattice<T,2>& lat, TinyVector<T,2>& a) {
-    TinyVector<T,2> ar(lat.toUnit(a));
-#if defined(HAVE_STD_ROUND)
-    ar[0]=ar[0]-round(ar[0]);
-    ar[1]=ar[1]-round(ar[1]);
-#else
-    T dmy0,dmy1;
-    T x=modf(ar[0],&dmy0); ar[0]=x-static_cast<int>(x*2.0);
-    T y=modf(ar[1],&dmy1); ar[1]=y-static_cast<int>(y*2.0);
-#endif
-    a=lat.toCart(ar);
-    return a[0]*a[0]+a[1]*a[1];
-  }
-};
-
-/** specialization for a periodic 2D orthorombic cell
- */
-template<class T>
-struct DTD_BConds<T,2,SUPERCELL_BULK+TwoPowerD> {
-  inline static T apply(const CrystalLattice<T,2>& lat, TinyVector<T,2>& a) 
-  {
-#if defined(HAVE_STD_ROUND)
-    T x=a[0]*lat.OneOverLength[0]; a[0]=lat.Length[0]*(x-round(x));
-    T y=a[1]*lat.OneOverLength[1]; a[1]=lat.Length[1]*(y-round(y));
-#else
-    T dmy0,dmy1;
-    T x=modf(a[0]*lat.OneOverLength[0],&dmy0); a[0]=lat.Length[0]*(x-static_cast<int>(x*2.0));
-    T y=modf(a[1]*lat.OneOverLength[1],&dmy1); a[1]=lat.Length[1]*(y-static_cast<int>(y*2.0));
-#endif
-    return a[0]*a[0]+a[1]*a[1];
-  }
-};
-
-/**@ingroup nnlist
- * @brief class to apply No Boundary conditions for distance evaluation
- *
- *NoBConds stands for No Boundary Conditions and is intended for
- finite systems with open or vanishing boundary conditions.
- Use a simple dot product assuming cartesian coordinates
- */
-template<class T, unsigned D>
-struct NoBConds {
-  inline static T apply(const CrystalLattice<T,D>& lat, TinyVector<T,D>& a) {
-    return dot(a,a);
-  }
-};
-
-/**@ingroup nnlist
- * @brief class to apply Periodic Boundary conditions for distance evaluation
- *
- *PeriodicBConds stands for Periodic Boundary Conditions and is intended 
- for periodic systems. The Cartesian distances are evaluated
- according to the minimum-image convention.
- */
-template<class T, unsigned D>
-struct PeriodicBConds {
-  inline static T apply(const CrystalLattice<T,D>& lat, TinyVector<T,D>& a) {
-    TinyVector<T,D> ar(lat.toUnit(a));
-    for(int idim=0; idim<D; idim++) {
-      if(lat.BoxBConds[idim]) {
-        if(ar[idim]<-0.5) ar[idim]+=1.0; 
-        else if(ar[idim]>=0.5) ar[idim]-=1.0;
-      }
-    }
-    a=lat.toCart(ar);
-    return dot(a,a);
-  }
-};
 
 void DistanceTable::createSimulationCell(xmlNodePtr cur) {
   if(cur != NULL) {

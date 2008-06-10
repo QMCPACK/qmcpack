@@ -20,7 +20,6 @@
 #include "QMCHamiltonians/CoulombPBCABTemp.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Numerics/OneDimNumGridFunctor.h"
-#include "Lattice/SuperCellTraits.h"
 
 namespace qmcplusplus {
   /** constructor

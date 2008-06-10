@@ -6,7 +6,6 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
@@ -21,10 +20,7 @@
 #include <cmath>
 #include "OhmmsPETE/TinyVector.h"
 #include "OhmmsPETE/Tensor.h"
-#include "Lattice/ParticleBConds.h"
 #include "Lattice/LatticeOperations.h"
-
-
 using namespace std;
 
 /**@file CrystalLattice.h
@@ -88,7 +84,11 @@ struct CrystalLattice{
   //@{ 
   /**@brief Physcial properties of a supercell*/
   /// Volume of a supercell
-  T  Volume; 
+  Scalar_t Volume; 
+  /// Wigner-Seitz cell radius
+  Scalar_t WignerSeitzRadius;
+  /// simulation cell radii
+  Scalar_t SimulationCellRadius;
   ///Real-space unit vectors. R(i,j) i=vector and j=x,y,z
   Tensor_t R;
   ///Reciprocal unit vectors. G(j,i) i=vector and j=x,y,z
@@ -97,9 +97,6 @@ struct CrystalLattice{
   Tensor_t M;
   ///Metric tensor for G vectors
   Tensor_t Mg;
-  // Wigner-Seitz and simulation cell radii
-  Scalar_t WignerSeitzRadius, SimulationCellRadius;
-
   ///Length[idim] length of the idim-th lattice vector
   SingleParticlePos_t Length;
   ///OneOverLength[idim] 1/length of the idim-th lattice vector
@@ -117,15 +114,8 @@ struct CrystalLattice{
    */
   TinyVector<SingleParticlePos_t,D> Gv;
   //@}
-  
   //angles between the two lattice vectors
   SingleParticlePos_t ABC;
-
-  //@{
-  /**@brief Parameters defining boundary Conditions */
-  ///Functors that apply boundary conditions on the position vectors
-  ParticleBConds<T,D> BConds;
-  //@}
 
   ///default constructor, assign a huge supercell
   CrystalLattice();
@@ -153,35 +143,34 @@ struct CrystalLattice{
     return Gv[i];
   }
 
-  inline T calcWignerSeitzRadius(TinyVector<SingleParticlePos_t,2> a) const 
-  {
-    T rMin = 1.0e50;
-    for (int i=-1; i<=1; i++)
-      for (int j=-1; j<=1; j++)
-	if ((i!=0) || (j!=0)) {
-	  SingleParticlePos_t L = ((double)i * a[0] +
-				   (double)j * a[1]);
-	  double dist = 0.5*std::fabs(dot(L,L));
-	  rMin = std::min(rMin, dist);
-	}
-    return rMin;
-  }
-
-  inline T calcWignerSeitzRadius(TinyVector<SingleParticlePos_t,3> a) const 
-  {
-    T rMin = 1.0e50;
-    for (int i=-1; i<=1; i++)
-      for (int j=-1; j<=1; j++)
-	for (int k=-1; k<=1; k++) 
-	  if ((i!=0) || (j!=0) || (k!=0)) {
-	    SingleParticlePos_t L = ((double)i * a[0] +
-				     (double)j * a[1] +
-				     (double)k * a[2]);
-	    double dist = 0.5*std::sqrt(dot(L,L));
-	    rMin = std::min(rMin, dist);
-	  }
-    return rMin;
-  }
+  //inline T calcWignerSeitzRadius(TinyVector<SingleParticlePos_t,2> a) const 
+  //{
+  //  T rMin = 1.0e50;
+  //  for (int i=-1; i<=1; i++)
+  //    for (int j=-1; j<=1; j++)
+  //      if ((i!=0) || (j!=0)) {
+  //        SingleParticlePos_t L = ((double)i * a[0] +
+  //      			   (double)j * a[1]);
+  //        double dist = 0.5*std::fabs(dot(L,L));
+  //        rMin = std::min(rMin, dist);
+  //      }
+  //  return rMin;
+  //}
+  //inline T calcWignerSeitzRadius(TinyVector<SingleParticlePos_t,3> a) const 
+  //{
+  //  T rMin = 1.0e50;
+  //  for (int i=-1; i<=1; i++)
+  //    for (int j=-1; j<=1; j++)
+  //      for (int k=-1; k<=1; k++) 
+  //        if ((i!=0) || (j!=0) || (k!=0)) {
+  //          SingleParticlePos_t L = ((double)i * a[0] +
+  //      			     (double)j * a[1] +
+  //      			     (double)k * a[2]);
+  //          double dist = 0.5*std::sqrt(dot(L,L));
+  //          rMin = std::min(rMin, dist);
+  //        }
+  //  return rMin;
+  //}
 	  
 	    
   /** Convert a cartesian vector to a unit vector.
@@ -284,13 +273,13 @@ struct CrystalLattice{
    *@param sc a scalar to scale the input lattice parameters
    *@param lat the starting address of DxD T-elements representing a supercell
    */
-  void set(T sc, T* lat= NULL);
+  void set(T sc, T* lat= 0);
 
   /** set the lattice vector by a CrystalLattice and expand it by integers
    *@param oldlat An input supercell to be copied.
    *@param uc An array to expand a supercell.
    */
-  void set(const CrystalLattice<T,D,ORTHO>& oldlat, int* uc= NULL);
+  void set(const CrystalLattice<T,D,ORTHO>& oldlat, int* uc= 0);
 
   /** set the lattice vector from the command-line options
    *@param lat a tensor representing a supercell
