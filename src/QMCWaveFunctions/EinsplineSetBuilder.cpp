@@ -896,8 +896,8 @@ namespace qmcplusplus {
     std::map<H5OrbSet,multi_UBspline_3d_d*>::iterator iter;
     iter = ExtendedMap_d.find (set);
     if (iter != ExtendedMap_d.end()) {
-      cerr << "Using existing copy of multi_UBspline_3d_d for "
-	   << "thread number " << omp_get_thread_num() << ".\n";
+      app_log() << "Using existing copy of multi_UBspline_3d_d for "
+		<< "thread number " << omp_get_thread_num() << ".\n";
       orbitalSet->MultiSpline = iter->second;
       return;
     }
