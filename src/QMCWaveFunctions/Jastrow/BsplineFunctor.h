@@ -64,6 +64,11 @@ namespace qmcplusplus {
     
     void reset() 
     {
+      int numCoefs = NumParams + 4;
+      int numKnots = numCoefs - 2;
+      DeltaR = Rcut / (real_type)(numKnots - 1);
+      DeltaRInv = 1.0/DeltaR;
+
       for (int i=0; i<SplineCoefs.size(); i++)
         SplineCoefs[i] = 0.0;
 

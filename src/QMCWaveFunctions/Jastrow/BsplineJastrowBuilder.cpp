@@ -61,6 +61,13 @@ namespace qmcplusplus {
 	  if (ig < numSpecies) 
           {//ignore
             functor->put (kids);
+	    if (functor->Rcut < 1.0e-6) {
+	      app_log()  << "  BsplineFunction rcut is currently zero.\n"
+			 << "  Setting to Wigner-Seitz radius = " 
+			 << sourcePtcl->Lattice.WignerSeitzRadius << endl;
+	      functor->Rcut = sourcePtcl->Lattice.WignerSeitzRadius;
+	      functor->reset();
+	    }
             functor->addOptimizables(targetPsi.VarList);
             J1->addFunc (ig,functor);
             //dJ1->addFunc(ig,functor);
