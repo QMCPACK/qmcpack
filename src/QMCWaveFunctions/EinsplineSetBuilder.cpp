@@ -442,9 +442,9 @@ namespace qmcplusplus {
   inline TinyVector<T,3>
   IntPart (const TinyVector<T,3>& twist)
   {
-    return TinyVector<T,3> (round(twist[0]-numeric_limits<T>::epsilon()), 
-        round(twist[1]-numeric_limits<T>::epsilon()), 
-        round(twist[2]-numeric_limits<T>::epsilon()));
+    return TinyVector<T,3> (round(twist[0]-1.0e-6),
+                            round(twist[1]-1.0e-6), 
+                            round(twist[2]-1.0e-6));
   }
   
   template<typename T>
