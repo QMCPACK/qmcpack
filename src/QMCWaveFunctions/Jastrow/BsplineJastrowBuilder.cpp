@@ -70,6 +70,7 @@ namespace qmcplusplus {
 	    }
             functor->addOptimizables(targetPsi.VarList);
             J1->addFunc (ig,functor);
+	    success = true;
             //dJ1->addFunc(ig,functor);
             if(ReportLevel) 
             {
@@ -159,6 +160,14 @@ namespace qmcplusplus {
 
 	  RadFuncType *functor = new RadFuncType(cusp);
 	  functor->put (kids);
+	  if (functor->Rcut < 1.0e-6) {
+	    app_log()  << "  BsplineFunction rcut is currently zero.\n"
+		       << "  Setting to Wigner-Seitz radius = " 
+		       << sourcePtcl->Lattice.WignerSeitzRadius << endl;
+	    functor->Rcut = sourcePtcl->Lattice.WignerSeitzRadius;
+	    functor->reset();
+	  }
+
 	  functor->addOptimizables(targetPsi.VarList);
 
           J2->addFunc(pairType,ia,ib,functor);
