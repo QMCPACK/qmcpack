@@ -382,7 +382,7 @@ namespace qmcplusplus {
 #endif
 
     ReportCounter++;
-    OHMMS::Controller->barrier();
+    //myComm->barrier();
   }
 
   void QMCCostFunctionBase::reportParameters() {
@@ -460,7 +460,7 @@ namespace qmcplusplus {
     //Estimators.put(q);
     vector<xmlNodePtr> oset,cset;
     xmlNodePtr cur=qsave->children;
-    int pid=OHMMS::Controller->rank();
+    int pid=myComm->rank();
     while(cur != NULL) {
       string cname((const char*)(cur->name));
       if(cname == "optimize") {

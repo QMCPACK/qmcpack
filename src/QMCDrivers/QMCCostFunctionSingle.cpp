@@ -80,7 +80,6 @@ namespace qmcplusplus {
       ++iw;
     }
 
-    OHMMS::Controller->barrier();
     //collect the total weight for normalization and apply maximum weight
     myComm->allreduce(wgt_tot);
 
