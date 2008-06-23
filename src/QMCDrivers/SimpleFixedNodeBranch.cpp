@@ -293,9 +293,11 @@ namespace qmcplusplus
 
     if(!WalkerController)
     {//running VMC
-      RealType e, w;
-      MyEstimator->getEnergyAndWeight(e,w);
+      RealType e, w,sigma2;
+      MyEstimator->getEnergyAndWeight(e,w,sigma2);
       Etrial=Eref=e/w;
+      //overwrite the energy window
+      vParam[B_ENERGYWINDOW]=std::sqrt(sigma2);
 
       //this is just to avoid diving by n-1  == 0
       EnergyHist(Eref);
@@ -338,9 +340,9 @@ namespace qmcplusplus
       herr_t status = H5Eset_auto(NULL, NULL);
       status = H5Gget_objinfo(h1,hdf::energy_history,0,NULL);
       //TinyVector<RealType,3> esave(Eref,EavgSum,WgtSum);
-      TinyVector<RealType,3> esave(Eref,EnergyHist.result(),EnergyHist.count());
+      TinyVector<RealType,4> esave(Eref,EnergyHist.result(),EnergyHist.count(),vParam[B_ENERGYWINDOW]);
       overwrite=(status == 0);
-      HDFAttribIO<TinyVector<RealType,3> > eh(esave,overwrite);
+      HDFAttribIO<TinyVector<RealType,4> > eh(esave,overwrite);
       eh.write(h1,hdf::energy_history);
       if(LogNorm.size())//check if collection is done correctly
       {
@@ -368,7 +370,12 @@ namespace qmcplusplus
 
     //esave is used for communication
     //TinyVector<RealType,3> esave(Eref,EavgSum,WgtSum);
-    TinyVector<RealType,3> esave(Eref,EnergyHist.result(),EnergyHist.count());
+    //TinyVector<RealType,3> esave(Eref,EnergyHist.result(),EnergyHist.count());
+    vector<RealType> esave(4);
+    esave[0]=Eref;
+    esave[1]=EnergyHist.result();
+    esave[2]=EnergyHist.count();
+    esave[3]=vParam[B_ENERGYWINDOW];
 
     RootName=fname;
     if(RootName.find(hdf::config_ext)>=RootName.size())
@@ -401,7 +408,8 @@ namespace qmcplusplus
         //in_version.read(h_file,hdf::version);
         hid_t h1=H5Gopen(h_file,hdf::main_state);
         //get the history
-        HDFAttribIO<TinyVector<RealType,3> > eh(esave);
+        //HDFAttribIO<TinyVector<RealType,3> > eh(esave);
+        HDFAttribIO<vector<RealType> > eh(esave);
         eh.read(h1,hdf::energy_history);
         if(LogNorm.size()) 
         {
@@ -417,7 +425,8 @@ namespace qmcplusplus
         herr_t status = H5Eset_auto(NULL, NULL);
         status = H5Gget_objinfo (h1, "Summary", 0, NULL);
         if(status == 0) {
-          HDFAttribIO<TinyVector<RealType,3> > eh(esave);
+          //HDFAttribIO<TinyVector<RealType,3> > eh(esave);
+          HDFAttribIO<vector<RealType> > eh(esave);
           eh.read(h1,"Summary");
           if(LogNorm.size()) 
           {
@@ -437,6 +446,7 @@ namespace qmcplusplus
     bcast(esave,MyEstimator->getCommunicator());
 
     Etrial=Eref=esave[0];
+    if(esave.size()>3) vParam[B_ENERGYWINDOW]=esave[3];
     //EavgSum=esave[1];
     //WgtSum=esave[2];
   }

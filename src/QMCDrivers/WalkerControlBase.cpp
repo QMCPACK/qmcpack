@@ -22,7 +22,7 @@ namespace qmcplusplus {
 
   WalkerControlBase::WalkerControlBase(Communicate* c): MPIObjectBase(c),
   SwapMode(0), Nmin(1), Nmax(10), MaxCopy(5), 
-  targetEnergyBound(20), targetVar(2), targetSigma(10), dmcStream(0)
+  targetEnergyBound(200), targetVar(2), targetSigma(200), dmcStream(0)
   {
     NumContexts=myComm->size();
     MyContext=myComm->rank();
