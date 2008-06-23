@@ -149,15 +149,6 @@ namespace qmcplusplus {
       targetVar=v;
     }
 
-    /** return a multiple of the current Sigma
-     *
-     * SimpleFixedNodeBranch::branch uses this value to determine a new trial energy.
-     */
-    inline RealType getSigmaBound() const
-    {
-      return std::min(10.0*std::sqrt(targetVar),targetSigma);
-    }
-
     /** sort Walkers between good and bad and prepare branching
      */
     void sortWalkers(MCWalkerConfiguration& W);
