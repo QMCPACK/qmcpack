@@ -17,6 +17,7 @@
 #include "Particle/MCWalkerConfiguration.h"
 #include "Estimators/EstimatorManager.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
+#include "Message/Communicate.h"
 #include "Message/CommOperators.h"
 #include "Message/CommUtilities.h"
 #include "Estimators/LocalEnergyEstimator.h"
@@ -38,27 +39,18 @@ namespace qmcplusplus {
 
   /** enumeration for EstimatorManager.Options
    */
-  enum {EM_COLLECT=0, 
-    EM_MANAGE,
-    EM_RECORD, 
-    EM_POSTIRECV, 
-    EM_APPEND};
+  enum {COLLECT=0, 
+  MANAGE,
+  RECORD, 
+  POSTIRECV, 
+  APPEND};
 
   //initialize the name of the primary estimator
-  EstimatorManager::EstimatorManager(Communicate* c): MPIObjectBase(c),
-  RecordCount(0),h_file(-1),
+  EstimatorManager::EstimatorManager(Communicate* c): RecordCount(0),h_file(-1),
   MainEstimatorName("elocal"), Archive(0), DebugArchive(0),
-  MainEstimator(0), CompEstimators(0), pendingRequests(0)
+  myComm(0), MainEstimator(0), CompEstimators(0), pendingRequests(0)
   { 
-    //set the default options
-    Options.set(EM_COLLECT,myComm->size()>1);
-    Options.set(EM_MANAGE,myComm->rank() == 0);
-
-    myRequest.resize(2);
-    if(Options[EM_COLLECT] && Options[EM_MANAGE]) myRequest.resize(myComm->size()-1);
-
-    if(RemoteData.empty())
-      for(int i=0; i<myComm->size(); i++) RemoteData.push_back(new BufferType);
+    setCommunicator(c);
   }
 
   EstimatorManager::EstimatorManager(EstimatorManager& em): RecordCount(0),h_file(-1),
@@ -88,14 +80,15 @@ namespace qmcplusplus {
 
   void EstimatorManager::setCommunicator(Communicate* c) 
   {
-    initCommunicator(c);
+    if(myComm && myComm == c) return;
+    myComm = c ? c:OHMMS::Controller;
 
     //set the default options
-    Options.set(EM_COLLECT,myComm->size()>1);
-    Options.set(EM_MANAGE,myComm->rank() == 0);
+    Options.set(COLLECT,myComm->size()>1);
+    Options.set(MANAGE,myComm->rank() == 0);
 
     myRequest.resize(2);
-    if(Options[EM_COLLECT] && Options[EM_MANAGE]) myRequest.resize(myComm->size()-1);
+    if(Options[COLLECT] && Options[MANAGE]) myRequest.resize(myComm->size()-1);
 
     if(RemoteData.empty())
       for(int i=0; i<myComm->size(); i++) RemoteData.push_back(new BufferType);
@@ -107,7 +100,7 @@ namespace qmcplusplus {
   void EstimatorManager::setCollectionMode(bool collect) 
   {
     if(!myComm) setCommunicator(0);
-    Options.set(EM_COLLECT,(myComm->size() == 1)? false:collect);
+    Options.set(COLLECT,(myComm->size() == 1)? false:collect);
     //force to be false for serial runs
     //CollectSum = (myComm->size() == 1)? false:collect;
   }
@@ -188,9 +181,9 @@ namespace qmcplusplus {
 #endif
 
     //set Options[RECORD] to enable/disable output 
-    Options.set(EM_RECORD,record&&Options[EM_MANAGE]);
+    Options.set(RECORD,record&&Options[MANAGE]);
 
-    if(Options[EM_RECORD])
+    if(Options[RECORD])
     {
       if(Archive) delete Archive;
       string fname(myComm->getName());
@@ -210,7 +203,7 @@ namespace qmcplusplus {
       }
 
 #if defined(QMC_ASYNC_COLLECT)
-      if(Options[EM_COLLECT])
+      if(Options[COLLECT])
       {//issue a irecv
         pendingRequests=0;
         for(int i=1,is=0; i<myComm->size(); i++,is++) 
@@ -337,7 +330,7 @@ namespace qmcplusplus {
     }
 #endif
 
-    if(Options[EM_COLLECT])
+    if(Options[COLLECT])
     { //copy cached data to RemoteData[0]
       BufferType::iterator cur(RemoteData[0]->begin());
       std::copy(AverageCache.begin(),AverageCache.end(),cur);
@@ -348,7 +341,7 @@ namespace qmcplusplus {
         CompEstimators->putMessage(cur);
 
 #if defined(QMC_ASYNC_COLLECT)
-      if(Options[EM_MANAGE]) 
+      if(Options[MANAGE]) 
       { //wait all the message but we can choose to wait one-by-one with a timer
         wait_all(myRequest.size(),&myRequest[0]);
         for(int is=1; is<myComm->size(); is++) 
@@ -360,7 +353,7 @@ namespace qmcplusplus {
       myComm->reduce(*RemoteData[0]);
 #endif
 
-      if(Options[EM_MANAGE])
+      if(Options[MANAGE])
       {
         int n1=AverageCache.size();
         int n2=AverageCache.size()+PropertyCache.size();
@@ -415,21 +408,24 @@ namespace qmcplusplus {
   }
 
   void 
-    EstimatorManager::getEnergyAndWeight(RealType& e, RealType& w) 
+    EstimatorManager::getEnergyAndWeight(RealType& e, RealType& w, RealType& var) 
   {
-    if(Options[EM_COLLECT])//need to broadcast the value
+    if(Options[COLLECT])//need to broadcast the value
     {
-      RealType tmp[2];
+      RealType tmp[3];
       tmp[0]= energyAccumulator.result();
       tmp[1]= energyAccumulator.count();
-      myComm->bcast(tmp,2);
+      tmp[2]= energyAccumulator.variance();
+      myComm->bcast(tmp,3);
       e=tmp[0];
       w=tmp[1];
+      var=tmp[2];
     }
     else
     {
       e= energyAccumulator.result();
       w= energyAccumulator.count();
+      var= energyAccumulator.variance();
     }
   }
 

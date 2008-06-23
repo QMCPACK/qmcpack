@@ -24,10 +24,10 @@
 #include "Configuration.h"
 #include "Utilities/Timer.h"
 #include "Utilities/PooledData.h"
+#include "Message/Communicate.h"
+#include "Estimators/ScalarEstimatorBase.h"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsData/HDFAttribIO.h"
-#include "Message/MPIObjectBase.h"
-#include "Estimators/ScalarEstimatorBase.h"
 #include <bitset>
 
 namespace qmcplusplus {
@@ -37,7 +37,7 @@ namespace qmcplusplus {
   class CompositeEstimatorSet;
 
   /**Class to manage a set of ScalarEstimators */
-  class EstimatorManager: public QMCTraits, public MPIObjectBase
+  class EstimatorManager: public QMCTraits
   {
 
   public:
@@ -63,6 +63,19 @@ namespace qmcplusplus {
 
     /** set the communicator */
     void setCommunicator(Communicate* c);
+
+    /** return the communicator 
+     */
+    Communicate* getCommunicator()  
+    { 
+      return myComm;
+    }
+
+    /** return true if the rank == 0
+     */
+    inline bool is_manager() const {
+      return !myComm->rank();
+    }
 
     ///return the number of ScalarEstimators
     inline int size() const { return Estimators.size();}
@@ -182,7 +195,7 @@ namespace qmcplusplus {
 
     ///** set the cummulative energy and weight
     // */
-    void getEnergyAndWeight(RealType& e, RealType& w);
+    void getEnergyAndWeight(RealType& e, RealType& w, RealType& var);
 
     template<class CT>
     void write(CT& anything, bool doappend) 
@@ -211,8 +224,8 @@ namespace qmcplusplus {
     ofstream* Archive;
     ///file handler to write data for debugging
     ofstream* DebugArchive;
-    /////communicator to handle communication
-    //Communicate* myComm;
+    ///communicator to handle communication
+    Communicate* myComm;
     /** pointer to the primary ScalarEstimatorBase
      *
      * To be removed 
