@@ -146,6 +146,7 @@ namespace qmcplusplus {
     RecordCount=0;
     energyAccumulator.clear();
     varAccumulator.clear();
+
     BlockAverages.setValues(0.0);
     AverageCache.resize(BlockAverages.size());
     PropertyCache.resize(BlockProperties.size());
@@ -308,6 +309,8 @@ namespace qmcplusplus {
     for(int i=1; i<num_threads; i++) PropertyCache+=est[i]->PropertyCache;
     for(int i=1; i<PropertyCache.size(); i++) PropertyCache[i] *= tnorm;
 
+    for(int i=1; i<num_threads; i++) PropertyCache+=est[i]->PropertyCache;
+
     if(CompEstimators) 
     { //simply clean this up
       CompEstimators->startBlock(1);
@@ -315,10 +318,13 @@ namespace qmcplusplus {
         CompEstimators->collectBlock(est[i]->CompEstimators);
     }
 
-    collectBlockAverages();
+    for(int i=0; i<num_threads; ++i)
+      varAccumulator(est[i]->varAccumulator.mean());
+
+    collectBlockAverages(num_threads);
   }
 
-  void EstimatorManager::collectBlockAverages()
+  void EstimatorManager::collectBlockAverages(int num_threads)
   {
 #if defined(DEBUG_ESTIMATOR_ARCHIVE)
     if(DebugArchive)
@@ -371,7 +377,7 @@ namespace qmcplusplus {
 
     //add the block average to summarize
     energyAccumulator(AverageCache[0]);
-    varAccumulator(MainEstimator->variance());
+    if(num_threads==1) varAccumulator(MainEstimator->variance());
 
     if(Archive)
     {

@@ -268,7 +268,7 @@ private:
      //storage for MPI_Request
     vector<Communicate::request> myRequest;
     ///collect data and write
-    void collectBlockAverages();
+    void collectBlockAverages(int num_threads=1);
     ///add header to an ostream
     void addHeader(ostream& o);
   };
