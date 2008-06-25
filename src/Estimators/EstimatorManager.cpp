@@ -145,6 +145,7 @@ namespace qmcplusplus {
     reset();
     RecordCount=0;
     energyAccumulator.clear();
+    varAccumulator.clear();
     BlockAverages.setValues(0.0);
     AverageCache.resize(BlockAverages.size());
     PropertyCache.resize(BlockProperties.size());
@@ -370,6 +371,7 @@ namespace qmcplusplus {
 
     //add the block average to summarize
     energyAccumulator(AverageCache[0]);
+    varAccumulator(MainEstimator->variance());
 
     if(Archive)
     {
@@ -415,7 +417,8 @@ namespace qmcplusplus {
       RealType tmp[3];
       tmp[0]= energyAccumulator.result();
       tmp[1]= energyAccumulator.count();
-      tmp[2]= energyAccumulator.variance();
+      tmp[2]= varAccumulator.mean();
+
       myComm->bcast(tmp,3);
       e=tmp[0];
       w=tmp[1];
@@ -425,7 +428,7 @@ namespace qmcplusplus {
     {
       e= energyAccumulator.result();
       w= energyAccumulator.count();
-      var= energyAccumulator.variance();
+      var= varAccumulator.mean();
     }
   }
 

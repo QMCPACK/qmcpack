@@ -236,6 +236,8 @@ namespace qmcplusplus {
      * @todo expand it for all the scalar observables to report the final results
      */
     ScalarEstimatorBase::accumulator_type energyAccumulator;
+    /** accumulator for the variance **/
+    ScalarEstimatorBase::accumulator_type varAccumulator;
     //save block averages (scalar data) to Cache 
     Vector<RealType> AverageCache;
     //save property data to Cache 
