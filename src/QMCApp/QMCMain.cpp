@@ -177,9 +177,9 @@ namespace qmcplusplus {
   void QMCMain::executeLoop(xmlNodePtr cur)
   {
     int niter=1;
-    const xmlChar* nptr=xmlGetProp(cur,(const xmlChar*)"max");
-    if(nptr != NULL)
-      niter=atoi((const char*)nptr);
+    OhmmsAttributeSet a;
+    a.add(niter,"max");
+    a.put(cur);
 
     app_log() << "Loop execution max-interations = " << niter << endl;
     for(int iter=0; iter<niter; iter++)
@@ -206,35 +206,11 @@ namespace qmcplusplus {
   bool QMCMain::executeQMCSection(xmlNodePtr cur, bool noloop)
   {
     string target("e");
-    const xmlChar* t=xmlGetProp(cur,(const xmlChar*)"target");
-    if(t) target = (const char*)t;
-    //bool toRunQMC=true;
-    //t=xmlGetProp(cur,(const xmlChar*)"completed");
-    //if(t != NULL) 
-    //{
-    //  if(xmlStrEqual(t,(const xmlChar*)"yes")) 
-    //  {
-    //    app_log() << "  This qmc section is already executed." << endl;
-    //    toRunQMC=false;
-    //  }
-    //} 
-    //else 
-    //{
-    //  xmlAttrPtr t1=xmlNewProp(cur,(const xmlChar*)"completed", (const xmlChar*)"no");
-    //}
-
-    //bool success=true;
-    //if(toRunQMC) 
-    //{
-    //  qmcSystem = ptclPool->getWalkerSet(target);
-    //  success = runQMC(cur);
-    //  if(success && noloop) 
-    //  {
-    //    xmlAttrPtr t1=xmlSetProp(cur,(const xmlChar*)"completed", (const xmlChar*)"yes");
-    //  } 
-    //  FirstQMC=false;
-    //}
-    qmcSystem = ptclPool->getWalkerSet(target);
+    OhmmsAttributeSet a;
+    a.add(target,"target");
+    a.put(cur);
+    if(qmcSystem ==0)
+      qmcSystem = ptclPool->getWalkerSet(target);
     bool success = runQMC(cur);
     FirstQMC=false;
     return success;
