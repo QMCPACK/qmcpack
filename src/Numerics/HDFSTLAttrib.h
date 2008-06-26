@@ -20,7 +20,9 @@
 #ifndef OHMMS_HDF_STL_NUMERICATTRIBIO_H
 #define OHMMS_HDF_STL_NUMERICATTRIBIO_H
 #include "OhmmsData/HDFAttribIO.h"
+#include "Numerics/HDFNumericAttrib.h"
 #include <complex>
+#include <bitset>
 
 namespace qmcplusplus {
 /** Specialization for std::vector<double> */
@@ -29,19 +31,28 @@ struct HDFAttribIO<std::vector<int> >: public HDFAttribIOBase {
 
   typedef std::vector<int> ArrayType_t;
   ArrayType_t&  ref;
+  bool replace;
 
-  HDFAttribIO<ArrayType_t>(ArrayType_t& a):ref(a) { }
+  HDFAttribIO<ArrayType_t>(ArrayType_t& a, bool reuse=false):ref(a),replace(reuse) { }
 
   inline void write(hid_t grp, const char* name) {
-
-    hsize_t dim = ref.size();
-    hid_t dataspace  = H5Screate_simple(1, &dim, NULL);
-    hid_t dataset =  
-      H5Dcreate(grp, name, H5T_NATIVE_INT, dataspace, H5P_DEFAULT);
-    hid_t ret = 
-      H5Dwrite(dataset, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT,&ref[0]);
-    H5Sclose(dataspace);
-    H5Dclose(dataset);
+    if(replace)
+    {
+      hid_t dataset = H5Dopen(grp,name);
+      hid_t ret = H5Dwrite(dataset, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT,&(ref[0]));
+      H5Dclose(dataset);
+    }
+    else
+    {
+      hsize_t dim = ref.size();
+      hid_t dataspace  = H5Screate_simple(1, &dim, NULL);
+      hid_t dataset =  
+        H5Dcreate(grp, name, H5T_NATIVE_INT, dataspace, H5P_DEFAULT);
+      hid_t ret = 
+        H5Dwrite(dataset, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT,&ref[0]);
+      H5Sclose(dataspace);
+      H5Dclose(dataset);
+    }
   }
 
   inline void read(hid_t grp, const char* name) {
@@ -181,6 +192,34 @@ struct HDFAttribIO<std::vector<std::complex<double> > >: public HDFAttribIOBase 
     H5Dclose(h1);
   }
 
+};
+
+template<std::size_t N>
+struct HDFAttribIO<std::bitset<N> >: public HDFAttribIOBase {
+  //NOTE: This specialization assumes each complex number was/will be saved
+  // as a pair of doubles. This is checked.
+
+  typedef std::bitset<N> ArrayType_t;
+  ArrayType_t& ref;
+  bool replace;
+
+  //Assumes complex stored as a pair of floats/doubles.
+  HDFAttribIO<ArrayType_t>(ArrayType_t& a, bool reuse=false): ref(a), replace(reuse)
+  { 
+  }
+  
+  inline void write(hid_t grp, const char* name) {
+    unsigned long c=ref.to_ulong();
+    HDFAttribIO<unsigned long> hc(c,replace);
+    hc.write(grp,name);
+  }
+
+  inline void read(hid_t grp, const char* name) {
+    unsigned long c=ref.to_ulong();
+    HDFAttribIO<unsigned long> hc(c);
+    hc.read(grp,name);
+    ref=c;
+  }
 };
 }
 #endif

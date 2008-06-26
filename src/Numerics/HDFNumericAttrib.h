@@ -55,6 +55,39 @@ struct HDFAttribIO<hsize_t>: public HDFAttribIOBase {
   }
 };
 
+template<>
+struct HDFAttribIO<unsigned long>: public HDFAttribIOBase {
+
+  unsigned long& ref;
+  bool replace;
+
+  HDFAttribIO<unsigned long>(unsigned long& a, bool reuse=false):ref(a),replace(reuse) { }
+
+  inline void write(hid_t grp, const char* name) {
+    if(replace)
+    {
+      hid_t h1 = H5Dopen(grp, name);
+      hid_t ret = H5Dwrite(h1, H5T_NATIVE_ULONG, H5S_ALL, H5S_ALL, H5P_DEFAULT,&ref);
+      H5Dclose(h1);
+    }
+    else
+    {
+      hsize_t dim = 1;
+      hid_t dataspace  = H5Screate_simple(1, &dim, NULL);
+      hid_t dataset =  H5Dcreate(grp, name, H5T_NATIVE_ULONG, dataspace, H5P_DEFAULT);
+      hid_t ret = H5Dwrite(dataset, H5T_NATIVE_ULONG, H5S_ALL, H5S_ALL, H5P_DEFAULT,&ref);
+      H5Sclose(dataspace);
+      H5Dclose(dataset);
+    }
+  }
+
+  inline void read(hid_t grp, const char* name) {
+    hid_t h1 = H5Dopen(grp, name);
+    hid_t ret = H5Dread(h1, H5T_NATIVE_ULONG, H5S_ALL, H5S_ALL, H5P_DEFAULT, &ref);
+    H5Dclose(h1);
+  }
+};
+
 /** Specialization for int */
 template<>
 struct HDFAttribIO<int>: public HDFAttribIOBase {
@@ -163,7 +196,8 @@ struct HDFAttribIO<TinyVector<double,D> >: public HDFAttribIOBase {
     H5Eget_auto (&func, &client_data);
     H5Eset_auto (NULL, NULL);
     hid_t h1 = H5Dopen(grp, name);
-    hid_t ret = H5Dread(h1, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, &(ref[0]));
+    if(h1>-1)
+      hid_t ret = H5Dread(h1, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, &(ref[0]));
     H5Dclose(h1);
     H5Eset_auto (func, client_data);
   }
@@ -209,28 +243,37 @@ struct HDFAttribIO<Tensor<double,D> >: public HDFAttribIOBase {
 template<unsigned D>
 struct HDFAttribIO<TinyVector<int,D> >: public HDFAttribIOBase {
 
-typedef TinyVector<int,D> data_type;
+  typedef TinyVector<int,D> data_type;
+  data_type& ref;
+  bool replace;
 
-data_type& ref;
+  HDFAttribIO<data_type>(data_type& a, bool reuse=false):ref(a),replace(reuse) { }
 
-HDFAttribIO<data_type>(data_type& a):ref(a) { }
+  inline void write(hid_t grp, const char* name) {
+    if(replace)
+    {
+      hid_t dataset = H5Dopen(grp,name);
+      hid_t ret = H5Dwrite(dataset, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT,&(ref[0]));
+      H5Dclose(dataset);
+    }
+    else
+    {
+      hsize_t dim = D;
+      hid_t dataspace  = H5Screate_simple(1, &dim, NULL);
+      hid_t dataset =  
+        H5Dcreate(grp, name, H5T_NATIVE_INT, dataspace, H5P_DEFAULT);
+      hid_t ret = 
+        H5Dwrite(dataset, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT,&(ref[0]));
+      H5Sclose(dataspace);
+      H5Dclose(dataset);
+    }
+  }
 
-inline void write(hid_t grp, const char* name) {
-hsize_t dim = D;
-hid_t dataspace  = H5Screate_simple(1, &dim, NULL);
-hid_t dataset =  
-H5Dcreate(grp, name, H5T_NATIVE_INT, dataspace, H5P_DEFAULT);
-hid_t ret = 
-H5Dwrite(dataset, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT,&(ref[0]));
-H5Sclose(dataspace);
-H5Dclose(dataset);
-}
-
-inline void read(hid_t  grp, const char* name) {
-hid_t h1 = H5Dopen(grp, name);
-hid_t ret = H5Dread(h1, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, &(ref[0]));
-H5Dclose(h1);
-}
+  inline void read(hid_t  grp, const char* name) {
+    hid_t h1 = H5Dopen(grp, name);
+    hid_t ret = H5Dread(h1, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, &(ref[0]));
+    H5Dclose(h1);
+  }
 };
 
   //Specialization for std::vector<TinyVector<int,D> >
