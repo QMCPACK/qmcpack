@@ -68,9 +68,15 @@ DistanceTable::add(ParticleSet& s, const char* aname) {
     else
     {
       if(s.Lattice.DiagonalOnly)
+      {
+        app_log() << "Distance table specialized for an Orthorhombic cell " << endl;
         dt = new SymmetricDTD<DTD_BConds<RealType,DIM,SUPERCELL_BULK+TwoPowerD> >(s,s);
+      }
       else
+      {
+        app_log() << "Distance table specialized for a generic cell " << endl;
         dt = new SymmetricDTD<DTD_BConds<RealType,DIM,SUPERCELL_BULK> >(s,s);
+      }
     }
 
     //set the name of the table
@@ -112,9 +118,15 @@ DistanceTable::add(const ParticleSet& s, ParticleSet& t, const char* aname) {
     else 
     {
       if(s.Lattice.DiagonalOnly)
+      {
+        app_log() << "Distance table specialized for an Orthorhombic cell " << endl;
         dt = new AsymmetricDTD<DTD_BConds<RealType,DIM,SUPERCELL_BULK+TwoPowerD> >(s,t);
+      }
       else
+      {
+        app_log() << "Distance table specialized for a generic cell " << endl;
         dt = new AsymmetricDTD<DTD_BConds<RealType,DIM,SUPERCELL_BULK> >(s,t);
+      }
     }
 
     //set the name of the table
