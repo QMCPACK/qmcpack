@@ -52,22 +52,29 @@ namespace qmcplusplus {
    */
   class SimpleFixedNodeBranch: public QMCTraits 
   {
+
+    friend class BranchIO;
+
     /*! enum for booleans 
      * \since 2008-05-05
      */
     enum  
     {
-      B_DMCSTAGE, B_POPCONTROL, B_USETAUEFF, B_CLEARHISTORY
+      B_DMC=0, B_DMCSTAGE=1, B_POPCONTROL=2, B_USETAUEFF=3, 
+      B_CLEARHISTORY=4,
+      B_MODE_MAX=8
     };
 
     /** booleans to set the branch modes
      * \since 2008-05-05
      *
+     * - BranchMode[D_DMC]  1 for dmc, 0 for anything else
      * - BranchMode[D_DMCSTAGE]  1 for main, 0 for wamrup 
      * - BranchMode[D_POPCONTROL] 1 for the standard dmc, 0 for the comb method
      * - BranchMode[B_USETAUEFF]  1 to use taueff accordning to JCP 93, 0 to use tau
      */
-    bitset<4> BranchMode;
+    typedef bitset<B_MODE_MAX> BranchModeType;
+    BranchModeType BranchMode;
 
     /*! enum for iParam 
      * \since 2008-05-05
@@ -75,7 +82,8 @@ namespace qmcplusplus {
     enum  
     {
       B_WARMUPSTEPS, B_ENERGYUPDATEINTERVAL, B_COUNTER, 
-      B_TARGETWALKERS,  B_MAXWALKERS, B_MINWALKERS, B_BRANCHINTERVAL 
+      B_TARGETWALKERS,  B_MAXWALKERS, B_MINWALKERS, B_BRANCHINTERVAL,
+      B_IPARAM_MAX
     };
 
     /** input parameters of integer types 
@@ -89,35 +97,40 @@ namespace qmcplusplus {
      * - iParam[B_MAXWALKERS]  maximum number of walkers per node
      * - iParam[B_MINWALKERS]  minimum number of walkers per node
      */
-    TinyVector<int,8> iParam; 
+    typedef TinyVector<int,B_IPARAM_MAX> IParamType;
+    IParamType iParam; 
 
     /*! enum for vParam */
     enum  
     {
-      B_BRANCHMAX, B_BRANCHCUTOFF, B_BRANCHFILTER, B_ENERGYWINDOW
+      B_TAU, B_TAUEFF, B_ETRIAL, B_EREF, B_ENOW,
+      B_BRANCHMAX, B_BRANCHCUTOFF, B_BRANCHFILTER, B_SIGMA, 
+      B_ACC_ENERGY, B_ACC_SAMPLES, 
+      B_VPARAM_MAX
     };
 
     /** controlling parameters of real type
      *
      * Mostly internal
      */
-    TinyVector<RealType,4> vParam;
+    typedef TinyVector<RealType,B_VPARAM_MAX> VParamType;
+    VParamType vParam;
 
     /** number of remaning steps for a specific tasks
      *
      * set differently for BranchMode[B_DMCSTAGE] 
      */
     int ToDoSteps;
-    //the timestep
-    RealType Tau;
-    ///the effective timestep
-    RealType TauEff;
+    ////the timestep
+    //RealType Tau;
+    /////the effective timestep
+    //RealType TauEff;
     ///feedback parameter to control the population
     RealType Feedback;
     ///energy offset to control branching
-    RealType Eref;
-    ///actual trial energy
-    RealType Etrial;
+    //RealType Eref;
+    /////actual trial energy
+    //RealType Etrial;
     ///Feed*log(N)
     RealType logN;
     ///save xml element
@@ -134,6 +147,8 @@ namespace qmcplusplus {
     accumulator_set<RealType> R2Proposed;
     ///histogram of populations
     BlockHistogram<RealType> PopHist;
+    ///histogram of populations
+    BlockHistogram<RealType> DMCEnergyHist;
     ///root name
     string RootName;
     ///set of parameters
@@ -187,41 +202,28 @@ namespace qmcplusplus {
      */
     void initWalkerController(RealType tau, bool fixW=false);
 
-    /**  Calculates the Branching Green's function
-     * @param tau effective time step
-     * @param emixed mixed energy \f$(E_L(R)+E_L(R'))/2\f$
-     * @param reject rejection probability
-     * @return \f$G_{branch}\f$
+    /** return the bare branch weight
      *
-     * \f[G_{branch} = \exp(-\tau \left[(E_L(R)+E_L(R'))/2-E_T\right])\f]
-     * @note Use the rejection probability \f$q\f$ to limit \f$G_{branch}\f$
-     * \f[ G_{branch} = \min \left(\frac{1}{2q},G_{branch}\right). \f]
+     * This is equivalent to calling branchWeight(enew,eold,1.0,1.0)
      */
-    inline RealType branchGF(RealType tau, RealType emixed, RealType reject) const { 
-      //return min(0.5/(reject+1e-12),exp(-tau*(emix-Etrial)));
-      return std::exp(-tau*(emixed-Etrial));
+    inline RealType branchWeightBare(RealType enew, RealType eold) const 
+    { 
+      return std::exp(vParam[B_TAUEFF]*(vParam[B_ETRIAL]-0.5*(enew+eold)));
     }
 
-    //inline RealType branchWeight(RealType tau_, RealType enew, RealType eold) const 
-    //{ 
-    //  RealType taueff_=tau_*0.5;
-    //  RealType x=std::max(Eref-enew,Eref-eold);
-    //  if(x>vParam[B_BRANCHMAX])
-    //    taueff_=0.0;
-    //  else if(x>vParam[B_BRANCHCUTOFF])
-    //    taueff_ *=(1.0-(x-vParam[B_BRANCHCUTOFF])*vParam[B_BRANCHFILTER]);
-    //  return std::exp(taueff_*(Etrial*2.0-enew-eold));
-    //}
-
+    /** return the bare branch weight with a filtering using an energy window
+     *
+     * Cutoff values are set by the variance
+     */
     inline RealType branchWeight(RealType enew, RealType eold) const 
     { 
-      RealType taueff_=TauEff*0.5;
-      RealType x=std::max(Eref-enew,Eref-eold);
+      RealType taueff_=vParam[B_TAUEFF]*0.5;
+      RealType x=std::max(vParam[B_EREF]-enew,vParam[B_EREF]-eold);
       if(x>vParam[B_BRANCHMAX])
         taueff_=0.0;
       else if(x>vParam[B_BRANCHCUTOFF])
         taueff_ *=(1.0-(x-vParam[B_BRANCHCUTOFF])*vParam[B_BRANCHFILTER]);
-      return std::exp(taueff_*(Etrial*2.0-enew-eold));
+      return std::exp(taueff_*(vParam[B_ETRIAL]*2.0-enew-eold));
     }
 
     /** return the branch weight according to JCP1993 Umrigar et al. Appendix A p=1, q=0
@@ -232,7 +234,9 @@ namespace qmcplusplus {
      */
     inline RealType branchWeight(RealType enew, RealType eold, RealType scnew, RealType scold) const
     {
-      return std::exp(TauEff*(Etrial-Eref+0.5*((Eref-enew)*scnew+(Eref-eold)*scold)));
+      RealType s1=(vParam[B_ETRIAL]-vParam[B_EREF])+(vParam[B_EREF]-enew)*scnew;
+      RealType s0=(vParam[B_ETRIAL]-vParam[B_EREF])+(vParam[B_EREF]-eold)*scold;
+      return std::exp(vParam[B_TAUEFF]*0.5*(s1+s0));
     }
 
     /** return the branch weight according to JCP1993 Umrigar et al. Appendix A
@@ -244,18 +248,20 @@ namespace qmcplusplus {
      */
     inline RealType branchWeight(RealType enew, RealType eold, RealType scnew, RealType scold, RealType p) const
     {
-      RealType sp=(Etrial-Eref)+(Eref-enew)*scnew;
-      RealType sq=(Etrial-Eref)+(Eref-eold)*scold;
-      return std::exp(TauEff*(p*0.5*(sp-sq)+sq));
+      RealType s1=(vParam[B_ETRIAL]-vParam[B_EREF])+(vParam[B_EREF]-enew)*scnew;
+      RealType s0=(vParam[B_ETRIAL]-vParam[B_EREF])+(vParam[B_EREF]-eold)*scold;
+      return std::exp(vParam[B_TAUEFF]*(p*0.5*(s1-s0)+s0));
+      //return std::exp(TauEff*(p*0.5*(sp-sq)+sq));
     }
 
-    inline RealType getEref() const { return Eref;}
-    inline RealType getTau() const { return Tau;}
-    inline RealType getTauEff() const { return TauEff;}
+    inline RealType getEref() const { return vParam[B_EREF];}
+    inline RealType getTau() const { return vParam[B_TAU];}
+    inline RealType getTauEff() const { return vParam[B_TAUEFF];}
 
     inline void setTrialEnergy(RealType etot, RealType wtot=1.0) 
     {
-      Eref=Etrial=etot/wtot;
+      vParam[B_EREF]=vParam[B_ETRIAL]=etot/wtot;
+      //Eref=Etrial=etot/wtot;
     }
 
     /** perform branching

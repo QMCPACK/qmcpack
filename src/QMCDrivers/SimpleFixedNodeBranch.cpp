@@ -22,9 +22,7 @@
 #include "QMCDrivers/WalkerControlBase.h"
 #include "Estimators/EstimatorManager.h"
 //#include "Estimators/DMCEnergyEstimator.h"
-#include "Numerics/HDFNumericAttrib.h"
-#include "Numerics/HDFSTLAttrib.h"
-#include "Message/CommUtilities.h"
+#include "QMCDrivers/BranchIO.h"
 #include "HDFVersion.h"
 
 //#include <boost/archive/text_oarchive.hpp>
@@ -36,7 +34,7 @@ namespace qmcplusplus
   enum {COMBOPT, USETAUOPT, DUMMYOPT};
 
   SimpleFixedNodeBranch::SimpleFixedNodeBranch(RealType tau, int nideal): 
-    vParam(1.0), WalkerController(0), MyEstimator(0), PopHist(10)
+    vParam(1.0), WalkerController(0), MyEstimator(0), PopHist(5), DMCEnergyHist(5)
   {
 
     BranchMode.set(B_DMCSTAGE,0); //warmup stage
@@ -44,8 +42,8 @@ namespace qmcplusplus
     BranchMode.set(B_USETAUEFF,1); //use taueff
     BranchMode.set(B_CLEARHISTORY,0); //clear history and start with the current average
 
-    Tau=tau;
-    TauEff=tau;
+    vParam[B_TAU]=tau;
+    vParam[B_TAUEFF]=tau;
     Feedback=1.0;
     R2Accepted(1.0e-10); 
     R2Proposed(1.0e-10);
@@ -74,8 +72,7 @@ namespace qmcplusplus
     BranchMode(abranch.BranchMode),
     iParam(abranch.iParam),
     vParam(abranch.vParam),
-    Tau(abranch.Tau), TauEff(abranch.TauEff), Feedback(abranch.Feedback),
-    Eref(abranch.Eref), Etrial(abranch.Etrial),
+    Feedback(abranch.Feedback),
     WalkerController(0), MyEstimator(0),
     sParam(abranch.sParam)
   {
@@ -94,9 +91,9 @@ namespace qmcplusplus
     m_param.add(iParam[B_TARGETWALKERS],"target_walkers","int"); 
 
     //trial energy
-    m_param.add(Etrial,"refEnergy","AU"); 
-    m_param.add(Etrial,"ref_energy","AU"); 
-    m_param.add(Etrial,"en_ref","AU");
+    m_param.add(vParam[B_EREF],"refEnergy","AU"); 
+    m_param.add(vParam[B_EREF],"ref_energy","AU"); 
+    m_param.add(vParam[B_EREF],"en_ref","AU");
 
     //feed back parameter for population control
     m_param.add(Feedback,"feedback","double"); 
@@ -115,11 +112,13 @@ namespace qmcplusplus
   void SimpleFixedNodeBranch::initWalkerController(RealType tau, bool fixW) 
   {
 
-    Tau=tau;
-    TauEff=tau*R2Accepted.result()/R2Proposed.result();
+    vParam[B_TAU]=tau;
+    if(!BranchMode[B_DMCSTAGE])
+      vParam[B_TAUEFF]=tau*R2Accepted.result()/R2Proposed.result();
 
     if(WalkerController == 0) 
     {
+      BranchMode.set(B_DMC,1);//set DMC
       BranchMode.set(B_POPCONTROL,!fixW);//fixW -> 0 
       WalkerController = createWalkerController(iParam[B_TARGETWALKERS], MyEstimator->getCommunicator(), myNode);
       iParam[B_MAXWALKERS]=WalkerController->Nmax;
@@ -127,9 +126,11 @@ namespace qmcplusplus
       WalkerController->start();
 
       PopHist.clear();
-      PopHist.reserve(std::max(iParam[B_ENERGYUPDATEINTERVAL],10));
+      PopHist.reserve(std::max(iParam[B_ENERGYUPDATEINTERVAL],5));
     }
 
+    //save the BranchMode in anticipating state changes in reset
+    bitset<B_MODE_MAX> bmode(BranchMode);
     //reset Feedback pararmeter
     this->reset();
 
@@ -137,28 +138,30 @@ namespace qmcplusplus
     //update the simulation parameters
     WalkerController->put(myNode);
     //assign current Eref and a large number for variance
-    WalkerController->setEnergyAndVariance(Eref,vParam[B_ENERGYWINDOW]);
+    WalkerController->setEnergyAndVariance(vParam[B_EREF],vParam[B_SIGMA]);
 
-    //determine the branch cutoff to limit wild weights
-    //this can be done with average
-    vParam[B_BRANCHCUTOFF]=vParam[B_ENERGYWINDOW]*WalkerController->targetSigma;
+    //determine the branch cutoff to limit wild weights based on the sigma and sigmaBound
+    RealType sigma=std::max(vParam[B_SIGMA]*WalkerController->targetSigma,100.0);
+    vParam[B_BRANCHCUTOFF]=std::min(sigma,5.0/tau);
+    //vParam[B_BRANCHCUTOFF]=vParam[B_SIGMA]*WalkerController->targetSigma;
     vParam[B_BRANCHMAX]=vParam[B_BRANCHCUTOFF]*1.5;
     vParam[B_BRANCHFILTER]=1.0/(vParam[B_BRANCHMAX]-vParam[B_BRANCHCUTOFF]);
 
     //reset controller 
     WalkerController->reset();
+    BranchMode=bmode;
 
     app_log() << "  QMC counter      = " << iParam[B_COUNTER] << endl;
-    app_log() << "  time step        = " << Tau << endl;
-    app_log() << "  effective time step = " << TauEff << endl;
+    app_log() << "  time step        = " << vParam[B_TAU] << endl;
+    app_log() << "  effective time step = " << vParam[B_TAUEFF] << endl;
+    app_log() << "  trial energy     = " << vParam[B_ETRIAL] << endl;
+    app_log() << "  reference energy = " << vParam[B_EREF] << endl;
     app_log() << "  Feedback = " << Feedback <<  endl;
-    app_log() << "  reference energy = " << Eref << endl;
-    app_log() << "  trial energy     = " << Etrial << endl;
-    app_log() << "  reference variance = " << vParam[B_ENERGYWINDOW] << endl;
+    app_log() << "  reference variance = " << vParam[B_SIGMA] << endl;
     app_log() << "  branch cutoff = " <<  vParam[B_BRANCHCUTOFF] << " " << vParam[B_BRANCHMAX] << endl;
     app_log() << "  target walkers = " << iParam[B_TARGETWALKERS] << endl;
     app_log() << "  Max and mimum walkers per node= " << iParam[B_MAXWALKERS] << " " << iParam[B_MINWALKERS] << endl;
-
+    app_log() << "  QMC Status (BranchMode) = " << BranchMode << endl;
   }
 
   void SimpleFixedNodeBranch::flush(int counter) 
@@ -169,17 +172,16 @@ namespace qmcplusplus
   void SimpleFixedNodeBranch::branch(int iter, MCWalkerConfiguration& Walkers) 
   {
     //collect the total weights and redistribute the walkers accordingly, using a fixed tolerance
-    int pop_now = WalkerController->branch(iter,Walkers,0.1);
+    RealType pop_now = WalkerController->branch(iter,Walkers,0.1);
 
-    EnergyHist(WalkerController->EnsembleProperty.Energy);
+    //current energy
+    vParam[B_ENOW]=WalkerController->EnsembleProperty.Energy;
+    EnergyHist(vParam[B_ENOW]);
     R2Accepted(WalkerController->EnsembleProperty.R2Accepted);
     R2Proposed(WalkerController->EnsembleProperty.R2Proposed);
-    PopHist(pop_now);
+    //PopHist(pop_now);
+    vParam[B_EREF]=EnergyHist.mean();//current mean
 
-    Eref=EnergyHist.mean();//current mean
-
-    //EavgSum += ene_now;
-    //WgtSum += 1.0;
     if(BranchMode[B_DMCSTAGE]) // main stage
     { 
       if(BranchMode[B_POPCONTROL])
@@ -188,52 +190,59 @@ namespace qmcplusplus
           --ToDoSteps;
         else
         {
-          //Etrial=Eref-Feedback*std::log(static_cast<RealType>(pop_now))+logN; 
-          Etrial=Eref-Feedback*std::log(static_cast<RealType>(PopHist.mean()))+logN; 
+          vParam[B_ETRIAL]=vParam[B_EREF]+Feedback*(logN-std::log(pop_now)); 
           ToDoSteps=iParam[B_ENERGYUPDATEINTERVAL]-1;
-          //app_log() << "  UPDATE " << iter << " "  << Etrial << " " << Eref << " " << PopHist.mean() << endl;
         }
       }
     }
     else//warmup
     {
-      if(BranchMode[B_USETAUEFF]) TauEff=Tau*R2Accepted.result()/R2Proposed.result();
-
+      if(BranchMode[B_USETAUEFF]) vParam[B_TAUEFF]=vParam[B_TAU]*R2Accepted.result()/R2Proposed.result();
       if(BranchMode[B_POPCONTROL])
-        Etrial=Eref-Feedback*std::log(static_cast<RealType>(pop_now))+logN;
-
+      {
+        //using enow for the first 100 step
+        //RealType emix=(ToDoSteps>900)?vParam[B_ENOW]:vParam[B_EREF];
+        //vParam[B_ETRIAL]=emix+Feedback*(logN-std::log(pop_now));
+        
+        //using eref
+        vParam[B_ETRIAL]=vParam[B_EREF]+Feedback*(logN-std::log(pop_now));
+      }
       --ToDoSteps;
       if(ToDoSteps==0)  //warmup is done
       {
+
+        RealType sigma_eq=std::sqrt(EnergyHist.variance());
+        RealType sigma=std::max(sigma_eq*WalkerController->targetSigma,10.0);
+        vParam[B_BRANCHCUTOFF]=std::min(sigma,5.0/vParam[B_TAU]);
+        vParam[B_BRANCHMAX]=vParam[B_BRANCHCUTOFF]*1.5;
+        vParam[B_BRANCHFILTER]=1.0/(vParam[B_BRANCHMAX]-vParam[B_BRANCHCUTOFF]);
+
+
         app_log() << "\n Warmup is completed. ";
         if(BranchMode[B_USETAUEFF])
-          app_log() << "\n TauEff     = " << TauEff << "\n TauEff/Tau = " << TauEff/Tau ;
+          app_log() << "\n  TauEff     = " << vParam[B_TAUEFF] << "\n TauEff/Tau = " << vParam[B_TAUEFF]/vParam[B_TAU];
         else
-          app_log() << "\n TauEff proposed   = " << Tau*R2Accepted.result()/R2Proposed.result();
+          app_log() << "\n  TauEff proposed   = " << vParam[B_TAUEFF]*R2Accepted.result()/R2Proposed.result();
 
-        app_log()  << "\n Etrial     = " << Etrial << endl;
-        app_log() << "\n Running average of energy = " << EnergyHist.mean() << endl;
-        app_log() << "\n            sqrt(variance) = " << std::sqrt(EnergyHist.variance()) << endl;
+        app_log()  << "\n  Etrial     = " << vParam[B_ETRIAL] << endl;
+        app_log() << " Running average of energy = " << EnergyHist.mean() << endl;
+        //app_log() << "            sqrt(variance) = " << std::sqrt(EnergyHist.variance()) << endl;
+        app_log() << "            sqrt(variance) = " << sigma_eq << endl;
+        app_log() << "branch cutoff = " <<  vParam[B_BRANCHCUTOFF] << " " << vParam[B_BRANCHMAX] << endl;
 
         ToDoSteps = iParam[B_ENERGYUPDATEINTERVAL]-1;
         BranchMode.set(B_DMCSTAGE,1); //set BranchModex to main stage
+
+        //reset the histogram
+        EnergyHist.clear();
+        EnergyHist(vParam[B_EREF]);
+       
+        //This is not necessary
+        //EnergyHist(DMCEnergyHist.mean());
       }
     }
 
-    WalkerController->setTrialEnergy(Etrial);
-
-    //app_log() << "  HIST " << EnergyHist.average() << " " << EavgSum/WgtSum << " "  << PopHist.average() << endl;
-    //if(FixedNumWalkers)
-    //{
-    //  WalkerController->setTrialEnergy(EavgSum/WgtSum);
-    //}
-    //else
-    //{//use an average: instantenous energy is good, too
-    //  Etrial=Eref= Emix-Feedback*std::log(static_cast<RealType>(pop_now))+logN;
-    //  WalkerController->setTrialEnergy(Etrial);
-    //  //MyEstimator->setColumn(EtrialIndex,Etrial);
-    //  //MyEstimator->setColumn(EtrialIndex+1,wgt_cur);
-    //}
+    WalkerController->setTrialEnergy(vParam[B_ETRIAL]);
 
     //evaluate everything else
     MyEstimator->accumulate(Walkers);
@@ -247,19 +256,12 @@ namespace qmcplusplus
   void SimpleFixedNodeBranch::branch(int iter, MCWalkerConfiguration& w, vector<ThisType*>& clones) 
   {
     branch(iter,w);
-
-    for(int i=0; i<clones.size(); i++) 
-    { 
-      clones[i]->Eref=Eref;
-      clones[i]->Etrial=Etrial; 
-      clones[i]->TauEff=TauEff; 
-    }
-
+    //synchronize it
+    for(int i=0; i<clones.size(); i++) clones[i]->vParam=vParam;
   }
 
   void SimpleFixedNodeBranch::reset() 
   {
-
     //use effective time step of BranchInterval*Tau
     //Feed = 1.0/(static_cast<RealType>(NumGeneration*BranchInterval)*Tau);
     //logN = Feed*std::log(static_cast<RealType>(Nideal));
@@ -275,13 +277,14 @@ namespace qmcplusplus
 
       if(BranchMode[B_POPCONTROL])
       {
-        logN = Feedback*std::log(static_cast<RealType>(iParam[B_TARGETWALKERS]));
+        //logN = Feedback*std::log(static_cast<RealType>(iParam[B_TARGETWALKERS]));
+        logN = std::log(static_cast<RealType>(iParam[B_TARGETWALKERS]));
       }
       else
       {
         //may set Eref to a safe value
         //if(EnergyHistory.count()<5) Eref -= vParam[EnergyWindowIndex];
-        Etrial=0.0;Feedback=0.0;logN=0.0;
+        vParam[B_ETRIAL]=0.0;Feedback=0.0;logN=0.0;
       }
 
       WalkerController->start();
@@ -295,14 +298,18 @@ namespace qmcplusplus
     {//running VMC
       RealType e, w,sigma2;
       MyEstimator->getEnergyAndWeight(e,w,sigma2);
-      Etrial=Eref=e/w;
-      //overwrite the energy window
-      vParam[B_ENERGYWINDOW]=std::sqrt(sigma2);
+      
+      vParam[B_ETRIAL]=vParam[B_EREF]=e/w;
+      vParam[B_SIGMA]=std::sqrt(sigma2);
 
       //this is just to avoid diving by n-1  == 0
-      EnergyHist(Eref);
-      EnergyHist(Eref);
+      EnergyHist(vParam[B_EREF]);
+      EnergyHist(vParam[B_EREF]);
+
+      //add Eref to the DMCEnergyHistory
+      DMCEnergyHist(vParam[B_EREF]);
     }
+
     //write to a file
     write(RootName,true);
   }
@@ -329,157 +336,50 @@ namespace qmcplusplus
     return true;
   }
 
-#if defined(HAVE_LIBHDF5)
   void SimpleFixedNodeBranch::write(const string& fname, bool overwrite) 
   {
     RootName=fname;
     if(MyEstimator->is_manager())
     {
-      hid_t fid =  H5Fopen(fname.c_str(),H5F_ACC_RDWR,H5P_DEFAULT);
-      hid_t h1 =  H5Gopen(fid,hdf::main_state);
-      herr_t status = H5Eset_auto(NULL, NULL);
-      status = H5Gget_objinfo(h1,hdf::energy_history,0,NULL);
-      //TinyVector<RealType,3> esave(Eref,EavgSum,WgtSum);
-      TinyVector<RealType,4> esave(Eref,EnergyHist.result(),EnergyHist.count(),vParam[B_ENERGYWINDOW]);
-      overwrite=(status == 0);
-      HDFAttribIO<TinyVector<RealType,4> > eh(esave,overwrite);
-      eh.write(h1,hdf::energy_history);
-      if(LogNorm.size())//check if collection is done correctly
-      {
-        HDFAttribIO<vector<RealType> > lh(LogNorm,overwrite);
-        lh.write(h1,hdf::norm_history);
-      }
-      H5Gclose(h1);
-      H5Fclose(fid);
+      //\since 2008-06-24
+      vParam[B_ACC_ENERGY]=EnergyHist.result();
+      vParam[B_ACC_SAMPLES]=EnergyHist.count();
+      BranchIO hh(*this,MyEstimator->getCommunicator());
+      bool success= hh.write(fname);
     }
   }
 
-  //  void SimpleFixedNodeBranch::write(hid_t grp, bool overwrite) {
-  //    TinyVector<RealType,3> esave(Eref,EavgSum,WgtSum);
-  //    HDFAttribIO<TinyVector<RealType,3> > eh(esave,overwrite);
-  //    eh.write(grp,hdf::energy_history);
-  //    if(LogNorm.size())
-  //    {
-  //      HDFAttribIO<vector<RealType> > lh(LogNorm,overwrite);
-  //      lh.write(grp,hdf::norm_history);
-  //    }
-  //  }
-
-
-  void SimpleFixedNodeBranch::read(const string& fname) {
-
-    //esave is used for communication
-    //TinyVector<RealType,3> esave(Eref,EavgSum,WgtSum);
-    //TinyVector<RealType,3> esave(Eref,EnergyHist.result(),EnergyHist.count());
-    vector<RealType> esave(4);
-    esave[0]=Eref;
-    esave[1]=EnergyHist.result();
-    esave[2]=EnergyHist.count();
-    esave[3]=vParam[B_ENERGYWINDOW];
-
+  void SimpleFixedNodeBranch::read(const string& fname) 
+  {
     RootName=fname;
     if(RootName.find(hdf::config_ext)>=RootName.size())
     {
       RootName.append(hdf::config_ext);
     }
 
-    //string ext=getExtension(fname);
-    //if(ext != "h5") { //if the filename does not h5 extension, add the extension
-    //  RootName.append(".config.h5");
-    //}
-    if(MyEstimator->is_manager())
+    vParam[B_ACC_ENERGY]=EnergyHist.result();
+    vParam[B_ACC_SAMPLES]=EnergyHist.count();
+
+    BranchIO hh(*this,MyEstimator->getCommunicator());
+    bool success=hh.read(RootName);
+
+    if(success)
     {
-      hid_t h_file =  H5Fopen(RootName.c_str(),H5F_ACC_RDONLY,H5P_DEFAULT);
-      if(h_file<0)
+      EnergyHist.clear();
+      if(BranchMode[B_DMC] && BranchMode[B_DMCSTAGE])
       {
-        app_error() << "  Failed to open " << RootName << endl;
-        return;
+        app_log() << "  Restarting main DMC" << endl;
+        EnergyHist(vParam[B_ACC_ENERGY]/vParam[B_ACC_SAMPLES],vParam[B_ACC_SAMPLES]);
       }
-
-      //start using major=0 and minor=4
-      HDFVersion res_version(0,4);
-      HDFVersion in_version(0,1);
-      herr_t status = H5Eset_auto(NULL, NULL);
-      in_version.read(h_file,hdf::version);
-      //status = H5Gget_objinfo (h_file, hdf::version, 0, NULL);
-      //if(status == 0)//version exists after (0,4)
-      if(in_version>=res_version)
+      else
       {
-        //in_version.read(h_file,hdf::version);
-        hid_t h1=H5Gopen(h_file,hdf::main_state);
-        //get the history
-        //HDFAttribIO<TinyVector<RealType,3> > eh(esave);
-        HDFAttribIO<vector<RealType> > eh(esave);
-        eh.read(h1,hdf::energy_history);
-        if(LogNorm.size()) 
-        {
-          HDFAttribIO<vector<RealType> > lh(LogNorm);
-          lh.read(h1,hdf::norm_history);
-        }
-        H5Gclose(h1);
+        app_log() << "  Restarting VMC or warm-up DMC" << endl;
+        EnergyHist(vParam[B_ACC_ENERGY]/vParam[B_ACC_SAMPLES]);
       }
-      else 
-      { 
-        app_log() << "  Missing version. Using old format " << endl;
-        hid_t h1 = H5Gopen(h_file,"config_collection");
-        herr_t status = H5Eset_auto(NULL, NULL);
-        status = H5Gget_objinfo (h1, "Summary", 0, NULL);
-        if(status == 0) {
-          //HDFAttribIO<TinyVector<RealType,3> > eh(esave);
-          HDFAttribIO<vector<RealType> > eh(esave);
-          eh.read(h1,"Summary");
-          if(LogNorm.size()) 
-          {
-            HDFAttribIO<vector<RealType> > lh(LogNorm);
-            lh.read(h1,"LogNorm");
-            app_log() << " Normalization factor defined from previous calculation " << endl;
-          }
-        } else {
-          app_log() << "  Summary is not found. Starting from scratch" << endl;
-        }
-        H5Gclose(h1);
-      }
-      H5Fclose(h_file);
+      app_log() << "    Cummulative mean energy = " << EnergyHist.mean() << endl;
+      app_log() << "    Cummaltive samples = " << EnergyHist.count() << endl;
     }
-
-    //broadcast to the nodes : need to add a namespace mpi::
-    bcast(esave,MyEstimator->getCommunicator());
-
-    Etrial=Eref=esave[0];
-    if(esave.size()>3) vParam[B_ENERGYWINDOW]=esave[3];
-    //EavgSum=esave[1];
-    //WgtSum=esave[2];
   }
-
-  //  void SimpleFixedNodeBranch::read(hid_t grp) {
-  //    //Disable this
-  //    app_log() << "  Missing version. Using old format " << endl;
-  //    hid_t h_config = H5Gopen(grp,"config_collection");
-  //    herr_t status = H5Eset_auto(NULL, NULL);
-  //    status = H5Gget_objinfo (h_config, "Summary", 0, NULL);
-  //    if(status == 0) {
-  //      TinyVector<RealType,3> esave(Eref,EavgSum,WgtSum);
-  //      HDFAttribIO<TinyVector<RealType,3> > eh(esave);
-  //      eh.read(h_config,"Summary");
-  //      Etrial=Eref=esave[0]; EavgSum=esave[1]; WgtSum=esave[2];
-  //      bool normFound(0);
-  //      if(LogNorm.size()) {
-  //        HDFAttribIO<vector<RealType> > lh(LogNorm);
-  //        lh.read(h_config,"LogNorm");
-  //        normFound=1;
-  //      }
-  //      if(normFound)app_log() << " Normalization factor defined from previous calculation " << endl;
-  //    } else {
-  //      app_log() << "  Summary is not found. Starting from scratch" << endl;
-  //    }
-  //    H5Gclose(h_config);
-  //  }
-
-#else
-  void SimpleFixedNodeBranch::write(hid_t grp, bool append) { }
-  void SimpleFixedNodeBranch::read(hid_t grp) {}
-  void SimpleFixedNodeBranch::read(const string& fname) {}
-#endif
 }
 
 /***************************************************************************

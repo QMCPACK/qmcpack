@@ -10,6 +10,7 @@ SET(QMCDRIVERS
   ../Estimators/SkEstimator.cpp
   ../Estimators/EstimatorManager.cpp
   SimpleFixedNodeBranch.cpp
+  BranchIO.cpp
   QMCDriver.cpp
   QMCOptimize.cpp
   QMCCostFunctionBase.cpp
