@@ -98,6 +98,14 @@
 /* Define if floor function exists */
 #cmakedefine HAVE_FLOOR @HAVE_FLOOR@
 
+/* Define if einspline lib exists */
+#cmakedefine HAVE_EINSPLINE @HAVE_EINSPLINE@
+
+/* Define if external einspline is found */
+#cmakedefine HAVE_EINSPLINE_EXT @HAVE_EINSPLINE_EXT@
+
+#ifndef HAVE_EINSPLINE_EXT
+
 /* Define if posix_memalign function exists */
 #cmakedefine HAVE_POSIX_MEMALIGN @HAVE_POSIX_MEMALIGN@
 
@@ -158,7 +166,6 @@
 /* Use SSE prefetch  */
 #cmakedefine USE_PREFETCH @USE_PREFETCH@
 
-/* Define if einspline lib exists */
-#cmakedefine HAVE_EINSPLINE @HAVE_EINSPLINE@
+#endif /* HAVE_EINSPLINE_EXT */
 
 #endif // QMCPLUSPLUS_CONFIGURATION_H
