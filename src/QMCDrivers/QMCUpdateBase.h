@@ -167,6 +167,13 @@ namespace qmcplusplus {
     ///storage for differential laplacians for PbyP update
     ParticleSet::ParticleLaplacian_t L, dL;
 
+    /** evaluate the ratio of scaled velocity and velocity
+     * @param g gradient
+     * @param gscaled scaled gradient
+     * @return the ratio
+     */
+    RealType getNodeCorrection(const ParticleSet::ParticleGradient_t& g, ParticleSet::ParticlePos_t& gscaled);
+    
     /// Copy Constructor (disabled)
     QMCUpdateBase(const QMCUpdateBase& a): W(a.W),Psi(a.Psi),H(a.H), RandomGen(a.RandomGen){ }
     /// Copy operator (disabled).

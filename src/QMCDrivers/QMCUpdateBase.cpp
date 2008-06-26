@@ -163,14 +163,36 @@ namespace qmcplusplus {
 
       //RealType scale=getDriftScale(Tau,W.G);
       //(*it)->Drift = scale*W.G;
-      setScaledDrift(Tau,W.G,(*it)->Drift);
-
+      //setScaledDrift(Tau,W.G,(*it)->Drift);
+      RealType nodecorr=getNodeCorrection(W.G,(*it)->Drift);
       RealType ene = H.evaluate(W);
-      (*it)->resetProperty(logpsi,Psi.getPhase(),ene);
+      //(*it)->resetProperty(logpsi,Psi.getPhase(),ene);
+      (*it)->resetProperty(logpsi,Psi.getPhase(),ene, 0.0,0.0, nodecorr);
       H.saveProperty((*it)->getPropertyBase());
     } 
-
   }
+
+  QMCUpdateBase::RealType
+    QMCUpdateBase::getNodeCorrection(const ParticleSet::ParticleGradient_t& g, ParticleSet::ParticlePos_t& gscaled) 
+    {
+      PAOps<RealType,OHMMS_DIM>::copy(g,gscaled);
+      //// DriftOperators.h getNodeCorrectionP
+      //RealType norm=0.0, norm_scaled=0.0;
+      //for(int i=0; i<g.size(); ++i)
+      //{
+      //  RealType vsq=dot(g[i],g[i]);
+      //  RealType x=vsq*Tau;
+      //  RealType scale= (vsq<numeric_limits<RealType>::epsilon())? 1.0:((-1.0+std::sqrt(1.0+2.0*x))/x);
+      //  norm_scaled+=vsq*scale*scale;
+      //  norm+=vsq;
+      //}
+      //return std::sqrt(norm_scaled/norm);
+
+      // DriftOperators.h getNodeCorrectionW
+      RealType vsq=Dot(g,g);
+      RealType x=Tau*vsq;
+      return (vsq<numeric_limits<RealType>::epsilon())? 1.0:((-1.0+std::sqrt(1.0+2.0*x))/x);
+    }
 
   void QMCUpdateBase::updateWalkers(WalkerIter_t it, WalkerIter_t it_end) {
 
