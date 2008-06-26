@@ -309,8 +309,6 @@ namespace qmcplusplus {
     for(int i=1; i<num_threads; i++) PropertyCache+=est[i]->PropertyCache;
     for(int i=1; i<PropertyCache.size(); i++) PropertyCache[i] *= tnorm;
 
-    for(int i=1; i<num_threads; i++) PropertyCache+=est[i]->PropertyCache;
-
     if(CompEstimators) 
     { //simply clean this up
       CompEstimators->startBlock(1);
