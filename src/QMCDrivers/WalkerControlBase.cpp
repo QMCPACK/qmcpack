@@ -22,7 +22,7 @@ namespace qmcplusplus {
 
   WalkerControlBase::WalkerControlBase(Communicate* c): MPIObjectBase(c),
   SwapMode(0), Nmin(1), Nmax(10), MaxCopy(5), 
-  targetEnergyBound(200), targetVar(2), targetSigma(200), dmcStream(0)
+  targetEnergyBound(10), targetVar(2), targetSigma(10), dmcStream(0)
   {
     NumContexts=myComm->size();
     MyContext=myComm->rank();
@@ -288,8 +288,8 @@ namespace qmcplusplus {
     params.add(MaxCopy,"maxCopy","int"); 
     bool success=params.put(cur);
     app_log() << "  WalkerControlBase parameters " << endl;
-    app_log() << "    energyBound = " << targetEnergyBound << endl;
-    app_log() << "    sigmaBound = " << targetSigma << endl;
+    //app_log() << "    energyBound = " << targetEnergyBound << endl;
+    //app_log() << "    sigmaBound = " << targetSigma << endl;
     app_log() << "    maxCopy = " << MaxCopy << endl;
     return true;
   }
