@@ -49,6 +49,41 @@ namespace qmcplusplus {
     T vsq=OTCDot<T,T,D>::apply(qf,qf);
     return (vsq<numeric_limits<T>::epsilon())? tau:((-1.0+std::sqrt(1.0+2.0*tau*vsq))/vsq);
   }
+
+  /** evaluate \f$\gamma\$ for \f$ \bar V= \gamma V\f$
+   *
+   * Using eq. 34 of JCP 99, 2865 (1993)
+   * \f$ \bar v(i)=\gamma_i \frac{-1+\sqrt{1+2*a*v^2*\tau}{av^2\tau} v(i)\f$
+   */
+  template<class T, unsigned D>
+  inline T getNodeCorrectionP(T tau, const ParticleAttrib<TinyVector<T,D> >& ga, T a=1) 
+  {
+    T norm=0.0, norm_scaled=0.0;
+    for(int i=0; i<ga.size(); ++i)
+    {
+      T vsq=dot(ga[i],ga[i]);
+      T x=a*vsq*tau;
+      T scale= (vsq<numeric_limits<T>::epsilon())? 1.0:((-1.0+std::sqrt(1.0+2.0*x))/x);
+      norm_scaled+=vsq*scale*scale;
+      norm+=vsq;
+    }
+    return std::sqrt(norm_scaled/norm);
+  }
+
+  /** evaluate \f$\gamma\$ for \f$ \bar V= \gamma V\f$
+   *
+   * Using eq. 33 of JCP 99, 2865 (1993)
+   * \f$ \bar v(i)=\gamma_i \frac{-1+\sqrt{1+2*a*v^2*\tau}{av^2\tau} v(i)\f$
+   * Scale velocity for each particle
+   */
+  template<class T, unsigned D>
+  inline T getNodeCorrectionW(T tau, const ParticleAttrib<TinyVector<T,D> >& ga) 
+  {
+    T vsq=Dot(ga,ga);
+    T x=tau*vsq;
+    return (vsq<numeric_limits<T>::epsilon())? 1.0:((-1.0+std::sqrt(1.0+2.0*x))/x);
+  }
+
     
   /** evaluate drift using the scaling function by JCP93
    * @param tau timestep
