@@ -38,6 +38,7 @@ namespace qmcplusplus
     const char num_walkers[]="number_of_walkers";
     const char energy_history[]="energy_history";
     const char norm_history[]="norm_history";
+    const char qmc_status[]="qmc_status";
 
     //2nd level for config_group
     const char num_blocks[]="NumOfConfigurations";
