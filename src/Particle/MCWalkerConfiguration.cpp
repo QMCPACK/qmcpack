@@ -232,28 +232,32 @@ void MCWalkerConfiguration::loadEnsemble()
 {
   //if(SampleStack.size()>WalkerList.size())
   //  createWalkers(SampleStack.size()-WalkerList.size());
-
-  while(SampleStack.size()) {
-
-    ParticlePos_t* pos(SampleStack.front());
+  for(int i=0; i<SampleStack.size(); ++i)
+  {
     Walker_t* awalker=new Walker_t(GlobalNum);
-    awalker->R = *pos;
+    awalker->R = *(SampleStack[i]);
     awalker->Drift = 0.0;
     WalkerList.push_back(awalker);
+    delete SampleStack[i];
+  }
+}
 
-    //cleanup
-    delete pos; 
-    SampleStack.pop_front();
+void MCWalkerConfiguration::loadEnsemble(MCWalkerConfiguration& other,
+    int first, int last)
+{
+  for(int i=first; i<last; ++i)
+  {
+    Walker_t* awalker=new Walker_t(GlobalNum);
+    awalker->R = *(SampleStack[i]);
+    awalker->Drift = 0.0;
+    other.WalkerList.push_back(awalker);
+    delete SampleStack[i];
   }
 }
 
 void MCWalkerConfiguration::clearEnsemble()
 {
-  while(SampleStack.size()) {
-    ParticlePos_t* pos(SampleStack.front());
-    delete pos;
-    SampleStack.pop_front();
-  }
+  SampleStack.clear();
 }
 }
 

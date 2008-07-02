@@ -231,10 +231,19 @@ namespace qmcplusplus {
     inline bool updatePbyP() const { return ReadyForPbyP;}
 
     //@{save/load/clear function for optimization
+    inline int numSamples() const { return SampleStack.size();}
     ///save the position of current walkers to SampleStack
     void saveEnsemble();
     ///load SampleStack data to current walkers
     void loadEnsemble();
+    /** load SampleStack data to other for [first,last) of SampleStack
+     * @param other MCWalkerConfiguration
+     * @param first index of the fast sample to be copied
+     * @param last index of the lst sample to be copied
+     *
+     * loadEnsemble severely inefficient. This is called within a parallel region.
+     */
+    void loadEnsemble(MCWalkerConfiguration& other, int first, int last);
     ///clear the ensemble
     void clearEnsemble();
     //@}
@@ -272,7 +281,7 @@ namespace qmcplusplus {
      MultiChain *Polymer;
      
      //add samples
-     list<ParticlePos_t*> SampleStack;
+     vector<ParticlePos_t*> SampleStack;
 
     /** initialize the PropertyList
      *
