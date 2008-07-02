@@ -234,6 +234,8 @@ namespace qmcplusplus {
     inline int numSamples() const { return SampleStack.size();}
     ///save the position of current walkers to SampleStack
     void saveEnsemble();
+    ///save the position of current walkers
+    void saveEnsemble(iterator first, iterator last);
     ///load SampleStack data to current walkers
     void loadEnsemble();
     /** load SampleStack data to other for [first,last) of SampleStack

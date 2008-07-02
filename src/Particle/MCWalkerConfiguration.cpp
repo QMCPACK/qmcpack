@@ -228,6 +228,14 @@ void MCWalkerConfiguration::saveEnsemble()
   }
 }
 
+void MCWalkerConfiguration::saveEnsemble(iterator first, iterator last)
+{
+  while(first != last) 
+  {
+    SampleStack.push_back(new ParticlePos_t((*first)->R));
+    ++first;
+  }
+}
 void MCWalkerConfiguration::loadEnsemble()
 {
   //if(SampleStack.size()>WalkerList.size())
