@@ -38,9 +38,10 @@ class CGOptimization: public MinimizerBase<T>,
 
   /** number of minimization steps */
   int NumSteps;
+  /** number of parameters to vary */
+  int NumParams;
   /** displacement to evaluate the gradients numerically */
   Return_t Displacement;
-
   /** tolerance the converged value */
   Return_t CostTol;
   /** tolerance for the converged gamma = (g*g-g*cg)/g0*g0 */
@@ -88,10 +89,14 @@ class CGOptimization: public MinimizerBase<T>,
   ///reset member data
   void reset();
 
+  /** evaluate the gradients numerically 
+   * @param grad container for the gradients
+   */
+  void evaluateGradients(std::vector<Return_t>& grad);
+
  protected:
 
   bool RestartCG;
-  int NumParams;
   int CurStep;
 
   Return_t gdotg, gdotg0, gdoth, gamma;
@@ -106,10 +111,6 @@ class CGOptimization: public MinimizerBase<T>,
    */
   Return_t Func(Return_t dl);
 
-  /** evaluate the gradients numerically 
-   * @param grad container for the gradients
-   */
-  void evaluateGradients(std::vector<Return_t>& grad);
 };
 
 template<class T>
@@ -126,7 +127,7 @@ CGOptimization<T>::CGOptimization(ObjectFuncType* atarget):
   NumSteps(100),Displacement(1e-6),
   CostTol(1.e-6),GradTol(1.e-6),GammaTol(1.e-7) // GammaTol was set to 1e-4 originally
 {
-  prevCost=10e6; //some large number
+  curCost=prevCost=1.0e13;
 }
 
 template<class T>
@@ -157,10 +158,32 @@ bool CGOptimization<T>::optimize() {
       RestartCG=false;
     }
 
-    bool success = this->lineoptimization();
-    success &= TargetFunc->IsValid;
-    if(success) { //successful lineminimization
-      curCost= Func(this->Lambda);
+    T lambda_a, val_proj, lambda_max=this->LambdaMax;
+    bool success=TargetFunc->lineoptimization(Y,cgY,curCost,lambda_a,val_proj,lambda_max);
+    if(success)
+    {
+      if(lambda_a>0)
+      {
+        this->Lambda=lambda_a;
+        curCost=val_proj;
+        this->LambdaMax=lambda_max;//over right the max
+      }
+      else
+        success=false;
+    }
+    else
+    {
+      success = this->lineoptimization();
+      success &= (TargetFunc->IsValid && this->Lambda>0.0);
+      if(success) 
+      {
+        cout << "  >>> Found lambda = " << this->Lambda << endl;
+        curCost= Func(this->Lambda);
+      }
+    }
+
+    if(success) 
+    { //successful lineminimization
       for(int i=0; i<NumParams; i++){ Y[i]+=this->Lambda*cgY[i]; }
     } else {
       if(msg_stream) {
@@ -231,6 +254,11 @@ bool CGOptimization<T>::optimize() {
 template<class T>
 void 
 CGOptimization<T>::evaluateGradients(std::vector<Return_t>& grad) {
+
+  //use targetFunc evaluateGradients if it does it better
+  if(TargetFunc->evaluateGradients(grad)) return;
+
+  //do the finite difference method
   Return_t dh=1.0/(2.0*Displacement);
   for(int i=0; i<TargetFunc->NumParams() ; i++) {
     for(int j=0; j<TargetFunc->NumParams(); j++) TargetFunc->Params(j)=Y[j];
@@ -240,6 +268,7 @@ CGOptimization<T>::evaluateGradients(std::vector<Return_t>& grad) {
     Return_t CostMinus = TargetFunc->Cost();
     grad[i]=(CostMinus-CostPlus)*dh;
   }
+
 }
 
 template<class T>

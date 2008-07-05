@@ -52,6 +52,34 @@ public:
 
   virtual void Report() = 0;
 
+  /** find dl that minimize an object function in cg direction
+   * @param x0 current parameters
+   * @param cg direction
+   * @param dl displacement
+   * @param val optimal value
+   * @param lambda_max maximum displacement
+   * @return true, if lineoptimization is done by the derived class
+   *
+   * Default implementation returns false to perform a simple method
+   */
+  virtual bool lineoptimization(const std::vector<T>& x0, const std::vector<T>& cg, 
+      Return_t val0,
+      Return_t& dl, Return_t& vopt, Return_t& lambda_max)
+  {
+    return false;
+  }
+
+  /** evaluate gradient, \f$ gr(\alpha_i)= -\frac{\partial F}{\partial \alhpa_i}\f$
+   * @param gradients
+   * @return true, if a cost function evaluates the gradients
+   *
+   * Default implementation returns false to perform a finite-difference method
+   * for gradients.
+   */
+  virtual bool evaluateGradients(std::vector<T>& gr) 
+  {
+    return false;
+  }
 };
 
 /** base class for optimization(minimization) classes 
