@@ -39,7 +39,6 @@ namespace qmcplusplus {
     IndexType nAcceptTot = 0;
     IndexType nRejectTot = 0;
     do {
-      //Estimators->startBlock(nSteps);
       Mover->startBlock(nSteps);
       IndexType step = 0;
       do
@@ -47,20 +46,22 @@ namespace qmcplusplus {
         ++step;++CurrentStep;
         Mover->advanceWalkers(W.begin(),W.end(),true); //step==nSteps);
         Estimators->accumulate(W);
+
+        //save walkers for optimization
+        if(QMCDriverMode[QMC_OPTIMIZE]&&CurrentStep%Period4WalkerDump==0) W.saveEnsemble();
+
       } while(step<nSteps);
 
-      //Estimators->stopBlock(Mover->acceptRatio());
       Mover->stopBlock();
-
       nAcceptTot += Mover->nAccept;
       nRejectTot += Mover->nReject;
       ++block;
 
       recordBlock(block);
 
-      //periodically re-evaluate everything for pbyp
-      if(QMCDriverMode[QMC_UPDATE_MODE] && CurrentStep%100 == 0) 
-        Mover->updateWalkers(W.begin(),W.end());
+      ////periodically re-evaluate everything for pbyp
+      //if(QMCDriverMode[QMC_UPDATE_MODE] && CurrentStep%100 == 0) 
+      //  Mover->updateWalkers(W.begin(),W.end());
 
     } while(block<nBlocks);
 

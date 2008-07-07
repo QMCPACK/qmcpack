@@ -57,14 +57,19 @@ namespace qmcplusplus {
           //assign the iterators and resuse them
           MCWalkerConfiguration::iterator wit(W.begin()+wPerNode[ip]), wit_end(W.begin()+wPerNode[ip+1]);
 
-          if(QMCDriverMode[QMC_UPDATE_MODE]&&now%100==0) 
-            Movers[ip]->updateWalkers(wit,wit_end);
-
+          //if(QMCDriverMode[QMC_UPDATE_MODE]&&now%100==0) 
+          //  Movers[ip]->updateWalkers(wit,wit_end);
+          
           Movers[ip]->startBlock(nSteps);
-          for(int step=0; step<nSteps;step++)
+          int now_loc=now;
+          for(int step=0; step<nSteps;++step)
           {
             Movers[ip]->advanceWalkers(wit,wit_end,false);
             Movers[ip]->accumulate(wit,wit_end);
+
+            ++now_loc;
+            //save walkers for optimization
+            if(QMCDriverMode[QMC_OPTIMIZE]&&now_loc%Period4WalkerDump==0) wClones[ip]->saveEnsemble(wit,wit_end);
           } 
           Movers[ip]->stopBlock();
         }//end-of-parallel for

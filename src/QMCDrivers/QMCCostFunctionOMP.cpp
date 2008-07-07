@@ -41,35 +41,37 @@ namespace qmcplusplus {
 
     Return_t wgt_tot=0.0;
 
-#pragma omp parallel reduction(+:wgt_tot)
+//#pragma omp parallel reduction(+:wgt_tot)
+#pragma omp parallel 
     {
       int ip = omp_get_thread_num();
       bool usingWeight=UseWeight;
       MCWalkerConfiguration& wRef(*wClones[ip]);
-      ParticleSet::ParticleLaplacian_t dl(wRef.getTotalNum());
+      ParticleSet::ParticleLaplacian_t pdL(wRef.getTotalNum());
+      ParticleSet::ParticleGradient_t pdG(wRef.getTotalNum());
       typedef MCWalkerConfiguration::Walker_t Walker_t;
       MCWalkerConfiguration::iterator it(wRef.begin()); 
       MCWalkerConfiguration::iterator it_end(wRef.end()); 
       Return_t eloc_new, wgt_node=0.0;
+      int totalElements=W.getTotalNum()*OHMMS_DIM;
       int iw=0;
       while(it != it_end) {
         Walker_t& thisWalker(**it);
-
         //rewind the buffer to get the data from buffer
         thisWalker.DataSet.rewind();
         //W is updated by thisWalker
         //BEGIN:MEMORY FIX
-        //wRef.copyFromBuffer(thisWalker.DataSet);
         wRef.R=thisWalker.R;
         wRef.update();
+        //wRef.copyFromBuffer(thisWalker.DataSet);
         //END:MEMORY FIX
 
-        Return_t logpsi=0.0;
-        //copy dL from Buffer
-        thisWalker.DataSet.get(dl.begin(),dl.end());
-        logpsi=psiClones[ip]->evaluateDeltaLog(wRef);
-        wRef.G += thisWalker.Drift;
-        wRef.L += dl;
+        thisWalker.DataSet.get(&(pdG[0][0]),&(pdG[0][0])+totalElements);
+        thisWalker.DataSet.get(pdL.begin(),pdL.end());
+
+        Return_t logpsi=psiClones[ip]->evaluateDeltaLog(wRef);
+        wRef.G += pdG;
+        wRef.L += pdL;
 
         Return_t* restrict saved = (*RecordsOnNode[ip])[iw];
         eloc_new=H_KE_Node[ip]->evaluate(wRef)+saved[ENERGY_FIXED];
@@ -81,7 +83,7 @@ namespace qmcplusplus {
         ++it;
         ++iw;
       }
-      //reduction
+#pragma omp atomic
       wgt_tot += wgt_node;
     }
 
@@ -168,16 +170,6 @@ namespace qmcplusplus {
 
     app_log() << "   Loading configuration from MCWalkerConfiguration::SampleStack " << endl;
     app_log() << "    number of walkers before load " << W.getActiveWalkers() << endl;
-    W.loadEnsemble();
-    app_log() << "    number of walkers after load " << W.getActiveWalkers() << endl;
-    //if(aroot.size() && aroot != "invalid") {
-    //  app_log() << "  Reading configurations from the previous qmc block" << endl;
-    //  HDFWalkerInputCollect wReader(aroot);
-    //  wReader.putSingle(W);
-    //}
-
-    //divide the walkers
-    FairDivideLow(W.getActiveWalkers(),NumThreads,wPerNode);
 
 #pragma omp parallel
     {
@@ -187,14 +179,16 @@ namespace qmcplusplus {
         H_KE_Node[ip]= new QMCHamiltonian;
         H_KE_Node[ip]->addOperator(hClones[ip]->getHamiltonian("Kinetic"),"Kinetic");
       }
-      if(ip)
-      {
-        wClones[ip]->createWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
-      }
+      wClones[ip]->destroyWalkers(wClones[ip]->begin(),wClones[ip]->end());
+      wClones[ip]->loadEnsemble();
+      wClones[ip]->clearEnsemble();
     }
 
-    //remove walkers on other threads
-    W.destroyWalkers(W.begin()+wPerNode[1],W.end());
+    app_log() << "    number of walkers after load: ";
+    for(int ip=0; ip<NumThreads; ++ip)
+      app_log() <<  wClones[ip]->getActiveWalkers() <<  " " ;
+    app_log() << endl;
+    FairDivideLow(W.getActiveWalkers()*NumThreads,NumThreads,wPerNode);
   }
 
   /** evaluate everything before optimization */
@@ -203,11 +197,14 @@ namespace qmcplusplus {
 
     RealType et_tot=0.0;
     RealType e2_tot=0.0;
-#pragma omp parallel reduction(+:et_tot,e2_tot)
+
+//#pragma omp parallel reduction(+:et_tot,e2_tot)
+#pragma omp parallel
     {
       int ip = omp_get_thread_num();
       MCWalkerConfiguration& wRef(*wClones[ip]);
-      ParticleSet::ParticleLaplacian_t dl(wRef.getTotalNum());
+      ParticleSet::ParticleLaplacian_t pdL(wRef.getTotalNum());
+      ParticleSet::ParticleGradient_t pdG(wRef.getTotalNum());
       int numLocWalkers=wRef.getActiveWalkers();
 
       if(RecordsOnNode[ip] ==0) RecordsOnNode[ip]=new Matrix<Return_t>;
@@ -217,6 +214,7 @@ namespace qmcplusplus {
       MCWalkerConfiguration::iterator it(wRef.begin()); 
       MCWalkerConfiguration::iterator it_end(wRef.end()); 
       int nat = wRef.getTotalNum();
+      int totalElements=W.getTotalNum()*OHMMS_DIM;
       int iw=0;
       Return_t e0=0.0;
       Return_t e2=0.0;
@@ -230,20 +228,16 @@ namespace qmcplusplus {
         thisWalker.DataSet.rewind();
         //MCWalkerConfiguraton::registerData add distance-table data
         //BEGIN:MEMORY FIX
-        //wRef.registerData(thisWalker,thisWalker.DataSet);
         wRef.R=thisWalker.R;
         wRef.update();
+        //wRef.registerData(thisWalker.DataSet);
         //END:MEMORY FIX
-
         Return_t* restrict saved=(*RecordsOnNode[ip])[iw];
-#if defined(QMC_COMPLEX)
-        app_error() << " Optimization is not working with complex wavefunctions yet" << endl;
-        app_error() << "  Needs to fix TrialWaveFunction::evaluateDeltaLog " << endl;
-#else
-        psiClones[ip]->evaluateDeltaLog(wRef, 
-            saved[LOGPSI_FIXED], saved[LOGPSI_FREE], thisWalker.Drift, dl);
-#endif
-        thisWalker.DataSet.add(dl.first_address(),dl.last_address());
+        psiClones[ip]->evaluateDeltaLog(wRef, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], pdG, pdL);
+
+        thisWalker.DataSet.add(&(pdG[0][0]),&(pdG[0][0])+totalElements);
+        thisWalker.DataSet.add(pdL.first_address(),pdL.last_address());
+
         //e0 += saved[ENERGY_TOT] = hClones[ip]->evaluate(wRef);
         Return_t x= hClones[ip]->evaluate(wRef);
         e0 += saved[ENERGY_TOT] = x;
@@ -254,7 +248,9 @@ namespace qmcplusplus {
         ++iw;
       }
       //add them all
+#pragma omp atomic
       et_tot+=e0;
+#pragma omp atomic
       e2_tot+=e2;
     }
 
@@ -270,6 +266,7 @@ namespace qmcplusplus {
 
     app_log() << "  VMC Eavg = " << Etarget << endl;
     app_log() << "  VMC Evar = " << etemp[2]/etemp[1]-Etarget*Etarget << endl;
+    app_log() << "  Total weights = " << etemp[1] << endl;
 
     setTargetEnergy(Etarget);
 

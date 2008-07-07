@@ -91,6 +91,18 @@ namespace qmcplusplus {
 
     void addCoefficients(xmlXPathContextPtr acontext, const char* cname);
 
+    /** implement the virtual function 
+     * @param x0 current parameters
+     * @param gr gradients or conjugate gradients
+     * @param dl return the displacelement to minimize the cost function
+     * @param val_proj projected cost
+     *
+     * If successful, any optimization object updates the parameters by x0 + dl*gr
+     * and proceeds with a new step.
+     */
+    bool lineoptimization(const vector<double>& x0, const vector<double>& gr, Return_t val0, 
+        Return_t& dl, Return_t& val_proj, Return_t& lambda_max);
+
     virtual void getConfigurations(const string& aroot)=0;
     virtual void checkConfigurations()=0;
 

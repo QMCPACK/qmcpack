@@ -78,7 +78,7 @@ namespace qmcplusplus {
     generateSamples();
 
     //cleanup walkers
-    W.destroyWalkers(W.begin(), W.end());
+    //W.destroyWalkers(W.begin(), W.end());
 
     app_log() << "<opt stage=\"setup\">" << endl;
     app_log() << "  <log>"<<endl;

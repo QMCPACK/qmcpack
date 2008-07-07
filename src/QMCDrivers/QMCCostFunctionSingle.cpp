@@ -51,23 +51,26 @@ namespace qmcplusplus {
       Walker_t& thisWalker(**it);
       Return_t* restrict saved = Records[iw];
 
+      //copy the walker
+      W.R=thisWalker.R;
       //rewind the buffer to get the data from buffer
       thisWalker.DataSet.rewind();
       //W is updated by thisWalker
-      W.copyFromBuffer(thisWalker.DataSet);
+      W.update();
+      //W.copyFromBuffer(thisWalker.DataSet);: save memory
 
       Return_t logpsi=0.0;
       //copy dL from Buffer
-#if defined(QMC_COMPLEX)
+//#if defined(QMC_COMPLEX)
       thisWalker.DataSet.get(&(dG[0][0]),&(dG[0][0])+totalElements);
       thisWalker.DataSet.get(dL.begin(),dL.end());
       logpsi=Psi.evaluateDeltaLog(W);
       W.G += dG;
-#else
-      thisWalker.DataSet.get(dL.begin(),dL.end());
-      logpsi=Psi.evaluateDeltaLog(W);
-      W.G += thisWalker.Drift;
-#endif
+//#else
+//      thisWalker.DataSet.get(dL.begin(),dL.end());
+//      logpsi=Psi.evaluateDeltaLog(W);
+//      W.G += thisWalker.Drift;
+//#endif
       W.L += dL;
 
       eloc_new=H_KE.evaluate(W)+saved[ENERGY_FIXED];
@@ -114,8 +117,9 @@ namespace qmcplusplus {
   void 
   QMCCostFunctionSingle::getConfigurations(const string& aroot) {
     app_log() << "   Loading configuration from MCWalkerConfiguration::SampleStack " << endl;
-    app_log() << "    number of walkers before load " << W.getActiveWalkers() << endl;
+    W.destroyWalkers(W.begin(),W.end());
     W.loadEnsemble();
+    W.clearEnsemble();
     app_log() << "    number of walkers after load " << W.getActiveWalkers() << endl;
     //if(aroot.size() && aroot != "invalid") {
     //  app_log() << "  Reading configurations from the previous qmc block" << endl;
@@ -138,28 +142,6 @@ namespace qmcplusplus {
 #endif
   }
 
- // /** evaluate everything before optimization */
- // void 
- // QMCCostFunctionSingle::getConfigurations(vector<string>& ConfigFile, 
- //     int partid, int nparts) {
- //   if(ConfigFile.size()) {
-
- //     app_log() << "  Reading configurations from mcwalkerset " << endl;
-
- //     W.destroyWalkers(W.begin(),W.end());
- //     for(int i=0; i<ConfigFile.size(); i++) {
- //       //JNKIM: needs to change to HDFWalkerInputCollect
- //       //HDFWalkerInput0 wReader(ConfigFile[i],partid,nparts);
- //       HDFWalkerInputCollect wReader(ConfigFile[i]);
- //       wReader.putSingle(W);
- //       //wReader.put(W,-1);
- //     }
-
- //     //remove input files
- //     ConfigFile.erase(ConfigFile.begin(),ConfigFile.end());
- //   }
- // }
-
   /** evaluate everything before optimization */
   void 
   QMCCostFunctionSingle::checkConfigurations() {
@@ -173,30 +155,32 @@ namespace qmcplusplus {
     MCWalkerConfiguration::iterator it(W.begin()); 
     MCWalkerConfiguration::iterator it_end(W.end()); 
     int nat = W.getTotalNum();
-    int iw=0;
     int totalElements=W.getTotalNum()*OHMMS_DIM;
+    int iw=0;
     Etarget=0.0;
     Return_t e2sum=0.0;
     while(it != it_end) {
 
       Walker_t& thisWalker(**it);
-
       //clean-up DataSet to save re-used values
       thisWalker.DataSet.clear();
       //rewind the counter
       thisWalker.DataSet.rewind();
+      W.R=thisWalker.R;
       //MCWalkerConfiguraton::registerData add distance-table data
-      W.registerData(thisWalker,thisWalker.DataSet);
+      //save memory
+      //W.registerData(thisWalker.DataSet);
+      W.update();
 
       Return_t*  saved=Records[iw];
-#if defined(QMC_COMPLEX)
-      app_error() << " Optimization is not working with complex wavefunctions yet" << endl;
-      app_error() << "  Needs to fix TrialWaveFunction::evaluateDeltaLog " << endl;
+//#if defined(QMC_COMPLEX)
+//      app_error() << " Optimization is not working with complex wavefunctions yet" << endl;
+//      app_error() << "  Needs to fix TrialWaveFunction::evaluateDeltaLog " << endl;
       Psi.evaluateDeltaLog(W, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], dG, dL);
       thisWalker.DataSet.add(&(dG[0][0]),&(dG[0][0])+totalElements);
-#else
-      Psi.evaluateDeltaLog(W, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], thisWalker.Drift, dL);
-#endif
+//#else
+//      Psi.evaluateDeltaLog(W, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], thisWalker.Drift, dL);
+//#endif
       thisWalker.DataSet.add(dL.first_address(),dL.last_address());
       Return_t e=H.evaluate(W);
       e2sum += e*e;
