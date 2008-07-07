@@ -111,11 +111,14 @@ namespace qmcplusplus {
       for (int j=0; j<3; j++)
 	LatticeInv(i,j) = RecipLattice(i,j)/(2.0*M_PI);
     HDFAttribIO<int> h_NumBands(NumBands), h_NumElectrons(NumElectrons), 
-      h_NumSpins(NumSpins), h_NumTwists(NumTwists);
+      h_NumSpins(NumSpins), h_NumTwists(NumTwists), h_NumCore(NumCoreStates),
+      h_NumMuffinTins(NumMuffinTins);
     h_NumBands.read     (H5FileID, (parameterGroup+"/num_bands").c_str());
+    h_NumCore.read      (H5FileID, (parameterGroup+"/num_core_states").c_str());
     h_NumElectrons.read (H5FileID, (parameterGroup+"/num_electrons").c_str());
     h_NumSpins.read     (H5FileID, (parameterGroup+"/num_spins").c_str());
     h_NumTwists.read    (H5FileID, (parameterGroup+"/num_twists").c_str());
+    h_NumTwists.read    (H5FileID, (parameterGroup+"/muffin_tins/num_tins").c_str());
     fprintf (stderr, "  bands = %d, elecs = %d, spins = %d, twists = %d\n",
 	     NumBands, NumElectrons, NumSpins, NumTwists);
     if (TileFactor[0]!=1 || TileFactor[1]!=1 || TileFactor[2]!=1)

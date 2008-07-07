@@ -22,6 +22,7 @@
 #include "QMCWaveFunctions/SPOSetBase.h"
 #include "Optimize/VarList.h"
 #include "QMCWaveFunctions/EinsplineOrb.h"
+#include "QMCWaveFunctions/MuffinTin.h"
 #include "Utilities/NewTimer.h"
 #include <einspline/multi_bspline_structs.h>
 #include "Configuration.h"
@@ -64,6 +65,12 @@ namespace qmcplusplus {
     int TwistNum;
     /// metric tensor to handle generic unitcell
     Tensor<RealType,OHMMS_DIM> GGt;
+
+    ///////////////////////////////////////////////
+    // Muffin-tin orbitals from LAPW calculation //
+    ///////////////////////////////////////////////
+    vector<MuffinTinClass> MuffinTins;
+    
     
     /////////////////////
     // Orbital storage //

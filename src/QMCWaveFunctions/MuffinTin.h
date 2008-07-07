@@ -23,6 +23,7 @@
 #include "Numerics/HDFNumericAttrib.h"
 #include "Lattice/CrystalLattice.h"
 #include "QMCWaveFunctions/MuffinTin.h"
+#include <einspline/bspline_base.h>
 #include <einspline/multi_bspline_structs.h>
 #include "Configuration.h"
 
@@ -56,7 +57,6 @@ namespace qmcplusplus {
     vector<complex<double> > RadialVec, dRadialVec, d2RadialVec;
     // Evaluates all the Ylm's up to lMax
     void evalYlm(TinyVector<double,3> rhat);
-    void evalYlmFast(TinyVector<double,3> rhat);
     
     /////////////////
     // Core states //

@@ -67,8 +67,24 @@ namespace qmcplusplus {
   
 
   void LRTwoBodyJastrow::resetParameters(OptimizableSetType& optVariables) 
-  {
-    if(handler) resetByHandler();
+  { 
+    const KContainer::SContainer_t& kk(skRef->KLists.ksq);
+    for(int ish=0; ish<MaxKshell; ish++) {
+      char coefname[128];
+      sprintf(coefname,"rpa_k%d",ish);
+      OptimizableSetType::iterator it(optVariables.find(coefname));
+      if (it !=  optVariables.end()) {
+	Fk_symm[ish] = it->second;
+	//cerr << "Found " << it->first << " = " << it->second << endl;
+      }
+    }
+    for(int ksh=0,ik=0; ksh<MaxKshell; ksh++, ik++) {
+      FkbyKK[ksh]=kk[ik]*Fk_symm[ksh];
+      for(; ik<skRef->KLists.kshell[ksh+1]; ik++) 
+	Fk[ik]=Fk_symm[ksh];
+    }
+
+    //if(handler) resetByHandler();
   }
 
   void LRTwoBodyJastrow::resetTargetParticleSet(ParticleSet& P) {
@@ -451,7 +467,7 @@ namespace qmcplusplus {
         {
           char coeffname[128];
           sprintf(coeffname,"rpa_k%d",ish);
-          vlist[coeffname]=Fk_symm[ish];
+          vlist.addVariable(coeffname,Fk_symm[ish]);
           ////vlist.add(coeffname,Fk_symm.data()+ik);
           //std::ostringstream kname,val;
           //kname << ish;

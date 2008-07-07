@@ -84,6 +84,8 @@ namespace qmcplusplus {
     // This is true if we should make distinct copies 
     // represeninting a +k, -k pair
     bool MakeTwoCopies;
+    // True if this state is a core state
+    bool IsCoreState;
     inline bool operator<(BandInfo other) const
     { return Energy < other.Energy; }
   };
@@ -139,7 +141,8 @@ namespace qmcplusplus {
 
     Tensor<double,OHMMS_DIM> Lattice, RecipLattice, LatticeInv, SuperLattice;
     UnitCellType SuperCell, PrimCell, PrimCellInv;
-    int NumBands, NumElectrons, NumSpins, NumTwists;
+    int NumBands, NumElectrons, NumSpins, NumTwists, 
+      NumCoreStates, NumMuffinTins;
     Vector<int> IonTypes;
     Vector<TinyVector<double,OHMMS_DIM> > IonPos;
     /////////////////////////////

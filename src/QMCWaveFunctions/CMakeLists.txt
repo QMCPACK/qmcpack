@@ -68,6 +68,7 @@ IF(OHMMS_DIM MATCHES 3)
       EinsplineSet.cpp
       EinsplineSetBuilder.cpp
       EinsplineWrapper.cpp
+      MuffinTin.cpp
      )
   ENDIF(HAVE_EINSPLINE)
     

@@ -143,6 +143,21 @@ namespace qmcplusplus {
         for(int j=0; j <npts; j++) vnn[i][j] *= grid_global->r(j);
     }
 
+    // Now, check to see what maximum cutoff should be
+    const double tolerance=1.0e-5;
+    double rc_check = grid_global->r(npts-1);
+    for (int j=npts-1; j>0; j++) {
+      bool closeEnough = true;
+      for (int i=0; i<vnn.rows(); i++)
+	for (int k=i+1; k<vnn.rows(); k++)
+	  if (std::fabs(vnn[i][j] - vnn[k][j]) > tolerance)
+	    closeEnough = false;
+      if (!closeEnough) {
+	rc_check = grid_global->r(j);
+	break;
+      }
+    }
+
     app_log() << "   Number of angular momentum channels " << angList.size() << endl;
     app_log() << "   Maximum angular momentum channel " << Lmax << endl;
     doBreakUp(angList,vnn,rmax,Vprefactor);

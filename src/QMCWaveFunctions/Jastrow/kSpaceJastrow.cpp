@@ -190,8 +190,10 @@ namespace qmcplusplus {
   }
 
   kSpaceJastrow::kSpaceJastrow(ParticleSet& ions, ParticleSet& elecs,
-			       SymmetryType oneBodySymm, RealType oneBodyCutoff, string oneBodyID,
-			       SymmetryType twoBodySymm, RealType twoBodyCutoff, string twoBodyID)
+			       SymmetryType oneBodySymm, RealType oneBodyCutoff, 
+			       string oneBodyID, bool oneBodySpin,
+			       SymmetryType twoBodySymm, RealType twoBodyCutoff, 
+			       string twoBodyID, bool twoBodySpin)
     : Ions(ions), Elecs(elecs)
   {
     NumIonSpecies = 0;
@@ -218,8 +220,10 @@ namespace qmcplusplus {
 	name << twoBodyID << "_" << i;
 	VarMap[name.str()] = &(TwoBodySymmCoefs[i].cG);
       }
-
     }
+    if (oneBodySpin)   app_log() << "One-body k-space Jastrow is spin-dependent.\n";
+    if (twoBodySpin)   app_log() << "Two-body k-space Jastrow is spin-dependent.\n";
+
     // Now resize all buffers
     int nOne = OneBodyGvecs.size();
     OneBodyCoefs.resize(nOne);

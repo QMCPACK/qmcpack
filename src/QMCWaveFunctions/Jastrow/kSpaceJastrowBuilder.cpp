@@ -44,7 +44,7 @@ namespace qmcplusplus {
     xmlNodePtr kids = cur->xmlChildrenNode;
     kSpaceJastrow::SymmetryType oneBodySymm, twoBodySymm;
     RealType kc1, kc2;
-    string symm1_opt, symm2_opt, id1_opt, id2_opt;
+    string symm1_opt, symm2_opt, id1_opt, id2_opt, spin1_opt("no"), spin2_opt("no");
     std::vector<RealType> oneBodyCoefs, twoBodyCoefs;
     // Initialize options
     kc1 = kc2 = 0.0;
@@ -65,12 +65,14 @@ namespace qmcplusplus {
 	if (type_opt == "One-Body") {
 	  attrib.add (symm1_opt, "symmetry");
 	  attrib.add (kc1, "kc");
+	  attrib.add (spin1_opt, "spinDependent");
 	  coefs = &oneBodyCoefs;
 	  id_opt = &id1_opt;
 	}
 	else if (type_opt == "Two-Body") {
 	  attrib.add (symm2_opt, "symmetry");
 	  attrib.add (kc2, "kc");
+	  attrib.add (spin2_opt, "spinDependent");
 	  coefs = &twoBodyCoefs;
 	  id_opt = &id2_opt;
 	}
@@ -122,9 +124,10 @@ namespace qmcplusplus {
     if (symm2 != SymmMap.end())
       twoBodySymm = symm2->second;
     
-    kSpaceJastrow *jastrow = new kSpaceJastrow(sourcePtcl, targetPtcl,
-					       oneBodySymm, kc1, id1_opt,
-					       twoBodySymm, kc2, id2_opt);
+    kSpaceJastrow *jastrow = 
+      new kSpaceJastrow(sourcePtcl, targetPtcl,
+			oneBodySymm, kc1, id1_opt, spin1_opt=="yes",
+			twoBodySymm, kc2, id2_opt, spin2_opt=="yes");
     jastrow->setCoefficients (oneBodyCoefs, twoBodyCoefs);
     jastrow->addOptimizables(targetPsi.VarList);
     targetPsi.addOrbital(jastrow,"kSpace");

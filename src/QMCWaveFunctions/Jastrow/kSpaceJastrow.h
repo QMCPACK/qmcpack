@@ -115,8 +115,10 @@ namespace qmcplusplus {
 
   public:
     kSpaceJastrow(ParticleSet& ions, ParticleSet& elecs,
-		  SymmetryType oneBodySymm, RealType oneBodyCutoff, string oneBodyID,
-		  SymmetryType twoBodySymm, RealType twoBodyCutoff, string twoBodyID);
+		  SymmetryType oneBodySymm, RealType oneBodyCutoff, 
+		  string oneBodyID, bool oneBodySpin,
+		  SymmetryType twoBodySymm, RealType twoBodyCutoff, 
+		  string twoBodyID, bool twoBodySpin);
     void setCoefficients (std::vector<RealType> &oneBodyCoefs,
 			  std::vector<RealType> &twoBodyCoefs);
 
