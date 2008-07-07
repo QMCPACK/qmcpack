@@ -82,8 +82,7 @@ namespace qmcplusplus {
     sdet->setBasisSet(new DummyBasisSet);
 
     //add Slater determinant to targetPsi
-    // HACK HACK HACK
-    //targetPsi.addOrbital(sdet);
+    targetPsi.addOrbital(sdet);
 
     return true;
   }
