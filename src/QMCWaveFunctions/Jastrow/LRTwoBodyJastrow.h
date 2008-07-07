@@ -34,7 +34,6 @@
 namespace qmcplusplus {
 
   class LRTwoBodyJastrow: public OrbitalBase {
-
     bool NeedToRestore;
     IndexType NumPtcls;
     IndexType NumSpecies;
@@ -138,20 +137,6 @@ namespace qmcplusplus {
       }
       Fk_0=Fk;
     }
-    
-    void resetByVector(Vector<RealType> uk)
-    {
-      const KContainer::SContainer_t& kk(skRef->KLists.ksq);
-      RealType u0 = -4.0*M_PI/CellVolume;
-      for (int ksh=0, ik=0; ksh<MaxKshell; ksh++, ik++) {
-	RealType v = u0 * uk[ksh];
-	Fk_symm[ksh]=v;
-        FkbyKK[ksh]=kk[ik]*v;
-        for(; ik<skRef->KLists.kshell[ksh+1]; ik++) Fk[ik]=v;
-      }
-      Fk_0 = Fk;
-    }
-
 
     inline ValueType evaluate(ParticleSet& P,
 			      ParticleSet::ParticleGradient_t& G, 

@@ -13,6 +13,7 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
+
 #include "QMCWaveFunctions/Jastrow/RPAConstraints.h"
 #include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbital.h"
 #include "QMCWaveFunctions/Jastrow/LRBreakupUtilities.h"
@@ -209,7 +210,7 @@ namespace qmcplusplus {
 
   void RPAPBCConstraints::resetParameters(OptimizableSetType& optVariables) 
   { 
-    if(LongRangeRPA) LongRangeRPA->resetParameters(optVariables);
+    
     OptimizableSetType::iterator it(optVariables.find(ID_Rs));
     if(it != optVariables.end()){ 
       //targetPtcl.Lattice.LR_rc *= ((*it).second) / rs;
@@ -222,7 +223,7 @@ namespace qmcplusplus {
 
       //2008-04-07 Longrange is not committed yet.
       //realHandler->resetTargetParticleSet(targetPtcl,Rs);
-      
+      if(LongRangeRPA) LongRangeRPA->resetParameters(optVariables);
     
       //reset the numerical functor
       //nfunc->initialize(SRA, myGrid);
@@ -248,7 +249,6 @@ namespace qmcplusplus {
       app_log() << "    Disable Short-Range RPA. Return the Long-Range RPA." << endl;
       if(LongRangeRPA==0) 
         LongRangeRPA = new LRTwoBodyJastrow(targetPtcl, myHandler);
-      LongRangeRPA->setOptimizable(true);
       return LongRangeRPA;
     }
     else
