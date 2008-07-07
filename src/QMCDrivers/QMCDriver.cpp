@@ -34,7 +34,7 @@ namespace qmcplusplus {
   QMCDriver::QMCDriver(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h): MPIObjectBase(0),
   branchEngine(0), ResetRandom(false), AppendRun(false),
   MyCounter(0), RollBackBlocks(0),
-  Period4CheckPoint(1), Period4WalkerDump(0),
+  Period4CheckPoint(1), Period4WalkerDump(10),
   CurrentStep(0), nBlocks(100), nSteps(10), 
   nAccept(0), nReject(0), nTargetWalkers(0),
   Tau(0.01), qmcNode(NULL),
@@ -187,8 +187,8 @@ namespace qmcplusplus {
       branchEngine->write(wOut->FileName,false); //save energy_history
     }
 
-    //save positions for optimization
-    if(QMCDriverMode[QMC_OPTIMIZE]) W.saveEnsemble();
+    //save positions for optimization: this is done within VMC
+    //if(QMCDriverMode[QMC_OPTIMIZE]) W.saveEnsemble();
     //if(Period4WalkerDump>0) wOut->append(W);
 
     //flush the ostream
@@ -272,7 +272,7 @@ namespace qmcplusplus {
     int targetw = 0;
 
     //these options are reset for each block
-    Period4WalkerDump=0;
+    Period4WalkerDump=10;
     Period4CheckPoint=1;
 
     OhmmsAttributeSet aAttrib;
@@ -287,7 +287,7 @@ namespace qmcplusplus {
       while(tcur != NULL) {
 	string cname((const char*)(tcur->name));
 	if(cname == "record") {
-          //construct a set of attributes
+          //dump walkers for optimization
           OhmmsAttributeSet rAttrib;
           rAttrib.add(Period4WalkerDump,"stride");
           rAttrib.add(Period4WalkerDump,"period");
