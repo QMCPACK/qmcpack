@@ -33,7 +33,7 @@ namespace qmcplusplus {
   class MuffinTinClass
   {
   private:
-    typedef typename QMCTraits::RealType RealType;
+    typedef QMCTraits::RealType RealType;
     typedef CrystalLattice<RealType,OHMMS_DIM> UnitCellType;
     UnitCellType PrimLattice;
     TinyVector<double,3> Center;
