@@ -32,7 +32,8 @@ namespace qmcplusplus {
 
   EinsplineSetBuilder::EinsplineSetBuilder(ParticleSet& p, 
       PtclPoolType& psets, xmlNodePtr cur) 
-    : XMLRoot(cur), TileFactor(1,1,1), TwistNum(0), LastSpinSet(-1), NumOrbitalsRead(-1)
+    : XMLRoot(cur), TileFactor(1,1,1), TwistNum(0), LastSpinSet(-1), NumOrbitalsRead(-1),
+      NumMuffinTins(0)
   {
     for (int i=0; i<3; i++)
       for (int j=0; j<3; j++)
@@ -113,17 +114,43 @@ namespace qmcplusplus {
     HDFAttribIO<int> h_NumBands(NumBands), h_NumElectrons(NumElectrons), 
       h_NumSpins(NumSpins), h_NumTwists(NumTwists), h_NumCore(NumCoreStates),
       h_NumMuffinTins(NumMuffinTins);
-    h_NumBands.read     (H5FileID, (parameterGroup+"/num_bands").c_str());
-    h_NumCore.read      (H5FileID, (parameterGroup+"/num_core_states").c_str());
-    h_NumElectrons.read (H5FileID, (parameterGroup+"/num_electrons").c_str());
-    h_NumSpins.read     (H5FileID, (parameterGroup+"/num_spins").c_str());
-    h_NumTwists.read    (H5FileID, (parameterGroup+"/num_twists").c_str());
-    h_NumTwists.read    (H5FileID, (parameterGroup+"/muffin_tins/num_tins").c_str());
-    fprintf (stderr, "  bands = %d, elecs = %d, spins = %d, twists = %d\n",
-	     NumBands, NumElectrons, NumSpins, NumTwists);
+    h_NumBands.read      (H5FileID, (parameterGroup+"/num_bands").c_str());
+    h_NumCore.read       (H5FileID, (parameterGroup+"/num_core_states").c_str());
+    h_NumElectrons.read  (H5FileID, (parameterGroup+"/num_electrons").c_str());
+    h_NumSpins.read      (H5FileID, (parameterGroup+"/num_spins").c_str());
+    h_NumTwists.read     (H5FileID, (parameterGroup+"/num_twists").c_str());
+    h_NumMuffinTins.read (H5FileID, (parameterGroup+"/muffin_tins/num_tins").c_str());
+    app_log() << "bands=" << NumBands << ", elecs=" << NumElectrons 
+	      << ", spins=" << NumSpins << ", twists=" << NumTwists 
+	      << ", muffin tins=" << NumMuffinTins << endl;
+    // fprintf (stderr, "  bands = %d, elecs = %d, spins = %d, twists = %d\n",
+    // 	     NumBands, NumElectrons, NumSpins, NumTwists);
     if (TileFactor[0]!=1 || TileFactor[1]!=1 || TileFactor[2]!=1)
       fprintf (stderr, "  Using a %dx%dx%d tiling factor.\n", 
 	       TileFactor[0], TileFactor[1], TileFactor[2]);
+
+    /////////////////////////////////
+    // Read muffin tin information //
+    /////////////////////////////////
+    MT_APW_radii.resize(NumMuffinTins);
+    MT_APW_lmax.resize(NumMuffinTins);
+    MT_APW_num_radial_points.resize(NumMuffinTins);
+    MT_centers.resize(NumMuffinTins);
+    for (int tin=0; tin<NumMuffinTins; tin++) {
+      ostringstream MTstream;
+      if (NumMuffinTins > 1)
+	MTstream << parameterGroup << "/muffin_tins/muffin_tin_" << tin;
+      else
+	MTstream << parameterGroup << "/muffin_tins/muffin_tin";
+      string MTgroup = MTstream.str();
+      HDFAttribIO<int> h_lmax(MT_APW_lmax[tin]), h_num_radial_points(MT_APW_num_radial_points[tin]);
+      HDFAttribIO<RealType> h_radius (MT_APW_radii[tin]);
+      HDFAttribIO<PosType> h_center (MT_centers[tin]);
+      h_lmax.read              (H5FileID, (MTgroup+"/lmax").c_str());
+      h_num_radial_points.read (H5FileID, (MTgroup+"/num_radial_points").c_str());
+      h_radius.read            (H5FileID, (MTgroup+"/radius").c_str());
+      h_center.read            (H5FileID, (MTgroup+"/center").c_str());
+    }
 
     //////////////////////////////////
     // Read ion types and locations //
@@ -187,6 +214,7 @@ namespace qmcplusplus {
     abuffer.add(NumSpins); //myComm->bcast(NumSpins);
     abuffer.add(NumTwists); //myComm->bcast(NumTwists);
     abuffer.add(numIons); //myComm->bcast(numIons);
+    abuffer.add(NumMuffinTins);
 
     myComm->bcast(abuffer);
 
@@ -203,6 +231,11 @@ namespace qmcplusplus {
       abuffer.get(NumSpins);
       abuffer.get(NumTwists);
       abuffer.get(numIons);
+      abuffer.get(NumMuffinTins);
+      MT_APW_radii.resize(NumMuffinTins);
+      MT_APW_lmax.resize(NumMuffinTins);
+      MT_APW_num_radial_points.resize(NumMuffinTins);
+      MT_centers.resize(NumMuffinTins);
     }
 
     if (IonTypes.size() != numIons) {
@@ -225,6 +258,11 @@ namespace qmcplusplus {
     bbuffer.add(HaveLocalizedOrbs);
     //myComm->bcast(HaveLocalizedOrbs);
 
+    bbuffer.add(MT_APW_radii.begin(), MT_APW_radii.end());
+    bbuffer.add(MT_APW_lmax.begin(),  MT_APW_lmax.end());
+    bbuffer.add(MT_APW_num_radial_points.begin(), MT_APW_num_radial_points.end());
+    bbuffer.add(&(MT_centers[0][0]), &(MT_centers[0][0])+OHMMS_DIM*NumMuffinTins);
+
     myComm->bcast(bbuffer);
 
     if(myComm->rank())
@@ -234,6 +272,10 @@ namespace qmcplusplus {
       bbuffer.get(&IonPos[0][0],&IonPos[0][0]+OHMMS_DIM*numIons);
       bbuffer.get(&TwistAngles[0][0],&TwistAngles[0][0]+OHMMS_DIM*NumTwists);
       bbuffer.get(HaveLocalizedOrbs);
+      bbuffer.get(MT_APW_radii.begin(), MT_APW_radii.end());
+      bbuffer.get(MT_APW_lmax.begin(),  MT_APW_lmax.end());
+      bbuffer.get(MT_APW_num_radial_points.begin(), MT_APW_num_radial_points.end());
+      bbuffer.get(&(MT_centers[0][0]), &(MT_centers[0][0])+OHMMS_DIM*NumMuffinTins);
     }
   }
 
@@ -945,6 +987,17 @@ namespace qmcplusplus {
 
     set_multi_UBspline_3d_d (orbitalSet->MultiSpline, 0, splineData.data());
 
+    //////////////////////////////////////
+    // Create the MuffinTin APW splines //
+    //////////////////////////////////////
+    orbitalSet->MuffinTins.resize(NumMuffinTins);
+    for (int tin=0; tin<NumMuffinTins; tin++) {
+      orbitalSet->MuffinTins[tin].set_center (MT_centers[tin]);
+      orbitalSet->MuffinTins[tin].set_lattice(Lattice);
+      orbitalSet->MuffinTins[tin].init_APW 
+	(MT_APW_radii[tin], MT_APW_num_radial_points[tin], MT_APW_lmax[tin], N);
+    }
+
     PosType twist, k;
     twist = TwistAngles[ti];
     k = orbitalSet->PrimLattice.k_cart(twist);
@@ -1003,6 +1056,17 @@ namespace qmcplusplus {
     else 
       groupPath << eigenstatesGroup << "/twist/band/";
 
+    return groupPath.str();
+  }
+
+  string
+  EinsplineSetBuilder::MuffinTinPath(int ti, int bi, int tin)
+  {
+    ostringstream groupPath;
+    if (NumMuffinTins > 0)
+      groupPath << OrbitalPath(ti,bi) << "/muffin_tin_" << tin << "/";
+    else
+      groupPath << OrbitalPath(ti,bi) << "/muffin_tin/";
     return groupPath.str();
   }
 
@@ -1093,6 +1157,17 @@ namespace qmcplusplus {
       create_multi_UBspline_3d_z (x_grid, y_grid, z_grid, xBC, yBC, zBC, N);
 
     set_multi_UBspline_3d_z (orbitalSet->MultiSpline, 0, splineData.data());
+
+    //////////////////////////////////////
+    // Create the MuffinTin APW splines //
+    //////////////////////////////////////
+    orbitalSet->MuffinTins.resize(NumMuffinTins);
+    for (int tin=0; tin<NumMuffinTins; tin++) {
+      orbitalSet->MuffinTins[tin].set_center (MT_centers[tin]);
+      orbitalSet->MuffinTins[tin].set_lattice(Lattice);
+      orbitalSet->MuffinTins[tin].init_APW 
+	(MT_APW_radii[tin], MT_APW_num_radial_points[tin], MT_APW_lmax[tin], N);
+    }
            
     int iorb  = 1;    
     while (iorb < N) {
@@ -1124,6 +1199,27 @@ namespace qmcplusplus {
       myComm->bcast(splineData);
       set_multi_UBspline_3d_z (orbitalSet->MultiSpline, iorb, splineData.data());
       
+      // Now read muffin tin data
+      for (int tin=0; tin<NumMuffinTins; tin++) {
+	app_log() << "Reading data for muffin tin " << tin << endl;
+	PosType twist, k;
+	twist = TwistAngles[ti];
+	k = orbitalSet->PrimLattice.k_cart(twist);
+
+	int lmax = MT_APW_lmax[tin];
+	int numYlm = (lmax+1)*(lmax+1);
+	Array<complex<double>,2> u_lm_r(numYlm, MT_APW_num_radial_points[tin]);
+	if (root) {
+	  int ti   = SortBands[iorb].TwistIndex;
+	  int bi   = SortBands[iorb].BandIndex;
+	  string dataName = MuffinTinPath (ti, bi,tin) + "u_lm_r";
+	  HDFAttribIO<Array<complex<double>,2> >h_u_lm_r;
+	  h_u_lm_r.read(H5FileID, dataName.c_str());
+	}
+	myComm->bcast(splineData);
+	OrbitalSet->MuffinTins[tin].set_APW (iorb, k, u_lm_r);
+      }
+
       iorb++;
     }
     ExtendedMap_z[set] = orbitalSet->MultiSpline;

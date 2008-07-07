@@ -71,7 +71,6 @@ namespace qmcplusplus {
     ///////////////////////////////////////////////
     vector<MuffinTinClass> MuffinTins;
     
-    
     /////////////////////
     // Orbital storage //
     /////////////////////

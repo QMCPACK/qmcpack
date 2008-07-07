@@ -70,12 +70,15 @@ namespace qmcplusplus {
     double CoreRadius;
     
   public:
-    void setLattice (Tensor<RealType,3> lattice);
-    void setCenter  (TinyVector<double,3> center);
-    void initAPW (double radius, int num_rad_points, int lmax, int numOrbitals);
+    void set_lattice (Tensor<RealType,3> lattice);
+    void set_center  (TinyVector<double,3> center);
+    void set_APW_radius (RealType radius);
+    void set_APW_num_points (int num_points);
+    void init_APW (double radius, int num_rad_points, 
+		   int lmax, int numOrbitals);
     // The first index of u_lm is l*(l+1)+m.  The second is the radial index.
-    void setAPW (int orbNum, TinyVector<double,3> k,
-		 Array<complex<double>,2> &u_lm);
+    void set_APW (int orbNum, TinyVector<double,3> k,
+		  Array<complex<double>,2> &u_lm);
     
     bool inside (TinyVector<double,3> r);
     void evaluate (TinyVector<double,3> r, vector<complex<double> > &phi);
@@ -87,7 +90,7 @@ namespace qmcplusplus {
 		     vector<complex<double> > &phi,
 		     vector<TinyVector<complex<double>,3> > &grad,
 		     vector<complex<double> > &lapl);
-    inline int getNumOrbitals() { return NumOrbitals; }
+    inline int get_num_orbitals() { return NumOrbitals; }
     
     friend class LAPWClass;
     MuffinTinClass() : RadialSplines(NULL), CoreSplines(NULL),

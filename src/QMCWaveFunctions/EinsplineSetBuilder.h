@@ -142,7 +142,7 @@ namespace qmcplusplus {
     Tensor<double,OHMMS_DIM> Lattice, RecipLattice, LatticeInv, SuperLattice;
     UnitCellType SuperCell, PrimCell, PrimCellInv;
     int NumBands, NumElectrons, NumSpins, NumTwists, 
-      NumCoreStates, NumMuffinTins;
+      NumCoreStates;
     Vector<int> IonTypes;
     Vector<TinyVector<double,OHMMS_DIM> > IonPos;
     /////////////////////////////
@@ -175,7 +175,19 @@ namespace qmcplusplus {
     void ReadBands(int spin, EinsplineSetExtended<        double  >* orbitalSet);
     void CopyBands(int numOrbs);
     
+    /////////////////////////////
+    // Muffin-tin information  //
+    /////////////////////////////
+    int NumMuffinTins;
+    std::vector<RealType> MT_APW_radii;
+    std::vector<int> MT_APW_lmax;
+    std::vector<int> MT_APW_num_radial_points;
+    std::vector<PosType> MT_centers;
+
+    // This returns the path in the HDF5 file to the group for orbital
+    // with twist ti and band bi
     string OrbitalPath (int ti, int bi);
+    string MuffinTinPath (int ti, int bi, int tin);
 
     /////////////////////////////////////////////////////////////
     // Information to avoid storing the same orbitals twice in //

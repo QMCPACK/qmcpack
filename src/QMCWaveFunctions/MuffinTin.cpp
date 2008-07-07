@@ -83,8 +83,8 @@ namespace qmcplusplus {
     
   
   void
-  MuffinTinClass::initAPW (double radius, int num_rad_points,
-			   int lmax, int numOrbitals)
+  MuffinTinClass::init_APW (double radius, int num_rad_points,
+			    int lmax, int numOrbitals)
   {
     lMax = lmax;
     APWRadius = radius;
@@ -116,8 +116,8 @@ namespace qmcplusplus {
   }
   
   void
-  MuffinTinClass::setAPW (int orbNum, TinyVector<double,3> k,
-			  Array<complex<double>,2> &u_lm)
+  MuffinTinClass::set_APW (int orbNum, TinyVector<double,3> k,
+			   Array<complex<double>,2> &u_lm)
   {
     kPoints[orbNum] = k;
     int numYlm = (lMax+1)*(lMax+1);
@@ -138,13 +138,13 @@ namespace qmcplusplus {
   
   
   void 
-  MuffinTinClass::setLattice (Tensor<RealType,3> lattice)
+  MuffinTinClass::set_lattice (Tensor<RealType,3> lattice)
   {
     PrimLattice.set(lattice);
   }
   
   void
-  MuffinTinClass::setCenter (TinyVector<double,3> r)
+  MuffinTinClass::set_center (TinyVector<double,3> r)
   {
     Center = r;
   }
