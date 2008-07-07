@@ -182,7 +182,7 @@ namespace qmcplusplus {
     /////////////////////////////
     SplineType *MultiSpline;
     // Temporary storage for Eispline calls
-    StorageValueVector_t StorageValueVector;
+    StorageValueVector_t StorageValueVector, StorageLaplVector;
     StorageGradVector_t  StorageGradVector;
     StorageHessVector_t  StorageHessVector;
     // True if we should unpack this orbital into two copies

@@ -16,6 +16,7 @@
 #include "MuffinTin.h"
 #include <einspline/bspline_base.h>
 #include <einspline/multi_bspline.h>
+#include <cmath>
 
 namespace qmcplusplus {
   // Fast implementation
@@ -81,7 +82,17 @@ namespace qmcplusplus {
     }
   }
     
-  
+  bool
+  MuffinTinClass::inside(TinyVector<double,3> r)
+  {
+    TinyVector<double,3> ru(PrimLattice.toUnit(r-Center));
+    for (int i=0; i<OHMMS_DIM; i++)
+      ru[i] -= round (ru[i]);
+    TinyVector<double,3> dr(PrimLattice.toCart(ru));
+    return dot(dr,dr) < APWRadius*APWRadius;
+  }
+
+
   void
   MuffinTinClass::init_APW (double radius, int num_rad_points,
 			    int lmax, int numOrbitals)
@@ -95,6 +106,7 @@ namespace qmcplusplus {
     rgrid.start = 0.0;
     rgrid.end = radius;
     rgrid.num = num_rad_points;
+    cerr << "rgrid.num = " << rgrid.num << endl;
     
     // Boundary conditions
     BCtype_z rBC;
@@ -153,16 +165,17 @@ namespace qmcplusplus {
 
   void
   MuffinTinClass::evaluate (TinyVector<double,3> r, 
-			    vector<complex<double> > &phi)
+			    Vector<complex<double> > &phi)
   {
     TinyVector<double,3> disp, u, dr, L;
     disp = r - Center;
-    TinyVector<double,3> ru(disp);
+    TinyVector<double,3> ru(PrimLattice.toUnit(disp));
     for (int i=0; i<OHMMS_DIM; i++)
-      ru[i] -= std::floor (ru[i]);
+      ru[i] -= round (ru[i]);
     dr = PrimLattice.toCart(ru);
 
     L = disp - dr;
+
     if (dot(dr,dr) > APWRadius*APWRadius) {
       for (int i=0; i<phi.size(); i++)
 	phi[i] = complex<double>();
@@ -197,9 +210,9 @@ namespace qmcplusplus {
   
   void 
   MuffinTinClass::evaluateFD (TinyVector<double,3> r,
-			      vector<complex<double> > &phi,
-			      vector<TinyVector<complex<double>,3> > &grad,
-			      vector<complex<double> > &lapl)
+			      Vector<complex<double> > &phi,
+			      Vector<TinyVector<complex<double>,3> > &grad,
+			      Vector<complex<double> > &lapl)
   {
     double eps = 1.0e-6;
     TinyVector<double,3> dx(eps, 0.0, 0.0);
@@ -207,7 +220,7 @@ namespace qmcplusplus {
     TinyVector<double,3> dz(0.0, 0.0, eps);
     
     int n = phi.size();
-    vector<complex<double> > xplus(n), xminus(n), 
+    Vector<complex<double> > xplus(n), xminus(n), 
       yplus(n), yminus(n), zplus(n), zminus(n);
     
     evaluate (r, phi);
@@ -228,18 +241,27 @@ namespace qmcplusplus {
   
   void 
   MuffinTinClass::evaluate (TinyVector<double,3> r,
-			    vector<complex<double> > &phi,
-			    vector<TinyVector<complex<double>,3> > &grad,
-			    vector<complex<double> > &lapl)
+			    Vector<complex<double> > &phi,
+			    Vector<TinyVector<complex<double>,3> > &grad,
+			    Vector<complex<double> > &lapl)
   {
     TinyVector<double,3> disp, dr, L;
     disp = r - Center;
-    TinyVector<double,3> ru(disp);
+    TinyVector<double,3> ru(PrimLattice.toUnit(disp));
     for (int i=0; i<OHMMS_DIM; i++)
-      ru[i] -= std::floor (ru[i]);
+      ru[i] -= round (ru[i]);
     dr = PrimLattice.toCart(ru);
     L = disp - dr;
     
+    if (dot(dr,dr) > APWRadius*APWRadius) {
+      for (int i=0; i<phi.size(); i++) {
+	phi[i] = lapl[i] = complex<double>();
+	for (int j=0; j<3; j++)
+	  grad[i][j] = complex<double>();
+      }
+      return;
+    }
+
     TinyVector<double,3> rhat, thetahat, phihat;
     double drmag = std::sqrt (dot(dr,dr));
     rhat = (1.0/drmag)*dr;
@@ -285,7 +307,9 @@ namespace qmcplusplus {
       double phase = dot(L,kPoints[iorb]);
       double s,c;
       sincos (phase, &s, &c);
-      phi[iorb] *= complex<double>(c,s);
+      phi[iorb]  *= complex<double>(c,s);
+      grad[iorb] *= complex<double>(c,s);
+      lapl[iorb] *= complex<double>(c,s);
     }
   }
 }

@@ -81,15 +81,15 @@ namespace qmcplusplus {
 		  Array<complex<double>,2> &u_lm);
     
     bool inside (TinyVector<double,3> r);
-    void evaluate (TinyVector<double,3> r, vector<complex<double> > &phi);
+    void evaluate (TinyVector<double,3> r, Vector<complex<double> > &phi);
     void evaluate (TinyVector<double,3> r,
-		   vector<complex<double> > &phi,
-		   vector<TinyVector<complex<double>,3> > &grad,
-		   vector<complex<double> > &lapl);
+		   Vector<complex<double> > &phi,
+		   Vector<TinyVector<complex<double>,3> > &grad,
+		   Vector<complex<double> > &lapl);
     void evaluateFD (TinyVector<double,3> r,
-		     vector<complex<double> > &phi,
-		     vector<TinyVector<complex<double>,3> > &grad,
-		     vector<complex<double> > &lapl);
+		     Vector<complex<double> > &phi,
+		     Vector<TinyVector<complex<double>,3> > &grad,
+		     Vector<complex<double> > &lapl);
     inline int get_num_orbitals() { return NumOrbitals; }
     
     friend class LAPWClass;

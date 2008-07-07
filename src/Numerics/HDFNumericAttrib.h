@@ -676,6 +676,49 @@ struct HDFAttribIO<blitz::Array<TinyVector<double,D>,2> >: public HDFAttribIOBas
     };
 
   template<>
+    struct HDFAttribIO<Array<complex<double>,2> >: public HDFAttribIOBase 
+    {
+      typedef Array<complex<double>,2> ArrayType_t;
+
+      ArrayType_t&  ref;
+      HDFAttribIO<ArrayType_t>(ArrayType_t& a):ref(a) { }
+      inline void write(hid_t grp, const char* name) 
+      {
+        const int rank = 3;
+        hsize_t dim[rank];
+        dim[0] = ref.size(0);
+        dim[1] = ref.size(1);
+        dim[2] = 2;
+        hid_t dataspace  = H5Screate_simple(rank, dim, NULL);
+        hid_t dataset =  
+          H5Dcreate(grp, name, H5T_NATIVE_DOUBLE, dataspace, H5P_DEFAULT);
+        hid_t ret = 
+          H5Dwrite(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT,ref.data());
+        H5Sclose(dataspace);
+        H5Dclose(dataset);
+      }
+
+      inline void read(hid_t grp, const char* name) 
+      {
+        std::vector<hsize_t> npts(3);
+        npts[0]=ref.size(0);
+        npts[1]=ref.size(1);
+        npts[2]=2;
+        hid_t h1 = H5Dopen(grp, name);
+        hid_t dataspace = H5Dget_space(h1);
+
+	hsize_t dims[3];
+	H5Sget_simple_extent_dims(dataspace, dims, NULL);
+	ref.resize(dims[0], dims[1]);
+
+        hid_t ret = H5Dread(h1, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, ref.data());
+        H5Sclose(dataspace);
+        H5Dclose(h1);
+      }
+    };
+
+
+  template<>
     struct HDFAttribIO<Array<complex<double>,3> >: public HDFAttribIOBase 
     {
       typedef Array<complex<double>,3> ArrayType_t;

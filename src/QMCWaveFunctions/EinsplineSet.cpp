@@ -296,6 +296,19 @@ namespace qmcplusplus {
   {
     ValueTimer.start();
     PosType r (P.R[iat]);
+    for (int tin=0; tin<MuffinTins.size(); tin++) {
+      if (MuffinTins[tin].inside(r)) {
+	MuffinTins[tin].evaluate (r, StorageValueVector);
+	int psiIndex=0;
+	for (int i=0; i<StorageValueVector.size(); i++) {
+	  psi[psiIndex++] = real(StorageValueVector[i]);
+	  if (MakeTwoCopies[i])
+	    psi[psiIndex++] = imag(StorageValueVector[i]);
+	}
+	return;
+      }
+    }
+    
     PosType ru(PrimLattice.toUnit(P.R[iat]));
     for (int i=0; i<OHMMS_DIM; i++)
       ru[i] -= std::floor (ru[i]);
@@ -374,6 +387,28 @@ namespace qmcplusplus {
   {
     VGLTimer.start();
     PosType r (P.R[iat]);
+    for (int tin=0; tin<MuffinTins.size(); tin++) {
+      if (MuffinTins[tin].inside(r)) {
+	MuffinTins[tin].evaluate (r, StorageValueVector, StorageGradVector, StorageLaplVector);
+	int psiIndex=0;
+	for (int i=0; i<StorageValueVector.size(); i++) {
+	  psi[psiIndex]     = real(StorageValueVector[i]);
+	  for (int j=0; j<OHMMS_DIM; j++)
+	    dpsi[psiIndex][j]    = real(StorageGradVector[i][j]);
+	  d2psi[psiIndex++] = real(StorageLaplVector[i]);
+
+	  if (MakeTwoCopies[i]) {
+	    psi[psiIndex]     = imag(StorageValueVector[i]);
+	    for (int j=0; j<OHMMS_DIM; j++)
+	      dpsi[psiIndex][j]    = imag(StorageGradVector[i][j]);
+	    d2psi[psiIndex++] = imag(StorageLaplVector[i]);
+	  }
+	}
+	return;
+      }
+    }
+
+
     PosType ru(PrimLattice.toUnit(P.R[iat]));
     for (int i=0; i<OHMMS_DIM; i++)
       ru[i] -= std::floor (ru[i]);

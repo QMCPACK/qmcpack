@@ -417,6 +417,24 @@ namespace qmcplusplus {
 	ReadBands(spinSet, orbitalSet);
       }
     }
+
+    if (OrbitalSet->MuffinTins.size() > 0) {
+      FILE *fout = fopen ("TestMuffins.dat", "w");
+      Vector<double> phi(numOrbs);
+      ParticleSet P;
+      P.R.resize(1);
+      for (double x=1.0e-8; x<=1.0; x+=0.001) {
+	P.R[0] = x * (PrimCell.a(0) + PrimCell.a(1) + PrimCell.a(2));
+	OrbitalSet->evaluate(P, 0, phi);
+	fprintf (fout, "%1.5f ", x);
+	for (int j=0; j<numOrbs; j++) 
+	  fprintf (fout, "%16.12e ", phi[j]);
+	fprintf (fout, "\n");
+      }
+      fclose(fout);
+    }
+
+
     return OrbitalSet;
   }
   
@@ -924,6 +942,7 @@ namespace qmcplusplus {
     orbitalSet->kPoints.resize(N);
     orbitalSet->MakeTwoCopies.resize(N);
     orbitalSet->StorageValueVector.resize(N);
+    orbitalSet->StorageLaplVector.resize(N);
     orbitalSet->StorageGradVector.resize(N);
     orbitalSet->StorageHessVector.resize(N);
     orbitalSet->phase.resize(N);
@@ -1064,9 +1083,9 @@ namespace qmcplusplus {
   {
     ostringstream groupPath;
     if (NumMuffinTins > 0)
-      groupPath << OrbitalPath(ti,bi) << "/muffin_tin_" << tin << "/";
+      groupPath << OrbitalPath(ti,bi) << "muffin_tin_" << tin << "/";
     else
-      groupPath << OrbitalPath(ti,bi) << "/muffin_tin/";
+      groupPath << OrbitalPath(ti,bi) << "muffin_tin/";
     return groupPath.str();
   }
 
@@ -1082,6 +1101,7 @@ namespace qmcplusplus {
     orbitalSet->kPoints.resize(N);
     orbitalSet->MakeTwoCopies.resize(N);
     orbitalSet->StorageValueVector.resize(N);
+    orbitalSet->StorageLaplVector.resize(N);
     orbitalSet->StorageGradVector.resize(N);
     orbitalSet->StorageHessVector.resize(N);
     orbitalSet->phase.resize(N);
@@ -1169,7 +1189,7 @@ namespace qmcplusplus {
 	(MT_APW_radii[tin], MT_APW_num_radial_points[tin], MT_APW_lmax[tin], N);
     }
            
-    int iorb  = 1;    
+    int iorb  = 0;    
     while (iorb < N) {
       if (root) {
 	int ti   = SortBands[iorb].TwistIndex;
@@ -1213,7 +1233,7 @@ namespace qmcplusplus {
 	  int ti   = SortBands[iorb].TwistIndex;
 	  int bi   = SortBands[iorb].BandIndex;
 	  string dataName = MuffinTinPath (ti, bi,tin) + "u_lm_r";
-	  HDFAttribIO<Array<complex<double>,2> >h_u_lm_r;
+	  HDFAttribIO<Array<complex<double>,2> > h_u_lm_r(u_lm_r);
 	  h_u_lm_r.read(H5FileID, dataName.c_str());
 	}
 	myComm->bcast(splineData);
