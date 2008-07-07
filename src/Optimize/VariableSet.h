@@ -1,0 +1,268 @@
+//////////////////////////////////////////////////////////////////
+// (c) Copyright 2008-  by Jeongnim Kim 
+//////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////
+//   Jeongnim Kim
+//   National Center for Supercomputing Applications &
+//   Materials Computation Center
+//   University of Illinois, Urbana-Champaign
+//   Urbana, IL 61801
+//   e-mail: jnkim@ncsa.uiuc.edu
+//
+// Supported by 
+//   National Center for Supercomputing Applications, UIUC
+//   Materials Computation Center, UIUC
+//////////////////////////////////////////////////////////////////
+// -*- C++ -*-
+/** @file VariableSet.h
+ * @brief Declare VariableSet 
+ */
+#ifndef QMCPLUSPLUS_OPTIMIZE_VARIABLESET_H
+#define QMCPLUSPLUS_OPTIMIZE_VARIABLESET_H
+#include "config.h"
+#include <map>
+#include <vector>
+#include <iostream>
+
+namespace optimize
+{
+  /** class to handle a set of variables that can be modified during optimizations
+   *
+   * A serialized container of named variables.
+   */
+    struct VariableSet
+    {
+      typedef APP_PRECISION                           real_type;
+      typedef std::pair<std::string,real_type>        pair_type;
+      typedef std::vector<pair_type>::iterator       iterator;
+      typedef std::vector<pair_type>::const_iterator const_iterator;
+      typedef std::vector<pair_type>::size_type      size_type;
+      typedef std::map<std::string,real_type>         variable_map_type;
+
+      ///number of active variables
+      int num_active_vars;
+      /** store locator of the named variable
+       *
+       * if(Index[i]  == -1), the named variable is not active
+       */
+      std::vector<int>        Index;
+      std::vector<pair_type>  NameAndValue;
+
+      ///default constructor
+      inline VariableSet():num_active_vars(0){}
+      ///constructor using map
+      VariableSet(variable_map_type& input);
+      ///viturval destructor for safety
+      virtual ~VariableSet(){}
+      /** if any of Index value is not zero, return true
+       */
+      inline bool is_optimizable() const { return num_active_vars>0; }
+      ///return the number of active variables
+      inline int size_of_active() const {return num_active_vars;}
+      ///return the first const_iterator
+      inline const_iterator begin() const { return NameAndValue.begin();}
+      ///return the last const_iterator
+      inline const_iterator end() const { return NameAndValue.end();}
+      ///return the first iterator
+      inline iterator begin() { return NameAndValue.begin();}
+      ///return the last iterator
+      inline iterator end() { return NameAndValue.end();}
+      ///return the size
+      inline size_type size() const { return NameAndValue.size();}
+      ///return the locator of the i-th Index
+      inline int where(int i) const { return Index[i];}
+      /** return the iterator of a named parameter
+       * @param vname name of a parameter
+       * @return the locator of vname
+       *
+       * If vname is not found among the Names, return NameAndValue.end()
+       * so that ::end() member function can be used to validate the iterator.
+       */
+      inline iterator find(const std::string& vname)
+      {
+        iterator it(NameAndValue.begin());
+        while(it != NameAndValue.end())
+        {
+          if((*it).first == vname) return it;
+          ++it;
+        }
+        return NameAndValue.end();
+      }
+
+      /** return the Index vaule for the named parameter
+       * @param vname name of the variable 
+       *
+       * If vname is not found in this variables, return -1;
+       */
+      inline int getIndex(const std::string& vname) const
+      {
+        int loc=0;
+        while(loc != NameAndValue.size())
+        {
+          if(NameAndValue[loc].first == vname) return Index[loc];
+          ++loc;
+        }
+        return -1;
+      }
+
+      inline void insert(const std::string& vname, real_type v, bool enable=true)
+      {
+        iterator loc=find(vname);
+        int ind_loc=loc-NameAndValue.begin();
+        if(loc==NameAndValue.end())
+        {
+          Index.push_back(ind_loc);
+          NameAndValue.push_back(pair_type(vname,v));
+        }
+        //disable it if enable == false
+        if(!enable) Index[ind_loc]=-1;
+      }
+
+      /** equivalent to map<string,T>[string] operator
+       */
+      inline real_type& operator[](const std::string& vname)
+      {
+        iterator loc=find(vname);
+        if(loc==NameAndValue.end())
+        {
+          Index.push_back(-1);
+          NameAndValue.push_back(pair_type(vname,0));
+          return NameAndValue.back().second;
+        }
+        return (*loc).second;
+      }
+
+
+      /** return the name of i-th variable
+       * @param i index
+       */
+      inline std::string name(int i) const
+      {
+        return NameAndValue[i].first;
+      }
+
+      /** return the i-th value
+       * @param i index
+       */
+      inline real_type operator[](int i) const
+      {
+        return NameAndValue[i].second;
+      }
+
+      /** assign the i-th value
+       * @param i index
+       */
+      inline real_type& operator[](int i) 
+      {
+        return NameAndValue[i].second;
+      }
+
+      /** clear the variable set
+       *
+       * Remove all the data.
+       */
+      void clear();
+
+      /** insert local variables to output
+       */
+      void insertTo(variable_map_type& output) const;
+
+      /** insert a VariableSet to the list
+       * @param input varaibles
+       */
+      void insertFrom(const VariableSet& input);
+
+      /** activate variables for optimization
+       * @param first iterator of the first name
+       * @param last iterator of the last name
+       * @param reindex if true, Index is updated
+       *
+       * The status of a variable that is not included in the [first,last)
+       * remains the same. 
+       */
+      template<typename ForwardIterator>
+        void activate(ForwardIterator first, ForwardIterator last, bool reindex)
+        {
+          while(first != last)
+          {
+            iterator loc=find(*first++);
+            if(loc != NameAndValue.end())
+            {
+              int i=loc-NameAndValue.begin();
+              if(Index[i]<0) Index[i]=num_active_vars++;
+            }
+          }
+
+          if(reindex)
+          {
+            removeInactive();
+            resetIndex();
+          }
+        }
+
+      /** make the selected variables active
+       * @param selected input variables that are set to be varied
+       */
+      void activate(const variable_map_type& selected);
+
+
+      /** deactivate variables for optimization
+       * @param first iterator of the first name
+       * @param last iterator of the last name
+       * @param reindex if true, the variales are removed and Index is updated
+       */
+      template<typename ForwardIterator>
+        void disable(ForwardIterator first, ForwardIterator last, bool reindex)
+        {
+          while(first != last)
+          {
+            int loc=find(*first++)-NameAndValue.begin();
+            if(loc<NameAndValue.size()) Index[loc]=-1;
+          }
+
+          if(reindex)
+          {
+            removeInactive();
+            resetIndex();
+          }
+        }
+
+      ///** make the selected variables active
+      // * @param selected input variables that are set to be varied
+      // */
+      //void activate(const std::vector<std::string>& selected, bool reindex);
+
+      /** exlcude variables 
+       * @param selected name-value pairs that should be dropped from the set
+       */
+      void disable(const variable_map_type& selected);
+
+      /** reset Index
+       */
+      void resetIndex();
+      /** remove inactive variables and trim the internal data
+       */
+      void removeInactive();
+
+      /** set the index table of this variables 
+       * @param selected input variables
+       *
+       * This variables is a subset of selected.
+       */
+      void getIndex(const VariableSet& selected);
+
+      /** set default Indices 
+       * @param optimize_all if true, all the variables are active
+       */
+      void setDefaults(bool optimize_all);
+
+      void print(std::ostream& os);
+    };
+}
+
+#endif
+/***************************************************************************
+ * $RCSfile$   $Author: jnkim $
+ * $Revision: 2550 $   $Date: 2008-03-26 15:17:43 -0500 (Wed, 26 Mar 2008) $
+ * $Id: VarList.h 2550 2008-03-26 20:17:43Z jnkim $ 
+ ***************************************************************************/
