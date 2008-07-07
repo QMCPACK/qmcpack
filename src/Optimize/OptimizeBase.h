@@ -8,7 +8,6 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by
 //   National Center for Supercomputing Applications, UIUC
@@ -19,6 +18,7 @@
 #define QMCPLUSPLUS_OPTIMIZATIONFUNCION_BASE_H
 
 #include "OhmmsData/OhmmsElementBase.h"
+#include "Optimize/LeastSquaredFit.h"
 
 /** Base class for any cost function
  *
@@ -62,7 +62,7 @@ public:
    *
    * Default implementation returns false to perform a simple method
    */
-  virtual bool lineoptimization(const std::vector<T>& x0, const std::vector<T>& cg, 
+  virtual bool lineoptimization(const std::vector<T>& x0, const std::vector<T>& gr, 
       Return_t val0,
       Return_t& dl, Return_t& vopt, Return_t& lambda_max)
   {

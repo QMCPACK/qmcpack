@@ -166,7 +166,7 @@ bool CGOptimization<T>::optimize() {
       {
         this->Lambda=lambda_a;
         curCost=val_proj;
-        this->LambdaMax=lambda_max;//over right the max
+        this->LambdaMax=lambda_max;//overwrite the max
       }
       else
         success=false;
@@ -175,11 +175,7 @@ bool CGOptimization<T>::optimize() {
     {
       success = this->lineoptimization();
       success &= (TargetFunc->IsValid && this->Lambda>0.0);
-      if(success) 
-      {
-        cout << "  >>> Found lambda = " << this->Lambda << endl;
-        curCost= Func(this->Lambda);
-      }
+      if(success) curCost= Func(this->Lambda);
     }
 
     if(success) 
