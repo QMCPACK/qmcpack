@@ -219,6 +219,7 @@ namespace qmcplusplus {
     else
       optSolver->put(optNode);
 
+    bool success=true;
     if(optTarget == 0) 
     {
 #if defined(ENABLE_OPENMP)
@@ -229,9 +230,11 @@ namespace qmcplusplus {
       else
 #endif
         optTarget = new QMCCostFunctionSingle(W,Psi,H);
+
       optTarget->setStream(&app_log());
+      success=optTarget->put(q);
     }
-    return optTarget->put(q);
+    return success;
   }
 }
 /***************************************************************************
