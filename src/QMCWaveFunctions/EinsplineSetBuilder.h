@@ -158,7 +158,7 @@ namespace qmcplusplus {
     // clone 
     vector<TinyVector<int,OHMMS_DIM> > UseTwists;
     vector<int> IncludeTwists, DistinctTwists;
-    int NumDistinctOrbitals;
+    int NumDistinctOrbitals, NumCoreOrbs, NumValenceOrbs;
     // This is true if the corresponding twist in DistinctTwists should
     // should be used to generate two distinct orbitals from the real and 
     // imaginary parts.
@@ -186,7 +186,8 @@ namespace qmcplusplus {
 
     // This returns the path in the HDF5 file to the group for orbital
     // with twist ti and band bi
-    string OrbitalPath (int ti, int bi);
+    string OrbitalPath   (int ti, int bi);
+    string CoreStatePath (int ti, int bi);
     string MuffinTinPath (int ti, int bi, int tin);
 
     /////////////////////////////////////////////////////////////

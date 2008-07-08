@@ -15,6 +15,7 @@
 
 #include "MuffinTin.h"
 #include <einspline/bspline_base.h>
+#include <einspline/bspline.h>
 #include <einspline/multi_bspline.h>
 #include <cmath>
 
@@ -106,7 +107,6 @@ namespace qmcplusplus {
     rgrid.start = 0.0;
     rgrid.end = radius;
     rgrid.num = num_rad_points;
-    cerr << "rgrid.num = " << rgrid.num << endl;
     
     // Boundary conditions
     BCtype_z rBC;
@@ -192,6 +192,9 @@ namespace qmcplusplus {
     // Evaluate the splines
     eval_multi_UBspline_1d_z (RadialSplines, drmag, RadialVec.data());
     
+//     drmag = max (0.0005, drmag);
+//     int lmax = (drmag < 0.005) ? min(2,lMax) : lMax;
+
     int numYlm = (lMax+1)*(lMax+1);
     // Compute phi
     int i=0; 
@@ -283,7 +286,10 @@ namespace qmcplusplus {
     eval_multi_UBspline_1d_z_vgh (RadialSplines, drmag, 
 				  RadialVec.data(), dRadialVec.data(), d2RadialVec.data());
     
-    int numYlm = (lMax+1)*(lMax+1);
+    int lmax = (drmag < 0.005) ? min(2,lMax) : lMax;
+    lmax = lMax;
+
+    int numYlm = (lmax+1)*(lmax+1);
     // Compute phi
     int i=0; 
     for (int iorb=0; iorb<NumOrbitals; iorb++) {
@@ -291,7 +297,7 @@ namespace qmcplusplus {
       grad[iorb][0] = grad[iorb][1] = grad[iorb][2] = complex<double>();
       lapl[iorb] = complex<double>();
       int lm=0;
-      for (int l=0; l<=lMax; l++)
+      for (int l=0; l<=lmax; l++)
 	for (int m=-l; m<=l; m++, lm++,i++) {
 	  complex<double> im(0.0,(double)m);
 	  phi[iorb]  += RadialVec[i] * YlmVec[lm];
@@ -312,4 +318,146 @@ namespace qmcplusplus {
       lapl[iorb] *= complex<double>(c,s);
     }
   }
+
+
+
+  void
+  MuffinTinClass::addCore (int l, int m, double rmax, Vector<double> &g0,
+			   TinyVector<double,3> kVec)
+  {
+    Ugrid rgrid;
+    rgrid.start = 0.0;
+    rgrid.end   = rmax;
+    rgrid.num = g0.size();
+    
+    BCtype_d rBC;
+    rBC.lCode = NATURAL;
+    rBC.rCode = NATURAL;
+    
+    int N = g0.size();
+    Vector<double> g0_over_r(N);
+    double dr = rmax / (double)(N-1);
+    for (int i=1; i<g0.size(); i++) {
+      double r = dr*i;
+      g0_over_r[i] = g0[i] / r;
+    }
+    g0_over_r[0] = 2.0*g0_over_r[1] - g0_over_r[2];
+
+    CoreSplines.push_back(create_UBspline_1d_d (rgrid, rBC, g0_over_r.data()));
+    Core_lm.push_back(TinyVector<int,2>(l,m));
+    Core_kVecs.push_back (kVec);
+    
+    NumCore++;
+  }
+
+  void
+  MuffinTinClass::evaluateCore (TinyVector<double,3> r, Vector<complex<double> > &phi,
+				int first)
+  {
+    TinyVector<double,3> disp, dr, drhat;
+    disp = r - Center;
+    TinyVector<double,3> ru(PrimLattice.toUnit(disp));
+    for (int i=0; i<OHMMS_DIM; i++)
+      ru[i] -= round (ru[i]);
+    dr = PrimLattice.toCart(ru);
+
+    double drmag = std::sqrt(dot(dr,dr));
+    drhat = (1.0/drmag) * dr;
+
+    // This is a slow hack
+    evalYlm (drhat);  
+  
+    for (int i=0; i<CoreSplines.size(); i++) { 
+      int l = Core_lm[i][0];
+      int m = Core_lm[i][1];
+      int lm = l*(l+1)+m;
+      complex<double> ylm = YlmVec[lm];
+      double u;
+      eval_UBspline_1d_d (CoreSplines[i], drmag, &u);
+      phi[first+i] = ylm*(u /* /drmag */);
+      double phase = dot (r, Core_kVecs[i]);
+      double s, c;
+      sincos(phase, &s, &c);
+      phi[first+i] *= complex<double>(c,s);
+    }
+  }
+
+ void
+  MuffinTinClass::evaluateCore (TinyVector<double,3> r, Vector<complex<double> > &phi,
+				Vector<TinyVector<complex<double>,3> > &grad,
+				Vector<complex<double> > &lapl, int first)
+  {
+    TinyVector<double,3> disp, dr;
+    disp = r - Center;
+    TinyVector<double,3> ru(PrimLattice.toUnit(disp));
+    for (int i=0; i<OHMMS_DIM; i++)
+      ru[i] -= round (ru[i]);
+    dr = PrimLattice.toCart(ru);
+
+    TinyVector<double,3> rhat, thetahat, phihat;
+    double drmag = std::sqrt (dot(dr,dr));
+    rhat = (1.0/drmag)*dr;
+    double costheta = rhat[2];
+    double sintheta = std::sqrt(1.0-costheta*costheta);
+    double cosphi = rhat[0]/sintheta;
+    double sinphi = rhat[1]/sintheta;
+    thetahat = TinyVector<double,3>(costheta*cosphi,
+				    costheta*sinphi,
+				    -sintheta);
+    phihat   = TinyVector<double,3>(-sinphi,
+				    cosphi,
+				    0.0 );
+
+    // This is a slow hack
+    evalYlm (rhat);  
+    for (int i=0; i<CoreSplines.size(); i++) { 
+      int l = Core_lm[i][0];
+      int m = Core_lm[i][1];
+      int lm = l*(l+1)+m;
+      complex<double> ylm = YlmVec[lm];
+      complex<double> im(0.0,(double)m);
+
+      double u, du, d2u;
+      eval_UBspline_1d_d_vgl (CoreSplines[i], drmag, &u, &du, &d2u);
+      
+//       double uplus, uminus;
+//       double eps = 1.0e-6;
+//       eval_UBspline_1d_d (CoreSplines[i], drmag, &u);
+//       eval_UBspline_1d_d (CoreSplines[i], drmag+eps, &uplus);
+//       eval_UBspline_1d_d (CoreSplines[i], drmag-eps, &uminus);
+//       d2u = (uplus + uminus - 2.0*u) / (eps*eps);
+//       du = (uplus - uminus) / (2.0*eps);
+
+      
+//       double f   = u / drmag;
+//       double df  = du/drmag - u/(drmag * drmag);
+//       double d2f = -2.0*du/(drmag*drmag) + d2u/drmag 
+// 	+ 2.0*u/(drmag * drmag *drmag);
+
+      phi[first+i] = ylm*u;      
+      grad[first+i] = (du                 *     YlmVec[lm] * rhat     +
+       		       u/drmag            *    dYlmVec[lm] * thetahat +
+       		       u/(drmag*sintheta) * im *YlmVec[lm] * phihat);
+      lapl[first+i] = YlmVec[lm] * (-(double)(l*(l+1))/(drmag*drmag) * u
+       				    + d2u + 2.0/drmag *du );
+
+//       double cent2 = dot (Center,Center);
+//       if (cent2 < 1.0e-4)
+// 	if (drmag < 0.1) {
+// 	  double locE = real(lapl[first+i])/real(phi[first+i]);
+// 	  cerr << "loc E = " << locE << " -0.5*locE-Z/r = " << -0.5*locE-5.0/drmag << endl;
+// 	}
+	
+    }
+
+    //   double phase = dot (r, Core_kVecs[i]);
+    //   double s, c;
+    //   sincos(phase, &s, &c);
+    //   phi[first+i] *= complex<double>(c,s);
+    // }
+  }
+
+
+
+
 }

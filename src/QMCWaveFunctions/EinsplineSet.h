@@ -70,6 +70,7 @@ namespace qmcplusplus {
     // Muffin-tin orbitals from LAPW calculation //
     ///////////////////////////////////////////////
     vector<MuffinTinClass> MuffinTins;
+    int NumValenceOrbs, NumCoreOrbs;
     
     /////////////////////
     // Orbital storage //

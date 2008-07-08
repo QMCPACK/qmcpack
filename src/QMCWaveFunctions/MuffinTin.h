@@ -24,6 +24,7 @@
 #include "Lattice/CrystalLattice.h"
 #include "QMCWaveFunctions/MuffinTin.h"
 #include <einspline/bspline_base.h>
+#include <einspline/bspline_structs.h>
 #include <einspline/multi_bspline_structs.h>
 #include "Configuration.h"
 
@@ -63,13 +64,18 @@ namespace qmcplusplus {
     /////////////////
     // The number of core-state orbitals
     int NumCore;
-    multi_UBspline_1d_z *CoreSplines;
+    vector<UBspline_1d_d*> CoreSplines;
     // Stores the l and m for each core state
     vector<TinyVector<int,2> > Core_lm;
+    // Stores the k-vector for the core states
+    vector<TinyVector<double,3> > Core_kVecs;
     // Outside this radials, the orbital is zero
     double CoreRadius;
     
   public:
+    ///////////////////////////////////
+    // Augmented plane-wave routines //
+    ///////////////////////////////////
     void set_lattice (Tensor<RealType,3> lattice);
     void set_center  (TinyVector<double,3> center);
     void set_APW_radius (RealType radius);
@@ -92,6 +98,19 @@ namespace qmcplusplus {
 		     Vector<complex<double> > &lapl);
     inline int get_num_orbitals() { return NumOrbitals; }
     
+    /////////////////////////
+    // Core state routines //
+    /////////////////////////
+    inline int get_num_core() { return NumCore; }
+    void addCore (int l, int m, double rmax, Vector<double> &g0,
+		  TinyVector<double,3> k);
+    void evaluateCore (TinyVector<double,3> r, Vector<complex<double> > &phi, int first=0);
+    void evaluateCore (TinyVector<double,3> r, 
+		       Vector<complex<double> > &phi,
+		       Vector<TinyVector<complex<double>,3> > &grad,
+		       Vector<complex<double> > &lapl,
+		       int first=0);
+
     friend class LAPWClass;
     MuffinTinClass() : RadialSplines(NULL), CoreSplines(NULL),
 		       APWRadius(0.0), NumOrbitals(0), NumCore(0),
@@ -104,8 +123,9 @@ namespace qmcplusplus {
     {
       if (RadialSplines)
 	destroy_Bspline (RadialSplines);
-      if (CoreSplines)
-	destroy_Bspline (CoreSplines);
+      for (int i=0; i<CoreSplines.size(); i++)
+      if (CoreSplines[i])
+	destroy_Bspline (CoreSplines[i]);
     }
   };
 }
