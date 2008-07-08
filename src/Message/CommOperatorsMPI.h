@@ -341,6 +341,13 @@ Communicate::bcast(APPNAMESPACE::Vector<double>& g)
 
 template<>
 inline void
+Communicate::bcast(APPNAMESPACE::Vector<complex<double> >& g)
+{
+  MPI_Bcast(&(g[0]),2*g.size(),MPI_DOUBLE,0,myMPI);
+}
+
+template<>
+inline void
 Communicate::bcast(APPNAMESPACE::Vector<int>& g)
 {
   MPI_Bcast(&(g[0]),g.size(),MPI_INT,0,myMPI);
@@ -365,6 +372,13 @@ inline void
 Communicate::bcast(Array<double,3> &g)
 {
   MPI_Bcast(g.data(), g.size(), MPI_DOUBLE, 0, myMPI);
+}
+
+template<>
+inline void
+Communicate::bcast(Array<complex<double>,2> &g)
+{
+  MPI_Bcast(g.data(), 2*g.size(), MPI_DOUBLE, 0, myMPI);
 }
 
 template<>

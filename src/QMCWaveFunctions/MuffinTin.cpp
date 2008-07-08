@@ -334,16 +334,7 @@ namespace qmcplusplus {
     rBC.lCode = NATURAL;
     rBC.rCode = NATURAL;
     
-    int N = g0.size();
-    Vector<double> g0_over_r(N);
-    double dr = rmax / (double)(N-1);
-    for (int i=1; i<g0.size(); i++) {
-      double r = dr*i;
-      g0_over_r[i] = g0[i] / r;
-    }
-    g0_over_r[0] = 2.0*g0_over_r[1] - g0_over_r[2];
-
-    CoreSplines.push_back(create_UBspline_1d_d (rgrid, rBC, g0_over_r.data()));
+    CoreSplines.push_back(create_UBspline_1d_d (rgrid, rBC, g0.data()));
     Core_lm.push_back(TinyVector<int,2>(l,m));
     Core_kVecs.push_back (kVec);
     
@@ -374,7 +365,7 @@ namespace qmcplusplus {
       complex<double> ylm = YlmVec[lm];
       double u;
       eval_UBspline_1d_d (CoreSplines[i], drmag, &u);
-      phi[first+i] = ylm*(u /* /drmag */);
+      phi[first+i] = ylm*(u);
       double phase = dot (r, Core_kVecs[i]);
       double s, c;
       sincos(phase, &s, &c);
@@ -383,7 +374,8 @@ namespace qmcplusplus {
   }
 
  void
-  MuffinTinClass::evaluateCore (TinyVector<double,3> r, Vector<complex<double> > &phi,
+  MuffinTinClass::evaluateCore (TinyVector<double,3> r, 
+				Vector<complex<double> > &phi,
 				Vector<TinyVector<complex<double>,3> > &grad,
 				Vector<complex<double> > &lapl, int first)
   {
@@ -420,20 +412,6 @@ namespace qmcplusplus {
       double u, du, d2u;
       eval_UBspline_1d_d_vgl (CoreSplines[i], drmag, &u, &du, &d2u);
       
-//       double uplus, uminus;
-//       double eps = 1.0e-6;
-//       eval_UBspline_1d_d (CoreSplines[i], drmag, &u);
-//       eval_UBspline_1d_d (CoreSplines[i], drmag+eps, &uplus);
-//       eval_UBspline_1d_d (CoreSplines[i], drmag-eps, &uminus);
-//       d2u = (uplus + uminus - 2.0*u) / (eps*eps);
-//       du = (uplus - uminus) / (2.0*eps);
-
-      
-//       double f   = u / drmag;
-//       double df  = du/drmag - u/(drmag * drmag);
-//       double d2f = -2.0*du/(drmag*drmag) + d2u/drmag 
-// 	+ 2.0*u/(drmag * drmag *drmag);
-
       phi[first+i] = ylm*u;      
       grad[first+i] = (du                 *     YlmVec[lm] * rhat     +
        		       u/drmag            *    dYlmVec[lm] * thetahat +
@@ -441,23 +419,6 @@ namespace qmcplusplus {
       lapl[first+i] = YlmVec[lm] * (-(double)(l*(l+1))/(drmag*drmag) * u
        				    + d2u + 2.0/drmag *du );
 
-//       double cent2 = dot (Center,Center);
-//       if (cent2 < 1.0e-4)
-// 	if (drmag < 0.1) {
-// 	  double locE = real(lapl[first+i])/real(phi[first+i]);
-// 	  cerr << "loc E = " << locE << " -0.5*locE-Z/r = " << -0.5*locE-5.0/drmag << endl;
-// 	}
-	
     }
-
-    //   double phase = dot (r, Core_kVecs[i]);
-    //   double s, c;
-    //   sincos(phase, &s, &c);
-    //   phi[first+i] *= complex<double>(c,s);
-    // }
   }
-
-
-
-
 }

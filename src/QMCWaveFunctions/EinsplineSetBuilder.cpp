@@ -418,19 +418,20 @@ namespace qmcplusplus {
       }
     }
 
-    if (OrbitalSet->MuffinTins.size() > 0) {
+    if (myComm->rank()==0 && OrbitalSet->MuffinTins.size() > 0) {
       FILE *fout = fopen ("TestMuffins.dat", "w");
       Vector<double> phi(numOrbs), lapl(numOrbs);
       Vector<PosType> grad(numOrbs);
       ParticleSet P;
       P.R.resize(1);
-      for (double x=1.0e-3; x<=1.0; x+=0.0002) {
+      for (double x=1.0e-6; x<=1.0; x+=0.0002) {
 	P.R[0] = x * (PrimCell.a(0) + PrimCell.a(1) + 0.8*PrimCell.a(2));
 	double r = std::sqrt(dot(P.R[0], P.R[0]));
 	OrbitalSet->evaluate(P, 0, phi, grad, lapl);
 	fprintf (fout, "%1.5e ", x);
 	for (int j=0; j<numOrbs; j++) 
-	  fprintf (fout, "%16.12e ", -5.0/r - 0.5*lapl[j]/phi[j]);
+	  //fprintf (fout, "%16.12e ", -5.0/r - 0.5*lapl[j]/phi[j]);
+	  fprintf (fout, "%16.12e ", phi[j]);
 	fprintf (fout, "\n");
       }
       fclose(fout);
@@ -1278,11 +1279,11 @@ namespace qmcplusplus {
 	  ///////////////////////////////////
 	  // HACK HACK HACK HACK HACK HACK //
 	  ///////////////////////////////////
-// 	  double z = (atom==0) ? 5.0 : 7.0;
-// 	  for (int i=0; i<g0.size(); i++) {
-// 	    double r = (double)i * rmax / (double)(g0.size()-1);
-// 	    g0[i] = std::exp(-1.0*z*r)*r;
-// 	  } 
+	  // double z = (atom==0) ? 5.0 : 7.0;
+	  // for (int i=0; i<g0.size(); i++) {
+	  //   double r = (double)i * rmax / (double)(g0.size()-1);
+	  //   g0[i] = std::exp(-1.0*z*r)*r;
+	  // } 
 
 	  
 	  fprintf (stderr, "  Core state:     ti=%3d  bi=%3d energy=%8.5f "
@@ -1343,7 +1344,7 @@ namespace qmcplusplus {
 	    HDFAttribIO<Array<complex<double>,2> > h_u_lm_r(u_lm_r);
 	    h_u_lm_r.read(H5FileID, dataName.c_str());
 	  }
-	  myComm->bcast(splineData);
+	  myComm->bcast(u_lm_r);
 	  OrbitalSet->MuffinTins[tin].set_APW (ival, k, u_lm_r);
 	}
 	ival++;
@@ -1351,6 +1352,7 @@ namespace qmcplusplus {
       iorb++;
     }
     ExtendedMap_z[set] = orbitalSet->MultiSpline;
+    cerr << "Rank = " << myComm->rank() << ".  Done readbands.\n";
   }
   
 
