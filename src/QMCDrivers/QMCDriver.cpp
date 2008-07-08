@@ -268,7 +268,8 @@ namespace qmcplusplus {
   bool 
   QMCDriver::putQMCInfo(xmlNodePtr cur) {
     
-    int defaultw = 100;
+    //set the default walker to the number of threads times 10
+    int defaultw = omp_get_max_threads()*10;
     int targetw = 0;
 
     //these options are reset for each block
@@ -307,6 +308,10 @@ namespace qmcplusplus {
     //reset CurrentStep to zero if qmc/@continue='no'
     if(!AppendRun) CurrentStep=0;
 
+    //target number of walkers is less than the number of threads. Reset it.
+    if(nTargetWalkers && nTargetWalkers<omp_get_max_threads()) 
+      nTargetWalkers=omp_get_max_threads();
+
     app_log() << "  timestep = " << Tau << endl;
     app_log() << "  blocks = " << nBlocks << endl;
     app_log() << "  steps = " << nSteps << endl;
@@ -335,7 +340,6 @@ namespace qmcplusplus {
   xmlNodePtr QMCDriver::getQMCNode() {
 
     xmlNodePtr newqmc = xmlCopyNode(qmcNode,1);
-    //update current
     xmlNodePtr current_ptr=NULL;
     xmlNodePtr cur=newqmc->children;
     while(cur != NULL && current_ptr == NULL) {
