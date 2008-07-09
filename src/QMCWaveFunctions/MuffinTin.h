@@ -70,7 +70,7 @@ namespace qmcplusplus {
     // Stores the k-vector for the core states
     vector<TinyVector<double,3> > Core_kVecs;
     // Outside this radials, the orbital is zero
-    double CoreRadius;
+    vector<double> CoreRadii;
     
   public:
     ///////////////////////////////////
@@ -115,7 +115,7 @@ namespace qmcplusplus {
     friend class LAPWClass;
     MuffinTinClass() : RadialSplines(NULL), CoreSplines(NULL),
 		       APWRadius(0.0), NumOrbitals(0), NumCore(0),
-		       lMax(0), CoreRadius(0.0)
+		       lMax(0)
       
     {
       

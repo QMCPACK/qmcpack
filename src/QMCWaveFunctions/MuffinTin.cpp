@@ -173,6 +173,7 @@ namespace qmcplusplus {
       set_multi_UBspline_1d_z (RadialSplines, spline_num,
 			       uvec.data());
       // BCtype_z rBC;
+      // rBC.rCode = NATURAL;
       // rBC.lCode = DERIV1;
       // rBC.lVal_r = -5.0*uvec(0).real();
       // rBC.lVal_i = -5.0*uvec(0).imag();
@@ -413,7 +414,21 @@ namespace qmcplusplus {
     rBC.lCode = DERIV1;
     rBC.lVal  = -Z*g0[0];
     rBC.rCode = NATURAL;
-    
+
+    // Compute radius at which to truncate the core state
+    int N = g0.size();
+    double dr = rmax / (N-1);
+    double norm = 0.0;
+    int i=N-1;
+    while ( i>0 && norm<1.0e-5) {
+      double r = dr*(double) i;
+      double u = g0[i];
+      norm += u*u*r*r * dr;
+      i--;
+    }
+    double rcut = (i+1)*dr;
+
+    CoreRadii.push_back(rcut);
     CoreSplines.push_back(create_UBspline_1d_d (rgrid, rBC, g0.data()));
     Core_lm.push_back(TinyVector<int,2>(l,m));
     Core_kVecs.push_back (kVec);
@@ -422,7 +437,8 @@ namespace qmcplusplus {
   }
 
   void
-  MuffinTinClass::evaluateCore (TinyVector<double,3> r, Vector<complex<double> > &phi,
+  MuffinTinClass::evaluateCore (TinyVector<double,3> r, 
+				Vector<complex<double> > &phi,
 				int first)
   {
     TinyVector<double,3> disp, dr, drhat;
@@ -439,17 +455,21 @@ namespace qmcplusplus {
     evalYlm (drhat);  
   
     for (int i=0; i<CoreSplines.size(); i++) { 
-      int l = Core_lm[i][0];
-      int m = Core_lm[i][1];
-      int lm = l*(l+1)+m;
-      complex<double> ylm = YlmVec[lm];
-      double u;
-      eval_UBspline_1d_d (CoreSplines[i], drmag, &u);
-      phi[first+i] = ylm*(u);
-      // double phase = dot (r, Core_kVecs[i]);
-      // double s, c;
-      // sincos(phase, &s, &c);
-      // phi[first+i] *= complex<double>(c,s);
+      if (drmag > CoreRadii[i]) 
+	phi[first+i] = complex<double>();
+      else {
+	int l = Core_lm[i][0];
+	int m = Core_lm[i][1];
+	int lm = l*(l+1)+m;
+	complex<double> ylm = YlmVec[lm];
+	double u;
+	eval_UBspline_1d_d (CoreSplines[i], drmag, &u);
+	phi[first+i] = ylm*(u);
+	// double phase = dot (r, Core_kVecs[i]);
+	// double s, c;
+	// sincos(phase, &s, &c);
+	// phi[first+i] *= complex<double>(c,s);
+      }
     }
   }
 
@@ -483,22 +503,29 @@ namespace qmcplusplus {
     // This is a slow hack
     evalYlm (rhat);  
     for (int i=0; i<CoreSplines.size(); i++) { 
-      int l = Core_lm[i][0];
-      int m = Core_lm[i][1];
-      int lm = l*(l+1)+m;
-      complex<double> ylm = YlmVec[lm];
-      complex<double> im(0.0,(double)m);
-
-      double u, du, d2u;
-      eval_UBspline_1d_d_vgl (CoreSplines[i], drmag, &u, &du, &d2u);
-      
-      phi[first+i] = ylm*u;      
-      grad[first+i] = (du                 *     YlmVec[lm] * rhat     +
-       		       u/drmag            *    dYlmVec[lm] * thetahat +
-       		       u/(drmag*sintheta) * im *YlmVec[lm] * phihat);
-      lapl[first+i] = YlmVec[lm] * (-(double)(l*(l+1))/(drmag*drmag) * u
-       				    + d2u + 2.0/drmag *du );
-
+      if (drmag > CoreRadii[i]) {
+	phi[first+i]   = complex<double>();
+	grad[first+i]  = complex<double>() * rhat;
+	lapl[first+i] =  complex<double>();
+      }
+      else {
+	int l = Core_lm[i][0];
+	int m = Core_lm[i][1];
+	int lm = l*(l+1)+m;
+	complex<double> ylm = YlmVec[lm];
+	complex<double> im(0.0,(double)m);
+	
+	double u, du, d2u;
+	eval_UBspline_1d_d_vgl (CoreSplines[i], drmag, &u, &du, &d2u);
+	
+	phi[first+i] = ylm*u;      
+	grad[first+i] = (du                 *     YlmVec[lm] * rhat     +
+			 u/drmag            *    dYlmVec[lm] * thetahat +
+			 u/(drmag*sintheta) * im *YlmVec[lm] * phihat);
+	lapl[first+i] = YlmVec[lm] * (-(double)(l*(l+1))/(drmag*drmag) * u
+				      + d2u + 2.0/drmag *du );
+	
+      }
     }
   }
 }
