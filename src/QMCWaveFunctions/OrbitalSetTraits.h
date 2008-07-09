@@ -25,6 +25,7 @@
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "Optimize/VarList.h"
+#include "Optimize/VariableSet.h"
 
 namespace qmcplusplus {
   /** dummy class for templated classes
@@ -40,7 +41,8 @@ namespace qmcplusplus {
   /** trait class to handel a set of Orbitals
    */
   template<typename T>
-  struct OrbitalSetTraits: public OrbitalTraits<T> {
+  struct OrbitalSetTraits: public OrbitalTraits<T> 
+  {
     enum {DIM=OHMMS_DIM};
     typedef typename OrbitalTraits<T>::real_type RealType;
     typedef typename OrbitalTraits<T>::value_type ValueType;
@@ -57,6 +59,13 @@ namespace qmcplusplus {
     typedef Vector<HessType>      HessVector_t;
     typedef Matrix<HessType>      HessMatrix_t;
   };
+
+  ///typedef for a set of variables that are varied during an optimization
+  typedef optimize::VariableSet  opt_variables_type;
+  ///typedef for a set of variables that can be varied
+  typedef optimize::VariableSet::variable_map_type variable_map_type;
+
+
 }
 
 #endif
