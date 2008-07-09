@@ -130,7 +130,8 @@ namespace qmcplusplus {
   
   void
   MuffinTinClass::set_APW (int orbNum, TinyVector<double,3> k,
-			   Array<complex<double>,2> &u_lm)
+			   Array<complex<double>,2> &u_lm,
+			   double Z)
   {
     kPoints[orbNum] = k;
     int numYlm = (lMax+1)*(lMax+1);
@@ -172,17 +173,22 @@ namespace qmcplusplus {
    
       set_multi_UBspline_1d_z (RadialSplines, spline_num,
 			       uvec.data());
-      // BCtype_z rBC;
-      // rBC.rCode = NATURAL;
-      // rBC.lCode = DERIV1;
-      // rBC.lVal_r = -5.0*uvec(0).real();
-      // rBC.lVal_i = -5.0*uvec(0).imag();
-      // if (lm != 0)
-      //  	rBC.lCode = NATURAL;
+      BCtype_z rBC;
+      rBC.rCode = NATURAL;
+      rBC.lCode = DERIV1;
+      if (lm == 0) {
+	rBC.lVal_r = -Z*uvec(0).real();
+	rBC.lVal_i = -Z*uvec(0).imag();
+      }
+      else {
+	rBC.lVal_r = -0.5*Z*uvec(0).real();
+	rBC.lVal_i = -0.5*Z*uvec(0).imag();
+      }
 
-      // rBC.lCode = NATURAL;
-      // rBC.rCode = NATURAL;
-      // set_multi_UBspline_1d_z_BC (RadialSplines, spline_num, uvec.data(), rBC);
+      //if (lm != 0)
+      //rBC.lCode = NATURAL;
+
+      set_multi_UBspline_1d_z_BC (RadialSplines, spline_num, uvec.data(), rBC);
     }
   }
   
@@ -365,10 +371,7 @@ namespace qmcplusplus {
       }
     }
     
-    int lmax = (drmag < 0.005) ? min(0,lMax) : lMax;
-    lmax = lMax;
-
-    int numYlm = (lmax+1)*(lmax+1);
+    int numYlm = (lMax+1)*(lMax+1);
     // Compute phi
     int i=0; 
     for (int iorb=0; iorb<NumOrbitals; iorb++) {
@@ -376,7 +379,7 @@ namespace qmcplusplus {
       grad[iorb][0] = grad[iorb][1] = grad[iorb][2] = complex<double>();
       lapl[iorb] = complex<double>();
       int lm=0;
-      for (int l=0; l<=lmax; l++)
+      for (int l=0; l<=lMax; l++)
 	for (int m=-l; m<=l; m++, lm++,i++) {
 	  complex<double> im(0.0,(double)m);
 	  phi[iorb]  += RadialVec[i] * YlmVec[lm];
@@ -426,7 +429,7 @@ namespace qmcplusplus {
       norm += u*u*r*r * dr;
       i--;
     }
-    double rcut = (i+1)*dr;
+    double rcut = 1000.0*(i+1)*dr;
 
     CoreRadii.push_back(rcut);
     CoreSplines.push_back(create_UBspline_1d_d (rgrid, rBC, g0.data()));

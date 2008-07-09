@@ -84,7 +84,8 @@ namespace qmcplusplus {
 		   int lmax, int numOrbitals);
     // The first index of u_lm is l*(l+1)+m.  The second is the radial index.
     void set_APW (int orbNum, TinyVector<double,3> k,
-		  Array<complex<double>,2> &u_lm);
+		  Array<complex<double>,2> &u_lm, 
+		  double Z);
     
     bool inside (TinyVector<double,3> r);
     void evaluate (TinyVector<double,3> r, Vector<complex<double> > &phi);

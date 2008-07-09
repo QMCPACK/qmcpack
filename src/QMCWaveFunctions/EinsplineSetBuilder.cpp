@@ -424,8 +424,8 @@ namespace qmcplusplus {
       Vector<PosType> grad(numOrbs);
       ParticleSet P;
       P.R.resize(1);
-      //for (double x=1.0e-3; x<=1.0; x+=0.0002) {
-      for (double x=1.0e-6; x<=0.001; x+=0.000001) {
+      for (double x=1.0e-3; x<=1.0; x+=0.0002) {
+	//for (double x=1.0e-6; x<=0.001; x+=0.000001) {
 	P.R[0] = x * (PrimCell.a(0) + PrimCell.a(1) + 0.8*PrimCell.a(2));
 	double r = std::sqrt(dot(P.R[0], P.R[0]));
 	OrbitalSet->evaluate(P, 0, phi, grad, lapl);
@@ -1348,7 +1348,8 @@ namespace qmcplusplus {
 	    h_u_lm_r.read(H5FileID, dataName.c_str());
 	  }
 	  myComm->bcast(u_lm_r);
-	  OrbitalSet->MuffinTins[tin].set_APW (ival, k, u_lm_r);
+	  double Z = (double)IonTypes(tin);
+	  OrbitalSet->MuffinTins[tin].set_APW (ival, k, u_lm_r, Z);
 	}
 	ival++;
       } // valence state
