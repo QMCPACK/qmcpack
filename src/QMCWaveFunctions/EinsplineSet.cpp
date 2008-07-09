@@ -304,41 +304,44 @@ namespace qmcplusplus {
       icore += MuffinTins[tin].get_num_core();
     }
 
-    for (int tin=0; tin<MuffinTins.size(); tin++) {
+    // Check if we are inside a muffin tin.  If so, compute valence
+    // states in the muffin tin.
+    bool inTin = false;
+    for (int tin=0; tin<MuffinTins.size() && !inTin; tin++) 
       if (MuffinTins[tin].inside(r)) {
 	MuffinTins[tin].evaluate (r, StorageValueVector);
-	int psiIndex=0;
-	for (int i=0; i<StorageValueVector.size(); i++) {
-	  psi[psiIndex] = real(StorageValueVector[i]);
-	  psiIndex++;
-	  if (MakeTwoCopies[i]) {
-	    psi[psiIndex] = imag(StorageValueVector[i]);
-	    psiIndex++;
-	  }
-	}
-	return;
+	inTin = true;
       }
+
+    if (!inTin) {
+      PosType ru(PrimLattice.toUnit(P.R[iat]));
+      for (int i=0; i<OHMMS_DIM; i++)
+	ru[i] -= std::floor (ru[i]);
+      EinsplineTimer.start();
+      EinsplineMultiEval (MultiSpline, ru, StorageValueVector);
+      EinsplineTimer.stop();
     }
-    
-    PosType ru(PrimLattice.toUnit(P.R[iat]));
-    for (int i=0; i<OHMMS_DIM; i++)
-      ru[i] -= std::floor (ru[i]);
-    EinsplineTimer.start();
-    EinsplineMultiEval (MultiSpline, ru, StorageValueVector);
-    EinsplineTimer.stop();
 
 
     //computePhaseFactors(r);
     int N = StorageValueVector.size();
-    int psiIndex = 0;
-    for (int i=0; i<N; i++) {
+
+    // If we are in a muffin tin, don't add the e^ikr term
+    // We should add it to the core states, however
+    int phaseStart = inTin ? NumValenceOrbs : 0;
+
+    for (int i=phaseStart; i<N; i++) {
       PosType k = kPoints[i];
       double s,c;
       double phase = -dot(r, k);
       sincos (phase, &s, &c);
       complex<double> e_mikr (c,s);
-      complex<double> psi_val = e_mikr*StorageValueVector[i];
+      StorageValueVector[i] *= e_mikr;
+    }
 
+    int psiIndex = 0;
+    for (int i=0; i<N; i++) {
+      complex<double> psi_val = StorageValueVector[i];
       psi[psiIndex] = real(psi_val);
       psiIndex++;
       if (MakeTwoCopies[i]) {

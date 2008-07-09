@@ -107,6 +107,7 @@ namespace qmcplusplus {
     rgrid.start = 0.0;
     rgrid.end = radius;
     rgrid.num = num_rad_points;
+    cerr << "dr = " << (rgrid.end - rgrid.start)/(num_rad_points-1);
     
     // Boundary conditions
     BCtype_z rBC;
@@ -137,14 +138,50 @@ namespace qmcplusplus {
     
     if (numYlm != u_lm.size(0)) 
       app_error() << "Wrong dimension in MuffinTinClass::setAPW.\n";
-    
+
+    /////////////////////////////////////////////////////////// 
+    // To get the correct behavior near the nucleus, we will //
+    // actually spline u_lm(r)/r^l, and then multiply this   //
+    // back on when we evaluate.                             //
+    /////////////////////////////////////////////////////////// 
+    double dr = APWRadius / (double)(num_r -1);
     Array<complex<double>,1> uvec (num_r);
+    for (int ir=1; ir<num_r; ir++) {
+      double r = (double)ir * dr;
+      double r2l = 1.0;
+      for (int l=0; l<=lMax; l++) {
+	for (int m=-l; m<=l; m++) {
+	  int lm = l*(l+1) + m;
+	  u_lm(lm, ir) /= r2l;
+	}
+	r2l *= r;
+      }
+    }
+
+    for (int l=0; l<=lMax; l++) 
+      for (int m=-l; m<=l; m++) {
+	int lm = l*(l+1) + m;
+	u_lm(lm, 0)  = 2.0*u_lm(lm,1) - u_lm(lm,2);
+      }
+
+	
     for (int lm=0; lm<numYlm; lm++) {
       int spline_num = orbNum*numYlm + lm;
       for (int ir=0; ir<num_r; ir++)
 	uvec(ir) = u_lm(lm,ir);
-      
-      set_multi_UBspline_1d_z (RadialSplines, spline_num, uvec.data());
+   
+      set_multi_UBspline_1d_z (RadialSplines, spline_num,
+			       uvec.data());
+      // BCtype_z rBC;
+      // rBC.lCode = DERIV1;
+      // rBC.lVal_r = -5.0*uvec(0).real();
+      // rBC.lVal_i = -5.0*uvec(0).imag();
+      // if (lm != 0)
+      //  	rBC.lCode = NATURAL;
+
+      // rBC.lCode = NATURAL;
+      // rBC.rCode = NATURAL;
+      // set_multi_UBspline_1d_z_BC (RadialSplines, spline_num, uvec.data(), rBC);
     }
   }
   
@@ -192,9 +229,21 @@ namespace qmcplusplus {
     // Evaluate the splines
     eval_multi_UBspline_1d_z (RadialSplines, drmag, RadialVec.data());
     
-//     drmag = max (0.0005, drmag);
-//     int lmax = (drmag < 0.005) ? min(2,lMax) : lMax;
+    // Multiply by r^l term
+    int j=0; 
+    for (int iorb=0; iorb<NumOrbitals; iorb++) {
+      double r2l = 1.0;
+      for (int l=0; l<=lMax; l++) {
+	for (int m=-l; m<=l; m++) {
+	  int lm = l*(l+1) + m;
+	  RadialVec[j] *= r2l;
+	  j++;
+	}
+	r2l *= drmag;
+      }
+    }
 
+    
     int numYlm = (lMax+1)*(lMax+1);
     // Compute phi
     int i=0; 
@@ -203,7 +252,7 @@ namespace qmcplusplus {
       for (int lm=0; lm<numYlm; lm++, i++)
 	phi[iorb] += RadialVec[i] * YlmVec[lm];
       // Multiply by phase factor for k-point translation
-      double phase = dot(L,kPoints[iorb]);
+      double phase = -dot(L,kPoints[iorb]);
       double s,c;
       sincos (phase, &s, &c);
       phi[iorb] *= complex<double>(c,s);
@@ -284,9 +333,38 @@ namespace qmcplusplus {
     
     // Evaluate the splines
     eval_multi_UBspline_1d_z_vgh (RadialSplines, drmag, 
-				  RadialVec.data(), dRadialVec.data(), d2RadialVec.data());
+				  RadialVec.data(), 
+				  dRadialVec.data(), 
+				  d2RadialVec.data());
+
+    // Multiply by r^l term
+    int j=0; 
+    for (int iorb=0; iorb<NumOrbitals; iorb++) {
+      double r2l = 1.0;
+      double r2lm1 = 1.0/drmag;
+      double r2lm2 = 1.0/(drmag*drmag);
+      for (int l=0; l<=lMax; l++) {
+	for (int m=-l; m<=l; m++) {
+	  int lm = l*(l+1) + m;
+	  complex<double> u = RadialVec[j];
+	  complex<double> du = dRadialVec[j];
+	  complex<double> d2u = d2RadialVec[j];
+
+	  RadialVec[j] = r2l * u;
+	  dRadialVec[j] = (double)l * r2lm1 * u +
+	    r2l * du;
+	  d2RadialVec[j] = (double)(l*(l-1)) * r2lm2 * u
+	    + 2.0 * (double)l*r2lm1 * du + r2l * d2u;
+	  
+	  j++;
+	}
+	r2l   *= drmag;
+	r2lm1 *= drmag;
+	r2lm2 *= drmag;
+      }
+    }
     
-    int lmax = (drmag < 0.005) ? min(2,lMax) : lMax;
+    int lmax = (drmag < 0.005) ? min(0,lMax) : lMax;
     lmax = lMax;
 
     int numYlm = (lmax+1)*(lmax+1);
@@ -301,16 +379,17 @@ namespace qmcplusplus {
 	for (int m=-l; m<=l; m++, lm++,i++) {
 	  complex<double> im(0.0,(double)m);
 	  phi[iorb]  += RadialVec[i] * YlmVec[lm];
-	  grad[iorb] += (dRadialVec[i]                 *     YlmVec[lm] * rhat     +
-			 RadialVec[i]/drmag            *    dYlmVec[lm] * thetahat +
-			 RadialVec[i]/(drmag*sintheta) * im *YlmVec[lm] * phihat);
+	  grad[iorb] += 
+	    (dRadialVec[i]                 *     YlmVec[lm] * rhat     +
+	     RadialVec[i]/drmag            *    dYlmVec[lm] * thetahat +
+	     RadialVec[i]/(drmag*sintheta) * im *YlmVec[lm] * phihat);
 	  lapl[iorb] += YlmVec[lm] * 
 	    (-(double)(l*(l+1))/(drmag*drmag) * RadialVec[i]
 	     + d2RadialVec[i] + 2.0/drmag *dRadialVec[i]);
 	}
       
       // Multiply by phase factor for k-point translation
-      double phase = dot(L,kPoints[iorb]);
+      double phase = -dot(L,kPoints[iorb]);
       double s,c;
       sincos (phase, &s, &c);
       phi[iorb]  *= complex<double>(c,s);
@@ -323,7 +402,7 @@ namespace qmcplusplus {
 
   void
   MuffinTinClass::addCore (int l, int m, double rmax, Vector<double> &g0,
-			   TinyVector<double,3> kVec)
+			   TinyVector<double,3> kVec, double Z)
   {
     Ugrid rgrid;
     rgrid.start = 0.0;
@@ -331,7 +410,8 @@ namespace qmcplusplus {
     rgrid.num = g0.size();
     
     BCtype_d rBC;
-    rBC.lCode = NATURAL;
+    rBC.lCode = DERIV1;
+    rBC.lVal  = -Z*g0[0];
     rBC.rCode = NATURAL;
     
     CoreSplines.push_back(create_UBspline_1d_d (rgrid, rBC, g0.data()));
@@ -366,10 +446,10 @@ namespace qmcplusplus {
       double u;
       eval_UBspline_1d_d (CoreSplines[i], drmag, &u);
       phi[first+i] = ylm*(u);
-      double phase = dot (r, Core_kVecs[i]);
-      double s, c;
-      sincos(phase, &s, &c);
-      phi[first+i] *= complex<double>(c,s);
+      // double phase = dot (r, Core_kVecs[i]);
+      // double s, c;
+      // sincos(phase, &s, &c);
+      // phi[first+i] *= complex<double>(c,s);
     }
   }
 

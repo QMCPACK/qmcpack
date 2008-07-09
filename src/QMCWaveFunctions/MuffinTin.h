@@ -103,8 +103,9 @@ namespace qmcplusplus {
     /////////////////////////
     inline int get_num_core() { return NumCore; }
     void addCore (int l, int m, double rmax, Vector<double> &g0,
-		  TinyVector<double,3> k);
-    void evaluateCore (TinyVector<double,3> r, Vector<complex<double> > &phi, int first=0);
+		  TinyVector<double,3> k, double Z);
+    void evaluateCore (TinyVector<double,3> r, 
+		       Vector<complex<double> > &phi, int first=0);
     void evaluateCore (TinyVector<double,3> r, 
 		       Vector<complex<double> > &phi,
 		       Vector<TinyVector<complex<double>,3> > &grad,
