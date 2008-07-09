@@ -65,6 +65,9 @@
 /* Define to 1 if you have OOMPI library */
 #cmakedefine HAVE_OOMPI @HAVE_OOMPI@
 
+/* Define the base precision: float, double */
+#cmakedefine APP_PRECISION @APP_PRECISION@
+
 /* Define the physical dimension of appliation. */
 #cmakedefine OHMMS_DIM @OHMMS_DIM@
 

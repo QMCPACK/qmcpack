@@ -30,6 +30,7 @@ SET (EXECUTABLE_OUTPUT_PATH ${qmcpack_BINARY_DIR}/bin CACHE PATH "Single output 
 SET(OHMMS_DIM 3 CACHE INTEGER "Select physical dimension")
 SET(OHMMS_INDEXTYPE int)
 SET(OHMMS_PRECISION double)
+SET(APP_PRECISION double)
 
 SET(QMC_COMPLEX 0 CACHE BOOL "Build for complex binary")
 SET(QMC_MPI 1 CACHE BOOL "Enable/disable MPI")
