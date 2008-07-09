@@ -16,11 +16,11 @@
 #ifndef QMCPLUSPLUS_DIFFERENTIAL_TWOBODYJASTROW_H
 #define QMCPLUSPLUS_DIFFERENTIAL_TWOBODYJASTROW_H
 #include "Configuration.h"
-#include  <map>
 #include "QMCWaveFunctions/DiffOrbitalBase.h"
 #include "Particle/DistanceTableData.h"
 #include "Particle/DistanceTable.h"
 #include "ParticleBase/ParticleAttribOps.h"
+#include "Utilities/IteratorUtility.h"
 
 namespace qmcplusplus {
 
@@ -29,13 +29,16 @@ namespace qmcplusplus {
    */ 
   template<class FT>
   class DiffTwoBodyJastrowOrbital: public DiffOrbitalBase {
-
     ///number of variables this object handles
     int NumVars;
     ///number of target particles
     int NumPtcls;
+    ///number of groups, e.g., for the up/down electrons
+    int NumGroups;
     ///read-only distance table
     const DistanceTableData* d_table;
+    ///variables handled by this orbital
+    opt_variables_type myVars;
     ///container for the Jastrow functions  for all tghe pairs
     vector<FT*> F;
 
@@ -51,12 +54,9 @@ namespace qmcplusplus {
     DiffTwoBodyJastrowOrbital(ParticleSet& p):NumVars(0) 
     {
       NumPtcls=p.getTotalNum();
+      NumGroups=p.groups();
       d_table=DistanceTable::add(p);
-
-      //reserve space for the pairs
-      int ng=p.groups();
-      F.reserve(ng*ng);
-      OffSet.reserve(ng*ng);
+      F.resize(NumGroups*NumGroups,0);
     }
 
     ~DiffTwoBodyJastrowOrbital()
@@ -65,41 +65,35 @@ namespace qmcplusplus {
       delete_iter(lapLogPsi.begin(),lapLogPsi.end());
     }
 
-    ///insert a named functor
-    void insert(const string& aname, FT* j) 
+    void addFunc(const string& aname, int ia, int ib, FT* j)
     {
-      J2Unique[aname]=j;
-      NumVars+=j->getNumOfVariables();
-    }
-
-    void insert(std::map<std::string,FT*>& j2unique) 
-    {
-      J2Unique.insert(j2unique.begin(),j2unique.end());
-      typename std::map<std::string,FT*>::iterator it(J2Unique.begin()),it_end(J2Unique.end());
-      while(it != it_end) 
+      if(ia==ib)
       {
-        NumVars+=(*it).second->size();
-        ++it;
+        if(ia==0)//first time, assign everything
+        {
+          int ij=0;
+          for(int ig=0; ig<NumGroups; ++ig) 
+            for(int jg=0; jg<NumGroups; ++jg, ++ij) 
+              if(F[ij]==0) F[ij]=j;
+        }
       }
+      else 
+      {
+        F[ia*NumGroups+ib]=j;
+        if(ia<ib) F[ib*NumGroups+ia]=j; 
+      }
+
+      J2Unique[aname]=j;
     }
 
     ///reset the value of all the unique Two-Body Jastrow functions
-    void resetParameters(OptimizableSetType& optVariables) 
+    void resetParameters(opt_variables_type& active) 
     { 
       typename std::map<std::string,FT*>::iterator it(J2Unique.begin()),it_end(J2Unique.end());
       while(it != it_end) 
       {
-        (*it).second->resetParameters(optVariables); 
-        ++it;
+        (*it++).second->resetParameters(active); 
       }
-    }
-
-    /** Add a functor for a pair
-     */
-    void addFunc(FT* afunc)
-    { 
-      F.push_back(afunc); 
-      OffSet.push_back(pair<int,int>(afunc->FirstIndex,afunc->LastIndex));
     }
 
     ///reset the distance table
@@ -108,52 +102,63 @@ namespace qmcplusplus {
       d_table = DistanceTable::add(P);
     }
 
-    void initialize()
+    void checkOutVariables(const opt_variables_type& active)
     {
-      int n=LastIndex-FirstIndex;
-
-      cout << "Index[" << FirstIndex << " " << LastIndex << endl;
-
-      if(dLogPsi.size()==0)
+      myVars.clear();
+      typename std::map<std::string,FT*>::iterator it(J2Unique.begin()),it_end(J2Unique.end());
+      while(it != it_end) 
       {
-        dLogPsi.resize(n);
-        gradLogPsi.resize(n,0);
-        lapLogPsi.resize(n,0);
-        for(int i=0; i<n; ++i)
+        (*it).second->myVars.getIndex(active); 
+        myVars.insertFrom((*it).second->myVars);
+        ++it;
+      }
+
+      myVars.getIndex(active);
+      NumVars=myVars.size();
+
+      //myVars.print(cout);
+
+      if(NumVars && dLogPsi.size()==0)
+      {
+        dLogPsi.resize(NumVars);
+        gradLogPsi.resize(NumVars,0);
+        lapLogPsi.resize(NumVars,0);
+        for(int i=0; i<NumVars; ++i)
         {
           gradLogPsi[i]=new GradVectorType(NumPtcls);
           lapLogPsi[i]=new ValueVectorType(NumPtcls);
         }
-      }
-
-      //correct the offset 
-      for(int p=0; p<OffSet.size(); ++p)
-      {
-        OffSet[p].first-=FirstIndex;
-        OffSet[p].second-=FirstIndex;
+        OffSet.resize(F.size());
+        int varoffset=myVars.Index[0];
+        for(int i=0; i<F.size(); ++i)
+        {
+          OffSet[i].first=F[i]->myVars.Index.front()-varoffset;
+          OffSet[i].second=F[i]->myVars.Index.size()+OffSet[i].first;
+        }
       }
     }
 
-    void evaluateDerivatives(ParticleSet& P, RealType ke0, OptimizableSetType& optVars)
+    void evaluateDerivatives(ParticleSet& P, RealType ke0, 
+        const opt_variables_type& active,
+        vector<RealType>& dlogpsi,
+        vector<RealType>& dhpsioverpsi)
     {
-
       dLogPsi=0.0;
       for(int p=0;p<NumVars; ++p) (*gradLogPsi[p])=0.0;
       for(int p=0;p<NumVars; ++p) (*lapLogPsi[p])=0.0;
       
       vector<TinyVector<RealType,3> > derivs(NumVars);
 
-      for(int i=0; i<d_table->size(SourceIndex); ++i) {
-	for(int nn=d_table->M[i]; nn<d_table->M[i+1]; ++nn) {
-	  int j = d_table->J[nn];
+      for(int i=0; i<d_table->size(SourceIndex); ++i) 
+      {
+	for(int nn=d_table->M[i]; nn<d_table->M[i+1]; ++nn) 
+        {
           int ptype=d_table->PairID[nn];
-
-          //functor evalaute value, dudr, d2udr2 at r for all the variables
-          F[ptype]->evaluate(d_table->r(nn),derivs);
-
+          std::fill(derivs.begin(),derivs.end(),0.0);
+          if(!F[ptype]->evaluateDerivatives(d_table->r(nn),derivs)) continue;
+	  int j = d_table->J[nn];
           RealType rinv(d_table->rinv(nn));
           PosType dr(d_table->dr(nn));
-
           for(int p=OffSet[ptype].first, ip=0; p<OffSet[ptype].second; ++p,++ip)
           {
             RealType dudr(rinv*derivs[ip][1]);
@@ -169,9 +174,13 @@ namespace qmcplusplus {
 	}
       }
 
-      for(int p=FirstIndex, ip=0; p<LastIndex; ++p,++ip)
+      for(int k=0; k<myVars.size(); ++k)
       {
-        optVars.setDeriv(p,dLogPsi[ip],-0.5*Sum(*lapLogPsi[ip])-Dot(P.G,*gradLogPsi[ip]));
+        int kk=myVars.where(k);
+        if(kk<0) continue;
+        dlogpsi[kk]=dLogPsi[k];
+        dhpsioverpsi[kk]=-0.5*Sum(*lapLogPsi[k])-Dot(P.G,*gradLogPsi[k]);
+        //optVars.setDeriv(p,dLogPsi[ip],-0.5*Sum(*lapLogPsi[ip])-Dot(P.G,*gradLogPsi[ip]));
       }
     }
   };

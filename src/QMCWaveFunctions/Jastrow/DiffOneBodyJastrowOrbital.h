@@ -16,11 +16,12 @@
 #ifndef QMCPLUSPLUS_DIFFERENTIAL_ONEBODYJASTROW_H
 #define QMCPLUSPLUS_DIFFERENTIAL_ONEBODYJASTROW_H
 #include "Configuration.h"
-#include  <map>
 #include "QMCWaveFunctions/DiffOrbitalBase.h"
 #include "Particle/DistanceTableData.h"
 #include "Particle/DistanceTable.h"
 #include "ParticleBase/ParticleAttribOps.h"
+#include "Utilities/IteratorUtility.h"
+
 
 namespace qmcplusplus {
 
@@ -30,6 +31,7 @@ namespace qmcplusplus {
   template<class FT>
   class DiffOneBodyJastrowOrbital: public DiffOrbitalBase {
 
+
     ///number of variables this object handles
     int NumVars;
     ///number of target particles
@@ -38,8 +40,11 @@ namespace qmcplusplus {
     const ParticleSet& CenterRef;
     ///read-only distance table
     const DistanceTableData* d_table;
-    ///container for the Jastrow functions  for all tghe pairs
+    ///variables handled by this orbital
+    opt_variables_type myVars;
+    ///container for the Jastrow functions  for all the pairs
     vector<FT*> Fs;
+    ///container for the unique Jastrow functions
     vector<FT*> Funique;
 
     vector<pair<int,int> > OffSet;
@@ -72,34 +77,60 @@ namespace qmcplusplus {
       if(Fs.empty()) 
       {
         Fs.resize(CenterRef.getTotalNum(),0);
-        OffSet.resize(CenterRef.getTotalNum());
+        Funique.resize(CenterRef.getSpeciesSet().size(),0);
       }
 
-      bool foundgroup=false;
       for(int i=0; i<Fs.size(); i++) 
-      {
-        if(CenterRef.GroupID[i] == source_type) 
-        {
-          Fs[i]=afunc;
-          OffSet[i].first=afunc->FirstIndex;
-          OffSet[i].second=afunc->LastIndex;
-          foundgroup=true;
-        }
-      }
-
-      if(foundgroup)
-      {
-        Funique.push_back(afunc);
-        NumVars+=afunc->getNumOfVariables();
-      }
+        if(CenterRef.GroupID[i] == source_type) Fs[i]=afunc;
+      Funique[source_type]=afunc;
     }
 
 
     ///reset the value of all the unique Two-Body Jastrow functions
-    void resetParameters(OptimizableSetType& optVariables) 
+    void resetParameters(opt_variables_type& active) 
     { 
       for(int i=0; i<Funique.size(); ++i)
-        Funique[i]->resetParameters(optVariables);
+        if(Funique[i]) Funique[i]->resetParameters(active);
+    }
+
+    void checkOutVariables(const opt_variables_type& active)
+    {
+      myVars.clear();
+      for(int i=0; i<Funique.size(); ++i)
+      {
+        if(Funique[i]) 
+        {
+          Funique[i]->myVars.getIndex(active);
+          myVars.insertFrom(Funique[i]->myVars);
+        }
+      }
+      myVars.getIndex(active);
+      NumVars=myVars.size();
+
+      //myVars.print(cout);
+
+      if(NumVars && dLogPsi.size()==0)
+      {
+        dLogPsi.resize(NumVars);
+        gradLogPsi.resize(NumVars,0);
+        lapLogPsi.resize(NumVars,0);
+        for(int i=0; i<NumVars; ++i)
+        {
+          gradLogPsi[i]=new GradVectorType(NumPtcls);
+          lapLogPsi[i]=new ValueVectorType(NumPtcls);
+        }
+
+        OffSet.resize(Fs.size());
+        int varoffset=myVars.Index[0];
+        for(int i=0; i<Fs.size(); ++i)
+        {
+          if(Fs[i]) 
+          {
+            OffSet[i].first=Fs[i]->myVars.Index.front()-varoffset;
+            OffSet[i].second=Fs[i]->myVars.Index.size()+OffSet[i].first;
+          }
+        }
+      }
     }
 
     ///reset the distance table
@@ -108,48 +139,26 @@ namespace qmcplusplus {
       d_table = DistanceTable::add(CenterRef,P);
     }
 
-    void initialize()
+    void evaluateDerivatives(ParticleSet& P, RealType ke0, 
+        const opt_variables_type& active,
+        vector<RealType>& dlogpsi,
+        vector<RealType>& dhpsioverpsi)
     {
-      int n=LastIndex-FirstIndex;
-
-      if(dLogPsi.size()==0)
-      {
-        dLogPsi.resize(n);
-        gradLogPsi.resize(n,0);
-        lapLogPsi.resize(n,0);
-        for(int i=0; i<n; ++i)
-        {
-          gradLogPsi[i]=new GradVectorType(NumPtcls);
-          lapLogPsi[i]=new ValueVectorType(NumPtcls);
-        }
-      }
-
-      //correct the offset , don't need to worry about null functor
-      for(int p=0; p<OffSet.size(); ++p)
-      {
-        OffSet[p].first-=FirstIndex;
-        OffSet[p].second-=FirstIndex;
-      }
-    }
-
-    void evaluateDerivatives(ParticleSet& P, RealType ke0, OptimizableSetType& optVars)
-    {
-
       dLogPsi=0.0;
       for(int p=0;p<NumVars; ++p) (*gradLogPsi[p])=0.0;
       for(int p=0;p<NumVars; ++p) (*lapLogPsi[p])=0.0;
-      
       vector<TinyVector<RealType,3> > derivs(NumVars);
-
       for(int i=0; i<d_table->size(SourceIndex); ++i) 
       {
         FT* func=Fs[i];
         if(func == 0) continue;
         int first(OffSet[i].first);
         int last(OffSet[i].second);
-	for(int nn=d_table->M[i]; nn<d_table->M[i+1]; ++nn) {
+	for(int nn=d_table->M[i]; nn<d_table->M[i+1]; ++nn) 
+        {
+          std::fill(derivs.begin(),derivs.end(),0.0);
+          if(!func->evaluateDerivatives(d_table->r(nn),derivs)) continue;
 	  int j = d_table->J[nn];
-          func->evaluate(d_table->r(nn),derivs);
           RealType rinv(d_table->rinv(nn));
           PosType dr(d_table->dr(nn));
           for(int p=first, ip=0; p<last; ++p,++ip)
@@ -162,9 +171,13 @@ namespace qmcplusplus {
 	}
       }
 
-      for(int p=FirstIndex, ip=0; p<LastIndex; ++p,++ip)
+      for(int k=0; k<myVars.size(); ++k)
       {
-        optVars.setDeriv(p,dLogPsi[ip],-0.5*Sum(*lapLogPsi[ip])-Dot(P.G,*gradLogPsi[ip]));
+        int kk=myVars.where(k);
+        if(kk<0) continue;
+        dlogpsi[kk]=dLogPsi[k];
+        dhpsioverpsi[kk]=-0.5*Sum(*lapLogPsi[k])-Dot(P.G,*gradLogPsi[k]);
+        //optVars.setDeriv(p,dLogPsi[ip],-0.5*Sum(*lapLogPsi[ip])-Dot(P.G,*gradLogPsi[ip]));
       }
     }
   };
