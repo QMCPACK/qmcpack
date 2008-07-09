@@ -39,17 +39,17 @@ namespace qmcplusplus {
    */
   struct DiffOrbitalBase
   {
+    enum {SourceIndex  = OrbitalBase::SourceIndex, 
+	  VisitorIndex = OrbitalBase::VisitorIndex, 
+	  WalkerIndex  = OrbitalBase::WalkerIndex};
+
     //@{typedefs inherited from OrbitalBase
     typedef OrbitalBase::RealType           RealType;
     typedef OrbitalBase::ValueType          ValueType;
+    typedef OrbitalBase::PosType            PosType;
     typedef OrbitalBase::GradVectorType     GradVectorType;
     typedef OrbitalBase::ValueVectorType    ValueVectorType;
-    typedef OrbitalBase::OptimizableSetType OptimizableSetType;
     //@}
-    ///firs tindex of the optimizable parameters
-    int FirstIndex;
-    ///last index of the optimizable parameters
-    int LastIndex;
     /** list of reference orbitals which contribute to the derivatives
      */
     vector<OrbitalBase*> refOrbital;
@@ -59,19 +59,6 @@ namespace qmcplusplus {
 
     ///default destructor
     virtual ~DiffOrbitalBase(){ }
-
-    /** set the index bounds for derivatives
-     * @param first locator for the first optimizable parameter
-     * @param last locator for the last parameter
-     *
-     * The derived classes should evaluate derivatives and assign them
-     * to optVars.derivatives in [first,last) range.
-     */
-    inline void setBounds(int first, int last=-1) 
-    {
-      FirstIndex=first;
-      LastIndex=(last>first)?last:first+1;
-    }
 
     /** add an OrbitalBase*
      */
@@ -93,11 +80,18 @@ namespace qmcplusplus {
      * @param P current configuration
      * @param ke0 current kinetic energy
      */
-    virtual void evaluateDerivatives(ParticleSet& P, RealType ke0, OptimizableSetType& optVars)=0;
+    virtual void evaluateDerivatives(ParticleSet& P, RealType ke0, 
+        const opt_variables_type& optvars,
+        vector<RealType>& dlogpsi,
+        vector<RealType>& dhpsioverpsi)=0;
+
+    /** check out optimizable variables
+     */
+    virtual void checkOutVariables(const opt_variables_type& optvars)=0;
 
     /** reset the parameters during optimizations
      */
-    virtual void resetParameters(OptimizableSetType& optVars)=0;
+    virtual void resetParameters(opt_variables_type& optvars)=0;
   };
 
   /** a generic DiffOrbitalBase using a finite-difference method for a single optimizable parameter.
@@ -110,8 +104,12 @@ namespace qmcplusplus {
     NumericalDiffOrbital(OrbitalBase* orb=0): DiffOrbitalBase(orb) {}
 
     void resetTargetParticleSet(ParticleSet& P);
-    void evaluateDerivatives(ParticleSet& P, RealType ke0,  OptimizableSetType& optVars);
-    void resetParameters(OptimizableSetType& optVariables);
+    void evaluateDerivatives(ParticleSet& P, RealType ke0, 
+        const opt_variables_type& optvars,
+        vector<RealType>& dlogpsi,
+        vector<RealType>& dhpsioverpsi);
+    void checkOutVariables(const opt_variables_type& optvars);
+    void resetParameters(opt_variables_type& optvars);
 
     ///\f$\nabla \partial_{\alpha} log\Psi\f$
     GradVectorType gradLogPsi, dg_p, dg_m;
@@ -124,11 +122,17 @@ namespace qmcplusplus {
   struct AnalyticDiffOrbital: public DiffOrbitalBase
   {
 
-    AnalyticDiffOrbital(OrbitalBase* orb=0): DiffOrbitalBase(orb) {}
+    AnalyticDiffOrbital(OrbitalBase* orb=0): DiffOrbitalBase(orb), MyIndex(-1) {}
 
     void resetTargetParticleSet(ParticleSet& P);
-    void evaluateDerivatives(ParticleSet& P, RealType ke0, OptimizableSetType& optVars);
-    void resetParameters(OptimizableSetType& optVariables);
+    void evaluateDerivatives(ParticleSet& P, RealType ke0, 
+        const opt_variables_type& optvars,
+        vector<RealType>& dlogpsi,
+        vector<RealType>& dhpsioverpsi);
+    void checkOutVariables(const opt_variables_type& optvars);
+    void resetParameters(opt_variables_type& optvars);
+    ///get the index in the variable list
+    int MyIndex;
     ///\f$\nabla \partial_{\alpha} log\Psi\f$
     GradVectorType gradLogPsi;
     ///\f$\nabla^2 \partial_{\alpha} log\Psi\f$
