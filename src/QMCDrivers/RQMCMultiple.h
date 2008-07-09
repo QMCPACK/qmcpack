@@ -25,7 +25,7 @@ namespace qmcplusplus {
 
   class Bead;
   class MultiChain;
-  class CSPolymerEstimator;
+  class PolymerEstimator;
 
   /** @ingroup QMCDrivers MultiplePsi
    * @brief Implements the RMC algorithm for energy differences
@@ -58,7 +58,7 @@ namespace qmcplusplus {
     ///The length of polymers
     int ReptileLength;
 
-    CSPolymerEstimator *multiEstimator;
+    PolymerEstimator *multiEstimator;
 
     ///
     int forward,backward,itail,inext;
@@ -66,7 +66,7 @@ namespace qmcplusplus {
     ///the number of turns per block
     int NumTurns;
 
-    int nptcl;
+    int nptcl,nObs;
 
     ///the number of H/Psi pairs
     int nPsi;

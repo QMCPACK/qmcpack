@@ -32,8 +32,10 @@ namespace qmcplusplus {
    * @param hcopy number of copies of QMCHamiltonians
    */
   CSPolymerEstimator::CSPolymerEstimator(QMCHamiltonian& h, int hcopy, 
-      MultiChain* polymer) : Reptile(polymer)
+      MultiChain* polymer)
+//   : Reptile(polymer)
   {
+    Reptile = polymer;
     NumCopies=hcopy;
     NumObservables = h.size();
     scalars.resize(NumCopies+NumCopies*(NumCopies-1)/2);
@@ -42,8 +44,10 @@ namespace qmcplusplus {
   }
 
   CSPolymerEstimator::CSPolymerEstimator(const CSPolymerEstimator& mest): 
-    ScalarEstimatorBase(mest), Reptile(mest.Reptile)
+       PolymerEstimator(mest)
+//       Reptile(mest.Reptile)
   {
+    Reptile=mest.Reptile;
     NumCopies=mest.NumCopies;
     //d_data.resize(mest.d_data.size());
   }

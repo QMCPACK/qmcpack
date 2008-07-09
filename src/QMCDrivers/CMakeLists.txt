@@ -37,6 +37,7 @@ SET(QMCDRIVERS
   CorrelatedSampling/CSVMCUpdatePbyP.cpp
   ../Estimators/CSEnergyEstimator.cpp
   ../Estimators/CSPolymerEstimator.cpp
+  ../Estimators/MJPolymerEstimator.cpp
 )
 #  ../Estimators/PairCorrEstimator.cpp
 

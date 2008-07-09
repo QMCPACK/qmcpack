@@ -25,6 +25,8 @@
 #include "Utilities/IteratorUtility.h"
 #include "Numerics/HDFNumericAttrib.h"
 #include "QMCDrivers/SpaceWarp.h"
+
+#include "QMCDrivers/DriftOperators.h"
 #include <deque>
 namespace qmcplusplus {
 
@@ -36,11 +38,17 @@ namespace qmcplusplus {
  
     Vector<int> BeadSignWgt;    
     vector<ParticlePos_t*> Gradients;
+    vector<ParticlePos_t*> DriftVectors;
     Matrix<RealType> Action;
     RealType TransProb[2];
+    
+    //Extra Observable Spots for Pressure, etc.
+    vector<RealType> Observables;
+    vector<RealType> deltaRSquared;
+    int stepmade;
 
     inline Bead(const Bead& a) {
-      makeCopyBead(a); 
+      makeCopyBead(a);
     }
 
     inline ~Bead()
@@ -53,6 +61,7 @@ namespace qmcplusplus {
       int rows=Properties.rows();
       Resize_Grad_and_Action(rows,R.size());
       BeadSignWgt.resize(rows);
+//       deltaRSquared.resize(3);
     }
 
     inline Bead& operator=(const Bead& a) {
@@ -70,6 +79,11 @@ namespace qmcplusplus {
       BeadSignWgt=a.BeadSignWgt;
       TransProb[0]=a.TransProb[0];
       TransProb[1]=a.TransProb[1];
+      
+      Observables=a.Observables;
+      stepmade=a.stepmade;
+      deltaRSquared=a.deltaRSquared;
+      DriftVectors=a.DriftVectors;
     }
 
     inline void Resize_Grad_and_Action(int n, int m){
@@ -78,7 +92,32 @@ namespace qmcplusplus {
         Gradients.push_back(new ParticlePos_t(m));
         ++curg;
       }
+      
+      curg=DriftVectors.size();
+      while(curg<n) {
+        DriftVectors.push_back(new ParticlePos_t(m));
+        ++curg;
+      }
+      
+      deltaRSquared.resize(3);
+      deltaRSquared[0]=0.0;
+      deltaRSquared[1]=0.0;
+      deltaRSquared[2]=0.0;
+      
       Action.resize(n,3);
+      for(int i=0;i<n;i++){
+        Action(i,0)=0.0;
+        Action(i,1)=0.0;
+        Action(i,2)=0.0;
+      };
+    }
+    
+    inline void Resize_Observables(int n){
+      Observables.resize(n);
+    }
+
+    inline void Add_Observable(double n){
+      Observables.push_back(n);
     }
 
     /** copy the restart data to buf 
@@ -91,11 +130,18 @@ namespace qmcplusplus {
       while(git != git_end) {
         buf.add(get_first_address(**git),get_last_address(**git)); ++git;
       }
+      git=(DriftVectors.begin()); git_end=(DriftVectors.end());
+      while(git != git_end) {
+        buf.add(get_first_address(**git),get_last_address(**git)); ++git;
+      }
       buf.add(BeadSignWgt.begin(),BeadSignWgt.end());
       buf.add(TransProb[0]);
       buf.add(TransProb[1]);
       buf.add(Action.begin(),Action.end());
       buf.add(Properties.begin(),Properties.end());
+      
+      buf.add(Observables.begin(),Observables.end());
+      buf.add(deltaRSquared.begin(),deltaRSquared.end());
     }
 
     /** copy the restart data from buf 
@@ -108,12 +154,18 @@ namespace qmcplusplus {
       while(git != git_end) {
         buf.get(get_first_address(**git),get_last_address(**git)); ++git;
       }
+      git=(DriftVectors.begin()); git_end=(DriftVectors.end());
+      while(git != git_end) {
+        buf.get(get_first_address(**git),get_last_address(**git)); ++git;
+      }
       //buf.get(BeadSignWgt.begin(),BeadSignWgt.end());
       for(int i=0; i<BeadSignWgt.size(); i++) buf.get(BeadSignWgt[i]);
       buf.get(TransProb[0]);
       buf.get(TransProb[1]);
       buf.get(Action.begin(),Action.end());
       buf.get(Properties.begin(),Properties.end());
+      buf.get(Observables.begin(),Observables.end());
+      buf.get(deltaRSquared.begin(),deltaRSquared.end());
     }
 
     /** copy the restart data to buf 
@@ -126,11 +178,17 @@ namespace qmcplusplus {
       while(git != git_end) {
         buf.put(get_first_address(**git),get_last_address(**git)); ++git;
       }
+      git=(DriftVectors.begin()); git_end=(DriftVectors.end());
+      while(git != git_end) {
+        buf.put(get_first_address(**git),get_last_address(**git)); ++git;
+      }
       buf.put(BeadSignWgt.begin(),BeadSignWgt.end());
       buf.put(TransProb[0]);
       buf.put(TransProb[1]);
       buf.put(Action.begin(),Action.end());
       buf.put(Properties.begin(),Properties.end());
+      buf.put(Observables.begin(),Observables.end());
+      buf.put(deltaRSquared.begin(),deltaRSquared.end());
     }
 
     inline void getDrift(vector<RealType>& LogNorm) {
@@ -140,9 +198,28 @@ namespace qmcplusplus {
       Drift=0.e0;
       for(int ipsi=0; ipsi<npsi; ipsi++) {
         wgtpsi=BeadSignWgt[ipsi]*std::exp(2.0*( Properties(ipsi,LOGPSI)- LogNorm[ipsi]
-                                          -Properties(0,LOGPSI)   + LogNorm[0]));
+            -Properties(0,LOGPSI)   + LogNorm[0]));
         denom += wgtpsi;
         Drift += (wgtpsi*(*Gradients[ipsi]));
+      }
+      denom=1.0/denom;
+      Drift *= denom;
+    }
+    
+    inline void getScaledDrift(vector<RealType>& LogNorm, RealType Tau) {
+      int npsi(Properties.rows());
+      //compute Drift
+      RealType denom(0.e0),wgtpsi;
+      Drift=0.e0;
+      ParticleAttrib<TinyVector<double,3> > TMPgrad(Drift);
+      for(int ipsi=0; ipsi<npsi; ipsi++) {
+        wgtpsi=BeadSignWgt[ipsi]*std::exp(2.0*( Properties(ipsi,LOGPSI)- LogNorm[ipsi]
+            -Properties(0,LOGPSI)   + LogNorm[0]));
+        denom += wgtpsi;
+        setScaledDriftPbyP(Tau,*Gradients[ipsi],TMPgrad);
+//         RealType sc=getDriftScale(Tau,(*Gradients[ipsi]));
+        (*DriftVectors[ipsi]) = TMPgrad;
+        Drift += (wgtpsi*TMPgrad);
       }
       denom=1.0/denom;
       Drift *= denom;
@@ -196,6 +273,9 @@ namespace qmcplusplus {
 
     ///The number of H/Psi pairs
     int nPsi;
+    
+    //age of entire reptile, number of steps taken.
+    int Age;
 
     ///hdf5 handle to multichain
     hid_t h_config;
@@ -206,6 +286,7 @@ namespace qmcplusplus {
     Vector<int>      GlobalSignWgt,RefSign;
 
     Container_t      Beads;
+    Vector< Vector<RealType> > OldObs;
 
     /**  constructor    
      * @param abead Bead used to generate len Beads to form a chain
@@ -228,6 +309,14 @@ namespace qmcplusplus {
     inline iterator end() { return Beads.end();}
     inline reference front() { return Beads.front();}
     inline reference back() { return Beads.back();}
+    
+    //An easy way to grab the center bead for observables calculated in center.
+    inline iterator middle() {
+      iterator Bit = Beads.begin()+Middle;
+      return Bit;
+    }
+    inline reference center() { return *(this->middle());}
+    
     INLINE_ALL void push_front(Bead* abead) {
       Beads.push_front(abead);
     }
@@ -251,6 +340,12 @@ namespace qmcplusplus {
     inline int getSign(RealType phase) {
       return (phase>M_PI_2)?-1:1;
     }
+
+    inline void Reset_Ages(){
+      for(Container_t::iterator Pit=Beads.begin();Pit!=Beads.end();Pit++){
+        (*Pit)->stepmade=0;
+      };
+    };
 
     /** copy the restart data from buf 
      * @param buf buffer to read from

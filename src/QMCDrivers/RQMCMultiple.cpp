@@ -24,6 +24,8 @@
 #include "Message/Communicate.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "Estimators/CSPolymerEstimator.h"
+#include "Estimators/MJPolymerEstimator.h"
+#include "OhmmsData/AttributeSet.h"
 
 namespace qmcplusplus { 
   RQMCMultiple::RQMCMultiple(MCWalkerConfiguration& w, 
@@ -41,6 +43,7 @@ namespace qmcplusplus {
     QMCDriverMode.set(QMC_UPDATE_MODE,1);
     //Add the primary h and psi, extra H and Psi pairs will be added by QMCMain
     add_H_and_Psi(&h,&psi);
+    nObs = h.size();
   }
 
   RQMCMultiple::~RQMCMultiple() {
@@ -69,6 +72,7 @@ namespace qmcplusplus {
       do 
       { //Loop over steps
         moveReptile();
+        Reptile->Age +=1;
         step++; CurrentStep++;
         Estimators->accumulate(W);
       } while(step<nSteps);
@@ -120,12 +124,24 @@ namespace qmcplusplus {
       //*(NewBead->Gradients[ipsi])=W.G;
       Copy(W.G,*(NewBead->Gradients[ipsi]));
       NewBead->BeadSignWgt[ipsi]=1;
-      NewBead->Action(ipsi,MinusDirection)= 0.25*Tau*Dot(*NewBead->Gradients[ipsi],*NewBead->Gradients[ipsi]);
+      NewBead->getScaledDrift(branchEngine->LogNorm,Tau);
+      NewBead->Action(ipsi,MinusDirection)= 0.25*Dot(*NewBead->DriftVectors[ipsi],*NewBead->DriftVectors[ipsi])/Tau;
       NewBead->Action(ipsi,PlusDirection)=NewBead->Action(ipsi,MinusDirection);
       NewBead->Action(ipsi,Directionless)=0.5*Tau*eloc;
+      
+      NewBead->Add_Observable(eloc);
+      for (int obsi=0;obsi<nObs;obsi++){
+        NewBead->Add_Observable((*H1[ipsi])[obsi]);
+      };
+      NewBead->stepmade=0;
+      NewBead->deltaRSquared[0]=0.0;
+      NewBead->deltaRSquared[1]=0.0;
+      NewBead->deltaRSquared[2]=0.0;
     }
-    NewBead->TransProb[MinusDirection]=(0.5*Tau)*Dot(NewBead->Drift,NewBead->Drift) ;
+    //     NewBead->TransProb[MinusDirection]=(0.5*Tau)*Dot(NewBead->Drift,NewBead->Drift) ;
+    NewBead->TransProb[MinusDirection]=0.5*Dot(NewBead->Drift,NewBead->Drift)/Tau ;
     NewBead->TransProb[PlusDirection]=NewBead->TransProb[MinusDirection];
+
 
     //Reptile is made up by replicating the first walker. To be read if restarted.
     //if(Reptile == 0) Reptile=new MultiChain(*W.begin(),ReptileLength,InitialGrowthDirection,nPsi);
@@ -144,6 +160,7 @@ namespace qmcplusplus {
     }
 
     multiEstimator->setPolymer(Reptile);
+    multiEstimator->pnorm = 1.0/( W.Lattice.DIM *  W.Lattice.Volume);
 
     if(!restartmode){
       if(reuseReptile)
@@ -308,7 +325,7 @@ namespace qmcplusplus {
     bead=first_bead;
     while(bead != bead_end) {
       Bead& curW(**bead);
-      curW.getDrift(branchEngine->LogNorm);
+      curW.getScaledDrift(branchEngine->LogNorm,Tau);
       ++bead;
     }
 
@@ -321,14 +338,14 @@ namespace qmcplusplus {
       // Compute contribution to the Transition Prob in the MinusDirection
       if(bead!=first_bead){//forward action
         Bead& prevW(**(bead-1));
-        deltaR=prevW.R-curW.R - Tau*curW.Drift;
+        deltaR=prevW.R-curW.R - curW.Drift;
         TrProbMinus=Dot(deltaR,deltaR);
       }
 
       // Compute contribution to the Transition Prob in the PlusDirection
       if(bead!=last_bead){//backward action
         Bead& nextW(**(bead+1));
-        deltaR=nextW.R-curW.R - Tau*curW.Drift;
+        deltaR=nextW.R-curW.R - curW.Drift;
         TrProbPlus=Dot(deltaR,deltaR);
       } 
 
@@ -419,8 +436,39 @@ namespace qmcplusplus {
     //Reptile->write(WO.getFileID());
   }
 
+//   bool RQMCMultiple::put(xmlNodePtr q)
+//   {
+//     //Using enumeration
+//     //MinusDirection=0;
+//     //PlusDirection=1;
+//     //Directionless=2;
+//     nPsi=H1.size();
+//     if(branchEngine->LogNorm.size()!=nPsi)
+//     {
+//       branchEngine->LogNorm.resize(nPsi);
+//       for(int i=0; i<nPsi; i++) branchEngine->LogNorm[i]=0.e0;
+//     }
+// 
+//     Estimators = branchEngine->getEstimatorManager();
+//     if(Estimators == 0) 
+//     {
+//       Estimators = new EstimatorManager(myComm);
+//       multiEstimator = new CSPolymerEstimator(H,nPsi);
+//       //multiEstimator = new RQMCEstimator(H,nPsi);
+//       Estimators->add(multiEstimator,Estimators->MainEstimatorName);
+//       branchEngine->setEstimatorManager(Estimators);
+//     }
+//     return true;
+//   }
   bool RQMCMultiple::put(xmlNodePtr q)
   {
+    string observ("NONE");
+
+    double nrs3=1.0;
+    OhmmsAttributeSet attrib;
+    attrib.add(observ,"observables" );
+    attrib.add(nrs3,"Nr_s3" );
+    attrib.put(q);
     //Using enumeration
     //MinusDirection=0;
     //PlusDirection=1;
@@ -436,14 +484,20 @@ namespace qmcplusplus {
     if(Estimators == 0) 
     {
       Estimators = new EstimatorManager(myComm);
-      multiEstimator = new CSPolymerEstimator(H,nPsi);
-      //multiEstimator = new RQMCEstimator(H,nPsi);
+      if (observ=="NONE"){
+        cout<<"Using normal Observables"<<endl;
+        multiEstimator = new CSPolymerEstimator(H,nPsi);
+      } else if (observ=="ZVZB"){
+        cout<<"Using ZVZB observables"<<endl;
+        multiEstimator = new MJPolymerEstimator(H,nPsi);
+//         multiEstimator->setConstants(nrs3);
+      };
       Estimators->add(multiEstimator,Estimators->MainEstimatorName);
       branchEngine->setEstimatorManager(Estimators);
     }
     return true;
   }
-
+  
   void RQMCMultiple::moveReptile(){
 
     //Used several times
@@ -479,10 +533,44 @@ namespace qmcplusplus {
     //create a 3N-Dimensional Gaussian with variance=1
     makeGaussRandom(gRand);
 
-    //new position,\f$R_{yp} = R_{xp} + \sqrt(2}*\Delta + tau*D_{xp}\f$
-    W.R = head->R + m_sqrttau*gRand + Tau*head->Drift;
+//     //new position,\f$R_{yp} = R_{xp} + \sqrt(2}*\Delta + tau*D_{xp}\f$
+//     W.R = head->R + m_sqrttau*gRand + Tau*head->Drift;
+//     //Save Transition Probability
+//     head->TransProb[forward]=0.5*Dot(gRand,gRand);
+//     //Save position in NewBead
+//     NewBead->R=W.R; 
+//     //update the distance table associated with W
+//     //DistanceTable::update(W);
+//     W.update();
+// 
+//     //Compute the "diffusion-drift"\f$=(R_{yp}-R{xp})/tau\f$
+//     deltaR= NewBead->R - head->R;
+// 
+//     //Compute HEAD action in forward direction
+//     for(int ipsi=0; ipsi<nPsi; ipsi++) {
+//       gRand = deltaR-Tau*(*head->Gradients[ipsi]);
+//       head->Action(ipsi,forward)=0.5*m_oneover2tau*Dot(gRand,gRand);
+//     }
+    NewBead->stepmade=Reptile->Age;
+//     //new position,\f$R_{yp} = R_{xp} + \sqrt(2}*\Delta + tau*D_{xp}\f$
+//     W.R = head->R + m_sqrttau*gRand + Tau*head->Drift;
+//     //Save Transition Probability
+//     head->TransProb[forward]=0.5*Dot(gRand,gRand);
+    
+    head->getScaledDrift(branchEngine->LogNorm,Tau);
+    deltaR =  m_sqrttau*gRand + head->Drift;
+    W.R = head->R + deltaR;
     //Save Transition Probability
     head->TransProb[forward]=0.5*Dot(gRand,gRand);
+    
+    head->deltaRSquared[forward]= Dot(deltaR,deltaR);
+    NewBead->deltaRSquared[backward]= Dot(deltaR,deltaR);
+    NewBead->deltaRSquared[forward]=0.0;
+        
+//     ParticleSet::ParticlePos_t DR1 = head->Gradients[0];
+    ParticleSet::ParticlePos_t DR1 = head->Drift;
+    DR1 *= 1.0/Tau;
+    head->deltaRSquared[Directionless]= Dot(DR1,DR1);
     //Save position in NewBead
     NewBead->R=W.R; 
     //update the distance table associated with W
@@ -494,10 +582,10 @@ namespace qmcplusplus {
 
     //Compute HEAD action in forward direction
     for(int ipsi=0; ipsi<nPsi; ipsi++) {
-      gRand = deltaR-Tau*(*head->Gradients[ipsi]);
-      head->Action(ipsi,forward)=0.5*m_oneover2tau*Dot(gRand,gRand);
+//       gRand = deltaR-Tau*(*head->Gradients[ipsi]);
+      gRand = deltaR - *head->DriftVectors[ipsi];
+      head->Action(ipsi,forward)= 0.5*m_oneover2tau*Dot(gRand,gRand);
     }
-
     //evaluate all relevant quantities in the new position
     int totbeadwgt(0);
     for(int ipsi=0; ipsi<nPsi; ipsi++) {
@@ -508,27 +596,64 @@ namespace qmcplusplus {
       NewBeadProp[LOGPSI]=Psi1[ipsi]->evaluateLog(W);
       NewBeadProp[SIGN]=Psi1[ipsi]->getPhase();
       RealType eloc=NewBeadProp[LOCALENERGY]= H1[ipsi]->evaluate(W);
+      NewBead->Observables[0] = H1[ipsi]->getLocalEnergy();
+      for(int obsi=0;obsi<nObs;obsi++){
+        NewBead->Observables[obsi+1] = (*H1[ipsi])[obsi];
+      };
+      
+      if (NewBead->Observables[1] <= 0.0) {
+        cout<<"*";
+        eloc=1e20;
+      };
 
       //Save properties
       H1[ipsi]->saveProperty(NewBeadProp);
       //*(NewBead->Gradients[ipsi])=W.G; 
       Copy(W.G,*(NewBead->Gradients[ipsi]));
+//       NewBead->deltaRSquared[Directionless]= Dot(W.G,W.G);
+      
+      NewBead->getScaledDrift(branchEngine->LogNorm,Tau);
+      
+      ParticleSet::ParticlePos_t DR2 = head->Drift;
+      DR2 *= 1.0/Tau;
+      NewBead->deltaRSquared[Directionless]= Dot(DR2,DR2);
 
       //Compute the backward part of the Kinetic action
       //gRand=deltaR+Tau*W.G;
-      PAOps<RealType,DIM>::axpy(Tau,W.G,deltaR,gRand);
-      NewBead->Action(ipsi,backward)=0.5*m_oneover2tau*Dot(gRand,gRand);
+      PAOps<RealType,DIM>::axpy(1.0,*NewBead->DriftVectors[ipsi],deltaR,gRand);
+      NewBead->Action(ipsi,backward)= 0.5*m_oneover2tau*Dot(gRand,gRand);
 
       NewBead->Action(ipsi,Directionless)=0.5*Tau*eloc;
       int beadwgt=abs( ( Reptile->getSign(NewBeadProp[SIGN])+Reptile->RefSign[ipsi] )/2 );
       NewBead->BeadSignWgt[ipsi]=beadwgt;
       totbeadwgt+=beadwgt;
+//       RealType* restrict NewBeadProp=NewBead->getPropertyBase(ipsi);
+// 
+//       //evaluate Psi and H
+//       NewBeadProp[LOGPSI]=Psi1[ipsi]->evaluateLog(W);
+//       NewBeadProp[SIGN]=Psi1[ipsi]->getPhase();
+//       RealType eloc=NewBeadProp[LOCALENERGY]= H1[ipsi]->evaluate(W);
+// 
+//       //Save properties
+//       H1[ipsi]->saveProperty(NewBeadProp);
+//       //*(NewBead->Gradients[ipsi])=W.G; 
+//       Copy(W.G,*(NewBead->Gradients[ipsi]));
+// 
+//       //Compute the backward part of the Kinetic action
+//       //gRand=deltaR+Tau*W.G;
+//       PAOps<RealType,DIM>::axpy(Tau,W.G,deltaR,gRand);
+//       NewBead->Action(ipsi,backward)=0.5*m_oneover2tau*Dot(gRand,gRand);
+// 
+//       NewBead->Action(ipsi,Directionless)=0.5*Tau*eloc;
+//       int beadwgt=abs( ( Reptile->getSign(NewBeadProp[SIGN])+Reptile->RefSign[ipsi] )/2 );
+//       NewBead->BeadSignWgt[ipsi]=beadwgt;
+//       totbeadwgt+=beadwgt;
     }
     //Compute Drift and TransProb here. This could be done (and was originally done)
     //after acceptance if # of beads is greater than one but needs to be done here 
     //to make the one-bead case working ok. 
-    NewBead->getDrift(branchEngine->LogNorm);
-    gRand=deltaR+Tau*NewBead->Drift;
+    NewBead->getScaledDrift(branchEngine->LogNorm,Tau);
+    gRand=deltaR+ NewBead->Drift;
     NewBead->TransProb[backward]=m_oneover2tau*Dot(gRand,gRand);
 
     RealType AcceptProb(-1.0),NewGlobalWgt(0.0);

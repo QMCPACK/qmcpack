@@ -71,6 +71,9 @@ GrowthDirection(direction), nPsi(npsi), h_config(-1)
   UmbrellaWeight.resize(npsi); UmbrellaWeight=1.0;
   GlobalSignWgt.resize(npsi);  GlobalSignWgt=0;
   RefSign.resize(npsi); RefSign=0;
+  
+  Age=0;
+  
 }
 
 MultiChain::~MultiChain() 
@@ -86,6 +89,7 @@ void MultiChain::copyFromBuffer(Buffer_t& buf)
   buf.get(Middle);
   buf.get(Last);
   buf.get(nPsi);
+  buf.get(Age);
   buf.get(GlobalWgt);
   buf.get(GlobalAction.begin(),GlobalAction.end());
   buf.get(UmbrellaWeight.begin(),UmbrellaWeight.end());
@@ -102,6 +106,7 @@ void MultiChain::copyToBuffer(Buffer_t& buf) {
   buf.add(Middle);
   buf.add(Last);
   buf.add(nPsi);
+  buf.add(Age);
   buf.add(GlobalWgt);
   buf.add(GlobalAction.begin(),GlobalAction.end());
   buf.add(UmbrellaWeight.begin(),UmbrellaWeight.end());
@@ -247,7 +252,7 @@ bool MultiChain::read(hid_t grp){
   c2.read(hgrp,"BufferSize");
   if(nc != bead_buffer.size()) {
     ERRORMSG("The buffer size is different. Ignore restart data")
-    H5Gclose(hgrp);
+        H5Gclose(hgrp);
     return false;
   }
 

@@ -14,17 +14,17 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef QMCPLUSPLUS_CORRELATED_POLYMERESTIMATOR_H
-#define QMCPLUSPLUS_CORRELATED_POLYMERESTIMATOR_H
+#ifndef QMCPLUSPLUS_FULL_POLYMERESTIMATOR_H
+#define QMCPLUSPLUS_FULL_POLYMERESTIMATOR_H
 
 #include "Estimators/PolymerEstimator.h"
 
 namespace qmcplusplus {
 
-  struct CSPolymerEstimator: public PolymerEstimator {
+  struct MJPolymerEstimator: public PolymerEstimator {
 
-    CSPolymerEstimator(QMCHamiltonian& h, int hcopy=1, MultiChain* polymer=0); 
-    CSPolymerEstimator(const CSPolymerEstimator& mest);
+    MJPolymerEstimator(QMCHamiltonian& h, int hcopy=1, MultiChain* polymer=0);
+    MJPolymerEstimator(const MJPolymerEstimator& mest);
     ScalarEstimatorBase* clone();
 
     void add2Record(RecordNamedProperty<RealType>& record);
@@ -36,6 +36,14 @@ namespace qmcplusplus {
     void accumulate(WalkerIterator first, WalkerIterator last, RealType wgt);
 
     void evaluateDiff();
+
+    private:
+          ///vector to contain the names of all the constituents of the local energy
+      std::vector<string> elocal_name;
+      int FirstHamiltonian;
+      int SizeOfHamiltonians;
+      double KEconst;
+//       QMCHamiltonian* Hpointer;
   };
 
 }
@@ -43,5 +51,5 @@ namespace qmcplusplus {
 /***************************************************************************
  * $RCSfile$   $Author: jnkim $
  * $Revision: 1926 $   $Date: 2007-04-20 12:30:26 -0500 (Fri, 20 Apr 2007) $
- * $Id: CSPolymerEstimator.h 1926 2007-04-20 17:30:26Z jnkim $ 
+ * $Id: MJPolymerEstimator.h 1926 2007-04-20 17:30:26Z jnkim $ 
  ***************************************************************************/
