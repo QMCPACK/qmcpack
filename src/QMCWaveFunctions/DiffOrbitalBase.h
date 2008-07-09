@@ -17,6 +17,7 @@
 #define QMCPLUSPLUS_DIFFERENTIAL_ORBITAL_BASE_H
 #include "Configuration.h"
 #include "QMCWaveFunctions/OrbitalBase.h"
+#include "QMCWaveFunctions/OrbitalSetTraits.h"
 
 /**@file DiffOrbitalBase.h
  *@brief Declaration of DiffOrbitalBase, NumericalDiffOrbital and AnalyticDiffOrbital

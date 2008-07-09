@@ -66,7 +66,7 @@ namespace qmcplusplus {
        * @return \f$ u(r) = \frac{A}{r}\left[1-\exp(-\frac{r}{F})\right]\f$
        */
       inline real_type evaluate(real_type r) {
-        return Coeff*(1.0-exp(-B*r));
+        return Coeff*(1.0-std::exp(-B*r));
       }
 
       /**@param r the distance
@@ -75,7 +75,7 @@ namespace qmcplusplus {
         @return the value
         */
       inline real_type evaluate(real_type r, real_type& dudr, real_type& d2udr2) {
-        real_type expmar=exp(-B*r);
+        real_type expmar=std::exp(-B*r);
         dudr=A*expmar;
         d2udr2=mAB*expmar;
         return Coeff*(1.0-expmar);
@@ -90,7 +90,7 @@ namespace qmcplusplus {
       /** return a derivative at r
       */
       real_type df(real_type r) {
-        return A*exp(-B*r);
+        return A*std::exp(-B*r);
       }
 
       /** Read in the parameter from the xml input file.
