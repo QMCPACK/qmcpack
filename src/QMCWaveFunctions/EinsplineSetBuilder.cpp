@@ -70,7 +70,8 @@ namespace qmcplusplus {
     // Check the version
     HDFAttribIO<TinyVector<int,2> > h_Version(Version);
     h_Version.read (H5FileID, "/version");
-    fprintf (stderr, "  HDF5 orbital file version %d.%d\n", Version[0], Version[1]);
+    app_log() << "  HDF5 orbital file version " 
+	      << Version[0] << "." << Version[1] << "\n";
     if (Version[0]==0 && Version[1]== 11) {
       parameterGroup  = "/parameters_0";
       ionsGroup       = "/ions_2";
@@ -87,27 +88,30 @@ namespace qmcplusplus {
       APP_ABORT(o.str());
       //abort();
     }
-    fprintf (stderr, "  HDF5 orbital file version %d.%d.\n", Version[0], Version[1]);
     HDFAttribIO<Tensor<double,3> > h_Lattice(Lattice), h_RecipLattice(RecipLattice);
     h_Lattice.read      (H5FileID, (parameterGroup+"/lattice").c_str());
     
     h_RecipLattice.read (H5FileID, (parameterGroup+"/reciprocal_lattice").c_str());
     SuperLattice = dot(TileMatrix, Lattice);
 
-    fprintf (stderr, 
+    char buff[1000];
+
+    snprintf (buff, 1000, 
 	     "  Lattice = \n    [ %8.5f %8.5f %8.5f\n"
 	     "      %8.5f %8.5f %8.5f\n"
 	     "      %8.5f %8.5f %8.5f ]\n", 
 	     Lattice(0,0), Lattice(0,1), Lattice(0,2), 
 	     Lattice(1,0), Lattice(1,1), Lattice(1,2), 
 	     Lattice(2,0), Lattice(2,1), Lattice(2,2));
-    fprintf (stderr, 
-	     "  SuperLattice = \n    [ %8.5f %8.5f %8.5f\n"
-	     "      %8.5f %8.5f %8.5f\n"
-	     "      %8.5f %8.5f %8.5f ]\n", 
-	     SuperLattice(0,0), SuperLattice(0,1), SuperLattice(0,2), 
-	     SuperLattice(1,0), SuperLattice(1,1), SuperLattice(1,2), 
-	     SuperLattice(2,0), SuperLattice(2,1), SuperLattice(2,2));
+    app_log() << buff;
+    snprintf (buff, 1000, 
+	      "  SuperLattice = \n    [ %8.5f %8.5f %8.5f\n"
+	      "      %8.5f %8.5f %8.5f\n"
+	      "      %8.5f %8.5f %8.5f ]\n", 
+	      SuperLattice(0,0), SuperLattice(0,1), SuperLattice(0,2), 
+	      SuperLattice(1,0), SuperLattice(1,1), SuperLattice(1,2), 
+	      SuperLattice(2,0), SuperLattice(2,1), SuperLattice(2,2));
+    app_log() << buff;
     for (int i=0; i<3; i++) 
       for (int j=0; j<3; j++)
 	LatticeInv(i,j) = RecipLattice(i,j)/(2.0*M_PI);
@@ -126,8 +130,8 @@ namespace qmcplusplus {
     // fprintf (stderr, "  bands = %d, elecs = %d, spins = %d, twists = %d\n",
     // 	     NumBands, NumElectrons, NumSpins, NumTwists);
     if (TileFactor[0]!=1 || TileFactor[1]!=1 || TileFactor[2]!=1)
-      fprintf (stderr, "  Using a %dx%dx%d tiling factor.\n", 
-	       TileFactor[0], TileFactor[1], TileFactor[2]);
+      cerr << "  Using a " << TileFactor[0] << "x" << TileFactor[1] 
+	   << "x" << TileFactor[2] << " tiling factor.\n";
 
     /////////////////////////////////
     // Read muffin tin information //
@@ -172,8 +176,9 @@ namespace qmcplusplus {
 	path << eigenstatesGroup << "/twist/twist_angle";
       HDFAttribIO<PosType> h_Twist(TwistAngles[ti]);
       h_Twist.read (H5FileID, path.str().c_str());
-      fprintf (stderr, "  Found twist angle (%6.3f, %6.3f, %6.3f)\n", 
+      snprintf (buff, 1000, "  Found twist angle (%6.3f, %6.3f, %6.3f)\n", 
 	       TwistAngles[ti][0], TwistAngles[ti][1], TwistAngles[ti][2]);
+      app_log() << buff;
     }
 
     /////////////////////////////////////////////////////////
@@ -424,8 +429,8 @@ namespace qmcplusplus {
       Vector<PosType> grad(numOrbs);
       ParticleSet P;
       P.R.resize(1);
-      for (double x=1.0e-3; x<=1.0; x+=0.0002) {
-	//for (double x=1.0e-6; x<=0.001; x+=0.000001) {
+      //for (double x=1.0e-3; x<=1.0; x+=0.0002) {
+	for (double x=1.0e-6; x<=0.001; x+=0.000001) {
 	P.R[0] = x * (PrimCell.a(0) + PrimCell.a(1) + 0.8*PrimCell.a(2));
 	double r = std::sqrt(dot(P.R[0], P.R[0]));
 	OrbitalSet->evaluate(P, 0, phi, grad, lapl);
@@ -611,8 +616,8 @@ namespace qmcplusplus {
 	  PosType twistSuper_j = dot (S, twistPrim_j);
 	  PosType superInt_j   = IntPart (twistSuper_j);
 	  if (dot(superInt_i-superInt_j, superInt_i-superInt_j) < 1.0e-6) {
-	    cerr << "Identical k-points detected in super twist set "
-		 << si << endl;
+	    app_error() << "Identical k-points detected in super twist set "
+			<< si << endl;
 	    abort();
 	  }
 	}
@@ -770,7 +775,7 @@ namespace qmcplusplus {
 //       cerr << "TwistMap = " << (*iter).first 
 // 	   << ", " << (*iter).second << endl;
     
-    fprintf (stderr, "  Including twist vectors:\n");
+    app_log() << "  Including twist vectors:\n";
     UseTwists.clear();
     for (int tx=0; tx<TileFactor[0]; tx++)
       for (int ty=0; ty<TileFactor[1]; ty++)
@@ -782,11 +787,15 @@ namespace qmcplusplus {
 	  tIndex[2] += tz*untiledMesh[2];
 	  UseTwists.push_back(tIndex);
 	  int ti = TwistMap[tIndex];
- 	  fprintf (stderr, "tIndex = (%d, %d, %d)  ti = %d\n", 
- 		   tIndex[0], tIndex[1], tIndex[2], ti);
-	    
-	  fprintf (stderr, "    (%6.3f %6.3f %6.3f)\n", 
-		   TwistAngles[ti][0], TwistAngles[ti][1], TwistAngles[ti][2]);
+	  app_log() << "tIndex = (" << tIndex[0] << ", " << tIndex[1] << ", "
+		    << tIndex[2] << ")\n";
+ 	  // fprintf (stderr, "tIndex = (%d, %d, %d)  ti = %d\n", 
+ 	  // 	   tIndex[0], tIndex[1], tIndex[2], ti);
+
+	  char buff[100];
+	  snprintf (buff, 100, "    (%6.3f %6.3f %6.3f)\n", 
+		    TwistAngles[ti][0], TwistAngles[ti][1], TwistAngles[ti][2]);
+	  app_log() << buff;
 	}
   }
   
@@ -857,7 +866,7 @@ namespace qmcplusplus {
     }
     // Now sort the bands by energy
     if (sortBands) {
-      cerr << "Sorting the bands now:\n";
+      app_log() << "Sorting the bands now:\n";
       sort (SortBands.begin(), SortBands.end());
     }
     
@@ -877,9 +886,9 @@ namespace qmcplusplus {
       orbIndex++;
     }
     NumDistinctOrbitals = orbIndex;
-    cerr << "We will read " << NumDistinctOrbitals << " distinct orbitals.\n";
-    cerr << "There are " << NumCoreOrbs << " core states and " 
-	 << NumValenceOrbs << " valence states.\n";
+    app_log() << "We will read " << NumDistinctOrbitals << " distinct orbitals.\n";
+    app_log() << "There are " << NumCoreOrbs << " core states and " 
+	      << NumValenceOrbs << " valence states.\n";
   }
 
 
@@ -935,8 +944,8 @@ namespace qmcplusplus {
       orbitalSet->Orbitals[iorb] = orb;
       iorb++;
       if (orb->uCenters.size() > 1) 
-	cerr << "Making " << orb->uCenters.size() << " copies of band "
-	     << iband << endl;
+	app_log() << "Making " << orb->uCenters.size() << " copies of band "
+		  << iband << endl;
       // If the orbital has more than one center associated with it,
       // make copies of the orbital, changing only the center
       // associated with it.
@@ -1356,7 +1365,6 @@ namespace qmcplusplus {
       iorb++;
     }
     ExtendedMap_z[set] = orbitalSet->MultiSpline;
-    cerr << "Rank = " << myComm->rank() << ".  Done readbands.\n";
   }
   
 
