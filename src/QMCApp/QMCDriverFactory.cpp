@@ -83,7 +83,7 @@ namespace qmcplusplus {
   {
 
     string curName((const char*)cur->name);
-    string update_mode("walker");
+    string update_mode("pbyp");
     string qmc_mode("invalid");
     string multi_tag("no");
     string warp_tag("no");
