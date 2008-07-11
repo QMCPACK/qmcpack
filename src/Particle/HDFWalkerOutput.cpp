@@ -132,16 +132,22 @@ namespace qmcplusplus
       H5Gclose(h_state);
       H5Fclose(h_file);
 #else
-      myRequest.resize(myComm->size()-1);
-      if(myComm->rank())
-      {
+      //add two buffers: local and collected
+      if(RemoteData.empty())
+      {//add two buffers
+        RemoteData.push_back(new BufferType);
         RemoteData.push_back(new BufferType);
       }
-      else
-      {
-        RemoteData.resize(myRequest.size(),0);
-        for(int p=0; p < myRequest.size(); ++p) RemoteData[p] = new BufferType;
-      }
+      //myRequest.resize(myComm->size()-1);
+      //if(myComm->rank())
+      //{
+      //  RemoteData.push_back(new BufferType);
+      //}
+      //else
+      //{
+      //  RemoteData.resize(myRequest.size(),0);
+      //  for(int p=0; p < myRequest.size(); ++p) RemoteData[p] = new BufferType;
+      //}
       dumpCollect(W);
 
       ////for debugging only. Open a file per node
@@ -318,45 +324,59 @@ namespace qmcplusplus
   {
 #if defined(HAVE_MPI)
     int wb=OHMMS_DIM*W.getTotalNum();
-    //could use gatherv but use send/irecv for now
-    //int nw_max=W.WalkerOffSets[myComm->size()]-W.WalkerOffsets[myComm->size()-1];
-    if(myComm->rank())
+    RemoteData[0]->resize(wb*W.getActiveWalkers());
+    W.putConfigurations(RemoteData[0]->begin());
+    vector<int> displ(myComm->size()), counts(myComm->size());
+    for(int i=0; i<myComm->size(); ++i)
     {
-      //RemoteData[0]->resize(wb*nw_max);
-      RemoteData[0]->resize(wb*W.getActiveWalkers());
-      W.putConfigurations(RemoteData[0]->begin());
-      myComm->send(0,2000,*RemoteData[0]); 
+      counts[i]=wb*(W.WalkerOffsets[i+1]-W.WalkerOffsets[i]);
+      displ[i]=wb*W.WalkerOffsets[i];
     }
-    else
+    RemoteData[1]->resize(wb*W.WalkerOffsets[myComm->size()]);
+    int ierr = MPI_Gatherv(RemoteData[0]->data(), RemoteData[0]->size(), MPI_DOUBLE, 
+        RemoteData[1]->data(), &counts[0], &displ[0], MPI_DOUBLE, 0, myComm->getMPI());
+    ////could use gatherv but use send/irecv for now
+    ////int nw_max=W.WalkerOffSets[myComm->size()]-W.WalkerOffsets[myComm->size()-1];
+    //if(myComm->rank())
+    //{
+    //  //RemoteData[0]->resize(wb*nw_max);
+    //  RemoteData[0]->resize(wb*W.getActiveWalkers());
+    //  W.putConfigurations(RemoteData[0]->begin());
+    //  myComm->send(0,2000,*RemoteData[0]); 
+    //}
+    //else
+    //{
+    //  for(int p=0; p<myRequest.size(); ++p)
+    //  {
+    //    RemoteData[p]->resize(wb*(W.WalkerOffsets[p+2]-W.WalkerOffsets[p+1]));
+    //    myRequest[p]=myComm->irecv(p+1,2000,*RemoteData[p]);
+    //    //RemoteData[p]->resize(wb*nw_max);
+    //    //myRequest[p]=myComm->irecv(MPI_ANY_SOURCE,2000,*RemoteData[p]);
+    //  }
+
+    //  number_of_walkers=W.WalkerOffsets[myComm->size()];
+    //  BufferType b(wb*number_of_walkers);
+    //  W.putConfigurations(b.begin());
+
+    //  vector<Communicate::status> myStatus(myRequest.size());
+    //  MPI_Waitall(myRequest.size(),&myRequest[0],&myStatus[0]);
+    //  for(int p=0; p<myRequest.size(); ++p)
+    //  {
+    //    std::copy(RemoteData[p]->begin(),RemoteData[p]->end(),b.begin()+wb*W.WalkerOffsets[p+1]);
+    //    //int s=myStatus[p].MPI_SOURCE;
+    //    //int nw_recv=W.WalkerOffsets[s+1]-W.WalkerOffsets[s];
+    //    //std::copy(RemoteData[p]->begin(),RemoteData[p]->begin()+nw_recv*wb,b.begin()+wb*W.WalkerOffsets[s]);
+    //  }
+    number_of_walkers=W.WalkerOffsets[myComm->size()];
+    if(myComm->rank()==0)
     {
-      for(int p=0; p<myRequest.size(); ++p)
-      {
-        RemoteData[p]->resize(wb*(W.WalkerOffsets[p+2]-W.WalkerOffsets[p+1]));
-        myRequest[p]=myComm->irecv(p+1,2000,*RemoteData[p]);
-        //RemoteData[p]->resize(wb*nw_max);
-        //myRequest[p]=myComm->irecv(MPI_ANY_SOURCE,2000,*RemoteData[p]);
-      }
-
-      number_of_walkers=W.WalkerOffsets[myComm->size()];
-      BufferType b(wb*number_of_walkers);
-      W.putConfigurations(b.begin());
-
-      vector<Communicate::status> myStatus(myRequest.size());
-      MPI_Waitall(myRequest.size(),&myRequest[0],&myStatus[0]);
-      for(int p=0; p<myRequest.size(); ++p)
-      {
-        std::copy(RemoteData[p]->begin(),RemoteData[p]->end(),b.begin()+wb*W.WalkerOffsets[p+1]);
-        //int s=myStatus[p].MPI_SOURCE;
-        //int nw_recv=W.WalkerOffsets[s+1]-W.WalkerOffsets[s];
-        //std::copy(RemoteData[p]->begin(),RemoteData[p]->begin()+nw_recv*wb,b.begin()+wb*W.WalkerOffsets[s]);
-      }
-
       hid_t d1= H5Fcreate(FileName.c_str(),H5F_ACC_TRUNC,H5P_DEFAULT,H5P_DEFAULT);
       HDFVersion cur_version;
       cur_version.write(d1,hdf::version);
       hid_t d2 = H5Gcreate(d1,hdf::main_state,0); 
       vector<int> inds(3); inds[0]=number_of_walkers; inds[1]=W.getTotalNum(); inds[2]=OHMMS_DIM;
-      HDFAttribIO<BufferType> po(b,inds);
+      //HDFAttribIO<BufferType> po(b,inds);
+      HDFAttribIO<BufferType> po(*RemoteData[1],inds);
       po.write(d2,hdf::walkers);
       HDFAttribIO<int> nwo(number_of_walkers);
       nwo.write(d2,hdf::num_walkers);
