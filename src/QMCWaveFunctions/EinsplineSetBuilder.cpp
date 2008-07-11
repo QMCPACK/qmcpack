@@ -33,7 +33,7 @@ namespace qmcplusplus {
   EinsplineSetBuilder::EinsplineSetBuilder(ParticleSet& p, 
       PtclPoolType& psets, xmlNodePtr cur) 
     : XMLRoot(cur), TileFactor(1,1,1), TwistNum(0), LastSpinSet(-1), NumOrbitalsRead(-1),
-      NumMuffinTins(0)
+      NumMuffinTins(0), NumCoreStates(0)
   {
     for (int i=0; i<3; i++)
       for (int j=0; j<3; j++)
@@ -424,7 +424,7 @@ namespace qmcplusplus {
     }
 
     if (myComm->rank()==0 && OrbitalSet->MuffinTins.size() > 0) {
-      FILE *fout = fopen ("TestMuffins.dat", "w");
+      FILE *fout  = fopen ("TestMuffins.dat", "w");
       Vector<double> phi(numOrbs), lapl(numOrbs);
       Vector<PosType> grad(numOrbs);
       ParticleSet P;
@@ -434,10 +434,13 @@ namespace qmcplusplus {
 	P.R[0] = x * (PrimCell.a(0) + PrimCell.a(1) + 0.8*PrimCell.a(2));
 	double r = std::sqrt(dot(P.R[0], P.R[0]));
 	OrbitalSet->evaluate(P, 0, phi, grad, lapl);
-	fprintf (fout, "%1.5e ", r);
+	fprintf (fout, "%1.12e ", r);
 	for (int j=0; j<numOrbs; j++) {
+	  double gmag = std::sqrt(dot(grad[j],grad[j]));
 	  fprintf (fout, "%16.12e ", -5.0/r  -0.5*lapl[j]/phi[j]);
+	  // double E = -5.0/r -0.5*lapl[j]/phi[j];
 	  fprintf (fout, "%16.12e ", phi[j]);
+	  fprintf (fout, "%16.12e ", gmag);
 	}
 	fprintf (fout, "\n");
       }
