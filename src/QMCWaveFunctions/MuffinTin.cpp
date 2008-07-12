@@ -107,7 +107,6 @@ namespace qmcplusplus {
     rgrid.start = 0.0;
     rgrid.end = radius;
     rgrid.num = num_rad_points;
-    cerr << "dr = " << (rgrid.end - rgrid.start)/(num_rad_points-1);
     
     // Boundary conditions
     BCtype_z rBC;
@@ -412,6 +411,19 @@ namespace qmcplusplus {
     rgrid.start = 0.0;
     rgrid.end   = rmax;
     rgrid.num = g0.size();
+    int N = g0.size();
+
+
+    // Replace the first few data points with the exact hydrogenic
+    // wave function
+    const int matchPoint = 4;
+    double dr = rmax / (N-1);
+    double rMatch = dr * matchPoint;
+    double cMatch = g0[matchPoint]/std::exp(-Z*rMatch);
+    for (int i=0; i<matchPoint; i++) {
+      double r = dr*i;
+      g0[i] = cMatch * std::exp(-Z*r);
+    }
     
     BCtype_d rBC;
     rBC.lCode = DERIV1;
@@ -419,8 +431,6 @@ namespace qmcplusplus {
     rBC.rCode = NATURAL;
 
     // Compute radius at which to truncate the core state
-    int N = g0.size();
-    double dr = rmax / (N-1);
     double norm = 0.0;
     int i=N-1;
     while ( i>0 && norm<1.0e-5) {
@@ -432,7 +442,13 @@ namespace qmcplusplus {
     double rcut = 1000.0*(i+1)*dr;
 
     CoreRadii.push_back(rcut);
-    CoreSplines.push_back(create_UBspline_1d_d (rgrid, rBC, g0.data()));
+    UBspline_1d_d *spline = create_UBspline_1d_d (rgrid, rBC, g0.data());
+    double u, du, d2u;
+    eval_UBspline_1d_d_vgl (spline, 0.0, &u, &du, &d2u);
+    fprintf (stderr, "Set boundary value = %1.16e\n", -Z*g0[0]);
+    fprintf (stderr, "Evaluated value    = %1.16e\n", du);
+
+    CoreSplines.push_back(spline);
     Core_lm.push_back(TinyVector<int,2>(l,m));
     Core_kVecs.push_back (kVec);
     
