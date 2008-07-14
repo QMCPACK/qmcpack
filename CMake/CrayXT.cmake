@@ -1,10 +1,11 @@
 # Cmake for cray XT
 SET(ENABLE_CATAMOUNT 1)
 SET(QMC_BITS 64)
+ADD_DEFINITIONS(-DADD_ -DINLINE_ALL=inline -D_CRAYMPI)
+
 
 IF($ENV{PE_ENV} MATCHES "PGI")
   # pgi environments: no reason to use it !!
-  ADD_DEFINITIONS(-DADD_ -DINLINE_ALL=inline)
   SET(CMAKE_CXX_FLAGS "--restrict -fastsse -Minline=levels:10 --no_exceptions -DBOOST_NO_EXCEPTIONS")
 
   # link ACML library
@@ -12,8 +13,6 @@ IF($ENV{PE_ENV} MATCHES "PGI")
   SET(LAPACK_LIBRARY "")
 
 ELSE($ENV{PE_ENV} MATCHES "PGI")
-  ADD_DEFINITIONS(-Drestrict=__restrict__ -DADD_ -DINLINE_ALL=inline)
-
   IF(CPU_IDENTITY MATCHES "barcelona")
     SET(CMAKE_CXX_FLAGS "-O6 -march=barcelona -msse3 -ftemplate-depth-60 -Drestrict=__restrict__ -fstrict-aliasing -funroll-all-loops   -finline-limit=1000 -ffast-math -Wno-deprecated ")
   ELSE(CPU_IDENTITY MATCHES "barcelona")
