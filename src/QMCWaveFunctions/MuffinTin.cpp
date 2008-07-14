@@ -15,7 +15,7 @@
 
 #include "MuffinTin.h"
 #include <einspline/bspline_base.h>
-#include <einspline/bspline.h>
+#include <einspline/nubspline.h>
 #include <einspline/multi_nubspline.h>
 #include "Numerics/DeterminantOperators.h"
 #include <cmath>
@@ -30,7 +30,7 @@ namespace qmcplusplus {
 			  vector<TinyVector<double,2> > &F,   // input
 			  TinyVector<double,2> &a )           // output
   {
-    int M=3;
+    int M=2;
     int N = F.size();
 
     if (y.size() != F.size()) 
@@ -60,39 +60,50 @@ namespace qmcplusplus {
 	alphaInv(i,j) = alpha(i,j);
     
     double det = invert_matrix(alphaInv);
-    //fprintf (stderr, "det = %1.8e\n", det);
-    for (int i=0; i<M; i++)
-      for (int j=0; j<M; j++) {
-	ident(i,j) = 0.0;
-	for (int k=0; k<M; k++)
-	  ident(i,j) += alphaInv(i,k) * alpha(k,j);
+	    
+    for (int i=0; i<M; i++) {
+      a[i] = 0.0;
+      for (int j=0; j<M; j++)
+	a[i] += alphaInv(i,j) * beta[j];
+    }
+  }
+
+
+  // M is the number of basis functions.  For each value of x, y
+  // should contain the values to be fitted.  F should contain
+  // all the basis functions evaluated at each x.
+  void 
+  MuffinTinClass::LinFit (vector<double> &y,                  // input
+			  vector<TinyVector<double,3> > &F,   // input
+			  TinyVector<double,3> &a )           // output
+  {
+    int M=3;
+    int N = F.size();
+      
+    // Next, construct alpha matrix
+    Matrix<double> alpha(M,M), alphaInv(M,M), ident(M,M);
+    alpha = 0.0;
+    for (int j=0; j<M; j++)
+      for (int k=0; k<M; k++) {
+	alpha(k,j) = 0.0;
+	for (int i=0; i<N; i++)
+	  alpha(k,j) += F[i][j] * F[i][k];
       }
-	//    ident = alphaInv * alpha;
-
-//     fprintf (stderr, "ident = \n");
-//     fprintf (stderr, "[ %18.12f %18.12f %18.12f\n", 
-// 	     ident(0,0), ident(0,1), ident(0,2));
-//     fprintf (stderr, "[ %18.12f %18.12f %18.12f\n", 
-// 	     ident(1,0), ident(1,1), ident(1,2));
-//     fprintf (stderr, "[ %18.12f %18.12f %18.12f ]\n", 
-// 	     ident(2,0), ident(2,1), ident(2,2));
-
-//     fprintf (stderr, "alpha = \n");
-//     fprintf (stderr, "[ %18.12f %18.12f %18.12f\n", 
-// 	     alpha(0,0), alpha(0,1), alpha(0,2));
-//     fprintf (stderr, "[ %18.12f %18.12f %18.12f\n", 
-// 	     alpha(1,0), alpha(1,1), alpha(1,2));
-//     fprintf (stderr, "[ %18.12f %18.12f %18.12f ]\n", 
-// 	     alpha(2,0), alpha(2,1), alpha(2,2));
-
-//     for (int i=0; i<M; i++)
-//       for (int j=0; j<M; j++) {
-// 	double expect = (i==j) ? 1.0 : 0.0;
-// 	if (std::fabs(ident(i,j)-expect) > 1.0e-13)
-// 	  app_error() << "Error in matrix inversion.\n";
-//       }
-	
     
+    // Next, construct beta vector
+    Vector<double> beta(M);
+    beta = 0.0;
+    for (int k=0; k<M; k++)
+      for (int i=0; i<N; i++)
+	beta[k] += y[i]*F[i][k];
+    
+    // Now, invert alpha
+    for (int i=0; i<M; i++)
+      for (int j=0; j<M; j++)
+	alphaInv(i,j) = alpha(i,j);
+    
+    double det = invert_matrix(alphaInv);
+	    
     for (int i=0; i<M; i++) {
       a[i] = 0.0;
       for (int j=0; j<M; j++)
@@ -186,7 +197,7 @@ namespace qmcplusplus {
     // Set rSmall.   
     // Find first place where (r[i+1]-r[i]) > 1e-5
     int ir=0;
-    while ((rgrid[ir+1]-rgrid[ir]) < 1.0e-4) ir++;
+    while ((rgrid[ir+1]-rgrid[ir]) < drMin) ir++;
     iSmall = ir;
     rSmall = rgrid[ir];
     fprintf (stderr, "  rSmall = %1.6f\n", rSmall);
@@ -528,7 +539,7 @@ namespace qmcplusplus {
     
     int numYlm = (lMax+1)*(lMax+1);
 
-    int lStop = (drmag < rSmall) ? 2 : lMax;
+    int lStop = (drmag < rSmall) ? lMax : lMax;
     //lStop = lMax;
     // Compute phi
     for (int iorb=0; iorb<NumOrbitals; iorb++) {
@@ -563,47 +574,77 @@ namespace qmcplusplus {
 
 
   void
-  MuffinTinClass::addCore (int l, int m, double rmax, Vector<double> &g0,
+  MuffinTinClass::addCore (int l, int m, Vector<double> &r, Vector<double> &g0,
 			   TinyVector<double,3> kVec, double Z)
   {
-    Ugrid rgrid;
-    rgrid.start = 0.0;
-    rgrid.end   = rmax;
-    rgrid.num = g0.size();
-    int N = g0.size();
+    int N = r.size();
+    NUgrid *rgrid = 
+      create_log_grid (r[0], r[N-1], N);
+    // NUgrid *rgrid = create_general_grid (r.data(), N);
 
-
-    // Replace the first few data points with the exact hydrogenic
-    // wave function
-    const int matchPoint = 4;
-    double dr = rmax / (N-1);
-    double rMatch = dr * matchPoint;
-    double cMatch = g0[matchPoint]/std::exp(-Z*rMatch);
-    for (int i=0; i<matchPoint; i++) {
-      double r = dr*i;
-      g0[i] = cMatch * std::exp(-Z*r);
+    // Compute small-r coefficients
+    int irSmall=0;
+    while ((r[irSmall+1] - r[irSmall]) < drMin && irSmall<(r.size()-1))
+      irSmall++;
+    rSmallCore = r[irSmall+1];
+    fprintf (stderr, "rSmallCore = %1.8f  irSmalle = %d\n", rSmallCore, irSmall);
+    vector<TinyVector<double,2> > BasisFuncs(irSmall+50);
+    vector<double> vals(irSmall+50);
+    for (int ir=0; ir<irSmall+50; ir++) {
+      BasisFuncs[ir][0] = 1.0 - Z/(double)(l+1) * r[ir];
+      BasisFuncs[ir][1] = r[ir]*r[ir];
+      vals[ir] = g0[ir];
     }
-    
+    TinyVector<double,2> coefs;
+    TinyVector<double,3> polyCoefs;
+    LinFit (vals, BasisFuncs, coefs);
+    polyCoefs[0] = coefs[0];
+    polyCoefs[1] = coefs[0] * -Z/(double)(l+1);
+    polyCoefs[2] = coefs[1];
+    SmallrCoreCoefs.push_back (polyCoefs);
+
+
     BCtype_d rBC;
-    rBC.lCode = DERIV1;
+    rBC.lCode = NATURAL;
     rBC.lVal  = -Z*g0[0];
-    rBC.rCode = NATURAL;
+    rBC.rCode = FLAT;
 
     // Compute radius at which to truncate the core state
     double norm = 0.0;
     int i=N-1;
-    while ( i>0 && norm<1.0e-5) {
-      double r = dr*(double) i;
+    while ( i>1 && norm<1.0e-5) {
       double u = g0[i];
-      norm += u*u*r*r * dr;
+      double dr = r[i] - r[i-1];
+      norm += u*u*r[i]*r[i]*dr;
       i--;
     }
-    double rcut = 1000.0*(i+1)*dr;
-
+    double rcut = r[i+1];
     CoreRadii.push_back(rcut);
-    UBspline_1d_d *spline = create_UBspline_1d_d (rgrid, rBC, g0.data());
+
+    int jstart = 0;
+    while (r[jstart] < 1.0) jstart++;
+    cerr << "icut = " << i+1 << endl;
+    cerr << "jstart = " << jstart << endl;
+    jstart = min (i-30, jstart);
+
+    // Compute large-r coefficients
+    vector<TinyVector<double,2> > bfuncs(i+1-jstart);
+    TinyVector<double,2> largeCoefs;
+    vals.resize(i+1-jstart);
+    for (int j=0; j<bfuncs.size(); j++) {
+      bfuncs[j][0] = 1.0;
+      bfuncs[j][1] = r[j+jstart];
+      vals[j] = std::log(g0[j+jstart]);
+    }
+    LinFit(vals, bfuncs, largeCoefs);
+    cerr << "  Core exponent = "  << largeCoefs[1] << endl;
+    LargerCoreCoefs.push_back(largeCoefs);
+
+
+
+    NUBspline_1d_d *spline = create_NUBspline_1d_d (rgrid, rBC, g0.data());
     double u, du, d2u;
-    eval_UBspline_1d_d_vgl (spline, 0.0, &u, &du, &d2u);
+    eval_NUBspline_1d_d_vgl (spline, r[0], &u, &du, &d2u);
     // fprintf (stderr, "Set boundary value = %1.16e\n", -Z*g0[0]);
     // fprintf (stderr, "Evaluated value    = %1.16e\n", du);
 
@@ -633,15 +674,19 @@ namespace qmcplusplus {
     evalYlm (drhat);  
   
     for (int i=0; i<CoreSplines.size(); i++) { 
-      if (drmag > CoreRadii[i]) 
+      if (drmag > 1000.0*CoreRadii[i]) 
 	phi[first+i] = complex<double>();
-      else {
+      else  {
 	int l = Core_lm[i][0];
 	int m = Core_lm[i][1];
 	int lm = l*(l+1)+m;
 	complex<double> ylm = YlmVec[lm];
 	double u;
-	eval_UBspline_1d_d (CoreSplines[i], drmag, &u);
+	if (drmag > rSmallCore) 
+	  eval_NUBspline_1d_d (CoreSplines[i], drmag, &u);
+	else
+	  u = SmallrCoreCoefs[i][0] + SmallrCoreCoefs[i][1]*drmag +
+	    SmallrCoreCoefs[i][2] * drmag * drmag;
 	phi[first+i] = ylm*(u);
 	// double phase = dot (r, Core_kVecs[i]);
 	// double s, c;
@@ -681,29 +726,36 @@ namespace qmcplusplus {
     // This is a slow hack
     evalYlm (rhat);  
     for (int i=0; i<CoreSplines.size(); i++) { 
-      if (drmag > CoreRadii[i]) {
-	phi[first+i]   = complex<double>();
-	grad[first+i]  = complex<double>() * rhat;
-	lapl[first+i] =  complex<double>();
-      }
+      int l = Core_lm[i][0];
+      int m = Core_lm[i][1];
+      int lm = l*(l+1)+m;
+      complex<double> ylm = YlmVec[lm];
+      complex<double> im(0.0,(double)m);
+      
+      double u, du, d2u;
+      if (drmag > rSmallCore) 
+	  eval_NUBspline_1d_d_vgl (CoreSplines[i], drmag, &u, &du, &d2u);
       else {
-	int l = Core_lm[i][0];
-	int m = Core_lm[i][1];
-	int lm = l*(l+1)+m;
-	complex<double> ylm = YlmVec[lm];
-	complex<double> im(0.0,(double)m);
-	
-	double u, du, d2u;
-	eval_UBspline_1d_d_vgl (CoreSplines[i], drmag, &u, &du, &d2u);
-	
-	phi[first+i] = ylm*u;      
-	grad[first+i] = (du                 *     YlmVec[lm] * rhat     +
-			 u/drmag            *    dYlmVec[lm] * thetahat +
-			 u/(drmag*sintheta) * im *YlmVec[lm] * phihat);
-	lapl[first+i] = YlmVec[lm] * (-(double)(l*(l+1))/(drmag*drmag) * u
-				      + d2u + 2.0/drmag *du );
-	
+	u = SmallrCoreCoefs[i][0]  + SmallrCoreCoefs[i][1] * drmag +
+	  SmallrCoreCoefs[i][2] * drmag * drmag;
+	du = SmallrCoreCoefs[i][1] + 2.0*SmallrCoreCoefs[i][2]*drmag;
+	d2u = 2.0*SmallrCoreCoefs[i][2];
       }
+      
+      if (drmag > CoreRadii[i]) {
+	double c0 = LargerCoreCoefs[i][0];
+	double c1 = LargerCoreCoefs[i][1];
+	u   = std::exp(c0 + c1*drmag);
+	du  = c1 * u;
+	d2u = c1 * du;
+      }
+
+      phi[first+i] = ylm*u;      
+      grad[first+i] = (du                 *     YlmVec[lm] * rhat     +
+		       u/drmag            *    dYlmVec[lm] * thetahat +
+		       u/(drmag*sintheta) * im *YlmVec[lm] * phihat);
+      lapl[first+i] = YlmVec[lm] * (-(double)(l*(l+1))/(drmag*drmag) * u
+				    + d2u + 2.0/drmag *du );
     }
   }
 }

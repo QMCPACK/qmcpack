@@ -433,15 +433,17 @@ namespace qmcplusplus {
       Vector<PosType> grad(numOrbs);
       ParticleSet P;
       P.R.resize(1);
-      //for (double x=1.0e-3; x<=1.0; x+=0.0002) {
-	for (double x=1.0e-6; x<=0.001; x+=0.0000001) {
-	P.R[0] = x * (PrimCell.a(0) + PrimCell.a(1) + PrimCell.a(2));
+      PosType N = 0.25*PrimCell.a(0) + 0.25*PrimCell.a(1) + 0.25*PrimCell.a(2);
+      for (double x=1.0e-4; x<=1.0; x+=0.0000500113412) {
+      //for (double x=1.0e-6; x<=0.001; x+=0.0000001) {
+	P.R[0] = x * (PrimCell.a(0) + PrimCell.a(1) + 1.0*PrimCell.a(2));
 	double r = std::sqrt(dot(P.R[0], P.R[0]));
+	double rN = std::sqrt(dot(P.R[0]-N, P.R[0]-N));
 	OrbitalSet->evaluate(P, 0, phi, grad, lapl);
 	fprintf (fout, "%1.12e ", r);
 	for (int j=0; j<numOrbs; j++) {
 	  double gmag = std::sqrt(dot(grad[j],grad[j]));
-	  fprintf (fout, "%16.12e ", -5.0/r  -0.5*lapl[j]/phi[j]);
+	  fprintf (fout, "%16.12e ", -7.0/rN  -0.5*lapl[j]/phi[j]);
 	  // double E = -5.0/r -0.5*lapl[j]/phi[j];
 	  fprintf (fout, "%16.12e ", phi[j]);
 	  fprintf (fout, "%16.12e ", gmag);
@@ -1276,9 +1278,9 @@ namespace qmcplusplus {
       if (root)  isCore = SortBands[iorb].IsCoreState;
       myComm->bcast (isCore);
       if (isCore) {
-	int atom, l;
+	int atom, l, m=0;
 	double rmax;
-	Vector<double> g0;
+	Vector<double> g, r;
 	PosType twist, k;
 	if (root) {
 	  int ti   = SortBands[iorb].TwistIndex;
@@ -1287,27 +1289,20 @@ namespace qmcplusplus {
 	  twist = TwistAngles[ti];
 	  k = orbitalSet->PrimLattice.k_cart(twist);
 	  string atomName = CoreStatePath (ti, bi) + "atom";
-	  string g0Name   = CoreStatePath (ti, bi) + "g0";
+	  string gName    = CoreStatePath (ti, bi) + "g";
 	  string rMaxName = CoreStatePath (ti, bi) + "rmax";
 	  string lName    = CoreStatePath (ti, bi) + "l";
 	  string kName    = CoreStatePath (ti, bi) + "k";
+	  string rName    = CoreStatePath (ti, bi) + "r";
 	  HDFAttribIO<int> h_atom(atom), h_l(l);
 	  HDFAttribIO<double> h_rmax(rmax);
-	  HDFAttribIO<Vector<double> > h_g0(g0);
+	  HDFAttribIO<Vector<double> > h_g(g);
+	  HDFAttribIO<Vector<double> > h_r(r);
 	  h_atom.read (H5FileID, atomName.c_str());
 	  h_l.read    (H5FileID,    lName.c_str());
 	  h_rmax.read (H5FileID, rMaxName.c_str());
-	  h_g0.read   (H5FileID,   g0Name.c_str());
-
-	  ///////////////////////////////////
-	  // HACK HACK HACK HACK HACK HACK //
-	  ///////////////////////////////////
-	  // double z = (atom==0) ? 5.0 : 7.0;
-	  // for (int i=0; i<g0.size(); i++) {
-	  //   double r = (double)i * rmax / (double)(g0.size()-1);
-	  //   g0[i] = std::exp(-1.0*z*r)*r;
-	  // } 
-
+	  h_g.read    (H5FileID,   gName.c_str());
+	  h_r.read    (H5FileID,   rName.c_str());
 	  
 	  fprintf (stderr, "  Core state:     ti=%3d  bi=%3d energy=%8.5f "
 		   "k=(%7.4f, %7.4f, %7.4f) rank=%d\n", 
@@ -1315,11 +1310,16 @@ namespace qmcplusplus {
 	}
 	myComm->bcast (atom);  myComm->bcast(rmax);	
 	myComm->bcast (l);     myComm->bcast (k);
-	int ng0 = g0.size();   myComm->bcast(ng0);
-	if (g0.size() != ng0)  g0.resize(ng0);
-	myComm->bcast (g0);
+	int ng = g.size();     myComm->bcast(ng);
+	if (g.size() != ng) {
+	  g.resize(ng);
+	  r.resize(ng);
+	}
+	myComm->bcast (g);
+	myComm->bcast (r);
+
 	double Z = (double)IonTypes(atom);
-	OrbitalSet->MuffinTins[atom].addCore (l, 0, rmax, g0, k, Z);
+	OrbitalSet->MuffinTins[atom].addCore (l, m, r, g, k, Z);
 	icore++;
       }
       else {

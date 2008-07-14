@@ -24,7 +24,7 @@
 #include "Lattice/CrystalLattice.h"
 #include "QMCWaveFunctions/MuffinTin.h"
 #include <einspline/bspline_base.h>
-#include <einspline/bspline_structs.h>
+#include <einspline/nubspline_structs.h>
 #include <einspline/multi_nubspline_structs.h>
 #include "Configuration.h"
 
@@ -41,6 +41,10 @@ namespace qmcplusplus {
     // Index is the orbital number
     vector<TinyVector<double,3> > kPoints;
     double APWRadius;
+    // This is the minimum grid delta.  For grid points spaced closer
+    // than this value, the second derivative on the spline is
+    // numerically unstable
+    double drMin;
     
     int NumOrbitals;
     
@@ -65,9 +69,10 @@ namespace qmcplusplus {
     vector<TinyVector<complex<double>,3> > SmallrCoefs;
     
     // This is a helper function for fitting the small-r values
-    void LinFit (vector<double> &y, 
-		 vector<TinyVector<double,2> > &F,
+    void LinFit (vector<double> &y,  vector<TinyVector<double,2> > &F,
 		 TinyVector<double,2> &a );
+    void LinFit (vector<double> &y,  vector<TinyVector<double,3> > &F,
+		 TinyVector<double,3> &a );
 
     // Temporary store for evaluating the splines
     vector<complex<double> > RadialVec, dRadialVec, d2RadialVec;
@@ -79,7 +84,14 @@ namespace qmcplusplus {
     /////////////////
     // The number of core-state orbitals
     int NumCore;
-    vector<UBspline_1d_d*> CoreSplines;
+    // Nonuniform spline for storing core orbitals
+    vector<NUBspline_1d_d*> CoreSplines;
+    // This is the radius below which we will use the polynomial fit.
+    double rSmallCore;
+    // Stores the polynomial fit for small r
+    vector<TinyVector<double,3> > SmallrCoreCoefs;
+    // Stores the expontential fit for large r
+    vector<TinyVector<double,2> > LargerCoreCoefs;
     // Stores the l and m for each core state
     vector<TinyVector<int,2> > Core_lm;
     // Stores the k-vector for the core states
@@ -118,7 +130,7 @@ namespace qmcplusplus {
     // Core state routines //
     /////////////////////////
     inline int get_num_core() { return NumCore; }
-    void addCore (int l, int m, double rmax, Vector<double> &g0,
+    void addCore (int l, int m, Vector<double> &r, Vector<double> &g0,
 		  TinyVector<double,3> k, double Z);
     void evaluateCore (TinyVector<double,3> r, 
 		       Vector<complex<double> > &phi, int first=0);
@@ -131,7 +143,7 @@ namespace qmcplusplus {
     friend class LAPWClass;
     MuffinTinClass() : RadialSplines(NULL), CoreSplines(NULL),
 		       APWRadius(0.0), NumOrbitals(0), NumCore(0),
-		       lMax(0)
+		       lMax(0), drMin(1.0e-4)
       
     {
       
