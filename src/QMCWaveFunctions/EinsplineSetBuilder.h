@@ -180,6 +180,7 @@ namespace qmcplusplus {
     /////////////////////////////
     int NumMuffinTins;
     std::vector<RealType> MT_APW_radii;
+    std::vector<Vector<double> > MT_APW_rgrids;
     std::vector<int> MT_APW_lmax;
     std::vector<int> MT_APW_num_radial_points;
     std::vector<PosType> MT_centers;

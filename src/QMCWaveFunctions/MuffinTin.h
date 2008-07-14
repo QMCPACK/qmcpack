@@ -25,7 +25,7 @@
 #include "QMCWaveFunctions/MuffinTin.h"
 #include <einspline/bspline_base.h>
 #include <einspline/bspline_structs.h>
-#include <einspline/multi_bspline_structs.h>
+#include <einspline/multi_nubspline_structs.h>
 #include "Configuration.h"
 
 namespace qmcplusplus {
@@ -49,11 +49,26 @@ namespace qmcplusplus {
     // Index = l*(l+1) + m.  There are (lMax+1)^2 Ylm's
     vector<complex<double> > YlmVec, dYlmVec;
     
+    // The nonuniform radial grid for the APW splines
+    NUgrid *RadialGrid;
+
     // There are NumOrbitals * Num_Ylm splines.  One can think of this
     // as a matrix of splines.  These splines include both the APW and
     // local orbital contribtions.
-    multi_UBspline_1d_z *RadialSplines;
+    multi_NUBspline_1d_z *RadialSplines;
+
+    // For r smaller than rSmall, we use the polynomial fit below
+    int iSmall;
+    double rSmall;
+    // These are coefficients of a quadratic polynomial used to
+    // replace the radial splines at very small r.
+    vector<TinyVector<complex<double>,3> > SmallrCoefs;
     
+    // This is a helper function for fitting the small-r values
+    void LinFit (vector<double> &y, 
+		 vector<TinyVector<double,2> > &F,
+		 TinyVector<double,2> &a );
+
     // Temporary store for evaluating the splines
     vector<complex<double> > RadialVec, dRadialVec, d2RadialVec;
     // Evaluates all the Ylm's up to lMax
@@ -80,7 +95,7 @@ namespace qmcplusplus {
     void set_center  (TinyVector<double,3> center);
     void set_APW_radius (RealType radius);
     void set_APW_num_points (int num_points);
-    void init_APW (double radius, int num_rad_points, 
+    void init_APW (Vector<double> rgrid, 
 		   int lmax, int numOrbitals);
     // The first index of u_lm is l*(l+1)+m.  The second is the radial index.
     void set_APW (int orbNum, TinyVector<double,3> k,

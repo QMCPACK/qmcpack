@@ -16,10 +16,91 @@
 #include "MuffinTin.h"
 #include <einspline/bspline_base.h>
 #include <einspline/bspline.h>
-#include <einspline/multi_bspline.h>
+#include <einspline/multi_nubspline.h>
+#include "Numerics/DeterminantOperators.h"
 #include <cmath>
 
 namespace qmcplusplus {
+
+  // M is the number of basis functions.  For each value of x, y
+  // should contain the values to be fitted.  F should contain
+  // all the basis functions evaluated at each x.
+  void 
+  MuffinTinClass::LinFit (vector<double> &y,                  // input
+			  vector<TinyVector<double,2> > &F,   // input
+			  TinyVector<double,2> &a )           // output
+  {
+    int M=3;
+    int N = F.size();
+
+    if (y.size() != F.size()) 
+      app_error() << "Different number of rows of basis functions than"
+		  << " of data points in LinFit.  Exitting.\n";
+      
+    // Next, construct alpha matrix
+    Matrix<double> alpha(M,M), alphaInv(M,M), ident(M,M);
+    alpha = 0.0;
+    for (int j=0; j<M; j++)
+      for (int k=0; k<M; k++) {
+	alpha(k,j) = 0.0;
+	for (int i=0; i<N; i++)
+	  alpha(k,j) += F[i][j] * F[i][k];
+      }
+    
+    // Next, construct beta vector
+    Vector<double> beta(M);
+    beta = 0.0;
+    for (int k=0; k<M; k++)
+      for (int i=0; i<N; i++)
+	beta[k] += y[i]*F[i][k];
+    
+    // Now, invert alpha
+    for (int i=0; i<M; i++)
+      for (int j=0; j<M; j++)
+	alphaInv(i,j) = alpha(i,j);
+    
+    double det = invert_matrix(alphaInv);
+    //fprintf (stderr, "det = %1.8e\n", det);
+    for (int i=0; i<M; i++)
+      for (int j=0; j<M; j++) {
+	ident(i,j) = 0.0;
+	for (int k=0; k<M; k++)
+	  ident(i,j) += alphaInv(i,k) * alpha(k,j);
+      }
+	//    ident = alphaInv * alpha;
+
+//     fprintf (stderr, "ident = \n");
+//     fprintf (stderr, "[ %18.12f %18.12f %18.12f\n", 
+// 	     ident(0,0), ident(0,1), ident(0,2));
+//     fprintf (stderr, "[ %18.12f %18.12f %18.12f\n", 
+// 	     ident(1,0), ident(1,1), ident(1,2));
+//     fprintf (stderr, "[ %18.12f %18.12f %18.12f ]\n", 
+// 	     ident(2,0), ident(2,1), ident(2,2));
+
+//     fprintf (stderr, "alpha = \n");
+//     fprintf (stderr, "[ %18.12f %18.12f %18.12f\n", 
+// 	     alpha(0,0), alpha(0,1), alpha(0,2));
+//     fprintf (stderr, "[ %18.12f %18.12f %18.12f\n", 
+// 	     alpha(1,0), alpha(1,1), alpha(1,2));
+//     fprintf (stderr, "[ %18.12f %18.12f %18.12f ]\n", 
+// 	     alpha(2,0), alpha(2,1), alpha(2,2));
+
+//     for (int i=0; i<M; i++)
+//       for (int j=0; j<M; j++) {
+// 	double expect = (i==j) ? 1.0 : 0.0;
+// 	if (std::fabs(ident(i,j)-expect) > 1.0e-13)
+// 	  app_error() << "Error in matrix inversion.\n";
+//       }
+	
+    
+    for (int i=0; i<M; i++) {
+      a[i] = 0.0;
+      for (int j=0; j<M; j++)
+	a[i] += alphaInv(i,j) * beta[j];
+    }
+  }
+
+
   // Fast implementation
   // See Geophys. J. Int. (1998) 135,pp.307-309
   void
@@ -95,18 +176,35 @@ namespace qmcplusplus {
 
 
   void
-  MuffinTinClass::init_APW (double radius, int num_rad_points,
+  MuffinTinClass::init_APW (Vector<double> rgrid,
 			    int lmax, int numOrbitals)
   {
     lMax = lmax;
-    APWRadius = radius;
+    APWRadius = rgrid[rgrid.size()-1];
     NumOrbitals = numOrbitals;
-    
+
+    // Set rSmall.   
+    // Find first place where (r[i+1]-r[i]) > 1e-5
+    int ir=0;
+    while ((rgrid[ir+1]-rgrid[ir]) < 1.0e-4) ir++;
+    iSmall = ir;
+    rSmall = rgrid[ir];
+    fprintf (stderr, "  rSmall = %1.6f\n", rSmall);
+
     // Create the grid
-    Ugrid rgrid;
-    rgrid.start = 0.0;
-    rgrid.end = radius;
-    rgrid.num = num_rad_points;
+    RadialGrid = 
+      create_log_grid (rgrid[0], APWRadius, rgrid.size());
+    //RadialGrid = create_general_grid (rgrid.data(), rgrid.size());
+    for (int i=0; i<rgrid.size(); i++) 
+      if (std::fabs(rgrid[i]-RadialGrid->points[i]) > 1.0e-12) 
+	app_error() << "Error in creating log grid.\n"
+		    << "rgrid[i] = " << rgrid[i] << "   "
+		    << "RadialGrid->points[i] = " 
+		    << RadialGrid->points[i] << endl;
+//     Ugrid rgrid;
+//     rgrid.start = 0.0;
+//     rgrid.end = radius;
+//     rgrid.num = num_rad_points;
     
     // Boundary conditions
     BCtype_z rBC;
@@ -116,7 +214,8 @@ namespace qmcplusplus {
     // Create the multi-spline
     int numYlm = (lmax+1)*(lmax+1);
     int numSplines = numYlm*numOrbitals;
-    RadialSplines = create_multi_UBspline_1d_z (rgrid, rBC, numSplines);
+    RadialSplines = 
+      create_multi_NUBspline_1d_z (RadialGrid, rBC, numSplines);
     
     // Resize internal storage
     YlmVec.resize(numYlm);
@@ -124,6 +223,7 @@ namespace qmcplusplus {
     RadialVec.resize(numSplines);
     dRadialVec.resize(numSplines);
     d2RadialVec.resize(numSplines);
+    SmallrCoefs.resize(numSplines);
     kPoints.resize(numOrbitals);
   }
   
@@ -144,10 +244,11 @@ namespace qmcplusplus {
     // actually spline u_lm(r)/r^l, and then multiply this   //
     // back on when we evaluate.                             //
     /////////////////////////////////////////////////////////// 
-    double dr = APWRadius / (double)(num_r -1);
+
     Array<complex<double>,1> uvec (num_r);
-    for (int ir=1; ir<num_r; ir++) {
-      double r = (double)ir * dr;
+    for (int ir=0; ir<num_r; ir++) {
+      //      double r = (double)ir * dr;
+      double r = RadialGrid->points[ir];
       double r2l = 1.0;
       for (int l=0; l<=lMax; l++) {
 	for (int m=-l; m<=l; m++) {
@@ -158,36 +259,60 @@ namespace qmcplusplus {
       }
     }
 
-    for (int l=0; l<=lMax; l++) 
+    // Basis functions for small r fit
+    vector<TinyVector<double,2> > BasisFuncs (iSmall+1);
+    vector<double> uReal(iSmall+1), uImag(iSmall+1);
+	
+    for (int l=0; l<=lMax; l++) {
+      // Use two basis functions that satisfy the cusp condition
+      for (int ir=0; ir<=iSmall; ir++) {
+	double r = RadialGrid->points[ir];
+	BasisFuncs[ir][0] = 1.0 - Z/(double)(l+1)*r;
+	BasisFuncs[ir][1] = r*r;
+      }
+      
       for (int m=-l; m<=l; m++) {
 	int lm = l*(l+1) + m;
-	u_lm(lm, 0)  = 2.0*u_lm(lm,1) - u_lm(lm,2);
-      }
-
+	int spline_num = orbNum*numYlm + lm;
+	for (int ir=0; ir<num_r; ir++)
+	  uvec(ir) = u_lm(lm,ir);
 	
-    for (int lm=0; lm<numYlm; lm++) {
-      int spline_num = orbNum*numYlm + lm;
-      for (int ir=0; ir<num_r; ir++)
-	uvec(ir) = u_lm(lm,ir);
-   
-      set_multi_UBspline_1d_z (RadialSplines, spline_num,
-			       uvec.data());
-      BCtype_z rBC;
-      rBC.rCode = NATURAL;
-      rBC.lCode = DERIV1;
-      if (lm == 0) {
-	rBC.lVal_r = -Z*uvec(0).real();
-	rBC.lVal_i = -Z*uvec(0).imag();
-      }
-      else {
-	rBC.lVal_r = -0.5*Z*uvec(0).real();
-	rBC.lVal_i = -0.5*Z*uvec(0).imag();
-      }
+	// Set small r coefficients
+	for (int ir=0; ir<=iSmall; ir++) {
+	  uReal[ir] = uvec(ir).real();
+	  uImag[ir] = uvec(ir).imag();
+	}
 
-      //if (lm != 0)
-      //rBC.lCode = NATURAL;
+	set_multi_NUBspline_1d_z (RadialSplines, spline_num,
+				  uvec.data());
 
-      set_multi_UBspline_1d_z_BC (RadialSplines, spline_num, uvec.data(), rBC);
+	TinyVector<double,2> realCoefs, imagCoefs;
+	LinFit (uReal, BasisFuncs, realCoefs);
+	LinFit (uImag, BasisFuncs, imagCoefs);
+	SmallrCoefs[spline_num][0]=complex<double>(realCoefs[0],imagCoefs[0]);
+	SmallrCoefs[spline_num][1]=
+	  complex<double>(realCoefs[0]* -Z/(double)(l+1),
+			  imagCoefs[0]* -Z/(double)(l+1));
+	SmallrCoefs[spline_num][2]=complex<double>(realCoefs[1],imagCoefs[1]);
+
+	// fprintf (stderr, "l = %d, fitted cusp real = %1.10f\n", 
+	// 	 l, SmallrCoefs[spline_num][1].real()/
+	// 	 SmallrCoefs[spline_num][0].real());
+	// fprintf (stderr, "l = %d, fitted cusp imag = %1.10f\n", 
+	// 	 l, SmallrCoefs[spline_num][1].imag()/
+	// 	 SmallrCoefs[spline_num][0].imag());
+
+	BCtype_z rBC;
+	rBC.rCode = NATURAL;
+	rBC.lCode = DERIV1;
+	complex<double> u0 = uvec(0);
+	
+	rBC.lVal_r = -Z*u0.real()/(double)(l+1);
+	rBC.lVal_i = -Z*u0.imag()/(double)(l+1);
+
+//  	set_multi_NUBspline_1d_z_BC 
+//  	  (RadialSplines, spline_num, uvec.data(), rBC);
+      }
     }
   }
   
@@ -204,8 +329,6 @@ namespace qmcplusplus {
     Center = r;
   }
   
-
-
   void
   MuffinTinClass::evaluate (TinyVector<double,3> r, 
 			    Vector<complex<double> > &phi)
@@ -233,8 +356,17 @@ namespace qmcplusplus {
     evalYlm(drhat);
     
     // Evaluate the splines
-    eval_multi_UBspline_1d_z (RadialSplines, drmag, RadialVec.data());
-    
+    if (drmag > rSmall)
+      eval_multi_NUBspline_1d_z (RadialSplines, drmag, RadialVec.data());
+    else 
+      for (int i=0; i<SmallrCoefs.size(); i++) {
+	double r = drmag;
+	RadialVec[i]   = (SmallrCoefs[i][0]      + SmallrCoefs[i][1]*r +
+			  SmallrCoefs[i][2]*r*r ); 
+      }
+      
+
+
     // Multiply by r^l term
     int j=0; 
     for (int iorb=0; iorb<NumOrbitals; iorb++) {
@@ -334,17 +466,41 @@ namespace qmcplusplus {
 				    cosphi,
 				    0.0 );
     
+
     // Evaluate the Ylms
     evalYlm(rhat);
     
-    // Evaluate the splines
-    eval_multi_UBspline_1d_z_vgh (RadialSplines, drmag, 
-				  RadialVec.data(), 
-				  dRadialVec.data(), 
-				  d2RadialVec.data());
+    if (drmag > rSmall) 
+      // Evaluate the splines
+      eval_multi_NUBspline_1d_z_vgh (RadialSplines, drmag, 
+				     RadialVec.data(), 
+				     dRadialVec.data(), 
+				     d2RadialVec.data());
+    else {
+      for (int i=0; i<SmallrCoefs.size(); i++) {
+	double r = drmag;
+	RadialVec[i]   = (SmallrCoefs[i][0]      + SmallrCoefs[i][1]*r +
+			  SmallrCoefs[i][2]*r*r );
+	dRadialVec[i]  = (SmallrCoefs[i][1] + 2.0*SmallrCoefs[i][2]*r);
+	d2RadialVec[i] = 2.0*SmallrCoefs[i][2];;
+// 	RadialVec[i] = SmallrCoefs[i][0] *
+// 	  std::exp (real(SmallrCoefs[i][1]) * drmag);
+// 	dRadialVec[i] = SmallrCoefs[i][1] * RadialVec[i];
+// 	d2RadialVec[i] = SmallrCoefs[i][1] * SmallrCoefs[i][1] * 
+// 	  RadialVec[i];
+      }
+    }
 
     // Multiply by r^l term
-    int j=0; 
+    int num_lm = (lMax+1)*(lMax+1);
+
+    int j = 0;
+
+    // The second derivative is numerically unstable for
+    // small r because essentially a subtraction of small
+    // quantities.
+    double smallMask = (drmag < 1.0e-3) ? 0.0 : 1.0;
+
     for (int iorb=0; iorb<NumOrbitals; iorb++) {
       double r2l = 1.0;
       double r2lm1 = 1.0/drmag;
@@ -361,7 +517,7 @@ namespace qmcplusplus {
 	    r2l * du;
 	  d2RadialVec[j] = (double)(l*(l-1)) * r2lm2 * u
 	    + 2.0 * (double)l*r2lm1 * du + r2l * d2u;
-	  
+
 	  j++;
 	}
 	r2l   *= drmag;
@@ -371,14 +527,17 @@ namespace qmcplusplus {
     }
     
     int numYlm = (lMax+1)*(lMax+1);
+
+    int lStop = (drmag < rSmall) ? 2 : lMax;
+    //lStop = lMax;
     // Compute phi
-    int i=0; 
     for (int iorb=0; iorb<NumOrbitals; iorb++) {
+      int i = numYlm * iorb;
       phi[iorb] = complex<double>();
       grad[iorb][0] = grad[iorb][1] = grad[iorb][2] = complex<double>();
       lapl[iorb] = complex<double>();
       int lm=0;
-      for (int l=0; l<=lMax; l++)
+      for (int l=0; l<=lStop; l++)
 	for (int m=-l; m<=l; m++, lm++,i++) {
 	  complex<double> im(0.0,(double)m);
 	  phi[iorb]  += RadialVec[i] * YlmVec[lm];
@@ -445,8 +604,8 @@ namespace qmcplusplus {
     UBspline_1d_d *spline = create_UBspline_1d_d (rgrid, rBC, g0.data());
     double u, du, d2u;
     eval_UBspline_1d_d_vgl (spline, 0.0, &u, &du, &d2u);
-    fprintf (stderr, "Set boundary value = %1.16e\n", -Z*g0[0]);
-    fprintf (stderr, "Evaluated value    = %1.16e\n", du);
+    // fprintf (stderr, "Set boundary value = %1.16e\n", -Z*g0[0]);
+    // fprintf (stderr, "Evaluated value    = %1.16e\n", du);
 
     CoreSplines.push_back(spline);
     Core_lm.push_back(TinyVector<int,2>(l,m));
