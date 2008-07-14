@@ -7,6 +7,7 @@ SET(ESLIBSRC
    ${EINSPLINE_DIR}/src/nubspline_create.c    
    ${EINSPLINE_DIR}/src/nubasis.c             
    ${EINSPLINE_DIR}/src/nugrid.c              
+   ${EINSPLINE_DIR}/src/multi_nubspline_create.c
    )
 
  IF(HAVE_SSE)
@@ -31,6 +32,8 @@ SET(ESLIBSRC
    ${EINSPLINE_DIR}/src/multi_bspline_eval_sse_d_cpp.cc 
    ${EINSPLINE_DIR}/src/multi_bspline_eval_sse_z.c 
    ${EINSPLINE_DIR}/src/multi_bspline_eval_sse_z_cpp.cc 
+   ${EINSPLINE_DIR}/src/multi_nubspline_eval_sse_z.c 
+   ${EINSPLINE_DIR}/src/multi_nubspline_eval_sse_z_cpp.cc
    )
  ELSE(HAVE_SSE2)
    SET(ESLIBSRC ${ESLIBSRC}
@@ -61,10 +64,10 @@ SET(ESLIBSRC
  multi_bspline_eval_sse_s.h
  multi_bspline_eval_sse_d.h
  multi_bspline_eval_sse_c.h
+ multi_nubspline.h
  multi_bspline_create.h
- fnubspline.h
- fmulti_bspline.h
- fbspline.h
+ multi_nubspline_create.h
+ multi_nubspline_structs.h
  bspline_structs.h
  bspline_eval_std_z.h
  bspline_eval_std_s.h
@@ -98,6 +101,11 @@ SET(ESLIBSRC
  multi_bspline_eval_std_c_impl.h
  multi_bspline_eval_sse_z.h
  multi_bspline_eval_d.h
+ multi_nubspline_eval_s.h
+ multi_nubspline_eval_c.h
+ multi_nubspline_eval_d.h
+ multi_nubspline_eval_z.h
+ multi_nubspline_eval_sse_z_impl.h
    )
 
 FOREACH(eh ${ESLIBH})
