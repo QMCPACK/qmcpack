@@ -333,8 +333,7 @@ namespace qmcplusplus
       displ[i]=wb*W.WalkerOffsets[i];
     }
     RemoteData[1]->resize(wb*W.WalkerOffsets[myComm->size()]);
-    int ierr = MPI_Gatherv(RemoteData[0]->data(), RemoteData[0]->size(), MPI_DOUBLE, 
-        RemoteData[1]->data(), &counts[0], &displ[0], MPI_DOUBLE, 0, myComm->getMPI());
+    myComm->gatherv(*RemoteData[0],*RemoteData[1],counts, displ);
     ////could use gatherv but use send/irecv for now
     ////int nw_max=W.WalkerOffSets[myComm->size()]-W.WalkerOffsets[myComm->size()-1];
     //if(myComm->rank())
