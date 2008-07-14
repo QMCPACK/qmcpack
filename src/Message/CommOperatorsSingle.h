@@ -50,6 +50,16 @@ Communicate::irecv(int source, int tag, T* , int n) { return 1; }
 
 template<typename T> inline Communicate::request
 Communicate::isend(int dest, int tag, T*, int n) { return 1; }
+
+template<typename T, typename IT> 
+inline void Communicate::gatherv(T& sb, T& rb, IT&, IT&, int dest)
+{ 
+}
+
+template<typename T, typename IT> 
+inline void Communicate::scatterv(T& sb, T& rb, IT&, IT&, int source)
+{ 
+}
 #endif
 
 /***************************************************************************

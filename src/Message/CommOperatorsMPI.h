@@ -64,9 +64,21 @@ template<typename T> inline void Communicate::gather(T& sb, T& rb, int dest)
   APP_ABORT("Need specialization for gather(T&, T&, int)");
 }
 
+template<typename T, typename IT> 
+inline void Communicate::gatherv(T& sb, T& rb, IT&, IT&, int dest)
+{ 
+  APP_ABORT("Need specialization for gatherv(T&, T&, IT&, IT&, int)");
+}
+
 template<typename T> inline void Communicate::scatter(T& sb, T& rb, int dest)
 { 
   APP_ABORT("Need specialization for scatter(T&, T&, int)");
+}
+
+template<typename T, typename IT> 
+inline void Communicate::scatterv(T& sb, T& rb, IT&, IT&, int source)
+{ 
+  APP_ABORT("Need specialization for scatterv(T&, T&, IT&, IT&, int)");
 }
 
 template<typename T> inline Communicate::request
@@ -471,6 +483,58 @@ Communicate::irecv(int source, int tag, std::vector<double>& g)
   request r;
   MPI_Irecv(&(g[0]),g.size(),MPI_DOUBLE,source,tag, myMPI,&r);
   return r;
+}
+
+template<>
+inline void 
+Communicate::gatherv(std::vector<double>& l, std::vector<double>& g, 
+    vector<int>& counts, vector<int>& displ, int dest) 
+{
+#if defined(_CRAYMPI)
+    const int cray_short_msg_size=128000;
+    if(l.size()*sizeof(double)<cray_short_msg_size) this->barrier();
+#endif
+  int ierr = MPI_Gatherv(l.data(), l.size(), MPI_DOUBLE, 
+      g.data(), &counts[0], &displ[0], MPI_DOUBLE, dest, 
+      myMPI);
+}
+
+template<>
+inline void 
+Communicate::gather(std::vector<double>& l, std::vector<double>& g, int dest) 
+{
+#if defined(_CRAYMPI)
+    const int cray_short_msg_size=128000;
+    if(l.size()*sizeof(double)<cray_short_msg_size) this->barrier();
+#endif
+    int ierr = MPI_Gather(l.data(), l.size(), MPI_DOUBLE, 
+        g.data(), l.size(), MPI_DOUBLE, dest, myMPI);
+}
+
+template<>
+inline void 
+Communicate::gatherv(PooledData<double>& l, PooledData<double>& g, 
+    vector<int>& counts, vector<int>& displ, int dest) 
+{
+#if defined(_CRAYMPI)
+    const int cray_short_msg_size=128000;
+    if(l.size()*sizeof(double)<cray_short_msg_size) this->barrier();
+#endif
+  int ierr = MPI_Gatherv(l.data(), l.size(), MPI_DOUBLE, 
+      g.data(), &counts[0], &displ[0], MPI_DOUBLE, dest, 
+      myMPI);
+}
+
+template<>
+inline void 
+Communicate::gather(PooledData<double>& l, PooledData<double>& g, int dest) 
+{
+#if defined(_CRAYMPI)
+    const int cray_short_msg_size=128000;
+    if(l.size()*sizeof(double)<cray_short_msg_size) this->barrier();
+#endif
+    int ierr = MPI_Gather(l.data(), l.size(), MPI_DOUBLE, 
+        g.data(), l.size(), MPI_DOUBLE, dest, myMPI);
 }
 #endif
 /***************************************************************************
