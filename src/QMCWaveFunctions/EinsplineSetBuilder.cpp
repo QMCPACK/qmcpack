@@ -434,8 +434,8 @@ namespace qmcplusplus {
       ParticleSet P;
       P.R.resize(1);
       PosType N = 0.25*PrimCell.a(0) + 0.25*PrimCell.a(1) + 0.25*PrimCell.a(2);
-      for (double x=1.0e-4; x<=1.0; x+=0.0000500113412) {
-      //for (double x=1.0e-6; x<=0.001; x+=0.0000001) {
+      //for (double x=1.0e-4; x<=1.0; x+=0.0000500113412) {
+      for (double x=1.0e-6; x<=0.001; x+=0.0000001) {
 	P.R[0] = x * (PrimCell.a(0) + PrimCell.a(1) + 1.0*PrimCell.a(2));
 	double r = std::sqrt(dot(P.R[0], P.R[0]));
 	double rN = std::sqrt(dot(P.R[0]-N, P.R[0]-N));
@@ -443,7 +443,8 @@ namespace qmcplusplus {
 	fprintf (fout, "%1.12e ", r);
 	for (int j=0; j<numOrbs; j++) {
 	  double gmag = std::sqrt(dot(grad[j],grad[j]));
-	  fprintf (fout, "%16.12e ", -7.0/rN  -0.5*lapl[j]/phi[j]);
+	  fprintf (fout, "%16.12e ", 
+		   phi[j]*phi[j]*(-5.0/r  -0.5*lapl[j]/phi[j]));
 	  // double E = -5.0/r -0.5*lapl[j]/phi[j];
 	  fprintf (fout, "%16.12e ", phi[j]);
 	  fprintf (fout, "%16.12e ", gmag);

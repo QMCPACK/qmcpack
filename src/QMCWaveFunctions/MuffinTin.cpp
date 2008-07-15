@@ -623,8 +623,6 @@ namespace qmcplusplus {
 
     int jstart = 0;
     while (r[jstart] < 1.0) jstart++;
-    cerr << "icut = " << i+1 << endl;
-    cerr << "jstart = " << jstart << endl;
     jstart = min (i-30, jstart);
 
     // Compute large-r coefficients
@@ -637,16 +635,13 @@ namespace qmcplusplus {
       vals[j] = std::log(g0[j+jstart]);
     }
     LinFit(vals, bfuncs, largeCoefs);
-    cerr << "  Core exponent = "  << largeCoefs[1] << endl;
     LargerCoreCoefs.push_back(largeCoefs);
 
 
-
+    // Create nonuniform B-spline.
     NUBspline_1d_d *spline = create_NUBspline_1d_d (rgrid, rBC, g0.data());
     double u, du, d2u;
     eval_NUBspline_1d_d_vgl (spline, r[0], &u, &du, &d2u);
-    // fprintf (stderr, "Set boundary value = %1.16e\n", -Z*g0[0]);
-    // fprintf (stderr, "Evaluated value    = %1.16e\n", du);
 
     CoreSplines.push_back(spline);
     Core_lm.push_back(TinyVector<int,2>(l,m));
@@ -674,25 +669,31 @@ namespace qmcplusplus {
     evalYlm (drhat);  
   
     for (int i=0; i<CoreSplines.size(); i++) { 
-      if (drmag > 1000.0*CoreRadii[i]) 
-	phi[first+i] = complex<double>();
-      else  {
-	int l = Core_lm[i][0];
-	int m = Core_lm[i][1];
-	int lm = l*(l+1)+m;
-	complex<double> ylm = YlmVec[lm];
-	double u;
-	if (drmag > rSmallCore) 
-	  eval_NUBspline_1d_d (CoreSplines[i], drmag, &u);
-	else
-	  u = SmallrCoreCoefs[i][0] + SmallrCoreCoefs[i][1]*drmag +
-	    SmallrCoreCoefs[i][2] * drmag * drmag;
-	phi[first+i] = ylm*(u);
-	// double phase = dot (r, Core_kVecs[i]);
-	// double s, c;
-	// sincos(phase, &s, &c);
-	// phi[first+i] *= complex<double>(c,s);
+      int l = Core_lm[i][0];
+      int m = Core_lm[i][1];
+      int lm = l*(l+1)+m;
+      complex<double> ylm = YlmVec[lm];
+      double u;
+      if (drmag > rSmallCore) 
+	eval_NUBspline_1d_d (CoreSplines[i], drmag, &u);
+      else
+	u = SmallrCoreCoefs[i][0] + SmallrCoreCoefs[i][1]*drmag +
+	  SmallrCoreCoefs[i][2] * drmag * drmag;
+  
+      if (drmag > 2.75) 
+	u = 0.0;
+      else if (drmag > CoreRadii[i]) {
+	double c0 = LargerCoreCoefs[i][0];
+	double c1 = LargerCoreCoefs[i][1];
+	u   = std::exp(c0 + c1*drmag);
       }
+
+
+      phi[first+i] = ylm*(u);
+      // double phase = dot (r, Core_kVecs[i]);
+      // double s, c;
+      // sincos(phase, &s, &c);
+      // phi[first+i] *= complex<double>(c,s);
     }
   }
 
@@ -742,7 +743,9 @@ namespace qmcplusplus {
 	d2u = 2.0*SmallrCoreCoefs[i][2];
       }
       
-      if (drmag > CoreRadii[i]) {
+      if (drmag > 2.75) 
+	u = du = d2u = 0.0;
+      else if (drmag > CoreRadii[i]) {
 	double c0 = LargerCoreCoefs[i][0];
 	double c1 = LargerCoreCoefs[i][1];
 	u   = std::exp(c0 + c1*drmag);
