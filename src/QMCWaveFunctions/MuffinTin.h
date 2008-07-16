@@ -68,7 +68,6 @@ namespace qmcplusplus {
     double rSmall;
     // These are coefficients of a quadratic polynomial used to
     // replace the radial splines at very small r.
-    vector<TinyVector<complex<double>,3> > SmallrCoefs;
     vector<ComplexExpFitClass<4> > Small_r_APW_Fits;
     
     // This is a helper function for fitting the small-r values
@@ -94,8 +93,6 @@ namespace qmcplusplus {
     // Exponential fits for small and large r
     vector<ExpFitClass<4> > Small_r_Core_Fits;
     vector<ExpFitClass<2> > Large_r_Core_Fits;
-    // Stores the polynomial fit for small r
-    vector<TinyVector<double,3> > SmallrCoreCoefs;
     // Stores the expontential fit for large r
     vector<TinyVector<double,2> > LargerCoreCoefs;
     // Stores the l and m for each core state

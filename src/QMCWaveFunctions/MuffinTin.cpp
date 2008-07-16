@@ -203,8 +203,7 @@ namespace qmcplusplus {
     rSmall = rgrid[ir];
 
     // Create the grid
-    RadialGrid = 
-      create_log_grid (rgrid[0], APWRadius, rgrid.size());
+    RadialGrid =  create_log_grid (rgrid[0], APWRadius, rgrid.size());
     //RadialGrid = create_general_grid (rgrid.data(), rgrid.size());
     for (int i=0; i<rgrid.size(); i++) 
       if (std::fabs(rgrid[i]-RadialGrid->points[i]) > 1.0e-12) 
@@ -212,10 +211,6 @@ namespace qmcplusplus {
 		    << "rgrid[i] = " << rgrid[i] << "   "
 		    << "RadialGrid->points[i] = " 
 		    << RadialGrid->points[i] << endl;
-//     Ugrid rgrid;
-//     rgrid.start = 0.0;
-//     rgrid.end = radius;
-//     rgrid.num = num_rad_points;
     
     // Boundary conditions
     BCtype_z rBC;
@@ -234,7 +229,6 @@ namespace qmcplusplus {
     RadialVec.resize(numSplines);
     dRadialVec.resize(numSplines);
     d2RadialVec.resize(numSplines);
-    SmallrCoefs.resize(numSplines);
     Small_r_APW_Fits.resize(numSplines);
     kPoints.resize(numOrbitals);
   }
@@ -259,7 +253,6 @@ namespace qmcplusplus {
 
     Array<complex<double>,1> uvec (num_r);
     for (int ir=0; ir<num_r; ir++) {
-      //      double r = (double)ir * dr;
       double r = RadialGrid->points[ir];
       double r2l = 1.0;
       for (int l=0; l<=lMax; l++) {
@@ -271,20 +264,11 @@ namespace qmcplusplus {
       }
     }
 
-    // Basis functions for small r fit
-    vector<TinyVector<double,2> > BasisFuncs (iSmall+1);
-    vector<double> uReal(iSmall+1), uImag(iSmall+1);
+    // Temp vectors for small r fit
     vector<complex<double> > uSmall(iSmall+1);
     vector<double> rSmall(iSmall+1);
 	
-    for (int l=0; l<=lMax; l++) {
-      // Use two basis functions that satisfy the cusp condition
-      for (int ir=0; ir<=iSmall; ir++) {
-	double r = RadialGrid->points[ir];
-	BasisFuncs[ir][0] = 1.0 - Z/(double)(l+1)*r;
-	BasisFuncs[ir][1] = r*r;
-      }
-      
+    for (int l=0; l<=lMax; l++) {      
       for (int m=-l; m<=l; m++) {
 	int lm = l*(l+1) + m;
 	int spline_num = orbNum*numYlm + lm;
@@ -293,8 +277,6 @@ namespace qmcplusplus {
 	
 	// Set small r coefficients
 	for (int ir=0; ir<=iSmall; ir++) {
-	  uReal[ir]  = uvec(ir).real();
-	  uImag[ir]  = uvec(ir).imag();
 	  uSmall[ir] = uvec(ir);
 	  rSmall[ir] = RadialGrid->points[ir];
 	}
@@ -302,22 +284,6 @@ namespace qmcplusplus {
 
 	set_multi_NUBspline_1d_z (RadialSplines, spline_num,
 				  uvec.data());
-
-	TinyVector<double,2> realCoefs, imagCoefs;
-	LinFit (uReal, BasisFuncs, realCoefs);
-	LinFit (uImag, BasisFuncs, imagCoefs);
-	SmallrCoefs[spline_num][0]=complex<double>(realCoefs[0],imagCoefs[0]);
-	SmallrCoefs[spline_num][1]=
-	  complex<double>(realCoefs[0]* -Z/(double)(l+1),
-			  imagCoefs[0]* -Z/(double)(l+1));
-	SmallrCoefs[spline_num][2]=complex<double>(realCoefs[1],imagCoefs[1]);
-
-	// fprintf (stderr, "l = %d, fitted cusp real = %1.10f\n", 
-	// 	 l, SmallrCoefs[spline_num][1].real()/
-	// 	 SmallrCoefs[spline_num][0].real());
-	// fprintf (stderr, "l = %d, fitted cusp imag = %1.10f\n", 
-	// 	 l, SmallrCoefs[spline_num][1].imag()/
-	// 	 SmallrCoefs[spline_num][0].imag());
 
 	BCtype_z rBC;
 	rBC.rCode = NATURAL;
@@ -376,12 +342,9 @@ namespace qmcplusplus {
     if (drmag > rSmall)
       eval_multi_NUBspline_1d_z (RadialSplines, drmag, RadialVec.data());
     else 
-      for (int i=0; i<SmallrCoefs.size(); i++) {
-	double r = drmag;
-	Small_r_APW_Fits[i].eval (r, RadialVec[i]);
-	// RadialVec[i]   = (SmallrCoefs[i][0]      + SmallrCoefs[i][1]*r +
-	// 		  SmallrCoefs[i][2]*r*r ); 
-      }
+      for (int i=0; i<RadialVec.size(); i++) 
+	Small_r_APW_Fits[i].eval (drmag, RadialVec[i]);
+    
       
 
 
@@ -398,7 +361,7 @@ namespace qmcplusplus {
 	r2l *= drmag;
       }
     }
-
+    
     
     int numYlm = (lMax+1)*(lMax+1);
     // Compute phi
@@ -495,33 +458,14 @@ namespace qmcplusplus {
 				     RadialVec.data(), 
 				     dRadialVec.data(), 
 				     d2RadialVec.data());
-    else {
-      for (int i=0; i<SmallrCoefs.size(); i++) {
+    else 
+      for (int i=0; i< RadialVec.size(); i++) 
 	Small_r_APW_Fits[i].eval (drmag, RadialVec[i], dRadialVec[i], d2RadialVec[i]);
-	// double r = drmag;
-	// RadialVec[i]   = (SmallrCoefs[i][0]      + SmallrCoefs[i][1]*r +
-	// 		  SmallrCoefs[i][2]*r*r );
-	// dRadialVec[i]  = (SmallrCoefs[i][1] + 2.0*SmallrCoefs[i][2]*r);
-	// d2RadialVec[i] = 2.0*SmallrCoefs[i][2];;
-
-// 	RadialVec[i] = SmallrCoefs[i][0] *
-// 	  std::exp (real(SmallrCoefs[i][1]) * drmag);
-// 	dRadialVec[i] = SmallrCoefs[i][1] * RadialVec[i];
-// 	d2RadialVec[i] = SmallrCoefs[i][1] * SmallrCoefs[i][1] * 
-// 	  RadialVec[i];
-      }
-    }
 
     // Multiply by r^l term
     int num_lm = (lMax+1)*(lMax+1);
 
     int j = 0;
-
-    // The second derivative is numerically unstable for
-    // small r because essentially a subtraction of small
-    // quantities.
-    double smallMask = (drmag < 1.0e-3) ? 0.0 : 1.0;
-
     for (int iorb=0; iorb<NumOrbitals; iorb++) {
       double r2l = 1.0;
       double r2lm1 = 1.0/drmag;
@@ -599,26 +543,14 @@ namespace qmcplusplus {
     rSmallCore = r[irSmall+1];
     //fprintf (stderr, "rSmallCore = %1.8f  irSmall = %d\n",
     //         rSmallCore, irSmall); 
-    vector<TinyVector<double,2> > BasisFuncs(irSmall+50);
     vector<double> vals(irSmall+50), rvals(irSmall+50);
     for (int ir=0; ir<irSmall+50; ir++) {
-      BasisFuncs[ir][0] = 1.0 - Z/(double)(l+1) * r[ir];
-      BasisFuncs[ir][1] = r[ir]*r[ir];
       vals[ir] = g0[ir];
       rvals[ir] = r[ir];
     }
     ExpFitClass<4> smallFit;
     smallFit.FitCusp(rvals, vals, -Z/(double)(l+1));
     Small_r_Core_Fits.push_back(smallFit);
-
-    TinyVector<double,2> coefs;
-    TinyVector<double,3> polyCoefs;
-    LinFit (vals, BasisFuncs, coefs);
-    polyCoefs[0] = coefs[0];
-    polyCoefs[1] = coefs[0] * -Z/(double)(l+1);
-    polyCoefs[2] = coefs[1];
-    SmallrCoreCoefs.push_back (polyCoefs);
-
 
     BCtype_d rBC;
     rBC.lCode = NATURAL;
@@ -692,8 +624,6 @@ namespace qmcplusplus {
       double u;
       if (drmag < rSmallCore) 
 	Small_r_Core_Fits[i].eval (drmag, u);
-	// u = SmallrCoreCoefs[i][0] + SmallrCoreCoefs[i][1]*drmag +
-	//   SmallrCoreCoefs[i][2] * drmag * drmag;
       else if (drmag < CoreRadii[i]) 
 	eval_NUBspline_1d_d (CoreSplines[i], drmag, &u);
       else if (drmag < 2.75) {
@@ -750,13 +680,8 @@ namespace qmcplusplus {
       complex<double> im(0.0,(double)m);
       
       double u, du, d2u;
-      if (drmag < rSmallCore) {
-	// u = SmallrCoreCoefs[i][0]  + SmallrCoreCoefs[i][1] * drmag +
-	//   SmallrCoreCoefs[i][2] * drmag * drmag;
-	// du = SmallrCoreCoefs[i][1] + 2.0*SmallrCoreCoefs[i][2]*drmag;
-	// d2u = 2.0*SmallrCoreCoefs[i][2];
+      if (drmag < rSmallCore) 
 	Small_r_Core_Fits[i].eval (drmag, u, du, d2u);
-      }
       else if (drmag < CoreRadii[i]) 
 	  eval_NUBspline_1d_d_vgl (CoreSplines[i], drmag, &u, &du, &d2u);
       else if (drmag < 2.75) {

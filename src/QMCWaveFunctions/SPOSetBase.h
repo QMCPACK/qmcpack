@@ -123,6 +123,13 @@ namespace qmcplusplus {
 
     virtual string Type() { return "unknown"; }
 
+    virtual SPOSetBase* clone()
+    {
+      app_error() << "SPOSet of type \"" << Type() 
+		  << "\" has not implemented clone.  Aborting.\n";
+      abort();
+    };
+
 protected:
     bool putOccupation(xmlNodePtr occ_ptr);
     bool putFromXML(xmlNodePtr coeff_ptr);

@@ -54,7 +54,7 @@ namespace qmcplusplus {
   void 
   EinsplineSet::evaluate (const ParticleSet& P, int iat, ValueVector_t& psi)
   {
-    fprintf (stderr, "Should never instantiate EinsplineSet.\n");
+    app_error() << "Should never instantiate EinsplineSet.\n";
     abort();
   }
 
@@ -63,7 +63,7 @@ namespace qmcplusplus {
 			  ValueVector_t& psi, GradVector_t& dpsi, 
 			  ValueVector_t& d2psi)
   {
-    fprintf (stderr, "Should never instantiate EinsplineSet.\n");
+    app_error() << "Should never instantiate EinsplineSet.\n";
     abort();
   }
 
@@ -73,9 +73,17 @@ namespace qmcplusplus {
 			  ValueMatrix_t& vals, GradMatrix_t& grads, 
 			  ValueMatrix_t& lapls)
   {
-    fprintf (stderr, "Should never instantiate EinsplineSet.\n");
+    app_error() << "Should never instantiate EinsplineSet.\n";
     abort();
   }
+
+  SPOSetBase*
+  EinsplineSet::clone() 
+  {
+    app_error() << "Should never instantiate EinsplineSet.\n";
+    abort();
+  }
+
 
   void 
   EinsplineSetLocal::evaluate (const ParticleSet& P, int iat, 

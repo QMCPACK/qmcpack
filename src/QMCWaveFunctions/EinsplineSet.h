@@ -97,6 +97,7 @@ namespace qmcplusplus {
     void resetTargetParticleSet(ParticleSet& e);
     void resetSourceParticleSet(ParticleSet& ions);
     void setOrbitalSetSize(int norbs);
+    SPOSetBase* clone();
     string Type();
     EinsplineSet() :  TwistNum(0)
     {
