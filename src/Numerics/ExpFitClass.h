@@ -115,7 +115,7 @@ namespace qmcplusplus {
     vector<double> log_u(N);
     for (int i=0; i<N; i++) {
       log_u[i] = std::log (sign*u[i]);
-      double r2j 1.0;
+      double r2j=1.0;
       for (int j=0; j<M; j++) {
 	F[i][j] = r2j;
 	r2j *= r[i];
