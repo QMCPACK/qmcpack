@@ -96,6 +96,8 @@ namespace qmcplusplus {
     // Type definitions //
     //////////////////////
     typedef map<string,ParticleSet*> PtclPoolType;
+    PtclPoolType &ParticleSets;
+    DistanceTableData* ElectronIonTable;
 
     EinsplineSetBuilder(ParticleSet& p, PtclPoolType& psets, xmlNodePtr cur);
     

@@ -38,6 +38,12 @@ namespace qmcplusplus {
   EinsplineSet::resetTargetParticleSet(ParticleSet& e)
   {
   }
+
+  void
+  EinsplineSet::resetSourceParticleSet(ParticleSet& ions)
+  {
+    IonSet = &ions;
+  }
   
   void
   EinsplineSet::setOrbitalSetSize(int norbs)

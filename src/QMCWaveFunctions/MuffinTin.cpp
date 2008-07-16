@@ -18,6 +18,7 @@
 #include <einspline/nubspline.h>
 #include <einspline/multi_nubspline.h>
 #include "Numerics/DeterminantOperators.h"
+#include "Particle/DistanceTableData.h"
 #include <cmath>
 
 namespace qmcplusplus {
@@ -200,7 +201,6 @@ namespace qmcplusplus {
     while ((rgrid[ir+1]-rgrid[ir]) < drMin) ir++;
     iSmall = ir;
     rSmall = rgrid[ir];
-    fprintf (stderr, "  rSmall = %1.6f\n", rSmall);
 
     // Create the grid
     RadialGrid = 
@@ -453,7 +453,7 @@ namespace qmcplusplus {
       ru[i] -= round (ru[i]);
     dr = PrimLattice.toCart(ru);
     L = disp - dr;
-    
+
     if (dot(dr,dr) > APWRadius*APWRadius) {
       for (int i=0; i<phi.size(); i++) {
 	phi[i] = lapl[i] = complex<double>();
@@ -465,6 +465,7 @@ namespace qmcplusplus {
 
     TinyVector<double,3> rhat, thetahat, phihat;
     double drmag = std::sqrt (dot(dr,dr));
+
     rhat = (1.0/drmag)*dr;
     double costheta = rhat[2];
     double sintheta = std::sqrt(1.0-costheta*costheta);
@@ -539,8 +540,8 @@ namespace qmcplusplus {
     
     int numYlm = (lMax+1)*(lMax+1);
 
-    int lStop = (drmag < rSmall) ? lMax : lMax;
-    //lStop = lMax;
+    int lStop = (drmag < rSmall) ? 2 : lMax;
+    lStop = lMax;
     // Compute phi
     for (int iorb=0; iorb<NumOrbitals; iorb++) {
       int i = numYlm * iorb;
@@ -587,7 +588,8 @@ namespace qmcplusplus {
     while ((r[irSmall+1] - r[irSmall]) < drMin && irSmall<(r.size()-1))
       irSmall++;
     rSmallCore = r[irSmall+1];
-    fprintf (stderr, "rSmallCore = %1.8f  irSmalle = %d\n", rSmallCore, irSmall);
+    //fprintf (stderr, "rSmallCore = %1.8f  irSmall = %d\n",
+    //         rSmallCore, irSmall); 
     vector<TinyVector<double,2> > BasisFuncs(irSmall+50);
     vector<double> vals(irSmall+50);
     for (int ir=0; ir<irSmall+50; ir++) {
@@ -674,20 +676,19 @@ namespace qmcplusplus {
       int lm = l*(l+1)+m;
       complex<double> ylm = YlmVec[lm];
       double u;
-      if (drmag > rSmallCore) 
-	eval_NUBspline_1d_d (CoreSplines[i], drmag, &u);
-      else
+      if (drmag < rSmallCore) 
 	u = SmallrCoreCoefs[i][0] + SmallrCoreCoefs[i][1]*drmag +
 	  SmallrCoreCoefs[i][2] * drmag * drmag;
-  
-      if (drmag > 2.75) 
-	u = 0.0;
-      else if (drmag > CoreRadii[i]) {
+      else if (drmag < CoreRadii[i]) 
+	eval_NUBspline_1d_d (CoreSplines[i], drmag, &u);
+      else if (drmag < 2.75) {
 	double c0 = LargerCoreCoefs[i][0];
 	double c1 = LargerCoreCoefs[i][1];
 	u   = std::exp(c0 + c1*drmag);
       }
-
+      else
+	u = 0.0;
+      
 
       phi[first+i] = ylm*(u);
       // double phase = dot (r, Core_kVecs[i]);
@@ -734,25 +735,24 @@ namespace qmcplusplus {
       complex<double> im(0.0,(double)m);
       
       double u, du, d2u;
-      if (drmag > rSmallCore) 
-	  eval_NUBspline_1d_d_vgl (CoreSplines[i], drmag, &u, &du, &d2u);
-      else {
+      if (drmag < rSmallCore) {
 	u = SmallrCoreCoefs[i][0]  + SmallrCoreCoefs[i][1] * drmag +
 	  SmallrCoreCoefs[i][2] * drmag * drmag;
 	du = SmallrCoreCoefs[i][1] + 2.0*SmallrCoreCoefs[i][2]*drmag;
 	d2u = 2.0*SmallrCoreCoefs[i][2];
       }
-      
-      if (drmag > 2.75) 
-	u = du = d2u = 0.0;
-      else if (drmag > CoreRadii[i]) {
+      else if (drmag < CoreRadii[i]) 
+	  eval_NUBspline_1d_d_vgl (CoreSplines[i], drmag, &u, &du, &d2u);
+      else if (drmag < 2.75) {
 	double c0 = LargerCoreCoefs[i][0];
 	double c1 = LargerCoreCoefs[i][1];
 	u   = std::exp(c0 + c1*drmag);
 	du  = c1 * u;
 	d2u = c1 * du;
       }
-
+      else
+	u = du = d2u = 0.0;
+      
       phi[first+i] = ylm*u;      
       grad[first+i] = (du                 *     YlmVec[lm] * rhat     +
 		       u/drmag            *    dYlmVec[lm] * thetahat +

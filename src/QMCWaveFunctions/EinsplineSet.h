@@ -65,6 +65,8 @@ namespace qmcplusplus {
     int TwistNum;
     /// metric tensor to handle generic unitcell
     Tensor<RealType,OHMMS_DIM> GGt;
+    ParticleSet *IonSet;
+    DistanceTableData *ElectronIonTable;
 
     ///////////////////////////////////////////////
     // Muffin-tin orbitals from LAPW calculation //
@@ -93,6 +95,7 @@ namespace qmcplusplus {
     
     void resetParameters(VarRegistry<RealType>& vlist);
     void resetTargetParticleSet(ParticleSet& e);
+    void resetSourceParticleSet(ParticleSet& ions);
     void setOrbitalSetSize(int norbs);
     string Type();
     EinsplineSet() :  TwistNum(0)

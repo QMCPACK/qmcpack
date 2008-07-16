@@ -15,6 +15,7 @@
 #include "QMCWaveFunctions/GroupedOrbitalSet.h"
 #include "QMCWaveFunctions/EinsplineSetBuilder.h"
 #include "QMCWaveFunctions/OrbitalBuilderBase.h"
+#include "Particle/DistanceTable.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Utilities/Timer.h"
 #include "Message/Communicate.h"
@@ -32,9 +33,11 @@ namespace qmcplusplus {
 
   EinsplineSetBuilder::EinsplineSetBuilder(ParticleSet& p, 
       PtclPoolType& psets, xmlNodePtr cur) 
-    : XMLRoot(cur), TileFactor(1,1,1), TwistNum(0), LastSpinSet(-1), NumOrbitalsRead(-1),
-      NumMuffinTins(0), NumCoreStates(0)
+    : XMLRoot(cur), TileFactor(1,1,1), TwistNum(0), LastSpinSet(-1), 
+      NumOrbitalsRead(-1), NumMuffinTins(0), NumCoreStates(0),
+      ParticleSets(psets)
   {
+    // ElectronIonTable = DistanceTable::add(*psets["i"], p);
     for (int i=0; i<3; i++)
       for (int j=0; j<3; j++)
 	TileMatrix(i,j) = 0;
@@ -380,6 +383,8 @@ namespace qmcplusplus {
     else
       OrbitalSet = new EinsplineSetExtended<complex<double> >;
 
+    OrbitalSet->resetSourceParticleSet(*ParticleSets["i"]);
+    OrbitalSet->ElectronIonTable = ElectronIonTable;
     /////////////////////////
     // Setup internal data //
     /////////////////////////
@@ -432,19 +437,22 @@ namespace qmcplusplus {
       Vector<double> phi(numOrbs), lapl(numOrbs);
       Vector<PosType> grad(numOrbs);
       ParticleSet P;
-      P.R.resize(1);
+      P.R.resize(6);
+      for (int i=0; i<P.R.size(); i++)
+	P.R[i] = PosType (0.0, 0.0, 0.0);
       PosType N = 0.25*PrimCell.a(0) + 0.25*PrimCell.a(1) + 0.25*PrimCell.a(2);
       //for (double x=1.0e-4; x<=1.0; x+=0.0000500113412) {
-      for (double x=1.0e-6; x<=0.001; x+=0.0000001) {
-	P.R[0] = x * (PrimCell.a(0) + PrimCell.a(1) + 1.0*PrimCell.a(2));
+	for (double x=-0.00001; x<=0.00001; x+=0.000000011329343481381) {
+	P.R[0] = x * (PrimCell.a(0) + 0.9632421*PrimCell.a(1) + 0.893421*PrimCell.a(2));
+	ElectronIonTable->evaluate(P);
 	double r = std::sqrt(dot(P.R[0], P.R[0]));
 	double rN = std::sqrt(dot(P.R[0]-N, P.R[0]-N));
 	OrbitalSet->evaluate(P, 0, phi, grad, lapl);
-	fprintf (fout, "%1.12e ", r);
+	fprintf (fout, "%1.12e ", r*x/std::fabs(x));
 	for (int j=0; j<numOrbs; j++) {
 	  double gmag = std::sqrt(dot(grad[j],grad[j]));
 	  fprintf (fout, "%16.12e ", 
-		   phi[j]*phi[j]*(-5.0/r  -0.5*lapl[j]/phi[j]));
+		   /*phi[j]*phi[j]**/(-5.0/r  -0.5*lapl[j]/phi[j]));
 	  // double E = -5.0/r -0.5*lapl[j]/phi[j];
 	  fprintf (fout, "%16.12e ", phi[j]);
 	  fprintf (fout, "%16.12e ", gmag);
@@ -1058,6 +1066,9 @@ namespace qmcplusplus {
     //////////////////////////////////////
     orbitalSet->MuffinTins.resize(NumMuffinTins);
     for (int tin=0; tin<NumMuffinTins; tin++) {
+      orbitalSet->MuffinTins[tin].IonSet = ParticleSets["i"];
+      orbitalSet->MuffinTins[tin].ElectronIonTable = ElectronIonTable;
+      orbitalSet->MuffinTins[tin].Atom = tin;
       orbitalSet->MuffinTins[tin].set_center (MT_centers[tin]);
       orbitalSet->MuffinTins[tin].set_lattice(Lattice);
 //    orbitalSet->MuffinTins[tin].init_APW 
@@ -1261,6 +1272,9 @@ namespace qmcplusplus {
     //////////////////////////////////////
     orbitalSet->MuffinTins.resize(NumMuffinTins);
     for (int tin=0; tin<NumMuffinTins; tin++) {
+      orbitalSet->MuffinTins[tin].IonSet = ParticleSets["i"];
+      orbitalSet->MuffinTins[tin].ElectronIonTable = ElectronIonTable;
+      orbitalSet->MuffinTins[tin].Atom = tin;
       orbitalSet->MuffinTins[tin].set_center (MT_centers[tin]);
       orbitalSet->MuffinTins[tin].set_lattice(Lattice);
 //       orbitalSet->MuffinTins[tin].init_APW 

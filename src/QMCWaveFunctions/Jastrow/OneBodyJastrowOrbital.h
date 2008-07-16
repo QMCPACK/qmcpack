@@ -22,7 +22,7 @@
 namespace qmcplusplus {
   
   /** @ingroup OrbitalComponent
-   * @brief generic implementation of one-body Jatrow function.
+   * @brief generic implementation of one-body Jastrow function.
    *
    *The One-Body Jastrow has the form  
    \f$ \psi = \exp{\left(-J_1\right)} \f$

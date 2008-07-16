@@ -100,6 +100,13 @@ namespace qmcplusplus {
     vector<double> CoreRadii;
     
   public:
+    // The ion particle set
+    ParticleSet *IonSet;
+    // The electron-ion distance table
+    DistanceTableData *ElectronIonTable;
+    // Which atom this tin corresponds to
+    int Atom;
+
     ///////////////////////////////////
     // Augmented plane-wave routines //
     ///////////////////////////////////
