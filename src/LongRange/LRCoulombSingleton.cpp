@@ -59,11 +59,13 @@ namespace qmcplusplus {
         r=(*agrid)[ig];
         v[ig]=r*aLR->evaluate(r,1.0/r);
       }
+      v[0] = 2.0*v[1] - v[2];
 
       v[ng-1]=0.0;
       RadFunctorType* V0=new RadFunctorType(agrid,v);
       RealType deriv=(v[1]-v[0])/((*agrid)[1]-(*agrid)[0]);
       V0->spline(0,deriv,ng-1,0.0);
+
       return V0;
     }
 }
