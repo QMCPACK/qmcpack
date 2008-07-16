@@ -30,6 +30,10 @@ std::string getHostName();
 
 //!< return the date and time
 std::string getDateAndTime();
+
+/** get the time and date with a format
+ */
+std::string getDateAndTime(const char* format);
 #endif
 /***************************************************************************
  * $RCSfile$   $Author$

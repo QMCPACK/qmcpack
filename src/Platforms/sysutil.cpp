@@ -18,6 +18,8 @@
  */
 
 #include <string>
+#include <sstream>
+#include <iostream>
 using std::string;
 #include <time.h>
 
@@ -53,6 +55,15 @@ string getDateAndTime() {
   time_t now;
   time(&now);
   return ctime(&now);
+}
+
+string getDateAndTime(const char* format) {
+  time_t now;
+  time(&now);
+  tm* now_c = localtime(&now);
+  char d[32];
+  strftime(d,32,format,now_c);
+  return string(d);
 }
 
 /***************************************************************************
