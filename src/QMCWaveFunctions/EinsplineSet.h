@@ -56,7 +56,7 @@ namespace qmcplusplus {
     //////////////////////////
     TinyVector<int,3> TileFactor;
     Tensor<int,OHMMS_DIM> TileMatrix;
-    UnitCellType SuperLattice, PrimLattice, PrimLatticeInv;
+    UnitCellType SuperLattice, PrimLattice;
     /// The "Twist" variables are in reduced coords, i.e. from 0 to1.
     /// The "k" variables are in Cartesian coordinates.
     PosType TwistVector, kVector;
@@ -117,6 +117,7 @@ namespace qmcplusplus {
     std::vector<EinsplineOrb<complex<double>,OHMMS_DIM>*> Orbitals;
 
   public:
+    SPOSetBase* clone();
     void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi);
     void evaluate(const ParticleSet& P, int iat, 
 		  ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi);
@@ -209,7 +210,7 @@ namespace qmcplusplus {
     NewTimer EinsplineTimer;
   public:
     // Real return values
-    void evaluate(const ParticleSet& P, int iat,    RealValueVector_t& psi);
+    void evaluate(const ParticleSet& P, int iat, RealValueVector_t& psi);
     void evaluate(const ParticleSet& P, int iat, RealValueVector_t& psi, 
 		  RealGradVector_t& dpsi, RealValueVector_t& d2psi);
     void evaluate(const ParticleSet& P, int first, int last,
@@ -228,6 +229,7 @@ namespace qmcplusplus {
     void resetTargetParticleSet(ParticleSet& e);
     void setOrbitalSetSize(int norbs);
     string Type();
+    SPOSetBase* clone();
 
     EinsplineSetExtended() : 
       ValueTimer  ("EinsplineSetExtended::ValueOnly"),

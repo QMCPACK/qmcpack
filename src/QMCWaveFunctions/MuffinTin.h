@@ -103,6 +103,8 @@ namespace qmcplusplus {
     vector<double> CoreRadii;
     
   public:
+    void copy (MuffinTinClass &src);
+
     // The ion particle set
     ParticleSet *IonSet;
     // The electron-ion distance table

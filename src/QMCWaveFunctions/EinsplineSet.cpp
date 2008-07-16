@@ -740,10 +740,80 @@ namespace qmcplusplus {
     return "EinsplineSetExtended";
   }
 
+  SPOSetBase*
+  EinsplineSetLocal::clone() {
+    EinsplineSetLocal *newSet = new EinsplineSetLocal;
+    // Copy base class's  data
+    newSet->Orthorhombic   = Orthorhombic;
+    newSet->Localized      = Localized;
+    newSet->Tiling         = Tiling;
+    newSet->TileFactor     = TileFactor;
+    newSet->TileMatrix     = TileMatrix;
+    newSet->SuperLattice   = SuperLattice;
+    newSet->PrimLattice    = PrimLattice;
+    newSet->TwistVector    = TwistVector;
+    newSet->kVector        = kVector;
+    newSet->TwistNum       = TwistNum;
+    newSet->GGt            = GGt;
+    newSet->NumValenceOrbs = NumValenceOrbs;
+    newSet->NumCoreOrbs    = NumCoreOrbs;
+    
+    // Copy muffin tins
+    newSet->MuffinTins.resize(MuffinTins.size());
+    for (int i=0; i<MuffinTins.size(); i++)
+      newSet->MuffinTins[i].copy(MuffinTins[i]);
+
+    newSet->Orbitals.resize(Orbitals.size());
+    newSet->Orbitals = Orbitals;
+
+    return newSet;
+  }
+
+  template<typename StorageType> SPOSetBase*
+  EinsplineSetExtended<StorageType>::clone()
+  {
+    EinsplineSetExtended<StorageType> *newSet = new EinsplineSetExtended<StorageType>;
+    // Copy base class's  data
+    newSet->Orthorhombic   = Orthorhombic;
+    newSet->Localized      = Localized;
+    newSet->Tiling         = Tiling;
+    newSet->TileFactor     = TileFactor;
+    newSet->TileMatrix     = TileMatrix;
+    newSet->SuperLattice   = SuperLattice;
+    newSet->PrimLattice    = PrimLattice;
+    newSet->TwistVector    = TwistVector;
+    newSet->kVector        = kVector;
+    newSet->TwistNum       = TwistNum;
+    newSet->GGt            = GGt;
+    newSet->NumValenceOrbs = NumValenceOrbs;
+    newSet->NumCoreOrbs    = NumCoreOrbs;
+    
+    // Copy muffin tins
+    newSet->MuffinTins.resize(MuffinTins.size());
+    for (int i=0; i<MuffinTins.size(); i++)
+      newSet->MuffinTins[i].copy(MuffinTins[i]);
+    
+
+    
+
+    // Copy Extended version data
+    newSet->MultiSpline = MultiSpline;
+    int N = StorageValueVector.size();
+    newSet->StorageValueVector.resize(N);
+    newSet->StorageLaplVector.resize(N);
+    newSet->StorageGradVector.resize(N);
+    newSet->StorageHessVector.resize(N);
+    newSet->MakeTwoCopies.resize(MakeTwoCopies.size());
+    newSet->MakeTwoCopies = MakeTwoCopies;
+    newSet->kPoints.resize(kPoints.size());
+    newSet->kPoints = kPoints;
+    newSet->phase.resize(phase.size());
+    newSet->eikr.resize(eikr.size());
+    
+
+    return newSet;
+  }
+
   template class EinsplineSetExtended<complex<double> >;
   template class EinsplineSetExtended<        double  >;
-//   template class EinsplineSetExtended<complex<double>,complex<double> >;
-//   template class EinsplineSetExtended<complex<double>,        double  >;
-//   template class EinsplineSetExtended<        double ,        double  >;
-
 }

@@ -702,4 +702,12 @@ namespace qmcplusplus {
 				    + d2u + 2.0/drmag *du );
     }
   }
+
+  void
+  MuffinTinClass::copy (MuffinTinClass &src)
+  {
+
+
+  }
+
 }
