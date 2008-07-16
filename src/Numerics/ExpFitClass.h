@@ -29,6 +29,7 @@ namespace qmcplusplus {
   {
   private:
     TinyVector<double,M> Coefs, dCoefs, d2Coefs;
+    double sign;
   public:
     inline void Fit (vector<double> &r, vector<double> &u);
     inline void FitCusp(vector<double> &r, vector<double> &u, double cusp);
@@ -41,6 +42,7 @@ namespace qmcplusplus {
   ExpFitClass<M>::FitCusp (vector<double> &r, vector<double> &u, double cusp)
   {
     int N = r.size();
+    sign = u[0] < 0.0 ? -1.0 : 1.0;
 
     if (r.size() != u.size()) 
       app_error() << "Different number of rows of basis functions than"
@@ -48,7 +50,7 @@ namespace qmcplusplus {
     vector<TinyVector<double,M-1> > F(N);
     vector<double> log_u(N);
     for (int i=0; i<N; i++) {
-      log_u[i] = std::log (u[i]) - cusp * r[i];
+      log_u[i] = std::log (sign*u[i]) - cusp * r[i];
       double r2jp1 = r[i]*r[i];
       F[i][0] = 1.0;
       for (int j=1; j<M-1; j++) {
@@ -104,6 +106,7 @@ namespace qmcplusplus {
   ExpFitClass<M>::Fit (vector<double> &r, vector<double> &u)
   {
     int N = r.size();
+    sign = u[0] < 0.0 ? -1.0 : 1.0;
 
     if (r.size() != u.size()) 
       app_error() << "Different number of rows of basis functions than"
@@ -111,7 +114,7 @@ namespace qmcplusplus {
     vector<TinyVector<double,M> > F(N);
     vector<double> log_u(N);
     for (int i=0; i<N; i++) {
-      log_u[i] = std::log (u[i]);
+      log_u[i] = std::log (sign*u[i]);
       double r2j 1.0;
       for (int j=0; j<M; j++) {
 	F[i][j] = r2j;
@@ -165,9 +168,9 @@ namespace qmcplusplus {
     double poly = 0.0;
     for (int j=0; j<M; j++) {
       poly += Coefs[j] * r2j;
-      rj2 *= r;
+      r2j *= r;
     }
-    return std::exp(poly);
+    u = sign*std::exp(poly);
   }
 
   template<int M> void
@@ -180,7 +183,7 @@ namespace qmcplusplus {
       d2P += d2Coefs[j] * r2j;
       r2j *= r;
     }
-    u   = std::exp (P);
+    u   = sign*std::exp (P);
     du  = dP * u;
     d2u = (d2P + dP*dP)*u;
   }
@@ -190,6 +193,7 @@ namespace qmcplusplus {
   {
   private:
     TinyVector<complex<double>,M> Coefs, dCoefs, d2Coefs;
+    double realSign, imagSign;
   public:
     inline void Fit (vector<double> &r, vector<complex<double> > &u);
     inline void FitCusp(vector<double> &r, vector<complex<double> > &u, double cusp);
@@ -203,17 +207,19 @@ namespace qmcplusplus {
   {
     int N = u.size();
     ExpFitClass<M> realFit, imagFit;
-    vector<double> realVals(N), imagVals[N];
+    vector<double> realVals(N), imagVals(N);
     for (int i=0; i<N; i++) {
       realVals[i] = real(u[i]);
-      iamgVals[i] = imag(u[i]);
+      imagVals[i] = imag(u[i]);
     }
     realFit.FitCusp (r, realVals, cusp);
     imagFit.FitCusp (r, imagVals, cusp);
+    realSign = realFit.sign;
+    imagSign = imagFit.sign;
     for (int i=0; i<M; i++) {
-      Coefs[i]   = complex<double>(realFit.Coefs[i]  ,   imag.Coefs[i]);
-      dCoefs[i]  = complex<double>(realFit.dCoefs[i] ,  imag.dCoefs[i]);
-      d2Coefs[i] = complex<double>(realFit.d2Coefs[i], imag.d2Coefs[i]);
+      Coefs[i]   = complex<double>(realFit.Coefs[i]  ,   imagFit.Coefs[i]);
+      dCoefs[i]  = complex<double>(realFit.dCoefs[i] ,  imagFit.dCoefs[i]);
+      d2Coefs[i] = complex<double>(realFit.d2Coefs[i], imagFit.d2Coefs[i]);
     }
   }
 
@@ -222,20 +228,56 @@ namespace qmcplusplus {
   {
     int N = u.size();
     ExpFitClass<M> realFit, imagFit;
-    vector<double> realVals(N), imagVals[N];
+    vector<double> realVals(N), imagVals(N);
     for (int i=0; i<N; i++) {
       realVals[i] = real(u[i]);
-      iamgVals[i] = imag(u[i]);
+      imagVals[i] = imag(u[i]);
     }
     realFit.Fit (r, realVals);
     imagFit.Fit (r, imagVals);
+    realSign = realFit.sign;
+    imagSign = imagFit.sign;
     for (int i=0; i<M; i++) {
-      Coefs[i]   = complex<double>(realFit.Coefs[i]  ,   imag.Coefs[i]);
-      dCoefs[i]  = complex<double>(realFit.dCoefs[i] ,  imag.dCoefs[i]);
-      d2Coefs[i] = complex<double>(realFit.d2Coefs[i], imag.d2Coefs[i]);
+      Coefs[i]   = complex<double>(realFit.Coefs[i]  ,   imagFit.Coefs[i]);
+      dCoefs[i]  = complex<double>(realFit.dCoefs[i] ,  imagFit.dCoefs[i]);
+      d2Coefs[i] = complex<double>(realFit.d2Coefs[i], imagFit.d2Coefs[i]);
     }
   }
 
+
+  template<int M> void
+  ComplexExpFitClass<M>::eval (double r, complex<double> &u)
+  {
+    double r2j = 1.0;
+    complex<double> P = complex<double>();
+    for (int j=0; j<M; j++) {
+      P += Coefs[j] * r2j;
+      r2j *= r;
+    }
+    u = complex<double>(realSign*std::exp(P.real()), imagSign*std::exp(P.imag()));
+  }
+
+  template<int M> void
+  ComplexExpFitClass<M>::eval (double r, complex<double> &u, 
+			       complex<double> &du, complex<double> &d2u) 
+  {
+    double r2j = 1.0;
+    complex<double> P, dP, d2P;
+    P = dP = d2P = complex<double>();
+    for (int j=0; j<M; j++) {
+      P   +=   Coefs[j] * r2j;
+      dP  +=  dCoefs[j] * r2j;      
+      d2P += d2Coefs[j] * r2j;
+      r2j *= r;
+    }
+    u.real()   = realSign * std::exp (P.real());
+    du.real()  = dP.real() * u.real();
+    d2u.real() = (d2P.real() + dP.real()*dP.real())*u.real();
+
+    u.imag()   = imagSign * std::exp (P.imag());
+    du.imag()  = dP.imag() * u.imag();
+    d2u.imag() = (d2P.imag() + dP.imag()*dP.imag())*u.imag();
+  }
 
 }
 

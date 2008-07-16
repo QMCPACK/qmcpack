@@ -27,172 +27,9 @@
 #include <einspline/nubspline_structs.h>
 #include <einspline/multi_nubspline_structs.h>
 #include "Configuration.h"
-#include "Numerics/DeterminantOperators.h"
+#include "Numerics/ExpFitClass.h"
 
 namespace qmcplusplus {
-  template<int M>
-  class ExpFitClass 
-  {
-  private:
-    TinyVector<double,M> Coefs, dCoefs, d2Coefs;
-  public:
-    inline void Fit (vector<double> &r, vector<double> &u);
-    inline void FitCusp(vector<double> &r, vector<double> &u, double cusp);
-    inline void eval (double r, double &u);
-    inline void eval (double r, double &u, double &du, double &d2u);
-  };
-
-  template<int M> void 
-  ExpFitClass<M>::FitCusp (vector<double> &r, vector<double> &u, double cusp)
-  {
-    int N = r.size();
-
-    if (r.size() != u.size()) 
-      app_error() << "Different number of rows of basis functions than"
-		  << " of data points in LinFit.  Exitting.\n";
-    vector<TinyVector<double,M-1> > F(N);
-    vector<double> log_u(N);
-    for (int i=0; i<N; i++) {
-      log_u[i] = std::log (u[i]) - cusp * r[i];
-      double r2jp1 = r[i]*r[i];
-      F[i][0] = 1.0;
-      for (int j=1; j<M-1; j++) {
-	F[i][j] = r2jp1;
-	r2jp1 *= r[i];
-      }
-    }
-      
-    // Next, construct alpha matrix
-    Matrix<double> alpha(M-1,M-1), alphaInv(M-1,M-1);
-    alpha = 0.0;
-    for (int j=0; j<M-1; j++)
-      for (int k=0; k<M-1; k++) {
-	alpha(k,j) = 0.0;
-	for (int i=0; i<N; i++)
-	  alpha(k,j) += F[i][j] * F[i][k];
-      }
-    
-    // Next, construct beta vector
-    TinyVector<double,M-1> beta;
-    beta = 0.0;
-    for (int k=0; k<M-1; k++)
-      for (int i=0; i<N; i++)
-	beta[k] += log_u[i]*F[i][k];
-    
-    // Now, invert alpha
-    for (int i=0; i<M-1; i++)
-      for (int j=0; j<M-1; j++)
-	alphaInv(i,j) = alpha(i,j);
-    
-    double det = invert_matrix(alphaInv);
-	    
-    TinyVector<double,M-1> c;
-
-    for (int i=0; i<M-1; i++) {
-      c[i] = 0.0;
-      for (int j=0; j<M-1; j++)
-	c[i] += alphaInv(i,j) * beta[j];
-    }
-    Coefs[0] = c[0];
-    Coefs[1] = cusp;
-    for (int i=2; i<M; i++)
-      Coefs[i] = c[i-1];
-    dCoefs  = 0.0;
-    d2Coefs = 0.0;
-    for (int i=0; i<M-1; i++) 
-      dCoefs[i] = (double)(i+1) * Coefs[i+1];
-    for (int i=0; i<M-2; i++)
-      d2Coefs[i] = (double)(i+1) * dCoefs[i+1];
-  }
-
-  template<int M> void 
-  ExpFitClass<M>::Fit (vector<double> &r, vector<double> &u)
-  {
-    int N = r.size();
-
-    if (r.size() != u.size()) 
-      app_error() << "Different number of rows of basis functions than"
-		  << " of data points in LinFit.  Exitting.\n";
-    vector<TinyVector<double,M> > F(N);
-    vector<double> log_u(N);
-    for (int i=0; i<N; i++) {
-      log_u[i] = std::log (u[i]);
-      double r2j 1.0;
-      for (int j=0; j<M; j++) {
-	F[i][j] = r2j;
-	r2j *= r[i];
-      }
-    }
-      
-    // Next, construct alpha matrix
-    Matrix<double> alpha(M,M), alphaInv(M,M);
-    alpha = 0.0;
-    for (int j=0; j<M; j++)
-      for (int k=0; k<M; k++) {
-	alpha(k,j) = 0.0;
-	for (int i=0; i<N; i++)
-	  alpha(k,j) += F[i][j] * F[i][k];
-      }
-    
-    // Next, construct beta vector
-    TinyVector<double,M> beta;
-    beta = 0.0;
-    for (int k=0; k<M; k++)
-      for (int i=0; i<N; i++)
-	beta[k] += log_u[i]*F[i][k];
-    
-    // Now, invert alpha
-    for (int i=0; i<M; i++)
-      for (int j=0; j<M; j++)
-	alphaInv(i,j) = alpha(i,j);
-    
-    double det = invert_matrix(alphaInv);
-	    
-    for (int i=0; i<M; i++) {
-      Coefs[i] = 0.0;
-      for (int j=0; j<M; j++)
-	Coefs[i] += alphaInv(i,j) * beta[j];
-    }
-    dCoefs  = 0.0;
-    d2Coefs = 0.0;
-    for (int i=0; i<M-1; i++) 
-      dCoefs[i] = (double)(i+1) * Coefs[i+1];
-    for (int i=0; i<M-2; i++)
-      d2Coefs[i] = (double)(i+1) * dCoefs[i+1];
-  }
-    
-
-
-  
-  template<int M> void
-  ExpFitClass<M>::eval (double r, double &u)
-  {
-    double r2j = 1.0;
-    double poly = 0.0;
-    for (int j=0; j<M; j++) {
-      poly += Coefs[j] * r2j;
-      rj2 *= r;
-    }
-    return std::exp(poly);
-  }
-
-  template<int M> void
-  ExpFitClass<M>::eval (double r, double &u, double &du, double &d2u) {
-    double r2j = 1.0;
-    double P=0.0, dP=0.0, d2P=0.0;
-    for (int j=0; j<M; j++) {
-      P   +=   Coefs[j] * r2j;
-      dP  +=  dCoefs[j] * r2j;      
-      d2P += d2Coefs[j] * r2j;
-      r2j *= r;
-    }
-    u   = std::exp (P);
-    du  = dP * u;
-    d2u = (d2P + dP*dP)*u;
-  }
-
-
-
 
   // This class stores and evaluates LAPW+LO type functions inside the
   // muffin tin for a particular atom
@@ -232,6 +69,7 @@ namespace qmcplusplus {
     // These are coefficients of a quadratic polynomial used to
     // replace the radial splines at very small r.
     vector<TinyVector<complex<double>,3> > SmallrCoefs;
+    vector<ComplexExpFitClass<4> > Small_r_APW_Fits;
     
     // This is a helper function for fitting the small-r values
     void LinFit (vector<double> &y,  vector<TinyVector<double,2> > &F,
@@ -254,8 +92,8 @@ namespace qmcplusplus {
     // This is the radius below which we will use the polynomial fit.
     double rSmallCore;
     // Exponential fits for small and large r
-    vector<ExpFitClass<4> > Small_r_Fits;
-    vector<ExpFitClass<2> > Large_r_Fits;
+    vector<ExpFitClass<4> > Small_r_Core_Fits;
+    vector<ExpFitClass<2> > Large_r_Core_Fits;
     // Stores the polynomial fit for small r
     vector<TinyVector<double,3> > SmallrCoreCoefs;
     // Stores the expontential fit for large r
