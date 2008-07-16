@@ -55,8 +55,8 @@ OhmmsInfo::OhmmsInfo(const std::string& fin_name, int rank, int gid, int num_gro
   if(Writeable && num_groups>1)
   {
     char fn[128];
-    sprintf(fn,"%s.g%03d.log.xml",fin_name.c_str(),gid);
-    Log->set(fin_name.c_str());
+    sprintf(fn,"%s.g%03d.qmc",fin_name.c_str(),gid);
+    Log->set(fn);
     Warn->set(*Log,"WARNING");
     Error->set(*Log,"ERROR");
   }
@@ -64,10 +64,10 @@ OhmmsInfo::OhmmsInfo(const std::string& fin_name, int rank, int gid, int num_gro
 
 void OhmmsInfo::initialize(const char* froot, int master){
 
-  if(master > 0) 
-    Writeable = false;
-  else 
-    Writeable = true;
+  //if(master > 0) 
+  //  Writeable = false;
+  //else 
+  //  Writeable = true;
 
   // initialize the estimator to record data
   Warn = new OhmmsInform("WARNING",false,Writeable);
