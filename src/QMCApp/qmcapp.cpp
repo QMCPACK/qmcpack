@@ -17,8 +17,10 @@
 #include "Configuration.h"
 #include "Message/Communicate.h"
 #include "Utilities/OhmmsInfo.h"
-#include "OhmmsData/FileUtility.h"
 #include "Utilities/SimpleParser.h"
+#include "OhmmsData/FileUtility.h"
+#include "Platforms/sysutil.h"
+#include "OhmmsApp/ProjectData.h"
 #include "QMCApp/QMCMain.h"
 
 
@@ -33,65 +35,95 @@
  */
 int main(int argc, char **argv) {
 
+  ///done with the option
   OHMMS::Controller->initialize(argc,argv);
 
-  OhmmsInfo Welcome(argc,argv,OHMMS::Controller->rank());
-
-  if(argc<=1)
+  //check the options first
+  int clones=1;
+  vector<string> fgroup1,fgroup2;
+  int i=1;
+  while(i<argc)
   {
-    ERRORMSG("No input file is given.")
-    ERRORMSG("usage: qmcapp input-file")
+    string c(argv[i]);
+    if(c.find("clones")<c.size())
+    {
+      clones=atoi(argv[++i]);
+    }
+    else if(c.find("xml")<c.size())
+    {
+      fgroup1.push_back(argv[i]);
+    }
+    else 
+    {
+      ifstream fin(argv[i]);
+      bool valid=true;
+      do 
+      {
+        vector<string> words;
+        getwords(words,fin);
+        if(words.size())
+        {
+          if(words[0].find("xml")<words[0].size())
+          {
+            int nc=1;
+            if(words.size()>1) nc=atoi(words[1].c_str());
+            while(nc)
+            {
+              fgroup2.push_back(words[0]);--nc;
+            }
+          }
+        }
+        else
+          valid=false;
+      } while(valid);
+    }
+    ++i;
+  }
+  int in_files=fgroup1.size();
+  vector<string> inputs(in_files*clones+fgroup2.size());
+  std::copy(fgroup2.begin(),fgroup2.end(),inputs.begin());
+  i=fgroup2.size();
+  for(int k=0; k<in_files; ++k)
+    for(int c=0; c<clones; ++c) inputs[i++]=fgroup1[k];
+
+  if(inputs.empty())
+  {
+    if(OHMMS::Controller->rank()==0)
+    {
+      cerr << "No input file is given" << endl;
+      cerr << "usage: qmcapp [--clones int] input-files " << endl;
+    }
+    OHMMS::Controller->finalize();
     return 1;
   }
 
+  //safe to move on
+  Communicate* qmcComm=OHMMS::Controller;
+  if(inputs.size()>1)
+    qmcComm=new Communicate(*OHMMS::Controller,inputs.size());
 
-  string fname=argv[1];
+  using namespace qmcplusplus;
+  stringstream logname;
+  logname<<getDateAndTime("%Y%m%dT%H%M");
+  OhmmsInfo Welcome(logname.str(),qmcComm->rank(),qmcComm->getGroupID(),inputs.size());
 
-#if defined(MPIRUN_EXTRA_ARGUMENTS)
-  //broadcast the input file name to other nodes
-  MPI_Bcast(fname.c_str(),fname.size(),MPI_CHAR,0,OHMMS::Controller->getID());
-#endif
+//#if defined(MPIRUN_EXTRA_ARGUMENTS)
+//  //broadcast the input file name to other nodes
+//  MPI_Bcast(fname.c_str(),fname.size(),MPI_CHAR,0,OHMMS::Controller->getID());
+//#endif
 
-  string fext=getExtension(fname);
+  QMCMain *qmc=0;
   bool validInput=false;
-
-  qmcplusplus::QMCMain *qmc=0;
-
-  if(fext == "xml")
-  {
-    qmc=new qmcplusplus::QMCMain(OHMMS::Controller);
-    validInput=qmc->parse(fname);
-  }
+  app_log() << "  Input file(s): ";
+  for(int k=0; k<inputs.size(); ++k) app_log() << inputs[k] << " ";
+  app_log() << endl;
+  qmc = new QMCMain(qmcComm);
+  if(inputs.size()>1)
+    validInput=qmc->parse(inputs[qmcComm->getGroupID()]);
   else
-  {
-    ifstream fin(fname.c_str());
-    vector<string> fgroup;
-    bool valid=true;
-    do 
-    {
-      vector<string> words;
-      getwords(words,fin);
-      if(words.size())
-        fgroup.push_back(words[0]);
-      else
-        valid=false;
-    } while(valid);
-
-    if(OHMMS::Controller->size()==1)
-    {
-      qmc=new qmcplusplus::QMCMain(OHMMS::Controller);
-      validInput=qmc->parse(fgroup[0]);
-    }
-    else
-    {
-      Communicate* qmcComm=new Communicate(*OHMMS::Controller,fgroup.size());
-      qmc = new qmcplusplus::QMCMain(qmcComm);
-      validInput=qmc->parse(fgroup[qmcComm->getGroupID()]);
-    }
-  }
-
+    validInput=qmc->parse(inputs[0]);
   if(validInput) qmc->execute();
-  delete qmc;
+  if(qmc) delete qmc;
 
   OHMMS::Controller->finalize();
   return 0;

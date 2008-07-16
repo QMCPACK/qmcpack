@@ -126,6 +126,7 @@ namespace qmcplusplus {
 
     app_log() << "  MPI Nodes            = " << OHMMS::Controller->size() << endl;
     app_log() << "  MPI Nodes per group  = " << myComm->size() << endl;
+    app_log() << "  MPI Group ID         = " << myComm->getGroupID() << endl;
     app_log() << "  OMP_NUM_THREADS      = " << omp_get_max_threads() << endl;
     app_log() << "  Total Execution time = " << t1.elapsed() << " secs" << endl;
 
