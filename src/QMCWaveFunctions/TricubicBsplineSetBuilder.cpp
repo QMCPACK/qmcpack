@@ -25,6 +25,7 @@
 #include "OhmmsData/AttributeSet.h"
 #include "ParticleIO/ParticleLayoutIO.h"
 #include "Utilities/ProgressReportEngine.h"
+#include "Message/CommOperators.h"
 //#define DEBUG_BSPLINE_EG
 namespace qmcplusplus {
 
