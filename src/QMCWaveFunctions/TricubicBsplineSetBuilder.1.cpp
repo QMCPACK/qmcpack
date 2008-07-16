@@ -17,6 +17,7 @@
 #include "OhmmsData/AttributeSet.h"
 #include "Numerics/OhmmsBlas.h"
 #include "Message/OpenMP.h"
+#include "Message/CommOperators.h"
 #include "Utilities/ProgressReportEngine.h"
 namespace qmcplusplus {
 
@@ -50,7 +51,6 @@ namespace qmcplusplus {
         PRE<<"  No data conversion is needed.\n";
       else
         PRE<< "  Data conversion is done.\n";
-      
 
       for(int iorb=0; iorb<norb; iorb++) 
       {
@@ -72,13 +72,21 @@ namespace qmcplusplus {
           BigDataSet[wnshort.str()]=new RSOType(activeBasis->Centers[iorb],activeBasis->Origins[iorb],newP);
           if(bspline_data_check<Tin,Tout>::is_same)
           {
-            HDFAttribIO<StorageType> dummy(inData);
-            dummy.read(hfileID,eigvName.c_str());
+            if(is_manager())
+            {
+              HDFAttribIO<StorageType> dummy(inData);
+              dummy.read(hfileID,eigvName.c_str());
+            }
+            myComm->bcast(inData);
           }
           else
           {
-            HDFAttribIO<InArrayType> dummy(inTemp);
-            dummy.read(hfileID,eigvName.c_str());
+            if(is_manager())
+            {
+              HDFAttribIO<InArrayType> dummy(inTemp);
+              dummy.read(hfileID,eigvName.c_str());
+            }
+            myComm->bcast(inTemp);
             BLAS::copy(inTemp.size(),inTemp.data(),inData.data());
           }
           activeBasis->add(iorb,inData,newP);
@@ -215,39 +223,22 @@ namespace qmcplusplus {
 
     bool in_complex = myParam->getEigVectorType(hfileID);
 
-    if(ompIn == "no")
-    {
+    //disable readDataOMP since mpi cannot handle communications within threads
+    //if(ompIn == "no")
+    //{
       if(in_complex)
         readData<ComplexType,ValueType>(hroot,occSet,spinIndex,degeneracy);
       else
         readData<RealType,ValueType>(hroot,occSet,spinIndex,degeneracy);
-    }
-    else
-    {
-      if(in_complex)
-        readDataOMP<ComplexType,ValueType>(hroot,occSet,spinIndex,degeneracy);
-      else
-        readDataOMP<RealType,ValueType>(hroot,occSet,spinIndex,degeneracy);
-    }
-
-    //if(complex2real)
-    //{
-    //  if(ompIn == "yes")
-    //    readComplex2RealDataOMP(hroot,occSet,spinIndex,degeneracy);
-    //  else
-    //  {
-    //    if(TranslateGrid)
-    //    {
-    //      readComplex2RealDataWithTruncation(hroot,occSet,spinIndex,degeneracy);
-    //    }
-    //    else
-    //    {
-    //      readComplex2RealData(hroot,occSet,spinIndex,degeneracy);
-    //    }
-    //  }
     //}
     //else
-    //  readData(hroot,occSet,spinIndex,degeneracy);
+    //{
+    //  if(in_complex)
+    //    readDataOMP<ComplexType,ValueType>(hroot,occSet,spinIndex,degeneracy);
+    //  else
+    //    readDataOMP<RealType,ValueType>(hroot,occSet,spinIndex,degeneracy);
+    //}
+
 
     if(degeneracy>1)
     { 
@@ -269,21 +260,29 @@ namespace qmcplusplus {
   {
     if(myParam->Rcut>0.0)
     {
-      for(int iorb=0; iorb<norb; iorb++) 
+      if(myComm->rank()==0)
       {
-        string centerName=myParam->getCenterName(hroot,occSet[iorb]);
-        HDFAttribIO<PosType > cdummy(activeBasis->Centers[iorb]);
-        cdummy.read(hfileID,centerName.c_str());
+        for(int iorb=0; iorb<norb; iorb++) 
+        {
+          string centerName=myParam->getCenterName(hroot,occSet[iorb]);
+          HDFAttribIO<PosType > cdummy(activeBasis->Centers[iorb]);
+          cdummy.read(hfileID,centerName.c_str());
+        }
       }
+      myComm->bcast(activeBasis->Centers);
     }
     if(FloatingGrid)
     {
-      for(int iorb=0; iorb<norb; iorb++) 
+      if(myComm->rank() ==0)
       {
-        string originName=myParam->getOriginName(hroot,occSet[iorb]);
-        HDFAttribIO<PosType > cdummy(activeBasis->Origins[iorb]);
-        cdummy.read(hfileID,originName.c_str());
+        for(int iorb=0; iorb<norb; iorb++) 
+        {
+          string originName=myParam->getOriginName(hroot,occSet[iorb]);
+          HDFAttribIO<PosType > cdummy(activeBasis->Origins[iorb]);
+          cdummy.read(hfileID,originName.c_str());
+        }
       }
+      myComm->bcast(activeBasis->Origins);
     }
   }
 

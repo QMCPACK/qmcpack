@@ -22,11 +22,13 @@
 #include "Configuration.h"
 #include "OhmmsData/ParameterSet.h"
 #include "Numerics/HDFNumericAttrib.h"
+#include "Message/MPIObjectBase.h"
 
 namespace qmcplusplus {
   /** class to handle various name conventions for hdf5 file
    */
-  struct PWParameterSet {
+  struct PWParameterSet: public MPIObjectBase
+  {
     ///true if spin channel exists
     bool hasSpin;
     ///version

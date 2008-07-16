@@ -54,6 +54,9 @@ namespace qmcplusplus {
 
     ReportEngine PRE(ClassName,"put(xmlNodePtr)");
 
+    //propagate the communicator
+    myParam->initCommunicator(myComm);
+
     curH5Fname.clear();
 
     //save the name of current HDF5 file name
@@ -155,16 +158,25 @@ namespace qmcplusplus {
 
     PRE <<"HDF5 File = " << curH5Fname << "\n";
 
-    hfileID = H5Fopen(curH5Fname.c_str(),H5F_ACC_RDWR,H5P_DEFAULT);
+    if(is_manager()) 
+      hfileID = H5Fopen(curH5Fname.c_str(),H5F_ACC_RDWR,H5P_DEFAULT);
+    else
+      hfileID = -1;
+
     //check the version
     myParam->checkVersion(hfileID);
+
     //check htag multiple times
     myParam->put(rootNode);
     myParam->put(cur);
 
-    string tname=myParam->getTwistAngleName();
-    HDFAttribIO<PosType> hdfobj_twist(TwistAngle);
-    hdfobj_twist.read(hfileID,tname.c_str());
+    if(is_manager())
+    {
+      string tname=myParam->getTwistAngleName();
+      HDFAttribIO<PosType> hdfobj_twist(TwistAngle);
+      hdfobj_twist.read(hfileID,tname.c_str());
+    }
+    myComm->bcast(TwistAngle);
     PRE<<"Twist-angle " << TwistAngle << "\n";
 
     //stage 2: analyze the supercell to choose a specialized bspline function
@@ -259,6 +271,7 @@ namespace qmcplusplus {
       //initialize the grid
       initGrid();
 
+
       myBasis[detname]=activeBasis;
       activeBasis->setOrbitalSetSize(norb);
       //activeBasis->setLattice(targetPtcl.Lattice);
@@ -274,8 +287,11 @@ namespace qmcplusplus {
       activeBasis=(*git).second;
     }
 
-    H5Fclose(hfileID);
-    hfileID=-1;
+    if(hfileID>-1)
+    {
+      H5Fclose(hfileID);
+      hfileID=-1;
+    }
     PRE << "Bspline Input = " << t1.elapsed() << " secs\n";
 
     //incremenet SPOSize
@@ -286,56 +302,52 @@ namespace qmcplusplus {
 
   void TricubicBsplineSetBuilder::initGrid()
   {
-    //check the grid here
-    herr_t status = H5Eset_auto(NULL, NULL);
-    char gname[64];
-    sprintf(gname,"/%s/grid",myParam->eigTag.c_str());
-    status = H5Gget_objinfo (hfileID, gname, 0, NULL);
-    if(status == 0) {
-      hid_t g_in=H5Gopen(hfileID,gname);
-      HDFAttribIO<TinyVector<int,DIM> > box_in(BoxGrid);
-      box_in.read(g_in,"dimensions");
-      PosType spacing;
-      HDFAttribIO<PosType> spacing_in(spacing);
-      spacing_in.read(g_in,"spacing");
+    if(is_manager())
+    {
+      //check the grid here
+      herr_t status = H5Eset_auto(NULL, NULL);
+      char gname[64];
+      sprintf(gname,"/%s/grid",myParam->eigTag.c_str());
+      status = H5Gget_objinfo (hfileID, gname, 0, NULL);
+      if(status == 0) {
+        hid_t g_in=H5Gopen(hfileID,gname);
+        HDFAttribIO<TinyVector<int,DIM> > box_in(BoxGrid);
+        box_in.read(g_in,"dimensions");
+        PosType spacing;
+        HDFAttribIO<PosType> spacing_in(spacing);
+        spacing_in.read(g_in,"spacing");
 
-      int yes=1;
-      HDFAttribIO<int> tg(yes);
-      tg.read(g_in,"translated");
-      if(yes) 
-      {
-        TranslateGrid=false;
-        FloatingGrid=true;
-      }
+        int yes=1;
+        HDFAttribIO<int> tg(yes);
+        tg.read(g_in,"translated");
+        if(yes) 
+        {
+          TranslateGrid=false;
+          FloatingGrid=true;
+        }
 
-      tg.read(g_in,"closed");
-      if(yes) 
-      {
-        OpenEndGrid=false;
-        UpperBox[0]=spacing[0]*(BoxGrid[0]-1);
-        UpperBox[1]=spacing[1]*(BoxGrid[1]-1);
-        UpperBox[2]=spacing[2]*(BoxGrid[2]-1);
-      }
-      else
-      {
-        OpenEndGrid=true;
-        UpperBox[0]=spacing[0]*BoxGrid[0];
-        UpperBox[1]=spacing[1]*BoxGrid[1];
-        UpperBox[2]=spacing[2]*BoxGrid[2];
+        tg.read(g_in,"closed");
+        if(yes) 
+        {
+          OpenEndGrid=false;
+          UpperBox[0]=spacing[0]*(BoxGrid[0]-1);
+          UpperBox[1]=spacing[1]*(BoxGrid[1]-1);
+          UpperBox[2]=spacing[2]*(BoxGrid[2]-1);
+        }
+        else
+        {
+          OpenEndGrid=true;
+          UpperBox[0]=spacing[0]*BoxGrid[0];
+          UpperBox[1]=spacing[1]*BoxGrid[1];
+          UpperBox[2]=spacing[2]*BoxGrid[2];
+        }
       }
     }
 
-    //TESTING BC
-    //if(OpenEndGrid)
-    //  activeBasis->setGrid(LowerBox[0],UpperBox[0], LowerBox[1],UpperBox[1],LowerBox[2],UpperBox[2],
-    //      BoxGrid[0],BoxGrid[1],BoxGrid[2],
-    //      targetPtcl.Lattice.BoxBConds[0],targetPtcl.Lattice.BoxBConds[1],targetPtcl.Lattice.BoxBConds[2],
-    //      OpenEndGrid);
-    //else//need to offset for closed end
-    //  activeBasis->setGrid(LowerBox[0],UpperBox[0],LowerBox[1],UpperBox[1],LowerBox[2],UpperBox[2],
-    //      BoxGrid[0]-1,BoxGrid[1]-1,BoxGrid[2]-1,
-    //      targetPtcl.Lattice.BoxBConds[0],targetPtcl.Lattice.BoxBConds[1],targetPtcl.Lattice.BoxBConds[2],
-    //      OpenEndGrid);
+    myComm->bcast(OpenEndGrid);
+    myComm->bcast(BoxGrid);
+    myComm->bcast(UpperBox);
+
     if(OpenEndGrid)
       activeBasis->setGrid(LowerBox[0],UpperBox[0], LowerBox[1],UpperBox[1],LowerBox[2],UpperBox[2],
           BoxGrid[0],BoxGrid[1],BoxGrid[2],

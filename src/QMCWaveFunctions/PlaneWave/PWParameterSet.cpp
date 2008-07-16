@@ -20,6 +20,7 @@
 #include "QMCWaveFunctions/PlaneWave/PWParameterSet.h"
 #include "Utilities/OhmmsInfo.h"
 #include "Message/Communicate.h"
+#include "Message/CommOperators.h"
 
 namespace qmcplusplus {
   PWParameterSet::PWParameterSet():
@@ -65,27 +66,36 @@ namespace qmcplusplus {
 
   bool PWParameterSet::getEigVectorType(hid_t h)
   {
-    ostringstream oss;
-    oss << "/"<<eigTag << "/"<<twistTag<<twistIndex << "/"<< bandTag << 0;
-    //if(version[1]==10)
-    if(hasSpin) oss << "/" << spinTag << 0;
-    oss << "/eigenvector";
+    int rank=0;
+    if(is_manager())
+    {
+      ostringstream oss;
+      oss << "/"<<eigTag << "/"<<twistTag<<twistIndex << "/"<< bandTag << 0;
+      //if(version[1]==10)
+      if(hasSpin) oss << "/" << spinTag << 0;
+      oss << "/eigenvector";
 
-    hsize_t dimTot[4];
-    hid_t dataset = H5Dopen(h,oss.str().c_str());
-    hid_t dataspace = H5Dget_space(dataset);
-    int rank = H5Sget_simple_extent_ndims(dataspace);
-    int status_n = H5Sget_simple_extent_dims(dataspace, dimTot, NULL);
+      hsize_t dimTot[4];
+      hid_t dataset = H5Dopen(h,oss.str().c_str());
+      hid_t dataspace = H5Dget_space(dataset);
+      rank = H5Sget_simple_extent_ndims(dataspace);
+      int status_n = H5Sget_simple_extent_dims(dataspace, dimTot, NULL);
+    }
+    myComm->bcast(rank);
     return rank==4;
   }
 
   bool PWParameterSet::hasComplexData(hid_t h_file) 
   {
-    ostringstream oss;
-    oss << paramTag << "/complex_coefficients";
     int iscomplex=0;
-    HDFAttribIO<int> creader(iscomplex);
-    creader.read(h_file,oss.str().c_str());
+    if(is_manager())
+    {
+      ostringstream oss;
+      oss << paramTag << "/complex_coefficients";
+      HDFAttribIO<int> creader(iscomplex);
+      creader.read(h_file,oss.str().c_str());
+    }
+    myComm->bcast(iscomplex);
     return iscomplex;
   }
 
@@ -175,32 +185,38 @@ namespace qmcplusplus {
 
   void PWParameterSet::checkVersion(hid_t h)
   {
-    hid_t dataset=H5Dopen(h,"version");
-    hid_t datatype=H5Dget_type(dataset);   
-    H5T_class_t classtype = H5Tget_class(datatype);
-    H5Tclose(datatype);
-    H5Dclose(dataset);
 
-    if(classtype == H5T_INTEGER)
+    if(is_manager())
     {
-      HDFAttribIO<TinyVector<int,2> > hdfver(version);
-      hdfver.read(h,"version");
+      hid_t dataset=H5Dopen(h,"version");
+      hid_t datatype=H5Dget_type(dataset);   
+      H5T_class_t classtype = H5Tget_class(datatype);
+      H5Tclose(datatype);
+      H5Dclose(dataset);
+
+      if(classtype == H5T_INTEGER)
+      {
+        HDFAttribIO<TinyVector<int,2> > hdfver(version);
+        hdfver.read(h,"version");
+      }
+      else if(classtype == H5T_FLOAT)
+      {
+        TinyVector<double,2> vt;
+        HDFAttribIO<TinyVector<double,2> > hdfver(vt);
+        hdfver.read(h,"version");
+        version[0]=int(vt[0]);
+        version[1]=int(vt[1]);
+      }
+      //else
+      //{
+      //  APP_ABORT("PWParameterSet::checkVersion  The type of version is not integer or double.");
+      //}
     }
-    else if(classtype == H5T_FLOAT)
-    {
-      TinyVector<double,2> vt;
-      HDFAttribIO<TinyVector<double,2> > hdfver(vt);
-      hdfver.read(h,"version");
-      version[0]=int(vt[0]);
-      version[1]=int(vt[1]);
-    }
-    else
-    {
-      app_error() << "  The type of version is not integer or double." << classtype << endl;
-      OHMMS::Controller->abort();
-    }
+
+    myComm->bcast(version);
 
     app_log() << "\tWavefunction HDF version: " << version[0] << "." << version[1] << endl;
+
     if(version[0] == 0)
     { 
       if(version[1] == 11)
