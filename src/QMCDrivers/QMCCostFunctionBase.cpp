@@ -670,30 +670,35 @@ namespace qmcplusplus {
     while(cit != cit_end)
     {
       string rname((*cit).first);
+      int count=0;
       OhmmsAttributeSet cAttrib;
       string datatype("none");
       string aname("0");
       cAttrib.add(datatype,"type");
       cAttrib.add(aname,"id");
+      cAttrib.add(count,"size");
       cAttrib.put((*cit).second);
 
       if(datatype == "Array")
       { // 
-        aname.append("_");
-        OptimizableSetType::iterator vit(OptVariablesForPsi.begin());
-        vector<Return_t> c;
-        while(vit != OptVariablesForPsi.end())
+        cAttrib.put((*cit).second->parent);
+        vector<Return_t> c(count);
+        bool foundit=false;
+        for(int i=0; i<count; ++i)
         {
-          if((*vit).first.find(aname) == 0)
-          {
-            c.push_back((*vit).second);
-          }
-          ++vit;
+          char myname[16];
+          sprintf(myname,"%s_%d",aname.c_str(),i);
+          OptimizableSetType::iterator vit = OptVariablesForPsi.find(myname);
+          if(vit != OptVariablesForPsi.end()) 
+          { foundit=true; c[i]=(*vit).second;}
         }
-	xmlNodePtr contentPtr = cit->second;
-	if (xmlNodeIsText(contentPtr->children))
-	  contentPtr = contentPtr->children;
-        getContent(c,contentPtr);
+        if(foundit)
+        {
+          xmlNodePtr contentPtr = cit->second;
+          if (xmlNodeIsText(contentPtr->children))
+            contentPtr = contentPtr->children;
+          getContent(c,contentPtr);
+        }
       }
       else
       {
