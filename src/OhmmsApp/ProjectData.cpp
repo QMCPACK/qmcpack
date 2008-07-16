@@ -14,27 +14,17 @@
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 
-//#include <iostream>
-//#include <vector>
-//#include <string>
-//#include <sstream>
-//using namespace std;
-
 #include "OhmmsApp/ProjectData.h"
 #include "Message/Communicate.h"
 #include "Platforms/sysutil.h"
-#if defined(HAVE_LIBBOOST) && !defined(__xlC__) && !defined(__PGI)
-#include <boost/date_time/posix_time/posix_time.hpp>
-#endif
 
-namespace APPNAMESPACE {
+namespace qmcplusplus {
 
   //----------------------------------------------------------------------------
   // ProjectData
   //----------------------------------------------------------------------------
   // constructors and destructors
   ProjectData::ProjectData(const char* aname): 
-    OhmmsElementBase(aname), 
     m_title("asample"),
     m_user("none"), 
     m_host("none"), 
@@ -43,6 +33,13 @@ namespace APPNAMESPACE {
     m_cur(0)
   { 
     myComm=OHMMS::Controller;
+    if(aname==0)
+    {
+      m_title=getDateAndTime("%Y%m%dT%H%M");
+      setName(m_title);
+    }
+    else
+      setName(aname);
   }
 
   void  ProjectData::setCommunicator(Communicate* c)
@@ -52,12 +49,8 @@ namespace APPNAMESPACE {
 
   bool ProjectData::get(ostream& os) const
   {
-    //os << "<Project ID=\""<<m_title << "\" series=\"" << m_series << "/>" << endl;
     os << "  Project = " << m_title << "\n";
-#if defined(HAVE_LIBBOOST) && !defined(__xlC__) && !defined(__PGI)
-    using namespace boost::posix_time;
-    os << "  date    = " << boost::posix_time::second_clock::local_time() << "\n";
-#endif
+    os << "  date    = " << getDateAndTime("%Y-%m-%d %H:%M:%S %Z\n");
     os << "  host    = " << m_host << "\n";
     os << "  user    = " << m_user << "\n";
     return true;
@@ -117,29 +110,46 @@ namespace APPNAMESPACE {
    */
   void ProjectData::reset() {
 
-    char fileroot[128], nextroot[128];
-    sprintf(fileroot,"%s.s%03d",m_title.c_str(),m_series);
+    int nproc_g = OHMMS::Controller->size();
+    int nproc = myComm->size();
+    int nodeid = myComm->rank(); 
+    int groupid=myComm->getGroupID();
+
+    char fileroot[256], nextroot[256];
+    if(nproc_g == nproc)
+      sprintf(fileroot,"%s.s%03d",m_title.c_str(),m_series);
+    else
+      sprintf(fileroot,"%s.g%03d.s%03d",m_title.c_str(),groupid,m_series);
+
     m_projectmain=fileroot;
 
     //set the communicator name
     myComm->setName(fileroot);
 
-    int nproc = myComm->size();
-    int nodeid = myComm->rank(); 
-    //int nproc = Controller->ncontexts();
-    //int nodeid = Controller->mycontext(); 
-    if(nproc > 1) {
-      sprintf(fileroot,".s%03d.p%03d", m_series,nodeid);
-      sprintf(nextroot,".s%03d.p%03d", m_series+1,nodeid);
-    } else {
-      sprintf(fileroot,".s%03d", m_series);
-      sprintf(nextroot,".s%03d", m_series+1);
+    if(nproc_g == nproc)
+    {
+      if(nproc > 1) {
+        sprintf(fileroot,".s%03d.p%03d", m_series,nodeid);
+        sprintf(nextroot,".s%03d.p%03d", m_series+1,nodeid);
+      } else {
+        sprintf(fileroot,".s%03d", m_series);
+        sprintf(nextroot,".s%03d", m_series+1);
+      }
+    }
+    else
+    {
+      if(nproc > 1) {
+        sprintf(fileroot,".g%03d.s%03d.p%03d", groupid,m_series,nodeid);
+        sprintf(nextroot,".g%03d.s%03d.p%03d", groupid,m_series+1,nodeid);
+      } else {
+        sprintf(fileroot,".g%03d.s%03d", groupid,m_series);
+        sprintf(nextroot,".g%03d.s%03d", groupid,m_series+1);
+      }
     }
     m_projectroot = m_title;
     m_projectroot.append(fileroot);
     m_nextroot = m_title;
     m_nextroot.append(nextroot);
-
 
     std::stringstream s;
     s << m_series+1;
@@ -152,14 +162,23 @@ namespace APPNAMESPACE {
     oldroot.erase(oldroot.begin(), oldroot.end());
     if(m_series) {
       char fileroot[128];
+      int nproc_g = OHMMS::Controller->size();
       int nproc = myComm->size();
       int nodeid = myComm->rank(); 
-      //int nproc = Controller->ncontexts();
-      //int nodeid = Controller->mycontext(); 
-      if(nproc > 1) {
-	sprintf(fileroot,".s%03d.p%03d", m_series-1,nodeid);
-      } else {
-	sprintf(fileroot,".s%03d", m_series-1);
+      int groupid=myComm->getGroupID();
+      if(nproc_g == nproc)
+      {
+        if(nproc > 1) 
+          sprintf(fileroot,".s%03d.p%03d", m_series-1,nodeid);
+        else 
+          sprintf(fileroot,".s%03d", m_series-1);
+      }
+      else
+      {
+        if(nproc > 1) 
+          sprintf(fileroot,".g%03d.s%03d.p%03d", groupid,m_series-1,nodeid);
+        else 
+          sprintf(fileroot,".g%03d.s%03d",groupid,m_series-1);
       }
       oldroot = m_title;
       oldroot.append(fileroot);

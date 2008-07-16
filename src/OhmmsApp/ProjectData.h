@@ -14,8 +14,8 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef OHMMS_PROJECTDATA_H__
-#define OHHMS_PROJECTDATA_H__
+#ifndef QMCPLUSPLUS_PROJECTDATA_H__
+#define QMCPLUSPLUS_PROJECTDATA_H__
 
 #include "OhmmsData/OhmmsElementBase.h"
 //#include <vector>
@@ -24,7 +24,7 @@
 using namespace std;
 #include "Message/Communicate.h"
 
-namespace APPNAMESPACE {
+namespace qmcplusplus {
 
   /**class ProjectData
    *\brief Encapsulate data for a project
@@ -36,7 +36,7 @@ namespace APPNAMESPACE {
   struct ProjectData: public OhmmsElementBase {
 
     /// constructor
-    ProjectData(const char* aname="project");
+    ProjectData(const char* aname=0);
     
     bool get(ostream& os) const;
     bool put(istream& is);
