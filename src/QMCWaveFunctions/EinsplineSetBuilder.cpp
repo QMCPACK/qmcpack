@@ -442,7 +442,7 @@ namespace qmcplusplus {
 	P.R[i] = PosType (0.0, 0.0, 0.0);
       PosType N = 0.25*PrimCell.a(0) + 0.25*PrimCell.a(1) + 0.25*PrimCell.a(2);
       //for (double x=1.0e-4; x<=1.0; x+=0.0000500113412) {
-	for (double x=-0.00001; x<=0.00001; x+=0.000000011329343481381) {
+	for (double x=-0.001; x<=0.001; x+=0.00000011329343481381) {
 	P.R[0] = x * (PrimCell.a(0) + 0.9632421*PrimCell.a(1) + 0.893421*PrimCell.a(2));
 	// ElectronIonTable->evaluate(P);
 	double r = std::sqrt(dot(P.R[0], P.R[0]));

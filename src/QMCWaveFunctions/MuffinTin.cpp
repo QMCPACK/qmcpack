@@ -591,12 +591,17 @@ namespace qmcplusplus {
     //fprintf (stderr, "rSmallCore = %1.8f  irSmall = %d\n",
     //         rSmallCore, irSmall); 
     vector<TinyVector<double,2> > BasisFuncs(irSmall+50);
-    vector<double> vals(irSmall+50);
+    vector<double> vals(irSmall+50), rvals(irSmall+50);
     for (int ir=0; ir<irSmall+50; ir++) {
       BasisFuncs[ir][0] = 1.0 - Z/(double)(l+1) * r[ir];
       BasisFuncs[ir][1] = r[ir]*r[ir];
       vals[ir] = g0[ir];
+      rvals[ir] = r[ir];
     }
+    ExpFitClass<4> smallFit;
+    smallFit.FitCusp(rvals, vals, -Z/(double)(l+1));
+    Small_r_Fits.push_back(smallFit);
+
     TinyVector<double,2> coefs;
     TinyVector<double,3> polyCoefs;
     LinFit (vals, BasisFuncs, coefs);
@@ -740,6 +745,7 @@ namespace qmcplusplus {
 	  SmallrCoreCoefs[i][2] * drmag * drmag;
 	du = SmallrCoreCoefs[i][1] + 2.0*SmallrCoreCoefs[i][2]*drmag;
 	d2u = 2.0*SmallrCoreCoefs[i][2];
+	Small_r_Fits[i].eval (drmag, u, du, d2u);
       }
       else if (drmag < CoreRadii[i]) 
 	  eval_NUBspline_1d_d_vgl (CoreSplines[i], drmag, &u, &du, &d2u);
