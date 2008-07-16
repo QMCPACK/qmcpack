@@ -262,15 +262,9 @@ namespace qmcplusplus {
 
           // Setup parameter names
           for (int i=0; i< NumParams; i++) {
-	    char buf[100];
-	    if (NumParams > 10)
-	      snprintf (buf, 100, "%s_%02d", id.c_str(), i);
-	    else
-	      snprintf (buf, 100, "%s_%d", id.c_str(), i);
-	    ParameterNames.push_back(buf);
-            // std::stringstream sstr;
-            // sstr << id << "_" << i;
-            // ParameterNames.push_back(sstr.str());
+            std::stringstream sstr;
+            sstr << id << "_" << i;
+            ParameterNames.push_back(sstr.str());
           }
 
           app_log() << "Parameter     Name      Value\n";
