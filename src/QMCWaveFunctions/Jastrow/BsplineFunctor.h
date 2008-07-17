@@ -49,6 +49,19 @@ namespace qmcplusplus {
     {
     }
 
+    ///copy constructor
+    BsplineFunctor(const BsplineFunctor<T>& rhs) : 
+      Rcut(rhs.Rcut), CuspValue(rhs.CuspValue), 
+      elementType(rhs.elementType),pairType(rhs.pairType)
+    {
+      resize(rhs.NumParams);
+      ParameterNames=rhs.ParameterNames;
+      //ParameterIndex=rhs.ParameterIndex;
+      Parameters=rhs.Parameters;
+      //ParameterNames=rhs.ParameterNames;
+      reset();
+    }
+
     void resize(int n) 
     { 
       NumParams = n;

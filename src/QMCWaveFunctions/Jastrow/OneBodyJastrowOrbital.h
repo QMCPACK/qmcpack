@@ -7,7 +7,6 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
@@ -86,29 +85,30 @@ namespace qmcplusplus {
 
     typedef FT FuncType;
 
-
     ///constructor
     OneBodyJastrowOrbital(const ParticleSet& centers, ParticleSet& els)
-      : CenterRef(centers), d_table(0), FirstAddressOfdU(0), LastAddressOfdU(0){ 
+      : CenterRef(centers), d_table(0), FirstAddressOfdU(0), LastAddressOfdU(0)
+    { 
       U.resize(els.getTotalNum());
       d_table = DistanceTable::add(CenterRef,els);
+      //allocate vector of proper size  and set them to 0
+      Funique.resize(CenterRef.getSpeciesSet().getTotalNum(),0);
+      Fs.resize(CenterRef.getTotalNum(),0);
     }
 
     ~OneBodyJastrowOrbital(){ }
 
     //evaluate the distance table with P
-    void resetTargetParticleSet(ParticleSet& P) {
+    void resetTargetParticleSet(ParticleSet& P) 
+    {
       d_table = DistanceTable::add(CenterRef,P);
     }
 
-    void addFunc(int source_type, FT* afunc) {
-      if(Fs.empty()) {
-        Fs.resize(CenterRef.getTotalNum(),0);
-      }
-      for(int i=0; i<Fs.size(); i++) {
+    void addFunc(int source_type, FT* afunc) 
+    {
+      for(int i=0; i<Fs.size(); i++) 
         if(CenterRef.GroupID[i] == source_type) Fs[i]=afunc;
-      }
-      Funique.push_back(afunc);
+      Funique[source_type]=afunc;
     }
 
     void resetParameters(OptimizableSetType& optVariables) 
@@ -350,6 +350,21 @@ namespace qmcplusplus {
       return std::exp(-sumu);
     }
 
+    OrbitalBasePtr makeClone(ParticleSet& tqp) const
+    {
+      OneBodyJastrowOrbital<FT>* j1copy=new OneBodyJastrowOrbital<FT>(CenterRef,tqp);
+      for(int i=0; i<Funique.size(); ++i)
+      {
+        if(Funique[i]) j1copy->addFunc(i,new FT(*Funique[i]));
+      }
+      //j1copy->OrbitalName=OrbitalName+"_clone";
+      return j1copy;
+    }
+
+    void copyFrom(const OrbitalBase& old)
+    {
+      //nothing to do
+    }
   };
 
 }
