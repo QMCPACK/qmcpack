@@ -441,9 +441,10 @@ namespace qmcplusplus {
       for (int i=0; i<P.R.size(); i++)
 	P.R[i] = PosType (0.0, 0.0, 0.0);
       PosType N = 0.25*PrimCell.a(0) + 0.25*PrimCell.a(1) + 0.25*PrimCell.a(2);
-      //for (double x=1.0e-4; x<=1.0; x+=0.0000500113412) {
-	for (double x=-0.001; x<=0.001; x+=0.0000011329343481381) {
-	P.R[0] = x * (PrimCell.a(0) + 0.9632421*PrimCell.a(1) + 0.893421*PrimCell.a(2));
+      for (double x=-1.0; x<=1.0; x+=0.0000500113412) {
+	// for (double x=-0.001; x<=0.001; x+=0.0000011329343481381) {
+	P.R[0] = x * (PrimCell.a(0) + 0.9632421*PrimCell.a(1) + 
+		      0.893421*PrimCell.a(2));
 	// ElectronIonTable->evaluate(P);
 	double r = std::sqrt(dot(P.R[0], P.R[0]));
 	double rN = std::sqrt(dot(P.R[0]-N, P.R[0]-N));
@@ -1378,16 +1379,24 @@ namespace qmcplusplus {
 	  int numYlm = (lmax+1)*(lmax+1);
 	  Array<complex<double>,2> 
 	    u_lm_r(numYlm, MT_APW_num_radial_points[tin]);
+	  Array<complex<double>,1> du_lm_dr (numYlm);
 	  if (root) {
 	    int ti   = SortBands[iorb].TwistIndex;
 	    int bi   = SortBands[iorb].BandIndex;
-	    string dataName = MuffinTinPath (ti, bi,tin) + "u_lm_r";
+	    string uName  = MuffinTinPath (ti, bi,tin) + "u_lm_r";
+	    string duName = MuffinTinPath (ti, bi,tin) + "du_lm_dr";
 	    HDFAttribIO<Array<complex<double>,2> > h_u_lm_r(u_lm_r);
-	    h_u_lm_r.read(H5FileID, dataName.c_str());
+	    HDFAttribIO<Array<complex<double>,1> > h_du_lm_dr(du_lm_dr);
+	    h_u_lm_r.read(H5FileID, uName.c_str());
+	    h_du_lm_dr.read(H5FileID, duName.c_str());
+	    // for (int i=0; i<du_lm_dr.size(); i++)
+	    //   fprintf (stderr, "du_lm_dr(%d) = %1.8e +%1.8ei\n",
+	    // 	       i, du_lm_dr(i).real(), du_lm_dr(i).imag());
 	  }
 	  myComm->bcast(u_lm_r);
+	  myComm->bcast(du_lm_dr);
 	  double Z = (double)IonTypes(tin);
-	  OrbitalSet->MuffinTins[tin].set_APW (ival, k, u_lm_r, Z);
+	  OrbitalSet->MuffinTins[tin].set_APW (ival, k, u_lm_r, du_lm_dr, Z);
 	}
 	ival++;
       } // valence state

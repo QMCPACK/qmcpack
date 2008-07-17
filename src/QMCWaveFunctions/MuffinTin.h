@@ -124,6 +124,7 @@ namespace qmcplusplus {
     // The first index of u_lm is l*(l+1)+m.  The second is the radial index.
     void set_APW (int orbNum, TinyVector<double,3> k,
 		  Array<complex<double>,2> &u_lm, 
+		  Array<complex<double>,1> &du_lm_final,
 		  double Z);
     
     bool inside (TinyVector<double,3> r);

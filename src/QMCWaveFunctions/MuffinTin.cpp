@@ -236,6 +236,7 @@ namespace qmcplusplus {
   void
   MuffinTinClass::set_APW (int orbNum, TinyVector<double,3> k,
 			   Array<complex<double>,2> &u_lm,
+			   Array<complex<double>,1> &du_lm_final,
 			   double Z)
   {
     kPoints[orbNum] = k;
@@ -252,6 +253,21 @@ namespace qmcplusplus {
     /////////////////////////////////////////////////////////// 
 
     Array<complex<double>,1> uvec (num_r);
+    
+    double rlast2l = 1.0;
+    int lastr = u_lm.size(1)-1;
+    double rlast = RadialGrid->points[lastr];
+    for (int l=0; l<=lMax; l++)  {
+      for (int m=-l; m<=l; m++) {
+	int lm = l*(l+1) + m;
+	complex<double> u = u_lm(lm,lastr);
+	complex<double> du = du_lm_final(lm);
+	du_lm_final(lm) = (1.0/rlast2l) * (du - (double)l/rlast * u);
+      }
+      rlast2l *= rlast;
+    }
+    
+
     for (int ir=0; ir<num_r; ir++) {
       double r = RadialGrid->points[ir];
       double r2l = 1.0;
@@ -286,15 +302,16 @@ namespace qmcplusplus {
 				  uvec.data());
 
 	BCtype_z rBC;
-	rBC.rCode = NATURAL;
+	rBC.rCode = DERIV1;
 	rBC.lCode = DERIV1;
 	complex<double> u0 = uvec(0);
 	
 	rBC.lVal_r = -Z*u0.real()/(double)(l+1);
 	rBC.lVal_i = -Z*u0.imag()/(double)(l+1);
+	rBC.rVal_r = du_lm_final(lm).real();
+	rBC.rVal_i = du_lm_final(lm).imag();
 
-//  	set_multi_NUBspline_1d_z_BC 
-//  	  (RadialSplines, spline_num, uvec.data(), rBC);
+ 	set_multi_NUBspline_1d_z_BC (RadialSplines, spline_num, uvec.data(), rBC);
       }
     }
   }
