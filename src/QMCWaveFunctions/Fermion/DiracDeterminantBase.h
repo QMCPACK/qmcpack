@@ -46,12 +46,18 @@ namespace qmcplusplus {
     ~DiracDeterminantBase();
   
     /**copy constructor
-     *@brief copy constructor, only resize and assign orbitals
+     * @param s existing DiracDeterminantBase
+     *
+     * This constructor makes a shallow copy of Phi.
+     * Other data members are allocated properly.
      */
     DiracDeterminantBase(const DiracDeterminantBase& s);
 
     DiracDeterminantBase& operator=(const DiracDeterminantBase& s);
 
+    /** return a clone of Phi
+     */
+    SPOSetBasePtr clonePhi() const;
 
     inline IndexType rows() const {
       return NumPtcls;
@@ -148,6 +154,9 @@ namespace qmcplusplus {
 	     ParticleSet::ParticleGradient_t& G, 
 	     ParticleSet::ParticleLaplacian_t& L);
 
+    OrbitalBasePtr makeClone(ParticleSet& tqp) const;
+
+    void copyFrom(const OrbitalBase& old);
 
     bool UseRatioOnly;
     ///The number of particles

@@ -7,7 +7,6 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
@@ -121,6 +120,36 @@ namespace qmcplusplus {
       return r;
     }
 
+  OrbitalBasePtr SlaterDet::makeClone(ParticleSet& tqp) const
+  {
+    map<SPOSetBase*,SPOSetBase*> spomap;
+    SlaterDet* myclone= new SlaterDet;
+    aclone->M=M;
+    aclone->DetID=DetID;
+    for(int i=0; i<Dets.size(); i++) 
+    {
+      map<SPOSetBase*,SPOSetBase*>::iterator it=spomap.find(Dets[i]->Phi);
+      Determinant_t* adet=new Determinant_t(*Dets[i]);
+      if(it == spomap.end())
+      {
+        SPOSetBase* newspo=Dets[i]->clonePhi();
+        spomap[Dets[i]->Phi]=newspo;
+        adet->Phi=newspo;//assign a new SPOSet
+      }
+      else
+      {
+        adet->Phi=(*it).second;//safe to transfer
+      }
+      adet->resetTargetParticleSet(tqp);
+      aclone->add(adet);
+    }
+    return aclone;
+  }
+
+  void SlaterDet::copyFrom(const OrbitalBase& old)
+  {
+    APP_ABORT("SlaterDet::copyFrom should never be used.");
+  }
 }
 /***************************************************************************
  * $RCSfile$   $Author$

@@ -8,7 +8,6 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
@@ -33,13 +32,6 @@ namespace qmcplusplus {
 
   ///default destructor
   DiracDeterminantBase::~DiracDeterminantBase() {}
-
-  /**copy constructor
-   *@brief copy constructor, only resize and assign orbitals
-   */
-  DiracDeterminantBase::DiracDeterminantBase(const DiracDeterminantBase& s): Phi(s.Phi),NP(0){
-    resize(s.NumPtcls, s.NumOrbitals);
-  }
 
   DiracDeterminantBase& DiracDeterminantBase::operator=(const DiracDeterminantBase& s) {
     NP=0;
@@ -417,6 +409,34 @@ namespace qmcplusplus {
       }
       return CurrentDet;
     }
+
+  OrbitalBasePtr DiracDeterminantBase::makeClone(ParticleSet& tqp) const
+  {
+    return 0;
+    //SPOSetBase* sposclone=Phi->makeClone();
+    //DiracDeterminantBase* dclone= new DiracDeterminantBase(sposclone);
+    //dclone->set(FirstIndex,LastIndex-FirstIndex);
+    //dclone->resetTargetParticleSet(tqp);
+    //return dclone;
+  }
+
+  void DiracDeterminantBase::copyFrom(const OrbitalBase& old)
+  {
+    //Phi = old.makeClone();
+  }
+
+  DiracDeterminantBase::DiracDeterminantBase(const DiracDeterminantBase& s): NP(0),Phi(s.Phi)
+  {
+    //Phi=s.makeClone();
+    this->set(s.FirstIndex,s.NumPtcls);
+  }
+
+  SPOSetBasePtr  DiracDeterminantBase::clonePhi() const
+  {
+    SPOSetBase* newspo=Phi->makeClone();
+    return newspo;
+  }
+
 }
 /***************************************************************************
  * $RCSfile$   $Author$
