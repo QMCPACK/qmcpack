@@ -54,6 +54,8 @@ struct OptimizableFunctorBase: public NumericTraits<T> {
   int FirstIndex;
   ///index of the last optimizable variable
   int LastIndex;
+  ///maximum cutoff
+  real_type cutoff_radius;
   ///default constructor
   OptimizableFunctorBase():FirstIndex(0),LastIndex(1) {}
   ///virtual destrutor
