@@ -7,7 +7,6 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
@@ -15,42 +14,38 @@
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 #include "QMCWaveFunctions/OrbitalBase.h"
-#include "QMCWaveFunctions/DiffOrbitalBase.h"
-#include "QMCWaveFunctions/ProxyOrbital.h"
+//#include "QMCWaveFunctions/DiffOrbitalBase.h"
+//#include "QMCWaveFunctions/ProxyOrbital.h"
 
 namespace qmcplusplus {
   OrbitalBase::OrbitalBase(): 
-    Optimizable(true), UseBuffer(true), Counter(0),
+    Optimizable(true), UseBuffer(true), //Counter(0),
     LogValue(1.0),PhaseValue(0.0)
-#if !defined(ENABLE_SMARTPOINTER)
-  ,dPsi(0)
-#endif
+//#if !defined(ENABLE_SMARTPOINTER)
+//  ,dPsi(0)
+//#endif
   { }
 
-  void OrbitalBase::setDiffOrbital(DiffOrbitalBasePtr d)
-  {
-#if defined(ENABLE_SMARTPOINTER)
-    dPsi=DiffOrbitalBasePtr(d);
-#else
-    dPsi=d;
-#endif
-  }
-
-  //void OrbitalBase::checkOutVariables(const opt_variables_type& o)
-  //{
-  //  myVars.getIndex(o);
-  //}
-  void OrbitalBase::evaluateDerivatives(ParticleSet& P, RealType ke0, 
-      const opt_variables_type& active,
-      vector<RealType>& dlogpsi, vector<RealType>& dhpsioverpsi)
-  {
-#if defined(ENABLE_SMARTPOINTER)
-    if(dPsi.get()) 
-#else
-    if(dPsi) 
-#endif
-      dPsi->evaluateDerivatives(P, ke0, active, dlogpsi, dhpsioverpsi);
-  }
+//  void OrbitalBase::setDiffOrbital(DiffOrbitalBasePtr d)
+//  {
+//#if defined(ENABLE_SMARTPOINTER)
+//    dPsi=DiffOrbitalBasePtr(d);
+//#else
+//    dPsi=d;
+//#endif
+//  }
+//
+//  void OrbitalBase::evaluateDerivatives(ParticleSet& P, RealType ke0, 
+//      const opt_variables_type& active,
+//      vector<RealType>& dlogpsi, vector<RealType>& dhpsioverpsi)
+//  {
+//#if defined(ENABLE_SMARTPOINTER)
+//    if(dPsi.get()) 
+//#else
+//    if(dPsi) 
+//#endif
+//      dPsi->evaluateDerivatives(P, ke0, active, dlogpsi, dhpsioverpsi);
+//  }
 
   ///** makeClone uses optVars  to determine if it will make a clone (deepcopy) 
   // * or make a ProxyOrbital.
@@ -72,24 +67,26 @@ namespace qmcplusplus {
 
   /*@todo makeClone should be a pure virtual function 
    */
-  OrbitalBasePtr OrbitalBase::makeClone(ParticleSet& tpq, bool deepcopy)
+  OrbitalBasePtr OrbitalBase::makeClone(ParticleSet& tpq) const
   {
-    if(deepcopy)
-    {
-      APP_ABORT("OrbitalBase::makeClone is not implemented for a deep copy.");
-    }
-
-    return makeProxy(tpq,this);
+    APP_ABORT("OrbitalBase::makeClone cannot be used for a deep copy.");
+    return 0;
   }
 
-  OrbitalBasePtr OrbitalBase::makeProxy(ParticleSet& tpq, OrbitalBase* org)
+  void OrbitalBase::copyFrom(const OrbitalBase& old)
   {
-    OrbitalBase* proxy= new ProxyOrbital(tpq,org);
-#if defined(ENABLE_SMARTPOINTER)
-    return OrbitalBasePtr(proxy);
-#else
-    return proxy;
-#endif
+    APP_ABORT("OrbitalBase::copyFrom needs to be implemented by a derived class.");
+  }
+
+  OrbitalBasePtr OrbitalBase::makeProxy(ParticleSet& tpq)
+  {
+    return 0;
+//    OrbitalBase* proxy= new ProxyOrbital(tpq,org);
+//#if defined(ENABLE_SMARTPOINTER)
+//    return OrbitalBasePtr(proxy);
+//#else
+//    return proxy;
+//#endif
   }
 }
 /***************************************************************************

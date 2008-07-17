@@ -22,12 +22,28 @@
 #include "OhmmsData/RecordProperty.h"
 #include "QMCWaveFunctions/OrbitalTraits.h"
 #include "Optimize/VarList.h"
+#include "QMCWaveFunctions/OrbitalSetTraits.h"
+#if defined(ENABLE_SMARTPOINTER)
+#include <boost/shared_ptr.hpp>
+#endif
 
 /**@file OrbitalBase.h
  *@brief Declaration of OrbitalBase
  */
 namespace qmcplusplus {
 
+  ///forward declaration of OrbitalBase
+  class OrbitalBase;
+  ///forward declaration of DiffOrbitalBase
+  class DiffOrbitalBase;
+
+#if defined(ENABLE_SMARTPOINTER)
+  typedef boost::shared_ptr<OrbitalBase>     OrbitalBasePtr;
+  typedef boost::shared_ptr<DiffOrbitalBase> DiffOrbitalBasePtr;
+#else
+  typedef OrbitalBase*                       OrbitalBasePtr;
+  typedef DiffOrbitalBase*                   DiffOrbitalBasePtr;
+#endif
 
   /**@defgroup OrbitalComponent Orbital group
    * @brief Classes which constitute a many-body trial wave function
@@ -61,7 +77,7 @@ namespace qmcplusplus {
     RealType PhaseValue;
 
     /// default constructor
-    inline OrbitalBase(): Optimizable(true), UseBuffer(true),LogValue(1.0),PhaseValue(0.0){ }
+    OrbitalBase();
 
     ///default destructor
     virtual ~OrbitalBase() { }
@@ -219,6 +235,23 @@ namespace qmcplusplus {
      * Implments the default function that does nothing
      */
     virtual void dumpFromBuffer(ParticleSet& P, BufferType& buf){}
+
+    /** return a proxy orbital of itself
+     */
+    OrbitalBasePtr makeProxy(ParticleSet& tqp);
+    /** make clone 
+     * @param tqp target Quantum ParticleSet
+     * @param deepcopy if true, make a decopy
+     *
+     * If not true, return a proxy class
+     */
+    virtual OrbitalBasePtr makeClone(ParticleSet& tqp) const;
+    /** copy data members from old
+     * @param old existing OrbitalBase from which all the data members are copied.
+     *
+     * It is up to the derived classes to determine to use deep, shallow and mixed copy methods.
+     */
+    virtual void copyFrom(const OrbitalBase& old);
   };
 }
 #endif

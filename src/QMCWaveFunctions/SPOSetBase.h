@@ -53,10 +53,16 @@ namespace qmcplusplus {
     ValueMatrix_t C;
     ///occupation number
     vector<RealType> Occ;
+    ///name of the basis set
+    string className;
 
     /** constructor
      */
-    SPOSetBase():Identity(false),OrbitalSetSize(0),BasisSetSize(0), ActivePtcl(-1), Counter(0) {}
+    SPOSetBase():Identity(false),OrbitalSetSize(0),BasisSetSize(0), ActivePtcl(-1), Counter(0) 
+    {
+      className="invalid";
+    }
+
 
     /** destructor
      */
@@ -121,14 +127,21 @@ namespace qmcplusplus {
     virtual void evaluate(const ParticleSet& P, int first, int last,
         ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet)=0;
 
-    virtual string Type() { return "unknown"; }
-
-    virtual SPOSetBase* clone()
+    /** make a clone of itself
+     */
+    virtual SPOSetBase* makeClone() const
     {
-      app_error() << "SPOSet of type \"" << Type() 
-		  << "\" has not implemented clone.  Aborting.\n";
-      abort();
-    };
+      APP_ABORT("Missing  SPOSetBase::makeClone for "+className);
+      return 0;
+    }
+
+    /** copy from a SPOSetBase
+     * @param old exisiting SPOSetBase from which the data members are copied.
+     */
+    virtual void copyFrom(const SPOSetBase& old)
+    {
+      APP_ABORT("Missing  SPOSetBase::copyFrom for "+className);
+    }
 
 protected:
     bool putOccupation(xmlNodePtr occ_ptr);
