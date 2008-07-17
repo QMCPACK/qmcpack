@@ -141,7 +141,7 @@ namespace qmcplusplus
     WalkerController->setEnergyAndVariance(vParam[B_EREF],vParam[B_SIGMA]);
 
     //determine the branch cutoff to limit wild weights based on the sigma and sigmaBound
-    RealType sigma=std::max(iParam[B_TARGETWALKERS]*vParam[B_SIGMA]*WalkerController->targetSigma,100.0);
+    RealType sigma=std::max(std::sqrt(static_cast<RealType>(iParam[B_TARGETWALKERS]))*vParam[B_SIGMA]*WalkerController->targetSigma,100.0);
     vParam[B_BRANCHCUTOFF]=std::min(sigma,5.0/tau);
     //vParam[B_BRANCHCUTOFF]=vParam[B_SIGMA]*WalkerController->targetSigma;
     vParam[B_BRANCHMAX]=vParam[B_BRANCHCUTOFF]*1.5;
@@ -211,7 +211,7 @@ namespace qmcplusplus
       if(ToDoSteps==0)  //warmup is done
       {
 
-        RealType sigma_eq=iParam[B_TARGETWALKERS]*std::sqrt(EnergyHist.variance());
+        RealType sigma_eq=std::sqrt(iParam[B_TARGETWALKERS]*EnergyHist.variance());
         RealType sigma=std::max(sigma_eq*WalkerController->targetSigma,10.0);
         vParam[B_BRANCHCUTOFF]=std::min(sigma,5.0/vParam[B_TAU]);
         vParam[B_BRANCHMAX]=vParam[B_BRANCHCUTOFF]*1.5;
