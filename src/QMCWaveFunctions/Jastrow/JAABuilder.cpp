@@ -50,6 +50,7 @@ namespace qmcplusplus {
     typedef TwoBodyJastrowOrbital<FN> JeeType;
     JeeType *J2 = new JeeType(targetPtcl);
 
+    RealType rc=targetPtcl.Lattice.WignerSeitzRadius;
     int pairs=0;
     while(cur != NULL) {
       string cname((const char*)(cur->name));
@@ -59,7 +60,7 @@ namespace qmcplusplus {
         string spB("u");
         OhmmsAttributeSet rAttrib;
         rAttrib.add(spA, "speciesA"); rAttrib.add(spA, "species1");
-        rAttrib.add(spB, "speciesB"); rAttrib.add(spA, "species2");
+        rAttrib.add(spB, "speciesB"); rAttrib.add(spB, "species2");
         rAttrib.put(cur);
         if(spA==targetPsi.getName()) //could have used the particle name
         {
@@ -74,6 +75,7 @@ namespace qmcplusplus {
         }
         string pairID=spA+spB;
         FN *j= new FN;
+        j->cutoff_radius=rc;
         j->put(cur);
         j->addOptimizables(targetPsi.VarList);
         J2->addFunc(pairID,ia,ib,j);
