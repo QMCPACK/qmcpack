@@ -124,8 +124,8 @@ namespace qmcplusplus {
   {
     map<SPOSetBase*,SPOSetBase*> spomap;
     SlaterDet* myclone= new SlaterDet;
-    aclone->M=M;
-    aclone->DetID=DetID;
+    myclone->M=M;
+    myclone->DetID=DetID;
     for(int i=0; i<Dets.size(); i++) 
     {
       map<SPOSetBase*,SPOSetBase*>::iterator it=spomap.find(Dets[i]->Phi);
@@ -141,9 +141,9 @@ namespace qmcplusplus {
         adet->Phi=(*it).second;//safe to transfer
       }
       adet->resetTargetParticleSet(tqp);
-      aclone->add(adet);
+      myclone->add(adet);
     }
-    return aclone;
+    return myclone;
   }
 
   void SlaterDet::copyFrom(const OrbitalBase& old)
