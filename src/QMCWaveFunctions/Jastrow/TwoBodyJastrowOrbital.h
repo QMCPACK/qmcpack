@@ -426,6 +426,32 @@ namespace qmcplusplus {
       return std::exp(x); 
     }
 
+    OrbitalBasePtr makeClone(ParticleSet& tqp) const
+    {
+      TwoBodyJastrowOrbital<FT>* j2copy=new TwoBodyJastrowOrbital<FT>(tqp);
+      map<const FT*,FT*> fcmap;
+      for(int ig=0; ig<NumGroups-1; ++ig)
+        for(int jg=ig; jg<NumGroups; ++jg)
+        {
+          int ij=ig*NumGroups+jg;
+          if(F[ij]==0) continue;
+          typename map<const FT*,FT*>::iterator fit=fcmap.find(F[ij]);
+          if(fit == fcmap.end())
+          {
+            FT* fc=new FT(*F[ij]);
+            stringstream aname;
+            aname<<ig<<jg;
+            j2copy->addFunc(aname.str(),ig,jg,fc);
+            fcmap[F[ij]]=fc;
+          }
+        }
+      return j2copy;
+    }
+
+    void copyFrom(const OrbitalBase& old)
+    {
+      //nothing to do
+    }
   };
 }
 #endif
