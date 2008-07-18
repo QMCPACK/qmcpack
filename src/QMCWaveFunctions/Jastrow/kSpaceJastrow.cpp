@@ -191,10 +191,10 @@ namespace qmcplusplus {
 
   kSpaceJastrow::kSpaceJastrow(ParticleSet& ions, ParticleSet& elecs,
 			       SymmetryType oneBodySymm, RealType oneBodyCutoff, 
-			       string oneBodyID, bool oneBodySpin,
+			       string onebodyid, bool oneBodySpin,
 			       SymmetryType twoBodySymm, RealType twoBodyCutoff, 
-			       string twoBodyID, bool twoBodySpin)
-    : Ions(ions), Elecs(elecs)
+			       string twobodyid, bool twoBodySpin)
+    : Ions(ions), Elecs(elecs),OneBodyID(onebodyid),TwoBodyID(twobodyid)
   {
     NumIonSpecies = 0;
     NumElecs = elecs.getLocalNum();
@@ -206,8 +206,8 @@ namespace qmcplusplus {
       sortGvecs (OneBodyGvecs, OneBodySymmCoefs, oneBodySymm);
       for (int i=0; i<OneBodySymmCoefs.size(); i++) {
 	stringstream name_real, name_imag;
-	name_real << oneBodyID << "_" << 2*i;
-	name_imag << oneBodyID << "_" << 2*i+1;
+	name_real << OneBodyID << "_" << 2*i;
+	name_imag << OneBodyID << "_" << 2*i+1;
 	VarMap[name_real.str()] = &(OneBodySymmCoefs[i].cG.real());
 	VarMap[name_imag.str()] = &(OneBodySymmCoefs[i].cG.imag());
       }
@@ -217,7 +217,7 @@ namespace qmcplusplus {
       sortGvecs (TwoBodyGvecs, TwoBodySymmCoefs, twoBodySymm);
       for (int i=0; i<TwoBodySymmCoefs.size(); i++) {
 	stringstream name;
-	name << twoBodyID << "_" << i;
+	name << TwoBodyID << "_" << i;
 	VarMap[name.str()] = &(TwoBodySymmCoefs[i].cG);
       }
     }
@@ -633,6 +633,63 @@ namespace qmcplusplus {
   kSpaceJastrow::put(xmlNodePtr cur, VarRegistry<RealType>& vlist) 
   {
     return true;
+  }
+
+  OrbitalBasePtr kSpaceJastrow::makeClone(ParticleSet& tqp) const
+  {
+    kSpaceJastrow *kj =new kSpaceJastrow(Ions,tqp);
+    kj->copyFrom(*this);
+    return kj;
+  }
+
+  /** constructor to initialize Ions and Elecs
+   */
+  kSpaceJastrow::kSpaceJastrow(const ParticleSet& ions, ParticleSet& els):
+    Ions(ions), Elecs(els) 
+  {
+  }
+
+  void kSpaceJastrow::copyFrom(const OrbitalBase& o)
+  {
+    const kSpaceJastrow& old=dynamic_cast<const kSpaceJastrow&>(o);
+    CellVolume=old.CellVolume;
+    NormConstant=old.NormConstant;
+    NumElecs=old.NumElecs;
+    NumSpins=old.NumSpins;
+    NumIons=old.NumIons;
+    NumIonSpecies=old.NumIonSpecies;
+    OneBodyGvecs=old.OneBodyGvecs;
+    TwoBodyGvecs=old.TwoBodyGvecs;
+    OneBodySymmCoefs=old.OneBodySymmCoefs;
+    TwoBodySymmCoefs=old.TwoBodySymmCoefs;
+    OneBodyCoefs=old.OneBodyCoefs;
+    TwoBodyCoefs=old.TwoBodyCoefs;
+    OneBodySymmType=old.OneBodySymmType;
+    TwoBodySymmType=old.TwoBodySymmType;
+    Ion_rhoG=old.Ion_rhoG;
+    OneBody_rhoG=old.OneBody_rhoG;
+    TwoBody_rhoG=old.TwoBody_rhoG;
+    OneBodyPhase=old.OneBodyPhase;
+    TwoBodyPhase=old.TwoBodyPhase;
+    OneBody_e2iGr=old.OneBody_e2iGr;
+    TwoBody_e2iGr_new=old.TwoBody_e2iGr_new;
+    TwoBody_e2iGr_old=old.TwoBody_e2iGr_old;
+    Delta_e2iGr=old.Delta_e2iGr;
+    OneBodyID=old.OneBodyID;
+    TwoBodyID=old.TwoBodyID;
+
+    for (int i=0; i<OneBodySymmCoefs.size(); i++) {
+      stringstream name_real, name_imag;
+      name_real << OneBodyID << "_" << 2*i;
+      name_imag << OneBodyID << "_" << 2*i+1;
+      VarMap[name_real.str()] = &(OneBodySymmCoefs[i].cG.real());
+      VarMap[name_imag.str()] = &(OneBodySymmCoefs[i].cG.imag());
+    }
+    for (int i=0; i<TwoBodySymmCoefs.size(); i++) {
+      stringstream name;
+      name << TwoBodyID << "_" << i;
+      VarMap[name.str()] = &(TwoBodySymmCoefs[i].cG);
+    }
   }
 }
 

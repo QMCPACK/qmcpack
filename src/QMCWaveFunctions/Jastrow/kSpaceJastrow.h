@@ -111,14 +111,19 @@ namespace qmcplusplus {
     bool Equivalent (PosType G1, PosType G2);
     void StructureFactor(PosType G, std::vector<ComplexType>& rho_G);
     
-    ParticleSet &Ions, &Elecs;
+    const ParticleSet &Ions;
+    ParticleSet &Elecs;
+    std::string OneBodyID;
+    std::string TwoBodyID;
 
   public:
     kSpaceJastrow(ParticleSet& ions, ParticleSet& elecs,
 		  SymmetryType oneBodySymm, RealType oneBodyCutoff, 
-		  string oneBodyID, bool oneBodySpin,
+		  string onebodyid, bool oneBodySpin,
 		  SymmetryType twoBodySymm, RealType twoBodyCutoff, 
-		  string twoBodyID, bool twoBodySpin);
+		  string twobodyid, bool twoBodySpin);
+
+
     void setCoefficients (std::vector<RealType> &oneBodyCoefs,
 			  std::vector<RealType> &twoBodyCoefs);
 
@@ -177,6 +182,11 @@ namespace qmcplusplus {
     // structure factors.  Used to sort the G-vectors according to
     // crystal symmetry
     bool operator()(PosType G1, PosType G2);
+    OrbitalBasePtr makeClone(ParticleSet& tqp) const;
+    void copyFrom(const OrbitalBase& old);
+
+  private:
+    kSpaceJastrow(const ParticleSet& ions, ParticleSet& els);
   };
 }
 #endif
