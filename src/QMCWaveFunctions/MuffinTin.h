@@ -103,8 +103,6 @@ namespace qmcplusplus {
     vector<double> CoreRadii;
     
   public:
-    void copyFrom (const MuffinTinClass &src);
-
     // Which atom this tin corresponds to
     int Atom;
 

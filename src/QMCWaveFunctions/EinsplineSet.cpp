@@ -732,64 +732,11 @@ namespace qmcplusplus {
     return "EinsplineSetExtended";
   }
 
-  EinsplineSet::EinsplineSet (const EinsplineSet& src) :
-    SPOSetBase(src)
-  {
-    className = "EinsplineSet";
-    Orthorhombic   = src.Orthorhombic;
-    Localized      = src.Localized;	 
-    Tiling         = src.Tiling;	 
-    TileFactor     = src.TileFactor; 
-    TileMatrix     = src.TileMatrix; 
-    SuperLattice   = src.SuperLattice;
-    PrimLattice    = src.PrimLattice;
-    TwistVector    = src.TwistVector;
-    kVector        = src.kVector;	 
-    TwistNum       = src.TwistNum;	 
-    GGt            = src.GGt;	 
-    NumValenceOrbs = src.NumValenceOrbs;
-    NumCoreOrbs    = src.NumCoreOrbs;
-    MuffinTins = src.MuffinTins;
-  }
-
-
 
   SPOSetBase*
   EinsplineSetLocal::makeClone() const 
   {
     return new EinsplineSetLocal(*this);
-  }
-
-
-  template<typename StorageType> 
-  EinsplineSetExtended<StorageType>::EinsplineSetExtended(const EinsplineSetExtended<StorageType> &src) :
-    EinsplineSet(src),
-    ValueTimer  ("EinsplineSetExtended::ValueOnly"),
-    VGLTimer    ("EinsplineSetExtended::VGL"),
-    VGLMatTimer ("EinsplineSetExtended::VGLMatrix"),
-    EinsplineTimer("libeinspline")
-  {
-    className = "EinsplineSetExtended";
-    TimerManager.addTimer (&ValueTimer);
-    TimerManager.addTimer (&VGLTimer);
-    TimerManager.addTimer (&VGLMatTimer);
-    TimerManager.addTimer (&EinsplineTimer);
-    
-    // Copy Extended version data
-    MultiSpline = src.MultiSpline;
-    int N = src.StorageValueVector.size();
-    StorageValueVector.resize(N);
-    StorageLaplVector.resize(N); 
-    StorageGradVector.resize(N);
-    StorageHessVector.resize(N);
-    MakeTwoCopies.resize (src.MakeTwoCopies.size());
-    MakeTwoCopies      = src.MakeTwoCopies;
-    kPoints.resize (src.kPoints.size());
-    kPoints            = src.kPoints;
-    phase.resize (src.phase.size());
-    phase              = src.phase;
-    eikr.resize (src.eikr.size());
-    eikr               = src.eikr;
   }
 
   template<typename StorageType> SPOSetBase*

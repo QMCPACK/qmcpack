@@ -720,44 +720,5 @@ namespace qmcplusplus {
     }
   }
 
-  void
-  MuffinTinClass::copyFrom (const MuffinTinClass &src)
-  {
-    PrimLattice         = src.PrimLattice;
-    Center              = src.Center;
-    kPoints.resize(src.kPoints.size());
-    kPoints             = src.kPoints;
-    APWRadius           = src.APWRadius;
-    drMin               = src.drMin;
-    NumOrbitals         = src.NumOrbitals;
-    lMax                = src.lMax;
-    YlmVec.resize (src.YlmVec.size());
-    dYlmVec.resize (src.dYlmVec.size());
-    RadialGrid          = src.RadialGrid;
-    RadialSplines       = src.RadialSplines;
-    iSmall              = src.iSmall;
-    rSmall              = src.rSmall;
-    Small_r_APW_Fits.resize (src.Small_r_APW_Fits.size());
-    Small_r_APW_Fits    = src.Small_r_APW_Fits;
-    RadialVec.resize   (src.RadialVec.size());
-    dRadialVec.resize  (src.dRadialVec.size());
-    d2RadialVec.resize (src.d2RadialVec.size());
-    NumCore             = src.NumCore;
-    CoreSplines.resize (src.CoreSplines.size());
-    CoreSplines         = src.CoreSplines;
-    rSmallCore          = src.rSmallCore;
-    Small_r_Core_Fits.resize (src.Small_r_Core_Fits.size());
-    Small_r_Core_Fits   = src.Small_r_Core_Fits;
-    Large_r_Core_Fits.resize (src.Large_r_Core_Fits.size());
-    Large_r_Core_Fits   = src.Large_r_Core_Fits;
-    LargerCoreCoefs      = src.LargerCoreCoefs;
-    Core_lm.resize (src.Core_lm.size());
-    Core_lm             = src.Core_lm;
-    Core_kVecs.resize (src.Core_kVecs.size());
-    Core_kVecs          = src.Core_kVecs;
-    CoreRadii.resize (src.CoreRadii.size());
-    CoreRadii           = src.CoreRadii;
-    Atom                = src.Atom;
-  }
 
 }

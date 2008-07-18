@@ -91,7 +91,6 @@ namespace qmcplusplus {
     {
       className = "EinsplineSet";
     }
-    EinsplineSet (const EinsplineSet& src);
   };
 
   class EinsplineSetLocal : public EinsplineSet
@@ -118,12 +117,6 @@ namespace qmcplusplus {
     EinsplineSetLocal() 
     {
       className = "EinsplineSetLocal";
-    }
-    EinsplineSetLocal(const EinsplineSetLocal& src) :
-      EinsplineSet(src)
-    {
-      className = "EinsplineSetLocal";
-      Orbitals = src.Orbitals;
     }
   };
 
@@ -232,7 +225,6 @@ namespace qmcplusplus {
     string Type();
     
     SPOSetBase* makeClone() const;
-    EinsplineSetExtended (const EinsplineSetExtended<StorageType> &src);
     
     EinsplineSetExtended() : 
       ValueTimer  ("EinsplineSetExtended::ValueOnly"),
