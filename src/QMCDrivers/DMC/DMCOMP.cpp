@@ -74,8 +74,8 @@ namespace qmcplusplus {
         estimatorClones[ip]->setCollectionMode(false);
 
         Rng[ip]=new RandomGenerator_t(*RandomNumberControl::Children[ip]);
-        Rng[ip]->init(OHMMS::Controller->rank()*NumThreads+ip,
-            NumThreads*OHMMS::Controller->size(),-1);
+        // Rng[ip]->init(OHMMS::Controller->rank()*NumThreads+ip,
+        //     NumThreads*OHMMS::Controller->size(),-1);
         hClones[ip]->setRandomGenerator(Rng[ip]);
 
         branchClones[ip] = new BranchEngineType(*branchEngine);
