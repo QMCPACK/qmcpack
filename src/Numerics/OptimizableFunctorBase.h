@@ -74,6 +74,7 @@ struct OptimizableFunctorBase: public NumericTraits<T> {
     LastIndex=(last>first)?last:first+1;
   }
 
+  virtual  OptimizableFunctorBase<T>* makeClone() const =0;
   /** evaluate the value at r
    * @param r distance
    *
