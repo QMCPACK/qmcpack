@@ -95,6 +95,11 @@ struct GaussianCombo: public OptimizableFunctorBase<T> {
 
   ~GaussianCombo(){ }
 
+  OptimizableFunctorBase<T>* makeClone() const 
+  {
+    return new GaussianCombo<T>(*this);
+  }
+
   void reset();
 
   /** return the number Gaussians

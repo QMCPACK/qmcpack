@@ -44,6 +44,11 @@ struct SlaterCombo: public OptimizableFunctorBase<T> {
 
   ~SlaterCombo(){ }
 
+  OptimizableFunctorBase<T>* makeClone() const 
+  {
+    return new SlaterCombo<T>(*this);
+  }
+
   inline real_type f(real_type r) {
     real_type res=0;
     typename std::vector<Component_t>::iterator it(sset.begin());

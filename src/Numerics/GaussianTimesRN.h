@@ -7,7 +7,6 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
@@ -110,6 +109,11 @@ struct GaussianTimesRN: public OptimizableFunctorBase<T> {
     {}
 
   ~GaussianTimesRN(){ }
+
+  OptimizableFunctorBase<T>* makeClone() const 
+  {
+    return new GaussianTimesRN<T>(*this);
+  }
 
   void resetInternals();
   void resetParameters(OptimizableSetType& vlist)

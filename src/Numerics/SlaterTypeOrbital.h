@@ -93,6 +93,12 @@ struct GenericSTO: public OptimizableFunctorBase<T> {
     resetInternals();
   }
 
+
+  OptimizableFunctorBase<T>* makeClone() const 
+  {
+    return new GenericSTO<T>(*this);
+  }
+
   inline void resetInternals() {
     if(N>0) {
       STONorm<T> anorm(N);
