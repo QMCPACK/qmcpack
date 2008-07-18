@@ -50,15 +50,20 @@ namespace qmcplusplus  {
     inline long  get_num_calls() const  
     { return num_calls;              }
     
-    inline const std::string& get_name() const 
+    inline std::string get_name() const 
     { return name;                   }
 
     inline void reset()           
     { num_calls = 0; total_time=0.0; }
         
-    NewTimer(std::string myname) : 
+    NewTimer(const std::string& myname) : 
       total_time(0.0), num_calls(0), name(myname)
     { }
+
+    void set_name(const std::string& myname)
+    {
+      name=myname;
+    }
   };
 #else /* use boost or pooma */
 #include <sys/time.h>
