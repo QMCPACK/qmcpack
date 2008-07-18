@@ -150,6 +150,8 @@ namespace qmcplusplus {
 
     void reverse();
 
+    TrialWaveFunction* makeClone(ParticleSet& tqp) const;
+
   private:
 
     ///control how ratio is calculated

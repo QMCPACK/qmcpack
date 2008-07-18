@@ -458,6 +458,20 @@ namespace qmcplusplus {
     //int n=Z.size()-1;
     //for(int i=0; i<Z.size(); ++i) Z[n-i]=zcopy[i]; 
   }
+
+  TrialWaveFunction* TrialWaveFunction::makeClone(ParticleSet& tqp)  const
+  {
+    TrialWaveFunction* myclone = new TrialWaveFunction(myComm);
+    for(int i=0; i<Z.size(); ++i)
+      myclone->add(Z[i]->makeClone(tqp),"dummy");
+
+    //rename the timers
+    for(int i=0; i<myTimers.size(); ++i)
+      myclone->myTimers[i]->set_name(myTimers[i]->get_name());
+
+    return myclone;
+
+  }
 }
 /***************************************************************************
  * $RCSfile$   $Author$
