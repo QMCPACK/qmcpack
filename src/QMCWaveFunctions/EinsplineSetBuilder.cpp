@@ -441,10 +441,10 @@ namespace qmcplusplus {
       for (int i=0; i<P.R.size(); i++)
 	P.R[i] = PosType (0.0, 0.0, 0.0);
       PosType N = 0.25*PrimCell.a(0) + 0.25*PrimCell.a(1) + 0.25*PrimCell.a(2);
-      for (double x=-1.0; x<=1.0; x+=0.0000500113412) {
-	// for (double x=-0.001; x<=0.001; x+=0.0000011329343481381) {
-	P.R[0] = x * (PrimCell.a(0) + 0.9632421*PrimCell.a(1) + 
-		      0.893421*PrimCell.a(2));
+      //for (double x=-1.0; x<=1.0; x+=0.0000500113412) {
+	for (double x=-0.003; x<=0.003; x+=0.0000011329343481381) {
+	P.R[0] = x * (PrimCell.a(0) + 0.914*PrimCell.a(1) + 
+		      0.781413*PrimCell.a(2));
 	// ElectronIonTable->evaluate(P);
 	double r = std::sqrt(dot(P.R[0], P.R[0]));
 	double rN = std::sqrt(dot(P.R[0]-N, P.R[0]-N));
