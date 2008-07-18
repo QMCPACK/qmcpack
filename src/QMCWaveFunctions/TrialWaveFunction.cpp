@@ -463,7 +463,7 @@ namespace qmcplusplus {
   {
     TrialWaveFunction* myclone = new TrialWaveFunction(myComm);
     for(int i=0; i<Z.size(); ++i)
-      myclone->add(Z[i]->makeClone(tqp),"dummy");
+      myclone->addOrbital(Z[i]->makeClone(tqp),"dummy");
 
     //rename the timers
     for(int i=0; i<myTimers.size(); ++i)
