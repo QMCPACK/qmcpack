@@ -75,6 +75,7 @@ namespace qmcplusplus {
   {
 
     ReportEngine PRE("RPAPBCConstraints","put");
+    myNode=xmlCopyNode(cur,1);
 
     //capture attribute jastrow/@name
     MyName="Jee";

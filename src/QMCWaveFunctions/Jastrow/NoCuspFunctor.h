@@ -41,6 +41,11 @@ namespace qmcplusplus {
       ///constructor
       NoCuspFunctor(real_type a=1.0, real_type b=1.0) {reset(a,b);}
 
+      OptimizableFunctorBase<T>* makeClone() const 
+      {
+        return new NoCuspFunctor<T>(*this);
+      }
+
       /**
        *@param a NoCusp Jastrow parameter a 
        *@param b NoCusp Jastrow parameter b 

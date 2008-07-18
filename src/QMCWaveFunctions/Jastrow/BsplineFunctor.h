@@ -62,6 +62,11 @@ namespace qmcplusplus {
       reset();
     }
 
+    OptimizableFunctorBase<T>* makeClone() const 
+    {
+      return new BsplineFunctor(*this);
+    }
+
     void resize(int n) 
     { 
       NumParams = n;

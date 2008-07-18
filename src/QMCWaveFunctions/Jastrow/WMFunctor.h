@@ -50,6 +50,12 @@ namespace qmcplusplus {
       {
         reset(b,rc);
       }
+
+      OptimizableFunctorBase<T>* makeClone() const 
+      {
+        return new WMFunctor<T>(*this);
+      }
+
       void reset(real_type b, real_type rc) { 
         B0=b; Rcut=rc; 
         OneOverRc=1.0/Rcut; 

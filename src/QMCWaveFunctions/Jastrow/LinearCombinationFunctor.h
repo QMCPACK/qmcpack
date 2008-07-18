@@ -54,6 +54,21 @@ struct LinearCombinationFunctor: public OptimizableFunctorBase<T>
     ID.reserve(8);
   }
 
+  LinearCombinationFunctor(const LinearCombinationFunctor<T>& old):
+    NumComponents(old.NumComponents), Active(old.Active),C(old.C),ID(old.ID)
+  {
+    Phi.resize(old.size(),0);
+    for(int i=0; i<old.size(); ++i)
+    {
+      Phi[i]=old.Phi[i]->makeClone();
+    }
+  }
+
+  OptimizableFunctorBase<T>* makeClone() const 
+  {
+    return new LinearCombinationFunctor<T>(*this);
+  }
+
   int size() const { return NumComponents;}
 
   void addComponent(ComponentType* func, real_type c,  const std::string& id, 

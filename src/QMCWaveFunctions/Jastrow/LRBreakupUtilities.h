@@ -351,6 +351,14 @@ template<typename T>
         explicit ShortRangePartAdapter(HandlerType* inhandler): Uconst(0) {
           myHandler = inhandler;
         }
+
+        OptimizableFunctorBase<T>* makeClone() const 
+        {
+          APP_ABORT("ShortRangePartAdapter<T>::makeClone() failed");
+          //this is ugly
+          return 0;
+        }
+
         inline void setRmax(real_type rm) { Uconst=myHandler->evaluate(rm,1.0/rm);}
         inline real_type evaluate(real_type r) { return f(r); }
         inline real_type f(real_type r) 

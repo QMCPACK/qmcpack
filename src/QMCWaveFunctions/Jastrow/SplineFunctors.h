@@ -56,6 +56,20 @@ namespace qmcplusplus {
       real_type d2Y;
       ///constructor
       CubicSplineSingle(): InFunc(0) { }
+      CubicSplineSingle(const CubicSplineSingle& old): 
+        NumGridPoints(old.NumGridPoints), Rmax(old.Rmax), GridDelta(old.GridDelta)
+      {
+        if(old.InFunc)
+        {
+          initialize(old.InFunc->makeClone(),old.Rmax,old.NumGridPoints);
+        }
+      }
+
+      OptimizableFunctorBase<RT>* makeClone() const 
+      {
+        return new CubicSplineSingle<RT,FNOUT>(*this);
+      }
+
       ///constructor with arguments
       CubicSplineSingle(FNIN* in_, grid_type* agrid): InFunc(0) 
       {

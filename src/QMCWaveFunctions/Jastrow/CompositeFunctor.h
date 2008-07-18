@@ -162,6 +162,16 @@ namespace qmcplusplus {
       {
       }
 
+      AnyTimesRnFunctor(const AnyTimesRnFunctor<T>& old):Np(old.Np)
+      {
+        myFunc=old.myFunc->makeClone();
+      }
+
+      OptimizableFunctorBase<T>* makeClone() const 
+      {
+        return new AnyTimesRnFunctor<T>(*this);
+      }
+
       inline real_type f(real_type r) {
         return std::pow(r,Np)*myFunc->f(r);
       }
@@ -222,6 +232,11 @@ namespace qmcplusplus {
 
       ///default constructor not to have nan
       CuspCorrectionFunctor():E(1.0),Rmax(1),Rcut(0), RmaxFixed(10){}
+
+      OptimizableFunctorBase<T>* makeClone() const 
+      {
+        return new CuspCorrectionFunctor<T>(*this);
+      }
       /** constructor
        * @param c Cusp condition, i.e., the first derivative at r=0
        * @param e exponent or scaling factor

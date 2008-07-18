@@ -55,6 +55,12 @@ namespace qmcplusplus {
 
       ///default constructor
       PadeFunctor(): Scale(1.0),ID_A("0"),ID_B("0") { }
+
+      OptimizableFunctorBase<T>* makeClone() const 
+      {
+        return new PadeFunctor<T>(*this);
+      }
+
       ///constructor
       explicit PadeFunctor(real_type a, real_type b, real_type s=1.0): 
         Scale(s),ID_A("0"), ID_B("0") 
@@ -161,8 +167,12 @@ namespace qmcplusplus {
       ///constructor
       Pade2ndOrderFunctor(real_type a=1.0, real_type b=1.0, real_type c=1.0) {reset(a,b,c);}
 
-      Pade2ndOrderFunctor(Pade2ndOrderFunctor<T>* func) {
-        reset(1.0,1.0,1.0);
+      //Pade2ndOrderFunctor(Pade2ndOrderFunctor<T>* func) {
+      //  reset(1.0,1.0,1.0);
+      //}
+      OptimizableFunctorBase<T>* makeClone() const 
+      {
+        return new Pade2ndOrderFunctor<T>(*this);
       }
 
       /** reset the internal variables.
@@ -280,6 +290,11 @@ namespace qmcplusplus {
       ///constructor
       explicit ScaledPadeFunctor(real_type a=1.0, real_type b=1.0, real_type c=1.0) 
       {reset(a,b,c);}
+
+      OptimizableFunctorBase<T>* makeClone() const 
+      {
+        return new ScaledPadeFunctor<T>(*this);
+      }
 
       /** reset the internal variables.
        *@param a Pade Jastrow parameter a 

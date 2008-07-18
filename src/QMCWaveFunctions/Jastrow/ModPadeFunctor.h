@@ -50,6 +50,10 @@ namespace qmcplusplus {
         reset(a,b);
       }
 
+      OptimizableFunctorBase<T>* makeClone() const 
+      {
+        return new ModPadeFunctor<T>(*this);
+      }
 
       /** reset the internal variables.
        *@param a New Jastrow parameter a 
