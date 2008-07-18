@@ -135,14 +135,6 @@ namespace qmcplusplus {
       return 0;
     }
 
-    /** copy from a SPOSetBase
-     * @param old exisiting SPOSetBase from which the data members are copied.
-     */
-    virtual void copyFrom(const SPOSetBase& old)
-    {
-      APP_ABORT("Missing  SPOSetBase::copyFrom for "+className);
-    }
-
 protected:
     bool putOccupation(xmlNodePtr occ_ptr);
     bool putFromXML(xmlNodePtr coeff_ptr);

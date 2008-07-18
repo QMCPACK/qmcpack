@@ -721,7 +721,7 @@ namespace qmcplusplus {
   }
 
   void
-  MuffinTinClass::copy (MuffinTinClass &src)
+  MuffinTinClass::copyFrom (const MuffinTinClass &src)
   {
     PrimLattice         = src.PrimLattice;
     Center              = src.Center;

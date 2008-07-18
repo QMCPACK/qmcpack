@@ -77,13 +77,6 @@ namespace qmcplusplus {
     abort();
   }
 
-  SPOSetBase*
-  EinsplineSet::clone() 
-  {
-    app_error() << "Should never instantiate EinsplineSet.\n";
-    abort();
-  }
-
 
   void 
   EinsplineSetLocal::evaluate (const ParticleSet& P, int iat, 
@@ -740,78 +733,66 @@ namespace qmcplusplus {
     return "EinsplineSetExtended";
   }
 
-  SPOSetBase*
-  EinsplineSetLocal::clone() {
-    EinsplineSetLocal *newSet = new EinsplineSetLocal;
-    // Copy base class's  data
-    newSet->Orthorhombic   = Orthorhombic;
-    newSet->Localized      = Localized;
-    newSet->Tiling         = Tiling;
-    newSet->TileFactor     = TileFactor;
-    newSet->TileMatrix     = TileMatrix;
-    newSet->SuperLattice   = SuperLattice;
-    newSet->PrimLattice    = PrimLattice;
-    newSet->TwistVector    = TwistVector;
-    newSet->kVector        = kVector;
-    newSet->TwistNum       = TwistNum;
-    newSet->GGt            = GGt;
-    newSet->NumValenceOrbs = NumValenceOrbs;
-    newSet->NumCoreOrbs    = NumCoreOrbs;
-    
-    // Copy muffin tins
-    newSet->MuffinTins.resize(MuffinTins.size());
+  EinsplineSet::EinsplineSet (const EinsplineSet& src)
+  {
+    className = "EinsplineSet";
+    Orthorhombic   = src.Orthorhombic;
+    Localized      = src.Localized;	 
+    Tiling         = src.Tiling;	 
+    TileFactor     = src.TileFactor; 
+    TileMatrix     = src.TileMatrix; 
+    SuperLattice   = src.SuperLattice;
+    PrimLattice    = src.PrimLattice;
+    TwistVector    = src.TwistVector;
+    kVector        = src.kVector;	 
+    TwistNum       = src.TwistNum;	 
+    GGt            = src.GGt;	 
+    NumValenceOrbs = src.NumValenceOrbs;
+    NumCoreOrbs    = src.NumCoreOrbs;
+    MuffinTins.resize(src.MuffinTins.size());
     for (int i=0; i<MuffinTins.size(); i++)
-      newSet->MuffinTins[i].copy(MuffinTins[i]);
+      MuffinTins[i].copyFrom(src.MuffinTins[i]);
+  }
 
-    newSet->Orbitals.resize(Orbitals.size());
-    newSet->Orbitals = Orbitals;
 
-    return newSet;
+
+  SPOSetBase*
+  EinsplineSetLocal::makeClone() const 
+  {
+    return new EinsplineSetLocal(*this);
+  }
+
+
+  template<typename StorageType> 
+  EinsplineSetExtended<StorageType>::EinsplineSetExtended(const EinsplineSetExtended<StorageType> &src) :
+    ValueTimer  ("EinsplineSetExtended::ValueOnly"),
+    VGLTimer    ("EinsplineSetExtended::VGL"),
+    VGLMatTimer ("EinsplineSetExtended::VGLMatrix"),
+    EinsplineTimer("libeinspline")
+  {
+    className = "EinsplineSetExtended";
+    TimerManager.addTimer (&ValueTimer);
+    TimerManager.addTimer (&VGLTimer);
+    TimerManager.addTimer (&VGLMatTimer);
+    TimerManager.addTimer (&EinsplineTimer);
+    
+    // Copy Extended version data
+    int N = src.StorageValueVector.size();
+    MultiSpline = MultiSpline;
+    StorageValueVector = src.StorageValueVector;
+    StorageLaplVector  = src.StorageLaplVector;
+    StorageGradVector  = src.StorageGradVector;
+    StorageHessVector  = src.StorageHessVector;
+    MakeTwoCopies      = src.MakeTwoCopies;
+    kPoints            = src.kPoints;
+    phase              = src.phase;
+    eikr               = src.eikr;
   }
 
   template<typename StorageType> SPOSetBase*
-  EinsplineSetExtended<StorageType>::clone()
+  EinsplineSetExtended<StorageType>::makeClone() const
   {
-    EinsplineSetExtended<StorageType> *newSet = new EinsplineSetExtended<StorageType>;
-    // Copy base class's  data
-    newSet->Orthorhombic   = Orthorhombic;
-    newSet->Localized      = Localized;
-    newSet->Tiling         = Tiling;
-    newSet->TileFactor     = TileFactor;
-    newSet->TileMatrix     = TileMatrix;
-    newSet->SuperLattice   = SuperLattice;
-    newSet->PrimLattice    = PrimLattice;
-    newSet->TwistVector    = TwistVector;
-    newSet->kVector        = kVector;
-    newSet->TwistNum       = TwistNum;
-    newSet->GGt            = GGt;
-    newSet->NumValenceOrbs = NumValenceOrbs;
-    newSet->NumCoreOrbs    = NumCoreOrbs;
-    
-    // Copy muffin tins
-    newSet->MuffinTins.resize(MuffinTins.size());
-    for (int i=0; i<MuffinTins.size(); i++)
-      newSet->MuffinTins[i].copy(MuffinTins[i]);
-    
-
-    
-
-    // Copy Extended version data
-    newSet->MultiSpline = MultiSpline;
-    int N = StorageValueVector.size();
-    newSet->StorageValueVector.resize(N);
-    newSet->StorageLaplVector.resize(N);
-    newSet->StorageGradVector.resize(N);
-    newSet->StorageHessVector.resize(N);
-    newSet->MakeTwoCopies.resize(MakeTwoCopies.size());
-    newSet->MakeTwoCopies = MakeTwoCopies;
-    newSet->kPoints.resize(kPoints.size());
-    newSet->kPoints = kPoints;
-    newSet->phase.resize(phase.size());
-    newSet->eikr.resize(eikr.size());
-    
-
-    return newSet;
+    return new EinsplineSetExtended<StorageType> (*this);
   }
 
   template class EinsplineSetExtended<complex<double> >;

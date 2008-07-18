@@ -73,16 +73,7 @@ namespace qmcplusplus {
     ///////////////////////////////////////////////
     vector<MuffinTinClass> MuffinTins;
     int NumValenceOrbs, NumCoreOrbs;
-    
-    /////////////////////
-    // Orbital storage //
-    /////////////////////
-    /// Store the orbital objects.  Using template class allows us to
-    /// avoid making separate real and complex versions of this class.
-    //std::vector<EinsplineOrb<ValueType,OHMMS_DIM>*> Orbitals;
-    //std::vector<EinsplineOrb<complex<double>,OHMMS_DIM>*> Orbitals;
-    
-    
+        
   public:  
     UnitCellType GetLattice();
 
@@ -97,11 +88,12 @@ namespace qmcplusplus {
     void resetTargetParticleSet(ParticleSet& e);
     void resetSourceParticleSet(ParticleSet& ions);
     void setOrbitalSetSize(int norbs);
-    SPOSetBase* clone();
     string Type();
     EinsplineSet() :  TwistNum(0)
     {
+      className = "EinsplineSet";
     }
+    EinsplineSet (const EinsplineSet& src);
   };
 
   class EinsplineSetLocal : public EinsplineSet
@@ -117,13 +109,23 @@ namespace qmcplusplus {
     std::vector<EinsplineOrb<complex<double>,OHMMS_DIM>*> Orbitals;
 
   public:
-    SPOSetBase* clone();
+    SPOSetBase* makeClone() const;
     void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi);
     void evaluate(const ParticleSet& P, int iat, 
 		  ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi);
     void evaluate(const ParticleSet& P, int first, int last,
 		  ValueMatrix_t& psi, GradMatrix_t& dpsi, 
 		  ValueMatrix_t& d2psi);
+
+    EinsplineSetLocal() 
+    {
+      className = "EinsplineSetLocal";
+    }
+    EinsplineSetLocal(const EinsplineSetLocal& src) 
+    {
+      className = "EinsplineSetLocal";
+      Orbitals = src.Orbitals;
+    }
   };
 
 
@@ -229,14 +231,17 @@ namespace qmcplusplus {
     void resetTargetParticleSet(ParticleSet& e);
     void setOrbitalSetSize(int norbs);
     string Type();
-    SPOSetBase* clone();
-
+    
+    SPOSetBase* makeClone() const;
+    EinsplineSetExtended (const EinsplineSetExtended<StorageType> &src);
+    
     EinsplineSetExtended() : 
       ValueTimer  ("EinsplineSetExtended::ValueOnly"),
       VGLTimer    ("EinsplineSetExtended::VGL"),
       VGLMatTimer ("EinsplineSetExtended::VGLMatrix"),
       EinsplineTimer("libeinspline")
     {
+      className = "EinsplineSetExtended";
       TimerManager.addTimer (&ValueTimer);
       TimerManager.addTimer (&VGLTimer);
       TimerManager.addTimer (&VGLMatTimer);

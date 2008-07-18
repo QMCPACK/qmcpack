@@ -103,7 +103,7 @@ namespace qmcplusplus {
     vector<double> CoreRadii;
     
   public:
-    void copy (MuffinTinClass &src);
+    void copyFrom (const MuffinTinClass &src);
 
     // The ion particle set
     ParticleSet *IonSet;
