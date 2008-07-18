@@ -33,8 +33,9 @@ namespace qmcplusplus {
 WaveFunctionTester::WaveFunctionTester(MCWalkerConfiguration& w, 
 				       TrialWaveFunction& psi, 
 				       QMCHamiltonian& h):
-  QMCDriver(w,psi,h),checkRatio("no") { 
+  QMCDriver(w,psi,h),checkRatio("no"),checkClone("no") { 
     m_param.add(checkRatio,"ratio","string");
+    m_param.add(checkClone,"clone","string");
   }
 
 
@@ -64,11 +65,12 @@ WaveFunctionTester::run() {
 
   put(qmcNode);
 
-  if(checkRatio == "yes") {
+  if(checkRatio == "yes") 
     runRatioTest();
-  } else {
+  else if (checkClone == "yes") 
+    runCloneTest();
+  else
     runBasicTest();
-  }
 
   RealType ene = H.evaluate(W);
 
@@ -76,6 +78,45 @@ WaveFunctionTester::run() {
 
   return true;
 }
+
+  void WaveFunctionTester::runCloneTest() {
+    TrialWaveFunction &clone = *Psi.makeClone(W);
+    IndexType nskipped = 0;
+    RealType sig2Enloc=0, sig2Drift=0;
+    RealType delta = 0.0001;
+    RealType delta2 = 2*delta;
+    ValueType c1 = 1.0/delta/2.0;
+    ValueType c2 = 1.0/delta/delta;
+    
+    int nat = W.getTotalNum();
+    
+    ParticleSet::ParticlePos_t deltaR(nat);
+    MCWalkerConfiguration::PropertyContainer_t Properties;
+    //pick the first walker
+    MCWalkerConfiguration::Walker_t* awalker = *(W.begin());
+    
+    //copy the properties of the working walker
+    Properties = awalker->Properties;
+    
+    W.R = awalker->R;
+        
+    W.update();
+    ValueType psi1 = Psi.evaluate(W);
+    ValueType psi2 = clone.evaluate(W); 
+    RealType eloc  = H.evaluate(W);
+        
+#if defined(QMC_COMPLEX)
+    ValueType logpsi1(std::log(psi1));
+    ValueType logpsi2(std::log(psi2));
+#else
+    ValueType logpsi1(std::log(std::abs(psi1)));
+    ValueType logpsi2(std::log(std::abs(psi2)));
+#endif
+
+    app_log() << "log (original) = " << logpsi1 << endl;
+    app_log() << "log (clone)    = " << logpsi2 << endl;
+    delete &clone;
+  }
 
 void WaveFunctionTester::runBasicTest() {
   IndexType nskipped = 0;

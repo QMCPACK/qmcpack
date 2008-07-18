@@ -105,10 +105,6 @@ namespace qmcplusplus {
   public:
     void copyFrom (const MuffinTinClass &src);
 
-    // The ion particle set
-    ParticleSet *IonSet;
-    // The electron-ion distance table
-    DistanceTableData *ElectronIonTable;
     // Which atom this tin corresponds to
     int Atom;
 

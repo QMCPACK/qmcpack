@@ -42,7 +42,6 @@ namespace qmcplusplus {
   void
   EinsplineSet::resetSourceParticleSet(ParticleSet& ions)
   {
-    IonSet = &ions;
   }
   
   void
@@ -733,7 +732,8 @@ namespace qmcplusplus {
     return "EinsplineSetExtended";
   }
 
-  EinsplineSet::EinsplineSet (const EinsplineSet& src)
+  EinsplineSet::EinsplineSet (const EinsplineSet& src) :
+    SPOSetBase(src)
   {
     className = "EinsplineSet";
     Orthorhombic   = src.Orthorhombic;
@@ -749,9 +749,7 @@ namespace qmcplusplus {
     GGt            = src.GGt;	 
     NumValenceOrbs = src.NumValenceOrbs;
     NumCoreOrbs    = src.NumCoreOrbs;
-    MuffinTins.resize(src.MuffinTins.size());
-    for (int i=0; i<MuffinTins.size(); i++)
-      MuffinTins[i].copyFrom(src.MuffinTins[i]);
+    MuffinTins = src.MuffinTins;
   }
 
 
@@ -765,6 +763,7 @@ namespace qmcplusplus {
 
   template<typename StorageType> 
   EinsplineSetExtended<StorageType>::EinsplineSetExtended(const EinsplineSetExtended<StorageType> &src) :
+    EinsplineSet(src),
     ValueTimer  ("EinsplineSetExtended::ValueOnly"),
     VGLTimer    ("EinsplineSetExtended::VGL"),
     VGLMatTimer ("EinsplineSetExtended::VGLMatrix"),
@@ -777,15 +776,19 @@ namespace qmcplusplus {
     TimerManager.addTimer (&EinsplineTimer);
     
     // Copy Extended version data
+    MultiSpline = src.MultiSpline;
     int N = src.StorageValueVector.size();
-    MultiSpline = MultiSpline;
-    StorageValueVector = src.StorageValueVector;
-    StorageLaplVector  = src.StorageLaplVector;
-    StorageGradVector  = src.StorageGradVector;
-    StorageHessVector  = src.StorageHessVector;
+    StorageValueVector.resize(N);
+    StorageLaplVector.resize(N); 
+    StorageGradVector.resize(N);
+    StorageHessVector.resize(N);
+    MakeTwoCopies.resize (src.MakeTwoCopies.size());
     MakeTwoCopies      = src.MakeTwoCopies;
+    kPoints.resize (src.kPoints.size());
     kPoints            = src.kPoints;
+    phase.resize (src.phase.size());
     phase              = src.phase;
+    eikr.resize (src.eikr.size());
     eikr               = src.eikr;
   }
 

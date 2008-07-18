@@ -37,13 +37,14 @@ namespace qmcplusplus {
     bool run();
     bool put(xmlNodePtr q);
   private:
-    string checkRatio;
+    string checkRatio, checkClone;
     /// Copy Constructor (disabled)
     WaveFunctionTester(const WaveFunctionTester& a): QMCDriver(a) { }
     /// Copy Operator (disabled)
     WaveFunctionTester& operator=(const WaveFunctionTester&) { return *this;}
     void runRatioTest();
     void runBasicTest();
+    void runCloneTest();
   };
 }
 #endif

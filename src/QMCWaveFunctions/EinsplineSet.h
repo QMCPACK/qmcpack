@@ -65,8 +65,6 @@ namespace qmcplusplus {
     int TwistNum;
     /// metric tensor to handle generic unitcell
     Tensor<RealType,OHMMS_DIM> GGt;
-    ParticleSet *IonSet;
-    DistanceTableData *ElectronIonTable;
 
     ///////////////////////////////////////////////
     // Muffin-tin orbitals from LAPW calculation //
@@ -121,7 +119,8 @@ namespace qmcplusplus {
     {
       className = "EinsplineSetLocal";
     }
-    EinsplineSetLocal(const EinsplineSetLocal& src) 
+    EinsplineSetLocal(const EinsplineSetLocal& src) :
+      EinsplineSet(src)
     {
       className = "EinsplineSetLocal";
       Orbitals = src.Orbitals;

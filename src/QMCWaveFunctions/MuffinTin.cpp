@@ -750,6 +750,7 @@ namespace qmcplusplus {
     Small_r_Core_Fits   = src.Small_r_Core_Fits;
     Large_r_Core_Fits.resize (src.Large_r_Core_Fits.size());
     Large_r_Core_Fits   = src.Large_r_Core_Fits;
+    LargerCoreCoefs      = src.LargerCoreCoefs;
     Core_lm.resize (src.Core_lm.size());
     Core_lm             = src.Core_lm;
     Core_kVecs.resize (src.Core_kVecs.size());
