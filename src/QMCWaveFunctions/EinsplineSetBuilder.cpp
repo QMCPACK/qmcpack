@@ -30,6 +30,8 @@ namespace qmcplusplus {
   std::map<H5OrbSet,multi_UBspline_3d_d*,H5OrbSet>
   EinsplineSetBuilder::ExtendedMap_d;
 
+  std::map<H5OrbSet,SPOSetBase*,H5OrbSet>  EinsplineSetBuilder::SPOSetMap;
+
 
   EinsplineSetBuilder::EinsplineSetBuilder(ParticleSet& p, 
       PtclPoolType& psets, xmlNodePtr cur) 
@@ -304,6 +306,38 @@ namespace qmcplusplus {
     attribs.add (numOrbs,    "norbs");
     attribs.put (cur);
 
+    ///////////////////////////////////////////////
+    // Read occupation information from XML file //
+    ///////////////////////////////////////////////
+    cur = cur->children;
+    int spinSet = -1;
+    while (cur != NULL) {
+      string cname((const char*)(cur->name));
+      if(cname == "occupation") {
+	string occ_mode("ground");
+        OhmmsAttributeSet oAttrib;
+        oAttrib.add(occ_mode,"mode");
+        oAttrib.add(spinSet,"spindataset");
+        oAttrib.put(cur);
+	if(occ_mode != "ground") {
+	  app_error() << "Only ground state occupation currently supported "
+		      << "in EinsplineSetBuilder.\n";
+          APP_ABORT("EinsplineSetBuilder::createSPOSet");
+	}
+      }
+      cur = cur->next;
+    }
+
+
+    H5OrbSet set(H5FileName, spinSet, numOrbs);
+    std::map<H5OrbSet,SPOSetBase*,H5OrbSet>::iterator iter;
+    iter = SPOSetMap.find (set);
+    if (iter != SPOSetMap.end()) {
+      app_log() << "SPOSet parameters match in EinsplineSetBuilder:  cloning EinsplineSet object.\n";
+      return iter->second->makeClone();
+    }
+
+
     // The tiling can be set by a simple vector, (e.g. 2x2x2), or by a
     // full 3x3 matrix of integers.  If the tilematrix was not set in
     // the input file... 
@@ -331,27 +365,6 @@ namespace qmcplusplus {
     else 
       app_log() << "  Reading " << numOrbs << " orbitals from HDF5 file.\n";
 
-    ///////////////////////////////////////////////
-    // Read occupation information from XML file //
-    ///////////////////////////////////////////////
-    cur = cur->children;
-    int spinSet = -1;
-    while (cur != NULL) {
-      string cname((const char*)(cur->name));
-      if(cname == "occupation") {
-	string occ_mode("ground");
-        OhmmsAttributeSet oAttrib;
-        oAttrib.add(occ_mode,"mode");
-        oAttrib.add(spinSet,"spindataset");
-        oAttrib.put(cur);
-	if(occ_mode != "ground") {
-	  app_error() << "Only ground state occupation currently supported "
-		      << "in EinsplineSetBuilder.\n";
-          APP_ABORT("EinsplineSetBuilder::createSPOSet");
-	}
-      }
-      cur = cur->next;
-    }
 
     /////////////////////////////////////////////////////////////////
     // Read the basic orbital information, without reading all the //
@@ -460,7 +473,8 @@ namespace qmcplusplus {
       fclose(fout);
     }
 
-
+    SPOSetMap[set] = OrbitalSet;
+    
     return OrbitalSet;
   }
   

@@ -124,6 +124,9 @@ namespace qmcplusplus {
     
     static std::map<H5OrbSet,multi_UBspline_3d_d*,H5OrbSet> ExtendedMap_d;
     static std::map<H5OrbSet,multi_UBspline_3d_z*,H5OrbSet> ExtendedMap_z;
+    static std::map<H5OrbSet,EinsplineSetExtended<double>*,H5OrbSet> ExtendedSetMap_d;
+    static std::map<H5OrbSet,SPOSetBase*,H5OrbSet> SPOSetMap;
+
 
     xmlNodePtr XMLRoot;
 
