@@ -59,10 +59,10 @@ namespace qmcplusplus {
       init(p);
     }
 
-    ///constructor
-    TwoBodyJastrowOrbital(ParticleSet& p, DistanceTableData* dtable): d_table(dtable) { 
-      init(p);
-    }
+    /////constructor
+    //TwoBodyJastrowOrbital(ParticleSet& p, DistanceTableData* dtable): d_table(dtable) { 
+    //  init(p);
+    //}
 
     ~TwoBodyJastrowOrbital(){ }
 
