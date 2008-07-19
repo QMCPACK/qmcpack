@@ -461,14 +461,9 @@ namespace qmcplusplus {
 
   TrialWaveFunction* TrialWaveFunction::makeClone(ParticleSet& tqp)  const
   {
-    TrialWaveFunction* myclone = new TrialWaveFunction(myComm);
+    TrialWaveFunction* myclone = new TrialWaveFunction(*this);
     for(int i=0; i<Z.size(); ++i)
-      myclone->addOrbital(Z[i]->makeClone(tqp),"dummy");
-
-    //rename the timers
-    for(int i=0; i<myTimers.size(); ++i)
-      myclone->myTimers[i]->set_name(myTimers[i]->get_name());
-
+      myclone->Z[i]=Z[i]->makeClone(tqp);
     return myclone;
 
   }

@@ -183,9 +183,6 @@ namespace qmcplusplus {
     ///differential laplacians
     ParticleSet::ParticleLaplacian_t delta_L;
 
-    ///cannot use copy constructor
-    TrialWaveFunction(const TrialWaveFunction&) {}
-
     TrialWaveFunction();
 
     vector<NewTimer*> myTimers;
