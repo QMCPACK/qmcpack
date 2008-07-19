@@ -58,7 +58,6 @@ namespace qmcplusplus {
     TinyVector<real_type,4> d2a,d2b,d2c;
 
     TricubicBsplineGrid();
-    TricubicBsplineGrid(const TricubicBsplineGrid<T,BC0,BC1,BC2>& rhs);
     TricubicBsplineGrid<T,BC0,BC1,BC2>& operator=(const TricubicBsplineGrid<T,BC0,BC1,BC2>& rhs);
 
     //void setGrid(real_type xi, real_type xf, real_type yi, real_type yf,

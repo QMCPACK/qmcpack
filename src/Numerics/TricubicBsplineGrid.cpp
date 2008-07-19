@@ -43,22 +43,12 @@ inline TricubicBsplineGrid<T,BC0,BC1,BC2>::TricubicBsplineGrid()
 }
 
 template<typename T, int BC0, int BC1, int BC2>
-inline TricubicBsplineGrid<T,BC0,BC1,BC2>::TricubicBsplineGrid(const TricubicBsplineGrid<T,BC0,BC1,BC2>& rhs)
-  :Periodic(rhs.Periodic)
-{
-  setGrid(rhs.gridX,rhs.gridY,rhs.gridZ);
-//  setGrid(rhs.xStart,rhs.xEnd,rhs.yStart,rhs.yEnd,rhs.zStart,rhs.zEnd,
-//      rhs.Nx, rhs.Ny, rhs.Nz, rhs.Interpolating, rhs.Periodic);
-}
-
-template<typename T, int BC0, int BC1, int BC2>
 inline TricubicBsplineGrid<T,BC0,BC1,BC2>&
 TricubicBsplineGrid<T,BC0,BC1,BC2>::operator=(const TricubicBsplineGrid<T,BC0,BC1,BC2>& rhs)
 {
+  Interpolating=rhs.Interpolating;
   Periodic=rhs.Periodic;
   setGrid(rhs.gridX,rhs.gridY,rhs.gridZ);
-  //setGrid(rhs.xStart,rhs.xEnd,rhs.yStart,rhs.yEnd,rhs.zStart,rhs.zEnd,
-  //    rhs.Nx, rhs.Ny, rhs.Nz, rhs.Interpolating, rhs.Periodic);
   return *this;
 }
 
