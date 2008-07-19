@@ -32,7 +32,8 @@ namespace qmcplusplus {
     using OptimizableFunctorBase<T>::LastIndex;
     int NumParams;
     int Dummy;
-    static const real_type A[16], dA[16], d2A[16];
+    const TinyVector<real_type,16> A, dA, d2A;
+    //static const real_type A[16], dA[16], d2A[16];
     real_type Rcut, DeltaR, DeltaRInv;
     real_type CuspValue;
     std::vector<real_type> SplineCoefs;
@@ -45,22 +46,39 @@ namespace qmcplusplus {
 
     ///constructor
     BsplineFunctor(real_type cusp=0.0) : 
-      NumParams(0), Rcut(0.0), CuspValue(cusp)
+      NumParams(0), Rcut(0.0), 
+      A( -1.0/6.0,  3.0/6.0, -3.0/6.0, 1.0/6.0,
+           3.0/6.0, -6.0/6.0,  0.0/6.0, 4.0/6.0,
+          -3.0/6.0,  3.0/6.0,  3.0/6.0, 1.0/6.0,
+           1.0/6.0,  0.0/6.0,  0.0/6.0, 0.0/6.0 ),
+      dA( 0.0, -0.5,  1.0, -0.5,
+          0.0,  1.5, -2.0,  0.0,
+          0.0, -1.5,  1.0,  0.5,
+          0.0,  0.5,  0.0,  0.0),
+      d2A( 0.0, 0.0, -1.0,  1.0,
+          0.0, 0.0,  3.0, -2.0,
+          0.0, 0.0, -3.0,  1.0,
+          0.0, 0.0,  1.0,  0.0),
+      CuspValue(cusp)
     {
     }
 
-    ///copy constructor
-    BsplineFunctor(const BsplineFunctor<T>& rhs) : 
-      Rcut(rhs.Rcut), CuspValue(rhs.CuspValue), 
-      elementType(rhs.elementType),pairType(rhs.pairType)
-    {
-      resize(rhs.NumParams);
-      ParameterNames=rhs.ParameterNames;
-      //ParameterIndex=rhs.ParameterIndex;
-      Parameters=rhs.Parameters;
-      //ParameterNames=rhs.ParameterNames;
-      reset();
-    }
+    /////copy constructor
+    //BsplineFunctor(const BsplineFunctor<T>& rhs) : 
+    //  Rcut(rhs.Rcut), 
+    //  A(rhs.A),dA(rhs.dA),d2A(rhs.d2A),
+    //  CuspValue(rhs.CuspValue), 
+    //  elementType(rhs.elementType),pairType(rhs.pairType)
+    //{
+    //  FirstIndex=rhs.FirstIndex;
+    //  LastIndex=rhs.LastIndex;
+    //  resize(rhs.NumParams);
+    //  ParameterNames=rhs.ParameterNames;
+    //  //ParameterIndex=rhs.ParameterIndex;
+    //  Parameters=rhs.Parameters;
+    //  //ParameterNames=rhs.ParameterNames;
+    //  reset();
+    //}
 
     OptimizableFunctorBase<T>* makeClone() const 
     {
