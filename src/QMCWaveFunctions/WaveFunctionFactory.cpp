@@ -42,6 +42,12 @@ namespace qmcplusplus {
     ClassName="WaveFunctionFactory";
   }
 
+  void WaveFunctionFactory::setPsi(TrialWaveFunction* psi)
+  {
+    this->setName(psi->getName());
+    targetPsi=psi;
+  }
+
   bool WaveFunctionFactory::build(xmlNodePtr cur, bool buildtree) {
 
     ReportEngine PRE(ClassName,"build");

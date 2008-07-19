@@ -50,6 +50,8 @@ namespace qmcplusplus {
 
     ~WaveFunctionFactory();
 
+    void setPsi(TrialWaveFunction* psi);
+
     ///write to ostream
     bool get(std::ostream& ) const;
 
