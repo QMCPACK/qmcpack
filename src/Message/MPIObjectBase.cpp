@@ -27,8 +27,8 @@ namespace APPNAMESPACE
     if(myComm->rank()) ReportLevel=0;
   }
 
-  MPIObjectBase::MPIObjectBase(const MPIObjectBase& a): myComm(0) 
-  {}
+  //MPIObjectBase::MPIObjectBase(const MPIObjectBase& a): myComm(0) 
+  //{}
 
   MPIObjectBase::~MPIObjectBase()
   {}

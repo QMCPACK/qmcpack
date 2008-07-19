@@ -83,9 +83,9 @@ namespace APPNAMESPACE
        */
       std::string ClassName;
 
-    private:
-      //disable copy constructor for now
-      MPIObjectBase(const MPIObjectBase& a);
+    //private:
+    //  //disable copy constructor for now
+    //  MPIObjectBase(const MPIObjectBase& a);
   };
 
 }
