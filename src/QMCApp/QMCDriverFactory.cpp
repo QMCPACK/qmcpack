@@ -244,6 +244,9 @@ namespace qmcplusplus {
       //VMCFactory fac(curQmcModeBits[UPDATE_MODE],cur);
       VMCFactory fac(curQmcModeBits.to_ulong(),cur);
       qmcDriver = fac.create(*qmcSystem,*primaryPsi,*primaryH,*ptclPool,*hamPool);
+      //TESTING CLONE
+      //TrialWaveFunction* psiclone=primaryPsi->makeClone(*qmcSystem);
+      //qmcDriver = fac.create(*qmcSystem,*psiclone,*primaryH,*ptclPool,*hamPool);
     } 
     else if(curRunType == DMC_RUN) 
     {

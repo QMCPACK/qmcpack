@@ -135,15 +135,20 @@ namespace qmcplusplus {
 
       sprintf(oname,"%s.c%i",psi.getName().c_str(),ip);
       // Don't recreate with a factory anymore
-      // otemp[ip]= psiFac->clone(plist[ip],ip,oname);
-      // ptclPool->addParticleSet(plist[ip]);
-      // psiPool->addFactory(otemp[ip]);
-      // olist[ip]=otemp[ip]->targetPsi;
-      // if(ip%2==1) olist[ip]->reverse();
-      
+      //otemp[ip]= psiFac->clone(plist[ip],ip,oname);
+      //ptclPool->addParticleSet(plist[ip]);
+      //psiPool->addFactory(otemp[ip]);
+      //olist[ip]=otemp[ip]->targetPsi;
+
       // Just clone the TrialWaveFunction.
       ptclPool->addParticleSet(plist[ip]);
       olist[ip]=psiFac->targetPsi->makeClone(*plist[ip]);
+      olist[ip]->setName(oname);
+
+      //need to add a WaveFunctionFactory so that Hamiltonian can use them
+      otemp[ip]=new WaveFunctionFactory(*psiFac);//make a shallow copy
+      otemp[ip]->setPsi(olist[ip]);
+      psiPool->addFactory(otemp[ip]);
     }
 
     //find the HamiltonianFactory* to be cloned
