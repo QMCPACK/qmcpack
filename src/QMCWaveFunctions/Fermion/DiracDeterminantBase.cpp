@@ -420,21 +420,15 @@ namespace qmcplusplus {
     //return dclone;
   }
 
-  void DiracDeterminantBase::copyFrom(const OrbitalBase& old)
+  DiracDeterminantBase::DiracDeterminantBase(const DiracDeterminantBase& s): 
+    NP(0),Phi(s.Phi),FirstIndex(s.FirstIndex)
   {
-    //Phi = old.makeClone();
-  }
-
-  DiracDeterminantBase::DiracDeterminantBase(const DiracDeterminantBase& s): NP(0),Phi(s.Phi)
-  {
-    //Phi=s.makeClone();
-    this->set(s.FirstIndex,s.NumPtcls);
+    this->resize(s.NumPtcls,s.NumOrbitals);
   }
 
   SPOSetBasePtr  DiracDeterminantBase::clonePhi() const
   {
-    SPOSetBase* newspo=Phi->makeClone();
-    return newspo;
+    return Phi->makeClone();
   }
 
 }

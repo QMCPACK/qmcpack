@@ -98,8 +98,6 @@ namespace qmcplusplus {
 
     OrbitalBasePtr makeClone(ParticleSet& tqp) const;
 
-    void copyFrom(const OrbitalBase& old);
-
   private:
     vector<int> M;
     vector<int> DetID;

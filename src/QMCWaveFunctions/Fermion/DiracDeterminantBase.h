@@ -156,8 +156,6 @@ namespace qmcplusplus {
 
     OrbitalBasePtr makeClone(ParticleSet& tqp) const;
 
-    void copyFrom(const OrbitalBase& old);
-
     bool UseRatioOnly;
     ///The number of particles
     int NP;
