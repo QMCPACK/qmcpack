@@ -16,12 +16,12 @@ SET(JASTROW_SRCS
   Jastrow/AnyConstraints.cpp
   Jastrow/CBSOBuilder.cpp
   Jastrow/JastrowBuilder.cpp
-  Jastrow/BsplineFunctor.cpp
   Jastrow/BsplineJastrowBuilder.cpp
   Jastrow/kSpaceJastrow.cpp
   Jastrow/kSpaceJastrowBuilder.cpp
 )
 
+#  Jastrow/BsplineFunctor.cpp
 # common ferminoic wavefunctions
 SET(FERMION_SRCS
   SPOSetBase.cpp
