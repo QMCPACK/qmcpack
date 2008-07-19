@@ -57,6 +57,7 @@ namespace qmcplusplus {
        */
       ~PWOrbitalSet();
 
+      SPOSetBase* makeClone() const;
       /** resize  the orbital base
        * @param bset PWBasis
        * @param nbands number of bands

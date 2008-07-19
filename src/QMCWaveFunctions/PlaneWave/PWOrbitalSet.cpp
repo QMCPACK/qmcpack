@@ -11,6 +11,13 @@ namespace qmcplusplus {
 #endif
   }
 
+  SPOSetBase* PWOrbitalSet::makeClone() const
+  {
+    PWOrbitalSet *myclone=new PWOrbitalSet(*this);
+    myclone->myBasisSet = new PWBasis(*myBasisSet);
+    return myclone;
+  }
+
   void PWOrbitalSet::resetParameters(OptimizableSetType& optVariables)
   {
     //DO NOTHING FOR NOW
