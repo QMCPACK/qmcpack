@@ -42,7 +42,7 @@ namespace qmcplusplus {
   TrialWaveFunction::~TrialWaveFunction(){
     DEBUGMSG("TrialWaveFunction::~TrialWaveFunction")
     delete_iter(Z.begin(),Z.end());
-    delete_iter(SPOSet.begin(),SPOSet.end());
+    //delete_iter(SPOSet.begin(),SPOSet.end());
     //delete_iter(myTimers.begin(),myTimers.end());
   }
   
@@ -408,32 +408,33 @@ namespace qmcplusplus {
     return real(psi);
   }
 
-  bool TrialWaveFunction::hasSPOSet(const string& aname) {
-    bool notfoundit=true;
-    vector<OhmmsElementBase*>::iterator it(SPOSet.begin());
-    vector<OhmmsElementBase*>::iterator it_end(SPOSet.end());
-    while(notfoundit && it != it_end) {
-      if((*it)->getName() == aname) notfoundit=false;
-      ++it;
-    }
-    return !notfoundit;
-  }
+  //bool TrialWaveFunction::hasSPOSet(const string& aname) {
+  //  return false;
+  //  //bool notfoundit=true;
+  //  //vector<OhmmsElementBase*>::iterator it(SPOSet.begin());
+  //  //vector<OhmmsElementBase*>::iterator it_end(SPOSet.end());
+  //  //while(notfoundit && it != it_end) {
+  //  //  if((*it)->getName() == aname) notfoundit=false;
+  //  //  ++it;
+  //  //}
+  //  //return !notfoundit;
+  //}
 
-  OhmmsElementBase* 
-  TrialWaveFunction::getSPOSet(const string& aname) {
-    bool notfoundit=true;
-    vector<OhmmsElementBase*>::iterator it(SPOSet.begin());
-    vector<OhmmsElementBase*>::iterator it_end(SPOSet.end());
-    while(notfoundit && it != it_end) {
-      if((*it)->getName() == aname) return *it;
-      ++it;
-    }
-    return 0;
-  }
+  //OhmmsElementBase* 
+  //TrialWaveFunction::getSPOSet(const string& aname) {
+  //  //bool notfoundit=true;
+  //  //vector<OhmmsElementBase*>::iterator it(SPOSet.begin());
+  //  //vector<OhmmsElementBase*>::iterator it_end(SPOSet.end());
+  //  //while(notfoundit && it != it_end) {
+  //  //  if((*it)->getName() == aname) return *it;
+  //  //  ++it;
+  //  //}
+  //  return 0;
+  //}
 
-  void TrialWaveFunction::addSPOSet(OhmmsElementBase* spo) {
-    SPOSet.push_back(spo);
-  }
+  //void TrialWaveFunction::addSPOSet(OhmmsElementBase* spo) {
+  //  //SPOSet.push_back(spo);
+  //}
 
   bool TrialWaveFunction::get(std::ostream& ) const {
     return true;
@@ -461,9 +462,13 @@ namespace qmcplusplus {
 
   TrialWaveFunction* TrialWaveFunction::makeClone(ParticleSet& tqp)  const
   {
-    TrialWaveFunction* myclone = new TrialWaveFunction(*this);
+    TrialWaveFunction* myclone = new TrialWaveFunction(myComm);
     for(int i=0; i<Z.size(); ++i)
-      myclone->Z[i]=Z[i]->makeClone(tqp);
+    {
+      myclone->addOrbital(Z[i]->makeClone(tqp),"dummy");
+    }
+    for(int i=0; i<myTimers.size(); i++)
+      myclone->myTimers[i]->set_name(myTimers[i]->get_name());
     return myclone;
 
   }

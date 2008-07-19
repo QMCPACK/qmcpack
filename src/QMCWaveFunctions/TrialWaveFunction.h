@@ -100,12 +100,12 @@ namespace qmcplusplus {
     /** recursively change the ParticleSet whose G and L are evaluated */
     void resetTargetParticleSet(ParticleSet& P);
 
-    ///Check if aname-ed Single-Particle-Orbital set exists
-    bool hasSPOSet(const string& aname);
-    ///add a Single-Particle-Orbital set
-    void addSPOSet(OhmmsElementBase* spo);
-    ///return the aname-ed Single-Particle-Orbital set. 
-    OhmmsElementBase* getSPOSet(const string& aname);
+    /////Check if aname-ed Single-Particle-Orbital set exists
+    //bool hasSPOSet(const string& aname);
+    /////add a Single-Particle-Orbital set
+    //void addSPOSet(OhmmsElementBase* spo);
+    /////return the aname-ed Single-Particle-Orbital set. 
+    //OhmmsElementBase* getSPOSet(const string& aname);
 
     /** evalaute the values of the wavefunction, gradient and laplacian  for a walkers */
     ValueType evaluate(ParticleSet& P);
@@ -175,7 +175,7 @@ namespace qmcplusplus {
     vector<OrbitalBase*> Z;
 
     ///a list of single-particle-orbital set
-    vector<OhmmsElementBase*> SPOSet;
+    //vector<OhmmsElementBase*> SPOSet;
 
     ///differential gradients
     ParticleSet::ParticleGradient_t delta_G;
