@@ -87,7 +87,8 @@ namespace qmcplusplus {
     void resetSourceParticleSet(ParticleSet& ions);
     void setOrbitalSetSize(int norbs);
     string Type();
-    EinsplineSet() :  TwistNum(0)
+    EinsplineSet() :  
+      TwistNum(0), NumValenceOrbs(0), NumCoreOrbs(0)
     {
       className = "EinsplineSet";
     }
@@ -203,6 +204,8 @@ namespace qmcplusplus {
     NewTimer ValueTimer, VGLTimer, VGLMatTimer;
     NewTimer EinsplineTimer;
   public:
+    void registerTimers();
+
     // Real return values
     void evaluate(const ParticleSet& P, int iat, RealValueVector_t& psi);
     void evaluate(const ParticleSet& P, int iat, RealValueVector_t& psi, 

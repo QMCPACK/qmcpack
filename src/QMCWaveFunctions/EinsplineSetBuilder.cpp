@@ -122,6 +122,7 @@ namespace qmcplusplus {
     HDFAttribIO<int> h_NumBands(NumBands), h_NumElectrons(NumElectrons), 
       h_NumSpins(NumSpins), h_NumTwists(NumTwists), h_NumCore(NumCoreStates),
       h_NumMuffinTins(NumMuffinTins);
+    NumCoreStates = NumMuffinTins = 0;
     h_NumBands.read      (H5FileID, (parameterGroup+"/num_bands").c_str());
     h_NumCore.read       (H5FileID, (parameterGroup+"/num_core_states").c_str());
     h_NumElectrons.read  (H5FileID, (parameterGroup+"/num_electrons").c_str());
@@ -333,7 +334,8 @@ namespace qmcplusplus {
     std::map<H5OrbSet,SPOSetBase*,H5OrbSet>::iterator iter;
     iter = SPOSetMap.find (set);
     if (iter != SPOSetMap.end()) {
-      app_log() << "SPOSet parameters match in EinsplineSetBuilder:  cloning EinsplineSet object.\n";
+      app_log() << "SPOSet parameters match in EinsplineSetBuilder:  "
+		<< "cloning EinsplineSet object.\n";
       return iter->second->makeClone();
     }
 

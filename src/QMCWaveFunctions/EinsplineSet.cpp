@@ -567,7 +567,6 @@ namespace qmcplusplus {
   (const ParticleSet& P, int first, int last, RealValueMatrix_t& psi, 
    RealGradMatrix_t& dpsi, RealValueMatrix_t& d2psi)
   {
-    //    cerr << "Calling matrix version.\n";
     VGLMatTimer.start();
     for (int iat=first,i=0; iat<last; iat++,i++) {
       PosType r (P.R[iat]);
@@ -581,7 +580,6 @@ namespace qmcplusplus {
 	icore += MuffinTins[tin].get_num_core();
       }
 
-      int psiIndex = 0;      
       bool done = false;
       for (int tin=0; tin<MuffinTins.size(); tin++) {
 	if (!done && MuffinTins[tin].inside(r)) {
@@ -590,7 +588,6 @@ namespace qmcplusplus {
 	  done = true;
 	}
       }
-
       if (!done) {
 	PosType ru(PrimLattice.toUnit(P.R[iat]));
 	for (int n=0; n<OHMMS_DIM; n++)
@@ -603,7 +600,7 @@ namespace qmcplusplus {
       //computePhaseFactors(r);
       complex<double> eye (0.0, 1.0);
       int N = StorageValueVector.size();
-      psiIndex = 0.0;
+      int psiIndex = 0;
       for (int j=0; j<N; j++) {
 	complex<double> u, laplu;
 	TinyVector<complex<double>, OHMMS_DIM> gradu;
@@ -733,6 +730,24 @@ namespace qmcplusplus {
   }
 
 
+  template<typename StorageType> void
+  EinsplineSetExtended<StorageType>::registerTimers()
+  {
+    ValueTimer.reset();
+    VGLTimer.reset();
+    VGLMatTimer.reset();
+    EinsplineTimer.reset();
+    TimerManager.addTimer (&ValueTimer);
+    TimerManager.addTimer (&VGLTimer);
+    TimerManager.addTimer (&VGLMatTimer);
+    TimerManager.addTimer (&EinsplineTimer);
+  }
+
+
+
+
+
+
   SPOSetBase*
   EinsplineSetLocal::makeClone() const 
   {
@@ -742,7 +757,10 @@ namespace qmcplusplus {
   template<typename StorageType> SPOSetBase*
   EinsplineSetExtended<StorageType>::makeClone() const
   {
-    return new EinsplineSetExtended<StorageType> (*this);
+    EinsplineSetExtended<StorageType> *clone = 
+      new EinsplineSetExtended<StorageType> (*this);
+    clone->registerTimers();
+    return clone;
   }
 
   template class EinsplineSetExtended<complex<double> >;
