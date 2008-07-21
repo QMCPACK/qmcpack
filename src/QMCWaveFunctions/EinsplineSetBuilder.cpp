@@ -248,9 +248,20 @@ namespace qmcplusplus {
       abuffer.get(NumMuffinTins);
       MT_APW_radii.resize(NumMuffinTins);
       MT_APW_lmax.resize(NumMuffinTins);
+      MT_APW_rgrids.resize(NumMuffinTins);
       MT_APW_num_radial_points.resize(NumMuffinTins);
       MT_centers.resize(NumMuffinTins);
     }
+
+    vector<int> rgrids_sizes(NumMuffinTins);
+    for (int tin=0; tin<NumMuffinTins; tin++) 
+      rgrids_sizes[tin] = MT_APW_rgrids[tin].size();
+    
+    myComm->bcast(rgrids_sizes);
+    if (myComm->rank())
+      for (int tin=0; tin<NumMuffinTins; tin++)
+	MT_APW_rgrids[tin].resize(rgrids_sizes[tin]);
+    
 
     if (IonTypes.size() != numIons) {
       IonTypes.resize(numIons);
@@ -276,6 +287,8 @@ namespace qmcplusplus {
     bbuffer.add(MT_APW_lmax.begin(),  MT_APW_lmax.end());
     bbuffer.add(MT_APW_num_radial_points.begin(), MT_APW_num_radial_points.end());
     bbuffer.add(&(MT_centers[0][0]), &(MT_centers[0][0])+OHMMS_DIM*NumMuffinTins);
+    for (int i=0; i<NumMuffinTins; i++) 
+      bbuffer.add(MT_APW_rgrids[i].begin(), MT_APW_rgrids[i].end());
 
     myComm->bcast(bbuffer);
 
@@ -290,6 +303,8 @@ namespace qmcplusplus {
       bbuffer.get(MT_APW_lmax.begin(),  MT_APW_lmax.end());
       bbuffer.get(MT_APW_num_radial_points.begin(), MT_APW_num_radial_points.end());
       bbuffer.get(&(MT_centers[0][0]), &(MT_centers[0][0])+OHMMS_DIM*NumMuffinTins);
+      for (int i=0; i<NumMuffinTins; i++) 
+	bbuffer.get(MT_APW_rgrids[i].begin(), MT_APW_rgrids[i].end());
     }
   }
 
@@ -445,7 +460,7 @@ namespace qmcplusplus {
       }
     }
 
-    if (myComm->rank()==0 && OrbitalSet->MuffinTins.size() > 0) {
+    if (myComm->rank()==1 && OrbitalSet->MuffinTins.size() > 0) {
       FILE *fout  = fopen ("TestMuffins.dat", "w");
       Vector<double> phi(numOrbs), lapl(numOrbs);
       Vector<PosType> grad(numOrbs);
@@ -454,8 +469,8 @@ namespace qmcplusplus {
       for (int i=0; i<P.R.size(); i++)
 	P.R[i] = PosType (0.0, 0.0, 0.0);
       PosType N = 0.25*PrimCell.a(0) + 0.25*PrimCell.a(1) + 0.25*PrimCell.a(2);
-      //for (double x=-1.0; x<=1.0; x+=0.0000500113412) {
-	for (double x=-0.003; x<=0.003; x+=0.0000011329343481381) {
+      for (double x=-1.0; x<=1.0; x+=0.0000500113412) {
+	// for (double x=-0.003; x<=0.003; x+=0.0000011329343481381) {
 	P.R[0] = x * (PrimCell.a(0) + 0.914*PrimCell.a(1) + 
 		      0.781413*PrimCell.a(2));
 	double r = std::sqrt(dot(P.R[0], P.R[0]));
@@ -1216,9 +1231,8 @@ namespace qmcplusplus {
     
     // First, check to see if we have already read this in
     H5OrbSet set(H5FileName, spin, N);
-    std::map<H5OrbSet,multi_UBspline_3d_z*>::iterator iter;
-    iter = ExtendedMap_z.find (set);
-    // HACK HACK HACK
+    // std::map<H5OrbSet,multi_UBspline_3d_z*>::iterator iter;
+    // iter = ExtendedMap_z.find (set);
     // if (iter != ExtendedMap_z.end()) {
     //   cerr << "Using existing copy of multi_UBspline_3d_z for "
     // 	   << "thread number " << omp_get_thread_num() << ".\n";
@@ -1393,9 +1407,6 @@ namespace qmcplusplus {
 	    HDFAttribIO<Array<complex<double>,1> > h_du_lm_dr(du_lm_dr);
 	    h_u_lm_r.read(H5FileID, uName.c_str());
 	    h_du_lm_dr.read(H5FileID, duName.c_str());
-	    // for (int i=0; i<du_lm_dr.size(); i++)
-	    //   fprintf (stderr, "du_lm_dr(%d) = %1.8e +%1.8ei\n",
-	    // 	       i, du_lm_dr(i).real(), du_lm_dr(i).imag());
 	  }
 	  myComm->bcast(u_lm_r);
 	  myComm->bcast(du_lm_dr);
