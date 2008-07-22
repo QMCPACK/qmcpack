@@ -114,9 +114,6 @@ public:
 
   ///the name of the node, corresponds to the xml tag
   std::string myName;
-
-  ///copy constructor is diabled.
-  OhmmsElementBase(const OhmmsElementBase&) { }
 };
 
 #endif
