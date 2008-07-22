@@ -460,7 +460,7 @@ namespace qmcplusplus {
       }
     }
 
-    if (myComm->rank()==1 && OrbitalSet->MuffinTins.size() > 0) {
+    if (myComm->rank()==0 && OrbitalSet->MuffinTins.size() > 0) {
       FILE *fout  = fopen ("TestMuffins.dat", "w");
       Vector<double> phi(numOrbs), lapl(numOrbs);
       Vector<PosType> grad(numOrbs);
