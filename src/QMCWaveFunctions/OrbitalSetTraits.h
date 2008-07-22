@@ -32,6 +32,10 @@ namespace qmcplusplus {
    */
   struct DummyGrid {
     inline void locate(double r) {}
+    DummyGrid* makeClone() const
+    {
+      return new DummyGrid;
+    }
   };
 
   typedef TinyVector<int,4> QuantumNumberType;
