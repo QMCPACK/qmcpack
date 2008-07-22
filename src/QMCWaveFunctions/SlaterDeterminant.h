@@ -218,9 +218,7 @@ namespace qmcplusplus {
       for(int i=0; i<Dets.size(); i++) 
       {
         Determinant_t* adet=new Determinant_t(*Dets[i]);
-        SPOSet* newspo=Dets[i]->clonePhi();
-        spomap[Dets[i]->Phi]=newspo;
-        adet->Phi=newspo;//assign a new SPOSet
+        adet->Phi=Dets[i]->clonePhi();//assign a new SPOSet
         adet->resetTargetParticleSet(tqp);
         myclone->Dets[i]=adet;
       }

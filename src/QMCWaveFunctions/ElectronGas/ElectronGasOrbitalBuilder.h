@@ -36,6 +36,11 @@ namespace qmcplusplus {
     inline void resetParameters(OptimizableSetType& vlist) { }
     inline void resetTargetParticleSet(ParticleSet& P) { }
 
+    RealEGOSet* makeClone() const
+    {
+      return new RealEGOSet(*this);
+    }
+
     inline ValueType f(const PosType& pos,int i)
     {
       if(i>0)

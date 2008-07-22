@@ -145,6 +145,11 @@ namespace qmcplusplus {
       return 0;
     }
 
+    SPOSet*  clonePhi() const
+    {
+      return Phi->makeClone();
+    }
+
     /** set the index of the first particle in the determinant and reset the size of the determinant
      *@param first index of first particle
      *@param nel number of particles in the determinant

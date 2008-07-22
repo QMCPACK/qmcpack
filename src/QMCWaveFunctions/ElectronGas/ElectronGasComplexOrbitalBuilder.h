@@ -44,6 +44,11 @@ namespace qmcplusplus {
 
       EGOSet(const vector<PosType>& k, const vector<RealType>& k2);
 
+      EGOSet* makeClone() const
+      {
+        return new EGOSet(*this);
+      }
+
       inline void resetParameters(OptimizableSetType& vlist) { }
       inline void resetTargetParticleSet(ParticleSet& P) { }
 
