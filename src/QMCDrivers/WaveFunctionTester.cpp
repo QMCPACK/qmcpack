@@ -231,20 +231,20 @@ void WaveFunctionTester::runBasicTest() {
 void WaveFunctionTester::runRatioTest() {
 
   int nat = W.getTotalNum();
-  ParticleSet::ParticleGradient_t G(nat), dG(nat);
-  ParticleSet::ParticleLaplacian_t L(nat), dL(nat);
+  ParticleSet::ParticleGradient_t Gp(nat), dGp(nat);
+  ParticleSet::ParticleLaplacian_t Lp(nat), dLp(nat);
 
   MCWalkerConfiguration::iterator it(W.begin()), it_end(W.end());
   while(it != it_end) {
-    (*it)->DataSet.rewind();
-    W.registerData(**it,(*it)->DataSet);
-    RealType logpsi=Psi.registerData(W,(*it)->DataSet);
-    //RealType vsq = Dot(W.G,W.G);
-    //(*it)->Drift = Tau*W.G;
-    setScaledDrift(Tau,W.G,(*it)->Drift);
+    makeGaussRandom(deltaR);
+    Walker_t::Buffer_t tbuffer;
+    W.R = (**it).R+Tau*deltaR;
+    W.registerData(**it,tbuffer);
+    RealType logpsi=Psi.registerData(W,tbuffer);
+    (*it)->DataSet=tbuffer;
 
     RealType ene = H.evaluate(W);
-    (*it)->resetProperty(logpsi,Psi.getPhase(),ene);
+    (*it)->resetProperty(logpsi,Psi.getPhase(),ene,0.0,0.0,1.0);
     H.saveProperty((*it)->getPropertyBase());
     ++it;
 
@@ -253,15 +253,15 @@ void WaveFunctionTester::runRatioTest() {
       app_log() << "  HamTest " << H.getName(i) << " " << H[i] << endl;
   } 
 
+  cout << "  Update using drift " << endl;
   it=W.begin();
   int iw=0;
   while(it != it_end) {
 
     cout << "\nStart Walker " << iw++ << endl;
-
     Walker_t& thisWalker(**it);
+    W.R = thisWalker.R;
     Walker_t::Buffer_t& w_buffer(thisWalker.DataSet);
-
     w_buffer.rewind();
     W.copyFromBuffer(w_buffer);
     Psi.copyFromBuffer(W,w_buffer);
@@ -279,18 +279,15 @@ void WaveFunctionTester::runRatioTest() {
 
       PosType newpos(W.makeMove(iat,dr));
 
-      RealType ratio=Psi.ratio(W,iat,dG,dL);
+      RealType ratio=Psi.ratio(W,iat,dGp,dLp);
+      Gp = W.G + dGp;
 
-      //if(ratio > 0 && iat%2 == 1) {//accept only the even index
-      if(ratio > Random()) {
+      if(ratio > Random() && iat%2!=0) {
         cout << " Accepting a move for " << iat << endl;
         W.acceptMove(iat);
         Psi.acceptMove(W,iat);
-
-        W.G += dG;
-        W.L += dL;
-        //G=W.G+dG;
-        //L=W.L+dL;
+        W.G = Gp;
+        W.L += dLp;
         ratio_accum *= ratio;
       } else {
         cout << " Rejecting a move for " << iat << endl;
@@ -299,13 +296,15 @@ void WaveFunctionTester::runRatioTest() {
       }
     }
 
-
-    G = W.G;
-    L = W.L;
-
+    thisWalker.R=W.R;
     w_buffer.rewind();
     W.copyToBuffer(w_buffer);
     RealType psi = Psi.evaluate(W,w_buffer);
+
+    Gp=W.G;
+    Lp=W.L;
+    //W.updateBuffer(w_buffer);
+    //RealType psi = Psi.updateBuffer(W,w_buffer,true);
 
     W.update();
     RealType newlogpsi=Psi.evaluateLog(W);
@@ -318,11 +317,78 @@ void WaveFunctionTester::runRatioTest() {
 
     cout << " Gradients " << endl;
     for(int iat=0; iat<nat; iat++) {
-      cout << W.G[iat]-G[iat] << W.G[iat] << endl; //W.G[iat] << G[iat] << endl;
+      cout << W.G[iat]-Gp[iat] << W.G[iat] << endl; //W.G[iat] << G[iat] << endl;
     }
     cout << " Laplacians " << endl;
     for(int iat=0; iat<nat; iat++) {
-      cout << W.L[iat]-L[iat] << " " << W.L[iat] << endl;
+      cout << W.L[iat]-Lp[iat] << " " << W.L[iat] << endl;
+    }
+    ++it;
+  }
+
+  cout << "  Update without drift : for VMC useDrift=\"no\"" << endl;
+  it=W.begin();
+  iw=0;
+  while(it != it_end) {
+
+    cout << "\nStart Walker " << iw++ << endl;
+    Walker_t& thisWalker(**it);
+    W.R = thisWalker.R;
+    Walker_t::Buffer_t& w_buffer(thisWalker.DataSet);
+    w_buffer.rewind();
+    W.copyFromBuffer(w_buffer);
+    Psi.copyFromBuffer(W,w_buffer);
+
+    RealType eold(thisWalker.Properties(LOCALENERGY));
+    RealType logpsi(thisWalker.Properties(LOGPSI));
+    RealType emixed(eold), enew(eold);
+
+    makeGaussRandom(deltaR);
+
+    //mave a move
+    RealType ratio_accum(1.0);
+    for(int iat=0; iat<nat; iat++) {
+      PosType dr(Tau*deltaR[iat]);
+
+      PosType newpos(W.makeMove(iat,dr));
+
+      RealType ratio=Psi.ratio(W,iat);
+
+      if(ratio > Random() && iat%2!=0) {
+        cout << " Accepting a move for " << iat << endl;
+        W.acceptMove(iat);
+        Psi.acceptMove(W,iat);
+        ratio_accum *= ratio;
+      } else {
+        cout << " Rejecting a move for " << iat << endl;
+        W.rejectMove(iat); 
+        Psi.rejectMove(iat);
+      }
+    }
+
+    thisWalker.R=W.R;
+    w_buffer.rewind();
+    W.updateBuffer(w_buffer);
+    RealType psi = Psi.updateBuffer(W,w_buffer,true);
+    Gp=W.G;
+    Lp=W.L;
+
+    W.update();
+    RealType newlogpsi=Psi.evaluateLog(W);
+
+    cout << " Ratio " << ratio_accum*ratio_accum 
+      << " | " << std::exp(2.0*(newlogpsi-logpsi)) << " " 
+      << ratio_accum*ratio_accum/std::exp(2.0*(newlogpsi-logpsi)) << endl
+      << " new log(psi) " << newlogpsi 
+      << " old log(psi) " << logpsi << endl;
+
+    cout << " Gradients " << endl;
+    for(int iat=0; iat<nat; iat++) {
+      cout << W.G[iat]-Gp[iat] << W.G[iat] << endl; //W.G[iat] << G[iat] << endl;
+    }
+    cout << " Laplacians " << endl;
+    for(int iat=0; iat<nat; iat++) {
+      cout << W.L[iat]-Lp[iat] << " " << W.L[iat] << endl;
     }
     ++it;
   }
