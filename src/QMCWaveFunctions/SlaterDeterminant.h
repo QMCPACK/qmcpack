@@ -209,6 +209,30 @@ namespace qmcplusplus {
       return Dets[DetID[iat]]->update(P,dG,dL,iat);
     }
 
+    OrbitalBasePtr makeClone(ParticleSet& tqp) const
+    {
+      SlaterDeterminant<SPOSet>* myclone= new SlaterDeterminant<SPOSet>;
+      myclone->M=M;
+      myclone->DetID=DetID;
+      myclone->Dets.resize(Dets.size(),0);
+      for(int i=0; i<Dets.size(); i++) 
+      {
+        Determinant_t* adet=new Determinant_t(*Dets[i]);
+        if(it == spomap.end())
+        {
+          SPOSetBase* newspo=Dets[i]->clonePhi();
+          spomap[Dets[i]->Phi]=newspo;
+          adet->Phi=newspo;//assign a new SPOSet
+        }
+        else
+        {
+          adet->Phi=(*it).second;//safe to transfer
+        }
+        adet->resetTargetParticleSet(tqp);
+        myclone->Dets[i]=adet;
+      }
+      return myclone;
+    }
 
   private:
     vector<int> M;
