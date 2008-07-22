@@ -40,6 +40,8 @@ namespace qmcplusplus {
         ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi);
     void evaluate(const ParticleSet& P, int first, int last,
         ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet);
+    SPOSetBase* makeClone() const;
+
   };
 
   /** Specialized for Orthorhombic cell and no truncation*/
@@ -54,6 +56,7 @@ namespace qmcplusplus {
         ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi);
     void evaluate(const ParticleSet& P, int first, int last,
         ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet);
+    SPOSetBase* makeClone() const;
   };
 
   /** Specialized for Orthorhombic cell and truncation*/
@@ -67,6 +70,7 @@ namespace qmcplusplus {
         ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi);
     void evaluate(const ParticleSet& P, int first, int last,
         ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet);
+    SPOSetBase* makeClone() const;
   };
 
   /** Specialized for non-Orthorhombic cell no truncation*/
@@ -81,6 +85,7 @@ namespace qmcplusplus {
         ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi);
     void evaluate(const ParticleSet& P, int first, int last,
         ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet);
+    SPOSetBase* makeClone() const;
   };
 
 #if defined(QMC_COMPLEX)
@@ -94,6 +99,7 @@ namespace qmcplusplus {
         ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi);
     void evaluate(const ParticleSet& P, int first, int last,
         ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet);
+    SPOSetBase* makeClone() const;
   };
 #endif
 
