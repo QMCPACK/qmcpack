@@ -55,6 +55,13 @@ namespace qmcplusplus {
      */
     ~LCOrbitalSet() {}
 
+    SPOSetBase* makeClone() const 
+    {
+      LCOrbitalSet<BS,true>* myclone = new LCOrbitalSet<BS,true>(*this);
+      myclone->myBasisSet = myBasisSet->makeClone();
+      return myclone;
+    }
+
     void resetParameters(VarRegistry<RealType>& optVariables) 
     {
       myBasisSet->resetParameters(optVariables);
@@ -152,6 +159,13 @@ namespace qmcplusplus {
      * BasisSet is deleted by the object with ID == 0
      */
     ~LCOrbitalSet() {}
+
+    SPOSetBase* makeClone() const 
+    {
+      LCOrbitalSet<BS,false>* myclone = new LCOrbitalSet<BS,false>(*this);
+      myclone->myBasisSet = myBasisSet->makeClone();
+      return myclone;
+    }
 
     ///reset
     void resetParameters(VarRegistry<RealType>& optVariables) 
