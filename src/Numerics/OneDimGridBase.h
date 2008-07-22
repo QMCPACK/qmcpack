@@ -60,6 +60,9 @@ struct OneDimGridBase {
 
   inline OneDimGridBase():num_points(0)
   {}
+
+  virtual OneDimGridBase<T,CT>* makeClone() const =0;
+
   inline int getGridTag() const  
   {
     return GridTag;
@@ -234,6 +237,11 @@ struct LinearGrid: public OneDimGridBase<T,CT> {
   // T Delta;
   T DeltaInv;
 
+  OneDimGridBase<T,CT>* makeClone() const
+  {
+    return new LinearGrid<T,CT>(*this);
+  }
+
   inline void locate(T r) {
     Loc = static_cast<int>((r-X[0])*DeltaInv);
   }
@@ -272,6 +280,11 @@ struct LogGrid: public OneDimGridBase<T,CT> {
   using OneDimGridBase<T,CT>::X;
   // T Delta;
   T OneOverLogDelta; 
+
+  OneDimGridBase<T,CT>* makeClone() const
+  {
+    return new LogGrid<T,CT>(*this);
+  }
 
   inline void locate(T r){
     Loc = static_cast<int>(std::log(r/X[0])*OneOverLogDelta);
@@ -322,6 +335,11 @@ struct LogGridZero: public OneDimGridBase<T,CT> {
   T OneOverA; 
   T OneOverB;
 
+  OneDimGridBase<T,CT>* makeClone() const
+  {
+    return new LogGridZero<T,CT>(*this);
+  }
+
   inline void locate(T r){
     Loc= static_cast<int>(std::log(r*OneOverB+1.0)*OneOverA);
   }
@@ -369,6 +387,11 @@ struct NumericalGrid: public OneDimGridBase<T,CT> {
   NumericalGrid(const VA& nv) {
     GridTag = CUSTOM_1DGRID;
     assign(nv.begin(),nv.end());
+  }
+
+  OneDimGridBase<T,CT>* makeClone() const
+  {
+    return new NumericalGrid<T,CT>(*this);
   }
 
 
