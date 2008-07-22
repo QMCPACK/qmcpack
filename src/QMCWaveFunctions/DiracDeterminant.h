@@ -140,7 +140,7 @@ namespace qmcplusplus {
       return *this;
     }
 
-    OrbitalBase* makeClone() const
+    OrbitalBasePtr makeClone(ParticleSet& tqp) const
     {
       return 0;
     }
