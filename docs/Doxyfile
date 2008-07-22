@@ -57,12 +57,12 @@ WARN_LOGFILE           =
 # configuration options related to the input files
 #---------------------------------------------------------------------------
 INPUT                  = \
-ohmms-config.h \
+config.h \
 ../src/Configuration.h \
-../src/Utilities \
-../src/Message \
 ../src/ParticleTags.h \
 ../src/ParticleTags.cpp \
+../src/Utilities \
+../src/Message \
 ../src/Lattice \
 ../src/ParticleBase \
 ../src/Particle \

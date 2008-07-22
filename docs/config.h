@@ -21,6 +21,12 @@
  * \section Major changes
  *
  * \htmlonly
+  <ul> 2008-07-22
+  <li>Numerous bug fixes.
+  <li>Support TrialWaveFunction cloning for multi-threaded applications
+  <li>EinsplineOrbitalSet uses Einspline library 
+  <li>BsplinFunctor for One- and Two-Body Jastrow
+  </ul>
   <ul> 2007-09-07
     <li> A new update
   </ul>    
