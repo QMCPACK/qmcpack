@@ -24,6 +24,11 @@ namespace qmcplusplus {
   ////////////////////////////////////////////////////////////
   //Implementation of Bspline3DSet_Ortho
   ////////////////////////////////////////////////////////////
+  SPOSetBase* Bspline3DSet_Ortho::makeClone() const 
+  {
+    return  new Bspline3DSet_Ortho(*this);
+  }
+
   void Bspline3DSet_Ortho::evaluate(const ParticleSet& e, int iat, ValueVector_t& vals)
   {
     if(bKnots.Find(e.R[iat][0],e.R[iat][1],e.R[iat][2]))
@@ -77,6 +82,10 @@ namespace qmcplusplus {
   ////////////////////////////////////////////////////////////
   //Implementation of Bspline3DSet_Gen
   ////////////////////////////////////////////////////////////
+  SPOSetBase* Bspline3DSet_Gen::makeClone() const 
+  {
+    return new Bspline3DSet_Gen(*this);
+  }
   void Bspline3DSet_Gen::evaluate(const ParticleSet& e, int iat, ValueVector_t& vals)
   {
     PosType ru(Lattice.toUnit(e.R[iat]));
@@ -142,6 +151,10 @@ namespace qmcplusplus {
   ////////////////////////////////////////////////////////////
   //Implementation of Bspline3DSet_Ortho_Trunc
   ////////////////////////////////////////////////////////////
+  SPOSetBase* Bspline3DSet_Ortho_Trunc::makeClone() const 
+  {
+    return new Bspline3DSet_Ortho_Trunc(*this);
+  }
   void Bspline3DSet_Ortho_Trunc::evaluate(const ParticleSet& e, int iat, ValueVector_t& vals) 
   {
     PosType r(e.R[iat]);
@@ -198,6 +211,11 @@ namespace qmcplusplus {
   ////////////////////////////////////////////////////////////
   //Implementation of Bspline3DSet_Gen_Trunc
   ////////////////////////////////////////////////////////////
+  SPOSetBase* Bspline3DSet_Gen_Trunc::makeClone() const 
+  {
+    return new Bspline3DSet_Gen_Trunc(*this);
+  }
+
   void Bspline3DSet_Gen_Trunc::evaluate(const ParticleSet& e, int iat, ValueVector_t& vals) 
   {
     PosType r(e.R[iat]);
@@ -270,6 +288,11 @@ namespace qmcplusplus {
   ////////////////////////////////////////////////////////////
   //Implementation of Bspline3DSet_Twist
   ////////////////////////////////////////////////////////////
+  SPOSetBase* Bspline3DSet_Twist::makeClone() const 
+  {
+    return new Bspline3DSet_Twist(*this);
+  }
+
   void Bspline3DSet_Twist::evaluate(const ParticleSet& e, int iat, ValueVector_t& vals)
   {
     PosType r(e.R[iat]);
