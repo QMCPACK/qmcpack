@@ -31,7 +31,7 @@ namespace qmcplusplus {
 
   //initialize the static data member
   //map<string,TricubicBsplineSetBuilder::StorageType*> TricubicBsplineSetBuilder::BigDataSet;
-  //map<string,TricubicBsplineSetBuilder::RSOType*> TricubicBsplineSetBuilder::BigDataSet;
+  map<string,TricubicBsplineSetBuilder::RSOType*> TricubicBsplineSetBuilder::BigDataSet;
 
   TricubicBsplineSetBuilder::TricubicBsplineSetBuilder(ParticleSet& p, PtclPoolType& psets, xmlNodePtr cur):
     targetPtcl(p),ptclPool(psets),OpenEndGrid(false),TranslateGrid(false),FloatingGrid(false),

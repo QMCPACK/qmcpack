@@ -69,8 +69,7 @@ namespace qmcplusplus {
      * Key is $1#$2 where $1 is the hdf5 file name and $2 is the band indenx
      */
     //static map<string,StorageType*> BigDataSet;
-    //static map<string,RSOType*> BigDataSet;
-    map<string,RSOType*> BigDataSet;
+    static map<string,RSOType*> BigDataSet;
     ///if true, grid is open-ended [0,nx) x [0,ny) x [0, nz)
     bool OpenEndGrid;
     ///if true, a grid is translated so that the center of localized orbitals conincides with the cell center
