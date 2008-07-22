@@ -282,7 +282,7 @@ void WaveFunctionTester::runRatioTest() {
       RealType ratio=Psi.ratio(W,iat,dGp,dLp);
       Gp = W.G + dGp;
 
-      if(ratio > Random() && iat%2!=0) {
+      if(ratio > Random()) {
         cout << " Accepting a move for " << iat << endl;
         W.acceptMove(iat);
         Psi.acceptMove(W,iat);
@@ -354,7 +354,7 @@ void WaveFunctionTester::runRatioTest() {
 
       RealType ratio=Psi.ratio(W,iat);
 
-      if(ratio > Random() && iat%2!=0) {
+      if(ratio > Random()) {
         cout << " Accepting a move for " << iat << endl;
         W.acceptMove(iat);
         Psi.acceptMove(W,iat);
