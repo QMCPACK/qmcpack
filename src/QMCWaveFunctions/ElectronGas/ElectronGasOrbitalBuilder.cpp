@@ -78,11 +78,11 @@ namespace qmcplusplus {
     RealEGOSet* psi=new RealEGOSet(egGrid.kpt,egGrid.mk2); 
 
     //create up determinant
-    Det_t *updet = new Det_t(*psi,0);
+    Det_t *updet = new Det_t(psi,0);
     updet->set(0,nup);
 
     //create down determinant
-    Det_t *downdet = new Det_t(*psi,nup);
+    Det_t *downdet = new Det_t(psi,nup);
     downdet->set(nup,nup);
 
     //create a Slater determinant
