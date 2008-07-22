@@ -104,6 +104,21 @@ namespace qmcplusplus {
       BasisOffset.resize(NumCenters+1);
     }
 
+    LocalizedBasisSet<COT>* makeClone() const
+    {
+      LocalizedBasisSet<COT>* myclone = new LocalizedBasisSet<COT>(*this);
+      for(int i=0; i<LOBasisSet.size(); ++i)
+      {
+        COT* cc=LOBasisSet[i]->makeClone();
+        myclone->LOBasisSet[i]=cc;
+        for(int j=0; j<CenterSys.getTotalNum(); ++j)
+        {
+          if(CenterSys.GroupID[j]==i) myclone->LOBasis[j]=cc;
+        }
+      }
+      return myclone;
+    }
+
     /**
      @param atable the distance table (ion-electron)
      @brief Assign the distance table (ion-electron) and
