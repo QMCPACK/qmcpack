@@ -421,7 +421,7 @@ namespace qmcplusplus {
   }
 
   DiracDeterminantBase::DiracDeterminantBase(const DiracDeterminantBase& s): 
-    NP(0),Phi(s.Phi),FirstIndex(s.FirstIndex)
+    OrbitalBase(s), NP(0),Phi(s.Phi),FirstIndex(s.FirstIndex)
   {
     this->resize(s.NumPtcls,s.NumOrbitals);
   }
