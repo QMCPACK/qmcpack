@@ -138,6 +138,11 @@ namespace qmcplusplus {
     {
       if(newRunType != curRunType || newQmcMode != curQmcMode) 
       {
+        if(curRunType == DUMMY_RUN)
+        {
+          APP_ABORT("QMCDriverFactory::setQMCDriver\n Other qmc sections cannot come after <qmc method=\"test\">.\n");
+        }
+
         //copy the pointer of the BranchEngine 
         branchEngine=qmcDriver->getBranchEngine();
         //remove the qmcDriver
