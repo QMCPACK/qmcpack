@@ -121,6 +121,17 @@ namespace qmcplusplus {
         LogValue += Psi[i]->evaluate(P,buf);
       return LogValue;
     }
+
+  OrbitalBase* ComboOrbital::makeClone(ParticleSet& tpq) const
+  {
+    app_warning() << "  ComboOrbital::makeClone for long-range breakup stuff won't work." << endl;
+    ComboOrbital* myclone=new ComboOrbital(*this);
+    for(int i=0; i<Psi.size(); ++i)
+    {
+      myclone->Psi[i]=Psi[i]->makeClone(tpq);
+    }
+    return myclone;
+  }
 }
 /***************************************************************************
  * $RCSfile$   $Author$

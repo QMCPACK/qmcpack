@@ -40,6 +40,7 @@ namespace qmcplusplus {
     ComboOrbital(OrbitalConstraintsBase* control):
       Constraints(control) {
         Optimizable=true;
+        OrbitalName="ComboOrbital";
       }
 
     ~ComboOrbital();
@@ -98,6 +99,9 @@ namespace qmcplusplus {
 
     ValueType 
       evaluate(ParticleSet& P,BufferType& buf);
+
+    OrbitalBase* makeClone(ParticleSet& tqp) const;
+
   };
 }
 #endif
