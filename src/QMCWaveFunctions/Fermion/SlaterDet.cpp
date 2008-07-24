@@ -123,10 +123,7 @@ namespace qmcplusplus {
   OrbitalBasePtr SlaterDet::makeClone(ParticleSet& tqp) const
   {
     map<SPOSetBase*,SPOSetBase*> spomap;
-    SlaterDet* myclone= new SlaterDet;
-    myclone->M=M;
-    myclone->DetID=DetID;
-    myclone->Dets.resize(Dets.size(),0);
+    SlaterDet* myclone= new SlaterDet(*this);
     for(int i=0; i<Dets.size(); i++) 
     {
       map<SPOSetBase*,SPOSetBase*>::iterator it=spomap.find(Dets[i]->Phi);
