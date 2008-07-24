@@ -45,7 +45,6 @@ namespace qmcplusplus {
 
   bool PadeConstraints::put(xmlNodePtr cur) 
   {
-    if(cur == NULL) APP_ABORT("PadeConstratins::put failes. Empty xml node");
     //always copy the node
     bool success=getVariables(cur);
     map<string,pair<string,RealType> >::iterator vit(inVars.find("B"));
