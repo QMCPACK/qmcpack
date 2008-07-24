@@ -124,8 +124,8 @@ namespace qmcplusplus {
 
       void addOptimizables(OptimizableSetType& vlist)
       {
-        if(ID_A != "0") vlist[ID_A]=A;
-        if(ID_B != "0") vlist[ID_B]=B0;
+        if(ID_A[0] != '0') vlist[ID_A]=A;
+        if(ID_B[0] != '0') vlist[ID_B]=B0;
       }
 
       /** reset the internal variables.
