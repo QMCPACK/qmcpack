@@ -54,12 +54,12 @@ namespace qmcplusplus
   void AnyConstraints::addOptimizables(OptimizableSetType& outVars) 
   {
     //createBasis will take care of this. Do not add again
-    //map<string,BasisGroupType*>::iterator it(BasisGroups.begin()),it_end(BasisGroups.end());
-    //while(it != it_end) 
-    //{
-    //  (*it).second->In_->addOptimizables(outVars);
-    //  ++it;
-    //}
+    map<string,BasisGroupType*>::iterator it(BasisGroups.begin()),it_end(BasisGroups.end());
+    while(it != it_end) 
+    {
+      (*it).second->In_->addOptimizables(outVars);
+      ++it;
+    }
   }
 
   void AnyConstraints::addSingleBasisPerSpecies(xmlNodePtr cur) 
