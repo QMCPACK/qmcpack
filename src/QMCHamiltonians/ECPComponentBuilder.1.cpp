@@ -7,7 +7,6 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
@@ -181,11 +180,11 @@ namespace qmcplusplus {
         app_log() << "     Use a Linear Grid: [0,"<< r << "] Number of points = " << ng << endl;
         grid_local->set(0.0,r,ng);
         v.resize(ng);
-        v[0]=1.0;
         for(int ig=1; ig<ng-1; ig++) {
           double r=(*grid_local)[ig];
           v[ig]=1.0-zinv*vr.f(r);
         }
+        v[0]=2.0*v[1]-v[2];
         v[ng-1]=1.0;
         pp_loc=new RadialPotentialType(grid_local,v);
         pp_loc->spline(); //use the fixed conditions
