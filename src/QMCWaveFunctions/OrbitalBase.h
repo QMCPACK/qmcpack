@@ -75,6 +75,7 @@ namespace qmcplusplus {
     bool UseBuffer;
     ValueType LogValue;
     RealType PhaseValue;
+    string OrbitalName;
 
     /// default constructor
     OrbitalBase();

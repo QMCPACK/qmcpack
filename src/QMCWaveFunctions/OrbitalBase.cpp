@@ -20,7 +20,7 @@
 namespace qmcplusplus {
   OrbitalBase::OrbitalBase(): 
     Optimizable(true), UseBuffer(true), //Counter(0),
-    LogValue(1.0),PhaseValue(0.0)
+    LogValue(1.0),PhaseValue(0.0),OrbitalName("OrbitalBase")
 //#if !defined(ENABLE_SMARTPOINTER)
 //  ,dPsi(0)
 //#endif
@@ -69,7 +69,7 @@ namespace qmcplusplus {
    */
   OrbitalBasePtr OrbitalBase::makeClone(ParticleSet& tpq) const
   {
-    APP_ABORT("OrbitalBase::makeClone cannot be used for a deep copy.");
+    APP_ABORT("Implement OrbitalBase::makeClone "+OrbitalName+ " class.");
     return 0;
   }
 
