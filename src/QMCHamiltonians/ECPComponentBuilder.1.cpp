@@ -62,11 +62,25 @@ namespace qmcplusplus {
     InFuncType a;
     a.putBasisGroup(cur);
 
-    int ng=agrid->size();
-    if(agrid->GridTag != LINEAR_1DGRID)
+    bool ignore=true;
+    const RealType eps=1e-4;
+    RealType rout=agrid->rmax()*2;
+    while(ignore&&rout>agrid->rmax())
+    {
+      ignore=(abs(a.f(rout))<eps);
+      rout-=0.01;
+    }
+
+    rout += 0.01;
+    app_log() << "  cutoff for non-local pseudopotential = " << agrid->rmax() << endl;
+    app_log() << "  calculated cutoff for " << eps << " = " << rout << endl;
+
+    int ng = agrid->size();
+    if(agrid->GridTag != LINEAR_1DGRID)// || rout > agrid->rmax())
     {
       RealType ri=0.0;
-      RealType rf=agrid->rmax();
+      RealType rf=std::max(rout,agrid->rmax());
+      delete agrid;
       agrid = new LinearGrid<RealType>;
       agrid->set(ri,rf,ng);
       app_log() << "  Reset the grid for SemiLocal component to a LinearGrid. " << endl;
@@ -162,7 +176,7 @@ namespace qmcplusplus {
         app_log() << "   Guassian basisGroup is used: base power " << vr.basePower << endl;
         const RealType eps=1e-12;//numeric_limits<RealType>::epsilon();//1e-12;
         RealType zinv=1.0/Zeff;
-        RealType r=5.;
+        RealType r=10.;
         bool ignore=true;
         int last=grid_local->size()-1;
         while(ignore&&last)

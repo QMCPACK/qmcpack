@@ -154,9 +154,7 @@ namespace qmcplusplus {
           }
 
           if(success) {
-#if !defined(HAVE_MPI)
-            ecp.printECPTable();
-#endif
+            if(OHMMS::Controller->rank()==0) ecp.printECPTable();
             if(ecp.pp_loc) {
               localPot[speciesIndex]=ecp.pp_loc;
               localZeff[speciesIndex]=ecp.Zeff;
