@@ -1246,8 +1246,8 @@ namespace qmcplusplus {
       // Find the orbital mesh size
       int i=0;
       while (SortBands[i].IsCoreState) i++;
-      int ti = SortBands[i].TwistIndex;
-      int bi = SortBands[i].BandIndex;
+      ti = SortBands[i].TwistIndex;
+      bi = SortBands[i].BandIndex;
       string vectorName = OrbitalPath (ti, bi) + "eigenvector";
       HDFAttribIO<Array<complex<double>,3> > h_rawData(rawData);
       h_rawData.read(H5FileID, vectorName.c_str());
@@ -1317,8 +1317,8 @@ namespace qmcplusplus {
 	Vector<double> g, r;
 	PosType twist, k;
 	if (root) {
-	  int ti   = SortBands[iorb].TwistIndex;
-	  int bi   = SortBands[iorb].BandIndex;
+	  ti   = SortBands[iorb].TwistIndex;
+	  bi   = SortBands[iorb].BandIndex;
 	  double e = SortBands[iorb].Energy;
 	  twist = TwistAngles[ti];
 	  k = orbitalSet->PrimLattice.k_cart(twist);
@@ -1390,9 +1390,6 @@ namespace qmcplusplus {
 	for (int tin=0; tin<NumMuffinTins; tin++) {
 	  // app_log() << "Reading data for muffin tin " << tin << endl;
 	  PosType twist, k;
-	  twist = TwistAngles[ti];
-	  k = orbitalSet->PrimLattice.k_cart(twist);
-	  
 	  int lmax = MT_APW_lmax[tin];
 	  int numYlm = (lmax+1)*(lmax+1);
 	  Array<complex<double>,2> 
@@ -1401,6 +1398,8 @@ namespace qmcplusplus {
 	  if (root) {
 	    int ti   = SortBands[iorb].TwistIndex;
 	    int bi   = SortBands[iorb].BandIndex;
+	    twist = TwistAngles[ti];
+	    k = orbitalSet->PrimLattice.k_cart(twist);
 	    string uName  = MuffinTinPath (ti, bi,tin) + "u_lm_r";
 	    string duName = MuffinTinPath (ti, bi,tin) + "du_lm_dr";
 	    HDFAttribIO<Array<complex<double>,2> > h_u_lm_r(u_lm_r);
@@ -1410,6 +1409,7 @@ namespace qmcplusplus {
 	  }
 	  myComm->bcast(u_lm_r);
 	  myComm->bcast(du_lm_dr);
+	  myComm->bcast(k);
 	  double Z = (double)IonTypes(tin);
 	  OrbitalSet->MuffinTins[tin].set_APW (ival, k, u_lm_r, du_lm_dr, Z);
 	}
