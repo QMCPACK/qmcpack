@@ -64,6 +64,7 @@ namespace qmcplusplus {
 
   void PadeConstraints::resetParameters(OptimizableSetType& optVariables)
   {
+    OptimizableSetType nothing;
     OptimizableSetType::iterator it(optVariables.find(ID_B));
     if(it != optVariables.end()) 
     {
@@ -71,12 +72,12 @@ namespace qmcplusplus {
       for(int i=0; i<FuncList.size(); i++) 
       {
         FuncList[i]->B0=B;
-        FuncList[i]->resetParameters(optVariables);
+        FuncList[i]->resetParameters(nothing);
       }
       //for(int i=0; i<dFuncList.size(); i++) 
       //{
       //  dFuncList[i]->B0=B;
-      //  dFuncList[i]->resetParameters(optVariables);
+      //  dFuncList[i]->resetParameters(nothing);
       //}
     }
   }
@@ -100,6 +101,7 @@ namespace qmcplusplus {
     {
       RealType cusp=0.5*q;
       FuncType *func=new FuncType(cusp,B);
+      func->ID_B=ID_B;
 
       J2->addFunc("pade_uu",0,0,func);
       FuncList.push_back(func);
