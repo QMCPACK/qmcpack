@@ -56,7 +56,7 @@ eval_e2iphi (const std::vector<float> &phi, std::vector<std::complex<float> > &z
   vcCIS (n, &(phi[0]), (float*) &(z[0]));
 #else
   for (int i=0; i<n; i++)
-    sincosf (phi[i], &(z[i].imag()), &(z[i].real()));
+    sincos (phi[i], &(z[i].imag()), &(z[i].real()));
 #endif
 }
 
