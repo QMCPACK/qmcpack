@@ -77,7 +77,7 @@ namespace qmcplusplus {
 		 TinyVector<double,3> &a );
 
     // Temporary store for evaluating the splines
-    vector<complex<double> > RadialVec, dRadialVec, d2RadialVec;
+    Vector<complex<double> > RadialVec, dRadialVec, d2RadialVec;
     // Evaluates all the Ylm's up to lMax
     void evalYlm(TinyVector<double,3> rhat);
     
