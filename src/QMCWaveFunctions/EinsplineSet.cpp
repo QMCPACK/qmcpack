@@ -617,7 +617,7 @@ namespace qmcplusplus {
 	complex<double> psi_val, psi_lapl;
 	TinyVector<complex<double>,OHMMS_DIM> psi_grad;
 
-	if (j > NumValenceOrbs || !done) {
+	if (j >= NumValenceOrbs || !done) {
 	  PosType k = kPoints[j];
 	  TinyVector<complex<double>,OHMMS_DIM> ck;
 	  for (int n=0; n<OHMMS_DIM; n++)	
@@ -627,10 +627,9 @@ namespace qmcplusplus {
 	  sincos (phase, &s, &c);
 	  complex<double> e_mikr (c,s);
 	  
-	  psi_val = e_mikr*u;
+	  psi_val  = e_mikr*u;
 	  psi_grad = e_mikr*(-eye*u*ck + gradu);
-	  complex<double> psi_lapl = 
-	    e_mikr*(-dot(k,k)*u - 2.0*eye*dot(ck,gradu) + laplu);
+	  psi_lapl = e_mikr*(-dot(k,k)*u - 2.0*eye*dot(ck,gradu) + laplu);
 	}
 	else {
 	  psi_val = u;
