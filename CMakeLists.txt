@@ -138,6 +138,8 @@ SET(MAC_VECLIB 0)
 SET(ENABLE_GTK_GUI 0)
 SET(HAVE_EINSPLINE 0)
 SET(HAVE_EINSPLINE_EXT 0)
+SET(HAVE_MKL 0)
+SET(HAVE_ACML 0)
 
 ######################################################
 # Directory where customize cmake files reside

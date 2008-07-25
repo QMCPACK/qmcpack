@@ -171,4 +171,10 @@
 
 #endif /* HAVE_EINSPLINE_EXT */
 
+/* Fund mkl library */
+#cmakedefine HAVE_MKL @HAVE_MKL@
+
+/* Fund acml library */
+#cmakedefine HAVE_ACML @HAVE_ACML@
+
 #endif // QMCPLUSPLUS_CONFIGURATION_H
