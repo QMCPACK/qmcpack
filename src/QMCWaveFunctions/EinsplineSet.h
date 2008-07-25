@@ -26,7 +26,7 @@
 #include "Utilities/NewTimer.h"
 #include <einspline/multi_bspline_structs.h>
 #include "Configuration.h"
-
+#include "Numerics/e2iphi.h"
 
 namespace qmcplusplus {
 
@@ -246,19 +246,20 @@ namespace qmcplusplus {
   template<typename StorageType>
   inline void EinsplineSetExtended<StorageType>::computePhaseFactors(TinyVector<double,OHMMS_DIM> r)
   {
-#ifdef HAVE_MKL
-    for (int i=0; i<kPoints.size(); i++) 
-      phase[i] = -dot(r, kPoints[i]);
-    vzCIS(OrbitalSetSize, phase, (double*)eikr.data());
-#else
-    double s, c;
-    for (int i=0; i<kPoints.size(); i++) {
-      phase[i] = -dot(r, kPoints[i]);
-      sincos (phase[i], &s, &c);
-      eikr[i] = complex<double>(c,s);
-    }
-
-#endif
+    for (int i=0; i<kPoints.size(); i++) phase[i] = -dot(r, kPoints[i]);
+    eval_e2iphi(phase,eikr);
+//#ifdef HAVE_MKL
+//    for (int i=0; i<kPoints.size(); i++) 
+//      phase[i] = -dot(r, kPoints[i]);
+//    vzCIS(OrbitalSetSize, phase, (double*)eikr.data());
+//#else
+//    double s, c;
+//    for (int i=0; i<kPoints.size(); i++) {
+//      phase[i] = -dot(r, kPoints[i]);
+//      sincos (phase[i], &s, &c);
+//      eikr[i] = complex<double>(c,s);
+//    }
+//#endif
   }
   
 
