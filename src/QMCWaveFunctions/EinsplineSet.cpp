@@ -413,75 +413,67 @@ namespace qmcplusplus {
     // Do core states first
     int icore = NumValenceOrbs;
     for (int tin=0; tin<MuffinTins.size(); tin++) {
-      MuffinTins[tin].evaluateCore(r, StorageValueVector, 
-       				   StorageGradVector, StorageLaplVector, icore);
+      MuffinTins[tin].evaluateCore(r, StorageValueVector, StorageGradVector, 
+				   StorageLaplVector, icore);
       icore += MuffinTins[tin].get_num_core();
     }
 
-    for (int tin=0; tin<MuffinTins.size(); tin++) {
+    // Check muffin tins;  if inside evaluate the orbitals
+    bool inTin = false;
+    for (int tin=0; tin<MuffinTins.size(); tin++) 
       if (MuffinTins[tin].inside(r)) {
+	inTin = true;
 	MuffinTins[tin].evaluate (r, StorageValueVector, StorageGradVector, StorageLaplVector);
-	int psiIndex=0;
-	for (int i=0; i<StorageValueVector.size(); i++) {
-	  psi[psiIndex]     = real(StorageValueVector[i]);
-	  for (int j=0; j<OHMMS_DIM; j++)
-	    dpsi[psiIndex][j]    = real(StorageGradVector[i][j]);
-	  d2psi[psiIndex] = real(StorageLaplVector[i]);
-	  psiIndex++;
+      }
 
-	  if (MakeTwoCopies[i]) {
-	    psi[psiIndex]     = imag(StorageValueVector[i]);
-	    for (int j=0; j<OHMMS_DIM; j++)
-	      dpsi[psiIndex][j]    = imag(StorageGradVector[i][j]);
-	    d2psi[psiIndex] = imag(StorageLaplVector[i]);
-	    psiIndex++;
-	  }
-	}
-	return;
+    // Otherwise, evaluate the B-splines
+    if (!inTin) {
+      PosType ru(PrimLattice.toUnit(P.R[iat]));
+      for (int i=0; i<OHMMS_DIM; i++)
+	ru[i] -= std::floor (ru[i]);
+      EinsplineTimer.start();
+      EinsplineMultiEval (MultiSpline, ru, StorageValueVector,
+			  StorageGradVector, StorageHessVector);
+      EinsplineTimer.stop();
+      for (int j=0; j<NumValenceOrbs; j++) {
+	complex<double> u, laplu;
+	TinyVector<complex<double>, OHMMS_DIM> gradu;
+	StorageGradVector[j] = dot (PrimLattice.G, StorageGradVector[j]);
+	StorageLaplVector[j] = trace (StorageHessVector[j], GGt);
       }
     }
 
-    
-    PosType ru(PrimLattice.toUnit(P.R[iat]));
-    for (int i=0; i<OHMMS_DIM; i++)
-      ru[i] -= std::floor (ru[i]);
-    EinsplineTimer.start();
-    EinsplineMultiEval (MultiSpline, ru, StorageValueVector,
-			StorageGradVector, StorageHessVector);
-    EinsplineTimer.stop();
-
-    //computePhaseFactors(r);
+    // Now, add phase factors to core states and B-spline states
+    int jstart = inTin ? NumValenceOrbs : 0;
     int N = StorageValueVector.size();
     complex<double> eye (0.0, 1.0);
-    int psiIndex = 0;
-    for (int j=0; j<N; j++) {
-      complex<double> u, laplu;
-      TinyVector<complex<double>, OHMMS_DIM> gradu;
-      u = StorageValueVector[j];
-      if (j < NumValenceOrbs) {
-	gradu = dot(PrimLattice.G, StorageGradVector[j]);
-	laplu = trace(StorageHessVector[j], GGt);
-      }
-      else {
-	gradu = StorageGradVector[j];
-	laplu = StorageLaplVector[j];
-      }
-	
-	
+    for (int j=jstart; j<N; j++) {
+      complex<double> u = StorageValueVector[j];
+      TinyVector<complex<double>,OHMMS_DIM> gradu = StorageGradVector[j];
+      complex<double> laplu = StorageLaplVector[j];
       PosType k = kPoints[j];
       TinyVector<complex<double>,OHMMS_DIM> ck;
-      for (int n=0; n<OHMMS_DIM; n++)	
-	ck[n] = k[n];
+      for (int n=0; n<OHMMS_DIM; n++)	  ck[n] = k[n];
       double s,c;
       double phase = -dot(r, k);
       sincos (phase, &s, &c);
       complex<double> e_mikr (c,s);
       complex<double> psi_val, psi_lapl;
       TinyVector<complex<double>,OHMMS_DIM> psi_grad;
-      psi_val = e_mikr*u;
-      psi_grad = e_mikr*(-eye*u*ck + gradu);
-      psi_lapl = e_mikr*(-dot(k,k)*u - 2.0*eye*dot(ck,gradu) + laplu);
-
+      StorageValueVector[j] = e_mikr*u;
+      StorageGradVector[j]  = e_mikr*(-eye*u*ck + gradu);
+      StorageLaplVector[j]  = e_mikr*(-dot(k,k)*u - 2.0*eye*dot(ck,gradu) + laplu);
+    }
+    
+    // Finally, copy into output vectors
+    int psiIndex = 0;
+    for (int j=0; j<N; j++) {
+      complex<double> psi_val, psi_lapl;
+      TinyVector<complex<double>, OHMMS_DIM> psi_grad;
+      psi_val  = StorageValueVector[j];
+      psi_grad = StorageGradVector[j];
+      psi_lapl = StorageLaplVector[j];
+      
       psi[psiIndex] = real(psi_val);
       for (int n=0; n<OHMMS_DIM; n++)
 	dpsi[psiIndex][n] = real(psi_grad[n]);
@@ -494,9 +486,6 @@ namespace qmcplusplus {
 	d2psi[psiIndex] = imag(psi_lapl);
 	psiIndex++;
       }
-      // convert(e_mikr * u, psi[j]);
-      // convertVec(e_mikr*(-eye*u*ck + gradu), dpsi[j]);
-      // convert(e_mikr*(-dot(k,k)*u - 2.0*eye*dot(ck,gradu) + laplu), d2psi[j]);
     }
     VGLTimer.stop();
   }
