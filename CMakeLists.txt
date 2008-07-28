@@ -32,7 +32,7 @@ SET(OHMMS_INDEXTYPE int)
 SET(OHMMS_PRECISION double)
 SET(APP_PRECISION double)
 
-SET(QMC_COMPLEX 0 CACHE BOOL "Build for complex binary")
+SET(QMC_COMPLEX 0 CACHE INTEGER "Build for complex binary")
 SET(QMC_MPI 1 CACHE BOOL "Enable/disable MPI")
 SET(QMC_OMP 0 CACHE BOOL "Enable/disable OpenMP")
 SET(QMC_BITS 32 CACHE INTEGER "Select OS bit")
@@ -221,7 +221,7 @@ ENDIF(NOT FOUND_CXXENV)
 #-------------------------------------------------------------------
 #COMPIELR MANUAL SELECTION
 #If automatic detection does not work, comment out above and select one
-# of these files
+#of these files
 #-------------------------------------------------------------------
 #INCLUDE(${PROJECT_CMAKE}/GNUCompilers.cmake)
 #INCLUDE(${PROJECT_CMAKE}/IntelCompilers.cmake)
@@ -265,6 +265,8 @@ ENDIF(FOUND_LIBXML2)
 IF(FOUND_BOOST)
   SET(HAVE_LIBBOOST 1)
   INCLUDE_DIRECTORIES(${BOOST_INCLUDE_DIR})
+ELSE(FOUND_BOOST)
+  MESSAGE(FATAL_ERROR "Require boost 1.33.x or higher. Set BOOST_HOME")
 ENDIF(FOUND_BOOST)
 
 #IF(FOUND_FFTW)
@@ -287,6 +289,8 @@ IF(FOUND_HDF5)
 #  IF(SZLIB_FOUND)
 #    LINK_LIBRARIES(${SZLIB_LIBRARY})
 #  ENDIF(SZLIB_FOUND)
+ELSE(FOUND_HDF5)
+  MESSAGE(FATAL_ERROR "Require hdf5 1.6.4 or higher. Set HDF5_HOME")
 ENDIF(FOUND_HDF5)
 
 ######################################################################
