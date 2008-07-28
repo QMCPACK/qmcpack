@@ -313,6 +313,7 @@ namespace qmcplusplus {
     // Check if we are inside a muffin tin.  If so, compute valence
     // states in the muffin tin.
     bool inTin = false;
+    double xBlend;
     for (int tin=0; tin<MuffinTins.size() && !inTin; tin++) 
       if (MuffinTins[tin].inside(r)) {
 	MuffinTins[tin].evaluate (r, StorageValueVector);
@@ -336,21 +337,21 @@ namespace qmcplusplus {
     // We should add it to the core states, however
     int phaseStart = inTin ? NumValenceOrbs : 0;
 
-    for (int i=phaseStart; i<N; i++) {
-      PosType k = kPoints[i];
+    for (int j=phaseStart; j<N; j++) {
+      PosType k = kPoints[j];
       double s,c;
       double phase = -dot(r, k);
       sincos (phase, &s, &c);
       complex<double> e_mikr (c,s);
-      StorageValueVector[i] *= e_mikr;
+      StorageValueVector[j] *= e_mikr;
     }
 
     int psiIndex = 0;
-    for (int i=0; i<N; i++) {
-      complex<double> psi_val = StorageValueVector[i];
+    for (int j=0; j<N; j++) {
+      complex<double> psi_val = StorageValueVector[j];
       psi[psiIndex] = real(psi_val);
       psiIndex++;
-      if (MakeTwoCopies[i]) {
+      if (MakeTwoCopies[j]) {
 	psi[psiIndex] = imag(psi_val);
 	psiIndex++;
       }
