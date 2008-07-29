@@ -123,7 +123,7 @@ namespace qmcplusplus {
     
     bool inside (TinyVector<double,3> r);
     void inside(TinyVector<double,3> r, bool &in, bool &needBlend);
-    void disp (TinyVector<double,3> r, TinyVector<double,3> &dr);
+    TinyVector<double,3> disp (TinyVector<double,3> r);
     void evaluate (TinyVector<double,3> r, Vector<complex<double> > &phi);
     void evaluate (TinyVector<double,3> r,
 		   Vector<complex<double> > &phi,

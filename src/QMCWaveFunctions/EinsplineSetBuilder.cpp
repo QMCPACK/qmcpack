@@ -476,6 +476,7 @@ namespace qmcplusplus {
 	double r = std::sqrt(dot(P.R[0], P.R[0]));
 	double rN = std::sqrt(dot(P.R[0]-N, P.R[0]-N));
 	OrbitalSet->evaluate(P, 0, phi, grad, lapl);
+	// OrbitalSet->evaluate(P, 0, phi);
 	fprintf (fout, "%1.12e ", r*x/std::fabs(x));
 	for (int j=0; j<numOrbs; j++) {
 	  double gmag = std::sqrt(dot(grad[j],grad[j]));
@@ -1025,9 +1026,9 @@ namespace qmcplusplus {
     int N = NumDistinctOrbitals;
     orbitalSet->kPoints.resize(N);
     orbitalSet->MakeTwoCopies.resize(N);
-    orbitalSet->StorageValueVector.resize(N);
-    orbitalSet->StorageLaplVector.resize(N);
-    orbitalSet->StorageGradVector.resize(N);
+    orbitalSet->StorageValueVector.resize(N); orbitalSet->BlendValueVector.resize(N);
+    orbitalSet->StorageLaplVector.resize(N);  orbitalSet->BlendLaplVector.resize(N);
+    orbitalSet->StorageGradVector.resize(N);  orbitalSet->BlendGradVector.resize(N);
     orbitalSet->StorageHessVector.resize(N);
     orbitalSet->phase.resize(N);
     orbitalSet->eikr.resize(N);
@@ -1209,9 +1210,9 @@ namespace qmcplusplus {
 
     orbitalSet->kPoints.resize(N);
     orbitalSet->MakeTwoCopies.resize(N);
-    orbitalSet->StorageValueVector.resize(N);
-    orbitalSet->StorageLaplVector.resize(N);
-    orbitalSet->StorageGradVector.resize(N);
+    orbitalSet->StorageValueVector.resize(N);  orbitalSet->BlendValueVector.resize(N);
+    orbitalSet->StorageLaplVector.resize(N);   orbitalSet->BlendLaplVector.resize(N);
+    orbitalSet->StorageGradVector.resize(N);   orbitalSet->BlendGradVector.resize(N);
     orbitalSet->StorageHessVector.resize(N);
     orbitalSet->phase.resize(N);
     orbitalSet->eikr.resize(N);

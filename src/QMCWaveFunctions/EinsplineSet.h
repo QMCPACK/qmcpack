@@ -186,6 +186,10 @@ namespace qmcplusplus {
     StorageValueVector_t StorageValueVector, StorageLaplVector;
     StorageGradVector_t  StorageGradVector;
     StorageHessVector_t  StorageHessVector;
+    // Temporary storage used when blending functions
+    StorageValueVector_t BlendValueVector, BlendLaplVector;
+    StorageGradVector_t  BlendGradVector;
+
     // True if we should unpack this orbital into two copies
     vector<bool>         MakeTwoCopies;
     // k-points for each orbital
