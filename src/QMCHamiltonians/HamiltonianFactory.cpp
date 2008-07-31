@@ -24,14 +24,19 @@
 #include "QMCHamiltonians/IonIonPotential.h"
 #include "QMCHamiltonians/NumericalRadialPotential.h"
 #if OHMMS_DIM == 3
-#include "QMCHamiltonians/LocalCorePolPotential.h"
-#include "QMCHamiltonians/ECPotentialBuilder.h"
+  #include "QMCHamiltonians/LocalCorePolPotential.h"
+  #include "QMCHamiltonians/ECPotentialBuilder.h"
 #endif
+#if defined(HAVE_LIBFFTW_LS)
+  #include "QMCHamiltonians/ModInsKineticEnergy.h"
+  #include "QMCHamiltonians/MomentumDistribution.h"
+  #include "QMCHamiltonians/DispersionRelation.h"
+#endif
+
 #if defined(HAVE_LIBFFTW)
-#include "QMCHamiltonians/ModInsKineticEnergy.h"
-#include "QMCHamiltonians/MomentumDistribution.h"
-#include "QMCHamiltonians/DispersionRelation.h"
+  #include "QMCHamiltonians/MPC.h"
 #endif
+
 #include "QMCHamiltonians/CoulombPBCAATemp.h"
 #include "QMCHamiltonians/CoulombPBCABTemp.h"
 #include "OhmmsData/AttributeSet.h"
@@ -129,6 +134,11 @@ namespace qmcplusplus {
         } else if(potType == "cpp") {
           addCorePolPotential(cur);
         }
+#if defined(HAVE_LIBFFTW)
+	else if (potType == "mpc") {
+	  addMPCPotential (cur);
+	}
+#endif
         else if(potType.find("num") < potType.size())
         {
           if(sourceInp == targetInp)//only accept the pair-potential for now
@@ -254,6 +264,23 @@ namespace qmcplusplus {
 
 
     return true;
+  }
+
+  void
+  HamiltonianFactory::addMPCPotential(xmlNodePtr cur) {
+#if defined(HAVE_LIBFFTW)
+    string a("e"), title("MPC");
+    OhmmsAttributeSet hAttrib;
+    hAttrib.add(title,"id"); hAttrib.add(title,"name"); 
+    hAttrib.put(cur);
+
+    renameProperty(a);
+
+    MPC *mpc = new MPC (*targetPtcl);
+    
+    
+    
+#endif // defined(HAVE_LIBFFTW)
   }
 
   void 
@@ -395,7 +422,7 @@ namespace qmcplusplus {
 
   void
   HamiltonianFactory::addModInsKE(xmlNodePtr cur) {
-#if defined(HAVE_LIBFFTW)
+#if defined(HAVE_LIBFFTW_LS)
     typedef QMCTraits::RealType    RealType;
     typedef QMCTraits::IndexType   IndexType;
     typedef QMCTraits::PosType     PosType;

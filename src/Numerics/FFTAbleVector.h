@@ -1,6 +1,6 @@
 #ifndef QMCPLUSPLUS_FFTABLEVECTOR_H
 #define QMCPLUSPLUS_FFTABLEVECTOR_H
-#include "ohmms-config.h"
+#include "config.h"
 #include "OhmmsPETE/TinyVector.h"
 #include "OhmmsPETE/OhmmsVector.h"
 

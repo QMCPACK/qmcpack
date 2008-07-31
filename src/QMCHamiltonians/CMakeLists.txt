@@ -19,15 +19,20 @@ IF(OHMMS_DIM MATCHES 3)
       ECPComponentBuilder.cpp
       ECPComponentBuilder.1.cpp
       ECPComponentBuilder.2.cpp
+      MPC.cpp
      )
+   IF(HAVE_LIBFFTW)
+     SET(HAMSRCS ${HAMSRCS} 
+         MPC.cpp)
+   ENDIF (HAVE_LIBFFTW)
 ENDIF(OHMMS_DIM MATCHES 3)
 
-IF(HAVE_LIBFFTW)
-  SET(HAMSRCS ${HAMSRCS}
-    DispersionRelation.cpp
-    MomentumDistribution.cpp
-)
-ENDIF(HAVE_LIBFFTW)
+#IF(HAVE_LIBFFTW)
+#  SET(HAMSRCS ${HAMSRCS}
+#    DispersionRelation.cpp
+#    MomentumDistribution.cpp
+#)
+#ENDIF(HAVE_LIBFFTW)
 
 ADD_LIBRARY(qmcham ${HAMSRCS})
 #IF(QMC_BUILD_STATIC)
