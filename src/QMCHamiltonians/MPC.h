@@ -24,11 +24,17 @@ namespace qmcplusplus {
   /** @ingroup hamiltonian
    *\brief Calculates the Model Periodic Coulomb potential using PBCs
    */
+
+  class UBspline_3d_d;
+
   class MPC: public QMCHamiltonianBase {
   private:
+    UBspline_3d_d *VlongSpline;
     void compute_g_G(double &g_0_N, vector<double> &g_G_N, int N);
-
     void init_f_G();
+    void init_spline();
+    double Ecut;
+    vector<PosType> Gvecs;
 
   public:
     ParticleSet& PtclRef;
@@ -50,7 +56,7 @@ namespace qmcplusplus {
     vector<RealType> Zat,Zspec; 
     vector<int> NofSpecies;
 
-    MPC(ParticleSet& ref);
+    MPC(ParticleSet& ref, double cutoff);
 
     /// copy constructor
     MPC(const MPC& c);
@@ -66,9 +72,7 @@ namespace qmcplusplus {
     }
 
     /** Do nothing */
-    bool put(xmlNodePtr cur) {
-      return true;
-    }
+    bool put(xmlNodePtr cur);
 
     bool get(std::ostream& os) const {
       os << "MPC potential: " << PtclRef.getName();

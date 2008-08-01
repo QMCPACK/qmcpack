@@ -85,6 +85,10 @@ namespace qmcplusplus {
     ///spherical-grids for non-local PP
     vector<ParticlePos_t*> Sphere;
 
+    ///Particle density in G-space for MPC interaction
+    vector<TinyVector<int,OHMMS_DIM> > DensityReducedGvecs;
+    vector<std::complex<double> >   Density_G;
+
      /** name-value map of Walker Properties
      *
      * PropertyMap is used to keep the name-value mapping of

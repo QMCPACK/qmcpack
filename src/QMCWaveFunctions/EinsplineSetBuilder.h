@@ -97,6 +97,7 @@ namespace qmcplusplus {
     //////////////////////
     typedef map<string,ParticleSet*> PtclPoolType;
     PtclPoolType &ParticleSets;
+    ParticleSet &TargetPtcl;
 
     EinsplineSetBuilder(ParticleSet& p, PtclPoolType& psets, xmlNodePtr cur);
     

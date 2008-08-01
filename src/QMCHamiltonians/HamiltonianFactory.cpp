@@ -271,12 +271,15 @@ namespace qmcplusplus {
 #if defined(HAVE_LIBFFTW)
     string a("e"), title("MPC");
     OhmmsAttributeSet hAttrib;
-    hAttrib.add(title,"id"); hAttrib.add(title,"name"); 
+    double cutoff = 30.0;
+    hAttrib.add(title,"id"); 
+    hAttrib.add(title,"name"); 
+    hAttrib.add(cutoff,"cutoff");
     hAttrib.put(cur);
 
     renameProperty(a);
 
-    MPC *mpc = new MPC (*targetPtcl);
+    MPC *mpc = new MPC (*targetPtcl, cutoff);
     
     
     

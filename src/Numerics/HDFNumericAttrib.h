@@ -306,6 +306,11 @@ HDFAttribIO<data_type>(data_type& a):ref(a) { }
   }
   
   inline void read(hid_t  grp, const char* name) {
+    H5E_auto_t func;
+    void *client_data;
+    H5Eget_auto (&func, &client_data);
+    H5Eset_auto (NULL, NULL);
+
     hid_t h1 = H5Dopen(grp, name);
     hid_t ret = -1;
     if (h1 >= 0) {
@@ -313,6 +318,7 @@ HDFAttribIO<data_type>(data_type& a):ref(a) { }
       hsize_t dim[2];
       int rank = H5Sget_simple_extent_ndims(dataspace);
       int status_n = H5Sget_simple_extent_dims(dataspace, dim, NULL);
+
       //Resize storage if not equal
       if(ref.size() != (unsigned long)dim[0]){
 	ref.resize(dim[0]);
@@ -320,6 +326,7 @@ HDFAttribIO<data_type>(data_type& a):ref(a) { }
       hid_t ret = H5Dread(h1, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, &(ref[0][0]));
       H5Dclose(h1);
     }
+    H5Eset_auto (func, client_data);
   }
 };
 
@@ -682,6 +689,8 @@ struct HDFAttribIO<blitz::Array<TinyVector<double,D>,2> >: public HDFAttribIOBas
         H5Dclose(h1);
       }
     };
+
+  
 
   template<>
     struct HDFAttribIO<Array<complex<double>,1> >: public HDFAttribIOBase 

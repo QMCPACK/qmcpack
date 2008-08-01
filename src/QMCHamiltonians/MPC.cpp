@@ -1,13 +1,14 @@
 #include "QMCHamiltonians/MPC.h"
 #include "Lattice/ParticleBConds.h"
 #include "OhmmsPETE/OhmmsArray.h"
+#include "OhmmsData/AttributeSet.h"
 
 #include <fftw3.h>
 
 namespace qmcplusplus {
 
-  MPC::MPC(ParticleSet& ptcl) :
-    PtclRef(ptcl)
+  MPC::MPC(ParticleSet& ptcl, double cutoff) :
+    PtclRef(ptcl), Ecut(cutoff)
   {
     initBreakup();
  
@@ -110,9 +111,8 @@ namespace qmcplusplus {
 
 
   void
-  MPC::initBreakup()
+  MPC::init_f_G()
   {
-    char str[1000];
     KContainer &Glist = PtclRef.SK->KLists;
     int numG = Glist.kpts.size();
     f_G.resize(numG);
@@ -135,7 +135,6 @@ namespace qmcplusplus {
     TinyVector<double,3> g0_124 (g_0_N, g_0_2N, g_0_4N);
     f_0 = extrap (N, g0_124);
     
-    app_log() << "\n  === Initializing MPC interaction === " << endl;
     app_log().precision(12);
     app_log() << "    Linear extrap    = " << std::scientific 
 	      << extrap (2*N, g0_12) << endl;
@@ -170,8 +169,93 @@ namespace qmcplusplus {
 	     "      Linear Extrap   : %18.14e\n"
 	     "      Quadratic Extrap: %18.14e\n", worstLin, worstQuad);
     
+  }
+
+  void
+  MPC::init_spline() 
+  {
+    TinyVector<int,OHMMS_DIM> maxIndex;
+    PosType b[OHMMS_DIM];
+    for (int j=0; j < OHMMS_DIM; j++) {
+      maxIndex[j] = 0;
+      b[j] = PtclRef.Lattice.b(j);
+    }
+    // Loop through all the G-vectors, and find the largest
+    // indices in each direction with energy less than the cutoff
+    
+    for (int iG=0; iG < PtclRef.DensityReducedGvecs.size(); iG++) {
+      TinyVector<int,OHMMS_DIM> gint = PtclRef.DensityReducedGvecs[iG];
+      PosType G = (double)gint[0] * b[0];
+      for (int j=1; j<OHMMS_DIM; j++) 
+	G += (double)gint[j]*b[j];
+      if (0.5*dot(G,G) < Ecut) 
+	for (int j=0; j<OHMMS_DIM; j++)
+	  maxIndex[j] = max(maxIndex[j], abs(gint[j]));
+    }
+    TinyVector<int,OHMMS_DIM> boxSize = 4 * maxIndex;
+    app_log() << "   Using real-space box of size [" << boxSize[0] 
+	      << "," << boxSize[1] << "," << boxSize[2] << "] for MPC spline.\n";
+
+    Array<complex<double>,3> rBox(boxSize[0], boxSize[1], boxSize[2]),
+      GBox(boxSize[0], boxSize[1], boxSize[2]);
+
+    GBox = complex<double>();
+
+    // Now fill in elements of GBox
+    double volInv = 1.0/PtclRef.Lattice.Volume;
+    for (int iG=0; iG < PtclRef.DensityReducedGvecs.size(); iG++) {
+      TinyVector<int,OHMMS_DIM> gint = PtclRef.DensityReducedGvecs[iG];
+      PosType G = (double)gint[0] * b[0];
+      complex<double> rho = PtclRef.Density_G[iG];
+      for (int j=1; j<OHMMS_DIM; j++) 
+	G += (double)gint[j]*b[j];
+      if (0.5*dot(G,G) < Ecut) {
+	TinyVector<int,OHMMS_DIM> index;
+	for (int j=0; j<OHMMS_DIM; j++)
+	  index[j] = (gint[j] + boxSize[j]) % boxSize[j];
+	// GBox(index[0], index[1], index[2]) = 
+      }
+    }
+  
+    fftw_plan fft = fftw_plan_dft_3d 
+      (boxSize[0], boxSize[1], boxSize[2], (fftw_complex*)rBox.data(), 
+       (fftw_complex*) GBox.data(), 1, FFTW_ESTIMATE);
+    fftw_execute (fft);
+    fftw_destroy_plan (fft);
+
+  }
+
+  void
+  MPC::initBreakup()
+  {
+    app_log() << "\n  === Initializing MPC interaction === " << endl;
+    if (!PtclRef.Density_G.size()) {
+      app_error() << "************************\n"
+		  << "** Error in MPC setup **\n"
+		  << "************************\n"
+		  << "    The electron density was not setup by the wave function builder.\n";
+      abort();
+    }
+    init_f_G();
+    init_spline();
     app_log() << "  === MPC interaction initialized === \n\n";
   }
+
+  bool 
+  MPC::put(xmlNodePtr cur)
+  {
+    Ecut = -1.0;
+    OhmmsAttributeSet attribs;
+    attribs.add (Ecut, "cutoff");
+    attribs.put (cur);
+    if (Ecut < 0.0) {
+      Ecut = 30.0;
+      app_log() << "    MPC cutoff not found.  Set using \"cutoff\" attribute.\n"
+		<< "    Setting to default value of " << Ecut << endl;
+    }
+    return true;
+  }
+
 
   MPC::Return_t
   MPC::evaluate(ParticleSet &P)
@@ -184,7 +268,7 @@ namespace qmcplusplus {
   QMCHamiltonianBase* 
   MPC::clone(ParticleSet& qp, TrialWaveFunction& psi)
   {
-    return new MPC(qp);
+    return new MPC(qp, Ecut);
   }
 
 }
