@@ -19,6 +19,45 @@ namespace qmcplusplus {
 
   }
   
+
+
+  void
+  MPC::init_gvecs()
+  {
+    TinyVector<int,OHMMS_DIM> maxIndex;
+    PosType b[OHMMS_DIM];
+    for (int j=0; j < OHMMS_DIM; j++) {
+      maxIndex[j] = 0;
+      b[j] = 2.0*M_PI*PtclRef.Lattice.b(j);
+    }
+    
+    int numG1 = PtclRef.Density_G.size();
+    int numG2 = PtclRef.DensityReducedGvecs.size();
+    assert (PtclRef.Density_G.size() == PtclRef.DensityReducedGvecs.size());
+
+    // Loop through all the G-vectors, and find the largest
+    // indices in each direction with energy less than the cutoff
+    for (int iG=0; iG < PtclRef.DensityReducedGvecs.size(); iG++) {
+      TinyVector<int,OHMMS_DIM> gint = PtclRef.DensityReducedGvecs[iG];
+      PosType G = (double)gint[0] * b[0];
+      for (int j=1; j<OHMMS_DIM; j++) 
+	G += (double)gint[j]*b[j];
+      if (0.5*dot(G,G) < Ecut) {
+	for (int j=0; j<OHMMS_DIM; j++)
+	  maxIndex[j] = max(maxIndex[j], abs(gint[j]));
+	Gvecs.push_back(G);
+	Gints.push_back(gint);
+	Rho_G.push_back(PtclRef.Density_G[iG]);
+      }
+    }
+    SplineDim = 4 * maxIndex;
+    MaxDim = max(maxIndex[0], max(maxIndex[1], maxIndex[2]));
+    app_log() << "  Using " << Gvecs.size() 
+	      << " G-vectors for MPC interaction.\n";
+    app_log() << "   Using real-space box of size [" << SplineDim[0] 
+	      << "," << SplineDim[1] << "," << SplineDim[2] 
+	      << "] for MPC spline.\n";
+  }
   
 
   
@@ -61,16 +100,14 @@ namespace qmcplusplus {
 
     // Now, copy data into output, and add on analytic part
     double norm = Ninv*Ninv*Ninv;
-    KContainer &Glist = PtclRef.SK->KLists;
-    int numG = Glist.kpts.size();
+    int numG = Gints.size();
     for (int iG=0; iG < numG; iG++) {
-      TinyVector<int,OHMMS_DIM> gint = Glist.kpts[iG];
+      TinyVector<int,OHMMS_DIM> gint = Gints[iG];
       for (int j=0; j<OHMMS_DIM; j++)
 	gint[j] = (gint[j] + N)%N;
       g_G[iG] = norm * real(GBox(gint[0], gint[1], gint[2]));
     }
     g_0 = norm * real(GBox(0,0,0));
-    
   }
 
 
@@ -86,10 +123,6 @@ namespace qmcplusplus {
     A(1,0) = 1.0; A(1,1) = N2inv2; A(1,2) = N2inv2*N2inv2;
     A(2,0) = 1.0; A(2,1) = N4inv2; A(2,2) = N4inv2*N4inv2;
     Ainv = inverse(A);
-    // fprintf (stderr, "Ainv = [ %8.5f %8.5f %8.5f\n"
-    // 	     "         %8.5f %8.5f %8.5f\n"
-    // 	     "         %8.5f %8.5f %8.5f ] \n");
-
     TinyVector<double,3> abc = dot(Ainv,g_124);
     return abc[0];
   }
@@ -113,11 +146,10 @@ namespace qmcplusplus {
   void
   MPC::init_f_G()
   {
-    KContainer &Glist = PtclRef.SK->KLists;
-    int numG = Glist.kpts.size();
+    int numG = Gints.size();
     f_G.resize(numG);
 
-    int N = max(64, 4*Glist.mmax[OHMMS_DIM]);
+    int N = max(64, 2*MaxDim+1);
     vector<double> g_G_N(numG), g_G_2N(numG), g_G_4N(numG);
     double g_0_N, g_0_2N, g_0_4N;
     compute_g_G(g_0_N , g_G_N,  1*N);
@@ -158,7 +190,7 @@ namespace qmcplusplus {
 	worstQuad = quadExtrap;
       }
       f_G[iG] = quadExtrap;
-      double G2 = Glist.ksq[iG];
+      double G2 = dot(Gvecs[iG], Gvecs[iG]);
       double G  = std::sqrt(G2);
       f_G[iG] += volInv*M_PI*(4.0/G2 + 12.0/(L*L*G2*G2)*
 			      (std::cos(G*L) - std::sin(G*L)/(G*L)));
@@ -171,71 +203,71 @@ namespace qmcplusplus {
     
   }
 
+
+
   void
   MPC::init_spline() 
   {
-    TinyVector<int,OHMMS_DIM> maxIndex;
-    PosType b[OHMMS_DIM];
-    for (int j=0; j < OHMMS_DIM; j++) {
-      maxIndex[j] = 0;
-      b[j] = PtclRef.Lattice.b(j);
-    }
-    // Loop through all the G-vectors, and find the largest
-    // indices in each direction with energy less than the cutoff
+    Array<complex<double>,3> rBox(SplineDim[0], SplineDim[1], SplineDim[2]),
+      GBox(SplineDim[0], SplineDim[1], SplineDim[2]);
+    Array<double,3> splineData(SplineDim[0], SplineDim[1], SplineDim[2]);
     
-    for (int iG=0; iG < PtclRef.DensityReducedGvecs.size(); iG++) {
-      TinyVector<int,OHMMS_DIM> gint = PtclRef.DensityReducedGvecs[iG];
-      PosType G = (double)gint[0] * b[0];
-      for (int j=1; j<OHMMS_DIM; j++) 
-	G += (double)gint[j]*b[j];
-      if (0.5*dot(G,G) < Ecut) 
-	for (int j=0; j<OHMMS_DIM; j++)
-	  maxIndex[j] = max(maxIndex[j], abs(gint[j]));
-    }
-    TinyVector<int,OHMMS_DIM> boxSize = 4 * maxIndex;
-    app_log() << "   Using real-space box of size [" << boxSize[0] 
-	      << "," << boxSize[1] << "," << boxSize[2] << "] for MPC spline.\n";
-
-    Array<complex<double>,3> rBox(boxSize[0], boxSize[1], boxSize[2]),
-      GBox(boxSize[0], boxSize[1], boxSize[2]);
-
+    
     GBox = complex<double>();
-
+    
     // Now fill in elements of GBox
     double volInv = 1.0/PtclRef.Lattice.Volume;
-    for (int iG=0; iG < PtclRef.DensityReducedGvecs.size(); iG++) {
-      TinyVector<int,OHMMS_DIM> gint = PtclRef.DensityReducedGvecs[iG];
-      PosType G = (double)gint[0] * b[0];
+    for (int iG=0; iG < Gvecs.size(); iG++) {
+      TinyVector<int,OHMMS_DIM> gint = Gints[iG];
       complex<double> rho = PtclRef.Density_G[iG];
-      for (int j=1; j<OHMMS_DIM; j++) 
-	G += (double)gint[j]*b[j];
-      if (0.5*dot(G,G) < Ecut) {
-	TinyVector<int,OHMMS_DIM> index;
-	for (int j=0; j<OHMMS_DIM; j++)
-	  index[j] = (gint[j] + boxSize[j]) % boxSize[j];
-	// GBox(index[0], index[1], index[2]) = 
-      }
+      PosType G = Gvecs[iG];
+      double G2 = dot(G,G);
+      TinyVector<int,OHMMS_DIM> index;
+      for (int j=0; j<OHMMS_DIM; j++)
+	index[j] = (gint[j] + SplineDim[j]) % SplineDim[j];
+      GBox(index[0], index[1], index[2]) = 
+	Rho_G[iG] * (f_G[iG] - 4.0*M_PI*volInv/G2);
     }
   
     fftw_plan fft = fftw_plan_dft_3d 
-      (boxSize[0], boxSize[1], boxSize[2], (fftw_complex*)rBox.data(), 
+      (SplineDim[0], SplineDim[1], SplineDim[2], (fftw_complex*)rBox.data(), 
        (fftw_complex*) GBox.data(), 1, FFTW_ESTIMATE);
     fftw_execute (fft);
     fftw_destroy_plan (fft);
 
-  }
+    for (int i0=0; i0<SplineDim[0]; i0++)
+      for (int i1=0; i1<SplineDim[1]; i1++)
+	for (int i2=0; i2<SplineDim[2]; i2++)
+	  splineData(i0, i1, i2) = real(rBox(i0,i1,i2));
+    
+    BCtype_d bc0, bc1, bc2;
+    Ugrid grid0, grid1, grid2;
+    grid0.start=0.0; grid0.end=1.0; grid0.num = SplineDim[0];
+    grid1.start=0.0; grid1.end=1.0; grid1.num = SplineDim[1];
+    grid2.start=0.0; grid2.end=1.0; grid2.num = SplineDim[2];
+
+    bc0.lCode = bc0.rCode = PERIODIC;
+    bc1.lCode = bc1.rCode = PERIODIC;
+    bc2.lCode = bc2.rCode = PERIODIC;
+
+    VlongSpline = create_UBspline_3d_d (grid0, grid1, grid2, bc0, bc1, bc2,
+					splineData.data());
+  
+}
 
   void
   MPC::initBreakup()
   {
     app_log() << "\n  === Initializing MPC interaction === " << endl;
-    if (!PtclRef.Density_G.size()) {
+    if (PtclRef.Density_G.size() == 0) {
       app_error() << "************************\n"
 		  << "** Error in MPC setup **\n"
 		  << "************************\n"
-		  << "    The electron density was not setup by the wave function builder.\n";
+		  << "    The electron density was not setup by the "
+		  << "wave function builder.\n";
       abort();
     }
+    init_gvecs();
     init_f_G();
     init_spline();
     app_log() << "  === MPC interaction initialized === \n\n";

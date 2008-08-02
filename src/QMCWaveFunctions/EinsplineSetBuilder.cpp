@@ -218,10 +218,17 @@ namespace qmcplusplus {
     if (!TargetPtcl.Density_G.size()) {
       HDFAttribIO<vector<TinyVector<int,OHMMS_DIM> > > h_reduced_gvecs(TargetPtcl.DensityReducedGvecs);
       h_reduced_gvecs.read (H5FileID, "/density/reduced_gvecs");
+      int numG = TargetPtcl.DensityReducedGvecs.size();
+      app_log() << "  Read " << numG << " density G-vectors.\n";
       if (TargetPtcl.DensityReducedGvecs.size()) {
 	app_log() << "  EinsplineSetBuilder found density in the HDF5 file.\n";
 	HDFAttribIO<vector<ComplexType > > h_density_G (TargetPtcl.Density_G);
 	h_density_G.read (H5FileID, "/density/rho_G");
+	if (!TargetPtcl.Density_G.size()) {
+	  app_error() << "  Density reduced G-vectors defined, but not the"
+		      << " density.\n";
+	  abort();
+	}
       }
     }
 

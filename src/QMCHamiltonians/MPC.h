@@ -18,6 +18,7 @@
 #define QMCPLUSPLUS_MPC_H
 #include "QMCHamiltonians/QMCHamiltonianBase.h"
 #include "LongRange/LRCoulombSingleton.h"
+#include <einspline/bspline.h>
 
 namespace qmcplusplus {
 
@@ -25,16 +26,19 @@ namespace qmcplusplus {
    *\brief Calculates the Model Periodic Coulomb potential using PBCs
    */
 
-  class UBspline_3d_d;
-
   class MPC: public QMCHamiltonianBase {
   private:
     UBspline_3d_d *VlongSpline;
     void compute_g_G(double &g_0_N, vector<double> &g_G_N, int N);
+    void init_gvecs();
     void init_f_G();
     void init_spline();
     double Ecut;
+    vector<TinyVector<int,OHMMS_DIM> > Gints;
     vector<PosType> Gvecs;
+    vector<ComplexType> Rho_G;
+    TinyVector<int,OHMMS_DIM> SplineDim;
+    int MaxDim;
 
   public:
     ParticleSet& PtclRef;
