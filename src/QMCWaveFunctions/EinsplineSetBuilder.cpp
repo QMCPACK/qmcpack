@@ -216,8 +216,12 @@ namespace qmcplusplus {
     // in TargetPtcl.                                       //
     //////////////////////////////////////////////////////////
     if (!TargetPtcl.Density_G.size()) {
-      HDFAttribIO<vector<TinyVector<int,OHMMS_DIM> > > h_reduced_gvecs(TargetPtcl.DensityReducedGvecs);
+      HDFAttribIO<vector<TinyVector<int,OHMMS_DIM> > > 
+	h_reduced_gvecs(TargetPtcl.DensityReducedGvecs);
+      HDFAttribIO<Array<RealType,OHMMS_DIM> > 
+	h_density_r (TargetPtcl.Density_r);
       h_reduced_gvecs.read (H5FileID, "/density/reduced_gvecs");
+      h_density_r.read (H5FileID,     "/density/rho_r");
       int numG = TargetPtcl.DensityReducedGvecs.size();
       app_log() << "  Read " << numG << " density G-vectors.\n";
       if (TargetPtcl.DensityReducedGvecs.size()) {

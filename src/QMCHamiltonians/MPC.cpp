@@ -2,16 +2,18 @@
 #include "Lattice/ParticleBConds.h"
 #include "OhmmsPETE/OhmmsArray.h"
 #include "OhmmsData/AttributeSet.h"
+#include "Particle/DistanceTable.h"
+#include "Particle/DistanceTableData.h"
 
 #include <fftw3.h>
 
 namespace qmcplusplus {
 
   MPC::MPC(ParticleSet& ptcl, double cutoff) :
-    PtclRef(ptcl), Ecut(cutoff)
+    PtclRef(ptcl), Ecut(cutoff), FirstTime(true)
   {
+    d_aa = DistanceTable::add(ptcl);
     initBreakup();
- 
   }
 
   MPC::~MPC() {
@@ -214,24 +216,35 @@ namespace qmcplusplus {
     
     
     GBox = complex<double>();
+    Vconst = 0.0;
     
     // Now fill in elements of GBox
-    double volInv = 1.0/PtclRef.Lattice.Volume;
+    double vol = PtclRef.Lattice.Volume;
+    double volInv = 1.0/vol;
     for (int iG=0; iG < Gvecs.size(); iG++) {
       TinyVector<int,OHMMS_DIM> gint = Gints[iG];
-      complex<double> rho = PtclRef.Density_G[iG];
       PosType G = Gvecs[iG];
       double G2 = dot(G,G);
       TinyVector<int,OHMMS_DIM> index;
       for (int j=0; j<OHMMS_DIM; j++)
 	index[j] = (gint[j] + SplineDim[j]) % SplineDim[j];
-      GBox(index[0], index[1], index[2]) = 
-	Rho_G[iG] * (f_G[iG] - 4.0*M_PI*volInv/G2);
+      if (!(index[0]==0 && index[1]==0 && index[2]==0)) {
+	  GBox(index[0], index[1], index[2]) = vol *
+	    Rho_G[iG] * (4.0*M_PI*volInv/G2 - f_G[iG]);
+	  Vconst -= 0.5 * vol * vol * norm(Rho_G[iG])
+	    * (4.0*M_PI*volInv/G2 - f_G[iG]);
+	}
     }
-  
+    // G=0 component calculated seperately
+    GBox(0,0,0) = -vol * f_0 * Rho_G[0];
+
+    Vconst += 0.5 * vol * vol * f_0 * norm(Rho_G[0]);
+    app_log() << "  Constant potential = " << Vconst << endl;
+
+
     fftw_plan fft = fftw_plan_dft_3d 
-      (SplineDim[0], SplineDim[1], SplineDim[2], (fftw_complex*)rBox.data(), 
-       (fftw_complex*) GBox.data(), 1, FFTW_ESTIMATE);
+      (SplineDim[0], SplineDim[1], SplineDim[2], (fftw_complex*)GBox.data(), 
+       (fftw_complex*) rBox.data(), -1, FFTW_ESTIMATE);
     fftw_execute (fft);
     fftw_destroy_plan (fft);
 
@@ -252,12 +265,20 @@ namespace qmcplusplus {
 
     VlongSpline = create_UBspline_3d_d (grid0, grid1, grid2, bc0, bc1, bc2,
 					splineData.data());
+
+    grid0.num = PtclRef.Density_r.size(0);
+    grid1.num = PtclRef.Density_r.size(1);
+    grid2.num = PtclRef.Density_r.size(2);
+    DensitySpline = create_UBspline_3d_d (grid0, grid1, grid2, bc0, bc1, bc2,
+					  PtclRef.Density_r.data());
   
 }
 
   void
   MPC::initBreakup()
   {
+    NParticles = PtclRef.getTotalNum();
+
     app_log() << "\n  === Initializing MPC interaction === " << endl;
     if (PtclRef.Density_G.size() == 0) {
       app_error() << "************************\n"
@@ -270,6 +291,24 @@ namespace qmcplusplus {
     init_gvecs();
     init_f_G();
     init_spline();
+
+    FILE *fout = fopen ("MPC.dat", "w");
+    double vol = PtclRef.Lattice.Volume;
+    PosType r0 (0.0, 0.0, 0.0);
+    PosType r1 (10.26499236, 10.26499236, 10.26499236);
+    int nPoints=1001;
+    for (int i=0; i<nPoints; i++) {
+      double s = (double)i/(double)(nPoints-1);
+      PosType r = (1.0-s)*r0 + s*r1;
+      PosType u = PtclRef.Lattice.toUnit(r);
+      double V, rho;
+      eval_UBspline_3d_d (VlongSpline, u[0], u[1], u[2], &V);
+      eval_UBspline_3d_d (DensitySpline, u[0], u[1], u[2], &rho);
+      fprintf (fout, "%6.4f %14.10e %14.10e\n", s, V, rho);
+    }
+    fclose(fout);
+
+
     app_log() << "  === MPC interaction initialized === \n\n";
   }
 
@@ -288,19 +327,56 @@ namespace qmcplusplus {
     return true;
   }
 
-
-  MPC::Return_t
-  MPC::evaluate(ParticleSet &P)
-  {
-
-    return 0.0;
-  }
-
-
   QMCHamiltonianBase* 
   MPC::clone(ParticleSet& qp, TrialWaveFunction& psi)
   {
-    return new MPC(qp, Ecut);
+    cerr << "In MPC::clone.\n";
+    // return new MPC(qp, Ecut);
+    return new MPC(*this);
   }
+
+  MPC::Return_t
+  MPC::evalSR() 
+  {
+    RealType SR=0.0;
+    for(int ipart=0; ipart<NParticles; ipart++){
+      RealType esum = 0.0;
+      for(int nn=d_aa->M[ipart],jpart=ipart+1; 
+	  nn<d_aa->M[ipart+1]; nn++,jpart++) 
+	esum += d_aa->rinv(nn);
+      //Accumulate pair sums...species charge for atom i.
+      SR += esum;
+    }
+    return SR;
+  }
+  
+  MPC::Return_t
+  MPC::evalLR() 
+  {
+    RealType LR=0.0;
+    PosType u;
+    for(int i=0; i<NParticles; i++) {
+      PosType r = PtclRef.R[i];
+      PosType u = PtclRef.Lattice.toUnit(r);
+      for (int j=0; j<OHMMS_DIM; j++)
+	u[j] -= std::floor(u[j]);
+      double val;
+      eval_UBspline_3d_d (VlongSpline, u[0], u[1], u[2], &val);
+      LR += val;
+    }
+    return LR;
+  }
+
+
+  MPC::Return_t
+  MPC::evaluate (ParticleSet& P)
+  {
+    if (FirstTime || P.tag() == PtclRef.tag()) {
+      Value = evalSR() + evalLR() + Vconst;
+      FirstTime = false;
+    }
+    return 0.0;
+  }
+
 
 }

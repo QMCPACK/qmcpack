@@ -28,7 +28,8 @@ namespace qmcplusplus {
 
   class MPC: public QMCHamiltonianBase {
   private:
-    UBspline_3d_d *VlongSpline;
+    UBspline_3d_d *VlongSpline, *DensitySpline;
+    double Vconst;
     void compute_g_G(double &g_0_N, vector<double> &g_G_N, int N);
     void init_gvecs();
     void init_f_G();
@@ -39,6 +40,8 @@ namespace qmcplusplus {
     vector<ComplexType> Rho_G;
     TinyVector<int,OHMMS_DIM> SplineDim;
     int MaxDim;
+    Return_t evalSR();
+    Return_t evalLR();
 
   public:
     ParticleSet& PtclRef;
@@ -63,7 +66,7 @@ namespace qmcplusplus {
     MPC(ParticleSet& ref, double cutoff);
 
     /// copy constructor
-    MPC(const MPC& c);
+    // MPC(const MPC& c);
     
     ~MPC();
 
@@ -86,11 +89,6 @@ namespace qmcplusplus {
     QMCHamiltonianBase* clone(ParticleSet& qp, TrialWaveFunction& psi);
 
     void initBreakup();
-
-    Return_t evalSR();
-    Return_t evalLR();
-    Return_t evalConsts();
-
   };
 
 }

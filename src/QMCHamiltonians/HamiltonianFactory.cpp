@@ -280,8 +280,7 @@ namespace qmcplusplus {
     renameProperty(a);
 
     MPC *mpc = new MPC (*targetPtcl, cutoff);
-    
-    
+    targetH->addOperator(mpc, "MPC");
     
 #endif // defined(HAVE_LIBFFTW)
   }
