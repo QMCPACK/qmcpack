@@ -82,6 +82,12 @@ public:
     assign(rhs.m_Y.begin(),rhs.m_Y.end());
   }
 
+
+  OneDimLinearSpline<Td,Tg,CTd,CTg>* makeClone() const
+  {
+    return new OneDimLinearSpline<Td,Tg,CTd,CTg>(*this);
+  }
+
   template<class IT>
   void assign(IT d_first, IT d_last)
   {
