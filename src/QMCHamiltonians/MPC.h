@@ -44,7 +44,7 @@ namespace qmcplusplus {
     Return_t evalLR();
 
   public:
-    ParticleSet& PtclRef;
+    ParticleSet* PtclRef;
     DistanceTableData* d_aa;
 
     // Store the average electron charge density in reciprocal space
@@ -70,7 +70,7 @@ namespace qmcplusplus {
     
     ~MPC();
 
-    void resetTargetParticleSet(ParticleSet& P) { }
+    void resetTargetParticleSet(ParticleSet& P);
 
     Return_t evaluate(ParticleSet& P);
 
@@ -82,7 +82,7 @@ namespace qmcplusplus {
     bool put(xmlNodePtr cur);
 
     bool get(std::ostream& os) const {
-      os << "MPC potential: " << PtclRef.getName();
+      os << "MPC potential: " << PtclRef->getName();
       return true;
     }
 

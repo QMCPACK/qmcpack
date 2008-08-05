@@ -10,15 +10,23 @@
 namespace qmcplusplus {
 
   MPC::MPC(ParticleSet& ptcl, double cutoff) :
-    PtclRef(ptcl), Ecut(cutoff), FirstTime(true)
+    PtclRef(&ptcl), Ecut(cutoff), FirstTime(true),
+    VlongSpline(0), DensitySpline(0)
   {
     d_aa = DistanceTable::add(ptcl);
     initBreakup();
   }
 
+  void
+  MPC::resetTargetParticleSet(ParticleSet& ptcl)
+  {
+    PtclRef = &ptcl;
+    d_aa = DistanceTable::add(ptcl);
+  }
+
   MPC::~MPC() {
-
-
+    if (VlongSpline)      destroy_Bspline(VlongSpline);
+    if (DensitySpline)    destroy_Bspline(DensitySpline);
   }
   
 
@@ -30,17 +38,17 @@ namespace qmcplusplus {
     PosType b[OHMMS_DIM];
     for (int j=0; j < OHMMS_DIM; j++) {
       maxIndex[j] = 0;
-      b[j] = 2.0*M_PI*PtclRef.Lattice.b(j);
+      b[j] = 2.0*M_PI*PtclRef->Lattice.b(j);
     }
     
-    int numG1 = PtclRef.Density_G.size();
-    int numG2 = PtclRef.DensityReducedGvecs.size();
-    assert (PtclRef.Density_G.size() == PtclRef.DensityReducedGvecs.size());
+    int numG1 = PtclRef->Density_G.size();
+    int numG2 = PtclRef->DensityReducedGvecs.size();
+    assert (PtclRef->Density_G.size() == PtclRef->DensityReducedGvecs.size());
 
     // Loop through all the G-vectors, and find the largest
     // indices in each direction with energy less than the cutoff
-    for (int iG=0; iG < PtclRef.DensityReducedGvecs.size(); iG++) {
-      TinyVector<int,OHMMS_DIM> gint = PtclRef.DensityReducedGvecs[iG];
+    for (int iG=0; iG < PtclRef->DensityReducedGvecs.size(); iG++) {
+      TinyVector<int,OHMMS_DIM> gint = PtclRef->DensityReducedGvecs[iG];
       PosType G = (double)gint[0] * b[0];
       for (int j=1; j<OHMMS_DIM; j++) 
 	G += (double)gint[j]*b[j];
@@ -49,7 +57,7 @@ namespace qmcplusplus {
 	  maxIndex[j] = max(maxIndex[j], abs(gint[j]));
 	Gvecs.push_back(G);
 	Gints.push_back(gint);
-	Rho_G.push_back(PtclRef.Density_G[iG]);
+	Rho_G.push_back(PtclRef->Density_G[iG]);
       }
     }
     SplineDim = 4 * maxIndex;
@@ -66,7 +74,7 @@ namespace qmcplusplus {
   void
   MPC::compute_g_G(double &g_0, vector<double> &g_G, int N)
   {
-    double L = PtclRef.Lattice.WignerSeitzRadius;
+    double L = PtclRef->Lattice.WignerSeitzRadius;
     double Linv = 1.0/L;
     double Linv3 = Linv*Linv*Linv;
     // create an FFTW plan
@@ -83,8 +91,8 @@ namespace qmcplusplus {
 	u[1] = Ninv*iy;
 	for (int iz=0; iz<N; iz++) {
 	  u[2] = Ninv*iz;
-	  r = PtclRef.Lattice.toCart (u);
-	  DTD_BConds<double,3,SUPERCELL_BULK>::apply (PtclRef.Lattice, r);
+	  r = PtclRef->Lattice.toCart (u);
+	  DTD_BConds<double,3,SUPERCELL_BULK>::apply (PtclRef->Lattice, r);
 	  double rmag = std::sqrt(dot(r,r));
 	  if (rmag < L) 
 	    rBox(ix,iy,iz) = -0.5*rmag*rmag*Linv3 + 1.5*Linv;
@@ -162,8 +170,8 @@ namespace qmcplusplus {
     // fprintf (stderr, "g_G_4N[0]      = %18.14e\n", g_G_4N[0]);
 
 
-    double volInv = 1.0/PtclRef.Lattice.Volume;
-    double L = PtclRef.Lattice.WignerSeitzRadius;
+    double volInv = 1.0/PtclRef->Lattice.Volume;
+    double L = PtclRef->Lattice.WignerSeitzRadius;
     
     TinyVector<double,2> g0_12  (g_0_2N, g_0_4N);
     TinyVector<double,3> g0_124 (g_0_N, g_0_2N, g_0_4N);
@@ -219,7 +227,7 @@ namespace qmcplusplus {
     Vconst = 0.0;
     
     // Now fill in elements of GBox
-    double vol = PtclRef.Lattice.Volume;
+    double vol = PtclRef->Lattice.Volume;
     double volInv = 1.0/vol;
     for (int iG=0; iG < Gvecs.size(); iG++) {
       TinyVector<int,OHMMS_DIM> gint = Gints[iG];
@@ -266,21 +274,21 @@ namespace qmcplusplus {
     VlongSpline = create_UBspline_3d_d (grid0, grid1, grid2, bc0, bc1, bc2,
 					splineData.data());
 
-    grid0.num = PtclRef.Density_r.size(0);
-    grid1.num = PtclRef.Density_r.size(1);
-    grid2.num = PtclRef.Density_r.size(2);
-    DensitySpline = create_UBspline_3d_d (grid0, grid1, grid2, bc0, bc1, bc2,
-					  PtclRef.Density_r.data());
+//     grid0.num = PtclRef->Density_r.size(0);
+//     grid1.num = PtclRef->Density_r.size(1);
+//     grid2.num = PtclRef->Density_r.size(2);
+//     DensitySpline = create_UBspline_3d_d (grid0, grid1, grid2, bc0, bc1, bc2,
+// 					  PtclRef->Density_r.data());
   
 }
 
   void
   MPC::initBreakup()
   {
-    NParticles = PtclRef.getTotalNum();
+    NParticles = PtclRef->getTotalNum();
 
     app_log() << "\n  === Initializing MPC interaction === " << endl;
-    if (PtclRef.Density_G.size() == 0) {
+    if (PtclRef->Density_G.size() == 0) {
       app_error() << "************************\n"
 		  << "** Error in MPC setup **\n"
 		  << "************************\n"
@@ -293,17 +301,17 @@ namespace qmcplusplus {
     init_spline();
 
     FILE *fout = fopen ("MPC.dat", "w");
-    double vol = PtclRef.Lattice.Volume;
+    double vol = PtclRef->Lattice.Volume;
     PosType r0 (0.0, 0.0, 0.0);
     PosType r1 (10.26499236, 10.26499236, 10.26499236);
     int nPoints=1001;
     for (int i=0; i<nPoints; i++) {
       double s = (double)i/(double)(nPoints-1);
       PosType r = (1.0-s)*r0 + s*r1;
-      PosType u = PtclRef.Lattice.toUnit(r);
-      double V, rho;
+      PosType u = PtclRef->Lattice.toUnit(r);
+      double V, rho(0.0);
       eval_UBspline_3d_d (VlongSpline, u[0], u[1], u[2], &V);
-      eval_UBspline_3d_d (DensitySpline, u[0], u[1], u[2], &rho);
+      // eval_UBspline_3d_d (DensitySpline, u[0], u[1], u[2], &rho);
       fprintf (fout, "%6.4f %14.10e %14.10e\n", s, V, rho);
     }
     fclose(fout);
@@ -330,9 +338,10 @@ namespace qmcplusplus {
   QMCHamiltonianBase* 
   MPC::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
   {
-    cerr << "In MPC::clone.\n";
     // return new MPC(qp, Ecut);
-    return new MPC(*this);
+    MPC* newMPC = new MPC(*this);
+    newMPC->resetTargetParticleSet(qp);
+    return newMPC;
   }
 
   MPC::Return_t
@@ -356,8 +365,8 @@ namespace qmcplusplus {
     RealType LR=0.0;
     PosType u;
     for(int i=0; i<NParticles; i++) {
-      PosType r = PtclRef.R[i];
-      PosType u = PtclRef.Lattice.toUnit(r);
+      PosType r = PtclRef->R[i];
+      PosType u = PtclRef->Lattice.toUnit(r);
       for (int j=0; j<OHMMS_DIM; j++)
 	u[j] -= std::floor(u[j]);
       double val;
@@ -371,7 +380,7 @@ namespace qmcplusplus {
   MPC::Return_t
   MPC::evaluate (ParticleSet& P)
   {
-    if (FirstTime || P.tag() == PtclRef.tag()) {
+    if (FirstTime || P.tag() == PtclRef->tag()) {
       Value = evalSR() + evalLR() + Vconst;
       FirstTime = false;
     }
