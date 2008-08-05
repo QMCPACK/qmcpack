@@ -20,6 +20,9 @@
 #include "Message/OpenMP.h"
 #include "Utilities/IteratorUtility.h"
 
+//comment this out to use only method to clone
+#define ENABLE_CLONE_PSI_AND_H
+
 namespace qmcplusplus { 
 
   //initialization of the static wClones
@@ -63,7 +66,19 @@ namespace qmcplusplus {
     psiClones[0]=&psi;
     hClones[0]=&ham;
 
+#if defined(ENABLE_CLONE_PSI_AND_H)
+    char pname[16];
+    for(int ip=1; ip<NumThreads; ++ip) 
+    {
+      sprintf(pname,"%s.c%i",w.getName().c_str(),ip);
+      wClones[ip]=new MCWalkerConfiguration(w);
+      wClones[ip]->setName(pname);
+      psiClones[ip]=psi.makeClone(*wClones[ip]);
+      hClones[ip]=ham.makeClone(*wClones[ip],*psiClones[ip]);
+    }
+#else
     cloneEngine.clone(w,psi,ham,wClones,psiClones,hClones);
+#endif
   }
 }
 
