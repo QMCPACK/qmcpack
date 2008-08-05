@@ -38,6 +38,7 @@ namespace qmcplusplus {
     GridType* myGrid;
     RadFunctorType* rVs;
 
+    bool is_active;
     bool FirstTime;
     int NumSpecies;
     int ChargeAttribIndx;
@@ -48,10 +49,10 @@ namespace qmcplusplus {
     vector<RealType> Zat,Zspec; 
     vector<int> NofSpecies;
 
-    CoulombPBCAATemp(ParticleSet& ref);
+    CoulombPBCAATemp(ParticleSet& ref, bool active);
 
-    /// copy constructor
-    CoulombPBCAATemp(const CoulombPBCAATemp& c);
+    ///// copy constructor
+    //CoulombPBCAATemp(const CoulombPBCAATemp& c);
     
     ~CoulombPBCAATemp();
 
@@ -73,7 +74,7 @@ namespace qmcplusplus {
       return true;
     }
 
-    QMCHamiltonianBase* clone(ParticleSet& qp, TrialWaveFunction& psi);
+    QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 
     void initBreakup();
 

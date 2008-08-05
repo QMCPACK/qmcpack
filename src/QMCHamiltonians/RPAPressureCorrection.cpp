@@ -592,7 +592,7 @@ namespace qmcplusplus {
   }
 
 
-  QMCHamiltonianBase* RPAPressureCorrection::clone(ParticleSet& P, TrialWaveFunction& psi)
+  QMCHamiltonianBase* RPAPressureCorrection::makeClone(ParticleSet& P, TrialWaveFunction& psi)
   {
     return new RPAPressureCorrection(P);
   }

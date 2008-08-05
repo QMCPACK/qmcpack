@@ -19,46 +19,48 @@
 
 namespace qmcplusplus {
 
-  CoulombPBCAATemp::CoulombPBCAATemp(ParticleSet& ref): 
-    PtclRef(&ref), AA(0), myGrid(0), rVs(0), FirstTime(true), myConst(0.0){
-      ReportEngine PRE("CoulombPBCAATemp","CoulombPBCAATemp");
-      //AA = new LRHandlerType(ref);
-      d_aa = DistanceTable::add(ref);
-      initBreakup();
-      app_log() << "  Maximum K shell " << AA->MaxKshell << endl;
-      app_log() << "  Number of k vectors " << AA->Fk.size() << endl;
-    }
+  CoulombPBCAATemp::CoulombPBCAATemp(ParticleSet& ref, bool active): 
+    PtclRef(&ref), AA(0), myGrid(0), rVs(0), 
+    is_active(active), FirstTime(true), myConst(0.0)
+  {
+    ReportEngine PRE("CoulombPBCAATemp","CoulombPBCAATemp");
+    //AA = new LRHandlerType(ref);
+    d_aa = DistanceTable::add(ref);
+    initBreakup();
+    app_log() << "  Maximum K shell " << AA->MaxKshell << endl;
+    app_log() << "  Number of k vectors " << AA->Fk.size() << endl;
 
-
-  /// copy constructor
-  CoulombPBCAATemp::CoulombPBCAATemp(const CoulombPBCAATemp& c): 
-    PtclRef(c.PtclRef),d_aa(c.d_aa),myGrid(0),rVs(0), FirstTime(true), myConst(0.0)
+    if(!active) 
     {
-      //AA = new LRHandlerType(*PtclRef);
-      initBreakup();
+      Value = evalLR()+evalSR()+myConst;
+      app_log() << "  Constant pair-potential " << ref.getName() << " " << Value << endl;
     }
+  }
+
+
+  ///// copy constructor
+  //CoulombPBCAATemp::CoulombPBCAATemp(const CoulombPBCAATemp& c): 
+  //  PtclRef(c.PtclRef),d_aa(c.d_aa),myGrid(0),rVs(0), FirstTime(true), myConst(0.0)
+  //  {
+  //    //AA = new LRHandlerType(*PtclRef);
+  //    initBreakup();
+  //  }
     
   CoulombPBCAATemp:: ~CoulombPBCAATemp() { }
 
   void CoulombPBCAATemp::resetTargetParticleSet(ParticleSet& P) {
-    if(PtclRef->tag() != P.tag())//only P is different
+    if(is_active)
     {
-      if(P.parent() == -1 || PtclRef->tag() == P.parent()) 
-      {
-        //Update the internal particleref
-        PtclRef = &P;
-        d_aa = DistanceTable::add(P);
-        AA->resetTargetParticleSet(P);
-      }
+      //Update the internal particleref
+      PtclRef = &P;
+      d_aa = DistanceTable::add(P);
+      AA->resetTargetParticleSet(P);
     }
   }
 
   CoulombPBCAATemp::Return_t 
     CoulombPBCAATemp::evaluate(ParticleSet& P) {
-      if(FirstTime || PtclRef->tag() == P.tag()){
-        Value = evalLR()+evalSR()+myConst;
-        FirstTime = false;
-      }
+      if(is_active) Value = evalLR()+evalSR()+myConst;
       return Value;
     }
 
@@ -171,11 +173,13 @@ namespace qmcplusplus {
       return Consts;
     }
 
-    QMCHamiltonianBase* CoulombPBCAATemp::clone(ParticleSet& qp, TrialWaveFunction& psi)
+    QMCHamiltonianBase* CoulombPBCAATemp::makeClone(ParticleSet& qp, TrialWaveFunction& psi) 
     {
-      return new CoulombPBCAATemp(qp);
+      if(is_active)
+        return new CoulombPBCAATemp(qp,is_active);
+      else
+        return new CoulombPBCAATemp(*this);
     }
-
 }
 
 /***************************************************************************

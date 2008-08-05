@@ -21,12 +21,20 @@ namespace qmcplusplus {
 
   NonLocalECPComponent::NonLocalECPComponent(): 
     lmax(0), nchannel(0), nknot(0), Rmax(-1), myRNG(&Random)
-    {}
+    { }
 
   NonLocalECPComponent::~NonLocalECPComponent() {
     for(int ip=0; ip<nlpp_m.size(); ip++) delete nlpp_m[ip];
   }
 
+  NonLocalECPComponent* NonLocalECPComponent::makeClone()
+  {
+    NonLocalECPComponent* myclone=new NonLocalECPComponent(*this);
+    for(int i=0; i<nlpp_m.size(); ++i)
+      myclone->nlpp_m[i]=nlpp_m[i]->makeClone();
+    return myclone;
+  }
+  
   void NonLocalECPComponent::add(int l, RadialPotentialType* pp) {
     angpp_m.push_back(l);
     wgt_angpp_m.push_back(static_cast<RealType>(2*l+1));

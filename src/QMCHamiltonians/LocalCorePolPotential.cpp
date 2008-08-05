@@ -147,13 +147,13 @@ namespace qmcplusplus {
   }
 
 
-  LocalCorePolPotential::LocalCorePolPotential(const LocalCorePolPotential& cpp):
-    FirstTime(true), nCenters(cpp.nCenters), nParticles(cpp.nParticles),
-  eCoreCore(0.0), IonConfig(cpp.IonConfig), d_ie(cpp.d_ie), d_ii(cpp.d_ii) {
-    CoreCoreDipole.resize(nCenters,0.0);
-    CoreElDipole.resize(nCenters,nParticles);
-    CoreElDipole = 0.0;
-  }
+  //LocalCorePolPotential::LocalCorePolPotential(const LocalCorePolPotential& cpp):
+  //  FirstTime(true), nCenters(cpp.nCenters), nParticles(cpp.nParticles),
+  //eCoreCore(0.0), IonConfig(cpp.IonConfig), d_ie(cpp.d_ie), d_ii(cpp.d_ii) {
+  //  CoreCoreDipole.resize(nCenters,0.0);
+  //  CoreElDipole.resize(nCenters,nParticles);
+  //  CoreElDipole = 0.0;
+  //}
 
 }
 /***************************************************************************

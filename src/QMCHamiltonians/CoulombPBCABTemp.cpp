@@ -33,16 +33,32 @@ namespace qmcplusplus {
       app_log() << "  Number of k vectors " << AB->Fk.size() << endl;
     }
 
-  QMCHamiltonianBase* CoulombPBCABTemp::clone(ParticleSet& qp, TrialWaveFunction& psi)
+  QMCHamiltonianBase* CoulombPBCABTemp::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
   {
-    return new CoulombPBCABTemp(*PtclA,qp);
+    CoulombPBCABTemp* myclone=new CoulombPBCABTemp(*this);
+    myclone->resetTargetParticleSet(qp);
+    myclone->AB = LRCoulombSingleton::getHandler(qp);
+    myclone->myGrid=new GridType(*myGrid);
+    for(int ig=0; ig<Vspec.size(); ++ig)
+    {
+      if(Vspec[ig]) 
+      {
+        RadFunctorType* apot=Vspec[ig]->makeClone();
+        myclone->Vspec[ig]=apot;
+        for(int iat=0; iat<PtclA->getTotalNum(); ++iat)
+        {
+          if(PtclA->GroupID[iat]==ig) myclone->Vat[iat]=apot;
+        }
+      }
+    }
+    return myclone;
   }
 
-  /// copy constructor
-  CoulombPBCABTemp::CoulombPBCABTemp(const CoulombPBCABTemp& c): 
-    PtclA(c.PtclA),PtclB(c.PtclB),d_ab(c.d_ab), FirstTime(true), myConst(0.0){
-      initBreakup();
-    }
+  ///// copy constructor
+  //CoulombPBCABTemp::CoulombPBCABTemp(const CoulombPBCABTemp& c): 
+  //  PtclA(c.PtclA),PtclB(c.PtclB),d_ab(c.d_ab), FirstTime(true), myConst(0.0){
+  //    initBreakup();
+  //  }
     
   CoulombPBCABTemp:: ~CoulombPBCABTemp() { 
     //remove Vspec

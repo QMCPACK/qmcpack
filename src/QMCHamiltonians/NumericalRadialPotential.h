@@ -64,7 +64,7 @@ namespace qmcplusplus {
 
     bool get(std::ostream& os) const;
 
-    QMCHamiltonianBase* clone(ParticleSet& qp, TrialWaveFunction& psi);
+    QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 
   };
 }

@@ -73,8 +73,8 @@ namespace qmcplusplus {
 
     CoulombPBCABTemp(ParticleSet& ions, ParticleSet& elns);
 
-    /// copy constructor
-    CoulombPBCABTemp(const CoulombPBCABTemp& c);
+    ///// copy constructor
+    //CoulombPBCABTemp(const CoulombPBCABTemp& c);
     
     ~CoulombPBCABTemp();
 
@@ -96,7 +96,7 @@ namespace qmcplusplus {
       return true;
     }
 
-    QMCHamiltonianBase* clone(ParticleSet& qp, TrialWaveFunction& psi);
+    QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 
     void initBreakup();
 

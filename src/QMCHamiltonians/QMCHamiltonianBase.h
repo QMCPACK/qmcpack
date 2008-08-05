@@ -103,7 +103,7 @@ namespace qmcplusplus {
      */
     inline bool getMode(int i) { return UpdateMode[i];}
 
-    virtual QMCHamiltonianBase* clone(ParticleSet& qp, TrialWaveFunction& psi)=0;
+    virtual QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi)=0;
 
     virtual void setRandomGenerator(RandomGenerator_t* rng)
     {

@@ -328,7 +328,7 @@ namespace qmcplusplus {
   }
 
   QMCHamiltonianBase* 
-  MPC::clone(ParticleSet& qp, TrialWaveFunction& psi)
+  MPC::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
   {
     cerr << "In MPC::clone.\n";
     // return new MPC(qp, Ecut);

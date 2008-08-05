@@ -32,7 +32,7 @@ namespace qmcplusplus {
     ///the set of local-potentials (one for each ion)
     vector<NonLocalECPComponent*> PP;
     ///unique NonLocalECPComponent to remove
-    map<int,NonLocalECPComponent*> PPset;
+    vector<NonLocalECPComponent*> PPset;
     ///reference to the center ion
     ParticleSet& IonConfig;
     ///target TrialWaveFunction
@@ -56,7 +56,7 @@ namespace qmcplusplus {
       return true;
     }
 
-    QMCHamiltonianBase* clone(ParticleSet& qp, TrialWaveFunction& psi);
+    QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 
     void add(int groupID, NonLocalECPComponent* pp);
 

@@ -89,7 +89,7 @@ namespace qmcplusplus {
       return true;
     };
 
-    QMCHamiltonianBase* clone(ParticleSet& P, TrialWaveFunction& psi);
+    QMCHamiltonianBase* makeClone(ParticleSet& P, TrialWaveFunction& psi);
     
     private:
 //       ShortRangePartAdapter<RealType>* sra;

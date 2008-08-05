@@ -38,7 +38,7 @@ namespace qmcplusplus {
     ///the distance table containing electron-nuclei distances  
     DistanceTableData* d_table;
     ///unique set of local ECP to cleanup
-    map<int,RadialPotentialType*> PPset;
+    vector<RadialPotentialType*> PPset;
     ///PP[iat] is the local potential for the iat-th particle
     vector<RadialPotentialType*> PP;
     ///effective charge per ion
@@ -65,7 +65,7 @@ namespace qmcplusplus {
       return true;
     }
 
-    QMCHamiltonianBase* clone(ParticleSet& qp, TrialWaveFunction& psi);
+    QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 
     /** Add a RadialPotentialType of a species
      * @param groupID index of the ion species

@@ -312,7 +312,7 @@ namespace qmcplusplus {
       if(source->getTotalNum()>1)  {
         if(applyPBC) {
           //targetH->addOperator(new CoulombPBCAA(*targetPtcl),title);
-          targetH->addOperator(new CoulombPBCAATemp(*targetPtcl),title);
+          targetH->addOperator(new CoulombPBCAATemp(*targetPtcl,true),title);
         } else {
           targetH->addOperator(new CoulombPotentialAA(*targetPtcl),title);
         }
@@ -415,7 +415,7 @@ namespace qmcplusplus {
       if(ion->getTotalNum()>1) 
         if(PBCType){
           //targetH->addOperator(new CoulombPBCAA(*ion),"IonIon");
-          targetH->addOperator(new CoulombPBCAATemp(*ion),"IonIon");
+          targetH->addOperator(new CoulombPBCAATemp(*ion,false),"IonIon");
         } else {
           targetH->addOperator(new IonIonPotential(*ion),"IonIon");
         }

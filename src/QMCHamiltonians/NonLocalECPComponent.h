@@ -71,6 +71,8 @@ namespace qmcplusplus {
     ///destructor
     ~NonLocalECPComponent();
 
+    NonLocalECPComponent* makeClone();
+
     ///add a new Non Local component
     void add(int l, RadialPotentialType* pp); 
 

@@ -112,7 +112,7 @@ namespace qmcplusplus {
   }
 
   QMCHamiltonianBase* 
-    NumericalRadialPotential::clone(ParticleSet& qp, TrialWaveFunction& psi)
+    NumericalRadialPotential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
   {
     NumericalRadialPotential* apot=0;
     if(IsPairPotential)

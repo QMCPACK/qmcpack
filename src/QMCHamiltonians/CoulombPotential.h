@@ -58,8 +58,8 @@ namespace qmcplusplus {
       }
     }
     
-    void resetTargetParticleSet(ParticleSet& P)  {
-      cout << "CoulombPotentialAB::resetTargetParticleSet " << sourcePtcl.getName() << " - " << P.getName() << endl;
+    void resetTargetParticleSet(ParticleSet& P)  
+    {
       d_table = DistanceTable::add(sourcePtcl,P);
     }
 
@@ -73,6 +73,7 @@ namespace qmcplusplus {
       }
       return Value;
     }
+
     inline Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy) {
       return evaluate(P);
     }
@@ -87,7 +88,7 @@ namespace qmcplusplus {
       return true;
     }
 
-    QMCHamiltonianBase* clone(ParticleSet& qp, TrialWaveFunction& psi)
+    QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi)
     {
       return new CoulombPotentialAB(sourcePtcl, qp); 
     }
@@ -176,7 +177,7 @@ namespace qmcplusplus {
       return true;
     }
 
-    QMCHamiltonianBase* clone(ParticleSet& qp, TrialWaveFunction& psi)
+    QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi)
     {
       return new CoulombPotentialAA(qp);
     }

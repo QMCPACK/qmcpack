@@ -7,7 +7,6 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
@@ -19,6 +18,7 @@
 #include "Particle/DistanceTableData.h"
 #include "QMCHamiltonians/QMCHamiltonianBase.h"
 #include "QMCHamiltonians/LocalECPotential.h"
+#include "Utilities/IteratorUtility.h"
 
 namespace qmcplusplus {
 
@@ -28,16 +28,18 @@ namespace qmcplusplus {
     NumIons=ions.getTotalNum();
     d_table = DistanceTable::add(ions,els);
     //allocate null
+    PPset.resize(ions.getSpeciesSet().getTotalNum(),0);
     PP.resize(NumIons,0);
-    Zeff.resize(NumIons,1.0);
+    Zeff.resize(NumIons,0.0);
   } 
 
   ///destructor
   LocalECPotential::~LocalECPotential() { 
-    map<int,RadialPotentialType*>::iterator pit(PPset.begin()), pit_end(PPset.end());
-    while(pit != pit_end) {
-      delete (*pit).second; ++pit;
-    }
+    delete_iter(PPset.begin(),PPset.end());
+    //map<int,RadialPotentialType*>::iterator pit(PPset.begin()), pit_end(PPset.end());
+    //while(pit != pit_end) {
+    //  delete (*pit).second; ++pit;
+    //}
   }
 
   void LocalECPotential::resetTargetParticleSet(ParticleSet& P) {
@@ -45,15 +47,12 @@ namespace qmcplusplus {
   }
 
   void LocalECPotential::add(int groupID, RadialPotentialType* ppot, RealType z) {
-    map<int,RadialPotentialType*>::iterator pit(PPset.find(groupID));
-    if(pit  == PPset.end()) {
-      for(int iat=0; iat<PP.size(); iat++) {
-        if(IonConfig.GroupID[iat]==groupID) {
-          PP[iat]=ppot;
-          Zeff[iat]=z;
-        }
+    PPset[groupID]=ppot;
+    for(int iat=0; iat<PP.size(); iat++) {
+      if(IonConfig.GroupID[iat]==groupID) {
+        PP[iat]=ppot;
+        Zeff[iat]=z;
       }
-      PPset[groupID]=ppot;
     }
   }
 
@@ -75,9 +74,24 @@ namespace qmcplusplus {
       return Value;
     }
 
-  QMCHamiltonianBase* LocalECPotential::clone(ParticleSet& qp, TrialWaveFunction& psi)
+  QMCHamiltonianBase* LocalECPotential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
   {
-    return new LocalECPotential(IonConfig,qp);
+    LocalECPotential* myclone=new LocalECPotential(IonConfig,qp);
+    myclone->Zeff=Zeff;
+    for(int ig=0; ig<PPset.size(); ++ig)
+    {
+      if(PPset[ig]) 
+      {
+        RadialPotentialType* ppot=PPset[ig]->makeClone();
+        myclone->PPset[ig]=ppot;
+        for(int iat=0; iat<PP.size(); iat++) 
+        {
+          if(IonConfig.GroupID[iat]==ig) myclone->PP[iat]=ppot;
+        }
+      }
+    }
+    return myclone;
+    //return new LocalECPotential(IonConfig,qp);
   }
 }
 /***************************************************************************

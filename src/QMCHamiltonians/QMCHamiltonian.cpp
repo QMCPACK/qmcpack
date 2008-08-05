@@ -25,8 +25,8 @@ using namespace qmcplusplus;
  */
 QMCHamiltonian::QMCHamiltonian(){ }
 
-/// copy constructor is distable by declaring it as private
-QMCHamiltonian::QMCHamiltonian(const QMCHamiltonian& qh) {}
+///// copy constructor is distable by declaring it as private
+//QMCHamiltonian::QMCHamiltonian(const QMCHamiltonian& qh) {}
 
 /** destructor
  */
@@ -181,6 +181,23 @@ QMCHamiltonian::setRandomGenerator(RandomGenerator_t* rng)
   for(int i=0; i<H.size(); i++) H[i]->setRandomGenerator(rng);
 }
 
+QMCHamiltonian* QMCHamiltonian::makeClone(ParticleSet& qp, TrialWaveFunction& psi) 
+{
+  QMCHamiltonian* myclone=new QMCHamiltonian(*this);
+  //make clone
+  for(int i=0; i<H.size(); ++i)
+  {
+    myclone->H[i]=H[i]->makeClone(qp,psi);
+  }
+  //create timers with the same name
+  for(int i=0; i<myTimers.size(); i++)
+  {
+    NewTimer* atimer=new NewTimer(myTimers[i]->get_name());
+    myclone->myTimers[i]=atimer;
+    TimerManager.addTimer(atimer);
+  }
+  return myclone;
+}
 //Meant for vectorized operators. Not so helpful.
 ///**
 // *@param W a set of walkers (N-particle configurations)

@@ -161,6 +161,9 @@ namespace qmcplusplus {
 
     void setRandomGenerator(RandomGenerator_t* rng);
 
+    /** return a clone */
+    QMCHamiltonian* makeClone(ParticleSet& qp, TrialWaveFunction& psi); 
+
    private:
 
     ///Current Local Energy
@@ -180,8 +183,8 @@ namespace qmcplusplus {
     ///map the name to an index
     std::map<string,int> Hmap;
 
-    ///disable copy constructor
-    QMCHamiltonian(const QMCHamiltonian& qh);
+    /////disable copy constructor
+    //QMCHamiltonian(const QMCHamiltonian& qh);
   };
 }
 #endif
