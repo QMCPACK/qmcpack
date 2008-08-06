@@ -19,11 +19,9 @@ IF(OHMMS_DIM MATCHES 3)
       ECPComponentBuilder.cpp
       ECPComponentBuilder.1.cpp
       ECPComponentBuilder.2.cpp
-      MPC.cpp
      )
    IF(HAVE_LIBFFTW)
-     SET(HAMSRCS ${HAMSRCS} 
-         MPC.cpp)
+     SET(HAMSRCS ${HAMSRCS} MPC.cpp)
    ENDIF (HAVE_LIBFFTW)
 ENDIF(OHMMS_DIM MATCHES 3)
 
