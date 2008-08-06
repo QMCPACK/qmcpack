@@ -675,18 +675,27 @@ struct HDFAttribIO<blitz::Array<TinyVector<double,D>,2> >: public HDFAttribIOBas
 
       inline void read(hid_t grp, const char* name) 
       {
+	// Turn off error printing
+	H5E_auto_t func;
+	void *client_data;
+	H5Eget_auto (&func, &client_data);
+	H5Eset_auto (NULL, NULL);
+
         std::vector<hsize_t> npts(3);
         npts[0]=ref.size(0);
         npts[1]=ref.size(1);
         npts[2]=ref.size(2);
         hid_t h1 = H5Dopen(grp, name);
-        hid_t dataspace = H5Dget_space(h1);
-	hsize_t dims[3];
-	H5Sget_simple_extent_dims(dataspace, dims, NULL);
-	ref.resize(dims[0], dims[1], dims[2]);
-        hid_t ret = H5Dread(h1, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, ref.data());
-        H5Sclose(dataspace);
-        H5Dclose(h1);
+	if (h1 > 0) {
+	  hid_t dataspace = H5Dget_space(h1);
+	  hsize_t dims[3];
+	  H5Sget_simple_extent_dims(dataspace, dims, NULL);
+	  ref.resize(dims[0], dims[1], dims[2]);
+	  hid_t ret = H5Dread(h1, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, ref.data());
+	  H5Sclose(dataspace);
+	  H5Dclose(h1);
+	}
+	H5Eset_auto (func, client_data);
       }
     };
 
