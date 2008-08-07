@@ -363,6 +363,7 @@ namespace qmcplusplus {
     attribs.add (TileFactor, "tile");
     attribs.add (sortBands,  "sort");
     attribs.add (TileMatrix, "tilematrix");
+    attribs.add (TwistNum,   "twistnum");
     attribs.put (XMLRoot);
     attribs.add (numOrbs,    "size");
     attribs.add (numOrbs,    "norbs");
