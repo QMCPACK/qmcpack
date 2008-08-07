@@ -222,7 +222,13 @@ namespace qmcplusplus {
 	h_density_r (TargetPtcl.Density_r);
       h_reduced_gvecs.read (H5FileID, "/density/reduced_gvecs");
       h_density_r.read (H5FileID,     "/density/rho_r");
+
       int numG = TargetPtcl.DensityReducedGvecs.size();
+      // Convert primitive G-vectors to supercell G-vectors
+      for (int iG=0; iG < numG; iG++) 
+	TargetPtcl.DensityReducedGvecs[iG] = 
+	  dot(TileMatrix, TargetPtcl.DensityReducedGvecs[iG]);
+
       app_log() << "  Read " << numG << " density G-vectors.\n";
       if (TargetPtcl.DensityReducedGvecs.size()) {
 	app_log() << "  EinsplineSetBuilder found density in the HDF5 file.\n";
