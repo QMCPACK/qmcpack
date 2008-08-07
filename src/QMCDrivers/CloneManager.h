@@ -75,7 +75,7 @@ namespace qmcplusplus {
 }
 #endif
 /***************************************************************************
- * $RCSfile: DMCPbyPOMP.h,v $   $Author: jnkim $
+ * $RCSfile: CloneManager.h,v $   $Author: jnkim $
  * $Revision: 1.2 $   $Date: 2006/02/26 17:41:10 $
- * $Id: DMCPbyPOMP.h,v 1.2 2006/02/26 17:41:10 jnkim Exp $ 
+ * $Id: CloneManager.h,v 1.2 2006/02/26 17:41:10 jnkim Exp $ 
  ***************************************************************************/
