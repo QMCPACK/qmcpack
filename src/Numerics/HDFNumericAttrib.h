@@ -365,7 +365,6 @@ HDFAttribIO<data_type>(data_type& a):ref(a) { }
       hsize_t dim[2]={0,D};
       int rank = H5Sget_simple_extent_ndims(dataspace);
       int status_n = H5Sget_simple_extent_dims(dataspace, dim, NULL);
-      cout << "What is the dimension = " << dim[0] << " " << dim[1] << endl;
       //Resize storage if not equal
       if(ref.size() != (unsigned long)dim[0]){
 	ref.resize(dim[0]);
@@ -650,184 +649,87 @@ struct HDFAttribIO<blitz::Array<TinyVector<double,D>,2> >: public HDFAttribIOBas
   
 };
 #else
-  /** Specialization for Array<double,3> */
-  template<>
-    struct HDFAttribIO<Array<double,3> >: public HDFAttribIOBase 
+/** Specialization for Array<double,D> */
+template <unsigned D>
+struct HDFAttribIO<Array<double,D> >: public HDFAttribIOBase 
+{
+  typedef Array<double,D> ArrayType_t;
+  ArrayType_t&  ref;
+  HDFAttribIO<ArrayType_t>(ArrayType_t& a):ref(a) { }
+  inline void write(hid_t grp, const char* name) 
+  {
+    const int rank = D;
+    hsize_t dim[rank];
+    for(int i=0; i<rank; ++i) dim[i]=ref.size(0);
+    hid_t dataspace  = H5Screate_simple(rank, dim, NULL);
+    hid_t dataset =  
+      H5Dcreate(grp, name, H5T_NATIVE_DOUBLE, dataspace, H5P_DEFAULT);
+    hid_t ret = 
+      H5Dwrite(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT,ref.data());
+    H5Sclose(dataspace);
+    H5Dclose(dataset);
+  }
+
+  inline void read(hid_t grp, const char* name) 
+  {
+    // Turn off error printing
+    H5E_auto_t func;
+    void *client_data;
+    H5Eget_auto (&func, &client_data);
+    H5Eset_auto (NULL, NULL);
+
+    hid_t h1 = H5Dopen(grp, name);
+    if (h1 > 0) {
+      hid_t dataspace = H5Dget_space(h1);
+      hsize_t dims[D];
+      H5Sget_simple_extent_dims(dataspace, dims, NULL);
+      ref.resize(dims);//[0], dims[1], dims[2]);
+      hid_t ret = H5Dread(h1, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, ref.data());
+      H5Sclose(dataspace);
+      H5Dclose(h1);
+    }
+    H5Eset_auto (func, client_data);
+  }
+};
+
+/** Specialization for Array<complex<double>,D> */
+template<unsigned D>
+struct HDFAttribIO<Array<complex<double>,D> >: public HDFAttribIOBase 
+{
+  typedef Array<complex<double>,D> ArrayType_t;
+
+  ArrayType_t&  ref;
+  HDFAttribIO<ArrayType_t>(ArrayType_t& a):ref(a) { }
+  inline void write(hid_t grp, const char* name) 
+  {
+    const int rank = D+1;
+    hsize_t dim[rank];
+    for(int i=0; i<D; ++i) dim[i]=ref.size(i);
+    dim[D] = 2;
+    hid_t dataspace  = H5Screate_simple(rank, dim, NULL);
+    hid_t dataset =  
+      H5Dcreate(grp, name, H5T_NATIVE_DOUBLE, dataspace, H5P_DEFAULT);
+    hid_t ret = 
+      H5Dwrite(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT,ref.data());
+    H5Sclose(dataspace);
+    H5Dclose(dataset);
+  }
+
+  inline void read(hid_t grp, const char* name) 
+  {
+    hid_t h1 = H5Dopen(grp, name);
+    if(h1>=-1)
     {
-      typedef Array<double,3> ArrayType_t;
-      ArrayType_t&  ref;
-      HDFAttribIO<ArrayType_t>(ArrayType_t& a):ref(a) { }
-      inline void write(hid_t grp, const char* name) 
-      {
-        const int rank = 3;
-        hsize_t dim[rank];
-        dim[0] = ref.size(0);
-        dim[1] = ref.size(1);
-        dim[2] = ref.size(2);
-        hid_t dataspace  = H5Screate_simple(rank, dim, NULL);
-        hid_t dataset =  
-          H5Dcreate(grp, name, H5T_NATIVE_DOUBLE, dataspace, H5P_DEFAULT);
-        hid_t ret = 
-          H5Dwrite(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT,ref.data());
-        H5Sclose(dataspace);
-        H5Dclose(dataset);
-      }
-
-      inline void read(hid_t grp, const char* name) 
-      {
-	// Turn off error printing
-	H5E_auto_t func;
-	void *client_data;
-	H5Eget_auto (&func, &client_data);
-	H5Eset_auto (NULL, NULL);
-
-        std::vector<hsize_t> npts(3);
-        npts[0]=ref.size(0);
-        npts[1]=ref.size(1);
-        npts[2]=ref.size(2);
-        hid_t h1 = H5Dopen(grp, name);
-	if (h1 > 0) {
-	  hid_t dataspace = H5Dget_space(h1);
-	  hsize_t dims[3];
-	  H5Sget_simple_extent_dims(dataspace, dims, NULL);
-	  ref.resize(dims[0], dims[1], dims[2]);
-	  hid_t ret = H5Dread(h1, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, ref.data());
-	  H5Sclose(dataspace);
-	  H5Dclose(h1);
-	}
-	H5Eset_auto (func, client_data);
-      }
-    };
-
-  
-
-  template<>
-    struct HDFAttribIO<Array<complex<double>,1> >: public HDFAttribIOBase 
-    {
-      typedef Array<complex<double>,1> ArrayType_t;
-
-      ArrayType_t&  ref;
-      HDFAttribIO<ArrayType_t>(ArrayType_t& a):ref(a) { }
-      inline void write(hid_t grp, const char* name) 
-      {
-        const int rank = 2;
-        hsize_t dim[rank];
-        dim[0] = ref.size(0);
-        dim[1] = 2;
-        hid_t dataspace  = H5Screate_simple(rank, dim, NULL);
-        hid_t dataset =  
-          H5Dcreate(grp, name, H5T_NATIVE_DOUBLE, dataspace, H5P_DEFAULT);
-        hid_t ret = 
-          H5Dwrite(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, 
-		   H5P_DEFAULT,ref.data());
-        H5Sclose(dataspace);
-        H5Dclose(dataset);
-      }
-
-      inline void read(hid_t grp, const char* name) 
-      {
-        hid_t h1 = H5Dopen(grp, name);
-        hid_t dataspace = H5Dget_space(h1);
-
-	hsize_t dims[2];
-	H5Sget_simple_extent_dims(dataspace, dims, NULL);
-	ref.resize(dims[0]);
-
-        hid_t ret = H5Dread(h1, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, 
-			    H5P_DEFAULT, ref.data());
-        H5Sclose(dataspace);
-        H5Dclose(h1);
-      }
-    };
-
-
-
-  template<>
-    struct HDFAttribIO<Array<complex<double>,2> >: public HDFAttribIOBase 
-    {
-      typedef Array<complex<double>,2> ArrayType_t;
-
-      ArrayType_t&  ref;
-      HDFAttribIO<ArrayType_t>(ArrayType_t& a):ref(a) { }
-      inline void write(hid_t grp, const char* name) 
-      {
-        const int rank = 3;
-        hsize_t dim[rank];
-        dim[0] = ref.size(0);
-        dim[1] = ref.size(1);
-        dim[2] = 2;
-        hid_t dataspace  = H5Screate_simple(rank, dim, NULL);
-        hid_t dataset =  
-          H5Dcreate(grp, name, H5T_NATIVE_DOUBLE, dataspace, H5P_DEFAULT);
-        hid_t ret = 
-          H5Dwrite(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT,ref.data());
-        H5Sclose(dataspace);
-        H5Dclose(dataset);
-      }
-
-      inline void read(hid_t grp, const char* name) 
-      {
-        std::vector<hsize_t> npts(3);
-        npts[0]=ref.size(0);
-        npts[1]=ref.size(1);
-        npts[2]=2;
-        hid_t h1 = H5Dopen(grp, name);
-        hid_t dataspace = H5Dget_space(h1);
-
-	hsize_t dims[3];
-	H5Sget_simple_extent_dims(dataspace, dims, NULL);
-	ref.resize(dims[0], dims[1]);
-
-        hid_t ret = H5Dread(h1, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, ref.data());
-        H5Sclose(dataspace);
-        H5Dclose(h1);
-      }
-    };
-
-
-  template<>
-    struct HDFAttribIO<Array<complex<double>,3> >: public HDFAttribIOBase 
-    {
-      typedef Array<complex<double>,3> ArrayType_t;
-
-      ArrayType_t&  ref;
-      HDFAttribIO<ArrayType_t>(ArrayType_t& a):ref(a) { }
-      inline void write(hid_t grp, const char* name) 
-      {
-        const int rank = 4;
-        hsize_t dim[rank];
-        dim[0] = ref.size(0);
-        dim[1] = ref.size(1);
-        dim[2] = ref.size(2);
-        dim[3] = 2;
-        hid_t dataspace  = H5Screate_simple(rank, dim, NULL);
-        hid_t dataset =  
-          H5Dcreate(grp, name, H5T_NATIVE_DOUBLE, dataspace, H5P_DEFAULT);
-        hid_t ret = 
-          H5Dwrite(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT,ref.data());
-        H5Sclose(dataspace);
-        H5Dclose(dataset);
-      }
-
-      inline void read(hid_t grp, const char* name) 
-      {
-        std::vector<hsize_t> npts(4);
-        npts[0]=ref.size(0);
-        npts[1]=ref.size(1);
-        npts[2]=ref.size(2);
-        npts[3]=2;
-        hid_t h1 = H5Dopen(grp, name);
-        hid_t dataspace = H5Dget_space(h1);
-
-	hsize_t dims[4];
-	H5Sget_simple_extent_dims(dataspace, dims, NULL);
-	ref.resize(dims[0], dims[1], dims[2]);
-
-        hid_t ret = H5Dread(h1, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, ref.data());
-        H5Sclose(dataspace);
-        H5Dclose(h1);
-      }
-    };
+      hid_t dataspace = H5Dget_space(h1);
+      hsize_t dims[D+1];
+      H5Sget_simple_extent_dims(dataspace, dims, NULL);
+      ref.resize(dims);
+      hid_t ret = H5Dread(h1, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, ref.data());
+      H5Sclose(dataspace);
+      H5Dclose(h1);
+    }
+  }
+};
 #endif
 }
 #endif
