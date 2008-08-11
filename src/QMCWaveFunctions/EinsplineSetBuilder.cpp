@@ -690,6 +690,25 @@ namespace qmcplusplus {
 	fprintf (stderr, "\n");
       }
 
+    // Check supertwist for this node
+    if (!myComm->rank()) 
+      fprintf (stderr, "  Using supercell twist %d:  [ %9.5f %9.5f %9.5f]\n",
+	       TwistNum, superFracs[TwistNum][0], superFracs[TwistNum][1],
+	       superFracs[TwistNum][2]);
+    
+#ifndef QMC_COMPLEX
+    // Check to see if supercell twist is okay to use with real wave
+    // functions 
+    for (int dim=0; dim<OHMMS_DIM; dim++) {
+      double t = 2.0*superFracs[TwistNum][dim];
+      if (std::fabs(t - round(t)) > 1.0e-10) {
+	app_error() << "Cannot use this super twist with real wavefunctions.\n" 
+		    << "Please recompile with QMC_COMPLEX=1.\n";
+	abort();
+      }
+    }
+#endif
+
     // Now check to see that each supercell twist has the right twists
     // to tile the primitive cell orbitals.
     int numTwistsNeeded = abs(TileMatrix.det());
