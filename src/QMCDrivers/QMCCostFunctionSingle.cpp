@@ -185,7 +185,7 @@ namespace qmcplusplus {
       Return_t e=H.evaluate(W);
       e2sum += e*e;
       Etarget += saved[ENERGY_TOT] = e;
-      saved[ENERGY_FIXED] = H.getInvariantEnergy();
+      saved[ENERGY_FIXED] = H.getLocalPotential();
 
       ++it;
       ++iw;
