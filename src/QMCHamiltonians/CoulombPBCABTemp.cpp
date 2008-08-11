@@ -38,7 +38,10 @@ namespace qmcplusplus {
     CoulombPBCABTemp* myclone=new CoulombPBCABTemp(*this);
     myclone->resetTargetParticleSet(qp);
     myclone->AB = LRCoulombSingleton::getHandler(qp);
-    myclone->myGrid=new GridType(*myGrid);
+    if (myGrid)
+      myclone->myGrid = (GridType*) myGrid->makeClone();
+    else
+      myclone->myGrid = myGrid;
     for(int ig=0; ig<Vspec.size(); ++ig)
     {
       if(Vspec[ig]) 
