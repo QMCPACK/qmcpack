@@ -185,8 +185,8 @@ namespace qmcplusplus {
           MCWalkerConfiguration::iterator 
             wit(W.begin()+wPerNode[ip]), wit_end(W.begin()+wPerNode[ip+1]);
 
-          //recalculate everything every 100 steps
-          if(pbyp && now%100 == 99) Movers[ip]->updateWalkers(wit, wit_end);
+          ////recalculate everything every 100 steps
+          //if(pbyp && now%100 == 99) Movers[ip]->updateWalkers(wit, wit_end);
 
           for(int interval = 0;interval<BranchInterval; interval++,now++)
           {
