@@ -30,22 +30,20 @@ namespace qmcplusplus {
     app_log() << "  Maximum K shell " << AA->MaxKshell << endl;
     app_log() << "  Number of k vectors " << AA->Fk.size() << endl;
 
-    if(!active) 
+    if(!is_active)
     {
-      Value = evalLR()+evalSR()+myConst;
-      app_log() << "  Constant pair-potential " << ref.getName() << " " << Value << endl;
+      d_aa->evaluate(ref);
+      RealType eL=evalLR();
+      RealType eS=evalSR();
+      Value = eL+eS+myConst;
+      app_log() << "  Fixed Coulomb potential for " << ref.getName() << endl;
+      app_log() << "   V(short)  =" << eS 
+                << "\n  V(long)  =" << eL
+                << "\n  Constant =" << myConst
+                << "\n  Vtot     =" << Value << endl;
     }
   }
 
-
-  ///// copy constructor
-  //CoulombPBCAATemp::CoulombPBCAATemp(const CoulombPBCAATemp& c): 
-  //  PtclRef(c.PtclRef),d_aa(c.d_aa),myGrid(0),rVs(0), FirstTime(true), myConst(0.0)
-  //  {
-  //    //AA = new LRHandlerType(*PtclRef);
-  //    initBreakup();
-  //  }
-    
   CoulombPBCAATemp:: ~CoulombPBCAATemp() { }
 
   void CoulombPBCAATemp::resetTargetParticleSet(ParticleSet& P) {
@@ -90,6 +88,7 @@ namespace qmcplusplus {
     if(rVs==0) {
       rVs = LRCoulombSingleton::createSpline4RbyVs(AA,myRcut,myGrid);
     }
+
   }
 
   CoulombPBCAATemp::Return_t
@@ -178,7 +177,7 @@ namespace qmcplusplus {
       if(is_active)
         return new CoulombPBCAATemp(qp,is_active);
       else
-        return new CoulombPBCAATemp(*this);
+        return new CoulombPBCAATemp(*this);//nothing needs to be re-evaluated
     }
 }
 
