@@ -35,26 +35,24 @@ namespace qmcplusplus {
 
   QMCHamiltonianBase* CoulombPBCABTemp::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
   {
-    CoulombPBCABTemp* myclone=new CoulombPBCABTemp(*this);
-    myclone->resetTargetParticleSet(qp);
-    myclone->AB = LRCoulombSingleton::getHandler(qp);
-    if (myGrid)
-      myclone->myGrid = (GridType*) myGrid->makeClone();
-    else
-      myclone->myGrid = myGrid;
-    for(int ig=0; ig<Vspec.size(); ++ig)
-    {
-      if(Vspec[ig]) 
-      {
-        RadFunctorType* apot=Vspec[ig]->makeClone();
-        myclone->Vspec[ig]=apot;
-        for(int iat=0; iat<PtclA->getTotalNum(); ++iat)
-        {
-          if(PtclA->GroupID[iat]==ig) myclone->Vat[iat]=apot;
-        }
-      }
-    }
-    return myclone;
+    return new CoulombPBCABTemp(*PtclA,qp);
+    //CoulombPBCABTemp* myclone=new CoulombPBCABTemp(*this);
+    //myclone->resetTargetParticleSet(qp);
+    //myclone->AB = LRCoulombSingleton::getHandler(qp);
+    //myclone->myGrid=myGrid->makeClone();
+    //for(int ig=0; ig<Vspec.size(); ++ig)
+    //{
+    //  if(Vspec[ig]) 
+    //  {
+    //    RadFunctorType* apot=Vspec[ig]->makeClone();
+    //    myclone->Vspec[ig]=apot;
+    //    for(int iat=0; iat<PtclA->getTotalNum(); ++iat)
+    //    {
+    //      if(PtclA->GroupID[iat]==ig) myclone->Vat[iat]=apot;
+    //    }
+    //  }
+    //}
+    //return myclone;
   }
 
   ///// copy constructor
