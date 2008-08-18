@@ -43,7 +43,6 @@ namespace qmcplusplus {
     RealType TransProb[2];
     
     //Extra Observable Spots for Pressure, etc.
-    vector<RealType> Observables;
     vector<RealType> deltaRSquared;
     int stepmade;
 
@@ -79,8 +78,7 @@ namespace qmcplusplus {
       BeadSignWgt=a.BeadSignWgt;
       TransProb[0]=a.TransProb[0];
       TransProb[1]=a.TransProb[1];
-      
-      Observables=a.Observables;
+
       stepmade=a.stepmade;
       deltaRSquared=a.deltaRSquared;
       DriftVectors=a.DriftVectors;
@@ -111,14 +109,7 @@ namespace qmcplusplus {
         Action(i,2)=0.0;
       };
     }
-    
-    inline void Resize_Observables(int n){
-      Observables.resize(n);
-    }
 
-    inline void Add_Observable(double n){
-      Observables.push_back(n);
-    }
 
     /** copy the restart data to buf 
      * @param buf buffer to write
@@ -139,8 +130,7 @@ namespace qmcplusplus {
       buf.add(TransProb[1]);
       buf.add(Action.begin(),Action.end());
       buf.add(Properties.begin(),Properties.end());
-      
-      buf.add(Observables.begin(),Observables.end());
+
       buf.add(deltaRSquared.begin(),deltaRSquared.end());
     }
 
@@ -164,7 +154,7 @@ namespace qmcplusplus {
       buf.get(TransProb[1]);
       buf.get(Action.begin(),Action.end());
       buf.get(Properties.begin(),Properties.end());
-      buf.get(Observables.begin(),Observables.end());
+
       buf.get(deltaRSquared.begin(),deltaRSquared.end());
     }
 
@@ -187,7 +177,7 @@ namespace qmcplusplus {
       buf.put(TransProb[1]);
       buf.put(Action.begin(),Action.end());
       buf.put(Properties.begin(),Properties.end());
-      buf.put(Observables.begin(),Observables.end());
+
       buf.put(deltaRSquared.begin(),deltaRSquared.end());
     }
 

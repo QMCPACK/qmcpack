@@ -41,7 +41,6 @@ namespace qmcplusplus {
     void getConfigurations(const string& aroot);
     void checkConfigurations();
   protected:
-    bool resetWaveFunctions();
     void resetPsi();
     Return_t correlatedSampling();
   };

@@ -44,7 +44,6 @@ namespace qmcplusplus {
   protected:
     vector<QMCHamiltonian*> H_KE_Node;
     vector<Matrix<Return_t>*> RecordsOnNode;
-    bool resetWaveFunctions();
     void resetPsi();
     Return_t correlatedSampling();
   };

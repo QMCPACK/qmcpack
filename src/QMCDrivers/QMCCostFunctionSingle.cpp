@@ -8,7 +8,6 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
@@ -20,6 +19,7 @@
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "Particle/HDFWalkerInputCollect.h"
 #include "Message/CommOperators.h"
+#include "Utilities/Timer.h"
 //#define QMCCOSTFUNCTION_DEBUG
 
 
@@ -51,26 +51,23 @@ namespace qmcplusplus {
       Walker_t& thisWalker(**it);
       Return_t* restrict saved = Records[iw];
 
-      //copy the walker
-      W.R=thisWalker.R;
       //rewind the buffer to get the data from buffer
       thisWalker.DataSet.rewind();
       //W is updated by thisWalker
-      W.update();
-      //W.copyFromBuffer(thisWalker.DataSet);: save memory
+      W.copyFromBuffer(thisWalker.DataSet);
 
       Return_t logpsi=0.0;
       //copy dL from Buffer
-//#if defined(QMC_COMPLEX)
+#if defined(QMC_COMPLEX)
       thisWalker.DataSet.get(&(dG[0][0]),&(dG[0][0])+totalElements);
       thisWalker.DataSet.get(dL.begin(),dL.end());
       logpsi=Psi.evaluateDeltaLog(W);
       W.G += dG;
-//#else
-//      thisWalker.DataSet.get(dL.begin(),dL.end());
-//      logpsi=Psi.evaluateDeltaLog(W);
-//      W.G += thisWalker.Drift;
-//#endif
+#else
+      thisWalker.DataSet.get(dL.begin(),dL.end());
+      logpsi=Psi.evaluateDeltaLog(W);
+      W.G += thisWalker.Drift;
+#endif
       W.L += dL;
 
       eloc_new=H_KE.evaluate(W)+saved[ENERGY_FIXED];
@@ -117,9 +114,11 @@ namespace qmcplusplus {
   void 
   QMCCostFunctionSingle::getConfigurations(const string& aroot) {
     app_log() << "   Loading configuration from MCWalkerConfiguration::SampleStack " << endl;
-    W.destroyWalkers(W.begin(),W.end());
+    app_log() << "    number of walkers before load " << W.getActiveWalkers() << endl;
+    Timer t1;
     W.loadEnsemble();
     W.clearEnsemble();
+    app_log() << "    Loading time = " << t1.elapsed() << endl;
     app_log() << "    number of walkers after load " << W.getActiveWalkers() << endl;
     //if(aroot.size() && aroot != "invalid") {
     //  app_log() << "  Reading configurations from the previous qmc block" << endl;
@@ -142,6 +141,28 @@ namespace qmcplusplus {
 #endif
   }
 
+ // /** evaluate everything before optimization */
+ // void 
+ // QMCCostFunctionSingle::getConfigurations(vector<string>& ConfigFile, 
+ //     int partid, int nparts) {
+ //   if(ConfigFile.size()) {
+
+ //     app_log() << "  Reading configurations from mcwalkerset " << endl;
+
+ //     W.destroyWalkers(W.begin(),W.end());
+ //     for(int i=0; i<ConfigFile.size(); i++) {
+ //       //JNKIM: needs to change to HDFWalkerInputCollect
+ //       //HDFWalkerInput0 wReader(ConfigFile[i],partid,nparts);
+ //       HDFWalkerInputCollect wReader(ConfigFile[i]);
+ //       wReader.putSingle(W);
+ //       //wReader.put(W,-1);
+ //     }
+
+ //     //remove input files
+ //     ConfigFile.erase(ConfigFile.begin(),ConfigFile.end());
+ //   }
+ // }
+
   /** evaluate everything before optimization */
   void 
   QMCCostFunctionSingle::checkConfigurations() {
@@ -155,32 +176,30 @@ namespace qmcplusplus {
     MCWalkerConfiguration::iterator it(W.begin()); 
     MCWalkerConfiguration::iterator it_end(W.end()); 
     int nat = W.getTotalNum();
-    int totalElements=W.getTotalNum()*OHMMS_DIM;
     int iw=0;
+    int totalElements=W.getTotalNum()*OHMMS_DIM;
     Etarget=0.0;
     Return_t e2sum=0.0;
     while(it != it_end) {
 
       Walker_t& thisWalker(**it);
+
       //clean-up DataSet to save re-used values
       thisWalker.DataSet.clear();
       //rewind the counter
       thisWalker.DataSet.rewind();
-      W.R=thisWalker.R;
       //MCWalkerConfiguraton::registerData add distance-table data
-      //save memory
-      //W.registerData(thisWalker.DataSet);
-      W.update();
+      W.registerData(thisWalker,thisWalker.DataSet);
 
       Return_t*  saved=Records[iw];
-//#if defined(QMC_COMPLEX)
-//      app_error() << " Optimization is not working with complex wavefunctions yet" << endl;
-//      app_error() << "  Needs to fix TrialWaveFunction::evaluateDeltaLog " << endl;
+#if defined(QMC_COMPLEX)
+      app_error() << " Optimization is not working with complex wavefunctions yet" << endl;
+      app_error() << "  Needs to fix TrialWaveFunction::evaluateDeltaLog " << endl;
       Psi.evaluateDeltaLog(W, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], dG, dL);
       thisWalker.DataSet.add(&(dG[0][0]),&(dG[0][0])+totalElements);
-//#else
-//      Psi.evaluateDeltaLog(W, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], thisWalker.Drift, dL);
-//#endif
+#else
+      Psi.evaluateDeltaLog(W, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], thisWalker.Drift, dL);
+#endif
       thisWalker.DataSet.add(dL.first_address(),dL.last_address());
       Return_t e=H.evaluate(W);
       e2sum += e*e;
@@ -203,6 +222,7 @@ namespace qmcplusplus {
 
     app_log() << "  VMC Eavg = " << Etarget << endl;
     app_log() << "  VMC Evar = " << etemp[2]/etemp[1]-Etarget*Etarget << endl;
+    app_log() << "  Total weights = " << etemp[1] << endl;
 
     setTargetEnergy(Etarget);
 
@@ -211,54 +231,27 @@ namespace qmcplusplus {
 
   void QMCCostFunctionSingle::resetPsi()
   {
-
-    OptimizableSetType::iterator oit(OptVariables.begin()), oit_end(OptVariables.end());
-    while(oit != oit_end)
+    if(OptVariables.size() < OptVariablesForPsi.size())
     {
-      Return_t v=(*oit).second;
-      OptVariablesForPsi[(*oit).first]=v;
-      map<string,set<string>*>::iterator eit(equalConstraints.find((*oit).first));
-      if(eit != equalConstraints.end())
-      {
-        set<string>::iterator f((*eit).second->begin()),l((*eit).second->end());
-        while(f != l)
-        {
-          OptVariablesForPsi[(*f)]=v;
-          ++f;
-        }
-      }
-      ++oit;
+      for(int i=0; i<equalVarMap.size(); ++i)
+        OptVariablesForPsi[equalVarMap[i][0]]=OptVariables[equalVarMap[i][1]];
     }
-
-    //cout << "QMCCostFunctionSingle::resetPsi " <<endl;
-    //oit=OptVariablesForPsi.begin();
-    //oit_end=OptVariablesForPsi.end();
-    //while(oit != oit_end)
-    //{
-    //  cout << (*oit).first << "=" << (*oit).second << " ";
-    //  ++oit;
-    //}
-    //cout << endl;
-    Psi.resetParameters(OptVariablesForPsi);
+    else
+      for(int i=0; i<OptVariables.size(); ++i) OptVariablesForPsi[i]=OptVariables[i];
   }
 
-  /** Reset the Wavefunction \f$ \Psi({\bf R},{{\bf \alpha_i}}) \f$
-   *@return true always
-   *
-   * Reset from the old parameter set \f$ {{\bf \alpha_i}} \f$ to the new parameter
-   * set \f$ {{\bf \alpha_{i+1}}}\f$  
-   */
-  bool
-  QMCCostFunctionSingle::resetWaveFunctions() {
+  ///** Reset the Wavefunction \f$ \Psi({\bf R},{{\bf \alpha_i}}) \f$
+  // *@return true always
+  // *
+  // * Reset from the old parameter set \f$ {{\bf \alpha_i}} \f$ to the new parameter
+  // * set \f$ {{\bf \alpha_{i+1}}}\f$  
+  // */
+  //bool
+  //QMCCostFunctionSingle::resetWaveFunctions() {
 
-    //loop over all the unique id's
-    for(int i=0; i<IDtag.size(); i++)
-    {
-      OptVariables[IDtag[i]]=OptParams[i];
-    }
-    resetPsi();
-    return true;
-  }
+  //  resetPsi();
+  //  return true;
+  //}
 }
 /***************************************************************************
  * $RCSfile$   $Author$

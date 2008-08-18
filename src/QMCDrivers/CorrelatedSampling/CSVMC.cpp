@@ -45,8 +45,8 @@ namespace qmcplusplus {
 
     int nPsi=H1.size();
 
-    for(int ipsi=0; ipsi<nPsi; ipsi++) 
-      H1[ipsi]->add2WalkerProperty(W);
+    //for(int ipsi=0; ipsi<nPsi; ipsi++) 
+    //  H1[ipsi]->add2WalkerProperty(W);
 
     Estimators = branchEngine->getEstimatorManager();
     if(Estimators == 0) 

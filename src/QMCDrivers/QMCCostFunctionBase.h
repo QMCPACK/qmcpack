@@ -8,7 +8,6 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
@@ -20,8 +19,8 @@
 
 #include "Configuration.h"
 #include "Optimize/OptimizeBase.h"
-#include "Optimize/VarList.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
+#include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "Message/MPIObjectBase.h"
 #include <deque>
 #include <set>
@@ -29,7 +28,6 @@
 namespace qmcplusplus {
 
   class MCWalkerConfiguration;
-  class TrialWaveFunction;
 
   /** @ingroup QMCDrivers
    * @brief Implements wave-function optimization
@@ -41,8 +39,6 @@ namespace qmcplusplus {
   class QMCCostFunctionBase: public CostFunctionBase<QMCTraits::RealType>, public MPIObjectBase
   {
   public:
-
-    typedef VarRegistry<Return_t> OptimizableSetType;
 
     enum FieldIndex_OPT {LOGPSI_FIXED=0, LOGPSI_FREE=1, ENERGY_TOT=2, ENERGY_FIXED=3, ENERGY_NEW=4, REWEIGHT=5};
     enum SumIndex_OPT {SUM_E_BARE=0, SUM_ESQ_BARE, SUM_ABSE_BARE,
@@ -59,13 +55,13 @@ namespace qmcplusplus {
     ///process xml node
     bool put(xmlNodePtr cur);
     ///assign optimization parameter i
-    Return_t& Params(int i) { return OptParams[i]; }
+    Return_t& Params(int i) { return OptVariables[i];}
     ///return optimization parameter i
-    Return_t Params(int i) const { return OptParams[i]; }
+    Return_t Params(int i) const { return OptVariables[i]; }
     ///return the cost value for CGMinimization
     Return_t Cost();
     ///return the number of optimizable parameters
-    inline int NumParams() { return OptParams.size(); }
+    inline int NumParams() { return OptVariables.size(); }
     ///return the number of optimizable parameters
     inline int getNumSamples() { return NumSamples; }
     ///dump the current parameters and other report
@@ -104,6 +100,7 @@ namespace qmcplusplus {
         Return_t& dl, Return_t& val_proj, Return_t& lambda_max);
 
     virtual void getConfigurations(const string& aroot)=0;
+
     virtual void checkConfigurations()=0;
 
   protected:
@@ -167,28 +164,29 @@ namespace qmcplusplus {
      * default CorrelationFactor=0.0;
      */
     Return_t CorrelationFactor;
-    ///storage for previous values of the cost function
-    std::deque<Return_t> costList;
-    ///storage for previous sets of parameters
-    std::deque<vector<Return_t> > paramList;
-    ///parameters to be optimized
-    vector<Return_t> OptParams;
-    ///ID tag for each optimizable parameter
-    vector<string> IDtag;  
     ///list of optimizables
-    OptimizableSetType OptVariables;
-    ///list of optimizables
-    OptimizableSetType FinalOptVariables;
+    opt_variables_type OptVariables;
     /** full list of optimizables
      *
      * The size of OptVariablesForPsi is equal to or larger than
      * that of OptVariables due to the dependent variables.
+     * This is used for TrialWaveFunction::resetParameters and
+     * is normally the same as OptVariables.
      */
-    OptimizableSetType OptVariablesForPsi;
-    ///list of constraint variables for equal relations
-    std::map<string,set<string>*> equalConstraints;
-    ///list of constraint variables for negative relations
-    std::map<string,set<string>*> negateConstraints;
+    opt_variables_type OptVariablesForPsi;
+    /** index mapping for <equal> constraints
+     *
+     * - equalVarMap[i][0] : index in OptVariablesForPsi
+     * - equalVarMap[i][1] : index in OptVariables
+     */
+    std::vector<TinyVector<int,2> > equalVarMap;
+    /** index mapping for <negate> constraints
+     *
+     * - negateVarMap[i][0] : index in OptVariablesForPsi
+     * - negateVarMap[i][1] : index in OptVariables
+     */
+    ///index mapping for <negative> constraints
+    std::vector<TinyVector<int,2> > negateVarMap;
     ///stream to which progress is sent
     ostream* msg_stream;
     ///xml node to be dumped
@@ -225,10 +223,8 @@ namespace qmcplusplus {
     ostream* debug_stream;
 
     bool checkParameters();
-    bool putOptParams();  
     void updateXmlNodes();
 
-    virtual bool resetWaveFunctions()=0;
     virtual void resetPsi()=0;
     virtual Return_t correlatedSampling()=0;
   };

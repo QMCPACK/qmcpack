@@ -148,8 +148,8 @@ void WaveFunctionTester::runBasicTest() {
   RealType eloc=H.evaluate(W);
 
   app_log() << "  HamTest " << "  Total " <<  eloc << endl;
-  for(int i=0; i<H.size(); i++)
-    app_log() << "  HamTest " << H.getName(i) << " " << H[i] << endl;
+  for(int i=0; i<H.sizeOfObservables(); i++)
+    app_log() << "  HamTest " << H.getObservableName(i) << " " << H.getObservable(i) << endl;
 
   //RealType psi = Psi.evaluateLog(W);
   ParticleSet::ParticleGradient_t G(nat), G1(nat);
@@ -249,8 +249,8 @@ void WaveFunctionTester::runRatioTest() {
     ++it;
 
     app_log() << "  HamTest " << "  Total " <<  ene << endl;
-    for(int i=0; i<H.size(); i++)
-      app_log() << "  HamTest " << H.getName(i) << " " << H[i] << endl;
+    for(int i=0; i<H.sizeOfObservables(); i++)
+      app_log() << "  HamTest " << H.getObservableName(i) << " " << H.getObservable(i) << endl;
   } 
 
   cout << "  Update using drift " << endl;

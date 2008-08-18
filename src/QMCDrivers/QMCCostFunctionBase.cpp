@@ -16,7 +16,6 @@
 // -*- C++ -*-
 #include "QMCDrivers/QMCCostFunctionBase.h"
 #include "Particle/MCWalkerConfiguration.h"
-#include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "OhmmsData/AttributeSet.h"
 #include "OhmmsData/ParameterSet.h"
 #include "Message/CommOperators.h"
@@ -34,14 +33,14 @@ namespace qmcplusplus {
     CorrelationFactor(0.0), m_wfPtr(NULL), m_doc_out(NULL), msg_stream(0), debug_stream(0)
   { 
 
-    paramList.resize(10); 
-    costList.resize(10,0.0); 
+    //paramList.resize(10); 
+    //costList.resize(10,0.0); 
 
     //default: when walkers below 90% stop
     MinNumWalkers = 0.9;
 
     H_KE.addOperator(H.getHamiltonian("Kinetic"),"Kinetic");
-    H_KE.add2WalkerProperty(W);
+    H_KE.addObservables(W.PropertyList);
 
     SumValue.resize(SUM_INDEX_SIZE,0.0);
     IsValid=true;
@@ -84,7 +83,7 @@ namespace qmcplusplus {
       *msg_stream << "  Optimization report = ";
       *msg_stream << "cost, walkers, eavg/wgt, eavg/walkers, evar/wgt, evar/walkers, evar_abs\n";
       *msg_stream << "  Optimized variables = ";
-      std::copy(IDtag.begin(),IDtag.end(),ostream_iterator<string>(*msg_stream,", "));
+      for(int i=0; i<OptVariables.size(); ++i) *msg_stream << OptVariables.name(i) << ",";
       *msg_stream << endl;
     }
   }
@@ -93,10 +92,10 @@ namespace qmcplusplus {
 
     NumCostCalls++;
 
-    if(checkParameters()) {
+    //if(checkParameters()) {
 
       //reset the wave function
-      resetWaveFunctions();
+      resetPsi();
 
       //evaluate new local energies
       NumWalkersEff=correlatedSampling();
@@ -124,7 +123,7 @@ namespace qmcplusplus {
         ERRORMSG("Going to stop now.")
         IsValid=false;
       } 
-    }
+    //}
     return CostValue;
   }
 
@@ -365,19 +364,15 @@ namespace qmcplusplus {
           << setw(16) << curVar_w << setw(16) << curVar 
           << setw(16) << curVar_abs << endl;
         *msg_stream << " curVars " << setw(5) << ReportCounter;
-        for(int i=0; i<OptParams.size(); i++) *msg_stream << setw(16) << OptParams[i];
+        for(int i=0; i<OptVariables.size(); i++) *msg_stream << setw(16) << OptVariables[i];
         *msg_stream << endl;
 
       }
     }
 
-    //save the converged values
-    for(int i=0; i<OptParams.size(); i++) FinalOptVariables[IDtag[i]]=OptParams[i];
-
 #if defined(QMCCOSTFUNCTION_DEBUG)
     *debug_stream << ReportCounter;
-    for(int i=0; i<OptParams.size(); i++) 
-      *debug_stream << " " << IDtag[i] << "=" << OptParams[i];
+    OptVariables.print(*debug_stream);
     *debug_stream << endl;
 #endif
 
@@ -387,13 +382,6 @@ namespace qmcplusplus {
 
   void QMCCostFunctionBase::reportParameters() {
 
-    for(int i=0; i<OptParams.size(); i++) 
-    {
-      OptParams[i]=FinalOptVariables[IDtag[i]];
-      OptVariables[IDtag[i]]=OptParams[i];
-      Psi.VarList[IDtag[i]]=OptParams[i];
-    }
-
     resetPsi();
 
     if(!myComm->rank())
@@ -401,8 +389,7 @@ namespace qmcplusplus {
       char newxml[128];
       sprintf(newxml,"%s.opt.xml", RootName.c_str());
       *msg_stream << "  <optVariables href=\"" << newxml << "\">" << endl;
-      for(int i=0; i<OptParams.size(); i++) 
-        *msg_stream << "      " << IDtag[i] << " "<< OptParams[i]<<endl;;
+      OptVariables.print(*msg_stream);
       *msg_stream << "  </optVariables>" << endl;
       updateXmlNodes();
       xmlSaveFormatFile(newxml,m_doc_out,1);
@@ -416,10 +403,10 @@ namespace qmcplusplus {
   bool QMCCostFunctionBase::checkParameters() {
 
     bool samesign = true;
-    if(samesign) {  
-      paramList.pop_back();
-      paramList.push_front(OptParams);
-    }
+    //if(samesign) {  
+    //  paramList.pop_back();
+    //  paramList.push_front(OptParams);
+    //}
 
     return samesign;
   }
@@ -458,14 +445,28 @@ namespace qmcplusplus {
 
     xmlNodePtr qsave=q;
     //Estimators.put(q);
-    vector<xmlNodePtr> oset,cset;
+    vector<xmlNodePtr> cset;
+    vector<string> excluded;
+    std::map<string,vector<string>*> equalConstraints;
+    std::map<string,vector<string>*> negateConstraints;
+
+    vector<string> idtag;
     xmlNodePtr cur=qsave->children;
     int pid=myComm->rank();
     while(cur != NULL) {
       string cname((const char*)(cur->name));
-      if(cname == "optimize") {
-	oset.push_back(cur);
+      if(cname == "optimize") 
+      {
+        vector<string> tmpid;
+        putContent(tmpid,cur);
+        idtag.insert(idtag.end(),tmpid.begin(),tmpid.end());
       } 
+      else if(cname == "exclude")
+      {
+        vector<string> tmpid;
+        putContent(tmpid,cur);
+        excluded.insert(excluded.end(),tmpid.begin(),tmpid.end());
+      }
       else if(cname == "cost") 
       {
 	cset.push_back(cur);
@@ -480,37 +481,117 @@ namespace qmcplusplus {
         pAttrib.put(cur);
         if(ctype == "equal" || ctype == "=")
         {
-          map<string,set<string>*>::iterator eit(equalConstraints.find(s));
-          set<string>* eqSet=0;
+          map<string,vector<string>*>::iterator eit(equalConstraints.find(s));
+          vector<string>* eqSet=0;
           if(eit == equalConstraints.end())
           {
-            eqSet = new set<string>;
+            eqSet = new vector<string>;
             equalConstraints[s]=eqSet;
           }
           else
             eqSet = (*eit).second;
           vector<string> econt;
           putContent(econt,cur);
-          eqSet->insert(econt.begin(),econt.end());
+          eqSet->insert(eqSet->end(),econt.begin(),econt.end());
         }
       }
       cur=cur->next;
     }  
 
-    if(oset.empty()) {
-      ERRORMSG("No Optimization Variables Set")
-      return false;
-    } else {
-      for(int i=0; i<oset.size(); i++) {
-	vector<string> tmpid;
-	putContent(tmpid,oset[i]);
-        IDtag.insert(IDtag.end(),tmpid.begin(),tmpid.end());
+    //build optimizables from the wavefunction 
+    OptVariablesForPsi.clear();
+    Psi.checkInVariables(OptVariablesForPsi);
+
+    OptVariablesForPsi.resetIndex();
+
+    //synchronize OptVariables and OptVariablesForPsi
+    OptVariables=OptVariablesForPsi;
+
+    //first disable <exclude>.... </exclude> from the big list used by a TrialWaveFunction
+    OptVariablesForPsi.disable(excluded.begin(),excluded.end(),false);
+
+    //now, set up the real variable list for optimization
+    //check <equal>
+    int nc=0;
+    if(equalConstraints.size())
+    {
+      map<string,vector<string>*>::iterator eit(equalConstraints.begin());
+      while(eit != equalConstraints.end())
+      {
+        nc+=(*eit).second->size();
+        //actiave the active variable even though it is probably unnecessary
+        OptVariablesForPsi.activate((*eit).second->begin(),(*eit).second->end(),false);
+        excluded.insert(excluded.end(),(*eit).second->begin(),(*eit).second->end());
+        ++eit;
       }
     }
-  
-    if(cset.empty()){
+    //build OptVariables which is equal to or identical to OptVariablesForPsi
+    //disable the variables that are equal to a variable
+    OptVariables.disable(excluded.begin(),excluded.end(),false);
+
+    //set up OptVariables and OptVariablesForPsi
+    OptVariables.activate(idtag.begin(),idtag.end(),true);
+    OptVariablesForPsi.activate(idtag.begin(),idtag.end(),true);
+
+    //found constraints build equalVarMap
+    if(nc>0) 
+    {
+      equalVarMap.reserve(nc+OptVariables.size());
+      //map the basic lists from the active list
+      for(int i=0; i<OptVariables.size(); ++i) 
+      {
+        int bigloc=OptVariablesForPsi.getIndex(OptVariables.name(i));
+        if(bigloc<0) continue;
+        equalVarMap.push_back(TinyVector<int,2>(bigloc,i));
+      }
+
+      //add <equal/>
+      map<string,vector<string>*>::iterator eit(equalConstraints.begin());
+      while(eit != equalConstraints.end())
+      {
+        int loc=OptVariables.getIndex((*eit).first);
+        if(loc>=0)
+        {
+          const vector<string>& elist(*((*eit).second));
+          for(int i=0; i<elist.size(); ++i)
+          {
+            int bigloc=OptVariablesForPsi.getIndex(elist[i]);
+            if(bigloc<0) continue;
+            equalVarMap.push_back(TinyVector<int,2>(bigloc,loc));
+          }
+        }
+        //remove vector<string>
+        delete (*eit).second;
+        ++eit;
+      }
+    }
+
+    //get the indices
+    Psi.checkOutVariables(OptVariablesForPsi);
+    NumOptimizables=OptVariables.size();
+
+    if(NumOptimizables == 0)
+    {
+      APP_ABORT("QMCCostFunctionBase::put No valid optimizable variables are found.");
+    }
+
+    app_log() << "  Active Optimizable Variables" << endl;
+    OptVariables.print(app_log());
+    app_log() << "======================= " << endl;
+
+    if(msg_stream) msg_stream->setf(ios::scientific, ios::floatfield);
+
+    resetPsi();
+
+    Psi.reportStatus(app_log());
+
+    //set the cost function
+    if(cset.empty())
+    {
       if(msg_stream) *msg_stream << " Using Default Cost Function: Cost = <|E-E_ff|^2>" << endl;
-    } else {
+    } 
+    else 
+    {
       for(int i=0; i<cset.size(); i++){
 	string pname;
 	Return_t wgt=1.0;
@@ -526,71 +607,12 @@ namespace qmcplusplus {
       }
     }  
 
-    putOptParams();
-
     //maybe overwritten but will try out
     EtargetEff=(1.0+CorrelationFactor)*Etarget;
-    return true;
-  }
-
-  bool QMCCostFunctionBase::putOptParams(){
-
-    //reduce to a unique list
-    set<string> idcopy;
-    idcopy.insert(IDtag.begin(),IDtag.end());
-
-    IDtag.clear();
-    OptParams.clear();
-    IDtag.reserve(idcopy.size());
-    OptParams.reserve(idcopy.size());
-
-    NumOptimizables=0;
-    set<string>::iterator it(idcopy.begin());
-
-    //build a local OptVariables
-    OptVariables.clear();
-    while(it != idcopy.end())
-    {
-      OptimizableSetType::iterator vIn(Psi.VarList.find(*it));
-      if(vIn != Psi.VarList.end())
-      {
-        OptimizableSetType::iterator vTarget(OptVariables.find(*it));
-        if(vTarget == OptVariables.end())
-        {
-          Return_t v=(*vIn).second;
-          IDtag.push_back((*it));
-          OptParams.push_back(v);
-          OptVariables[(*it)]=v;
-          ++NumOptimizables;
-        }
-      }
-      ++it;
-    }
-
-    if(NumOptimizables == 0)
-    {
-      app_error() << "QMCCostFunctionBase::No valid optimizable variables are found." << endl;
-      abort();
-    }
-
-    for(int i=0; i<paramList.size(); i++) 
-    {
-      paramList[i] = OptParams;
-    }
-
-    app_log() << "  Input Optimizable Variable List" << endl;
-    for(int i=0; i<NumOptimizables; i++)
-      app_log() << "    " << IDtag[i] << "=" << OptParams[i] << endl;
-
-
-    if(msg_stream) {
-      msg_stream->setf(ios::scientific, ios::floatfield);
-    }
-
-    resetPsi();
 
     return true;
   }
+
 
   void QMCCostFunctionBase::updateXmlNodes() {
 
@@ -609,7 +631,7 @@ namespace qmcplusplus {
         const xmlChar* iptr=xmlGetProp(cur,(const xmlChar*)"id");
         if(iptr == NULL) continue;
         string aname((const char*)iptr);
-        OptimizableSetType::iterator oit(OptVariablesForPsi.find(aname));
+        opt_variables_type::iterator oit(OptVariablesForPsi.find(aname));
         if(oit != OptVariablesForPsi.end())
         {
           paramNodes[aname]=cur;
@@ -626,7 +648,7 @@ namespace qmcplusplus {
         string aname((const char*)iptr);
         string expID=aname+"_E";
         xmlAttrPtr aptr=xmlHasProp(cur,(const xmlChar*)"exponent");
-        OptimizableSetType::iterator oit(OptVariablesForPsi.find(expID));
+        opt_variables_type::iterator oit(OptVariablesForPsi.find(expID));
         if(aptr != NULL && oit != OptVariablesForPsi.end())
         {
           attribNodes[expID]=pair<xmlNodePtr,string>(cur,"exponent");
@@ -647,6 +669,8 @@ namespace qmcplusplus {
 
       xmlXPathFreeContext(acontext);
     }
+
+    Psi.reportStatus(app_log());
 
     map<string,xmlNodePtr>::iterator pit(paramNodes.begin()), pit_end(paramNodes.end());
     while(pit != pit_end)
@@ -670,35 +694,30 @@ namespace qmcplusplus {
     while(cit != cit_end)
     {
       string rname((*cit).first);
-      int count=0;
       OhmmsAttributeSet cAttrib;
       string datatype("none");
       string aname("0");
       cAttrib.add(datatype,"type");
       cAttrib.add(aname,"id");
-      cAttrib.add(count,"size");
       cAttrib.put((*cit).second);
 
       if(datatype == "Array")
       { // 
-        cAttrib.put((*cit).second->parent);
-        vector<Return_t> c(count);
-        bool foundit=false;
-        for(int i=0; i<count; ++i)
+        aname.append("_");
+        opt_variables_type::iterator vit(OptVariablesForPsi.begin());
+        vector<Return_t> c;
+        while(vit != OptVariablesForPsi.end())
         {
-          char myname[16];
-          sprintf(myname,"%s_%d",aname.c_str(),i);
-          OptimizableSetType::iterator vit = OptVariablesForPsi.find(myname);
-          if(vit != OptVariablesForPsi.end()) 
-          { foundit=true; c[i]=(*vit).second;}
+          if((*vit).first.find(aname) == 0)
+          {
+            c.push_back((*vit).second);
+          }
+          ++vit;
         }
-        if(foundit)
-        {
-          xmlNodePtr contentPtr = cit->second;
-          if (xmlNodeIsText(contentPtr->children))
-            contentPtr = contentPtr->children;
-          getContent(c,contentPtr);
-        }
+	xmlNodePtr contentPtr = cit->second;
+	if (xmlNodeIsText(contentPtr->children))
+	  contentPtr = contentPtr->children;
+        getContent(c,contentPtr);
       }
       else
       {
@@ -719,7 +738,7 @@ namespace qmcplusplus {
               sprintf(lambda_id,"%s_%d",rname.c_str(),i);
             else
               sprintf(lambda_id,"%s_%d_%d",rname.c_str(),i,j);
-            OptimizableSetType::iterator vTarget(OptVariablesForPsi.find(lambda_id));
+            opt_variables_type::iterator vTarget(OptVariablesForPsi.find(lambda_id));
             if(vTarget != OptVariablesForPsi.end())
             {
               std::ostringstream vout;
@@ -754,7 +773,6 @@ namespace qmcplusplus {
       cAttrib.put(cur);
       if(aname[0] == '0') continue;
 
-
       if(datatype == "Array")
       {
         coeffNodes[aname]=cur;
@@ -763,7 +781,7 @@ namespace qmcplusplus {
       {
         //check if any optimizables contains the id of coefficients
         bool notlisted=true;
-        OptimizableSetType::iterator oit(OptVariablesForPsi.begin()),oit_end(OptVariablesForPsi.end());
+        opt_variables_type::iterator oit(OptVariablesForPsi.begin()),oit_end(OptVariablesForPsi.end());
         while(notlisted && oit != oit_end)
         {
           const string& oname((*oit).first);
@@ -856,6 +874,7 @@ namespace qmcplusplus {
       val_proj=Cost();
 
       app_log() << "  cost = " << val_proj << endl;
+      //Psi.reportStatus(app_log());
       //return false;
       return true;
     }

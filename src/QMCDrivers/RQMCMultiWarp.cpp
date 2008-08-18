@@ -159,7 +159,7 @@ namespace qmcplusplus {
     }
 
     //Register properties for each walker
-    for(int ipsi=0; ipsi<nPsi; ipsi++) H1[ipsi]->add2WalkerProperty(W);
+    //for(int ipsi=0; ipsi<nPsi; ipsi++) H1[ipsi]->add2WalkerProperty(W);
 
     //resize Walker::Properties to hold everything
     W.resetWalkerProperty(nPsi);

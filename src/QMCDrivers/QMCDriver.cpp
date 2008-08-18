@@ -56,8 +56,8 @@ namespace qmcplusplus {
     m_param.add(Period4WalkerDump,"recordWalkers","int");
     m_param.add(MaxCPUSecs,"maxcpusecs","real");
 
-    //add each QMCHamiltonianBase to W.PropertyList so that averages can be taken
-    H.add2WalkerProperty(W);
+    ////add each QMCHamiltonianBase to W.PropertyList so that averages can be taken
+    //H.add2WalkerProperty(W);
   }
 
   QMCDriver::~QMCDriver() 

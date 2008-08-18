@@ -69,13 +69,11 @@ namespace qmcplusplus {
 #pragma omp parallel  
       {
         int ip = omp_get_thread_num();
-        if(ip) hClones[ip]->add2WalkerProperty(*wClones[ip]);
+        //if(ip) hClones[ip]->add2WalkerProperty(*wClones[ip]);
         estimatorClones[ip]= new EstimatorManager(*Estimators);//,*hClones[ip]);  
         estimatorClones[ip]->setCollectionMode(false);
 
         Rng[ip]=new RandomGenerator_t(*RandomNumberControl::Children[ip]);
-        // Rng[ip]->init(OHMMS::Controller->rank()*NumThreads+ip,
-        //     NumThreads*OHMMS::Controller->size(),-1);
         hClones[ip]->setRandomGenerator(Rng[ip]);
 
         branchClones[ip] = new BranchEngineType(*branchEngine);
@@ -185,8 +183,8 @@ namespace qmcplusplus {
           MCWalkerConfiguration::iterator 
             wit(W.begin()+wPerNode[ip]), wit_end(W.begin()+wPerNode[ip+1]);
 
-          ////recalculate everything every 100 steps
-          //if(pbyp && now%100 == 99) Movers[ip]->updateWalkers(wit, wit_end);
+          //recalculate everything every 100 steps
+          if(pbyp && now%100 == 99) Movers[ip]->updateWalkers(wit, wit_end);
 
           for(int interval = 0;interval<BranchInterval; interval++,now++)
           {

@@ -116,40 +116,6 @@ namespace qmcplusplus {
         SumValue[SUM_WGTSQ] += weight*weight;
       }
     }
-
-// this is rather trivial operations
-//#pragma omp parallel
-//    {
-//      int ip = omp_get_thread_num();
-//      int pe=PowerE;
-//      RealType e0=EtargetEff;
-//      Return_t wgtnorm=1.0/wgt_tot;
-//
-//      vector<Return_t> sumLoc(SUM_INDEX_SIZE,0.0);
-//      Return_t wgt_max=MaxWeight*wgtnorm;
-//      int nw=wClones[ip]->getActiveWalkers();
-//      for(int iw=0; iw<nw;iw++) {
-//        const Return_t* restrict saved = (*RecordsOnNode[ip])[iw];
-//        Return_t weight=saved[REWEIGHT]*wgtnorm;
-//        Return_t eloc_new=saved[ENERGY_NEW];
-//
-//        weight = std::min(wgt_max,weight);
-//        Return_t delE=std::pow(abs(eloc_new-e0),pe);
-//        sumLoc[SUM_E_BARE] += eloc_new;
-//        sumLoc[SUM_ESQ_BARE] += eloc_new*eloc_new;
-//        sumLoc[SUM_ABSE_BARE] += delE;
-//        sumLoc[SUM_E_WGT] += eloc_new*weight;
-//        sumLoc[SUM_ESQ_WGT] += eloc_new*eloc_new*weight;
-//        sumLoc[SUM_ABSE_WGT] += delE*weight;
-//        sumLoc[SUM_WGT] += weight;
-//        sumLoc[SUM_WGTSQ] += weight*weight;
-//      }
-//#pragma omp critical
-//      {
-//       for(int i=0; i<SUM_INDEX_SIZE; i++) SumValue[i]=sumLoc[i];
-//      }
-//    }
-
     //collect everything
     myComm->allreduce(SumValue);
 
@@ -275,57 +241,24 @@ namespace qmcplusplus {
 
   void QMCCostFunctionOMP::resetPsi()
   {
-
-    OptimizableSetType::iterator oit(OptVariables.begin()), oit_end(OptVariables.end());
-    while(oit != oit_end)
+    if(OptVariables.size() < OptVariablesForPsi.size())
     {
-      Return_t v=(*oit).second;
-      OptVariablesForPsi[(*oit).first]=v;
-      map<string,set<string>*>::iterator eit(equalConstraints.find((*oit).first));
-      if(eit != equalConstraints.end())
-      {
-        set<string>::iterator f((*eit).second->begin()),l((*eit).second->end());
-        while(f != l)
-        {
-          OptVariablesForPsi[(*f)]=v;
-          ++f;
-        }
-      }
-      ++oit;
+      for(int i=0; i<equalVarMap.size(); ++i)
+        OptVariablesForPsi[equalVarMap[i][0]]=OptVariables[equalVarMap[i][1]];
     }
-
-    //cout << "QMCCostFunctionOMP::resetPsi " <<endl;
-    //oit=OptVariablesForPsi.begin();
-    //oit_end=OptVariablesForPsi.end();
-    //while(oit != oit_end)
-    //{
-    //  cout << (*oit).first << "=" << (*oit).second << " ";
-    //  ++oit;
-    //}
-    //cout << endl;
-    if(psiClones.empty())
-      Psi.resetParameters(OptVariablesForPsi);
     else
-      for(int i=0; i<NumThreads; i++) psiClones[i]->resetParameters(OptVariablesForPsi);
+      for(int i=0; i<OptVariables.size(); ++i) OptVariablesForPsi[i]=OptVariables[i];
+
+    //cout << "######### QMCCostFunctionOMP::resetPsi " << endl;
+    //OptVariablesForPsi.print(cout);
+    //cout << "-------------------------------------- " << endl;
+    Psi.resetParameters(OptVariablesForPsi);
+
+    for(int i=0; i<psiClones.size(); ++i)
+      psiClones[i]->resetParameters(OptVariablesForPsi);
+
   }
 
-  /** Reset the Wavefunction \f$ \Psi({\bf R},{{\bf \alpha_i}}) \f$
-   *@return true always
-   *
-   * Reset from the old parameter set \f$ {{\bf \alpha_i}} \f$ to the new parameter
-   * set \f$ {{\bf \alpha_{i+1}}}\f$  
-   */
-  bool
-  QMCCostFunctionOMP::resetWaveFunctions() {
-
-    //loop over all the unique id's
-    for(int i=0; i<IDtag.size(); i++)
-    {
-      OptVariables[IDtag[i]]=OptParams[i];
-    }
-    resetPsi();
-    return true;
-  }
 }
 /***************************************************************************
  * $RCSfile$   $Author: jnkim $
