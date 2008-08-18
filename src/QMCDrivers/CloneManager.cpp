@@ -21,7 +21,7 @@
 #include "Utilities/IteratorUtility.h"
 
 //comment this out to use only method to clone
-//#define ENABLE_CLONE_PSI_AND_H
+#define ENABLE_CLONE_PSI_AND_H
 
 namespace qmcplusplus { 
 
@@ -81,8 +81,9 @@ namespace qmcplusplus {
 #endif
   }
 }
+
 /***************************************************************************
  * $RCSfile: CloneManager.cpp,v $   $Author: jnkim $
  * $Revision: 1.5 $   $Date: 2006/10/18 17:23:35 $
- * $Id: CloneManager.cpp,v 1.5 2006/10/18 17:23:35 jnkim Exp $ 
+ * $Id:CloneManagerDMCPbyPOMP.cpp,v 1.5 2006/10/18 17:23:35 jnkim Exp $ 
  ***************************************************************************/
