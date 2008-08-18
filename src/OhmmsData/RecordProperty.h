@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////
-// (c) Copyright 2003  by Jeongnim Kim
+// (c) Copyright 2003-  by Jeongnim Kim
 //////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////
 //   National Center for Supercomputing Applications &
@@ -7,7 +7,6 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
@@ -128,7 +127,9 @@ struct RecordNamedProperty: public RecordProperty {
   inline typename std::vector<T>::const_iterator begin() const { return Values.begin();}
   inline typename std::vector<T>::const_iterator end() const { return Values.end();}
 
-  inline int add(const char* aname) {
+  //inline int add(const char* aname) {
+  inline int add(const std::string& aname) 
+  {
     int i=0;
     while(i<Names.size()) {
       if(Names[i]== aname) return i;
@@ -168,8 +169,8 @@ struct RecordNamedProperty: public RecordProperty {
       OutStream->setf(std::ios::left,std::ios::adjustfield);
       *OutStream << "#   ";
       for(int i=0; i<Names.size(); i++) 
-        (*OutStream) << setw(15) << Names[i].c_str();
-      (*OutStream) << endl;
+        (*OutStream) << std::setw(15) << Names[i].c_str();
+      (*OutStream) << std::endl;
     }
     OutStream->setf(std::ios::scientific, std::ios::floatfield);
     OutStream->setf(std::ios::right,std::ios::adjustfield);
@@ -178,8 +179,8 @@ struct RecordNamedProperty: public RecordProperty {
   inline void report(int iter){ 
     if(stride && iter%stride == 0) {
       for(int i=0; i<Values.size(); i++) 
-	(*OutStream) << setw(15) << Values[i];
-      (*OutStream) << endl;
+	(*OutStream) << std::setw(15) << Values[i];
+      (*OutStream) << std::endl;
     }
   }
 
