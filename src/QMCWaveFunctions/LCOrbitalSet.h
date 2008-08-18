@@ -62,9 +62,9 @@ namespace qmcplusplus {
       return myclone;
     }
 
-    void resetParameters(VarRegistry<RealType>& optVariables) 
+    void resetParameters(const opt_variables_type& active) 
     {
-      myBasisSet->resetParameters(optVariables);
+      myBasisSet->resetParameters(active);
     }
 
     ///reset the target particleset
@@ -168,9 +168,9 @@ namespace qmcplusplus {
     }
 
     ///reset
-    void resetParameters(VarRegistry<RealType>& optVariables) 
+    void resetParameters(const opt_variables_type& active) 
     {
-      myBasisSet->resetParameters(optVariables);
+      myBasisSet->resetParameters(active);
     }
 
     ///reset the target particleset

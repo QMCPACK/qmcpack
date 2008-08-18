@@ -279,14 +279,28 @@ namespace qmcplusplus {
     for(int i=0; i<Z.size(); i++) Z[i]->acceptMove(P,iat);
   }
 
-  void TrialWaveFunction::resizeByWalkers(int nwalkers){
-    for(int i=0; i<Z.size(); i++) Z[i]->resizeByWalkers(nwalkers);
-  }
+  //void TrialWaveFunction::resizeByWalkers(int nwalkers){
+  //  for(int i=0; i<Z.size(); i++) Z[i]->resizeByWalkers(nwalkers);
+  //}
   
-  void TrialWaveFunction::resetParameters(OptimizableSetType& optVariables)
+  void TrialWaveFunction::checkInVariables(opt_variables_type& active) 
   {
-    for(int i=0; i<Z.size(); i++) 
-      Z[i]->resetParameters(optVariables);
+    for(int i=0; i<Z.size(); i++) Z[i]->checkInVariables(active);
+  }
+
+  void TrialWaveFunction::checkOutVariables(const opt_variables_type& active) 
+  {
+    for(int i=0; i<Z.size(); i++) Z[i]->checkOutVariables(active);
+  }
+
+  void TrialWaveFunction::resetParameters(const opt_variables_type& active)
+  {
+    for(int i=0; i<Z.size(); i++) Z[i]->resetParameters(active);
+  }
+
+  void TrialWaveFunction::reportStatus(ostream& os)
+  {
+    for(int i=0; i<Z.size(); i++) Z[i]->reportStatus(os);
   }
 
   TrialWaveFunction::RealType

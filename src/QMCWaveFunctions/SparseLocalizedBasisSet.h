@@ -46,7 +46,6 @@ namespace qmcplusplus {
     typedef typename BasisSetType::ValueMatrix_t ValueMatrix_t;
     typedef typename BasisSetType::GradVector_t  GradVector_t;
     typedef typename BasisSetType::GradMatrix_t  GradMatrix_t;
-    typedef typename BasisSetType::OptimizableSetType OptimizableSetType;
 
     using BasisSetType::BasisSetSize;
     using BasisSetType::Phi;
@@ -150,10 +149,10 @@ namespace qmcplusplus {
       this->resize(NumTargets);
     }
 
-    void resetParameters(OptimizableSetType& optVariables) 
+    void resetParameters(const opt_variables_type& active) 
     {
       for(int ig=0; ig<NumGroups; ig++)
-        if(LOBasisSet[ig]) LOBasisSet[ig]->myO->resetParameters(optVariables);
+        if(LOBasisSet[ig]) LOBasisSet[ig]->myO->resetParameters(active);
     }
     
     /** reset the distance table with a new target P

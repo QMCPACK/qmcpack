@@ -38,7 +38,6 @@ namespace qmcplusplus {
     typedef OrbitalSetTraits<ValueType>::ValueMatrix_t ValueMatrix_t;
     typedef OrbitalSetTraits<ValueType>::GradVector_t  GradVector_t;
     typedef OrbitalSetTraits<ValueType>::GradMatrix_t  GradMatrix_t;
-    typedef VarRegistry<RealType> OptimizableSetType;
     ///true if C is an identity matrix
     bool Identity;
     ///number of Single-particle orbtials
@@ -91,7 +90,7 @@ namespace qmcplusplus {
     bool put(xmlNodePtr cur);
 
     ///reset
-    virtual void resetParameters(OptimizableSetType& optVariables)=0;
+    virtual void resetParameters(const opt_variables_type& optVariables)=0;
     ///reset the target particleset
     virtual void resetTargetParticleSet(ParticleSet& P)=0;
     /** set the OrbitalSetSize

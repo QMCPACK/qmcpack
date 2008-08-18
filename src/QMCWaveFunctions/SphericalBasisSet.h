@@ -30,7 +30,6 @@ namespace qmcplusplus {
   template<class ROT, class GT=DummyGrid>
   struct SphericalBasisSet 
   {
-
     typedef ROT                                                  RadialOrbital_t;
     typedef typename ROT::value_type                             value_type;
     typedef typename OrbitalSetTraits<value_type>::RealType      RealType;
@@ -43,7 +42,6 @@ namespace qmcplusplus {
     typedef typename OrbitalSetTraits<value_type>::GradVector_t  GradVector_t;
     typedef typename OrbitalSetTraits<value_type>::GradMatrix_t  GradMatrix_t;
     typedef SphericalTensor<RealType,PosType>                    SphericalHarmonics_t;
-    typedef VarRegistry<OHMMS_PRECISION>                         OptimizableSetType;
 
     ///size of the basis set
     IndexType BasisSetSize;
@@ -76,15 +74,17 @@ namespace qmcplusplus {
     SphericalBasisSet<ROT,GT>* makeClone() const
     {
       SphericalBasisSet<ROT,GT>* myclone=new SphericalBasisSet<ROT,GT>(*this);
-      for(int i=0; i<Grids.size(); ++i) myclone->Grids[i]=Grids[i]->makeClone();
-      for(int i=0; i<Rnl.size(); ++i) myclone->Rnl[i]=new ROT(*Rnl[i]);
+      //for(int i=0; i<Grids.size(); ++i) myclone->Grids[i]=Grids[i]->makeClone();
+      //for(int i=0; i<Rnl.size(); ++i) myclone->Rnl[i]=new ROT(*Rnl[i]);
+      for(int i=0; i<Rnl.size(); ++i) 
+        myclone->Rnl[i]=dynamic_cast<ROT*>(Rnl[i]->makeClone());
       return myclone;
     }
 
-    inline void resetParameters(VarRegistry<RealType>& optVariables) 
+    inline void resetParameters(const opt_variables_type& active) 
     { 
       for(int nl=0; nl<Rnl.size(); nl++) 
-        Rnl[nl]->resetParameters(optVariables);
+        Rnl[nl]->resetParameters(active);
     }
 
     /** return the number of basis functions

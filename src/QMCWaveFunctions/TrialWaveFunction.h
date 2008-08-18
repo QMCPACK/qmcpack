@@ -7,7 +7,6 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
@@ -52,18 +51,11 @@ namespace qmcplusplus {
     typedef OrbitalBase::PosType            PosType;
     typedef OrbitalBase::GradType           GradType;
     typedef OrbitalBase::BufferType         BufferType;
-    typedef OrbitalBase::OptimizableSetType OptimizableSetType;
 
     ///differential gradients
     ParticleSet::ParticleGradient_t G;
     ///differential laplacians
     ParticleSet::ParticleLaplacian_t L;
-    /**a list of real variables to be optimized
-     *
-     * Each builder for a trial wavefuncion is responsible for registering
-     * the variables to be optimized.
-     */
-    OptimizableSetType VarList;
 
     TrialWaveFunction(Communicate* c);
 
@@ -87,15 +79,20 @@ namespace qmcplusplus {
     bool put(xmlNodePtr cur);
     ///implement the virtual function
     void reset();
-    ///reset member data
-    void resetParameters(OptimizableSetType& optVariables);
-
-    /**resize the internal storage
-     * @param nwalkers number of walkers 
+    /** check in an optimizable parameter
+     * * @param o a super set of optimizable variables
      *
-     * Not used anymore
+     * Update myOptIndex if o is found among the "active" paramemters.
      */
-    void resizeByWalkers(int nwalkers);
+    void checkInVariables(opt_variables_type& o);
+    /** check out optimizable variables
+     */      
+    void checkOutVariables(const opt_variables_type& o);
+    ///reset member data
+    void resetParameters(const opt_variables_type& active);
+    /** print out state of the trial wavefunction
+     */
+    void reportStatus(ostream& os);
 
     /** recursively change the ParticleSet whose G and L are evaluated */
     void resetTargetParticleSet(ParticleSet& P);

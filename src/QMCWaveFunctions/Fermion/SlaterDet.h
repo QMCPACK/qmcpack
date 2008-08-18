@@ -27,7 +27,7 @@ namespace qmcplusplus {
     typedef DiracDeterminantBase Determinant_t;
 
     /// constructor
-    SlaterDet() {M.resize(3,0);Optimizable=false;}
+    SlaterDet();
 
     ///destructor
     ~SlaterDet();
@@ -35,8 +35,14 @@ namespace qmcplusplus {
     ///add a new DiracDeterminant to the list of determinants
     void add(Determinant_t* det);
 
+    void checkInVariables(opt_variables_type& active);
+
+    void checkOutVariables(const opt_variables_type& active);
+
     ///reset all the Dirac determinants, Optimizable is true
-    void resetParameters(OptimizableSetType& optVariables);
+    void resetParameters(const opt_variables_type& optVariables);
+
+    void reportStatus(ostream& os);
 
     void resetTargetParticleSet(ParticleSet& P);
 

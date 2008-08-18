@@ -53,9 +53,9 @@ namespace qmcplusplus {
         BasisSetSize=norbs;
       }
 
-      void resetParameters(VarRegistry<RealType>& optVariables) 
+      void resetParameters(const opt_variables_type& active) 
       { 
-        for(int i=0; i<Phi.size(); i++) Phi[i]->resetParameters(optVariables); 
+        for(int i=0; i<Phi.size(); i++) Phi[i]->resetParameters(active); 
       }
 
       void resetTargetParticleSet(ParticleSet& P) { }

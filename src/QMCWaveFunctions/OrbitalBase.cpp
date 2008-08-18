@@ -21,10 +21,22 @@ namespace qmcplusplus {
   OrbitalBase::OrbitalBase(): 
     Optimizable(true), UseBuffer(true), //Counter(0),
     LogValue(1.0),PhaseValue(0.0),OrbitalName("OrbitalBase")
-//#if !defined(ENABLE_SMARTPOINTER)
-//  ,dPsi(0)
-//#endif
+#if !defined(ENABLE_SMARTPOINTER)
+    ,dPsi(0)
+#endif
   { }
+
+//  OrbitalBase::OrbitalBase(const OrbitalBase& old):
+//    Optimizable(old.Optimizable), UseBuffer(old.UseBuffer),
+//    dPsi(old.dPsi), dLogPsi(old.dLogPsi),d2LogPsi(old.d2LogPsi),
+//    OrbitalName(old.OrbitalName),myVars(old.myVars)
+//  {
+//    //
+//    //if(dLogPsi.size()) dLogPsi.resize(dLogPsi.size());
+//    //if(d2LogPsi.size()) dLogPsi.resize(d2LogPsi.size());
+//    //if(dPsi) dPsi=old.dPsi->makeClone();
+//  }
+
 
 //  void OrbitalBase::setDiffOrbital(DiffOrbitalBasePtr d)
 //  {
@@ -73,10 +85,10 @@ namespace qmcplusplus {
     return 0;
   }
 
-  void OrbitalBase::copyFrom(const OrbitalBase& old)
-  {
-    APP_ABORT("OrbitalBase::copyFrom needs to be implemented by a derived class.");
-  }
+  //void OrbitalBase::copyFrom(const OrbitalBase& old)
+  //{
+  //  APP_ABORT("OrbitalBase::copyFrom needs to be implemented by a derived class.");
+  //}
 
   OrbitalBasePtr OrbitalBase::makeProxy(ParticleSet& tpq)
   {

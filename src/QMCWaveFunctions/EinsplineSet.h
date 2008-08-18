@@ -81,8 +81,7 @@ namespace qmcplusplus {
     void evaluate(const ParticleSet& P, int first, int last,
 		  ValueMatrix_t& psi, GradMatrix_t& dpsi, 
 		  ValueMatrix_t& d2psi);
-    
-    void resetParameters(VarRegistry<RealType>& vlist);
+
     void resetTargetParticleSet(ParticleSet& e);
     void resetSourceParticleSet(ParticleSet& ions);
     void setOrbitalSetSize(int norbs);
@@ -114,6 +113,8 @@ namespace qmcplusplus {
     void evaluate(const ParticleSet& P, int first, int last,
 		  ValueMatrix_t& psi, GradMatrix_t& dpsi, 
 		  ValueMatrix_t& d2psi);
+
+    void resetParameters(const opt_variables_type& active);
 
     EinsplineSetLocal() 
     {
@@ -186,10 +187,6 @@ namespace qmcplusplus {
     StorageValueVector_t StorageValueVector, StorageLaplVector;
     StorageGradVector_t  StorageGradVector;
     StorageHessVector_t  StorageHessVector;
-    // Temporary storage used when blending functions
-    StorageValueVector_t BlendValueVector, BlendLaplVector;
-    StorageGradVector_t  BlendGradVector;
-
     // True if we should unpack this orbital into two copies
     vector<bool>         MakeTwoCopies;
     // k-points for each orbital
@@ -226,7 +223,7 @@ namespace qmcplusplus {
 		  ComplexValueMatrix_t& psi, ComplexGradMatrix_t& dpsi, 
 		  ComplexValueMatrix_t& d2psi);
     
-    void resetParameters(VarRegistry<RealType>& vlist);
+    void resetParameters(const opt_variables_type& active);
     void resetTargetParticleSet(ParticleSet& e);
     void setOrbitalSetSize(int norbs);
     string Type();

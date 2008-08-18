@@ -72,10 +72,18 @@ namespace qmcplusplus {
     }
 
     ///reset all the Dirac determinants, Optimizable is true
-    void resetParameters(OptimizableSetType& optVariables) {  
-      if(Optimizable) 
-        for(int i=0; i<Dets.size(); i++) Dets[i]->resetParameters(optVariables);
-    }
+    ///optimizations  are disabled
+    inline void checkInVariables(opt_variables_type& active)
+    { }
+
+    inline void checkOutVariables(const opt_variables_type& active)
+    { }
+    
+    inline void resetParameters(const opt_variables_type& active) 
+    { }
+
+    inline void reportStatus(ostream& os)
+    { }
 
     void resetTargetParticleSet(ParticleSet& P) {
       //BasisSet->resetTargetParticleSet(P);

@@ -77,6 +77,24 @@ namespace qmcplusplus {
     }
   }
 
+  void AGPDeterminant::checkInVariables(opt_variables_type& active)
+  {
+    //do nothing
+  }
+  void AGPDeterminant::checkOutVariables(const opt_variables_type& active)
+  {
+    //do nothing
+  }
+  void AGPDeterminant::resetParameters(const opt_variables_type& active)
+  {
+    //GeminalBasis->resetParameters(active); 
+  }
+  void AGPDeterminant::reportStatus(ostream& os)
+  {
+    //do nothing
+  }
+
+
   void AGPDeterminant::resetTargetParticleSet(ParticleSet& P) 
   { 
     GeminalBasis->resetTargetParticleSet(P);

@@ -69,34 +69,72 @@ namespace qmcplusplus {
     typedef ParticleAttrib<ValueType> ValueVectorType;
     typedef ParticleAttrib<GradType>  GradVectorType;
     typedef PooledData<RealType>      BufferType;
-    typedef VarRegistry<RealType>     OptimizableSetType;
 
+    /** boolean to set optimization
+     *
+     * If true, this object is actively modified during optimization
+     */
     bool Optimizable;
+    /** boolean to turn on/off the buffer
+     */
     bool UseBuffer;
+    ///** integer to keep track its usage
+    // */
+    //int Counter;
+    /** current \f$\log\phi \f$
+     */
     ValueType LogValue;
+    /** current phase 
+     */
     RealType PhaseValue;
+    /** Pointer to the differential orbital of this object
+     *
+     * If dPsi=0, this orbital is constant with respect to the optimizable variables
+     */
+    DiffOrbitalBasePtr dPsi;
+    /** A vector for \f$ \frac{\partial \nabla \log\phi}{\partial \alpha} \f$
+     */
+    GradVectorType dLogPsi;
+    /** A vector for \f$ \frac{\partial \nabla^2 \log\phi}{\partial \alpha} \f$
+     */
+    ValueVectorType d2LogPsi;
+    /** Name of this orbital
+     */
     string OrbitalName;
+    ///list of variables this orbital handles
+    opt_variables_type myVars;
 
     /// default constructor
     OrbitalBase();
+    //OrbitalBase(const OrbitalBase& old);
 
     ///default destructor
     virtual ~OrbitalBase() { }
 
     inline void setOptimizable(bool optimizeit) { Optimizable = optimizeit;}
 
+    ///assign a differential orbital
+    void setDiffOrbital(DiffOrbitalBasePtr d);
+
+    /** check in optimizable parameters
+     * @param active a super set of optimizable variables
+     *
+     * Add the paramemters this orbital manage to active.
+     */
+    virtual void checkInVariables(opt_variables_type& active)=0;
+
+    /** check out optimizable variables
+     *
+     * Update myVars index map
+     */
+    virtual void checkOutVariables(const opt_variables_type& active)=0;
+
     /** reset the parameters during optimizations
      */
-    virtual void resetParameters(OptimizableSetType& optVariables)=0;
+    virtual void resetParameters(const opt_variables_type& active)=0;
 
-    /**resize the internal storage with multiple walkers
-     *@param nwalkers the number of walkers
-     *
-     *Specialized for all-walker move.
-     */
-    void resizeByWalkers(int nwalkers) {
-      UseBuffer=nwalkers>1;
-    }
+    /** print the state, e.g., optimizables */
+    virtual void reportStatus(ostream& os)=0;
 
     /** reset properties, e.g., distance tables, for a new target ParticleSet
      * @param P ParticleSet
@@ -126,21 +164,6 @@ namespace qmcplusplus {
     virtual ValueType
     evaluateLog(ParticleSet& P, 
         ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L) = 0;
-
-    /** evaluate the orbital values of for all the walkers
-     *@param W a collection of walkers
-     *@param psi an array of orbital values
-     *@param G the Gradients
-     *@param L the Laplacians
-     *@return the value
-     *
-     *Specialized for all-walker move. G and L are two-dimensional arrays.
-    virtual void 
-    evaluate(WalkerSetRef& W, 
-	     ValueVectorType& psi,
-	     WalkerSetRef::WalkerGradient_t& G,
-	     WalkerSetRef::WalkerLaplacian_t& L) = 0;
-     */
 
 
     /** evaluate the ratio of the new to old orbital value
@@ -247,12 +270,12 @@ namespace qmcplusplus {
      * If not true, return a proxy class
      */
     virtual OrbitalBasePtr makeClone(ParticleSet& tqp) const;
-    /** copy data members from old
-     * @param old existing OrbitalBase from which all the data members are copied.
-     *
-     * It is up to the derived classes to determine to use deep, shallow and mixed copy methods.
-     */
-    virtual void copyFrom(const OrbitalBase& old);
+    ///** copy data members from old
+    // * @param old existing OrbitalBase from which all the data members are copied.
+    // *
+    // * It is up to the derived classes to determine to use deep, shallow and mixed copy methods.
+    // */
+    //virtual void copyFrom(const OrbitalBase& old);
   };
 }
 #endif

@@ -145,6 +145,19 @@ namespace qmcplusplus {
       return 0;
     }
 
+    inline void checkInVariables(opt_variables_type& active)
+    { }
+
+    inline void checkOutVariables(const opt_variables_type& active)
+    { }
+    
+    inline void resetParameters(const opt_variables_type& active) 
+    { }
+
+    inline void reportStatus(ostream& os)
+    { }
+
+
     SPOSet*  clonePhi() const
     {
       return Phi->makeClone();
@@ -158,11 +171,6 @@ namespace qmcplusplus {
     {
       FirstIndex = first;
       resize(nel,nel);
-    }
-
-    void resetParameters(OptimizableSetType& optVariables)
-    {
-      Phi->resetParameters(optVariables);
     }
 
     void resetTargetParticleSet(ParticleSet& P) 

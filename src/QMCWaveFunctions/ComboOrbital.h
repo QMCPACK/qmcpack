@@ -49,9 +49,21 @@ namespace qmcplusplus {
       Constraints=control;
     }
 
-    /** reset parameters
+    /** check out optimizable variables
      */
-    void resetParameters(OptimizableSetType& optVariables);
+    void checkOutVariables(const opt_variables_type& o);
+
+    /** check in an optimizable parameter
+     * @param o a super set of optimizable variables
+     */
+    void checkInVariables(opt_variables_type& o);
+
+    /** print the state, e.g., optimizables */
+    void reportStatus(ostream& os);
+
+    /** reset the parameters during optimizations
+     */
+    void resetParameters(const opt_variables_type& active);
 
     void resetTargetParticleSet(ParticleSet& P);
 

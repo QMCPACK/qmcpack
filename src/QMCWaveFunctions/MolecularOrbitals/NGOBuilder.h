@@ -7,7 +7,6 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
@@ -18,10 +17,65 @@
 
 #include "Configuration.h"
 #include "OhmmsData/HDFAttribIO.h"
-#include "Numerics/OneDimGridFunctor.h"
+#include "Numerics/OneDimCubicSpline.h"
+#include "Numerics/OptimizableFunctorBase.h"
 #include "QMCWaveFunctions/SphericalBasisSet.h"
 
 namespace qmcplusplus {
+
+  struct NGOrbital: public OptimizableFunctorBase
+  {
+    typedef real_type                    value_type;
+    typedef real_type                    point_type;
+    typedef OneDimGridBase<real_type>    grid_type;
+    typedef OneDimCubicSpline<real_type> functor_type;
+    functor_type myFunc;
+    real_type Y, dY, d2Y;
+
+    NGOrbital(grid_type* agrid):myFunc(agrid) { }
+
+    template<typename VV>
+    NGOrbital(grid_type* agrid, const VV& nv):myFunc(agrid,nv) { }
+
+    void checkInVariables(opt_variables_type& active){}
+    void checkOutVariables(const opt_variables_type& active){}
+    void resetParameters(const opt_variables_type& active){}
+    void reset(){}
+    inline real_type f(real_type r) { return myFunc.f(r);}
+    inline real_type df(real_type r) { return myFunc.df(r);}
+    bool put(xmlNodePtr cur) { return true;}
+    OptimizableFunctorBase* makeClone() const;
+
+    inline real_type evaluate(real_type r, real_type rinv)
+    {
+      return Y=myFunc.splint(r);
+    }
+    inline value_type evaluateAll(real_type r, real_type rinv) 
+    {
+      return Y=myFunc.splint(r,dY,d2Y);
+    }
+
+    inline value_type operator()(int i) const { return myFunc(i);}
+    inline value_type& operator()(int i) { return myFunc(i);}
+    inline grid_type& grid() 
+    {
+      return myFunc.grid();
+    }
+    inline void setGridManager(bool willmanage) 
+    {
+      myFunc.setGridManager(willmanage);
+    }
+
+    inline void spline(int imin, value_type yp1, int imax, value_type ypn)
+    {
+      myFunc.spline(imin,yp1,imax,ypn);
+    }
+
+    inline void resize(int n)
+    {
+      myFunc.resize(n);
+    }
+  };
 
   /**Class to convert SlaterTypeOrbital to a radial orbital on a log grid.
    *
@@ -32,8 +86,10 @@ namespace qmcplusplus {
   class NGOBuilder: public QMCTraits {
 
     public:
-    typedef OneDimGridBase<RealType>                        GridType;
-    typedef OneDimGridFunctor<RealType>                     RadialOrbitalType;
+    //typedef OneDimGridBase<RealType>                        GridType;
+    //typedef OneDimGridFunctor<RealType>                     RadialOrbitalType;
+    typedef NGOrbital                                     RadialOrbitalType;
+    typedef NGOrbital::grid_type                          GridType;
     typedef SphericalBasisSet<RadialOrbitalType,GridType> CenteredOrbitalType;
 
     ///true, if the RadialOrbitalType is normalized

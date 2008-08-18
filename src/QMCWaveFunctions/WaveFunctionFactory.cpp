@@ -102,10 +102,10 @@ namespace qmcplusplus {
       cur = cur->next;
     }
 
-    {
-      ReportEngine PREA("TrialWaveFunction","print");
-      targetPsi->VarList.print(app_log());
-    }
+    //{
+    //  ReportEngine PREA("TrialWaveFunction","print");
+    //  targetPsi->VarList.print(app_log());
+    //}
 
     return success;
   }

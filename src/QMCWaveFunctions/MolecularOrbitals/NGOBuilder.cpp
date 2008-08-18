@@ -7,7 +7,6 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
@@ -23,6 +22,14 @@
 #include "QMCFactory/OneDimGridFactory.h"
 #include "QMCWaveFunctions/MolecularOrbitals/NGOBuilder.h"
 namespace qmcplusplus {
+
+  OptimizableFunctorBase* NGOrbital::makeClone() const
+  {
+    NGOrbital *myclone=new NGOrbital(*this); 
+    myclone->myFunc.m_grid=myFunc.m_grid->makeClone();
+    myclone->setGridManager(true);
+    return myclone;
+  }
 
   NGOBuilder::NGOBuilder(xmlNodePtr cur): 
     Normalized(true),m_rcut(-1.0), m_infunctype("Gaussian"), m_fileid(-1){
@@ -124,9 +131,9 @@ namespace qmcplusplus {
       addNumerical(cur,dsname);
     }
 
-
-    if(lastRnl && m_orbitals->Rnl.size()> lastRnl) {
-      //LOGMSG("\tSetting GridManager of " << lastRnl << " radial orbital to false")
+    if(lastRnl && m_orbitals->Rnl.size()> lastRnl) 
+    {
+      app_log() << "\tSetting GridManager of " << lastRnl << " radial orbital to false" << endl;
       m_orbitals->Rnl[lastRnl]->setGridManager(false);
     }
 
@@ -140,7 +147,7 @@ namespace qmcplusplus {
     gset.putBasisGroup(cur);
 
     GridType* agrid = m_orbitals->Grids[0];
-    RadialOrbitalType *radorb = new OneDimCubicSpline<RealType>(agrid);
+    RadialOrbitalType *radorb = new RadialOrbitalType(agrid);
 
     if(m_rcut<0) m_rcut = agrid->rmax();
     Transform2GridFunctor<GaussianCombo<RealType>,RadialOrbitalType> transform(gset, *radorb);
@@ -154,7 +161,7 @@ namespace qmcplusplus {
 
     ////pointer to the grid
     GridType* agrid = m_orbitals->Grids[0];
-    RadialOrbitalType *radorb = new OneDimCubicSpline<RealType>(agrid);
+    RadialOrbitalType *radorb = new RadialOrbitalType(agrid);
 
     SlaterCombo<RealType> sto(m_nlms[1],Normalized);
     sto.putBasisGroup(cur);
@@ -196,7 +203,7 @@ namespace qmcplusplus {
 
     //last valid index for radial grid
     int imax = rad_orb.size()-1;
-    RadialOrbitalType *radorb = new OneDimCubicSpline<RealType>(agrid,rad_orb);
+    RadialOrbitalType *radorb = new RadialOrbitalType(agrid,rad_orb);
     //calculate boundary condition, assume derivates at endpoint are 0.0
     RealType yprime_i = rad_orb[imin+1]-rad_orb[imin];
     if(std::abs(yprime_i)<1e-10)  yprime_i = 0.0;
@@ -228,10 +235,9 @@ namespace qmcplusplus {
   }
 
   template<class T>
-  struct PadeOrbital: public OptimizableFunctorBase<T> {
+  struct PadeOrbital: public OptimizableFunctorBase {
   
-    typedef typename OptimizableFunctorBase<T>::value_type value_type;
-    typedef typename OptimizableFunctorBase<T>::real_type real_type;
+    typedef T value_type;
     real_type a0,a1,a2,a3,rcut;
     std::string  nodeName;
   
@@ -241,6 +247,11 @@ namespace qmcplusplus {
   
     ~PadeOrbital(){ }
   
+    OptimizableFunctorBase* makeClone() const
+    {
+      return new PadeOrbital<T>(*this);
+    }
+
     void reset() {}
   
     inline real_type f(real_type r) {

@@ -7,7 +7,6 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
@@ -28,9 +27,26 @@ namespace qmcplusplus {
     delete Constraints;
   }
 
-  void ComboOrbital::resetParameters(OptimizableSetType& optVariables) 
+  void ComboOrbital::resetParameters(const opt_variables_type& active) 
   {
-    Constraints->resetParameters(optVariables);
+    //APP_ABORT("ComboOrbital::resetParameters is incomplete");
+    //Constraints->resetParameters(active);
+    for(int i=0; i<Psi.size(); i++) Psi[i]->resetParameters(active);
+  }
+
+  void ComboOrbital::checkOutVariables(const opt_variables_type& o)
+  {
+    for(int i=0; i<Psi.size(); i++) Psi[i]->checkOutVariables(o);
+  }
+
+  void ComboOrbital::checkInVariables(opt_variables_type& o)
+  {
+    for(int i=0; i<Psi.size(); i++) Psi[i]->checkInVariables(o);
+  }
+
+  void ComboOrbital::reportStatus(ostream& os)
+  {
+    for(int i=0; i<Psi.size(); i++) Psi[i]->reportStatus(os);
   }
 
   void ComboOrbital::resetTargetParticleSet(ParticleSet& P) {

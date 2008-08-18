@@ -75,6 +75,16 @@ namespace qmcplusplus {
     ///virtual destructor
     virtual ~Bspline3DSetBase();
 
+    /** reset optimizable variables. 
+     *
+     * Currently nothing is optimized.
+     */
+    void checkInVariables(opt_variables_type& active);
+    void checkOutVariables(const opt_variables_type& active);
+    void resetParameters(const opt_variables_type& active);
+    void reportStatus(ostream& os);
+    void resetTargetParticleSet(ParticleSet& e);
+
     inline void setRcut(RealType rc)
     {
       Rcut2=rc*rc;
@@ -114,10 +124,6 @@ namespace qmcplusplus {
      */
     void add(int i, StorageType* curP);
 
-    /** reset optimizable variables. 
-     */
-    void resetParameters(VarRegistry<RealType>& vlist);
-    void resetTargetParticleSet(ParticleSet& e);
     void setOrbitalSetSize(int norbs);
 
     /** tile localized orbitals

@@ -42,7 +42,7 @@ namespace qmcplusplus {
     TinyVector<double,3> Center;
     // Index is the orbital number
     vector<TinyVector<double,3> > kPoints;
-    double APWRadius, BlendRadius;
+    double APWRadius;
     // This is the minimum grid delta.  For grid points spaced closer
     // than this value, the second derivative on the spline is
     // numerically unstable
@@ -122,8 +122,6 @@ namespace qmcplusplus {
 		  double Z);
     
     bool inside (TinyVector<double,3> r);
-    void inside(TinyVector<double,3> r, bool &in, bool &needBlend);
-    TinyVector<double,3> disp (TinyVector<double,3> r);
     void evaluate (TinyVector<double,3> r, Vector<complex<double> > &phi);
     void evaluate (TinyVector<double,3> r,
 		   Vector<complex<double> > &phi,
@@ -134,12 +132,6 @@ namespace qmcplusplus {
 		     Vector<TinyVector<complex<double>,3> > &grad,
 		     Vector<complex<double> > &lapl);
     inline int get_num_orbitals() { return NumOrbitals; }
-
-    inline double get_APW_radius ()  { return APWRadius;   }
-    inline double get_blend_radius() { return BlendRadius; }
-
-    void blend_func(double r, double &b);
-    void blend_func(double r, double &b, double &db, double &d2b);    
     
     /////////////////////////
     // Core state routines //

@@ -28,7 +28,11 @@ namespace qmcplusplus {
    *@param first index of the first particle
    */
   DiracDeterminantBase::DiracDeterminantBase(SPOSetBasePtr const &spos, int first): 
-    NP(0), Phi(spos), FirstIndex(first) {}
+    NP(0), Phi(spos), FirstIndex(first) 
+  {
+    Optimizable=false;
+    OrbitalName="DiracDeterminantBase";
+  }
 
   ///default destructor
   DiracDeterminantBase::~DiracDeterminantBase() {}

@@ -29,6 +29,24 @@ namespace qmcplusplus {
   {
   }
 
+  void Bspline3DSetBase::checkInVariables(opt_variables_type& active)
+  {
+    //do nothing
+  }
+  void Bspline3DSetBase::checkOutVariables(const opt_variables_type& active)
+  {
+    //do nothing
+  }
+  void Bspline3DSetBase::resetParameters(const opt_variables_type& active)
+  {
+    //do nothing
+  }
+  void Bspline3DSetBase::reportStatus(ostream& os)
+  {
+    //do nothing
+  }
+
+
   void Bspline3DSetBase::setLattice(const CrystalLattice<RealType,DIM>& lat)
   {
     Lattice.set(lat);
@@ -70,10 +88,6 @@ namespace qmcplusplus {
   {
     TwistAngle=tangle;
     mK2=-dot(tangle,tangle);
-  }
-
-  void Bspline3DSetBase::resetParameters(VarRegistry<RealType>& vlist)
-  {
   }
 
   void Bspline3DSetBase::setOrbitalSetSize(int norbs) { 
