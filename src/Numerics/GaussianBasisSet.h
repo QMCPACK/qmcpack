@@ -20,14 +20,10 @@
 #include <cmath>
 
 template<class T>
-struct GaussianCombo: public OptimizableFunctorBase<T> {
+struct GaussianCombo: public OptimizableFunctorBase {
 
-  typedef typename OptimizableFunctorBase<T>::value_type value_type;
-  typedef typename OptimizableFunctorBase<T>::real_type real_type;
-  typedef typename OptimizableFunctorBase<T>::OptimizableSetType OptimizableSetType;
-
-  //typedef T value_type;
-  value_type Y, dY, d2Y;
+  typedef T value_type;
+  real_type Y, dY, d2Y;
 
   struct BasicGaussian {
     real_type Sigma;
@@ -56,7 +52,7 @@ struct GaussianCombo: public OptimizableFunctorBase<T> {
       CoeffPP = 4.0*Sigma*Sigma*Coeff;
     }
 
-    void resetParameters(OptimizableSetType& vlist)
+    void resetParameters(const opt_variables_type& active)
     {
       //DO NOTHING
     }
@@ -95,7 +91,7 @@ struct GaussianCombo: public OptimizableFunctorBase<T> {
 
   ~GaussianCombo(){ }
 
-  OptimizableFunctorBase<T>* makeClone() const 
+  OptimizableFunctorBase* makeClone() const 
   {
     return new GaussianCombo<T>(*this);
   }
@@ -108,9 +104,9 @@ struct GaussianCombo: public OptimizableFunctorBase<T> {
     return gset.size();
   }
 
-  inline real_type f(value_type r) {
-    value_type res=0;
-    value_type r2 = r*r;
+  inline real_type f(real_type r) {
+    real_type res=0;
+    real_type r2 = r*r;
     typename std::vector<BasicGaussian>::const_iterator it(gset.begin());
     typename std::vector<BasicGaussian>::const_iterator it_end(gset.end());
     while(it != it_end) {
@@ -118,9 +114,9 @@ struct GaussianCombo: public OptimizableFunctorBase<T> {
     }
     return res;
   }
-  inline value_type df(value_type r) {
-    value_type res=0;
-    value_type r2 = r*r;
+  inline real_type df(real_type r) {
+    real_type res=0;
+    real_type r2 = r*r;
     typename std::vector<BasicGaussian>::const_iterator it(gset.begin());
     typename std::vector<BasicGaussian>::const_iterator it_end(gset.end());
     while(it != it_end) {
@@ -129,9 +125,9 @@ struct GaussianCombo: public OptimizableFunctorBase<T> {
     return res;
   }
 
-  inline value_type evaluate(real_type r, real_type rinv) {
+  inline real_type evaluate(real_type r, real_type rinv) {
     Y=0.0;
-    value_type rr = r*r;
+    real_type rr = r*r;
     typename std::vector<BasicGaussian>::iterator it(gset.begin()),it_end(gset.end());
     while(it != it_end) {
       Y+=(*it).f(rr); ++it;
@@ -141,14 +137,14 @@ struct GaussianCombo: public OptimizableFunctorBase<T> {
 
   inline void evaluateAll(real_type r, real_type rinv) {
     Y=0.0;dY=0.0;d2Y=0.0;
-    value_type rr = r*r;
+    real_type rr = r*r;
     typename std::vector<BasicGaussian>::iterator it(gset.begin()),it_end(gset.end());
     while(it != it_end) {
       Y+=(*it).evaluate(r,rr,dY,d2Y); ++it;
     }
   }
 
-  //inline value_type evaluate(real_type r, real_type rinv, real_type& drnl, real_type& d2rnl) {
+  //inline real_type evaluate(real_type r, real_type rinv, real_type& drnl, real_type& d2rnl) {
   //  Y=0.0;drnl=0.0;d2rnl=0.0;
   //  real_type du, d2u;
   //  typename std::vector<BasicGaussian>::iterator 
@@ -163,12 +159,9 @@ struct GaussianCombo: public OptimizableFunctorBase<T> {
 
   bool put(xmlNodePtr cur);
 
-  void addOptimizables( VarRegistry<real_type>& vlist)
-  {
-    //DO NOTHING FOR NOW
-  }
-
-  void resetParameters(VarRegistry<real_type>& vlist)
+  void checkInVariables(opt_variables_type& active) { }
+  void checkOutVariables(const opt_variables_type& active) { }
+  void resetParameters(const opt_variables_type& active)
   {
     //DO NOTHING FOR NOW
   }

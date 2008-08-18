@@ -58,17 +58,17 @@ struct OneDimGridFunctor//: public FunctorBase<Td,1> {
    */
   OneDimGridFunctor(grid_type* gt = 0): GridManager(true), m_grid(gt) {
     if(m_grid) resize(m_grid->size());
-    FirstAddress.resize(3,0);
+    //FirstAddress.resize(3,0);
   }
 
   /** virtual destructor */
   inline virtual ~OneDimGridFunctor() { }
 
-  ///copy constructor
-  OneDimGridFunctor(const this_type& a): GridManager(true), m_grid(a.m_grid){
-    if(m_grid) resize(m_grid->size());
-    FirstAddress.resize(3,0);
-  }
+  /////copy constructor
+  //OneDimGridFunctor(const this_type& a): GridManager(true), m_grid(a.m_grid){
+  //  if(m_grid) resize(m_grid->size());
+  //  FirstAddress.resize(3,0);
+  //}
 
   /// assignment operator
   const this_type& operator=(const this_type& a) {
@@ -85,6 +85,11 @@ struct OneDimGridFunctor//: public FunctorBase<Td,1> {
     Y = x;
     return *this;
   }
+
+  template<typename TT>
+    inline void resetParameters(const TT& active)
+    {
+    }
 
   ///set the number of nodes
   inline void setNumOfNodes(int n) { NumNodes = n;}
@@ -121,12 +126,13 @@ struct OneDimGridFunctor//: public FunctorBase<Td,1> {
    */
   inline value_type& operator()(int i) { return m_Y[i];} 
 
-  /** return the address of the values
-   * @param i index, i=0 value, i=1 first derivative, i=2 second
-   */
-  inline value_type* data(int i) {
-    return FirstAddress[i];
-  }
+  ///** return the address of the values
+  // * @param i index, i=0 value, i=1 first derivative, i=2 second
+  // */
+  //inline value_type* data(int i) {
+  //  return 0;
+  //  //return FirstAddress[i];
+  //}
 
   /**return the differntial spacing for the grid
    *@warning only for LinearGrid and LogGrid
@@ -143,7 +149,7 @@ struct OneDimGridFunctor//: public FunctorBase<Td,1> {
    *@return the value of the function
    */
   inline value_type f(point_type r) {
-    setgrid(r);
+    //setgrid(r);
     return Y=splint(r);
   }
 
@@ -152,7 +158,7 @@ struct OneDimGridFunctor//: public FunctorBase<Td,1> {
    *@return the derivative of the function
    */
   inline value_type df(point_type r) {
-    setgrid(r);
+    //setgrid(r);
     Y=splint(r,dY,d2Y);
     return dY;
   }
@@ -177,13 +183,13 @@ struct OneDimGridFunctor//: public FunctorBase<Td,1> {
     return Y = splint(r,dY,d2Y);
   }
 
-  ///reset the values: do nothing
-  virtual void reset() { }
-  ///reset the values from the pool
-  virtual void resetParameters(VarRegistry<point_type>& vlist) 
-  { 
-    ///DO NOTHING
-  }
+  /////reset the values: do nothing
+  //virtual void reset() { }
+  /////reset the values from the pool
+  //virtual void resetParameters(VarRegistry<point_type>& vlist) 
+  //{ 
+  //  ///DO NOTHING
+  //}
 
   virtual 
   value_type 
@@ -230,7 +236,7 @@ struct OneDimGridFunctor//: public FunctorBase<Td,1> {
   int NumNodes;
 
   ///address of coefficients Y and dY or d2Y
-  std::vector<value_type*> FirstAddress;
+  //std::vector<value_type*> FirstAddress;
 };
 
 /** One-dimensional grid functor that returns a constant

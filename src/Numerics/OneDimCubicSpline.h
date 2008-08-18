@@ -46,7 +46,7 @@ public:
   using base_type::dY;
   using base_type::d2Y;
   using base_type::m_Y;
-  using base_type::FirstAddress;
+  //using base_type::FirstAddress;
 
   data_type m_Y1;
   int First,Last;
@@ -171,8 +171,8 @@ public:
 
     NRCubicSplineFirst(m_grid->data()+imin, m_Y.data(), npts, m_Y1.data(), m_y2.data()); 
 
-    FirstAddress[0]=m_Y.data()+imin;
-    FirstAddress[1]=m_Y1.data();
+    //FirstAddress[0]=m_Y.data()+imin;
+    //FirstAddress[1]=m_Y1.data();
   }
 
   inline void spline() {
@@ -205,7 +205,7 @@ public:
   using base_type::d2Y;
   using base_type::m_Y;
   using base_type::NumNodes;
-  using base_type::FirstAddress;
+  //using base_type::FirstAddress;
 
   data_type m_Y1;
   int First;
@@ -298,8 +298,8 @@ public:
     data_type m_Y2(npts);
     m_Y1.resize(npts);
     NRCubicSplinePBC(m_grid->data(), m_Y.data(), npts, m_Y1.data(), m_Y2.data());
-    FirstAddress[0]=m_Y.data();
-    FirstAddress[1]=m_Y1.data();
+    //FirstAddress[0]=m_Y.data();
+    //FirstAddress[1]=m_Y1.data();
   }
 
 };
@@ -408,7 +408,7 @@ public:
   using base_type::dY;
   using base_type::d2Y;
   using base_type::m_Y;
-  using base_type::FirstAddress;
+  //using base_type::FirstAddress;
 
   data_type m_Y2;
 
@@ -419,9 +419,9 @@ public:
   value_type first_deriv;
   value_type last_deriv;
 
-  OneDimCubicSpline(const OneDimCubicSpline<Td,Tg,CTd,CTg>& rhs):
-    base_type(rhs), m_Y2(rhs.m_Y2)
-    { }
+  //OneDimCubicSpline(const OneDimCubicSpline<Td,Tg,CTd,CTg>& rhs):
+  //  base_type(rhs), m_Y2(rhs.m_Y2)
+  //  { }
 
   OneDimCubicSpline(grid_type* gt = 0):base_type(gt) { }
 
@@ -494,7 +494,6 @@ public:
   splint(point_type r, value_type& du, value_type& d2u) {
 
     if(GridManager) {
-      //m_grid->locate(r);
       m_grid->updateSecondOrder(r,true);
     }
 
@@ -553,8 +552,8 @@ public:
     m_Y2 = 0.0;
     NRCubicSpline(m_grid->data()+imin, m_Y.data()+imin, 
 		  npts-imin, yp1, ypn, m_Y2.data()+imin);
-    FirstAddress[0]=m_Y.data()+imin;
-    FirstAddress[2]=m_Y2.data()+imin;
+    //FirstAddress[0]=m_Y.data()+imin;
+    //FirstAddress[2]=m_Y2.data()+imin;
   }
 
   inline

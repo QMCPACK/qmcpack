@@ -19,37 +19,38 @@
 #include <cmath>
 
 template<class T>
-struct GaussianTimesRN: public OptimizableFunctorBase<T> {
+struct GaussianTimesRN: public OptimizableFunctorBase {
 
-  typedef typename OptimizableFunctorBase<T>::value_type value_type;
-  typedef typename OptimizableFunctorBase<T>::real_type real_type;
-  typedef typename OptimizableFunctorBase<T>::OptimizableSetType OptimizableSetType;
-  value_type Y, dY, d2Y;
+  typedef T value_type;
+  real_type Y, dY, d2Y;
 
   struct BasicGaussian {
-    T Sigma;
-    T Coeff;
+    real_type Sigma;
+    real_type Coeff;
     int Power;
 
-    T MinusSigma;
-    T CoeffP;
-    T CoeffPP;
-    T PowerC;
-    BasicGaussian(): Sigma(1.0), Coeff(1.0), Power(0) { } 
+    real_type MinusSigma;
+    real_type CoeffP;
+    real_type CoeffPP;
+    real_type PowerC;
 
-    inline BasicGaussian(T sig, T c, int p=0) { 
-      reset(sig,c,p);
-    } 
+    //BasicGaussian(): Sigma(1.0), Coeff(1.0), Power(0) { } 
+    inline BasicGaussian(real_type sig=1.0, real_type c=1.0, int p=0):
+      Sigma(sig),Coeff(c),Power(p)
+      { 
+        reset();
+      } 
 
-    inline void reset(T sig, T c, int p=0){
-      Sigma = sig; 
-      Coeff = c;
-      Power = p;
-      LOGMSG(" Gaussian exponent = " << sig << " contraction=" << c << " power = " << Power)
+    inline void resetGaussian(real_type sig, real_type c, int p)
+    {
+      Sigma=sig;
+      Coeff=c;
+      Power=p;
       reset();
     }
 
-    inline void reset() {
+    inline void reset() 
+    {
       MinusSigma=-Sigma;
       CoeffP = -2.0*Sigma*Coeff;
       CoeffPP = 4.0*Sigma*Sigma*Coeff;
@@ -78,7 +79,7 @@ struct GaussianTimesRN: public OptimizableFunctorBase<T> {
       }
     }
 
-    inline value_type evaluate(real_type r, real_type rr, value_type& du, value_type& d2u) {
+    inline real_type evaluate(real_type r, real_type rr, real_type& du, real_type& d2u) {
       T v=exp(MinusSigma*rr);
       if(Power==0) {
         du += CoeffP*r*v;
@@ -110,13 +111,16 @@ struct GaussianTimesRN: public OptimizableFunctorBase<T> {
 
   ~GaussianTimesRN(){ }
 
-  OptimizableFunctorBase<T>* makeClone() const 
+  OptimizableFunctorBase* makeClone() const 
   {
     return new GaussianTimesRN<T>(*this);
   }
 
-  void resetInternals();
-  void resetParameters(OptimizableSetType& vlist)
+  void reset();
+
+  void checkInVariables(opt_variables_type& active) { }
+  void checkOutVariables(const opt_variables_type& active) { }
+  void resetParameters(const opt_variables_type& active)
   {
     ///DO NOTHING FOR NOW
   }
@@ -149,7 +153,7 @@ struct GaussianTimesRN: public OptimizableFunctorBase<T> {
     return res;
   }
 
-  inline value_type evaluate(real_type r, real_type rinv) {
+  inline real_type evaluate(real_type r, real_type rinv) {
     Y=0.0;
     real_type rr = r*r;
     typename std::vector<BasicGaussian>::iterator it(gset.begin()),it_end(gset.end());
@@ -187,7 +191,7 @@ bool GaussianTimesRN<T>::put(xmlNodePtr cur) {
 }
 
 template<class T>
-void GaussianTimesRN<T>::resetInternals() {
+void GaussianTimesRN<T>::reset() {
   if(InParam.empty()) {
     for(int i=0; i<gset.size(); i++) gset[i].reset();
   } else {
@@ -196,16 +200,15 @@ void GaussianTimesRN<T>::resetInternals() {
       gset.push_back(BasicGaussian());
       n++;
     }
-    T alpha(1.0),c(1.0); 
-    int np(0);
-    OhmmsAttributeSet radAttrib;
-    radAttrib.add(alpha,expName); 
-    radAttrib.add(c,coeffName);
-    radAttrib.add(np,powerName);
-
     for(int i=0; i<InParam.size(); i++) {
+      T alpha(1.0),c(1.0); 
+      int np(0);
+      OhmmsAttributeSet radAttrib;
+      radAttrib.add(alpha,expName); 
+      radAttrib.add(c,coeffName);
+      radAttrib.add(np,powerName);
       radAttrib.put(InParam[i]);
-      gset[i].reset(alpha,c,np+basePower);
+      gset[i].resetGaussian(alpha,c,np+basePower);
     }
   }
 }
@@ -223,7 +226,7 @@ bool GaussianTimesRN<T>::putBasisGroup(xmlNodePtr cur, int baseOff) {
     }
     cur=cur->next;
   }
-  resetInternals();
+  reset();
   return true;
 }
 

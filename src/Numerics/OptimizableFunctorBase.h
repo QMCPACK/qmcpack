@@ -18,63 +18,64 @@
  */
 #ifndef QMCPLUSPLUS_OPTIMIZABLEFUNCTORBASE_H
 #define QMCPLUSPLUS_OPTIMIZABLEFUNCTORBASE_H
-#include <complex>
-#include "OhmmsData/libxmldefs.h"
-#include "Optimize/VarList.h"
+#include "Optimize/VariableSet.h"
+#include "OhmmsData/OhmmsElementBase.h"
 
-template<class T> struct NumericTraits {};
-
-template<>
-struct NumericTraits<double> {
-  typedef double          real_type;
-  typedef double          value_type;
-  typedef std::complex<double> complex_type;
-};
-
-template<>
-struct NumericTraits<std::complex<double> > {
-  typedef double          real_type;
-  typedef std::complex<double> value_type;
-  typedef std::complex<double> complex_type;
-};
-
-/** Base class for any functor used as a source for NumericalJastrow
-*/
-template<class T>
-struct OptimizableFunctorBase: public NumericTraits<T> {
-
-  ///define the real type
-  typedef typename NumericTraits<T>::real_type  real_type;
-  ///define the value type
-  typedef typename NumericTraits<T>::value_type value_type;
-  ///define the type of Optimizable Sets
-  typedef VarRegistry<real_type>                OptimizableSetType;
-
-  ///index of the first optimizable variable
-  int FirstIndex;
-  ///index of the last optimizable variable
-  int LastIndex;
+/** Base class for any functor with optimizable parameters
+ *
+ * Derived classes from OptimizableFunctorBase are called "functor"s and 
+ * can be used as a template signature for  Jastrow functions. 
+ * - OneBodyJastroOrbital<FUNC>
+ * - TwoBodyJastroOrbital<FUNC>
+ * Functor in qmcpack denotes any function which returns a value at a point, e.g.,
+ * GTO, STO, one-dimensional splines etc. OptimizableFunctorBase is introduced for
+ * optimizations. The virtual functions are intended for non-critical operations that
+ * are executed infrequently during optimizations.
+ *
+ * This class handles myVars of opt_variables_type (Optimize/VariableSet.h). A derived class
+ * can insert any number of variables it handles during optimizations, by calling 
+ * myVars.insert(name,value); 
+ * Unlike VarList which uses map, VariableSet is serialized in that the internal order is according
+ * to insert calls.
+ */
+struct OptimizableFunctorBase
+{
+  ///typedef for real values
+  typedef optimize::VariableSet::real_type real_type;
+  ///typedef for variableset: this is going to be replaced 
+  typedef optimize::VariableSet opt_variables_type;
+  ///typedef for name-value lists
+  typedef optimize::VariableSet::variable_map_type variable_map_type;
   ///maximum cutoff
   real_type cutoff_radius;
+  ///set of variables to be optimized
+  opt_variables_type myVars;
   ///default constructor
-  OptimizableFunctorBase():FirstIndex(0),LastIndex(1) {}
+  inline OptimizableFunctorBase(){}
   ///virtual destrutor
   virtual ~OptimizableFunctorBase(){}
 
-  ///return the total number of variables to optimize
-  inline int getNumOfVariables() const {return LastIndex-FirstIndex;}
-
-  /** set the index bounds of the variables to optimize
-   *
-   * This is to utilize the vectorized container of variables.
-   */
-  inline void setBounds(int first, int last=-1)
+  inline void getIndex(const opt_variables_type& active)
   {
-    FirstIndex=first;
-    LastIndex=(last>first)?last:first+1;
+    myVars.getIndex(active);
   }
 
-  virtual  OptimizableFunctorBase<T>* makeClone() const =0;
+  virtual void checkInVariables(opt_variables_type& active)=0;
+
+  virtual void checkOutVariables(const opt_variables_type& active)=0;
+
+  /** reset the optimizable variables
+   * @param active list of active optimizable variables
+   */
+  virtual void resetParameters(const opt_variables_type& active)=0;
+  /** create a clone of this object
+   */
+  virtual OptimizableFunctorBase* makeClone() const =0;
+
+  /** reset function 
+   */
+  virtual void reset()=0;
+
   /** evaluate the value at r
    * @param r distance
    *
@@ -93,17 +94,6 @@ struct OptimizableFunctorBase: public NumericTraits<T> {
    * @param cur xmlNode for a functor
    */
   virtual bool put(xmlNodePtr cur) = 0;
-
-  /** add variables to be optimized
-   * @param vlist list to which  derived classes add optimizable variables
-   */
-  virtual void addOptimizables(OptimizableSetType& vlist) =0;
-
-  /** reset the optimizable variables
-   *
-   * @param optVariables list of active optimizable variables
-   */
-  virtual void resetParameters(OptimizableSetType& optVariables)=0;
 
   /** empty virtual function to help builder classes
   */

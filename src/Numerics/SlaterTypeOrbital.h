@@ -58,11 +58,9 @@ struct STONorm {
  * where n-1 is the number of nodes.
  */
 template<class T>
-struct GenericSTO: public OptimizableFunctorBase<T> {
+struct GenericSTO: public OptimizableFunctorBase {
 
-  typedef typename OptimizableFunctorBase<T>::value_type value_type;
-  typedef typename OptimizableFunctorBase<T>::real_type real_type;
-  typedef typename OptimizableFunctorBase<T>::OptimizableSetType OptimizableSetType;
+  typedef T value_type;
 
   int ID;
   ///Principal number
@@ -71,7 +69,7 @@ struct GenericSTO: public OptimizableFunctorBase<T> {
   int Power;
   real_type Z;
   real_type Norm;
-  value_type Y, dY, d2Y;
+  real_type Y, dY, d2Y;
 
   GenericSTO(): N(-1), Power(0), Z(1.0), Norm(1.0) { } 
 
@@ -90,16 +88,16 @@ struct GenericSTO: public OptimizableFunctorBase<T> {
    */
   explicit GenericSTO(int n, int l, real_type z) : 
     N(n), Power(n-l-1), Z(z) {
-    resetInternals();
+    reset();
   }
 
 
-  OptimizableFunctorBase<T>* makeClone() const 
+  OptimizableFunctorBase* makeClone() const 
   {
     return new GenericSTO<T>(*this);
   }
 
-  inline void resetInternals() {
+  inline void reset() {
     if(N>0) {
       STONorm<T> anorm(N);
       Norm = anorm(N-1,Z);
@@ -133,7 +131,7 @@ struct GenericSTO: public OptimizableFunctorBase<T> {
     Y = evaluate(r,rinv,dY,d2Y);
   }
 
-  inline value_type evaluate(real_type r, real_type rinv, value_type& drnl, value_type& d2rnl) {
+  inline real_type evaluate(real_type r, real_type rinv, real_type& drnl, real_type& d2rnl) {
     real_type rnl = Norm*exp(-Z*r);
     if(Power == 0) {
       drnl = -Z*rnl;
@@ -149,12 +147,9 @@ struct GenericSTO: public OptimizableFunctorBase<T> {
 
   bool put(xmlNodePtr cur) {return true;}
 
-  void addOptimizables( OptimizableSetType& vlist)
-  {
-    //DO NOTHING FOR NOW
-  }
-
-  void resetParameters( OptimizableSetType& vlist)
+  void checkInVariables(opt_variables_type& active) { }
+  void checkOutVariables(const opt_variables_type& active) { }
+  void resetParameters(const opt_variables_type& active)
   {
     //DO NOTHING FOR NOW
   }
@@ -169,7 +164,7 @@ struct GenericSTO: public OptimizableFunctorBase<T> {
  */
 template<class T>
 struct RadialSTO {
-  typedef T value_type;
+  typedef T real_type;
   int NminusOne;
   T Z;
   T Norm;

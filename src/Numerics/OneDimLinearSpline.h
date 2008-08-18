@@ -47,7 +47,7 @@ public:
   using base_type::dY;
   using base_type::d2Y;
   using base_type::m_Y;
-  using base_type::FirstAddress;
+  //using base_type::FirstAddress;
 
   int First;
   int Last;
@@ -58,30 +58,29 @@ public:
   point_type delta_inv;
   data_type m_Y1;
 
-  OneDimLinearSpline(grid_type* gt = 0): base_type(gt){ 
+  OneDimLinearSpline(grid_type* gt = 0): base_type(gt),r_min(0),r_max(0)
+  { 
     if(gt) 
     {
-      r_min=m_grid->rmin();
-      r_max=m_grid->rmax();
+      r_min=gt->rmin();
+      r_max=gt->rmax();
     }
+  }
+
+  OneDimLinearSpline(point_type ri, point_type rf): base_type(0), r_min(ri), r_max(rf)
+  { 
   }
 
   template<class VV>
   OneDimLinearSpline(grid_type* gt, const VV& nv, bool pbc=false): base_type(gt)
   {
+    if(gt)
+    {
+      r_min=gt->rmin();
+      r_max=gt->rmax();
+    }
     assign(nv.begin(), nv.end());
   }
-
-  /** copy constructor
-   */
-  OneDimLinearSpline(const OneDimLinearSpline<Td,Tg,CTd,CTg>& rhs):
-    First(rhs.First), Last(rhs.Last), ConstValue(rhs.ConstValue), m_Y1(rhs.m_Y1)
-  {
-    m_grid = new LinearGrid<Tg,CTg>;
-    m_grid->set(rhs.r_min,rhs.r_max,rhs.size());
-    assign(rhs.m_Y.begin(),rhs.m_Y.end());
-  }
-
 
   OneDimLinearSpline<Td,Tg,CTd,CTg>* makeClone() const
   {
@@ -91,11 +90,12 @@ public:
   template<class IT>
   void assign(IT d_first, IT d_last)
   {
-    m_Y.resize(m_grid->size());
+    m_Y.resize(d_last-d_first);
     std::copy(d_first,d_last,m_Y.data());
-    r_min=m_grid->rmin();
-    r_max=m_grid->rmax();
-    delta=m_grid->dh();
+    delta=(r_max-r_min)/static_cast<point_type>(m_Y.size()-1);
+    //r_min=m_grid->rmin();
+    //r_max=m_grid->rmax();
+    //delta=m_grid->dh();
     delta_inv=1.0/delta;
   }
 

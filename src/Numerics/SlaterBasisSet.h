@@ -14,15 +14,14 @@
 //////////////////////////////////////////////////////////////////
 #ifndef QMCPLUSPLUS_RADIALGRIDFUNCTOR_SLATERBASISSET_H
 #define QMCPLUSPLUS_RADIALGRIDFUNCTOR_SLATERBASISSET_H
+#include "Numerics/OptimizableFunctorBase.h"
 #include "Numerics/SlaterTypeOrbital.h"
 #include "OhmmsData/AttributeSet.h"
 
 template<class T>
-struct SlaterCombo: public OptimizableFunctorBase<T> {
+struct SlaterCombo: public OptimizableFunctorBase {
 
-  typedef typename OptimizableFunctorBase<T>::value_type value_type;
-  typedef typename OptimizableFunctorBase<T>::real_type real_type;
-  typedef typename OptimizableFunctorBase<T>::OptimizableSetType OptimizableSetType;
+  typedef T value_type;
   typedef GenericSTO<T> Component_t;
 
   int L;
@@ -33,7 +32,7 @@ struct SlaterCombo: public OptimizableFunctorBase<T> {
   std::string  coeffName;
   std::vector<xmlNodePtr> InParam;
   std::vector<Component_t> sset;
-  value_type Y, dY, d2Y;
+  real_type Y, dY, d2Y;
 
   explicit 
     SlaterCombo(int l=0, 
@@ -44,7 +43,7 @@ struct SlaterCombo: public OptimizableFunctorBase<T> {
 
   ~SlaterCombo(){ }
 
-  OptimizableFunctorBase<T>* makeClone() const 
+  OptimizableFunctorBase* makeClone() const 
   {
     return new SlaterCombo<T>(*this);
   }
@@ -69,7 +68,7 @@ struct SlaterCombo: public OptimizableFunctorBase<T> {
     return res;
   }
 
-  inline value_type evaluate(real_type r, real_type rinv) {
+  inline real_type evaluate(real_type r, real_type rinv) {
     Y=0.0;dY=0.0;d2Y=0.0;
     typename std::vector<Component_t>::iterator it(sset.begin()),it_end(sset.end());
     while(it != it_end) {
@@ -88,7 +87,7 @@ struct SlaterCombo: public OptimizableFunctorBase<T> {
     }
   }
 
-//  inline value_type evaluate(T r, T rinv, T& drnl, T& d2rnl) {
+//  inline real_type evaluate(T r, T rinv, T& drnl, T& d2rnl) {
 //    Y=0.0;drnl=0.0;d2rnl=0.0;
 //    T du, d2u;
 //    typename std::vector<Component_t>::iterator it(sset.begin()),it_end(sset.end());
@@ -103,12 +102,13 @@ struct SlaterCombo: public OptimizableFunctorBase<T> {
 
   bool put(xmlNodePtr cur) {return true;}
 
-  void addOptimizables(OptimizableSetType& vlist)
+  void reset()
   {
     //DO NOTHING FOR NOW
   }
-
-  void resetParameters(OptimizableSetType& vlist) 
+  void checkInVariables(opt_variables_type& active) { }
+  void checkOutVariables(const opt_variables_type& active) { }
+  void resetParameters(const opt_variables_type& active) 
   {
     //DO NOTHING FOR NOW
   }
