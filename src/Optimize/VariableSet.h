@@ -244,10 +244,10 @@ namespace optimize
        */
       void removeInactive();
 
-      /** set the index table of this variables 
+      /** set the index table of this VariableSet 
        * @param selected input variables
        *
-       * This variables is a subset of selected.
+       * This VariableSet is a subset of selected.
        */
       void getIndex(const VariableSet& selected);
 

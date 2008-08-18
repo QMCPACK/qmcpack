@@ -24,6 +24,7 @@ SET(UTILITIES
   QMCFactory/OneDimGridFactory.cpp
   Message/Communicate.cpp 
   Message/MPIObjectBase.cpp 
+  Optimize/VariableSet.cpp
 )
 
 ##gsl library will be optional

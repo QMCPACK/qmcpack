@@ -24,6 +24,7 @@
 #include "OhmmsPETE/TinyVector.h"
 #include "OhmmsPETE/Tensor.h"
 #include "OhmmsData/OhmmsElementBase.h"
+#include "OhmmsData/RecordProperty.h"
 #if OHMMS_DIM==3
 #include "Lattice/Uniform3DGridLayout.h"
 #else
@@ -78,7 +79,8 @@ namespace qmcplusplus {
     typedef TinyVector<RealType,DIM>       PosType;
     typedef TinyVector<ValueType,DIM>      GradType;
     typedef Tensor<RealType,DIM>           TensorType;
-
+    ///define PropertyList_t
+    typedef RecordNamedProperty<RealType> PropertySetType;
   };
 
   /** Particle traits to use UniformGridLayout for the ParticleLayout.
