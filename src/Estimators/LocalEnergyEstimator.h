@@ -80,9 +80,8 @@ namespace qmcplusplus {
       const RealType* restrict ePtr = awalker.getPropertyBase();
       scalars[0](ePtr[LOCALENERGY],wgt);
       scalars[1](ePtr[LOCALPOTENTIAL],wgt);
-      for(int target=2, source=FirstHamiltonian; 
-          target<scalars.size(); 
-          target++, source++)
+      for(int target=2, source=FirstHamiltonian; target<scalars.size(); 
+          ++target, ++source)
         scalars[target](ePtr[source],wgt);
     }
 

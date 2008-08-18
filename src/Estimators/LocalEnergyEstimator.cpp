@@ -20,16 +20,15 @@ namespace qmcplusplus {
 
   LocalEnergyEstimator::LocalEnergyEstimator(QMCHamiltonian& h)
   { 
-    int hterms(h.size());
-    SizeOfHamiltonians = hterms;
+    SizeOfHamiltonians = h.sizeOfObservables();
     FirstHamiltonian = h.startIndex();
     scalars.resize(SizeOfHamiltonians+LE_MAX);
     scalars_saved.resize(SizeOfHamiltonians+LE_MAX);
 
     elocal_name.push_back("LocalEnergy");
     elocal_name.push_back("LocalPotential");
-    for(int i=0; i < SizeOfHamiltonians; i++) 
-      elocal_name.push_back(h.getName(i));
+    for(int i=0; i<SizeOfHamiltonians; ++i)
+      elocal_name.push_back(h.getObservableName(i));
   }
 
   LocalEnergyEstimator::LocalEnergyEstimator(const LocalEnergyEstimator& est):

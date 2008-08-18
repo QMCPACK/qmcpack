@@ -17,7 +17,7 @@
 //   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#include "Estimators/MJPolymerEstimator.h"
+#include "Estimators/HFDHE2PolymerEstimator.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "ParticleBase/ParticleAttribOps.h"
@@ -31,7 +31,7 @@ namespace qmcplusplus {
    * @param h QMCHamiltonian to define the components
    * @param hcopy number of copies of QMCHamiltonians
    */
-  MJPolymerEstimator::MJPolymerEstimator(QMCHamiltonian& h, int hcopy, MultiChain* polymer)
+  HFDHE2PolymerEstimator::HFDHE2PolymerEstimator(QMCHamiltonian& h, int hcopy, MultiChain* polymer)
   {
     Reptile=polymer;
     NumCopies=hcopy;
@@ -52,15 +52,17 @@ namespace qmcplusplus {
     elocal_name.push_back("ElSumPot");
     elocal_name.push_back("Virial");
     elocal_name.push_back("MaxAge");
-    elocal_name.push_back("ThermE");
 
-    scalars.resize(SizeOfHamiltonians+6);
+    scalars.resize(SizeOfHamiltonians+5);
     scalars_saved=scalars;
     pnorm=0.0;
-  };
+    
+    Pindex = h.getHamiltonian("HePress")->myIndex;
+    HDFHE2index = h.getHamiltonian("HFDHE2")->myIndex;
+  }
 
 
-  MJPolymerEstimator::MJPolymerEstimator(const MJPolymerEstimator& mest): 
+  HFDHE2PolymerEstimator::HFDHE2PolymerEstimator(const HFDHE2PolymerEstimator& mest): 
        PolymerEstimator(mest)
 //       Reptile(mest.Reptile)
   {
@@ -69,16 +71,16 @@ namespace qmcplusplus {
     //d_data.resize(mest.d_data.size());
   }
 
-  ScalarEstimatorBase* MJPolymerEstimator::clone()
+  ScalarEstimatorBase* HFDHE2PolymerEstimator::clone()
   {
-    return new MJPolymerEstimator(*this);
+    return new HFDHE2PolymerEstimator(*this);
   }
 
   /**  add the local energy, variance and all the Hamiltonian components to the scalar record container
    *@param record storage of scalar records (name,value)
    */
   void 
-  MJPolymerEstimator::add2Record(RecordNamedProperty<RealType>& record) {
+  HFDHE2PolymerEstimator::add2Record(RecordNamedProperty<RealType>& record) {
     FirstIndex = record.add(elocal_name[0].c_str());
     for(int i=1; i<elocal_name.size(); i++) record.add(elocal_name[i].c_str());
     LastIndex=FirstIndex + elocal_name.size();
@@ -92,7 +94,7 @@ namespace qmcplusplus {
     }
   };
 
-  void MJPolymerEstimator::accumulate(WalkerIterator first, WalkerIterator last, RealType wgt)
+  void HFDHE2PolymerEstimator::accumulate(WalkerIterator first, WalkerIterator last, RealType wgt)
   {
     for(int i=0; i<NumCopies; i++) 
     {
@@ -107,49 +109,36 @@ namespace qmcplusplus {
       };
       //Center Pressure
       RealType* restrict CenProp(Reptile->center()->getPropertyBase(i));
-      scalars[SizeOfHamiltonians+3]( (2.0*eloc-CenProp[LOCALPOTENTIAL])*pnorm ,uw);
+      scalars[SizeOfHamiltonians+3]( (2.0*eloc-2.0*CenProp[LOCALPOTENTIAL])*pnorm+CenProp[Pindex+1+FirstHamiltonian] ,uw);
       
       int Rage(Reptile->Age);
       int Bage=Rage;
 
-      RealType tmpE=0.0;
       RealType tmpV=0.0;
-      RealType tmpF=0.0;
-      RealType localE=0.0;
+      RealType tmpP=0.0;
       KEconst = (*(Reptile->begin()))->Drift.size()  * 1.5 * OneOverTau;
       for( MultiChain::iterator Bit = Reptile->begin();Bit != (Reptile->end());Bit++){
-        localE += 0.5*( (*Bit)->deltaRSquared[0] + (*Bit)->deltaRSquared[1]);
-        tmpF+= 0.5*(*Bit)->deltaRSquared[2];
-        tmpE+=(*Bit)->getPropertyBase(i)[LOCALENERGY];
+        tmpP+= (*Bit)->getPropertyBase(i)[Pindex+1+FirstHamiltonian];
         tmpV+=(*Bit)->getPropertyBase(i)[LOCALPOTENTIAL];
         Bage=min((*Bit)->stepmade,Bage);
       };
 
-      tmpF-=0.25*Reptile->back()->deltaRSquared[2];
-      tmpF-=0.25*Reptile->front()->deltaRSquared[2];
-      tmpE-=0.5*Reptile->back()->getPropertyBase(i)[LOCALENERGY];
-      tmpE-=0.5*Reptile->front()->getPropertyBase(i)[LOCALENERGY];
+      tmpP-=0.5*Reptile->back()->getPropertyBase(i)[Pindex+1+FirstHamiltonian];
+      tmpP-=0.5*Reptile->front()->getPropertyBase(i)[Pindex+1+FirstHamiltonian];
       tmpV-=0.5*Reptile->back()->getPropertyBase(i)[LOCALPOTENTIAL];
       tmpV-=0.5*Reptile->front()->getPropertyBase(i)[LOCALPOTENTIAL];
-      tmpV *= -pnorm*Tau;
+      tmpV *= -2.0*pnorm*Tau;
+      tmpP *= -Tau;
 
-      localE *= -0.5*OneOverTau*OneOverTau;
-      localE += KEconst* (Reptile->Last) + tmpF ;
-      localE += tmpE;
-
-      scalars[SizeOfHamiltonians+1](tmpV,uw);
-      scalars[SizeOfHamiltonians+2](eloc*tmpV,uw);
-
+      scalars[SizeOfHamiltonians+1](tmpV+tmpP,uw);
+      scalars[SizeOfHamiltonians+2](eloc*(tmpV+tmpP),uw);
       scalars[SizeOfHamiltonians+4](Rage-Bage,1.0);
 
-      ///This is the center bead energy using PIMC stuff.
-      localE *= 1.0/(Reptile->Last);
-      scalars[SizeOfHamiltonians+5]( localE ,uw);
     }
   }
 
   void 
-  MJPolymerEstimator::evaluateDiff() 
+  HFDHE2PolymerEstimator::evaluateDiff() 
   {
 
   }
@@ -158,5 +147,5 @@ namespace qmcplusplus {
 /***************************************************************************
  * $RCSfile$   $Author: jnkim $
  * $Revision: 1926 $   $Date: 2007-04-20 12:30:26 -0500 (Fri, 20 Apr 2007) $
- * $Id: MJPolymerEstimator.cpp 1926 2007-04-20 17:30:26Z jnkim $
+ * $Id: HFDHE2PolymerEstimator.cpp 1926 2007-04-20 17:30:26Z jnkim $
  ***************************************************************************/

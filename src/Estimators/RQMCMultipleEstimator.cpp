@@ -33,7 +33,7 @@ namespace qmcplusplus {
   RQMCEstimator::RQMCEstimator(QMCHamiltonian& h, int hcopy) : CurrentWalker(0) {
 
     NumCopies=hcopy;
-    NumOperators = h.size();
+    NumOperators = h.sizeOfObservables();
     FirstHamiltonian=h.startIndex();
 
     esum.resize(NumCopies,LE_INDEX);
@@ -51,7 +51,8 @@ namespace qmcplusplus {
       sprintf(aname,"WPsi%i",i); esum_name(WEIGHT_INDEX,i)=aname;
 
       for(int j=0; j<NumOperators; j++) {
-        sprintf(aname,"%s%i",h.getName(j).c_str(),i);
+        //sprintf(aname,"%s%i",h.getName(j).c_str(),i);
+        sprintf(aname,"%s%i",h.getObservableName(j).c_str(),i);
         elocal_name(i,j)=aname;
       }
     }
