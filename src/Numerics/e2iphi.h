@@ -58,7 +58,7 @@ eval_e2iphi (const std::vector<float> &phi, std::vector<std::complex<float> > &z
   for (int i=0; i<n; i++)
     z[i] = std::complex<float>(c[i],s[i]);
 }
-#elif defined(HAVE_MKL)
+#elif defined(HAVE_MKL_VML)
 #include <mkl_vml_functions.h>
 inline void
 eval_e2iphi (const std::vector<double> &phi, std::vector<std::complex<double> > &z)
@@ -95,7 +95,7 @@ inline void
 eval_e2iphi (const std::vector<float> &phi, std::vector<std::complex<float> > &z)
 {
   int n = phi.size();
-#if defined(__APPLE__)
+#if defined(__APPLE__) && !defined(__INTEL_COMPILER)
   for (int i=0; i<n; i++) sincos (phi[i], &(z[i].imag()), &(z[i].real()));
 #else
   for (int i=0; i<n; i++) sincosf (phi[i], &(z[i].imag()), &(z[i].real()));
@@ -113,7 +113,7 @@ inline void
 eval_e2iphi (const APPNAMESPACE::Vector<float> &phi, APPNAMESPACE::Vector<std::complex<float> > &z)
 {
   int n = phi.size();
-#if defined(__APPLE__)
+#if defined(__APPLE__) && !defined(__INTEL_COMPILER)
   for (int i=0; i<n; i++) sincos (phi[i], &(z[i].imag()), &(z[i].real()));
 #else
   for (int i=0; i<n; i++) sincosf (phi[i], &(z[i].imag()), &(z[i].real()));
