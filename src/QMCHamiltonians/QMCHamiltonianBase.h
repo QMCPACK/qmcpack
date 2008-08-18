@@ -21,7 +21,8 @@
 #define QMCPLUSPLUS_HAMILTONIANBASE_H
 
 #include "Particle/ParticleSet.h"
-#include "Utilities/PooledData.h"
+//#include "Utilities/PooledData.h"
+#include "OhmmsData/RecordProperty.h"
 #include "Utilities/RandomGenerator.h"
 #include <bitset>
 
@@ -54,11 +55,12 @@ namespace qmcplusplus {
      */
     typedef RealType Return_t;
 
-    enum {PRIMARY, OPTIMIZABLE, RATIOUPDATE};
-    bitset<3> UpdateMode;
- 
+    enum {PRIMARY, OPTIMIZABLE, RATIOUPDATE, PHYSICAL};
+    bitset<4> UpdateMode;
+    int myIndex;
     RealType Tau;
     RealType Value;
+    string myName;
    
     ///constructor
     QMCHamiltonianBase():Tau(0.0),Value(0.0){
@@ -67,6 +69,19 @@ namespace qmcplusplus {
 
     ///virtual destructor
     virtual ~QMCHamiltonianBase() { }
+
+    /** default implementation to add named values to a list
+     * @param plist RecordNameProperty
+     */
+    virtual void addObservables(PropertySetType& plist)
+    {
+      myIndex=plist.add(myName.c_str());
+    }
+
+    virtual void setObservables(PropertySetType& plist)
+    {
+      plist[myIndex]=Value;
+    }
 
     /** reset the data with the target ParticleSet
      * @param P new target ParticleSet

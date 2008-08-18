@@ -1,5 +1,5 @@
 /////////////////////////////////////////////////////////////////
-// (c) Copyright 2003  by Jeongnim Kim
+// (c) Copyright 2003-  by Jeongnim Kim
 //////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////
 //   National Center for Supercomputing Applications &
@@ -7,7 +7,6 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
@@ -19,11 +18,13 @@
 #include "Particle/DistanceTableData.h"
 #include "Utilities/OhmmsInfo.h"
 #include "Utilities/NewTimer.h"
-using namespace qmcplusplus;
+namespace qmcplusplus
+{
 
-/** constructor
- */
-QMCHamiltonian::QMCHamiltonian(){ }
+  /** constructor
+  */
+  QMCHamiltonian::QMCHamiltonian():myIndex(0)
+  { }
 
 ///// copy constructor is distable by declaring it as private
 //QMCHamiltonian::QMCHamiltonian(const QMCHamiltonian& qh) {}
@@ -32,68 +33,71 @@ QMCHamiltonian::QMCHamiltonian(){ }
  */
 QMCHamiltonian::~QMCHamiltonian() 
 {
-  
-  DEBUGMSG("QMCHamiltonian::~QMCHamiltonian")
+  //@todo clean up H and auxH
 }
 
 bool QMCHamiltonian::get(std::ostream& os) const 
 {
   for(int i=0; i<H.size(); i++) {
     os.setf(ios::left);
-    os << "  " << setw(16) << Hname[i]; 
+    os << "  " << setw(16) << H[i]->myName; 
     H[i]->get(os); os << "\n";
   }
   return true;
 }
 
 /** add a new Hamiltonian the the list of Hamiltonians.
- *@param h the Hamiltonian
- *@param aname the name of the Hamiltonian
+ * @param h an operator
+ * @param aname name of h
+ * @param physical if true, a physical operator
  */
 void 
-QMCHamiltonian::addOperator(QMCHamiltonianBase* h, const string& aname) 
+QMCHamiltonian::addOperator(QMCHamiltonianBase* h, const string& aname, bool physical) 
 {
-  //check if already added, if not add at the end
-  map<string,int>::iterator it = Hmap.find(aname);
-  if(it == Hmap.end()) 
+  if(physical)
   {
-    Hmap[aname] = H.size();
-    Hname.push_back(aname);
+    for(int i=0; i<H.size(); ++i)
+    {
+      if(H[i]->myName == aname) 
+      {
+        app_warning() << "QMCHamiltonian::addOperator cannot " << aname << ". The name is already used" << endl;
+        return;
+      }
+    }
+    app_log() << "  QMCHamiltonian::addOperator " << aname << " to H, physical Hamiltonian " << endl;
+    h->myName=aname;
     H.push_back(h);
-
-    //add timer for each Hamiltonian
     string tname="Hamiltonian::"+aname;
     NewTimer *atimer=new NewTimer(tname);
     myTimers.push_back(atimer);
     TimerManager.addTimer(atimer);
   }
-  Hvalue.resize(H.size(),RealType());
+  else
+  {//ignore timers for now
+    for(int i=0; i<auxH.size(); ++i)
+    {
+      if(auxH[i]->myName == aname) 
+      {
+        app_warning() << "QMCHamiltonian::addOperator cannot " << aname << ". The name is already used" << endl;
+        return;
+      }
+    }
+
+    app_log() << "  QMCHamiltonian::addOperator " << aname << " to auxH " << endl;
+    h->myName=aname;
+    auxH.push_back(h);
+  }
 }
 
-/** remove a named Hamiltonian from the list
- *@param aname the name of the Hamiltonian
- *@return true, if the request hamiltonian exists and is removed.
- */
-bool 
-QMCHamiltonian::remove(const string& aname) 
-{
-  map<string,int>::iterator it = Hmap.find(aname);
-  if(it != Hmap.end()) {
-    int n = (*it).second;
-    Hmap.erase(aname); 
-    map<string,int>::iterator jt = Hmap.begin();
-    while(jt != Hmap.end()) {
-      if((*jt).second > n) (*jt).second -= 1;
-      jt++;
-    }
-    delete H[n];
-    for(int i=n+1; i<H.size(); i++) H[i-1]=H[i];
-    H.pop_back();
-    Hvalue.resize(H.size(),RealType());
-    return true;
-  }
-  return false;
-}
+///** remove a named Hamiltonian from the list
+// *@param aname the name of the Hamiltonian
+// *@return true, if the request hamiltonian exists and is removed.
+// */
+//bool 
+//QMCHamiltonian::remove(const string& aname) 
+//{
+//  return false;
+//}
 
 /** add a number of properties to the ParticleSet
  * @param P ParticleSet to which multiple columns to be added
@@ -104,9 +108,18 @@ QMCHamiltonian::remove(const string& aname)
  * object to the correct property column.
  */
 void 
-QMCHamiltonian::add2WalkerProperty(ParticleSet& P) {
-  Hindex.resize(Hname.size());
-  for(int i=0; i<Hname.size(); i++) Hindex[i]=P.addProperty(Hname[i]);
+QMCHamiltonian::addObservables(PropertySetType& plist) 
+{
+  //first add properties to Observables
+  Observables.clear();
+  for(int i=0; i<H.size(); ++i) H[i]->addObservables(Observables);
+  for(int i=0; i<auxH.size(); ++i) auxH[i]->addObservables(Observables);
+
+  myIndex=plist.add(Observables.Names[0]);
+  for(int i=1; i<Observables.size(); ++i) plist.add(Observables.Names[i]);
+
+  app_log() << "  QMCHamiltonian::add2WalkerProperty added " << Observables.size() << " data to PropertyList" << endl;
+  app_log() << "    starting Index = " << myIndex << endl;
 }
 
 /** Evaluate all the Hamiltonians for the N-particle  configuration
@@ -116,17 +129,23 @@ QMCHamiltonian::add2WalkerProperty(ParticleSet& P) {
 QMCHamiltonian::Return_t 
 QMCHamiltonian::evaluate(ParticleSet& P) 
 {
-  RecordNamedProperty<RealType>& prp(P.PropertyList);
   LocalEnergy = 0.0;
-  vector<QMCHamiltonianBase*>::iterator hit(H.begin()),hit_end(H.end());
-  for(int i=0; hit!=hit_end; ++hit,++i){
+  for(int i=0; i<H.size(); ++i)
+  {
     myTimers[i]->start();
-    LocalEnergy += (*hit)->evaluate(P);
-    Hvalue[i]=(*hit)->Value; 
+    LocalEnergy += H[i]->evaluate(P);
+    H[i]->setObservables(Observables);
     myTimers[i]->stop();
-    prp[LOCALENERGY]=LocalEnergy;
-    prp[LOCALPOTENTIAL]=LocalEnergy-Hvalue[0];
-  };
+  }
+  KineticEnergy=H[0]->Value;
+  P.PropertyList[LOCALENERGY]=LocalEnergy;
+  P.PropertyList[LOCALPOTENTIAL]=LocalEnergy-KineticEnergy;
+  for(int i=0; i<auxH.size(); ++i)
+  {
+    RealType sink = auxH[i]->evaluate(P);
+    auxH[i]->setObservables(Observables);
+  }
+
   return LocalEnergy;
 }
 
@@ -134,13 +153,20 @@ QMCHamiltonian::Return_t
 QMCHamiltonian::evaluate(ParticleSet& P, vector<NonLocalData>& Txy) 
 {
   LocalEnergy = 0.0;
-  vector<QMCHamiltonianBase*>::iterator hit(H.begin()),hit_end(H.end());
-  for(int i=0; hit!=hit_end; ++hit,++i)
+  for(int i=0; i<H.size(); ++i)
   {
     myTimers[i]->start();
-    LocalEnergy += (*hit)->evaluate(P,Txy);
-    Hvalue[i]=(*hit)->Value; 
+    LocalEnergy += H[i]->evaluate(P,Txy);
+    H[i]->setObservables(Observables);
     myTimers[i]->stop();
+  }
+  KineticEnergy=H[0]->Value;
+  P.PropertyList[LOCALENERGY]=LocalEnergy;
+  P.PropertyList[LOCALPOTENTIAL]=LocalEnergy-KineticEnergy;
+  for(int i=0; i<auxH.size(); ++i)
+  {
+    RealType sink = auxH[i]->evaluate(P);
+    auxH[i]->setObservables(Observables);
   }
   return LocalEnergy;
 }
@@ -161,65 +187,52 @@ QMCHamiltonian::getEnsembleAverage() {
 QMCHamiltonianBase* 
 QMCHamiltonian::getHamiltonian(const string& aname) {
 
-  //check if already added, if not add at the end
-  map<string,int>::iterator it = Hmap.find(aname);
-  if(it == Hmap.end()) 
-    return 0;
-  else 
-    return H[(*it).second];
+  for(int i=0; i<H.size(); ++i)
+    if(H[i]->myName == aname) return H[i];
+
+  for(int i=0; i<auxH.size(); ++i)
+    if(auxH[i]->myName == aname) return auxH[i];
+
+  return 0;
 }
 
 void
 QMCHamiltonian::resetTargetParticleSet(ParticleSet& P) 
 {
   for(int i=0; i<H.size(); i++) H[i]->resetTargetParticleSet(P);
+  for(int i=0; i<auxH.size(); i++) auxH[i]->resetTargetParticleSet(P);
 }
 
 void
 QMCHamiltonian::setRandomGenerator(RandomGenerator_t* rng) 
 {
   for(int i=0; i<H.size(); i++) H[i]->setRandomGenerator(rng);
+  for(int i=0; i<auxH.size(); i++) auxH[i]->setRandomGenerator(rng);
 }
 
 QMCHamiltonian* QMCHamiltonian::makeClone(ParticleSet& qp, TrialWaveFunction& psi) 
 {
-  QMCHamiltonian* myclone=new QMCHamiltonian(*this);
-  //make clone
+  QMCHamiltonian* myclone=new QMCHamiltonian;
   for(int i=0; i<H.size(); ++i)
-  {
-    myclone->H[i]=H[i]->makeClone(qp,psi);
-  }
-  //create timers with the same name
-  for(int i=0; i<myTimers.size(); i++)
-  {
-    NewTimer* atimer=new NewTimer(myTimers[i]->get_name());
-    myclone->myTimers[i]=atimer;
-    TimerManager.addTimer(atimer);
-  }
+    myclone->addOperator(H[i]->makeClone(qp,psi),H[i]->myName,true);
+  for(int i=0; i<auxH.size(); ++i)
+    myclone->addOperator(auxH[i]->makeClone(qp,psi),auxH[i]->myName,false);
+  //myclone->addObservables(qp.PropertyList);
+  myclone->resetObservables(myIndex);
   return myclone;
 }
-//Meant for vectorized operators. Not so helpful.
-///**
-// *@param W a set of walkers (N-particle configurations)
-// *@param LE return a vector containing the local 
-// energy for each walker
-// *@brief Evaluate all the Hamiltonians for a set of N-particle
-// *configurations
-// */
-//void QMCHamiltonian::evaluate(WalkerSetRef& W, ValueVectorType& LE) {
-//  LE = 0.0;
-//  for(int i=0; i<H.size(); i++) H[i]->evaluate(W, LE);
-//}
 
-//bool QMCHamiltonian::put(std::istream& ) {
-//  return true;
-//}
-//
-//bool QMCHamiltonian::put(xmlNodePtr cur) {
-//  return true;
-//}
-//
-//void QMCHamiltonian::reset() { }
+void 
+QMCHamiltonian::resetObservables(int start)
+{
+  //first add properties to Observables
+  Observables.clear();
+  for(int i=0; i<H.size(); ++i) H[i]->addObservables(Observables);
+  for(int i=0; i<auxH.size(); ++i) auxH[i]->addObservables(Observables);
+  myIndex=start;
+}
+
+}
 
 /***************************************************************************
  * $RCSfile$   $Author$

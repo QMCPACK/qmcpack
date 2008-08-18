@@ -24,24 +24,21 @@
 #include "QMCHamiltonians/IonIonPotential.h"
 #include "QMCHamiltonians/NumericalRadialPotential.h"
 #if OHMMS_DIM == 3
-  #include "QMCHamiltonians/LocalCorePolPotential.h"
-  #include "QMCHamiltonians/ECPotentialBuilder.h"
+#include "QMCHamiltonians/LocalCorePolPotential.h"
+#include "QMCHamiltonians/ECPotentialBuilder.h"
 #endif
 #if defined(HAVE_LIBFFTW_LS)
-  #include "QMCHamiltonians/ModInsKineticEnergy.h"
-  #include "QMCHamiltonians/MomentumDistribution.h"
-  #include "QMCHamiltonians/DispersionRelation.h"
+#include "QMCHamiltonians/ModInsKineticEnergy.h"
+#include "QMCHamiltonians/MomentumDistribution.h"
+#include "QMCHamiltonians/DispersionRelation.h"
 #endif
-
-#if defined(HAVE_LIBFFTW)
-  #include "QMCHamiltonians/MPC.h"
-#endif
-
 #include "QMCHamiltonians/CoulombPBCAATemp.h"
 #include "QMCHamiltonians/CoulombPBCABTemp.h"
 #include "OhmmsData/AttributeSet.h"
 #include "QMCHamiltonians/Pressure.h"
-// #include "QMCHamiltonians/RPAPressureCorrection.h"
+#include "QMCHamiltonians/RPAPressure.h"
+#include "QMCHamiltonians/HePressure.h"
+#include "QMCHamiltonians/HFDHE2Potential.h"
 
 
 
@@ -101,8 +98,17 @@ namespace qmcplusplus {
       targetH  = new QMCHamiltonian;
       targetH->setName(myName);
       
-      if(defaultKE == "yes")
-        targetH->addOperator(new BareKineticEnergy,"Kinetic");
+      if(defaultKE == "yes"){
+        targetH->addOperator(new BareKineticEnergy ,"Kinetic");
+      } else if(defaultKE != "no") {
+        double mass(1.0);
+        string tgt("mass");
+        int indx1 = targetPtcl->mySpecies.findSpecies(defaultKE);
+        int indx2 = targetPtcl->mySpecies.addAttribute(tgt);
+        mass = targetPtcl->mySpecies(indx2,indx1);
+        cout<<"  Kinetic energy operator:: Mass "<<mass<<endl;
+        targetH->addOperator(new BareKineticEnergy(mass),"Kinetic");
+      }
     }
 
     cur = cur->children;
@@ -110,6 +116,7 @@ namespace qmcplusplus {
       string cname((const char*)cur->name);
       string potType("0");
       string potName("any");
+      string estType("coulomb");
       string sourceInp(targetPtcl->getName());
       string targetInp(targetPtcl->getName());
       OhmmsAttributeSet attrib;
@@ -117,6 +124,7 @@ namespace qmcplusplus {
       attrib.add(targetInp,"target");
       attrib.add(potType,"type");
       attrib.add(potName,"name");
+      attrib.add(estType,"potential");
       attrib.put(cur);
       renameProperty(sourceInp);
       renameProperty(targetInp);
@@ -129,16 +137,14 @@ namespace qmcplusplus {
           else {
             addConstCoulombPotential(cur,sourceInp);
           }
+        } else if(potType == "HFDHE2") {
+          targetH->addOperator(new HFDHE2Potential(*targetPtcl),"HFDHE2",true);
+          app_log() << "  Adding HFDHE2Potential " << endl;
         } else if(potType == "pseudo") {
           addPseudoPotential(cur);
         } else if(potType == "cpp") {
           addCorePolPotential(cur);
         }
-#if defined(HAVE_LIBFFTW)
-	else if (potType == "mpc") {
-	  addMPCPotential (cur);
-	}
-#endif
         else if(potType.find("num") < potType.size())
         {
           if(sourceInp == targetInp)//only accept the pair-potential for now
@@ -161,17 +167,21 @@ namespace qmcplusplus {
       {
         if(potType == "Pressure")
         {
-          Pressure* BP = new Pressure(*targetPtcl);
-          BP-> put(cur, *targetPtcl,  targetH);
-          targetH->addOperator(BP,"Pressure");
-          
+          if(estType=="coulomb"){
+            Pressure* BP = new Pressure(*targetPtcl);
+            BP-> put(cur);
+            targetH->addOperator(BP,"Pressure",false);
+          } else if (estType=="HFDHE2"){
+            HePressure* BP = new HePressure(*targetPtcl);
+            BP-> put(cur);
+            targetH->addOperator(BP,"HePress",false);
+          } else if (estType=="RPAZVZB"){
+            RPAPressure* BP = new RPAPressure(*targetPtcl);
+            BP-> put(cur, *targetPtcl);
+            targetH->addOperator(BP,"RPAZVZBP",false);
+          }
         }
       }
-      
-      
-      
-
-      
       //else if(cname == "harmonic") 
       //{
       //  PtclPoolType::iterator pit(ptclPool.find(sourceInp));
@@ -233,36 +243,7 @@ namespace qmcplusplus {
       if(attach2Node) xmlAddChild(myNode,xmlCopyNode(cur,1));
       cur = cur->next;
     }
-
-    ////This should be disabled
-    //if(targetH->size() == 1) 
-    //{//no external potential is provided, use type
-    //  WARNMSG("Using pre-determined hamiltonian for molecular systems.")
-    //  PtclPoolType::iterator pit(ptclPool.find(source));
-    //  if(pit == ptclPool.end()) {
-    //    ERRORMSG("No ionic system " << source << " exists.")
-    //    return false;
-    //  }
-    //  ParticleSet* ion=(*pit).second;
-    //  if(PBCType) targetH->addOperator(new CoulombPBCAATemp(*targetPtcl),"ElecElec");
-    //  else targetH->addOperator(new CoulombPotentialAA(*targetPtcl),"ElecElec");
-    //  if(htype == "molecule" || htype=="coulomb")
-    //  {
-    //    if(PBCType) targetH->addOperator(new CoulombPBCABTemp(*ion,*targetPtcl),"Coulomb");
-    //    else targetH->addOperator(new CoulombPotentialAB(*ion,*targetPtcl),"Coulomb");
-    //  } 
-    //  else 
-    //  {
-    //    ERRORMSG(htype << " is diabled")
-    //  }
-    //  if(ion->getTotalNum()>1) {
-    //    if(PBCType) targetH->addOperator(new CoulombPBCAATemp(*ion),"IonIon");
-    //    else targetH->addOperator(new IonIonPotential(*ion),"IonIon");
-    //  }
-    //}
-
-
-
+    targetH->addObservables(targetPtcl->PropertyList);
     return true;
   }
 

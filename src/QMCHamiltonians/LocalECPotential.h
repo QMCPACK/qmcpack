@@ -43,6 +43,8 @@ namespace qmcplusplus {
     vector<RadialPotentialType*> PP;
     ///effective charge per ion
     vector<RealType> Zeff;
+    ///effective charge per species
+    vector<RealType> gZeff;
     ///reference to the ionic configuration
     const ParticleSet& IonConfig;
 

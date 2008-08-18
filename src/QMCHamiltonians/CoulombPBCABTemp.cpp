@@ -22,7 +22,7 @@
 namespace qmcplusplus {
 
   CoulombPBCABTemp::CoulombPBCABTemp(ParticleSet& ions, ParticleSet& elns): 
-    PtclA(&ions), PtclB(&elns),  myConst(0.0), myGrid(0),V0(0)
+    PtclA(&ions), PtclB(&elns), FirstTime(true), myConst(0.0), myGrid(0),V0(0)
     {
       ReportEngine PRE("CoulombPBCABTemp","CoulombPBCABTemp");
       //Use singleton pattern 

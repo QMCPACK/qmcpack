@@ -73,13 +73,11 @@ namespace qmcplusplus {
     bool build(xmlNodePtr cur, bool buildtree=true);
 
     void addCoulombPotential(xmlNodePtr cur);
-    void addMPCPotential    (xmlNodePtr cur);
-    void addPseudoPotential (xmlNodePtr cur);
+    void addPseudoPotential(xmlNodePtr cur);
     void addCorePolPotential(xmlNodePtr cur);
     void addConstCoulombPotential(xmlNodePtr cur, string& nuclei);
     void addModInsKE(xmlNodePtr cur);
-
-
+    void addMPCPotential(xmlNodePtr cur);
     
     /** add a property whose name will be renamed by b
      * @param a target property whose name should be replaced by b

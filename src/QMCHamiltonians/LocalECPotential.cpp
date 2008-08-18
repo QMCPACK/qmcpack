@@ -31,6 +31,7 @@ namespace qmcplusplus {
     PPset.resize(ions.getSpeciesSet().getTotalNum(),0);
     PP.resize(NumIons,0);
     Zeff.resize(NumIons,0.0);
+    gZeff.resize(ions.getSpeciesSet().getTotalNum(),0);
   } 
 
   ///destructor
@@ -48,6 +49,7 @@ namespace qmcplusplus {
 
   void LocalECPotential::add(int groupID, RadialPotentialType* ppot, RealType z) {
     PPset[groupID]=ppot;
+    gZeff[groupID]=z;
     for(int iat=0; iat<PP.size(); iat++) {
       if(IonConfig.GroupID[iat]==groupID) {
         PP[iat]=ppot;
@@ -77,21 +79,15 @@ namespace qmcplusplus {
   QMCHamiltonianBase* LocalECPotential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
   {
     LocalECPotential* myclone=new LocalECPotential(IonConfig,qp);
-    myclone->Zeff=Zeff;
     for(int ig=0; ig<PPset.size(); ++ig)
     {
       if(PPset[ig]) 
       {
         RadialPotentialType* ppot=PPset[ig]->makeClone();
-        myclone->PPset[ig]=ppot;
-        for(int iat=0; iat<PP.size(); iat++) 
-        {
-          if(IonConfig.GroupID[iat]==ig) myclone->PP[iat]=ppot;
-        }
+        myclone->add(ig,ppot,gZeff[ig]);
       }
     }
     return myclone;
-    //return new LocalECPotential(IonConfig,qp);
   }
 }
 /***************************************************************************
