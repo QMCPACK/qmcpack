@@ -208,8 +208,10 @@ namespace qmcplusplus {
 	stringstream name_real, name_imag;
 	name_real << OneBodyID << "_" << 2*i;
 	name_imag << OneBodyID << "_" << 2*i+1;
-	VarMap[name_real.str()] = &(OneBodySymmCoefs[i].cG.real());
-	VarMap[name_imag.str()] = &(OneBodySymmCoefs[i].cG.imag());
+        myVars.insert(name_real.str(),OneBodySymmCoefs[i].cG.real());
+        myVars.insert(name_imag.str(),OneBodySymmCoefs[i].cG.imag());
+	//VarMap[name_real.str()] = &(OneBodySymmCoefs[i].cG.real());
+	//VarMap[name_imag.str()] = &(OneBodySymmCoefs[i].cG.imag());
       }
     }
     if (twoBodyCutoff > 0.0) {
@@ -218,7 +220,8 @@ namespace qmcplusplus {
       for (int i=0; i<TwoBodySymmCoefs.size(); i++) {
 	stringstream name;
 	name << TwoBodyID << "_" << i;
-	VarMap[name.str()] = &(TwoBodySymmCoefs[i].cG);
+        myVars.insert(name.str(),TwoBodySymmCoefs[i].cG);
+	//VarMap[name.str()] = &(TwoBodySymmCoefs[i].cG);
       }
     }
     if (oneBodySpin)   app_log() << "One-body k-space Jastrow is spin-dependent.\n";
@@ -601,32 +604,37 @@ namespace qmcplusplus {
     return std::exp(J1 + J2);
   }
   
-  void
-  kSpaceJastrow::addOptimizables(OptimizableSetType& vlist)
+  void kSpaceJastrow::checkInVariables(opt_variables_type& active)
   {
-    std::map<std::string,RealType*>::iterator iter;
-    for (iter=VarMap.begin(); iter!=VarMap.end(); iter++) {
-      string name = iter->first;
-      RealType val = *(iter->second);
-      vlist[name] = val;
-    }
+    active.insertFrom(myVars);
+  }
+
+  void kSpaceJastrow::checkOutVariables(const opt_variables_type& active)
+  {
+    myVars.getIndex(active);
+    Optimizable=myVars.is_optimizable();
+  }
+
+  void kSpaceJastrow::reportStatus(ostream& os)
+  {
   }
 
   void 
-  kSpaceJastrow::resetParameters(OptimizableSetType& optVariables) 
+  kSpaceJastrow::resetParameters(const opt_variables_type& active) 
   { 
-    OptimizableSetType::iterator var;
-    for (var=optVariables.begin(); var!=optVariables.end(); var++) {
-      std::map<std::string,RealType*>::iterator myVar
-	= VarMap.find(var->first);
-      if (myVar != VarMap.end())  {
-	*(myVar->second) = var->second;
-      }
+    int ii=0;
+    for (int i=0; i<OneBodySymmCoefs.size(); i++) 
+    {
+      int loc_r=myVars.where(ii++);
+      int loc_i=myVars.where(ii++);
+      if(loc_r>=0) OneBodySymmCoefs[i].cG.real()=active[loc_r];
+      if(loc_i>=0) OneBodySymmCoefs[i].cG.imag()=active[loc_i];
     }
-    for (int i=0; i<OneBodySymmCoefs.size(); i++)
-      OneBodySymmCoefs[i].set(OneBodyCoefs);
-    for (int i=0; i<TwoBodySymmCoefs.size(); i++)
-      TwoBodySymmCoefs[i].set(TwoBodyCoefs);
+    for (int i=0; i<TwoBodySymmCoefs.size(); i++) 
+    {
+      int loc=myVars.where(ii++);
+      if(loc>=0) TwoBodySymmCoefs[i].cG=active[loc];
+    }
   }
 
   bool
@@ -649,9 +657,8 @@ namespace qmcplusplus {
   {
   }
 
-  void kSpaceJastrow::copyFrom(const OrbitalBase& o)
+  void kSpaceJastrow::copyFrom(const kSpaceJastrow& old)
   {
-    const kSpaceJastrow& old=dynamic_cast<const kSpaceJastrow&>(o);
     CellVolume=old.CellVolume;
     NormConstant=old.NormConstant;
     NumElecs=old.NumElecs;
@@ -678,18 +685,21 @@ namespace qmcplusplus {
     OneBodyID=old.OneBodyID;
     TwoBodyID=old.TwoBodyID;
 
-    for (int i=0; i<OneBodySymmCoefs.size(); i++) {
-      stringstream name_real, name_imag;
-      name_real << OneBodyID << "_" << 2*i;
-      name_imag << OneBodyID << "_" << 2*i+1;
-      VarMap[name_real.str()] = &(OneBodySymmCoefs[i].cG.real());
-      VarMap[name_imag.str()] = &(OneBodySymmCoefs[i].cG.imag());
-    }
-    for (int i=0; i<TwoBodySymmCoefs.size(); i++) {
-      stringstream name;
-      name << TwoBodyID << "_" << i;
-      VarMap[name.str()] = &(TwoBodySymmCoefs[i].cG);
-    }
+    //copy the variable map
+    myVars=old.myVars;
+
+    //for (int i=0; i<OneBodySymmCoefs.size(); i++) {
+    //  stringstream name_real, name_imag;
+    //  name_real << OneBodyID << "_" << 2*i;
+    //  name_imag << OneBodyID << "_" << 2*i+1;
+    //  VarMap[name_real.str()] = &(OneBodySymmCoefs[i].cG.real());
+    //  VarMap[name_imag.str()] = &(OneBodySymmCoefs[i].cG.imag());
+    //}
+    //for (int i=0; i<TwoBodySymmCoefs.size(); i++) {
+    //  stringstream name;
+    //  name << TwoBodyID << "_" << i;
+    //  VarMap[name.str()] = &(TwoBodySymmCoefs[i].cG);
+    //}
   }
 }
 

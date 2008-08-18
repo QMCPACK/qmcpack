@@ -24,11 +24,7 @@ namespace qmcplusplus {
    * Only valid for two-body jastrow with a "known" cusp condition.
    */
   template<class T>
-    struct TruncatedPadeFunctor:public OptimizableFunctorBase<T> {
-
-      typedef OptimizableFunctorBase<T> ThisBaseType;
-      typedef typename ThisBaseType::real_type real_type;
-      typedef typename ThisBaseType::OptimizableSetType OptimizableSetType;
+    struct TruncatedPadeFunctor:public OptimizableFunctorBase {
 
       ///input A
       real_type A;
@@ -47,13 +43,13 @@ namespace qmcplusplus {
       ///offset
       real_type OffSet;
       ///input function
-      ThisBaseType* inFunc;
+      OptimizableFunctorBase* inFunc;
 
       /** constructor
        * @param a default a for e-e cusp condition
        * @param fin input function
        */
-      TruncatedPadeFunctor(real_type a=-0.5, ThisBaseType* fin=0, real_type rmax=10):
+      TruncatedPadeFunctor(real_type a=-0.5, OptimizableFunctorBase* fin=0, real_type rmax=10):
         inFunc(fin),Rmax(rmax) {
         Rcut=0.0; 
         A=a;
@@ -77,17 +73,10 @@ namespace qmcplusplus {
       }
 
       bool put(xmlNodePtr cur) {return true;}
-      void addOptimizables( VarRegistry<real_type>& vlist)
-      {
-        if(inFunc) inFunc->addOptimizables(vlist);
-      }
 
-      void resetParameters(OptimizableSetType& optVariables) 
+      void resetParameters(const opt_variables_type& active) 
       {
-        if(inFunc) 
-        {
-          inFunc->resetParameters(optVariables);
-        }
+        if(inFunc) inFunc->resetParameters(active);
         applyCuspCondition();
       }
 
@@ -147,29 +136,28 @@ namespace qmcplusplus {
    * for a final numerical functor.
    */
   template<class T>
-    struct AnyTimesRnFunctor: public OptimizableFunctorBase<T> {
-      typedef OptimizableFunctorBase<T> ThisBaseType;
-      typedef typename ThisBaseType::real_type real_type;
-      typedef typename ThisBaseType::OptimizableSetType OptimizableSetType;
-
+    struct AnyTimesRnFunctor: public OptimizableFunctorBase
+    {
       ///pointer to a functor
-      OptimizableFunctorBase<T>* myFunc;
+      OptimizableFunctorBase* myFunc;
       ///power
       int Np;
       ///constructor
-      AnyTimesRnFunctor(OptimizableFunctorBase<T>* infunc=0, int n=1): 
+      AnyTimesRnFunctor(OptimizableFunctorBase* infunc=0, int n=1): 
         myFunc(infunc),Np(n)
       {
       }
 
-      AnyTimesRnFunctor(const AnyTimesRnFunctor<T>& old):Np(old.Np)
+      OptimizableFunctorBase* makeClone() const 
       {
-        myFunc=old.myFunc->makeClone();
+        AnyTimesRnFunctor<T>* myclone=new AnyTimesRnFunctor<T>(*this);
+        myclone->myFunc=myFunc->makeClone();
+        return myclone;
       }
 
-      OptimizableFunctorBase<T>* makeClone() const 
+      inline void reset()
       {
-        return new AnyTimesRnFunctor<T>(*this);
+        myFunc->reset();
       }
 
       inline real_type f(real_type r) {
@@ -187,14 +175,9 @@ namespace qmcplusplus {
         return true;
       }
 
-      void addOptimizables(VarRegistry<T>& vlist) 
-      {
-        if(myFunc) myFunc->addOptimizables(vlist);
-      }
-
-      void resetParameters(OptimizableSetType& optVariables) 
+      void resetParameters(const opt_variables_type& active) 
       { 
-        if(myFunc) myFunc->resetParameters(optVariables);
+        if(myFunc) myFunc->resetParameters(active);
       }
 
     };
@@ -205,11 +188,7 @@ namespace qmcplusplus {
    * for a final numerical functor to correct the cusp condition.
    */
   template<class T>
-    struct CuspCorrectionFunctor: public OptimizableFunctorBase<T> {
-
-      typedef OptimizableFunctorBase<T> ThisBaseType;
-      typedef typename ThisBaseType::real_type real_type;
-      typedef typename ThisBaseType::OptimizableSetType OptimizableSetType;
+    struct CuspCorrectionFunctor: public OptimizableFunctorBase {
 
       ///scaling function or exponent
       real_type E;
@@ -227,16 +206,14 @@ namespace qmcplusplus {
       real_type dCosFac;
       ///temporary data for second-derivative
       real_type d2CosFac;
-      ///ID for variable E 
-      string ID_E;
-
       ///default constructor not to have nan
       CuspCorrectionFunctor():E(1.0),Rmax(1),Rcut(0), RmaxFixed(10){}
 
-      OptimizableFunctorBase<T>* makeClone() const 
+      OptimizableFunctorBase* makeClone() const 
       {
         return new CuspCorrectionFunctor<T>(*this);
       }
+
       /** constructor
        * @param c Cusp condition, i.e., the first derivative at r=0
        * @param e exponent or scaling factor
@@ -244,13 +221,16 @@ namespace qmcplusplus {
       inline CuspCorrectionFunctor(real_type e, real_type rc)
       {
         real_type rin=0.5*rc;
-        E=(rin)<e?4.0/rin:e;
+        if(e>0) 
+          E=(rin)<e?4.0/rin:e;
+        else
+          E=5.0/rc;
         Rmax=rc;
         //E=e; 
-        resetInternals();
+        reset();
       }
 
-      inline void resetInternals()
+      inline void reset()
       {
         mOneOverE=-1.0/E;
         Rcut=0.7*Rmax;
@@ -311,32 +291,36 @@ namespace qmcplusplus {
 
       bool put(xmlNodePtr cur) 
       {
+        ///ID for variable E 
+        string ID_E;
         OhmmsAttributeSet rAttrib;
         rAttrib.add(ID_E,"id"); 
         rAttrib.add(E,"exponent"); 
         rAttrib.put(cur);
         ID_E.append("_E");
+        myVars.insert(ID_E,E);
         return true;
       }
 
-      //cannot be optimized
-      void addOptimizables(OptimizableSetType& vlist) 
+      void checkInVariables(opt_variables_type& active)
       {
-        //vlist.addVariable(ID_E,E);
+        active.insertFrom(myVars);
+      }
+
+      void checkOutVariables(const opt_variables_type& active)
+      {
+        myVars.getIndex(active);
       }
 
       //cannot be optimized
-      void resetParameters(OptimizableSetType& optVariables) 
+      void resetParameters(const opt_variables_type& active) 
       { 
-        //typename OptimizableSetType::iterator it_b(optVariables.find(ID_E));
-        //if(it_b != optVariables.end()) {
-        //  E=(*it_b).second;
-        //  //only change the exponent: leave the cutoff fixed
-        //  mOneOverE=-1.0/E;
-        //  dCosFac=0.5*R12/E;
-        //  d2CosFac=0.5*R12*R12/E;
-        //  //resetInternals();
-        //}
+        int loc=myVars.where(0);
+        if(loc>=0) 
+        {
+          E=active[loc];
+          reset();
+        }
       }
     };
 
@@ -346,11 +330,7 @@ namespace qmcplusplus {
    * for a final numerical functor to correct the cusp condition.
    */
   template<class T>
-    struct DCuspCorrectionDEFunctor: public OptimizableFunctorBase<T> {
-
-      typedef OptimizableFunctorBase<T> ThisBaseType;
-      typedef typename ThisBaseType::real_type real_type;
-      typedef typename ThisBaseType::OptimizableSetType OptimizableSetType;
+    struct DCuspCorrectionDEFunctor: public OptimizableFunctorBase {
 
       ///scaling function or exponent
       real_type E;
@@ -368,8 +348,6 @@ namespace qmcplusplus {
       real_type dCosFac;
       ///temporary data for derivative
       real_type d2CosFac;
-      ///ID for variable E 
-      string ID_E;
 
       ///default constructor not to have nan
       DCuspCorrectionDEFunctor():E(1.0),Rmax(1),Rcut(0), RmaxFixed(10){}
@@ -381,10 +359,10 @@ namespace qmcplusplus {
       {
         E=e; 
         Rmax=rc;
-        resetInternals();
+        reset();
       }
 
-      inline void resetInternals()
+      inline void reset()
       {
         OneOverE=1.0/E;
         Rcut=0.7*Rmax;
@@ -447,29 +425,24 @@ namespace qmcplusplus {
 
       bool put(xmlNodePtr cur) 
       {
+        ///ID for variable E 
+        string ID_E;
         OhmmsAttributeSet rAttrib;
         rAttrib.add(ID_E,"id"); 
         rAttrib.add(E,"exponent"); 
         rAttrib.put(cur);
         ID_E.append("_E");
+        myVars.insert(ID_E,E);
         return true;
       }
 
-      void addOptimizables(OptimizableSetType& vlist) 
-      {
-        vlist.addVariable(ID_E,E);
-      }
-
-      void resetParameters(OptimizableSetType& optVariables) 
+      void resetParameters(const opt_variables_type& active) 
       { 
-        typename OptimizableSetType::iterator it_b(optVariables.find(ID_E));
-        if(it_b != optVariables.end()) {
-          E=(*it_b).second;
-          //only change the exponent: leave the cutoff fixed
-          OneOverE=1.0/E;
-          dCosFac=0.5*R12/E;
-          d2CosFac=0.5*R12*R12/E;
-          //resetInternals();
+        int loc=myVars.where(0);
+        if(loc>=0) 
+        {
+          E=active[loc];
+          reset();
         }
       }
     };

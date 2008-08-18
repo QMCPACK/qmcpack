@@ -23,18 +23,13 @@
 namespace qmcplusplus {
 
   template<class T>
-  struct BsplineFunctor: public OptimizableFunctorBase<T> {
-    ///typedef of real values
-    typedef typename OptimizableFunctorBase<T>::real_type real_type;
-    typedef typename OptimizableFunctorBase<T>::OptimizableSetType OptimizableSetType;
+  struct BsplineFunctor: public OptimizableFunctorBase {
 
-    using OptimizableFunctorBase<T>::FirstIndex;
-    using OptimizableFunctorBase<T>::LastIndex;
     int NumParams;
     int Dummy;
     const TinyVector<real_type,16> A, dA, d2A;
     //static const real_type A[16], dA[16], d2A[16];
-    real_type cutoff_radius, DeltaR, DeltaRInv;
+    real_type Rcut, DeltaR, DeltaRInv;
     real_type CuspValue;
     std::vector<real_type> SplineCoefs;
     // Stores the derivatives w.r.t. SplineCoefs 
@@ -46,7 +41,7 @@ namespace qmcplusplus {
 
     ///constructor
     BsplineFunctor(real_type cusp=0.0) : 
-      NumParams(0), cutoff_radius(0.0), 
+      NumParams(0), Rcut(0.0), 
       A( -1.0/6.0,  3.0/6.0, -3.0/6.0, 1.0/6.0,
            3.0/6.0, -6.0/6.0,  0.0/6.0, 4.0/6.0,
           -3.0/6.0,  3.0/6.0,  3.0/6.0, 1.0/6.0,
@@ -63,24 +58,7 @@ namespace qmcplusplus {
     {
     }
 
-    /////copy constructor
-    //BsplineFunctor(const BsplineFunctor<T>& rhs) : 
-    //  cutoff_radius(rhs.cutoff_radius), 
-    //  A(rhs.A),dA(rhs.dA),d2A(rhs.d2A),
-    //  CuspValue(rhs.CuspValue), 
-    //  elementType(rhs.elementType),pairType(rhs.pairType)
-    //{
-    //  FirstIndex=rhs.FirstIndex;
-    //  LastIndex=rhs.LastIndex;
-    //  resize(rhs.NumParams);
-    //  ParameterNames=rhs.ParameterNames;
-    //  //ParameterIndex=rhs.ParameterIndex;
-    //  Parameters=rhs.Parameters;
-    //  //ParameterNames=rhs.ParameterNames;
-    //  reset();
-    //}
-
-    OptimizableFunctorBase<T>* makeClone() const 
+    OptimizableFunctorBase* makeClone() const 
     {
       return new BsplineFunctor(*this);
     }
@@ -90,7 +68,7 @@ namespace qmcplusplus {
       NumParams = n;
       int numCoefs = NumParams + 4;
       int numKnots = numCoefs - 2;
-      DeltaR = cutoff_radius / (real_type)(numKnots - 1);
+      DeltaR = Rcut / (real_type)(numKnots - 1);
       DeltaRInv = 1.0/DeltaR;
 
       Parameters.resize(n);
@@ -102,7 +80,7 @@ namespace qmcplusplus {
     {
       int numCoefs = NumParams + 4;
       int numKnots = numCoefs - 2;
-      DeltaR = cutoff_radius / (real_type)(numKnots - 1);
+      DeltaR = Rcut / (real_type)(numKnots - 1);
       DeltaRInv = 1.0/DeltaR;
 
       for (int i=0; i<SplineCoefs.size(); i++)
@@ -119,7 +97,7 @@ namespace qmcplusplus {
 //      fname = fname + ".dat";
 //      // fprintf (stderr, "Writing %s file.\n", fname.c_str());
 //      FILE *fout = fopen (fname.c_str(), "w");
-//      for (real_type r=1.0e-5; r<cutoff_radius; r+=0.01) {
+//      for (real_type r=1.0e-5; r<Rcut; r+=0.01) {
 //        real_type eps = 1.0e-6;
 //        real_type du, d2u, du_FD, d2u_FD;
 //        real_type u = evaluate (r, du, d2u);
@@ -139,7 +117,7 @@ namespace qmcplusplus {
     }
 
     inline real_type evaluate(real_type r) {
-      if (r >= cutoff_radius)
+      if (r >= Rcut)
         return 0.0;
       r *= DeltaRInv;
 
@@ -160,7 +138,7 @@ namespace qmcplusplus {
 
     inline real_type 
     evaluate(real_type r, real_type& dudr, real_type& d2udr2) {
-      if (r >= cutoff_radius) {
+      if (r >= Rcut) {
 	dudr = d2udr2 = 0.0;
 	return 0.0;
       }
@@ -193,7 +171,7 @@ namespace qmcplusplus {
 
 //       if (std::fabs(d2udr2_FD-d2udr2) > 1.0e-4) 
 // 	cerr << "Error in BsplineFunction:  r = " << r << "  d2udr2 = " << dudr 
-// 	     << "  d2udr2_FD = " << d2udr2_FD << "  rcut = " << cutoff_radius << endl;
+// 	     << "  d2udr2_FD = " << d2udr2_FD << "  rcut = " << Rcut << endl;
       return 
 	(SplineCoefs[i+0]*(A[ 0]*tp[0] + A[ 1]*tp[1] + A[ 2]*tp[2] + A[ 3]*tp[3])+
 	 SplineCoefs[i+1]*(A[ 4]*tp[0] + A[ 5]*tp[1] + A[ 6]*tp[2] + A[ 7]*tp[3])+
@@ -205,7 +183,7 @@ namespace qmcplusplus {
     inline bool
     evaluateDerivatives (real_type r, vector<TinyVector<real_type,3> >& derivs)
     {
-      if (r >= cutoff_radius) 
+      if (r >= Rcut) 
 	return false;
 
       r *= DeltaRInv;
@@ -243,11 +221,11 @@ namespace qmcplusplus {
     }
 
     inline real_type f(real_type r) {
-      if(r>cutoff_radius) return 0.0;
+      if(r>Rcut) return 0.0;
       return evaluate (r);
     }
     inline real_type df(real_type r) {
-      if(r>cutoff_radius) return 0.0;
+      if(r>Rcut) return 0.0;
       real_type du, d2u;
       evaluate (r, du, d2u);
       return du;
@@ -258,10 +236,10 @@ namespace qmcplusplus {
       ReportEngine PRE("BsplineFunctor","put(xmlNodePtr)");
       //CuspValue = -1.0e10;
       NumParams = 0;
-      cutoff_radius = 0.0;
+      Rcut = 0.0;
       OhmmsAttributeSet rAttrib;
       rAttrib.add(NumParams,   "size");
-      rAttrib.add(cutoff_radius,        "rcut");
+      rAttrib.add(Rcut,        "rcut");
       rAttrib.put(cur);
 
       if (NumParams == 0) 
@@ -270,7 +248,7 @@ namespace qmcplusplus {
       }
       app_log() << " size = " << NumParams << " parameters " << endl;
       app_log() << " cusp = " << CuspValue << endl;
-      app_log() << " rcut = " << cutoff_radius << endl;
+      app_log() << " rcut = " << Rcut << endl;
 
       resize (NumParams);
 
@@ -300,13 +278,15 @@ namespace qmcplusplus {
           for (int i=0; i< NumParams; i++) {
             std::stringstream sstr;
             sstr << id << "_" << i;
-            ParameterNames.push_back(sstr.str());
+            myVars.insert(sstr.str(),Parameters[i],true);
           }
 
           app_log() << "Parameter     Name      Value\n";
-          for (int i=0; i<ParameterNames.size(); i++)
-            app_log() << "    " << i << "         " << ParameterNames[i] 
-		      << "       " << Parameters[i] << endl;
+          myVars.print(app_log());
+
+          //for (int i=0; i<ParameterNames.size(); i++)
+          //  app_log() << "    " << i << "         " << ParameterNames[i] 
+          //    << "       " << Parameters[i] << endl;
         }
         xmlCoefs = xmlCoefs->next;
       }
@@ -315,39 +295,30 @@ namespace qmcplusplus {
       return true;
     }
     
-    void addOptimizables(OptimizableSetType& vlist)
+    void checkInVariables(opt_variables_type& active)
     {
-      //capture FirstIndex in the vlist
-      FirstIndex=vlist.addVariable(ParameterNames[0],Parameters[0]);
-      for (int i=1; i<ParameterNames.size(); i++)
-       int loc=vlist.addVariable(ParameterNames[i],Parameters[i]);
-      LastIndex=FirstIndex+ParameterNames.size();
-//      for (int i=0; i<ParameterNames.size(); i++)
-//	vlist[ParameterNames[i]] = Parameters[i];
-    }
-    
-    /** reset the internal variables.
-     *
-     * USE_resetParameters
-     */
-    void resetParameters(OptimizableSetType& optVariables) 
-    {
-      for (int i=0; i<ParameterNames.size(); i++) {
-	typename OptimizableSetType::iterator it(optVariables.find(ParameterNames[i]));
-	if(it != optVariables.end()) {
-// 	  cerr << "Resetting " << ParameterNames[i] << " to " 
-// 	       << it->second << endl;
-	  Parameters[i] = it->second;
-	}
-	reset();
-      }
+      active.insertFrom(myVars);
     }
 
+    void checkOutVariables(const opt_variables_type& active)
+    {
+      myVars.getIndex(active);
+    }
+
+    void resetParameters(const opt_variables_type& active)
+    {
+      for(int i=0; i<Parameters.size(); ++i)
+      {
+        int loc=myVars.where(i);
+        if(loc>=0) Parameters[i]=myVars[i]=active[loc];
+      }
+      reset();
+    }
 
     void print(std::ostream& os)
     {
       int n=100;
-      T d=cutoff_radius/100.,r=0;
+      T d=Rcut/100.,r=0;
       T u,du,d2du;
       for(int i=0; i<n; ++i)
       {

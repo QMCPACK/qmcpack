@@ -77,7 +77,6 @@ namespace qmcplusplus {
     //vector<PosType>  Kcart;
    
     void resetInternals();
-    void resetByHandler();
     void resize();
     ///fixed components of Fk
     Vector<RealType> Fk_0; 
@@ -89,11 +88,23 @@ namespace qmcplusplus {
     ///A unique Fk sorted by |k|
     Vector<RealType> Fk_symm;
 
-    LRTwoBodyJastrow(ParticleSet& p, HandlerType* inhandler=0);
+    LRTwoBodyJastrow(ParticleSet& p);
 
-    void resetParameters(OptimizableSetType& optVariables);
+    /** check out optimizable variables
+     */
+    void checkOutVariables(const opt_variables_type& o);
 
-    void resetByFunction(RealType kc, int functype);
+    /** check in an optimizable parameter
+     * @param o a super set of optimizable variables
+     */
+    void checkInVariables(opt_variables_type& o);
+
+    /** print the state, e.g., optimizables */
+    void reportStatus(ostream& os);
+
+    void resetParameters(const opt_variables_type& active);
+
+    void resetByHandler(HandlerType* handler);
 
     //evaluate the distance table with els
     void resetTargetParticleSet(ParticleSet& P);
@@ -171,8 +182,9 @@ namespace qmcplusplus {
     ValueType evaluate(ParticleSet& P, PooledData<RealType>& buf);
 
     ///process input file
-    bool put(xmlNodePtr cur, VarRegistry<RealType>& vlist);
+    bool put(xmlNodePtr cur);
 
+    OrbitalBasePtr makeClone(ParticleSet& tqp) const;
   };
 }
 #endif

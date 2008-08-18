@@ -18,7 +18,6 @@
 #include "Numerics/OneDimGridBase.h"
 #include "Numerics/CubicSpline.h"
 #include "Numerics/CubicBspline.h"
-#include "Optimize/VarList.h"
 #include "Numerics/OptimizableFunctorBase.h"
 #include "Message/Communicate.h"
 
@@ -35,14 +34,12 @@ namespace qmcplusplus {
    *  typedef CubicSplineSingle<RealType,SplineEngineType> RadialOrbitalType;
    */
   template <typename RT, typename FNOUT>
-    struct CubicSplineSingle: public OptimizableFunctorBase<RT> {
+    struct CubicSplineSingle: public OptimizableFunctorBase {
 
+      ///typedef for the value_type
+      typedef RT value_type;
       ///typedef of the source functor
-      typedef OptimizableFunctorBase<RT> FNIN;
-      ///typedef for the argument
-      typedef typename FNIN::real_type real_type;
-      ///typedef for OptimizableSetType
-      typedef typename FNIN::OptimizableSetType OptimizableSetType;
+      typedef OptimizableFunctorBase FNIN;
       ///typedef for the grid
       typedef OneDimGridBase<real_type> grid_type;
 
@@ -56,8 +53,12 @@ namespace qmcplusplus {
       real_type d2Y;
       ///constructor
       CubicSplineSingle(): InFunc(0) { }
+
       CubicSplineSingle(const CubicSplineSingle& old): 
-        NumGridPoints(old.NumGridPoints), Rmax(old.Rmax), GridDelta(old.GridDelta)
+        OptimizableFunctorBase(old),
+        NumGridPoints(old.NumGridPoints), 
+        Rmax(old.Rmax), 
+        GridDelta(old.GridDelta)
       {
         if(old.InFunc)
         {
@@ -65,18 +66,18 @@ namespace qmcplusplus {
         }
       }
 
-      OptimizableFunctorBase<RT>* makeClone() const 
+      OptimizableFunctorBase* makeClone() const 
       {
         return new CubicSplineSingle<RT,FNOUT>(*this);
       }
 
       ///constructor with arguments
-      CubicSplineSingle(FNIN* in_, grid_type* agrid): InFunc(0) 
+      CubicSplineSingle(FNIN* in_, grid_type* agrid): InFunc(in_) 
       {
         initialize(in_,agrid);
       }
       ///constructor with arguments
-      CubicSplineSingle(FNIN* in_, real_type rc, int npts):InFunc(0)
+      CubicSplineSingle(FNIN* in_, real_type rc, int npts):InFunc(in_)
       {
         initialize(in_,rc,npts);
       }
@@ -130,28 +131,29 @@ namespace qmcplusplus {
 
       bool put(xmlNodePtr cur) 
       {
-        if(InFunc)
-          return InFunc->put(cur);
-        else
-          return false;
+        bool s=false;
+        if(InFunc) s=InFunc->put(cur);
+        return s;
       }
 
-      void addOptimizables(OptimizableSetType& vlist)
+      void checkInVariables(opt_variables_type& active)
       {
-        if(InFunc) 
-          InFunc->addOptimizables(vlist);
+        if(InFunc) InFunc->checkInVariables(active);
+      }
+
+      void checkOutVariables(const opt_variables_type& active)
+      {
+        if(InFunc) InFunc->checkOutVariables(active);
       }
 
       ///reset the input/output function
-      void resetParameters(OptimizableSetType& optVariables) 
+      void resetParameters(const opt_variables_type& active) 
       {
-        if(!InFunc)
+        if(InFunc)
         {
-          app_error() << "  CubicSplineJastrow::reset failed due to null input function " << endl;
-          OHMMS::Controller->abort();
+          InFunc->resetParameters(active);
+          reset();
         }
-        InFunc->resetParameters(optVariables);
-        resetInternals();
       }
 
       void print(ostream& os) 
@@ -173,31 +175,34 @@ namespace qmcplusplus {
         Rmax=rmax;
         NumGridPoints=npts;
         GridDelta=Rmax/static_cast<real_type>(NumGridPoints-1);
-        resetInternals();
+        reset();
       }
 
-      void resetInternals()
+      void reset()
       {
-        typename FNOUT::container_type datain(NumGridPoints);
-        real_type r=0;
-        for(int i=0; i<NumGridPoints; i++, r+=GridDelta) 
+        if(InFunc)
         {
-          datain[i] = InFunc->f(r);
+          typename FNOUT::container_type datain(NumGridPoints);
+          real_type r=0;
+          for(int i=0; i<NumGridPoints; i++, r+=GridDelta) 
+          {
+            datain[i] = InFunc->f(r);
+          }
+          OutFunc.Init(0.0,Rmax,datain,true,InFunc->df(0.0),0.0);
         }
-        OutFunc.Init(0.0,Rmax,datain,true,InFunc->df(0.0),0.0);
+        else
+        {
+          APP_ABORT("CubicSplineSingle::reset has no input functor");
+        }
       }
     };
 
 
   template <typename RT>
-    struct CubicSplineBasisSet: public OptimizableFunctorBase<RT> {
+    struct CubicSplineBasisSet: public OptimizableFunctorBase {
 
       ///typedef of the source functor
-      typedef OptimizableFunctorBase<RT> FNIN;
-      ///typedef for the argument
-      typedef typename FNIN::real_type real_type;
-      ///typedef for OptimizableSetType
-      typedef typename FNIN::OptimizableSetType OptimizableSetType;
+      typedef OptimizableFunctorBase FNIN;
       ///typedef for the argument
       typedef CubicBspline<RT,LINEAR_1DGRID,FIRSTDERIV_CONSTRAINTS> FNOUT;
       ///typedef for the grid
@@ -220,18 +225,16 @@ namespace qmcplusplus {
       ///set the output numerical function
       void setOutFunc(FNOUT* out_) { OutFunc=out_;}
       ///reset the input/output function
-      void resetParameters(OptimizableSetType& optVariables) 
+      void resetParameters(const opt_variables_type& active) 
       {
         if(!InFunc)
-        {
-          app_error() << "  CubicSplineJastrow::reset failed due to null input function " << endl;
-          OHMMS::Controller->abort();
-        }
-        InFunc->resetParameters(optVariables);
-        resetInternals();
+          APP_ABORT("CubicSplineBasisSet::resetParameters failed due to null input function ");
+
+        InFunc->resetParameters(active);
+        reset();
       }
 
-      void resetInternals()
+      void reset()
       {
         if(!OutFunc) OutFunc = new FNOUT;
         typename FNOUT::container_type datain(NumGridPoints);
@@ -269,11 +272,6 @@ namespace qmcplusplus {
         return InFunc->put(cur);
       }
 
-      void addOptimizables( VarRegistry<real_type>& vlist)
-      {
-        InFunc->addOptimizables(vlist);
-      }
-
       void print(ostream& os) {
         real_type r=0;
         for(int i=0; i<NumGridPoints; i++, r+=GridDelta) 
@@ -286,7 +284,7 @@ namespace qmcplusplus {
         NumGridPoints=agrid->size();
         GridDelta=Rmax/static_cast<real_type>(NumGridPoints-1);
         InFunc=in_;
-        resetInternals();
+        reset();
       }
     };
 

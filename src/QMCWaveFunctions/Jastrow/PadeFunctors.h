@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////
-// (c) Copyright 2003  by Jeongnim Kim
+// (c) Copyright 2003-  by Jeongnim Kim
 //////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////
 //   National Center for Supercomputing Applications &
@@ -7,7 +7,6 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
@@ -29,11 +28,7 @@ namespace qmcplusplus {
    * Similar to PadeJastrow with a scale.
    */
   template<class T>
-    struct PadeFunctor:public OptimizableFunctorBase<T> {
-
-      typedef typename OptimizableFunctorBase<T>::real_type real_type;
-      typedef typename OptimizableFunctorBase<T>::OptimizableSetType OptimizableSetType;
-
+    struct PadeFunctor:public OptimizableFunctorBase {
       ///input A
       real_type A;
       ///input B
@@ -55,21 +50,35 @@ namespace qmcplusplus {
 
       ///default constructor
       PadeFunctor(): Scale(1.0),ID_A("0"),ID_B("0") { }
-
-      OptimizableFunctorBase<T>* makeClone() const 
-      {
-        return new PadeFunctor<T>(*this);
-      }
-
       ///constructor
       explicit PadeFunctor(real_type a, real_type b, real_type s=1.0): 
-        Scale(s),ID_A("0"), ID_B("0") 
-        {
-          reset(a,b);
-        }
+        A(a),B0(b),Scale(s)
+      {
+        reset();
+      }
 
-      void reset(real_type a, real_type b, real_type s=1.0) {
-        A=a; B0=b; Scale=s;
+
+      /** set ID_A and ID_B
+       * @param id_a ID of A
+       * @param id_b ID of B
+       * @param free_a if true, A is optimizable
+       * @param free_b if true, B is optimizable
+       */
+      inline void setIDs(const std::string& id_a, const std::string& id_b, bool free_a=false, bool free_b=true)
+      {
+        ID_A=id_a;
+        ID_B=id_b;
+        myVars.insert(ID_A,A,free_a);
+        myVars.insert(ID_B,B0,free_b);
+      }
+
+      OptimizableFunctorBase* makeClone() const
+      {
+        return new PadeFunctor(*this);
+      }
+
+      void reset() {
+        //A=a; B0=b; Scale=s;
         B = B0*Scale;
         AB = A*B; B2=2.0*B;
         AoverB=A/B;
@@ -98,8 +107,9 @@ namespace qmcplusplus {
       }
 
       bool put(xmlNodePtr cur) {
-        real_type Atemp(A),Btemp(B);
+        real_type Atemp(A),Btemp(B0);
         cur = cur->xmlChildrenNode;
+        bool renewed=false;
         while(cur != NULL) {
           //@todo Var -> <param(eter) role="opt"/>
           std::string cname((const char*)(cur->name));
@@ -115,29 +125,37 @@ namespace qmcplusplus {
               ID_B = (const char*)iptr;
               putContent(Btemp,cur);
             }
+            bool renewed=true;
           }
           cur = cur->next;
         }
-        reset(Atemp,Btemp);
+        if(renewed)
+        {
+          A=Atemp;
+          B0=Btemp;
+          reset();
+          myVars.clear();
+          myVars.insert(ID_A,A, ID_A != "0");
+          myVars.insert(ID_B,B0,ID_B != "0");
+        }
         return true;
       }
 
-      void addOptimizables(OptimizableSetType& vlist)
+      void checkInVariables(opt_variables_type& active)
       {
-        if(ID_A[0] != '0') vlist[ID_A]=A;
-        if(ID_B[0] != '0') vlist[ID_B]=B0;
+        active.insertFrom(myVars);
       }
 
-      /** reset the internal variables.
-       *
-       * USE_resetParameters
-       */
-      void resetParameters(OptimizableSetType& optVariables) 
+      void checkOutVariables(const opt_variables_type& active)
       {
-        typename OptimizableSetType::iterator it_a(optVariables.find(ID_A));
-        if(it_a != optVariables.end()) A=(*it_a).second;
-        typename OptimizableSetType::iterator it_b(optVariables.find(ID_B));
-        if(it_b != optVariables.end()) B0=(*it_b).second;
+        myVars.getIndex(active);
+        myVars.print(std::cout);
+      }
+
+      void resetParameters(const opt_variables_type& active) 
+      {
+        int ia=myVars.where(0); if(ia>-1) A=active[ia];
+        int ib=myVars.where(1); if(ib>-1) B0=active[ib];
         B = B0*Scale;
         AB = A*B; 
         B2=2.0*B;
@@ -151,10 +169,8 @@ namespace qmcplusplus {
    * Prototype of the template parameter of TwoBodyJastrow and OneBodyJastrow
    */
   template<class T>
-    struct Pade2ndOrderFunctor:public OptimizableFunctorBase<T> {
+    struct Pade2ndOrderFunctor:public OptimizableFunctorBase {
 
-      typedef typename OptimizableFunctorBase<T>::real_type real_type;
-      typedef typename OptimizableFunctorBase<T>::OptimizableSetType OptimizableSetType;
       ///coefficients
       real_type A, B, C, C2;
       ///id for A
@@ -165,23 +181,21 @@ namespace qmcplusplus {
       std::string ID_C;
 
       ///constructor
-      Pade2ndOrderFunctor(real_type a=1.0, real_type b=1.0, real_type c=1.0) {reset(a,b,c);}
-
-      //Pade2ndOrderFunctor(Pade2ndOrderFunctor<T>* func) {
-      //  reset(1.0,1.0,1.0);
-      //}
-      OptimizableFunctorBase<T>* makeClone() const 
+      Pade2ndOrderFunctor(real_type a=1.0, real_type b=1.0, real_type c=1.0): A(a),B(b),C(c)
       {
-        return new Pade2ndOrderFunctor<T>(*this);
+        reset();
+      }
+
+      OptimizableFunctorBase* makeClone() const
+      {
+        return new Pade2ndOrderFunctor(*this);
       }
 
       /** reset the internal variables.
-       *@param a Pade Jastrow parameter a 
-       *@param b Pade Jastrow parameter b 
-       *@param c Pade Jastrow parameter c 
        */
-      void reset(real_type a, real_type b, real_type c) {
-        A = a; B=b; C = c; C2 = 2.0*C;
+      void reset() {
+       // A = a; B=b; C = c; 
+        C2 = 2.0*C;
       }
 
       /**@param r the distance
@@ -246,29 +260,30 @@ namespace qmcplusplus {
           }
           tcur = tcur->next;
         }
-        reset(Atemp,Btemp,Ctemp);
+        A=Atemp; B=Btemp; C=Ctemp;
+        reset();
+        //these are always active 
+        myVars.insert(ID_A,A,true);
+        myVars.insert(ID_B,B,true);
+        myVars.insert(ID_C,C,true);
         //LOGMSG("Jastrow (A*r+C*r*r)/(1+Br) = (" << A << "," << B << "," << C << ")") 
-          return true;
+        return true;
       }
 
-      /** add optimizable variables to vlist
-       * @param vlist VarRegistry<T1> to which the Pade variables A and B are added for optimization
-       */
-      void addOptimizables(OptimizableSetType& vlist)
+      void checkInVariables(opt_variables_type& active)
       {
-        vlist[ID_A]=A;
-        vlist[ID_B]=B;
-        vlist[ID_C]=C;
+        active.insertFrom(myVars);
       }
 
-      void resetParameters(OptimizableSetType& optVariables) 
+      void checkOutVariables(const opt_variables_type& active)
       {
-        typename OptimizableSetType::iterator it(optVariables.find(ID_A));
-        if(it != optVariables.end()) A=(*it).second;
-        it=optVariables.find(ID_B);
-        if(it != optVariables.end()) B=(*it).second;
-        it=optVariables.find(ID_C);
-        if(it != optVariables.end()) C=(*it).second;
+        myVars.getIndex(active);
+      }
+      void resetParameters(const opt_variables_type& active) 
+      {
+        if(myVars.where(0)>-1) A=active[myVars.where(0)];
+        if(myVars.where(1)>-1) B=active[myVars.where(1)];
+        if(myVars.where(2)>-1) C=active[myVars.where(2)];
         C2 = 2.0*C;
       }
     };
@@ -278,32 +293,27 @@ namespace qmcplusplus {
    * Prototype of the template parameter of TwoBodyJastrow and OneBodyJastrow
    */
   template<class T>
-    struct ScaledPadeFunctor:public OptimizableFunctorBase<T> {
-
-      typedef typename OptimizableFunctorBase<T>::real_type real_type;
-      typedef typename OptimizableFunctorBase<T>::OptimizableSetType OptimizableSetType;
+    struct ScaledPadeFunctor:public OptimizableFunctorBase {
 
       ///coefficients
       real_type A, B, C; 
       real_type OneOverC, B2;
 
       ///constructor
-      explicit ScaledPadeFunctor(real_type a=1.0, real_type b=1.0, real_type c=1.0) 
-      {reset(a,b,c);}
+      explicit ScaledPadeFunctor(real_type a=1.0, real_type b=1.0, real_type c=1.0) :
+        A(a),B(b),C(c)
+      {reset();}
 
-      OptimizableFunctorBase<T>* makeClone() const 
+      OptimizableFunctorBase* makeClone() const
       {
-        return new ScaledPadeFunctor<T>(*this);
+        return new ScaledPadeFunctor(*this);
       }
 
       /** reset the internal variables.
-       *@param a Pade Jastrow parameter a 
-       *@param b Pade Jastrow parameter b 
        */
-      void reset(real_type a, real_type b, real_type c) {
-        A=a; B=b; C=c; 
-        OneOverC=1.0/c;
-        B2=2.0*b;
+      void reset() {
+        OneOverC=1.0/C;
+        B2=2.0*B;
       }
 
       /** evaluate the value at r
@@ -344,13 +354,18 @@ namespace qmcplusplus {
       }
 
       bool put(xmlNodePtr cur) {return true;}
-      void addOptimizables(OptimizableSetType& vlist){}
 
-      /** reset the internal variables.
-       *
-       * When RefPade is not 0, use RefPade->B to reset the values
-       */
-      inline void resetParameters(OptimizableSetType& optVariables) 
+      void checkInVariables(opt_variables_type& active)
+      {
+        active.insertFrom(myVars);
+      }
+
+      void checkOutVariables(const opt_variables_type& active)
+      {
+        myVars.getIndex(active);
+      }
+
+      inline void resetParameters(const opt_variables_type& active) 
       {
         OneOverC=1.0/C;
         B2=2.0*B;

@@ -24,7 +24,7 @@ namespace qmcplusplus {
 
   struct AnyConstraints: public OrbitalConstraintsBase {
     ///analytic functor
-    typedef OptimizableFunctorBase<RealType> InFuncType;
+    typedef OptimizableFunctorBase InFuncType;
     ///spline engine
     typedef CubicBspline<RealType,LINEAR_1DGRID,FIRSTDERIV_CONSTRAINTS> SplineEngineType;
     ///numerical functor
@@ -58,8 +58,7 @@ namespace qmcplusplus {
     AnyConstraints(ParticleSet& p, TrialWaveFunction& psi);
     ~AnyConstraints();
 
-    void addOptimizables(OptimizableSetType& vlist);
-    void resetParameters(OptimizableSetType& optVariables);
+    void resetParameters(const opt_variables_type& active);
 
     OrbitalBase* createTwoBody();
     OrbitalBase* createOneBody(ParticleSet& source);

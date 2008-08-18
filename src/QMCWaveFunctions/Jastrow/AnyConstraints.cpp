@@ -41,26 +41,26 @@ namespace qmcplusplus
     return success;
   }
 
-  void AnyConstraints::resetParameters(OptimizableSetType& optVariables) 
+  void AnyConstraints::resetParameters(const opt_variables_type& active) 
   {
-    map<string,BasisGroupType*>::iterator it(BasisGroups.begin()),it_end(BasisGroups.end());
-    while(it != it_end) 
-    {
-      (*it).second->Out_->resetParameters(optVariables);
-      ++it;
-    }
+    //map<string,BasisGroupType*>::iterator it(BasisGroups.begin()),it_end(BasisGroups.end());
+    //while(it != it_end) 
+    //{
+    //  (*it).second->Out_->resetParameters(active);
+    //  ++it;
+    //}
   }
 
-  void AnyConstraints::addOptimizables(OptimizableSetType& outVars) 
-  {
-    //createBasis will take care of this. Do not add again
-    map<string,BasisGroupType*>::iterator it(BasisGroups.begin()),it_end(BasisGroups.end());
-    while(it != it_end) 
-    {
-      (*it).second->In_->addOptimizables(outVars);
-      ++it;
-    }
-  }
+  //void AnyConstraints::addOptimizables(OptimizableSetType& outVars) 
+  //{
+  //  //createBasis will take care of this. Do not add again
+  //  map<string,BasisGroupType*>::iterator it(BasisGroups.begin()),it_end(BasisGroups.end());
+  //  while(it != it_end) 
+  //  {
+  //    (*it).second->In_->addOptimizables(outVars);
+  //    ++it;
+  //  }
+  //}
 
   void AnyConstraints::addSingleBasisPerSpecies(xmlNodePtr cur) 
   {
@@ -185,7 +185,9 @@ namespace qmcplusplus
         rAttrib.put(cur);
 
 
-        OptimizableFunctorBase<RealType> *a=0, *da=0;
+        acombo->cutoff_radius=rcut;
+        OptimizableFunctorBase *a=0;
+        OptimizableFunctorBase *da=0;
         if(rfuncName == "cusp")
         {
           //a= new CuspCorrectionFunctor<RealType>(exponent,rcut);
@@ -226,7 +228,7 @@ namespace qmcplusplus
       CuspCorrectionFunctor<RealType> *a  = new CuspCorrectionFunctor<RealType>(2.0,curBG->Rcut);
       app_log() << "  Adding a cusp term: " << curBG->Cusp << "* (-1/b exp(-br)), b=" << a->E << endl;
       string cusp_tag=radID+"_cusp"; //non optimizable
-      acombo->addComponent(a,curBG->Cusp,cusp_tag,false);//this cannot be modified
+      acombo->addComponent(a,curBG->Cusp,cusp_tag,true);//this cannot be modified
     }
 
     //curBG->Deriv_ = aderiv;
@@ -263,7 +265,7 @@ namespace qmcplusplus
       curGroup=(*it).second;
     }
 
-    InFuncType* infunc=curGroup->In_;
+    InFuncType* infunc=curGroup->In_ ;
     OutFuncType* nfunc= new OutFuncType(infunc, curGroup->Rcut, curGroup->NumGridPoints);
     curGroup->Out_ = nfunc;
 

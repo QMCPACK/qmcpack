@@ -341,41 +341,178 @@ template<class T=double>
     }
 };
 
-template<typename T>
-    struct ShortRangePartAdapter : OptimizableFunctorBase<T> {
-      public:
-        typedef LRHandlerBase HandlerType;
-        typedef typename OptimizableFunctorBase<T>::real_type real_type;  
-        typedef typename OptimizableFunctorBase<T>::OptimizableSetType OptimizableSetType;  
+template<class T=double>
+    struct EPRPABreakup {
+  T Rs;
+  T Kf;
+  T Density;
+  T NormFactor;
+  inline EPRPABreakup(){}
 
-        explicit ShortRangePartAdapter(HandlerType* inhandler): Uconst(0) {
-          myHandler = inhandler;
-        }
+  void reset(ParticleSet& ref) {
+    NormFactor=1.0/ref.getTotalNum();
+    Density=ref.getTotalNum()/ref.Lattice.Volume;
+    Rs = std::pow(3.0/(4.0*M_PI*Density), 1.0/3.0);
+        //unpolarized K_f
+    Kf = std::pow(2.25*M_PI, 1.0/3.0)/Rs;
+  }
 
-        OptimizableFunctorBase<T>* makeClone() const 
-        {
-          APP_ABORT("ShortRangePartAdapter<T>::makeClone() failed");
-          //this is ugly
-          return 0;
-        }
+  void reset(ParticleSet& ref, T rs) {
+          //       NormFactor=4.0*M_PI/ref.Lattice.Volume;
+    NormFactor=1.0/ref.getTotalNum();
+        //       NormFactor=4.0*M_PI/ref.getTotalNum();
+    Density=ref.getTotalNum()/ref.Lattice.Volume;
 
-        inline void setRmax(real_type rm) { Uconst=myHandler->evaluate(rm,1.0/rm);}
-        inline real_type evaluate(real_type r) { return f(r); }
-        inline real_type f(real_type r) 
-        { 
-          return myHandler->evaluate(r, 1.0/r)-Uconst; 
-        }
-        inline real_type df(real_type r) 
-        {
-          return myHandler->srDf(r, 1.0/r);
-        }
-        void resetParameters(OptimizableSetType& optVariables) { }
-        bool put(xmlNodePtr cur) {return true;}
-        void addOptimizables(OptimizableSetType& vlist){}
-      private:
-        real_type Uconst;
-        HandlerType* myHandler;
+    Rs = rs;
+          //unpolarized
+    Kf = std::pow(2.25*M_PI, 1.0/3.0)/Rs;
+  }
+
+
+  inline T operator()(T r, T rinv) {
+    return 0.0;
+  }
+
+  inline T df(T r) {
+    return 0.0;
+  }
+
+  inline T Fk(T k, T rc) {
+    return -Xk(k,rc);
+  }
+
+  inline T Xk(T k, T rc) {
+    T y = 0.5*k/Kf;
+    T Sy;
+    if (y >= 1.0) {
+      Sy=1.0;
+    }
+    else {
+      Sy = 1.5*y - 0.5*y*y*y;
     };
+    T val = 12.0/(k*k*k*k*Rs*Rs*Rs);
+    return  -0.5*NormFactor*val*std::pow(1.0/(Sy*Sy)+val,-0.5);
+  }
+
+      /** return RPA value at |k|
+   * @param kk |k|^2
+       */
+  inline T Uk(T kk)
+  {
+    return NormFactor*Rs/kk;
+  }
+
+        /** return d u(k)/d rs
+   *
+   * Implement a correct one
+         */
+  inline T derivUk(T kk)
+  {
+    return 0.0;
+  }
+};
+    template<class T=double>
+        struct derivEPRPABreakup {
+      T Rs;
+      T Kf;
+      T Density;
+      T NormFactor;
+      inline derivEPRPABreakup(){}
+
+      void reset(ParticleSet& ref) {
+        NormFactor=1.0/ref.getTotalNum();
+        Density=ref.getTotalNum()/ref.Lattice.Volume;
+        Rs = std::pow(3.0/(4.0*M_PI*Density), 1.0/3.0);
+    //unpolarized K_f
+        Kf = std::pow(2.25*M_PI, 1.0/3.0)/Rs;
+      }
+
+      void reset(ParticleSet& ref, T rs) {
+    //       NormFactor=4.0*M_PI/ref.Lattice.Volume;
+        NormFactor=1.0/ref.getTotalNum();
+    //       NormFactor=4.0*M_PI/ref.getTotalNum();
+        Density=ref.getTotalNum()/ref.Lattice.Volume;
+
+        Rs = rs;
+      //unpolarized
+        Kf = std::pow(2.25*M_PI, 1.0/3.0)/Rs;
+      }
+
+
+      inline T operator()(T r, T rinv) {
+        return 0.0;
+      }
+
+      inline T df(T r) {
+        return 0.0;
+      }
+
+      inline T Fk(T k, T rc) {
+        return -Xk(k,rc);
+      }
+
+      inline T Xk(T k, T rc) {
+        T y = 0.5*k/Kf;
+        T Sy;
+        if (y >= 1.0) {
+          Sy=1.0;
+        }
+        else {
+          Sy = 1.5*y - 0.5*y*y*y;
+        };
+        T val = 12.0/(k*k*k*k*Rs*Rs*Rs);
+        T uk = val*std::pow(1.0/(Sy*Sy)+val,-0.5);
+        return  -0.5*NormFactor*(uk/Rs)*(1.0-0.5*val/(1.0/(Sy*Sy)+val) );
+      }
+
+        /** return RPA value at |k|
+       * @param kk |k|^2
+         */
+      inline T Uk(T kk)
+      {
+        return NormFactor*Rs/kk;
+      }
+
+/** return d u(k)/d rs
+       *
+       * Implement a correct one
+ */
+      inline T derivUk(T kk)
+      {
+        return 0.0;
+      }
+ };
+
+template<typename T>
+struct ShortRangePartAdapter : OptimizableFunctorBase {
+  typedef LRHandlerBase HandlerType;
+
+  explicit ShortRangePartAdapter(HandlerType* inhandler): Uconst(0), myHandler(inhandler) 
+  { }
+
+  OptimizableFunctorBase* makeClone() const 
+  {
+    return new ShortRangePartAdapter<T>(*this);
+  }
+
+  inline void reset() {}
+  inline void setRmax(real_type rm) { Uconst=myHandler->evaluate(rm,1.0/rm);}
+  inline real_type evaluate(real_type r) { return f(r); }
+  inline real_type f(real_type r) 
+  { 
+    return myHandler->evaluate(r, 1.0/r)-Uconst; 
+  }
+  inline real_type df(real_type r) 
+  {
+    return myHandler->srDf(r, 1.0/r);
+  }
+  void checkInVariables(opt_variables_type& active) { }
+  void checkOutVariables(const opt_variables_type& active) { }
+  void resetParameters(const opt_variables_type& optVariables) { }
+  bool put(xmlNodePtr cur) {return true;}
+  real_type Uconst;
+  HandlerType* myHandler;
+};
 
 
 }

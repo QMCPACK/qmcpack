@@ -316,9 +316,21 @@ namespace qmcplusplus {
     GeminalBasis->resetTargetParticleSet(P);
   }
 
+  void ThreeBodyBlockSparse::checkInVariables(opt_variables_type& active)
+  {
+    active.insertFrom(myVars);
+  }
+
+  void ThreeBodyBlockSparse::checkOutVariables(const opt_variables_type& active)
+  {
+    myVars.getIndex(active);
+    Optimizable=myVars.is_optimizable();
+  }
+
   ///reset the value of all the Two-Body Jastrow functions
-  void ThreeBodyBlockSparse::resetParameters(OptimizableSetType& optVariables) {
-    char coeffname[16];
+  void ThreeBodyBlockSparse::resetParameters(const opt_variables_type& active) 
+  {
+    int ii=0;
     for(int b=0; b<Blocks.size(); b++)
     {
       Matrix<RealType>& m(*LambdaBlocks[b]);
@@ -328,24 +340,48 @@ namespace qmcplusplus {
       {
         for(int kp=k,jb=ib; kp<lastK; kp++,jb++)
         {
-          sprintf(coeffname,"%s_%d_%d",ID_Lambda.c_str(),k+IndexOffSet,kp+IndexOffSet);
-          OptimizableSetType::iterator it(optVariables.find(coeffname));
-          if(it != optVariables.end()) 
+          if(FreeLambda(k,kp))
           {
-            m(ib,jb)=Lambda(k,kp)=(*it).second;
-            if(k!=kp) m(jb,ib)=Lambda(kp,k)=(*it).second;
+            int loc=myVars.where(ii++);
+            if(loc>=0)
+            {
+              m(ib,jb)=Lambda(k,kp)=active[loc];
+              if(k!=kp) m(jb,ib)=Lambda(kp,k)=active[loc];
+            }
           }
         }
       }
     }
+    //char coeffname[16];
+    //for(int b=0; b<Blocks.size(); b++)
+    //{
+    //  Matrix<RealType>& m(*LambdaBlocks[b]);
+    //  int firstK=BlockOffset[b];
+    //  int lastK=BlockOffset[b+1];
+    //  for(int k=firstK,ib=0; k<lastK; k++,ib++)
+    //  {
+    //    for(int kp=k,jb=ib; kp<lastK; kp++,jb++)
+    //    {
+    //      sprintf(coeffname,"%s_%d_%d",ID_Lambda.c_str(),k+IndexOffSet,kp+IndexOffSet);
+    //      OptimizableSetType::iterator it(optVariables.find(coeffname));
+    //      if(it != optVariables.end()) 
+    //      {
+    //        m(ib,jb)=Lambda(k,kp)=(*it).second;
+    //        if(k!=kp) m(jb,ib)=Lambda(kp,k)=(*it).second;
+    //      }
+    //    }
+    //  }
+    //}
 
     if(SameBlocksForGroup) checkLambda();
-
-    GeminalBasis->resetParameters(optVariables);
+    GeminalBasis->resetParameters(active);
   }
 
+  void ThreeBodyBlockSparse::reportStatus(ostream& os)
+  {
+  }
 
-  bool ThreeBodyBlockSparse::put(xmlNodePtr cur, OptimizableSetType& varlist) 
+  bool ThreeBodyBlockSparse::put(xmlNodePtr cur)
   {
 
     //BasisSize = GeminalBasis->TotalBasis;
@@ -357,12 +393,15 @@ namespace qmcplusplus {
 
     Lambda.resize(BasisSize,BasisSize);
 
+    FreeLambda.resize(BasisSize,BasisSize);
+    FreeLambda=false;
+
     //identity is the default
     for(int ib=0; ib<BasisSize; ib++) Lambda(ib,ib)=1.0;
 
     if(cur == NULL) 
     { 
-      addOptimizables(varlist);
+      FreeLambda=true;
     }
     else 
     {//read from an input nodes
@@ -385,17 +424,18 @@ namespace qmcplusplus {
       if(datatype.find("rray")<datatype.size())
       {
         putContent(Lambda,cur);
-        addOptimizables(varlist);
-        //symmetrize it
-        for(int ib=0; ib<BasisSize; ib++) {
-          sprintf(coeffname,"%s_%d_%d",aname.c_str(),ib+IndexOffSet,ib+IndexOffSet);
-          varlist[coeffname]=Lambda(ib,ib);
-          for(int jb=ib+1; jb<BasisSize; jb++) {
-            sprintf(coeffname,"%s_%d_%d",aname.c_str(),ib+IndexOffSet,jb+IndexOffSet);
-            Lambda(jb,ib) = Lambda(ib,jb);
-            varlist[coeffname]=Lambda(ib,jb);
-          }
-        }
+        FreeLambda=true;
+        //addOptimizables(varlist);
+        ////symmetrize it
+        //for(int ib=0; ib<BasisSize; ib++) {
+        //  sprintf(coeffname,"%s_%d_%d",aname.c_str(),ib+IndexOffSet,ib+IndexOffSet);
+        //  varlist[coeffname]=Lambda(ib,ib);
+        //  for(int jb=ib+1; jb<BasisSize; jb++) {
+        //    sprintf(coeffname,"%s_%d_%d",aname.c_str(),ib+IndexOffSet,jb+IndexOffSet);
+        //    Lambda(jb,ib) = Lambda(ib,jb);
+        //    varlist[coeffname]=Lambda(ib,jb);
+        //  }
+        //}
       }
       else 
       {
@@ -408,9 +448,10 @@ namespace qmcplusplus {
             int j=jIn-IndexOffSet;
             double c=atof((const char*)(xmlGetProp(tcur,(const xmlChar*)"c")));
             Lambda(i,j)=c;
+            FreeLambda(i,j)=true;
             if(i != j) Lambda(j,i)=c;
-            sprintf(coeffname,"%s_%d_%d",aname.c_str(),iIn,jIn);
-            varlist[coeffname]=c;
+            //sprintf(coeffname,"%s_%d_%d",aname.c_str(),iIn,jIn);
+            //varlist[coeffname]=c;
           }
           tcur=tcur->next;
         }
@@ -495,19 +536,19 @@ namespace qmcplusplus {
     }
   }
 
-  void ThreeBodyBlockSparse::addOptimizables(OptimizableSetType& varlist) 
-  {
-    char coeffname[16];
-    for(int ib=0; ib<BasisSize; ib++) {
-      sprintf(coeffname,"%s_%d_%d",ID_Lambda.c_str(),ib+IndexOffSet,ib+IndexOffSet);
-      varlist[coeffname]=Lambda(ib,ib);
-      for(int jb=ib+1; jb<BasisSize; jb++) {
-        sprintf(coeffname,"%s_%d_%d",ID_Lambda.c_str(),ib+IndexOffSet,jb+IndexOffSet);
-        Lambda(jb,ib) = Lambda(ib,jb);
-        varlist[coeffname]=Lambda(ib,jb);
-      }
-    }
-  }
+  //void ThreeBodyBlockSparse::addOptimizables(OptimizableSetType& varlist) 
+  //{
+  //  char coeffname[16];
+  //  for(int ib=0; ib<BasisSize; ib++) {
+  //    sprintf(coeffname,"%s_%d_%d",ID_Lambda.c_str(),ib+IndexOffSet,ib+IndexOffSet);
+  //    varlist[coeffname]=Lambda(ib,ib);
+  //    for(int jb=ib+1; jb<BasisSize; jb++) {
+  //      sprintf(coeffname,"%s_%d_%d",ID_Lambda.c_str(),ib+IndexOffSet,jb+IndexOffSet);
+  //      Lambda(jb,ib) = Lambda(ib,jb);
+  //      varlist[coeffname]=Lambda(ib,jb);
+  //    }
+  //  }
+  //}
 }
 /***************************************************************************
  * $RCSfile$   $Author: jnkim $

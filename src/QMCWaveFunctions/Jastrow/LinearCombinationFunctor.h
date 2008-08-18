@@ -27,59 +27,52 @@
  * OptimizableFunctorBase<T>. 
  */
 template<class T>
-struct LinearCombinationFunctor: public OptimizableFunctorBase<T> 
+struct LinearCombinationFunctor: public OptimizableFunctorBase
 {
 
-  typedef OptimizableFunctorBase<T> ComponentType;
-  typedef typename NumericTraits<T>::real_type real_type;
-  typedef typename NumericTraits<T>::value_type value_type;
-  typedef typename ComponentType::OptimizableSetType OptimizableSetType;
+  typedef OptimizableFunctorBase ComponentType;
 
   ///number of ComponentType*
   int NumComponents;
-  ///fixed C
-  std::vector<bool> Active;
+  ///list of bool
+  std::vector<bool> CanNotChange;
   ///list of linear coefficients
   std::vector<real_type> C;
   ///list of component functors
   std::vector<ComponentType*> Phi;
-  ///list of C names
-  std::vector<std::string> ID;
 
   LinearCombinationFunctor(): NumComponents(0)
   { 
-    Active.reserve(8);
+    CanNotChange.reserve(8);
     C.reserve(8);
     Phi.reserve(8);
-    ID.reserve(8);
   }
 
-  LinearCombinationFunctor(const LinearCombinationFunctor<T>& old):
-    NumComponents(old.NumComponents), Active(old.Active),C(old.C),ID(old.ID)
+  OptimizableFunctorBase* makeClone() const 
   {
-    Phi.resize(old.size(),0);
-    for(int i=0; i<old.size(); ++i)
-    {
-      Phi[i]=old.Phi[i]->makeClone();
-    }
-  }
-
-  OptimizableFunctorBase<T>* makeClone() const 
-  {
-    return new LinearCombinationFunctor<T>(*this);
+    LinearCombinationFunctor<T>* myclone=new LinearCombinationFunctor<T>(*this);
+    for(int i=0; i<NumComponents; ++i) myclone->Phi[i]=Phi[i]->makeClone();
+    return myclone;
   }
 
   int size() const { return NumComponents;}
 
-  void addComponent(ComponentType* func, real_type c,  const std::string& id, 
-      bool canchange=true) 
+  void addComponent(ComponentType* func, real_type c,  std::string& id, bool fixit=false)
   {
-    Active.push_back(canchange);
+    CanNotChange.push_back(fixit);
     C.push_back(c);
     Phi.push_back(func);
-    ID.push_back(id);
+    int loc=myVars.size();
+    myVars.insert(id,c);
+    if(fixit) myVars.Index[loc]=-1;//freeze this
     NumComponents++;
   }
+
+  inline void reset()
+  {
+    for(int i=0; i<NumComponents; ++i) Phi[i]->reset();
+  }
+
 
   inline real_type f(real_type r) {
     real_type res=0;
@@ -98,13 +91,20 @@ struct LinearCombinationFunctor: public OptimizableFunctorBase<T>
     return true;
   }
 
-  void addOptimizables(OptimizableSetType& vlist) 
+
+  //disable optimization of exponents
+  void checkInVariables(opt_variables_type& active)
   {
-    for(int i=0; i<NumComponents; ++i) 
-    { 
-      if(Active[i]) int loc=vlist.addVariable(ID[i],C[i]);
-    }
+    active.insertFrom(myVars);
+    //for(int i=0; i<NumComponents; i++) Phi[i]->checkInVariables(active);
   }
+
+  void checkOutVariables(const opt_variables_type& active)
+  {
+    myVars.getIndex(active);
+    //for(int i=0; i<NumComponents; i++) Phi[i]->checkOutVariables(active);
+  }
+
 
   /** reset the coefficients
    * @param optVariables modified variables
@@ -112,18 +112,17 @@ struct LinearCombinationFunctor: public OptimizableFunctorBase<T>
    * - update C[i] if optVariables contains the ID[i]
    * - call resetParameters of the component functors
    */
-  void resetParameters(OptimizableSetType& optVariables) 
+  void resetParameters(const opt_variables_type& active) 
   {
-    for(int i=0; i<NumComponents; i++) 
+    for(int i=0; i<NumComponents; ++i) 
     {
-      typename OptimizableSetType::iterator it(optVariables.find(ID[i]));
-      if(it != optVariables.end())
-      {
-        C[i]=(*it).second;
-      }
+      if(CanNotChange[i]) continue;
+      int loc=myVars.where(i);
+      if(loc>=0) C[i]=myVars[i]=active[loc];
     }
-    for(int i=0; i<NumComponents; i++) 
-      Phi[i]->resetParameters(optVariables);
+
+
+    //for(int i=0; i<NumComponents; i++) Phi[i]->resetParameters(active);
   }
 
 };

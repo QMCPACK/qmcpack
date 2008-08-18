@@ -7,7 +7,6 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
@@ -18,6 +17,7 @@
 #define QMCPLUSPLUS_MODIFIED_PADEFUNCTION_H
 
 #include "Numerics/OptimizableFunctorBase.h"
+#include "OhmmsData/AttributeSet.h"
 
 namespace qmcplusplus {
   /** ModPade Jastrow functional
@@ -25,11 +25,8 @@ namespace qmcplusplus {
    * \f[ u(r) = \frac{1}{2*A}\left[1-\exp(-A*r)\right], \f]
    */
   template<class T>
-    struct ModPadeFunctor: public OptimizableFunctorBase<T> 
+    struct ModPadeFunctor: public OptimizableFunctorBase
     {
-
-      typedef typename OptimizableFunctorBase<T>::real_type real_type;
-      typedef typename OptimizableFunctorBase<T>::OptimizableSetType OptimizableSetType;
 
       ///coefficients
       real_type A;
@@ -45,12 +42,12 @@ namespace qmcplusplus {
        * @param a A coefficient
        * @param samespin boolean to indicate if this function is for parallel spins
        */
-      ModPadeFunctor(real_type a=-0.5, real_type b=1): Zeff(1.0) 
+      ModPadeFunctor(real_type a=-0.5, real_type b=1): A(a),B(b),Zeff(1.0) 
       {
-        reset(a,b);
+        reset();
       }
 
-      OptimizableFunctorBase<T>* makeClone() const 
+      OptimizableFunctorBase* makeClone() const 
       {
         return new ModPadeFunctor<T>(*this);
       }
@@ -58,9 +55,7 @@ namespace qmcplusplus {
       /** reset the internal variables.
        *@param a New Jastrow parameter a 
        */
-      inline void reset(real_type a, real_type b) {
-        A = a;
-        B = b;
+      inline void reset() {
         Coeff=A/B;
         mAB = -A*B;
       }
@@ -100,52 +95,52 @@ namespace qmcplusplus {
       /** Read in the parameter from the xml input file.
        * @param cur current xmlNode from which the data members are reset
        */
-      bool put(xmlNodePtr cur){
+      bool put(xmlNodePtr cur)
+      {
         Zeff=1.0;
         //jastrow[iab]->put(cur->xmlChildrenNode,wfs_ref.RealVars);
-        xmlNodePtr tcur = cur->xmlChildrenNode;
-        while(tcur != NULL) {
+        cur = cur->xmlChildrenNode;
+        while(cur != NULL) {
           //@todo Var -> <param(eter) role="opt"/>
-          string cname((const char*)(tcur->name));
+          string cname((const char*)(cur->name));
           if(cname == "parameter" || cname == "Var") {
-            string aname((const char*)(xmlGetProp(tcur,(const xmlChar *)"name")));
-            string idname((const char*)(xmlGetProp(tcur,(const xmlChar *)"id")));
+            string aname("B"),idname("0");
+            OhmmsAttributeSet p;
+            p.add(aname,"name");
+            p.add(idname,"id");
+            p.put(cur);
             if(aname == "A") {
-              putContent(A,tcur);
+              putContent(A,cur);
             } else if(aname == "B") {
               ID_B = idname;
-              putContent(B,tcur);
+              putContent(B,cur);
             } else if(aname == "Z") {
-              putContent(Zeff,tcur);
+              putContent(Zeff,cur);
             }
           }
-          tcur = tcur->next;
+          cur = cur->next;
         }
-        reset(A,B);
+        reset();
+        myVars.insert(ID_B,B);
         return true;
       }
 
-      /** add A as an optimizable variable
-       * @param vlist VarRegistry<T1> to which the variable A will be added for optimization
-       */
-      void addOptimizables(OptimizableSetType& vlist) 
+      void checkInVariables(opt_variables_type& active)
       {
-        vlist[ID_B]=B;
+        active.insertFrom(myVars);
       }
 
-      /** reset the internal variables.
-       *
-       * USE_resetParameters
-       */
-      inline void resetParameters(OptimizableSetType& optVariables) 
+      void checkOutVariables(const opt_variables_type& active)
       {
-        typename OptimizableSetType::iterator it(optVariables.find(ID_B));
-        if(it != optVariables.end())
-        {
-          B=(*it).second;
-          Coeff=A/B;
-          mAB = -A*B;
-        }
+        myVars.getIndex(active);
+      }
+      
+      inline void resetParameters(const opt_variables_type& active) 
+      {
+        int loc=myVars.where(0);
+        if(loc>-1) B=active[myVars[loc]];
+        Coeff=A/B;
+        mAB = -A*B;
       }
 
     };

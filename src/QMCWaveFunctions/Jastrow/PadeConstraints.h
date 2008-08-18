@@ -34,8 +34,7 @@ namespace qmcplusplus {
 
     PadeConstraints(ParticleSet& p, TrialWaveFunction& psi, bool nospin=true);
 
-    void addOptimizables(OptimizableSetType& outVars);
-    void resetParameters(OptimizableSetType& optVariables);
+    void resetParameters(const opt_variables_type& active);
 
     OrbitalBase* createTwoBody();
     OrbitalBase* createOneBody(ParticleSet& source);
@@ -56,8 +55,7 @@ namespace qmcplusplus {
 
     ~ScaledPadeConstraints();
 
-    void addOptimizables(OptimizableSetType& outVars);
-    void resetParameters(OptimizableSetType& optVariables); 
+    void resetParameters(const opt_variables_type& active);
 
     OrbitalBase* createTwoBody();
     OrbitalBase* createOneBody(ParticleSet& source);

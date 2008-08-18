@@ -19,7 +19,7 @@
 #include "QMCWaveFunctions/Jastrow/JABBuilder.h"
 #include "QMCWaveFunctions/Jastrow/BsplineJastrowBuilder.h"
 #include "QMCWaveFunctions/Jastrow/PadeFunctors.h"
-#include "QMCWaveFunctions/Jastrow/NoCuspFunctor.h"
+#include "QMCWaveFunctions/Jastrow/GaussianFunctor.h"
 #include "QMCWaveFunctions/Jastrow/ModPadeFunctor.h"
 #include "QMCWaveFunctions/Jastrow/BsplineFunctor.h"
 #include "QMCWaveFunctions/Jastrow/OneBodyJastrowOrbital.h"
@@ -29,7 +29,6 @@ namespace qmcplusplus {
   template<class FN>
   bool JABBuilder::createJAB(xmlNodePtr cur, const string& jname) {
 
-    int cur_var = targetPsi.VarList.size();
     string corr_tag("correlation");
 
     vector<FN*> jastrow;
@@ -63,7 +62,6 @@ namespace qmcplusplus {
 	if(!(jastrow[ia])) {
 	  jastrow[ia]= new FN;
 	  jastrow[ia]->put(cur);
-          jastrow[ia]->addOptimizables(targetPsi.VarList);
 	  LOGMSG("  Added Jastrow Correlation between " << speciesA)
 	}
       }
@@ -81,11 +79,6 @@ namespace qmcplusplus {
       J1->addFunc(ig,jastrow[ig]);
     }
 
-    //set this jastrow function to be not optimizable
-    if(targetPsi.VarList.size() == cur_var) {
-      J1->setOptimizable(false);
-    }
-
     string j1name="J1_"+jname;
     targetPsi.addOrbital(J1,j1name);
     XMLReport("Added a One-Body Jastrow Function")
@@ -101,11 +94,7 @@ namespace qmcplusplus {
 
     bool success=false;
     app_log() << "  One-Body Jastrow Function = " << jastfunction << endl;
-    if(jastfunction == "nocusp") 
-    {
-      success = createJAB<NoCuspFunctor<RealType> >(cur,jastfunction);
-    } 
-    else if(jastfunction == "pade") 
+    if(jastfunction == "pade") 
     {
       success = createJAB<PadeFunctor<RealType> >(cur,jastfunction);
     } 
@@ -116,6 +105,14 @@ namespace qmcplusplus {
     else if(jastfunction == "short") 
     {
       success = createJAB<ModPadeFunctor<RealType> >(cur,jastfunction);
+    }
+    else if(jastfunction == "Gaussian") 
+    {
+      success = createJAB<GaussianFunctor<RealType> >(cur,jastfunction);
+    }
+    else if(jastfunction == "shiftedGaussian") 
+    {
+      success = createJAB<TruncatedShiftedGaussianFunctor<RealType> >(cur,jastfunction);
     }
     else if (jastfunction == "Bspline") 
     {

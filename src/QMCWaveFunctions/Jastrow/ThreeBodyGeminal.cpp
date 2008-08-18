@@ -44,24 +44,42 @@ namespace qmcplusplus {
     GeminalBasis->resetTargetParticleSet(P);
   }
 
-  ///reset the value of all the Two-Body Jastrow functions
-  void ThreeBodyGeminal::resetParameters(OptimizableSetType& optVariables) 
+  void ThreeBodyGeminal::checkInVariables(opt_variables_type& active) 
   {
-    char coeffname[16];
-    for(int ib=0; ib<BasisSize; ib++) {
-      sprintf(coeffname,"%s_%d_%d",ID_Lambda.c_str(),ib+IndexOffSet,ib+IndexOffSet);
-      OptimizableSetType::iterator it(optVariables.find(coeffname));
-      if(it != optVariables.end()) Lambda(ib,ib)=(*it).second;
+    active.insertFrom(myVars);
+  }
 
+  void ThreeBodyGeminal::checkOutVariables(const opt_variables_type& active)
+  {
+    myVars.getIndex(active);
+    Optimizable=myVars.is_optimizable();
+  }
+
+  ///reset the value of all the Two-Body Jastrow functions
+  void ThreeBodyGeminal::resetParameters(const opt_variables_type& active) 
+  {
+    int ii=0; //counter for (i,j) pairs for i<j<BasisSize 
+    int aii=0;//counter for the variables that are meant to be optimized
+    for(int ib=0; ib<BasisSize; ib++) {
+      if(FreeLambda(ii++))
+      {
+        int loc=myVars.where(aii++);
+        if(loc>=0) Lambda(ib,ib)=active[loc];
+      }
       for(int jb=ib+1; jb<BasisSize; jb++) 
       {
-        sprintf(coeffname,"%s_%d_%d",ID_Lambda.c_str(),ib+IndexOffSet,jb+IndexOffSet);
-        it=optVariables.find(coeffname);
-        if(it != optVariables.end()) 
-          Lambda(jb,ib) = Lambda(ib,jb) = (*it).second;
+        if(FreeLambda(ii++))
+        {
+          int loc=myVars.where(aii++);
+          if(loc>=0) Lambda(jb,ib)=Lambda(ib,jb)=active[loc];
+        }
       }
     }
-    GeminalBasis->resetParameters(optVariables);
+    GeminalBasis->resetParameters(active);
+  }
+
+  void ThreeBodyGeminal::reportStatus(ostream& os)
+  {
   }
 
   OrbitalBase::ValueType 
@@ -335,7 +353,7 @@ namespace qmcplusplus {
     return LogValue;
   }
     
-  bool ThreeBodyGeminal::put(xmlNodePtr cur, OptimizableSetType& varlist) 
+  bool ThreeBodyGeminal::put(xmlNodePtr cur) 
   {
 
     //BasisSize = GeminalBasis->TotalBasis;
@@ -346,16 +364,21 @@ namespace qmcplusplus {
     app_log() << "  The number of particles " << NumPtcls << endl;
 
     Lambda.resize(BasisSize,BasisSize);
+
+    //disable lambda's so that element-by-element input can be handled
+    FreeLambda.resize(BasisSize*(BasisSize+1)/2);
+    FreeLambda=false;
+
     //identity is the default
+    Lambda=0.0;
     for(int ib=0; ib<BasisSize; ib++) Lambda(ib,ib)=1.0;
 
     if(cur == NULL) 
     { 
-      addOptimizables(varlist);
+      FreeLambda=true;
     }
     else 
     {//read from an input nodes
-      char coeffname[16];
       string aname("j3g");
       string datatype("no");
       IndexOffSet=1;
@@ -371,17 +394,18 @@ namespace qmcplusplus {
       if(datatype.find("rray")<datatype.size())
       {
         putContent(Lambda,cur);
-        addOptimizables(varlist);
+        FreeLambda=true;
+        //addOptimizables(varlist);
         //symmetrize it
-        for(int ib=0; ib<BasisSize; ib++) {
-          sprintf(coeffname,"%s_%d_%d",aname.c_str(),ib+IndexOffSet,ib+IndexOffSet);
-          varlist[coeffname]=Lambda(ib,ib);
-          for(int jb=ib+1; jb<BasisSize; jb++) {
-            sprintf(coeffname,"%s_%d_%d",aname.c_str(),ib+IndexOffSet,jb+IndexOffSet);
-            Lambda(jb,ib) = Lambda(ib,jb);
-            varlist[coeffname]=Lambda(ib,jb);
-          }
-        }
+        //for(int ib=0; ib<BasisSize; ib++) {
+        //  sprintf(coeffname,"%s_%d_%d",aname.c_str(),ib+IndexOffSet,ib+IndexOffSet);
+        //  varlist[coeffname]=Lambda(ib,ib);
+        //  for(int jb=ib+1; jb<BasisSize; jb++) {
+        //    sprintf(coeffname,"%s_%d_%d",aname.c_str(),ib+IndexOffSet,jb+IndexOffSet);
+        //    Lambda(jb,ib) = Lambda(ib,jb);
+        //    varlist[coeffname]=Lambda(ib,jb);
+        //  }
+        //}
       }
       else 
       {
@@ -394,11 +418,32 @@ namespace qmcplusplus {
             int j=jIn-IndexOffSet;
             double c=atof((const char*)(xmlGetProp(tcur,(const xmlChar*)"c")));
             Lambda(i,j)=c;
+            FreeLambda(i*BasisSize+j)=true;
             if(i != j) Lambda(j,i)=c;
-            sprintf(coeffname,"%s_%d_%d",aname.c_str(),iIn,jIn);
-            varlist[coeffname]=c;
+            //sprintf(coeffname,"%s_%d_%d",aname.c_str(),iIn,jIn);
+            //varlist[coeffname]=c;
           }
           tcur=tcur->next;
+        }
+      }
+    }
+
+    //myVars are set
+    myVars.clear();
+    char coeffname[16];
+    int ii=0;
+    for(int ib=0; ib<BasisSize; ib++) {
+      if(FreeLambda(ii++))
+      {
+        sprintf(coeffname,"%s_%d_%d",ID_Lambda.c_str(),ib,ib);
+        myVars.insert(coeffname,Lambda(ib,ib));
+      }
+      for(int jb=ib+1; jb<BasisSize; jb++) 
+      {
+        if(FreeLambda(ii++))
+        {
+          sprintf(coeffname,"%s_%d_%d",ID_Lambda.c_str(),ib,jb);
+          myVars.insert(coeffname,Lambda(ib,jb));
         }
       }
     }
@@ -430,19 +475,19 @@ namespace qmcplusplus {
     return true;
   }
 
-  void ThreeBodyGeminal::addOptimizables(OptimizableSetType& varlist) 
-  {
-    char coeffname[16];
-    for(int ib=0; ib<BasisSize; ib++) {
-      sprintf(coeffname,"%s_%d_%d",ID_Lambda.c_str(),ib+IndexOffSet,ib+IndexOffSet);
-      varlist[coeffname]=Lambda(ib,ib);
-      for(int jb=ib+1; jb<BasisSize; jb++) {
-        sprintf(coeffname,"%s_%d_%d",ID_Lambda.c_str(),ib+IndexOffSet,jb+IndexOffSet);
-        Lambda(jb,ib) = Lambda(ib,jb);
-        varlist[coeffname]=Lambda(ib,jb);
-      }
-    }
-  }
+  //void ThreeBodyGeminal::addOptimizables(OptimizableSetType& varlist) 
+  //{
+  //  char coeffname[16];
+  //  for(int ib=0; ib<BasisSize; ib++) {
+  //    sprintf(coeffname,"%s_%d_%d",ID_Lambda.c_str(),ib+IndexOffSet,ib+IndexOffSet);
+  //    varlist[coeffname]=Lambda(ib,ib);
+  //    for(int jb=ib+1; jb<BasisSize; jb++) {
+  //      sprintf(coeffname,"%s_%d_%d",ID_Lambda.c_str(),ib+IndexOffSet,jb+IndexOffSet);
+  //      Lambda(jb,ib) = Lambda(ib,jb);
+  //      varlist[coeffname]=Lambda(ib,jb);
+  //    }
+  //  }
+  //}
 }
 /***************************************************************************
  * $RCSfile$   $Author$

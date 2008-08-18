@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////
-// (c) Copyright 2003  by Jeongnim Kim
+// (c) Copyright 2003-  by Jeongnim Kim
 //////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////
 //   National Center for Supercomputing Applications &
@@ -7,7 +7,6 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
@@ -59,11 +58,6 @@ namespace qmcplusplus {
       init(p);
     }
 
-    /////constructor
-    //TwoBodyJastrowOrbital(ParticleSet& p, DistanceTableData* dtable): d_table(dtable) { 
-    //  init(p);
-    //}
-
     ~TwoBodyJastrowOrbital(){ }
 
     void init(ParticleSet& p) {
@@ -114,17 +108,63 @@ namespace qmcplusplus {
       d_table = DistanceTable::add(P);
     }
 
-    ///reset the value of all the unique Two-Body Jastrow functions
-    void resetParameters(OptimizableSetType& optVariables) 
-    { 
+    /** check in an optimizable parameter
+     * @param o a super set of optimizable variables
+     */
+    void checkInVariables(opt_variables_type& active)
+    {
+      myVars.clear();
       typename std::map<std::string,FT*>::iterator it(J2Unique.begin()),it_end(J2Unique.end());
-      while(it != it_end) {
-        (*it).second->resetParameters(optVariables); 
+      while(it != it_end) 
+      {
+        (*it).second->checkInVariables(active);
+        (*it).second->checkInVariables(myVars);
         ++it;
       }
-
-      //if(dPsi) dPsi->resetParameters(optVariables);
     }
+
+    /** check out optimizable variables
+     */
+    void checkOutVariables(const opt_variables_type& active)
+    {
+      myVars.getIndex(active);
+      Optimizable=myVars.is_optimizable();
+      typename std::map<std::string,FT*>::iterator it(J2Unique.begin()),it_end(J2Unique.end());
+      while(it != it_end) 
+      {
+        (*it++).second->checkOutVariables(active);
+      }
+      //if(dPsi) dPsi->checkOutVariables(active);
+    }
+
+    ///reset the value of all the unique Two-Body Jastrow functions
+    void resetParameters(const opt_variables_type& active)
+    { 
+      if(!Optimizable) return;
+      typename std::map<std::string,FT*>::iterator it(J2Unique.begin()),it_end(J2Unique.end());
+      while(it != it_end) 
+      {
+        (*it++).second->resetParameters(active); 
+      }
+      //if(dPsi) dPsi->resetParameters(optVariables);
+      for(int i=0; i<myVars.size(); ++i)
+      {
+        int ii=myVars.Index[i];
+        if(ii>=0) myVars[i]= active[ii];
+      }
+    }
+
+    /** print the state, e.g., optimizables */
+    void reportStatus(ostream& os)
+    {
+      typename std::map<std::string,FT*>::iterator it(J2Unique.begin()),it_end(J2Unique.end());
+      while(it != it_end) 
+      {
+        (*it).second->myVars.print(os);
+        ++it;
+      }
+    }
+
 
     /** 
      *@param P input configuration containing N particles
@@ -430,7 +470,7 @@ namespace qmcplusplus {
     {
       TwoBodyJastrowOrbital<FT>* j2copy=new TwoBodyJastrowOrbital<FT>(tqp);
       map<const FT*,FT*> fcmap;
-      for(int ig=0; ig<NumGroups-1; ++ig)
+      for(int ig=0; ig<NumGroups; ++ig)
         for(int jg=ig; jg<NumGroups; ++jg)
         {
           int ij=ig*NumGroups+jg;

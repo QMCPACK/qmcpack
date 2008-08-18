@@ -21,8 +21,8 @@
  * Optimization should use rpa_k0, ...rpa_kn as the names of the
  * optimizable parameters.
  */
-#ifndef QMCPLUSPLUS_LR_RPAJASTROW_H
-#define QMCPLUSPLUS_LR_RPAJASTROW_H
+#ifndef QMCPLUSPLUS_LR_KSPACEJASTROW_H
+#define QMCPLUSPLUS_LR_KSPACEJASTROW_H
 
 #include "QMCWaveFunctions/OrbitalBase.h"
 #include "Optimize/VarList.h"
@@ -32,6 +32,24 @@
 #include "LongRange/LRHandlerBase.h"
 
 namespace qmcplusplus {
+  
+    /** Functor which return \f$frac{Rs}{k^2 (k^2+(1/Rs)^2)}\f$
+     */
+  template<typename T>
+      struct RPA0
+  {
+    T Rs;
+    T OneOverRsSq;
+    RPA0(T rs=1):Rs(rs){OneOverRsSq=1.0/(Rs*Rs);}
+    inline T operator()(T kk) 
+    {
+      T k2=std::sqrt(kk);
+      return Rs/(k2*(k2+OneOverRsSq));
+        //return (-0.5+0.5*std::pow(1.0+12.0*OneOverRs3/kk/kk,0.5));
+    }
+  };
+  
+  
   template<typename T>
   class kSpaceCoef
   {
@@ -48,7 +66,7 @@ namespace qmcplusplus {
   };
 
   class kSpaceJastrow: public OrbitalBase {
-  public:   
+  public:
     typedef enum { CRYSTAL, ISOTROPIC, NOSYMM } SymmetryType;
   private:
     typedef std::complex<RealType> ComplexType;
@@ -91,7 +109,7 @@ namespace qmcplusplus {
     Matrix<ComplexType> Delta_e2iGr;
 
     // Map of the optimizable variables:
-    std::map<std::string,RealType*> VarMap;
+    //std::map<std::string,RealType*> VarMap;
 
     //////////////////////
     // Member functions //
@@ -127,11 +145,11 @@ namespace qmcplusplus {
     void setCoefficients (std::vector<RealType> &oneBodyCoefs,
 			  std::vector<RealType> &twoBodyCoefs);
 
-    // Optimization-related
-    void addOptimizables(OptimizableSetType& vlist);
-
-    void resetParameters(OptimizableSetType& optVariables);
-
+    //implement virtual functions for optimizations
+    void checkInVariables(opt_variables_type& active);
+    void checkOutVariables(const opt_variables_type& active);
+    void resetParameters(const opt_variables_type& active);
+    void reportStatus(ostream& os);
     //evaluate the distance table with els
     void resetTargetParticleSet(ParticleSet& P);
 
@@ -183,9 +201,9 @@ namespace qmcplusplus {
     // crystal symmetry
     bool operator()(PosType G1, PosType G2);
     OrbitalBasePtr makeClone(ParticleSet& tqp) const;
-    void copyFrom(const OrbitalBase& old);
 
   private:
+    void copyFrom(const kSpaceJastrow& old);
     kSpaceJastrow(const ParticleSet& ions, ParticleSet& els);
   };
 }

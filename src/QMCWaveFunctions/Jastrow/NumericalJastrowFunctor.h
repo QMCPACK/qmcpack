@@ -55,12 +55,9 @@ namespace qmcplusplus {
    * - TwoBodyJastrow<NumericalJastrow>
    */
   template <class RT>
-    struct NumericalJastrow: public OptimizableFunctorBase<RT> {
+    struct NumericalJastrow: public OptimizableFunctorBase {
 
-      ///typedef of the source functor
-      typedef OptimizableFunctorBase<RT> FNIN;
-      ///typedef for the argument
-      typedef typename FNIN::real_type real_type;
+      typedef OptimizableFunctorBase FNIN;
       ///typedef of the target functor
       typedef OneDimCubicSpline<real_type,real_type>  FNOUT;
 
@@ -122,11 +119,6 @@ namespace qmcplusplus {
       bool put(xmlNodePtr cur)
       {
         return InFunc->put(cur);
-      }
-
-      void addOptimizables(VarRegistry<real_type>& vlist) 
-      {
-        InFunc->addOptimizables(vlist);
       }
 
       void print(ostream& os) {

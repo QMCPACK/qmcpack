@@ -26,10 +26,7 @@ namespace qmcplusplus {
    * Short-range functor introduced by Wagner and Mitas, cond-mat/0610088
    */
   template<class T>
-    struct WMFunctor: public OptimizableFunctorBase<T> {
-      ///typedef of real values
-      typedef typename OptimizableFunctorBase<T>::real_type real_type;
-      typedef typename OptimizableFunctorBase<T>::OptimizableSetType OptimizableSetType;
+    struct WMFunctor: public OptimizableFunctorBase {
       ///input B
       real_type B0;
       ///input Rcut
@@ -46,18 +43,18 @@ namespace qmcplusplus {
       std::string attribName;
       ///constructor
       WMFunctor(real_type b, real_type rc=7.5, const std::string& bname="exponent"): 
-        attribName(bname)
+        B0(b),Rcut(rc),attribName(bname)
       {
-        reset(b,rc);
+        reset();
       }
 
-      OptimizableFunctorBase<T>* makeClone() const 
+      OptimizableFunctorBase* makeClone() const 
       {
         return new WMFunctor<T>(*this);
       }
 
-      void reset(real_type b, real_type rc) { 
-        B0=b; Rcut=rc; 
+      void reset() { 
+        //B0=b; Rcut=rc; 
         OneOverRc=1.0/Rcut; 
         DxDr=12*OneOverRc;
         D2xDr2=OneOverRc*DxDr;
@@ -104,35 +101,34 @@ namespace qmcplusplus {
         rAttrib.add(B0,"exponent"); 
         rAttrib.put(cur);
         ID_B.append("_E");
+        myVars.insert(ID_B,B0,true);
         return true;
       }
 
-      void addOptimizables(OptimizableSetType& vlist)
+      void checkInVariables(opt_variables_type& active)
       {
-        int loc=vlist.addVariable(ID_B,B0);
+        //disable optimization of E
+        //active.insertFrom(myVars);
       }
 
-      /** reset the internal variables.
-       *
-       * USE_resetParameters
-       */
-      void resetParameters(OptimizableSetType& optVariables) 
+      void checkOutVariables(const opt_variables_type& active)
       {
-        typename OptimizableSetType::iterator it_b(optVariables.find(ID_B));
-        if(it_b != optVariables.end()) {
-          B0=(*it_b).second;
-        }
+        //disable optimization of E
+        //myVars.getIndex(active);
+      }
+
+      void resetParameters(const opt_variables_type& active) 
+      {
+        //disable optimization of E
+        //int loc=myVars.where(0);
+        //if(loc>=0) {myVars[0]=B0=active[loc];}
       }
     };
 
   template<class T>
-    struct WMFunctorSet: public OptimizableFunctorBase<T> {
-      typedef typename OptimizableFunctorBase<T>::real_type real_type;
-      typedef typename OptimizableFunctorBase<T>::OptimizableSetType OptimizableSetType;
+    struct WMFunctorSet: public OptimizableFunctorBase {
+      //contraction and exponent pair
       typedef TinyVector<real_type,2>  variable_type;
-
-      using OptimizableFunctorBase<T>::FirstIndex;
-      using OptimizableFunctorBase<T>::LastIndex;
       ///input Rcut
       real_type Rcut;
       ///1/Rcut
@@ -143,8 +139,6 @@ namespace qmcplusplus {
       real_type D2xDr2;
       ///input  Param[i][0]=B; Param[i][1]=C for i-th component
       vector<variable_type> Params;
-      ///name of the parameters
-      vector<pair<string,string> > IDs;
 
       WMFunctorSet(real_type rc=7.5):Rcut(rc)
       {
@@ -154,12 +148,21 @@ namespace qmcplusplus {
         Params.reserve(8);//limit to 8
       }
 
+      OptimizableFunctorBase* makeClone() const 
+      {
+        return new WMFunctorSet<T>(*this);
+      }
+
+      inline void reset() {}
+
       inline void addComponent(real_type c, real_type b, const string& aname)
       {
+        int i=Params.size();
         Params.push_back(variable_type(c,b));
         string cname=aname+"_C";
         string ename=aname+"_E";
-        IDs.push_back(pair<string,string>(cname,ename));
+        myVars.insert(cname,Params[i][0]);
+        myVars.insert(ename,Params[i][1]);
       }
 
       inline real_type evaluate(real_type r)
@@ -245,40 +248,30 @@ namespace qmcplusplus {
         return dv;
       }
 
-      void addOptimizables(OptimizableSetType& vlist)
-      {
-        //only add the C's not E's
-        //get the first index using the IDs
-        FirstIndex=vlist.addVariable(IDs[0].first,Params[0][0]);
-        //int loc=vlist.addVariable(IDs[0].second,Params[0][1]);
-        for(int i=1; i<IDs.size(); ++i)
-        {
-          int loc=vlist.addVariable(IDs[i].first,Params[i][0]);
-          //loc=vlist.addVariable(IDs[i].second,Params[i][1]);
-        }
-        //LastIndex=FirstIndex+Params.size()*2;
-        LastIndex=FirstIndex+Params.size();
-      }
-
       bool put(xmlNodePtr cur) 
       {
         return true;
       }
 
-      void resetParameters(OptimizableSetType& optVariables) 
+      void checkInVariables(opt_variables_type& active)
       {
-        for(int i=0; i<IDs.size(); ++i)
+        active.insertFrom(myVars);
+      }
+
+      void checkOutVariables(const opt_variables_type& active)
+      {
+        myVars.getIndex(active);
+      }
+
+      void resetParameters(const opt_variables_type& active) 
+      {
+        int ii=0;
+        for(int i=0; i<Params.size(); ++i)
         {
-          typename OptimizableSetType::iterator it_c(optVariables.find(IDs[i].first));
-          if(it_c != optVariables.end()) 
-          {
-            Params[i][0]=(*it_c).second;
-          }
-          //Disable exponent optimization
-          //typename OptimizableSetType::iterator it_b(optVariables.find(IDs[i].second));
-          //if(it_b != optVariables.end()) {
-          //  Params[i][1]=(*it_b).second;
-          //}
+          int loc_c=myVars.where(ii++);
+          int loc_e=myVars.where(ii++);
+          if(loc_c>=0) Params[i][0]=active[loc_c];
+          if(loc_e>=0) Params[i][1]=active[loc_e];
         }
       }
     };

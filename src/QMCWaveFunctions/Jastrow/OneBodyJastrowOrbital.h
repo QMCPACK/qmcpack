@@ -17,6 +17,8 @@
 #define QMCPLUSPLUS_GENERIC_ONEBODYJASTROW_H
 #include "Configuration.h"
 #include "QMCWaveFunctions/OrbitalBase.h"
+#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 
 namespace qmcplusplus {
   
@@ -111,10 +113,56 @@ namespace qmcplusplus {
       Funique[source_type]=afunc;
     }
 
-    void resetParameters(OptimizableSetType& optVariables) 
+    /** check in an optimizable parameter
+     * @param o a super set of optimizable variables
+     */
+    void checkInVariables(opt_variables_type& active)
+    {
+      myVars.clear();
+      for(int i=0; i<Funique.size(); ++i)
+      {
+        FT* fptr=Funique[i];
+        if(fptr)
+        {
+          fptr->checkInVariables(active);
+          fptr->checkInVariables(myVars);
+        }
+      }
+    }
+
+    /** check out optimizable variables
+     */
+    void checkOutVariables(const opt_variables_type& active)
+    {
+      myVars.getIndex(active);
+      Optimizable=myVars.is_optimizable();
+
+      for(int i=0; i<Funique.size(); ++i)
+        if(Funique[i]) Funique[i]->checkOutVariables(active);
+
+      //if(dPsi) dPsi->checkOutVariables(active);
+    }
+
+    ///reset the value of all the unique Two-Body Jastrow functions
+    void resetParameters(const opt_variables_type& active)
     { 
-      for(int i=0; i<Funique.size(); i++) 
-        if(Funique[i]) Funique[i]->resetParameters(optVariables);
+      if(!Optimizable) return;
+      for(int i=0; i<Funique.size(); ++i)
+        if(Funique[i]) Funique[i]->resetParameters(active);
+      for(int i=0; i<myVars.size(); ++i)
+      {
+        int ii=myVars.Index[i];
+        if(ii>=0) myVars[i]= active[ii];
+      }
+    }
+
+    /** print the state, e.g., optimizables */
+    void reportStatus(ostream& os)
+    {
+      for(int i=0; i<Funique.size(); ++i)
+      {
+        if(Funique[i]) Funique[i]->myVars.print(os);
+      }
     }
 
     /** 

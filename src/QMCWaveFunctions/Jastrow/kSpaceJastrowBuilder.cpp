@@ -129,7 +129,7 @@ namespace qmcplusplus {
 			oneBodySymm, kc1, id1_opt, spin1_opt=="yes",
 			twoBodySymm, kc2, id2_opt, spin2_opt=="yes");
     jastrow->setCoefficients (oneBodyCoefs, twoBodyCoefs);
-    jastrow->addOptimizables(targetPsi.VarList);
+    //jastrow->addOptimizables(targetPsi.VarList);
     targetPsi.addOrbital(jastrow,"kSpace");
     return true;
   }

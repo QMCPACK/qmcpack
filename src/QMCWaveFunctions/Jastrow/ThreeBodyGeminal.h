@@ -39,9 +39,11 @@ namespace qmcplusplus {
 
     ~ThreeBodyGeminal();
 
-    ///reset the value of all the Two-Body Jastrow functions
-    void resetParameters(OptimizableSetType& optVariables);
-    //evaluate the distance table with els
+    //implement virtual functions for optimizations
+    void checkInVariables(opt_variables_type& active);
+    void checkOutVariables(const opt_variables_type& active);
+    void resetParameters(const opt_variables_type& active);
+    void reportStatus(ostream& os);
     void resetTargetParticleSet(ParticleSet& P);
 
     ValueType evaluateLog(ParticleSet& P,
@@ -85,9 +87,7 @@ namespace qmcplusplus {
 
     void setBasisSet(BasisSetType* abasis) { GeminalBasis=abasis;}
 
-    bool put(xmlNodePtr cur, OptimizableSetType& varlist);
-
-    void addOptimizables(OptimizableSetType& varlist);
+    bool put(xmlNodePtr cur);
 
   private:
 
@@ -120,7 +120,8 @@ namespace qmcplusplus {
 
     /** Symmetric matrix connecting Geminal Basis functions */
     Matrix<RealType> Lambda;
-
+    /** boolean to enable/disable optmization of Lambda(i,j) component */
+    Vector<int> FreeLambda;
     /** Uk[i] = \sum_j dot(U[i],V[j]) */
     Vector<RealType> Uk;
 

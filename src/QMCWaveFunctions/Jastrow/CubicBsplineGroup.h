@@ -78,6 +78,7 @@ class CubicBsplineGroup: public CubicBsplineGrid<T,GRIDTYPE,FIRSTDERIV_CONSTRAIN
    */
   void  initialize(FNIN* in_, point_type rmax, int npts) 
   {
+    if(in_==0) APP_ABORT("Cannot initialize with null functor");
     InFunc=in_;
     this->setGrid(0.0,rmax,npts);
     reset();
@@ -105,6 +106,7 @@ class CubicBsplineGroup: public CubicBsplineGrid<T,GRIDTYPE,FIRSTDERIV_CONSTRAIN
   {
     if(InFunc)
     {
+      cout << "Getting thru " << endl;
       InFunc->reset();
       container_type datain(Npts);
       point_type r=GridStart;
