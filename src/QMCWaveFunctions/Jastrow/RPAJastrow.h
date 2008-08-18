@@ -1,170 +1,131 @@
-//////////////////////////////////////////////////////////////////
-// (c) Copyright 2003  by Jeongnim Kim and Jordan Vincent
-//////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////
-//   National Center for Supercomputing Applications &
-//   Materials Computation Center
-//   University of Illinois, Urbana-Champaign
-//   Urbana, IL 61801
-//   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
-//
-// Supported by 
-//   National Center for Supercomputing Applications, UIUC
-//   Materials Computation Center, UIUC
-//////////////////////////////////////////////////////////////////
-// -*- C++ -*-
-#ifndef QMCPLUSPLUS_RPAFUNCTION_H
-#define QMCPLUSPLUS_RPAFUNCTION_H
+#ifndef QMCPLUSPLUS_RPA_JASTROW_H
+#define QMCPLUSPLUS_RPA_JASTROW_H
 
-#include "Numerics/OptimizableFunctorBase.h"
+#include "QMCWaveFunctions/OrbitalBase.h"
+#include "LongRange/LRHandlerBase.h"
+#include "QMCWaveFunctions/Jastrow/SplineFunctors.h"
+#include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbital.h"
+#include "QMCWaveFunctions/Jastrow/LRBreakupUtilities.h"
+#include "QMCWaveFunctions/Jastrow/LRTwoBodyJastrow.h"
+
 
 namespace qmcplusplus {
-  /** RPA Jastrow functor
-   *
-   * \f$ u(r) = \frac{A}{r}\left[1-\exp(-\frac{r}{F})\right], \f$
-   * where \f$F\f$ satisfies the cusp conditions: \f$F_{\uparrow \uparrow} = \sqrt{2A}\f$ 
-   * and \f$F_{\uparrow \downarrow} = \sqrt{A} \f$.
-   * Prototype of the template parameter of TwoBodyJastrow 
-   * Reformulated by using B=1/F.
+
+  /** JastrowBuilder using RPA functor
+   *  Modification of RPAJastrow
+   *  
    */
-  template<class T>
-    struct RPAJastrow: public OptimizableFunctorBase<T> {
+  struct RPAJastrow: public OrbitalBase {
+    typedef LRHandlerBase HandlerType;    
+    typedef CubicBspline<RealType,LINEAR_1DGRID,FIRSTDERIV_CONSTRAINTS> SplineEngineType;
+    typedef CubicSplineSingle<RealType,SplineEngineType> FuncType;
+    typedef LinearGrid<RealType> GridType;
 
-      typedef typename OptimizableFunctorBase<T>::real_type real_type;
-      typedef typename OptimizableFunctorBase<T>::OptimizableSetType OptimizableSetType;
+    RPAJastrow(ParticleSet& target);
 
-      bool SameSpin;
-
-      ///coefficients
-      real_type A, B, AB, ABB;
-      ///id of A for optimization
-      string ID_A;
-      /** constructor
-       * @param a A coefficient
-       * @param samespin boolean to indicate if this function is for parallel spins
-       */
-      RPAJastrow(bool samespin=true): SameSpin(samespin) {reset(1.0);}
-
-      /** dummy constructor to handle referenced case
-      */
-      RPAJastrow(RPAJastrow<T>* func): SameSpin(true) 
-      {
-        reset(1.0);
-      }
-
-      /** reset the internal variables.
-       *@param a New Jastrow parameter a 
-       */
-      void reset(real_type a) 
-      {
-        A = a;
-        resetInternals();
-      }
-
-      /** reset internal variables for the current value of A
-       */
-      void resetInternals() {
-        real_type F=std::sqrt(std::abs(A));
-        if(SameSpin) F*=std::sqrt(2.0);
-        B=1.0/F;
-        AB=A*B;
-        ABB=AB*B;
-      }
-
-      /** evaluate the value at r
-       * @param r the distance
-       * @return \f$ u(r) = \frac{A}{r}\left[1-\exp(-\frac{r}{F})\right]\f$
-       */
-      inline real_type evaluate(real_type r) {
-        return A/r*(1.0-std::exp(-B*r));
-      }
-
-      /**@param r the distance
-        @param dudr first derivative
-        @param d2udr second derivative
-        @return the value
-        */
-      inline real_type evaluate(real_type r, T& dudr, T& d2udr2) {
-        real_type rinv=1.0/r;
-        real_type expbr=std::exp(-B*r);
-        real_type u = A*rinv*(1.0-expbr);
-        dudr=-rinv*(u-AB*expbr);
-        d2udr2=-rinv*(2.0*dudr+ABB*expbr);
-        return u;
-      }
-
-      /** return a value at r
-      */
-      real_type f(real_type r) {
-        return evaluate(r);
-      }
-
-      /** return a derivative at r
-      */
-      real_type df(real_type r) {
-        real_type dudr,d2udr2;
-        real_type res=evaluate(r,dudr,d2udr2);
-        return dudr;
-      }
-
-      void setDensity(real_type n) {
-        A = std::pow(4.0*M_PI*n/3.0,-1.0/3.0);
-        resetInternals();
-      }
-
-      /** Read in the parameter from the xml input file.
-        @param cur current xmlNode from which the data members are reset
-        @param vlist VarRegistry<T1> to which the variable A will be added for optimization
-        */
-      bool put(xmlNodePtr cur){
-        real_type Atemp=-100;
-        //jastrow[iab]->put(cur->xmlChildrenNode,wfs_ref.RealVars);
-        xmlNodePtr tcur = cur->xmlChildrenNode;
-        while(tcur != NULL) {
-          //@todo Var -> <param(eter) role="opt"/>
-          string cname((const char*)(tcur->name));
-          if(cname == "parameter" || cname == "Var") {
-            string aname((const char*)(xmlGetProp(tcur,(const xmlChar *)"name")));
-            string idname((const char*)(xmlGetProp(tcur,(const xmlChar *)"id")));
-            if(aname == "A") {
-              ID_A = idname;
-              putContent(Atemp,tcur);
-            } 
-          }
-          tcur = tcur->next;
-        }
-        //only if Atemp is given
-        if(Atemp>0) reset(Atemp);
-        app_log() << "  RPA Jastrow A/r[1-exp(-r/F)] = (" << A << "," << 1.0/B << ")" << std::endl;
-        return true;
-      }
-
-      void addOptimizables(OptimizableSetType& vlist)
-      {
-        vlist[ID_A]=A;
-      }
-
-      /** reset the internal variables.
-       *
-       * USE_resetParameters
-       */
-      void resetParameters(OptimizableSetType& optVariables) 
-      {
-        typename OptimizableSetType::iterator it_a(optVariables.find(ID_A));
-        if(it_a != optVariables.end()) 
-        {
-          A=(*it_a).second;
-          resetInternals();
-        }
-      }
+    ~RPAJastrow();
+    
+    bool put(xmlNodePtr cur);
+    
+    void makeShortRange();
+    void makeLongRange();
+    
+    void setHandler(HandlerType* Handler) {
+      myHandler=Handler;
     };
+
+/** check out optimizable variables
+  */
+    void checkOutVariables(const opt_variables_type& o);
+
+/** check in an optimizable parameter
+      * @param o a super set of optimizable variables
+  */
+    void checkInVariables(opt_variables_type& o);
+
+    /** print the state, e.g., optimizables */
+    void reportStatus(ostream& os);
+
+/** reset the parameters during optimizations
+  */
+    void resetParameters(const opt_variables_type& active);
+
+    void resetTargetParticleSet(ParticleSet& P);
+
+    ValueType evaluate(ParticleSet& P, 
+          ParticleSet::ParticleGradient_t& G, 
+          ParticleSet::ParticleLaplacian_t& L) {
+            return std::exp(evaluateLog(P,G,L)); };
+
+            ValueType
+                evaluateLog(ParticleSet& P, 
+                            ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
+
+    ValueType 
+        ratio(ParticleSet& P, int iat,
+              ParticleSet::ParticleGradient_t& dG,
+              ParticleSet::ParticleLaplacian_t& dL);
+
+    ValueType 
+        ratio(ParticleSet& P, int iat);
+
+    ValueType 
+        logRatio(ParticleSet& P, int iat,
+                ParticleSet::ParticleGradient_t& dG,
+                ParticleSet::ParticleLaplacian_t& dL);
+
+    void acceptMove(ParticleSet& P, int iat);
+
+    void restore(int iat);
+
+    void update(ParticleSet& P, 
+                ParticleSet::ParticleGradient_t& dG, 
+                ParticleSet::ParticleLaplacian_t& dL,
+                int iat);
+
+    ValueType 
+        registerData(ParticleSet& P, BufferType& buf);
+
+    ValueType 
+        updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch=false);
+
+    void 
+        copyFromBuffer(ParticleSet& P, BufferType& buf);
+
+    ValueType 
+        evaluate(ParticleSet& P,BufferType& buf);
+
+    OrbitalBase* makeClone(ParticleSet& tqp) const;
+    
+    private:
+    
+    bool IgnoreSpin;
+    bool DropLongRange;
+    bool DropShortRange;
+    RealType Rs;
+    RealType Kc;
+    RealType Rcut;
+    string ID_Rs;
+    string rpafunc;
+    string MyName;
+
+      ///@}
+      /** main handler
+       */
+    HandlerType* myHandler;
+      ///object to handle the long-range part
+    LRTwoBodyJastrow* LongRangeRPA;
+      ///@{objects to handle the short-range part
+      ///two-body Jastrow function
+    OrbitalBase* ShortRangeRPA;
+      ///numerical function owned by ShortRangeRPA
+    FuncType* nfunc;
+    GridType* myGrid;
+      ///adaptor function to initialize nfunc
+    ShortRangePartAdapter<RealType>* SRA;
+    ParticleSet& targetPtcl;
+    ///A list of OrbitalBase* 
+    vector<OrbitalBase*> Psi;
+ };
 }
-
 #endif
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$ 
- ***************************************************************************/
-
