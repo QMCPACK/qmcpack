@@ -21,15 +21,18 @@
 
 namespace qmcplusplus {
 
-  /** an enum denoting index of physical properties */
+  /** an enum denoting index of physical properties 
+   *
+   * LOCALPOTENTIAL should be always the last enumeation 
+   */
   enum {LOGPSI=0,       /*!< log(fabs(psi)) instead of square of the many-body wavefunction \f$|\Psi|^2\f$ */
 	SIGN,           /*!< value of the many-body wavefunction \f$\Psi(\{R\})\f$ */
         UMBRELLAWEIGHT, /*!< sum of wavefunction ratios for multiple H and Psi */
-	LOCALENERGY,    /*!< local energy, the sum of all the components */
-	LOCALPOTENTIAL, /*!< local potential energy = local energy - kinetic energy */
         R2ACCEPTED,     /*!< r^2 for accepted moves */
         R2PROPOSED,     /*!< r^2 for proposed moves */
         DRIFTSCALE,     /*!< scaling value for the drift */
+	LOCALENERGY,    /*!< local energy, the sum of all the components */
+	LOCALPOTENTIAL, /*!< local potential energy = local energy - kinetic energy */
 	NUMPROPERTIES   /*!< the number of properties */
        };
   

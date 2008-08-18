@@ -288,15 +288,16 @@ namespace qmcplusplus {
 
   void ParticleSet::initPropertyList() 
   {
+    PropertyList.clear();
     //Need to add the default Properties according to the enumeration
     PropertyList.add("LogPsi");
     PropertyList.add("SignPsi");
     PropertyList.add("UmbrellaWeight");
-    PropertyList.add("LocalEnergy");
-    PropertyList.add("LocalPotential");
     PropertyList.add("R2Accepted");
     PropertyList.add("R2Proposed");
     PropertyList.add("DriftScale");
+    PropertyList.add("LocalEnergy");
+    PropertyList.add("LocalPotential");
 
     if(PropertyList.size() != NUMPROPERTIES)
     {

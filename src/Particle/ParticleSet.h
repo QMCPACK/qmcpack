@@ -19,7 +19,6 @@
 #include "Configuration.h"
 #include "Utilities/SpeciesSet.h"
 #include "Particle/Walker.h"
-#include "OhmmsData/RecordProperty.h"
 #include "OhmmsPETE/OhmmsArray.h"
 
 namespace qmcplusplus {
@@ -96,7 +95,7 @@ namespace qmcplusplus {
      * PropertyMap is used to keep the name-value mapping of
      * Walker_t::Properties.
      */ 
-    RecordNamedProperty<RealType> PropertyList;
+    PropertySetType PropertyList;
     
     ///default constructor
     ParticleSet();
