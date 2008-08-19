@@ -196,19 +196,20 @@ namespace qmcplusplus {
 
   void QMCUpdateBase::updateWalkers(WalkerIter_t it, WalkerIter_t it_end) {
 
-    RealType tauinv=1.0/Tau;
     for(;it != it_end; ++it)
     {
+      Walker_t& thisWalker(**it);
       Walker_t::Buffer_t& w_buffer((*it)->DataSet);
       w_buffer.rewind();
       W.updateBuffer(**it,w_buffer);
       RealType logpsi=Psi.updateBuffer(W,w_buffer,true);
-      RealType enew= H.evaluate(W);
 
-      (*it)->resetProperty(logpsi,Psi.getPhase(),enew,1.0,1.0,1.0);
-      H.saveProperty((*it)->getPropertyBase());
+      //thisWalker.Properties(DRIFTSCALE)=getNodeCorrection(W.G,(*it)->Drift);
+      //RealType enew= H.evaluate(W);
+      //thisWalker.resetProperty(logpsi,Psi.getPhase(),enew);
+      //H.saveProperty(thisWalker.getPropertyBase());
 
-      (*it)->Drift=W.G;//copy gradients to drift
+      //(*it)->Drift=W.G;//copy gradients to drift
       //scaling factor per particle
       //setScaledDriftPbyP(Tau,W.G,(*it)->Drift);
       

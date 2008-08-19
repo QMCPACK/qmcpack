@@ -185,6 +185,87 @@ namespace qmcplusplus {
     TinyVector<double,3> dr(PrimLattice.toCart(ru));
     return dot(dr,dr) < APWRadius*APWRadius;
   }
+  
+  void 
+  MuffinTinClass::inside(TinyVector<double,3> r,
+			 bool &in, bool &needBlend)
+  {
+        TinyVector<double,3> ru(PrimLattice.toUnit(r-Center));
+    for (int i=0; i<OHMMS_DIM; i++)
+      ru[i] -= round (ru[i]);
+    TinyVector<double,3> dr(PrimLattice.toCart(ru));
+    in = dot(dr,dr) < APWRadius*APWRadius;
+    if (in)
+      needBlend = dot(dr,dr) > BlendRadius*BlendRadius;
+  }
+
+
+  void
+  MuffinTinClass::blend_func (double r, double &b)
+  {
+    if (r < BlendRadius)
+      b = 0.0;
+    else {
+      double x = (r - BlendRadius)/(APWRadius - BlendRadius);
+      b = 1.0 - 10.0 * x*x*x +15.0*x*x*x*x - 6.0*x*x*x*x*x;
+    }
+  }
+
+  void
+  MuffinTinClass::blend_func (double r, double &b, double &db,
+			      double &d2b)
+  {
+    if (r < BlendRadius) 
+      b = db = d2b = 0.0;
+    else {
+      double dr = APWRadius - BlendRadius;
+      double drInv = 1.0/dr;
+      double x = (r - BlendRadius)*drInv;
+      b =  1.0 - 10.0 * x*x*x +15.0*x*x*x*x - 6.0*x*x*x*x*x;
+      db = drInv * (-30.0*x*x + 60.0*x*x*x -30.0*x*x*x*x);
+      d2b = drInv * drInv * (-60.0*x + 180.0*x*x -120.0*x*x*x);
+    }
+  }
+
+
+  // void
+  // MuffinTinClass::blend_func(double r, double &b)
+  // {
+  //   if (r < BlendRadius) 
+  //     b = 0.0;
+  //   else {
+  //     double x = (r - BlendRadius)/(APWRadius - BlendRadius);
+  //     b =  0.5*(std::cos(M_PI*x)+1.0);
+  //   }
+  // }
+
+  // void
+  // MuffinTinClass::blend_func (double r, double &b, double &db,
+  // 			      double &d2b)
+  // {
+  //   if (r < BlendRadius) 
+  //     b = db = d2b = 0.0;
+  //   else {
+  //     double dr = APWRadius - BlendRadius;
+  //     double drInv = 1.0/dr;
+  //     double x = (r - BlendRadius)*drInv;
+  //     b =  0.5*(std::cos(M_PI*x)+1.0);
+  //     db = -0.5*M_PI*std::sin(M_PI*x)*drInv;
+  //     d2b = -0.5*M_PI*M_PI*std::cos(M_PI*x)*drInv*drInv;
+  //   }
+  // }
+
+
+
+
+  TinyVector<double,3> 
+  MuffinTinClass::disp(TinyVector<double,3> r)
+  {
+    TinyVector<double,3> ru(PrimLattice.toUnit(r-Center));
+    for (int i=0; i<OHMMS_DIM; i++)
+      ru[i] -= round (ru[i]);
+    return PrimLattice.toCart(ru);
+  }
 
 
   void
@@ -193,6 +274,8 @@ namespace qmcplusplus {
   {
     lMax = lmax;
     APWRadius = rgrid[rgrid.size()-1];
+    // HACK HACK HACK
+    BlendRadius = APWRadius - 0.0;
     NumOrbitals = numOrbitals;
 
     // Set rSmall.   

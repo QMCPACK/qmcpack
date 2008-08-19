@@ -29,11 +29,6 @@ namespace qmcplusplus {
   }
   
   void
-  EinsplineSet::resetParameters(const opt_variables_type& active)
-  {
-  }
-  
-  void
   EinsplineSet::resetTargetParticleSet(ParticleSet& e)
   {
   }
@@ -278,8 +273,7 @@ namespace qmcplusplus {
 			   
 
   template<typename StorageType> void
-  EinsplineSetExtended<StorageType>::resetParameters
-  (VarRegistry<RealType>& vlist) 
+  EinsplineSetExtended<StorageType>::resetParameters(const opt_variables_type& active)
   {
 
   }
@@ -946,6 +940,11 @@ namespace qmcplusplus {
   EinsplineSetLocal::makeClone() const 
   {
     return new EinsplineSetLocal(*this);
+  }
+
+  void
+  EinsplineSetLocal::resetParameters(const opt_variables_type& active)
+  {
   }
 
   template<typename StorageType> SPOSetBase*
