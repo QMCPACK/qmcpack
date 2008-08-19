@@ -33,7 +33,7 @@ namespace qmcplusplus {
   **/
 
   struct HePressure: public QMCHamiltonianBase {
-    double A,alpha,c0,c1,c2,c3,c1p,c2p,c3p,D,rdV;
+    double A,alpha,c0,c1,c2,c3,c1p,c2p,c3p,D,rdV ;
     double pNorm,tailcorr,rcutoff,kNorm;
     bool ZV;
     bool ZB;
@@ -77,8 +77,9 @@ namespace qmcplusplus {
       tailcorr =  (10*c3)/7*rm7 + (8*c2)/5*rm5 + (2*c1)*rm3 + ( A*std::exp(alpha*r1) * (6 - alpha*rcutoff*(6 - alpha*rcutoff* (3 - alpha* rcutoff))))/(alpha*alpha*alpha);
       tailcorr *= pNorm;
       tailcorr *= 2.0*M_PI*rho*N0;
-      cout<<"  Pressure Tail Correction for "<<sourcePtcl->getName()<<" is: "<<tailcorr<<endl;
+      cout<<setprecision (12)<<"  HePressure:: Tail Correction for "<<sourcePtcl->getName()<<" is: "<<tailcorr<<endl;
 //       cout<<"  Cutoff is: "<<rcutoff<<endl;
+
     }
     ///destructor
     ~HePressure() { }
@@ -107,36 +108,44 @@ namespace qmcplusplus {
 
     inline Return_t evaluate(ParticleSet& P) {
       Value = 0.0;
+//       dV = 0.0;
       Return_t KE = P.PropertyList[LOCALENERGY]-P.PropertyList[LOCALPOTENTIAL];
 
-      for(int i=0; i<d_table->getTotNadj(); i++) { 
+      for(int i=0; i<d_table->getTotNadj(); i++) {
         Return_t RR = d_table->r(i);
         if ( RR < rcutoff) {
-          Return_t r2 = (RR*RR);
           Return_t rm1 = 1.0/RR;
-          Return_t rm6 = std::pow(rm1,6.0);
-          Return_t rm8 = rm6*rm1*rm1;
-          Return_t rm10 = rm8*rm1*rm1;
-          Return_t TMP1 = c0*RR*std::exp(alpha*RR) - (c1p*rm6 + c2p*rm8 + c3p*rm10 + (c1*rm6+c2*rm8+c3*rm10)*D*rm1*(D*rm1-1.0) )*dampF(RR);
+          Return_t rm2 = rm1*rm1;
+          Return_t rm6 = std::pow(rm2,3);
+          Return_t rm8 = rm6*rm2;
+          Return_t rm10 = rm8*rm2;
+          Return_t TMP1;
+          if (RR < D){
+            Return_t t1=(D*rm1 - 1.0);
+            Return_t dampF = std::exp(-t1*t1);
+            TMP1 = c0*RR*std::exp(alpha*RR) - (c1p*rm6 + c2p*rm8 + c3p*rm10 + 2.0* (c1*rm6+c2*rm8+c3*rm10)*D*rm1*t1 )*dampF;
+          } else  TMP1 = c0*RR*std::exp(alpha*RR) - (c1p*rm6 + c2p*rm8 + c3p*rm10);
           Value += TMP1;
+//           dV += Value*rm1;
         }
       }
+//       dV *= -pNorm;
       Value *= pNorm;
-      rdV = Value+tailcorr;
+      rdV = Value;
       Value += kNorm*KE;
       Value += tailcorr;
       
       return 0.0;
     }
     
-    inline Return_t dampF(Return_t r) {
-      if (r < D){
-        Return_t t1=(D/r - 1.0);
-        return std::exp(-t1*t1);
-      }
-      else
-        return 1.0;
-    }
+//     inline Return_t dampF(Return_t r) {
+//       if (r < D){
+//         Return_t t1=(D/r - 1.0);
+//         return std::exp(-t1*t1);
+//       }
+//       else
+//         return 1.0;
+//     }
     
     inline Return_t 
     evaluate(ParticleSet& P, vector<NonLocalData>& Txy) {
@@ -163,12 +172,14 @@ namespace qmcplusplus {
     {
       myIndex=plist.add("HePress");
       plist.add("rijdrV");
+//       plist.add("drV");
     }
 
     void setObservables(PropertySetType& plist)
     {
       plist[myIndex]=Value;
       plist[myIndex+1]=rdV;
+//       plist[myIndex+2]=dV;
     }
   };
 }

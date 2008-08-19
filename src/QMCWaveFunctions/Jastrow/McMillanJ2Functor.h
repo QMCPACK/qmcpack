@@ -144,17 +144,162 @@ namespace qmcplusplus {
     
   };
   
+//   template<class T>
+//       struct ModMcMillanJ2Functor: public OptimizableFunctorBase
+//   {
+// 
+//     typedef typename OptimizableFunctorBase::real_type real_type;
+// 
+//       ///coefficients
+//     real_type A;
+//     real_type B;
+//     real_type RC;
+//     real_type c0,c1,c2,c3,c4,c5,c6;
+// 
+//     string ID_A,ID_B,ID_RC;
+// 
+//       /** constructor
+//      * @param a A coefficient
+//      * @param samespin boolean to indicate if this function is for parallel spins
+//        */
+//     ModMcMillanJ2Functor(real_type a=4.9133, real_type b=5, real_type rc=1.0):ID_RC("Rcutoff"),ID_A("A"),ID_B("B")
+//     {
+//       A = a;
+//       B = b;
+//       RC = rc;
+//       reset();
+//     }
+// 
+//     
+//     void checkInVariables(opt_variables_type& active)
+//     {
+//       active.insertFrom(myVars);
+//     }
+// 
+//     void checkOutVariables(const opt_variables_type& active)
+//     {
+//       myVars.getIndex(active);
+//     }
+//     
+//     OptimizableFunctorBase* makeClone() const 
+//     {
+//       return new ModMcMillanJ2Functor<T>(*this);
+//     }
+//     
+//     void resetParameters(const opt_variables_type& active) 
+//     {
+//       int ia=myVars.where(0); if(ia>-1) A=active[ia];
+//       int ib=myVars.where(1); if(ib>-1) B=active[ib];
+//       int ic=myVars.where(2); if(ic>-1) RC=active[ic];
+//       reset();
+//     }
+// 
+//     inline void reset() {
+//       c0 = std::pow(A,B);
+//       c1 = -1.0*std::pow(A/RC,B);
+//       c2 =  B*c0*std::pow(RC,-B-1);
+//       c3 =  -0.5*(B+1)*B*c0*std::pow(RC,-B-2);
+//       
+//       c4 = -B*c0;
+//       c5 = 2.0*c3;
+//       c6 = B*(B+1.0)*c0;
+//     }
+// 
+// 
+//       /** evaluate the value at r
+//      * @param r the distance
+//      * @return \f$ u(r) = \frac{A}{r}\left[1-\exp(-\frac{r}{F})\right]\f$
+//        */
+//     inline real_type evaluate(real_type r) {
+//       if (r<RC) {
+//         real_type r1 = (r-RC);
+//         return c0*std::pow(r,-B)+c1 + r1*(c2+r1*c3) ;
+//       }
+//       else {return 0.0;};
+//     }
+// 
+//       /**@param r the distance
+//     @param dudr first derivative
+//     @param d2udr2 second derivative
+//     @return the value
+//        */
+//     inline real_type evaluate(real_type r, real_type& dudr, real_type& d2udr2) {
+//       if (r<RC){
+//         real_type r1 = (r-RC);
+//         real_type overr = 1.0/r;
+//         real_type wert = std::pow(1.0/r,B);
+//         dudr = c4*wert*overr + c2 + c5*r1;
+//         d2udr2= c6*wert*overr*overr+ c5 ;
+//         return c0*wert + c1 + r1*(c2+r1*c3) ;
+//       } else {
+//         dudr = 0.0;
+//         d2udr2= 0.0;
+//         return 0.0;
+//       };
+//     }
+// 
+//       /** return a value at r
+//        */
+//     real_type f(real_type r) {
+//       return evaluate(r);
+//     }
+// 
+//       /** return a derivative at r
+//        */
+//     real_type df(real_type r) {
+//       if (r<RC) {return c4*std::pow(1.0/r,B+1) + c2 + c5*(r-RC) ;}
+//       else {return 0.0;};
+//     }
+// 
+//       /** Read in the parameter from the xml input file.
+//      * @param cur current xmlNode from which the data members are reset
+//        */
+//     bool put(xmlNodePtr cur) {
+//       RC = cutoff_radius;
+//       xmlNodePtr tcur = cur->xmlChildrenNode;
+//       while(tcur != NULL) {
+//           //@todo Var -> <param(eter) role="opt"/>
+//         string cname((const char*)(tcur->name));
+//         if(cname == "parameter" || cname == "Var") {
+//           string aname((const char*)(xmlGetProp(tcur,(const xmlChar *)"name")));
+//           string idname((const char*)(xmlGetProp(tcur,(const xmlChar *)"id")));
+//           if(aname == "A") {
+//             ID_A = idname;
+//             putContent(A,tcur);
+//           } else if(aname == "B") {
+//             ID_B = idname;
+//             putContent(B,tcur);
+//           }else if(aname == "RC")
+//           {
+//             ID_RC = idname;
+//             putContent(RC,tcur);
+//           }
+//         }
+//         tcur = tcur->next;
+//       }
+//       myVars.insert(ID_A,A);
+//       myVars.insert(ID_B,B);
+//       myVars.insert(ID_RC,RC);
+//       reset();
+//       LOGMSG("  Modified McMillan Parameters ")
+//           LOGMSG("    A (" << ID_A << ") = " << A  << "  B (" << ID_B << ") =  " << B<< "  R_c (" << ID_RC << ") =  " << RC)
+//       return true;
+//     }
+// 
+//   };
+  
   template<class T>
       struct ModMcMillanJ2Functor: public OptimizableFunctorBase
   {
 
+    ///f(r) = A*r^-5 - A*r_c^-5 + A/(B*r_c^6) * tanh(B*(r-r_c))
     typedef typename OptimizableFunctorBase::real_type real_type;
 
       ///coefficients
     real_type A;
     real_type B;
     real_type RC;
-    real_type c0,c1,c2,c3,c4,c5,c6;
+    real_type cA,c0,c1,c2,c3,c4,c5;
 
     string ID_A,ID_B,ID_RC;
 
@@ -162,12 +307,8 @@ namespace qmcplusplus {
      * @param a A coefficient
      * @param samespin boolean to indicate if this function is for parallel spins
        */
-    ModMcMillanJ2Functor(real_type a=4.9133, real_type b=5, real_type rc=1.0):ID_RC("Rcutoff"),ID_A("A"),ID_B("B")
+    ModMcMillanJ2Functor(real_type a=0.0, real_type b=0.0, real_type rc=0.0):ID_RC("Rcutoff"),ID_A("A"),ID_B("B")
     {
-      A = a;
-      B = b;
-      RC = rc;
-      reset();
     }
 
     
@@ -195,14 +336,13 @@ namespace qmcplusplus {
     }
 
     inline void reset() {
-      c0 = std::pow(A,B);
-      c1 = -1.0*std::pow(A/RC,B);
-      c2 =  B*c0*std::pow(RC,-B-1);
-      c3 =  -0.5*(B+1)*B*c0*std::pow(RC,-B-2);
-      
-      c4 = -B*c0;
-      c5 = 2.0*c3;
-      c6 = B*(B+1.0)*c0;
+      cA = std::pow(A,5);
+      c0 = cA*std::pow(RC,-5);
+      c1 = 5*cA*std::pow(RC,-6)/B;
+      c2 = -5*cA;
+      c3 = B*c1;
+      c4 = 30*cA;
+      c5 = B*c3;
     }
 
 
@@ -213,7 +353,10 @@ namespace qmcplusplus {
     inline real_type evaluate(real_type r) {
       if (r<RC) {
         real_type r1 = (r-RC);
-        return c0*std::pow(r,-B)+c1 + r1*(c2+r1*c3) ;
+        real_type plZ = std::exp(B*r1);
+        real_type miZ = 1.0/plZ;
+        real_type tanhZ = (plZ-miZ)/(plZ+miZ);
+        return cA*std::pow(r,-5)-c0 + c1*tanhZ;
       }
       else {return 0.0;};
     }
@@ -225,12 +368,20 @@ namespace qmcplusplus {
        */
     inline real_type evaluate(real_type r, real_type& dudr, real_type& d2udr2) {
       if (r<RC){
+        real_type prt = cA*std::pow(r,-5);
         real_type r1 = (r-RC);
-        real_type overr = 1.0/r;
-        real_type wert = std::pow(1.0/r,B);
-        dudr = c4*wert*overr + c2 + c5*r1;
-        d2udr2= c6*wert*overr*overr+ c5 ;
-        return c0*wert + c1 + r1*(c2+r1*c3) ;
+        real_type plZ = std::exp(B*r1);
+        real_type miZ = 1.0/plZ;
+        real_type tanhZ = (plZ-miZ)/(plZ+miZ);
+        real_type sechZ = 2.0/(plZ+miZ);
+        real_type sechZ2 = sechZ*sechZ; 
+        real_type ret = prt - c0 + c1*tanhZ;
+        
+        prt = prt/r;
+        dudr = -5*prt + c3*sechZ2;
+        prt = prt/r;
+        d2udr2 = 30*prt + c5*sechZ2*tanhZ;
+        return ret;
       } else {
         dudr = 0.0;
         d2udr2= 0.0;
@@ -247,7 +398,14 @@ namespace qmcplusplus {
       /** return a derivative at r
        */
     real_type df(real_type r) {
-      if (r<RC) {return c4*std::pow(1.0/r,B+1) + c2 + c5*(r-RC) ;}
+      if (r<RC) {
+        real_type r1 = (r-RC);
+        real_type plZ = std::exp(B*r1);
+        real_type miZ = 1.0/plZ;
+        real_type sechZ = 2.0/(plZ+miZ);
+        real_type sechZ2 = sechZ*sechZ; 
+        return c2*std::pow(r,-6) + c3*sechZ2;
+      }
       else {return 0.0;};
     }
 
@@ -283,7 +441,7 @@ namespace qmcplusplus {
       reset();
       LOGMSG("  Modified McMillan Parameters ")
           LOGMSG("    A (" << ID_A << ") = " << A  << "  B (" << ID_B << ") =  " << B<< "  R_c (" << ID_RC << ") =  " << RC)
-      return true;
+          return true;
     }
 
   };

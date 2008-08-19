@@ -109,7 +109,7 @@ namespace qmcplusplus {
       };
       //Center Pressure
       RealType* restrict CenProp(Reptile->center()->getPropertyBase(i));
-      scalars[SizeOfHamiltonians+3]( (2.0*eloc-2.0*CenProp[LOCALPOTENTIAL])*pnorm+CenProp[Pindex+1+FirstHamiltonian] ,uw);
+      scalars[SizeOfHamiltonians+3]( (2.0*eloc-2.0*CenProp[LOCALPOTENTIAL])*pnorm + CenProp[Pindex+1+FirstHamiltonian] ,uw);
       
       int Rage(Reptile->Age);
       int Bage=Rage;
@@ -128,7 +128,7 @@ namespace qmcplusplus {
       tmpV-=0.5*Reptile->back()->getPropertyBase(i)[LOCALPOTENTIAL];
       tmpV-=0.5*Reptile->front()->getPropertyBase(i)[LOCALPOTENTIAL];
       tmpV *= -2.0*pnorm*Tau;
-      tmpP *= -Tau;
+      tmpP *= Tau;
 
       scalars[SizeOfHamiltonians+1](tmpV+tmpP,uw);
       scalars[SizeOfHamiltonians+2](eloc*(tmpV+tmpP),uw);

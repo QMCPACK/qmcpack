@@ -56,7 +56,7 @@ namespace qmcplusplus {
         if ( r1 < rc) {
           Return_t r2 = (r1*r1);
           Return_t rm2 = 1.0/r2;
-          Return_t rm6 = std::pow(r1,-6.0);
+          Return_t rm6 = std::pow(rm2,3);
           Return_t rm8 = rm6*rm2;
           Return_t rm10 = rm8*rm2;
 	  Value += (A*std::exp(alpha*r1) - (c1*rm6+c2*rm8+c3*rm10)*dampF(r1));
