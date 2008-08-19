@@ -91,15 +91,6 @@ public:
     //assign(*this, T());
   }
 
-  /**@brief copy constructor **/
-  inline ParticleAttrib(const ParticleAttrib<T> &rhs): nGhosts(0) {
-    InUnit = rhs.InUnit;
-    resize(rhs.size());
-    for(int i=0; i<nLocal; i++) X[i]=rhs[i];
-    //assign(*this,rhs);
-  }
-  /**@} */
-
   //! Destructor 
   inline ~ParticleAttrib() { 
      DEBUGMSG("Calling ParticleAttrib::~ParticleAttrib() of " << objName());
