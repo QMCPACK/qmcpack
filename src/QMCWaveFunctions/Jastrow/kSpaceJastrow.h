@@ -194,7 +194,7 @@ namespace qmcplusplus {
     ValueType evaluate(ParticleSet& P, PooledData<RealType>& buf);
 
     ///process input file
-    bool put(xmlNodePtr cur, VarRegistry<RealType>& vlist);
+    bool put(xmlNodePtr cur);
     
     // Implements strict weak ordering with respect to the
     // structure factors.  Used to sort the G-vectors according to

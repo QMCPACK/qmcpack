@@ -68,6 +68,7 @@ namespace qmcplusplus {
       {
         ID_A=id_a;
         ID_B=id_b;
+        myVars.clear();
         myVars.insert(ID_A,A,free_a);
         myVars.insert(ID_B,B0,free_b);
       }
@@ -154,12 +155,13 @@ namespace qmcplusplus {
 
       void resetParameters(const opt_variables_type& active) 
       {
-        int ia=myVars.where(0); if(ia>-1) A=active[ia];
-        int ib=myVars.where(1); if(ib>-1) B0=active[ib];
-        B = B0*Scale;
-        AB = A*B; 
-        B2=2.0*B;
-        AoverB=A/B;
+        int ia=myVars.where(0); if(ia>-1) A=myVars[0]=active[ia];
+        int ib=myVars.where(1); if(ib>-1) B0=myVars[1]=active[ib];
+        reset();
+        //B = B0*Scale;
+        //AB = A*B; 
+        //B2=2.0*B;
+        //AoverB=A/B;
       }
     };
 

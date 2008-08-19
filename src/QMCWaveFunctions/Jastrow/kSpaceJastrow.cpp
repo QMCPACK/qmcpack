@@ -612,7 +612,8 @@ namespace qmcplusplus {
   void kSpaceJastrow::checkOutVariables(const opt_variables_type& active)
   {
     myVars.getIndex(active);
-    Optimizable=myVars.is_optimizable();
+    Optimizable=true;
+    //Optimizable=myVars.is_optimizable();
   }
 
   void kSpaceJastrow::reportStatus(ostream& os)
@@ -638,7 +639,7 @@ namespace qmcplusplus {
   }
 
   bool
-  kSpaceJastrow::put(xmlNodePtr cur, VarRegistry<RealType>& vlist) 
+  kSpaceJastrow::put(xmlNodePtr cur) 
   {
     return true;
   }
@@ -687,6 +688,7 @@ namespace qmcplusplus {
 
     //copy the variable map
     myVars=old.myVars;
+    Optimizable=true;
 
     //for (int i=0; i<OneBodySymmCoefs.size(); i++) {
     //  stringstream name_real, name_imag;
