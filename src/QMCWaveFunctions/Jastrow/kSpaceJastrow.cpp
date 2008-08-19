@@ -238,7 +238,7 @@ namespace qmcplusplus {
     int nTwo = TwoBodyGvecs.size();
     int nElecs = Elecs.getTotalNum();
     TwoBodyCoefs.resize(nTwo);
-    TwoBody_rhoG.resize(nOne);
+    TwoBody_rhoG.resize(nTwo);
     TwoBodyPhase.resize(nTwo);
     TwoBody_e2iGr_new.resize(nTwo);
     TwoBody_e2iGr_old.resize(nTwo);
