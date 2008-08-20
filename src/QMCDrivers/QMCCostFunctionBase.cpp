@@ -26,9 +26,11 @@
 
 namespace qmcplusplus {
 
-  QMCCostFunctionBase::QMCCostFunctionBase(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h): MPIObjectBase(0),
+  QMCCostFunctionBase::QMCCostFunctionBase(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h): 
+    MPIObjectBase(0),
     W(w),Psi(psi),H(h),
-    UseWeight(false), PowerE(2), NumCostCalls(0), NumSamples(0), MaxWeight(5),
+    UseWeight(false), Write2OneXml(true),
+    PowerE(2), NumCostCalls(0), NumSamples(0), MaxWeight(5),
     w_en(0.0), w_var(0.0), w_abs(1.0),
     CorrelationFactor(0.0), m_wfPtr(NULL), m_doc_out(NULL), msg_stream(0), debug_stream(0)
   { 
@@ -350,12 +352,19 @@ namespace qmcplusplus {
     //reset the wavefunction for with the new variables
     resetPsi();
 
-    if(!myComm->rank()) {
+    if(!myComm->rank()) 
+    {
       updateXmlNodes();
+
       char newxml[128];
-      sprintf(newxml,"%s.opt.%d.xml", RootName.c_str(),ReportCounter);
+      if(Write2OneXml)
+        sprintf(newxml,"%s.opt.xml", RootName.c_str());
+      else
+        sprintf(newxml,"%s.opt.%d.xml", RootName.c_str(),ReportCounter);
       xmlSaveFormatFile(newxml,m_doc_out,1);
-      if(msg_stream) {
+
+      if(msg_stream) 
+      {
         msg_stream->precision(8);
         *msg_stream << " curCost " 
           << setw(5) << ReportCounter << setw(16) << CostValue 
@@ -366,8 +375,10 @@ namespace qmcplusplus {
         *msg_stream << " curVars " << setw(5) << ReportCounter;
         for(int i=0; i<OptVariables.size(); i++) *msg_stream << setw(16) << OptVariables[i];
         *msg_stream << endl;
-
       }
+
+      //report the data
+      //Psi.reportStatus(*mgs_stream);
     }
 
 #if defined(QMCCOSTFUNCTION_DEBUG)
@@ -432,8 +443,10 @@ namespace qmcplusplus {
   QMCCostFunctionBase::put(xmlNodePtr q) {
 
     string useWeightStr("no");
+    string writeXmlPerStep("no");
     ParameterSet m_param;
     m_param.add(useWeightStr,"useWeight","string");
+    m_param.add(writeXmlPerStep,"dumpXML","string");
     m_param.add(PowerE,"power","int");
     m_param.add(CorrelationFactor,"correlation","scalar");
     m_param.add(MinNumWalkers,"min_walkers","scalar");
@@ -442,6 +455,7 @@ namespace qmcplusplus {
     m_param.put(q);
 
     UseWeight = (useWeightStr == "yes");
+    Write2OneXml = (writeXmlPerStep == "no");
 
     xmlNodePtr qsave=q;
     //Estimators.put(q);

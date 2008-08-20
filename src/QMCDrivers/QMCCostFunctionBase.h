@@ -120,6 +120,8 @@ namespace qmcplusplus {
     bool needBuffering;
     ///bollean to turn on/off the use of anonymous buffer for the ratio
     bool hamiltonianNeedRatio;
+    ///if true, do not write the *.opt.#.xml 
+    bool Write2OneXml;
     /** |E-E_T|^PowerE is used for the cost function
      *
      * default PowerE=1

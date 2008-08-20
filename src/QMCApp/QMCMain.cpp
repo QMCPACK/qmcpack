@@ -370,7 +370,7 @@ namespace qmcplusplus {
       //if it is NOT the first qmc node and qmc/@append!='yes'
       if(!FirstQMC && !append_run) myProject.advance();
 
-      qmcDriver->setStatus(myProject.CurrentRoot(),PrevConfigFile, append_run);
+      qmcDriver->setStatus(myProject.CurrentMainRoot(),PrevConfigFile, append_run);
       qmcDriver->putWalkers(m_walkerset_in);
       qmcDriver->process(cur);
 
@@ -379,7 +379,7 @@ namespace qmcplusplus {
       app_log() << "  QMC Execution time = " << qmcTimer.elapsed() << " secs " << endl;
 
       //keeps track of the configuration file
-      PrevConfigFile = myProject.CurrentRoot();
+      PrevConfigFile = myProject.CurrentMainRoot();
       return true;
     } else {
       return false;
