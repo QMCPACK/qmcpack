@@ -636,6 +636,12 @@ namespace qmcplusplus {
       int loc=myVars.where(ii++);
       if(loc>=0) TwoBodySymmCoefs[i].cG=active[loc];
     }
+
+    for (int i=0; i<OneBodySymmCoefs.size(); i++) 
+      OneBodySymmCoefs[i].set(OneBodyCoefs);
+
+    for (int i=0; i<TwoBodySymmCoefs.size(); i++) 
+      TwoBodySymmCoefs[i].set(TwoBodyCoefs);
   }
 
   bool
