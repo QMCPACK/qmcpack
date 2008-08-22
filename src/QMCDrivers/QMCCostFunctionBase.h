@@ -217,10 +217,12 @@ namespace qmcplusplus {
      * field_id is one of FieldIndex_opt
      */
     Matrix<Return_t> Records;
-    /** Fixed  Gradients , \f$\nabla\ln\Psi\f$, components */
-    ParticleSet::ParticleGradient_t dG;
-    /** Fixed  Laplacian , \f$\nabla^2\ln\Psi\f$, components */
-    ParticleSet::ParticleLaplacian_t dL;
+    typedef ParticleSet::ParticleGradient_t ParticleGradient_t;
+    typedef ParticleSet::ParticleLaplacian_t ParticleLaplacian_t;
+    ///** Fixed  Gradients , \f$\nabla\ln\Psi\f$, components */
+    vector<ParticleGradient_t*> dLogPsi;
+    ///** Fixed  Laplacian , \f$\nabla^2\ln\Psi\f$, components */
+    vector<ParticleLaplacian_t*> d2LogPsi;
     ///stream for debug
     ostream* debug_stream;
 
