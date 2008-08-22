@@ -66,11 +66,13 @@ namespace qmcplusplus {
       std::copy(wPerNode.begin(),wPerNode.end(),ostream_iterator<int>(app_log()," "));
       app_log() << endl;
 
-#pragma omp parallel  
+//#pragma omp parallel 
+//      {
+//        int ip = omp_get_thread_num();
+#pragma omp parallel for
+      for(int ip=0; ip<NumThreads; ++ip)
       {
-        int ip = omp_get_thread_num();
-        //if(ip) hClones[ip]->add2WalkerProperty(*wClones[ip]);
-        estimatorClones[ip]= new EstimatorManager(*Estimators);//,*hClones[ip]);  
+        estimatorClones[ip]= new EstimatorManager(*Estimators);
         estimatorClones[ip]->setCollectionMode(false);
 
         Rng[ip]=new RandomGenerator_t(*RandomNumberControl::Children[ip]);
@@ -92,39 +94,40 @@ namespace qmcplusplus {
             Movers[ip]= new DMCUpdatePbyPWithRejection(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]); 
           }
           Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip]);
-          //Movers[ip]->initWalkersForPbyP(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
+          Movers[ip]->initWalkersForPbyP(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
         } 
         else
         {
           if(NonLocalMove == "yes") {
             app_log() << "  Non-local update is used." << endl;
-            DMCNonLocalUpdate* nlocMover= new DMCNonLocalUpdate(W,Psi,H,Random);
+            DMCNonLocalUpdate* nlocMover= new DMCNonLocalUpdate(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
             nlocMover->put(qmcNode);
             Movers[ip]=nlocMover;
           } else {
             if(KillNodeCrossing) {
-              Movers[ip] = new DMCUpdateAllWithKill(W,Psi,H,Random);
+              Movers[ip] = new DMCUpdateAllWithKill(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
             } else {
-              Movers[ip] = new DMCUpdateAllWithRejection(W,Psi,H,Random);
+              Movers[ip] = new DMCUpdateAllWithRejection(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
             }
           }
           Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip]);
-          //Movers[ip]->initWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
+          Movers[ip]->initWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
         }
       } 
     }
 
-
-#pragma omp parallel 
-    {
-      int ip = omp_get_thread_num();
-      MCWalkerConfiguration::iterator 
-        wit(W.begin()+wPerNode[ip]), wit_end(W.begin()+wPerNode[ip+1]);
-      if(QMCDriverMode[QMC_UPDATE_MODE])
-        Movers[ip]->initWalkersForPbyP(wit,wit_end);
-      else
-        Movers[ip]->initWalkers(wit,wit_end);
-    }
+//#pragma omp parallel  for
+//    for(int ip=0; ip<NumThreads; ++ip)
+//    {
+////    {
+////      int ip = omp_get_thread_num();
+//      MCWalkerConfiguration::iterator 
+//        wit(W.begin()+wPerNode[ip]), wit_end(W.begin()+wPerNode[ip+1]);
+//      if(QMCDriverMode[QMC_UPDATE_MODE])
+//        Movers[ip]->initWalkersForPbyP(wit,wit_end);
+//      else
+//        Movers[ip]->initWalkers(wit,wit_end);
+//    }
 
     if(fixW) 
     {
@@ -176,18 +179,18 @@ namespace qmcplusplus {
 
       for(IndexType step=0; step< nSteps; step++, CurrentStep+=BranchInterval)
       {
-#pragma omp parallel 
-        {
+#pragma omp parallel for
+      for(int ip=0; ip<NumThreads; ++ip)
+      {
           bool pbyp=QMCDriverMode[QMC_UPDATE_MODE];
-          int ip = omp_get_thread_num();
           int now=CurrentStep;
           MCWalkerConfiguration::iterator 
             wit(W.begin()+wPerNode[ip]), wit_end(W.begin()+wPerNode[ip+1]);
 
           //recalculate everything every 100 steps
-          //if(pbyp && now%100 == 0) Movers[ip]->updateWalkers(wit, wit_end);
+          if(pbyp && now%100 == 0) Movers[ip]->updateWalkers(wit, wit_end);
 
-          for(int interval = 0;interval<BranchInterval; interval++,now++)
+          for(int interval = 0;interval<BranchInterval; ++interval,++now)
           {
             Movers[ip]->advanceWalkers(wit,wit_end,false);
           } 

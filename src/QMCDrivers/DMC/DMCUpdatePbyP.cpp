@@ -252,6 +252,7 @@ namespace qmcplusplus {
       if(nAcceptTemp>0) 
       {//need to overwrite the walker properties
         myTimers[2]->start();
+        thisWalker.Age=0;
         thisWalker.R = W.R;
 
         nodecorr=getNodeCorrection(W.G,thisWalker.Drift);
