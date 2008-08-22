@@ -55,6 +55,7 @@ namespace qmcplusplus {
   { 
     delete vmcEngine;
     delete optSolver;
+    delete optTarget;
   }
 
   /** Add configuration files for the optimization
