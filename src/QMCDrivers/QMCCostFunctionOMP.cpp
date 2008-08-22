@@ -50,28 +50,19 @@ namespace qmcplusplus {
       ParticleSet::ParticleLaplacian_t pdL(wRef.getTotalNum());
       ParticleSet::ParticleGradient_t pdG(wRef.getTotalNum());
       typedef MCWalkerConfiguration::Walker_t Walker_t;
+      Return_t eloc_new, wgt_node=0.0;
+      //int totalElements=W.getTotalNum()*OHMMS_DIM;
       MCWalkerConfiguration::iterator it(wRef.begin()); 
       MCWalkerConfiguration::iterator it_end(wRef.end()); 
-      Return_t eloc_new, wgt_node=0.0;
-      int totalElements=W.getTotalNum()*OHMMS_DIM;
-      int iw=0;
-      while(it != it_end) {
+      int iw=0,iwg=wPerNode[ip];
+      for(; it!= it_end;++it,++iw,++iwg)
+      {
         Walker_t& thisWalker(**it);
-        //rewind the buffer to get the data from buffer
-        thisWalker.DataSet.rewind();
-        //W is updated by thisWalker
-        //BEGIN:MEMORY FIX
         wRef.R=thisWalker.R;
         wRef.update();
-        //wRef.copyFromBuffer(thisWalker.DataSet);
-        //END:MEMORY FIX
-
-        thisWalker.DataSet.get(&(pdG[0][0]),&(pdG[0][0])+totalElements);
-        thisWalker.DataSet.get(pdL.begin(),pdL.end());
-
         Return_t logpsi=psiClones[ip]->evaluateDeltaLog(wRef);
-        wRef.G += pdG;
-        wRef.L += pdL;
+        wRef.G += *dLogPsi[iwg];
+        wRef.L += *d2LogPsi[iwg];
 
         Return_t* restrict saved = (*RecordsOnNode[ip])[iw];
         eloc_new=H_KE_Node[ip]->evaluate(wRef)+saved[ENERGY_FIXED];
@@ -79,10 +70,8 @@ namespace qmcplusplus {
         saved[ENERGY_NEW]=eloc_new;
         saved[REWEIGHT]=weight;
         wgt_node+=weight;
-
-        ++it;
-        ++iw;
       }
+
 #pragma omp atomic
       wgt_tot += wgt_node;
     }
@@ -155,6 +144,18 @@ namespace qmcplusplus {
       app_log() <<  wClones[ip]->getActiveWalkers() <<  " " ;
     app_log() << endl;
     FairDivideLow(W.getActiveWalkers()*NumThreads,NumThreads,wPerNode);
+
+    if(dLogPsi.size() != wPerNode[NumThreads])
+    {
+      delete_iter(dLogPsi.begin(),dLogPsi.end());
+      delete_iter(d2LogPsi.begin(),d2LogPsi.end());
+      int nptcl=W.getTotalNum();
+      int nwtot=wPerNode[NumThreads];
+      dLogPsi.resize(nwtot,0);
+      d2LogPsi.resize(nwtot,0);
+      for(int i=0; i<nwtot; ++i) dLogPsi[i]=new ParticleGradient_t(nptcl);
+      for(int i=0; i<nwtot; ++i) d2LogPsi[i]=new ParticleLaplacian_t(nptcl);
+    }
   }
 
   /** evaluate everything before optimization */
@@ -177,41 +178,25 @@ namespace qmcplusplus {
       RecordsOnNode[ip]->resize(numLocWalkers,6);
 
       typedef MCWalkerConfiguration::Walker_t Walker_t;
-      MCWalkerConfiguration::iterator it(wRef.begin()); 
-      MCWalkerConfiguration::iterator it_end(wRef.end()); 
-      int nat = wRef.getTotalNum();
-      int totalElements=W.getTotalNum()*OHMMS_DIM;
-      int iw=0;
+      //int nat = wRef.getTotalNum();
+      //int totalElements=W.getTotalNum()*OHMMS_DIM;
       Return_t e0=0.0;
       Return_t e2=0.0;
-      while(it != it_end) {
+      MCWalkerConfiguration::iterator it(wRef.begin()); 
+      MCWalkerConfiguration::iterator it_end(wRef.end()); 
+      int iw=0,iwg=wPerNode[ip];
+      for(; it!=it_end; ++it,++iw,++iwg)
+      {
 
         Walker_t& thisWalker(**it);
-
-        //clean-up DataSet to save re-used values
-        thisWalker.DataSet.clear();
-        //rewind the counter
-        thisWalker.DataSet.rewind();
-        //MCWalkerConfiguraton::registerData add distance-table data
-        //BEGIN:MEMORY FIX
         wRef.R=thisWalker.R;
         wRef.update();
-        //wRef.registerData(thisWalker.DataSet);
-        //END:MEMORY FIX
         Return_t* restrict saved=(*RecordsOnNode[ip])[iw];
-        psiClones[ip]->evaluateDeltaLog(wRef, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], pdG, pdL);
-
-        thisWalker.DataSet.add(&(pdG[0][0]),&(pdG[0][0])+totalElements);
-        thisWalker.DataSet.add(pdL.first_address(),pdL.last_address());
-
-        //e0 += saved[ENERGY_TOT] = hClones[ip]->evaluate(wRef);
+        psiClones[ip]->evaluateDeltaLog(wRef, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], *dLogPsi[iwg],*d2LogPsi[iwg]);
         Return_t x= hClones[ip]->evaluate(wRef);
         e0 += saved[ENERGY_TOT] = x;
         e2 += x*x;
         saved[ENERGY_FIXED] = hClones[ip]->getLocalPotential();
-
-        ++it;
-        ++iw;
       }
       //add them all
 #pragma omp atomic
