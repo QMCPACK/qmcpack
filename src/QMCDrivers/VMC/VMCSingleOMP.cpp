@@ -57,8 +57,8 @@ namespace qmcplusplus {
           //assign the iterators and resuse them
           MCWalkerConfiguration::iterator wit(W.begin()+wPerNode[ip]), wit_end(W.begin()+wPerNode[ip+1]);
 
-          //if(QMCDriverMode[QMC_UPDATE_MODE]&&now%100==0) 
-          //  Movers[ip]->updateWalkers(wit,wit_end);
+          if(QMCDriverMode[QMC_UPDATE_MODE]&&now%100==0) 
+            Movers[ip]->updateWalkers(wit,wit_end);
           
           Movers[ip]->startBlock(nSteps);
           int now_loc=now;
