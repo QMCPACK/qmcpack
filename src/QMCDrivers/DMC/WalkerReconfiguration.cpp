@@ -113,7 +113,7 @@ int WalkerReconfiguration::getIndexPermutation(MCWalkerConfiguration& W) {
   }
 
   for(int i=0; i<plus.size(); i++) {
-    W[minus[i]]->assign(*(W[plus[i]]));
+    W[minus[i]]->makeCopy(*(W[plus[i]]));
   }
   //int killed = shuffleIndex(nw);
   //fout << "# Total weight " << wtot << " " << killed <<  endl;

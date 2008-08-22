@@ -232,20 +232,22 @@ namespace qmcplusplus {
 
     //@{save/load/clear function for optimization
     inline int numSamples() const { return SampleStack.size();}
+    ///set the number of max samples
+    inline void setNumSamples(int n) { MaxSamples=n;}
     ///save the position of current walkers to SampleStack
     void saveEnsemble();
     ///save the position of current walkers
     void saveEnsemble(iterator first, iterator last);
     ///load SampleStack data to current walkers
     void loadEnsemble();
-    /** load SampleStack data to other for [first,last) of SampleStack
-     * @param other MCWalkerConfiguration
-     * @param first index of the fast sample to be copied
-     * @param last index of the lst sample to be copied
-     *
-     * loadEnsemble severely inefficient. This is called within a parallel region.
-     */
-    void loadEnsemble(MCWalkerConfiguration& other, int first, int last);
+    ///** load SampleStack data to other for [first,last) of SampleStack
+    // * @param other MCWalkerConfiguration
+    // * @param first index of the fast sample to be copied
+    // * @param last index of the lst sample to be copied
+    // *
+    // * loadEnsemble severely inefficient. This is called within a parallel region.
+    // */
+    //void loadEnsemble(MCWalkerConfiguration& other, int first, int last);
     ///clear the ensemble
     void clearEnsemble();
     //@}
@@ -282,6 +284,8 @@ namespace qmcplusplus {
 
      MultiChain *Polymer;
      
+     int MaxSamples;
+     int CurSampleCount;
      //add samples
      vector<ParticlePos_t*> SampleStack;
 

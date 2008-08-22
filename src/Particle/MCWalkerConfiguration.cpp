@@ -24,14 +24,17 @@
 namespace qmcplusplus {
 
 MCWalkerConfiguration::MCWalkerConfiguration(): 
-OwnWalkers(true),ReadyForPbyP(false),UpdateMode(Update_Walker),Polymer(0) {
+OwnWalkers(true),ReadyForPbyP(false),UpdateMode(Update_Walker),Polymer(0),
+  MaxSamples(10),CurSampleCount(0)
+  {
   //move to ParticleSet
   //initPropertyList();
 }
 
 MCWalkerConfiguration::MCWalkerConfiguration(const MCWalkerConfiguration& mcw)
 : ParticleSet(mcw), OwnWalkers(true), GlobalNumWalkers(mcw.GlobalNumWalkers),
-  UpdateMode(Update_Walker), ReadyForPbyP(false), Polymer(0)
+  UpdateMode(Update_Walker), ReadyForPbyP(false), Polymer(0), 
+  MaxSamples(mcw.MaxSamples), CurSampleCount(0)
 {
   GlobalNumWalkers=mcw.GlobalNumWalkers;
   WalkerOffsets=mcw.WalkerOffsets;
@@ -46,12 +49,41 @@ MCWalkerConfiguration::~MCWalkerConfiguration(){
 
 
 void MCWalkerConfiguration::createWalkers(int n) {
-  while(n) {
-    Walker_t* awalker=new Walker_t(GlobalNum);
-    awalker->R = R;
-    awalker->Drift = 0.0;
-    WalkerList.push_back(awalker);
-    --n;
+  if(WalkerList.empty())
+  {
+    while(n) {
+      Walker_t* awalker=new Walker_t(GlobalNum);
+      awalker->R = R;
+      awalker->Drift = 0.0;
+      WalkerList.push_back(awalker);
+      --n;
+    }
+  }
+  else
+  {
+    if(WalkerList.size()>=n)
+    {
+      int iw=WalkerList.size();//copy from the back
+      for(int i=0; i<n; ++i)
+      {
+        WalkerList.push_back(new Walker_t(*WalkerList[--iw]));
+      }
+    }
+    else
+    {
+      int nc=n/WalkerList.size();
+      int nw0=WalkerList.size();
+      for(int iw=0; iw<nw0; ++iw)
+      {
+        for(int ic=0; ic<nc; ++ic) WalkerList.push_back(new Walker_t(*WalkerList[iw]));
+      }
+      n-=nc*nw0;
+      while(n>0) 
+      {
+        WalkerList.push_back(new Walker_t(*WalkerList[--nw0]));
+        --n;
+      }
+    }
   }
 }
 
@@ -125,8 +157,7 @@ MCWalkerConfiguration::destroyWalkers(int nw) {
 void MCWalkerConfiguration::copyWalkers(iterator first, iterator last, iterator it)
 {
   while(first != last) {
-    (*it)->assign(**first);
-    ++it;++first;
+    (*it++)->makeCopy(**first++);
   }
 }
 
@@ -238,30 +269,33 @@ void MCWalkerConfiguration::saveEnsemble(iterator first, iterator last)
 }
 void MCWalkerConfiguration::loadEnsemble()
 {
-  //if(SampleStack.size()>WalkerList.size())
-  //  createWalkers(SampleStack.size()-WalkerList.size());
+  delete_iter(WalkerList.begin(),WalkerList.end());
+  WalkerList.resize(SampleStack.size());
+
   for(int i=0; i<SampleStack.size(); ++i)
   {
     Walker_t* awalker=new Walker_t(GlobalNum);
     awalker->R = *(SampleStack[i]);
     awalker->Drift = 0.0;
-    WalkerList.push_back(awalker);
+    WalkerList[i]=awalker;
     delete SampleStack[i];
   }
+
+  SampleStack.clear();
 }
 
-void MCWalkerConfiguration::loadEnsemble(MCWalkerConfiguration& other,
-    int first, int last)
-{
-  for(int i=first; i<last; ++i)
-  {
-    Walker_t* awalker=new Walker_t(GlobalNum);
-    awalker->R = *(SampleStack[i]);
-    awalker->Drift = 0.0;
-    other.WalkerList.push_back(awalker);
-    delete SampleStack[i];
-  }
-}
+//void MCWalkerConfiguration::loadEnsemble(MCWalkerConfiguration& other,
+//    int first, int last)
+//{
+//  //for(int i=first; i<last; ++i)
+//  //{
+//  //  Walker_t* awalker=new Walker_t(GlobalNum);
+//  //  awalker->R = *(SampleStack[i]);
+//  //  awalker->Drift = 0.0;
+//  //  other.WalkerList.push_back(awalker);
+//  //  delete SampleStack[i];
+//  //}
+//}
 
 void MCWalkerConfiguration::clearEnsemble()
 {

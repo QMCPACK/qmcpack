@@ -100,9 +100,7 @@ namespace qmcplusplus {
     app_log() << "   Loading configuration from MCWalkerConfiguration::SampleStack " << endl;
     app_log() << "    number of walkers before load " << W.getActiveWalkers() << endl;
     Timer t1;
-    W.destroyWalkers(W.begin(),W.end());
     W.loadEnsemble();
-    W.clearEnsemble();
     app_log() << "    Loading time = " << t1.elapsed() << endl;
     app_log() << "    number of walkers after load " << W.getActiveWalkers() << endl;
     //if(aroot.size() && aroot != "invalid") {

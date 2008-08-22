@@ -49,7 +49,7 @@ namespace qmcplusplus {
    * - Properties  : 2D container. The first index corresponds to the H/Psi index and second index >=NUMPROPERTIES.
    * - DataSet : anonymous container. 
    */
-  template<class T, class PA, class GA=PA>
+  template<typename T, typename PA, typename GA=PA>
   struct Walker 
   {
     
@@ -60,13 +60,15 @@ namespace qmcplusplus {
     typedef PooledData<T>  Buffer_t;
 
     ///id reserved for forward walking
-    int ID;
+    long ID;
+    ///id reserved for forward walking
+    long ParentID;
+    ///DMCgeneration
+    int Generation;
     ///Age of this walker age is incremented when a walker is not moved after a sweep
     int Age;
-
     ///Weight of the walker
     T Weight;
-
     /** Number of copies for branching
      *
      * When Multiplicity = 0, this walker will be destroyed.
@@ -76,7 +78,12 @@ namespace qmcplusplus {
     /**the configuration vector (3N-dimensional vector to store
        the positions of all the particles for a single walker)*/
     PA R;
-    
+
+    ///** \f$ \nabla_i d\log \Psi for the i-th particle */
+    //GA Grad;
+    ///** \f$ \nabla^2_i d\log \Psi for the i-th particle */
+    //LA Lap;
+
     ///drift of the walker \f$ Drift({\bf R}) = \tau v_{drift}({\bf R}) \f$
     GA Drift;
 
@@ -87,62 +94,54 @@ namespace qmcplusplus {
     Buffer_t DataSet;
 
     ///default constructor
-    inline Walker() : Age(0),Weight(1.0e0),Multiplicity(1.0e0) {
+    inline Walker() : ID(0),ParentID(0), Generation(0),Age(0),
+    Weight(1.0e0),Multiplicity(1.0e0) 
+    {
       Properties.resize(1,NUMPROPERTIES);
       reset();
     }
 
     ///create a walker for n-particles
-    inline explicit Walker(int nptcl) : Age(0), Weight(1.0e0),Multiplicity(1.0e0){  
+    inline explicit Walker(int nptcl) : ID(0),ParentID(0), Generation(0),Age(0),
+        Weight(1.0e0),Multiplicity(1.0e0)
+    {
       Properties.resize(1,NUMPROPERTIES);
       resize(nptcl);
       reset();
-    }
-
-    ///copy constructor
-    inline Walker(const Walker& a):Age(0),Weight(1.0e0), Multiplicity(1.0e0){
-      makeCopy(a);
     }
 
     inline ~Walker() { }
     
     ///assignment operator
     inline Walker& operator=(const Walker& a) {
-      makeCopy(a);
+      if(this != &a) makeCopy(a);
       return *this;
-    }
-
-    inline void assign(const Walker& a) {
-      Age=a.Age;
-      Weight=a.Weight;
-      Multiplicity=a.Multiplicity;
-      R = a.R;
-      Drift = a.Drift;
-      Properties=a.Properties;
-      if(a.DataSet.size()) {
-        DataSet=a.DataSet;
-      }
     }
 
     ///return the number of particles per walker
     inline int size() const { return R.size(); }
 
-    ///resize for n-particles
-    inline void resize(int nptcl) {
+    ///resize for n particles
+    inline void resize(int nptcl) 
+    {
+      //R.resize(nptcl); Grad.resize(nptcl),Lap.resize(nptcl),Drift.resize(nptcl); 
       R.resize(nptcl); Drift.resize(nptcl); 
     }
 
     ///copy the content of a walker
-    inline void makeCopy(const Walker& a) {    
-      resize(a.R.size());
+    inline void makeCopy(const Walker& a) 
+    {    
+      ID=a.ID;
+      ParentID=a.ParentID;
+      Generation=a.Generation;
       Age=a.Age;
+      Weight=a.Weight;
       Multiplicity=a.Multiplicity;
+      if(R.size()!=a.R.size()) resize(a.R.size());
       R = a.R;
       Drift = a.Drift;
       Properties.copy(a.Properties);
-      if(a.DataSet.size()) {
-        DataSet=a.DataSet;
-      }
+      DataSet=a.DataSet;
     }
 
     //return the address of the values of Hamiltonian terms
@@ -197,7 +196,6 @@ namespace qmcplusplus {
     inline void resetProperty(T logpsi, T sigN, T ene, T r2a, T r2p, T vq) 
     {
       Age=0;
-      //Weight=1.0;
       Properties(LOGPSI)=logpsi;
       Properties(SIGN)=sigN;
       Properties(LOCALENERGY) = ene;
@@ -230,14 +228,17 @@ namespace qmcplusplus {
      *
      * ID, Age, Properties, R, Drift, DataSet is packed
      */
-    inline int byteSize() {
+    inline int byteSize() 
+    {
+      //return 2*sizeof(long)+2*sizeof(int)+
       return 2*sizeof(int)+(Properties.size()+DIM*2*R.size()+DataSet.size())*sizeof(T);
     }
 
     template<class Msg>
     inline Msg& putMessage(Msg& m) {
       int nat=R.size();
-      m << ID << Age;
+      //m << ID << ParentID << Generation << Age;
+      m << Generation << Age;
       for(int iat=0; iat<nat;iat++) R[iat].putMessage(m);
       for(int iat=0; iat<nat;iat++) Drift[iat].putMessage(m);
       Properties.putMessage(m);
@@ -248,7 +249,8 @@ namespace qmcplusplus {
     template<class Msg>
     inline Msg& getMessage(Msg& m) {
       int nat=R.size();
-      m >> ID >> Age;
+      //m>>ID >> ParentID >> Generation >> Age;
+      m>> Generation >> Age;
       for(int iat=0; iat<nat;iat++) R[iat].getMessage(m);
       for(int iat=0; iat<nat;iat++) Drift[iat].getMessage(m);
       Properties.getMessage(m);

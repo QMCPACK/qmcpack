@@ -172,7 +172,7 @@ int WalkerReconfigurationMPI::swapWalkers(MCWalkerConfiguration& W) {
   int lower=std::min(plus.size(),minus.size()); 
   while(lower>0) {
     --lower;
-    W[minus[lower]]->assign(*(W[plus[lower]]));
+    W[minus[lower]]->makeCopy(*(W[plus[lower]]));
     minus.pop_back();
     plus.pop_back();
   }

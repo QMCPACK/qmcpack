@@ -126,17 +126,15 @@ namespace qmcplusplus {
     app_log() << "   Loading configuration from MCWalkerConfiguration::SampleStack " << endl;
     app_log() << "    number of walkers before load " << W.getActiveWalkers() << endl;
 
-#pragma omp parallel
+#pragma omp parallel for
+    for(int ip=0; ip<NumThreads; ++ip)
     {
-      int ip = omp_get_thread_num();
       if(H_KE_Node[ip]==0)
       {
         H_KE_Node[ip]= new QMCHamiltonian;
         H_KE_Node[ip]->addOperator(hClones[ip]->getHamiltonian("Kinetic"),"Kinetic");
       }
-      wClones[ip]->destroyWalkers(wClones[ip]->begin(),wClones[ip]->end());
       wClones[ip]->loadEnsemble();
-      wClones[ip]->clearEnsemble();
     }
 
     app_log() << "    number of walkers after load: ";
