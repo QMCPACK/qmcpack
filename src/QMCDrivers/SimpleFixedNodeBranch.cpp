@@ -218,7 +218,7 @@ namespace qmcplusplus
         vParam[B_BRANCHFILTER]=1.0/(vParam[B_BRANCHMAX]-vParam[B_BRANCHCUTOFF]);
 
 
-        app_log() << "\n Warmup is completed. ";
+        app_log() << "\n Warmup is completed after " << iParam[B_WARMUPSTEPS] << endl;
         if(BranchMode[B_USETAUEFF])
           app_log() << "\n  TauEff     = " << vParam[B_TAUEFF] << "\n TauEff/Tau = " << vParam[B_TAUEFF]/vParam[B_TAU];
         else
