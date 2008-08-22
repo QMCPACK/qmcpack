@@ -39,10 +39,10 @@ struct PooledData {
   //default constructor
   inline PooledData() { Anchor=myData.begin();}
 
-  //copy constructor
-  inline PooledData(const PooledData& a): myData(a.myData) { 
-    Anchor=myData.begin();
-  }
+  ////copy constructor
+  //inline PooledData(const PooledData& a): myData(a.myData) { 
+  //  Anchor=myData.begin();
+  //}
 
   //constructor with a size
   explicit inline PooledData(int n): myData(n)
@@ -50,16 +50,16 @@ struct PooledData {
     Anchor=myData.begin();
   }
 
-  //assignement operator
-  PooledData<T>& operator=(const PooledData<T>& a) 
-  {
-    myData.clear();
-    if(a.size()) {
-      myData.reserve(a.size());
-      myData.insert(myData.begin(), a.begin(), a.end());
-    }
-    return *this;
-  }
+  ////assignement operator
+  //PooledData<T>& operator=(const PooledData<T>& a) 
+  //{
+  //  myData.clear();
+  //  if(a.size()) {
+  //    myData.reserve(a.size());
+  //    myData.insert(myData.begin(), a.begin(), a.end());
+  //  }
+  //  return *this;
+  //}
 
   inline size_type size() const { return myData.size();}
   inline size_type capacity() const { return myData.capacity();}
@@ -208,17 +208,18 @@ public:
   inline PooledData(): Current(0) { }
 
   //copy constructor
-  inline PooledData(const PooledData& a): std::vector<T>(a),Current(0) { }
+  //inline PooledData(const PooledData& a): std::vector<T>(a),Current(0) { }
 
   //constructor with a size
   explicit inline PooledData(int n): std::vector<T>(n) , Current(0){}
 
   //assignement operator
   PooledData<T>& operator=(const PooledData<T>& a) {
-    this->clear();
-    if(a.size()) {
-      this->reserve(a.size());
-      this->insert(this->begin(), a.begin(), a.end());
+    if(this != &a && a.size())
+    {
+      Current=a.Current;
+      this->resize(a.size());
+      std::copy(a.begin(),a.end(),this->begin());
     }
     return *this;
   }
