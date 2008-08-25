@@ -45,6 +45,9 @@ class accumulator_set
 
     /** return the sum */
     inline return_type result() const { return val;}
+
+    /** return the sum of value squared */
+    inline return_type result2() const { return valsq;}
     /** return the count
      *
      * Will return the sum of weights of each sample

@@ -197,6 +197,8 @@ namespace qmcplusplus {
     // */
     void getEnergyAndWeight(RealType& e, RealType& w, RealType& var);
 
+    void getCurrentStatistics(MCWalkerConfiguration& W, RealType& eavg, RealType& var);
+
     template<class CT>
     void write(CT& anything, bool doappend) 
     {

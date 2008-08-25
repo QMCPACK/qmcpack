@@ -436,6 +436,21 @@ namespace qmcplusplus {
     }
   }
 
+  void 
+    EstimatorManager::getCurrentStatistics(MCWalkerConfiguration& W, RealType& eavg, RealType& var)
+  {
+    LocalEnergyOnlyEstimator energynow;
+    energynow.clear();
+    energynow.accumulate(W.begin(),W.end(),1.0);
+    vector<RealType> tmp(3);
+    tmp[0]= energynow.scalars[0].result();
+    tmp[1]= energynow.scalars[0].result2();
+    tmp[2]= energynow.scalars[0].count();
+    myComm->allreduce(tmp);
+    eavg=tmp[0]/tmp[2];
+    var=tmp[1]/tmp[2]-eavg*eavg;
+  }
+
   EstimatorManager::EstimatorType* 
     EstimatorManager::getMainEstimator() 
     {
