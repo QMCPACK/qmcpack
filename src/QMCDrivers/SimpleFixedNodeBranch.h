@@ -298,7 +298,7 @@ namespace qmcplusplus {
     ///start a run
     void start(const string& froot, bool append);
     ///finalize the simulation
-    void finalize();
+    void finalize(MCWalkerConfiguration& w);
 
     private:
     ///default constructor (disabled)

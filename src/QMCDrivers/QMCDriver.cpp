@@ -199,7 +199,7 @@ namespace qmcplusplus {
     TimerManager.print(myComm);
     TimerManager.reset();
     
-    branchEngine->finalize();
+    branchEngine->finalize(W);
 
     RandomNumberControl::write(wOut->FileName,myComm);
 

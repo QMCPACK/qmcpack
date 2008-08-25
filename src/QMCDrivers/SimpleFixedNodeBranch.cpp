@@ -125,17 +125,15 @@ namespace qmcplusplus
       WalkerController = createWalkerController(iParam[B_TARGETWALKERS], MyEstimator->getCommunicator(), myNode);
       iParam[B_MAXWALKERS]=WalkerController->Nmax;
       iParam[B_MINWALKERS]=WalkerController->Nmin;
-      WalkerController->start();
 
       if(!fixW && sParam[MIXDMCOPT]=="yes")
       {
         app_log() << "Warmup DMC is done with a fixed population " << iParam[B_TARGETWALKERS] << endl;
         BackupWalkerController=WalkerController; //save the main controller
         WalkerController=createWalkerController(iParam[B_TARGETWALKERS],MyEstimator->getCommunicator(), myNode,true);
-        WalkerController->start();
         BranchMode.set(B_POPCONTROL,0);
       }
-
+      WalkerController->start();
       PopHist.clear();
       PopHist.reserve(std::max(iParam[B_ENERGYUPDATEINTERVAL],5));
     }
@@ -256,6 +254,9 @@ namespace qmcplusplus
           delete WalkerController;
           WalkerController=BackupWalkerController;
           BackupWalkerController=0;
+          vParam[B_ETRIAL]=vParam[B_EREF];
+          app_log()  << "  Etrial     = " << vParam[B_ETRIAL] << endl;
+          WalkerController->start();
         }
         //This is not necessary
         //EnergyHist(DMCEnergyHist.mean());
@@ -311,16 +312,22 @@ namespace qmcplusplus
     }
   }
 
-  void SimpleFixedNodeBranch::finalize() 
+  void SimpleFixedNodeBranch::finalize(MCWalkerConfiguration& w) 
   {
 
     if(!WalkerController)
     {//running VMC
-      RealType e, w,sigma2;
-      MyEstimator->getEnergyAndWeight(e,w,sigma2);
-      
-      vParam[B_ETRIAL]=vParam[B_EREF]=e/w;
+      RealType e, sigma2;
+      //MyEstimator->getEnergyAndWeight(e,w,sigma2);
+      MyEstimator->getCurrentStatistics(w,e,sigma2);
+      vParam[B_ETRIAL]=vParam[B_EREF]=e;
       vParam[B_SIGMA]=std::sqrt(sigma2);
+      
+      app_log() << "SimpleFixedNodeBranch::finalize " << endl;
+      app_log() << "  Average Energy of a population  = " << e << endl;
+      app_log() << "  Energy Variance = " << vParam[B_SIGMA] << endl;
+      //vParam[B_ETRIAL]=vParam[B_EREF]=e/w;
+      //vParam[B_SIGMA]=std::sqrt(sigma2);
 
       //this is just to avoid diving by n-1  == 0
       EnergyHist(vParam[B_EREF]);
