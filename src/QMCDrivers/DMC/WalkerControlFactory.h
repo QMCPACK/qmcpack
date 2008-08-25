@@ -41,7 +41,7 @@ namespace qmcplusplus {
    * @param current number of walkers
    */
   WalkerControlBase* createWalkerController(int nwtot,
-      Communicate* comm, xmlNodePtr cur);
+      Communicate* comm, xmlNodePtr cur, bool reconfig=false);
 }
 #endif
 /***************************************************************************

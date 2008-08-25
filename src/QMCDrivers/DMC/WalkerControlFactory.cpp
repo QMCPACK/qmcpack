@@ -26,7 +26,8 @@ namespace qmcplusplus {
 
 #if defined(HAVE_MPI)
 
-  WalkerControlBase* createWalkerController(int nwtot, Communicate* comm, xmlNodePtr cur) 
+  WalkerControlBase* createWalkerController(int nwtot, Communicate* comm, xmlNodePtr cur,
+      bool reconfig) 
   {
 
     app_log() << "  Creating WalkerController: current number of walkers = " << nwtot << endl;
@@ -34,18 +35,18 @@ namespace qmcplusplus {
     ///set of parameters
     int nmax=0;
     int nmin=0;
-    string reconfig("no");
+    string reconfigopt("no");
     ParameterSet m_param;
     m_param.add(nwtot,"targetWalkers","int"); 
     m_param.add(nwtot,"targetwalkers","int"); 
-    m_param.add(reconfig,"reconfiguration","string");
+    m_param.add(reconfigopt,"reconfiguration","string");
     m_param.put(cur);
 
     //if(nmax<0) nmax=2*nideal;
     //if(nmin<0) nmin=nideal/2;
     WalkerControlBase* wc=0;
     int ncontexts = comm->size();
-    bool fixw= (reconfig == "yes");
+    bool fixw= (reconfig || reconfigopt == "yes");
 
     if(fixw) {
       nmax=nwtot/ncontexts;
@@ -161,7 +162,7 @@ namespace qmcplusplus {
     return wc;
   }
 
-  WalkerControlBase* createWalkerController(int nwtot, Communicate* comm, xmlNodePtr cur) 
+  WalkerControlBase* createWalkerController(int nwtot, Communicate* comm, xmlNodePtr cur, bool reconfig) 
   {
 
     app_log() << "  Creating WalkerController: current number of walkers = " << nwtot << endl;
@@ -169,11 +170,11 @@ namespace qmcplusplus {
     ///set of parameters
     int nmax=0;
     int nmin=0;
-    string reconfig("no");
+    string reconfigopt("no");
     ParameterSet m_param;
     m_param.add(nwtot,"targetWalkers","int"); 
     m_param.add(nwtot,"targetwalkers","int"); 
-    m_param.add(reconfig,"reconfiguration","string");
+    m_param.add(reconfigopt,"reconfiguration","string");
     m_param.put(cur);
 
     //if(nmax<0) nmax=2*nideal;
@@ -182,7 +183,7 @@ namespace qmcplusplus {
     WalkerControlBase* wc=0;
 
     //if(wc== 0) wc= new WalkerControlBase;
-    if(reconfig == "yes") {
+    if(reconfig || reconfigopt == "yes") {
       app_log() << "  Using a fixed number of walkers by reconfiguration." << endl;
       wc = new WalkerReconfiguration(comm);
       wc->Nmax=nwtot;

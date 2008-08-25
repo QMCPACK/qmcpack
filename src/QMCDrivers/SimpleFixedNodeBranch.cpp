@@ -1,4 +1,4 @@
-//////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
 // (c) Copyright 2005- by Jeongnim Kim
 //////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////
@@ -31,10 +31,11 @@ namespace qmcplusplus
 {
 
   ///enum to yes/no options saved in sParam 
-  enum {COMBOPT, USETAUOPT, DUMMYOPT};
+  enum {COMBOPT, USETAUOPT, MIXDMCOPT,DUMMYOPT};
 
   SimpleFixedNodeBranch::SimpleFixedNodeBranch(RealType tau, int nideal): 
-    vParam(1.0), WalkerController(0), MyEstimator(0), PopHist(5), DMCEnergyHist(5)
+    vParam(1.0), WalkerController(0), BackupWalkerController(0),
+    MyEstimator(0), PopHist(5), DMCEnergyHist(5)
   {
 
     BranchMode.set(B_DMCSTAGE,0); //warmup stage
@@ -100,6 +101,7 @@ namespace qmcplusplus
 
     //turn on/off effective tau onl for time-step error comparisons
     m_param.add(sParam[USETAUOPT],"useBareTau","option");
+    m_param.add(sParam[MIXDMCOPT],"warmupByReconfiguration","opt"); 
   }
 
   void SimpleFixedNodeBranch::start(const string& froot, bool append) 
@@ -125,6 +127,15 @@ namespace qmcplusplus
       iParam[B_MINWALKERS]=WalkerController->Nmin;
       WalkerController->start();
 
+      if(!fixW && sParam[MIXDMCOPT]=="yes")
+      {
+        app_log() << "Warmup DMC is done with a fixed population " << iParam[B_TARGETWALKERS] << endl;
+        BackupWalkerController=WalkerController; //save the main controller
+        WalkerController=createWalkerController(iParam[B_TARGETWALKERS],MyEstimator->getCommunicator(), myNode,true);
+        WalkerController->start();
+        BranchMode.set(B_POPCONTROL,0);
+      }
+
       PopHist.clear();
       PopHist.reserve(std::max(iParam[B_ENERGYUPDATEINTERVAL],5));
     }
@@ -149,6 +160,7 @@ namespace qmcplusplus
 
     //reset controller 
     WalkerController->reset();
+    if(BackupWalkerController) BackupWalkerController->reset();
     BranchMode=bmode;
 
     app_log() << "  QMC counter      = " << iParam[B_COUNTER] << endl;
@@ -236,7 +248,15 @@ namespace qmcplusplus
         //reset the histogram
         EnergyHist.clear();
         EnergyHist(vParam[B_EREF]);
-       
+
+        if(sParam[MIXDMCOPT]=="yes")
+        {
+          app_log() << "Switching to DMC with fluctuating populations" << endl;
+          BranchMode.set(B_POPCONTROL,1); //use standard DMC
+          delete WalkerController;
+          WalkerController=BackupWalkerController;
+          BackupWalkerController=0;
+        }
         //This is not necessary
         //EnergyHist(DMCEnergyHist.mean());
       }

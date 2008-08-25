@@ -61,7 +61,7 @@ namespace qmcplusplus {
     enum  
     {
       B_DMC=0, B_DMCSTAGE=1, B_POPCONTROL=2, B_USETAUEFF=3, 
-      B_CLEARHISTORY=4,
+      B_CLEARHISTORY=4, 
       B_MODE_MAX=8
     };
 
@@ -137,6 +137,8 @@ namespace qmcplusplus {
     xmlNodePtr myNode;
     ///WalkerController
     WalkerControlBase* WalkerController;
+    ///Backup WalkerController for mixed DMC
+    WalkerControlBase* BackupWalkerController;
     ///EstimatorManager
     EstimatorManager*  MyEstimator;
     ///a simple accumulator for energy
