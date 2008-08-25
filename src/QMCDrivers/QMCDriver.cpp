@@ -35,7 +35,8 @@ namespace qmcplusplus {
   branchEngine(0), ResetRandom(false), AppendRun(false),
   MyCounter(0), RollBackBlocks(0),
   Period4CheckPoint(1), Period4WalkerDump(10),
-  CurrentStep(0), nBlocks(100), nSteps(10), 
+  Period4CheckProperties(100), CurrentStep(0), 
+  nBlocks(100), nSteps(10), 
   nAccept(0), nReject(0), nTargetWalkers(0),
   Tau(0.01), qmcNode(NULL),
   QMCType("invalid"), wOut(0),
@@ -55,6 +56,7 @@ namespace qmcplusplus {
     m_param.add(RollBackBlocks,"rewind","int");
     m_param.add(Period4WalkerDump,"recordWalkers","int");
     m_param.add(MaxCPUSecs,"maxcpusecs","real");
+    m_param.add(Period4CheckProperties,"checkProperties","int");
 
     ////add each QMCHamiltonianBase to W.PropertyList so that averages can be taken
     //H.add2WalkerProperty(W);
@@ -268,6 +270,14 @@ namespace qmcplusplus {
   bool 
   QMCDriver::putQMCInfo(xmlNodePtr cur) {
     
+    SpeciesSet tspecies(W.getSpeciesSet());
+    RealType mass = tspecies(tspecies.addAttribute("mass"),tspecies.addSpecies(tspecies.speciesName[W.GroupID[0]]));
+    if (mass < 1e-12) {
+      mass=1.0;
+      tspecies(tspecies.addAttribute("mass"),tspecies.addSpecies(tspecies.speciesName[W.GroupID[0]]))=1.0;
+    }
+    oneovermass = 1.0/mass;
+
     //set the default walker to the number of threads times 10
     int defaultw = omp_get_max_threads()*10;
     int targetw = 0;
@@ -315,6 +325,7 @@ namespace qmcplusplus {
     app_log() << "  timestep = " << Tau << endl;
     app_log() << "  blocks = " << nBlocks << endl;
     app_log() << "  steps = " << nSteps << endl;
+//     app_log() << "  mass = " << mass << endl;
     app_log() << "  current = " << CurrentStep << endl;
 
     //Need MPI-IO

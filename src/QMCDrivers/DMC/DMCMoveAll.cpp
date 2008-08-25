@@ -39,6 +39,7 @@ namespace qmcplusplus {
     m_param.add(NonLocalMove,"nonlocalmoves","string");
 
     //create a ScalarEstimator and add DMCEnergyEstimator
+//     if (Estimators) delete Estimators;
     Estimators = new ScalarEstimatorManager(H);
     Estimators->add(new DMCEnergyEstimator,"elocal");
   }
@@ -177,7 +178,7 @@ namespace qmcplusplus {
    * Default mode: Print the ensemble of walker configurations 
    * at the end of the run.
    */
-  bool DMCMoveAll::run() { 
+  bool DMCMoveAll::run() {
 
     bool fixW = (Reconfiguration == "yes");
 

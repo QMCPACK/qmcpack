@@ -45,6 +45,18 @@ namespace qmcplusplus {
     //Add the primary h and psi, extra H and Psi pairs will be added by QMCMain
     add_H_and_Psi(&h,&psi);
     nObs = h.sizeOfObservables();
+    
+//     SpeciesSet tspecies(W.getSpeciesSet());
+//     RealType mass = tspecies(tspecies.addAttribute("mass"),tspecies.addSpecies(tspecies.speciesName[W.GroupID[0]]));
+//     if (mass < 1e-12) {
+//       mass=1.0;
+//       tspecies(tspecies.addAttribute("mass"),tspecies.addSpecies(tspecies.speciesName[W.GroupID[0]]))=1.0;
+//     }
+//     oneovermass = 1.0/mass;
+//     RealType oneoversqrtmass = std::sqrt(oneovermass);
+//     Tau=brancher->getTau();
+//     m_oneover2tau = 0.5*mass/Tau;
+//     m_sqrttau = std::sqrt(Tau*oneovermass);
   }
 
   RQMCMultiple::~RQMCMultiple() {
@@ -105,10 +117,10 @@ namespace qmcplusplus {
    * - set reference properties for the first run
    */
   void RQMCMultiple::initReptile() {
-    m_oneover2tau=0.5/Tau;
-    m_sqrttau=std::sqrt(Tau);
-    Tauoverm = Tau/MSS;
-    sqrtTauoverm = std::sqrt(Tauoverm);
+//     m_oneover2tau=0.5/Tau;
+//     m_sqrttau=std::sqrt(Tau);
+//     Tauoverm = Tau/MSS;
+//     sqrtTauoverm = std::sqrt(Tauoverm);
     
     //Resize working arrays
     resizeArrays(Psi1.size());
@@ -129,8 +141,8 @@ namespace qmcplusplus {
       //*(NewBead->Gradients[ipsi])=W.G;
       Copy(W.G,*(NewBead->Gradients[ipsi]));
       NewBead->BeadSignWgt[ipsi]=1;
-      NewBead->getScaledDrift(branchEngine->LogNorm,Tau);
-      NewBead->Action(ipsi,MinusDirection)= 0.25*Dot(*NewBead->DriftVectors[ipsi],*NewBead->DriftVectors[ipsi])/Tau;
+      NewBead->getScaledDrift(branchEngine->LogNorm,Tauoverm);
+      NewBead->Action(ipsi,MinusDirection)= 0.5*m_oneover2tau*Dot(*NewBead->DriftVectors[ipsi],*NewBead->DriftVectors[ipsi]);
       NewBead->Action(ipsi,PlusDirection)=NewBead->Action(ipsi,MinusDirection);
       NewBead->Action(ipsi,Directionless)=0.5*Tau*eloc;
 
@@ -140,7 +152,7 @@ namespace qmcplusplus {
       NewBead->deltaRSquared[2]=0.0;
     }
     //     NewBead->TransProb[MinusDirection]=(0.5*Tau)*Dot(NewBead->Drift,NewBead->Drift) ;
-    NewBead->TransProb[MinusDirection]=0.5*Dot(NewBead->Drift,NewBead->Drift)/Tau ;
+    NewBead->TransProb[MinusDirection]=m_oneover2tau*Dot(NewBead->Drift,NewBead->Drift) ;
     NewBead->TransProb[PlusDirection]=NewBead->TransProb[MinusDirection];
 
 
@@ -161,7 +173,8 @@ namespace qmcplusplus {
     }
 
     multiEstimator->setPolymer(Reptile);
-    multiEstimator->pnorm = 1.0/( W.Lattice.DIM *  W.Lattice.Volume);
+    ///THis does not belong here!!
+//     multiEstimator->pnorm = 1.0/( W.Lattice.DIM *  W.Lattice.Volume);
 
     if(!restartmode){
       if(reuseReptile)
@@ -296,8 +309,8 @@ namespace qmcplusplus {
         SumSign[ipsi] += BeadSign;
 
         // Save them in curW
-        curW.Action(ipsi,MinusDirection)=0.25*MSS/Tau*KinActMinus;
-        curW.Action(ipsi,PlusDirection)=0.25*MSS/Tau*KinActPlus;
+        curW.Action(ipsi,MinusDirection)=0.5*m_oneover2tau*KinActMinus;
+        curW.Action(ipsi,PlusDirection)=0.5*m_oneover2tau*KinActPlus;
         curW.Action(ipsi,Directionless)=0.5*Tau*eloc;
       }
 
@@ -352,8 +365,8 @@ namespace qmcplusplus {
         TrProbPlus=Dot(deltaR,deltaR);
       } 
 
-      curW.TransProb[MinusDirection]=TrProbMinus*MSS*0.5/Tau ;
-      curW.TransProb[PlusDirection]=TrProbPlus*MSS*0.5/Tau;
+      curW.TransProb[MinusDirection]=TrProbMinus*m_oneover2tau ;
+      curW.TransProb[PlusDirection]=TrProbPlus*m_oneover2tau;
       ++bead;
     }
 
@@ -492,25 +505,43 @@ namespace qmcplusplus {
         multiEstimator = new CSPolymerEstimator(H,nPsi);
       } else if (observ=="ZVZB"){
         cout<<"Using ZVZB observables"<<endl;
-        multiEstimator = new MJPolymerEstimator(H,nPsi);
+//         multiEstimator = new MJPolymerEstimator(H,nPsi);
+        MJPolymerEstimator* MJp = new MJPolymerEstimator(H,nPsi);
+        MJp->setpNorm(1.0/( W.Lattice.DIM *  W.Lattice.Volume));
+        multiEstimator = MJp;
       } else if (observ=="HFDHE2"){
         cout<<"Using HFDHE2 observables"<<endl;
-        multiEstimator = new HFDHE2PolymerEstimator(H,nPsi);
+        HFDHE2PolymerEstimator* HFp = new HFDHE2PolymerEstimator(H,nPsi);
+        HFp->setpNorm(1.0/( W.Lattice.DIM *  W.Lattice.Volume));
+        multiEstimator = HFp;
       }
       
       Estimators->add(multiEstimator,Estimators->MainEstimatorName);
       branchEngine->setEstimatorManager(Estimators);
     }
-    cout<<"  Mass for Propagator is: "<<MSS<<endl;
+    
+    SpeciesSet tspecies(W.getSpeciesSet());
+    RealType mass = tspecies(tspecies.addAttribute("mass"),tspecies.addSpecies(tspecies.speciesName[W.GroupID[0]]));
+    if (mass < 1e-12) {
+      mass=1.0;
+      tspecies(tspecies.addAttribute("mass"),tspecies.addSpecies(tspecies.speciesName[W.GroupID[0]]))=1.0;
+    }
+    RealType oneoversqrtmass = std::sqrt(oneovermass);
+    Tauoverm = (Tau*oneovermass);
+    m_oneover2tau = 0.5/Tauoverm;
+    m_sqrttau = std::sqrt(Tauoverm);
+    
+//     cout<<"  Mass for Propagator is: "<<1.0/oneovermass<<endl;
+//     cout<<"  m_over2t: "<<m_oneover2tau<<endl;
     return true;
   }
   
   void RQMCMultiple::moveReptile(){
 
-    m_oneover2tau=0.5/Tau;
-    m_sqrttau=std::sqrt(Tau);
-    Tauoverm = Tau/MSS;
-    sqrtTauoverm = std::sqrt(Tauoverm);
+//     m_oneover2tau=0.5/Tau;
+//     m_sqrttau=std::sqrt(Tau);
+//     Tauoverm = Tau/MSS;
+//     sqrtTauoverm = std::sqrt(Tauoverm);
 
     int ihead,inext,itail;
 
@@ -569,7 +600,7 @@ namespace qmcplusplus {
     head->getScaledDrift(branchEngine->LogNorm,Tauoverm);
 //     head->getScaledDrift(branchEngine->LogNorm,Tau);
 //     deltaR =  m_sqrttau*gRand + head->Drift;
-    deltaR =  sqrtTauoverm*gRand + head->Drift;
+    deltaR =  m_sqrttau*gRand + head->Drift;
     
     W.R = head->R + deltaR;
     //Save Transition Probability
@@ -597,7 +628,7 @@ namespace qmcplusplus {
 //       gRand = deltaR-Tau*(*head->Gradients[ipsi]);
       gRand = deltaR - *head->DriftVectors[ipsi];
 //       head->Action(ipsi,forward)= 0.5*m_oneover2tau*Dot(gRand,gRand);
-      head->Action(ipsi,forward)= 0.5*m_oneover2tau*MSS*Dot(gRand,gRand);
+      head->Action(ipsi,forward)= 0.5*m_oneover2tau*Dot(gRand,gRand);
     }
     bool FAIL=0;
     //evaluate all relevant quantities in the new position
@@ -637,7 +668,7 @@ namespace qmcplusplus {
       //gRand=deltaR+Tau*W.G;
       PAOps<RealType,DIM>::axpy(1.0,*NewBead->DriftVectors[ipsi],deltaR,gRand);
 //       NewBead->Action(ipsi,backward)= 0.5*m_oneover2tau*Dot(gRand,gRand);
-      NewBead->Action(ipsi,backward)= 0.5*m_oneover2tau*MSS*Dot(gRand,gRand);
+      NewBead->Action(ipsi,backward)= 0.5*m_oneover2tau*Dot(gRand,gRand);
 
       NewBead->Action(ipsi,Directionless)=0.5*Tau*eloc;
       int beadwgt=abs( ( Reptile->getSign(NewBeadProp[SIGN])+Reptile->RefSign[ipsi] )/2 );
@@ -673,7 +704,7 @@ namespace qmcplusplus {
       NewBead->getScaledDrift(branchEngine->LogNorm,Tauoverm);
       gRand=deltaR+ NewBead->Drift;
 //       NewBead->TransProb[backward]=m_oneover2tau*Dot(gRand,gRand);
-      NewBead->TransProb[backward]=m_oneover2tau*MSS*Dot(gRand,gRand);
+      NewBead->TransProb[backward]=m_oneover2tau*Dot(gRand,gRand);
 
       RealType AcceptProb(-1.0),NewGlobalWgt(0.0);
       RealType RefAction(-1.0e20);

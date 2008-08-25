@@ -83,6 +83,7 @@ namespace qmcplusplus {
         else
           Mover=new VMCUpdatePbyP(W,Psi,H,Random);
         Mover->resetRun(branchEngine,Estimators);
+        //Mover->initWalkersForPbyP(W.begin(),W.end());
       }
       else
       {
@@ -92,14 +93,15 @@ namespace qmcplusplus {
         else
           Mover=new VMCUpdateAll(W,Psi,H,Random);
         Mover->resetRun(branchEngine,Estimators);
+        //Mover->initWalkers(W.begin(),W.end());
       }
     }
 
+    Mover->put(qmcNode);
     if(QMCDriverMode[QMC_UPDATE_MODE])
       Mover->initWalkersForPbyP(W.begin(),W.end());
     else
       Mover->initWalkers(W.begin(),W.end());
-    Mover->put(qmcNode);
   }
 
   bool 

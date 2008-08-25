@@ -136,6 +136,8 @@ namespace qmcplusplus {
     RealType m_oneover2tau;
     ///Time-step factor \f$ \sqrt{\Tau}\f$
     RealType m_sqrttau;
+    
+    RealType oneovermass;
     ///maximum displacement^2
     RealType m_r2max;
     ///walker ensemble

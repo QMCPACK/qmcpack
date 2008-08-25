@@ -30,7 +30,10 @@ namespace qmcplusplus {
     void add2Record(RecordNamedProperty<RealType>& record);
 
     inline  void accumulate(const Walker_t& awalker, RealType wgt) {}
-
+    
+    void setpNorm(RealType pn){
+      pNorm = pn;
+    }
 //     inline void accumulate(ParticleSet& P, MCWalkerConfiguration::Walker_t& awalker) { }
 
     void accumulate(WalkerIterator first, WalkerIterator last, RealType wgt);
@@ -42,7 +45,7 @@ namespace qmcplusplus {
       std::vector<string> elocal_name;
       int FirstHamiltonian;
       int SizeOfHamiltonians;
-      double KEconst;
+      RealType KEconst, pNorm;
       int HDFHE2index, Pindex;
 //       QMCHamiltonian* Hpointer;
   };

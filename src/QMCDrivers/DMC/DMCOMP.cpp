@@ -188,7 +188,9 @@ namespace qmcplusplus {
             wit(W.begin()+wPerNode[ip]), wit_end(W.begin()+wPerNode[ip+1]);
 
           //recalculate everything every 100 steps
-          if(pbyp && now%100 == 0) Movers[ip]->updateWalkers(wit, wit_end);
+          //Try this less often?
+//           if(pbyp && now%100 == 0) Movers[ip]->updateWalkers(wit, wit_end);
+          if(pbyp && now%Period4CheckProperties == 0) Movers[ip]->updateWalkers(wit, wit_end);
 
           for(int interval = 0;interval<BranchInterval; ++interval,++now)
           {

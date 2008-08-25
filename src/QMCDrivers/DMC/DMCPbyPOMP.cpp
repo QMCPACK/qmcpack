@@ -167,7 +167,8 @@ namespace qmcplusplus {
 
       block++;
       recordBlock(block);
-      if(CurrentStep%100 == 0) {
+//       if(CurrentStep%100 == 0) {
+      if(CurrentStep%Period4CheckProperties == 0) {
 #pragma omp parallel  
         {
           int ip = omp_get_thread_num();
@@ -218,7 +219,8 @@ namespace qmcplusplus {
 
         for(int ip=0; ip<NumThreads; ip++) Movers[ip]->resetEtrial(Eest); 
 
-        if(CurrentStep%100 == 0) {
+//         if(CurrentStep%100 == 0) {
+        if(CurrentStep%Period4CheckProperties == 0) {
 #pragma omp parallel  
           {
             int ip = omp_get_thread_num();

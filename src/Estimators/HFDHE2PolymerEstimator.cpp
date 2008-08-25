@@ -55,7 +55,7 @@ namespace qmcplusplus {
 
     scalars.resize(SizeOfHamiltonians+5);
     scalars_saved=scalars;
-    pnorm=0.0;
+    pNorm=0.0;
     
     Pindex = h.getHamiltonian("HePress")->myIndex;
     HDFHE2index = h.getHamiltonian("HFDHE2")->myIndex;
@@ -109,7 +109,7 @@ namespace qmcplusplus {
       };
       //Center Pressure
       RealType* restrict CenProp(Reptile->center()->getPropertyBase(i));
-      scalars[SizeOfHamiltonians+3]( (2.0*eloc-2.0*CenProp[LOCALPOTENTIAL])*pnorm + CenProp[Pindex+1+FirstHamiltonian] ,uw);
+      scalars[SizeOfHamiltonians+3]( (2.0*eloc-2.0*CenProp[LOCALPOTENTIAL])*pNorm + CenProp[Pindex+1+FirstHamiltonian] ,uw);
       
       int Rage(Reptile->Age);
       int Bage=Rage;
@@ -127,7 +127,7 @@ namespace qmcplusplus {
       tmpP-=0.5*Reptile->front()->getPropertyBase(i)[Pindex+1+FirstHamiltonian];
       tmpV-=0.5*Reptile->back()->getPropertyBase(i)[LOCALPOTENTIAL];
       tmpV-=0.5*Reptile->front()->getPropertyBase(i)[LOCALPOTENTIAL];
-      tmpV *= -2.0*pnorm*Tau;
+      tmpV *= -2.0*pNorm*Tau;
       tmpP *= Tau;
 
       scalars[SizeOfHamiltonians+1](tmpV+tmpP,uw);

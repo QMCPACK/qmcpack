@@ -59,8 +59,9 @@ namespace qmcplusplus {
       //create a 3N-Dimensional Gaussian with variance=1
       makeGaussRandomWithEngine(deltaR,RandomGen);
 
-      W.R = m_sqrttau*deltaR + thisWalker.R + thisWalker.Drift;
-      
+      W.R = m_sqrttau*deltaR + thisWalker.Drift;
+      RealType rr_proposed = Dot(W.R,W.R);
+      W.R += thisWalker.R;
       //update the distance table associated with W
       //DistanceTable::update(W);
       W.update();
@@ -69,6 +70,8 @@ namespace qmcplusplus {
       RealType logpsi(Psi.evaluateLog(W));
 
       bool accepted=false; 
+      RealType rr_accepted = 0.0;
+      RealType nodecorr=0.0;
       if(branchEngine->phaseChanged(Psi.getPhase(),thisWalker.Properties(SIGN))) {
         thisWalker.Age++;
       } else {
@@ -77,24 +80,26 @@ namespace qmcplusplus {
         //converting gradients to drifts, D = tau*G (reuse G)
         //RealType scale=getDriftScale(Tau,W.G);
         //drift = scale*W.G;
-        setScaledDrift(Tau,W.G,drift);
-
-        deltaR = (*it)->R - W.R - drift;
+        RealType nodecorr = setScaledDriftPbyPandNodeCorr(Tau*oneovermass,W.G,drift);
+        deltaR = thisWalker.R - W.R - drift;
         RealType logGb = -m_oneover2tau*Dot(deltaR,deltaR);
-
         RealType prob= std::min(std::exp(logGb-logGf +2.0*(logpsi-thisWalker.Properties(LOGPSI))),1.0);
         if(RandomGen() > prob){
           thisWalker.Age++;
           enew=eold;
+          thisWalker.Properties(R2ACCEPTED)=0.0;
+          thisWalker.Properties(R2PROPOSED)=rr_proposed;
         } else {
           accepted=true;  
           thisWalker.R = W.R;
-          thisWalker.Drift = drift;
-          thisWalker.resetProperty(logpsi,Psi.getPhase(),enew);
+          thisWalker.Drift = drift;          
+          rr_accepted = rr_proposed;
+          thisWalker.resetProperty(logpsi,Psi.getPhase(),enew,rr_accepted,rr_proposed,nodecorr);
+          
+          H.saveProperty(thisWalker.getPropertyBase());
           H.saveProperty(thisWalker.getPropertyBase());
         }
       }
-
       thisWalker.Weight *= branchEngine->branchWeight(eold,enew);
 
       //branchEngine->accumulate(eold,1);
@@ -141,8 +146,9 @@ namespace qmcplusplus {
       //create a 3N-Dimensional Gaussian with variance=1
       makeGaussRandomWithEngine(deltaR,RandomGen);
       
-      W.R = m_sqrttau*deltaR + thisWalker.R + thisWalker.Drift;
-      
+      W.R = m_sqrttau*deltaR + thisWalker.Drift;
+      RealType rr_proposed = Dot(W.R,W.R);
+      W.R += thisWalker.R;
       //update the distance table associated with W
       //DistanceTable::update(W);
       W.update();
@@ -150,34 +156,38 @@ namespace qmcplusplus {
       //evaluate wave function
       RealType logpsi(Psi.evaluateLog(W));
 
-      bool accepted=false; 
+      bool accepted=false;
+      RealType rr_accepted = 0.0;
+      RealType nodecorr=0.0;
       if(branchEngine->phaseChanged(Psi.getPhase(),thisWalker.Properties(SIGN))) {
         thisWalker.Age++;
         thisWalker.willDie();
       } else {
         enew=H.evaluate(W);
         RealType logGf = -0.5*Dot(deltaR,deltaR);
-        //converting gradients to drifts, D = tau*G (reuse G)
-        //RealType scale=getDriftScale(Tau,W.G);
-        //drift = scale*W.G;
-        setScaledDrift(Tau,W.G,drift);
-
-        deltaR = (*it)->R - W.R - drift;
+        nodecorr = setScaledDriftPbyPandNodeCorr(Tau*oneovermass,W.G,drift);
+        
+        deltaR = thisWalker.R - W.R - drift;
         RealType logGb = -m_oneover2tau*Dot(deltaR,deltaR);
-
         RealType prob= std::min(std::exp(logGb-logGf +2.0*(logpsi-thisWalker.Properties(LOGPSI))),1.0);
         if(RandomGen() > prob){
           enew=eold;
           thisWalker.Age++;
+          thisWalker.Properties(R2ACCEPTED)=0.0;
+          thisWalker.Properties(R2PROPOSED)=rr_proposed;
         } else {
           accepted=true;  
           thisWalker.R = W.R;
           thisWalker.Drift = drift;
-          thisWalker.resetProperty(logpsi,Psi.getPhase(),enew);
+//           thisWalker.resetProperty(logpsi,Psi.getPhase(),enew);
+          rr_accepted = rr_proposed;
+          thisWalker.resetProperty(logpsi,Psi.getPhase(),enew,rr_accepted,rr_proposed,nodecorr);
           H.saveProperty(thisWalker.getPropertyBase());
           //emixed = (emixed+enew)*0.5;
           //eold=enew;
         }
+        
+//         cout<<logpsi<<"  "<<Psi.getPhase()<<"  "<<enew<<"  "<<rr_accepted<<"  "<<rr_proposed<<"  "<<nodecorr<<endl;
         thisWalker.Weight *= branchEngine->branchWeight(eold,enew);
       }
 

@@ -21,7 +21,7 @@
 #include "QMCDrivers/DriftOperators.h"
 #include "Message/CommCreate.h"
 
-namespace qmcplusplus { 
+namespace qmcplusplus {
 
   /// Constructor.
   DMCUpdateBase::DMCUpdateBase(ParticleSet& w, TrialWaveFunction& psi, QMCHamiltonian& h,
@@ -37,10 +37,15 @@ namespace qmcplusplus {
     NumPtcl = W.getTotalNum();
     deltaR.resize(NumPtcl);
     drift.resize(NumPtcl);
+    
+    SpeciesSet tspecies(W.getSpeciesSet());
+    RealType mass = tspecies(tspecies.addAttribute("mass"),tspecies.addSpecies(tspecies.speciesName[W.GroupID[0]]));
+    oneovermass = 1.0/mass;
+    RealType oneoversqrtmass = std::sqrt(oneovermass);
 
     Tau=brancher->Tau;
-    m_oneover2tau = 0.5/Tau;
-    m_sqrttau = sqrt(Tau);
+    m_oneover2tau = 0.5*mass/Tau;
+    m_sqrttau = sqrt(Tau*oneovermass);
   }
 
   void DMCUpdateBase::resetEtrial(RealType et) {
@@ -69,7 +74,7 @@ namespace qmcplusplus {
 
       //RealType scale=getDriftScale(Tau,W.G);
       //(*it)->Drift = scale*W.G;
-      setScaledDrift(Tau,W.G,(*it)->Drift);
+      setScaledDriftPbyP(Tau*oneovermass,W.G,(*it)->Drift);
 
       RealType ene = H.evaluate(W);
       (*it)->resetProperty(logpsi,Psi.getPhase(),ene);
@@ -90,7 +95,7 @@ namespace qmcplusplus {
 
       //RealType scale=getDriftScale(Tau,W.G);
       //(*it)->Drift = scale*W.G;
-      setScaledDrift(Tau,W.G,(*it)->Drift);
+      setScaledDriftPbyP(Tau*oneovermass,W.G,(*it)->Drift);
 
       ++it;
     }

@@ -18,6 +18,8 @@
 #define QMCPLUSPLUS_FULL_POLYMERESTIMATOR_H
 
 #include "Estimators/PolymerEstimator.h"
+#include "Particle/MCWalkerConfiguration.h"
+
 
 namespace qmcplusplus {
 
@@ -28,6 +30,10 @@ namespace qmcplusplus {
     ScalarEstimatorBase* clone();
 
     void add2Record(RecordNamedProperty<RealType>& record);
+    
+    void setpNorm(RealType pn){
+      pNorm = pn;
+    }
 
     inline  void accumulate(const Walker_t& awalker, RealType wgt) {}
 
@@ -42,7 +48,7 @@ namespace qmcplusplus {
       std::vector<string> elocal_name;
       int FirstHamiltonian;
       int SizeOfHamiltonians;
-      double KEconst;
+      RealType KEconst,pNorm;
 //       QMCHamiltonian* Hpointer;
   };
 

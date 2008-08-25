@@ -187,6 +187,9 @@ namespace qmcplusplus {
      * The unit is a block.
      */
     int Period4CheckPoint;
+    
+    ///Period to recalculate the walker properties from scratch.
+    int Period4CheckProperties;
 
     /** period of recording walker configurations
      *
@@ -222,6 +225,7 @@ namespace qmcplusplus {
     RealType m_oneover2tau;
     ///Time-step factor \f$ \sqrt{\Tau}\f$
     RealType m_sqrttau;
+    RealType oneovermass;
 
     ///pointer to qmc node in xml file
     xmlNodePtr qmcNode;

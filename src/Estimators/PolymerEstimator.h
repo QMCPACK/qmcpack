@@ -36,8 +36,6 @@ namespace qmcplusplus {
     int NumObservables;
     ///Time step
     RealType Tau;
-    ///For pressure
-    RealType pnorm;
     ///1/Tau
     RealType OneOverTau;
 

@@ -142,7 +142,8 @@ namespace qmcplusplus {
         branchEngine->branch(CurrentStep,W);
 
         pop_acc += W.getActiveWalkers();
-        if(CurrentStep%100 == 0) updateWalkers();
+//         if(CurrentStep%100 == 0) updateWalkers();
+        if(CurrentStep%Period4CheckProperties  == 0) updateWalkers();
 
         ++step; 
       } while(step<nSteps);

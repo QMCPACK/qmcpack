@@ -147,7 +147,7 @@ namespace qmcplusplus {
       {
 
         //PosType dr = m_sqrttau*deltaR[iat]+thisWalker.Drift[iat];
-        RealType sc=getDriftScale(Tau,W.G[iat]);
+        RealType sc=getDriftScale(Tau*oneovermass,W.G[iat]);
         PosType dr(m_sqrttau*deltaR[iat]+sc*real(W.G[iat]));
 
         PosType newpos = W.makeMove(iat,dr);
@@ -170,7 +170,7 @@ namespace qmcplusplus {
         RealType logGf = -0.5e0*dot(deltaR[iat],deltaR[iat]);
 
         //RealType scale=getDriftScale(Tau,G);
-        RealType scale=getDriftScale(Tau,G[iat]);
+        RealType scale=getDriftScale(Tau*oneovermass,G[iat]);
         dr = thisWalker.R[iat]-newpos-scale*real(G[iat]);
 
         RealType logGb = -m_oneover2tau*dot(dr,dr);

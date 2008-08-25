@@ -89,8 +89,8 @@ namespace qmcplusplus
 
     m_param.add(iParam[B_TARGETWALKERS],"targetWalkers","int"); 
     m_param.add(iParam[B_TARGETWALKERS],"targetwalkers","int"); 
-    m_param.add(iParam[B_TARGETWALKERS],"target_walkers","int"); 
-
+    m_param.add(iParam[B_TARGETWALKERS],"target_walkers","int");
+    
     //trial energy
     m_param.add(vParam[B_EREF],"refEnergy","AU"); 
     m_param.add(vParam[B_EREF],"ref_energy","AU"); 
@@ -183,6 +183,7 @@ namespace qmcplusplus
   {
     //collect the total weights and redistribute the walkers accordingly, using a fixed tolerance
     RealType pop_now = WalkerController->branch(iter,Walkers,0.1);
+//     cout<<pop_now<<"  "<<ToDoSteps<<endl;
 
     //current energy
     vParam[B_ENOW]=WalkerController->EnsembleProperty.Energy;
@@ -213,9 +214,10 @@ namespace qmcplusplus
         //using enow for the first 100 step
         //RealType emix=(ToDoSteps>900)?vParam[B_ENOW]:vParam[B_EREF];
         //vParam[B_ETRIAL]=emix+Feedback*(logN-std::log(pop_now));
-        
         //using eref
-        vParam[B_ETRIAL]=vParam[B_EREF]+Feedback*(logN-std::log(pop_now));
+//         vParam[B_ETRIAL]=vParam[B_EREF]+Feedback*(logN-std::log(pop_now));
+        RealType dW = Feedback*(logN-std::log(pop_now));
+        vParam[B_ETRIAL]=vParam[B_EREF]+dW;
       }
       --ToDoSteps;
       if(ToDoSteps==0)  //warmup is done
@@ -264,6 +266,7 @@ namespace qmcplusplus
     }
 
     WalkerController->setTrialEnergy(vParam[B_ETRIAL]);
+
 
     //evaluate everything else
     MyEstimator->accumulate(Walkers);
@@ -404,7 +407,7 @@ namespace qmcplusplus
         EnergyHist(vParam[B_ACC_ENERGY]/vParam[B_ACC_SAMPLES]);
       }
       app_log() << "    Cummulative mean energy = " << EnergyHist.mean() << endl;
-      app_log() << "    Cummaltive samples = " << EnergyHist.count() << endl;
+      app_log() << "    Cummulative samples = " << EnergyHist.count() << endl;
     }
   }
 }
