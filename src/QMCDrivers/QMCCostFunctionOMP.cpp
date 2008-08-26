@@ -126,6 +126,8 @@ namespace qmcplusplus {
     app_log() << "   Loading configuration from MCWalkerConfiguration::SampleStack " << endl;
     app_log() << "    number of walkers before load " << W.getActiveWalkers() << endl;
 
+    OhmmsInfo::Log->turnoff();
+    OhmmsInfo::Warn->turnoff();
 #pragma omp parallel for
     for(int ip=0; ip<NumThreads; ++ip)
     {
@@ -136,6 +138,8 @@ namespace qmcplusplus {
       }
       wClones[ip]->loadEnsemble();
     }
+    OhmmsInfo::Log->reset();
+    OhmmsInfo::Warn->reset();
 
     app_log() << "    number of walkers after load: ";
     for(int ip=0; ip<NumThreads; ++ip)
