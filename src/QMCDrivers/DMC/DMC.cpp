@@ -90,7 +90,10 @@ namespace qmcplusplus {
 
     if(Mover==0) //disable switching update modes for DMC in a run
     {
-      branchEngine->initWalkerController(Tau,fixW);
+      //load walkers if they were saved
+      W.loadEnsemble();
+
+      branchEngine->initWalkerController(W,Tau,fixW);
 
       if(QMCDriverMode[QMC_UPDATE_MODE])
       {
@@ -125,6 +128,8 @@ namespace qmcplusplus {
         Mover->resetRun(branchEngine,Estimators);
         Mover->initWalkers(W.begin(),W.end());
       }
+
+      branchEngine->checkParameters(W);
     }
     else
     {

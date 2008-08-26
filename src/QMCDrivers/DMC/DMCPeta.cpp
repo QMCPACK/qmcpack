@@ -181,7 +181,7 @@ namespace qmcplusplus {
     bool fixW=false;
     if(Mover==0) //disable switching update modes for DMCPeta in a run
     {
-      branchEngine->initWalkerController(Tau,fixW);
+      branchEngine->initWalkerController(W,Tau,fixW);
       Mover= new DMCUpdatePbyPWithRejection(W,Psi,H,Random); 
       Mover->MaxAge=3;
       Mover->resetRun(branchEngine,Estimators);

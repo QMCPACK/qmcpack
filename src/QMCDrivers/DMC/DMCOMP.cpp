@@ -54,7 +54,11 @@ namespace qmcplusplus {
 
     if(Movers.empty()) 
     {
-      branchEngine->initWalkerController(Tau,fixW);
+      //load walkers
+      W.loadEnsemble();
+      for(int ip=1;ip<NumThreads;++ip) wClones[ip]->loadEnsemble(W);
+
+      branchEngine->initWalkerController(W,Tau,fixW);
 
       //if(QMCDriverMode[QMC_UPDATE_MODE]) W.clearAuxDataSet();
       Movers.resize(NumThreads,0);
@@ -116,6 +120,7 @@ namespace qmcplusplus {
       } 
     }
 
+    branchEngine->checkParameters(W);
 //#pragma omp parallel  for
 //    for(int ip=0; ip<NumThreads; ++ip)
 //    {
