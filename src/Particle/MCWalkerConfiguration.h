@@ -238,16 +238,13 @@ namespace qmcplusplus {
     void saveEnsemble();
     ///save the position of current walkers
     void saveEnsemble(iterator first, iterator last);
-    ///load SampleStack data to current walkers
+    /** load SampleStack data to current walkers
+     */
     void loadEnsemble();
-    ///** load SampleStack data to other for [first,last) of SampleStack
-    // * @param other MCWalkerConfiguration
-    // * @param first index of the fast sample to be copied
-    // * @param last index of the lst sample to be copied
-    // *
-    // * loadEnsemble severely inefficient. This is called within a parallel region.
-    // */
-    //void loadEnsemble(MCWalkerConfiguration& other, int first, int last);
+    /** load SampleStack data to other
+     * @param other MCWalkerConfiguration
+     */
+    void loadEnsemble(MCWalkerConfiguration& other);
     ///clear the ensemble
     void clearEnsemble();
     //@}

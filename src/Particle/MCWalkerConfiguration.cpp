@@ -269,36 +269,45 @@ void MCWalkerConfiguration::saveEnsemble(iterator first, iterator last)
 }
 void MCWalkerConfiguration::loadEnsemble()
 {
-  delete_iter(WalkerList.begin(),WalkerList.end());
-  WalkerList.resize(SampleStack.size());
+  if(SampleStack.empty()) return;
 
-  for(int i=0; i<SampleStack.size(); ++i)
+  Walker_t::PropertyContainer_t prop(1,PropertyList.size());
+  int nsamples=SampleStack.size();
+
+  delete_iter(WalkerList.begin(),WalkerList.end());
+  WalkerList.resize(nsamples);
+  for(int i=0; i<nsamples; ++i)
   {
     Walker_t* awalker=new Walker_t(GlobalNum);
     awalker->R = *(SampleStack[i]);
     awalker->Drift = 0.0;
+    awalker->Properties.copy(prop);
     WalkerList[i]=awalker;
     delete SampleStack[i];
   }
-
   SampleStack.clear();
 }
 
-//void MCWalkerConfiguration::loadEnsemble(MCWalkerConfiguration& other,
-//    int first, int last)
-//{
-//  //for(int i=first; i<last; ++i)
-//  //{
-//  //  Walker_t* awalker=new Walker_t(GlobalNum);
-//  //  awalker->R = *(SampleStack[i]);
-//  //  awalker->Drift = 0.0;
-//  //  other.WalkerList.push_back(awalker);
-//  //  delete SampleStack[i];
-//  //}
-//}
+void MCWalkerConfiguration::loadEnsemble(MCWalkerConfiguration& other)
+{
+  if(SampleStack.empty()) return;
+  Walker_t::PropertyContainer_t prop(1,PropertyList.size());
+  int nsamples=SampleStack.size();
+  for(int i=0; i<nsamples; ++i)
+  {
+    Walker_t* awalker=new Walker_t(GlobalNum);
+    awalker->R = *(SampleStack[i]);
+    awalker->Drift = 0.0;
+    awalker->Properties.copy(prop);
+    other.WalkerList.push_back(awalker);
+    delete SampleStack[i];
+  }
+  SampleStack.clear();
+}
 
 void MCWalkerConfiguration::clearEnsemble()
 {
+  delete_iter(SampleStack.begin(),SampleStack.end());
   SampleStack.clear();
 }
 }
