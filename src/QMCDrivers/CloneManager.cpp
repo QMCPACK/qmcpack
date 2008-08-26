@@ -57,7 +57,6 @@ namespace qmcplusplus {
       return;
     }
 
-    app_log() << "Number of threads = " << NumThreads << endl;
     wClones.resize(NumThreads,0);
     psiClones.resize(NumThreads,0);
     hClones.resize(NumThreads,0);
@@ -65,8 +64,12 @@ namespace qmcplusplus {
     wClones[0]=&w;
     psiClones[0]=&psi;
     hClones[0]=&ham;
+    app_log() << "  CloneManager::makeClones makes " << NumThreads << " clones for W/Psi/H." <<endl;
 
 #if defined(ENABLE_CLONE_PSI_AND_H)
+    app_log() << "  Cloning methods for both Psi and H are used" << endl;
+    OhmmsInfo::Log->turnoff();
+    OhmmsInfo::Warn->turnoff();
     char pname[16];
     for(int ip=1; ip<NumThreads; ++ip) 
     {
@@ -76,7 +79,10 @@ namespace qmcplusplus {
       psiClones[ip]=psi.makeClone(*wClones[ip]);
       hClones[ip]=ham.makeClone(*wClones[ip],*psiClones[ip]);
     }
+    OhmmsInfo::Log->reset();
+    OhmmsInfo::Warn->reset();
 #else
+    app_log() << "Old parse method is used." << endl;
     cloneEngine.clone(w,psi,ham,wClones,psiClones,hClones);
 #endif
   }
