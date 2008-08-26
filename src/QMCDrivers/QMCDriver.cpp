@@ -37,7 +37,7 @@ namespace qmcplusplus {
   Period4CheckPoint(1), Period4WalkerDump(10),
   Period4CheckProperties(100), CurrentStep(0), 
   nBlocks(100), nSteps(10), 
-  nAccept(0), nReject(0), nTargetWalkers(0),
+  nAccept(0), nReject(0), nTargetWalkers(0),nTargetSamples(0),
   Tau(0.01), qmcNode(NULL),
   QMCType("invalid"), wOut(0),
   W(w), Psi(psi), H(h), Estimators(0)
@@ -56,6 +56,7 @@ namespace qmcplusplus {
     m_param.add(RollBackBlocks,"rewind","int");
     m_param.add(Period4WalkerDump,"recordWalkers","int");
     m_param.add(MaxCPUSecs,"maxcpusecs","real");
+    m_param.add(nTargetSamples,"samples","int");
     m_param.add(Period4CheckProperties,"checkProperties","int");
 
     ////add each QMCHamiltonianBase to W.PropertyList so that averages can be taken
@@ -102,7 +103,7 @@ namespace qmcplusplus {
 
     //create branchEngine first
     if(branchEngine==0) 
-      branchEngine = new BranchEngineType(Tau,W.getActiveWalkers());
+      branchEngine = new BranchEngineType(Tau,W.getGlobalNumWalkers());
 
     //execute the put function implemented by the derived classes
     put(cur);

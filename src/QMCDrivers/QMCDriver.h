@@ -66,7 +66,7 @@ namespace qmcplusplus {
   public:
 
     /** enumeration coupled with QMCMode */
-    enum {QMC_UPDATE_MODE, QMC_MULTIPLE, QMC_OPTIMIZE};
+    enum {QMC_UPDATE_MODE, QMC_MULTIPLE, QMC_OPTIMIZE, QMC_WARMUP};
 
     typedef MCWalkerConfiguration::Walker_t Walker_t;
     typedef Walker_t::Buffer_t              Buffer_t;
@@ -214,7 +214,8 @@ namespace qmcplusplus {
 
     ///the number of walkers
     IndexType nTargetWalkers;
-
+    ///the number of saved samples
+    IndexType nTargetSamples;
     ///timestep
     RealType Tau;
 
