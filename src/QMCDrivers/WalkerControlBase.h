@@ -149,6 +149,9 @@ namespace qmcplusplus {
       targetVar=v;
     }
 
+    /** update properties without branching */
+    int doNotBranch(int iter, MCWalkerConfiguration& W);
+
     /** sort Walkers between good and bad and prepare branching
      */
     void sortWalkers(MCWalkerConfiguration& W);

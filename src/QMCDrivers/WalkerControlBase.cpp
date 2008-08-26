@@ -106,6 +106,47 @@ namespace qmcplusplus {
     std::fill(accumData.begin(),accumData.end(),0.0);
   }
 
+  int WalkerControlBase::doNotBranch(int iter, MCWalkerConfiguration& W)
+  {
+    MCWalkerConfiguration::iterator it(W.begin());
+    MCWalkerConfiguration::iterator it_end(W.end());
+    RealType esum=0.0,e2sum=0.0,wsum=0.0,ecum=0.0, w2sum=0.0;
+    RealType r2_accepted=0.0,r2_proposed=0.0;
+    for(; it!=it_end;++it)
+    {
+      r2_accepted+=(*it)->Properties(R2ACCEPTED);
+      r2_proposed+=(*it)->Properties(R2PROPOSED);
+      RealType e((*it)->Properties(LOCALENERGY));
+      int nc= std::min(static_cast<int>((*it)->Multiplicity),MaxCopy);
+      RealType wgt((*it)->Weight);
+      esum += wgt*e;
+      e2sum += wgt*e*e;
+      wsum += wgt;
+      w2sum += wgt*wgt;
+      ecum += e;
+    }
+
+    //temp is an array to perform reduction operations
+    std::fill(curData.begin(),curData.end(),0);
+
+    curData[ENERGY_INDEX]=esum;
+    curData[ENERGY_SQ_INDEX]=e2sum;
+    curData[WALKERSIZE_INDEX]=W.getActiveWalkers();
+    curData[WEIGHT_INDEX]=wsum;
+    curData[EREF_INDEX]=ecum;
+    curData[R2ACCEPTED_INDEX]=r2_accepted;
+    curData[R2PROPOSED_INDEX]=r2_proposed;
+
+    myComm->allreduce(curData);
+
+    measureProperties(iter);
+    trialEnergy=EnsembleProperty.Energy;
+    W.EnsembleProperty=EnsembleProperty;
+
+    //return the current data
+    return W.getGlobalNumWalkers();
+  }
+
   int WalkerControlBase::branch(int iter, MCWalkerConfiguration& W, RealType trigger) {
 
     sortWalkers(W);
@@ -153,6 +194,7 @@ namespace qmcplusplus {
       ++it;
     }
   }
+
 
   /** evaluate curData and mark the bad/good walkers
    */
