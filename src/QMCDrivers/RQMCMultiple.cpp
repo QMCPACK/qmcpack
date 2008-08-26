@@ -526,6 +526,7 @@ namespace qmcplusplus {
       mass=1.0;
       tspecies(tspecies.addAttribute("mass"),tspecies.addSpecies(tspecies.speciesName[W.GroupID[0]]))=1.0;
     }
+    RealType oneovermass=1.0/mass;
     RealType oneoversqrtmass = std::sqrt(oneovermass);
     Tauoverm = (Tau*oneovermass);
     m_oneover2tau = 0.5/Tauoverm;
