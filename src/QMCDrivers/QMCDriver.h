@@ -226,7 +226,6 @@ namespace qmcplusplus {
     RealType m_oneover2tau;
     ///Time-step factor \f$ \sqrt{\Tau}\f$
     RealType m_sqrttau;
-    RealType oneovermass;
 
     ///pointer to qmc node in xml file
     xmlNodePtr qmcNode;

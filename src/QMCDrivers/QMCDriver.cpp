@@ -271,13 +271,13 @@ namespace qmcplusplus {
   bool 
   QMCDriver::putQMCInfo(xmlNodePtr cur) {
     
-    SpeciesSet tspecies(W.getSpeciesSet());
-    RealType mass = tspecies(tspecies.addAttribute("mass"),tspecies.addSpecies(tspecies.speciesName[W.GroupID[0]]));
-    if (mass < 1e-12) {
-      mass=1.0;
-      tspecies(tspecies.addAttribute("mass"),tspecies.addSpecies(tspecies.speciesName[W.GroupID[0]]))=1.0;
-    }
-    oneovermass = 1.0/mass;
+    //SpeciesSet tspecies(W.getSpeciesSet());
+    //RealType mass = tspecies(tspecies.addAttribute("mass"),tspecies.addSpecies(tspecies.speciesName[W.GroupID[0]]));
+    //if (mass < 1e-12) {
+    //  mass=1.0;
+    //  tspecies(tspecies.addAttribute("mass"),tspecies.addSpecies(tspecies.speciesName[W.GroupID[0]]))=1.0;
+    //}
+    //oneovermass = 1.0/mass;
 
     //set the default walker to the number of threads times 10
     int defaultw = omp_get_max_threads()*10;
