@@ -52,6 +52,7 @@ namespace qmcplusplus {
 
     Mover->startRun(nBlocks,true);
 
+    IndexType updatePeriod=(QMCDriverMode[QMC_UPDATE_MODE])?Period4CheckProperties:(nBlocks+1)*nSteps;
 
     Timer myclock;
     IndexType block = 0;
@@ -74,8 +75,7 @@ namespace qmcplusplus {
       Mover->stopBlock();
       recordBlock(block);
 
-      if(QMCDriverMode[QMC_UPDATE_MODE] && CurrentStep%100 == 0) 
-        Mover->updateWalkers(W.begin(), W.end());
+      if(CurrentStep%updatePeriod == 0) Mover->updateWalkers(W.begin(), W.end());
 
     } while(block<nBlocks &&  myclock.elapsed()<MaxCPUSecs);
 

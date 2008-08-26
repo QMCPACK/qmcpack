@@ -32,6 +32,10 @@ namespace qmcplusplus {
     bool run();
     bool put(xmlNodePtr cur);
   private:
+    ///number of warmup steps
+    int myWarmupSteps;
+    ///period for walker dump
+    int myPeriod4WalkerDump;
     ///option to enable/disable drift equation for VMC
     string UseDrift;
     ///check the run-time environments

@@ -121,19 +121,21 @@ namespace qmcplusplus {
   {
     Timer t1;
     app_log() << "<optimization-report>" << endl;
-    if(WarmupBlocks) 
-    {
-      app_log() << "<vmc stage=\"warm-up\" blocks=\"" << WarmupBlocks << "\">" << endl;
-      //turn off QMC_OPTIMIZE
-      vmcEngine->QMCDriverMode.set(QMC_OPTIMIZE,0);
-      vmcEngine->setValue("blocks",WarmupBlocks);
-      vmcEngine->run();
-      vmcEngine->setValue("blocks",nBlocks);
-      app_log() << "  Execution time = " << t1.elapsed() << endl;
-      app_log() << "</vmc>" << endl;
-    }
+    //if(WarmupBlocks) 
+    //{
+    //  app_log() << "<vmc stage=\"warm-up\" blocks=\"" << WarmupBlocks << "\">" << endl;
+    //  //turn off QMC_OPTIMIZE
+    //  vmcEngine->setValue("blocks",WarmupBlocks);
+    //  vmcEngine->QMCDriverMode.set(QMC_WARMUP,1);
+    //  vmcEngine->run();
+    //  vmcEngine->setValue("blocks",nBlocks);
+    //  app_log() << "  Execution time = " << t1.elapsed() << endl;
+    //  app_log() << "</vmc>" << endl;
+    //}
 
     vmcEngine->QMCDriverMode.set(QMC_OPTIMIZE,1);
+    vmcEngine->QMCDriverMode.set(QMC_WARMUP,0);
+
     //vmcEngine->setValue("recordWalkers",1);//set record 
     vmcEngine->setValue("current",0);//reset CurrentStep
     app_log() << "<vmc stage=\"main\" blocks=\"" << nBlocks << "\">" << endl;

@@ -53,7 +53,7 @@ namespace qmcplusplus
     iParam[B_WARMUPSTEPS]=1000;
     iParam[B_ENERGYUPDATEINTERVAL]=1;
     iParam[B_BRANCHINTERVAL]=1;
-    iParam[B_TARGETWALKERS]=nideal;
+    iParam[B_TARGETWALKERS]=0;
     iParam[B_MAXWALKERS]=nideal;
     iParam[B_MINWALKERS]=nideal;
     iParam[B_COUNTER]=-1;
@@ -111,7 +111,7 @@ namespace qmcplusplus
     MyEstimator->reset();
   }
 
-  void SimpleFixedNodeBranch::initWalkerController(RealType tau, bool fixW) 
+  void SimpleFixedNodeBranch::initWalkerController(MCWalkerConfiguration& w, RealType tau, bool fixW) 
   {
 
     vParam[B_TAU]=tau;
@@ -120,6 +120,20 @@ namespace qmcplusplus
 
     if(WalkerController == 0) 
     {
+      if(iParam[B_TARGETWALKERS]==0) 
+      {
+        Communicate* acomm=MyEstimator->getCommunicator();
+        int ncontexts=acomm->size();
+        vector<int> nw(ncontexts,0),nwoff(ncontexts+1,0);
+        nw[acomm->rank()]=w.getActiveWalkers();
+        acomm->allreduce(nw);
+        for(int ip=0; ip<ncontexts; ++ip) nwoff[ip+1]=nwoff[ip]+nw[ip];
+        w.setGlobalNumWalkers(nwoff[ncontexts]);
+        w.setWalkerOffsets(nwoff);
+        iParam[B_TARGETWALKERS]=nwoff[ncontexts];
+      }
+
+
       BranchMode.set(B_DMC,1);//set DMC
       BranchMode.set(B_POPCONTROL,!fixW);//fixW -> 0 
       WalkerController = createWalkerController(iParam[B_TARGETWALKERS], MyEstimator->getCommunicator(), myNode);
@@ -168,8 +182,8 @@ namespace qmcplusplus
     app_log() << "  reference energy = " << vParam[B_EREF] << endl;
     app_log() << "  Feedback = " << Feedback <<  endl;
     app_log() << "  reference variance = " << vParam[B_SIGMA] << endl;
-    app_log() << "  branch cutoff = " <<  vParam[B_BRANCHCUTOFF] << " " << vParam[B_BRANCHMAX] << endl;
     app_log() << "  target walkers = " << iParam[B_TARGETWALKERS] << endl;
+    app_log() << "  branch cutoff = " <<  vParam[B_BRANCHCUTOFF] << " " << vParam[B_BRANCHMAX] << endl;
     app_log() << "  Max and mimum walkers per node= " << iParam[B_MAXWALKERS] << " " << iParam[B_MINWALKERS] << endl;
     app_log() << "  QMC Status (BranchMode) = " << BranchMode << endl;
   }
@@ -182,7 +196,12 @@ namespace qmcplusplus
   void SimpleFixedNodeBranch::branch(int iter, MCWalkerConfiguration& Walkers) 
   {
     //collect the total weights and redistribute the walkers accordingly, using a fixed tolerance
-    RealType pop_now = WalkerController->branch(iter,Walkers,0.1);
+    //RealType pop_now= WalkerController->branch(iter,Walkers,0.1);
+    RealType pop_now;
+    if(BranchMode[B_DMCSTAGE]||iter)
+      pop_now= WalkerController->branch(iter,Walkers,0.1);
+    else
+      pop_now= WalkerController->doNotBranch(iter,Walkers);//do not branch for the first step of a warmup
 //     cout<<pop_now<<"  "<<ToDoSteps<<endl;
 
     //current energy
@@ -211,13 +230,10 @@ namespace qmcplusplus
       if(BranchMode[B_USETAUEFF]) vParam[B_TAUEFF]=vParam[B_TAU]*R2Accepted.result()/R2Proposed.result();
       if(BranchMode[B_POPCONTROL])
       {
-        //using enow for the first 100 step
-        //RealType emix=(ToDoSteps>900)?vParam[B_ENOW]:vParam[B_EREF];
+        //RealType emix=((iParam[B_WARMUPSTEPS]-ToDoSteps)<100)?(0.25*vParam[B_EREF]+0.75*vParam[B_ENOW]):vParam[B_EREF];
         //vParam[B_ETRIAL]=emix+Feedback*(logN-std::log(pop_now));
-        //using eref
-//         vParam[B_ETRIAL]=vParam[B_EREF]+Feedback*(logN-std::log(pop_now));
-        RealType dW = Feedback*(logN-std::log(pop_now));
-        vParam[B_ETRIAL]=vParam[B_EREF]+dW;
+        //vParam[B_ETRIAL]=vParam[B_EREF]+Feedback*(logN-std::log(pop_now));
+        vParam[B_ETRIAL]=(0.25*vParam[B_EREF]+0.75*vParam[B_ENOW])+Feedback*(logN-std::log(pop_now));
       }
       --ToDoSteps;
       if(ToDoSteps==0)  //warmup is done
@@ -315,6 +331,27 @@ namespace qmcplusplus
     }
   }
 
+  void SimpleFixedNodeBranch::checkParameters(MCWalkerConfiguration& w) 
+  {
+    if(!BranchMode[B_DMCSTAGE])
+    {
+      RealType e, sigma2;
+      MyEstimator->getCurrentStatistics(w,e,sigma2);
+      vParam[B_ETRIAL]=vParam[B_EREF]=e;
+      vParam[B_SIGMA]=std::sqrt(iParam[B_TARGETWALKERS]*sigma2);
+
+      EnergyHist.clear();
+      DMCEnergyHist.clear();
+
+      EnergyHist(vParam[B_EREF]);
+      DMCEnergyHist(vParam[B_EREF]);
+
+      app_log() << "SimpleFixedNodeBranch::checkParameters " << endl;
+      app_log() << "  Average Energy of a population  = " << e << endl;
+      app_log() << "  Energy Variance = " << vParam[B_SIGMA] << endl;
+    }
+  }
+
   void SimpleFixedNodeBranch::finalize(MCWalkerConfiguration& w) 
   {
 
@@ -324,7 +361,7 @@ namespace qmcplusplus
       //MyEstimator->getEnergyAndWeight(e,w,sigma2);
       MyEstimator->getCurrentStatistics(w,e,sigma2);
       vParam[B_ETRIAL]=vParam[B_EREF]=e;
-      vParam[B_SIGMA]=std::sqrt(sigma2);
+      vParam[B_SIGMA]=std::sqrt(iParam[B_TARGETWALKERS]*sigma2);
       
       app_log() << "SimpleFixedNodeBranch::finalize " << endl;
       app_log() << "  Average Energy of a population  = " << e << endl;
@@ -333,7 +370,6 @@ namespace qmcplusplus
       //vParam[B_SIGMA]=std::sqrt(sigma2);
 
       //this is just to avoid diving by n-1  == 0
-      EnergyHist(vParam[B_EREF]);
       EnergyHist(vParam[B_EREF]);
 
       //add Eref to the DMCEnergyHistory

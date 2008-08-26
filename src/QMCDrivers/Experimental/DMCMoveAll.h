@@ -17,44 +17,56 @@
 //   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef QMCPLUSPLUS_VMC_WITHUPDATEENINGE_H
-#define QMCPLUSPLUS_VMC_WITHUPDATEENINGE_H
+/**@file DMCMoveAll.h
+ * @brief Declaration of DMCMoveAll
+ */
+#ifndef QMCPLUSPLUS_DMC_MOVEALL_H
+#define QMCPLUSPLUS_DMC_MOVEALL_H
+
 #include "QMCDrivers/QMCDriver.h" 
+#include "Utilities/OhmmsInfo.h"
+
 namespace qmcplusplus {
 
-  class QMCUpdateBase;
+  class DMCUpdateBase;
 
-  /** @ingroup QMCDrivers  PbyP
-   *@brief Implements the VMC algorithm using particle-by-particle move. 
+  /** @ingroup QMCDrivers  WalkerByWalker
+   *@brief implements the DMC algorithm using walker-by-walker move. 
    */
-  class VMCSingle: public QMCDriver {
+  class DMCMoveAll: public QMCDriver {
+
   public:
     /// Constructor.
-    VMCSingle(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h);
+    DMCMoveAll(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h);
+    ///destructor
+    ~DMCMoveAll();
+
     bool run();
-    bool put(xmlNodePtr cur);
- 
+    bool put(xmlNodePtr q);
+
   private:
-    ///number of warmup steps
-    int myWarmupSteps;
-    ///period for walker dump
-    int myPeriod4WalkerDump;
-    ///update engine
-    QMCUpdateBase* Mover;
-    ///option to enable/disable drift term
-    string UseDrift;
+
+    DMCUpdateBase *Mover;
+    IndexType KillNodeCrossing;
+    IndexType BranchInterval;
+    ///Interval between branching
+    IndexType NonLocalMoveIndex;
+    string Reconfiguration;
+    string KillWalker;
+    ///input string to determine to use nonlocal move
+    string NonLocalMove;
     /// Copy Constructor (disabled)
-    VMCSingle(const VMCSingle& a): QMCDriver(a) { }
+    DMCMoveAll(const DMCMoveAll& a): QMCDriver(a) { }
     /// Copy operator (disabled).
-    VMCSingle& operator=(const VMCSingle&) { return *this;}
-    ///hide initialization from the main function
-    void resetRun();
+    DMCMoveAll& operator=(const DMCMoveAll&) { return *this;}
+
+    bool dmcWithBranching();
+    bool dmcWithReconfiguration();
   };
 }
-
 #endif
 /***************************************************************************
- * $RCSfile: VMCSingle.h,v $   $Author: jnkim $
- * $Revision: 1.5 $   $Date: 2006/07/17 14:29:40 $
- * $Id: VMCSingle.h,v 1.5 2006/07/17 14:29:40 jnkim Exp $ 
+ * $RCSfile$   $Author$
+ * $Revision$   $Date$
+ * $Id$ 
  ***************************************************************************/

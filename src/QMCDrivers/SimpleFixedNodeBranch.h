@@ -200,9 +200,15 @@ namespace qmcplusplus {
     }
 
     /** initialize  the WalkerController 
+     * @param w Walkers
+     * @param tau timestep
      * @param fixW true, if reconfiguration with the fixed number of walkers is used
      */
-    void initWalkerController(RealType tau, bool fixW=false);
+    void initWalkerController(MCWalkerConfiguration& w, RealType tau, bool fixW=false);
+
+    /** determine trial and reference energies
+     */
+    void checkParameters(MCWalkerConfiguration& w);
 
     /** return the bare branch weight
      *

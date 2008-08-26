@@ -176,26 +176,24 @@ namespace qmcplusplus {
 
     Timer myclock;
     IndexType block = 0;
+    IndexType updatePeriod=(QMCDriverMode[QMC_UPDATE_MODE])?Period4CheckProperties:(nBlocks+1)*nSteps;
+
     do // block
     {
       Estimators->startBlock(nSteps);
       for(int ip=0; ip<NumThreads; ip++) Movers[ip]->startBlock(nSteps);
       IndexType step = 0;
 
-      for(IndexType step=0; step< nSteps; step++, CurrentStep+=BranchInterval)
+      for(IndexType step=0; step< nSteps; ++step, CurrentStep+=BranchInterval)
       {
 #pragma omp parallel for
-      for(int ip=0; ip<NumThreads; ++ip)
-      {
-          bool pbyp=QMCDriverMode[QMC_UPDATE_MODE];
+        for(int ip=0; ip<NumThreads; ++ip)
+        {
           int now=CurrentStep;
           MCWalkerConfiguration::iterator 
             wit(W.begin()+wPerNode[ip]), wit_end(W.begin()+wPerNode[ip+1]);
 
-          //recalculate everything every 100 steps
-          //Try this less often?
-//           if(pbyp && now%100 == 0) Movers[ip]->updateWalkers(wit, wit_end);
-          if(pbyp && now%Period4CheckProperties == 0) Movers[ip]->updateWalkers(wit, wit_end);
+          if(now%updatePeriod == 0) Movers[ip]->updateWalkers(wit, wit_end);
 
           for(int interval = 0;interval<BranchInterval; ++interval,++now)
           {

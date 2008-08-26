@@ -55,8 +55,8 @@ namespace qmcplusplus {
     IndexType block = 0;
     IndexType numPtcls=W.getTotalNum();
 
-    m_oneover2tau = 0.5/Tau;
-    m_sqrttau = std::sqrt(Tau);
+    RealType oneover2tau = 0.5/Tau;
+    RealType sqrttau = std::sqrt(Tau);
 
     //temporary data to store differences
     ParticleSet::ParticlePos_t deltaR(numPtcls);
@@ -95,7 +95,7 @@ namespace qmcplusplus {
             //loop over particles
             for(int iat=0; iat<numPtcls; iat++) 
             {
-              PosType dr(m_sqrttau*deltaR[iat]+thisWalker.Drift[iat]);
+              PosType dr(sqrttau*deltaR[iat]+thisWalker.Drift[iat]);
               PosType newpos(W.makeMove(iat,dr));
 
               RealType ratio=Psi.ratio(W,iat,dG,dL);
@@ -115,7 +115,7 @@ namespace qmcplusplus {
                 RealType scale=getDriftScale(Tau,G);
                 dr = thisWalker.R[iat]-newpos-scale*real(G[iat]); 
 
-                RealType logGb = -m_oneover2tau*dot(dr,dr);
+                RealType logGb = -oneover2tau*dot(dr,dr);
                 RealType prob = std::min(1.0,ratio*ratio*std::exp(logGb-logGf));
                 if(Random() < prob) 
                 {//move is accepted 

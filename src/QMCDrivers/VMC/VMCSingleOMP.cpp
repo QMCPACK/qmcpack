@@ -26,14 +26,18 @@ namespace qmcplusplus {
   /// Constructor.
   VMCSingleOMP::VMCSingleOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
       HamiltonianPool& hpool):
-    QMCDriver(w,psi,h),  CloneManager(hpool), UseDrift("yes") 
-    { 
+    QMCDriver(w,psi,h),  CloneManager(hpool), 
+    myWarmupSteps(0),UseDrift("yes") 
+  { 
     RootName = "vmc";
     QMCType ="VMCSingleOMP";
     QMCDriverMode.set(QMC_UPDATE_MODE,1);
+    QMCDriverMode.set(QMC_WARMUP,0);
     m_param.add(UseDrift,"useDrift","string"); m_param.add(UseDrift,"usedrift","string");
+    m_param.add(myWarmupSteps,"warmupSteps","int");
+    m_param.add(nTargetSamples,"targetWalkers","int");
   }
-  
+
   bool VMCSingleOMP::run() 
   { 
     resetRun();
@@ -54,12 +58,10 @@ namespace qmcplusplus {
 #pragma omp for 
         for(int ip=0; ip<NumThreads; ++ip)
         {
+          IndexType updatePeriod=(QMCDriverMode[QMC_UPDATE_MODE])?Period4CheckProperties:(nBlocks+1)*nSteps;
           //assign the iterators and resuse them
           MCWalkerConfiguration::iterator wit(W.begin()+wPerNode[ip]), wit_end(W.begin()+wPerNode[ip+1]);
 
-          if(QMCDriverMode[QMC_UPDATE_MODE]&&now%100==0) 
-            Movers[ip]->updateWalkers(wit,wit_end);
-          
           Movers[ip]->startBlock(nSteps);
           int now_loc=now;
           for(int step=0; step<nSteps;++step)
@@ -68,8 +70,8 @@ namespace qmcplusplus {
             Movers[ip]->accumulate(wit,wit_end);
 
             ++now_loc;
-            //save walkers for optimization
-            if(QMCDriverMode[QMC_OPTIMIZE]&&now_loc%Period4WalkerDump==0) wClones[ip]->saveEnsemble(wit,wit_end);
+            if(now_loc%updatePeriod==0) Movers[ip]->updateWalkers(wit,wit_end);
+            if(now_loc%myPeriod4WalkerDump==0) wClones[ip]->saveEnsemble(wit,wit_end);
           } 
           Movers[ip]->stopBlock();
         }//end-of-parallel for
@@ -98,6 +100,21 @@ namespace qmcplusplus {
   {
 
     makeClones(W,Psi,H);
+
+    //determine dump period for walkers
+    int samples_tot=W.getActiveWalkers()*nBlocks*nSteps*myComm->size();
+    myPeriod4WalkerDump=(nTargetSamples>0)?samples_tot/nTargetSamples:Period4WalkerDump;
+    if(QMCDriverMode[QMC_WARMUP]) myPeriod4WalkerDump=nBlocks*nSteps;
+    int samples_th=nTargetSamples/myComm->size()/NumThreads;
+    for(int ip=0; ip<NumThreads;++ip)
+    {
+      wClones[ip]->clearEnsemble();
+      wClones[ip]->setNumSamples(samples_th);
+    }
+    app_log() << "  Samples are dumped at every " << myPeriod4WalkerDump << " step " << endl;
+    app_log() << "  Total Sample Size =" << nTargetSamples
+      << "\n  Sample size per node per thread = " << samples_th << endl;
+    app_log() << "  Warmup Steps " << myWarmupSteps << endl;
 
     if(Movers.empty()) 
     {
@@ -150,7 +167,11 @@ namespace qmcplusplus {
         Movers[ip]->initWalkersForPbyP(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
       else
         Movers[ip]->initWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
+
+      for(int prestep=0; prestep<myWarmupSteps; ++prestep)
+        Movers[ip]->advanceWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1],true); 
     }
+    myWarmupSteps=0;
     //Used to debug and benchmark opnemp
     //#pragma omp parallel for
     //    for(int ip=0; ip<NumThreads; ip++)

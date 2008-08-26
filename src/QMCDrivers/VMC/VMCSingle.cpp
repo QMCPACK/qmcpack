@@ -22,11 +22,15 @@ namespace qmcplusplus {
 
   /// Constructor.
   VMCSingle::VMCSingle(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h):
-    QMCDriver(w,psi,h), Mover(0), UseDrift("yes") { 
+    QMCDriver(w,psi,h), myWarmupSteps(0), Mover(0), UseDrift("yes")
+  { 
     RootName = "vmc";
     QMCType ="VMPSingle";
     QMCDriverMode.set(QMC_UPDATE_MODE,1);
+    QMCDriverMode.set(QMC_WARMUP,0);
     m_param.add(UseDrift,"useDrift","string"); m_param.add(UseDrift,"usedrift","string");
+    m_param.add(myWarmupSteps,"warmupSteps","int");
+    m_param.add(nTargetSamples,"targetWalkers","int");
   }
   
   bool VMCSingle::run() { 
@@ -38,6 +42,8 @@ namespace qmcplusplus {
     IndexType block = 0;
     IndexType nAcceptTot = 0;
     IndexType nRejectTot = 0;
+    IndexType updatePeriod=(QMCDriverMode[QMC_UPDATE_MODE])?Period4CheckProperties:(nBlocks+1)*nSteps;
+
     do {
       Mover->startBlock(nSteps);
       IndexType step = 0;
@@ -46,10 +52,8 @@ namespace qmcplusplus {
         ++step;++CurrentStep;
         Mover->advanceWalkers(W.begin(),W.end(),true); //step==nSteps);
         Estimators->accumulate(W);
-
-        //save walkers for optimization
-        if(QMCDriverMode[QMC_OPTIMIZE]&&CurrentStep%Period4WalkerDump==0) W.saveEnsemble();
-
+        if(CurrentStep%updatePeriod==0) Mover->updateWalkers(W.begin(),W.end());
+        if(CurrentStep%Period4WalkerDump==0) W.saveEnsemble();
       } while(step<nSteps);
 
       Mover->stopBlock();
@@ -73,8 +77,16 @@ namespace qmcplusplus {
 
   void VMCSingle::resetRun()
   {
+
+    int samples_tot=W.getActiveWalkers()*nBlocks*nSteps*myComm->size();
+    myPeriod4WalkerDump=(nTargetSamples>0)?samples_tot/nTargetSamples:Period4WalkerDump;
+    if(QMCDriverMode[QMC_WARMUP]) myPeriod4WalkerDump=nBlocks*nSteps;
+    W.clearEnsemble();
+    W.setNumSamples(W.getActiveWalkers()*((nBlocks*nSteps)/myPeriod4WalkerDump));
+
     if(Mover ==0)
     {
+
       if(QMCDriverMode[QMC_UPDATE_MODE])
       {
         app_log() << "  Update particle by particle " << endl;
@@ -93,8 +105,9 @@ namespace qmcplusplus {
         else
           Mover=new VMCUpdateAll(W,Psi,H,Random);
         Mover->resetRun(branchEngine,Estimators);
-        //Mover->initWalkers(W.begin(),W.end());
+
       }
+
     }
 
     Mover->put(qmcNode);
@@ -102,6 +115,11 @@ namespace qmcplusplus {
       Mover->initWalkersForPbyP(W.begin(),W.end());
     else
       Mover->initWalkers(W.begin(),W.end());
+
+    //do a warmup run
+    for(int prestep=0; prestep<myWarmupSteps; ++prestep)
+      Mover->advanceWalkers(W.begin(),W.end(),true); 
+    myWarmupSteps=0;
   }
 
   bool 
