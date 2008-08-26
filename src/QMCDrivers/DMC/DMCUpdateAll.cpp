@@ -80,7 +80,7 @@ namespace qmcplusplus {
         //converting gradients to drifts, D = tau*G (reuse G)
         //RealType scale=getDriftScale(Tau,W.G);
         //drift = scale*W.G;
-        RealType nodecorr = setScaledDriftPbyPandNodeCorr(Tau*oneovermass,W.G,drift);
+        RealType nodecorr = setScaledDriftPbyPandNodeCorr(m_tauovermass,W.G,drift);
         deltaR = thisWalker.R - W.R - drift;
         RealType logGb = -m_oneover2tau*Dot(deltaR,deltaR);
         RealType prob= std::min(std::exp(logGb-logGf +2.0*(logpsi-thisWalker.Properties(LOGPSI))),1.0);
@@ -165,7 +165,7 @@ namespace qmcplusplus {
       } else {
         enew=H.evaluate(W);
         RealType logGf = -0.5*Dot(deltaR,deltaR);
-        nodecorr = setScaledDriftPbyPandNodeCorr(Tau*oneovermass,W.G,drift);
+        nodecorr = setScaledDriftPbyPandNodeCorr(m_tauovermass,W.G,drift);
         
         deltaR = thisWalker.R - W.R - drift;
         RealType logGb = -m_oneover2tau*Dot(deltaR,deltaR);

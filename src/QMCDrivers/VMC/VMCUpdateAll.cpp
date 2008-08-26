@@ -106,7 +106,7 @@ namespace qmcplusplus {
  
       RealType logGf = -0.5*Dot(deltaR,deltaR);
       
-      setScaledDrift(Tau*oneovermass,W.G,drift);
+      setScaledDrift(m_tauovermass,W.G,drift);
       
       //backward GreenFunction needs \f$d{\bf R} = {\bf R}_{old} - {\bf R}_{new} - {\bf V}_d\f$
       deltaR = thisWalker.R - W.R - drift;

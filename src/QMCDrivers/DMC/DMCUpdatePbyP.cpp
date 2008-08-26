@@ -188,11 +188,11 @@ namespace qmcplusplus {
 
         //get the displacement
         //PosType dr(m_sqrttau*deltaR[iat]+thisWalker.Drift[iat]);
-        RealType sc=getDriftScale(Tau*oneovermass,W.G[iat]);
+        RealType sc=getDriftScale(m_tauovermass,W.G[iat]);
         PosType dr(m_sqrttau*deltaR[iat]+sc*real(W.G[iat]));
 
         //RealType rr=dot(dr,dr);
-        RealType rr=Tau*oneovermass*dot(deltaR[iat],deltaR[iat]);
+        RealType rr=m_tauovermass*dot(deltaR[iat],deltaR[iat]);
         rr_proposed+=rr;
 
         if(rr>m_r2max)
@@ -221,7 +221,7 @@ namespace qmcplusplus {
           //dr = thisWalker.R[iat]-newpos-scale*real(G[iat]); 
           
           //Use the force of the particle iat
-          RealType scale=getDriftScale(Tau*oneovermass,G[iat]);
+          RealType scale=getDriftScale(m_tauovermass,G[iat]);
           dr = thisWalker.R[iat]-newpos-scale*real(G[iat]); 
 
           RealType logGb = -m_oneover2tau*dot(dr,dr);
