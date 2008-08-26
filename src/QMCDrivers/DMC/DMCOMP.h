@@ -8,7 +8,6 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
@@ -17,16 +16,19 @@
 //   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
+/** @file DMCOMP.h
+ * @brief Define OpenMP-able DMC Driver.
+ */
 #ifndef QMCPLUSPLUS_DMC_PARTICLEBYPARTICLE_OPNEMP_H
 #define QMCPLUSPLUS_DMC_PARTICLEBYPARTICLE_OPNEMP_H
 #include "QMCDrivers/QMCDriver.h" 
 #include "QMCDrivers/CloneManager.h" 
 namespace qmcplusplus {
 
-  class DMCUpdateBase;
-
   /** @ingroup QMCDrivers 
-   *@brief A dummy QMCDriver for testing
+   * @brief DMC driver using OpenMP paragra
+   *
+   * This is the main DMC driver with MPI/OpenMP loops over the walkers.
    */
   class DMCOMP: public QMCDriver, public CloneManager {
   public:
