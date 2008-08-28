@@ -64,6 +64,8 @@ namespace qmcplusplus {
     int NumParts;
     ///total number of Warmup Blocks
     int WarmupBlocks;
+    ///total number of Warmup Blocks
+    int NumOfVMCWalkers;
     ///yes/no applicable only first time
     string SkipSampleGeneration;
     ///need to know HamiltonianPool to use OMP
