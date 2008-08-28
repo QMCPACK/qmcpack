@@ -59,10 +59,6 @@ namespace qmcplusplus {
       W.copyFromBuffer(w_buffer);
       Psi.copyFromBuffer(W,w_buffer);
 
-
-      RealType psi_old = thisWalker.Properties(SIGN);
-      RealType psi = psi_old;
-
       myTimers[1]->start();
       for(int iter=0; iter<nSubSteps; ++iter) 
       {
@@ -95,9 +91,11 @@ namespace qmcplusplus {
 
       myTimers[2]->start();
       thisWalker.R = W.R;
+      PAOps<RealType,OHMMS_DIM>::copy(W.G,thisWalker.Drift);
       w_buffer.rewind();
       W.updateBuffer(w_buffer);
-      RealType logpsi = Psi.updateBuffer(W,w_buffer);
+      RealType logpsi = Psi.updateBuffer(W,w_buffer,true);
+
       //W.copyToBuffer(w_buffer);
       //RealType logpsi = Psi.evaluate(W,w_buffer);
       myTimers[2]->stop();
@@ -136,8 +134,6 @@ namespace qmcplusplus {
       W.copyFromBuffer(w_buffer);
       Psi.copyFromBuffer(W,w_buffer);
 
-      RealType psi_old = thisWalker.Properties(SIGN);
-      RealType psi = psi_old;
       //create a 3N-Dimensional Gaussian with variance=1
       makeGaussRandomWithEngine(deltaR,RandomGen);
 
@@ -201,7 +197,7 @@ namespace qmcplusplus {
 
         w_buffer.rewind();
         W.copyToBuffer(w_buffer);
-        psi = Psi.evaluate(W,w_buffer);
+        RealType psi = Psi.evaluate(W,w_buffer);
         RealType eloc=H.evaluate(W);
         thisWalker.resetProperty(std::log(abs(psi)), psi,eloc);
         H.saveProperty(thisWalker.getPropertyBase());
