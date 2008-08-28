@@ -131,10 +131,11 @@ namespace qmcplusplus {
   {
     o.setf(ios::scientific, ios::floatfield);
     o.setf(ios::left,ios::adjustfield);
+    o.precision(10);
     o << "#   index    ";
-    for(int i=0; i<BlockAverages.size(); i++) o << setw(16) << BlockAverages.Names[i];
+    for(int i=0; i<BlockAverages.size(); i++) o << setw(20) << BlockAverages.Names[i];
     //(*Archive) << setw(16) << "WeightSum";
-    for(int i=0; i<BlockProperties.size(); i++) o << setw(16) << BlockProperties.Names[i];
+    for(int i=0; i<BlockProperties.size(); i++) o << setw(20) << BlockProperties.Names[i];
     o << endl;
     o.setf(ios::right,ios::adjustfield);
   }
@@ -329,8 +330,8 @@ namespace qmcplusplus {
     {
      if(CompEstimators) CompEstimators->print(*DebugArchive);
       *DebugArchive << setw(10) << RecordCount;
-      for(int j=0; j<AverageCache.size(); j++) *DebugArchive << setw(16) << AverageCache[j];
-      for(int j=0; j<PropertyCache.size(); j++) *DebugArchive << setw(16) << PropertyCache[j];
+      for(int j=0; j<AverageCache.size(); j++) *DebugArchive << setw(20) << AverageCache[j];
+      for(int j=0; j<PropertyCache.size(); j++) *DebugArchive << setw(20) << PropertyCache[j];
       *DebugArchive << endl;
     }
 #endif
@@ -380,8 +381,8 @@ namespace qmcplusplus {
     if(Archive)
     {
       *Archive << setw(10) << RecordCount;
-      for(int j=0; j<AverageCache.size(); j++) *Archive << setw(16) << AverageCache[j];
-      for(int j=0; j<PropertyCache.size(); j++) *Archive << setw(16) << PropertyCache[j];
+      for(int j=0; j<AverageCache.size(); j++) *Archive << setw(20) << AverageCache[j];
+      for(int j=0; j<PropertyCache.size(); j++) *Archive << setw(20) << PropertyCache[j];
       *Archive << endl;
 
       if(CompEstimators) CompEstimators->recordBlock();
