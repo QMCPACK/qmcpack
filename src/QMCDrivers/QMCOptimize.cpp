@@ -133,6 +133,13 @@ namespace qmcplusplus {
     //  app_log() << "</vmc>" << endl;
     //}
 
+    if(W.getActiveWalkers()>NumOfVMCWalkers)
+    {
+      W.destroyWalkers(W.getActiveWalkers()-NumOfVMCWalkers);
+      app_log() << "  QMCOptimize::generateSamples removed walkers." << endl;
+      app_log() << "  Number of Walkers per node " << W.getActiveWalkers() << endl;
+    }
+
     vmcEngine->QMCDriverMode.set(QMC_OPTIMIZE,1);
     vmcEngine->QMCDriverMode.set(QMC_WARMUP,0);
 
@@ -181,7 +188,9 @@ namespace qmcplusplus {
     }  
 
     //no walkers exist, add 10
-    if(W.getActiveWalkers() == 0) addWalkers(10); 
+    if(W.getActiveWalkers() == 0) addWalkers(omp_get_max_threads()); 
+
+    NumOfVMCWalkers=W.getActiveWalkers();
 
     //create VMC engine
     if(vmcEngine ==0)
@@ -190,9 +199,8 @@ namespace qmcplusplus {
       if(omp_get_max_threads()>1)
         vmcEngine = new VMCSingleOMP(W,Psi,H,hamPool);
       else
-        vmcEngine = new VMCSingle(W,Psi,H);
 #else
-      vmcEngine = new VMCSingle(W,Psi,H);
+        vmcEngine = new VMCSingle(W,Psi,H);
 #endif
       vmcEngine->setUpdateMode(vmcMove[0] == 'p');
       vmcEngine->initCommunicator(myComm);
