@@ -244,6 +244,7 @@ void MCWalkerConfiguration::loadWalker(Walker_t& awalker) {
 void MCWalkerConfiguration::resetWalkerProperty(int ncopy) {
   int m(PropertyList.size());
   app_log() << "  Resetting Properties of the walkers " << ncopy << " x " << m << endl;
+  Properties.resize(ncopy,m);
   iterator it(WalkerList.begin()),it_end(WalkerList.end());
   while(it != it_end) {
     (*it)->resizeProperty(ncopy,m); ++it;

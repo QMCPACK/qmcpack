@@ -64,6 +64,8 @@ namespace qmcplusplus {
     
     ///define a Walker_t
     typedef Walker<RealType,ParticlePos_t> Walker_t;
+    typedef Walker_t::PropertyContainer_t  PropertyContainer_t;
+
     ///property of an ensemble represented by this ParticleSet
     MCDataType<RealType> EnsembleProperty;
 
@@ -96,6 +98,8 @@ namespace qmcplusplus {
      * Walker_t::Properties.
      */ 
     PropertySetType PropertyList;
+
+    PropertyContainer_t  Properties;
     
     ///default constructor
     ParticleSet();
@@ -203,6 +207,30 @@ namespace qmcplusplus {
    void updateBuffer(PooledData<RealType>& buf);
    void copyToBuffer(PooledData<RealType>& buf);
    void copyFromBuffer(PooledData<RealType>& buf);
+
+    //return the address of the values of Hamiltonian terms
+    inline RealType* restrict getPropertyBase() 
+    {
+      return Properties.data();
+    }
+
+    //return the address of the values of Hamiltonian terms
+    inline const RealType* restrict getPropertyBase() const 
+    {
+      return Properties.data();
+    }
+
+    ///return the address of the i-th properties
+    inline RealType* restrict getPropertyBase(int i) 
+    {
+      return Properties[i];
+    }
+
+    ///return the address of the i-th properties
+    inline const RealType* restrict getPropertyBase(int i) const 
+    {
+      return Properties[i];
+    }
 
   protected:
     ///the number of particle objects
