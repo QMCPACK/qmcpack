@@ -480,6 +480,13 @@ Communicate::bcast(int* restrict x, int n)
   MPI_Bcast(x,n,MPI_INT,0,myMPI);
 }
 
+template<>
+inline void
+Communicate::bcast(char* restrict x, int n) 
+{
+  MPI_Bcast(x,n,MPI_CHAR,0,myMPI);
+}
+
 template<> inline void
 Communicate::send(int dest, int tag, std::vector<double>& g)
 {
