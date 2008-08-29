@@ -25,7 +25,7 @@
 
 namespace qmcplusplus {
 
-  struct ECPComponentBuilder: public QMCTraits {
+  struct ECPComponentBuilder: public MPIObjectBase, public QMCTraits {
 
     typedef LocalECPotential::GridType GridType;
     typedef LocalECPotential::RadialPotentialType RadialPotentialType;
@@ -41,7 +41,7 @@ namespace qmcplusplus {
     NonLocalECPComponent* pp_nonloc;
     map<string,int> angMon;
 
-    ECPComponentBuilder(const string& aname);
+    ECPComponentBuilder(const string& aname, Communicate* c);
 
     bool parse(const string& fname, xmlNodePtr cur);
     bool put(xmlNodePtr cur);

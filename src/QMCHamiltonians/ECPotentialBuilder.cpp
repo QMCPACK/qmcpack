@@ -28,7 +28,9 @@ namespace qmcplusplus {
    *\param psi trial wavefunction
    */
   ECPotentialBuilder::ECPotentialBuilder(QMCHamiltonian& h,
-      ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi): 
+      ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi,
+      Communicate* c): 
+    MPIObjectBase(c),
     hasLocalPot(false),hasNonLocalPot(false),
     targetH(h), IonConfig(ions), targetPtcl(els), targetPsi(psi)
   { }
@@ -138,7 +140,7 @@ namespace qmcplusplus {
         int speciesIndex=IonConfig.getSpeciesSet().findSpecies(ionName);
         if(speciesIndex < IonConfig.getSpeciesSet().getTotalNum()) {
           app_log() << endl << "  Adding pseudopotential for " << ionName << endl;
-          ECPComponentBuilder ecp(ionName);
+          ECPComponentBuilder ecp(ionName,myComm);
           bool success=false;
           if(format == "xml") {
             if(href == "none") {

@@ -44,7 +44,8 @@
 
 namespace qmcplusplus {
   HamiltonianFactory::HamiltonianFactory(ParticleSet* qp, 
-    PtclPoolType& pset, OrbitalPoolType& oset): 
+    PtclPoolType& pset, OrbitalPoolType& oset, Communicate* c): 
+    MPIObjectBase(c),
     targetPtcl(qp), targetH(0), 
   ptclPool(pset),psiPool(oset), myNode(NULL), psiName("psi0") 
   {
@@ -357,7 +358,7 @@ namespace qmcplusplus {
     //}
     //else  {
     app_log() << endl << "  ECPotential builder for pseudopotential "<< endl;
-    ECPotentialBuilder ecp(*targetH,*ion,*targetPtcl,*psi);
+    ECPotentialBuilder ecp(*targetH,*ion,*targetPtcl,*psi,myComm);
     ecp.put(cur);
 #endif
     //}
@@ -522,7 +523,7 @@ namespace qmcplusplus {
   HamiltonianFactory*
   HamiltonianFactory::clone(ParticleSet* qp, TrialWaveFunction* psi, 
       int ip, const string& aname) {
-    HamiltonianFactory* aCopy=new HamiltonianFactory(qp, ptclPool, psiPool);
+    HamiltonianFactory* aCopy=new HamiltonianFactory(qp, ptclPool, psiPool, myComm);
     aCopy->setName(aname);
 
     aCopy->renameProperty("e",qp->getName());

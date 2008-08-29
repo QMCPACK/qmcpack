@@ -21,11 +21,13 @@
 #include "QMCHamiltonians/FSAtomPseudoPot.h"
 #include "Utilities/IteratorUtility.h"
 #include "Utilities/SimpleParser.h"
+#include "Message/CommOperators.h"
 #include <cmath>
 
 namespace qmcplusplus {
 
-  ECPComponentBuilder::ECPComponentBuilder(const string& aname):
+  ECPComponentBuilder::ECPComponentBuilder(const string& aname, Communicate* c):
+    MPIObjectBase(c),
     RcutMax(-1), NumNonLocal(0), Lmax(0), Zeff(0), Species(aname), Nrule(4),
     grid_global(0),pp_loc(0), pp_nonloc(0) {
     angMon["s"]=0; angMon["p"]=1; angMon["d"]=2; angMon["f"]=3; angMon["g"]=4;
@@ -37,19 +39,38 @@ namespace qmcplusplus {
     const xmlChar* rptr=xmlGetProp(cur,(const xmlChar*)"cutoff");
     if(rptr != NULL) RcutMax = atof((const char*)rptr);
 
+    int length=0;
+    char* cbuffer=0;
+
+    ifstream *fin=0;
+    if(myComm->rank()==0)
+    {
+      fin = new ifstream(fname.c_str());
+      fin->seekg (0, ios::end);
+      length = fin->tellg();
+      fin->seekg (0, ios::beg);
+    }
+
+    myComm->bcast(length);
+    cbuffer = new char[length];
+    if(myComm->rank()==0) fin->read (cbuffer,length);
+    myComm->bcast(cbuffer,length);
+    xmlDocPtr m_doc = xmlReadMemory(cbuffer,length,NULL,NULL,0);
+
+    if(fin)  delete fin;
+    if(cbuffer) delete cbuffer;
+
     // build an XML tree from a the file;
-    xmlDocPtr m_doc = xmlParseFile(fname.c_str());
+    //xmlDocPtr m_doc = xmlParseFile(fname.c_str());
     if (m_doc == NULL) {
       xmlFreeDoc(m_doc);
-      app_error() <<"File " << fname << " is invalid" << endl;
-      OHMMS::Controller->abort();
+      APP_ABORT("ECPComponentBuilder::parse xml file "+fname+" is invalid");
     }    
     // Check the document is of the right kind
     cur = xmlDocGetRootElement(m_doc);
     if (cur == NULL) {
       xmlFreeDoc(m_doc);
-      app_error() << "Empty document" << endl;
-      OHMMS::Controller->abort();
+      APP_ABORT("Empty document");
     }
 
     bool success=put(cur);

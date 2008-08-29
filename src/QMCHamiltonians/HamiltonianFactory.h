@@ -22,11 +22,12 @@
 
 #include "QMCWaveFunctions/WaveFunctionFactory.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
+#include "Message/MPIObjectBase.h"
 namespace qmcplusplus {
 
   /** Factory class to build a many-body wavefunction 
    */
-  struct HamiltonianFactory: public OhmmsElementBase {
+  struct HamiltonianFactory: public MPIObjectBase, public OhmmsElementBase {
 
     typedef map<string,ParticleSet*> PtclPoolType;
     typedef map<string,WaveFunctionFactory*> OrbitalPoolType;
@@ -51,7 +52,8 @@ namespace qmcplusplus {
     map<string,string> RenamedProperty;
 
     ///constructor
-    HamiltonianFactory(ParticleSet* qp, PtclPoolType& pset, OrbitalPoolType& oset);
+    HamiltonianFactory(ParticleSet* qp, PtclPoolType& pset, OrbitalPoolType& oset,
+        Communicate* c);
 
     ///destructor
     ~HamiltonianFactory();

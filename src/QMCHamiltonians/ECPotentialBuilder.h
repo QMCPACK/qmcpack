@@ -27,7 +27,7 @@ namespace qmcplusplus {
   class ParticleSet;
   class TrialWaveFunction;
 
-  struct ECPotentialBuilder: public QMCTraits {
+  struct ECPotentialBuilder: public MPIObjectBase, public QMCTraits {
 
     typedef LocalECPotential::RadialPotentialType RadialPotentialType;
     typedef LocalECPotential::GridType GridType;
@@ -44,7 +44,8 @@ namespace qmcplusplus {
     vector<NonLocalECPComponent*>  nonLocalPot;
 
     ECPotentialBuilder(QMCHamiltonian& h, 
-        ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi);
+        ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi,
+        Communicate* c);
 
     bool put(xmlNodePtr cur);
 
