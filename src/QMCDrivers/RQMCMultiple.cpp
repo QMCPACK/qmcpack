@@ -643,14 +643,6 @@ namespace qmcplusplus {
       NewBeadProp[LOGPSI]=Psi1[ipsi]->evaluateLog(W);
       NewBeadProp[SIGN]=Psi1[ipsi]->getPhase();
       RealType eloc=NewBeadProp[LOCALENERGY]= H1[ipsi]->evaluate(W);
-//       NewBead->Observables[0] = H1[ipsi]->getLocalEnergy();
-//       for(int obsi=0;obsi<nObs;obsi++){
-//         NewBead->Observables[obsi+1] = (*H1[ipsi])[obsi];
-//       };
-//       NewBeadProp[LOCALENERGY]-NewBeadProp[LOCALPOTENTIAL]
-      if ((NewBeadProp[LOCALENERGY]-NewBeadProp[LOCALPOTENTIAL] <= 0.0) && (NewBeadProp[LOCALENERGY] < HeadProp[LOCALENERGY]) ) {
-        FAIL=1;
-      }
 
       //Save properties
       H1[ipsi]->saveProperty(NewBeadProp);
@@ -696,6 +688,9 @@ namespace qmcplusplus {
 //       int beadwgt=abs( ( Reptile->getSign(NewBeadProp[SIGN])+Reptile->RefSign[ipsi] )/2 );
 //       NewBead->BeadSignWgt[ipsi]=beadwgt;
 //       totbeadwgt+=beadwgt;
+      if ((NewBeadProp[LOCALENERGY]-NewBeadProp[LOCALPOTENTIAL] <= 0.0) && (NewBeadProp[LOCALENERGY] < HeadProp[LOCALENERGY]) ) {
+        FAIL=1;
+      }
     }
     if (!FAIL){
     //Compute Drift and TransProb here. This could be done (and was originally done)
