@@ -60,7 +60,7 @@ namespace qmcplusplus {
     PoolType::iterator hit(myPool.find(id));
     if(hit == myPool.end()) 
     {
-      curH= new HamiltonianFactory(qp, ptclPool->getPool(), psiPool->getPool());
+      curH= new HamiltonianFactory(qp, ptclPool->getPool(), psiPool->getPool(),myComm);
       curH->setName(id);
       myPool[id]=curH;
     }
