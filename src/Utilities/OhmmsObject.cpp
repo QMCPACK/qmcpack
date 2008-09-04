@@ -57,7 +57,6 @@ OhmmsObject::OhmmsObject(const std::string& tname, const std::string& oname):
 }
 
 OhmmsObject::~OhmmsObject() {
-  DEBUGMSG("Calling OhmmsObject::~OhmmsObject()");
 }
 
 /***************************************************************************

@@ -23,12 +23,13 @@ namespace qmcplusplus {
   {
   }
 
-  QMCAppBase::~QMCAppBase() {
+  QMCAppBase::~QMCAppBase() 
+  {
     while(!XmlDocStack.empty()) { popDocument(); }
-    DEBUGMSG("QMCAppBase::~QMCAppBase")
   }
 
-  bool QMCAppBase::pushDocument(const string& infile) {
+  bool QMCAppBase::pushDocument(const string& infile) 
+  {
     Libxml2Document* adoc= new Libxml2Document();
     bool success = adoc->parse(infile);
 

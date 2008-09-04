@@ -251,8 +251,8 @@ typename ParticleBase<PL>::ParticleIndex_t*
 ParticleBase<PL>::getIndexAttrib(const std::string& aname) {
 
   map<string,OhmmsObject*>::iterator it= AttribList.find(aname);
-  if(it != AttribList.end()) {
-    DEBUGMSG(aname << " attribute of " << ParticleTags::indextype_tag << " exists.")
+  if(it != AttribList.end()) 
+  {
     return  dynamic_cast<ParticleIndex_t*>((*it).second);
   }
 
@@ -270,8 +270,8 @@ typename ParticleBase<PL>::ParticleScalar_t*
 ParticleBase<PL>::getScalarAttrib(const std::string& aname) {
 
   map<string,OhmmsObject*>::iterator it= AttribList.find(aname);
-  if(it != AttribList.end()) {
-    DEBUGMSG(aname << " attribute of " << ParticleTags::scalartype_tag << " exists.")
+  if(it != AttribList.end()) 
+  {
     return  dynamic_cast<ParticleScalar_t*>((*it).second);
   }
 
@@ -289,8 +289,8 @@ typename ParticleBase<PL>::ParticlePos_t*
 ParticleBase<PL>::getVectorAttrib(const std::string&  aname) {
 
   map<string,OhmmsObject*>::iterator it= AttribList.find(aname);
-  if(it != AttribList.end()) {
-    DEBUGMSG(aname << " attribute of " << ParticleTags::postype_tag << " exists.")
+  if(it != AttribList.end()) 
+  {
     return  dynamic_cast<ParticlePos_t*>((*it).second);
   }
 
@@ -324,8 +324,6 @@ ParticleBase<PL>::getTensorAttrib(const std::string& aname) {
 template<class PL>
 void ParticleBase<PL>::create(unsigned m) {
 
-  DEBUGMSG("Number of particle before creating = " << LocalNum)
-  DEBUGMSG("==================================================")
   for(int i=0; i< INDEX.size(); i++) INDEX[i]->create(m);
   for(int i=0; i< VAL.size(); i++)   VAL[i]->create(m);
   for(int i=0; i< POS.size(); i++)   POS[i]->create(m);
@@ -335,18 +333,14 @@ void ParticleBase<PL>::create(unsigned m) {
   for(int i=0; i< LAPS.size(); i++) LAPS[i]->create(m);
 #endif
   curR.create(m);
-  DEBUGMSG("==================================================")
   LocalNum += m;
   GlobalNum += m;
   
-  DEBUGMSG("Number of particle after creating = " << LocalNum)
 }
 
 template<class PL>
 void ParticleBase<PL>::resize(unsigned m) {
 
-  DEBUGMSG("Number of particle before creating = " << LocalNum);
-  DEBUGMSG("==================================================");
   for(int i=0; i< INDEX.size(); i++) INDEX[i]->resize(m);
   for(int i=0; i< VAL.size(); i++)   VAL[i]->resize(m);
   for(int i=0; i< POS.size(); i++)   POS[i]->resize(m);
@@ -356,18 +350,15 @@ void ParticleBase<PL>::resize(unsigned m) {
   for(int i=0; i< LAPS.size(); i++) LAPS[i]->resize(m);
 #endif
   curR.resize(m);
-  DEBUGMSG("==================================================");
+
   LocalNum = m;
   GlobalNum = m;
   
-  DEBUGMSG("Number of particle after creating = " << LocalNum);
 }
 
 template<class PL>
 void ParticleBase<PL>::clear() {
 
-  DEBUGMSG("Number of particle before creating = " << LocalNum);
-  DEBUGMSG("==================================================");
   for(int i=0; i< INDEX.size(); i++) INDEX[i]->clear();
   for(int i=0; i< VAL.size(); i++)   VAL[i]->clear();
   for(int i=0; i< POS.size(); i++)   POS[i]->clear();
@@ -377,7 +368,6 @@ void ParticleBase<PL>::clear() {
   for(int i=0; i< LAPS.size(); i++) LAPS[i]->clear();
 #endif
   curR.clear();
-  DEBUGMSG("==================================================");
   LocalNum = 0;
   GlobalNum = 0;
 }

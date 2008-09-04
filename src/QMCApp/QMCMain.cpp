@@ -52,8 +52,8 @@ namespace qmcplusplus {
   }
 
   ///destructor
-  QMCMain::~QMCMain() {
-    DEBUGMSG("QMCMain::~QMCMain")
+  QMCMain::~QMCMain() 
+  {
   }
 
 

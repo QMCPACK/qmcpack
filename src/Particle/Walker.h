@@ -230,15 +230,15 @@ namespace qmcplusplus {
      */
     inline int byteSize() 
     {
-      //return 2*sizeof(long)+2*sizeof(int)+
-      return 2*sizeof(int)+(Properties.size()+DIM*2*R.size()+DataSet.size())*sizeof(T);
+      return 2*sizeof(long)+2*sizeof(int)+(Properties.size()+DIM*2*R.size()+DataSet.size())*sizeof(T);
+      //return 2*sizeof(int)+(Properties.size()+DIM*2*R.size()+DataSet.size())*sizeof(T);
     }
 
     template<class Msg>
     inline Msg& putMessage(Msg& m) {
       int nat=R.size();
-      //m << ID << ParentID << Generation << Age;
-      m << Generation << Age;
+      m << ID << ParentID << Generation << Age;
+      //m << Generation << Age;
       for(int iat=0; iat<nat;iat++) R[iat].putMessage(m);
       for(int iat=0; iat<nat;iat++) Drift[iat].putMessage(m);
       Properties.putMessage(m);
@@ -249,8 +249,8 @@ namespace qmcplusplus {
     template<class Msg>
     inline Msg& getMessage(Msg& m) {
       int nat=R.size();
-      //m>>ID >> ParentID >> Generation >> Age;
-      m>> Generation >> Age;
+      m>>ID >> ParentID >> Generation >> Age;
+      //m>> Generation >> Age;
       for(int iat=0; iat<nat;iat++) R[iat].getMessage(m);
       for(int iat=0; iat<nat;iat++) Drift[iat].getMessage(m);
       Properties.getMessage(m);

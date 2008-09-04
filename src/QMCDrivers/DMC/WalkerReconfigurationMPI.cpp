@@ -170,9 +170,13 @@ int WalkerReconfigurationMPI::swapWalkers(MCWalkerConfiguration& W) {
 
   //copy within the local node
   int lower=std::min(plus.size(),minus.size()); 
-  while(lower>0) {
+  while(lower>0) 
+  {
     --lower;
-    W[minus[lower]]->makeCopy(*(W[plus[lower]]));
+    int im=minus[lower], ip=plus[lower];
+    W[im]->makeCopy(*(W[ip]));
+    W[im]->ParentID=W[ip]->ID;
+    W[im]->ID=(++NumWalkersCreated)*NumContexts+MyContext;
     minus.pop_back();
     plus.pop_back();
   }
@@ -279,7 +283,10 @@ void WalkerReconfigurationMPI::recvWalkers(MCWalkerConfiguration& W,
       //OOMPI_COMM_WORLD[plusN[ic]].Recv(recvBuffer);
       OOMPI_Packed recvBuffer(wbuffer_size,myComm->getComm());
       myComm->getComm()[plusN[ic]].Recv(recvBuffer);
-      W[minus[last]]->getMessage(recvBuffer);
+      int im=minus[last];
+      W[im]->getMessage(recvBuffer);
+      W[im]->ParentID=W[im]->ID;
+      W[im]->ID=(++NumWalkersCreated)*NumContexts+MyContext;
       --last;
     }
     ++ic;

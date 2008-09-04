@@ -18,7 +18,25 @@
 #include "Utilities/IteratorUtility.h"
 #include "Utilities/UtilityFunctions.h"
 #include "Utilities/NewTimer.h"
+#include "Utilities/Timer.h"
 using namespace qmcplusplus;
+
+//#if defined(PRINT_DEBUG)
+//#define DMC_BRANCH_START(NOW) NOW
+//#define DMC_BRANCH_STOP(TID,TM) TID=TM
+//#define DMC_BRANCH_DUMP(IT,T1,T2,T3)  \
+//  OhmmsInfo::Debug->getStream()  << "BRANCH " \
+//<< setw(8) << IT \
+//<< " SORT" << setw(16) << T1 \
+//<< " GSUM" << setw(16) << T2 \
+//<< " SWAP" << setw(16) << T3 << std::endl
+//#else
+#define DMC_BRANCH_START(NOW) 
+#define DMC_BRANCH_STOP(TID,TM) 
+#define DMC_BRANCH_DUMP(IT,T1,T2,T3) 
+//#endif
+
+
 //#define MCWALKERSET_MPI_DEBUG
 
 /** default constructor
@@ -49,6 +67,9 @@ int
 WalkerControlMPI::branch(int iter, MCWalkerConfiguration& W, RealType trigger) 
 {
 
+  DMC_BRANCH_START(Timer localTimer);
+  TinyVector<RealType,3> bTime(0.0);
+
   myTimers[0]->start();
 
   myTimers[1]->start();
@@ -59,12 +80,16 @@ WalkerControlMPI::branch(int iter, MCWalkerConfiguration& W, RealType trigger)
   //update the number of walkers for this node
   curData[LE_MAX+MyContext]=NumWalkers;
 
+  DMC_BRANCH_STOP(bTime[0],localTimer.elapsed());
+  DMC_BRANCH_START(localTimer.restart());
+
   int nw = copyWalkers(W);
-
   myComm->allreduce(curData);
-
   measureProperties(iter);
   W.EnsembleProperty=EnsembleProperty;
+
+  DMC_BRANCH_STOP(bTime[1],localTimer.elapsed());
+  DMC_BRANCH_START(localTimer.restart());
 
   ////update the samples and weights
   //W.EnsembleProperty.NumSamples=curData[WALKERSIZE_INDEX];
@@ -112,6 +137,10 @@ WalkerControlMPI::branch(int iter, MCWalkerConfiguration& W, RealType trigger)
   //update the global number of walkers and offsets
   W.setGlobalNumWalkers(Cur_pop);
   W.setWalkerOffsets(FairOffSet);
+
+  DMC_BRANCH_STOP(bTime[2],localTimer.elapsed());
+
+  DMC_BRANCH_DUMP(iter,bTime[0],bTime[1],bTime[2]);
 
   myTimers[0]->stop();
   return Cur_pop;

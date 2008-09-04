@@ -29,6 +29,9 @@
 /* define the subversion last changed date */
 #cmakedefine QMCPLUSPLUS_LAST_CHANGED_DATE  "@QMCPLUSPLUS_LAST_CHANGED_DATE@"
 
+/* define PRINT_DEBUG */
+#cmakedefine PRINT_DEBUG @PRINT_DEBUG@
+
 /* Enable OpenMP parallelization. */
 #cmakedefine ENABLE_OPENMP @ENABLE_OPENMP@
 

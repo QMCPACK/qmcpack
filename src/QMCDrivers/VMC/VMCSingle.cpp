@@ -53,7 +53,7 @@ namespace qmcplusplus {
         Mover->advanceWalkers(W.begin(),W.end(),true); //step==nSteps);
         Estimators->accumulate(W);
         if(CurrentStep%updatePeriod==0) Mover->updateWalkers(W.begin(),W.end());
-        if(CurrentStep%Period4WalkerDump==0) W.saveEnsemble();
+        if(CurrentStep%myPeriod4WalkerDump==0) W.saveEnsemble();
       } while(step<nSteps);
 
       Mover->stopBlock();
@@ -82,7 +82,8 @@ namespace qmcplusplus {
     myPeriod4WalkerDump=(nTargetSamples>0)?samples_tot/nTargetSamples:Period4WalkerDump;
     if(QMCDriverMode[QMC_WARMUP]) myPeriod4WalkerDump=nBlocks*nSteps;
     W.clearEnsemble();
-    W.setNumSamples(W.getActiveWalkers()*((nBlocks*nSteps)/myPeriod4WalkerDump));
+    samples_tot=W.getActiveWalkers()*((nBlocks*nSteps)/myPeriod4WalkerDump);
+    W.setNumSamples(samples_tot);
 
     if(Mover ==0)
     {
@@ -115,6 +116,12 @@ namespace qmcplusplus {
       Mover->initWalkersForPbyP(W.begin(),W.end());
     else
       Mover->initWalkers(W.begin(),W.end());
+
+    app_log() << "  Samples are dumped at every " << myPeriod4WalkerDump << " step " << endl;
+    app_log() << "  Total Sample Size =" << nTargetSamples
+      << "\n  Sample size per node per thread = " << samples_tot << endl;
+    app_log() << "  Warmup Steps " << myWarmupSteps << endl;
+
 
     //do a warmup run
     for(int prestep=0; prestep<myWarmupSteps; ++prestep)

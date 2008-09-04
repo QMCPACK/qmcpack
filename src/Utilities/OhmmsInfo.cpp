@@ -7,7 +7,6 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
@@ -19,6 +18,7 @@
 /** @file OhmmsInfo.cpp
  * @brief Definition of OhmmsInfo class.
  */
+#include "config.h"
 #include "Utilities/OhmmsInfo.h"
 
 bool OhmmsInfo::Writeable = false;
@@ -60,6 +60,19 @@ OhmmsInfo::OhmmsInfo(const std::string& fin_name, int rank, int gid, int num_gro
     Warn->set(*Log,"WARNING");
     Error->set(*Log,"ERROR");
   }
+
+#if defined(PRINT_DEBUG)
+  if(Debug==0)
+  {
+    char fn[128];
+    sprintf(fn,"%s.p%03d.debug",fin_name.c_str(),rank);
+    Debug = new OhmmsInform("DEBUG",false,true);
+    Debug->set(fn);
+    Debug->getStream().setf(std::ios::scientific, std::ios::floatfield);
+    Debug->getStream().precision(6);
+
+  }
+#endif
 }
 
 void OhmmsInfo::initialize(const char* froot, int master){

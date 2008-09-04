@@ -43,12 +43,12 @@ MCWalkerConfiguration::MCWalkerConfiguration(const MCWalkerConfiguration& mcw)
 
 ///default destructor
 MCWalkerConfiguration::~MCWalkerConfiguration(){
-  DEBUGMSG("MCWalkerConfiguration::~MCWalkerConfiguration")
   if(OwnWalkers) destroyWalkers(WalkerList.begin(), WalkerList.end());
 }
 
 
-void MCWalkerConfiguration::createWalkers(int n) {
+void MCWalkerConfiguration::createWalkers(int n) 
+{
   if(WalkerList.empty())
   {
     while(n) {

@@ -349,35 +349,39 @@ void WaveFunctionTester::runRatioTest() {
       RealType logpsi(thisWalker.Properties(LOGPSI));
       RealType emixed(eold), enew(eold);
 
-      makeGaussRandom(deltaR);
-
       //mave a move
       RealType ratio_accum(1.0);
-      for(int iat=0; iat<nat; iat++) {
-        PosType dr(Tau*deltaR[iat]);
 
-        PosType newpos(W.makeMove(iat,dr));
+      for(int substep=0; substep<3; ++substep)
+      {
+        makeGaussRandom(deltaR);
 
-        RealType ratio=Psi.ratio(W,iat);
+        for(int iat=0; iat<nat; iat++) {
+          PosType dr(Tau*deltaR[iat]);
 
-        if(ratio > Random()) {
-          cout << " Accepting a move for " << iat << endl;
-          W.acceptMove(iat);
-          Psi.acceptMove(W,iat);
-          ratio_accum *= ratio;
-        } else {
-          cout << " Rejecting a move for " << iat << endl;
-          W.rejectMove(iat); 
-          Psi.rejectMove(iat);
+          PosType newpos(W.makeMove(iat,dr));
+
+          RealType ratio=Psi.ratio(W,iat);
+          RealType prob = ratio*ratio;
+          if(prob > Random()) {
+            cout << " Accepting a move for " << iat << endl;
+            W.acceptMove(iat);
+            Psi.acceptMove(W,iat);
+            ratio_accum *= ratio;
+          } else {
+            cout << " Rejecting a move for " << iat << endl;
+            W.rejectMove(iat); 
+            Psi.rejectMove(iat);
+          }
         }
-      }
 
-      thisWalker.R=W.R;
-      w_buffer.rewind();
-      W.updateBuffer(w_buffer);
-      RealType logpsi_up = Psi.updateBuffer(W,w_buffer,true);
-      RealType ene = H.evaluate(W);
-      thisWalker.resetProperty(logpsi_up,Psi.getPhase(),ene);
+        thisWalker.R=W.R;
+        w_buffer.rewind();
+        W.updateBuffer(w_buffer);
+        RealType logpsi_up = Psi.updateBuffer(W,w_buffer,false);
+        RealType ene = H.evaluate(W);
+        thisWalker.resetProperty(logpsi_up,Psi.getPhase(),ene);
+      }
 
       Gp=W.G;
       Lp=W.L;

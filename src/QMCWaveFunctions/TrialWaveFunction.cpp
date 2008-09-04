@@ -40,7 +40,6 @@ namespace qmcplusplus {
    *  or not. It will depend on I/O implementation.
    */
   TrialWaveFunction::~TrialWaveFunction(){
-    DEBUGMSG("TrialWaveFunction::~TrialWaveFunction")
     delete_iter(Z.begin(),Z.end());
     //delete_iter(SPOSet.begin(),SPOSet.end());
     //delete_iter(myTimers.begin(),myTimers.end());

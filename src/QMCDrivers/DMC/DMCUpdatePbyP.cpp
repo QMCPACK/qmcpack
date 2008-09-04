@@ -23,6 +23,17 @@
 #include "QMCDrivers/DriftOperators.h"
 //#define TEST_INNERBRANCH
 
+//define macros to print out runtime data
+#if defined(PRINT_DEBUG)
+#define DMC_TRACE_START(NOW) NOW
+#define DMC_TRACE_STOP(WID,PID,MVD,ELAPSED) \
+  OhmmsInfo::Debug->getStream() << setw(16) << WID \
+  << setw(5) << PID << setw(4) << MVD << setw(15) << ELAPSED << std::endl
+#else
+#define DMC_TRACE_START(NOW) 
+#define DMC_TRACE_STOP(WID,MID,PID,ELAPSED) 
+#endif
+
 namespace qmcplusplus { 
 
   /// Constructor.
@@ -158,6 +169,8 @@ namespace qmcplusplus {
 //      }
 //    }
 //#else
+    Timer localTimer;
+
     myTimers[0]->start();
     for(;it != it_end;++it) 
     {
@@ -186,6 +199,8 @@ namespace qmcplusplus {
       for(int iat=0; iat<NumPtcl; ++iat) 
       {
 
+        DMC_TRACE_START(localTimer.restart());
+
         //get the displacement
         //PosType dr(m_sqrttau*deltaR[iat]+thisWalker.Drift[iat]);
         RealType sc=getDriftScale(m_tauovermass,W.G[iat]);
@@ -203,6 +218,7 @@ namespace qmcplusplus {
 
         PosType newpos(W.makeMove(iat,dr));
         RealType ratio=Psi.ratio(W,iat,dG,dL);
+        bool valid_move=false;
 
         //node is crossed reject the move
         if(Psi.getPhase() > numeric_limits<RealType>::epsilon()) 
@@ -230,6 +246,7 @@ namespace qmcplusplus {
           //RealType prob = std::min(1.0,ratio*ratio*std::exp(logGb-logGf));
           if(RandomGen() < prob) 
           { 
+            valid_move=true;
             ++nAcceptTemp;
             W.acceptMove(iat);
             Psi.acceptMove(W,iat);
@@ -244,11 +261,16 @@ namespace qmcplusplus {
             W.rejectMove(iat); Psi.rejectMove(iat);
           }
         } 
+
+        DMC_TRACE_STOP(thisWalker.ID,iat,valid_move,localTimer.elapsed());
       }
       myTimers[1]->stop();
+
+      DMC_TRACE_START(localTimer.restart());
       
       RealType nodecorr_old=thisWalker.Properties(DRIFTSCALE);
       RealType nodecorr=nodecorr_old;
+      bool advanced=true;
 
       if(nAcceptTemp>0) 
       {//need to overwrite the walker properties
@@ -272,6 +294,7 @@ namespace qmcplusplus {
       } 
       else 
       {//all moves are rejected: does not happen normally with reasonable wavefunctions
+        advanced=false;
         thisWalker.Age++;
         thisWalker.Properties(R2ACCEPTED)=0.0;
         ++nAllRejected;
@@ -282,6 +305,8 @@ namespace qmcplusplus {
       //2008-06-26: select any
       //bare green function by setting nodecorr=nodecorr_old=1.0
       thisWalker.Weight *= branchEngine->branchWeight(enew,eold);
+
+      DMC_TRACE_STOP(thisWalker.ID,NumPtcl,advanced,localTimer.elapsed());
 
       //Filtering extreme energies
       //thisWalker.Weight *= branchEngine->branchWeight(eold,enew);

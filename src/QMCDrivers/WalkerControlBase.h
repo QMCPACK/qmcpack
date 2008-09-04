@@ -21,6 +21,7 @@
 #include "Particle/MCWalkerConfiguration.h"
 #include "Message/MPIObjectBase.h"
 #include "Message/CommOperators.h"
+
 //#include <boost/archive/binary_oarchive.hpp>
 
 namespace qmcplusplus {
@@ -65,6 +66,8 @@ namespace qmcplusplus {
     IndexType NumWalkers;
     ///a dummy integer
     IndexType DummyIndex;
+    ///Number of walkers created by this node
+    IndexType NumWalkersCreated;
     ///trial energy energy
     RealType trialEnergy;
     ///target average energy
@@ -110,8 +113,11 @@ namespace qmcplusplus {
     /** empty destructor to clean up the derived classes */
     virtual ~WalkerControlBase();
 
-    /** start controller */
+    /** start a block */
     void start();
+
+    /** start controller  and initialize the IDs of walkers*/
+    void setWalkerID(MCWalkerConfiguration& walkers);
 
     /** take averages and writes to a file */
     void measureProperties(int iter);

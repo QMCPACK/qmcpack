@@ -127,8 +127,7 @@ namespace qmcplusplus {
     OhmmsInfo::Log->getStream() << "WARNING ";
     return OhmmsInfo::Warn->getStream();
   }
-  inline std::ostream& app_debug(){ 
-    OhmmsInfo::Log->getStream() << "DEBUG ";
+  inline std::ostream& app_debug(){
     return OhmmsInfo::Debug->getStream();
   }
 }

@@ -189,14 +189,14 @@ namespace qmcplusplus {
   int AtomicBasisBuilder<RFB>::expandYlm(const string& rnl, const QuantumNumberType& nlms, int num, 
                   COT* aos, xmlNodePtr cur1, int expandlm) {
       if(expandlm == GAUSSIAN_EXPAND) {
-        DEBUGMSG("Expanding Ylm according to Gaussian98")
+        app_log() << "Expanding Ylm according to Gaussian98"<<endl;
         map<string,int>::iterator rnl_it = RnlID.find(rnl);
         if(rnl_it == RnlID.end()) {
           int nl = aos->Rnl.size();
           if(radFuncBuilder.addRadialOrbital(cur1,nlms)) {
             RnlID[rnl] = nl;
             int l = nlms[q_l];
-            DEBUGMSG("Adding " << 2*l+1 << " spherical orbitals for l= " << l)
+            app_log() << "Adding " << 2*l+1 << " spherical orbitals for l= " << l<<endl;
             switch (l) 
             {
               case(0):
@@ -218,7 +218,7 @@ namespace qmcplusplus {
           }
         }
       } else if(expandlm == NATURAL_EXPAND) {
-        DEBUGMSG("Expanding Ylm as -l,-l+1,...,l-1,l")
+        app_log() << "Expanding Ylm as -l,-l+1,...,l-1,l" << endl;
         map<string,int>::iterator rnl_it = RnlID.find(rnl);
         if(rnl_it == RnlID.end()) {
           int nl = aos->Rnl.size();
@@ -232,7 +232,6 @@ namespace qmcplusplus {
           }
         }
       } else {
-        DEBUGMSG("Ylm is NOT expanded.")
         //assign the index for real Spherical Harmonic with (l,m)
         aos->LM[num] = aos->Ylm.index(nlms[q_l],nlms[q_m]);
         //radial orbitals: add only distinct orbitals
@@ -245,7 +244,6 @@ namespace qmcplusplus {
           }
         } else {
           //assign the index for radial orbital with (n,l) if repeated
-          DEBUGMSG("Already added radial function for id: " << rnl)
           aos->NL[num] = (*rnl_it).second;
         }
         //increment number of basis functions

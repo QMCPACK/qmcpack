@@ -88,7 +88,7 @@ private:
 //{std::cout<< "XML " << msg << std::endl;}
 
 #ifdef PRINT_DEBUG
-#define DEBUGMSG(msg) { OhmmsInfo::Debug->getStream() << "DEBUG " << msg << std::endl;}
+#define DEBUGMSG(msg) OhmmsInfo::Debug->getStream() << msg << std::endl
 #else
 #define DEBUGMSG(msg)
 #endif

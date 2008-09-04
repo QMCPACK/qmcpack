@@ -111,13 +111,13 @@ namespace qmcplusplus
     MyEstimator->reset();
   }
 
-  void SimpleFixedNodeBranch::initWalkerController(MCWalkerConfiguration& w, RealType tau, bool fixW) 
+  void SimpleFixedNodeBranch::initWalkerController(MCWalkerConfiguration& walkers, RealType tau, bool fixW) 
   {
 
     vParam[B_TAU]=tau;
     if(!BranchMode[B_DMCSTAGE])
       vParam[B_TAUEFF]=tau*R2Accepted.result()/R2Proposed.result();
-
+    
     if(WalkerController == 0) 
     {
       if(iParam[B_TARGETWALKERS]==0) 
@@ -125,11 +125,11 @@ namespace qmcplusplus
         Communicate* acomm=MyEstimator->getCommunicator();
         int ncontexts=acomm->size();
         vector<int> nw(ncontexts,0),nwoff(ncontexts+1,0);
-        nw[acomm->rank()]=w.getActiveWalkers();
+        nw[acomm->rank()]=walkers.getActiveWalkers();
         acomm->allreduce(nw);
         for(int ip=0; ip<ncontexts; ++ip) nwoff[ip+1]=nwoff[ip]+nw[ip];
-        w.setGlobalNumWalkers(nwoff[ncontexts]);
-        w.setWalkerOffsets(nwoff);
+        walkers.setGlobalNumWalkers(nwoff[ncontexts]);
+        walkers.setWalkerOffsets(nwoff);
         iParam[B_TARGETWALKERS]=nwoff[ncontexts];
       }
 
@@ -147,7 +147,7 @@ namespace qmcplusplus
         WalkerController=createWalkerController(iParam[B_TARGETWALKERS],MyEstimator->getCommunicator(), myNode,true);
         BranchMode.set(B_POPCONTROL,0);
       }
-      WalkerController->start();
+      WalkerController->setWalkerID(walkers);
       PopHist.clear();
       PopHist.reserve(std::max(iParam[B_ENERGYUPDATEINTERVAL],5));
     }
@@ -193,15 +193,15 @@ namespace qmcplusplus
     if(counter==0 && WalkerController) WalkerController->reset();
   }
 
-  void SimpleFixedNodeBranch::branch(int iter, MCWalkerConfiguration& Walkers) 
+  void SimpleFixedNodeBranch::branch(int iter, MCWalkerConfiguration& walkers) 
   {
     //collect the total weights and redistribute the walkers accordingly, using a fixed tolerance
-    //RealType pop_now= WalkerController->branch(iter,Walkers,0.1);
+    //RealType pop_now= WalkerController->branch(iter,walkers,0.1);
     RealType pop_now;
     if(BranchMode[B_DMCSTAGE]||iter)
-      pop_now= WalkerController->branch(iter,Walkers,0.1);
+      pop_now= WalkerController->branch(iter,walkers,0.1);
     else
-      pop_now= WalkerController->doNotBranch(iter,Walkers);//do not branch for the first step of a warmup
+      pop_now= WalkerController->doNotBranch(iter,walkers);//do not branch for the first step of a warmup
 //     cout<<pop_now<<"  "<<ToDoSteps<<endl;
 
     //current energy
@@ -285,7 +285,7 @@ namespace qmcplusplus
 
 
     //evaluate everything else
-    MyEstimator->accumulate(Walkers);
+    MyEstimator->accumulate(walkers);
 
   }
 
@@ -293,14 +293,14 @@ namespace qmcplusplus
    *
    * Set the trial energy of clones
    */
-  void SimpleFixedNodeBranch::branch(int iter, MCWalkerConfiguration& w, vector<ThisType*>& clones) 
+  void SimpleFixedNodeBranch::branch(int iter, MCWalkerConfiguration& walkers, vector<ThisType*>& clones) 
   {
-    branch(iter,w);
+    branch(iter,walkers);
     //synchronize it
     for(int i=0; i<clones.size(); i++) clones[i]->vParam=vParam;
   }
 
-  void SimpleFixedNodeBranch::reset() 
+  void SimpleFixedNodeBranch::reset()
   {
     //use effective time step of BranchInterval*Tau
     //Feed = 1.0/(static_cast<RealType>(NumGeneration*BranchInterval)*Tau);

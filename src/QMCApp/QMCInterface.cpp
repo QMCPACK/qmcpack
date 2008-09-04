@@ -56,8 +56,8 @@ namespace qmcplusplus {
   }
 
   ///destructor
-  QMCInterface::~QMCInterface() {
-    DEBUGMSG("QMCInterface::~QMCInterface")
+  QMCInterface::~QMCInterface() 
+  {
   }
 
 

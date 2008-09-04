@@ -20,17 +20,17 @@
 
 namespace qmcplusplus {
 
-  WalkerControlBase::WalkerControlBase(Communicate* c): MPIObjectBase(c),
-  SwapMode(0), Nmin(1), Nmax(10), MaxCopy(5), 
-  targetEnergyBound(10), targetVar(2), targetSigma(10), dmcStream(0)
+  WalkerControlBase::WalkerControlBase(Communicate* c):
+    MPIObjectBase(c), SwapMode(0), Nmin(1), Nmax(10),
+    MaxCopy(5), NumWalkersCreated(0),targetEnergyBound(10), targetVar(2),
+    targetSigma(10), dmcStream(0) 
   {
-    NumContexts=myComm->size();
-    MyContext=myComm->rank();
+    NumContexts=myComm->size(); MyContext=myComm->rank();
     curData.resize(LE_MAX+NumContexts);
     NumPerNode.resize(NumContexts);
     OffSet.resize(NumContexts+1);
     FairOffSet.resize(NumContexts+1);
-    accumData.resize(LE_MAX);
+    accumData.resize(LE_MAX); 
   }
 
   WalkerControlBase::~WalkerControlBase()
@@ -71,6 +71,21 @@ namespace qmcplusplus {
         << setw(20) << "TrialEnergy " 
         << setw(20) << "DiffEff " 
         << endl;
+    }
+  }
+
+  void WalkerControlBase::setWalkerID(MCWalkerConfiguration& walkers)
+  {
+    start(); //do the normal start
+    MCWalkerConfiguration::iterator wit(walkers.begin());
+    MCWalkerConfiguration::iterator wit_end(walkers.end());
+    for(; wit != wit_end; ++wit)
+    {
+      if((*wit)->ID==0) 
+      {
+        (*wit)->ID=(++NumWalkersCreated)*NumContexts+MyContext;
+        (*wit)->ParentID=(*wit)->ID;
+      }
     }
   }
 
@@ -311,8 +326,12 @@ namespace qmcplusplus {
 
     int cur_walker = good_w.size();
     for(int i=0; i<good_w.size(); i++) { //,ie+=ncols) {
-      for(int j=0; j<ncopy_w[i]; j++, cur_walker++) {
-        W.push_back(new Walker_t(*(good_w[i])));
+      for(int j=0; j<ncopy_w[i]; j++, cur_walker++) 
+      {
+        Walker_t* awalker=new Walker_t(*(good_w[i]));
+        awalker->ID=(++NumWalkersCreated)*NumContexts+MyContext;
+        awalker->ParentID=good_w[j]->ID;
+        W.push_back(awalker);
       }
     }
 

@@ -42,9 +42,9 @@
 #include <iostream>
 #include "Utilities/OhmmsObject.h"
 
-#ifndef DEBUGMSG
-#define DEBUGMSG(msg)
-#endif
+//#ifndef DEBUGMSG
+//#define DEBUGMSG(msg)
+//#endif
 namespace qmcplusplus {
 template<class T>
 class ParticleAttrib: public OhmmsObject {
@@ -92,9 +92,7 @@ public:
   }
 
   //! Destructor 
-  inline ~ParticleAttrib() { 
-     DEBUGMSG("Calling ParticleAttrib::~ParticleAttrib() of " << objName());
-  }
+  inline ~ParticleAttrib() { }
 
   //! return the current size
   inline unsigned size() const { 
@@ -242,8 +240,6 @@ void ParticleAttrib<T>::resize(unsigned n){
  */
 template<class T>
 void ParticleAttrib<T>::create(unsigned n) {
-
-  DEBUGMSG(TypeName << " " << objName() << " attemps to create " << n << " elements");
   Container_t y(X);
   X = Container_t(n+y.size());
   for(int i=0; i<y.size(); i++) X[i] = y[i];

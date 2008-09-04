@@ -112,8 +112,12 @@ int WalkerReconfiguration::getIndexPermutation(MCWalkerConfiguration& W) {
       minus.push_back(iw);
   }
 
-  for(int i=0; i<plus.size(); i++) {
-    W[minus[i]]->makeCopy(*(W[plus[i]]));
+  for(int i=0; i<plus.size(); i++) 
+  {
+    int im=minus[i],ip=plus[i];
+    W[im]->makeCopy(*(W[ip]));
+    W[im]->ParentID=W[ip]->ID;
+    W[im]->ID=(++NumWalkersCreated)*NumContexts+MyContext;
   }
   //int killed = shuffleIndex(nw);
   //fout << "# Total weight " << wtot << " " << killed <<  endl;
