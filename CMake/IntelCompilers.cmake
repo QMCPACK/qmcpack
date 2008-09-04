@@ -27,7 +27,7 @@ ADD_DEFINITIONS(-DADD_ -DINLINE_ALL=inline -DMPICH_SKIP_MPICXX)
 #SET(CMAKE_CXX_FLAGS "-restrict -unroll -fno-alias -O3")
 
 # common options for intel compilers
-SET(INTEL_OPTS "-restrict -unroll -fno-alias -O3 -ip")
+SET(INTEL_OPTS "-g -restrict -unroll -fno-alias -O3 -ip")
 
 IF(${CMAKE_SYSTEM_PROCESSOR} MATCHES "i386")
   SET(CMAKE_CXX_FLAGS "${INTEL_OPTS}")
