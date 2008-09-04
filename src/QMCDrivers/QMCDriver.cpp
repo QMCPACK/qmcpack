@@ -34,7 +34,7 @@ namespace qmcplusplus {
   QMCDriver::QMCDriver(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h): MPIObjectBase(0),
   branchEngine(0), ResetRandom(false), AppendRun(false),
   MyCounter(0), RollBackBlocks(0),
-  Period4CheckPoint(1), Period4WalkerDump(10),
+  Period4CheckPoint(0), Period4WalkerDump(10),
   Period4CheckProperties(100), CurrentStep(0), 
   nBlocks(100), nSteps(10), 
   nAccept(0), nReject(0), nTargetWalkers(0),nTargetSamples(0),
@@ -285,7 +285,7 @@ namespace qmcplusplus {
 
     //these options are reset for each block
     Period4WalkerDump=10;
-    Period4CheckPoint=1;
+    Period4CheckPoint=0;
 
     OhmmsAttributeSet aAttrib;
     aAttrib.add(Period4CheckPoint,"checkpoint");
@@ -316,6 +316,8 @@ namespace qmcplusplus {
       }
     }
     
+    if(Period4CheckPoint==0)  Period4CheckPoint=(nBlocks+1)*nSteps;
+
     //reset CurrentStep to zero if qmc/@continue='no'
     if(!AppendRun) CurrentStep=0;
 
