@@ -59,6 +59,7 @@ SET(PARTICLE
   Particle/ParticleSet.cpp 
   Particle/ParticleSet.BC.cpp 
   Particle/MCWalkerConfiguration.cpp 
+  Particle/Bead_ParticleSet.cpp 
   Particle/DistanceTable.cpp
   Particle/HDFWalkerInputManager.cpp
   LongRange/KContainer.cpp
