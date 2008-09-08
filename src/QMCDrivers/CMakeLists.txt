@@ -61,6 +61,7 @@ IF(NOT QMCPLUSPLUS_RELEASE)
   SET(QMCDRIVERS ${QMCDRIVERS}
     PolymerEstimator.cpp
     RQMCMultiple.cpp
+    RQMCMultiplePbyP.cpp
     MultiChain.cpp
     SpaceWarp.cpp
     RQMCMultiWarp.cpp
