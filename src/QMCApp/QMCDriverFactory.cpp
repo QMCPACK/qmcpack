@@ -121,14 +121,15 @@ namespace qmcplusplus {
       {
         newRunType=DMC_RUN;
       }
-      else if(qmc_mode.find("rmc")<nchars)
-      {
-        newRunType=RMC_RUN;
-      }
       else if (qmc_mode.find("rmcPbyP")<nchars)
 	{
 	  newRunType=RMC_PBYP_RUN;
 	}
+
+      else if(qmc_mode.find("rmc")<nchars)
+      {
+        newRunType=RMC_RUN;
+      }
       if(qmc_mode.find("ptcl")<nchars) WhatToDo[UPDATE_MODE]=1;
       if(qmc_mode.find("mul")<nchars) WhatToDo[MULTIPLE_MODE]=1;
       if(qmc_mode.find("warp")<nchars) WhatToDo[SPACEWARP_MODE]=1;
