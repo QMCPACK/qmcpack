@@ -26,6 +26,7 @@
 #include "QMCDrivers/DMC/DMCFactory.h"
 #include "QMCDrivers/QMCOptimize.h"
 #include "QMCDrivers/RQMCMultiple.h"
+#include "QMCDrivers/RQMCMultiplePbyP.h"
 #if !defined(QMC_COMPLEX)
 #include "QMCDrivers/RQMCMultiWarp.h"
 #endif
@@ -124,6 +125,10 @@ namespace qmcplusplus {
       {
         newRunType=RMC_RUN;
       }
+      else if (qmc_mode.find("rmcPbyP")<nchars)
+	{
+	  newRunType=RMC_PBYP_RUN;
+	}
       if(qmc_mode.find("ptcl")<nchars) WhatToDo[UPDATE_MODE]=1;
       if(qmc_mode.find("mul")<nchars) WhatToDo[MULTIPLE_MODE]=1;
       if(qmc_mode.find("warp")<nchars) WhatToDo[SPACEWARP_MODE]=1;
@@ -258,6 +263,10 @@ namespace qmcplusplus {
       DMCFactory fac(curQmcModeBits[UPDATE_MODE],cur);
       qmcDriver = fac.create(*qmcSystem,*primaryPsi,*primaryH,*hamPool);
     } 
+    else if (curRunType==RMC_PBYP_RUN)
+      {
+        qmcDriver = new RQMCMultiplePbyP(*qmcSystem,*primaryPsi,*primaryH);
+      }
     else if(curRunType == RMC_RUN) 
     {
 #if defined(QMC_COMPLEX)
