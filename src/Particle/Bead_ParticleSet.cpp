@@ -198,7 +198,7 @@ Bead_ParticleSet::Bead_ParticleSet(const ParticleSet& mcw,int nPsi)
 
 ///default destructor
 Bead_ParticleSet::~Bead_ParticleSet(){
-  DEBUGMSG("Bead_ParticleSet::~Bead_ParticleSet")
+  DEBUGMSG("Bead_ParticleSet::~Bead_ParticleSet");
 }
 
 
