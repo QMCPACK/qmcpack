@@ -200,6 +200,7 @@ namespace qmcplusplus {
    void applyBC(const ParticlePos_t& pin, ParticlePos_t& pout);
    void applyBC(ParticlePos_t& pos);
    void applyBC(const ParticlePos_t& pin, ParticlePos_t& pout, int first, int last);
+   void applyMinimumImage(ParticlePos_t& pinout);
 
    void registerData(PooledData<RealType>& buf);
    void registerData(Walker_t& awalker, PooledData<RealType>& buf);
