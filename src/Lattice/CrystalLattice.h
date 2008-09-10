@@ -197,6 +197,10 @@ struct CrystalLattice{
 #endif
   }
 
+  inline void applyMinimumImage(TinyVector<T,D>& c) const
+  {
+    if(SuperCellEnum) MinimumImageBConds<T,D>::apply(R,G,c);
+  }
 
   /** evaluate the cartesian distance
    *@param ra a vector in the supercell unit

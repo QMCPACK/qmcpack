@@ -171,6 +171,17 @@ struct CartesianNorm2<TinyVector<T1,3>,Tensor<T2,3>,true>
 };
 
 
+template<class T, unsigned D>
+struct MinimumImageBConds 
+{
+  typedef TinyVector<T,D> Return_t;
+  inline static void apply(const Tensor<T,D>& R, const Tensor<T,D>&  G, TinyVector<T,D>& r)
+  {
+    Return_t u=dot(r,G);
+    for(int i=0; i<D; ++i) u[i]=u[i]-round(u[i]);
+    r=dot(u,R);
+  }
+};
 }
 
 #endif
