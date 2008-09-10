@@ -193,13 +193,13 @@ namespace qmcplusplus {
           MCWalkerConfiguration::iterator 
             wit(W.begin()+wPerNode[ip]), wit_end(W.begin()+wPerNode[ip+1]);
 
-          if(now%updatePeriod == 0) Movers[ip]->updateWalkers(wit, wit_end);
-
           for(int interval = 0;interval<BranchInterval; ++interval,++now)
           {
             Movers[ip]->advanceWalkers(wit,wit_end,false);
           } 
           Movers[ip]->setMultiplicity(wit,wit_end);
+
+          if(now%updatePeriod == 0) Movers[ip]->updateWalkers(wit, wit_end);
         }//#pragma omp parallel
 
         branchEngine->branch(CurrentStep,W, branchClones);
