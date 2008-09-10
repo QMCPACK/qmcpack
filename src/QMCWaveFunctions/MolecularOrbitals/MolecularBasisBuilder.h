@@ -59,8 +59,6 @@ namespace qmcplusplus {
 
       PRE.echo(cur);
 
-      DistanceTableData* d_table=DistanceTable::add(sourcePtcl,targetPtcl);
-
       //create the BasisSetType
       thisBasisSet = new ThisBasisSetType(sourcePtcl,targetPtcl);
 
