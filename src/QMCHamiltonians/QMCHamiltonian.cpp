@@ -231,7 +231,62 @@ QMCHamiltonian::resetObservables(int start)
   for(int i=0; i<auxH.size(); ++i) auxH[i]->addObservables(Observables);
   myIndex=start;
 }
+QMCHamiltonian::Return_t QMCHamiltonian::registerData(ParticleSet& P, BufferType& buffer)
+{
+  LocalEnergy=0.0;
+  for(int i=0; i<H.size(); ++i) 
+  {
+    LocalEnergy+=H[i]->registerData(P,buffer);
+    H[i]->setObservables(Observables);
+  }
+  buffer.add(LocalEnergy);
+  return LocalEnergy;
+}
 
+void QMCHamiltonian::copyFromBuffer(ParticleSet& P, BufferType& buffer)
+{
+  for(int i=0; i<H.size(); ++i) H[i]->copyFromBuffer(P,buffer);
+  buffer.get(LocalEnergy);
+}
+
+QMCHamiltonian::Return_t QMCHamiltonian::evaluate(ParticleSet& P, BufferType& buffer)
+{
+  LocalEnergy = 0.0;
+  for(int i=0; i<H.size(); ++i)
+  {
+    LocalEnergy += H[i]->Value;
+    H[i]->setObservables(Observables);
+  }
+  KineticEnergy=H[0]->Value;
+  P.PropertyList[LOCALENERGY]=LocalEnergy;
+  P.PropertyList[LOCALPOTENTIAL]=LocalEnergy-KineticEnergy;
+  for(int i=0; i<auxH.size(); ++i)
+  {
+    RealType sink = auxH[i]->evaluate(P);
+    auxH[i]->setObservables(Observables);
+  }
+
+  for(int i=0; i<H.size(); ++i) H[i]->copyToBuffer(P,buffer);
+  buffer.put(LocalEnergy);
+  return LocalEnergy;
+}
+
+QMCHamiltonian::Return_t QMCHamiltonian::evaluatePbyP(ParticleSet& P, int active)
+{
+  NewLocalEnergy = 0.0;
+  for(int i=0; i<H.size(); ++i) NewLocalEnergy +=H[i]->evaluatePbyP(P,active);
+  return NewLocalEnergy;
+}
+void QMCHamiltonian::acceptMove(int active)
+{
+  for(int i=0; i<H.size(); ++i) H[i]->acceptMove(active);
+  LocalEnergy=NewLocalEnergy;
+}
+
+void QMCHamiltonian::rejectMove(int active)
+{
+  for(int i=0; i<H.size(); ++i) H[i]->rejectMove(active);
+}
 }
 
 /***************************************************************************

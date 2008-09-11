@@ -54,6 +54,7 @@ namespace qmcplusplus {
     /** type of return value of evaluate
      */
     typedef RealType Return_t;
+    typedef ParticleSet::Walker_t::Buffer_t  BufferType;
 
     enum {PRIMARY, OPTIMIZABLE, RATIOUPDATE, PHYSICAL};
     bitset<4> UpdateMode;
@@ -95,6 +96,37 @@ namespace qmcplusplus {
     virtual Return_t evaluate(ParticleSet& P) = 0; 
 
     virtual Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy) = 0; 
+
+    /*@{
+     * @brief functions to handle particle-by-particle move
+     */
+    virtual Return_t registerData(ParticleSet& P, BufferType& buffer)
+    {
+      APP_ABORT(myName+" cannot use pbyp for Hamiltonian. Missing registerDat");
+      return 0;
+    }
+    virtual void copyFromBuffer(ParticleSet& P, BufferType& buf)
+    {
+      APP_ABORT(myName+" cannot use pbyp for Hamiltonian. Missing copyFromBuffer");
+    }
+    virtual void copyToBuffer(ParticleSet& P, BufferType& buf)
+    {
+      APP_ABORT(myName+" cannot use pbyp for Hamiltonian. Missing copyToBuffer");
+    }
+    virtual Return_t evaluatePbyP(ParticleSet& P, int active)
+    {
+      APP_ABORT(myName+" cannot use pbyp for Hamiltonian. Missing evaluate");
+      return 0;
+    }
+    virtual void acceptMove(int active)
+    { 
+      APP_ABORT(myName+" cannot use pbyp for Hamiltonian. Missing acceptMove");
+    }
+    virtual void rejectMove(int active)
+    {
+      APP_ABORT(myName+" cannot use pbyp for Hamiltonian. Missing rejectMove");
+    }
+    /*@}*/
 
     /** return an average value by collective operation
      */ 

@@ -41,7 +41,8 @@ namespace qmcplusplus {
     LRHandlerType* AB;
     DistanceTableData* d_ab;
 
-    bool FirstTime;
+    ///boolean used to update Sk by this
+    bool FirstSkUser;
     int NumSpeciesA;
     int NumSpeciesB;
     int ChargeAttribIndxA;
@@ -53,10 +54,24 @@ namespace qmcplusplus {
     RealType myConst;
     RealType myRcut;
 
-    vector<RealType> Zat,Zspec; 
-    vector<RealType> Qat,Qspec; 
     vector<int> NofSpeciesA;
     vector<int> NofSpeciesB;
+    vector<RealType> Zat,Zspec; 
+    vector<RealType> Qat,Qspec; 
+    /*@{
+     * @brief temporary data for pbyp evaluation
+     */
+    ///new value for the proposed move
+    RealType NewValue;
+    ///short-range part for the moved particle
+    RealType SRtmp;
+    ///long-range part for the moved particle
+    RealType LRtmp;
+    ///short-range per particle
+    vector<RealType> SRpart;
+    ///long-range per particle
+    vector<RealType> LRpart;
+    /*@}*/
 
     ///radial grid
     GridType* myGrid;
@@ -85,6 +100,13 @@ namespace qmcplusplus {
     inline Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy) {
       return evaluate(P);
     }
+
+    Return_t registerData(ParticleSet& P, BufferType& buffer);
+    void copyFromBuffer(ParticleSet& P, BufferType& buf);
+    void copyToBuffer(ParticleSet& P, BufferType& buf);
+    Return_t evaluatePbyP(ParticleSet& P, int iat);
+    void acceptMove(int iat);
+    void rejectMove(int iat);
 
     /** Do nothing */
     bool put(xmlNodePtr cur) {

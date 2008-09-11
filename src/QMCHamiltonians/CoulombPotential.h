@@ -21,6 +21,7 @@
 #include "Particle/DistanceTableData.h"
 #include "Particle/DistanceTable.h"
 #include "QMCHamiltonians/QMCHamiltonianBase.h"
+#include <numeric>
 
 namespace qmcplusplus {
 
@@ -39,10 +40,12 @@ namespace qmcplusplus {
 
     ///number of ions
     int Centers;
-    ///container for the ion charges
-    vector<RealType> Z;
+    ///temporary energy
+    RealType NewValue;
     ParticleSet& sourcePtcl;
     DistanceTableData* d_table;
+    ///container for the ion charges
+    vector<RealType> Z;
 
     CoulombPotentialAB(ParticleSet& ions, ParticleSet& els): 
       sourcePtcl(ions), d_table(0) { 
@@ -67,9 +70,9 @@ namespace qmcplusplus {
 
     inline Return_t evaluate(ParticleSet& P) {
       Value=0.0;
-      for(int iat=0; iat<Centers; iat++) {
-        for(int nn=d_table->M[iat]; nn<d_table->M[iat+1]; nn++)
-        Value+=Z[iat]*d_table->rinv(nn);
+      for(int iat=0; iat<Centers; ++iat) {
+        for(int nn=d_table->M[iat]; nn<d_table->M[iat+1]; ++nn)
+          Value+=Z[iat]*d_table->rinv(nn);
       }
       return Value;
     }
@@ -78,7 +81,38 @@ namespace qmcplusplus {
       return evaluate(P);
     }
 
-    bool put(xmlNodePtr cur) {
+    inline Return_t 
+    registerData(ParticleSet& P, BufferType& buffer) 
+    {
+      Value=evaluate(P);
+      buffer.add(Value);
+      return Value;
+    }
+
+    inline void copyFromBuffer(ParticleSet& P, BufferType& buffer)
+    {
+      buffer.get(Value);
+    }
+
+    inline void copyToBuffer(ParticleSet& P, BufferType& buffer)
+    {
+      buffer.put(Value);
+    }
+
+    inline Return_t 
+    evaluatePbyP(ParticleSet& P, int active)
+    {
+      const std::vector<DistanceTableData::TempDistType> &temp(d_table->Temp);
+      Return_t del=0.0;
+      for(int iat=0; iat<Centers; ++iat) del+=Z[iat]*(temp[iat].rinv1-temp[iat].rinv0);
+      return NewValue=Value+del;
+    }
+
+    void acceptMove(int active) {Value=NewValue;}
+    void rejectMove(int active) {}
+
+    bool put(xmlNodePtr cur) 
+    {
       return true;
     }
 
@@ -136,28 +170,38 @@ namespace qmcplusplus {
    */
   struct CoulombPotentialAA: public QMCHamiltonianBase {
 
-    RealType C;
-    DistanceTableData* d_table;
-    ParticleSet* PtclRef;
+    ///number of particle
+    int Centers;
+    ///Charge factor=q*q
+    RealType Q;
+    //DistanceTableData* d_table;
+    //ParticleSet* PtclRef;
+    ///new value for proposed move
+    RealType NewValue;
     //ElecElecPotential(RealType c=1.0): C(c){}
-    CoulombPotentialAA(ParticleSet& P):d_table(NULL),PtclRef(&P) {
-      d_table = DistanceTable::add(P);
-      C = 1.0;
+    //CoulombPotentialAA(ParticleSet& P):d_table(NULL),PtclRef(&P) {
+    CoulombPotentialAA(ParticleSet& P) 
+    {
+      Centers=P.getTotalNum();
+      Q = 1.0;//cheating, need to fix this
+      const DistanceTableData* d_table = DistanceTable::add(P);
     }
 
     ~CoulombPotentialAA() { }
 
-    void resetTargetParticleSet(ParticleSet& P)  {
-      d_table = DistanceTable::add(P);
-      PtclRef=&P;
+    void resetTargetParticleSet(ParticleSet& P)  
+    {
+      //d_table = DistanceTable::add(P);
+      //PtclRef=&P;
     }
 
     inline Return_t 
-    evaluate(ParticleSet& P) {
+    evaluate(ParticleSet& P) 
+    {
+      const DistanceTableData* d_table=P.DistTables[0];
       Value = 0.0;
-      for(int i=0; i<d_table->getTotNadj(); i++) { Value += d_table->rinv(i); }
-      Value*=C;
-      return Value;
+      for(int nn=0; nn<d_table->getTotNadj(); ++nn) { Value += d_table->rinv(nn); }
+      return Value*=Q;
       //return C*std::accumulate(d_table->rinv.data(), 
       //	  	       d_table->rinv.data()+d_table->getTotNadj(),
       //		       0.0);
@@ -167,13 +211,49 @@ namespace qmcplusplus {
       return evaluate(P);
     }
 
+    inline Return_t 
+    registerData(ParticleSet& P, BufferType& buffer) 
+    {
+      Value=evaluate(P);
+      buffer.add(Value);
+      return Value;
+    }
+
+    inline void copyFromBuffer(ParticleSet& P, BufferType& buffer)
+    {
+      buffer.get(Value);
+      NewValue=Value;
+    }
+
+    inline void copyToBuffer(ParticleSet& P, BufferType& buffer)
+    {
+      buffer.put(Value);
+    }
+
+    inline Return_t 
+    evaluatePbyP(ParticleSet& P, int active)
+    {
+      const std::vector<DistanceTableData::TempDistType> &temp(P.DistTables[0]->Temp);
+      Return_t del=0.0;
+      for(int iat=0; iat<Centers; ++iat) del+=(temp[iat].rinv1-temp[iat].rinv0);
+      return NewValue=Value+Q*del;
+    }
+
+    void acceptMove(int active) 
+    {
+      Value=NewValue; 
+    }
+
+    void rejectMove(int active) 
+    {
+    }
     /** Do nothing */
     bool put(xmlNodePtr cur) {
       return true;
     }
 
     bool get(std::ostream& os) const {
-      os << "CoulombPotentialAA: " << PtclRef->getName();
+      //os << "CoulombPotentialAA: " << PtclRef->getName();
       return true;
     }
 

@@ -46,6 +46,11 @@ namespace qmcplusplus {
     RealType M;
     ///\f$ 1/(2 m^*) \f$
     RealType OneOver2M;
+    ///value saved for update
+    RealType NewValue;
+    
+    ParticleSet::ParticleGradient_t Gtmp;
+    ParticleSet::ParticleLaplacian_t Ltmp;
 
     /** constructor
      *
@@ -69,6 +74,40 @@ namespace qmcplusplus {
     evaluate(ParticleSet& P, vector<NonLocalData>& Txy) {
       return evaluate(P);
     }
+
+    inline Return_t 
+    registerData(ParticleSet& P, BufferType& buffer) 
+    {
+      Gtmp.resize(P.getTotalNum());
+      Ltmp.resize(P.getTotalNum());
+      Value = Dot(P.G,P.G) + Sum(P.L); 
+      NewValue=Value*=-OneOver2M;
+      buffer.add(Value);
+      return Value;
+    }
+
+    inline void copyFromBuffer(ParticleSet& P, BufferType& buffer)
+    {
+      buffer.get(Value);
+    }
+
+    inline void copyToBuffer(ParticleSet& P, BufferType& buffer)
+    {
+      buffer.put(Value);
+    }
+
+    inline Return_t 
+    evaluatePbyP(ParticleSet& P, int active)
+    {
+      Gtmp=P.G+P.dG;
+      Ltmp=P.L+P.dL;
+      NewValue = Dot(Gtmp,Gtmp) + Sum(Ltmp); 
+      return NewValue*=-OneOver2M;
+    }
+
+    void acceptMove(int active) {Value=NewValue;}
+    void rejectMove(int active) {}
+
     
     /** implements the virtual function.
      * 

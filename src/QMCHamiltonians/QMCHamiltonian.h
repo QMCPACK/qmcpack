@@ -35,6 +35,7 @@ namespace qmcplusplus {
     typedef QMCHamiltonianBase::ValueType ValueType;
     typedef QMCHamiltonianBase::Return_t  Return_t;
     typedef QMCHamiltonianBase::PropertySetType  PropertySetType;
+    typedef QMCHamiltonianBase::BufferType  BufferType;
     
     ///constructor
     QMCHamiltonian();
@@ -135,6 +136,17 @@ namespace qmcplusplus {
      */
     Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy); 
 
+    /*@{
+     * @brief functions to handle particle-by-particle move
+     */
+    Return_t registerData(ParticleSet& P, BufferType& buffer);
+    void copyFromBuffer(ParticleSet& P, BufferType& buf);
+    Return_t evaluate(ParticleSet& P, BufferType& buf);
+    Return_t evaluatePbyP(ParticleSet& P, int active);
+    void acceptMove(int active);
+    void rejectMove(int active);
+    /*@}*/
+
     /** return an average value of the LocalEnergy 
      *
      * Introduced to get a collective value
@@ -168,6 +180,8 @@ namespace qmcplusplus {
     Return_t LocalEnergy;
     ///Current Kinetic Energy
     Return_t KineticEnergy;
+    ///Current Local Energy for the proposed move
+    Return_t NewLocalEnergy;
     ///getName is in the way
     string myName;
     ///vector of Hamiltonians

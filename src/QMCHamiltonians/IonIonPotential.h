@@ -98,6 +98,17 @@ namespace qmcplusplus {
     {
       return new IonIonPotential(PtclRef);
     }
+
+    /*@{
+     * @brief functions to handle particle-by-particle move
+     */
+    Return_t registerData(ParticleSet& P, BufferType& buffer) { return evaluate(P); }
+    void copyFromBuffer(ParticleSet& P, BufferType& buf) { }
+    void copyToBuffer(ParticleSet& P, BufferType& buf) { }
+    Return_t evaluatePbyP(ParticleSet& P, int active) { return Value; }
+    void acceptMove(int active) { }
+    void rejectMove(int active) { }
+    /*@}*/
   };
 }
 #endif

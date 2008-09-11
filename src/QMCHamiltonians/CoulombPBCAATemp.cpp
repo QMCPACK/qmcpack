@@ -62,6 +62,40 @@ namespace qmcplusplus {
       return Value;
     }
 
+  CoulombPBCAATemp::Return_t 
+    CoulombPBCAATemp::registerData(ParticleSet& P, BufferType& buffer) 
+    {
+      APP_ABORT("CoulombPBCAATemp::registerData incomplete");
+      return Value;
+    }
+
+  void CoulombPBCAATemp::copyFromBuffer(ParticleSet& P, BufferType& buffer) 
+  {
+    APP_ABORT("CoulombPBCAATemp::copyFromBuffer incomplete");
+  }
+
+  void CoulombPBCAATemp::copyToBuffer(ParticleSet& P, BufferType& buffer) 
+  {
+    APP_ABORT("CoulombPBCAATemp::copyToBuffer incomplete");
+  }
+
+  CoulombPBCAATemp::Return_t 
+    CoulombPBCAATemp::evaluatePbyP(ParticleSet& P, int active)
+    {
+      APP_ABORT("CoulombPBCAATemp::evalutePbyP incomplete");
+      return Value;
+    }
+
+  void CoulombPBCAATemp::acceptMove(int active)
+  {
+    APP_ABORT("CoulombPBCAATemp::acceptMove incomplete");
+  }
+
+  void CoulombPBCAATemp::rejectMove(int active)
+  {
+    APP_ABORT("CoulombPBCAATemp::rejectMove incomplete");
+  }
+
 
   void CoulombPBCAATemp::initBreakup() {
     SpeciesSet& tspecies(PtclRef->getSpeciesSet());
