@@ -1,8 +1,10 @@
 #include "LongRange/StructFact.h"
-using namespace qmcplusplus;
+namespace qmcplusplus
+{
 
 //Constructor - pass arguments to KLists' constructor
-StructFact::StructFact(ParticleSet& ref, RealType kc): PtclRef(ref), KLists(ref.Lattice) 
+StructFact::StructFact(ParticleSet& ref, RealType kc): 
+  DoNotUpdate(true),PtclRef(ref), KLists(ref.Lattice) 
 {
   //Update Rhok with new "Lattice" information.
   UpdateNewCell(kc);
@@ -14,7 +16,8 @@ StructFact::StructFact(ParticleSet& ref, RealType kc): PtclRef(ref), KLists(ref.
  * The KLists constructor doesn't generate the lists. It merely sets the lattice reference.
  * "=" is defined for all data members that need to be copied.
  */
-StructFact::StructFact(const StructFact &ref): PtclRef(ref.PtclRef), KLists(ref.PtclRef.Lattice) 
+StructFact::StructFact(const StructFact &ref): 
+ DoNotUpdate(ref.DoNotUpdate),PtclRef(ref.PtclRef), KLists(ref.PtclRef.Lattice) 
 {
   KLists = ref.KLists; //= checks for same cutoff and returns with no cost if equal.
   resize();
@@ -63,6 +66,7 @@ void StructFact::resize()
   SpeciesSet& tspecies(PtclRef.getSpeciesSet());
   rhok.resize(tspecies.TotalNum,KLists.numk);
   eikr.resize(PtclRef.getTotalNum(),KLists.numk);
+  eikr_temp.resize(KLists.numk);
   //int maxdim = std::max(KLists.mmax[0],std::max(KLists.mmax[1],KLists.mmax[2]));
   int maxdim=KLists.mmax[DIM];
   C.resize(DIM,2*maxdim+1);
@@ -75,7 +79,7 @@ void StructFact::resize()
 
 void 
 StructFact::UpdateAllPart() {
-  FillRhok();
+  if(DoNotUpdate) FillRhok();
 }
 
 
@@ -210,45 +214,32 @@ StructFact::UpdateRhok(const PosType& rold,const PosType& rnew,int iat,int Group
   }
 }
 
-//void StructFact::makeMove(int iat, const PosType& pos) {
-//  cout << "Nobody should call this! " << endl;
-//  const ComplexType* restrict eikr0(eikr[iat]);
-//#if defined(QMC_SK_USE_RECURSIVE)
-//  PosType tau_red=PtclRef.Lattice.toUnit(pos);
-//  for(int idim=0; idim<3; idim++)
-//  {
-//    RealType phi=TWOPI*tau_red[idim];
-//    ComplexType ctemp(std::cos(phi),std::sin(phi));
-//    C(idim,KLists.mmax[idim])=1.0;
-//    for(int n=1; n<=KLists.mmax[idim]; n++){
-//      C(idim,KLists.mmax[idim]+n) = ctemp*C(idim,KLists.mmax[idim]+n-1);
-//      C(idim,KLists.mmax[idim]-n) = conj(C(idim,KLists.mmax[idim]+n));
-//    }
-//  }
-//  for(int ki=0; ki<KLists.numk; ki++)
-//  {
-//    eikr_new[ki]=C(0,KLists.kpts[ki][0]+KLists.mmax[0])
-//      *C(1,KLists.kpts[ki][1]+KLists.mmax[1])
-//      *C(2,KLists.kpts[ki][2]+KLists.mmax[2]);
-//    delta_eikr[ki]=eikr_new[ki]-eikr0[ki];
-//  }
-//#else
-//  for(int ki=0; ki<KLists.numk; ki++){
-//    RealType kdotr(dot(KLists.kpts_cart[ki],pos));
-//    eikr_new[ki]=ComplexType(std::cos(kdotr),std::sin(kdotr));
-//    delta_eikr[ki]=eikr_new[ki]-eikr0[ki];
-//  }
-//#endif
-//}
-//
-//void StructFact::acceptMove(int iat) {
-//  std::copy(eikr_new.begin(),eikr_new.end(),eikr[iat]);
-//  ComplexType* restrict rhok_ptr(rhok[PtclRef.GroupID[iat]]);
-//  for(int ki=0; ki<KLists.numk; ki++){
-//    rhok_ptr[ki]+= delta_eikr[ki];
-//  }
-//}
-//
-//void StructFact::rejectMove(int iat) {
-//  //do nothing
-//}
+void StructFact::makeMove(int iat, const PosType& pos) 
+{
+  if(DoNotUpdate) return;
+  RealType s,c;//get sin and cos
+  for(int ki=0; ki<KLists.numk; ki++)
+  {
+    sincos(dot(KLists.kpts_cart[ki],pos),&s,&c);
+    eikr_temp[ki]=ComplexType(c,s);
+  }
+}
+
+void StructFact::acceptMove(int active) {
+  if(DoNotUpdate) return;
+  ComplexType* restrict eikr_ptr=eikr[active];
+  ComplexType* restrict rhok_ptr(rhok[PtclRef.GroupID[active]]);
+  //const ComplexType* restrict t(eikr_ref.data());
+  for(int ki=0; ki<KLists.numk; ki++)
+  {
+    //(*rho_ptr++) += (*t)-(*eikr_ptr);
+    //*eikr_ptr++ = *t++;
+    rhok_ptr[k] += (eikr_temp[k]-eikr_ref[k]);
+    eikr_ref[k]=eikr_temp[k];
+  }
+}
+
+void StructFact::rejectMove(int iat) {
+  //do nothing
+}
+}

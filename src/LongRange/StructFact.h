@@ -23,6 +23,8 @@ namespace qmcplusplus {
     typedef PooledData<RealType>  BufferType;
 
   public:
+    ///true, if performing particle-by-particle update
+    bool DoNotUpdate;
     ///reference particle set
     ParticleSet& PtclRef;
     /** Rhok[alpha][k]
@@ -32,9 +34,10 @@ namespace qmcplusplus {
     Matrix<ComplexType> rhok;
     ///eikr[particle-index][K]
     Matrix<ComplexType> eikr;
+    ///eikr[K] for a proposed move
+    Vector<ComplexType> eikr_temp;
     /// K-Vector List.
     KContainer KLists;
-    
   public:
     /** Constructor - copy ParticleSet and init. k-shells
      * @param ref Reference particle set
@@ -59,9 +62,9 @@ namespace qmcplusplus {
 
     /// Update Rhok if 1 particle moved
     //void Update1Part(const PosType& rold, const PosType& rnew,int iat,int GroupID);
-    //void makeMove(int iat, const PosType& pos);
-    //void acceptMove(int iat);
-    //void rejectMove(int iat);
+    void makeMove(int iat, const PosType& pos);
+    void acceptMove(int iat);
+    void rejectMove(int iat);
 
     //Buffer methods. For PbyP MC where data must be stored in an anonymous
     //buffer between iterations
