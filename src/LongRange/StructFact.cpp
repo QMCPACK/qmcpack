@@ -214,32 +214,31 @@ StructFact::UpdateRhok(const PosType& rold,const PosType& rnew,int iat,int Group
   }
 }
 
-void StructFact::makeMove(int iat, const PosType& pos) 
+void StructFact::makeMove(int active, const PosType& pos) 
 {
-  if(DoNotUpdate) return;
   RealType s,c;//get sin and cos
-  for(int ki=0; ki<KLists.numk; ki++)
+  for(int ki=0; ki<KLists.numk; ++ki)
   {
     sincos(dot(KLists.kpts_cart[ki],pos),&s,&c);
     eikr_temp[ki]=ComplexType(c,s);
   }
 }
 
-void StructFact::acceptMove(int active) {
-  if(DoNotUpdate) return;
+void StructFact::acceptMove(int active) 
+{
   ComplexType* restrict eikr_ptr=eikr[active];
   ComplexType* restrict rhok_ptr(rhok[PtclRef.GroupID[active]]);
   //const ComplexType* restrict t(eikr_ref.data());
-  for(int ki=0; ki<KLists.numk; ki++)
+  for(int ki=0; ki<KLists.numk; ++ki)
   {
     //(*rho_ptr++) += (*t)-(*eikr_ptr);
     //*eikr_ptr++ = *t++;
-    rhok_ptr[k] += (eikr_temp[k]-eikr_ref[k]);
-    eikr_ref[k]=eikr_temp[k];
+    rhok_ptr[ki] += (eikr_temp[ki]-eikr_ptr[ki]);
+    eikr_ptr[ki]=eikr_temp[ki];
   }
 }
 
-void StructFact::rejectMove(int iat) {
+void StructFact::rejectMove(int active) {
   //do nothing
 }
 }

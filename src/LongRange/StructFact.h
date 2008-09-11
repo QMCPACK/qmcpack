@@ -23,7 +23,11 @@ namespace qmcplusplus {
     typedef PooledData<RealType>  BufferType;
 
   public:
-    ///true, if performing particle-by-particle update
+    /** true, if the structure factor is not actively update
+     *
+     * Particle-by-particle update functions, makeMove, acceptMove and rejectMove
+     * are costly and do not need to be performed unless Hamiltonian uses pbyp.
+     */
     bool DoNotUpdate;
     ///reference particle set
     ParticleSet& PtclRef;
@@ -60,11 +64,23 @@ namespace qmcplusplus {
      */
     void UpdateAllPart();
 
+    /** evaluate eikr_temp for eikr for the proposed move
+     * @param active index of the moved particle
+     * @param pos proposed position
+     */
+    void makeMove(int active, const PosType& pos);
+    /** update eikr and rhok with eikr_temp
+     * @param active index of the moved particle  
+     */
+    void acceptMove(int active);
+    /** discard any temporary data
+     * @param active index of the moved particle  
+     *
+     * Do nothing
+     */
+    void rejectMove(int active);
     /// Update Rhok if 1 particle moved
     //void Update1Part(const PosType& rold, const PosType& rnew,int iat,int GroupID);
-    void makeMove(int iat, const PosType& pos);
-    void acceptMove(int iat);
-    void rejectMove(int iat);
 
     //Buffer methods. For PbyP MC where data must be stored in an anonymous
     //buffer between iterations
