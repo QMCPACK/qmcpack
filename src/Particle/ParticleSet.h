@@ -74,6 +74,12 @@ namespace qmcplusplus {
     
     ///laplacians of the particles
     ParticleLaplacian_t L;
+
+    ///differential gradients of the particles
+    ParticleGradient_t dG;
+    
+    ///differential laplacians of the particles
+    ParticleLaplacian_t dL;
    
     ///SpeciesSet of particles
     SpeciesSet mySpecies;
@@ -127,8 +133,15 @@ namespace qmcplusplus {
      */
     //void setUpdateMode(int updatenode);
 
-    /** add a distance table */
-    void addTable(DistanceTableData* d_table);
+    ///** add a distance table */
+    //void addTable(DistanceTableData* d_table);
+    
+    /**  add a distance table
+     * @param psrc source particle set
+     *
+     * Ensure that the distance for this-this is always created first.
+     */
+    int  addTable(const ParticleSet& psrc);
 
     /**update the internal data
      *@param iflag index for the update mode
@@ -249,6 +262,12 @@ namespace qmcplusplus {
     ///the position of the active particle for particle-by-particle moves
     SingleParticlePos_t activePos;
 
+    /** map to handle distance tables
+     *
+     * myDistTableMap[source-particle-tag]= locator in the distance table
+     * myDistTableMap[ObjectTag] === 0
+     */
+    map<int,int> myDistTableMap;
     void initParticleSet();
   };
 }

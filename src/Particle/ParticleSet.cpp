@@ -58,9 +58,15 @@ namespace qmcplusplus {
     G.setTypeName(ParticleTags::postype_tag);
     G.setObjName("grad");
     L.setTypeName(ParticleTags::scalartype_tag);
-    L.setObjName("laplacian");
+    L.setObjName("lap");
+    dG.setTypeName(ParticleTags::postype_tag);
+    dG.setObjName("dgrad");
+    dL.setTypeName(ParticleTags::scalartype_tag);
+    dL.setObjName("dlap");
     addAttribute(G);
     addAttribute(L);
+    addAttribute(dG);
+    addAttribute(dL);
   }
 
   ///write to a ostream
@@ -99,21 +105,46 @@ namespace qmcplusplus {
   //  }
   //}
 
-  /** add a distance table to DistTables list
-   * @param d_table pointer to a DistanceTableData to be added
-   *
-   * DistTables is a list of DistanceTables which are updated by MC moves.
-   */
-  void ParticleSet::addTable(DistanceTableData* d_table) {
-    int oid=d_table->origin().tag();
-    int i=0;
-    int dsize=DistTables.size();
-    while(i<dsize) {
-      if(oid == DistTables[i]->origin().tag()) //table already exists
-        return;
-      ++i;
+  ///** add a distance table to DistTables list
+  // * @param d_table pointer to a DistanceTableData to be added
+  // *
+  // * DistTables is a list of DistanceTables which are updated by MC moves.
+  // */
+  //void ParticleSet::addTable(DistanceTableData* d_table) {
+  //  int oid=d_table->origin().tag();
+  //  int i=0;
+  //  int dsize=DistTables.size();
+  //  while(i<dsize) {
+  //    if(oid == DistTables[i]->origin().tag()) //table already exists
+  //      return;
+  //    ++i;
+  //  }
+  //  DistTables.push_back(d_table);
+  //}
+  int ParticleSet::addTable(const ParticleSet& psrc)
+  {
+    if(DistTables.empty())
+    {
+      DistTables.reserve(4);
+      DistTables.push_back(createDistanceTable(*this));
+      //add  this-this pair
+      myDistTableMap.clear();
+      myDistTableMap[ObjectTag]=0;
     }
-    DistTables.push_back(d_table);
+
+    if(psrc.tag() == ObjectTag) return 0;
+
+    int tsize=DistTables.size(),tid;
+    map<int,int>::iterator tit(myDistTableMap.find(psrc.tag()));
+    if(tit == myDistTableMap.end())
+    {
+      tid=DistTables.size();
+      DistTables.push_back(createDistanceTable(psrc,*this));
+      myDistTableMap[psrc.tag()]=tid;
+    }
+    else
+      tid = (*tit).second;
+    return tid;
   }
 
   void ParticleSet::update(int iflag) { 
@@ -307,10 +338,13 @@ namespace qmcplusplus {
     }
   }
 
-  void ParticleSet::clearDistanceTables() {
+  void ParticleSet::clearDistanceTables() 
+  {
     //Physically remove the tables
-    for(int i=0; i< DistTables.size(); i++) DistanceTable::removeTable(DistTables[i]->getName());
-    DistTables.erase(DistTables.begin(),DistTables.end());
+    delete_iter(DistTables.begin(),DistTables.end());
+    DistTables.clear();
+    //for(int i=0; i< DistTables.size(); i++) DistanceTable::removeTable(DistTables[i]->getName());
+    //DistTables.erase(DistTables.begin(),DistTables.end());
   }
 }
 

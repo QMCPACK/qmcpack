@@ -7,7 +7,6 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
@@ -45,14 +44,15 @@ namespace qmcplusplus {
     typedef ParticleSet::SingleParticlePos_t PosType;
 
     ///add a named DistanceTableData_t of Symmectric type
-    static DistanceTableData* add(ParticleSet& s, const char* aname = NULL);
+    static DistanceTableData* add(ParticleSet& s);//, const char* aname = NULL);
     
     ///add a named DistanceTableData_t of Asymmectric type
-    static DistanceTableData* add(const ParticleSet& s, ParticleSet& t, const char* aname = NULL);
+    static DistanceTableData* add(const ParticleSet& s, ParticleSet& t);//, const char* aname = NULL);
 
     /** returns the pointer to SimulationCell
      */
-    static const ParticleLayout_t* getSimulationCell() {
+    static const ParticleLayout_t* getSimulationCell() 
+    {
       return SimulationCell;
     }
 
@@ -61,22 +61,21 @@ namespace qmcplusplus {
      */
     static void createSimulationCell(xmlNodePtr cur);
 
+    /////reset the internal values, mainly Updated flags to prepare new series
+    //static void reset();
 
-    ///reset the internal values, mainly Updated flags to prepare new series
-    static void reset();
-
-    /** resize the containers
-     * @param walkers number of walkers
-     */
-    static void create(int walkers);
-    
-    ///remove the distance table with the name
-    static void removeTable(const string& tname);
+    ///** resize the containers
+    // * @param walkers number of walkers
+    // */
+    //static void create(int walkers);
+    //
+    /////remove the distance table with the name
+    //static void removeTable(const string& tname);
 
   private:
     
-    ///Center_map[name] returns DistanceTableData*
-    static map<string,DistanceTableData*> TableMap;
+    /////Center_map[name] returns DistanceTableData*
+    //static map<string,DistanceTableData*> TableMap;
     
     ///Global object to define a simulation cell
     static ParticleLayout_t* SimulationCell;
@@ -84,6 +83,12 @@ namespace qmcplusplus {
     /// Default constructor.
     DistanceTable(){ }
   };
+
+  ///free function to create a distable table of s-s
+  DistanceTableData* createDistanceTable(ParticleSet& s);
+
+  ///free function create a distable table of s-t
+  DistanceTableData* createDistanceTable(const ParticleSet& s, ParticleSet& s);
 }
 #endif
 /***************************************************************************

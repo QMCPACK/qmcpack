@@ -24,45 +24,20 @@
 namespace qmcplusplus
 {
 
-/**@{instantiation of static data members*/
-map<string,DistanceTableData*>  DistanceTable::TableMap;
-ParticleSet::ParticleLayout_t* DistanceTable::SimulationCell=0;
-/**@}*/
+  /**@{instantiation of static data members*/
+  //map<string,DistanceTableData*>  DistanceTable::TableMap;
+  ParticleSet::ParticleLayout_t* DistanceTable::SimulationCell=0;
+  /**@}*/
 
-
-void DistanceTable::createSimulationCell(xmlNodePtr cur) {
-  if(cur != NULL) {
-    if(SimulationCell == 0) {
-      SimulationCell = new ParticleLayout_t;
-    }
-    LatticeParser a(*SimulationCell);
-    a.put(cur);
-  }
-}
-
-/** Adding SymmetricDTD to the list, e.g., el-el distance table
- *\param s source/target particle set
- *\param aname of a new DistanceTableData
- *\return index of the distance table with the name
- */
-DistanceTableData*
-DistanceTable::add(ParticleSet& s, const char* aname) {
-
-  string newname;
-
-  if(aname) {
-    newname = aname;
-  } else {
-    newname = s.getName(); newname.append(s.getName());
-  }
-
-  map<string,DistanceTableData*>::iterator it = TableMap.find(newname);
-
-  //the named pair does not exist, add a new symmetric metrics
-  if(it == TableMap.end()) {
-    //LOGMSG("Distance table " << newname << " is created.")
+  /** Adding SymmetricDTD to the list, e.g., el-el distance table
+   *\param s source/target particle set
+   *\return index of the distance table with the name
+   */
+  DistanceTableData* createDistanceTable(ParticleSet& s) 
+  {
+    typedef OHMMS_PRECISION RealType;
+    enum {DIM=OHMMS_DIM};
     DistanceTableData* dt=0;
-    //if(SuperCellType<DIM>::apply(s.Lattice.BoxBConds) == SUPERCELL_OPEN) 
     if(s.Lattice.SuperCellEnum == SUPERCELL_OPEN)
       dt = new SymmetricDTD<DTD_BConds<RealType,DIM,SUPERCELL_OPEN> >(s,s);
     else
@@ -78,41 +53,21 @@ DistanceTable::add(ParticleSet& s, const char* aname) {
         dt = new SymmetricDTD<DTD_BConds<RealType,DIM,SUPERCELL_BULK> >(s,s);
       }
     }
-
-    //set the name of the table
-    dt->setName(newname);
-    TableMap[newname] = dt;
-    s.addTable(dt);
-    //add to the list
+    ostringstream o;
+    o << s.getName() << "_" << s.getName();
+    dt->Name=o.str();//assign the table name
     return dt;
-  } else {
-    //LOGMSG("Distance table " << newname << " is reused")
-    return (*it).second;
-  }
-}
-
-/** Adding AsymmetricDTD to the list, e.g., el-nuclei distance table
- *\param s source particle set
- *\param t target particle set
- *\param aname of a new DistanceTableData
- *\return index of the distance table with the name
- */
-DistanceTableData*
-DistanceTable::add(const ParticleSet& s, ParticleSet& t, const char* aname) {
-
-  string newname;
-  if(aname) {
-    newname = aname;
-  } else {
-    newname = s.getName();
-    newname.append(t.getName());
   }
 
-  map<string,DistanceTableData*>::iterator it = TableMap.find(newname);
-  ///the named pair does not exist, add a new asymmetric metrics
-  if(it == TableMap.end()) {
+  /** Adding SymmetricDTD to the list, e.g., el-el distance table
+   *\param s source/target particle set
+   *\return index of the distance table with the name
+   */
+  DistanceTableData* createDistanceTable(const ParticleSet& s, ParticleSet& t) 
+  {
+    typedef OHMMS_PRECISION RealType;
+    enum {DIM=OHMMS_DIM};
     DistanceTableData* dt=0;
-    //if(SuperCellType<DIM>::apply(s.Lattice.BoxBConds) == SUPERCELL_OPEN) 
     if(s.Lattice.SuperCellEnum == SUPERCELL_OPEN)
       dt = new AsymmetricDTD<DTD_BConds<RealType,DIM,SUPERCELL_OPEN> >(s,t);
     else 
@@ -128,39 +83,66 @@ DistanceTable::add(const ParticleSet& s, ParticleSet& t, const char* aname) {
         dt = new AsymmetricDTD<DTD_BConds<RealType,DIM,SUPERCELL_BULK> >(s,t);
       }
     }
-
-    //set the name of the table
-    dt->setName(newname);
-
-    t.addTable(dt);
-    TableMap[newname] = dt;
+    ostringstream o;
+    o << s.getName() << "_" << t.getName();
+    dt->Name=o.str();//assign the table name
     return dt;
-  } else {
-    //LOGMSG("Distance table " << newname << " is reused")
-    return (*it).second;
   }
-}
 
-void 
-DistanceTable::removeTable(const string& tname) {
-  map<string,DistanceTableData*>::iterator it = TableMap.find(tname);
-  if(it != TableMap.end()) {
-    delete (*it).second;
-    TableMap.erase(it);
+
+  void DistanceTable::createSimulationCell(xmlNodePtr cur) 
+  {
+    if(cur != NULL) {
+      if(SimulationCell == 0) {
+        SimulationCell = new ParticleLayout_t;
+      }
+      LatticeParser a(*SimulationCell);
+      a.put(cur);
+    }
   }
-}
 
-void DistanceTable::create(int walkers) {
-  map<string,DistanceTableData*>::iterator it = TableMap.begin();
-  map<string,DistanceTableData*>::iterator it_end = TableMap.end();
-  while(it != it_end) {
-    (*it).second->create(walkers);
-    ++it;
+  /** Adding SymmetricDTD to the list, e.g., el-el distance table
+   *\param s source/target particle set
+   *\return DistanceTableData*
+   */
+  DistanceTableData* DistanceTable::add(ParticleSet& s)
+  {
+    int tid=s.addTable(s);
+    return s.DistTables[tid];
   }
-}
 
-void DistanceTable::reset() {
-}
+  /** Adding AsymmetricDTD to the list, e.g., el-nuclei distance table
+   *\param s source particle set
+   *\param t target particle set
+   *\return DistanceTableData*
+   */
+  DistanceTableData* DistanceTable::add(const ParticleSet& s, ParticleSet& t) 
+  {
+    int tid=t.addTable(s);
+    return t.DistTables[tid];
+  }
+
+
+//void 
+//DistanceTable::removeTable(const string& tname) {
+//  map<string,DistanceTableData*>::iterator it = TableMap.find(tname);
+//  if(it != TableMap.end()) {
+//    delete (*it).second;
+//    TableMap.erase(it);
+//  }
+//}
+//
+//void DistanceTable::create(int walkers) {
+//  map<string,DistanceTableData*>::iterator it = TableMap.begin();
+//  map<string,DistanceTableData*>::iterator it_end = TableMap.end();
+//  while(it != it_end) {
+//    (*it).second->create(walkers);
+//    ++it;
+//  }
+//}
+//
+//void DistanceTable::reset() {
+//}
 
 //May need to make it singleton
 // class DistanceTableSingleton {
