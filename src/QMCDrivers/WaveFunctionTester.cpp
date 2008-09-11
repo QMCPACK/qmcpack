@@ -61,7 +61,7 @@ WaveFunctionTester::run() {
 
   app_log() << "Starting a Wavefunction tester" << endl;
 
-  DistanceTable::create(1);
+  //DistanceTable::create(1);
 
   put(qmcNode);
 
@@ -244,9 +244,10 @@ void WaveFunctionTester::runRatioTest() {
     //W.registerData(**it,tbuffer);
     W.registerData(tbuffer);
     RealType logpsi=Psi.registerData(W,tbuffer);
+    RealType ene = H.registerData(W,tbuffer);
     (*it)->DataSet=tbuffer;
 
-    RealType ene = H.evaluate(W);
+    //RealType ene = H.evaluate(W);
     (*it)->resetProperty(logpsi,Psi.getPhase(),ene,0.0,0.0,1.0);
     H.saveProperty((*it)->getPropertyBase());
     ++it;
@@ -270,6 +271,7 @@ void WaveFunctionTester::runRatioTest() {
       w_buffer.rewind();
       W.copyFromBuffer(w_buffer);
       Psi.copyFromBuffer(W,w_buffer);
+      H.copyFromBuffer(W,w_buffer);
 
       RealType eold(thisWalker.Properties(LOCALENERGY));
       RealType logpsi(thisWalker.Properties(LOGPSI));
@@ -284,34 +286,46 @@ void WaveFunctionTester::runRatioTest() {
 
         PosType newpos(W.makeMove(iat,dr));
 
-        RealType ratio=Psi.ratio(W,iat,dGp,dLp);
-        Gp = W.G + dGp;
+        //RealType ratio=Psi.ratio(W,iat,dGp,dLp);
+        RealType ratio=Psi.ratio(W,iat,W.dG,W.dL);
+        Gp = W.G + W.dG;
+        RealType enew = H.evaluatePbyP(W,iat);
 
         if(ratio > Random()) {
           cout << " Accepting a move for " << iat << endl;
+          cout << " Energy after a move " << enew << endl;
+          W.G += W.dG;
+          W.L += W.dL;
           W.acceptMove(iat);
           Psi.acceptMove(W,iat);
-          W.G = Gp;
-          W.L += dLp;
+          H.acceptMove(iat);
           ratio_accum *= ratio;
         } else {
           cout << " Rejecting a move for " << iat << endl;
           W.rejectMove(iat); 
           Psi.rejectMove(iat);
+          H.rejectMove(iat);
         }
       }
 
+      cout << " Energy after pbyp = " << H.getLocalEnergy() << endl;
       thisWalker.R=W.R;
       w_buffer.rewind();
       W.copyToBuffer(w_buffer);
       RealType psi = Psi.evaluate(W,w_buffer);
-      RealType ene = H.evaluate(W);
-      thisWalker.resetProperty(std::log(psi),Psi.getPhase(),ene);
+      RealType ene_up = H.evaluate(W,w_buffer);
+
+      //RealType ene = H.evaluate(W);
 
       Gp=W.G;
       Lp=W.L;
+      W.R=thisWalker.R;
       W.update();
       RealType newlogpsi=Psi.evaluateLog(W);
+      RealType ene = H.evaluate(W);
+      thisWalker.resetProperty(std::log(psi),Psi.getPhase(),ene);
+
+      cout << iter << "  Energy by update = "<< ene_up << " " << ene << " "  << ene_up-ene << endl;
 
       cout << iter << " Ratio " << ratio_accum*ratio_accum 
         << " | " << std::exp(2.0*(newlogpsi-logpsi)) << " " 
