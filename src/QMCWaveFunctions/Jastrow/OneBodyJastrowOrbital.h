@@ -212,9 +212,8 @@ namespace qmcplusplus {
      * @param iat particle that has been moved.
      */
     inline ValueType ratio(ParticleSet& P, int iat) {
-      int n=d_table->size(VisitorIndex);
       curVal=0.0;
-      for(int i=0, nn=iat; i<d_table->size(SourceIndex); i++,nn+= n) {
+      for(int i=0; i<d_table->size(SourceIndex); ++i) {
         if(Fs[i]) curVal += Fs[i]->evaluate(d_table->Temp[i].r1);
       }
       return std::exp(U[iat]-curVal);
