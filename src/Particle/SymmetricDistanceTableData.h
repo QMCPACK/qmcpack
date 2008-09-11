@@ -120,7 +120,6 @@ namespace qmcplusplus {
     ///evaluate the temporary pair relations
     inline void move(const ParticleSet& P, const PosType& rnew, IndexType jat) {
       activePtcl=jat;
-      Temp[jat].reset();
       for(int iat=0; iat<jat; iat++) {
 	int loc = IJ[iat*N[SourceIndex]+jat];
 	PosType drij(rnew - P.R[iat]);
@@ -134,6 +133,7 @@ namespace qmcplusplus {
 	Temp[iat].dr0=-1.0*dr_m[loc];
 	Temp[iat].dr1=drij;
       }
+      Temp[jat].reset();
       for(int iat=jat+1,nn=jat; iat< N[SourceIndex]; iat++) {
 	int loc = IJ[iat*N[SourceIndex]+jat];
 	PosType drij(rnew - P.R[iat]);

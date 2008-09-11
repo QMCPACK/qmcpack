@@ -60,8 +60,8 @@ namespace qmcplusplus {
   struct TempDisplacement {
     T r1,rinv1,r0,rinv0;
     TinyVector<T,N> dr0, dr1;
-    inline TempDisplacement() {}
-    inline void reset() {r0=T();r1=T();}
+    inline TempDisplacement():r1(0.0),rinv1(0.0),r0(0.0),rinv0(0.0) {}
+    inline void reset() {r1=0.0;rinv1=0.0;r0=0.0;rinv0=0.0;dr0=0.0;dr1=0.0;}
   };
 
 
