@@ -71,7 +71,7 @@ namespace qmcplusplus {
 
     ///the number of H/Psi pairs
     int nPsi;
-
+    ParticleSet::ParticlePos_t grand_transProb;//a
     ///The Reptile: a chain of beads
     MultiChain* Reptile;
 
