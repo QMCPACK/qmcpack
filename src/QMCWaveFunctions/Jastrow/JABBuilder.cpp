@@ -56,13 +56,16 @@ namespace qmcplusplus {
 	for(int i=0; i<ng; i++) jastrow.push_back(0);
       } else if(cname == corr_tag) {
         if(sourcePtcl == 0) return false;
-	string speciesA((const char*)(xmlGetProp(cur,(const xmlChar *)"speciesA")));
+        string spA;
+        OhmmsAttributeSet rAttrib;
+        rAttrib.add(spA, "speciesA"); rAttrib.add(spA, "elementType");
+        rAttrib.put(cur);
 	//string speciesB((const char*)(xmlGetProp(cur,(const xmlChar *)"speciesB")));
-	int ia = sourcePtcl->getSpeciesSet().findSpecies(speciesA);
+	int ia = sourcePtcl->getSpeciesSet().findSpecies(spA);
 	if(!(jastrow[ia])) {
 	  jastrow[ia]= new FN;
 	  jastrow[ia]->put(cur);
-	  LOGMSG("  Added Jastrow Correlation between " << speciesA)
+	  LOGMSG("  Added Jastrow Correlation between " << spA)
 	}
       }
       cur = cur->next;

@@ -19,6 +19,7 @@
 #ifndef QMCPLUSPLUS_PADEFUNCTORS_H
 #define QMCPLUSPLUS_PADEFUNCTORS_H
 #include "Numerics/OptimizableFunctorBase.h"
+#include "OhmmsData/AttributeSet.h"
 #include <cmath>
 
 namespace qmcplusplus {
@@ -111,22 +112,28 @@ namespace qmcplusplus {
         real_type Atemp(A),Btemp(B0);
         cur = cur->xmlChildrenNode;
         bool renewed=false;
-        while(cur != NULL) {
+        while(cur != NULL) 
+        {
           //@todo Var -> <param(eter) role="opt"/>
           std::string cname((const char*)(cur->name));
-          if(cname == "parameter" || cname == "Var") {
-            const xmlChar* nptr=xmlGetProp(cur,(const xmlChar *)"name");
-            const xmlChar* iptr=xmlGetProp(cur,(const xmlChar *)"id");
-            if(nptr == NULL || iptr == NULL) return false;
-            if(nptr[0] == 'A')
-            { 
-              ID_A = (const char*)iptr; 
+          if(cname == "parameter" || cname == "Var") 
+          {
+            std::string id_in("0");
+            std::string p_name("B");
+            OhmmsAttributeSet rAttrib;
+            rAttrib.add(id_in, "id");
+            rAttrib.add(p_name, "name"); 
+            rAttrib.put(cur);
+            if(p_name=="A")
+            {
+              ID_A = id_in;
               putContent(Atemp,cur);
-            } else if(nptr[0] == 'B'){
-              ID_B = (const char*)iptr;
+              renewed=true;
+            } else if(p_name == "B"){
+              ID_B = id_in;
               putContent(Btemp,cur);
+              renewed=true;
             }
-            bool renewed=true;
           }
           cur = cur->next;
         }
@@ -145,6 +152,8 @@ namespace qmcplusplus {
       void checkInVariables(opt_variables_type& active)
       {
         active.insertFrom(myVars);
+        std::cout << "Checking variables by PadeFunctor" << endl;
+        myVars.print(std::cout);
       }
 
       void checkOutVariables(const opt_variables_type& active)
