@@ -40,8 +40,6 @@ namespace qmcplusplus {
 
     ///number of ions
     int Centers;
-    ///temporary energy
-    RealType NewValue;
     ParticleSet& sourcePtcl;
     DistanceTableData* d_table;
     ///container for the ion charges
@@ -84,8 +82,16 @@ namespace qmcplusplus {
     inline Return_t 
     registerData(ParticleSet& P, BufferType& buffer) 
     {
-      Value=evaluate(P);
+      NewValue=evaluate(P);
       buffer.add(Value);
+      return Value;
+    }
+
+    inline Return_t 
+    updateBuffer(ParticleSet& P, BufferType& buffer) 
+    {
+      NewValue=evaluate(P);
+      buffer.put(Value);
       return Value;
     }
 
@@ -107,9 +113,6 @@ namespace qmcplusplus {
       for(int iat=0; iat<Centers; ++iat) del+=Z[iat]*(temp[iat].rinv1-temp[iat].rinv0);
       return NewValue=Value+del;
     }
-
-    void acceptMove(int active) {Value=NewValue;}
-    void rejectMove(int active) {}
 
     bool put(xmlNodePtr cur) 
     {
@@ -176,8 +179,6 @@ namespace qmcplusplus {
     RealType Q;
     //DistanceTableData* d_table;
     //ParticleSet* PtclRef;
-    ///new value for proposed move
-    RealType NewValue;
     //ElecElecPotential(RealType c=1.0): C(c){}
     //CoulombPotentialAA(ParticleSet& P):d_table(NULL),PtclRef(&P) {
     CoulombPotentialAA(ParticleSet& P) 
@@ -214,8 +215,16 @@ namespace qmcplusplus {
     inline Return_t 
     registerData(ParticleSet& P, BufferType& buffer) 
     {
-      Value=evaluate(P);
+      NewValue=evaluate(P);
       buffer.add(Value);
+      return Value;
+    }
+
+    inline Return_t 
+    updateBuffer(ParticleSet& P, BufferType& buffer) 
+    {
+      NewValue=evaluate(P);
+      buffer.put(Value);
       return Value;
     }
 
@@ -239,14 +248,6 @@ namespace qmcplusplus {
       return NewValue=Value+Q*del;
     }
 
-    void acceptMove(int active) 
-    {
-      Value=NewValue; 
-    }
-
-    void rejectMove(int active) 
-    {
-    }
     /** Do nothing */
     bool put(xmlNodePtr cur) {
       return true;

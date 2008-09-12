@@ -61,6 +61,7 @@ namespace qmcplusplus {
     int myIndex;
     RealType Tau;
     RealType Value;
+    RealType NewValue;
     string myName;
    
     ///constructor
@@ -98,33 +99,36 @@ namespace qmcplusplus {
     virtual Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy) = 0; 
 
     /*@{
-     * @brief functions to handle particle-by-particle move
+     * @brief Functions to handle particle-by-particle move
+     *
+     * Default implementations use evaluate.
      */
     virtual Return_t registerData(ParticleSet& P, BufferType& buffer)
     {
-      APP_ABORT(myName+" cannot use pbyp for Hamiltonian. Missing registerDat");
-      return 0;
+      return evaluate(P);
+    }
+    virtual Return_t updateBuffer(ParticleSet& P, BufferType& buf)
+    {
+      return evaluate(P);
     }
     virtual void copyFromBuffer(ParticleSet& P, BufferType& buf)
     {
-      APP_ABORT(myName+" cannot use pbyp for Hamiltonian. Missing copyFromBuffer");
+      Value=evaluate(P);
     }
     virtual void copyToBuffer(ParticleSet& P, BufferType& buf)
     {
-      APP_ABORT(myName+" cannot use pbyp for Hamiltonian. Missing copyToBuffer");
     }
     virtual Return_t evaluatePbyP(ParticleSet& P, int active)
     {
-      APP_ABORT(myName+" cannot use pbyp for Hamiltonian. Missing evaluate");
-      return 0;
+      APP_ABORT(myName + " missing evaluatePbyP");
+      return NewValue;
     }
     virtual void acceptMove(int active)
     { 
-      APP_ABORT(myName+" cannot use pbyp for Hamiltonian. Missing acceptMove");
+      Value=NewValue;
     }
     virtual void rejectMove(int active)
     {
-      APP_ABORT(myName+" cannot use pbyp for Hamiltonian. Missing rejectMove");
     }
     /*@}*/
 

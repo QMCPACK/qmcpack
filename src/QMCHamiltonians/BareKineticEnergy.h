@@ -86,6 +86,15 @@ namespace qmcplusplus {
       return Value;
     }
 
+    inline Return_t 
+    updateBuffer(ParticleSet& P, BufferType& buffer) 
+    {
+      Value = Dot(P.G,P.G) + Sum(P.L); 
+      NewValue=Value*=-OneOver2M;
+      buffer.put(Value);
+      return Value;
+    }
+
     inline void copyFromBuffer(ParticleSet& P, BufferType& buffer)
     {
       buffer.get(Value);
@@ -104,9 +113,6 @@ namespace qmcplusplus {
       NewValue = Dot(Gtmp,Gtmp) + Sum(Ltmp); 
       return NewValue*=-OneOver2M;
     }
-
-    void acceptMove(int active) {Value=NewValue;}
-    void rejectMove(int active) {}
 
     
     /** implements the virtual function.
