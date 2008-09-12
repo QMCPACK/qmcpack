@@ -481,10 +481,12 @@ namespace qmcplusplus {
   {
     string observ("NONE");
 
+    KEcut=-1e100;
     OhmmsAttributeSet attrib;
     ParameterSet nattrib;
     attrib.add(observ,"observables" );
     nattrib.add(MSS,"mass","double" );
+    nattrib.add(KEcut,"KEcut","double" );
     attrib.put(q);
     nattrib.put(q);
 
@@ -598,8 +600,8 @@ namespace qmcplusplus {
 //     //Save Transition Probability
 //     head->TransProb[forward]=0.5*Dot(gRand,gRand);
     
-    head->getScaledDrift(branchEngine->LogNorm,Tauoverm);
-//     head->getScaledDrift(branchEngine->LogNorm,Tau);
+//     head->getScaledDrift(branchEngine->LogNorm,Tauoverm);
+
 //     deltaR =  m_sqrttau*gRand + head->Drift;
     deltaR =  m_sqrttau*gRand + head->Drift;
     
@@ -651,9 +653,10 @@ namespace qmcplusplus {
 //       NewBead->deltaRSquared[Directionless]= Dot(W.G,W.G);
       
 //       NewBead->getScaledDrift(branchEngine->LogNorm,Tau);
-      NewBead->getScaledDrift(branchEngine->LogNorm,Tauoverm);
+//       NewBead->getScaledDrift(branchEngine->LogNorm,Tauoverm);
+      NewBead->getScaledDriftSingle(branchEngine->LogNorm,Tauoverm,ipsi);
       
-      ParticleSet::ParticlePos_t DR2 = head->Drift;
+      ParticleSet::ParticlePos_t DR2 = NewBead->Drift;
       DR2 *= 1.0/Tauoverm;
       NewBead->deltaRSquared[Directionless]= Dot(DR2,DR2);
 
@@ -688,7 +691,7 @@ namespace qmcplusplus {
 //       int beadwgt=abs( ( Reptile->getSign(NewBeadProp[SIGN])+Reptile->RefSign[ipsi] )/2 );
 //       NewBead->BeadSignWgt[ipsi]=beadwgt;
 //       totbeadwgt+=beadwgt;
-      if ((NewBeadProp[LOCALENERGY]-NewBeadProp[LOCALPOTENTIAL] <= 0.0) && (NewBeadProp[LOCALENERGY] < HeadProp[LOCALENERGY]) ) {
+      if ((NewBeadProp[LOCALENERGY]-NewBeadProp[LOCALPOTENTIAL] <= KEcut) && (NewBeadProp[LOCALENERGY] < HeadProp[LOCALENERGY]) ) {
         FAIL=1;
       }
     }

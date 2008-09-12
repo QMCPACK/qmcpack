@@ -253,6 +253,10 @@ namespace qmcplusplus {
       Drift *= denom;
     }
 
+    inline void getScaledDriftSingle(vector<RealType>& LogNorm, RealType Tau, int ipsi) {
+      setScaledDriftPbyP(Tau,*Gradients[ipsi],(*DriftVectors[ipsi]));
+    }
+    
     inline void getDrift(vector<RealType>& Jacobian, SpaceWarp& PtclWarp,vector<RealType>& LogNorm) {
 
       QMCTraits::PosType WarpDrift;
