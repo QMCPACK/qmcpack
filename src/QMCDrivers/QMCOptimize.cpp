@@ -199,9 +199,8 @@ namespace qmcplusplus {
       if(omp_get_max_threads()>1)
         vmcEngine = new VMCSingleOMP(W,Psi,H,hamPool);
       else
-#else
-        vmcEngine = new VMCSingle(W,Psi,H);
 #endif
+        vmcEngine = new VMCSingle(W,Psi,H);
       vmcEngine->setUpdateMode(vmcMove[0] == 'p');
       vmcEngine->initCommunicator(myComm);
     }

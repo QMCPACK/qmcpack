@@ -104,6 +104,8 @@ namespace qmcplusplus {
     //determine dump period for walkers
     int samples_tot=W.getActiveWalkers()*nBlocks*nSteps*myComm->size();
     myPeriod4WalkerDump=(nTargetSamples>0)?samples_tot/nTargetSamples:Period4WalkerDump;
+    //fall back to the default
+    if(myPeriod4WalkerDump==0) myPeriod4WalkerDump=Period4WalkerDump;
     if(QMCDriverMode[QMC_WARMUP]) myPeriod4WalkerDump=nBlocks*nSteps;
     int samples_th=nTargetSamples/myComm->size()/NumThreads;
     for(int ip=0; ip<NumThreads;++ip)

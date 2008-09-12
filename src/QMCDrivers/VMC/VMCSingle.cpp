@@ -80,7 +80,8 @@ namespace qmcplusplus {
 
     int samples_tot=W.getActiveWalkers()*nBlocks*nSteps*myComm->size();
     myPeriod4WalkerDump=(nTargetSamples>0)?samples_tot/nTargetSamples:Period4WalkerDump;
-    if(QMCDriverMode[QMC_WARMUP]) myPeriod4WalkerDump=nBlocks*nSteps;
+    if(myPeriod4WalkerDump==0) myPeriod4WalkerDump=10;
+    if(QMCDriverMode[QMC_WARMUP]) myPeriod4WalkerDump=(nBlocks+1)*nSteps;
     W.clearEnsemble();
     samples_tot=W.getActiveWalkers()*((nBlocks*nSteps)/myPeriod4WalkerDump);
     W.setNumSamples(samples_tot);
