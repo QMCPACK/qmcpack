@@ -43,12 +43,15 @@ namespace qmcplusplus {
     int NumSpecies;
     int ChargeAttribIndx;
     int MemberAttribIndx;
-    int NParticles;
+    int NumCenters;
     RealType myConst;
     RealType myRcut;
     vector<RealType> Zat,Zspec; 
     vector<int> NofSpecies;
 
+    Matrix<RealType> SR2;
+    Vector<RealType> dSR;
+    Vector<ComplexType> del_eikr;
     CoulombPBCAATemp(ParticleSet& ref, bool active);
 
     ///// copy constructor
@@ -64,11 +67,11 @@ namespace qmcplusplus {
       return evaluate(P);
     }
     Return_t registerData(ParticleSet& P, BufferType& buffer);
+    Return_t updateBuffer(ParticleSet& P, BufferType& buffer);
     void copyFromBuffer(ParticleSet& P, BufferType& buf);
     void copyToBuffer(ParticleSet& P, BufferType& buf);
     Return_t evaluatePbyP(ParticleSet& P, int iat);
     void acceptMove(int iat);
-    void rejectMove(int iat);
 
     /** Do nothing */
     bool put(xmlNodePtr cur) {
@@ -87,6 +90,7 @@ namespace qmcplusplus {
     Return_t evalSR();
     Return_t evalLR();
     Return_t evalConsts();
+    Return_t evaluateForPbyP(ParticleSet& P);
 
   };
 

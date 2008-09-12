@@ -78,38 +78,26 @@ namespace qmcplusplus {
   CoulombPBCABTemp::Return_t 
     CoulombPBCABTemp::registerData(ParticleSet& P, BufferType& buffer) 
     {
-      SRpart.resize(NptclB,0.0);
-      LRpart.resize(NptclB,0.0);
+      P.SK->DoUpdate=true;
 
-      Value=myConst;
-      for(int iat=0; iat<NptclA; ++iat)
-      {
-        RealType z=Zat[iat];
-        RadFunctorType* rVs=Vat[iat];
-        for(int nn=d_ab->M[iat], jat=0; nn<d_ab->M[iat+1]; nn++,jat++) 
-        {
-          RealType e=z*Qat[jat]*d_ab->rinv(nn)*rVs->splint(d_ab->r(nn));
-          SRpart[jat]+=e;
-          Value+=e;
-        }
-      }
+      SRpart.resize(NptclB);
+      LRpart.resize(NptclB);
 
-      const StructFact& RhoKA(*(PtclA->SK));
-      const StructFact& RhoKB(*(PtclB->SK));
-      for(int i=0; i<NumSpeciesA; i++) 
-      {
-        RealType z=Zspec[i];
-        for(int jat=0; jat<P.getTotalNum(); ++jat)
-        {
-          RealType e=z*Qat[jat]*AB->evaluate(RhoKA.KLists.kshell, RhoKA.rhok[i],RhoKB.eikr[jat]);
-          LRpart[jat]+=e;
-          Value+=e;
-        }
-      }
-       
+      Value=evaluateForPyP(P);
+
       buffer.add(SRpart.begin(),SRpart.end());
       buffer.add(LRpart.begin(),LRpart.end());
       buffer.add(Value);
+      return Value;
+    }
+
+  CoulombPBCABTemp::Return_t 
+    CoulombPBCABTemp::updateBuffer(ParticleSet& P, BufferType& buffer) 
+    {
+      Value=evaluateForPyP(P);
+      buffer.put(SRpart.begin(),SRpart.end());
+      buffer.put(LRpart.begin(),LRpart.end());
+      buffer.put(Value);
       return Value;
     }
 
@@ -128,14 +116,47 @@ namespace qmcplusplus {
   }
 
   CoulombPBCABTemp::Return_t 
+    CoulombPBCABTemp::evaluateForPyP(ParticleSet& P) 
+    {
+      Return_t res=myConst;
+      SRpart=0.0;
+      for(int iat=0; iat<NptclA; ++iat)
+      {
+        RealType z=Zat[iat];
+        RadFunctorType* rVs=Vat[iat];
+        for(int nn=d_ab->M[iat], jat=0; nn<d_ab->M[iat+1]; nn++,jat++) 
+        {
+          RealType e=z*Qat[jat]*d_ab->rinv(nn)*rVs->splint(d_ab->r(nn));
+          SRpart[jat]+=e;
+          res+=e;
+        }
+      }
+      LRpart=0.0;
+      const StructFact& RhoKA(*(PtclA->SK));
+      const StructFact& RhoKB(*(PtclB->SK));
+      for(int i=0; i<NumSpeciesA; i++) 
+      {
+        RealType z=Zspec[i];
+        for(int jat=0; jat<P.getTotalNum(); ++jat)
+        {
+          RealType e=z*Qat[jat]*AB->evaluate(RhoKA.KLists.kshell, RhoKA.rhok[i],RhoKB.eikr[jat]);
+          LRpart[jat]+=e;
+          res+=e;
+        }
+      }
+      return res;
+    }
+
+
+  CoulombPBCABTemp::Return_t 
     CoulombPBCABTemp::evaluatePbyP(ParticleSet& P, int active)
     {
+      const std::vector<DistanceTableData::TempDistType> &temp(d_ab->Temp);
       RealType q=Qat[active];
       SRtmp=0.0;
       for(int iat=0; iat<NptclA; ++iat)
       {
-        int nn=d_ab->M[iat]+active;
-        SRtmp+=Zat[iat]*q*d_ab->rinv(nn)*Vat[iat]->splint(d_ab->r(nn));
+        SRtmp+=Zat[iat]*q*temp[iat].rinv1*Vat[iat]->splint(temp[iat].r1);
       }
 
       LRtmp=0.0;
@@ -144,6 +165,7 @@ namespace qmcplusplus {
       for(int i=0; i<NumSpeciesA; i++) 
         LRtmp+=Zspec[i]*q*AB->evaluate(RhoKA.KLists.kshell, RhoKA.rhok[i],RhoKB.eikr_temp.data());
       return NewValue=Value+(SRtmp-SRpart[active])+(LRtmp-LRpart[active]);
+      return NewValue=Value+(SRtmp-SRpart[active]);
     }
 
   void CoulombPBCABTemp::acceptMove(int active)

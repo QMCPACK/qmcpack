@@ -41,8 +41,6 @@ namespace qmcplusplus {
     LRHandlerType* AB;
     DistanceTableData* d_ab;
 
-    ///boolean used to update Sk by this
-    bool FirstSkUser;
     int NumSpeciesA;
     int NumSpeciesB;
     int ChargeAttribIndxA;
@@ -68,9 +66,9 @@ namespace qmcplusplus {
     ///long-range part for the moved particle
     RealType LRtmp;
     ///short-range per particle
-    vector<RealType> SRpart;
+    Vector<RealType> SRpart;
     ///long-range per particle
-    vector<RealType> LRpart;
+    Vector<RealType> LRpart;
     /*@}*/
 
     ///radial grid
@@ -102,6 +100,7 @@ namespace qmcplusplus {
     }
 
     Return_t registerData(ParticleSet& P, BufferType& buffer);
+    Return_t updateBuffer(ParticleSet& P, BufferType& buffer);
     void copyFromBuffer(ParticleSet& P, BufferType& buf);
     void copyToBuffer(ParticleSet& P, BufferType& buf);
     Return_t evaluatePbyP(ParticleSet& P, int iat);
@@ -125,6 +124,7 @@ namespace qmcplusplus {
     Return_t evalSR();
     Return_t evalLR();
     Return_t evalConsts();
+    Return_t evaluateForPyP(ParticleSet& P);
     void add(int groupID, RadFunctorType* ppot);
   };
 
