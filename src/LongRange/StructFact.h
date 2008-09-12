@@ -23,12 +23,12 @@ namespace qmcplusplus {
     typedef PooledData<RealType>  BufferType;
 
   public:
-    /** true, if the structure factor is not actively update
+    /** false, if the structure factor is not actively update
      *
-     * Particle-by-particle update functions, makeMove, acceptMove and rejectMove
+     * Default is false. Particle-by-particle update functions, makeMove, acceptMove and rejectMove
      * are costly and do not need to be performed unless Hamiltonian uses pbyp.
      */
-    bool DoNotUpdate;
+    bool DoUpdate;
     ///reference particle set
     ParticleSet& PtclRef;
     /** Rhok[alpha][k]

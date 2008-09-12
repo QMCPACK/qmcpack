@@ -4,7 +4,7 @@ namespace qmcplusplus
 
 //Constructor - pass arguments to KLists' constructor
 StructFact::StructFact(ParticleSet& ref, RealType kc): 
-  DoNotUpdate(true),PtclRef(ref), KLists(ref.Lattice) 
+  DoUpdate(false),PtclRef(ref), KLists(ref.Lattice) 
 {
   //Update Rhok with new "Lattice" information.
   UpdateNewCell(kc);
@@ -17,7 +17,7 @@ StructFact::StructFact(ParticleSet& ref, RealType kc):
  * "=" is defined for all data members that need to be copied.
  */
 StructFact::StructFact(const StructFact &ref): 
- DoNotUpdate(ref.DoNotUpdate),PtclRef(ref.PtclRef), KLists(ref.PtclRef.Lattice) 
+ DoUpdate(ref.DoUpdate),PtclRef(ref.PtclRef), KLists(ref.PtclRef.Lattice) 
 {
   KLists = ref.KLists; //= checks for same cutoff and returns with no cost if equal.
   resize();
@@ -79,7 +79,7 @@ void StructFact::resize()
 
 void 
 StructFact::UpdateAllPart() {
-  if(DoNotUpdate) FillRhok();
+  if(!DoUpdate) FillRhok();
 }
 
 
@@ -216,6 +216,8 @@ StructFact::UpdateRhok(const PosType& rold,const PosType& rnew,int iat,int Group
 
 void StructFact::makeMove(int active, const PosType& pos) 
 {
+  //APP_ABORT("StructFact::makeMove should not be used yet");
+  cout << "StructFact::makeMove " << active << " " << pos << endl;
   RealType s,c;//get sin and cos
   for(int ki=0; ki<KLists.numk; ++ki)
   {
@@ -226,6 +228,8 @@ void StructFact::makeMove(int active, const PosType& pos)
 
 void StructFact::acceptMove(int active) 
 {
+  cout << "StructFact::acceptMove " << active << endl;
+  //APP_ABORT("StructFact::acceptMove should not be used yet");
   ComplexType* restrict eikr_ptr=eikr[active];
   ComplexType* restrict rhok_ptr(rhok[PtclRef.GroupID[active]]);
   //const ComplexType* restrict t(eikr_ref.data());
@@ -239,6 +243,7 @@ void StructFact::acceptMove(int active)
 }
 
 void StructFact::rejectMove(int active) {
+  //APP_ABORT("StructFact::rejectMove should not be used yet");
   //do nothing
 }
 }
