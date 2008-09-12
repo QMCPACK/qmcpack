@@ -39,7 +39,7 @@ namespace qmcplusplus {
     MyName="RPA_Jee";
     string useL="yes";
     string useS="yes";
-    rpafunc="breakup";
+    rpafunc="RPA";
     
     OhmmsAttributeSet a;
     a.add(MyName,"name");
@@ -55,7 +55,75 @@ namespace qmcplusplus {
     params.add(Rs,"rs","double");
     params.add(Kc,"kc","double");
     params.put(cur);
+    buildOrbital(MyName, useL, useS, rpafunc, Rs, Kc);
 
+//     app_log() <<endl<<"   LongRangeForm is "<<rpafunc<<endl;
+// 
+//     DropLongRange = (useL == "no");
+//     DropShortRange = (useS=="no");
+// 
+//     app_log() << "    Rs can be optimized using ID=" << ID_Rs << endl;
+//     RealType tlen = std::pow(3.0/4.0/M_PI*targetPtcl.Lattice.Volume/ static_cast<RealType>(targetPtcl.getTotalNum()) ,1.0/3.0);
+//     
+//     if(Rs<0) {
+//       if(targetPtcl.Lattice.SuperCellEnum) {
+//         Rs=tlen;
+//       } else {
+//         cout<<"  Error finding rs. Is this an open system?!"<<endl;
+//         Rs=100.0;
+//       }
+//     }
+//     
+//     //Add Rs to optimizable list
+//     myVars.insert(ID_Rs,Rs,true);
+//     
+//     int indx = targetPtcl.SK->KLists.ksq.size()-1;
+//     double Kc_max=std::pow(targetPtcl.SK->KLists.ksq[indx],0.5);
+// 
+//     if(Kc<0){ 
+//       Kc = 2.0*  std::pow(2.25*M_PI,1.0/3.0)/tlen ;
+//     }
+//     
+//     if(Kc>Kc_max){
+//       Kc=Kc_max;
+//       app_log() << "    Kc set too high. Resetting to the maximum value"<<endl;
+//     }
+// 
+//     app_log() << "    RPAJastrowBuilder::addTwoBodyPart Rs = " << Rs <<  "  Kc= " << Kc << endl;
+//     
+//     if (rpafunc=="Yukawa" || rpafunc=="breakup"){
+//       myHandler= new LRHandlerTemp<YukawaBreakup<RealType>,LPQHIBasis>(targetPtcl,Kc);
+//     } else if (rpafunc=="RPA"){
+//       myHandler= new LRRPAHandlerTemp<RPABreakup<RealType>,LPQHIBasis>(targetPtcl,Kc);
+//     } else if (rpafunc=="dYukawa"){
+//       myHandler= new LRHandlerTemp<DerivYukawaBreakup<RealType>,LPQHIBasis >(targetPtcl,Kc);
+//     } else if (rpafunc=="dRPA"){
+//       myHandler= new LRRPAHandlerTemp<DerivRPABreakup<RealType>,LPQHIBasis >(targetPtcl,Kc);
+//     }
+//     
+//     
+//     myHandler->Breakup(targetPtcl,Rs);
+//     
+//     app_log() << "  Maximum K shell " << myHandler->MaxKshell << endl;
+//     app_log() << "  Number of k vectors " << myHandler->Fk.size() << endl;
+// 
+//     if(!DropLongRange) makeLongRange();
+//     if(!DropShortRange) makeShortRange();
+
+    return true;
+  }
+
+  void RPAJastrow::buildOrbital(string name, string UL, string US, string RF, RealType R, RealType K)
+  {
+    
+    string ID_Rs="RPA_rs";
+    MyName = name;
+    string useL=UL;
+    string useS=US;
+    rpafunc=RF;
+    Rs=R;
+    Kc=K;
+    
     app_log() <<endl<<"   LongRangeForm is "<<rpafunc<<endl;
 
     DropLongRange = (useL == "no");
@@ -108,10 +176,8 @@ namespace qmcplusplus {
 
     if(!DropLongRange) makeLongRange();
     if(!DropShortRange) makeShortRange();
-
-    return true;
   }
-
+  
   void RPAJastrow::makeLongRange(){
     LongRangeRPA = new LRTwoBodyJastrow(targetPtcl);
     LongRangeRPA->resetByHandler(myHandler);

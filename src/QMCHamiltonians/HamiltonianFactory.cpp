@@ -177,9 +177,33 @@ namespace qmcplusplus {
             BP-> put(cur);
             targetH->addOperator(BP,"HePress",false);
           } else if (estType=="RPAZVZB"){
-            RPAPressure* BP = new RPAPressure(*targetPtcl);
-            BP-> put(cur, *targetPtcl);
-            targetH->addOperator(BP,"RPAZVZBP",false);
+            ParticleSet* source;
+            bool withSource=false;
+            
+            xmlNodePtr tcur = cur->children;
+            while(tcur != NULL) {
+              string cname((const char*)tcur->name);
+              if(cname == "OneBody") 
+              {
+                withSource=true;
+                string a("ion0");
+                OhmmsAttributeSet hAttrib;
+                hAttrib.add(a,"source"); 
+                hAttrib.put(tcur);
+                renameProperty(a);
+                PtclPoolType::iterator pit(ptclPool.find(a));
+                if(pit == ptclPool.end()) {
+                  ERRORMSG("Missing source ParticleSet" << a)
+                }
+                source = (*pit).second;
+              }
+              tcur = tcur->next;
+            }
+
+            RPAPressure* BP= new RPAPressure(*targetPtcl);;
+            if (withSource) BP-> put(cur, *targetPtcl,*source);
+            else BP-> put(cur, *targetPtcl);
+            targetH->addOperator(BP,BP->MyName,false);
           }
         }
       }

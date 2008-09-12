@@ -91,16 +91,16 @@ namespace qmcplusplus {
     bool put(xmlNodePtr cur ) {return true;}
     
     bool put(xmlNodePtr cur, ParticleSet& P);
+    bool put(xmlNodePtr cur, ParticleSet& P, ParticleSet& source);
 
     bool get(std::ostream& os) const {
-      os << "RPAZVZBP";
+      os << myName;
       return true;
     }
 
     QMCHamiltonianBase* makeClone(ParticleSet& P, TrialWaveFunction& psi);
 
-    private:
-      string MyName;
+    string MyName;
   };
 }
 #endif

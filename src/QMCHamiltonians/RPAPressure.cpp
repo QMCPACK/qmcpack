@@ -24,11 +24,13 @@
 
 #include "Configuration.h"
 #include "QMCHamiltonians/RPAPressure.h"
+#include "QMCWaveFunctions/Jastrow/singleRPAJastrowBuilder.h"
 #include "QMCWaveFunctions/Jastrow/RPAJastrow.h"
 #include "Optimize/VarList.h"
 #include "ParticleBase/ParticleAttribOps.h"
 
-
+#include "QMCWaveFunctions/TrialWaveFunction.h"
+#include "Message/Communicate.h"
 
 
 namespace qmcplusplus {
@@ -36,8 +38,12 @@ namespace qmcplusplus {
   typedef QMCHamiltonianBase::Return_t Return_t;
   
   void RPAPressure::resetTargetParticleSet(ParticleSet& P) {
-    dPsi[0]->resetTargetParticleSet(P);
+//     cout<<dPsi.size()<<endl;
+    for (int i=0;i<(dPsi.size());i++) dPsi[i]->resetTargetParticleSet(P);
     pNorm = 1.0/(P.Lattice.DIM*P.Lattice.Volume);
+    //3-D hard coded
+    RealType tlen=std::pow(0.75/M_PI*P.Lattice.Volume/static_cast<RealType>(P.getTotalNum()),1.0/3.0);
+    drsdV= tlen*pNorm;
   };
     
   Return_t RPAPressure::evaluate(ParticleSet& P) {
@@ -66,13 +72,79 @@ namespace qmcplusplus {
   }
 
   bool RPAPressure::put(xmlNodePtr cur, ParticleSet& P) {
+    
     MyName = "RPAZVZBP";
     RealType tlen=std::pow(0.75/M_PI*P.Lattice.Volume/static_cast<RealType>(P.getTotalNum()),1.0/3.0);
-    drsdV= tlen/(3.0* P.Lattice.Volume);
+    drsdV= tlen*pNorm;
+    
+    //Always a 2-body term
     RPAJastrow* rpajastrow = new RPAJastrow(P);
-    rpajastrow->put(cur);
+    bool FOUND=false;
+    xmlNodePtr tcur = cur->children;
+    while(tcur != NULL) {
+      string cname((const char*)tcur->name);
+      if(cname == "TwoBody") 
+      {
+        app_log() <<"  Found TwoBody parameters for dPsi in RPA-ZVZB Pressure"<<endl;
+        rpajastrow->put(tcur);
+        FOUND=true;
+      }
+      tcur = tcur->next;
+    }
+    if (!FOUND) {
+      rpajastrow->buildOrbital("P_dRPA","true", "true", "dRPA", tlen, 10.0/tlen);
+      app_log() <<"  Using Default TwoBody parameters for dPsi in RPA-ZVZB Pressure"<<endl;
+    }
     dPsi.push_back(rpajastrow);
+    return true;
+  }
+  
+  bool RPAPressure::put(xmlNodePtr cur, ParticleSet& P, ParticleSet& source) {
+    
+    MyName = "HRPAZVZBP";
+    RealType tlen=std::pow(0.75/M_PI*P.Lattice.Volume/static_cast<RealType>(P.getTotalNum()),1.0/3.0);
+    drsdV= tlen*pNorm;
+    
+    //Always a 2-body term
+    RPAJastrow* rpajastrow = new RPAJastrow(P);
+//     bool FOUND1=false;
+    bool FOUND2=false;
+    xmlNodePtr tcur = cur->children;
+    while(tcur != NULL) {
+      string cname((const char*)tcur->name);
+      if(cname == "TwoBody") 
+      {
+        app_log() <<"  Found TwoBody parameters for dPsi in RPA-ZVZB Pressure"<<endl;
+        rpajastrow->put(tcur);
+        FOUND2=true;
+      }
+//       else if(cname == "OneBody") 
+//       {
+//         app_log() <<"  Found OneBody parameters for dPsi in RPA-ZVZB Pressure"<<endl;
+//         FOUND1=true;
+//       }
+      tcur = tcur->next;
+    }
+    if (!FOUND2) {
+      rpajastrow->buildOrbital("P_dRPA","true", "true", "dRPA", tlen, 10.0/tlen);
+      app_log() <<"  Using Default TwoBody parameters for dPsi in RPA-ZVZB Pressure"<<endl;
+    }
+//     if (!FOUND1) {
+//       rpajastrow->buildOrbital("P_dRPA","true", "true", "dRPA", tlen, 10.0/tlen);
+//       app_log() <<"  Using Default TwoBody parameters for dPsi in RPA-ZVZB Pressure"<<endl;
+//     }
 
+    Communicate* cpt = new Communicate();
+    TrialWaveFunction* tempPsi = new TrialWaveFunction(cpt);
+    singleRPAJastrowBuilder* jb = new singleRPAJastrowBuilder(P, *tempPsi, source );
+    OrbitalBase* Hrpajastrow = jb->getOrbital();
+
+    delete jb;
+    delete tempPsi;
+    delete cpt;
+
+    dPsi.push_back(Hrpajastrow);
+    dPsi.push_back(rpajastrow);
     return true;
   }
 

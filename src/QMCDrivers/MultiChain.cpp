@@ -125,98 +125,83 @@ void MultiChain::copyToBuffer(Buffer_t& buf) {
  *      properties, weights etc, see Bead::copyToBuffer
  */
 void MultiChain::open(const string& aroot) {
-//  hid_t h_file=-1;
-//  string h5file=aroot+".config.h5";
-//  h_file  =  H5Fopen(h5file.c_str(),H5F_ACC_RDWR,H5P_DEFAULT);
-//  h_config = H5Gcreate(h_file,"MultiChain",0);
-//  int m_version=1;
-//  HDFAttribIO<int> v(m_version);
-//  v.write(h_config,"Version");
-//
-//  int nc=Beads.size();
-//  HDFAttribIO<int> c(nc);
-//  c.write(h_config,"NumberOfBeads");
-//
-//  //typedef Bead::PosType PosType;
-//  typedef Bead::RealType PosType;
-//  typedef Bead::Buffer_t Buffer_t;
-//
-//  Buffer_t chain_buffer,bead_buffer;
-//  (*(this->begin()))->registerData(bead_buffer);
-//  nc=bead_buffer.size();
-//  HDFAttribIO<int> c2(nc);
-//  c2.write(h_config,"BufferSize");
-//
-//  chain_buffer.rewind();
-//  copyToBuffer(chain_buffer);
-//
-//  HDFAttribIO<Buffer_t> mcout(chain_buffer);
-//  mcout.write(h_config,"state");
-//
-//  std::deque<Bead*>::iterator bead_it(this->begin());
-//  std::deque<Bead*>::iterator bead_end(this->end());
-//  //create the group and increment counter
-//  char GrpName[128];
-//  int ibead=0;
-//  while(bead_it != bead_end) {
-//    sprintf(GrpName,"bead%04d",ibead);
-//    hid_t bead_id = H5Gcreate(h_config,GrpName,0);
-//
-//    bead_buffer.rewind();
-//    Bead& bead(**bead_it);
-//    bead.copyToBuffer(bead_buffer);
-//    HDFAttribIO<Buffer_t> bout(bead_buffer);
-//    bout.write(bead_id,"state");
-//
-//    H5Gclose(bead_id);
-//    ++bead_it;
-//    ++ibead;
-//  }
-//  if(h_file>-1) H5Fclose(h_file);
+ hid_t h_file=-1;
+ string h5file=aroot+".config.h5";
+ h_file  =  H5Fopen(h5file.c_str(),H5F_ACC_RDWR,H5P_DEFAULT);
+ h_config = H5Gcreate(h_file,"MultiChain",0);
+ int m_version=1;
+ HDFAttribIO<int> v(m_version);
+ v.write(h_config,"Version");
+
+ int nc=Beads.size();
+ HDFAttribIO<int> c(nc);
+ c.write(h_config,"NumberOfBeads");
+
+ //typedef Bead::PosType PosType;
+ typedef Bead::RealType PosType;
+ typedef Bead::Buffer_t Buffer_t;
+
+ Buffer_t chain_buffer,bead_buffer;
+ (*(this->begin()))->registerData(bead_buffer);
+ nc=bead_buffer.size();
+ HDFAttribIO<int> c2(nc);
+ c2.write(h_config,"BufferSize");
+
+ chain_buffer.rewind();
+ copyToBuffer(chain_buffer);
+
+ HDFAttribIO<Buffer_t> mcout(chain_buffer);
+ mcout.write(h_config,"state");
+
+ std::deque<Bead*>::iterator bead_it(this->begin());
+ std::deque<Bead*>::iterator bead_end(this->end());
+ //create the group and increment counter
+ char GrpName[128];
+ int ibead=0;
+ while(bead_it != bead_end) {
+   sprintf(GrpName,"bead%04d",ibead);
+   hid_t bead_id = H5Gcreate(h_config,GrpName,0);
+
+   bead_buffer.rewind();
+   Bead& bead(**bead_it);
+   bead.copyToBuffer(bead_buffer);
+   HDFAttribIO<Buffer_t> bout(bead_buffer);
+   bout.write(bead_id,"state");
+
+   H5Gclose(bead_id);
+   ++bead_it;
+   ++ibead;
+ }
+ if(h_file>-1) H5Fclose(h_file);
 }
 
 void MultiChain::record() {
-//  //h_config = H5Gopen(h_file,"MultiChain");
-//  cerr<<"in record"<<endl;
-//  typedef Bead::RealType PosType;
-//  typedef Bead::Buffer_t Buffer_t;
-//
-//  Buffer_t chain_buffer,bead_buffer;
-//  (*(this->begin()))->registerData(bead_buffer);
-//  cerr<<"in record 1 "<<endl;
-//  chain_buffer.rewind();
-//  copyToBuffer(chain_buffer);
-//  cerr<<"in record 2 "<<endl;
-//  HDFAttribIO<Buffer_t> mcout(chain_buffer);
-//  mcout.overwrite(h_config,"state");
-//  cerr<<"in record 3"<<endl;
-//  std::deque<Bead*>::iterator bead_it(this->begin());
-//  std::deque<Bead*>::iterator bead_end(this->end());
-//  //create the group and increment counter
-//  char GrpName[128];
-//  int ibead=0;
-//  cerr<<"in record 4"<<endl;
-//  while(bead_it != bead_end) {
-//    cerr<<"in record 5"<<endl;
-//    sprintf(GrpName,"bead%04d",ibead);
-//    hid_t bead_id = H5Gopen(h_config,GrpName);
-//    cerr<<"in record 5p"<<endl;
-//    bead_buffer.rewind();
-//    cerr<<"in record 5pp"<<endl;
-//    Bead& bead(**bead_it);
-//    cerr<<"in record 5ppp"<<endl;
-//    bead.copyToBuffer(bead_buffer);
-//    cerr<<"in record 5a"<<endl;
-//    HDFAttribIO<Buffer_t> bout(bead_buffer);
-//    cerr<<"in record 5b"<<endl;
-//    bout.overwrite(bead_id,"state");
-//    cerr<<"in record 5c"<<endl;
-//    H5Gclose(bead_id);
-//    ++bead_it;
-//    ++ibead;
-//    cerr<<"in record 6"<<endl;
-//  }
-//  cerr<<"in record 7"<<endl;
+ //h_config = H5Gopen(h_file,"MultiChain");
+ typedef Bead::RealType PosType;
+ typedef Bead::Buffer_t Buffer_t;
+
+ Buffer_t chain_buffer,bead_buffer;
+ (*(this->begin()))->registerData(bead_buffer);
+ chain_buffer.rewind();
+ copyToBuffer(chain_buffer);
+ HDFAttribIO<Buffer_t> mcout(chain_buffer);
+ mcout.overwrite(h_config,"state");
+ std::deque<Bead*>::iterator bead_it(this->begin());
+ std::deque<Bead*>::iterator bead_end(this->end());
+ char GrpName[128];
+ int ibead=0;
+ while(bead_it != bead_end) {
+   sprintf(GrpName,"bead%04d",ibead);
+   hid_t bead_id = H5Gopen(h_config,GrpName);
+   bead_buffer.rewind();
+   Bead& bead(**bead_it);
+   bead.copyToBuffer(bead_buffer);
+   HDFAttribIO<Buffer_t> bout(bead_buffer);
+   bout.overwrite(bead_id,"state");
+   H5Gclose(bead_id);
+   ++bead_it;
+   ++ibead;
+ }
 }
 
 bool MultiChain::read(const string& aroot){
@@ -239,65 +224,65 @@ void MultiChain::close()
 }
 
 bool MultiChain::read(hid_t grp){
-//
-//  hid_t hgrp = H5Gopen(grp,"MultiChain");
-//
-//  int m_version=1;
-//  HDFAttribIO<int> v(m_version);
-//  v.read(hgrp,"Version");
-//
-//  int nc(0);
-//  HDFAttribIO<int> c(nc);
-//  c.read(hgrp,"NumberOfBeads");
-//  if(nc != Beads.size()) {
-//    WARNMSG("The number of chains is different. Previous = "  << nc << " Current = " << Beads.size())
-//  }
-//
-//  typedef Bead::RealType PosType;
-//  typedef Bead::Buffer_t Buffer_t;
-//
-//  Buffer_t chain_buffer,bead_buffer;
-//  (*(this->begin()))->registerData(bead_buffer);
-//
-//  HDFAttribIO<int> c2(nc);
-//  c2.read(hgrp,"BufferSize");
-//  if(nc != bead_buffer.size()) {
-//    ERRORMSG("The buffer size is different. Ignore restart data")
-//        H5Gclose(hgrp);
-//    return false;
-//  }
-//
-//  chain_buffer.rewind();
-//  copyToBuffer(chain_buffer);
-//
-//  HDFAttribIO<Buffer_t> mcin(chain_buffer);
-//  mcin.read(hgrp,"state");
-//  chain_buffer.rewind();
-//  copyFromBuffer(chain_buffer);
-//
-//  std::deque<Bead*>::iterator bead_it(this->begin());
-//  std::deque<Bead*>::iterator bead_end(this->end());
-//  //create the group and increment counter
-//  char GrpName[128];
-//  int ibead=0;
-//  while(bead_it != bead_end) {
-//    sprintf(GrpName,"bead%04d",ibead);
-//    hid_t bead_id = H5Gopen(hgrp,GrpName);
-//
-//    Bead& bead(**bead_it);
-//
-//    HDFAttribIO<Buffer_t> bout(bead_buffer);
-//    bout.read(bead_id,"state");
-//
-//    bead_buffer.rewind();
-//    bead.copyFromBuffer(bead_buffer);
-//
-//    H5Gclose(bead_id);
-//    ++bead_it;
-//    ++ibead;
-//  }
-//
-//  H5Gclose(hgrp);
+
+ hid_t hgrp = H5Gopen(grp,"MultiChain");
+
+ int m_version=1;
+ HDFAttribIO<int> v(m_version);
+ v.read(hgrp,"Version");
+
+ int nc(0);
+ HDFAttribIO<int> c(nc);
+ c.read(hgrp,"NumberOfBeads");
+ if(nc != Beads.size()) {
+   WARNMSG("The number of chains is different. Previous = "  << nc << " Current = " << Beads.size())
+ }
+
+ typedef Bead::RealType PosType;
+ typedef Bead::Buffer_t Buffer_t;
+
+ Buffer_t chain_buffer,bead_buffer;
+ (*(this->begin()))->registerData(bead_buffer);
+
+ HDFAttribIO<int> c2(nc);
+ c2.read(hgrp,"BufferSize");
+ if(nc != bead_buffer.size()) {
+   ERRORMSG("The buffer size is different. Ignore restart data")
+       H5Gclose(hgrp);
+   return false;
+ }
+
+ chain_buffer.rewind();
+ copyToBuffer(chain_buffer);
+
+ HDFAttribIO<Buffer_t> mcin(chain_buffer);
+ mcin.read(hgrp,"state");
+ chain_buffer.rewind();
+ copyFromBuffer(chain_buffer);
+
+ std::deque<Bead*>::iterator bead_it(this->begin());
+ std::deque<Bead*>::iterator bead_end(this->end());
+ //create the group and increment counter
+ char GrpName[128];
+ int ibead=0;
+ while(bead_it != bead_end) {
+   sprintf(GrpName,"bead%04d",ibead);
+   hid_t bead_id = H5Gopen(hgrp,GrpName);
+
+   Bead& bead(**bead_it);
+
+   HDFAttribIO<Buffer_t> bout(bead_buffer);
+   bout.read(bead_id,"state");
+
+   bead_buffer.rewind();
+   bead.copyFromBuffer(bead_buffer);
+
+   H5Gclose(bead_id);
+   ++bead_it;
+   ++ibead;
+ }
+
+ H5Gclose(hgrp);
 
   return true;
 }

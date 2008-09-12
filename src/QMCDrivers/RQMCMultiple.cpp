@@ -97,12 +97,13 @@ namespace qmcplusplus {
       nReject = 0;
       block++;
 
-      Reptile->record();
+//       Reptile->record();
       //recordBlock(block);
     } while(block<nBlocks);
 
     Estimators->stop();
 
+    Reptile->record();
     Reptile->close();
 
     return finalize(nBlocks);

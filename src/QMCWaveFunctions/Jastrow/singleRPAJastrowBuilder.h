@@ -60,8 +60,8 @@ namespace qmcplusplus {
 //         ng = 0;
         ng=source.getSpeciesSet().getTotalNum();
 //         J1s = new JneType (source,target);
-      }
-
+    }
+    OrbitalBase* getOrbital();
     bool put(xmlNodePtr cur);
 
 

@@ -122,102 +122,102 @@ namespace qmcplusplus {
     /** copy the restart registerdata to buf 
      * @param buf buffer to write
      */
-    //inline void registerData(Buffer_t& buf) {
-      //buf.add(get_first_address(R),get_last_address(R));
-      //buf.add(get_first_address(Drift),get_last_address(Drift)); 
-      //vector<ParticlePos_t*>::iterator git(Gradients.begin()), git_end(Gradients.end());
-      //while(git != git_end) {
-      //  buf.add(get_first_address(**git),get_last_address(**git)); ++git;
-      //}
+    inline void registerData(Buffer_t& buf) {
+      buf.add(get_first_address(R),get_last_address(R));
+      buf.add(get_first_address(Drift),get_last_address(Drift)); 
+      vector<ParticlePos_t*>::iterator git(Gradients.begin()), git_end(Gradients.end());
+      while(git != git_end) {
+       buf.add(get_first_address(**git),get_last_address(**git)); ++git;
+      }
 
-      //vector<ParticleLaplacian_t*>::iterator lit(Laplacians.begin()), lit_end(Laplacians.end());
-      //while( lit != lit_end){
-      //  buf.add((*lit)->begin(),(*lit)->end());
-      //  lit++;
-      //  //        buf.add(get_first_address(**lit),get_last_address(**lit)); ++lit;
-      //}
+      vector<ParticleLaplacian_t*>::iterator lit(Laplacians.begin()), lit_end(Laplacians.end());
+      while( lit != lit_end){
+       buf.add((*lit)->begin(),(*lit)->end());
+       lit++;
+       //        buf.add(get_first_address(**lit),get_last_address(**lit)); ++lit;
+      }
 
-      //git=(DriftVectors.begin()); git_end=(DriftVectors.end());
-      //while(git != git_end) {
-      //  buf.add(get_first_address(**git),get_last_address(**git)); ++git;
-      //}
-      //buf.add(BeadSignWgt.begin(),BeadSignWgt.end());
-      //buf.add(TransProb[0]);
-      //buf.add(TransProb[1]);
-      //buf.add(Action.begin(),Action.end());
-      //buf.add(Properties.begin(),Properties.end());
-      //buf.add(deltaRSquared.begin(),deltaRSquared.end());
-    //}
+      git=(DriftVectors.begin()); git_end=(DriftVectors.end());
+      while(git != git_end) {
+       buf.add(get_first_address(**git),get_last_address(**git)); ++git;
+      }
+      buf.add(BeadSignWgt.begin(),BeadSignWgt.end());
+      buf.add(TransProb[0]);
+      buf.add(TransProb[1]);
+      buf.add(Action.begin(),Action.end());
+      buf.add(Properties.begin(),Properties.end());
+      buf.add(deltaRSquared.begin(),deltaRSquared.end());
+    }
 
     /** copy the restart data from buf 
      * @param buf buffer to read from
      */
-    //inline void copyFromBuffer(Buffer_t& buf) {
-      //buf.get(get_first_address(R),get_last_address(R));
-      //buf.get(get_first_address(Drift),get_last_address(Drift)); 
-      //vector<ParticlePos_t*>::iterator git(Gradients.begin()), git_end(Gradients.end());
-      //while(git != git_end) {
-      //  buf.get(get_first_address(**git),get_last_address(**git)); ++git;
-      //}
+    inline void copyFromBuffer(Buffer_t& buf) {
+      buf.get(get_first_address(R),get_last_address(R));
+      buf.get(get_first_address(Drift),get_last_address(Drift)); 
+      vector<ParticlePos_t*>::iterator git(Gradients.begin()), git_end(Gradients.end());
+      while(git != git_end) {
+       buf.get(get_first_address(**git),get_last_address(**git)); ++git;
+      }
 
 
-      //vector<ParticleLaplacian_t*>::iterator lit(Laplacians.begin()), lit_end(Laplacians.end());
-      //while(lit != lit_end) {
-      //  //        buf.get(get_first_address(**lit),get_last_address(**lit));
-      //  buf.get((*lit)->begin(),(*lit)->end());
-      //  ++lit;
-      //}
+      vector<ParticleLaplacian_t*>::iterator lit(Laplacians.begin()), lit_end(Laplacians.end());
+      while(lit != lit_end) {
+       //        buf.get(get_first_address(**lit),get_last_address(**lit));
+       buf.get((*lit)->begin(),(*lit)->end());
+       ++lit;
+      }
 
-      //
-      //
+      
+      
 
-      //git=(DriftVectors.begin()); git_end=(DriftVectors.end());
-      //while(git != git_end) {
-      //  buf.get(get_first_address(**git),get_last_address(**git)); ++git;
-      //}
-      ////buf.get(BeadSignWgt.begin(),BeadSignWgt.end());
-      //for(int i=0; i<BeadSignWgt.size(); i++) buf.get(BeadSignWgt[i]);
-      //buf.get(TransProb[0]);
-      //buf.get(TransProb[1]);
-      //buf.get(Action.begin(),Action.end());
-      //buf.get(Properties.begin(),Properties.end());
+      git=(DriftVectors.begin()); git_end=(DriftVectors.end());
+      while(git != git_end) {
+       buf.get(get_first_address(**git),get_last_address(**git)); ++git;
+      }
+      //buf.get(BeadSignWgt.begin(),BeadSignWgt.end());
+      for(int i=0; i<BeadSignWgt.size(); i++) buf.get(BeadSignWgt[i]);
+      buf.get(TransProb[0]);
+      buf.get(TransProb[1]);
+      buf.get(Action.begin(),Action.end());
+      buf.get(Properties.begin(),Properties.end());
 
-      //buf.get(deltaRSquared.begin(),deltaRSquared.end());
-    //}
+      buf.get(deltaRSquared.begin(),deltaRSquared.end());
+    }
 
     /** copy the restart data to buf 
      * @param buf buffer to write
      */
-    //inline void copyToBuffer(Buffer_t& buf) {
-      //buf.put(get_first_address(R),get_last_address(R));
-      //buf.put(get_first_address(Drift),get_last_address(Drift)); 
-      //vector<ParticlePos_t*>::iterator git(Gradients.begin()), git_end(Gradients.end());
-      //while(git != git_end) {
-      //  buf.put(get_first_address(**git),get_last_address(**git)); ++git;
-      //}
+    inline void copyToBuffer(Buffer_t& buf) {
+      buf.put(get_first_address(R),get_last_address(R));
+      buf.put(get_first_address(Drift),get_last_address(Drift)); 
+      vector<ParticlePos_t*>::iterator git(Gradients.begin()), git_end(Gradients.end());
+      while(git != git_end) {
+       buf.put(get_first_address(**git),get_last_address(**git)); ++git;
+      }
 
 
-      //
-      //vector<ParticleLaplacian_t*>::iterator lit(Laplacians.begin()), lit_end(Laplacians.end());
-      //while(lit != lit_end) {
-      //  //        buf.get(get_first_address(**lit),get_last_address(**lit));
-      //  buf.put((*lit)->begin(),(*lit)->end());
-      //  ++lit;
-      //}
+      
+      vector<ParticleLaplacian_t*>::iterator lit(Laplacians.begin()), lit_end(Laplacians.end());
+      while(lit != lit_end) {
+       //        buf.get(get_first_address(**lit),get_last_address(**lit));
+       buf.put((*lit)->begin(),(*lit)->end());
+       ++lit;
+      }
 
 
-      //git=(DriftVectors.begin()); git_end=(DriftVectors.end());
-      //while(git != git_end) {
-      //  buf.put(get_first_address(**git),get_last_address(**git)); ++git;
-      //}
-      //buf.put(BeadSignWgt.begin(),BeadSignWgt.end());
-      //buf.put(TransProb[0]);
-      //buf.put(TransProb[1]);
-      //buf.put(Action.begin(),Action.end());
-      //buf.put(Properties.begin(),Properties.end());
+      git=(DriftVectors.begin()); git_end=(DriftVectors.end());
+      while(git != git_end) {
+       buf.put(get_first_address(**git),get_last_address(**git)); ++git;
+      }
+      buf.put(BeadSignWgt.begin(),BeadSignWgt.end());
+      buf.put(TransProb[0]);
+      buf.put(TransProb[1]);
+      buf.put(Action.begin(),Action.end());
+      buf.put(Properties.begin(),Properties.end());
 
-      //buf.put(deltaRSquared.begin(),deltaRSquared.end());
-    //}
+      buf.put(deltaRSquared.begin(),deltaRSquared.end());
+    }
 
     inline void getDrift(vector<RealType>& LogNorm) {
       int npsi(Properties.rows());
