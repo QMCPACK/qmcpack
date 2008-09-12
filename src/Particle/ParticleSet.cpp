@@ -172,7 +172,7 @@ namespace qmcplusplus {
   void ParticleSet::update(const ParticlePos_t& pos) { 
     R = pos;
     for(int i=0; i< DistTables.size(); i++) DistTables[i]->evaluate(*this);
-    if(SK) SK->UpdateAllPart();
+    if(SK && !SK->DoUpdate) SK->UpdateAllPart();
   }  
 
 
@@ -195,7 +195,7 @@ namespace qmcplusplus {
     
     R[iat]=newpos;
     //Do not change SK: 2007-05-18
-    //if(SK) SK->makeMove(iat,newpos);
+    if(SK && SK->DoUpdate) SK->makeMove(iat,newpos);
     return newpos;
   }
 
@@ -219,7 +219,11 @@ namespace qmcplusplus {
         DistTables[i]->update(iat);
       }
       //Do not change SK: 2007-05-18
-      //if(SK) SK->acceptMove(iat);
+      if(SK && SK->DoUpdate) SK->acceptMove(iat);
+    }
+    else
+    {
+      APP_ABORT("  Illegal acceptMove ");
     }
   }
 
@@ -227,7 +231,7 @@ namespace qmcplusplus {
     //restore the position by the saved activePos
     R[iat]=activePos;
     //Do not change SK: 2007-05-18
-    //if(SK) SK->rejectMove(iat);
+    //if(SK && SK->DoUpdate) SK->rejectMove(iat);
   }
 
   /** resize Sphere by the LocalNum
