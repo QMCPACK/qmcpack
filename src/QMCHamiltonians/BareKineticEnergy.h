@@ -46,8 +46,6 @@ namespace qmcplusplus {
     RealType M;
     ///\f$ 1/(2 m^*) \f$
     RealType OneOver2M;
-    ///value saved for update
-    RealType NewValue;
     
     ParticleSet::ParticleGradient_t Gtmp;
     ParticleSet::ParticleLaplacian_t Ltmp;
