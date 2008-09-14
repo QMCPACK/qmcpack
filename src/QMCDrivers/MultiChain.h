@@ -8,13 +8,10 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
-//   Department of Physics, Ohio State University
-//   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 #ifndef QMCPLUSPLUS_MULTICHAIN_H
@@ -47,7 +44,7 @@ namespace qmcplusplus {
     RealType TransProb[2];
     
     //Extra Observable Spots for Pressure, etc.
-    vector<RealType> deltaRSquared;
+    Vector<RealType> deltaRSquared;
     int stepmade;
 
     inline Bead(const Bead& a) {
@@ -91,7 +88,8 @@ namespace qmcplusplus {
       deltaRSquared=a.deltaRSquared;
     }
 
-    inline void Resize_Grad_and_Action(int n, int m){
+    inline void Resize_Grad_and_Action(int n, int m)
+    {
       int curg=Gradients.size();
       while(curg<n) {
         Gradients.push_back(new ParticlePos_t(m));
@@ -106,118 +104,14 @@ namespace qmcplusplus {
       }
       
       deltaRSquared.resize(3);
-      deltaRSquared[0]=0.0;
-      deltaRSquared[1]=0.0;
-      deltaRSquared[2]=0.0;
-      
+      deltaRSquared=0.0;
       Action.resize(n,3);
-      for(int i=0;i<n;i++){
-        Action(i,0)=0.0;
-        Action(i,1)=0.0;
-        Action(i,2)=0.0;
-      };
+      Action=0.0;
     }
 
-
-    /** copy the restart registerdata to buf 
-     * @param buf buffer to write
-     */
-    inline void registerData(Buffer_t& buf) {
-      buf.add(get_first_address(R),get_last_address(R));
-      buf.add(get_first_address(Drift),get_last_address(Drift)); 
-      vector<ParticlePos_t*>::iterator git(Gradients.begin()), git_end(Gradients.end());
-      while(git != git_end) {
-       buf.add(get_first_address(**git),get_last_address(**git)); ++git;
-      }
-
-      vector<ParticleLaplacian_t*>::iterator lit(Laplacians.begin()), lit_end(Laplacians.end());
-      while( lit != lit_end){
-       buf.add((*lit)->begin(),(*lit)->end());
-       lit++;
-       //        buf.add(get_first_address(**lit),get_last_address(**lit)); ++lit;
-      }
-
-      git=(DriftVectors.begin()); git_end=(DriftVectors.end());
-      while(git != git_end) {
-       buf.add(get_first_address(**git),get_last_address(**git)); ++git;
-      }
-      buf.add(BeadSignWgt.begin(),BeadSignWgt.end());
-      buf.add(TransProb[0]);
-      buf.add(TransProb[1]);
-      buf.add(Action.begin(),Action.end());
-      buf.add(Properties.begin(),Properties.end());
-      buf.add(deltaRSquared.begin(),deltaRSquared.end());
-    }
-
-    /** copy the restart data from buf 
-     * @param buf buffer to read from
-     */
-    inline void copyFromBuffer(Buffer_t& buf) {
-      buf.get(get_first_address(R),get_last_address(R));
-      buf.get(get_first_address(Drift),get_last_address(Drift)); 
-      vector<ParticlePos_t*>::iterator git(Gradients.begin()), git_end(Gradients.end());
-      while(git != git_end) {
-       buf.get(get_first_address(**git),get_last_address(**git)); ++git;
-      }
-
-
-      vector<ParticleLaplacian_t*>::iterator lit(Laplacians.begin()), lit_end(Laplacians.end());
-      while(lit != lit_end) {
-       //        buf.get(get_first_address(**lit),get_last_address(**lit));
-       buf.get((*lit)->begin(),(*lit)->end());
-       ++lit;
-      }
-
-      
-      
-
-      git=(DriftVectors.begin()); git_end=(DriftVectors.end());
-      while(git != git_end) {
-       buf.get(get_first_address(**git),get_last_address(**git)); ++git;
-      }
-      //buf.get(BeadSignWgt.begin(),BeadSignWgt.end());
-      for(int i=0; i<BeadSignWgt.size(); i++) buf.get(BeadSignWgt[i]);
-      buf.get(TransProb[0]);
-      buf.get(TransProb[1]);
-      buf.get(Action.begin(),Action.end());
-      buf.get(Properties.begin(),Properties.end());
-
-      buf.get(deltaRSquared.begin(),deltaRSquared.end());
-    }
-
-    /** copy the restart data to buf 
-     * @param buf buffer to write
-     */
-    inline void copyToBuffer(Buffer_t& buf) {
-      buf.put(get_first_address(R),get_last_address(R));
-      buf.put(get_first_address(Drift),get_last_address(Drift)); 
-      vector<ParticlePos_t*>::iterator git(Gradients.begin()), git_end(Gradients.end());
-      while(git != git_end) {
-       buf.put(get_first_address(**git),get_last_address(**git)); ++git;
-      }
-
-
-      
-      vector<ParticleLaplacian_t*>::iterator lit(Laplacians.begin()), lit_end(Laplacians.end());
-      while(lit != lit_end) {
-       //        buf.get(get_first_address(**lit),get_last_address(**lit));
-       buf.put((*lit)->begin(),(*lit)->end());
-       ++lit;
-      }
-
-
-      git=(DriftVectors.begin()); git_end=(DriftVectors.end());
-      while(git != git_end) {
-       buf.put(get_first_address(**git),get_last_address(**git)); ++git;
-      }
-      buf.put(BeadSignWgt.begin(),BeadSignWgt.end());
-      buf.put(TransProb[0]);
-      buf.put(TransProb[1]);
-      buf.put(Action.begin(),Action.end());
-      buf.put(Properties.begin(),Properties.end());
-
-      buf.put(deltaRSquared.begin(),deltaRSquared.end());
-    }
+    void registerData(Buffer_t& buf);
+    void copyFromBuffer(Buffer_t& buf);
+    void copyToBuffer(Buffer_t& buf);
 
     inline void getDrift(vector<RealType>& LogNorm) {
       int npsi(Properties.rows());
@@ -308,6 +202,11 @@ namespace qmcplusplus {
     
     //age of entire reptile, number of steps taken.
     int Age;
+
+    ///size of bead buffe for each Bead
+    int BeadBufferSize;
+    ///size of MultiChain buffer for the collective data
+    int MyBufferSize;
 
     ///hdf5 handle to multichain
     hid_t h_config;
