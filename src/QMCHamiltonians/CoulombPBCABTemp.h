@@ -59,8 +59,6 @@ namespace qmcplusplus {
     /*@{
      * @brief temporary data for pbyp evaluation
      */
-    ///new value for the proposed move
-    RealType NewValue;
     ///short-range part for the moved particle
     RealType SRtmp;
     ///long-range part for the moved particle
