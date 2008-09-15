@@ -320,7 +320,6 @@ namespace qmcplusplus {
 #else
       curRatio= DetRatio(psiM_temp, psiV.begin(),WorkingIndex);
 #endif
-
 #ifdef QMC_COMPLEX
       if(norm(curRatio)<numeric_limits<RealType>::epsilon()) 
       {
@@ -328,7 +327,7 @@ namespace qmcplusplus {
         return 0.0;
       }
 #else
-      if(curRatio<numeric_limits<RealType>::epsilon()) 
+      if(abs(curRatio)<numeric_limits<RealType>::epsilon()) 
       {
         UseRatioOnly=true;
         return 0.0;
