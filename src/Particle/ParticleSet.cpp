@@ -32,18 +32,29 @@ namespace qmcplusplus {
     initPropertyList();
   }
 
-  ParticleSet::ParticleSet(const ParticleSet& p): SK(0), mySpecies(p.getSpeciesSet()), ParentTag(p.tag()){
+  ParticleSet::ParticleSet(const ParticleSet& p): SK(0), mySpecies(p.getSpeciesSet()), 
+  ParentTag(p.tag())
+  {
     initBase();
     initParticleSet();
     assign(p);
 
-    if(p.SK) 
-    {
-      createSK();
-    }
+    ostringstream o;
+    o<<p.getName()<<ObjectTag;
+    this->setName(o.str());
 
     PropertyList.Names=p.PropertyList.Names;
     PropertyList.Values=p.PropertyList.Values;
+
+    //construct the distance tables with the same order
+    //first is always for this-this paier
+    for(int i=1;i<p.DistTables.size(); ++i) addTable(p.DistTables[i]->origin());
+
+    if(p.SK) 
+    {
+      createSK();
+      SK->DoUpdate=p.SK->DoUpdate;
+    }
   }
 
 
@@ -130,6 +141,7 @@ namespace qmcplusplus {
       //add  this-this pair
       myDistTableMap.clear();
       myDistTableMap[ObjectTag]=0;
+      app_log() << "  ... ParticleSet::addTable Create Table #0 " << DistTables[0]->Name << endl;
     }
 
     if(psrc.tag() == ObjectTag) return 0;
@@ -141,9 +153,13 @@ namespace qmcplusplus {
       tid=DistTables.size();
       DistTables.push_back(createDistanceTable(psrc,*this));
       myDistTableMap[psrc.tag()]=tid;
+      app_log() << "  ... ParticleSet::addTable Create Table #" << tid << " " << DistTables[tid]->Name <<endl;
     }
     else
+    {
+      app_log() << "  ... ParticleSet::addTable Reuse Table #" << tid << " " << DistTables[tid]->Name << endl;
       tid = (*tit).second;
+    }
     return tid;
   }
 
@@ -189,19 +205,18 @@ namespace qmcplusplus {
     activePtcl=iat;
     activePos=R[iat]; //save the current position
     SingleParticlePos_t newpos(activePos+displ);
-    for(int i=0; i< DistTables.size(); i++) {
-      DistTables[i]->move(*this,newpos,iat);
-    } 
+    for(int i=0; i< DistTables.size(); ++i) DistTables[i]->move(*this,newpos,iat);
     
     R[iat]=newpos;
     //Do not change SK: 2007-05-18
+    //Change SK only if DoUpdate is true: 2008-09-12
     if(SK && SK->DoUpdate) SK->makeMove(iat,newpos);
     return newpos;
   }
 
   void
   ParticleSet::makeMoveOnSphere(Index_t iat, const SingleParticlePos_t& displ) {
-    for(int i=0; i< DistTables.size(); i++) {
+    for(int i=0; i< DistTables.size(); ++i) {
       DistTables[i]->moveOnSphere(*this,displ,iat);
     }
   }
@@ -310,7 +325,7 @@ namespace qmcplusplus {
     //if(SK) SK->copyToBuffer(buf);
     if(SK)
     {//need to calculate the Sk with the current position
-      SK->UpdateAllPart();
+      if(!SK->DoUpdate) SK->UpdateAllPart();
       SK->copyToBuffer(buf);
     }
   }

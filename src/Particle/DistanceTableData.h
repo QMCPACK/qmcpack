@@ -54,14 +54,24 @@ namespace qmcplusplus {
   };
 
   /** @defgroup nnlist Distance-table group
-   * @brief Classes to manage a set of data for distance relations between ParticleSet objects.
+   * @brief class to manage a set of data for distance relations between ParticleSet objects.
    */
   template<class T, unsigned N>
   struct TempDisplacement {
-    T r1,rinv1,r0,rinv0;
-    TinyVector<T,N> dr0, dr1;
+    ///new distance
+    T r1;
+    ///inverse of the new distance
+    T rinv1;
+    ///new displacement
+    TinyVector<T,N> dr1;
+    ///old distance
+    T r0;
+    ///inverse of old distance
+    T rinv0;
+    ///old displacement
+    TinyVector<T,N> dr0;
     inline TempDisplacement():r1(0.0),rinv1(0.0),r0(0.0),rinv0(0.0) {}
-    inline void reset() {r1=0.0;rinv1=0.0;r0=0.0;rinv0=0.0;dr0=0.0;dr1=0.0;}
+    inline void reset() {r1=0.0;rinv1=0.0;dr1=0.0;r0=0.0;rinv0=0.0;dr0=0.0;}
   };
 
 

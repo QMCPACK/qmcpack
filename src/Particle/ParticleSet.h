@@ -81,6 +81,12 @@ namespace qmcplusplus {
     ///differential laplacians of the particles
     ParticleLaplacian_t dL;
    
+    ///the indexp of the active particle for particle-by-particle moves
+    Index_t activePtcl;
+
+    ///the position of the active particle for particle-by-particle moves
+    SingleParticlePos_t activePos;
+
     ///SpeciesSet of particles
     SpeciesSet mySpecies;
 
@@ -255,12 +261,6 @@ namespace qmcplusplus {
 
     ///id of the parent
     Index_t ParentTag;
-
-    ///the indexp of the active particle for particle-by-particle moves
-    Index_t activePtcl;
-
-    ///the position of the active particle for particle-by-particle moves
-    SingleParticlePos_t activePos;
 
     /** map to handle distance tables
      *
