@@ -79,7 +79,8 @@ void StructFact::resize()
 
 void 
 StructFact::UpdateAllPart() {
-  if(!DoUpdate) FillRhok();
+  //if(!DoUpdate) FillRhok();
+  FillRhok();
 }
 
 
