@@ -1,12 +1,11 @@
 //////////////////////////////////////////////////////////////////
-// (c) Copyright 1998-2002 by Jeongnim Kim
-//
+// (c) Copyright 1998-2002,2003- by Jeongnim Kim
+//////////////////////////////////////////////////////////////////
 //   National Center for Supercomputing Applications &
 //   Materials Computation Center
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
@@ -21,13 +20,15 @@ using namespace std;
 
 SpeciesSet::SpeciesSet() {
   TotalNum = 0;  
-  speciesName.reserve(10); 
-  attribName.reserve(10);
+  speciesName.reserve(4); 
+  attribName.reserve(4);
 }
 
-SpeciesSet::~SpeciesSet() {
-  AttribList_t::iterator dit = d_attrib.begin();      
-  for(; dit != d_attrib.end(); ++dit) delete (*dit);
+SpeciesSet::~SpeciesSet() 
+{
+  AttribList_t::iterator it(d_attrib.begin());
+  AttribList_t::iterator it_end(d_attrib.end());
+  while(it != it_end) { delete *it; ++it;}
 }
 
 
@@ -66,7 +67,8 @@ int SpeciesSet::addAttribute(const string& aname) {
 SpeciesSet::SpeciesSet(const SpeciesSet& species):
   TotalNum(species.TotalNum),
   speciesName(species.speciesName),
-  attribName(species.attribName) {
+  attribName(species.attribName) 
+{
   AttribList_t::const_iterator dit(species.d_attrib.begin());
   AttribList_t::const_iterator dit_end(species.d_attrib.end());
   while(dit != dit_end) {
@@ -75,19 +77,20 @@ SpeciesSet::SpeciesSet(const SpeciesSet& species):
 }
                                                                                                                                                                
 SpeciesSet& SpeciesSet::operator=(const SpeciesSet& species) {
-                                                                                                                                                               
-  TotalNum = species.TotalNum;
-  speciesName = species.speciesName;
-  attribName = species.attribName;
-  AttribList_t::iterator it(d_attrib.begin());
-  AttribList_t::iterator it_end(d_attrib.end());
-  while(it != it_end) { delete *it; ++it;}
-  d_attrib.clear();
-                                                                                                                                                               
-  AttribList_t::const_iterator dit(species.d_attrib.begin());
-  AttribList_t::const_iterator dit_end(species.d_attrib.end());
-  while(dit != dit_end) {
-    d_attrib.push_back(new SpeciesAttrib_t(**dit));++dit;
+  if(this != &species)
+  {
+    TotalNum = species.TotalNum;
+    speciesName = species.speciesName;
+    attribName = species.attribName;
+    AttribList_t::iterator it(d_attrib.begin());
+    AttribList_t::iterator it_end(d_attrib.end());
+    while(it != it_end) { delete *it; ++it;}
+    d_attrib.clear();
+    AttribList_t::const_iterator dit(species.d_attrib.begin());
+    AttribList_t::const_iterator dit_end(species.d_attrib.end());
+    while(dit != dit_end) {
+      d_attrib.push_back(new SpeciesAttrib_t(**dit));++dit;
+    }
   }
   return *this;
 }
