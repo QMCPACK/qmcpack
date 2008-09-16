@@ -315,10 +315,19 @@ bool XMLParticleParser::putSpecial(xmlNodePtr cur) {
   }
 
   int membersize= tspecies.addAttribute("membersize");
-  for(int ig=0; ig<tspecies.getTotalNum(); ig++) {
+
+  for(int ig=0; ig<tspecies.getTotalNum(); ++ig) {
     tspecies(membersize,ig)=numPerGroup[ig];
   }
 
+  int beforemass=tspecies.numAttributes();
+  int massind= tspecies.addAttribute("mass");
+  if(beforemass == massind)
+  {
+    app_log() << "  XMLParticleParser setting mass of  " << ref_.getName() << " to 1.0" << endl;
+    for(int ig=0; ig<tspecies.getTotalNum(); ++ig) 
+      tspecies(massind,ig)=1.0; 
+  }
   //Check the unit of ParticleSet::R and PBC
   ref_.createSK();
 
