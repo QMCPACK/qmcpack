@@ -95,7 +95,8 @@ namespace qmcplusplus {
     myG=0.0;
     myL=0.0;
 
-    ValueType x=evaluate(P,myG,myL); 
+    //ValueType x=evaluate(P,myG,myL); 
+    ValueType x=evaluateLog(P,myG,myL); 
 
     P.G += myG;
     P.L += myL;
@@ -108,7 +109,8 @@ namespace qmcplusplus {
     buf.add(FirstAddressOfG,LastAddressOfG);
     buf.add(CurrentDet);
 
-    return CurrentDet;
+    return LogValue;
+    //return CurrentDet;
   }
 
   DiracDeterminantBase::ValueType DiracDeterminantBase::updateBuffer(ParticleSet& P, 
@@ -118,7 +120,8 @@ namespace qmcplusplus {
     myL=0.0;
 
     if(fromscratch)
-      ValueType x=evaluate(P,myG,myL);
+      ValueType x=evaluateLog(P,myG,myL);
+      //ValueType x=evaluate(P,myG,myL);
     else
     {
       Phi->evaluate(P, FirstIndex, LastIndex, psiM_temp,dpsiM, d2psiM);    
@@ -412,6 +415,88 @@ namespace qmcplusplus {
         }
       }
       return CurrentDet;
+    }
+
+  /** invert a matrix                                                                                                                                          
+   * \param M a matrix to be inverted                                                                                                                          
+   * \param getdet bool, if true, calculate the determinant                                                                                                    
+   * \return the determinant                                                                                                                                   
+   */
+  template<class MatrixA>
+    inline double
+    InvertLog(MatrixA& M, bool getdet,double &sign_det) 
+    {
+    //invert_matrix_log(MatrixA& M, bool getdet,double &sign_det) {
+
+      typedef typename MatrixA::value_type value_type;
+      Vector<int> pivot(M.rows());
+      Vector<value_type> work(M.rows());
+      int status;
+
+      dgetrf(M.rows(), M.cols(), M.data(), M.rows(), pivot.data(), status);
+
+      value_type det0 = 1.0;
+      value_type detp = 0.0;
+      //  double sign_det=0.0;                                                                                                                                   
+      sign_det=1.0;
+      if(getdet) {// calculate determinant                                                                                                                       
+        int sign = 1;
+        for(int i=0; i<M.rows(); ++i){
+          if(pivot[i] != i+1) sign *= -1;
+          det0 *= M(i,i);
+          detp += std::log(abs(M(i,i)));
+          //      sign_det += (sign(M(i,i)>0)? 1:0;                                                                                                              
+          sign_det *= M(i,i)>0 ? 1: -1;
+        }
+
+        det0 *= static_cast<value_type>(sign);
+        sign_det*= static_cast<value_type>(sign);
+        //double expdetp = sign_det*std::exp(detp);
+        //cerr<<"DETS ARE NOW "<<det0<<" "<<expdetp<<" "<<detp<<endl;
+      }
+
+      dgetri(M.rows(), M.data(),  M.rows(), pivot.data(), work.data(),
+          M.rows(), status);
+      return detp;
+    }
+
+  DiracDeterminantBase::ValueType
+    DiracDeterminantBase::evaluateLog(ParticleSet& P, 
+        ParticleSet::ParticleGradient_t& G, 
+        ParticleSet::ParticleLaplacian_t& L)
+    {
+
+      Phi->evaluate(P, FirstIndex, LastIndex, psiM,dpsiM, d2psiM);
+
+      if(NumPtcls==1) {
+        CurrentDet=psiM(0,0);
+        ValueType y=1.0/CurrentDet;
+        psiM(0,0)=y;
+        GradType rv = y*dpsiM(0,0);
+        G(FirstIndex) += rv;
+        L(FirstIndex) += y*d2psiM(0,0) - dot(rv,rv);
+
+        DetSign=(CurrentDet>0)?1.0:-1.0;
+      } else {
+        //CurrentDet = Invert(psiM.data(),NumPtcls,NumOrbitals, WorkSpace.data(), Pivot.data());
+        LogValue=InvertLog(psiM,true,DetSign);
+        CurrentDet=DetSign*std::exp(LogValue);
+
+        const ValueType* restrict yptr=psiM.data();
+        const ValueType* restrict d2yptr=d2psiM.data();
+        const GradType* restrict dyptr=dpsiM.data();
+        for(int i=0, iat=FirstIndex; i<NumPtcls; i++, iat++) {
+          GradType rv;
+          ValueType lap=0.0;
+          for(int j=0; j<NumOrbitals; j++,yptr++) {
+            rv += *yptr * *dyptr++;
+            lap += *yptr * *d2yptr++;
+          }
+          G(iat) += rv;
+          L(iat) += lap - dot(rv,rv);
+        }
+      }
+      return LogValue;
     }
 
   OrbitalBasePtr DiracDeterminantBase::makeClone(ParticleSet& tqp) const

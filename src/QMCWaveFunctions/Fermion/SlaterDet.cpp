@@ -78,32 +78,52 @@ namespace qmcplusplus {
         ParticleSet::ParticleGradient_t& G, 
         ParticleSet::ParticleLaplacian_t& L) 
     {
-      //@attention BasisSet::evaluate is to be called but the due to the bugs, it is commented out.
-      //if(BasisSet == 0) 
-      //{
-      //  ERRORMSG("SlaterDet::BasisSet is not assigned")
-      //  OHMMS::Controller->abort();
-      //}
-      //BasisSet->evaluate(P);
-      ValueType psi = 1.0;
-      for(int i=0; i<Dets.size(); i++) psi *= Dets[i]->evaluate(P,G,L);
-      return LogValue = evaluateLogAndPhase(psi,PhaseValue);
+      //ValueType psi = 1.0;
+      //for(int i=0; i<Dets.size(); i++) psi *= Dets[i]->evaluate(P,G,L);
+      //return LogValue = evaluateLogAndPhase(psi,PhaseValue);
+      LogValue=0.0;
+      RealType sign_tot = 1.0;
+      for(int i=0; i<Dets.size(); ++i)
+      {
+        LogValue+=Dets[i]->evaluateLog(P,G,L);
+        sign_tot *=Dets[i]->DetSign;
+      }
+      evaluateLogAndPhase(sign_tot,PhaseValue);
+      return LogValue;
     }
 
   SlaterDet::ValueType SlaterDet::registerData(ParticleSet& P, PooledData<RealType>& buf)
   {
-    ValueType psi = 1.0;
-    for(int i=0; i<Dets.size(); i++) 
-      psi *= Dets[i]->registerData(P,buf);
-    return LogValue = evaluateLogAndPhase(psi,PhaseValue);
+    //ValueType psi = 1.0;
+    //for(int i=0; i<Dets.size(); i++) 
+    //  psi *= Dets[i]->registerData(P,buf);
+    //return LogValue = evaluateLogAndPhase(psi,PhaseValue);
+    LogValue=0.0;
+    RealType sign_tot = 1.0;
+    for(int i=0; i<Dets.size(); ++i)
+    {
+      LogValue+=Dets[i]->registerData(P,buf);
+      sign_tot *=Dets[i]->DetSign;
+    }
+    evaluateLogAndPhase(sign_tot,PhaseValue);
+    return LogValue;
   }
 
   SlaterDet::ValueType SlaterDet::updateBuffer(ParticleSet& P, PooledData<RealType>& buf,
       bool fromscratch)
   {
-    ValueType psi = 1.0;
-    for(int i=0; i<Dets.size(); i++) psi *= Dets[i]->updateBuffer(P,buf,fromscratch);
-    return LogValue = evaluateLogAndPhase(psi,PhaseValue);
+    //ValueType psi = 1.0;
+    //for(int i=0; i<Dets.size(); i++) psi *= Dets[i]->updateBuffer(P,buf,fromscratch);
+    //return LogValue = evaluateLogAndPhase(psi,PhaseValue);
+    LogValue=0.0;
+    RealType sign_tot = 1.0;
+    for(int i=0; i<Dets.size(); ++i)
+    {
+      LogValue+=Dets[i]->updateBuffer(P,buf,fromscratch);
+      sign_tot *=Dets[i]->DetSign;
+    }
+    evaluateLogAndPhase(sign_tot,PhaseValue);
+    return LogValue;
   }
 
   void SlaterDet::copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf) 

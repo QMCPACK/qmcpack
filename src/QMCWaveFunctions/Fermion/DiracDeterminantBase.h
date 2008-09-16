@@ -156,10 +156,7 @@ namespace qmcplusplus {
     ValueType
     evaluateLog(ParticleSet& P, 
 	        ParticleSet::ParticleGradient_t& G, 
-	        ParticleSet::ParticleLaplacian_t& L) {
-      std::cerr << "DiracDeterminantBase::evaluateLog should never be called directly" << std::endl;
-      return 0.0;
-    }
+	        ParticleSet::ParticleLaplacian_t& L) ;
 
 
     ValueType
@@ -192,7 +189,8 @@ namespace qmcplusplus {
 
     ///Current determinant value
     ValueType CurrentDet;
-
+    ///the sign of determinant
+    RealType DetSign;
     /// psiM(j,i) \f$= \psi_j({\bf r}_i)\f$
     ValueMatrix_t psiM, psiM_temp;
 
