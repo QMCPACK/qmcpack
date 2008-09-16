@@ -177,32 +177,33 @@ namespace qmcplusplus {
             BP-> put(cur);
             targetH->addOperator(BP,"HePress",false);
           } else if (estType=="RPAZVZB"){
-            ParticleSet* source;
-            bool withSource=false;
+            RPAPressure* BP= new RPAPressure(*targetPtcl);
             
+            ParticleSet* Isource;
+            bool withSource=false;
             xmlNodePtr tcur = cur->children;
             while(tcur != NULL) {
               string cname((const char*)tcur->name);
               if(cname == "OneBody") 
               {
+                string PsiName="psi0";
                 withSource=true;
-                string a("ion0");
+//                 string in0("ion0");
                 OhmmsAttributeSet hAttrib;
-                hAttrib.add(a,"source"); 
+//                 hAttrib.add(in0,"source");
+                hAttrib.add(PsiName,"psi"); 
                 hAttrib.put(tcur);
-                renameProperty(a);
-                PtclPoolType::iterator pit(ptclPool.find(a));
+//                 renameProperty(a);
+                PtclPoolType::iterator pit(ptclPool.find(sourceInp));
                 if(pit == ptclPool.end()) {
-                  ERRORMSG("Missing source ParticleSet" << a)
+                  ERRORMSG("Missing source ParticleSet" << sourceInp)
                 }
-                source = (*pit).second;
+                Isource = (*pit).second;
+                BP-> put(cur, *targetPtcl,*Isource,*(psiPool[PsiName]->targetPsi));
               }
               tcur = tcur->next;
             }
-
-            RPAPressure* BP= new RPAPressure(*targetPtcl);;
-            if (withSource) BP-> put(cur, *targetPtcl,*source);
-            else BP-> put(cur, *targetPtcl);
+            if (!withSource) BP-> put(cur, *targetPtcl);
             targetH->addOperator(BP,BP->MyName,false);
           }
         }

@@ -51,7 +51,7 @@ namespace qmcplusplus {
 
     singleRPAJastrowBuilder(ParticleSet& target, TrialWaveFunction& psi,
 			 ParticleSet& source) : 
-        OrbitalBuilderBase(target,psi), sourcePtcl(&source), myHandler(0) {
+        OrbitalBuilderBase(target,psi), sourcePtcl(&source), myHandler(0),J1s(0) {
         tlen = std::pow(3.0/4.0/M_PI*target.Lattice.Volume/ static_cast<RealType>(target.getTotalNum()) ,1.0/3.0);
 //         indx = target.SK->KLists.ksq.size()-1;
 //         Kc_max=std::pow(target.SK->KLists.ksq[indx],0.5);
@@ -63,6 +63,7 @@ namespace qmcplusplus {
     }
     OrbitalBase* getOrbital();
     bool put(xmlNodePtr cur);
+    bool put(xmlNodePtr cur, int addOrbital);
 
 
   };

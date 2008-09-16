@@ -142,9 +142,14 @@ namespace qmcplusplus {
       myDistTableMap.clear();
       myDistTableMap[ObjectTag]=0;
       app_log() << "  ... ParticleSet::addTable Create Table #0 " << DistTables[0]->Name << endl;
+      
+      if(psrc.tag() == ObjectTag) return 0;
+    } 
+    
+    if(psrc.tag() == ObjectTag) {
+      app_log() << "  ... ParticleSet::addTable Reuse Table #" << 0 << " " << DistTables[0]->Name <<endl;
+      return 0;
     }
-
-    if(psrc.tag() == ObjectTag) return 0;
 
     int tsize=DistTables.size(),tid;
     map<int,int>::iterator tit(myDistTableMap.find(psrc.tag()));
@@ -157,8 +162,8 @@ namespace qmcplusplus {
     }
     else
     {
-      app_log() << "  ... ParticleSet::addTable Reuse Table #" << tid << " " << DistTables[tid]->Name << endl;
       tid = (*tit).second;
+      app_log() << "  ... ParticleSet::addTable Reuse Table #" << tid << " " << DistTables[tid]->Name << endl;
     }
     return tid;
   }

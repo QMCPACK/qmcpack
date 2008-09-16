@@ -91,7 +91,7 @@ namespace qmcplusplus {
     bool put(xmlNodePtr cur ) {return true;}
     
     bool put(xmlNodePtr cur, ParticleSet& P);
-    bool put(xmlNodePtr cur, ParticleSet& P, ParticleSet& source);
+    bool put(xmlNodePtr cur, ParticleSet& P, ParticleSet& source, TrialWaveFunction& Psi);
 
     bool get(std::ostream& os) const {
       os << myName;

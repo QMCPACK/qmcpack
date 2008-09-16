@@ -99,34 +99,40 @@ namespace qmcplusplus {
     return true;
   }
   
-  bool RPAPressure::put(xmlNodePtr cur, ParticleSet& P, ParticleSet& source) {
-    
+  bool RPAPressure::put(xmlNodePtr cur, ParticleSet& P, ParticleSet& ISource, TrialWaveFunction& Psi) {
     MyName = "HRPAZVZBP";
     RealType tlen=std::pow(0.75/M_PI*P.Lattice.Volume/static_cast<RealType>(P.getTotalNum()),1.0/3.0);
     drsdV= tlen*pNorm;
     
     //Always a 2-body term
     RPAJastrow* rpajastrow = new RPAJastrow(P);
-//     bool FOUND1=false;
+    bool FOUND1=false;
     bool FOUND2=false;
     xmlNodePtr tcur = cur->children;
     while(tcur != NULL) {
       string cname((const char*)tcur->name);
       if(cname == "TwoBody") 
       {
-        app_log() <<"  Found TwoBody parameters for dPsi in RPA-ZVZB Pressure"<<endl;
         rpajastrow->put(tcur);
+        dPsi.push_back(rpajastrow);
+        app_log() <<"  Found TwoBody parameters for dPsi in RPA-ZVZB Pressure"<<endl;
         FOUND2=true;
       }
-//       else if(cname == "OneBody") 
-//       {
-//         app_log() <<"  Found OneBody parameters for dPsi in RPA-ZVZB Pressure"<<endl;
-//         FOUND1=true;
-//       }
+      else if(cname == "OneBody") 
+      {
+        
+        singleRPAJastrowBuilder* jb = new singleRPAJastrowBuilder(P, Psi, ISource);
+        jb->put(tcur,0);
+        OrbitalBase* Hrpajastrow = jb->getOrbital();
+        dPsi.push_back(Hrpajastrow);
+        app_log() <<"  Found OneBody parameters for dPsi in RPA-ZVZB Pressure"<<endl;
+        FOUND1=true;
+      }
       tcur = tcur->next;
     }
     if (!FOUND2) {
       rpajastrow->buildOrbital("P_dRPA","true", "true", "dRPA", tlen, 10.0/tlen);
+      dPsi.push_back(rpajastrow);
       app_log() <<"  Using Default TwoBody parameters for dPsi in RPA-ZVZB Pressure"<<endl;
     }
 //     if (!FOUND1) {
@@ -134,25 +140,23 @@ namespace qmcplusplus {
 //       app_log() <<"  Using Default TwoBody parameters for dPsi in RPA-ZVZB Pressure"<<endl;
 //     }
 
-    Communicate* cpt = new Communicate();
-    TrialWaveFunction* tempPsi = new TrialWaveFunction(cpt);
-    singleRPAJastrowBuilder* jb = new singleRPAJastrowBuilder(P, *tempPsi, source );
-    OrbitalBase* Hrpajastrow = jb->getOrbital();
+//     Communicate* cpt = new Communicate();
+//     TrialWaveFunction* tempPsi = new TrialWaveFunction(cpt);
+//     singleRPAJastrowBuilder* jb = new singleRPAJastrowBuilder(P, *tempPsi, source);
+//     OrbitalBase* Hrpajastrow = jb->getOrbital();
+// 
+//     delete jb;
+//     delete tempPsi;
+//     delete cpt;
 
-    delete jb;
-    delete tempPsi;
-    delete cpt;
-
-    dPsi.push_back(Hrpajastrow);
-    dPsi.push_back(rpajastrow);
+//     dPsi.push_back(Hrpajastrow);
+//     dPsi.push_back(rpajastrow);
     return true;
   }
-
 
   QMCHamiltonianBase* RPAPressure::makeClone(ParticleSet& P, TrialWaveFunction& psi)
   {
     RPAPressure* myClone = new RPAPressure(P);
-    
     vector<OrbitalBase*>::iterator dit(dPsi.begin()), dit_end(dPsi.end());
     while(dit != dit_end) {
       myClone->dPsi.push_back((*dit)->makeClone(P)); 

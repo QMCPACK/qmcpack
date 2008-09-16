@@ -174,8 +174,14 @@ namespace qmcplusplus {
     app_log() << "  Maximum K shell " << myHandler->MaxKshell << endl;
     app_log() << "  Number of k vectors " << myHandler->Fk.size() << endl;
 
-    if(!DropLongRange) makeLongRange();
-    if(!DropShortRange) makeShortRange();
+    if(!DropLongRange) {
+      makeLongRange();
+      app_log()<<"  Using LongRange part"<<endl;
+    }
+    if(!DropShortRange){
+      makeShortRange();
+      app_log()<<"  Using ShortRange part"<<endl;
+    }
   }
   
   void RPAJastrow::makeLongRange(){
@@ -208,7 +214,6 @@ namespace qmcplusplus {
           << myHandler->evaluate(r,1.0/r) << " " 
           << myHandler->evaluateLR(r) << endl;
     }
-
     TwoBodyJastrowOrbital<FuncType> *j2 = new TwoBodyJastrowOrbital<FuncType>(targetPtcl);
     j2->addFunc("rpa",0,0,nfunc);
     ShortRangeRPA=j2;

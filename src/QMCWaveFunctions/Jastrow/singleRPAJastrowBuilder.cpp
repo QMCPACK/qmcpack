@@ -29,6 +29,11 @@ namespace qmcplusplus {
 
   bool singleRPAJastrowBuilder::put(xmlNodePtr cur)
   {
+    return put( cur, 1);
+  }
+    
+  bool singleRPAJastrowBuilder::put(xmlNodePtr cur, int addOrbital)
+    {
     MyName="Jep";
     string rpafunc="RPA";
     OhmmsAttributeSet a;
@@ -53,7 +58,14 @@ namespace qmcplusplus {
     };
 
 
-    myHandler= new LRRPAHandlerTemp<EPRPABreakup<RealType>,LPQHIBasis>(targetPtcl,Kc);
+    if (rpafunc=="RPA"){ 
+      myHandler= new LRRPAHandlerTemp<EPRPABreakup<RealType>,LPQHIBasis>(targetPtcl,Kc);
+      app_log()<<"  using e-p RPA"<<endl;
+    }
+    else if (rpafunc=="dRPA") {
+      myHandler= new LRRPAHandlerTemp<derivEPRPABreakup<RealType>,LPQHIBasis>(targetPtcl,Kc);
+      app_log()<<"  using e-p derivRPA"<<endl;
+    }
     myHandler->Breakup(targetPtcl,Rs);
     
 //     app_log() << "  Maximum K shell " << myHandler->MaxKshell << endl;
@@ -71,42 +83,40 @@ namespace qmcplusplus {
     SRA = new ShortRangePartAdapter<RealType>(myHandler);
     SRA->setRmax(Rcut);
     nfunc->initialize(SRA, myGrid);
-
-    JneType* J1s = new JneType (*sourcePtcl,targetPtcl);
-
+    J1s = new JneType (*sourcePtcl,targetPtcl);
     for(int ig=0; ig<ng; ig++) {
       J1s->addFunc(ig,nfunc);
     }
 
     app_log()<<" Only Short range part of E-I RPA is implemented"<<endl;
-    targetPsi.addOrbital(J1s,MyName);
+    if (addOrbital) targetPsi.addOrbital(J1s,MyName);
     return true;
   }
   
   OrbitalBase* singleRPAJastrowBuilder::getOrbital(){
-    RealType Rs=tlen;
-    RealType Kc = 1e-4 ;
-    myHandler= new LRRPAHandlerTemp<derivEPRPABreakup<RealType>,LPQHIBasis>(targetPtcl,Kc);
-    myHandler->Breakup(targetPtcl,Rs);
-
-    //Add short range part
-    Rcut = myHandler->get_rc()-0.1;
-    GridType* myGrid = new GridType;
-    int npts=static_cast<int>(Rcut/0.01)+1;
-    myGrid->set(0,Rcut,npts);
-
-      //create the numerical functor
-    nfunc = new FuncType;
-    SRA = new ShortRangePartAdapter<RealType>(myHandler);
-    SRA->setRmax(Rcut);
-    nfunc->initialize(SRA, myGrid);
-
-    J1s = new JneType (*sourcePtcl,targetPtcl);
-
-    for(int ig=0; ig<ng; ig++) {
-      J1s->addFunc(ig,nfunc);
-    }
-    
+//     RealType Rs=tlen;
+//     RealType Kc = 1e-5 ;
+//     myHandler= new LRRPAHandlerTemp<derivEPRPABreakup<RealType>,LPQHIBasis>(targetPtcl,Kc);
+//     myHandler->Breakup(targetPtcl,Rs);
+// 
+//     //Add short range part
+//     Rcut = myHandler->get_rc()-0.1;
+//     GridType* myGrid = new GridType;
+//     int npts=static_cast<int>(Rcut/0.01)+1;
+//     myGrid->set(0,Rcut,npts);
+// 
+//       //create the numerical functor
+//     nfunc = new FuncType;
+//     SRA = new ShortRangePartAdapter<RealType>(myHandler);
+//     SRA->setRmax(Rcut);
+//     nfunc->initialize(SRA, myGrid);
+// 
+//     J1s = new JneType (*sourcePtcl,targetPtcl);
+// 
+//     for(int ig=0; ig<ng; ig++) {
+//       J1s->addFunc(ig,nfunc);
+//     }
+    if (J1s==0) app_log()<<"  ERROR!! Must singleRPAJastrowBuilder::put() first!"<<endl;
     return J1s;
   }
 }
