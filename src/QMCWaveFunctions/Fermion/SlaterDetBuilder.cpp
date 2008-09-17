@@ -130,17 +130,23 @@ namespace qmcplusplus {
       psi->put(cur);
       psi->checkObject();
       SPOSet[detname]=psi;
+      app_log() << "  Creating a new SPO set " << detname << endl;
     } else {
+      app_log() << "  Reusing a SPO set " << detname << endl;
       psi = (*lit).second;
     }
 
     if(psi->getOrbitalSetSize()) {
       map<string,Det_t*>::iterator dit(DetSet.find(detname));
       if(dit == DetSet.end()) {
+        app_log() << "  Creating a Dirac Determinant " << detname << " First Index = " 
+          << firstIndex << endl;
         adet = new Det_t(psi,firstIndex);
         adet->set(firstIndex,psi->getOrbitalSetSize());
         DetSet[detname]=adet;
       } else {
+        app_log() << "  Reusing a Dirac Determinant " << detname << " First Index = " 
+          << firstIndex << endl;
         adet = (*dit).second;
       }
       firstIndex += psi->getOrbitalSetSize();
