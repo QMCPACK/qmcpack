@@ -365,7 +365,7 @@ namespace qmcplusplus {
 
 	psi[psiIndex] = real(psi_val);
 	psiIndex++;
-	if (MakeTwoCopies[j]) {
+	if (MakeTwoCopies[j] && psiIndex < psi.size()) {
 	  psi[psiIndex] = imag(psi_val);
 	  psiIndex++;
 	}
@@ -378,7 +378,7 @@ namespace qmcplusplus {
 	complex<double> psi_val = StorageValueVector[j];
 	psi[psiIndex] = real(psi_val);
 	psiIndex++;
-	if (MakeTwoCopies[j]) {
+	if (MakeTwoCopies[j] && psiIndex < psi.size()) {
 	  psi[psiIndex] = imag(psi_val);
 	  psiIndex++;
 	}
@@ -550,7 +550,7 @@ namespace qmcplusplus {
 	  dpsi[psiIndex][n] = real(psi_grad[n]);
 	d2psi[psiIndex] = real(psi_lapl);
 	psiIndex++;
-	if (MakeTwoCopies[j]) {
+	if (MakeTwoCopies[j] && psiIndex < psi.size()) {
 	  psi[psiIndex] = imag(psi_val);
 	  for (int n=0; n<OHMMS_DIM; n++)
 	    dpsi[psiIndex][n] = imag(psi_grad[n]);
@@ -570,7 +570,7 @@ namespace qmcplusplus {
 	  dpsi[psiIndex][n] = real(psi_grad[n]);
 	d2psi[psiIndex] = real(psi_lapl);
 	psiIndex++;
-	if (MakeTwoCopies[j]) {
+	if (MakeTwoCopies[j] && psiIndex < psi.size()) {
 	  psi[psiIndex] = imag(psi_val);
 	  for (int n=0; n<OHMMS_DIM; n++)
 	    dpsi[psiIndex][n] = imag(psi_grad[n]);
@@ -592,7 +592,7 @@ namespace qmcplusplus {
 	  dpsi[psiIndex][n] = real(psi_grad[n]);
 	d2psi[psiIndex] = real(psi_lapl);
 	psiIndex++;
-	if (MakeTwoCopies[j]) {
+	if (MakeTwoCopies[j] && psiIndex < psi.size()) {
 	  psi[psiIndex] = imag(psi_val);
 	  for (int n=0; n<OHMMS_DIM; n++)
 	    dpsi[psiIndex][n] = imag(psi_grad[n]);
@@ -786,7 +786,7 @@ namespace qmcplusplus {
 	    dpsi(i,psiIndex)[n] = real(psi_grad[n]);
 	  d2psi(i,psiIndex) = real(psi_lapl);
 	  psiIndex++;
-	  if (MakeTwoCopies[j]) {
+	  if (MakeTwoCopies[j] && psiIndex < psi.cols()) {
 	    psi(psiIndex,i) = imag(psi_val);
 	    for (int n=0; n<OHMMS_DIM; n++)
 	      dpsi(i,psiIndex)[n] = imag(psi_grad[n]);
@@ -807,7 +807,7 @@ namespace qmcplusplus {
 	    dpsi(i,psiIndex)[n] = real(psi_grad[n]);
 	  d2psi(i,psiIndex) = real(psi_lapl);
 	  psiIndex++;
-	  if (MakeTwoCopies[j]) {
+	  if (MakeTwoCopies[j] && psiIndex < psi.cols()) {
 	    psi(psiIndex,i) = imag(psi_val);
 	    for (int n=0; n<OHMMS_DIM; n++)
 	      dpsi(i,psiIndex)[n] = imag(psi_grad[n]);
@@ -829,7 +829,11 @@ namespace qmcplusplus {
 	    dpsi(i,psiIndex)[n] = real(psi_grad[n]);
 	  d2psi(i,psiIndex) = real(psi_lapl);
 	  psiIndex++;
-	  if (MakeTwoCopies[j]) {
+	  // if (psiIndex >= dpsi.cols()) {
+	  //   cerr << "Error:  out of bounds writing in EinsplineSet::evalate.\n"
+	  // 	 << "psiIndex = " << psiIndex << "  dpsi.cols() = " << dpsi.cols() << endl;
+	  // }
+	  if (MakeTwoCopies[j] && psiIndex < psi.cols()) {
 	    psi(psiIndex,i) = imag(psi_val);
 	    for (int n=0; n<OHMMS_DIM; n++)
 	      dpsi(i,psiIndex)[n] = imag(psi_grad[n]);

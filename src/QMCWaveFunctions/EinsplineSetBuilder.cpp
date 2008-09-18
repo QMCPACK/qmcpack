@@ -1089,6 +1089,7 @@ namespace qmcplusplus {
   (int spin, EinsplineSetExtended<double>* orbitalSet)
   {
     //int N = orbitalSet->getOrbitalSetSize();
+
     int N = NumDistinctOrbitals;
     orbitalSet->kPoints.resize(N);
     orbitalSet->MakeTwoCopies.resize(N);
