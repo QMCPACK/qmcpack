@@ -166,6 +166,7 @@ namespace qmcplusplus {
     {
       map<SPOSetBase*,SPOSetBase*>::iterator it=spomap.find(Dets[i]->Phi);
       Determinant_t* adet=new Determinant_t(*Dets[i]);
+      adet->NP=0;
       if(it == spomap.end())
       {
         SPOSetBase* newspo=Dets[i]->clonePhi();
