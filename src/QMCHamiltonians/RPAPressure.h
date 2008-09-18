@@ -42,7 +42,7 @@ namespace qmcplusplus {
     Return_t drsdV;
     Return_t pNorm;
     Return_t ZVCorrection;
-    Return_t Press,Energy;
+    Return_t Press,Energy,Pot;
 
     /** constructor
      *
@@ -59,20 +59,21 @@ namespace qmcplusplus {
     
     void addObservables(PropertySetType& plist)
     {
-      myIndex=plist.add("EPterm");
+      myIndex=plist.add("Pressure");
       plist.add("ZVterm");
       plist.add("dpsi");
       plist.add("Edpsi");
-      plist.add("Pressure");
+      plist.add("Vdpsi");
+
     }
 
     void setObservables(PropertySetType& plist)
     {
-      plist[myIndex]=Energy*Press;
+      plist[myIndex]=Press;
       plist[myIndex+1]=Value;
       plist[myIndex+2]=tValue;
       plist[myIndex+3]=Energy*tValue;
-      plist[myIndex+4]=Press;
+      plist[myIndex+4]=Pot*tValue;
       
     }
 

@@ -60,7 +60,8 @@ namespace qmcplusplus {
     ZVCorrection =  -1.0 * (0.5*Sum(dL)+Dot(dG,P.G));
     Value = -ZVCorrection*drsdV;
     
-    Press=2.0*P.PropertyList[LOCALENERGY]-P.PropertyList[LOCALPOTENTIAL];
+    Pot=P.PropertyList[LOCALPOTENTIAL];
+    Press=2.0*P.PropertyList[LOCALENERGY]-Pot;
     Press*=pNorm;
     Energy = P.PropertyList[LOCALENERGY];
     
