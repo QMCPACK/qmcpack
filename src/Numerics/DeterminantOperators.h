@@ -88,6 +88,24 @@ namespace qmcplusplus {
       return detvalue;
     }
 
+    inline double
+    InvertWithLog(double* restrict x, int n, int m, double* restrict work, int* restrict pivot, 
+        double& phase) 
+    {
+      double logdet(0.0);
+      LUFactorization(n,m,x,n,pivot);
+      int sign_det=1;
+      for(int i=0; i<n; i++)
+      {
+        sign_det *= (pivot[i] == i+1)?1:-1;
+        sign_det *= (x[i*m+i]>0)?1:-1;
+        logdet += std::log(std::abs(x[i*m+i]));
+      }
+      InvertLU(n, x, n, pivot, work, n);
+      phase=(sign_det>0)?0.0:M_PI;
+      return logdet;
+    }
+
 /** invert a matrix
  * \param M a matrix to be inverted
  * \param getdet bool, if true, calculate the determinant
@@ -119,6 +137,41 @@ invert_matrix(MatrixA& M, bool getdet=true) {
       M.rows(), status);
   return det0;
 }  
+
+/** invert a matrix                                                                                                                                          
+ * \param M a matrix to be inverted                                                                                                                          
+ * \param getdet bool, if true, calculate the determinant                                                                                                    
+ * \return the determinant                                                                                                                                   
+ */
+template<class MatrixA>
+  inline typename MatrixA::value_type
+invert_matrix_log(MatrixA& M, int &sign_det, bool getdet) 
+{
+  typedef typename MatrixA::value_type value_type;
+  vector<int> pivot(M.rows());
+  vector<value_type> work(M.rows());
+  int n(M.rows());
+  int m(M.cols());
+  MatrixA Mcopy(M);
+  LUFactorization(n,m,M.data(),n,&pivot[0]);
+  value_type logdet = 0.0;
+  sign_det=1;
+  if(getdet) 
+  {
+    for(int i=0; i<n; i++)
+    {
+      ////if(pivot[i] != i+1) sign_det *= -1;
+      sign_det *= (pivot[i] == i+1)?1:-1;
+      sign_det *= (M(i*m+i)>0)?1:-1;
+      logdet += std::log(std::abs(M(i*m+i)));
+    }
+  }
+  InvertLU(n,M.data(),m, &pivot[0], &work[0], n);
+  //value_type det0 = Invert(Mcopy.data(),n,m,&work[0], &pivot[0]);
+  //double expdetp = sign_det*std::exp(logdet);
+  //cerr<<"DETS ARE NOW "<<det0<<" "<<expdetp<<" "<<logdet<<endl;
+  return logdet;
+}
 
 template<typename MatA, typename Iter>
 inline
