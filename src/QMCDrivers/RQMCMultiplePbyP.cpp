@@ -688,7 +688,8 @@ RQMCMultiplePbyP::RealType RQMCMultiplePbyP::LogSampleProb(vector<Bead_ParticleS
       w_buffer.rewind();
       tempReptile[ii]->copyToBuffer(w_buffer);
       for (int ipsi=0;ipsi<nPsi;ipsi++){
-	psiReptile[ii][ipsi]->evaluate(*tempReptile[ii],w_buffer);
+	psiReptile[ii][ipsi]->evaluateLog(*tempReptile[ii],w_buffer);
+	//psiReptile[ii][ipsi]->evaluate(*tempReptile[ii],w_buffer);
 	hReptile[ii][ipsi]->evaluate(*tempReptile[ii],w_buffer);
       }
     }
@@ -972,7 +973,8 @@ RQMCMultiplePbyP::RealType RQMCMultiplePbyP::LogSampleProb(vector<Bead_ParticleS
       w_buffer.rewind();
       tempReptile[ii]->copyToBuffer(w_buffer);
       for (int ipsi=0;ipsi<nPsi;ipsi++){
-	psiReptile[ii][ipsi]->evaluate(*tempReptile[ii],w_buffer);
+	psiReptile[ii][ipsi]->evaluateLog(*tempReptile[ii],w_buffer);
+	//psiReptile[ii][ipsi]->evaluate(*tempReptile[ii],w_buffer);
 	hReptile[ii][ipsi]->evaluate(*tempReptile[ii],w_buffer);
       }
     }
