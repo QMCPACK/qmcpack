@@ -83,7 +83,7 @@ namespace qmcplusplus {
     
     void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf);
 
-    ValueType evaluate(ParticleSet& P, PooledData<RealType>& buf);
+    ValueType evaluateLog(ParticleSet& P, PooledData<RealType>& buf);
 
     void setBasisSet(BasisSetType* abasis) { GeminalBasis=abasis;}
 
@@ -96,10 +96,12 @@ namespace qmcplusplus {
 
     ///reference to the center
     const ParticleSet& CenterRef;
-    ///distance table
-    const DistanceTableData* d_table;
+    /////distance table
+    //const DistanceTableData* d_table;
     ///assign same blocks for the group
     bool SameBlocksForGroup;
+    ///index of the table for source-target
+    int myTableIndex;
     ///size of the localized basis set
     int BasisSize;
     ///number of particles

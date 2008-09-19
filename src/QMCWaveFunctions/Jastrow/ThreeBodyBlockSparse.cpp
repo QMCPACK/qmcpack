@@ -31,7 +31,8 @@ namespace qmcplusplus {
   ThreeBodyBlockSparse::ThreeBodyBlockSparse(ParticleSet& ions, ParticleSet& els): 
     CenterRef(ions), GeminalBasis(0), IndexOffSet(1), ID_Lambda("j3g"), SameBlocksForGroup(true)
     {
-      d_table = DistanceTable::add(ions,els);
+      myTableIndex=els.addTable(ions);
+      //d_table = DistanceTable::add(ions,els);
       NumPtcls=els.getTotalNum();
     }
 
@@ -278,7 +279,7 @@ namespace qmcplusplus {
   }
 
   OrbitalBase::ValueType 
-  ThreeBodyBlockSparse::evaluate(ParticleSet& P, PooledData<RealType>& buf) {
+  ThreeBodyBlockSparse::evaluateLog(ParticleSet& P, PooledData<RealType>& buf) {
     buf.put(LogValue);
     buf.put(V.begin(), V.end());
 
@@ -290,7 +291,8 @@ namespace qmcplusplus {
     buf.put(FirstAddressOfgU,LastAddressOfgU);
     buf.put(d2Uk.begin(), d2Uk.end());
 
-    return std::exp(LogValue);
+    return LogValue;
+    //return std::exp(LogValue);
   }
 
   OrbitalBase::ValueType 
@@ -312,7 +314,7 @@ namespace qmcplusplus {
     
   void ThreeBodyBlockSparse::resetTargetParticleSet(ParticleSet& P) 
   {
-    d_table = DistanceTable::add(CenterRef,P);
+    //d_table = DistanceTable::add(CenterRef,P);
     GeminalBasis->resetTargetParticleSet(P);
   }
 
