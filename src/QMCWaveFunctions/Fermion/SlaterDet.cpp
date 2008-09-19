@@ -59,8 +59,8 @@ namespace qmcplusplus {
   void SlaterDet::resetTargetParticleSet(ParticleSet& P) 
   {
     //BasisSet->resetTargetParticleSet(P);
-    LOGMSG("\nSlaterDet::resetTargetParticleSet")
-      for(int i=0; i<Dets.size(); i++) Dets[i]->resetTargetParticleSet(P);
+    //LOGMSG("\nSlaterDet::resetTargetParticleSet")
+    for(int i=0; i<Dets.size(); i++) Dets[i]->resetTargetParticleSet(P);
   }
 
   SlaterDet::ValueType 
@@ -82,13 +82,12 @@ namespace qmcplusplus {
       //for(int i=0; i<Dets.size(); i++) psi *= Dets[i]->evaluate(P,G,L);
       //return LogValue = evaluateLogAndPhase(psi,PhaseValue);
       LogValue=0.0;
-      RealType sign_tot = 1.0;
+      PhaseValue=0.0;
       for(int i=0; i<Dets.size(); ++i)
       {
         LogValue+=Dets[i]->evaluateLog(P,G,L);
-        sign_tot *=Dets[i]->DetSign;
+        PhaseValue += Dets[i]->PhaseValue;
       }
-      evaluateLogAndPhase(sign_tot,PhaseValue);
       return LogValue;
     }
 
@@ -99,13 +98,12 @@ namespace qmcplusplus {
     //  psi *= Dets[i]->registerData(P,buf);
     //return LogValue = evaluateLogAndPhase(psi,PhaseValue);
     LogValue=0.0;
-    RealType sign_tot = 1.0;
+    PhaseValue=0.0;
     for(int i=0; i<Dets.size(); ++i)
     {
       LogValue+=Dets[i]->registerData(P,buf);
-      sign_tot *=Dets[i]->DetSign;
+      PhaseValue += Dets[i]->PhaseValue;
     }
-    evaluateLogAndPhase(sign_tot,PhaseValue);
     return LogValue;
   }
 
@@ -116,13 +114,12 @@ namespace qmcplusplus {
     //for(int i=0; i<Dets.size(); i++) psi *= Dets[i]->updateBuffer(P,buf,fromscratch);
     //return LogValue = evaluateLogAndPhase(psi,PhaseValue);
     LogValue=0.0;
-    RealType sign_tot = 1.0;
+    PhaseValue=0.0;
     for(int i=0; i<Dets.size(); ++i)
     {
       LogValue+=Dets[i]->updateBuffer(P,buf,fromscratch);
-      sign_tot *=Dets[i]->DetSign;
+      PhaseValue+=Dets[i]->PhaseValue;
     }
-    evaluateLogAndPhase(sign_tot,PhaseValue);
     return LogValue;
   }
 
@@ -151,12 +148,24 @@ namespace qmcplusplus {
   }
 
   SlaterDet::ValueType 
-    SlaterDet::evaluate(ParticleSet& P, PooledData<RealType>& buf) 
+    SlaterDet::evaluateLog(ParticleSet& P, PooledData<RealType>& buf) 
     {
-      ValueType r=1.0;
-      for(int i=0; i<Dets.size(); i++) 	r *= Dets[i]->evaluate(P,buf);
-      return r;
+      LogValue=0.0;
+      PhaseValue=0.0;
+      for(int i=0; i<Dets.size(); i++) 	
+      { 
+        LogValue += Dets[i]->evaluateLog(P,buf);
+        PhaseValue +=Dets[i]->PhaseValue;
+      }
+      return LogValue;
     }
+  //SlaterDet::ValueType 
+  //  SlaterDet::evaluate(ParticleSet& P, PooledData<RealType>& buf) 
+  //  {
+  //    ValueType r=1.0;
+  //    for(int i=0; i<Dets.size(); i++) 	r *= Dets[i]->evaluate(P,buf);
+  //    return r;
+  //  }
 
   OrbitalBasePtr SlaterDet::makeClone(ParticleSet& tqp) const
   {
