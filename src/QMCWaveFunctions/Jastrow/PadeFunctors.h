@@ -152,8 +152,8 @@ namespace qmcplusplus {
       void checkInVariables(opt_variables_type& active)
       {
         active.insertFrom(myVars);
-        std::cout << "Checking variables by PadeFunctor" << endl;
-        myVars.print(std::cout);
+        //std::cout << "Checking variables by PadeFunctor" << endl;
+        //myVars.print(std::cout);
       }
 
       void checkOutVariables(const opt_variables_type& active)
