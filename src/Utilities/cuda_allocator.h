@@ -72,5 +72,22 @@ public:
   }
 };
 
+#include <vector>
+
+template<typename T>
+class cuda_vector : public std::vector<T, cuda_allocator<T> >
+{
+public:
+  cuda_vector& operator=(const std::vector<T,std::allocator<T> > &vec)
+  {
+    if (this->size() != vec.size())
+      resize(vec.size());
+    cudaMemcpy (&((*this)[0]), &(vec[0]), this->size(), cudaMemcpyHostToDevice);
+  }
+
+};
+
+
+
 
 #endif
