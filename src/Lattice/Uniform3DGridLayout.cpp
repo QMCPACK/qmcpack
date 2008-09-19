@@ -311,9 +311,13 @@ int Uniform3DGridLayout::connectGrid(value_type int_rad, value_type con_rad) {
 }
 
 void Uniform3DGridLayout::print(std::ostream& os) const {
+  os << "<unitcell>" << endl;
   Base_t::print(os);
+  os << "<note>" << endl;
   os << "\tLong-range breakup parameters:" << endl;
   os << "\trc*kc = " << LR_dim_cutoff << "; rc = " << LR_rc << "; kc = " << LR_kc << "\n" << endl;
+  os << "</note>" << endl;
+  os << "</unitcell>" << endl;
   ////printGrid(os);
   //for(int ig=0; ig<c_offset.size()-1; ig++) {
   //  os << ig << " has neighboring cell "  

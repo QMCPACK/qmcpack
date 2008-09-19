@@ -87,11 +87,11 @@ public:
     for(int i=0; i<GridLevel; i++) SuperGrid.push_back(NULL);
   } 
 
-  /**copy constructor
-   */
-  inline Uniform3DGridLayout(const Uniform3DGridLayout& pl){
-    copy(pl);
-  } 
+  ///**copy constructor
+  // */
+  //inline Uniform3DGridLayout(const Uniform3DGridLayout& pl){
+  //  copy(pl);
+  //} 
 
 
   /** copy function

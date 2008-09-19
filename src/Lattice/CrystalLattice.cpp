@@ -38,13 +38,13 @@ namespace APPNAMESPACE
       reset();
     }
 
-  template<class T, unsigned D,bool ORTHO>
-    CrystalLattice<T,D,ORTHO>::CrystalLattice(const CrystalLattice<T,D>& rhs) 
-    {
-      BoxBConds = rhs.BoxBConds;
-      R = rhs.R;
-      reset();
-    }
+//  template<class T, unsigned D,bool ORTHO>
+//    CrystalLattice<T,D,ORTHO>::CrystalLattice(const CrystalLattice<T,D>& rhs) 
+//    {
+//      BoxBConds = rhs.BoxBConds;
+//      R = rhs.R;
+//      reset();
+//    }
 
   template<class T, unsigned D,bool ORTHO>
     void CrystalLattice<T,D,ORTHO>::set(int argc, char **argv) 
@@ -188,20 +188,21 @@ namespace APPNAMESPACE
        *      level == 2: + all the internal values
        */
 
-      os << "<lattice>" << endl; 
+      os << "<parameter name=\"lattice\">" << endl; 
       for(int i=0; i<D; ++i) os << Rv[i] << endl;
-      os << "</lattice>" << endl; 
+      os << "</parameter>" << endl; 
 
       if(level > 0) {
-        os << "<bconds> ";
+        os << "<parameter name=\"bconds\"> ";
         for(int i=0; i<D; ++i) 
         {
           if(BoxBConds[i]) os << " p "; 
           else             os << " n ";
         }
-        os << " </bconds>" << endl;
+        os << "</parameter>" << endl;
       }
 
+      os << "<note>"<<endl;
       if(level > 1) {
         os << "Volume (A^3) = " << Volume << endl;
         os << "Reciprocal vectors without 2*pi.\n";
@@ -223,6 +224,7 @@ namespace APPNAMESPACE
           os << endl;
         }
       }
+      os << "</note>"<<endl;
     }
 
   template<class T, unsigned D,bool ORTHO>

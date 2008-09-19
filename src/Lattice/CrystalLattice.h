@@ -119,10 +119,10 @@ struct CrystalLattice{
 
   ///default constructor, assign a huge supercell
   CrystalLattice();
-  /** copy constructor
-      @param rhs An existing SC object is copied to this SC.
-  */
-  CrystalLattice(const CrystalLattice<T,D>& rhs);
+  ///** copy constructor
+  //    @param rhs An existing SC object is copied to this SC.
+  //*/
+  //CrystalLattice(const CrystalLattice<T,D>& rhs);
   
   ///destructor
   virtual ~CrystalLattice(){ }

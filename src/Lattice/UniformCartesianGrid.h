@@ -66,10 +66,10 @@ public:
     InvDelta[0] = 1; InvDelta[1] = 1; InvDelta[2] =1;
   }
 
-  ///copy constructor
-  inline UniformCartesianGrid(const UniformCartesianGrid<T,3>& gr) { 
-    makeCopy(gr);
-  }
+  /////copy constructor
+  //inline UniformCartesianGrid(const UniformCartesianGrid<T,3>& gr) { 
+  //  makeCopy(gr);
+  //}
 
   /**constructor 
    *@param ng a 3-Dim index vector that sets the partition
