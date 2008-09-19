@@ -21,27 +21,29 @@
 namespace qmcplusplus {
 
   CoulombPBCAATemp::CoulombPBCAATemp(ParticleSet& ref, bool active): 
-    PtclRef(&ref), AA(0), myGrid(0), rVs(0), 
+    AA(0), myGrid(0), rVs(0), 
     is_active(active), FirstTime(true), myConst(0.0)
   {
     ReportEngine PRE("CoulombPBCAATemp","CoulombPBCAATemp");
-    //AA = new LRHandlerType(ref);
-    d_aa = DistanceTable::add(ref);
-    initBreakup();
+
+    //create a distance table: just to get the table name
+    DistanceTableData *d_aa = DistanceTable::add(ref);
+    PtclRefName=d_aa->Name;
+    initBreakup(ref);
     app_log() << "  Maximum K shell " << AA->MaxKshell << endl;
     app_log() << "  Number of k vectors " << AA->Fk.size() << endl;
 
     if(!is_active)
     {
       d_aa->evaluate(ref);
-      RealType eL=evalLR();
-      RealType eS=evalSR();
+      RealType eL=evalLR(ref);
+      RealType eS=evalSR(ref);
       NewValue=Value = eL+eS+myConst;
-      app_log() << "  Fixed Coulomb potential for " << ref.getName() << endl;
-      app_log() << "   V(short)  =" << eS 
-                << "\n  V(long)  =" << eL
-                << "\n  Constant =" << myConst
-                << "\n  Vtot     =" << Value << endl;
+      app_log() << "  Fixed Coulomb potential for " << ref.getName();
+      app_log() << "\n    V(short) =" << eS 
+                << "\n    V(long)  =" << eL
+                << "\n    Constant =" << myConst
+                << "\n    Vtot     =" << Value << endl;
     }
   }
 
@@ -50,16 +52,15 @@ namespace qmcplusplus {
   void CoulombPBCAATemp::resetTargetParticleSet(ParticleSet& P) {
     if(is_active)
     {
-      //Update the internal particleref
-      PtclRef = &P;
-      d_aa = DistanceTable::add(P);
+      PtclRefName=P.DistTables[0]->Name;
       AA->resetTargetParticleSet(P);
     }
   }
 
   CoulombPBCAATemp::Return_t 
-    CoulombPBCAATemp::evaluate(ParticleSet& P) {
-      if(is_active) Value = evalLR()+evalSR()+myConst;
+    CoulombPBCAATemp::evaluate(ParticleSet& P) 
+    {
+      if(is_active) Value = evalLR(P)+evalSR(P)+myConst;
       return Value;
     }
 
@@ -119,19 +120,19 @@ namespace qmcplusplus {
       {
         SR2=0.0;
         Return_t res=myConst;
+        const DistanceTableData *d_aa = P.DistTables[0];
         for(int iat=0; iat<NumCenters; iat++)
         {
           Return_t z=0.5*Zat[iat];
           for(int nn=d_aa->M[iat],jat=iat+1; nn<d_aa->M[iat+1]; ++nn,++jat) 
           {
-            //esum += Zat[jpart]*d_aa->rinv(nn)*rVs->splint(d_aa->r(nn));
             Return_t e=z*Zat[jat]*d_aa->rinv(nn)*rVs->splint(d_aa->r(nn));
             SR2(iat,jat)=e;
             SR2(jat,iat)=e;
             res+=e+e;
           }
         }
-        return res+evalLR();
+        return res+evalLR(P);
       }
       else
         return Value;
@@ -142,7 +143,7 @@ namespace qmcplusplus {
     {
       if(is_active)
       {
-        const std::vector<DistanceTableData::TempDistType> &temp(d_aa->Temp);
+        const std::vector<DistanceTableData::TempDistType> &temp(P.DistTables[0]->Temp);
         Return_t z=0.5*Zat[active];
         Return_t sr=0;
         const Return_t* restrict sr_ptr=SR2[active];
@@ -154,17 +155,30 @@ namespace qmcplusplus {
             sr+=dSR[iat]=(z*Zat[iat]*temp[iat].rinv1*rVs->splint(temp[iat].r1)- (*sr_ptr));
         }
 
-        const StructFact& PtclRhoK(*(PtclRef->SK));
+        const StructFact& PtclRhoK(*(P.SK));
         const ComplexType* restrict eikr_new=PtclRhoK.eikr_temp.data();
         const ComplexType* restrict eikr_old=PtclRhoK.eikr[active];
         ComplexType* restrict d_ptr=del_eikr.data();
         for(int k=0; k<del_eikr.size(); ++k) *d_ptr++ = (*eikr_new++ - *eikr_old++);
-
-        for(int iat=0;iat<NumCenters; ++iat)
+        int spec2=SpeciesID[active];
+        for(int spec1=0; spec1<NumSpecies; ++spec1)
         {
-          if(iat!=active)
-            sr += z*Zat[iat]*AA->evaluate(PtclRhoK.KLists.kshell, PtclRhoK.eikr[iat],del_eikr.data());
+          Return_t zz=z*Zspec[spec1];
+          sr += zz*AA->evaluate(PtclRhoK.KLists.kshell,PtclRhoK.rhok[spec1],del_eikr.data());
         }
+        sr+= z*z*AA->evaluate(PtclRhoK.KLists.kshell,del_eikr.data(),del_eikr.data());
+        //// const StructFact& PtclRhoK(*(PtclRef->SK));
+        //const StructFact& PtclRhoK(*(P.SK));
+        //const ComplexType* restrict eikr_new=PtclRhoK.eikr_temp.data();
+        //const ComplexType* restrict eikr_old=PtclRhoK.eikr[active];
+        //ComplexType* restrict d_ptr=del_eikr.data();
+        //for(int k=0; k<del_eikr.size(); ++k) *d_ptr++ = (*eikr_new++ - *eikr_old++);
+
+        //for(int iat=0;iat<NumCenters; ++iat)
+        //{
+        //  if(iat!=active)
+        //    sr += z*Zat[iat]*AA->evaluate(PtclRhoK.KLists.kshell, PtclRhoK.eikr[iat],del_eikr.data());
+        //}
         return NewValue=Value+2.0*sr;
       }
       else
@@ -183,13 +197,14 @@ namespace qmcplusplus {
     }
   }
 
-  void CoulombPBCAATemp::initBreakup() 
+  void CoulombPBCAATemp::initBreakup(ParticleSet& P) 
   {
-    SpeciesSet& tspecies(PtclRef->getSpeciesSet());
+    //SpeciesSet& tspecies(PtclRef->getSpeciesSet());
+    SpeciesSet& tspecies(P.getSpeciesSet());
     //Things that don't change with lattice are done here instead of InitBreakup()
     ChargeAttribIndx = tspecies.addAttribute("charge");
     MemberAttribIndx = tspecies.addAttribute("membersize");
-    NumCenters = PtclRef->getTotalNum();
+    NumCenters = P.getTotalNum();
     NumSpecies = tspecies.TotalNum;
 
     Zat.resize(NumCenters);
@@ -199,10 +214,15 @@ namespace qmcplusplus {
       Zspec[spec] = tspecies(ChargeAttribIndx,spec);
       NofSpecies[spec] = static_cast<int>(tspecies(MemberAttribIndx,spec));
     }
-    for(int iat=0; iat<NumCenters; iat++)
-      Zat[iat] = Zspec[PtclRef->GroupID[iat]];
 
-    AA = LRCoulombSingleton::getHandler(*PtclRef);
+    SpeciesID.resize(NumCenters);
+    for(int iat=0; iat<NumCenters; iat++)
+    {
+      SpeciesID[iat]=P.GroupID[iat];
+      Zat[iat] = Zspec[P.GroupID[iat]];
+    }
+
+    AA = LRCoulombSingleton::getHandler(P);
     //AA->initBreakup(*PtclRef);
     myConst=evalConsts();
     myRcut=AA->Basis.get_rc();
@@ -213,9 +233,9 @@ namespace qmcplusplus {
   }
 
   CoulombPBCAATemp::Return_t
-    CoulombPBCAATemp::evalLR() {
+    CoulombPBCAATemp::evalLR(ParticleSet& P) {
       RealType LR=0.0;
-      const StructFact& PtclRhoK(*(PtclRef->SK));
+      const StructFact& PtclRhoK(*(P.SK));
       for(int spec1=0; spec1<NumSpecies; spec1++) {
         RealType Z1 = Zspec[spec1];
         for(int spec2=spec1; spec2<NumSpecies; spec2++) {
@@ -233,7 +253,8 @@ namespace qmcplusplus {
     }
 
   CoulombPBCAATemp::Return_t
-    CoulombPBCAATemp::evalSR() {
+    CoulombPBCAATemp::evalSR(ParticleSet& P) {
+      const DistanceTableData *d_aa = P.DistTables[0];
       RealType SR=0.0;
       for(int ipart=0; ipart<NumCenters; ipart++){
         RealType esum = 0.0;

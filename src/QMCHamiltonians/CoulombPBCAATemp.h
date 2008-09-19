@@ -7,7 +7,6 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
@@ -32,8 +31,6 @@ namespace qmcplusplus {
     typedef LRCoulombSingleton::LRHandlerType LRHandlerType;
     typedef LRCoulombSingleton::GridType       GridType;
     typedef LRCoulombSingleton::RadFunctorType RadFunctorType;
-    ParticleSet* PtclRef;
-    DistanceTableData* d_aa;
     LRHandlerType* AA;
     GridType* myGrid;
     RadFunctorType* rVs;
@@ -46,17 +43,18 @@ namespace qmcplusplus {
     int NumCenters;
     RealType myConst;
     RealType myRcut;
+    string PtclRefName;
     vector<RealType> Zat,Zspec; 
     vector<int> NofSpecies;
+    vector<int> SpeciesID;
 
     Matrix<RealType> SR2;
     Vector<RealType> dSR;
     Vector<ComplexType> del_eikr;
+
+    /** constructor */
     CoulombPBCAATemp(ParticleSet& ref, bool active);
 
-    ///// copy constructor
-    //CoulombPBCAATemp(const CoulombPBCAATemp& c);
-    
     ~CoulombPBCAATemp();
 
     void resetTargetParticleSet(ParticleSet& P);
@@ -79,19 +77,18 @@ namespace qmcplusplus {
     }
 
     bool get(std::ostream& os) const {
-      os << "CoulombPBCAA potential: " << PtclRef->getName();
+      os << "CoulombPBCAA potential: " << PtclRefName;
       return true;
     }
 
     QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 
-    void initBreakup();
+    void initBreakup(ParticleSet& P);
 
-    Return_t evalSR();
-    Return_t evalLR();
+    Return_t evalSR(ParticleSet& P);
+    Return_t evalLR(ParticleSet& P);
     Return_t evalConsts();
     Return_t evaluateForPbyP(ParticleSet& P);
-
   };
 
 }
