@@ -255,36 +255,38 @@ namespace qmcplusplus {
     int numIons = IonTypes.size();
     int numDensityGvecs = TargetPtcl.DensityReducedGvecs.size();
     PooledData<RealType> abuffer;
-    abuffer.add(Version.begin(),Version.end()); //myComm->bcast(Version);
+    PooledData<int>       aibuffer;
+    aibuffer.add(Version.begin(),Version.end()); //myComm->bcast(Version);
     abuffer.add(Lattice.begin(),Lattice.end());//myComm->bcast(Lattice);
     abuffer.add(RecipLattice.begin(),RecipLattice.end()); //myComm->bcast(RecipLattice);
     abuffer.add(SuperLattice.begin(),SuperLattice.end()); //myComm->bcast(SuperLattice);
     abuffer.add(LatticeInv.begin(),LatticeInv.end()); //myComm->bcast(LatticeInv);
-    abuffer.add(NumBands); //myComm->bcast(NumBands);
-    abuffer.add(NumElectrons); //myComm->bcast(NumElectrons);
-    abuffer.add(NumSpins); //myComm->bcast(NumSpins);
-    abuffer.add(NumTwists); //myComm->bcast(NumTwists);
-    abuffer.add(numIons); //myComm->bcast(numIons);
-    abuffer.add(NumMuffinTins);
-    abuffer.add(numDensityGvecs);
+    aibuffer.add(NumBands); //myComm->bcast(NumBands);
+    aibuffer.add(NumElectrons); //myComm->bcast(NumElectrons);
+    aibuffer.add(NumSpins); //myComm->bcast(NumSpins);
+    aibuffer.add(NumTwists); //myComm->bcast(NumTwists);
+    aibuffer.add(numIons); //myComm->bcast(numIons);
+    aibuffer.add(NumMuffinTins);
+    aibuffer.add(numDensityGvecs);
 
     myComm->bcast(abuffer);
+    myComm->bcast(aibuffer);
 
     if(myComm->rank())
     {
       abuffer.rewind();
-      abuffer.get(Version.begin(),Version.end());
+      aibuffer.get(Version.begin(),Version.end());
       abuffer.get(Lattice.begin(),Lattice.end());
       abuffer.get(RecipLattice.begin(),RecipLattice.end());
       abuffer.get(SuperLattice.begin(),SuperLattice.end());
       abuffer.get(LatticeInv.begin(),LatticeInv.end());
-      abuffer.get(NumBands);
-      abuffer.get(NumElectrons);
-      abuffer.get(NumSpins);
-      abuffer.get(NumTwists);
-      abuffer.get(numIons);
-      abuffer.get(NumMuffinTins);
-      abuffer.get(numDensityGvecs);
+      aibuffer.get(NumBands);
+      aibuffer.get(NumElectrons);
+      aibuffer.get(NumSpins);
+      aibuffer.get(NumTwists);
+      aibuffer.get(numIons);
+      aibuffer.get(NumMuffinTins);
+      aibuffer.get(numDensityGvecs);
       MT_APW_radii.resize(NumMuffinTins);
       MT_APW_lmax.resize(NumMuffinTins);
       MT_APW_rgrids.resize(NumMuffinTins);
@@ -311,7 +313,8 @@ namespace qmcplusplus {
 
     //new buffer
     PooledData<RealType> bbuffer;
-    for(int i=0; i<numIons; ++i) bbuffer.add(IonTypes[i]);
+    PooledData<int> bibuffer;
+    for(int i=0; i<numIons; ++i) bibuffer.add(IonTypes[i]);
     //myComm->bcast(IonTypes);
     
     bbuffer.add(&IonPos[0][0],&IonPos[0][0]+OHMMS_DIM*numIons);
@@ -321,36 +324,41 @@ namespace qmcplusplus {
     bbuffer.add(&TwistAngles[0][0],&TwistAngles[0][0]+OHMMS_DIM*NumTwists);
     //myComm->bcast(TwistAngles);
     
-    bbuffer.add(HaveLocalizedOrbs);
+    bibuffer.add(HaveLocalizedOrbs);
     //myComm->bcast(HaveLocalizedOrbs);
 
     bbuffer.add(MT_APW_radii.begin(), MT_APW_radii.end());
-    bbuffer.add(MT_APW_lmax.begin(),  MT_APW_lmax.end());
-    bbuffer.add(MT_APW_num_radial_points.begin(), MT_APW_num_radial_points.end());
+    bibuffer.add(MT_APW_lmax.begin(),  MT_APW_lmax.end());
+    bibuffer.add(MT_APW_num_radial_points.begin(), 
+		 MT_APW_num_radial_points.end());
     bbuffer.add(&(MT_centers[0][0]), &(MT_centers[0][0])+OHMMS_DIM*NumMuffinTins);
     for (int i=0; i<NumMuffinTins; i++) 
       bbuffer.add(MT_APW_rgrids[i].begin(), MT_APW_rgrids[i].end());
-    bbuffer.add(&(TargetPtcl.DensityReducedGvecs[0][0]),
+    bibuffer.add(&(TargetPtcl.DensityReducedGvecs[0][0]),
 		&(TargetPtcl.DensityReducedGvecs[0][0])+numDensityGvecs*OHMMS_DIM);
     bbuffer.add(&(TargetPtcl.Density_G[0]),
 		&(TargetPtcl.Density_G[0]) + numDensityGvecs);
     myComm->bcast(bbuffer);
+    myComm->bcast(bibuffer);
 
     if(myComm->rank())
     {
       bbuffer.rewind();
-      for(int i=0; i<numIons; ++i) bbuffer.get(IonTypes[i]);
+      for(int i=0; i<numIons; ++i) bibuffer.get(IonTypes[i]);
       bbuffer.get(&IonPos[0][0],&IonPos[0][0]+OHMMS_DIM*numIons);
       bbuffer.get(&TwistAngles[0][0],&TwistAngles[0][0]+OHMMS_DIM*NumTwists);
-      bbuffer.get(HaveLocalizedOrbs);
+      bibuffer.get(HaveLocalizedOrbs);
       bbuffer.get(MT_APW_radii.begin(), MT_APW_radii.end());
-      bbuffer.get(MT_APW_lmax.begin(),  MT_APW_lmax.end());
-      bbuffer.get(MT_APW_num_radial_points.begin(), MT_APW_num_radial_points.end());
-      bbuffer.get(&(MT_centers[0][0]), &(MT_centers[0][0])+OHMMS_DIM*NumMuffinTins);
+      bibuffer.get(MT_APW_lmax.begin(),  MT_APW_lmax.end());
+      bibuffer.get(MT_APW_num_radial_points.begin(), 
+		   MT_APW_num_radial_points.end());
+      bbuffer.get(&(MT_centers[0][0]), 
+		  &(MT_centers[0][0])+OHMMS_DIM*NumMuffinTins);
       for (int i=0; i<NumMuffinTins; i++) 
 	bbuffer.get(MT_APW_rgrids[i].begin(), MT_APW_rgrids[i].end());
-      bbuffer.get(&(TargetPtcl.DensityReducedGvecs[0][0]),
-		  &(TargetPtcl.DensityReducedGvecs[0][0])+numDensityGvecs*OHMMS_DIM);
+      bibuffer.get(&(TargetPtcl.DensityReducedGvecs[0][0]),
+		  &(TargetPtcl.DensityReducedGvecs[0][0])+
+		   numDensityGvecs*OHMMS_DIM);
       bbuffer.get(&(TargetPtcl.Density_G[0]),
 		  &(TargetPtcl.Density_G[0]) + numDensityGvecs);
     }
@@ -1102,18 +1110,22 @@ namespace qmcplusplus {
     orbitalSet->phase.resize(N);
     orbitalSet->eikr.resize(N);
     // Read in k-points
+    int numOrbs = orbitalSet->getOrbitalSetSize();
+    int num = 0;
     for (int iorb=0; iorb<N; iorb++) {
       int ti = SortBands[iorb].TwistIndex;
       PosType twist  = TwistAngles[ti];
       orbitalSet->kPoints[iorb] = orbitalSet->PrimLattice.k_cart(twist);
-      orbitalSet->MakeTwoCopies[iorb] = SortBands[iorb].MakeTwoCopies;
+      orbitalSet->MakeTwoCopies[iorb] = 
+	(num < (numOrbs-1)) && SortBands[iorb].MakeTwoCopies;
+      num += orbitalSet->MakeTwoCopies[iorb] ? 2 : 1;
     }
     
     // First, check to see if we have already read this in
     H5OrbSet set(H5FileName, spin, N);
-    std::map<H5OrbSet,multi_UBspline_3d_d*>::iterator iter;
+    std::map<H5OrbSet,multi_UBspline_3d_d*,H5OrbSet>::iterator iter;
     iter = ExtendedMap_d.find (set);
-    if (iter != ExtendedMap_d.end()) {
+    if (!(iter == ExtendedMap_d.end())) {
       app_log() << "Using existing copy of multi_UBspline_3d_d for "
 		<< "thread number " << omp_get_thread_num() << ".\n";
       orbitalSet->MultiSpline = iter->second;
@@ -1289,11 +1301,15 @@ namespace qmcplusplus {
     orbitalSet->NumCoreOrbs    = NumCoreOrbs;
 
     if (root) {
+      int numOrbs = orbitalSet->getOrbitalSetSize();
+      int num = 0;
       for (int iorb=0; iorb<N; iorb++) {
 	int ti = SortBands[iorb].TwistIndex;
 	PosType twist  = TwistAngles[ti];
 	orbitalSet->kPoints[iorb] = orbitalSet->PrimLattice.k_cart(twist);
-	orbitalSet->MakeTwoCopies[iorb] = SortBands[iorb].MakeTwoCopies;
+	orbitalSet->MakeTwoCopies[iorb] = 
+	  (num < (numOrbs-1)) && SortBands[iorb].MakeTwoCopies;
+	num += orbitalSet->MakeTwoCopies[iorb] ? 2 : 1;
       }
     }
     myComm->bcast(orbitalSet->kPoints);

@@ -57,7 +57,7 @@ namespace qmcplusplus {
     string FileName;
     int SpinSet;
     int NumOrbs;
-    bool operator()(const H5OrbSet &a, const H5OrbSet &b)
+    bool operator()(const H5OrbSet &a, const H5OrbSet &b) const
     {
       if (a.FileName == b.FileName) {
 	if (a.SpinSet == b.SpinSet) 
