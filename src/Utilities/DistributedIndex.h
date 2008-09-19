@@ -147,6 +147,12 @@ struct DistributedIndex {
   ///default constructor
   inline DistributedIndex():NumData(0) { }
 
+  inline DistributedIndex(const DistributedIndex& old): 
+    M(old.M),NumData(old.NumData)
+  {
+    for(int i=0; i<old.I.size(); ++i) I.push_back(new List_t(*I[i]));
+  }
+
   ///destructor
   inline ~DistributedIndex() { 
     for(int i=0; i<I.size(); i++) delete I[i];
