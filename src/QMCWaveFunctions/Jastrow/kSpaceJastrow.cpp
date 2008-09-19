@@ -571,7 +571,7 @@ namespace qmcplusplus {
   }
   
   kSpaceJastrow::ValueType 
-  kSpaceJastrow::evaluate(ParticleSet& P, PooledData<RealType>& buf) 
+  kSpaceJastrow::evaluateLog(ParticleSet& P, PooledData<RealType>& buf) 
   {
     RealType J1(0.0), J2(0.0);
     int N = P.getTotalNum();
@@ -601,7 +601,8 @@ namespace qmcplusplus {
     }
     for (int i=0; i<nTwo; i++) 
       J2 += TwoBodyCoefs[i]*norm(TwoBody_rhoG[i]);
-    return std::exp(J1 + J2);
+
+    return J1+J2;
   }
   
   void kSpaceJastrow::checkInVariables(opt_variables_type& active)
