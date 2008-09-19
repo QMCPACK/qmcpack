@@ -40,6 +40,8 @@ namespace qmcplusplus {
      */
     SlaterDetBuilder(ParticleSet& els, TrialWaveFunction& psi, PtclPoolType& psets);
 
+    ~SlaterDetBuilder();
+
     /** initialize the Antisymmetric wave function for electrons
      *@param cur the current xml node
      *

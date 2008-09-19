@@ -28,6 +28,14 @@ namespace qmcplusplus {
   { 
     ClassName="SlaterDetBuilder";
   }   
+  SlaterDetBuilder::~SlaterDetBuilder()
+  {
+    DEBUG_MEMORY("SlaterDetBuilder::~SlaterDetBuilder");
+    if(myBasisSetFactory)
+    {
+      delete myBasisSetFactory;
+    }
+  }
 
   bool SlaterDetBuilder::put(xmlNodePtr cur)
   {
@@ -83,6 +91,9 @@ namespace qmcplusplus {
       buildMultiSlaterDetermiant();
     else
       buildSlaterDetermiant();
+
+    delete myBasisSetFactory;
+    myBasisSetFactory=0;
 
     return success;
   }
