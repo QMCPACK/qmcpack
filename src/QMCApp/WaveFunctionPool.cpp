@@ -33,6 +33,17 @@ namespace qmcplusplus {
     MPIObjectBase(c), OhmmsElementBase(aname)
     { }
 
+  WaveFunctionPool::~WaveFunctionPool()
+  {
+    DEBUG_MEMORY("WaveFunctionPool::~WaveFunctionPool");
+    PoolType::iterator it(myPool.begin());
+    while(it != myPool.end())
+    {
+      delete (*it).second;
+      ++it;
+    }
+  }
+
   bool WaveFunctionPool::put(xmlNodePtr cur) {
 
     string id("psi0"), target("e"), role("extra");

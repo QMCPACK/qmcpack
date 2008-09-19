@@ -48,6 +48,7 @@ namespace qmcplusplus {
     typedef std::map<std::string,WaveFunctionFactory*> PoolType;
 
     WaveFunctionPool(Communicate* c, const char* aname = "wavefunction");
+    ~WaveFunctionPool();
 
     bool get(std::ostream& os) const;
     bool put(std::istream& is);
