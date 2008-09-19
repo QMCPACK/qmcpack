@@ -91,16 +91,23 @@ namespace qmcplusplus {
     deltaR.resize(NumPtcl);
     drift.resize(NumPtcl);
 
-    //Tau=brancher->getTau();
-    //m_oneover2tau = 0.5/Tau;
-    //m_sqrttau = std::sqrt(Tau);
+    G.resize(NumPtcl);
+    dG.resize(NumPtcl);
+    L.resize(NumPtcl);
+    dL.resize(NumPtcl);
+
+    ////Tau=brancher->getTau();
+    ////m_oneover2tau = 0.5/Tau;
+    ////m_sqrttau = std::sqrt(Tau);
     SpeciesSet tspecies(W.getSpeciesSet());
-    RealType mass = tspecies(tspecies.addAttribute("mass"),tspecies.addSpecies(tspecies.speciesName[W.GroupID[0]]));
-    if(mass<numeric_limits<RealType>::epsilon()) 
-    {
-      mass=1.0;
-      tspecies(tspecies.addAttribute("mass"),tspecies.addSpecies(tspecies.speciesName[W.GroupID[0]]))=1.0;
-    }
+    int massind=tspecies.addAttribute("mass");
+    RealType mass = tspecies(massind,0);
+    //if(mass<numeric_limits<RealType>::epsilon()) 
+    //{
+    //  mass=1.0;
+    //  tspecies(tspecies.addAttribute("mass"),tspecies.addSpecies(tspecies.speciesName[W.GroupID[0]]))=1.0;
+    //}
+
     //oneovermass is NOT a data member and used only here!!!
     //use m_ if using all lowercase for the variables
     RealType oneovermass = 1.0/mass;
@@ -110,9 +117,7 @@ namespace qmcplusplus {
     m_oneover2tau = 0.5/(m_tauovermass);
     m_sqrttau = std::sqrt(m_tauovermass);
 
-    //     cout<<"  Mass for Propagator is: "<<1.0/oneovermass<<endl;
-    //     cout<<"  m_over2t: "<<m_oneover2tau<<endl;
-    
+    //app_log() << "  QMCUpdateBase::resetRun m/tau=" << m_tauovermass << endl;
     if(m_r2max<0)
       m_r2max =  W.Lattice.LR_rc* W.Lattice.LR_rc;
 
@@ -156,22 +161,19 @@ namespace qmcplusplus {
       W.R = (*it)->R;
       W.update();
       RealType logpsi(Psi.evaluateLog(W));
-//       setScaledDriftPbyP(Tau*m_oneovermass,W.G,(*it)->Drift);
+      //setScaledDriftPbyP(Tau*m_oneovermass,W.G,(*it)->Drift);
       RealType nodecorr=setScaledDriftPbyPandNodeCorr(m_tauovermass,W.G,(*it)->Drift);
-      RealType ene = H.evaluate(W);
-      (*it)->resetProperty(logpsi,Psi.getPhase(),ene,0.0,0.0, nodecorr);
-      H.saveProperty((*it)->getPropertyBase());
+      cout << "  Checking  no correction " << nodecorr<< endl;
+      cout << W.G <<endl;
+      //RealType ene = H.evaluate(W);
+      //(*it)->resetProperty(logpsi,Psi.getPhase(),ene,0.0,0.0, nodecorr);
+      ////H.saveProperty((*it)->getPropertyBase());
     }
   }
 
   void QMCUpdateBase::initWalkersForPbyP(WalkerIter_t it, WalkerIter_t it_end) 
   {
     UpdatePbyP=true;
-    NumPtcl=(*it)->size();//resize it always
-    G.resize(NumPtcl);
-    dG.resize(NumPtcl);
-    L.resize(NumPtcl);
-    dL.resize(NumPtcl);
 
     for(;it != it_end; ++it)
     {
@@ -180,9 +182,7 @@ namespace qmcplusplus {
       RealType logpsi=Psi.registerData(W,tbuffer);
       (*it)->DataSet=tbuffer;
 
-      //RealType scale=getDriftScale(Tau,W.G);
-      //(*it)->Drift = scale*W.G;
-//       setScaledDriftPbyP(m_tauovermass,W.G,(*it)->Drift);
+      //setScaledDriftPbyP(m_tauovermass,W.G,(*it)->Drift);
       RealType nodecorr=setScaledDriftPbyPandNodeCorr(m_tauovermass,W.G,(*it)->Drift);
       RealType ene = H.evaluate(W);
       //(*it)->resetProperty(logpsi,Psi.getPhase(),ene);
