@@ -18,16 +18,10 @@
 #include "Particle/DistanceTableData.h"
 #include "Particle/SymmetricDistanceTableData.h"
 #include "Particle/AsymmetricDistanceTableData.h"
-#include "ParticleIO/ParticleLayoutIO.h"
 #include "Lattice/ParticleBConds.h"
 
 namespace qmcplusplus
 {
-
-  /**@{instantiation of static data members*/
-  //map<string,DistanceTableData*>  DistanceTable::TableMap;
-  ParticleSet::ParticleLayout_t* DistanceTable::SimulationCell=0;
-  /**@}*/
 
   /** Adding SymmetricDTD to the list, e.g., el-el distance table
    *\param s source/target particle set
@@ -98,17 +92,6 @@ namespace qmcplusplus
   }
 
 
-  void DistanceTable::createSimulationCell(xmlNodePtr cur) 
-  {
-    if(cur != NULL) {
-      if(SimulationCell == 0) {
-        SimulationCell = new ParticleLayout_t;
-      }
-      LatticeParser a(*SimulationCell);
-      a.put(cur);
-    }
-  }
-
   /** Adding SymmetricDTD to the list, e.g., el-el distance table
    *\param s source/target particle set
    *\return DistanceTableData*
@@ -130,40 +113,6 @@ namespace qmcplusplus
     return t.DistTables[tid];
   }
 
-
-//void 
-//DistanceTable::removeTable(const string& tname) {
-//  map<string,DistanceTableData*>::iterator it = TableMap.find(tname);
-//  if(it != TableMap.end()) {
-//    delete (*it).second;
-//    TableMap.erase(it);
-//  }
-//}
-//
-//void DistanceTable::create(int walkers) {
-//  map<string,DistanceTableData*>::iterator it = TableMap.begin();
-//  map<string,DistanceTableData*>::iterator it_end = TableMap.end();
-//  while(it != it_end) {
-//    (*it).second->create(walkers);
-//    ++it;
-//  }
-//}
-//
-//void DistanceTable::reset() {
-//}
-
-//May need to make it singleton
-// class DistanceTableSingleton {
-// public:
-//   typedef DistanceTable<TinyVector<double,3> > Table_t;
-//   static void set(int np, int nc=1) {ref_.set(np,nc);}
-//   static Table_t& getTable() {return ref_;}
-//   ///static const Table_t& getTable() const { return ref_; }
-// private:
-//   static Table_t ref_;
-// };
-// ///instantiate the singleton
-// DistanceTable<TinyVector<double,3> > DistanceTableSingleton::ref_;
 } //namespace qmcplusplus
 /***************************************************************************
  * $RCSfile$   $Author$
