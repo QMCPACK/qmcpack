@@ -124,7 +124,7 @@ namespace qmcplusplus {
 		int iat);
 
 
-    ValueType evaluate(ParticleSet& P, PooledData<RealType>& buf);
+    ValueType evaluateLog(ParticleSet& P, PooledData<RealType>& buf);
 
 
     void resizeByWalkers(int nwalkers);

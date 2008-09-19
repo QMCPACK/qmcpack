@@ -563,7 +563,7 @@ namespace qmcplusplus {
 		int iat) {
     }
 
-  AGPDeterminant::ValueType AGPDeterminant::evaluate(ParticleSet& P, PooledData<RealType>& buf) 
+  AGPDeterminant::ValueType AGPDeterminant::evaluateLog(ParticleSet& P, PooledData<RealType>& buf) 
   {
     if(UseBuffer) 
     {
@@ -580,7 +580,8 @@ namespace qmcplusplus {
       buf.put(myL.first_address(), myL.last_address());
       //buf.put(myL.begin(), myL.end());
     }
-    return CurrentDet;
+    return evaluateLogAndPhase(CurrentDet,PhaseValue);
+    //return CurrentDet;
   }
 
 }
