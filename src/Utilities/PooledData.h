@@ -76,7 +76,7 @@ struct PooledData {
   inline const_iterator end() const { return myData.end();}
 
   inline void reserve(size_type n) { myData.reserve(n);}
-  inline void clear() { myData.clear();}
+  inline void clear() { myData.clear();Anchor=myData.begin();}
 
   ///@{Add data to the pool
   template<class T1>
@@ -198,52 +198,56 @@ struct PooledData {
 };
 #else
 template<class T>
-class PooledData: public std::vector<T> {
+struct PooledData {
+
+  typedef typename std::vector<T>::size_type size_type;
 
   int Current;
-
-public:
+  std::vector<T> myData;
   
-  //default constructor
+  ///default constructor
   inline PooledData(): Current(0) { }
 
-  //copy constructor
-  //inline PooledData(const PooledData& a): std::vector<T>(a),Current(0) { }
+  ///constructor with a size
+  explicit inline PooledData(int n):Current(0){ myData.resize(n,T());}
 
-  //constructor with a size
-  explicit inline PooledData(int n): std::vector<T>(n) , Current(0){}
+  ///return the size of the data
+  inline size_type size() const { return myData.size();}
 
-  //assignement operator
-  PooledData<T>& operator=(const PooledData<T>& a) {
-    if(this != &a && a.size())
-    {
-      Current=a.Current;
-      this->resize(a.size());
-      std::copy(a.begin(),a.end(),this->begin());
-    }
-    return *this;
-  }
-
+  //inline void clear() { std::vector<T>::clear(); Current=0;}
   inline int current() const { return Current;}
 
   ///set the Current to zero
   inline void rewind() { Current = 0;}
 
-  template<class T1>
-  inline void add(T1 x) { Current++; this->push_back(static_cast<T>(x));}
+  /*@{ matching functions to std::vector functions */
+  ///clear the data and set Current=0
+  inline void clear() { myData.clear(); Current=0;}
+  ///reserve the memory using vector<T>::reserve
+  inline void reserve(size_type n) { myData.reserve(n); Current=0;}
+  ///resize
+  inline void resize(size_type n, T val=T()) { myData.resize(n,val); Current=0;}
+  ///return i-th value
+  inline T operator[](size_type i) const { return myData[i];}
+  ///return i-th value to assign
+  inline T& operator[](size_type i) { return myData[i];}
+  /*@}*/
 
-  inline void add(T x) { Current++; this->push_back(x);}
+  template<class T1>
+  inline void add(T1 x) { Current++; myData.push_back(static_cast<T>(x));}
+
+  inline void add(T x) { Current++; myData.push_back(x);}
 
   inline void add(complex<T>& x) { 
     Current+=2; 
-    this->push_back(x.real()); 
-    this->push_back(x.imag());
+    myData.push_back(x.real()); 
+    myData.push_back(x.imag());
   }
 
   template<class _InputIterator>
   inline void add(_InputIterator first, _InputIterator last) {
     Current += last-first;
-    this->insert(this->end(),first,last);
+    myData.insert(myData.end(),first,last);
     //while(first != last) {
     //  Current++; this->push_back(*first++);
     //}
@@ -255,31 +259,32 @@ public:
 #if defined(SGI_IA64)
     for(;first != last; ++first)
     {
-      this->push_back((*first).real()); 
-      this->push_back((*first).imag());
+      myData.push_back((*first).real()); 
+      myData.push_back((*first).imag());
     }
 #else
-    this->insert(this->end(),&(first->real()),&(first->real())+dn);
+    myData.insert(myData.end(),&(first->real()),&(first->real())+dn);
 #endif
     Current += dn;
   }
 
   template<class T1>
   inline void get(T1& x) {
-    x = static_cast<T1>((*this)[Current++]);
+    x = static_cast<T1>(myData[Current++]);
   }
 
-  inline void get(T& x) { x = (*this)[Current++];}
+  inline void get(T& x) { x = myData[Current++];}
 
-  inline void get(std::complex<T>& x) { 
-    x=std::complex<T>((*this)[Current],(*this)[Current+1]); Current+=2;
+  inline void get(std::complex<T>& x) 
+  { 
+    x=std::complex<T>(myData[Current],myData[Current+1]); Current+=2;
   }
 
   template<class _OutputIterator>
   inline void get(_OutputIterator first, _OutputIterator last) {
     int now=Current;
     Current+=last-first;
-    std::copy(this->begin()+now,this->begin()+Current,first);
+    std::copy(myData.begin()+now,myData.begin()+Current,first);
     //while(first != last) {
     //  *first++ = (*this)[Current++];
     //}
@@ -287,20 +292,20 @@ public:
 
   inline void get(std::complex<T>* first, std::complex<T>* last){
     while(first != last) {
-      (*first)=std::complex<T>((*this)[Current],(*this)[Current+1]);
+      (*first)=std::complex<T>(myData[Current],myData[Current+1]);
       ++first; Current+=2;
     }
   }
   
-  inline void put(T x) { (*this)[Current++] = x;}
+  inline void put(T x) { myData[Current++] = x;}
   inline void put(std::complex<T>& x) { 
-    (*this)[Current++] = x.real();  
-    (*this)[Current++] = x.imag();
+    myData[Current++] = x.real();  
+    myData[Current++] = x.imag();
   }
 
   template<class _InputIterator>
   inline void put(_InputIterator first, _InputIterator last){
-    std::copy(first,last,this->begin()+Current);
+    std::copy(first,last,myData.begin()+Current);
     Current+=last-first;
     //while(first != last) {
     //  (*this)[Current++] = *first++;
@@ -309,33 +314,59 @@ public:
 
   inline void put(std::complex<T>* first, std::complex<T>* last) {
     while(first != last) {
-      (*this)[Current++] = (*first).real();
-      (*this)[Current++] = (*first).imag();
+      myData[Current++] = (*first).real();
+      myData[Current++] = (*first).imag();
       ++first;
     }
   }
 
 
   /** return the address of the first element **/
-  inline T* data() { return &((*this)[0]);}
+  inline T* data() { return &(myData[0]);}
 
   inline void print(std::ostream& os) {
-    std::copy(this->begin(), this->end(), ostream_iterator<T>(os," "));
+    std::copy(myData.begin(), myData.end(), ostream_iterator<T>(os," "));
   }
 
   template<class Msg>
   inline Msg& putMessage(Msg& m) {
-    m.Pack(&((*this)[0]),this->size());
+    m.Pack(&(myData[0]),myData.size());
     return m;
   }
 
   template<class Msg>
   inline Msg& getMessage(Msg& m) {
-    m.Unpack(&((*this)[0]),this->size());
+    m.Unpack(&(myData[0]),myData.size());
     return m;
   }
 };
 #endif
+
+/** operator to check if two buffers are identical */
+template<class T>
+bool operator==(const PooledData<T>& a, const PooledData<T>& b)
+{
+  if(a.size() != b.size()) return false;
+  //if(a.Current != b.Current) return false;
+  for(int i=0; i<a.size(); ++i)
+  {
+    if(abs(a[i]-b[i])>numeric_limits<RealType>::epsilon()) return false;
+  }
+  return true;
+}
+
+/** operator to check if two buffers are different */
+template<class T>
+bool operator!=(const PooledData<T>& a, const PooledData<T>& b)
+{
+  if(a.size() != b.size()) return true;
+  //if(a.Current != b.Current) return true;
+  for(int i=0; i<a.size(); ++i)
+  {
+    if(abs(a[i]-b[i])>numeric_limits<RealType>::epsilon()) return true;
+  }
+  return false;
+}
 #endif
 /***************************************************************************
  * $RCSfile$   $Author$
