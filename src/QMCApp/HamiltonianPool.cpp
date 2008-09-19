@@ -128,11 +128,9 @@ namespace qmcplusplus {
     //add the Clones to the pools
     for(int ip=1; ip<np; ++ip) 
     {
-      char pname[16],oname[16];
-      sprintf(pname,"%s.c%i",qp.getName().c_str(),ip);
       plist[ip]=new MCWalkerConfiguration(qp);
-      plist[ip]->setName(pname);
 
+      char oname[16];
       sprintf(oname,"%s.c%i",psi.getName().c_str(),ip);
       // Don't recreate with a factory anymore
       //otemp[ip]= psiFac->clone(plist[ip],ip,oname);
