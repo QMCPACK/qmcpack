@@ -3,6 +3,7 @@
 
 #include <cuda_runtime_api.h>
 #include <malloc.h>
+#include <iostream>
 
 template<typename T> class cuda_allocator;
 
@@ -47,19 +48,24 @@ public:
   
   pointer allocate(size_type s, cuda_allocator<void>::const_pointer hint = 0)
   {
-
+    std::cerr << "Called allocate with s = " << s << std::endl;
+    pointer mem;
+    cudaMalloc ((void**)&mem, s*sizeof(T));
+    return mem;
   }
   
   void deallocate(pointer p, size_type n)
   {
-
+    cudaFree (p);
   }
 
   size_type max_size() const throw()
   { return (size_type)1 << 32 - 1; }
   
   void construct(pointer p, const T& val)
-  { new(static_cast<void*>(p)) T(val);  }
+  { 
+    //new(static_cast<void*>(p)) T(val);  
+  }
   
   void destroy(pointer p) {
     p->~T();
