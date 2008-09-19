@@ -394,7 +394,7 @@ namespace qmcplusplus {
   }
   
   LRTwoBodyJastrow::ValueType 
-    LRTwoBodyJastrow::evaluate(ParticleSet& P, PooledData<RealType>& buf) {
+    LRTwoBodyJastrow::evaluateLog(ParticleSet& P, PooledData<RealType>& buf) {
       buf.put(Rhok.first_address(), Rhok.last_address());
       buf.put(U.first_address(), U.last_address());
       buf.put(d2U.first_address(), d2U.last_address());
