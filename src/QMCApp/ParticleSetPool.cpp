@@ -21,13 +21,41 @@
 #include "Particle/DistanceTable.h"
 #include "OhmmsData/AttributeSet.h"
 #include "ParticleIO/XMLParticleIO.h"
-#include "Utilities/OhmmsInfo.h"
+#include "ParticleIO/ParticleLayoutIO.h"
+#include "Utilities/ProgressReportEngine.h"
 
 namespace qmcplusplus {
   
   ParticleSetPool::ParticleSetPool(Communicate* c, const char* aname): 
-    MPIObjectBase(c), OhmmsElementBase(aname)
-    { }
+    MPIObjectBase(c), OhmmsElementBase(aname), SimulationCell(0)
+  { }
+
+  ParticleSet* ParticleSetPool::getParticleSet(const string& pname) 
+  {
+    map<string,ParticleSet*>::iterator pit(myPool.find(pname));
+    if(pit == myPool.end())  
+    {
+      return 0;
+    }
+    else  
+    {
+      return (*pit).second;
+    }
+  }
+
+  MCWalkerConfiguration* ParticleSetPool::getWalkerSet(const string& pname)
+  {
+    ParticleSet* mc=0;
+    if(myPool.size() ==1) 
+      mc=(*myPool.begin()).second;
+    else
+      mc=getParticleSet(pname);
+    if(mc ==0) 
+    {
+      APP_ABORT("ParticleSePool::getWalkerSet missing "+ pname);
+    }
+    return dynamic_cast<MCWalkerConfiguration*>(mc);
+  }
 
   void  ParticleSetPool::addParticleSet(ParticleSet* p) {
     PoolType::iterator pit(myPool.find(p->getName()));
@@ -40,6 +68,25 @@ namespace qmcplusplus {
     }
   }
 
+  bool ParticleSetPool::putLattice(xmlNodePtr cur) 
+  {
+    ReportEngine PRE("ParticleSetPool","putLattice");
+    if(SimulationCell==0)
+    {
+      app_log() << "  Create Global SuperCell " << endl;
+      SimulationCell = new ParticleSet::ParticleLayout_t;
+    }
+    else
+    {
+      app_log() << "  Overwrite Global SuperCell " << endl;
+    }
+    LatticeParser a(*SimulationCell);
+    bool success=a.put(cur);
+
+    SimulationCell->print(app_log());
+    return success;
+  }
+
   /** process an xml element
    * @param cur current xmlNodePtr
    * @return true, if successful.
@@ -47,9 +94,13 @@ namespace qmcplusplus {
    * Creating MCWalkerConfiguration for all the ParticleSet
    * objects. 
    */
-  bool ParticleSetPool::put(xmlNodePtr cur) {
+  bool ParticleSetPool::put(xmlNodePtr cur) 
+  {
 
-    const ParticleSet::ParticleLayout_t* sc=DistanceTable::getSimulationCell();
+    ReportEngine PRE("ParticleSetPool","put");
+
+    //const ParticleSet::ParticleLayout_t* sc=DistanceTable::getSimulationCell();
+    //ParticleSet::ParticleLayout_t* sc=0;
 
     string id("e"), role("none");
     OhmmsAttributeSet pAttrib;
@@ -61,16 +112,18 @@ namespace qmcplusplus {
     if(id == "e" && role=="none") role="MC";
 
     ParticleSet* pTemp = getParticleSet(id);
-    if(pTemp == 0) {
+    if(pTemp == 0) 
+    {
       app_log() << "  Creating " << id << " particleset" << endl;
       pTemp = new MCWalkerConfiguration;
       //if(role == "MC") 
       //  pTemp = new MCWalkerConfiguration;
       //else 
       //  pTemp = new ParticleSet;
-      if(sc) {
+      if(SimulationCell) 
+      {
         app_log() << "  Initializing the lattice of " << id << " by the global supercell" << endl;
-        pTemp->Lattice.copy(*sc);
+        pTemp->Lattice.copy(*SimulationCell);
       }
       myPool[id] = pTemp;
       XMLParticleParser pread(*pTemp);
@@ -84,11 +137,14 @@ namespace qmcplusplus {
     return true;
   }
 
-  bool ParticleSetPool::put(std::istream& is) {
+  bool ParticleSetPool::put(std::istream& is) 
+  {
     return true;
   }
 
-  bool ParticleSetPool::get(std::ostream& os) const {
+  bool ParticleSetPool::get(std::ostream& os) const 
+  {
+    os << "ParticleSetPool has: " << endl;
     PoolType::const_iterator it(myPool.begin()), it_end(myPool.end());
     while(it != it_end) {
       os << endl;

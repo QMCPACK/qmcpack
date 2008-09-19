@@ -49,6 +49,9 @@ namespace qmcplusplus {
     bool put(xmlNodePtr cur);
     void reset();
 
+    /** initialize the supercell shared by all the particle sets 
+     */
+    bool putLattice(xmlNodePtr cur);
     ///return true, if the pool is empty
     inline bool empty() const { return myPool.empty();}
 
@@ -56,19 +59,11 @@ namespace qmcplusplus {
     void addParticleSet(ParticleSet* p);
     /** get a named ParticleSet
      * @param pname name of the ParticleSet
-     * @return a ParticleSet object with pname
+     * @return a MCWalkerConfiguration object with pname
      *
      * When the named ParticleSet is not in this object, return 0.
      */
-    ParticleSet* getParticleSet(const string& pname) {
-      map<string,ParticleSet*>::iterator pit(myPool.find(pname));
-      if(pit == myPool.end())  {
-        return 0;
-      }
-      else  {
-        return (*pit).second;
-      }
-    }
+    ParticleSet* getParticleSet(const string& pname);
 
     /** get a named MCWalkerConfiguration
      * @param pname name of the MCWalkerConfiguration
@@ -76,13 +71,7 @@ namespace qmcplusplus {
      *
      * When the named MCWalkerConfiguration is not in this object, return 0.
      */
-    MCWalkerConfiguration* getWalkerSet(const string& pname) {
-      map<string,ParticleSet*>::iterator pit(myPool.find(pname));
-      if(pit == myPool.end()) 
-        return 0;
-      else 
-        return dynamic_cast<MCWalkerConfiguration*>((*pit).second);
-    }
+    MCWalkerConfiguration* getWalkerSet(const string& pname);
 
     /** get the Pool object
      */
@@ -100,7 +89,7 @@ namespace qmcplusplus {
     vector<ParticleSet*> clone(const string& pname, int np);
      */
   private:
-
+    ParticleSet::ParticleLayout_t* SimulationCell;
     map<string,ParticleSet*> myPool;
   };
 }
