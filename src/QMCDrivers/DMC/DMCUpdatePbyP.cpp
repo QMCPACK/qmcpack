@@ -282,14 +282,16 @@ namespace qmcplusplus {
 
         w_buffer.rewind();
         W.copyToBuffer(w_buffer);
-        RealType psi = Psi.evaluate(W,w_buffer);
+        //RealType psi = Psi.evaluate(W,w_buffer);
+        RealType logpsi = Psi.evaluateLog(W,w_buffer);
         myTimers[2]->stop();
 
         myTimers[3]->start();
         enew= H.evaluate(W);
         myTimers[3]->stop();
 
-        thisWalker.resetProperty(std::log(abs(psi)),psi,enew,rr_accepted,rr_proposed,nodecorr);
+        //thisWalker.resetProperty(std::log(abs(psi)),psi,enew,rr_accepted,rr_proposed,nodecorr);
+        thisWalker.resetProperty(logpsi,Psi.getPhase(),enew,rr_accepted,rr_proposed,nodecorr);
         H.saveProperty(thisWalker.getPropertyBase());
       } 
       else 
