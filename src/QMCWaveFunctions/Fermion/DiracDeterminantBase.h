@@ -8,13 +8,10 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
-//   Department of Physics, Ohio State University
-//   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 /**@file DiracDeterminantBaseBase.h
@@ -149,7 +146,7 @@ namespace qmcplusplus {
 		ParticleSet::ParticleLaplacian_t& dL,
 		int iat);
 
-    ValueType evaluate(ParticleSet& P, PooledData<RealType>& buf);
+    ValueType evaluateLog(ParticleSet& P, PooledData<RealType>& buf);
 
 
     ///evaluate log of determinant for a particle set: should not be called 
@@ -166,31 +163,25 @@ namespace qmcplusplus {
 
     OrbitalBasePtr makeClone(ParticleSet& tqp) const;
 
+    ///flag to turn on/off to skip some calculations
     bool UseRatioOnly;
-    ///The number of particles
+    ///total number of particles
     int NP;
-
     ///number of single-particle orbitals which belong to this Dirac determinant
     int NumOrbitals;
     ///number of particles which belong to this Dirac determinant
     int NumPtcls;
-
     ///index of the first particle with respect to the particle set
     int FirstIndex;
-
     ///index of the last particle with respect to the particle set
     int LastIndex;
-
+    ///index of the particle (or row) 
+    int WorkingIndex;      
     ///a set of single-particle orbitals used to fill in the  values of the matrix 
     SPOSetBasePtr Phi;
 
-    ///index of the particle (or row) 
-    int WorkingIndex;      
-
-    ///Current determinant value
-    ValueType CurrentDet;
-    ///the sign of determinant
-    RealType DetSign;
+    /////Current determinant value
+    //ValueType CurrentDet;
     /// psiM(j,i) \f$= \psi_j({\bf r}_i)\f$
     ValueMatrix_t psiM, psiM_temp;
 
