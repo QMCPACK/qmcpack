@@ -73,9 +73,7 @@ namespace qmcplusplus {
     char pname[16];
     for(int ip=1; ip<NumThreads; ++ip) 
     {
-      sprintf(pname,"%s.c%i",w.getName().c_str(),ip);
       wClones[ip]=new MCWalkerConfiguration(w);
-      wClones[ip]->setName(pname);
       psiClones[ip]=psi.makeClone(*wClones[ip]);
       hClones[ip]=ham.makeClone(*wClones[ip],*psiClones[ip]);
     }
