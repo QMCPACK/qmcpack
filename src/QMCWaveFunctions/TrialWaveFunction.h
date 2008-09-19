@@ -137,7 +137,7 @@ namespace qmcplusplus {
     RealType registerData(ParticleSet& P, BufferType& buf);
     RealType updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch=false);
     void copyFromBuffer(ParticleSet& P, BufferType& buf);
-    RealType evaluate(ParticleSet& P, BufferType& buf);
+    RealType evaluateLog(ParticleSet& P, BufferType& buf);
 
     void dumpToBuffer(ParticleSet& P, BufferType& buf);
     void dumpFromBuffer(ParticleSet& P, BufferType& buf);

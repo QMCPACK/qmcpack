@@ -306,6 +306,7 @@ namespace qmcplusplus {
   TrialWaveFunction::registerData(ParticleSet& P, PooledData<RealType>& buf) {
     delta_G.resize(P.getTotalNum());
     delta_L.resize(P.getTotalNum());
+
     P.G = 0.0;
     P.L = 0.0;
 
@@ -408,19 +409,29 @@ namespace qmcplusplus {
   }
 
   TrialWaveFunction::RealType
-  TrialWaveFunction::evaluate(ParticleSet& P, PooledData<RealType>& buf) {
-
-    ValueType psi(1.0);
-    for(int i=0; i<Z.size(); i++) psi *= Z[i]->evaluate(P,buf);
+  TrialWaveFunction::evaluateLog(ParticleSet& P, PooledData<RealType>& buf) 
+  {
+    LogValue=0.0;
+    PhaseValue=0.0;
+    for(int i=0; i<Z.size(); i++) 
+    {
+      LogValue += Z[i]->evaluateLog(P,buf);
+      PhaseValue += Z[i]->PhaseValue;
+    }
     buf.put(&(P.G[0][0]), &(P.G[0][0])+TotalDim);
     buf.put(&(P.L[0]), &(P.L[0])+NumPtcls);
-//     cout << "Checking in gradients and laplacians " << endl;
-//     for(int i=0; i<P.getLocalNum(); i++) {
-//       cout << P.G[i] << " " << P.L[i] << endl;
-//     }
-    return real(psi);
+    return real(LogValue);
   }
 
+  //TrialWaveFunction::RealType
+  //TrialWaveFunction::evaluate(ParticleSet& P, PooledData<RealType>& buf) {
+
+  //  ValueType psi(1.0);
+  //  for(int i=0; i<Z.size(); i++) psi *= Z[i]->evaluate(P,buf);
+  //  buf.put(&(P.G[0][0]), &(P.G[0][0])+TotalDim);
+  //  buf.put(&(P.L[0]), &(P.L[0])+NumPtcls);
+  //  return real(psi);
+  //}
   //bool TrialWaveFunction::hasSPOSet(const string& aname) {
   //  return false;
   //  //bool notfoundit=true;
