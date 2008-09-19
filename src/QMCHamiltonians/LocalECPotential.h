@@ -7,7 +7,6 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
@@ -33,10 +32,14 @@ namespace qmcplusplus {
     typedef OneDimGridBase<RealType> GridType;
     typedef OneDimLinearSpline<RealType> RadialPotentialType;
 
+    ///reference to the ionic configuration
+    const ParticleSet& IonConfig;
     ///the number of ioncs
     int NumIons;
-    ///the distance table containing electron-nuclei distances  
-    DistanceTableData* d_table;
+    ///distance table index
+    int myTableIndex;
+    ///temporary energy per particle for pbyp move
+    RealType PPtmp;
     ///unique set of local ECP to cleanup
     vector<RadialPotentialType*> PPset;
     ///PP[iat] is the local potential for the iat-th particle
@@ -45,8 +48,8 @@ namespace qmcplusplus {
     vector<RealType> Zeff;
     ///effective charge per species
     vector<RealType> gZeff;
-    ///reference to the ionic configuration
-    const ParticleSet& IonConfig;
+    ///energy per particle
+    Vector<RealType> PPart;
 
     LocalECPotential(const ParticleSet& ions, ParticleSet& els);
     
@@ -59,6 +62,12 @@ namespace qmcplusplus {
     inline Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy) {
       return evaluate(P);
     }
+    Return_t registerData(ParticleSet& P, BufferType& buffer);
+    Return_t updateBuffer(ParticleSet& P, BufferType& buffer);
+    void copyFromBuffer(ParticleSet& P, BufferType& buf);
+    void copyToBuffer(ParticleSet& P, BufferType& buf);
+    Return_t evaluatePbyP(ParticleSet& P, int iat);
+    void acceptMove(int iat);
 
     bool put(xmlNodePtr cur) { return true;}
 
@@ -75,6 +84,7 @@ namespace qmcplusplus {
      * @param z effective charge of groupID particle
      */
     void add(int groupID, RadialPotentialType* ppot, RealType z);
+    Return_t evaluateForPbyP(ParticleSet& P);
   };
 }
 #endif

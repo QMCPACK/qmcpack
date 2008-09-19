@@ -14,7 +14,6 @@
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 #include "Particle/ParticleSet.h"
-#include "Particle/DistanceTable.h"
 #include "Particle/DistanceTableData.h"
 #include "QMCHamiltonians/QMCHamiltonianBase.h"
 #include "QMCHamiltonians/LocalECPotential.h"
@@ -23,10 +22,10 @@
 namespace qmcplusplus {
 
   LocalECPotential::LocalECPotential(const ParticleSet& ions, ParticleSet& els):
-    IonConfig(ions), d_table(0)
+    IonConfig(ions)
   { 
     NumIons=ions.getTotalNum();
-    d_table = DistanceTable::add(ions,els);
+    myTableIndex=els.addTable(ions);
     //allocate null
     PPset.resize(ions.getSpeciesSet().getTotalNum(),0);
     PP.resize(NumIons,0);
@@ -44,7 +43,11 @@ namespace qmcplusplus {
   }
 
   void LocalECPotential::resetTargetParticleSet(ParticleSet& P) {
-    d_table = DistanceTable::add(IonConfig,P);
+    int tid=P.addTable(IonConfig);
+    if(tid != myTableIndex)
+    {
+      APP_ABORT("  LocalECPotential::resetTargetParticleSet found a different distance table index.");
+    }
   }
 
   void LocalECPotential::add(int groupID, RadialPotentialType* ppot, RealType z) {
@@ -59,22 +62,93 @@ namespace qmcplusplus {
   }
 
   LocalECPotential::Return_t 
-    LocalECPotential::evaluate(ParticleSet& P) {
+    LocalECPotential::evaluate(ParticleSet& P) 
+    {
+      const DistanceTableData& d_table(*P.DistTables[myTableIndex]);
       Value=0.0;
       //loop over all the ions
       for(int iat=0; iat<NumIons; iat++) {
         RadialPotentialType* ppot(PP[iat]);
-        if(ppot) {
-          Return_t esum(0.0);
-          for(int nn=d_table->M[iat]; nn<d_table->M[iat+1]; nn++){
-            esum += ppot->splint(d_table->r(nn))*d_table->rinv(nn);
-          }
-          //count the sign and effective charge
-          Value -= esum*Zeff[iat];
-        }
+        if(ppot==0) continue;
+        Return_t esum(0.0);
+        for(int nn=d_table.M[iat]; nn<d_table.M[iat+1]; ++nn)
+          esum += ppot->splint(d_table.r(nn))*d_table.rinv(nn);
+        //count the sign and effective charge
+        Value -= esum*Zeff[iat];
       }
       return Value;
     }
+
+  LocalECPotential::Return_t 
+    LocalECPotential::registerData(ParticleSet& P, BufferType& buffer) 
+    {
+      PPart.resize(P.getTotalNum());
+      NewValue=Value=evaluateForPbyP(P);
+      buffer.add(PPart.begin(),PPart.end());
+      buffer.add(Value);
+      return Value;
+    }
+
+  LocalECPotential::Return_t 
+    LocalECPotential::updateBuffer(ParticleSet& P, BufferType& buffer) 
+    {
+      NewValue=Value=evaluateForPbyP(P);
+      buffer.put(PPart.begin(),PPart.end());
+      buffer.put(Value);
+      return Value;
+    }
+
+  void LocalECPotential::copyFromBuffer(ParticleSet& P, BufferType& buffer) 
+  {
+    buffer.get(PPart.begin(),PPart.end());
+    buffer.get(Value);
+  }
+
+  void LocalECPotential::copyToBuffer(ParticleSet& P, BufferType& buffer) 
+  {
+    buffer.put(PPart.begin(),PPart.end());
+    buffer.put(Value);
+  }
+
+  LocalECPotential::Return_t
+    LocalECPotential::evaluateForPbyP(ParticleSet& P)
+    {
+      const DistanceTableData& d_table(*P.DistTables[myTableIndex]);
+      PPart=0.0;
+      Return_t res=0.0;
+      for(int iat=0; iat<NumIons; ++iat) {
+        RadialPotentialType* ppot(PP[iat]);
+        if(ppot) {
+          Return_t z=-Zeff[iat];
+          for(int nn=d_table.M[iat]; nn<d_table.M[iat+1]; ++nn)
+          {
+            Return_t e= z*ppot->splint(d_table.r(nn))*d_table.rinv(nn);
+            PPart[d_table.J[nn]]+=e;
+            res+=e;
+          }
+        }
+      }
+      return res;
+    }
+
+  LocalECPotential::Return_t
+    LocalECPotential::evaluatePbyP(ParticleSet& P, int active)
+    {
+      const std::vector<DistanceTableData::TempDistType> &temp(P.DistTables[myTableIndex]->Temp);
+      PPtmp=0.0;
+      for(int iat=0; iat<NumIons; ++iat) 
+      {
+        if(PP[iat]) 
+          PPtmp -= Zeff[iat]*PP[iat]->splint(temp[iat].r1)*temp[iat].rinv1;
+      }
+      return NewValue=Value+PPtmp-PPart[active];
+    }
+
+  void LocalECPotential::acceptMove(int active)
+  {
+    PPart[active]=PPtmp;
+    Value=NewValue;
+  }
 
   QMCHamiltonianBase* LocalECPotential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
   {
