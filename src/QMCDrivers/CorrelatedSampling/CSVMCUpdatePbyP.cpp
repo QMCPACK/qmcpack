@@ -163,7 +163,8 @@ namespace qmcplusplus {
         for(int ipsi=0; ipsi< nPsi; ipsi++){
           W.G=Psi1[ipsi]->G;
           W.L=Psi1[ipsi]->L;
-          ValueType psi = Psi1[ipsi]->evaluate(W,w_buffer);
+          //ValueType psi = Psi1[ipsi]->evaluate(W,w_buffer);
+          ValueType logpsi = Psi1[ipsi]->evaluateLog(W,w_buffer);
           RealType et = H1[ipsi]->evaluate(W);
 
           //multiEstimator->updateSample(iwalker,ipsi,et,UmbrellaWeight[ipsi]);
