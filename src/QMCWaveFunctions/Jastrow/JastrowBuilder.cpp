@@ -253,13 +253,15 @@ namespace qmcplusplus {
     if(sourceOpt == targetPtcl.getName()) 
     {
       app_warning() << "  Three-Body Jastrow Function needs a source different from " << targetPtcl.getName() << endl;
-      app_warning() << "  Exit JastrowBuilder::addOneBody." << endl;
+      APP_ABORT("  JastrowBuilder::addThreeBody");
       return false;
     }
 
     PtclPoolType::iterator pit(ptclPool.find(sourceOpt));
-    if(pit == ptclPool.end()) {
+    if(pit == ptclPool.end()) 
+    {
       app_error() << "     JastrowBuilder::addThreeBody requires a center. " << sourceOpt << " is invalid " << endl;
+      APP_ABORT("  JastrowBuilder::addThreeBody");
       return false;
     }
     app_log() << "  JastrowBuilder::addThreeBody source="<< sourceOpt <<  endl;
