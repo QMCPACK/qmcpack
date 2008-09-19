@@ -65,6 +65,12 @@ namespace qmcplusplus {
     return TinyVector<double,1>(a[0].real());
   }
 
+  inline double
+    evaluatePhase(int sign_v)
+    {
+      return (sign_v>0)?0.0:M_PI;
+    }
+
   /** evaluate the log(|psi|) and phase
    * @param psi real/complex value
    * @param phase phase of psi

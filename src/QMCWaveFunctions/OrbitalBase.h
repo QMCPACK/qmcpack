@@ -228,8 +228,8 @@ namespace qmcplusplus {
 			int iat) =0;
 
 
-    /** equivalent to evaluate(P,G,L) with write-back function */
-    virtual ValueType evaluate(ParticleSet& P,BufferType& buf)=0;
+    /** equivalent to evaluateLog(P,G,L) with write-back function */
+    virtual ValueType evaluateLog(ParticleSet& P,BufferType& buf)=0;
 
     /** add temporary data reserved for particle-by-particle move.
      *
