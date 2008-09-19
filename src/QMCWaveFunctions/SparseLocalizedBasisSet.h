@@ -110,7 +110,7 @@ namespace qmcplusplus {
       if(nbs == BasisSetSize) return;
 
       if(myTable ==0) {
-        app_error() << "SparseLocalizsedBasisSet cannot function without a distance table. Abort" << endl;
+        APP_ABORT("SparseLocalizsedBasisSet cannot function without a distance table. Abort");
       }
 
       for(int ig=0; ig<NumGroups; ig++)
