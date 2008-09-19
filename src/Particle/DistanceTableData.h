@@ -321,10 +321,6 @@ namespace qmcplusplus {
       }
     }
 
-  private:
-    
-    ///disable copy constructor of the base class
-    DistanceTableData(const DistanceTableData& a):Origin(a.Origin) { }
   };
 }
 #endif
