@@ -368,7 +368,7 @@ void QMCInterface::processPWH(xmlNodePtr cur) {
   while(cur != NULL) {
     string cname((const char*)cur->name);
     if(cname == "simulationcell") {
-      DistanceTable::createSimulationCell(cur);
+      ptclPool->putLattice(cur);
     } else if(cname == "particleset") {
       ptclPool->put(cur);
     } else if(cname == "wavefunction") {

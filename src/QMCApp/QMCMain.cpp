@@ -210,7 +210,7 @@ namespace qmcplusplus {
     OhmmsAttributeSet a;
     a.add(target,"target");
     a.put(cur);
-    if(qmcSystem ==0)
+    if(qmcSystem ==0) 
       qmcSystem = ptclPool->getWalkerSet(target);
     bool success = runQMC(cur);
     FirstQMC=false;
@@ -340,7 +340,7 @@ namespace qmcplusplus {
     while(cur != NULL) {
       string cname((const char*)cur->name);
       if(cname == "simulationcell") {
-        DistanceTable::createSimulationCell(cur);
+        ptclPool->putLattice(cur);
       } else if(cname == "particleset") {
         ptclPool->put(cur);
       } else if(cname == "wavefunction") {
