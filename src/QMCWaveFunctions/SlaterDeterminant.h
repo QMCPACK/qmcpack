@@ -17,6 +17,7 @@
 #ifndef QMCPLUSPLUS_SLATERDETERMINANT_ORBITAL_H
 #define QMCPLUSPLUS_SLATERDETERMINANT_ORBITAL_H
 #include "Configuration.h"
+#include "QMCWaveFunctions/OrbitalTraits.h"
 #include "QMCWaveFunctions/OrbitalBase.h"
 #include "QMCWaveFunctions/DiracDeterminant.h"
 #include "Message/Communicate.h"
@@ -124,7 +125,6 @@ namespace qmcplusplus {
       //  OHMMS::Controller->abort();
       //}
       //BasisSet->evaluate(P);
-
       ValueType psi = 1.0;
       for(int i=0; i<Dets.size(); i++) psi *= Dets[i]->evaluate(P,G,L);
       return LogValue = evaluateLogAndPhase(psi,PhaseValue);
@@ -175,13 +175,20 @@ namespace qmcplusplus {
       for(int i=0; i<Dets.size(); i++) 	Dets[i]->dumpFromBuffer(P,buf);
     }
 
-    ValueType evaluate(ParticleSet& P, PooledData<RealType>& buf) {
-
-      //BasisSet->evaluate(P);
-
+    ValueType evaluateLog(ParticleSet& P, PooledData<RealType>& buf) {
+      //LogValue=0.0;
+      //int sign_tot = 1;
+      //for(int i=0; i<Dets.size(); i++) 	
+      //{ 
+      //  LogValue += Dets[i]->evaluateLog(P,buf);
+      //  sign_tot *=Dets[i]->DetSign;
+      //}
+      //PhaseValue=evaluatePhase(sign_tot);
+      //return LogValue;
       ValueType r=1.0;
-      for(int i=0; i<Dets.size(); i++) 	r *= Dets[i]->evaluate(P,buf);
-      return r;
+      for(int i=0; i<Dets.size(); i++) 	r *= Dets[i]->evaluateLog(P,buf);
+      return evaluateLogAndPhase(r,PhaseValue);
+      //return r;
     }
 
     inline ValueType ratio(ParticleSet& P, int iat,

@@ -429,7 +429,7 @@ namespace qmcplusplus {
       curRatio=1.0;
     }
 
-    ValueType evaluate(ParticleSet& P, PooledData<RealType>& buf) {
+    ValueType evaluateLog(ParticleSet& P, PooledData<RealType>& buf) {
 
       buf.put(psiM.first_address(),psiM.last_address());
       buf.put(FirstAddressOfdV,LastAddressOfdV);
@@ -438,7 +438,9 @@ namespace qmcplusplus {
       buf.put(FirstAddressOfG,LastAddressOfG);
       buf.put(CurrentDet);
 
-      return CurrentDet;
+      //WARNING: INCONSISTENT should be log
+      //return CurrentDet;
+      return LogValue = evaluateLogAndPhase(CurrentDet,PhaseValue);
     }
 
 
