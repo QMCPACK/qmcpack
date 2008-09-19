@@ -24,6 +24,7 @@
 
 namespace qmcplusplus {
 
+  ///object counter 
   int  ParticleSet::PtclObjectCounter = 0;
 
   ParticleSet::ParticleSet(): SK(0), ParentTag(-1){ 
@@ -42,7 +43,7 @@ namespace qmcplusplus {
     ostringstream o;
     o<<p.getName()<<ObjectTag;
     this->setName(o.str());
-
+    app_log() << "  Copying a particle set " << p.getName() << " to " << this->getName() << endl;
     PropertyList.Names=p.PropertyList.Names;
     PropertyList.Values=p.PropertyList.Values;
 
@@ -52,27 +53,46 @@ namespace qmcplusplus {
 
     if(p.SK) 
     {
+      R.InUnit=p.R.InUnit;
       createSK();
       SK->DoUpdate=p.SK->DoUpdate;
+    }
+
+    if(p.Sphere.size())
+    {
+      resizeSphere(p.Sphere.size());
     }
   }
 
 
-  ParticleSet::~ParticleSet() {
+  ParticleSet::~ParticleSet() 
+  {
+    DEBUG_MEMORY("ParticleSet::~ParticleSet");
+    delete_iter(DistTables.begin(), DistTables.end());
     if(SK) delete SK;
     delete_iter(Sphere.begin(), Sphere.end());
   }
 
-  void ParticleSet::initParticleSet() {
+  void ParticleSet::initParticleSet() 
+  {
     ObjectTag = PtclObjectCounter;
+#pragma omp atomic 
     PtclObjectCounter++;
+
+#if defined(QMC_COMPLEX)
+    G.setTypeName(ParticleTags::gradtype_tag);
+    L.setTypeName(ParticleTags::laptype_tag);
+    dG.setTypeName(ParticleTags::gradtype_tag);
+    dL.setTypeName(ParticleTags::laptype_tag);
+#else
     G.setTypeName(ParticleTags::postype_tag);
-    G.setObjName("grad");
     L.setTypeName(ParticleTags::scalartype_tag);
-    L.setObjName("lap");
     dG.setTypeName(ParticleTags::postype_tag);
-    dG.setObjName("dgrad");
     dL.setTypeName(ParticleTags::scalartype_tag);
+#endif
+    G.setObjName("grad");
+    L.setObjName("lap");
+    dG.setObjName("dgrad");
     dL.setObjName("dlap");
     addAttribute(G);
     addAttribute(L);
