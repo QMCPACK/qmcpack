@@ -38,18 +38,18 @@ namespace qmcplusplus {
     Matrix<ComplexType> rhok;
     ///eikr[particle-index][K]
     Matrix<ComplexType> eikr;
-    ///eikr[K] for a proposed move
-    Vector<ComplexType> eikr_temp;
     /// K-Vector List.
     KContainer KLists;
   public:
+    ///eikr[K] for a proposed move
+    Vector<ComplexType> eikr_temp;
     /** Constructor - copy ParticleSet and init. k-shells
      * @param ref Reference particle set
      * @param kc cutoff for k
      */
     StructFact(ParticleSet& ref, RealType kc);
-    //Copy Constructor
-    StructFact(const StructFact& ref);
+    ////Copy Constructor
+    //StructFact(const StructFact& ref);
     //Destructor
     ~StructFact();
     //Need to overload assignment operator.

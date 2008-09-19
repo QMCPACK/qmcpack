@@ -10,19 +10,19 @@ StructFact::StructFact(ParticleSet& ref, RealType kc):
   UpdateNewCell(kc);
 }
 
-/** Copy Constructor
- *
- * Lattices are forced to match in PtclRef initialization.
- * The KLists constructor doesn't generate the lists. It merely sets the lattice reference.
- * "=" is defined for all data members that need to be copied.
- */
-StructFact::StructFact(const StructFact &ref): 
- DoUpdate(ref.DoUpdate),PtclRef(ref.PtclRef), KLists(ref.PtclRef.Lattice) 
-{
-  KLists = ref.KLists; //= checks for same cutoff and returns with no cost if equal.
-  resize();
-  rhok = ref.rhok;
-}
+///** Copy Constructor
+// *
+// * Lattices are forced to match in PtclRef initialization.
+// * The KLists constructor doesn't generate the lists. It merely sets the lattice reference.
+// * "=" is defined for all data members that need to be copied.
+// */
+//StructFact::StructFact(const StructFact &ref): 
+// DoUpdate(ref.DoUpdate),PtclRef(ref.PtclRef), KLists(ref.PtclRef.Lattice) 
+//{
+//  KLists = ref.KLists; //= checks for same cutoff and returns with no cost if equal.
+//  resize();
+//  rhok = ref.rhok;
+//}
 
 //Destructor
 StructFact::~StructFact() { }
@@ -218,7 +218,7 @@ StructFact::UpdateRhok(const PosType& rold,const PosType& rnew,int iat,int Group
 void StructFact::makeMove(int active, const PosType& pos) 
 {
   //APP_ABORT("StructFact::makeMove should not be used yet");
-  cout << "StructFact::makeMove " << active << " " << pos << endl;
+  //cout << "StructFact::makeMove " << active << " " << pos << endl;
   RealType s,c;//get sin and cos
   for(int ki=0; ki<KLists.numk; ++ki)
   {
@@ -229,7 +229,7 @@ void StructFact::makeMove(int active, const PosType& pos)
 
 void StructFact::acceptMove(int active) 
 {
-  cout << "StructFact::acceptMove " << active << endl;
+  //cout << "StructFact::acceptMove " << active << endl;
   //APP_ABORT("StructFact::acceptMove should not be used yet");
   ComplexType* restrict eikr_ptr=eikr[active];
   ComplexType* restrict rhok_ptr(rhok[PtclRef.GroupID[active]]);
