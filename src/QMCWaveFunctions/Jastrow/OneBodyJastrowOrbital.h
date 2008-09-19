@@ -387,14 +387,15 @@ namespace qmcplusplus {
      *@param P the ParticleSet to operate on
      *@param buf PooledData which stores the data for each walker
      */
-    inline ValueType evaluate(ParticleSet& P, PooledData<RealType>& buf) {
+    inline ValueType evaluateLog(ParticleSet& P, PooledData<RealType>& buf) {
       ValueType sumu = 0.0;
       for(int i=0; i<U.size(); i++) sumu+=U[i];
 
       buf.put(U.first_address(), U.last_address());
       buf.put(d2U.first_address(), d2U.last_address());
       buf.put(FirstAddressOfdU,LastAddressOfdU);
-      return std::exp(-sumu);
+      return -sumu;
+      //return std::exp(-sumu);
     }
 
     OrbitalBasePtr makeClone(ParticleSet& tqp) const

@@ -458,12 +458,12 @@ namespace qmcplusplus {
       DiffValSum=0.0;
     }
 
-    inline ValueType evaluate(ParticleSet& P, PooledData<RealType>& buf) {
+    inline ValueType evaluateLog(ParticleSet& P, PooledData<RealType>& buf) {
       RealType x = (U[NN] += DiffValSum);
       buf.put(U.begin(), U.end());
       buf.put(d2U.begin(), d2U.end());
       buf.put(FirstAddressOfdU,LastAddressOfdU);
-      return std::exp(x); 
+      return x;
     }
 
     OrbitalBasePtr makeClone(ParticleSet& tqp) const
