@@ -336,10 +336,10 @@ namespace qmcplusplus {
     }
 
   RPAJastrow::ValueType 
-    RPAJastrow::evaluate(ParticleSet& P,BufferType& buf) {
+    RPAJastrow::evaluateLog(ParticleSet& P,BufferType& buf) {
       LogValue=0.0;
       for(int i=0; i<Psi.size(); i++) 
-        LogValue += Psi[i]->evaluate(P,buf);
+        LogValue += Psi[i]->evaluateLog(P,buf);
       return LogValue;
     }
 

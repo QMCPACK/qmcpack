@@ -95,7 +95,7 @@ namespace qmcplusplus {
         copyFromBuffer(ParticleSet& P, BufferType& buf);
 
     ValueType 
-        evaluate(ParticleSet& P,BufferType& buf);
+        evaluateLog(ParticleSet& P,BufferType& buf);
 
     OrbitalBase* makeClone(ParticleSet& tqp) const;
     
