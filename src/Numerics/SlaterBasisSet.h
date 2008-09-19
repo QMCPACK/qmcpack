@@ -139,14 +139,15 @@ bool SlaterCombo<T>::putBasisGroup(xmlNodePtr cur) {
       if(Normalized) {
         //z is not right
         sset.push_back(Component_t(qN-1,zeta,c));
+        LOGMSG(" Slater Component (n,zeta,c)= " << qN-1 << " " << zeta << " " << c)
       } else {
         STONorm<T> anorm(qN);
         //multiply a normalization factor to the contraction factor
         //anorm(n,\zeta) = 1/\sqrt((2n+2)!/(2*\zeta)^{2*n+3))
         c *= anorm(qN-1,zeta);
         sset.push_back(Component_t(qN-L-1,zeta,c));
+        LOGMSG(" Slater Component (n,zeta,c)= " << qN << " " << zeta << " " << c)
       }
-      LOGMSG(" Slater Component (n,zeta,c)= " << qN << " " << zeta << " " << c)
     }
     cur=cur->next;
   }
