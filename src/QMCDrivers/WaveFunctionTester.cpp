@@ -33,9 +33,11 @@ namespace qmcplusplus {
 WaveFunctionTester::WaveFunctionTester(MCWalkerConfiguration& w, 
 				       TrialWaveFunction& psi, 
 				       QMCHamiltonian& h):
-  QMCDriver(w,psi,h),checkRatio("no"),checkClone("no") { 
+  QMCDriver(w,psi,h),checkRatio("no"),checkClone("no"), checkHamPbyP("no")
+  { 
     m_param.add(checkRatio,"ratio","string");
     m_param.add(checkClone,"clone","string");
+    m_param.add(checkHamPbyP,"hamiltonianpbyp","string");
   }
 
 
@@ -80,7 +82,13 @@ WaveFunctionTester::run() {
 }
 
   void WaveFunctionTester::runCloneTest() {
-    TrialWaveFunction &clone = *Psi.makeClone(W);
+
+    for(int iter=0; iter<4; ++iter)
+    {
+    ParticleSet* w_clone = new MCWalkerConfiguration(W);
+    TrialWaveFunction *psi_clone = Psi.makeClone(*w_clone);
+    QMCHamiltonian *h_clone = H.makeClone(*w_clone,*psi_clone);
+
     IndexType nskipped = 0;
     RealType sig2Enloc=0, sig2Drift=0;
     RealType delta = 0.0001;
@@ -99,23 +107,43 @@ WaveFunctionTester::run() {
     Properties = awalker->Properties;
     
     W.R = awalker->R;
-        
     W.update();
-    ValueType psi1 = Psi.evaluate(W);
-    ValueType psi2 = clone.evaluate(W); 
-    RealType eloc  = H.evaluate(W);
-        
-#if defined(QMC_COMPLEX)
-    ValueType logpsi1(std::log(psi1));
-    ValueType logpsi2(std::log(psi2));
-#else
-    ValueType logpsi1(std::log(std::abs(psi1)));
-    ValueType logpsi2(std::log(std::abs(psi2)));
-#endif
+    ValueType logpsi1 = Psi.evaluateLog(W);
+    RealType eloc1  = H.evaluate(W);
 
-    app_log() << "log (original) = " << logpsi1 << endl;
-    app_log() << "log (clone)    = " << logpsi2 << endl;
-    delete &clone;
+    w_clone->R=awalker->R;
+    w_clone->update();
+    ValueType logpsi2 = psi_clone->evaluateLog(*w_clone); 
+    RealType eloc2  = h_clone->evaluate(*w_clone);
+
+    app_log() << "Testing walker-by-walker functions " << endl;
+    app_log() << "log (original) = " << logpsi1 << " energy = " << eloc1 << endl;
+    app_log() << "log (clone)    = " << logpsi2 << " energy = " << eloc2 << endl;
+
+        
+    app_log() << "Testing pbyp functions " << endl;
+    Walker_t::Buffer_t &wbuffer(awalker->DataSet);
+    wbuffer.clear();
+    app_log() << "  Walker Buffer State current=" << wbuffer.current() << " size=" << wbuffer.size() << endl;
+    W.registerData(wbuffer);
+    logpsi1=Psi.registerData(W,wbuffer);
+    eloc1= H.evaluate(W);
+    app_log() << "  Walker Buffer State current=" << wbuffer.current() << " size=" << wbuffer.size() << endl;
+
+    wbuffer.clear();
+    app_log() << "  Walker Buffer State current=" << wbuffer.current() << " size=" << wbuffer.size() << endl;
+    w_clone->registerData(wbuffer);
+    logpsi2=psi_clone->registerData(W,wbuffer);
+    eloc2= H.evaluate(*w_clone);
+    app_log() << "  Walker Buffer State current=" << wbuffer.current() << " size=" << wbuffer.size() << endl;
+
+    app_log() << "log (original) = " << logpsi1 << " energy = " << eloc1 << endl;
+    app_log() << "log (clone)    = " << logpsi2 << " energy = " << eloc2 << endl;
+
+    delete h_clone;
+    delete psi_clone;
+    delete w_clone;
+    }
   }
 
 void WaveFunctionTester::runBasicTest() {
@@ -144,7 +172,8 @@ void WaveFunctionTester::runBasicTest() {
   //W.R += deltaR;
 
   W.update();
-  ValueType psi = Psi.evaluate(W);
+  //ValueType psi = Psi.evaluate(W);
+  ValueType logpsi = Psi.evaluateLog(W);
   RealType eloc=H.evaluate(W);
 
   app_log() << "  HamTest " << "  Total " <<  eloc << endl;
@@ -157,11 +186,11 @@ void WaveFunctionTester::runBasicTest() {
   G = W.G;
   L = W.L;
 
-#if defined(QMC_COMPLEX)
-  ValueType logpsi(std::log(psi));
-#else
-  ValueType logpsi(std::log(std::abs(psi)));
-#endif
+//#if defined(QMC_COMPLEX)
+//  ValueType logpsi(std::log(psi));
+//#else
+//  ValueType logpsi(std::log(std::abs(psi)));
+//#endif
 
   for(int iat=0; iat<nat; iat++) {
     PosType r0 = W.R[iat];
@@ -171,18 +200,20 @@ void WaveFunctionTester::runBasicTest() {
    
       W.R[iat][idim] = r0[idim]+delta;         
       W.update();
-      ValueType psi_p = Psi.evaluate(W);
+      ValueType logpsi_p = Psi.evaluateLog(W);
       
       W.R[iat][idim] = r0[idim]-delta;         
       W.update();
-      ValueType psi_m = Psi.evaluate(W);
-#if defined(QMC_COMPLEX)
-      lap += std::log(psi_m) + std::log(psi_p);
-      g0[idim] = std::log(psi_p)-std::log(psi_m);
-#else
-      lap += std::log(std::abs(psi_m)) + std::log(abs(psi_p));
-      g0[idim] = std::log(std::abs(psi_p/psi_m));
-#endif
+      ValueType logpsi_m = Psi.evaluateLog(W);
+      lap += logpsi_m+logpsi_p;
+      g0[idim] = logpsi_p-logpsi_m;
+//#if defined(QMC_COMPLEX)
+//      lap += std::log(psi_m) + std::log(psi_p);
+//      g0[idim] = std::log(psi_p)-std::log(psi_m);
+//#else
+//      lap += std::log(std::abs(psi_m)) + std::log(abs(psi_p));
+//      g0[idim] = std::log(std::abs(psi_p/psi_m));
+//#endif
       W.R[iat] = r0;
     }
     G1[iat] = c1*g0;
@@ -234,6 +265,7 @@ void WaveFunctionTester::runRatioTest() {
   ParticleSet::ParticleGradient_t Gp(nat), dGp(nat);
   ParticleSet::ParticleLaplacian_t Lp(nat), dLp(nat);
 
+  bool checkHam=(checkHamPbyP == "yes");
   Tau=0.025;
   MCWalkerConfiguration::iterator it(W.begin()), it_end(W.end());
   while(it != it_end) {
@@ -244,7 +276,11 @@ void WaveFunctionTester::runRatioTest() {
     //W.registerData(**it,tbuffer);
     W.registerData(tbuffer);
     RealType logpsi=Psi.registerData(W,tbuffer);
-    RealType ene = H.registerData(W,tbuffer);
+    RealType ene;
+    if(checkHam) 
+      ene = H.registerData(W,tbuffer);
+    else
+      ene = H.evaluate(W);
     (*it)->DataSet=tbuffer;
 
     //RealType ene = H.evaluate(W);
@@ -289,7 +325,8 @@ void WaveFunctionTester::runRatioTest() {
         //RealType ratio=Psi.ratio(W,iat,dGp,dLp);
         RealType ratio=Psi.ratio(W,iat,W.dG,W.dL);
         Gp = W.G + W.dG;
-        RealType enew = H.evaluatePbyP(W,iat);
+        //RealType enew = H.evaluatePbyP(W,iat);
+        if(checkHam) enew = H.evaluatePbyP(W,iat);
 
         if(ratio > Random()) {
           cout << " Accepting a move for " << iat << endl;
@@ -298,13 +335,13 @@ void WaveFunctionTester::runRatioTest() {
           W.L += W.dL;
           W.acceptMove(iat);
           Psi.acceptMove(W,iat);
-          H.acceptMove(iat);
+          if(checkHam) H.acceptMove(iat);
           ratio_accum *= ratio;
         } else {
           cout << " Rejecting a move for " << iat << endl;
           W.rejectMove(iat); 
           Psi.rejectMove(iat);
-          H.rejectMove(iat);
+          //H.rejectMove(iat);
         }
       }
 
@@ -312,10 +349,12 @@ void WaveFunctionTester::runRatioTest() {
       thisWalker.R=W.R;
       w_buffer.rewind();
       W.copyToBuffer(w_buffer);
-      RealType psi = Psi.evaluate(W,w_buffer);
-      RealType ene_up = H.evaluate(W,w_buffer);
-
-      //RealType ene = H.evaluate(W);
+      RealType newlogpsi_up = Psi.evaluateLog(W,w_buffer);
+      RealType ene_up;
+      if(checkHam)
+        ene_up= H.evaluate(W,w_buffer);
+      else
+        ene_up = H.evaluate(W);
 
       Gp=W.G;
       Lp=W.L;
@@ -323,14 +362,15 @@ void WaveFunctionTester::runRatioTest() {
       W.update();
       RealType newlogpsi=Psi.evaluateLog(W);
       RealType ene = H.evaluate(W);
-      thisWalker.resetProperty(std::log(psi),Psi.getPhase(),ene);
+      thisWalker.resetProperty(newlogpsi,Psi.getPhase(),ene);
+      //thisWalker.resetProperty(std::log(psi),Psi.getPhase(),ene);
 
       cout << iter << "  Energy by update = "<< ene_up << " " << ene << " "  << ene_up-ene << endl;
-
       cout << iter << " Ratio " << ratio_accum*ratio_accum 
         << " | " << std::exp(2.0*(newlogpsi-logpsi)) << " " 
         << ratio_accum*ratio_accum/std::exp(2.0*(newlogpsi-logpsi)) << endl
-        << " new log(psi) " << newlogpsi 
+        << " new log(psi) updated " << newlogpsi_up
+        << " new log(psi) calculated " << newlogpsi  
         << " old log(psi) " << logpsi << endl;
 
       cout << " Gradients " << endl;
@@ -402,7 +442,6 @@ void WaveFunctionTester::runRatioTest() {
 
       W.update();
       RealType newlogpsi=Psi.evaluateLog(W);
-
       cout << iter << " Ratio " << ratio_accum*ratio_accum 
         << " | " << std::exp(2.0*(newlogpsi-logpsi)) << " " 
         << ratio_accum*ratio_accum/std::exp(2.0*(newlogpsi-logpsi)) << endl
