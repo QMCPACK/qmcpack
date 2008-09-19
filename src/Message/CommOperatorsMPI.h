@@ -429,7 +429,7 @@ template<>
 inline void 
 Communicate::bcast(PooledData<double>& g) 
 {
-  MPI_Bcast(&(g[0]),g.size(),MPI_DOUBLE,0,myMPI);
+  MPI_Bcast(g.data(),g.size(),MPI_DOUBLE,0,myMPI);
 }
 
 template<>
