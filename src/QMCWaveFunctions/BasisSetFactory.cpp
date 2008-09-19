@@ -26,6 +26,7 @@
   #endif
 #endif
 #include "Utilities/ProgressReportEngine.h"
+#include "Utilities/IteratorUtility.h"
 #include "OhmmsData/AttributeSet.h"
 
 namespace qmcplusplus {
@@ -39,6 +40,12 @@ namespace qmcplusplus {
   OrbitalBuilderBase(els,psi), ptclPool(psets)
   {
     ClassName="BasisSetFactory";
+  }
+
+  BasisSetFactory::~BasisSetFactory()
+  {
+    DEBUG_MEMORY("BasisSetFactory::~BasisSetFactory");
+    delete_iter(basisBuilder.begin(),basisBuilder.end());
   }
 
   bool BasisSetFactory::put(xmlNodePtr cur) {

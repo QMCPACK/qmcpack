@@ -35,6 +35,7 @@ namespace qmcplusplus {
      */
     BasisSetFactory(ParticleSet& els, TrialWaveFunction& psi, PtclPoolType& psets);
 
+    ~BasisSetFactory();
     bool put(xmlNodePtr cur);
 
     void createBasisSet(xmlNodePtr cur, xmlNodePtr rootNode=NULL);

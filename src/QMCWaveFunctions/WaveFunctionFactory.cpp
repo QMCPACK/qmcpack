@@ -32,6 +32,7 @@
 #include "QMCWaveFunctions/AGPDeterminantBuilder.h"
 #endif
 #include "Utilities/ProgressReportEngine.h"
+#include "Utilities/IteratorUtility.h"
 #include "OhmmsData/AttributeSet.h"
 namespace qmcplusplus {
 
@@ -188,7 +189,8 @@ namespace qmcplusplus {
 
   WaveFunctionFactory::~WaveFunctionFactory() 
   {
-    //clean up everything
+    DEBUG_MEMORY("WaveFunctionFactory::~WaveFunctionFactory");
+    delete_iter(psiBuilder.begin(),psiBuilder.end());
   }
 
   bool WaveFunctionFactory::get(std::ostream& ) const 
