@@ -321,7 +321,7 @@ namespace qmcplusplus {
   }
 
   OrbitalBase::ValueType 
-  ThreeBodyGeminal::evaluate(ParticleSet& P, PooledData<RealType>& buf) {
+  ThreeBodyGeminal::evaluateLog(ParticleSet& P, PooledData<RealType>& buf) {
     buf.put(LogValue);
     buf.put(V.begin(), V.end());
 
@@ -333,7 +333,8 @@ namespace qmcplusplus {
     buf.put(FirstAddressOfgU,LastAddressOfgU);
     buf.put(d2Uk.begin(), d2Uk.end());
 
-    return std::exp(LogValue);
+    return LogValue;
+    //return std::exp(LogValue);
   }
 
   OrbitalBase::ValueType 

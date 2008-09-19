@@ -83,7 +83,7 @@ namespace qmcplusplus {
     
     void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf);
 
-    ValueType evaluate(ParticleSet& P, PooledData<RealType>& buf);
+    ValueType evaluateLog(ParticleSet& P, PooledData<RealType>& buf);
 
     void setBasisSet(BasisSetType* abasis) { GeminalBasis=abasis;}
 
