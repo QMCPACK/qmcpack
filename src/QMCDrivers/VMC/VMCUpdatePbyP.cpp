@@ -194,12 +194,13 @@ namespace qmcplusplus {
       {
         thisWalker.R = W.R;
         PAOps<RealType,OHMMS_DIM>::copy(W.G,thisWalker.Drift);
-
         w_buffer.rewind();
         W.copyToBuffer(w_buffer);
-        RealType psi = Psi.evaluate(W,w_buffer);
+        //RealType psi = Psi.evaluate(W,w_buffer);
+        RealType logpsi = Psi.evaluateLog(W,w_buffer);
         RealType eloc=H.evaluate(W);
-        thisWalker.resetProperty(std::log(abs(psi)), psi,eloc);
+        //thisWalker.resetProperty(std::log(abs(psi)), psi,eloc);
+        thisWalker.resetProperty(logpsi,Psi.getPhase(), eloc);
         H.saveProperty(thisWalker.getPropertyBase());
       }
       else 

@@ -47,9 +47,9 @@ namespace qmcplusplus {
 
 #pragma omp parallel
     {
-      int now=1;
+      int now=0;
 
-#pragma omp for  nowait
+#pragma omp for 
       for(int ip=0; ip<NumThreads; ++ip) 
         Movers[ip]->startRun(nBlocks,false);
 
@@ -68,7 +68,6 @@ namespace qmcplusplus {
           {
             Movers[ip]->advanceWalkers(wit,wit_end,false);
             Movers[ip]->accumulate(wit,wit_end);
-
             ++now_loc;
             if(now_loc%updatePeriod==0) Movers[ip]->updateWalkers(wit,wit_end);
             if(now_loc%myPeriod4WalkerDump==0) wClones[ip]->saveEnsemble(wit,wit_end);
@@ -131,7 +130,7 @@ namespace qmcplusplus {
       std::copy(wPerNode.begin(),wPerNode.end(),ostream_iterator<int>(app_log()," "));
       app_log() << endl;
 
-#pragma omp parallel for
+//#pragma omp parallel for
       for(int ip=0; ip<NumThreads; ++ip)
       {
         estimatorClones[ip]= new EstimatorManager(*Estimators);//,*hClones[ip]);  
@@ -161,7 +160,7 @@ namespace qmcplusplus {
       }
     }
 
-#pragma omp parallel  for
+//#pragma omp parallel  for
     for(int ip=0; ip<NumThreads; ++ip)
     {
       if(QMCDriverMode[QMC_UPDATE_MODE])

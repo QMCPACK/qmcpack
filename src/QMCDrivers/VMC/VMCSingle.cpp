@@ -80,8 +80,8 @@ namespace qmcplusplus {
 
     int samples_tot=W.getActiveWalkers()*nBlocks*nSteps*myComm->size();
     myPeriod4WalkerDump=(nTargetSamples>0)?samples_tot/nTargetSamples:Period4WalkerDump;
-    if(myPeriod4WalkerDump==0) myPeriod4WalkerDump=10;
-    if(QMCDriverMode[QMC_WARMUP]) myPeriod4WalkerDump=(nBlocks+1)*nSteps;
+    if(myPeriod4WalkerDump==0 || QMCDriverMode[QMC_WARMUP]) 
+      myPeriod4WalkerDump=(nBlocks+1)*nSteps;
     W.clearEnsemble();
     samples_tot=W.getActiveWalkers()*((nBlocks*nSteps)/myPeriod4WalkerDump);
     W.setNumSamples(samples_tot);
@@ -96,8 +96,6 @@ namespace qmcplusplus {
           Mover=new VMCUpdatePbyPWithDrift(W,Psi,H,Random);
         else
           Mover=new VMCUpdatePbyP(W,Psi,H,Random);
-        Mover->resetRun(branchEngine,Estimators);
-        //Mover->initWalkersForPbyP(W.begin(),W.end());
       }
       else
       {
@@ -106,13 +104,11 @@ namespace qmcplusplus {
           Mover=new VMCUpdateAllWithDrift(W,Psi,H,Random);
         else
           Mover=new VMCUpdateAll(W,Psi,H,Random);
-        Mover->resetRun(branchEngine,Estimators);
-
       }
-
+      Mover->put(qmcNode);
+      Mover->resetRun(branchEngine,Estimators);
     }
 
-    Mover->put(qmcNode);
     if(QMCDriverMode[QMC_UPDATE_MODE])
       Mover->initWalkersForPbyP(W.begin(),W.end());
     else

@@ -315,14 +315,17 @@ namespace qmcplusplus {
 	    for(int ipsi=0; ipsi< nPsi; ipsi++){
 	      WW[ipsi]->G=Psi1[ipsi]->G;
 	      WW[ipsi]->L=Psi1[ipsi]->L;
-	      RealType psi = Psi1[ipsi]->evaluate(*WW[ipsi],w_buffer);
+	      //RealType psi = Psi1[ipsi]->evaluate(*WW[ipsi],w_buffer);
+	      RealType logpsi = Psi1[ipsi]->evaluateLog(*WW[ipsi],w_buffer);
 	      RealType et = H1[ipsi]->evaluate(*WW[ipsi]);
 
 	      //multiEstimator->updateSample(iwalker,ipsi,et,UmbrellaWeight[ipsi]);
               //Properties is used for UmbrellaWeight and UmbrellaEnergy
               thisWalker.Properties(ipsi,UMBRELLAWEIGHT)=UmbrellaWeight[ipsi];
               thisWalker.Properties(ipsi,LOCALENERGY)=et;
-              thisWalker.Properties(ipsi,LOGPSI)=std::log(abs(psi));
+              //thisWalker.Properties(ipsi,LOGPSI)=std::log(abs(psi));
+              thisWalker.Properties(ipsi,LOGPSI)=logpsi;
+              thisWalker.Properties(ipsi,SIGN)=Psi1[ipsi]->getPhase();
 
               H1[ipsi]->saveProperty(thisWalker.getPropertyBase(ipsi));
 	    }
