@@ -36,26 +36,45 @@ namespace qmcplusplus {
     typedef LRCoulombSingleton::GridType GridType;
     typedef LRCoulombSingleton::RadFunctorType RadFunctorType;
 
-    ParticleSet* PtclA;
-    ParticleSet* PtclB;
+    ///source particle set
+    ParticleSet& PtclA;
+    ///long-range Handler
     LRHandlerType* AB;
-    DistanceTableData* d_ab;
-
+    ///locator of the distance table 
+    int myTableIndex;
+    ///number of species of A particle set
     int NumSpeciesA;
+    ///number of species of B particle set
     int NumSpeciesB;
-    int ChargeAttribIndxA;
-    int ChargeAttribIndxB;
-    int MemberAttribIndxA;
-    int MemberAttribIndxB;
+    ///number of particles of A
     int NptclA;
+    ///number of particles of B
     int NptclB;
+    ///const energy after breakup
     RealType myConst;
+    ///cutoff radius of the short-range part
     RealType myRcut;
+    ///radial grid
+    GridType* myGrid;
+    ///Always mave a radial functor for the bare coulomb
+    RadFunctorType* V0;
 
+    ///number of particles per species of A
     vector<int> NofSpeciesA;
+    ///number of particles per species of B
     vector<int> NofSpeciesB;
-    vector<RealType> Zat,Zspec; 
-    vector<RealType> Qat,Qspec; 
+    ///Zat[iat] charge for the iat-th particle of A
+    vector<RealType> Zat;
+    ///Qat[iat] charge for the iat-th particle of B
+    vector<RealType> Qat; 
+    ///Zspec[spec] charge for the spec-th species of A
+    vector<RealType> Zspec; 
+    ///Qspec[spec] charge for the spec-th species of B
+    vector<RealType> Qspec; 
+    ///Short-range potential for each ion
+    vector<RadFunctorType*> Vat;
+    ///Short-range potential for each species
+    vector<RadFunctorType*> Vspec;
     /*@{
      * @brief temporary data for pbyp evaluation
      */
@@ -68,15 +87,6 @@ namespace qmcplusplus {
     ///long-range per particle
     Vector<RealType> LRpart;
     /*@}*/
-
-    ///radial grid
-    GridType* myGrid;
-    ///Always mave a radial functor for the bare coulomb
-    RadFunctorType* V0;
-    ///Short-range potential for each ion
-    vector<RadFunctorType*> Vat;
-    ///Short-range potential for each species
-    vector<RadFunctorType*> Vspec;
 
     //This is set to true if the K_c of structure-factors are different
     bool kcdifferent; 
@@ -103,7 +113,6 @@ namespace qmcplusplus {
     void copyToBuffer(ParticleSet& P, BufferType& buf);
     Return_t evaluatePbyP(ParticleSet& P, int iat);
     void acceptMove(int iat);
-    void rejectMove(int iat);
 
     /** Do nothing */
     bool put(xmlNodePtr cur) {
@@ -111,16 +120,16 @@ namespace qmcplusplus {
     }
 
     bool get(std::ostream& os) const {
-      os << "CoulombPBCAB potential: " << PtclA->getName() << "-" << PtclB->getName();
+      //os << "CoulombPBCAB potential: " << PtclA->getName() << "-" << PtclB->getName();
       return true;
     }
 
     QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 
-    void initBreakup();
+    void initBreakup(ParticleSet& P);
 
-    Return_t evalSR();
-    Return_t evalLR();
+    Return_t evalSR(ParticleSet& P);
+    Return_t evalLR(ParticleSet& P);
     Return_t evalConsts();
     Return_t evaluateForPyP(ParticleSet& P);
     void add(int groupID, RadFunctorType* ppot);

@@ -22,20 +22,20 @@
 namespace qmcplusplus {
 
   CoulombPBCABTemp::CoulombPBCABTemp(ParticleSet& ions, ParticleSet& elns): 
-    PtclA(&ions), PtclB(&elns),  myConst(0.0), myGrid(0),V0(0)
+    PtclA(ions), myConst(0.0), myGrid(0),V0(0)
     {
       ReportEngine PRE("CoulombPBCABTemp","CoulombPBCABTemp");
       //Use singleton pattern 
       //AB = new LRHandlerType(ions);
-      d_ab = DistanceTable::add(ions,elns);
-      initBreakup();
+      myTableIndex=elns.addTable(ions);
+      initBreakup(elns);
       app_log() << "  Maximum K shell " << AB->MaxKshell << endl;
       app_log() << "  Number of k vectors " << AB->Fk.size() << endl;
     }
 
   QMCHamiltonianBase* CoulombPBCABTemp::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
   {
-    CoulombPBCABTemp* myclone=new CoulombPBCABTemp(*PtclA,qp);
+    CoulombPBCABTemp* myclone=new CoulombPBCABTemp(PtclA,qp);
     if(myGrid) myclone->myGrid=new GridType(*myGrid);
     for(int ig=0; ig<Vspec.size(); ++ig)
     {
@@ -43,36 +43,33 @@ namespace qmcplusplus {
       {
         RadFunctorType* apot=Vspec[ig]->makeClone();
         myclone->Vspec[ig]=apot;
-        for(int iat=0; iat<PtclA->getTotalNum(); ++iat)
+        for(int iat=0; iat<PtclA.getTotalNum(); ++iat)
         {
-          if(PtclA->GroupID[iat]==ig) myclone->Vat[iat]=apot;
+          if(PtclA.GroupID[iat]==ig) myclone->Vat[iat]=apot;
         }
       }
     }
     return myclone;
   }
 
-  ///// copy constructor
-  //CoulombPBCABTemp::CoulombPBCABTemp(const CoulombPBCABTemp& c): 
-  //  PtclA(c.PtclA),PtclB(c.PtclB),d_ab(c.d_ab),  myConst(0.0){
-  //    initBreakup();
-  //  }
-    
-  CoulombPBCABTemp:: ~CoulombPBCABTemp() { 
-    //remove Vspec
-    //remove grid
+  CoulombPBCABTemp:: ~CoulombPBCABTemp() 
+  {
+    //probably need to clean up
   }
 
   void CoulombPBCABTemp::resetTargetParticleSet(ParticleSet& P) {
-    //Update the internal particleref
-    PtclB = &P;
-    d_ab = DistanceTable::add(*PtclA,P);
+    int tid=P.addTable(PtclA);
+    if(tid != myTableIndex)
+    {
+      APP_ABORT("CoulombPBCABTemp::resetTargetParticleSet found inconsistent table index");
+    }
     AB->resetTargetParticleSet(P);
   }
 
   CoulombPBCABTemp::Return_t 
-    CoulombPBCABTemp::evaluate(ParticleSet& P) {
-      return Value = evalLR()+evalSR()+myConst;
+    CoulombPBCABTemp::evaluate(ParticleSet& P) 
+    {
+      return Value = evalLR(P)+evalSR(P)+myConst;
     }
 
   CoulombPBCABTemp::Return_t 
@@ -118,6 +115,7 @@ namespace qmcplusplus {
   CoulombPBCABTemp::Return_t 
     CoulombPBCABTemp::evaluateForPyP(ParticleSet& P) 
     {
+      const DistanceTableData* d_ab=P.DistTables[myTableIndex];
       Return_t res=myConst;
       SRpart=0.0;
       for(int iat=0; iat<NptclA; ++iat)
@@ -132,8 +130,9 @@ namespace qmcplusplus {
         }
       }
       LRpart=0.0;
-      const StructFact& RhoKA(*(PtclA->SK));
-      const StructFact& RhoKB(*(PtclB->SK));
+      const StructFact& RhoKA(*(PtclA.SK));
+      const StructFact& RhoKB(*(P.SK));
+      // const StructFact& RhoKB(*(PtclB->SK));
       for(int i=0; i<NumSpeciesA; i++) 
       {
         RealType z=Zspec[i];
@@ -151,7 +150,7 @@ namespace qmcplusplus {
   CoulombPBCABTemp::Return_t 
     CoulombPBCABTemp::evaluatePbyP(ParticleSet& P, int active)
     {
-      const std::vector<DistanceTableData::TempDistType> &temp(d_ab->Temp);
+      const std::vector<DistanceTableData::TempDistType> &temp(P.DistTables[myTableIndex]->Temp);
       RealType q=Qat[active];
       SRtmp=0.0;
       for(int iat=0; iat<NptclA; ++iat)
@@ -160,8 +159,9 @@ namespace qmcplusplus {
       }
 
       LRtmp=0.0;
-      const StructFact& RhoKA(*(PtclA->SK));
-      const StructFact& RhoKB(*(PtclB->SK));
+      const StructFact& RhoKA(*(PtclA.SK));
+      //const StructFact& RhoKB(*(PtclB->SK));
+      const StructFact& RhoKB(*(P.SK));
       for(int i=0; i<NumSpeciesA; i++) 
         LRtmp+=Zspec[i]*q*AB->evaluate(RhoKA.KLists.kshell, RhoKA.rhok[i],RhoKB.eikr_temp.data());
       return NewValue=Value+(SRtmp-SRpart[active])+(LRtmp-LRpart[active]);
@@ -175,22 +175,17 @@ namespace qmcplusplus {
     Value=NewValue;
   }
 
-  void CoulombPBCABTemp::rejectMove(int iat)
-  {
-  }
+  void CoulombPBCABTemp::initBreakup(ParticleSet& P) {
+    SpeciesSet& tspeciesA(PtclA.getSpeciesSet());
+    SpeciesSet& tspeciesB(P.getSpeciesSet());
 
-  void CoulombPBCABTemp::initBreakup() {
-    SpeciesSet& tspeciesA(PtclA->getSpeciesSet());
-    SpeciesSet& tspeciesB(PtclB->getSpeciesSet());
+    int ChargeAttribIndxA = tspeciesA.addAttribute("charge");
+    int MemberAttribIndxA = tspeciesA.addAttribute("membersize");
+    int ChargeAttribIndxB = tspeciesB.addAttribute("charge");
+    int MemberAttribIndxB = tspeciesB.addAttribute("membersize");
 
-    ChargeAttribIndxA = tspeciesA.addAttribute("charge");
-    MemberAttribIndxA = tspeciesA.addAttribute("membersize");
-    ChargeAttribIndxB = tspeciesB.addAttribute("charge");
-    MemberAttribIndxB = tspeciesB.addAttribute("membersize");
-
-    NptclA = PtclA->getTotalNum();
-    NptclB = PtclB->getTotalNum();
-
+    NptclA = PtclA.getTotalNum();
+    NptclB = P.getTotalNum();
 
     NumSpeciesA = tspeciesA.TotalNum;
     NumSpeciesB = tspeciesB.TotalNum;
@@ -213,9 +208,9 @@ namespace qmcplusplus {
 
     RealType totQ=0.0;
     for(int iat=0; iat<NptclA; iat++)
-      totQ+=Zat[iat] = Zspec[PtclA->GroupID[iat]];
+      totQ+=Zat[iat] = Zspec[PtclA.GroupID[iat]];
     for(int iat=0; iat<NptclB; iat++)
-      totQ+=Qat[iat] = Qspec[PtclB->GroupID[iat]];
+      totQ+=Qat[iat] = Qspec[P.GroupID[iat]];
 
     if(totQ>numeric_limits<RealType>::epsilon()) {
       LOGMSG("PBCs not yet finished for non-neutral cells");
@@ -223,12 +218,13 @@ namespace qmcplusplus {
     }
 
     ////Test if the box sizes are same (=> kcut same for fixed dimcut)
-    kcdifferent = (std::abs(PtclA->Lattice.LR_kc - PtclB->Lattice.LR_kc) > numeric_limits<RealType>::epsilon());
-    minkc = std::min(PtclA->Lattice.LR_kc,PtclB->Lattice.LR_kc);
+    kcdifferent = (std::abs(PtclA.Lattice.LR_kc - P.Lattice.LR_kc) > numeric_limits<RealType>::epsilon());
+    minkc = std::min(PtclA.Lattice.LR_kc,P.Lattice.LR_kc);
 
     //AB->initBreakup(*PtclB);
     //initBreakup is called only once
-    AB = LRCoulombSingleton::getHandler(*PtclB);
+    //AB = LRCoulombSingleton::getHandler(*PtclB);
+    AB = LRCoulombSingleton::getHandler(P);
     myConst=evalConsts();
     myRcut=AB->Basis.get_rc();
 
@@ -272,42 +268,45 @@ namespace qmcplusplus {
       rfunc->spline(0,deriv,ng-1,0.0);
       Vspec[groupID]=rfunc;
       for(int iat=0; iat<NptclA; iat++) {
-        if(PtclA->GroupID[iat]==groupID) Vat[iat]=rfunc;
+        if(PtclA.GroupID[iat]==groupID) Vat[iat]=rfunc;
       }
     }
   }
 
   CoulombPBCABTemp::Return_t
-    CoulombPBCABTemp::evalLR() {
-      RealType LR=0.0;
-      const StructFact& RhoKA(*(PtclA->SK));
-      const StructFact& RhoKB(*(PtclB->SK));
+    CoulombPBCABTemp::evalLR(ParticleSet& P) {
+      RealType res=0.0;
+      const StructFact& RhoKA(*(PtclA.SK));
+      const StructFact& RhoKB(*(P.SK));
       for(int i=0; i<NumSpeciesA; i++) {
         RealType esum=0.0;
         for(int j=0; j<NumSpeciesB; j++) {
-          //esum += Qspec[j]*AB->evaluate(RhoKA.KLists.minusk, RhoKA.rhok[i],RhoKB.rhok[j]);
           esum += Qspec[j]*AB->evaluate(RhoKA.KLists.kshell, RhoKA.rhok[i],RhoKB.rhok[j]);
         } //speceln
-        LR += Zspec[i]*esum;
+        res += Zspec[i]*esum;
       }//specion
-      return LR;
+      return res;
     }
 
   CoulombPBCABTemp::Return_t
-    CoulombPBCABTemp::evalSR() {
-      RealType SR=0.0;
+    CoulombPBCABTemp::evalSR(ParticleSet& P) 
+    {
+      const DistanceTableData &d_ab(*P.DistTables[myTableIndex]);
+      RealType res=0.0;
       //Loop over distinct eln-ion pairs
-      for(int iat=0; iat<NptclA; iat++){
+      for(int iat=0; iat<NptclA; iat++)
+      {
         RealType esum = 0.0;
         RadFunctorType* rVs=Vat[iat];
-        for(int nn=d_ab->M[iat], jat=0; nn<d_ab->M[iat+1]; nn++,jat++) {
+        for(int nn=d_ab.M[iat], jat=0; nn<d_ab.M[iat+1]; ++nn,++jat) 
+        {
           //if(d_ab->r(nn)>=myRcut) continue;
-          esum += Qat[jat]*d_ab->rinv(nn)*rVs->splint(d_ab->r(nn));
+          esum += Qat[jat]*d_ab.rinv(nn)*rVs->splint(d_ab.r(nn));
         }
         //Accumulate pair sums...species charge for atom i.
-        SR += Zat[iat]*esum;
+        res += Zat[iat]*esum;
       }
-      return SR;
+      return res;
     }
 
   CoulombPBCABTemp::Return_t
