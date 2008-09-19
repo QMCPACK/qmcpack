@@ -49,6 +49,8 @@ std::string ParticleTags::indextype_tag="indexArray";
 std::string ParticleTags::scalartype_tag="scalarArray";
 std::string ParticleTags::stringtype_tag="stringArray";
 std::string ParticleTags::postype_tag="posArray";
+std::string ParticleTags::gradtype_tag="gradArray";
+std::string ParticleTags::laptype_tag="lapArray";
 std::string ParticleTags::tensortype_tag="tensorArray";
 std::string ParticleTags::xmoltype_tag="xmolArray";
 

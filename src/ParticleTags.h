@@ -68,6 +68,12 @@ struct ParticleTags {
   ///the datatype tag for the pos-type attribute
   static std::string postype_tag;
 
+  ///the datatype tag for the gradient-type attribute
+  static std::string gradtype_tag;
+
+  ///the datatype tag for the laplacian-type attribute
+  static std::string laptype_tag;
+
   ///the datatype tag for the tensor-type attribute
   static std::string tensortype_tag;
 
