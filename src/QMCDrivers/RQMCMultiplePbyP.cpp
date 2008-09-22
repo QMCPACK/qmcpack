@@ -40,6 +40,9 @@ namespace qmcplusplus {
     RootName = "rmc";
     QMCType ="RQMCMultiplePbyP";
     m_param.add(ReptileLength,"chains","int");
+    MaxLevel=-1;
+    m_param.add(MaxLevel,"MaxLevel","int");
+
 
     QMCDriverMode.set(QMC_MULTIPLE,1);
     QMCDriverMode.set(QMC_UPDATE_MODE,1);
@@ -178,7 +181,9 @@ namespace qmcplusplus {
     grand_transProb.resize(W.G.size());//dothis better
     lambda=1.0/(2.0*MSS);
     assert(lambda==0.5); //6.059;
-    MaxLevel=2;
+    cout<<"My max level is "<<MaxLevel<<endl;
+    assert(MaxLevel!=-1);
+    //    MaxLevel=2;
     int num_bisection_slices=std::pow(2.0,(double)MaxLevel);
     tempReptile.resize(num_bisection_slices+1);
     //    tempReptile_slow.resize(num_bisection_slices+1);
