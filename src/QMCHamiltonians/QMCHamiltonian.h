@@ -147,6 +147,7 @@ namespace qmcplusplus {
      * @brief functions to handle particle-by-particle move
      */
     Return_t registerData(ParticleSet& P, BufferType& buffer);
+    void updateBuffer(ParticleSet& P, BufferType& buf);
     void copyFromBuffer(ParticleSet& P, BufferType& buf);
     Return_t evaluate(ParticleSet& P, BufferType& buf);
     Return_t evaluatePbyP(ParticleSet& P, int active);

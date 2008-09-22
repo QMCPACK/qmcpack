@@ -246,6 +246,18 @@ QMCHamiltonian::Return_t QMCHamiltonian::registerData(ParticleSet& P, BufferType
   return LocalEnergy;
 }
 
+QMCHamiltonian::Return_t QMCHamiltonian::updateBuffer(ParticleSet& P, BufferType& buffer)
+{
+  LocalEnergy=0.0;
+  for(int i=0; i<H.size(); ++i) 
+  {
+    LocalEnergy+=H[i]->updateBuffer(P,buffer);
+    H[i]->setObservables(Observables);
+  }
+  buffer.add(LocalEnergy);
+  return LocalEnergy;
+}
+
 void QMCHamiltonian::copyFromBuffer(ParticleSet& P, BufferType& buffer)
 {
   for(int i=0; i<H.size(); ++i) H[i]->copyFromBuffer(P,buffer);
