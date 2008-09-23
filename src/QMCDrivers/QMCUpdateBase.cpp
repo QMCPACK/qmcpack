@@ -163,11 +163,9 @@ namespace qmcplusplus {
       RealType logpsi(Psi.evaluateLog(W));
       //setScaledDriftPbyP(Tau*m_oneovermass,W.G,(*it)->Drift);
       RealType nodecorr=setScaledDriftPbyPandNodeCorr(m_tauovermass,W.G,(*it)->Drift);
-      cout << "  Checking  no correction " << nodecorr<< endl;
-      cout << W.G <<endl;
-      //RealType ene = H.evaluate(W);
-      //(*it)->resetProperty(logpsi,Psi.getPhase(),ene,0.0,0.0, nodecorr);
-      ////H.saveProperty((*it)->getPropertyBase());
+      RealType ene = H.evaluate(W);
+      (*it)->resetProperty(logpsi,Psi.getPhase(),ene,0.0,0.0, nodecorr);
+      H.saveProperty((*it)->getPropertyBase());
     }
   }
 
