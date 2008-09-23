@@ -178,6 +178,7 @@ namespace qmcplusplus {
 
   void RQMCMultiplePbyP::InitBisection(Buffer_t& w_buffer)
   {
+    KEcut=0.0;
     grand_transProb.resize(W.G.size());//dothis better
     lambda=1.0/(2.0*MSS);
     assert(lambda==0.5); //6.059;
@@ -375,6 +376,10 @@ RQMCMultiplePbyP::RealType RQMCMultiplePbyP::LogSampleProb(vector<Bead_ParticleS
       }
       DeltaG[ipsi]-=tempReptile[sliceToThrow]->Properties(ipsi,LOGPSI)*toMult;
     }
+    
+
+      
+
   }
   
   
@@ -733,6 +738,7 @@ RQMCMultiplePbyP::RealType RQMCMultiplePbyP::LogSampleProb(vector<Bead_ParticleS
     int totalNumParticles=W.getTotalNum();
     for (int k=0;k<1;k++)
       for (int movePtcl=0;movePtcl<totalNumParticles; movePtcl++) {
+	bool shouldReject=false;
 	myTimers[7]->start();
 	myTimers[5]->start();
         DeltaG=0.0;
@@ -819,9 +825,13 @@ RQMCMultiplePbyP::RealType RQMCMultiplePbyP::LogSampleProb(vector<Bead_ParticleS
 	    //if refSign==newBeadProb[sign] then beadwgt=1  else beadwgt=0
 	    int beadwgt=abs( ( Reptile->getSign(NewBeadProp[SIGN])+Reptile->RefSign[ipsi] )/2 );
 	    tempReptile[i]->BeadSignWgt[ipsi]=beadwgt;
+	    if (NewBeadProp[LOCALENERGY]-NewBeadProp[LOCALPOTENTIAL] <= KEcut )
+	      shouldReject=true;
+	      
 	  }
 	    myTimers[8]->stop();
 	    //	    checkBeadInfo(i);
+
 	}
 
 
@@ -841,7 +851,7 @@ RQMCMultiplePbyP::RealType RQMCMultiplePbyP::LogSampleProb(vector<Bead_ParticleS
 	///If some hamiltonian has overlap then we are ok
 	RealType AcceptProb(-1.0),NewGlobalWgt(0.0);
 	RealType RefAction(-1.0e20);
-	if (someHamiltonian_ok) {
+	if (someHamiltonian_ok && !shouldReject) {
 	  for (int ipsi=0;ipsi<nPsi;ipsi++){
 	    NewGlobalAction[ipsi]=Reptile->GlobalAction[ipsi]+DeltaG[ipsi];
 	    

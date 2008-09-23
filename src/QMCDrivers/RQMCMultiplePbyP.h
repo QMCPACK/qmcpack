@@ -35,7 +35,7 @@ namespace qmcplusplus {
   public:
 
     enum { MinusDirection=0, PlusDirection=1, Directionless=2};
-
+    double KEcut;
     /// Constructor.
     RQMCMultiplePbyP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h);
 
