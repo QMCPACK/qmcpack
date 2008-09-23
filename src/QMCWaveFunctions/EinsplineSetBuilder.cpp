@@ -275,6 +275,7 @@ namespace qmcplusplus {
     if(myComm->rank())
     {
       abuffer.rewind();
+      aibuffer.rewind();
       aibuffer.get(Version.begin(),Version.end());
       abuffer.get(Lattice.begin(),Lattice.end());
       abuffer.get(RecipLattice.begin(),RecipLattice.end());
@@ -344,6 +345,7 @@ namespace qmcplusplus {
     if(myComm->rank())
     {
       bbuffer.rewind();
+      bibuffer.rewind();
       for(int i=0; i<numIons; ++i) bibuffer.get(IonTypes[i]);
       bbuffer.get(&IonPos[0][0],&IonPos[0][0]+OHMMS_DIM*numIons);
       bbuffer.get(&TwistAngles[0][0],&TwistAngles[0][0]+OHMMS_DIM*NumTwists);

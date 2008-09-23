@@ -49,7 +49,8 @@ namespace qmcplusplus {
   }
 
   void
-  kSpaceJastrow::setupGvecs(RealType kc, std::vector<PosType> &gvecs)
+  kSpaceJastrow::setupGvecs(RealType kc, std::vector<PosType> &gvecs,
+			    bool useStructFact)
   {
     gvecs.clear();
     int maxIndex[OHMMS_DIM];
@@ -70,7 +71,7 @@ namespace qmcplusplus {
 	      StructureFactor(G, rho_G);	      
 	      for (int sp=0; sp<NumIonSpecies; sp++) 
 		notZero = notZero || (norm(rho_G[sp]) > 1.0e-12);
-	      if (notZero)
+	      if (notZero || !useStructFact)
 		gvecs.push_back(G);
 	    }
 	  }
@@ -196,13 +197,14 @@ namespace qmcplusplus {
 			       string twobodyid, bool twoBodySpin)
     : Ions(ions), Elecs(elecs),OneBodyID(onebodyid),TwoBodyID(twobodyid)
   {
+    Prefactor = 1.0/elecs.Lattice.Volume;
     NumIonSpecies = 0;
     NumElecs = elecs.getLocalNum();
     for (int iat=0; iat<ions.getLocalNum(); iat++) 
       NumIonSpecies = max(NumIonSpecies, ions.GroupID[iat]+1);
 
     if (oneBodyCutoff > 0.0) {
-      setupGvecs(oneBodyCutoff, OneBodyGvecs);
+      setupGvecs(oneBodyCutoff, OneBodyGvecs, true);
       sortGvecs (OneBodyGvecs, OneBodySymmCoefs, oneBodySymm);
       for (int i=0; i<OneBodySymmCoefs.size(); i++) {
 	stringstream name_real, name_imag;
@@ -215,7 +217,7 @@ namespace qmcplusplus {
       }
     }
     if (twoBodyCutoff > 0.0) {
-      setupGvecs(twoBodyCutoff, TwoBodyGvecs);
+      setupGvecs(twoBodyCutoff, TwoBodyGvecs, false);
       sortGvecs (TwoBodyGvecs, TwoBodySymmCoefs, twoBodySymm);
       for (int i=0; i<TwoBodySymmCoefs.size(); i++) {
 	stringstream name;
@@ -337,9 +339,9 @@ namespace qmcplusplus {
       
       for (int i=0; i<nOne; i++) {
 	ComplexType z = OneBodyCoefs[i] * conj(OneBody_e2iGr[i]);
-	J1 += real(z);
-	G[iat] += -real(z*eye)*OneBodyGvecs[i];
-	L[iat] += -dot(OneBodyGvecs[i],OneBodyGvecs[i])*real(z);
+	J1 += Prefactor*real(z);
+	G[iat] += -Prefactor*real(z*eye)*OneBodyGvecs[i];
+	L[iat] += -Prefactor*dot(OneBodyGvecs[i],OneBodyGvecs[i])*real(z);
       }
     }
 
@@ -349,15 +351,20 @@ namespace qmcplusplus {
       TwoBody_rhoG[i] = ComplexType();
     for (int iat=0; iat<N; iat++) {
       PosType r(P.R[iat]);
-      for (int i=0; i<nTwo; i++) 
-	TwoBodyPhase[i] = dot(TwoBodyGvecs[i], r);
+      for (int iG=0; iG<nTwo; iG++) 
+	TwoBodyPhase[iG] = dot(TwoBodyGvecs[iG], r);
       eval_e2iphi (TwoBodyPhase, TwoBody_e2iGr_new);
-      for (int i=0; i<nTwo; i++)
-	TwoBody_rhoG[i] += TwoBody_e2iGr_new[i];
+      for (int iG=0; iG<nTwo; iG++)
+	TwoBody_rhoG[iG] += TwoBody_e2iGr_new[iG];
     }
 
+//     cerr << "TwoBody_rhoG = ";
+//     for (int i=0; i<nTwo; i++)
+//       cerr << TwoBody_rhoG[i]  << "  ";
+//     cerr << endl;
+
     for (int i=0; i<nTwo; i++) 
-      J2 += TwoBodyCoefs[i]*norm(TwoBody_rhoG[i]);
+      J2 += Prefactor*TwoBodyCoefs[i]*norm(TwoBody_rhoG[i]);
     
     for (int iat=0; iat<N; iat++) {
       PosType r(P.R[iat]);
@@ -367,10 +374,11 @@ namespace qmcplusplus {
       for (int i=0; i<nTwo; i++) {
 	PosType Gvec(TwoBodyGvecs[i]);
 	ComplexType z = TwoBody_e2iGr_new[i];
-	G[iat] += -2.0*Gvec*TwoBodyCoefs[i]*imag(conj(TwoBody_rhoG[i])*z);
-	L[iat] += 2.0*TwoBodyCoefs[i]*dot(Gvec,Gvec)*(-real(z*conj(TwoBody_rhoG[i])) + 1.0);
+	G[iat] += -Prefactor*2.0*Gvec*TwoBodyCoefs[i]*imag(conj(TwoBody_rhoG[i])*z);
+	L[iat] += Prefactor*2.0*TwoBodyCoefs[i]*dot(Gvec,Gvec)*(-real(z*conj(TwoBody_rhoG[i])) + 1.0);
       }
     }
+    
     return J1 + J2;
   }
   
@@ -390,14 +398,14 @@ namespace qmcplusplus {
     eval_e2iphi (OneBodyPhase, OneBody_e2iGr);
 
     for (int i=0; i<nOne; i++) 
-      J1new += real(OneBodyCoefs[i] * conj(OneBody_e2iGr[i]));
+      J1new += Prefactor*real(OneBodyCoefs[i] * conj(OneBody_e2iGr[i]));
 
     for (int i=0; i<nOne; i++)
       OneBodyPhase[i] = dot(OneBodyGvecs[i], rold);
     eval_e2iphi (OneBodyPhase, OneBody_e2iGr);
 
     for (int i=0; i<nOne; i++) 
-      J1old += real(OneBodyCoefs[i] * conj(OneBody_e2iGr[i]));
+      J1old += Prefactor*real(OneBodyCoefs[i] * conj(OneBody_e2iGr[i]));
 
     // Now, do two-body part
     int nTwo = TwoBodyGvecs.size();
@@ -408,11 +416,11 @@ namespace qmcplusplus {
 
     for (int i=0; i<nTwo; i++) {
       ComplexType rho_G = TwoBody_rhoG[i];
-      J2old += TwoBodyCoefs[i]*std::norm(rho_G);
+      J2old += Prefactor*TwoBodyCoefs[i]*std::norm(rho_G);
     }
     for (int i=0; i<nTwo; i++) {
       ComplexType rho_G = TwoBody_rhoG[i] + TwoBody_e2iGr_new[i] - TwoBody_e2iGr_old[i];
-      J2new += TwoBodyCoefs[i]*std::norm(rho_G);
+      J2new += Prefactor*TwoBodyCoefs[i]*std::norm(rho_G);
     }
 
     return std::exp(J1new+J2new - (J1old + J2old));
@@ -436,9 +444,9 @@ namespace qmcplusplus {
 
     for (int i=0; i<nOne; i++) {
       ComplexType z = OneBodyCoefs[i] * conj(OneBody_e2iGr[i]);
-      J1 += real(z);
-      dG[iat] += -real(z*eye) * OneBodyGvecs[i];
-      dL[iat] += -dot(OneBodyGvecs[i],OneBodyGvecs[i])*real(z);
+      J1 += Prefactor*real(z);
+      dG[iat] += -Prefactor*real(z*eye) * OneBodyGvecs[i];
+      dL[iat] += -Prefactor*dot(OneBodyGvecs[i],OneBodyGvecs[i])*real(z);
     }
 
     for (int i=0; i<nOne; i++)
@@ -447,9 +455,9 @@ namespace qmcplusplus {
 
     for (int i=0; i<nOne; i++) {
       ComplexType z = OneBodyCoefs[i] * conj(OneBody_e2iGr[i]);
-      J1 -= real(z);
-      dG[iat] -= -real(z*eye) * OneBodyGvecs[i];
-      dL[iat] -= -dot(OneBodyGvecs[i],OneBodyGvecs[i])*real(z);
+      J1 -= Prefactor*real(z);
+      dG[iat] -= -Prefactor*real(z*eye) * OneBodyGvecs[i];
+      dL[iat] -= -Prefactor*dot(OneBodyGvecs[i],OneBodyGvecs[i])*real(z);
     }
 
     // Compute two-body contribution
@@ -469,7 +477,7 @@ namespace qmcplusplus {
     for (int i=0; i<nTwo; i++) {
       ComplexType rhoG_old = TwoBody_rhoG[i];
       ComplexType rhoG_new = TwoBody_rhoG[i] + TwoBody_e2iGr_new[i] - TwoBody_e2iGr_old[i];
-      J2 += TwoBodyCoefs[i] * (norm(rhoG_new) - norm(rhoG_old));
+      J2 += Prefactor*TwoBodyCoefs[i] * (norm(rhoG_new) - norm(rhoG_old));
       for (int jat=0; jat<NumElecs; jat++) {
 	PosType rj_new = P.R[jat];
 	PosType rj_old = rj_new;
@@ -479,11 +487,11 @@ namespace qmcplusplus {
 	ComplexType zold, znew;
 	sincos (dot(Gvec,rj_old), &(zold.imag()), &(zold.real()));
 	sincos (dot(Gvec,rj_new), &(znew.imag()), &(znew.real()));
-	dG[jat] += -2.0*Gvec*TwoBodyCoefs[i]*imag(conj(rhoG_new)*znew);
-	dG[jat] -= -2.0*Gvec*TwoBodyCoefs[i]*imag(conj(rhoG_old)*zold);
+	dG[jat] += -Prefactor*2.0*Gvec*TwoBodyCoefs[i]*imag(conj(rhoG_new)*znew);
+	dG[jat] -= -Prefactor*2.0*Gvec*TwoBodyCoefs[i]*imag(conj(rhoG_old)*zold);
 
-	dL[jat] += 2.0*TwoBodyCoefs[i]*dot(Gvec,Gvec)*(-real(znew*conj(rhoG_new)) + 1.0);
-	dL[jat] -= 2.0*TwoBodyCoefs[i]*dot(Gvec,Gvec)*(-real(zold*conj(rhoG_old)) + 1.0);
+	dL[jat] += Prefactor*2.0*TwoBodyCoefs[i]*dot(Gvec,Gvec)*(-real(znew*conj(rhoG_new)) + 1.0);
+	dL[jat] -= Prefactor*2.0*TwoBodyCoefs[i]*dot(Gvec,Gvec)*(-real(zold*conj(rhoG_old)) + 1.0);
       }
 
     }
@@ -517,6 +525,7 @@ namespace qmcplusplus {
 			int iat) 
   {
     app_error() << "kSpaceJastrow::update is INCOMPLETE " << endl;
+    abort();
   }
   
   
@@ -583,12 +592,12 @@ namespace qmcplusplus {
       eval_e2iphi (OneBodyPhase, OneBody_e2iGr);
       
       for (int i=0; i<nOne; i++) {
-	J1 +=  real(OneBodyCoefs[i]  * conj(OneBody_e2iGr[i]));
+	J1 +=  Prefactor*real(OneBodyCoefs[i]  * conj(OneBody_e2iGr[i]));
       }
     }
     
     // Do two-body part
-    int nTwo = OneBodyGvecs.size();
+    int nTwo = TwoBodyGvecs.size();
     for (int i=0; i<nTwo; i++)
       TwoBody_rhoG[i] = ComplexType();
     for (int iat=0; iat<N; iat++) {
@@ -600,7 +609,7 @@ namespace qmcplusplus {
 	TwoBody_rhoG[i] += TwoBody_e2iGr_new[i];
     }
     for (int i=0; i<nTwo; i++) 
-      J2 += TwoBodyCoefs[i]*norm(TwoBody_rhoG[i]);
+      J2 += Prefactor*TwoBodyCoefs[i]*norm(TwoBody_rhoG[i]);
 
     return J1+J2;
   }
@@ -655,6 +664,23 @@ namespace qmcplusplus {
   {
     kSpaceJastrow *kj =new kSpaceJastrow(Ions,tqp);
     kj->copyFrom(*this);
+    // kSpaceJastrow *kj = new kSpaceJastrow(*this);
+    // kj->VarMap.clear();
+
+    // for (int i=0; i<OneBodySymmCoefs.size(); i++) {
+    //   stringstream name_real, name_imag;
+    //   name_real << OneBodyID << "_" << 2*i;
+    //   name_imag << OneBodyID << "_" << 2*i+1;
+    //   kj->VarMap[name_real.str()] = &(kj->OneBodySymmCoefs[i].cG.real());
+    //   kj->VarMap[name_imag.str()] = &(kj->OneBodySymmCoefs[i].cG.imag());
+    // }
+
+    // for (int i=0; i<TwoBodySymmCoefs.size(); i++) {
+    //   stringstream name;
+    //   name << TwoBodyID << "_" << i;
+    //   kj->VarMap[name.str()] = &(kj->TwoBodySymmCoefs[i].cG);
+    // }
+
     return kj;
   }
 

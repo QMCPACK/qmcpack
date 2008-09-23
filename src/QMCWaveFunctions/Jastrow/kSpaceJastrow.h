@@ -116,7 +116,8 @@ namespace qmcplusplus {
     //////////////////////
 
     // Enumerate G-vectors with nonzero structure factors
-    void setupGvecs (RealType kcut, std::vector<PosType> &gvecs);
+    void setupGvecs (RealType kcut, std::vector<PosType> &gvecs,
+		     bool useStructFact);
     void setupCoefs();
 
     // Sort the G-vectors into appropriate symmtry groups
@@ -133,6 +134,7 @@ namespace qmcplusplus {
     ParticleSet &Elecs;
     std::string OneBodyID;
     std::string TwoBodyID;
+    double Prefactor;
 
   public:
     kSpaceJastrow(ParticleSet& ions, ParticleSet& elecs,

@@ -21,6 +21,7 @@
 #include "QMCWaveFunctions/DiffOrbitalBase.h"
 #include "Particle/DistanceTableData.h"
 #include "Particle/DistanceTable.h"
+#include "LongRange/StructFact.h"
 
 namespace qmcplusplus {
 
@@ -45,6 +46,8 @@ namespace qmcplusplus {
     Matrix<int> PairID;
 
     std::map<std::string,FT*> J2Unique;
+    ParticleSet *PtclRef;
+    bool FirstTime;
 
   public:
 
@@ -54,8 +57,10 @@ namespace qmcplusplus {
     vector<FT*> F;
 
     TwoBodyJastrowOrbital(ParticleSet& p) {
+      PtclRef = &p;
       d_table=DistanceTable::add(p);
       init(p);
+      FirstTime = true;
     }
 
     ~TwoBodyJastrowOrbital(){ }
@@ -106,6 +111,7 @@ namespace qmcplusplus {
     void resetTargetParticleSet(ParticleSet& P) 
     {
       d_table = DistanceTable::add(P);
+      PtclRef = &P;
     }
 
     /** check in an optimizable parameter
@@ -145,6 +151,11 @@ namespace qmcplusplus {
       while(it != it_end) 
       {
         (*it++).second->resetParameters(active); 
+      }
+      if (FirstTime) {
+	app_log() << "  Chiesa kinetic energy correction = " 
+		  << ChiesaKEcorrection() << endl;
+	FirstTime = false;
       }
       //if(dPsi) dPsi->resetParameters(optVariables);
       for(int i=0; i<myVars.size(); ++i)
@@ -492,7 +503,115 @@ namespace qmcplusplus {
     {
       //nothing to do
     }
+
+    double ChiesaKEcorrection()
+    {
+      const int numPoints = 1000;
+      double vol = PtclRef->Lattice.Volume;
+      double aparam = 0.0;
+      int nsp = PtclRef->groups();
+      FILE *fout = fopen ("uk.dat", "w");
+      double sum, KEcorr;
+      for (int iG=0; iG<PtclRef->SK->KLists.ksq.size(); iG++) {
+	double Gmag = std::sqrt(PtclRef->SK->KLists.ksq[iG]);
+	sum = 0.0;
+	double uk = 0.0;
+	for (int i=0; i<PtclRef->groups(); i++) {
+	  int Ni = PtclRef->last(i) - PtclRef->first(i);
+	  double aparam = 0.0;
+	  for (int j=0; j<PtclRef->groups(); j++) {
+	    int Nj = PtclRef->last(j) - PtclRef->first(j);
+	    if (F[i*nsp+j]) {
+	      FT& ufunc = *(F[i*nsp+j]);
+	      double radius = ufunc.cutoff_radius;
+	      double k = Gmag;
+	      double dr = radius/(double)(numPoints-1);
+	      for (int ir=0; ir<numPoints; ir++) {
+		double r = dr * (double)ir;
+		double u = ufunc.evaluate(r);
+		aparam += (1.0/4.0)*k*k*
+		  4.0*M_PI*r*std::sin(k*r)/k*u*dr;
+		uk += 0.5*4.0*M_PI*r*std::sin(k*r)/k * u * dr *
+		  (double)Nj / (double)(Ni+Nj);
+		
+		//aparam += 0.25* 4.0*M_PI*r*r*u*dr;
+	      }
+	    }
+	  }
+	  //app_log() << "A = " << aparam << endl;
+	  sum += Ni * aparam / vol;
+	}
+	if (iG == 0) {
+	  double a = 1.0;
+	  for (int iter=0; iter<20; iter++) {
+	    a = uk / (4.0*M_PI*(1.0/(Gmag*Gmag) - 1.0/(Gmag*Gmag + 1.0/a)));
+	  }
+	  KEcorr = 4.0*M_PI*a/(4.0*vol) * PtclRef->getTotalNum();
+	}
+	fprintf (fout, "%1.8f %1.12e %1.12e\n", Gmag, uk, sum);
+      }
+      fclose(fout);
+      return KEcorr;
+    }
+
+    void
+    finalizeOptimization()
+    {
+      	app_log() << "  Chiesa kinetic energy correction = " 
+		  << ChiesaKEcorrection() << endl;
+    }
+    
+// double ChiesaKEcorrection()
+//     {
+//       // Find magnitude of the smallest nonzero G-vector
+//       double Gmag = std::sqrt(PtclRef->SK->KLists.ksq[0]);
+//       //app_log() << "Gmag = " << Gmag << endl;
+
+//       const int numPoints = 1000;
+//       double vol = PtclRef->Lattice.Volume;
+//       double aparam = 0.0;
+//       int nsp = PtclRef->groups();
+//       FILE *fout = fopen ("uk.dat", "w");
+//       double sum;
+//       for (double s=0.001; s<6.0; s+=0.001) {
+//        	double k = s * M_PI/F[0]->cutoff_radius;
+// 	sum = 0.0;
+// 	for (int i=0; i<PtclRef->groups(); i++) {
+// 	  int Ni = PtclRef->last(i) - PtclRef->first(i);
+// 	  double aparam = 0.0;
+// 	  for (int j=0; j<PtclRef->groups(); j++) {
+// 	    int Nj = PtclRef->last(j) - PtclRef->first(j);
+// 	    if (F[i*nsp+j]) {
+// 	      FT& ufunc = *(F[i*nsp+j]);
+// 	      double radius = ufunc.cutoff_radius;
+// 	      double k = 1.0*M_PI/radius;
+// 	      //double k = Gmag;
+// 	      double dr = radius/(double)(numPoints-1);
+// 	      for (int ir=0; ir<numPoints; ir++) {
+// 		double r = dr * (double)ir;
+// 		double u = ufunc.evaluate(r);
+// 		aparam += (1.0/4.0)*k*k*
+// 		  4.0*M_PI*r*std::sin(k*r)/k*u*dr;
+// 		//aparam += 0.25* 4.0*M_PI*r*r*u*dr;
+// 	      }
+// 	    }
+// 	  }
+// 	  //app_log() << "A = " << aparam << endl;
+// 	  sum += Ni * aparam / vol;
+// 	}
+// 	fprintf (fout, "%1.8f %1.12e\n", k/Gmag, sum);
+//       }
+//       fclose(fout);
+//       return sum;
+//     }
+
+
+
   };
+
+
+
+
 }
 #endif
 /***************************************************************************
