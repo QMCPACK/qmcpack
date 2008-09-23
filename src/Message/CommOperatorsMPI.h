@@ -433,6 +433,14 @@ Communicate::bcast(PooledData<double>& g)
 }
 
 template<>
+inline void 
+Communicate::bcast(PooledData<int>& g) 
+{
+  MPI_Bcast(g.data(),g.size(),MPI_INT,0,myMPI);
+}
+
+
+template<>
 inline void
 Communicate::bcast(std::vector<APPNAMESPACE::TinyVector<double,2> > &g)
 {
