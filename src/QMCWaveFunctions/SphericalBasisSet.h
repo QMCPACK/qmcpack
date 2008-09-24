@@ -83,7 +83,6 @@ namespace qmcplusplus {
 
     void checkInVariables(opt_variables_type& active) 
     {
-      cout << "### SphericalBasisSet::checkInVariables " << endl;
       for(int nl=0; nl<Rnl.size(); nl++) Rnl[nl]->checkInVariables(active);
     }
 

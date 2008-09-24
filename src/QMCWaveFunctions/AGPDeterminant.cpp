@@ -21,7 +21,9 @@
 
 namespace qmcplusplus {
 
-  AGPDeterminant::AGPDeterminant(BasisSetType* bs): GeminalBasis(bs), NumPtcls(0){
+  AGPDeterminant::AGPDeterminant(BasisSetType* bs): 
+    GeminalBasis(bs), NumPtcls(0)
+  {
   }
   AGPDeterminant::~AGPDeterminant() {}
 
@@ -584,6 +586,16 @@ namespace qmcplusplus {
     //return CurrentDet;
   }
 
+  OrbitalBasePtr AGPDeterminant::makeClone(ParticleSet& tqp) const
+  {
+    AGPDeterminant* myclone = new AGPDeterminant(0);
+    myclone->GeminalBasis=GeminalBasis->makeClone();
+    myclone->GeminalBasis->resetTargetParticleSet(tqp);
+    myclone->resize(Nup,Ndown);
+    myclone->Lambda=Lambda;
+    if(Nup!=Ndown) myclone->LambdaUP=LambdaUP;
+    return myclone;
+  }
 }
 /***************************************************************************
  * $RCSfile$   $Author$

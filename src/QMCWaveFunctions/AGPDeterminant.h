@@ -153,6 +153,8 @@ namespace qmcplusplus {
 	     ParticleSet::ParticleGradient_t& G, 
 	     ParticleSet::ParticleLaplacian_t& L);
 
+    OrbitalBasePtr makeClone(ParticleSet& tqp) const;
+
     bool UseRatioOnly;
 
     ///Total number of particles
