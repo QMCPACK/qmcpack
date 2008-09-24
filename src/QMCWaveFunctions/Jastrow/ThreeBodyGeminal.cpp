@@ -20,17 +20,19 @@
 #include "Numerics/DeterminantOperators.h"
 #include "Numerics/OhmmsBlas.h"
 #include "Numerics/LibxmlNumericIO.h"
+#include "Utilities/RandomGenerator.h"
 using namespace std;
 #include "Numerics/MatrixOperators.h"
 #include "OhmmsData/AttributeSet.h"
 
 namespace qmcplusplus {
 
-  ThreeBodyGeminal::ThreeBodyGeminal(ParticleSet& ions, ParticleSet& els): 
-    CenterRef(ions), GeminalBasis(0), IndexOffSet(1), ID_Lambda("j3g")
+  ThreeBodyGeminal::ThreeBodyGeminal(const ParticleSet& ions, ParticleSet& els): 
+    CenterRef(ions), GeminalBasis(0), IndexOffSet(1), ID_Lambda("j3")
     {
       d_table = DistanceTable::add(ions,els);
       NumPtcls=els.getTotalNum();
+      Optimizable=true;
     }
 
   ThreeBodyGeminal::~ThreeBodyGeminal() 
@@ -47,12 +49,14 @@ namespace qmcplusplus {
   void ThreeBodyGeminal::checkInVariables(opt_variables_type& active) 
   {
     active.insertFrom(myVars);
+    GeminalBasis->checkInVariables(active);
   }
 
   void ThreeBodyGeminal::checkOutVariables(const opt_variables_type& active)
   {
     myVars.getIndex(active);
-    Optimizable=myVars.is_optimizable();
+    GeminalBasis->checkOutVariables(active);
+    //Optimizable=myVars.is_optimizable();
   }
 
   ///reset the value of all the Two-Body Jastrow functions
@@ -76,6 +80,9 @@ namespace qmcplusplus {
       }
     }
     GeminalBasis->resetParameters(active);
+
+    app_log() << "ThreeBodyGeminal::resetParameters" << endl;
+    app_log() << Lambda << endl;
   }
 
   void ThreeBodyGeminal::reportStatus(ostream& os)
@@ -86,61 +93,67 @@ namespace qmcplusplus {
   ThreeBodyGeminal::evaluateLog(ParticleSet& P,
 		                 ParticleSet::ParticleGradient_t& G, 
 		                 ParticleSet::ParticleLaplacian_t& L) {
-    //GeminalBasis->evaluate(P);
-    GeminalBasis->evaluateForWalkerMove(P);
-    
-
-    MatrixOperators::product(GeminalBasis->Y, Lambda, V);
-
-    //Rewrite with gemm
-    //for(int i=0; i<NumPtcls; i++) {
-    //  for(int k=0; k<BasisSize; k++) {
-    //    V(i,k) = BLAS::dot(BasisSize,GeminalBasis->Y[i],Lambda[k]);
+    //this is necessary to handle ratio for pseudopotentials
+    evaluateLogAndStore(P);
+    ////GeminalBasis->evaluate(P);
+    //GeminalBasis->evaluateForWalkerMove(P);
+    //
+    //MatrixOperators::product(GeminalBasis->Y, Lambda, V);
+    ////Rewrite with gemm
+    ////for(int i=0; i<NumPtcls; i++) {
+    ////  for(int k=0; k<BasisSize; k++) {
+    ////    V(i,k) = BLAS::dot(BasisSize,GeminalBasis->Y[i],Lambda[k]);
+    ////  }
+    ////}
+    //Uk=0.0;
+    //LogValue=ValueType();
+    //for(int i=0; i< NumPtcls-1; i++) {
+    //  const RealType* restrict yptr=GeminalBasis->Y[i];
+    //  for(int j=i+1; j<NumPtcls; j++) {
+    //    RealType x= dot(V[j],yptr,BasisSize);
+    //    LogValue += x;
+    //    Uk[i]+= x;
+    //    Uk[j]+= x;
     //  }
     //}
-    Uk=0.0;
-
-    LogValue=ValueType();
-    for(int i=0; i< NumPtcls-1; i++) {
-      const RealType* restrict yptr=GeminalBasis->Y[i];
-      for(int j=i+1; j<NumPtcls; j++) {
-        RealType x= dot(V[j],yptr,BasisSize);
-        LogValue += x;
-        Uk[i]+= x;
-        Uk[j]+= x;
-      }
-    }
-
-    for(int i=0; i<NumPtcls; i++)  {
-      const PosType* restrict dptr=GeminalBasis->dY[i];
-      const RealType* restrict d2ptr=GeminalBasis->d2Y[i];
-      const RealType* restrict vptr=V[0];
-      GradType grad(0.0);
-      ValueType lap(0.0);
-      for(int j=0; j<NumPtcls; j++, vptr+=BasisSize) {
-        if(j!=i) {
-          grad += dot(vptr,dptr,BasisSize);
-          lap +=  dot(vptr,d2ptr,BasisSize);
-        }
-      }
-      G(i)+=grad;
-      L(i)+=lap;
-    }
+    //for(int i=0; i<NumPtcls; i++)  {
+    //  const PosType* restrict dptr=GeminalBasis->dY[i];
+    //  const RealType* restrict d2ptr=GeminalBasis->d2Y[i];
+    //  const RealType* restrict vptr=V[0];
+    //  GradType grad(0.0);
+    //  ValueType lap(0.0);
+    //  for(int j=0; j<NumPtcls; j++, vptr+=BasisSize) {
+    //    if(j!=i) {
+    //      grad += dot(vptr,dptr,BasisSize);
+    //      lap +=  dot(vptr,d2ptr,BasisSize);
+    //    }
+    //  }
+    //  G(i)+=grad;
+    //  L(i)+=lap;
+    //}
 
     return LogValue;
   }
 
   OrbitalBase::ValueType 
   ThreeBodyGeminal::ratio(ParticleSet& P, int iat) {
-    //GeminalBasis->evaluate(P,iat);
+    RatioOnly=true;
     GeminalBasis->evaluateForPtclMove(P,iat);
-    diffVal=0.0;
-    for(int j=0; j<NumPtcls; j++) {
-      if(j == iat) continue;
-      //diffVal+= dot(V[j],GeminalBasis->y(0),BasisSize);
-      diffVal+= dot(V[j],GeminalBasis->Phi.data(),BasisSize);
+    const BasisSetType::RealType* restrict y_ptr=GeminalBasis->Phi.data();
+    for(int k=0; k<BasisSize; k++) 
+    {
+      curV[k] = BLAS::dot(BasisSize,y_ptr,Lambda[k]);
+      delV[k] = curV[k]-V[iat][k];
     }
-    return std::exp(diffVal-Uk[iat]);
+    diffVal=0.0;
+    const RealType* restrict vptr=V[0];
+    for(int j=0; j<NumPtcls; j++, vptr+=BasisSize) 
+    {
+      if(j==iat) continue;
+      diffVal+= (curVal[j]=dot(delV.data(),Y[j],BasisSize));
+    }
+    curVal[iat]=diffVal;
+    return std::exp(diffVal);
   }
 
     /** later merge the loop */
@@ -149,6 +162,7 @@ namespace qmcplusplus {
 		    ParticleSet::ParticleGradient_t& dG,
 		    ParticleSet::ParticleLaplacian_t& dL) {
 
+    RatioOnly=false;
     return std::exp(logRatio(P,iat,dG,dL));
   }
 
@@ -209,24 +223,31 @@ namespace qmcplusplus {
   }
 
   void ThreeBodyGeminal::acceptMove(ParticleSet& P, int iat) {
-
     //add the differential
     LogValue += diffVal;
     Uk+=curVal; //accumulate the differences
 
-    dUk.replaceRow(curGrad.begin(),iat);
-    d2Uk.replaceRow(curLap.begin(),iat);
+    if(RatioOnly) 
+    {
+      Y.replaceRow(GeminalBasis->Phi.data(),iat);
+      V.replaceRow(curV.begin(),iat);
+    }
+    else
+    {
+      dUk.replaceRow(curGrad.begin(),iat);
+      d2Uk.replaceRow(curLap.begin(),iat);
 
-    dUk.add2Column(tGrad.begin(),iat);
-    d2Uk.add2Column(tLap.begin(),iat);
+      dUk.add2Column(tGrad.begin(),iat);
+      d2Uk.add2Column(tLap.begin(),iat);
 
-    //Y.replaceRow(GeminalBasis->y(0),iat);
-    //dY.replaceRow(GeminalBasis->dy(0),iat);
-    //d2Y.replaceRow(GeminalBasis->d2y(0),iat);
-    Y.replaceRow(GeminalBasis->Phi.data(),iat);
-    dY.replaceRow(GeminalBasis->dPhi.data(),iat);
-    d2Y.replaceRow(GeminalBasis->d2Phi.data(),iat);
-    V.replaceRow(curV.begin(),iat);
+      //Y.replaceRow(GeminalBasis->y(0),iat);
+      //dY.replaceRow(GeminalBasis->dy(0),iat);
+      //d2Y.replaceRow(GeminalBasis->d2y(0),iat);
+      Y.replaceRow(GeminalBasis->Phi.data(),iat);
+      dY.replaceRow(GeminalBasis->dPhi.data(),iat);
+      d2Y.replaceRow(GeminalBasis->d2Phi.data(),iat);
+      V.replaceRow(curV.begin(),iat);
+    }
 
   }
 
@@ -373,6 +394,12 @@ namespace qmcplusplus {
     //identity is the default
     Lambda=0.0;
     for(int ib=0; ib<BasisSize; ib++) Lambda(ib,ib)=1.0;
+    //for(int ib=0; ib<BasisSize; ib++) 
+    //  for(int jb=ib; jb<BasisSize; ++jb)
+    //  {
+    //    Lambda(ib,jb)=Random();
+    //    if(jb!=ib) Lambda(jb,ib)=Lambda(ib,jb);
+    //  }
 
     if(cur == NULL) 
     { 
@@ -380,7 +407,7 @@ namespace qmcplusplus {
     }
     else 
     {//read from an input nodes
-      string aname("j3g");
+      string aname("j3");
       string datatype("no");
       IndexOffSet=1;
       OhmmsAttributeSet attrib;
@@ -449,6 +476,10 @@ namespace qmcplusplus {
       }
     }
 
+    //app_log() << "  Lambda Variables " << endl;
+    //myVars.print(app_log());
+    //app_log() << endl;
+
     V.resize(NumPtcls,BasisSize);
     Y.resize(NumPtcls,BasisSize);
     dY.resize(NumPtcls,BasisSize);
@@ -474,6 +505,19 @@ namespace qmcplusplus {
     //GeminalBasis->resize(NumPtcls);
 
     return true;
+  }
+
+  OrbitalBasePtr ThreeBodyGeminal::makeClone(ParticleSet& tqp) const
+  {
+    ThreeBodyGeminal* myclone=new ThreeBodyGeminal(CenterRef,tqp);
+    myclone->GeminalBasis=GeminalBasis->makeClone();
+    myclone->GeminalBasis->resetTargetParticleSet(tqp);
+    myclone->put(NULL);
+    myclone->myVars=myVars;
+    myclone->Lambda=Lambda;
+    myclone->ID_Lambda=ID_Lambda;
+    myclone->FreeLambda=FreeLambda;
+    return myclone;
   }
 
   //void ThreeBodyGeminal::addOptimizables(OptimizableSetType& varlist) 

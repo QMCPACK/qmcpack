@@ -267,8 +267,13 @@ namespace qmcplusplus {
     app_log() << "  JastrowBuilder::addThreeBody source="<< sourceOpt <<  endl;
     xmlNodePtr basisPtr=NULL;
     xmlNodePtr coeffPtr=NULL;
+    string diagOnly("no");//default:use diagonal blocks only
+    string sameblocks("yes");
+    OhmmsAttributeSet tAttrib;
+    tAttrib.add(diagOnly,"diagonal");
+    tAttrib.add(sameblocks,"sameBlocksForGroup");
+    tAttrib.put(cur);
     cur = cur->xmlChildrenNode;
-    string diagOnly("no");
     while(cur != NULL) {
       string cname((const char*)(cur->name));
       if(cname == basisset_tag) 
@@ -301,6 +306,8 @@ namespace qmcplusplus {
       app_log() << "\n  creating Three-Body Jastrow function using only diagnoal blocks." << endl;
       ThreeBodyBlockSparse* J3 = new ThreeBodyBlockSparse(*sourcePtcl, targetPtcl);
       J3->setBasisSet(basisBuilder->myBasisSet);
+      J3->put(coeffPtr);
+      J3->SameBlocksForGroup=(sameblocks == "yes");
       J3->setBlocks(basisBuilder->SizeOfBasisPerCenter);
       targetPsi.addOrbital(J3,"J3_block");
     } 
@@ -317,6 +324,7 @@ namespace qmcplusplus {
 //#error "  Three-body Jastrow is disabled for QMC_DIM != 3\n "
 #endif
 
+    delete basisBuilder;
     //if(jbuilder)
     //{
     //  jbuilder->put(cur);

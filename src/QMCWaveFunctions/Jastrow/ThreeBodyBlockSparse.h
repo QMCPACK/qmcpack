@@ -34,7 +34,7 @@ namespace qmcplusplus {
     typedef BasisSetBase<RealType> BasisSetType;
 
     ///constructor
-    ThreeBodyBlockSparse(ParticleSet& ions, ParticleSet& els);
+    ThreeBodyBlockSparse(const ParticleSet& ions, ParticleSet& els);
 
     ~ThreeBodyBlockSparse();
 
@@ -85,6 +85,8 @@ namespace qmcplusplus {
 
     ValueType evaluateLog(ParticleSet& P, PooledData<RealType>& buf);
 
+    OrbitalBasePtr makeClone(ParticleSet& tqp) const;
+
     void setBasisSet(BasisSetType* abasis) { GeminalBasis=abasis;}
 
     bool put(xmlNodePtr cur);
@@ -92,12 +94,12 @@ namespace qmcplusplus {
     //set blocks
     void setBlocks(const std::vector<int>& blockspergroup);
 
-  private:
-
     ///reference to the center
     const ParticleSet& CenterRef;
     /////distance table
     //const DistanceTableData* d_table;
+    ///turn on/off to make correct acceptMove
+    bool RatioOnly;
     ///assign same blocks for the group
     bool SameBlocksForGroup;
     ///index of the table for source-target
@@ -129,8 +131,10 @@ namespace qmcplusplus {
     Matrix<RealType> Lambda;
     /** boolean to enable/disable optmization of Lambda(i,j) component */
     Matrix<int> FreeLambda;
+    vector<IndexType> BlocksPerGroup;
     vector<IndexType> Blocks;
     vector<IndexType> BlockOffset;
+    vector<IndexType> BlockID;
     vector<Matrix<RealType>* > LambdaBlocks;
 
     /** Uk[i] = \sum_j dot(U[i],V[j]) */

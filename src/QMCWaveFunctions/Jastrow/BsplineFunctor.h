@@ -25,12 +25,14 @@ namespace qmcplusplus {
   template<class T>
   struct BsplineFunctor: public OptimizableFunctorBase {
 
+    typedef real_type value_type;
     int NumParams;
     int Dummy;
     const TinyVector<real_type,16> A, dA, d2A;
     //static const real_type A[16], dA[16], d2A[16];
     real_type Rcut, DeltaR, DeltaRInv;
     real_type CuspValue;
+    real_type Y, dY, d2Y;
     std::vector<real_type> SplineCoefs;
     // Stores the derivatives w.r.t. SplineCoefs 
     // of the u, du/dr, and d2u/dr2
@@ -134,6 +136,15 @@ namespace qmcplusplus {
          SplineCoefs[i+2]*(A[ 8]*tp[0] + A[ 9]*tp[1] + A[10]*tp[2] + A[11]*tp[3])+
          SplineCoefs[i+3]*(A[12]*tp[0] + A[13]*tp[1] + A[14]*tp[2] + A[15]*tp[3]));
 
+    }
+    inline real_type evaluate(real_type r, real_type rinv) 
+    {
+      return Y=evaluate(r,dY,d2Y);
+    }
+
+    inline void evaluateAll(real_type r, real_type rinv) 
+    {
+      Y=evaluate(r,dY,d2Y);
     }
 
     inline real_type 

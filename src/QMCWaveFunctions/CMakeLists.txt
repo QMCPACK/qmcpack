@@ -64,6 +64,7 @@ IF(OHMMS_DIM MATCHES 3)
       MolecularOrbitals/STOBuilder.cpp
       MolecularOrbitals/GTOBuilder.cpp
       MolecularOrbitals/NGOBuilder.cpp
+      MolecularOrbitals/BsplineAOBuilder.cpp
      )
   IF(HAVE_EINSPLINE)
     SET(FERMION_SRCS 

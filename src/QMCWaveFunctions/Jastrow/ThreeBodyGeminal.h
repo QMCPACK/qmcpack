@@ -35,7 +35,7 @@ namespace qmcplusplus {
     typedef BasisSetBase<RealType> BasisSetType;
 
     ///constructor
-    ThreeBodyGeminal(ParticleSet& ions, ParticleSet& els);
+    ThreeBodyGeminal(const ParticleSet& ions, ParticleSet& els);
 
     ~ThreeBodyGeminal();
 
@@ -89,12 +89,16 @@ namespace qmcplusplus {
 
     bool put(xmlNodePtr cur);
 
+    OrbitalBasePtr makeClone(ParticleSet& tqp) const;
+
   private:
 
     ///reference to the center
     const ParticleSet& CenterRef;
     ///distance table
     const DistanceTableData* d_table;
+    ///do accept/reject
+    bool RatioOnly;
     ///size of the localized basis set
     int BasisSize;
     ///number of particles

@@ -81,10 +81,20 @@ namespace qmcplusplus {
       return myclone;
     }
 
-    inline void resetParameters(const opt_variables_type& active) 
+    void checkInVariables(opt_variables_type& active) 
+    {
+      cout << "### SphericalBasisSet::checkInVariables " << endl;
+      for(int nl=0; nl<Rnl.size(); nl++) Rnl[nl]->checkInVariables(active);
+    }
+
+    void checkOutVariables(const opt_variables_type& active) 
+    {
+      for(int nl=0; nl<Rnl.size(); nl++) Rnl[nl]->checkOutVariables(active);
+    }
+
+    void resetParameters(const opt_variables_type& active) 
     { 
-      for(int nl=0; nl<Rnl.size(); nl++) 
-        Rnl[nl]->resetParameters(active);
+      for(int nl=0; nl<Rnl.size(); nl++) Rnl[nl]->resetParameters(active);
     }
 
     /** return the number of basis functions

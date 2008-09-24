@@ -55,7 +55,7 @@ namespace qmcplusplus {
     using BasisSetType::dY;
     using BasisSetType::d2Y;
     ///Reference to the center
-    const ParticleSet& CenterSys;
+    const ParticleSet& CenterRef;
     ///number of centers, e.g., ions
     int NumCenters;
     ///number of quantum particles
@@ -74,6 +74,10 @@ namespace qmcplusplus {
       ///IDs for the particle which belong to the same center
       vector<int> myP;
       inline LOForCenter(COT* o=0):myO(o) {}
+      LOForCenter(const LOForCenter& old):myP(old.myP)
+      {
+        myO=old.myO->makeClone();
+      }
     };
 
     typedef vector<LOForCenter*> ContainerType;
@@ -81,7 +85,7 @@ namespace qmcplusplus {
 
     /** distance table, e.g., ion-electron
      *
-     * Localized basis sets require a pair relationship between CenterSys 
+     * Localized basis sets require a pair relationship between CenterRef 
      * and the quantum particle set. 
      */
     const DistanceTableData* myTable;
@@ -90,15 +94,41 @@ namespace qmcplusplus {
      * @param ions ionic system
      * @param els electronic system
      */
-    SparseLocalizedBasisSet(ParticleSet& ions, ParticleSet& els): 
-      CenterSys(ions), myTable(0)
+    SparseLocalizedBasisSet(const ParticleSet& ions, ParticleSet& els): 
+      CenterRef(ions), myTable(0)
     { 
       myTable = DistanceTable::add(ions,els);
-      NumCenters=CenterSys.getTotalNum();
+      NumCenters=CenterRef.getTotalNum();
       NumTargets=els.getTotalNum();
-      NumGroups=CenterSys.getSpeciesSet().getTotalNum();
+      NumGroups=CenterRef.getSpeciesSet().getTotalNum();
       BasisOffset.resize(NumCenters+1);
       LOBasisSet.resize(NumGroups,0);
+    }
+
+    BasisSetBase<typename COT::value_type>* makeClone() const
+    {
+      SparseLocalizedBasisSet<COT>* myclone=new SparseLocalizedBasisSet<COT>(*this);
+      for(int i=0; i<LOBasisSet.size(); ++i)
+        myclone->LOBasisSet[i]=new LOForCenter(*LOBasisSet[i]);
+      return myclone;
+    }
+
+    void checkInVariables(opt_variables_type& active)
+    {
+      for(int i=0; i<LOBasisSet.size(); ++i)
+        LOBasisSet[i]->myO->checkInVariables(active);
+    }
+
+    void checkOutVariables(const opt_variables_type& active)
+    {
+      for(int i=0; i<LOBasisSet.size(); ++i)
+        LOBasisSet[i]->myO->checkOutVariables(active);
+    }
+
+    void resetParameters(const opt_variables_type& active) 
+    {
+      for(int i=0; i<LOBasisSet.size(); ++i)
+        LOBasisSet[i]->myO->resetParameters(active);
     }
 
     /**
@@ -119,7 +149,7 @@ namespace qmcplusplus {
       BasisOffset[0]=0;
       for(int c=0; c<NumCenters; c++)
       {
-        int ig=CenterSys.GroupID[c];
+        int ig=CenterRef.GroupID[c];
         if(LOBasisSet[ig])
         {
           LOBasisSet[ig]->myP.push_back(c);//add this center to the basis set group
@@ -149,17 +179,11 @@ namespace qmcplusplus {
       this->resize(NumTargets);
     }
 
-    void resetParameters(const opt_variables_type& active) 
-    {
-      for(int ig=0; ig<NumGroups; ig++)
-        if(LOBasisSet[ig]) LOBasisSet[ig]->myO->resetParameters(active);
-    }
-    
     /** reset the distance table with a new target P
      */
     void resetTargetParticleSet(ParticleSet& P) {
       LOGMSG("SparseLocalizsedBasisSet::resetTargetParticleSet")
-      myTable = DistanceTable::add(CenterSys,P);
+      myTable = DistanceTable::add(CenterRef,P);
       for(int ig=0; ig<NumGroups; ig++)
         if(LOBasisSet[ig]) LOBasisSet[ig]->myO->setTable(myTable);
     }

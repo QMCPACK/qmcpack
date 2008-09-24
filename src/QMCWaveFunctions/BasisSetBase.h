@@ -87,13 +87,24 @@ namespace qmcplusplus {
       }
     }
 
+    ///clone the basis set
+    virtual BasisSetBase* makeClone() const=0;
     /** return the basis set size */
     inline IndexType getBasisSetSize() const {
       return BasisSetSize;
     }
 
-    ///reset the basis set
-    virtual void resetParameters(const opt_variables_type& active) = 0;
+    /**@{ functions to perform optimizations  */
+    /** checkIn optimizable variables */
+    virtual void checkInVariables(opt_variables_type& active) 
+    { }
+    /** checkOut optimizable variables */
+    virtual void checkOutVariables(const opt_variables_type& active)
+    { }
+    /** reset parameters */
+    virtual void resetParameters(const opt_variables_type& active) 
+    {}
+    /**@}*/
     ///resize the basis set
     virtual void setBasisSetSize(int nbs) = 0;
     ///reset the target particle set

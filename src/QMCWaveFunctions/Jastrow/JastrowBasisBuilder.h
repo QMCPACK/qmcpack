@@ -36,6 +36,8 @@ namespace qmcplusplus {
      * \param ions reference to the ions
      */
     JastrowBasisBuilder(ParticleSet& els, ParticleSet& ions, const string& functype, bool usespline=false);
+    ///destructor
+    ~JastrowBasisBuilder();
 
     bool put(xmlNodePtr cur);
 

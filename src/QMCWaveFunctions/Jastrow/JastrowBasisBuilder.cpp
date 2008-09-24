@@ -16,6 +16,7 @@
 #include "QMCWaveFunctions/Jastrow/JastrowBasisBuilder.h"
 #include "QMCWaveFunctions/MolecularOrbitals/AtomicBasisBuilder.h"
 #include "QMCWaveFunctions/MolecularOrbitals/GTOBuilder.h"
+#include "QMCWaveFunctions/MolecularOrbitals/BsplineAOBuilder.h"
 #include "QMCWaveFunctions/Jastrow/CBSOBuilder.h"
 #include "QMCWaveFunctions/SparseLocalizedBasisSet.h"
 #include "Message/Communicate.h"
@@ -31,6 +32,10 @@ namespace qmcplusplus {
     targetPtcl(els), sourcePtcl(ions), UseSpline(usespline),FuncType(functype)
     { 
     }   
+
+  JastrowBasisBuilder::~JastrowBasisBuilder()
+  {
+  }
 
   template<typename RFBUILDER>
     void JastrowBasisBuilder::createLocalizedBasisSet(xmlNodePtr cur)
@@ -65,7 +70,7 @@ namespace qmcplusplus {
             curBasis->add(activeCenter, aoBasis);
             aoBuilders[elementType]=any;
             printRadialFunctors(elementType,aoBasis);
-            SizeOfBasisPerCenter[activeCenter]=aoBasis->Rnl.size();
+            SizeOfBasisPerCenter[activeCenter]=aoBasis->getBasisSetSize();
           }
         }
       }
@@ -88,10 +93,12 @@ namespace qmcplusplus {
     } 
     else
     {
-      if(FuncType == "gto" || FuncType == "GTO")
+      if(FuncType == "Bspline")
       {
-        createLocalizedBasisSet<GTOBuilder>(cur);
+        createLocalizedBasisSet<BsplineAOBuilder>(cur);
       }
+      if(FuncType == "gto" || FuncType == "GTO")
+        createLocalizedBasisSet<GTOBuilder>(cur);
     }
 
     return true;
