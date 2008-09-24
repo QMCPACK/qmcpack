@@ -133,10 +133,11 @@ namespace qmcplusplus {
     ValueType
     evaluateLog(ParticleSet& P, 
 	        ParticleSet::ParticleGradient_t& G, 
-	        ParticleSet::ParticleLaplacian_t& L) {
-      ValueType psi=evaluate(P,G,L);
-      return LogValue = evaluateLogAndPhase(psi,PhaseValue);
-    }
+	        ParticleSet::ParticleLaplacian_t& L);
+    //{
+    //  ValueType psi=evaluate(P,G,L);
+    //  return LogValue = evaluateLogAndPhase(psi,PhaseValue);
+    //}
 
     /** Calculate the value of the Dirac determinant for particles
      *@param P input configuration containing N particles
@@ -169,8 +170,8 @@ namespace qmcplusplus {
     ///index of the particle (or row) 
     int WorkingIndex;      
 
-    ///Current determinant value
-    ValueType CurrentDet;
+    /////Current determinant value
+    //ValueType CurrentDet;
 
     ///coefficient of the up/down block
     ValueMatrix_t Lambda;

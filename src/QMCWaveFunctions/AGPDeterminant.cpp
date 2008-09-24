@@ -116,72 +116,83 @@ namespace qmcplusplus {
   AGPDeterminant::evaluate(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
   {
 
-    //GeminalBasis->evaluate(P);
-    GeminalBasis->evaluateForWalkerMove(P);//@@
+    APP_ABORT("WHO's calling AGPDeterminant::evaluate!!");
+    return std::exp(LogValue);
+    ////GeminalBasis->evaluate(P);
+    //GeminalBasis->evaluateForWalkerMove(P);//@@
 
-    /* evaluate psi_up(iat)= \sum_{j} C_{ij} \phi_j^{u}(r_{iat}) 
-     * psi_down(iat-Nup) =  \sum_{j} C_{ij} \phi_j^{d}(r_{iat})
-     */
-    MatrixOperators::product(GeminalBasis->Y, Lambda, phiT);
+    ///* evaluate psi_up(iat)= \sum_{j} C_{ij} \phi_j^{u}(r_{iat}) 
+    // * psi_down(iat-Nup) =  \sum_{j} C_{ij} \phi_j^{d}(r_{iat})
+    // */
+    //MatrixOperators::product(GeminalBasis->Y, Lambda, phiT);
 
-    for(int u=0; u<Nup; u++) 
-    {
-      for(int d=0, jat=Nup; d<Ndown; d++,jat++) //paired block
-      {
-        //psiM(d,u) = BLAS::dot(BasisSize,phiT[u],GeminalBasis->y(jat));
-        psiM(d,u) = BLAS::dot(BasisSize,phiT[u],GeminalBasis->Y[jat]);//@@
-      }
-      for(int d=Ndown,unpaired=0; d<Nup; d++,unpaired++)//unpaired block Ndown x unpaired
-      {
-        //psiM(d,u) = BLAS::dot(BasisSize,LambdaUP[unpaired],GeminalBasis->y(u));
-        psiM(d,u) = BLAS::dot(BasisSize,LambdaUP[unpaired],GeminalBasis->Y[u]);//@@
-      }
-    }
+    //for(int u=0; u<Nup; u++) 
+    //{
+    //  for(int d=0, jat=Nup; d<Ndown; d++,jat++) //paired block
+    //  {
+    //    //psiM(d,u) = BLAS::dot(BasisSize,phiT[u],GeminalBasis->y(jat));
+    //    psiM(d,u) = BLAS::dot(BasisSize,phiT[u],GeminalBasis->Y[jat]);//@@
+    //  }
+    //  for(int d=Ndown,unpaired=0; d<Nup; d++,unpaired++)//unpaired block Ndown x unpaired
+    //  {
+    //    //psiM(d,u) = BLAS::dot(BasisSize,LambdaUP[unpaired],GeminalBasis->y(u));
+    //    psiM(d,u) = BLAS::dot(BasisSize,LambdaUP[unpaired],GeminalBasis->Y[u]);//@@
+    //  }
+    //}
 
-    CurrentDet = Invert(psiM.data(),Nup,Nup,WorkSpace.data(),Pivot.data());
+    //CurrentDet = Invert(psiM.data(),Nup,Nup,WorkSpace.data(),Pivot.data());
 
-    for(int iat=0; iat<Nup; iat++) 
-    {
-      GradType rv;
-      ValueType lap=0;
-      int jat=Nup;
-      for(int d=0; d<Ndown; d++,jat++) 
-      {
-        ValueType dfac=psiM(iat,d);
-        //rv += dfac*dot(phiT[jat],GeminalBasis->dy(iat),BasisSize);
-        //lap += dfac*dot(phiT[jat],GeminalBasis->d2y(iat),BasisSize);
-        rv += dfac*dot(phiT[jat],GeminalBasis->dY[iat],BasisSize);//@@
-        lap += dfac*dot(phiT[jat],GeminalBasis->d2Y[iat],BasisSize);//@@
-      }
-      for(int d=Ndown,unpaired=0; d<Nup; d++,unpaired++) 
-      {
-        ValueType dfac=psiM(iat,d);
-        //rv += dfac*dot(LambdaUP[unpaired],GeminalBasis->dy(iat),BasisSize);
-        //lap += dfac*dot(LambdaUP[unpaired],GeminalBasis->d2y(iat),BasisSize);
-        rv += dfac*dot(LambdaUP[unpaired],GeminalBasis->dY[iat],BasisSize);//@@
-        lap += dfac*dot(LambdaUP[unpaired],GeminalBasis->d2Y[iat],BasisSize);//@@
-      }
-      G(iat) += rv;
-      L(iat) += lap-dot(rv,rv);
-    }
+    //for(int iat=0; iat<Nup; iat++) 
+    //{
+    //  GradType rv;
+    //  ValueType lap=0;
+    //  int jat=Nup;
+    //  for(int d=0; d<Ndown; d++,jat++) 
+    //  {
+    //    ValueType dfac=psiM(iat,d);
+    //    //rv += dfac*dot(phiT[jat],GeminalBasis->dy(iat),BasisSize);
+    //    //lap += dfac*dot(phiT[jat],GeminalBasis->d2y(iat),BasisSize);
+    //    rv += dfac*dot(phiT[jat],GeminalBasis->dY[iat],BasisSize);//@@
+    //    lap += dfac*dot(phiT[jat],GeminalBasis->d2Y[iat],BasisSize);//@@
+    //  }
+    //  for(int d=Ndown,unpaired=0; d<Nup; d++,unpaired++) 
+    //  {
+    //    ValueType dfac=psiM(iat,d);
+    //    //rv += dfac*dot(LambdaUP[unpaired],GeminalBasis->dy(iat),BasisSize);
+    //    //lap += dfac*dot(LambdaUP[unpaired],GeminalBasis->d2y(iat),BasisSize);
+    //    rv += dfac*dot(LambdaUP[unpaired],GeminalBasis->dY[iat],BasisSize);//@@
+    //    lap += dfac*dot(LambdaUP[unpaired],GeminalBasis->d2Y[iat],BasisSize);//@@
+    //  }
+    //  G(iat) += rv;
+    //  L(iat) += lap-dot(rv,rv);
+    //}
 
-    for(int jat=Nup,d=0; jat<NumPtcls; jat++,d++) 
-    {
-      GradType rv;
-      ValueType lap=0;
-      for(int u=0; u<Nup; u++) 
-      {
-        ValueType dfac=psiM(u,d);
-        //rv += dfac*dot(phiT[u],GeminalBasis->dy(jat),BasisSize);
-        //lap += dfac*dot(phiT[u],GeminalBasis->d2y(jat),BasisSize);
-        rv += dfac*dot(phiT[u],GeminalBasis->dY[jat],BasisSize);//@@
-        lap += dfac*dot(phiT[u],GeminalBasis->d2Y[jat],BasisSize);//@@
-      }
-      G(jat) += rv;
-      L(jat) += lap-dot(rv,rv);
-    }
+    //for(int jat=Nup,d=0; jat<NumPtcls; jat++,d++) 
+    //{
+    //  GradType rv;
+    //  ValueType lap=0;
+    //  for(int u=0; u<Nup; u++) 
+    //  {
+    //    ValueType dfac=psiM(u,d);
+    //    //rv += dfac*dot(phiT[u],GeminalBasis->dy(jat),BasisSize);
+    //    //lap += dfac*dot(phiT[u],GeminalBasis->d2y(jat),BasisSize);
+    //    rv += dfac*dot(phiT[u],GeminalBasis->dY[jat],BasisSize);//@@
+    //    lap += dfac*dot(phiT[u],GeminalBasis->d2Y[jat],BasisSize);//@@
+    //  }
+    //  G(jat) += rv;
+    //  L(jat) += lap-dot(rv,rv);
+    //}
 
-    return CurrentDet;
+    //return CurrentDet;
+  }
+
+  AGPDeterminant::ValueType
+  AGPDeterminant::evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
+  {
+    evaluateLogAndStore(P);
+    G += myG;
+    L += myL;
+    return LogValue;
   }
 
   void
@@ -210,7 +221,8 @@ namespace qmcplusplus {
       }
     }
 
-    CurrentDet = Invert(psiM.data(),Nup,Nup,WorkSpace.data(),Pivot.data());
+    //CurrentDet = Invert(psiM.data(),Nup,Nup,WorkSpace.data(),Pivot.data());
+    LogValue=InvertWithLog(psiM.data(),Nup,Nup,WorkSpace.data(),Pivot.data(),PhaseValue);
 
     for(int iat=0; iat<Nup; iat++) {
       for(int d=0,jat=Nup; d<Ndown; d++,jat++) 
@@ -266,7 +278,8 @@ namespace qmcplusplus {
 
     if(UseBuffer) 
     {  //add the data: determinant, inverse, gradient and laplacians
-      buf.add(CurrentDet);
+      //buf.add(CurrentDet);
+      buf.add(LogValue);
       buf.add(psiM.begin(),psiM.end());
       buf.add(phiT.begin(),phiT.end());
       buf.add(d2psiU.begin(),d2psiU.end());
@@ -280,7 +293,8 @@ namespace qmcplusplus {
       //buf.add(myL.begin(), myL.end());
     }
 
-    return LogValue = evaluateLogAndPhase(CurrentDet,PhaseValue);
+    return LogValue;
+    //return LogValue = evaluateLogAndPhase(CurrentDet,PhaseValue);
   }
 
   AGPDeterminant::ValueType 
@@ -293,7 +307,8 @@ namespace qmcplusplus {
     P.L += myL;
 
     if(UseBuffer) {
-      buf.put(CurrentDet);
+      //buf.put(CurrentDet);
+      buf.put(LogValue);
       buf.put(psiM.begin(),psiM.end());
       buf.put(phiT.begin(),phiT.end());
       buf.put(d2psiU.begin(),d2psiU.end());
@@ -307,12 +322,14 @@ namespace qmcplusplus {
       //buf.put(myL.begin(), myL.end());
     }
 
-    return CurrentDet;
+    return LogValue;
+    //return CurrentDet;
   }
 
   void AGPDeterminant::copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf) {
     if(UseBuffer) {
-      buf.get(CurrentDet);
+      //buf.get(CurrentDet);
+      buf.get(LogValue);
       buf.get(psiM.begin(),psiM.end());
       buf.get(phiT.begin(),phiT.end());
       buf.get(d2psiU.begin(),d2psiU.end());
@@ -350,23 +367,20 @@ namespace qmcplusplus {
       if(iat<Nup) 
       {
         for(int d=0,jat=Nup; d<Ndown; d++,jat++) 
-        {
           psiU[d]=dot(y_ptr,phiT[jat],BasisSize);
           //psiU[d]=BLAS::dot(BasisSize,y_ptr,phiT[jat]);
-        }
         //unpaired block Ndown x unpaired
         for(int d=Ndown,unpaired=0; d<Nup; d++,unpaired++) 
-        {
           psiU[d] = BLAS::dot(BasisSize,LambdaUP[unpaired],y_ptr);
-        }
-        return DetRatio(psiM, psiU.data(),iat);
-      } else {
+        curRatio=DetRatio(psiM, psiU.data(),iat);
+      } 
+      else 
+      {
         for(int u=0; u<Nup; u++) 
-        {
           psiD[u]=BLAS::dot(BasisSize,y_ptr,phiT[u]);
-        }
-        return DetRatioTranspose(psiM, psiD.data(),iat-Nup);
+        curRatio=DetRatioTranspose(psiM, psiD.data(),iat-Nup);
       }
+      return curRatio;
     }
 
     /** return the ratio
@@ -512,8 +526,20 @@ namespace qmcplusplus {
      */
     void AGPDeterminant::acceptMove(ParticleSet& P, int iat) 
     {
-      CurrentDet *= curRatio;
-      if(!UseRatioOnly) 
+      PhaseValue += evaluatePhase(curRatio);
+      LogValue +=std::log(std::abs(curRatio));
+      //CurrentDet *= curRatio;
+      if(UseRatioOnly) 
+      {
+        APP_ABORT("Incomplete AGPDeterminant::acceptMove Turn on useDrift " );
+        if(iat<Nup)
+          DetUpdate(psiM,psiU,workV1,workV2,iat,curRatio);
+        else
+          DetUpdateTranspose(psiM,psiD,workV1,workV2,iat-Nup,curRatio);
+        psiM_temp=psiM;
+        //psiM = psiM_temp;
+      }
+      else
       {
         psiM = psiM_temp;
         myG = myG_temp;
@@ -569,7 +595,8 @@ namespace qmcplusplus {
   {
     if(UseBuffer) 
     {
-      buf.put(CurrentDet);
+      //buf.put(CurrentDet);
+      buf.put(LogValue);
       buf.put(psiM.begin(),psiM.end());
       buf.put(phiT.begin(),phiT.end());
       buf.put(d2psiU.begin(),d2psiU.end());
@@ -582,7 +609,8 @@ namespace qmcplusplus {
       buf.put(myL.first_address(), myL.last_address());
       //buf.put(myL.begin(), myL.end());
     }
-    return evaluateLogAndPhase(CurrentDet,PhaseValue);
+    return LogValue;
+    //return evaluateLogAndPhase(CurrentDet,PhaseValue);
     //return CurrentDet;
   }
 
