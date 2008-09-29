@@ -350,7 +350,7 @@ bool operator==(const PooledData<T>& a, const PooledData<T>& b)
   //if(a.Current != b.Current) return false;
   for(int i=0; i<a.size(); ++i)
   {
-    if(abs(a[i]-b[i])>numeric_limits<RealType>::epsilon()) return false;
+    if(abs(a[i]-b[i])>numeric_limits<T>::epsilon()) return false;
   }
   return true;
 }
@@ -363,7 +363,7 @@ bool operator!=(const PooledData<T>& a, const PooledData<T>& b)
   //if(a.Current != b.Current) return true;
   for(int i=0; i<a.size(); ++i)
   {
-    if(abs(a[i]-b[i])>numeric_limits<RealType>::epsilon()) return true;
+    if(abs(a[i]-b[i])>numeric_limits<T>::epsilon()) return true;
   }
   return false;
 }
