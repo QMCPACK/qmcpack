@@ -105,6 +105,8 @@ namespace qmcplusplus {
     int NumPtcls;
     ///offset of the index
     int IndexOffSet;
+    ///normalization factor 1.0/N*N
+    RealType NormFac;
     /** temporary value for update */
     RealType diffVal;
     ///root name for Lambda compoenents

@@ -32,6 +32,7 @@ namespace qmcplusplus {
     {
       d_table = DistanceTable::add(ions,els);
       NumPtcls=els.getTotalNum();
+      NormFac=1.0/static_cast<RealType>(NumPtcls*NumPtcls);
       Optimizable=true;
     }
 
@@ -49,14 +50,20 @@ namespace qmcplusplus {
   void ThreeBodyGeminal::checkInVariables(opt_variables_type& active) 
   {
     active.insertFrom(myVars);
+    int ncur=active.size();
     GeminalBasis->checkInVariables(active);
+    if(ncur!= active.size())
+      GeminalBasis->checkInVariables(myVars);
   }
 
   void ThreeBodyGeminal::checkOutVariables(const opt_variables_type& active)
   {
     myVars.getIndex(active);
     GeminalBasis->checkOutVariables(active);
-    //Optimizable=myVars.is_optimizable();
+
+    app_log() << "<j3-variables>"<<endl;
+    myVars.print(app_log());
+    app_log() << "</j3-variables>"<<endl;
   }
 
   ///reset the value of all the Two-Body Jastrow functions
@@ -80,13 +87,17 @@ namespace qmcplusplus {
       }
     }
     GeminalBasis->resetParameters(active);
+    
+    for(int i=0; i<myVars.size(); ++i)
+      if(myVars.where(i)>=0) myVars[i]=active[myVars.where(i)];
 
-    app_log() << "ThreeBodyGeminal::resetParameters" << endl;
-    app_log() << Lambda << endl;
+    //app_log() << "ThreeBodyGeminal::resetParameters" << endl;
+    //app_log() << Lambda << endl;
   }
 
   void ThreeBodyGeminal::reportStatus(ostream& os)
   {
+    myVars.print(os);
   }
 
   OrbitalBase::ValueType 
@@ -391,9 +402,9 @@ namespace qmcplusplus {
     FreeLambda.resize(BasisSize*(BasisSize+1)/2);
     FreeLambda=false;
 
-    //identity is the default
+    //zero is default
     Lambda=0.0;
-    for(int ib=0; ib<BasisSize; ib++) Lambda(ib,ib)=1.0;
+    //for(int ib=0; ib<BasisSize; ib++) Lambda(ib,ib)=NormFac;
     //for(int ib=0; ib<BasisSize; ib++) 
     //  for(int jb=ib; jb<BasisSize; ++jb)
     //  {

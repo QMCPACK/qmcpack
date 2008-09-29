@@ -343,14 +343,21 @@ namespace qmcplusplus {
   void ThreeBodyBlockSparse::checkInVariables(opt_variables_type& active)
   {
     active.insertFrom(myVars);
+    int ncur=active.size();
     GeminalBasis->checkInVariables(active);
+    if(active.size()>ncur)
+      GeminalBasis->checkInVariables(myVars);
   }
 
   void ThreeBodyBlockSparse::checkOutVariables(const opt_variables_type& active)
   {
     myVars.getIndex(active);
     GeminalBasis->checkOutVariables(active);
-    //Optimizable=myVars.is_optimizable();
+    Optimizable=myVars.is_optimizable();
+
+    app_log() << "<j3-variables>"<<endl;
+    myVars.print(app_log());
+    app_log() << "</j3-variables>"<<endl;
   }
 
   ///reset the value of all the Two-Body Jastrow functions
@@ -376,6 +383,9 @@ namespace qmcplusplus {
     if(SameBlocksForGroup) checkLambda();
     GeminalBasis->resetParameters(active);
 
+    for(int i=0; i<myVars.size(); ++i)
+      if(myVars.where(i)>=0) myVars[i]=active[myVars.where(i)];
+
     //app_log() << "ThreeBodyBlockSparse::resetParameters " << endl << Lambda << endl;
     //for(int b=0; b<LambdaBlocks.size();++b)
     //{
@@ -385,6 +395,7 @@ namespace qmcplusplus {
 
   void ThreeBodyBlockSparse::reportStatus(ostream& os)
   {
+    myVars.print(os);
   }
 
   bool ThreeBodyBlockSparse::put(xmlNodePtr cur)

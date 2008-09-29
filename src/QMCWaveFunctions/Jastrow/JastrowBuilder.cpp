@@ -267,6 +267,7 @@ namespace qmcplusplus {
     app_log() << "  JastrowBuilder::addThreeBody source="<< sourceOpt <<  endl;
     xmlNodePtr basisPtr=NULL;
     xmlNodePtr coeffPtr=NULL;
+
     string diagOnly("no");//default:use diagonal blocks only
     string sameblocks("yes");
     OhmmsAttributeSet tAttrib;
@@ -280,7 +281,7 @@ namespace qmcplusplus {
       {
         basisPtr=cur;
       } 
-      else if(cname.find("coeff")<cname.size())
+      else if(cname.find("oeff")<cname.size())
       {
         coeffPtr=cur;
         OhmmsAttributeSet oAttrib;
