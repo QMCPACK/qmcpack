@@ -591,9 +591,9 @@ namespace qmcplusplus {
       APP_ABORT("QMCCostFunctionBase::put No valid optimizable variables are found.");
     }
 
-    app_log() << "  Active Optimizable Variables" << endl;
+    app_log() << "<active-optimizables> " << endl;
     OptVariables.print(app_log());
-    app_log() << "======================= " << endl;
+    app_log() << "</active-optimizables>" << endl;
 
     if(msg_stream) msg_stream->setf(ios::scientific, ios::floatfield);
 
