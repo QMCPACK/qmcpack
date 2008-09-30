@@ -130,7 +130,7 @@ namespace qmcplusplus {
       std::copy(wPerNode.begin(),wPerNode.end(),ostream_iterator<int>(app_log()," "));
       app_log() << endl;
 
-//#pragma omp parallel for
+#pragma omp parallel for
       for(int ip=0; ip<NumThreads; ++ip)
       {
         estimatorClones[ip]= new EstimatorManager(*Estimators);//,*hClones[ip]);  
@@ -160,7 +160,7 @@ namespace qmcplusplus {
       }
     }
 
-//#pragma omp parallel  for
+#pragma omp parallel  for
     for(int ip=0; ip<NumThreads; ++ip)
     {
       if(QMCDriverMode[QMC_UPDATE_MODE])
