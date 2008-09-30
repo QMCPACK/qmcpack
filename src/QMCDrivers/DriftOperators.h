@@ -119,6 +119,23 @@ namespace qmcplusplus {
         }
         return std::sqrt(norm_scaled/norm);
       }
+
+  template<class T, unsigned D>
+    inline T setScaledDriftPbyPandNodeCorr(T tau, 
+        const ParticleAttrib<TinyVector<std::complex<T>,D> >& qf,
+        ParticleAttrib<TinyVector<T,D> >& drift) 
+    {
+      T norm=0.0, norm_scaled=0.0, tau2=tau*tau;
+      for(int iat=0; iat<qf.size(); ++iat)
+      {
+        T vsq=OTCDot<T,T,D>::apply(qf[iat],qf[iat]);
+        T sc=(vsq<numeric_limits<T>::epsilon())? tau:((-1.0+std::sqrt(1.0+2.0*tau*vsq))/vsq);
+        norm_scaled+=vsq*sc*sc;
+        norm+=vsq*tau2;
+        drift[iat]=sc*qf[iat];
+      }
+      return std::sqrt(norm_scaled/norm);
+    }
       
   /** da = scaled(tau)*ga
    * @param tau time step
