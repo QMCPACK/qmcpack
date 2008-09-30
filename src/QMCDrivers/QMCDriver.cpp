@@ -203,9 +203,8 @@ namespace qmcplusplus {
   bool QMCDriver::finalize(int block) {
     TimerManager.print(myComm);
     TimerManager.reset();
-    
+    wOut->dump(W);
     branchEngine->finalize(W);
-
     RandomNumberControl::write(wOut->FileName,myComm);
 
     delete wOut;
@@ -319,6 +318,8 @@ namespace qmcplusplus {
     }
     
     if(Period4CheckPoint==0)  Period4CheckPoint=(nBlocks+1)*nSteps;
+
+    app_log() << "  Walkers are dumped every " << Period4CheckPoint << " blocks." << endl;
 
     //reset CurrentStep to zero if qmc/@continue='no'
     if(!AppendRun) CurrentStep=0;
