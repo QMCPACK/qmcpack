@@ -52,9 +52,13 @@ namespace qmcplusplus {
     elocal_name.push_back("ElSumPot");
     elocal_name.push_back("Virial");
     elocal_name.push_back("MaxAge");
-    elocal_name.push_back("ThermE");
+//     elocal_name.push_back("ThermE");
+    elocal_name.push_back("centerV");
+    elocal_name.push_back("EcorrFun");
+    elocal_name.push_back("Ehead");
+    elocal_name.push_back("Etail");
 
-    scalars.resize(SizeOfHamiltonians+6);
+    scalars.resize(SizeOfHamiltonians+9);
     scalars_saved=scalars;
     pNorm=0.0;
   };
@@ -108,34 +112,38 @@ namespace qmcplusplus {
       //Center Pressure
       RealType* restrict CenProp(Reptile->center()->getPropertyBase(i));
       scalars[SizeOfHamiltonians+3]( (2.0*eloc-CenProp[LOCALPOTENTIAL])*pNorm ,uw);
+      scalars[SizeOfHamiltonians+5]( CenProp[LOCALPOTENTIAL] ,uw);
+      scalars[SizeOfHamiltonians+6]( HeadProp[LOCALENERGY] * TailProp[LOCALENERGY] ,uw);
+      scalars[SizeOfHamiltonians+7]( HeadProp[LOCALENERGY] ,uw);
+      scalars[SizeOfHamiltonians+8]( TailProp[LOCALENERGY] ,uw);
       
       int Rage(Reptile->Age);
       int Bage=Rage;
 
-      RealType tmpE=0.0;
+//       RealType tmpE=0.0;
       RealType tmpV=0.0;
-      RealType tmpF=0.0;
-      RealType localE=0.0;
-      KEconst = (*(Reptile->begin()))->Drift.size()  * 1.5 * OneOverTau;
+//       RealType tmpF=0.0;
+//       RealType localE=0.0;
+//       KEconst = (*(Reptile->begin()))->Drift.size()  * 1.5 * OneOverTau;
       for( MultiChain::iterator Bit = Reptile->begin();Bit != (Reptile->end());Bit++){
-        localE += 0.5*( (*Bit)->deltaRSquared[0] + (*Bit)->deltaRSquared[1]);
-        tmpF+= 0.5*(*Bit)->deltaRSquared[2];
-        tmpE+=(*Bit)->getPropertyBase(i)[LOCALENERGY];
+//         localE += 0.5*( (*Bit)->deltaRSquared[0] + (*Bit)->deltaRSquared[1]);
+//         tmpF+= 0.5*(*Bit)->deltaRSquared[2];
+//         tmpE+=(*Bit)->getPropertyBase(i)[LOCALENERGY];
         tmpV+=(*Bit)->getPropertyBase(i)[LOCALPOTENTIAL];
         Bage=min((*Bit)->stepmade,Bage);
       };
 
-      tmpF-=0.25*Reptile->back()->deltaRSquared[2];
-      tmpF-=0.25*Reptile->front()->deltaRSquared[2];
-      tmpE-=0.5*Reptile->back()->getPropertyBase(i)[LOCALENERGY];
-      tmpE-=0.5*Reptile->front()->getPropertyBase(i)[LOCALENERGY];
+//       tmpF-=0.25*Reptile->back()->deltaRSquared[2];
+//       tmpF-=0.25*Reptile->front()->deltaRSquared[2];
+//       tmpE-=0.5*Reptile->back()->getPropertyBase(i)[LOCALENERGY];
+//       tmpE-=0.5*Reptile->front()->getPropertyBase(i)[LOCALENERGY];
       tmpV-=0.5*Reptile->back()->getPropertyBase(i)[LOCALPOTENTIAL];
       tmpV-=0.5*Reptile->front()->getPropertyBase(i)[LOCALPOTENTIAL];
       tmpV *= -pNorm*Tau;
 
-      localE *= -0.5*OneOverTau*OneOverTau;
-      localE += KEconst* (Reptile->Last) + tmpF ;
-      localE += tmpE;
+//       localE *= -0.5*OneOverTau*OneOverTau;
+//       localE += KEconst* (Reptile->Last) + tmpF ;
+//       localE += tmpE;
 
       scalars[SizeOfHamiltonians+1](tmpV,uw);
       scalars[SizeOfHamiltonians+2](eloc*tmpV,uw);
@@ -143,8 +151,8 @@ namespace qmcplusplus {
       scalars[SizeOfHamiltonians+4](Rage-Bage,1.0);
 
       ///This is the center bead energy using PIMC stuff.
-      localE *= 1.0/(Reptile->Last);
-      scalars[SizeOfHamiltonians+5]( localE ,uw);
+//       localE *= 1.0/(Reptile->Last);
+//       scalars[SizeOfHamiltonians+5]( localE ,uw);
     }
   }
 

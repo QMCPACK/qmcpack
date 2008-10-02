@@ -70,7 +70,8 @@ namespace qmcplusplus {
 
     ///the number of H/Psi pairs
     int nPsi;
-
+    ///use scaled drift "true" = yes (default) else no
+    string scaleBeadDrift;
     ///The Reptile: a chain of beads
     MultiChain* Reptile;
 
@@ -106,7 +107,7 @@ namespace qmcplusplus {
     RQMCMultiple& operator=(const RQMCMultiple&) { return *this;}
 
     ParticleSet::ParticlePos_t gRand;
-    RealType MSS,Tauoverm,sqrtTauoverm,KEcut;
+    RealType MSS,Tauoverm,sqrtTauoverm,Ecut;
   };
 }
 #endif

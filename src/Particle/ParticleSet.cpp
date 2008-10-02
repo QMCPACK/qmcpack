@@ -188,7 +188,7 @@ namespace qmcplusplus {
     return tid;
   }
 
-  void ParticleSet::update(int iflag) { 
+  void ParticleSet::update(int iflag) {
 
     //apply Boundary condition
     //R.setUnit(0);

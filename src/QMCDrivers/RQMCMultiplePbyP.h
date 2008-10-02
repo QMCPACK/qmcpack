@@ -68,7 +68,8 @@ namespace qmcplusplus {
     int NumTurns;
 
     int nptcl,nObs;
-
+    ///use scaled drift "true" = yes (default) else no
+    string scaleBeadDrift;
     ///the number of H/Psi pairs
     int nPsi;
     ParticleSet::ParticlePos_t grand_transProb;//a

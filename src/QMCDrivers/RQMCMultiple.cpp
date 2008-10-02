@@ -130,7 +130,8 @@ namespace qmcplusplus {
     int InitialGrowthDirection(0);
 
     //Build NewBead. This takes care of a bunch of resizing operation and properties of the starting bead
-    NewBead=new Bead(**W.begin());
+    NewBead=new Bead(**W.begin() , scaleBeadDrift);
+//     NewBead->ScaleDrift = ((scaleBeadDrift=="true")||(scaleBeadDrift=="yes"))
     W.R = NewBead->R;
     W.update();
     for(int ipsi=0; ipsi<nPsi; ipsi++) {
@@ -142,7 +143,7 @@ namespace qmcplusplus {
       //*(NewBead->Gradients[ipsi])=W.G;
       Copy(W.G,*(NewBead->Gradients[ipsi]));
       NewBead->BeadSignWgt[ipsi]=1;
-      NewBead->getScaledDrift(branchEngine->LogNorm,Tauoverm);
+      NewBead->getScaledDriftSingle(branchEngine->LogNorm,Tauoverm,ipsi);
       NewBead->Action(ipsi,MinusDirection)= 0.5*m_oneover2tau*Dot(*NewBead->DriftVectors[ipsi],*NewBead->DriftVectors[ipsi]);
       NewBead->Action(ipsi,PlusDirection)=NewBead->Action(ipsi,MinusDirection);
       NewBead->Action(ipsi,Directionless)=0.5*Tau*eloc;
@@ -152,6 +153,8 @@ namespace qmcplusplus {
       NewBead->deltaRSquared[1]=0.0;
       NewBead->deltaRSquared[2]=0.0;
     }
+    
+    NewBead->getDrift(branchEngine->LogNorm);
     //     NewBead->TransProb[MinusDirection]=(0.5*Tau)*Dot(NewBead->Drift,NewBead->Drift) ;
     NewBead->TransProb[MinusDirection]=m_oneover2tau*Dot(NewBead->Drift,NewBead->Drift) ;
     NewBead->TransProb[PlusDirection]=NewBead->TransProb[MinusDirection];
@@ -482,15 +485,21 @@ namespace qmcplusplus {
   {
     string observ("NONE");
 
-    KEcut=-1e100;
+    Ecut=-1e100;
     OhmmsAttributeSet attrib;
     ParameterSet nattrib;
+    scaleBeadDrift = "no";
     attrib.add(observ,"observables" );
     nattrib.add(MSS,"mass","double" );
-    nattrib.add(KEcut,"KEcut","double" );
+    nattrib.add(Ecut,"Ecut","double" );
+    attrib.add(scaleBeadDrift,"scaleDrift");
     attrib.put(q);
     nattrib.put(q);
 
+    if ((scaleBeadDrift=="yes")||(scaleBeadDrift=="true")) app_log()<<"  Using Scaled drift."<<endl;
+    else app_log()<<"  Drift set by gradient."<<endl;
+
+    
     nPsi=H1.size();
     if(branchEngine->LogNorm.size()!=nPsi)
     {
@@ -535,8 +544,6 @@ namespace qmcplusplus {
     m_oneover2tau = 0.5/Tauoverm;
     m_sqrttau = std::sqrt(Tauoverm);
     
-//     cout<<"  Mass for Propagator is: "<<1.0/oneovermass<<endl;
-//     cout<<"  m_over2t: "<<m_oneover2tau<<endl;
     return true;
   }
   
@@ -692,7 +699,7 @@ namespace qmcplusplus {
 //       int beadwgt=abs( ( Reptile->getSign(NewBeadProp[SIGN])+Reptile->RefSign[ipsi] )/2 );
 //       NewBead->BeadSignWgt[ipsi]=beadwgt;
 //       totbeadwgt+=beadwgt;
-      if ((NewBeadProp[LOCALENERGY]-NewBeadProp[LOCALPOTENTIAL] <= KEcut) && (NewBeadProp[LOCALENERGY] < HeadProp[LOCALENERGY]) ) {
+      if ((NewBeadProp[LOCALENERGY] <= Ecut) && (NewBeadProp[LOCALENERGY] < HeadProp[LOCALENERGY]) ) {
         FAIL=1;
       }
     }
@@ -701,7 +708,7 @@ namespace qmcplusplus {
     //after acceptance if # of beads is greater than one but needs to be done here 
     //to make the one-bead case working ok. 
 //       NewBead->getScaledDrift(branchEngine->LogNorm,Tau);
-      NewBead->getScaledDrift(branchEngine->LogNorm,Tauoverm);
+      NewBead->getDrift(branchEngine->LogNorm);
       gRand=deltaR+ NewBead->Drift;
 //       NewBead->TransProb[backward]=m_oneover2tau*Dot(gRand,gRand);
       NewBead->TransProb[backward]=m_oneover2tau*Dot(gRand,gRand);

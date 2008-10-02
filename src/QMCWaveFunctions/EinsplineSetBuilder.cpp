@@ -112,9 +112,9 @@ namespace qmcplusplus {
 	     Lattice(2,0), Lattice(2,1), Lattice(2,2));
     app_log() << buff;
     snprintf (buff, 1000, 
-	      "  SuperLattice = \n    [ %8.5f %8.5f %8.5f\n"
-	      "      %8.5f %8.5f %8.5f\n"
-	      "      %8.5f %8.5f %8.5f ]\n", 
+              "  SuperLattice = \n    [ %13.12f %13.12f %13.12f\n"
+                  "      %13.12f %13.12f %13.12f\n"
+                  "      %13.12f %13.12f %13.12f ]\n", 
 	      SuperLattice(0,0), SuperLattice(0,1), SuperLattice(0,2), 
 	      SuperLattice(1,0), SuperLattice(1,1), SuperLattice(1,2), 
 	      SuperLattice(2,0), SuperLattice(2,1), SuperLattice(2,2));
@@ -471,7 +471,7 @@ namespace qmcplusplus {
     else
       OrbitalSet = new EinsplineSetExtended<complex<double> >;
 
-    OrbitalSet->resetSourceParticleSet(*ParticleSets["i"]);
+//     OrbitalSet->resetSourceParticleSet(*ParticleSets["ion0"]);
     /////////////////////////
     // Setup internal data //
     /////////////////////////
@@ -600,7 +600,7 @@ namespace qmcplusplus {
     if (myComm->rank() == 0) {
       fprintf (stderr, "Supercell ion positions = \n");
       for (int i=0; i<IonPos.size(); i++)
-	fprintf (stderr, "   [%12.6f %12.6f %12.6f]\n",
+	fprintf (stderr, "   [%14.12f %14.12f %14.12f]\n",
 		 IonPos[i][0], IonPos[i][1], IonPos[i][2]);
     }
   }
@@ -1054,7 +1054,7 @@ namespace qmcplusplus {
 	orb = new EinsplineOrb<complex<double>,OHMMS_DIM>;
 	OrbitalMap[TinyVector<int,4>(spin, ti, bi, 0)] = orb;
 	orb->kVec = k;
-	orb->Lattice = SuperLattice;
+        orb->Lattice = SuperLattice;
 	ostringstream groupPath;
 	
 	if ((Version[0]==0 && Version[1]==11) || NumTwists > 1)

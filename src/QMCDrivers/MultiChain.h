@@ -42,6 +42,8 @@ namespace qmcplusplus {
     vector<ParticlePos_t*> DriftVectors;
     Matrix<RealType> Action;
     RealType TransProb[2];
+    bool ScaleDrift;
+    vector<RealType> Tau_eff;
     
     //Extra Observable Spots for Pressure, etc.
     Vector<RealType> deltaRSquared;
@@ -63,6 +65,18 @@ namespace qmcplusplus {
       int rows=Properties.rows();
       Resize_Grad_and_Action(rows,R.size());
       BeadSignWgt.resize(rows);
+      Tau_eff.resize(rows);
+      //       deltaRSquared.resize(3);
+    }
+    
+    inline Bead(const Walker_t& a, string scaleBeadDrift){
+      ScaleDrift = ((scaleBeadDrift=="true")||(scaleBeadDrift=="yes"));
+      
+      makeCopy(a);
+      int rows=Properties.rows();
+      Resize_Grad_and_Action(rows,R.size());
+      BeadSignWgt.resize(rows);
+      Tau_eff.resize(rows);
       //       deltaRSquared.resize(3);
     }
 
@@ -77,9 +91,11 @@ namespace qmcplusplus {
       int rows=a.Gradients.size();
       Resize_Grad_and_Action(rows,a.size());
       Action=a.Action;
+      Tau_eff.resize(rows);
       for(int i=0; i<rows; i++) *Gradients[i] = *(a.Gradients[i]);
       for(int i=0; i<rows; i++) *Laplacians[i] = *(a.Laplacians[i]);
       for(int i=0; i<rows; i++) *DriftVectors[i] = *(a.DriftVectors[i]);
+      Tau_eff = a.Tau_eff ;
       BeadSignWgt.resize(rows);
       BeadSignWgt=a.BeadSignWgt;
       TransProb[0]=a.TransProb[0];
@@ -102,7 +118,7 @@ namespace qmcplusplus {
         DriftVectors.push_back(new ParticlePos_t(m));
         ++curg;
       }
-      
+      Tau_eff.resize(n);
       deltaRSquared.resize(3);
       deltaRSquared=0.0;
       Action.resize(n,3);
@@ -122,7 +138,7 @@ namespace qmcplusplus {
         wgtpsi=BeadSignWgt[ipsi]*std::exp(2.0*( Properties(ipsi,LOGPSI)- LogNorm[ipsi]
             -Properties(0,LOGPSI)   + LogNorm[0]));
         denom += wgtpsi;
-        Drift += (wgtpsi*(*Gradients[ipsi]));
+        Drift += (wgtpsi*(*DriftVectors[ipsi]));
       }
       denom=1.0/denom;
       Drift *= denom;
@@ -138,17 +154,29 @@ namespace qmcplusplus {
         wgtpsi=BeadSignWgt[ipsi]*std::exp(2.0*( Properties(ipsi,LOGPSI)- LogNorm[ipsi]
             -Properties(0,LOGPSI)   + LogNorm[0]));
         denom += wgtpsi;
-        setScaledDriftPbyP(Tau,*Gradients[ipsi],TMPgrad);
-//         RealType sc=getDriftScale(Tau,(*Gradients[ipsi]));
-        (*DriftVectors[ipsi]) = TMPgrad;
-        Drift += (wgtpsi*TMPgrad);
+        if (ScaleDrift){
+        //setScaledDriftPbyP(Tau,*Gradients[ipsi],TMPgrad);
+          Tau_eff[ipsi] = setLargestScaledDriftPbyP(Tau,*Gradients[ipsi],TMPgrad);
+          (*DriftVectors[ipsi]) = TMPgrad;
+          Drift += (wgtpsi*TMPgrad);
+        } else {
+          Tau_eff[ipsi] = Tau;
+          (*DriftVectors[ipsi]) = Tau*(*Gradients[ipsi]);
+          Drift += Tau*(wgtpsi*(*Gradients[ipsi]));
+        }
       }
       denom=1.0/denom;
       Drift *= denom;
     }
 
     inline void getScaledDriftSingle(vector<RealType>& LogNorm, RealType Tau, int ipsi) {
-      setScaledDriftPbyP(Tau,*Gradients[ipsi],(*DriftVectors[ipsi]));
+      if (ScaleDrift){
+//        setScaledDriftPbyP(Tau,*Gradients[ipsi],(*DriftVectors[ipsi]));
+        Tau_eff[ipsi] = setLargestScaledDriftPbyP(Tau,*Gradients[ipsi],(*DriftVectors[ipsi]));
+      } else {
+        Tau_eff[ipsi] = Tau;
+        (*DriftVectors[ipsi]) = Tau* (*Gradients[ipsi]);
+      }
     }
     
     inline void getDrift(vector<RealType>& Jacobian, SpaceWarp& PtclWarp,vector<RealType>& LogNorm) {

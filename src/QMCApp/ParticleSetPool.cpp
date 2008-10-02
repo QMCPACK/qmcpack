@@ -129,6 +129,7 @@ namespace qmcplusplus {
       XMLParticleParser pread(*pTemp);
       bool success = pread.put(cur);
       pTemp->setName(id);
+      app_log() << pTemp->getName() <<endl;
       return success;
     } else {
       app_warning() << "particleset " << id << " is already created. Ignore this" << endl;

@@ -420,9 +420,11 @@ namespace qmcplusplus {
     {//read from an input nodes
       string aname("j3");
       string datatype("no");
+      int sizeIn(0);
       IndexOffSet=1;
       OhmmsAttributeSet attrib;
       attrib.add(aname,"id");
+      attrib.add(sizeIn,"size");
       attrib.add(aname,"name");
       attrib.add(datatype,"type");
       attrib.add(IndexOffSet,"offset");
@@ -432,8 +434,11 @@ namespace qmcplusplus {
 
       if(datatype.find("rray")<datatype.size())
       {
-        putContent(Lambda,cur);
-        FreeLambda=true;
+        if (sizeIn==Lambda.rows())
+        {
+          putContent(Lambda,cur);
+        }
+        FreeLambda=true; 
         //addOptimizables(varlist);
         //symmetrize it
         //for(int ib=0; ib<BasisSize; ib++) {

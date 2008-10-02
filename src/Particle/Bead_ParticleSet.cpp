@@ -25,6 +25,7 @@
 #include <map>
 #include "Particle/Walker.h"
 #include "ParticleBase/ParticleAttribOps.h"
+#include "QMCDrivers/DriftOperators.h"
 namespace qmcplusplus {
 
 
@@ -46,6 +47,7 @@ ReadyForPbyP(false),UpdateMode(Update_Walker)
     //      R_saved[i]=R[i];
     for(int i=0; i<Gradients_saved.size(); i++) *Gradients_saved[i] = *(Gradients[i]);
     for(int i=0; i<Laplacians_saved.size(); i++) *Laplacians_saved[i] = *(Laplacians[i]);
+    for(int i=0; i<DriftVectors_saved.size(); i++) *DriftVectors_saved[i] = *(DriftVectors[i]);
     properties_saved=Properties;
     //    Action_saved=Action;
 
@@ -69,6 +71,7 @@ ReadyForPbyP(false),UpdateMode(Update_Walker)
     //      R[i]=R_saved[i];
     for(int i=0; i<Gradients_saved.size(); i++) *Gradients[i] = *(Gradients_saved[i]);
     for(int i=0; i<Laplacians_saved.size(); i++) *Laplacians[i] = *(Laplacians_saved[i]);
+    for(int i=0; i<DriftVectors_saved.size(); i++) *DriftVectors[i] = *(DriftVectors_saved[i]);
     //    Action=Action_saved;
     for (int ipsi=0;ipsi<nPsi;ipsi++)
       for (int i=0;i<3;i++)
@@ -102,19 +105,52 @@ ReadyForPbyP(false),UpdateMode(Update_Walker)
       wgtpsi=BeadSignWgt[ipsi]*std::exp(2.0*( Properties(ipsi,LOGPSI)- LogNorm[ipsi]
 					      -Properties(0,LOGPSI)   + LogNorm[0]));
       denom += wgtpsi;
-      Drift += (wgtpsi*(*Gradients[ipsi]));
+      Drift += (wgtpsi*(*DriftVectors[ipsi]));
+    }
+    denom=1.0/denom;
+    Drift *= denom;
+  }
+  
+  void Bead_ParticleSet::getScaledDrift(vector<RealType>& LogNorm, RealType Tau) {
+    int npsi(Properties.rows());
+      //compute Drift
+    RealType denom(0.e0),wgtpsi;
+    Drift=0.e0;
+    ParticleAttrib<TinyVector<double,3> > TMPgrad(Drift);
+    for(int ipsi=0; ipsi<npsi; ipsi++) {
+      wgtpsi=BeadSignWgt[ipsi]*std::exp(2.0*( Properties(ipsi,LOGPSI)- LogNorm[ipsi]
+          -Properties(0,LOGPSI)   + LogNorm[0]));
+      denom += wgtpsi;
+      if (ScaleDrift){
+        Tau_eff[ipsi] = setLargestScaledDriftPbyP(Tau,*Gradients[ipsi],TMPgrad);
+//         RealType sc=getDriftScale(Tau,(*Gradients[ipsi]));
+        (*DriftVectors[ipsi]) = TMPgrad;
+        Drift += (wgtpsi*TMPgrad);
+      } else {
+        Tau_eff[ipsi]=Tau;
+        (*DriftVectors[ipsi]) = Tau*(*Gradients[ipsi]);
+        Drift += Tau*(wgtpsi*(*Gradients[ipsi]));
+      }
     }
     denom=1.0/denom;
     Drift *= denom;
   }
 
-
+  void Bead_ParticleSet::getScaledDriftSingle(vector<RealType>& LogNorm, RealType Tau, int ipsi) {
+    if (ScaleDrift){
+//        setScaledDriftPbyP(Tau,*Gradients[ipsi],(*DriftVectors[ipsi]));
+      Tau_eff[ipsi] = setLargestScaledDriftPbyP(Tau,*Gradients[ipsi],(*DriftVectors[ipsi]));
+    } else {
+      Tau_eff[ipsi]=Tau;
+      (*DriftVectors[ipsi]) = Tau* (*Gradients[ipsi]);
+    }
+  }
   
 void
  Bead_ParticleSet::CopyFromBead(Bead& b,vector<TrialWaveFunction*> &Psi)
  {
    
- assert(R.size()==b.R.size());
+  assert(R.size()==b.R.size());
   assert(BeadSignWgt.size()==b.BeadSignWgt.size());
   assert(Gradients.size()==b.Gradients.size());
   assert(Laplacians.size()==b.Laplacians.size());
@@ -124,6 +160,7 @@ void
   copy(b.BeadSignWgt.begin(),b.BeadSignWgt.end(),BeadSignWgt.begin());
   for(int i=0; i<b.Gradients.size(); i++) *Gradients[i] = *(b.Gradients[i]);
   for(int i=0; i<b.Laplacians.size(); i++) *Laplacians[i] = *(b.Laplacians[i]);
+  for(int i=0; i<b.DriftVectors.size(); i++) *DriftVectors[i] = *(b.DriftVectors[i]);
   TransProb[0]=b.TransProb[0];
   TransProb[1]=b.TransProb[1];
     for (int ipsi=0;ipsi<nPsi;ipsi++)
@@ -132,7 +169,8 @@ void
 
     //  Action=b.Action;
   Drift=b.Drift;
-
+  Tau_eff=b.Tau_eff;
+  ScaleDrift = b.ScaleDrift;
   Properties=b.Properties;
 
  }
@@ -150,6 +188,7 @@ Bead_ParticleSet::CopyToBead(Bead& b,vector<TrialWaveFunction*> &Psi)
   copy(BeadSignWgt.begin(),BeadSignWgt.end(),b.BeadSignWgt.begin());
   for(int i=0; i<Gradients.size(); i++) *(b.Gradients[i]) = *Gradients[i];
   for(int i=0; i<Laplacians.size(); i++) *(b.Laplacians[i])=*Laplacians[i];
+  for(int i=0; i<DriftVectors.size(); i++) *(b.DriftVectors[i]) = *DriftVectors[i];
   b.TransProb[0]=TransProb[0];
   b.TransProb[1]=TransProb[1];
   
@@ -160,6 +199,8 @@ Bead_ParticleSet::CopyToBead(Bead& b,vector<TrialWaveFunction*> &Psi)
     b.Drift=Drift;
     b.R=R;
     b.Properties=Properties;
+    b.Tau_eff = Tau_eff;
+    b.ScaleDrift = ScaleDrift;
 
 }
 
@@ -179,7 +220,9 @@ Bead_ParticleSet::Bead_ParticleSet(const ParticleSet& mcw,int nPsi)
   for (int i=0;i<nPsi;i++){
     Gradients.push_back(new ParticlePos_t(nptcl));
     Laplacians.push_back(new ParticleLaplacian_t(nptcl));
+    DriftVectors.push_back(new ParticlePos_t(nptcl));
   }
+  Tau_eff.resize(nPsi);
   Action.resize(nPsi,3);
   
   R_saved.resize(nptcl);
@@ -188,6 +231,7 @@ Bead_ParticleSet::Bead_ParticleSet(const ParticleSet& mcw,int nPsi)
   for (int i=0;i<nPsi;i++){
     Gradients_saved.push_back(new ParticlePos_t(nptcl));
     Laplacians_saved.push_back(new ParticleLaplacian_t(nptcl));
+    DriftVectors_saved.push_back(new ParticlePos_t(nptcl));
   }
   Action_saved.resize(nPsi,3);
   

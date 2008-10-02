@@ -25,7 +25,6 @@
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 
 
-
 namespace qmcplusplus {
 
   //Forward declaration
@@ -79,6 +78,7 @@ namespace qmcplusplus {
     ParticlePos_t Drift;
     //    ParticlePos_t R;
     vector<ParticleGradient_t*> Gradients;
+    vector<ParticleGradient_t*> DriftVectors;
     vector<ParticleLaplacian_t*> Laplacians;
     vector<ParticleGradient_t*> dG_saved;
     vector<ParticleLaplacian_t*> dL_saved;
@@ -90,13 +90,18 @@ namespace qmcplusplus {
     ParticlePos_t R_saved;
     vector<int> BeadSignWgt_saved;
     vector<ParticleGradient_t*> Gradients_saved;
+    vector<ParticleGradient_t*> DriftVectors_saved;
     vector<ParticleLaplacian_t*> Laplacians_saved;
     Matrix<RealType> Action_saved;
     int nPsi;
     RealType TransProb_saved[2];
     Walker_t::PropertyContainer_t properties_saved;
     ParticlePos_t Drift_saved;
-
+    
+    ///true if using scaled drift
+    bool ScaleDrift;
+    vector<RealType> Tau_eff;
+    
     void SaveOldData();
     void RestoreOldData();
     void SetGradientAndLaplacian(int ipsi);
@@ -133,6 +138,8 @@ namespace qmcplusplus {
     inline int getParticleNum() const { return R.size();}
     void getDrift(vector<RealType>& LogNorm);
     
+    void getScaledDrift(vector<RealType>& LogNorm,RealType Tau);
+    void getScaledDriftSingle(vector<RealType>& LogNorm, RealType Tau, int ipsi);
 
     inline bool updatePbyP() const { return ReadyForPbyP;}
 

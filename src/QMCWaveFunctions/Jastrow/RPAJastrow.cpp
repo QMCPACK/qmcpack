@@ -142,7 +142,7 @@ namespace qmcplusplus {
     }
     
     //Add Rs to optimizable list
-    myVars.insert(ID_Rs,Rs,true);
+//     myVars.insert(ID_Rs,Rs,true);
     
     int indx = targetPtcl.SK->KLists.ksq.size()-1;
     double Kc_max=std::pow(targetPtcl.SK->KLists.ksq[indx],0.5);
@@ -221,7 +221,7 @@ namespace qmcplusplus {
   }
   
   void RPAJastrow::resetParameters(const opt_variables_type& active) 
-  {
+  {/*
     int loc=myVars.where(0);
     if(loc>=0) {
       Rs=myVars[0]=active[loc];
@@ -236,17 +236,17 @@ namespace qmcplusplus {
         delete ShortRangeRPA;
         makeShortRange();
       }
-    };
+    };*/
   }
 
   void RPAJastrow::checkOutVariables(const opt_variables_type& active)
   {
-    myVars.getIndex(active);
+//     myVars.getIndex(active);
   }
 
   void RPAJastrow::checkInVariables(opt_variables_type& active)
   {
-    active.insertFrom(myVars);
+//     active.insertFrom(myVars);
   }
 
   void RPAJastrow::reportStatus(ostream& os)
