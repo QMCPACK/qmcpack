@@ -262,6 +262,7 @@ namespace qmcplusplus
       //H5Fclose(h_pair.first);
     }
 
+    //app_log() << "  Dumped " << number_of_walkers << " walkers for restart." << endl;
     //appended_blocks=appendSingle(h_debug_file,W,appended_blocks);
     return success;
   }

@@ -218,7 +218,7 @@ Bead_ParticleSet::Bead_ParticleSet(const ParticleSet& mcw,int nPsi)
   BeadSignWgt.resize(nPsi);
   Drift.resize(nptcl);
   for (int i=0;i<nPsi;i++){
-    Gradients.push_back(new ParticlePos_t(nptcl));
+    Gradients.push_back(new ParticleGradient_t(nptcl));
     Laplacians.push_back(new ParticleLaplacian_t(nptcl));
     DriftVectors.push_back(new ParticlePos_t(nptcl));
   }
@@ -229,7 +229,7 @@ Bead_ParticleSet::Bead_ParticleSet(const ParticleSet& mcw,int nPsi)
   BeadSignWgt_saved.resize(nPsi);
   Drift_saved.resize(nptcl);
   for (int i=0;i<nPsi;i++){
-    Gradients_saved.push_back(new ParticlePos_t(nptcl));
+    Gradients_saved.push_back(new ParticleGradient_t(nptcl));
     Laplacians_saved.push_back(new ParticleLaplacian_t(nptcl));
     DriftVectors_saved.push_back(new ParticlePos_t(nptcl));
   }
