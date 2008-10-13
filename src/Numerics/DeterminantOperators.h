@@ -106,6 +106,26 @@ namespace qmcplusplus {
       return logdet;
     }
 
+    inline double
+    InvertWithLog(std::complex<double>* restrict x, int n, int m, std::complex<double>* restrict work, 
+        int* restrict pivot, double& phase) 
+    {
+      cerr << "  Fix InverWithLog for complex " << endl;
+      abort();
+      double logdet(0.0);
+      LUFactorization(n,m,x,n,pivot);
+      int sign_det=1;
+      for(int i=0; i<n; i++)
+      {
+        //sign_det *= (pivot[i] == i+1)?1:-1;
+        //sign_det *= (x[i*m+i]>0)?1:-1;
+        //logdet += std::log(std::abs(x[i*m+i]));
+      }
+      InvertLU(n, x, n, pivot, work, n);
+      phase=(sign_det>0)?0.0:M_PI;
+      return logdet;
+    }
+
 /** invert a matrix
  * \param M a matrix to be inverted
  * \param getdet bool, if true, calculate the determinant
