@@ -65,7 +65,7 @@ namespace qmcplusplus {
     string myName;
    
     ///constructor
-    QMCHamiltonianBase():Tau(0.0),Value(0.0){
+    QMCHamiltonianBase():myIndex(-1),Tau(0.0),Value(0.0){
       UpdateMode.set(PRIMARY,1);
     }
 
