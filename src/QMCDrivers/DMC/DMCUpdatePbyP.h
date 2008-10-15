@@ -35,14 +35,25 @@ namespace qmcplusplus {
     void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
 
   private:
-
-    /// Copy Constructor (disabled)
-    DMCUpdatePbyPWithRejection(const DMCUpdatePbyPWithRejection& a): QMCUpdateBase(a){ }
-    /// Copy operator (disabled).
-    DMCUpdatePbyPWithRejection& operator=(const DMCUpdatePbyPWithRejection&) { return *this;}
     vector<NewTimer*> myTimers;
-
   };
+
+  class DMCUpdatePbyPWithRejectionFast: public QMCUpdateBase {
+
+  public:
+
+    /// Constructor.
+    DMCUpdatePbyPWithRejectionFast(MCWalkerConfiguration& w, TrialWaveFunction& psi, 
+        QMCHamiltonian& h, RandomGenerator_t& rg);
+    ///destructor
+    ~DMCUpdatePbyPWithRejectionFast();
+
+    void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
+
+  private:
+    vector<NewTimer*> myTimers;
+  };
+
 
   class DMCUpdatePbyPWithKill: public QMCUpdateBase {
 

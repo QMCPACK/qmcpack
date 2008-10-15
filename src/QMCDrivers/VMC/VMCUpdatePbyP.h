@@ -38,10 +38,6 @@ namespace qmcplusplus {
   private:
     ///sub steps
     int nSubSteps;
-    /// Copy Constructor (disabled)
-    VMCUpdatePbyP(const VMCUpdatePbyP& a): QMCUpdateBase(a) { }
-    /// Copy operator (disabled).
-    VMCUpdatePbyP& operator=(const VMCUpdatePbyP&) { return *this;}
     vector<NewTimer*> myTimers;
   };
 
@@ -59,10 +55,23 @@ namespace qmcplusplus {
     void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
  
   private:
-    /// Copy Constructor (disabled)
-    VMCUpdatePbyPWithDrift(const VMCUpdatePbyPWithDrift& a): QMCUpdateBase(a) { }
-    /// Copy operator (disabled).
-    VMCUpdatePbyPWithDrift& operator=(const VMCUpdatePbyPWithDrift&) { return *this;}
+    vector<NewTimer*> myTimers;
+  };
+
+  /** @ingroup QMCDrivers  ParticleByParticle
+   *@brief Implements the VMC algorithm using particle-by-particle move with the drift equation. 
+   */
+  class VMCUpdatePbyPWithDriftFast: public QMCUpdateBase {
+  public:
+    /// Constructor.
+    VMCUpdatePbyPWithDriftFast(MCWalkerConfiguration& w, TrialWaveFunction& psi, 
+        QMCHamiltonian& h, RandomGenerator_t& rg);
+
+    ~VMCUpdatePbyPWithDriftFast();
+
+    void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
+ 
+  private:
     vector<NewTimer*> myTimers;
   };
 }
