@@ -96,9 +96,9 @@ namespace qmcplusplus {
     ///reset the size: with the number of particles and number of orbtials
     void resize(int nel, int morb);
 
-    ValueType registerData(ParticleSet& P, PooledData<RealType>& buf);
+    RealType registerData(ParticleSet& P, PooledData<RealType>& buf);
 
-    ValueType updateBuffer(ParticleSet& P, PooledData<RealType>& buf, bool fromscratch=false);
+    RealType updateBuffer(ParticleSet& P, PooledData<RealType>& buf, bool fromscratch=false);
 
     void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf);
 
@@ -116,6 +116,7 @@ namespace qmcplusplus {
      */
     ValueType ratio(ParticleSet& P, int iat);
 
+
     /** return the ratio
      * @param P current configuration
      * @param iat particle whose position is moved
@@ -128,6 +129,9 @@ namespace qmcplusplus {
     ValueType ratio(ParticleSet& P, int iat,
 		    ParticleSet::ParticleGradient_t& dG, 
 		    ParticleSet::ParticleLaplacian_t& dL);
+
+    ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
+    GradType evalGrad(ParticleSet& P, int iat);
 
     ValueType logRatio(ParticleSet& P, int iat,
 		    ParticleSet::ParticleGradient_t& dG, 
@@ -146,11 +150,11 @@ namespace qmcplusplus {
 		ParticleSet::ParticleLaplacian_t& dL,
 		int iat);
 
-    ValueType evaluateLog(ParticleSet& P, PooledData<RealType>& buf);
+    RealType evaluateLog(ParticleSet& P, PooledData<RealType>& buf);
 
 
     ///evaluate log of determinant for a particle set: should not be called 
-    ValueType
+    RealType
     evaluateLog(ParticleSet& P, 
 	        ParticleSet::ParticleGradient_t& G, 
 	        ParticleSet::ParticleLaplacian_t& L) ;
@@ -163,8 +167,6 @@ namespace qmcplusplus {
 
     OrbitalBasePtr makeClone(ParticleSet& tqp) const;
 
-    ///flag to turn on/off to skip some calculations
-    bool UseRatioOnly;
     ///total number of particles
     int NP;
     ///number of single-particle orbitals which belong to this Dirac determinant

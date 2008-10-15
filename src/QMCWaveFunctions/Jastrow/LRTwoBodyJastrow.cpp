@@ -81,10 +81,11 @@ namespace qmcplusplus {
     //}
   }
   
-  LRTwoBodyJastrow::ValueType 
+  LRTwoBodyJastrow::RealType 
     LRTwoBodyJastrow::evaluateLog(ParticleSet& P, 
 				      ParticleSet::ParticleGradient_t& G, 
-				      ParticleSet::ParticleLaplacian_t& L) {
+				      ParticleSet::ParticleLaplacian_t& L) 
+    {
       //memcopy if necessary but this is not so critcal
       std::copy(P.SK->rhok[0],P.SK->rhok[0]+MaxK,Rhok.data());
       for(int spec1=1; spec1<NumSpecies; spec1++)
@@ -351,8 +352,9 @@ namespace qmcplusplus {
   }
   
   
-  LRTwoBodyJastrow::ValueType 
-    LRTwoBodyJastrow::registerData(ParticleSet& P, PooledData<RealType>& buf) {
+  LRTwoBodyJastrow::RealType 
+    LRTwoBodyJastrow::registerData(ParticleSet& P, PooledData<RealType>& buf) 
+    {
       LogValue=evaluateLog(P,P.G,P.L); 
       eikr.resize(NumPtcls,MaxK);
       eikr_new.resize(MaxK);
@@ -368,9 +370,10 @@ namespace qmcplusplus {
       return LogValue;
     }
 
-  LRTwoBodyJastrow::ValueType 
+  LRTwoBodyJastrow::RealType 
     LRTwoBodyJastrow::updateBuffer(ParticleSet& P, PooledData<RealType>& buf,
-        bool fromscratch) {
+        bool fromscratch) 
+    {
       LogValue=evaluateLog(P,P.G,P.L); 
 
       for(int iat=0; iat<NumPtcls; iat++)
@@ -393,8 +396,9 @@ namespace qmcplusplus {
       std::copy(P.SK->eikr[iat],P.SK->eikr[iat]+MaxK,eikr[iat]);
   }
   
-  LRTwoBodyJastrow::ValueType 
-    LRTwoBodyJastrow::evaluateLog(ParticleSet& P, PooledData<RealType>& buf) {
+  LRTwoBodyJastrow::RealType 
+    LRTwoBodyJastrow::evaluateLog(ParticleSet& P, PooledData<RealType>& buf) 
+    {
       buf.put(Rhok.first_address(), Rhok.last_address());
       buf.put(U.first_address(), U.last_address());
       buf.put(d2U.first_address(), d2U.last_address());
@@ -403,16 +407,16 @@ namespace qmcplusplus {
     }
   
   
-  bool
-    LRTwoBodyJastrow::put(xmlNodePtr cur) {
-      if(skRef == 0) {
-        app_error() << "  LRTowBodyJastrow should not be used for non periodic systems." << endl;
-        return false;
-      }
-      return true;
+  bool LRTwoBodyJastrow::put(xmlNodePtr cur) 
+  {
+    if(skRef == 0) {
+      app_error() << "  LRTowBodyJastrow should not be used for non periodic systems." << endl;
+      return false;
     }
+    return true;
+  }
 
-    void LRTwoBodyJastrow::resetByHandler(HandlerType* handler)
+  void LRTwoBodyJastrow::resetByHandler(HandlerType* handler)
   { 
     MaxKshell=handler->MaxKshell;
     Fk_symm.resize(MaxKshell);

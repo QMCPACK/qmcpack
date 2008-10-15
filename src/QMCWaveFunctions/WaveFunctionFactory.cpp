@@ -90,7 +90,7 @@ namespace qmcplusplus {
       else if(cname == "agp") 
       {
 #if defined(QMC_COMPLEX)
-        sendError("AGPDeterminant cannot be used with QMC_COMPLEX=1");
+        APP_ABORT("AGPDeterminant cannot be used with QMC_COMPLEX=1");
         return false;
 #else
         AGPDeterminantBuilder* agpbuilder = new AGPDeterminantBuilder(*targetPtcl,*targetPsi,ptclPool);

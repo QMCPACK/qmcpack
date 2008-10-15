@@ -70,7 +70,7 @@ namespace qmcplusplus {
     NumOrbitals=norb;
   }
 
-  DiracDeterminantBase::ValueType 
+  DiracDeterminantBase::RealType 
     DiracDeterminantBase::registerData(ParticleSet& P, PooledData<RealType>& buf) 
     {
 
@@ -112,8 +112,9 @@ namespace qmcplusplus {
     return LogValue;
   }
 
-  DiracDeterminantBase::ValueType DiracDeterminantBase::updateBuffer(ParticleSet& P, 
-      PooledData<RealType>& buf, bool fromscratch) {
+  DiracDeterminantBase::RealType DiracDeterminantBase::updateBuffer(ParticleSet& P, 
+      PooledData<RealType>& buf, bool fromscratch) 
+  {
 
     myG=0.0;
     myL=0.0;
@@ -122,7 +123,8 @@ namespace qmcplusplus {
       LogValue=evaluateLog(P,myG,myL);
     else
     {
-      Phi->evaluate(P, FirstIndex, LastIndex, psiM_temp,dpsiM, d2psiM);    
+      if(UpdateMode == ORB_PBYP_RATIO) Phi->evaluate(P, FirstIndex, LastIndex, psiM_temp,dpsiM, d2psiM);    
+
       if(NumPtcls==1) {
         ValueType y=1.0/psiM_temp(0,0);
         psiM(0,0)=y;
@@ -198,8 +200,9 @@ namespace qmcplusplus {
    * @param P current configuration
    * @param iat the particle thas is being moved
    */
-  DiracDeterminantBase::ValueType DiracDeterminantBase::ratio(ParticleSet& P, int iat) {
-    UseRatioOnly=true;
+  DiracDeterminantBase::ValueType DiracDeterminantBase::ratio(ParticleSet& P, int iat) 
+  {
+    UpdateMode=ORB_PBYP_RATIO;
     WorkingIndex = iat-FirstIndex;
     Phi->evaluate(P, iat, psiV);
 #ifdef DIRAC_USE_BLAS
@@ -207,6 +210,73 @@ namespace qmcplusplus {
 #else
     return curRatio = DetRatio(psiM, psiV.begin(),iat-FirstIndex);
 #endif
+  }
+
+  DiracDeterminantBase::GradType 
+    DiracDeterminantBase::evalGrad(ParticleSet& P, int iat)
+  {
+    const ValueType* restrict yptr=psiM[iat-FirstIndex];
+    const GradType* restrict dyptr=dpsiM[iat-FirstIndex];
+    GradType rv;
+    for(int j=0; j<NumOrbitals; ++j) rv += (*yptr++) *(*dyptr++);
+    return rv;
+  }
+
+  DiracDeterminantBase::ValueType 
+    DiracDeterminantBase::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
+  {
+    Phi->evaluate(P, iat, psiV, dpsiV, d2psiV);
+    WorkingIndex = iat-FirstIndex;
+
+#ifdef DIRAC_USE_BLAS
+    curRatio = BLAS::dot(NumOrbitals,psiM_temp[WorkingIndex],&psiV[0]);
+#else
+    curRatio= DetRatio(psiM_temp, psiV.begin(),WorkingIndex);
+#endif
+
+    if(abs(curRatio)<numeric_limits<RealType>::epsilon()) 
+    {
+      UpdateMode=ORB_PBYP_RATIO; //singularity! do not update inverse 
+      return 0.0;
+    }
+
+    //update psiM_temp with the row substituted
+    DetUpdate(psiM_temp,psiV,workV1,workV2,WorkingIndex,curRatio);
+
+    const ValueType* restrict yptr=psiM_temp[WorkingIndex];
+    const GradType* restrict dyptr=dpsiV.data();
+    GradType rv;
+    for(int j=0; j<NumOrbitals; ++j) rv += (*yptr++) *(*dyptr++);
+    grad_iat += rv;
+
+    ////////////////////////////////////////
+    ////THIS WILL BE REMOVED. ONLY FOR DEBUG DUE TO WAVEFUNCTIONTEST
+    //{
+    //  int kat=FirstIndex;
+    //  for(int j=0; j<NumOrbitals; j++) {
+    //    dpsiM_temp(WorkingIndex,j)=dpsiV[j];
+    //    d2psiM_temp(WorkingIndex,j)=d2psiV[j];
+    //  }
+    //  const ValueType* restrict yptr=psiM_temp.data();
+    //  const ValueType* restrict d2yptr=d2psiM_temp.data();
+    //  const GradType* restrict dyptr=dpsiM_temp.data();
+    //  for(int i=0; i<NumPtcls; i++,kat++) {
+    //    //This mimics gemm with loop optimization
+    //    GradType rv;
+    //    ValueType lap=0.0;
+    //    for(int j=0; j<NumOrbitals; j++,yptr++) {
+    //      rv += *yptr * *dyptr++;
+    //      lap += *yptr * *d2yptr++;
+    //    }
+    //    lap -= dot(rv,rv);
+    //    myG_temp[kat]=rv;
+    //    myL_temp[kat]=lap;
+    //  }
+    //}
+    ////////////////////////////////////////
+
+    UpdateMode=ORB_PBYP_PARTIAL;
+    return curRatio;
   }
 
   /** return the ratio
@@ -220,8 +290,9 @@ namespace qmcplusplus {
    */
   DiracDeterminantBase::ValueType DiracDeterminantBase::ratio(ParticleSet& P, int iat,
       ParticleSet::ParticleGradient_t& dG, 
-      ParticleSet::ParticleLaplacian_t& dL) {
-    UseRatioOnly=false;
+      ParticleSet::ParticleLaplacian_t& dL) 
+  {
+    UpdateMode=ORB_PBYP_ALL;
     Phi->evaluate(P, iat, psiV, dpsiV, d2psiV);
     WorkingIndex = iat-FirstIndex;
 
@@ -233,7 +304,7 @@ namespace qmcplusplus {
 
     if(abs(curRatio)<numeric_limits<RealType>::epsilon()) 
     {
-      UseRatioOnly=true;//do not update with restore
+      UpdateMode=ORB_PBYP_RATIO; //singularity! do not update inverse 
       return 0.0;
     }
 
@@ -295,37 +366,47 @@ namespace qmcplusplus {
   {
     PhaseValue += evaluatePhase(curRatio);
     LogValue +=std::log(std::abs(curRatio));
-    //CurrentDet *= curRatio;
-    if(UseRatioOnly) 
+    switch(UpdateMode)
     {
-      DetUpdate(psiM,psiV,workV1,workV2,WorkingIndex,curRatio);
-    } 
-    else 
-    {
-      myG = myG_temp;
-      myL = myL_temp;
-      psiM = psiM_temp;
-      std::copy(dpsiV.begin(),dpsiV.end(),dpsiM[WorkingIndex]);
-      std::copy(d2psiV.begin(),d2psiV.end(),d2psiM[WorkingIndex]);
-      //for(int j=0; j<NumOrbitals; j++) {
-      //  dpsiM(WorkingIndex,j)=dpsiV[j];
-      //  d2psiM(WorkingIndex,j)=d2psiV[j];
-      //}
+      case ORB_PBYP_RATIO:
+        DetUpdate(psiM,psiV,workV1,workV2,WorkingIndex,curRatio);
+        break;
+      case ORB_PBYP_PARTIAL:
+        psiM = psiM_temp;
+        std::copy(dpsiV.begin(),dpsiV.end(),dpsiM[WorkingIndex]);
+        std::copy(d2psiV.begin(),d2psiV.end(),d2psiM[WorkingIndex]);
+
+        //////////////////////////////////////
+        ////THIS WILL BE REMOVED. ONLY FOR DEBUG DUE TO WAVEFUNCTIONTEST
+        //myG = myG_temp;
+        //myL = myL_temp;
+        ///////////////////////
+
+        break;
+      default:
+        myG = myG_temp;
+        myL = myL_temp;
+        psiM = psiM_temp;
+        std::copy(dpsiV.begin(),dpsiV.end(),dpsiM[WorkingIndex]);
+        std::copy(d2psiV.begin(),d2psiV.end(),d2psiM[WorkingIndex]);
+        break;
     }
+
     curRatio=1.0;
   }
 
   /** move was rejected. copy the real container to the temporary to move on
   */
   void DiracDeterminantBase::restore(int iat) {
-    if(!UseRatioOnly) {
+    if(UpdateMode == ORB_PBYP_PARTIAL)
+    {
+      psiM_temp = psiM;
+    }
+    else if(UpdateMode == ORB_PBYP_ALL)
+    {
       psiM_temp = psiM;
       std::copy(dpsiM[WorkingIndex],dpsiM[WorkingIndex+1],dpsiM_temp[WorkingIndex]);
       std::copy(d2psiM[WorkingIndex],d2psiM[WorkingIndex+1],d2psiM_temp[WorkingIndex]);
-      //for(int j=0; j<NumOrbitals; j++) {
-      //  dpsiM_temp(WorkingIndex,j)=dpsiM(WorkingIndex,j);
-      //  d2psiM_temp(WorkingIndex,j)=d2psiM(WorkingIndex,j);
-      //}
     }
     curRatio=1.0;
   }
@@ -361,7 +442,7 @@ namespace qmcplusplus {
     curRatio=1.0;
   }
 
-  DiracDeterminantBase::ValueType 
+  DiracDeterminantBase::RealType 
     DiracDeterminantBase::evaluateLog(ParticleSet& P, PooledData<RealType>& buf) 
     {
       buf.put(psiM.first_address(),psiM.last_address());
@@ -431,7 +512,7 @@ namespace qmcplusplus {
     }
 
 
-  DiracDeterminantBase::ValueType
+  DiracDeterminantBase::RealType
     DiracDeterminantBase::evaluateLog(ParticleSet& P, 
         ParticleSet::ParticleGradient_t& G, 
         ParticleSet::ParticleLaplacian_t& L)

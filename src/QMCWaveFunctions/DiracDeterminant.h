@@ -197,7 +197,8 @@ namespace qmcplusplus {
       NumOrbitals=norb;
     }
 
-    ValueType registerData(ParticleSet& P, PooledData<RealType>& buf) {
+    RealType registerData(ParticleSet& P, PooledData<RealType>& buf) 
+    {
 
       if(NP == 0) {//first time, allocate once
 	//int norb = cols();
@@ -221,6 +222,7 @@ namespace qmcplusplus {
       myL=0.0;
 
       ValueType x=evaluate(P,myG,myL); 
+      LogValue = evaluateLogAndPhase(x,PhaseValue);
 
       P.G += myG;
       P.L += myL;
@@ -231,17 +233,21 @@ namespace qmcplusplus {
       buf.add(d2psiM.first_address(),d2psiM.last_address());
       buf.add(myL.first_address(), myL.last_address());
       buf.add(FirstAddressOfG,LastAddressOfG);
-      buf.add(CurrentDet);
+      buf.add(LogValue);
+      buf.add(PhaseValue);
 
-      return CurrentDet;
+      return LogValue;
     }
 
-    ValueType updateBuffer(ParticleSet& P, PooledData<RealType>& buf,
-        bool fromscratch=false) {
+    RealType updateBuffer(ParticleSet& P, PooledData<RealType>& buf, bool fromscratch=false) 
+    {
 
       myG=0.0;
       myL=0.0;
+
       ValueType x=evaluate(P,myG,myL); 
+      LogValue = evaluateLogAndPhase(x,PhaseValue);
+
       P.G += myG;
       P.L += myL;
       buf.put(psiM.first_address(),psiM.last_address());
@@ -249,20 +255,22 @@ namespace qmcplusplus {
       buf.put(d2psiM.first_address(),d2psiM.last_address());
       buf.put(myL.first_address(), myL.last_address());
       buf.put(FirstAddressOfG,LastAddressOfG);
-      buf.put(CurrentDet);
+      buf.put(LogValue);
+      buf.put(PhaseValue);
 
-      return CurrentDet;
+      return LogValue;
     }
 
-    void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf) {
+    void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf) 
+    {
 
       buf.get(psiM.first_address(),psiM.last_address());
       buf.get(FirstAddressOfdV,LastAddressOfdV);
       buf.get(d2psiM.first_address(),d2psiM.last_address());
       buf.get(myL.first_address(), myL.last_address());
       buf.get(FirstAddressOfG,LastAddressOfG);
-      buf.get(CurrentDet);
-
+      buf.get(LogValue);
+      buf.get(PhaseValue);
       //re-evaluate it for testing
       //Phi.evaluate(P, FirstIndex, LastIndex, psiM, dpsiM, d2psiM);
       //CurrentDet = Invert(psiM.data(),NumPtcls,NumOrbitals);
@@ -288,8 +296,9 @@ namespace qmcplusplus {
      * @param P current configuration
      * @param iat the particle thas is being moved
      */
-    inline ValueType ratio(ParticleSet& P, int iat) {
-      UseRatioOnly=true;
+    inline ValueType ratio(ParticleSet& P, int iat) 
+    {
+      UpdateMode = ORB_PBYP_RATIO;
       WorkingIndex = iat-FirstIndex;
       Phi->evaluate(P, iat, psiV);
 #ifdef DIRAC_USE_BLAS
@@ -310,8 +319,9 @@ namespace qmcplusplus {
      */
     ValueType ratio(ParticleSet& P, int iat,
 		    ParticleSet::ParticleGradient_t& dG, 
-		    ParticleSet::ParticleLaplacian_t& dL) {
-      UseRatioOnly=false;
+		    ParticleSet::ParticleLaplacian_t& dL) 
+    {
+      UpdateMode=ORB_PBYP_ALL;
       Phi->evaluate(P, iat, psiV, dpsiV, d2psiV);
       WorkingIndex = iat-FirstIndex;
 
@@ -323,13 +333,13 @@ namespace qmcplusplus {
 #ifdef QMC_COMPLEX
       if(norm(curRatio)<numeric_limits<RealType>::epsilon()) 
       {
-        UseRatioOnly=true;
+        UpdateMode = ORB_PBYP_RATIO;
         return 0.0;
       }
 #else
       if(abs(curRatio)<numeric_limits<RealType>::epsilon()) 
       {
-        UseRatioOnly=true;
+        UpdateMode = ORB_PBYP_RATIO;
         return 0.0;
       }
 #endif
@@ -373,13 +383,17 @@ namespace qmcplusplus {
      */
     void acceptMove(ParticleSet& P, int iat) {
       CurrentDet *= curRatio;
-      if(UseRatioOnly) {
+      if(UpdateMode == ORB_PBYP_RATIO) 
+      {
         DetUpdate(psiM,psiV,workV1,workV2,WorkingIndex,curRatio);
-      } else {
+      } 
+      else 
+      {
         myG = myG_temp;
         myL = myL_temp;
         psiM = psiM_temp;
-        for(int j=0; j<NumOrbitals; j++) {
+        for(int j=0; j<NumOrbitals; ++j) 
+        {
           dpsiM(WorkingIndex,j)=dpsiV[j];
           d2psiM(WorkingIndex,j)=d2psiV[j];
         }
@@ -390,9 +404,11 @@ namespace qmcplusplus {
     /** move was rejected. copy the real container to the temporary to move on
      */
     void restore(int iat) {
-      if(!UseRatioOnly) {
+      if(UpdateMode != ORB_PBYP_RATIO) 
+      {
         psiM_temp = psiM;
-        for(int j=0; j<NumOrbitals; j++) {
+        for(int j=0; j<NumOrbitals; j++) 
+        {
           dpsiM_temp(WorkingIndex,j)=dpsiM(WorkingIndex,j);
           d2psiM_temp(WorkingIndex,j)=d2psiM(WorkingIndex,j);
         }
@@ -429,18 +445,22 @@ namespace qmcplusplus {
       curRatio=1.0;
     }
 
-    ValueType evaluateLog(ParticleSet& P, PooledData<RealType>& buf) {
+    RealType evaluateLog(ParticleSet& P, PooledData<RealType>& buf) 
+    {
+
+      LogValue = evaluateLogAndPhase(CurrentDet,PhaseValue);
 
       buf.put(psiM.first_address(),psiM.last_address());
       buf.put(FirstAddressOfdV,LastAddressOfdV);
       buf.put(d2psiM.first_address(),d2psiM.last_address());
       buf.put(myL.first_address(), myL.last_address());
       buf.put(FirstAddressOfG,LastAddressOfG);
-      buf.put(CurrentDet);
+      buf.put(LogValue);
+      buf.put(PhaseValue);
 
       //WARNING: INCONSISTENT should be log
       //return CurrentDet;
-      return LogValue = evaluateLogAndPhase(CurrentDet,PhaseValue);
+      return  LogValue;
     }
 
 
@@ -451,10 +471,11 @@ namespace qmcplusplus {
     inline int cols() const { return NumOrbitals;}
 
     ///evaluate log of determinant for a particle set: should not be called 
-    ValueType
+    RealType
     evaluateLog(ParticleSet& P, 
 	        ParticleSet::ParticleGradient_t& G, 
-	        ParticleSet::ParticleLaplacian_t& L) {
+	        ParticleSet::ParticleLaplacian_t& L) 
+    {
       std::cerr << "DiracDeterminant::evaluateLog should never be called directly" << std::endl;
       return 0.0;
     }
@@ -501,26 +522,20 @@ namespace qmcplusplus {
       return CurrentDet;
     }
 
-
-    bool UseRatioOnly;
     ///The number of particles
     int NP;
-
+    ///number of single-particl orbitals
     int NumOrbitals;
+    ///number of particles for this determinant
     int NumPtcls;
-
     ///index of the first particle with respect to the particle set
     int FirstIndex;
-
     ///index of the last particle with respect to the particle set
     int LastIndex;
-
-    ///a set of single-particle orbitals used to fill in the  values of the matrix 
-    SPOSet* Phi;
-
     ///index of the particle (or row) 
     int WorkingIndex;      
-
+    ///a set of single-particle orbitals used to fill in the  values of the matrix 
+    SPOSet* Phi;
     ///Current determinant value
     ValueType CurrentDet;
 

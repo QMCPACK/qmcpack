@@ -7,7 +7,6 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
@@ -15,7 +14,7 @@
 //////////////////////////////////////////////////////////////////
 #include "Utilities/OhmmsInfo.h"
 #include "QMCWaveFunctions/ElectronGas/ElectronGasOrbitalBuilder.h"
-#include "QMCWaveFunctions/SlaterDeterminant.h"
+#include "QMCWaveFunctions/Fermion/SlaterDet.h"
 #include "QMCWaveFunctions/ElectronGas/HEGGrid.h"
 #include "OhmmsData/AttributeSet.h"
 
@@ -26,8 +25,13 @@ namespace qmcplusplus {
    * @param k list of unique k points in Cartesian coordinate excluding gamma
    * @param k2 k2[i]=dot(k[i],k[i])
    */
-  RealEGOSet::RealEGOSet(const vector<PosType>& k, const vector<RealType>& k2): K(k),mK2(k2) {
+  RealEGOSet::RealEGOSet(const vector<PosType>& k, const vector<RealType>& k2): K(k),mK2(k2) 
+  {
     KptMax=k.size();
+    Identity=true;
+    OrbitalSetSize=2*k.size()+1;
+    BasisSetSize=2*k.size()+1;
+    className="EGOSet";
   }
 
   ElectronGasOrbitalBuilder::ElectronGasOrbitalBuilder(ParticleSet& els, TrialWaveFunction& psi):
@@ -45,8 +49,8 @@ namespace qmcplusplus {
     aAttrib.add(twist,"twist");
     aAttrib.put(cur);
 
-    typedef DiracDeterminant<RealEGOSet>  Det_t;
-    typedef SlaterDeterminant<RealEGOSet> SlaterDeterminant_t;
+    typedef DiracDeterminantBase  Det_t;
+    typedef SlaterDet SlaterDeterminant_t;
 
     int nat=targetPtcl.getTotalNum();
     int nup=nat/2;
@@ -75,23 +79,21 @@ namespace qmcplusplus {
 
     //create a E(lectron)G(as)O(rbital)Set
     egGrid.createGrid(nc,nkpts);
-    RealEGOSet* psi=new RealEGOSet(egGrid.kpt,egGrid.mk2); 
+    RealEGOSet* psiu=new RealEGOSet(egGrid.kpt,egGrid.mk2); 
+    RealEGOSet* psid=new RealEGOSet(egGrid.kpt,egGrid.mk2); 
 
     //create up determinant
-    Det_t *updet = new Det_t(psi,0);
+    Det_t *updet = new Det_t(psiu);
     updet->set(0,nup);
 
     //create down determinant
-    Det_t *downdet = new Det_t(psi,nup);
+    Det_t *downdet = new Det_t(psid);
     downdet->set(nup,nup);
 
     //create a Slater determinant
     SlaterDeterminant_t *sdet  = new SlaterDeterminant_t;
     sdet->add(updet);
     sdet->add(downdet);
-
-    //add a DummyBasisSet
-    sdet->setBasisSet(new DummyBasisSet);
 
     //add Slater determinant to targetPsi
     targetPsi.addOrbital(sdet,"SlaterDet");

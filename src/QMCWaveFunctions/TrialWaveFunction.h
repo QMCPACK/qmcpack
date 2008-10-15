@@ -126,9 +126,8 @@ namespace qmcplusplus {
 		    ParticleSet::ParticleGradient_t& dG,
 		    ParticleSet::ParticleLaplacian_t& dL);
 
-//    RealType logRatio(ParticleSet& P, int iat, 
-//		    ParticleSet::ParticleGradient_t& dG,
-//		    ParticleSet::ParticleLaplacian_t& dL);
+    GradType evalGrad(ParticleSet& P, int iat);
+    RealType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
 
 
     void rejectMove(int iat);

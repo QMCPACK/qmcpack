@@ -258,7 +258,7 @@ namespace qmcplusplus {
     for(int i=0; i<Psi.size(); i++) Psi[i]->resetTargetParticleSet(P);
   }
 
-  RPAJastrow::ValueType
+  RPAJastrow::RealType
     RPAJastrow::evaluateLog(ParticleSet& P, 
         ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L) {
       LogValue=0.0;
@@ -285,15 +285,15 @@ namespace qmcplusplus {
       return r;
     }
 
-  RPAJastrow::ValueType 
-    RPAJastrow::logRatio(ParticleSet& P, int iat,
-        ParticleSet::ParticleGradient_t& dG,
-        ParticleSet::ParticleLaplacian_t& dL) {
-      ValueType r(0.0);
-      for(int i=0; i<Psi.size(); i++) 
-        r += Psi[i]->logRatio(P,iat,dG,dL);
-      return r;
-    }
+  //RPAJastrow::ValueType 
+  //  RPAJastrow::logRatio(ParticleSet& P, int iat,
+  //      ParticleSet::ParticleGradient_t& dG,
+  //      ParticleSet::ParticleLaplacian_t& dL) {
+  //    ValueType r(0.0);
+  //    for(int i=0; i<Psi.size(); i++) 
+  //      r += Psi[i]->logRatio(P,iat,dG,dL);
+  //    return r;
+  //  }
 
   void RPAJastrow::acceptMove(ParticleSet& P, int iat) {
     for(int i=0; i<Psi.size(); i++) 
@@ -313,7 +313,7 @@ namespace qmcplusplus {
       Psi[i]->update(P,dG,dL,iat);
   }
 
-  RPAJastrow::ValueType 
+  RPAJastrow::RealType 
     RPAJastrow::registerData(ParticleSet& P, BufferType& buf) {
       LogValue=0.0;
       for(int i=0; i<Psi.size(); i++) 
@@ -321,7 +321,7 @@ namespace qmcplusplus {
       return LogValue;
     }
 
-  RPAJastrow::ValueType 
+  RPAJastrow::RealType 
     RPAJastrow::updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch) {
       LogValue=0.0;
       for(int i=0; i<Psi.size(); i++) 
@@ -335,7 +335,7 @@ namespace qmcplusplus {
         Psi[i]->copyFromBuffer(P,buf);
     }
 
-  RPAJastrow::ValueType 
+  RPAJastrow::RealType 
     RPAJastrow::evaluateLog(ParticleSet& P,BufferType& buf) {
       LogValue=0.0;
       for(int i=0; i<Psi.size(); i++) 

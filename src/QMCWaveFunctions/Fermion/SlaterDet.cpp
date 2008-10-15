@@ -73,7 +73,7 @@ namespace qmcplusplus {
       return psi;
     }
 
-  SlaterDet::ValueType 
+  SlaterDet::RealType 
     SlaterDet::evaluateLog(ParticleSet& P, 
         ParticleSet::ParticleGradient_t& G, 
         ParticleSet::ParticleLaplacian_t& L) 
@@ -91,7 +91,7 @@ namespace qmcplusplus {
       return LogValue;
     }
 
-  SlaterDet::ValueType SlaterDet::registerData(ParticleSet& P, PooledData<RealType>& buf)
+  SlaterDet::RealType SlaterDet::registerData(ParticleSet& P, PooledData<RealType>& buf)
   {
     //ValueType psi = 1.0;
     //for(int i=0; i<Dets.size(); i++) 
@@ -107,7 +107,7 @@ namespace qmcplusplus {
     return LogValue;
   }
 
-  SlaterDet::ValueType SlaterDet::updateBuffer(ParticleSet& P, PooledData<RealType>& buf,
+  SlaterDet::RealType SlaterDet::updateBuffer(ParticleSet& P, PooledData<RealType>& buf,
       bool fromscratch)
   {
     //ValueType psi = 1.0;
@@ -147,7 +147,7 @@ namespace qmcplusplus {
     for(int i=0; i<Dets.size(); i++) 	Dets[i]->dumpFromBuffer(P,buf);
   }
 
-  SlaterDet::ValueType 
+  SlaterDet::RealType 
     SlaterDet::evaluateLog(ParticleSet& P, PooledData<RealType>& buf) 
     {
       LogValue=0.0;

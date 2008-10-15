@@ -17,6 +17,7 @@
 #define QMCPLUSPLUS_COMMON_TWOBODYJASTROW_H
 #include "Configuration.h"
 #include  <map>
+#include  <numeric>
 #include "QMCWaveFunctions/OrbitalBase.h"
 #include "QMCWaveFunctions/DiffOrbitalBase.h"
 #include "Particle/DistanceTableData.h"
@@ -42,6 +43,7 @@ namespace qmcplusplus {
     RealType DiffVal, DiffValSum;
     ParticleAttrib<RealType> U,d2U,curLap,curVal;
     ParticleAttrib<PosType> dU,curGrad;
+    ParticleAttrib<PosType> curGrad0;
     RealType *FirstAddressOfdU, *LastAddressOfdU;
     Matrix<int> PairID;
 
@@ -72,6 +74,7 @@ namespace qmcplusplus {
       d2U.resize(NN);
       dU.resize(NN);
       curGrad.resize(N);
+      curGrad0.resize(N);
       curLap.resize(N);
       curVal.resize(N);
 
@@ -192,7 +195,7 @@ namespace qmcplusplus {
      *@note The DistanceTableData contains only distinct pairs of the 
      *particles belonging to one set, e.g., SymmetricDTD.
      */
-    ValueType evaluateLog(ParticleSet& P,
+    RealType evaluateLog(ParticleSet& P,
 		          ParticleSet::ParticleGradient_t& G, 
 		          ParticleSet::ParticleLaplacian_t& L) {
       LogValue=0.0;
@@ -223,13 +226,14 @@ namespace qmcplusplus {
 
     ValueType evaluate(ParticleSet& P,
 		       ParticleSet::ParticleGradient_t& G, 
-		       ParticleSet::ParticleLaplacian_t& L) {
+		       ParticleSet::ParticleLaplacian_t& L) 
+    {
       return std::exp(evaluateLog(P,G,L));
     }
 
-    ValueType ratio(ParticleSet& P, int iat) {
+    ValueType ratio(ParticleSet& P, int iat) 
+    {
       DiffVal=0.0;
-      //ValueType d(0.0);
       const int* pairid(PairID[iat]);
       for(int jat=0, ij=iat*N; jat<N; jat++,ij++) {
         if(jat == iat) {
@@ -246,12 +250,14 @@ namespace qmcplusplus {
     /** later merge the loop */
     ValueType ratio(ParticleSet& P, int iat,
 		    ParticleSet::ParticleGradient_t& dG,
-		    ParticleSet::ParticleLaplacian_t& dL)  {
+		    ParticleSet::ParticleLaplacian_t& dL)  
+    {
       register RealType dudr, d2udr2,u;
       register PosType gr;
       DiffVal = 0.0;      
       const int* pairid = PairID[iat];
-      for(int jat=0, ij=iat*N; jat<N; jat++,ij++) {
+      for(int jat=0, ij=iat*N; jat<N; jat++,ij++) 
+      {
 	if(jat==iat) {
 	  curVal[jat] = 0.0;curGrad[jat]=0.0; curLap[jat]=0.0;
 	} else {
@@ -272,40 +278,78 @@ namespace qmcplusplus {
       }
       dG[iat] += sumg;
       dL[iat] += suml;     
+
+      curGrad0=curGrad;
+
       return std::exp(DiffVal);
     }
 
-    /** later merge the loop */
-    ValueType logRatio(ParticleSet& P, int iat,
-		    ParticleSet::ParticleGradient_t& dG,
-		    ParticleSet::ParticleLaplacian_t& dL)  {
-      register RealType dudr, d2udr2,u;
-      register PosType gr;
-      DiffVal = 0.0;      
+    GradType evalGrad(ParticleSet& P, int iat)
+    {
+      GradType gr;
+      for(int jat=0,ij=iat*N; jat<N; ++jat,++ij) gr += dU[ij];
+      return gr;
+    }
+
+    ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
+    {
+      RealType dudr, d2udr2,u;
+      PosType gr;
       const int* pairid = PairID[iat];
-      for(int jat=0, ij=iat*N; jat<N; jat++,ij++) {
-	if(jat==iat) {
+      DiffVal = 0.0;      
+      for(int jat=0, ij=iat*N; jat<N; jat++,ij++) 
+      {
+	if(jat==iat) 
+        {
 	  curVal[jat] = 0.0;curGrad[jat]=0.0; curLap[jat]=0.0;
-	} else {
+	} 
+        else 
+        {
 	  curVal[jat] = F[pairid[jat]]->evaluate(d_table->Temp[jat].r1, dudr, d2udr2);
 	  dudr *= d_table->Temp[jat].rinv1;
-	  curGrad[jat] = -dudr*d_table->Temp[jat].dr1;
+	  gr += curGrad[jat] = -dudr*d_table->Temp[jat].dr1;
 	  curLap[jat] = -(d2udr2+2.0*dudr);
 	  DiffVal += (U[ij]-curVal[jat]);
 	}
       }
-      PosType sumg,dg;
-      RealType suml=0.0,dl;
-      for(int jat=0,ij=iat*N,ji=iat; jat<N; jat++,ij++,ji+=N) {
-	sumg += (dg=curGrad[jat]-dU[ij]);
-	suml += (dl=curLap[jat]-d2U[ij]);
-        dG[jat] -= dg;
-	dL[jat] += dl;
-      }
-      dG[iat] += sumg;
-      dL[iat] += suml;     
-      return DiffVal;
+      grad_iat += gr;
+      //curGrad0-=curGrad;
+      //cout << "RATIOGRAD " << curGrad0 << endl;
+
+      return std::exp(DiffVal);
     }
+
+    ///** later merge the loop */
+    //ValueType logRatio(ParticleSet& P, int iat,
+    //    	    ParticleSet::ParticleGradient_t& dG,
+    //    	    ParticleSet::ParticleLaplacian_t& dL)  {
+    //  register RealType dudr, d2udr2,u;
+    //  register PosType gr;
+    //  DiffVal = 0.0;      
+    //  const int* pairid = PairID[iat];
+    //  for(int jat=0, ij=iat*N; jat<N; jat++,ij++) {
+    //    if(jat==iat) {
+    //      curVal[jat] = 0.0;curGrad[jat]=0.0; curLap[jat]=0.0;
+    //    } else {
+    //      curVal[jat] = F[pairid[jat]]->evaluate(d_table->Temp[jat].r1, dudr, d2udr2);
+    //      dudr *= d_table->Temp[jat].rinv1;
+    //      curGrad[jat] = -dudr*d_table->Temp[jat].dr1;
+    //      curLap[jat] = -(d2udr2+2.0*dudr);
+    //      DiffVal += (U[ij]-curVal[jat]);
+    //    }
+    //  }
+    //  PosType sumg,dg;
+    //  RealType suml=0.0,dl;
+    //  for(int jat=0,ij=iat*N,ji=iat; jat<N; jat++,ij++,ji+=N) {
+    //    sumg += (dg=curGrad[jat]-dU[ij]);
+    //    suml += (dl=curLap[jat]-d2U[ij]);
+    //    dG[jat] -= dg;
+    //    dL[jat] += dl;
+    //  }
+    //  dG[iat] += sumg;
+    //  dL[iat] += suml;     
+    //  return DiffVal;
+    //}
 
     inline void restore(int iat) {}
 
@@ -353,7 +397,6 @@ namespace qmcplusplus {
       for(int i=0; i<d_table->size(SourceIndex); i++) {
 	for(int nn=d_table->M[i]; nn<d_table->M[i+1]; nn++) {
 	  int j = d_table->J[nn];
-	  //ValueType sumu = F.evaluate(d_table->r(nn));
 	  u = F[d_table->PairID[nn]]->evaluate(d_table->r(nn), dudr, d2udr2);
 	  LogValue -= u;
 	  dudr *= d_table->rinv(nn);
@@ -375,7 +418,7 @@ namespace qmcplusplus {
       }
     }
 
-    inline ValueType registerData(ParticleSet& P, PooledData<RealType>& buf){
+    inline RealType registerData(ParticleSet& P, PooledData<RealType>& buf){
 
       evaluateLogAndStore(P,P.G,P.L);
       //LogValue=0.0;
@@ -419,7 +462,7 @@ namespace qmcplusplus {
       return LogValue;
     }
 
-    inline ValueType updateBuffer(ParticleSet& P, PooledData<RealType>& buf,
+    inline RealType updateBuffer(ParticleSet& P, PooledData<RealType>& buf,
         bool fromscratch=false){
       evaluateLogAndStore(P,P.G,P.L);
       //RealType dudr, d2udr2,u;
@@ -469,7 +512,7 @@ namespace qmcplusplus {
       DiffValSum=0.0;
     }
 
-    inline ValueType evaluateLog(ParticleSet& P, PooledData<RealType>& buf) {
+    inline RealType evaluateLog(ParticleSet& P, PooledData<RealType>& buf) {
       RealType x = (U[NN] += DiffValSum);
       buf.put(U.begin(), U.end());
       buf.put(d2U.begin(), d2U.end());

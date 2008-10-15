@@ -66,6 +66,16 @@ namespace qmcplusplus {
 	  VisitorIndex = DistanceTableData::VisitorIndex, 
 	  WalkerIndex  = DistanceTableData::WalkerIndex};
 
+    /** enum for a update mode */
+    enum 
+    {
+      ORB_PBYP_RATIO,   /*!< particle-by-particle ratio only */
+      ORB_PBYP_ALL,     /*!< particle-by-particle, update Value-Gradient-Laplacian */
+      ORB_PBYP_PARTIAL, /*!< particle-by-particle, update Value and Grdient */
+      ORB_WALKER,    /*!< walker update */
+      ORB_ALLWALKER  /*!< all walkers update */ 
+    };
+
     typedef ParticleAttrib<ValueType> ValueVectorType;
     typedef ParticleAttrib<GradType>  GradVectorType;
     typedef PooledData<RealType>      BufferType;
@@ -75,15 +85,11 @@ namespace qmcplusplus {
      * If true, this object is actively modified during optimization
      */
     bool Optimizable;
-    /** boolean to turn on/off the buffer
-     */
-    bool UseBuffer;
-    ///** integer to keep track its usage
-    // */
-    //int Counter;
+    /** current update mode */
+    int UpdateMode;
     /** current \f$\log\phi \f$
      */
-    ValueType LogValue;
+    RealType LogValue;
     /** current phase 
      */
     RealType PhaseValue;
@@ -161,10 +167,31 @@ namespace qmcplusplus {
      * @param L Laplacians, \f$\nabla^2\ln\Psi\f$
      *
      */
-    virtual ValueType
+    virtual RealType
     evaluateLog(ParticleSet& P, 
         ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L) = 0;
 
+    /** return the current gradient for the iat-th particle
+     * @param Pquantum particle set
+     * @param iat particle index
+     * @return the gradient of the iat-th particle
+     */
+    virtual GradType evalGrad(ParticleSet& P, int iat) 
+    {
+      APP_ABORT("OrbitalBase::evalGradient is not implemented");
+      return GradType();
+    }
+
+    /** evaluate the ratio of the new to old orbital value
+     * @param P the active ParticleSet
+     * @param iat the index of a particle
+     * @param grad_iat Gradient for the active particle
+     */
+    virtual ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) 
+    {
+      APP_ABORT("OrbitalBase::ratioGrad is not implemented");
+      return ValueType();
+    }
 
     /** evaluate the ratio of the new to old orbital value
      *@param P the active ParticleSet
@@ -176,19 +203,6 @@ namespace qmcplusplus {
      *Paired with acceptMove(ParticleSet& P, int iat).
      */
     virtual ValueType ratio(ParticleSet& P, int iat,
-			    ParticleSet::ParticleGradient_t& dG,
-			    ParticleSet::ParticleLaplacian_t& dL) = 0;
-
-    /** evaluate the log ratio of the new to old orbital value
-     *@param P the active ParticleSet
-     *@param iat the index of a particle
-     *@param dG the differential gradient
-     *@param dL the differential laplacian
-     *@return \f$ \log\[\psi( \{ {\bf R}^{'} \} )/ \psi( \{ {\bf R}^{'} \})\] \f$
-     *
-     *Paired with update(ParticleSet& P, int iat).
-     */
-    virtual ValueType logRatio(ParticleSet& P, int iat,
 			    ParticleSet::ParticleGradient_t& dG,
 			    ParticleSet::ParticleLaplacian_t& dL) = 0;
 
@@ -229,13 +243,13 @@ namespace qmcplusplus {
 
 
     /** equivalent to evaluateLog(P,G,L) with write-back function */
-    virtual ValueType evaluateLog(ParticleSet& P,BufferType& buf)=0;
+    virtual RealType evaluateLog(ParticleSet& P,BufferType& buf)=0;
 
     /** add temporary data reserved for particle-by-particle move.
      *
      * Return the log|psi|  like evalaute evaluateLog
      */
-    virtual ValueType registerData(ParticleSet& P, BufferType& buf) =0;
+    virtual RealType registerData(ParticleSet& P, BufferType& buf) =0;
 
     /** re-evaluate the content and buffer data
      * @param P particle set
@@ -243,7 +257,7 @@ namespace qmcplusplus {
      *
      * This function is introduced to update the data periodically for particle-by-particle move.
      */
-    virtual ValueType updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch=false) =0;
+    virtual RealType updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch=false) =0;
 
     /** copy the internal data saved for particle-by-particle move.*/
     virtual void copyFromBuffer(ParticleSet& P, BufferType& buf)=0;

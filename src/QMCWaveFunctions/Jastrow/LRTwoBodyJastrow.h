@@ -109,7 +109,7 @@ namespace qmcplusplus {
     //evaluate the distance table with els
     void resetTargetParticleSet(ParticleSet& P);
 
-    ValueType evaluateLog(ParticleSet& P,
+    RealType evaluateLog(ParticleSet& P,
 		         ParticleSet::ParticleGradient_t& G, 
 		         ParticleSet::ParticleLaplacian_t& L);
     /** reset the coefficients by a function
@@ -176,10 +176,10 @@ namespace qmcplusplus {
 		int iat);
 
 
-    ValueType registerData(ParticleSet& P, PooledData<RealType>& buf);
-    ValueType updateBuffer(ParticleSet& P, PooledData<RealType>& buf, bool fromscratch=false);
+    RealType registerData(ParticleSet& P, PooledData<RealType>& buf);
+    RealType updateBuffer(ParticleSet& P, PooledData<RealType>& buf, bool fromscratch=false);
     void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf);
-    ValueType evaluateLog(ParticleSet& P, PooledData<RealType>& buf);
+    RealType evaluateLog(ParticleSet& P, PooledData<RealType>& buf);
 
     ///process input file
     bool put(xmlNodePtr cur);

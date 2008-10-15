@@ -114,7 +114,7 @@ namespace qmcplusplus {
     }
 
 
-    inline ValueType 
+    inline RealType 
     evaluateLog(ParticleSet& P, 
 	        ParticleSet::ParticleGradient_t& G, 
 	        ParticleSet::ParticleLaplacian_t& L) {
@@ -138,7 +138,7 @@ namespace qmcplusplus {
 
     /** similar to evaluateLog 
      */
-    ValueType registerData(ParticleSet& P, PooledData<RealType>& buf){
+    RealType registerData(ParticleSet& P, PooledData<RealType>& buf){
 
       //BasisSet->evaluate(P);
       ValueType psi = 1.0;
@@ -147,7 +147,7 @@ namespace qmcplusplus {
       return LogValue = evaluateLogAndPhase(psi,PhaseValue);
     }
     
-    ValueType updateBuffer(ParticleSet& P, PooledData<RealType>& buf,
+    RealType updateBuffer(ParticleSet& P, PooledData<RealType>& buf,
         bool fromscratch=false){
       ValueType psi = 1.0;
       for(int i=0; i<Dets.size(); i++) psi *= Dets[i]->updateBuffer(P,buf);
@@ -175,7 +175,8 @@ namespace qmcplusplus {
       for(int i=0; i<Dets.size(); i++) 	Dets[i]->dumpFromBuffer(P,buf);
     }
 
-    ValueType evaluateLog(ParticleSet& P, PooledData<RealType>& buf) {
+    RealType evaluateLog(ParticleSet& P, PooledData<RealType>& buf) 
+    {
       //LogValue=0.0;
       //int sign_tot = 1;
       //for(int i=0; i<Dets.size(); i++) 	

@@ -20,7 +20,6 @@
 #include "QMCWaveFunctions/OrbitalBase.h"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
-#include "Optimize/VarList.h"
 #include "QMCWaveFunctions/BasisSetBase.h"
 
 namespace qmcplusplus {
@@ -46,13 +45,12 @@ namespace qmcplusplus {
     void reportStatus(ostream& os);
     void resetTargetParticleSet(ParticleSet& P);
 
-    ValueType evaluateLog(ParticleSet& P,
-		          ParticleSet::ParticleGradient_t& G, 
-		          ParticleSet::ParticleLaplacian_t& L);
+    RealType evaluateLog(ParticleSet& P,
+        ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
 
     ValueType evaluate(ParticleSet& P,
-		       ParticleSet::ParticleGradient_t& G, 
-		       ParticleSet::ParticleLaplacian_t& L) {
+        ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L) 
+    {
       return std::exp(evaluateLog(P,G,L));
     }
 
@@ -77,13 +75,13 @@ namespace qmcplusplus {
 		       ParticleSet::ParticleLaplacian_t& dL,
 		       int iat);
 
-    ValueType registerData(ParticleSet& P, PooledData<RealType>& buf);
+    RealType registerData(ParticleSet& P, PooledData<RealType>& buf);
 
-    ValueType updateBuffer(ParticleSet& P, PooledData<RealType>& buf, bool fromscratch=false);
+    RealType updateBuffer(ParticleSet& P, PooledData<RealType>& buf, bool fromscratch=false);
     
     void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf);
 
-    ValueType evaluateLog(ParticleSet& P, PooledData<RealType>& buf);
+    RealType evaluateLog(ParticleSet& P, PooledData<RealType>& buf);
 
     void setBasisSet(BasisSetType* abasis) { GeminalBasis=abasis;}
 
@@ -97,8 +95,6 @@ namespace qmcplusplus {
     const ParticleSet& CenterRef;
     ///distance table
     const DistanceTableData* d_table;
-    ///do accept/reject
-    bool RatioOnly;
     ///size of the localized basis set
     int BasisSize;
     ///number of particles

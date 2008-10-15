@@ -212,6 +212,35 @@ namespace qmcplusplus {
 #endif
   }
 
+  TrialWaveFunction::GradType
+  TrialWaveFunction::evalGrad(ParticleSet& P,int iat) 
+  {
+    GradType grad_iat;
+    for(int i=0; i<Z.size(); ++i) grad_iat += Z[i]->evalGrad(P,iat);
+    return grad_iat;
+  }
+
+  TrialWaveFunction::RealType
+  TrialWaveFunction::ratioGrad(ParticleSet& P,int iat, GradType& grad_iat) 
+  {
+    grad_iat=0.0;
+    ValueType r(1.0);
+    for(int i=0,ii=1; i<Z.size(); ++i,ii+=2) 
+    {
+      myTimers[ii]->start();
+      r *= Z[i]->ratioGrad(P,iat,grad_iat);
+      myTimers[ii]->stop();
+    }
+#if defined(QMC_COMPLEX)
+    //return std::exp(evaluateLogAndPhase(r,PhaseValue));
+    RealType logr=evaluateLogAndPhase(r,PhaseValue);
+    return std::exp(logr)*std::cos(PhaseValue);
+#else
+    PhaseValue=evaluatePhase(r);
+    return real(r);
+#endif
+  }
+
   void   
   TrialWaveFunction::update(ParticleSet& P,int iat) 
   {

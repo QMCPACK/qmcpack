@@ -156,8 +156,6 @@ namespace qmcplusplus {
 
     OrbitalBasePtr makeClone(ParticleSet& tqp) const;
 
-    bool UseRatioOnly;
-
     ///Total number of particles
     int NumPtcls;
     ///number of major spins

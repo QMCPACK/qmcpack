@@ -321,7 +321,7 @@ namespace qmcplusplus {
   //                  Evaluation functions                     //
   ///////////////////////////////////////////////////////////////
 
-  kSpaceJastrow::ValueType 
+  kSpaceJastrow::RealType 
   kSpaceJastrow::evaluateLog(ParticleSet& P, 
 			     ParticleSet::ParticleGradient_t& G, 
 			     ParticleSet::ParticleLaplacian_t& L) 
@@ -529,7 +529,7 @@ namespace qmcplusplus {
   }
   
   
-  kSpaceJastrow::ValueType 
+  kSpaceJastrow::RealType 
   kSpaceJastrow::registerData(ParticleSet& P, PooledData<RealType>& buf) 
   {
     LogValue=evaluateLog(P,P.G,P.L); 
@@ -548,7 +548,7 @@ namespace qmcplusplus {
     return LogValue;
   }
   
-  kSpaceJastrow::ValueType 
+  kSpaceJastrow::RealType 
   kSpaceJastrow::updateBuffer(ParticleSet& P, PooledData<RealType>& buf,
 			      bool fromscratch) 
   {
@@ -579,7 +579,7 @@ namespace qmcplusplus {
     }
   }
   
-  kSpaceJastrow::ValueType 
+  kSpaceJastrow::RealType 
   kSpaceJastrow::evaluateLog(ParticleSet& P, PooledData<RealType>& buf) 
   {
     RealType J1(0.0), J2(0.0);

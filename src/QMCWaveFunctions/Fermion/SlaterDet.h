@@ -51,7 +51,7 @@ namespace qmcplusplus {
 	     ParticleSet::ParticleGradient_t& G, 
 	     ParticleSet::ParticleLaplacian_t& L);
 
-    ValueType 
+    RealType 
     evaluateLog(ParticleSet& P, 
 	        ParticleSet::ParticleGradient_t& G, 
 	        ParticleSet::ParticleLaplacian_t& L);
@@ -62,17 +62,27 @@ namespace qmcplusplus {
     ///return the column dimension of the i-th Dirac determinant
     inline int size(int i) const { return Dets[i]->cols();}
 
-    ValueType registerData(ParticleSet& P, PooledData<RealType>& buf);
-    ValueType updateBuffer(ParticleSet& P, PooledData<RealType>& buf, bool fromscratch=false);
+    RealType registerData(ParticleSet& P, PooledData<RealType>& buf);
+    RealType updateBuffer(ParticleSet& P, PooledData<RealType>& buf, bool fromscratch=false);
     void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf);
     void dumpToBuffer(ParticleSet& P, PooledData<RealType>& buf);
     void dumpFromBuffer(ParticleSet& P, PooledData<RealType>& buf);
-    ValueType evaluateLog(ParticleSet& P, PooledData<RealType>& buf);
+    RealType evaluateLog(ParticleSet& P, PooledData<RealType>& buf);
 
     inline ValueType ratio(ParticleSet& P, int iat,
 			   ParticleSet::ParticleGradient_t& dG, 
 			   ParticleSet::ParticleLaplacian_t& dL) { 
       return Dets[DetID[iat]]->ratio(P,iat,dG,dL);
+    }
+
+    inline ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
+    {
+      return Dets[DetID[iat]]->ratioGrad(P,iat,grad_iat);
+    }
+
+    GradType evalGrad(ParticleSet& P, int iat)
+    {
+      return Dets[DetID[iat]]->evalGrad(P,iat);
     }
 
     inline ValueType logRatio(ParticleSet& P, int iat,
@@ -82,23 +92,27 @@ namespace qmcplusplus {
       return evaluateLogAndPhase(r,PhaseValue);
     }
     
-    inline void restore(int iat) {
+    inline void restore(int iat) 
+    {
       return Dets[DetID[iat]]->restore(iat);
     }
 
-    inline void acceptMove(ParticleSet& P, int iat) {
+    inline void acceptMove(ParticleSet& P, int iat) 
+    {
       Dets[DetID[iat]]->acceptMove(P,iat);
     }
 
     inline ValueType
-    ratio(ParticleSet& P, int iat) {
+    ratio(ParticleSet& P, int iat) 
+    {
       return Dets[DetID[iat]]->ratio(P,iat);
     } 	  
 
     void update(ParticleSet& P, 
 		ParticleSet::ParticleGradient_t& dG, 
 		ParticleSet::ParticleLaplacian_t& dL,
-		int iat) {
+		int iat) 
+    {
       return Dets[DetID[iat]]->update(P,dG,dL,iat);
     }
 

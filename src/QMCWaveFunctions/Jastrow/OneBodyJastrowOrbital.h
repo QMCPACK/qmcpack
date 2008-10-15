@@ -179,7 +179,7 @@ namespace qmcplusplus {
      *such that \f[ G[i]+={\bf \nabla}_i J({\bf R}) \f] 
      *and \f[ L[i]+=\nabla^2_i J({\bf R}). \f]
      */
-    ValueType evaluateLog(ParticleSet& P,
+    RealType evaluateLog(ParticleSet& P,
 		          ParticleSet::ParticleGradient_t& G, 
 		          ParticleSet::ParticleLaplacian_t& L) {
       LogValue=0.0;
@@ -252,9 +252,46 @@ namespace qmcplusplus {
       return std::exp(logRatio(P,iat,dG,dL));
     }
 
+    inline GradType evalGrad(ParticleSet& P, int iat)
+    {
+      int n=d_table->size(VisitorIndex);
+      curGrad = 0.0;
+      RealType ur,dudr, d2udr2;
+      for(int i=0, nn=iat; i<d_table->size(SourceIndex); ++i,nn+= n) 
+      {
+        if(Fs[i]) 
+        {
+          ur=Fs[i]->evaluate(d_table->r(nn),dudr,d2udr2);
+          dudr *= d_table->rinv(nn);
+          curGrad -= dudr*d_table->dr(nn);
+        }
+      }
+      return curGrad;
+    }
+
+    inline ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
+    {
+      int n=d_table->size(VisitorIndex);
+      curVal=0.0;
+      curGrad = 0.0;
+      RealType dudr, d2udr2;
+      for(int i=0; i<d_table->size(SourceIndex); ++i) 
+      {
+        if(Fs[i]) 
+        {
+          curVal += Fs[i]->evaluate(d_table->Temp[i].r1,dudr,d2udr2);
+          dudr *= d_table->Temp[i].rinv1;
+          curGrad -= dudr*d_table->Temp[i].dr1;
+        }
+      }
+      grad_iat += curGrad;
+      return std::exp(U[iat]-curVal);
+    }
+
     inline ValueType logRatio(ParticleSet& P, int iat,
 		    ParticleSet::ParticleGradient_t& dG,
-		    ParticleSet::ParticleLaplacian_t& dL)  {
+		    ParticleSet::ParticleLaplacian_t& dL)  
+    {
       int n=d_table->size(VisitorIndex);
       curVal=0.0;
       curLap=0.0;
@@ -319,7 +356,7 @@ namespace qmcplusplus {
     }
 
     /** equivalent to evalaute with additional data management */
-    ValueType registerData(ParticleSet& P, PooledData<RealType>& buf){
+    RealType registerData(ParticleSet& P, PooledData<RealType>& buf){
 
       //U.resize(d_table->size(VisitorIndex));
       d2U.resize(d_table->size(VisitorIndex));
@@ -337,7 +374,7 @@ namespace qmcplusplus {
       return LogValue;
     }
 
-    ValueType updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch=false)  {
+    RealType updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch=false)  {
       evaluateLogAndStore(P,P.G,P.L);
       //LogValue = 0.0;
       //U=0.0; dU=0.0; d2U=0.0;
@@ -387,8 +424,8 @@ namespace qmcplusplus {
      *@param P the ParticleSet to operate on
      *@param buf PooledData which stores the data for each walker
      */
-    inline ValueType evaluateLog(ParticleSet& P, PooledData<RealType>& buf) {
-      ValueType sumu = 0.0;
+    inline RealType evaluateLog(ParticleSet& P, PooledData<RealType>& buf) {
+      RealType sumu = 0.0;
       for(int i=0; i<U.size(); i++) sumu+=U[i];
 
       buf.put(U.first_address(), U.last_address());

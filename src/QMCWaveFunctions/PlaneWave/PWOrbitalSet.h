@@ -70,7 +70,7 @@ namespace qmcplusplus {
       void addVector(const std::vector<ComplexType>& coefs,int jorb);
       void addVector(const std::vector<RealType>& coefs,int jorb);
 
-      void resetParameters(OptimizableSetType& optVariables);
+      void resetParameters(const opt_variables_type& optVariables);
 
       void setOrbitalSetSize(int norbs);
 

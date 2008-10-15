@@ -276,7 +276,7 @@ namespace qmcplusplus {
     //copy psiM to temporary
     psiM_temp = psiM;
 
-    if(UseBuffer) 
+    //if(UseBuffer) 
     {  //add the data: determinant, inverse, gradient and laplacians
       //buf.add(CurrentDet);
       buf.add(LogValue);
@@ -306,7 +306,8 @@ namespace qmcplusplus {
     P.G += myG;
     P.L += myL;
 
-    if(UseBuffer) {
+    //if(UseBuffer) 
+    {
       //buf.put(CurrentDet);
       buf.put(LogValue);
       buf.put(psiM.begin(),psiM.end());
@@ -327,7 +328,8 @@ namespace qmcplusplus {
   }
 
   void AGPDeterminant::copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf) {
-    if(UseBuffer) {
+    //if(UseBuffer) 
+    {
       //buf.get(CurrentDet);
       buf.get(LogValue);
       buf.get(psiM.begin(),psiM.end());
@@ -354,8 +356,7 @@ namespace qmcplusplus {
     AGPDeterminant::ValueType 
     AGPDeterminant::ratio(ParticleSet& P, int iat) 
     {
-
-      UseRatioOnly=true;
+      UpdateMode=ORB_PBYP_RATIO;
       //GeminalBasis->evaluate(P,iat);
       GeminalBasis->evaluateForPtclMove(P,iat);//@@
 
@@ -397,7 +398,7 @@ namespace qmcplusplus {
 		    ParticleSet::ParticleGradient_t& dG, 
 		    ParticleSet::ParticleLaplacian_t& dL) {
 
-      UseRatioOnly=false;
+      UpdateMode=ORB_PBYP_ALL;
       //copy the iat-row to temporary vectors, restore when rejected
       std::copy(phiT[iat],phiT[iat]+BasisSize,phiTv.begin());
 
@@ -529,7 +530,7 @@ namespace qmcplusplus {
       PhaseValue += evaluatePhase(curRatio);
       LogValue +=std::log(std::abs(curRatio));
       //CurrentDet *= curRatio;
-      if(UseRatioOnly) 
+      if(UpdateMode == ORB_PBYP_RATIO)
       {
         APP_ABORT("Incomplete AGPDeterminant::acceptMove Turn on useDrift " );
         if(iat<Nup)
@@ -556,7 +557,7 @@ namespace qmcplusplus {
      */
     void AGPDeterminant::restore(int iat) 
     {
-      if(!UseRatioOnly) 
+      if(UpdateMode != ORB_PBYP_RATIO)
       {
         std::copy(phiTv.begin(), phiTv.end(),phiT[iat]);
         psiM_temp = psiM;
@@ -593,7 +594,7 @@ namespace qmcplusplus {
 
   AGPDeterminant::ValueType AGPDeterminant::evaluateLog(ParticleSet& P, PooledData<RealType>& buf) 
   {
-    if(UseBuffer) 
+    //if(UseBuffer) 
     {
       //buf.put(CurrentDet);
       buf.put(LogValue);

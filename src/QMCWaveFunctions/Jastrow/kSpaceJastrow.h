@@ -155,7 +155,7 @@ namespace qmcplusplus {
     //evaluate the distance table with els
     void resetTargetParticleSet(ParticleSet& P);
 
-    ValueType evaluateLog(ParticleSet& P,
+    RealType evaluateLog(ParticleSet& P,
 			  ParticleSet::ParticleGradient_t& G, 
 			  ParticleSet::ParticleLaplacian_t& L);
 
@@ -186,14 +186,14 @@ namespace qmcplusplus {
 		int iat);
 
     // Allocate per-walker data in the PooledData buffer
-    ValueType registerData(ParticleSet& P, PooledData<RealType>& buf);
+    RealType registerData(ParticleSet& P, PooledData<RealType>& buf);
     // Walker move has been accepted -- update the buffer
-    ValueType updateBuffer(ParticleSet& P, PooledData<RealType>& buf, 
+    RealType updateBuffer(ParticleSet& P, PooledData<RealType>& buf, 
 			   bool fromscratch=false);
     // Pull data from the walker buffer at the beginning of a block of
     // single-particle moves
     void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf);
-    ValueType evaluateLog(ParticleSet& P, PooledData<RealType>& buf);
+    RealType evaluateLog(ParticleSet& P, PooledData<RealType>& buf);
 
     ///process input file
     bool put(xmlNodePtr cur);

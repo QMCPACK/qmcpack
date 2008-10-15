@@ -18,7 +18,7 @@ namespace qmcplusplus {
     return myclone;
   }
 
-  void PWOrbitalSet::resetParameters(OptimizableSetType& optVariables)
+  void PWOrbitalSet::resetParameters(const opt_variables_type& optVariables)
   {
     //DO NOTHING FOR NOW
   }

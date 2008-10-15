@@ -42,7 +42,7 @@ namespace qmcplusplus {
     delete_iter(LambdaBlocks.begin(), LambdaBlocks.end());
   }
 
-  OrbitalBase::ValueType 
+  OrbitalBase::RealType 
     ThreeBodyBlockSparse::evaluateLog(ParticleSet& P,
         ParticleSet::ParticleGradient_t& G, 
         ParticleSet::ParticleLaplacian_t& L) 
@@ -84,7 +84,9 @@ namespace qmcplusplus {
   }
 
   OrbitalBase::ValueType 
-  ThreeBodyBlockSparse::ratio(ParticleSet& P, int iat) {
+  ThreeBodyBlockSparse::ratio(ParticleSet& P, int iat) 
+  {
+    UpdateMode=ORB_PBYP_RATIO;
     GeminalBasis->evaluateForPtclMove(P,iat);
     const BasisSetType::ValueType* restrict y_ptr=GeminalBasis->Phi.data();
     //This is the only difference from ThreeBodyGeminal
@@ -114,8 +116,9 @@ namespace qmcplusplus {
   OrbitalBase::ValueType 
   ThreeBodyBlockSparse::ratio(ParticleSet& P, int iat,
 		    ParticleSet::ParticleGradient_t& dG,
-		    ParticleSet::ParticleLaplacian_t& dL) {
-    RatioOnly=false;
+		    ParticleSet::ParticleLaplacian_t& dL) 
+  {
+    UpdateMode=ORB_PBYP_ALL;
     return std::exp(logRatio(P,iat,dG,dL));
   }
 
@@ -176,15 +179,17 @@ namespace qmcplusplus {
     return diffVal;
   }
 
-  void ThreeBodyBlockSparse::restore(int iat) {
+  void ThreeBodyBlockSparse::restore(int iat) 
+  {
     //nothing to do here
   }
 
-  void ThreeBodyBlockSparse::acceptMove(ParticleSet& P, int iat) {
+  void ThreeBodyBlockSparse::acceptMove(ParticleSet& P, int iat) 
+  {
     //add the differential
     LogValue += diffVal;
     Uk+=curVal; //accumulate the differences
-    if(RatioOnly)
+    if(UpdateMode == ORB_PBYP_RATIO)
     {
       Y.replaceRow(GeminalBasis->Phi.data(),iat);
       V.replaceRow(curV.begin(),iat);
@@ -210,14 +215,15 @@ namespace qmcplusplus {
   void ThreeBodyBlockSparse::update(ParticleSet& P, 		
 		       ParticleSet::ParticleGradient_t& dG, 
 		       ParticleSet::ParticleLaplacian_t& dL,
-		       int iat) {
+		       int iat) 
+  {
     cout << "****  This is to be removed " << endl;
     //dG[iat]+=curGrad-dUk[iat]; 
     //dL[iat]+=curLap-d2Uk[iat]; 
     acceptMove(P,iat);
   }
 
-  OrbitalBase::ValueType 
+  OrbitalBase::RealType 
   ThreeBodyBlockSparse::registerData(ParticleSet& P, PooledData<RealType>& buf) {
 
     evaluateLogAndStore(P);
@@ -255,7 +261,7 @@ namespace qmcplusplus {
     d2Y=GeminalBasis->d2Y;
 
     Uk=0.0;
-    LogValue=ValueType();
+    LogValue=RealType();
     for(int i=0; i< NumPtcls-1; i++) {
       const RealType* restrict yptr=GeminalBasis->Y[i];
       for(int j=i+1; j<NumPtcls; j++) {
@@ -300,7 +306,7 @@ namespace qmcplusplus {
     buf.get(d2Uk.begin(), d2Uk.end());
   }
 
-  OrbitalBase::ValueType 
+  OrbitalBase::RealType 
   ThreeBodyBlockSparse::evaluateLog(ParticleSet& P, PooledData<RealType>& buf) {
     buf.put(LogValue);
     buf.put(V.begin(), V.end());
@@ -317,7 +323,7 @@ namespace qmcplusplus {
     //return std::exp(LogValue);
   }
 
-  OrbitalBase::ValueType 
+  OrbitalBase::RealType 
   ThreeBodyBlockSparse::updateBuffer(ParticleSet& P, PooledData<RealType>& buf,
       bool fromscratch) {
     evaluateLogAndStore(P);

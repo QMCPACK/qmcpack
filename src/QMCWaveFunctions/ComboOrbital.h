@@ -70,26 +70,19 @@ namespace qmcplusplus {
     ValueType
       evaluate(ParticleSet& P, 
           ParticleSet::ParticleGradient_t& G, 
-          ParticleSet::ParticleLaplacian_t& L) {
+          ParticleSet::ParticleLaplacian_t& L) 
+      {
         return std::exp(evaluateLog(P,G,L));
       }
 
-    ValueType
-      evaluateLog(ParticleSet& P, 
-          ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
+    RealType evaluateLog(ParticleSet& P, 
+        ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
 
-    ValueType 
-      ratio(ParticleSet& P, int iat,
+    ValueType ratio(ParticleSet& P, int iat,
           ParticleSet::ParticleGradient_t& dG,
           ParticleSet::ParticleLaplacian_t& dL);
 
-    ValueType 
-      ratio(ParticleSet& P, int iat);
-
-    ValueType 
-      logRatio(ParticleSet& P, int iat,
-          ParticleSet::ParticleGradient_t& dG,
-          ParticleSet::ParticleLaplacian_t& dL);
+    ValueType ratio(ParticleSet& P, int iat);
 
     void acceptMove(ParticleSet& P, int iat);
 
@@ -100,16 +93,16 @@ namespace qmcplusplus {
         ParticleSet::ParticleLaplacian_t& dL,
         int iat);
 
-    ValueType 
+    RealType 
       registerData(ParticleSet& P, BufferType& buf);
 
-    ValueType 
+    RealType 
       updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch=false);
 
     void 
       copyFromBuffer(ParticleSet& P, BufferType& buf);
 
-    ValueType 
+    RealType 
       evaluateLog(ParticleSet& P,BufferType& buf);
 
     OrbitalBase* makeClone(ParticleSet& tqp) const;

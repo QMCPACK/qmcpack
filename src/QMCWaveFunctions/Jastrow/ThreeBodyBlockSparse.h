@@ -19,7 +19,6 @@
 #include "QMCWaveFunctions/OrbitalBase.h"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
-#include "Optimize/VarList.h"
 #include "QMCWaveFunctions/BasisSetBase.h"
 
 namespace qmcplusplus {
@@ -46,7 +45,7 @@ namespace qmcplusplus {
     //evaluate the distance table with els
     void resetTargetParticleSet(ParticleSet& P);
 
-    ValueType evaluateLog(ParticleSet& P,
+    RealType evaluateLog(ParticleSet& P,
 		          ParticleSet::ParticleGradient_t& G, 
 		          ParticleSet::ParticleLaplacian_t& L);
 
@@ -77,13 +76,13 @@ namespace qmcplusplus {
 		       ParticleSet::ParticleLaplacian_t& dL,
 		       int iat);
 
-    ValueType registerData(ParticleSet& P, PooledData<RealType>& buf);
+    RealType registerData(ParticleSet& P, PooledData<RealType>& buf);
 
-    ValueType updateBuffer(ParticleSet& P, PooledData<RealType>& buf, bool fromscratch=false);
+    RealType updateBuffer(ParticleSet& P, PooledData<RealType>& buf, bool fromscratch=false);
     
     void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf);
 
-    ValueType evaluateLog(ParticleSet& P, PooledData<RealType>& buf);
+    RealType evaluateLog(ParticleSet& P, PooledData<RealType>& buf);
 
     OrbitalBasePtr makeClone(ParticleSet& tqp) const;
 
@@ -96,10 +95,6 @@ namespace qmcplusplus {
 
     ///reference to the center
     const ParticleSet& CenterRef;
-    /////distance table
-    //const DistanceTableData* d_table;
-    ///turn on/off to make correct acceptMove
-    bool RatioOnly;
     ///assign same blocks for the group
     bool SameBlocksForGroup;
     ///index of the table for source-target

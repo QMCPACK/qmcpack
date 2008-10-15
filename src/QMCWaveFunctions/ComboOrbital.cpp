@@ -53,7 +53,7 @@ namespace qmcplusplus {
     for(int i=0; i<Psi.size(); i++) Psi[i]->resetTargetParticleSet(P);
   }
 
-  ComboOrbital::ValueType
+  ComboOrbital::RealType
     ComboOrbital::evaluateLog(ParticleSet& P, 
         ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L) {
       LogValue=0.0;
@@ -80,15 +80,15 @@ namespace qmcplusplus {
       return r;
     }
 
-  ComboOrbital::ValueType 
-    ComboOrbital::logRatio(ParticleSet& P, int iat,
-        ParticleSet::ParticleGradient_t& dG,
-        ParticleSet::ParticleLaplacian_t& dL) {
-      ValueType r(0.0);
-      for(int i=0; i<Psi.size(); i++) 
-        r += Psi[i]->logRatio(P,iat,dG,dL);
-      return r;
-    }
+  //ComboOrbital::ValueType 
+  //  ComboOrbital::logRatio(ParticleSet& P, int iat,
+  //      ParticleSet::ParticleGradient_t& dG,
+  //      ParticleSet::ParticleLaplacian_t& dL) {
+  //    ValueType r(0.0);
+  //    for(int i=0; i<Psi.size(); i++) 
+  //      r += Psi[i]->logRatio(P,iat,dG,dL);
+  //    return r;
+  //  }
 
   void ComboOrbital::acceptMove(ParticleSet& P, int iat) {
     for(int i=0; i<Psi.size(); i++) 
@@ -108,7 +108,7 @@ namespace qmcplusplus {
       Psi[i]->update(P,dG,dL,iat);
   }
 
-  ComboOrbital::ValueType 
+  ComboOrbital::RealType 
     ComboOrbital::registerData(ParticleSet& P, BufferType& buf) {
       LogValue=0.0;
       for(int i=0; i<Psi.size(); i++) 
@@ -116,7 +116,7 @@ namespace qmcplusplus {
       return LogValue;
     }
 
-  ComboOrbital::ValueType 
+  ComboOrbital::RealType 
     ComboOrbital::updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch) {
       LogValue=0.0;
       for(int i=0; i<Psi.size(); i++) 
@@ -130,7 +130,7 @@ namespace qmcplusplus {
         Psi[i]->copyFromBuffer(P,buf);
     }
 
-  ComboOrbital::ValueType 
+  ComboOrbital::RealType 
     ComboOrbital::evaluateLog(ParticleSet& P,BufferType& buf) {
       LogValue=0.0;
       for(int i=0; i<Psi.size(); i++) 
