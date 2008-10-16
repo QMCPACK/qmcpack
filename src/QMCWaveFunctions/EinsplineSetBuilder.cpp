@@ -38,7 +38,7 @@ namespace qmcplusplus {
       PtclPoolType& psets, xmlNodePtr cur) 
     : XMLRoot(cur), TileFactor(1,1,1), TwistNum(0), LastSpinSet(-1), 
       NumOrbitalsRead(-1), NumMuffinTins(0), NumCoreStates(0),
-      ParticleSets(psets), TargetPtcl(p), H5FileID(0)
+      ParticleSets(psets), TargetPtcl(p), H5FileID(-1)
   {
     for (int i=0; i<3; i++)
       for (int j=0; j<3; j++)
