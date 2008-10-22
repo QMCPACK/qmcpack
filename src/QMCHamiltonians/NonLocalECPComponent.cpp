@@ -97,7 +97,8 @@ namespace qmcplusplus {
       // Compute ratio of wave functions
       for (int j=0; j < nknot ; j++){ 
         PosType deltar(r*rrotsgrid_m[j]-dr);
-        W.makeMove(iel,deltar); 
+        W.makeMoveOnSphere(iel,deltar); 
+        //W.makeMove(iel,deltar); 
         psiratio[j]=psi.ratio(W,iel)*sgridweight_m[j];
         W.rejectMove(iel);
         //psi.rejectMove(iel);
@@ -167,7 +168,8 @@ namespace qmcplusplus {
       // Compute ratio of wave functions
       for (int j=0; j < nknot ; j++){ 
         PosType deltar(r*rrotsgrid_m[j]-dr);
-        PosType newpos(W.makeMove(iel,deltar)); 
+        PosType newpos(W.makeMoveOnSphere(iel,deltar)); 
+        //PosType newpos(W.makeMove(iel,deltar)); 
         psiratio[j]=psi.ratio(W,iel)*sgridweight_m[j];
         W.rejectMove(iel);
         //psi.rejectMove(iel);
