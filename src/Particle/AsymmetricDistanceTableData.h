@@ -135,28 +135,23 @@ namespace qmcplusplus {
       }
     }
 
-    ///evaluate the temporary pair relations
-    inline void moveOnSphere(const ParticleSet& P, const PosType& displ, IndexType jat) {
-      //if(activePtcl == jat) {
-      //  for(int iat=0; iat<N[SourceIndex]; iat++) {
-      //    //PosType drij = rnew-Origin.R[iat];
-      //    //RealType sep = sqrt(BC::apply(Origin.Lattice,drij));
-      //    PosType drij(displ+Temp[iat].dr0);
-      //    RealType sep2 = BC::apply(Origin.Lattice,drij);
-      //    RealType sep = sqrt(sep2);
-      //    Temp[iat].r1=sep;
-      //    //Temp[iat].rr1=sep2;
-      //    Temp[iat].rinv1=1.0/sep;
-      //    Temp[iat].dr1=drij;
-      //  }
-      //} else {
-      //  move(P,P.R[jat]+displ,jat);
-      //}
-      move(P,P.R[jat]+displ,jat);
+    ///evaluate the temporary pair relations 
+    inline void moveOnSphere(const ParticleSet& P, const PosType& displ, IndexType jat) 
+    {
+      //rinv1 is not useful
+      for(int iat=0, loc=jat; iat<N[SourceIndex]; ++iat,loc+=N[VisitorIndex]) 
+      {
+        PosType& drij=Temp[iat].dr1=dr_m[loc]+displ;
+        RealType sep(sqrt(dot(drij,drij)));
+        Temp[iat].r1=sep;
+        Temp[iat].rinv1=1.0/sep;
+      }
     }
 
-    inline void update(IndexType jat) {
-      for(int iat=0,loc=jat; iat<N[SourceIndex]; iat++, loc += N[VisitorIndex]) {
+    inline void update(IndexType jat) 
+    {
+      for(int iat=0,loc=jat; iat<N[SourceIndex]; iat++, loc += N[VisitorIndex]) 
+      {
 	r_m[loc]=Temp[iat].r1;
 	//rr_m[loc]=Temp[iat].rr1;
 	rinv_m[loc]=Temp[iat].rinv1;

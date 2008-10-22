@@ -111,7 +111,6 @@ namespace qmcplusplus {
     ///size of indicies
     TinyVector<IndexType,DIM> N;
 
-    std::string Name;
 
     /** @brief M.size() = N[SourceIndex]+1
      *
@@ -145,6 +144,7 @@ namespace qmcplusplus {
      */
     std::vector<TempDistType> Temp;
 
+    std::string Name;
     ///constructor using source and target ParticleSet
     DistanceTableData(const ParticleSet& source, const ParticleSet& target)
       : Origin(source)
