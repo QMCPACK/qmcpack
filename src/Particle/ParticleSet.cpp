@@ -241,11 +241,12 @@ namespace qmcplusplus {
 
   void
   ParticleSet::makeMoveOnSphere(Index_t iat, const SingleParticlePos_t& displ) {
-    activePtcl=iat;
-    activePos=R[iat]; //save the current position
-    R[iat]=activePos+displ;
-    for(int i=0; i< DistTables.size(); ++i) 
-      DistTables[i]->moveOnSphere(*this,displ,iat);
+    SingleParticlePos_t dum=makeMove(iat,displ);
+    //activePtcl=iat;
+    //activePos=R[iat]; //save the current position
+    //R[iat]=activePos+displ;
+    //for(int i=0; i< DistTables.size(); ++i) 
+    //  DistTables[i]->moveOnSphere(*this,displ,iat);
   }
   
   /** update the particle attribute by the proposed move
