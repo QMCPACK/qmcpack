@@ -53,10 +53,10 @@ namespace qmcplusplus {
     setCommunicator(c);
   }
 
-  EstimatorManager::EstimatorManager(EstimatorManager& em): RecordCount(0),h_file(-1),
-  MainEstimatorName("elocal"),
+  EstimatorManager::EstimatorManager(EstimatorManager& em): 
+    RecordCount(0),h_file(-1),  MainEstimatorName("elocal"),
   Options(em.Options), Archive(0), DebugArchive(0),MainEstimator(0), CompEstimators(0), 
-  EstimatorMap(em.EstimatorMap), pendingRequests(0)
+    EstimatorMap(em.EstimatorMap), pendingRequests(0), myComm(0)
   {
     //inherit communicator
     setCommunicator(em.myComm);
