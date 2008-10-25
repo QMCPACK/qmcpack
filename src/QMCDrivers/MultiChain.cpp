@@ -128,7 +128,6 @@ GrowthDirection(direction), nPsi(npsi), h_config(-1)
   RefSign.resize(npsi); RefSign=0;
   
   Age=0;
-  
 }
 
 MultiChain::~MultiChain() 

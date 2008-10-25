@@ -125,6 +125,11 @@ namespace qmcplusplus {
       app_log() << "  Modified McMillan Jastrow function Two-Body Jastrow Function = " << jastfunction << endl;
       IgnoreSpin=true;
       success = createJAA<ModMcMillanJ2Functor<RealType> >(cur,jastfunction);
+    }else if(jastfunction == "comboMcMillan")
+    {
+      app_log() << "  Combo McMillan Jastrow function Two-Body Jastrow Function = " << jastfunction << endl;
+      IgnoreSpin=true;
+      success = createJAA<comboMcMillanJ2Functor<RealType> >(cur,jastfunction);
     }else if(jastfunction == "McMillan")
     {
       app_log() << "  McMillan Jastrow (LONG RANGE!) function Two-Body Jastrow Function = " << jastfunction << endl;

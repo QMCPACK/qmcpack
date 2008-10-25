@@ -47,7 +47,7 @@ namespace qmcplusplus {
     
     //Extra Observable Spots for Pressure, etc.
     Vector<RealType> deltaRSquared;
-    int stepmade;
+    int stepmade,timesTouched;
 
     inline Bead(const Bead& a) {
       makeCopyBead(a);
@@ -77,6 +77,7 @@ namespace qmcplusplus {
       Resize_Grad_and_Action(rows,R.size());
       BeadSignWgt.resize(rows);
       Tau_eff.resize(rows);
+
       //       deltaRSquared.resize(3);
     }
 
@@ -101,6 +102,7 @@ namespace qmcplusplus {
       TransProb[0]=a.TransProb[0];
       TransProb[1]=a.TransProb[1];
       stepmade=a.stepmade;
+      timesTouched=a.timesTouched;
       deltaRSquared=a.deltaRSquared;
     }
 
@@ -303,6 +305,7 @@ namespace qmcplusplus {
     inline void Reset_Ages(){
       for(Container_t::iterator Pit=Beads.begin();Pit!=Beads.end();Pit++){
         (*Pit)->stepmade=0;
+        (*Pit)->timesTouched=0;
       };
     };
 

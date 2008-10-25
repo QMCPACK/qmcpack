@@ -213,10 +213,23 @@ QMCHamiltonian::setRandomGenerator(RandomGenerator_t* rng)
 QMCHamiltonian* QMCHamiltonian::makeClone(ParticleSet& qp, TrialWaveFunction& psi) 
 {
   QMCHamiltonian* myclone=new QMCHamiltonian;
-  for(int i=0; i<H.size(); ++i)
+  std::vector<int> depIndexVector;
+  for(int i=0; i<H.size(); ++i){
     myclone->addOperator(H[i]->makeClone(qp,psi),H[i]->myName,true);
-  for(int i=0; i<auxH.size(); ++i)
-    myclone->addOperator(auxH[i]->makeClone(qp,psi),auxH[i]->myName,false);
+    if (H[i]->Dependants != 0 )
+//       cout<<i<<endl;
+      depIndexVector.push_back(i);
+  }
+  for(int i=0; i<auxH.size(); ++i){
+    QMCHamiltonianBase* auxi = auxH[i]->makeClone(qp,psi);
+    if (auxi)
+      myclone->addOperator(auxi,auxH[i]->myName,false);
+    else{
+//       cout<<"SHOUTING~!!!"<<i<<"  "<<depIndexVector[depIndexVector.size()-1]<<"  "<<depIndexVector.size()-1<<endl;
+      myclone->addOperator((myclone->getHamiltonian(depIndexVector[depIndexVector.size()-1]))->makeDependants(qp),(myclone->getHamiltonian(depIndexVector[depIndexVector.size()-1]))->depName,false);
+      depIndexVector.pop_back();
+    }
+  }
   //myclone->addObservables(qp.PropertyList);
   myclone->resetObservables(myIndex);
   //Assume tau is correct for the Kinetic energy operator and assign to the rest of the clones

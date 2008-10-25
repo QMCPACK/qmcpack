@@ -38,7 +38,11 @@
 #include "QMCHamiltonians/Pressure.h"
 #include "QMCHamiltonians/RPAPressure.h"
 #include "QMCHamiltonians/HePressure.h"
+// #include "QMCHamiltonians/HePressure_A.h"
 #include "QMCHamiltonians/HFDHE2Potential.h"
+// #include "QMCHamiltonians/HFDHE2Potential_A.h"
+// #include "QMCHamiltonians/HFDHE2Potential_A_tail.h"
+#include "QMCHamiltonians/HFDHE2Potential_tail.h"
 
 
 
@@ -117,6 +121,7 @@ namespace qmcplusplus {
       string cname((const char*)cur->name);
       string potType("0");
       string potName("any");
+      string potUnit("hartree");
       string estType("coulomb");
       string sourceInp(targetPtcl->getName());
       string targetInp(targetPtcl->getName());
@@ -125,6 +130,7 @@ namespace qmcplusplus {
       attrib.add(targetInp,"target");
       attrib.add(potType,"type");
       attrib.add(potName,"name");
+      attrib.add(potUnit,"units");
       attrib.add(estType,"potential");
       attrib.put(cur);
       renameProperty(sourceInp);
@@ -139,8 +145,16 @@ namespace qmcplusplus {
             addConstCoulombPotential(cur,sourceInp);
           }
         } else if(potType == "HFDHE2") {
-          targetH->addOperator(new HFDHE2Potential(*targetPtcl),"HFDHE2",true);
-          app_log() << "  Adding HFDHE2Potential " << endl;
+//           if (potUnit=="Kelvin"){
+//           targetH->addOperator(new HFDHE2Potential_A(*targetPtcl),"HFDHE2",true);
+//           targetH->addOperator(new HFDHE2Potential_A_tail(*targetPtcl),"HFDHE2tail",false);
+//           app_log() << "  Adding HFDHE2Potential(Kelvin) " << endl;
+//           } else {
+            HFDHE2Potential* HFD = new HFDHE2Potential(*targetPtcl);
+            targetH->addOperator(HFD,"HFDHE2",true);
+            targetH->addOperator(HFD->makeDependants(*targetPtcl),HFD->depName,false);
+            app_log() << "  Adding HFDHE2Potential(Au) " << endl;
+          }
         } else if(potType == "pseudo") {
           addPseudoPotential(cur);
         } else if(potType == "cpp") {
@@ -173,9 +187,15 @@ namespace qmcplusplus {
             BP-> put(cur);
             targetH->addOperator(BP,"Pressure",false);
           } else if (estType=="HFDHE2"){
-            HePressure* BP = new HePressure(*targetPtcl);
-            BP-> put(cur);
-            targetH->addOperator(BP,"HePress",false);
+            if (potUnit=="Kelvin"){
+              HePressure_A* BP = new HePressure_A(*targetPtcl);
+              BP-> put(cur);
+              targetH->addOperator(BP,"HePress",false);
+            }else{
+              HePressure* BP = new HePressure(*targetPtcl);
+              BP-> put(cur);
+              targetH->addOperator(BP,"HePress",false);
+            }
           } else if (estType=="RPAZVZB"){
             RPAPressure* BP= new RPAPressure(*targetPtcl);
             

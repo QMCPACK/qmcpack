@@ -62,10 +62,11 @@ namespace qmcplusplus {
     RealType Tau;
     RealType Value;
     RealType NewValue;
-    string myName;
+    string myName,depName;
+    int Dependants;
    
     ///constructor
-    QMCHamiltonianBase():myIndex(-1),Tau(0.0),Value(0.0){
+    QMCHamiltonianBase():myIndex(-1),Tau(0.0),Value(0.0),Dependants(0){
       UpdateMode.set(PRIMARY,1);
     }
 
@@ -159,6 +160,11 @@ namespace qmcplusplus {
     virtual void setRandomGenerator(RandomGenerator_t* rng)
     {
       //empty
+    }
+    
+    virtual QMCHamiltonianBase* makeDependants(ParticleSet& qp )
+    {
+      return 0;
     }
   };
 }

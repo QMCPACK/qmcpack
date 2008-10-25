@@ -33,7 +33,7 @@ namespace qmcplusplus {
   **/
 
   struct HePressure: public QMCHamiltonianBase {
-    double A,alpha,c0,c1,c2,c3,c1p,c2p,c3p,D,rdV ;
+    double A,alpha,c0,c1,c2,c3,c1p,c2p,c3p,D,rdV,dV,dVnorm ;
     double pNorm,tailcorr,rcutoff,kNorm;
     bool ZV;
     bool ZB;
@@ -55,6 +55,7 @@ namespace qmcplusplus {
       Return_t rs = std::pow(3.0/(4.0*M_PI*rho),1.0/3.0);
       pNorm = -1.0/(3.0*P.Lattice.Volume);
       kNorm = 2.0/(3.0*P.Lattice.Volume);
+      dVnorm = 2.0*pNorm*rs;
 
       A = 18.63475757;
       alpha = -2.381392669;
@@ -93,6 +94,7 @@ namespace qmcplusplus {
       Return_t rs = std::pow(3.0/(4.0*M_PI*rho),1.0/3.0);
       pNorm = -1.0/(3.0*P.Lattice.Volume);
       kNorm = 2.0/(3.0*P.Lattice.Volume);
+      dVnorm = 2.0*pNorm*rs;
       
       Return_t r1 = rcutoff;
       Return_t r2 = (r1*r1);
@@ -102,7 +104,7 @@ namespace qmcplusplus {
       tailcorr =  (10*c3)/7*rm7 + (8*c2)/5*rm5 + (2*c1)*rm3 + ( A*std::exp(alpha*r1) * (6 - alpha*rcutoff*(6 - alpha*rcutoff* (3 - alpha* rcutoff))))/(alpha*alpha*alpha);
       tailcorr *= pNorm;
       tailcorr *= 2.0*M_PI*rho*N0;
-      cout<<"  Pressure Tail Correction for "<<sourcePtcl->getName()<<" is: "<<tailcorr<<endl;
+//       cout<<"  Pressure Tail Correction for "<<sourcePtcl->getName()<<" is: "<<tailcorr<<endl;
 
     }
 
@@ -126,12 +128,12 @@ namespace qmcplusplus {
             TMP1 = c0*RR*std::exp(alpha*RR) - (c1p*rm6 + c2p*rm8 + c3p*rm10 + 2.0* (c1*rm6+c2*rm8+c3*rm10)*D*rm1*t1 )*dampF;
           } else  TMP1 = c0*RR*std::exp(alpha*RR) - (c1p*rm6 + c2p*rm8 + c3p*rm10);
           Value += TMP1;
-//           dV += Value*rm1;
+          dV += TMP1/RR;
         }
       }
-//       dV *= -pNorm;
+      dV *= dVnorm;
       Value *= pNorm;
-      rdV = Value;
+      rdV = Value + tailcorr;
       Value += kNorm*KE;
       Value += tailcorr;
       
@@ -172,14 +174,14 @@ namespace qmcplusplus {
     {
       myIndex=plist.add("HePress");
       plist.add("rijdrV");
-//       plist.add("drV");
+      plist.add("drV");
     }
 
     void setObservables(PropertySetType& plist)
     {
       plist[myIndex]=Value;
       plist[myIndex+1]=rdV;
-//       plist[myIndex+2]=dV;
+      plist[myIndex+2]=dV;
     }
   };
 }

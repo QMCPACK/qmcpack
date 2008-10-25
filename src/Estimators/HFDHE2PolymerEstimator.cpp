@@ -52,8 +52,9 @@ namespace qmcplusplus {
     elocal_name.push_back("ElSumPot");
     elocal_name.push_back("Virial");
     elocal_name.push_back("MaxAge");
+    elocal_name.push_back("centerV");
 
-    scalars.resize(SizeOfHamiltonians+5);
+    scalars.resize(SizeOfHamiltonians+6);
     scalars_saved=scalars;
     pNorm=0.0;
     
@@ -115,25 +116,25 @@ namespace qmcplusplus {
       int Bage=Rage;
 
       RealType tmpV=0.0;
-      RealType tmpP=0.0;
+      RealType tmpF=0.0;
       KEconst = (*(Reptile->begin()))->Drift.size()  * 1.5 * OneOverTau;
       for( MultiChain::iterator Bit = Reptile->begin();Bit != (Reptile->end());Bit++){
-        tmpP+= (*Bit)->getPropertyBase(i)[Pindex+1+FirstHamiltonian];
+        tmpF+= (*Bit)->getPropertyBase(i)[Pindex+2+FirstHamiltonian];
         tmpV+=(*Bit)->getPropertyBase(i)[LOCALPOTENTIAL];
         Bage=min((*Bit)->stepmade,Bage);
       };
 
-      tmpP-=0.5*Reptile->back()->getPropertyBase(i)[Pindex+1+FirstHamiltonian];
-      tmpP-=0.5*Reptile->front()->getPropertyBase(i)[Pindex+1+FirstHamiltonian];
+      tmpF-=0.5*Reptile->back()->getPropertyBase(i)[Pindex+2+FirstHamiltonian];
+      tmpF-=0.5*Reptile->front()->getPropertyBase(i)[Pindex+2+FirstHamiltonian];
       tmpV-=0.5*Reptile->back()->getPropertyBase(i)[LOCALPOTENTIAL];
       tmpV-=0.5*Reptile->front()->getPropertyBase(i)[LOCALPOTENTIAL];
       tmpV *= -2.0*pNorm*Tau;
-      tmpP *= Tau;
+      tmpF *= Tau;
 
-      scalars[SizeOfHamiltonians+1](tmpV+tmpP,uw);
-      scalars[SizeOfHamiltonians+2](eloc*(tmpV+tmpP),uw);
+      scalars[SizeOfHamiltonians+1](tmpV+tmpF,uw);
+      scalars[SizeOfHamiltonians+2](eloc*(tmpV+tmpF),uw);
       scalars[SizeOfHamiltonians+4](Rage-Bage,1.0);
-
+      scalars[SizeOfHamiltonians+5](CenProp[LOCALPOTENTIAL] ,uw);
     }
   }
 
