@@ -190,25 +190,17 @@ namespace qmcplusplus {
             Pressure* BP = new Pressure(*targetPtcl);
             BP-> put(cur);
             targetH->addOperator(BP,"Pressure",false);
-          } 
-          //JNKIM COMMENTED OUT UNTIL IT IS FIXED
-          //else if (estType=="HFDHE2")
-          //{
-          //  if (potUnit=="Kelvin")
-          //  {
-          //    HePressure_A* BP = new HePressure_A(*targetPtcl);
-          //    BP-> put(cur);
-          //    targetH->addOperator(BP,"HePress",false);
-          //  }
-          //  else
-          //  {
-          //    HePressure* BP = new HePressure(*targetPtcl);
-          //    BP-> put(cur);
-          //    targetH->addOperator(BP,"HePress",false);
-          //  }
-          //} 
-          else if (estType=="RPAZVZB")
-          {
+          } else if (estType=="HFDHE2"){
+//             if (potUnit=="Kelvin"){
+//               HePressure_A* BP = new HePressure_A(*targetPtcl);
+//               BP-> put(cur);
+//               targetH->addOperator(BP,"HePress",false);
+//             }else{
+              HePressure* BP = new HePressure(*targetPtcl);
+              BP-> put(cur);
+              targetH->addOperator(BP,"HePress",false);
+//             }
+          } else if (estType=="RPAZVZB"){
             RPAPressure* BP= new RPAPressure(*targetPtcl);
             
             ParticleSet* Isource;
