@@ -40,7 +40,7 @@
 #include "QMCHamiltonians/HePressure.h"
 // #include "QMCHamiltonians/HePressure_A.h"
 #include "QMCHamiltonians/HFDHE2Potential.h"
-// #include "QMCHamiltonians/HFDHE2Potential_A.h"
+//#include "QMCHamiltonians/HFDHE2Potential_A.h"
 // #include "QMCHamiltonians/HFDHE2Potential_A_tail.h"
 #include "QMCHamiltonians/HFDHE2Potential_tail.h"
 
@@ -141,10 +141,11 @@ namespace qmcplusplus {
         {
           if(targetInp == targetPtcl->getName())
             addCoulombPotential(cur);
-          else {
+          else 
             addConstCoulombPotential(cur,sourceInp);
-          }
-        } else if(potType == "HFDHE2") {
+        } 
+        else if(potType == "HFDHE2") 
+        {
 //           if (potUnit=="Kelvin"){
 //           targetH->addOperator(new HFDHE2Potential_A(*targetPtcl),"HFDHE2",true);
 //           targetH->addOperator(new HFDHE2Potential_A_tail(*targetPtcl),"HFDHE2tail",false);
@@ -154,10 +155,13 @@ namespace qmcplusplus {
             targetH->addOperator(HFD,"HFDHE2",true);
             targetH->addOperator(HFD->makeDependants(*targetPtcl),HFD->depName,false);
             app_log() << "  Adding HFDHE2Potential(Au) " << endl;
-          }
-        } else if(potType == "pseudo") {
+        }
+        else if(potType == "pseudo") 
+        {
           addPseudoPotential(cur);
-        } else if(potType == "cpp") {
+        } 
+        else if(potType == "cpp") 
+        {
           addCorePolPotential(cur);
         }
         else if(potType.find("num") < potType.size())
@@ -186,17 +190,25 @@ namespace qmcplusplus {
             Pressure* BP = new Pressure(*targetPtcl);
             BP-> put(cur);
             targetH->addOperator(BP,"Pressure",false);
-          } else if (estType=="HFDHE2"){
-            if (potUnit=="Kelvin"){
-              HePressure_A* BP = new HePressure_A(*targetPtcl);
-              BP-> put(cur);
-              targetH->addOperator(BP,"HePress",false);
-            }else{
-              HePressure* BP = new HePressure(*targetPtcl);
-              BP-> put(cur);
-              targetH->addOperator(BP,"HePress",false);
-            }
-          } else if (estType=="RPAZVZB"){
+          } 
+          //JNKIM COMMENTED OUT UNTIL IT IS FIXED
+          //else if (estType=="HFDHE2")
+          //{
+          //  if (potUnit=="Kelvin")
+          //  {
+          //    HePressure_A* BP = new HePressure_A(*targetPtcl);
+          //    BP-> put(cur);
+          //    targetH->addOperator(BP,"HePress",false);
+          //  }
+          //  else
+          //  {
+          //    HePressure* BP = new HePressure(*targetPtcl);
+          //    BP-> put(cur);
+          //    targetH->addOperator(BP,"HePress",false);
+          //  }
+          //} 
+          else if (estType=="RPAZVZB")
+          {
             RPAPressure* BP= new RPAPressure(*targetPtcl);
             
             ParticleSet* Isource;
