@@ -50,16 +50,20 @@ namespace qmcplusplus {
     
     elocal_name.push_back("SumPot");
     elocal_name.push_back("ElSumPot");
+    elocal_name.push_back("TruncSumPot");
+    elocal_name.push_back("TruncElSumPot");
     elocal_name.push_back("Virial");
     elocal_name.push_back("MaxAge");
     elocal_name.push_back("centerV");
+    elocal_name.push_back("decorr");
 
-    scalars.resize(SizeOfHamiltonians+6);
+    scalars.resize(SizeOfHamiltonians+9);
     scalars_saved=scalars;
     pNorm=0.0;
     
     Pindex = h.getHamiltonian("HePress")->myIndex;
     HDFHE2index = h.getHamiltonian("HFDHE2")->myIndex;
+    ObsEvals=0;
   }
 
 
@@ -110,31 +114,90 @@ namespace qmcplusplus {
       };
       //Center Pressure
       RealType* restrict CenProp(Reptile->center()->getPropertyBase(i));
-      scalars[SizeOfHamiltonians+3]( (2.0*eloc-2.0*CenProp[LOCALPOTENTIAL])*pNorm + CenProp[Pindex+1+FirstHamiltonian] ,uw);
+      scalars[SizeOfHamiltonians+5]( (2.0*eloc-2.0*CenProp[LOCALPOTENTIAL])*pNorm + CenProp[Pindex+1+FirstHamiltonian] ,uw);
       
       int Rage(Reptile->Age);
       int Bage=Rage;
 
       RealType tmpV=0.0;
       RealType tmpF=0.0;
-      KEconst = (*(Reptile->begin()))->Drift.size()  * 1.5 * OneOverTau;
-      for( MultiChain::iterator Bit = Reptile->begin();Bit != (Reptile->end());Bit++){
-        tmpF+= (*Bit)->getPropertyBase(i)[Pindex+2+FirstHamiltonian];
-        tmpV+=(*Bit)->getPropertyBase(i)[LOCALPOTENTIAL];
-        Bage=min((*Bit)->stepmade,Bage);
+      
+//       if (truncLength<0){
+//         for( MultiChain::iterator Bit = Reptile->begin();Bit != (Reptile->end());Bit++){
+//           tmpF+= (*Bit)->getPropertyBase(i)[Pindex+2+FirstHamiltonian];
+//           tmpV+=(*Bit)->getPropertyBase(i)[LOCALPOTENTIAL];
+//           Bage=min((*Bit)->stepmade,Bage);
+//         };
+// 
+//       tmpF-=0.5*Reptile->back()->getPropertyBase(i)[Pindex+2+FirstHamiltonian];
+//       tmpF-=0.5*Reptile->front()->getPropertyBase(i)[Pindex+2+FirstHamiltonian];
+//       tmpV-=0.5*Reptile->back()->getPropertyBase(i)[LOCALPOTENTIAL];
+//       tmpV-=0.5*Reptile->front()->getPropertyBase(i)[LOCALPOTENTIAL];
+//       tmpV *= -2.0*pNorm*Tau;
+//       tmpF *= Tau;
+// 
+//       scalars[SizeOfHamiltonians+1](tmpV+tmpF,uw);
+//       scalars[SizeOfHamiltonians+2](eloc*(tmpV+tmpF),uw);
+//       scalars[SizeOfHamiltonians+3](tmpV+tmpF,uw);
+//       scalars[SizeOfHamiltonians+4](eloc*(tmpV+tmpF),uw);
+//       } else {
+        MultiChain::iterator Bit = Reptile->begin();
+        MultiChain::iterator Lit = Reptile->end();
+        MultiChain::iterator Endit = Reptile->end();
+        Endit--;
+        
+        //truncated version of estimator
+        Lit--;
+        for(int j=0 ;( (j<truncLength) && (Bit != Endit) );Bit++,Lit--,j++){
+          tmpF+= 0.5*(*Bit)->getPropertyBase(i)[Pindex+2+FirstHamiltonian];
+          tmpV+= 0.5*(*Bit)->getPropertyBase(i)[LOCALPOTENTIAL];
+          tmpF+= 0.5*(*Lit)->getPropertyBase(i)[Pindex+2+FirstHamiltonian];
+          tmpV+= 0.5*(*Lit)->getPropertyBase(i)[LOCALPOTENTIAL];
+          Bage=min((*Bit)->stepmade,Bage);
+        };
+        RealType tmpval = (tmpV*(-2.0*pNorm) + tmpF)*Tau;
+        
+        scalars[SizeOfHamiltonians+3](tmpval,uw);
+        scalars[SizeOfHamiltonians+4](eloc*tmpval,uw);
+        
+        //continue sum for comparison to truncated version
+        for( ;Bit != Endit;Bit++,Lit--){
+          tmpF+= 0.5*(*Bit)->getPropertyBase(i)[Pindex+2+FirstHamiltonian];
+          tmpV+= 0.5*(*Bit)->getPropertyBase(i)[LOCALPOTENTIAL];
+          tmpF+= 0.5*(*Lit)->getPropertyBase(i)[Pindex+2+FirstHamiltonian];
+          tmpV+= 0.5*(*Lit)->getPropertyBase(i)[LOCALPOTENTIAL];
+          Bage=min((*Bit)->stepmade,Bage);
+        };
+
+        tmpV *= -2.0*pNorm*Tau;
+        tmpF *= Tau;
+
+        scalars[SizeOfHamiltonians+1](tmpV+tmpF,uw);
+        scalars[SizeOfHamiltonians+2](eloc*(tmpV+tmpF),uw);
+//       };
+
+      scalars[SizeOfHamiltonians+6](Rage-Bage,1.0);
+      scalars[SizeOfHamiltonians+7](CenProp[LOCALPOTENTIAL] ,uw);
+
+      //calculate correlation between head energy and energy at some point in chain to truncate correctly
+      Bit= Reptile->begin();
+      ObsEvals+=1.0;
+      RealType Opf=1.0/ObsEvals;
+      for(int j=0;Bit != (Reptile->end());Bit++,j++){
+        ObsCont[j]+=(*Bit)->getPropertyBase(i)[LOCALENERGY];
+        ObsContAvg[j]=ObsCont[j]*Opf;
       };
+      int AC(-1);
+      RealType tmpE=1.0;
+      RealType Hac=HeadProp[LOCALENERGY]-ObsContAvg[0];
 
-      tmpF-=0.5*Reptile->back()->getPropertyBase(i)[Pindex+2+FirstHamiltonian];
-      tmpF-=0.5*Reptile->front()->getPropertyBase(i)[Pindex+2+FirstHamiltonian];
-      tmpV-=0.5*Reptile->back()->getPropertyBase(i)[LOCALPOTENTIAL];
-      tmpV-=0.5*Reptile->front()->getPropertyBase(i)[LOCALPOTENTIAL];
-      tmpV *= -2.0*pNorm*Tau;
-      tmpF *= Tau;
-
-      scalars[SizeOfHamiltonians+1](tmpV+tmpF,uw);
-      scalars[SizeOfHamiltonians+2](eloc*(tmpV+tmpF),uw);
-      scalars[SizeOfHamiltonians+4](Rage-Bage,1.0);
-      scalars[SizeOfHamiltonians+5](CenProp[LOCALPOTENTIAL] ,uw);
+      Bit = Reptile->begin();
+      Bit++;
+      for(int j=1; (Bit!=(Reptile->end()))&&(tmpE>=0.0) ;Bit++,j++){
+        tmpE=Hac*( (*Bit)->getPropertyBase(i)[LOCALENERGY]-ObsContAvg[j] );
+        AC+=1;
+      };
+      scalars[SizeOfHamiltonians+8](AC,1.0);
     }
   }
 

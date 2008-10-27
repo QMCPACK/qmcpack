@@ -108,6 +108,7 @@ namespace qmcplusplus {
 
     ParticleSet::ParticlePos_t gRand;
     RealType MSS,Tauoverm,sqrtTauoverm,Ecut;
+    int maxTouch;
   };
 }
 #endif

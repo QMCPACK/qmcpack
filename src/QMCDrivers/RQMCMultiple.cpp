@@ -486,12 +486,16 @@ namespace qmcplusplus {
     string observ("NONE");
 
     Ecut=-1e100;
+    maxTouch=100;
+    int trunclength(ReptileLength);
     OhmmsAttributeSet attrib;
     ParameterSet nattrib;
     scaleBeadDrift = "no";
     attrib.add(observ,"observables" );
     nattrib.add(MSS,"mass","double" );
     nattrib.add(Ecut,"Ecut","double" );
+    nattrib.add(maxTouch,"maxTouch","int" );
+    nattrib.add(trunclength,"truncLength","int" );
     attrib.add(scaleBeadDrift,"scaleDrift");
     attrib.put(q);
     nattrib.put(q);
@@ -524,6 +528,8 @@ namespace qmcplusplus {
       } else if (observ=="HFDHE2"){
         cout<<"Using HFDHE2 observables"<<endl;
         HFDHE2PolymerEstimator* HFp = new HFDHE2PolymerEstimator(H,nPsi);
+        HFp->settruncLength(trunclength);
+        HFp->setrLen(ReptileLength);
         HFp->setpNorm(1.0/( W.Lattice.DIM *  W.Lattice.Volume));
         multiEstimator = HFp;
       }
@@ -584,6 +590,14 @@ namespace qmcplusplus {
     //create a 3N-Dimensional Gaussian with variance=1
     makeGaussRandom(gRand);
 
+    
+    tail->timesTouched +=1;
+    bool FORCE=0;
+    if (tail->timesTouched > maxTouch) {
+      FORCE=1;
+      app_log()<<"Forcing Accept!!"<<endl;
+    };
+    
 //     //new position,\f$R_{yp} = R_{xp} + \sqrt(2}*\Delta + tau*D_{xp}\f$
 //     W.R = head->R + m_sqrttau*gRand + Tau*head->Drift;
 //     //Save Transition Probability
@@ -602,7 +616,9 @@ namespace qmcplusplus {
 //       gRand = deltaR-Tau*(*head->Gradients[ipsi]);
 //       head->Action(ipsi,forward)=0.5*m_oneover2tau*Dot(gRand,gRand);
 //     }
+    //Just making sure this is set
     NewBead->stepmade=Reptile->Age;
+    NewBead->timesTouched=0;
 //     //new position,\f$R_{yp} = R_{xp} + \sqrt(2}*\Delta + tau*D_{xp}\f$
 //     W.R = head->R + m_sqrttau*gRand + Tau*head->Drift;
 //     //Save Transition Probability
@@ -745,8 +761,9 @@ namespace qmcplusplus {
 
         AcceptProb=std::exp(NewGlobalWgt - Reptile->GlobalWgt + head->TransProb[forward] - next->TransProb[backward]);
       }
-
-      if(Random() < AcceptProb){
+      
+//FORCE acceptance if tail bead is the stuck one.
+      if((Random() < AcceptProb)||(FORCE)){
 
       //Update Reptile information
         Reptile->GlobalWgt=NewGlobalWgt;
