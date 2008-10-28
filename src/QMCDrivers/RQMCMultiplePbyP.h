@@ -120,9 +120,15 @@ namespace qmcplusplus {
     ParticleSet::ParticleLaplacian_t dL;
     void InitBisection(Buffer_t &w_buffer);
     vector<Bead_ParticleSet*> tempReptile;
-
+    vector<Bead_ParticleSet*> tempReptile2;
     vector<vector<TrialWaveFunction*> > psiReptile;
     vector<vector<QMCHamiltonian*> > hReptile;
+    vector<vector<TrialWaveFunction*> > psiReptile2;
+    vector<vector<QMCHamiltonian*> > hReptile2;
+    void ActionChange_displace(bool oldData);
+    void moveReptile_displace();
+	
+
     void RegisterMe();
 
 

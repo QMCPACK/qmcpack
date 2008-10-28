@@ -48,6 +48,7 @@ namespace qmcplusplus {
     //Extra Observable Spots for Pressure, etc.
     Vector<RealType> deltaRSquared;
     int stepmade,timesTouched;
+    vector<int> ptclAge;
 
     inline Bead(const Bead& a) {
       makeCopyBead(a);
@@ -125,6 +126,11 @@ namespace qmcplusplus {
       deltaRSquared=0.0;
       Action.resize(n,3);
       Action=0.0;
+      ptclAge.resize(R.size());
+      for (int i=0;i<ptclAge.size();i++)
+        ptclAge[i]=0;
+      
+
     }
 
     void registerData(Buffer_t& buf);

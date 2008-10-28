@@ -81,10 +81,31 @@ namespace qmcplusplus {
 
 	//	moveReptile();
 	moveReptile_bisection();
+	Estimators->accumulate(W);
+	if (block>3){
+	  moveReptile_displace();	
+	  Estimators->accumulate(W);
+	}
 	moveReptile_bisection_end();	
+
+	for (int i=0;i<ReptileLength;i++){
+          (*Reptile)[i]->stepmade=(*Reptile)[i]->ptclAge[0];
+          for (int ptcl=0;ptcl<W.R.size();ptcl++){
+            if ((*Reptile)[i]->ptclAge[ptcl]<=(*Reptile)[i]->stepmade){
+              (*Reptile)[i]->stepmade=(*Reptile)[i]->ptclAge[ptcl];
+              //              cerr<<(*Reptile)[i]->ptclAge[ptcl]<<" "<<ptcl<<" "<<i<<endl;                                                                   
+            }
+          }
+        }
 
 	Estimators->accumulate(W);
         Reptile->Age +=1;
+	int min=(*Reptile)[0]->stepmade;
+        for (int i=0;i<ReptileLength;i++)
+          if ((*Reptile)[i]->stepmade<min)
+            min=(*Reptile)[i]->stepmade;
+        cerr<<Reptile->Age-min<<endl;
+
         step++; CurrentStep++;
       } while(step<nSteps);
       multiEstimator->evaluateDiff();
@@ -176,6 +197,7 @@ namespace qmcplusplus {
 
 
 
+
   void RQMCMultiplePbyP::InitBisection(Buffer_t& w_buffer)
   {
 
@@ -187,23 +209,46 @@ namespace qmcplusplus {
     //    MaxLevel=2;
     int num_bisection_slices=std::pow(2.0,(double)MaxLevel);
     tempReptile.resize(num_bisection_slices+1);
-    //    tempReptile_slow.resize(num_bisection_slices+1);
+    tempReptile2.resize(ReptileLength);
+    
     psiReptile.resize(num_bisection_slices+1);
     hReptile.resize(num_bisection_slices+1);
+
+    psiReptile2.resize(ReptileLength);
+    hReptile2.resize(ReptileLength);
+
+    //    for(int i=0; i<=num_bisection_slices;i++){
+    for(int i=0; i<ReptileLength;i++){
+
+      char pname[16];
+      sprintf(pname,"Bead_PS.%s.c%i",W.getName().c_str(),i);
+      tempReptile2[i]=new Bead_ParticleSet(W,nPsi);
+      tempReptile2[i]->setName(pname);
+      Bead_ParticleSet &tempBPS(*tempReptile2[i]);
+      //      sprintf(pname,"Bead_PS_H.%s.c%i",W.getName().c_str(),i);
+      for (int ipsi=0;ipsi<nPsi;ipsi++){
+	psiReptile2[i].push_back(Psi1[ipsi]->makeClone(tempBPS));
+	hReptile2[i].push_back(H1[ipsi]->makeClone(tempBPS,*psiReptile2[i][ipsi]));
+	//	hReptile[i][ipsi]->setName(pname);//new
+      }
+    }
+
     for(int i=0; i<=num_bisection_slices;i++){
 
       char pname[16];
       sprintf(pname,"Bead_PS.%s.c%i",W.getName().c_str(),i);
-      tempReptile[i]=new Bead_ParticleSet(W,nPsi);
-      tempReptile[i]->setName(pname);
-      Bead_ParticleSet &tempBPS(*tempReptile[i]);
-      //      sprintf(pname,"Bead_PS_H.%s.c%i",W.getName().c_str(),i);
+      tempReptile[i]=tempReptile2[i];
+      psiReptile[i].resize(nPsi);
+      hReptile[i].resize(nPsi);
       for (int ipsi=0;ipsi<nPsi;ipsi++){
-	psiReptile[i].push_back(Psi1[ipsi]->makeClone(tempBPS));
-	hReptile[i].push_back(H1[ipsi]->makeClone(tempBPS,*psiReptile[i][ipsi]));
-	//	hReptile[i][ipsi]->setName(pname);//new
+	psiReptile[i][ipsi]=psiReptile2[i][ipsi];
+	hReptile[i][ipsi]=hReptile2[i][ipsi];
       }
     }
+
+
+
+
     RegisterMe();
     
     myTimers.push_back(new NewTimer("RQMCMultiplePbyP::BisectionMove"));   //0
@@ -227,21 +272,391 @@ namespace qmcplusplus {
 
   }
 
+
   void RQMCMultiplePbyP::RegisterMe()
   {
 
     //resize tempReptile info
-    for (int i=0;i<tempReptile.size();++i){
+    for (int i=0;i<tempReptile2.size();++i){
       Walker_t::Buffer_t tbuffer;
-      tempReptile[i]->registerData(tbuffer);
+      tempReptile2[i]->registerData(tbuffer);
       for (int ipsi=0;ipsi<nPsi;ipsi++){
 
-	psiReptile[i][ipsi]->registerData(*tempReptile[i],tbuffer);
-	RealType eloc=hReptile[i][ipsi]->registerData(*tempReptile[i],tbuffer);
+	psiReptile2[i][ipsi]->registerData(*tempReptile2[i],tbuffer);
+	RealType eloc=hReptile2[i][ipsi]->registerData(*tempReptile2[i],tbuffer);
       }
     }
 
   }
+
+//   void RQMCMultiplePbyP::InitBisection(Buffer_t& w_buffer)
+//   {
+
+//     grand_transProb.resize(W.G.size());//dothis better
+//     lambda=1.0/(2.0*MSS);
+//     assert(lambda==0.5); //6.059;
+//     cout<<"My max level is "<<MaxLevel<<endl;
+//     assert(MaxLevel!=-1);
+//     //    MaxLevel=2;
+//     int num_bisection_slices=std::pow(2.0,(double)MaxLevel);
+//     tempReptile.resize(num_bisection_slices+1);
+//     tempReptile2.resize(ReptileLength);
+//     //    tempReptile_slow.resize(num_bisection_slices+1);
+//     psiReptile.resize(num_bisection_slices+1);
+//     hReptile.resize(num_bisection_slices+1);
+//     for(int i=0; i<=num_bisection_slices;i++){
+
+//       char pname[16];
+//       sprintf(pname,"Bead_PS.%s.c%i",W.getName().c_str(),i);
+//       tempReptile[i]=new Bead_ParticleSet(W,nPsi);
+//       tempReptile[i]->setName(pname);
+//       Bead_ParticleSet &tempBPS(*tempReptile[i]);
+//       //      sprintf(pname,"Bead_PS_H.%s.c%i",W.getName().c_str(),i);
+//       for (int ipsi=0;ipsi<nPsi;ipsi++){
+// 	psiReptile[i].push_back(Psi1[ipsi]->makeClone(tempBPS));
+// 	hReptile[i].push_back(H1[ipsi]->makeClone(tempBPS,*psiReptile[i][ipsi]));
+// 	//	hReptile[i][ipsi]->setName(pname);//new
+//       }
+//     }
+//     RegisterMe();
+    
+//     myTimers.push_back(new NewTimer("RQMCMultiplePbyP::BisectionMove"));   //0
+//     myTimers.push_back(new NewTimer("RQMCMultiplePbyP::GrowMove"));        //1
+//     myTimers.push_back(new NewTimer("RQMCMultiplePbyP::PsiCalc"));         //2
+//     myTimers.push_back(new NewTimer("RQMCMultiplePbyP::HCalc"));           //3
+//     myTimers.push_back(new NewTimer("RQMCMultiplePbyP::BisectionStartup"));//4 
+//     myTimers.push_back(new NewTimer("RQMCMultiplePbyP::BisectionMoves"));  //5
+//     myTimers.push_back(new NewTimer("RQMCMultiplePbyP::other"));           //6
+//     myTimers.push_back(new NewTimer("RQMCMultiplePbyP::highLevel"));       //7
+//     myTimers.push_back(new NewTimer("RQMCMultiplePbyP::sumProperties"));  //8
+//     TimerManager.addTimer(myTimers[1]); 
+//     TimerManager.addTimer(myTimers[0]);
+//     TimerManager.addTimer(myTimers[2]);
+//     TimerManager.addTimer(myTimers[3]);
+//     TimerManager.addTimer(myTimers[4]);
+//     TimerManager.addTimer(myTimers[5]);
+//     TimerManager.addTimer(myTimers[6]);
+//     TimerManager.addTimer(myTimers[7]);
+//     TimerManager.addTimer(myTimers[8]);
+
+//   }
+
+//   void RQMCMultiplePbyP::RegisterMe()
+//   {
+
+//     //resize tempReptile info
+//     for (int i=0;i<tempReptile.size();++i){
+//       Walker_t::Buffer_t tbuffer;
+//       tempReptile[i]->registerData(tbuffer);
+//       for (int ipsi=0;ipsi<nPsi;ipsi++){
+
+// 	psiReptile[i][ipsi]->registerData(*tempReptile[i],tbuffer);
+// 	RealType eloc=hReptile[i][ipsi]->registerData(*tempReptile[i],tbuffer);
+//       }
+//     }
+
+//   }
+
+  void 
+  RQMCMultiplePbyP::ActionChange_displace(bool oldData)
+  {
+    RealType AddPsi=0.0;
+    int toMult;
+    if (oldData)
+      toMult=1;
+    else
+      toMult=-1;
+    for (int ipsi=0;ipsi<nPsi;ipsi++){
+      for (int i=0;i<tempReptile2.size()-1;i++){
+	DeltaG[ipsi]+= tempReptile2[i]->Action(ipsi,forward)*toMult;
+	AddPsi+= tempReptile2[i]->Action(ipsi,forward)*toMult;
+      }
+      for (int i=1;i<tempReptile2.size();i++){
+	DeltaG[ipsi]+= tempReptile2[i]->Action(ipsi,backward)*toMult;
+	AddPsi+= tempReptile2[i]->Action(ipsi,backward)*toMult;
+      }
+      for (int i=0;i<tempReptile2.size();i++){
+	DeltaG[ipsi]+= 2.0*tempReptile2[i]->Action(ipsi,Directionless)*toMult;
+	//	AddPsi+= 2.0*tempReptile2[i]->Action(ipsi,Directionless)*toMult;
+      }
+      for (int i=0;i<tempReptile2.size();i++){
+	DeltaSign[ipsi] -= tempReptile2[i]->BeadSignWgt[ipsi]*toMult;
+      }
+      DeltaG[ipsi]-=tempReptile2[0]->Properties(ipsi,LOGPSI)*toMult;
+      //      AddPsi-=tempReptile2[0]->Properties(ipsi,LOGPSI)*toMult;
+      DeltaG[ipsi]-=tempReptile2[0]->Action(ipsi,Directionless)*toMult; //correct the *2
+      //      AddPsi-=tempReptile2[0]->Action(ipsi,Directionless)*toMult; //correct the *2
+      DeltaG[ipsi]-=tempReptile2[tempReptile2.size()-1]->Properties(ipsi,LOGPSI)*toMult;
+      //      AddPsi-=tempReptile2[tempReptile2.size()-1]->Properties(ipsi,LOGPSI)*toMult;
+      DeltaG[ipsi]-=tempReptile2[tempReptile2.size()-1]->Action(ipsi,Directionless)*toMult; //correct the *2
+      //      AddPsi-=tempReptile2[tempReptile2.size()-1]->Action(ipsi,Directionless)*toMult; //correct the *2
+
+    }
+    //    cerr<<"ADDPsi is "<<AddPsi<<endl;
+    //    cerr<<"Delta G is "<<DeltaG<<endl;
+      
+
+  }
+  
+
+
+  void RQMCMultiplePbyP::moveReptile_displace(){
+    myTimers[0]->start();
+
+
+    int oldForward=forward;
+    int oldBackward=backward;
+    forward=PlusDirection;
+    backward=MinusDirection;
+
+
+    myTimers[4]->start();
+    startSlice=0;
+    endSlice=ReptileLength-1;
+    for (int i=startSlice;i<=endSlice;i++)
+      tempReptile2[i-startSlice]->CopyFromBead(*(*Reptile)[i],psiReptile2[i-startSlice]);
+
+
+    for (int i=startSlice,ii=0;i<=endSlice;i++,ii++){
+      //      tempReptile2[ii]->R=(*Reptile)[i]->R;
+       Walker_t& thisWalker(*((*Reptile)[i]));
+       Walker_t::Buffer_t& w_buffer(thisWalker.DataSet);
+       w_buffer.rewind();
+       //a
+       tempReptile2[ii]->updateBuffer(thisWalker,w_buffer);
+       for (int ipsi=0;ipsi<nPsi;ipsi++){
+    	 RealType logPsi=psiReptile2[ii][ipsi]->updateBuffer(*tempReptile2[ii],w_buffer,true); 
+	 hReptile2[ii][ipsi]->updateBuffer(*tempReptile2[ii],w_buffer);
+	 assert(logPsi=tempReptile2[ii]->getPropertyBase(ipsi)[LOGPSI]);
+	 Copy(tempReptile2[ii]->G,*(tempReptile2[ii]->Gradients[ipsi]));
+  	 *(tempReptile2[ii]->Laplacians[ipsi])=tempReptile2[ii]->L;	  
+       }
+       w_buffer.rewind();
+//a
+       tempReptile2[ii]->copyFromBuffer(w_buffer);
+       for (int ipsi=0;ipsi<nPsi;ipsi++){
+         psiReptile2[ii][ipsi]->copyFromBuffer(*tempReptile2[ii],w_buffer);
+         hReptile2[ii][ipsi]->copyFromBuffer(*tempReptile2[ii],w_buffer);
+       }
+    }
+    myTimers[4]->stop();
+    
+    
+    ///the invariant here is that you have the laplacians 
+    ///and gradients that stay correct because you will need
+    ///them from previous configurations
+    int totalNumParticles=W.getTotalNum();
+    for (int k=0;k<1;k++)
+      for (int movePtcl=0;movePtcl<totalNumParticles; movePtcl++) {
+	bool shouldReject=false;
+	myTimers[7]->start();
+	myTimers[5]->start();
+        DeltaG=0.0;
+        DeltaSign=0.0;
+
+	//old is added
+	///calculate the old action
+	ActionChange_displace(true);
+
+	///save the old data
+	for (int i=0;i<tempReptile2.size();i++)
+	  tempReptile2[i]->SaveOldData();
+	
+	RealType sigma=3.0;
+	ParticleSet::ParticlePos_t toMove_rand(1);
+       	for (int dim=0;dim<DIM;dim++)
+	  toMove_rand[0][dim]=sigma*(Random()-0.5);
+	//	cerr<<toMove_rand[0][0]<<endl;
+	for (int i=0;i<tempReptile2.size();i++)
+	  tempReptile2[i]->makeMove(movePtcl,toMove_rand[0]);
+
+	for (int i=0;i<tempReptile2.size();i++){
+	  vector<TrialWaveFunction*> &Psi_curr(psiReptile2[i]);
+	  vector<QMCHamiltonian*> &H_curr(hReptile2[i]);
+	  for (int ipsi=0;ipsi<nPsi;ipsi++){
+	    RealType* restrict NewBeadProp=tempReptile2[i]->getPropertyBase(ipsi);
+	    tempReptile2[i]->SetGradientAndLaplacian(ipsi);
+	    RealType logPsi;
+	    RealType eloc;
+	    RealType oldLogPsi=tempReptile2[i]->getPropertyBase(ipsi)[LOGPSI];
+	    myTimers[2]->start();
+	    RealType ratio=Psi_curr[ipsi]->ratio(*tempReptile2[i],movePtcl,dG,dL);	 
+	    myTimers[2]->stop();
+	    logPsi=std::log(ratio)+oldLogPsi;
+	    NewBeadProp[LOGPSI]=logPsi;
+	    myTimers[3]->start();
+	    tempReptile2[i]->dG=dG; 
+	    tempReptile2[i]->dL=dL; 
+	    eloc=NewBeadProp[LOCALENERGY]=hReptile2[i][ipsi]->evaluatePbyP(*tempReptile2[i],movePtcl);
+	    NewBeadProp[LOCALPOTENTIAL]=hReptile2[i][ipsi]->getLocalPotential();
+	    hReptile2[i][ipsi]->saveProperty(NewBeadProp);
+	    myTimers[3]->stop();
+	    tempReptile2[i]->G=tempReptile2[i]->G+dG;
+	    tempReptile2[i]->L=tempReptile2[i]->L+dL;
+	    Copy(tempReptile2[i]->G,*(tempReptile2[i]->Gradients[ipsi]));
+	    *(tempReptile2[i]->Laplacians[ipsi])=tempReptile2[i]->L;	  
+	    if (ratio<0)
+	      NewBeadProp[SIGN]=abs(NewBeadProp[SIGN]-M_PI);
+	    myTimers[8]->start();
+	    tempReptile2[i]->Action(ipsi,Directionless)=0.5*Tau*eloc;
+	    tempReptile2[i]->getDrift(branchEngine->LogNorm);//a
+	    if (i!=0){
+	      deltaR=(*tempReptile2[i-1]).R-(*tempReptile2[i]).R; //PBC???
+	      W.applyMinimumImage(deltaR);
+	      grand_transProb=deltaR-Tau*tempReptile2[i]->Drift;//a
+	      tempReptile2[i]->TransProb[MinusDirection]=Dot(grand_transProb,grand_transProb)*0.5/Tau;//a
+	      deltaR=deltaR-Tau*tempReptile2[i]->G; //not hack any more
+	      tempReptile2[i]->Action(ipsi,backward)=0.5*m_oneover2tau*Dot(deltaR,deltaR);
+	      //	      cerr<<"backward: "<<tempReptile2[i]->Action(ipsi,backward)<<" ";
+	      //	      cerr<<tempReptile2[i]->Action_saved(ipsi,backward)<<endl;
+	      //	      cerr<<deltaR<<endl;
+	    }
+	    if (i!=tempReptile2.size()-1){
+	      deltaR=(*tempReptile2[i+1]).R-(*tempReptile2[i]).R;
+	      W.applyMinimumImage(deltaR);
+	      grand_transProb=deltaR-Tau*tempReptile2[i]->Drift;//a
+	      tempReptile2[i]->TransProb[PlusDirection]=Dot(grand_transProb,grand_transProb)*0.5/Tau;//a
+	      deltaR=deltaR-Tau*tempReptile2[i]->G; //not hack any more
+	      tempReptile2[i]->Action(ipsi,forward)=0.5*m_oneover2tau*Dot(deltaR,deltaR);
+	      //	      cerr<<"forward: "<<tempReptile2[i]->Action(ipsi,forward)<<" ";
+	      //	      cerr<<tempReptile2[i]->Action_saved(ipsi,forward)<<endl;
+	      //	      cerr<<deltaR<<endl;
+
+	    }
+	    //checks to see if the refsign and you are the same
+	    //if refSign==newBeadProb[sign] then beadwgt=1  else beadwgt=0
+	    int beadwgt=abs( ( Reptile->getSign(NewBeadProp[SIGN])+Reptile->RefSign[ipsi] )/2 );
+	    tempReptile2[i]->BeadSignWgt[ipsi]=beadwgt;
+	    if (NewBeadProp[LOCALENERGY]<= KEcut) // && (Reptile->Age>100))
+	      shouldReject=false;
+	    
+	  }
+	  myTimers[8]->stop();
+	}
+	
+	
+	myTimers[6]->start();
+	ActionChange_displace(false);
+	
+	/// Here we should check to see if the Hamiltonian for all the reptiles
+	/// has managed to go over the nodes 
+	bool someHamiltonian_ok=false;
+	for (int ipsi=0;ipsi<nPsi;ipsi++){
+	  bool myHamiltonian_ok=true;
+	  for (int slice=0;slice<tempReptile2.size();slice++){
+	    myHamiltonian_ok = tempReptile2[slice]->BeadSignWgt[ipsi]==1 && myHamiltonian_ok;
+	  }
+	  someHamiltonian_ok = someHamiltonian_ok || myHamiltonian_ok;
+	}
+	///If some hamiltonian has overlap then we are ok
+	RealType AcceptProb(-1.0),NewGlobalWgt(0.0);
+	RealType RefAction(-1.0e20);
+	if (someHamiltonian_ok)
+	  //	  cerr<<"NOT OVER NODES"<<endl;
+	if (shouldReject)
+	  cerr<<"REJECTING DUE TO KE CUTOFF"<<endl;
+	if (someHamiltonian_ok && !shouldReject) {
+	  for (int ipsi=0;ipsi<nPsi;ipsi++){
+	    NewGlobalAction[ipsi]=Reptile->GlobalAction[ipsi]+DeltaG[ipsi];
+	    
+	    
+	    //Compute the new sign  
+	    NewGlobalSignWgt[ipsi]=Reptile->GlobalSignWgt[ipsi]+
+	      DeltaSign[ipsi];
+	    //Weight: 1 if all beads have the same sign. 0 otherwise. 
+	    WeightSign[ipsi]=std::max(0,NewGlobalSignWgt[ipsi]-Reptile->Last);
+	    // Assign Reference Action
+	    if(WeightSign[ipsi]>0)RefAction=max(RefAction,NewGlobalAction[ipsi]);
+	  }
+	  
+	  //Compute Log of global Wgt
+	  for(int ipsi=0; ipsi<nPsi; ipsi++) {
+	    RealType DeltaAction(NewGlobalAction[ipsi]-RefAction);
+	    if((WeightSign[ipsi]>0) && (DeltaAction > -30.0)) 
+	      NewGlobalWgt+=std::exp(DeltaAction);
+	  }
+	  NewGlobalWgt=std::log(NewGlobalWgt)+RefAction;
+	  
+
+	  ///These forward and backward probs must be changed!
+	  AcceptProb=std::exp(NewGlobalWgt - Reptile->GlobalWgt );
+
+	  //	  cerr<<"My accept prob is "<<AcceptProb<<endl;
+	  //	  cerr<<NewGlobalWgt - Reptile->GlobalWgt - logSampleProb + oldLogSampleProb<<" "<<rdist2_new-rdist2_old<<endl;
+	}
+	if(Random() < AcceptProb ){
+	  //	  cerr<<"ACCEPT"<<endl;
+	  for (int i=0;i<tempReptile2.size();i++){
+	    vector<TrialWaveFunction*> &Psi_curr(psiReptile2[i]);
+	    tempReptile2[i]->acceptMove(movePtcl);
+	    (*Reptile)[i+startSlice]->ptclAge[movePtcl]=Reptile->Age;
+	    
+	    for (int ipsi=0;ipsi<nPsi;ipsi++){
+	      Psi_curr[ipsi]->acceptMove(*(ParticleSet*)tempReptile2[i],movePtcl);
+	      hReptile2[i][ipsi]->acceptMove(movePtcl);
+	      }
+	    
+	  }
+	  //Update Reptile information
+	  Reptile->GlobalWgt=NewGlobalWgt;
+	  for(int ipsi=0; ipsi<nPsi; ipsi++) {
+	    Reptile->GlobalAction[ipsi]=NewGlobalAction[ipsi];
+	    Reptile->GlobalSignWgt[ipsi]=NewGlobalSignWgt[ipsi];
+	    RealType DeltaAction(NewGlobalAction[ipsi]-NewGlobalWgt);
+	    if((WeightSign[ipsi]>0) && (DeltaAction > -30.0))
+	      Reptile->UmbrellaWeight[ipsi]=std::exp(DeltaAction);
+	    else Reptile->UmbrellaWeight[ipsi]=0.0e0;
+	  }
+	  
+	  ++nAccept;
+	}
+	else {
+	  //	  cerr<<"REJECT;"<<endl;
+	  for (int i=0;i<tempReptile2.size();i++){
+	    vector<TrialWaveFunction*> &Psi_curr(psiReptile2[i]);
+	    tempReptile2[i]->rejectMove(movePtcl);
+	    tempReptile2[i]->RestoreOldData();
+	    for (int ipsi=0;ipsi<nPsi;ipsi++){
+	      Psi_curr[ipsi]->rejectMove(movePtcl);
+	      hReptile2[i][ipsi]->rejectMove(movePtcl);
+	    }
+	  }
+	  //	  ++nAccept;
+	  ++nReject;
+	}
+	
+	myTimers[6]->stop();
+	myTimers[7]->stop();
+      }
+    for (int i=startSlice;i<=endSlice;i++){
+      tempReptile2[i-startSlice]->CopyToBead(*(*Reptile)[i],psiReptile2[i-startSlice]);
+    }
+    
+    for (int i=startSlice,ii=0;i<=endSlice;i++,ii++){
+      Walker_t& thisWalker(*((*Reptile)[i]));
+      Walker_t::Buffer_t& w_buffer(thisWalker.DataSet);
+      w_buffer.rewind();
+      tempReptile2[ii]->copyToBuffer(w_buffer);
+      for (int ipsi=0;ipsi<nPsi;ipsi++){
+	psiReptile2[ii][ipsi]->evaluateLog(*tempReptile2[ii],w_buffer);
+	//psiReptile2[ii][ipsi]->evaluate(*tempReptile2[ii],w_buffer);
+	hReptile2[ii][ipsi]->evaluate(*tempReptile2[ii],w_buffer);
+      }
+    }
+    
+
+
+    oldForward=forward;
+    oldBackward=backward;
+    myTimers[0]->stop();
+
+
+
+
+
+  }
+
+
 
   void RQMCMultiplePbyP::ChooseSlices(int ReptileLength,int &startSlice,int &endSlice)
   {
@@ -357,6 +772,7 @@ RQMCMultiplePbyP::RealType RQMCMultiplePbyP::LogSampleProb(vector<Bead_ParticleS
   RQMCMultiplePbyP::ActionChange_wf(bool oldData,int sliceToThrow)
   {
     int toMult;
+    RealType AddPsi=0.0;
     if (oldData)
       toMult=1;
     else
@@ -364,9 +780,11 @@ RQMCMultiplePbyP::RealType RQMCMultiplePbyP::LogSampleProb(vector<Bead_ParticleS
     for (int ipsi=0;ipsi<nPsi;ipsi++){
       for (int i=0;i<tempReptile.size()-1;i++){
 	DeltaG[ipsi]+= tempReptile[i]->Action(ipsi,forward)*toMult;
+	AddPsi+= tempReptile[i]->Action(ipsi,forward)*toMult;
       }
       for (int i=1;i<tempReptile.size();i++){
 	DeltaG[ipsi]+= tempReptile[i]->Action(ipsi,backward)*toMult;
+	AddPsi+= tempReptile[i]->Action(ipsi,backward)*toMult;
       }
       for (int i=0;i<tempReptile.size();i++){
       	DeltaG[ipsi]+= 2.0*tempReptile[i]->Action(ipsi,Directionless)*toMult;
@@ -375,8 +793,10 @@ RQMCMultiplePbyP::RealType RQMCMultiplePbyP::LogSampleProb(vector<Bead_ParticleS
 	DeltaSign[ipsi] -= tempReptile[i]->BeadSignWgt[ipsi]*toMult;
       }
       DeltaG[ipsi]-=tempReptile[sliceToThrow]->Properties(ipsi,LOGPSI)*toMult;
+      DeltaG[ipsi]-=tempReptile[sliceToThrow]->Action(ipsi,Directionless)*toMult; //correct the *2
     }
-    
+    //    cerr<<"Add psi for wf is "<<AddPsi<<endl;
+    //    cerr<<"Delta G for wf is "<<DeltaG<<endl;
 
       
 
@@ -435,15 +855,17 @@ RQMCMultiplePbyP::RealType RQMCMultiplePbyP::LogSampleProb(vector<Bead_ParticleS
        Walker_t& thisWalker(*((*Reptile)[i]));
        Walker_t::Buffer_t& w_buffer(thisWalker.DataSet);
        w_buffer.rewind();
-//         tempReptile[ii]->updateBuffer(thisWalker,w_buffer);
-//         for (int ipsi=0;ipsi<nPsi;ipsi++){
-//         	 RealType logPsi=psiReptile[ii][ipsi]->updateBuffer(*tempReptile[ii],w_buffer,true); 
-//  	 hReptile[ii][ipsi]->evaluate(*tempReptile[ii],w_buffer);
-//  	 assert(logPsi=tempReptile[ii]->getPropertyBase(ipsi)[LOGPSI]);
-//  	 Copy(tempReptile[ii]->G,*(tempReptile[ii]->Gradients[ipsi]));
-//         	 *(tempReptile[ii]->Laplacians[ipsi])=tempReptile[ii]->L;	  
-//         }
-//        w_buffer.rewind();
+       //a
+       tempReptile[ii]->updateBuffer(thisWalker,w_buffer);
+       for (int ipsi=0;ipsi<nPsi;ipsi++){
+    	 RealType logPsi=psiReptile[ii][ipsi]->updateBuffer(*tempReptile[ii],w_buffer,true); 
+	 hReptile[ii][ipsi]->updateBuffer(*tempReptile[ii],w_buffer);
+	 assert(logPsi=tempReptile[ii]->getPropertyBase(ipsi)[LOGPSI]);
+	 Copy(tempReptile[ii]->G,*(tempReptile[ii]->Gradients[ipsi]));
+  	 *(tempReptile[ii]->Laplacians[ipsi])=tempReptile[ii]->L;	  
+       }
+       w_buffer.rewind();
+//a
        tempReptile[ii]->copyFromBuffer(w_buffer);
        for (int ipsi=0;ipsi<nPsi;ipsi++){
          psiReptile[ii][ipsi]->copyFromBuffer(*tempReptile[ii],w_buffer);
@@ -483,6 +905,7 @@ RQMCMultiplePbyP::RealType RQMCMultiplePbyP::LogSampleProb(vector<Bead_ParticleS
 
 
 	PosType old_rdiff=tempReptile[tempReptile.size()-1]->R[movePtcl]-tempReptile[0]->R[movePtcl];
+	W.Lattice.applyMinimumImage(old_rdiff);
 	int skip = 1<<(MaxLevel);
 	RealType levelTau = Tau*skip*0.5;
 	RealType sigma=std::sqrt(4.0*lambda*levelTau);
@@ -531,8 +954,15 @@ RQMCMultiplePbyP::RealType RQMCMultiplePbyP::LogSampleProb(vector<Bead_ParticleS
 	      myTimers[3]->start();
 	      tempReptile[i]->dG=dG; 
 	      tempReptile[i]->dL=dL; 
-	      eloc=NewBeadProp[LOCALENERGY]= hReptile[i][ipsi]->evaluatePbyP(*tempReptile[i],movePtcl); 
+	      
+	      //	      W.R=(tempReptile[i]->R);
+	      //	      W.G=tempReptile[i]->G+dG;
+	      //	      W.L=tempReptile[i]->L+dL;
+	      //	      W.update();
+	      //	      eloc=NewBeadProp[LOCALENERGY]=H1[ipsi]->evaluate(W);
+	      eloc=NewBeadProp[LOCALENERGY]=hReptile[i][ipsi]->evaluatePbyP(*tempReptile[i],movePtcl);
 	      hReptile[i][ipsi]->saveProperty(NewBeadProp);
+	      //	      H1[ipsi]->saveProperty(NewBeadProp);
 	      myTimers[3]->stop();
 	      //	      myTimers[2]->start();
 	      tempReptile[i]->G=tempReptile[i]->G+dG;
@@ -570,8 +1000,8 @@ RQMCMultiplePbyP::RealType RQMCMultiplePbyP::LogSampleProb(vector<Bead_ParticleS
 	    //if refSign==newBeadProb[sign] then beadwgt=1  else beadwgt=0
 	    int beadwgt=abs( ( Reptile->getSign(NewBeadProp[SIGN])+Reptile->RefSign[ipsi] )/2 );
 	    tempReptile[i]->BeadSignWgt[ipsi]=beadwgt;
-	    if (NewBeadProp[LOCALENERGY]-NewBeadProp[LOCALPOTENTIAL] <= KEcut && (Reptile->Age>100))
-	      shouldReject=true;
+	    if (NewBeadProp[LOCALENERGY]<= KEcut) // && (Reptile->Age>100))
+	      shouldReject=false;
 
 	  }
 	    myTimers[8]->stop();
@@ -626,12 +1056,15 @@ RQMCMultiplePbyP::RealType RQMCMultiplePbyP::LogSampleProb(vector<Bead_ParticleS
 	  //	  cerr<<"My accept prob is "<<AcceptProb<<endl;
 	  //	  cerr<<NewGlobalWgt - Reptile->GlobalWgt - logSampleProb + oldLogSampleProb<<" "<<rdist2_new-rdist2_old<<endl;
 	}
+	//	cerr<<"ACCEpt prob is "<<AcceptProb<<endl;
 	if(Random() < AcceptProb ){
-	  //	  cerr<<"ACCEPT"<<endl;
+	  //	  cerr<<"ACCEPT end"<<endl;
 	  for (int i=0;i<tempReptile.size();i++){
 	    vector<TrialWaveFunction*> &Psi_curr(psiReptile[i]);
 	    if (i==sliceToThrow || (i!=0 && i!=tempReptile.size()-1)){
 	      tempReptile[i]->acceptMove(movePtcl);
+	      (*Reptile)[i+startSlice]->ptclAge[movePtcl]=Reptile->Age;
+
 	      for (int ipsi=0;ipsi<nPsi;ipsi++){
 		Psi_curr[ipsi]->acceptMove(*(ParticleSet*)tempReptile[i],movePtcl);
 		hReptile[i][ipsi]->acceptMove(movePtcl);
@@ -649,10 +1082,10 @@ RQMCMultiplePbyP::RealType RQMCMultiplePbyP::LogSampleProb(vector<Bead_ParticleS
 	    else Reptile->UmbrellaWeight[ipsi]=0.0e0;
 	  }
 	  
-	  ++nAccept;
+	  //	  ++nAccept;
 	}
 	else {
-	  //	  cerr<<"REJECT"<<endl;
+	  //	  cerr<<"REJECT end"<<endl;
 	  for (int i=0;i<tempReptile.size();i++){
 	    vector<TrialWaveFunction*> &Psi_curr(psiReptile[i]);
 	    if (i==sliceToThrow || (i!=0 && i!=tempReptile.size()-1))
@@ -665,7 +1098,7 @@ RQMCMultiplePbyP::RealType RQMCMultiplePbyP::LogSampleProb(vector<Bead_ParticleS
 	     }
 	  }
 	  //	  ++nAccept;
-	  ++nReject;
+	  //	  ++nReject;
 	}
 
 	myTimers[6]->stop();
@@ -711,7 +1144,9 @@ RQMCMultiplePbyP::RealType RQMCMultiplePbyP::LogSampleProb(vector<Bead_ParticleS
     //    int startSlice;
     //    int endSlice;
     ChooseSlices(ReptileLength,startSlice,endSlice);
-
+    bool isFirst=startSlice==0;
+    bool isLast=endSlice==ReptileLength-1;
+    
     myTimers[4]->start();
     for (int i=startSlice;i<=endSlice;i++)
       tempReptile[i-startSlice]->CopyFromBead(*(*Reptile)[i],psiReptile[i-startSlice]);
@@ -752,7 +1187,12 @@ RQMCMultiplePbyP::RealType RQMCMultiplePbyP::LogSampleProb(vector<Bead_ParticleS
 
 	//old is added
 	///calculate the old action
-	ActionChange(true);
+	if (isFirst)
+	  ActionChange_wf(true,0);
+	else if (isLast)
+	  ActionChange_wf(true,tempReptile.size()-1);
+	else
+	  ActionChange(true);
 
 	///save the old data
 	for (int i=0;i<tempReptile.size();i++)
@@ -833,8 +1273,8 @@ RQMCMultiplePbyP::RealType RQMCMultiplePbyP::LogSampleProb(vector<Bead_ParticleS
 	    //if refSign==newBeadProb[sign] then beadwgt=1  else beadwgt=0
 	    int beadwgt=abs( ( Reptile->getSign(NewBeadProp[SIGN])+Reptile->RefSign[ipsi] )/2 );
 	    tempReptile[i]->BeadSignWgt[ipsi]=beadwgt;
-	    if (NewBeadProp[LOCALENERGY]-NewBeadProp[LOCALPOTENTIAL] <= KEcut && (Reptile->Age>100))
-	      shouldReject=true;
+	    if (NewBeadProp[LOCALENERGY] <= KEcut) // && (Reptile->Age>100))
+	      shouldReject=false;
 	      
 	  }
 	    myTimers[8]->stop();
@@ -844,7 +1284,13 @@ RQMCMultiplePbyP::RealType RQMCMultiplePbyP::LogSampleProb(vector<Bead_ParticleS
 
 
 	myTimers[6]->start();
-	ActionChange(false);
+	if (isFirst)
+	  ActionChange_wf(false,0);
+	else if (isLast)
+	  ActionChange_wf(false,tempReptile.size()-1);
+	else
+	  ActionChange(false);
+
 	
 	/// Here we should check to see if the Hamiltonian for all the reptiles
 	/// has managed to go over the nodes 
@@ -1658,6 +2104,7 @@ void RQMCMultiplePbyP::moveReptile(){
 
 void RQMCMultiplePbyP::ActionChange(bool oldData)
 {
+  RealType AddPsi=0.0;
   int toMult;
   if (oldData)
     toMult=1;
@@ -1666,10 +2113,12 @@ void RQMCMultiplePbyP::ActionChange(bool oldData)
   for (int ipsi=0;ipsi<nPsi;ipsi++){
     for (int i=0;i<tempReptile.size()-1;i++){
       DeltaG[ipsi]+= tempReptile[i]->Action(ipsi,forward)*toMult;
+      AddPsi+= tempReptile[i]->Action(ipsi,forward)*toMult;
       //      cerr<<"CHANGE: "<<i<<" "<<tempReptile[i]->Action(0,1)*toMult<<endl;
     }
     for (int i=1;i<tempReptile.size();i++){
       DeltaG[ipsi]+= tempReptile[i]->Action(ipsi,backward)*toMult;
+      AddPsi+= tempReptile[i]->Action(ipsi,backward)*toMult;
       //      cerr<<"CHANGE2: "<<i<<" "<<tempReptile[i]->Action(ipsi,forward)*toMult<<endl;
     }
     for (int i=1;i<tempReptile.size()-1;i++){
@@ -1679,6 +2128,8 @@ void RQMCMultiplePbyP::ActionChange(bool oldData)
       DeltaSign[ipsi] -= tempReptile[i]->BeadSignWgt[ipsi]*toMult;
     }
   }
+  //  cerr<<"AddPsi for ActionChange is "<<AddPsi<<endl;
+  //  cerr<<"Delta G for ACtionchange is "<<DeltaG<<endl;
 }
 
 
