@@ -44,6 +44,7 @@ namespace qmcplusplus {
     //3-D hard coded
     RealType tlen=std::pow(0.75/M_PI*P.Lattice.Volume/static_cast<RealType>(P.getTotalNum()),1.0/3.0);
     drsdV= tlen*pNorm;
+//     app_log()<<"drsdV  "<<drsdV<<endl;
   };
     
   Return_t RPAPressure::evaluate(ParticleSet& P) {
@@ -56,14 +57,17 @@ namespace qmcplusplus {
       tValue += (*dit)-> evaluateLog(P,dG,dL);
       ++dit;
     }
+    
+//     app_log()<<"tValue  "<<tValue<<endl;
     tValue *= drsdV;
     ZVCorrection =  -1.0 * (0.5*Sum(dL)+Dot(dG,P.G));
     Value = -ZVCorrection*drsdV;
     
     Pot=P.PropertyList[LOCALPOTENTIAL];
-    Press=2.0*P.PropertyList[LOCALENERGY]-Pot;
-    Press*=pNorm;
     Energy = P.PropertyList[LOCALENERGY];
+    Press=2.0*Energy-Pot;
+    Press*=pNorm;
+    
     
     return 0.0;
   }

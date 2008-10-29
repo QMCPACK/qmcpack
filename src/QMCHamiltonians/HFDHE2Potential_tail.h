@@ -13,7 +13,7 @@ namespace qmcplusplus {
    */
   struct HFDHE2Potential_tail: public QMCHamiltonianBase {
 
-    Return_t tailcorr,rc,A,alpha,c1,c2,c3,D;
+    Return_t tailcorr,rc,A,alpha,c1,c2,c3,D,KValue,Kpre;
     // remember that the default units are Hartree and Bohrs
     DistanceTableData* d_table;
     ParticleSet* PtclRef;
@@ -33,6 +33,7 @@ namespace qmcplusplus {
       d_table = DistanceTable::add(P);
       Return_t rho = P.G.size()/P.Lattice.Volume;
       Return_t N0 = P.G.size();
+      Kpre = 3.157733e+5/N0;
       rc = P.Lattice.WignerSeitzRadius;
 //       tailcorr = 2.0*M_PI*rho*N0*(-26.7433377905*std::pow(rc,-7.0) - 2.8440930339*std::pow(rc,-5.0)-0.486669351961 *std::pow(rc,-3.0)+ std::exp(-2.381392669*rc)*(2.75969257875+6.571911675726*rc+7.82515114293*rc*rc) );
       tailcorr = 2.0*M_PI*rho*N0*(-26.7433377905*std::pow(rc,-7.0) - 2.8440930339*std::pow(rc,-5.0)-0.486669351961 *std::pow(rc,-3.0)+ std::exp(-2.381392669*rc)*(2.75969257875+6.571911675726*rc+7.82515114293*rc*rc) );
@@ -46,6 +47,7 @@ namespace qmcplusplus {
       PtclRef=&P;
       Return_t rho = P.G.size()/P.Lattice.Volume;
       Return_t N0 = P.G.size();
+      Kpre = 3.157733e+5/N0;
       Return_t rc = P.Lattice.WignerSeitzRadius;
 //       tailcorr = 2*M_PI*rho*N0*(-26.7433377905*std::pow(rc,-7.0) - 2.8440930339*std::pow(rc,-5.0)-0.486669351961 *std::pow(rc,-3.0)+ std::exp(-2.381392669*rc)*(2.75969257875+6.571911675726*rc+7.82515114293*rc*rc) );
       tailcorr = 2.0*M_PI*rho*N0*(-26.7433377905*std::pow(rc,-7.0) - 2.8440930339*std::pow(rc,-5.0)-0.486669351961 *std::pow(rc,-3.0)+ std::exp(-2.381392669*rc)*(2.75969257875+6.571911675726*rc+7.82515114293*rc*rc) );
@@ -67,6 +69,8 @@ namespace qmcplusplus {
 	}
       }*/
       Value += tailcorr;
+      KValue = Value + P.PropertyList[LOCALENERGY];
+      KValue *= Kpre;
       return Value;
     }
     
@@ -106,12 +110,15 @@ namespace qmcplusplus {
     void addObservables(PropertySetType& plist)
     {
       myIndex=plist.add("HFDHE2tail");
+      plist.add("KperP");
+      
 //       plist.add("HFDHE2tail");
     }
 
     void setObservables(PropertySetType& plist)
     {
       plist[myIndex]=Value;
+      plist[myIndex+1]=KValue;
 //       plist[myIndex+1]=tailcorr;
     }
     

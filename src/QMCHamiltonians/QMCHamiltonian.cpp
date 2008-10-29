@@ -218,7 +218,7 @@ QMCHamiltonian* QMCHamiltonian::makeClone(ParticleSet& qp, TrialWaveFunction& ps
     myclone->addOperator(H[i]->makeClone(qp,psi),H[i]->myName,true);
     if (H[i]->Dependants != 0 )
 //       cout<<i<<endl;
-      depIndexVector.push_back(i);
+    depIndexVector.insert(depIndexVector.begin(),1,i);
   }
   for(int i=0; i<auxH.size(); ++i){
     QMCHamiltonianBase* auxi = auxH[i]->makeClone(qp,psi);
@@ -226,7 +226,7 @@ QMCHamiltonian* QMCHamiltonian::makeClone(ParticleSet& qp, TrialWaveFunction& ps
       myclone->addOperator(auxi,auxH[i]->myName,false);
     else{
 //       cout<<"SHOUTING~!!!"<<i<<"  "<<depIndexVector[depIndexVector.size()-1]<<"  "<<depIndexVector.size()-1<<endl;
-      myclone->addOperator((myclone->getHamiltonian(depIndexVector[depIndexVector.size()-1]))->makeDependants(qp),(myclone->getHamiltonian(depIndexVector[depIndexVector.size()-1]))->depName,false);
+      myclone->addOperator((myclone->getHamiltonian(depIndexVector.back()))->makeDependants(qp),(myclone->getHamiltonian(depIndexVector.back()))->depName,false);
       depIndexVector.pop_back();
     }
   }

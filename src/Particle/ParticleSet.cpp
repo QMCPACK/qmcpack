@@ -393,6 +393,47 @@ namespace qmcplusplus {
     //for(int i=0; i< DistTables.size(); i++) DistanceTable::removeTable(DistTables[i]->getName());
     //DistTables.erase(DistTables.begin(),DistTables.end());
   }
+  
+   void ParticleSet::setPropertyHistoryLength(int leng)
+  {
+    if (leng>0) phLength=leng;
+  }
+    
+  int ParticleSet::addPropertyHistory(int leng)
+  {
+    int newL = PropertyHistory.size();
+    vector<double> newVecHistory(leng,0.0);
+    PropertyHistory.push_back(newVecHistory);
+    return newL;
+  }
+
+  void ParticleSet::addPropertyHistoryPoint(int index, double data)
+  {
+    vector<double>::iterator phStart=PropertyHistory[index].begin();
+    PropertyHistory[index].insert(phStart,1,data);
+    PropertyHistory[index].pop_back();
+  }
+    
+   double ParticleSet::getPropertyHistoryAvg(int index)
+  {
+    double mean=0.0;
+    vector<double>::iterator phStart=PropertyHistory[index].begin();
+    for(;phStart!=PropertyHistory[index].end();phStart++){
+      mean+= (*phStart);
+    }
+    return (mean/PropertyHistory[index].size());
+  }
+    
+  double ParticleSet::getPropertyHistorySum(int index, int endN)
+  {
+    double mean=0.0;
+    vector<double>::iterator phStart=PropertyHistory[index].begin();
+    for(int i=0;((phStart!=PropertyHistory[index].end())&(i<endN));phStart++,i++){
+      mean+= (*phStart);
+    }
+    return mean ;
+  }
+  
 }
 
 /***************************************************************************

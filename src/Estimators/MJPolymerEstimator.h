@@ -34,7 +34,17 @@ namespace qmcplusplus {
     void setpNorm(RealType pn){
       pNorm = pn;
     }
-
+    void settruncLength(int pn){
+      truncLength = pn;
+      app_log()<<"  Truncation length set to: "<<truncLength<<endl;
+    }
+    void setrLen(int pn){
+      ObsCont.resize(pn,0.0);
+      ObsContAvg.resize(pn,0.0);
+      ObsCont2.resize(pn,0.0);
+      ObsContAvg2.resize(pn,0.0);
+      ObsEvals=0;
+    }
     inline  void accumulate(const Walker_t& awalker, RealType wgt) {}
 
 //     inline void accumulate(ParticleSet& P, MCWalkerConfiguration::Walker_t& awalker) { }
@@ -47,8 +57,10 @@ namespace qmcplusplus {
           ///vector to contain the names of all the constituents of the local energy
       std::vector<string> elocal_name;
       int FirstHamiltonian;
-      int SizeOfHamiltonians;
-      RealType KEconst,pNorm;
+      int SizeOfHamiltonians,truncLength;
+      RealType KEconst,pNorm,ObsEvals;
+      std::vector<RealType> ObsCont,ObsContAvg;
+      std::vector<RealType> ObsCont2,ObsContAvg2;
 //       QMCHamiltonian* Hpointer;
   };
 

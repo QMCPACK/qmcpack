@@ -51,6 +51,9 @@ namespace qmcplusplus {
     RPAPressure(ParticleSet& P): dG(P.G),dL(P.L) {
       UpdateMode.set(OPTIMIZABLE,1);
       pNorm = 1.0/(P.Lattice.DIM*P.Lattice.Volume);
+      RealType tlen=std::pow(0.75/M_PI*P.Lattice.Volume/static_cast<RealType>(P.getTotalNum()),1.0/3.0);
+      drsdV= tlen*pNorm;
+//       app_log()<<"drsdV  "<<drsdV<<endl;
     };
     
     ///destructor

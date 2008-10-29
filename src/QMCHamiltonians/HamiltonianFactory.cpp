@@ -40,6 +40,7 @@
 #include "QMCHamiltonians/HePressure.h"
 #include "QMCHamiltonians/HFDHE2Potential.h"
 #include "QMCHamiltonians/HFDHE2Potential_tail.h"
+#include "QMCHamiltonians/DMCmixPressureCorr.h"
 
 
 
@@ -182,6 +183,13 @@ namespace qmcplusplus {
             Pressure* BP = new Pressure(*targetPtcl);
             BP-> put(cur);
             targetH->addOperator(BP,"Pressure",false);
+            
+            int nlen(100);
+            attrib.add(nlen,"truncateSum");
+            attrib.put(cur);
+            DMCPressureCorr* DMCP = new DMCPressureCorr(*targetPtcl,nlen);
+            targetH->addOperator(DMCP,"PressureSum",false);
+            
           } else if (estType=="HFDHE2"){
               HePressure* BP = new HePressure(*targetPtcl);
               BP-> put(cur);
@@ -215,6 +223,12 @@ namespace qmcplusplus {
             }
             if (!withSource) BP-> put(cur, *targetPtcl);
             targetH->addOperator(BP,BP->MyName,false);
+            
+            int nlen(100);
+            attrib.add(nlen,"truncateSum");
+            attrib.put(cur);
+            DMCPressureCorr* DMCP = new DMCPressureCorr(*targetPtcl,nlen);
+            targetH->addOperator(DMCP,"PressureSum",false);
           }
         }
       }

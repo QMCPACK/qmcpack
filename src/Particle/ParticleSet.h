@@ -112,6 +112,10 @@ namespace qmcplusplus {
     PropertySetType PropertyList;
 
     PropertyContainer_t  Properties;
+
+    ///Property history vector
+    vector<vector<double> >  PropertyHistory;
+    int phLength;
     
     ///default constructor
     ParticleSet();
@@ -206,6 +210,12 @@ namespace qmcplusplus {
       return PropertyList.add(pname.c_str());
     }
 
+     void setPropertyHistoryLength(int leng);
+     int addPropertyHistory(int leng);
+     void addPropertyHistoryPoint(int index, RealType data);
+     double getPropertyHistoryAvg(int index);
+     double getPropertyHistorySum(int index,int endN);
+    
 
     void clearDistanceTables();
    void resizeSphere(int nc);

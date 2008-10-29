@@ -524,6 +524,9 @@ namespace qmcplusplus {
 //         multiEstimator = new MJPolymerEstimator(H,nPsi);
         MJPolymerEstimator* MJp = new MJPolymerEstimator(H,nPsi);
         MJp->setpNorm(1.0/( W.Lattice.DIM *  W.Lattice.Volume));
+        MJp->settruncLength(trunclength);
+        MJp->setrLen(ReptileLength);
+        
         multiEstimator = MJp;
       } else if (observ=="HFDHE2"){
         cout<<"Using HFDHE2 observables"<<endl;

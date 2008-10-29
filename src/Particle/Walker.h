@@ -89,7 +89,11 @@ namespace qmcplusplus {
 
     ///scalar properties of a walker
     PropertyContainer_t  Properties;
-
+    
+    ///Property history vector
+    vector<vector<T> >  PropertyHistory;
+    int phLength;
+    
     ///buffer for the data for particle-by-particle update
     Buffer_t DataSet;
 
@@ -103,15 +107,55 @@ namespace qmcplusplus {
 
     ///create a walker for n-particles
     inline explicit Walker(int nptcl) : ID(0),ParentID(0), Generation(0),Age(0),
-        Weight(1.0e0),Multiplicity(1.0e0)
+                           Weight(1.0e0),Multiplicity(1.0e0),phLength(0)
     {
       Properties.resize(1,NUMPROPERTIES);
       resize(nptcl);
       reset();
     }
+    
+    inline void setPropertyHistoryLength(int leng)
+    {
+      if (leng>0) phLength=leng;
+    }
+    
+    inline int addPropertyHistory(int leng)
+    {
+      int newL = PropertyHistory.size();
+      vector<double> newVecHistory(leng,0.0);
+      PropertyHistory.push_back(newVecHistory);
+      return newL;
+    }
+
+    inline void addPropertyHistoryPoint(int index, double data)
+    {
+      vector<double>::iterator phStart=PropertyHistory[index].begin();
+      PropertyHistory[index].insert(phStart,1,data);
+      PropertyHistory[index].pop_back();
+    }
+    
+    inline double getPropertyHistoryAvg(int index)
+    {
+      double mean=0.0;
+      vector<double>::iterator phStart=PropertyHistory[index].begin();
+      for(;phStart!=PropertyHistory[index].end();phStart++){
+        mean+= (*phStart);
+      }
+      return (mean/PropertyHistory[index].size());
+    }
+    
+    inline double getPropertyHistorySum(int index, int endN)
+    {
+      double mean=0.0;
+      vector<double>::iterator phStart=PropertyHistory[index].begin();
+      for(int i=0;((phStart!=PropertyHistory[index].end())&(i<endN));phStart++,i++){
+        mean+= (*phStart);
+      }
+      return mean ;
+    }
 
     inline ~Walker() { }
-    
+
     ///assignment operator
     inline Walker& operator=(const Walker& a) {
       if(this != &a) makeCopy(a);
@@ -142,6 +186,8 @@ namespace qmcplusplus {
       Drift = a.Drift;
       Properties.copy(a.Properties);
       DataSet=a.DataSet;
+      PropertyHistory=a.PropertyHistory;
+      phLength=a.phLength;
     }
 
     //return the address of the values of Hamiltonian terms

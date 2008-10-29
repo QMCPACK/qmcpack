@@ -52,12 +52,14 @@ namespace qmcplusplus {
     elocal_name.push_back("ElSumPot");
     elocal_name.push_back("TruncSumPot");
     elocal_name.push_back("TruncElSumPot");
-    elocal_name.push_back("Virial");
+    elocal_name.push_back("Virial"); 
     elocal_name.push_back("MaxAge");
+    elocal_name.push_back("MaxTouch");
     elocal_name.push_back("centerV");
-    elocal_name.push_back("decorr");
+    elocal_name.push_back("Edecorr");
+    elocal_name.push_back("Vdecorr");
 
-    scalars.resize(SizeOfHamiltonians+9);
+    scalars.resize(SizeOfHamiltonians+11);
     scalars_saved=scalars;
     pNorm=0.0;
     
@@ -141,51 +143,58 @@ namespace qmcplusplus {
 //       scalars[SizeOfHamiltonians+3](tmpV+tmpF,uw);
 //       scalars[SizeOfHamiltonians+4](eloc*(tmpV+tmpF),uw);
 //       } else {
-        MultiChain::iterator Bit = Reptile->begin();
-        MultiChain::iterator Lit = Reptile->end();
-        MultiChain::iterator Endit = Reptile->end();
-        Endit--;
+      int maxtouch=0;
+      MultiChain::iterator Bit = Reptile->begin();
+      MultiChain::iterator Lit = Reptile->end();
+      MultiChain::iterator Endit = Reptile->end();
+      Endit--;
         
         //truncated version of estimator
-        Lit--;
-        for(int j=0 ;( (j<truncLength) && (Bit != Endit) );Bit++,Lit--,j++){
-          tmpF+= 0.5*(*Bit)->getPropertyBase(i)[Pindex+2+FirstHamiltonian];
-          tmpV+= 0.5*(*Bit)->getPropertyBase(i)[LOCALPOTENTIAL];
-          tmpF+= 0.5*(*Lit)->getPropertyBase(i)[Pindex+2+FirstHamiltonian];
-          tmpV+= 0.5*(*Lit)->getPropertyBase(i)[LOCALPOTENTIAL];
-          Bage=min((*Bit)->stepmade,Bage);
-        };
-        RealType tmpval = (tmpV*(-2.0*pNorm) + tmpF)*Tau;
+      Lit--;
+      for(int j=0 ;( (j<truncLength) && (Bit != Endit) );Bit++,Lit--,j++){
+        tmpF+= 0.5*(*Bit)->getPropertyBase(i)[Pindex+2+FirstHamiltonian];
+        tmpV+= 0.5*(*Bit)->getPropertyBase(i)[LOCALPOTENTIAL];
+        tmpF+= 0.5*(*Lit)->getPropertyBase(i)[Pindex+2+FirstHamiltonian];
+        tmpV+= 0.5*(*Lit)->getPropertyBase(i)[LOCALPOTENTIAL];
+        if ((*Bit)->timesTouched>maxtouch) maxtouch = (*Bit)->timesTouched;
+        if ((*Bit)->stepmade < Bage) Bage = (*Bit)->stepmade; 
+      };
+      RealType tmpval = (tmpV*(-2.0*pNorm) + tmpF)*Tau;
         
-        scalars[SizeOfHamiltonians+3](tmpval,uw);
-        scalars[SizeOfHamiltonians+4](eloc*tmpval,uw);
+      scalars[SizeOfHamiltonians+3](tmpval,uw);
+      scalars[SizeOfHamiltonians+4](eloc*tmpval,uw);
         
         //continue sum for comparison to truncated version
-        for( ;Bit != Endit;Bit++,Lit--){
-          tmpF+= 0.5*(*Bit)->getPropertyBase(i)[Pindex+2+FirstHamiltonian];
-          tmpV+= 0.5*(*Bit)->getPropertyBase(i)[LOCALPOTENTIAL];
-          tmpF+= 0.5*(*Lit)->getPropertyBase(i)[Pindex+2+FirstHamiltonian];
-          tmpV+= 0.5*(*Lit)->getPropertyBase(i)[LOCALPOTENTIAL];
-          Bage=min((*Bit)->stepmade,Bage);
-        };
+      for( ;Bit != Endit;Bit++,Lit--){
+        tmpF+= 0.5*(*Bit)->getPropertyBase(i)[Pindex+2+FirstHamiltonian];
+        tmpV+= 0.5*(*Bit)->getPropertyBase(i)[LOCALPOTENTIAL];
+        tmpF+= 0.5*(*Lit)->getPropertyBase(i)[Pindex+2+FirstHamiltonian];
+        tmpV+= 0.5*(*Lit)->getPropertyBase(i)[LOCALPOTENTIAL];
+        if ((*Bit)->timesTouched>maxtouch) maxtouch = (*Bit)->timesTouched;
+        if ((*Bit)->stepmade < Bage) Bage = (*Bit)->stepmade;
+      };
 
-        tmpV *= -2.0*pNorm*Tau;
-        tmpF *= Tau;
+      tmpV *= -2.0*pNorm*Tau;
+      tmpF *= Tau;
 
-        scalars[SizeOfHamiltonians+1](tmpV+tmpF,uw);
-        scalars[SizeOfHamiltonians+2](eloc*(tmpV+tmpF),uw);
-//       };
+      scalars[SizeOfHamiltonians+1](tmpV+tmpF,uw);
+      scalars[SizeOfHamiltonians+2](eloc*(tmpV+tmpF),uw);
+
 
       scalars[SizeOfHamiltonians+6](Rage-Bage,1.0);
-      scalars[SizeOfHamiltonians+7](CenProp[LOCALPOTENTIAL] ,uw);
+      scalars[SizeOfHamiltonians+7](maxtouch,1.0);
+      scalars[SizeOfHamiltonians+8](CenProp[LOCALPOTENTIAL] ,uw);
 
       //calculate correlation between head energy and energy at some point in chain to truncate correctly
       Bit= Reptile->begin();
+
       ObsEvals+=1.0;
       RealType Opf=1.0/ObsEvals;
       for(int j=0;Bit != (Reptile->end());Bit++,j++){
         ObsCont[j]+=(*Bit)->getPropertyBase(i)[LOCALENERGY];
         ObsContAvg[j]=ObsCont[j]*Opf;
+        ObsCont2[j]+=(*Bit)->getPropertyBase(i)[LOCALPOTENTIAL];
+        ObsContAvg2[j]=ObsCont[j]*Opf;
       };
       int AC(-1);
       RealType tmpE=1.0;
@@ -197,7 +206,19 @@ namespace qmcplusplus {
         tmpE=Hac*( (*Bit)->getPropertyBase(i)[LOCALENERGY]-ObsContAvg[j] );
         AC+=1;
       };
-      scalars[SizeOfHamiltonians+8](AC,1.0);
+      scalars[SizeOfHamiltonians+9](AC,uw);
+      
+      int AC2(-1);
+      tmpE= -1.0;
+      Bit = Reptile->begin();
+      if (Hac*((*Bit)->getPropertyBase(i)[LOCALPOTENTIAL]-ObsContAvg2[0]) >0) tmpE=1.0;
+      Bit++;
+      for(int j=1; (Bit!=(Reptile->end()))&&(tmpE>=0.0) ;Bit++,j++){
+        tmpE=Hac*( (*Bit)->getPropertyBase(i)[LOCALPOTENTIAL]-ObsContAvg2[j] );
+        AC2+=1;
+      };
+      
+      scalars[SizeOfHamiltonians+10](AC2,uw);
     }
   }
 
