@@ -142,7 +142,7 @@ namespace qmcplusplus {
 
   void EstimatorManager::start(int blocks, bool record)
   {
-
+    cout<<"nofr calling estimator manager"<<endl;
     reset();
     RecordCount=0;
     energyAccumulator.clear();
@@ -524,6 +524,22 @@ namespace qmcplusplus {
     //add extra
     return true;
   }
+
+
+  int EstimatorManager::add(CompositeEstimatorBase* newestimator, const string& aname)
+  {
+    cout<<"Adding nofr"<<endl;
+    if(CompEstimators == 0) CompEstimators = new CompositeEstimatorSet;
+    if(CompEstimators->missing(aname))
+      {
+        assert(aname=="nofr");
+        app_log() << "  EstimatorManager::add " << aname << endl;
+        CompEstimators->add(newestimator,aname);
+      }
+
+
+  }
+
 
   int EstimatorManager::add(EstimatorType* newestimator, const string& aname) 
   { 

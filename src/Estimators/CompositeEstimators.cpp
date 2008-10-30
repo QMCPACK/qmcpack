@@ -52,6 +52,7 @@ namespace qmcplusplus {
 
   void CompositeEstimatorBase::open(hid_t hroot)
   {
+    cerr<<"nofr: opening "<<endl;
     if(GroupID<0)
     {
       int n=nList.size();

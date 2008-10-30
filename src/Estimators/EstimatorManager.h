@@ -35,7 +35,7 @@ namespace qmcplusplus {
   class MCWalkerConifugration;
   class QMCHamiltonian;
   class CompositeEstimatorSet;
-
+  class CompositeEstimatorBase;
   /**Class to manage a set of ScalarEstimators */
   class EstimatorManager: public QMCTraits
   {
@@ -117,6 +117,7 @@ namespace qmcplusplus {
      * @return locator of newestimator
      */
     int add(EstimatorType* newestimator, const string& aname);
+    int add(CompositeEstimatorBase* newestimator, const string& aname);
 
     /** add a main estimator
      * @param newestimator New Estimator
