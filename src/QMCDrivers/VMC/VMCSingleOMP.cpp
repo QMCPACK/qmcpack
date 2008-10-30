@@ -19,6 +19,7 @@
 #include "QMCDrivers/VMC/VMCUpdateAll.h"
 #include "OhmmsApp/RandomNumberControl.h"
 #include "Message/OpenMP.h"
+#include "Estimators/nofrEstimator.h"
 //#define ENABLE_VMC_OMP_MASTER
 
 namespace qmcplusplus { 
@@ -167,6 +168,8 @@ namespace qmcplusplus {
         Movers[ip]->initWalkersForPbyP(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
       else
         Movers[ip]->initWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
+      cout<<"Now initializing nofr"<<endl;
+      estimatorClones[ip]->add(new nofrEstimator(Psi,W),"nofr");
 
       for(int prestep=0; prestep<myWarmupSteps; ++prestep)
         Movers[ip]->advanceWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1],true); 

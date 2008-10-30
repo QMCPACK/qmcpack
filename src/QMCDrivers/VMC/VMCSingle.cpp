@@ -17,6 +17,7 @@
 #include "QMCDrivers/VMC/VMCSingle.h"
 #include "QMCDrivers/VMC/VMCUpdatePbyP.h"
 #include "QMCDrivers/VMC/VMCUpdateAll.h"
+#include "Estimators/nofrEstimator.h"
 
 namespace qmcplusplus { 
 
@@ -34,7 +35,7 @@ namespace qmcplusplus {
   }
   
   bool VMCSingle::run() { 
-
+    cout<<"IN SINGLE VMC RUN"<<endl;
     resetRun();
 
     Mover->startRun(nBlocks,true);
@@ -113,7 +114,8 @@ namespace qmcplusplus {
       Mover->initWalkersForPbyP(W.begin(),W.end());
     else
       Mover->initWalkers(W.begin(),W.end());
-
+    cout<<"Now initializing nofr"<<endl;
+    Estimators->add(new nofrEstimator(Psi,W),"nofr");
     app_log() << "  Samples are dumped at every " << myPeriod4WalkerDump << " step " << endl;
     app_log() << "  Total Sample Size =" << nTargetSamples
       << "\n  Sample size per node per thread = " << samples_tot << endl;
