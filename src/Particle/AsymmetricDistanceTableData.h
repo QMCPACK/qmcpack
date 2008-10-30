@@ -144,7 +144,7 @@ namespace qmcplusplus {
         PosType& drij=Temp[iat].dr1=dr_m[loc]+displ;
         RealType sep(sqrt(dot(drij,drij)));
         Temp[iat].r1=sep;
-        Temp[iat].rinv1=1.0/sep;
+        //Temp[iat].rinv1=1.0/sep;
       }
     }
 

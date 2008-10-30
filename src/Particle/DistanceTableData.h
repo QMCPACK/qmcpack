@@ -111,6 +111,10 @@ namespace qmcplusplus {
     ///size of indicies
     TinyVector<IndexType,DIM> N;
 
+    /** Maximum radius */
+    RealType Rmax;
+    /** Maximum square */
+    RealType Rmax2;
 
     /** @brief M.size() = N[SourceIndex]+1
      *
@@ -147,7 +151,7 @@ namespace qmcplusplus {
     std::string Name;
     ///constructor using source and target ParticleSet
     DistanceTableData(const ParticleSet& source, const ParticleSet& target)
-      : Origin(source)
+      : Origin(source), Rmax(1e6), Rmax2(1e12)
     {  }
 
     ///virutal destructor
@@ -157,7 +161,8 @@ namespace qmcplusplus {
     inline string getName() const { return Name;}
     ///set the name of table
     inline void setName(const string& tname) { Name = tname;}
-
+    ///set the maximum radius
+    inline void setRmax(RealType rc) { Rmax=rc;Rmax2=rc*rc;}
     ///returns the reference the origin
     const ParticleSet& origin() const { return Origin;}
 

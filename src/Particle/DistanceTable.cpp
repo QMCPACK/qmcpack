@@ -46,8 +46,10 @@ namespace qmcplusplus
       }
       else
       {
-        app_log() << "  Sym Distance table specialized for a generic cell ";
         dt = new SymmetricDTD<DTD_BConds<RealType,DIM,SUPERCELL_BULK> >(s,s);
+        dt->setRmax(s.Lattice.SimulationCellRadius);
+        app_log() << "  Sym Distance table specialized for a generic cell ";
+        app_log() << "  Setting Rmax = " << s.Lattice.SimulationCellRadius <<endl;
       }
     }
     ostringstream o;
@@ -80,8 +82,10 @@ namespace qmcplusplus
       }
       else
       {
-        app_log() << "  Asymm Distance table specialized for a generic cell ";
         dt = new AsymmetricDTD<DTD_BConds<RealType,DIM,SUPERCELL_BULK> >(s,t);
+        dt->setRmax(s.Lattice.SimulationCellRadius);
+        app_log() << "  Asymm Distance table specialized for a generic cell ";
+        app_log() << "  Setting Rmax = " << s.Lattice.SimulationCellRadius <<endl;
       }
     }
     ostringstream o;
