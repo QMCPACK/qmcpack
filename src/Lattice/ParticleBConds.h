@@ -77,6 +77,9 @@ namespace APPNAMESPACE
         T z=modf(ar[2],&dmy2); ar[2]=z-static_cast<int>(z*2.0);
 #endif
         a=lat.toCart(ar);
+#if defined(DISABLE_WS_CELL)
+        return a[0]*a[0]+a[1]*a[1]+a[2]*a[2];
+#else
         T d2 = a[0]*a[0]+a[1]*a[1]+a[2]*a[2];
         if (d2 < lat.SimulationCellRadius * lat.SimulationCellRadius)
           return d2;
@@ -101,6 +104,7 @@ namespace APPNAMESPACE
           }
           return d2min;
         }
+#endif
       }
     };
 
