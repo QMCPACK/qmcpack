@@ -309,6 +309,9 @@ void QMCHamiltonian::acceptMove(int active)
 {
   for(int i=0; i<H.size(); ++i) H[i]->acceptMove(active);
   LocalEnergy=NewLocalEnergy;
+  for(int i=0; i<H.size(); ++i)
+    H[i]->setObservables(Observables);
+
 }
 
 void QMCHamiltonian::rejectMove(int active)
