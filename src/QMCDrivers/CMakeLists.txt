@@ -28,6 +28,7 @@ SET(QMCDRIVERS
   CorrelatedSampling/CSVMC.cpp
   CorrelatedSampling/CSVMCUpdateAll.cpp
   CorrelatedSampling/CSVMCUpdatePbyP.cpp
+  ../Estimators/nofrEstimator.cpp
   ../Estimators/LocalEnergyEstimator.cpp
   ../Estimators/MultipleEnergyEstimator.cpp
   ../Estimators/RQMCMultipleEstimator.cpp
