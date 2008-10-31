@@ -59,6 +59,7 @@ namespace qmcplusplus {
     void addObservables(PropertySetType& plist)
     {
       addObservablesF(plist);
+      myIndex=FirstForceIndex;
     }
     void setObservables(PropertySetType& plist)
     {

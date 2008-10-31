@@ -155,11 +155,11 @@ namespace qmcplusplus {
       {
         (*it++).second->resetParameters(active); 
       }
-      if (FirstTime) {
-	app_log() << "  Chiesa kinetic energy correction = " 
-		  << ChiesaKEcorrection() << endl;
-	FirstTime = false;
-      }
+//       if (FirstTime) {
+// 	app_log() << "  Chiesa kinetic energy correction = " 
+// 		  << ChiesaKEcorrection() << endl;
+// 	FirstTime = false;
+//       }
       //if(dPsi) dPsi->resetParameters(optVariables);
       for(int i=0; i<myVars.size(); ++i)
       {

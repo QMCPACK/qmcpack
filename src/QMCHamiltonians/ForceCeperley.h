@@ -57,7 +57,11 @@ namespace qmcplusplus {
     void resetTargetParticleSet(ParticleSet& P)
     {
     }
-
+    
+    void setParticleSet(PropertySetType& plist, int offset)
+    {
+      setParticleSetF(plist, offset);
+    }
     QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 
     /** Do nothing */
