@@ -136,10 +136,20 @@ namespace qmcplusplus {
     gRand.resize(1);
     ///Here we are going to compute the ODLRO stuff
     for (int ptcl=0;ptcl<p.R.size();ptcl++){
-      makeUniformRandom(gRand);
-      ///      gRand=Box[0]*gRand;
-      PutInBox(gRand[0]);
-      double dist=std::sqrt(dot(gRand[0],gRand[0]));
+      double dist;
+      //      do {
+	makeUniformRandom(gRand);
+	
+	//      makeGaussRandom(gRand);
+	///      gRand=Box[0]*gRand;
+	do {
+	for (int dim=0;dim<gRand[0].size();dim++)
+	  gRand[0][dim]=gRand[0][dim]*W.Lattice.R(dim,dim)/2.0;
+	PutInBox(gRand[0]);
+	dist=std::sqrt(dot(gRand[0],gRand[0]));
+	} while (dist>W.Lattice.R(0,0)/2.0);
+
+
       p.makeMove(ptcl,gRand[0]);
       RealType ratio = Psi.ratio(p,ptcl);
       //      ratio=ratio*ratio;

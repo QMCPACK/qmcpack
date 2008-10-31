@@ -171,7 +171,6 @@ namespace qmcplusplus {
 
   hid_t GofREstimator::createGroup(hid_t gid)
   {
-    cerr<<"nofr not creating group"<<endl;
     hid_t h1=H5Gcreate(gid,this->Title.c_str(),0);
     Vector<RealType> rv(NumBins);
     RealType r=0;

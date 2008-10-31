@@ -471,7 +471,8 @@ namespace qmcplusplus {
     else
       OrbitalSet = new EinsplineSetExtended<complex<double> >;
 
-    // OrbitalSet->resetSourceParticleSet(*ParticleSets["ion0"]);
+
+    ///JEREMY    OrbitalSet->resetSourceParticleSet(*ParticleSets["i"]);
     /////////////////////////
     // Setup internal data //
     /////////////////////////

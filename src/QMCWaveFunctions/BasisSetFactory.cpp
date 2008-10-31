@@ -74,6 +74,10 @@ namespace qmcplusplus {
     //  bb = new SplineSetBuilder(targetPtcl,ptclPool);
     //} 
     //else if(typeOpt == "bspline")
+    cerr<<"TYPE OPT IS "<<typeOpt<<endl;
+#ifdef HAVE_EINSPLINE
+    cerr<<"HAVE EINSPLINE"<<endl;
+#endif
 #if OHMMS_DIM==3
     if(typeOpt == "bspline" || typeOpt== "spline")
     {
