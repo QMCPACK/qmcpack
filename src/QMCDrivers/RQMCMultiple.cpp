@@ -672,7 +672,7 @@ namespace qmcplusplus {
       NewBeadProp[LOGPSI]=Psi1[ipsi]->evaluateLog(W);
       NewBeadProp[SIGN]=Psi1[ipsi]->getPhase();
       RealType eloc=NewBeadProp[LOCALENERGY]= H1[ipsi]->evaluate(W);
-
+      H1[ipsi]->auxHevaluate(W);
       //Save properties
       H1[ipsi]->saveProperty(NewBeadProp);
       //*(NewBead->Gradients[ipsi])=W.G; 
