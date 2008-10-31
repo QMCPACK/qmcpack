@@ -185,6 +185,14 @@ namespace qmcplusplus {
     inline void push_back(Walker_t* awalker) {
       WalkerList.push_back(awalker);
     }
+    
+    inline void resizeWalkerHistories() {
+      for(iterator Wit=WalkerList.begin();Wit!=WalkerList.end();Wit++){
+        if ((*Wit)->PropertyHistory.size()!=PropertyHistory.size()) (*Wit)->PropertyHistory=PropertyHistory;
+      }
+    }
+    
+    
 
     /** delete the last Walker_t*
      *

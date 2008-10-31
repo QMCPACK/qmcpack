@@ -139,6 +139,7 @@ namespace qmcplusplus {
             Psi.acceptMove(W,iat);
             rr_accepted+=rr;
             gf_acc *=prob;//accumulate the ratio 
+            
           } 
           else 
           {
@@ -175,6 +176,7 @@ namespace qmcplusplus {
         //nodecorr=getNodeCorrection(W.G,thisWalker.Drift);
         //thisWalker.resetProperty(logpsi,Psi.getPhase(),enew,rr_accepted,rr_proposed,nodecorr);
         thisWalker.resetProperty(logpsi,Psi.getPhase(),enew,rr_accepted,rr_proposed,1.0);
+        H.auxHevaluate(W,thisWalker);
         H.saveProperty(thisWalker.getPropertyBase());
       } 
       else 
@@ -466,6 +468,7 @@ namespace qmcplusplus {
 
         //thisWalker.resetProperty(std::log(abs(psi)),psi,enew,rr_accepted,rr_proposed,nodecorr);
         thisWalker.resetProperty(logpsi,Psi.getPhase(),enew,rr_accepted,rr_proposed,nodecorr);
+        H.auxHevaluate(W,thisWalker);
         H.saveProperty(thisWalker.getPropertyBase());
       } 
       else 

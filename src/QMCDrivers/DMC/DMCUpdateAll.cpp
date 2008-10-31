@@ -90,13 +90,13 @@ namespace qmcplusplus {
           thisWalker.Properties(R2ACCEPTED)=0.0;
           thisWalker.Properties(R2PROPOSED)=rr_proposed;
         } else {
+          
           accepted=true;  
           thisWalker.R = W.R;
           thisWalker.Drift = drift;          
           rr_accepted = rr_proposed;
           thisWalker.resetProperty(logpsi,Psi.getPhase(),enew,rr_accepted,rr_proposed,nodecorr);
-          
-          H.saveProperty(thisWalker.getPropertyBase());
+          H.auxHevaluate(W,thisWalker);
           H.saveProperty(thisWalker.getPropertyBase());
         }
       }
@@ -182,9 +182,8 @@ namespace qmcplusplus {
 //           thisWalker.resetProperty(logpsi,Psi.getPhase(),enew);
           rr_accepted = rr_proposed;
           thisWalker.resetProperty(logpsi,Psi.getPhase(),enew,rr_accepted,rr_proposed,nodecorr);
+          H.auxHevaluate(W,thisWalker);
           H.saveProperty(thisWalker.getPropertyBase());
-          //emixed = (emixed+enew)*0.5;
-          //eold=enew;
         }
         
 //         cout<<logpsi<<"  "<<Psi.getPhase()<<"  "<<enew<<"  "<<rr_accepted<<"  "<<rr_proposed<<"  "<<nodecorr<<endl;

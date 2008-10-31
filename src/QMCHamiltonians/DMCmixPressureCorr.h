@@ -36,7 +36,7 @@ namespace qmcplusplus {
     double pNorm, Value0, Value1, Value2;
     int phlen;
     int ELVindex, Vindex, Eindex;
-
+    Walker<Return_t, ParticleSet::ParticleGradient_t>* tWalker;
 
     /** constructor
      *
@@ -51,6 +51,12 @@ namespace qmcplusplus {
       Vindex = P.addPropertyHistory(phlen);
       int tpl= max(phlen,1000);
       Eindex = P.addPropertyHistory(tpl);
+      app_log()<<"INITIAL  indices :"<<ELVindex<<"  "<<Vindex<<"  "<<Eindex<<endl;
+    }
+    
+    DMCPressureCorr(ParticleSet& P) {
+      UpdateMode.set(OPTIMIZABLE,1);
+      pNorm = 1.0/(P.Lattice.DIM*P.Lattice.Volume);
     }
     
     ///destructor
@@ -58,30 +64,35 @@ namespace qmcplusplus {
 
     void resetTargetParticleSet(ParticleSet& P) {
       pNorm = 1.0/(P.Lattice.DIM*P.Lattice.Volume);
-//       app_log()<<"Tau "<<Tau<<endl;
-//       assert(phlen==P.phLength);
+    }
+    
+    void setHistories(Walker<Return_t, ParticleSet::ParticleGradient_t>& ThisWalker){
+      (tWalker)= &(ThisWalker);
+//       app_log()<<"  Plist for ThisWalker is len:"<<ThisWalker.PropertyHistory.size()<<endl;
     }
 
     inline Return_t 
     evaluate(ParticleSet& P) {
-//       assert(phlen==P.phLength);
+//       app_log()<<"  Plist for P is len:"<<P.PropertyHistory.size()<<endl;
+//       app_log()<<"  Plist for twalker is len:"<<tWalker->PropertyHistory.size()<<endl;
       
+//       app_log()<<"  indices :"<<ELVindex<<"  "<<Vindex<<"  "<<Eindex<<endl;
       double eloc = P.PropertyList[LOCALENERGY];
       double vloc = P.PropertyList[LOCALPOTENTIAL];
-      P.addPropertyHistoryPoint(ELVindex,eloc*vloc);
-      P.addPropertyHistoryPoint(Vindex,vloc);
-      P.addPropertyHistoryPoint(Eindex,eloc);
-      double ELVsum = P.getPropertyHistorySum(ELVindex,phlen);
-      double Vsum = P.getPropertyHistorySum(Vindex,phlen);
-      double Ebar = P.getPropertyHistoryAvg(Eindex);
+      tWalker->addPropertyHistoryPoint(ELVindex,eloc*vloc);
+      tWalker->addPropertyHistoryPoint(Vindex,vloc);
+      tWalker->addPropertyHistoryPoint(Eindex,eloc);
+      double ELVsum = tWalker->getPropertyHistorySum(ELVindex,phlen);
+      double Vsum = tWalker->getPropertyHistorySum(Vindex,phlen);
+      double Ebar = tWalker->getPropertyHistoryAvg(Eindex);
       
       int AC(0.0);
       double tm=1.0;
-      for (int i=1;((i<phlen)&&(tm>0.0));i++){
-        tm=P.PropertyHistory[Eindex][i]-Ebar;
+      for (int i=1;((i<tWalker->PropertyHistory[Eindex].size())&&(tm>0.0));i++){
+        tm=tWalker->PropertyHistory[Eindex][i]-Ebar;
         AC+=1;
       }
-//       app_log()<<"DATAS "<<Vsum<<"  "<<ELVsum<<"  "<<AC<<endl;
+
       Value0=Vsum*pNorm*Tau;
       Value1=ELVsum*pNorm*Tau;
       Value2=AC;
@@ -102,7 +113,11 @@ namespace qmcplusplus {
 
     QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi)
     {
-      return new DMCPressureCorr(qp,phlen);
+      DMCPressureCorr* myClone = new DMCPressureCorr(qp);
+      myClone->ELVindex =ELVindex;
+      myClone->Vindex = Vindex;
+      myClone->Eindex = Eindex;
+      return myClone;
     }
     
     void addObservables(PropertySetType& plist)
@@ -118,9 +133,14 @@ namespace qmcplusplus {
       plist[myIndex]=Value0;
       plist[myIndex+1]=Value1;
       plist[myIndex+2]=Value2;
+    }
+    void setParticleSet(PropertySetType& plist, int offset)
+    {
+      plist[myIndex+offset]=Value0;
+      plist[myIndex+1+offset]=Value1;
+      plist[myIndex+2+offset]=Value2;
       
     }
-
   };
 }
 #endif

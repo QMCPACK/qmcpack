@@ -41,6 +41,7 @@
 #include "QMCHamiltonians/HFDHE2Potential.h"
 #include "QMCHamiltonians/HFDHE2Potential_tail.h"
 #include "QMCHamiltonians/DMCmixPressureCorr.h"
+#include "QMCHamiltonians/ForwardWalking.h"
 
 
 
@@ -114,6 +115,7 @@ namespace qmcplusplus {
       }
     }
 
+    xmlNodePtr cur2(cur);
     cur = cur->children;
     while(cur != NULL) {
       string cname((const char*)cur->name);
@@ -191,9 +193,9 @@ namespace qmcplusplus {
             targetH->addOperator(DMCP,"PressureSum",false);
             
           } else if (estType=="HFDHE2"){
-              HePressure* BP = new HePressure(*targetPtcl);
-              BP-> put(cur);
-              targetH->addOperator(BP,"HePress",false);
+            HePressure* BP = new HePressure(*targetPtcl);
+            BP-> put(cur);
+            targetH->addOperator(BP,"HePress",false);
           } else if (estType=="RPAZVZB"){
             RPAPressure* BP= new RPAPressure(*targetPtcl);
             
@@ -219,7 +221,7 @@ namespace qmcplusplus {
                 Isource = (*pit).second;
                 BP-> put(cur, *targetPtcl,*Isource,*(psiPool[PsiName]->targetPsi));
               }
-              tcur = tcur->next;
+              tcur = tcur->next; 
             }
             if (!withSource) BP-> put(cur, *targetPtcl);
             targetH->addOperator(BP,BP->MyName,false);
@@ -231,6 +233,13 @@ namespace qmcplusplus {
             targetH->addOperator(DMCP,"PressureSum",false);
           }
         }
+//         else if (potType=="ForwardWalking"){
+//           app_log()<<"  Adding Forward Walking Operator"<<endl;
+//           ForwardWalking* FW=new ForwardWalking();
+//           FW->put(cur,*targetH,*targetPtcl);
+//           targetH->addOperator(FW,"ForwardWalking",false);
+//           
+//         }
       }
       //else if(cname == "harmonic") 
       //{
@@ -292,6 +301,26 @@ namespace qmcplusplus {
       //}
       if(attach2Node) xmlAddChild(myNode,xmlCopyNode(cur,1));
       cur = cur->next;
+    }
+    targetH->setObservables(targetPtcl->PropertyList);
+    
+    ///This is officially ugly, but we need to add all observables (previous line) before the forward walker is initialized otherwise we can't find them.
+    cur2 = cur2->children;
+    while(cur2 != NULL) {
+      string cname((const char*)cur2->name);
+      string potType("Null");
+      OhmmsAttributeSet attrib;
+      attrib.add(potType,"type");
+      attrib.put(cur2);
+      if((cname == "estimator")&&(potType=="ForwardWalking"))
+      {
+        targetH->updateParticleSet();
+        app_log()<<"  Adding Forward Walking Operator"<<endl;
+        ForwardWalking* FW=new ForwardWalking();
+        FW->put(cur2,*targetH,*targetPtcl);
+        targetH->addOperator(FW,"ForwardWalking",false);
+      }
+      cur2 = cur2->next;
     }
     targetH->addObservables(targetPtcl->PropertyList);
     return true;

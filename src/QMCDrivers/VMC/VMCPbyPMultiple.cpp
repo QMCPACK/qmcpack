@@ -255,6 +255,7 @@ namespace qmcplusplus {
               //Properties is used for UmbrellaWeight and UmbrellaEnergy
               thisWalker.Properties(ipsi,UMBRELLAWEIGHT)=UmbrellaWeight[ipsi];
               thisWalker.Properties(ipsi,LOCALENERGY)=et;
+              H1[ipsi]->auxHevaluate(W);
               H1[ipsi]->saveProperty(thisWalker.getPropertyBase(ipsi));
 	    }
 	  }

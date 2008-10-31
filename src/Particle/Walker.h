@@ -118,7 +118,7 @@ namespace qmcplusplus {
     {
       if (leng>0) phLength=leng;
     }
-    
+
     inline int addPropertyHistory(int leng)
     {
       int newL = PropertyHistory.size();
@@ -174,7 +174,7 @@ namespace qmcplusplus {
 
     ///copy the content of a walker
     inline void makeCopy(const Walker& a) 
-    {    
+    {
       ID=a.ID;
       ParentID=a.ParentID;
       Generation=a.Generation;
@@ -186,8 +186,9 @@ namespace qmcplusplus {
       Drift = a.Drift;
       Properties.copy(a.Properties);
       DataSet=a.DataSet;
-      PropertyHistory=a.PropertyHistory;
-      phLength=a.phLength;
+
+      PropertyHistory=  a.PropertyHistory;
+      phLength= a.phLength;
     }
 
     //return the address of the values of Hamiltonian terms

@@ -61,6 +61,7 @@ namespace qmcplusplus {
         RealType eloc=H.evaluate(W);
 	thisWalker.R = W.R;
         thisWalker.resetProperty(logpsi,Psi.getPhase(),eloc);
+        H.auxHevaluate(W,thisWalker);
 	H.saveProperty(thisWalker.getPropertyBase());
 #if defined(ENABLE_COMPOSITE_ESTIMATOR)
         if(measure) compEstimator->accumulate(W,1.0);
@@ -129,6 +130,7 @@ namespace qmcplusplus {
 	thisWalker.R = W.R;
 	thisWalker.Drift = drift;
         thisWalker.resetProperty(logpsi,Psi.getPhase(),eloc);
+        H.auxHevaluate(W,thisWalker);
 	H.saveProperty(thisWalker.getPropertyBase());
 #if defined(ENABLE_COMPOSITE_ESTIMATOR)
         if(measure) compEstimator->accumulate(W,1.0);

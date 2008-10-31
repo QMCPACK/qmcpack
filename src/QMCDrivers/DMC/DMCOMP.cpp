@@ -49,7 +49,7 @@ namespace qmcplusplus {
   void DMCOMP::resetUpdateEngines() {
 
     bool fixW = (Reconfiguration == "yes");
-
+    
     makeClones(W,Psi,H);
 
     if(Movers.empty()) 

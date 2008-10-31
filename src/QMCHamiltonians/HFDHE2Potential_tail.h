@@ -121,7 +121,12 @@ namespace qmcplusplus {
       plist[myIndex+1]=KValue;
 //       plist[myIndex+1]=tailcorr;
     }
-    
+    void setParticleSet(PropertySetType& plist, int offset)
+    {
+      plist[myIndex+offset]=Value;
+      plist[myIndex+1+offset]=KValue;
+//       plist[myIndex+1]=tailcorr;
+    }
   };
 }
 #endif

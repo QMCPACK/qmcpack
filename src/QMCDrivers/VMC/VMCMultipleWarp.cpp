@@ -383,6 +383,7 @@ namespace qmcplusplus {
           thisWalker.Properties(ipsi,UMBRELLAWEIGHT)=invsumratio[ipsi];
           thisWalker.Properties(ipsi,LOCALENERGY)=et;
           thisWalker.Properties(ipsi,JACOBIAN)=Jacobian[ipsi];
+          H1[ipsi]->auxHevaluate(W);
           H1[ipsi]->saveProperty(thisWalker.getPropertyBase(ipsi));
         }
         //cout << "ACCEPTED" << endl << endl;

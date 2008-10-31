@@ -23,7 +23,7 @@ namespace qmcplusplus
 
   /** constructor
   */
-  QMCHamiltonian::QMCHamiltonian():myIndex(0)
+  QMCHamiltonian::QMCHamiltonian():myIndex(0),storeAllDataInPset(false)
   { }
 
 ///// copy constructor is distable by declaring it as private
@@ -122,12 +122,21 @@ QMCHamiltonian::addObservables(PropertySetType& plist)
   app_log() << "    starting Index = " << myIndex << endl;
 }
 
+void QMCHamiltonian::setObservables(PropertySetType& plist)
+{
+  //first add properties to Observables
+  Observables.clear();
+  for(int i=0; i<H.size(); ++i) H[i]->addObservables(Observables);
+  for(int i=0; i<auxH.size(); ++i) auxH[i]->addObservables(Observables);
+  myIndex=plist.size();
+}
+
 /** Evaluate all the Hamiltonians for the N-particle  configuration
  *@param P input configuration containing N particles
  *@return the local energy
  */
 QMCHamiltonian::Return_t 
-QMCHamiltonian::evaluate(ParticleSet& P) 
+    QMCHamiltonian::evaluate(ParticleSet& P) 
 {
   LocalEnergy = 0.0;
   for(int i=0; i<H.size(); ++i)
@@ -135,18 +144,38 @@ QMCHamiltonian::evaluate(ParticleSet& P)
     myTimers[i]->start();
     LocalEnergy += H[i]->evaluate(P);
     H[i]->setObservables(Observables);
+    if (storeAllDataInPset) H[i]->setParticleSet(P.PropertyList,myIndex);
     myTimers[i]->stop();
   }
   KineticEnergy=H[0]->Value;
   P.PropertyList[LOCALENERGY]=LocalEnergy;
   P.PropertyList[LOCALPOTENTIAL]=LocalEnergy-KineticEnergy;
+//   auxHevaluate(P);
+
+  return LocalEnergy;
+}
+
+void QMCHamiltonian::auxHevaluate(ParticleSet& P )
+{
   for(int i=0; i<auxH.size(); ++i)
   {
     RealType sink = auxH[i]->evaluate(P);
     auxH[i]->setObservables(Observables);
+    if (storeAllDataInPset) auxH[i]->setParticleSet(P.PropertyList,myIndex);
   }
+}
 
-  return LocalEnergy;
+///This is more efficient. Only calculate auxH elements if moves are accepted.
+void QMCHamiltonian::auxHevaluate(ParticleSet& P, Walker<Return_t, ParticleSet::ParticleGradient_t>& ThisWalker)
+{
+  for(int i=0; i<auxH.size(); ++i)
+  {
+    auxH[i]->setHistories(ThisWalker);
+    RealType sink = auxH[i]->evaluate(P);
+    auxH[i]->setObservables(Observables);
+    
+    if (storeAllDataInPset) auxH[i]->setParticleSet(P.PropertyList,myIndex);
+  }
 }
 
 QMCHamiltonian::Return_t 
@@ -158,16 +187,13 @@ QMCHamiltonian::evaluate(ParticleSet& P, vector<NonLocalData>& Txy)
     myTimers[i]->start();
     LocalEnergy += H[i]->evaluate(P,Txy);
     H[i]->setObservables(Observables);
+    if (storeAllDataInPset) H[i]->setParticleSet(P.PropertyList,myIndex);
     myTimers[i]->stop();
   }
   KineticEnergy=H[0]->Value;
   P.PropertyList[LOCALENERGY]=LocalEnergy;
   P.PropertyList[LOCALPOTENTIAL]=LocalEnergy-KineticEnergy;
-  for(int i=0; i<auxH.size(); ++i)
-  {
-    RealType sink = auxH[i]->evaluate(P);
-    auxH[i]->setObservables(Observables);
-  }
+//   auxHevaluate(P);
   return LocalEnergy;
 }
 
@@ -213,6 +239,7 @@ QMCHamiltonian::setRandomGenerator(RandomGenerator_t* rng)
 QMCHamiltonian* QMCHamiltonian::makeClone(ParticleSet& qp, TrialWaveFunction& psi) 
 {
   QMCHamiltonian* myclone=new QMCHamiltonian;
+  myclone->storeAllDataInPset=storeAllDataInPset;
   std::vector<int> depIndexVector;
   for(int i=0; i<H.size(); ++i){
     myclone->addOperator(H[i]->makeClone(qp,psi),H[i]->myName,true);

@@ -47,6 +47,9 @@ namespace qmcplusplus {
     PropertyList.Names=p.PropertyList.Names;
     PropertyList.Values=p.PropertyList.Values;
 
+    PropertyHistory=  p.PropertyHistory;
+    phLength= p.phLength;
+    
     //construct the distance tables with the same order
     //first is always for this-this paier
     for(int i=1;i<p.DistTables.size(); ++i) addTable(p.DistTables[i]->origin());
@@ -407,11 +410,15 @@ namespace qmcplusplus {
     return newL;
   }
 
-  void ParticleSet::addPropertyHistoryPoint(int index, double data)
+  void ParticleSet::addPropertyHistoryPoint(int Rindex, double data)
   {
-    vector<double>::iterator phStart=PropertyHistory[index].begin();
-    PropertyHistory[index].insert(phStart,1,data);
-    PropertyHistory[index].pop_back();
+    PropertyHistory[Rindex].insert(PropertyHistory[Rindex].begin(),1,data);
+    PropertyHistory[Rindex].pop_back();
+  }
+  
+  double ParticleSet::getPropertyHistoryPoint(int Rindex, double Tindex)
+  {
+    return PropertyHistory[Rindex][Tindex];
   }
     
    double ParticleSet::getPropertyHistoryAvg(int index)

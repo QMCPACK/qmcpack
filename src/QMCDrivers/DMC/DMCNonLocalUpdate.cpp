@@ -91,6 +91,7 @@ namespace qmcplusplus {
           thisWalker.R = W.R;
           thisWalker.Drift = drift;
           thisWalker.resetProperty(logpsi,Psi.getPhase(),enew);
+          H.auxHevaluate(W,thisWalker);
           H.saveProperty(thisWalker.getPropertyBase());
           //emixed = (emixed+enew)*0.5;
           //eold=enew;
@@ -223,6 +224,7 @@ namespace qmcplusplus {
         enew= H.evaluate(W,nonLocalOps.Txy);
         //thisWalker.resetProperty(std::log(abs(psi)),psi,enew,rr_accepted,rr_proposed,1.0);
         thisWalker.resetProperty(logpsi,Psi.getPhase(),enew,rr_accepted,rr_proposed,1.0);
+        H.auxHevaluate(W,thisWalker);
         H.saveProperty(thisWalker.getPropertyBase());
 
         thisWalker.Drift=W.G;

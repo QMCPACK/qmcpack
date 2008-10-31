@@ -249,6 +249,7 @@ void MCWalkerConfiguration::resetWalkerProperty(int ncopy) {
   while(it != it_end) {
     (*it)->resizeProperty(ncopy,m); ++it;
   }
+  resizeWalkerHistories();
 }
 
 void MCWalkerConfiguration::saveEnsemble()
@@ -286,6 +287,7 @@ void MCWalkerConfiguration::loadEnsemble()
     WalkerList[i]=awalker;
     delete SampleStack[i];
   }
+  resizeWalkerHistories();
   SampleStack.clear();
 }
 
@@ -303,6 +305,7 @@ void MCWalkerConfiguration::loadEnsemble(MCWalkerConfiguration& other)
     other.WalkerList.push_back(awalker);
     delete SampleStack[i];
   }
+  other.resizeWalkerHistories();
   SampleStack.clear();
 }
 

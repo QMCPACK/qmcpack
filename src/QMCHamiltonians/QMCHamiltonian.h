@@ -70,12 +70,22 @@ namespace qmcplusplus {
      * @param plist a set of properties to which this Hamiltonian add the observables
      */
     void addObservables(PropertySetType& plist);
+    ///Sets the observable sup so Forward walking can look and find the elements
+    void setObservables(PropertySetType& plist);
     ///retrun the starting index
     inline int startIndex() const { return myIndex;}
     ///return the size of observables
     inline int sizeOfObservables() const { return Observables.size();}
     ///return the value of the i-th observable
     inline RealType getObservable(int i) const { return Observables.Values[i];}
+    ///return the value of the observable with a set name if it exists
+    inline int getObservable(string Oname) const { 
+      int rtval(-1);
+      for(int io=0;io<Observables.size();io++){
+        if (Observables.Names[io]==Oname) return io;
+      }
+      return rtval;
+    }
     ///return the name of the i-th observable
     inline string getObservableName(int i) const { return Observables.Names[i];}
     ///save the values of Hamiltonian elements to the Properties
@@ -92,7 +102,8 @@ namespace qmcplusplus {
     inline Return_t getLocalEnergy() { return LocalEnergy;}
     ////return the LocalPotential \f$=\sum_i H^{qmc}_{i} - KE\f$
     inline Return_t getLocalPotential() { return LocalEnergy-KineticEnergy;}
-
+    void auxHevaluate(ParticleSet& P);
+    void auxHevaluate(ParticleSet& P, Walker<Return_t, ParticleSet::ParticleGradient_t>& ThisWalker);
     ///** set Tau for each Hamiltonian
     // */
     //inline void setTau(RealType tau) 
@@ -180,6 +191,8 @@ namespace qmcplusplus {
 
     /** return a clone */
     QMCHamiltonian* makeClone(ParticleSet& qp, TrialWaveFunction& psi); 
+    
+    void updateParticleSet() {storeAllDataInPset=true; }
 
   private:
     ///starting index
@@ -202,6 +215,7 @@ namespace qmcplusplus {
     PropertySetType Observables;
     ///reset Observables
     void resetObservables(int start);
+    bool storeAllDataInPset;
   };
 }
 #endif

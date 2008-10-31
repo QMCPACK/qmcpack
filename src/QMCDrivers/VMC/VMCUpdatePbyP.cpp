@@ -105,6 +105,7 @@ namespace qmcplusplus {
       myTimers[3]->stop();
 
       thisWalker.resetProperty(logpsi,Psi.getPhase(),eloc);
+      H.auxHevaluate(W,thisWalker);
       H.saveProperty(thisWalker.getPropertyBase());
 
     }
@@ -217,6 +218,7 @@ namespace qmcplusplus {
         myTimers[3]->stop();
         //thisWalker.resetProperty(std::log(abs(psi)), psi,eloc);
         thisWalker.resetProperty(logpsi,Psi.getPhase(), eloc);
+        H.auxHevaluate(W,thisWalker);
         H.saveProperty(thisWalker.getPropertyBase());
       }
       else 
@@ -320,6 +322,7 @@ namespace qmcplusplus {
         myTimers[3]->stop();
         //thisWalker.resetProperty(std::log(abs(psi)), psi,eloc);
         thisWalker.resetProperty(logpsi,Psi.getPhase(), eloc);
+        H.auxHevaluate(W,thisWalker);
         H.saveProperty(thisWalker.getPropertyBase());
       }
       else 

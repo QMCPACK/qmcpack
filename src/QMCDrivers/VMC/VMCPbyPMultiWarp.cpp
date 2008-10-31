@@ -326,7 +326,7 @@ namespace qmcplusplus {
               //thisWalker.Properties(ipsi,LOGPSI)=std::log(abs(psi));
               thisWalker.Properties(ipsi,LOGPSI)=logpsi;
               thisWalker.Properties(ipsi,SIGN)=Psi1[ipsi]->getPhase();
-
+              H1[ipsi]->auxHevaluate(W);
               H1[ipsi]->saveProperty(thisWalker.getPropertyBase(ipsi));
 	    }
 	  }
