@@ -75,6 +75,7 @@ namespace qmcplusplus {
     bool build(xmlNodePtr cur, bool buildtree=true);
 
     void addCoulombPotential(xmlNodePtr cur);
+    void addForceHam(xmlNodePtr cur);
     void addPseudoPotential(xmlNodePtr cur);
     void addCorePolPotential(xmlNodePtr cur);
     void addConstCoulombPotential(xmlNodePtr cur, string& nuclei);

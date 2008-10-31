@@ -39,11 +39,11 @@
 #include "QMCHamiltonians/RPAPressure.h"
 #include "QMCHamiltonians/HePressure.h"
 #include "QMCHamiltonians/HFDHE2Potential.h"
+#include "QMCHamiltonians/ForceBase.h"
+#include "QMCHamiltonians/ForceCeperley.h"
 #include "QMCHamiltonians/HFDHE2Potential_tail.h"
 #include "QMCHamiltonians/DMCmixPressureCorr.h"
 #include "QMCHamiltonians/ForwardWalking.h"
-
-
 
 namespace qmcplusplus {
   HamiltonianFactory::HamiltonianFactory(ParticleSet* qp, 
@@ -233,6 +233,10 @@ namespace qmcplusplus {
             targetH->addOperator(DMCP,"PressureSum",false);
           }
         }
+        else if(potType == "Force")
+        {
+          addForceHam(cur);
+        }
 //         else if (potType=="ForwardWalking"){
 //           app_log()<<"  Adding Forward Walking Operator"<<endl;
 //           ForwardWalking* FW=new ForwardWalking();
@@ -384,6 +388,47 @@ namespace qmcplusplus {
       } else {
         targetH->addOperator(new CoulombPotentialAB(*source,*targetPtcl),title);
       }
+    }
+  }
+
+  void 
+  HamiltonianFactory::addForceHam(xmlNodePtr cur) {
+    string a("ion0"),targetName("e"),title("ForceBase"),pbc("yes");
+    OhmmsAttributeSet hAttrib;
+    string mode("base");
+    //hAttrib.add(title,"id");
+    //hAttrib.add(title,"name"); 
+    hAttrib.add(a,"source"); 
+    hAttrib.add(targetName,"target"); 
+    hAttrib.add(pbc,"pbc"); 
+    hAttrib.add(mode,"mode"); 
+    hAttrib.put(cur);
+    cerr << "HamFac forceBase mode " << mode << endl;
+    renameProperty(a);
+
+    PtclPoolType::iterator pit(ptclPool.find(a));
+    if(pit == ptclPool.end()) {
+      ERRORMSG("Missing source ParticleSet" << a)
+      return;
+    }
+    ParticleSet* source = (*pit).second;
+    pit = ptclPool.find(targetName);
+    if(pit == ptclPool.end()) {
+      ERRORMSG("Missing target ParticleSet" << targetName)
+      return;
+    }
+    ParticleSet* target = (*pit).second;
+
+    //bool applyPBC= (PBCType && pbc=="yes");
+
+    if(mode=="bare") {
+      targetH->addOperator(new BareForce(*source, *target), title, false);
+    } else if(mode=="cep") {
+      targetH->addOperator(new ForceCeperley(*source, *target), title, false);
+    } else {
+      ERRORMSG("Failed to recognize Force mode " << mode)
+    //} else if(mode=="FD") {
+    //  targetH->addOperator(new ForceFiniteDiff(*source, *target), title, false);
     }
   }
 
