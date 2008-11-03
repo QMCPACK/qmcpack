@@ -342,7 +342,7 @@ namespace qmcplusplus {
       c2 = -5*cA;
       c3 = B*c1;
       c4 = 30*cA;
-      c5 = B*c3;
+      c5 = -2*B*c3;
     }
 
 
@@ -505,7 +505,7 @@ namespace qmcplusplus {
       c2 = -5*cA;
       c3 = B*c1;
       c4 = 30*cA;
-      c5 = B*c3;
+      c5 = -2*B*c3;
       
       
       real_type r1 = (R0-RC);
