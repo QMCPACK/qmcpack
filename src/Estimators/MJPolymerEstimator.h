@@ -58,6 +58,7 @@ namespace qmcplusplus {
       std::vector<string> elocal_name;
       int FirstHamiltonian;
       int SizeOfHamiltonians,truncLength;
+      int Findex;
       RealType KEconst,pNorm,ObsEvals;
       std::vector<RealType> ObsCont,ObsContAvg;
       std::vector<RealType> ObsCont2,ObsContAvg2;

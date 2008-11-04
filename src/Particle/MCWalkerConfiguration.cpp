@@ -85,6 +85,7 @@ void MCWalkerConfiguration::createWalkers(int n)
       }
     }
   }
+  resizeWalkerHistories();
 }
 
 

@@ -44,6 +44,7 @@
 #include "QMCHamiltonians/HFDHE2Potential_tail.h"
 #include "QMCHamiltonians/DMCmixPressureCorr.h"
 #include "QMCHamiltonians/ForwardWalking.h"
+#include "QMCHamiltonians/TrialEnergy.h"
 
 namespace qmcplusplus {
   HamiltonianFactory::HamiltonianFactory(ParticleSet* qp, 
@@ -237,6 +238,12 @@ namespace qmcplusplus {
         {
           addForceHam(cur);
         }
+        else if(potType == "TrialEnergy")
+        {
+	  TrialEnergy* TE = new TrialEnergy(*targetPtcl);
+	  TE->put(cur,*targetPtcl);
+          targetH->addOperator(TE,"E_T",false);
+        }
 //         else if (potType=="ForwardWalking"){
 //           app_log()<<"  Adding Forward Walking Operator"<<endl;
 //           ForwardWalking* FW=new ForwardWalking();
@@ -318,7 +325,6 @@ namespace qmcplusplus {
       attrib.put(cur2);
       if((cname == "estimator")&&(potType=="ForwardWalking"))
       {
-        targetH->updateParticleSet();
         app_log()<<"  Adding Forward Walking Operator"<<endl;
         ForwardWalking* FW=new ForwardWalking();
         FW->put(cur2,*targetH,*targetPtcl);

@@ -18,7 +18,7 @@
 
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "Utilities/PooledData.h"
-
+#include <assert.h>
 namespace qmcplusplus {
 
   /** an enum denoting index of physical properties 
@@ -33,7 +33,8 @@ namespace qmcplusplus {
         DRIFTSCALE,     /*!< scaling value for the drift */
 	LOCALENERGY,    /*!< local energy, the sum of all the components */
 	LOCALPOTENTIAL, /*!< local potential energy = local energy - kinetic energy */
-	NUMPROPERTIES   /*!< the number of properties */
+	TRIALENERGY,
+        NUMPROPERTIES   /*!< the number of properties */
        };
   
   /** A container class to represent a walker.
@@ -99,7 +100,7 @@ namespace qmcplusplus {
 
     ///default constructor
     inline Walker() : ID(0),ParentID(0), Generation(0),Age(0),
-    Weight(1.0e0),Multiplicity(1.0e0) 
+                  Weight(1.0e0),Multiplicity(1.0e0), phLength(1)
     {
       Properties.resize(1,NUMPROPERTIES);
       reset();
@@ -107,7 +108,7 @@ namespace qmcplusplus {
 
     ///create a walker for n-particles
     inline explicit Walker(int nptcl) : ID(0),ParentID(0), Generation(0),Age(0),
-                           Weight(1.0e0),Multiplicity(1.0e0),phLength(0)
+                           Weight(1.0e0),Multiplicity(1.0e0),phLength(1)
     {
       Properties.resize(1,NUMPROPERTIES);
       resize(nptcl);
@@ -122,7 +123,7 @@ namespace qmcplusplus {
     inline int addPropertyHistory(int leng)
     {
       int newL = PropertyHistory.size();
-      vector<double> newVecHistory(leng,0.0);
+      vector<double>  newVecHistory(leng,0.0);
       PropertyHistory.push_back(newVecHistory);
       return newL;
     }
@@ -132,6 +133,14 @@ namespace qmcplusplus {
       vector<double>::iterator phStart=PropertyHistory[index].begin();
       PropertyHistory[index].insert(phStart,1,data);
       PropertyHistory[index].pop_back();
+    }
+    
+    inline void rejectedMove()
+    {
+      if (PropertyHistory.size()>0) addPropertyHistoryPoint(0,Properties(TRIALENERGY));
+      for(int dindex=1;dindex<PropertyHistory.size();dindex++){
+        addPropertyHistoryPoint(dindex,PropertyHistory[dindex][0]);
+      }
     }
     
     inline double getPropertyHistoryAvg(int index)
@@ -187,7 +196,7 @@ namespace qmcplusplus {
       Properties.copy(a.Properties);
       DataSet=a.DataSet;
 
-      PropertyHistory=  a.PropertyHistory;
+      PropertyHistory=a.PropertyHistory;
       phLength= a.phLength;
     }
 
@@ -250,6 +259,19 @@ namespace qmcplusplus {
       Properties(R2PROPOSED) = r2p;
       Properties(DRIFTSCALE) = vq;
     }
+    
+    inline void resetProperty(T logpsi, T sigN, T ene, T r2a, T r2p, T vq, T et) 
+    {
+      Age=0;
+      Properties(LOGPSI)=logpsi;
+      Properties(SIGN)=sigN;
+      Properties(LOCALENERGY) = ene;
+      Properties(R2ACCEPTED) = r2a;
+      Properties(R2PROPOSED) = r2p;
+      Properties(DRIFTSCALE) = vq;
+      Properties(TRIALENERGY) = et;
+    }
+    
     /** marked to die
      *
      * Multiplicity and weight are set to zero.

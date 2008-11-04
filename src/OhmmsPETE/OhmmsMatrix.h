@@ -20,7 +20,7 @@
 #define OHMMS_PETE_MATRIX_H
 
 #include "PETE/PETE.h"
-
+#include <cstdlib>
 #include <vector>
 #include <iostream>
 

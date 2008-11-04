@@ -35,7 +35,8 @@ namespace qmcplusplus {
     vector<double> Values;
     vector<string> Names;
     int blockT,nObservables,nValues,FirstHamiltonian;
-    Walker<Return_t, ParticleSet::ParticleGradient_t>* tWalker;
+    
+    double count;
 
 
     /** constructor
@@ -56,20 +57,26 @@ namespace qmcplusplus {
     void resetTargetParticleSet(ParticleSet& P) {
     }
     
-    void setHistories(Walker<Return_t, ParticleSet::ParticleGradient_t>& ThisWalker){
-      (tWalker)= &(ThisWalker);
-    }
+
 
     inline Return_t 
     evaluate(ParticleSet& P) {
 
-      P.phLength++;
-      if (P.phLength%blockT == 0){
-        P.phLength=0;
+      tWalker->phLength++;
+//       count=tWalker->phLength;
+//       if (tWalker->phLength%blockT == 0){
+//         tWalker->phLength=0;
         for(int i=0;i<nObservables;i++){
-          tWalker->addPropertyHistoryPoint(Pindices[i],P.PropertyList[ Hindices[i] ]);
+          tWalker->addPropertyHistoryPoint(Pindices[i],  tWalker->Properties(Hindices[i]));
         }
-        
+	
+//         for(int i=0;i<nObservables;i++){
+// 	app_log()<<" Nobs:"<<i<<endl;
+// 	for(int j=0;j<tWalker->PropertyHistory[i].size();j++){
+//             app_log()<<"  "<<tWalker->PropertyHistory[i][j];
+// 	  }
+// 	  app_log()<<endl;
+//         }
         
         vector<double>::iterator Vit=Values.begin();
         for(int i=0;i<nObservables;i++){
@@ -78,7 +85,7 @@ namespace qmcplusplus {
             
           }
         }
-      }
+//       }
       return 0.0;
     }
 
@@ -99,6 +106,7 @@ namespace qmcplusplus {
       attrib.put(cur);
       app_log()<<"  Forward walking block size is "<< blockT<<"*Tau"<<endl;
       P.phLength=0;
+      bool FIRST=true;
 
       xmlNodePtr tcur = cur->children;
       while(tcur != NULL) {
@@ -107,14 +115,18 @@ namespace qmcplusplus {
         if(cname == "Observable") 
         {
           string tagName("none");
-          int Hindex(-1);
+          int Hindex(-100);
           OhmmsAttributeSet Tattrib;
           Tattrib.add(tagName,"name");
           Tattrib.put(tcur);
-          
+	  
           Hindex=h.getObservable(tagName);
+          if (tagName=="LocalPotential") {
+            Hindex=LOCALPOTENTIAL-FirstHamiltonian;
+            tagName="LPot";
+          } 
           
-          if (Hindex<0){
+          if ((Hindex==-100)){
             app_log()<<" Hamiltonian Element "<<tagName<<" does not exist!! "<<Hindex<<endl;
             assert(Hindex>=0);
           }
@@ -186,17 +198,10 @@ namespace qmcplusplus {
       }
     }
 
-
     void setObservables(PropertySetType& plist)
     {
       for (int i=0;i<nValues;i++) plist[myIndex+i]=Values[i];
     }
-    
-    void setParticleSet(PropertySetType& plist, int offset)
-    {
-      for (int i=0;i<nValues;i++) plist[myIndex+i+offset]=Values[i];
-    }
-
   };
 }
 #endif

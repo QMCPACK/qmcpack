@@ -68,6 +68,7 @@ namespace qmcplusplus {
       bool accepted=false; 
       if(branchEngine->phaseChanged(Psi.getPhase(),thisWalker.Properties(SIGN))) 
       {
+        thisWalker.rejectedMove();
         thisWalker.Age++;
         ++nReject;
       } 
@@ -84,6 +85,7 @@ namespace qmcplusplus {
         RealType prob= std::min(std::exp(logGb-logGf +2.0*(logpsi-thisWalker.Properties(LOGPSI))),1.0);
         if(RandomGen() > prob){
           thisWalker.Age++;
+          thisWalker.rejectedMove();
           ++nReject;
           enew=eold;
         } else {
@@ -231,6 +233,7 @@ namespace qmcplusplus {
       } 
       else 
       {
+        thisWalker.rejectedMove();
         thisWalker.Age++;
         thisWalker.Properties(R2ACCEPTED)=0.0;
         ++nAllRejected;

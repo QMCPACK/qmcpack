@@ -263,6 +263,7 @@ namespace qmcplusplus {
     }
 
     inline RealType getEref() const { return vParam[B_EREF];}
+    inline RealType getEtrial() const { return vParam[B_ETRIAL];}
     inline RealType getTau() const { return vParam[B_TAU];}
     inline RealType getTauEff() const { return vParam[B_TAUEFF];}
 

@@ -55,6 +55,7 @@ namespace qmcplusplus {
       RealType eold    = thisWalker.Properties(LOCALENERGY);
       RealType signold = thisWalker.Properties(SIGN);
       RealType enew  = eold;
+      thisWalker.Properties(TRIALENERGY)=branchEngine->getEtrial();
 
       //create a 3N-Dimensional Gaussian with variance=1
       makeGaussRandomWithEngine(deltaR,RandomGen);
@@ -74,6 +75,7 @@ namespace qmcplusplus {
       RealType nodecorr=0.0;
       if(branchEngine->phaseChanged(Psi.getPhase(),thisWalker.Properties(SIGN))) {
         thisWalker.Age++;
+	thisWalker.rejectedMove();
       } else {
         enew=H.evaluate(W);
         RealType logGf = -0.5*Dot(deltaR,deltaR);
@@ -89,20 +91,21 @@ namespace qmcplusplus {
           enew=eold;
           thisWalker.Properties(R2ACCEPTED)=0.0;
           thisWalker.Properties(R2PROPOSED)=rr_proposed;
+          thisWalker.rejectedMove();
         } else {
-          
           accepted=true;  
           thisWalker.R = W.R;
           thisWalker.Drift = drift;          
           rr_accepted = rr_proposed;
-          thisWalker.resetProperty(logpsi,Psi.getPhase(),enew,rr_accepted,rr_proposed,nodecorr);
-          H.auxHevaluate(W,thisWalker);
+	  H.auxHevaluate(W,thisWalker);
+          thisWalker.resetProperty(logpsi,Psi.getPhase(),enew,rr_accepted,rr_proposed,nodecorr,branchEngine->getEtrial());
           H.saveProperty(thisWalker.getPropertyBase());
         }
       }
       thisWalker.Weight *= branchEngine->branchWeight(eold,enew);
-
+      
       //branchEngine->accumulate(eold,1);
+      
 
       if(accepted) 
         ++nAccept;
@@ -141,6 +144,7 @@ namespace qmcplusplus {
       RealType eold = thisWalker.Properties(LOCALENERGY);
       RealType enew = eold;
       RealType signold = thisWalker.Properties(SIGN);
+      thisWalker.Properties(TRIALENERGY)=branchEngine->getEtrial();
       //RealType emixed  = eold;
 
       //create a 3N-Dimensional Gaussian with variance=1
@@ -162,9 +166,10 @@ namespace qmcplusplus {
       if(branchEngine->phaseChanged(Psi.getPhase(),thisWalker.Properties(SIGN))) {
         thisWalker.Age++;
         thisWalker.willDie();
+        thisWalker.rejectedMove();
       } else {
         enew=H.evaluate(W);
-        RealType logGf = -0.5*Dot(deltaR,deltaR);
+	RealType logGf = -0.5*Dot(deltaR,deltaR);
         nodecorr = setScaledDriftPbyPandNodeCorr(m_tauovermass,W.G,drift);
         
         deltaR = thisWalker.R - W.R - drift;
@@ -175,14 +180,14 @@ namespace qmcplusplus {
           thisWalker.Age++;
           thisWalker.Properties(R2ACCEPTED)=0.0;
           thisWalker.Properties(R2PROPOSED)=rr_proposed;
+          thisWalker.rejectedMove();
         } else {
           accepted=true;  
           thisWalker.R = W.R;
           thisWalker.Drift = drift;
-//           thisWalker.resetProperty(logpsi,Psi.getPhase(),enew);
           rr_accepted = rr_proposed;
-          thisWalker.resetProperty(logpsi,Psi.getPhase(),enew,rr_accepted,rr_proposed,nodecorr);
           H.auxHevaluate(W,thisWalker);
+          thisWalker.resetProperty(logpsi,Psi.getPhase(),enew,rr_accepted,rr_proposed,nodecorr,branchEngine->getEtrial());
           H.saveProperty(thisWalker.getPropertyBase());
         }
         

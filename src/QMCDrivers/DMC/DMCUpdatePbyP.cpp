@@ -175,7 +175,7 @@ namespace qmcplusplus {
 
         //nodecorr=getNodeCorrection(W.G,thisWalker.Drift);
         //thisWalker.resetProperty(logpsi,Psi.getPhase(),enew,rr_accepted,rr_proposed,nodecorr);
-        thisWalker.resetProperty(logpsi,Psi.getPhase(),enew,rr_accepted,rr_proposed,1.0);
+        thisWalker.resetProperty(logpsi,Psi.getPhase(),enew,rr_accepted,rr_proposed,1.0,branchEngine->getEtrial());
         H.auxHevaluate(W,thisWalker);
         H.saveProperty(thisWalker.getPropertyBase());
       } 
@@ -184,6 +184,7 @@ namespace qmcplusplus {
         advanced=false;
         thisWalker.Age++;
         thisWalker.Properties(R2ACCEPTED)=0.0;
+        thisWalker.rejectedMove();
         ++nAllRejected;
         enew=eold;//copy back old energy
         gf_acc=1.0;
@@ -192,7 +193,7 @@ namespace qmcplusplus {
       //2008-06-26: select any
       //bare green function by setting nodecorr=nodecorr_old=1.0
       thisWalker.Weight *= branchEngine->branchWeight(enew,eold);
-
+      thisWalker.Properties(TRIALENERGY)=branchEngine->getEtrial();
       DMC_TRACE_STOP(thisWalker.ID,NumPtcl,advanced,localTimer.elapsed());
 
       //Filtering extreme energies
@@ -467,13 +468,14 @@ namespace qmcplusplus {
         myTimers[3]->stop();
 
         //thisWalker.resetProperty(std::log(abs(psi)),psi,enew,rr_accepted,rr_proposed,nodecorr);
-        thisWalker.resetProperty(logpsi,Psi.getPhase(),enew,rr_accepted,rr_proposed,nodecorr);
+        thisWalker.resetProperty(logpsi,Psi.getPhase(),enew,rr_accepted,rr_proposed,nodecorr,branchEngine->getEtrial());
         H.auxHevaluate(W,thisWalker);
         H.saveProperty(thisWalker.getPropertyBase());
       } 
       else 
       {//all moves are rejected: does not happen normally with reasonable wavefunctions
         advanced=false;
+        thisWalker.rejectedMove();
         thisWalker.Age++;
         thisWalker.Properties(R2ACCEPTED)=0.0;
         ++nAllRejected;
@@ -484,6 +486,7 @@ namespace qmcplusplus {
       //2008-06-26: select any
       //bare green function by setting nodecorr=nodecorr_old=1.0
       thisWalker.Weight *= branchEngine->branchWeight(enew,eold);
+      thisWalker.Properties(TRIALENERGY)=branchEngine->getEtrial();
 
       DMC_TRACE_STOP(thisWalker.ID,NumPtcl,advanced,localTimer.elapsed());
 

@@ -23,7 +23,7 @@ namespace qmcplusplus
 
   /** constructor
   */
-  QMCHamiltonian::QMCHamiltonian():myIndex(0),storeAllDataInPset(false)
+  QMCHamiltonian::QMCHamiltonian():myIndex(0)
   { }
 
 ///// copy constructor is distable by declaring it as private
@@ -144,7 +144,6 @@ QMCHamiltonian::Return_t
     myTimers[i]->start();
     LocalEnergy += H[i]->evaluate(P);
     H[i]->setObservables(Observables);
-    if (storeAllDataInPset) H[i]->setParticleSet(P.PropertyList,myIndex);
     myTimers[i]->stop();
   }
   KineticEnergy=H[0]->Value;
@@ -161,7 +160,6 @@ void QMCHamiltonian::auxHevaluate(ParticleSet& P )
   {
     RealType sink = auxH[i]->evaluate(P);
     auxH[i]->setObservables(Observables);
-    if (storeAllDataInPset) auxH[i]->setParticleSet(P.PropertyList,myIndex);
   }
 }
 
@@ -173,8 +171,6 @@ void QMCHamiltonian::auxHevaluate(ParticleSet& P, Walker<Return_t, ParticleSet::
     auxH[i]->setHistories(ThisWalker);
     RealType sink = auxH[i]->evaluate(P);
     auxH[i]->setObservables(Observables);
-    
-    if (storeAllDataInPset) auxH[i]->setParticleSet(P.PropertyList,myIndex);
   }
 }
 
@@ -187,7 +183,6 @@ QMCHamiltonian::evaluate(ParticleSet& P, vector<NonLocalData>& Txy)
     myTimers[i]->start();
     LocalEnergy += H[i]->evaluate(P,Txy);
     H[i]->setObservables(Observables);
-    if (storeAllDataInPset) H[i]->setParticleSet(P.PropertyList,myIndex);
     myTimers[i]->stop();
   }
   KineticEnergy=H[0]->Value;
@@ -239,7 +234,6 @@ QMCHamiltonian::setRandomGenerator(RandomGenerator_t* rng)
 QMCHamiltonian* QMCHamiltonian::makeClone(ParticleSet& qp, TrialWaveFunction& psi) 
 {
   QMCHamiltonian* myclone=new QMCHamiltonian;
-  myclone->storeAllDataInPset=storeAllDataInPset;
   std::vector<int> depIndexVector;
   for(int i=0; i<H.size(); ++i){
     myclone->addOperator(H[i]->makeClone(qp,psi),H[i]->myName,true);

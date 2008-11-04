@@ -85,6 +85,7 @@ namespace qmcplusplus {
         }
         if(stucked) {
           ++nAllRejected;
+          thisWalker.rejectedMove();
         }
       }
       myTimers[1]->stop();
@@ -224,6 +225,7 @@ namespace qmcplusplus {
       else 
       { 
         ++nAllRejected;
+        thisWalker.rejectedMove();
       }
     }
     myTimers[0]->stop();
@@ -328,6 +330,7 @@ namespace qmcplusplus {
       else 
       { 
         ++nAllRejected;
+        thisWalker.rejectedMove();
       }
     }
     myTimers[0]->stop();

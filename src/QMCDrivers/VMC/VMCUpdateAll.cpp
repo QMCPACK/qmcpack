@@ -49,12 +49,14 @@ namespace qmcplusplus {
       if(RandomGen() > g) {
         thisWalker.Age++;
 	++nReject; 
+        thisWalker.rejectedMove();
 #if defined(ENABLE_COMPOSITE_ESTIMATOR)
         if(measure)
         {//evaluate the old value
           W.R = thisWalker.R;
           W.update();
           compEstimator->accumulate(W,1.0);
+          
         }
 #endif
       } else {
@@ -117,6 +119,7 @@ namespace qmcplusplus {
       if(RandomGen() > g) {
         thisWalker.Age++;
 	++nReject; 
+        thisWalker.rejectedMove();
 #if defined(ENABLE_COMPOSITE_ESTIMATOR)
         if(measure)
         {//evaluate the old value

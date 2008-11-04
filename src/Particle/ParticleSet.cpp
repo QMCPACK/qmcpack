@@ -378,6 +378,7 @@ namespace qmcplusplus {
     PropertyList.add("R2Proposed");
     PropertyList.add("DriftScale");
     PropertyList.add("LocalEnergy");
+    PropertyList.add("TrialEnergy");
     PropertyList.add("LocalPotential");
 
     if(PropertyList.size() != NUMPROPERTIES)

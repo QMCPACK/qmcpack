@@ -64,6 +64,7 @@ namespace qmcplusplus {
     RealType NewValue;
     string myName,depName;
     int Dependants;
+    Walker<Return_t, ParticleSet::ParticleGradient_t>* tWalker;
    
     ///constructor
     QMCHamiltonianBase():myIndex(-1),Tau(0.0),Value(0.0),Dependants(0){
@@ -85,16 +86,11 @@ namespace qmcplusplus {
     {
       plist[myIndex]=Value;
     }
+
     virtual void setHistories(Walker<Return_t, ParticleSet::ParticleGradient_t>& ThisWalker){
-    //does nothing except for forward walking
+       tWalker = &(ThisWalker);
     }
     
-    /// Allows H to update individual elements in the hamiltonian on the particle list. needed for forward walking 
-    virtual void setParticleSet(PropertySetType& plist, int offset)
-    {
-      plist[myIndex+offset]=Value;
-    }
-
     /** reset the data with the target ParticleSet
      * @param P new target ParticleSet
      */

@@ -18,6 +18,7 @@
 #ifndef OHMMS_SIMPLEPARSER_H
 #define OHMMS_SIMPLEPARSER_H
 
+#include <cstdlib>
 #include <string>
 #include <iostream>
 #include <fstream>

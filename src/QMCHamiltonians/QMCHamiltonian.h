@@ -98,6 +98,15 @@ namespace qmcplusplus {
     }
     /*@}*/
 
+    template<class IT>
+    inline 
+    void setProperty(IT first)
+    { 
+//       LocalEnergy=first[LOCALENERGY];
+//       KineticEnergy=LocalEnergy-first[LOCALPOTENTIAL];
+      std::copy(first+myIndex,first+myIndex+Observables.size(),Observables.begin());
+    }
+
     ////return the LocalEnergy \f$=\sum_i H^{qmc}_{i}\f$
     inline Return_t getLocalEnergy() { return LocalEnergy;}
     ////return the LocalPotential \f$=\sum_i H^{qmc}_{i} - KE\f$
@@ -191,8 +200,6 @@ namespace qmcplusplus {
 
     /** return a clone */
     QMCHamiltonian* makeClone(ParticleSet& qp, TrialWaveFunction& psi); 
-    
-    void updateParticleSet() {storeAllDataInPset=true; }
 
   private:
     ///starting index
@@ -215,7 +222,6 @@ namespace qmcplusplus {
     PropertySetType Observables;
     ///reset Observables
     void resetObservables(int start);
-    bool storeAllDataInPset;
   };
 }
 #endif

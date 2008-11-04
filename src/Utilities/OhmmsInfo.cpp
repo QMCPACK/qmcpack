@@ -19,6 +19,7 @@
  * @brief Definition of OhmmsInfo class.
  */
 #include "config.h"
+#include <cstdlib>
 #include "Utilities/OhmmsInfo.h"
 
 bool OhmmsInfo::Writeable = false;
