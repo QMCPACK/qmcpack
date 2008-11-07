@@ -86,7 +86,7 @@ namespace qmcplusplus {
       double Vsum = tWalker->getPropertyHistorySum(Vindex,phlen);
       double Ebar = tWalker->getPropertyHistoryAvg(Eindex);
       
-      int AC(0.0);
+      int AC(0);
       double tm=1.0;
       for (int i=1;((i<tWalker->PropertyHistory[Eindex].size())&&(tm>0.0));i++){
         tm=tWalker->PropertyHistory[Eindex][i]-Ebar;

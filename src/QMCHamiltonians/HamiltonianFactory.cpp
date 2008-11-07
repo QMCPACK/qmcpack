@@ -24,13 +24,13 @@
 #include "QMCHamiltonians/IonIonPotential.h"
 #include "QMCHamiltonians/NumericalRadialPotential.h"
 #if OHMMS_DIM == 3
-#include "QMCHamiltonians/LocalCorePolPotential.h"
-#include "QMCHamiltonians/ECPotentialBuilder.h"
+  #include "QMCHamiltonians/LocalCorePolPotential.h"
+  #include "QMCHamiltonians/ECPotentialBuilder.h"
 #endif
 #if defined(HAVE_LIBFFTW_LS)
-#include "QMCHamiltonians/ModInsKineticEnergy.h"
-#include "QMCHamiltonians/MomentumDistribution.h"
-#include "QMCHamiltonians/DispersionRelation.h"
+  #include "QMCHamiltonians/ModInsKineticEnergy.h"
+  #include "QMCHamiltonians/MomentumDistribution.h"
+  #include "QMCHamiltonians/DispersionRelation.h"
 #endif
 #include "QMCHamiltonians/CoulombPBCAATemp.h"
 #include "QMCHamiltonians/CoulombPBCABTemp.h"
@@ -46,6 +46,9 @@
 #include "QMCHamiltonians/ForwardWalking.h"
 #include "QMCHamiltonians/TrialEnergy.h"
 #include "QMCHamiltonians/trialDMCcorrection.h"
+#ifdef HAVE_LIBFFTW
+  #include "QMCHamiltonians/MPC.h"
+#endif
 
 namespace qmcplusplus {
   HamiltonianFactory::HamiltonianFactory(ParticleSet* qp, 
@@ -364,8 +367,8 @@ namespace qmcplusplus {
 
     renameProperty(a);
 
-    MPC *mpc = new MPC (*targetPtcl, cutoff, physical);
-    targetH->addOperator(mpc, "MPC");
+    MPC *mpc = new MPC (*targetPtcl, cutoff);
+    targetH->addOperator(mpc, "MPC", physical);
 #else
     app_error() << "MPC was not built because FFTW3 was not found during "
 		<< "the build process.  Aborting.\n";
