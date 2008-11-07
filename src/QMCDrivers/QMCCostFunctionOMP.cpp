@@ -128,7 +128,7 @@ namespace qmcplusplus {
 
     OhmmsInfo::Log->turnoff();
     OhmmsInfo::Warn->turnoff();
-#pragma omp parallel for
+    // #pragma omp parallel for
     for(int ip=0; ip<NumThreads; ++ip)
     {
       if(H_KE_Node[ip]==0)
