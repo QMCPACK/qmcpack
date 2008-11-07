@@ -124,7 +124,7 @@ namespace qmcplusplus {
     inline int addPropertyHistory(int leng)
     {
       int newL = PropertyHistory.size();
-      newVecHistory=deque<double>(leng,0.0);
+      deque<double> newVecHistory=deque<double>(leng,0.0);
       PropertyHistory.push_back(newVecHistory);
       return newL;
     }
