@@ -14,8 +14,8 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef QMCPLUSPLUS_FORWARDWALKING_H
-#define QMCPLUSPLUS_FORWARDWALKING_H
+#ifndef QMCPLUSPLUS_TRIALDMCCORRECTION_H
+#define QMCPLUSPLUS_TRIALDMCCORRECTION_H
 #include "Particle/ParticleSet.h"
 #include "Particle/WalkerSetRef.h"
 #include "QMCHamiltonians/QMCHamiltonianBase.h"
@@ -29,11 +29,11 @@
 namespace qmcplusplus {
 
 
-  struct ForwardWalking: public QMCHamiltonianBase {
+  struct TrialDMCCorrection: public QMCHamiltonianBase {
     vector<int> Hindices;
     vector<int> Pindices;
     vector<vector<int> > walkerLengths;
-    vector<double> Values;
+    vector<double> Values,EValues;
     vector<string> Names;
     int blockT,nObservables,nValues,FirstHamiltonian;
     
@@ -44,16 +44,16 @@ namespace qmcplusplus {
      *
      * Pressure operators need to be re-evaluated during optimization.
      */
-    ForwardWalking() {
+    TrialDMCCorrection() {
       UpdateMode.set(OPTIMIZABLE,1);
     }
     
-    ForwardWalking(ParticleSet& P) {
+    TrialDMCCorrection(ParticleSet& P) {
       UpdateMode.set(OPTIMIZABLE,1);
     }
     
     ///destructor
-    ~ForwardWalking() { }
+    ~TrialDMCCorrection() { }
 
     void resetTargetParticleSet(ParticleSet& P) {
     }
@@ -63,19 +63,29 @@ namespace qmcplusplus {
     inline Return_t 
     rejectedMove(ParticleSet& P) {
         vector<double>::iterator Vit=Values.begin();
+	vector<double>::iterator Vit2=EValues.begin();
 
         for(int i=0;i<nObservables;i++){
 //           app_log()<<"Obs#"<<i;
-	  for(int j=0;j<walkerLengths[i].size();j++,Vit++){
-            (*Vit) = tWalker->PropertyHistory[Pindices[i]][walkerLengths[i][j]-1];
+          (*Vit)=0.0;
+	  int k=0;
+	  for(int j=0;j<walkerLengths[i].back();j++){
+            (*Vit) += tWalker->PropertyHistory[Pindices[i]][j];
+	    if(j==walkerLengths[i][k]-1){
+	      double Tsum=(*Vit);
+	      Vit++;
+	      (*Vit)=Tsum;
+	      k++;
+	      (*Vit2)=Tsum* P.PropertyList[LOCALENERGY];
+	      Vit2++;
+	    }
 //             app_log()<<"  "<<tWalker->PropertyHistory[Pindices[i]][walkerLengths[i][j]-1];
           }
 // 	  app_log()<<endl;
         }
 //       }
 // 	double* wFWval = tWalker->getPropertyBase();
-	std::copy(Values.begin(),Values.end(),tWalker->getPropertyBase()+FirstHamiltonian+myIndex);
-// 	wFWval += FirstHamiltonian;
+	std::copy(Values.begin(),Values.end(),tWalker->getPropertyBase()+FirstHamiltonian+myIndex );
 
       return 0.0;
     }
@@ -100,18 +110,29 @@ namespace qmcplusplus {
 //         }
         
         vector<double>::iterator Vit=Values.begin();
+	vector<double>::iterator Vit2=EValues.begin();
 
         for(int i=0;i<nObservables;i++){
 //           app_log()<<"Obs#"<<i;
-	  for(int j=0;j<walkerLengths[i].size();j++,Vit++){
-            (*Vit) = tWalker->PropertyHistory[Pindices[i]][walkerLengths[i][j]-1];
+          (*Vit)=0.0;
+	  int k=0;
+	  for(int j=0;j<walkerLengths[i].back();j++){
+            (*Vit) += tWalker->PropertyHistory[Pindices[i]][j];
+	    if(j==walkerLengths[i][k]-1){
+	      double Tsum=(*Vit);
+	      Vit++;
+	      (*Vit)=Tsum;
+	      k++;
+	      (*Vit2)=Tsum* P.PropertyList[LOCALENERGY];
+	      Vit2++;
+	    }
 //             app_log()<<"  "<<tWalker->PropertyHistory[Pindices[i]][walkerLengths[i][j]-1];
           }
 // 	  app_log()<<endl;
         }
 //       }
 // 	double* wFWval = tWalker->getPropertyBase();
-	std::copy(Values.begin(),Values.end(),tWalker->getPropertyBase()+FirstHamiltonian+myIndex-1);
+	std::copy(Values.begin(),Values.end(),tWalker->getPropertyBase()+FirstHamiltonian+myIndex );
 // 	wFWval += FirstHamiltonian;
 
       return 0.0;
@@ -201,17 +222,18 @@ namespace qmcplusplus {
       app_log()<<"Total number of observables calculated:"<<nObservables<<endl;
       app_log()<<"Total number of values calculated:"<<nValues<<endl;
       for (int i=0;i<nValues;i++) Values.push_back(0.0);
+      EValues=Values;
       return true;
     }
 
     bool get(std::ostream& os) const {
-      os << "ForwardWalking";
+      os << "TrialVCorrection";
       return true;
     }
 
     QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi)
     {
-      ForwardWalking* myClone = new ForwardWalking();
+      TrialDMCCorrection* myClone = new TrialDMCCorrection();
       ///Do I need to do this?
       myClone->Hindices=Hindices;
       myClone->Pindices=Pindices;
@@ -223,6 +245,8 @@ namespace qmcplusplus {
       myClone->myIndex=myIndex;
       myClone->FirstHamiltonian=FirstHamiltonian;
       myClone->Values=Values;
+      myClone->EValues=EValues;
+      
       return myClone;
     }
 
@@ -231,10 +255,10 @@ namespace qmcplusplus {
       bool first(true);
       for(int i=0;i<nObservables;i++){
         for(int j=0;j<walkerLengths[i].size();j++){
-          std::stringstream sstr;
-          sstr << "FW_" << Names[i] << "_" << walkerLengths[i][j];
+          std::stringstream sstr,sstr2;
+          sstr << "T_" << Names[i] << "_" << walkerLengths[i][j];
           app_log()<<"Observables named "<<sstr.str()<<endl;
-          if (first) {
+	  if (first) {
             myIndex = plist.add(sstr.str());
             first=false;
           } else {
@@ -242,16 +266,29 @@ namespace qmcplusplus {
           }
         }
       }
+      for(int i=0;i<nObservables;i++){
+        for(int j=0;j<walkerLengths[i].size();j++){
+          std::stringstream sstr2;
+          sstr2 << "ET_" << Names[i] << "_" << walkerLengths[i][j];
+          app_log()<<"Observables named "<<sstr2.str()<<endl;
+          plist.add(sstr2.str());
+        }
+      }
     }
 
     void setObservables(PropertySetType& plist)
     {
-      for (int i=0;i<nValues;i++) plist[myIndex+i]=Values[i];
+      for (int i=0;i<nValues;i++) plist[myIndex+ i]=Values[i];
+      for (int i=0;i<nValues;i++) plist[myIndex+i+nValues]=EValues[i];
+ 
     }
     
     void setParticlePropertyList(PropertySetType& plist, int offset)
     {
+ 
       for (int i=0;i<nValues;i++) plist[myIndex+i+offset]=Values[i];
+      for (int i=0;i<nValues;i++) plist[myIndex+i+offset+nValues]=EValues[i];
+ 
     }
   };
 }

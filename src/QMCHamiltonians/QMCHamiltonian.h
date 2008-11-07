@@ -71,7 +71,7 @@ namespace qmcplusplus {
      */
     void addObservables(PropertySetType& plist);
     ///Sets the observable sup so Forward walking can look and find the elements
-    void setObservables(PropertySetType& plist);
+    void setTempObservables(PropertySetType& plist);
     ///retrun the starting index
     inline int startIndex() const { return myIndex;}
     ///return the size of observables
@@ -113,6 +113,7 @@ namespace qmcplusplus {
     inline Return_t getLocalPotential() { return LocalEnergy-KineticEnergy;}
     void auxHevaluate(ParticleSet& P);
     void auxHevaluate(ParticleSet& P, Walker<Return_t, ParticleSet::ParticleGradient_t>& ThisWalker);
+    void rejectedMove(ParticleSet& P, Walker<Return_t, ParticleSet::ParticleGradient_t>& ThisWalker);
     ///** set Tau for each Hamiltonian
     // */
     //inline void setTau(RealType tau) 

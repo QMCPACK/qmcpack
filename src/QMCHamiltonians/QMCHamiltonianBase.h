@@ -86,6 +86,11 @@ namespace qmcplusplus {
     {
       plist[myIndex]=Value;
     }
+    
+    virtual void setParticlePropertyList(PropertySetType& plist, int offset)
+    {
+      plist[myIndex+offset]=Value;
+    }
 
     virtual void setHistories(Walker<Return_t, ParticleSet::ParticleGradient_t>& ThisWalker){
        tWalker = &(ThisWalker);
@@ -101,7 +106,7 @@ namespace qmcplusplus {
      *@return the value of the Hamiltonian
      */
     virtual Return_t evaluate(ParticleSet& P) = 0; 
-
+    virtual Return_t rejectedMove(ParticleSet& P){ return 0; }
     virtual Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy) = 0; 
 
     /*@{

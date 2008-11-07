@@ -19,6 +19,7 @@
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "Utilities/PooledData.h"
 #include <assert.h>
+#include <deque>
 namespace qmcplusplus {
 
   /** an enum denoting index of physical properties 
@@ -92,7 +93,7 @@ namespace qmcplusplus {
     PropertyContainer_t  Properties;
     
     ///Property history vector
-    vector<vector<T> >  PropertyHistory;
+    vector<deque<T> >  PropertyHistory;
     int phLength;
     
     ///buffer for the data for particle-by-particle update
@@ -123,30 +124,33 @@ namespace qmcplusplus {
     inline int addPropertyHistory(int leng)
     {
       int newL = PropertyHistory.size();
-      vector<double>  newVecHistory(leng,0.0);
+      newVecHistory=deque<double>(leng,0.0);
       PropertyHistory.push_back(newVecHistory);
       return newL;
     }
 
     inline void addPropertyHistoryPoint(int index, double data)
     {
-      vector<double>::iterator phStart=PropertyHistory[index].begin();
-      PropertyHistory[index].insert(phStart,1,data);
+      PropertyHistory[index].push_front(data);
       PropertyHistory[index].pop_back();
     }
     
     inline void rejectedMove()
     {
-      if (PropertyHistory.size()>0) addPropertyHistoryPoint(0,Properties(TRIALENERGY));
+      if (PropertyHistory.size()>0) {
+      PropertyHistory[0].push_front(Properties(TRIALENERGY));
+      PropertyHistory[0].pop_back();
+      }
       for(int dindex=1;dindex<PropertyHistory.size();dindex++){
-        addPropertyHistoryPoint(dindex,PropertyHistory[dindex][0]);
+      PropertyHistory[dindex].push_front(PropertyHistory[dindex].front());
+      PropertyHistory[dindex].pop_back();
       }
     }
     
     inline double getPropertyHistoryAvg(int index)
     {
       double mean=0.0;
-      vector<double>::iterator phStart=PropertyHistory[index].begin();
+      deque<double>::iterator phStart=PropertyHistory[index].begin();
       for(;phStart!=PropertyHistory[index].end();phStart++){
         mean+= (*phStart);
       }
@@ -156,7 +160,7 @@ namespace qmcplusplus {
     inline double getPropertyHistorySum(int index, int endN)
     {
       double mean=0.0;
-      vector<double>::iterator phStart=PropertyHistory[index].begin();
+      deque<double>::iterator phStart=PropertyHistory[index].begin();
       for(int i=0;((phStart!=PropertyHistory[index].end())&(i<endN));phStart++,i++){
         mean+= (*phStart);
       }

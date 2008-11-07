@@ -134,7 +134,7 @@ namespace qmcplusplus {
       plist[myIndex+1]=Value1;
       plist[myIndex+2]=Value2;
     }
-    void setParticleSet(PropertySetType& plist, int offset)
+    void setParticlePropertyList(PropertySetType& plist, int offset)
     {
       plist[myIndex+offset]=Value0;
       plist[myIndex+1+offset]=Value1;

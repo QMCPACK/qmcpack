@@ -398,49 +398,52 @@ namespace qmcplusplus {
     //DistTables.erase(DistTables.begin(),DistTables.end());
   }
   
-   void ParticleSet::setPropertyHistoryLength(int leng)
-  {
-    if (leng>0) phLength=leng;
-  }
-    
-  int ParticleSet::addPropertyHistory(int leng)
-  {
-    int newL = PropertyHistory.size();
-    vector<double> newVecHistory(leng,0.0);
-    PropertyHistory.push_back(newVecHistory);
-    return newL;
-  }
+    void ParticleSet::setPropertyHistoryLength(int leng)
+    {
+      if (leng>0) phLength=leng;
+    }
 
-  void ParticleSet::addPropertyHistoryPoint(int Rindex, double data)
-  {
-    PropertyHistory[Rindex].insert(PropertyHistory[Rindex].begin(),1,data);
-    PropertyHistory[Rindex].pop_back();
-  }
-  
-  double ParticleSet::getPropertyHistoryPoint(int Rindex, double Tindex)
-  {
-    return PropertyHistory[Rindex][Tindex];
-  }
-    
-   double ParticleSet::getPropertyHistoryAvg(int index)
-  {
-    double mean=0.0;
-    vector<double>::iterator phStart=PropertyHistory[index].begin();
-    for(;phStart!=PropertyHistory[index].end();phStart++){
-      mean+= (*phStart);
+    int ParticleSet::addPropertyHistory(int leng)
+    {
+      int newL = PropertyHistory.size();
+      deque<double> newVecHistory=deque<double>(leng,0.0);
+      PropertyHistory.push_back(newVecHistory);
+      return newL;
     }
-    return (mean/PropertyHistory[index].size());
-  }
-    
-  double ParticleSet::getPropertyHistorySum(int index, int endN)
-  {
-    double mean=0.0;
-    vector<double>::iterator phStart=PropertyHistory[index].begin();
-    for(int i=0;((phStart!=PropertyHistory[index].end())&(i<endN));phStart++,i++){
-      mean+= (*phStart);
+
+    void ParticleSet::addPropertyHistoryPoint(int index, double data)
+    {
+      PropertyHistory[index].push_front(data);
+      PropertyHistory[index].pop_back();
     }
-    return mean ;
-  }
+    
+//     void ParticleSet::rejectedMove()
+//     {
+//       if (PropertyHistory.size()>0) addPropertyHistoryPoint(0,Properties(TRIALENERGY));
+//       for(int dindex=1;dindex<PropertyHistory.size();dindex++){
+//         addPropertyHistoryPoint(dindex,PropertyHistory[dindex][0]);
+//       }
+//     }
+    
+    double ParticleSet::getPropertyHistoryAvg(int index)
+    {
+      double mean=0.0;
+      deque<double>::iterator phStart=PropertyHistory[index].begin();
+      for(;phStart!=PropertyHistory[index].end();phStart++){
+        mean+= (*phStart);
+      }
+      return (mean/PropertyHistory[index].size());
+    }
+    
+    double ParticleSet::getPropertyHistorySum(int index, int endN)
+    {
+      double mean=0.0;
+      deque<double>::iterator phStart=PropertyHistory[index].begin();
+      for(int i=0;((phStart!=PropertyHistory[index].end())&(i<endN));phStart++,i++){
+        mean+= (*phStart);
+      }
+      return mean ;
+    }
   
 }
 

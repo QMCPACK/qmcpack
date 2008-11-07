@@ -20,6 +20,7 @@
 #include "Utilities/SpeciesSet.h"
 #include "Particle/Walker.h"
 #include "OhmmsPETE/OhmmsArray.h"
+#include <deque>
 
 namespace qmcplusplus {
 
@@ -114,8 +115,8 @@ namespace qmcplusplus {
           PropertyContainer_t  Properties;
 
     ///Property history vector
-          vector<vector<double> >  PropertyHistory;
-          int phLength;
+          vector<deque<double> >  PropertyHistory;
+          int phLength; 
     
     ///default constructor
           ParticleSet();

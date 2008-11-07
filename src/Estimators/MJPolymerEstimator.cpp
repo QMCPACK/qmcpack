@@ -61,13 +61,13 @@ namespace qmcplusplus {
     elocal_name.push_back("Etail");
     elocal_name.push_back("Edecorr");
     elocal_name.push_back("Vdecorr");
-//     elocal_name.push_back("RMC_HFCep_0_2");
-//     elocal_name.push_back("RMC_HFCep_1_2");
+    elocal_name.push_back("RMC_HFCep_0_2");
+    elocal_name.push_back("RMC_HFCep_1_2");
 
-    scalars.resize(SizeOfHamiltonians+14);
+    scalars.resize(SizeOfHamiltonians+16);
     scalars_saved=scalars;
     pNorm=0.0;
-//     Findex = h.getObservable("HFCep_0_2");
+    Findex = h.getObservable("HFCep_0_2");
 //     app_log()<<"Force Index "<<Findex<<endl;
   };
 
@@ -236,8 +236,8 @@ namespace qmcplusplus {
       };
       
       scalars[SizeOfHamiltonians+13](AC2,uw);
-//       scalars[SizeOfHamiltonians+14](CenProp[Findex+FirstHamiltonian],uw);
-//       scalars[SizeOfHamiltonians+15](CenProp[Findex+3+FirstHamiltonian],uw);
+      scalars[SizeOfHamiltonians+14](CenProp[Findex+FirstHamiltonian],uw);
+      scalars[SizeOfHamiltonians+15](CenProp[Findex+3+FirstHamiltonian],uw);
     }
   }
 

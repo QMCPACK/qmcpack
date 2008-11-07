@@ -35,8 +35,21 @@ namespace qmcplusplus {
      *
      * Pressure operators need to be re-evaluated during optimization.
      */
-    TrialEnergy(ParticleSet& P) { 
+    TrialEnergy( ) { 
       UpdateMode.set(OPTIMIZABLE,1);
+    }
+    
+    TrialEnergy(ParticleSet& P ) { 
+      UpdateMode.set(OPTIMIZABLE,1);
+      numT=1;
+      walkerLengths.resize(1,1);
+      app_log()<<"   "<<numT<<" E_T values will be calculated at step numbers:"<<endl;
+      app_log()<<"      ";
+      for(int nm=0;nm<walkerLengths.size();nm++) app_log()<<walkerLengths[nm]<<"  ";
+      app_log()<<endl;
+      nValues=walkerLengths.back();
+      historyIndex = P.addPropertyHistory(nValues);
+      Values.resize(numT);
     }
     ///destructor
     ~TrialEnergy() { }
@@ -114,6 +127,10 @@ namespace qmcplusplus {
             plist.add(sstr.str());
           }
       }
+    }
+    void setParticlePropertyList(PropertySetType& plist, int offset)
+    {
+      for (int i=0;i<numT;i++) plist[myIndex+i+offset]=Values[i];
     }
 
     void setObservables(PropertySetType& plist)

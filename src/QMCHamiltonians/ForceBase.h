@@ -66,7 +66,7 @@ namespace qmcplusplus {
       setObservablesF(plist);
     }
 
-    void setParticleSet(PropertySetType& plist, int offset)
+    void setParticlePropertyList(PropertySetType& plist, int offset)
     {
       setParticleSetF(plist, offset);
     }

@@ -75,7 +75,7 @@ namespace qmcplusplus {
       RealType nodecorr=0.0;
       if(branchEngine->phaseChanged(Psi.getPhase(),thisWalker.Properties(SIGN))) {
         thisWalker.Age++;
-	thisWalker.rejectedMove();
+	H.rejectedMove(W,thisWalker);
       } else {
         enew=H.evaluate(W);
         RealType logGf = -0.5*Dot(deltaR,deltaR);
@@ -91,12 +91,13 @@ namespace qmcplusplus {
           enew=eold;
           thisWalker.Properties(R2ACCEPTED)=0.0;
           thisWalker.Properties(R2PROPOSED)=rr_proposed;
-          thisWalker.rejectedMove();
+          H.rejectedMove(W,thisWalker);
         } else {
           accepted=true;  
           thisWalker.R = W.R;
           thisWalker.Drift = drift;          
           rr_accepted = rr_proposed;
+// 	  H.saveProperty(thisWalker.getPropertyBase());
 	  H.auxHevaluate(W,thisWalker);
           thisWalker.resetProperty(logpsi,Psi.getPhase(),enew,rr_accepted,rr_proposed,nodecorr,branchEngine->getEtrial());
           H.saveProperty(thisWalker.getPropertyBase());
@@ -166,7 +167,7 @@ namespace qmcplusplus {
       if(branchEngine->phaseChanged(Psi.getPhase(),thisWalker.Properties(SIGN))) {
         thisWalker.Age++;
         thisWalker.willDie();
-        thisWalker.rejectedMove();
+        H.rejectedMove(W,thisWalker);
       } else {
         enew=H.evaluate(W);
 	RealType logGf = -0.5*Dot(deltaR,deltaR);
@@ -180,7 +181,7 @@ namespace qmcplusplus {
           thisWalker.Age++;
           thisWalker.Properties(R2ACCEPTED)=0.0;
           thisWalker.Properties(R2PROPOSED)=rr_proposed;
-          thisWalker.rejectedMove();
+          H.rejectedMove(W,thisWalker);
         } else {
           accepted=true;  
           thisWalker.R = W.R;

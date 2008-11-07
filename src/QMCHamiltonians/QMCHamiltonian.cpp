@@ -122,7 +122,7 @@ QMCHamiltonian::addObservables(PropertySetType& plist)
   app_log() << "    starting Index = " << myIndex << endl;
 }
 
-void QMCHamiltonian::setObservables(PropertySetType& plist)
+void QMCHamiltonian::setTempObservables(PropertySetType& plist)
 {
   //first add properties to Observables
   Observables.clear();
@@ -145,6 +145,7 @@ QMCHamiltonian::Return_t
     LocalEnergy += H[i]->evaluate(P);
     H[i]->setObservables(Observables);
     myTimers[i]->stop();
+    H[i]->setParticlePropertyList(P.PropertyList,myIndex);
   }
   KineticEnergy=H[0]->Value;
   P.PropertyList[LOCALENERGY]=LocalEnergy;
@@ -160,6 +161,7 @@ void QMCHamiltonian::auxHevaluate(ParticleSet& P )
   {
     RealType sink = auxH[i]->evaluate(P);
     auxH[i]->setObservables(Observables);
+    H[i]->setParticlePropertyList(P.PropertyList,myIndex);
   }
 }
 
@@ -171,6 +173,16 @@ void QMCHamiltonian::auxHevaluate(ParticleSet& P, Walker<Return_t, ParticleSet::
     auxH[i]->setHistories(ThisWalker);
     RealType sink = auxH[i]->evaluate(P);
     auxH[i]->setObservables(Observables);
+    auxH[i]->setParticlePropertyList(P.PropertyList,myIndex);
+  }
+}
+void QMCHamiltonian::rejectedMove(ParticleSet& P, Walker<Return_t, ParticleSet::ParticleGradient_t>& ThisWalker )
+{
+  ThisWalker.rejectedMove();
+  for(int i=0; i<auxH.size(); ++i)
+  {
+    auxH[i]->setHistories(ThisWalker);
+    RealType sink = auxH[i]->rejectedMove(P);
   }
 }
 
