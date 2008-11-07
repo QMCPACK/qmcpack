@@ -13,7 +13,7 @@ IF(FFTW_INCLUDE_DIRS)
   FIND_LIBRARY(FFTW_LIBRARY fftw3 ${FFTW_LIBRARY_DIRS})
 ELSE(FFTW_INCLUDE_DIRS)
   SET(TRIAL_PATHS
-    $ENV{FFTW_HOME}
+    $ENV{FFTW_HOME}/include
     /usr/include
     /usr/local/include
     /opt/include
