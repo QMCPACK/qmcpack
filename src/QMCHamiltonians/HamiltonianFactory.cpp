@@ -146,6 +146,8 @@ namespace qmcplusplus {
           else 
             addConstCoulombPotential(cur,sourceInp);
         } 
+	else if (potType == "MPC") 
+	  addMPCPotential(cur);
         else if(potType == "HFDHE2") 
         {
             HFDHE2Potential* HFD = new HFDHE2Potential(*targetPtcl);
@@ -352,18 +354,24 @@ namespace qmcplusplus {
 #if defined(HAVE_LIBFFTW)
     string a("e"), title("MPC");
     OhmmsAttributeSet hAttrib;
+    bool physical = true;
     double cutoff = 30.0;
     hAttrib.add(title,"id"); 
     hAttrib.add(title,"name"); 
     hAttrib.add(cutoff,"cutoff");
+    hAttrib.add(physical,"physical");
     hAttrib.put(cur);
 
     renameProperty(a);
 
-    MPC *mpc = new MPC (*targetPtcl, cutoff);
+    MPC *mpc = new MPC (*targetPtcl, cutoff, physical);
     targetH->addOperator(mpc, "MPC");
-    
+#else
+    app_error() << "MPC was not built because FFTW3 was not found during "
+		<< "the build process.  Aborting.\n";
+    abort();
 #endif // defined(HAVE_LIBFFTW)
+    
   }
 
   void 
