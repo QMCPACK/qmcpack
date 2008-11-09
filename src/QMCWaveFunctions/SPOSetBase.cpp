@@ -30,9 +30,11 @@ namespace qmcplusplus {
   bool SPOSetBase::put(xmlNodePtr cur) {
     //initialize the number of orbital by the basis set size
     int norb= BasisSetSize;
+    string debugc("no");
 
     OhmmsAttributeSet aAttrib;
     aAttrib.add(norb,"orbitals"); aAttrib.add(norb,"size");
+    aAttrib.add(debugc,"debug");
     aAttrib.put(cur);
     //const xmlChar* norb_ptr=xmlGetProp(cur, (const xmlChar *)"orbitals");
     //if(norb_ptr != NULL) { 
@@ -66,6 +68,12 @@ namespace qmcplusplus {
       success = putFromXML(coeff_ptr);
     } else {
       success = putFromH5((const char*)h, coeff_ptr);
+    }
+
+    if(debugc=="yes")
+    {
+      app_log() << "   Single-particle orbital coefficients dims=" << C.rows() << " x " << C.cols() << endl;
+      app_log() << C << endl;
     }
     return success;
   }

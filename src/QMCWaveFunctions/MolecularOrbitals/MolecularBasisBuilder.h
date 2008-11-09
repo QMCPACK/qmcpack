@@ -113,7 +113,7 @@ namespace qmcplusplus {
         string cname((const char*)(cur->name));
         if(cname.find("coeff") < cname.size()) 
         {
-          app_log() << "Creating LCOrbitalSet with the Identity coefficient" << endl;
+          app_log() << "Creating LCOrbitalSet with the input coefficients" << endl;
           lcos= new LCOrbitalSet<ThisBasisSetType,false>(thisBasisSet,ReportLevel);
         }
         cur=cur->next;
@@ -121,7 +121,7 @@ namespace qmcplusplus {
 
       if(lcos==0)
       {
-        app_log() << "Creating LCOrbitalSet with the input coefficients" << endl;
+        app_log() << "Creating LCOrbitalSet with the Identity coefficient" << endl;
         lcos = new LCOrbitalSet<ThisBasisSetType,true>(thisBasisSet,ReportLevel);
       }
 
