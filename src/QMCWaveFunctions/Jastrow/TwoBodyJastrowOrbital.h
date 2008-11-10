@@ -183,6 +183,7 @@ namespace qmcplusplus {
         (*it).second->myVars.print(os);
         ++it;
       }
+      ChiesaKEcorrection();
     }
 
 
