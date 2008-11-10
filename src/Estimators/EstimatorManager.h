@@ -274,6 +274,7 @@ private:
     void collectBlockAverages(int num_threads=1);
     ///add header to an ostream
     void addHeader(ostream& o);
+    unsigned long FieldWidth;
   };
 }
 #endif

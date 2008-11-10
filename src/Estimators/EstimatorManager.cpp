@@ -46,16 +46,17 @@ namespace qmcplusplus {
   APPEND};
 
   //initialize the name of the primary estimator
-  EstimatorManager::EstimatorManager(Communicate* c): RecordCount(0),h_file(-1),
-  MainEstimatorName("elocal"), Archive(0), DebugArchive(0),
-  myComm(0), MainEstimator(0), CompEstimators(0), pendingRequests(0)
+  EstimatorManager::EstimatorManager(Communicate* c): 
+    RecordCount(0),h_file(-1), FieldWidth(20),
+    MainEstimatorName("elocal"), Archive(0), DebugArchive(0),
+    myComm(0), MainEstimator(0), CompEstimators(0), pendingRequests(0)
   { 
     setCommunicator(c);
   }
 
   EstimatorManager::EstimatorManager(EstimatorManager& em): 
-    RecordCount(0),h_file(-1),  MainEstimatorName("elocal"),
-  Options(em.Options), Archive(0), DebugArchive(0),MainEstimator(0), CompEstimators(0), 
+    RecordCount(0),h_file(-1),  MainEstimatorName("elocal"), FieldWidth(20),
+    Options(em.Options), Archive(0), DebugArchive(0),MainEstimator(0), CompEstimators(0), 
     EstimatorMap(em.EstimatorMap), pendingRequests(0), myComm(0)
   {
     //inherit communicator
@@ -133,9 +134,13 @@ namespace qmcplusplus {
     o.setf(ios::left,ios::adjustfield);
     o.precision(10);
     o << "#   index    ";
-    for(int i=0; i<BlockAverages.size(); i++) o << setw(26) << BlockAverages.Names[i];
+    for (int i=0; i<BlockAverages.size(); i++)
+      FieldWidth = std::max(FieldWidth, BlockAverages.Names[i].size()+2);
+    for (int i=0; i<BlockProperties.size(); i++)
+      FieldWidth = std::max(FieldWidth, BlockProperties.Names[i].size()+2);
+    for(int i=0; i<BlockAverages.size(); i++) o << setw(FieldWidth) << BlockAverages.Names[i];
     //(*Archive) << setw(16) << "WeightSum";
-    for(int i=0; i<BlockProperties.size(); i++) o << setw(26) << BlockProperties.Names[i];
+    for(int i=0; i<BlockProperties.size(); i++) o << setw(FieldWidth) << BlockProperties.Names[i];
     o << endl;
     o.setf(ios::right,ios::adjustfield);
   }
@@ -329,8 +334,8 @@ namespace qmcplusplus {
     {
      if(CompEstimators) CompEstimators->print(*DebugArchive);
       *DebugArchive << setw(10) << RecordCount;
-      for(int j=0; j<AverageCache.size(); j++) *DebugArchive << setw(20) << AverageCache[j];
-      for(int j=0; j<PropertyCache.size(); j++) *DebugArchive << setw(20) << PropertyCache[j];
+      for(int j=0; j<AverageCache.size(); j++) *DebugArchive << setw(FieldWidth) << AverageCache[j];
+      for(int j=0; j<PropertyCache.size(); j++) *DebugArchive << setw(FieldWidth) << PropertyCache[j];
       *DebugArchive << endl;
     }
 #endif
@@ -380,8 +385,8 @@ namespace qmcplusplus {
     if(Archive)
     {
       *Archive << setw(10) << RecordCount;
-      for(int j=0; j<AverageCache.size(); j++) *Archive << setw(20) << AverageCache[j];
-      for(int j=0; j<PropertyCache.size(); j++) *Archive << setw(20) << PropertyCache[j];
+      for(int j=0; j<AverageCache.size(); j++) *Archive << setw(FieldWidth) << AverageCache[j];
+      for(int j=0; j<PropertyCache.size(); j++) *Archive << setw(FieldWidth) << PropertyCache[j];
       *Archive << endl;
 
       if(CompEstimators) CompEstimators->recordBlock();
