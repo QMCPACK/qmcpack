@@ -50,6 +50,7 @@ namespace qmcplusplus {
     std::map<std::string,FT*> J2Unique;
     ParticleSet *PtclRef;
     bool FirstTime;
+    RealType KEcorr;
 
   public:
 
@@ -58,7 +59,9 @@ namespace qmcplusplus {
     ///container for the Jastrow functions 
     vector<FT*> F;
 
-    TwoBodyJastrowOrbital(ParticleSet& p) {
+    TwoBodyJastrowOrbital(ParticleSet& p) :
+      KEcorr(0.0)
+    {
       PtclRef = &p;
       d_table=DistanceTable::add(p);
       init(p);
@@ -108,6 +111,9 @@ namespace qmcplusplus {
       }
 
       J2Unique[aname]=j;
+
+      ChiesaKEcorrection();
+      FirstTime = false;
     }
 
     //evaluate the distance table with els
@@ -198,6 +204,11 @@ namespace qmcplusplus {
     RealType evaluateLog(ParticleSet& P,
 		          ParticleSet::ParticleGradient_t& G, 
 		          ParticleSet::ParticleLaplacian_t& L) {
+      if (FirstTime) {
+	FirstTime = false;
+	ChiesaKEcorrection();
+      }
+
       LogValue=0.0;
       RealType dudr, d2udr2;
       PosType gr;
@@ -391,6 +402,11 @@ namespace qmcplusplus {
     inline void evaluateLogAndStore(ParticleSet& P, 
 		       ParticleSet::ParticleGradient_t& dG, 
 		       ParticleSet::ParticleLaplacian_t& dL) {
+      if (FirstTime) {
+	FirstTime = false;
+	ChiesaKEcorrection();
+      }
+
       RealType dudr, d2udr2,u;
       LogValue=0.0;
       GradType gr;
@@ -549,12 +565,14 @@ namespace qmcplusplus {
 
     double ChiesaKEcorrection()
     {
+      if (!PtclRef->Lattice.SuperCellEnum)
+	return 0.0;
       const int numPoints = 1000;
       double vol = PtclRef->Lattice.Volume;
       double aparam = 0.0;
       int nsp = PtclRef->groups();
       FILE *fout = fopen ("uk.dat", "w");
-      double sum, KEcorr;
+      double sum;
       for (int iG=0; iG<PtclRef->SK->KLists.ksq.size(); iG++) {
 	double Gmag = std::sqrt(PtclRef->SK->KLists.ksq[iG]);
 	sum = 0.0;
@@ -586,9 +604,8 @@ namespace qmcplusplus {
 	}
 	if (iG == 0) {
 	  double a = 1.0;
-	  for (int iter=0; iter<20; iter++) {
+	  for (int iter=0; iter<20; iter++) 
 	    a = uk / (4.0*M_PI*(1.0/(Gmag*Gmag) - 1.0/(Gmag*Gmag + 1.0/a)));
-	  }
 	  KEcorr = 4.0*M_PI*a/(4.0*vol) * PtclRef->getTotalNum();
 	}
 	fprintf (fout, "%1.8f %1.12e %1.12e\n", Gmag, uk, sum);
@@ -600,8 +617,12 @@ namespace qmcplusplus {
     void
     finalizeOptimization()
     {
-      	app_log() << "  Chiesa kinetic energy correction = " 
-		  << ChiesaKEcorrection() << endl;
+      ChiesaKEcorrection();
+    }
+
+    RealType KECorrection()
+    {
+      return KEcorr;
     }
     
 // double ChiesaKEcorrection()

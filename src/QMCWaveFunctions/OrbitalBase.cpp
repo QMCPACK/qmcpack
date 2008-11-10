@@ -100,6 +100,12 @@ namespace qmcplusplus {
 //    return proxy;
 //#endif
   }
+
+  OrbitalBase::RealType OrbitalBase::KECorrection()
+  {
+    return 0.0;
+  }
+
 }
 /***************************************************************************
  * $RCSfile$   $Author: jnkim $

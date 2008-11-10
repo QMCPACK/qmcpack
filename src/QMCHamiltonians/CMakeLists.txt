@@ -8,6 +8,7 @@ SET(HAMSRCS
   RPAPressure.cpp
   ForceBase.cpp
   ForceCeperley.cpp
+  ChiesaCorrection.cpp
 )
 #  FSAtomPseudoPot.cpp
 

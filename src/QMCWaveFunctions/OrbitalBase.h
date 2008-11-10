@@ -284,6 +284,11 @@ namespace qmcplusplus {
      * If not true, return a proxy class
      */
     virtual OrbitalBasePtr makeClone(ParticleSet& tqp) const;
+
+    /** Return the Chiesa kinetic energy correction 
+     */
+    virtual RealType KECorrection();
+
     ///** copy data members from old
     // * @param old existing OrbitalBase from which all the data members are copied.
     // *

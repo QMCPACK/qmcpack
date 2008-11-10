@@ -141,6 +141,8 @@ namespace qmcplusplus {
     void dumpToBuffer(ParticleSet& P, BufferType& buf);
     void dumpFromBuffer(ParticleSet& P, BufferType& buf);
 
+    RealType KECorrection() const;
+
     /** evalaute the values of the wavefunction, gradient and laplacian  for all the walkers */
     //void evaluate(WalkerSetRef& W, OrbitalBase::ValueVectorType& psi);
 

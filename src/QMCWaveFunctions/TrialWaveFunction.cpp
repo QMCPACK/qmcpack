@@ -525,6 +525,17 @@ namespace qmcplusplus {
     return myclone;
 
   }
+
+  TrialWaveFunction::RealType
+  TrialWaveFunction::KECorrection() const
+  {
+    RealType sum = 0.0;
+    for(int i=0; i<Z.size(); ++i)
+      sum += Z[i]->KECorrection();
+    return sum;
+  }
+
+
 }
 /***************************************************************************
  * $RCSfile$   $Author$

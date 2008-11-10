@@ -46,6 +46,7 @@
 #include "QMCHamiltonians/ForwardWalking.h"
 #include "QMCHamiltonians/TrialEnergy.h"
 #include "QMCHamiltonians/trialDMCcorrection.h"
+#include "QMCHamiltonians/ChiesaCorrection.h"
 #ifdef HAVE_LIBFFTW
   #include "QMCHamiltonians/MPC.h"
 #endif
@@ -244,6 +245,35 @@ namespace qmcplusplus {
         {
           addForceHam(cur);
         }
+	else if(potType == "chiesa")
+	{
+	  string PsiName="psi0";
+	  string SourceName = "e";
+	  OhmmsAttributeSet hAttrib;
+	  hAttrib.add(PsiName,"psi"); 
+	  hAttrib.add(SourceName, "source");
+	  hAttrib.put(cur);
+
+	  PtclPoolType::iterator pit(ptclPool.find(SourceName));
+	  if(pit == ptclPool.end()) {
+	    app_error() << "Unknown source \"" << SourceName 
+			<< "\" for Chiesa correction.  Aborting.\n";
+	    abort();
+	  }
+	  ParticleSet &source = *pit->second;
+
+	  OrbitalPoolType::iterator psi_it(psiPool.find(PsiName));
+	  if(psi_it == psiPool.end()) {
+	    app_error() << "Unknown psi \"" << SourceName 
+			<< "\" for Chiesa correction.  Aborting.\n";
+	    abort();
+	  }
+	  const TrialWaveFunction &psi = *psi_it->second->targetPsi;
+	  ChiesaCorrection *chiesa = new ChiesaCorrection (source, psi);
+
+	  targetH->addOperator(chiesa,"KEcorr",false);
+
+	}  
 
 //         else if (potType=="ForwardWalking"){
 //           app_log()<<"  Adding Forward Walking Operator"<<endl;
