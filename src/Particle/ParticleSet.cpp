@@ -1,6 +1,5 @@
 //////////////////////////////////////////////////////////////////
-//W.create
-// (c) Copyright 2003  by Jeongnim Kim
+// (c) Copyright 2003-  by Jeongnim Kim
 //////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////
 //   National Center for Supercomputing Applications &
@@ -244,12 +243,12 @@ namespace qmcplusplus {
 
   void
   ParticleSet::makeMoveOnSphere(Index_t iat, const SingleParticlePos_t& displ) {
-    SingleParticlePos_t dum=makeMove(iat,displ);
-    //activePtcl=iat;
-    //activePos=R[iat]; //save the current position
-    //R[iat]=activePos+displ;
-    //for(int i=0; i< DistTables.size(); ++i) 
-    //  DistTables[i]->moveOnSphere(*this,displ,iat);
+    //SingleParticlePos_t dum=makeMove(iat,displ);
+    activePtcl=iat;
+    activePos=R[iat]; //save the current position
+    R[iat]=activePos+displ;
+    for(int i=0; i< DistTables.size(); ++i) 
+      DistTables[i]->moveOnSphere(*this,displ,iat);
   }
   
   /** update the particle attribute by the proposed move
@@ -378,8 +377,8 @@ namespace qmcplusplus {
     PropertyList.add("R2Proposed");
     PropertyList.add("DriftScale");
     PropertyList.add("LocalEnergy");
-    PropertyList.add("TrialEnergy");
     PropertyList.add("LocalPotential");
+    PropertyList.add("TrialEnergy");
 
     if(PropertyList.size() != NUMPROPERTIES)
     {
