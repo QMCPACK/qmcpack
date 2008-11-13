@@ -540,7 +540,7 @@ namespace qmcplusplus {
         CompEstimators->add(newestimator,aname);
       }
 
-
+// return -1;
   }
 
 

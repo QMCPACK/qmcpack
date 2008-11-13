@@ -57,6 +57,9 @@ namespace qmcplusplus {
     string NonLocalMove;
     ///input string to benchmark OMP performance
     string BenchMarkRun;
+    ///input to control maximum age allowed for walkers.
+    IndexType mover_MaxAge;
+
 
     void resetUpdateEngines();
     void benchMark();

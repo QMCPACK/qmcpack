@@ -42,9 +42,7 @@
 #include "QMCHamiltonians/ForceBase.h"
 #include "QMCHamiltonians/ForceCeperley.h"
 #include "QMCHamiltonians/HFDHE2Potential_tail.h"
-#include "QMCHamiltonians/DMCmixPressureCorr.h"
 #include "QMCHamiltonians/ForwardWalking.h"
-#include "QMCHamiltonians/TrialEnergy.h"
 #include "QMCHamiltonians/trialDMCcorrection.h"
 #include "QMCHamiltonians/ChiesaCorrection.h"
 #ifdef HAVE_LIBFFTW
@@ -197,8 +195,8 @@ namespace qmcplusplus {
             int nlen(100);
             attrib.add(nlen,"truncateSum");
             attrib.put(cur);
-            DMCPressureCorr* DMCP = new DMCPressureCorr(*targetPtcl,nlen);
-            targetH->addOperator(DMCP,"PressureSum",false);
+//             DMCPressureCorr* DMCP = new DMCPressureCorr(*targetPtcl,nlen);
+//             targetH->addOperator(DMCP,"PressureSum",false);
             
           } else if (estType=="HFDHE2"){
             HePressure* BP = new HePressure(*targetPtcl);
@@ -237,8 +235,8 @@ namespace qmcplusplus {
             int nlen(100);
             attrib.add(nlen,"truncateSum");
             attrib.put(cur);
-            DMCPressureCorr* DMCP = new DMCPressureCorr(*targetPtcl,nlen);
-            targetH->addOperator(DMCP,"PressureSum",false);
+//             DMCPressureCorr* DMCP = new DMCPressureCorr(*targetPtcl,nlen);
+//             targetH->addOperator(DMCP,"PressureSum",false);
           }
         }
         else if(potType == "Force")
@@ -357,19 +355,11 @@ namespace qmcplusplus {
       attrib.put(cur2);
       if((cname == "estimator")&&(potType=="ForwardWalking"))
       {
-        if (!FoundET) targetH->addOperator(new TrialEnergy(*targetPtcl),"E_T",false);
         app_log()<<"  Adding Forward Walking Operator"<<endl;
         ForwardWalking* FW=new ForwardWalking();
         FW->put(cur2,*targetH,*targetPtcl);
         targetH->addOperator(FW,"ForwardWalking",false);
-      } else if((cname == "estimator")&&(potType == "TrialEnergy"))
-        {
-	  FoundET=true;
-	  TrialEnergy* TE = new TrialEnergy();
-	  TE->put(cur2,*targetPtcl);
-          targetH->addOperator(TE,"E_T",false);
-          targetH->setTempObservables(targetPtcl->PropertyList);
-        }else if((cname == "estimator")&&(potType == "DMCCorrection"))
+      }else if((cname == "estimator")&&(potType == "DMCCorrection"))
         {
 	  TrialDMCCorrection* TE = new TrialDMCCorrection();
 	  TE->put(cur2,*targetH,*targetPtcl);

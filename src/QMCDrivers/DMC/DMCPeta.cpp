@@ -146,7 +146,7 @@ namespace qmcplusplus {
               RealType logpsi = Psi.evaluateLog(W,w_buffer);
               enew= H.evaluate(W);
               //thisWalker.resetProperty(std::log(abs(psi)),psi,enew,rr_accepted,rr_proposed,1.0);
-              thisWalker.resetProperty(logpsi,Psi.getPhase(),enew,rr_accepted,rr_proposed,1.0,branchEngine->getEtrial());
+              thisWalker.resetProperty(logpsi,Psi.getPhase(),enew,rr_accepted,rr_proposed,1.0 );
               H.auxHevaluate(W,thisWalker);
               H.saveProperty(thisWalker.getPropertyBase());
             } 

@@ -25,6 +25,7 @@
 
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include <cstdlib>
+#include <set>
 
 namespace qmcplusplus {
 
@@ -36,7 +37,7 @@ namespace qmcplusplus {
     vector<double> Values;
     vector<string> Names;
     int blockT,nObservables,nValues,FirstHamiltonian;
-    
+
     double count;
 
 
@@ -63,58 +64,30 @@ namespace qmcplusplus {
     inline Return_t 
     rejectedMove(ParticleSet& P) {
         vector<double>::iterator Vit=Values.begin();
-
         for(int i=0;i<nObservables;i++){
-//           app_log()<<"Obs#"<<i;
 	  for(int j=0;j<walkerLengths[i].size();j++,Vit++){
             (*Vit) = tWalker->PropertyHistory[Pindices[i]][walkerLengths[i][j]-1];
-//             app_log()<<"  "<<tWalker->PropertyHistory[Pindices[i]][walkerLengths[i][j]-1];
           }
-// 	  app_log()<<endl;
         }
-//       }
-// 	double* wFWval = tWalker->getPropertyBase();
 	std::copy(Values.begin(),Values.end(),tWalker->getPropertyBase()+FirstHamiltonian+myIndex);
-// 	wFWval += FirstHamiltonian;
-
       return 0.0;
     }
     
     inline Return_t 
     evaluate(ParticleSet& P) {
-
-//       tWalker->phLength++;
-//       count=tWalker->phLength;
-//       if (tWalker->phLength%blockT == 0){
-//         tWalker->phLength=0;
-        for(int i=0;i<nObservables;i++){
+	for(int i=0;i<nObservables;i++){
           tWalker->addPropertyHistoryPoint(Pindices[i],  P.PropertyList[Hindices[i]]);
         }
-	
-//         for(int i=0;i<nObservables;i++){
-// 	app_log()<<" Nobs:"<<i<<endl;
-// 	for(int j=0;j<tWalker->PropertyHistory[i].size();j++){
-//             app_log()<<"  "<<tWalker->PropertyHistory[i][j];
-// 	  }
-// 	  app_log()<<endl;
-//         }
-        
-        vector<double>::iterator Vit=Values.begin();
 
+        vector<double>::iterator Vit=Values.begin();
         for(int i=0;i<nObservables;i++){
-//           app_log()<<"Obs#"<<i;
 	  for(int j=0;j<walkerLengths[i].size();j++,Vit++){
             (*Vit) = tWalker->PropertyHistory[Pindices[i]][walkerLengths[i][j]-1];
-//             app_log()<<"  "<<tWalker->PropertyHistory[Pindices[i]][walkerLengths[i][j]-1];
           }
-// 	  app_log()<<endl;
         }
-//       }
-// 	double* wFWval = tWalker->getPropertyBase();
-	std::copy(Values.begin(),Values.end(),tWalker->getPropertyBase()+FirstHamiltonian+myIndex-1);
-// 	wFWval += FirstHamiltonian;
 
-      return 0.0;
+	std::copy(Values.begin(),Values.end(),tWalker->getPropertyBase()+FirstHamiltonian+myIndex);
+        return 0.0;
     }
 
     inline Return_t 
@@ -124,7 +97,7 @@ namespace qmcplusplus {
 
     bool put(xmlNodePtr cur) {return true;}
       
-    bool put(xmlNodePtr cur, QMCHamiltonian& h, ParticleSet& P ) {
+    bool put(xmlNodePtr cur, QMCHamiltonian& h, ParticleSet& P) {
       FirstHamiltonian = h.startIndex();
       nObservables=0;
       nValues=0;
@@ -132,14 +105,11 @@ namespace qmcplusplus {
 //       OhmmsAttributeSet attrib;
 //       attrib.add(blockT,"blockSize");
 //       attrib.put(cur);
-//       app_log()<<"  Forward walking block size is "<< blockT<<"*Tau"<<endl;
-//       P.phLength=0;
       bool FIRST=true;
 
       xmlNodePtr tcur = cur->children;
       while(tcur != NULL) {
         string cname((const char*)tcur->name);
-//         app_log()<<cname<<endl;
         if(cname == "Observable") 
         {
           string tagName("none");
@@ -153,23 +123,17 @@ namespace qmcplusplus {
           Tattrib.put(tcur);
 	  
 	  int numProps = P.PropertyList.Names.size();
-// 	  Hindex = P.PropertyList.add(tagName);
 	  Hindex = h.getObservable(tagName)+NUMPROPERTIES;
 	  if(tagName=="LocalPotential") {
 	    Hindex=LOCALPOTENTIAL ;
 	    tagName="LocPot";
-	  }
-	  if (Hindex==(NUMPROPERTIES-1)){
+	  }else if (Hindex==(NUMPROPERTIES-1)){
 	    app_log()<<"Not a valid H element("<<Hindex<<") Valid names are:";
 	    for (int jk=0;jk<h.sizeOfObservables();jk++) app_log()<<"  "<<h.getObservableName(jk);
 	    app_log()<<endl;
 	    exit(-1);
 	  }
-/*
-          if ((Hindex==-100)){
-            app_log()<<" Hamiltonian Element "<<tagName<<" does not exist!! "<<Hindex<<endl;
-            assert(Hindex>=0);
-          }*/
+
           Names.push_back(tagName);
           Hindices.push_back( Hindex);
           app_log()<<" Hamiltonian Element "<<tagName<<" was found at "<< Hindex<<endl;
@@ -189,18 +153,15 @@ namespace qmcplusplus {
           for(int nm=0;nm<Parameters.size();nm++) app_log()<<Parameters[nm]<<"  ";
           app_log()<<endl;
           walkerLengths.push_back(Parameters);
-          
           int maxWsize=Parameters.back();
 	  int pindx = P.addPropertyHistory(maxWsize);
           Pindices.push_back(pindx);
-	  app_log()<<"pindex "<<pindx<<endl;
-          
         }
         tcur = tcur->next;
       }
       app_log()<<"Total number of observables calculated:"<<nObservables<<endl;
       app_log()<<"Total number of values calculated:"<<nValues<<endl;
-      for (int i=0;i<nValues;i++) Values.push_back(0.0);
+      Values.resize(nValues);
       return true;
     }
 

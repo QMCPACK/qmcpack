@@ -47,8 +47,7 @@ namespace qmcplusplus {
     PropertyList.Values=p.PropertyList.Values;
 
     PropertyHistory=  p.PropertyHistory;
-    phLength= p.phLength;
-    
+
     //construct the distance tables with the same order
     //first is always for this-this paier
     for(int i=1;i<p.DistTables.size(); ++i) addTable(p.DistTables[i]->origin());
@@ -376,7 +375,6 @@ namespace qmcplusplus {
     PropertyList.add("R2Accepted");
     PropertyList.add("R2Proposed");
     PropertyList.add("DriftScale");
-    PropertyList.add("TrialEnergy");
     PropertyList.add("LocalEnergy");
     PropertyList.add("LocalPotential");
 
@@ -396,11 +394,6 @@ namespace qmcplusplus {
     //for(int i=0; i< DistTables.size(); i++) DistanceTable::removeTable(DistTables[i]->getName());
     //DistTables.erase(DistTables.begin(),DistTables.end());
   }
-  
-    void ParticleSet::setPropertyHistoryLength(int leng)
-    {
-      if (leng>0) phLength=leng;
-    }
 
     int ParticleSet::addPropertyHistory(int leng)
     {
@@ -416,13 +409,13 @@ namespace qmcplusplus {
       PropertyHistory[index].pop_back();
     }
     
-//     void ParticleSet::rejectedMove()
-//     {
-//       if (PropertyHistory.size()>0) addPropertyHistoryPoint(0,Properties(TRIALENERGY));
-//       for(int dindex=1;dindex<PropertyHistory.size();dindex++){
-//         addPropertyHistoryPoint(dindex,PropertyHistory[dindex][0]);
-//       }
-//     }
+    void ParticleSet::rejectedMove()
+    {
+      for(int dindex=0;dindex<PropertyHistory.size();dindex++){
+      PropertyHistory[dindex].push_front(PropertyHistory[dindex].front());
+      PropertyHistory[dindex].pop_back();
+      }
+    }
     
     double ParticleSet::getPropertyHistoryAvg(int index)
     {

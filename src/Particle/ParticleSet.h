@@ -116,8 +116,7 @@ namespace qmcplusplus {
 
     ///Property history vector
           vector<deque<double> >  PropertyHistory;
-          int phLength; 
-    
+
     ///default constructor
           ParticleSet();
 
@@ -211,8 +210,8 @@ namespace qmcplusplus {
             return PropertyList.add(pname.c_str());
           }
 
-          void setPropertyHistoryLength(int leng);
           int addPropertyHistory(int leng);
+	  void rejectedMove();
           void addPropertyHistoryPoint(int index, RealType data);
           double getPropertyHistoryAvg(int index);
           double getPropertyHistorySum(int index,int endN);

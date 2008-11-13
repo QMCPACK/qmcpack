@@ -55,7 +55,6 @@ namespace qmcplusplus {
       RealType eold    = thisWalker.Properties(LOCALENERGY);
       RealType signold = thisWalker.Properties(SIGN);
       RealType enew  = eold;
-      thisWalker.Properties(TRIALENERGY)=branchEngine->getEtrial();
 
       //create a 3N-Dimensional Gaussian with variance=1
       makeGaussRandomWithEngine(deltaR,RandomGen);
@@ -93,13 +92,13 @@ namespace qmcplusplus {
           thisWalker.Properties(R2PROPOSED)=rr_proposed;
           H.rejectedMove(W,thisWalker);
         } else {
-          accepted=true;  
+          accepted=true;
+	  thisWalker.Age=0;
           thisWalker.R = W.R;
           thisWalker.Drift = drift;          
           rr_accepted = rr_proposed;
-// 	  H.saveProperty(thisWalker.getPropertyBase());
 	  H.auxHevaluate(W,thisWalker);
-          thisWalker.resetProperty(logpsi,Psi.getPhase(),enew,rr_accepted,rr_proposed,nodecorr,branchEngine->getEtrial());
+          thisWalker.resetProperty(logpsi,Psi.getPhase(),enew,rr_accepted,rr_proposed,nodecorr);
           H.saveProperty(thisWalker.getPropertyBase());
         }
       }
@@ -145,7 +144,6 @@ namespace qmcplusplus {
       RealType eold = thisWalker.Properties(LOCALENERGY);
       RealType enew = eold;
       RealType signold = thisWalker.Properties(SIGN);
-      thisWalker.Properties(TRIALENERGY)=branchEngine->getEtrial();
       //RealType emixed  = eold;
 
       //create a 3N-Dimensional Gaussian with variance=1
@@ -167,7 +165,6 @@ namespace qmcplusplus {
       if(branchEngine->phaseChanged(Psi.getPhase(),thisWalker.Properties(SIGN))) {
         thisWalker.Age++;
         thisWalker.willDie();
-        H.rejectedMove(W,thisWalker);
       } else {
         enew=H.evaluate(W);
 	RealType logGf = -0.5*Dot(deltaR,deltaR);
@@ -183,13 +180,14 @@ namespace qmcplusplus {
           thisWalker.Properties(R2PROPOSED)=rr_proposed;
           H.rejectedMove(W,thisWalker);
         } else {
+	  thisWalker.Age=0;
           accepted=true;  
           thisWalker.R = W.R;
           thisWalker.Drift = drift;
           rr_accepted = rr_proposed;
+          thisWalker.resetProperty(logpsi,Psi.getPhase(),enew,rr_accepted,rr_proposed,nodecorr);
           H.auxHevaluate(W,thisWalker);
-          thisWalker.resetProperty(logpsi,Psi.getPhase(),enew,rr_accepted,rr_proposed,nodecorr,branchEngine->getEtrial());
-          H.saveProperty(thisWalker.getPropertyBase());
+	  H.saveProperty(thisWalker.getPropertyBase());
         }
         
 //         cout<<logpsi<<"  "<<Psi.getPhase()<<"  "<<enew<<"  "<<rr_accepted<<"  "<<rr_proposed<<"  "<<nodecorr<<endl;

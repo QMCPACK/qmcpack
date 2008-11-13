@@ -175,7 +175,7 @@ namespace qmcplusplus {
 
         //nodecorr=getNodeCorrection(W.G,thisWalker.Drift);
         //thisWalker.resetProperty(logpsi,Psi.getPhase(),enew,rr_accepted,rr_proposed,nodecorr);
-        thisWalker.resetProperty(logpsi,Psi.getPhase(),enew,rr_accepted,rr_proposed,1.0,branchEngine->getEtrial());
+        thisWalker.resetProperty(logpsi,Psi.getPhase(),enew,rr_accepted,rr_proposed,1.0 );
         H.auxHevaluate(W,thisWalker);
         H.saveProperty(thisWalker.getPropertyBase());
       } 
@@ -193,7 +193,6 @@ namespace qmcplusplus {
       //2008-06-26: select any
       //bare green function by setting nodecorr=nodecorr_old=1.0
       thisWalker.Weight *= branchEngine->branchWeight(enew,eold);
-      thisWalker.Properties(TRIALENERGY)=branchEngine->getEtrial();
       DMC_TRACE_STOP(thisWalker.ID,NumPtcl,advanced,localTimer.elapsed());
 
       //Filtering extreme energies
@@ -468,7 +467,7 @@ namespace qmcplusplus {
         myTimers[3]->stop();
 
         //thisWalker.resetProperty(std::log(abs(psi)),psi,enew,rr_accepted,rr_proposed,nodecorr);
-        thisWalker.resetProperty(logpsi,Psi.getPhase(),enew,rr_accepted,rr_proposed,nodecorr,branchEngine->getEtrial());
+        thisWalker.resetProperty(logpsi,Psi.getPhase(),enew,rr_accepted,rr_proposed,nodecorr );
         H.auxHevaluate(W,thisWalker);
         H.saveProperty(thisWalker.getPropertyBase());
       } 
@@ -486,7 +485,6 @@ namespace qmcplusplus {
       //2008-06-26: select any
       //bare green function by setting nodecorr=nodecorr_old=1.0
       thisWalker.Weight *= branchEngine->branchWeight(enew,eold);
-      thisWalker.Properties(TRIALENERGY)=branchEngine->getEtrial();
 
       DMC_TRACE_STOP(thisWalker.ID,NumPtcl,advanced,localTimer.elapsed());
 

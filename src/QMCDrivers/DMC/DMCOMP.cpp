@@ -31,7 +31,7 @@ namespace qmcplusplus {
       HamiltonianPool& hpool):
     QMCDriver(w,psi,h), CloneManager(hpool),
     KillNodeCrossing(0),
-    Reconfiguration("no"), BenchMarkRun("no"), BranchInterval(-1){
+    Reconfiguration("no"), BenchMarkRun("no"), BranchInterval(-1),mover_MaxAge(-1){
     RootName = "dummy";
     QMCType ="DMCOMP";
 
@@ -44,6 +44,7 @@ namespace qmcplusplus {
     m_param.add(BranchInterval,"branchInterval","string");
     m_param.add(NonLocalMove,"nonlocalmove","string");
     m_param.add(NonLocalMove,"nonlocalmoves","string");
+    m_param.add(mover_MaxAge,"MaxAge","double");
   }
 
   void DMCOMP::resetUpdateEngines() {
@@ -140,7 +141,10 @@ namespace qmcplusplus {
         app_log() << "  DMCOMP PbyP Update with reconfigurations" << endl;
       else
         app_log() << "  DMCOMP walker Update with reconfigurations" << endl;
-      for(int ip=0; ip<Movers.size(); ip++) Movers[ip]->MaxAge=0;
+      for(int ip=0; ip<Movers.size(); ip++) {
+        if(mover_MaxAge!=-1) Movers[ip]->MaxAge=mover_MaxAge;
+	else Movers[ip]->MaxAge=0;
+      }
       if(BranchInterval<0)
       {
         BranchInterval=nSteps;
@@ -151,12 +155,18 @@ namespace qmcplusplus {
       if(QMCDriverMode[QMC_UPDATE_MODE])
       {
         app_log() << "  DMCOMP PbyP Update with a fluctuating population" << endl;
-        for(int ip=0; ip<Movers.size(); ip++) Movers[ip]->MaxAge=1;
+        for(int ip=0; ip<Movers.size(); ip++) {
+          if(mover_MaxAge!=-1) Movers[ip]->MaxAge=mover_MaxAge;
+	  else Movers[ip]->MaxAge=1;
+        }
       }
       else
       {
         app_log() << "  DMCOMP walker Update with a fluctuating population" << endl;
-        for(int ip=0; ip<Movers.size(); ip++) Movers[ip]->MaxAge=3;
+        for(int ip=0; ip<Movers.size(); ip++){
+          if(mover_MaxAge!=-1) Movers[ip]->MaxAge=mover_MaxAge;
+	  else Movers[ip]->MaxAge=5;
+        }
       }
       if(BranchInterval<0) BranchInterval=1;
     }

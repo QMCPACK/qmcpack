@@ -50,7 +50,8 @@ namespace qmcplusplus {
     
     elocal_name.push_back("SumPot");
     elocal_name.push_back("ElSumPot");
-    elocal_name.push_back("TruncSumPot");
+    elocal_name.push_back("HeadTruncSumPot");
+    elocal_name.push_back("TailTruncSumPot");
     elocal_name.push_back("TruncElSumPot");
     elocal_name.push_back("Virial");
     elocal_name.push_back("MaxAge");
@@ -61,13 +62,13 @@ namespace qmcplusplus {
     elocal_name.push_back("Etail");
     elocal_name.push_back("Edecorr");
     elocal_name.push_back("Vdecorr");
-    elocal_name.push_back("RMC_HFCep_0_2");
-    elocal_name.push_back("RMC_HFCep_1_2");
+    elocal_name.push_back("RMC_HFCep_1_0");
+    elocal_name.push_back("RMC_HFCep_1_1");
 
-    scalars.resize(SizeOfHamiltonians+16);
+    scalars.resize(SizeOfHamiltonians+17);
     scalars_saved=scalars;
     pNorm=0.0;
-    Findex = h.getObservable("HFCep_0_2");
+    Findex = h.getObservable("HFCep_1_0");
 //     app_log()<<"Force Index "<<Findex<<endl;
   };
 
@@ -119,11 +120,13 @@ namespace qmcplusplus {
       };
       //Center Pressure
       RealType* restrict CenProp(Reptile->center()->getPropertyBase(i));
-      scalars[SizeOfHamiltonians+5]( (2.0*eloc-CenProp[LOCALPOTENTIAL])*pNorm ,uw);
-      scalars[SizeOfHamiltonians+8]( CenProp[LOCALPOTENTIAL] ,uw);
-      scalars[SizeOfHamiltonians+9]( HeadProp[LOCALENERGY] * TailProp[LOCALENERGY] ,uw);
-      scalars[SizeOfHamiltonians+10]( HeadProp[LOCALENERGY] ,uw);
-      scalars[SizeOfHamiltonians+11]( TailProp[LOCALENERGY] ,uw);
+      scalars[SizeOfHamiltonians+6]( (2.0*eloc-CenProp[LOCALPOTENTIAL])*pNorm ,uw);
+      scalars[SizeOfHamiltonians+9]( CenProp[LOCALPOTENTIAL] ,uw);
+      scalars[SizeOfHamiltonians+10]( HeadProp[LOCALENERGY] * TailProp[LOCALENERGY] ,uw);
+      RealType energy_head = HeadProp[LOCALENERGY];
+      RealType energy_tail = TailProp[LOCALENERGY];
+      scalars[SizeOfHamiltonians+11]( HeadProp[LOCALENERGY] ,uw);
+      scalars[SizeOfHamiltonians+12]( TailProp[LOCALENERGY] ,uw);
       
 //       int Rage(Reptile->Age);
 //       int Bage=Rage;
@@ -165,7 +168,8 @@ namespace qmcplusplus {
       int Rage(Reptile->Age);
       int Bage=Rage;
 
-      RealType tmpV=0.0;
+      RealType tmpV_head=0.0;
+      RealType tmpV_tail=0.0;
       RealType tmpF=0.0;
       int maxtouch=0;
       MultiChain::iterator Bit = Reptile->begin();
@@ -176,31 +180,33 @@ namespace qmcplusplus {
         //truncated version of estimator
       Lit--;
       for(int j=0 ;( (j<truncLength) && (Bit != Endit) );Bit++,Lit--,j++){
-        tmpV+= 0.5*(*Bit)->getPropertyBase(i)[LOCALPOTENTIAL];
-        tmpV+= 0.5*(*Lit)->getPropertyBase(i)[LOCALPOTENTIAL];
+        tmpV_head+= 0.5*(*Bit)->getPropertyBase(i)[LOCALPOTENTIAL];
+        tmpV_tail+= 0.5*(*Lit)->getPropertyBase(i)[LOCALPOTENTIAL];
         if ((*Bit)->timesTouched>maxtouch) maxtouch = (*Bit)->timesTouched;
         if ((*Bit)->stepmade < Bage) Bage = (*Bit)->stepmade; 
       };
-      double tmpVsum = tmpV * (-pNorm*Tau);
-      scalars[SizeOfHamiltonians+3](tmpVsum,uw);
-      scalars[SizeOfHamiltonians+4](eloc*tmpVsum,uw);
+      RealType Ppref = (-pNorm*Tau);
+      RealType tmpVsum = (energy_head*tmpV_head + energy_tail*tmpV_tail)*Ppref;
+      scalars[SizeOfHamiltonians+3](tmpV_head*Ppref,uw);
+      scalars[SizeOfHamiltonians+4](tmpV_tail*Ppref,uw);
+      scalars[SizeOfHamiltonians+5]( tmpVsum,uw);
         
         //continue sum for comparison to truncated version
       for( ;Bit != Endit;Bit++,Lit--){
-        tmpV+= 0.5*(*Bit)->getPropertyBase(i)[LOCALPOTENTIAL];
-        tmpV+= 0.5*(*Lit)->getPropertyBase(i)[LOCALPOTENTIAL];
+        tmpV_head+= 0.5*(*Bit)->getPropertyBase(i)[LOCALPOTENTIAL];
+        tmpV_tail+= 0.5*(*Lit)->getPropertyBase(i)[LOCALPOTENTIAL];
         if ((*Bit)->timesTouched>maxtouch) maxtouch = (*Bit)->timesTouched;
         if ((*Bit)->stepmade < Bage) Bage = (*Bit)->stepmade;
       };
 
-      tmpV *= -2.0*pNorm*Tau;
-
+      RealType tmpV = 2.0*tmpV_head*Ppref;
+      RealType tmpEVsum = (energy_head*tmpV_head + energy_tail*tmpV_tail)*Ppref;
       scalars[SizeOfHamiltonians+1](tmpV,uw);
-      scalars[SizeOfHamiltonians+2](eloc*tmpV,uw);
+      scalars[SizeOfHamiltonians+2](tmpEVsum,uw);
 
 
-      scalars[SizeOfHamiltonians+6](Rage-Bage,1.0);
-      scalars[SizeOfHamiltonians+7](maxtouch,1.0);
+      scalars[SizeOfHamiltonians+7](Rage-Bage,1.0);
+      scalars[SizeOfHamiltonians+8](maxtouch,1.0);
 
       //calculate correlation between head energy and energy at some point in chain to truncate correctly
       Bit= Reptile->begin();
@@ -223,7 +229,7 @@ namespace qmcplusplus {
         tmpE=Hac*( (*Bit)->getPropertyBase(i)[LOCALENERGY]-ObsContAvg[j] );
         AC+=1;
       };
-      scalars[SizeOfHamiltonians+12](AC,uw);
+      scalars[SizeOfHamiltonians+13](AC,uw);
       
       int AC2(-1);
       tmpE= -1.0;
@@ -235,9 +241,9 @@ namespace qmcplusplus {
         AC2+=1;
       };
       
-      scalars[SizeOfHamiltonians+13](AC2,uw);
-      scalars[SizeOfHamiltonians+14](CenProp[Findex+FirstHamiltonian],uw);
-      scalars[SizeOfHamiltonians+15](CenProp[Findex+3+FirstHamiltonian],uw);
+      scalars[SizeOfHamiltonians+14](AC2,uw);
+      scalars[SizeOfHamiltonians+15](CenProp[Findex+FirstHamiltonian],uw);
+      scalars[SizeOfHamiltonians+16](CenProp[Findex+1+FirstHamiltonian],uw);
     }
   }
 

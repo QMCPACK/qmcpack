@@ -94,14 +94,13 @@ namespace qmcplusplus {
     
     ///Property history vector
     vector<deque<T> >  PropertyHistory;
-    int phLength;
-    
+
     ///buffer for the data for particle-by-particle update
     Buffer_t DataSet;
 
     ///default constructor
     inline Walker() : ID(0),ParentID(0), Generation(0),Age(0),
-                  Weight(1.0e0),Multiplicity(1.0e0), phLength(1)
+                  Weight(1.0e0),Multiplicity(1.0e0) 
     {
       Properties.resize(1,NUMPROPERTIES);
       reset();
@@ -109,16 +108,11 @@ namespace qmcplusplus {
 
     ///create a walker for n-particles
     inline explicit Walker(int nptcl) : ID(0),ParentID(0), Generation(0),Age(0),
-                           Weight(1.0e0),Multiplicity(1.0e0),phLength(1)
+                           Weight(1.0e0),Multiplicity(1.0e0)
     {
       Properties.resize(1,NUMPROPERTIES);
       resize(nptcl);
       reset();
-    }
-    
-    inline void setPropertyHistoryLength(int leng)
-    {
-      if (leng>0) phLength=leng;
     }
 
     inline int addPropertyHistory(int leng)
@@ -137,11 +131,7 @@ namespace qmcplusplus {
     
     inline void rejectedMove()
     {
-      if (PropertyHistory.size()>0) {
-      PropertyHistory[0].push_front(Properties(TRIALENERGY));
-      PropertyHistory[0].pop_back();
-      }
-      for(int dindex=1;dindex<PropertyHistory.size();dindex++){
+      for(int dindex=0;dindex<PropertyHistory.size();dindex++){
       PropertyHistory[dindex].push_front(PropertyHistory[dindex].front());
       PropertyHistory[dindex].pop_back();
       }
@@ -201,7 +191,6 @@ namespace qmcplusplus {
       DataSet=a.DataSet;
 
       PropertyHistory=a.PropertyHistory;
-      phLength= a.phLength;
     }
 
     //return the address of the values of Hamiltonian terms
@@ -263,20 +252,8 @@ namespace qmcplusplus {
       Properties(R2PROPOSED) = r2p;
       Properties(DRIFTSCALE) = vq;
     }
-    
-    inline void resetProperty(T logpsi, T sigN, T ene, T r2a, T r2p, T vq, T et) 
-    {
-      Age=0;
-      Properties(LOGPSI)=logpsi;
-      Properties(SIGN)=sigN;
-      Properties(LOCALENERGY) = ene;
-      Properties(R2ACCEPTED) = r2a;
-      Properties(R2PROPOSED) = r2p;
-      Properties(DRIFTSCALE) = vq;
-      Properties(TRIALENERGY) = et;
-    }
-    
-    /** marked to die
+
+/** marked to die
      *
      * Multiplicity and weight are set to zero.
      */
