@@ -32,7 +32,6 @@ namespace qmcplusplus {
         R2ACCEPTED,     /*!< r^2 for accepted moves */
         R2PROPOSED,     /*!< r^2 for proposed moves */
         DRIFTSCALE,     /*!< scaling value for the drift */
-	TRIALENERGY,
 	LOCALENERGY,    /*!< local energy, the sum of all the components */
 	LOCALPOTENTIAL, /*!< local potential energy = local energy - kinetic energy */
         NUMPROPERTIES   /*!< the number of properties */
