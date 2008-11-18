@@ -468,6 +468,8 @@ namespace qmcplusplus {
     //////////////////////////////////
     if (HaveLocalizedOrbs) 
       OrbitalSet = new EinsplineSetLocal;
+    else if (GammaOnly)
+      OrbitalSet = new EinsplineSetExtended<double>;
     else
       OrbitalSet = new EinsplineSetExtended<complex<double> >;
 
@@ -511,12 +513,19 @@ namespace qmcplusplus {
     }
     // Otherwise, use EinsplineSetExtended
     else {
-      EinsplineSetExtended<complex<double> > *restrict orbitalSet = 
-	dynamic_cast<EinsplineSetExtended<complex<double> >*>(OrbitalSet);
-      OccupyBands(spinSet, sortBands);
+      if (GammaOnly) { 
+	EinsplineSetExtended<double> *restrict orbitalSet =
+	  dynamic_cast<EinsplineSetExtended<double>* > (OrbitalSet);    
+        OccupyBands(spinSet, sortBands);
 #pragma omp critical(read_extended_orbs)
-      {
-	ReadBands(spinSet, orbitalSet);
+	{ ReadBands(spinSet, orbitalSet); }
+      }
+      else {
+	EinsplineSetExtended<complex<double> > *restrict orbitalSet = 
+	  dynamic_cast<EinsplineSetExtended<complex<double> >*>(OrbitalSet);
+	OccupyBands(spinSet, sortBands);
+#pragma omp critical(read_extended_orbs)
+	{ ReadBands(spinSet, orbitalSet); }
       }
     }
 
@@ -801,6 +810,16 @@ namespace qmcplusplus {
 	fprintf (stderr, "Using %d copies of twist angle [%6.3f, %6.3f, %6.3f]\n",
 		 MakeTwoCopies[i] ? 2 : 1, twist_i[0], twist_i[1], twist_i[2]);
     }
+    
+    GammaOnly = (DistinctTwists.size() == 1) && 
+      (dot(TwistAngles[DistinctTwists[0]], 
+	   TwistAngles[DistinctTwists[0]]) < 1.0e-10);
+    
+    if (GammaOnly) 
+      app_log() << "Using real orbitals for gamma-point calculation.\n";
+    else
+      app_log() << "Using complex orbitals for non-gamma-point calculation.\n";
+    
 #else
     DistinctTwists.resize(IncludeTwists.size());
     MakeTwoCopies.resize(IncludeTwists.size());

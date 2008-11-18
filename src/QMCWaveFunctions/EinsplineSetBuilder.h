@@ -163,6 +163,7 @@ namespace qmcplusplus {
     // clone 
     vector<TinyVector<int,OHMMS_DIM> > UseTwists;
     vector<int> IncludeTwists, DistinctTwists;
+    bool GammaOnly;
     int NumDistinctOrbitals, NumCoreOrbs, NumValenceOrbs;
     // This is true if the corresponding twist in DistinctTwists should
     // should be used to generate two distinct orbitals from the real and 

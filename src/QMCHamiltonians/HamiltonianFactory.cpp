@@ -401,10 +401,12 @@ namespace qmcplusplus {
   HamiltonianFactory::addCoulombPotential(xmlNodePtr cur) {
 
     string a("e"),title("ElecElec"),pbc("yes");
+    bool physical = true;
     OhmmsAttributeSet hAttrib;
     hAttrib.add(title,"id"); hAttrib.add(title,"name"); 
     hAttrib.add(a,"source"); 
     hAttrib.add(pbc,"pbc"); 
+    hAttrib.add(physical,"physical");
     hAttrib.put(cur);
 
     renameProperty(a);
@@ -424,9 +426,11 @@ namespace qmcplusplus {
       if(source->getTotalNum()>1)  {
         if(applyPBC) {
           //targetH->addOperator(new CoulombPBCAA(*targetPtcl),title);
-          targetH->addOperator(new CoulombPBCAATemp(*targetPtcl,true),title);
+          targetH->addOperator(new CoulombPBCAATemp(*targetPtcl,true),
+			       title,physical);
         } else {
-          targetH->addOperator(new CoulombPotentialAA(*targetPtcl),title);
+          targetH->addOperator(new CoulombPotentialAA(*targetPtcl),
+			       title,physical);
         }
       }
     } else {
