@@ -45,7 +45,7 @@
 #include "QMCHamiltonians/ForwardWalking.h"
 #include "QMCHamiltonians/trialDMCcorrection.h"
 #include "QMCHamiltonians/ChiesaCorrection.h"
-#ifdef HAVE_LIBFFTW
+#if defined(HAVE_LIBFFTW)
   #include "QMCHamiltonians/MPC.h"
 #endif
 
@@ -121,7 +121,8 @@ namespace qmcplusplus {
 
     xmlNodePtr cur2(cur);
     cur = cur->children;
-    while(cur != NULL) {
+    while(cur != NULL) 
+    {
       string cname((const char*)cur->name);
       string potType("0");
       string potName("any");
@@ -373,7 +374,8 @@ namespace qmcplusplus {
   }
 
   void
-  HamiltonianFactory::addMPCPotential(xmlNodePtr cur) {
+  HamiltonianFactory::addMPCPotential(xmlNodePtr cur) 
+  {
 #if defined(HAVE_LIBFFTW)
     string a("e"), title("MPC");
     OhmmsAttributeSet hAttrib;
@@ -390,11 +392,8 @@ namespace qmcplusplus {
     MPC *mpc = new MPC (*targetPtcl, cutoff);
     targetH->addOperator(mpc, "MPC", physical);
 #else
-    app_error() << "MPC was not built because FFTW3 was not found during "
-		<< "the build process.  Aborting.\n";
-    abort();
+    APP_ABORT("HamiltonianFactory::addMPCPotential MPC is disabled because FFTW3 was not found during the build process.");
 #endif // defined(HAVE_LIBFFTW)
-    
   }
 
   void 
