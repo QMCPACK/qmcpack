@@ -227,12 +227,13 @@ namespace qmcplusplus {
    * Evaluate the related distance table data DistanceTableData::Temp.
    */
   ParticleSet::SingleParticlePos_t 
-  ParticleSet::makeMove(Index_t iat, const SingleParticlePos_t& displ) {
+  ParticleSet::makeMove(Index_t iat, const SingleParticlePos_t& displ) 
+  {
     activePtcl=iat;
     activePos=R[iat]; //save the current position
     SingleParticlePos_t newpos(activePos+displ);
-    for(int i=0; i< DistTables.size(); ++i) DistTables[i]->move(*this,newpos,iat);
-    
+    for(int i=0; i< DistTables.size(); ++i) 
+      DistTables[i]->move(*this,newpos,iat);
     R[iat]=newpos;
     //Do not change SK: 2007-05-18
     //Change SK only if DoUpdate is true: 2008-09-12
@@ -241,13 +242,14 @@ namespace qmcplusplus {
   }
 
   void
-  ParticleSet::makeMoveOnSphere(Index_t iat, const SingleParticlePos_t& displ) {
-    //SingleParticlePos_t dum=makeMove(iat,displ);
-    activePtcl=iat;
-    activePos=R[iat]; //save the current position
-    R[iat]=activePos+displ;
-    for(int i=0; i< DistTables.size(); ++i) 
-      DistTables[i]->moveOnSphere(*this,displ,iat);
+  ParticleSet::makeMoveOnSphere(Index_t iat, const SingleParticlePos_t& displ) 
+  {
+    SingleParticlePos_t dum=makeMove(iat,displ);
+    //activePtcl=iat;
+    //activePos=R[iat]; //save the current position
+    //R[iat]=activePos+displ;
+    //for(int i=0; i< DistTables.size(); ++i) 
+    //  DistTables[i]->moveOnSphere(*this,displ,iat);
   }
   
   /** update the particle attribute by the proposed move
