@@ -78,6 +78,7 @@ IF(NOT HAVE_MKL)
     SET(LAPACK_LIBRARY_INIT 1 CACHE BOOL "use Mac Framework")
     SET(MAC_VECLIB 1 CACHE BOOL "use Mac Framework")
     SET(LAPACK_LIBRARY "")
+    SET(BLAS_LIBRARY "")
     MESSAGE(STATUS "Using Framework on Darwin.")
 
     ## check goto library: does not work so well
