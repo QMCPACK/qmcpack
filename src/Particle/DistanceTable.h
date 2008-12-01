@@ -52,7 +52,7 @@ namespace qmcplusplus {
   DistanceTableData* createDistanceTable(ParticleSet& s);
 
   ///free function create a distable table of s-t
-  DistanceTableData* createDistanceTable(const ParticleSet& s, ParticleSet& s);
+  DistanceTableData* createDistanceTable(const ParticleSet& s, ParticleSet& t);
 }
 #endif
 /***************************************************************************
