@@ -202,6 +202,9 @@ namespace qmcplusplus {
     Vector<double> phase;
     Vector<complex<double> > eikr;
     inline void computePhaseFactors(TinyVector<double,OHMMS_DIM> r);
+    // For running at half G-vectors with real orbitals;  
+    // 0 if the twist is zero, 1 if the twist is G/2.
+    TinyVector<int,OHMMS_DIM> HalfG;
 
     ////////////
     // Timers //
@@ -245,6 +248,8 @@ namespace qmcplusplus {
       TimerManager.addTimer (&VGLTimer);
       TimerManager.addTimer (&VGLMatTimer);
       TimerManager.addTimer (&EinsplineTimer);
+      for (int i=0; i<OHMMS_DIM; i++)
+	HalfG[i] = 0;
     }
   };
 

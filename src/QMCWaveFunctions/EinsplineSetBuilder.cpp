@@ -468,7 +468,7 @@ namespace qmcplusplus {
     //////////////////////////////////
     if (HaveLocalizedOrbs) 
       OrbitalSet = new EinsplineSetLocal;
-    else if (GammaOnly)
+    else if (UseRealOrbitals)
       OrbitalSet = new EinsplineSetExtended<double>;
     else
       OrbitalSet = new EinsplineSetExtended<complex<double> >;
@@ -513,7 +513,7 @@ namespace qmcplusplus {
     }
     // Otherwise, use EinsplineSetExtended
     else {
-      if (GammaOnly) { 
+      if (UseRealOrbitals) { 
 	EinsplineSetExtended<double> *restrict orbitalSet =
 	  dynamic_cast<EinsplineSetExtended<double>* > (OrbitalSet);    
         OccupyBands(spinSet, sortBands);
@@ -811,14 +811,28 @@ namespace qmcplusplus {
 		 MakeTwoCopies[i] ? 2 : 1, twist_i[0], twist_i[1], twist_i[2]);
     }
     
-    GammaOnly = (DistinctTwists.size() == 1) && 
-      (dot(TwistAngles[DistinctTwists[0]], 
-	   TwistAngles[DistinctTwists[0]]) < 1.0e-10);
+    // Find out if we can make real orbitals
+    UseRealOrbitals = true;
+    for (int i=0; i < DistinctTwists.size(); i++) {
+      int ti = DistinctTwists[i];
+      PosType twist = TwistAngles[ti];
+      for (int j=0; j<OHMMS_DIM; j++)
+	if (std::fabs(twist[j]-0.5) > 1.0e-8 &&
+	    std::fabs(twist[j]-0.5) > 1.0e-8 &&
+	    std::fabs(twist[j]+0.5) > 1.0e-8)
+	  UseRealOrbitals = false;
+    }
+
+    if (UseRealOrbitals && (DistinctTwists.size() > 1)) {
+      app_log() << "***** Use of real orbitals is possible, but not currently implemented\n"
+		<< "      with more than one twist angle.\n";
+      UseRealOrbitals = false;
+    }
     
-    if (GammaOnly) 
-      app_log() << "Using real orbitals for gamma-point calculation.\n";
+    if (UseRealOrbitals) 
+      app_log() << "Using real orbitals.\n";
     else
-      app_log() << "Using complex orbitals for non-gamma-point calculation.\n";
+      app_log() << "Using complex orbitals.\n";
     
 #else
     DistinctTwists.resize(IncludeTwists.size());
@@ -1149,10 +1163,17 @@ namespace qmcplusplus {
 	  (num < (numOrbs-1)) && SortBands[iorb].MakeTwoCopies;
 	num += orbitalSet->MakeTwoCopies[iorb] ? 2 : 1;
       }
+      PosType twist0 = TwistAngles[SortBands[0].TwistIndex];
+      for (int i=0; i<OHMMS_DIM; i++)
+	if (std::fabs(std::fabs(twist0[i]) - 0.5) < 1.0e-8)
+	  orbitalSet->HalfG[i] = 1;
+	else
+	  orbitalSet->HalfG[i] = 0;
     }
     myComm->bcast(orbitalSet->kPoints);
     myComm->bcast(orbitalSet->MakeTwoCopies);
-    
+    myComm->bcast(orbitalSet->HalfG);
+
     // First, check to see if we have already read this in
     H5OrbSet set(H5FileName, spin, N);
     
@@ -1173,10 +1194,22 @@ namespace qmcplusplus {
       ny = rawData.size(1);
       nz = rawData.size(2);
       splineData.resize(nx-1, ny-1, nz-1);
-      for (int ix=0; ix<(nx-1); ix++)
-	for (int iy=0; iy<(ny-1); iy++)
-	  for (int iz=0; iz<(nz-1); iz++)
-	    splineData(ix,iy,iz) = real(rawData(ix,iy,iz));
+      PosType ru;
+      for (int ix=0; ix<(nx-1); ix++) {
+	ru[0] = (RealType)ix / (RealType)(nx-1);
+	for (int iy=0; iy<(ny-1); iy++) {
+	  ru[1] = (RealType)iy / (RealType)(ny-1);
+	  for (int iz=0; iz<(nz-1); iz++) {
+	    ru[2] = (RealType)iz / (RealType)(nz-1);
+	    double phi = -2.0*M_PI*dot (ru, TwistAngles[ti]);
+	    double s, c;
+	    sincos(phi, &s, &c);
+	    complex<double> phase(c,s);
+	    complex<double> z = phase*rawData(ix,iy,iz);
+	    splineData(ix,iy,iz) = z.imag();
+	  }
+	}
+      }
 
       PosType twist, k;
       twist = TwistAngles[ti];
@@ -1194,9 +1227,21 @@ namespace qmcplusplus {
     Ugrid x_grid, y_grid, z_grid;
     BCtype_d xBC, yBC, zBC;
 
-    xBC.lCode = PERIODIC;    xBC.rCode = PERIODIC;
-    yBC.lCode = PERIODIC;    yBC.rCode = PERIODIC;
-    zBC.lCode = PERIODIC;    zBC.rCode = PERIODIC;
+    if (orbitalSet->HalfG[0]) 
+      { xBC.lCode = ANTIPERIODIC;    xBC.rCode = ANTIPERIODIC; }
+    else
+      { xBC.lCode = PERIODIC;        xBC.rCode = PERIODIC; }
+
+    if (orbitalSet->HalfG[1]) 
+      { yBC.lCode = ANTIPERIODIC;    yBC.rCode = ANTIPERIODIC; }
+    else
+      { yBC.lCode = PERIODIC;        yBC.rCode = PERIODIC; }
+
+    if (orbitalSet->HalfG[2]) 
+      { zBC.lCode = ANTIPERIODIC;    zBC.rCode = ANTIPERIODIC; }
+    else
+      { zBC.lCode = PERIODIC;        zBC.rCode = PERIODIC; }
+
     x_grid.start = 0.0;  x_grid.end = 1.0;  x_grid.num = nx-1;
     y_grid.start = 0.0;  y_grid.end = 1.0;  y_grid.num = ny-1;
     z_grid.start = 0.0;  z_grid.end = 1.0;  z_grid.num = nz-1;
@@ -1293,10 +1338,22 @@ namespace qmcplusplus {
 	    fprintf (stderr, "Extended orbitals should all have the same dimensions\n");
 	    abort();
 	  }
-	  for (int ix=0; ix<(nx-1); ix++)
-	    for (int iy=0; iy<(ny-1); iy++)
-	      for (int iz=0; iz<(nz-1); iz++)
-		splineData(ix,iy,iz) = real(rawData(ix,iy,iz));
+	  PosType ru;
+	  for (int ix=0; ix<(nx-1); ix++) {
+	    ru[0] = (RealType)ix / (RealType)(nx-1);
+	    for (int iy=0; iy<(ny-1); iy++) {
+	      ru[1] = (RealType)iy / (RealType)(ny-1);
+	      for (int iz=0; iz<(nz-1); iz++) {
+		ru[2] = (RealType)iz / (RealType)(nz-1);
+		double phi = -2.0*M_PI*dot (ru, TwistAngles[ti]);
+		double s, c;
+		sincos(phi, &s, &c);
+		complex<double> phase(c,s);
+		complex<double> z = phase*rawData(ix,iy,iz);
+		splineData(ix,iy,iz) = z.real();
+	      }
+	    }
+	  }
 	}
 	myComm->bcast(splineData);
 	set_multi_UBspline_3d_d 

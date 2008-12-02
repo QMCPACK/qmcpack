@@ -26,8 +26,10 @@
 #include <complex>
 
 //#define USE_POOLED_DATA_ITERATOR 1
+typedef double RealType;
 
 #if defined(USE_POOLED_DATA_ITERATOR)
+
 template<class T>
 struct PooledData {
   
