@@ -817,7 +817,7 @@ namespace qmcplusplus {
       int ti = DistinctTwists[i];
       PosType twist = TwistAngles[ti];
       for (int j=0; j<OHMMS_DIM; j++)
-	if (std::fabs(twist[j]-0.5) > 1.0e-8 &&
+	if (std::fabs(twist[j]-0.0) > 1.0e-8 &&
 	    std::fabs(twist[j]-0.5) > 1.0e-8 &&
 	    std::fabs(twist[j]+0.5) > 1.0e-8)
 	  UseRealOrbitals = false;
