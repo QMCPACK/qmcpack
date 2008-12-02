@@ -13,13 +13,13 @@
 //   Materials Computation Center, UIUC                         //
 //////////////////////////////////////////////////////////////////
 
-#include "MuffinTin.h"
 #include <einspline/bspline_base.h>
 #include <einspline/nubspline.h>
 #include <einspline/multi_nubspline.h>
-#include "Numerics/DeterminantOperators.h"
-#include "Particle/DistanceTableData.h"
-#include <cmath>
+#include <Numerics/DeterminantOperators.h>
+#include <Particle/DistanceTableData.h>
+#include <QMCWaveFunctions/MuffinTin.h>
+#include <config/stdlib/math.h>
 
 namespace qmcplusplus {
 

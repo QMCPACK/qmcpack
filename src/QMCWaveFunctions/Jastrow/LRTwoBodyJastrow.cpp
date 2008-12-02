@@ -14,8 +14,9 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#include "QMCWaveFunctions/Jastrow/LRTwoBodyJastrow.h"
-#include "LongRange/StructFact.h"
+#include <QMCWaveFunctions/Jastrow/LRTwoBodyJastrow.h>
+#include <LongRange/StructFact.h>
+#include <config/stdlib/math.h>
 
 namespace qmcplusplus {
 

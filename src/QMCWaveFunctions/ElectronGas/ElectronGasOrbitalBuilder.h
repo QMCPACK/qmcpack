@@ -16,8 +16,9 @@
 #ifndef QMCPLUSPLUS_ELECTRONGAS_ORBITALS_H
 #define QMCPLUSPLUS_ELECTRONGAS_ORBITALS_H
 
-#include "QMCWaveFunctions/OrbitalBuilderBase.h"
-#include "QMCWaveFunctions/SPOSetBase.h"
+#include <QMCWaveFunctions/OrbitalBuilderBase.h>
+#include <QMCWaveFunctions/SPOSetBase.h>
+#include <config/stdlib/math.h>
 
 namespace qmcplusplus {
 

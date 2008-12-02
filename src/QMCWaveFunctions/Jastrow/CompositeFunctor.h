@@ -16,8 +16,11 @@
 #ifndef QMCPLUSPLUS_COMPOSITEFUNCTORS_H
 #define QMCPLUSPLUS_COMPOSITEFUNCTORS_H
 
-#include "Numerics/OptimizableFunctorBase.h"
-namespace qmcplusplus {
+#include <Numerics/OptimizableFunctorBase.h>
+#include <config/stdlib/math.h>
+
+namespace qmcplusplus 
+{
 
   /** Implements a truncated Pade Function \f$u[r]=A*r/(1+B*r)\f$ 
    *

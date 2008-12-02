@@ -7,7 +7,6 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by
 //   National Center for Supercomputing Applications, UIUC
@@ -16,25 +15,24 @@
 // -*- C++ -*-
 #ifndef QMCPLUSPLUS_MULTISLATERDETERMINANT_ORBITAL_H
 #define QMCPLUSPLUS_MULTISLATERDETERMINANT_ORBITAL_H
-#include "Configuration.h"
-#include "QMCWaveFunctions/OrbitalBase.h"
-#include "QMCWaveFunctions/SlaterDeterminant.h"
+#include <Configuration.h>
+#include <QMCWaveFunctions/OrbitalBase.h>
 
-namespace qmcplusplus {
+namespace qmcplusplus 
+{
+
+  class SlaterDet;
 
   /** @ingroup OrbitalComponent
    *  @brief An AntiSymmetric OrbitalBase composed of a linear combination of SlaterDeterminants. 
    *
-   *\f[ 
-   *MS({\bf R}) = \sum_n c_n S_n({\bf R}) 
-   *\f].
+   *\f$ MS({\bf R}) = \sum_n c_n S_n({\bf R})\f$.
    *
    *The (S)ingle(P)article(O)rbitalSet template parameter is an 
    *engine which fills in single-particle orbital terms.  
    * 
    \f[
-   \frac{\nabla_i\Psi}{\Psi} = \frac{\sum_{n=1}^M c_n \nabla_i D_n}
-   {\sum_{n=1}^M c_n D_n}
+   \frac{\nabla_i\Psi}{\Psi} = \frac{\sum_{n=1}^M c_n \nabla_i D_n} {\sum_{n=1}^M c_n D_n}
    \f]
    \f[ 
    \frac{\sum_{n=1}^M c_n S_n(\sum_{j=1}^N(\nabla_i
@@ -46,159 +44,82 @@ namespace qmcplusplus {
    (\nabla_i^2S^{ij}_n({\bf r_i}))(S^{-1})^{ji}_n}{\sum_{n=1}^M c_n S_n}
    \f]
    */
-template<class SPOSet>
-class MultiSlaterDeterminant: public OrbitalBase 
-{
+  class MultiSlaterDeterminant: public OrbitalBase 
+  {
 
-public:
+    public:
 
-  typedef SlaterDeterminant<SPOSet> DeterminantSet_t;
+      ///constructor
+      MultiSlaterDeterminant(const ParticleSet& p);
 
-  ///constructor
-  MultiSlaterDeterminant() { Optimizable=false;}
+      ///destructor
+      ~MultiSlaterDeterminant();
 
-  ///destructor
-  ~MultiSlaterDeterminant() { }
+      /** add a new SlaterDeterminant 
+       * @param sdet Slater-Determinant
+       * @param c coefficient
+       * @param id name
+       */
+      void add(SlaterDet* sdet, RealType c, const string& id) ;
 
-  /**
-     add a new SlaterDeterminant with coefficient c to the 
-     list of determinants
-  */
-  void add(DeterminantSet_t* sdet, RealType c) {
-    SDets.push_back(sdet);
-    C.push_back(c);
-  }
+      void checkInVariables(opt_variables_type& active);
+      void checkOutVariables(const opt_variables_type& active);
+      void resetParameters(const opt_variables_type& active);
+      void reportStatus(ostream& os);
 
-  void add(DeterminantSet_t* sdet, RealType c, const string& id, VarRegistry<RealType>& vlist) {
-    int cur=C.size();
-    SDets.push_back(sdet);
-    C.push_back(c);
-    ID_C.push_back(id);
-    vlist[id]=c;
-  }
+      void resetTargetParticleSet(ParticleSet& P);
 
-  /** resetParameters with optVariables
-   *
-   * USE_resetParameters
-   */
-  void resetParameters(OptimizableSetType& optVariables) 
-  {  
-    if(Optimizable) 
-    {
-      for(int i=0; i<C.size(); i++) 
-      {
-        OptimizableSetType::iterator it(optVariables.find(ID_C[i]));
-        if(it != optVariables.end()) C[i]=(*it).second;
-      }
-      for(int i=0; i<SDets.size(); i++) SDets[i]->resetParameters(optVariables);
-    }
-  }
+      ValueType evaluate(ParticleSet& P
+            ,ParticleSet::ParticleGradient_t& G
+            .ParticleSet::ParticleLaplacian_t& L);
 
-  void resetTargetParticleSet(ParticleSet& P) {
-    for(int i=0; i<SDets.size(); i++) SDets[i]->resetTargetParticleSet(P);
-  }
+      ValueType evaluateLog(ParticleSet& P
+            ,ParticleSet::ParticleGradient_t& G
+            .ParticleSet::ParticleLaplacian_t& L);
 
-  void initParameters() { }
+      ValueType ratio(ParticleSet& P, int iat 
+          ,ParticleSet::ParticleGradient_t& dG 
+          ,ParticleSet::ParticleLaplacian_t& dL);
 
-  inline ValueType
-  evaluate(ParticleSet& P, //const DistanceTableData* dtable,
-	   ParticleSet::ParticleGradient_t& G,
-	   ParticleSet::ParticleLaplacian_t& L){
+      void acceptMove(ParticleSet& P, int iat);
 
-    int n = P.getTotalNum();
-    ParticleSet::ParticleGradient_t g(n), gt(n);
-    ParticleSet::ParticleLaplacian_t l(n), lt(n);
+      void restore(int iat);
 
-    ValueType psi = 0.0;
-    for(int i=0; i<SDets.size(); i++){
-      ValueType cdet = C[i]*SDets[i]->evaluate(P,g,l);
-      psi += cdet;
-      gt += cdet*g;
-      lt += cdet*l;
-      g=0.0;
-      l=0.0;
-    }
-    ValueType psiinv = 1.0/psi;
-    G += gt*psiinv;
-    L += lt*psiinv;
-    return psi;
-  }
+      ValueType ratio(ParticleSet& P, int iat);
 
-  inline ValueType
-  evaluateLog(ParticleSet& P, //const DistanceTableData* dtable,
-	      ParticleSet::ParticleGradient_t& G,
-	      ParticleSet::ParticleLaplacian_t& L){
-    ValueType psi = evaluate(P,G,L);
-    return LogValue = evaluateLogAndPhase(psi,PhaseValue);
-  }
+      void update(ParticleSet& P
+          ,ParticleSet::ParticleGradient_t& dG
+          ,ParticleSet::ParticleLaplacian_t& dL
+          ,int iat);
 
-  /// returns the dimension of the j-th determinant 
-  inline int size(int i, int j) const {return SDets[i]->size(j);}
+      RealType evaluateLog(ParticleSet& P,BufferType& buf);
+      RealType registerData(ParticleSet& P, BufferType& buf);
+      RealType updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch=false);
 
+      OrbitalBasePtr makeClone(ParticleSet& tqp) const;
 
-  ValueType registerData(ParticleSet& P, PooledData<RealType>& buf){
-    std::cerr << "MultiSlaterDeterminant::registerData is empty" << std::endl;
-    return 0.0;
-  }
-  
-  ValueType updateBuffer(ParticleSet& P, PooledData<RealType>& buf,
-      bool fromscratch=false){
-    std::cerr << "MultiSlaterDeterminant::updateBuffer is empty" << std::endl;
-    return 0.0;
-  }
-
-  void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf) {
-    std::cerr << "MultiSlaterDeterminant::putData is empty" << std::endl;
-  }
-  
-  inline ValueType
-  ratio(ParticleSet& P, int iat, 
-	ParticleSet::ParticleGradient_t& dG, 
-	ParticleSet::ParticleLaplacian_t& dL) { 
-    std::cerr << "MultiSlaterDeterminant should not be used by Particle-By-Particle update"
-              << std::endl;
-    return 1.0;
-  }
-
-  inline ValueType
-  logRatio(ParticleSet& P, int iat, 
-	ParticleSet::ParticleGradient_t& dG, 
-	ParticleSet::ParticleLaplacian_t& dL) { 
-    std::cerr << "MultiSlaterDeterminant should not be used by Particle-By-Particle update"
-              << std::endl;
-    return 0.0;
-  }
-
-  inline void restore(int iat) { }
-
-  void acceptMove(ParticleSet& P, int iat) {
-    std::cerr << "MultiSlaterDeterminant::update is empty" << std::endl;
-  }
-
-  inline ValueType
-  ratio(ParticleSet& P, int iat) { 
-    std::cerr << "MultiSlaterDeterminant should not be used by Particle-By-Particle update"
-              << std::endl;
-    return 1.0;
-  }
-
-  void update(ParticleSet& P, 
-	      ParticleSet::ParticleGradient_t& dG, 
-	      ParticleSet::ParticleLaplacian_t& dL,
-	      int iat) {
-    std::cerr << "MultiSlaterDeterminant::update is empty" << std::endl;
-  }
-  
-  ValueType evaluate(ParticleSet& P, PooledData<RealType>& buf) {
-    std::cerr << "MultiSlaterDeterminant::evaluate is empty" << std::endl;
-    return 1.0;
-  }
-
-private:
-  vector<DeterminantSet_t*> SDets;
-  vector<RealType> C;
-  vector<string> ID_C;
-};
+    private:
+      /** CI sum
+       *
+       * my_psi \f$ = \sum_i my\_c[i] my\_sdet[i]({\bf R})\f$.
+       */
+      ValueType my_psi;
+      /** my_psiinv=1/my_psi
+       */
+      ValueType my_psiinv;
+      /** cur_sdet[i] = value of the i-th SlaterDetermiant */
+      vector<ValueType> cur_sdet;
+      /** cur_ratio[i]= ratio of the i-th SlaterDetermiant */
+      vector<ValueType> cur_ratio;
+      /** temporary gradients */
+      ParticleSet::ParticleGradient_t  my_grad, t_grad;
+      /** temporary laplacians */
+      ParticleSet::ParticleLaplacian_t my_lap, t_lap;
+      /** SlaterDeterminant components */
+      vector<SlaterDet_t*> my_sdet;
+      /** Coefficients of the SlaterDeterminant components */
+      vector<RealType> my_c;
+  };
 
 }
 #endif
