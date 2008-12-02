@@ -5,17 +5,11 @@
 #include "Particle/DistanceTable.h"
 #include "Particle/DistanceTableData.h"
 
+#if defined(HAVE_LIBFFTW)
 #include <fftw3.h>
+#endif
 
 namespace qmcplusplus {
-
-  MPC::MPC(ParticleSet& ptcl, double cutoff) :
-    PtclRef(&ptcl), Ecut(cutoff), FirstTime(true),
-    VlongSpline(0), DensitySpline(0)
-  {
-    d_aa = DistanceTable::add(ptcl);
-    initBreakup();
-  }
 
   void
   MPC::resetTargetParticleSet(ParticleSet& ptcl)
@@ -24,12 +18,20 @@ namespace qmcplusplus {
     d_aa = DistanceTable::add(ptcl);
   }
 
-  MPC::~MPC() {
+#if defined(HAVE_EINSPLINE) && defined(HAVE_LIBFFTW)
+  MPC::MPC(ParticleSet& ptcl, double cutoff) :
+    PtclRef(&ptcl), Ecut(cutoff), FirstTime(true),
+    VlongSpline(0), DensitySpline(0)
+  {
+    d_aa = DistanceTable::add(ptcl);
+    initBreakup();
+  }
+
+  MPC::~MPC() 
+  {
     if (VlongSpline)      destroy_Bspline(VlongSpline);
     if (DensitySpline)    destroy_Bspline(DensitySpline);
   }
-  
-
 
   void
   MPC::init_gvecs()
@@ -320,21 +322,6 @@ namespace qmcplusplus {
     app_log() << "  === MPC interaction initialized === \n\n";
   }
 
-  bool 
-  MPC::put(xmlNodePtr cur)
-  {
-    Ecut = -1.0;
-    OhmmsAttributeSet attribs;
-    attribs.add (Ecut, "cutoff");
-    attribs.put (cur);
-    if (Ecut < 0.0) {
-      Ecut = 30.0;
-      app_log() << "    MPC cutoff not found.  Set using \"cutoff\" attribute.\n"
-		<< "    Setting to default value of " << Ecut << endl;
-    }
-    return true;
-  }
-
   QMCHamiltonianBase* 
   MPC::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
   {
@@ -376,7 +363,6 @@ namespace qmcplusplus {
     return LR;
   }
 
-
   MPC::Return_t
   MPC::evaluate (ParticleSet& P)
   {
@@ -387,5 +373,43 @@ namespace qmcplusplus {
     return 0.0;
   }
 
+#else
+  MPC::MPC(ParticleSet& ptcl, double cutoff) :
+    PtclRef(&ptcl), Ecut(cutoff), FirstTime(true),
+    VlongSpline(0), DensitySpline(0)
+  {
+    APP_ABORT("MPC::MPC cannot be used with einspline/fftw ");
+  }
+
+  MPC::~MPC() 
+  { }
+
+  QMCHamiltonianBase* 
+  MPC::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+  {
+    return 0;
+  }
+
+  MPC::Return_t
+  MPC::evaluate (ParticleSet& P)
+  {
+    return 0.0;
+  }
+
+#endif
+  bool MPC::put(xmlNodePtr cur)
+  {
+    Ecut = -1.0;
+    OhmmsAttributeSet attribs;
+    attribs.add (Ecut, "cutoff");
+    attribs.put (cur);
+    if (Ecut < 0.0) 
+    {
+      Ecut = 30.0;
+      app_log() << "    MPC cutoff not found.  Set using \"cutoff\" attribute.\n"
+		<< "    Setting to default value of " << Ecut << endl;
+    }
+    return true;
+  }
 
 }

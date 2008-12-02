@@ -16,10 +16,14 @@
 // -*- C++ -*-
 #ifndef QMCPLUSPLUS_MPC_H
 #define QMCPLUSPLUS_MPC_H
-#include "QMCHamiltonians/QMCHamiltonianBase.h"
-#include "LongRange/LRCoulombSingleton.h"
-#include <einspline/bspline.h>
+#include <QMCHamiltonians/QMCHamiltonianBase.h>
+#include <LongRange/LRCoulombSingleton.h>
 
+#if defined(HAVE_EINSPLINE)
+#include <einspline/bspline.h>
+#else
+class UBspline_3d_d;
+#endif
 namespace qmcplusplus {
 
   /** @ingroup hamiltonian
