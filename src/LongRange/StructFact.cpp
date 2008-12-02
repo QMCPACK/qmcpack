@@ -1,4 +1,5 @@
-#include "LongRange/StructFact.h"
+#include <LongRange/StructFact.h>
+#include <config/stdlib/math.h>
 namespace qmcplusplus
 {
 
