@@ -15,7 +15,8 @@
 
 #include <vector>
 #include <complex>
-#include "config.h"
+#include <config.h>
+#include <config/stdlib/math.h>
 
 #if defined(HAVE_ACML)
 #include <acml.h>
