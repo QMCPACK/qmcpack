@@ -16,7 +16,8 @@
 #ifndef QMCPLUSPLUS_PARTICLE_BCONDS_H
 #define QMCPLUSPLUS_PARTICLE_BCONDS_H
 
-#include "Lattice/CrystalLattice.h"
+#include <Lattice/CrystalLattice.h>
+#include <config/stdlib/math.h>
 #include <limits>
 
 namespace APPNAMESPACE 
@@ -53,7 +54,8 @@ namespace APPNAMESPACE
   */
   template<class T>
     struct DTD_BConds<T,3,SUPERCELL_BULK> {
-      inline static T apply(const CrystalLattice<T,3>& lat, TinyVector<T,3>& a) {
+      inline static T apply(const CrystalLattice<T,3>& lat, TinyVector<T,3>& a) 
+      {
         TinyVector<T,3> ar(lat.toUnit(a));
         /*
            if(ar[0]<-0.5) ar[0]+=1.0; 
