@@ -108,14 +108,14 @@ namespace qmcplusplus {
         if(swapmode) {
 	  if (nmax==0)
 	  {
-	  int npernode=nwtot/ncontexts;
+	  int npernode=nideal/ncontexts;
 	  nmax=2*npernode+1;
 	  nmin=npernode/5+1;
 	  }
 	  else
 	  {
 	  int nmaxpernode = nmax/ncontexts;
-	  int npernode=nwtot/ncontexts;
+	  int npernode=nideal/ncontexts;
 	  nmax=nmaxpernode;
 	  nmin=npernode/5+1;
 	  }
