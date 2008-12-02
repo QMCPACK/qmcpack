@@ -389,8 +389,10 @@ public:
 
   private:
 
-    mutable Type_t &elem_m;
-    mutable int where_m;
+    //mutable Type_t &elem_m;
+    //mutable int where_m;
+    Type_t &elem_m;
+    int where_m;
   };
 
   // Operators
