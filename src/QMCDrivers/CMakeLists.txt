@@ -32,6 +32,7 @@ SET(QMCDRIVERS
   ../Estimators/LocalEnergyEstimator.cpp
   ../Estimators/MultipleEnergyEstimator.cpp
   ../Estimators/RQMCMultipleEstimator.cpp
+  ../Estimators/ComboPolymerEstimator.cpp
   ../Estimators/CompositeEstimators.cpp
   ../Estimators/GofREstimator.cpp
   ../Estimators/SkEstimator.cpp

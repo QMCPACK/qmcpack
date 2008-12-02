@@ -39,9 +39,11 @@
 #include "QMCHamiltonians/RPAPressure.h"
 #include "QMCHamiltonians/HePressure.h"
 #include "QMCHamiltonians/HFDHE2Potential.h"
+#include "QMCHamiltonians/HeEPotential.h"
 #include "QMCHamiltonians/ForceBase.h"
 #include "QMCHamiltonians/ForceCeperley.h"
 #include "QMCHamiltonians/HFDHE2Potential_tail.h"
+#include "QMCHamiltonians/HeEPotential_tail.h"
 #include "QMCHamiltonians/ForwardWalking.h"
 #include "QMCHamiltonians/trialDMCcorrection.h"
 #include "QMCHamiltonians/ChiesaCorrection.h"
@@ -108,7 +110,10 @@ namespace qmcplusplus {
       
       if(defaultKE == "yes"){
         targetH->addOperator(new BareKineticEnergy ,"Kinetic");
-      } else if(defaultKE != "no") {
+      } else if(defaultKE != "multi"){
+        //Multicomponent wavefunction. Designed for 2 species.
+	app_log()<<" Multicomponent system. You must add the Kinetic energy term first!"<<endl;
+      } else  {
         double mass(1.0);
         string tgt("mass");
         int indx1 = targetPtcl->mySpecies.findSpecies(defaultKE);
@@ -175,6 +180,27 @@ namespace qmcplusplus {
             targetH->addOperator(apot,potName);
           }
         }
+	else if(potType == "eHe")
+	{
+	  string SourceName = "e";
+	  OhmmsAttributeSet hAttrib;
+	  hAttrib.add(SourceName, "source");
+	  hAttrib.put(cur);
+
+	  PtclPoolType::iterator pit(ptclPool.find(SourceName));
+	  if(pit == ptclPool.end()) 
+	  {
+	    app_error() << "Unknown source \"" << SourceName 
+			<< "\" for e-He Potential.  Aborting.\n";
+	    abort();
+	  }
+	  ParticleSet* source = (*pit).second;
+	  
+	  HeePotential* eHetype = new HeePotential(*targetPtcl, *source);
+	  targetH->addOperator(eHetype,potName,true);
+	  targetH->addOperator(eHetype->makeDependants(*targetPtcl),potName,false);
+	  
+	}
       } 
       else if(cname == "constant") 
       { //ugly!!!
@@ -199,11 +225,15 @@ namespace qmcplusplus {
 //             DMCPressureCorr* DMCP = new DMCPressureCorr(*targetPtcl,nlen);
 //             targetH->addOperator(DMCP,"PressureSum",false);
             
-          } else if (estType=="HFDHE2"){
+          } 
+	  else if (estType=="HFDHE2")
+	  {
             HePressure* BP = new HePressure(*targetPtcl);
             BP-> put(cur);
             targetH->addOperator(BP,"HePress",false);
-          } else if (estType=="RPAZVZB"){
+          } 
+	  else if (estType=="RPAZVZB")
+	  {
             RPAPressure* BP= new RPAPressure(*targetPtcl);
             
             ParticleSet* Isource;
@@ -222,7 +252,8 @@ namespace qmcplusplus {
                 hAttrib.put(tcur);
 //                 renameProperty(a);
                 PtclPoolType::iterator pit(ptclPool.find(sourceInp));
-                if(pit == ptclPool.end()) {
+                if(pit == ptclPool.end()) 
+		{
                   ERRORMSG("Missing source ParticleSet" << sourceInp)
                 }
                 Isource = (*pit).second;
@@ -254,7 +285,8 @@ namespace qmcplusplus {
 	  hAttrib.put(cur);
 
 	  PtclPoolType::iterator pit(ptclPool.find(SourceName));
-	  if(pit == ptclPool.end()) {
+	  if(pit == ptclPool.end()) 
+	  {
 	    app_error() << "Unknown source \"" << SourceName 
 			<< "\" for Chiesa correction.  Aborting.\n";
 	    abort();
@@ -262,7 +294,8 @@ namespace qmcplusplus {
 	  ParticleSet &source = *pit->second;
 
 	  OrbitalPoolType::iterator psi_it(psiPool.find(PsiName));
-	  if(psi_it == psiPool.end()) {
+	  if(psi_it == psiPool.end()) 
+	  {
 	    app_error() << "Unknown psi \"" << SourceName 
 			<< "\" for Chiesa correction.  Aborting.\n";
 	    abort();
@@ -271,7 +304,6 @@ namespace qmcplusplus {
 	  ChiesaCorrection *chiesa = new ChiesaCorrection (source, psi);
 
 	  targetH->addOperator(chiesa,"KEcorr",false);
-
 	}  
 
 //         else if (potType=="ForwardWalking"){
@@ -281,7 +313,20 @@ namespace qmcplusplus {
 //           targetH->addOperator(FW,"ForwardWalking",false);
 //           
 //         }
+      } 
+      else if (cname == "Kinetic")
+      {
+      	  string TargetName="e";
+	  string SourceName = "I";
+	  OhmmsAttributeSet hAttrib;
+	  hAttrib.add(TargetName,"Dependant"); 
+	  hAttrib.add(SourceName, "Independant");
+	  hAttrib.put(cur);
+	  //hand two particle sets to the Hamiltonian. One is independant(heavy ions, not parameterized by electron positions), the other is dependant (parameterized by the others positions). This Hamiltonian element must also correct the Drift/Gradient and Laplacians in the Particlesets.
+	  
+	  
       }
+      
       //else if(cname == "harmonic") 
       //{
       //  PtclPoolType::iterator pit(ptclPool.find(sourceInp));
@@ -360,13 +405,14 @@ namespace qmcplusplus {
         ForwardWalking* FW=new ForwardWalking();
         FW->put(cur2,*targetH,*targetPtcl);
         targetH->addOperator(FW,"ForwardWalking",false);
-      }else if((cname == "estimator")&&(potType == "DMCCorrection"))
-        {
-	  TrialDMCCorrection* TE = new TrialDMCCorrection();
-	  TE->put(cur2,*targetH,*targetPtcl);
-          targetH->addOperator(TE,"DMC_CORR",false);
-          targetH->setTempObservables(targetPtcl->PropertyList);
-        }
+      }
+      else if((cname == "estimator")&&(potType == "DMCCorrection"))
+      {
+	TrialDMCCorrection* TE = new TrialDMCCorrection();
+	TE->put(cur2,*targetH,*targetPtcl);
+	targetH->addOperator(TE,"DMC_CORR",false);
+	targetH->setTempObservables(targetPtcl->PropertyList);
+      }
       cur2 = cur2->next;
     }
     targetH->addObservables(targetPtcl->PropertyList);

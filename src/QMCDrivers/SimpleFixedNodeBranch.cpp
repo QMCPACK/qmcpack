@@ -91,6 +91,8 @@ namespace qmcplusplus
     m_param.add(iParam[B_TARGETWALKERS],"targetwalkers","int"); 
     m_param.add(iParam[B_TARGETWALKERS],"target_walkers","int");
     
+    m_param.add(iParam[B_MAXWALKERS],"max_walkers","int");
+    
     //trial energy
     m_param.add(vParam[B_EREF],"refEnergy","AU"); 
     m_param.add(vParam[B_EREF],"ref_energy","AU"); 

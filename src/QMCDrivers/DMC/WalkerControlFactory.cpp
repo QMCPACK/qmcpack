@@ -38,7 +38,8 @@ namespace qmcplusplus {
     string reconfigopt("no");
     ParameterSet m_param;
     m_param.add(nwtot,"targetWalkers","int"); 
-    m_param.add(nwtot,"targetwalkers","int"); 
+    m_param.add(nwtot,"targetwalkers","int");
+    m_param.add(nmax,"max_walkers","int");
     m_param.add(reconfigopt,"reconfiguration","string");
     m_param.put(cur);
 
@@ -52,9 +53,19 @@ namespace qmcplusplus {
       nmax=nwtot/ncontexts;
       nmin=nwtot/ncontexts;
     } else {
+      if (nmax==0)
+      {
       int npernode=nwtot/ncontexts;
       nmax=2*npernode+1;
       nmin=npernode/5+1;
+      }
+      else
+      {
+      int nmaxpernode = nmax/ncontexts;
+      int npernode=nwtot/ncontexts;
+      nmax=nmaxpernode;
+      nmin=npernode/5+1;
+      }
     }
 
     if(ncontexts>1) {
@@ -95,12 +106,29 @@ namespace qmcplusplus {
         nmin=nideal/ncontexts;
       } else {
         if(swapmode) {
-          int npernode=nideal/ncontexts;
-          nmax=2*npernode+1;
-          nmin=npernode/5+1;
+	  if (nmax==0)
+	  {
+	  int npernode=nwtot/ncontexts;
+	  nmax=2*npernode+1;
+	  nmin=npernode/5+1;
+	  }
+	  else
+	  {
+	  int nmaxpernode = nmax/ncontexts;
+	  int npernode=nwtot/ncontexts;
+	  nmax=nmaxpernode;
+	  nmin=npernode/5+1;
+	  }
         } else {
+	if (nmax==0)
+	  {
           nmax=2*nideal;
           nmin=nideal/2;
+	  }
+	  else
+	  {
+          nmin=nideal/2;
+	  }
         }
       }
 
@@ -155,8 +183,18 @@ namespace qmcplusplus {
       } else {
         app_log() << "  Using a WalkerControlBase with population fluctations." << endl;
         wc = new WalkerControlBase(comm);
-        wc->Nmax=2*nideal;
-        wc->Nmin=nideal/2;
+	  if (nmax==0)
+	  {
+            wc->Nmax=2*nideal;
+            wc->Nmin=nideal/2;
+	  }
+	  else
+	  {
+            wc->Nmax=nmax;
+            wc->Nmin=nideal/2;
+	  }
+//         wc->Nmax=2*nideal;
+//         wc->Nmin=nideal/2;
       }
     }
     return wc;
@@ -174,6 +212,7 @@ namespace qmcplusplus {
     ParameterSet m_param;
     m_param.add(nwtot,"targetWalkers","int"); 
     m_param.add(nwtot,"targetwalkers","int"); 
+    m_param.add(nmax,"max_walkers","int");
     m_param.add(reconfigopt,"reconfiguration","string");
     m_param.put(cur);
 
@@ -192,8 +231,18 @@ namespace qmcplusplus {
       app_log() << "  Using a WalkerControlBase with population fluctations." << endl;
       app_log() << "  Target number of walkers = " << nwtot << endl;
       wc = new WalkerControlBase(comm);
-      wc->Nmax=2*nwtot;
-      wc->Nmin=nwtot/2;
+      if (nmax==0)
+      {
+	wc->Nmax=2*nwtot;
+	wc->Nmin=nwtot/2;
+      }
+      else
+      {
+	wc->Nmax=nmax;
+	wc->Nmin=nwtot/2;
+      }
+//       wc->Nmax=2*nwtot;
+//       wc->Nmin=nwtot/2;
     }
 
     return wc;

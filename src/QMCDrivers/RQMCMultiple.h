@@ -107,8 +107,8 @@ namespace qmcplusplus {
     RQMCMultiple& operator=(const RQMCMultiple&) { return *this;}
 
     ParticleSet::ParticlePos_t gRand;
-    RealType MSS,Tauoverm,sqrtTauoverm,Ecut;
-    int maxTouch;
+    RealType MSS,Tauoverm,sqrtTauoverm;
+    int maxTouch,EvalInterval;
   };
 }
 #endif

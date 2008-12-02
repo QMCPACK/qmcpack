@@ -50,9 +50,9 @@ namespace qmcplusplus {
     
     elocal_name.push_back("SumPot");
     elocal_name.push_back("ElSumPot");
-    elocal_name.push_back("HeadTruncSumPot");
-    elocal_name.push_back("TailTruncSumPot");
-    elocal_name.push_back("TruncElSumPot");
+    elocal_name.push_back("CenterTruncSumPot");
+    elocal_name.push_back("Null");
+    elocal_name.push_back("CenterTruncElSumPot");
     elocal_name.push_back("Virial");
     elocal_name.push_back("MaxAge");
     elocal_name.push_back("MaxTouch");
@@ -65,7 +65,7 @@ namespace qmcplusplus {
     elocal_name.push_back("RMC_HFCep_1_0");
     elocal_name.push_back("RMC_HFCep_1_1");
 
-    scalars.resize(SizeOfHamiltonians+17);
+    scalars.resize(SizeOfHamiltonians+23);
     scalars_saved=scalars;
     pNorm=0.0;
     Findex = h.getObservable("HFCep_1_0");
@@ -179,28 +179,33 @@ namespace qmcplusplus {
         
         //truncated version of estimator
       Lit--;
-      for(int j=0 ;( (j<truncLength) && (Bit != Endit) );Bit++,Lit--,j++){
-        tmpV_head+= 0.5*(*Bit)->getPropertyBase(i)[LOCALPOTENTIAL];
-        tmpV_tail+= 0.5*(*Lit)->getPropertyBase(i)[LOCALPOTENTIAL];
+      for(int j=0 ;( (j<truncLength[0]) && (Bit != Endit) );Bit++,Lit--,j++){
+        tmpV_head+= (*Bit)->getPropertyBase(i)[LOCALPOTENTIAL];
+        tmpV_tail+= (*Lit)->getPropertyBase(i)[LOCALPOTENTIAL];
         if ((*Bit)->timesTouched>maxtouch) maxtouch = (*Bit)->timesTouched;
         if ((*Bit)->stepmade < Bage) Bage = (*Bit)->stepmade; 
       };
       RealType Ppref = (-pNorm*Tau);
-      RealType tmpVsum = (energy_head*tmpV_head + energy_tail*tmpV_tail)*Ppref;
-      scalars[SizeOfHamiltonians+3](tmpV_head*Ppref,uw);
-      scalars[SizeOfHamiltonians+4](tmpV_tail*Ppref,uw);
+      
+      
+      
+      
+      
+      RealType tmpVsum = (energy_tail*tmpV_head + energy_head*tmpV_tail)*Ppref;
+      scalars[SizeOfHamiltonians+3]((tmpV_head+tmpV_tail)*Ppref,uw);
+      scalars[SizeOfHamiltonians+4](0.0,uw);
       scalars[SizeOfHamiltonians+5]( tmpVsum,uw);
         
         //continue sum for comparison to truncated version
-      for( ;Bit != Endit;Bit++,Lit--){
-        tmpV_head+= 0.5*(*Bit)->getPropertyBase(i)[LOCALPOTENTIAL];
-        tmpV_tail+= 0.5*(*Lit)->getPropertyBase(i)[LOCALPOTENTIAL];
+      for( ;Bit != Endit;Bit++ ){
+        tmpV_head+= (*Bit)->getPropertyBase(i)[LOCALPOTENTIAL];
+//         tmpV_tail+= (*Lit)->getPropertyBase(i)[LOCALPOTENTIAL];
         if ((*Bit)->timesTouched>maxtouch) maxtouch = (*Bit)->timesTouched;
         if ((*Bit)->stepmade < Bage) Bage = (*Bit)->stepmade;
       };
 
-      RealType tmpV = 2.0*tmpV_head*Ppref;
-      RealType tmpEVsum = (energy_head*tmpV_head + energy_tail*tmpV_tail)*Ppref;
+      RealType tmpV = tmpV_head*Ppref;
+      RealType tmpEVsum = 0.5*(energy_head  + energy_tail)*tmpV;
       scalars[SizeOfHamiltonians+1](tmpV,uw);
       scalars[SizeOfHamiltonians+2](tmpEVsum,uw);
 
@@ -236,10 +241,11 @@ namespace qmcplusplus {
       Bit = Reptile->begin();
       if (Hac*((*Bit)->getPropertyBase(i)[LOCALPOTENTIAL]-ObsContAvg2[0]) >0) tmpE=1.0;
       Bit++;
-      for(int j=1; (Bit!=(Reptile->end()))&&(tmpE>=0.0) ;Bit++,j++){
+      for(int j=1; (Bit!=(Reptile->end()))&&(tmpE>=0.0) ;Bit++,j++)
+      {
         tmpE=Hac*( (*Bit)->getPropertyBase(i)[LOCALPOTENTIAL]-ObsContAvg2[j] );
         AC2+=1;
-      };
+      }
       
       scalars[SizeOfHamiltonians+14](AC2,uw);
       scalars[SizeOfHamiltonians+15](CenProp[Findex+FirstHamiltonian],uw);
