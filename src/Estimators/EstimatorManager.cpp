@@ -539,7 +539,7 @@ namespace qmcplusplus {
         app_log() << "  EstimatorManager::add " << aname << endl;
         CompEstimators->add(newestimator,aname);
       }
-
+    return 0;
 // return -1;
   }
 
