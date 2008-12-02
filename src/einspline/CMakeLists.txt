@@ -37,10 +37,12 @@ SET(ESLIBSRC
    )
  ELSE(HAVE_SSE2)
    SET(ESLIBSRC ${ESLIBSRC}
-   ${EINSPLINE_DIR}/src/multi_bspline_eval_std_d.c 
-   ${EINSPLINE_DIR}/src/multi_bspline_eval_std_d_cpp.cc 
-   ${EINSPLINE_DIR}/src/multi_bspline_eval_std_z.c 
-   ${EINSPLINE_DIR}/src/multi_bspline_eval_std_z_cpp.cc 
+     ${EINSPLINE_DIR}/src/multi_bspline_eval_std_d.c 
+     ${EINSPLINE_DIR}/src/multi_bspline_eval_std_d_cpp.cc 
+     ${EINSPLINE_DIR}/src/multi_bspline_eval_std_z.c 
+     ${EINSPLINE_DIR}/src/multi_bspline_eval_std_z_cpp.cc 
+     ${EINSPLINE_DIR}/src/multi_nubspline_eval_std_z.c 
+     ${EINSPLINE_DIR}/src/multi_nubspline_eval_std_z_cpp.cc  
    )
  ENDIF(HAVE_SSE2)
 
