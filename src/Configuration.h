@@ -13,27 +13,30 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
+/** @file Configuration.h
+ * @brief A master header file which defines the basic types and traits.
+ */
 #ifndef QMCPLUSPLUS_TRAITS_H
 #define QMCPLUSPLUS_TRAITS_H
 
-#include "config.h"
+#include <config.h>
 #include <string>
 #include <vector>
 #include <map>
 #include <complex>
-#include "OhmmsPETE/TinyVector.h"
-#include "OhmmsPETE/Tensor.h"
-#include "OhmmsData/OhmmsElementBase.h"
-#include "OhmmsData/RecordProperty.h"
+#include <OhmmsPETE/TinyVector.h>
+#include <OhmmsPETE/Tensor.h>
+#include <OhmmsData/OhmmsElementBase.h>
+#include <OhmmsData/RecordProperty.h>
 #if OHMMS_DIM==3
-#include "Lattice/Uniform3DGridLayout.h"
+#include <Lattice/Uniform3DGridLayout.h>
 #else
-#include "Lattice/UniformGridLayout.h"
+#include <Lattice/UniformGridLayout.h>
 #endif
-#include "ParticleBase/ParticleAttrib.h"
-#include "ParticleBase/ParticleBase.h"
-#include "Utilities/OhmmsInfo.h"
-#include "Message/Communicate.h"
+#include <ParticleBase/ParticleAttrib.h>
+#include <ParticleBase/ParticleBase.h>
+#include <Utilities/OhmmsInfo.h>
+#include <Message/Communicate.h>
 
 //define empty DEBUG_MEMORY
 #define DEBUG_MEMORY(msg) 
@@ -41,24 +44,15 @@
 //uncomment this out to trace the call tree of destructors
 //#define DEBUG_MEMORY(msg) std::cerr << "<<<< " << msg << std::endl;
 
-#if !defined(HAVE_SINCOS)
-template<typename T> 
-inline void sincos(T a, T* restrict s, T*  restrict c)
+namespace qmcplusplus 
 {
-  *s=std::sin(a);
-  *c=std::cos(a);
-}
-#endif
-
-
-namespace qmcplusplus {
 
   /** traits for the common particle attributes
    *
    *This is an alternative to the global typedefs.
    */
-  struct PtclAttribTraits {
-
+  struct PtclAttribTraits 
+  {
     typedef int                                                     Index_t;
     typedef ParticleAttrib<Index_t>                                 ParticleIndex_t;
     typedef ParticleAttrib<OHMMS_PRECISION>                         ParticleScalar_t;
@@ -72,7 +66,8 @@ namespace qmcplusplus {
    *
    *typedefs for the QMC data types
    */
-  struct QMCTraits {
+  struct QMCTraits 
+  {
     enum {DIM = OHMMS_DIM};
     typedef OHMMS_INDEXTYPE                IndexType;
     typedef OHMMS_PRECISION                RealType;
@@ -91,8 +86,8 @@ namespace qmcplusplus {
 
   /** Particle traits to use UniformGridLayout for the ParticleLayout.
    */
-  struct PtclOnLatticeTraits{
-
+  struct PtclOnLatticeTraits
+  {
 #if OHMMS_DIM==3
     typedef Uniform3DGridLayout                          ParticleLayout_t;
 #else
@@ -121,19 +116,25 @@ namespace qmcplusplus {
 #endif
   };
 
-  inline std::ostream& app_log() { 
+  inline std::ostream& app_log() 
+  { 
     return  OhmmsInfo::Log->getStream(); 
   }
 
-  inline std::ostream& app_error(){ 
+  inline std::ostream& app_error()
+  { 
     OhmmsInfo::Log->getStream() << "ERROR ";
     return OhmmsInfo::Error->getStream();
   }
-  inline std::ostream& app_warning(){ 
+
+  inline std::ostream& app_warning()
+  {
     OhmmsInfo::Log->getStream() << "WARNING ";
     return OhmmsInfo::Warn->getStream();
   }
-  inline std::ostream& app_debug(){
+
+  inline std::ostream& app_debug()
+  {
     return OhmmsInfo::Debug->getStream();
   }
 }
