@@ -18,9 +18,10 @@
 #define OHMMS_CRYSTALLATTICE_H
 #include <limits>
 #include <cmath>
-#include "OhmmsPETE/TinyVector.h"
-#include "OhmmsPETE/Tensor.h"
-#include "Lattice/LatticeOperations.h"
+#include <cstdlib>
+#include <OhmmsPETE/TinyVector.h>
+#include <OhmmsPETE/Tensor.h>
+#include <Lattice/LatticeOperations.h>
 using namespace std;
 
 /**@file CrystalLattice.h
