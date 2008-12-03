@@ -137,10 +137,13 @@ namespace qmcplusplus {
     hid_t H5FileID;
     string H5FileName;
     // HDF5 orbital file version
+    typedef enum {QMCPACK, ESHDF} FormatType;
+    FormatType Format;
     TinyVector<int,2> Version;
     string parameterGroup, ionsGroup, eigenstatesGroup;
     bool HaveLocalizedOrbs;
     bool ReadOrbitalInfo ();
+    bool ReadOrbitalInfo_ESHDF ();
     void BroadcastOrbitalInfo();
 
 
@@ -176,9 +179,13 @@ namespace qmcplusplus {
     void AnalyzeTwists2();
     void TileIons();
     void OccupyBands(int spin, bool sortBands);
-    void ReadBands(int spin, EinsplineSetLocal* orbitalSet);
-    void ReadBands(int spin, EinsplineSetExtended<complex<double> >* orbitalSet);
-    void ReadBands(int spin, EinsplineSetExtended<        double  >* orbitalSet);
+    void OccupyBands_ESHDF(int spin, bool sortBands);
+    void ReadBands      (int spin, EinsplineSetLocal* orbitalSet);
+    void ReadBands_ESHDF(int spin, EinsplineSetLocal* orbitalSet);
+    void ReadBands      (int spin, EinsplineSetExtended<complex<double> >* orbitalSet);
+    void ReadBands_ESHDF(int spin, EinsplineSetExtended<complex<double> >* orbitalSet);
+    void ReadBands      (int spin, EinsplineSetExtended<        double  >* orbitalSet);
+    void ReadBands_ESHDF(int spin, EinsplineSetExtended<        double  >* orbitalSet);
     void CopyBands(int numOrbs);
     
     /////////////////////////////

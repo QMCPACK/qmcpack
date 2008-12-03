@@ -28,6 +28,43 @@
 
 
 namespace qmcplusplus {
+
+
+/** Specialization for string */
+/*
+template<>
+struct HDFAttribIO<string>: public HDFAttribIOBase {
+
+  std::string& ref;
+
+  HDFAttribIO<string>(string& a):ref(a) { }
+
+  inline void write(hid_t grp, const char* name) {
+    hsize_t dim = 1;
+    hid_t dataspace  = H5Screate_simple(1, &dim, NULL);
+    hid_t typeID = H5Tcopy (H5T_C_S1);
+    H5Tset_size(typeID, ref.size());
+    hid_t dataset =  
+      H5Dcreate(grp, name, typeID, dataspace, H5P_DEFAULT);
+    hid_t ret = 
+      H5Dwrite(dataset, typeID, H5S_ALL, H5S_ALL, H5P_DEFAULT,&(ref[0]));
+    H5Sclose(dataspace);
+    H5Dclose(dataset);
+    H5Tclose(typeID);
+  }
+
+  inline void read(hid_t grp, const char* name) {
+    hid_t h1 = H5Dopen(grp, name);
+    hid_t typeID = H5Dget_type(h1);
+    hsize_t len = H5Tget_size(typeID);
+    ref.resize(len);
+    hid_t ret = H5Dread(h1, typeID, H5S_ALL, H5S_ALL, H5P_DEFAULT, &(ref[0]));
+    H5Tclose(typeID);
+    H5Dclose(h1);
+  }
+  };*/
+
+
 /** Specialization for hsize_t */
 template<>
 struct HDFAttribIO<hsize_t>: public HDFAttribIOBase {

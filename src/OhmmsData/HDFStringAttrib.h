@@ -42,23 +42,35 @@ namespace qmcplusplus
 
       inline void read(hid_t grp, const char* name) 
       {
+	// Turn off error printing
+	H5E_auto_t func;
+	void *client_data;
+	H5Eget_auto (&func, &client_data);
+	H5Eset_auto (NULL, NULL);
+	
         hid_t dataset = H5Dopen(grp,name);
-        hid_t datatype=H5Dget_type(dataset);
-        hsize_t dim_out;
-        if(datatype == H5T_NATIVE_CHAR) 
-        {
-          hid_t dataspace = H5Dget_space(dataset);
-          hid_t status = H5Sget_simple_extent_dims(dataspace, &dim_out, NULL);
-          H5Sclose(dataspace);
-        }
-        else
-        {
-          dim_out=H5Tget_size(datatype);
-        }
-        ref.resize(dim_out);
-        hid_t ret = H5Dread(dataset, datatype, H5S_ALL, H5S_ALL, H5P_DEFAULT,&(ref[0]));
-        H5Tclose(datatype);
-        H5Dclose(dataset);
+	if (dataset > -1) {
+	  hid_t datatype=H5Dget_type(dataset);
+	  hsize_t dim_out;
+	  if(datatype == H5T_NATIVE_CHAR) 
+	    {
+	      hid_t dataspace = H5Dget_space(dataset);
+	      hid_t status = H5Sget_simple_extent_dims(dataspace, &dim_out, NULL);
+	      H5Sclose(dataspace);
+	    }
+	  else
+	    {
+	      dim_out=H5Tget_size(datatype);
+	    }
+	  ref.resize(dim_out);
+	  hid_t ret = H5Dread(dataset, datatype, H5S_ALL, H5S_ALL, H5P_DEFAULT,&(ref[0]));
+	  // Erase trailing null character
+	  ref.erase (dim_out-1, 1);
+	  H5Tclose(datatype);
+	  H5Dclose(dataset);
+	}
+	// Turn error printing back on
+	H5Eset_auto (func, client_data);
       }
     };
 
