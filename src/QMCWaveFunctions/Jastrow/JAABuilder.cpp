@@ -19,6 +19,7 @@
 #include "QMCWaveFunctions/Jastrow/JAABuilder.h"
 #include "QMCWaveFunctions/Jastrow/ModPadeFunctor.h"
 #include "QMCWaveFunctions/Jastrow/McMillanJ2Functor.h"
+#include "QMCWaveFunctions/Jastrow/McMillanJ2GFunctor.h"
 #include "QMCWaveFunctions/Jastrow/GaussianFunctor.h"
 #include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbital.h"
 #include "OhmmsData/AttributeSet.h"
@@ -38,7 +39,7 @@ namespace qmcplusplus {
    *spin-dependent Jastrow function,e.g., for electrons, two functions
    *are created for uu(dd) and ud(du).
    */
-  template<class FN> bool JAABuilder::createJAA(xmlNodePtr cur, const string& jname) 
+  template <class FN> TwoBodyJastrowOrbital<FN>* JAABuilder::createJAA(xmlNodePtr cur, const string& jname)
   {
 
     string corr_tag("correlation");
@@ -88,12 +89,12 @@ namespace qmcplusplus {
     {
       string j2name="J2_"+jname;
       targetPsi.addOrbital(J2,j2name);
-      return true;
+      return J2;
     }
     else
     {//clean up and delete the twobody orbitals
-      delete J2;
-      return false;
+      APP_ABORT("JAABuilder::put Failed to create Two-Body with "+jname);
+      return 0;
     }
   }
 
@@ -109,7 +110,7 @@ namespace qmcplusplus {
     aAttrib.put(cur);
 
     IgnoreSpin=(spinOpt=="no");
-    bool success=false;
+    OrbitalBase* newJ = 0;
     //if(jastfunction == "pade") {
     //  app_log() << "  Two-Body Jastrow Function = " << jastfunction << endl;
     //  PadeJastrow<RealType> *dummy = 0;
@@ -119,39 +120,54 @@ namespace qmcplusplus {
       app_log() << "  Modified Jastrow function Two-Body Jastrow Function = " << jastfunction << endl;
       IgnoreSpin=true;
       //ModPadeFunctor<RealType> *dummy = 0;
-      success = createJAA<ModPadeFunctor<RealType> >(cur,jastfunction);
+      newJ = createJAA<ModPadeFunctor<RealType> >(cur,jastfunction);
     }else if(jastfunction == "modMcMillan")
     {
       app_log() << "  Modified McMillan Jastrow function Two-Body Jastrow Function = " << jastfunction << endl;
       IgnoreSpin=true;
-      success = createJAA<ModMcMillanJ2Functor<RealType> >(cur,jastfunction);
+      newJ = createJAA<ModMcMillanJ2Functor<RealType> >(cur,jastfunction);
     }else if(jastfunction == "comboMcMillan")
     {
       app_log() << "  Combo McMillan Jastrow function Two-Body Jastrow Function = " << jastfunction << endl;
       IgnoreSpin=true;
-      success = createJAA<comboMcMillanJ2Functor<RealType> >(cur,jastfunction);
+      newJ = createJAA<comboMcMillanJ2Functor<RealType> >(cur,jastfunction);
     }else if(jastfunction == "McMillan")
     {
-      app_log() << "  McMillan Jastrow (LONG RANGE!) function Two-Body Jastrow Function = " << jastfunction << endl;
+      app_log() << "  McMillan (LONG RANGE!) Two-Body Jastrow Function = " << jastfunction << endl;
       IgnoreSpin=true;
-      success = createJAA<McMillanJ2Functor<RealType> >(cur,jastfunction);
+
+      SpeciesSet& species(targetPtcl.getSpeciesSet());
+      TwoBodyJastrowOrbital<McMillanJ2Functor<RealType> >* a = createJAA<McMillanJ2Functor<RealType> >(cur,jastfunction);
+      species(species.addAttribute("J2_A"),species.addSpecies(species.speciesName[targetPtcl.GroupID[0]])) = (a->F[a->F.size()-1])->A;
+      species(species.addAttribute("J2_B"),species.addSpecies(species.speciesName[targetPtcl.GroupID[0]])) = (a->F[a->F.size()-1])->B;
+      newJ = a;
+    }else if(jastfunction == "McMillanJ2G")
+    {
+      app_log() << "  McMillan Two-Body Jastrow Function (Gaussian for r < 2.5) = " << jastfunction << endl;
+      IgnoreSpin=true;
+
+      SpeciesSet& species(targetPtcl.getSpeciesSet());
+      TwoBodyJastrowOrbital<McMillanJ2GFunctor<RealType> >* a = createJAA<McMillanJ2GFunctor<RealType> >(cur,jastfunction);
+      species(species.addAttribute("J2_A"),species.addSpecies(species.speciesName[targetPtcl.GroupID[0]])) = (a->F[a->F.size()-1])->A;
+      species(species.addAttribute("J2_B"),species.addSpecies(species.speciesName[targetPtcl.GroupID[0]])) = (a->F[a->F.size()-1])->B;
+      newJ = a;
     }else if(jastfunction == "Gaussian")
     {
       app_log() << "  Gaussian function Two-Body Jastrow Function = " << jastfunction << endl;
       IgnoreSpin=true;
-      success = createJAA<GaussianFunctor<RealType> >(cur,jastfunction);
+      newJ = createJAA<GaussianFunctor<RealType> >(cur,jastfunction);
     } else if(jastfunction == "shiftedGaussian")
     {
       app_log() << "  Gaussian function Two-Body Jastrow Function = " << jastfunction << endl;
       IgnoreSpin=true;
-      success = createJAA<TruncatedShiftedGaussianFunctor<RealType> >(cur,jastfunction);
+      newJ = createJAA<TruncatedShiftedGaussianFunctor<RealType> >(cur,jastfunction);
     }
     //} else if(jastfunction == "rpa") {
     //  app_log() << "  Two-Body Jastrow Function = " << jastfunction << endl;
     //  RPAJastrow<RealType> *dummy = 0;
     //  success = createJAA(cur,dummy);
     //}
-    return success;
+    return (newJ != 0);
   }
 }
 /***************************************************************************
