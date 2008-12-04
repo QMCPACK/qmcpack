@@ -44,6 +44,9 @@
 #include "QMCHamiltonians/ForceCeperley.h"
 #include "QMCHamiltonians/HFDHE2Potential_tail.h"
 #include "QMCHamiltonians/HeEPotential_tail.h"
+#include "QMCHamiltonians/HFDHE2_Moroni1995.h"
+#include "QMCHamiltonians/HFDBHE_smoothed.h"
+#include "QMCHamiltonians/HeSAPT_smoothed.h"
 #include "QMCHamiltonians/ForwardWalking.h"
 #include "QMCHamiltonians/trialDMCcorrection.h"
 #include "QMCHamiltonians/ChiesaCorrection.h"
@@ -110,7 +113,7 @@ namespace qmcplusplus {
       
       if(defaultKE == "yes"){
         targetH->addOperator(new BareKineticEnergy ,"Kinetic");
-      } else if(defaultKE != "multi"){
+      } else if(defaultKE == "multi"){
         //Multicomponent wavefunction. Designed for 2 species.
 	app_log()<<" Multicomponent system. You must add the Kinetic energy term first!"<<endl;
       } else  {
@@ -154,6 +157,24 @@ namespace qmcplusplus {
           else 
             addConstCoulombPotential(cur,sourceInp);
         } 
+	else if (potType == "HeSAPT_smoothed") {
+	  HeSAPT_smoothed* SAPT = new HeSAPT_smoothed(*targetPtcl);
+	  targetH->addOperator(SAPT,"HeSAPT",true);
+	  targetH->addOperator(SAPT->makeDependants(*targetPtcl),SAPT->depName,false);
+	  app_log() << "  Adding " << SAPT->depName << endl;
+	}
+	else if (potType == "HFDHE2_Moroni1995") {
+	  HFDHE2_Moroni1995_physical* HFD = new HFDHE2_Moroni1995_physical(*targetPtcl);
+	  targetH->addOperator(HFD,"HFD-HE2",true);
+	  targetH->addOperator(HFD->makeDependants(*targetPtcl),HFD->depName,false);
+	  app_log() << "  Adding " << HFD->depName << endl;
+	}
+	else if (potType == "HFDBHE_smoothed") {
+	  HFDBHE_smoothed* HFD = new HFDBHE_smoothed(*targetPtcl);
+	  targetH->addOperator(HFD,"HFD-B(He)",true);
+	  targetH->addOperator(HFD->makeDependants(*targetPtcl),HFD->depName,false);
+	  app_log() << "  Adding " << HFD->depName << endl;
+	}
 	else if (potType == "MPC") 
 	  addMPCPotential(cur);
         else if(potType == "HFDHE2") 
