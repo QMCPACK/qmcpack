@@ -681,7 +681,12 @@ namespace qmcplusplus {
 	  dynamic_cast<EinsplineSetExtended<complex<double> >*>(OrbitalSet);
 	OccupyBands(spinSet, sortBands);
 #pragma omp critical(read_extended_orbs)
-	{ ReadBands(spinSet, orbitalSet); }
+	{ 
+	  if (Format == ESHDF)
+	    ReadBands_ESHDF(spinSet,orbitalSet);
+	  else
+	    ReadBands(spinSet, orbitalSet); 
+	}
       }
     }
 
@@ -1622,6 +1627,174 @@ namespace qmcplusplus {
     }
     ExtendedMap_d[set] = orbitalSet->MultiSpline;
   }
+
+
+  void
+  EinsplineSetBuilder::ReadBands_ESHDF
+  (int spin, EinsplineSetExtended<complex<double > >* orbitalSet)
+  {
+    cerr << "In ReadBands_ESHDF.\n";
+    bool root = myComm->rank()==0;
+    // bcast other stuff
+    myComm->bcast (NumDistinctOrbitals);
+    myComm->bcast (NumValenceOrbs);
+    myComm->bcast (NumCoreOrbs);
+    int N = NumDistinctOrbitals;
+
+    orbitalSet->kPoints.resize(N);
+    orbitalSet->MakeTwoCopies.resize(N);
+    orbitalSet->StorageValueVector.resize(N); orbitalSet->BlendValueVector.resize(N);
+    orbitalSet->StorageLaplVector.resize(N);  orbitalSet->BlendLaplVector.resize(N);
+    orbitalSet->StorageGradVector.resize(N);  orbitalSet->BlendGradVector.resize(N);
+    orbitalSet->StorageHessVector.resize(N);
+    orbitalSet->phase.resize(N);
+    orbitalSet->eikr.resize(N);
+    orbitalSet->NumValenceOrbs = NumValenceOrbs;
+    orbitalSet->NumCoreOrbs    = NumCoreOrbs;
+    // Read in k-points
+    int numOrbs = orbitalSet->getOrbitalSetSize();
+    int num = 0;
+    if (root) {
+      for (int iorb=0; iorb<N; iorb++) {
+	int ti = SortBands[iorb].TwistIndex;
+	PosType twist  = TwistAngles[ti];
+	orbitalSet->kPoints[iorb] = orbitalSet->PrimLattice.k_cart(twist);
+	orbitalSet->MakeTwoCopies[iorb] = 
+	  (num < (numOrbs-1)) && SortBands[iorb].MakeTwoCopies;
+	num += orbitalSet->MakeTwoCopies[iorb] ? 2 : 1;
+      }
+    }
+    myComm->bcast(orbitalSet->kPoints);
+    myComm->bcast(orbitalSet->MakeTwoCopies);
+    myComm->bcast(orbitalSet->HalfG);
+
+    // First, check to see if we have already read this in
+    H5OrbSet set(H5FileName, spin, N);
+    
+    int nx, ny, nz, bi, ti;
+    Array<complex<double>,3> splineData;
+    TinyVector<int,3> mesh;
+
+    // Find the orbital mesh size
+    if (root) {
+      HDFAttribIO<TinyVector<int,3> > h_mesh(mesh);
+      h_mesh.read (H5FileID, "/electrons/mesh");
+    }
+    myComm->bcast(mesh);
+    nx=mesh[0]; ny=mesh[1]; nz=mesh[2];
+    splineData.resize(nx,ny,nz);
+
+    Ugrid x_grid, y_grid, z_grid;
+    BCtype_z xBC, yBC, zBC;
+
+    xBC.lCode = PERIODIC;        xBC.rCode = PERIODIC;
+    yBC.lCode = PERIODIC;        yBC.rCode = PERIODIC;
+    zBC.lCode = PERIODIC;        zBC.rCode = PERIODIC;
+    x_grid.start = 0.0;  x_grid.end = 1.0;  x_grid.num = nx;
+    y_grid.start = 0.0;  y_grid.end = 1.0;  y_grid.num = ny;
+    z_grid.start = 0.0;  z_grid.end = 1.0;  z_grid.num = nz;
+
+    // Create the multiUBspline object
+    orbitalSet->MultiSpline = 
+      create_multi_UBspline_3d_z (x_grid, y_grid, z_grid, xBC, yBC, zBC, NumValenceOrbs);
+    
+    //////////////////////////////////////
+    // Create the MuffinTin APW splines //
+    //////////////////////////////////////
+    orbitalSet->MuffinTins.resize(NumMuffinTins);
+    for (int tin=0; tin<NumMuffinTins; tin++) {
+      orbitalSet->MuffinTins[tin].Atom = tin;
+      orbitalSet->MuffinTins[tin].set_center (MT_centers[tin]);
+      orbitalSet->MuffinTins[tin].set_lattice(Lattice);
+      orbitalSet->MuffinTins[tin].init_APW 
+	(MT_APW_rgrids[tin], MT_APW_lmax[tin], 
+	 NumValenceOrbs);
+    }
+           
+    int iorb  = 0;
+    int icore = 0;
+    int ival = 0;
+
+    int isComplex;
+    HDFAttribIO<int> h_isComplex(isComplex);
+    h_isComplex.read(H5FileID, "/electrons/psi_r_is_complex");
+    if (!isComplex) {
+      app_error() << "Expected complex orbitals in ES-HDF file, but found real ones.\n";
+      abort();
+    }
+
+    while (iorb < N) {
+      bool isCore;
+      if (root)  isCore = SortBands[iorb].IsCoreState;
+      myComm->bcast (isCore);
+      if (isCore) {
+	app_error() << "Core states not supported by ES-HDF yet.\n";
+	abort();
+      }
+      else {
+	if (root) {
+	  int ti   = SortBands[iorb].TwistIndex;
+	  int bi   = SortBands[iorb].BandIndex;
+	  double e = SortBands[iorb].Energy;
+	  PosType twist, k;
+	  twist = TwistAngles[ti];
+	  k = orbitalSet->PrimLattice.k_cart(twist);
+	  fprintf (stderr, "  Valence state:  ti=%3d  bi=%3d energy=%8.5f k=(%7.4f, %7.4f, %7.4f) rank=%d\n", 
+		   ti, bi, e, k[0], k[1], k[2], myComm->rank());
+
+	  ostringstream path;
+	  path << "/electrons/kpoint_" << ti << "/spin_" << spin << "/state_" << bi << "/";
+	  string psiName = path.str() + "psi_r";
+
+	  HDFAttribIO<Array<complex<double>,3> >  h_splineData(splineData);
+	  h_splineData.read(H5FileID, psiName.c_str());
+	  if ((splineData.size(0) != nx) ||
+	      (splineData.size(1) != ny) ||
+	      (splineData.size(2) != nz)) {
+	    fprintf (stderr, "Error in EinsplineSetBuilder::ReadBands.\n");
+	    fprintf (stderr, "Extended orbitals should all have the same dimensions\n");
+	    abort();
+	  }
+	}
+	myComm->bcast(splineData);
+	set_multi_UBspline_3d_z 
+	  (orbitalSet->MultiSpline, ival, splineData.data());
+      
+	
+	// Now read muffin tin data
+	for (int tin=0; tin<NumMuffinTins; tin++) {
+	  // app_log() << "Reading data for muffin tin " << tin << endl;
+	  PosType twist, k;
+	  int lmax = MT_APW_lmax[tin];
+	  int numYlm = (lmax+1)*(lmax+1);
+	  Array<complex<double>,2> 
+	    u_lm_r(numYlm, MT_APW_num_radial_points[tin]);
+	  Array<complex<double>,1> du_lm_dr (numYlm);
+	  if (root) {
+	    int ti   = SortBands[iorb].TwistIndex;
+	    int bi   = SortBands[iorb].BandIndex;
+	    twist = TwistAngles[ti];
+	    k = orbitalSet->PrimLattice.k_cart(twist);
+	    string uName  = MuffinTinPath (ti, bi,tin) + "u_lm_r";
+	    string duName = MuffinTinPath (ti, bi,tin) + "du_lm_dr";
+	    HDFAttribIO<Array<complex<double>,2> > h_u_lm_r(u_lm_r);
+	    HDFAttribIO<Array<complex<double>,1> > h_du_lm_dr(du_lm_dr);
+	    h_u_lm_r.read(H5FileID, uName.c_str());
+	    h_du_lm_dr.read(H5FileID, duName.c_str());
+	  }
+	  myComm->bcast(u_lm_r);
+	  myComm->bcast(du_lm_dr);
+	  myComm->bcast(k);
+	  double Z = (double)IonTypes(tin);
+	  OrbitalSet->MuffinTins[tin].set_APW (ival, k, u_lm_r, du_lm_dr, Z);
+	}
+	ival++;
+      } // valence state
+      iorb++;
+    }
+    ExtendedMap_z[set] = orbitalSet->MultiSpline;
+  }
+
 
 
   void
