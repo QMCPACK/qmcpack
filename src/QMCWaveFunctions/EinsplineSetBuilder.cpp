@@ -1132,7 +1132,7 @@ namespace qmcplusplus {
       int tindex = DistinctTwists[ti];
       // First, read valence states
       ostringstream ePath;
-      ePath << "/electrons/kpoint_" << ti << "/spin_" 
+      ePath << "/electrons/kpoint_" << tindex << "/spin_" 
 	    << spin << "/eigenvalues";
       vector<double> eigvals;
       HDFAttribIO<vector<double> > h_eigvals(eigvals);
@@ -1633,7 +1633,6 @@ namespace qmcplusplus {
   EinsplineSetBuilder::ReadBands_ESHDF
   (int spin, EinsplineSetExtended<complex<double > >* orbitalSet)
   {
-    cerr << "In ReadBands_ESHDF.\n";
     bool root = myComm->rank()==0;
     // bcast other stuff
     myComm->bcast (NumDistinctOrbitals);
@@ -1666,7 +1665,6 @@ namespace qmcplusplus {
     }
     myComm->bcast(orbitalSet->kPoints);
     myComm->bcast(orbitalSet->MakeTwoCopies);
-    myComm->bcast(orbitalSet->HalfG);
 
     // First, check to see if we have already read this in
     H5OrbSet set(H5FileName, spin, N);
