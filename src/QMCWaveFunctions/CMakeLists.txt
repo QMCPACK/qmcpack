@@ -3,7 +3,7 @@ SET(WFBASE_SRCS
     OrbitalBase.cpp
     OrbitalBuilderBase.cpp
     WaveFunctionFactory.cpp
-    ComboOrbital.cpp
+    ProductOrbital.cpp
     OrbitalConstraintsBase.cpp
    )
 
@@ -13,7 +13,6 @@ SET(JASTROW_SRCS
   Jastrow/JABBuilder.cpp
   Jastrow/PadeJastrowBuilder.cpp
   Jastrow/WMJastrowBuilder.cpp
-  Jastrow/AnyConstraints.cpp
   Jastrow/CBSOBuilder.cpp
   Jastrow/JastrowBuilder.cpp
   Jastrow/BsplineJastrowBuilder.cpp
