@@ -17,7 +17,6 @@
 #ifndef QMCPLUSPLUS_MOBASISBUILDER_H
 #define QMCPLUSPLUS_MOBASISBUILDER_H
 
-#include "QMCWaveFunctions/SphericalOrbitalSet.h"
 #include "QMCWaveFunctions/LocalizedBasisSet.h"
 #include "QMCWaveFunctions/MolecularOrbitals/AtomicBasisBuilder.h"
 #include "QMCWaveFunctions/LCOrbitalSet.h"
