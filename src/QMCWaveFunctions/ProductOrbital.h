@@ -14,11 +14,11 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-/** @file ComboOrbital.h
- * @brief Declaration of a Composite Orbital
+/** @file ProductOrbital.h
+ * @brief Declaration of \f$\Psi^c=($\prod_i \Psi_i({\bf R})\f$
  */
-#ifndef QMCPLUSPLUS_GENERIC_COMBO_WITHCONSTRAINTS_H
-#define QMCPLUSPLUS_GENERIC_COMBO_WITHCONSTRAINTS_H
+#ifndef QMCPLUSPLUS_GENERIC_PRODUCT_WITHCONSTRAINTS_H
+#define QMCPLUSPLUS_GENERIC_PRODUCT_WITHCONSTRAINTS_H
 #include "QMCWaveFunctions/OrbitalBase.h"
 #include "QMCWaveFunctions/OrbitalConstraintsBase.h"
 
@@ -26,7 +26,7 @@ namespace qmcplusplus {
 
   /** A composite Orbital
    */
-  struct ComboOrbital: public OrbitalBase 
+  struct ProductOrbital: public OrbitalBase 
   {
 
     ///A list of OrbitalBase* 
@@ -37,13 +37,13 @@ namespace qmcplusplus {
      */
     OrbitalConstraintsBase* Constraints;
 
-    ComboOrbital(OrbitalConstraintsBase* control):
+    ProductOrbital(OrbitalConstraintsBase* control):
       Constraints(control) {
         Optimizable=true;
-        OrbitalName="ComboOrbital";
+        OrbitalName="ProductOrbital";
       }
 
-    ~ComboOrbital();
+    ~ProductOrbital();
 
     void setContraints(OrbitalConstraintsBase* control) {
       Constraints=control;

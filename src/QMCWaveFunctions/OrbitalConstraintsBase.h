@@ -24,7 +24,7 @@
 
 namespace qmcplusplus {
   
-  class ComboOrbital;
+  class ProductOrbital;
   
   /**  Base class to build Jastrow functions with constraints.
    *
@@ -60,20 +60,20 @@ namespace qmcplusplus {
     virtual void resetParameters(const opt_variables_type& optVaraibles)=0;
 
     /** Add the appropriate orbital (or orbitals in the case of 
-     *  a jastrow with a short and a long range part) to the ComboOrbital
+     *  a jastrow with a short and a long range part) to the ProductOrbital
      */
     virtual OrbitalBase* createTwoBody()=0;
 
     /** Create an OrbitalBase using two-body relation
      * @param target Quantum Particle Set on which an Orbital depend
-     * @return A OrbitalBase*, typically ComboOrbital*
+     * @return A OrbitalBase*, typically ProductOrbital*
      */
-    virtual void addExtra2ComboOrbital(ComboOrbital* j)=0;
+    virtual void addExtra2ProductOrbital(ProductOrbital* j)=0;
 
     /** Create an OrbitalBase using one-body relation
      * @param target Quantum Particle Set on which an Orbital depend
      * @param source Quantum/Classical ParticleSet 
-     * @return A OrbitalBase*, typically ComboOrbital*
+     * @return A OrbitalBase*, typically ProductOrbital*
      */
     virtual OrbitalBase* createOneBody(ParticleSet& source)=0;
 

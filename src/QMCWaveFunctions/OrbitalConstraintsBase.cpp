@@ -18,10 +18,10 @@
 
 namespace qmcplusplus {
 
-  OrbitalConstraintsBase::OrbitalConstraintsBase(ParticleSet& p, TrialWaveFunction& psi):
-    OrbitalBuilderBase(p,psi), myGrid(0), PrintTables(false) 
-    {
-    }
+  OrbitalConstraintsBase::OrbitalConstraintsBase(ParticleSet& p, TrialWaveFunction& psi)
+    : OrbitalBuilderBase(p,psi), myGrid(0), PrintTables(false) 
+  {
+  }
 
   void OrbitalConstraintsBase::getParam(xmlNodePtr cur) 
   {
