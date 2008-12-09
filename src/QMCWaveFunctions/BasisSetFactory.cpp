@@ -68,29 +68,16 @@ namespace qmcplusplus {
     if(rootNode != NULL)  aAttrib.put(rootNode);
 
     BasisSetBuilder* bb=0;
-
-    //if(typeOpt == "spline") {
-    //  app_log() << "  SplineSetBuilder: spline on 3D TriCubicGrid " << endl;
-    //  bb = new SplineSetBuilder(targetPtcl,ptclPool);
-    //} 
-    //else if(typeOpt == "bspline")
-    cerr<<"TYPE OPT IS "<<typeOpt<<endl;
-#ifdef HAVE_EINSPLINE
-    cerr<<"HAVE EINSPLINE"<<endl;
-#endif
-#if OHMMS_DIM==3
-    if(typeOpt == "bspline" || typeOpt== "spline")
+    if(typeOpt.find("spline")<typeOpt.size())
     {
-      PRE << "TEMP  TricubicBsplineSetBuilder: b-spline on 3D TriCubicGrid.\n";
-      bb = new TricubicBsplineSetBuilder(targetPtcl,ptclPool,rootNode);
-    }
 #ifdef HAVE_EINSPLINE
-    else if (typeOpt == "einspline") 
-    {
-      PRE << "TEMP  EinsplineSetBuilder:  using libeinspline for B-spline orbitals.\n";
+      PRE << "EinsplineSetBuilder:  using libeinspline for B-spline orbitals.\n";
       bb = new EinsplineSetBuilder(targetPtcl,ptclPool,rootNode);
-    }
+#else
+      PRE << "TricubicBsplineSetBuilder: b-spline on 3D TriCubicGrid.\n";
+      bb = new TricubicBsplineSetBuilder(targetPtcl,ptclPool,rootNode);
 #endif
+    }
     else if(typeOpt == "MolecularOrbital" || typeOpt == "MO") 
     {
       ParticleSet* ions=0;
@@ -98,29 +85,19 @@ namespace qmcplusplus {
       //initialize with the source tag
       PtclPoolType::iterator pit(ptclPool.find(sourceOpt));
       if(pit == ptclPool.end()) 
-      {
         //fatal error
         PRE.error("Missing basisset/@source.",true);
-      } 
       else 
-      {
         ions=(*pit).second; 
-      }
 
       if(transformOpt == "yes") 
-      {
         bb = new MolecularBasisBuilder<NGOBuilder>(targetPtcl,*ions);
-      } 
       else 
       {
         if(keyOpt == "GTO") 
-        {
           bb = new MolecularBasisBuilder<GTOBuilder>(targetPtcl,*ions);
-        } 
         else if(keyOpt == "STO") 
-        {
           bb = new MolecularBasisBuilder<STOBuilder>(targetPtcl,*ions);
-        }
       }
     }
 
