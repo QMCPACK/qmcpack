@@ -86,7 +86,7 @@ namespace qmcplusplus {
 
   void DMC::resetUpdateEngine() {
 
-    bool fixW=(Reconfiguration == "yes");
+    bool fixW=((Reconfiguration == "yes")||(Reconfiguration == "pure"));
 
     if(Mover==0) //disable switching update modes for DMC in a run
     {

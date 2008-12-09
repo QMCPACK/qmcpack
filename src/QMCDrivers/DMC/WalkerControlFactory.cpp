@@ -18,6 +18,7 @@
 #include "OhmmsData/ParameterSet.h"
 #include "QMCDrivers/DMC/WalkerControlFactory.h"
 #include "QMCDrivers/DMC/WalkerReconfiguration.h"
+#include "QMCDrivers/DMC/WalkerPureDMC.h"
 #if defined(HAVE_MPI)
 #include "QMCDrivers/DMC/WalkerControlMPI.h"
 #include "QMCDrivers/DMC/WalkerReconfigurationMPI.h"
@@ -47,7 +48,7 @@ namespace qmcplusplus {
     //if(nmin<0) nmin=nideal/2;
     WalkerControlBase* wc=0;
     int ncontexts = comm->size();
-    bool fixw= (reconfig || reconfigopt == "yes");
+    bool fixw= (reconfig || reconfigopt == "yes"|| reconfigopt == "pure");
 
     if(fixw) {
       nmax=nwtot/ncontexts;
@@ -222,12 +223,21 @@ namespace qmcplusplus {
     WalkerControlBase* wc=0;
 
     //if(wc== 0) wc= new WalkerControlBase;
-    if(reconfig || reconfigopt == "yes") {
+    if(reconfig || reconfigopt == "yes") {      
       app_log() << "  Using a fixed number of walkers by reconfiguration." << endl;
       wc = new WalkerReconfiguration(comm);
       wc->Nmax=nwtot;
       wc->Nmin=nwtot;
-    } else {
+    } 
+    else if  (reconfigopt == "pure")
+    {
+      app_log() << "  Using a fixed number of walkers by pure DMC." << endl;
+      wc = new WalkerPureDMC(comm);
+      wc->Nmax=nwtot;
+      wc->Nmin=nwtot;
+    }
+    else
+    {
       app_log() << "  Using a WalkerControlBase with population fluctations." << endl;
       app_log() << "  Target number of walkers = " << nwtot << endl;
       wc = new WalkerControlBase(comm);

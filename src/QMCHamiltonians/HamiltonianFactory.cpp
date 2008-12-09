@@ -37,6 +37,7 @@
 #include "OhmmsData/AttributeSet.h"
 #include "QMCHamiltonians/Pressure.h"
 #include "QMCHamiltonians/RPAPressure.h"
+#include "QMCHamiltonians/PsiValue.h"
 #include "QMCHamiltonians/HePressure.h"
 #include "QMCHamiltonians/HFDHE2Potential.h"
 #include "QMCHamiltonians/HeEPotential.h"
@@ -326,6 +327,10 @@ namespace qmcplusplus {
 
 	  targetH->addOperator(chiesa,"KEcorr",false);
 	}  
+	else if(potType=="psi")
+	{
+	  targetH->addOperator(new PsiValue(),"Psi",false);
+	}
 
 //         else if (potType=="ForwardWalking"){
 //           app_log()<<"  Adding Forward Walking Operator"<<endl;

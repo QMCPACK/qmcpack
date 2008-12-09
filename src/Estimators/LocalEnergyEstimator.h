@@ -78,11 +78,15 @@ namespace qmcplusplus {
 
     inline void accumulate(const Walker_t& awalker, RealType wgt) {
       const RealType* restrict ePtr = awalker.getPropertyBase();
-      scalars[0](ePtr[LOCALENERGY],wgt);
-      scalars[1](ePtr[LOCALPOTENTIAL],wgt);
+      ///weight of observables should take into account the walkers weight. For Pure DMC. In branching DMC set weights to 1.
+      RealType wwght= wgt* awalker.Weight;
+//       RealType wwght= wgt;
+      
+      scalars[0](ePtr[LOCALENERGY],wwght);
+      scalars[1](ePtr[LOCALPOTENTIAL],wwght);
       for(int target=2, source=FirstHamiltonian; target<scalars.size(); 
           ++target, ++source)
-        scalars[target](ePtr[source],wgt);
+        scalars[target](ePtr[source],wwght);
     }
 
     inline void accumulate(WalkerIterator first, WalkerIterator last, RealType wgt) {

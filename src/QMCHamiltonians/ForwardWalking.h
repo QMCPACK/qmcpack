@@ -127,7 +127,12 @@ namespace qmcplusplus {
 	  if(tagName=="LocalPotential") {
 	    Hindex=LOCALPOTENTIAL ;
 	    tagName="LocPot";
-	  }else if (Hindex==(NUMPROPERTIES-1)){
+	  }
+	  else if(tagName=="LocalEnergy") {
+	    Hindex=LOCALENERGY ;
+	    tagName="LocEn";
+	  }	  
+	  else if (Hindex==(NUMPROPERTIES-1)){
 	    app_log()<<"Not a valid H element("<<Hindex<<") Valid names are:";
 	    for (int jk=0;jk<h.sizeOfObservables();jk++) app_log()<<"  "<<h.getObservableName(jk);
 	    app_log()<<endl;
