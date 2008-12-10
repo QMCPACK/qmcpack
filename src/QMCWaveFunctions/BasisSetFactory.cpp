@@ -115,7 +115,6 @@ namespace qmcplusplus {
       //fatal error
       PRE.error("Failed to create a basis set.",true);
     }
-#endif
   }
 
   SPOSetBase* BasisSetFactory::createSPOSet(xmlNodePtr cur) {
