@@ -106,6 +106,9 @@ namespace qmcplusplus {
 
     /** evalaute the values of the wavefunction, gradient and laplacian  for a walkers */
     ValueType evaluate(ParticleSet& P);
+    
+    /** evalaute the values of the wavefunction, gradient and laplacian  for a walkers */
+    ValueType evaluateLogOnly(ParticleSet& P);
 
     /** evalaute the log of the trial wave function */
     RealType evaluateLog(ParticleSet& P);
@@ -147,6 +150,10 @@ namespace qmcplusplus {
     //void evaluate(WalkerSetRef& W, OrbitalBase::ValueVectorType& psi);
 
     void reverse();
+    
+    void resizeTempP(ParticleSet& P){
+      tempP = new ParticleSet(P);
+    };
 
     TrialWaveFunction* makeClone(ParticleSet& tqp) const;
 
@@ -180,6 +187,9 @@ namespace qmcplusplus {
 
     ///differential laplacians
     ParticleSet::ParticleLaplacian_t delta_L;
+    
+    ///fake particleset
+    ParticleSet* tempP;
 
     TrialWaveFunction();
 

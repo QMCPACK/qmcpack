@@ -19,11 +19,16 @@
 #include "Particle/ParticleSet.h"
 #include "Particle/WalkerSetRef.h"
 #include "QMCHamiltonians/QMCHamiltonianBase.h"
+#include "QMCWaveFunctions/WaveFunctionFactory.h"
+#include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "ParticleBase/ParticleAttribOps.h"
 
 namespace qmcplusplus {
 
   struct PsiValue: public QMCHamiltonianBase {
+  typedef map<string,ParticleSet*> PtclPoolType;
+  
+  TrialWaveFunction* trialPsi;
 
     PsiValue( ){ 
       UpdateMode.set(OPTIMIZABLE,1);
@@ -31,11 +36,15 @@ namespace qmcplusplus {
     ///destructor
     ~PsiValue() { }
 
-    void resetTargetParticleSet(ParticleSet& P) { }
+    void resetTargetParticleSet(ParticleSet& P) {
+      trialPsi->resizeTempP(P);
+    }
 
     inline Return_t 
     evaluate(ParticleSet& P) {
-      Value = std::exp(-2.0*tWalker->Properties(LOGPSI));
+      RealType logValue = trialPsi->evaluateLogOnly(P);
+//       app_log()<<tWalker->Properties(LOGPSI)<<"  "<<logValue<<endl;
+      Value = std::exp(2.0*logValue);
       return Value;
     }
 
@@ -47,7 +56,9 @@ namespace qmcplusplus {
     inline Return_t 
     registerData(ParticleSet& P, BufferType& buffer) 
     {
-      Value = std::exp(tWalker->Properties(LOGPSI));
+      RealType logValue = trialPsi->evaluateLogOnly(P);
+    
+      Value = std::exp(2.0*logValue);
       buffer.add(Value);
       return Value;
     }
@@ -55,8 +66,9 @@ namespace qmcplusplus {
     inline Return_t 
     updateBuffer(ParticleSet& P, BufferType& buffer) 
     {
-      Value = std::exp(tWalker->Properties(LOGPSI));
-      buffer.put(Value);
+      RealType logValue = trialPsi->evaluateLogOnly(P);
+    
+      Value = std::exp(2.0*logValue);
       return Value;
     }
 
@@ -73,11 +85,31 @@ namespace qmcplusplus {
     inline Return_t 
     evaluatePbyP(ParticleSet& P, int active)
     {
-      Value = std::exp(tWalker->Properties(LOGPSI));
-      return NewValue;
+      RealType logValue = trialPsi->evaluateLogOnly(P);
+    
+      Value = std::exp(2.0*logValue);
+      return Value;
     }
  
-    bool put(xmlNodePtr) {
+ bool put(xmlNodePtr cur) {
+   return true;
+    }
+    
+     bool put(xmlNodePtr cur,ParticleSet* qp, 
+    PtclPoolType& pset, Communicate* c ) {
+      xmlNodePtr tcur = cur->children;
+//       app_log()<<"PUTTING LOGPSI "<<((const char*)(tcur->name))<<endl;
+      WaveFunctionFactory* WFF = new WaveFunctionFactory(qp,pset,c);
+      WFF->setReportLevel(0);
+      WFF->setName("HamPsiVal");
+      WFF->build(cur,false);
+      
+      trialPsi = (WFF->targetPsi)->makeClone(*qp);
+      
+      trialPsi->resizeTempP(*qp);
+      
+      delete WFF;
+      
       return true;
     }
 
@@ -88,7 +120,10 @@ namespace qmcplusplus {
 
     QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi)
     {
-      return new PsiValue(*this);
+      PsiValue* acopy = new PsiValue();
+      acopy->trialPsi = trialPsi->makeClone(qp);
+      acopy->trialPsi->resizeTempP(qp);
+      return acopy;
     }
 
   };

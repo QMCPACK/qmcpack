@@ -329,7 +329,9 @@ namespace qmcplusplus {
 	}  
 	else if(potType=="psi")
 	{
-	  targetH->addOperator(new PsiValue(),"Psi",false);
+	  PsiValue* PV = new PsiValue();
+	  PV->put(cur,targetPtcl,ptclPool,myComm);
+	  targetH->addOperator(PV,"Psi",false);
 	}
 
 //         else if (potType=="ForwardWalking"){

@@ -96,6 +96,35 @@ namespace qmcplusplus {
     return LogValue=real(logpsi);
   }
   
+    /** return log(|psi|)
+   *
+   * PhaseValue is the phase for the complex wave function
+   */
+  TrialWaveFunction::RealType
+  TrialWaveFunction::evaluateLogOnly(ParticleSet& P) {
+    tempP->R=P.R;
+    tempP->L=0.0;
+    tempP->G=0.0;
+
+    ValueType logpsi(0.0);
+    PhaseValue=0.0;
+    vector<OrbitalBase*>::iterator it(Z.begin());
+    vector<OrbitalBase*>::iterator it_end(Z.end());
+
+    //WARNING: multiplication for PhaseValue is not correct, fix this!!
+    for(; it!=it_end; ++it)
+    {
+      logpsi += (*it)->evaluateLog(*tempP, tempP->G, tempP->L); 
+      PhaseValue += (*it)->PhaseValue;
+    }
+
+    
+    return LogValue=real(logpsi);
+  }
+  
+  
+  
+  
   /** evaluate the log value of a many-body wave function
    * @param P input configuration containing N particles
    * @param needratio users request ratio evaluation
