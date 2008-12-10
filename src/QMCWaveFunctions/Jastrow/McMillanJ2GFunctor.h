@@ -182,7 +182,7 @@ namespace qmcplusplus {
       c1 = evaluate(R0, Y, c2);
       c2 = -Y/(2.0*R0*c1);
       c1 *= std::exp(c2*R0*R0);
-      cout << "ChangMo's test: " << R0 << ", " << cutoff_radius << ", " << c1 << ", " << c2 << endl << evaluate(R0-0.0001) << ", " << evaluate(R0+0.0001) << endl;
+//      cout << "ChangMo's test: " << R0 << ", " << cutoff_radius << ", " << c1 << ", " << c2 << endl << evaluate(R0-0.0001) << ", " << evaluate(R0+0.0001) << endl;
 
       return true;
     }

@@ -28,9 +28,29 @@ namespace qmcplusplus {
       // Will be different for other densities.
       // Generalize later.
 //      tailcorr = -0.0002705961159;	// N = 32, RHO = 0.3648 sigma^2 : 01x
-//      tailcorr = -0.0002651066072;	// N = 64, RHO = 0.3648 sigma^2 : 02x
-      tailcorr = -0.0002618281770;	// N = 128, RHO = 0.3648 sigma^2 : 03x
+      tailcorr = -0.0002651066072;	// N = 64, RHO = 0.3648 sigma^2 : 02x
+//      tailcorr = -0.0002618281770;	// N = 128, RHO = 0.3648 sigma^2 : 03x
 //      tailcorr = -0.0002598285275;	// N = 256, RHO = 0.3648 sigma^2 : 04x
+//      tailcorr = -0.0002178620081;	// N = 32, RHO = 0.3280 sigma^2 : 21x
+//      tailcorr = -0.0002137701388;	// N = 64, RHO = 0.3280 sigma^2 : 22x
+//      tailcorr = -0.0002113168481;	// N = 128, RHO = 0.3280 sigma^2 : 23x
+//      tailcorr = -0.0002098169307;	// N = 256, RHO = 0.3280 sigma^2 : 24x
+//      tailcorr = -0.0002443783556;	// N = 32, RHO = 0.3470 sigma^2 : 31x
+//      tailcorr = -0.0002395972888;	// N = 64, RHO = 0.3470 sigma^2 : 32x
+//      tailcorr = -0.0002367366424;	// N = 128, RHO = 0.3470 sigma^2 : 33x
+//      tailcorr = -0.0002349898273;	// N = 256, RHO = 0.3470 sigma^2 : 34x
+//      tailcorr = -0.0003280694504;	// N = 32, RHO = 0.4009 sigma^2 : 41x
+//      tailcorr = -0.0003209410359;	// N = 64, RHO = 0.4009 sigma^2 : 42x
+//      tailcorr = -0.0003166990570;	// N = 128, RHO = 0.4009 sigma^2 : 43x
+//      tailcorr = -0.0003141175814;	// N = 256, RHO = 0.4009 sigma^2 : 44x
+//      tailcorr = -0.0003926875054;	// N = 32, RHO = 0.4378 sigma^2 : 51x
+//      tailcorr = -0.0003835898243;	// N = 64, RHO = 0.4378 sigma^2 : 52x
+//      tailcorr = -0.0003781940744;	// N = 128, RHO = 0.4378 sigma^2 : 53x
+//      tailcorr = -0.0003749179381;	// N = 256, RHO = 0.4378 sigma^2 : 54x
+//      tailcorr = -0.0004941981444;	// N = 32, RHO = 0.4899 sigma^2 : 61x
+//      tailcorr = -0.0004817718362;	// N = 64, RHO = 0.4899 sigma^2 : 62x
+//      tailcorr = -0.0004744316477;	// N = 128, RHO = 0.4899 sigma^2 : 63x
+//      tailcorr = -0.0004699888991;	// N = 256, RHO = 0.4899 sigma^2 : 64x
       unsmooth = 0.0;
 
       app_log() << "  HeSAPT_smoothed_np tail correction is " << tailcorr << endl;
@@ -43,9 +63,29 @@ namespace qmcplusplus {
       PtclRef=&P;
 //      tailcorr = -0.000274497151179;	// N = 32, RHO = 0.022 /Angstrom^3 : 11x
 //      tailcorr = -0.0002705961159;	// N = 32, RHO = 0.3648 sigma^2 : 01x
-//      tailcorr = -0.0002651066072;	// N = 64, RHO = 0.3648 sigma^2 : 02x
-      tailcorr = -0.0002618281770;	// N = 128, RHO = 0.3648 sigma^2 : 03x
+      tailcorr = -0.0002651066072;	// N = 64, RHO = 0.3648 sigma^2 : 02x
+//      tailcorr = -0.0002618281770;	// N = 128, RHO = 0.3648 sigma^2 : 03x
 //      tailcorr = -0.0002598285275;	// N = 256, RHO = 0.3648 sigma^2 : 04x
+//      tailcorr = -0.0002178620081;	// N = 32, RHO = 0.3280 sigma^2 : 21x
+//      tailcorr = -0.0002137701388;	// N = 64, RHO = 0.3280 sigma^2 : 22x
+//      tailcorr = -0.0002113168481;	// N = 128, RHO = 0.3280 sigma^2 : 23x
+//      tailcorr = -0.0002098169307;	// N = 256, RHO = 0.3280 sigma^2 : 24x
+//      tailcorr = -0.0002443783556;	// N = 32, RHO = 0.3470 sigma^2 : 31x
+//      tailcorr = -0.0002395972888;	// N = 64, RHO = 0.3470 sigma^2 : 32x
+//      tailcorr = -0.0002367366424;	// N = 128, RHO = 0.3470 sigma^2 : 33x
+//      tailcorr = -0.0002349898273;	// N = 256, RHO = 0.3470 sigma^2 : 34x
+//      tailcorr = -0.0003280694504;	// N = 32, RHO = 0.4009 sigma^2 : 41x
+//      tailcorr = -0.0003209410359;	// N = 64, RHO = 0.4009 sigma^2 : 42x
+//      tailcorr = -0.0003166990570;	// N = 128, RHO = 0.4009 sigma^2 : 43x
+//      tailcorr = -0.0003141175814;	// N = 256, RHO = 0.4009 sigma^2 : 44x
+//      tailcorr = -0.0003926875054;	// N = 32, RHO = 0.4378 sigma^2 : 51x
+//      tailcorr = -0.0003835898243;	// N = 64, RHO = 0.4378 sigma^2 : 52x
+//      tailcorr = -0.0003781940744;	// N = 128, RHO = 0.4378 sigma^2 : 53x
+//      tailcorr = -0.0003749179381;	// N = 256, RHO = 0.4378 sigma^2 : 54x
+//      tailcorr = -0.0004941981444;	// N = 32, RHO = 0.4899 sigma^2 : 61x
+//      tailcorr = -0.0004817718362;	// N = 64, RHO = 0.4899 sigma^2 : 62x
+//      tailcorr = -0.0004744316477;	// N = 128, RHO = 0.4899 sigma^2 : 63x
+//      tailcorr = -0.0004699888991;	// N = 256, RHO = 0.4899 sigma^2 : 64x
       unsmooth = 0.0;
     }
 
