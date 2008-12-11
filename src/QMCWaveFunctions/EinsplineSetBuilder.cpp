@@ -189,7 +189,7 @@ namespace qmcplusplus {
 	}
       }
     }
-
+    HaveLocalizedOrbs = false;
     return true;
 
 
@@ -216,7 +216,8 @@ namespace qmcplusplus {
     std::string format;
     HDFAttribIO<string> h_format(format);
     h_format.read(H5FileID, "/format");
-    if (format == "ES-HDF") {
+    if (format.find("ES")<format.size())
+    {
       Format = ESHDF;
       return ReadOrbitalInfo_ESHDF();
     }
