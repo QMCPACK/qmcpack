@@ -409,6 +409,7 @@ namespace qmcplusplus {
     PooledData<RealType> abuffer;
     PooledData<int>       aibuffer;
     aibuffer.add(Version.begin(),Version.end()); //myComm->bcast(Version);
+    aibuffer.add(Format);
     abuffer.add(Lattice.begin(),Lattice.end());//myComm->bcast(Lattice);
     abuffer.add(RecipLattice.begin(),RecipLattice.end()); //myComm->bcast(RecipLattice);
     abuffer.add(SuperLattice.begin(),SuperLattice.end()); //myComm->bcast(SuperLattice);
@@ -429,6 +430,7 @@ namespace qmcplusplus {
       abuffer.rewind();
       aibuffer.rewind();
       aibuffer.get(Version.begin(),Version.end());
+      aibuffer.get(Format);
       abuffer.get(Lattice.begin(),Lattice.end());
       abuffer.get(RecipLattice.begin(),RecipLattice.end());
       abuffer.get(SuperLattice.begin(),SuperLattice.end());
