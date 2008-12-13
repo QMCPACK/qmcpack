@@ -47,9 +47,6 @@ namespace qmcplusplus {
       int ip = omp_get_thread_num();
       bool usingWeight=UseWeight;
       MCWalkerConfiguration& wRef(*wClones[ip]);
-      ParticleSet::ParticleLaplacian_t pdL(wRef.getTotalNum());
-      ParticleSet::ParticleGradient_t pdG(wRef.getTotalNum());
-      typedef MCWalkerConfiguration::Walker_t Walker_t;
       Return_t eloc_new, wgt_node=0.0;
       //int totalElements=W.getTotalNum()*OHMMS_DIM;
       MCWalkerConfiguration::iterator it(wRef.begin()); 
@@ -57,7 +54,7 @@ namespace qmcplusplus {
       int iw=0,iwg=wPerNode[ip];
       for(; it!= it_end;++it,++iw,++iwg)
       {
-        Walker_t& thisWalker(**it);
+        ParticleSet::Walker_t& thisWalker(**it);
         wRef.R=thisWalker.R;
         wRef.update();
         Return_t logpsi=psiClones[ip]->evaluateDeltaLog(wRef);
@@ -172,14 +169,9 @@ namespace qmcplusplus {
     {
       int ip = omp_get_thread_num();
       MCWalkerConfiguration& wRef(*wClones[ip]);
-      ParticleSet::ParticleLaplacian_t pdL(wRef.getTotalNum());
-      ParticleSet::ParticleGradient_t pdG(wRef.getTotalNum());
-      int numLocWalkers=wRef.getActiveWalkers();
-
       if(RecordsOnNode[ip] ==0) RecordsOnNode[ip]=new Matrix<Return_t>;
-      RecordsOnNode[ip]->resize(numLocWalkers,6);
+      RecordsOnNode[ip]->resize(wRef.getActiveWalkers(),6);
 
-      typedef MCWalkerConfiguration::Walker_t Walker_t;
       //int nat = wRef.getTotalNum();
       //int totalElements=W.getTotalNum()*OHMMS_DIM;
       Return_t e0=0.0;
@@ -190,7 +182,7 @@ namespace qmcplusplus {
       for(; it!=it_end; ++it,++iw,++iwg)
       {
 
-        Walker_t& thisWalker(**it);
+        ParticleSet::Walker_t& thisWalker(**it);
         wRef.R=thisWalker.R;
         wRef.update();
         Return_t* restrict saved=(*RecordsOnNode[ip])[iw];
