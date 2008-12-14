@@ -28,7 +28,6 @@ SET(QMCDRIVERS
   CorrelatedSampling/CSVMC.cpp
   CorrelatedSampling/CSVMCUpdateAll.cpp
   CorrelatedSampling/CSVMCUpdatePbyP.cpp
-  ../Estimators/nofrEstimator.cpp
   ../Estimators/LocalEnergyEstimator.cpp
   ../Estimators/MultipleEnergyEstimator.cpp
   ../Estimators/RQMCMultipleEstimator.cpp
@@ -41,6 +40,7 @@ SET(QMCDRIVERS
   ../Estimators/CSPolymerEstimator.cpp
   ../Estimators/MJPolymerEstimator.cpp
   ../Estimators/HFDHE2PolymerEstimator.cpp
+  ../Estimators/OneBodyDensityMatrix.cpp
 )
 #  ../Estimators/PairCorrEstimator.cpp
 
