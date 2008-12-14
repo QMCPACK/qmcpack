@@ -55,231 +55,231 @@ namespace qmcplusplus {
    *conditions. The ParticleLayout class also takes care of spatial decompositions
    *for efficient evaluations for the interactions with a finite cutoff.
    */
-  class ParticleSet:  
-      public QMCTraits,
-      public OhmmsElementBase,
-      public ParticleBase<PtclOnLatticeTraits>
+  class ParticleSet
+    :  public QMCTraits,
+    public OhmmsElementBase,
+    public ParticleBase<PtclOnLatticeTraits>
+  {
+   
+    public:
+
+      ///define a Walker_t
+      typedef Walker<RealType,ParticlePos_t> Walker_t;
+      typedef Walker_t::PropertyContainer_t  PropertyContainer_t;
+
+      ///property of an ensemble represented by this ParticleSet
+      MCDataType<RealType> EnsembleProperty;
+
+      ///gradients of the particles
+      ParticleGradient_t G;
+
+      ///laplacians of the particles
+      ParticleLaplacian_t L;
+
+      ///differential gradients of the particles
+      ParticleGradient_t dG;
+
+      ///differential laplacians of the particles
+      ParticleLaplacian_t dL;
+
+      ///the indexp of the active particle for particle-by-particle moves
+      Index_t activePtcl;
+
+      ///the position of the active particle for particle-by-particle moves
+      SingleParticlePos_t activePos;
+
+      ///SpeciesSet of particles
+      SpeciesSet mySpecies;
+
+      ///Structure factor
+      StructFact *SK;
+
+      ///distance tables that need to be updated by moving this ParticleSet
+      vector<DistanceTableData*> DistTables;
+
+      ///spherical-grids for non-local PP
+      vector<ParticlePos_t*> Sphere;
+
+      ///Particle density in G-space for MPC interaction
+      vector<TinyVector<int,OHMMS_DIM> > DensityReducedGvecs;
+      vector<std::complex<double> >   Density_G;
+      Array<RealType,OHMMS_DIM> Density_r;
+
+      /** name-value map of Walker Properties
+       *
+       * PropertyMap is used to keep the name-value mapping of
+       * Walker_t::Properties.
+       */ 
+      PropertySetType PropertyList;
+
+      PropertyContainer_t  Properties;
+
+      ///Property history vector
+      vector<deque<double> >  PropertyHistory;
+
+      ///default constructor
+      ParticleSet();
+
+      ///default constructor
+      ParticleSet(const ParticleSet& p);
+
+      ///default destructor
+      virtual ~ParticleSet();
+
+      ///write to a ostream
+      bool get(ostream& ) const;
+
+      ///read from istream
+      bool put(istream& );
+
+      ///reset member data
+      void reset();
+
+      ///initialize ParticleSet from xmlNode
+      bool put(xmlNodePtr cur);
+
+      /** set the update mode
+       * @param updatemode
+       */
+      //void setUpdateMode(int updatenode);
+
+      ///** add a distance table */
+      //void addTable(DistanceTableData* d_table);
+
+      /**  add a distance table
+       * @param psrc source particle set
+       *
+       * Ensure that the distance for this-this is always created first.
+       */
+      int  addTable(const ParticleSet& psrc);
+
+      /**update the internal data
+       *@param iflag index for the update mode
+       */
+      void update(int iflag=0);
+
+      /**update the internal data with new position
+       *@param pos position vector assigned to R
+       */
+      void update(const ParticlePos_t& pos);
+
+      /** create Structure Factor with PBCs
+      */
+      void createSK();
+
+      inline SpeciesSet& getSpeciesSet() { return mySpecies;}
+      inline const SpeciesSet& getSpeciesSet() const { return mySpecies;}
+
+      ///return the id
+      inline int tag() const { return ObjectTag;}
+
+      ///return the id
+      inline int parent() const { return ParentTag;}
+
+      inline RealType getTotalWeight() const {
+        return EnsembleProperty.Weight;
+      }
+
+      /**move a particle
+       *@param iat the index of the particle to be moved
+       *@param displ random displacement of the iat-th particle
+       *
+       * Update activePos  by  R[iat]+displ
+       */
+      SingleParticlePos_t makeMove(Index_t iat, const SingleParticlePos_t& displ);
+
+      void makeMoveOnSphere(Index_t iat, const SingleParticlePos_t& displ);
+
+      /** accept the move
+       *@param iat the index of the particle whose position and other attributes to be updated
+       */
+      void acceptMove(Index_t iat);
+
+      /** reject the move
+      */
+      void rejectMove(Index_t iat);
+
+
+      inline SingleParticlePos_t getOldPos() const
       {
-   
-        public:
-    
-    ///define a Walker_t
-          typedef Walker<RealType,ParticlePos_t> Walker_t;
-          typedef Walker_t::PropertyContainer_t  PropertyContainer_t;
+        return activePos;
+      }
 
-    ///property of an ensemble represented by this ParticleSet
-          MCDataType<RealType> EnsembleProperty;
+      void initPropertyList();
+      inline int addProperty(const string& pname) {
+        return PropertyList.add(pname.c_str());
+      }
 
-    ///gradients of the particles
-          ParticleGradient_t G;
-    
-    ///laplacians of the particles
-          ParticleLaplacian_t L;
-
-    ///differential gradients of the particles
-          ParticleGradient_t dG;
-    
-    ///differential laplacians of the particles
-          ParticleLaplacian_t dL;
-   
-    ///the indexp of the active particle for particle-by-particle moves
-          Index_t activePtcl;
-
-    ///the position of the active particle for particle-by-particle moves
-          SingleParticlePos_t activePos;
-
-    ///SpeciesSet of particles
-          SpeciesSet mySpecies;
-
-    ///Structure factor
-          StructFact *SK;
-
-    ///distance tables that need to be updated by moving this ParticleSet
-          vector<DistanceTableData*> DistTables;
-
-    ///spherical-grids for non-local PP
-          vector<ParticlePos_t*> Sphere;
-
-    ///Particle density in G-space for MPC interaction
-          vector<TinyVector<int,OHMMS_DIM> > DensityReducedGvecs;
-          vector<std::complex<double> >   Density_G;
-          Array<RealType,OHMMS_DIM> Density_r;
-
-     /** name-value map of Walker Properties
-           *
-           * PropertyMap is used to keep the name-value mapping of
-           * Walker_t::Properties.
-      */ 
-          PropertySetType PropertyList;
-
-          PropertyContainer_t  Properties;
-
-    ///Property history vector
-          vector<deque<double> >  PropertyHistory;
-
-    ///default constructor
-          ParticleSet();
-
-    ///default constructor
-          ParticleSet(const ParticleSet& p);
-    
-    ///default destructor
-          virtual ~ParticleSet();
-    
-    ///write to a ostream
-          bool get(ostream& ) const;
-    
-    ///read from istream
-          bool put(istream& );
-    
-    ///reset member data
-          void reset();
-    
-    ///initialize ParticleSet from xmlNode
-          bool put(xmlNodePtr cur);
-    
-    /** set the update mode
-           * @param updatemode
-     */
-    //void setUpdateMode(int updatenode);
-
-          ///** add a distance table */
-    //void addTable(DistanceTableData* d_table);
-    
-    /**  add a distance table
-           * @param psrc source particle set
-           *
-           * Ensure that the distance for this-this is always created first.
-     */
-          int  addTable(const ParticleSet& psrc);
-
-    /**update the internal data
-           *@param iflag index for the update mode
-     */
-          void update(int iflag=0);
-
-    /**update the internal data with new position
-           *@param pos position vector assigned to R
-     */
-          void update(const ParticlePos_t& pos);
-
-    /** create Structure Factor with PBCs
-     */
-          void createSK();
-
-          inline SpeciesSet& getSpeciesSet() { return mySpecies;}
-          inline const SpeciesSet& getSpeciesSet() const { return mySpecies;}
-
-    ///return the id
-          inline int tag() const { return ObjectTag;}
-
-    ///return the id
-          inline int parent() const { return ParentTag;}
-    
-          inline RealType getTotalWeight() const {
-            return EnsembleProperty.Weight;
-          }
-    
-    /**move a particle
-           *@param iat the index of the particle to be moved
-           *@param displ random displacement of the iat-th particle
-           *
-           * Update activePos  by  R[iat]+displ
-     */
-          SingleParticlePos_t makeMove(Index_t iat, const SingleParticlePos_t& displ);
-
-          void makeMoveOnSphere(Index_t iat, const SingleParticlePos_t& displ);
-
-    /** accept the move
-           *@param iat the index of the particle whose position and other attributes to be updated
-     */
-          void acceptMove(Index_t iat);
-
-    /** reject the move
-     */
-          void rejectMove(Index_t iat);
+      int addPropertyHistory(int leng);
+      void rejectedMove();
+      void addPropertyHistoryPoint(int index, RealType data);
+      double getPropertyHistoryAvg(int index);
+      double getPropertyHistorySum(int index,int endN);
+      double getPropertyHistoryPoint(int Rindex, double Tindex);
 
 
-          inline SingleParticlePos_t getOldPos() const
-          {
-            return activePos;
-          }
+      void clearDistanceTables();
+      void resizeSphere(int nc);
 
-          void initPropertyList();
-          inline int addProperty(const string& pname) {
-            return PropertyList.add(pname.c_str());
-          }
+      void convert(const ParticlePos_t& pin, ParticlePos_t& pout);
+      void convert2Unit(const ParticlePos_t& pin, ParticlePos_t& pout);
+      void convert2Cart(const ParticlePos_t& pin, ParticlePos_t& pout);
+      void convert2Unit(ParticlePos_t& pout);
+      void convert2Cart(ParticlePos_t& pout);
 
-          int addPropertyHistory(int leng);
-	  void rejectedMove();
-          void addPropertyHistoryPoint(int index, RealType data);
-          double getPropertyHistoryAvg(int index);
-          double getPropertyHistorySum(int index,int endN);
-          double getPropertyHistoryPoint(int Rindex, double Tindex);
-    
+      void applyBC(const ParticlePos_t& pin, ParticlePos_t& pout);
+      void applyBC(ParticlePos_t& pos);
+      void applyBC(const ParticlePos_t& pin, ParticlePos_t& pout, int first, int last);
+      void applyMinimumImage(ParticlePos_t& pinout);
 
-          void clearDistanceTables();
-          void resizeSphere(int nc);
+      void registerData(PooledData<RealType>& buf);
+      void registerData(Walker_t& awalker, PooledData<RealType>& buf);
+      void updateBuffer(Walker_t& awalker, PooledData<RealType>& buf);
+      void updateBuffer(PooledData<RealType>& buf);
+      void copyToBuffer(PooledData<RealType>& buf);
+      void copyFromBuffer(PooledData<RealType>& buf);
 
-          void convert(const ParticlePos_t& pin, ParticlePos_t& pout);
-          void convert2Unit(const ParticlePos_t& pin, ParticlePos_t& pout);
-          void convert2Cart(const ParticlePos_t& pin, ParticlePos_t& pout);
-          void convert2Unit(ParticlePos_t& pout);
-          void convert2Cart(ParticlePos_t& pout);
+      //return the address of the values of Hamiltonian terms
+      inline RealType* restrict getPropertyBase() 
+      {
+        return Properties.data();
+      }
 
-          void applyBC(const ParticlePos_t& pin, ParticlePos_t& pout);
-          void applyBC(ParticlePos_t& pos);
-          void applyBC(const ParticlePos_t& pin, ParticlePos_t& pout, int first, int last);
-          void applyMinimumImage(ParticlePos_t& pinout);
+      //return the address of the values of Hamiltonian terms
+      inline const RealType* restrict getPropertyBase() const 
+      {
+        return Properties.data();
+      }
 
-          void registerData(PooledData<RealType>& buf);
-          void registerData(Walker_t& awalker, PooledData<RealType>& buf);
-          void updateBuffer(Walker_t& awalker, PooledData<RealType>& buf);
-          void updateBuffer(PooledData<RealType>& buf);
-          void copyToBuffer(PooledData<RealType>& buf);
-          void copyFromBuffer(PooledData<RealType>& buf);
+      ///return the address of the i-th properties
+      inline RealType* restrict getPropertyBase(int i) 
+      {
+        return Properties[i];
+      }
 
-    //return the address of the values of Hamiltonian terms
-          inline RealType* restrict getPropertyBase() 
-          {
-            return Properties.data();
-          }
+      ///return the address of the i-th properties
+      inline const RealType* restrict getPropertyBase(int i) const 
+      {
+        return Properties[i];
+      }
 
-    //return the address of the values of Hamiltonian terms
-          inline const RealType* restrict getPropertyBase() const 
-          {
-            return Properties.data();
-          }
+    protected:
+      ///the number of particle objects
+      static Index_t PtclObjectCounter;
 
-    ///return the address of the i-th properties
-          inline RealType* restrict getPropertyBase(int i) 
-          {
-            return Properties[i];
-          }
+      ///id of this object    
+      Index_t ObjectTag;
 
-    ///return the address of the i-th properties
-          inline const RealType* restrict getPropertyBase(int i) const 
-          {
-            return Properties[i];
-          }
+      ///id of the parent
+      Index_t ParentTag;
 
-        protected:
-    ///the number of particle objects
-          static Index_t PtclObjectCounter;
-
-    ///id of this object    
-          Index_t ObjectTag;
-
-    ///id of the parent
-          Index_t ParentTag;
-
-    /** map to handle distance tables
-           *
-           * myDistTableMap[source-particle-tag]= locator in the distance table
-           * myDistTableMap[ObjectTag] === 0
-     */
-          map<int,int> myDistTableMap;
-          void initParticleSet();
+      /** map to handle distance tables
+       *
+       * myDistTableMap[source-particle-tag]= locator in the distance table
+       * myDistTableMap[ObjectTag] === 0
+       */
+      map<int,int> myDistTableMap;
+      void initParticleSet();
       };
 }
 #endif
