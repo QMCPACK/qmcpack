@@ -176,7 +176,7 @@ namespace qmcplusplus {
 	  targetH->addOperator(HFD->makeDependants(*targetPtcl),HFD->depName,false);
 	  app_log() << "  Adding " << HFD->depName << endl;
 	}
-	else if (potType == "MPC") 
+	else if (potType == "MPC" || potType == "mpc")
 	  addMPCPotential(cur);
         else if(potType == "HFDHE2") 
         {

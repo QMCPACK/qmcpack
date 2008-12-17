@@ -169,23 +169,38 @@ namespace qmcplusplus {
 	h_density_r (TargetPtcl.Density_r);
       TinyVector<int,3> mesh;
       h_reduced_gvecs.read (H5FileID, "/electrons/density/gvectors");
-      h_density_r.read (H5FileID,     "/electrons/density/spin_0/density_r");
 
       int numG = TargetPtcl.DensityReducedGvecs.size();
       // Convert primitive G-vectors to supercell G-vectors
+      // Also, flip sign since ESHDF format uses opposite sign convention
       for (int iG=0; iG < numG; iG++) 
 	TargetPtcl.DensityReducedGvecs[iG] = 
-	  dot(TileMatrix, TargetPtcl.DensityReducedGvecs[iG]);
-
+	  -1.0 * dot(TileMatrix, TargetPtcl.DensityReducedGvecs[iG]);
       app_log() << "  Read " << numG << " density G-vectors.\n";
-      if (TargetPtcl.DensityReducedGvecs.size()) {
-	app_log() << "  EinsplineSetBuilder found density in the HDF5 file.\n";
-	HDFAttribIO<vector<ComplexType > > h_density_G (TargetPtcl.Density_G);
-	h_density_G.read (H5FileID, "/electrons/density/spin_0/density_g");
-	if (!TargetPtcl.Density_G.size()) {
-	  app_error() << "  Density reduced G-vectors defined, but not the"
-		      << " density.\n";
-	  abort();
+
+      for (int ispin=0; ispin<NumSpins; ispin++) {
+	ostringstream density_r_path, density_g_path;
+	density_r_path << "/electrons/density/spin_" << ispin << "/density_r";
+	density_g_path << "/electrons/density/spin_" << ispin << "/density_g";
+	h_density_r.read (H5FileID, density_r_path.str().c_str());
+
+	if (TargetPtcl.DensityReducedGvecs.size()) {
+	  app_log() << "  EinsplineSetBuilder found density in the HDF5 file.\n";
+	  vector<ComplexType> density_G;
+	  HDFAttribIO<vector<ComplexType > > h_density_G (density_G);
+	  h_density_G.read (H5FileID, density_g_path.str().c_str());
+	  if (!density_G.size()) {
+	    app_error() << "  Density reduced G-vectors defined, but not the"
+			<< " density.\n";
+	    abort();
+	  }
+	  else {
+	    if (ispin == 0)
+	      TargetPtcl.Density_G = density_G;
+	    else
+	      for (int iG=0; iG<density_G.size(); iG++)
+		TargetPtcl.Density_G[iG] += density_G[iG];
+	  }
 	}
       }
     }
