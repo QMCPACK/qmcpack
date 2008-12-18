@@ -418,7 +418,8 @@ namespace qmcplusplus {
     }
     targetH->setTempObservables(targetPtcl->PropertyList);
     
-    ///This is officially ugly, but we need to add all observables (previous line) before the forward walker is initialized otherwise we can't find them.
+    ///This is officially ugly, but we need to add all observables (previous line) 
+    ///before the forward walker is initialized otherwise we can't find them.
     cur2 = cur2->children;
     bool FoundET(false);
     while(cur2 != NULL) {

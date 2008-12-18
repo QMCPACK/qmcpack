@@ -57,17 +57,26 @@ namespace qmcplusplus {
     typedef ParticleSet::Walker_t::Buffer_t  BufferType;
 
     enum {PRIMARY, OPTIMIZABLE, RATIOUPDATE, PHYSICAL};
+    ///set the current update mode
     bitset<4> UpdateMode;
+    ///starting index of this object
     int myIndex;
-    RealType Tau;
-    RealType Value;
-    RealType NewValue;
-    string myName,depName;
+    ///number of dependents
     int Dependants;
+    ///current value
+    RealType Value;
+    ///a new value for a proposed move
+    RealType NewValue;
+    ///what is this????
     Walker<Return_t, ParticleSet::ParticleGradient_t>* tWalker;
+    ///name of this object
+    string myName;
+    ///name of dependent object
+    string depName;
    
     ///constructor
-    QMCHamiltonianBase():myIndex(-1),Tau(0.0),Value(0.0),Dependants(0){
+    QMCHamiltonianBase():myIndex(-1),Value(0.0),Dependants(0)
+    {
       UpdateMode.set(PRIMARY,1);
     }
 
@@ -82,17 +91,26 @@ namespace qmcplusplus {
       myIndex=plist.add(myName.c_str());
     }
 
+    /** set the values evaluated by this object to plist
+     * @param plist RecordNameProperty
+     *
+     * Default implementation is to assign Value which is updated
+     * by evaluate  function using myIndex.
+     */
     virtual void setObservables(PropertySetType& plist)
     {
       plist[myIndex]=Value;
     }
     
-    virtual void setParticlePropertyList(PropertySetType& plist, int offset)
+    virtual void setParticlePropertyList(PropertySetType& plist
+        , int offset)
     {
       plist[myIndex+offset]=Value;
     }
 
-    virtual void setHistories(Walker<Return_t, ParticleSet::ParticleGradient_t>& ThisWalker){
+    virtual void setHistories(
+        Walker<Return_t, ParticleSet::ParticleGradient_t>& ThisWalker)
+    {
        tWalker = &(ThisWalker);
     }
     
@@ -155,11 +173,6 @@ namespace qmcplusplus {
     /** write about the class */
     virtual bool get(std::ostream& os) const =0;
     
-    /** set Tau
-     * @param tau time step
-     */
-    inline void setTau(RealType tau) { Tau = tau;}
-
     /** return the mode i
      * @param i index among PRIMARY, OPTIMIZABLE, RATIOUPDATE
      */

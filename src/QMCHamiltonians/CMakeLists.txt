@@ -9,6 +9,8 @@ SET(HAMSRCS
   ForceBase.cpp
   ForceCeperley.cpp
   ChiesaCorrection.cpp
+  PairCorrEstimator.cpp
+  DensityEstimator.cpp
 )
 #  FSAtomPseudoPot.cpp
 

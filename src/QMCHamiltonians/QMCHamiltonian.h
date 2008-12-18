@@ -129,12 +129,12 @@ namespace qmcplusplus {
         H[i]->UpdateMode.set(QMCHamiltonianBase::PRIMARY,primary);
     }
     
-    ///Set Tau inside each of the Hamiltonian elements
-    void setTau(Return_t tau) 
-    {
-      for(int i=0; i<H.size(); i++) H[i]->setTau(tau);
-      for(int i=0; i<auxH.size(); i++) auxH[i]->setTau(tau);
-    }
+    /////Set Tau inside each of the Hamiltonian elements
+    //void setTau(Return_t tau) 
+    //{
+    //  for(int i=0; i<H.size(); i++) H[i]->setTau(tau);
+    //  for(int i=0; i<auxH.size(); i++) auxH[i]->setTau(tau);
+    //}
     
     ///** return if WaveFunction Ratio needs to be evaluated
     // *

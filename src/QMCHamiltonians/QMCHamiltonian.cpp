@@ -266,8 +266,8 @@ QMCHamiltonian* QMCHamiltonian::makeClone(ParticleSet& qp, TrialWaveFunction& ps
   //myclone->addObservables(qp.PropertyList);
   myclone->resetObservables(myIndex);
   //Assume tau is correct for the Kinetic energy operator and assign to the rest of the clones
-  Return_t tau = H[0]->Tau;
-  myclone->setTau(tau);
+  //Return_t tau = H[0]->Tau;
+  //myclone->setTau(tau);
   return myclone;
 }
 
