@@ -14,7 +14,7 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#include "Estimators/nofrEstimator.h"
+#include "Estimators/OneBodyDensityMatrix.h"
 #include "Particle/DistanceTable.h"
 #include "Particle/DistanceTableData.h"
 #include "Utilities/IteratorUtility.h"
