@@ -45,8 +45,7 @@
 
 #include <iostream>
 
-//namespace APPNAMESPACE {
-namespace qmcplusplus {
+namespace APPNAMESPACE {
 
 //////////////////////////////////////////////////////////////////////
 //

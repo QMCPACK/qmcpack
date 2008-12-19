@@ -39,8 +39,7 @@
 #include "PETE/PETE.h"
 #include "OhmmsPETE/OhmmsTinyMeta.h"
 
-//namespace APPNAMESPACE {
-namespace qmcplusplus{
+namespace APPNAMESPACE {
 // forward declarations
 template <class T, unsigned D> class SymTensor;
 template <class T, unsigned D> class AntiSymTensor;
@@ -458,7 +457,7 @@ std::istream& operator>>(std::istream& is, Tensor<T,D>& rhs)
 #include "OhmmsPETE/SymTensor.h"
 #include "OhmmsPETE/AntiSymTensor.h"
 
-namespace qmcplusplus {
+namespace APPNAMESPACE {
 template <class T, unsigned D>
 Tensor<T,D>::Tensor(const SymTensor<T,D>& rhs) {
   for (int i=0; i<D; ++i)

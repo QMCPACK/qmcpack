@@ -99,6 +99,22 @@ public:
     return &(X[0]);
   }
 
+  inline const Type_t* first_address() const { 
+    return &(X[0]);
+  }
+
+  inline const Type_t* last_address() const { 
+    return &(X[0])+X.size();
+  }
+
+  inline Type_t* first_address() { 
+    return &(X[0]);
+  }
+
+  inline Type_t* last_address() { 
+    return &(X[0])+X.size();
+  }
+
   This_t& operator=(const T rhs) {
     std::fill(X.begin(),X.end(),rhs);
     return *this;

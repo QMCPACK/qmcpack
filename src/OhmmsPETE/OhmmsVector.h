@@ -28,6 +28,7 @@
 
 #include "PETE/PETE.h"
 
+#include <cstdlib>
 #include <vector>
 #include <iostream>
 //using namespace std;
@@ -147,7 +148,7 @@ void Vector<T,C>::create(unsigned n) {
  
 #include "OhmmsPETE/OhmmsVectorOperators.h"
 
-namespace qmcplusplus {
+namespace APPNAMESPACE {
 //-----------------------------------------------------------------------------
 // We need to specialize CreateLeaf<T> for our class, so that operators
 // know what to stick in the leaves of the expression tree.
