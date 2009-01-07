@@ -96,8 +96,8 @@ namespace qmcplusplus {
 
     //process common parameters
     putQMCInfo(cur);
-    //set the Tau parameter inside the Hamiltonian
-    H.setTau(Tau);
+    ////set the Tau parameter inside the Hamiltonian
+    //H.setTau(Tau);
 
     //need to initialize properties
     int numCopies= (H1.empty())?1:H1.size();
