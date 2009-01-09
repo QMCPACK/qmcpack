@@ -817,6 +817,8 @@ namespace qmcplusplus {
     QMCCostFunctionBase::lineoptimization(const vector<Return_t>& x0, const vector<Return_t>& gr, Return_t val0,
         Return_t&  dl, Return_t& val_proj, Return_t& lambda_max)
     {
+      return false;
+
       const int maxclones=3;
       const int max_poly=3;
       //Matrix<Return_t> js(maxclones+1,x0.size());
