@@ -29,18 +29,15 @@ SET(QMCDRIVERS
   CorrelatedSampling/CSVMCUpdateAll.cpp
   CorrelatedSampling/CSVMCUpdatePbyP.cpp
   ../Estimators/LocalEnergyEstimator.cpp
+  ../Estimators/LocalEnergyEstimatorHDF.cpp
   ../Estimators/MultipleEnergyEstimator.cpp
   ../Estimators/RQMCMultipleEstimator.cpp
   ../Estimators/ComboPolymerEstimator.cpp
-  ../Estimators/CompositeEstimators.cpp
-  ../Estimators/GofREstimator.cpp
-  ../Estimators/SkEstimator.cpp
   ../Estimators/EstimatorManager.cpp
   ../Estimators/CSEnergyEstimator.cpp
   ../Estimators/CSPolymerEstimator.cpp
   ../Estimators/MJPolymerEstimator.cpp
   ../Estimators/HFDHE2PolymerEstimator.cpp
-  ../Estimators/OneBodyDensityMatrix.cpp
 )
 #  ../Estimators/PairCorrEstimator.cpp
 
