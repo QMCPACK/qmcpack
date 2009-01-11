@@ -70,4 +70,25 @@ namespace qmcplusplus {
     targetH.addOperator(tcrr,corrected,false);
   }
 
+    void HFDHE2Potential_tail::registerObservables(vector<observable_helper*>& h5list
+        , hid_t gid) const
+    {
+      int loc=h5list.size();
+      std::vector<int> onedim(1,1);
+      h5list.push_back(new observable_helper("HFDHE2tail"));
+      h5list[loc]->set_dimensions(onedim,myIndex);
+      h5list[loc]->open(gid);
+
+      ++loc;
+      h5list.push_back(new observable_helper("KperP"));
+      h5list[loc]->set_dimensions(onedim,myIndex);
+      h5list[loc]->open(gid);
+    }
+    
+    void HFDHE2Potential_tail::addObservables(PropertySetType& plist)
+    {
+      myIndex=plist.add("HFDHE2tail");
+      plist.add("KperP");
+    }
+
 }

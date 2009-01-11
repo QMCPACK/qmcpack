@@ -128,12 +128,10 @@ namespace qmcplusplus {
     {
       return 0;
     }
+
+    void registerObservables(vector<observable_helper*>& h5list, hid_t gid) const;
     
-    void addObservables(PropertySetType& plist)
-    {
-      myIndex=plist.add("HFDHE2tail");
-      plist.add("KperP");
-    }
+    void addObservables(PropertySetType& plist);
 
     void setObservables(PropertySetType& plist)
     {

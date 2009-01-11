@@ -34,9 +34,6 @@ namespace qmcplusplus
   {
     int loc=h5list.size();
     h5list.push_back(new observable_helper(myName));
-
-    cout << "#### " << myName << " " << myIndex << endl;
-
     std::vector<int> onedim(1,1);
     h5list[loc]->set_dimensions(onedim,myIndex);
     h5list[loc]->open(gid);
