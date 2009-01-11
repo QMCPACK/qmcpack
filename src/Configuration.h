@@ -76,7 +76,7 @@ namespace qmcplusplus
 #else
     typedef OHMMS_PRECISION                ValueType;
 #endif
-    typedef std::complex<OHMMS_PRECISION>  ComplexType;
+    typedef std::complex<RealType>         ComplexType;
     typedef TinyVector<RealType,DIM>       PosType;
     typedef TinyVector<ValueType,DIM>      GradType;
     typedef Tensor<RealType,DIM>           TensorType;
