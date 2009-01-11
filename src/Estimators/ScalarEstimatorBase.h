@@ -8,7 +8,6 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
@@ -19,11 +18,15 @@
 // -*- C++ -*-
 #ifndef QMCPLUSPLUS_SCALAR_ESTIMATORBASE_H
 #define QMCPLUSPLUS_SCALAR_ESTIMATORBASE_H
-#include "Particle/MCWalkerConfiguration.h"
-#include "OhmmsData/RecordProperty.h"
-#include "Estimators/accumulators.h"
+#include <Particle/MCWalkerConfiguration.h>
+#include <OhmmsData/RecordProperty.h>
+#include <OhmmsData/RecordProperty.h>
+#include <OhmmsData/HDFAttribIO.h>
+#include <Estimators/accumulators.h>
 
 namespace qmcplusplus {
+
+  class observable_helper;
 
   /** Abstract class for an estimator of a scalar operator.
    *
@@ -86,6 +89,31 @@ namespace qmcplusplus {
       }
     }
 
+    /** take block average and write to common containers for values and squared values
+     * @param first starting iterator of values
+     * @param first_sq starting iterator of squared values
+     */
+    template<typename IT>
+    inline void takeBlockAverage(IT first, IT first_sq)
+    {
+      first += FirstIndex;
+      first_sq += FirstIndex;
+      for(int i=0; i<scalars.size(); i++)
+      {  
+        *first++ = scalars[i].mean(); 
+        *first_sq++ = scalars[i].mean2(); 
+        scalars_saved[i]=scalars[i]; //save current block
+        scalars[i].clear();
+      }
+    }
+
+    /** add descriptors of observables to utilize hdf5
+     * @param h5desc descriptor of a data stored in a h5 group
+     * @param gid h5 group to which each statistical data will be stored
+     */
+    virtual void registerObservables(vector<observable_helper*>& h5dec, hid_t gid)
+    {
+    }
     ///clone the object
     virtual ScalarEstimatorBase* clone()=0;
 
