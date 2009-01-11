@@ -128,6 +128,15 @@ namespace qmcplusplus {
     for(int i=0; i<pinout.size(); ++i)
       MinimumImageBConds<RealType,DIM>::apply(Lattice.R,Lattice.G,pinout[i]);
   }
+
+  void ParticleSet::convert2UnitInBox(const ParticlePos_t& pin, ParticlePos_t& pout) 
+  {
+    APP_ABORT("Do implement ParticleSet::convert2UnitInBox");
+    for(int i=0; i<pin.size(); ++i)
+    {
+      //MinimumImageBConds<RealType,DIM>::apply(Lattice.G,pin[i]);
+    }
+  }
 }
 /***************************************************************************
  * $RCSfile$   $Author$

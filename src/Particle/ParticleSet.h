@@ -56,9 +56,9 @@ namespace qmcplusplus {
    *for efficient evaluations for the interactions with a finite cutoff.
    */
   class ParticleSet
-    :  public QMCTraits,
-    public OhmmsElementBase,
-    public ParticleBase<PtclOnLatticeTraits>
+    :  public QMCTraits
+       , public OhmmsElementBase
+       , public ParticleBase<PtclOnLatticeTraits>
   {
    
     public:
@@ -82,11 +82,17 @@ namespace qmcplusplus {
       ///differential laplacians of the particles
       ParticleLaplacian_t dL;
 
+      ///current position after applying PBC in the Lattice Unit
+      ParticlePos_t redR;
+
       ///the indexp of the active particle for particle-by-particle moves
       Index_t activePtcl;
 
       ///the position of the active particle for particle-by-particle moves
       SingleParticlePos_t activePos;
+
+      ///the reduced position of the active particle for particle-by-particle moves
+      SingleParticlePos_t activeRedPos;
 
       ///SpeciesSet of particles
       SpeciesSet mySpecies;
@@ -102,7 +108,7 @@ namespace qmcplusplus {
 
       ///Particle density in G-space for MPC interaction
       vector<TinyVector<int,OHMMS_DIM> > DensityReducedGvecs;
-      vector<std::complex<double> >   Density_G;
+      vector<ComplexType>   Density_G;
       Array<RealType,OHMMS_DIM> Density_r;
 
       /** name-value map of Walker Properties
@@ -153,7 +159,7 @@ namespace qmcplusplus {
        */
       int  addTable(const ParticleSet& psrc);
 
-      /**update the internal data
+      /** update the internal data
        *@param iflag index for the update mode
        */
       void update(int iflag=0);
@@ -167,13 +173,15 @@ namespace qmcplusplus {
       */
       void createSK();
 
+      ///retrun the SpeciesSet of this particle set
       inline SpeciesSet& getSpeciesSet() { return mySpecies;}
+      ///retrun the const SpeciesSet of this particle set
       inline const SpeciesSet& getSpeciesSet() const { return mySpecies;}
 
-      ///return the id
+      ///return this id
       inline int tag() const { return ObjectTag;}
 
-      ///return the id
+      ///return parent's id 
       inline int parent() const { return ParentTag;}
 
       inline RealType getTotalWeight() const {
@@ -217,7 +225,6 @@ namespace qmcplusplus {
       double getPropertyHistorySum(int index,int endN);
       double getPropertyHistoryPoint(int Rindex, double Tindex);
 
-
       void clearDistanceTables();
       void resizeSphere(int nc);
 
@@ -226,6 +233,7 @@ namespace qmcplusplus {
       void convert2Cart(const ParticlePos_t& pin, ParticlePos_t& pout);
       void convert2Unit(ParticlePos_t& pout);
       void convert2Cart(ParticlePos_t& pout);
+      void convert2UnitInBox(const ParticlePos_t& pint, ParticlePos_t& pout);
 
       void applyBC(const ParticlePos_t& pin, ParticlePos_t& pout);
       void applyBC(ParticlePos_t& pos);
@@ -280,7 +288,7 @@ namespace qmcplusplus {
        */
       map<int,int> myDistTableMap;
       void initParticleSet();
-      };
+  };
 }
 #endif
 /***************************************************************************

@@ -99,6 +99,11 @@ namespace qmcplusplus {
     addAttribute(L);
     addAttribute(dG);
     addAttribute(dL);
+
+    ////this has to be in unit
+    //redR.setObjName("redpos");
+    //redR.InUnit=PosUnit::LatticeUnit;
+    //addAttribute(redR);
   }
 
   ///write to a ostream
