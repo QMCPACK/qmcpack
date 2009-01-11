@@ -40,8 +40,8 @@ int getwords(vector<string>& slist,istream& fpos, const char* terminate);
 int getXwords(vector<string>& slist, istream &fp);
 int getXwords(vector<string>& slist,istream& fpos, const char* terminate);
 
-unsigned parsewords(char *inbuf, vector<string>& slist);
-unsigned parsewords(char *inbuf, list<string>& slist);
+unsigned parsewords(const char *inbuf, vector<string>& slist);
+unsigned parsewords(const char *inbuf, list<string>& slist);
 
 void readXmol(istream& ,double*,int);
 

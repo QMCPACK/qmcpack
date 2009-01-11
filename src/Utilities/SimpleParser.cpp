@@ -60,7 +60,7 @@ char* readLine(char *s, int max, istream &fp){
 
 
 // NOTE that it only adds strings
-unsigned parsewords(char *inbuf, vector<string>& slist){
+unsigned parsewords(const char *inbuf, vector<string>& slist){
   const char* token = "=, \t\n\"";
 
   char *tmpstr = new char[strlen(inbuf)+1];
@@ -80,7 +80,7 @@ unsigned parsewords(char *inbuf, vector<string>& slist){
 
 }
 
-unsigned parsewords(char *inbuf, list<string>& slist){
+unsigned parsewords(const char *inbuf, list<string>& slist){
   const char* token = "=, \t\n";
 
   char *tmpstr = new char[strlen(inbuf)+1];

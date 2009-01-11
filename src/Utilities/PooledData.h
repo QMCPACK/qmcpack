@@ -24,6 +24,7 @@
 #define QMCPLUSPLUS_POOLEDDATA_H
 #include <vector>
 #include <complex>
+#include <limits>
 
 //#define USE_POOLED_DATA_ITERATOR 1
 typedef double RealType;
