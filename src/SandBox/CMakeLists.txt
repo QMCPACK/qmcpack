@@ -13,6 +13,13 @@ ENDIF(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 ADD_EXECUTABLE(mpi_group group.cpp)
 TARGET_LINK_LIBRARIES(mpi_group qmc qmcbase qmcutil)
 
+ADD_EXECUTABLE( observable_helper_test  observable_helper_test.cpp)
+TARGET_LINK_LIBRARIES( observable_helper_test qmcbase qmcutil)
+
+ADD_EXECUTABLE(gnubug gnubug.cpp)
+TARGET_LINK_LIBRARIES(gnubug qmcbase qmcutil)
+
+
 #FIND_LIBRARY(BOOST_SERIALIZATION_LIBRARY  boost_serialization-il-1_33
 #/u/ncsa/jnkim/share/boost/bin/boost/libs/serialization/build/libboost_serialization.so/intel-linux/release/shared-linkable-true/
 #)
