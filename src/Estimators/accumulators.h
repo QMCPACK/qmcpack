@@ -60,7 +60,11 @@ class accumulator_set
       return pair<return_type,return_type>(avg,norm*valsq-avg*avg);
     }
 
+    ///return the mean
     inline return_type mean() const { return val/weight; }
+
+    ///return the mean of squared values
+    inline return_type mean2() const { return valsq/weight; }
 
     inline return_type variance() const { 
       value_type norm=1.0/weight;
