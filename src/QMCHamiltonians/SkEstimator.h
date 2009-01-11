@@ -13,19 +13,17 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef QMCPLUSPLUS_DENSITY_HAMILTONIAN_H
-#define QMCPLUSPLUS_DENSITY_HAMILTONIAN_H
+#ifndef QMCPLUSPLUS_SK_ESTIMATOR_H
+#define QMCPLUSPLUS_SK_ESTIMATOR_H
 #include <QMCHamiltonians/QMCHamiltonianBase.h>
-#include <OhmmsPETE/OhmmsArray.h>
-
 namespace qmcplusplus 
 {
 
-  class DensityEstimator: public QMCHamiltonianBase
+  class SkEstimator: public QMCHamiltonianBase
   {
     public:
 
-    DensityEstimator(ParticleSet& elns);
+    SkEstimator(ParticleSet& elns);
 
     void resetTargetParticleSet(ParticleSet& P);
 
@@ -36,7 +34,7 @@ namespace qmcplusplus
       return evaluate(P);
     }
 
-    void registerObservables(vector<observable_helper*>& h5list, hid_t gid) const ;
+    void registerObservables(vector<observable_helper*>& h5list, hid_t gid) const;
     void addObservables(PropertySetType& plist);
     void setObservables(PropertySetType& plist);
     void setParticlePropertyList(PropertySetType& plist, int offset);
@@ -45,16 +43,24 @@ namespace qmcplusplus
     QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 
     private:
-    ///bounds
-    TinyVector<RealType,OHMMS_DIM> Bounds;
-    ///bin size
-    TinyVector<RealType,OHMMS_DIM> Delta;
-    ///inverse
-    TinyVector<RealType,OHMMS_DIM> DeltaInv;
-    ///name of the density data
-    string prefix;
-    ///density
-    Array<RealType,OHMMS_DIM> density;
+    /** number of species */
+    int NumSpecies;
+    /** number of kpoints */
+    int NumK;
+    /** number of kshells */
+    int MaxKshell;
+    /** normalization factor */
+    RealType OneOverN;
+    /** kshell counters */
+    vector<int> Kshell;
+    /** instantaneous structure factor  */
+    vector<RealType> Kmag;
+    /** 1.0/degenracy for a ksell */
+    vector<RealType> OneOverDnk;
+    /** \f$rho_k = \sum_{\alpha} \rho_k^{\alpha} \f$ for species index \f$\alpha\f$ */
+    Vector<ComplexType> RhokTot;
+    /** instantaneous structure factor  */
+    Vector<RealType> SkInst;
     /** resize the internal data
      *
      * The argument list is not completed

@@ -21,7 +21,8 @@
 
 namespace qmcplusplus {
 
-  ForceBase::ForceBase(ParticleSet& ions, ParticleSet& elns): FirstForceIndex(-1),tries(0), Ions(ions)
+  ForceBase::ForceBase(ParticleSet& ions, ParticleSet& elns)
+    : FirstForceIndex(-1),tries(0), Ions(ions)
     {
       ReportEngine PRE("ForceBase","ForceBase");
       myTableIndex=elns.addTable(ions);
@@ -58,10 +59,22 @@ namespace qmcplusplus {
     for(int iat=0; iat<Nnuc; iat++) {
       for(int x=0; x<OHMMS_DIM; x++) {
         ostringstream obsName;
-        obsName << prefix << iat << "_" << x;
+        obsName << prefix << "_" << iat << "_" << x;
         plist.add(obsName.str());
       }
     }
+  }
+
+  void ForceBase::registerObservablesF(vector<observable_helper*>& h5list
+      , hid_t gid) const
+  {
+    vector<int> ndim(2);
+    ndim[0]=Nnuc;
+    ndim[1]=OHMMS_DIM;
+    observable_helper* h5o=new observable_helper(prefix);
+    h5o->set_dimensions(ndim,FirstForceIndex);
+    h5o->open(gid);
+    h5list.push_back(h5o);
   }
 
   void ForceBase::setObservablesF(QMCTraits::PropertySetType& plist) {
@@ -103,8 +116,8 @@ namespace qmcplusplus {
 
   BareForce::BareForce(ParticleSet& ions, ParticleSet& elns): ForceBase(ions,elns)
   {
-    myName = "HF_Force_Base_";
-    prefix="HFBase_";
+    myName = "HF_Force_Base";
+    prefix="HFBase";
   }
 
   void BareForce::resetTargetParticleSet(ParticleSet& P) { }

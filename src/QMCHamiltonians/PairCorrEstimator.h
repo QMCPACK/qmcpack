@@ -25,7 +25,7 @@ namespace qmcplusplus
   {
     public:
 
-    PairCorrEstimator(ParticleSet& elns);
+    PairCorrEstimator(ParticleSet& elns, string& sources);
 
     void resetTargetParticleSet(ParticleSet& P);
 
@@ -36,6 +36,7 @@ namespace qmcplusplus
       return evaluate(P);
     }
 
+    void registerObservables(vector<observable_helper*>& h5list, hid_t gid) const;
     void addObservables(PropertySetType& plist);
     void setObservables(PropertySetType& plist);
     void setParticlePropertyList(PropertySetType& plist, int offset);
@@ -50,17 +51,26 @@ namespace qmcplusplus
     RealType Delta;
     /// one of bin size 
     RealType DeltaInv;
+    /// volume of the cell
+    RealType Volume;
     ///save pair indices
     vector<int> pair_ids;
+    /// table indexs for other type
+    vector<int> other_ids;
+    /// offset of the gofr's associated with others_id
+    vector<int> other_offsets;
+    /////save source indices
+    //vector<int> source_ids;
+    ///normalization factor
+    vector<RealType> norm_factor;
     ///data
     Matrix<RealType> gof_r;
     ///prefix of each gof_r
     vector<string> gof_r_prefix;
     /** resize the internal data
-     *
-     * The argument list is not completed
+     * @param nbins number of bins for the historgram
      */
-    void resize();
+    void resize(int nbins);
   };
 
 }

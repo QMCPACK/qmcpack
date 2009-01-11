@@ -34,7 +34,6 @@
 #endif
 #include "QMCHamiltonians/CoulombPBCAATemp.h"
 #include "QMCHamiltonians/CoulombPBCABTemp.h"
-#include "OhmmsData/AttributeSet.h"
 #include "QMCHamiltonians/Pressure.h"
 #include "QMCHamiltonians/RPAPressure.h"
 #include "QMCHamiltonians/PsiValue.h"
@@ -51,9 +50,13 @@
 #include "QMCHamiltonians/ForwardWalking.h"
 #include "QMCHamiltonians/trialDMCcorrection.h"
 #include "QMCHamiltonians/ChiesaCorrection.h"
+#include "QMCHamiltonians/PairCorrEstimator.h"
+#include "QMCHamiltonians/DensityEstimator.h"
+#include "QMCHamiltonians/SkEstimator.h"
 #if defined(HAVE_LIBFFTW)
   #include "QMCHamiltonians/MPC.h"
 #endif
+#include "OhmmsData/AttributeSet.h"
 
 namespace qmcplusplus {
   HamiltonianFactory::HamiltonianFactory(ParticleSet* qp, 
@@ -141,6 +144,7 @@ namespace qmcplusplus {
       string targetInp(targetPtcl->getName());
       OhmmsAttributeSet attrib;
       attrib.add(sourceInp,"source");
+      attrib.add(sourceInp,"sources");
       attrib.add(targetInp,"target");
       attrib.add(potType,"type");
       attrib.add(potName,"name");
@@ -180,10 +184,11 @@ namespace qmcplusplus {
 	  addMPCPotential(cur);
         else if(potType == "HFDHE2") 
         {
-            HFDHE2Potential* HFD = new HFDHE2Potential(*targetPtcl);
-            targetH->addOperator(HFD,"HFDHE2",true);
-            targetH->addOperator(HFD->makeDependants(*targetPtcl),HFD->depName,false);
-            app_log() << "  Adding HFDHE2Potential(Au) " << endl;
+          HFDHE2Potential* HFD = new HFDHE2Potential(*targetPtcl);
+          targetH->addOperator(HFD,"HFDHE2",true);
+          //HFD->addCorrection(*targetPtcl,*targetH);
+          targetH->addOperator(HFD->makeDependants(*targetPtcl),HFD->depName,false);
+          app_log() << "  Adding HFDHE2Potential(Au) " << endl;
         }
         else if(potType == "pseudo") 
         {
@@ -212,9 +217,7 @@ namespace qmcplusplus {
 	  PtclPoolType::iterator pit(ptclPool.find(SourceName));
 	  if(pit == ptclPool.end()) 
 	  {
-	    app_error() << "Unknown source \"" << SourceName 
-			<< "\" for e-He Potential.  Aborting.\n";
-	    abort();
+            APP_ABORT("Unknown source \"" + SourceName + "\" for e-He Potential.");
 	  }
 	  ParticleSet* source = (*pit).second;
 	  
@@ -234,19 +237,74 @@ namespace qmcplusplus {
       }
       else if(cname == "estimator")
       {
-        if(potType == "Pressure")
+        if(potType == "Force")
         {
-          if(estType=="coulomb"){
+          addForceHam(cur);
+        }
+	else if(potType == "gofr")
+        {
+          PairCorrEstimator* apot=new PairCorrEstimator(*targetPtcl,sourceInp);
+          apot->put(cur);
+          targetH->addOperator(apot,potName,false);
+        }
+	else if(potType == "density")
+        {
+          if(PBCType)//only if perioidic 
+          {
+            DensityEstimator* apot=new DensityEstimator(*targetPtcl);
+            apot->put(cur);
+            targetH->addOperator(apot,potName,false);
+          }
+        }
+	else if(potType == "sk")
+        {
+          if(PBCType)//only if perioidic 
+          {
+            SkEstimator* apot=new SkEstimator(*targetPtcl);
+            apot->put(cur);
+            targetH->addOperator(apot,potName,false);
+          }
+        }
+	else if(potType == "chiesa")
+	{
+	  string PsiName="psi0";
+	  string SourceName = "e";
+	  OhmmsAttributeSet hAttrib;
+	  hAttrib.add(PsiName,"psi"); 
+	  hAttrib.add(SourceName, "source");
+	  hAttrib.put(cur);
+
+	  PtclPoolType::iterator pit(ptclPool.find(SourceName));
+	  if(pit == ptclPool.end()) 
+	  {
+            APP_ABORT("Unknown source \""+SourceName+"\" for Chiesa correction.");
+	  }
+	  ParticleSet &source = *pit->second;
+
+	  OrbitalPoolType::iterator psi_it(psiPool.find(PsiName));
+	  if(psi_it == psiPool.end()) 
+          {
+            APP_ABORT("Unknown psi \""+PsiName+"\" for Chiesa correction.");
+          }
+
+	  const TrialWaveFunction &psi = *psi_it->second->targetPsi;
+	  ChiesaCorrection *chiesa = new ChiesaCorrection (source, psi);
+	  targetH->addOperator(chiesa,"KEcorr",false);
+	}  
+        else if(potType == "Pressure")
+        {
+          if(estType=="coulomb")
+          {
             Pressure* BP = new Pressure(*targetPtcl);
             BP-> put(cur);
             targetH->addOperator(BP,"Pressure",false);
-            
+
             int nlen(100);
             attrib.add(nlen,"truncateSum");
             attrib.put(cur);
-//             DMCPressureCorr* DMCP = new DMCPressureCorr(*targetPtcl,nlen);
-//             targetH->addOperator(DMCP,"PressureSum",false);
-            
+            //             DMCPressureCorr* DMCP = new DMCPressureCorr(*targetPtcl,nlen);
+            //             targetH->addOperator(DMCP,"PressureSum",false);
+
           } 
 	  else if (estType=="HFDHE2")
 	  {
@@ -293,40 +351,6 @@ namespace qmcplusplus {
 //             targetH->addOperator(DMCP,"PressureSum",false);
           }
         }
-        else if(potType == "Force")
-        {
-          addForceHam(cur);
-        }
-	else if(potType == "chiesa")
-	{
-	  string PsiName="psi0";
-	  string SourceName = "e";
-	  OhmmsAttributeSet hAttrib;
-	  hAttrib.add(PsiName,"psi"); 
-	  hAttrib.add(SourceName, "source");
-	  hAttrib.put(cur);
-
-	  PtclPoolType::iterator pit(ptclPool.find(SourceName));
-	  if(pit == ptclPool.end()) 
-	  {
-	    app_error() << "Unknown source \"" << SourceName 
-			<< "\" for Chiesa correction.  Aborting.\n";
-	    abort();
-	  }
-	  ParticleSet &source = *pit->second;
-
-	  OrbitalPoolType::iterator psi_it(psiPool.find(PsiName));
-	  if(psi_it == psiPool.end()) 
-	  {
-	    app_error() << "Unknown psi \"" << SourceName 
-			<< "\" for Chiesa correction.  Aborting.\n";
-	    abort();
-	  }
-	  const TrialWaveFunction &psi = *psi_it->second->targetPsi;
-	  ChiesaCorrection *chiesa = new ChiesaCorrection (source, psi);
-
-	  targetH->addOperator(chiesa,"KEcorr",false);
-	}  
 	else if(potType=="psi")
 	{
 	  PsiValue* PV = new PsiValue();
@@ -521,7 +545,7 @@ namespace qmcplusplus {
   HamiltonianFactory::addForceHam(xmlNodePtr cur) {
     string a("ion0"),targetName("e"),title("ForceBase"),pbc("yes");
     OhmmsAttributeSet hAttrib;
-    string mode("base");
+    string mode("bare");
     //hAttrib.add(title,"id");
     //hAttrib.add(title,"name"); 
     hAttrib.add(a,"source"); 
@@ -573,8 +597,7 @@ namespace qmcplusplus {
 
     if(format == "old")
     {
-      app_error() << "Table format is not supported." << endl;
-      OHMMS::Controller->abort();
+      APP_ABORT("pseudopotential Table format is not supported.");
     }
 
     renameProperty(src);

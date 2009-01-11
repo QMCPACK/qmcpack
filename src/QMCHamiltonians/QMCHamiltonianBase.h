@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////
-// (c) Copyright 2003  by Jeongnim Kim
+// (c) Copyright 2003-  by Jeongnim Kim
 //////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////
 //   National Center for Supercomputing Applications &
@@ -7,7 +7,6 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
@@ -20,10 +19,10 @@
 #ifndef QMCPLUSPLUS_HAMILTONIANBASE_H
 #define QMCPLUSPLUS_HAMILTONIANBASE_H
 
-#include "Particle/ParticleSet.h"
-//#include "Utilities/PooledData.h"
-#include "OhmmsData/RecordProperty.h"
-#include "Utilities/RandomGenerator.h"
+#include <Particle/ParticleSet.h>
+#include <OhmmsData/RecordProperty.h>
+#include <Utilities/RandomGenerator.h>
+#include <QMCHamiltonians/observable_helper.h>
 #include <bitset>
 
 namespace qmcplusplus {
@@ -34,6 +33,7 @@ namespace qmcplusplus {
 
   class DistanceTableData;
   class TrialWaveFunction;
+  class QMCHamiltonian;
 
   struct NonLocalData: public QMCTraits {
     IndexType PID;
@@ -61,7 +61,7 @@ namespace qmcplusplus {
     bitset<4> UpdateMode;
     ///starting index of this object
     int myIndex;
-    ///number of dependents
+    ///number of dependents: to be removed
     int Dependants;
     ///current value
     RealType Value;
@@ -71,7 +71,7 @@ namespace qmcplusplus {
     Walker<Return_t, ParticleSet::ParticleGradient_t>* tWalker;
     ///name of this object
     string myName;
-    ///name of dependent object
+    ///name of dependent object: to be removed
     string depName;
    
     ///constructor
@@ -83,6 +83,11 @@ namespace qmcplusplus {
     ///virtual destructor
     virtual ~QMCHamiltonianBase() { }
 
+    /** return the mode i
+     * @param i index among PRIMARY, OPTIMIZABLE, RATIOUPDATE, PHYSICAL
+     */
+    inline bool getMode(int i) { return UpdateMode[i];}
+
     /** default implementation to add named values to a list
      * @param plist RecordNameProperty
      */
@@ -90,6 +95,14 @@ namespace qmcplusplus {
     {
       myIndex=plist.add(myName.c_str());
     }
+
+    /*** add to observable descriptor for hdf5 
+     * @param h5list contains a set of hdf5 descriptors for observables
+     *
+     * Default implementation is for scalar observables.
+     */
+    virtual void registerObservables(vector<observable_helper*>& h5list
+        , hid_t gid) const ;
 
     /** set the values evaluated by this object to plist
      * @param plist RecordNameProperty
@@ -173,11 +186,6 @@ namespace qmcplusplus {
     /** write about the class */
     virtual bool get(std::ostream& os) const =0;
     
-    /** return the mode i
-     * @param i index among PRIMARY, OPTIMIZABLE, RATIOUPDATE
-     */
-    inline bool getMode(int i) { return UpdateMode[i];}
-
     virtual QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi)=0;
 
     virtual void setRandomGenerator(RandomGenerator_t* rng)
@@ -185,10 +193,12 @@ namespace qmcplusplus {
       //empty
     }
     
-    virtual QMCHamiltonianBase* makeDependants(ParticleSet& qp )
-    {
-      return 0;
-    }
+    virtual void add2Hamiltonian(ParticleSet& qp, TrialWaveFunction& psi
+        , QMCHamiltonian& targetH);
+    //virtual QMCHamiltonianBase* makeDependants(ParticleSet& qp )
+    //{
+    //  return 0;
+    //}
   };
 }
 #endif

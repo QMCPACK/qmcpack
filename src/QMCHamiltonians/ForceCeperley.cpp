@@ -27,8 +27,8 @@ namespace qmcplusplus {
     ForceBase(ions, elns)
     {
       ReportEngine PRE("ForceCeperley","ForceCeperley");
-      myName = "Ceperley_Force_Base_";
-      prefix="HFCep_";
+      myName = "Ceperley_Force_Base";
+      prefix="HFCep";
 
       // hard wired parameters but these should be made user-defined
       Rcut = 0.4;
@@ -59,7 +59,8 @@ namespace qmcplusplus {
   }
 
   ForceCeperley::Return_t 
-    ForceCeperley::evaluate(ParticleSet& P) {
+    ForceCeperley::evaluate(ParticleSet& P) 
+    {
       forces = 0.0;
       forces_ShortRange = 0.0;
       const DistanceTableData* d_ab=P.DistTables[myTableIndex];

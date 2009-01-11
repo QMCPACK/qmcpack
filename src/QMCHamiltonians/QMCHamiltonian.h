@@ -18,7 +18,7 @@
  */
 #ifndef QMCPLUSPLUS_HAMILTONIAN_H
 #define QMCPLUSPLUS_HAMILTONIAN_H
-#include "QMCHamiltonians/QMCHamiltonianBase.h"
+#include <QMCHamiltonians/QMCHamiltonianBase.h>
 
 namespace qmcplusplus {
 
@@ -70,6 +70,9 @@ namespace qmcplusplus {
      * @param plist a set of properties to which this Hamiltonian add the observables
      */
     void addObservables(PropertySetType& plist);
+    /** register obsevables so that their averages can be dumped to hdf5
+     */
+    void registerObservables(vector<observable_helper*>& h5dec, hid_t gid) const ;
     ///Sets the observable sup so Forward walking can look and find the elements
     void setTempObservables(PropertySetType& plist);
     ///retrun the starting index

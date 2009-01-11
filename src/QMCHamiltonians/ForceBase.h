@@ -39,6 +39,7 @@ namespace qmcplusplus {
     ForceBase(ParticleSet& ions, ParticleSet& elns);
     virtual ~ForceBase(){}
 
+    void registerObservablesF(vector<observable_helper*>& h5list, hid_t gid) const;
     void addObservablesF(QMCTraits::PropertySetType& plist);
     void setObservablesF(QMCTraits::PropertySetType& plist);
     void setParticleSetF(QMCTraits::PropertySetType& plist, int offset);
@@ -54,6 +55,11 @@ namespace qmcplusplus {
     inline Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy) 
     {
       return evaluate(P);
+    }
+
+    void registerObservables(vector<observable_helper*>& h5list, hid_t gid) const
+    {
+      registerObservablesF(h5list,gid);
     }
 
     void addObservables(PropertySetType& plist)

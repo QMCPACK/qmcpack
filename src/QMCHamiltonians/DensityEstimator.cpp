@@ -14,15 +14,13 @@
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 #include <QMCHamiltonians/DensityEstimator.h>
-#include <Particle/DistanceTableData.h>
-
 namespace qmcplusplus 
 {
 
   DensityEstimator::DensityEstimator(ParticleSet& elns)
   {
     for(int i=0; i<OHMMS_DIM; ++i)
-      Bounds[i]=elns.Lattice.Length[i];
+      Bounds[i]=1.0/elns.Lattice.Length[i];
   }
 
   void DensityEstimator::resetTargetParticleSet(ParticleSet& P)
@@ -32,13 +30,21 @@ namespace qmcplusplus
   DensityEstimator::Return_t DensityEstimator::evaluate(ParticleSet& P)
   {
     density=0.0;
-    //not correct
+    Return_t dmy0,dmy1,dmy2;
     for(int iat=0; iat<P.getTotalNum(); ++iat) 
     {
+      PosType ru=P.Lattice.toUnit(P.R[iat]);
+      int i=static_cast<int>(DeltaInv[0]*(ru[0]-std::floor(ru[0])));
+      int j=static_cast<int>(DeltaInv[1]*(ru[1]-std::floor(ru[1])));
+      int k=static_cast<int>(DeltaInv[2]*(ru[2]-std::floor(ru[2])));
+      //int i=static_cast<int>(DeltaInv[0]*modf(ru[0],&dmy0));
+      //int j=static_cast<int>(DeltaInv[1]*modf(ru[1],&dmy1));
+      //int k=static_cast<int>(DeltaInv[2]*modf(ru[2],&dmy2));
+      //density(static_cast<int>(Random()*DeltaInv[0])
+      //    , static_cast<int>(Random()*DeltaInv[1])
+      //    , static_cast<int>(Random()*DeltaInv[2])) += 1.0;
       //WRONG!!!
-      density(static_cast<int>(DeltaInv[0]*P.R[iat][0])
-          , static_cast<int>(DeltaInv[1]*P.R[iat][1])
-          , static_cast<int>(DeltaInv[2]*P.R[iat][2])) += 1.0;
+      density(i,j,k)+=1.0;
     }
     //do the rest
     return 0.0;
@@ -53,9 +59,23 @@ namespace qmcplusplus
         for(int k=0; k<density.size(2); ++k)
         {
           ostringstream h;
-          h << "den_" << i << "_" << j << "_" << k;
+          h << myName << "_" << i << "_" << j << "_" << k;
           int dum=plist.add(h.str());
         }
+  }
+
+  void DensityEstimator::registerObservables(vector<observable_helper*>& h5list
+      , hid_t gid) const
+  {
+    int loc=h5list.size();
+    //determine the shape
+    vector<int> ndim(OHMMS_DIM);
+    for(int i=0; i<OHMMS_DIM; ++i) ndim[i]=density.size(i);
+
+    observable_helper* h5o=new observable_helper(myName);
+    h5o->set_dimensions(ndim,myIndex);
+    h5o->open(gid);
+    h5list.push_back(h5o);
   }
 
   void DensityEstimator::setObservables(PropertySetType& plist)
@@ -66,12 +86,12 @@ namespace qmcplusplus
   void DensityEstimator::setParticlePropertyList(PropertySetType& plist
       , int offset)
   {
-    std::copy(density.first_address(),density.last_address(),plist.begin()+offset);
+    std::copy(density.first_address(),density.last_address(),plist.begin()+myIndex+offset);
   }
 
   bool DensityEstimator::put(xmlNodePtr cur)
   {
-    Delta=0.5;
+    Delta=0.1;
     resize();
   }
 
@@ -92,10 +112,14 @@ namespace qmcplusplus
     TinyVector<int,OHMMS_DIM> ng;
     for(int i=0; i<OHMMS_DIM; ++i)
     {
-      DeltaInv[i]=Delta[i]/Bounds[i];
+      DeltaInv[i]=1.0/Delta[i];
       ng[i]=static_cast<int>(DeltaInv[i]);
-      if(ng[i]) APP_ABORT("DensityEstimator::resize invalid bin size");
+      if(ng[i]<2) 
+      {
+        APP_ABORT("DensityEstimator::resize invalid bin size");
+      }
     }
+    app_log() << " DensityEstimator bin_size= " <<ng << " delta = " << Delta << endl;
     density.resize(ng[0],ng[1],ng[2]);
   }
 }

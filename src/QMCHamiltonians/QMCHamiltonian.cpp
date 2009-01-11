@@ -54,6 +54,9 @@ bool QMCHamiltonian::get(std::ostream& os) const
 void 
 QMCHamiltonian::addOperator(QMCHamiltonianBase* h, const string& aname, bool physical) 
 {
+  //change UpdateMode[PHYSICAL] of h so that cloning can be done correctly
+  h->UpdateMode[QMCHamiltonianBase::PHYSICAL]=physical;
+
   if(physical)
   {
     for(int i=0; i<H.size(); ++i)
@@ -122,6 +125,13 @@ QMCHamiltonian::addObservables(PropertySetType& plist)
   app_log() << "    starting Index = " << myIndex << endl;
 }
 
+void 
+QMCHamiltonian::registerObservables(vector<observable_helper*>& h5dec, hid_t gid)  const
+{
+  for(int i=0; i<H.size(); ++i) H[i]->registerObservables(h5dec,gid);
+  for(int i=0; i<auxH.size(); ++i) auxH[i]->registerObservables(h5dec,gid);
+}
+
 void QMCHamiltonian::setTempObservables(PropertySetType& plist)
 {
   //first add properties to Observables
@@ -150,7 +160,7 @@ QMCHamiltonian::Return_t
   KineticEnergy=H[0]->Value;
   P.PropertyList[LOCALENERGY]=LocalEnergy;
   P.PropertyList[LOCALPOTENTIAL]=LocalEnergy-KineticEnergy;
-//   auxHevaluate(P);
+  // auxHevaluate(P);
 
   return LocalEnergy;
 }
@@ -161,7 +171,8 @@ void QMCHamiltonian::auxHevaluate(ParticleSet& P )
   {
     RealType sink = auxH[i]->evaluate(P);
     auxH[i]->setObservables(Observables);
-    H[i]->setParticlePropertyList(P.PropertyList,myIndex);
+    auxH[i]->setParticlePropertyList(P.PropertyList,myIndex);
+    //H[i]->setParticlePropertyList(P.PropertyList,myIndex);
   }
 }
 
@@ -205,20 +216,21 @@ QMCHamiltonian::evaluate(ParticleSet& P, vector<NonLocalData>& Txy)
 }
 
 
-QMCHamiltonian::Return_t 
-QMCHamiltonian::getEnsembleAverage() {
+QMCHamiltonian::Return_t QMCHamiltonian::getEnsembleAverage() 
+{
   Return_t sum=0.0;
   for(int i=0; i<H.size(); i++) sum += H[i]->getEnsembleAverage();
   return sum;
 }
+
 /** return pointer to the QMCHamtiltonian with the name
  *@param aname the name of Hamiltonian
  *@return the pointer to the named term.
  *
  * If not found, return 0
  */
-QMCHamiltonianBase* 
-QMCHamiltonian::getHamiltonian(const string& aname) {
+QMCHamiltonianBase* QMCHamiltonian::getHamiltonian(const string& aname) 
+{
 
   for(int i=0; i<H.size(); ++i)
     if(H[i]->myName == aname) return H[i];
@@ -229,15 +241,13 @@ QMCHamiltonian::getHamiltonian(const string& aname) {
   return 0;
 }
 
-void
-QMCHamiltonian::resetTargetParticleSet(ParticleSet& P) 
+void QMCHamiltonian::resetTargetParticleSet(ParticleSet& P) 
 {
   for(int i=0; i<H.size(); i++) H[i]->resetTargetParticleSet(P);
   for(int i=0; i<auxH.size(); i++) auxH[i]->resetTargetParticleSet(P);
 }
 
-void
-QMCHamiltonian::setRandomGenerator(RandomGenerator_t* rng) 
+void QMCHamiltonian::setRandomGenerator(RandomGenerator_t* rng) 
 {
   for(int i=0; i<H.size(); i++) H[i]->setRandomGenerator(rng);
   for(int i=0; i<auxH.size(); i++) auxH[i]->setRandomGenerator(rng);
@@ -246,23 +256,29 @@ QMCHamiltonian::setRandomGenerator(RandomGenerator_t* rng)
 QMCHamiltonian* QMCHamiltonian::makeClone(ParticleSet& qp, TrialWaveFunction& psi) 
 {
   QMCHamiltonian* myclone=new QMCHamiltonian;
-  std::vector<int> depIndexVector;
-  for(int i=0; i<H.size(); ++i){
-    myclone->addOperator(H[i]->makeClone(qp,psi),H[i]->myName,true);
-    if (H[i]->Dependants != 0 )
-//       cout<<i<<endl;
-    depIndexVector.insert(depIndexVector.begin(),1,i);
-  }
-  for(int i=0; i<auxH.size(); ++i){
-    QMCHamiltonianBase* auxi = auxH[i]->makeClone(qp,psi);
-    if (auxi)
-      myclone->addOperator(auxi,auxH[i]->myName,false);
-    else{
-//       cout<<"SHOUTING~!!!"<<i<<"  "<<depIndexVector[depIndexVector.size()-1]<<"  "<<depIndexVector.size()-1<<endl;
-      myclone->addOperator((myclone->getHamiltonian(depIndexVector.back()))->makeDependants(qp),(myclone->getHamiltonian(depIndexVector.back()))->depName,false);
-      depIndexVector.pop_back();
-    }
-  }
+  for(int i=0; i<H.size(); ++i)
+    H[i]->add2Hamiltonian(qp,psi,*myclone);
+
+  for(int i=0; i<auxH.size(); ++i)
+    auxH[i]->add2Hamiltonian(qp,psi,*myclone);
+
+  // std::vector<int> depIndexVector;
+  // for(int i=0; i<H.size(); ++i){
+  //   myclone->addOperator(H[i]->makeClone(qp,psi),H[i]->myName,true);
+  //   if (H[i]->Dependants != 0 )
+  //       cout<<i<<endl;
+  //   depIndexVector.insert(depIndexVector.begin(),1,i);
+  // }
+  // for(int i=0; i<auxH.size(); ++i){
+  //   QMCHamiltonianBase* auxi = auxH[i]->makeClone(qp,psi);
+  //   if (auxi)
+  //     myclone->addOperator(auxi,auxH[i]->myName,false);
+  //   else{
+  ////       cout<<"SHOUTING~!!!"<<i<<"  "<<depIndexVector[depIndexVector.size()-1]<<"  "<<depIndexVector.size()-1<<endl;
+  //     myclone->addOperator((myclone->getHamiltonian(depIndexVector.back()))->makeDependants(qp),(myclone->getHamiltonian(depIndexVector.back()))->depName,false);
+  //     depIndexVector.pop_back();
+  //   }
+  // }
   //myclone->addObservables(qp.PropertyList);
   myclone->resetObservables(myIndex);
   //Assume tau is correct for the Kinetic energy operator and assign to the rest of the clones
@@ -271,8 +287,7 @@ QMCHamiltonian* QMCHamiltonian::makeClone(ParticleSet& qp, TrialWaveFunction& ps
   return myclone;
 }
 
-void 
-QMCHamiltonian::resetObservables(int start)
+void QMCHamiltonian::resetObservables(int start)
 {
   //first add properties to Observables
   Observables.clear();
@@ -280,6 +295,7 @@ QMCHamiltonian::resetObservables(int start)
   for(int i=0; i<auxH.size(); ++i) auxH[i]->addObservables(Observables);
   myIndex=start;
 }
+
 QMCHamiltonian::Return_t QMCHamiltonian::registerData(ParticleSet& P, BufferType& buffer)
 {
   LocalEnergy=0.0;

@@ -1,4 +1,5 @@
 SET(HAMSRCS
+  QMCHamiltonianBase.cpp
   QMCHamiltonian.cpp
   CoulombPBCAATemp.cpp
   CoulombPBCABTemp.cpp
@@ -11,6 +12,7 @@ SET(HAMSRCS
   ChiesaCorrection.cpp
   PairCorrEstimator.cpp
   DensityEstimator.cpp
+  SkEstimator.cpp
 )
 #  FSAtomPseudoPot.cpp
 
