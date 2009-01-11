@@ -31,14 +31,6 @@ namespace qmcplusplus {
       elocal_name.push_back(h.getObservableName(i));
   }
 
-  LocalEnergyEstimator::LocalEnergyEstimator(const LocalEnergyEstimator& est):
-    ScalarEstimatorBase(est),
-  SizeOfHamiltonians(est.SizeOfHamiltonians),
-  FirstHamiltonian(est.FirstHamiltonian),
-  elocal_name(est.elocal_name)
-  {
-  }
-
   ScalarEstimatorBase* LocalEnergyEstimator::clone()
   {
     return new LocalEnergyEstimator(*this);

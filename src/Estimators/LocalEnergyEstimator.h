@@ -68,7 +68,6 @@ namespace qmcplusplus {
      * @param h QMCHamiltonian to define the components
      */
     LocalEnergyEstimator(QMCHamiltonian& h);
-    LocalEnergyEstimator(const LocalEnergyEstimator& est);
 
     /** implement virtual function
      */
