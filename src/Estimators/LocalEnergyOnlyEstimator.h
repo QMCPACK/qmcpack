@@ -25,8 +25,8 @@ namespace qmcplusplus {
 
     inline LocalEnergyOnlyEstimator() 
     {
-      scalars.resize(1);
-      scalars_saved.resize(1);
+      scalars.resize(2);
+      scalars_saved.resize(2);
     }
 
     ScalarEstimatorBase* clone()
@@ -39,17 +39,25 @@ namespace qmcplusplus {
      */
     inline void add2Record(RecordListType& record) {
       FirstIndex = record.add("LocalEnergy");
-      LastIndex=FirstIndex+1;
+      int s1=record.add("LocalPotential");
+      LastIndex = FirstIndex+2;
+      // int s2=record.add("KineticEnergy");
+      //LastIndex = FirstIndex+3;
       clear();
     }
 
-    inline void accumulate(const Walker_t& awalker, RealType wgt) {
+    inline void accumulate(const Walker_t& awalker, RealType wgt) 
+    {
       scalars[0](awalker.Properties(LOCALENERGY),wgt);
+      scalars[1](awalker.Properties(LOCALPOTENTIAL),wgt);
+      //scalars[2](awalker.Properties(NUMPROPERTIES),wgt);
     }
 
-    inline void accumulate(WalkerIterator first, WalkerIterator last, RealType wgt) {
-      while(first != last) {
-        scalars[0]((*first++)->Properties(LOCALENERGY),wgt);
+    inline void accumulate(WalkerIterator first, WalkerIterator last, RealType wgt) 
+    {
+      while(first != last) 
+      {
+        accumulate(**first,wgt);++first;
       }
     }
 
