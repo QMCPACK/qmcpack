@@ -34,8 +34,7 @@ namespace qmcplusplus {
 
   class MCWalkerConifugration;
   class QMCHamiltonian;
-  class CompositeEstimatorSet;
-  class CompositeEstimatorBase;
+
   /**Class to manage a set of ScalarEstimators */
   class EstimatorManager: public QMCTraits
   {
@@ -117,7 +116,7 @@ namespace qmcplusplus {
      * @return locator of newestimator
      */
     int add(EstimatorType* newestimator, const string& aname);
-    int add(CompositeEstimatorBase* newestimator, const string& aname);
+    //int add(CompositeEstimatorBase* newestimator, const string& aname);
 
     /** add a main estimator
      * @param newestimator New Estimator
@@ -241,11 +240,13 @@ namespace qmcplusplus {
     ScalarEstimatorBase::accumulator_type energyAccumulator;
     /** accumulator for the variance **/
     ScalarEstimatorBase::accumulator_type varAccumulator;
-    //save block averages (scalar data) to Cache 
+    ///cached block averages of the values
     Vector<RealType> AverageCache;
-    //save property data to Cache 
+    ///cached block averages of the squared values 
+    Vector<RealType> SquaredAverageCache;
+    ///cached block averages of properties, e.g. BlockCPU
     Vector<RealType> PropertyCache;
-    //manager of scalar data
+    ///manager of scalar data
     RecordNamedProperty<RealType> BlockAverages;
     ///manager of property data
     RecordNamedProperty<RealType> BlockProperties;
@@ -259,11 +260,15 @@ namespace qmcplusplus {
     std::map<string,int> EstimatorMap;
     ///estimators of simple scalars
     vector<EstimatorType*> Estimators;
-    ///estimators of composite data
-    CompositeEstimatorSet* CompEstimators;
+    ///convenient descriptors for hdf5
+    vector<observable_helper*> h5desc;
+    /////estimators of composite data
+    //CompositeEstimatorSet* CompEstimators;
     ///Timer
     Timer MyTimer;
 private:
+    ///number of maximum data for a scalar.dat
+    int max4ascii;
     ///number of requests
     int pendingRequests;
     //Data for communication

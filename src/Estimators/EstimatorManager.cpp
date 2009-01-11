@@ -22,15 +22,14 @@
 #include "Message/CommUtilities.h"
 #include "Estimators/LocalEnergyEstimator.h"
 #include "Estimators/LocalEnergyOnlyEstimator.h"
-#include "Estimators/CompositeEstimators.h"
-#include "Estimators/GofREstimator.h"
-#include "Estimators/SkEstimator.h"
+#include "Estimators/LocalEnergyEstimatorHDF.h"
+//#include "Estimators/CompositeEstimators.h"
 #include "QMCDrivers/SimpleFixedNodeBranch.h"
-//#include "Estimators/PolarizationEstimator.h"
 #include "Utilities/IteratorUtility.h"
 #include "Numerics/HDFNumericAttrib.h"
 #include "OhmmsData/HDFStringAttrib.h"
 #include "HDFVersion.h"
+#include "OhmmsData/AttributeSet.h"
 //#define QMC_ASYNC_COLLECT
 //leave it for serialization debug
 //#define DEBUG_ESTIMATOR_ARCHIVE
@@ -49,15 +48,18 @@ namespace qmcplusplus {
   EstimatorManager::EstimatorManager(Communicate* c): 
     RecordCount(0),h_file(-1), FieldWidth(20),
     MainEstimatorName("elocal"), Archive(0), DebugArchive(0),
-    myComm(0), MainEstimator(0), CompEstimators(0), pendingRequests(0)
+    myComm(0), MainEstimator(0)
+    //, CompEstimators(0)
+    ,max4ascii(16), pendingRequests(0)
   { 
     setCommunicator(c);
   }
 
   EstimatorManager::EstimatorManager(EstimatorManager& em): 
     RecordCount(0),h_file(-1),  MainEstimatorName("elocal"), FieldWidth(20),
-    Options(em.Options), Archive(0), DebugArchive(0),MainEstimator(0), CompEstimators(0), 
-    EstimatorMap(em.EstimatorMap), pendingRequests(0), myComm(0)
+    Options(em.Options), Archive(0), DebugArchive(0),MainEstimator(0)
+    //, CompEstimators(0)
+    , EstimatorMap(em.EstimatorMap), pendingRequests(0), myComm(0)
   {
     //inherit communicator
     setCommunicator(em.myComm);
@@ -66,17 +68,21 @@ namespace qmcplusplus {
 
     MainEstimator=Estimators[EstimatorMap[MainEstimatorName]];
 
-    if(em.CompEstimators)//copy composite estimator
-    {
-      CompEstimators = new CompositeEstimatorSet(*(em.CompEstimators));
-    }
+    //since h5 file is managed by the 0-th thread of the master node, 
+    //copying them is not needed.
+    //if(em.h5desc.size())
+    //{
+    //  for(int i=0; i<em.h5desc.size(); ++i)  
+    //    h5desc.push_back(new obervable_helper(*em.h5desc[i]));
+    //}
   }
 
   EstimatorManager::~EstimatorManager()
   { 
     delete_iter(Estimators.begin(), Estimators.end());
-    if(CompEstimators) delete CompEstimators;
+    //if(CompEstimators) delete CompEstimators;
     delete_iter(RemoteData.begin(), RemoteData.end());
+    delete_iter(h5desc.begin(), h5desc.end());
   }
 
   void EstimatorManager::setCommunicator(Communicate* c) 
@@ -125,7 +131,7 @@ namespace qmcplusplus {
 
   void EstimatorManager::resetTargetParticleSet(ParticleSet& p)
   {
-    if(CompEstimators) CompEstimators->resetTargetParticleSet(p);
+    //if(CompEstimators) CompEstimators->resetTargetParticleSet(p);
   }
 
   void EstimatorManager::addHeader(ostream& o)
@@ -133,13 +139,14 @@ namespace qmcplusplus {
     o.setf(ios::scientific, ios::floatfield);
     o.setf(ios::left,ios::adjustfield);
     o.precision(10);
-    o << "#   index    ";
     for (int i=0; i<BlockAverages.size(); i++)
       FieldWidth = std::max(FieldWidth, BlockAverages.Names[i].size()+2);
     for (int i=0; i<BlockProperties.size(); i++)
       FieldWidth = std::max(FieldWidth, BlockProperties.Names[i].size()+2);
-    for(int i=0; i<BlockAverages.size(); i++) o << setw(FieldWidth) << BlockAverages.Names[i];
-    //(*Archive) << setw(16) << "WeightSum";
+
+    int maxobjs=std::min(BlockAverages.size(),max4ascii);
+    o << "#   index    ";
+    for(int i=0; i<maxobjs; i++) o << setw(FieldWidth) << BlockAverages.Names[i];
     for(int i=0; i<BlockProperties.size(); i++) o << setw(FieldWidth) << BlockProperties.Names[i];
     o << endl;
     o.setf(ios::right,ios::adjustfield);
@@ -154,22 +161,23 @@ namespace qmcplusplus {
 
     BlockAverages.setValues(0.0);
     AverageCache.resize(BlockAverages.size());
+    SquaredAverageCache.resize(BlockAverages.size());
     PropertyCache.resize(BlockProperties.size());
 
     //count the buffer size for message
-    BufferSize=AverageCache.size()+PropertyCache.size();
+    BufferSize=2*AverageCache.size()+PropertyCache.size();
 
-    if(CompEstimators) 
-    {
-      int comp_size = CompEstimators->size();
-      if(comp_size) 
-        BufferSize += comp_size;
-      else
-      {
-        delete CompEstimators;
-        CompEstimators=0;
-      }
-    }
+    //if(CompEstimators) 
+    //{
+    //  int comp_size = CompEstimators->size();
+    //  if(comp_size) 
+    //    BufferSize += comp_size;
+    //  else
+    //  {
+    //    delete CompEstimators;
+    //    CompEstimators=0;
+    //  }
+    //}
 
     //allocate buffer for data collection
     if(RemoteData.empty())
@@ -198,16 +206,26 @@ namespace qmcplusplus {
       Archive = new ofstream(fname.c_str());
       addHeader(*Archive);
 
-      //open/close hdf5 file
-      if(CompEstimators) 
+      if(h5desc.size())
       {
-        RootName=myComm->getName()+".stat.h5";
-        hid_t fid = H5Fcreate(RootName.c_str(),H5F_ACC_TRUNC,H5P_DEFAULT,H5P_DEFAULT);
-        HDFVersion cur_version;
-        cur_version.write(fid,hdf::version);
-        CompEstimators->open(fid);
-        //H5Fclose(fid);
+        delete_iter(h5desc.begin(),h5desc.end());
+        h5desc.clear();
       }
+
+      fname=myComm->getName()+".stat.h5";
+      h_file= H5Fcreate(fname.c_str(),H5F_ACC_TRUNC,H5P_DEFAULT,H5P_DEFAULT);
+      for(int i=0; i<Estimators.size(); i++) 
+        Estimators[i]->registerObservables(h5desc,h_file);
+
+      //if(CompEstimators) 
+      //{
+      //  RootName=myComm->getName()+".stat.h5";
+      //  hid_t fid = H5Fcreate(RootName.c_str(),H5F_ACC_TRUNC,H5P_DEFAULT,H5P_DEFAULT);
+      //  HDFVersion cur_version;
+      //  cur_version.write(fid,hdf::version);
+      //  CompEstimators->open(fid);
+      //  //H5Fclose(fid);
+      //}
 
 #if defined(QMC_ASYNC_COLLECT)
       if(Options[COLLECT])
@@ -234,6 +252,10 @@ namespace qmcplusplus {
     AverageCache=est[0]->AverageCache;
     for(int i=1; i<num_threads; i++) AverageCache+=est[i]->AverageCache;
     AverageCache*=tnorm;
+
+    SquaredAverageCache=est[0]->SquaredAverageCache;
+    for(int i=1; i<num_threads; i++) SquaredAverageCache+=est[i]->SquaredAverageCache;
+    SquaredAverageCache*=tnorm;
 
     //add properties and divide them by the number of threads except for the weight
     PropertyCache=est[0]->PropertyCache;
@@ -276,7 +298,7 @@ namespace qmcplusplus {
   { 
     MyTimer.restart();
     BlockWeight=0.0;
-    if(CompEstimators) CompEstimators->startBlock(steps);
+    //if(CompEstimators) CompEstimators->startBlock(steps);
   }
 
   void EstimatorManager::stopBlock(RealType accept)
@@ -287,12 +309,12 @@ namespace qmcplusplus {
     PropertyCache[acceptInd] = accept;
 
 
+    //for(int i=0; i<Estimators.size(); i++) 
+    //  Estimators[i]->takeBlockAverage(AverageCache.begin());
     for(int i=0; i<Estimators.size(); i++) 
-    {
-      Estimators[i]->takeBlockAverage(AverageCache.begin());
-    }
+      Estimators[i]->takeBlockAverage(AverageCache.begin(),SquaredAverageCache.begin());
 
-    if(CompEstimators) CompEstimators->stopBlock();
+    //if(CompEstimators) CompEstimators->stopBlock();
 
     collectBlockAverages();
   }
@@ -310,16 +332,20 @@ namespace qmcplusplus {
     for(int i=1; i<num_threads; i++) AverageCache +=est[i]->AverageCache;
     AverageCache *= tnorm;
 
+    SquaredAverageCache=est[0]->SquaredAverageCache;
+    for(int i=1; i<num_threads; i++) SquaredAverageCache +=est[i]->SquaredAverageCache;
+    SquaredAverageCache *= tnorm;
+
     PropertyCache=est[0]->PropertyCache;
     for(int i=1; i<num_threads; i++) PropertyCache+=est[i]->PropertyCache;
     for(int i=1; i<PropertyCache.size(); i++) PropertyCache[i] *= tnorm;
 
-    if(CompEstimators) 
-    { //simply clean this up
-      CompEstimators->startBlock(1);
-      for(int i=0; i<num_threads; i++) 
-        CompEstimators->collectBlock(est[i]->CompEstimators);
-    }
+    //if(CompEstimators) 
+    //{ //simply clean this up
+    //  CompEstimators->startBlock(1);
+    //  for(int i=0; i<num_threads; i++) 
+    //    CompEstimators->collectBlock(est[i]->CompEstimators);
+    //}
 
     for(int i=0; i<num_threads; ++i)
       varAccumulator(est[i]->varAccumulator.mean());
@@ -332,7 +358,7 @@ namespace qmcplusplus {
 #if defined(DEBUG_ESTIMATOR_ARCHIVE)
     if(DebugArchive)
     {
-     if(CompEstimators) CompEstimators->print(*DebugArchive);
+     //if(CompEstimators) CompEstimators->print(*DebugArchive);
       *DebugArchive << setw(10) << RecordCount;
       for(int j=0; j<AverageCache.size(); j++) *DebugArchive << setw(FieldWidth) << AverageCache[j];
       for(int j=0; j<PropertyCache.size(); j++) *DebugArchive << setw(FieldWidth) << PropertyCache[j];
@@ -345,10 +371,12 @@ namespace qmcplusplus {
       BufferType::iterator cur(RemoteData[0]->begin());
       std::copy(AverageCache.begin(),AverageCache.end(),cur);
       cur+=AverageCache.size();
+      std::copy(SquaredAverageCache.begin(),SquaredAverageCache.end(),cur);
+      cur+=SquaredAverageCache.size();
       std::copy(PropertyCache.begin(),PropertyCache.end(),cur);
-      cur+=PropertyCache.size();
-      if(CompEstimators)
-        CompEstimators->putMessage(cur);
+
+      //if(CompEstimators)
+      //  CompEstimators->putMessage(cur);
 
 #if defined(QMC_ASYNC_COLLECT)
       if(Options[MANAGE]) 
@@ -366,13 +394,18 @@ namespace qmcplusplus {
       if(Options[MANAGE])
       {
         int n1=AverageCache.size();
-        int n2=AverageCache.size()+PropertyCache.size();
-        std::copy(RemoteData[0]->begin(),RemoteData[0]->begin()+n1, AverageCache.begin());
-        std::copy(RemoteData[0]->begin()+n1,RemoteData[0]->begin()+n2, PropertyCache.begin());
-        if(CompEstimators) CompEstimators->getMessage(RemoteData[0]->begin()+n2);
+        int n2=n1+AverageCache.size();
+        int n3=n2+PropertyCache.size();
+        BufferType::iterator cur(RemoteData[0]->begin());
+        std::copy(cur,cur+n1, AverageCache.begin());
+        std::copy(cur+n1,cur+n2, SquaredAverageCache.begin());
+        std::copy(cur+n2,cur+n3, PropertyCache.begin());
+
+        //if(CompEstimators) CompEstimators->getMessage(RemoteData[0]->begin()+n2);
 
         RealType nth=1.0/static_cast<RealType>(myComm->size());
         AverageCache *= nth;
+        SquaredAverageCache *= nth;
         //do not weight weightInd
         for(int i=1; i<PropertyCache.size(); i++) PropertyCache[i] *= nth;
       }
@@ -385,11 +418,18 @@ namespace qmcplusplus {
     if(Archive)
     {
       *Archive << setw(10) << RecordCount;
-      for(int j=0; j<AverageCache.size(); j++) *Archive << setw(FieldWidth) << AverageCache[j];
+      int maxobjs=std::min(BlockAverages.size(),max4ascii);
+      for(int j=0; j<maxobjs; j++) *Archive << setw(FieldWidth) << AverageCache[j];
       for(int j=0; j<PropertyCache.size(); j++) *Archive << setw(FieldWidth) << PropertyCache[j];
       *Archive << endl;
 
-      if(CompEstimators) CompEstimators->recordBlock();
+      for(int o=0; o<h5desc.size(); ++o)
+        h5desc[o]->write(AverageCache.data(),SquaredAverageCache.data());
+
+      //flush the file
+      H5Fflush(h_file,H5F_SCOPE_LOCAL);
+
+      //if(CompEstimators) CompEstimators->recordBlock();
     }
 
     RecordCount++;
@@ -404,7 +444,7 @@ namespace qmcplusplus {
     RealType norm=1.0/W.getGlobalNumWalkers();
     for(int i=0; i< Estimators.size(); i++) 
       Estimators[i]->accumulate(W.begin(),W.end(),norm);
-    if(CompEstimators) CompEstimators->accumulate(W,norm);
+    //if(CompEstimators) CompEstimators->accumulate(W,norm);
   }
 
   void EstimatorManager::accumulate(MCWalkerConfiguration& W, 
@@ -415,7 +455,7 @@ namespace qmcplusplus {
     RealType norm=1.0/W.getGlobalNumWalkers();
     for(int i=0; i< Estimators.size(); i++) 
       Estimators[i]->accumulate(it,it_end,norm);
-    if(CompEstimators) CompEstimators->accumulate(W,it,it_end,norm);
+    //if(CompEstimators) CompEstimators->accumulate(W,it,it_end,norm);
   }
 
   void 
@@ -484,15 +524,27 @@ namespace qmcplusplus {
       string cname((const char*)(cur->name));
       if(cname == "estimator") 
       {
-        xmlChar* att=xmlGetProp(cur,(const xmlChar*)"name");
-        if(att) 
+        string est_name(MainEstimatorName);
+        string use_hdf5("yes");
+        OhmmsAttributeSet hAttrib;
+        hAttrib.add(est_name, "name");
+        hAttrib.add(use_hdf5, "hdf5");
+        hAttrib.put(cur);
+        if(est_name == MainEstimatorName)
         {
-          string aname((const char*)att);
-          if(aname == "LocalEnergy") 
+          if(use_hdf5 == "yes")
+          {
+            max4ascii=H.size()+2;//write only physical energies
+            add(new LocalEnergyEstimatorHDF(H),MainEstimatorName);
+          }
+          else
+          {//fall back to the ascii file
+            max4ascii=H.sizeOfObservables()+2;
             add(new LocalEnergyEstimator(H),MainEstimatorName);
-          else 
-            extra.push_back(aname);
+          }
         }
+        else 
+          extra.push_back(est_name);
       } 
       cur = cur->next;
     }
@@ -503,45 +555,46 @@ namespace qmcplusplus {
       add(new LocalEnergyOnlyEstimator(),MainEstimatorName);
     } 
 
-    string SkName("sk");
-    string GofRName("gofr");
-    for(int i=0; i< extra.size(); i++)
-    {
-      if(extra[i] == SkName && W.Lattice.SuperCellEnum)
-      {
-        if(CompEstimators == 0) CompEstimators = new CompositeEstimatorSet;
-        if(CompEstimators->missing(SkName))
-        {
-          app_log() << "  EstimatorManager::add " << SkName << endl;
-          CompEstimators->add(new SkEstimator(W),SkName);
-        }
-      } else if(extra[i] == GofRName)
-      {
-        if(CompEstimators == 0) CompEstimators = new CompositeEstimatorSet;
-        if(CompEstimators->missing(GofRName))
-        {
-          app_log() << "  EstimatorManager::add " << GofRName << endl;
-          CompEstimators->add(new GofREstimator(W),GofRName);
-        }
-      }
-    }
+    //string SkName("sk");
+    //string GofRName("gofr");
+    //for(int i=0; i< extra.size(); i++)
+    //{
+    //  if(extra[i] == SkName && W.Lattice.SuperCellEnum)
+    //  {
+    //    if(CompEstimators == 0) CompEstimators = new CompositeEstimatorSet;
+    //    if(CompEstimators->missing(SkName))
+    //    {
+    //      app_log() << "  EstimatorManager::add " << SkName << endl;
+    //      CompEstimators->add(new SkEstimator(W),SkName);
+    //    }
+    //  } 
+    //  else if(extra[i] == GofRName)
+    //  {
+    //    if(CompEstimators == 0) CompEstimators = new CompositeEstimatorSet;
+    //    if(CompEstimators->missing(GofRName))
+    //    {
+    //      app_log() << "  EstimatorManager::add " << GofRName << endl;
+    //      CompEstimators->add(new GofREstimator(W),GofRName);
+    //    }
+    //  }
+    //}
     //add extra
     return true;
   }
 
 
-  int EstimatorManager::add(CompositeEstimatorBase* newestimator, const string& aname)
-  {
-    if(CompEstimators == 0) CompEstimators = new CompositeEstimatorSet;
-    if(CompEstimators->missing(aname))
-      {
-        assert(aname=="nofr");
-        app_log() << "  EstimatorManager::add " << aname << endl;
-        CompEstimators->add(newestimator,aname);
-      }
-    return 0;
-// return -1;
-  }
+  //int EstimatorManager::add(CompositeEstimatorBase* newestimator, const string& aname)
+  //{
+  //  if(CompEstimators == 0) CompEstimators = new CompositeEstimatorSet;
+  //  if(CompEstimators->missing(aname))
+  //    {
+  //      assert(aname=="nofr");
+  //      app_log() << "  EstimatorManager::add " << aname << endl;
+  //      CompEstimators->add(newestimator,aname);
+  //    }
+  //  return 0;
+  //// return -1;
+  //}
 
 
   int EstimatorManager::add(EstimatorType* newestimator, const string& aname) 
