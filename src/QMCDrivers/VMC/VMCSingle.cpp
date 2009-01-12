@@ -88,7 +88,6 @@ namespace qmcplusplus {
 
     if(Mover ==0)
     {
-
       if(QMCDriverMode[QMC_UPDATE_MODE])
       {
         app_log() << "  Update particle by particle " << endl;
@@ -105,9 +104,10 @@ namespace qmcplusplus {
         else
           Mover=new VMCUpdateAll(W,Psi,H,Random);
       }
-      Mover->put(qmcNode);
-      Mover->resetRun(branchEngine,Estimators);
     }
+
+    Mover->put(qmcNode);
+    Mover->resetRun(branchEngine,Estimators);
 
     if(QMCDriverMode[QMC_UPDATE_MODE])
       Mover->initWalkersForPbyP(W.begin(),W.end());

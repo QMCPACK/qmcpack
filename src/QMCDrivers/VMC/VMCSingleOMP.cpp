@@ -147,7 +147,7 @@ namespace qmcplusplus {
             Movers[ip]=new VMCUpdatePbyPWithDrift(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]); 
           else
             Movers[ip]=new VMCUpdatePbyP(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]); 
-          Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip]);
+          //Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip]);
         }
         else
         {
@@ -155,7 +155,7 @@ namespace qmcplusplus {
             Movers[ip]=new VMCUpdateAllWithDrift(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]); 
           else
             Movers[ip]=new VMCUpdateAll(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]); 
-          Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip]);
+          //Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip]);
         }
       }
     }
@@ -163,6 +163,8 @@ namespace qmcplusplus {
 #pragma omp parallel  for
     for(int ip=0; ip<NumThreads; ++ip)
     {
+      Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip]);
+
       if(QMCDriverMode[QMC_UPDATE_MODE])
         Movers[ip]->initWalkersForPbyP(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
       else
