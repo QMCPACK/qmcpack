@@ -163,6 +163,7 @@ namespace qmcplusplus {
 #pragma omp parallel  for
     for(int ip=0; ip<NumThreads; ++ip)
     {
+      Movers[ip]->put(qmcNode);
       Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip]);
 
       if(QMCDriverMode[QMC_UPDATE_MODE])
