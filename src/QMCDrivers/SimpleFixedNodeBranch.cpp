@@ -97,6 +97,11 @@ namespace qmcplusplus
     m_param.add(vParam[B_EREF],"refEnergy","AU"); 
     m_param.add(vParam[B_EREF],"ref_energy","AU"); 
     m_param.add(vParam[B_EREF],"en_ref","AU");
+    
+    m_param.add(vParam[B_TAU],"tau","AU");
+    m_param.add(vParam[B_TAU],"timestep","AU");
+    m_param.add(vParam[B_TAU],"timeStep","AU");
+    m_param.add(vParam[B_TAU],"TimeStep","AU");
 
     //feed back parameter for population control
     m_param.add(Feedback,"feedback","double"); 
@@ -328,6 +333,7 @@ namespace qmcplusplus
         //if(EnergyHistory.count()<5) Eref -= vParam[EnergyWindowIndex];
         vParam[B_ETRIAL]=0.0;Feedback=0.0;logN=0.0;
       }
+//       vParam(abranch.vParam)
 
       WalkerController->start();
     }

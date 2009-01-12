@@ -16,30 +16,32 @@ namespace qmcplusplus {
   struct HeePotential: public QMCHamiltonianBase {
     RealType rc;
     RealType A,B,C,trunc,TCValue;
-    HeePotential_tail* TCorr;
+//     HeePotential_tail* TCorr;
     DistanceTableData* d_table;
     ParticleSet* PtclRef, IRef;
 
     HeePotential(ParticleSet& P, ParticleSet& I): PtclRef(&P), IRef(I) {
-      Dependants=1;
-      depName = "Heetail";
+//       Dependants=1;
+//       depName = "Heetail";
       A=0.655;
       B=89099;
       C=12608;
     
       d_table = DistanceTable::add(I,P);
-      rc = P.Lattice.WignerSeitzRadius;
-      trunc= A*std::pow(rc,-4) * ( B/(C+std::pow(rc,6)) - 1 );
-      app_log()<<" trunc "<<trunc<<endl;
+//       rc = P.Lattice.WignerSeitzRadius;
+//       app_log()<<" RC is "<<rc<<endl;
+//       if (rc>0) trunc= A*std::pow(rc,-4) * ( B/(C+std::pow(rc,6)) - 1 );
+//       else trunc=0;
+//       app_log()<<" trunc "<<trunc<<endl;
     }
 
     ~HeePotential() { }
 
-    QMCHamiltonianBase* makeDependants(ParticleSet& qp )
-    {
-      TCorr = new HeePotential_tail(qp);
-      return TCorr;
-    }
+//     QMCHamiltonianBase* makeDependants(ParticleSet& qp )
+//     {
+// //       TCorr = new HeePotential_tail(qp);
+//       return TCorr;
+//     }
     
     void resetTargetParticleSet(ParticleSet& P)  {
       d_table = DistanceTable::add(P);
@@ -48,15 +50,15 @@ namespace qmcplusplus {
 
     inline Return_t evaluate(ParticleSet& P) {
       Value = 0.0;
-      TCValue=0.0;
+//       TCValue=0.0;
       for(int i=0; i<d_table->getTotNadj(); i++) {
 	Return_t r1 = d_table->r(i);
-        if ( r1 < rc) {
-	 Value+=A*std::pow(r1,-4) * ( B/(C+std::pow(r1,6)) - 1 ) -trunc;
-	 TCValue+=trunc;
-	}
+//         if ( r1 < rc) {
+	 Value+=A*std::pow(r1,-4) * ( B/(C+std::pow(r1,6)) - 1 ) ;
+// 	 TCValue+=trunc;
+// 	}
       }
-      TCorr->set_TC(TCValue);
+//       TCorr->set_TC(TCValue);
       return Value;
     }
 

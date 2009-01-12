@@ -37,6 +37,8 @@
 #include "QMCHamiltonians/Pressure.h"
 #include "QMCHamiltonians/RPAPressure.h"
 #include "QMCHamiltonians/PsiValue.h"
+#include "QMCHamiltonians/DMCPsiValue.h"
+#include "QMCHamiltonians/PsiOverlap.h"
 #include "QMCHamiltonians/HePressure.h"
 #include "QMCHamiltonians/HFDHE2Potential.h"
 #include "QMCHamiltonians/HeEPotential.h"
@@ -223,7 +225,7 @@ namespace qmcplusplus {
 	  
 	  HeePotential* eHetype = new HeePotential(*targetPtcl, *source);
 	  targetH->addOperator(eHetype,potName,true);
-	  targetH->addOperator(eHetype->makeDependants(*targetPtcl),potName,false);
+// 	  targetH->addOperator(eHetype->makeDependants(*targetPtcl),potName,false);
 	  
 	}
       } 
@@ -353,10 +355,33 @@ namespace qmcplusplus {
         }
 	else if(potType=="psi")
 	{
-	  PsiValue* PV = new PsiValue();
+	  int pwr=2;
+	  OhmmsAttributeSet hAttrib;
+	  hAttrib.add(pwr,"power"); 
+	  hAttrib.put(cur);
+	  PsiValue* PV = new PsiValue(pwr);
 	  PV->put(cur,targetPtcl,ptclPool,myComm);
-	  targetH->addOperator(PV,"Psi",false);
+	  targetH->addOperator(PV,"PsiValue",false);
 	}
+	else if(potType=="overlap")
+	{
+	  int pwr=1;
+	  OhmmsAttributeSet hAttrib;
+	  hAttrib.add(pwr,"power"); 
+	  hAttrib.put(cur);
+	  
+	  PsiOverlapValue* PV = new PsiOverlapValue(pwr);
+	  PV->put(cur,targetPtcl,ptclPool,myComm);
+	  targetH->addOperator(PV,"PsiRatio",false);
+	}
+	else if(potType=="DMCoverlap")
+	{
+	  DMCPsiValue* PV = new DMCPsiValue( );
+	  PV->put(cur,targetPtcl,ptclPool,myComm);
+	  targetH->addOperator(PV,"DMCPsiRatio",false);
+	}
+	
+	
 
 //         else if (potType=="ForwardWalking"){
 //           app_log()<<"  Adding Forward Walking Operator"<<endl;

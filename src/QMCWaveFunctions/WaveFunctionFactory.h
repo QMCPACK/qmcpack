@@ -71,6 +71,9 @@ namespace qmcplusplus {
     /** add Fermion wavefunction term */
     bool addFermionTerm(xmlNodePtr cur);
 
+    /** add Molecular wavefunction term */
+    bool addMolecularTerm(xmlNodePtr cur);
+    
     /** add an OrbitalBuilder and the matching xml node
      * @param b OrbitalBuilderBase*
      * @oaram cur xmlNode for b

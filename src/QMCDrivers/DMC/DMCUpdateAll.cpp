@@ -97,9 +97,9 @@ namespace qmcplusplus {
           thisWalker.R = W.R;
           thisWalker.Drift = drift;          
           rr_accepted = rr_proposed;
-	  H.auxHevaluate(W,thisWalker);
           thisWalker.resetProperty(logpsi,Psi.getPhase(),enew,rr_accepted,rr_proposed,nodecorr);
-          H.saveProperty(thisWalker.getPropertyBase());
+          H.auxHevaluate(W,thisWalker);
+	  H.saveProperty(thisWalker.getPropertyBase());
         }
       }
       thisWalker.Weight *= branchEngine->branchWeight(eold,enew);

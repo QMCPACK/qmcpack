@@ -91,7 +91,7 @@ WaveFunctionTester::run() {
 
     IndexType nskipped = 0;
     RealType sig2Enloc=0, sig2Drift=0;
-    RealType delta = 0.0001;
+    RealType delta = 0.00001;
     RealType delta2 = 2*delta;
     ValueType c1 = 1.0/delta/2.0;
     ValueType c2 = 1.0/delta/delta;
@@ -149,7 +149,7 @@ WaveFunctionTester::run() {
 void WaveFunctionTester::runBasicTest() {
   IndexType nskipped = 0;
   RealType sig2Enloc=0, sig2Drift=0;
-  RealType delta = 0.0001;
+  RealType delta = 0.00001;
   RealType delta2 = 2*delta;
   ValueType c1 = 1.0/delta/2.0;
   ValueType c2 = 1.0/delta/delta;
