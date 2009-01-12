@@ -89,6 +89,7 @@ namespace qmcplusplus {
     string multi_tag("no");
     string warp_tag("no");
     string append_tag("no");
+    string renew_tag("yes");
 
     OhmmsAttributeSet aAttrib;
     aAttrib.add(qmc_mode,"method");
@@ -96,9 +97,11 @@ namespace qmcplusplus {
     aAttrib.add(multi_tag,"multiple");
     aAttrib.add(warp_tag,"warp");
     aAttrib.add(append_tag,"append");
+    aAttrib.add(renew_tag,"renew");
     aAttrib.put(cur);
 
     bool append_run =(append_tag == "yes");
+    bool new_objects =(renew_tag == "yes");
     bitset<3>  WhatToDo;
     WhatToDo[SPACEWARP_MODE]= (warp_tag == "yes");
     WhatToDo[MULTIPLE_MODE]= (multi_tag == "yes");
@@ -142,7 +145,7 @@ namespace qmcplusplus {
 
     if(qmcDriver) 
     {
-      if(newRunType != curRunType || newQmcMode != curQmcMode) 
+      if(newRunType != curRunType || newQmcMode != curQmcMode || new_objects) 
       {
         if(curRunType == DUMMY_RUN)
         {
