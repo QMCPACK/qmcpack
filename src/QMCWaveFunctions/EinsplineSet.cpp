@@ -17,7 +17,7 @@
 #include <einspline/multi_bspline.h>
 #include "Configuration.h"
 #ifdef HAVE_MKL
-  #include "/opt/intel/mkl/10.0.3.020/include/mkl_vml.h"
+  #include <mkl_vml.h>
 #endif
 
 namespace qmcplusplus {
