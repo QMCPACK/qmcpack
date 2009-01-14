@@ -121,6 +121,17 @@ namespace qmcplusplus {
       PropertyHistory.push_back(newVecHistory);
       return newL;
     }
+    
+    inline void resetPropertyHistory( )
+    {
+      for(int i=0;i<PropertyHistory.size();i++)
+      {
+	for(int k=0;k<PropertyHistory[i].size();k++)
+	{
+	  PropertyHistory[i][k]=0.0;
+	}
+      }
+    }
 
     inline void addPropertyHistoryPoint(int index, double data)
     {

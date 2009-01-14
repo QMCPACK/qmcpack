@@ -14,8 +14,7 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#include "QMCDrivers/VMC/VMCSingleOMP.h"
-#include "QMCDrivers/VMC/VMCUpdatePbyP.h"
+#include "QMCDrivers/VMC/WFMCSingleOMP.h"
 #include "QMCDrivers/VMC/VMCUpdateAll.h"
 #include "OhmmsApp/RandomNumberControl.h"
 #include "Message/OpenMP.h"
@@ -24,92 +23,111 @@
 namespace qmcplusplus { 
 
   /// Constructor.
-  VMCSingleOMP::VMCSingleOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
+  WFMCSingleOMP::WFMCSingleOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
       HamiltonianPool& hpool):
     QMCDriver(w,psi,h),  CloneManager(hpool), 
-    myWarmupSteps(0),UseDrift("yes") ,weightLength(0), reweight("no"), Eindex(0)
+    myWarmupSteps(0),UseDrift("yes"),reweight("yes")
   { 
-    RootName = "vmc";
-    QMCType ="VMCSingleOMP";
+    RootName = "wfmc";
+    QMCType ="WFMCSingleOMP";
     QMCDriverMode.set(QMC_UPDATE_MODE,1);
     QMCDriverMode.set(QMC_WARMUP,0);
     m_param.add(UseDrift,"useDrift","string"); m_param.add(UseDrift,"usedrift","string");
-    m_param.add(reweight,"reweight","string");
-    m_param.add(weightLength,"weightlength","int");
     m_param.add(myWarmupSteps,"warmupSteps","int");
-    m_param.add(nTargetSamples,"targetWalkers","int");
+    m_param.add(reweight,"reweight","string");
+//     m_param.add(nTargetSamples,"targetWalkers","int");
   }
 
-  bool VMCSingleOMP::run() 
+  bool WFMCSingleOMP::run() 
   { 
     resetRun();
-
+    
     //start the main estimator
     Estimators->start(nBlocks);
-
-#pragma omp parallel
+    
+    ///Load a single walkers position into the walker.
+    MCWalkerConfiguration Keeper(W);
+    Keeper.createWalkers(W.begin(),W.end());
+    MCWalkerConfiguration::iterator Kit=(Keeper.begin()), Kit_end(Keeper.end());
+    
+    int block=0;
+    while ((Kit!=Kit_end)&&(nBlocks>block))
     {
-      int now=0;
-
-#pragma omp for 
-      for(int ip=0; ip<NumThreads; ++ip) 
-        Movers[ip]->startRun(nBlocks,false);
-
-      for(int block=0;block<nBlocks; ++block)
+      MCWalkerConfiguration::iterator Wit(W.begin()), Wit_end(W.end());
+      while ((Wit!=Wit_end) )
       {
-#pragma omp for 
-        for(int ip=0; ip<NumThreads; ++ip)
-        {
-          IndexType updatePeriod=(QMCDriverMode[QMC_UPDATE_MODE])?Period4CheckProperties:(nBlocks+1)*nSteps;
-          //assign the iterators and resuse them
-          MCWalkerConfiguration::iterator wit(W.begin()+wPerNode[ip]), wit_end(W.begin()+wPerNode[ip+1]);
-
-          Movers[ip]->startBlock(nSteps);
-          int now_loc=now;
-          for(int step=0; step<nSteps;++step)
-          {
-            Movers[ip]->advanceWalkers(wit,wit_end,false);
-            Movers[ip]->accumulate(wit,wit_end);
-            ++now_loc;
-            if(now_loc%updatePeriod==0) Movers[ip]->updateWalkers(wit,wit_end);
-            if(now_loc%myPeriod4WalkerDump==0) wClones[ip]->saveEnsemble(wit,wit_end);
-          } 
-          Movers[ip]->stopBlock();
-        }//end-of-parallel for
-
-        //increase now
-        now+=nSteps;
-#pragma omp master
-        {
-          CurrentStep+=nSteps;
-          Estimators->stopBlock(estimatorClones);
-          recordBlock(block+1);
-        }//end of mater
-      }//block
+	(*Wit)->R=(*Kit)->R;
+	(*Wit)->Drift=(*Kit)->Drift;
+	(*Wit)->reset();
+	(*Wit)->resetPropertyHistory();
+	++Wit;
+      }
+      #pragma omp parallel for
+      for(int ip=0; ip<NumThreads; ++ip)
+	Movers[ip]->initWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
+      
+      Wit=W.begin();
+      while ((Wit!=Wit_end) )
+      {
+	//       app_log()<<std::exp((*Wit)->Properties(LOGPSI))<<endl;
+	(*Wit)->PropertyHistory[0][0]=std::exp((*Wit)->Properties(LOGPSI));
+	++Wit;
+      }
+      
+      
+      #pragma omp parallel
+      {
+	#pragma omp for 
+	for(int ip=0; ip<NumThreads; ++ip)
+	  Movers[ip]->startRun(nBlocks,false);
+	
+	#pragma omp for 
+	for(int ip=0; ip<NumThreads; ++ip)
+	{
+	  //assign the iterators and resuse them
+	  MCWalkerConfiguration::iterator wit(W.begin()+wPerNode[ip]), wit_end(W.begin()+wPerNode[ip+1]);
+	  
+	  Movers[ip]->startBlock(nSteps);
+	  for(int step=0; step<nSteps;++step)
+	  {
+	    Movers[ip]->advanceWalkers(wit,wit_end,false);
+	    // 	    Movers[ip]->updateWalkers(wit,wit_end);
+	    // 	    wClones[ip]->saveEnsemble(wit,wit_end);
+	  }
+	  Movers[ip]->accumulate(wit,wit_end);
+	  Movers[ip]->stopBlock();
+	}
+	#pragma omp master
+	{
+	  Estimators->stopBlock(estimatorClones);
+	  recordBlock(block+1);
+	  block++;
+	  ++Kit;
+	}
+      }
+      
     }//end of parallel
     Estimators->stop(estimatorClones);
-
+    
     //copy back the random states
     for(int ip=0; ip<NumThreads; ++ip) 
       *(RandomNumberControl::Children[ip])=*(Rng[ip]);
-
+    
     //finalize a qmc section
     return finalize(nBlocks);
   }
 
-  void VMCSingleOMP::resetRun() 
+  void WFMCSingleOMP::resetRun() 
   {
-    
-    ///Set up a PropertyHistory for the energy to be recorded
-    if (reweight=="yes")
-    {
+     ///Set up a PropertyHistory for the energy to be recorded
+      Eindex=0;
       MCWalkerConfiguration::iterator Cit(W.begin()), Cit_end(W.end());
-      Eindex = (*Cit)->addPropertyHistory(weightLength);
+      Eindex = (*Cit)->addPropertyHistory(nSteps);
       while(Cit!=Cit_end){
-	(*Cit)->addPropertyHistory(weightLength);
+	(*Cit)->addPropertyHistory(nSteps);
 	Cit++;
       }
-    }
+
     makeClones(W,Psi,H);
 
     //determine dump period for walkers
@@ -137,42 +155,28 @@ namespace qmcplusplus {
       Rng.resize(NumThreads,0);
       int nwtot=(W.getActiveWalkers()/NumThreads)*NumThreads;
       FairDivideLow(nwtot,NumThreads,wPerNode);
-
+      
       app_log() << "  Initial partition of walkers ";
       std::copy(wPerNode.begin(),wPerNode.end(),ostream_iterator<int>(app_log()," "));
       app_log() << endl;
-
-#pragma omp parallel for
+      
+      #pragma omp parallel for
       for(int ip=0; ip<NumThreads; ++ip)
       {
-        estimatorClones[ip]= new EstimatorManager(*Estimators);//,*hClones[ip]);  
-        estimatorClones[ip]->resetTargetParticleSet(*wClones[ip]);
-        estimatorClones[ip]->setCollectionMode(false);
-        Rng[ip]=new RandomGenerator_t(*(RandomNumberControl::Children[ip]));
-        hClones[ip]->setRandomGenerator(Rng[ip]);
-
-        branchClones[ip] = new BranchEngineType(*branchEngine);
-
-	if(reweight=="yes")
-	{
-	  Movers[ip]=new WFMCUpdateAllWithReweight(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip],weightLength,Eindex);
-	}
-        else if(QMCDriverMode[QMC_UPDATE_MODE])
-        {
-          if(UseDrift == "yes")
-            Movers[ip]=new VMCUpdatePbyPWithDrift(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]); 
-          else
-            Movers[ip]=new VMCUpdatePbyP(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]); 
-          //Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip]);
-        }
-        else
-        {
-          if(UseDrift == "yes")
-            Movers[ip]=new VMCUpdateAllWithDrift(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]); 
-          else
-            Movers[ip]=new VMCUpdateAll(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]); 
-          //Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip]);
-        }
+	estimatorClones[ip]= new EstimatorManager(*Estimators);//,*hClones[ip]);  
+	estimatorClones[ip]->resetTargetParticleSet(*wClones[ip]);
+	estimatorClones[ip]->setCollectionMode(false);
+	Rng[ip]=new RandomGenerator_t(*(RandomNumberControl::Children[ip]));
+	hClones[ip]->setRandomGenerator(Rng[ip]);
+	branchClones[ip] = new BranchEngineType(*branchEngine);
+	
+	if(reweight=="yes") 
+	  Movers[ip]=new WFMCUpdateAllWithReweight(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip],nSteps,Eindex);
+	else if(UseDrift == "yes")
+	  Movers[ip]=new VMCUpdateAllWithDrift(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]); 
+	else
+	  Movers[ip]=new VMCUpdateAll(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]); 
+	
       }
     }
 
@@ -181,17 +185,9 @@ namespace qmcplusplus {
     {
       Movers[ip]->put(qmcNode);
       Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip]);
-
-      if(QMCDriverMode[QMC_UPDATE_MODE])
-        Movers[ip]->initWalkersForPbyP(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
-      else
-        Movers[ip]->initWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
-
+      Movers[ip]->initWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
       for(int prestep=0; prestep<myWarmupSteps; ++prestep)
-        Movers[ip]->advanceWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1],true); 
-
-      if(myWarmupSteps && QMCDriverMode[QMC_UPDATE_MODE])
-        Movers[ip]->updateWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]); 
+	Movers[ip]->advanceWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1],true); 
     }
     myWarmupSteps=0;
     //Used to debug and benchmark opnemp
@@ -203,7 +199,7 @@ namespace qmcplusplus {
   }
 
   bool 
-  VMCSingleOMP::put(xmlNodePtr q){
+  WFMCSingleOMP::put(xmlNodePtr q){
     //nothing to add
     return true;
   }

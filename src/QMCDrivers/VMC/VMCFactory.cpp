@@ -18,6 +18,7 @@
 #include "QMCDrivers/VMC/VMCSingle.h"
 #if defined(ENABLE_OPENMP)
 #include "QMCDrivers/VMC/VMCSingleOMP.h"
+#include "QMCDrivers/VMC/WFMCSingleOMP.h"
 #endif
 //#include "QMCDrivers/VMC/VMCMultiple.h"
 //#include "QMCDrivers/VMC/VMCPbyPMultiple.h"
@@ -67,6 +68,10 @@ namespace qmcplusplus {
       qmc = new VMCPbyPMultiWarp(w,psi,h, ptclpool);
     }
 #endif
+    else if(VMCMode == 8) //(only possible for WFMC run)
+    {
+      qmc = new WFMCSingleOMP(w,psi,h,hpool);
+    }
     qmc->setUpdateMode(VMCMode&1);
     return qmc;
   }

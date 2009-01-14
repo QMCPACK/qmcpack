@@ -29,6 +29,7 @@ SET(QMCDRIVERS
   CorrelatedSampling/CSVMCUpdateAll.cpp
   CorrelatedSampling/CSVMCUpdatePbyP.cpp
   ../Estimators/LocalEnergyEstimator.cpp
+  ../Estimators/WFMCOnlyEstimator.cpp
   ../Estimators/LocalEnergyEstimatorHDF.cpp
   ../Estimators/MultipleEnergyEstimator.cpp
   ../Estimators/RQMCMultipleEstimator.cpp
@@ -44,6 +45,7 @@ SET(QMCDRIVERS
 IF(ENABLE_OPENMP) 
   SET(QMCDRIVERS ${QMCDRIVERS} 
       VMC/VMCSingleOMP.cpp
+      VMC/WFMCSingleOMP.cpp
       DMC/DMCOMP.cpp
       QMCCostFunctionOMP.cpp
      )

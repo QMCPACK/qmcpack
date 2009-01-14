@@ -89,7 +89,7 @@ namespace qmcplusplus {
     string multi_tag("no");
     string warp_tag("no");
     string append_tag("no");
-    string renew_tag("yes");
+    string renew_tag("no");
 
     OhmmsAttributeSet aAttrib;
     aAttrib.add(qmc_mode,"method");
@@ -123,6 +123,13 @@ namespace qmcplusplus {
       else if(qmc_mode.find("dmc")<nchars)
       {
         newRunType=DMC_RUN;
+      }
+      else if(qmc_mode.find("wfqmc")<nchars)
+      {
+        newRunType=WFMC_RUN;
+	WhatToDo[UPDATE_MODE]=0;
+	WhatToDo[MULTIPLE_MODE]=0;
+	WhatToDo[SPACEWARP_MODE]=0;
       }
       else if (qmc_mode.find("rmcPbyP")<nchars)
 	{
@@ -257,6 +264,15 @@ namespace qmcplusplus {
     {
       //VMCFactory fac(curQmcModeBits[UPDATE_MODE],cur);
       VMCFactory fac(curQmcModeBits.to_ulong(),cur);
+      qmcDriver = fac.create(*qmcSystem,*primaryPsi,*primaryH,*ptclPool,*hamPool);
+      //TESTING CLONE
+      //TrialWaveFunction* psiclone=primaryPsi->makeClone(*qmcSystem);
+      //qmcDriver = fac.create(*qmcSystem,*psiclone,*primaryH,*ptclPool,*hamPool);
+    } 
+    else if(curRunType == WFMC_RUN) 
+    {
+      //VMCFactory fac(curQmcModeBits[UPDATE_MODE],cur);
+      VMCFactory fac(8,cur);
       qmcDriver = fac.create(*qmcSystem,*primaryPsi,*primaryH,*ptclPool,*hamPool);
       //TESTING CLONE
       //TrialWaveFunction* psiclone=primaryPsi->makeClone(*qmcSystem);

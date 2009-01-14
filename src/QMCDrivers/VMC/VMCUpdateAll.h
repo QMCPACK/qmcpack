@@ -62,6 +62,28 @@ namespace qmcplusplus {
     /// Copy operator (disabled).
     VMCUpdateAllWithDrift& operator=(const VMCUpdateAllWithDrift&) { return *this;}
   };
+  
+  class WFMCUpdateAllWithReweight: public QMCUpdateBase {
+
+  public:
+    int Elength,Eindex ;
+
+    /// Constructor.
+    WFMCUpdateAllWithReweight(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator_t& rg, int length, int index );
+    
+    ///destructor
+    ~WFMCUpdateAllWithReweight();
+
+    void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
+
+  private:
+    /// Copy Constructor (disabled)
+    WFMCUpdateAllWithReweight(const WFMCUpdateAllWithReweight& a): QMCUpdateBase(a){}
+    /// Copy operator (disabled).
+    WFMCUpdateAllWithReweight& operator=(const WFMCUpdateAllWithReweight&) { return *this;}
+  };
+  
+  
 }
 
 #endif

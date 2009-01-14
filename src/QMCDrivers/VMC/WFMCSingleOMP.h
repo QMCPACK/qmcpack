@@ -15,8 +15,8 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef QMCPLUSPLUS_VMCSINGLE_OMP_H
-#define QMCPLUSPLUS_VMCSINGLE_OMP_H
+#ifndef QMCPLUSPLUS_WFMCSINGLE_OMP_H
+#define QMCPLUSPLUS_WFMCSINGLE_OMP_H
 #include "QMCDrivers/QMCDriver.h" 
 #include "QMCDrivers/CloneManager.h" 
 namespace qmcplusplus {
@@ -24,10 +24,10 @@ namespace qmcplusplus {
   /** @ingroup QMCDrivers  ParticleByParticle
    * @brief Implements a VMC using particle-by-particle move. Threaded execution.
    */
-  class VMCSingleOMP: public QMCDriver, public CloneManager {
+  class WFMCSingleOMP: public QMCDriver, public CloneManager {
   public:
     /// Constructor.
-    VMCSingleOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
+    WFMCSingleOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
         HamiltonianPool& hpool);
     bool run();
     bool put(xmlNodePtr cur);
@@ -36,17 +36,16 @@ namespace qmcplusplus {
     int myWarmupSteps;
     ///period for walker dump
     int myPeriod4WalkerDump;
+    ///Index for Energy Index
+    int Eindex;
     ///option to enable/disable drift equation for VMC
-    string UseDrift;
-    ///options to use Pure DMC with truncated weights.
-    string reweight;
-    int weightLength,Eindex;
+    string UseDrift,reweight;
     ///check the run-time environments
     void resetRun();
     ///copy constructor
-    VMCSingleOMP(const VMCSingleOMP& a): QMCDriver(a),CloneManager(a) { }
+    WFMCSingleOMP(const WFMCSingleOMP& a): QMCDriver(a),CloneManager(a) { }
     /// Copy operator (disabled).
-    VMCSingleOMP& operator=(const VMCSingleOMP&) { return *this;}
+    WFMCSingleOMP& operator=(const WFMCSingleOMP&) { return *this;}
   };
 }
 

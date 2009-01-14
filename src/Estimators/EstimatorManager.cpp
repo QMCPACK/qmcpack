@@ -22,6 +22,7 @@
 #include "Message/CommUtilities.h"
 #include "Estimators/LocalEnergyEstimator.h"
 #include "Estimators/LocalEnergyOnlyEstimator.h"
+#include "Estimators/WFMCOnlyEstimator.h"
 #include "Estimators/LocalEnergyEstimatorHDF.h"
 //#include "Estimators/CompositeEstimators.h"
 #include "QMCDrivers/SimpleFixedNodeBranch.h"
@@ -543,6 +544,13 @@ namespace qmcplusplus {
             add(new LocalEnergyEstimator(H),MainEstimatorName);
           }
         }
+	else if (est_name=="WFMConly")
+	{
+	  max4ascii=H.sizeOfObservables()+10;
+	  app_log() << "  Using WFMConly for the MainEstimator " << endl;
+	  add(new WFMCOnlyEstimator(H),MainEstimatorName);
+	  est_name=MainEstimatorName;
+	}
         else 
           extra.push_back(est_name);
       } 
