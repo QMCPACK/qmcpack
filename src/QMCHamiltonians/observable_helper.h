@@ -109,13 +109,13 @@ namespace qmcplusplus {
       H5Pset_chunk(p,rank,&mydims[0]);
 
       space1_id=H5Screate_simple(rank, &mydims[0], &maxdims[0]);
-      value1_id= H5Dcreate(data_id,"data",h5_observable_type,space1_id,p);
+      value1_id= H5Dcreate(data_id,"value",h5_observable_type,space1_id,p);
       hid_t memspace = H5Screate_simple(rank, &mydims[0], NULL);
       herr_t ret = H5Dwrite(value1_id, h5_observable_type, memspace, space1_id, H5P_DEFAULT, &zeros[0]);
       H5Sclose(memspace);
 
       space2_id=H5Screate_simple(rank, &mydims[0], &maxdims[0]);
-      value2_id= H5Dcreate(data_id,"data_squared",h5_observable_type,space2_id,p);
+      value2_id= H5Dcreate(data_id,"value_squared",h5_observable_type,space2_id,p);
       memspace = H5Screate_simple(rank, &mydims[0], NULL);
       ret = H5Dwrite(value2_id, h5_observable_type, memspace, space2_id, H5P_DEFAULT, &zeros[0]);
       H5Sclose(memspace);
