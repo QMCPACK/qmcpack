@@ -109,7 +109,10 @@ namespace qmcplusplus {
     void addFunc(int source_type, FT* afunc) 
     {
       for(int i=0; i<Fs.size(); i++) 
-        if(CenterRef.GroupID[i] == source_type) Fs[i]=afunc;
+        if(CenterRef.GroupID[i] == source_type) { 
+	  Fs[i]=afunc;
+	  app_log() << "Adding function of type " << source_type << " for atom " << i << ".\n";
+	}
       Funique[source_type]=afunc;
     }
 
@@ -441,6 +444,7 @@ namespace qmcplusplus {
       for(int i=0; i<Funique.size(); ++i)
       {
         if(Funique[i]) j1copy->addFunc(i,new FT(*Funique[i]));
+        //if(Funique[i]) j1copy->addFunc(i, Funique[i]);
       }
       //j1copy->OrbitalName=OrbitalName+"_clone";
       return j1copy;

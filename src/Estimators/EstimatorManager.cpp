@@ -51,7 +51,7 @@ namespace qmcplusplus {
     MainEstimatorName("elocal"), Archive(0), DebugArchive(0),
     myComm(0), MainEstimator(0)
     //, CompEstimators(0)
-    ,max4ascii(16), pendingRequests(0)
+    ,max4ascii(30), pendingRequests(0)
   { 
     setCommunicator(c);
   }

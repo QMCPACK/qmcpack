@@ -16,6 +16,7 @@
 #ifndef QMCPLUSPLUS_COULOMBPBCAA_TEMP_H
 #define QMCPLUSPLUS_COULOMBPBCAA_TEMP_H
 #include "QMCHamiltonians/QMCHamiltonianBase.h"
+#include "QMCHamiltonians/ForceBase.h"
 #include "LongRange/LRCoulombSingleton.h"
 
 namespace qmcplusplus {
@@ -26,7 +27,7 @@ namespace qmcplusplus {
    * Functionally identical to CoulombPBCAA but uses a templated version of
    * LRHandler.
    */
-  struct CoulombPBCAATemp: public QMCHamiltonianBase {
+  struct CoulombPBCAATemp: public QMCHamiltonianBase, public ForceBase {
 
     typedef LRCoulombSingleton::LRHandlerType LRHandlerType;
     typedef LRCoulombSingleton::GridType       GridType;
@@ -51,9 +52,13 @@ namespace qmcplusplus {
     Matrix<RealType> SR2;
     Vector<RealType> dSR;
     Vector<ComplexType> del_eikr;
+    /// Flag for whether to compute forces or not
+    bool ComputeForces;
+
 
     /** constructor */
-    CoulombPBCAATemp(ParticleSet& ref, bool active);
+    CoulombPBCAATemp(ParticleSet& ref, bool active, 
+		     bool computeForces=false);
 
     ~CoulombPBCAATemp();
 
@@ -87,8 +92,29 @@ namespace qmcplusplus {
 
     Return_t evalSR(ParticleSet& P);
     Return_t evalLR(ParticleSet& P);
+    Return_t evalSRwithForces(ParticleSet& P);
+    Return_t evalLRwithForces(ParticleSet& P);
     Return_t evalConsts();
     Return_t evaluateForPbyP(ParticleSet& P);
+
+    void addObservables(PropertySetType& plist)
+    { 
+      QMCHamiltonianBase::addObservables(plist);
+      if (ComputeForces) addObservablesF(plist);   
+    }
+
+    void setObservables(PropertySetType& plist)
+    { 
+      QMCHamiltonianBase::setObservables(plist);
+      if (ComputeForces) setObservablesF(plist);   
+    }
+
+    void setParticlePropertyList(PropertySetType& plist, int offset)
+    {  
+      QMCHamiltonianBase::setParticlePropertyList(plist, offset);
+      if (ComputeForces) setParticleSetF(plist, offset);  
+    }
+
   };
 
 }

@@ -20,6 +20,7 @@
 #include "Numerics/OneDimGridBase.h"
 #include "Numerics/OneDimGridFunctor.h"
 #include "Numerics/OneDimLinearSpline.h"
+#include "Numerics/OneDimCubicSpline.h"
 
 namespace qmcplusplus {
 
@@ -30,7 +31,7 @@ namespace qmcplusplus {
   struct LocalECPotential: public QMCHamiltonianBase {
 
     typedef OneDimGridBase<RealType> GridType;
-    typedef OneDimLinearSpline<RealType> RadialPotentialType;
+    typedef OneDimCubicSpline<RealType> RadialPotentialType;
 
     ///reference to the ionic configuration
     const ParticleSet& IonConfig;

@@ -20,9 +20,11 @@
 
 namespace qmcplusplus {
 
-  CoulombPBCAATemp::CoulombPBCAATemp(ParticleSet& ref, bool active): 
+  CoulombPBCAATemp::CoulombPBCAATemp(ParticleSet& ref, bool active,
+				     bool computeForces) : 
     AA(0), myGrid(0), rVs(0), 
-    is_active(active), FirstTime(true), myConst(0.0)
+    is_active(active), FirstTime(true), myConst(0.0),
+    ComputeForces(computeForces), ForceBase(ref,ref)
   {
     ReportEngine PRE("CoulombPBCAATemp","CoulombPBCAATemp");
 
@@ -30,14 +32,26 @@ namespace qmcplusplus {
     DistanceTableData *d_aa = DistanceTable::add(ref);
     PtclRefName=d_aa->Name;
     initBreakup(ref);
+    prefix="F_AA";
+    
     app_log() << "  Maximum K shell " << AA->MaxKshell << endl;
     app_log() << "  Number of k vectors " << AA->Fk.size() << endl;
 
     if(!is_active)
     {
       d_aa->evaluate(ref);
-      RealType eL=evalLR(ref);
-      RealType eS=evalSR(ref);
+      RealType eL(0.0), eS(0.0);
+      if (computeForces) {
+	forces = 0.0;
+	eS=evalSRwithForces(ref);
+	// 1.3978248322
+        eL=evalLRwithForces(ref);
+	// 2.130267378 
+      }
+      else {
+	eL=evalLR(ref);
+	eS=evalSR(ref);
+      }
       NewValue=Value = eL+eS+myConst;
       app_log() << "  Fixed Coulomb potential for " << ref.getName();
       app_log() << "\n    V(short) =" << eS 
@@ -253,6 +267,23 @@ namespace qmcplusplus {
     }
 
   CoulombPBCAATemp::Return_t
+    CoulombPBCAATemp::evalLRwithForces(ParticleSet& P) {
+    RealType LR=0.0;
+      const StructFact& PtclRhoK(*(P.SK));
+      vector<TinyVector<RealType,DIM> > grad(P.getTotalNum());
+      for(int spec2=0; spec2<NumSpecies; spec2++) {
+        RealType Z2 = Zspec[spec2];
+	for (int iat=0; iat<grad.size(); iat++) 
+	  grad[iat] = TinyVector<RealType,DIM>(0.0, 0.0, 0.0);
+	AA->evaluateGrad(P, P, spec2, Zat, grad);
+	for (int iat=0; iat<grad.size(); iat++) 
+	  forces[iat] += Z2*grad[iat];
+      } //spec2
+      return evalLR(P);
+    }
+
+
+  CoulombPBCAATemp::Return_t
     CoulombPBCAATemp::evalSR(ParticleSet& P) {
       const DistanceTableData *d_aa = P.DistTables[0];
       RealType SR=0.0;
@@ -268,6 +299,30 @@ namespace qmcplusplus {
       }
       return SR;
     }
+
+
+  CoulombPBCAATemp::Return_t
+    CoulombPBCAATemp::evalSRwithForces(ParticleSet& P) {
+      const DistanceTableData *d_aa = P.DistTables[0];
+      RealType SR=0.0;
+      for(int ipart=0; ipart<NumCenters; ipart++){
+        RealType esum = 0.0;
+        for(int nn=d_aa->M[ipart],jpart=ipart+1; nn<d_aa->M[ipart+1]; nn++,jpart++) {
+	  RealType rV, d_rV_dr, d2_rV_dr2;
+	  rV = rVs->splint(d_aa->r(nn), d_rV_dr, d2_rV_dr2);
+	  RealType V = rV *d_aa->rinv(nn);
+          esum += Zat[jpart]*d_aa->rinv(nn)*rV;
+	  PosType grad = Zat[jpart]*Zat[ipart]*
+	    (d_rV_dr - V)*d_aa->rinv(nn)*d_aa->rinv(nn)*d_aa->dr(nn);
+	  forces[ipart] += grad;
+	  forces[jpart] -= grad;
+        }
+        //Accumulate pair sums...species charge for atom i.
+        SR += Zat[ipart]*esum;
+      }
+      return SR;
+    }
+
 
   CoulombPBCAATemp::Return_t
     CoulombPBCAATemp::evalConsts() {

@@ -57,6 +57,7 @@ namespace qmcplusplus {
           rAttrib.put(kids);
 
 	  BsplineFunctor<double> *functor = new BsplineFunctor<double>(cusp);
+	  functor->elementType = elementType;
 	  int ig = sSet.findSpecies (elementType);
 	  if (ig < numSpecies) 
           {//ignore
@@ -159,6 +160,7 @@ namespace qmcplusplus {
 
 	  RadFuncType *functor = new RadFuncType(cusp);
 	  functor->put (kids);
+	  functor->elementType=pairType;
 	  if (functor->cutoff_radius < 1.0e-6) {
 	    app_log()  << "  BsplineFunction rcut is currently zero.\n"
 		       << "  Setting to Wigner-Seitz radius = " 

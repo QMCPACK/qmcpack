@@ -49,6 +49,7 @@ namespace qmcplusplus {
       pairName=elns.getName()+"-"+ions.getName();
 
       forces.resize(Nnuc);
+      forces = 0.0;
       forces_IonIon.resize(Nnuc);
       forces_IonIon = 0.0;
     }
@@ -56,6 +57,7 @@ namespace qmcplusplus {
   void ForceBase::addObservablesF(QMCTraits::PropertySetType& plist) {
     if(FirstForceIndex<0) 
       FirstForceIndex=plist.size();
+    //    cerr << "FirstForceIndex = " << FirstForceIndex << endl;
     for(int iat=0; iat<Nnuc; iat++) {
       for(int x=0; x<OHMMS_DIM; x++) {
         ostringstream obsName;
@@ -96,8 +98,9 @@ namespace qmcplusplus {
 
     int index = FirstForceIndex;
     for(int iat=0; iat<Nnuc; iat++) {
+      //      cerr << "Forces[iat] = " << forces[iat] << " index = " << index << endl;
       for(int x=0; x<OHMMS_DIM; x++) {
-        plist[index] = forces[iat][x] + forces_IonIon[iat][x];
+        plist[index] = forces[iat][x];// + forces_IonIon[iat][x];
         index++;
       }
     }
@@ -108,7 +111,7 @@ namespace qmcplusplus {
     int index = FirstForceIndex + offset;
     for(int iat=0; iat<Nnuc; iat++) {
       for(int x=0; x<OHMMS_DIM; x++) {
-        plist[index] = forces[iat][x] + forces_IonIon[iat][x];
+        plist[index] = forces[iat][x];// + forces_IonIon[iat][x];
         index++;
       }
     }

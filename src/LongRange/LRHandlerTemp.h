@@ -22,6 +22,7 @@
 #include "LongRange/LRHandlerBase.h"
 #include "LongRange/LPQHIBasis.h"
 #include "LongRange/LRBreakup.h"
+#include "OhmmsPETE/OhmmsMatrix.h"
 
 namespace qmcplusplus {
 
@@ -72,7 +73,7 @@ namespace qmcplusplus {
       myFunc.reset(ref);
       fillFk(ref.SK->KLists);
     }
-      
+    
     void initBreakup(ParticleSet& ref) {
       InitBreakup(ref.Lattice,1); 
       fillFk(ref.SK->KLists);
@@ -91,7 +92,7 @@ namespace qmcplusplus {
     void resetTargetParticleSet(ParticleSet& ref) {
       myFunc.reset(ref);
     }
-
+    
     void resetTargetParticleSet(ParticleSet& ref, RealType rs) {
       myFunc.reset(ref,rs);
     }
@@ -101,7 +102,7 @@ namespace qmcplusplus {
       for(int n=0; n<coefs.size(); n++) v -= coefs[n]*Basis.h(n,r);
       return v;
     }
-
+    
     /**  evaluate the first derivative of the short range part at r
      *
      * @param r  radius
@@ -114,7 +115,7 @@ namespace qmcplusplus {
       return df;
     }
     
-
+    
     /** evaluate the contribution from the long-range part for for spline
      */
     inline RealType evaluateLR(RealType r) {
@@ -122,7 +123,7 @@ namespace qmcplusplus {
       for(int n=0; n<coefs.size(); n++) v -= coefs[n]*Basis.h(n,r);
       return v;
     }
-
+    
     /** evaluate \f$\sum_k F_{k} \rho^1_{-{\bf k} \rho^2_{\bf k}\f$
      * @param kshell degeneracies of the vectors
      * @param rk1 starting address of \f$\rho^1_{{\bf k}\f$
@@ -131,13 +132,13 @@ namespace qmcplusplus {
      * Valid for the strictly ordered k and \f$F_{k}\f$.
      */
     inline RealType evaluate(const vector<int>& kshell, 
-        const ComplexType* restrict rk1, const ComplexType* restrict rk2) {
+			     const ComplexType* restrict rk1, const ComplexType* restrict rk2) 
+    {
       RealType vk=0.0;
-      for(int ks=0,ki=0; ks<MaxKshell; ks++)
-      {
-        RealType u=0;
-        for(;ki<kshell[ks+1]; ki++,rk1++,rk2++)
-          u += ((*rk1).real()*(*rk2).real()+(*rk1).imag()*(*rk2).imag());
+      for(int ks=0,ki=0; ks<MaxKshell; ks++) {
+	RealType u=0;
+	for(;ki<kshell[ks+1]; ki++,rk1++,rk2++)
+	  u += ((*rk1).real()*(*rk2).real()+(*rk1).imag()*(*rk2).imag());
         vk += Fk_symm[ks]*u;
       }
       //for(int ki=0; ki<Fk.size(); ki++) {
@@ -146,6 +147,32 @@ namespace qmcplusplus {
       //} //ki
       return vk;
     }
+    
+    /** evaluate \f$\sum_k F_{k} \rho^1_{-{\bf k} \rho^2_{\bf k}\f$
+     * and \f$\sum_k F_{k} \rho^1_{-{\bf k} \rho^2_{\bf k}\f$
+     * @param kshell degeneracies of the vectors
+     * @param rk1 starting address of \f$\rho^1_{{\bf k}\f$
+     * @param rk2 starting address of \f$\rho^2_{{\bf k}\f$
+     * 
+     * Valid for the strictly ordered k and \f$F_{k}\f$.
+     */
+    inline void evaluateGrad(const ParticleSet &A, const ParticleSet &B,
+			     int specB, vector<RealType> &Zat,
+			     vector<TinyVector<RealType,DIM> > &grad1) 
+    {
+      const Matrix<ComplexType> &e2ikrA = A.SK->eikr;
+      const ComplexType *rhokB = B.SK->rhok[specB];
+      const vector<PosType> &kpts = A.SK->KLists.kpts_cart;
+      for (int ki=0; ki<Fk.size(); ki++) {
+      	TinyVector<RealType,DIM> k = kpts[ki];
+      	for (int iat=0; iat<Zat.size(); iat++) {
+	  grad1[iat] -= Zat[iat]*k*Fk[ki]*
+	    (e2ikrA(iat,ki).real()*rhokB[ki].imag() - e2ikrA(iat,ki).imag()*rhokB[ki].real());
+	}
+      }
+    }
+    
+
 
   private:
 

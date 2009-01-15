@@ -17,6 +17,7 @@
 #ifndef QMCPLUSPLUS_COULOMBPBCAB_TEMP_H
 #define QMCPLUSPLUS_COULOMBPBCAB_TEMP_H
 #include "QMCHamiltonians/QMCHamiltonianBase.h"
+#include "QMCHamiltonians/ForceBase.h"
 #include "LongRange/LRCoulombSingleton.h"
 #include "Numerics/OneDimGridBase.h"
 #include "Numerics/OneDimGridFunctor.h"
@@ -30,7 +31,7 @@ namespace qmcplusplus {
    * Functionally identical to CoulombPBCAB but uses a templated version of
    * LRHandler.
    */
-  struct CoulombPBCABTemp: public QMCHamiltonianBase {
+  struct CoulombPBCABTemp: public QMCHamiltonianBase, public ForceBase {
 
     typedef LRCoulombSingleton::LRHandlerType LRHandlerType;
     typedef LRCoulombSingleton::GridType GridType;
@@ -58,6 +59,8 @@ namespace qmcplusplus {
     GridType* myGrid;
     ///Always mave a radial functor for the bare coulomb
     RadFunctorType* V0;
+    /// Flag for whether to compute forces or not
+    bool ComputeForces;
 
     ///number of particles per species of A
     vector<int> NofSpeciesA;
@@ -92,7 +95,7 @@ namespace qmcplusplus {
     bool kcdifferent; 
     RealType minkc;
 
-    CoulombPBCABTemp(ParticleSet& ions, ParticleSet& elns);
+    CoulombPBCABTemp(ParticleSet& ions, ParticleSet& elns, bool computeForces=false);
 
     ///// copy constructor
     //CoulombPBCABTemp(const CoulombPBCABTemp& c);
@@ -130,9 +133,30 @@ namespace qmcplusplus {
 
     Return_t evalSR(ParticleSet& P);
     Return_t evalLR(ParticleSet& P);
+    Return_t evalSRwithForces(ParticleSet& P);
+    Return_t evalLRwithForces(ParticleSet& P);
     Return_t evalConsts();
     Return_t evaluateForPyP(ParticleSet& P);
     void add(int groupID, RadFunctorType* ppot);
+
+    void addObservables(PropertySetType& plist)
+    { 
+      QMCHamiltonianBase::addObservables(plist);
+      if (ComputeForces) addObservablesF(plist);   
+    }
+
+    void setObservables(PropertySetType& plist)
+    { 
+      QMCHamiltonianBase::setObservables(plist);
+      if (ComputeForces) setObservablesF(plist);   
+    }
+
+    void setParticlePropertyList(PropertySetType& plist, int offset)
+    {  
+      QMCHamiltonianBase::setParticlePropertyList(plist, offset);
+      if (ComputeForces) setParticleSetF(plist, offset);  
+    }
+
   };
 
 }

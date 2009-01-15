@@ -46,9 +46,11 @@ namespace qmcplusplus {
 
     string ecpFormat("table");
     string pbc("yes");
+    string forces("no");
     OhmmsAttributeSet pAttrib;
     pAttrib.add(ecpFormat,"format");
     pAttrib.add(pbc,"pbc");
+    pAttrib.add(forces,"forces");
     pAttrib.put(cur);
 
     //const xmlChar* t=xmlGetProp(cur,(const xmlChar*)"format");
@@ -77,7 +79,10 @@ namespace qmcplusplus {
       }
       else
       {
-        CoulombPBCABTemp* apot=new CoulombPBCABTemp(IonConfig,targetPtcl);
+	bool doForces = (forces == "yes") || (forces == "true");
+	if (doForces) 
+	  app_log() << "  Will compute forces in CoulombPBCABTemp.\n" << endl;
+        CoulombPBCABTemp* apot=new CoulombPBCABTemp(IonConfig,targetPtcl, doForces);
         for(int i=0; i<localPot.size(); i++) {
           if(localPot[i]) apot->add(i,localPot[i]);
         }

@@ -40,6 +40,7 @@ namespace qmcplusplus {
     std::vector<real_type> Parameters;
     std::vector<std::string> ParameterNames;
     std::string elementType, pairType;
+    int ResetCount;
 
     ///constructor
     BsplineFunctor(real_type cusp=0.0) : 
@@ -56,7 +57,7 @@ namespace qmcplusplus {
           0.0, 0.0,  3.0, -2.0,
           0.0, 0.0, -3.0,  1.0,
           0.0, 0.0,  1.0,  0.0),
-      CuspValue(cusp)
+      CuspValue(cusp), ResetCount(0)
     {
       cutoff_radius = 0.0;
     }
@@ -324,8 +325,25 @@ namespace qmcplusplus {
         int loc=myVars.where(i);
         if(loc>=0) Parameters[i]=myVars[i]=active[loc];
       }
+      if (ResetCount++ == 100) {
+	ResetCount = 0;
+	print();
+      }
       reset();
     }
+
+
+    void print()
+    {
+      string fname = (elementType != "") ? elementType : pairType;
+      fname = fname + ".dat";
+      //cerr << "Writing " << fname << " file.\n";
+      FILE *fout = fopen (fname.c_str(), "w");
+      for (double r=0.0; r<cutoff_radius; r+=0.001)
+	fprintf (fout, "%8.3f %16.10f\n", r, evaluate(r));
+      fclose(fout);
+    }
+    
 
     void print(std::ostream& os)
     {

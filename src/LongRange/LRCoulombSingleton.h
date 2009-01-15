@@ -23,7 +23,7 @@
 #include "LongRange/LRHandlerTemp.h"
 #include "Numerics/OneDimGridBase.h"
 #include "Numerics/OneDimGridFunctor.h"
-//#include "Numerics/OneDimCubicSpline.h"
+#include "Numerics/OneDimCubicSpline.h"
 #include "Numerics/OneDimLinearSpline.h"
 
 namespace qmcplusplus {
@@ -86,7 +86,8 @@ namespace qmcplusplus {
     typedef OHMMS_PRECISION                                    RealType;
     typedef LRHandlerTemp<CoulombFunctor<RealType>,LPQHIBasis> LRHandlerType;
     typedef LinearGrid<RealType>                               GridType;
-    typedef OneDimLinearSpline<RealType>                       RadFunctorType;
+    //    typedef OneDimLinearSpline<RealType>                       RadFunctorType;
+    typedef OneDimCubicSpline<RealType>                       RadFunctorType;
 
     static LRHandlerType* CoulombHandler;
 

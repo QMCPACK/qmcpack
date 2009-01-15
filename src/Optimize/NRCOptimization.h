@@ -86,12 +86,16 @@ struct NRCOptimization {
     Return_t bx, fa, fx, fb;
     Return_t xx = LambdaMax;
 
+    fprintf (stderr, "Before:  ax = %1.10f  bx=%1.10f  cx=%1.10f\n",
+	     ax, xx, bx);
     mnbrakNRC(ax,xx,bx,fa,fx,fb);
+    fprintf (stderr, "After:  ax = %1.10f  bx=%1.10f  cx=%1.10f\n",
+	     ax, xx, bx);
 
     Lambda = 0.0e0;
     Return_t ep = brentNRC(ax,xx,bx,Lambda);
 
-    if(Lambda<TINY) 
+    if(std::fabs(Lambda)<TINY) 
       return false;
     else 
       return true;

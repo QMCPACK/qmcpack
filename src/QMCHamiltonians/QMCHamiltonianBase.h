@@ -67,6 +67,9 @@ namespace qmcplusplus {
     RealType Value;
     ///a new value for a proposed move
     RealType NewValue;
+    /// This is used to store the value for force on the source
+    /// ParticleSet.  It is accumulated if setComputeForces(true).
+    ParticleSet::ParticlePos_t IonForce;
     ///what is this????
     Walker<Return_t, ParticleSet::ParticleGradient_t>* tWalker;
     ///name of this object
@@ -199,6 +202,12 @@ namespace qmcplusplus {
     //{
     //  return 0;
     //}
+
+    virtual void setComputeForces(bool compute) 
+    {
+      // empty
+    }
+
   };
 }
 #endif

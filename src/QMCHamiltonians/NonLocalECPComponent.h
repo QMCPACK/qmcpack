@@ -22,6 +22,7 @@
 #include "Numerics/OneDimGridBase.h"
 #include "Numerics/OneDimGridFunctor.h"
 #include "Numerics/OneDimLinearSpline.h"
+#include "Numerics/OneDimCubicSpline.h"
 #include "Numerics/OhmmsBlas.h"
 
 namespace qmcplusplus {
@@ -32,7 +33,7 @@ namespace qmcplusplus {
 
     typedef vector<PosType>  SpherGridType;
     typedef OneDimGridBase<RealType> GridType;
-    typedef OneDimLinearSpline<RealType> RadialPotentialType;
+    typedef OneDimCubicSpline<RealType> RadialPotentialType;
 
     ///Non Local part: angular momentum, potential and grid
     int lmax;

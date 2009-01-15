@@ -21,14 +21,17 @@
 
 namespace qmcplusplus {
 
-  CoulombPBCABTemp::CoulombPBCABTemp(ParticleSet& ions, ParticleSet& elns): 
-    PtclA(ions), myConst(0.0), myGrid(0),V0(0)
+  CoulombPBCABTemp::CoulombPBCABTemp(ParticleSet& ions, ParticleSet& elns, 
+				     bool computeForces): 
+    PtclA(ions), myConst(0.0), myGrid(0),V0(0),ComputeForces(computeForces),
+    ForceBase (ions, elns)
     {
       ReportEngine PRE("CoulombPBCABTemp","CoulombPBCABTemp");
       //Use singleton pattern 
       //AB = new LRHandlerType(ions);
       myTableIndex=elns.addTable(ions);
       initBreakup(elns);
+      prefix="Flocal";
       app_log() << "  Maximum K shell " << AB->MaxKshell << endl;
       app_log() << "  Number of k vectors " << AB->Fk.size() << endl;
     }
@@ -69,7 +72,13 @@ namespace qmcplusplus {
   CoulombPBCABTemp::Return_t 
     CoulombPBCABTemp::evaluate(ParticleSet& P) 
     {
-      return Value = evalLR(P)+evalSR(P)+myConst;
+      if (ComputeForces) {
+	forces = 0.0;
+	Value = evalLRwithForces(P) + evalSRwithForces(P) +myConst;
+      }
+      else
+	Value = evalLR(P) + evalSR(P) +myConst;
+      return Value;
     }
 
   CoulombPBCABTemp::Return_t 
@@ -274,19 +283,36 @@ namespace qmcplusplus {
   }
 
   CoulombPBCABTemp::Return_t
-    CoulombPBCABTemp::evalLR(ParticleSet& P) {
-      RealType res=0.0;
-      const StructFact& RhoKA(*(PtclA.SK));
-      const StructFact& RhoKB(*(P.SK));
-      for(int i=0; i<NumSpeciesA; i++) {
-        RealType esum=0.0;
-        for(int j=0; j<NumSpeciesB; j++) {
-          esum += Qspec[j]*AB->evaluate(RhoKA.KLists.kshell, RhoKA.rhok[i],RhoKB.rhok[j]);
-        } //speceln
-        res += Zspec[i]*esum;
-      }//specion
-      return res;
-    }
+  CoulombPBCABTemp::evalLR(ParticleSet& P) {
+    RealType res=0.0;
+    const StructFact& RhoKA(*(PtclA.SK));
+    const StructFact& RhoKB(*(P.SK));
+    for(int i=0; i<NumSpeciesA; i++) {
+      RealType esum=0.0;
+      for(int j=0; j<NumSpeciesB; j++) {
+	esum += Qspec[j]*AB->evaluate(RhoKA.KLists.kshell, RhoKA.rhok[i],RhoKB.rhok[j]);
+      } //speceln
+      res += Zspec[i]*esum;
+    }//specion
+    return res;
+  }
+
+  
+  CoulombPBCABTemp::Return_t
+  CoulombPBCABTemp::evalLRwithForces(ParticleSet& P) {
+    const StructFact& RhoKA(*(PtclA.SK));
+    const StructFact& RhoKB(*(P.SK));
+    vector<TinyVector<RealType,DIM> > grad(PtclA.getTotalNum());
+    for(int j=0; j<NumSpeciesB; j++) {
+      for (int iat=0; iat<grad.size(); iat++) 
+	grad[iat] = TinyVector<RealType,DIM>(0.0, 0.0, 0.0);
+      AB->evaluateGrad(PtclA, P, j, Zat, grad);
+      for (int iat=0; iat<grad.size(); iat++) 
+	forces[iat] += Qspec[j]*grad[iat];
+    } // electron species
+    return evalLR(P);
+  }
+
 
   CoulombPBCABTemp::Return_t
     CoulombPBCABTemp::evalSR(ParticleSet& P) 
@@ -300,14 +326,42 @@ namespace qmcplusplus {
         RadFunctorType* rVs=Vat[iat];
         for(int nn=d_ab.M[iat], jat=0; nn<d_ab.M[iat+1]; ++nn,++jat) 
         {
-          //if(d_ab->r(nn)>=myRcut) continue;
-          esum += Qat[jat]*d_ab.rinv(nn)*rVs->splint(d_ab.r(nn));
+          // if(d_ab.r(nn)>=(myRcut-0.1)) continue;
+          esum += Qat[jat]*d_ab.rinv(nn)*rVs->splint(d_ab.r(nn));;
         }
         //Accumulate pair sums...species charge for atom i.
         res += Zat[iat]*esum;
       }
       return res;
     }
+
+  CoulombPBCABTemp::Return_t
+    CoulombPBCABTemp::evalSRwithForces(ParticleSet& P) 
+    {
+      const DistanceTableData &d_ab(*P.DistTables[myTableIndex]);
+      RealType res=0.0;
+      //Loop over distinct eln-ion pairs
+      for(int iat=0; iat<NptclA; iat++)
+      {
+        RealType esum = 0.0;
+        RadFunctorType* rVs=Vat[iat];
+
+        for(int nn=d_ab.M[iat], jat=0; nn<d_ab.M[iat+1]; ++nn,++jat) 
+        {
+	  RealType rV, d_rV_dr, d2_rV_dr2, V;
+	  rV = rVs->splint(d_ab.r(nn), d_rV_dr, d2_rV_dr2);
+	  V = rV *d_ab.rinv(nn);
+	  PosType drhat = d_ab.rinv(nn) * d_ab.dr(nn);
+          esum += Qat[jat]*d_ab.rinv(nn)*rV;
+	  forces[iat] += Zat[iat]*Qat[jat] * 
+	    (d_rV_dr - V)*d_ab.rinv(nn) *drhat;
+        }
+        //Accumulate pair sums...species charge for atom i.
+        res += Zat[iat]*esum;
+      }
+      return res;
+    }
+
 
   CoulombPBCABTemp::Return_t
     CoulombPBCABTemp::evalConsts() {

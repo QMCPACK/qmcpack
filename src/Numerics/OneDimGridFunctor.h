@@ -70,6 +70,19 @@ struct OneDimGridFunctor//: public FunctorBase<Td,1> {
   //  FirstAddress.resize(3,0);
   //}
 
+
+  OneDimGridFunctor<Td,Tg,CTd,CTg>(const OneDimGridFunctor<Td,Tg,CTd,CTg>& a)
+  {
+    GridManager = a.GridManager;
+    m_grid = a.m_grid->makeClone();
+    Y = a.Y;
+    dY = a.dY;
+    d2Y = a.d2Y;
+    m_Y.resize(a.m_Y.size());
+    m_Y = a.m_Y;
+    NumNodes = a.NumNodes;
+  }
+
   /// assignment operator
   const this_type& operator=(const this_type& a) {
     //This object does not manage the grid
@@ -234,6 +247,7 @@ struct OneDimGridFunctor//: public FunctorBase<Td,1> {
 
   ///the number of nodes
   int NumNodes;
+
 
   ///address of coefficients Y and dY or d2Y
   //std::vector<value_type*> FirstAddress;

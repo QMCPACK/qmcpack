@@ -32,18 +32,23 @@ namespace qmcplusplus {
    */
   CSEnergyEstimator::CSEnergyEstimator(QMCHamiltonian& h, int hcopy) 
   {
-    NumCopies=hcopy;
-    NumObservables = h.size();
-    scalars.resize(2*NumCopies+NumCopies*(NumCopies-1)/2);
-    scalars_saved.resize(2*NumCopies+NumCopies*(NumCopies-1)/2);
-    //d_data.resize(NumCopies*3+NumCopies*(NumCopies-1)/2);
-  }
+    int NumObservables = h.size();
 
-  CSEnergyEstimator::CSEnergyEstimator(const CSEnergyEstimator& mest): 
-    ScalarEstimatorBase(mest)
-  {
-    NumCopies=mest.NumCopies;
-    //d_data.resize(mest.d_data.size());
+    NumCopies=hcopy;
+    FirstHamiltonian = h.startIndex();
+    LastHamiltonian = FirstHamiltonian+NumObservables;
+
+    //add names
+    h_components.push_back("LocEne");
+    h_components.push_back("LocPot");
+    for(int i=0; i<NumObservables; ++i) 
+      h_components.push_back(h.getObservableName(i));
+
+    scalars.resize(NumCopies  + 
+		   h_components.size()*(NumCopies+NumCopies*(NumCopies-1)/2));
+    scalars_saved.resize(scalars.size());
+    //    cerr << "scalars.size() = " << scalars.size() << endl;
+    //d_data.resize(NumCopies*3+NumCopies*(NumCopies-1)/2);
   }
 
   ScalarEstimatorBase* CSEnergyEstimator::clone()
@@ -56,27 +61,38 @@ namespace qmcplusplus {
    */
   void 
   CSEnergyEstimator::add2Record(RecordNamedProperty<RealType>& record) {
-    FirstIndex = record.add("LE0");
-    //int dummy=record.add("LESQ0");
-    int dummy=record.add("WPsi0");
-    char aname[32];
-    for(int i=1; i<NumCopies; i++)
+    char aname[80];
+    FirstIndex = record.size();
+    
+    for(int i=0; i<NumCopies; ++i)
     {
-      sprintf(aname,"LE%i",i);   
-      dummy=record.add(aname);
-      //sprintf(aname,"LESQ%i",i);   
-      //dummy=record.add(aname);
-      sprintf(aname,"WPsi%i",i);   
-      dummy=record.add(aname);
-    }
-
-    for(int i=0; i<NumCopies-1; i++) {
-      for(int j=i+1; j<NumCopies; j++) {
-        sprintf(aname,"DiffS%iS%i",i,j); 
-        dummy=record.add(aname);
+      for(int k=0; k<h_components.size(); ++k)
+      {
+        sprintf(aname,"%s_%i",h_components[k].c_str(),i);   
+        int dummy=record.add(aname);
       }
     }
-    LastIndex=dummy+1;
+
+    for(int i=0; i<NumCopies; ++i)
+    {
+      sprintf(aname,"wpsi_%i",i);   
+      int dummy=record.add(aname);
+    }
+
+    for(int i=0; i<NumCopies; i++) {
+      for(int j=i+1; j<NumCopies; j++) {
+        for(int k=0; k<h_components.size(); ++k)
+        {
+          sprintf(aname,"d%s_%d_%d",h_components[k].c_str(),i,j); 
+          int dummy=record.add(aname);
+        }
+      }
+    }
+
+
+    LastIndex=record.size();
+    tmp_data.resize(NumCopies,h_components.size());
+    uweights.resize(NumCopies);
     clear();
 
     //msg.add(d_data.begin(),d_data.end());
@@ -85,26 +101,49 @@ namespace qmcplusplus {
   void 
   CSEnergyEstimator::accumulate(const Walker_t& awalker, RealType wgt) 
   {
-    int ii=0;
-    vector<RealType> e(NumCopies),uw(NumCopies);
+
+    //first copy data to tmp_dat to calculate differences
     for(int i=0; i<NumCopies; i++) 
     {
-      //get the pointer to the i-th row
       const RealType* restrict prop=awalker.getPropertyBase(i);
-      e[i]=prop[LOCALENERGY];
-      uw[i]=prop[UMBRELLAWEIGHT];
-      scalars[ii++](e[i],uw[i]);
-      scalars[ii++](uw[i],1.0);
-      //    RealType uw = prop[UMBRELLAWEIGHT];
-      //    RealType e = prop[LOCALENERGY];
-      //    d_data[ii++]+=uw*e;
-      //    d_data[ii++]+=uw*e*e;
-      //    d_data[ii++]+=uw;
+      RealType* restrict prop_saved=tmp_data[i];
+      uweights[i]=prop[UMBRELLAWEIGHT];
+      *prop_saved++=prop[LOCALENERGY];
+      *prop_saved++=prop[LOCALPOTENTIAL];
+      std::copy(prop+FirstHamiltonian,prop+LastHamiltonian,prop_saved);
     }
-    for(int i=0; i<NumCopies-1; i++) 
+
+    int ii=0;
+    const RealType *hptr=tmp_data.data();
+    for(int i=0; i<NumCopies; i++) 
+    {
+      RealType uw=uweights[i];
+      for(int k=0; k<tmp_data.cols(); ++k) scalars[ii++](*hptr++,uw);
+    }
+
+    for(int i=0; i<NumCopies; i++) 
+    {
+      scalars[ii++](uweights[i],1.0);
+    }
+
+    for(int i=0; i<NumCopies; i++) 
+    {
+      RealType ui=uweights[i];
       for(int j=i+1; j<NumCopies; j++)
-        scalars[ii++](uw[i]*e[i]-uw[j]*e[j],1.0);
-        //d_data[ii++]+=uw[i]*e[i]-uw[j]*e[j];
+      {
+        RealType uj=uweights[j];
+	// cerr << "ui = " << ui << "  uj = " << uj << endl;
+	// cerr << "diff        = " << tmp_data(j,0) - tmp_data(i,0) << endl;
+	// cerr << "LOCALENERGY = " << uj*awalker.getPropertyBase(j)[LOCALENERGY] 
+	//   - ui*awalker.getPropertyBase(i)[LOCALENERGY] << endl;
+
+        for(int k=0; k<tmp_data.cols(); ++k) 
+          scalars[ii++](2.0*(ui*tmp_data(i,k)-uj*tmp_data(j,k)),1.0);
+	  // scalars[ii++](awalker.getPropertyBase(j)[LOCALENERGY] -
+	  // 		awalker.getPropertyBase(i)[LOCALENERGY],1.0);
+      }
+    }
+    //d_data[ii++]+=uw[i]*e[i]-uw[j]*e[j];
   }
 
   void 

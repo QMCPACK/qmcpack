@@ -341,6 +341,8 @@ namespace qmcplusplus {
 
         pp_loc = new RadialPotentialType(agrid,newP);
         pp_loc->spline();
+	// for (double r=0.0; r<3.50001; r+=0.001) 
+	//   fprintf (stderr, "%10.5f %10.5f\n", r, pp_loc->splint(r));
       }
   }
 

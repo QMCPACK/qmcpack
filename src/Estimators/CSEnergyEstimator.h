@@ -32,14 +32,21 @@ namespace qmcplusplus {
 
     ///number of correlated systems
     int NumCopies;
-    ///number of observables
-    int NumObservables;
+    ///index of the starting Hamiltonian component
+    int FirstHamiltonian;
+    ///index of the ending Hamiltonian component
+    int LastHamiltonian;
+    ///save umbrella weights
+    vector<RealType> uweights;
+    ///temporary dat
+    Matrix<RealType> tmp_data;
+    ///name of hamiltonian components
+    vector<string> h_components;
     /** constructor
      * @param h QMCHamiltonian to define the components
      * @param hcopy number of copies of QMCHamiltonians
      */
     CSEnergyEstimator(QMCHamiltonian& h, int hcopy=1); 
-    CSEnergyEstimator(const CSEnergyEstimator& mest);
     ScalarEstimatorBase* clone();
 
     inline RealType getUmbrellaWeight(int ipsi)

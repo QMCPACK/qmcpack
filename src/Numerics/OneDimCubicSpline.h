@@ -51,6 +51,7 @@ public:
   data_type m_Y1;
   int First,Last;
   point_type r_min, r_max;
+  value_type ConstValue;
 
   OneDimCubicSplineFirst(grid_type* gt = 0): base_type(gt){ }
 
@@ -60,6 +61,7 @@ public:
     m_Y.resize(nv.size());
     std::copy(nv.begin(), nv.end(), m_Y.data());
   }
+
 
   /** evaluate the value at r
    * @param r value on a grid
@@ -78,7 +80,7 @@ public:
     if(r<r_min) {
       return m_Y[0]+m_Y1[0]*(r-r_min);
     } else if(r>=r_max) {
-      return 1e-20;
+      return ConstValue;
     }
 
     int Loc(m_grid->Loc);
@@ -170,7 +172,7 @@ public:
     data_type m_y2(npts);
 
     NRCubicSplineFirst(m_grid->data()+imin, m_Y.data(), npts, m_Y1.data(), m_y2.data()); 
-
+    ConstValue=m_Y[imax];
     //FirstAddress[0]=m_Y.data()+imin;
     //FirstAddress[1]=m_Y1.data();
   }
@@ -281,6 +283,7 @@ public:
     return 
       m_grid->cubicInterpolateFirst(m_Y[Loc],m_Y[Loc+1],m_Y1[Loc],m_Y1[Loc+1],du,d2u);
   }
+
 
   inline 
   void spline(int imin, value_type yp1, int imax, value_type ypn) {
@@ -418,6 +421,7 @@ public:
   point_type r_max;
   value_type first_deriv;
   value_type last_deriv;
+  value_type ConstValue;
 
   //OneDimCubicSpline(const OneDimCubicSpline<Td,Tg,CTd,CTg>& rhs):
   //  base_type(rhs), m_Y2(rhs.m_Y2)
@@ -430,16 +434,39 @@ public:
     base_type(gt),first_deriv(0.0),last_deriv(0.0)
   {
     m_Y.resize(nv.size());
+    m_Y2.resize(nv.size());
     std::copy(nv.begin(), nv.end(), m_Y.data());
+  }
+
+  OneDimCubicSpline<Td,Tg,CTd,CTg>* makeClone() const
+  {
+    return new OneDimCubicSpline<Td,Tg,CTd,CTg>(*this);
+  }
+  
+  OneDimCubicSpline<Td,Tg,CTd,CTg>(const OneDimCubicSpline<Td,Tg,CTd,CTg>& a) :
+  OneDimGridFunctor<Td,Tg,CTd,CTg>(a)
+  {
+    m_Y2.resize(a.m_Y2.size());
+    m_Y2        = a.m_Y2;
+    ConstValue  = a.ConstValue;
+    r_min       = a.r_min;
+    r_max       = a.r_max;
+    first_deriv = a.first_deriv;
+    last_deriv  = a.last_deriv;
   }
 
   const OneDimCubicSpline<Td,Tg,CTd,CTg>& 
     operator=(const OneDimCubicSpline<Td,Tg,CTd,CTg>& a) 
     {
-      GridManager=false;
+      GridManager = a.GridManager;
       m_grid = a.m_grid;
       m_Y = a.m_Y;
       m_Y2=a.m_Y2;
+      ConstValue = a.ConstValue;
+      r_min = a.r_min;
+      r_max = a.r_max;
+      first_deriv = a.first_deriv;
+      last_deriv = a.last_deriv;
       return *this;
     }
 
@@ -470,14 +497,14 @@ public:
     //return A*m_Y[klo]+B*m_Y[khi]+
     //  hh6*(A*(A*A-1.0)*m_Y2[klo]+B*(B*B-1.0)*m_Y2[khi]);
 
-    if(GridManager) {
-      m_grid->updateSecondOrder(r,false);
-    }
-
     if(r<r_min) {
       return m_Y[0]+first_deriv*(r-r_min);
     }  else if(r>=r_max) {
-      return 0.0;
+      return ConstValue;
+    }
+
+    if(GridManager) {
+      m_grid->updateSecondOrder(r,false);
     }
 
     int Loc(m_grid->currentIndex());
@@ -492,18 +519,17 @@ public:
   */
   inline value_type 
   splint(point_type r, value_type& du, value_type& d2u) {
-
-    if(GridManager) {
-      m_grid->updateSecondOrder(r,true);
-    }
-
     if(r<r_min) { //linear-extrapolation returns y[0]+y'*(r-r[0])
       du = first_deriv; 
       d2u = 0.0; 
       return m_Y[0]+first_deriv*(r-r_min);
     }  else if(r>=r_max) {
       du = 0.0; d2u = 0.0; 
-      return 0.0;
+      return ConstValue;
+    }
+
+    if(GridManager) {
+      m_grid->updateSecondOrder(r,true);
     }
 
     int Loc(m_grid->currentIndex());
@@ -552,6 +578,7 @@ public:
     m_Y2 = 0.0;
     NRCubicSpline(m_grid->data()+imin, m_Y.data()+imin, 
 		  npts-imin, yp1, ypn, m_Y2.data()+imin);
+    ConstValue=m_Y[imax];
     //FirstAddress[0]=m_Y.data()+imin;
     //FirstAddress[2]=m_Y2.data()+imin;
   }
