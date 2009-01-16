@@ -52,6 +52,7 @@ namespace qmcplusplus {
     pAttrib.add(pbc,"pbc");
     pAttrib.add(forces,"forces");
     pAttrib.put(cur);
+    bool doForces = (forces == "yes") || (forces == "true");
 
     //const xmlChar* t=xmlGetProp(cur,(const xmlChar*)"format");
     //if(t != NULL) {
@@ -79,7 +80,6 @@ namespace qmcplusplus {
       }
       else
       {
-	bool doForces = (forces == "yes") || (forces == "true");
 	if (doForces) 
 	  app_log() << "  Will compute forces in CoulombPBCABTemp.\n" << endl;
         CoulombPBCABTemp* apot=new CoulombPBCABTemp(IonConfig,targetPtcl, doForces);
@@ -107,7 +107,7 @@ namespace qmcplusplus {
       //resize the sphere
       targetPtcl.resizeSphere(IonConfig.getTotalNum());
 
-      NonLocalECPotential* apot = new NonLocalECPotential(IonConfig,targetPtcl,targetPsi);
+      NonLocalECPotential* apot = new NonLocalECPotential(IonConfig,targetPtcl,targetPsi, doForces);
       for(int i=0; i<nonLocalPot.size(); i++) {
         if(nonLocalPot[i]) {
           apot->add(i,nonLocalPot[i]);

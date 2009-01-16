@@ -18,14 +18,16 @@
 #ifndef QMCPLUSPLUS_NONLOCAL_ECPOTENTIAL_H
 #define QMCPLUSPLUS_NONLOCAL_ECPOTENTIAL_H
 #include "QMCHamiltonians/NonLocalECPComponent.h"
+#include "QMCHamiltonians/ForceBase.h"
 
 namespace qmcplusplus {
 
   /** @ingroup hamiltonian
    * \brief Evaluate the semi local potentials
    */
-  struct NonLocalECPotential: public QMCHamiltonianBase {
-
+  struct NonLocalECPotential: public QMCHamiltonianBase,
+  public ForceBase 
+  {
     int NumIons;
     ///the distance table containing electron-nuclei distances  
     DistanceTableData* d_table;
@@ -37,8 +39,11 @@ namespace qmcplusplus {
     ParticleSet& IonConfig;
     ///target TrialWaveFunction
     TrialWaveFunction& Psi;
+    ///true if we should compute forces
+    bool ComputeForces;
 
-    NonLocalECPotential(ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi);
+    NonLocalECPotential(ParticleSet& ions, ParticleSet& els, 
+			TrialWaveFunction& psi, bool computeForces=false); 
 
     ~NonLocalECPotential();
 
@@ -61,6 +66,24 @@ namespace qmcplusplus {
     void add(int groupID, NonLocalECPComponent* pp);
 
     void setRandomGenerator(RandomGenerator_t* rng);
+
+    void addObservables(PropertySetType& plist)
+    { 
+      QMCHamiltonianBase::addObservables(plist);
+      if (ComputeForces) addObservablesF(plist);   
+    }
+
+    void setObservables(PropertySetType& plist)
+    { 
+      QMCHamiltonianBase::setObservables(plist);
+      if (ComputeForces) setObservablesF(plist);   
+    }
+
+    void setParticlePropertyList(PropertySetType& plist, int offset)
+    {  
+      QMCHamiltonianBase::setParticlePropertyList(plist, offset);
+      if (ComputeForces) setParticleSetF(plist, offset);  
+    }
   };
 }
 #endif

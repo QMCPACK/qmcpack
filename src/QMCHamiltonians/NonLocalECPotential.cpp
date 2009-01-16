@@ -31,12 +31,16 @@ namespace qmcplusplus {
    *\param psi trial wavefunction
    */
   NonLocalECPotential::NonLocalECPotential(ParticleSet& ions, ParticleSet& els,
-      TrialWaveFunction& psi): IonConfig(ions), d_table(0), Psi(psi)
+					   TrialWaveFunction& psi, 
+					   bool computeForces): 
+    IonConfig(ions), d_table(0), Psi(psi), 
+    ComputeForces(computeForces), ForceBase(ions,els)
   { 
     d_table = DistanceTable::add(ions,els);
     NumIons=ions.getTotalNum();
     //els.resizeSphere(NumIons);
     PP.resize(NumIons,0);
+    prefix="FNL";
     PPset.resize(IonConfig.getSpeciesSet().getTotalNum(),0);
   }
 
@@ -54,11 +58,19 @@ namespace qmcplusplus {
   NonLocalECPotential::evaluate(ParticleSet& P) { 
     Value=0.0;
     //loop over all the ions
-    for(int iat=0; iat<NumIons; iat++) {
-      if(PP[iat]) {
-        PP[iat]->randomize_grid(*(P.Sphere[iat]),UpdateMode[PRIMARY]);
-        Value += PP[iat]->evaluate(P,iat,Psi);
-      }
+    if (ComputeForces) {
+      for(int iat=0; iat<NumIons; iat++) 
+	if(PP[iat]) {
+	  PP[iat]->randomize_grid(*(P.Sphere[iat]),UpdateMode[PRIMARY]);
+	  Value += PP[iat]->evaluate(P,iat,Psi, forces[iat]);
+	}
+    }
+    else {
+      for(int iat=0; iat<NumIons; iat++) 
+	if(PP[iat]) {
+	  PP[iat]->randomize_grid(*(P.Sphere[iat]),UpdateMode[PRIMARY]);
+	  Value += PP[iat]->evaluate(P,iat,Psi);
+	}
     }
     return Value;
   }

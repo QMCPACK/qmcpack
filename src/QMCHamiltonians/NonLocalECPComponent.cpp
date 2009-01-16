@@ -44,10 +44,14 @@ namespace qmcplusplus {
   void NonLocalECPComponent::resize_warrays(int n,int m,int l){
     app_log() << "  NonLocalECPComponent::resize_warrays " << endl;
      psiratio.resize(n);
+     psigrad.resize(n);
      vrad.resize(m);
+     dvrad.resize(m);
      wvec.resize(m);
      Amat.resize(n*m);
+     dAmat.resize(n*m);
      lpol.resize(l+1,1.0);
+     dlpol.resize(l+1,0.0);
      rrotsgrid_m.resize(n);
      nchannel=nlpp_m.size();
      nknot=sgridxyz_m.size();
@@ -150,6 +154,109 @@ namespace qmcplusplus {
     }   /* end loop over electron */
     return esum;
   }
+
+
+  NonLocalECPComponent::RealType 
+  NonLocalECPComponent::evaluate(ParticleSet& W, int iat, TrialWaveFunction& psi,
+				 PosType &force_iat) {
+    RealType esum=0.0;
+    force_iat = PosType();
+    for(int nn=myTable->M[iat],iel=0; nn<myTable->M[iat+1]; nn++,iel++){
+
+      register RealType r(myTable->r(nn));
+      if(r>Rmax) continue;
+
+      register RealType rinv(myTable->rinv(nn));
+      register PosType  dr(myTable->dr(nn));
+
+      // Compute ratio of wave functions
+      psi.evalGrad(W,iat);
+      for (int j=0; j < nknot ; j++){ 
+        PosType deltar(r*rrotsgrid_m[j]-dr);
+        W.makeMoveOnSphere(iel,deltar); 
+        psiratio[j]=psi.ratioGrad(W,iel,psigrad[j]) * sgridweight_m[j];
+        //psiratio[j] = psi.ratio(W,iel) * sgridweight_m[j];
+	psigrad[j] *= sgridweight_m[j];
+	//app_log() << "psigrad[" << j << " = " << psigrad[j] << endl;
+        W.rejectMove(iel);
+        psi.rejectMove(iel);
+      }
+      // Compute radial potential
+      //int k;
+      //RealType rfrac;
+      //nlpp_m[0]->locate(r,k,rfrac);
+      //for(int ip=0;ip< nchannel; ip++){
+      //  vrad[ip]=nlpp_m[ip]->f(k,rfrac)*wgt_angpp_m[ip];
+      //}
+      for(int ip=0;ip< nchannel; ip++){
+	double dummy;
+        vrad[ip]=nlpp_m[ip]->splint(r,dvrad[ip],dummy)*wgt_angpp_m[ip];
+	dvrad[ip] *= wgt_angpp_m[ip];
+      }
+
+      // Compute spherical harmonics on grid
+      for (int j=0, jl=0; j<nknot ; j++){ 
+        RealType zz=dot(dr,rrotsgrid_m[j])*rinv;
+        // Forming the Legendre polynomials
+        lpol[0]=1.0;
+	dlpol[0] = 0.0;
+        RealType lpolprev=0.0;
+	RealType dlpolprev=0.0;
+        for (int l=0 ; l< lmax ; l++){
+          //Not a big difference
+          //lpol[l+1]=(2*l+1)*zz*lpol[l]-l*lpolprev;
+          //lpol[l+1]/=(l+1);
+          lpol[l+1]  = Lfactor1[l]*zz*lpol[l]-l*lpolprev; 
+	  dlpol[l+1] = Lfactor1[l]*lpol[l] + Lfactor1[l]*zz*dlpol[l] - l*dlpolprev;
+          lpol[l+1]  *= Lfactor2[l]; 
+	  dlpol[l+1] *= Lfactor2[l];
+          lpolprev  =  lpol[l];
+	  dlpolprev = dlpol[l];
+        }
+        for(int l=0; l <nchannel; l++,jl++){
+	  Amat[jl]  =  lpol[ angpp_m[l] ]; 
+	  dAmat[jl] = dlpol[ angpp_m[l] ];
+	} 
+      }
+      
+      // Force calculation
+      for (int j=0,jl=0; j<nknot; j++) {
+	for (int l=0; l<nchannel; l++,jl++) {
+	  // Term 1:  from dV/dr
+	  force_iat -= Amat[jl] * psiratio[j] * dvrad[l] * rinv * dr;
+	  // Term 2:  from P_l(zz)
+	  force_iat += dAmat[jl] * psiratio[j] * vrad[l] *
+	    (-rinv * rrotsgrid_m[j] + dot(dr,rrotsgrid_m[j])*rinv*rinv*rinv * dr);
+	  // Term 3:  from grad psi
+	  PosType term3 = Amat[jl] * vrad[l] *
+	    (-dot(psigrad[j],rrotsgrid_m[j])*rinv*dr + psigrad[j]);
+	  // app_log() << "term3 = " << term3 << endl;
+	  force_iat += term3;
+	}
+	
+      }
+
+
+      if(nchannel==1) {
+        esum += vrad[0]*BLAS::dot(nknot, &Amat[0],&psiratio[0]);
+      } else {
+        BLAS::gemv(nknot, nchannel, &Amat[0], &psiratio[0], &wvec[0]);
+        esum += BLAS::dot(nchannel, &vrad[0], &wvec[0]);
+      }
+      ////////////////////////////////////
+      //Original implmentation by S. C.
+      //const char TRANS('T');
+      //const int ione=1;
+      //const RealType one=1.0;
+      //const RealType zero=0.0;
+      //dgemv(TRANS,nknot,nchannel,one,&Amat[0],nknot,&psiratio[0],ione,zero,&wvec[0],ione);
+      //esum += ddot(nchannel,&vrad[0],ione,&wvec[0],ione);
+      ////////////////////////////////////
+      //iel++;
+    }   /* end loop over electron */
+    return esum;
+  }
+
 
   NonLocalECPComponent::RealType 
   NonLocalECPComponent::evaluate(ParticleSet& W, TrialWaveFunction& psi,int iat, vector<NonLocalData>& Txy) {
