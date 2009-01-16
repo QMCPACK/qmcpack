@@ -173,10 +173,10 @@ namespace qmcplusplus {
       psi.evalGrad(W,iat);
       for (int j=0; j < nknot ; j++){ 
         PosType deltar(r*rrotsgrid_m[j]-dr);
-        W.makeMoveOnSphere(iel,deltar); 
+        //W.makeMoveOnSphere(iel,deltar); 
+        W.makeMove(iel,deltar) ;
         psiratio[j]=psi.ratioGrad(W,iel,psigrad[j]) * sgridweight_m[j];
-        //psiratio[j] = psi.ratio(W,iel) * sgridweight_m[j];
-	psigrad[j] *= sgridweight_m[j];
+	psigrad[j] *= psiratio[j];
 	//app_log() << "psigrad[" << j << " = " << psigrad[j] << endl;
         W.rejectMove(iel);
         psi.rejectMove(iel);
@@ -223,15 +223,13 @@ namespace qmcplusplus {
       for (int j=0,jl=0; j<nknot; j++) {
 	for (int l=0; l<nchannel; l++,jl++) {
 	  // Term 1:  from dV/dr
-	  force_iat -= Amat[jl] * psiratio[j] * dvrad[l] * rinv * dr;
+	  force_iat += Amat[jl] * psiratio[j] * dvrad[l] * rinv * dr;
 	  // Term 2:  from P_l(zz)
-	  force_iat += dAmat[jl] * psiratio[j] * vrad[l] *
+	  force_iat -= dAmat[jl] * psiratio[j] * vrad[l] *
 	    (-rinv * rrotsgrid_m[j] + dot(dr,rrotsgrid_m[j])*rinv*rinv*rinv * dr);
 	  // Term 3:  from grad psi
-	  PosType term3 = Amat[jl] * vrad[l] *
-	    (/*-dot(psigrad[j],rrotsgrid_m[j])*rinv*dr +*/ psigrad[j]);
-	  // app_log() << "term3 = " << term3 << endl;
-	  force_iat += term3;
+	  force_iat -= Amat[jl] * vrad[l] *
+	    (-dot(psigrad[j],rrotsgrid_m[j])*rinv*dr + psigrad[j]);
 	}
 	
       }
