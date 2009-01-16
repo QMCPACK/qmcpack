@@ -229,7 +229,7 @@ namespace qmcplusplus {
 	    (-rinv * rrotsgrid_m[j] + dot(dr,rrotsgrid_m[j])*rinv*rinv*rinv * dr);
 	  // Term 3:  from grad psi
 	  PosType term3 = Amat[jl] * vrad[l] *
-	    (-dot(psigrad[j],rrotsgrid_m[j])*rinv*dr + psigrad[j]);
+	    (/*-dot(psigrad[j],rrotsgrid_m[j])*rinv*dr +*/ psigrad[j]);
 	  // app_log() << "term3 = " << term3 << endl;
 	  force_iat += term3;
 	}
