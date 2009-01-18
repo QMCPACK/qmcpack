@@ -88,6 +88,7 @@ WaveFunctionTester::run() {
     ParticleSet* w_clone = new MCWalkerConfiguration(W);
     TrialWaveFunction *psi_clone = Psi.makeClone(*w_clone);
     QMCHamiltonian *h_clone = H.makeClone(*w_clone,*psi_clone);
+    h_clone->setPrimary(false);
 
     IndexType nskipped = 0;
     RealType sig2Enloc=0, sig2Drift=0;
