@@ -106,7 +106,8 @@ namespace qmcplusplus {
 
   QMCHamiltonianBase* NonLocalECPotential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
   {
-    NonLocalECPotential* myclone=new NonLocalECPotential(IonConfig,qp,psi);
+    NonLocalECPotential* myclone=new NonLocalECPotential(IonConfig,qp,psi,
+							 ComputeForces);
 
     for(int ig=0; ig<PPset.size(); ++ig)
     {

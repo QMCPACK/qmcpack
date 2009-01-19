@@ -372,7 +372,7 @@ namespace qmcplusplus {
     QMCHamiltonianBase* CoulombPBCAATemp::makeClone(ParticleSet& qp, TrialWaveFunction& psi) 
     {
       if(is_active)
-        return new CoulombPBCAATemp(qp,is_active);
+        return new CoulombPBCAATemp(qp,is_active,ComputeForces);
       else
         return new CoulombPBCAATemp(*this);//nothing needs to be re-evaluated
     }

@@ -38,7 +38,8 @@ namespace qmcplusplus {
 
   QMCHamiltonianBase* CoulombPBCABTemp::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
   {
-    CoulombPBCABTemp* myclone=new CoulombPBCABTemp(PtclA,qp);
+    CoulombPBCABTemp* myclone=new CoulombPBCABTemp(PtclA,qp,ComputeForces);
+    myclone->FirstForceIndex = FirstForceIndex;
     if(myGrid) myclone->myGrid=new GridType(*myGrid);
     for(int ig=0; ig<Vspec.size(); ++ig)
     {
