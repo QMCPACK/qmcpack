@@ -155,6 +155,14 @@ namespace qmcplusplus {
       for(int i=0; i<nwtot; ++i) dLogPsi[i]=new ParticleGradient_t(nptcl);
       for(int i=0; i<nwtot; ++i) d2LogPsi[i]=new ParticleLaplacian_t(nptcl);
     }
+
+    //JNKIM TO JEREMY
+    //for(int ip=1; ip<NumThreads;++ip)
+    //{
+    //  opt_variables_type dummy;
+    //  psiClone->checkInVariables(dummy);
+    //  PsiClone[ip]->checkOutVariables(OptVariablesForPsi);
+    //}
   }
 
   /** evaluate everything before optimization */
