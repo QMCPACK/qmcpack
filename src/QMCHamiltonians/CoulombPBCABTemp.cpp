@@ -26,6 +26,8 @@ namespace qmcplusplus {
     PtclA(ions), myConst(0.0), myGrid(0),V0(0),ComputeForces(computeForces),
     ForceBase (ions, elns)
     {
+      if (ComputeForces)
+	InitVarReduction (0.5, 0, 3);
       ReportEngine PRE("CoulombPBCABTemp","CoulombPBCABTemp");
       //Use singleton pattern 
       //AB = new LRHandlerType(ions);
@@ -354,7 +356,7 @@ namespace qmcplusplus {
 	  V = rV *d_ab.rinv(nn);
 	  PosType drhat = d_ab.rinv(nn) * d_ab.dr(nn);
           esum += Qat[jat]*d_ab.rinv(nn)*rV;
-	  forces[iat] += Zat[iat]*Qat[jat] * 
+	  forces[iat] += Zat[iat]*Qat[jat] * //g(d_ab.r(nn)) *
 	    (d_rV_dr - V)*d_ab.rinv(nn) *drhat;
         }
         //Accumulate pair sums...species charge for atom i.

@@ -36,6 +36,28 @@ namespace qmcplusplus {
     string prefix;
     string pairName;
 
+    // Data for variance reduction of Chiesa et al.
+    // PRL 94, 036404 (2005)
+    RealType Rcut;
+    int m;
+    vector<RealType> ck;
+    inline RealType g(RealType r) {
+      if (r > Rcut) return 1.0;
+      RealType sum=0.0;
+      RealType r2kplusm = r;
+      for (int i=0; i<m; i++)
+	r2kplusm *= r;
+      for (int k=0; k<ck.size(); k++) {
+	sum += ck[k] * r2kplusm;
+	r2kplusm *= r;
+      }
+      return sum;
+    }
+	
+
+    void InitVarReduction (RealType Rcut, int m, int numFuncs);
+
+
     ForceBase(ParticleSet& ions, ParticleSet& elns);
     virtual ~ForceBase(){}
 

@@ -18,6 +18,9 @@
 #include "Particle/DistanceTableData.h"
 #include "Message/Communicate.h"
 #include "Utilities/ProgressReportEngine.h"
+#include "Numerics/MatrixOperators.h"
+#include "Numerics/DeterminantOperators.h"
+
 
 namespace qmcplusplus {
 
@@ -149,6 +152,58 @@ namespace qmcplusplus {
       tries++;
       return 0.0;
     }
+
+
+  void
+  ForceBase::InitVarReduction (RealType rcut, int _m,
+			       int numFuncs)
+  {
+    m = _m;
+    Rcut = rcut;
+    vector<RealType> h(numFuncs);
+    Matrix<RealType> S(numFuncs, numFuncs);
+    ck.resize(numFuncs, 0.0);
+    RealType R2jp1 = Rcut*Rcut;
+    RealType R2m = 1.0;
+    for (int i=0; i<m; i++)
+      R2m *= Rcut;
+    for (int j=1; j<=numFuncs; j++) {
+      h[j-1] = R2jp1/RealType(j+1);
+      RealType R2k = Rcut;
+      for (int k=1; k<=numFuncs; k++) {
+	S(k-1,j-1) = R2m * R2k * R2jp1/(RealType)(m+k+j+1);
+	S(k-1,j-1) = std::pow(Rcut,(m+k+j+1))/(m+k+j+1.0);
+	R2k *= Rcut;
+      }
+      R2jp1 *= Rcut;
+    }
+
+    // fprintf (stderr, "Sij = \n");
+    // for (int i=0; i<numFuncs; i++) {
+    //   for (int j=0; j<numFuncs; j++)
+    // 	fprintf (stderr, " %12.6f ", S(i,j));
+    //   fprintf (stderr, "\n");
+    // }
+
+    invert_matrix (S, false);
+    for (int i=0; i<numFuncs; i++) {
+      for (int j=0; j<numFuncs; j++)
+	ck[i] += S(i,j)*h[j];
+      //  fprintf (stderr, "ck[%d] = %1.8f\n", i, ck[i]);
+    }
+
+
+
+    //    MatrixOperators::product (S, h.data(), ck.data());
+
+    FILE *fout = fopen ("g_r.dat", "w");
+    for (double r=0.0; r<Rcut; r+=0.001)
+      fprintf (fout, "%1.10f %1.10e\n", r, g(r));
+    fclose(fout);
+
+
+    app_log() << "Initialized variance reduction coefs.\n";
+  }
 
 }
 
