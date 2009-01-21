@@ -26,8 +26,8 @@ namespace qmcplusplus {
     PtclA(ions), myConst(0.0), myGrid(0),V0(0),ComputeForces(computeForces),
     ForceBase (ions, elns)
     {
-      if (ComputeForces)
-	InitVarReduction (0.5, 0, 3);
+      // if (ComputeForces)
+      // 	InitVarReduction (0.5, 0, 3);
       ReportEngine PRE("CoulombPBCABTemp","CoulombPBCABTemp");
       //Use singleton pattern 
       //AB = new LRHandlerType(ions);
