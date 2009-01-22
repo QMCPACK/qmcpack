@@ -48,7 +48,7 @@ namespace qmcplusplus {
   //initialize the name of the primary estimator
   EstimatorManager::EstimatorManager(Communicate* c): 
     RecordCount(0),h_file(-1), FieldWidth(20),
-    MainEstimatorName("elocal"), Archive(0), DebugArchive(0),
+    MainEstimatorName("LocalEnergy"), Archive(0), DebugArchive(0),
     myComm(0), MainEstimator(0)
     //, CompEstimators(0)
     ,max4ascii(30), pendingRequests(0)
@@ -57,7 +57,7 @@ namespace qmcplusplus {
   }
 
   EstimatorManager::EstimatorManager(EstimatorManager& em): 
-    RecordCount(0),h_file(-1),  MainEstimatorName("elocal"), FieldWidth(20),
+    RecordCount(0),h_file(-1),  MainEstimatorName("LocalEnergy"), FieldWidth(20),
     Options(em.Options), Archive(0), DebugArchive(0),MainEstimator(0)
     //, CompEstimators(0)
     , EstimatorMap(em.EstimatorMap), pendingRequests(0), myComm(0)
@@ -531,7 +531,7 @@ namespace qmcplusplus {
         hAttrib.add(est_name, "name");
         hAttrib.add(use_hdf5, "hdf5");
         hAttrib.put(cur);
-        if(est_name == MainEstimatorName)
+        if((est_name == MainEstimatorName)|(est_name="elocal"))
         {
           if(use_hdf5 == "yes")
           {
