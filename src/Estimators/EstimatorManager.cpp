@@ -531,7 +531,7 @@ namespace qmcplusplus {
         hAttrib.add(est_name, "name");
         hAttrib.add(use_hdf5, "hdf5");
         hAttrib.put(cur);
-        if((est_name == MainEstimatorName)|(est_name="elocal"))
+        if( (est_name == MainEstimatorName) || (est_name=="elocal") )
         {
           if(use_hdf5 == "yes")
           {
