@@ -18,6 +18,7 @@
 #include "Numerics/OptimizableFunctorBase.h"
 #include "Utilities/ProgressReportEngine.h"
 #include "OhmmsData/AttributeSet.h"
+#include "Numerics/LinearFit.h"
 #include <cstdio>
 
 namespace qmcplusplus {
@@ -284,8 +285,36 @@ namespace qmcplusplus {
             xmlNewProp (xmlCoefs, (const xmlChar*) "type", (const xmlChar*) "Array");
           }
 
-          //vector<T> can be read by this
-          putContent(Parameters,xmlCoefs);
+	  vector<real_type> params;
+	  putContent(params, xmlCoefs);
+	  if (params.size() == NumParams) 
+	    Parameters = params;
+	  else {
+	    app_log() << "Changing number of Bspline parameters from "
+		      << params.size() << " to " << NumParams << ".  Performing fit:\n";
+	    // Fit function to new number of parameters
+	    const int numPoints = 500;
+	    BsplineFunctor<T> tmp_func(CuspValue);
+	    tmp_func.cutoff_radius = cutoff_radius;
+	    tmp_func.resize(params.size());
+	    tmp_func.Parameters = params;
+	    tmp_func.reset();
+	    vector<real_type> y(numPoints);
+	    Matrix<real_type> basis(numPoints,NumParams);
+	    vector<TinyVector<real_type,3> > derivs(NumParams);
+	    for (int i=0; i<numPoints; i++) {
+	      real_type r = (real_type)i / (real_type)numPoints * cutoff_radius;
+	      y[i] = tmp_func.evaluate(r);
+	      evaluateDerivatives(r, derivs);
+	      for (int j=0; j<NumParams; j++)
+		basis(i,j) = derivs[j][0];
+	    }	      
+	    resize(NumParams);
+	    LinearFit (y, basis, Parameters);
+	    app_log() << "New parameters are:\n";
+	    for (int i=0; i < Parameters.size(); i++)
+	      app_log() << "   " << Parameters[i] << endl;
+	  }
 
           // Setup parameter names
           for (int i=0; i< NumParams; i++) {
