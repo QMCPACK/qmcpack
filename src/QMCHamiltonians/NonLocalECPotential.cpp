@@ -79,10 +79,19 @@ namespace qmcplusplus {
   NonLocalECPotential::evaluate(ParticleSet& P, vector<NonLocalData>& Txy) { 
     Value=0.0;
     //loop over all the ions
-    for(int iat=0; iat<NumIons; iat++) {
-      if(PP[iat]) {
-        PP[iat]->randomize_grid(*(P.Sphere[iat]),UpdateMode[PRIMARY]);
-        Value += PP[iat]->evaluate(P,Psi,iat,Txy);
+    if (ComputeForces) {
+      for(int iat=0; iat<NumIons; iat++) 
+	if(PP[iat]) {
+	  PP[iat]->randomize_grid(*(P.Sphere[iat]),UpdateMode[PRIMARY]);
+	  Value += PP[iat]->evaluate(P,Psi,iat,Txy, forces[iat]);
+	}
+    }
+    else {
+      for(int iat=0; iat<NumIons; iat++) {
+	if(PP[iat]) {
+	  PP[iat]->randomize_grid(*(P.Sphere[iat]),UpdateMode[PRIMARY]);
+	  Value += PP[iat]->evaluate(P,Psi,iat,Txy);
+	}
       }
     }
     return Value;

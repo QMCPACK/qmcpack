@@ -170,24 +170,17 @@ namespace qmcplusplus {
       register PosType  dr(myTable->dr(nn));
 
       // Compute ratio of wave functions
-      psi.evalGrad(W,iat);
+      // psi.evalGrad(W,iat);
       for (int j=0; j < nknot ; j++){ 
         PosType deltar(r*rrotsgrid_m[j]-dr);
         //W.makeMoveOnSphere(iel,deltar); 
         W.makeMove(iel,deltar) ;
         psiratio[j]=psi.ratioGrad(W,iel,psigrad[j]) * sgridweight_m[j];
 	psigrad[j] *= psiratio[j];
-	//app_log() << "psigrad[" << j << " = " << psigrad[j] << endl;
         W.rejectMove(iel);
         psi.rejectMove(iel);
       }
       // Compute radial potential
-      //int k;
-      //RealType rfrac;
-      //nlpp_m[0]->locate(r,k,rfrac);
-      //for(int ip=0;ip< nchannel; ip++){
-      //  vrad[ip]=nlpp_m[ip]->f(k,rfrac)*wgt_angpp_m[ip];
-      //}
       for(int ip=0;ip< nchannel; ip++){
 	double dummy;
         vrad[ip]=nlpp_m[ip]->splint(r,dvrad[ip],dummy)*wgt_angpp_m[ip];
@@ -231,7 +224,6 @@ namespace qmcplusplus {
 	  force_iat -= Amat[jl] * vrad[l] *
 	    (-dot(psigrad[j],rrotsgrid_m[j])*rinv*dr + psigrad[j]);
 	}
-	
       }
 
 
@@ -312,6 +304,92 @@ namespace qmcplusplus {
     return esum;
 
   }
+
+  NonLocalECPComponent::RealType 
+  NonLocalECPComponent::evaluate(ParticleSet& W, TrialWaveFunction& psi,int iat, 
+				 vector<NonLocalData>& Txy, PosType &force_iat) 
+  {
+    RealType esum=0.0;
+    force_iat = PosType();
+
+    //int iel=0;
+    for(int nn=myTable->M[iat],iel=0; nn<myTable->M[iat+1]; nn++,iel++){
+
+      register RealType r(myTable->r(nn));
+      if(r>Rmax) continue;
+
+      register RealType rinv(myTable->rinv(nn));
+      register PosType  dr(myTable->dr(nn));
+
+      int txyCounter=Txy.size();
+      // Compute ratio of wave functions
+      for (int j=0; j < nknot ; j++){ 
+        PosType deltar(r*rrotsgrid_m[j]-dr);
+        W.makeMoveOnSphere(iel,deltar); 
+        //PosType newpos(W.makeMove(iel,deltar)); 
+        //psiratio[j]=psi.ratio(W,iel)*sgridweight_m[j];
+	psiratio[j]=psi.ratioGrad(W,iel,psigrad[j]) * sgridweight_m[j];
+	psigrad[j] *= psiratio[j];
+        W.rejectMove(iel);
+        psi.rejectMove(iel);
+        //first, add a new NonLocalData with ratio
+        Txy.push_back(NonLocalData(iel,psiratio[j],deltar));
+      }
+      // Compute radial potential
+      for(int ip=0;ip< nchannel; ip++){
+	double dummy;
+        vrad[ip]=nlpp_m[ip]->splint(r,dvrad[ip],dummy)*wgt_angpp_m[ip];
+	dvrad[ip] *= wgt_angpp_m[ip];
+      }
+
+      // Compute spherical harmonics on grid
+      for (int j=0, jl=0; j<nknot ; j++){ 
+        RealType zz=dot(dr,rrotsgrid_m[j])*rinv;
+	// Forming the Legendre polynomials
+        lpol[0]=1.0;
+	dlpol[0] = 0.0;
+        RealType lpolprev=0.0;
+	RealType dlpolprev=0.0;
+        for (int l=0 ; l< lmax ; l++){
+          lpol[l+1]  = Lfactor1[l]*zz*lpol[l]-l*lpolprev; 
+	  dlpol[l+1] = Lfactor1[l]*lpol[l] + Lfactor1[l]*zz*dlpol[l] - l*dlpolprev;
+          lpol[l+1]  *= Lfactor2[l]; 
+	  dlpol[l+1] *= Lfactor2[l];
+          lpolprev  =  lpol[l];
+	  dlpolprev = dlpol[l];
+        }
+	for(int l=0; l <nchannel; l++,jl++){
+	  Amat[jl]  =  lpol[ angpp_m[l] ]; 
+	  dAmat[jl] = dlpol[ angpp_m[l] ];
+	}
+
+        //for(int l=0; l <nchannel; l++,jl++) Amat[jl]=lpol[ angpp_m[l] ]; 
+        RealType lsum=0;
+        for(int l=0; l <nchannel; l++) lsum += vrad[l]*lpol[ angpp_m[l] ]; 
+        esum += Txy[txyCounter++].Weight *= lsum;
+      } 
+
+      // Force calculation
+      for (int j=0,jl=0; j<nknot; j++) {
+	for (int l=0; l<nchannel; l++,jl++) {
+	  // Term 1:  from dV/dr
+	  force_iat += Amat[jl] * psiratio[j] * dvrad[l] * rinv * dr;
+	  // Term 2:  from P_l(zz)
+	  force_iat -= dAmat[jl] * psiratio[j] * vrad[l] *
+	    (-rinv * rrotsgrid_m[j] + dot(dr,rrotsgrid_m[j])*rinv*rinv*rinv * dr);
+	  // Term 3:  from grad psi
+	  force_iat -= Amat[jl] * vrad[l] *
+	    (-dot(psigrad[j],rrotsgrid_m[j])*rinv*dr + psigrad[j]);
+	}
+      }
+
+     //BLAS::gemv(nknot, nchannel, &Amat[0], &psiratio[0], &wvec[0]);
+     //esum += BLAS::dot(nchannel, &vrad[0], &wvec[0]);
+    }   /* end loop over electron */
+    return esum;
+
+  }
+
 
   ///Randomly rotate sgrid_m
   void NonLocalECPComponent::randomize_grid(ParticleSet::ParticlePos_t& sphere, bool randomize)

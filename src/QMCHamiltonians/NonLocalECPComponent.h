@@ -94,9 +94,13 @@ namespace qmcplusplus {
     RealType evaluate(ParticleSet& W, int iat, TrialWaveFunction& Psi,
 		      PosType &force_iat);
 
-
     RealType 
     evaluate(ParticleSet& W, TrialWaveFunction& Psi,int iat, vector<NonLocalData>& Txy);
+
+    RealType 
+    evaluate(ParticleSet& W, TrialWaveFunction& Psi,int iat, vector<NonLocalData>& Txy,
+	     PosType &force_iat);
+
 
     void print(std::ostream& os);
 
