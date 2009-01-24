@@ -198,7 +198,7 @@ namespace qmcplusplus {
 		Pindices.push_back(pindx);
 		
 		nValues+=Parameters.size();
-		app_log()<<"   "<<numT<<" values will be calculated at block numbers:"<<endl;
+		app_log()<<"   "<<maxWsize<<" values will be calculated at block numbers:"<<endl;
 		app_log()<<"      ";
 		for(int nm=0;nm<Parameters.size();nm++) app_log()<<Parameters[nm]<<"  ";
 		app_log()<<endl;
