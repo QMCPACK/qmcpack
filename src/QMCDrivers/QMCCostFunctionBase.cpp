@@ -30,8 +30,8 @@ namespace qmcplusplus {
     MPIObjectBase(0),
     W(w),Psi(psi),H(h),
     UseWeight(false), Write2OneXml(true),
-    PowerE(2), NumCostCalls(0), NumSamples(0), MaxWeight(5),
-    w_en(0.0), w_var(0.0), w_abs(1.0),
+    PowerE(2), NumCostCalls(0), NumSamples(0), MaxWeight(5),MinWeight(0.0),
+    w_en(0.0), w_var(0.0), w_abs(1.0), MinKE(-100.0),
     CorrelationFactor(0.0), m_wfPtr(NULL), m_doc_out(NULL), msg_stream(0), debug_stream(0)
   { 
 
@@ -39,7 +39,7 @@ namespace qmcplusplus {
     //costList.resize(10,0.0); 
 
     //default: when walkers below 90% stop
-    MinNumWalkers = 0.9;
+    MinNumWalkers = 0.4;
 
     H_KE.addOperator(H.getHamiltonian("Kinetic"),"Kinetic");
     H_KE.addObservables(W.PropertyList);
@@ -92,44 +92,50 @@ namespace qmcplusplus {
     }
   }
 
-  QMCCostFunctionBase::Return_t QMCCostFunctionBase::Cost() {
-
-    NumCostCalls++;
-
-    //if(checkParameters()) {
-
-      //reset the wave function
-      resetPsi();
-
-      //evaluate new local energies
-      NumWalkersEff=correlatedSampling();
-
-      //Estimators::accumulate has been called by correlatedSampling
-      curAvg_w = SumValue[SUM_E_WGT]/SumValue[SUM_WGT];
-      curVar_w = SumValue[SUM_ESQ_WGT]/SumValue[SUM_WGT]-curAvg_w*curAvg_w;
-
-      Return_t wgtinv=1.0/static_cast<Return_t>(NumSamples);
-      curAvg = SumValue[SUM_E_BARE]*wgtinv;
-      curVar = SumValue[SUM_ESQ_BARE]*wgtinv-curAvg*curAvg; 
-
-      curVar_abs = SumValue[SUM_ABSE_WGT]/SumValue[SUM_WGT];
-
-      CostValue = w_abs*curVar_abs+w_var*curVar+w_en*curAvg;
-
-      //DIFFERENT COST FUNCTIOn
-      //CostValue = w_en*eavg+w_var*0.5*Tau*evar;
-      //CostValue = w_abs*SumValue[SUM_ABSE_BARE]*wgtinv+w_var*evar;
-      //CostValue = w_abs*evar_abs+w_var*evar;
-      //Return_t evar_abs = SumValue[SUM_ABSE_WGT]/SumValue[SUM_WGT];
-
-      if(NumWalkersEff < NumSamples*MinNumWalkers) {
-        ERRORMSG("CostFunction-> Number of Effective Walkers is too small " << NumWalkersEff)
-        ERRORMSG("Going to stop now.")
-        IsValid=false;
-      } 
-    //}
-    return CostValue;
-  }
+QMCCostFunctionBase::Return_t QMCCostFunctionBase::Cost() {
+  
+  NumCostCalls++;
+  
+  //if(checkParameters()) {
+ 
+ //reset the wave function
+ resetPsi();
+ 
+ //evaluate new local energies
+ NumWalkersEff=correlatedSampling();
+ 
+ //Estimators::accumulate has been called by correlatedSampling
+ curAvg_w = SumValue[SUM_E_WGT]/SumValue[SUM_WGT];
+ curVar_w = SumValue[SUM_ESQ_WGT]/SumValue[SUM_WGT]-curAvg_w*curAvg_w;
+ 
+ Return_t wgtinv=1.0/static_cast<Return_t>(NumSamples);
+ curAvg = SumValue[SUM_E_BARE]*wgtinv;
+ curVar = SumValue[SUM_ESQ_BARE]*wgtinv-curAvg*curAvg; 
+ 
+ curVar_abs = SumValue[SUM_ABSE_WGT]/SumValue[SUM_WGT];
+ 
+ Return_t wgt_var = SumValue[SUM_WGTSQ]-SumValue[SUM_WGT]*SumValue[SUM_WGT];
+ wgt_var *=wgtinv;
+ 
+ CostValue = w_abs*curVar_abs + w_var*curVar_w + w_en*curAvg_w + w_w*wgt_var;
+ 
+ //       app_log()<<"Energy: "<<curAvg_w<<" Var: "<<curVar_w<<endl;
+ //       app_log()<<"E_w   : "<<w_en<<" V_w: "<<w_var<<endl;
+ //DIFFERENT COST FUNCTIOn
+ //CostValue = w_en*eavg+w_var*0.5*Tau*evar;
+ //CostValue = w_abs*SumValue[SUM_ABSE_BARE]*wgtinv+w_var*evar;
+ //CostValue = w_abs*evar_abs+w_var*evar;
+ //Return_t evar_abs = SumValue[SUM_ABSE_WGT]/SumValue[SUM_WGT];
+ IsValid=true;
+ //       if(NumWalkersEff < NumSamples*MinNumWalkers) {
+ if(NumWalkersEff < MinNumWalkers) {
+   ERRORMSG("CostFunction-> Number of Effective Walkers is too small " << NumWalkersEff)
+   ERRORMSG("Going to stop now.")
+   IsValid=false;
+ } 
+ //}
+ return CostValue;
+}
 
 //  /**  Perform the correlated sampling algorthim.
 //   */
@@ -454,9 +460,12 @@ namespace qmcplusplus {
     m_param.add(MinNumWalkers,"min_walkers","scalar");
     m_param.add(MinNumWalkers,"minWalkers","scalar");
     m_param.add(MaxWeight,"maxWeight","scalar");
+    m_param.add(MinWeight,"minWeight","scalar");
+    m_param.add(MinKE,"MinKE","scalar");
     m_param.put(q);
 
     UseWeight = (useWeightStr == "yes");
+//     MinWeight=1.0/MaxWeight;
     Write2OneXml = (writeXmlPerStep == "no");
 
     xmlNodePtr qsave=q;
@@ -620,6 +629,8 @@ namespace qmcplusplus {
 	  putContent(w_var,cset[i]);
         else if(pname == "difference")
 	  putContent(w_abs,cset[i]);
+        else if(pname == "weight")
+	  putContent(w_w,cset[i]);
       }
     }  
 

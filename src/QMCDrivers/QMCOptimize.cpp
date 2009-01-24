@@ -21,6 +21,7 @@
 #include "OhmmsData/AttributeSet.h"
 #include "Message/CommOperators.h"
 #include "Optimize/CGOptimization.h"
+#include "Optimize/macCGOptimization.h"
 #include "Optimize/DampedDynamics.h"
 #include "QMCDrivers/VMC/VMCSingle.h"
 #include "QMCDrivers/QMCCostFunctionSingle.h"
@@ -106,6 +107,9 @@ namespace qmcplusplus {
 
     t1.restart();
     bool success=optSolver->optimize(optTarget);
+//     W.reset();
+//     branchEngine->flush(0);
+//     branchEngine->reset();
     app_log() << "  Execution time = " << t1.elapsed() << endl;;
     app_log() << "  </log>" << endl;
     optTarget->reportParameters();
@@ -147,6 +151,9 @@ namespace qmcplusplus {
     vmcEngine->setValue("current",0);//reset CurrentStep
     app_log() << "<vmc stage=\"main\" blocks=\"" << nBlocks << "\">" << endl;
     t1.restart();
+//     W.reset();
+//     branchEngine->flush(0);
+//     branchEngine->reset();
     vmcEngine->run();
     app_log() << "  Execution time = " << t1.elapsed() << endl;
     app_log() << "</vmc>" << endl;
@@ -214,6 +221,11 @@ namespace qmcplusplus {
       {
         app_log() << " Annealing optimization using DampedDynamics"<<endl;
         optSolver = new DampedDynamics<RealType>;
+      } 
+      else if(optmethod == "macopt") 
+      {
+        app_log() << "Conjugate-gradient optimization using macOptimization"<<endl;
+        optSolver = new MacOptimization<RealType>;
       } 
       else
       {

@@ -60,36 +60,39 @@ class CompactHeliumTwo: public OrbitalBase
       
       
       OrbitalName="CHe4";
-      string HEprefix("HE");
       OhmmsAttributeSet bb;
-      bb.add(HEprefix,"id");
       bb.add(OrbitalName,"name");
       bb.put(cur);
-      
-      std::stringstream sstr;
-      sstr << HEprefix << "_A";
-      nameA = sstr.str();
-      sstr.str("");
-      sstr << HEprefix << "_B";
-      nameB = sstr.str();
-      sstr.str("");
-      sstr << HEprefix << "_C";
-      nameC = sstr.str();
-      sstr.str("");
-      sstr << HEprefix << "_D";
-      nameD = sstr.str();
-      
+
       cur=cur->children;
       while(cur != NULL)
       {
 	string pname="0";
+	string pid="0";
 	OhmmsAttributeSet aa;
 	aa.add(pname,"name");
+	aa.add(pid,"id");
 	aa.put(cur);
-	if(pname[0]=='A') putContent(pA,cur);
-	if(pname[0]=='B') putContent(pB,cur);
-	if(pname[0]=='C') putContent(pC,cur);
-	if(pname[0]=='D') putContent(pD,cur);
+	if(pname[0]=='A')
+	{
+	  putContent(pA,cur);
+	  nameA=pid;
+	}
+	if(pname[0]=='B')	
+	{
+	  putContent(pB,cur);
+	  nameB=pid;
+	}
+	if(pname[0]=='C')	
+	{
+	  putContent(pC,cur);
+	  nameC=pid;
+	}
+	if(pname[0]=='D')	
+	{
+	  putContent(pD,cur);
+	  nameD=pid;
+	}
 	cur=cur->next;
       }
       
@@ -117,15 +120,15 @@ class CompactHeliumTwo: public OrbitalBase
     void checkOutVariables(const opt_variables_type& active)
     {
       myVars.getIndex(active);
-      myVars.print(std::cout);
+//       myVars.print(std::cout);
     }
     
     void resetParameters(const opt_variables_type& active)
     {
-      int ia=myVars.where(0); if(ia>-1) pA=active[ia];
-      int ib=myVars.where(1); if(ib>-1) pB=active[ib];
-      int ic=myVars.where(2); if(ic>-1) pC=active[ic];
-      int id=myVars.where(3); if(id>-1) pD=active[id];
+      int ia=myVars.where(0); if(ia>-1) myVars[0]=pA=active[ia];
+      int ib=myVars.where(1); if(ib>-1) myVars[1]=pB=active[ib];
+      int ic=myVars.where(2); if(ic>-1) myVars[2]=pC=active[ic];
+      int id=myVars.where(3); if(id>-1) myVars[3]=pD=active[id];
       reset(pA,pB,pC,pD);
     }
     void reset(ValueType A, ValueType B, ValueType C, ValueType D){
@@ -163,7 +166,7 @@ class CompactHeliumTwo: public OrbitalBase
      
     void reportStatus(ostream& os)
     {
-      os<<"WF parameters: A="<<pA<<"  B="<<pB<<"  C="<<pC<<"  D="<<pD<<endl;
+          myVars.print(os);
     }
     
     ValueType evaluate(ParticleSet& P, 
@@ -327,10 +330,10 @@ class NewCompactHeliumTwo: public OrbitalBase
     
     void resetParameters(const opt_variables_type& active)
     {
-      int ia=myVars.where(0); if(ia>-1) pA=active[ia];
-      int ib=myVars.where(1); if(ib>-1) pB=active[ib];
-      int ic=myVars.where(2); if(ic>-1) pC=active[ic];
-      int id=myVars.where(3); if(id>-1) pD=active[id];
+      int ia=myVars.where(0); if(ia>-1) myVars[0]=pA=active[ia];
+      int ib=myVars.where(1); if(ib>-1) myVars[1]=pB=active[ib];
+      int ic=myVars.where(2); if(ic>-1) myVars[2]=pC=active[ic];
+      int id=myVars.where(3); if(id>-1) myVars[3]=pD=active[id];
       reset(pA,pB,pC,pD);
     }
     void reset(ValueType A, ValueType B, ValueType C, ValueType D){
@@ -374,7 +377,7 @@ class NewCompactHeliumTwo: public OrbitalBase
      
     void reportStatus(ostream& os)
     {
-      os<<"WF parameters: A="<<pA<<"  B="<<pB<<"  C="<<pC<<"  D="<<pD<<endl;
+      myVars.print(os);
     }
     
     ValueType evaluate(ParticleSet& P, 
@@ -538,10 +541,10 @@ class NewCuspCompactHeliumTwo: public OrbitalBase
     
     void resetParameters(const opt_variables_type& active)
     {
-      int ia=myVars.where(0); if(ia>-1) pA=active[ia];
-      int ib=myVars.where(1); if(ib>-1) pB=active[ib];
+      int ia=myVars.where(0); if(ia>-1) myVars[0]=pA=active[ia];
+      int ib=myVars.where(1); if(ib>-1) myVars[1]=pB=active[ib];
 //       int ic=myVars.where(2); if(ic>-1) pC=active[ic];
-      int id=myVars.where(2); if(id>-1) pD=active[id];
+      int id=myVars.where(2); if(id>-1) myVars[2]=pD=active[id];
       reset(pA,pB,pC,pD);
     }
     void reset(ValueType A, ValueType B, ValueType C, ValueType D){
@@ -585,10 +588,7 @@ class NewCuspCompactHeliumTwo: public OrbitalBase
      
     void reportStatus(ostream& os)
     {
-      os<<nameA<<"  "<<pA<<endl;
-      os<<nameB<<"  "<<pB<<endl;
-      os<<nameC<<"  "<<pC<<endl;
-      os<<nameD<<"  "<<pD<<endl;
+      myVars.print(os);
     }
     
     ValueType evaluate(ParticleSet& P, 
@@ -727,7 +727,7 @@ class SimpleCompactHelium: public OrbitalBase
     
     void resetParameters(const opt_variables_type& active)
     {
-      int ia=myVars.where(0); if(ia>-1) pA=active[ia];
+      int ia=myVars.where(0); if(ia>-1) myVars[0]=pA=active[ia];
       reset(pA);
     }
     void reset(ValueType A){
@@ -762,7 +762,7 @@ class SimpleCompactHelium: public OrbitalBase
      
     void reportStatus(ostream& os)
     {
-      os<<nameA<<"  "<<pA <<endl;
+       myVars.print(os);
     }
     
     ValueType evaluate(ParticleSet& P, 
@@ -895,7 +895,7 @@ class SimpleCompactHeliumElectronCorrelation: public OrbitalBase
     
     void resetParameters(const opt_variables_type& active)
     {
-      int ia=myVars.where(0); if(ia>-1) pA=active[ia];
+      int ia=myVars.where(0); if(ia>-1) myVars[0]=pA=active[ia];
       reset(pA);
     }
     void reset(ValueType A){
@@ -929,8 +929,8 @@ class SimpleCompactHeliumElectronCorrelation: public OrbitalBase
     
      
     void reportStatus(ostream& os)
-    {
-      os<<nameA<<"  "<<pA <<endl;
+    {      
+      myVars.print(os);
     }
     
     ValueType evaluate(ParticleSet& P, 
@@ -1071,8 +1071,8 @@ class SimpleCompactHeliumOrbitalPart: public OrbitalBase
     
     void resetParameters(const opt_variables_type& active)
     {
-      int ia=myVars.where(0); if(ia>-1) pA=active[ia];
-      int ib=myVars.where(1); if(ib>-1) pB=active[ia];
+      int ia=myVars.where(0); if(ia>-1) myVars[0]=pA=active[ia];
+      int ib=myVars.where(1); if(ib>-1) myVars[1]=pB=active[ia];
       reset(pA,pB);
     }
     void reset(ValueType A,ValueType B){
@@ -1108,9 +1108,7 @@ class SimpleCompactHeliumOrbitalPart: public OrbitalBase
      
     void reportStatus(ostream& os)
     {
-      os<<nameA<<"  "<<pA<<endl;
-      os<<nameB<<"  "<<pB<<endl;
-
+      myVars.print(os);
     }
     
     ValueType evaluate(ParticleSet& P, 
@@ -1190,8 +1188,8 @@ class SingleSlaterOrbital: public OrbitalBase
       SingleSlaterOrbital* cloned = new SingleSlaterOrbital(tqp,CenterRef);
       cloned->nameA = nameA;
       cloned->myVars.insert(nameA,pA,true);
-      cloned->nameB = nameB;
-      cloned->myVars.insert(nameB,pB,true);
+//       cloned->nameB = nameB;
+//       cloned->myVars.insert(nameB,pB,true);
       cloned->reset(pA,pB);
       
       return cloned;
@@ -1213,8 +1211,8 @@ class SingleSlaterOrbital: public OrbitalBase
       sstr << HEprefix << "_A";
       nameA = sstr.str();
       sstr.str("");
-      sstr << HEprefix << "_B";
-      nameB = sstr.str();
+//       sstr << HEprefix << "_B";
+//       nameB = sstr.str();
       
       cur=cur->children;
       while(cur != NULL)
@@ -1224,14 +1222,14 @@ class SingleSlaterOrbital: public OrbitalBase
 	aa.add(pname,"name");
 	aa.put(cur);
 	if(pname[0]=='A') putContent(pA,cur);
-	if(pname[0]=='B') putContent(pB,cur);
+// 	if(pname[0]=='B') putContent(pB,cur);
 	cur=cur->next;
       }
       reset(pA,pB);
       
       
       myVars.insert(nameA,pA,true);
-      myVars.insert(nameB,pB,true);
+//       myVars.insert(nameB,pB,true);
       reportStatus(app_log());
       return true;
     }
@@ -1255,13 +1253,13 @@ class SingleSlaterOrbital: public OrbitalBase
     
     void resetParameters(const opt_variables_type& active)
     {
-      int ia=myVars.where(0); if(ia>-1) pA=active[ia];
-      int ib=myVars.where(1); if(ib>-1) pB=active[ia];
+      int ia=myVars.where(0); if(ia>-1) myVars[0]=pA=active[ia];
+//       int ib=myVars.where(1); if(ib>-1) pB=active[ia];
       reset(pA,pB);
     }
     void reset(ValueType A,ValueType B){
       pA=A;
-      pB=B;
+//       pB=B;
     }
     
     RealType
@@ -1292,9 +1290,7 @@ class SingleSlaterOrbital: public OrbitalBase
      
     void reportStatus(ostream& os)
     {
-      os<<nameA<<"  "<<pA<<endl;
-      os<<nameB<<"  "<<pB<<endl;
-
+      myVars.print(os);
     }
     
     ValueType evaluate(ParticleSet& P, 
@@ -1713,7 +1709,7 @@ class NewCompactHeliumOne: public OrbitalBase
     
     void resetParameters(const opt_variables_type& active)
     {
-      int ia=myVars.where(0); if(ia>-1) pA=active[ia];
+      int ia=myVars.where(0); if(ia>-1) myVars[0]=pA=active[ia];
 //       int ib=myVars.where(1); if(ib>-1) pB=active[ib];
 //       int ic=myVars.where(2); if(ic>-1) pC=active[ic];
 //       int id=myVars.where(3); if(id>-1) pD=active[id];
@@ -1761,7 +1757,7 @@ class NewCompactHeliumOne: public OrbitalBase
      
     void reportStatus(ostream& os)
     {
-      os<<nameA<<"  "<<pA <<endl;
+      myVars.print(os);
     }
     
     ValueType evaluate(ParticleSet& P, 

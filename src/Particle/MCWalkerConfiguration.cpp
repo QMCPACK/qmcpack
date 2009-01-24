@@ -248,7 +248,9 @@ void MCWalkerConfiguration::resetWalkerProperty(int ncopy) {
   Properties.resize(ncopy,m);
   iterator it(WalkerList.begin()),it_end(WalkerList.end());
   while(it != it_end) {
-    (*it)->resizeProperty(ncopy,m); ++it;
+    (*it)->resizeProperty(ncopy,m);
+    (*it)->Weight=1;
+    ++it;
   }
   resizeWalkerHistories();
 }
