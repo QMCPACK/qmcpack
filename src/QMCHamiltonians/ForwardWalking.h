@@ -26,6 +26,8 @@
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include <cstdlib>
 #include <set>
+#include <string>
+
 
 namespace qmcplusplus {
 
@@ -122,6 +124,9 @@ namespace qmcplusplus {
 	  Tattrib.add(blockFreq,"frequency");
           Tattrib.put(tcur);
 	  
+	  if (tagName.find("*")==string::npos)
+	  {
+	  //Single Observable case
 	  int numProps = P.PropertyList.Names.size();
 	  Hindex = h.getObservable(tagName)+NUMPROPERTIES;
 	  if(tagName=="LocalPotential") {
@@ -161,6 +166,58 @@ namespace qmcplusplus {
           int maxWsize=Parameters.back();
 	  int pindx = P.addPropertyHistory(maxWsize);
           Pindices.push_back(pindx);
+	  
+	  }
+	  else
+	  {
+	    bool FOUNDH(false);
+	    // 	    Multiple observables for this tag
+	    int found=tagName.rfind("*");
+	    tagName.replace (found,1,"");
+	    
+	    int numProps = P.PropertyList.Names.size();
+	    for(int j=0;j<h.sizeOfObservables();j++)
+	    {
+	      string Hname = h.getObservableName(j);
+	      if (Hname.find(tagName) != string::npos)
+	      {
+		vector<int> Parameters;
+		if(blockSeries==0) putContent(Parameters,tcur);
+		else{
+		  for( int pl=blockFreq;pl<=blockSeries;pl+=blockFreq) Parameters.push_back(pl);
+		}
+		FOUNDH=true;
+		app_log()<<" Hamiltonian Element "<<Hname<<" was found at "<< j<<endl;
+		Names.push_back(Hname);
+		Hindex = j+NUMPROPERTIES;
+		Hindices.push_back( Hindex);
+		
+		walkerLengths.push_back(Parameters);
+		int maxWsize=Parameters.size();
+		int pindx = P.addPropertyHistory(maxWsize);
+		Pindices.push_back(pindx);
+		
+		nValues+=Parameters.size();
+		app_log()<<"   "<<numT<<" values will be calculated at block numbers:"<<endl;
+		app_log()<<"      ";
+		for(int nm=0;nm<Parameters.size();nm++) app_log()<<Parameters[nm]<<"  ";
+		app_log()<<endl;
+	      }
+	    }
+	    if (FOUNDH)
+	    {
+	      nObservables+=1;
+	    }
+	    else
+	    {
+	    app_log()<<"Not a valid H element("<<Hindex<<") Valid names are:";
+	    for (int jk=0;jk<h.sizeOfObservables();jk++) app_log()<<"  "<<h.getObservableName(jk);
+	    app_log()<<endl;
+	    exit(-1);
+	    }
+
+
+	  }
         }
         tcur = tcur->next;
       }
