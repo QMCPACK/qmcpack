@@ -1,4 +1,4 @@
-#!/bin/env python
+#!/usr/bin/env python
 from numpy import *
 import sys
 
@@ -61,25 +61,38 @@ file = open (sys.argv[1], 'r')
 names = file.readline().split()
 file.close()
 
+M = int(sys.argv[3])
+print '# Forward-walking distance is ' + repr(M)
+
 numat = 0
 for n in names:
-    if (n[0] == 'F' and n[1] != 'W'):
+    if (n[0:4] == 'FW_F'):
         d = n.split('_')
-        iat = int(d[-2])
-        dim = int(d[-1])
-        numat = max(iat+1,numat)
+        m = int(d[-1])
+        if (m == M):
+            iat = int(d[-3])
+            dim = int(d[-2])
+            numat = max(iat+1,numat)
 collist = [ [ [], [], [] ] ]
 for iat in range(0,numat-1):
     collist.append([ [],[],[] ])
 
 col = 0
 for n in names:
-    if (n[0] == 'F' and n[1] != 'W'):
+    if (n[0:4] == 'FW_F'):
+        d = n.split('_')
+        m = int(d[-1])
+        if (m == M):
+            iat = int(d[-3])
+            dim = int(d[-2])
+            collist[iat][dim].append(col-1)
+    
+    if(n[0:4] == 'F_AA'):
         d = n.split('_')
         iat = int(d[-2])
         dim = int(d[-1])
-        numat = max(iat+1,numat)
-        collist[iat][dim].append(col-1)
+        if (iat < numat):
+            collist[iat][dim].append(col-1)        
     col = col + 1
 
 s = loadtxt(sys.argv[1])
@@ -89,7 +102,7 @@ if len(sys.argv) > 2:
 else:
     first = 20
 
-print 'Atom                Force              +/-             Error'
+print '# Atom               Force              +/-             Error'
 for iat in range(0,numat):
     means  = []
     errors = []
@@ -102,5 +115,5 @@ for iat in range(0,numat):
         means.append (avg)
         errors.append(error)
 #        print '%-20s = %s' % (n, MeanErrorString(avg,error))
-    print '%3d  %10.5f %10.5f %10.5f    %10.5f %10.5f %10.5f' \
+    print '%4d  %10.5f %10.5f %10.5f    %10.5f %10.5f %10.5f' \
         % (iat+1,means[0], means[1], means[2], errors[0], errors[1], errors[2])
