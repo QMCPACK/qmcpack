@@ -68,10 +68,12 @@ class MacOptimization: public MinimizerBase<T> {
   vector<Return_t>  a_xi , a_g , a_h, Parms ; 
   int a_restart ;           /* whether to restart macopt - fresh cg directions */
   //If we want to do a steepest descent minimization
-  bool SD;
+  bool SD,xybisect;
 
 
-
+    vector< vector<Return_t> > PastLineDirections;
+    vector< vector<Return_t> > PastGradients;
+    vector< vector<Return_t> > PastGradientsParameterPoints;
 
 
 
@@ -81,7 +83,7 @@ class MacOptimization: public MinimizerBase<T> {
 * @param atarget target function to optimize
 */
   MacOptimization(ObjectFuncType* atarget=0):  TargetFunc(atarget), RestartCG(true),
-  NumSteps(100),Displacement(1e-6),
+  NumSteps(100),Displacement(1e-6),xybisect(false),
   CostTol(1.e-6),GradTol(1.e-6),GammaTol(1.e-7) // GammaTol was set to 1e-4 originally
   {
     if (atarget) setTarget(atarget);
@@ -163,21 +165,24 @@ class MacOptimization: public MinimizerBase<T> {
   bool put(xmlNodePtr cur)
   {
   string steepestD("no");
+  string xyBi("no");
   ParameterSet p;
   p.add(a_itmax,"max_steps","none"); p.add(a_itmax,"maxSteps","none");
   p.add(a_tol,"tolerance","none");
-  p.add(GradTol,"tolerance_g","none"); p.add(GradTol,"toleranceG","none");
   p.add(GammaTol,"tolerance_cg","none"); p.add(GammaTol,"toleranceCG","none");
   p.add(Displacement,"epsilon","none");
-  p.add(xycleanup,"xypolish","none");
   p.add(steepestD,"SD","none");
   p.add(a_rich,"rich","none");
+  p.add(xyBi,"xybisect","none");
+  p.add(xycleanup,"xypolish","none");
+  p.add(GradTol,"tolerance_g","none"); p.add(GradTol,"toleranceG","none");
   p.add(a_verbose,"verbose","none");
   p.add( a_lastx_default,"stepsize","none"); p.add( a_lastx_default,"stepSize","none");
   p.add( a_linmin_maxits,"max_linemin","none"); p.add( a_linmin_maxits,"maxLinemin","none");
   p.put(cur);
   
   SD=(steepestD=="yes");
+  xybisect=(xyBi=="yes");
   a_lastx=a_lastx_default;
   return true;
   }
@@ -207,6 +212,9 @@ class MacOptimization: public MinimizerBase<T> {
     //     cout<<NumParams<<endl;
     //leave initial parameters inside the wave function/cost function
     for(int k=0; k<TargetFunc->NumParams(); k++) TargetFunc->Params(k)=tmpPs[k];
+
+    PastGradients.push_back(FG);
+    PastGradientsParameterPoints.push_back(RT);
   }
 
     bool macoptII( ) 
@@ -216,6 +224,7 @@ class MacOptimization: public MinimizerBase<T> {
       Return_t step , tmpd ;
       dfunc( Parms, a_xi );
       macopt_restart ( 1 ) ;
+      PastLineDirections.push_back(a_h);
       gg = CostTol*2.0;
       for (int a_its = 0 ; ((a_its < a_itmax)&(TargetFunc->IsValid)&(gg>CostTol)) ; a_its++ ) {
 	gg = 0.0;
@@ -230,7 +239,9 @@ class MacOptimization: public MinimizerBase<T> {
 	return true;
 	}
        
-       step = maclinminII ( Parms ) ; 
+       step = maclinminII ( Parms ) ;
+       //if step<0 line minimization failed. reset parameters, or generate new walker dist, something is funny.
+       if (step<0.0) return false;
        
        if ( a_restart == 0 ) {
 	 if ( a_verbose > 1 ) printf (" (step %9.5g)",step);
@@ -284,6 +295,7 @@ class MacOptimization: public MinimizerBase<T> {
 	/* check that the inner product of gradient and line search is < 0 */
 	tmpd -= a_xi[j] * a_g[j] ; 
       }
+      PastLineDirections.push_back(a_h);
       gg = 0.0;
       for (int j = 0 ; j < NumParams ; j ++ ) 
 	gg += a_g[j]*a_g[j]; 
@@ -315,7 +327,7 @@ class MacOptimization: public MinimizerBase<T> {
   Return_t maclinminII(vector<Return_t> &p)
   {
     Return_t y(0.0) ;
-    Return_t  t(0.0) , m(0.0) ;
+    Return_t  t(0.0) ;
     Return_t step(0.0) , tmpd(0.0) ;  
     
     /* at x=0, the gradient (uphill) satisfies s < 0 */
@@ -327,12 +339,13 @@ class MacOptimization: public MinimizerBase<T> {
 		  return 0.0 ; 
 		}
     }
-    int its(0);
+    int its(0);int xyit(0);
     Return_t x = a_lastx / a_gtyp ;
-    Return_t s = macprodII ( Parms , a_gx , x ) ; 
+    Return_t s = macprodII ( Parms , a_gx , x ) ;
+    
     
     if ( s < 0 & TargetFunc->IsValid)  {  /* we need to go further */
-      do {
+      do { 
 	y = x * a_linmin_g1 ;
 	t = macprodII ( Parms , a_gy , y  ) ; 
 	if ( a_verbose > 1 ) 
@@ -382,19 +395,21 @@ class MacOptimization: public MinimizerBase<T> {
     }
     
     Return_t u(0.0);
-    int xyit(0);
-    do {
-//       Return_t s2 = std::fabs(s);
-//       Return_t t2 = std::fabs(t);
-      m = 0.5*( x+y ) ;
-      //       s2 /= m ; t2 /= m ;
-      //       m =  s2 * y + t2 * x ;
-      printf ("Polishing line minimization m= %6.3g", m);
-      u=macprodII ( Parms , a_gunused , m ) ;
-      if (u==u){
+    Return_t m(0.5*( x+y ));
+    if ((xyit<xycleanup) & (std::fabs(s-t)>GradTol) & (s*t<0.0)) 
+    { 
+      
+      do {
+	if (xybisect) m = 0.5*( x+y ) ;
+	else {
+	  Return_t ms(std::fabs(s)), mt(std::fabs(t));
+	  m= (ms*y + mt*x)/(ms+mt);
+	}
+        u=macprodII ( Parms , a_gunused , m ) ;
+      if ((u==u) ){
 	if ( u*s >= 0.0  & TargetFunc->IsValid )
 	{
-	  s=u; x=m; a_gx = a_gunused; 
+	  s=u; x=m; a_gx = a_gunused;
 	}
 	else if ( u*t >= 0.0  & TargetFunc->IsValid )
 	{
@@ -428,6 +443,12 @@ class MacOptimization: public MinimizerBase<T> {
       }
       xyit++;
     } while ( (TargetFunc->IsValid) & (std::fabs(s-t)>GradTol) & (xyit<xycleanup) ) ;
+    }
+    else if (s*t>0.0)
+    {
+      printf("Bracketing FAIL");
+      return -1.0;
+    }
     
     if ( its > a_linmin_maxits )  {
       fprintf (stderr, "Warning! maclinmin overran" );
@@ -441,29 +462,22 @@ class MacOptimization: public MinimizerBase<T> {
 		} 
     }
     if (TargetFunc->IsValid){
-      /*  Linear interpolate between the last two. 
-      This assumes that x and y do bracket. */
-    s = std::fabs(s);
-    t = std::fabs(t);
-    m = ( s+t ) ;
-    s /= m ; t /= m ;
-    
-    m =  s * y + t * x ; 
-    /* evaluate the step length, not that it necessarily means anything */
-//     cout<<"Setting new parameters"<<endl;
-    step = 0.0;
-    for (int i = 0 ; i < NumParams ; i ++ ) {
-      tmpd = m * a_xi[i] ;
-      Parms[i] += tmpd ; /* this is the point where the parameter vector steps */
-      step += fabs ( tmpd ) ; 
-      a_xi[i] = s * a_gy[i] + t * a_gx[i] ;
-      /* send back the estimated gradient in xi (NB not like linmin) */
-//       cout<<i<<"  "<<Parms[i]<<endl;
-    }
-    a_lastx = m * a_linmin_g2 *  a_gtyp ;
-    for(int j=0; j<NumParams; j++) TargetFunc->Params(j)=Parms[j];
-    TargetFunc->Cost();
-    TargetFunc->Report();
+      // Linear interpolate between the last two. 
+      Return_t ms(std::fabs(s)), mt(std::fabs(t));
+      m= (ms*y + mt*x)/(ms+mt);
+      step = 0.0;
+//       Update the parameter vector
+      for (int i = 0 ; i < NumParams ; i ++ ) {
+	tmpd = m * a_xi[i] ;
+	Parms[i] += tmpd ;
+        step += fabs ( tmpd ) ; 
+        a_xi[i] = s * a_gy[i] + t * a_gx[i] ;
+//        send back the estimated gradient in xi (NB not like linmin) 
+      }
+      a_lastx = m * a_linmin_g2 *  a_gtyp ;
+      for(int j=0; j<NumParams; j++) TargetFunc->Params(j)=Parms[j];
+      TargetFunc->Cost();
+      TargetFunc->Report();
     }
     else
     {
@@ -485,14 +499,14 @@ class MacOptimization: public MinimizerBase<T> {
   }
   
   void macopt_restart ( int start)
-  {  
+  {
     if ( start == 0 ) a_lastx = a_lastx_default ; 
     /* it is assumed that dfunc( p , xi  ) ;  has happened */
   for (int j = 0 ; j < NumParams ; j ++ ) {
     if ( a_restart != 2 ) a_g[j] = -a_xi[j] ;
     a_xi[j] = a_h[j] = a_g[j] ;
   }
-  a_restart = 0 ; 
+  a_restart = 0 ;
   }
   
     };
