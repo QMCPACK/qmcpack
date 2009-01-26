@@ -70,7 +70,7 @@ int a_restart ;           /* whether to restart macopt - fresh cg directions */
 //If we want to do a steepest descent minimization
 bool SD,xybisect;
 Return_t Gfactor;
-
+string steepestD;
 vector< vector<Return_t> > PastLineDirections;
 vector< vector<Return_t> > PastGradients;
 vector< vector<Return_t> > PastGradientsParameterPoints;
@@ -83,7 +83,7 @@ vector< vector<Return_t> > PastGradientsParameterPoints;
 * @param atarget target function to optimize
 */
 MacOptimization(ObjectFuncType* atarget=0):  TargetFunc(atarget), RestartCG(true),
-NumSteps(100),Displacement(1e-6),xybisect(false),
+NumSteps(100),Displacement(1e-6),xybisect(false), steepestD("no"),
 CostTol(1.e-6),GradTol(1.e-6),GammaTol(1.e-7) // GammaTol was set to 1e-4 originally
 {
 a_end_if_small_step = 0 ; /* Change this to 0/1 if you prefer */
@@ -173,7 +173,7 @@ bool put(std::istream& );
 ///read from an xmlNode 
 bool put(xmlNodePtr cur)
 {
-string steepestD("no");
+
 string xyBi("no");
 ParameterSet p;
 p.add(a_itmax,"max_steps","none"); p.add(a_itmax,"maxSteps","none");
@@ -276,8 +276,11 @@ if (GGnew>Gfactor*gg)
 cout<<" Gradient grew by factor of "<<Gfactor<<" from last step. Something is probably wrong. Resetting to previous parameters and exiting."<<endl;
 cout<<" Old Gradient :"<<gg<<"  New Gradient:"<<GGnew<<endl;
 Parms=OldParms;
-return false;
+if (SD) return false;
+else SD=true;
+cout<<" Temporarily switching to SD method"<<endl;
 }
+else SD=(steepestD=="yes");
 }
 if ( a_restart ) {
 if(a_verbose > 0)
