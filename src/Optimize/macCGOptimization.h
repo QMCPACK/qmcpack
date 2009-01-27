@@ -36,6 +36,7 @@ Return_t LambdaMax;
 
 bool RestartCG;
 int CurStep;
+int LastGoodGrad;
 
 Return_t gdotg, gdotg0, gdoth, gamma;
 Return_t a_tol ;    /* convergence declared when the gradient vector is smaller
@@ -65,7 +66,7 @@ Return_t a_lastx_default ;  /* if maclinmin is reset, lastx is set to this */
 int xycleanup;
 Return_t a_gtyp ; /* stores the rms gradient for linmin */
 vector<Return_t>  a_pt ,  a_gx ,  a_gy , a_gunused ;
-vector<Return_t>  a_xi , a_g , a_h, Parms , OldParms; 
+vector<Return_t>  a_xi , a_g , a_h, Parms , OldParms, OldGrad; 
 int a_restart ;           /* whether to restart macopt - fresh cg directions */
 //If we want to do a steepest descent minimization
 bool SD,xybisect;
@@ -104,6 +105,7 @@ a_linmin_g3 = 0.5 ;
 a_restart = 0 ; 
 xycleanup=3;
 Gfactor=10;	
+
 	
 if (atarget) setTarget(atarget);
 }
@@ -139,6 +141,7 @@ a_gx.resize(newSize,0.0); /* scratch gradients             */
 a_gy.resize(newSize,0.0); /* used by maclinmin and macprod */
 Parms.resize(newSize,0.0);
 OldParms.resize(newSize,0.0);
+OldGrad.resize(newSize,0.0);
 }
 
 /** optimize an object function
@@ -228,11 +231,13 @@ PastGradientsParameterPoints.push_back(RT);
 }
 
 bool macoptII( ) 
-{ 
+{
 Return_t gg(0.0) , gam(0.0) , dgg(0.0) ; 
 int end_if_small_grad = 1 - a_end_if_small_step ;
 Return_t step , tmpd ;
 dfunc( Parms, a_xi );
+OldGrad=a_xi;
+OldParms=Parms;
 macopt_restart ( 1 ) ;
 PastLineDirections.push_back(a_h);
 gg = CostTol*2.0;
@@ -273,9 +278,15 @@ Return_t GGnew = 0.0;
 for (int j = 0 ; j < NumParams ; j ++ )	  GGnew += a_xi[j]*a_xi[j];
 if (GGnew>Gfactor*gg)
 {
-cout<<" Gradient grew by factor of "<<Gfactor<<" from last step. Something is probably wrong. Resetting to previous parameters and exiting."<<endl;
+cout<<" Gradient grew by more than a factor of "<<Gfactor<<". Resetting to previous parameters and switching to SD."<<endl;
 cout<<" Old Gradient :"<<gg<<"  New Gradient:"<<GGnew<<endl;
 Parms=OldParms;
+dfunc( Parms , a_xi  ) ;
+for (int j = 0 ; j < NumParams ; j ++ ) cout<<"  "<<Parms[j];
+cout<<endl;
+//{
+	//cout<<a_xi[j]<<" "<<OldGrad[j]<<" "<<Parms[j]<<endl;
+//}
 if (SD) return false;
 else SD=true;
 cout<<" Temporarily switching to SD method"<<endl;
@@ -419,7 +430,7 @@ t = 1.0 ; y = x;
 Return_t u(0.0);
 Return_t m(0.5*( x+y ));
 if ((xyit<xycleanup) & (std::fabs(s-t)>GradTol) & (s*t<0.0)) 
-{ 
+{
 
 do {
 if (xybisect) m = 0.5*( x+y ) ;
@@ -489,6 +500,7 @@ Return_t ms(std::fabs(s)), mt(std::fabs(t));
 m= (ms*y + mt*x)/(ms+mt);
 step = 0.0;
 OldParms=Parms;
+
 for (int i = 0 ; i < NumParams ; i ++ ) {
 tmpd = m * a_xi[i] ;
 Parms[i] += tmpd ;
@@ -498,7 +510,7 @@ a_xi[i] = s * a_gy[i] + t * a_gx[i] ;
 }
 a_lastx = m * a_linmin_g2 *  a_gtyp ;
 for(int j=0; j<NumParams; j++) TargetFunc->Params(j)=Parms[j];
-TargetFunc->Cost();
+//TargetFunc->Cost();
 TargetFunc->Report();
 }
 else

@@ -40,6 +40,8 @@ namespace qmcplusplus {
   QMCCostFunctionOMP::Return_t QMCCostFunctionOMP::correlatedSampling() {
     
     Return_t wgt_tot=0.0;
+    Return_t wgt_bare=0.0;
+    Return_t wgt_bare2=0.0;
     
     //#pragma omp parallel reduction(+:wgt_tot)
     #pragma omp parallel 
@@ -47,33 +49,41 @@ namespace qmcplusplus {
       int ip = omp_get_thread_num();
       bool usingWeight=UseWeight;
       MCWalkerConfiguration& wRef(*wClones[ip]);
-      Return_t eloc_new, wgt_node=0.0;
+      Return_t eloc_new, wgt_node=0.0, wgt_node_bare=0.0, wgt_bare2_node=0.0;
       //int totalElements=W.getTotalNum()*OHMMS_DIM;
       MCWalkerConfiguration::iterator it(wRef.begin()); 
       MCWalkerConfiguration::iterator it_end(wRef.end()); 
       int iw=0,iwg=wPerNode[ip];
       for(; it!= it_end;++it,++iw,++iwg)
       {
-	ParticleSet::Walker_t& thisWalker(**it);
-	wRef.R=thisWalker.R;
-	wRef.update();
-	Return_t logpsi=psiClones[ip]->evaluateDeltaLog(wRef);
-	wRef.G += *dLogPsi[iwg];
-	wRef.L += *d2LogPsi[iwg];
-	
-	Return_t* restrict saved = (*RecordsOnNode[ip])[iw];
-	RealType KEtemp = H_KE_Node[ip]->evaluate(wRef);
-	if (KEtemp<MinKE) KEtemp=std::fabs(KEtemp-MinKE)+MinKE;
-	eloc_new= KEtemp + saved[ENERGY_FIXED];	
-	Return_t weight = usingWeight?std::max(MinWeight,std::min(std::exp(2.0*(logpsi-saved[LOGPSI_FREE])),MaxWeight)):1.0;
-// 	Return_t weight = usingWeight?std::exp(2.0*(logpsi-saved[LOGPSI_FREE])):1.0;
-	saved[ENERGY_NEW]=eloc_new;
-	saved[REWEIGHT]=weight;
-	wgt_node+=weight;
+				ParticleSet::Walker_t& thisWalker(**it);
+				wRef.R=thisWalker.R;
+				wRef.update();
+				Return_t logpsi=psiClones[ip]->evaluateDeltaLog(wRef);
+				wRef.G += *dLogPsi[iwg];
+				wRef.L += *d2LogPsi[iwg];
+				
+				Return_t* restrict saved = (*RecordsOnNode[ip])[iw];
+				RealType KEtemp = H_KE_Node[ip]->evaluate(wRef);
+				//if (KEtemp<MinKE) KEtemp=std::fabs(KEtemp-MinKE)+MinKE;
+				eloc_new = KEtemp + saved[ENERGY_FIXED];
+				Return_t this_bare_weight=(1.0);
+				Return_t weight = usingWeight? std::min(this_bare_weight = std::exp(2.0*(logpsi-saved[LOGPSI_FREE])),MaxWeight) :1.0;
+				if (KEtemp<MinKE) weight=0.0;
+			// 	Return_t weight = usingWeight?std::exp(2.0*(logpsi-saved[LOGPSI_FREE])):1.0;
+				saved[ENERGY_NEW]=eloc_new;
+				saved[REWEIGHT]=weight;
+				wgt_node+=weight;
+				wgt_node_bare+=this_bare_weight;
+				wgt_bare2_node+=this_bare_weight*this_bare_weight;
       }
       
       #pragma omp atomic
       wgt_tot += wgt_node;
+      #pragma omp atomic
+      wgt_bare += wgt_node_bare;
+      #pragma omp atomic
+      wgt_bare2 +=wgt_bare2_node;
     }
     
 //     for(int ip=0; ip<NumThreads; ip++)
@@ -92,33 +102,30 @@ namespace qmcplusplus {
     
     for(int i=0; i<SumValue.size(); i++) SumValue[i]=0.0;
     
-    wgt_tot=1.0/wgt_tot;
-    Return_t wgt_max=MaxWeight*wgt_tot;
+    wgt_tot=1.0/wgt_tot;  
     for(int ip=0; ip<NumThreads; ip++)
     {
       int nw=wClones[ip]->getActiveWalkers();
-//       cout<<"Number active walkers "<<nw<<endl;
-      for(int iw=0; iw<nw;iw++) { 
-	const Return_t* restrict saved = (*RecordsOnNode[ip])[iw];
-	Return_t weight=saved[REWEIGHT]*wgt_tot;
-	Return_t eloc_new=saved[ENERGY_NEW];
-	
-	//         weight = (weight>wgt_max)? wgt_max:weight;
-	Return_t delE=std::pow(abs(eloc_new-EtargetEff),PowerE);
-	SumValue[SUM_E_BARE] += eloc_new;
-	SumValue[SUM_ESQ_BARE] += eloc_new*eloc_new;
-	SumValue[SUM_ABSE_BARE] += delE;
-	SumValue[SUM_E_WGT] += eloc_new*saved[REWEIGHT];
-	SumValue[SUM_ESQ_WGT] += eloc_new*eloc_new*saved[REWEIGHT];
-	SumValue[SUM_ABSE_WGT] += delE*saved[REWEIGHT];
-	SumValue[SUM_WGT] += saved[REWEIGHT];
-	SumValue[SUM_WGTSQ] += saved[REWEIGHT]*saved[REWEIGHT];
+      for(int iw=0; iw<nw;iw++) 
+      { 
+				const Return_t* restrict saved = (*RecordsOnNode[ip])[iw];
+				Return_t weight=saved[REWEIGHT]*wgt_tot;
+				Return_t eloc_new=saved[ENERGY_NEW];
+				Return_t delE=std::pow(abs(eloc_new-EtargetEff),PowerE);
+				SumValue[SUM_E_BARE] += eloc_new;
+				SumValue[SUM_ESQ_BARE] += eloc_new*eloc_new;
+				SumValue[SUM_ABSE_BARE] += delE;
+				SumValue[SUM_E_WGT] += eloc_new*saved[REWEIGHT];
+				SumValue[SUM_ESQ_WGT] += eloc_new*eloc_new*saved[REWEIGHT];
+				SumValue[SUM_ABSE_WGT] += delE*saved[REWEIGHT];
+				SumValue[SUM_WGT] += saved[REWEIGHT];
+				SumValue[SUM_WGTSQ] += saved[REWEIGHT]*saved[REWEIGHT];
       }
     }
     //collect everything
     myComm->allreduce(SumValue);
-
-    return SumValue[SUM_WGT]*SumValue[SUM_WGT]/SumValue[SUM_WGTSQ];
+    return wgt_bare*wgt_bare/wgt_bare2;
+    //return SumValue[SUM_WGT]*SumValue[SUM_WGT]/SumValue[SUM_WGTSQ];
   }
   
   void 
