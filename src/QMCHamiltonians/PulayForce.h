@@ -46,7 +46,7 @@ namespace qmcplusplus {
 
     QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi)
     { 
-      PulayForce *myClone = new PulayForce (Electrons, Ions);
+      PulayForce *myClone = new PulayForce (Ions, qp);
       myClone->FirstForceIndex = FirstForceIndex;
       return myClone;
     }
