@@ -30,7 +30,7 @@ namespace qmcplusplus {
     MPIObjectBase(0),
     W(w),Psi(psi),H(h),
     UseWeight(false), Write2OneXml(true),
-    PowerE(2), NumCostCalls(0), NumSamples(0), MaxWeight(5),MinWeight(0.0),
+    PowerE(2), NumCostCalls(0), NumSamples(0), MaxWeight(5), w_w(0),
     w_en(0.0), w_var(0.0), w_abs(1.0), MinKE(-100.0),
     CorrelationFactor(0.0), m_wfPtr(NULL), m_doc_out(NULL), msg_stream(0), debug_stream(0)
   { 
@@ -38,8 +38,8 @@ namespace qmcplusplus {
     //paramList.resize(10); 
     //costList.resize(10,0.0); 
 
-    //default: when walkers below 90% stop
-    MinNumWalkers = 0.4;
+    //default: when walkers below 50% stop
+    MinNumWalkers = 0.5;
 
     H_KE.addOperator(H.getHamiltonian("Kinetic"),"Kinetic");
     H_KE.addObservables(W.PropertyList);
@@ -117,7 +117,7 @@ QMCCostFunctionBase::Return_t QMCCostFunctionBase::Cost() {
  Return_t wgt_var = SumValue[SUM_WGTSQ]-SumValue[SUM_WGT]*SumValue[SUM_WGT];
  wgt_var *=wgtinv;
  
- CostValue = w_abs*curVar_abs + w_var*curVar_w + w_en*curAvg_w + w_w*wgt_var;
+ CostValue = w_abs*curVar_abs + w_var*curVar_w + w_en*curAvg_w + w_w*curVar;
  
  //       app_log()<<"Energy: "<<curAvg_w<<" Var: "<<curVar_w<<endl;
  //       app_log()<<"E_w   : "<<w_en<<" V_w: "<<w_var<<endl;
@@ -460,12 +460,10 @@ QMCCostFunctionBase::Return_t QMCCostFunctionBase::Cost() {
     m_param.add(MinNumWalkers,"min_walkers","scalar");
     m_param.add(MinNumWalkers,"minWalkers","scalar");
     m_param.add(MaxWeight,"maxWeight","scalar");
-    m_param.add(MinWeight,"minWeight","scalar");
     m_param.add(MinKE,"MinKE","scalar");
     m_param.put(q);
 
     UseWeight = (useWeightStr == "yes");
-//     MinWeight=1.0/MaxWeight;
     Write2OneXml = (writeXmlPerStep == "no");
 
     xmlNodePtr qsave=q;
@@ -629,7 +627,7 @@ QMCCostFunctionBase::Return_t QMCCostFunctionBase::Cost() {
 	  putContent(w_var,cset[i]);
         else if(pname == "difference")
 	  putContent(w_abs,cset[i]);
-        else if(pname == "weight")
+        else if(pname == "NoReweightvariance")
 	  putContent(w_w,cset[i]);
       }
     }  
