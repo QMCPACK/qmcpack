@@ -20,7 +20,7 @@
 
 namespace qmcplusplus {
 
-  struct PulayForce : public public QMCHamiltonianBase, public ForceBase
+  struct PulayForce : public QMCHamiltonianBase, public ForceBase
   {
     ParticleSet& Ions;
     ParticleSet& Electrons;
@@ -29,9 +29,10 @@ namespace qmcplusplus {
 
     ParticleSet::ParticlePos_t GradLogPsi, EGradLogPsi;
     
-    CoulombPBCABTemp(ParticleSet& ions, ParticleSet& elns);
+    PulayForce(ParticleSet& ions, ParticleSet& elns);
 
     void resetTargetParticleSet(ParticleSet& P);
+
     Return_t evaluate(ParticleSet& P);
 
     inline Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy) 
@@ -43,6 +44,14 @@ namespace qmcplusplus {
     bool get(std::ostream& os) const 
     { return true;    }
 
+    QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+    { 
+      PulayForce *myClone = new PulayForce (Electrons, Ions);
+      myClone->FirstForceIndex = FirstForceIndex;
+      return myClone;
+    }
+
+
     inline RealType
     WarpFunction (RealType r)
     { return 1.0/(r*r*r*r); }
@@ -52,5 +61,10 @@ namespace qmcplusplus {
     void setObservables(PropertySetType& plist);
 
     void setParticlePropertyList(PropertySetType& plist, int offset);
+
+    void registerObservables(vector<observable_helper*>& h5list,
+			     hid_t gid) const;
   };
 
+}
+#endif

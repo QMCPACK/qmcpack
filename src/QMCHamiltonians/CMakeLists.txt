@@ -8,6 +8,7 @@ SET(HAMSRCS
   NumericalRadialPotential.cpp
   RPAPressure.cpp
   ForceBase.cpp
+  PulayForce.cpp
   ForceCeperley.cpp
   ChiesaCorrection.cpp
   PairCorrEstimator.cpp

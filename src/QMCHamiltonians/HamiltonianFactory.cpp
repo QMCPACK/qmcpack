@@ -44,6 +44,7 @@
 #include "QMCHamiltonians/HeEPotential.h"
 #include "QMCHamiltonians/ForceBase.h"
 #include "QMCHamiltonians/ForceCeperley.h"
+#include "QMCHamiltonians/PulayForce.h"
 #include "QMCHamiltonians/HFDHE2Potential_tail.h"
 #include "QMCHamiltonians/HeEPotential_tail.h"
 #include "QMCHamiltonians/HFDHE2_Moroni1995.h"
@@ -567,6 +568,31 @@ namespace qmcplusplus {
     }
   }
 
+  // void
+  // HamiltonianFactory::addPulayForce (xmlNodePtr cur) {
+  //   string a("ion0"),targetName("e"),title("Pulay");
+  //   OhmmsAttributeSet hAttrib;
+  //   hAttrib.add(a,"source"); 
+  //   hAttrib.add(targetName,"target"); 
+
+  //   PtclPoolType::iterator pit(ptclPool.find(a));
+  //   if(pit == ptclPool.end()) {
+  //     ERRORMSG("Missing source ParticleSet" << a)
+  //     return;
+  //   }
+
+  //   ParticleSet* source = (*pit).second;
+  //   pit = ptclPool.find(targetName);
+  //   if(pit == ptclPool.end()) {
+  //     ERRORMSG("Missing target ParticleSet" << targetName)
+  //     return;
+  //   }
+  //   ParticleSet* target = (*pit).second;
+    
+  //   targetH->addOperator(new PulayForce(*source, *target), title, false);
+
+  // }
+
   void 
   HamiltonianFactory::addForceHam(xmlNodePtr cur) {
     string a("ion0"),targetName("e"),title("ForceBase"),pbc("yes");
@@ -597,14 +623,16 @@ namespace qmcplusplus {
 
     //bool applyPBC= (PBCType && pbc=="yes");
 
-    if(mode=="bare") {
+    if(mode=="bare") 
       targetH->addOperator(new BareForce(*source, *target), title, false);
-    } else if(mode=="cep") {
+    else if(mode=="cep") 
       targetH->addOperator(new ForceCeperley(*source, *target), title, false);
-    } else {
-      ERRORMSG("Failed to recognize Force mode " << mode)
-    //} else if(mode=="FD") {
-    //  targetH->addOperator(new ForceFiniteDiff(*source, *target), title, false);
+    else if(mode=="pulay")
+      targetH->addOperator(new PulayForce(*source, *target), title, false);
+    else {
+      ERRORMSG("Failed to recognize Force mode " << mode);
+      //} else if(mode=="FD") {
+      //  targetH->addOperator(new ForceFiniteDiff(*source, *target), title, false);
     }
   }
 
