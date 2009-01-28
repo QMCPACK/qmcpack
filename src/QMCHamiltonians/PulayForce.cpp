@@ -103,11 +103,11 @@ namespace qmcplusplus {
     for (int ion=0; ion < Nnuc; ion++) {
       GradLogPsi[ion] = EGradLogPsi[ion] = PosType();
       for(int nn=d_ab.M[ion], elec=0; nn<d_ab.M[ion+1]; ++nn,++elec) 
-	GradLogPsi[ion] += WarpNorm[elec] * WarpFunction(d_ab.r(nn))
+	GradLogPsi[ion] -= WarpNorm[elec] * WarpFunction(d_ab.r(nn))
 	  * P.G[elec];
-      RealType E = P.getPropertyBase()[LOCALENERGY];
-      cerr << "E = " << E << endl;
-      EGradLogPsi[ion] = P.getPropertyBase()[LOCALENERGY] * GradLogPsi[ion];
+      RealType E = tWalker->Properties(0,LOCALENERGY);
+      // EGradLogPsi[ion] = P.getPropertyBase()[LOCALENERGY] * GradLogPsi[ion];
+      EGradLogPsi[ion] = E * GradLogPsi[ion];
     }
     //    cerr << "Finish PulayForce::evaluate(ParticleSet& P).\n";
     return Value = 0.0;
