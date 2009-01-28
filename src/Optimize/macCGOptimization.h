@@ -245,8 +245,7 @@ for (int a_its = 0 ; ((a_its < a_itmax)&(TargetFunc->IsValid)&(gg>CostTol)) ; a_
 gg = 0.0;
 for (int j = 0 ; j < NumParams ; j ++ )  gg += a_g[j]*a_g[j];
 a_gtyp = sqrt ( gg / (1.0*NumParams) ) ;
-if ( a_verbose > 0 ) 
-printf ( "mac_it %d of %d : gg = %6.3g tol = %6.3g: ", a_its , a_itmax , gg , a_tol ) ;
+if ( a_verbose > 0 ) printf ( "mac_it %d of %d : gg = %6.3g tol = %6.3g: ", a_its , a_itmax , gg , a_tol ) ;
 if ( ( end_if_small_grad && ( gg <= a_tol ) ) 
 || ( gg <= a_grad_tol_tiny ) ) {
 //      macopt_free ( a ) ;
@@ -278,8 +277,8 @@ Return_t GGnew = 0.0;
 for (int j = 0 ; j < NumParams ; j ++ )	  GGnew += a_xi[j]*a_xi[j];
 if (GGnew>Gfactor*gg)
 {
-cout<<" Gradient grew by more than a factor of "<<Gfactor<<". Resetting to previous parameters and switching to SD."<<endl;
-cout<<" Old Gradient :"<<gg<<"  New Gradient:"<<GGnew<<endl;
+if(a_verbose > 0) cout<<" Gradient grew by more than a factor of "<<Gfactor<<". Resetting to previous parameters and switching to SD."<<endl;
+if(a_verbose > 1) cout<<" Old Gradient :"<<gg<<"  New Gradient:"<<GGnew<<endl;
 Parms=OldParms;
 dfunc( Parms , a_xi  ) ;
 for (int j = 0 ; j < NumParams ; j ++ ) cout<<"  "<<Parms[j];
@@ -289,7 +288,7 @@ cout<<endl;
 //}
 if (SD) return false;
 else SD=true;
-cout<<" Temporarily switching to SD method"<<endl;
+if(a_verbose > 0) cout<<" Temporarily switching to SD method"<<endl;
 }
 else SD=(steepestD=="yes");
 }
@@ -306,7 +305,7 @@ giving an endless loop of resets
 } 
 else if (SD)
 {
-fprintf(stderr,"Using Steepest Descent:\n" ) ;
+if(a_verbose > 0) fprintf(stderr,"Using Steepest Descent:\n" ) ;
 a_restart = 1 ;
 macopt_restart(1);
 gg = 0.0;
@@ -333,16 +332,15 @@ gg = 0.0;
 for (int j = 0 ; j < NumParams ; j ++ ) 
 gg += a_g[j]*a_g[j]; 
 if ( tmpd > 0.0  || a_verbose > 2 ) {
-fprintf(stderr,"new line search has inner prod %9.4g\n", tmpd ) ; 
+ fprintf(stderr,"new line search has inner prod %9.4g\n", tmpd ) ; 
 }
 if ( tmpd > 0.0 ) { 
 if ( a_rich == 0 ) {
-fprintf (stderr, "Setting rich to 1; " ) ; 
+if(a_verbose > 0) fprintf (stderr, "Setting rich to 1; " ) ; 
 a_rich = 1 ; 
 }
 a_restart = 2 ; /* signifies that g[j] = -xi[j] is already done */
-if(a_verbose > 0)
-fprintf(stderr,"Restarting macopt (2)\n" ) ; 
+if(a_verbose > 0) fprintf(stderr,"Restarting macopt (2)\n" ) ; 
 macopt_restart ( 0 ) ;
 }
 }
@@ -381,10 +379,9 @@ if ( s < 0 & TargetFunc->IsValid)  {  /* we need to go further */
 do { 
 y = x * a_linmin_g1 ;
 t = macprodII ( Parms , a_gy , y  ) ; 
-if ( a_verbose > 1 ) 
-printf ("s < 0: s = %6.3g: t = %6.3g; x = %6.3g y = %6.3g\n",s, t , x , y );
+if ( a_verbose > 1 )  printf ("s < 0: s = %6.3g: t = %6.3g; x = %6.3g y = %6.3g\n",s, t , x , y );
 if (( t >= 0.0 ) | ( !TargetFunc->IsValid)){
-printf ("CHANGED sign: s = %6.3g: t = %6.3g; x = %6.3g y = %6.3g\n",s, t , x , y );
+if(a_verbose > 0) printf ("CHANGED sign: s = %6.3g: t = %6.3g; x = %6.3g y = %6.3g\n",s, t , x , y );
 break ;
 }
 if (t==t)
@@ -409,7 +406,7 @@ t = macprodII ( Parms , a_gy , y ) ;
 if ( a_verbose > 1 ) 
 printf ("s > 0: s = %6.3g: t = %6.3g; x = %6.3g y = %6.3g\n",s, t , x , y );
 if (( t <= 0.0 ) | ( !TargetFunc->IsValid)){
-printf ("CHANGED sign: s = %6.3g: t = %6.3g; x = %6.3g y = %6.3g\n",s, t , x , y );
+if(a_verbose > 0) printf ("CHANGED sign: s = %6.3g: t = %6.3g; x = %6.3g y = %6.3g\n",s, t , x , y );
 break ;
 }
 if (t==t)
@@ -484,14 +481,16 @@ return -1.0;
 }
 
 if ( its > a_linmin_maxits )  {
-fprintf (stderr, "Warning! maclinmin overran" );
-fprintf (stderr, "- inner product at 0 = %9.4g\n" ,
-tmpd = macprodII ( Parms , a_gy , 0.0 ) ) ; 
+if(a_verbose > 0) fprintf (stderr, "Warning! maclinmin overran" );
+tmpd = macprodII ( Parms , a_gy , 0.0 );
+if(a_verbose > 0) fprintf (stderr, "- inner product at 0 = %9.4g\n" ,tmpd ) ; 
 if ( tmpd > 0 && a_rich == 0 ) {
-fprintf (stderr, "setting rich to 1\n" ) ;       a_rich = 1 ; 
+if(a_verbose > 0)  fprintf (stderr, "setting rich to 1\n" ) ;       
+a_rich = 1 ; 
 }
 if ( tmpd > 0 ) {
-fprintf (stderr, "setting a_restart to 1\n" ) ;       a_restart = 1 ;
+if(a_verbose > 0) fprintf (stderr, "setting a_restart to 1\n" ) ;
+a_restart = 1 ;
 } 
 }
 if (TargetFunc->IsValid){
@@ -513,7 +512,7 @@ for(int j=0; j<NumParams; j++) TargetFunc->Params(j)=Parms[j];
 //TargetFunc->Cost();
 TargetFunc->Report();
 }
-else
+else if(a_verbose > 0) 
 {
 cout<<" TargetFunc->IsValid=False" <<endl;
 }
