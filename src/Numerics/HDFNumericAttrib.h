@@ -315,9 +315,17 @@ struct HDFAttribIO<TinyVector<int,D> >: public HDFAttribIOBase {
   }
 
   inline void read(hid_t  grp, const char* name) {
+    // Turn off error printing
+    H5E_auto_t func;
+    void *client_data;
+    H5Eget_auto (&func, &client_data);
+    H5Eset_auto (NULL, NULL);
+
     hid_t h1 = H5Dopen(grp, name);
     hid_t ret = H5Dread(h1, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, &(ref[0]));
     H5Dclose(h1);
+
+    H5Eset_auto (func, client_data);
   }
 };
 
