@@ -1694,6 +1694,7 @@ namespace qmcplusplus {
     // Find the orbital mesh size
     if (root) {
       HDFAttribIO<TinyVector<int,3> > h_mesh(mesh);
+      h_mesh.read (H5FileID, "/electrons/psi_r_mesh");
       h_mesh.read (H5FileID, "/electrons/mesh");
     }
     myComm->bcast(mesh);
@@ -1868,6 +1869,7 @@ namespace qmcplusplus {
     // Find the orbital mesh size
     if (root) {
       HDFAttribIO<TinyVector<int,3> > h_mesh(mesh);
+      h_mesh.read (H5FileID, "/electrons/psi_r_mesh");
       h_mesh.read (H5FileID, "/electrons/mesh");
     }
     myComm->bcast(mesh);
