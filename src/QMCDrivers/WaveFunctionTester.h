@@ -43,6 +43,7 @@ namespace qmcplusplus {
     /// Copy Operator (disabled)
     WaveFunctionTester& operator=(const WaveFunctionTester&) { return *this;}
     void runRatioTest();
+    void runRatioTest2();
     void runBasicTest();
     void runCloneTest();
   };

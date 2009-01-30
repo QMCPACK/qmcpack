@@ -68,7 +68,10 @@ WaveFunctionTester::run() {
   put(qmcNode);
 
   if(checkRatio == "yes") 
+  {
     runRatioTest();
+    runRatioTest2();
+  }
   else if (checkClone == "yes") 
     runCloneTest();
   else
@@ -458,6 +461,89 @@ void WaveFunctionTester::runRatioTest() {
         cout << W.L[iat]-Lp[iat] << " " << W.L[iat] << endl;
       }
       ++it;
+    }
+  }
+
+  //for(it=W.begin();it != it_end; ++it)
+  //{
+  //  Walker_t& thisWalker(**it);
+  //  Walker_t::Buffer_t& w_buffer((*it)->DataSet);
+  //  w_buffer.rewind();
+  //  W.updateBuffer(**it,w_buffer);
+  //  RealType logpsi=Psi.updateBuffer(W,w_buffer,true);
+  //}
+
+
+}
+
+void WaveFunctionTester::runRatioTest2() 
+{
+
+  int nat = W.getTotalNum();
+  ParticleSet::ParticleGradient_t Gp(nat), dGp(nat);
+  ParticleSet::ParticleLaplacian_t Lp(nat), dLp(nat);
+
+  Tau=0.025;
+  MCWalkerConfiguration::iterator it(W.begin()), it_end(W.end());
+  for(; it != it_end; ++it)
+  {
+    makeGaussRandom(deltaR);
+    Walker_t::Buffer_t tbuffer;
+    W.R = (**it).R+Tau*deltaR;
+    (**it).R=W.R;
+    //W.registerData(**it,tbuffer);
+    W.registerData(tbuffer);
+    RealType logpsi=Psi.registerData(W,tbuffer);
+    RealType ene = H.evaluate(W);
+    (*it)->DataSet=tbuffer;
+
+    //RealType ene = H.evaluate(W);
+    (*it)->resetProperty(logpsi,Psi.getPhase(),ene,0.0,0.0,1.0);
+    H.saveProperty((*it)->getPropertyBase());
+
+    app_log() << "  HamTest " << "  Total " <<  ene << endl;
+    for(int i=0; i<H.sizeOfObservables(); i++)
+      app_log() << "  HamTest " << H.getObservableName(i) << " " << H.getObservable(i) << endl;
+  } 
+
+  for(int iter=0; iter<20;++iter)
+  {
+    int iw=0;
+    it=W.begin();
+    //while(it != it_end) 
+    for(; it != it_end; ++it)
+    {
+      cout << "\nStart Walker " << iw++ << endl;
+      Walker_t& thisWalker(**it);
+      W.R = thisWalker.R;
+      Walker_t::Buffer_t& w_buffer(thisWalker.DataSet);
+      w_buffer.rewind();
+      W.copyFromBuffer(w_buffer);
+      Psi.copyFromBuffer(W,w_buffer);
+
+      RealType eold(thisWalker.Properties(LOCALENERGY));
+      RealType logpsi(thisWalker.Properties(LOGPSI));
+      RealType emixed(eold), enew(eold);
+
+      makeGaussRandom(deltaR);
+
+      //mave a move
+      RealType ratio_accum(1.0);
+      for(int iat=0; iat<nat; iat++) 
+      {
+        GradType grad_now=Psi.evalGrad(W,iat), grad_new;
+        PosType dr(Tau*deltaR[iat]);
+        PosType newpos(W.makeMove(iat,dr));
+
+        RealType ratio2 = Psi.ratioGrad(W,iat,grad_new);
+        W.rejectMove(iat); 
+        Psi.rejectMove(iat);
+
+        newpos=W.makeMove(iat,dr);
+        RealType ratio1 = Psi.ratio(W,iat);
+        W.rejectMove(iat); 
+        cout << " ratio1 = " << ratio1 << " ration2 = " << ratio2 << endl;
+      }
     }
   }
 
