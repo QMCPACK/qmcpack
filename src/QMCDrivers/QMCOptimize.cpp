@@ -21,7 +21,8 @@
 #include "OhmmsData/AttributeSet.h"
 #include "Message/CommOperators.h"
 #include "Optimize/CGOptimization.h"
-#include "Optimize/macCGOptimization.h"
+#include "Optimize/flexOptimization.h"
+#include "Optimize/BFGSOptimization.h"
 #include "Optimize/DampedDynamics.h"
 #include "QMCDrivers/VMC/VMCSingle.h"
 #include "QMCDrivers/QMCCostFunctionSingle.h"
@@ -221,11 +222,16 @@ namespace qmcplusplus {
       {
         app_log() << " Annealing optimization using DampedDynamics"<<endl;
         optSolver = new DampedDynamics<RealType>;
-      } 
-      else if(optmethod == "macopt") 
+      }  
+      else if((optmethod == "flexOpt")  | (optmethod == "macopt") )
       {
-        app_log() << "Conjugate-gradient optimization using macOptimization"<<endl;
-        optSolver = new MacOptimization<RealType>;
+        app_log() << "Conjugate-gradient optimization using FlexOptimization"<<endl;
+        optSolver = new FlexOptimization<RealType>;
+      } 
+      else if (optmethod == "BFGS") 
+      {
+        app_log() << "Approximate Hessian optimization using BFGSOptimization"<<endl;
+        optSolver = new BFGSOptimization<RealType>;
       } 
       else
       {
