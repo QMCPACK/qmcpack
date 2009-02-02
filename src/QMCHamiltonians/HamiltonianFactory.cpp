@@ -43,6 +43,7 @@
 #include "QMCHamiltonians/HFDHE2Potential.h"
 #include "QMCHamiltonians/HeEPotential.h"
 #include "QMCHamiltonians/ForceBase.h"
+// #include "QMCHamiltonians/ZeroVarObs.h"
 #include "QMCHamiltonians/ForceCeperley.h"
 #include "QMCHamiltonians/PulayForce.h"
 #include "QMCHamiltonians/HFDHE2Potential_tail.h"
@@ -469,6 +470,7 @@ namespace qmcplusplus {
 
     //ATTENTION FORWARD WALKING IS BROKEN 
     //targetH->setTempObservables(targetPtcl->PropertyList);
+    targetH->addObservables(*targetPtcl);
     
     ///This is officially ugly, but we need to add all observables (previous line) 
     ///before the forward walker is initialized otherwise we can't find them.
@@ -480,7 +482,14 @@ namespace qmcplusplus {
       OhmmsAttributeSet attrib;
       attrib.add(potType,"type");
       attrib.put(cur2);
-      if((cname == "estimator")&&(potType=="ForwardWalking"))
+      if((cname == "estimator")&&(potType=="ZeroVarObs"))
+      {
+        app_log()<<"  Adding ZeroVarObs Operator"<<endl;
+//         ZeroVarObs* FW=new ZeroVarObs();
+//         FW->put(cur2,*targetH,*targetPtcl);
+//         targetH->addOperator(FW,"ZeroVarObs",false);
+      }
+      else if((cname == "estimator")&&(potType=="ForwardWalking"))
       {
         app_log()<<"  Adding Forward Walking Operator"<<endl;
         ForwardWalking* FW=new ForwardWalking();

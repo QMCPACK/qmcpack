@@ -1,6 +1,7 @@
 SET(WFBASE_SRCS
     TrialWaveFunction.cpp
     OrbitalBase.cpp
+    DiffOrbitalBase.cpp
     OrbitalBuilderBase.cpp
     WaveFunctionFactory.cpp
     ProductOrbital.cpp
