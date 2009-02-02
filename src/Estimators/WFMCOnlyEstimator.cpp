@@ -53,6 +53,11 @@ namespace qmcplusplus {
     clear();
   }
 
+  void WFMCOnlyEstimator::registerObservables(vector<observable_helper*>& h5dec, hid_t gid)
+  {
+    //IMPLEMENT for hdf5
+  }
+
 }
 /***************************************************************************
  * $RCSfile$   $Author: jnkim $

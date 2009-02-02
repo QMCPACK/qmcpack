@@ -27,6 +27,7 @@
 #include "OhmmsData/AttributeSet.h"
 #include "ReptationEstimators/ReptileStatistics.h"
 #include "ReptationEstimators/ReptileCorrelation.h"
+#include "Utilities/SimpleParser.h"
 
 // #include <string>
 // #include <algorithm>
@@ -35,6 +36,7 @@
 
 namespace qmcplusplus {
   
+  //duplicated implementation: use parsewords in SimpleParser.h
   void Tokenize(const string& str,
                       vector<string>& tokens,
                       const string& delimiters = " ")
@@ -104,6 +106,7 @@ namespace qmcplusplus {
 	string name;
 	vector<string> names;
 	Tokenize(tags,names,",");
+        //parsewords(tags.c_str(),names);
 	app_log()<<"  Found center block: "<<tags<<endl;
 // 	some special cases
 //         app_log()<<names.size()<<names[names.size()-1]<<tags<<endl;
@@ -179,7 +182,8 @@ namespace qmcplusplus {
     }
   };
 
-  void ComboPolymerEstimator::accumulate(WalkerIterator first, WalkerIterator last, RealType wgt)
+  void ComboPolymerEstimator::accumulate(const MCWalkerConfiguration& W
+      , WalkerIterator first, WalkerIterator last, RealType wgt)
   {
     for(int i=0; i<NumCopies; i++) 
     {
@@ -208,6 +212,11 @@ namespace qmcplusplus {
   void ComboPolymerEstimator::evaluateDiff() 
   {
 
+  }
+
+  void ComboPolymerEstimator::registerObservables(vector<observable_helper*>& h5dec, hid_t gid)
+  {
+    //IMPLEMENT for hdf5
   }
 
 }

@@ -28,14 +28,17 @@ namespace qmcplusplus {
 
     ComboPolymerEstimator(QMCHamiltonian& h, int hcopy=1, MultiChain* polymer=0);
     ComboPolymerEstimator(const ComboPolymerEstimator& mest);
-    ScalarEstimatorBase* clone();
 
-    void add2Record(RecordNamedProperty<RealType>& record);
     
-    inline  void accumulate(const Walker_t& awalker, RealType wgt) {}
-
     void put(xmlNodePtr cur, MCWalkerConfiguration& refWalker,int Rlength);
-    void accumulate(WalkerIterator first, WalkerIterator last, RealType wgt);
+
+    /*@{*/
+    void accumulate(const MCWalkerConfiguration& W
+        , WalkerIterator first, WalkerIterator last, RealType wgt);
+    void add2Record(RecordNamedProperty<RealType>& record);
+    void registerObservables(vector<observable_helper*>& h5dec, hid_t gid);
+    ScalarEstimatorBase* clone();
+    /*@}*/
     void evaluateDiff();
 
     private:

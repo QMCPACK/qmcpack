@@ -57,11 +57,10 @@ namespace qmcplusplus {
       }
     }
 
-    void accumulate(WalkerIterator first, WalkerIterator last) {
-      while(first != last) {
-        accumulate(**first,(*first)->Weight);
-        ++first;
-      }
+    void accumulate(const MCWalkerConfiguration& W
+        , WalkerIterator first, WalkerIterator last) 
+    {
+      for(;first != last;++first) accumulate(**first,(*first)->Weight);
     }
 
     ///reset all the cumulative sums to zero

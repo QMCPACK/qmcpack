@@ -20,7 +20,6 @@
 #define QMCPLUSPLUS_SCALAR_ESTIMATORBASE_H
 #include <Particle/MCWalkerConfiguration.h>
 #include <OhmmsData/RecordProperty.h>
-#include <OhmmsData/RecordProperty.h>
 #include <OhmmsData/HDFAttribIO.h>
 #include <Estimators/accumulators.h>
 
@@ -39,9 +38,9 @@ namespace qmcplusplus {
   struct ScalarEstimatorBase: public QMCTraits {
 
     typedef accumulator_set<RealType> accumulator_type;
-    typedef MCWalkerConfiguration::Walker_t Walker_t;
-    typedef MCWalkerConfiguration::iterator WalkerIterator;
-    typedef RecordNamedProperty<RealType>   RecordListType;
+    typedef MCWalkerConfiguration::Walker_t       Walker_t;
+    typedef MCWalkerConfiguration::const_iterator WalkerIterator;
+    typedef RecordNamedProperty<RealType>         RecordListType;
 
     ///first index within an record of the first element handled by an object
     int FirstIndex;
@@ -53,12 +52,6 @@ namespace qmcplusplus {
     vector<accumulator_type> scalars_saved;
 
     inline ScalarEstimatorBase(): FirstIndex(0), LastIndex(0) {}
-
-    /** copy constructor */
-    ScalarEstimatorBase(const ScalarEstimatorBase& est):
-      FirstIndex(est.FirstIndex),LastIndex(est.LastIndex),
-    scalars(est.scalars), scalars_saved(est.scalars_saved)
-    {}
 
     virtual ~ScalarEstimatorBase(){}
 
@@ -107,15 +100,16 @@ namespace qmcplusplus {
       }
     }
 
-    /** add descriptors of observables to utilize hdf5
-     * @param h5desc descriptor of a data stored in a h5 group
-     * @param gid h5 group to which each statistical data will be stored
+    /** a virtual function to accumulate observables or collectables
+     * @param W const MCWalkerConfiguration
+     * @param first const_iterator for the first walker
+     * @param last const_iterator for the last walker
+     * @param wgt weight
+     *
+     * Pass W along with the iterators so that the properties of W can be utilized.
      */
-    virtual void registerObservables(vector<observable_helper*>& h5dec, hid_t gid)
-    {
-    }
-    ///clone the object
-    virtual ScalarEstimatorBase* clone()=0;
+    virtual void accumulate(const MCWalkerConfiguration& W
+        , WalkerIterator first, WalkerIterator last , RealType wgt) = 0;
 
     /** add the content of the scalar estimator to the record
      * @param record scalar data list 
@@ -124,18 +118,14 @@ namespace qmcplusplus {
      */
     virtual void add2Record(RecordNamedProperty<RealType>& record) = 0;
 
-    /** a virtual function to accumulate expectation values
-     *\param awalker a single walker
-     *\param wgt the weight
+    /** add descriptors of observables to utilize hdf5
+     * @param h5desc descriptor of a data stored in a h5 group
+     * @param gid h5 group to which each statistical data will be stored
      */
-    virtual void accumulate(const Walker_t& awalker, RealType wgt) = 0;
-    /** a virtual function to accumulate expectatio values 
-     * @param first iterator for the first walker
-     * @param last iterafor for the last walker
-     * @param wgt weight
-     */
-    virtual void accumulate(WalkerIterator first, WalkerIterator last, RealType wgt) = 0;
+    virtual void registerObservables(vector<observable_helper*>& h5dec, hid_t gid)=0;
 
+    ///clone the object
+    virtual ScalarEstimatorBase* clone()=0;
   };
 }
 

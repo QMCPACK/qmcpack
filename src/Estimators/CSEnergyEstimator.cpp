@@ -98,6 +98,11 @@ namespace qmcplusplus {
     //msg.add(d_data.begin(),d_data.end());
   }
 
+  void CSEnergyEstimator::registerObservables(vector<observable_helper*>& h5dec, hid_t gid)
+  {
+    //NEED TO IMPLEMENT for hdf5
+  }
+
   void 
   CSEnergyEstimator::accumulate(const Walker_t& awalker, RealType wgt) 
   {

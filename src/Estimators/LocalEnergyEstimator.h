@@ -8,13 +8,10 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
-//   Department of Physics, Ohio State University
-//   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 #ifndef QMCPLUSPLUS_LOCALENERGYESTIMATOR_H
@@ -24,43 +21,18 @@
 
 namespace qmcplusplus {
 
-  /*** A class to evaluate the local energy 
+  /** Class to accumulate the local energy and components
    *
-   *The LocalEnergyEstimator evaluates 
-   <ul>
-   <li> LocalEnergy
-   <li> Variance of the LocalEnergy
-   </ul>
-   and the values of each QHCHamiltonianBase elements added by an application.
-   Typical local energies are
-   <li> Kinetic Energy
-   <li> External Potential Energy
-   <li> Electron-Electron Energy
-   <li> Ion-Ion Energy (for molecules only)
-   <li> Conserved Quantity (VMC only)
-   </ul>
-   The method of evaluating the estimators is as follows
-   \f[
-   \langle O \rangle = \frac{\sum_{i=1}^N w_i O_i}{\sum_{i=1}^N w_i}
-   \f]
-   where the sum runs over the total number of accumulated walkers 
-   and \f$ w_i \f$ is the weight of the \f$ ith \f$ walker.
-   *
-   *The formula for the LocalEnergy 
-   \f[ E_L({\bf R}) = \frac{\hat{H} \Psi({\bf R})}{ \Psi({\bf R})} \f]
-  */
-  class LocalEnergyEstimator: public ScalarEstimatorBase {
+   * Use Walker::Properties to accumulate Hamiltonian-related quantities.
+   */
+  class LocalEnergyEstimator: public ScalarEstimatorBase 
+  {
 
-    //typedef PooledData<T>                            BufferType;
-    //enum {ENERGY_INDEX, ENERGY_SQ_INDEX, POTENTIAL_INDEX, LE_MAX};
     enum {ENERGY_INDEX, POTENTIAL_INDEX, LE_MAX};
 
-    //int LocalPotentialIndex;
     int FirstHamiltonian;
     int SizeOfHamiltonians;
-
-    ///vector to contain the names of all the constituents of the local energy
-    std::vector<string> elocal_name;
+    const QMCHamiltonian& refH;
 
   public:
 
@@ -69,18 +41,16 @@ namespace qmcplusplus {
      */
     LocalEnergyEstimator(QMCHamiltonian& h);
 
-    /** implement virtual function
+    /** accumulation per walker
+     * @param awalker current walker
+     * @param wgt weight
+     * 
+     * Weight of observables should take into account the walkers weight. For Pure DMC. In branching DMC set weights to 1.
      */
-    ScalarEstimatorBase* clone();
-
-    void add2Record(RecordListType& record);
-
-    inline void accumulate(const Walker_t& awalker, RealType wgt) {
+    inline void accumulate(const Walker_t& awalker, RealType wgt) 
+    {
       const RealType* restrict ePtr = awalker.getPropertyBase();
-      ///weight of observables should take into account the walkers weight. For Pure DMC. In branching DMC set weights to 1.
       RealType wwght= wgt* awalker.Weight;
-//       RealType wwght= wgt;
-      
       scalars[0](ePtr[LOCALENERGY],wwght);
       scalars[1](ePtr[LOCALPOTENTIAL],wwght);
       for(int target=2, source=FirstHamiltonian; target<scalars.size(); 
@@ -88,13 +58,16 @@ namespace qmcplusplus {
         scalars[target](ePtr[source],wwght);
     }
 
-    inline void accumulate(WalkerIterator first, WalkerIterator last, RealType wgt) {
-      while(first != last) {
-        accumulate(**first,wgt);
-        ++first;
-      }
+    /*@{*/
+    inline void accumulate(const MCWalkerConfiguration& W
+        , WalkerIterator first, WalkerIterator last, RealType wgt) 
+    {
+      for(; first != last; ++first) accumulate(**first,wgt);
     }
-
+    void add2Record(RecordListType& record);
+    void registerObservables(vector<observable_helper*>& h5dec, hid_t gid) {}
+    ScalarEstimatorBase* clone();
+    /*@}*/
   };
 }
 #endif

@@ -27,10 +27,6 @@ namespace qmcplusplus {
 
     MJPolymerEstimator(QMCHamiltonian& h, int hcopy=1, MultiChain* polymer=0);
     MJPolymerEstimator(const MJPolymerEstimator& mest);
-    ScalarEstimatorBase* clone();
-
-    void add2Record(RecordNamedProperty<RealType>& record);
-    
     void setpNorm(RealType pn){
       pNorm = pn;
     }
@@ -46,11 +42,17 @@ namespace qmcplusplus {
       truncLength[1]= static_cast<int>(0.5*pn);
       truncLength[2]= static_cast<int>(0.75*pn);
     }
-    inline  void accumulate(const Walker_t& awalker, RealType wgt) {}
 
 //     inline void accumulate(ParticleSet& P, MCWalkerConfiguration::Walker_t& awalker) { }
 
-    void accumulate(WalkerIterator first, WalkerIterator last, RealType wgt);
+    /*@{*/
+    void accumulate(const MCWalkerConfiguration& W
+        , WalkerIterator first, WalkerIterator last, RealType wgt);
+    void add2Record(RecordNamedProperty<RealType>& record);
+    void registerObservables(vector<observable_helper*>& h5dec, hid_t gid);
+    ScalarEstimatorBase* clone();
+    /*@}*/
+    
 
     void evaluateDiff();
 

@@ -105,7 +105,8 @@ namespace qmcplusplus {
     }
   };
 
-  void MJPolymerEstimator::accumulate(WalkerIterator first, WalkerIterator last, RealType wgt)
+  void MJPolymerEstimator::accumulate(const MCWalkerConfiguration& W
+      , WalkerIterator first, WalkerIterator last, RealType wgt)
   {
     for(int i=0; i<NumCopies; i++) 
     {
@@ -253,10 +254,9 @@ namespace qmcplusplus {
     }
   }
 
-  void 
-  MJPolymerEstimator::evaluateDiff() 
+  void MJPolymerEstimator::registerObservables(vector<observable_helper*>& h5dec, hid_t gid)
   {
-
+    //IMPLEMENT for hdf5
   }
 
 }

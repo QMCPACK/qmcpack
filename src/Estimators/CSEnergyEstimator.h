@@ -47,7 +47,6 @@ namespace qmcplusplus {
      * @param hcopy number of copies of QMCHamiltonians
      */
     CSEnergyEstimator(QMCHamiltonian& h, int hcopy=1); 
-    ScalarEstimatorBase* clone();
 
     inline RealType getUmbrellaWeight(int ipsi)
     {
@@ -55,21 +54,22 @@ namespace qmcplusplus {
       //return d_data[ipsi*LE_INDEX+WEIGHT_INDEX];
     }
 
+
+    void accumulate(const Walker_t& awalker, RealType wgt);
+
+    inline void accumulate(const MCWalkerConfiguration& W
+        , WalkerIterator first, WalkerIterator last, RealType wgt) 
+    {
+      //accumulate  the number of times accumulation has occurred.
+      //d_wgt+=last-first;
+      for(; first != last; ++first) accumulate(**first,wgt);
+    }
     /**  add the local energy, variance and all the Hamiltonian components to the scalar record container
      *@param record storage of scalar records (name,value)
      */
     void add2Record(RecordNamedProperty<RealType>& record);
-
-    void accumulate(const Walker_t& awalker, RealType wgt);
-
-    inline void accumulate(WalkerIterator first, WalkerIterator last, RealType wgt) 
-    {
-      //accumulate  the number of times accumulation has occurred.
-      //d_wgt+=last-first;
-      while(first != last) {
-        accumulate(**first++,wgt);
-      }
-    }
+    void registerObservables(vector<observable_helper*>& h5dec, hid_t gid);
+    ScalarEstimatorBase* clone();
 
     void evaluateDiff();
   };

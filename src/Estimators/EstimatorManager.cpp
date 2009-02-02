@@ -24,6 +24,7 @@
 #include "Estimators/LocalEnergyOnlyEstimator.h"
 #include "Estimators/WFMCOnlyEstimator.h"
 #include "Estimators/LocalEnergyEstimatorHDF.h"
+#include "Estimators/CollectablesEstimator.h"
 //#include "Estimators/CompositeEstimators.h"
 #include "QMCDrivers/SimpleFixedNodeBranch.h"
 #include "Utilities/IteratorUtility.h"
@@ -46,21 +47,20 @@ namespace qmcplusplus {
   APPEND};
 
   //initialize the name of the primary estimator
-  EstimatorManager::EstimatorManager(Communicate* c): 
-    RecordCount(0),h_file(-1), FieldWidth(20),
-    MainEstimatorName("LocalEnergy"), Archive(0), DebugArchive(0),
-    myComm(0), MainEstimator(0)
-    //, CompEstimators(0)
-    ,max4ascii(30), pendingRequests(0)
+  EstimatorManager::EstimatorManager(Communicate* c)
+    : RecordCount(0),h_file(-1), FieldWidth(20)
+      , MainEstimatorName("LocalEnergy"), Archive(0), DebugArchive(0)
+      , myComm(0), MainEstimator(0)
+      , max4ascii(8), pendingRequests(0)
   { 
     setCommunicator(c);
   }
 
-  EstimatorManager::EstimatorManager(EstimatorManager& em): 
-    RecordCount(0),h_file(-1),  MainEstimatorName("LocalEnergy"), FieldWidth(20),
-    Options(em.Options), Archive(0), DebugArchive(0),MainEstimator(0)
-    //, CompEstimators(0)
-    , EstimatorMap(em.EstimatorMap), pendingRequests(0), myComm(0)
+  EstimatorManager::EstimatorManager(EstimatorManager& em)
+    : RecordCount(0),h_file(-1), FieldWidth(20)
+      , MainEstimatorName(em.MainEstimatorName), Options(em.Options), Archive(0), DebugArchive(0)
+      , myComm(0), MainEstimator(0) 
+      , EstimatorMap(em.EstimatorMap), max4ascii(em.max4ascii), pendingRequests(0)
   {
     //inherit communicator
     setCommunicator(em.myComm);
@@ -167,18 +167,6 @@ namespace qmcplusplus {
 
     //count the buffer size for message
     BufferSize=2*AverageCache.size()+PropertyCache.size();
-
-    //if(CompEstimators) 
-    //{
-    //  int comp_size = CompEstimators->size();
-    //  if(comp_size) 
-    //    BufferSize += comp_size;
-    //  else
-    //  {
-    //    delete CompEstimators;
-    //    CompEstimators=0;
-    //  }
-    //}
 
     //allocate buffer for data collection
     if(RemoteData.empty())
@@ -444,7 +432,7 @@ namespace qmcplusplus {
     BlockWeight += W.getActiveWalkers();
     RealType norm=1.0/W.getGlobalNumWalkers();
     for(int i=0; i< Estimators.size(); i++) 
-      Estimators[i]->accumulate(W.begin(),W.end(),norm);
+      Estimators[i]->accumulate(W,W.begin(),W.end(),norm);
     //if(CompEstimators) CompEstimators->accumulate(W,norm);
   }
 
@@ -455,7 +443,7 @@ namespace qmcplusplus {
     BlockWeight += it_end-it;
     RealType norm=1.0/W.getGlobalNumWalkers();
     for(int i=0; i< Estimators.size(); i++) 
-      Estimators[i]->accumulate(it,it_end,norm);
+      Estimators[i]->accumulate(W,it,it_end,norm);
     //if(CompEstimators) CompEstimators->accumulate(W,it,it_end,norm);
   }
 
@@ -487,7 +475,7 @@ namespace qmcplusplus {
   {
     LocalEnergyOnlyEstimator energynow;
     energynow.clear();
-    energynow.accumulate(W.begin(),W.end(),1.0);
+    energynow.accumulate(W,W.begin(),W.end(),1.0);
     vector<RealType> tmp(3);
     tmp[0]= energynow.scalars[0].result();
     tmp[1]= energynow.scalars[0].result2();
@@ -563,6 +551,11 @@ namespace qmcplusplus {
       add(new LocalEnergyOnlyEstimator(),MainEstimatorName);
     } 
 
+    if(H.sizeOfCollectables())
+    {
+      app_log() << "  Using CollectablesEstimator for collectables, e.g. sk, gofr, density " << endl;
+      add(new CollectablesEstimator(H),"collectables");
+    }
     //string SkName("sk");
     //string GofRName("gofr");
     //for(int i=0; i< extra.size(); i++)

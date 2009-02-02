@@ -75,10 +75,10 @@ namespace qmcplusplus {
 
     void evaluateDiff() {};
     void setConstants(double x){};
-    virtual ScalarEstimatorBase* clone()=0;
-    virtual void add2Record(RecordNamedProperty<RealType>& record) = 0;
-    virtual void accumulate(const Walker_t& awalker, RealType wgt) = 0;
-    virtual void accumulate(WalkerIterator first, WalkerIterator last, RealType wgt) = 0;
+    //virtual ScalarEstimatorBase* clone()=0;
+    //virtual void add2Record(RecordNamedProperty<RealType>& record) = 0;
+    //virtual void accumulate(const Walker_t& awalker, RealType wgt) = 0;
+    //virtual void accumulate(const MCWalkerConfiguration& W, WalkerIterator first, WalkerIterator last, RealType wgt) = 0;
   };
 
 }

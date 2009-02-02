@@ -24,31 +24,6 @@
 
 namespace qmcplusplus {
 
-  /*** A class to evaluate the local energy 
-   *
-   *The WFMCOnlyEstimator evaluates 
-   <ul>
-   <li> LocalEnergy
-   <li> Variance of the LocalEnergy
-   </ul>
-   and the values of each QHCHamiltonianBase elements added by an application.
-   Typical local energies are
-   <li> Kinetic Energy
-   <li> External Potential Energy
-   <li> Electron-Electron Energy
-   <li> Ion-Ion Energy (for molecules only)
-   <li> Conserved Quantity (VMC only)
-   </ul>
-   The method of evaluating the estimators is as follows
-   \f[
-   \langle O \rangle = \frac{\sum_{i=1}^N w_i O_i}{\sum_{i=1}^N w_i}
-   \f]
-   where the sum runs over the total number of accumulated walkers 
-   and \f$ w_i \f$ is the weight of the \f$ ith \f$ walker.
-   *
-   *The formula for the LocalEnergy 
-   \f[ E_L({\bf R}) = \frac{\hat{H} \Psi({\bf R})}{ \Psi({\bf R})} \f]
-  */
   class WFMCOnlyEstimator: public ScalarEstimatorBase {
 
     //typedef PooledData<T>                            BufferType;
@@ -70,12 +45,6 @@ namespace qmcplusplus {
      */
     WFMCOnlyEstimator(QMCHamiltonian& h);
 
-    /** implement virtual function
-     */
-    ScalarEstimatorBase* clone();
-
-    void add2Record(RecordListType& record);
-
     inline void accumulate(const Walker_t& awalker, RealType wgt) {
       const RealType* restrict ePtr = awalker.getPropertyBase();
       ///weight of observables should take into account the walkers weight. For Pure DMC. In branching DMC set weights to 1.
@@ -95,12 +64,16 @@ namespace qmcplusplus {
         scalars[ target+1](wwght,1);
     }
 
-    inline void accumulate(WalkerIterator first, WalkerIterator last, RealType wgt) {
-      while(first != last) {
-        accumulate(**first,wgt);
-        ++first;
-      }
+    /*@{*/
+    inline void accumulate(const MCWalkerConfiguration& W
+        , WalkerIterator first, WalkerIterator last, RealType wgt) 
+    {
+      for(;first!=last; ++first) accumulate(**first,wgt);
     }
+    void add2Record(RecordListType& record);
+    void registerObservables(vector<observable_helper*>& h5dec, hid_t gid);
+    ScalarEstimatorBase* clone();
+    /*@}*/
 
   };
 }

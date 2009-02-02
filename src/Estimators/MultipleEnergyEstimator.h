@@ -8,13 +8,10 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
-//   Department of Physics, Ohio State University
-//   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 #ifndef QMCPLUSPLUS_MULTIPLELOCALENERGYESTIMATOR_H
@@ -28,7 +25,8 @@ namespace qmcplusplus {
   class QMCHamiltonian;
   class TrialWaveFunction;
 
-  struct MultipleEnergyEstimator: public ScalarEstimatorBase {
+  struct MultipleEnergyEstimator: public ScalarEstimatorBase 
+  {
 
     enum {ENERGY_INDEX, ENERGY_SQ_INDEX, WEIGHT_INDEX, PE_INDEX, KE_INDEX, LE_INDEX};
 
@@ -109,26 +107,25 @@ namespace qmcplusplus {
      */
     MultipleEnergyEstimator(QMCHamiltonian& h, int hcopy=1); 
     MultipleEnergyEstimator(const MultipleEnergyEstimator& mest);
-    ScalarEstimatorBase* clone();
 
     inline RealType getUmbrellaWeight(int ipsi)
     {
       return esum(ipsi,WEIGHT_INDEX);
     }
 
+    void accumulate(const Walker_t& awalker, RealType wgt);
+
+    void accumulate(const MCWalkerConfiguration& W
+        , WalkerIterator first, WalkerIterator last, RealType wgt)
+    {
+      for(; first != last; ++first) accumulate(**first,wgt);
+    }
     /**  add the local energy, variance and all the Hamiltonian components to the scalar record container
      *@param record storage of scalar records (name,value)
      */
     void add2Record(RecordNamedProperty<RealType>& record);
-
-    void accumulate(const Walker_t& awalker, RealType wgt);
-
-    void accumulate(WalkerIterator first, WalkerIterator last, RealType wgt) {
-      while(first != last) {
-        accumulate(**first,wgt);
-        ++first;
-      }
-    }
+    void registerObservables(vector<observable_helper*>& h5dec, hid_t gid);
+    ScalarEstimatorBase* clone();
 
     /////reset all the cumulative sums to zero
     //void reset();

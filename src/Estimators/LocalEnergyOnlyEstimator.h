@@ -29,11 +29,18 @@ namespace qmcplusplus {
       scalars_saved.resize(2);
     }
 
-    ScalarEstimatorBase* clone()
+    inline void accumulate(const MCWalkerConfiguration& W
+        , WalkerIterator first, WalkerIterator last, RealType wgt) 
     {
-      return new LocalEnergyOnlyEstimator();
+      for(; first != last; ++first)
+      {
+        scalars[0]((*first)->Properties(LOCALENERGY),wgt);
+        scalars[1]((*first)->Properties(LOCALPOTENTIAL),wgt);
+      }
     }
 
+    void registerObservables(vector<observable_helper*>& h5dec, hid_t gid)
+    {}
     /**  add the local energy, variance and all the Hamiltonian components to the scalar record container
      * @param record storage of scalar records (name,value)
      */
@@ -45,20 +52,9 @@ namespace qmcplusplus {
       //LastIndex = FirstIndex+3;
       clear();
     }
-
-    inline void accumulate(const Walker_t& awalker, RealType wgt) 
+    ScalarEstimatorBase* clone()
     {
-      scalars[0](awalker.Properties(LOCALENERGY),wgt);
-      scalars[1](awalker.Properties(LOCALPOTENTIAL),wgt);
-      //scalars[2](awalker.Properties(NUMPROPERTIES),wgt);
-    }
-
-    inline void accumulate(WalkerIterator first, WalkerIterator last, RealType wgt) 
-    {
-      while(first != last) 
-      {
-        accumulate(**first,wgt);++first;
-      }
+      return new LocalEnergyOnlyEstimator();
     }
 
   };

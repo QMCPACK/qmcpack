@@ -118,17 +118,22 @@ namespace qmcplusplus {
 
     RQMCEstimator(const RQMCEstimator& rest);
 
-    ScalarEstimatorBase* clone();
+    void accumulate(const Walker_t& awalker, RealType wgt);
+
+    /*@{*/
+    void accumulate(const MCWalkerConfiguration& W
+        , WalkerIterator first, WalkerIterator last, RealType wgt) 
+    {
+      accumulate(**first,1.0);
+    }
     /**  add the local energy, variance and all the Hamiltonian components to the scalar record container
      *@param record storage of scalar records (name,value)
      */
     void add2Record(RecordNamedProperty<RealType>& record);
+    void registerObservables(vector<observable_helper*>& h5dec, hid_t gid);
+    ScalarEstimatorBase* clone();
+    /*@}*/
 
-    void accumulate(const Walker_t& awalker, RealType wgt);
-
-    void accumulate(WalkerIterator first, WalkerIterator last, RealType wgt) {
-      accumulate(**first,1.0);
-    }
 
     //RealType accumulate(WalkerIterator first, WalkerIterator last) {
     //  int nw=0;

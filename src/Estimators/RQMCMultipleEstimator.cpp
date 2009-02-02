@@ -379,6 +379,11 @@ namespace qmcplusplus {
       //cerr << "Leaving accumulate" << endl;
     }
 
+  void RQMCEstimator::registerObservables(vector<observable_helper*>& h5dec, hid_t gid)
+  {
+    //IMPLEMENT for hdf5
+  }
+
 //  ///Set CurrentWalker to zero so that accumulation is done in a vectorized way
 //  void RQMCEstimator::reset() { 
 //    CurrentWalker=0;

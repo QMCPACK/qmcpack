@@ -87,7 +87,8 @@ namespace qmcplusplus {
   }
 
   void 
-  CSPolymerEstimator::accumulate(WalkerIterator first, WalkerIterator last, RealType wgt)
+  CSPolymerEstimator::accumulate(const MCWalkerConfiguration& W
+      , WalkerIterator first, WalkerIterator last, RealType wgt)
   {
     //Directionless=2
     for(int i=0,ii=0; i<NumCopies; i++) 
@@ -118,46 +119,11 @@ namespace qmcplusplus {
     //    d_data[ii++]+=uw[i]*e[i]-uw[j]*e[j];
   }
 
-  void 
-  CSPolymerEstimator::evaluateDiff() 
+  void CSPolymerEstimator::registerObservables(vector<observable_helper*>& h5dec, hid_t gid)
   {
-//    int ii=0;
-//    for(int i=0; i<NumCopies; i++,ii+=3) 
-//    {
-//      RealType r= d_wgt/d_data[ii+2];
-//      d_data[ii] *= r;
-//      d_data[ii+1] *= r;
-//    }
-//
-//    //d_wgt=1.0;
-//    for(int i=0; i<NumCopies-1; i++) 
-//      for(int j=i+1; j<NumCopies; j++)
-//        d_data[ii++]+=d_data[j*3]-d_data[i*3];
+    //IMPLEMENT for hdf5
   }
 
-//  ///Set CurrentWalker to zero so that accumulation is done in a vectorized way
-//  void CSPolymerEstimator::reset() 
-//  {
-//    //d_wgt=0.0;
-//    //std::fill(d_data.begin(), d_data.end(),0.0);
-//  }
-//
-//  void CSPolymerEstimator::report(RecordNamedProperty<RealType>& record, RealType wgtinv)
-//  {
-//  }
-//
-//  /** calculate the averages and reset to zero
-//   * @param record a container class for storing scalar records (name,value)
-//   * @param wgtinv the inverse weight
-//   *
-//   * Disable collection. CSPolymerEstimator does not need to communiate at all.
-//   */
-//  void CSPolymerEstimator::report(RecordNamedProperty<RealType>& record, 
-//      RealType wgtinv, BufferType& msg) 
-//  {
-//    //msg.get(d_data.begin(),d_data.end());
-//    //report(record,wgtinv);
-//  }
 }
 /***************************************************************************
  * $RCSfile$   $Author: jnkim $

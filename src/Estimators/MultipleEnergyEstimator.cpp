@@ -79,13 +79,15 @@ namespace qmcplusplus {
     return new MultipleEnergyEstimator(*this);
   }
 
-  void 
-  MultipleEnergyEstimator
-  ::initialize(MCWalkerConfiguration& W, 
-      vector<QMCHamiltonian*>& h, 
-      vector<TrialWaveFunction*>& psi,
-      RealType tau,vector<RealType>& Norm,
-      bool require_register) {
+  void MultipleEnergyEstimator::registerObservables(vector<observable_helper*>& h5dec, hid_t gid)
+  {
+    //leave it empty for a while
+  }
+
+  void MultipleEnergyEstimator::initialize(MCWalkerConfiguration& W
+      , vector<QMCHamiltonian*>& h, vector<TrialWaveFunction*>& psi
+      , RealType tau,vector<RealType>& Norm, bool require_register) 
+  {
     NumWalkers = W.getActiveWalkers();
     //allocate UmbrellaEnergy
     int numPtcls(W.getTotalNum());

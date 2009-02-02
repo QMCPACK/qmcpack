@@ -25,12 +25,6 @@ namespace qmcplusplus {
 
     HFDHE2PolymerEstimator(QMCHamiltonian& h, int hcopy=1, MultiChain* polymer=0);
     HFDHE2PolymerEstimator(const HFDHE2PolymerEstimator& mest);
-    ScalarEstimatorBase* clone();
-
-    void add2Record(RecordNamedProperty<RealType>& record);
-
-    inline  void accumulate(const Walker_t& awalker, RealType wgt) {}
-    
     void setpNorm(RealType pn){
       pNorm = pn;
     }
@@ -44,11 +38,15 @@ namespace qmcplusplus {
       ObsCont2.resize(pn,0.0);
       ObsContAvg2.resize(pn,0.0);
     }
-//     inline void accumulate(ParticleSet& P, MCWalkerConfiguration::Walker_t& awalker) { }
 
-    void accumulate(WalkerIterator first, WalkerIterator last, RealType wgt);
+    /*@{*/
+    void accumulate(const MCWalkerConfiguration& W
+        , WalkerIterator first, WalkerIterator last, RealType wgt);
+    void add2Record(RecordNamedProperty<RealType>& record);
+    void registerObservables(vector<observable_helper*>& h5dec, hid_t gid);
+    ScalarEstimatorBase* clone();
+    /*@}*/
 
-    void evaluateDiff();
 
     private:
           ///vector to contain the names of all the constituents of the local energy

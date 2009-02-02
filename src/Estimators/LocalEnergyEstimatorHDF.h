@@ -8,13 +8,10 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
-//   Department of Physics, Ohio State University
-//   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 #ifndef QMCPLUSPLUS_LOCALENERGYESTIMATOR_HDF_H
@@ -37,8 +34,6 @@ namespace qmcplusplus {
     int FirstHamiltonian;
     int SizeOfHamiltonians;
 
-    ///vector to contain the names of all the constituents of the local energy
-    std::vector<string> elocal_name;
     ///save the reference hamiltonian
     const QMCHamiltonian& refH;
 
@@ -48,25 +43,31 @@ namespace qmcplusplus {
      * @param h QMCHamiltonian to define the components
      */
     LocalEnergyEstimatorHDF(QMCHamiltonian& h);
-    //LocalEnergyEstimatorHDF(const LocalEnergyEstimatorHDF& est);
 
-    /** implement virtual function
-     */
-    ScalarEstimatorBase* clone();
+    inline void accumulate(const Walker_t& awalker, RealType wgt)
+    {
+      const RealType* restrict ePtr = awalker.getPropertyBase();
+      //weight of observables should take into account the walkers weight. For Pure DMC. In branching DMC set weights to 1.
+      RealType wwght= wgt* awalker.Weight;
 
-    void add2Record(RecordListType& record);
-
-    void accumulate(const Walker_t& awalker, RealType wgt);
-
-    inline void accumulate(WalkerIterator first, WalkerIterator last, RealType wgt) {
-      while(first != last) {
-        accumulate(**first,wgt);
-        ++first;
-      }
+      // RealType wwght= wgt;
+      scalars[0](ePtr[LOCALENERGY],wwght);
+      scalars[1](ePtr[LOCALPOTENTIAL],wwght);
+      for(int target=2, source=FirstHamiltonian; target<scalars.size(); 
+          ++target, ++source)
+        scalars[target](ePtr[source],wwght);
     }
-    
-    void registerObservables(vector<observable_helper*>& h5dec, hid_t gid);
 
+    /*@{*/
+    inline void accumulate(const MCWalkerConfiguration& W
+        , WalkerIterator first, WalkerIterator last, RealType wgt) 
+    {
+      for(; first!=last; ++first) accumulate(**first,wgt);
+    }
+    void add2Record(RecordListType& record);
+    void registerObservables(vector<observable_helper*>& h5dec, hid_t gid);
+    ScalarEstimatorBase* clone();
+    /*@}*/
   };
 }
 #endif

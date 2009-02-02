@@ -24,18 +24,16 @@ namespace qmcplusplus {
   struct CSPolymerEstimator: public PolymerEstimator {
 
     CSPolymerEstimator(QMCHamiltonian& h, int hcopy=1, MultiChain* polymer=0); 
+    //probably not needed
     CSPolymerEstimator(const CSPolymerEstimator& mest);
-    ScalarEstimatorBase* clone();
 
+    /*@{*/
+    void accumulate(const MCWalkerConfiguration& W
+        , WalkerIterator first, WalkerIterator last, RealType wgt);
     void add2Record(RecordNamedProperty<RealType>& record);
-
-    inline  void accumulate(const Walker_t& awalker, RealType wgt) {}
-
-//     inline void accumulate(ParticleSet& P, MCWalkerConfiguration::Walker_t& awalker) { }
-
-    void accumulate(WalkerIterator first, WalkerIterator last, RealType wgt);
-
-    void evaluateDiff();
+    void registerObservables(vector<observable_helper*>& h5dec, hid_t gid);
+    ScalarEstimatorBase* clone();
+    /*@}*/
   };
 
 }
