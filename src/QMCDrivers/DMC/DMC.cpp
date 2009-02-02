@@ -62,10 +62,12 @@ namespace qmcplusplus {
       Mover->startBlock(nSteps);
       for(IndexType step=0; step< nSteps; step++, CurrentStep+=BranchInterval)
       {
-        for(IndexType interval=0; interval<BranchInterval; interval++)
-        {
-          Mover->advanceWalkers(W.begin(),W.end(), interval == BranchInterval);
-        } 
+        for(IndexType interval=0; interval<BranchInterval-1; ++interval)
+          Mover->advanceWalkers(W.begin(),W.end(), false);
+
+        W.resetCollectables();
+        Mover->advanceWalkers(W.begin(),W.end(), false);
+
         Mover->setMultiplicity(W.begin(),W.end());
         branchEngine->branch(CurrentStep,W);
       } 

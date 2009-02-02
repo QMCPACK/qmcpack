@@ -203,10 +203,12 @@ namespace qmcplusplus {
           MCWalkerConfiguration::iterator 
             wit(W.begin()+wPerNode[ip]), wit_end(W.begin()+wPerNode[ip+1]);
 
-          for(int interval = 0;interval<BranchInterval; ++interval,++now)
-          {
+          for(int interval = 0;interval<BranchInterval-1; ++interval,++now)
             Movers[ip]->advanceWalkers(wit,wit_end,false);
-          } 
+
+          wClones[ip]->resetCollectables();
+          Movers[ip]->advanceWalkers(wit,wit_end,false);
+
           Movers[ip]->setMultiplicity(wit,wit_end);
 
           if(now%updatePeriod == 0) Movers[ip]->updateWalkers(wit, wit_end);
