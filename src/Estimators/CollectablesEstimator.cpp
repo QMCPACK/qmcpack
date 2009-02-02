@@ -58,8 +58,8 @@ namespace qmcplusplus {
   void CollectablesEstimator::accumulate(const MCWalkerConfiguration& W
       , WalkerIterator first, WalkerIterator last , RealType wgt)
   {
-    for(int i=0; i<refH.sizeOfCollectables(); ++i)
-      scalars[i](W.Collectables[i],1.0);
+    for(int i=0; i<refH.sizeOfCollectables(); ++i) 
+      scalars[i](W.Collectables[i],wgt);
   }
 }
 /***************************************************************************
