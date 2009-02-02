@@ -223,6 +223,11 @@ struct PooledData {
   ///set the Current to zero
   inline void rewind() { Current = 0;}
 
+  ///return the starting iterator
+  inline typename std::vector<T>::iterator begin() { return myData.begin();}
+  ///return the ending iterator
+  inline typename std::vector<T>::iterator end() { return myData.end();}
+
   /*@{ matching functions to std::vector functions */
   ///clear the data and set Current=0
   inline void clear() { myData.clear(); Current=0;}
