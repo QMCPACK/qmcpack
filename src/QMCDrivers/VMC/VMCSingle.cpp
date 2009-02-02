@@ -44,12 +44,14 @@ namespace qmcplusplus {
     IndexType nRejectTot = 0;
     IndexType updatePeriod=(QMCDriverMode[QMC_UPDATE_MODE])?Period4CheckProperties:(nBlocks+1)*nSteps;
 
-    do {
+    do 
+    {
       Mover->startBlock(nSteps);
       IndexType step = 0;
       do
       {
         ++step;++CurrentStep;
+        W.resetCollectables();
         Mover->advanceWalkers(W.begin(),W.end(),true); //step==nSteps);
         Estimators->accumulate(W);
         if(CurrentStep%updatePeriod==0) Mover->updateWalkers(W.begin(),W.end());

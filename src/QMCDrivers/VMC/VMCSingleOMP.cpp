@@ -68,6 +68,7 @@ namespace qmcplusplus {
           int now_loc=now;
           for(int step=0; step<nSteps;++step)
           {
+            wClones[ip]->resetCollectables();
             Movers[ip]->advanceWalkers(wit,wit_end,false);
             Movers[ip]->accumulate(wit,wit_end);
             ++now_loc;
