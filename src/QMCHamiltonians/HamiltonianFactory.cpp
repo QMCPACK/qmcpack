@@ -466,7 +466,9 @@ namespace qmcplusplus {
       if(attach2Node) xmlAddChild(myNode,xmlCopyNode(cur,1));
       cur = cur->next;
     }
-    targetH->setTempObservables(targetPtcl->PropertyList);
+
+    //ATTENTION FORWARD WALKING IS BROKEN 
+    //targetH->setTempObservables(targetPtcl->PropertyList);
     
     ///This is officially ugly, but we need to add all observables (previous line) 
     ///before the forward walker is initialized otherwise we can't find them.
@@ -494,7 +496,8 @@ namespace qmcplusplus {
       }
       cur2 = cur2->next;
     }
-    targetH->addObservables(targetPtcl->PropertyList);
+    //targetH->addObservables(targetPtcl->PropertyList);
+    targetH->addObservables(*targetPtcl);
     return true;
   }
 

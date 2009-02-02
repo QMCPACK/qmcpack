@@ -36,15 +36,22 @@ namespace qmcplusplus
       return evaluate(P);
     }
 
-    void registerObservables(vector<observable_helper*>& h5list, hid_t gid) const ;
-    void addObservables(PropertySetType& plist);
+    void addObservables(PropertySetType& plist,BufferType& olist);
+    void registerCollectables(vector<observable_helper*>& h5desc, hid_t gid) const ;
     void setObservables(PropertySetType& plist);
     void setParticlePropertyList(PropertySetType& plist, int offset);
     bool put(xmlNodePtr cur);
     bool get(std::ostream& os) const;
     QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 
+    inline int getGridIndex(int i, int j, int k) const
+    {
+      return myIndex+k+NumGrids[2]*(j+NumGrids[1]*i);
+    }
+
     private:
+    ///number of grids
+    TinyVector<int,OHMMS_DIM+1> NumGrids;
     ///bounds
     TinyVector<RealType,OHMMS_DIM> Bounds;
     ///bin size

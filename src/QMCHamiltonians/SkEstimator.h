@@ -13,12 +13,19 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
+/** @file SkEstimator.h
+ * @brief Declare SkEstimator
+ */
 #ifndef QMCPLUSPLUS_SK_ESTIMATOR_H
 #define QMCPLUSPLUS_SK_ESTIMATOR_H
 #include <QMCHamiltonians/QMCHamiltonianBase.h>
 namespace qmcplusplus 
 {
 
+  /** SkEstimator evaluate the structure factor of the target particleset
+   *
+   * <estimator name="sk" type="sk" debug="no"/>
+   */
   class SkEstimator: public QMCHamiltonianBase
   {
     public:
@@ -34,10 +41,10 @@ namespace qmcplusplus
       return evaluate(P);
     }
 
-    void registerObservables(vector<observable_helper*>& h5list, hid_t gid) const;
-    void addObservables(PropertySetType& plist);
-    void setObservables(PropertySetType& plist);
-    void setParticlePropertyList(PropertySetType& plist, int offset);
+    void addObservables(PropertySetType& plist, BufferType& collectables);
+    void registerCollectables(vector<observable_helper*>& h5desc, hid_t gid) const ;
+    void setObservables(PropertySetType& plist) {}
+    void setParticlePropertyList(PropertySetType& plist, int offset){}
     bool put(xmlNodePtr cur);
     bool get(std::ostream& os) const;
     QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
@@ -59,8 +66,6 @@ namespace qmcplusplus
     vector<RealType> OneOverDnk;
     /** \f$rho_k = \sum_{\alpha} \rho_k^{\alpha} \f$ for species index \f$\alpha\f$ */
     Vector<ComplexType> RhokTot;
-    /** instantaneous structure factor  */
-    Vector<RealType> SkInst;
     /** resize the internal data
      *
      * The argument list is not completed

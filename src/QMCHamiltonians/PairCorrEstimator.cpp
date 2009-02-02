@@ -25,6 +25,7 @@ namespace qmcplusplus
   PairCorrEstimator::PairCorrEstimator(ParticleSet& elns, string& sources)
     :Dmax(10.), Delta(0.5)
   {
+    UpdateMode.set(COLLECTABLE,1);
     int num_species=elns.groups();
 
     //use the simulation cell radius if any direction is periodic
@@ -34,8 +35,8 @@ namespace qmcplusplus
       Volume=elns.Lattice.Volume;
     }
 
-    int num_bins=static_cast<int>(Dmax/Delta);
-    Delta=Dmax/static_cast<RealType>(num_bins);
+    NumBins=static_cast<int>(Dmax/Delta);
+    Delta=Dmax/static_cast<RealType>(NumBins);
     DeltaInv=1.0/Delta;
 
     //ostringstream h;
@@ -111,7 +112,7 @@ namespace qmcplusplus
 
   PairCorrEstimator::Return_t PairCorrEstimator::evaluate(ParticleSet& P)
   {
-    gof_r=0.0;
+    BufferType& collectables(P.Collectables);
     const DistanceTableData&  dii(*P.DistTables[0]);
     for(int iat=0; iat<dii.centers(); ++iat) 
     {
@@ -120,7 +121,7 @@ namespace qmcplusplus
         RealType r=dii.r(nn);
         if(r>=Dmax) continue;
         int loc=static_cast<int>(DeltaInv*r);
-        gof_r(pair_ids[nn],loc) += norm_factor[loc];
+        collectables[pair_ids[nn]*NumBins+loc] += norm_factor[loc];
       }
     }
 
@@ -128,31 +129,29 @@ namespace qmcplusplus
     {
       const DistanceTableData&  d1(*P.DistTables[other_ids[k]]);
       const ParticleSet::ParticleIndex_t& gid(d1.origin().GroupID);
-      int toff=other_offsets[k];
+      int koff=other_offsets[k];
       for(int iat=0; iat<d1.centers(); ++iat) 
       {
-        RealType* gofr_ptr=gof_r[gid[iat]+toff];
+        int toff= (gid[iat]+koff)*NumBins;
         for(int nn=d1.M[iat]; nn<d1.M[iat+1]; ++nn)
         {
           RealType r=dii.r(nn);
           if(r>=Dmax) continue;
           int loc=static_cast<int>(DeltaInv*r);
-          gofr_ptr[loc]+=norm_factor[loc];
+          collectables[toff+loc] += norm_factor[loc];
         }
       }
     }
-
-    //do the rest
     return 0.0;
   }
 
-  void PairCorrEstimator::registerObservables(vector<observable_helper*>& h5list
+  void PairCorrEstimator::registerCollectables(vector<observable_helper*>& h5list
       , hid_t gid) const
   {
-    vector<int> onedim(1,gof_r.cols());
-    int offset=myIndex;
 
-    for(int i=0; i<gof_r_prefix.size(); ++i)
+    vector<int> onedim(1,NumBins);
+    int offset=myIndex;
+    for(int i=0; i<NumBins; ++i)
     {
       observable_helper* h5o=new observable_helper(gof_r_prefix[i]);
       h5o->set_dimensions(onedim,offset);
@@ -166,48 +165,66 @@ namespace qmcplusplus
       h5o->addProperty(blob,"dictionary");
 
       h5list.push_back(h5o);
-      offset+=gof_r.cols();
+      offset+=NumBins;
     }
   }
 
-  void PairCorrEstimator::addObservables(PropertySetType& plist)
+
+  void PairCorrEstimator::addObservables(PropertySetType& plist, BufferType& collectables)
   {
-    myIndex=plist.size();
-    for(int i=0; i<gof_r_prefix.size(); ++i)
-    {
-      for(int k=0; k<gof_r.cols(); ++k)
-      {
-        ostringstream h;
-        h << gof_r_prefix[i]<< "_" << k;
-        int dum=plist.add(h.str());
-      }
-    }
+    myIndex=collectables.size();
+
+    ////only while debugging
+    //if(gof_r.size())
+    //{
+    //  myDebugIndex=plist.size();
+    //  for(int i=0; i<gof_r_prefix.size(); ++i)
+    //  {
+    //    for(int k=0; k<gof_r.cols(); ++k)
+    //    {
+    //      ostringstream h;
+    //      h << gof_r_prefix[i]<< "_" << k;
+    //      int dum=plist.add(h.str());
+    //    }
+    //  }
+    //}
   }
+
 
   void PairCorrEstimator::setObservables(PropertySetType& plist)
   {
-    std::copy(gof_r.first_address(),gof_r.last_address(),plist.begin()+myIndex);
+    //std::copy(gof_r.first_address(),gof_r.last_address(),plist.begin()+myIndex);
   }
 
   void PairCorrEstimator::setParticlePropertyList(PropertySetType& plist
       , int offset)
   {
-    std::copy(gof_r.first_address(),gof_r.last_address(),plist.begin()+myIndex+offset);
+    //std::copy(gof_r.first_address(),gof_r.last_address(),plist.begin()+myDebugIndex+offset);
   }
 
   bool PairCorrEstimator::put(xmlNodePtr cur)
   {
     //set resolution 
     int nbins=Dmax*DeltaInv;
+    string debug("no");
     OhmmsAttributeSet attrib;
     attrib.add(nbins,"num_bin");
     attrib.add(Dmax,"rmax");
     attrib.add(Delta,"dr");
+    attrib.add(debug,"debug");
     attrib.put(cur);
 
     Delta=Dmax/static_cast<RealType>(nbins);
     DeltaInv=1.0/Delta;
-    resize(nbins);
+
+    NumBins=nbins;
+    norm_factor.resize(NumBins);
+    RealType r=Delta*0.5;
+    for(int i=0; i<NumBins; ++i, r+=Delta) norm_factor[i]=1.0/r/r;
+
+    ////resize(nbins);
+    //if(debug == "yes")
+    //  gof_r.resize(gof_r_prefix.size(),NumBins);
   }
 
   bool PairCorrEstimator::get(std::ostream& os) const
@@ -224,8 +241,7 @@ namespace qmcplusplus
 
   void  PairCorrEstimator::resize(int nbins)
   {
-    gof_r.resize(gof_r_prefix.size(),nbins);
-    norm_factor.resize(gof_r.cols());
+    norm_factor.resize(nbins);
     RealType r=Delta*0.5;
     for(int i=0; i<norm_factor.size(); ++i, r+=Delta)
     {

@@ -36,8 +36,8 @@ namespace qmcplusplus
       return evaluate(P);
     }
 
-    void registerObservables(vector<observable_helper*>& h5list, hid_t gid) const;
-    void addObservables(PropertySetType& plist);
+    void addObservables(PropertySetType& plist, BufferType& collectables);
+    void registerCollectables(vector<observable_helper*>& h5list, hid_t gid) const;
     void setObservables(PropertySetType& plist);
     void setParticlePropertyList(PropertySetType& plist, int offset);
     bool put(xmlNodePtr cur);
@@ -45,6 +45,8 @@ namespace qmcplusplus
     QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 
     private:
+    ///number of bins
+    int NumBins;
     /// maximum distance 
     RealType Dmax;
     /// bin size 
@@ -63,8 +65,8 @@ namespace qmcplusplus
     //vector<int> source_ids;
     ///normalization factor
     vector<RealType> norm_factor;
-    ///data
-    Matrix<RealType> gof_r;
+    /////data
+    //Matrix<RealType> gof_r;
     ///prefix of each gof_r
     vector<string> gof_r_prefix;
     /** resize the internal data

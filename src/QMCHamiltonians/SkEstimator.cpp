@@ -16,18 +16,19 @@
 #include <QMCHamiltonians/SkEstimator.h>
 #include <LongRange/StructFact.h>
 #include <Utilities/IteratorUtility.h>
+#include <OhmmsData/AttributeSet.h>
 
 namespace qmcplusplus 
 {
 
   SkEstimator::SkEstimator(ParticleSet& source)
   {
+    UpdateMode.set(COLLECTABLE,1);
     NumSpecies=source.getSpeciesSet().getTotalNum();
     NumK=source.SK->KLists.numk;
     OneOverN=1.0/static_cast<RealType>(source.getTotalNum());
     Kshell=source.SK->KLists.kshell;
     MaxKshell=Kshell.size()-1;
-    SkInst.resize(NumK);
     RhokTot.resize(NumK);
 
     Kmag.resize(MaxKshell);
@@ -50,48 +51,38 @@ namespace qmcplusplus
     for(int i=1; i<NumSpecies; ++i)
       accumulate_elements(P.SK->rhok[i],P.SK->rhok[i]+NumK,RhokTot.begin());
 
-    Vector<ComplexType>::const_iterator iit(RhokTot.begin());
-    Vector<RealType>::iterator oit(SkInst.begin()),oit_end(SkInst.end());
-    for(;oit != oit_end;++iit,++oit)
-      (*oit)+=(*iit).real()*(*iit).real()+(*iit).imag()*(*iit).imag();
+    Vector<ComplexType>::const_iterator iit(RhokTot.begin()),iit_end(RhokTot.end());
+    for(int i=myIndex;iit != iit_end;++iit,++i)
+      P.Collectables[i]+=(*iit).real()*(*iit).real()+(*iit).imag()*(*iit).imag();
+
     return 0.0;
   }
 
-
-  void SkEstimator::addObservables(PropertySetType& plist)
+  void SkEstimator::addObservables(PropertySetType& plist, BufferType& collectables)
   {
-    myIndex=plist.size();
-    for(int i=0; i<NumK; ++i)
-    {
-      ostringstream h;
-      h << myName << "_" << i;
-      int dum=plist.add(h.str());
-    }
+    myIndex=collectables.size();
+    vector<RealType> tmp(NumK);
+    collectables.add(tmp.begin(),tmp.end());
   }
 
-  void SkEstimator::registerObservables(vector<observable_helper*>& h5list
+  void SkEstimator::registerCollectables(vector<observable_helper*>& h5desc
       , hid_t gid) const
   {
+    app_log() << " SkEstimator::registerCollectables " << endl;
     vector<int> ndim(1,NumK);
     observable_helper* h5o=new observable_helper(myName);
     h5o->set_dimensions(ndim,myIndex);
     h5o->open(gid);
-    h5list.push_back(h5o);
-  }
-
-  void SkEstimator::setObservables(PropertySetType& plist)
-  {
-    std::copy(SkInst.begin(),SkInst.end(),plist.begin()+myIndex);
-  }
-
-  void SkEstimator::setParticlePropertyList(PropertySetType& plist
-      , int offset)
-  {
-    std::copy(SkInst.begin(),SkInst.end(),plist.begin()+myIndex+offset);
+    h5desc.push_back(h5o);
   }
 
   bool SkEstimator::put(xmlNodePtr cur)
   {
+    //string debug("no");
+    //OhmmsAttributeSet attrib;
+    //attrib.add(debug,"debug");
+    //attrib.put(cur);
+    //if(debug == "yes") SkInst.resize(NumK);
   }
 
   bool SkEstimator::get(std::ostream& os) const
