@@ -23,7 +23,8 @@ namespace qmcplusplus
 
   /** constructor
   */
-  QMCHamiltonian::QMCHamiltonian():myIndex(0)
+  QMCHamiltonian::QMCHamiltonian()
+    :myIndex(0),numCollectables(0)
   { }
 
 ///// copy constructor is distable by declaring it as private
@@ -110,26 +111,73 @@ QMCHamiltonian::addOperator(QMCHamiltonianBase* h, const string& aname, bool phy
  * This enables assigning the properties evaluated by each QMCHamiltonianBase
  * object to the correct property column.
  */
+//void 
+//QMCHamiltonian::addObservables(PropertySetType& plist) 
+//{
+//  //first add properties to Observables
+//  Observables.clear();
+//  for(int i=0; i<H.size(); ++i) H[i]->addObservables(Observables);
+//  for(int i=0; i<auxH.size(); ++i) auxH[i]->addObservables(Observables);
+//
+//  myIndex=plist.add(Observables.Names[0]);
+//  for(int i=1; i<Observables.size(); ++i) plist.add(Observables.Names[i]);
+//
+//  app_log() << "  QMCHamiltonian::add2WalkerProperty added " << Observables.size() << " data to PropertyList" << endl;
+//  app_log() << "    starting Index = " << myIndex << endl;
+//}
+//
 void 
-QMCHamiltonian::addObservables(PropertySetType& plist) 
+QMCHamiltonian::addObservables(ParticleSet& P)
 {
   //first add properties to Observables
   Observables.clear();
-  for(int i=0; i<H.size(); ++i) H[i]->addObservables(Observables);
-  for(int i=0; i<auxH.size(); ++i) auxH[i]->addObservables(Observables);
+  //ParticleSet::mcObservables (large data, e.g. density) are accumulated while evaluations
+  P.Collectables.clear();
+  cout << "Collectables should be empty " << P.Collectables.size() << endl;
+  P.Collectables.rewind();
+  for(int i=0; i<H.size(); ++i) H[i]->addObservables(Observables,P.Collectables);
+  for(int i=0; i<auxH.size(); ++i) auxH[i]->addObservables(Observables,P.Collectables);
 
-  myIndex=plist.add(Observables.Names[0]);
-  for(int i=1; i<Observables.size(); ++i) plist.add(Observables.Names[i]);
+  myIndex=P.PropertyList.add(Observables.Names[0]);
+  for(int i=1; i<Observables.size(); ++i) P.PropertyList.add(Observables.Names[i]);
 
-  app_log() << "  QMCHamiltonian::add2WalkerProperty added " << Observables.size() << " data to PropertyList" << endl;
-  app_log() << "    starting Index = " << myIndex << endl;
+  numCollectables=P.Collectables.size();
+  app_log() << "\n  QMCHamiltonian::add2WalkerProperty added" 
+    << "\n    " << Observables.size()  << " to P::PropertyList " 
+    << "\n    " <<  P.Collectables.size() << " to P::Collectables "
+    << "\n    starting Index of the observables in P::PropertyList = " << myIndex << endl;
+}
+
+void QMCHamiltonian::resetObservables(int start, int ncollects)
+{
+  Observables.clear();
+  BufferType collectables;
+  collectables.rewind();
+  for(int i=0; i<H.size(); ++i) H[i]->addObservables(Observables,collectables);
+  for(int i=0; i<auxH.size(); ++i) auxH[i]->addObservables(Observables,collectables);
+
+  if(collectables.size() != ncollects)
+  {
+    APP_ABORT("  QMCHamiltonian::resetObservables numCollectables != ncollects");
+  }
+  myIndex=start;
+  numCollectables=ncollects;
 }
 
 void 
-QMCHamiltonian::registerObservables(vector<observable_helper*>& h5dec, hid_t gid)  const
+QMCHamiltonian::registerObservables(vector<observable_helper*>& h5desc
+    , hid_t gid)  const
 {
-  for(int i=0; i<H.size(); ++i) H[i]->registerObservables(h5dec,gid);
-  for(int i=0; i<auxH.size(); ++i) auxH[i]->registerObservables(h5dec,gid);
+  for(int i=0; i<H.size(); ++i) H[i]->registerObservables(h5desc,gid);
+  for(int i=0; i<auxH.size(); ++i) auxH[i]->registerObservables(h5desc,gid);
+}
+
+void 
+QMCHamiltonian::registerCollectables(vector<observable_helper*>& h5desc
+    , hid_t gid)  const
+{
+  //The physical operators cannot add to collectables
+  for(int i=0; i<auxH.size(); ++i) auxH[i]->registerCollectables(h5desc,gid);
 }
 
 void QMCHamiltonian::setTempObservables(PropertySetType& plist)
@@ -262,38 +310,20 @@ QMCHamiltonian* QMCHamiltonian::makeClone(ParticleSet& qp, TrialWaveFunction& ps
   for(int i=0; i<auxH.size(); ++i)
     auxH[i]->add2Hamiltonian(qp,psi,*myclone);
 
-  // std::vector<int> depIndexVector;
-  // for(int i=0; i<H.size(); ++i){
-  //   myclone->addOperator(H[i]->makeClone(qp,psi),H[i]->myName,true);
-  //   if (H[i]->Dependants != 0 )
-  //       cout<<i<<endl;
-  //   depIndexVector.insert(depIndexVector.begin(),1,i);
-  // }
-  // for(int i=0; i<auxH.size(); ++i){
-  //   QMCHamiltonianBase* auxi = auxH[i]->makeClone(qp,psi);
-  //   if (auxi)
-  //     myclone->addOperator(auxi,auxH[i]->myName,false);
-  //   else{
-  ////       cout<<"SHOUTING~!!!"<<i<<"  "<<depIndexVector[depIndexVector.size()-1]<<"  "<<depIndexVector.size()-1<<endl;
-  //     myclone->addOperator((myclone->getHamiltonian(depIndexVector.back()))->makeDependants(qp),(myclone->getHamiltonian(depIndexVector.back()))->depName,false);
-  //     depIndexVector.pop_back();
-  //   }
-  // }
-  //myclone->addObservables(qp.PropertyList);
-  myclone->resetObservables(myIndex);
+  //sync indices
+  myclone->resetObservables(myIndex,numCollectables);
+
+  //Hamiltonian needs to make sure qp.Collectables are the same as defined by the original Hamiltonian
+  if(numCollectables)
+  {
+    qp.Collectables.clear();
+    qp.Collectables.resize(numCollectables);
+  }
+
   //Assume tau is correct for the Kinetic energy operator and assign to the rest of the clones
   //Return_t tau = H[0]->Tau;
   //myclone->setTau(tau);
   return myclone;
-}
-
-void QMCHamiltonian::resetObservables(int start)
-{
-  //first add properties to Observables
-  Observables.clear();
-  for(int i=0; i<H.size(); ++i) H[i]->addObservables(Observables);
-  for(int i=0; i<auxH.size(); ++i) auxH[i]->addObservables(Observables);
-  myIndex=start;
 }
 
 QMCHamiltonian::Return_t QMCHamiltonian::registerData(ParticleSet& P, BufferType& buffer)

@@ -69,22 +69,40 @@ namespace qmcplusplus {
     /** add each term to the PropertyList for averages
      * @param plist a set of properties to which this Hamiltonian add the observables
      */
-    void addObservables(PropertySetType& plist);
-    /** register obsevables so that their averages can be dumped to hdf5
+    //void addObservables(PropertySetType& plist);
+
+    /** add each term to P.PropertyList and P.mcObservables
      */
-    void registerObservables(vector<observable_helper*>& h5dec, hid_t gid) const ;
+    void addObservables(ParticleSet& P);
+
+    /** register obsevables so that their averages can be dumped to hdf5
+     * @param h5desc has observable_helper* for each h5 group
+     * @param gid h5 group id to which the observable groups are added.
+     */
+    void registerObservables(vector<observable_helper*>& h5desc, hid_t gid) const ;
+    /** register collectables so that their averages can be dumped to hdf5
+     * @param h5desc has observable_helper* for each h5 group
+     * @param gid h5 group id to which the observable groups are added.
+     *
+     * Add observable_helper information for the data stored in ParticleSet::mcObservables.
+     */
+    void registerCollectables(vector<observable_helper*>& h5desc, hid_t gid) const ;
     ///Sets the observable sup so Forward walking can look and find the elements
     void setTempObservables(PropertySetType& plist);
     ///retrun the starting index
     inline int startIndex() const { return myIndex;}
     ///return the size of observables
     inline int sizeOfObservables() const { return Observables.size();}
+    ///return the size of collectables
+    inline int sizeOfCollectables() const { return numCollectables;}
     ///return the value of the i-th observable
     inline RealType getObservable(int i) const { return Observables.Values[i];}
     ///return the value of the observable with a set name if it exists
-    inline int getObservable(string Oname) const { 
+    inline int getObservable(string Oname) const 
+    { 
       int rtval(-1);
-      for(int io=0;io<Observables.size();io++){
+      for(int io=0;io<Observables.size();io++)
+      {
         if (Observables.Names[io]==Oname) return io;
       }
       return rtval;
@@ -167,9 +185,9 @@ namespace qmcplusplus {
      */
     Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy); 
 
-    /*@{
-     * @brief functions to handle particle-by-particle move
-     */
+    /*@{*/
+    /** @brief functions to handle particle-by-particle move
+    */
     Return_t registerData(ParticleSet& P, BufferType& buffer);
     Return_t updateBuffer(ParticleSet& P, BufferType& buf);
     void copyFromBuffer(ParticleSet& P, BufferType& buf);
@@ -208,6 +226,8 @@ namespace qmcplusplus {
   private:
     ///starting index
     int myIndex;
+    ///starting index
+    int numCollectables;
     ///Current Local Energy
     Return_t LocalEnergy;
     ///Current Kinetic Energy
@@ -224,8 +244,11 @@ namespace qmcplusplus {
     std::vector<NewTimer*> myTimers;
     ///data
     PropertySetType Observables;
-    ///reset Observables
-    void resetObservables(int start);
+    /** reset Observables and counters
+     * @param start starting index within PropertyList
+     * @param ncollects number of collectables
+     */
+    void resetObservables(int start, int ncollects);
   };
 }
 #endif

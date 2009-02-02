@@ -29,14 +29,18 @@ namespace qmcplusplus
       targetH.addOperator(myclone,myName,UpdateMode[PHYSICAL]);
   }
 
-  void QMCHamiltonianBase::registerObservables(vector<observable_helper*>& h5list
+  void QMCHamiltonianBase::registerObservables(vector<observable_helper*>& h5desc
       , hid_t gid)  const
   {
-    int loc=h5list.size();
-    h5list.push_back(new observable_helper(myName));
-    std::vector<int> onedim(1,1);
-    h5list[loc]->set_dimensions(onedim,myIndex);
-    h5list[loc]->open(gid);
+    //exclude collectables
+    if(!UpdateMode[COLLECTABLE])
+    {
+      int loc=h5desc.size();
+      h5desc.push_back(new observable_helper(myName));
+      std::vector<int> onedim(1,1);
+      h5desc[loc]->set_dimensions(onedim,myIndex);
+      h5desc[loc]->open(gid);
+    }
   }
 }
 /***************************************************************************

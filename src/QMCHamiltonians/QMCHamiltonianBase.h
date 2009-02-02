@@ -29,18 +29,20 @@ namespace qmcplusplus {
 
   /**@defgroup hamiltonian Hamiltonian group
    * @brief QMCHamiltonian and its component, QMCHamiltonianBase
+   *
    */
-
   class DistanceTableData;
   class TrialWaveFunction;
   class QMCHamiltonian;
 
-  struct NonLocalData: public QMCTraits {
+  struct NonLocalData: public QMCTraits 
+  {
     IndexType PID;
     RealType Weight;
     PosType Delta;
     inline NonLocalData():PID(-1),Weight(1.0){}
-    inline NonLocalData(IndexType id, RealType w, const PosType& d):PID(id),Weight(w),Delta(d) {}
+    inline NonLocalData(IndexType id, RealType w, const PosType& d)
+      :PID(id),Weight(w),Delta(d) {}
   };
 
   /** @ingroup hamiltonian
@@ -54,11 +56,16 @@ namespace qmcplusplus {
     /** type of return value of evaluate
      */
     typedef RealType Return_t;
-    typedef ParticleSet::Walker_t::Buffer_t  BufferType;
+    /** typedef for the serialized buffer
+     *
+     * PooledData<RealType> is used to serialized an anonymous buffer
+     */
+    typedef ParticleSet::Buffer_t  BufferType;
 
-    enum {PRIMARY, OPTIMIZABLE, RATIOUPDATE, PHYSICAL};
+    ///enum for UpdateMode
+    enum {PRIMARY, OPTIMIZABLE, RATIOUPDATE, PHYSICAL, COLLECTABLE};
     ///set the current update mode
-    bitset<4> UpdateMode;
+    bitset<8> UpdateMode;
     ///starting index of this object
     int myIndex;
     ///number of dependents: to be removed
@@ -96,16 +103,37 @@ namespace qmcplusplus {
      */
     virtual void addObservables(PropertySetType& plist)
     {
-      myIndex=plist.add(myName.c_str());
+      if(!UpdateMode[COLLECTABLE]) myIndex=plist.add(myName.c_str());
+    }
+
+    /** default implementation to add named values to  the property list
+     * @param plist RecordNameProperty
+     * @param collectables Observables that are accumulated by evaluate
+     */
+    virtual void addObservables(PropertySetType& plist, BufferType& collectables)
+    {
+      if(!UpdateMode[COLLECTABLE]) myIndex=plist.add(myName.c_str());
     }
 
     /*** add to observable descriptor for hdf5 
-     * @param h5list contains a set of hdf5 descriptors for observables
+     * @param h5desc contains a set of hdf5 descriptors for a scalar observable
+     * @param gid hdf5 group to which the observables belong
      *
-     * Default implementation is for scalar observables.
+     * The default implementation is to register a scalar for this->Value
      */
-    virtual void registerObservables(vector<observable_helper*>& h5list
+    virtual void registerObservables(vector<observable_helper*>& h5desc
         , hid_t gid) const ;
+
+    /*** add to collectables descriptor for hdf5 
+     * @param h5desc contains a set of hdf5 descriptors for a scalar observable
+     * @param gid hdf5 group to which the observables belong
+     *
+     * The default implementation does nothing. The derived classes which compute
+     * big data, e.g. density, should overwrite this function.
+     */
+    virtual void registerCollectables(vector<observable_helper*>& h5desc
+        , hid_t gid) const 
+    {}
 
     /** set the values evaluated by this object to plist
      * @param plist RecordNameProperty
@@ -124,8 +152,7 @@ namespace qmcplusplus {
       plist[myIndex+offset]=Value;
     }
 
-    virtual void setHistories(
-        Walker<Return_t, ParticleSet::ParticleGradient_t>& ThisWalker)
+    virtual void setHistories(Walker<Return_t, ParticleSet::ParticleGradient_t>& ThisWalker)
     {
        tWalker = &(ThisWalker);
     }
