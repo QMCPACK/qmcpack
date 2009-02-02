@@ -42,7 +42,8 @@ namespace qmcplusplus {
     MinNumWalkers = 0.5;
 
     H_KE.addOperator(H.getHamiltonian("Kinetic"),"Kinetic");
-    H_KE.addObservables(W.PropertyList);
+    H_KE.addObservables(W);
+    //H_KE.addObservables(W.PropertyList);
 
     SumValue.resize(SUM_INDEX_SIZE,0.0);
     IsValid=true;
