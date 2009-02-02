@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////
-// (c) Copyright 2003  by Jeongnim Kim
+// (c) Copyright 2003-  by Jeongnim Kim
 //////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////
 //   National Center for Supercomputing Applications &
@@ -16,11 +16,13 @@
 #ifndef QMCPLUSPLUS_PARTICLESET_H
 #define QMCPLUSPLUS_PARTICLESET_H
 
-#include "Configuration.h"
-#include "Utilities/SpeciesSet.h"
-#include "Particle/Walker.h"
-#include "OhmmsPETE/OhmmsArray.h"
+#include <Configuration.h>
+#include <OhmmsPETE/OhmmsArray.h>
+#include <Particle/Walker.h>
+#include <Utilities/SpeciesSet.h>
+#include <Utilities/PooledData.h>
 #include <deque>
+#include <algorithm>
 
 namespace qmcplusplus {
 
@@ -66,6 +68,7 @@ namespace qmcplusplus {
       ///define a Walker_t
       typedef Walker<RealType,ParticlePos_t> Walker_t;
       typedef Walker_t::PropertyContainer_t  PropertyContainer_t;
+      typedef Walker_t::Buffer_t             Buffer_t;
 
       ///property of an ensemble represented by this ParticleSet
       MCDataType<RealType> EnsembleProperty;
@@ -114,11 +117,24 @@ namespace qmcplusplus {
       /** name-value map of Walker Properties
        *
        * PropertyMap is used to keep the name-value mapping of
-       * Walker_t::Properties.
+       * Walker_t::Properties.  PropertyList::Values are not
+       * necessarily updated during the simulations.
        */ 
       PropertySetType PropertyList;
 
+      /** properties of the current walker
+       *
+       * The internal order is identical to PropertyList, which holds
+       * the matching names. 
+       */
       PropertyContainer_t  Properties;
+
+      /** observables in addition to those registered in Properties/PropertyList 
+       *
+       * Such observables as density, gofr, sk are not stored per walker but
+       * collected during QMC iterations.
+       */
+      Buffer_t Collectables;
 
       ///Property history vector
       vector<deque<double> >  PropertyHistory;
@@ -158,6 +174,13 @@ namespace qmcplusplus {
        * Ensure that the distance for this-this is always created first.
        */
       int  addTable(const ParticleSet& psrc);
+
+      /** reset all the collectable quantities during a MC iteration 
+       */
+      inline void resetCollectables()
+      {
+        std::fill(Collectables.begin(),Collectables.end(),0.0);
+      }
 
       /** update the internal data
        *@param iflag index for the update mode
@@ -240,12 +263,12 @@ namespace qmcplusplus {
       void applyBC(const ParticlePos_t& pin, ParticlePos_t& pout, int first, int last);
       void applyMinimumImage(ParticlePos_t& pinout);
 
-      void registerData(PooledData<RealType>& buf);
-      void registerData(Walker_t& awalker, PooledData<RealType>& buf);
-      void updateBuffer(Walker_t& awalker, PooledData<RealType>& buf);
-      void updateBuffer(PooledData<RealType>& buf);
-      void copyToBuffer(PooledData<RealType>& buf);
-      void copyFromBuffer(PooledData<RealType>& buf);
+      void registerData(Buffer_t& buf);
+      void registerData(Walker_t& awalker, Buffer_t& buf);
+      void updateBuffer(Walker_t& awalker, Buffer_t& buf);
+      void updateBuffer(Buffer_t& buf);
+      void copyToBuffer(Buffer_t& buf);
+      void copyFromBuffer(Buffer_t& buf);
 
       //return the address of the values of Hamiltonian terms
       inline RealType* restrict getPropertyBase() 

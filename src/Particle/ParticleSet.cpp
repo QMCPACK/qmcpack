@@ -45,6 +45,7 @@ namespace qmcplusplus {
     app_log() << "  Copying a particle set " << p.getName() << " to " << this->getName() << endl;
     PropertyList.Names=p.PropertyList.Names;
     PropertyList.Values=p.PropertyList.Values;
+    Collectables=p.Collectables;
 
     PropertyHistory=  p.PropertyHistory;
 
