@@ -44,39 +44,11 @@ namespace qmcplusplus {
 
   bool QMCUpdateBase::put(xmlNodePtr cur)
   {
+
     //nonlocal operator is very light
     bool s= nonLocalOps.put(cur);
     s=myParams.put(cur);
-
-#if defined(ENABLE_COMPOSITE_ESTIMATOR)
-    if(compEstimator == 0)
-    {
-      //check if estimator needs to be constructed
-      cur=cur->children;
-      vector<string> elist;
-      while(cur != NULL)
-      {
-        string cname((const char*)(cur->name));
-        if(cname == "estimator") {
-          string ename("0");
-          OhmmsAttributeSet att;
-          att.add(ename,"name");
-          att.put(cur);
-          if(ename == "gofr" || ename == "sk") //only accept gofr/sk
-          {
-            elist.push_back(ename);
-          }
-        }
-        cur=cur->next;
-      }
-      if(elist.size())
-      {
-        compEstimator = new CompositeEstimatorSet(W);
-      }
-    }
-
-    if(compEstimator)  compEstimator->open(-1);
-#endif
+    if(branchEngine) branchEngine->put(cur);
     return s;
   }
 
