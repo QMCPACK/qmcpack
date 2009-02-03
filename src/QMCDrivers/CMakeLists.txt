@@ -6,6 +6,7 @@ SET(QMCDRIVERS
   BranchIO.cpp
   QMCDriver.cpp
   QMCOptimize.cpp
+  ZeroVarianceOptimize.cpp
   QMCCostFunctionBase.cpp
   QMCCostFunctionSingle.cpp
   WaveFunctionTester.cpp
@@ -28,6 +29,7 @@ SET(QMCDRIVERS
   CorrelatedSampling/CSVMC.cpp
   CorrelatedSampling/CSVMCUpdateAll.cpp
   CorrelatedSampling/CSVMCUpdatePbyP.cpp
+  ../Estimators/CollectablesEstimator.cpp
   ../Estimators/LocalEnergyEstimator.cpp
   ../Estimators/WFMCOnlyEstimator.cpp
   ../Estimators/LocalEnergyEstimatorHDF.cpp
