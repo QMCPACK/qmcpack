@@ -6,7 +6,6 @@ SET(QMCDRIVERS
   BranchIO.cpp
   QMCDriver.cpp
   QMCOptimize.cpp
-  ZeroVarianceOptimize.cpp
   QMCCostFunctionBase.cpp
   QMCCostFunctionSingle.cpp
   WaveFunctionTester.cpp
