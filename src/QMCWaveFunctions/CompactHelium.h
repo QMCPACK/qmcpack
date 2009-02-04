@@ -1812,5 +1812,186 @@ class NewCompactHeliumOne: public OrbitalBase
 
 
 
+//class VariableGaussianBond: public OrbitalBase
+//{
+  //public:
+    //ValueType pA, pB, pC , RC, RCmax;
+    //string nameA,nameB,nameC,nameD ;
+    //vector<ValueType> center1, center2, line, BondCenter;
+
+    
+    //VariableGaussianBond(ParticleSet& electrons, vector<ValueType> CenterPosition , vector<ValueType> IonPosition ) : center1(CenterPosition), center2(IonPosition), BondCenter(IonPosition)
+    //{
+      //RC=0.0;
+      //for( int i=0;i<3;i++){
+	//line.push_back(IonPosition[i]-CenterPosition[i]);
+	//RC += line[i]*line[i];
+      //}
+      //RCmax = RC = std::sqrt(RC) - 1e-2;
+    //}
+    
+    //OrbitalBase* makeClone(ParticleSet& tqp) const
+    //{
+      //VariableGaussianBond* cloned = new VariableGaussianBond(tqp,center1,center2);
+      //cloned->nameA = nameA;
+      //cloned->nameB = nameB;
+      //cloned->nameC = nameC;
+      //cloned->nameD = nameD;
+      //cloned->myVars.insert(nameA,pA,true);
+      //cloned->myVars.insert(nameB,pB,true);
+      //cloned->myVars.insert(nameC,pC,true);
+      //cloned->myVars.insert(nameD,RC,true);
+      //cloned->reset(pA,pB,pC,RC);
+      
+      //return cloned;
+    //}
+    
+    
+    //bool put(xmlNodePtr cur){
+      //return true;
+    //}
+    
+    //void resetTargetParticleSet(ParticleSet& P) 
+    //{
+    //}
+    
+    //void checkInVariables(opt_variables_type& active)
+    //{
+      //active.insertFrom(myVars);
+    //}
+    
+    //void checkOutVariables(const opt_variables_type& active)
+    //{
+      //myVars.getIndex(active);
+    //}
+    
+    //void resetParameters(const opt_variables_type& active)
+    //{
+      //int ia=myVars.where(0); if(ia>-1) myVars[0]=pA=active[ia];
+      //int ib=myVars.where(1); if(ib>-1) myVars[1]=pB=active[ib];
+      //int ic=myVars.where(2); if(ic>-1) myVars[2]=pC=active[ic];
+      //int id=myVars.where(3); if(id>-1) myVars[3]=RC=active[id];
+      //reset(pA,pB,pC,RC);
+    //}
+    
+    //void reset(ValueType A, ValueType B, ValueType C, ValueType D){
+      //pA=A; pB=B; pC=C; RC=D;
+      ////safety checks
+      //pC = std::max( std::min(1.0,pC) , 0.0);
+      //RC = std::min(RCmax,RC);
+      
+      ////move bond center along line
+      //for( int i=0;i<3;i++) BondCenter[i] = center2[i]-c*line[i];
+      
+      
+    //}
+    
+    //inline RealType expPart(RealType rx, RealType ry, RealType rz)
+    //{
+      //RealType dx = rx-BondCenter[0];
+      //RealType dy = ry-BondCenter[1];
+      //RealType dz = rz-BondCenter[2];
+     //return std::exp(-(pA*(dx*dx+dy*dy) + pB*dz*dz) );
+    //}
+    
+    //inline RealType logexpPart(RealType rx, RealType ry, RealType rz)
+    //{
+      //RealType dx = rx-BondCenter[0];
+      //RealType dy = ry-BondCenter[1];
+      //RealType dz = rz-BondCenter[2];
+     //return -(pA*(dx*dx+dy*dy) + pB*dz*dz) ;
+    //}
+    
+    
+    
+    //RealType
+    //evaluateLog(ParticleSet& P, 
+        //ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
+	//{
+	  //RealType Value(0.0);
+	  
+	  
+	  
+	 //return Value; 
+	//}
+    
+    //ValueType ratio(ParticleSet& P, int iat,
+			    //ParticleSet::ParticleGradient_t& dG,
+			    //ParticleSet::ParticleLaplacian_t& dL)
+			    //{return 0; }
+    
+    //void acceptMove(ParticleSet& P, int iat){}
+    //void restore(int iat){}
+    //ValueType ratio(ParticleSet& P, int iat){return 0;}
+    //void update(ParticleSet& P, 
+			//ParticleSet::ParticleGradient_t& dG, 
+			//ParticleSet::ParticleLaplacian_t& dL,
+			//int iat) {}
+    //RealType evaluateLog(ParticleSet& P,BufferType& buf){return 0;}
+    
+    //RealType registerData(ParticleSet& P, BufferType& buf){return 0;}
+    //RealType updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch=false){return 0;}
+    //void copyFromBuffer(ParticleSet& P, BufferType& buf){}
+    
+     
+    //void reportStatus(ostream& os)
+    //{
+          //myVars.print(os);
+    //}
+    
+    //ValueType evaluate(ParticleSet& P, 
+			//ParticleSet::ParticleGradient_t& G, 
+			//ParticleSet::ParticleLaplacian_t& L)
+    //{
+      //ValueType r0 = Ie_table->r(0);
+      //ValueType r1 = Ie_table->r(1);
+      //ValueType r01 = ee_table->r(0);
+      
+      //ValueType s = r0+r1;
+      //ValueType t = r0-r1;
+      //ValueType u = r01;
+      
+      //ValueType expm2s = std::exp(-2*s);
+      //ValueType expAu = std::exp(pA*u);
+      //ValueType part1 = (1.0+0.5*u)*expAu;
+      //ValueType part2 = 1.0 + pB*s*u + pC*t*t + pD*u*u;
+      //ValueType mpart1 = 1.0/part1;
+      //ValueType mpart2 = 1.0/part2;
+      
+////       Gradients
+      //ValueType bu2ct  = (pB*u+2.0*pC*t)*mpart2;
+      //ValueType bs2du  = (pB*s+2.0*pD*u)*mpart2;
+      //ValueType bu2mct = (pB*u-2.0*pC*t)*mpart2;
+      //ValueType mupart = 1.0/(1.0+0.5*u);
+
+      //ValueType F01 = (-2.0 + bu2ct );
+      //ValueType F02 = (pA + 0.5*mupart + bs2du );
+      //PosType J0 = Ie_table->dr(0)*F01*Ie_table->rinv(0) - ee_table->dr(0)*F02*ee_table->rinv(0);
+      
+      //ValueType F11 = (-2.0 + bu2mct );
+      //PosType J1 = Ie_table->dr(1)*F11*Ie_table->rinv(1) + ee_table->dr(0)*F02*ee_table->rinv(0);      
+      //G[0] = J0;
+      //G[1] = J1;  
+      
+      //ValueType L0 = -0.25*mupart*mupart + 2.0*(pD+pC)*mpart2 - bs2du*bs2du - bu2ct*bu2ct;
+      //L0 -= dot(Ie_table->dr(0),ee_table->dr(0))*Ie_table->rinv(0)*ee_table->rinv(0)* ( 2.0*pB*mpart2 - 2.0*bs2du*bu2ct);
+      //L0 += 2.0*Ie_table->rinv(0)*F01 + 2.0*ee_table->rinv(0)*F02;
+
+      //ValueType L1= -0.25*mupart*mupart + 2.0*(pD+pC)*mpart2 - bs2du*bs2du - bu2mct*bu2mct;
+      //L1 += dot(Ie_table->dr(1),ee_table->dr(0))*Ie_table->rinv(1)*ee_table->rinv(0)* ( 2.0*pB*mpart2 - 2.0*bs2du*bu2mct);
+      //L1 += 2.0*Ie_table->rinv(1)*F11 + 2.0*ee_table->rinv(0)*F02; 
+      
+      //L[0]= L0;
+      //L[1]= L1; 
+      
+       //return expm2s*part1*part2;
+    //}
+
+
+//};
+
+
+
+
 }
 #endif

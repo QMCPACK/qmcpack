@@ -28,10 +28,9 @@ namespace qmcplusplus {
 
   QMCCostFunctionBase::QMCCostFunctionBase(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h): 
     MPIObjectBase(0),
-    W(w),Psi(psi),H(h),
-    UseWeight(false), Write2OneXml(true),
-    PowerE(2), NumCostCalls(0), NumSamples(0), MaxWeight(5), w_w(0),
-    w_en(0.0), w_var(0.0), w_abs(1.0), MinKE(-100.0),
+    W(w),H(h),Psi(psi),  Write2OneXml(true),
+    PowerE(2), NumCostCalls(0), NumSamples(0), MaxWeight(5), w_w(0.0),
+    w_en(0.0), w_var(0.0), w_abs(0.0), MinKE(-100.0),
     CorrelationFactor(0.0), m_wfPtr(NULL), m_doc_out(NULL), msg_stream(0), debug_stream(0)
   { 
 
@@ -54,7 +53,6 @@ namespace qmcplusplus {
     debug_stream->setf(ios::scientific, ios::floatfield);
     debug_stream->precision(8);
 #endif
-
   }
 
   /** Clean up the vector */
@@ -75,11 +73,11 @@ namespace qmcplusplus {
 
     app_log() << "Effective Target Energy = " << EtargetEff << endl;
     app_log() << "Cost Function = " << w_en << "*<E> + " 
-      << w_var << "*<Var> + " << w_abs << "*|E-E_T|^" << PowerE << endl;
-    if(UseWeight) 
-      app_log() << "Correlated sampling is used." << endl;
-    else
-      app_log() << "Weight is set to one." << endl;
+      << w_var << "*<Var> + " << w_w << "*<Var(unreweighted)> + " << endl;
+    //if(UseWeight) 
+      //app_log() << "Correlated sampling is used." << endl;
+    //else
+      //app_log() << "Weight is set to one." << endl;
 
     if(msg_stream) {
       *msg_stream << "  Total number of walkers          = " << NumSamples << endl;
@@ -120,13 +118,6 @@ QMCCostFunctionBase::Return_t QMCCostFunctionBase::Cost() {
  
  CostValue = w_abs*curVar_abs + w_var*curVar_w + w_en*curAvg_w + w_w*curVar;
  
- //       app_log()<<"Energy: "<<curAvg_w<<" Var: "<<curVar_w<<endl;
- //       app_log()<<"E_w   : "<<w_en<<" V_w: "<<w_var<<endl;
- //DIFFERENT COST FUNCTIOn
- //CostValue = w_en*eavg+w_var*0.5*Tau*evar;
- //CostValue = w_abs*SumValue[SUM_ABSE_BARE]*wgtinv+w_var*evar;
- //CostValue = w_abs*evar_abs+w_var*evar;
- //Return_t evar_abs = SumValue[SUM_ABSE_WGT]/SumValue[SUM_WGT];
  IsValid=true;
  //       if(NumWalkersEff < NumSamples*MinNumWalkers) {
  if(NumWalkersEff < MinNumWalkers) {
@@ -134,7 +125,6 @@ QMCCostFunctionBase::Return_t QMCCostFunctionBase::Cost() {
    ERRORMSG("Going to stop now.")
    IsValid=false;
  } 
- //}
  return CostValue;
 }
 
@@ -451,10 +441,10 @@ QMCCostFunctionBase::Return_t QMCCostFunctionBase::Cost() {
   bool
   QMCCostFunctionBase::put(xmlNodePtr q) {
 
-    string useWeightStr("no");
+    //string useWeightStr("yes");
     string writeXmlPerStep("no");
     ParameterSet m_param;
-    m_param.add(useWeightStr,"useWeight","string");
+    //m_param.add(useWeightStr,"useWeight","string");
     m_param.add(writeXmlPerStep,"dumpXML","string");
     m_param.add(PowerE,"power","int");
     m_param.add(CorrelationFactor,"correlation","scalar");
@@ -464,7 +454,7 @@ QMCCostFunctionBase::Return_t QMCCostFunctionBase::Cost() {
     m_param.add(MinKE,"MinKE","scalar");
     m_param.put(q);
 
-    UseWeight = (useWeightStr == "yes");
+    //UseWeight = (useWeightStr == "yes");
     Write2OneXml = (writeXmlPerStep == "no");
 
     xmlNodePtr qsave=q;
@@ -616,20 +606,21 @@ QMCCostFunctionBase::Return_t QMCCostFunctionBase::Cost() {
     } 
     else 
     {
-      for(int i=0; i<cset.size(); i++){
-	string pname;
-	Return_t wgt=1.0;
-        OhmmsAttributeSet pAttrib;
-        pAttrib.add(pname,"name");
-        pAttrib.put(cset[i]);
-	if(pname == "energy") 
-	  putContent(w_en,cset[i]);
-	else if(pname == "variance") 
-	  putContent(w_var,cset[i]);
-        else if(pname == "difference")
-	  putContent(w_abs,cset[i]);
-        else if(pname == "NoReweightvariance")
-	  putContent(w_w,cset[i]);
+      for(int i=0; i<cset.size(); i++)
+      {
+				string pname;
+				Return_t wgt=1.0;
+				OhmmsAttributeSet pAttrib;
+				pAttrib.add(pname,"name");
+				pAttrib.put(cset[i]);
+				if(pname == "energy") 
+					putContent(w_en,cset[i]);
+				else if(pname == "variance") 
+					putContent(w_w,cset[i]);
+				else if(pname == "difference")
+					putContent(w_abs,cset[i]);
+				else if(pname == "reweightedVariance")
+					putContent(w_var,cset[i]);
       }
     }  
 
@@ -905,7 +896,7 @@ QMCCostFunctionBase::Return_t QMCCostFunctionBase::Cost() {
       //Psi.reportStatus(app_log());
       //return false;
       return true;
-    }
+    }    
 }
 /***************************************************************************
  * $RCSfile$   $Author: jnkim $

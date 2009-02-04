@@ -25,6 +25,7 @@
 #include "QMCDrivers/VMC/VMCFactory.h"
 #include "QMCDrivers/DMC/DMCFactory.h"
 #include "QMCDrivers/QMCOptimize.h"
+#include "QMCDrivers/ZeroVarianceOptimize.h"
 #include "QMCDrivers/RQMCMultiple.h"
 #include "QMCDrivers/RQMCMultiplePbyP.h"
 #if !defined(QMC_COMPLEX)
@@ -301,6 +302,7 @@ namespace qmcplusplus {
     else if(curRunType == OPTIMIZE_RUN)
     {
       QMCOptimize *opt = new QMCOptimize(*qmcSystem,*primaryPsi,*primaryH,*hamPool);
+      //ZeroVarianceOptimize *opt = new ZeroVarianceOptimize(*qmcSystem,*primaryPsi,*primaryH );
       opt->setWaveFunctionNode(psiPool->getWaveFunctionNode("null"));
       qmcDriver=opt;
     } 

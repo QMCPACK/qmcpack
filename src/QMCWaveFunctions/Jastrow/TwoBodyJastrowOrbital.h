@@ -19,7 +19,7 @@
 #include  <map>
 #include  <numeric>
 #include "QMCWaveFunctions/OrbitalBase.h"
-#include "QMCWaveFunctions/DiffOrbitalBase.h"
+#include "QMCWaveFunctions/Jastrow/DiffTwoBodyJastrowOrbital.h"
 #include "Particle/DistanceTableData.h"
 #include "Particle/DistanceTable.h"
 #include "LongRange/StructFact.h"
@@ -121,6 +121,7 @@ namespace qmcplusplus {
     {
       d_table = DistanceTable::add(P);
       PtclRef = &P;
+      if(dPsi) dPsi->resetTargetParticleSet(P);
     }
 
     /** check in an optimizable parameter
@@ -136,6 +137,8 @@ namespace qmcplusplus {
         (*it).second->checkInVariables(myVars);
         ++it;
       }
+      reportStatus(cout);
+      
     }
 
     /** check out optimizable variables
@@ -149,12 +152,12 @@ namespace qmcplusplus {
       {
         (*it++).second->checkOutVariables(active);
       }
-      //if(dPsi) dPsi->checkOutVariables(active);
+      if(dPsi) dPsi->checkOutVariables(active);
     }
 
     ///reset the value of all the unique Two-Body Jastrow functions
     void resetParameters(const opt_variables_type& active)
-    { 
+    {
       if(!Optimizable) return;
       typename std::map<std::string,FT*>::iterator it(J2Unique.begin()),it_end(J2Unique.end());
       while(it != it_end) 
@@ -162,11 +165,11 @@ namespace qmcplusplus {
         (*it++).second->resetParameters(active); 
       }
       if (FirstTime) {
-	app_log() << "  Chiesa kinetic energy correction = " 
+	    app_log() << "  Chiesa kinetic energy correction = " 
 		  << ChiesaKEcorrection() << endl;
-	FirstTime = false;
+	    FirstTime = false;
       }
-      //if(dPsi) dPsi->resetParameters(optVariables);
+      if(dPsi) dPsi->resetParameters( active );
       for(int i=0; i<myVars.size(); ++i)
       {
         int ii=myVars.Index[i];
@@ -540,6 +543,7 @@ namespace qmcplusplus {
     OrbitalBasePtr makeClone(ParticleSet& tqp) const
     {
       TwoBodyJastrowOrbital<FT>* j2copy=new TwoBodyJastrowOrbital<FT>(tqp);
+      if (dPsi) j2copy->dPsi = dPsi->makeClone(tqp);
       map<const FT*,FT*> fcmap;
       for(int ig=0; ig<NumGroups; ++ig)
         for(int jg=ig; jg<NumGroups; ++jg)
@@ -553,9 +557,12 @@ namespace qmcplusplus {
             stringstream aname;
             aname<<ig<<jg;
             j2copy->addFunc(aname.str(),ig,jg,fc);
+            //if (dPsi) (j2copy->dPsi)->addFunc(aname.str(),ig,jg,fc);
             fcmap[F[ij]]=fc;
           }
         }
+        
+        
       return j2copy;
     }
 

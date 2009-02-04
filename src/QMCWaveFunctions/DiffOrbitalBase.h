@@ -25,6 +25,7 @@
 namespace qmcplusplus {
 
 
+
   /**@defgroup OrbitalComponent Orbital group
    * @brief Base base class for derivatives of OrbitalBase
    *
@@ -92,7 +93,14 @@ namespace qmcplusplus {
 
     /** reset the parameters during optimizations
      */
-    virtual void resetParameters(opt_variables_type& optvars)=0;
+    virtual void resetParameters(const opt_variables_type& optvars)=0;
+    
+   /** make clone 
+     * @param tqp target Quantum ParticleSet
+     */
+    virtual DiffOrbitalBasePtr makeClone(ParticleSet& tqp) const;
+    
+
   };
 
   /** a generic DiffOrbitalBase using a finite-difference method for a single optimizable parameter.
@@ -123,7 +131,7 @@ namespace qmcplusplus {
   struct AnalyticDiffOrbital: public DiffOrbitalBase
   {
 
-    AnalyticDiffOrbital(OrbitalBase* orb=0): DiffOrbitalBase(orb), MyIndex(-1) {}
+    AnalyticDiffOrbital(OrbitalBase* orb=0): DiffOrbitalBase(orb)  { }
 
     void resetTargetParticleSet(ParticleSet& P);
     void evaluateDerivatives(ParticleSet& P, RealType ke0, 
@@ -132,12 +140,13 @@ namespace qmcplusplus {
         vector<RealType>& dhpsioverpsi);
     void checkOutVariables(const opt_variables_type& optvars);
     void resetParameters(opt_variables_type& optvars);
-    ///get the index in the variable list
-    int MyIndex;
+
     ///\f$\nabla \partial_{\alpha} log\Psi\f$
     GradVectorType gradLogPsi;
     ///\f$\nabla^2 \partial_{\alpha} log\Psi\f$
     ValueVectorType lapLogPsi;
+       ///get the index in the variable list
+    int MyIndex;
   };
 }
 #endif

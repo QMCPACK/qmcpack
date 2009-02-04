@@ -14,7 +14,7 @@
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 #include "QMCWaveFunctions/OrbitalBase.h"
-//#include "QMCWaveFunctions/DiffOrbitalBase.h"
+#include "QMCWaveFunctions/DiffOrbitalBase.h"
 //#include "QMCWaveFunctions/ProxyOrbital.h"
 
 namespace qmcplusplus {
@@ -38,26 +38,26 @@ namespace qmcplusplus {
   // }
 
 
-//  void OrbitalBase::setDiffOrbital(DiffOrbitalBasePtr d)
-//  {
-//#if defined(ENABLE_SMARTPOINTER)
-//    dPsi=DiffOrbitalBasePtr(d);
-//#else
-//    dPsi=d;
-//#endif
-//  }
-//
-//  void OrbitalBase::evaluateDerivatives(ParticleSet& P, RealType ke0, 
-//      const opt_variables_type& active,
-//      vector<RealType>& dlogpsi, vector<RealType>& dhpsioverpsi)
-//  {
-//#if defined(ENABLE_SMARTPOINTER)
-//    if(dPsi.get()) 
-//#else
-//    if(dPsi) 
-//#endif
-//      dPsi->evaluateDerivatives(P, ke0, active, dlogpsi, dhpsioverpsi);
-//  }
+  void OrbitalBase::setDiffOrbital(DiffOrbitalBasePtr d)
+  {
+#if defined(ENABLE_SMARTPOINTER)
+    dPsi=DiffOrbitalBasePtr(d);
+#else
+    dPsi=d;
+#endif
+  }
+ 
+  void OrbitalBase::evaluateDerivatives(ParticleSet& P, RealType ke0, 
+      const opt_variables_type& active,
+      vector<RealType>& dlogpsi, vector<RealType>& dhpsioverpsi)
+  {
+#if defined(ENABLE_SMARTPOINTER)
+    if(dPsi.get()) 
+#else
+    if(dPsi) 
+#endif
+      dPsi->evaluateDerivatives(P, ke0, active, dlogpsi, dhpsioverpsi);
+  }
 
   ///** makeClone uses optVars  to determine if it will make a clone (deepcopy) 
   // * or make a ProxyOrbital.

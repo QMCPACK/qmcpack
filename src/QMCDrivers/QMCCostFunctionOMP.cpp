@@ -28,6 +28,8 @@ namespace qmcplusplus {
 					  TrialWaveFunction& psi, QMCHamiltonian& h, HamiltonianPool& hpool):
 					  QMCCostFunctionBase(w,psi,h), CloneManager(hpool)
 					  { 
+					  	CSWeight=(1.0);
+  	          cout<<" Using QMCCostFunctionOMP::QMCCostFunctionOMP"<<endl;
 					  }
 					  
 					  
@@ -35,98 +37,109 @@ namespace qmcplusplus {
   QMCCostFunctionOMP::~QMCCostFunctionOMP() {
   }
   
-  /**  Perform the correlated sampling algorthim.
-  */
-  QMCCostFunctionOMP::Return_t QMCCostFunctionOMP::correlatedSampling() {
-    
-    Return_t wgt_tot=0.0;
-    Return_t wgt_bare=0.0;
-    Return_t wgt_bare2=0.0;
-    
-    //#pragma omp parallel reduction(+:wgt_tot)
-    #pragma omp parallel 
-    {
-      int ip = omp_get_thread_num();
-      bool usingWeight=UseWeight;
-      MCWalkerConfiguration& wRef(*wClones[ip]);
-      Return_t eloc_new, wgt_node=0.0, wgt_node_bare=0.0, wgt_bare2_node=0.0;
-      //int totalElements=W.getTotalNum()*OHMMS_DIM;
-      MCWalkerConfiguration::iterator it(wRef.begin()); 
-      MCWalkerConfiguration::iterator it_end(wRef.end()); 
-      int iw=0,iwg=wPerNode[ip];
-      for(; it!= it_end;++it,++iw,++iwg)
-      {
-				ParticleSet::Walker_t& thisWalker(**it);
-				wRef.R=thisWalker.R;
-				wRef.update();
-				Return_t logpsi=psiClones[ip]->evaluateDeltaLog(wRef);
-				wRef.G += *dLogPsi[iwg];
-				wRef.L += *d2LogPsi[iwg];
-				
-				Return_t* restrict saved = (*RecordsOnNode[ip])[iw];
-				RealType KEtemp = H_KE_Node[ip]->evaluate(wRef);
-				//if (KEtemp<MinKE) KEtemp=std::fabs(KEtemp-MinKE)+MinKE;
-				eloc_new = KEtemp + saved[ENERGY_FIXED];
-				Return_t this_bare_weight=(1.0);
-				Return_t weight = usingWeight? std::min(this_bare_weight = std::exp(2.0*(logpsi-saved[LOGPSI_FREE])),MaxWeight) :1.0;
-				if (KEtemp<MinKE) weight=0.0;
-			// 	Return_t weight = usingWeight?std::exp(2.0*(logpsi-saved[LOGPSI_FREE])):1.0;
-				saved[ENERGY_NEW]=eloc_new;
-				saved[REWEIGHT]=weight;
-				wgt_node+=weight;
-				wgt_node_bare+=this_bare_weight;
-				wgt_bare2_node+=this_bare_weight*this_bare_weight;
-      }
-      
-      #pragma omp atomic
-      wgt_tot += wgt_node;
-      #pragma omp atomic
-      wgt_bare += wgt_node_bare;
-      #pragma omp atomic
-      wgt_bare2 +=wgt_bare2_node;
+
+  void QMCCostFunctionOMP::GradCost(vector<Return_t>& PGradient, vector<Return_t> PM, Return_t FiniteDiff)
+  {
+  	if (FiniteDiff != 0)
+  	{
+			QMCTraits::RealType dh=1.0/(2.0*FiniteDiff);
+			for(int i=0; i<NumOptimizables ; i++) {
+				for(int j=0; j<NumOptimizables; j++) OptVariables[j]=PM[j];
+				OptVariables[i] = PM[i]+ FiniteDiff;
+				QMCTraits::RealType CostPlus = this->Cost(); 
+				OptVariables[i] = PM[i]- FiniteDiff;
+				QMCTraits::RealType CostMinus = this->Cost(); 
+				PGradient[i]= (CostPlus-CostMinus)*dh;
+			}
     }
-    
-//     for(int ip=0; ip<NumThreads; ip++)
-//     {
-//       int nw=wClones[ip]->getActiveWalkers();
-//       for(int iw=0; iw<nw;iw++) {
-//         const Return_t* restrict saved = (*RecordsOnNode[ip])[iw];
-// 	cout<<ip<<"  "<<iw<<"  "<<saved[ENERGY_NEW]<<"  "<<saved[ENERGY_TOT]<<"  "<<saved[LOGPSI_FREE]<<"  "<<saved[REWEIGHT]<<endl;
-//       }
-//     }
-    
-    //this is MPI barrier
-    //OHMMS::Controller->barrier();
-    //collect the total weight for normalization and apply maximum weight
-    myComm->allreduce(wgt_tot);
-    
-    for(int i=0; i<SumValue.size(); i++) SumValue[i]=0.0;
-    
-    wgt_tot=1.0/wgt_tot;  
-    for(int ip=0; ip<NumThreads; ip++)
+    else
     {
-      int nw=wClones[ip]->getActiveWalkers();
-      for(int iw=0; iw<nw;iw++) 
-      { 
-				const Return_t* restrict saved = (*RecordsOnNode[ip])[iw];
-				Return_t weight=saved[REWEIGHT]*wgt_tot;
-				Return_t eloc_new=saved[ENERGY_NEW];
-				Return_t delE=std::pow(abs(eloc_new-EtargetEff),PowerE);
-				SumValue[SUM_E_BARE] += eloc_new;
-				SumValue[SUM_ESQ_BARE] += eloc_new*eloc_new;
-				SumValue[SUM_ABSE_BARE] += delE;
-				SumValue[SUM_E_WGT] += eloc_new*saved[REWEIGHT];
-				SumValue[SUM_ESQ_WGT] += eloc_new*eloc_new*saved[REWEIGHT];
-				SumValue[SUM_ABSE_WGT] += delE*saved[REWEIGHT];
-				SumValue[SUM_WGT] += saved[REWEIGHT];
-				SumValue[SUM_WGTSQ] += saved[REWEIGHT]*saved[REWEIGHT];
-      }
+    	for(int j=0; j<NumOptimizables; j++) OptVariables[j]=PM[j];
+    	 resetPsi();
+ 
+			 //evaluate new local energies and derivatives
+			 NumWalkersEff=correlatedSampling( );
+			 //Estimators::accumulate has been called by correlatedSampling
+
+
+			 curAvg_w = SumValue[SUM_E_WGT]/SumValue[SUM_WGT];
+			 Return_t curAvg2_w = curAvg_w*curAvg_w;
+       curVar_w = SumValue[SUM_ESQ_WGT]/SumValue[SUM_WGT]-curAvg_w*curAvg_w;
+			vector<Return_t> EDtotals(NumOptimizables,0.0);
+			vector<Return_t> E2Dtotals(NumOptimizables,0.0);
+			vector<Return_t> EDtotals_w(NumOptimizables,0.0);
+			vector<Return_t> E2Dtotals_w(NumOptimizables,0.0);
+			vector<Return_t> URV(NumOptimizables,0.0);
+			vector<Return_t> HD_avg(NumOptimizables,0.0);
+			Return_t e2(0.0);
+
+
+			for(int ip=0, wn=0; ip<NumThreads; ip++)
+			{
+				int nw=wClones[ip]->getActiveWalkers();
+				for(int iw=0; iw<nw;iw++,wn++) 
+				{
+					const Return_t* restrict saved = (*RecordsOnNode[ip])[iw];
+					Return_t weight=saved[REWEIGHT]*CSWeight;
+					Return_t eloc_new=saved[ENERGY_NEW];
+					e2 += eloc_new*eloc_new*weight;
+					vector<Return_t> Dsaved= (*TempDerivRecords[ip])[iw];
+					vector<Return_t> HDsaved= (*TempHDerivRecords[ip])[iw];
+					for(int pm=0; pm<NumOptimizables;pm++) 
+					{
+						HD_avg[pm]+= HDsaved[pm];
+						Return_t val = (HDsaved[pm] + 2.0*(eloc_new - curAvg_w)*Dsaved[pm]);
+						EDtotals[pm] +=  val;
+						EDtotals_w[pm] += weight*val;
+					}
+				}
+			}
+			myComm->allreduce(EDtotals);
+			myComm->allreduce(EDtotals_w);
+			myComm->allreduce(HD_avg);
+			
+			Return_t wgtinv=1.0/static_cast<Return_t>(NumSamples);
+			curAvg = SumValue[SUM_E_BARE]*wgtinv;
+			for(int pm=0; pm<NumOptimizables;pm++)  HD_avg[pm] *=wgtinv;
+			Return_t weightFrac(0.0);
+			for(int ip=0, wn=0; ip<NumThreads; ip++)
+			{
+				int nw=wClones[ip]->getActiveWalkers();
+				for(int iw=0; iw<nw;iw++,wn++) 
+				{
+					const Return_t* restrict saved = (*RecordsOnNode[ip])[iw];
+					Return_t weight=saved[REWEIGHT]*CSWeight;
+					Return_t eloc_new=saved[ENERGY_NEW];
+					vector<Return_t> Dsaved= (*TempDerivRecords[ip])[iw];
+					vector<Return_t> HDsaved= (*TempHDerivRecords[ip])[iw];
+					for(int pm=0; pm<NumOptimizables;pm++) 
+					{
+						URV[pm] += 2.0*(eloc_new*HDsaved[pm] - curAvg*HD_avg[pm]);
+						Return_t val =  2.0*(eloc_new*eloc_new - e2)*Dsaved[pm] 
+						                + 2.0*eloc_new*(HDsaved[pm])
+						                - 2.0*curAvg_w*EDtotals_w[pm];
+						E2Dtotals[pm] += val ;
+						E2Dtotals_w[pm] += val * weight;
+					}
+				}
+			}
+			myComm->allreduce(E2Dtotals);
+			myComm->allreduce(E2Dtotals_w);
+			myComm->allreduce(URV);
+			
+			for(int pm=0; pm<NumOptimizables;pm++)  URV[pm] *=wgtinv;
+      for(int j=0; j<NumOptimizables; j++) PGradient[j] = (w_var*E2Dtotals_w[j] + w_en*EDtotals_w[j] + w_w*URV[j]) ;
+
+			 IsValid=true;
+
+			 if((CSWeight/wgtinv) < MinNumWalkers) {
+				 ERRORMSG("CostFunction-> Number of Effective Walkers is too small " << (CSWeight/wgtinv))
+				 //ERRORMSG("Going to stop now.")
+				 IsValid=false;
+			 }
     }
-    //collect everything
-    myComm->allreduce(SumValue);
-    return wgt_bare*wgt_bare/wgt_bare2;
-    //return SumValue[SUM_WGT]*SumValue[SUM_WGT]/SumValue[SUM_WGTSQ];
   }
+  
   
   void 
   QMCCostFunctionOMP::getConfigurations(const string& aroot) {
@@ -138,6 +151,10 @@ namespace qmcplusplus {
       //make H_KE_Node
       H_KE_Node.resize(NumThreads,0);
       RecordsOnNode.resize(NumThreads,0);
+      //DerivRecords.resize(NumThreads );
+      //HDerivRecords.resize(NumThreads );
+      TempDerivRecords.resize(NumThreads,0 );
+      TempHDerivRecords.resize(NumThreads,0 );
     }
     
     app_log() << "   Loading configuration from MCWalkerConfiguration::SampleStack " << endl;
@@ -150,8 +167,8 @@ namespace qmcplusplus {
     {
       if(H_KE_Node[ip]==0)
       {
-	H_KE_Node[ip]= new QMCHamiltonian;
-	H_KE_Node[ip]->addOperator(hClones[ip]->getHamiltonian("Kinetic"),"Kinetic");
+				H_KE_Node[ip]= new QMCHamiltonian;
+				H_KE_Node[ip]->addOperator(hClones[ip]->getHamiltonian("Kinetic"),"Kinetic");
       }
       wClones[ip]->loadEnsemble();
     }
@@ -197,9 +214,16 @@ namespace qmcplusplus {
     {
       int ip = omp_get_thread_num();
       MCWalkerConfiguration& wRef(*wClones[ip]);
-      if(RecordsOnNode[ip] ==0) RecordsOnNode[ip]=new Matrix<Return_t>;
-      RecordsOnNode[ip]->resize(wRef.getActiveWalkers(),SUM_INDEX_SIZE);
-      
+      if(RecordsOnNode[ip] ==0) 
+      {
+      	RecordsOnNode[ip]=new Matrix<Return_t>;
+        RecordsOnNode[ip]->resize(wRef.getActiveWalkers(),SUM_INDEX_SIZE);
+        //DerivRecords[ip]=new vector<vector<Return_t> >(wRef.getActiveWalkers() , vector<Return_t>(0.0,NumOptimizables));
+        //HDerivRecords[ip]=new vector<vector<Return_t> >(wRef.getActiveWalkers() , vector<Return_t>(0.0,NumOptimizables));
+        TempDerivRecords[ip]=new vector<vector<Return_t> >(wRef.getActiveWalkers() , vector<Return_t>(NumOptimizables,0.0));
+        TempHDerivRecords[ip]=new vector<vector<Return_t> >(wRef.getActiveWalkers() , vector<Return_t>(NumOptimizables,0.0));
+      }
+          
       //int nat = wRef.getTotalNum();
       //int totalElements=W.getTotalNum()*OHMMS_DIM;
       Return_t e0=0.0;
@@ -209,17 +233,29 @@ namespace qmcplusplus {
       int iw=0,iwg=wPerNode[ip];
       for(; it!=it_end; ++it,++iw,++iwg)
       {
-	
-	ParticleSet::Walker_t& thisWalker(**it);
-	wRef.R=thisWalker.R;
-	wRef.update();
-	Return_t* restrict saved=(*RecordsOnNode[ip])[iw];
-	psiClones[ip]->evaluateDeltaLog(wRef, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], *dLogPsi[iwg],*d2LogPsi[iwg]);
-	Return_t x= hClones[ip]->evaluate(wRef);
-	e0 += saved[ENERGY_TOT] = x;
-	e2 += x*x;
-	saved[ENERGY_FIXED] = hClones[ip]->getLocalPotential();
-	thisWalker.Weight=1.0;
+				
+				ParticleSet::Walker_t& thisWalker(**it);
+				wRef.R=thisWalker.R;
+				wRef.update();
+				Return_t* restrict saved=(*RecordsOnNode[ip])[iw];
+				//vector<Return_t> Dsaved= (*DerivRecords[ip])[iw];
+				//vector<Return_t> HDsaved= (*HDerivRecords[ip])[iw];
+				psiClones[ip]->evaluateDeltaLog(wRef, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], *dLogPsi[iwg],*d2LogPsi[iwg]);
+				Return_t x= hClones[ip]->evaluate(wRef);
+				e0 += saved[ENERGY_TOT] = x;
+				e2 += x*x;
+				saved[ENERGY_FIXED] = hClones[ip]->getLocalPotential();
+				thisWalker.Weight=1.0;
+				
+
+        vector<Return_t>* Dsaved= &((*TempDerivRecords[ip])[iw]);
+	      vector<Return_t>* HDsaved= &((*TempHDerivRecords[ip])[iw]);
+	      psiClones[ip]->evaluateDerivatives(wRef,0.0,OptVariablesForPsi,*Dsaved,*HDsaved);
+				//for(int l=0; l<NumOptimizables; l++) (*HDsaved)[l] += saved[ENERGY_FIXED]* (*Dsaved)[l];
+				//for(int l=0; l<NumOptimizables; l++) cout<<HDsaved[l]<<"  "<<Dsaved[l];
+				//cout<<endl;
+
+
       }
       //add them all
       #pragma omp atomic
@@ -251,8 +287,7 @@ namespace qmcplusplus {
   {
     if(OptVariables.size() < OptVariablesForPsi.size())
     {
-      for(int i=0; i<equalVarMap.size(); ++i)
-	OptVariablesForPsi[equalVarMap[i][0]]=OptVariables[equalVarMap[i][1]];
+      for(int i=0; i<equalVarMap.size(); ++i) OptVariablesForPsi[equalVarMap[i][0]]=OptVariables[equalVarMap[i][1]];
     }
     else
       for(int i=0; i<OptVariables.size(); ++i) OptVariablesForPsi[i]=OptVariables[i];
@@ -267,6 +302,94 @@ namespace qmcplusplus {
     
   }
   
+  QMCCostFunctionOMP::Return_t QMCCostFunctionOMP::correlatedSampling( ) {
+    
+    Return_t wgt_tot=0.0;
+    Return_t wgt_bare=0.0;
+    Return_t wgt_bare2=0.0;
+    
+    //#pragma omp parallel reduction(+:wgt_tot)
+    #pragma omp parallel 
+    {
+      int ip = omp_get_thread_num();
+      //bool usingWeight=UseWeight;
+      MCWalkerConfiguration& wRef(*wClones[ip]);
+      Return_t eloc_new, wgt_node=0.0, wgt_node_bare=0.0, wgt_bare2_node=0.0;
+      //int totalElements=W.getTotalNum()*OHMMS_DIM;
+      MCWalkerConfiguration::iterator it(wRef.begin()); 
+      MCWalkerConfiguration::iterator it_end(wRef.end()); 
+      int iw=0,iwg=wPerNode[ip];
+      for(; it!= it_end;++it,++iw,++iwg)
+      {
+				ParticleSet::Walker_t& thisWalker(**it);
+				wRef.R=thisWalker.R;
+				wRef.update();
+				Return_t logpsi=psiClones[ip]->evaluateDeltaLog(wRef);
+				wRef.G += *dLogPsi[iwg];
+				wRef.L += *d2LogPsi[iwg];
+				
+				Return_t* restrict saved = (*RecordsOnNode[ip])[iw];
+				RealType KEtemp = H_KE_Node[ip]->evaluate(wRef);
+				//if (KEtemp<MinKE) KEtemp=std::fabs(KEtemp-MinKE)+MinKE;
+				eloc_new = KEtemp + saved[ENERGY_FIXED];
+				Return_t this_bare_weight=(1.0);
+				Return_t weight = std::min(this_bare_weight = std::exp(2.0*(logpsi-saved[LOGPSI_FREE])),MaxWeight) ;
+				if (KEtemp<MinKE) weight=0.0;
+			// 	Return_t weight = usingWeight?std::exp(2.0*(logpsi-saved[LOGPSI_FREE])):1.0;
+				saved[ENERGY_NEW]=eloc_new;
+				saved[REWEIGHT]=weight;
+				
+				vector<Return_t>* Dsaved= &((*TempDerivRecords[ip])[iw]);
+	      vector<Return_t>* HDsaved= &((*TempHDerivRecords[ip])[iw]);
+	      psiClones[ip]->evaluateDerivatives(wRef,KEtemp,OptVariablesForPsi,*Dsaved,*HDsaved);
+				//for(int l=0; l<NumOptimizables; l++) (*HDsaved)[l] += saved[ENERGY_FIXED]* (*Dsaved)[l];
+
+				wgt_node+=weight;
+				wgt_node_bare+=this_bare_weight;
+				wgt_bare2_node+=this_bare_weight*this_bare_weight;
+      }
+      
+      #pragma omp atomic
+      wgt_tot += wgt_node;
+      #pragma omp atomic
+      wgt_bare += wgt_node_bare;
+      #pragma omp atomic
+      wgt_bare2 +=wgt_bare2_node;
+    }
+    
+    //this is MPI barrier
+    //OHMMS::Controller->barrier();
+    //collect the total weight for normalization and apply maximum weight
+    myComm->allreduce(wgt_tot);
+    
+    for(int i=0; i<SumValue.size(); i++) SumValue[i]=0.0;
+    
+    CSWeight=wgt_tot=1.0/wgt_tot;  
+    for(int ip=0; ip<NumThreads; ip++)
+    {
+      int nw=wClones[ip]->getActiveWalkers();
+      for(int iw=0; iw<nw;iw++) 
+      { 
+				const Return_t* restrict saved = (*RecordsOnNode[ip])[iw];
+				Return_t weight=saved[REWEIGHT]*wgt_tot;
+				Return_t eloc_new=saved[ENERGY_NEW];
+				Return_t delE=std::pow(abs(eloc_new-EtargetEff),PowerE);
+				SumValue[SUM_E_BARE] += eloc_new;
+				SumValue[SUM_ESQ_BARE] += eloc_new*eloc_new;
+				SumValue[SUM_ABSE_BARE] += delE;
+				SumValue[SUM_E_WGT] += eloc_new*saved[REWEIGHT];
+				SumValue[SUM_ESQ_WGT] += eloc_new*eloc_new*saved[REWEIGHT];
+				SumValue[SUM_ABSE_WGT] += delE*saved[REWEIGHT];
+				SumValue[SUM_WGT] += saved[REWEIGHT];
+				SumValue[SUM_WGTSQ] += saved[REWEIGHT]*saved[REWEIGHT];
+      }
+    }
+    //collect everything
+    myComm->allreduce(SumValue);
+    return wgt_bare*wgt_bare/wgt_bare2;
+    //return SumValue[SUM_WGT]*SumValue[SUM_WGT]/SumValue[SUM_WGTSQ];
+  }
+    
 }
 /***************************************************************************
 * $RCSfile$   $Author: jnkim $

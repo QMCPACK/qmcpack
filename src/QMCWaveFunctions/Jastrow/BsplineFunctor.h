@@ -207,7 +207,9 @@ namespace qmcplusplus {
 
       real_type tp[4];
       tp[0] = t*t*t;  tp[1] = t*t;  tp[2] = t;  tp[3] = 1.0;
-
+      
+      SplineDerivs[0] = TinyVector<real_type,3>(0.0);
+      
       // d/dp_i u(r)
       SplineDerivs[i+0][0] = A[ 0]*tp[0] + A[ 1]*tp[1] + A[ 2]*tp[2] + A[ 3]*tp[3];
       SplineDerivs[i+1][0] = A[ 4]*tp[0] + A[ 5]*tp[1] + A[ 6]*tp[2] + A[ 7]*tp[3];

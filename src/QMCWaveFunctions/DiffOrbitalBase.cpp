@@ -24,6 +24,12 @@ namespace qmcplusplus {
     if(orb) refOrbital.push_back(orb);
   }
 
+  DiffOrbitalBasePtr DiffOrbitalBase::makeClone(ParticleSet& tpq) const
+  {
+    APP_ABORT("Implement DiffOrbitalBase::makeClone for this orbital");
+    return 0;
+  }
+  
   void NumericalDiffOrbital::resetTargetParticleSet(ParticleSet& P)
   {
     int nptcls=P.getTotalNum();

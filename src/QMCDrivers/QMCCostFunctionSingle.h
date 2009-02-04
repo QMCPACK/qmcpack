@@ -40,7 +40,11 @@ namespace qmcplusplus {
 
     void getConfigurations(const string& aroot);
     void checkConfigurations();
+    void GradCost(vector<QMCTraits::RealType>& PGradient, vector<QMCTraits::RealType> PM, QMCTraits::RealType FiniteDiff=0) ;
   protected:
+    vector<vector<Return_t> > TempDerivRecords;
+    vector<vector<Return_t> > TempHDerivRecords;
+    Return_t CSWeight;
     void resetPsi();
     Return_t correlatedSampling();
   };

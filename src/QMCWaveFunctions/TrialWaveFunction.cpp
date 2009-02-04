@@ -554,6 +554,17 @@ namespace qmcplusplus {
     return myclone;
 
   }
+  
+  void TrialWaveFunction::evaluateDerivatives(ParticleSet& P, RealType ke0, 
+        const opt_variables_type& optvars,
+        vector<RealType>& dlogpsi,
+        vector<RealType>& dhpsioverpsi)
+	{
+	  for(int i=0; i<Z.size(); i++)
+	  {
+	  	if (Z[i]->dPsi) (Z[i]->dPsi)->evaluateDerivatives( P, ke0, optvars, dlogpsi, dhpsioverpsi); 
+	  }
+	}
 
   TrialWaveFunction::RealType
   TrialWaveFunction::KECorrection() const

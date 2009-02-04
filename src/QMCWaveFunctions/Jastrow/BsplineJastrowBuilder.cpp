@@ -18,7 +18,9 @@
 #include "QMCWaveFunctions/Jastrow/BsplineJastrowBuilder.h"
 #include "QMCWaveFunctions/Jastrow/BsplineFunctor.h"
 #include "QMCWaveFunctions/Jastrow/OneBodyJastrowOrbital.h"
+#include "QMCWaveFunctions/Jastrow/DiffOneBodyJastrowOrbital.h"
 #include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbital.h"
+#include "QMCWaveFunctions/Jastrow/DiffTwoBodyJastrowOrbital.h"
 #include "Utilities/ProgressReportEngine.h"
 
 namespace qmcplusplus {
@@ -35,10 +37,10 @@ namespace qmcplusplus {
     if (sourcePtcl) 
     {
       typedef OneBodyJastrowOrbital<RadFuncType> J1Type;
-      //typedef DiffOneBodyJastrowOrbital<RadFuncType> dJ1Type;
+      typedef DiffOneBodyJastrowOrbital<RadFuncType> dJ1Type;
 
       J1Type *J1 = new J1Type(*sourcePtcl, targetPtcl);
-      //dJ1Type *dJ1 = new dJ1Type(*sourcePtcl, targetPtcl);
+      dJ1Type *dJ1 = new dJ1Type(*sourcePtcl, targetPtcl);
 
       // Find the number of the source species
       SpeciesSet &sSet = sourcePtcl->getSpeciesSet();
@@ -71,7 +73,7 @@ namespace qmcplusplus {
 	    }
             J1->addFunc (ig,functor);
 	    success = true;
-            //dJ1->addFunc(ig,functor);
+            dJ1->addFunc(ig,functor);
             if(ReportLevel) 
             {
               string fname="J1."+elementType+".dat";
@@ -90,7 +92,7 @@ namespace qmcplusplus {
         //assign derivatives to J1
         //dJ1->initialize();
         //J1->setDiffOrbital(dJ1);
-        //J1->dPsi=dJ1;
+        J1->dPsi=dJ1;
 
         targetPsi.addOrbital(J1,"J1_bspline");
         J1->setOptimizable(true);
@@ -99,17 +101,17 @@ namespace qmcplusplus {
       {
         PRE.warning("BsplineJastrowBuilder failed to add an One-Body Jastrow.");
         delete J1;
-        //delete dJ1;
+        delete dJ1;
       }
     } 
     // Create a two-body Jastrow
     else 
     {
       typedef TwoBodyJastrowOrbital<BsplineFunctor<RealType> > J2Type;
-      //typedef DiffTwoBodyJastrowOrbital<BsplineFunctor<RealType> > dJ2Type;
+      typedef DiffTwoBodyJastrowOrbital<BsplineFunctor<RealType> > dJ2Type;
 
       J2Type *J2 = new J2Type(targetPtcl);
-      //dJ2Type *dJ2 = new dJ2Type(targetPtcl);
+      dJ2Type *dJ2 = new dJ2Type(targetPtcl);
 
       SpeciesSet& species(targetPtcl.getSpeciesSet());
       RealType q=species(0,species.addAttribute("charge"));
@@ -170,7 +172,7 @@ namespace qmcplusplus {
 	  }
 
           J2->addFunc(pairType,ia,ib,functor);
-          //dJ2->addFunc(pairType,ia,ib,functor);
+          dJ2->addFunc(pairType,ia,ib,functor);
 
           if(ReportLevel) 
           {
@@ -185,6 +187,7 @@ namespace qmcplusplus {
       }
       //dJ2->initialize();
       //J2->setDiffOrbital(dJ2);
+      J2->dPsi=dJ2;
       targetPsi.addOrbital(J2,"J2_bspline");
       J2->setOptimizable(true);
     }

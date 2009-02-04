@@ -21,6 +21,7 @@
 
 #include "Message/MPIObjectBase.h"
 #include "QMCWaveFunctions/OrbitalBase.h"
+#include "QMCWaveFunctions/DiffOrbitalBase.h"
 #include "Utilities/NewTimer.h"
 /**@defgroup MBWfs Many-body wave function group
  * @brief Classes to handle many-body trial wave functions
@@ -145,6 +146,11 @@ namespace qmcplusplus {
     void dumpFromBuffer(ParticleSet& P, BufferType& buf);
 
     RealType KECorrection() const;
+    
+    void evaluateDerivatives(ParticleSet& P, RealType ke0, 
+        const opt_variables_type& optvars,
+        vector<RealType>& dlogpsi,
+        vector<RealType>& dhpsioverpsi);
 
     /** evalaute the values of the wavefunction, gradient and laplacian  for all the walkers */
     //void evaluate(WalkerSetRef& W, OrbitalBase::ValueVectorType& psi);

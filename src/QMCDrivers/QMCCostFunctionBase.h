@@ -44,7 +44,7 @@ namespace qmcplusplus {
     enum SumIndex_OPT {SUM_E_BARE=0, SUM_ESQ_BARE, SUM_ABSE_BARE,
       SUM_E_WGT, SUM_ESQ_WGT, SUM_ABSE_WGT, SUM_WGT, SUM_WGTSQ,
       SUM_INDEX_SIZE};
-
+    
 
     ///Constructor.
     QMCCostFunctionBase(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h);
@@ -60,6 +60,8 @@ namespace qmcplusplus {
     Return_t Params(int i) const { return OptVariables[i]; }
     ///return the cost value for CGMinimization
     Return_t Cost();
+    ///return the gradient of cost value for CGMinimization
+    virtual void GradCost(vector<Return_t>& PGradient, vector<Return_t> PM, Return_t FiniteDiff=0) {};
     ///return the number of optimizable parameters
     inline int NumParams() { return OptVariables.size(); }
     ///return the number of optimizable parameters
@@ -114,8 +116,8 @@ namespace qmcplusplus {
     ///Hamiltonian
     QMCHamiltonian& H;
 
-    ///boolean to turn on/off the psi^2/psi^2_old for correlated sampling
-    bool UseWeight;
+    /////boolean to turn on/off the psi^2/psi^2_old for correlated sampling
+    //bool UseWeight;
     ///bollean to turn on/off the use of anonymous buffer
     bool needBuffering;
     ///bollean to turn on/off the use of anonymous buffer for the ratio
@@ -219,6 +221,12 @@ namespace qmcplusplus {
      * field_id is one of FieldIndex_opt
      */
     Matrix<Return_t> Records;
+    ///** Saved derivative properties and Hderivative properties of all the walkers
+    //*/
+    //vector<vector<vector<Return_t> >* > DerivRecords;
+    //vector<vector<vector<Return_t> >* > HDerivRecords;
+    
+    
     typedef ParticleSet::ParticleGradient_t ParticleGradient_t;
     typedef ParticleSet::ParticleLaplacian_t ParticleLaplacian_t;
     ///** Fixed  Gradients , \f$\nabla\ln\Psi\f$, components */

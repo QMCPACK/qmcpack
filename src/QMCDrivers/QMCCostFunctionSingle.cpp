@@ -27,7 +27,9 @@ namespace qmcplusplus {
 
   QMCCostFunctionSingle::QMCCostFunctionSingle(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h):
     QMCCostFunctionBase(w,psi,h)
-  { 
+  {
+  	CSWeight=(1.0); 
+  	cout<<" Using QMCCostFunctionSingle::QMCCostFunctionSingle"<<endl;
   }
 
   /** Clean up the vector */
@@ -43,6 +45,7 @@ namespace qmcplusplus {
     //int totalElements=W.getTotalNum()*OHMMS_DIM;
 
     Return_t wgt_tot=0.0;
+    //bool usingWeight=UseWeight;
     MCWalkerConfiguration::iterator it(W.begin()); 
     MCWalkerConfiguration::iterator it_end(W.end()); 
     int iw=0;
@@ -55,9 +58,22 @@ namespace qmcplusplus {
       Return_t logpsi=Psi.evaluateDeltaLog(W);
       W.G += *dLogPsi[iw];
       W.L += *d2LogPsi[iw];
+      
+			RealType KEtemp = H_KE.evaluate(W); 
+			Return_t eloc_new = KEtemp + saved[ENERGY_FIXED];
+			Return_t this_bare_weight=(1.0);
+			Return_t weight = std::min(this_bare_weight = std::exp(2.0*(logpsi-saved[LOGPSI_FREE])),MaxWeight) ;
+			//Return_t weight = usingWeight?std::min(this_bare_weight = std::exp(2.0*(logpsi-saved[LOGPSI_FREE])),MaxWeight):1.0 ;
+			if (KEtemp<MinKE) weight=0.0;
 
-      Return_t eloc_new=H_KE.evaluate(W)+saved[ENERGY_FIXED];
-      Return_t weight = UseWeight?std::exp(2.0*(logpsi-saved[LOGPSI_FREE])):1.0;
+      //Return_t eloc_new=+saved[ENERGY_FIXED];
+      //Return_t weight = UseWeight?std::exp(2.0*(logpsi-saved[LOGPSI_FREE])):1.0;
+      
+			vector<Return_t>* Dsaved= &(TempDerivRecords[iw]) ;
+			vector<Return_t>* HDsaved= &(TempHDerivRecords[iw]) ;
+			Psi.evaluateDerivatives(W,KEtemp,OptVariables,*Dsaved,*HDsaved);
+			for(int l=0; l<NumOptimizables; l++) (*HDsaved)[l] += saved[ENERGY_FIXED] * (*Dsaved)[l];
+
 
       saved[ENERGY_NEW]=eloc_new;
       saved[REWEIGHT]=weight;
@@ -68,25 +84,23 @@ namespace qmcplusplus {
     myComm->allreduce(wgt_tot);
 
     for(int i=0; i<SumValue.size(); i++) SumValue[i]=0.0;
-    wgt_tot=1.0/wgt_tot;
+    CSWeight=wgt_tot=1.0/wgt_tot;
 
-    Return_t wgt_max=MaxWeight*wgt_tot;
     int nw=W.getActiveWalkers();
     for(iw=0; iw<nw;iw++) {
       Return_t* restrict saved = Records[iw];
-      Return_t weight=saved[REWEIGHT]*wgt_tot;
-      Return_t eloc_new=saved[ENERGY_NEW];
-
-      weight = (weight>wgt_max)? wgt_max:weight;
-      Return_t delE=std::pow(abs(eloc_new-EtargetEff),PowerE);
-      SumValue[SUM_E_BARE] += eloc_new;
-      SumValue[SUM_ESQ_BARE] += eloc_new*eloc_new;
-      SumValue[SUM_ABSE_BARE] += delE;
-      SumValue[SUM_E_WGT] += eloc_new*weight;
-      SumValue[SUM_ESQ_WGT] += eloc_new*eloc_new*weight;
-      SumValue[SUM_ABSE_WGT] += delE*weight;
-      SumValue[SUM_WGT] += weight;
-      SumValue[SUM_WGTSQ] += weight*weight;
+				Return_t weight=saved[REWEIGHT]*wgt_tot;
+				Return_t eloc_new=saved[ENERGY_NEW];
+				Return_t delE=std::pow(abs(eloc_new-EtargetEff),PowerE);
+				SumValue[SUM_E_BARE] += eloc_new;
+				SumValue[SUM_ESQ_BARE] += eloc_new*eloc_new;
+				SumValue[SUM_ABSE_BARE] += delE;
+				SumValue[SUM_E_WGT] += eloc_new*saved[REWEIGHT];
+				SumValue[SUM_ESQ_WGT] += eloc_new*eloc_new*saved[REWEIGHT];
+				SumValue[SUM_ABSE_WGT] += delE*saved[REWEIGHT];
+				SumValue[SUM_WGT] += saved[REWEIGHT];
+				SumValue[SUM_WGTSQ] += saved[REWEIGHT]*saved[REWEIGHT];
+        SumValue[SUM_WGTSQ] += weight*weight;
     }
 
     //collect everything
@@ -166,6 +180,9 @@ namespace qmcplusplus {
     //dL.resize(W.getTotalNum());
     int numLocWalkers=W.getActiveWalkers();
     Records.resize(numLocWalkers,6);
+    
+		TempHDerivRecords.resize(numLocWalkers,vector<Return_t>(NumOptimizables,0));
+		TempDerivRecords.resize(numLocWalkers,vector<Return_t>(NumOptimizables,0));
 
     typedef MCWalkerConfiguration::Walker_t Walker_t;
     MCWalkerConfiguration::iterator it(W.begin()); 
@@ -214,6 +231,101 @@ namespace qmcplusplus {
     }
     else
       for(int i=0; i<OptVariables.size(); ++i) OptVariablesForPsi[i]=OptVariables[i];
+      
+      Psi.resetParameters(OptVariablesForPsi);
+  }
+  
+  
+    void QMCCostFunctionSingle::GradCost(vector<Return_t>& PGradient, vector<Return_t> PM, Return_t FiniteDiff)
+  {
+  	if (FiniteDiff)
+  	{
+  		
+			Return_t dh=1.0/(2.0*FiniteDiff);
+			for(int i=0; i<NumOptimizables ; i++) {
+				for(int j=0; j<NumOptimizables; j++) OptVariables[j]=PM[j];
+				OptVariables[i] = PM[i]+ FiniteDiff;
+				Return_t CostPlus = this->Cost(); 
+				OptVariables[i] = PM[i]- FiniteDiff;
+				Return_t CostMinus = this->Cost(); 
+				PGradient[i]= (CostPlus-CostMinus)*dh;
+			}
+    }
+    else
+    {
+    	for(int j=0; j<NumOptimizables; j++) OptVariables[j]=PM[j];
+    	 resetPsi();
+ 
+			 //evaluate new local energies and derivatives
+			 NumWalkersEff=correlatedSampling( );
+			  //Estimators::accumulate has been called by correlatedSampling
+
+
+			 curAvg_w = SumValue[SUM_E_WGT]/SumValue[SUM_WGT];
+			 Return_t curAvg2_w = curAvg_w*curAvg_w;
+				
+			vector<Return_t> EDtotals(NumParams(),0.0);
+			vector<Return_t> E2Dtotals(NumParams(),0.0);
+			vector<Return_t> EDtotals_w(NumParams(),0.0);
+			vector<Return_t> E2Dtotals_w(NumParams(),0.0);
+
+
+ 
+				int nw=W.getActiveWalkers();
+				for(int iw=0; iw<nw;iw++) 
+				{
+					Return_t*  saved=Records[iw];
+					Return_t weight=saved[REWEIGHT]*CSWeight;
+					Return_t eloc_new=saved[ENERGY_NEW];
+					Return_t delta_eloc_new=eloc_new-curAvg_w;
+					vector<Return_t> Dsaved= TempDerivRecords[iw];
+					vector<Return_t> HDsaved= TempHDerivRecords[iw];
+					for(int pm=0; pm<NumOptimizables;pm++) 
+					{
+						//Return_t val = (HDsaved[pm] + 2.0*(eloc_new - curAvg_w)*Dsaved[pm]);
+						Return_t val = ( 2.0*(eloc_new - curAvg_w)*Dsaved[pm]);
+						EDtotals[pm] +=  val;
+						EDtotals_w[pm] += weight*val;
+					}
+				} 
+			myComm->allreduce(EDtotals);
+			myComm->allreduce(EDtotals_w);
+ 
+				for(int iw=0; iw<nw;iw++) 
+				{
+					Return_t*  saved=Records[iw];
+					Return_t weight=saved[REWEIGHT]*CSWeight;
+					Return_t eloc_new=saved[ENERGY_NEW];
+					Return_t delta_eloc_new=eloc_new-curAvg_w;
+					vector<Return_t> Dsaved= TempDerivRecords[iw];
+					vector<Return_t> HDsaved= TempHDerivRecords[iw];
+					for(int pm=0; pm<NumOptimizables;pm++) 
+					{
+						//Return_t val =  (delta_eloc_new*delta_eloc_new - curVar_w)*Dsaved[pm] +
+						   //delta_eloc_new*((HDsaved[pm] + (eloc_new - 2.0*curAvg_w)*Dsaved[pm]) - EDtotals_w[pm] );
+					  Return_t val0 = ( 2.0*(eloc_new - curAvg_w)*Dsaved[pm]);
+						Return_t val = Dsaved[pm]*((eloc_new*eloc_new-curAvg2_w) - (curVar_w))
+						               + eloc_new*val0 - curAvg_w*EDtotals_w[pm] ;
+						E2Dtotals[pm] += 2.0*val ;
+						E2Dtotals_w[pm] += 2.0*val * weight;
+					}
+				}
+
+			myComm->allreduce(E2Dtotals);
+			myComm->allreduce(E2Dtotals_w);
+			
+			for(int j=0; j<NumOptimizables; j++) PGradient[j] = w_en*E2Dtotals_w[j] + w_var*EDtotals_w[j];
+
+
+
+			 IsValid=true;
+
+			 if(NumWalkersEff < MinNumWalkers) {
+				 ERRORMSG("CostFunction-> Number of Effective Walkers is too small " << NumWalkersEff)
+				 ERRORMSG("Going to stop now.")
+				 IsValid=false;
+			 }
+    }
   }
 
   ///** Reset the Wavefunction \f$ \Psi({\bf R},{{\bf \alpha_i}}) \f$

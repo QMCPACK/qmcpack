@@ -23,6 +23,9 @@
 #include "Optimize/OptimizeBase.h"
 #include "OhmmsData/ParameterSet.h"
 
+#include <time.h>
+
+
 template<class T>
 class FlexOptimization: public MinimizerBase<T> {
 public:
@@ -65,7 +68,7 @@ vector< vector<Return_t> > PastGradients;
 vector< vector<Return_t> > PastGradientsParameterPoints;
 
 FlexOptimization(ObjectFuncType* atarget=0):  TargetFunc(atarget), 
-Displacement(1e-6),xybisect(0), Failed_Last(false),
+Displacement(0),xybisect(0), Failed_Last(false),
 CostTol(1.e-3),GradTol(1.e-2), CG_ortho(1), a_linmin_maxits(5),
 a_lastx(1e-2), a_lastx_default(1e-2), a_linmin_g1(2), a_linmin_g2(1.0), 
 a_linmin_g3(0.5), a_restart(0), xycleanup(4), Gfactor(3), deltaG(1e-5)
@@ -145,6 +148,7 @@ p.add(a_rich,"rich","none");
 p.add(xybisect,"xybisect","none");
 p.add(Gfactor,"Gfactor","none");
 p.add(xycleanup,"xypolish","none");
+p.add(CostTol,"tolerance","none");
 p.add(GradTol,"tolerance_g","none"); p.add(GradTol,"toleranceG","none");
 p.add(deltaG,"tolerance_cg","none"); p.add(deltaG,"toleranceCG","none");
 p.add(a_verbose,"verbose","none");
@@ -171,21 +175,29 @@ return TargetFunc->Cost();
 
 void dfunc(vector<Return_t> RT, vector<Return_t> &FG)
 {
-vector<Return_t> tmpPs(NumParams,0.0);
-for(int k=0; k<NumParams; k++) tmpPs[k] = TargetFunc->Params(k) ;
-Return_t dh=1.0/(2.0*Displacement);
-for(int i=0; i<NumParams ; i++) {
-for(int j=0; j<NumParams; j++) TargetFunc->Params(j)=RT[j];
-TargetFunc->Params(i) = RT[i]+ Displacement;
-Return_t CostPlus = TargetFunc->Cost(); 
-TargetFunc->Params(i) = RT[i]- Displacement;
-Return_t CostMinus = TargetFunc->Cost(); 
-FG[i]= (CostPlus-CostMinus)*dh;
-}
-for(int k=0; k<TargetFunc->NumParams(); k++) TargetFunc->Params(k)=tmpPs[k];
-//Later we can build an approximate hessian with all this data
+	//vector<Return_t> Dummy(FG);
+  //TargetFunc->GradCost( Dummy, RT, 0.0);
+
+//vector<Return_t> tmpPs(NumParams,0.0);
+//for(int k=0; k<NumParams; k++) tmpPs[k] = TargetFunc->Params(k) ;
+//Return_t dh=1.0/(2.0*Displacement);
+//for(int i=0; i<NumParams ; i++) {
+//for(int j=0; j<NumParams; j++) TargetFunc->Params(j)=RT[j];
+//TargetFunc->Params(i) = RT[i]+ Displacement;
+//Return_t CostPlus = TargetFunc->Cost(); 
+//TargetFunc->Params(i) = RT[i]- Displacement;
+//Return_t CostMinus = TargetFunc->Cost(); 
+//FG[i]= (CostPlus-CostMinus)*dh;
+//}
+//for(int k=0; k<TargetFunc->NumParams(); k++) TargetFunc->Params(k)=tmpPs[k];
+////Later we can build an approximate hessian with all this data
+
+TargetFunc->GradCost( FG, RT, Displacement);
 PastGradients.push_back(FG);
 PastGradientsParameterPoints.push_back(RT);
+
+//for(int k=0; k<NumParams; k++) cout<<Dummy[k]<<"  "<<FG[k]<<endl;
+//cout<<endl;
 }
 
   /** Main Optimization routine
@@ -256,7 +268,7 @@ else Failed_Last=true;
 }
 else 
 {
-	//here we relax the CG towards steepest descent.
+	//here we relax the CG towards steepest descent. Is this the right thing to do?
 	if ((deltaG > std::fabs(gg-GGnew)) & (CG_ortho>0) ) 
 	{
 		--CG_ortho;
@@ -399,7 +411,7 @@ t = 1.0 ; y = x;
 Return_t u(0.0);
 Return_t m(0.5*( x+y ));
 int xyit(0);
-if ((xyit<xycleanup) & (std::fabs(s-t)>GradTol) & (s*t<0.0))
+if ((xyit<xycleanup) & (std::fabs(s-t)>GradTol) & (s*t<0.0) &(TargetFunc->IsValid))
 {
 int XYBisectCounter=xybisect;
 do {
@@ -443,7 +455,7 @@ xyit=xycleanup;
 xyit++;
 } while ( (TargetFunc->IsValid) & (std::fabs(s-t)>GradTol) & (xyit<xycleanup) ) ;
 }
-else if (s*t>0.0)
+else if ((s*t>0.0) | (!TargetFunc->IsValid))
 {
 return -1.0;
 }

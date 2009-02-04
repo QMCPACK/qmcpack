@@ -19,7 +19,7 @@
 #include "QMCDrivers/VMC/VMCUpdateAll.h"
 #include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbital.h"
 #include "QMCWaveFunctions/Jastrow/PadeFunctors.h"
-#include "QMCWaveFunctions/Jastrow/DerivPadeFunctors.h"
+//#include "QMCWaveFunctions/Jastrow/DerivPadeFunctors.h"
 #include "QMCWaveFunctions/DiffOrbitalBase.h"
 
 namespace qmcplusplus { 
@@ -83,25 +83,25 @@ namespace qmcplusplus {
 
     Mover->stopRun();
 
-    cout << "Hessian matrix " << endl;
-    for(int i=0; i<NoptPlusOne; ++i)
-    {
-      for(int j=0; j<NoptPlusOne; ++j)
-      {
-        cout << setw(22) << Hessian(i,j);
-      }
-      cout << endl;
-    }
+    //cout << "Hessian matrix " << endl;
+    //for(int i=0; i<NoptPlusOne; ++i)
+    //{
+      //for(int j=0; j<NoptPlusOne; ++j)
+      //{
+        //cout << setw(22) << Hessian(i,j);
+      //}
+      //cout << endl;
+    //}
 
-    cout << "Overlap matrix " << endl;
-    for(int i=0; i<NoptPlusOne; ++i)
-    {
-      for(int j=0; j<NoptPlusOne; ++j)
-      {
-        cout << setw(22) << Overlap(i,j);
-      }
-      cout << endl;
-    }
+    //cout << "Overlap matrix " << endl;
+    //for(int i=0; i<NoptPlusOne; ++i)
+    //{
+      //for(int j=0; j<NoptPlusOne; ++j)
+      //{
+        //cout << setw(22) << Overlap(i,j);
+      //}
+      //cout << endl;
+    //}
 
 
     //finalize a qmc section
@@ -112,33 +112,33 @@ namespace qmcplusplus {
   {
     for(;it != it_end; ++it)
     {
-      Walker_t& thisWalker(**it);
+      //Walker_t& thisWalker(**it);
 
-      //only need to update distance tables and structure factor
-      W.R = thisWalker.R;
-      if(QMCDriverMode[QMC_UPDATE_MODE])
-      {
-        Walker_t::Buffer_t& w_buffer(thisWalker.DataSet);
-        w_buffer.rewind();
-        W.copyFromBuffer(w_buffer);
-      }
-      else
-        W.update();
+      ////only need to update distance tables and structure factor
+      //W.R = thisWalker.R;
+      //if(QMCDriverMode[QMC_UPDATE_MODE])
+      //{
+        //Walker_t::Buffer_t& w_buffer(thisWalker.DataSet);
+        //w_buffer.rewind();
+        //W.copyFromBuffer(w_buffer);
+      //}
+      //else
+        //W.update();
 
-      dPsi[0]->dHPsi=thisWalker.Properties(LOCALENERGY);
-      RealType ke0=thisWalker.Properties(NUMPROPERTIES);
-      for(int i=1; i<NoptPlusOne; ++i)
-        dPsi[i]->evaluateDerivatives(W,ke0);
+      //dPsi[0]->dHPsi=thisWalker.Properties(LOCALENERGY);
+      //RealType ke0=thisWalker.Properties(NUMPROPERTIES);
+      //for(int i=1; i<NoptPlusOne; ++i)
+        //dPsi[i]->evaluateDerivatives(W,ke0);
 
-      for(int i=0; i<NoptPlusOne; ++i)
-      {
-        RealType dlogpsi= dPsi[i]->dLogPsi;
-        for(int j=0; j<NoptPlusOne; ++j)
-        {
-          Hessian(i,j) += dlogpsi*dPsi[j]->dHPsi;
-          Overlap(i,j) += dlogpsi*dPsi[j]->dLogPsi;
-        }
-      }
+      //for(int i=0; i<NoptPlusOne; ++i)
+      //{
+        //RealType dlogpsi= dPsi[i]->dLogPsi;
+        //for(int j=0; j<NoptPlusOne; ++j)
+        //{
+          //Hessian(i,j) += dlogpsi*dPsi[j]->dHPsi;
+          //Overlap(i,j) += dlogpsi*dPsi[j]->dLogPsi;
+        //}
+      //}
     }
   }
 
@@ -166,23 +166,23 @@ namespace qmcplusplus {
       }
 
       //push an dummy AnalyticDiffOrbital
-      dPsi.push_back(new AnalyticDiffOrbital(0));
-      RealType p0=Psi.VarList["jee_b"];
-      DPadeDBFunctor<RealType>* dpade = new DPadeDBFunctor<RealType>(-0.5,p0);
-      TwoBodyJastrowOrbital<DPadeDBFunctor<RealType> > *J2=new TwoBodyJastrowOrbital<DPadeDBFunctor<RealType> >(W);
-      dpade->ID_B="jee_b";
-      J2->insert("j2",dpade);
-      for(int i=0; i<4; i++) J2->addFunc(dpade);
-      DiffOrbitalBase *o= new AnalyticDiffOrbital(J2);
-      o->resize(W.getTotalNum());
-      o->setParameter("jee_b",p0);
-      dPsi.push_back(o);
+      //dPsi.push_back(new AnalyticDiffOrbital(0));
+      //RealType p0=Psi.VarList["jee_b"];
+      //DPadeDBFunctor<RealType>* dpade = new DPadeDBFunctor<RealType>(-0.5,p0);
+      //TwoBodyJastrowOrbital<DPadeDBFunctor<RealType> > *J2=new TwoBodyJastrowOrbital<DPadeDBFunctor<RealType> >(W);
+      //dpade->ID_B="jee_b";
+      //J2->insert("j2",dpade);
+      //for(int i=0; i<4; i++) J2->addFunc(dpade);
+      //DiffOrbitalBase *o= new AnalyticDiffOrbital(J2);
+      //o->resize(W.getTotalNum());
+      //o->setParameter("jee_b",p0);
+      //dPsi.push_back(o);
 
-      NoptPlusOne=dPsi.size();
-      dLogPsi.resize(NoptPlusOne);
-      dHPsi.resize(NoptPlusOne);
-      Hessian.resize(NoptPlusOne,NoptPlusOne);
-      Overlap.resize(NoptPlusOne,NoptPlusOne);
+      //NoptPlusOne=dPsi.size();
+      //dLogPsi.resize(NoptPlusOne);
+      //dHPsi.resize(NoptPlusOne);
+      //Hessian.resize(NoptPlusOne,NoptPlusOne);
+      //Overlap.resize(NoptPlusOne,NoptPlusOne);
     }
 
     if(QMCDriverMode[QMC_UPDATE_MODE])

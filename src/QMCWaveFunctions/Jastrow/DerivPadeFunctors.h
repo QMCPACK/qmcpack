@@ -137,7 +137,7 @@ namespace qmcplusplus {
        *
        * USE_resetParameters
        */
-      void resetParameters(OptimizableSetType& optVariables) 
+      void resetParameters(const OptimizableSetType& optVariables) 
       {
         typename OptimizableSetType::iterator it_a(optVariables.find(ID_A));
         if(it_a != optVariables.end()) A=(*it_a).second;

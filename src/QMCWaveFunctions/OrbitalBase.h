@@ -120,7 +120,7 @@ namespace qmcplusplus {
     inline void setOptimizable(bool optimizeit) { Optimizable = optimizeit;}
 
     ///assign a differential orbital
-    void setDiffOrbital(DiffOrbitalBasePtr d);
+    virtual void setDiffOrbital(DiffOrbitalBasePtr d);
 
     /** check in optimizable parameters
      * @param active a super set of optimizable variables
@@ -288,6 +288,13 @@ namespace qmcplusplus {
     /** Return the Chiesa kinetic energy correction 
      */
     virtual RealType KECorrection();
+    
+    virtual void evaluateDerivatives(ParticleSet& P, RealType ke0, 
+        const opt_variables_type& optvars,
+        vector<RealType>& dlogpsi,
+        vector<RealType>& dhpsioverpsi) ;
+
+    
 
     ///** copy data members from old
     // * @param old existing OrbitalBase from which all the data members are copied.

@@ -51,7 +51,7 @@ namespace qmcplusplus {
   public:
 
     ///constructor
-    DiffTwoBodyJastrowOrbital(ParticleSet& p):NumVars(0) 
+    DiffTwoBodyJastrowOrbital(ParticleSet& p):NumVars(0)
     {
       NumPtcls=p.getTotalNum();
       NumGroups=p.groups();
@@ -87,7 +87,7 @@ namespace qmcplusplus {
     }
 
     ///reset the value of all the unique Two-Body Jastrow functions
-    void resetParameters(opt_variables_type& active) 
+    void resetParameters(const opt_variables_type& active) 
     { 
       typename std::map<std::string,FT*>::iterator it(J2Unique.begin()),it_end(J2Unique.end());
       while(it != it_end) 
@@ -143,6 +143,7 @@ namespace qmcplusplus {
         vector<RealType>& dlogpsi,
         vector<RealType>& dhpsioverpsi)
     {
+    	
       dLogPsi=0.0;
       for(int p=0;p<NumVars; ++p) (*gradLogPsi[p])=0.0;
       for(int p=0;p<NumVars; ++p) (*lapLogPsi[p])=0.0;
@@ -151,12 +152,12 @@ namespace qmcplusplus {
 
       for(int i=0; i<d_table->size(SourceIndex); ++i) 
       {
-	for(int nn=d_table->M[i]; nn<d_table->M[i+1]; ++nn) 
+	    for(int nn=d_table->M[i]; nn<d_table->M[i+1]; ++nn) 
         {
           int ptype=d_table->PairID[nn];
           std::fill(derivs.begin(),derivs.end(),0.0);
           if(!F[ptype]->evaluateDerivatives(d_table->r(nn),derivs)) continue;
-	  int j = d_table->J[nn];
+	        int j = d_table->J[nn];
           RealType rinv(d_table->rinv(nn));
           PosType dr(d_table->dr(nn));
           for(int p=OffSet[ptype].first, ip=0; p<OffSet[ptype].second; ++p,++ip)
@@ -171,7 +172,7 @@ namespace qmcplusplus {
             (*lapLogPsi[p])[i] -=lap;
             (*lapLogPsi[p])[j] -=lap;
           }
-	}
+	      }
       }
 
       for(int k=0; k<myVars.size(); ++k)
@@ -183,6 +184,46 @@ namespace qmcplusplus {
         //optVars.setDeriv(p,dLogPsi[ip],-0.5*Sum(*lapLogPsi[ip])-Dot(P.G,*gradLogPsi[ip]));
       }
     }
+    
+   DiffOrbitalBasePtr makeClone(ParticleSet& tqp) const
+    {
+      DiffTwoBodyJastrowOrbital<FT>* j2copy=new DiffTwoBodyJastrowOrbital<FT>(tqp);
+      map<const FT*,FT*> fcmap;
+      for(int ig=0; ig<NumGroups; ++ig)
+        for(int jg=ig; jg<NumGroups; ++jg)
+        {
+          int ij=ig*NumGroups+jg;
+          if(F[ij]==0) continue;
+          typename map<const FT*,FT*>::iterator fit=fcmap.find(F[ij]);
+          if(fit == fcmap.end())
+          {
+            FT* fc=new FT(*F[ij]);
+            stringstream aname;
+            aname<<ig<<jg;
+            j2copy->addFunc(aname.str(),ig,jg,fc);
+            fcmap[F[ij]]=fc;
+          }
+        }
+        
+      j2copy->myVars.clear();
+      j2copy->myVars.insertFrom(myVars);
+      j2copy->NumVars=NumVars;
+      j2copy->NumPtcls=NumPtcls;
+      j2copy->NumGroups=NumGroups;
+			j2copy->dLogPsi.resize(NumVars);
+			j2copy->gradLogPsi.resize(NumVars,0);
+			j2copy->lapLogPsi.resize(NumVars,0);
+			for(int i=0; i<NumVars; ++i)
+			{
+				j2copy->gradLogPsi[i]=new GradVectorType(NumPtcls);
+				j2copy->lapLogPsi[i]=new ValueVectorType(NumPtcls);
+			}
+			j2copy->OffSet=OffSet;
+			
+			
+      return j2copy;
+    }
+    
   };
 }
 #endif

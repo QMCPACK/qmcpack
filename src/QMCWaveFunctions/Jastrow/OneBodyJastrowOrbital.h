@@ -17,6 +17,7 @@
 #define QMCPLUSPLUS_GENERIC_ONEBODYJASTROW_H
 #include "Configuration.h"
 #include "QMCWaveFunctions/OrbitalBase.h"
+#include "QMCWaveFunctions/Jastrow/DiffOneBodyJastrowOrbital.h"
 #include "Particle/DistanceTableData.h"
 #include "Particle/DistanceTable.h"
 
@@ -104,15 +105,16 @@ namespace qmcplusplus {
     void resetTargetParticleSet(ParticleSet& P) 
     {
       d_table = DistanceTable::add(CenterRef,P);
+      if(dPsi) dPsi->resetTargetParticleSet(P);
     }
 
     void addFunc(int source_type, FT* afunc) 
     {
       for(int i=0; i<Fs.size(); i++) 
         if(CenterRef.GroupID[i] == source_type) { 
-	  Fs[i]=afunc;
-	  app_log() << "Adding function of type " << source_type << " for atom " << i << ".\n";
-	}
+					Fs[i]=afunc;
+					app_log() << "Adding function of type " << source_type << " for atom " << i << ".\n";
+				}
       Funique[source_type]=afunc;
     }
 
@@ -143,12 +145,12 @@ namespace qmcplusplus {
       for(int i=0; i<Funique.size(); ++i)
         if(Funique[i]) Funique[i]->checkOutVariables(active);
 
-      //if(dPsi) dPsi->checkOutVariables(active);
+      if(dPsi) dPsi->checkOutVariables(active);
     }
 
     ///reset the value of all the unique Two-Body Jastrow functions
     void resetParameters(const opt_variables_type& active)
-    { 
+    {
       if(!Optimizable) return;
       for(int i=0; i<Funique.size(); ++i)
         if(Funique[i]) Funique[i]->resetParameters(active);
@@ -157,6 +159,7 @@ namespace qmcplusplus {
         int ii=myVars.Index[i];
         if(ii>=0) myVars[i]= active[ii];
       }
+      if(dPsi) dPsi->resetParameters(active);
     }
 
     /** print the state, e.g., optimizables */
@@ -444,9 +447,14 @@ namespace qmcplusplus {
       for(int i=0; i<Funique.size(); ++i)
       {
         if(Funique[i]) j1copy->addFunc(i,new FT(*Funique[i]));
-        //if(Funique[i]) j1copy->addFunc(i, Funique[i]);
       }
       //j1copy->OrbitalName=OrbitalName+"_clone";
+      
+      if (dPsi)
+      {
+      	j1copy->dPsi =  dPsi->makeClone(tqp );
+      }
+
       return j1copy;
     }
 

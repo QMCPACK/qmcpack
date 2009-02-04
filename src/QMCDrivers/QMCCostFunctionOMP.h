@@ -19,6 +19,7 @@
 
 #include "QMCDrivers/QMCCostFunctionBase.h"
 #include "QMCDrivers/CloneManager.h"
+#include "QMCWaveFunctions/OrbitalSetTraits.h"
 
 namespace qmcplusplus {
 
@@ -41,9 +42,16 @@ namespace qmcplusplus {
 
     void getConfigurations(const string& aroot);
     void checkConfigurations();
+    void GradCost(vector<Return_t>& PGradient, vector<Return_t> PM, Return_t FiniteDiff=0);
   protected:
     vector<QMCHamiltonian*> H_KE_Node;
     vector<Matrix<Return_t>*> RecordsOnNode;
+    
+     /** Temp derivative properties and Hderivative properties of all the walkers
+     */
+    vector<vector<vector<Return_t> >* > TempDerivRecords;
+    vector<vector<vector<Return_t> >* > TempHDerivRecords;
+    Return_t CSWeight;
     void resetPsi();
     Return_t correlatedSampling();
   };

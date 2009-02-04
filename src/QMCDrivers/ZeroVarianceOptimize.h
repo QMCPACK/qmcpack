@@ -40,7 +40,7 @@ namespace qmcplusplus {
     typedef MCWalkerConfiguration::iterator WalkerIter_t;
     ///Constructor.
     ZeroVarianceOptimize(MCWalkerConfiguration& w, TrialWaveFunction& psi, 
-        QMCHamiltonian& h);//, HamiltonianPool& hpool);
+        QMCHamiltonian& h );//, HamiltonianPool& hpool);
     
     ///Destructor
     ~ZeroVarianceOptimize();
@@ -65,14 +65,11 @@ namespace qmcplusplus {
     ///option to use drift
     string UseDrift;
 
-    ///orbitals differential
-    vector<DiffOrbitalBase*> dPsi;
-
     ///these going to be matrix
-    Vector<RealType> dLogPsi;
-    Vector<RealType> dHPsi;
-    Matrix<RealType> Hessian;
-    Matrix<RealType> Overlap;
+    Vector <Vector<RealType> > dLogPsi;
+    Vector <Vector<RealType> > dHPsi;
+    Vector <Matrix<RealType> > Hessian;
+    Vector <Matrix<RealType> > Overlap;
 
 
     ///hide initialization from the main function
