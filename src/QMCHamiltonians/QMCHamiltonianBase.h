@@ -112,7 +112,8 @@ namespace qmcplusplus {
      */
     virtual void addObservables(PropertySetType& plist, BufferType& collectables)
     {
-      if(!UpdateMode[COLLECTABLE]) myIndex=plist.add(myName.c_str());
+      addObservables(plist);
+      // if(!UpdateMode[COLLECTABLE]) myIndex=plist.add(myName.c_str());
     }
 
     /*** add to observable descriptor for hdf5 
