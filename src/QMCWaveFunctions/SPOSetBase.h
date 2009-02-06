@@ -126,6 +126,11 @@ namespace qmcplusplus {
     virtual void evaluate(const ParticleSet& P, int first, int last,
         ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet)=0;
 
+    virtual void evaluateGradSource (const ParticleSet &P, int first, int last, 
+				     const ParticleSet &source,
+				     int iat_src, GradMatrix_t &gradphi)
+    { APP_ABORT("SPOSetlBase::evalGradSource is not implemented"); }
+
     /** make a clone of itself
      */
     virtual SPOSetBase* makeClone() const

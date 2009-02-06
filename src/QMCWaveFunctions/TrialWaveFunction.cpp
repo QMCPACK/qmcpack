@@ -249,6 +249,17 @@ namespace qmcplusplus {
     return grad_iat;
   }
 
+  TrialWaveFunction::GradType
+  TrialWaveFunction::evalGradSource(ParticleSet& P,
+				    ParticleSet &source, int iat) 
+  {
+    GradType grad_iat;
+    for(int i=0; i<Z.size(); ++i) 
+      grad_iat += Z[i]->evalGradSource(P, source, iat);
+    return grad_iat;
+  }
+
+
   TrialWaveFunction::RealType
   TrialWaveFunction::ratioGrad(ParticleSet& P,int iat, GradType& grad_iat) 
   {

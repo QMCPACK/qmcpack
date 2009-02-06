@@ -85,6 +85,16 @@ namespace qmcplusplus {
       return Dets[DetID[iat]]->evalGrad(P,iat);
     }
 
+    GradType evalGradSource(ParticleSet& P, ParticleSet &src, int iat)
+    {
+      GradType G = GradType();
+      for (int iz=0; iz < size(); iz++) 
+	G += Dets[iz]->evalGradSource (P, src, iat);
+      return G;
+    }
+
+
+
     inline ValueType logRatio(ParticleSet& P, int iat,
 			   ParticleSet::ParticleGradient_t& dG, 
 			   ParticleSet::ParticleLaplacian_t& dL) { 

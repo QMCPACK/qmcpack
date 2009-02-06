@@ -237,6 +237,18 @@ namespace qmcplusplus {
   EinsplineMultiEval (multi_UBspline_3d_d *restrict spline,
 		      TinyVector<double,3> r,
 		      Vector<double> &psi,
+		      Vector<TinyVector<double,3> > &grad)
+  {
+    eval_multi_UBspline_3d_d_vg (spline, r[0], r[1], r[2],
+				 psi.data(), 
+				 (double*)grad.data());
+  }
+
+
+  inline void
+  EinsplineMultiEval (multi_UBspline_3d_d *restrict spline,
+		      TinyVector<double,3> r,
+		      Vector<double> &psi,
 		      Vector<TinyVector<double,3> > &grad,
 		      Vector<Tensor<double,3> > &hess)
   {
@@ -257,6 +269,16 @@ namespace qmcplusplus {
     eval_multi_UBspline_3d_z (spline, r[0], r[1], r[2], psi.data());
   }
 
+  inline void
+  EinsplineMultiEval (multi_UBspline_3d_z *restrict spline,
+		      TinyVector<double,3> r,
+		      Vector<complex<double> > &psi,
+		      Vector<TinyVector<complex<double>,3> > &grad)
+  {
+    eval_multi_UBspline_3d_z_vg (spline, r[0], r[1], r[2],
+				 psi.data(), 
+				 (complex<double>*)grad.data());
+  }
 
   inline void
   EinsplineMultiEval (multi_UBspline_3d_z *restrict spline,
@@ -865,6 +887,89 @@ namespace qmcplusplus {
     }
     VGLMatTimer.stop();
   }
+
+  
+  template<typename StorageType> void
+  EinsplineSetExtended<StorageType>::evaluateGradSource
+  (const ParticleSet& P, int first, int last,
+   const ParticleSet &source, int iat, RealGradMatrix_t& dpsi)
+  {
+    complex<double> eye(0.0,1.0);
+    
+    // Loop over dimensions
+    for (int dim=0; dim<OHMMS_DIM; dim++) {
+      // Loop over electrons
+      for(int iel=first,i=0; iel<last; iel++,i++) {
+	PosType r (P.R[iel]);
+	PosType ru(PrimLattice.toUnit(P.R[iel]));
+
+	assert (FirstOrderSplines[iat][dim]);
+	EinsplineMultiEval (FirstOrderSplines[iat][dim], ru, 
+			    StorageValueVector);
+	int dpsiIndex=0;
+	for (int j=0; j<NumValenceOrbs; j++) {
+	  PosType k = kPoints[j];
+	  double s,c;
+	  double phase = -dot(r, k);
+	  sincos (phase, &s, &c);
+	  complex<double> e_mikr (c,s);
+	  StorageValueVector[j] *= e_mikr;
+	  dpsi(i,dpsiIndex)[dim] = real(StorageValueVector[j]);
+	  dpsiIndex++;
+	  if (MakeTwoCopies[j]) {
+	    dpsi(i,dpsiIndex)[dim] = imag(StorageValueVector[j]);
+	    dpsiIndex++;
+	  }
+	}
+      }
+    }
+    for (int i=0; i<(last-first); i++)
+      for (int j=0; j<(last-first); j++) 
+	dpsi(i,j) = dot (PrimLattice.G, dpsi(i,j));
+     
+
+  }
+
+
+  template<> void
+  EinsplineSetExtended<double>::evaluateGradSource
+  (const ParticleSet& P, int first, int last,
+   const ParticleSet &source, int iat, RealGradMatrix_t& dpsi)
+  {
+    // Loop over dimensions
+    for (int dim=0; dim<OHMMS_DIM; dim++) {
+      assert (FirstOrderSplines[iat][dim]);
+      // Loop over electrons
+      for(int iel=first,i=0; iel<last; iel++,i++) {
+	PosType r (P.R[iel]);
+	PosType ru(PrimLattice.toUnit(r));
+	int sign=0;
+	for (int n=0; n<OHMMS_DIM; n++) {
+	  RealType img = std::floor(ru[n]);
+	  ru[n] -= img;
+	  sign += HalfG[n] * (int)img;
+	}
+	for (int n=0; n<OHMMS_DIM; n++)
+	  ru[n] -= std::floor (ru[n]);
+	
+	EinsplineMultiEval (FirstOrderSplines[iat][dim], ru, 
+			    StorageValueVector);
+	if (sign & 1) 
+	  for (int j=0; j<OrbitalSetSize; j++) 
+	    dpsi(i,j)[dim] = -1.0 * StorageValueVector[j];
+	else
+	  for (int j=0; j<OrbitalSetSize; j++) 
+	    dpsi(i,j)[dim] = StorageValueVector[j];
+      }
+    }
+    for (int i=0; i<(last-first); i++)
+      for (int j=0; j<(last-first); j++) {
+	dpsi(i,j) = dot (PrimLattice.G, dpsi(i,j));
+      }
+    
+  }
+  
+
   
   
   
@@ -937,7 +1042,6 @@ namespace qmcplusplus {
 	  StorageGradVector[j]  *= -1.0;
 	  StorageHessVector[j]  *= -1.0;
 	}
-      complex<double> eye (0.0, 1.0);
       for (int j=0; j<OrbitalSetSize; j++) {
         psi(j,i)   = StorageValueVector[j];
 	dpsi(i,j)  = dot(PrimLattice.G, StorageGradVector[j]);

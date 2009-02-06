@@ -123,7 +123,8 @@ namespace qmcplusplus {
       LogValue=evaluateLog(P,myG,myL);
     else
     {
-      if(UpdateMode == ORB_PBYP_RATIO) Phi->evaluate(P, FirstIndex, LastIndex, psiM_temp,dpsiM, d2psiM);    
+      if(UpdateMode == ORB_PBYP_RATIO) 
+	Phi->evaluate(P, FirstIndex, LastIndex, psiM_temp,dpsiM, d2psiM);    
 
       if(NumPtcls==1) {
         ValueType y=1.0/psiM_temp(0,0);
@@ -222,32 +223,43 @@ namespace qmcplusplus {
     return rv;
   }
 
+  DiracDeterminantBase::GradType 
+    DiracDeterminantBase::evalGradSource(ParticleSet& P, 
+					 ParticleSet& source,
+					 int iat)
+  {
+    Phi->evaluateGradSource (P, FirstIndex, LastIndex,
+			     source, iat, dpsiM_temp);
+    const ValueType* restrict yptr=psiM[0];
+    const GradType* restrict dyptr=dpsiM_temp[0];
+    GradType rv;
+    for(int j=0; j<NumOrbitals*NumPtcls; ++j) rv += (*yptr++) *(*dyptr++);
+    dpsiM_temp = dpsiM;
+    return rv;
+  }
+
+
+
   DiracDeterminantBase::ValueType 
     DiracDeterminantBase::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
   {
     Phi->evaluate(P, iat, psiV, dpsiV, d2psiV);
     WorkingIndex = iat-FirstIndex;
 
-#ifdef DIRAC_USE_BLAS
-    curRatio = BLAS::dot(NumOrbitals,psiM_temp[WorkingIndex],&psiV[0]);
-#else
-    curRatio= DetRatio(psiM_temp, psiV.begin(),WorkingIndex);
-#endif
-
-    if(abs(curRatio)<numeric_limits<RealType>::epsilon()) 
-    {
-      UpdateMode=ORB_PBYP_RATIO; //singularity! do not update inverse 
-      return 0.0;
-    }
-
-    //update psiM_temp with the row substituted
-    DetUpdate(psiM_temp,psiV,workV1,workV2,WorkingIndex,curRatio);
-
-    const ValueType* restrict yptr=psiM_temp[WorkingIndex];
-    const GradType* restrict dyptr=dpsiV.data();
+    UpdateMode=ORB_PBYP_PARTIAL;
+    
+    const ValueType* restrict vptr = psiV.data();
+    const ValueType* restrict yptr = psiM[WorkingIndex];
+    const GradType* restrict dyptr = dpsiV.data();
+    
     GradType rv;
-    for(int j=0; j<NumOrbitals; ++j) rv += (*yptr++) *(*dyptr++);
-    grad_iat += rv;
+    curRatio = 0.0;
+    for(int j=0; j<NumOrbitals; ++j) {
+      rv       += yptr[j] * dyptr[j];
+      curRatio += yptr[j] * vptr[j];
+    }
+    grad_iat += (1.0/curRatio) * rv;
+    return curRatio;
 
     ////////////////////////////////////////
     ////THIS WILL BE REMOVED. ONLY FOR DEBUG DUE TO WAVEFUNCTIONTEST
@@ -274,9 +286,6 @@ namespace qmcplusplus {
     //  }
     //}
     ////////////////////////////////////////
-
-    UpdateMode=ORB_PBYP_PARTIAL;
-    return curRatio;
   }
 
   /** return the ratio
@@ -296,6 +305,7 @@ namespace qmcplusplus {
     Phi->evaluate(P, iat, psiV, dpsiV, d2psiV);
     WorkingIndex = iat-FirstIndex;
 
+    //psiM_temp = psiM;
 #ifdef DIRAC_USE_BLAS
     curRatio = BLAS::dot(NumOrbitals,psiM_temp[WorkingIndex],&psiV[0]);
 #else
@@ -372,7 +382,8 @@ namespace qmcplusplus {
         DetUpdate(psiM,psiV,workV1,workV2,WorkingIndex,curRatio);
         break;
       case ORB_PBYP_PARTIAL:
-        psiM = psiM_temp;
+        //psiM = psiM_temp;
+	DetUpdate(psiM,psiV,workV1,workV2,WorkingIndex,curRatio);
         std::copy(dpsiV.begin(),dpsiV.end(),dpsiM[WorkingIndex]);
         std::copy(d2psiV.begin(),d2psiV.end(),d2psiM[WorkingIndex]);
 
@@ -398,12 +409,7 @@ namespace qmcplusplus {
   /** move was rejected. copy the real container to the temporary to move on
   */
   void DiracDeterminantBase::restore(int iat) {
-    if(UpdateMode == ORB_PBYP_PARTIAL)
-    {
-      psiM_temp = psiM;
-    }
-    else if(UpdateMode == ORB_PBYP_ALL)
-    {
+    if(UpdateMode == ORB_PBYP_ALL) {
       psiM_temp = psiM;
       std::copy(dpsiM[WorkingIndex],dpsiM[WorkingIndex+1],dpsiM_temp[WorkingIndex]);
       std::copy(d2psiM[WorkingIndex],d2psiM[WorkingIndex+1],d2psiM_temp[WorkingIndex]);
@@ -546,6 +552,7 @@ namespace qmcplusplus {
           L(iat) += lap - dot(rv,rv);
         }
       }
+      psiM_temp = psiM;
       return LogValue;
     }
 

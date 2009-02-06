@@ -132,6 +132,8 @@ namespace qmcplusplus {
 
     ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
     GradType evalGrad(ParticleSet& P, int iat);
+    GradType evalGradSource (ParticleSet &P, ParticleSet &source,
+			     int iat);
 
     ValueType logRatio(ParticleSet& P, int iat,
 		    ParticleSet::ParticleGradient_t& dG, 

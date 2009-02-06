@@ -131,6 +131,9 @@ namespace qmcplusplus {
 		    ParticleSet::ParticleLaplacian_t& dL);
 
     GradType evalGrad(ParticleSet& P, int iat);
+    /** Returns the logarithmic gradient of the trial wave function
+     *  with respect to the iat^th atom of the source ParticleSet. */
+    GradType evalGradSource(ParticleSet& P, ParticleSet &source, int iat);
     RealType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
 
 

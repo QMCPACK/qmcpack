@@ -182,6 +182,22 @@ namespace qmcplusplus {
       return GradType();
     }
 
+
+    /** return the logarithmic gradient for the iat-th particle
+     * of the source particleset
+     * @param Pquantum particle set
+     * @param iat particle index
+     * @return the gradient of the iat-th particle
+     */
+    virtual GradType evalGradSource(ParticleSet& P, 
+				    ParticleSet& source,
+				    int iat) 
+    {
+      APP_ABORT("OrbitalBase::evalGradSource is not implemented");
+      return GradType();
+    }
+
+
     /** evaluate the ratio of the new to old orbital value
      * @param P the active ParticleSet
      * @param iat the index of a particle

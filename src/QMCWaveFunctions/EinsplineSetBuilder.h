@@ -119,6 +119,11 @@ namespace qmcplusplus {
 
     // The actual orbital set we're building
     EinsplineSet *OrbitalSet, *LastOrbitalSet;
+
+    // This is true if we have the orbital derivatives w.r.t. the ion
+    // positions 
+    bool HaveOrbDerivs;
+
     typedef EinsplineOrb<complex<double>,OHMMS_DIM> OrbType;
     // The map key is (spin, twist, band, center)
     static std::map<TinyVector<int,4>,OrbType*,Int4less> OrbitalMap;

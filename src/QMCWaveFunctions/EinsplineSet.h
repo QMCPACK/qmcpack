@@ -183,6 +183,10 @@ namespace qmcplusplus {
     /// Orbital storage object //
     /////////////////////////////
     SplineType *MultiSpline;
+
+    // First-order derivative w.r.t. the ion positions
+    vector<TinyVector<SplineType*,OHMMS_DIM> > FirstOrderSplines;
+    
     // Temporary storage for Eispline calls
     StorageValueVector_t StorageValueVector, StorageLaplVector;
     StorageGradVector_t  StorageGradVector;
@@ -221,6 +225,9 @@ namespace qmcplusplus {
     void evaluate(const ParticleSet& P, int first, int last,
 		  RealValueMatrix_t& psi, RealGradMatrix_t& dpsi, 
 		  RealValueMatrix_t& d2psi);
+    void evaluateGradSource (const ParticleSet &P, int first, int last, 
+			 const ParticleSet &source, int iat_src, 
+			 RealGradMatrix_t &gradphi);
 
     // Complex return values
     void evaluate(const ParticleSet& P, int iat, ComplexValueVector_t& psi);
@@ -229,6 +236,9 @@ namespace qmcplusplus {
     void evaluate(const ParticleSet& P, int first, int last,
 		  ComplexValueMatrix_t& psi, ComplexGradMatrix_t& dpsi, 
 		  ComplexValueMatrix_t& d2psi);
+    void evaluateGradSource (const ParticleSet &P, int first, int last,
+			     const ParticleSet &source, int iat_src, 
+			     ComplexGradMatrix_t &gradphi);
     
     void resetParameters(const opt_variables_type& active);
     void resetTargetParticleSet(ParticleSet& e);

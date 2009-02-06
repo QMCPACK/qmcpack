@@ -99,9 +99,10 @@ namespace qmcplusplus {
       for (int j=0; j<3; j++)
 	LatticeInv(i,j) = RecipLattice(i,j)/(2.0*M_PI);
 
+    int have_dpsi = 0;
     HDFAttribIO<int> h_NumBands(NumBands), h_NumElectrons(NumElectrons), 
       h_NumSpins(NumSpins), h_NumTwists(NumTwists), h_NumCore(NumCoreStates),
-      h_NumMuffinTins(NumMuffinTins);
+      h_NumMuffinTins(NumMuffinTins), h_have_dpsi(have_dpsi);
     NumCoreStates = NumMuffinTins = 0;
     h_NumBands.read      (H5FileID, "/electrons/kpoint_0/spin_0/number_of_states");
     h_NumCore.read       (H5FileID, "/electrons/kpoint_0/spin_0/number_of_core_states");
@@ -109,6 +110,8 @@ namespace qmcplusplus {
     h_NumSpins.read      (H5FileID, "/electrons/number_of_spins");
     h_NumTwists.read     (H5FileID, "/electrons/number_of_kpoints");
     h_NumMuffinTins.read (H5FileID, "/muffin_tins/number_of_tins");
+    h_have_dpsi.read     (H5FileID, "/electrons/have_dpsi");
+    HaveOrbDerivs = have_dpsi;
     app_log() << "bands=" << NumBands << ", elecs=" << NumElectrons 
 	      << ", spins=" << NumSpins << ", twists=" << NumTwists 
 	      << ", muffin tins=" << NumMuffinTins << endl;
@@ -175,7 +178,7 @@ namespace qmcplusplus {
       // Also, flip sign since ESHDF format uses opposite sign convention
       for (int iG=0; iG < numG; iG++) 
 	TargetPtcl.DensityReducedGvecs[iG] = 
-	  -1.0 * dot(TileMatrix, TargetPtcl.DensityReducedGvecs[iG]);
+	  -1 * dot(TileMatrix, TargetPtcl.DensityReducedGvecs[iG]);
       app_log() << "  Read " << numG << " density G-vectors.\n";
 
       for (int ispin=0; ispin<NumSpins; ispin++) {
@@ -436,6 +439,7 @@ namespace qmcplusplus {
     aibuffer.add(numIons); //myComm->bcast(numIons);
     aibuffer.add(NumMuffinTins);
     aibuffer.add(numDensityGvecs);
+    aibuffer.add((int)HaveOrbDerivs);
 
     myComm->bcast(abuffer);
     myComm->bcast(aibuffer);
@@ -457,6 +461,7 @@ namespace qmcplusplus {
       aibuffer.get(numIons);
       aibuffer.get(NumMuffinTins);
       aibuffer.get(numDensityGvecs);
+      aibuffer.get(HaveOrbDerivs);
       MT_APW_radii.resize(NumMuffinTins);
       MT_APW_lmax.resize(NumMuffinTins);
       MT_APW_rgrids.resize(NumMuffinTins);
@@ -1835,6 +1840,7 @@ namespace qmcplusplus {
     orbitalSet->eikr.resize(N);
     orbitalSet->NumValenceOrbs = NumValenceOrbs;
     orbitalSet->NumCoreOrbs    = NumCoreOrbs;
+    orbitalSet->FirstOrderSplines.resize(IonPos.size());
     // Read in k-points
     int numOrbs = orbitalSet->getOrbitalSetSize();
     int num = 0;
@@ -1901,7 +1907,14 @@ namespace qmcplusplus {
     // Create the multiUBspline object
     orbitalSet->MultiSpline = 
       create_multi_UBspline_3d_d (x_grid, y_grid, z_grid, xBC, yBC, zBC, NumValenceOrbs);
-    
+
+    if (HaveOrbDerivs) {
+      orbitalSet->FirstOrderSplines.resize(IonPos.size());
+      for (int ion=0; ion<IonPos.size(); ion++)
+	for (int dir=0; dir<OHMMS_DIM; dir++)
+	  orbitalSet->FirstOrderSplines[ion][dir] = 
+	    create_multi_UBspline_3d_d (x_grid, y_grid, z_grid, xBC, yBC, zBC, NumValenceOrbs);
+    }
     //////////////////////////////////////
     // Create the MuffinTin APW splines //
     //////////////////////////////////////
@@ -1989,6 +2002,67 @@ namespace qmcplusplus {
 	set_multi_UBspline_3d_d 
 	  (orbitalSet->MultiSpline, ival, splineData.data());
       
+	// Now read orbital derivatives if we have them
+	if (HaveOrbDerivs) {
+	  for (int ion=0; ion<IonPos.size(); ion++) 
+	    for (int dim=0; dim<OHMMS_DIM; dim++) {
+	      if (root) {
+		int ti   = SortBands[iorb].TwistIndex;
+		int bi   = SortBands[iorb].BandIndex;
+		
+		app_log() << "Reading orbital derivative for ion " << ion 
+			  << " dim " << dim << " spin " << spin << " band "
+			  << bi << " kpoint " << ti << endl;
+		ostringstream path;
+		path << "/electrons/kpoint_" << ti << "/spin_" << spin << "/state_" << bi << "/"
+		     << "dpsi_" << ion << "_" << dim << "_r";
+		string psiName = path.str();
+		if (isComplex) {
+		  HDFAttribIO<Array<complex<double>,3> > h_rawData(rawData);
+		  h_rawData.read(H5FileID, psiName.c_str());
+		  if ((rawData.size(0) != nx) ||
+		      (rawData.size(1) != ny) ||
+		      (rawData.size(2) != nz)) {
+		    fprintf (stderr, "Error in EinsplineSetBuilder::ReadBands.\n");
+		    fprintf (stderr, "Extended orbitals should all have the same dimensions\n");
+		    abort();
+		  }
+		  PosType ru;
+		  for (int ix=0; ix<nx; ix++) {
+		    ru[0] = (RealType)ix / (RealType)nx;
+		    for (int iy=0; iy<ny; iy++) {
+		      ru[1] = (RealType)iy / (RealType)ny;
+		      for (int iz=0; iz<nz; iz++) {
+			ru[2] = (RealType)iz / (RealType)nz;
+			double phi = -2.0*M_PI*dot (ru, TwistAngles[ti]);
+			double s, c;
+			sincos(phi, &s, &c);
+			complex<double> phase(c,s);
+			complex<double> z = phase*rawData(ix,iy,iz);
+			splineData(ix,iy,iz) = z.real();
+		      }
+		    }
+		  }
+		}
+		else {
+		  HDFAttribIO<Array<double,3> >  h_splineData(splineData);
+		  h_splineData.read(H5FileID, psiName.c_str());
+		  if ((splineData.size(0) != nx) ||
+		      (splineData.size(1) != ny) ||
+		      (splineData.size(2) != nz)) {
+		    fprintf (stderr, "Error in EinsplineSetBuilder::ReadBands.\n");
+		    fprintf (stderr, "Extended orbitals should all have the same dimensions\n");
+		    abort();
+		  }
+		}
+	      }
+	      myComm->bcast(splineData);
+	      set_multi_UBspline_3d_d 
+		(orbitalSet->FirstOrderSplines[ion][dim], ival, splineData.data());
+	    }
+	}
+	
+
 	
 	// Now read muffin tin data
 	for (int tin=0; tin<NumMuffinTins; tin++) {
