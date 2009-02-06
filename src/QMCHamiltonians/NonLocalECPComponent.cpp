@@ -157,7 +157,8 @@ namespace qmcplusplus {
 
 
   NonLocalECPComponent::RealType 
-  NonLocalECPComponent::evaluate(ParticleSet& W, int iat, TrialWaveFunction& psi,
+  NonLocalECPComponent::evaluate(ParticleSet& W, int iat, 
+				 TrialWaveFunction& psi,
 				 PosType &force_iat) {
     RealType esum=0.0;
     force_iat = PosType();
@@ -175,7 +176,11 @@ namespace qmcplusplus {
         PosType deltar(r*rrotsgrid_m[j]-dr);
         //W.makeMoveOnSphere(iel,deltar); 
         W.makeMove(iel,deltar) ;
-        psiratio[j]=psi.ratioGrad(W,iel,psigrad[j]) * sgridweight_m[j];
+	RealType ratio1 = psiratio[j] = psi.ratio(W,iel)*sgridweight_m[j];
+        RealType ratio2 = psi.ratioGrad(W,iel,psigrad[j]) * sgridweight_m[j];
+ 	if (std::fabs(ratio2 - ratio1) > 1.0e-8)
+ 	  fprintf (stderr, "ratio1 = %10.8f  ratio2 = %10.8f\n", 
+		   ratio1, ratio2);
 	psigrad[j] *= psiratio[j];
         W.rejectMove(iel);
         psi.rejectMove(iel);
@@ -246,6 +251,155 @@ namespace qmcplusplus {
     }   /* end loop over electron */
     return esum;
   }
+
+
+  NonLocalECPComponent::RealType 
+  NonLocalECPComponent::evaluate(ParticleSet& W, int iat, TrialWaveFunction& psi,
+				 PosType &force_iat, PosType &pulay) {
+    RealType esum=0.0;
+    force_iat = PosType();
+    pulay     = PosType();
+    int NumElecs = W.G.size();
+    if (WarpNorm.size() < NumElecs) {
+      WarpNorm.resize(NumElecs);
+      Gnew.resize(nknot, NumElecs);
+      dG.resize(NumElecs);
+      dL.resize(NumElecs);
+      Gion.resize(nknot);
+    }
+
+    // Compute warp norm for each electron
+    for (int kel=0; kel<NumElecs; kel++)
+      WarpNorm[kel] = 0.0;
+    for (int ion=0; ion<myTable->centers(); ion++) 
+      for (int mm=myTable->M[ion],kel=0; mm<myTable->M[ion+1]; mm++,kel++)
+	WarpNorm[kel] += WarpFunction(myTable->r(mm));
+    for (int kel=0; kel<NumElecs; kel++)
+      WarpNorm[kel] = 1.0/WarpNorm[kel];
+
+    for(int nn=myTable->M[iat],iel=0; nn<myTable->M[iat+1]; nn++,iel++){
+
+      register RealType r(myTable->r(nn));
+      if(r>Rmax) continue;
+
+      register RealType rinv(myTable->rinv(nn));
+      register PosType  dr(myTable->dr(nn));
+
+      // Compute ratio of wave functions
+      // psi.evalGrad(W,iat);
+      for (int j=0; j < nknot ; j++){ 
+        PosType deltar(r*rrotsgrid_m[j]-dr);
+        //W.makeMoveOnSphere(iel,deltar); 
+        W.makeMove(iel,deltar) ;
+        //psi.ratioGrad(W,iel,psigrad[j]) * sgridweight_m[j];
+	RealType ratio1 = psi.ratio(W,iel)                       * sgridweight_m[j];
+	RealType ratio2 = psiratio[j] = psi.ratio (W,iel,dG, dL) * sgridweight_m[j];
+
+ 	if (std::fabs(ratio2 - ratio1) > 1.0e-8)
+ 	  fprintf (stderr, "ratio1 = %10.8f  ratio2 = %10.8f\n", 
+		   ratio1, ratio2);
+
+	for (int i=0; i < NumElecs; i++)
+	  Gnew(j,i) = psiratio[j] * (W.G[i] + dG[i]);
+	psigrad[j] = Gnew(j,iel);
+	
+	// Now compute gradient of psi w.r.t. ion iat
+	Gion[j] = PosType();
+	for (int mm=myTable->M[iat],kel=0; mm<myTable->M[iat+1]; mm++,kel++)
+	  // Gion[j] -= WarpNorm[kel] * WarpFunction(myTable->r(mm)) *
+	  //   Gnew(j,kel);
+	  Gion[j] -= WarpNorm[kel] * WarpFunction(myTable->r(mm)) * dG[kel] * psiratio[j];
+
+	Gion[j] = -1.0*dG[iel] * psiratio[j];
+
+        W.rejectMove(iel);
+        psi.rejectMove(iel);
+      }
+      // Compute radial potential
+      for(int ip=0;ip< nchannel; ip++){
+	double dummy;
+        vrad[ip]=nlpp_m[ip]->splint(r,dvrad[ip],dummy)*wgt_angpp_m[ip];
+	dvrad[ip] *= wgt_angpp_m[ip];
+      }
+
+      // Compute spherical harmonics on grid
+      for (int j=0, jl=0; j<nknot ; j++){ 
+        RealType zz=dot(dr,rrotsgrid_m[j])*rinv;
+        // Forming the Legendre polynomials
+        lpol[0]=1.0;
+	dlpol[0] = 0.0;
+        RealType lpolprev=0.0;
+	RealType dlpolprev=0.0;
+        for (int l=0 ; l< lmax ; l++){
+          //Not a big difference
+          //lpol[l+1]=(2*l+1)*zz*lpol[l]-l*lpolprev;
+          //lpol[l+1]/=(l+1);
+          lpol[l+1]  = Lfactor1[l]*zz*lpol[l]-l*lpolprev; 
+	  dlpol[l+1] = Lfactor1[l]*lpol[l] + Lfactor1[l]*zz*dlpol[l] - l*dlpolprev;
+          lpol[l+1]  *= Lfactor2[l]; 
+	  dlpol[l+1] *= Lfactor2[l];
+          lpolprev  =  lpol[l];
+	  dlpolprev = dlpol[l];
+        }
+        for(int l=0; l <nchannel; l++,jl++){
+	  Amat[jl]  =  lpol[ angpp_m[l] ]; 
+	  dAmat[jl] = dlpol[ angpp_m[l] ];
+	} 
+      }
+      
+      // Force calculation
+      for (int j=0,jl=0; j<nknot; j++) {
+	for (int l=0; l<nchannel; l++,jl++) {
+	  // Term 1:  from dV/dr
+	  force_iat += Amat[jl] * psiratio[j] * dvrad[l] * rinv * dr;
+	  // Term 2:  from P_l(zz)
+	  force_iat -= dAmat[jl] * psiratio[j] * vrad[l] *
+	    (-rinv * rrotsgrid_m[j] + dot(dr,rrotsgrid_m[j])*rinv*rinv*rinv * dr);
+	  // Term 3:  from grad psi
+	  force_iat -= Amat[jl] * vrad[l] *
+	    (-dot(psigrad[j],rrotsgrid_m[j])*rinv*dr + psigrad[j]);
+
+	  // Pulay force, term 1
+	  // HACK HACK HACK
+	  pulay -= Amat[jl] * vrad[l] * Gion[j];
+	}
+      }
+
+
+      if(nchannel==1) {
+        esum += vrad[0]*BLAS::dot(nknot, &Amat[0],&psiratio[0]);
+      } else {
+        BLAS::gemv(nknot, nchannel, &Amat[0], &psiratio[0], &wvec[0]);
+        esum += BLAS::dot(nchannel, &vrad[0], &wvec[0]);
+      }
+    }   /* end loop over electron */
+    
+    // Now that we have esum=(W \psi)/psi, we can compute the second
+    // part of the Pulay correction
+    // Compute grad psi_T w.r.t. ion iat
+
+    // Compute warp norm for each electron
+    for (int kel=0; kel<NumElecs; kel++)
+      WarpNorm[kel] = 0.0;
+    
+    for (int ion=0; ion<myTable->centers(); ion++) 
+      for (int mm=myTable->M[ion],kel=0; mm<myTable->M[ion+1]; mm++,kel++)
+	WarpNorm[kel] += WarpFunction(myTable->r(mm));
+    for (int kel=0; kel<NumElecs; kel++)
+      WarpNorm[kel] = 1.0/WarpNorm[kel];
+    
+    // Now, compute gradient
+    PosType Giat = PosType();
+    for (int mm=myTable->M[iat],kel=0; mm<myTable->M[iat+1]; mm++,kel++)
+      Giat -= WarpNorm[kel] * WarpFunction(myTable->r(mm)) *W.G[kel];
+    //pulay += esum*Giat;
+    
+
+
+    return esum;
+  }
+
+
 
 
   NonLocalECPComponent::RealType 

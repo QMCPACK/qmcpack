@@ -1,11 +1,14 @@
 #include "QMCHamiltonians/PulayForce.h"
 #include "Particle/DistanceTable.h"
 #include "Particle/DistanceTableData.h"
+#include "QMCWaveFunctions/TrialWaveFunction.h"
 
 namespace qmcplusplus {
 
-  PulayForce::PulayForce(ParticleSet& ions, ParticleSet& elns)
-    : ForceBase(ions, elns), Ions(ions), Electrons(elns)
+  PulayForce::PulayForce(ParticleSet& ions, ParticleSet& elns,
+			 TrialWaveFunction &psi)
+    : ForceBase(ions, elns), Ions(ions), Electrons(elns),
+      Psi(psi)
   {
     GradLogPsi.resize(Nnuc);
     EGradLogPsi.resize(Nnuc);
@@ -86,6 +89,14 @@ namespace qmcplusplus {
   PulayForce::evaluate(ParticleSet& P)
   {
     const DistanceTableData& d_ab = *P.DistTables[myTableIndex];
+    for (int ion=0; ion < Nnuc; ion++) {
+      GradLogPsi[ion] = Psi.evalGradSource(P, Ions, ion);
+      RealType E = tWalker->Properties(0,LOCALENERGY);
+      EGradLogPsi[ion] = E * GradLogPsi[ion];
+    }
+    
+    return Value=0.0;
+
 
     //    cerr << "In PulayForce::evaluate(ParticleSet& P).\n";
 

@@ -283,6 +283,17 @@ namespace qmcplusplus {
         if(PtclA.GroupID[iat]==groupID) Vat[iat]=rfunc;
       }
     }
+
+    if (ComputeForces) {
+      FILE *fout = fopen ("Vlocal.dat", "w");
+      for (double r=1.0e-8; r<5.0; r+=1.0e-4) {
+	double d_rV_dr, d2_rV_dr2;
+	double Vr = Vat[0]->splint(r, d_rV_dr, d2_rV_dr2);
+	Vr = Vat[0]->splint(r);
+	fprintf (fout, "%1.8e %1.12e %1.12e %1.12e\n", r, Vr, d_rV_dr, d2_rV_dr2);
+      }
+      fclose(fout);
+    }
   }
 
   CoulombPBCABTemp::Return_t

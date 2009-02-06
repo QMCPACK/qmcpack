@@ -66,6 +66,19 @@ namespace qmcplusplus {
     vector<PosType> psigrad;
     vector<RealType> lpol, dlpol;
 
+    // For Pulay correction to the force
+    vector<RealType> WarpNorm;
+    ParticleSet::ParticleGradient_t dG;
+    ParticleSet::ParticleLaplacian_t dL;
+    // First index is knot, second is electron
+    Matrix<PosType> Gnew;
+    // The gradient of the wave function w.r.t. the ion position
+    // at each quadrature point.
+    ParticleSet::ParticleGradient_t Gion;
+    // For space-warp transformation used in Pulay correction
+    inline RealType WarpFunction (RealType r) { return 1.0/(r*r*r*r); }
+
+
     DistanceTableData* myTable;
 
     NonLocalECPComponent();
@@ -93,6 +106,10 @@ namespace qmcplusplus {
 
     RealType evaluate(ParticleSet& W, int iat, TrialWaveFunction& Psi,
 		      PosType &force_iat);
+
+    RealType evaluate(ParticleSet& W, int iat, TrialWaveFunction& Psi,
+		      PosType &force_iat, PosType &pulay_iat);
+
 
     RealType 
     evaluate(ParticleSet& W, TrialWaveFunction& Psi,int iat, vector<NonLocalData>& Txy);

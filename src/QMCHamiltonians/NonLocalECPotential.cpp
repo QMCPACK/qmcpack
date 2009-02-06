@@ -42,6 +42,7 @@ namespace qmcplusplus {
     PP.resize(NumIons,0);
     prefix="FNL";
     PPset.resize(IonConfig.getSpeciesSet().getTotalNum(),0);
+    PulayTerm.resize(NumIons);
   }
 
   ///destructor
@@ -63,6 +64,8 @@ namespace qmcplusplus {
 	if(PP[iat]) {
 	  PP[iat]->randomize_grid(*(P.Sphere[iat]),UpdateMode[PRIMARY]);
 	  Value += PP[iat]->evaluate(P,iat,Psi, forces[iat]);
+	  // Value += PP[iat]->evaluate(P,iat,Psi, forces[iat], 
+	  // 			     PulayTerm[iat]);
 	}
     }
     else {
@@ -142,6 +145,72 @@ namespace qmcplusplus {
     //  ++pit;
     //}
   }
+
+
+ void 
+  NonLocalECPotential::addObservables(QMCTraits::PropertySetType& plist) {
+    QMCHamiltonianBase::addObservables(plist);
+    if(FirstForceIndex<0) 
+      FirstForceIndex=plist.size();
+    for(int iat=0; iat<Nnuc; iat++) {
+      for(int x=0; x<OHMMS_DIM; x++) {
+        ostringstream obsName1, obsName2;
+        obsName1 << "FNL" << "_" << iat << "_" << x;
+        plist.add(obsName1.str());
+        obsName2 << "FNL_Pulay" << "_" << iat << "_" << x;
+        plist.add(obsName2.str());
+      }
+    }
+  }
+
+  void 
+  NonLocalECPotential::registerObservables(vector<observable_helper*>& h5list,
+				  hid_t gid) const
+  {
+    QMCHamiltonianBase::registerObservables(h5list, gid);
+    vector<int> ndim(2);
+    ndim[0]=Nnuc;
+    ndim[1]=OHMMS_DIM;
+    observable_helper* h5o1 = new observable_helper("FNL");
+    h5o1->set_dimensions(ndim,FirstForceIndex);
+    h5o1->open(gid);
+    h5list.push_back(h5o1);
+
+    observable_helper* h5o2 = new observable_helper("FNL_Pulay");
+    h5o2->set_dimensions(ndim,FirstForceIndex+Nnuc*OHMMS_DIM);
+    h5o2->open(gid);
+    h5list.push_back(h5o2);
+  }
+
+  void 
+  NonLocalECPotential::setObservables(QMCTraits::PropertySetType& plist) 
+  {
+    QMCHamiltonianBase::setObservables(plist);
+    int index = FirstForceIndex;
+    for(int iat=0; iat<Nnuc; iat++) {
+      for(int x=0; x<OHMMS_DIM; x++) {
+        plist[index++] = forces[iat][x];
+	plist[index++] = PulayTerm[iat][x];
+      }
+    }
+  }
+   
+
+  void 
+  NonLocalECPotential::setParticlePropertyList(QMCTraits::PropertySetType& plist, 
+				      int offset)
+  {
+    QMCHamiltonianBase::setParticlePropertyList (plist, offset);
+    int index = FirstForceIndex + offset;
+    for(int iat=0; iat<Nnuc; iat++) {
+      for(int x=0; x<OHMMS_DIM; x++) {
+        plist[index++] = forces[iat][x];
+        plist[index++] = PulayTerm[iat][x];
+      }
+    }
+  }
+
+
 }
 /***************************************************************************
  * $RCSfile$   $Author$

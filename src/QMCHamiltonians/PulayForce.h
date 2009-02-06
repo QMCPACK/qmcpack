@@ -24,12 +24,14 @@ namespace qmcplusplus {
   {
     ParticleSet& Ions;
     ParticleSet& Electrons;
+    TrialWaveFunction& Psi;
 
     vector<RealType> WarpNorm;
 
     ParticleSet::ParticlePos_t GradLogPsi, EGradLogPsi;
     
-    PulayForce(ParticleSet& ions, ParticleSet& elns);
+    PulayForce(ParticleSet& ions, ParticleSet& elns,
+	       TrialWaveFunction &psi);
 
     void resetTargetParticleSet(ParticleSet& P);
 
@@ -46,7 +48,7 @@ namespace qmcplusplus {
 
     QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi)
     { 
-      PulayForce *myClone = new PulayForce (Ions, qp);
+      PulayForce *myClone = new PulayForce (Ions, qp, psi);
       myClone->FirstForceIndex = FirstForceIndex;
       return myClone;
     }

@@ -607,7 +607,8 @@ namespace qmcplusplus {
 
   void 
   HamiltonianFactory::addForceHam(xmlNodePtr cur) {
-    string a("ion0"),targetName("e"),title("ForceBase"),pbc("yes");
+    string a("ion0"),targetName("e"),title("ForceBase"),pbc("yes"),
+      PsiName="psi0";
     OhmmsAttributeSet hAttrib;
     string mode("bare");
     //hAttrib.add(title,"id");
@@ -616,6 +617,7 @@ namespace qmcplusplus {
     hAttrib.add(targetName,"target"); 
     hAttrib.add(pbc,"pbc"); 
     hAttrib.add(mode,"mode"); 
+    hAttrib.add(PsiName, "psi");
     hAttrib.put(cur);
     cerr << "HamFac forceBase mode " << mode << endl;
     renameProperty(a);
@@ -639,8 +641,14 @@ namespace qmcplusplus {
       targetH->addOperator(new BareForce(*source, *target), title, false);
     else if(mode=="cep") 
       targetH->addOperator(new ForceCeperley(*source, *target), title, false);
-    else if(mode=="pulay")
-      targetH->addOperator(new PulayForce(*source, *target), title, false);
+    else if(mode=="pulay") {
+      OrbitalPoolType::iterator psi_it(psiPool.find(PsiName));
+      if(psi_it == psiPool.end()) {
+	APP_ABORT("Unknown psi \""+PsiName+"\" for Chiesa correction.");
+      }
+      TrialWaveFunction &psi = *psi_it->second->targetPsi;
+      targetH->addOperator(new PulayForce(*source, *target, psi), title, false);
+    }
     else {
       ERRORMSG("Failed to recognize Force mode " << mode);
       //} else if(mode=="FD") {
