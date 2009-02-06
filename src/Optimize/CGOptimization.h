@@ -252,18 +252,18 @@ void
 CGOptimization<T>::evaluateGradients(std::vector<Return_t>& grad) {
 
   //use targetFunc evaluateGradients if it does it better
-  if(TargetFunc->evaluateGradients(grad)) return;
-
-  //do the finite difference method
-  Return_t dh=1.0/(2.0*Displacement);
-  for(int i=0; i<TargetFunc->NumParams() ; i++) {
-    for(int j=0; j<TargetFunc->NumParams(); j++) TargetFunc->Params(j)=Y[j];
-    TargetFunc->Params(i) = Y[i]+ Displacement;
-    Return_t CostPlus = TargetFunc->Cost();
-    TargetFunc->Params(i) = Y[i]- Displacement;
-    Return_t CostMinus = TargetFunc->Cost();
-    grad[i]=(CostMinus-CostPlus)*dh;
-  }
+  TargetFunc->GradCost(FG, RT, Displacement);
+ 
+//   //do the finite difference method
+//   Return_t dh=1.0/(2.0*Displacement);
+//   for(int i=0; i<TargetFunc->NumParams() ; i++) {
+//     for(int j=0; j<TargetFunc->NumParams(); j++) TargetFunc->Params(j)=Y[j];
+//     TargetFunc->Params(i) = Y[i]+ Displacement;
+//     Return_t CostPlus = TargetFunc->Cost();
+//     TargetFunc->Params(i) = Y[i]- Displacement;
+//     Return_t CostMinus = TargetFunc->Cost();
+//     grad[i]=(CostMinus-CostPlus)*dh;
+//   }
 
 }
 
