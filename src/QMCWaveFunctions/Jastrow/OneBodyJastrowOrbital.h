@@ -275,6 +275,22 @@ namespace qmcplusplus {
       return curGrad;
     }
 
+    inline GradType evalGradSource(ParticleSet& P, 
+				   ParticleSet& source, int isrc)
+    {
+      if (&source != &CenterRef)
+	return GradType();
+      FT* func=Fs[isrc];
+      if(func == 0) return GradType();
+      GradType G(0.0);
+      RealType dudr, d2udr2;
+      for(int nn=d_table->M[isrc]; nn<d_table->M[isrc+1]; nn++) {
+	RealType uij= func->evaluate(d_table->r(nn), dudr, d2udr2);
+	dudr *= d_table->rinv(nn);
+	G += dudr*d_table->dr(nn);
+      }
+    }
+
     inline ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
     {
       int n=d_table->size(VisitorIndex);

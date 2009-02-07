@@ -193,7 +193,7 @@ namespace qmcplusplus {
 				    ParticleSet& source,
 				    int iat) 
     {
-      APP_ABORT("OrbitalBase::evalGradSource is not implemented");
+      // APP_ABORT("OrbitalBase::evalGradSource is not implemented");
       return GradType();
     }
 
