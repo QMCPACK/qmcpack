@@ -118,7 +118,7 @@ namespace qmcplusplus {
         vector<RealType>& dlogpsi,
         vector<RealType>& dhpsioverpsi);
     void checkOutVariables(const opt_variables_type& optvars);
-    void resetParameters(opt_variables_type& optvars);
+    void resetParameters(const opt_variables_type& optvars);
 
     ///\f$\nabla \partial_{\alpha} log\Psi\f$
     GradVectorType gradLogPsi, dg_p, dg_m;
@@ -139,7 +139,7 @@ namespace qmcplusplus {
         vector<RealType>& dlogpsi,
         vector<RealType>& dhpsioverpsi);
     void checkOutVariables(const opt_variables_type& optvars);
-    void resetParameters(opt_variables_type& optvars);
+    void resetParameters(const opt_variables_type& optvars);
 
     ///\f$\nabla \partial_{\alpha} log\Psi\f$
     GradVectorType gradLogPsi;

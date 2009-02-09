@@ -46,7 +46,7 @@ namespace qmcplusplus {
     //do nothing
   }
   //@{implementation of NumericalDiffOrbital
-  void NumericalDiffOrbital::resetParameters(opt_variables_type& optvars)
+  void NumericalDiffOrbital::resetParameters(const opt_variables_type& optvars)
   {
     //do nothing
   }
@@ -106,7 +106,7 @@ namespace qmcplusplus {
   //@}
   
   //@{implementation of AnalyticDiffOrbital
-  void AnalyticDiffOrbital::resetParameters(opt_variables_type& optvars)
+  void AnalyticDiffOrbital::resetParameters(const opt_variables_type& optvars)
   {
     if(MyIndex<0) return;
     for(int i=0; i<refOrbital.size(); ++i)
