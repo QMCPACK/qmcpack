@@ -289,6 +289,7 @@ namespace qmcplusplus {
 	dudr *= d_table->rinv(nn);
 	G += dudr*d_table->dr(nn);
       }
+      return G;
     }
 
     inline ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
