@@ -78,15 +78,12 @@ namespace qmcplusplus
 
   bool SkEstimator::put(xmlNodePtr cur)
   {
-    //string debug("no");
-    //OhmmsAttributeSet attrib;
-    //attrib.add(debug,"debug");
-    //attrib.put(cur);
-    //if(debug == "yes") SkInst.resize(NumK);
+    return true;
   }
 
   bool SkEstimator::get(std::ostream& os) const
   {
+    return true;
   }
 
   QMCHamiltonianBase* SkEstimator::makeClone(ParticleSet& qp

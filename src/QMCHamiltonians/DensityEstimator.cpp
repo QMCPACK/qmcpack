@@ -88,19 +88,13 @@ namespace qmcplusplus
     attrib.put(cur);
 
     resize();
-
-    //if(debug=="yes")
-    //{
-    //  app_warning() << "DensityEstimator::put detected debug mode turned on\n";
-    //  app_warning() << "Treating density estimator the usual way will increase the memory use by "
-    //     << NumGrids[OHMMS_DIM] << endl;
-    //  density.resize(NumGrids[0],NumGrids[1],NumGrids[2]);
-    //}
+    return true;
   }
 
   bool DensityEstimator::get(std::ostream& os) const
   {
     os << myName << " bin =" << Delta << " bohrs " << endl;
+    return true;
   }
 
   QMCHamiltonianBase* DensityEstimator::makeClone(ParticleSet& qp

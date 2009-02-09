@@ -225,11 +225,13 @@ namespace qmcplusplus
     ////resize(nbins);
     //if(debug == "yes")
     //  gof_r.resize(gof_r_prefix.size(),NumBins);
+    return true;
   }
 
   bool PairCorrEstimator::get(std::ostream& os) const
   {
     os << myName << " dmax=" << Dmax << endl;
+    return true;
   }
 
   QMCHamiltonianBase* PairCorrEstimator::makeClone(ParticleSet& qp
