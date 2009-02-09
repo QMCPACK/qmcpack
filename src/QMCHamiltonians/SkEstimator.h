@@ -41,6 +41,7 @@ namespace qmcplusplus
       return evaluate(P);
     }
 
+    void addObservables(PropertySetType& plist) { }
     void addObservables(PropertySetType& plist, BufferType& collectables);
     void registerCollectables(vector<observable_helper*>& h5desc, hid_t gid) const ;
     void setObservables(PropertySetType& plist) {}
