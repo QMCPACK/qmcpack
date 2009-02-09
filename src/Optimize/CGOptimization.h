@@ -162,7 +162,7 @@ bool CGOptimization<T>::optimize() {
     bool success=TargetFunc->lineoptimization(Y,cgY,curCost,lambda_a,val_proj,lambda_max);
     if(success)
     {
-      if(lambda_a>0)
+      if(std::fabs(lambda_a)>0.0)
       {
         this->Lambda=lambda_a;
         curCost=val_proj;
@@ -174,7 +174,7 @@ bool CGOptimization<T>::optimize() {
     else
     {
       success = this->lineoptimization();
-      success &= (TargetFunc->IsValid && this->Lambda>0.0);
+      success &= (TargetFunc->IsValid && std::fabs(this->Lambda)>0.0);
       if(success) curCost= Func(this->Lambda);
     }
 
