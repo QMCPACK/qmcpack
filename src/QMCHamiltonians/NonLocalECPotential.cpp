@@ -150,15 +150,17 @@ namespace qmcplusplus {
  void 
   NonLocalECPotential::addObservables(QMCTraits::PropertySetType& plist) {
     QMCHamiltonianBase::addObservables(plist);
-    if(FirstForceIndex<0) 
-      FirstForceIndex=plist.size();
-    for(int iat=0; iat<Nnuc; iat++) {
-      for(int x=0; x<OHMMS_DIM; x++) {
-        ostringstream obsName1, obsName2;
-        obsName1 << "FNL" << "_" << iat << "_" << x;
-        plist.add(obsName1.str());
-        obsName2 << "FNL_Pulay" << "_" << iat << "_" << x;
-        plist.add(obsName2.str());
+    if (ComputeForces) {
+      if(FirstForceIndex<0) 
+	FirstForceIndex=plist.size();
+      for(int iat=0; iat<Nnuc; iat++) {
+	for(int x=0; x<OHMMS_DIM; x++) {
+	  ostringstream obsName1, obsName2;
+	  obsName1 << "FNL" << "_" << iat << "_" << x;
+	  plist.add(obsName1.str());
+	  obsName2 << "FNL_Pulay" << "_" << iat << "_" << x;
+	  plist.add(obsName2.str());
+	}
       }
     }
   }
@@ -186,11 +188,13 @@ namespace qmcplusplus {
   NonLocalECPotential::setObservables(QMCTraits::PropertySetType& plist) 
   {
     QMCHamiltonianBase::setObservables(plist);
-    int index = FirstForceIndex;
-    for(int iat=0; iat<Nnuc; iat++) {
-      for(int x=0; x<OHMMS_DIM; x++) {
-        plist[index++] = forces[iat][x];
-	plist[index++] = PulayTerm[iat][x];
+    if (ComputeForces) {
+      int index = FirstForceIndex;
+      for(int iat=0; iat<Nnuc; iat++) {
+	for(int x=0; x<OHMMS_DIM; x++) {
+	  plist[index++] = forces[iat][x];
+	  plist[index++] = PulayTerm[iat][x];
+	}
       }
     }
   }
@@ -201,11 +205,13 @@ namespace qmcplusplus {
 				      int offset)
   {
     QMCHamiltonianBase::setParticlePropertyList (plist, offset);
-    int index = FirstForceIndex + offset;
-    for(int iat=0; iat<Nnuc; iat++) {
-      for(int x=0; x<OHMMS_DIM; x++) {
-        plist[index++] = forces[iat][x];
-        plist[index++] = PulayTerm[iat][x];
+    if (ComputeForces) {
+      int index = FirstForceIndex + offset;
+      for(int iat=0; iat<Nnuc; iat++) {
+	for(int x=0; x<OHMMS_DIM; x++) {
+	  plist[index++] = forces[iat][x];
+	  plist[index++] = PulayTerm[iat][x];
+	}
       }
     }
   }
