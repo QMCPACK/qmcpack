@@ -10,6 +10,8 @@ SET(HAMSRCS
   ForceBase.cpp
   PulayForce.cpp
   ForceCeperley.cpp
+  ForwardWalking.cpp
+  trialDMCcorrection.cpp
   ChiesaCorrection.cpp
   PairCorrEstimator.cpp
   DensityEstimator.cpp

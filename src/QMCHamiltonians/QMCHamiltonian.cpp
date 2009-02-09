@@ -11,6 +11,7 @@
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
+//   Department of Physics, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 #include "QMCHamiltonians/QMCHamiltonian.h"
@@ -126,8 +127,7 @@ QMCHamiltonian::addOperator(QMCHamiltonianBase* h, const string& aname, bool phy
 //  app_log() << "    starting Index = " << myIndex << endl;
 //}
 //
-void 
-QMCHamiltonian::addObservables(ParticleSet& P)
+int QMCHamiltonian::addObservables(ParticleSet& P)
 {
   //first add properties to Observables
   Observables.clear();
@@ -138,14 +138,18 @@ QMCHamiltonian::addObservables(ParticleSet& P)
   for(int i=0; i<H.size(); ++i) H[i]->addObservables(Observables,P.Collectables);
   for(int i=0; i<auxH.size(); ++i) auxH[i]->addObservables(Observables,P.Collectables);
 
+  int last_obs;
   myIndex=P.PropertyList.add(Observables.Names[0]);
-  for(int i=1; i<Observables.size(); ++i) P.PropertyList.add(Observables.Names[i]);
+  for(int i=1; i<Observables.size(); ++i) 
+    last_obs=P.PropertyList.add(Observables.Names[i]);
 
   numCollectables=P.Collectables.size();
   app_log() << "\n  QMCHamiltonian::add2WalkerProperty added" 
     << "\n    " << Observables.size()  << " to P::PropertyList " 
     << "\n    " <<  P.Collectables.size() << " to P::Collectables "
     << "\n    starting Index of the observables in P::PropertyList = " << myIndex << endl;
+
+  return Observables.size(); 
 }
 
 void QMCHamiltonian::resetObservables(int start, int ncollects)
@@ -178,15 +182,6 @@ QMCHamiltonian::registerCollectables(vector<observable_helper*>& h5desc
 {
   //The physical operators cannot add to collectables
   for(int i=0; i<auxH.size(); ++i) auxH[i]->registerCollectables(h5desc,gid);
-}
-
-void QMCHamiltonian::setTempObservables(PropertySetType& plist)
-{
-  //first add properties to Observables
-  Observables.clear();
-  for(int i=0; i<H.size(); ++i) H[i]->addObservables(Observables);
-  for(int i=0; i<auxH.size(); ++i) auxH[i]->addObservables(Observables);
-  myIndex=plist.size();
 }
 
 /** Evaluate all the Hamiltonians for the N-particle  configuration

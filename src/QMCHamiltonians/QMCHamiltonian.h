@@ -72,8 +72,10 @@ namespace qmcplusplus {
     //void addObservables(PropertySetType& plist);
 
     /** add each term to P.PropertyList and P.mcObservables
+     * @param P particle set to which observables are added
+     * @return the number of observables
      */
-    void addObservables(ParticleSet& P);
+    int addObservables(ParticleSet& P);
 
     /** register obsevables so that their averages can be dumped to hdf5
      * @param h5desc has observable_helper* for each h5 group
@@ -87,8 +89,6 @@ namespace qmcplusplus {
      * Add observable_helper information for the data stored in ParticleSet::mcObservables.
      */
     void registerCollectables(vector<observable_helper*>& h5desc, hid_t gid) const ;
-    ///Sets the observable sup so Forward walking can look and find the elements
-    void setTempObservables(PropertySetType& plist);
     ///retrun the starting index
     inline int startIndex() const { return myIndex;}
     ///return the size of observables

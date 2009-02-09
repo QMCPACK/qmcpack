@@ -135,7 +135,7 @@ namespace qmcplusplus {
       }
     }
 
-    xmlNodePtr cur2(cur);
+    xmlNodePtr cur_saved(cur);
     cur = cur->children;
     while(cur != NULL) 
     {
@@ -382,16 +382,6 @@ namespace qmcplusplus {
 	  PV->put(cur,targetPtcl,ptclPool,myComm);
 	  targetH->addOperator(PV,"DMCPsiRatio",false);
 	}
-	
-	
-
-//         else if (potType=="ForwardWalking"){
-//           app_log()<<"  Adding Forward Walking Operator"<<endl;
-//           ForwardWalking* FW=new ForwardWalking();
-//           FW->put(cur,*targetH,*targetPtcl);
-//           targetH->addOperator(FW,"ForwardWalking",false);
-//           
-//         }
       } 
       else if (cname == "Kinetic")
       {
@@ -401,112 +391,55 @@ namespace qmcplusplus {
 	  hAttrib.add(TargetName,"Dependant"); 
 	  hAttrib.add(SourceName, "Independant");
 	  hAttrib.put(cur);
-	  //hand two particle sets to the Hamiltonian. One is independant(heavy ions, not parameterized by electron positions), the other is dependant (parameterized by the others positions). This Hamiltonian element must also correct the Drift/Gradient and Laplacians in the Particlesets.
-	  
-	  
       }
-      
-      //else if(cname == "harmonic") 
-      //{
-      //  PtclPoolType::iterator pit(ptclPool.find(sourceInp));
-      //  if(pit != ptclPool.end()) 
-      //  {
-      //    ParticleSet* ion=(*pit).second;
-      //    targetH->addOperator(new HarmonicPotential(*ion, *targetPtcl),"Harmonic");
-      //    app_log() << "  Adding HarmonicPotential " << endl;
-      //  }
-      //} 
-
-      //const xmlChar* t = xmlGetProp(cur,(const xmlChar*)"type");
-      //if(t != NULL) { // accept only if it has type
-      //  string pot_type((const char*)t);
-      //  string nuclei("i");
-
-      //  const xmlChar* sptr = xmlGetProp(cur,(const xmlChar*)"source");
-      //  if(sptr != NULL) nuclei=(const char*)sptr;
-      //  renameProperty(nuclei);
-
-      //  if(cname == "pairpot") {
-      //    if(pot_type == "coulomb") {
-      //      bool sameTarget=true;
-      //      string aNewTarget(targetPtcl->getName());
-      //      const xmlChar* aptr = xmlGetProp(cur,(const xmlChar*)"target");
-      //      if(aptr != NULL) {
-      //        aNewTarget=(const char*)aptr;
-      //        renameProperty(aNewTarget);
-      //        sameTarget= (aNewTarget == targetPtcl->getName());
-      //      } 
-      //      cout << "This is most likely problem " << aNewTarget << " " << targetPtcl->getName() << " " << targetPtcl->parent() << endl;
-      //      if(sameTarget) 
-      //        addCoulombPotential(cur);
-      //      else {
-      //        app_log() << "  Creating Coulomb potential " << nuclei << "-" << nuclei << endl;
-      //        addConstCoulombPotential(cur,nuclei);
-      //      }
-      //    } else if(pot_type == "pseudo") {
-      //      addPseudoPotential(cur);
-      //    } else if(pot_type == "cpp") {
-      //      addCorePolPotential(cur);
-      //    }
-      //  } 
-      //  else if(cname == "harmonic") {
-      //    PtclPoolType::iterator pit(ptclPool.find(nuclei));
-      //    if(pit != ptclPool.end()) {
-      //      ParticleSet* ion=(*pit).second;
-      //      targetH->addOperator(new HarmonicPotential(*ion, *targetPtcl),"Harmonic");
-      //      app_log() << "  Adding HarmonicPotential " << endl;
-      //    }
-      //  } else if(cname == "constant") { 
-      //    if(pot_type == "coulomb") { //ugly!!!
-      //      addConstCoulombPotential(cur,nuclei);
-      //    }
-      //  } else if(cname == "modInsKE") {
-      //    addModInsKE(cur);
-      //  }
-      //}
       if(attach2Node) xmlAddChild(myNode,xmlCopyNode(cur,1));
       cur = cur->next;
     }
 
-    //ATTENTION FORWARD WALKING IS BROKEN 
-    //targetH->setTempObservables(targetPtcl->PropertyList);
-    targetH->addObservables(*targetPtcl);
-    
-    ///This is officially ugly, but we need to add all observables (previous line) 
-    ///before the forward walker is initialized otherwise we can't find them.
-    cur2 = cur2->children;
-    bool FoundET(false);
-    while(cur2 != NULL) {
-      string cname((const char*)cur2->name);
-      string potType("Null");
+    //add observables with physical and simple estimators
+    int howmany=targetH->addObservables(*targetPtcl);
+
+    //do correction
+    bool dmc_correction=false;
+    cur = cur_saved->children;
+    while(cur != NULL) 
+    {
+      string cname((const char*)cur->name);
+      string potType("0");
       OhmmsAttributeSet attrib;
       attrib.add(potType,"type");
-      attrib.put(cur2);
-      if((cname == "estimator")&&(potType=="ZeroVarObs"))
+      attrib.put(cur);
+      if(cname == "estimator")
       {
-        app_log()<<"  Adding ZeroVarObs Operator"<<endl;
-//         ZeroVarObs* FW=new ZeroVarObs();
-//         FW->put(cur2,*targetH,*targetPtcl);
-//         targetH->addOperator(FW,"ZeroVarObs",false);
+        if(potType=="ZeroVarObs")
+        {
+          app_log()<<"  Adding ZeroVarObs Operator"<<endl;
+          //         ZeroVarObs* FW=new ZeroVarObs();
+          //         FW->put(cur,*targetH,*targetPtcl);
+          //         targetH->addOperator(FW,"ZeroVarObs",false);
+        }
+        else if(potType == "DMCCorrection")
+        {
+          TrialDMCCorrection* TE = new TrialDMCCorrection();
+          TE->putSpecial(cur,*targetH,*targetPtcl);
+          targetH->addOperator(TE,"DMC_CORR",false);
+          dmc_correction=true;
+        }
+        else if(potType == "ForwardWalking")
+        {
+          app_log()<<"  Adding Forward Walking Operator"<<endl;
+          ForwardWalking* FW=new ForwardWalking();
+          FW->putSpecial(cur,*targetH,*targetPtcl);
+          targetH->addOperator(FW,"ForwardWalking",false);
+          dmc_correction=true;
+        }
       }
-      else if((cname == "estimator")&&(potType=="ForwardWalking"))
-      {
-        app_log()<<"  Adding Forward Walking Operator"<<endl;
-        ForwardWalking* FW=new ForwardWalking();
-        FW->put(cur2,*targetH,*targetPtcl);
-        targetH->addOperator(FW,"ForwardWalking",false);
-      }
-      else if((cname == "estimator")&&(potType == "DMCCorrection"))
-      {
-	TrialDMCCorrection* TE = new TrialDMCCorrection();
-	TE->put(cur2,*targetH,*targetPtcl);
-	targetH->addOperator(TE,"DMC_CORR",false);
-	targetH->setTempObservables(targetPtcl->PropertyList);
-      }
-      cur2 = cur2->next;
+      cur = cur->next;
     }
-    //targetH->addObservables(targetPtcl->PropertyList);
-    targetH->addObservables(*targetPtcl);
+
+    //evaluate the observables again
+    if(dmc_correction) howmany=targetH->addObservables(*targetPtcl);
+
     return true;
   }
 

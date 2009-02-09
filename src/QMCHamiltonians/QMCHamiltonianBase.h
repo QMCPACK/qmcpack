@@ -61,6 +61,8 @@ namespace qmcplusplus {
      * PooledData<RealType> is used to serialized an anonymous buffer
      */
     typedef ParticleSet::Buffer_t  BufferType;
+    ///typedef for the walker
+    typedef ParticleSet::Walker_t  Walker_t;
 
     ///enum for UpdateMode
     enum {PRIMARY, OPTIMIZABLE, RATIOUPDATE, PHYSICAL, COLLECTABLE};
@@ -77,15 +79,16 @@ namespace qmcplusplus {
     /// This is used to store the value for force on the source
     /// ParticleSet.  It is accumulated if setComputeForces(true).
     ParticleSet::ParticlePos_t IonForce;
-    ///what is this????
-    Walker<Return_t, ParticleSet::ParticleGradient_t>* tWalker;
+    ///reference to the current walker
+    Walker_t* tWalker;
+    //Walker<Return_t, ParticleSet::ParticleGradient_t>* tWalker;
     ///name of this object
     string myName;
     ///name of dependent object: to be removed
     string depName;
    
     ///constructor
-    QMCHamiltonianBase():myIndex(-1),Value(0.0),Dependants(0)
+    QMCHamiltonianBase():myIndex(-1),Value(0.0),Dependants(0),tWalker(0)
     {
       UpdateMode.set(PRIMARY,1);
     }
@@ -113,7 +116,6 @@ namespace qmcplusplus {
     virtual void addObservables(PropertySetType& plist, BufferType& collectables)
     {
       addObservables(plist);
-      // if(!UpdateMode[COLLECTABLE]) myIndex=plist.add(myName.c_str());
     }
 
     /*** add to observable descriptor for hdf5 
