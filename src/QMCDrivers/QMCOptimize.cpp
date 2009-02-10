@@ -22,6 +22,7 @@
 #include "Message/CommOperators.h"
 #include "Optimize/CGOptimization.h"
 #include "Optimize/flexOptimization.h"
+#include "Optimize/testDerivOptimization.h"
 #include "Optimize/BFGSOptimization.h"
 #include "Optimize/DampedDynamics.h"
 #include "QMCDrivers/VMC/VMCSingle.h"
@@ -223,7 +224,7 @@ namespace qmcplusplus {
         app_log() << " Annealing optimization using DampedDynamics"<<endl;
         optSolver = new DampedDynamics<RealType>;
       }  
-      else if((optmethod == "flexOpt")  | (optmethod == "macopt") )
+      else if((optmethod == "flexOpt")  |(optmethod == "flexopt")  | (optmethod == "macopt") )
       {
         app_log() << "Conjugate-gradient optimization using FlexOptimization"<<endl;
         optSolver = new FlexOptimization<RealType>;
@@ -233,12 +234,16 @@ namespace qmcplusplus {
         app_log() << "Approximate Hessian optimization using BFGSOptimization"<<endl;
         optSolver = new BFGSOptimization<RealType>;
       } 
+      else if (optmethod == "test")
+      {
+        app_log() << "Conjugate-gradient optimization using tester Optimization: "<<endl;
+        optSolver = new testDerivOptimization<RealType>;
+      }
       else
       {
         app_log() << " Conjugate-gradient optimization using CGOptimization"<<endl;
         optSolver = new CGOptimization<RealType>;
-      }
-      //set the stream
+      }      //set the stream
       optSolver->setOstream(&app_log());
     }
 

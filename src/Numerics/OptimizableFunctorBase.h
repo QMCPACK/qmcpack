@@ -20,6 +20,7 @@
 #define QMCPLUSPLUS_OPTIMIZABLEFUNCTORBASE_H
 #include "Optimize/VariableSet.h"
 #include "OhmmsData/OhmmsElementBase.h"
+#include "OhmmsPETE/TinyVector.h"
 
 /** Base class for any functor with optimizable parameters
  *
@@ -98,6 +99,11 @@ struct OptimizableFunctorBase
   /** empty virtual function to help builder classes
   */
   virtual void setDensity(real_type n) { }
+  
+  virtual inline bool evaluateDerivatives (real_type r, std::vector<APPNAMESPACE::TinyVector<real_type,3> >& derivs)
+    {
+      return false;
+    }
 };
 
 #endif

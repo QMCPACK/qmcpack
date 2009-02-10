@@ -21,6 +21,9 @@
 #include "Numerics/OptimizableFunctorBase.h"
 #include "OhmmsData/AttributeSet.h"
 #include <cmath>
+// #include <vector>
+#include "OhmmsPETE/TinyVector.h"
+
 
 namespace qmcplusplus {
 
@@ -107,6 +110,18 @@ namespace qmcplusplus {
         real_type res=evaluate(r,dudr,d2udr2);
         return dudr;
       }
+      
+      inline bool evaluateDerivatives (real_type r, std::vector<TinyVector<real_type,3> >& derivs)
+    {
+      real_type u = 1.0/(1.0+B*r);
+      derivs[0][0]= r*u;
+      derivs[1][0]= -A*r*r*u*u;
+      derivs[0][1]= u*u;
+      derivs[1][1]= -2.0*A*r*u*u*u;
+      derivs[0][2]= -B2*u*u*u;
+      derivs[1][2]= 2*A*(B2*r-1)*u*u*u*u;
+      return true; 
+    }
 
       bool put(xmlNodePtr cur) {
         real_type Atemp(A),Btemp(B0);
@@ -225,10 +240,10 @@ namespace qmcplusplus {
        */
       inline real_type evaluate(real_type r, real_type& dudr, real_type& d2udr2) {
         real_type u = 1.0/(1.0+B*r);
-        real_type v = A*r+B*r*r;
+        real_type v = A*r+C*r*r;
         real_type w = A+C2*r;
         dudr = u*(w-B*u*v);
-        d2udr2 = 2.0*u*(C-B*dudr);
+        d2udr2 = 2.0*u*u*u*(C-B*A);
         return u*v;
       }
 
@@ -241,6 +256,30 @@ namespace qmcplusplus {
         real_type res=evaluate(r,dudr,d2udr2);
         return dudr;
       }
+    
+    inline bool evaluateDerivatives (real_type r, std::vector<TinyVector<real_type,3> >& derivs)
+    {
+      real_type u = 1.0/(1.0+B*r);
+      real_type u2 = u*u;
+      real_type u3 = u*u*u;
+      real_type u4 = u*u*u*u;
+      
+      derivs[0][0]= r*u;
+      derivs[1][0]= -r*r*(A+C*r)*u2;
+      derivs[2][0]= r*r*u;
+      
+      derivs[0][1]= u2;
+      derivs[1][1]= -r*(2.0*A+C*r*(3.0+B*r))*u3;
+      derivs[2][1]= r*(2.0+B*r)*u2;
+      
+      derivs[0][2]= -2.0*B*u3;
+      derivs[1][2]= -2.0*u4*(A-2.0*A*B*r+3.0*C*r);
+      derivs[2][2]= 2.0*u3;
+      return true; 
+    }
+      
+      
+      
 
       /** process input xml node
        * @param cur current xmlNode from which the data members are reset
@@ -252,31 +291,45 @@ namespace qmcplusplus {
         real_type Atemp,Btemp, Ctemp;
         //jastrow[iab]->put(cur->xmlChildrenNode,wfs_ref.RealVars);
         xmlNodePtr tcur = cur->xmlChildrenNode;
+        bool renewed=false;
         while(tcur != NULL) {
-          //@todo Var -> <param(eter) role="opt"/>
           std::string cname((const char*)(tcur->name));
-          if(cname == "parameter") {
-            std::string aname((const char*)(xmlGetProp(tcur,(const xmlChar *)"name")));
-            std::string idname((const char*)(xmlGetProp(tcur,(const xmlChar *)"id")));
-            if(aname == "A") {
-              ID_A = idname;
+          if(cname == "parameter" || cname == "Var") 
+          {
+            std::string id_in("0");
+            std::string p_name("B");
+            OhmmsAttributeSet rAttrib;
+            rAttrib.add(id_in, "id");
+            rAttrib.add(p_name, "name"); 
+            rAttrib.put(tcur);
+            if(p_name=="A")
+            {
+              ID_A = id_in;
               putContent(Atemp,tcur);
-            } else if(aname == "B"){
-              ID_B = idname;
+              renewed=true;
+            } else if(p_name == "B"){
+              ID_B = id_in;
               putContent(Btemp,tcur);
-            } else if(aname == "C") {
-              ID_C = idname;
+              renewed=true;
+            } else if(p_name == "C"){
+              ID_C = id_in;
               putContent(Ctemp,tcur);
+              renewed=true;
             }
           }
+
           tcur = tcur->next;
         }
+        if (renewed)
+        {
         A=Atemp; B=Btemp; C=Ctemp;
         reset();
         //these are always active 
-        myVars.insert(ID_A,A,true);
-        myVars.insert(ID_B,B,true);
-        myVars.insert(ID_C,C,true);
+        myVars.clear();
+        myVars.insert(ID_A,A,ID_A!="0");
+        myVars.insert(ID_B,B,ID_B!="0");
+        myVars.insert(ID_C,C,ID_C!="0");
+        }
         //LOGMSG("Jastrow (A*r+C*r*r)/(1+Br) = (" << A << "," << B << "," << C << ")") 
         return true;
       }
@@ -292,9 +345,9 @@ namespace qmcplusplus {
       }
       void resetParameters(const opt_variables_type& active) 
       {
-        if(myVars.where(0)>-1) A=active[myVars.where(0)];
-        if(myVars.where(1)>-1) B=active[myVars.where(1)];
-        if(myVars.where(2)>-1) C=active[myVars.where(2)];
+        if (ID_A!="0") {int ia=myVars.where(0); if(ia>-1) A=myVars[0]=active[ia];}
+        if (ID_B!="0") {int ib=myVars.where(1); if(ib>-1) B=myVars[1]=active[ib];}
+        if (ID_C!="0") {int ic=myVars.where(2); if(ic>-1) C=myVars[2]=active[ic];}
         C2 = 2.0*C;
       }
     };
