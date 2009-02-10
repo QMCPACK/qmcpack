@@ -93,6 +93,17 @@ namespace qmcplusplus {
       return G;
     }
 
+    GradType evalGradSource
+    (ParticleSet& P, ParticleSet& src, int iat,
+     TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM> &grad_grad,
+     TinyVector<ParticleSet::ParticleLaplacian_t,OHMMS_DIM> &lapl_grad)
+    {
+      GradType G = GradType();
+      for (int iz=0; iz < size(); iz++) 
+	G += Dets[iz]->evalGradSource (P, src, iat, grad_grad, lapl_grad);
+      return G;
+    }
+
 
 
     inline ValueType logRatio(ParticleSet& P, int iat,

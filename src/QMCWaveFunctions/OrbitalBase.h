@@ -197,6 +197,24 @@ namespace qmcplusplus {
       return GradType();
     }
 
+    /** Adds the gradient w.r.t. the iat-th particle of the 
+     *  source particleset (ions) of the logarithmic gradient 
+     *  and laplacian w.r.t. the target paritlceset (electrons). 
+     * @param P quantum particle set (electrons)
+     * @param source classical particle set (ions)
+     * @param iat particle index of source (ion)
+     * @param the ion gradient of the elctron gradient
+     * @param the ion gradient of the elctron laplacian.
+     * @return the log gradient of psi w.r.t. the source particle iat
+     */
+    virtual GradType evalGradSource
+    (ParticleSet& P, ParticleSet& source, int iat,
+     TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM> &grad_grad,
+     TinyVector<ParticleSet::ParticleLaplacian_t,OHMMS_DIM> &lapl_grad)
+    {
+    }
+
+
 
     /** evaluate the ratio of the new to old orbital value
      * @param P the active ParticleSet

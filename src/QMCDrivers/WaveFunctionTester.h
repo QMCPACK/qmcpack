@@ -21,6 +21,7 @@
 #define QMCPLUSPLUS_WAVEFUNCTIONTEST_H
 
 #include "QMCDrivers/QMCDriver.h" 
+#include "QMCApp/ParticleSetPool.h"
 namespace qmcplusplus {
 
   /** Test the correctness of TrialWaveFunction for the values,
@@ -32,20 +33,24 @@ namespace qmcplusplus {
     /// Constructor.
     WaveFunctionTester(MCWalkerConfiguration& w, 
 		       TrialWaveFunction& psi, 
-		       QMCHamiltonian& h);
+		       QMCHamiltonian& h,
+		       ParticleSetPool& ptclPool);
 
     bool run();
     bool put(xmlNodePtr q);
   private:
-    string checkRatio, checkClone, checkHamPbyP;
+    ParticleSetPool &PtclPool;
+    string checkRatio, checkClone, checkHamPbyP, sourceName;
     /// Copy Constructor (disabled)
-    WaveFunctionTester(const WaveFunctionTester& a): QMCDriver(a) { }
+    WaveFunctionTester(const WaveFunctionTester& a): 
+      QMCDriver(a), PtclPool(a.PtclPool){ }
     /// Copy Operator (disabled)
     WaveFunctionTester& operator=(const WaveFunctionTester&) { return *this;}
     void runRatioTest();
     void runRatioTest2();
     void runBasicTest();
     void runCloneTest();
+    void runGradSourceTest();
   };
 }
 #endif

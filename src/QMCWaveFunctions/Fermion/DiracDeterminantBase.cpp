@@ -68,6 +68,11 @@ namespace qmcplusplus {
     LastIndex = FirstIndex + nel;
     NumPtcls=nel;
     NumOrbitals=norb;
+
+    // For forces
+    grad_source_psiM.resize(nel,norb);
+    grad_lapl_source_psiM.resize(nel,norb);
+    grad_grad_source_psiM.resize(nel,norb);
   }
 
   DiracDeterminantBase::RealType 
@@ -229,14 +234,46 @@ namespace qmcplusplus {
 					 int iat)
   {
     Phi->evaluateGradSource (P, FirstIndex, LastIndex,
-			     source, iat, dpsiM_temp);
+			     source, iat, grad_source_psiM);
     const ValueType* restrict yptr=psiM[0];
-    const GradType* restrict dyptr=dpsiM_temp[0];
+    const GradType* restrict dyptr=grad_source_psiM[0];
     GradType rv;
     for(int j=0; j<NumOrbitals*NumPtcls; ++j) rv += (*yptr++) *(*dyptr++);
     dpsiM_temp = dpsiM;
     return rv;
   }
+
+
+  DiracDeterminantBase::GradType 
+  DiracDeterminantBase::evalGradSource
+  (ParticleSet& P, ParticleSet& source,int iat,
+   TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM> &grad_grad,
+   TinyVector<ParticleSet::ParticleLaplacian_t,OHMMS_DIM> &lapl_grad)
+  {
+    GradType gradPsi(0.0);
+    Phi->evaluateGradSource (P, FirstIndex, LastIndex, source, iat, 
+			     grad_source_psiM, grad_grad_source_psiM, 
+			     grad_lapl_source_psiM);
+    const ValueType* restrict  invptr = psiM[0];
+    const GradType* restrict    yptr  = grad_source_psiM[0];
+    const HessType* restrict   dyptr  = grad_grad_source_psiM[0];
+    const GradType* restrict  d2yptr  = grad_lapl_source_psiM[0];
+    for(int i=0, iel=FirstIndex; i<NumPtcls; i++, iel++) {
+      HessType dval (0.0);
+      GradType d2val(0.0);
+      for(int j=0; j<NumOrbitals; j++,invptr++) {
+	gradPsi = gradPsi + *invptr *   *yptr++;
+	dval    = dval    + *invptr *  *dyptr++;
+	d2val   = d2val   + *invptr * *d2yptr++;
+      }
+      for (int dim=0; dim<OHMMS_DIM; dim++) {
+	grad_grad[dim][iel] = dval.getRow(dim);
+	lapl_grad[dim][iel] = d2val[dim];
+      }
+    }
+    return gradPsi;
+  }
+
 
 
 

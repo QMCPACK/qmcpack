@@ -166,7 +166,9 @@ namespace qmcplusplus {
     typedef Vector<TinyVector<double,OHMMS_DIM> >                 RealGradVector_t;
     typedef Vector<TinyVector<complex<double>,OHMMS_DIM> >        ComplexGradVector_t;
     typedef Vector<Tensor<double,OHMMS_DIM> >                     RealHessVector_t;
+    typedef Matrix<Tensor<double,OHMMS_DIM> >                     RealHessMatrix_t;
     typedef Vector<Tensor<complex<double>,OHMMS_DIM> >            ComplexHessVector_t;
+    typedef Matrix<Tensor<complex<double>,OHMMS_DIM> >            ComplexHessMatrix_t;
     typedef Matrix<double>                                        RealValueMatrix_t;
     typedef Matrix<complex<double> >                              ComplexValueMatrix_t;
     typedef Matrix<TinyVector<double,OHMMS_DIM> >                 RealGradMatrix_t;
@@ -225,9 +227,17 @@ namespace qmcplusplus {
     void evaluate(const ParticleSet& P, int first, int last,
 		  RealValueMatrix_t& psi, RealGradMatrix_t& dpsi, 
 		  RealValueMatrix_t& d2psi);
+    // This is the gradient of the orbitals w.r.t. the ion iat
     void evaluateGradSource (const ParticleSet &P, int first, int last, 
 			 const ParticleSet &source, int iat_src, 
 			 RealGradMatrix_t &gradphi);
+    // Evaluate the gradient w.r.t. to ion iat of the gradient and
+    // laplacian of the orbitals w.r.t. the electrons
+    void evaluateGradSource (const ParticleSet &P, int first, int last, 
+			     const ParticleSet &source, int iat_src,
+			     RealGradMatrix_t &dphi,
+			     RealHessMatrix_t  &dgrad_phi,
+			     RealGradMatrix_t &dlaplphi);
 
     // Complex return values
     void evaluate(const ParticleSet& P, int iat, ComplexValueVector_t& psi);

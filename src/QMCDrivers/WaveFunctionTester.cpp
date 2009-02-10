@@ -32,12 +32,15 @@ namespace qmcplusplus {
 
 WaveFunctionTester::WaveFunctionTester(MCWalkerConfiguration& w, 
 				       TrialWaveFunction& psi, 
-				       QMCHamiltonian& h):
-  QMCDriver(w,psi,h),checkRatio("no"),checkClone("no"), checkHamPbyP("no")
+				       QMCHamiltonian& h,
+				       ParticleSetPool &ptclPool):
+  QMCDriver(w,psi,h),checkRatio("no"),checkClone("no"), checkHamPbyP("no"),
+  PtclPool(ptclPool)
   { 
     m_param.add(checkRatio,"ratio","string");
     m_param.add(checkClone,"clone","string");
     m_param.add(checkHamPbyP,"hamiltonianpbyp","string");
+    m_param.add(sourceName,"source","string");
   }
 
 
@@ -74,6 +77,8 @@ WaveFunctionTester::run() {
   }
   else if (checkClone == "yes") 
     runCloneTest();
+  else if (sourceName.size() != 0)
+    runGradSourceTest();
   else
     runBasicTest();
 
@@ -558,6 +563,119 @@ void WaveFunctionTester::runRatioTest2()
 
 
 }
+
+
+void WaveFunctionTester::runGradSourceTest() {
+  app_log() << "In runGradSourceTest.\n";
+  app_log() << "sourceName = " << sourceName << ".\n";
+  ParticleSetPool::PoolType::iterator p;
+  for (p=PtclPool.getPool().begin(); p != PtclPool.getPool().end(); p++)
+    app_log() << "ParticelSet = " << p->first << endl;
+
+  // Find source ParticleSet
+  ParticleSetPool::PoolType::iterator pit(PtclPool.getPool().find(sourceName));
+  app_log() << "After find.\n";  
+  app_log() << pit->first << endl;
+  // if(pit == PtclPool.getPool().end()) 
+  //   APP_ABORT("Unknown source \"" + sourceName + "\" WaveFunctionTester.");
+  
+
+
+  ParticleSet& source = *((*pit).second);
+
+  IndexType nskipped = 0;
+  RealType sig2Enloc=0, sig2Drift=0;
+  RealType delta = 0.00001;
+  RealType delta2 = 2*delta;
+  ValueType c1 = 1.0/delta/2.0;
+  ValueType c2 = 1.0/delta/delta;
+
+  int nat = W.getTotalNum();
+
+  ParticleSet::ParticlePos_t deltaR(nat);
+  MCWalkerConfiguration::PropertyContainer_t Properties;
+  //pick the first walker
+  MCWalkerConfiguration::Walker_t* awalker = *(W.begin());
+
+  //copy the properties of the working walker
+  Properties = awalker->Properties;
+  
+  //sample a new walker configuration and copy to ParticleSet::R
+  //makeGaussRandom(deltaR);
+ 
+  W.R = awalker->R;
+
+  //W.R += deltaR;
+
+  W.update();
+  //ValueType psi = Psi.evaluate(W);
+  ValueType logpsi = Psi.evaluateLog(W);
+  RealType eloc=H.evaluate(W);
+
+  app_log() << "  HamTest " << "  Total " <<  eloc << endl;
+  for(int i=0; i<H.sizeOfObservables(); i++)
+    app_log() << "  HamTest " << H.getObservableName(i) << " " << H.getObservable(i) << endl;
+
+  //RealType psi = Psi.evaluateLog(W);
+  ParticleSet::ParticleGradient_t G(nat), G1(nat);
+  ParticleSet::ParticleLaplacian_t L(nat), L1(nat);
+  G = W.G;
+  L = W.L;
+
+  for (int isrc=0; isrc < source.getTotalNum(); isrc++) {
+    TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM> grad_grad;
+    TinyVector<ParticleSet::ParticleLaplacian_t,OHMMS_DIM> lapl_grad;
+    TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM> grad_grad_FD;
+    TinyVector<ParticleSet::ParticleLaplacian_t,OHMMS_DIM> lapl_grad_FD;
+    for (int dim=0; dim<OHMMS_DIM; dim++) {
+      grad_grad[dim].resize(nat);    lapl_grad[dim].resize(nat);
+      grad_grad_FD[dim].resize(nat); lapl_grad_FD[dim].resize(nat);
+    }
+    Psi.evalGradSource (W, source, isrc, grad_grad, lapl_grad);
+    GradType grad_log = Psi.evalGradSource(W, source, isrc);
+    for(int iat=0; iat<nat; iat++) {
+      PosType r0 = W.R[iat];
+      GradType gFD[OHMMS_DIM];  
+      GradType lapFD = 0.0;
+      for(int idim=0; idim<3; idim++) {
+	W.R[iat][idim] = r0[idim]+delta;         
+	W.update();
+	GradType gradlogpsi_p = Psi.evalGradSource(W, source, isrc);
+	W.R[iat][idim] = r0[idim]-delta;         
+	W.update();
+	GradType gradlogpsi_m = Psi.evalGradSource(W, source, isrc);
+	lapFD    += gradlogpsi_m + gradlogpsi_p;
+	gFD[idim] = gradlogpsi_p - gradlogpsi_m;
+	W.R[iat] = r0;
+	W.update();
+      }
+      for (int i=0; i<OHMMS_DIM; i++) {
+	for (int j=0; j<OHMMS_DIM; j++)
+	  grad_grad_FD[i][iat][j] = c1*gFD[j][i];
+	lapl_grad_FD[i][iat] = c2*(lapFD[i]-6.0*grad_log[i]);
+      }
+      // cerr << "G1 = " << G1[iat] << endl;
+      // cerr << "L1 = " << L1[iat] << endl;
+    }
+    cout.precision(15);
+    for (int dimsrc=0; dimsrc<OHMMS_DIM; dimsrc++) {
+      for(int iat=0; iat<nat; iat++) {
+	cout.precision(15);
+	cout << "For particle #" << iat << " at " << W.R[iat] << endl;
+	cout << "Gradient      = " << setw(12) << grad_grad[dimsrc][iat] << endl 
+	     << "  Finite diff = " << setw(12) << grad_grad_FD[dimsrc][iat] << endl 
+	     << "  Error       = " << setw(12) 
+	     <<  grad_grad_FD[dimsrc][iat] - grad_grad[dimsrc][iat] << endl << endl;
+	cout << "Laplacian     = " << setw(12) << lapl_grad[dimsrc][iat] << endl 
+	     << "  Finite diff = " << setw(12) << lapl_grad_FD[dimsrc][iat] << endl 
+	     << "  Error       = " << setw(12) 
+	     << lapl_grad_FD[dimsrc][iat] - lapl_grad[dimsrc][iat] << endl << endl;
+      }
+    }
+  }
+} 
+
+
 
 bool 
 WaveFunctionTester::put(xmlNodePtr q){

@@ -38,6 +38,8 @@ namespace qmcplusplus {
     typedef OrbitalSetTraits<ValueType>::ValueMatrix_t ValueMatrix_t;
     typedef OrbitalSetTraits<ValueType>::GradVector_t  GradVector_t;
     typedef OrbitalSetTraits<ValueType>::GradMatrix_t  GradMatrix_t;
+    typedef OrbitalSetTraits<ValueType>::HessMatrix_t  HessMatrix_t;
+    typedef OrbitalSetTraits<ValueType>::HessType      HessType;
     ///true if C is an identity matrix
     bool Identity;
     ///number of Single-particle orbtials
@@ -130,6 +132,15 @@ namespace qmcplusplus {
 				     const ParticleSet &source,
 				     int iat_src, GradMatrix_t &gradphi)
     { APP_ABORT("SPOSetlBase::evalGradSource is not implemented"); }
+
+    virtual void evaluateGradSource (const ParticleSet &P, int first, int last, 
+				     const ParticleSet &source, int iat_src, 
+				     GradMatrix_t &grad_phi,
+				     HessMatrix_t &grad_grad_phi,
+				     GradMatrix_t &grad_lapl_phi)
+    { APP_ABORT("SPOSetlBase::evalGradSource is not implemented"); }
+
+
 
     /** make a clone of itself
      */

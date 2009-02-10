@@ -308,8 +308,9 @@ namespace qmcplusplus {
     } 
     else 
     {
-      WARNMSG("Testing wavefunctions. Creating WaveFunctionTester for testing")
-      qmcDriver = new WaveFunctionTester(*qmcSystem,*primaryPsi,*primaryH);
+      WARNMSG("Testing wavefunctions. Creating WaveFunctionTester for testing");
+      qmcDriver = new WaveFunctionTester(*qmcSystem,*primaryPsi,*primaryH,
+					 *ptclPool);
     }
 
     if(curQmcModeBits[MULTIPLE_MODE]) 

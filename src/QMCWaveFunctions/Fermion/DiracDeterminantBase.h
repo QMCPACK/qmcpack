@@ -32,6 +32,8 @@ namespace qmcplusplus {
     typedef SPOSetBase::ValueMatrix_t ValueMatrix_t;
     typedef SPOSetBase::GradVector_t  GradVector_t;
     typedef SPOSetBase::GradMatrix_t  GradMatrix_t;
+    typedef SPOSetBase::HessMatrix_t  HessMatrix_t;
+    typedef SPOSetBase::HessType      HessType;
 
     /** constructor
      *@param spos the single-particle orbital set
@@ -134,6 +136,10 @@ namespace qmcplusplus {
     GradType evalGrad(ParticleSet& P, int iat);
     GradType evalGradSource (ParticleSet &P, ParticleSet &source,
 			     int iat);
+    GradType evalGradSource
+    (ParticleSet& P, ParticleSet& source, int iat,
+     TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM> &grad_grad,
+     TinyVector<ParticleSet::ParticleLaplacian_t,OHMMS_DIM> &lapl_grad);
 
     ValueType logRatio(ParticleSet& P, int iat,
 		    ParticleSet::ParticleGradient_t& dG, 
@@ -197,6 +203,10 @@ namespace qmcplusplus {
 
     /// d2psiM(i,j) \f$= \nabla_i^2 \psi_j({\bf r}_i)\f$
     ValueMatrix_t d2psiM, d2psiM_temp;
+
+    /// Used for force computations
+    GradMatrix_t grad_source_psiM, grad_lapl_source_psiM;
+    HessMatrix_t  grad_grad_source_psiM;
 
     /// value of single-particle orbital for particle-by-particle update
     ValueVector_t psiV;

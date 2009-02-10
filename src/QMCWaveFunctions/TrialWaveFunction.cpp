@@ -249,6 +249,9 @@ namespace qmcplusplus {
     return grad_iat;
   }
 
+
+  // Evaluates the gradient w.r.t. to the source of the Laplacian
+  // w.r.t. to the electrons of the wave function.
   TrialWaveFunction::GradType
   TrialWaveFunction::evalGradSource(ParticleSet& P,
 				    ParticleSet &source, int iat) 
@@ -258,6 +261,21 @@ namespace qmcplusplus {
       grad_iat += Z[i]->evalGradSource(P, source, iat);
     return grad_iat;
   }
+
+  TrialWaveFunction::GradType
+  TrialWaveFunction::evalGradSource
+  (ParticleSet& P, ParticleSet &source, int iat,
+   TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM> &grad_grad,
+   TinyVector<ParticleSet::ParticleLaplacian_t,OHMMS_DIM> &lapl_grad)
+  {
+    GradType grad_iat;
+    for(int i=0; i<Z.size(); ++i) 
+      grad_iat += Z[i]->evalGradSource(P, source, iat,
+				       grad_grad, lapl_grad);
+    return grad_iat;
+  }
+
+
 
 
   TrialWaveFunction::RealType

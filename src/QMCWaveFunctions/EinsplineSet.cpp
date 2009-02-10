@@ -931,6 +931,128 @@ namespace qmcplusplus {
   }
 
 
+  // Evaluate the gradient w.r.t. to ion iat of the gradient and
+  // laplacian of the orbitals w.r.t. the electrons
+  template<typename StorageType> void
+  EinsplineSetExtended<StorageType>::evaluateGradSource 
+  (const ParticleSet &P, int first, int last, 
+   const ParticleSet &source, int iat_src,
+   RealGradMatrix_t &dphi, RealHessMatrix_t &dgrad_phi, RealGradMatrix_t &dlapl_phi)
+  {
+    complex<double> eye(0.0,1.0);
+    
+    // Loop over dimensions
+    for (int dim=0; dim<OHMMS_DIM; dim++) {
+      // Loop over electrons
+      for(int iel=first,i=0; iel<last; iel++,i++) {
+	PosType r (P.R[iel]);
+	PosType ru(PrimLattice.toUnit(P.R[iel]));
+
+	assert (FirstOrderSplines[iat_src][dim]);
+	EinsplineMultiEval (FirstOrderSplines[iat_src][dim], ru, 
+			    StorageValueVector, StorageGradVector,
+			    StorageHessVector);
+	int dphiIndex=0;
+	for (int j=0; j<NumValenceOrbs; j++) {
+	  StorageGradVector[j] = dot (PrimLattice.G, StorageGradVector[j]);
+	  StorageLaplVector[j] = trace (StorageHessVector[j], GGt);
+
+	  complex<double> u = StorageValueVector[j];
+	  TinyVector<complex<double>,OHMMS_DIM> gradu = StorageGradVector[j];
+	  complex<double> laplu = StorageLaplVector[j];
+	  PosType k = kPoints[j];
+	  TinyVector<complex<double>,OHMMS_DIM> ck;
+	  for (int n=0; n<OHMMS_DIM; n++)	  ck[n] = k[n];
+	  double s,c;
+	  double phase = -dot(r, k);
+	  sincos (phase, &s, &c);
+	  complex<double> e_mikr (c,s);
+	  StorageValueVector[j]   = e_mikr*u;
+	  StorageGradVector[j]  = e_mikr*(-eye*u*ck + gradu);
+	  StorageLaplVector[j]  = e_mikr*(-dot(k,k)*u - 2.0*eye*dot(ck,gradu) + laplu);
+
+	  dphi(i,dphiIndex)[dim]    = real(StorageValueVector[j]);
+	    for (int k=0; k<OHMMS_DIM; k++)
+	      dgrad_phi(dphiIndex)[dim] = real(StorageGradVector[j][k]);
+	  dlapl_phi(dphiIndex)[dim] = real(StorageLaplVector[j]);
+	  dphiIndex++;
+	  if (MakeTwoCopies[j]) {
+	    dphi(i,dphiIndex)[dim] = imag(StorageValueVector[j]);
+	    for (int k=0; k<OHMMS_DIM; k++)
+	      dgrad_phi(i,dphiIndex)(dim,k) = imag(StorageGradVector[j][k]);
+	    dlapl_phi(i,dphiIndex)[dim]     = imag(StorageLaplVector[j]);
+	    dphiIndex++;
+	  }
+	}
+      }
+    }
+    for (int i=0; i<(last-first); i++)
+      for (int j=0; j<(last-first); j++) {
+	dphi(i,j) = dot (PrimLattice.G, dphi(i,j));
+	// Check this one!
+	dgrad_phi(i,j) = dot (PrimLattice.G, dgrad_phi(i,j));
+	dlapl_phi(i,j) = dot (PrimLattice.G, dlapl_phi(i,j));
+      }
+ 
+
+  }
+
+
+
+  template<> void
+  EinsplineSetExtended<double>::evaluateGradSource 
+  (const ParticleSet &P, int first, int last, 
+   const ParticleSet &source, int iat_src,
+   RealGradMatrix_t &dphi, RealHessMatrix_t &dgrad_phi, RealGradMatrix_t &dlapl_phi)
+  {
+    // Loop over dimensions
+    for (int dim=0; dim<OHMMS_DIM; dim++) {
+      assert (FirstOrderSplines[iat_src][dim]);
+      // Loop over electrons
+      for(int iel=first,i=0; iel<last; iel++,i++) {
+	PosType r (P.R[iel]);
+	PosType ru(PrimLattice.toUnit(r));
+	int sign=0;
+	for (int n=0; n<OHMMS_DIM; n++) {
+	  RealType img = std::floor(ru[n]);
+	  ru[n] -= img;
+	  sign += HalfG[n] * (int)img;
+	}
+	for (int n=0; n<OHMMS_DIM; n++)
+	  ru[n] -= std::floor (ru[n]);
+
+	EinsplineMultiEval (FirstOrderSplines[iat_src][dim], ru, 
+			    StorageValueVector, StorageGradVector,
+			    StorageHessVector);
+	if (sign & 1) 
+	  for (int j=0; j<OrbitalSetSize; j++) {
+	    dphi(i,j)[dim]      = -1.0 * StorageValueVector[j];
+	    PosType g = -1.0*dot(PrimLattice.G, StorageGradVector[j]);
+	    for (int k=0; k<OHMMS_DIM; k++)  dgrad_phi(i,j)(dim,k) = g[k];
+	    dlapl_phi(i,j)[dim] = -1.0*trace (StorageHessVector[j], GGt);
+	  }
+	else 
+	  for (int j=0; j<OrbitalSetSize; j++)  {
+	    dphi(i,j)[dim] = StorageValueVector[j];
+	    PosType g = dot(PrimLattice.G, StorageGradVector[j]);
+	    for (int k=0; k<OHMMS_DIM; k++) dgrad_phi(i,j)(dim,k) = g[k];
+	    dlapl_phi(i,j)[dim] = trace (StorageHessVector[j], GGt);
+	  }
+      }
+    }
+    for (int i=0; i<(last-first); i++)
+      for (int j=0; j<(last-first); j++)  {
+	dphi(i,j) = dot (PrimLattice.G, dphi(i,j));
+	// Check this one!
+	dgrad_phi(i,j) = dot (PrimLattice.G, dgrad_phi(i,j));
+	dlapl_phi(i,j) = dot (PrimLattice.G, dlapl_phi(i,j));
+      } 
+  }
+
+
+
+
+
   template<> void
   EinsplineSetExtended<double>::evaluateGradSource
   (const ParticleSet& P, int first, int last,
