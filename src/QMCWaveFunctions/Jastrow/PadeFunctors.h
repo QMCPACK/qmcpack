@@ -289,6 +289,9 @@ namespace qmcplusplus {
        */
       bool put(xmlNodePtr cur){
         real_type Atemp,Btemp, Ctemp;
+        ID_A="pade2A";
+        ID_B="pade2B";
+        ID_C="pade2C";
         //jastrow[iab]->put(cur->xmlChildrenNode,wfs_ref.RealVars);
         xmlNodePtr tcur = cur->xmlChildrenNode;
         bool renewed=false;
@@ -304,15 +307,15 @@ namespace qmcplusplus {
             rAttrib.put(tcur);
             if(p_name=="A")
             {
-              ID_A = id_in;
+              if (id_in!="0") ID_A = id_in;
               putContent(Atemp,tcur);
               renewed=true;
             } else if(p_name == "B"){
-              ID_B = id_in;
+              if (id_in!="0") ID_B = id_in;
               putContent(Btemp,tcur);
               renewed=true;
             } else if(p_name == "C"){
-              ID_C = id_in;
+              if (id_in!="0") ID_C = id_in;
               putContent(Ctemp,tcur);
               renewed=true;
             }
@@ -326,9 +329,9 @@ namespace qmcplusplus {
         reset();
         //these are always active 
         myVars.clear();
-        myVars.insert(ID_A,A,ID_A!="0");
-        myVars.insert(ID_B,B,ID_B!="0");
-        myVars.insert(ID_C,C,ID_C!="0");
+        myVars.insert(ID_A,A,ID_A!="pade2A");
+        myVars.insert(ID_B,B,ID_B!="pade2B");
+        myVars.insert(ID_C,C,ID_C!="pade2C");
         }
         //LOGMSG("Jastrow (A*r+C*r*r)/(1+Br) = (" << A << "," << B << "," << C << ")") 
         return true;

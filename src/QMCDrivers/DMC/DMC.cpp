@@ -77,7 +77,7 @@ namespace qmcplusplus {
       Mover->stopBlock();
       recordBlock(block);
 
-      if(CurrentStep%updatePeriod == 0) Mover->updateWalkers(W.begin(), W.end());
+      if(QMCDriverMode[QMC_UPDATE_MODE] && CurrentStep%updatePeriod == 0) Mover->updateWalkers(W.begin(), W.end());
 
     } while(block<nBlocks &&  myclock.elapsed()<MaxCPUSecs);
 

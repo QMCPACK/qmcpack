@@ -211,7 +211,7 @@ namespace qmcplusplus {
 
           Movers[ip]->setMultiplicity(wit,wit_end);
 
-          if(now%updatePeriod == 0) Movers[ip]->updateWalkers(wit, wit_end);
+          if(QMCDriverMode[QMC_UPDATE_MODE] && now%updatePeriod == 0) Movers[ip]->updateWalkers(wit, wit_end);
         }//#pragma omp parallel
 
         branchEngine->branch(CurrentStep,W, branchClones);

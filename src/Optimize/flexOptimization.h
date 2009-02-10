@@ -274,21 +274,27 @@ class FlexOptimization: public MinimizerBase<T>
                   a_h = a_xi;
                   for (int j = 0 ; j < NumParams ; j ++) a_h[j] *= -1.0;
                   Past_a_h.push_back(a_h);
+                  Past_Parms.push_back(Parms);
+                  Past_a_xi.push_back(a_xi);
+                  
                 }
               else return false;
               //dfunc( Parms , a_xi  ) ;
-              if (Failed_Last) return false;
+              if (Failed_Last)
+              {
+              return false;
+              }
               else Failed_Last=true;
             }
           else
             {
-              //here we relax the CG towards steepest descent. Is this the right thing to do?
-              if ((deltaG > std::fabs(gg-GGnew)) & (CG_ortho>0))
+              //here we increase the CG away from steepest descent.
+              if (deltaG > std::fabs(gg-GGnew))
                 {
-                  --CG_ortho;
+                  ++CG_ortho;
                   if (a_verbose>3)
                     {
-                      cout<<"Relaxing Orthogonality condition. Rotating to Steepest Descent"<<endl;
+                      cout<<"Increasing CG steps to remain conjugate"<<endl;
                     }
                 }
               Past_Parms.push_back(Parms);
