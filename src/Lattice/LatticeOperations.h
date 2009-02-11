@@ -198,7 +198,7 @@ struct CheckBoxConds
 template<class T>
 struct CheckBoxConds<T,1>
 {
-  inline static bool inside(const TinyVector<T,D>& u)
+  inline static bool inside(const TinyVector<T,1>& u)
   {
     return (u[0]>0.0 && u[0]<1.0);
   }
@@ -207,7 +207,7 @@ struct CheckBoxConds<T,1>
 template<class T>
 struct CheckBoxConds<T,2>
 {
-  inline static bool inside(const TinyVector<T,D>& u)
+  inline static bool inside(const TinyVector<T,2>& u)
   {
     return (u[0]>0.0 && u[0]<1.0) && (u[1]>0.0 && u[1]<1.0);
   }
@@ -217,7 +217,7 @@ struct CheckBoxConds<T,2>
 template<class T>
 struct CheckBoxConds<T,3>
 {
-  inline static bool inside(const TinyVector<T,D>& u)
+  inline static bool inside(const TinyVector<T,3>& u)
   {
     return (u[0]>0.0 && u[0]<1.0) &&
       (u[1]>0.0 && u[1]<1.0) &&
