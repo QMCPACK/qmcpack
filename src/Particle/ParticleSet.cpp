@@ -45,7 +45,6 @@ namespace qmcplusplus {
     app_log() << "  Copying a particle set " << p.getName() << " to " << this->getName() << endl;
     PropertyList.Names=p.PropertyList.Names;
     PropertyList.Values=p.PropertyList.Values;
-    Collectables=p.Collectables;
 
     PropertyHistory=  p.PropertyHistory;
 
@@ -246,6 +245,35 @@ namespace qmcplusplus {
     if(SK && SK->DoUpdate) SK->makeMove(iat,newpos);
     return newpos;
   }
+
+  /** move a particle iat
+   * @param iat the index of the particle to be moved
+   * @param displ the displacement of the iath-particle position
+   * @return the proposed position
+   *
+   * Update activePtcl index and activePos position for the proposed move.
+   * Evaluate the related distance table data DistanceTableData::Temp.
+   */
+  bool
+  ParticleSet::makeMoveAndCheck(Index_t iat, const SingleParticlePos_t& displ) 
+  //ParticleSet::makeMove(Index_t iat, const SingleParticlePos_t& displ) 
+  {
+    activePtcl=iat;
+    activePos=R[iat]; //save the current position
+    SingleParticlePos_t newpos(activePos+displ);
+    newRedPos=Lattice.toUnit(newpos);
+    if(Lattice.isValid(newRedPos)) 
+    {
+      for(int i=0; i< DistTables.size(); ++i) 
+        DistTables[i]->move(*this,newpos,iat);
+      R[iat]=newpos;
+      if(SK && SK->DoUpdate) SK->makeMove(iat,newpos);
+      return true;
+    }
+    //out of bound
+    return false;
+  }
+
 
   void
   ParticleSet::makeMoveOnSphere(Index_t iat, const SingleParticlePos_t& displ) 

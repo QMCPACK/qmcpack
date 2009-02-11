@@ -91,11 +91,15 @@ namespace qmcplusplus {
       ///the indexp of the active particle for particle-by-particle moves
       Index_t activePtcl;
 
-      ///the position of the active particle for particle-by-particle moves
+      /** the position of the active particle for particle-by-particle moves
+       *
+       * Saves the position before making a move to handle rejectMove
+       */
       SingleParticlePos_t activePos;
 
-      ///the reduced position of the active particle for particle-by-particle moves
-      SingleParticlePos_t activeRedPos;
+      /** the proposed position in the Lattice unit
+       */
+      SingleParticlePos_t newRedPos;
 
       ///SpeciesSet of particles
       SpeciesSet mySpecies;
@@ -218,6 +222,13 @@ namespace qmcplusplus {
        * Update activePos  by  R[iat]+displ
        */
       SingleParticlePos_t makeMove(Index_t iat, const SingleParticlePos_t& displ);
+
+      /** move a particle
+       * @param iat the index of the particle to be moved
+       * @param displ random displacement of the iat-th particle
+       * @return true, if the move is valid
+       */
+      bool makeMoveAndCheck(Index_t iat, const SingleParticlePos_t& displ);
 
       void makeMoveOnSphere(Index_t iat, const SingleParticlePos_t& displ);
 
