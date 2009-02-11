@@ -9,6 +9,7 @@ SET(HAMSRCS
   RPAPressure.cpp
   ForceBase.cpp
   PulayForce.cpp
+  ZeroVarianceForce.cpp
   ForceCeperley.cpp
   ForwardWalking.cpp
   trialDMCcorrection.cpp

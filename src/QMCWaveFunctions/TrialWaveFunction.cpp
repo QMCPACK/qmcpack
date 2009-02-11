@@ -268,7 +268,12 @@ namespace qmcplusplus {
    TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM> &grad_grad,
    TinyVector<ParticleSet::ParticleLaplacian_t,OHMMS_DIM> &lapl_grad)
   {
-    GradType grad_iat;
+    GradType grad_iat = GradType();
+    for (int dim=0; dim<OHMMS_DIM; dim++)
+      for (int i=0; i<grad_grad[0].size(); i++) {
+	grad_grad[dim][i] = GradType();
+	lapl_grad[dim][i] = 0.0;
+      }
     for(int i=0; i<Z.size(); ++i) 
       grad_iat += Z[i]->evalGradSource(P, source, iat,
 				       grad_grad, lapl_grad);

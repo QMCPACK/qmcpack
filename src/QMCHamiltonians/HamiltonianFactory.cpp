@@ -46,6 +46,7 @@
 // #include "QMCHamiltonians/ZeroVarObs.h"
 #include "QMCHamiltonians/ForceCeperley.h"
 #include "QMCHamiltonians/PulayForce.h"
+#include "QMCHamiltonians/ZeroVarianceForce.h"
 #include "QMCHamiltonians/HFDHE2Potential_tail.h"
 #include "QMCHamiltonians/HeEPotential_tail.h"
 #include "QMCHamiltonians/HFDHE2_Moroni1995.h"
@@ -577,11 +578,23 @@ namespace qmcplusplus {
     else if(mode=="pulay") {
       OrbitalPoolType::iterator psi_it(psiPool.find(PsiName));
       if(psi_it == psiPool.end()) {
-	APP_ABORT("Unknown psi \""+PsiName+"\" for Chiesa correction.");
+	APP_ABORT("Unknown psi \""+PsiName+"\" for Pulay force.");
       }
       TrialWaveFunction &psi = *psi_it->second->targetPsi;
-      targetH->addOperator(new PulayForce(*source, *target, psi), title, false);
+      targetH->addOperator(new PulayForce(*source, *target, psi), 
+			   "PulayForce", false);
     }
+    else if(mode=="zero_variance") {
+      app_log() << "Adding zero-variance force term.\n";
+      OrbitalPoolType::iterator psi_it(psiPool.find(PsiName));
+      if(psi_it == psiPool.end()) {
+	APP_ABORT("Unknown psi \""+PsiName+"\" for zero-variance force.");
+      }
+      TrialWaveFunction &psi = *psi_it->second->targetPsi;
+      targetH->addOperator
+	(new ZeroVarianceForce(*source, *target, psi), "ZVForce", false);
+    }
+
     else {
       ERRORMSG("Failed to recognize Force mode " << mode);
       //} else if(mode=="FD") {

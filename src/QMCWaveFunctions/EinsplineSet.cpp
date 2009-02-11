@@ -1003,7 +1003,8 @@ namespace qmcplusplus {
   EinsplineSetExtended<double>::evaluateGradSource 
   (const ParticleSet &P, int first, int last, 
    const ParticleSet &source, int iat_src,
-   RealGradMatrix_t &dphi, RealHessMatrix_t &dgrad_phi, RealGradMatrix_t &dlapl_phi)
+   RealGradMatrix_t &dphi, RealHessMatrix_t &dgrad_phi, 
+   RealGradMatrix_t &dlapl_phi)
   {
     // Loop over dimensions
     for (int dim=0; dim<OHMMS_DIM; dim++) {

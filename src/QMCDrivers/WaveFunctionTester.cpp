@@ -566,15 +566,12 @@ void WaveFunctionTester::runRatioTest2()
 
 
 void WaveFunctionTester::runGradSourceTest() {
-  app_log() << "In runGradSourceTest.\n";
-  app_log() << "sourceName = " << sourceName << ".\n";
   ParticleSetPool::PoolType::iterator p;
   for (p=PtclPool.getPool().begin(); p != PtclPool.getPool().end(); p++)
     app_log() << "ParticelSet = " << p->first << endl;
 
   // Find source ParticleSet
   ParticleSetPool::PoolType::iterator pit(PtclPool.getPool().find(sourceName));
-  app_log() << "After find.\n";  
   app_log() << pit->first << endl;
   // if(pit == PtclPool.getPool().end()) 
   //   APP_ABORT("Unknown source \"" + sourceName + "\" WaveFunctionTester.");
