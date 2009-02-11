@@ -181,7 +181,50 @@ struct MinimumImageBConds
     for(int i=0; i<D; ++i) u[i]=u[i]-round(u[i]);
     r=dot(u,R);
   }
+
 };
+
+template<class T, unsigned D>
+struct CheckBoxConds
+{
+  inline static bool inside(const TinyVector<T,D>& u)
+  {
+    bool yes=(u[0]>0.0 && u[0]<1.0);
+    for(int i=1; i<D; ++i) yes &=(u[i]>0.0 && u[i]<1.0);
+    return yes;
+  }
+};
+
+template<class T>
+struct CheckBoxConds<T,1>
+{
+  inline static bool inside(const TinyVector<T,D>& u)
+  {
+    return (u[0]>0.0 && u[0]<1.0);
+  }
+};
+
+template<class T>
+struct CheckBoxConds<T,2>
+{
+  inline static bool inside(const TinyVector<T,D>& u)
+  {
+    return (u[0]>0.0 && u[0]<1.0) && (u[1]>0.0 && u[1]<1.0);
+  }
+};
+
+
+template<class T>
+struct CheckBoxConds<T,3>
+{
+  inline static bool inside(const TinyVector<T,D>& u)
+  {
+    return (u[0]>0.0 && u[0]<1.0) &&
+      (u[1]>0.0 && u[1]<1.0) &&
+      (u[2]>0.0 && u[2]<1.0);
+  }
+};
+
 }
 
 #endif

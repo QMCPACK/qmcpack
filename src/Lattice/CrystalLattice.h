@@ -198,6 +198,14 @@ struct CrystalLattice{
 #endif
   }
 
+  inline bool isValid(const TinyVector<T,D>& u) const
+  {
+    if(SuperCellEnum) 
+      return true;
+    else 
+      return CheckBoxConds<T,D>::inside(u);
+  }
+
   inline void applyMinimumImage(TinyVector<T,D>& c) const
   {
     if(SuperCellEnum) MinimumImageBConds<T,D>::apply(R,G,c);
