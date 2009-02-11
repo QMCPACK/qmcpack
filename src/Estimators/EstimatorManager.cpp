@@ -88,7 +88,14 @@ namespace qmcplusplus {
     if(Options[COLLECT] && Options[MANAGE]) myRequest.resize(myComm->size()-1);
 
     if(RemoteData.empty())
+    {
+#if defined(QMC_ASYNC_COLLECT)
       for(int i=0; i<myComm->size(); i++) RemoteData.push_back(new BufferType);
+#else
+      RemoteData.push_back(new BufferType);
+      RemoteData.push_back(new BufferType);
+#endif
+    }
   }
 
   /** set CollectSum
@@ -156,11 +163,17 @@ namespace qmcplusplus {
     //count the buffer size for message
     BufferSize=2*AverageCache.size()+PropertyCache.size();
 
+#if defined(QMC_ASYNC_COLLECT)
+    int sources=myComm->size();
+#else
+    int sources=2;
+#endif
+
     //allocate buffer for data collection
     if(RemoteData.empty())
-      for(int i=0; i<myComm->size(); i++) RemoteData.push_back(new BufferType(BufferSize));
+      for(int i=0; i<sources; ++i) RemoteData.push_back(new BufferType(BufferSize));
     else
-      for(int i=0; i<myComm->size(); i++) RemoteData[i]->resize(BufferSize);
+      for(int i=0; i<RemoteData.size(); ++i) RemoteData[i]->resize(BufferSize);
 
 #if defined(DEBUG_ESTIMATOR_ARCHIVE)
     if(record && DebugArchive ==0)
@@ -317,12 +330,17 @@ namespace qmcplusplus {
 
     if(Options[COLLECT])
     { //copy cached data to RemoteData[0]
-      BufferType::iterator cur(RemoteData[0]->begin());
-      std::copy(AverageCache.begin(),AverageCache.end(),cur);
-      cur+=AverageCache.size();
-      std::copy(SquaredAverageCache.begin(),SquaredAverageCache.end(),cur);
-      cur+=SquaredAverageCache.size();
-      std::copy(PropertyCache.begin(),PropertyCache.end(),cur);
+      int n1=AverageCache.size();
+      int n2=n1+AverageCache.size();
+      int n3=n2+PropertyCache.size();
+      {
+        BufferType::iterator cur(RemoteData[0]->begin());
+        std::copy(AverageCache.begin(),AverageCache.end(),cur);
+        //cur+=AverageCache.size();
+        std::copy(SquaredAverageCache.begin(),SquaredAverageCache.end(),cur+n1);
+        //cur+=SquaredAverageCache.size();
+        std::copy(PropertyCache.begin(),PropertyCache.end(),cur+n2);
+      }
 
 #if defined(QMC_ASYNC_COLLECT)
       if(Options[MANAGE]) 
@@ -334,14 +352,12 @@ namespace qmcplusplus {
       else //not a master, pack and send the data
         myRequest[0]=myComm->isend(0,myComm->rank(),*RemoteData[0]);
 #else
-      myComm->reduce(*RemoteData[0]);
+      //use allocate buffers
+      *RemoteData[1]=*RemoteData[0];
+      myComm->reduce(RemoteData[1]->data(),RemoteData[0]->data(),BufferSize);
 #endif
-
       if(Options[MANAGE])
       {
-        int n1=AverageCache.size();
-        int n2=n1+AverageCache.size();
-        int n3=n2+PropertyCache.size();
         BufferType::iterator cur(RemoteData[0]->begin());
         std::copy(cur,cur+n1, AverageCache.begin());
         std::copy(cur+n1,cur+n2, SquaredAverageCache.begin());
