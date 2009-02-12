@@ -354,7 +354,7 @@ namespace qmcplusplus {
 	  //grad_grad[dim][iel][k] += gradPsi[dim] * (dval(dim,k) /*- gv[k]*/);
 	  // grad_grad[dim][iel][k] = ((i == 1) ? 1.0 : 0.0) *grad_grad_source_psiM(1,3)(dim,k);
 	  grad_grad[dim][iel][k] += dval(dim,k);// - gradPsi[dim]*gv[k];
-	  grad_grad[dim][iel][k] += ComputeExtraTerms(i,dim,k);  ///BRYAN added extram terms!
+	  //	  grad_grad[dim][iel][k] += ComputeExtraTerms(i,dim,k);  ///BRYAN added extram terms!
 	}
 	//lapl_grad[dim][iel] += d2val[dim];
       }
@@ -366,27 +366,27 @@ namespace qmcplusplus {
     return gradPsi;
   }
 
-  double DiracDeterminantBase::ComputeExtraTerms(int ptcl_gradient,int elDim,int ionDim)
-  {
-    ValueMatrix_t det;
-    det.resize(2,2);
-    ValueType toAdd(0);
-    for (int orbital=0;orbital<NumOrbitals;orbital++)
-      det(0,0)+=psiM(ptcl_gradient,orbital)*dpsiM(ptcl_gradient,orbital)[elDim]; //   grad_source_psiM(ptcl_gradient,orbital);
-    for (int ptcl=0;ptcl<NumPtcls;ptcl++){
-      if (ptcl!=ptcl_gradient){
-	for (int orbital=0;orbital<NumOrbitals;orbital++)
-	  det(0,1)+=psiM(ptcl_gradient,orbital)*grad_source_psiM(ptcl,orbital)[ionDim];
-	for (int orbital=0;orbital<NumOrbitals;orbital++)
-	  det(1,0)+=psiM(ptcl,orbital)*dpsiM(ptcl_gradient,orbital)[elDim];
-	for (int orbital=0;orbital<NumOrbitals;orbital++)
-	  det(1,1)+=psiM(ptcl,orbital)*grad_source_psiM(ptcl,orbital)[ionDim];
-	toAdd+=det(0,0)*det(1,1)-det(1,0)*det(0,1);
-      }
-    }
+//   double DiracDeterminantBase::ComputeExtraTerms(int ptcl_gradient,int elDim,int ionDim)
+//   {
+//     ValueMatrix_t det;
+//     det.resize(2,2);
+//     ValueType toAdd(0);
+//     for (int orbital=0;orbital<NumOrbitals;orbital++)
+//       det(0,0)+=psiM(ptcl_gradient,orbital)*dpsiM(ptcl_gradient,orbital)[elDim]; //   grad_source_psiM(ptcl_gradient,orbital);
+//     for (int ptcl=0;ptcl<NumPtcls;ptcl++){
+//       if (ptcl!=ptcl_gradient){
+// 	for (int orbital=0;orbital<NumOrbitals;orbital++)
+// 	  det(0,1)+=psiM(ptcl_gradient,orbital)*grad_source_psiM(ptcl,orbital)[ionDim];
+// 	for (int orbital=0;orbital<NumOrbitals;orbital++)
+// 	  det(1,0)+=psiM(ptcl,orbital)*dpsiM(ptcl_gradient,orbital)[elDim];
+// 	for (int orbital=0;orbital<NumOrbitals;orbital++)
+// 	  det(1,1)+=psiM(ptcl,orbital)*grad_source_psiM(ptcl,orbital)[ionDim];
+// 	toAdd+=det(0,0)*det(1,1)-det(1,0)*det(0,1);
+//       }
+//     }
     
-    return toAdd;
-  }
+//     return toAdd;
+//   }
 
 
     DiracDeterminantBase::ValueType 
