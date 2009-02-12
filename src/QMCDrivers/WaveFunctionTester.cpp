@@ -576,8 +576,6 @@ void WaveFunctionTester::runGradSourceTest() {
   // if(pit == PtclPool.getPool().end()) 
   //   APP_ABORT("Unknown source \"" + sourceName + "\" WaveFunctionTester.");
   
-
-
   ParticleSet& source = *((*pit).second);
 
   IndexType nskipped = 0;
@@ -619,7 +617,7 @@ void WaveFunctionTester::runGradSourceTest() {
   G = W.G;
   L = W.L;
 
-  for (int isrc=0; isrc < source.getTotalNum(); isrc++) {
+  for (int isrc=0; isrc < 1/*source.getTotalNum()*/; isrc++) {
     TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM> grad_grad;
     TinyVector<ParticleSet::ParticleLaplacian_t,OHMMS_DIM> lapl_grad;
     TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM> grad_grad_FD;
@@ -628,31 +626,35 @@ void WaveFunctionTester::runGradSourceTest() {
       grad_grad[dim].resize(nat);    lapl_grad[dim].resize(nat);
       grad_grad_FD[dim].resize(nat); lapl_grad_FD[dim].resize(nat);
     }
-    Psi.evalGradSource (W, source, isrc, grad_grad, lapl_grad);
-    GradType grad_log = Psi.evalGradSource(W, source, isrc);
+    Psi.evaluateLog(W);
+    GradType grad_log = Psi.evalGradSource (W, source, isrc, grad_grad, lapl_grad);
+    ValueType log = Psi.evaluateLog(W);
+    //grad_log = Psi.evalGradSource (W, source, isrc);
+
     for(int iat=0; iat<nat; iat++) {
       PosType r0 = W.R[iat];
       GradType gFD[OHMMS_DIM];  
       GradType lapFD = 0.0;
-      for(int idim=0; idim<3; idim++) {
-	W.R[iat][idim] = r0[idim]+delta;         
+      for(int eldim=0; eldim<3; eldim++) {
+	W.R[iat][eldim] = r0[eldim]+delta;         
 	W.update();
-	GradType gradlogpsi_p = Psi.evalGradSource(W, source, isrc);
-	W.R[iat][idim] = r0[idim]-delta;         
+	//ValueType log_p = Psi.evaluateLog(W);
+	GradType gradlogpsi_p =  Psi.evalGradSource(W, source, isrc);
+	W.R[iat][eldim] = r0[eldim]-delta;         
 	W.update();
+	//ValueType log_m = Psi.evaluateLog(W);
 	GradType gradlogpsi_m = Psi.evalGradSource(W, source, isrc);
 	lapFD    += gradlogpsi_m + gradlogpsi_p;
-	gFD[idim] = gradlogpsi_p - gradlogpsi_m;
+	gFD[eldim] = gradlogpsi_p - gradlogpsi_m;
 	W.R[iat] = r0;
 	W.update();
+	//Psi.evaluateLog(W);
       }
-      for (int i=0; i<OHMMS_DIM; i++) {
-	for (int j=0; j<OHMMS_DIM; j++)
-	  grad_grad_FD[i][iat][j] = c1*gFD[j][i];
-	lapl_grad_FD[i][iat] = c2*(lapFD[i]-6.0*grad_log[i]);
+      for (int iondim=0; iondim<OHMMS_DIM; iondim++) {
+	for (int eldim=0; eldim<OHMMS_DIM; eldim++)
+	  grad_grad_FD[iondim][iat][eldim] = c1*gFD[eldim][iondim];
+	lapl_grad_FD[iondim][iat] = c2*(lapFD[iondim]-6.0*grad_log[iondim]);
       }
-      // cerr << "G1 = " << G1[iat] << endl;
-      // cerr << "L1 = " << L1[iat] << endl;
     }
     cout.precision(15);
     for (int dimsrc=0; dimsrc<OHMMS_DIM; dimsrc++) {
@@ -663,10 +665,10 @@ void WaveFunctionTester::runGradSourceTest() {
 	     << "  Finite diff = " << setw(12) << grad_grad_FD[dimsrc][iat] << endl 
 	     << "  Error       = " << setw(12) 
 	     <<  grad_grad_FD[dimsrc][iat] - grad_grad[dimsrc][iat] << endl << endl;
-	cout << "Laplacian     = " << setw(12) << lapl_grad[dimsrc][iat] << endl 
-	     << "  Finite diff = " << setw(12) << lapl_grad_FD[dimsrc][iat] << endl 
-	     << "  Error       = " << setw(12) 
-	     << lapl_grad_FD[dimsrc][iat] - lapl_grad[dimsrc][iat] << endl << endl;
+	// cout << "Laplacian     = " << setw(12) << lapl_grad[dimsrc][iat] << endl 
+	//      << "  Finite diff = " << setw(12) << lapl_grad_FD[dimsrc][iat] << endl 
+	//      << "  Error       = " << setw(12) 
+	//      << lapl_grad_FD[dimsrc][iat] - lapl_grad[dimsrc][iat] << endl << endl;
       }
     }
   }
