@@ -1,0 +1,62 @@
+\documentclass{article}
+\usepackage{amsmath}
+\author{Kenneth P. Esler Jr.}
+\title{Computing the Zero-Variance term for Forces}
+\begin{document}
+\maketitle
+The zero-variance term is of the form
+\begin{equation}
+\int \psi_T^2 (\hat{H} - E_L) \frac{\partial_\alpha \psi_T}{\psi_T}.
+\end{equation}
+The kinetic contribution will involve the term,
+\begin{equation}
+\frac{\nabla^2 \psi_T^\alpha}{\psi_T} = \nabla^2 \partial_\alpha \ln
+\psi_T + 2 (\nabla \partial_\alpha \ln \psi_T)\cdot (\nabla \ln \psi_T)
+\end{equation}
+Let us begin with the term
+\begin{equation}
+\nabla \partial_\alpha \ln \psi_T =
+\nabla\left(\frac{\psi^\alpha_T}{\psi_T}\right)
+\end{equation}
+For a Dirac determinant, we can write, dropping the subscript ``T'', 
+\begin{equation}
+\frac{\psi^\alpha}{\psi} = \phi^\alpha_{ij} M^{-1}_{ji},
+\end{equation}
+where $\phi^{\alpha}_{ij} = \partial_\alpha \phi_j(r_i)$ and $M_{ij} =
+\phi_j(r_i)$.  We now want to compute the gradient of this term
+w.r.t. the n$^\text{th}$ electron:
+\begin{equation}
+\nabla_n \left(\frac{\psi^\alpha_T}{\psi_T}\right)  = 
+(\nabla_n \phi_{ij}^\alpha)M^{-1}_{ji} + \phi^\alpha_{ij} (\nabla_n M^{-1}_{ji}).
+\end{equation}
+The first term on the R.H.S. can be computed directly if the gradient
+of the $\phi^\alpha$s are known.  For the second term, we make use of
+the identity 
+\begin{equation}
+\nabla_n (M^{-1}) = -M^{-1} (\nabla_n M) M^{-1}.
+\end{equation}
+Then, defining 
+\begin{eqnarray}
+\phi^\alpha_{ij} (\nabla_n M^{-1}_{ji}) & = & -\text{Tr}\left[\phi^\alpha M^{-1}
+  (\nabla_n M)M^{-1}\right] \\
+& = & -\phi^\alpha_{ij} M^{-1}_{jk} (\nabla_n \phi_{kl}) M^{-1}_{li}
+\end{eqnarray}
+
+For the Laplacian, we have,
+\begin{equation}
+\nabla_n\cdot\nabla_n\left(\frac{\psi^\alpha}{\psi}\right) =
+(\nabla_n^2\phi_{ij}^\alpha)M^{-1}_{ji} +
+2(\nabla_n\phi_{ij})\cdot(\nabla_n M^{-1}_{ji}) +
+\phi^\alpha_{ij}(\nabla^2 M^{-1}_{ji})
+\end{equation} 
+Now, the last term is the novel one:
+\begin{eqnarray}
+\nabla^2 M^{-1} & = & -\nabla\cdot [M^{-1}(\nabla M) M^{-1}] \\
+& = & M^{-1}(\nabla M)M^{-1}(\nabla M) M^{-1} - M^{-1}(\nabla^2)M^{-1}
++ M^{-1}(\nabla M) M^{-1} (\nabla M) M^{-1} \\
+& = & -M^{-1} (\nabla^2) M^{-1} + 2 M^{-1}(\nabla M) M^{-1}(\nabla M) M^{-1}
+\end{eqnarray}
+
+
+
+\end{document}
