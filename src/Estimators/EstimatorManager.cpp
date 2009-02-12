@@ -354,7 +354,7 @@ namespace qmcplusplus {
 #else
       //use allocate buffers
       *RemoteData[1]=*RemoteData[0];
-      myComm->reduce(RemoteData[1]->data(),RemoteData[0]->data(),BufferSize);
+      myComm->reduce(&((*RemoteData[1])[0]),&((*RemoteData[0])[0]),BufferSize);
 #endif
       if(Options[MANAGE])
       {
