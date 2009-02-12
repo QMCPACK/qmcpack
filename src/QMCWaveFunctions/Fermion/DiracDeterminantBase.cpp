@@ -221,6 +221,7 @@ namespace qmcplusplus {
   DiracDeterminantBase::GradType 
     DiracDeterminantBase::evalGrad(ParticleSet& P, int iat)
   {
+    cerr<<"Calling evalGrad"<<endl;
     const ValueType* restrict yptr=psiM[iat-FirstIndex];
     const GradType* restrict dyptr=dpsiM[iat-FirstIndex];
     GradType rv;
@@ -353,6 +354,7 @@ namespace qmcplusplus {
 	  //grad_grad[dim][iel][k] += gradPsi[dim] * (dval(dim,k) /*- gv[k]*/);
 	  // grad_grad[dim][iel][k] = ((i == 1) ? 1.0 : 0.0) *grad_grad_source_psiM(1,3)(dim,k);
 	  grad_grad[dim][iel][k] += dval(dim,k);// - gradPsi[dim]*gv[k];
+	  grad_grad[dim][iel][k] += ComputeExtraTerms(i,dim,k);  ///BRYAN added extram terms!
 	}
 	//lapl_grad[dim][iel] += d2val[dim];
       }
@@ -364,12 +366,33 @@ namespace qmcplusplus {
     return gradPsi;
   }
 
-
-
-
-  DiracDeterminantBase::ValueType 
-    DiracDeterminantBase::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
+  double DiracDeterminantBase::ComputeExtraTerms(int ptcl_gradient,int elDim,int ionDim)
   {
+    ValueMatrix_t det;
+    det.resize(2,2);
+    ValueType toAdd(0);
+    for (int orbital=0;orbital<NumOrbitals;orbital++)
+      det(0,0)+=psiM(ptcl_gradient,orbital)*dpsiM(ptcl_gradient,orbital)[elDim]; //   grad_source_psiM(ptcl_gradient,orbital);
+    for (int ptcl=0;ptcl<NumPtcls;ptcl++){
+      if (ptcl!=ptcl_gradient){
+	for (int orbital=0;orbital<NumOrbitals;orbital++)
+	  det(0,1)+=psiM(ptcl_gradient,orbital)*grad_source_psiM(ptcl,orbital)[ionDim];
+	for (int orbital=0;orbital<NumOrbitals;orbital++)
+	  det(1,0)+=psiM(ptcl,orbital)*dpsiM(ptcl_gradient,orbital)[elDim];
+	for (int orbital=0;orbital<NumOrbitals;orbital++)
+	  det(1,1)+=psiM(ptcl,orbital)*grad_source_psiM(ptcl,orbital)[ionDim];
+	toAdd+=det(0,0)*det(1,1)-det(1,0)*det(0,1);
+      }
+    }
+    
+    return toAdd;
+  }
+
+
+    DiracDeterminantBase::ValueType 
+      DiracDeterminantBase::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
+  {
+    cerr<<"Calling ratio grad"<<endl;
     Phi->evaluate(P, iat, psiV, dpsiV, d2psiV);
     WorkingIndex = iat-FirstIndex;
 
@@ -548,7 +571,7 @@ namespace qmcplusplus {
       ParticleSet::ParticleGradient_t& dG, 
       ParticleSet::ParticleLaplacian_t& dL,
       int iat) {
-
+    cerr<<"UPDATE BEING CALLED"<<endl;
     DetUpdate(psiM,psiV,workV1,workV2,WorkingIndex,curRatio);
     for(int j=0; j<NumOrbitals; j++) {
       dpsiM(WorkingIndex,j)=dpsiV[j];
@@ -578,6 +601,7 @@ namespace qmcplusplus {
   DiracDeterminantBase::RealType 
     DiracDeterminantBase::evaluateLog(ParticleSet& P, PooledData<RealType>& buf) 
     {
+      cerr<<"EVALUATE LOG BEING CALLED"<<endl;
       buf.put(psiM.first_address(),psiM.last_address());
       buf.put(FirstAddressOfdV,LastAddressOfdV);
       buf.put(d2psiM.first_address(),d2psiM.last_address());
@@ -650,7 +674,7 @@ namespace qmcplusplus {
         ParticleSet::ParticleGradient_t& G, 
         ParticleSet::ParticleLaplacian_t& L)
     {
-
+      cerr<<"EVALUATELOG SECOND IS BEING CALLED"<<endl;
       Phi->evaluate(P, FirstIndex, LastIndex, psiM,dpsiM, d2psiM);
 
       if(NumPtcls==1) 
