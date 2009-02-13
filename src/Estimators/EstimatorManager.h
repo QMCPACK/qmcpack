@@ -180,7 +180,7 @@ namespace qmcplusplus {
     /** stop a block
      * @param accept acceptance rate of this block
      */
-    void stopBlock(RealType accept);
+    void stopBlock(RealType accept, bool collectall=true);
     /** stop a block
      * @param m list of estimator which has been collecting data independently
      */
