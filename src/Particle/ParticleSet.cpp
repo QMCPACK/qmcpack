@@ -275,6 +275,37 @@ namespace qmcplusplus {
     return false;
   }
 
+  bool ParticleSet::makeMove(const Walker_t& awalker
+      , const ParticlePos_t& deltaR, RealType dt)
+  {
+    for(int iat=0; iat<deltaR.size(); ++iat)
+    {
+      SingleParticlePos_t displ(dt*deltaR[iat]);
+      if(Lattice.outOfBound(Lattice.toUnit(displ))) return false;
+      SingleParticlePos_t newpos(awalker.R[iat]+displ);
+      if(!Lattice.isValid(Lattice.toUnit(newpos)))  return false;
+      R[iat]=newpos;
+    }
+    this->update();
+    //every move is valid
+    return true;
+  }
+
+  bool ParticleSet::makeMoveWithDrift(const Walker_t& awalker
+      , const ParticlePos_t& deltaR, RealType dt)
+  {
+    for(int iat=0; iat<deltaR.size(); ++iat)
+    {
+      SingleParticlePos_t displ(dt*deltaR[iat]+awalker.Drift[iat]);
+      if(Lattice.outOfBound(Lattice.toUnit(displ))) return false;
+      SingleParticlePos_t newpos(awalker.R[iat]+displ);
+      if(!Lattice.isValid(Lattice.toUnit(newpos))) return false;
+      R[iat]=newpos;
+    }
+    this->update();
+    //every move is valid
+    return true;
+  }
 
   void
   ParticleSet::makeMoveOnSphere(Index_t iat, const SingleParticlePos_t& displ) 

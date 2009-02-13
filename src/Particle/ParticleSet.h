@@ -230,6 +230,22 @@ namespace qmcplusplus {
        */
       bool makeMoveAndCheck(Index_t iat, const SingleParticlePos_t& displ);
 
+      /** move all the particles of a walker
+       * @param awalker the walker to operate
+       * @param deltaR proposed displacement 
+       * @param dt  factor of deltaR
+       * @return true if all the moves are legal.
+       *
+       * If big displacements or illegal positions are detected, return false.
+       * If all good, R = awalker.R + dt* deltaR
+       */
+      bool makeMove(const Walker_t& awalker, const ParticlePos_t& deltaR, RealType dt);
+      /** move all the particles including the drift
+       *
+       * Otherwise, everything is the same as makeMove for a walker
+       */
+      bool makeMoveWithDrift(const Walker_t& awalker, const ParticlePos_t& deltaR, RealType dt);
+
       void makeMoveOnSphere(Index_t iat, const SingleParticlePos_t& displ);
 
       /** accept the move
