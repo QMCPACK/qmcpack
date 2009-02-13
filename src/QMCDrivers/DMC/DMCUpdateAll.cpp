@@ -48,7 +48,8 @@ namespace qmcplusplus {
   void DMCUpdateAllWithRejection::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, 
       bool measure) 
   {
-    while(it != it_end) {
+    for(;it != it_end;++it) 
+    {
       Walker_t& thisWalker(**it);
       
       //save old local energy
@@ -59,23 +60,25 @@ namespace qmcplusplus {
       //create a 3N-Dimensional Gaussian with variance=1
       makeGaussRandomWithEngine(deltaR,RandomGen);
 
-      W.R = m_sqrttau*deltaR + thisWalker.Drift;
-      RealType rr_proposed = Dot(W.R,W.R);
-      W.R += thisWalker.R;
-      //update the distance table associated with W
-      //DistanceTable::update(W);
-      W.update();
+      if(!W.makeMoveWithDrift(thisWalker,deltaR,m_sqrttau)) continue;
+      //W.R = m_sqrttau*deltaR + thisWalker.Drift;
+      //RealType rr_proposed = Dot(W.R,W.R);
+      //W.R += thisWalker.R;
+      //W.update();
       
-      //evaluate wave function
+      //evaluate wave functior
       RealType logpsi(Psi.evaluateLog(W));
 
       bool accepted=false; 
       RealType rr_accepted = 0.0;
       RealType nodecorr=0.0;
-      if(branchEngine->phaseChanged(Psi.getPhase(),thisWalker.Properties(SIGN))) {
+      if(branchEngine->phaseChanged(Psi.getPhase(),thisWalker.Properties(SIGN))) 
+      {
         thisWalker.Age++;
 	H.rejectedMove(W,thisWalker);
-      } else {
+      } 
+      else 
+      {
         enew=H.evaluate(W);
         RealType logGf = -0.5*Dot(deltaR,deltaR);
         //converting gradients to drifts, D = tau*G (reuse G)
@@ -85,13 +88,21 @@ namespace qmcplusplus {
         deltaR = thisWalker.R - W.R - drift;
         RealType logGb = -m_oneover2tau*Dot(deltaR,deltaR);
         RealType prob= std::min(std::exp(logGb-logGf +2.0*(logpsi-thisWalker.Properties(LOGPSI))),1.0);
-        if(RandomGen() > prob){
+
+        //calculate rr_proposed here
+        deltaR = W.R-thisWalker.R;
+        RealType rr_proposed = Dot(deltaR,deltaR);
+
+        if(RandomGen() > prob)
+        {
           thisWalker.Age++;
           enew=eold;
           thisWalker.Properties(R2ACCEPTED)=0.0;
           thisWalker.Properties(R2PROPOSED)=rr_proposed;
           H.rejectedMove(W,thisWalker);
-        } else {
+        } 
+        else 
+        {
           accepted=true;
 	  thisWalker.Age=0;
           thisWalker.R = W.R;
@@ -111,7 +122,6 @@ namespace qmcplusplus {
         ++nAccept;
       else 
         ++nReject;
-      ++it;
     }
   }
 
@@ -136,8 +146,8 @@ namespace qmcplusplus {
   void DMCUpdateAllWithKill::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end,
       bool measure) 
   {
-    while(it != it_end) {
-      
+    for(;it != it_end;++it) 
+    {
       Walker_t& thisWalker(**it);
       
       //save old local energy
@@ -149,12 +159,11 @@ namespace qmcplusplus {
       //create a 3N-Dimensional Gaussian with variance=1
       makeGaussRandomWithEngine(deltaR,RandomGen);
       
-      W.R = m_sqrttau*deltaR + thisWalker.Drift;
-      RealType rr_proposed = Dot(W.R,W.R);
-      W.R += thisWalker.R;
-      //update the distance table associated with W
-      //DistanceTable::update(W);
-      W.update();
+      if(!W.makeMoveWithDrift(thisWalker,deltaR,m_sqrttau)) continue;
+      //W.R = m_sqrttau*deltaR + thisWalker.Drift;
+      //RealType rr_proposed = Dot(W.R,W.R);
+      //W.R += thisWalker.R;
+      //W.update();
       
       //evaluate wave function
       RealType logpsi(Psi.evaluateLog(W));
@@ -162,10 +171,13 @@ namespace qmcplusplus {
       bool accepted=false;
       RealType rr_accepted = 0.0;
       RealType nodecorr=0.0;
-      if(branchEngine->phaseChanged(Psi.getPhase(),thisWalker.Properties(SIGN))) {
+      if(branchEngine->phaseChanged(Psi.getPhase(),thisWalker.Properties(SIGN))) 
+      {
         thisWalker.Age++;
         thisWalker.willDie();
-      } else {
+      } 
+      else 
+      {
         enew=H.evaluate(W);
 	RealType logGf = -0.5*Dot(deltaR,deltaR);
         nodecorr = setScaledDriftPbyPandNodeCorr(m_tauovermass,W.G,drift);
@@ -173,13 +185,21 @@ namespace qmcplusplus {
         deltaR = thisWalker.R - W.R - drift;
         RealType logGb = -m_oneover2tau*Dot(deltaR,deltaR);
         RealType prob= std::min(std::exp(logGb-logGf +2.0*(logpsi-thisWalker.Properties(LOGPSI))),1.0);
-        if(RandomGen() > prob){
+
+        //calculate rr_proposed here
+        deltaR = W.R-thisWalker.R;
+        RealType rr_proposed = Dot(deltaR,deltaR);
+
+        if(RandomGen() > prob)
+        {
           enew=eold;
           thisWalker.Age++;
           thisWalker.Properties(R2ACCEPTED)=0.0;
           thisWalker.Properties(R2PROPOSED)=rr_proposed;
           H.rejectedMove(W,thisWalker);
-        } else {
+        } 
+        else 
+        {
 	  thisWalker.Age=0;
           accepted=true;  
           thisWalker.R = W.R;
@@ -198,7 +218,6 @@ namespace qmcplusplus {
         ++nAccept;
       else 
         ++nReject;
-      ++it;
     }
   }
 }

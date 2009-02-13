@@ -110,7 +110,9 @@ namespace qmcplusplus {
           ++nRejectTemp; continue;
         }
 
-        PosType newpos(W.makeMove(iat,dr));
+        //PosType newpos(W.makeMove(iat,dr));
+        if(!W.makeMoveAndCheck(iat,dr)) continue;
+        PosType newpos(W.R[iat]);
         RealType ratio = Psi.ratioGrad(W,iat,grad_iat);
         bool valid_move=false;
 
@@ -392,7 +394,9 @@ namespace qmcplusplus {
           ++nRejectTemp; continue;
         }
 
-        PosType newpos(W.makeMove(iat,dr));
+        //PosType newpos(W.makeMove(iat,dr));
+        if(!W.makeMoveAndCheck(iat,dr)) continue;
+        PosType newpos(W.R[iat]);
         RealType ratio=Psi.ratio(W,iat,dG,dL);
         bool valid_move=false;
 
