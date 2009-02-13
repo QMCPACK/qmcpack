@@ -274,7 +274,7 @@ namespace qmcplusplus {
     BlockWeight=0.0;
   }
 
-  void EstimatorManager::stopBlock(RealType accept)
+  void EstimatorManager::stopBlock(RealType accept, bool collectall)
   {
     //take block averages and update properties per block
     PropertyCache[weightInd]=BlockWeight;
@@ -286,7 +286,7 @@ namespace qmcplusplus {
     for(int i=0; i<Estimators.size(); i++) 
       Estimators[i]->takeBlockAverage(AverageCache.begin(),SquaredAverageCache.begin());
 
-    collectBlockAverages();
+    if(collectall) collectBlockAverages();
   }
 
   void EstimatorManager::stopBlock(const vector<EstimatorManager*> est)
@@ -318,16 +318,6 @@ namespace qmcplusplus {
 
   void EstimatorManager::collectBlockAverages(int num_threads)
   {
-#if defined(DEBUG_ESTIMATOR_ARCHIVE)
-    if(DebugArchive)
-    {
-      *DebugArchive << setw(10) << RecordCount;
-      for(int j=0; j<AverageCache.size(); j++) *DebugArchive << setw(FieldWidth) << AverageCache[j];
-      for(int j=0; j<PropertyCache.size(); j++) *DebugArchive << setw(FieldWidth) << PropertyCache[j];
-      *DebugArchive << endl;
-    }
-#endif
-
     if(Options[COLLECT])
     { //copy cached data to RemoteData[0]
       int n1=AverageCache.size();
