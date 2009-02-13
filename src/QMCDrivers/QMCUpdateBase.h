@@ -88,7 +88,7 @@ namespace qmcplusplus {
 
     /** stop a block
      */
-    void stopBlock();
+    void stopBlock(bool collectall=true);
 
     /** set the multiplicity of the walkers to branch */
     void setMultiplicity(WalkerIter_t it, WalkerIter_t it_end);

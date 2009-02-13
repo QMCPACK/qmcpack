@@ -121,8 +121,9 @@ namespace qmcplusplus {
     NonLocalMoveAccepted=0;
   }
 
-  void QMCUpdateBase::stopBlock() {
-    Estimators->stopBlock(acceptRatio());
+  void QMCUpdateBase::stopBlock(bool collectall) 
+  {
+    Estimators->stopBlock(acceptRatio(),collectall);
   }
 
   void QMCUpdateBase::initWalkers(WalkerIter_t it, WalkerIter_t it_end) 

@@ -75,7 +75,7 @@ namespace qmcplusplus {
             if(now_loc%updatePeriod==0) Movers[ip]->updateWalkers(wit,wit_end);
             if(now_loc%myPeriod4WalkerDump==0) wClones[ip]->saveEnsemble(wit,wit_end);
           } 
-          Movers[ip]->stopBlock();
+          Movers[ip]->stopBlock(false);
         }//end-of-parallel for
 
         //increase now
