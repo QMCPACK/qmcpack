@@ -221,7 +221,6 @@ namespace qmcplusplus {
   DiracDeterminantBase::GradType 
     DiracDeterminantBase::evalGrad(ParticleSet& P, int iat)
   {
-    cerr<<"Calling evalGrad"<<endl;
     const ValueType* restrict yptr=psiM[iat-FirstIndex];
     const GradType* restrict dyptr=dpsiM[iat-FirstIndex];
     GradType rv;
@@ -392,7 +391,6 @@ namespace qmcplusplus {
     DiracDeterminantBase::ValueType 
       DiracDeterminantBase::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
   {
-    cerr<<"Calling ratio grad"<<endl;
     Phi->evaluate(P, iat, psiV, dpsiV, d2psiV);
     WorkingIndex = iat-FirstIndex;
 
@@ -571,7 +569,6 @@ namespace qmcplusplus {
       ParticleSet::ParticleGradient_t& dG, 
       ParticleSet::ParticleLaplacian_t& dL,
       int iat) {
-    cerr<<"UPDATE BEING CALLED"<<endl;
     DetUpdate(psiM,psiV,workV1,workV2,WorkingIndex,curRatio);
     for(int j=0; j<NumOrbitals; j++) {
       dpsiM(WorkingIndex,j)=dpsiV[j];
@@ -601,7 +598,6 @@ namespace qmcplusplus {
   DiracDeterminantBase::RealType 
     DiracDeterminantBase::evaluateLog(ParticleSet& P, PooledData<RealType>& buf) 
     {
-      cerr<<"EVALUATE LOG BEING CALLED"<<endl;
       buf.put(psiM.first_address(),psiM.last_address());
       buf.put(FirstAddressOfdV,LastAddressOfdV);
       buf.put(d2psiM.first_address(),d2psiM.last_address());
@@ -674,7 +670,6 @@ namespace qmcplusplus {
         ParticleSet::ParticleGradient_t& G, 
         ParticleSet::ParticleLaplacian_t& L)
     {
-      cerr<<"EVALUATELOG SECOND IS BEING CALLED"<<endl;
       Phi->evaluate(P, FirstIndex, LastIndex, psiM,dpsiM, d2psiM);
 
       if(NumPtcls==1) 
