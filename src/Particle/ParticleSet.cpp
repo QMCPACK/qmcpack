@@ -256,9 +256,10 @@ namespace qmcplusplus {
    */
   bool
   ParticleSet::makeMoveAndCheck(Index_t iat, const SingleParticlePos_t& displ) 
-  //ParticleSet::makeMove(Index_t iat, const SingleParticlePos_t& displ) 
   {
+    //SingleParticlePos_t red_displ(Lattice.toUnit(displ));
     activePtcl=iat;
+    if(Lattice.outOfBound(Lattice.toUnit(displ))) return false;
     activePos=R[iat]; //save the current position
     SingleParticlePos_t newpos(activePos+displ);
     newRedPos=Lattice.toUnit(newpos);
