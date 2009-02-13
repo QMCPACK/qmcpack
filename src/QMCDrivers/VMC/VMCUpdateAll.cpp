@@ -34,10 +34,6 @@ namespace qmcplusplus {
 
   void VMCUpdateAll::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure) 
   {
-#if defined(ENABLE_COMPOSITE_ESTIMATOR)
-    measure &= (compEstimator != 0);
-    if(measure) compEstimator->startAccumulate();
-#endif
     while(it != it_end) 
     {
       MCWalkerConfiguration::Walker_t& thisWalker(**it);
@@ -46,35 +42,21 @@ namespace qmcplusplus {
       W.update();
       RealType logpsi(Psi.evaluateLog(W));
       RealType g= std::exp(2.0*(logpsi-thisWalker.Properties(LOGPSI)));
-      if(RandomGen() > g) {
+      if(RandomGen() > g) 
+      {
         thisWalker.Age++;
 	++nReject; 
         H.rejectedMove(W,thisWalker);
-// 	app_log()<<"REJECTED MOVE"<<endl;
-#if defined(ENABLE_COMPOSITE_ESTIMATOR)
-        if(measure)
-        {//evaluate the old value
-          W.R = thisWalker.R;
-          W.update();
-          compEstimator->accumulate(W,1.0);
-        }
-#endif
       } else {
         RealType eloc=H.evaluate(W);
 	thisWalker.R = W.R;
         thisWalker.resetProperty(logpsi,Psi.getPhase(),eloc);
         H.auxHevaluate(W,thisWalker);
 	H.saveProperty(thisWalker.getPropertyBase());
-#if defined(ENABLE_COMPOSITE_ESTIMATOR)
-        if(measure) compEstimator->accumulate(W,1.0);
-#endif
 	++nAccept;
       }
       ++it; 
     }
-#if defined(ENABLE_COMPOSITE_ESTIMATOR)
-    if(measure) compEstimator->stopAccumulate(-1);
-#endif
   }
   
   /// Constructor.
@@ -90,11 +72,6 @@ namespace qmcplusplus {
 
   void VMCUpdateAllWithDrift::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure) 
   {
-#if defined(ENABLE_COMPOSITE_ESTIMATOR)
-    measure &= (compEstimator != 0);
-    if(measure) compEstimator->startAccumulate();
-#endif
-
     while(it != it_end) 
     {
       MCWalkerConfiguration::Walker_t& thisWalker(**it);
@@ -120,14 +97,6 @@ namespace qmcplusplus {
         thisWalker.Age++;
 	++nReject; 
 	H.rejectedMove(W,thisWalker);
-#if defined(ENABLE_COMPOSITE_ESTIMATOR)
-        if(measure)
-        {//evaluate the old value
-          W.R = thisWalker.R;
-          W.update();
-          compEstimator->accumulate(W,1.0);
-        }
-#endif
       } else {
         RealType eloc=H.evaluate(W);
 	thisWalker.R = W.R;
@@ -135,16 +104,10 @@ namespace qmcplusplus {
         thisWalker.resetProperty(logpsi,Psi.getPhase(),eloc);
         H.auxHevaluate(W,thisWalker);
 	H.saveProperty(thisWalker.getPropertyBase());
-#if defined(ENABLE_COMPOSITE_ESTIMATOR)
-        if(measure) compEstimator->accumulate(W,1.0);
-#endif
 	++nAccept;
       }
       ++it; 
     }
-#if defined(ENABLE_COMPOSITE_ESTIMATOR)
-    if(measure) compEstimator->stopAccumulate(-1);
-#endif
   }
   
     /*
