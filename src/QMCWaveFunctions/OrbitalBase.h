@@ -212,6 +212,7 @@ namespace qmcplusplus {
      TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM> &grad_grad,
      TinyVector<ParticleSet::ParticleLaplacian_t,OHMMS_DIM> &lapl_grad)
     {
+      return GradType();
     }
 
 
