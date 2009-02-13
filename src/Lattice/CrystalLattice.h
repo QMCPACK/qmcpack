@@ -206,6 +206,13 @@ struct CrystalLattice{
       return CheckBoxConds<T,D>::inside(u);
   }
 
+  inline bool outOfBound(const TinyVector<T,D>& u) const
+  {
+    for(int i=0; i<D; ++i) if(abs(u[i])>0.5) return true;
+    return false;
+  }
+
+
   inline void applyMinimumImage(TinyVector<T,D>& c) const
   {
     if(SuperCellEnum) MinimumImageBConds<T,D>::apply(R,G,c);
