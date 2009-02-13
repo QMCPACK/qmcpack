@@ -8,13 +8,10 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
-//   Department of Physics, Ohio State University
-//   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 #include "QMCDrivers/VMC/VMCUpdatePbyP.h"
@@ -64,26 +61,32 @@ namespace qmcplusplus {
       {
         makeGaussRandomWithEngine(deltaR,RandomGen);
         bool stucked=true;
-        for(int iat=0; iat<W.getTotalNum(); iat++) {
-
+        for(int iat=0; iat<W.getTotalNum(); ++iat) 
+        {
           PosType dr = m_sqrttau*deltaR[iat];
-          PosType newpos = W.makeMove(iat,dr);
+          //ignore illegal moves
+          if(!W.makeMoveAndCheck(iat,dr)) continue;
+          //PosType newpos = W.makeMove(iat,dr);
 
           RealType ratio = Psi.ratio(W,iat);
           RealType prob = ratio*ratio;
           //RealType prob = std::min(1.0e0,ratio*ratio);
-          if(RandomGen() < prob) { 
+          if(RandomGen() < prob) 
+          { 
             stucked=false;
             ++nAccept;
             W.acceptMove(iat);
             Psi.acceptMove(W,iat);
-          } else {
+          } 
+          else 
+          {
             ++nReject; 
             W.rejectMove(iat); 
             Psi.rejectMove(iat);
           }
         }
-        if(stucked) {
+        if(stucked) 
+        {
           ++nAllRejected;
           thisWalker.rejectedMove();
         }
@@ -158,7 +161,11 @@ namespace qmcplusplus {
         RealType sc=getDriftScale(m_tauovermass,W.G[iat]);
         PosType dr(m_sqrttau*deltaR[iat]+sc*real(W.G[iat]));
 
-        PosType newpos = W.makeMove(iat,dr);
+        //reject illegal moves
+        if(!W.makeMoveAndCheck(iat,dr)) continue;
+        //PosType newpos=W.R[iat];
+        //PosType newpos = W.makeMove(iat,dr);
+       
         RealType ratio = Psi.ratio(W,iat,dG,dL);
         RealType prob = ratio*ratio;
 
@@ -179,7 +186,7 @@ namespace qmcplusplus {
 
         //RealType scale=getDriftScale(Tau,G);
         RealType scale=getDriftScale(m_tauovermass,G[iat]);
-        dr = thisWalker.R[iat]-newpos-scale*real(G[iat]);
+        dr = thisWalker.R[iat]-W.R[iat]-scale*real(G[iat]);
 
         RealType logGb = -m_oneover2tau*dot(dr,dr);
 
@@ -274,7 +281,8 @@ namespace qmcplusplus {
         RealType sc=getDriftScale(m_tauovermass,grad_now);
         PosType dr(m_sqrttau*deltaR[iat]+sc*real(grad_now));
 
-        PosType newpos = W.makeMove(iat,dr);
+        if(!W.makeMoveAndCheck(iat,dr)) continue;
+        //PosType newpos = W.makeMove(iat,dr);
         RealType ratio = Psi.ratioGrad(W,iat,grad_new);
         RealType prob = ratio*ratio;
 
@@ -292,7 +300,7 @@ namespace qmcplusplus {
         RealType logGf = -0.5e0*dot(deltaR[iat],deltaR[iat]);
 
         sc=getDriftScale(m_tauovermass,grad_new);
-        dr = thisWalker.R[iat]-newpos-sc*real(grad_new);
+        dr = thisWalker.R[iat]-W.R[iat]-sc*real(grad_new);
 
         RealType logGb = -m_oneover2tau*dot(dr,dr);
 
@@ -303,7 +311,9 @@ namespace qmcplusplus {
           ++nAccept;
           W.acceptMove(iat);
           Psi.acceptMove(W,iat);
-        } else {
+        } 
+        else 
+        {
           ++nReject; 
           W.rejectMove(iat); Psi.rejectMove(iat);
         }
