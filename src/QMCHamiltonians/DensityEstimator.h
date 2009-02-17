@@ -51,6 +51,10 @@ namespace qmcplusplus
     }
 
     private:
+    TinyVector<double, OHMMS_DIM> density_min;
+    TinyVector<double, OHMMS_DIM> density_max;
+    
+    
     ///number of grids
     TinyVector<int,OHMMS_DIM+1> NumGrids;
     ///bounds
