@@ -242,6 +242,7 @@ namespace qmcplusplus {
       }
       else if(cname == "estimator")
       {
+	cerr<<"THE POTTYPE IS "<<potType<<endl;
         if(potType == "Force")
         {
           addForceHam(cur);
@@ -254,7 +255,7 @@ namespace qmcplusplus {
         }
 	else if(potType == "density")
         {
-          if(PBCType)//only if perioidic 
+	  //          if(PBCType)//only if perioidic 
           {
             DensityEstimator* apot=new DensityEstimator(*targetPtcl);
             apot->put(cur);
