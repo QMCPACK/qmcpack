@@ -140,6 +140,24 @@ struct RecordNamedProperty: public RecordProperty {
     return Names.size()-1;
   }
 
+  /** add multiple items with the aroot
+   * @param aroot root
+   * @param first first index
+   * @param last last index
+   * @return the last valid index
+   */
+  inline int append(const std::string& aroot, int first, int last) 
+  {
+    for(int i=first; i<last; ++i)
+    {
+      std::ostringstream o;
+      o<<aroot<<i;
+      Names.push_back(o.str());
+      Values.push_back(T());
+    }
+    return Values.size();
+  }
+
   inline int size() const { return Names.size();}
 
   inline void setValues(T v) {
