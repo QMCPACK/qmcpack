@@ -45,12 +45,17 @@ namespace qmcplusplus {
   void CollectablesEstimator::add2Record(RecordListType& record) 
   {
     FirstIndex = record.size();
-    for(int i=0; i<refH.sizeOfCollectables(); ++i)
+    int loc=record.add("qc0");
+    if(loc == FirstIndex)//check if qc is added first time
     {
-      ostringstream o;
-      o<<"a"<<i;
-      int dummy=record.add(o.str());
+      loc=record.append("qc",1,refH.sizeOfCollectables());
     }
+    //for(int i=0; i<refH.sizeOfCollectables(); ++i)
+    //{
+    //  ostringstream o;
+    //  o<<"a"<<i;
+    //  int dummy=record.add(o.str());
+    //}
     LastIndex = record.size();
     clear();
   }
