@@ -70,7 +70,7 @@ namespace qmcplusplus {
      *@param first index of first particle
      *@param nel number of particles in the determinant
      */
-    void set(int first, int nel);
+    virtual void set(int first, int nel);
 
     ///optimizations  are disabled
     inline void checkInVariables(opt_variables_type& active)
@@ -96,7 +96,7 @@ namespace qmcplusplus {
     }
 
     ///reset the size: with the number of particles and number of orbtials
-    void resize(int nel, int morb);
+    virtual void resize(int nel, int morb);
 
     RealType registerData(ParticleSet& P, PooledData<RealType>& buf);
 
@@ -136,7 +136,13 @@ namespace qmcplusplus {
     GradType evalGrad(ParticleSet& P, int iat);
     GradType evalGradSource (ParticleSet &P, ParticleSet &source,
 			     int iat);
+
     GradType evalGradSource
+    (ParticleSet& P, ParticleSet& source, int iat,
+     TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM> &grad_grad,
+     TinyVector<ParticleSet::ParticleLaplacian_t,OHMMS_DIM> &lapl_grad);
+
+    GradType evalGradSourcep
     (ParticleSet& P, ParticleSet& source, int iat,
      TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM> &grad_grad,
      TinyVector<ParticleSet::ParticleLaplacian_t,OHMMS_DIM> &lapl_grad);
@@ -222,7 +228,7 @@ namespace qmcplusplus {
     ValueType *LastAddressOfG;
     ValueType *FirstAddressOfdV;
     ValueType *LastAddressOfdV;
-
+    //    double ComputeExtraTerms(int ptcl_gradient, int elDim,int ionDim);
     ParticleSet::ParticleGradient_t myG, myG_temp;
     ParticleSet::ParticleLaplacian_t myL, myL_temp;
   };
