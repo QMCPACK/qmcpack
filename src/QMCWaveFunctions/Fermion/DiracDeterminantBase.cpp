@@ -250,63 +250,6 @@ namespace qmcplusplus {
     return rv;
   }
 
-//   DiracDeterminantBase::GradType
-//   DiracDeterminantBase::evalGradSource
-//   (ParticleSet& P, ParticleSet& source,int iat,
-//    TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM> &grad_grad,
-//    TinyVector<ParticleSet::ParticleLaplacian_t,OHMMS_DIM> &lapl_grad)
-//   {
-//     return;
-//     Phi->evaluateGradSource (P, FirstIndex, LastIndex, source, iat, 
-// 			     grad_source_psiM, grad_grad_source_psiM, 
-// 			     grad_lapl_source_psiM);
-//     Phi->evaluate(P, FirstIndex, LastIndex, psiM, dpsiM, d2psiM);
-//     LogValue=InvertWithLog(psiM.data(),NumPtcls,NumOrbitals,
-//     			   WorkSpace.data(),Pivot.data(),PhaseValue);
-    
-//     GradMatrix_t &Phi_alpha(grad_source_psiM);
-//     GradMatrix_t &Grad_phi(dpsiM);
-//     HessMatrix_t &Grad_phi_alpha(grad_grad_source_psiM);
-
-//     GradType Psi_alpha_over_psi;
-//     Psi_alpha_over_psi = evalGradSource(P, source, iat);
-    
-//     ValueMatrix_t toDet;
-//     toDet.resize(2,2);
-//     for (int ptcl=0;ptcl<NumPtcls;ptcl++){
-//       GradType Grad_psi_over_psi(0.0);	
-//       HessType one_row_change(0.0);
-//       HessType two_row_change(0.0);
-//       for (int el_dim=0;el_dim<3;el_dim++){
-// 	for (int orbital=0;orbital<NumOrbitals;orbital++)
-// 	  Grad_psi_over_psi(el_dim)+=Grad_phi(ptcl,orbital)(el_dim)*psiM(ptcl,orbital);
-// 	for (int dim=0;dim<3;dim++){
-// 	  one_row_change(dim,el_dim)=0.0;
-// 	  two_row_change(dim,el_dim)=0.0;
-// 	  for (int orbital=0;orbital<NumOrbitals;orbital++)
-// 	    one_row_change(dim,el_dim)+=Grad_phi_alpha(ptcl,orbital)(dim,el_dim)*psiM(ptcl,orbital);
-// 	  for (int ptcl2=0;ptcl2<NumPtcls;ptcl2++){
-// 	    if (ptcl!=ptcl2){
-// 	      toDet=0.0;
-// 	      for (int orbital=0;orbital<NumOrbitals;orbital++)
-// 		toDet(0,0)+=Grad_phi(ptcl,orbital)(el_dim)*psiM(ptcl,orbital);
-// 	      for (int orbital=0;orbital<NumOrbitals;orbital++)
-// 		toDet(0,1)+=Grad_phi(ptcl,orbital)(el_dim)*psiM(ptcl2,orbital);
-// 	      for (int orbital=0;orbital<NumOrbitals;orbital++)
-// 		toDet(1,0)+=Phi_alpha(ptcl2,orbital)(dim)*psiM(ptcl,orbital);
-// 	      for (int orbital=0;orbital<NumOrbitals;orbital++)
-// 		toDet(1,1)+=Phi_alpha(ptcl2,orbital)(dim)*psiM(ptcl2,orbital);
-// 	      two_row_change(dim,el_dim)+=toDet(0,0)*toDet(1,1)-toDet(1,0)*toDet(0,1);
-// 	    }
-// 	  }
-// 	  grad_grad(dim)(ptcl)(el_dim)=one_row_change(dim,el_dim)+two_row_change(dim,el_dim)-
-// 	    Grad_psi_over_psi(el_dim)*Psi_alpha_over_psi(dim);
-// 	}
-//       }
-//     }
-//     return Psi_alpha_over_psi;
-//   }
-
   DiracDeterminantBase::GradType
   DiracDeterminantBase::evalGradSource
   (ParticleSet& P, ParticleSet& source,int iat,
@@ -393,106 +336,28 @@ namespace qmcplusplus {
   }
 
 
-//   DiracDeterminantBase::GradType
-//   DiracDeterminantBase::evalGradSource
-//   (ParticleSet& P, ParticleSet& source,int iat,
-//    TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM> &grad_grad,
-//    TinyVector<ParticleSet::ParticleLaplacian_t,OHMMS_DIM> &lapl_grad)
-//   {
-//     Phi->evaluateGradSource (P, FirstIndex, LastIndex, source, iat, 
-// 			     grad_source_psiM, grad_grad_source_psiM, 
-// 			     grad_lapl_source_psiM);
-//     Phi->evaluate(P, FirstIndex, LastIndex, psiM, dpsiM, d2psiM);
-//     LogValue=InvertWithLog(psiM.data(),NumPtcls,NumOrbitals,
-//     			   WorkSpace.data(),Pivot.data(),PhaseValue);
-
-//     GradMatrix_t &Phi_alpha(grad_source_psiM);
-//     GradMatrix_t &Grad_phi(dpsiM);
-//     ValueMatrix_t &Grad2_phi(d2psiM);
-//     HessMatrix_t &Grad_phi_alpha(grad_grad_source_psiM);
-//     GradMatrix_t &Grad2_phi_alpha(grad_lapl_source_psiM);
-    
-//     GradType Psi_alpha_over_psi;
-//     Psi_alpha_over_psi = evalGradSource(P, source, iat);
-    
-//     ValueMatrix_t toDet;
-//     ValueMatrix_t toDet_l;
-//     toDet.resize(2,2);
-//     toDet_l.resize(2,2);
-//     for (int ptcl=0;ptcl<NumPtcls;ptcl++){
-//       ValueType Grad2_psi_over_psi(0.0);
-//       GradType Grad_psi_over_psi(0.0);
-//       HessType Grad_psi_alpha_over_psi(0.0);
-//       HessType one_row_change(0.0);
-//       HessType two_row_change(0.0);
-//       GradType one_row_change_l(0.0);
-//       GradType two_row_change_l(0.0);
-
-//       for (int el_dim=0;el_dim<3;el_dim++){
-// 	for (int orbital=0;orbital<NumOrbitals;orbital++){
-// 	  Grad_psi_over_psi(el_dim)+=Grad_phi(ptcl,orbital)(el_dim)*psiM(ptcl,orbital);
-// 	  Grad2_psi_over_psi+=Grad2_phi(ptcl,orbital)*psiM(ptcl,orbital);
-// 	}
-// 	for (int dim=0;dim<3;dim++){
-// 	  one_row_change(dim,el_dim)=0.0;
-// 	  for (int orbital=0;orbital<NumOrbitals;orbital++){
-// 	    one_row_change(dim,el_dim)+=Grad_phi_alpha(ptcl,orbital)(dim,el_dim)*psiM(ptcl,orbital);
-// 	    one_row_change_l(dim)+=Grad2_phi_alpha(ptcl,orbital)(dim)*psiM(ptcl,orbital);
-// 	  }
-// 	  for (int ptcl2=0;ptcl2<NumPtcls;ptcl2++){
-// 	    if (ptcl!=ptcl2){
-// 	      toDet=0.0;
-// 	      toDet_l=0.0;
-// 	      for (int orbital=0;orbital<NumOrbitals;orbital++){
-// 		toDet(0,0)+=Grad_phi(ptcl,orbital)[el_dim]*psiM(ptcl,orbital);
-// 		toDet_l(0,0)+=Grad2_phi(ptcl,orbital)*psiM(ptcl,orbital);
-// 		toDet(0,1)+=Grad_phi(ptcl,orbital)[el_dim]*psiM(ptcl2,orbital);
-// 		toDet_l(0,1)+=Grad2_phi(ptcl,orbital)*psiM(ptcl2,orbital);
-// 		toDet(1,0)+=Phi_alpha(ptcl2,orbital)[dim]*psiM(ptcl,orbital);
-// 		toDet_l(1,0)+=Phi_alpha(ptcl2,orbital)[dim]*psiM(ptcl,orbital);
-// 		toDet(1,1)+=Phi_alpha(ptcl2,orbital)[dim]*psiM(ptcl2,orbital);
-// 		toDet_l(1,1)+=Phi_alpha(ptcl2,orbital)[dim]*psiM(ptcl2,orbital);
-// 	      }
-// 	      two_row_change(dim,el_dim)+=toDet(0,0)*toDet(1,1)-toDet(1,0)*toDet(0,1);
-// 	      two_row_change_l(dim)+=toDet_l(0,0)*toDet_l(1,1)-toDet_l(1,0)*toDet_l(0,1);
-// 	    }
-// 	  }
-// 	  Grad_psi_alpha_over_psi(dim,el_dim)=one_row_change(dim,el_dim)+two_row_change(dim,el_dim);
-// 	  grad_grad(dim)(ptcl)(el_dim)=one_row_change(dim,el_dim)+two_row_change(dim,el_dim)-
-// 	    Grad_psi_over_psi[el_dim]*Psi_alpha_over_psi[dim];
-// 	}
-//       }
-//       for (int dim=0;dim<3;dim++){
-// 	lapl_grad(dim)(ptcl)=0.0;
-// 	lapl_grad(dim)(ptcl)+=one_row_change_l(dim)+two_row_change_l(dim)- Psi_alpha_over_psi(dim)*Grad2_psi_over_psi;
-// 	for (int el_dim=0;el_dim<3;el_dim++){
-// 	  lapl_grad(dim)(ptcl)-= 1.0*Grad_psi_alpha_over_psi(dim,el_dim)*Grad_psi_over_psi(el_dim);
-// 	  lapl_grad(dim)(ptcl)+= 1.0*Psi_alpha_over_psi(dim)*(Grad_psi_over_psi(el_dim)*Grad_psi_over_psi(el_dim));
-// 	  lapl_grad(dim)(ptcl) -= grad_grad(dim)(ptcl)(el_dim)*Grad_psi_over_psi(el_dim);
-// 	}
-//       }
-      
-//     }
-//     return Psi_alpha_over_psi;
-//   }
-  
-
-  DiracDeterminantBase::GradType 
+  DiracDeterminantBase::GradType
   DiracDeterminantBase::evalGradSourcep
   (ParticleSet& P, ParticleSet& source,int iat,
    TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM> &grad_grad,
    TinyVector<ParticleSet::ParticleLaplacian_t,OHMMS_DIM> &lapl_grad)
   {
-    Phi->evaluateGradSource (P, FirstIndex, LastIndex, source, iat, 
-			     grad_source_psiM, grad_grad_source_psiM, 
+    Phi->evaluateGradSource (P, FirstIndex, LastIndex, source, iat,
+			     grad_source_psiM, grad_grad_source_psiM,
 			     grad_lapl_source_psiM);
     Phi->evaluate(P, FirstIndex, LastIndex, psiM, dpsiM, d2psiM);
     LogValue=InvertWithLog(psiM.data(),NumPtcls,NumOrbitals,
-    			   WorkSpace.data(),Pivot.data(),PhaseValue);
+			   WorkSpace.data(),Pivot.data(),PhaseValue);
 
     TinyVector<ValueMatrix_t,3> phi_alpha_Minv, grad_phi_Minv;
-    HessMatrix_t grad_phi_alpha_Minv;
-    grad_phi_alpha_Minv.resize(NumPtcls,NumOrbitals);
+    ValueMatrix_t lapl_phi_Minv (NumPtcls, NumOrbitals);
+    HessMatrix_t grad_phi_alpha_Minv(NumPtcls, NumOrbitals);
+    for (int i=0; i<NumPtcls; i++)
+      for (int j=0; j<NumOrbitals; j++) {
+	lapl_phi_Minv(i,j) = 0.0;
+	for (int k=0; k<NumOrbitals; k++)
+	  lapl_phi_Minv(i,j) += d2psiM(i,k)*psiM(j,k);
+      }
     for (int dim=0; dim<3; dim++) {
       phi_alpha_Minv[dim].resize(NumPtcls,NumOrbitals);
       grad_phi_Minv[dim].resize(NumPtcls,NumOrbitals);
@@ -503,29 +368,15 @@ namespace qmcplusplus {
 	  for (int k=0; k<NumOrbitals; k++) {
 	    phi_alpha_Minv[dim](i,j) += grad_source_psiM(i,k)[dim]
 	      * psiM(j,k);
-	    for (int el_dim=0;el_dim<3;el_dim++)
-	      grad_phi_alpha_Minv(i,j)(dim,el_dim) += grad_grad_source_psiM(i,k)(dim,el_dim)
-		* psiM(j,k);
-
-
 	    grad_phi_Minv[dim](i,j) += dpsiM(i,k)[dim] * psiM(j,k);
+	    for (int dim_el=0; dim_el<3; dim_el++)
+	      grad_phi_alpha_Minv(i,j)(dim, dim_el) +=
+		grad_grad_source_psiM(i,k)(dim,dim_el)*psiM(j,k);
 	  }
 	}
     }
 
-    // TinyVector<ValueMatrix_t,OHMMS_DIM> psi_alpha_inv;
-    // for (int i=0; i<3; i++)
-    //   psi_alpha_inv[i].resize(NumOrbitals,NumPtcls);
-
-    // for (int dim=0; dim < 3; dim++) {
-    //   for (int i=0; i<NumOrbitals; i++)
-    // 	for (int j=0; j<NumPtcls; j++)
-    // 	  psi_alpha_inv[dim](i,j) = grad_source_psiM(j,i)[dim];
-    //   InvertWithLog(psi_alpha_inv[dim].data(),NumPtcls,NumOrbitals,
-    // 		    WorkSpace.data(),Pivot.data(),PhaseValue);
-    // }
-
-    GradType gradPsi;
+    GradType gradPsi = evalGradSource(P, source, iat);
 
     const ValueType* restrict    invptr = psiM[0];
     const GradType*  restrict     yptr  = grad_source_psiM[0];
@@ -534,137 +385,42 @@ namespace qmcplusplus {
     const GradType*  restrict  dvalptr  = dpsiM.data();
     const ValueType* restrict d2valptr  = d2psiM.data();
 
-    // for(int i=0; i<NumPtcls; i++) 
-    //   for(int j=0; j<NumOrbitals; j++)
-    // 	gradPsi += *invptr++ * *yptr++;
-    gradPsi = evalGradSource(P, source, iat);
-    invptr = psiM[0];
-
-    // for(int i=0, iel=FirstIndex; i<NumPtcls; i++, iel++) {
-    //   HessType dval (0.0);
-    //   GradType d2val(0.0);
-    //   GradType gv(0.0);
-    //   ValueType lv(0.0);
-    //   GradType dlog_psi(0.0);
-    //   for(int j=0; j<NumOrbitals; j++,invptr++) {
-    // 	dlog_psi = dlog_psi + *invptr *   *yptr++;
-
-    // 	// dval     = dval     + *invptr *  *dyptr++;
-    // 	for (int dim=0; dim<3; dim++)
-    // 	  for (int k=0; k<3; k++)
-    // 	    dval(dim,k) += psi_alpha_inv[dim](i,j) * (*dyptr)(dim,k);
-    // 	dyptr++;
-
-    // 	d2val    = d2val    + *invptr * *d2yptr++;
-    // 	gv += *invptr *  *dvalptr++;
-    // 	lv += *invptr * *d2valptr++;
-    //   }
-    //   for (int dim=0; dim<OHMMS_DIM; dim++) {
-    // 	grad_grad[dim][iel] += gradPsi[dim] * (dval.getRow(dim) - gv);
-    // 	lapl_grad[dim][iel] += d2val[dim];
-    //   }
-    // }
 
     for(int i=0, iel=FirstIndex; i<NumPtcls; i++, iel++) {
       HessType dval (0.0);
       GradType d2val(0.0);
-      GradType gv(0.0);
-      ValueType lv(0.0);
-      GradType dlog_psi(0.0);
-      for(int j=0; j<NumOrbitals; j++,invptr++) {
+      for (int dim=0; dim<3; dim++)
+	for (int dim_el=0; dim_el<3; dim_el++)
+	  dval(dim,dim_el) = grad_phi_alpha_Minv(i,i)(dim,dim_el);
+      for(int j=0; j<NumOrbitals; j++) {
 	for (int dim=0; dim<3; dim++)
 	  for (int k=0; k<3; k++)
-	    //dval(dim,k) += psi_alpha_inv[dim](i,j) * grad_grad_source_psiM(i,j)(dim,k);
-	    dval(dim,k) += psiM(i,j) * grad_grad_source_psiM(i,j)(dim,k) - 
-	      phi_alpha_Minv[dim](j,i)*grad_phi_Minv[k](i,j);
-
-	gv += psiM(i,j) *  dpsiM(i,j);
-	dlog_psi += psiM(i,j) * grad_source_psiM(i,j);
+	    dval(dim,k) -= phi_alpha_Minv[dim](j,i)*grad_phi_Minv[k](i,j);
       }
       for (int dim=0; dim<OHMMS_DIM; dim++) {
-	for (int k=0; k<3; k++) {
-	  //grad_grad[dim][iel][k] += gradPsi[dim] * (dval(dim,k) /*- gv[k]*/);
-	  // grad_grad[dim][iel][k] = ((i == 1) ? 1.0 : 0.0) *grad_grad_source_psiM(1,3)(dim,k);
-	  grad_grad[dim][iel][k] += dval(dim,k);// - gradPsi[dim]*gv[k];
-	  //	  grad_grad[dim][iel][k] += ComputeExtraTerms(i,dim,k);  ///BRYAN added extram terms!
-	}
-	//lapl_grad[dim][iel] += d2val[dim];
-      }
-    }
-
-
-
-
-    //Bryan addding
-    TinyVector<ValueMatrix_t,3> lapl_phi_Minv;
-    TinyVector<ValueMatrix_t,3> gradM_MInv;
-    for (int dim=0;dim<3;dim++){
-      gradM_MInv[dim].resize(NumPtcls,NumPtcls);
-      lapl_phi_Minv[dim].resize(NumPtcls,NumPtcls);
-    }
-    for (int ptcl=0;ptcl<NumPtcls;ptcl++){
-    for (int dim=0;dim<3;dim++){
-      double term2=0.0;
-      double term3=0.0;
-      for (int orbital=0;orbital<NumOrbitals;orbital++){
-	for (int el_dim=0;el_dim<3;el_dim++)
-	  term2-= 2.0*grad_phi_alpha_Minv(orbital,ptcl)(dim,el_dim)*grad_phi_Minv[el_dim](ptcl,orbital);
-	term3+=grad_lapl_source_psiM(ptcl,orbital)[dim]*grad_source_psiM(ptcl,orbital)[dim];
-      }
-      for (int ptcl2=0;ptcl2<NumPtcls;ptcl2++){
-	for (int orbital=0;orbital<NumOrbitals;orbital++){
-	  gradM_MInv[dim](ptcl,ptcl2)=dpsiM(ptcl,orbital)[dim]*psiM(ptcl2,orbital);
+	for (int k=0; k<3; k++)
+	  grad_grad[dim][iel][k] += dval(dim,k);
+	for (int j=0; j<NumOrbitals; j++) {
+	  // First term, eq 9
+	  lapl_grad[dim][iel] += grad_lapl_source_psiM(i,j)[dim] *
+	    psiM(i,j);
+	  // Second term, eq 9
+	  if (j == i)
+	    for (int dim_el=0; dim_el<3; dim_el++)
+	      lapl_grad[dim][iel] -= 2.0 * grad_phi_alpha_Minv(j,i)(dim,dim_el)
+		* grad_phi_Minv[dim_el](i,j);
+	  // Third term, eq 9
+	  // First term, eq 10
+	  lapl_grad[dim][iel] -= phi_alpha_Minv[dim](j,i)*lapl_phi_Minv(i,j);
+	  // Second term, eq 11
+	  for (int dim_el=0; dim_el<3; dim_el++)
+	    lapl_grad[dim][iel] += 2.0*phi_alpha_Minv[dim](j,i) *
+	      grad_phi_Minv[dim_el](i,i)*grad_phi_Minv[dim_el](i,j);
 	}
       }
-      double term1b=0.0;
-      double term1a=0.0;
-      for (int k=0;k<NumPtcls;k++){
-	for (int el_dim=0;el_dim<3;el_dim++)
-	  term1b+=phi_alpha_Minv[dim](k,ptcl)*grad_phi_Minv[el_dim](ptcl,ptcl)*grad_phi_Minv[el_dim](ptcl,k);
-      }
-      term1b*=2;
-      for (int ptcl2=0;ptcl2<NumPtcls;ptcl2++){
-	for (int orbital=0;orbital<NumOrbitals;orbital++){
-	  lapl_phi_Minv[dim](ptcl,ptcl2)+=d2psiM(ptcl,orbital)*psiM(ptcl2,orbital);
-	}
-      }
-      for (int k=0;k<NumPtcls;k++)
-	term1a+=phi_alpha_Minv[dim](k,ptcl)*lapl_phi_Minv[dim](ptcl,k);
-	//	term1a+=grad_source_psiM(ptcl,ptcl2)[dim]*psiM(ptcl2,ptcl)*lapl_phi_Minv[dim](ptcl,ptcl);
-      lapl_grad[dim][ptcl]=-term1a+term1b+term2+term3;
     }
-    }
-    ///Bryan done
-
-
-
-    // -0.0061939011
-
     return gradPsi;
   }
-
-//   double DiracDeterminantBase::ComputeExtraTerms(int ptcl_gradient,int elDim,int ionDim)
-//   {
-//     ValueMatrix_t det;
-//     det.resize(2,2);
-//     ValueType toAdd(0);
-//     for (int orbital=0;orbital<NumOrbitals;orbital++)
-//       det(0,0)+=psiM(ptcl_gradient,orbital)*dpsiM(ptcl_gradient,orbital)[elDim]; //   grad_source_psiM(ptcl_gradient,orbital);
-//     for (int ptcl=0;ptcl<NumPtcls;ptcl++){
-//       if (ptcl!=ptcl_gradient){
-// 	for (int orbital=0;orbital<NumOrbitals;orbital++)
-// 	  det(0,1)+=psiM(ptcl_gradient,orbital)*grad_source_psiM(ptcl,orbital)[ionDim];
-// 	for (int orbital=0;orbital<NumOrbitals;orbital++)
-// 	  det(1,0)+=psiM(ptcl,orbital)*dpsiM(ptcl_gradient,orbital)[elDim];
-// 	for (int orbital=0;orbital<NumOrbitals;orbital++)
-// 	  det(1,1)+=psiM(ptcl,orbital)*grad_source_psiM(ptcl,orbital)[ionDim];
-// 	toAdd+=det(0,0)*det(1,1)-det(1,0)*det(0,1);
-//       }
-//     }
-    
-//     return toAdd;
-//   }
-
 
     DiracDeterminantBase::ValueType 
       DiracDeterminantBase::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
