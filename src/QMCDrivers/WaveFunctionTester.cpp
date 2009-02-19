@@ -638,11 +638,11 @@ void WaveFunctionTester::runGradSourceTest() {
       for(int eldim=0; eldim<3; eldim++) {
 	W.R[iat][eldim] = r0[eldim]+delta;         
 	W.update();
-	//ValueType log_p = Psi.evaluateLog(W);
+	ValueType log_p = Psi.evaluateLog(W);
 	GradType gradlogpsi_p =  Psi.evalGradSource(W, source, isrc);
 	W.R[iat][eldim] = r0[eldim]-delta;         
 	W.update();
-	//ValueType log_m = Psi.evaluateLog(W);
+	ValueType log_m = Psi.evaluateLog(W);
 	GradType gradlogpsi_m = Psi.evalGradSource(W, source, isrc);
 	lapFD    += gradlogpsi_m + gradlogpsi_p;
 	gFD[eldim] = gradlogpsi_p - gradlogpsi_m;
@@ -665,10 +665,10 @@ void WaveFunctionTester::runGradSourceTest() {
 	     << "  Finite diff = " << setw(12) << grad_grad_FD[dimsrc][iat] << endl 
 	     << "  Error       = " << setw(12) 
 	     <<  grad_grad_FD[dimsrc][iat] - grad_grad[dimsrc][iat] << endl << endl;
-	// cout << "Laplacian     = " << setw(12) << lapl_grad[dimsrc][iat] << endl 
-	//      << "  Finite diff = " << setw(12) << lapl_grad_FD[dimsrc][iat] << endl 
-	//      << "  Error       = " << setw(12) 
-	//      << lapl_grad_FD[dimsrc][iat] - lapl_grad[dimsrc][iat] << endl << endl;
+	cout << "Laplacian     = " << setw(12) << lapl_grad[dimsrc][iat] << endl 
+	     << "  Finite diff = " << setw(12) << lapl_grad_FD[dimsrc][iat] << endl 
+	     << "  Error       = " << setw(12) 
+	     << lapl_grad_FD[dimsrc][iat] - lapl_grad[dimsrc][iat] << endl << endl;
       }
     }
   }

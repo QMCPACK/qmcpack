@@ -213,6 +213,9 @@ namespace qmcplusplus {
     /// Used for force computations
     GradMatrix_t grad_source_psiM, grad_lapl_source_psiM;
     HessMatrix_t  grad_grad_source_psiM;
+    GradMatrix_t phi_alpha_Minv, grad_phi_Minv;
+    ValueMatrix_t lapl_phi_Minv;
+    HessMatrix_t grad_phi_alpha_Minv;
 
     /// value of single-particle orbital for particle-by-particle update
     ValueVector_t psiV;

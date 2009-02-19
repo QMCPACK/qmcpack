@@ -84,11 +84,9 @@ namespace qmcplusplus {
     for (int ion=0; ion < Nnuc; ion++) {
       //GradType grad = Psi.evalGradSource(P, Ions, ion);
       GradType grad = Psi.evalGradSource(P, Ions, ion, grad_grad_psi, lapl_grad_psi);
-      for (int dim=0; dim < OHMMS_DIM; dim++) {
-// 	F_ZV[ion][dim] = 0.5*(Sum(lapl_grad_psi[dim]) 
-// 			      + 2.0*Dot(grad_grad_psi[dim], P.G));
-	F_ZV[ion][dim] = 0.5*(Sum(lapl_grad_psi[dim]) - lapl*grad[dim]);
-      }
+      for (int dim=0; dim < OHMMS_DIM; dim++) 
+	F_ZV[ion][dim] = 0.5*(Sum(lapl_grad_psi[dim]) + 2.0*Dot(grad_grad_psi[dim], P.G));
+	//F_ZV[ion][dim] = 0.5*(Sum(lapl_grad_psi[dim]) - lapl*grad[dim]);
     }
     return Value=0.0;
   }
