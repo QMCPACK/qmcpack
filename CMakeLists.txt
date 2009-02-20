@@ -318,41 +318,50 @@ ENDIF(ENABLE_GTK_GUI)
 
 ######################################################################
 # Manage Einspline library
-# - check if libeinspline can be found using PKG_CONFIG_PATH
-# - if not found, try to build it from the source directory
+# - check if libeinspline can be found in $EINSPLINE_HOME/include and
+# $EINSPLINE_HOME/lib
+# - if not found, build it from the source directory in $EINSPLINE_HOME
 # - if everything fails, do not use it
 ######################################################################
-SET(HAVE_EINSPLINE 0)
+INCLUDE(${PROJECT_CMAKE}/FindEinspline.cmake)
+  IF(HAVE_EINSPLINE_EXT)
+  INCLUDE_DIRECTORIES(${EINSPLINE_INCLUDE_DIR})
+  LINK_LIBRARIES(${EINSPLINE_LIBRARY})  
+  ELSE(HAVE_EINSPLINE_EXT)
+  IF(HAVE_EINSPLINE)
+  SUBDIRS(src/einspline)
+  ENDIF(HAVE_EINSPLINE)
+ENDIF(HAVE_EINSPLINE_EXT)
 
-IF ( CMAKE_PKGCONFIG_EXECUTABLE )
-   # Find all the librtk stuff with pkg-config
-   PKGCONFIG( "einspline >= 0.9" HAVE_EINSPLINE EINSPLINE_INCLUDE_DIRS EINSPLINE_DEFINES EINSPLINE_LINK_DIRS EINSPLINE_LIBS )
-   CHECK_INCLUDE_FILE(${EINSPLINE_INCLUDE_DIRS}/config.h HAVE_EINSPLINE)
-   IF(HAVE_EINSPLINE)	
-     FIND_LIBRARY(EINSPLINE_LIBRARY einspline ${EINSPLINE_LINK_DIRS})
-     INCLUDE_DIRECTORIES(${EINSPLINE_INCLUDE_DIRS})
-     ADD_DEFINITIONS (${EINSPLINE_DEFINES} -DHAVE_EINSPLINE)
-     SET(HAVE_EINSPLINE 1)
-     SET(HAVE_EINSPLINE_EXT 1)
-     LINK_LIBRARIES(${EINSPLINE_LIBRARY})  
-     MESSAGE("-- Einspline library found at  ${EINSPLINE_LIBRARY}")	 
-   ELSE(HAVE_EINSPLINE)	
-     MESSAGE("-- Checked PKG_CONFIG_PATH=$ENV{PKG_CONFIG_PATH}")
-     MESSAGE("-- Missing pre-built Einspline library.")
-   ENDIF(HAVE_EINSPLINE)	
-ENDIF  ( CMAKE_PKGCONFIG_EXECUTABLE )
-
-IF(NOT HAVE_EINSPLINE)
-  FIND_PATH(EINSPLINE_DIR src/bspline.h $ENV{EINSPLINE_HOME})
-  IF(EINSPLINE_DIR)
-    MESSAGE("-- Try to build Einspline library. Source is found at ${EINSPLINE_DIR}.")
-    SET(HAVE_EINSPLINE 1)
-    SUBDIRS(src/einspline)
-  ELSE(EINSPLINE_DIR)
-    MESSAGE("-- EINSPLINE_HOME is not found. Disable Einspline library.")
-    MESSAGE("-- Download einspline library to utilize an optimized 3D-bspline library.")
-  ENDIF(EINSPLINE_DIR)
-ENDIF(NOT HAVE_EINSPLINE)
+#IF ( CMAKE_PKGCONFIG_EXECUTABLE )
+#   # Find all the librtk stuff with pkg-config
+#   PKGCONFIG( "einspline >= 0.9" HAVE_EINSPLINE EINSPLINE_INCLUDE_DIRS EINSPLINE_DEFINES EINSPLINE_LINK_DIRS EINSPLINE_LIBS )
+#   CHECK_INCLUDE_FILE(${EINSPLINE_INCLUDE_DIRS}/config.h HAVE_EINSPLINE)
+#   IF(HAVE_EINSPLINE)	
+#     FIND_LIBRARY(EINSPLINE_LIBRARY einspline ${EINSPLINE_LINK_DIRS})
+#     INCLUDE_DIRECTORIES(${EINSPLINE_INCLUDE_DIRS})
+#     ADD_DEFINITIONS (${EINSPLINE_DEFINES} -DHAVE_EINSPLINE)
+#     SET(HAVE_EINSPLINE 1)
+#     SET(HAVE_EINSPLINE_EXT 1)
+#     LINK_LIBRARIES(${EINSPLINE_LIBRARY})  
+#     MESSAGE("-- Einspline library found at  ${EINSPLINE_LIBRARY}")	 
+#   ELSE(HAVE_EINSPLINE)	
+#     MESSAGE("-- Checked PKG_CONFIG_PATH=$ENV{PKG_CONFIG_PATH}")
+#     MESSAGE("-- Missing pre-built Einspline library.")
+#   ENDIF(HAVE_EINSPLINE)	
+#ENDIF  ( CMAKE_PKGCONFIG_EXECUTABLE )
+#
+#IF(NOT HAVE_EINSPLINE)
+#  FIND_PATH(EINSPLINE_DIR src/bspline.h $ENV{EINSPLINE_HOME})
+#  IF(EINSPLINE_DIR)
+#    MESSAGE("-- Try to build Einspline library. Source is found at ${EINSPLINE_DIR}.")
+#    SET(HAVE_EINSPLINE 1)
+#    SUBDIRS(src/einspline)
+#  ELSE(EINSPLINE_DIR)
+#    MESSAGE("-- EINSPLINE_HOME is not found. Disable Einspline library.")
+#    MESSAGE("-- Download einspline library to utilize an optimized 3D-bspline library.")
+#  ENDIF(EINSPLINE_DIR)
+#ENDIF(NOT HAVE_EINSPLINE)
 
 ###################################################
 # Done searching libraries. Start building qmcpack
