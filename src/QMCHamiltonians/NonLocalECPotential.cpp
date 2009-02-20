@@ -63,9 +63,9 @@ namespace qmcplusplus {
       for(int iat=0; iat<NumIons; iat++) 
 	if(PP[iat]) {
 	  PP[iat]->randomize_grid(*(P.Sphere[iat]),UpdateMode[PRIMARY]);
-	  Value += PP[iat]->evaluate(P,iat,Psi, forces[iat]);
-	  // Value += PP[iat]->evaluate(P,iat,Psi, forces[iat], 
-	  // 			     PulayTerm[iat]);
+	  //Value += PP[iat]->evaluate(P,iat,Psi, forces[iat]);
+	  Value += PP[iat]->evaluate(P,IonConfig,iat,Psi, forces[iat], 
+	   			     PulayTerm[iat]);
 	}
     }
     else {

@@ -110,6 +110,34 @@ namespace qmcplusplus
       /**@param r the distance
       @param dudr first derivative
       @param d2udr2 second derivative
+      @param d3udr3 second derivative
+      @return the value
+       */
+      inline real_type evaluate(real_type r, real_type& dudr, 
+				real_type& d2udr2, real_type& d3udr3)
+      {
+	std::cerr << "Third derivative not implemented for GaussianFunctor.\n";
+        if (r<RC)
+          {
+            real_type expart = std::exp(c0*r*r);
+            real_type r1=c1-r;
+            real_type expartRC = std::exp(c0*r1*r1);
+            dudr =  c3*(r*expart - r1*expartRC);
+            d2udr2 = (c4*r*r+c3)*expart + (c4*r1*r1+c3)*expartRC;
+            return A*(expart+expartRC)+c2;
+          }
+        else
+          {
+            dudr = 0.0;
+            d2udr2 = 0.0;
+            return 0.0;
+          }
+      }
+
+
+      /**@param r the distance
+      @param dudr first derivative
+      @param d2udr2 second derivative
       @return the value
        */
       inline real_type evaluate(real_type r, real_type& dudr, real_type& d2udr2)
@@ -290,6 +318,19 @@ namespace qmcplusplus
         else
           return 0.0;
       }
+
+      /**@param r the distance
+      @param dudr first derivative
+      @param d2udr2 second derivative
+      @param d3udr3 second derivative
+      @return the value
+       */
+      inline real_type evaluate(real_type r, real_type& dudr, 
+				real_type& d2udr2, real_type& d3udr3)
+      {
+	std::cerr << "Third derivative not implemented for GaussianFunctor.\n";
+      }
+
 
       /**@param r the distance
       @param dudr return value  \f$ du/dr = -2abr/(1+br^2)^2 \f$

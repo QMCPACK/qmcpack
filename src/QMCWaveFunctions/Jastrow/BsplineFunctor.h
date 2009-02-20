@@ -29,7 +29,7 @@ namespace qmcplusplus {
     typedef real_type value_type;
     int NumParams;
     int Dummy;
-    const TinyVector<real_type,16> A, dA, d2A;
+    const TinyVector<real_type,16> A, dA, d2A, d3A;
     //static const real_type A[16], dA[16], d2A[16];
     real_type DeltaR, DeltaRInv;
     real_type CuspValue;
@@ -47,17 +47,21 @@ namespace qmcplusplus {
     BsplineFunctor(real_type cusp=0.0) : 
       NumParams(0), 
       A( -1.0/6.0,  3.0/6.0, -3.0/6.0, 1.0/6.0,
-           3.0/6.0, -6.0/6.0,  0.0/6.0, 4.0/6.0,
-          -3.0/6.0,  3.0/6.0,  3.0/6.0, 1.0/6.0,
-           1.0/6.0,  0.0/6.0,  0.0/6.0, 0.0/6.0 ),
+          3.0/6.0, -6.0/6.0,  0.0/6.0, 4.0/6.0,
+         -3.0/6.0,  3.0/6.0,  3.0/6.0, 1.0/6.0,
+          1.0/6.0,  0.0/6.0,  0.0/6.0, 0.0/6.0 ),
       dA( 0.0, -0.5,  1.0, -0.5,
           0.0,  1.5, -2.0,  0.0,
           0.0, -1.5,  1.0,  0.5,
           0.0,  0.5,  0.0,  0.0),
       d2A( 0.0, 0.0, -1.0,  1.0,
-          0.0, 0.0,  3.0, -2.0,
-          0.0, 0.0, -3.0,  1.0,
-          0.0, 0.0,  1.0,  0.0),
+           0.0, 0.0,  3.0, -2.0,
+           0.0, 0.0, -3.0,  1.0,
+           0.0, 0.0,  1.0,  0.0),
+      d3A( 0.0, 0.0,  0.0, -1.0,
+	   0.0, 0.0,  0.0,  3.0,
+	   0.0, 0.0,  0.0, -3.0,
+	   0.0, 0.0,  0.0,  1.0),
       CuspValue(cusp), ResetCount(0)
     {
       cutoff_radius = 0.0;
@@ -193,6 +197,68 @@ namespace qmcplusplus {
 	 SplineCoefs[i+3]*(A[12]*tp[0] + A[13]*tp[1] + A[14]*tp[2] + A[15]*tp[3]));
 
     }
+
+
+    inline real_type 
+    evaluate(real_type r, real_type& dudr, real_type& d2udr2, real_type &d3udr3) {
+      if (r >= cutoff_radius) {
+	dudr = d2udr2 = 0.0;
+	return 0.0;
+      }
+      real_type eps = 1.0e-5;
+//       real_type dudr_FD = (evaluate(r+eps)-evaluate(r-eps))/(2.0*eps);
+//       real_type d2udr2_FD = (evaluate(r+eps)+evaluate(r-eps)-2.0*evaluate(r))/(eps*eps);
+      real_type d3udr3_FD = (-1.0*evaluate(r+1.0*eps)
+			     +2.0*evaluate(r+0.5*eps)
+			     -2.0*evaluate(r-0.5*eps)
+			     +1.0*evaluate(r-1.0*eps))/(eps*eps*eps);
+
+      r *= DeltaRInv;
+      real_type ipart, t;
+      t = modf (r, &ipart);
+      int i = (int) ipart;
+      
+      real_type tp[4];
+      tp[0] = t*t*t;  tp[1] = t*t;  tp[2] = t;  tp[3] = 1.0;
+
+      d3udr3 = DeltaRInv * DeltaRInv * DeltaRInv *
+	(SplineCoefs[i+0]*(d3A[ 0]*tp[0] + d3A[ 1]*tp[1] + d3A[ 2]*tp[2] + d3A[ 3]*tp[3])+
+	 SplineCoefs[i+1]*(d3A[ 4]*tp[0] + d3A[ 5]*tp[1] + d3A[ 6]*tp[2] + d3A[ 7]*tp[3])+
+	 SplineCoefs[i+2]*(d3A[ 8]*tp[0] + d3A[ 9]*tp[1] + d3A[10]*tp[2] + d3A[11]*tp[3])+
+	 SplineCoefs[i+3]*(d3A[12]*tp[0] + d3A[13]*tp[1] + d3A[14]*tp[2] + d3A[15]*tp[3]));
+      d2udr2 = DeltaRInv * DeltaRInv *
+	(SplineCoefs[i+0]*(d2A[ 0]*tp[0] + d2A[ 1]*tp[1] + d2A[ 2]*tp[2] + d2A[ 3]*tp[3])+
+	 SplineCoefs[i+1]*(d2A[ 4]*tp[0] + d2A[ 5]*tp[1] + d2A[ 6]*tp[2] + d2A[ 7]*tp[3])+
+	 SplineCoefs[i+2]*(d2A[ 8]*tp[0] + d2A[ 9]*tp[1] + d2A[10]*tp[2] + d2A[11]*tp[3])+
+	 SplineCoefs[i+3]*(d2A[12]*tp[0] + d2A[13]*tp[1] + d2A[14]*tp[2] + d2A[15]*tp[3]));
+      dudr = DeltaRInv * 
+	(SplineCoefs[i+0]*(dA[ 0]*tp[0] + dA[ 1]*tp[1] + dA[ 2]*tp[2] + dA[ 3]*tp[3])+
+	 SplineCoefs[i+1]*(dA[ 4]*tp[0] + dA[ 5]*tp[1] + dA[ 6]*tp[2] + dA[ 7]*tp[3])+
+	 SplineCoefs[i+2]*(dA[ 8]*tp[0] + dA[ 9]*tp[1] + dA[10]*tp[2] + dA[11]*tp[3])+
+	 SplineCoefs[i+3]*(dA[12]*tp[0] + dA[13]*tp[1] + dA[14]*tp[2] + dA[15]*tp[3]));
+
+//       if (std::fabs(dudr_FD-dudr) > 1.0e-8) 
+// 	cerr << "Error in BsplineFunction:  dudr = " << dudr 
+// 	     << "  dudr_FD = " << dudr_FD << endl;
+
+//       if (std::fabs(d2udr2_FD-d2udr2) > 1.0e-4) 
+// 	cerr << "Error in BsplineFunction:  r = " << r << "  d2udr2 = " << dudr 
+// 	     << "  d2udr2_FD = " << d2udr2_FD << "  rcut = " << cutoff_radius << endl;
+
+      if (std::fabs(d3udr3_FD-d3udr3) > 1.0e-4) 
+	cerr << "Error in BsplineFunction:  r = " << r << "  d3udr3 = " << dudr 
+	     << "  d3udr3_FD = " << d3udr3_FD << "  rcut = " << cutoff_radius << endl;
+
+
+      return 
+	(SplineCoefs[i+0]*(A[ 0]*tp[0] + A[ 1]*tp[1] + A[ 2]*tp[2] + A[ 3]*tp[3])+
+	 SplineCoefs[i+1]*(A[ 4]*tp[0] + A[ 5]*tp[1] + A[ 6]*tp[2] + A[ 7]*tp[3])+
+	 SplineCoefs[i+2]*(A[ 8]*tp[0] + A[ 9]*tp[1] + A[10]*tp[2] + A[11]*tp[3])+
+	 SplineCoefs[i+3]*(A[12]*tp[0] + A[13]*tp[1] + A[14]*tp[2] + A[15]*tp[3]));
+
+    }
+
+
 
     inline bool
     evaluateDerivatives (real_type r, vector<TinyVector<real_type,3> >& derivs)

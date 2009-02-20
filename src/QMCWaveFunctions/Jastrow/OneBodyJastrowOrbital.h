@@ -314,19 +314,19 @@ namespace qmcplusplus
         FT* func=Fs[isrc];
         if (func == 0) return GradType();
         GradType G(0.0);
-        RealType dudr, d2udr2;
+        RealType dudr, d2udr2, d3udr3;
         for (int nn=d_table->M[isrc],iel=0; nn<d_table->M[isrc+1]; nn++,iel++) {
-	  RealType uij= func->evaluate(d_table->r(nn), dudr, d2udr2);
-	  dudr *= d_table->rinv(nn);
-	  d2udr2 *= d_table->rinv(nn) * d_table->rinv(nn);
+	  RealType rinv = d_table->rinv(nn); 
+	  RealType uij= func->evaluate(d_table->r(nn), dudr, d2udr2, d3udr3);
+	  dudr *= rinv;
+	  d2udr2 *= rinv * rinv;
 	  G += dudr*d_table->dr(nn);
 	  for (int dim_ion=0; dim_ion < OHMMS_DIM; dim_ion++) {
-	    for (int dim_el=0; dim_el < OHMMS_DIM; dim_el++) {
+	    for (int dim_el=0; dim_el < OHMMS_DIM; dim_el++) 
 	      grad_grad[dim_ion][iel][dim_el] += d2udr2 * d_table->dr(nn)[dim_ion] * d_table->dr(nn)[dim_el]
-		- dudr * d_table->rinv(nn) * d_table->rinv(nn) * d_table->dr(nn)[dim_ion] * d_table->dr(nn)[dim_el];
-	    }
+		- dudr * rinv * rinv * d_table->dr(nn)[dim_ion] * d_table->dr(nn)[dim_el];
 	    grad_grad[dim_ion][iel][dim_ion] += dudr;
-	    // grad_grad[dim_ion][iel][dim_ion] += dudr * (+1.0 - d_table->rinv(nn) * d_table->dr(nn)[dim_ion]);
+	    lapl_grad[dim_ion][iel] += (d3udr3*rinv + 2.0*d2udr2 - 2.0*rinv*rinv*dudr)*d_table->dr(nn)[dim_ion];
 	  }
 	}
         return G;

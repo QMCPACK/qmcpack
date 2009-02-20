@@ -84,6 +84,16 @@ namespace qmcplusplus {
       ///set the input, analytic function
       void setInFunc(FNIN* in_) { InFunc=in_;}
 
+      /** evaluate everything: value, first, second and third derivatives
+       */
+     inline real_type evaluate(real_type r, real_type& dudr, 
+			       real_type& d2udr2, real_type &d3udr3) 
+      {
+	std::cerr << "Third derivative not implemented for CubicSplineSingle.\n";
+        return OutFunc.splint(r,dudr,d2udr2);
+      }
+
+
       /** evaluate everything: value, first and second derivaties
        */
       inline real_type evaluate(real_type r, real_type& dudr, real_type& d2udr2) 

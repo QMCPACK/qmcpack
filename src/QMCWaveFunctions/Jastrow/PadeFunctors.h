@@ -101,6 +101,16 @@ namespace qmcplusplus {
           return A*u*r;
         }
 
+      inline real_type 
+      evaluate(real_type r, real_type& dudr, real_type& d2udr2, real_type d3udr3) {
+          real_type u = 1.0/(1.0+B*r);
+          dudr = A*u*u;
+          d2udr2 = -B2*dudr*u;
+	  std::cerr << "Third derivative not imlemented for Pade functor.\n";
+          return A*u*r;
+        }
+
+
       inline real_type f(real_type r) {
         return evaluate(r)-AoverB;
       }
@@ -246,6 +256,18 @@ namespace qmcplusplus {
         d2udr2 = 2.0*u*u*u*(C-B*A);
         return u*v;
       }
+
+    inline real_type evaluate(real_type r, real_type& dudr, 
+			      real_type& d2udr2, real_type& d3udr3) {
+        real_type u = 1.0/(1.0+B*r);
+        real_type v = A*r+C*r*r;
+        real_type w = A+C2*r;
+        dudr = u*(w-B*u*v);
+        d2udr2 = 2.0*u*u*u*(C-B*A);
+	std::cerr << "Third derivative not imlemented for Pade functor.\n";
+        return u*v;
+      }
+
 
       real_type f(real_type r) {
         return evaluate(r);
@@ -409,6 +431,21 @@ namespace qmcplusplus {
           d2udr2=-reff_1*auu*(C+B2*reff_1*u);
           return A*u*reff;
         }
+
+      inline real_type 
+        evaluate(real_type r, real_type& dudr, real_type& d2udr2, real_type d3udr3) {
+	  real_type reff_1(std::exp(-C*r));
+	  real_type reff((1.0-reff_1)*OneOverC);
+	  real_type u(1.0/(1.0+B*reff));
+	  real_type auu(A*u*u);
+	  dudr=reff_1*auu;
+	  //d2udr=auu*(-C*reff_1*reff_2-B2*reff_1*reff_1*u);
+	  d2udr2=-reff_1*auu*(C+B2*reff_1*u);
+	  std::cerr << "Third derivative not imlemented for Pade functor.\n";
+	  return A*u*reff;
+        }
+
+
 
       real_type f(real_type r) {
         return evaluate(r);

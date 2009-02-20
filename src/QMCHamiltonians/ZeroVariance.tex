@@ -1,5 +1,6 @@
 \documentclass{article}
 \usepackage{amsmath}
+\usepackage{amssymb}
 \author{Kenneth P. Esler Jr.}
 \title{Computing the Zero-Variance term for Forces}
 \begin{document}
@@ -68,6 +69,28 @@ Now, the last term is the novel one:
 & = & -M^{-1} (\nabla^2 M) M^{-1} + 2 M^{-1}(\nabla M) M^{-1}(\nabla M) M^{-1}
 \end{eqnarray}
 
-
+\section{The one-body Jastrow}
+The one-body Jastrow factor is given by
+\begin{equation}
+\psi_1(\{r\};\{I\}) = \sum_{r_i,I_j} \exp\left[-u(|r_i - I_j|)\right].
+\end{equation}
+Then
+\begin{equation}
+\nabla_{I_j} \ln(\psi_1) = \sum_{r_i} \left.\frac{\partial u}{\partial r}\right|_{r_{ij}} \frac{r_i - I_j}{|r_i-I_j|}.
+\end{equation}
+We need the gradient of this term w.r.t. $r_i$:
+\begin{eqnarray}
+\nabla_{r_i} \nabla_{I_j} \ln(\psi_1) = 
+\left[\left.\frac{\partial^2 u}{\partial r^2} \right|_{r_{ij}} 
+- \frac{1}{r_{ij}}\left.\frac{\partial u}{\partial r}\right|_{r_{ij}}
+\right]\frac{(r_i - I_j)\otimes(r_i-I_j)}{|r_i-I_j|^2} + \left.\frac{\partial u}{\partial r}\right|_{r_{ij}} 
+\frac{\mathbf{1}}{|r_i - I_j|}
+\end{eqnarray}
+Now, we need the laplacian,
+\begin{eqnarray}
+\nabla^2_{r_i} \nabla_{I_j} \ln(\psi_1) & = & \left[
+\frac{\partial^3 u}{\partial r^3} + \frac{2}{r}\frac{\partial^2u}{\partial r^2} - \frac{2}{r^2}\frac{\partial u}{\partial r} \right] 
+\frac{I_j - r_i}{|I_j - r_i|}
+\end{eqnarray}
 
 \end{document}

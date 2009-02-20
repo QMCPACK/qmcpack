@@ -80,6 +80,21 @@ namespace qmcplusplus {
         return Coeff*(1.0-expmar);
       }
 
+      /**@param r the distance
+        @param dudr first derivative
+        @param d2udr second derivative
+        @return the value
+        */
+      inline real_type evaluate(real_type r, real_type& dudr, 
+				real_type& d2udr2, real_type d3udr3) {
+	std::cerr << "Third derivative not implemented for ModPadeFunctor.\n";
+        real_type expmar=std::exp(-B*r);
+        dudr=A*expmar;
+        d2udr2=mAB*expmar;
+        return Coeff*(1.0-expmar);
+      }
+
+
       /** return a value at r
       */
       real_type f(real_type r) {

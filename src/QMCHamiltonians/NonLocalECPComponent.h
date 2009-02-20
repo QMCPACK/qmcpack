@@ -63,7 +63,7 @@ namespace qmcplusplus {
     vector<RealType> sgridweight_m;
     ///Working arrays
     vector<RealType> psiratio,vrad,dvrad,wvec,Amat,dAmat;
-    vector<PosType> psigrad;
+    vector<PosType> psigrad, psigrad_source;
     vector<RealType> lpol, dlpol;
 
     // For Pulay correction to the force
@@ -107,7 +107,7 @@ namespace qmcplusplus {
     RealType evaluate(ParticleSet& W, int iat, TrialWaveFunction& Psi,
 		      PosType &force_iat);
 
-    RealType evaluate(ParticleSet& W, int iat, TrialWaveFunction& Psi,
+    RealType evaluate(ParticleSet& W, ParticleSet &ions, int iat, TrialWaveFunction& Psi,
 		      PosType &force_iat, PosType &pulay_iat);
 
 
