@@ -31,12 +31,13 @@ SET(OHMMS_DIM 3 CACHE INTEGER "Select physical dimension")
 SET(OHMMS_INDEXTYPE int)
 SET(OHMMS_PRECISION double)
 SET(APP_PRECISION double)
+SET(QMC_BUILD_COMPLETE 0 CACHE BOOL "Enable all the packages")
 
 SET(PRINT_DEBUG 0 CACHE BOOL "Enable/disable debug printing")
 SET(QMC_COMPLEX 0 CACHE INTEGER "Build for complex binary")
 SET(QMC_MPI 1 CACHE BOOL "Enable/disable MPI")
-SET(QMC_OMP 0 CACHE BOOL "Enable/disable OpenMP")
-SET(QMC_BITS 32 CACHE INTEGER "Select OS bit")
+SET(QMC_OMP 1 CACHE BOOL "Enable/disable OpenMP")
+SET(QMC_BITS 64 CACHE INTEGER "Select OS bit")
 
 ######################################################################
 # Standard test
@@ -258,10 +259,13 @@ IF(QMC_MPI)
     LINK_LIBRARIES("/usr/lib/libiberty.a")
   ENDIF(MPIP_PROFILE)
 
-  INCLUDE(${PROJECT_SOURCE_DIR}/CMake/addMPI.cmake)
-  IF(FOUND_MPI)
+  include(FindMPI)
+  #INCLUDE(${PROJECT_SOURCE_DIR}/CMake/addMPI.cmake)
+  IF(MPI_FOUND)
+    SET(HAVE_MPI 1)
+    SET(HAVE_OOMPI 1)
     LINK_LIBRARIES(${MPI_LIBRARY})
-  ENDIF(FOUND_MPI)
+  ENDIF(MPI_FOUND)
 ENDIF(QMC_MPI)
 
 IF(FOUND_LIBXML2)
