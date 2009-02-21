@@ -24,22 +24,12 @@ SET(QMCDRIVERS
   DMC/DMCFactory.cpp
   DMC/WalkerControlFactory.cpp
   DMC/WalkerReconfiguration.cpp
-  CorrelatedSampling/CSUpdateBase.cpp
-  CorrelatedSampling/CSVMC.cpp
-  CorrelatedSampling/CSVMCUpdateAll.cpp
-  CorrelatedSampling/CSVMCUpdatePbyP.cpp
   ../Estimators/CollectablesEstimator.cpp
   ../Estimators/LocalEnergyEstimator.cpp
   ../Estimators/WFMCOnlyEstimator.cpp
   ../Estimators/LocalEnergyEstimatorHDF.cpp
-  ../Estimators/MultipleEnergyEstimator.cpp
-  ../Estimators/RQMCMultipleEstimator.cpp
-  ../Estimators/ComboPolymerEstimator.cpp
   ../Estimators/EstimatorManager.cpp
-  ../Estimators/CSEnergyEstimator.cpp
-  ../Estimators/CSPolymerEstimator.cpp
-  ../Estimators/MJPolymerEstimator.cpp
-  ../Estimators/HFDHE2PolymerEstimator.cpp
+  ../Estimators/MultipleEnergyEstimator.cpp
 )
 #  ../Estimators/PairCorrEstimator.cpp
 
@@ -59,7 +49,7 @@ IF(HAVE_MPI)
 ENDIF(HAVE_MPI) 
 
 
-IF(NOT QMCPLUSPLUS_RELEASE)
+IF(QMC_BUILD_COMPLETE)
   SET(QMCDRIVERS ${QMCDRIVERS}
     PolymerEstimator.cpp
     RQMCMultiple.cpp
@@ -69,8 +59,18 @@ IF(NOT QMCPLUSPLUS_RELEASE)
     RQMCMultiWarp.cpp
     VMC/VMCMultipleWarp.cpp
     VMC/VMCPbyPMultiWarp.cpp
+    ../Estimators/RQMCMultipleEstimator.cpp
+    ../Estimators/ComboPolymerEstimator.cpp
+    ../Estimators/CSEnergyEstimator.cpp
+    ../Estimators/CSPolymerEstimator.cpp
+    ../Estimators/MJPolymerEstimator.cpp
+    ../Estimators/HFDHE2PolymerEstimator.cpp
+    CorrelatedSampling/CSUpdateBase.cpp
+    CorrelatedSampling/CSVMC.cpp
+    CorrelatedSampling/CSVMCUpdateAll.cpp
+    CorrelatedSampling/CSVMCUpdatePbyP.cpp
   )
-ENDIF(NOT QMCPLUSPLUS_RELEASE)
+ENDIF(QMC_BUILD_COMPLETE)
 
 ####################################
 # create libqmc 
