@@ -329,6 +329,7 @@ namespace qmcplusplus
 				real_type& d2udr2, real_type& d3udr3)
       {
 	std::cerr << "Third derivative not implemented for GaussianFunctor.\n";
+        return 0.0;
       }
 
 

@@ -16,16 +16,18 @@
 #include "QMCWaveFunctions/Jastrow/JastrowBuilder.h"
 #include "QMCWaveFunctions/Jastrow/JastrowBasisBuilder.h"
 #include "QMCWaveFunctions/Jastrow/PadeJastrowBuilder.h"
-#include "QMCWaveFunctions/Jastrow/WMJastrowBuilder.h"
 #include "QMCWaveFunctions/Jastrow/RPAJastrow.h"
-#include "QMCWaveFunctions/Jastrow/JAABuilder.h"
-#include "QMCWaveFunctions/Jastrow/JABBuilder.h"
 #include "QMCWaveFunctions/Jastrow/BsplineJastrowBuilder.h"
 #if OHMMS_DIM ==3
 #include "QMCWaveFunctions/Jastrow/ThreeBodyGeminal.h"
 #include "QMCWaveFunctions/Jastrow/ThreeBodyBlockSparse.h"
 #include "QMCWaveFunctions/Jastrow/kSpaceJastrowBuilder.h"
 #include "QMCWaveFunctions/Jastrow/singleRPAJastrowBuilder.h"
+#endif
+#if defined(QMC_BUILD_COMPLETE)
+#include "QMCWaveFunctions/Jastrow/WMJastrowBuilder.h"
+#include "QMCWaveFunctions/Jastrow/JAABuilder.h"
+#include "QMCWaveFunctions/Jastrow/JABBuilder.h"
 #endif
 #include "Utilities/ProgressReportEngine.h"
 #include "OhmmsData/AttributeSet.h"
@@ -122,13 +124,8 @@ namespace qmcplusplus {
 
     bool success=false;
     ParticleSet* sourcePtcl= (*pa_it).second;
-    if(funcOpt == "any")
-    {
-      app_log() << "\n  Using WMJastrowBuilder for one-body jastrow with WM functions" << endl;
-      WMJastrowBuilder jb(targetPtcl,targetPsi,sourcePtcl);
-      success=jb.put(cur);
-    }
-    else if (funcOpt == "Bspline" ) 
+
+    if (funcOpt == "Bspline" ) 
     {
       app_log() << "\n  Using BsplineBuilder for one-body jastrow with B-spline functions" << endl;
       BsplineJastrowBuilder jb(targetPtcl,targetPsi,*sourcePtcl);
@@ -140,12 +137,20 @@ namespace qmcplusplus {
       singleRPAJastrowBuilder jb(targetPtcl, targetPsi, *sourcePtcl);
       success= jb.put(cur);
     }
+#if defined(QMC_BUILD_COMPLETE)
+    else if(funcOpt == "any")
+    {
+      app_log() << "\n  Using WMJastrowBuilder for one-body jastrow with WM functions" << endl;
+      WMJastrowBuilder jb(targetPtcl,targetPsi,sourcePtcl);
+      success=jb.put(cur);
+    }
     else
     {
       app_log() << "\n  Using JABBuilder for one-body jastrow with analytic functions" << endl;
       JABBuilder jb(targetPtcl,targetPsi,ptclPool);
       success=jb.put(cur);
     }
+#endif
 
     return success;
   }
@@ -159,12 +164,7 @@ namespace qmcplusplus {
     bool ignoreSpin = (spinOpt == "no");
 
 //     OrbitalConstraintsBase* control=0;
-    if(funcOpt == "any")
-    {
-      WMJastrowBuilder jb(targetPtcl,targetPsi);
-      return jb.put(cur);
-    }
-    else if(funcOpt == "pade") 
+    if(funcOpt == "pade") 
     {
       if (targetPtcl.Lattice.SuperCellEnum != SUPERCELL_OPEN) {
         PRE.warning("Pade Jastrow is requested for a periodic system. Please choose other functors.");
@@ -191,11 +191,18 @@ namespace qmcplusplus {
       BsplineJastrowBuilder bbuilder(targetPtcl,targetPsi);
       return bbuilder.put(cur);
     }
+#if defined(QMC_BUILD_COMPLETE)
+    else if(funcOpt == "any")
+    {
+      WMJastrowBuilder jb(targetPtcl,targetPsi);
+      return jb.put(cur);
+    }
     else //try analytic functions
     {
       JAABuilder jb(targetPtcl,targetPsi);
       return jb.put(cur);
     }
+#endif
 
 //     control->setReportLevel(ReportLevel);
 //     success=control->put(cur);

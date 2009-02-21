@@ -20,17 +20,17 @@
 #include "QMCWaveFunctions/WaveFunctionFactory.h"
 #include "QMCWaveFunctions/Jastrow/JastrowBuilder.h"
 #include "QMCWaveFunctions/Fermion/SlaterDetBuilder.h"
+#if defined(QMC_BUILD_COMPLETE)
 #include "QMCWaveFunctions/CompactHelium.h"
-
 #include "QMCWaveFunctions/PlaneWave/PWOrbitalBuilder.h"
 #if defined(QMC_COMPLEX)
 #include "QMCWaveFunctions/ElectronGas/ElectronGasComplexOrbitalBuilder.h"
 #else
 #include "QMCWaveFunctions/ElectronGas/ElectronGasOrbitalBuilder.h"
 #endif
-
 #if OHMMS_DIM==3 && !defined(QMC_COMPLEX)
 #include "QMCWaveFunctions/AGPDeterminantBuilder.h"
+#endif
 #endif
 #include "Utilities/ProgressReportEngine.h"
 #include "Utilities/IteratorUtility.h"
@@ -91,17 +91,12 @@ namespace qmcplusplus {
       {
 	addMolecularTerm(cur);
       }
-#if OHMMS_DIM==3
+#if defined(QMC_BUILD_COMPLETE) && !defined(QMC_COMPLEX) && OHMMS_DIM==3
       else if(cname == "agp") 
       {
-#if defined(QMC_COMPLEX)
-        APP_ABORT("AGPDeterminant cannot be used with QMC_COMPLEX=1");
-        return false;
-#else
         AGPDeterminantBuilder* agpbuilder = new AGPDeterminantBuilder(*targetPtcl,*targetPsi,ptclPool);
         success = agpbuilder->put(cur);
         addNode(agpbuilder,cur);
-#endif
       } 
 #endif
       if(attach2Node) xmlAddChild(myNode,xmlCopyNode(cur,1));
@@ -117,7 +112,7 @@ namespace qmcplusplus {
   }
   bool WaveFunctionFactory::addMolecularTerm(xmlNodePtr cur) {
     ReportEngine PRE(ClassName,"addMolecularTerm");
-    
+#if defined(QMC_BUILD_COMPLETE)
     string orbtype("CompactHeliumTwo");
     string nuclei("i");
     OhmmsAttributeSet oAttrib;
@@ -217,6 +212,9 @@ namespace qmcplusplus {
       targetPsi->addOrbital(CHwf,CHwf->OrbitalName);
     }
          
+#else
+        APP_ABORT("QMC_BUILD_COMPLETE=0 Cannot use with He wavefunctions");
+#endif
     return true;
   }
   
@@ -225,7 +223,6 @@ namespace qmcplusplus {
     
     ReportEngine PRE(ClassName,"addFermionTerm");
 
-    OrbitalBuilderBase* detbuilder=0;
 
     string orbtype("MolecularOrbital");
     string nuclei("i");
@@ -233,9 +230,9 @@ namespace qmcplusplus {
     oAttrib.add(orbtype,"type");
     oAttrib.add(nuclei,"source");
     oAttrib.put(cur);
-
     //app_log() << "\n  Slater determinant terms using " << orbtype << endl;
-
+#if defined(QMC_BUILD_COMPLETE)
+    OrbitalBuilderBase* detbuilder=0;
 #if defined(QMC_COMPLEX)
     if(orbtype == "electron-gas") 
     {
@@ -259,6 +256,9 @@ namespace qmcplusplus {
     {
       detbuilder = new SlaterDetBuilder(*targetPtcl,*targetPsi,ptclPool);
     }
+#else
+    OrbitalBuilderBase* detbuilder= new SlaterDetBuilder(*targetPtcl,*targetPsi,ptclPool);
+#endif
 
     if(detbuilder) 
     {//valid determinant set

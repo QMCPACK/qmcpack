@@ -8,13 +8,13 @@ SET(WFBASE_SRCS
     OrbitalConstraintsBase.cpp
    )
 
+########################
+# build jastrows
+########################
+#common jastrows
 SET(JASTROW_SRCS
   Jastrow/LRTwoBodyJastrow.cpp
-  Jastrow/JAABuilder.cpp
-  Jastrow/JABBuilder.cpp
   Jastrow/PadeJastrowBuilder.cpp
-  Jastrow/WMJastrowBuilder.cpp
-  Jastrow/CBSOBuilder.cpp
   Jastrow/JastrowBuilder.cpp
   Jastrow/BsplineJastrowBuilder.cpp
   Jastrow/kSpaceJastrow.cpp
@@ -23,7 +23,25 @@ SET(JASTROW_SRCS
   Jastrow/singleRPAJastrowBuilder.cpp
 )
 
-#  Jastrow/BsplineFunctor.cpp
+#common jastrows for three D
+IF(OHMMS_DIM MATCHES 3)
+  SET(JASTROW_SRCS ${JASTROW_SRCS}
+    Jastrow/ThreeBodyGeminal.cpp
+    Jastrow/ThreeBodyBlockSparse.cpp
+    Jastrow/JastrowBasisBuilder.cpp
+    Jastrow/CBSOBuilder.cpp
+    )
+ENDIF(OHMMS_DIM MATCHES 3)
+
+#specialized jastrows: extremely taxing for some compilers
+IF(QMC_BUILD_COMPLETE)
+  SET(JASTROW_SRCS ${JASTROW_SRCS}
+    Jastrow/JAABuilder.cpp
+    Jastrow/JABBuilder.cpp
+    Jastrow/WMJastrowBuilder.cpp
+    )
+ENDIF(QMC_BUILD_COMPLETE)
+
 # common ferminoic wavefunctions
 SET(FERMION_SRCS
   SPOSetBase.cpp
@@ -31,30 +49,11 @@ SET(FERMION_SRCS
   Fermion/DiracDeterminantBase.cpp
   Fermion/SlaterDet.cpp
   Fermion/SlaterDetBuilder.cpp
-  PlaneWave/PWBasis.cpp
-  PlaneWave/PWParameterSet.cpp
-  PlaneWave/PWOrbitalBuilder.cpp
 )
-
-# plane-wave / HEG
-IF(QMC_COMPLEX)
-  SET(FERMION_SRCS ${FERMION_SRCS}
-      ElectronGas/ElectronGasComplexOrbitalBuilder.cpp
-      PlaneWave/PWOrbitalSet.cpp
-     )
-ELSE(QMC_COMPLEX)
-  SET(FERMION_SRCS ${FERMION_SRCS}
-      ElectronGas/ElectronGasOrbitalBuilder.cpp
-      PlaneWave/PWRealOrbitalSet.cpp
-     )
-ENDIF(QMC_COMPLEX)
 
 # wavefunctions only availbale to 3-dim problems
 IF(OHMMS_DIM MATCHES 3)
   SET(FERMION_SRCS ${FERMION_SRCS}
-      Jastrow/ThreeBodyGeminal.cpp
-      Jastrow/ThreeBodyBlockSparse.cpp
-      Jastrow/JastrowBasisBuilder.cpp
       Bspline3DSetBase.cpp
       Bspline3DSet.cpp
       Bspline3DSetTrunc.cpp
@@ -76,10 +75,27 @@ IF(OHMMS_DIM MATCHES 3)
      )
   ENDIF(HAVE_EINSPLINE)
     
-  IF(NOT QMC_COMPLEX)
-    SET(FERMION_SRCS ${FERMION_SRCS} AGPDeterminant.cpp AGPDeterminantBuilder.cpp)
-  ENDIF(NOT QMC_COMPLEX)
 ENDIF(OHMMS_DIM MATCHES 3)
+
+IF(QMC_BUILD_COMPLETE)
+  SET(FERMION_SRCS ${FERMION_SRCS}
+    PlaneWave/PWBasis.cpp
+    PlaneWave/PWParameterSet.cpp
+    PlaneWave/PWOrbitalBuilder.cpp
+    )
+  IF(QMC_COMPLEX)
+    SET(FERMION_SRCS ${FERMION_SRCS}
+      ElectronGas/ElectronGasComplexOrbitalBuilder.cpp
+      PlaneWave/PWOrbitalSet.cpp
+      )
+  ELSE(QMC_COMPLEX)
+    SET(FERMION_SRCS ${FERMION_SRCS}
+      ElectronGas/ElectronGasOrbitalBuilder.cpp
+      PlaneWave/PWRealOrbitalSet.cpp
+      AGPDeterminant.cpp AGPDeterminantBuilder.cpp
+      )
+  ENDIF(QMC_COMPLEX)
+ENDIF(QMC_BUILD_COMPLETE)
 
 ####################################
 # create libqmcwfs
