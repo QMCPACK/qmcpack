@@ -26,10 +26,12 @@
 #include "QMCDrivers/DMC/DMCFactory.h"
 #include "QMCDrivers/QMCOptimize.h"
 #include "QMCDrivers/ZeroVarianceOptimize.h"
+#if defined(QMC_BUILD_COMPLETE)
 #include "QMCDrivers/RQMCMultiple.h"
 #include "QMCDrivers/RQMCMultiplePbyP.h"
 #if !defined(QMC_COMPLEX)
 #include "QMCDrivers/RQMCMultiWarp.h"
+#endif
 #endif
 #include "QMCDrivers/WaveFunctionTester.h"
 #include "Utilities/OhmmsInfo.h"
@@ -284,6 +286,7 @@ namespace qmcplusplus {
       DMCFactory fac(curQmcModeBits[UPDATE_MODE],cur);
       qmcDriver = fac.create(*qmcSystem,*primaryPsi,*primaryH,*hamPool);
     } 
+#if defined(QMC_BUILD_COMPLETE)
     else if (curRunType==RMC_PBYP_RUN)
       {
         qmcDriver = new RQMCMultiplePbyP(*qmcSystem,*primaryPsi,*primaryH);
@@ -299,6 +302,7 @@ namespace qmcplusplus {
         qmcDriver = new RQMCMultiple(*qmcSystem,*primaryPsi,*primaryH);
 #endif
     } 
+#endif
     else if(curRunType == OPTIMIZE_RUN)
     {
       QMCOptimize *opt = new QMCOptimize(*qmcSystem,*primaryPsi,*primaryH,*hamPool);
