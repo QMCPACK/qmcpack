@@ -16,14 +16,13 @@
 # 12) xtpe-target-cnl                         24) hdf5/1.6.8
 
 SET(CMAKE_SYSTEM_PROCESSOR "XT5")
-#SET(XT5 1 CACHE BOOL "On Jaguar XT5 GNU Toolchain")
-SET(QMC_TOOLCHAIN 1 CACHE BOOL "Using TOOLCHAIN specialized for Jaguar XT5 GNU")
-SET(QMC_ENV "CrayXT5" CACHE STRING "STUFF")
+SET(QMC_ENV "CrayXTEnv" CACHE STRING "Setting envirnoments for Cray XT5")
 
 SET_PROPERTY(GLOBAL PROPERTY TARGET_SUPPORTS_SHARED_LIBS FALSE)
 
 set(CMAKE_C_COMPILER  /opt/cray/xt-asyncpe/2.0/bin/cc)
 set(CMAKE_CXX_COMPILER  /opt/cray/xt-asyncpe/2.0/bin/CC)
+
 set(CMAKE_FIND_ROOT_PATH
       /opt/acml/4.1.0/gfortran64
       /sw/xt5/hdf5/1.6.8/cnl2.1_gnu4.2.4
@@ -49,10 +48,10 @@ SET(CMAKE_DL_LIBS "" )
 SET(CMAKE_FIND_LIBRARY_PREFIXES "lib")
 SET(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
 
-INCLUDE(Platform/UnixPaths)
-
 SET(CMAKE_CXX_FLAGS "-O3 -march=amdfam10 -msse3 -ftemplate-depth-60 -Drestrict=__restrict__ -fstrict-aliasing -funroll-all-loops   -finline-limit=1000 -ffast-math -Wno-deprecated ")
 SET(CMAKE_C_FLAGS "-O3 -march=amdfam10 -msse3 -ftemplate-depth-60 -Drestrict=__restrict__ -fstrict-aliasing -funroll-all-loops   -finline-limit=1000 -ffast-math -Wno-deprecated ")
+
+INCLUDE(Platform/UnixPaths)
 
 SET(CMAKE_CXX_LINK_SHARED_LIBRARY)
 SET(CMAKE_CXX_LINK_MODULE_LIBRARY)
