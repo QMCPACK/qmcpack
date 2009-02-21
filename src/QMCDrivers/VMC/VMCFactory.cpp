@@ -16,17 +16,15 @@
 // -*- C++ -*-
 #include "QMCDrivers/VMC/VMCFactory.h" 
 #include "QMCDrivers/VMC/VMCSingle.h"
-#if defined(ENABLE_OPENMP)
 #include "QMCDrivers/VMC/VMCSingleOMP.h"
+#if defined(QMC_BUILD_COMPLETE)
 #include "QMCDrivers/VMC/WFMCSingleOMP.h"
-#endif
-//#include "QMCDrivers/VMC/VMCMultiple.h"
-//#include "QMCDrivers/VMC/VMCPbyPMultiple.h"
 #if !defined(QMC_COMPLEX)
 #include "QMCDrivers/VMC/VMCMultipleWarp.h"
 #include "QMCDrivers/VMC/VMCPbyPMultiWarp.h"
 #endif
 #include "QMCDrivers/CorrelatedSampling/CSVMC.h"
+#endif
 #include "Message/OpenMP.h"
 
 namespace qmcplusplus {
@@ -46,6 +44,7 @@ namespace qmcplusplus {
 #endif
         qmc = new VMCSingle(w,psi,h);
     } 
+#if defined(QMC_BUILD_COMPLETE)
     //else if(VMCMode == 2) //(0,1,0)
     //{
     //  qmc = new VMCMultiple(w,psi,h);
@@ -72,6 +71,7 @@ namespace qmcplusplus {
     {
       qmc = new WFMCSingleOMP(w,psi,h,hpool);
     }
+#endif
     qmc->setUpdateMode(VMCMode&1);
     return qmc;
   }

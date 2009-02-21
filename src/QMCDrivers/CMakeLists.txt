@@ -20,16 +20,15 @@ SET(QMCDRIVERS
   DMC/DMCUpdatePbyP.cpp
   DMC/DMCNonLocalUpdate.cpp
   DMC/DMC.cpp
-  DMC/DMCPeta.cpp
   DMC/DMCFactory.cpp
   DMC/WalkerControlFactory.cpp
   DMC/WalkerReconfiguration.cpp
-  ../Estimators/CollectablesEstimator.cpp
   ../Estimators/LocalEnergyEstimator.cpp
   ../Estimators/WFMCOnlyEstimator.cpp
   ../Estimators/LocalEnergyEstimatorHDF.cpp
   ../Estimators/EstimatorManager.cpp
   ../Estimators/MultipleEnergyEstimator.cpp
+  ../Estimators/CollectablesEstimator.cpp
 )
 #  ../Estimators/PairCorrEstimator.cpp
 
