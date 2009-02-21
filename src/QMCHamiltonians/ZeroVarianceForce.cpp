@@ -80,7 +80,6 @@ namespace qmcplusplus {
   ZeroVarianceForce::Return_t 
   ZeroVarianceForce::evaluate(ParticleSet& P)
   {
-    RealType lapl = Sum(P.L) + Dot(P.G, P.G);
     for (int ion=0; ion < Nnuc; ion++) {
       GradType grad = Psi.evalGradSource(P, Ions, ion, grad_grad_psi, lapl_grad_psi);
       for (int dim=0; dim < OHMMS_DIM; dim++) 

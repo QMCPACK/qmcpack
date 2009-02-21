@@ -349,6 +349,12 @@ namespace qmcplusplus {
     Phi->evaluateGradSource (P, FirstIndex, LastIndex, source, iat,
 			     grad_source_psiM, grad_grad_source_psiM,
 			     grad_lapl_source_psiM);
+
+    // HACK HACK HACK
+    // Phi->evaluate(P, FirstIndex, LastIndex, psiM, dpsiM, d2psiM);
+    // LogValue=InvertWithLog(psiM.data(),NumPtcls,NumOrbitals,
+    // 			   WorkSpace.data(),Pivot.data(),PhaseValue);
+
     // Compute matrices
     phi_alpha_Minv = 0.0;    grad_phi_Minv = 0.0;
     lapl_phi_Minv = 0.0;     grad_phi_alpha_Minv = 0.0;

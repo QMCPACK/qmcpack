@@ -202,16 +202,16 @@ namespace qmcplusplus {
     inline real_type 
     evaluate(real_type r, real_type& dudr, real_type& d2udr2, real_type &d3udr3) {
       if (r >= cutoff_radius) {
-	dudr = d2udr2 = 0.0;
+	dudr = d2udr2 = d3udr3 = 0.0;
 	return 0.0;
       }
-      real_type eps = 1.0e-5;
+      // real_type eps = 1.0e-5;
 //       real_type dudr_FD = (evaluate(r+eps)-evaluate(r-eps))/(2.0*eps);
 //       real_type d2udr2_FD = (evaluate(r+eps)+evaluate(r-eps)-2.0*evaluate(r))/(eps*eps);
-      real_type d3udr3_FD = (-1.0*evaluate(r+1.0*eps)
-			     +2.0*evaluate(r+0.5*eps)
-			     -2.0*evaluate(r-0.5*eps)
-			     +1.0*evaluate(r-1.0*eps))/(eps*eps*eps);
+      // real_type d3udr3_FD = (-1.0*evaluate(r+1.0*eps)
+      // 			     +2.0*evaluate(r+0.5*eps)
+      // 			     -2.0*evaluate(r-0.5*eps)
+      // 			     +1.0*evaluate(r-1.0*eps))/(eps*eps*eps);
 
       r *= DeltaRInv;
       real_type ipart, t;
@@ -245,10 +245,9 @@ namespace qmcplusplus {
 // 	cerr << "Error in BsplineFunction:  r = " << r << "  d2udr2 = " << dudr 
 // 	     << "  d2udr2_FD = " << d2udr2_FD << "  rcut = " << cutoff_radius << endl;
 
-      if (std::fabs(d3udr3_FD-d3udr3) > 1.0e-4) 
-	cerr << "Error in BsplineFunction:  r = " << r << "  d3udr3 = " << dudr 
-	     << "  d3udr3_FD = " << d3udr3_FD << "  rcut = " << cutoff_radius << endl;
-
+      // if (std::fabs(d3udr3_FD-d3udr3) > 1.0e-4) 
+      // 	cerr << "Error in BsplineFunction:  r = " << r << "  d3udr3 = " << dudr 
+      // 	     << "  d3udr3_FD = " << d3udr3_FD << "  rcut = " << cutoff_radius << endl;
 
       return 
 	(SplineCoefs[i+0]*(A[ 0]*tp[0] + A[ 1]*tp[1] + A[ 2]*tp[2] + A[ 3]*tp[3])+
