@@ -11,8 +11,7 @@ IF(ICPC_VERSION LESS 10)
 ENDIF(ICPC_VERSION LESS 10)
 
 SET(INTEL_COMPILER 1)
-#ADD_DEFINITIONS(-DADD_ -DINLINE_ALL=inline)
-ADD_DEFINITIONS(-DADD_ -DINLINE_ALL=inline -DMPICH_SKIP_MPICXX)
+ADD_DEFINITIONS(-DADD_ -DINLINE_ALL=inline)
 #enable Interprocedural (IP) Optimizations
 #-ipo_obj force generation of real object files (requires -ipo)
 #SET(CMAKE_CXX_FLAGS "-unroll -O3 -Ob=1 -ansi -ipo -ipo_obj -cxxlib-icc")
