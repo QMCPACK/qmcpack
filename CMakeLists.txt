@@ -169,20 +169,24 @@ SET(FOUND_CXXENV 0)
 INCLUDE(${CMAKE_ROOT}/Modules/TestCXXAcceptsFlag.cmake)
 INCLUDE(${CMAKE_ROOT}/Modules/CheckCCompilerFlag.cmake)
 
+IF(QMC_ENV)
+  MESSAGE(STATUS "Using tested toolchain by qmcpack developers")
+  INCLUDE(${PROJECT_SOURCE_DIR}/config/${QMC_ENV}.cmake)
+ELSE(QMC_ENV)
+
 ######################################################
 # Try to identify CPU identity
 ######################################################
 SET(CPU_IDENTITY "generic")
 INCLUDE(${PROJECT_CMAKE}/CheckProcessorID.cmake)
-
 #------------------------------------
 # On Jaguar use CrayXT.cmake
 #------------------------------------
 IF($ENV{HOST} MATCHES "jaguar")
   MESSAGE("  Working on jaguar. Using CMake/CrayXT.cmake")	 
+  SET(CPU_IDENTITY "barcelona")
   INCLUDE(${PROJECT_CMAKE}/CrayXT.cmake)
   SET(FOUND_CXXENV 1)
-  SET(CPU_IDENTITY "barcelona")
 ENDIF($ENV{HOST} MATCHES "jaguar")
 
 #------------------------------------
@@ -206,18 +210,18 @@ ENDIF($ENV{CXX} MATCHES "icpc")
 # most likely *unix with gnu or intel compilers
 # using "-restrict" option to find out if intel compilers are backend.
 #------------------------------------
-IF(NOT FOUND_CXXENV)
-  IF(CMAKE_COMPILER_IS_GNUCXX)
-    INCLUDE(${PROJECT_CMAKE}/GNUCompilers.cmake)
-  ELSE(CMAKE_COMPILER_IS_GNUCXX)
-    SET(CMAKE_TRY_INTEL_CXX_FLAGS "-restrict")
-    CHECK_CXX_ACCEPTS_FLAG(${CMAKE_TRY_INTEL_CXX_FLAGS} INTEL_CXX_FLAGS)
-    IF(INTEL_CXX_FLAGS)
-      INCLUDE(${PROJECT_CMAKE}/IntelCompilers.cmake)
-      SET(FOUND_CXXENV 1)
-    ENDIF(INTEL_CXX_FLAGS)
-  ENDIF(CMAKE_COMPILER_IS_GNUCXX)
-ENDIF(NOT FOUND_CXXENV)
+#IF(NOT FOUND_CXXENV)
+#  IF(CMAKE_COMPILER_IS_GNUCXX)
+#    INCLUDE(${PROJECT_CMAKE}/GNUCompilers.cmake)
+#  ELSE(CMAKE_COMPILER_IS_GNUCXX)
+#    SET(CMAKE_TRY_INTEL_CXX_FLAGS "-restrict")
+#    CHECK_CXX_ACCEPTS_FLAG(${CMAKE_TRY_INTEL_CXX_FLAGS} INTEL_CXX_FLAGS)
+#    IF(INTEL_CXX_FLAGS)
+#      INCLUDE(${PROJECT_CMAKE}/IntelCompilers.cmake)
+#      SET(FOUND_CXXENV 1)
+#    ENDIF(INTEL_CXX_FLAGS)
+#  ENDIF(CMAKE_COMPILER_IS_GNUCXX)
+#ENDIF(NOT FOUND_CXXENV)
 
 #-------------------------------------------------------------------
 #COMPIELR MANUAL SELECTION
@@ -229,19 +233,22 @@ ENDIF(NOT FOUND_CXXENV)
 #INCLUDE(${PROJECT_CMAKE}/IBMCompilers.cmake)
 #INCLUDE(${PROJECT_CMAKE}/KCCCompilers.cmake)
 
+INCLUDE(${PROJECT_CMAKE}/FindLapack.cmake)
+
+ENDIF(QMC_ENV)
+
 MESSAGE("-- CXX compiler flags: ${CMAKE_CXX_FLAGS}")
 MESSAGE("-- CC  compiler flags: ${CMAKE_C_FLAGS}")
 
+#
 ######################################################
 # DO NOT MODIFY BELOW
 ######################################################
-
 INCLUDE(${CMAKE_ROOT}/Modules/FindThreads.cmake)
 INCLUDE(${PROJECT_CMAKE}/FindLibxml2.cmake)
-INCLUDE(${PROJECT_CMAKE}/FindLapack.cmake)
 INCLUDE(${PROJECT_CMAKE}/FindHDF5.cmake)
 INCLUDE(${PROJECT_CMAKE}/FindBoost.cmake)
-INCLUDE(${PROJECT_CMAKE}/FindPkgConfig.cmake)
+#INCLUDE(${PROJECT_CMAKE}/FindPkgConfig.cmake)
 INCLUDE(${PROJECT_CMAKE}/FindFFTW.cmake)
 
 IF(QMC_MPI)
@@ -286,10 +293,10 @@ IF(FOUND_HDF5)
     LINK_LIBRARIES(${ZLIB_LIBRARY})
   ENDIF(ZLIB_FOUND)
   #szlib
-#  INCLUDE(${PROJECT_CMAKE}/FindSZLIB.cmake)
-#  IF(SZLIB_FOUND)
-#    LINK_LIBRARIES(${SZLIB_LIBRARY})
-#  ENDIF(SZLIB_FOUND)
+  INCLUDE(${PROJECT_CMAKE}/FindSZLIB.cmake)
+  IF(SZLIB_FOUND)
+    LINK_LIBRARIES(${SZLIB_LIBRARY})
+  ENDIF(SZLIB_FOUND)
 ELSE(FOUND_HDF5)
   MESSAGE(FATAL_ERROR "Require hdf5 1.6.4 or higher. Set HDF5_HOME")
 ENDIF(FOUND_HDF5)
@@ -374,6 +381,7 @@ INCLUDE_DIRECTORIES(
   ${qmcpack_BINARY_DIR}/src
   )
 ADD_DEFINITIONS(-DHAVE_CONFIG_H -DH5_USE_16_API -DAPPNAMESPACE=qmcplusplus)
+ADD_DEFINITIONS(-DMPICH_SKIP_MPICXX)
 #ADD_DEFINITIONS(-DDISABLE_WS_CELL)
 
 IF(BUILD_QMCTOOLS)
