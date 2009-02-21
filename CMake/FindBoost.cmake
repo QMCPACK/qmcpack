@@ -12,6 +12,7 @@ IF(Boost_INCLUDE_DIRS)
 ELSE(Boost_INCLUDE_DIRS)
   SET(TRIAL_PATHS
     $ENV{BOOST_HOME}
+    ${CMAKE_FIND_ROOT_PATH}
     /usr/apps/include
     /usr/include
     /opt/include
