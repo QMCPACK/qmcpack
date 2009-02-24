@@ -29,6 +29,9 @@
 /* define the subversion last changed date */
 #cmakedefine QMCPLUSPLUS_LAST_CHANGED_DATE  "@QMCPLUSPLUS_LAST_CHANGED_DATE@"
 
+/* define QMC_BUILD_COMPLETE */
+#cmakedefine QMC_BUILD_COMPLETE @QMC_BUILD_COMPLETE@
+
 /* define PRINT_DEBUG */
 #cmakedefine PRINT_DEBUG @PRINT_DEBUG@
 
@@ -184,3 +187,4 @@
 #cmakedefine HAVE_ACML @HAVE_ACML@
 
 #endif // QMCPLUSPLUS_CONFIGURATION_H
+
