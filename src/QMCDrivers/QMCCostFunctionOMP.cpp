@@ -365,6 +365,8 @@ namespace qmcplusplus
     //OHMMS::Controller->barrier();
     //collect the total weight for normalization and apply maximum weight
     myComm->allreduce(wgt_tot);
+    myComm->allreduce(wgt_bare);
+    myComm->allreduce(wgt_bare2);
 
     for (int i=0; i<SumValue.size(); i++) SumValue[i]=0.0;
 
