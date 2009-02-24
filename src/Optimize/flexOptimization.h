@@ -274,8 +274,8 @@ class FlexOptimization: public MinimizerBase<T>
                   a_h = a_xi;
                   for (int j = 0 ; j < NumParams ; j ++) a_h[j] *= -1.0;
                   Past_a_h.push_back(a_h);
-                  Past_Parms.push_back(Parms);
-                  Past_a_xi.push_back(a_xi);
+//                   Past_Parms.push_back(Parms);
+//                   Past_a_xi.push_back(a_xi);
                   
                 }
               else return false;
@@ -289,15 +289,14 @@ class FlexOptimization: public MinimizerBase<T>
           else
             {
               //here we increase the CG away from steepest descent.
-              if (deltaG > std::fabs(gg-GGnew))
-                {
-                  ++CG_ortho;
-                  if (a_verbose>3)
-                    {
-                      cout<<"Increasing CG steps to remain conjugate"<<endl;
-                    }
-                }
-              Past_Parms.push_back(Parms);
+//               if (deltaG > std::fabs(gg-GGnew))
+//                 {
+//                   ++CG_ortho;
+//                   if (a_verbose>3)
+//                     {
+//                       cout<<"Increasing CG steps to remain conjugate"<<endl;
+//                     }
+//                 }
               Failed_Last=false;
               gg=GGnew;
             }
@@ -383,13 +382,13 @@ class FlexOptimization: public MinimizerBase<T>
       Return_t s = lineProduct(Parms , a_gx , x) ;
 
 
-      if (s < 0 & TargetFunc->IsValid)
+      if (s < 0  )
         {
           do
             {
               y = x * a_linmin_g1 ;
               t = lineProduct(Parms , a_gy , y) ;
-              if ((t >= 0.0) | (!TargetFunc->IsValid))
+              if ( t >= 0.0 )
                 {
                   if (a_verbose > 1)  printf("s < 0: s = %6.3g: t = %6.3g; x = %6.3g y = %6.3g\n",s, t , x , y);
                   break ;
@@ -411,15 +410,15 @@ class FlexOptimization: public MinimizerBase<T>
                 }
               its++ ;
             }
-          while ((its <= a_linmin_maxits)&(TargetFunc->IsValid)) ;
+          while ((its <= a_linmin_maxits) ) ;
         }
-      else if (s > 0 & TargetFunc->IsValid)
+      else if (s > 0 )
         {
           do
             {
               y = x * a_linmin_g3 ;
               t = lineProduct(Parms , a_gy , y) ;
-              if ((t <= 0.0) | (!TargetFunc->IsValid))
+              if ((t <= 0.0)  )
                 {
                   if (a_verbose > 1)  printf("s > 0: s = %6.3g: t = %6.3g; x = %6.3g y = %6.3g\n",s, t , x , y);
                   break ;
@@ -441,7 +440,7 @@ class FlexOptimization: public MinimizerBase<T>
                 }
               its ++ ;
             }
-          while ((its <= a_linmin_maxits)&(TargetFunc->IsValid)) ;
+          while ((its <= a_linmin_maxits) ) ;
         }
       else
         {
@@ -453,7 +452,7 @@ class FlexOptimization: public MinimizerBase<T>
       Return_t u(0.0);
       Return_t m(0.5*(x+y));
       int xyit(0);
-      if ((xyit<xycleanup) & (std::fabs(s-t)>GradTol) & (s*t<0.0) &(TargetFunc->IsValid))
+      if ((xyit<xycleanup) & (std::fabs(s-t)>GradTol) & (s*t<0.0) )
         {
           int XYBisectCounter=xybisect;
           do
@@ -474,14 +473,14 @@ class FlexOptimization: public MinimizerBase<T>
 
               if ((u==u))
                 {
-                  if (u*s >= 0.0  & TargetFunc->IsValid)
+                  if (u*s >= 0.0 )
                     {
                       s=u;
                       x=m;
                       a_gx = a_gunused;
                       if (a_verbose > 1)  printf("s = %6.3g: t = %6.3g; x = %6.3g y = %6.3g\n",s, t , x , y);
                     }
-                  else if (u*t >= 0.0  & TargetFunc->IsValid)
+                  else if (u*t >= 0.0 )
                     {
                       t=u;
                       y=m;
@@ -503,15 +502,14 @@ class FlexOptimization: public MinimizerBase<T>
                 }
               xyit++;
             }
-          while ((TargetFunc->IsValid) & (std::fabs(s-t)>GradTol) & (xyit<xycleanup)) ;
+          while (  (std::fabs(s-t)>GradTol) & (xyit<xycleanup)) ;
         }
-      else if ((s*t>0.0) | (!TargetFunc->IsValid))
+      else if ((s*t>0.0) )
         {
           return -1.0;
         }
 
-      if (TargetFunc->IsValid)
-        {
+ 
           Return_t ms(std::fabs(s)), mt(std::fabs(t));
           m= (ms*y + mt*x)/(ms+mt);
           step = 0.0;
@@ -524,10 +522,11 @@ class FlexOptimization: public MinimizerBase<T>
             }
           if (a_rich || a_restart) dfunc(Parms , a_xi);
           Past_a_xi.push_back(a_xi);
+          Past_Parms.push_back(Parms);
           a_lastx = m * a_linmin_g2 *  a_gtyp ;
           for (int j=0; j<NumParams; j++) TargetFunc->Params(j)=Parms[j];
           TargetFunc->Report();
-        }
+ 
       return (step / (1.0*NumParams)) ;
     }
 
