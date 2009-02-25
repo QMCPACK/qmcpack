@@ -101,7 +101,6 @@ class FlexOptimization: public MinimizerBase<T>
       a_gx.resize(newSize,0.0);
       a_gy.resize(newSize,0.0);
       Parms.resize(newSize,0.0);
-
     }
 
     bool optimize(ObjectFuncType* fn)
@@ -239,13 +238,13 @@ class FlexOptimization: public MinimizerBase<T>
 
           if (a_verbose > 0) printf("mac_it %d of %d : gg = %6.3g tol = %6.3g: \n", a_its , a_itmax , gg , CostTol) ;
           step = maclinminII(Parms);
-          if (step<0.0) return false;
+//           if (step<0.0) return false;
 
           Return_t GGnew = 0.0;
           for (int j = 0 ; j < NumParams ; j ++) GGnew += a_xi[j]*a_xi[j];
-          if (GGnew>Gfactor*gg)
+          if ((GGnew>Gfactor*gg) || (!TargetFunc->IsValid) || (step<0.0) )
             {
-              if (a_verbose>1)
+              if ((a_verbose>1)&(GGnew>Gfactor*gg))
                 {
                   cout<<"G grew too much "<<GGnew<<" > "<<Gfactor<<"*"<<gg<<endl;
                   printf("mac_it %d of %d : gg = %6.3g tol = %6.3g: \n", a_its , a_itmax , gg , CostTol) ;
@@ -261,6 +260,8 @@ class FlexOptimization: public MinimizerBase<T>
                         }
                     }
                 }
+              else if ((a_verbose>1)&(!TargetFunc->IsValid)) cout<<"TargetFunc is not valid"<<endl;
+              else if ((a_verbose>1)&(step<0.)) cout<<"step<0."<<endl;
               Past_Parms.pop_back();
               Past_a_xi.pop_back();
               Past_a_h.pop_back();
@@ -320,7 +321,7 @@ class FlexOptimization: public MinimizerBase<T>
                 }
             }
 
-          if (!Failed_Last)
+          if ((!Failed_Last))
             {
               vector<Return_t> tmpA_H(a_xi);
               for (int j = 0 ; j < NumParams ; j ++) tmpA_H[j] *= -1.0;
@@ -513,9 +514,22 @@ class FlexOptimization: public MinimizerBase<T>
           Return_t ms(std::fabs(s)), mt(std::fabs(t));
           m= (ms*y + mt*x)/(ms+mt);
           step = 0.0;
+          if (m!=m)
+          {
+            if (a_verbose > 1) cout<<"Parameters have gone rogue!"<<endl;
+            return -1.0;
+          }
+          for (int i = 0 ; i < NumParams ; i ++)
+          {
+            if (a_h[i]!=a_h[i])         
+            {
+              if (a_verbose > 1) cout<<"Parameters have gone rogue!"<<endl;
+              return -1.0;
+            }  
+          }
           for (int i = 0 ; i < NumParams ; i ++)
             {
-              tmpd = m * a_h[i] ;
+              tmpd = m * a_h[i] ; 
               Parms[i] += tmpd ;
               step += fabs(tmpd) ;
               a_xi[i] = (ms/(ms+mt)) * a_gy[i] + (mt/(ms+mt)) * a_gx[i] ;
