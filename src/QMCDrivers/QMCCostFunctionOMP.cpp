@@ -135,9 +135,10 @@ namespace qmcplusplus
 
         IsValid=true;
 
-        if ((CSWeight/wgtinv) < MinNumWalkers)
+//         if ((CSWeight/wgtinv) < MinNumWalkers)
+        if (NumWalkersEff < MinNumWalkers*NumSamples)
           {
-            ERRORMSG("CostFunction-> Number of Effective Walkers is too small " << (CSWeight/wgtinv))
+            ERRORMSG("CostFunction-> Number of Effective Walkers is too small: " << NumWalkersEff/NumSamples<< " < "<<MinNumWalkers)
             //ERRORMSG("Going to stop now.")
             IsValid=false;
           }
@@ -365,8 +366,8 @@ namespace qmcplusplus
     //OHMMS::Controller->barrier();
     //collect the total weight for normalization and apply maximum weight
     myComm->allreduce(wgt_tot);
-//     myComm->allreduce(wgt_bare);
-//     myComm->allreduce(wgt_bare2);
+    myComm->allreduce(wgt_bare);
+    myComm->allreduce(wgt_bare2);
 
     for (int i=0; i<SumValue.size(); i++) SumValue[i]=0.0;
 
@@ -392,8 +393,10 @@ namespace qmcplusplus
       }
     //collect everything
     myComm->allreduce(SumValue);
+//     app_log()<<"wgt_bare:"<<wgt_bare<<" wgt_bare2:"<<wgt_bare2<<"  SumValue[SUM_WGT]:"<<SumValue[SUM_WGT]<<"  SumValue[SUM_WGTSQ]:"<<SumValue[SUM_WGTSQ]<<endl;
 //     return wgt_bare*wgt_bare/wgt_bare2;
-    return SumValue[SUM_WGT]*SumValue[SUM_WGT]/SumValue[SUM_WGTSQ];
+    return SumValue[SUM_WGT]*SumValue[SUM_WGT]/wgt_bare2;
+//     return SumValue[SUM_WGT]*SumValue[SUM_WGT]/SumValue[SUM_WGTSQ];
   }
 
 }
