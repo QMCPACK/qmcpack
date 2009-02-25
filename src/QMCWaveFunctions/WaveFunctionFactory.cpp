@@ -87,8 +87,9 @@ namespace qmcplusplus {
         success = jbuilder->put(cur);
         addNode(jbuilder,cur);
       }
-      else if (cname ==  "Molecular") 
+      else if ((cname ==  "Molecular") || (cname =="molecular"))
       {
+      app_log()<<"  Adding Molecular term"<<endl;
 	addMolecularTerm(cur);
       }
 #if defined(QMC_BUILD_COMPLETE) && !defined(QMC_COMPLEX) && OHMMS_DIM==3
@@ -196,7 +197,7 @@ namespace qmcplusplus {
       CHwf->put(cur);
       targetPsi->addOrbital(CHwf,CHwf->OrbitalName);
     }
-        else if (orbtype=="SingleSlaterOrbital")
+    else if (orbtype=="SingleSlaterOrbital")
     {   
       map<string,ParticleSet*>::iterator pa_it(ptclPool.find(nuclei));
       if(pa_it == ptclPool.end()) 
@@ -204,7 +205,7 @@ namespace qmcplusplus {
 	PRE.warning("SingleSlaterOrbital failed. "+nuclei+" does not exist.");
 	return false;
       }
-      
+      app_log()<<"  Adding Single Slater Orbital"<<endl;
       bool success=false;
       ParticleSet* sourcePtcl= (*pa_it).second;
       SingleSlaterOrbital* CHwf = new SingleSlaterOrbital(*targetPtcl,*sourcePtcl);

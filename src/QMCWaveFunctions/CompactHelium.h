@@ -3,8 +3,10 @@
 #include "Configuration.h"
 #include "QMCWaveFunctions/OrbitalBase.h"
 #include "Particle/DistanceTableData.h"
+#include "ParticleBase/ParticleAttribOps.h"
 #include "Particle/DistanceTable.h"
 #include "OhmmsData/AttributeSet.h"
+#include "QMCWaveFunctions/DiffOrbitalBase.h"
 
 namespace qmcplusplus {
 
@@ -643,34 +645,126 @@ class NewCuspCompactHeliumTwo: public OrbitalBase
 
 };
 
-class SimpleCompactHelium: public OrbitalBase
+class DSimpleCompactHelium: public DiffOrbitalBase
 {
   public:
-    ParticleSet& CenterRef;
+    ParticleSet& CenterRef ;
     DistanceTableData* Ie_table;
     DistanceTableData* ee_table;
     ValueType pA, pB, pC, pD;
     string nameA,nameB,nameC,nameD;
+        ///variables handled by this orbital
+    opt_variables_type myVars;
 
-    SimpleCompactHelium(ParticleSet& electrons, ParticleSet& Ion): CenterRef(Ion), Ie_table(0), ee_table(0) 
+    DSimpleCompactHelium(ParticleSet& electrons, ParticleSet& Ion):CenterRef(Ion), Ie_table(0), ee_table(0) 
     {
       Ie_table = DistanceTable::add(CenterRef,electrons);
       ee_table = DistanceTable::add(electrons);
-      
-      ///Default parameterization is from  CW David, PRA 74 059904(E) (2006)
-//       pA=-1.013;
-//       pB=0.2119;
-//       pC=0.1406;
-//       pD=-0.003;
     }
     
-    OrbitalBase* makeClone(ParticleSet& tqp) const
+    DiffOrbitalBase* makeClone(ParticleSet& tqp) const
     {
-      SimpleCompactHelium* cloned = new SimpleCompactHelium(tqp,CenterRef);
+      DSimpleCompactHelium* cloned = new DSimpleCompactHelium(tqp,CenterRef);
       cloned->nameA = nameA;
       cloned->myVars.insert(nameA,pA,true);
       cloned->reset(pA);
       
+      return cloned;
+    }
+ 
+    void resetTargetParticleSet(ParticleSet& P) 
+    {
+      Ie_table = DistanceTable::add(CenterRef,P);
+      ee_table = DistanceTable::add(P);
+    }
+ 
+    void checkOutVariables(const opt_variables_type& active)
+    {
+      myVars.getIndex(active);
+      myVars.print(std::cout);
+    }
+    
+    void resetParameters(const opt_variables_type& active)
+    {
+      int ia=myVars.where(0); if(ia>-1) myVars[0]=pA=active[ia];
+      reset(pA);
+    }
+    void reset(ValueType A){
+      pA=A;
+    }
+    void reportStatus(ostream& os)
+    {
+       myVars.print(os);
+    }
+    
+    void evaluateDerivatives(ParticleSet& P, RealType ke0, 
+        const opt_variables_type& active,
+        vector<RealType>& dlogpsi,
+        vector<RealType>& dhpsioverpsi)
+    { 
+//     assert( &els == &P);
+      ValueType dLogPsi=0.0;
+      ValueType d2rdLogPsi=0.0;
+      PosType gradLogPsi;
+      ValueType u = ee_table->r(0);
+      ValueType expAu = std::exp(pA*u);
+      ValueType part1 = 1.0+0.5*u*expAu;
+      ValueType mpart1 = 1.0/part1;
+      dLogPsi = 0.5*u*u*mpart1*expAu;
+//       PosType R01 = P.R[0] - P.R[1];
+//       ValueType r01 = std::sqrt(R01[0]*R01[0]+ R01[1]*R01[1]+ R01[2]*R01[2]);
+//       cout<<pA<<"  "<<u<<"  "<<r01<<endl;
+      ValueType Gval = (expAu*u*(1.0 + 0.5*pA*u + 0.25*u*expAu)*mpart1*mpart1);
+      gradLogPsi = ee_table->dr(0)*ee_table->rinv(0)*Gval;
+      qmcplusplus::PtclOnLatticeTraits::ParticleGradient_t elgrads(2);
+      elgrads[0]=-1.0*gradLogPsi;
+      elgrads[1]=gradLogPsi;
+      
+      d2rdLogPsi = expAu*(1.0+pA*u*(2.0+pA*u*(0.5-0.25*expAu*u)))*mpart1*mpart1*mpart1;
+      d2rdLogPsi += 2.0*ee_table->rinv(0)*Gval;
+      int kk=myVars.where(0);
+      if (kk>-1)
+      {
+//       cout<<pA<<"  "<<dLogPsi<<endl;
+        dlogpsi[kk]= dLogPsi; 
+        dhpsioverpsi[kk]= -(d2rdLogPsi + Dot(P.G,elgrads));
+      }
+    }
+
+
+};
+
+class SimpleCompactHelium: public OrbitalBase
+{
+  public:
+    ParticleSet& CenterRef,els;
+    DistanceTableData* Ie_table;
+    DistanceTableData* ee_table;
+    ValueType pA, pB, pC, pD;
+    string nameA,nameB,nameC,nameD;
+    DiffOrbitalBase* dPsi;
+    DSimpleCompactHelium Dp;
+
+    SimpleCompactHelium(ParticleSet& electrons, ParticleSet& Ion): els(electrons), CenterRef(Ion), Ie_table(0), ee_table(0), Dp(electrons,Ion)
+    {
+      Ie_table = DistanceTable::add(CenterRef,electrons);
+      ee_table = DistanceTable::add(electrons);
+ 
+      dPsi = &Dp;
+      setDiffOrbital(dPsi);
+    }
+    
+    OrbitalBase* makeClone(ParticleSet& tqp) const
+    {
+      SimpleCompactHelium* cloned = new SimpleCompactHelium(tqp,CenterRef); 
+
+      cloned->nameA = nameA;
+      cloned->myVars.insertFrom(myVars);
+      cloned->reset(pA);
+      
+      (cloned->Dp).myVars.insertFrom(cloned->myVars);
+      (cloned->Dp).nameA=cloned->nameA;
+      (cloned->Dp).reset(pA); 
       return cloned;
     }
     
@@ -705,6 +799,8 @@ class SimpleCompactHelium: public OrbitalBase
       
       myVars.insert(nameA,pA,true);
       reportStatus(app_log());
+      Dp.myVars.insert(nameA,pA,true);
+      Dp.nameA=nameA; 
       return true;
     }
     
@@ -712,6 +808,7 @@ class SimpleCompactHelium: public OrbitalBase
     {
       Ie_table = DistanceTable::add(CenterRef,P);
       ee_table = DistanceTable::add(P);
+      dPsi->resetTargetParticleSet(P);
     }
     
     void checkInVariables(opt_variables_type& active)
@@ -723,12 +820,14 @@ class SimpleCompactHelium: public OrbitalBase
     {
       myVars.getIndex(active);
       myVars.print(std::cout);
+      dPsi->checkOutVariables(active);
     }
     
     void resetParameters(const opt_variables_type& active)
     {
       int ia=myVars.where(0); if(ia>-1) myVars[0]=pA=active[ia];
       reset(pA);
+      dPsi->resetParameters(active);
     }
     void reset(ValueType A){
       pA=A;
@@ -1162,82 +1261,38 @@ class SimpleCompactHeliumOrbitalPart: public OrbitalBase
 
 };
 
-class SingleSlaterOrbital: public OrbitalBase
+
+class DSingleSlaterOrbital: public DiffOrbitalBase
 {
   public:
     ParticleSet& CenterRef;
     DistanceTableData* Ie_table;
     DistanceTableData* ee_table;
-    ValueType pA, pB, pC, pD;
-    string nameA,nameB,nameC,nameD;
+    ValueType pA;
+    string nameA;
+    opt_variables_type myVars;
 
-    SingleSlaterOrbital(ParticleSet& electrons, ParticleSet& Ion): CenterRef(Ion), Ie_table(0), ee_table(0) 
+    DSingleSlaterOrbital(ParticleSet& electrons, ParticleSet& Ion): CenterRef(Ion), Ie_table(0), ee_table(0) 
     {
       Ie_table = DistanceTable::add(CenterRef,electrons);
-//       ee_table = DistanceTable::add(electrons);
-      
-      ///Default parameterization is from  CW David, PRA 74 059904(E) (2006)
-//       pA=-1.013;
-//       pB=0.2119;
-//       pC=0.1406;
-//       pD=-0.003;
     }
     
-    OrbitalBase* makeClone(ParticleSet& tqp) const
+    DiffOrbitalBase* makeClone(ParticleSet& tqp) const
     {
-      SingleSlaterOrbital* cloned = new SingleSlaterOrbital(tqp,CenterRef);
+      DSingleSlaterOrbital* cloned = new DSingleSlaterOrbital(tqp,CenterRef);
       cloned->nameA = nameA;
-      cloned->myVars.insert(nameA,pA,true);
-//       cloned->nameB = nameB;
-//       cloned->myVars.insert(nameB,pB,true);
-      cloned->reset(pA,pB);
-      
+      cloned->myVars.insertFrom(myVars);      
       return cloned;
     }
     
     
     bool put(xmlNodePtr cur){
-      pA=-0.08; pB=-1.0;
-     
-      
-      OrbitalName="CHe4";
-      string HEprefix("HE");
-      OhmmsAttributeSet bb;
-      bb.add(HEprefix,"id");
-      bb.add(OrbitalName,"name");
-      bb.put(cur);
-      
-      std::stringstream sstr;
-      sstr << HEprefix << "_A";
-      nameA = sstr.str();
-      sstr.str("");
-//       sstr << HEprefix << "_B";
-//       nameB = sstr.str();
-      
-      cur=cur->children;
-      while(cur != NULL)
-      {
-	string pname="0";
-	OhmmsAttributeSet aa;
-	aa.add(pname,"name");
-	aa.put(cur);
-	if(pname[0]=='A') putContent(pA,cur);
-// 	if(pname[0]=='B') putContent(pB,cur);
-	cur=cur->next;
-      }
-      reset(pA,pB);
-      
-      
-      myVars.insert(nameA,pA,true);
-//       myVars.insert(nameB,pB,true);
-      reportStatus(app_log());
       return true;
     }
     
     void resetTargetParticleSet(ParticleSet& P) 
     {
       Ie_table = DistanceTable::add(CenterRef,P);
-//       ee_table = DistanceTable::add(P);
     }
     
     void checkInVariables(opt_variables_type& active)
@@ -1254,12 +1309,133 @@ class SingleSlaterOrbital: public OrbitalBase
     void resetParameters(const opt_variables_type& active)
     {
       int ia=myVars.where(0); if(ia>-1) myVars[0]=pA=active[ia];
-//       int ib=myVars.where(1); if(ib>-1) pB=active[ia];
-      reset(pA,pB);
+      reset(pA);
     }
-    void reset(ValueType A,ValueType B){
+    void reset(ValueType A ){
       pA=A;
-//       pB=B;
+      }
+ 
+    void reportStatus(ostream& os)
+    {
+      myVars.print(os);
+    }
+    
+    void evaluateDerivatives(ParticleSet& P, RealType ke0, 
+        const opt_variables_type& active,
+        vector<RealType>& dlogpsi,
+        vector<RealType>& dhpsioverpsi)
+    { 
+      ValueType r = Ie_table->r(0);
+      PosType J0 = -1.0*Ie_table->dr(0)* Ie_table->rinv(0);
+ 
+      int kk=myVars.where(0);
+      if (kk>-1)
+      {
+        dlogpsi[kk]= r; 
+        dhpsioverpsi[kk]=  -1.0*(Ie_table->rinv(0) + pA);
+      }
+    }
+
+
+};
+
+class SingleSlaterOrbital: public OrbitalBase
+{
+  public:
+    ParticleSet& CenterRef;
+    DistanceTableData* Ie_table;
+    DistanceTableData* ee_table;
+    ValueType pA;
+    string nameA;
+    DSingleSlaterOrbital DP;
+    DiffOrbitalBase* dPsi;
+
+    SingleSlaterOrbital(ParticleSet& electrons, ParticleSet& Ion): CenterRef(Ion), Ie_table(0), ee_table(0) , DP(electrons,Ion)
+    {
+      Ie_table = DistanceTable::add(CenterRef,electrons);
+      dPsi = &DP;
+      setDiffOrbital(dPsi);
+    }
+    
+    OrbitalBase* makeClone(ParticleSet& tqp) const
+    {
+      SingleSlaterOrbital* cloned = new SingleSlaterOrbital(tqp,CenterRef);
+      cloned->nameA = nameA;
+      cloned->myVars.insertFrom(myVars);  
+      cloned->pA=pA;
+      (cloned->DP).myVars.insertFrom(myVars);  
+      (cloned->DP).nameA=nameA;  
+      (cloned->DP).pA=pA;  
+      return cloned;
+    }
+    
+    
+    bool put(xmlNodePtr cur){
+      pA=-1.0;
+     
+      
+      OrbitalName="H";
+      OhmmsAttributeSet bb;
+      bb.add(OrbitalName,"name");
+      bb.put(cur);
+      
+//       std::stringstream sstr;
+//       sstr << OrbitalName << "_A";
+      nameA = "H_A_dflt";
+      
+      cur=cur->children;
+      while(cur != NULL)
+      {
+        string pname="0";
+        string pid="H_A_dflt";
+        OhmmsAttributeSet aa;
+        aa.add(pname,"name");
+        aa.add(pid,"id");
+        aa.put(cur);
+        if(pname[0]=='A')
+        {
+          putContent(pA,cur);
+          nameA=pid;
+        }
+        cur=cur->next;
+      }
+      reset(pA);
+      
+      
+      myVars.insert(nameA,pA, nameA !="H_A_dflt");
+      reportStatus(app_log());
+      DP.myVars.insertFrom(myVars);
+      DP.nameA=nameA;  
+      DP.reset(pA);
+      return true;
+    }
+    
+    void resetTargetParticleSet(ParticleSet& P) 
+    {
+      Ie_table = DistanceTable::add(CenterRef,P);
+      dPsi->resetTargetParticleSet(P);
+    }
+    
+    void checkInVariables(opt_variables_type& active)
+    {
+      active.insertFrom(myVars);
+    }
+    
+    void checkOutVariables(const opt_variables_type& active)
+    {
+      myVars.getIndex(active);
+      myVars.print(std::cout);
+      dPsi->checkOutVariables(active);
+    }
+    
+    void resetParameters(const opt_variables_type& active)
+    {
+      int ia=myVars.where(0); if(ia>-1) myVars[0]=pA=active[ia];
+      reset(pA);
+      dPsi->resetParameters(active);
+    }
+    void reset(ValueType A ){
+      pA=A;
     }
     
     RealType
@@ -1297,48 +1473,17 @@ class SingleSlaterOrbital: public OrbitalBase
 			ParticleSet::ParticleGradient_t& G, 
 			ParticleSet::ParticleLaplacian_t& L)
     {
-      ValueType r0 = Ie_table->r(0);
-//       ValueType r1 = Ie_table->r(1);
-//       ValueType r01 = ee_table->r(0);
+      ValueType r = Ie_table->r(0);
       
-      ValueType s = r0 ;
-//       ValueType t = r0-r1;
-//       ValueType u = r01;
-      
-      ValueType expm2s = std::exp(pB*s);
-//       ValueType expAu = std::exp(pA*u);
-//       ValueType part1 = 1.0+0.5*u*expAu;
-//       ValueType mpart1 = 1.0/part1;
-
-      
-//       Gradients
-//       ValueType upart = 0.5*(1+pA*u)*expAu*mpart1;
-
-      ValueType F01 = (pB);
-//       ValueType F02 = (upart);
+      ValueType expm2s = std::exp(pA*r);
+      ValueType F01 = (pA);
       PosType J0 = Ie_table->dr(0)*F01*Ie_table->rinv(0);
-//       - ee_table->dr(0)*F02*ee_table->rinv(0);
-      
-//       ValueType F11 = (pB );
-//       app_log()<<F11<<endl;
-//       PosType J1 = Ie_table->dr(1)*F11*Ie_table->rinv(1);
-//       + ee_table->dr(0)*F02*ee_table->rinv(0);      
       G[0] += J0;
-//       G[1] += J1;  
       
-//       ValueType L0 = (0.5*pA*pA*u+pA)*expAu*mpart1 - upart*upart ;
-      ValueType L0  = 2.0*Ie_table->rinv(0)*F01;
-//       + 2.0*ee_table->rinv(0)*F02;
-
-//       ValueType L1= (0.5*pA*pA*u+pA)*expAu*mpart1 - upart*upart;
-//       ValueType L1  = 2.0*Ie_table->rinv(1)*F11;
-//       + 2.0*ee_table->rinv(0)*F02; 
+      ValueType L0  = 2.0*pA*Ie_table->rinv(0);
       
       L[0] += L0;
-//       L[1] += L1; 
-      
-       return expm2s;
-//        *part1;
+      return expm2s;
     }
 
 
@@ -1580,7 +1725,6 @@ class SingleSlaterOrbital: public OrbitalBase
 // 
 // 
 // };
-
 
 
 
