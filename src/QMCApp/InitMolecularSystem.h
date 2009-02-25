@@ -44,7 +44,7 @@ namespace qmcplusplus {
     bool put(xmlNodePtr cur);
     void reset();
 
-    void initAtom(ParticleSet* els);
+    void initAtom(ParticleSet* ions, ParticleSet* els);
     void initMolecule(ParticleSet* ions, ParticleSet* els);
 
   private:

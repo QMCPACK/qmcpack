@@ -56,13 +56,14 @@ namespace qmcplusplus {
     if(ions->getTotalNum()>1) {
       initMolecule(ions,els);
     } else {
-      initAtom(els);
+      initAtom(ions,els);
     }
      
     return true;
   }
 
-  void InitMolecularSystem::initAtom(ParticleSet* els) {
+  void InitMolecularSystem::initAtom(ParticleSet* ions, ParticleSet* els) 
+  {
 
     //3N-dimensional Gaussian
     ParticleSet::ParticlePos_t chi(els->getTotalNum());
@@ -71,19 +72,23 @@ namespace qmcplusplus {
     double q=std::sqrt(static_cast<double>(els->getTotalNum()))*0.5;
     int nel(els->getTotalNum()), items(0);
     while(nel) {
-      els->R[items]=q*chi[items]; 
+      els->R[items]=ions->R[0]+q*chi[items]; 
       --nel; ++items;
     }
   }
 
-  struct LoneElectron {
+  struct LoneElectron 
+  {
     int ID;
     double BondLength;
     inline LoneElectron(int id, double bl):ID(id),BondLength(bl){}
   };
   
-  void InitMolecularSystem::initMolecule(ParticleSet* ions, ParticleSet* els) {
+  void InitMolecularSystem::initMolecule(ParticleSet* ions, ParticleSet* els) 
+  {
     
+    if(ions->getTotalNum()==1) return initAtom(ions,els);
+
     DistanceTableData* d_ii = DistanceTable::add(*ions);
     d_ii->create(1);
     d_ii->evaluate(*ions);
