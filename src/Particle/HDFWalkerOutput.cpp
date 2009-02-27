@@ -41,9 +41,10 @@ namespace qmcplusplus
    */
   int appendSingle(hid_t h0, MCWalkerConfiguration& W, int block)
   {
-    hid_t h1=-1;
+    hid_t h1;
     bool overwrite=true;
-    if(block) 
+
+    if(block)
       h1 = H5Gopen(h0,hdf::config_group);
     else
     {
@@ -314,10 +315,12 @@ namespace qmcplusplus
    * @param block index for the block
    */
   bool  HDFWalkerOutput::append(MCWalkerConfiguration& W) {
-    hid_t h0=h_file;
-    if(h0<0) h0 =  H5Fopen(FileName.c_str(),H5F_ACC_RDWR,H5P_DEFAULT);
-    appended_blocks=appendSingle(h0,W,appended_blocks);
-    if(h0 != h_file) H5Fclose(h0);
+//    hid_t h0=h_file;
+//    if(h0<0) h0 =  H5Fopen(FileName.c_str(),H5F_ACC_RDWR,H5P_DEFAULT);
+    h_file = H5Fopen(FileName.c_str(),H5F_ACC_RDWR,H5P_DEFAULT);
+    appended_blocks=appendSingle(h_file,W,appended_blocks);
+//    if(h0 != h_file) H5Fclose(h0);
+    if (H5Fclose(h_file) > -1) h_file = -1;
     return true;
   }
 
@@ -381,7 +384,7 @@ namespace qmcplusplus
       HDFAttribIO<int> nwo(number_of_walkers);
       nwo.write(d2,hdf::num_walkers);
       H5Gclose(d2);
-      H5Fclose(d1);
+      if(H5Fclose(d1) > -1) d1 = -1;
     }
 #endif
 
