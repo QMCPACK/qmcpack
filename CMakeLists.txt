@@ -211,18 +211,18 @@ ENDIF($ENV{CXX} MATCHES "icpc")
 # most likely *unix with gnu or intel compilers
 # using "-restrict" option to find out if intel compilers are backend.
 #------------------------------------
-#IF(NOT FOUND_CXXENV)
-#  IF(CMAKE_COMPILER_IS_GNUCXX)
-#    INCLUDE(${PROJECT_CMAKE}/GNUCompilers.cmake)
-#  ELSE(CMAKE_COMPILER_IS_GNUCXX)
-#    SET(CMAKE_TRY_INTEL_CXX_FLAGS "-restrict")
-#    CHECK_CXX_ACCEPTS_FLAG(${CMAKE_TRY_INTEL_CXX_FLAGS} INTEL_CXX_FLAGS)
-#    IF(INTEL_CXX_FLAGS)
-#      INCLUDE(${PROJECT_CMAKE}/IntelCompilers.cmake)
-#      SET(FOUND_CXXENV 1)
-#    ENDIF(INTEL_CXX_FLAGS)
-#  ENDIF(CMAKE_COMPILER_IS_GNUCXX)
-#ENDIF(NOT FOUND_CXXENV)
+IF(NOT FOUND_CXXENV)
+  IF(CMAKE_COMPILER_IS_GNUCXX)
+    INCLUDE(${PROJECT_CMAKE}/GNUCompilers.cmake)
+  ELSE(CMAKE_COMPILER_IS_GNUCXX)
+    SET(CMAKE_TRY_INTEL_CXX_FLAGS "-restrict")
+    CHECK_CXX_ACCEPTS_FLAG(${CMAKE_TRY_INTEL_CXX_FLAGS} INTEL_CXX_FLAGS)
+    IF(INTEL_CXX_FLAGS)
+      INCLUDE(${PROJECT_CMAKE}/IntelCompilers.cmake)
+      SET(FOUND_CXXENV 1)
+    ENDIF(INTEL_CXX_FLAGS)
+  ENDIF(CMAKE_COMPILER_IS_GNUCXX)
+ENDIF(NOT FOUND_CXXENV)
 
 #-------------------------------------------------------------------
 #COMPIELR MANUAL SELECTION
