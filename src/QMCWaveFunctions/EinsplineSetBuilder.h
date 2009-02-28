@@ -112,7 +112,8 @@ namespace qmcplusplus {
     
   protected:
     // Type definitions
-    typedef CrystalLattice<RealType,OHMMS_DIM> UnitCellType;
+    //typedef CrystalLattice<RealType,OHMMS_DIM> UnitCellType;
+    typedef ParticleSet::ParticleLayout_t UnitCellType;
 
     // Helper vector for sorting bands
     std::vector<BandInfo> SortBands;
@@ -123,6 +124,9 @@ namespace qmcplusplus {
     // This is true if we have the orbital derivatives w.r.t. the ion
     // positions 
     bool HaveOrbDerivs;
+
+    // The name of the ion particleset
+    void CreateIonParticleSet(string sourceName);
 
     typedef EinsplineOrb<complex<double>,OHMMS_DIM> OrbType;
     // The map key is (spin, twist, band, center)

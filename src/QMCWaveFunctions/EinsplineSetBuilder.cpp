@@ -545,6 +545,7 @@ namespace qmcplusplus {
     OhmmsAttributeSet attribs;
     int numOrbs = 0;
     bool sortBands = true;
+    string sourceName;
     attribs.add (H5FileName, "href");
     attribs.add (TileFactor, "tile");
     attribs.add (sortBands,  "sort");
@@ -553,6 +554,7 @@ namespace qmcplusplus {
     attribs.put (XMLRoot);
     attribs.add (numOrbs,    "size");
     attribs.add (numOrbs,    "norbs");
+    attribs.add (sourceName, "source");
     attribs.put (cur);
 
     ///////////////////////////////////////////////
@@ -632,8 +634,14 @@ namespace qmcplusplus {
     // Now, analyze the k-point mesh to figure out the what k-points //
     // are needed                                                    //
     ///////////////////////////////////////////////////////////////////
-    PrimCell = Lattice;
-    SuperCell = SuperLattice;
+    PrimCell.set(Lattice);
+    SuperCell.set(SuperLattice);
+
+    // Copy supercell into the ParticleSets
+    app_log() << "Overwriting XML lattice with that from the ESHDF file.\n";
+    PtclPoolType::iterator piter;
+    for(piter = ParticleSets.begin(); piter != ParticleSets.end(); piter++)
+      piter->second->Lattice.copy(SuperCell);
 
     AnalyzeTwists2();
 
@@ -746,9 +754,23 @@ namespace qmcplusplus {
 
     SPOSetMap[set] = OrbitalSet;
     
+    if (sourceName != "") 
+      if (ParticleSets.find(sourceName) == ParticleSets.end())
+	CreateIonParticleSet(sourceName);
+
     return OrbitalSet;
   }
   
+  //////////////////////////////////////////////////////////////
+  // Create the ion ParticleSet from the data in the HDF file //
+  //////////////////////////////////////////////////////////////
+  void
+  EinsplineSetBuilder::CreateIonParticleSet(string sourceName)
+  {
+
+
+  }
+
   ////////////////////////////////////////////////////
   // Tile the ion positions according to TileMatrix //
   ////////////////////////////////////////////////////
