@@ -767,7 +767,7 @@ namespace qmcplusplus {
   void
   EinsplineSetBuilder::CreateIonParticleSet(string sourceName)
   {
-
+    
 
   }
 
