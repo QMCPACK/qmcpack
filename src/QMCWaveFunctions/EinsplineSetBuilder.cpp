@@ -638,10 +638,10 @@ namespace qmcplusplus {
     SuperCell.set(SuperLattice);
 
     // Copy supercell into the ParticleSets
-    app_log() << "Overwriting XML lattice with that from the ESHDF file.\n";
-    PtclPoolType::iterator piter;
-    for(piter = ParticleSets.begin(); piter != ParticleSets.end(); piter++)
-      piter->second->Lattice.copy(SuperCell);
+//     app_log() << "Overwriting XML lattice with that from the ESHDF file.\n";
+//     PtclPoolType::iterator piter;
+//     for(piter = ParticleSets.begin(); piter != ParticleSets.end(); piter++)
+//       piter->second->Lattice.copy(SuperCell);
 
     AnalyzeTwists2();
 
@@ -767,8 +767,13 @@ namespace qmcplusplus {
   void
   EinsplineSetBuilder::CreateIonParticleSet(string sourceName)
   {
+    //    ParticleSet &pTemp = *(new MCWalkerConfiguration);
+    ParticleSet &pTemp = *(new ParticleSet);
+    pTemp.setName (sourceName);
+    SpeciesSet& tspecies(pTemp.getSpeciesSet());
     
 
+    ParticleSets[sourceName] = &pTemp;
   }
 
   ////////////////////////////////////////////////////

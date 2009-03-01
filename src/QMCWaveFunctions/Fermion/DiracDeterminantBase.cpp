@@ -352,8 +352,24 @@ namespace qmcplusplus {
 
     // HACK HACK HACK
     // Phi->evaluate(P, FirstIndex, LastIndex, psiM, dpsiM, d2psiM);
+    // psiM_temp = psiM;
     // LogValue=InvertWithLog(psiM.data(),NumPtcls,NumOrbitals,
     // 			   WorkSpace.data(),Pivot.data(),PhaseValue);
+    // for (int i=0; i<NumPtcls; i++)
+    //   for (int j=0; j<NumPtcls; j++) {
+    // 	double val = 0.0;
+    // 	for (int k=0; k<NumPtcls; k++)
+    // 	  val += psiM(i,k) * psiM_temp(k,j);
+    // 	val -= (i == j) ? 1.0 : 0.0;
+    // 	if (std::fabs(val) > 1.0e-12)
+    // 	  cerr << "Error in inverse.\n";
+    //   }
+	
+    // for (int i=0; i<NumPtcls; i++) {
+    //   P.G[FirstIndex+i] = GradType();
+    //   for (int j=0; j<NumOrbitals; j++)
+    // 	P.G[FirstIndex+i] += psiM(i,j)*dpsiM(i,j);
+    // }
 
     // Compute matrices
     phi_alpha_Minv = 0.0;    grad_phi_Minv = 0.0;
