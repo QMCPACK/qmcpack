@@ -27,6 +27,7 @@ set(CMAKE_FIND_ROOT_PATH
       /opt/acml/4.1.0/gfortran64
       /sw/xt5/hdf5/1.6.8/cnl2.1_gnu4.2.4
       /sw/xt5/szip/2.1/sles10.1_gnu4.2.4
+      /sw/xt5/fftw/3.2/cnl2.1_gnu4.2.0
       /ccs/proj/mat001/xt5/gnu2.1.4/einspline
       /ccs/proj/mat001/cnl/boost
      )
