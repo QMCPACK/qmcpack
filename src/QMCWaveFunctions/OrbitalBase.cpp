@@ -57,7 +57,7 @@ namespace qmcplusplus {
     if(dPsi) 
 #endif
       dPsi->evaluateDerivatives(P, ke0, active, dlogpsi, dhpsioverpsi);
-  }
+  } 
 
   ///** makeClone uses optVars  to determine if it will make a clone (deepcopy) 
   // * or make a ProxyOrbital.

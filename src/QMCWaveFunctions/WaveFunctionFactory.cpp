@@ -22,6 +22,7 @@
 #include "QMCWaveFunctions/Fermion/SlaterDetBuilder.h"
 #if defined(QMC_BUILD_COMPLETE)
 #include "QMCWaveFunctions/CompactHelium.h"
+#include "QMCWaveFunctions/Jastrow/BondOrbital.h"
 #include "QMCWaveFunctions/PlaneWave/PWOrbitalBuilder.h"
 #if defined(QMC_COMPLEX)
 #include "QMCWaveFunctions/ElectronGas/ElectronGasComplexOrbitalBuilder.h"
@@ -209,6 +210,21 @@ namespace qmcplusplus {
       bool success=false;
       ParticleSet* sourcePtcl= (*pa_it).second;
       SingleSlaterOrbital* CHwf = new SingleSlaterOrbital(*targetPtcl,*sourcePtcl);
+      CHwf->put(cur);
+      targetPsi->addOrbital(CHwf,CHwf->OrbitalName);
+    }
+    else if (orbtype=="Bond")
+    {   
+      map<string,ParticleSet*>::iterator pa_it(ptclPool.find(nuclei));
+      if(pa_it == ptclPool.end()) 
+      {
+ PRE.warning("Bond failed. "+nuclei+" does not exist.");
+ return false;
+      }
+      app_log()<<"  Adding BondOrbital"<<endl;
+      bool success=false;
+      ParticleSet* sourcePtcl= (*pa_it).second;
+      BondOrbital* CHwf = new BondOrbital(*targetPtcl,*sourcePtcl);
       CHwf->put(cur);
       targetPsi->addOrbital(CHwf,CHwf->OrbitalName);
     }

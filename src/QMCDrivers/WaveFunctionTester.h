@@ -50,6 +50,7 @@ namespace qmcplusplus {
     void runRatioTest2();
     void runBasicTest();
     void runCloneTest();
+    void runDerivTest();
     void runGradSourceTest();
   };
 }

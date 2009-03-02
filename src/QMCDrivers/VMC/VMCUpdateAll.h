@@ -83,6 +83,27 @@ namespace qmcplusplus {
     WFMCUpdateAllWithReweight& operator=(const WFMCUpdateAllWithReweight&) { return *this;}
   };
   
+  /** @ingroup QMCDrivers  ParticleByParticle
+   *@brief Implements the VMC algorithm using particle-by-particle move. 
+   */
+  class VMCUpdateAllSamplePsi: public QMCUpdateBase {
+  public:
+    /// Constructor.
+    VMCUpdateAllSamplePsi(MCWalkerConfiguration& w, TrialWaveFunction& psi, 
+        QMCHamiltonian& h, RandomGenerator_t& rg);
+
+    ~VMCUpdateAllSamplePsi();
+
+    void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
+ 
+  private:
+    ///sub steps
+    int nSubSteps;
+    /// Copy Constructor (disabled)
+    VMCUpdateAllSamplePsi(const VMCUpdateAllSamplePsi& a): QMCUpdateBase(a) { }
+    /// Copy operator (disabled).
+    VMCUpdateAllSamplePsi& operator=(const VMCUpdateAllSamplePsi&) { return *this;}
+  };
   
 }
 

@@ -241,8 +241,7 @@ namespace qmcplusplus {
         addModInsKE(cur);
       }
       else if(cname == "estimator")
-      {
-	cerr<<"THE POTTYPE IS "<<potType<<endl;
+      { 
         if(potType == "Force")
         {
           addForceHam(cur);

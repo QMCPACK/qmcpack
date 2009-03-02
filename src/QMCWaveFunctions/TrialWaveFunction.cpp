@@ -597,6 +597,7 @@ namespace qmcplusplus {
 	  for(int i=0; i<Z.size(); i++)
 	  {
 	  	if (Z[i]->dPsi) (Z[i]->dPsi)->evaluateDerivatives( P, ke0, optvars, dlogpsi, dhpsioverpsi); 
+    else Z[i]->evaluateDerivatives( P, ke0, optvars, dlogpsi, dhpsioverpsi);
 	  }
 	}
 

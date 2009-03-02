@@ -61,10 +61,10 @@ namespace qmcplusplus {
       
 			RealType KEtemp = H_KE.evaluate(W); 
 			Return_t eloc_new = KEtemp + saved[ENERGY_FIXED];
-			Return_t this_bare_weight=(1.0);
-			Return_t weight = std::min(this_bare_weight = std::exp(2.0*(logpsi-saved[LOGPSI_FREE])),MaxWeight) ;
-			//Return_t weight = usingWeight?std::min(this_bare_weight = std::exp(2.0*(logpsi-saved[LOGPSI_FREE])),MaxWeight):1.0 ;
-			if (KEtemp<MinKE) weight=0.0;
+          Return_t weight;
+          if (samplePsi2) weight = std::min( std::exp(2.0*(logpsi-saved[LOGPSI_FREE])),MaxWeight) ;
+          else weight = std::min( std::exp( logpsi-saved[LOGPSI_FREE] ),MaxWeight) ;
+          if (KEtemp<MinKE) weight=0.0;
 
       //Return_t eloc_new=+saved[ENERGY_FIXED];
       //Return_t weight = UseWeight?std::exp(2.0*(logpsi-saved[LOGPSI_FREE])):1.0;
@@ -72,7 +72,7 @@ namespace qmcplusplus {
 			vector<Return_t>* Dsaved= &(TempDerivRecords[iw]) ;
 			vector<Return_t>* HDsaved= &(TempHDerivRecords[iw]) ;
 			Psi.evaluateDerivatives(W,KEtemp,OptVariables,*Dsaved,*HDsaved);
-			for(int l=0; l<NumOptimizables; l++) (*HDsaved)[l] += saved[ENERGY_FIXED] * (*Dsaved)[l];
+// 			for(int l=0; l<NumOptimizables; l++) (*HDsaved)[l] += saved[ENERGY_FIXED] * (*Dsaved)[l];
 
 
       saved[ENERGY_NEW]=eloc_new;
@@ -201,6 +201,10 @@ namespace qmcplusplus {
       e2sum += e*e;
       Etarget += saved[ENERGY_TOT] = e;
       saved[ENERGY_FIXED] = H.getLocalPotential();
+      
+      vector<Return_t>* Dsaved=  &(TempDerivRecords[iw]) ;
+      vector<Return_t>* HDsaved=  &(TempHDerivRecords[iw]) ;
+      Psi.evaluateDerivatives(W,e-saved[ENERGY_FIXED],OptVariables,*Dsaved,*HDsaved);
     }
 
     //Need to sum over the processors
@@ -238,7 +242,7 @@ namespace qmcplusplus {
   
     void QMCCostFunctionSingle::GradCost(vector<Return_t>& PGradient, vector<Return_t> PM, Return_t FiniteDiff)
   {
-  	if (FiniteDiff)
+  	if (FiniteDiff>0)
   	{
   		
 			Return_t dh=1.0/(2.0*FiniteDiff);
@@ -264,10 +268,13 @@ namespace qmcplusplus {
 			 curAvg_w = SumValue[SUM_E_WGT]/SumValue[SUM_WGT];
 			 Return_t curAvg2_w = curAvg_w*curAvg_w;
 				
-			vector<Return_t> EDtotals(NumParams(),0.0);
-			vector<Return_t> E2Dtotals(NumParams(),0.0);
-			vector<Return_t> EDtotals_w(NumParams(),0.0);
-			vector<Return_t> E2Dtotals_w(NumParams(),0.0);
+        vector<Return_t> EDtotals(NumOptimizables,0.0);
+        vector<Return_t> E2Dtotals(NumOptimizables,0.0);
+        vector<Return_t> EDtotals_w(NumOptimizables,0.0);
+        vector<Return_t> E2Dtotals_w(NumOptimizables,0.0);
+        vector<Return_t> URV(NumOptimizables,0.0);
+        vector<Return_t> HD_avg(NumOptimizables,0.0);
+        Return_t e2(0.0);
 
 
  
@@ -275,22 +282,28 @@ namespace qmcplusplus {
 				for(int iw=0; iw<nw;iw++) 
 				{
 					Return_t*  saved=Records[iw];
-					Return_t weight=saved[REWEIGHT]*CSWeight;
+					Return_t weight=saved[REWEIGHT]/SumValue[SUM_WGT];
 					Return_t eloc_new=saved[ENERGY_NEW];
+     e2 += eloc_new*eloc_new*weight;
 					Return_t delta_eloc_new=eloc_new-curAvg_w;
-					vector<Return_t> Dsaved= TempDerivRecords[iw];
-					vector<Return_t> HDsaved= TempHDerivRecords[iw];
+					vector<Return_t>  Dsaved= (TempDerivRecords[iw]);
+					vector<Return_t>  HDsaved= (TempHDerivRecords[iw]);
 					for(int pm=0; pm<NumOptimizables;pm++) 
 					{
-						//Return_t val = (HDsaved[pm] + 2.0*(eloc_new - curAvg_w)*Dsaved[pm]);
-						Return_t val = ( 2.0*(eloc_new - curAvg_w)*Dsaved[pm]);
-						EDtotals[pm] +=  val;
-						EDtotals_w[pm] += weight*val;
+                    HD_avg[pm]+= HDsaved[pm];
+                    Return_t val;
+                    if (samplePsi2) val = (HDsaved[pm] + 2.0*(eloc_new - curAvg_w)*Dsaved[pm]);
+                    else val = (HDsaved[pm] + (eloc_new - curAvg_w)*Dsaved[pm]);
+                    EDtotals[pm] +=  val;
+                    EDtotals_w[pm] += weight*val;
+                    
 					}
 				} 
-			myComm->allreduce(EDtotals);
-			myComm->allreduce(EDtotals_w);
+        myComm->allreduce(EDtotals);
+        myComm->allreduce(EDtotals_w);
+        myComm->allreduce(HD_avg);
  
+        Return_t wgtinv=1.0/static_cast<Return_t>(NumSamples);
 				for(int iw=0; iw<nw;iw++) 
 				{
 					Return_t*  saved=Records[iw];
@@ -301,28 +314,33 @@ namespace qmcplusplus {
 					vector<Return_t> HDsaved= TempHDerivRecords[iw];
 					for(int pm=0; pm<NumOptimizables;pm++) 
 					{
-						//Return_t val =  (delta_eloc_new*delta_eloc_new - curVar_w)*Dsaved[pm] +
-						   //delta_eloc_new*((HDsaved[pm] + (eloc_new - 2.0*curAvg_w)*Dsaved[pm]) - EDtotals_w[pm] );
-					  Return_t val0 = ( 2.0*(eloc_new - curAvg_w)*Dsaved[pm]);
-						Return_t val = Dsaved[pm]*((eloc_new*eloc_new-curAvg2_w) - (curVar_w))
-						               + eloc_new*val0 - curAvg_w*EDtotals_w[pm] ;
-						E2Dtotals[pm] += 2.0*val ;
-						E2Dtotals_w[pm] += 2.0*val * weight;
+                    URV[pm] += 2.0*(eloc_new*HDsaved[pm] - curAvg*HD_avg[pm]);
+                    Return_t val;
+                    if (samplePsi2) val=  2.0*(eloc_new*eloc_new - e2)*Dsaved[pm]
+                                    + 2.0*eloc_new*(HDsaved[pm])
+                                    - 2.0*curAvg_w*EDtotals_w[pm];
+                    else val = (eloc_new*eloc_new - e2)*Dsaved[pm]
+                                    + 2.0*eloc_new*(HDsaved[pm])
+                                    - 2.0*curAvg_w*EDtotals_w[pm];
+                    E2Dtotals[pm] += val ;
+                    E2Dtotals_w[pm] += val * weight;
 					}
 				}
 
-			myComm->allreduce(E2Dtotals);
-			myComm->allreduce(E2Dtotals_w);
+        myComm->allreduce(E2Dtotals);
+        myComm->allreduce(E2Dtotals_w);
+        myComm->allreduce(URV);
 			
-			for(int j=0; j<NumOptimizables; j++) PGradient[j] = w_en*E2Dtotals_w[j] + w_var*EDtotals_w[j];
-
+        for (int pm=0; pm<NumOptimizables;pm++)  URV[pm] *=wgtinv;
+        for (int j=0; j<NumOptimizables; j++) PGradient[j] = (w_var*E2Dtotals_w[j] + w_en*EDtotals_w[j] + w_w*URV[j]) ;
 
 
 			 IsValid=true;
 
-			 if(NumWalkersEff < MinNumWalkers) {
-				 ERRORMSG("CostFunction-> Number of Effective Walkers is too small " << NumWalkersEff)
-				 ERRORMSG("Going to stop now.")
+			 if (NumWalkersEff < MinNumWalkers*NumSamples)
+    {
+                  ERRORMSG("CostFunction-> Number of Effective Walkers is too small " << NumWalkersEff<< "Minimum required"<<MinNumWalkers*NumSamples)
+// 				 ERRORMSG("Going to stop now.")
 				 IsValid=false;
 			 }
     }

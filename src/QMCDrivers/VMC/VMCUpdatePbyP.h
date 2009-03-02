@@ -74,6 +74,25 @@ namespace qmcplusplus {
   private:
     vector<NewTimer*> myTimers;
   };
+  
+    /** @ingroup QMCDrivers  ParticleByParticle
+   *@brief Implements the VMC algorithm using particle-by-particle move. Samples |Psi| to increase number of walkers near nodes.
+   */
+  class VMCUpdatePbyPSamplePsi: public QMCUpdateBase {
+  public:
+    /// Constructor.
+    VMCUpdatePbyPSamplePsi(MCWalkerConfiguration& w, TrialWaveFunction& psi, 
+        QMCHamiltonian& h, RandomGenerator_t& rg);
+
+    ~VMCUpdatePbyPSamplePsi();
+
+    void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
+
+  private:
+    ///sub steps
+    int nSubSteps;
+    vector<NewTimer*> myTimers;
+  };
 }
 
 #endif

@@ -33,6 +33,7 @@ namespace qmcplusplus {
     }
     elocal_name.push_back("DMC_Psi_W");
     elocal_name.push_back("DMC_W");
+    elocal_name.push_back("URW_LE");
     
     scalars.resize(elocal_name.size());
     scalars_saved.resize(elocal_name.size());

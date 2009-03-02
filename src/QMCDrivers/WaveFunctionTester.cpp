@@ -25,6 +25,7 @@ using namespace std;
 #include "Message/Communicate.h"
 #include "QMCDrivers/WaveFunctionTester.h"
 #include "QMCDrivers/DriftOperators.h"
+#include "Optimize/VarList.h"
 #include "Utilities/OhmmsInform.h"
 #include "LongRange/StructFact.h"
 namespace qmcplusplus {
@@ -79,6 +80,8 @@ WaveFunctionTester::run() {
     runCloneTest();
   else if (sourceName.size() != 0)
     runGradSourceTest();
+  else if (checkRatio =="deriv")
+    runDerivTest();
   else
     runBasicTest();
 
@@ -253,6 +256,7 @@ void WaveFunctionTester::runBasicTest() {
     RealType phase_p=Psi.getPhase();
 
     W.makeMove(iat,deltaR[iat]);
+    W.update();
     RealType aratio = Psi.ratio(W,iat);
     W.rejectMove(iat);
     Psi.rejectMove(iat);
@@ -680,6 +684,109 @@ bool
 WaveFunctionTester::put(xmlNodePtr q){
   return putQMCInfo(q);
 }
+
+void WaveFunctionTester::runDerivTest() {
+  app_log()<<" Testing derivatives"<<endl;
+  IndexType nskipped = 0;
+  RealType sig2Enloc=0, sig2Drift=0;
+  RealType delta = 0.00001;
+  RealType delta2 = 2*delta;
+  ValueType c1 = 1.0/delta/2.0;
+  ValueType c2 = 1.0/delta/delta;
+
+  int nat = W.getTotalNum();
+
+  ParticleSet::ParticlePos_t deltaR(nat);
+  MCWalkerConfiguration::PropertyContainer_t Properties;
+  //pick the first walker
+  MCWalkerConfiguration::Walker_t* awalker = *(W.begin());
+
+  //copy the properties of the working walker
+  Properties = awalker->Properties;
+  
+  //sample a new walker configuration and copy to ParticleSet::R
+  //makeGaussRandom(deltaR);
+ 
+  W.R = awalker->R;
+
+  //W.R += deltaR;
+
+  W.update();
+  //ValueType psi = Psi.evaluate(W);
+  ValueType logpsi = Psi.evaluateLog(W);
+  RealType eloc=H.evaluate(W);
+
+  app_log() << "  HamTest " << "  Total " <<  eloc << endl;
+  for(int i=0; i<H.sizeOfObservables(); i++)
+    app_log() << "  HamTest " << H.getObservableName(i) << " " << H.getObservable(i) << endl;
+
+  //RealType psi = Psi.evaluateLog(W);
+  ParticleSet::ParticleGradient_t G(nat), G1(nat);
+  ParticleSet::ParticleLaplacian_t L(nat), L1(nat);
+  G = W.G;
+  L = W.L;
+  cout<<"Gradients"<<endl;
+   for (int iat=0;iat<W.R.size();iat++)
+   {
+     for (int i=0; i<3 ; i++) cout<<W.G[iat][i]<<"  ";
+     cout<<endl;
+   }
+  
+  opt_variables_type wfVars,wfvar_prime;
+  Psi.checkInVariables(wfVars);
+  Psi.checkOutVariables(wfVars);
+  wfvar_prime= wfVars;
+  wfVars.print(cout);
+  int Nvars= wfVars.size();
+  vector<RealType> Dsaved(Nvars);
+  vector<RealType> HDsaved(Nvars);
+  vector<RealType> PGradient(Nvars);
+  vector<RealType> HGradient(Nvars);
+  Psi.evaluateDerivatives(W, eloc-H.getLocalPotential(),wfVars, Dsaved, HDsaved);
+  RealType FiniteDiff = 1e-5;
+
+  QMCTraits::RealType dh=1.0/(2.0*FiniteDiff);
+  for (int i=0; i<Nvars ; i++)
+  {
+    for (int j=0; j<Nvars; j++) wfvar_prime[j]=wfVars[j];
+    wfvar_prime[i] = wfVars[i]+ FiniteDiff; 
+//     Psi.checkOutVariables(wfvar_prime);
+    Psi.resetParameters(wfvar_prime);
+    Psi.reset();
+     W.update();
+ W.G=0;
+ W.L=0;
+    ValueType logpsiPlus = Psi.evaluateLog(W);
+    RealType elocPlus=H.evaluate(W);
+    
+    
+    wfvar_prime[i] = wfVars[i]- FiniteDiff; 
+//     Psi.checkOutVariables(wfvar_prime);
+    Psi.resetParameters(wfvar_prime);
+    Psi.reset();
+ W.update();
+ W.G=0;
+ W.L=0;
+    ValueType logpsiMinus = Psi.evaluateLog(W);
+    RealType elocMinus =H.evaluate(W);
+    
+    PGradient[i]= (logpsiPlus-logpsiMinus)*dh;
+    HGradient[i]= (elocPlus-elocMinus)*dh;
+  }
+   cout<<endl<<"Deriv  Numeric Analytic"<<endl;
+   for (int i=0; i<Nvars ; i++) cout<<i<<"  "<<PGradient[i]<<"  "<<Dsaved[i] <<endl;
+   cout<<endl<<"Hderiv  Numeric Analytic"<<endl;
+   for (int i=0; i<Nvars ; i++) cout<<i <<"  "<<HGradient[i]<<"  "<<HDsaved[i]<<endl;
+   
+} 
+
+
+
+
+
+
+
+
 }
 
 /***************************************************************************

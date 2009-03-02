@@ -190,14 +190,17 @@ class testDerivOptimization: public MinimizerBase<T>
     {
     ///To test we simply output the analytic and numeric gradients of the cost function. Make sure they agree.
       vector<Return_t> Dummy(FG);
-      TargetFunc->GradCost( Dummy, RT, 1e-5);
+      TargetFunc->GradCost( Dummy, RT, 1e-4);
 
       TargetFunc->GradCost(FG, RT, 0.0);
       PastGradients.push_back(FG);
       PastGradientsParameterPoints.push_back(RT);
 
-      cout<<"Numeric            Analytic"<<endl;
-      for(int k=0; k<NumParams; k++) cout<<Dummy[k]<<"  "<<FG[k]<<endl;
+      cout<<"Numeric            Analytic       Percent"<<endl;
+      for(int k=0; k<NumParams; k++) {
+        if (Dummy[k]!=0) cout<<Dummy[k]<<"  "<<FG[k]<<"  "<< 100*(Dummy[k]-FG[k])/Dummy[k]<<endl;
+        else cout<<Dummy[k]<<"  "<<FG[k]<<"   inf"<<endl;
+        }
       cout<<endl;
     }
 

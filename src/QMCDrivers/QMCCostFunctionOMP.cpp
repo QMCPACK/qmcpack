@@ -83,7 +83,7 @@ namespace qmcplusplus
             for (int iw=0; iw<nw;iw++,wn++)
               {
                 const Return_t* restrict saved = (*RecordsOnNode[ip])[iw];
-                Return_t weight=saved[REWEIGHT]*CSWeight;
+                Return_t weight=saved[REWEIGHT]/SumValue[SUM_WGT];
                 Return_t eloc_new=saved[ENERGY_NEW];
                 e2 += eloc_new*eloc_new*weight;
                 vector<Return_t> Dsaved= (*TempDerivRecords[ip])[iw];
@@ -91,7 +91,9 @@ namespace qmcplusplus
                 for (int pm=0; pm<NumOptimizables;pm++)
                   {
                     HD_avg[pm]+= HDsaved[pm];
-                    Return_t val = (HDsaved[pm] + 2.0*(eloc_new - curAvg_w)*Dsaved[pm]);
+                    Return_t val;
+                    if (samplePsi2) val = (HDsaved[pm] + 2.0*(eloc_new - curAvg_w)*Dsaved[pm] );
+                    else val = (HDsaved[pm] + (eloc_new - curAvg_w)*Dsaved[pm]);
                     EDtotals[pm] +=  val;
                     EDtotals_w[pm] += weight*val;
                   }
@@ -118,7 +120,11 @@ namespace qmcplusplus
                 for (int pm=0; pm<NumOptimizables;pm++)
                   {
                     URV[pm] += 2.0*(eloc_new*HDsaved[pm] - curAvg*HD_avg[pm]);
-                    Return_t val =  2.0*(eloc_new*eloc_new - e2)*Dsaved[pm]
+                    Return_t val;
+                    if (samplePsi2) val=  2.0*((eloc_new-curAvg_w)*(eloc_new-curAvg_w)-curVar_w)*Dsaved[pm]
+                                    + 2.0*(eloc_new-curAvg_w)*(HDsaved[pm] - EDtotals_w[pm]);
+//                                     - 2.0*curAvg_w*EDtotals_w[pm];
+                    else val = (eloc_new*eloc_new - e2)*Dsaved[pm]
                                     + 2.0*eloc_new*(HDsaved[pm])
                                     - 2.0*curAvg_w*EDtotals_w[pm];
                     E2Dtotals[pm] += val ;
@@ -138,7 +144,7 @@ namespace qmcplusplus
 //         if ((CSWeight/wgtinv) < MinNumWalkers)
         if (NumWalkersEff < MinNumWalkers*NumSamples)
           {
-            ERRORMSG("CostFunction-> Number of Effective Walkers is too small: " << NumWalkersEff/NumSamples<< " < "<<MinNumWalkers)
+            ERRORMSG("CostFunction-> Number of Effective Walkers is too small " << NumWalkersEff<< "Minimum required"<<MinNumWalkers*NumSamples)
             //ERRORMSG("Going to stop now.")
             IsValid=false;
           }
@@ -215,6 +221,7 @@ namespace qmcplusplus
 
     RealType et_tot=0.0;
     RealType e2_tot=0.0;
+    RealType TotLogPsi=0.0;
 
     //#pragma omp parallel reduction(+:et_tot,e2_tot)
 #pragma omp parallel
@@ -251,12 +258,14 @@ namespace qmcplusplus
           e0 += saved[ENERGY_TOT] = x;
           e2 += x*x;
           saved[ENERGY_FIXED] = hClones[ip]->getLocalPotential();
+//           if (samplePsi2) thisWalker.Weight=1.0;
+//           else thisWalker.Weight=std::exp(saved[LOGPSI_FIXED]+saved[LOGPSI_FREE]);
           thisWalker.Weight=1.0;
 
 
           vector<Return_t>* Dsaved= &((*TempDerivRecords[ip])[iw]);
           vector<Return_t>* HDsaved= &((*TempHDerivRecords[ip])[iw]);
-          psiClones[ip]->evaluateDerivatives(wRef,0.0,OptVariablesForPsi,*Dsaved,*HDsaved);
+          psiClones[ip]->evaluateDerivatives(wRef,saved[ENERGY_TOT]-saved[ENERGY_FIXED],OptVariablesForPsi,*Dsaved,*HDsaved);
           //for(int l=0; l<NumOptimizables; l++) (*HDsaved)[l] += saved[ENERGY_FIXED]* (*Dsaved)[l];
           //for(int l=0; l<NumOptimizables; l++) cout<<HDsaved[l]<<"  "<<Dsaved[l];
           //cout<<endl;
@@ -312,6 +321,7 @@ namespace qmcplusplus
     Return_t wgt_tot=0.0;
     Return_t wgt_bare=0.0;
     Return_t wgt_bare2=0.0;
+    Return_t NSm1 = 1.0/NumSamples;
 
     //#pragma omp parallel reduction(+:wgt_tot)
 #pragma omp parallel
@@ -319,7 +329,8 @@ namespace qmcplusplus
       int ip = omp_get_thread_num();
       //bool usingWeight=UseWeight;
       MCWalkerConfiguration& wRef(*wClones[ip]);
-      Return_t eloc_new, wgt_node=0.0, wgt_node_bare=0.0, wgt_bare2_node=0.0;
+      Return_t eloc_new, wgt_node=0.0;
+//       , wgt_node_bare=0.0, wgt_bare2_node=0.0;
       //int totalElements=W.getTotalNum()*OHMMS_DIM;
       MCWalkerConfiguration::iterator it(wRef.begin());
       MCWalkerConfiguration::iterator it_end(wRef.end());
@@ -337,8 +348,10 @@ namespace qmcplusplus
           RealType KEtemp = H_KE_Node[ip]->evaluate(wRef);
           //if (KEtemp<MinKE) KEtemp=std::fabs(KEtemp-MinKE)+MinKE;
           eloc_new = KEtemp + saved[ENERGY_FIXED];
-          Return_t this_bare_weight=(1.0);
-          Return_t weight = std::min(this_bare_weight = std::exp(2.0*(logpsi-saved[LOGPSI_FREE])),MaxWeight) ;
+//           Return_t this_bare_weight=(1.0);
+          Return_t weight;
+          if (samplePsi2) weight = std::min( std::exp(2.0*(logpsi-saved[LOGPSI_FREE])),MaxWeight) ;
+          else weight = std::min( std::exp( logpsi-saved[LOGPSI_FREE] ),MaxWeight) ;
           if (KEtemp<MinKE) weight=0.0;
           //  Return_t weight = usingWeight?std::exp(2.0*(logpsi-saved[LOGPSI_FREE])):1.0;
           saved[ENERGY_NEW]=eloc_new;
@@ -350,16 +363,16 @@ namespace qmcplusplus
           //for(int l=0; l<NumOptimizables; l++) (*HDsaved)[l] += saved[ENERGY_FIXED]* (*Dsaved)[l];
 
           wgt_node+=weight;
-          wgt_node_bare+=this_bare_weight;
-          wgt_bare2_node+=this_bare_weight*this_bare_weight;
+//           wgt_node_bare+=this_bare_weight;
+//           wgt_bare2_node+=this_bare_weight*this_bare_weight;
         }
 
 #pragma omp atomic
       wgt_tot += wgt_node;
-#pragma omp atomic
-      wgt_bare += wgt_node_bare;
-#pragma omp atomic
-      wgt_bare2 +=wgt_bare2_node;
+// #pragma omp atomic
+//       wgt_bare += wgt_node_bare;
+// #pragma omp atomic
+//       wgt_bare2 +=wgt_bare2_node;
     }
 
     //this is MPI barrier
@@ -368,9 +381,7 @@ namespace qmcplusplus
     myComm->allreduce(wgt_tot);
     myComm->allreduce(wgt_bare);
     myComm->allreduce(wgt_bare2);
-
-    for (int i=0; i<SumValue.size(); i++) SumValue[i]=0.0;
-
+    for (int i=0; i<SumValue.size(); i++) SumValue[i]=0.0; 
     CSWeight=wgt_tot=1.0/wgt_tot;
     for (int ip=0; ip<NumThreads; ip++)
       {

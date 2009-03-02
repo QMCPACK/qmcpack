@@ -188,6 +188,48 @@ namespace qmcplusplus {
     }
   }
   
+  VMCUpdateAllSamplePsi::VMCUpdateAllSamplePsi(MCWalkerConfiguration& w, TrialWaveFunction& psi, 
+      QMCHamiltonian& h, RandomGenerator_t& rg):
+    QMCUpdateBase(w,psi,h,rg), nSubSteps(1)
+    { 
+      myParams.add(nSubSteps,"subSteps","int"); 
+      myParams.add(nSubSteps,"substeps","int");
+    }
+
+  VMCUpdateAllSamplePsi::~VMCUpdateAllSamplePsi()
+  {
+  }
+
+  void VMCUpdateAllSamplePsi::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure) 
+  {
+    for(; it!= it_end; ++it)
+    {
+      MCWalkerConfiguration::Walker_t& thisWalker(**it);
+      makeGaussRandomWithEngine(deltaR,RandomGen);
+      if(!W.makeMove(thisWalker,deltaR,m_sqrttau)) continue;
+      //W.R = m_sqrttau*deltaR + thisWalker.R;
+      //W.update();
+
+      RealType logpsi(Psi.evaluateLog(W));
+      RealType g= std::exp( (logpsi-thisWalker.Properties(LOGPSI)));
+      if(RandomGen() > g) 
+      {
+        thisWalker.Age++;
+ ++nReject; 
+        H.rejectedMove(W,thisWalker);
+      } 
+      else 
+      {
+        RealType eloc=H.evaluate(W);
+ thisWalker.R = W.R;
+        thisWalker.resetProperty(logpsi,Psi.getPhase(),eloc);
+        H.auxHevaluate(W,thisWalker);
+        thisWalker.Weight=std::exp(logpsi);
+ H.saveProperty(thisWalker.getPropertyBase());
+ ++nAccept;
+      }
+    }
+  }
   
 }
 

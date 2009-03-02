@@ -30,7 +30,7 @@ namespace qmcplusplus {
     MPIObjectBase(0),
     W(w),H(h),Psi(psi),  Write2OneXml(true),
     PowerE(2), NumCostCalls(0), NumSamples(0), MaxWeight(5), w_w(0.0),
-    w_en(0.0), w_var(0.0), w_abs(0.0), MinKE(-100.0),
+    w_en(0.0), w_var(0.0), w_abs(0.0), MinKE(-100.0),samplePsi2(true),
     CorrelationFactor(0.0), m_wfPtr(NULL), m_doc_out(NULL), msg_stream(0), debug_stream(0)
   { 
 
@@ -73,7 +73,7 @@ namespace qmcplusplus {
 
     app_log() << "Effective Target Energy = " << EtargetEff << endl;
     app_log() << "Cost Function = " << w_en << "*<E> + " 
-      << w_var << "*<Var> + " << w_w << "*<Var(unreweighted)> + " << endl;
+      << w_var << "*<Var> + " << w_w << "*<Var(unreweighted)> " << endl;
     //if(UseWeight) 
       //app_log() << "Correlated sampling is used." << endl;
     //else
@@ -82,7 +82,7 @@ namespace qmcplusplus {
     if(msg_stream) {
       *msg_stream << "  Total number of walkers          = " << NumSamples << endl;
       *msg_stream << "  Effective Target Energy = " << EtargetEff << endl;
-      *msg_stream << "  Cost Function = " << w_en << "*<E> + " << w_var << "*<Var> + " << w_abs << "*|E-E_T|^" << PowerE << endl;
+      *msg_stream << "  Cost Function = " << w_en << "*<E> + " << w_var << "*<Var> + " << w_w << "*<Var(unreweighted)> " << endl;
       *msg_stream << "  Optimization report = ";
       *msg_stream << "cost, walkers, eavg/wgt, eavg/walkers, evar/wgt, evar/walkers, evar_abs\n";
       *msg_stream << "  Optimized variables = ";
@@ -441,8 +441,9 @@ QMCCostFunctionBase::Return_t QMCCostFunctionBase::Cost() {
   bool
   QMCCostFunctionBase::put(xmlNodePtr q) {
 
-    //string useWeightStr("yes");
+    string useWeightStr("yes");
     string writeXmlPerStep("no");
+    
     ParameterSet m_param;
     //m_param.add(useWeightStr,"useWeight","string");
     m_param.add(writeXmlPerStep,"dumpXML","string");
@@ -452,9 +453,11 @@ QMCCostFunctionBase::Return_t QMCCostFunctionBase::Cost() {
     m_param.add(MinNumWalkers,"minWalkers","scalar");
     m_param.add(MaxWeight,"maxWeight","scalar");
     m_param.add(MinKE,"MinKE","scalar");
+    m_param.add(useWeightStr,"reweight","string");
     m_param.put(q);
 
-    //UseWeight = (useWeightStr == "yes");
+    samplePsi2 = (useWeightStr != "psi");
+    app_log()<<"  samplePsi2 is "<<samplePsi2<<endl;
     Write2OneXml = (writeXmlPerStep == "no");
 
     xmlNodePtr qsave=q;
@@ -615,11 +618,11 @@ QMCCostFunctionBase::Return_t QMCCostFunctionBase::Cost() {
 				pAttrib.put(cset[i]);
 				if(pname == "energy") 
 					putContent(w_en,cset[i]);
-				else if(pname == "variance") 
+				else if((pname == "variance")|| (pname == "unreweightedvariance") ) 
 					putContent(w_w,cset[i]);
 				else if(pname == "difference")
 					putContent(w_abs,cset[i]);
-				else if(pname == "reweightedVariance")
+				else if((pname == "reweightedVariance") ||(pname == "reweightedvariance"))
 					putContent(w_var,cset[i]);
       }
     }  

@@ -345,6 +345,107 @@ namespace qmcplusplus {
     }
     myTimers[0]->stop();
   }
+  
+  
+  VMCUpdatePbyPSamplePsi::VMCUpdatePbyPSamplePsi(MCWalkerConfiguration& w, TrialWaveFunction& psi, 
+      QMCHamiltonian& h, RandomGenerator_t& rg):
+    QMCUpdateBase(w,psi,h,rg), nSubSteps(1)
+    { 
+      myParams.add(nSubSteps,"subSteps","int"); 
+      myParams.add(nSubSteps,"substeps","int");
+
+      myTimers.push_back(new NewTimer("VMCUpdatePbyP::advance")); //timer for the walker loop
+      myTimers.push_back(new NewTimer("VMCUpdatePbyP::movePbyP")); //timer for MC, ratio etc
+      myTimers.push_back(new NewTimer("VMCUpdatePbyP::updateMBO")); //timer for measurements
+      myTimers.push_back(new NewTimer("VMCUpdatePbyP::energy")); //timer for measurements
+      TimerManager.addTimer(myTimers[0]);
+      TimerManager.addTimer(myTimers[1]);
+      TimerManager.addTimer(myTimers[2]);
+      TimerManager.addTimer(myTimers[3]);
+    }
+
+  VMCUpdatePbyPSamplePsi::~VMCUpdatePbyPSamplePsi()
+  {
+  }
+
+  void VMCUpdatePbyPSamplePsi::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure) 
+  {
+
+    myTimers[0]->start();
+    for(; it != it_end;++it) 
+    {
+
+      Walker_t& thisWalker(**it);
+      Walker_t::Buffer_t& w_buffer(thisWalker.DataSet);
+
+      W.R = thisWalker.R;
+      w_buffer.rewind();
+      W.copyFromBuffer(w_buffer);
+      Psi.copyFromBuffer(W,w_buffer);
+
+      myTimers[1]->start();
+      for(int iter=0; iter<nSubSteps; ++iter) 
+      {
+        makeGaussRandomWithEngine(deltaR,RandomGen);
+        bool stucked=true;
+        for(int iat=0; iat<W.getTotalNum(); ++iat) 
+        {
+          PosType dr = m_sqrttau*deltaR[iat];
+          //ignore illegal moves
+          if(!W.makeMoveAndCheck(iat,dr)) continue;
+          //PosType newpos = W.makeMove(iat,dr);
+
+          RealType ratio = Psi.ratio(W,iat);
+          RealType prob = ratio;
+          //RealType prob = std::min(1.0e0,ratio*ratio);
+          if(RandomGen() < prob) 
+          { 
+            stucked=false;
+            ++nAccept;
+            W.acceptMove(iat);
+            Psi.acceptMove(W,iat);
+          } 
+          else 
+          {
+            ++nReject; 
+            W.rejectMove(iat); 
+            Psi.rejectMove(iat);
+          }
+        }
+        if(stucked) 
+        {
+          ++nAllRejected;
+          thisWalker.rejectedMove();
+        }
+      }
+      myTimers[1]->stop();
+
+      myTimers[2]->start();
+      thisWalker.R = W.R;
+      PAOps<RealType,OHMMS_DIM>::copy(W.G,thisWalker.Drift);
+      w_buffer.rewind();
+      W.updateBuffer(w_buffer);
+      RealType logpsi = Psi.updateBuffer(W,w_buffer,true);
+
+      //W.copyToBuffer(w_buffer);
+      //RealType logpsi = Psi.evaluate(W,w_buffer);
+      myTimers[2]->stop();
+
+      myTimers[3]->start();
+      RealType eloc=H.evaluate(W);
+      myTimers[3]->stop();
+
+      thisWalker.resetProperty(logpsi,Psi.getPhase(),eloc);
+      H.auxHevaluate(W,thisWalker);
+      thisWalker.Weight=std::exp(logpsi);
+      H.saveProperty(thisWalker.getPropertyBase());
+
+    }
+    myTimers[0]->stop();
+  }
+
+  
+  
 }
 
 /***************************************************************************

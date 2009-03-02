@@ -61,7 +61,8 @@ namespace qmcplusplus {
 	  scalars[target](ePtr[source],wwght);
 	}
         scalars[ target](wwght*ePtr[PsiIndex+FirstHamiltonian],1);
-        scalars[ target+1](wwght,1);
+        scalars[ target+1](awalker.Weight,1);
+        scalars[ target+2](ePtr[LOCALENERGY]* awalker.Weight,1.0);
     }
 
     /*@{*/
