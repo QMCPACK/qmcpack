@@ -213,6 +213,7 @@ namespace qmcplusplus
         }
         dHLogPsi.resize(NumVars); 
       } 
+      return true;
     }
 
     void reportStatus(ostream& os)
