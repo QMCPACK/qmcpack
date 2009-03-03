@@ -47,47 +47,37 @@ namespace qmcplusplus {
     //start the main estimator
     Estimators->start(nBlocks);
 
-#pragma omp parallel
+    for(int ip=0; ip<NumThreads; ++ip) Movers[ip]->startRun(nBlocks,false);
+
+    for(int block=0;block<nBlocks; ++block)
     {
-      int now=0;
-
-#pragma omp for 
-      for(int ip=0; ip<NumThreads; ++ip) 
-        Movers[ip]->startRun(nBlocks,false);
-
-      for(int block=0;block<nBlocks; ++block)
+#pragma omp parallel for 
+      for(int ip=0; ip<NumThreads; ++ip)
       {
-#pragma omp for 
-        for(int ip=0; ip<NumThreads; ++ip)
-        {
-          IndexType updatePeriod=(QMCDriverMode[QMC_UPDATE_MODE])?Period4CheckProperties:(nBlocks+1)*nSteps;
-          //assign the iterators and resuse them
-          MCWalkerConfiguration::iterator wit(W.begin()+wPerNode[ip]), wit_end(W.begin()+wPerNode[ip+1]);
+        //IndexType updatePeriod=(QMCDriverMode[QMC_UPDATE_MODE])?Period4CheckProperties:(nBlocks+1)*nSteps;
+        IndexType updatePeriod=(QMCDriverMode[QMC_UPDATE_MODE])?Period4CheckProperties:0;
+        //assign the iterators and resuse them
+        MCWalkerConfiguration::iterator wit(W.begin()+wPerNode[ip]), wit_end(W.begin()+wPerNode[ip+1]);
 
-          Movers[ip]->startBlock(nSteps);
-          int now_loc=now;
-          for(int step=0; step<nSteps;++step)
-          {
-            wClones[ip]->resetCollectables();
-            Movers[ip]->advanceWalkers(wit,wit_end,false);
-            Movers[ip]->accumulate(wit,wit_end);
-            ++now_loc;
-            if(now_loc%updatePeriod==0) Movers[ip]->updateWalkers(wit,wit_end);
-            if(now_loc%myPeriod4WalkerDump==0) wClones[ip]->saveEnsemble(wit,wit_end);
-          } 
-          Movers[ip]->stopBlock(false);
-        }//end-of-parallel for
-
-        //increase now
-        now+=nSteps;
-#pragma omp master
+        Movers[ip]->startBlock(nSteps);
+        int now_loc=CurrentStep;
+        for(int step=0; step<nSteps;++step)
         {
-          CurrentStep+=nSteps;
-          Estimators->stopBlock(estimatorClones);
-          recordBlock(block+1);
-        }//end of mater
-      }//block
-    }//end of parallel
+          wClones[ip]->resetCollectables();
+          Movers[ip]->advanceWalkers(wit,wit_end,false);
+          Movers[ip]->accumulate(wit,wit_end);
+          ++now_loc;
+          if(updatePeriod&& now_loc%updatePeriod==0) Movers[ip]->updateWalkers(wit,wit_end);
+          if(Period4WalkerDump&& now_loc%myPeriod4WalkerDump==0) wClones[ip]->saveEnsemble(wit,wit_end);
+        } 
+        Movers[ip]->stopBlock(false);
+      }//end-of-parallel for
+
+      CurrentStep+=nSteps;
+      Estimators->stopBlock(estimatorClones);
+      //recordBlock(block+1);
+    }//block
+
     Estimators->stop(estimatorClones);
 
     //copy back the random states
@@ -154,17 +144,17 @@ namespace qmcplusplus {
 
         branchClones[ip] = new BranchEngineType(*branchEngine);
 
-	if(reweight=="yes")
-	{
-   app_log() << "  WFMCUpdateAllWithReweight"<<endl;
-	  Movers[ip]=new WFMCUpdateAllWithReweight(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip],weightLength,Eindex);
-	}
-  else if (reweight=="psi")
- {
-   app_log() << "  Sampling Psi to increase number of walkers near nodes"<<endl;
-   if (QMCDriverMode[QMC_UPDATE_MODE]) Movers[ip]=new VMCUpdatePbyPSamplePsi(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
-   else Movers[ip]=new VMCUpdateAllSamplePsi(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
- }
+        if(reweight=="yes")
+        {
+          app_log() << "  WFMCUpdateAllWithReweight"<<endl;
+          Movers[ip]=new WFMCUpdateAllWithReweight(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip],weightLength,Eindex);
+        }
+        else if (reweight=="psi")
+        {
+          app_log() << "  Sampling Psi to increase number of walkers near nodes"<<endl;
+          if (QMCDriverMode[QMC_UPDATE_MODE]) Movers[ip]=new VMCUpdatePbyPSamplePsi(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
+          else Movers[ip]=new VMCUpdateAllSamplePsi(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
+        }
         else if(QMCDriverMode[QMC_UPDATE_MODE])
         {
           app_log() << "  PbyP moves"<<endl;
