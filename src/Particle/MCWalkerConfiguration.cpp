@@ -20,6 +20,7 @@
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "Message/Communicate.h"
 #include "Message/CommOperators.h"
+#include "Utilities/IteratorUtility.h"
 #include <map>
 namespace qmcplusplus {
 
@@ -44,6 +45,7 @@ MCWalkerConfiguration::MCWalkerConfiguration(const MCWalkerConfiguration& mcw)
 ///default destructor
 MCWalkerConfiguration::~MCWalkerConfiguration(){
   if(OwnWalkers) destroyWalkers(WalkerList.begin(), WalkerList.end());
+  delete_iter(SampleStack.begin(),SampleStack.end());
 }
 
 
@@ -255,29 +257,38 @@ void MCWalkerConfiguration::resetWalkerProperty(int ncopy) {
   resizeWalkerHistories();
 }
 
+void MCWalkerConfiguration::setNumSamples(int n)
+{
+  MaxSamples=n;
+  CurSampleCount=0;
+  int nadd=n-SampleStack.size();
+  while(nadd>0)
+  {
+    SampleStack.push_back(new ParticlePos_t(R));
+    --nadd;
+  }
+}
+
 void MCWalkerConfiguration::saveEnsemble()
 {
-  iterator it(WalkerList.begin()),it_end(WalkerList.end());
-  while(it != it_end) {
-    SampleStack.push_back(new ParticlePos_t((*it)->R));
-    ++it;
-  }
+  saveEnsemble(WalkerList.begin(),WalkerList.end());
 }
 
 void MCWalkerConfiguration::saveEnsemble(iterator first, iterator last)
 {
   while(first != last) 
   {
-    SampleStack.push_back(new ParticlePos_t((*first)->R));
-    ++first;
+    (*SampleStack[CurSampleCount++])=(*first++)->R;
   }
 }
 void MCWalkerConfiguration::loadEnsemble()
 {
-  if(SampleStack.empty()) return;
+  //if(SampleStack.empty()) return;
+  if(!MaxSamples) return;
 
   Walker_t::PropertyContainer_t prop(1,PropertyList.size());
-  int nsamples=SampleStack.size();
+  //int nsamples=SampleStack.size();
+  int nsamples=MaxSamples;
 
   delete_iter(WalkerList.begin(),WalkerList.end());
   WalkerList.resize(nsamples);
@@ -292,30 +303,39 @@ void MCWalkerConfiguration::loadEnsemble()
   }
   resizeWalkerHistories();
   SampleStack.clear();
+
+  MaxSamples=0;
+  CurSampleCount=0;
 }
 
 void MCWalkerConfiguration::loadEnsemble(MCWalkerConfiguration& other)
 {
-  if(SampleStack.empty()) return;
+  //if(SampleStack.empty()) return;
+  if(!MaxSamples) return;
   Walker_t::PropertyContainer_t prop(1,PropertyList.size());
-  int nsamples=SampleStack.size();
-  for(int i=0; i<nsamples; ++i)
+  //int nsamples=SampleStack.size();
+  //for(int i=0; i<nsamples; ++i)
+  for(int i=0; i<MaxSamples; ++i)
   {
     Walker_t* awalker=new Walker_t(GlobalNum);
     awalker->R = *(SampleStack[i]);
     awalker->Drift = 0.0;
     awalker->Properties.copy(prop);
     other.WalkerList.push_back(awalker);
-    delete SampleStack[i];
+    //delete SampleStack[i];
   }
   other.resizeWalkerHistories();
-  SampleStack.clear();
+  //SampleStack.clear();
+  MaxSamples=0;
+  CurSampleCount=0;
 }
 
 void MCWalkerConfiguration::clearEnsemble()
 {
   delete_iter(SampleStack.begin(),SampleStack.end());
   SampleStack.clear();
+  MaxSamples=0;
+  CurSampleCount=0;
 }
 }
 

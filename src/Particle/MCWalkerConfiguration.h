@@ -239,9 +239,9 @@ namespace qmcplusplus {
     inline bool updatePbyP() const { return ReadyForPbyP;}
 
     //@{save/load/clear function for optimization
-    inline int numSamples() const { return SampleStack.size();}
+    inline int numSamples() const { return CurSampleCount;}
     ///set the number of max samples
-    inline void setNumSamples(int n) { MaxSamples=n;}
+    void setNumSamples(int n);
     ///save the position of current walkers to SampleStack
     void saveEnsemble();
     ///save the position of current walkers
