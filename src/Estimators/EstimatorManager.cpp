@@ -342,9 +342,7 @@ namespace qmcplusplus {
       else //not a master, pack and send the data
         myRequest[0]=myComm->isend(0,myComm->rank(),*RemoteData[0]);
 #else
-      //use allocate buffers
-      *RemoteData[1]=*RemoteData[0];
-      myComm->reduce(&((*RemoteData[1])[0]),&((*RemoteData[0])[0]),BufferSize);
+      myComm->reduce(*RemoteData[0]);
 #endif
       if(Options[MANAGE])
       {
