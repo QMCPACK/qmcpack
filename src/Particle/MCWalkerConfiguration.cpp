@@ -264,7 +264,6 @@ void MCWalkerConfiguration::setNumSamples(int n)
   //do not add anything
   if(n==0) return;
   int nadd=n-SampleStack.size();
-  cout << "  Adding samples " << nadd << " " << R.size() << endl;
   while(nadd>0)
   {
     SampleStack.push_back(new ParticlePos_t(R));
