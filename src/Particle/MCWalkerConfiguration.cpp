@@ -261,7 +261,10 @@ void MCWalkerConfiguration::setNumSamples(int n)
 {
   MaxSamples=n;
   CurSampleCount=0;
+  //do not add anything
+  if(n==0) return;
   int nadd=n-SampleStack.size();
+  cout << "  Adding samples " << nadd << " " << R.size() << endl;
   while(nadd>0)
   {
     SampleStack.push_back(new ParticlePos_t(R));
@@ -276,6 +279,8 @@ void MCWalkerConfiguration::saveEnsemble()
 
 void MCWalkerConfiguration::saveEnsemble(iterator first, iterator last)
 {
+  //safety check
+  if(MaxSamples==0) return;
   while(first != last) 
   {
     (*SampleStack[CurSampleCount++])=(*first++)->R;
