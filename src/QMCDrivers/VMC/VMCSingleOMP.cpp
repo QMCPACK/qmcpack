@@ -110,11 +110,17 @@ namespace qmcplusplus {
     if(myPeriod4WalkerDump==0) myPeriod4WalkerDump=Period4WalkerDump;
     if(QMCDriverMode[QMC_WARMUP]) myPeriod4WalkerDump=nBlocks*nSteps;
     int samples_th=nTargetSamples/myComm->size()/NumThreads;
-    for(int ip=0; ip<NumThreads;++ip)
+
+#pragma omp parallel 
     {
-      wClones[ip]->clearEnsemble();
-      wClones[ip]->setNumSamples(samples_th);
+#pragma omp critical
+      {
+        int ip=omp_get_thread_num();
+        wClones[ip]->clearEnsemble();
+        wClones[ip]->setNumSamples(samples_th);
+      }
     }
+
     app_log() << "  Samples are dumped at every " << myPeriod4WalkerDump << " step " << endl;
     app_log() << "  Total Sample Size =" << nTargetSamples
       << "\n  Sample size per node per thread = " << samples_th << endl;
