@@ -56,14 +56,14 @@ namespace qmcplusplus {
         //           app_log()<<"Obs#"<<i;
         (*Vit)=0.0;
         int k=0;
-        for(int j=0;j<walkerLengths[i].back();j++){
+        for(int j=0;j<walkerLengths[i].back()+1;j++){
           (*Vit) += tWalker->PropertyHistory[Pindices[i]][j];
-          if(j==walkerLengths[i][k]-1){
+          if(j==walkerLengths[i][k]){
             double Tsum=(*Vit);
             Vit++;
             (*Vit)=Tsum;
             k++;
-            (*Vit2)=Tsum* P.PropertyList[LOCALENERGY];
+            (*Vit2)=Tsum* (tWalker->Properties(LOCALENERGY));
             Vit2++;
           }
           //             app_log()<<"  "<<tWalker->PropertyHistory[Pindices[i]][walkerLengths[i][j]-1];
@@ -73,6 +73,7 @@ namespace qmcplusplus {
       //       }
       // 	double* wFWval = tWalker->getPropertyBase();
       std::copy(Values.begin(),Values.end(),tWalker->getPropertyBase()+FirstHamiltonian+myIndex );
+    std::copy(EValues.begin(),EValues.end(),tWalker->getPropertyBase()+FirstHamiltonian+myIndex+nValues);
 
       return 0.0;
   }
@@ -103,14 +104,14 @@ namespace qmcplusplus {
       //           app_log()<<"Obs#"<<i;
       (*Vit)=0.0;
       int k=0;
-      for(int j=0;j<walkerLengths[i].back();j++){
+      for(int j=0;j<walkerLengths[i].back()+1;j++){
         (*Vit) += tWalker->PropertyHistory[Pindices[i]][j];
-        if(j==walkerLengths[i][k]-1){
+        if(j==walkerLengths[i][k]){
           double Tsum=(*Vit);
           Vit++;
           (*Vit)=Tsum;
           k++;
-          (*Vit2)=Tsum* P.PropertyList[LOCALENERGY];
+          (*Vit2)=Tsum* tWalker->Properties(LOCALENERGY);
           Vit2++;
         }
         //             app_log()<<"  "<<tWalker->PropertyHistory[Pindices[i]][walkerLengths[i][j]-1];
@@ -120,6 +121,7 @@ namespace qmcplusplus {
     //       }
     // 	double* wFWval = tWalker->getPropertyBase();
     std::copy(Values.begin(),Values.end(),tWalker->getPropertyBase()+FirstHamiltonian+myIndex );
+    std::copy(EValues.begin(),EValues.end(),tWalker->getPropertyBase()+FirstHamiltonian+myIndex+nValues);
     // 	wFWval += FirstHamiltonian;
 
     return 0.0;

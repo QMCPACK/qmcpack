@@ -52,10 +52,25 @@ namespace qmcplusplus {
       vector<double>::iterator Vit=Values.begin();
       for(int i=0;i<nObservables;i++){
         for(int j=0;j<walkerLengths[i].size();j++,Vit++){
-          (*Vit) = tWalker->PropertyHistory[Pindices[i]][walkerLengths[i][j]-1];
+          (*Vit) = tWalker->PropertyHistory[Pindices[i]][walkerLengths[i][j]];
         }
       }
       std::copy(Values.begin(),Values.end(),tWalker->getPropertyBase()+FirstHamiltonian+myIndex);
+//       cerr<<"REJECTEDMOVE"<<endl;
+//       Vit=Values.begin();
+//       while(Vit!=Values.end())
+//       {
+//         cerr<<(*Vit)<<"  ";
+//         Vit++;
+//       }
+//       cerr<<endl;
+//       cerr<<"REJECTEDMOVE ARRAY"<<endl;
+//       for(int dindex=0;dindex<tWalker->PropertyHistory.size();dindex++)
+//       {
+//         for(int f=0;f<20;f++) cerr<<tWalker->PropertyHistory[dindex][f]<<"  ";
+//         cerr<<endl; 
+//       }
+//       cout<<tWalker->PropertyHistory[dindex].front()<<endl; 
       return 0.0;
     }
 
@@ -67,9 +82,23 @@ namespace qmcplusplus {
       vector<double>::iterator Vit=Values.begin();
       for(int i=0;i<nObservables;i++)
         for(int j=0;j<walkerLengths[i].size();j++,Vit++)
-          (*Vit) = tWalker->PropertyHistory[Pindices[i]][walkerLengths[i][j]-1];
+          (*Vit) = tWalker->PropertyHistory[Pindices[i]][walkerLengths[i][j] ];
 
       std::copy(Values.begin(),Values.end(),tWalker->getPropertyBase()+FirstHamiltonian+myIndex);
+//       cerr<<"ACCEPTED VALUES"<<endl;
+//       Vit=Values.begin();
+//       while(Vit!=Values.end())
+//       {
+//         cerr<<(*Vit)<<"  ";
+//         Vit++;
+//       }
+//       cerr<<endl;
+//       cerr<<"ACCEPTED ARRAY"<<endl;
+//       for(int dindex=0;dindex<tWalker->PropertyHistory.size();dindex++)
+//       {
+//         for(int f=0;f<20;f++) cerr<<tWalker->PropertyHistory[dindex][f]<<"  ";
+//         cerr<<endl; 
+//       }
       return 0.0;
     }
 

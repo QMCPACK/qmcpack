@@ -77,7 +77,7 @@ namespace qmcplusplus {
         vector<int> Parameters;
         if(blockSeries==0) putContent(Parameters,tcur);
         else{
-          for( int pl=blockFreq;pl<=blockSeries;pl+=blockFreq) Parameters.push_back(pl);
+          for( int pl=blockFreq-1;pl<blockSeries;pl+=blockFreq) Parameters.push_back(pl);
         }
 
         int numT=Parameters.size();

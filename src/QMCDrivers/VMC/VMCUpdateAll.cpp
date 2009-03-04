@@ -38,7 +38,14 @@ namespace qmcplusplus {
     {
       MCWalkerConfiguration::Walker_t& thisWalker(**it);
       makeGaussRandomWithEngine(deltaR,RandomGen);
-      if(!W.makeMove(thisWalker,deltaR,m_sqrttau)) continue;
+      bool Cont(true);
+      if(!W.makeMoveWithDrift(thisWalker,deltaR, m_sqrttau)) Cont=false;
+      if (!Cont)
+      {
+        H.rejectedMove(W,thisWalker); 
+        continue;
+      }
+
       //W.R = m_sqrttau*deltaR + thisWalker.R;
       //W.update();
 
@@ -48,7 +55,7 @@ namespace qmcplusplus {
       {
         thisWalker.Age++;
 	++nReject; 
-        H.rejectedMove(W,thisWalker);
+        H.rejectedMove(W,thisWalker); 
       } 
       else 
       {
@@ -79,7 +86,13 @@ namespace qmcplusplus {
     {
       MCWalkerConfiguration::Walker_t& thisWalker(**it);
       makeGaussRandomWithEngine(deltaR,RandomGen);
-      if(!W.makeMoveWithDrift(thisWalker,deltaR, m_sqrttau)) continue;
+      bool Cont(true);
+      if(!W.makeMoveWithDrift(thisWalker,deltaR, m_sqrttau)) Cont=false;
+      if (!Cont)
+      {
+        H.rejectedMove(W,thisWalker); 
+        continue;
+      } 
       //W.R = m_sqrttau*deltaR + thisWalker.R + thisWalker.Drift;
       //W.update();
       RealType logpsi(Psi.evaluateLog(W));
@@ -95,7 +108,7 @@ namespace qmcplusplus {
       {
         thisWalker.Age++;
 	++nReject; 
-	H.rejectedMove(W,thisWalker);
+	H.rejectedMove(W,thisWalker); 
       } 
       else 
       {
@@ -140,7 +153,14 @@ namespace qmcplusplus {
       //create a 3N-Dimensional Gaussian with variance=1
       makeGaussRandomWithEngine(deltaR,RandomGen);
       //reject illegal positions or big displacement
-      if(!W.makeMoveWithDrift(thisWalker,deltaR, m_sqrttau)) continue;
+      bool Cont(true);
+      if(!W.makeMoveWithDrift(thisWalker,deltaR, m_sqrttau)) Cont=false;
+      if (!Cont)
+      {
+        H.rejectedMove(W,thisWalker);
+        H.auxHevaluate(W,thisWalker);
+        continue;
+      }
       ///W.R = m_sqrttau*deltaR + thisWalker.Drift;
       ///W.R += thisWalker.R;
       ///W.update();
@@ -164,7 +184,7 @@ namespace qmcplusplus {
         thisWalker.Age++;
         //           thisWalker.Properties(R2ACCEPTED)=0.0;
         //           thisWalker.Properties(R2PROPOSED)=rr_proposed;
-        H.rejectedMove(W,thisWalker);
+        H.rejectedMove(W,thisWalker); 
       } 
       else 
       {

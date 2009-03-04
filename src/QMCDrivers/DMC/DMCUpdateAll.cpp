@@ -60,7 +60,13 @@ namespace qmcplusplus {
       //create a 3N-Dimensional Gaussian with variance=1
       makeGaussRandomWithEngine(deltaR,RandomGen);
 
-      if(!W.makeMoveWithDrift(thisWalker,deltaR,m_sqrttau)) continue;
+      bool Cont(true);
+      if(!W.makeMoveWithDrift(thisWalker,deltaR, m_sqrttau)) Cont=false;
+      if (!Cont)
+      {
+        H.rejectedMove(W,thisWalker); 
+        continue;
+      }
       //W.R = m_sqrttau*deltaR + thisWalker.Drift;
       //RealType rr_proposed = Dot(W.R,W.R);
       //W.R += thisWalker.R;
@@ -113,7 +119,7 @@ namespace qmcplusplus {
 	  H.saveProperty(thisWalker.getPropertyBase());
         }
       }
-      thisWalker.Weight *= branchEngine->branchWeight(eold,enew);
+      thisWalker.Weight *= branchEngine->branchWeight(enew,eold);
       
       //branchEngine->accumulate(eold,1);
       
@@ -158,8 +164,14 @@ namespace qmcplusplus {
 
       //create a 3N-Dimensional Gaussian with variance=1
       makeGaussRandomWithEngine(deltaR,RandomGen);
-      
-      if(!W.makeMoveWithDrift(thisWalker,deltaR,m_sqrttau)) continue;
+       
+      bool Cont(true);
+      if(!W.makeMoveWithDrift(thisWalker,deltaR, m_sqrttau)) Cont=false;
+      if (!Cont)
+      {
+        H.rejectedMove(W,thisWalker); 
+        continue;
+      }
       //W.R = m_sqrttau*deltaR + thisWalker.Drift;
       //RealType rr_proposed = Dot(W.R,W.R);
       //W.R += thisWalker.R;
@@ -211,7 +223,7 @@ namespace qmcplusplus {
         }
         
 //         cout<<logpsi<<"  "<<Psi.getPhase()<<"  "<<enew<<"  "<<rr_accepted<<"  "<<rr_proposed<<"  "<<nodecorr<<endl;
-        thisWalker.Weight *= branchEngine->branchWeight(eold,enew);
+        thisWalker.Weight *= branchEngine->branchWeight(enew,eold);
       }
 
       if(accepted) 
