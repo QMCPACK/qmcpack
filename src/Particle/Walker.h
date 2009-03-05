@@ -92,7 +92,8 @@ namespace qmcplusplus {
     PropertyContainer_t  Properties;
     
     ///Property history vector
-    vector<deque<T> >  PropertyHistory;
+    vector<vector<T> >  PropertyHistory;
+    vector<int> PHindex;
 
     ///buffer for the data for particle-by-particle update
     Buffer_t DataSet;
@@ -100,7 +101,7 @@ namespace qmcplusplus {
     ///default constructor
     inline Walker() : ID(0),ParentID(0), Generation(0),Age(0),
                   Weight(1.0e0),Multiplicity(1.0e0) 
-    {
+    { 
       Properties.resize(1,NUMPROPERTIES);
       reset();
     }
@@ -110,15 +111,16 @@ namespace qmcplusplus {
                            Weight(1.0e0),Multiplicity(1.0e0)
     {
       Properties.resize(1,NUMPROPERTIES);
-      resize(nptcl);
+      resize(nptcl); 
       reset();
     }
 
     inline int addPropertyHistory(int leng)
     {
       int newL = PropertyHistory.size();
-      deque<double> newVecHistory=deque<double>(leng,0.0);
+      vector<T> newVecHistory=vector<T>(leng,0.0);
       PropertyHistory.push_back(newVecHistory);
+      PHindex.push_back(0);
       return newL;
     }
     
@@ -126,6 +128,7 @@ namespace qmcplusplus {
     {
       for(int i=0;i<PropertyHistory.size();i++)
       {
+        PHindex[i]=0;
 	for(int k=0;k<PropertyHistory[i].size();k++)
 	{
 	  PropertyHistory[i][k]=0.0;
@@ -133,35 +136,32 @@ namespace qmcplusplus {
       }
     }
 
-    inline void addPropertyHistoryPoint(int index, double data)
+    inline void addPropertyHistoryPoint(int index, RealType data)
     {
-      PropertyHistory[index].push_front(data);
-      PropertyHistory[index].pop_back();
+      PropertyHistory[index][PHindex[index]]=(data);
+      PHindex[index]++;
+      if (PHindex[index]==PropertyHistory[index].size()) PHindex[index]=0;
+//       PropertyHistory[index].pop_back();
     }
     
     inline void rejectedMove()
     {
       for(int dindex=0;dindex<PropertyHistory.size();dindex++){
-      PropertyHistory[dindex].push_front(PropertyHistory[dindex].front());
-      PropertyHistory[dindex].pop_back();
+        PropertyHistory[dindex][PHindex[dindex]]=PropertyHistory[dindex][PHindex[dindex]-1];
+        PHindex[dindex]++;
+        if (PHindex[dindex]==PropertyHistory[dindex].size()) PHindex[dindex]=0;
+//       PropertyHistory[dindex].push_front(PropertyHistory[dindex].front());
+//       PropertyHistory[dindex].pop_back();
       }
     }
     
-    inline double getPropertyHistoryAvg(int index)
+    inline T getPropertyHistorySum(int index, int endN)
     {
-      double mean=0.0;
-      deque<double>::iterator phStart=PropertyHistory[index].begin();
-      for(;phStart!=PropertyHistory[index].end();phStart++){
-        mean+= (*phStart);
-      }
-      return (mean/PropertyHistory[index].size());
-    }
-    
-    inline double getPropertyHistorySum(int index, int endN)
-    {
-      double mean=0.0;
-      deque<double>::iterator phStart=PropertyHistory[index].begin();
-      for(int i=0;((phStart!=PropertyHistory[index].end())&(i<endN));phStart++,i++){
+      T mean=0.0; 
+      typename vector<T>::const_iterator phStart;
+      phStart=PropertyHistory[index].begin()+PHindex[index];
+      for(int i=0;i<endN;phStart++,i++){
+        if (phStart==PropertyHistory[index].end()) phStart = PropertyHistory[index].begin();
         mean+= (*phStart);
       }
       return mean ;
@@ -199,8 +199,10 @@ namespace qmcplusplus {
       Drift = a.Drift;
       Properties.copy(a.Properties);
       DataSet=a.DataSet;
-
-      PropertyHistory=a.PropertyHistory;
+      
+      PropertyHistory =a.PropertyHistory;
+      for(int i=0;i<PropertyHistory.size();i++) PropertyHistory[i]=a.PropertyHistory[i];
+      PHindex=a.PHindex;
     }
 
     //return the address of the values of Hamiltonian terms
@@ -303,6 +305,8 @@ namespace qmcplusplus {
       for(int iat=0; iat<nat;iat++) Drift[iat].putMessage(m);
       Properties.putMessage(m);
       DataSet.putMessage(m);
+      for(int iat=0; iat<PropertyHistory.size();iat++)m.Pack(&(PropertyHistory[iat][0]),PropertyHistory[iat].size());
+      m.Pack(&(PHindex[0]),PHindex.size());
       return m;
     }
 
@@ -315,6 +319,8 @@ namespace qmcplusplus {
       for(int iat=0; iat<nat;iat++) Drift[iat].getMessage(m);
       Properties.getMessage(m);
       DataSet.getMessage(m);
+      for(int iat=0; iat<PropertyHistory.size();iat++)m.Unpack(&(PropertyHistory[iat][0]),PropertyHistory[iat].size());
+      m.Unpack(&(PHindex[0]),PHindex.size());
       return m;
     }
 

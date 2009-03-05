@@ -466,44 +466,44 @@ namespace qmcplusplus {
     int ParticleSet::addPropertyHistory(int leng)
     {
       int newL = PropertyHistory.size();
-      deque<double> newVecHistory=deque<double>(leng,0.0);
+      vector<RealType> newVecHistory=vector<RealType>(leng,0.0);
       PropertyHistory.push_back(newVecHistory);
+      PHindex.push_back(0);
       return newL;
     }
-
-    void ParticleSet::addPropertyHistoryPoint(int index, double data)
+    
+     void ParticleSet::resetPropertyHistory( )
     {
-      PropertyHistory[index].push_front(data);
-      PropertyHistory[index].pop_back();
+      for(int i=0;i<PropertyHistory.size();i++)
+      {
+        PHindex[i]=0;
+ for(int k=0;k<PropertyHistory[i].size();k++)
+ {
+   PropertyHistory[i][k]=0.0;
+ }
+      }
+    }
+
+     void ParticleSet::addPropertyHistoryPoint(int index, RealType data)
+    {
+      PropertyHistory[index][PHindex[index]]=(data);
+      PHindex[index]++;
+      if (PHindex[index]==PropertyHistory[index].size()) PHindex[index]=0;
+//       PropertyHistory[index].pop_back();
     }
     
-    void ParticleSet::rejectedMove()
+     void ParticleSet::rejectedMove()
     {
       for(int dindex=0;dindex<PropertyHistory.size();dindex++){
-      PropertyHistory[dindex].push_front(PropertyHistory[dindex].front());
-      PropertyHistory[dindex].pop_back();
+        PropertyHistory[dindex][PHindex[dindex]]=PropertyHistory[dindex][PHindex[dindex]-1];
+        PHindex[dindex]++;
+        if (PHindex[dindex]==PropertyHistory[dindex].size()) PHindex[dindex]=0;
+//       PropertyHistory[dindex].push_front(PropertyHistory[dindex].front());
+//       PropertyHistory[dindex].pop_back();
       }
     }
     
-    double ParticleSet::getPropertyHistoryAvg(int index)
-    {
-      double mean=0.0;
-      deque<double>::iterator phStart=PropertyHistory[index].begin();
-      for(;phStart!=PropertyHistory[index].end();phStart++){
-        mean+= (*phStart);
-      }
-      return (mean/PropertyHistory[index].size());
-    }
-    
-    double ParticleSet::getPropertyHistorySum(int index, int endN)
-    {
-      double mean=0.0;
-      deque<double>::iterator phStart=PropertyHistory[index].begin();
-      for(int i=0;((phStart!=PropertyHistory[index].end())&(i<endN));phStart++,i++){
-        mean+= (*phStart);
-      }
-      return mean ;
-    }
+
   
 }
 

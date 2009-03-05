@@ -49,10 +49,18 @@ namespace qmcplusplus {
 
     inline Return_t rejectedMove(ParticleSet& P) 
     {
-      vector<double>::iterator Vit=Values.begin();
+      vector<Return_t>::iterator Vit=Values.begin();
+      
       for(int i=0;i<nObservables;i++){
-        for(int j=0;j<walkerLengths[i].size();j++,Vit++){
-          (*Vit) = tWalker->PropertyHistory[Pindices[i]][walkerLengths[i][j]];
+        int j=0; 
+        int FWindex = tWalker->PHindex[Pindices[i]]; 
+        while (j<walkerLengths[i].size())
+        {
+          int Cindex = FWindex - walkerLengths[i][j];
+          if (Cindex< 0) Cindex += tWalker->PropertyHistory[Pindices[i]].size();
+          (*Vit) = tWalker->PropertyHistory[Pindices[i]][Cindex];
+          j++;
+          Vit++;
         }
       }
       std::copy(Values.begin(),Values.end(),tWalker->getPropertyBase()+FirstHamiltonian+myIndex);
@@ -80,10 +88,21 @@ namespace qmcplusplus {
         tWalker->addPropertyHistoryPoint(Pindices[i],  P.PropertyList[Hindices[i]]);
 
       vector<double>::iterator Vit=Values.begin();
-      for(int i=0;i<nObservables;i++)
-        for(int j=0;j<walkerLengths[i].size();j++,Vit++)
-          (*Vit) = tWalker->PropertyHistory[Pindices[i]][walkerLengths[i][j] ];
-
+//       for(int i=0;i<nObservables;i++)
+//         for(int j=0;j<walkerLengths[i].size();j++,Vit++)
+//           (*Vit) = tWalker->PropertyHistory[Pindices[i]][walkerLengths[i][j] ];
+      for(int i=0;i<nObservables;i++){
+        int j=0;
+        int FWindex = tWalker->PHindex[Pindices[i]];
+        while (j<walkerLengths[i].size())
+        {
+          int Cindex = FWindex - walkerLengths[i][j];
+          if (Cindex< 0) Cindex += tWalker->PropertyHistory[Pindices[i]].size();
+          (*Vit) = tWalker->PropertyHistory[Pindices[i]][Cindex];
+          j++;
+          Vit++;
+        }
+      }
       std::copy(Values.begin(),Values.end(),tWalker->getPropertyBase()+FirstHamiltonian+myIndex);
 //       cerr<<"ACCEPTED VALUES"<<endl;
 //       Vit=Values.begin();

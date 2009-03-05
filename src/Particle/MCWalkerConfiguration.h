@@ -189,6 +189,7 @@ namespace qmcplusplus {
     inline void resizeWalkerHistories() {
       for(iterator Wit=WalkerList.begin();Wit!=WalkerList.end();Wit++){
         if ((*Wit)->PropertyHistory.size()!=PropertyHistory.size()) (*Wit)->PropertyHistory=PropertyHistory;
+        if ((*Wit)->PHindex.size()!=PHindex.size()) (*Wit)->PHindex=PHindex;
       }
     }
     

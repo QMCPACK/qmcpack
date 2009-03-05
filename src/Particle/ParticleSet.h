@@ -141,7 +141,8 @@ namespace qmcplusplus {
       Buffer_t Collectables;
 
       ///Property history vector
-      vector<deque<double> >  PropertyHistory;
+      vector<vector<RealType> >  PropertyHistory;
+      vector<int> PHindex;
 
       ///default constructor
       ParticleSet();
@@ -268,12 +269,10 @@ namespace qmcplusplus {
         return PropertyList.add(pname.c_str());
       }
 
-      int addPropertyHistory(int leng);
-      void rejectedMove();
-      void addPropertyHistoryPoint(int index, RealType data);
-      double getPropertyHistoryAvg(int index);
-      double getPropertyHistorySum(int index,int endN);
-      double getPropertyHistoryPoint(int Rindex, double Tindex);
+       int addPropertyHistory(int leng);
+       void rejectedMove();
+       void resetPropertyHistory( );
+       void addPropertyHistoryPoint(int index, RealType data); 
 
       void clearDistanceTables();
       void resizeSphere(int nc);

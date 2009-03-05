@@ -56,8 +56,11 @@ namespace qmcplusplus {
         //           app_log()<<"Obs#"<<i;
         (*Vit)=0.0;
         int k=0;
+        int DMindex = tWalker->PHindex[Pindices[i]];
         for(int j=0;j<walkerLengths[i].back()+1;j++){
-          (*Vit) += tWalker->PropertyHistory[Pindices[i]][j];
+          (*Vit) += tWalker->PropertyHistory[Pindices[i]][DMindex];
+          DMindex--;
+          if (DMindex<0) DMindex=tWalker->PropertyHistory[Pindices[i]].size()-1;
           if(j==walkerLengths[i][k]){
             double Tsum=(*Vit);
             Vit++;
@@ -73,7 +76,7 @@ namespace qmcplusplus {
       //       }
       // 	double* wFWval = tWalker->getPropertyBase();
       std::copy(Values.begin(),Values.end(),tWalker->getPropertyBase()+FirstHamiltonian+myIndex );
-    std::copy(EValues.begin(),EValues.end(),tWalker->getPropertyBase()+FirstHamiltonian+myIndex+nValues);
+      std::copy(EValues.begin(),EValues.end(),tWalker->getPropertyBase()+FirstHamiltonian+myIndex+nValues);
 
       return 0.0;
   }
@@ -100,24 +103,27 @@ namespace qmcplusplus {
     vector<double>::iterator Vit=Values.begin();
     vector<double>::iterator Vit2=EValues.begin();
 
-    for(int i=0;i<nObservables;i++){
-      //           app_log()<<"Obs#"<<i;
-      (*Vit)=0.0;
-      int k=0;
-      for(int j=0;j<walkerLengths[i].back()+1;j++){
-        (*Vit) += tWalker->PropertyHistory[Pindices[i]][j];
-        if(j==walkerLengths[i][k]){
-          double Tsum=(*Vit);
-          Vit++;
-          (*Vit)=Tsum;
-          k++;
-          (*Vit2)=Tsum* tWalker->Properties(LOCALENERGY);
-          Vit2++;
+      for(int i=0;i<nObservables;i++){
+        //           app_log()<<"Obs#"<<i;
+        (*Vit)=0.0;
+        int k=0;
+        int DMindex = tWalker->PHindex[Pindices[i]];
+        for(int j=0;j<walkerLengths[i].back()+1;j++){
+          (*Vit) += tWalker->PropertyHistory[Pindices[i]][DMindex];
+          DMindex--;
+          if (DMindex<0) DMindex=tWalker->PropertyHistory[Pindices[i]].size()-1;
+          if(j==walkerLengths[i][k]){
+            double Tsum=(*Vit);
+            Vit++;
+            (*Vit)=Tsum;
+            k++;
+            (*Vit2)=Tsum* (tWalker->Properties(LOCALENERGY));
+            Vit2++;
+          }
+          //             app_log()<<"  "<<tWalker->PropertyHistory[Pindices[i]][walkerLengths[i][j]-1];
         }
-        //             app_log()<<"  "<<tWalker->PropertyHistory[Pindices[i]][walkerLengths[i][j]-1];
+        //    app_log()<<endl;
       }
-      // 	  app_log()<<endl;
-    }
     //       }
     // 	double* wFWval = tWalker->getPropertyBase();
     std::copy(Values.begin(),Values.end(),tWalker->getPropertyBase()+FirstHamiltonian+myIndex );
