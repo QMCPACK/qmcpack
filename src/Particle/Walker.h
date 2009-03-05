@@ -200,7 +200,7 @@ namespace qmcplusplus {
       Properties.copy(a.Properties);
       DataSet=a.DataSet;
       
-      PropertyHistory =a.PropertyHistory;
+      PropertyHistory.resize(a.PropertyHistory.size());
       for(int i=0;i<PropertyHistory.size();i++) PropertyHistory[i]=a.PropertyHistory[i];
       PHindex=a.PHindex;
     }
@@ -292,7 +292,9 @@ namespace qmcplusplus {
      */
     inline int byteSize() 
     {
-      return 2*sizeof(long)+2*sizeof(int)+(Properties.size()+DIM*2*R.size()+DataSet.size())*sizeof(T);
+      int numPH(0);
+      for(int iat=0; iat<PropertyHistory.size();iat++) numPH += PropertyHistory[iat].size();
+      return 2*sizeof(long)+2*sizeof(int)+ PHindex.size()*sizeof(int) +(Properties.size()+DIM*2*R.size()+DataSet.size()+ numPH )*sizeof(T);
       //return 2*sizeof(int)+(Properties.size()+DIM*2*R.size()+DataSet.size())*sizeof(T);
     }
 

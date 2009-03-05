@@ -231,7 +231,7 @@ namespace qmcplusplus {
       RealType e((*it)->Properties(LOCALENERGY));
       int nc= std::min(static_cast<int>((*it)->Multiplicity),MaxCopy);
       RealType wgt((*it)->Weight);
-
+// If we are using branching then it seems we should have weight=1 here?
       esum += wgt*e;
       e2sum += wgt*e*e;
       wsum += wgt;

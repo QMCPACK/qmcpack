@@ -39,7 +39,7 @@ namespace qmcplusplus {
      * Pressure operators need to be re-evaluated during optimization.
      */
     TrialDMCCorrection() {
-      UpdateMode.set(OPTIMIZABLE,1);
+      //UpdateMode.set(OPTIMIZABLE,1);
     }
     
     ///destructor
@@ -58,9 +58,9 @@ namespace qmcplusplus {
         int k=0;
         int DMindex = tWalker->PHindex[Pindices[i]];
         for(int j=0;j<walkerLengths[i].back()+1;j++){
+          if (DMindex<0) DMindex=tWalker->PropertyHistory[Pindices[i]].size()-1;
           (*Vit) += tWalker->PropertyHistory[Pindices[i]][DMindex];
           DMindex--;
-          if (DMindex<0) DMindex=tWalker->PropertyHistory[Pindices[i]].size()-1;
           if(j==walkerLengths[i][k]){
             double Tsum=(*Vit);
             Vit++;
@@ -109,9 +109,9 @@ namespace qmcplusplus {
         int k=0;
         int DMindex = tWalker->PHindex[Pindices[i]];
         for(int j=0;j<walkerLengths[i].back()+1;j++){
+          if (DMindex<0) DMindex=tWalker->PropertyHistory[Pindices[i]].size()-1;
           (*Vit) += tWalker->PropertyHistory[Pindices[i]][DMindex];
           DMindex--;
-          if (DMindex<0) DMindex=tWalker->PropertyHistory[Pindices[i]].size()-1;
           if(j==walkerLengths[i][k]){
             double Tsum=(*Vit);
             Vit++;
