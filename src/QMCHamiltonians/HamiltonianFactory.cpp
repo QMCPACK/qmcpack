@@ -682,8 +682,10 @@ namespace qmcplusplus {
   void 
   HamiltonianFactory::addConstCoulombPotential(xmlNodePtr cur, string& nuclei){
     OhmmsAttributeSet hAttrib;
+    string hname("IonIon");
     string forces("no");
     hAttrib.add(forces,"forces");
+    hAttrib.add(hname,"name");
     hAttrib.put(cur);
     bool doForces = (forces == "yes") || (forces == "true");
 
@@ -695,9 +697,10 @@ namespace qmcplusplus {
       if(ion->getTotalNum()>1) 
         if(PBCType){
           //targetH->addOperator(new CoulombPBCAA(*ion),"IonIon");
-          targetH->addOperator(new CoulombPBCAATemp(*ion,false,doForces),"IonIon");
+          //targetH->addOperator(new CoulombPBCAATemp(*ion,false,doForces),"IonIon");
+          targetH->addOperator(new CoulombPBCAATemp(*ion,false,doForces),hname);
         } else {
-          targetH->addOperator(new IonIonPotential(*ion),"IonIon");
+          targetH->addOperator(new IonIonPotential(*ion),hname);
         }
      }
   }
