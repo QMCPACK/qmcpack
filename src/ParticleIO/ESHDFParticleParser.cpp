@@ -44,8 +44,9 @@ namespace qmcplusplus {
   {
     //add basic attributes of the speciesset
     SpeciesSet& tspecies(ref_.getSpeciesSet());
-    int icharge= tspecies.addAttribute(charge_tag);
+    int icharge= tspecies.addAttribute("charge");//charge_tag);
     int iatnumber= tspecies.addAttribute(atomic_number_tag);
+    int membersize= tspecies.addAttribute("membersize");
     int massind= tspecies.addAttribute(mass_tag);
 
     if(myComm->rank()==0 && hfile_id>=-1) readESHDF();
@@ -114,7 +115,7 @@ namespace qmcplusplus {
     }
 
     SpeciesSet& tspecies(ref_.getSpeciesSet());
-    int icharge= tspecies.addAttribute(charge_tag);
+    int icharge= tspecies.addAttribute("charge");//use charge
     int iatnumber= tspecies.addAttribute(atomic_number_tag);
     int massind= tspecies.addAttribute(mass_tag);
     //add charge
@@ -232,6 +233,17 @@ namespace qmcplusplus {
     }
 
     ref_.createSK();
+
+    SpeciesSet& tspecies(ref_.getSpeciesSet());
+    vector<int> numPerGroup(tspecies.getTotalNum(),0);
+    for(int iat=0; iat<ref_.GroupID.size(); iat++) {
+      numPerGroup[ref_.GroupID[iat]]++;
+    }
+    int membersize= tspecies.addAttribute("membersize");
+    for(int ig=0; ig<tspecies.getTotalNum(); ++ig) {
+      tspecies(membersize,ig)=numPerGroup[ig];
+    }
+
 
     //char fname[8];
     //sprintf(fname,"test%i",myComm->rank());
