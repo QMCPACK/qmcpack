@@ -23,6 +23,7 @@
 #include <vector>
 #include "Numerics/HDFSTLAttrib.h"
 #include "OhmmsData/HDFStringAttrib.h"
+#include "ParticleIO/ESHDFParticleParser.h"
 
 namespace qmcplusplus {
   std::map<TinyVector<int,4>,EinsplineSetBuilder::OrbType*,Int4less> 
@@ -551,10 +552,10 @@ namespace qmcplusplus {
     attribs.add (sortBands,  "sort");
     attribs.add (TileMatrix, "tilematrix");
     attribs.add (TwistNum,   "twistnum");
+    attribs.add (sourceName, "source");
     attribs.put (XMLRoot);
     attribs.add (numOrbs,    "size");
     attribs.add (numOrbs,    "norbs");
-    attribs.add (sourceName, "source");
     attribs.put (cur);
 
     ///////////////////////////////////////////////
@@ -663,8 +664,9 @@ namespace qmcplusplus {
     
     // Lattice information
     OrbitalSet->TileFactor = TileFactor;
-    OrbitalSet->Tiling = 
-      TileFactor[0]!=1 || TileFactor[1]!=1 || TileFactor[2]!=1;
+    OrbitalSet->Tiling = (TileFactor[0]*TileFactor[1]*TileFactor[2] != 1);
+    //OrbitalSet->Tiling = 
+    //  TileFactor[0]!=1 || TileFactor[1]!=1 || TileFactor[2]!=1;
 
     OrbitalSet->PrimLattice  = Lattice;
     OrbitalSet->SuperLattice = SuperLattice;
@@ -754,9 +756,17 @@ namespace qmcplusplus {
 
     SPOSetMap[set] = OrbitalSet;
     
-    if (sourceName != "") 
-      if (ParticleSets.find(sourceName) == ParticleSets.end())
-	CreateIonParticleSet(sourceName);
+    if (sourceName.size() && (ParticleSets.find(sourceName) == ParticleSets.end()))
+    {
+      app_log() << "  EinsplineSetBuilder creates a ParticleSet " << sourceName << endl;
+      ParticleSet* ions=new ParticleSet;
+      ions->Lattice=TargetPtcl.Lattice;
+      ESHDFIonsParser ap(*ions,H5FileID,myComm);
+      ap.put(XMLRoot);
+      ap.expand(TileMatrix);
+      ions->setName(sourceName);
+      ParticleSets[sourceName]=ions;
+    }
 
     return OrbitalSet;
   }
