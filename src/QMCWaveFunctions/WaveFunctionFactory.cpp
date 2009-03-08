@@ -109,7 +109,6 @@ namespace qmcplusplus {
     //  ReportEngine PREA("TrialWaveFunction","print");
     //  targetPsi->VarList.print(app_log());
     //}
-
     return success;
   }
   bool WaveFunctionFactory::addMolecularTerm(xmlNodePtr cur) {
@@ -230,7 +229,9 @@ namespace qmcplusplus {
     }
          
 #else
-        APP_ABORT("QMC_BUILD_COMPLETE=0 Cannot use with He wavefunctions");
+    {
+      APP_ABORT("QMC_BUILD_COMPLETE=0 Cannot use with He wavefunctions");
+    }
 #endif
     return true;
   }
