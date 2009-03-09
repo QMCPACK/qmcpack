@@ -81,6 +81,7 @@ IF(HAVE_LIBHDF5)
       Particle/HDFWalkerInput_0_0.cpp
       Particle/HDFWalkerInput_0_4.cpp
       ParticleIO/HDFParticleIO.cpp 
+      ParticleIO/ESHDFParticleParser.cpp
      )
 ENDIF(HAVE_LIBHDF5)
 
