@@ -137,7 +137,18 @@ namespace qmcplusplus
         myComm->allreduce(URV);
 
         for (int pm=0; pm<NumOptimizables;pm++)  URV[pm] *=wgtinv;
-        for (int j=0; j<NumOptimizables; j++) PGradient[j] = (w_var*E2Dtotals_w[j] + w_en*EDtotals_w[j] + w_w*URV[j]) ;
+	// app_log() << "Gradient:\n";
+        for (int j=0; j<NumOptimizables; j++) {
+	  PGradient[j] = 0.0;
+	  if (std::fabs(w_var) > 1.0e-10)   PGradient[j] += w_var*E2Dtotals_w[j];
+	  if (std::fabs(w_en)  > 1.0e-10)   PGradient[j] += w_en*EDtotals_w[j];
+	  if (std::fabs(w_w)   > 1.0e-10)   PGradient[j] += w_w*URV[j];
+	  
+	  //	  PGradient[j] = (w_var*E2Dtotals_w[j] + w_en*EDtotals_w[j] + w_w*URV[j]) ;
+	  // char buff[200];
+	  // snprintf (buff, 200, "%10.5e\n", PGradient[j]);
+	  // app_log() << buff;
+	}
 
         IsValid=true;
 
@@ -345,6 +356,7 @@ namespace qmcplusplus
           wRef.L += *d2LogPsi[iwg];
 
           Return_t* restrict saved = (*RecordsOnNode[ip])[iw];
+
           RealType KEtemp = H_KE_Node[ip]->evaluate(wRef);
           //if (KEtemp<MinKE) KEtemp=std::fabs(KEtemp-MinKE)+MinKE;
           eloc_new = KEtemp + saved[ENERGY_FIXED];

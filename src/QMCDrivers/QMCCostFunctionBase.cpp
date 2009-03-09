@@ -108,15 +108,34 @@ QMCCostFunctionBase::Return_t QMCCostFunctionBase::Cost() {
  curVar_w = SumValue[SUM_ESQ_WGT]/SumValue[SUM_WGT]-curAvg_w*curAvg_w;
  
  Return_t wgtinv=1.0/static_cast<Return_t>(NumSamples);
+ // app_log() << "wgtinv = " << wgtinv << endl;
  curAvg = SumValue[SUM_E_BARE]*wgtinv;
  curVar = SumValue[SUM_ESQ_BARE]*wgtinv-curAvg*curAvg; 
  
  curVar_abs = SumValue[SUM_ABSE_WGT]/SumValue[SUM_WGT];
- 
+ // app_log() << "curVar     = " << curVar 
+ // 	   << "   curAvg     = " << curAvg << endl;
+ // app_log() << "SumValue[SUM_WGT] = " << SumValue[SUM_WGT] << endl;
+ // app_log() << "SumValue[SUM_WGTSQ] = " << SumValue[SUM_WGTSQ] << endl;
+ // app_log() << "SumValue[SUM_ABSE_WGT] = " << SumValue[SUM_ABSE_WGT] << endl;
+ // app_log() << "SumValue[SUM_E_WGT] = " << SumValue[SUM_E_WGT] << endl;
+ // app_log() << "SumValue[SUM_ESQ_WGT] = " << SumValue[SUM_ESQ_WGT] << endl;
+
  Return_t wgt_var = SumValue[SUM_WGTSQ]-SumValue[SUM_WGT]*SumValue[SUM_WGT];
  wgt_var *=wgtinv;
- 
- CostValue = w_abs*curVar_abs + w_var*curVar_w + w_en*curAvg_w + w_w*curVar;
+
+ CostValue = 0.0;
+ if (std::fabs(w_abs) > 1.0e-10)
+   CostValue += w_abs*curVar_abs;
+ if (std::fabs(w_var) > 1.0e-10)
+   CostValue += w_var*curVar_w;
+ if (std::fabs(w_en) > 1.0e-10)
+   CostValue += w_en*curAvg_w;
+ if (std::fabs(w_w) > 1.0e-10)
+   CostValue += w_w*curVar;
+
+ //CostValue = w_abs*curVar_abs + w_var*curVar_w + w_en*curAvg_w + w_w*curVar;
+ // app_log() << "CostValue = " << CostValue << endl << endl;
  
  IsValid=true;
  //       if(NumWalkersEff < NumSamples*MinNumWalkers) {
