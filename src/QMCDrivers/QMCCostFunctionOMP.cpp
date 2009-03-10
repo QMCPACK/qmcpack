@@ -329,19 +329,16 @@ namespace qmcplusplus
   QMCCostFunctionOMP::Return_t QMCCostFunctionOMP::correlatedSampling()
   {
 
-    Return_t wgt_tot=0.0;
-    Return_t wgt_bare=0.0;
-    Return_t wgt_bare2=0.0;
+    Return_t wgt_tot=0.0; 
+    Return_t wgt_tot2=0.0;
     Return_t NSm1 = 1.0/NumSamples;
 
     //#pragma omp parallel reduction(+:wgt_tot)
 #pragma omp parallel
     {
-      int ip = omp_get_thread_num();
-      //bool usingWeight=UseWeight;
+      int ip = omp_get_thread_num(); 
       MCWalkerConfiguration& wRef(*wClones[ip]);
-      Return_t eloc_new, wgt_node=0.0;
-//       , wgt_node_bare=0.0, wgt_bare2_node=0.0;
+      Return_t eloc_new, wgt_node=0.0, wgt_node2=0.0; 
       //int totalElements=W.getTotalNum()*OHMMS_DIM;
       MCWalkerConfiguration::iterator it(wRef.begin());
       MCWalkerConfiguration::iterator it_end(wRef.end());
@@ -357,13 +354,13 @@ namespace qmcplusplus
 
           Return_t* restrict saved = (*RecordsOnNode[ip])[iw];
 
-          RealType KEtemp = H_KE_Node[ip]->evaluate(wRef);
-          //if (KEtemp<MinKE) KEtemp=std::fabs(KEtemp-MinKE)+MinKE;
-          eloc_new = KEtemp + saved[ENERGY_FIXED];
-//           Return_t this_bare_weight=(1.0);
+          RealType KEtemp = H_KE_Node[ip]->evaluate(wRef); 
+          eloc_new = KEtemp + saved[ENERGY_FIXED]; 
           Return_t weight;
-          if (samplePsi2) weight = std::min( std::exp(2.0*(logpsi-saved[LOGPSI_FREE])),MaxWeight) ;
-          else weight = std::min( std::exp( logpsi-saved[LOGPSI_FREE] ),MaxWeight) ;
+//           if (samplePsi2) weight = std::min( std::exp(2.0*(logpsi-saved[LOGPSI_FREE])),MaxWeight) ;
+//           else weight = std::min( std::exp( logpsi-saved[LOGPSI_FREE] ),MaxWeight) ;
+          if (samplePsi2) weight = std::exp(2.0*(logpsi-saved[LOGPSI_FREE])) ;
+          else weight = std::exp( logpsi-saved[LOGPSI_FREE] ) ;
           if (KEtemp<MinKE) weight=0.0;
           //  Return_t weight = usingWeight?std::exp(2.0*(logpsi-saved[LOGPSI_FREE])):1.0;
           saved[ENERGY_NEW]=eloc_new;
@@ -371,28 +368,40 @@ namespace qmcplusplus
 
           vector<Return_t>* Dsaved= &((*TempDerivRecords[ip])[iw]);
           vector<Return_t>* HDsaved= &((*TempHDerivRecords[ip])[iw]);
-          psiClones[ip]->evaluateDerivatives(wRef,KEtemp,OptVariablesForPsi,*Dsaved,*HDsaved);
-          //for(int l=0; l<NumOptimizables; l++) (*HDsaved)[l] += saved[ENERGY_FIXED]* (*Dsaved)[l];
+          psiClones[ip]->evaluateDerivatives(wRef,KEtemp,OptVariablesForPsi,*Dsaved,*HDsaved); 
 
-          wgt_node+=weight;
-//           wgt_node_bare+=this_bare_weight;
-//           wgt_bare2_node+=this_bare_weight*this_bare_weight;
+          wgt_node+=weight; 
+          wgt_node2+=weight*weight; 
         }
 
 #pragma omp atomic
       wgt_tot += wgt_node;
-// #pragma omp atomic
-//       wgt_bare += wgt_node_bare;
-// #pragma omp atomic
-//       wgt_bare2 +=wgt_bare2_node;
+#pragma omp atomic
+      wgt_tot2 += wgt_node2;
     }
+    
 
     //this is MPI barrier
     //OHMMS::Controller->barrier();
     //collect the total weight for normalization and apply maximum weight
-    myComm->allreduce(wgt_tot);
-    myComm->allreduce(wgt_bare);
-    myComm->allreduce(wgt_bare2);
+    myComm->allreduce(wgt_tot); 
+    myComm->allreduce(wgt_tot2);
+    Return_t wgtnorm = (1.0*NumSamples)/wgt_tot;
+    wgt_tot=0.0;
+    Return_t new_wgt_tot2=0.0;
+    for (int ip=0; ip<NumThreads; ip++)
+    {
+      int nw=wClones[ip]->getActiveWalkers();
+      for (int iw=0; iw<nw;iw++)
+        {   
+          Return_t* restrict saved = (*RecordsOnNode[ip])[iw];
+          saved[REWEIGHT] = std::min(saved[REWEIGHT]*wgtnorm,MaxWeight) ;
+          wgt_tot+= saved[REWEIGHT];
+          new_wgt_tot2 += saved[REWEIGHT]*saved[REWEIGHT];
+        }
+    }
+    
+    
     for (int i=0; i<SumValue.size(); i++) SumValue[i]=0.0; 
     CSWeight=wgt_tot=1.0/wgt_tot;
     for (int ip=0; ip<NumThreads; ip++)

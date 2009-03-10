@@ -100,8 +100,8 @@ namespace qmcplusplus {
     }
     app_log()<<"Total number of observables calculated:"<<nObservables<<endl;
     app_log()<<"Total number of values calculated:"<<nValues<<endl;
-    for (int i=0;i<nValues;i++) Values.push_back(0.0);
-    EValues=Values;
+    Values.resize(nValues,0.0);
+    EValues.resize(nValues,0.0);
     return true;
   }
 

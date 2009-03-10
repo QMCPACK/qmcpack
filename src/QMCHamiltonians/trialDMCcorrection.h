@@ -56,18 +56,21 @@ namespace qmcplusplus {
         //           app_log()<<"Obs#"<<i;
         (*Vit)=0.0;
         int k=0;
-        int DMindex = tWalker->PHindex[Pindices[i]];
-        for(int j=0;j<walkerLengths[i].back()+1;j++){
+        int DMindex = tWalker->PHindex[Pindices[i]]-1;
+        for(int j=0;j<tWalker->PropertyHistory[Pindices[i]].size();j++){
           if (DMindex<0) DMindex=tWalker->PropertyHistory[Pindices[i]].size()-1;
           (*Vit) += tWalker->PropertyHistory[Pindices[i]][DMindex];
           DMindex--;
           if(j==walkerLengths[i][k]){
             double Tsum=(*Vit);
-            Vit++;
-            (*Vit)=Tsum;
-            k++;
             (*Vit2)=Tsum* (tWalker->Properties(LOCALENERGY));
+            Vit++;
             Vit2++;
+            if (Vit != Values.end())
+            {
+              (*Vit)=Tsum;
+            }
+            k++;
           }
           //             app_log()<<"  "<<tWalker->PropertyHistory[Pindices[i]][walkerLengths[i][j]-1];
         }
@@ -107,18 +110,22 @@ namespace qmcplusplus {
         //           app_log()<<"Obs#"<<i;
         (*Vit)=0.0;
         int k=0;
-        int DMindex = tWalker->PHindex[Pindices[i]];
-        for(int j=0;j<walkerLengths[i].back()+1;j++){
+        int DMindex = tWalker->PHindex[Pindices[i]]-1;
+        for(int j=0;j<tWalker->PropertyHistory[Pindices[i]].size();j++){
           if (DMindex<0) DMindex=tWalker->PropertyHistory[Pindices[i]].size()-1;
           (*Vit) += tWalker->PropertyHistory[Pindices[i]][DMindex];
           DMindex--;
           if(j==walkerLengths[i][k]){
             double Tsum=(*Vit);
-            Vit++;
-            (*Vit)=Tsum;
-            k++;
             (*Vit2)=Tsum* (tWalker->Properties(LOCALENERGY));
-            Vit2++;
+            Vit++;
+            if (Vit != Values.end())
+            {
+              (*Vit)=Tsum;
+              (*Vit2)=Tsum* (tWalker->Properties(LOCALENERGY));
+              Vit2++;
+            }
+            k++;
           }
           //             app_log()<<"  "<<tWalker->PropertyHistory[Pindices[i]][walkerLengths[i][j]-1];
         }
