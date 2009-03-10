@@ -418,8 +418,8 @@ namespace qmcplusplus
     myComm->allreduce(SumValue);
 //     app_log()<<"wgt_bare:"<<wgt_bare<<" wgt_bare2:"<<wgt_bare2<<"  SumValue[SUM_WGT]:"<<SumValue[SUM_WGT]<<"  SumValue[SUM_WGTSQ]:"<<SumValue[SUM_WGTSQ]<<endl;
 //     return wgt_bare*wgt_bare/wgt_bare2;
-    return SumValue[SUM_WGT]*SumValue[SUM_WGT]/wgt_bare2;
-//     return SumValue[SUM_WGT]*SumValue[SUM_WGT]/SumValue[SUM_WGTSQ];
+//     return SumValue[SUM_WGT]*SumValue[SUM_WGT]/wgt_bare2;
+    return SumValue[SUM_WGT]*SumValue[SUM_WGT]/SumValue[SUM_WGTSQ];
   }
 
 }
