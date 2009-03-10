@@ -18,10 +18,10 @@
 #include "ParticleIO/HDFParticleAttrib.h"
 #include "Numerics/HDFNumericAttrib.h"
 #include "OhmmsData/HDFStringAttrib.h"
-#include "Message/CommOperatorsMPI.h"
+#include "Message/Communicate.h"
+#include "Message/CommOperators.h"
 #include "Utilities/SimpleParser.h"
 #include "Utilities/IteratorUtility.h"
-#include "Message/CommOperatorsMPI.h"
 
 namespace qmcplusplus {
 
