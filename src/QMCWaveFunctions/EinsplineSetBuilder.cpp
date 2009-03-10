@@ -1775,11 +1775,14 @@ namespace qmcplusplus {
     int ival = 0;
 
     int isComplex;
-    HDFAttribIO<int> h_isComplex(isComplex);
-    h_isComplex.read(H5FileID, "/electrons/psi_r_is_complex");
-    if (!isComplex) {
-      app_error() << "Expected complex orbitals in ES-HDF file, but found real ones.\n";
-      abort();
+    if (root) {
+      HDFAttribIO<int> h_isComplex(isComplex);
+      h_isComplex.read(H5FileID, "/electrons/psi_r_is_complex");
+
+      if (!isComplex) {
+	app_error() << "Expected complex orbitals in ES-HDF file, but found real ones.\n";
+	abort();
+      }
     }
 
     while (iorb < N) {
@@ -1970,8 +1973,11 @@ namespace qmcplusplus {
     int ival = 0;
 
     int isComplex;
-    HDFAttribIO<int> h_isComplex(isComplex);
-    h_isComplex.read(H5FileID, "/electrons/psi_r_is_complex");
+    if (root) {
+      HDFAttribIO<int> h_isComplex(isComplex);
+      h_isComplex.read(H5FileID, "/electrons/psi_r_is_complex");
+    }
+    myComm->bcast(isComplex);
 
     while (iorb < N) {
       bool isCore;
