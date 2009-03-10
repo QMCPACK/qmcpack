@@ -61,16 +61,16 @@ namespace qmcplusplus {
     {
       int i=0;
       for(; i<nspecies-1;++i) o<<tspecies.speciesName[i]<<",";
-      o<<tspecies.speciesName[i] << "\0";
+      o<<tspecies.speciesName[i];
     }
 
-    TinyVector<int,3> bsizes(nspecies,natoms,o.str().size());
+    TinyVector<int,3> bsizes(nspecies,natoms,o.str().size()+1);
     myComm->bcast(bsizes);
 
     //send the names: UGLY!!!!
     nspecies=bsizes[0];
     char *species_names=new char[bsizes[2]];
-    if(myComm->rank()==0) sprintf(species_names,"%s",o.str().c_str());
+    if(myComm->rank()==0) snprintf(species_names, bsizes[2], "%s",o.str().c_str());
     myComm->bcast(species_names,bsizes[2]);
     if(myComm->rank())
     {
@@ -147,8 +147,8 @@ namespace qmcplusplus {
 
     for(int ig=0; ig<nspecies; ++ig) tspecies(massind,ig)=1.0; 
     //just for checking
-    tspecies(icharge,0)=15.0;
-    tspecies(icharge,1)=6.0;
+    // tspecies(icharge,0)=15.0;
+    // tspecies(icharge,1)=6.0;
 
     {//get the unit cell
       Tensor<double,3> alat;
