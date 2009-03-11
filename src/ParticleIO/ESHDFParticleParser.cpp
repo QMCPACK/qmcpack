@@ -224,6 +224,11 @@ namespace qmcplusplus {
                     (uSuper[1] >= -1.0e-6) && (uSuper[1] < 0.9999) &&
                     (uSuper[2] >= -1.0e-6) && (uSuper[2] < 0.9999)) 
                 {
+		  char buff[500];
+		  app_log() << "  Reduced coord    Cartesion coord    species.\n";
+		  snprintf (buff, 500, "  %10.4f  %10.4f %10.4f   %12.6f %12.6f %12.6f %d\n", 
+			    uSuper[0], uSuper[1], uSuper[2], r[0], r[1], r[2], ns);
+		  app_log() << buff;
                   ref_.R[index]= r;
                   ref_.GroupID[index]= ns;//primTypes[iat];
                   index++;
@@ -231,6 +236,8 @@ namespace qmcplusplus {
               }
       }
     }
+
+    
 
     ref_.createSK();
 
