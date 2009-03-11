@@ -775,6 +775,7 @@ namespace qmcplusplus {
         makeUniformRandom(TargetPtcl.R);
         TargetPtcl.R.setUnit(PosUnit::LatticeUnit);
         TargetPtcl.convert2Cart(TargetPtcl.R);
+	TargetPtcl.createSK();
       }
     }
 
