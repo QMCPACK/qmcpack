@@ -24,6 +24,7 @@
 #include "Numerics/HDFSTLAttrib.h"
 #include "OhmmsData/HDFStringAttrib.h"
 #include "ParticleIO/ESHDFParticleParser.h"
+#include "ParticleBase/RandomSeqGenerator.h"
 
 namespace qmcplusplus {
   std::map<TinyVector<int,4>,EinsplineSetBuilder::OrbType*,Int4less> 
@@ -766,6 +767,15 @@ namespace qmcplusplus {
       ap.expand(TileMatrix);
       ions->setName(sourceName);
       ParticleSets[sourceName]=ions;
+
+      //overwrite the lattice and assign random
+      if(TargetPtcl.Lattice.SuperCellEnum)
+      { 
+        TargetPtcl.Lattice=ions->Lattice;
+        makeUniformRandom(TargetPtcl.R);
+        TargetPtcl.R.setUnit(PosUnit::LatticeUnit);
+        TargetPtcl.convert2Cart(TargetPtcl.R);
+      }
     }
 
     return OrbitalSet;
