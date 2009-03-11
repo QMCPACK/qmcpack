@@ -29,14 +29,23 @@ namespace qmcplusplus {
    * 
    * Currently testing only 1 component for PBCs.
    */
-  void ParticleSet::createSK() {
+  void ParticleSet::createSK() 
+  {
     convert2Cart(R); //make sure that R is in Cartesian coordinates
     //if(Lattice.BoxBConds[0] && SK == 0)
-    if(Lattice.SuperCellEnum != SUPERCELL_OPEN && SK == 0)
+    if(Lattice.SuperCellEnum != SUPERCELL_OPEN)
     {
-      LOGMSG("\n  Creating Structure Factor for periodic systems.")
       Lattice.SetLRCutoffs();
-      SK = new StructFact(*this,Lattice.LR_kc);
+      if(SK) 
+      {
+        app_log() << "\n  Structure Factor is reset by " << Lattice.LR_kc << endl;
+        SK->UpdateNewCell(Lattice.LR_kc);
+      }
+      else
+      {
+        app_log() << "\n  Creating Structure Factor for periodic systems." <<endl;
+        SK = new StructFact(*this,Lattice.LR_kc);
+      }
       //Lattice.print(app_log());
       //This uses the copy constructor to avoid recomputing the data.
       //SKOld = new StructFact(*SK);
