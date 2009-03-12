@@ -8,7 +8,7 @@
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //   Department of Physics, UIUC
@@ -18,169 +18,145 @@
 #define QMCPLUSPLUS_TRIALDMCCORRECTION_H
 #include "QMCHamiltonians/QMCHamiltonianBase.h"
 
-namespace qmcplusplus {
+namespace qmcplusplus
+  {
 
   class QMCHamiltonian;
 
-  struct TrialDMCCorrection: public QMCHamiltonianBase 
-  {
-    vector<int> Hindices;
-    vector<int> Pindices;
-    vector<vector<int> > walkerLengths;
-    vector<double> Values,EValues;
-    vector<string> Names;
-    int blockT,nObservables,nValues,FirstHamiltonian;
-    
-    double count;
-
-
-    /** constructor
-     *
-     * Pressure operators need to be re-evaluated during optimization.
-     */
-    TrialDMCCorrection() {
-      //UpdateMode.set(OPTIMIZABLE,1);
-    }
-    
-    ///destructor
-    ~TrialDMCCorrection() { }
-
-    void resetTargetParticleSet(ParticleSet& P) { }
-
-    inline Return_t rejectedMove(ParticleSet& P) 
+  struct TrialDMCCorrection: public QMCHamiltonianBase
     {
-      vector<double>::iterator Vit=Values.begin();
-      vector<double>::iterator Vit2=EValues.begin();
+      vector<int> Hindices;
+      vector<int> Pindices;
+      vector<vector<int> > walkerLengths;
+      vector<double> Values,EValues;
+      vector<string> Names;
+      int blockT,nObservables,nValues,FirstHamiltonian;
 
-      for(int i=0;i<nObservables;i++){
-        //           app_log()<<"Obs#"<<i;
-        (*Vit)=0.0;
-        int k=0;
-        int DMindex = tWalker->PHindex[Pindices[i]]-1;
-        for(int j=0;j<tWalker->PropertyHistory[Pindices[i]].size();j++){
-          if (DMindex<0) DMindex=tWalker->PropertyHistory[Pindices[i]].size()-1;
-          (*Vit) += tWalker->PropertyHistory[Pindices[i]][DMindex];
-          DMindex--;
-          if(j==walkerLengths[i][k]){
-            double Tsum=(*Vit);
-            (*Vit2)=Tsum* (tWalker->Properties(LOCALENERGY));
-            Vit++;
-            Vit2++;
-            if (Vit != Values.end())
-            {
-              (*Vit)=Tsum;
-            }
-            k++;
-          }
-          //             app_log()<<"  "<<tWalker->PropertyHistory[Pindices[i]][walkerLengths[i][j]-1];
-        }
-        // 	  app_log()<<endl;
+      double count;
+
+
+      /** constructor
+       *
+       * Pressure operators need to be re-evaluated during optimization.
+       */
+      TrialDMCCorrection()
+      {
+        //UpdateMode.set(OPTIMIZABLE,1);
       }
-      //       }
-      // 	double* wFWval = tWalker->getPropertyBase();
-      std::copy(Values.begin(),Values.end(),tWalker->getPropertyBase()+FirstHamiltonian+myIndex );
-      std::copy(EValues.begin(),EValues.end(),tWalker->getPropertyBase()+FirstHamiltonian+myIndex+nValues);
 
-      return 0.0;
-  }
-    
-  inline Return_t evaluate(ParticleSet& P) 
-  {
+      ///destructor
+      ~TrialDMCCorrection() { }
 
-    //       tWalker->phLength++;
-    //       count=tWalker->phLength;
-    //       if (tWalker->phLength%blockT == 0){
-    //         tWalker->phLength=0;
-    for(int i=0;i<nObservables;i++){
-      tWalker->addPropertyHistoryPoint(Pindices[i],  P.PropertyList[Hindices[i]]);
-    }
+      void resetTargetParticleSet(ParticleSet& P) { }
 
-    //         for(int i=0;i<nObservables;i++){
-    // 	app_log()<<" Nobs:"<<i<<endl;
-    // 	for(int j=0;j<tWalker->PropertyHistory[i].size();j++){
-    //             app_log()<<"  "<<tWalker->PropertyHistory[i][j];
-    // 	  }
-    // 	  app_log()<<endl;
-    //         }
+      inline Return_t rejectedMove(ParticleSet& P)
+      {
+        vector<double>::iterator Vit=Values.begin();
+        vector<double>::iterator Vit2=EValues.begin();
 
-    vector<double>::iterator Vit=Values.begin();
-    vector<double>::iterator Vit2=EValues.begin();
-
-      for(int i=0;i<nObservables;i++){
-        //           app_log()<<"Obs#"<<i;
-        (*Vit)=0.0;
-        int k=0;
-        int DMindex = tWalker->PHindex[Pindices[i]]-1;
-        for(int j=0;j<tWalker->PropertyHistory[Pindices[i]].size();j++){
-          if (DMindex<0) DMindex=tWalker->PropertyHistory[Pindices[i]].size()-1;
-          (*Vit) += tWalker->PropertyHistory[Pindices[i]][DMindex];
-          DMindex--;
-          if(j==walkerLengths[i][k]){
-            double Tsum=(*Vit);
-            (*Vit2)=Tsum* (tWalker->Properties(LOCALENERGY));
-            Vit++;
-            if (Vit != Values.end())
-            {
-              (*Vit)=Tsum;
-              (*Vit2)=Tsum* (tWalker->Properties(LOCALENERGY));
-              Vit2++;
-            }
-            k++;
+        for (int i=0;i<nObservables;i++)
+          {
+            int DMindex = tWalker->PHindex[Pindices[i]]-2;
+            if (DMindex<0) DMindex+=walkerLengths[i][2];
+            for (int j=0;j<walkerLengths[i][1];j++)
+              tWalker->PropertyHistory[Pindices[i]+1][j] += tWalker->PropertyHistory[Pindices[i]][DMindex];
+            int hin = DMindex;
+            for (int j=0;j<walkerLengths[i][1];j++)
+              {
+                hin -= walkerLengths[i][0];
+                if (hin<0) hin+=walkerLengths[i][2];
+                tWalker->PropertyHistory[Pindices[i]+1][j] -=  tWalker->PropertyHistory[Pindices[i]][hin];
+                (*Vit)=tWalker->PropertyHistory[Pindices[i]+1][j];/*tWalker->PropertyHistory[Pindices[i]+1][j];*/
+                (*Vit2)=(tWalker->Properties(LOCALENERGY))*tWalker->PropertyHistory[Pindices[i]+1][j];
+                Vit++;
+                Vit2++;
+              }
+//         for(int j=0;j<tWalker->PropertyHistory[Pindices[i]].size();j++){
+//           if (DMindex<0) DMindex=tWalker->PropertyHistory[Pindices[i]].size()-1;
+//           (*Vit) += tWalker->PropertyHistory[Pindices[i]][DMindex];
+//           DMindex--;
+//           if(j==walkerLengths[i][k]){
+//             double Tsum=(*Vit);
+//             (*Vit2)=Tsum* (tWalker->Properties(LOCALENERGY));
+//             Vit++;
+//             Vit2++;
+//             if (Vit != Values.end())
+//             {
+//               (*Vit)=Tsum;
+//             }
+//             k++;
+//           }
+//           //             app_log()<<"  "<<tWalker->PropertyHistory[Pindices[i]][walkerLengths[i][j]-1];
+//         }
+            //    app_log()<<endl;
           }
-          //             app_log()<<"  "<<tWalker->PropertyHistory[Pindices[i]][walkerLengths[i][j]-1];
-        }
-        //    app_log()<<endl;
+        //       }
+        //  double* wFWval = tWalker->getPropertyBase();
+
+
+        std::copy(Values.begin(),Values.end(),tWalker->getPropertyBase()+FirstHamiltonian+myIndex);
+        std::copy(EValues.begin(),EValues.end(),tWalker->getPropertyBase()+FirstHamiltonian+myIndex+nValues);
+
+        return 0.0;
       }
-    //       }
-    // 	double* wFWval = tWalker->getPropertyBase();
-    std::copy(Values.begin(),Values.end(),tWalker->getPropertyBase()+FirstHamiltonian+myIndex );
-    std::copy(EValues.begin(),EValues.end(),tWalker->getPropertyBase()+FirstHamiltonian+myIndex+nValues);
-    // 	wFWval += FirstHamiltonian;
 
-    return 0.0;
-  }
+      inline Return_t evaluate(ParticleSet& P)
+      {
+        for (int i=0;i<nObservables;i++)
+          {
+            tWalker->addPropertyHistoryPoint(Pindices[i],  P.PropertyList[Hindices[i]]);
+          }
 
-  inline Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy) 
-  {
-    return evaluate(P);
-  }
+        rejectedMove(P);
 
-  bool put(xmlNodePtr cur) {return true;}
-      
-  bool putSpecial(xmlNodePtr cur, QMCHamiltonian& h, ParticleSet& P );
+        return 0.0;
+      }
 
-  bool get(std::ostream& os) const {
-    os << "TrialVCorrection";
-    return true;
-  }
+      inline Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy)
+      {
+        return evaluate(P);
+      }
 
-  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+      bool put(xmlNodePtr cur)
+      {
+        return true;
+      }
 
-  void addObservables(PropertySetType& plist); 
-  void addObservables(PropertySetType& plist, BufferType& collectables);
+      bool putSpecial(xmlNodePtr cur, QMCHamiltonian& h, ParticleSet& P);
 
-  void setObservables(PropertySetType& plist)
-  {
-    std::copy(Values.begin(),Values.end(),plist.begin()+myIndex);
-    std::copy(EValues.begin(),EValues.end(),plist.begin()+myIndex+nValues);
-    //for (int i=0;i<nValues;i++) plist[myIndex+ i]=Values[i];
-    //for (int i=0;i<nValues;i++) plist[myIndex+i+nValues]=EValues[i];
-  }
-    
-  void setParticlePropertyList(PropertySetType& plist, int offset)
-  {
-    std::copy(Values.begin(),Values.end(),plist.begin()+myIndex+offset);
-    std::copy(EValues.begin(),EValues.end(),plist.begin()+myIndex+nValues+offset);
-    //for (int i=0;i<nValues;i++) plist[myIndex+i+offset]=Values[i];
-    //for (int i=0;i<nValues;i++) plist[myIndex+i+offset+nValues]=EValues[i];
-  }
-};
+      bool get(std::ostream& os) const
+        {
+          os << "TrialVCorrection";
+          return true;
+        }
+
+      QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+
+      void addObservables(PropertySetType& plist);
+      void addObservables(PropertySetType& plist, BufferType& collectables);
+
+      void setObservables(PropertySetType& plist)
+      {
+        std::copy(Values.begin(),Values.end(),plist.begin()+myIndex);
+        std::copy(EValues.begin(),EValues.end(),plist.begin()+myIndex+nValues);
+        //for (int i=0;i<nValues;i++) plist[myIndex+ i]=Values[i];
+        //for (int i=0;i<nValues;i++) plist[myIndex+i+nValues]=EValues[i];
+      }
+
+      void setParticlePropertyList(PropertySetType& plist, int offset)
+      {
+        std::copy(Values.begin(),Values.end(),plist.begin()+myIndex+offset);
+        std::copy(EValues.begin(),EValues.end(),plist.begin()+myIndex+nValues+offset);
+        //for (int i=0;i<nValues;i++) plist[myIndex+i+offset]=Values[i];
+        //for (int i=0;i<nValues;i++) plist[myIndex+i+offset+nValues]=EValues[i];
+      }
+    };
 }
 #endif
 
 /***************************************************************************
  * $RCSfile$   $Author: jnkim $
  * $Revision: 1581 $   $Date: 2007-01-04 10:02:14 -0600 (Thu, 04 Jan 2007) $
- * $Id: trialDMCcorrection.h 1581 2007-01-04 16:02:14Z jnkim $ 
+ * $Id: trialDMCcorrection.h 1581 2007-01-04 16:02:14Z jnkim $
  ***************************************************************************/
 

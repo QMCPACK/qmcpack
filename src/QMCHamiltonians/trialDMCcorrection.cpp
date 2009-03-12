@@ -74,24 +74,29 @@ namespace qmcplusplus {
         Hindices.push_back( Hindex);
         app_log()<<" Hamiltonian Element "<<tagName<<" was found at "<< Hindex<<endl;
 
-        vector<int> Parameters;
-        if(blockSeries==0) putContent(Parameters,tcur);
-        else{
-          for( int pl=blockFreq-1;pl<blockSeries;pl+=blockFreq) Parameters.push_back(pl);
-        }
+        //vector<int> Parameters;
+        //if(blockSeries==0) putContent(Parameters,tcur);
+        //else{
+        //  for( int pl=blockFreq-1;pl<blockSeries;pl+=blockFreq) Parameters.push_back(pl);
+        //}
 
-        int numT=Parameters.size();
+        int numT=blockSeries/blockFreq ;
         nObservables+=1;
         nValues+=numT;
 
-        app_log()<<"   "<<numT<<" values will be calculated at block numbers:"<<endl;
-        app_log()<<"      ";
-        for(int nm=0;nm<Parameters.size();nm++) app_log()<<Parameters[nm]<<"  ";
-        app_log()<<endl;
-        walkerLengths.push_back(Parameters);
+        app_log()<<"   "<<numT<<" values will be calculated every "<<blockFreq<<"*tau H^-1"<<endl;
+  //      app_log()<<"      ";
+//        for(int nm=0;nm<Parameters.size();nm++) app_log()<<Parameters[nm]<<"  ";
+      //  app_log()<<endl;
+        vector<int> pms(3);
+        pms[0]=blockFreq;
+        pms[1]=numT;
+        pms[2]=blockSeries+2;
+        walkerLengths.push_back(pms);
 
-        int maxWsize=Parameters.back();
+        int maxWsize=blockSeries+2;
         int pindx = P.addPropertyHistory(maxWsize);
+        P.addPropertyHistory(numT);
         Pindices.push_back(pindx);
         app_log()<<"pindex "<<pindx<<endl;
 
@@ -119,20 +124,20 @@ namespace qmcplusplus {
     myIndex=plist.size();
     int nc=0;
     for(int i=0;i<nObservables;++i)
-      for(int j=0;j<walkerLengths[i].size();++j,++nc)
+      for(int j=0;j<walkerLengths[i][1];++j,++nc)
       {
         std::stringstream sstr;
-        sstr << "T_" << Names[i] << "_" << walkerLengths[i][j];
+        sstr << "T_" << Names[i] << "_" << (j+1)*walkerLengths[i][0];
         int id= plist.add(sstr.str());
         myIndex=std::min(myIndex,id);
         //app_log()<<"Observables named "<<sstr.str()<< " at " << id <<endl;
       }
 
     for(int i=0;i<nObservables;++i)
-      for(int j=0;j<walkerLengths[i].size();++j,++nc)
+      for(int j=0;j<walkerLengths[i][1];++j,++nc)
       {
         std::stringstream sstr;
-        sstr << "ET_" << Names[i] << "_" << walkerLengths[i][j];
+        sstr << "ET_" << Names[i] << "_" << (j+1)*walkerLengths[i][0];
         int id=plist.add(sstr.str());
         myIndex=std::min(myIndex,id);
         //app_log()<<"Observables named "<<sstr.str()<< " at " << id <<endl;
