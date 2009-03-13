@@ -186,43 +186,40 @@ namespace qmcplusplus {
     }
     
    DiffOrbitalBasePtr makeClone(ParticleSet& tqp) const
-    {
-      DiffTwoBodyJastrowOrbital<FT>* j2copy=new DiffTwoBodyJastrowOrbital<FT>(tqp);
-      map<const FT*,FT*> fcmap;
-      for(int ig=0; ig<NumGroups; ++ig)
-        for(int jg=ig; jg<NumGroups; ++jg)
-        {
-          int ij=ig*NumGroups+jg;
-          if(F[ij]==0) continue;
-          typename map<const FT*,FT*>::iterator fit=fcmap.find(F[ij]);
-          if(fit == fcmap.end())
-          {
-            FT* fc=new FT(*F[ij]);
-            stringstream aname;
-            aname<<ig<<jg;
-            j2copy->addFunc(aname.str(),ig,jg,fc);
-            fcmap[F[ij]]=fc;
-          }
-        }
+   {
+     DiffTwoBodyJastrowOrbital<FT>* j2copy=new DiffTwoBodyJastrowOrbital<FT>(tqp);
+     map<const FT*,FT*> fcmap;
+     for(int ig=0; ig<NumGroups; ++ig)
+       for(int jg=ig; jg<NumGroups; ++jg)  {
+	 int ij=ig*NumGroups+jg;
+	 if(F[ij]==0) continue;
+	 typename map<const FT*,FT*>::iterator fit=fcmap.find(F[ij]);
+	 if(fit == fcmap.end()) {
+	   FT* fc=new FT(*F[ij]);
+	   stringstream aname;
+	   aname<<ig<<jg;
+	   j2copy->addFunc(aname.str(),ig,jg,fc);
+	   fcmap[F[ij]]=fc;
+	 }
+       }
         
-      j2copy->myVars.clear();
-      j2copy->myVars.insertFrom(myVars);
-      j2copy->NumVars=NumVars;
-      j2copy->NumPtcls=NumPtcls;
-      j2copy->NumGroups=NumGroups;
-			j2copy->dLogPsi.resize(NumVars);
-			j2copy->gradLogPsi.resize(NumVars,0);
-			j2copy->lapLogPsi.resize(NumVars,0);
-			for(int i=0; i<NumVars; ++i)
-			{
-				j2copy->gradLogPsi[i]=new GradVectorType(NumPtcls);
-				j2copy->lapLogPsi[i]=new ValueVectorType(NumPtcls);
-			}
-			j2copy->OffSet=OffSet;
+     j2copy->myVars.clear();
+     j2copy->myVars.insertFrom(myVars);
+     j2copy->NumVars=NumVars;
+     j2copy->NumPtcls=NumPtcls;
+     j2copy->NumGroups=NumGroups;
+     j2copy->dLogPsi.resize(NumVars);
+     j2copy->gradLogPsi.resize(NumVars,0);
+     j2copy->lapLogPsi.resize(NumVars,0);
+     for(int i=0; i<NumVars; ++i) {
+       j2copy->gradLogPsi[i]=new GradVectorType(NumPtcls);
+       j2copy->lapLogPsi[i]=new ValueVectorType(NumPtcls);
+     }
+     j2copy->OffSet=OffSet;
+     
 			
-			
-      return j2copy;
-    }
+     return j2copy;
+   }
     
   };
 }

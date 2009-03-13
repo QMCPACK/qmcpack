@@ -573,6 +573,7 @@ namespace qmcplusplus {
           }
         }
         
+      j2copy->Optimizable = Optimizable;
         
       return j2copy;
     }

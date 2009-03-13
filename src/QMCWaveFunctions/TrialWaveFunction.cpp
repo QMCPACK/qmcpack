@@ -158,12 +158,15 @@ namespace qmcplusplus {
     PhaseValue=0.0;
     vector<OrbitalBase*>::iterator it(Z.begin());
     vector<OrbitalBase*>::iterator it_end(Z.end());
-    for(; it!=it_end; ++it)
+    int i = 0;
+    for(; it!=it_end; ++it, i++)
     {
       if((*it)->Optimizable) {
         logpsi += (*it)->evaluateLog(P, P.G, P.L); 
         PhaseValue += (*it)->PhaseValue;
       }
+      // else 
+      // 	cerr << "Orbital " << i << " is not optimizable.\n";
     }
     return LogValue=real(logpsi);
   }
@@ -198,12 +201,15 @@ namespace qmcplusplus {
     ValueType logpsi_opt(0.0);
     vector<OrbitalBase*>::iterator it(Z.begin());
     vector<OrbitalBase*>::iterator it_end(Z.end());
-    for(; it!=it_end; ++it)
+    int i = 0;
+    for(; it!=it_end; ++it, i++)
     {
       if((*it)->Optimizable) 
         logpsi_opt += (*it)->evaluateLog(P, P.G, P.L); 
-      else
+      else {
         logpsi_fixed += (*it)->evaluateLog(P, fixedG, fixedL); 
+	//cerr << "Orbital " << i << " is not optimizable.\n";
+      }
     }
     P.G += fixedG; 
     P.L += fixedL;

@@ -724,6 +724,7 @@ namespace qmcplusplus {
       }
     }
 
+#ifndef QMC_COMPLEX
     if (myComm->rank()==0 && OrbitalSet->MuffinTins.size() > 0) {
       FILE *fout  = fopen ("TestMuffins.dat", "w");
       Vector<double> phi(numOrbs), lapl(numOrbs);
@@ -754,6 +755,7 @@ namespace qmcplusplus {
       }
       fclose(fout);
     }
+#endif
 
     SPOSetMap[set] = OrbitalSet;
     
