@@ -38,7 +38,13 @@ namespace qmcplusplus {
 
     const DistanceTableData* d_table;
 
-    int N,NN;
+    //flag to prevent parallel output
+    bool Write_Chiesa_Correction;
+    //nuber of particles
+    int N;
+    //N*N
+    int NN;
+    //number of groups of the target particleset
     int NumGroups;
     RealType DiffVal, DiffValSum;
     ParticleAttrib<RealType> U,d2U,curLap,curVal;
@@ -59,18 +65,19 @@ namespace qmcplusplus {
     ///container for the Jastrow functions 
     vector<FT*> F;
 
-    TwoBodyJastrowOrbital(ParticleSet& p) :
-      KEcorr(0.0)
-    {
-      PtclRef = &p;
-      d_table=DistanceTable::add(p);
-      init(p);
-      FirstTime = true;
-    }
+    TwoBodyJastrowOrbital(ParticleSet& p, bool is_master) 
+      : Write_Chiesa_Correction(is_master), KEcorr(0.0)
+      {
+        PtclRef = &p;
+        d_table=DistanceTable::add(p);
+        init(p);
+        FirstTime = true;
+      }
 
     ~TwoBodyJastrowOrbital(){ }
 
-    void init(ParticleSet& p) {
+    void init(ParticleSet& p) 
+    {
       N=p.getTotalNum();
       NN=N*N;
       U.resize(NN+1);
@@ -164,11 +171,15 @@ namespace qmcplusplus {
       {
         (*it++).second->resetParameters(active); 
       }
-      if (FirstTime) {
-	    app_log() << "  Chiesa kinetic energy correction = " 
-		  << ChiesaKEcorrection() << endl;
-	    FirstTime = false;
+
+      //if (FirstTime) {
+      if(!IsOptimizing)
+      {
+        app_log() << "  Chiesa kinetic energy correction = " 
+          << ChiesaKEcorrection() << endl;
+        //FirstTime = false;
       }
+
       if(dPsi) dPsi->resetParameters( active );
       for(int i=0; i<myVars.size(); ++i)
       {
@@ -542,7 +553,7 @@ namespace qmcplusplus {
 
     OrbitalBasePtr makeClone(ParticleSet& tqp) const
     {
-      TwoBodyJastrowOrbital<FT>* j2copy=new TwoBodyJastrowOrbital<FT>(tqp);
+      TwoBodyJastrowOrbital<FT>* j2copy=new TwoBodyJastrowOrbital<FT>(tqp,Write_Chiesa_Correction);
       if (dPsi) j2copy->dPsi = dPsi->makeClone(tqp);
       map<const FT*,FT*> fcmap;
       for(int ig=0; ig<NumGroups; ++ig)
@@ -571,37 +582,41 @@ namespace qmcplusplus {
       //nothing to do
     }
 
-    double ChiesaKEcorrection()
+    RealType ChiesaKEcorrection()
     {
       if (!PtclRef->Lattice.SuperCellEnum)
 	return 0.0;
       const int numPoints = 1000;
-      double vol = PtclRef->Lattice.Volume;
-      double aparam = 0.0;
+      RealType vol = PtclRef->Lattice.Volume;
+      RealType aparam = 0.0;
       int nsp = PtclRef->groups();
-      FILE *fout = fopen ("uk.dat", "w");
-      double sum;
-      for (int iG=0; iG<PtclRef->SK->KLists.ksq.size(); iG++) {
-	double Gmag = std::sqrt(PtclRef->SK->KLists.ksq[iG]);
-	sum = 0.0;
-	double uk = 0.0;
-	for (int i=0; i<PtclRef->groups(); i++) {
+      FILE *fout=(Write_Chiesa_Correction)?fopen ("uk.dat", "w"):0;
+      for (int iG=0; iG<PtclRef->SK->KLists.ksq.size(); iG++) 
+      {
+        RealType Gmag = std::sqrt(PtclRef->SK->KLists.ksq[iG]);
+        RealType sum=0.0;
+        RealType uk = 0.0;
+	for (int i=0; i<PtclRef->groups(); i++) 
+        {
 	  int Ni = PtclRef->last(i) - PtclRef->first(i);
-	  double aparam = 0.0;
-	  for (int j=0; j<PtclRef->groups(); j++) {
+	  RealType aparam = 0.0;
+	  for (int j=0; j<PtclRef->groups(); j++) 
+          {
 	    int Nj = PtclRef->last(j) - PtclRef->first(j);
-	    if (F[i*nsp+j]) {
+	    if (F[i*nsp+j]) 
+            {
 	      FT& ufunc = *(F[i*nsp+j]);
-	      double radius = ufunc.cutoff_radius;
-	      double k = Gmag;
-	      double dr = radius/(double)(numPoints-1);
-	      for (int ir=0; ir<numPoints; ir++) {
-		double r = dr * (double)ir;
-		double u = ufunc.evaluate(r);
+	      RealType radius = ufunc.cutoff_radius;
+	      RealType k = Gmag;
+	      RealType dr = radius/(RealType)(numPoints-1);
+	      for (int ir=0; ir<numPoints; ir++) 
+              {
+		RealType r = dr * (RealType)ir;
+		RealType u = ufunc.evaluate(r);
 		aparam += (1.0/4.0)*k*k*
 		  4.0*M_PI*r*std::sin(k*r)/k*u*dr;
 		uk += 0.5*4.0*M_PI*r*std::sin(k*r)/k * u * dr *
-		  (double)Nj / (double)(Ni+Nj);
+		  (RealType)Nj / (RealType)(Ni+Nj);
 		
 		//aparam += 0.25* 4.0*M_PI*r*r*u*dr;
 	      }
@@ -610,15 +625,16 @@ namespace qmcplusplus {
 	  //app_log() << "A = " << aparam << endl;
 	  sum += Ni * aparam / vol;
 	}
-	if (iG == 0) {
-	  double a = 1.0;
+	if (iG == 0) 
+        {
+	  RealType a = 1.0;
 	  for (int iter=0; iter<20; iter++) 
 	    a = uk / (4.0*M_PI*(1.0/(Gmag*Gmag) - 1.0/(Gmag*Gmag + 1.0/a)));
 	  KEcorr = 4.0*M_PI*a/(4.0*vol) * PtclRef->getTotalNum();
 	}
-	fprintf (fout, "%1.8f %1.12e %1.12e\n", Gmag, uk, sum);
+	if(fout) fprintf (fout, "%1.8f %1.12e %1.12e\n", Gmag, uk, sum);
       }
-      fclose(fout);
+      if(fout) fclose(fout);
       return KEcorr;
     }
 
@@ -633,35 +649,35 @@ namespace qmcplusplus {
       return KEcorr;
     }
     
-// double ChiesaKEcorrection()
+// RealType ChiesaKEcorrection()
 //     {
 //       // Find magnitude of the smallest nonzero G-vector
-//       double Gmag = std::sqrt(PtclRef->SK->KLists.ksq[0]);
+//       RealType Gmag = std::sqrt(PtclRef->SK->KLists.ksq[0]);
 //       //app_log() << "Gmag = " << Gmag << endl;
 
 //       const int numPoints = 1000;
-//       double vol = PtclRef->Lattice.Volume;
-//       double aparam = 0.0;
+//       RealType vol = PtclRef->Lattice.Volume;
+//       RealType aparam = 0.0;
 //       int nsp = PtclRef->groups();
 //       FILE *fout = fopen ("uk.dat", "w");
-//       double sum;
-//       for (double s=0.001; s<6.0; s+=0.001) {
-//        	double k = s * M_PI/F[0]->cutoff_radius;
+//       RealType sum;
+//       for (RealType s=0.001; s<6.0; s+=0.001) {
+//        	RealType k = s * M_PI/F[0]->cutoff_radius;
 // 	sum = 0.0;
 // 	for (int i=0; i<PtclRef->groups(); i++) {
 // 	  int Ni = PtclRef->last(i) - PtclRef->first(i);
-// 	  double aparam = 0.0;
+// 	  RealType aparam = 0.0;
 // 	  for (int j=0; j<PtclRef->groups(); j++) {
 // 	    int Nj = PtclRef->last(j) - PtclRef->first(j);
 // 	    if (F[i*nsp+j]) {
 // 	      FT& ufunc = *(F[i*nsp+j]);
-// 	      double radius = ufunc.cutoff_radius;
-// 	      double k = 1.0*M_PI/radius;
-// 	      //double k = Gmag;
-// 	      double dr = radius/(double)(numPoints-1);
+// 	      RealType radius = ufunc.cutoff_radius;
+// 	      RealType k = 1.0*M_PI/radius;
+// 	      //RealType k = Gmag;
+// 	      RealType dr = radius/(RealType)(numPoints-1);
 // 	      for (int ir=0; ir<numPoints; ir++) {
-// 		double r = dr * (double)ir;
-// 		double u = ufunc.evaluate(r);
+// 		RealType r = dr * (RealType)ir;
+// 		RealType u = ufunc.evaluate(r);
 // 		aparam += (1.0/4.0)*k*k*
 // 		  4.0*M_PI*r*std::sin(k*r)/k*u*dr;
 // 		//aparam += 0.25* 4.0*M_PI*r*r*u*dr;

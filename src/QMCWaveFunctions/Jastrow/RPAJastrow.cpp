@@ -18,12 +18,13 @@
 
 namespace qmcplusplus {
   
-  RPAJastrow::RPAJastrow(ParticleSet& target):
-     targetPtcl(target) {
+  RPAJastrow::RPAJastrow(ParticleSet& target, bool is_manager)
+    :IsManager(is_manager), targetPtcl(target)
+    {
 
-    Optimizable=true;
-    OrbitalName="RPAJastrow";
-  }
+      Optimizable=true;
+      OrbitalName="RPAJastrow";
+    }
 
   RPAJastrow::~RPAJastrow() 
   {
@@ -214,7 +215,7 @@ namespace qmcplusplus {
           << myHandler->evaluate(r,1.0/r) << " " 
           << myHandler->evaluateLR(r) << endl;
     }
-    TwoBodyJastrowOrbital<FuncType> *j2 = new TwoBodyJastrowOrbital<FuncType>(targetPtcl);
+    TwoBodyJastrowOrbital<FuncType> *j2 = new TwoBodyJastrowOrbital<FuncType>(targetPtcl,IsManager);
     j2->addFunc("rpa",0,0,nfunc);
     ShortRangeRPA=j2;
     Psi.push_back(ShortRangeRPA);
@@ -356,7 +357,7 @@ namespace qmcplusplus {
       tempHandler= new LRRPAHandlerTemp<DerivRPABreakup<RealType>,LPQHIBasis >(dynamic_cast<const LRRPAHandlerTemp<DerivRPABreakup<RealType>,LPQHIBasis>& > (*myHandler),tpq);
     }
 
-    RPAJastrow* myClone = new RPAJastrow(tpq);
+    RPAJastrow* myClone = new RPAJastrow(tpq,IsManager);
     myClone->setHandler(tempHandler);
     if(!DropLongRange) myClone->makeLongRange();
     if(!DropShortRange) myClone->makeShortRange();

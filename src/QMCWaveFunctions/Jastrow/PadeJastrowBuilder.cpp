@@ -80,7 +80,7 @@ namespace qmcplusplus
     typedef PadeFunctor<RealType> FuncType;
 
     typedef TwoBodyJastrowOrbital<FuncType> JeeType;
-    JeeType *J2 = new JeeType(targetPtcl);
+    JeeType *J2 = new JeeType(targetPtcl,targetPsi.is_manager());
 
     SpeciesSet& species(targetPtcl.getSpeciesSet());
     RealType q=species(0,species.addAttribute("charge"));

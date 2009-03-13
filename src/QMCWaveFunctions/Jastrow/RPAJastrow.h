@@ -21,7 +21,7 @@ namespace qmcplusplus {
     typedef CubicSplineSingle<RealType,SplineEngineType> FuncType;
     typedef LinearGrid<RealType> GridType;
 
-    RPAJastrow(ParticleSet& target);
+    RPAJastrow(ParticleSet& target, bool is_manager);
 
     ~RPAJastrow();
     
@@ -91,6 +91,7 @@ namespace qmcplusplus {
     
     private:
     
+    bool IsManager;
     bool IgnoreSpin;
     bool DropLongRange;
     bool DropShortRange;

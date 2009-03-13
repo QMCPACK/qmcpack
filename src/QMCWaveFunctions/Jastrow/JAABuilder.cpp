@@ -53,7 +53,7 @@ namespace qmcplusplus
     cur = cur->children;
     const SpeciesSet& species(targetPtcl.getSpeciesSet());
     typedef TwoBodyJastrowOrbital<FN> JeeType;
-    JeeType *J2 = new JeeType(targetPtcl);
+    JeeType *J2 = new JeeType(targetPtcl,targetPsi.is_manager());
     typedef DiffTwoBodyJastrowOrbital<FN> dJ2Type;
     dJ2Type *dJ2 = new dJ2Type(targetPtcl);
 

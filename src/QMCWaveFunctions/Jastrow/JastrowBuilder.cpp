@@ -181,7 +181,7 @@ namespace qmcplusplus {
         return false;
       }
 //         control = new RPAPBCConstraints(targetPtcl,targetPsi,ignoreSpin);
-      RPAJastrow* rpajastrow = new RPAJastrow(targetPtcl);
+      RPAJastrow* rpajastrow = new RPAJastrow(targetPtcl,targetPsi.is_manager());
       rpajastrow->put(cur);
       targetPsi.addOrbital(rpajastrow,nameOpt);
       return true;
