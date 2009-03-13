@@ -113,7 +113,7 @@ namespace qmcplusplus {
     ValueType evaluate(ParticleSet& P);
     
     /** evalaute the values of the wavefunction, gradient and laplacian  for a walkers */
-    ValueType evaluateLogOnly(ParticleSet& P);
+    RealType evaluateLogOnly(ParticleSet& P);
 
     /** evalaute the log of the trial wave function */
     RealType evaluateLog(ParticleSet& P);
