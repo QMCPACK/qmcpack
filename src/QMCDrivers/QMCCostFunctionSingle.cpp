@@ -226,8 +226,9 @@ namespace qmcplusplus {
     ReportCounter=0;
   }
 
-  void QMCCostFunctionSingle::resetPsi()
+  void QMCCostFunctionSingle::resetPsi(bool final_reset)
   {
+
     if(OptVariables.size() < OptVariablesForPsi.size())
     {
       for(int i=0; i<equalVarMap.size(); ++i)
@@ -236,7 +237,8 @@ namespace qmcplusplus {
     else
       for(int i=0; i<OptVariables.size(); ++i) OptVariablesForPsi[i]=OptVariables[i];
       
-      Psi.resetParameters(OptVariablesForPsi);
+    if(final_reset) Psi.stopOptimization();
+    Psi.resetParameters(OptVariablesForPsi);
   }
   
   

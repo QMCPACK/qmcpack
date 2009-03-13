@@ -240,7 +240,7 @@ namespace qmcplusplus {
     bool checkParameters();
     void updateXmlNodes();
 
-    virtual void resetPsi()=0;
+    virtual void resetPsi(bool final_reset=false)=0;
     virtual Return_t correlatedSampling()=0;
   };
 }

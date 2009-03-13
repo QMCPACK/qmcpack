@@ -411,7 +411,8 @@ QMCCostFunctionBase::Return_t QMCCostFunctionBase::Cost() {
 
   void QMCCostFunctionBase::reportParameters() {
 
-    resetPsi();
+    //final reset, restoring the OrbitalBase::IsOptimizing to false
+    resetPsi(true);
 
     if(!myComm->rank())
     {

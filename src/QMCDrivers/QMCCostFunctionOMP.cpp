@@ -248,6 +248,8 @@ namespace qmcplusplus
           TempDerivRecords[ip]=new vector<vector<Return_t> >(wRef.getActiveWalkers() , vector<Return_t>(NumOptimizables,0.0));
           TempHDerivRecords[ip]=new vector<vector<Return_t> >(wRef.getActiveWalkers() , vector<Return_t>(NumOptimizables,0.0));
         }
+      //set the optimization mode for the trial wavefunction
+      psiClones[ip]->startOptimization();
 
       //int nat = wRef.getTotalNum();
       //int totalElements=W.getTotalNum()*OHMMS_DIM;
@@ -307,7 +309,7 @@ namespace qmcplusplus
     ReportCounter=0;
   }
 
-  void QMCCostFunctionOMP::resetPsi()
+  void QMCCostFunctionOMP::resetPsi(bool final_reset)
   {
     if (OptVariables.size() < OptVariablesForPsi.size())
       {
@@ -316,6 +318,10 @@ namespace qmcplusplus
     else
       for (int i=0; i<OptVariables.size(); ++i) OptVariablesForPsi[i]=OptVariables[i];
 
+    if(final_reset) 
+      for (int i=0; i<psiClones.size(); ++i)
+        psiClones[i]->stopOptimization();
+
     //cout << "######### QMCCostFunctionOMP::resetPsi " << endl;
     //OptVariablesForPsi.print(cout);
     //cout << "-------------------------------------- " << endl;
@@ -323,7 +329,6 @@ namespace qmcplusplus
 
     for (int i=0; i<psiClones.size(); ++i)
       psiClones[i]->resetParameters(OptVariablesForPsi);
-
   }
 
   QMCCostFunctionOMP::Return_t QMCCostFunctionOMP::correlatedSampling()

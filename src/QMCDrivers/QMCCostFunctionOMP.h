@@ -52,7 +52,7 @@ namespace qmcplusplus {
     vector<vector<vector<Return_t> >* > TempDerivRecords;
     vector<vector<vector<Return_t> >* > TempHDerivRecords;
     Return_t CSWeight;
-    void resetPsi();
+    void resetPsi(bool final_reset=false);
     Return_t correlatedSampling();
   };
 }
