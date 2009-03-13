@@ -155,7 +155,8 @@ namespace qmcplusplus {
       plist[myIndex+offset]=Value;
     }
 
-    virtual void setHistories(Walker<Return_t, ParticleSet::ParticleGradient_t>& ThisWalker)
+    //virtual void setHistories(Walker<Return_t, ParticleSet::ParticleGradient_t>& ThisWalker)
+    virtual void setHistories(Walker_t& ThisWalker)
     {
        tWalker = &(ThisWalker);
     }

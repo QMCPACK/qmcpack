@@ -638,7 +638,7 @@ void WaveFunctionTester::runGradSourceTest() {
     for(int iat=0; iat<nat; iat++) {
       PosType r0 = W.R[iat];
       GradType gFD[OHMMS_DIM];  
-      GradType lapFD = 0.0;
+      GradType lapFD = ValueType();
       for(int eldim=0; eldim<3; eldim++) {
 	W.R[iat][eldim] = r0[eldim]+delta;         
 	W.update();
@@ -756,7 +756,7 @@ void WaveFunctionTester::runDerivTest() {
      W.update();
  W.G=0;
  W.L=0;
-    ValueType logpsiPlus = Psi.evaluateLog(W);
+    RealType logpsiPlus = Psi.evaluateLog(W);
     RealType elocPlus=H.evaluate(W);
     
     
@@ -767,7 +767,7 @@ void WaveFunctionTester::runDerivTest() {
  W.update();
  W.G=0;
  W.L=0;
-    ValueType logpsiMinus = Psi.evaluateLog(W);
+    RealType logpsiMinus = Psi.evaluateLog(W);
     RealType elocMinus =H.evaluate(W);
     
     PGradient[i]= (logpsiPlus-logpsiMinus)*dh;

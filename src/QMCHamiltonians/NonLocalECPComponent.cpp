@@ -161,6 +161,9 @@ namespace qmcplusplus {
   NonLocalECPComponent::evaluate(ParticleSet& W, int iat, 
 				 TrialWaveFunction& psi,
 				 PosType &force_iat) {
+#if defined(QMC_COMPLEX)
+    return 0.0;
+#else
     RealType esum=0.0;
     force_iat = PosType();
     for(int nn=myTable->M[iat],iel=0; nn<myTable->M[iat+1]; nn++,iel++){
@@ -251,6 +254,7 @@ namespace qmcplusplus {
       //iel++;
     }   /* end loop over electron */
     return esum;
+#endif
   }
 
   NonLocalECPComponent::RealType 
@@ -258,6 +262,9 @@ namespace qmcplusplus {
 				 TrialWaveFunction& psi,
 				 PosType &force_iat, PosType &pulay_iat) 
   {
+#if defined(QMC_COMPLEX)
+    return 0.0;
+#else
     RealType esum=0.0;
     force_iat = PosType();
     pulay_iat = PosType();
@@ -353,6 +360,7 @@ namespace qmcplusplus {
       //iel++;
     }   /* end loop over electron */
     return esum;
+#endif
   }
 
 
@@ -567,6 +575,9 @@ namespace qmcplusplus {
   NonLocalECPComponent::evaluate(ParticleSet& W, TrialWaveFunction& psi,int iat, 
 				 vector<NonLocalData>& Txy, PosType &force_iat) 
   {
+#if defined(QMC_COMPLEX)
+    return 0.0;
+#else
     RealType esum=0.0;
     force_iat = PosType();
 
@@ -645,7 +656,7 @@ namespace qmcplusplus {
      //esum += BLAS::dot(nchannel, &vrad[0], &wvec[0]);
     }   /* end loop over electron */
     return esum;
-
+#endif
   }
 
 

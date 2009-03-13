@@ -889,6 +889,7 @@ namespace qmcplusplus {
   }
 
   
+#if !defined(QMC_COMPLEX)
   template<typename StorageType> void
   EinsplineSetExtended<StorageType>::evaluateGradSource
   (const ParticleSet& P, int first, int last,
@@ -1049,11 +1050,6 @@ namespace qmcplusplus {
 	dlapl_phi(i,j) = dot (PrimLattice.G, dlapl_phi(i,j));
       } 
   }
-
-
-
-
-
   template<> void
   EinsplineSetExtended<double>::evaluateGradSource
   (const ParticleSet& P, int first, int last,
@@ -1092,6 +1088,7 @@ namespace qmcplusplus {
     
   }
   
+#endif
 
   
   

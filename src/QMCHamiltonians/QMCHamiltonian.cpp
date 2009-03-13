@@ -220,7 +220,7 @@ void QMCHamiltonian::auxHevaluate(ParticleSet& P )
 }
 
 ///This is more efficient. Only calculate auxH elements if moves are accepted.
-void QMCHamiltonian::auxHevaluate(ParticleSet& P, Walker<Return_t, ParticleSet::ParticleGradient_t>& ThisWalker)
+void QMCHamiltonian::auxHevaluate(ParticleSet& P, Walker_t& ThisWalker)
 {
   for(int i=0; i<auxH.size(); ++i)
   {
@@ -230,7 +230,7 @@ void QMCHamiltonian::auxHevaluate(ParticleSet& P, Walker<Return_t, ParticleSet::
     auxH[i]->setParticlePropertyList(P.PropertyList,myIndex);
   }
 }
-void QMCHamiltonian::rejectedMove(ParticleSet& P, Walker<Return_t, ParticleSet::ParticleGradient_t>& ThisWalker )
+void QMCHamiltonian::rejectedMove(ParticleSet& P, Walker_t& ThisWalker )
 {
   ThisWalker.rejectedMove();
   for(int i=0; i<auxH.size(); ++i)

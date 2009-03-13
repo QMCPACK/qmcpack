@@ -36,6 +36,7 @@ namespace qmcplusplus {
     typedef QMCHamiltonianBase::Return_t  Return_t;
     typedef QMCHamiltonianBase::PropertySetType  PropertySetType;
     typedef QMCHamiltonianBase::BufferType  BufferType;
+    typedef QMCHamiltonianBase::Walker_t  Walker_t;
     
     ///constructor
     QMCHamiltonian();
@@ -133,8 +134,8 @@ namespace qmcplusplus {
     ////return the LocalPotential \f$=\sum_i H^{qmc}_{i} - KE\f$
     inline Return_t getLocalPotential() { return LocalEnergy-KineticEnergy;}
     void auxHevaluate(ParticleSet& P);
-    void auxHevaluate(ParticleSet& P, Walker<Return_t, ParticleSet::ParticleGradient_t>& ThisWalker);
-    void rejectedMove(ParticleSet& P, Walker<Return_t, ParticleSet::ParticleGradient_t>& ThisWalker);
+    void auxHevaluate(ParticleSet& P, Walker_t& ThisWalker);
+    void rejectedMove(ParticleSet& P, Walker_t& ThisWalker);
     ///** set Tau for each Hamiltonian
     // */
     //inline void setTau(RealType tau) 

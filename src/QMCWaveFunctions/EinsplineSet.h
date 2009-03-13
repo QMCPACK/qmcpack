@@ -227,6 +227,8 @@ namespace qmcplusplus {
     void evaluate(const ParticleSet& P, int first, int last,
 		  RealValueMatrix_t& psi, RealGradMatrix_t& dpsi, 
 		  RealValueMatrix_t& d2psi);
+
+#if !defined(QMC_COMPLEX)
     // This is the gradient of the orbitals w.r.t. the ion iat
     void evaluateGradSource (const ParticleSet &P, int first, int last, 
 			 const ParticleSet &source, int iat_src, 
@@ -238,7 +240,10 @@ namespace qmcplusplus {
 			     RealGradMatrix_t &dphi,
 			     RealHessMatrix_t  &dgrad_phi,
 			     RealGradMatrix_t &dlaplphi);
-
+    void evaluateGradSource (const ParticleSet &P, int first, int last,
+			     const ParticleSet &source, int iat_src, 
+			     ComplexGradMatrix_t &gradphi);
+#endif
     // Complex return values
     void evaluate(const ParticleSet& P, int iat, ComplexValueVector_t& psi);
     void evaluate(const ParticleSet& P, int iat, ComplexValueVector_t& psi, 
@@ -246,9 +251,6 @@ namespace qmcplusplus {
     void evaluate(const ParticleSet& P, int first, int last,
 		  ComplexValueMatrix_t& psi, ComplexGradMatrix_t& dpsi, 
 		  ComplexValueMatrix_t& d2psi);
-    void evaluateGradSource (const ParticleSet &P, int first, int last,
-			     const ParticleSet &source, int iat_src, 
-			     ComplexGradMatrix_t &gradphi);
     
     void resetParameters(const opt_variables_type& active);
     void resetTargetParticleSet(ParticleSet& e);
