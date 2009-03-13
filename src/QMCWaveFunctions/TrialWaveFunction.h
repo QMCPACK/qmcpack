@@ -80,6 +80,10 @@ namespace qmcplusplus {
     bool put(xmlNodePtr cur);
     ///implement the virtual function
     void reset();
+    /** set OrbitalBase::IsOptimizing to true */
+    void startOptimization();
+    /** set OrbitalBase::IsOptimizing to flase */
+    void stopOptimization();
     /** check in an optimizable parameter
      * * @param o a super set of optimizable variables
      *

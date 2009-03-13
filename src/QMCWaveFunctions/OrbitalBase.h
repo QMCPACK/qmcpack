@@ -80,6 +80,8 @@ namespace qmcplusplus {
     typedef ParticleAttrib<GradType>  GradVectorType;
     typedef PooledData<RealType>      BufferType;
 
+    /** flag to set the optimization mode */
+    bool IsOptimizing;
     /** boolean to set optimization
      *
      * If true, this object is actively modified during optimization
