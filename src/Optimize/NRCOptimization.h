@@ -152,36 +152,46 @@ struct NRCOptimization {
   bool lineoptimization() {
     vector<Return_t> x(5), y(5), coefs(5), deriv(4);
     qmcplusplus::Matrix<Return_t> S(5,5);
-    x[0]=-0.2; x[1]=-0.1; x[2]=0.0; x[3]=0.1; x[4]=0.2;
+    x[0]=-0.02; x[1]=-0.01; x[2]=0.0; x[3]=0.01; x[4]=0.02;
+    Return_t start_cost, cost;
     for (int i=0; i<5; i++) {
       y[i] = Func(x[i]);
       for (int j=0; j<5; j++)
 	S(i,j) = std::pow(x[i],j);
     }
+    start_cost = y[2];
+
     qmcplusplus::invert_matrix(S, false);
     qmcplusplus::MatrixOperators::product(S, &(y[0]), &(coefs[0]));
 
     Lambda = QuarticMinimum (coefs);
-    if (fabs(Lambda) > 2.0)
+    if (fabs(Lambda) > 2.0 || isnan(Lambda))
       return lineoptimization2();
-    fprintf (stderr, "Minimum found at %1.8f\n", Lambda);
+    cost = Func(Lambda);
+    if (isnan(cost) || cost > start_cost)
+      return lineoptimization2();
+    //fprintf (stderr, "Minimum found at %1.8f\n", Lambda);
     
-    // HACK HACK HACK
-//     if (Lambda < 0.0) {
-//       char fname[50];
-//       snprintf (fname, 50, "line_opt_%d.dat", current_step);
-//       FILE *fout = fopen (fname, "w");
-//       for (double lam=-0.01; lam<=0.01; lam+=0.0001) {
-//         double val = 0.0;
-//         for (int j=0; j<5; j++) 
-//       	val += coefs[j] * std::pow(lam, j);
-//         fprintf (fout, "%1.8f %1.12e %1.12e\n", lam, Func(lam), val);
-//       }
-//       fclose(fout);
-//     }
-    // END HACK HACK HACK
     current_step++;
     return true;
+
+    // HACK HACK HACK
+//     if (Lambda < 0.0) {
+      // char fname[50];
+      // snprintf (fname, 50, "line_opt_%d.dat", current_step);
+      // FILE *fout = fopen (fname, "w");
+      // for (double lam=-0.01; lam<=0.01; lam+=0.0001) {
+      //   double val = 0.0;
+      //   for (int j=0; j<5; j++) 
+      // 	val += coefs[j] * std::pow(lam, j);
+      //   fprintf (fout, "%1.8f %1.12e %1.12e\n", lam, Func(lam), val);
+      // }
+      // fclose(fout);
+//     }
+    // END HACK HACK HACK
+
+
+
   }    
 
   bool lineoptimization2() {
