@@ -83,7 +83,8 @@ namespace qmcplusplus {
     drsdV= tlen*pNorm;
     
     //Always a 2-body term
-    RPAJastrow* rpajastrow = new RPAJastrow(P);
+    //WARNING: NO CHIESA CORRECTION
+    RPAJastrow* rpajastrow = new RPAJastrow(P,false);
     bool FOUND=false;
     xmlNodePtr tcur = cur->children;
     while(tcur != NULL) {
@@ -110,7 +111,7 @@ namespace qmcplusplus {
     drsdV= tlen*pNorm;
     
     //Always a 2-body term
-    RPAJastrow* rpajastrow = new RPAJastrow(P);
+    RPAJastrow* rpajastrow = new RPAJastrow(P,Psi.is_manager());
     bool FOUND1=false;
     bool FOUND2=false;
     xmlNodePtr tcur = cur->children;
