@@ -59,7 +59,6 @@ SET(PARTICLE
   Particle/ParticleSet.cpp 
   Particle/ParticleSet.BC.cpp 
   Particle/MCWalkerConfiguration.cpp 
-  Particle/Bead_ParticleSet.cpp 
   Particle/DistanceTable.cpp
   Particle/HDFWalkerInputManager.cpp
   LongRange/KContainer.cpp
@@ -67,6 +66,12 @@ SET(PARTICLE
   LongRange/LPQHIBasis.cpp			      	
   LongRange/LRCoulombSingleton.cpp
 )
+
+IF(NOT QMC_BUILD_COMPLETE)
+  SET(PARTICLE ${PARTICLE}
+    Particle/Bead_ParticleSet.cpp 
+    )
+ENDIF(NOT QMC_BUILD_COMPLETE)
 
 SET(PARTICLEIO
   ParticleTags.cpp 
