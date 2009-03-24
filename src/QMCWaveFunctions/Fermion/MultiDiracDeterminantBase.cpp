@@ -252,7 +252,7 @@ namespace qmcplusplus {
     ValueType oldVal=1.0; //eventually store previous valuess
     int coefIndex=0;
     Excitations.CalcSingleExcitations(coefs,oldVal,coefIndex);
-    //    Excitations.CalcDoubleExcitations(coefs,oldVal,coefIndex)
+    Excitations.CalcDoubleExcitations(coefs,oldVal,coefIndex);
     cerr<<"B"<<endl;
     ValueType gs_ratio=0.0;
     for (int orbital=0;orbital<NumOrbitals;orbital++)
@@ -291,7 +291,7 @@ namespace qmcplusplus {
     coefIndex=0;
     cerr<<"E"<<endl;
     Excitations.CalcSingleExcitations(coefs,val,coefIndex);
-    //    Excitations.CalcDoubleExcitations(coefs,val,coefIndex);
+    Excitations.CalcDoubleExcitations(coefs,val,coefIndex);
     curRatio=(gs_ratio*val)/oldVal;
     cerr<<"curr Ratio is "<<curRatio<<" "<<psiMInv.size()<<" "<<psiM_temp.size()<<endl;
     return curRatio;
@@ -407,15 +407,16 @@ namespace qmcplusplus {
       psiM_temp = psiM;
       cerr<<"EVAL LOG gs_ratio is "<<std::exp(LogValue)<<endl;
       double val1=std::exp(LogValue)*std::cos(abs(PhaseValue));
-      for (int orb=NumOrbitals;orb<NumOrbitals_total;orb++){
+      //Single Excitations!
+      TinyVector<int,2> second_replaces_first=Excitations.begin();
+      while (second_replaces_first[0]!=-1){
 	for (int orbital=0;orbital<NumOrbitals;orbital++){
 	  for (int ptcl=0;ptcl<NumPtcls;ptcl++){ 
 	    psiM(orbital,ptcl)=psiM_actual(orbital,ptcl);
 	  }
 	}
 	for (int ptcl=0;ptcl<NumPtcls;ptcl++){
-	  cerr<<"reasonable "<<psiM_actual(orb,ptcl)<<endl;
-	  psiM(NumOrbitals-1,ptcl)=psiM_actual(orb,ptcl);
+	  psiM(second_replaces_first[0],ptcl)=psiM_actual(second_replaces_first[1],ptcl);
 	}
 	double PhaseValuep;
 	double LogValuep=InvertWithLog(psiM.data(),NumPtcls,NumOrbitals,WorkSpace.data(),Pivot.data(),PhaseValuep);
@@ -431,7 +432,53 @@ namespace qmcplusplus {
 	  PhaseValue=M_PI;
 	cerr<<"Post-LOGVALUE PHASEVALUE "<<LogValue<<" "<<PhaseValue<<" "<<LogValuep<<" "<<PhaseValuep<<endl;
 	psiM=psiM_temp;
+	second_replaces_first=Excitations.next();
       }
+
+
+
+      //double excitations
+      
+      for (int ii1=0;ii1<Excitations.orbitals_to_replace.size();ii1++){
+	for (int ii2=ii1+1;ii2<Excitations.orbitals_to_replace.size();ii2++){
+	  for (int jj1=0;jj1<Excitations.unoccupied_orbitals_to_use.size();jj1++){
+	    for (int jj2=jj1+1;jj2<Excitations.unoccupied_orbitals_to_use.size();jj2++){
+	      cerr<<"Second excitations are here!"<<endl;
+	       
+	      int or1=Excitations.orbitals_to_replace[ii1];
+	      int or2=Excitations.orbitals_to_replace[ii2];
+	      int uo1=Excitations.unoccupied_orbitals_to_use[jj1];
+	      int uo2=Excitations.unoccupied_orbitals_to_use[jj2];
+	      for (int orbital=0;orbital<NumOrbitals;orbital++){
+		for (int ptcl=0;ptcl<NumPtcls;ptcl++){ 
+		  psiM(orbital,ptcl)=psiM_actual(orbital,ptcl);
+		}
+	      }
+	      for (int ptcl=0;ptcl<NumPtcls;ptcl++){
+		psiM(or1,ptcl)=psiM_actual(uo1,ptcl);
+		psiM(or2,ptcl)=psiM_actual(uo2,ptcl);
+	      }
+	      double PhaseValuep;
+	      double LogValuep=InvertWithLog(psiM.data(),NumPtcls,NumOrbitals,WorkSpace.data(),Pivot.data(),PhaseValuep);
+	      cerr<<"Pre-LOGVALUE PHASEVALUE "<<LogValue<<" "<<PhaseValue<<" "<<LogValuep<<" "<<PhaseValuep<<endl;
+	      
+	      double val2=std::exp(LogValuep)*std::cos(abs(PhaseValuep));
+	      cerr<<"RATIO: "<<val2/val1<<endl;
+	      double val=std::exp(LogValue)*std::cos(abs(PhaseValue))+std::exp(LogValuep)*std::cos(abs(PhaseValuep));
+	      LogValue=std::log(abs(val));
+	      if (val>0)
+		PhaseValue=0.0;
+	      else 
+		PhaseValue=M_PI;
+	      cerr<<"Post-LOGVALUE PHASEVALUE "<<LogValue<<" "<<PhaseValue<<" "<<LogValuep<<" "<<PhaseValuep<<endl;
+	      psiM=psiM_temp;
+	      second_replaces_first=Excitations.next();
+	    }
+	  }
+	}
+      }
+      //double excitations done!
+
       cerr<<"LOGVALUE PHASEVALUE "<<LogValue<<" "<<PhaseValue<<endl;
       return LogValue;
     }
