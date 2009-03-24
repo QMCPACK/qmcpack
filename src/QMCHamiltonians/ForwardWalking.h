@@ -49,11 +49,18 @@ namespace qmcplusplus {
 
     inline Return_t rejectedMove(ParticleSet& P) 
     {
+        for (int i=0;i<nObservables;i++)
+          {
+            int lastindex = tWalker->PHindex[Pindices[i]]-1;
+            if (lastindex<0) lastindex +=walkerLengths[i][2];
+            tWalker->addPropertyHistoryPoint(Pindices[i],  tWalker->PropertyHistory[Pindices[i]][lastindex]  );
+          }
+        
       vector<Return_t>::iterator Vit=Values.begin();
       
       for(int i=0;i<nObservables;i++){
         int j=0; 
-        int FWindex = tWalker->PHindex[Pindices[i]]; 
+        int FWindex = tWalker->PHindex[Pindices[i]]-1; 
         while (j<walkerLengths[i].size())
         {
           int Cindex = FWindex - walkerLengths[i][j];
@@ -93,7 +100,7 @@ namespace qmcplusplus {
 //           (*Vit) = tWalker->PropertyHistory[Pindices[i]][walkerLengths[i][j] ];
       for(int i=0;i<nObservables;i++){
         int j=0;
-        int FWindex = tWalker->PHindex[Pindices[i]];
+        int FWindex = tWalker->PHindex[Pindices[i]]-1;
         while (j<walkerLengths[i].size())
         {
           int Cindex = FWindex - walkerLengths[i][j];
