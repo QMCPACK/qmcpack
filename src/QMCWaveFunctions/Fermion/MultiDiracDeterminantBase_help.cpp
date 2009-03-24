@@ -90,6 +90,9 @@
 
     psiM_actual.resize(NumOrbitals_total,nel); //WARNING: Orbitals are first!
     Excitations.set_excitations(NumOrbitals,NumOrbitals_total-1,NumOrbitals-3,NumOrbitals-1,coefs);
+    //    coef_vals.resize(coefs.size());
+    //    coef_vals_temp.resize(coefs.size());
+    
     // For forces
     grad_source_psiM.resize(nel,norb);
     grad_lapl_source_psiM.resize(nel,norb);

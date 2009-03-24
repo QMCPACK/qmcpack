@@ -122,8 +122,33 @@ namespace qmcplusplus {
     const GradType* restrict dyptr=dpsiM[iat-FirstIndex];
     GradType rv;
     for(int j=0; j<NumOrbitals; ++j) rv += (*yptr++) *(*dyptr++);
+    for (int i=0;i<NumOrbitals; i++)
+      WorkV1[i]=dPsiM(iat,i)-psiM_actual(i,iat);
+    MatrixOperators::product(psiM,WorkV1,WorkV2.data()); //check to see if this doesn't need a transpose on the psiM
+    Excitations.BuildDotProducts(psiM,WorkV1,WorkV2,dpsiM_actual,1.0/rv);
+    double coefIndex=0;
+    ValueType newVal=1.0;
+    Excitations.CalcSingleExcitations(coefs,newVal,coefIndex);
+    cerr<<(rv*newVal)/psi_old;
     return rv;
   }
+
+  MultiDiracDeterminantBase::GradType 
+    MultiDiracDeterminantBase::evalGrad_slow(ParticleSet& P, int iat)
+  {
+    const ValueType* restrict yptr=psiM[iat-FirstIndex];
+    const GradType* restrict dyptr=dpsiM[iat-FirstIndex];
+    GradType rv;
+    for(int j=0; j<NumOrbitals; ++j) rv += (*yptr++) *(*dyptr++);
+    psiMInv=psiM_temp;
+    DetUpdate(psiMInv,dpsiM[iat-FirstIndex],workV1,workV2,iat-FirstIndex,rv);
+    Excitations.begin();
+
+    return rv;
+  }
+
+
+
     MultiDiracDeterminantBase::ValueType 
       MultiDiracDeterminantBase::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
   {
@@ -283,6 +308,8 @@ namespace qmcplusplus {
     Excitations.CalcSingleExcitations(coefs,val,coefIndex);
     Excitations.CalcDoubleExcitations(coefs,val,coefIndex);
     curRatio=(gs_ratio*val)/oldVal;
+    psi_new=val;
+    psi_old=oldVal;
     return curRatio;
   }
 
@@ -294,6 +321,7 @@ namespace qmcplusplus {
   */
   void MultiDiracDeterminantBase::acceptMove(ParticleSet& P, int iat) 
   {
+    psi_new=psi_old;
     PhaseValue += evaluatePhase(curRatio);
     LogValue +=std::log(std::abs(curRatio));
     switch(UpdateMode)
@@ -329,6 +357,7 @@ namespace qmcplusplus {
   /** move was rejected. copy the real container to the temporary to move on
   */
   void MultiDiracDeterminantBase::restore(int iat) {
+    psi_old=psi_new;
     if(UpdateMode == ORB_PBYP_ALL) {
       psiM_temp = psiM;
       for (int orbital=0;orbital<NumOrbitals_total;orbital++)

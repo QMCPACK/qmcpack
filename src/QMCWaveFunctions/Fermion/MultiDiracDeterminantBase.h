@@ -141,6 +141,10 @@ namespace qmcplusplus {
     ValueType ratio_multi(ParticleSet& P, int iat);
     ExcitationClass Excitations;
     ValueVector_t coefs;
+    ValueType psi_new;
+    ValueType psi_old;
+    //    ValueVector_t coef_vals;
+    //    ValueVector_t coef_vals_temp;
     ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
     GradType evalGrad(ParticleSet& P, int iat);
     GradType evalGradSource (ParticleSet &P, ParticleSet &source,
