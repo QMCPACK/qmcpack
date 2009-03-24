@@ -49,6 +49,61 @@ namespace qmcplusplus {
           zero, C.data(), C.cols());
     }
 
+
+  inline static void ABt(const Matrix<double>& A,
+			 const Matrix<double >& B, Matrix<double >& C) {
+    const char transa = 'T';
+    const char transb = 'N';
+    const double zone(1.0);
+    const double zero(0.0);
+    int acols=A.cols();
+    int bcols=B.cols();
+    int arows=A.rows();
+    int brows=B.rows();
+    dgemm(transa, transb, bcols, arows, brows,
+          zone, B.data(), bcols, A.data(), acols,
+          zero, C.data(), C.cols());
+  }
+
+
+    inline static void half_outerProduct(const Matrix<double> &M,
+					 const Vector<double> &B,
+					 int iat,
+					 Matrix<double> &C){
+      for (int i=0;i<C.rows();i++)
+	for (int j=0;j<C.cols();j++)
+	  C(iat,i)+=M(i,j)*B(j); 
+    }
+
+    inline static void other_half_outerProduct(const Matrix<double> &M,
+					       const Vector<double> &B,
+					       int iat,
+					       Matrix<double> &C){
+      
+      for (int i=0;i<C.rows();i++)
+	for (int j=0;j<C.cols();j++)
+	  C(i,iat)+=M(i,j)*B(j); 
+      
+    }
+    inline static double  innerProduct(const Vector<double> &A,
+				      const Vector<double > &B){
+      double tot=0.0;
+      for (int i=0;i<A.size();i++)
+	tot+=A(i)*B(i);
+      return tot;
+    }
+
+
+
+    inline static void transpose(Matrix<double>& A)
+    {
+      for (int i=0;i<A.extent(0);i++)
+	for (int j=0;j<i;j++)
+	  swap(A(i,j),A(j,i));
+    }
+
+
+
     /** static function to perform C=AB for complex matrices
      *
      * Call zgemm
