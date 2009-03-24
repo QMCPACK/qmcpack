@@ -366,7 +366,9 @@ namespace qmcplusplus {
    */
   void 
   TrialWaveFunction::rejectMove(int iat) {
-    for(int i=0; i<Z.size(); i++) Z[i]->restore(iat);
+    for(int i=0; i<Z.size(); i++) {
+      Z[i]->restore(iat);
+    }
   }
 
   /** update the state with the new data

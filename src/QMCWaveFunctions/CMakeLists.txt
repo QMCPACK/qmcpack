@@ -47,6 +47,10 @@ SET(FERMION_SRCS
   SPOSetBase.cpp
   BasisSetFactory.cpp
   Fermion/DiracDeterminantBase.cpp
+  Fermion/DiracDeterminantIterative.cpp
+  Fermion/DiracDeterminantTruncation.cpp
+  Fermion/MultiDiracDeterminantBase.cpp
+  Fermion/ILUGMRESInterface.c
   Fermion/SlaterDet.cpp
   Fermion/SlaterDetBuilder.cpp
 )

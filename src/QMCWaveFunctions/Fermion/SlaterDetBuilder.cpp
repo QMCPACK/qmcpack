@@ -17,7 +17,9 @@
 #include "QMCWaveFunctions/BasisSetFactory.h"
 #include "Utilities/ProgressReportEngine.h"
 #include "OhmmsData/AttributeSet.h"
-
+#include "QMCWaveFunctions/Fermion/DiracDeterminantIterative.h"
+#include "QMCWaveFunctions/Fermion/DiracDeterminantTruncation.h"
+#include "QMCWaveFunctions/Fermion/MultiDiracDeterminantBase.h"
 namespace qmcplusplus {
 
   SlaterDetBuilder::SlaterDetBuilder(ParticleSet& els, TrialWaveFunction& psi,
@@ -105,10 +107,24 @@ namespace qmcplusplus {
 
     string basisName("invalid");
     string detname("0"), refname("0");
+    string s_detSize("0");
+    string detMethod("");
     OhmmsAttributeSet aAttrib;
     aAttrib.add(basisName,basisset_tag);
     aAttrib.add(detname,"id");
     aAttrib.add(refname,"ref");
+    aAttrib.add(detMethod,"DetMethod");
+    aAttrib.add(s_detSize,"DetSize");
+    string s_cutoff("0.0");
+    string s_radius("0.0");
+    aAttrib.add(s_cutoff,"Cutoff");
+    aAttrib.add(s_radius,"Radius");
+
+    //    cerr<<"Det method is "<<detMethod<<endl;
+    //    if (detMethod=="Iterative"){
+    //      cerr<<"Trying to pull in cutoff"<<endl;
+    //    }
+    //    cerr<<"The cutoff is "<<s_cutoff<<endl;
     aAttrib.put(cur);
 
     //index of the last SlaterDeterminant
@@ -152,8 +168,38 @@ namespace qmcplusplus {
       if(dit == DetSet.end()) {
         app_log() << "  Creating a Dirac Determinant " << detname << " First Index = " 
           << firstIndex << endl;
-        adet = new Det_t(psi,firstIndex);
-        adet->set(firstIndex,psi->getOrbitalSetSize());
+	cerr<<"My det method is "<<detMethod<<endl;
+	if (detMethod=="Iterative"){
+	  //	  string s_cutoff("0.0");
+	  //	  aAttrib.add(s_cutoff,"Cutoff");
+	  cerr<<"My cutoff is "<<s_cutoff<<endl;
+
+	  double cutoff=std::atof(s_cutoff.c_str());
+	  adet= new DiracDeterminantIterative(psi,firstIndex);
+	  ((DiracDeterminantIterative*)(adet))->set_iterative(firstIndex,psi->getOrbitalSetSize(),cutoff);
+	  
+	}
+	else if (detMethod=="Truncation"){
+	  //	  string s_cutoff("0.0");
+	  //	  aAttrib.add(s_cutoff,"Cutoff");
+	  adet= new DiracDeterminantTruncation(psi,firstIndex);
+	  double cutoff=std::atof(s_cutoff.c_str());
+	  double radius=std::atof(s_radius.c_str());
+	  //	  adet->set(firstIndex,psi->getOrbitalSetSize());
+	  ((DiracDeterminantTruncation*)(adet))->set_truncation(firstIndex,psi->getOrbitalSetSize(),cutoff,radius);
+	  
+	}
+	else if (detMethod=="Multi"){
+	  cerr<<"BUILDING DIRAC DETERM "<<firstIndex<<endl;
+	  adet = new MultiDiracDeterminantBase(psi,firstIndex);
+	  int detSize=std::atof(s_detSize.c_str());
+	  ((MultiDiracDeterminantBase*)(adet)) -> set_Multi(firstIndex,detSize,psi->getOrbitalSetSize());
+	  firstIndex+=detSize-psi->getOrbitalSetSize(); //designed to get firstIndex correct after adding back in ...
+	}
+	else {
+	  adet = new Det_t(psi,firstIndex);
+	  adet->set(firstIndex,psi->getOrbitalSetSize());
+	}
         DetSet[detname]=adet;
       } else {
         app_log() << "  Reusing a Dirac Determinant " << detname << " First Index = " 

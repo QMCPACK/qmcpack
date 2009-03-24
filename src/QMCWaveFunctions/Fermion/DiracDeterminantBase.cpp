@@ -255,7 +255,7 @@ namespace qmcplusplus {
   }
 
   DiracDeterminantBase::GradType
-  DiracDeterminantBase::evalGradSourcep
+  DiracDeterminantBase::evalGradSource
   (ParticleSet& P, ParticleSet& source,int iat,
    TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM> &grad_grad,
    TinyVector<ParticleSet::ParticleLaplacian_t,OHMMS_DIM> &lapl_grad)
@@ -272,9 +272,13 @@ namespace qmcplusplus {
     ValueMatrix_t &Grad2_phi(d2psiM);
     HessMatrix_t &Grad_phi_alpha(grad_grad_source_psiM);
     GradMatrix_t &Grad2_phi_alpha(grad_lapl_source_psiM);
+    //    vector<ValueType> grad_psi_over_psi_vector;
+    //    vector<ValueType> grad_psi_alpha_over_psi_vector;
     
     GradType Psi_alpha_over_psi;
     Psi_alpha_over_psi = evalGradSource(P, source, iat);
+    ofstream outfile;
+    outfile.open("grad_psi_alpha_over_psi",ios::app);
     
     ValueMatrix_t toDet;
     ValueMatrix_t toDet_l;
@@ -322,6 +326,7 @@ namespace qmcplusplus {
 	    }
 	  }
 	  Grad_psi_alpha_over_psi(dim,el_dim)=one_row_change(dim,el_dim)+two_row_change(dim,el_dim);
+	  outfile<<Grad_psi_alpha_over_psi(dim,el_dim)<<endl;
 	  grad_grad(dim)(ptcl)(el_dim)=one_row_change(dim,el_dim)+two_row_change(dim,el_dim)-
 	    Grad_psi_over_psi(el_dim)*Psi_alpha_over_psi(dim);
 	}
@@ -336,12 +341,13 @@ namespace qmcplusplus {
       }
       
     }
+    outfile.close();
     return Psi_alpha_over_psi;
   }
 
 
   DiracDeterminantBase::GradType
-  DiracDeterminantBase::evalGradSource
+  DiracDeterminantBase::evalGradSourcep
   (ParticleSet& P, ParticleSet& source,int iat,
    TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM> &grad_grad,
    TinyVector<ParticleSet::ParticleLaplacian_t,OHMMS_DIM> &lapl_grad)
@@ -713,6 +719,7 @@ namespace qmcplusplus {
         ParticleSet::ParticleGradient_t& G, 
         ParticleSet::ParticleLaplacian_t& L)
     {
+      cerr<<"I'm calling evaluate log"<<endl;
       Phi->evaluate(P, FirstIndex, LastIndex, psiM,dpsiM, d2psiM);
 
       if(NumPtcls==1) 

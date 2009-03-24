@@ -450,7 +450,7 @@ namespace qmcplusplus {
     }
 
     inline RealType registerData(ParticleSet& P, PooledData<RealType>& buf){
-
+      cerr<<"REGISTERING 2 BODY JASTROW"<<endl;
       evaluateLogAndStore(P,P.G,P.L);
       //LogValue=0.0;
       //RealType dudr, d2udr2,u;

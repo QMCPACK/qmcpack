@@ -35,6 +35,11 @@ namespace qmcplusplus {
     {
       orbitals_to_replace_index=0;
       unoccupied_orbitals_to_use_index=0;
+      if (orbitals_to_replace.size()==0 || unoccupied_orbitals_to_use.size()==0){
+	second_replaces_first[0]=-1;
+	second_replaces_first[1]=-1;
+	return second_replaces_first;
+      }
       second_replaces_first[0]=orbitals_to_replace[orbitals_to_replace_index];
       second_replaces_first[1]=unoccupied_orbitals_to_use[unoccupied_orbitals_to_use_index];
       return second_replaces_first;
@@ -91,7 +96,7 @@ namespace qmcplusplus {
     void BuildDotProducts(ValueMatrix_t &gs_inverse,ValueMatrix_t &psiM_actual)
     {
       int NumPtcls=psiM_actual.extent(1);
-      cerr<<"NUMPTLCS IS "<<NumPtcls<<endl;
+
       for (int ii=0;ii<orbitals_to_replace.size();ii++)
 	for (int jj=0;jj<unoccupied_orbitals_to_use.size();jj++){
 	  int i=orbitals_to_replace[ii];
@@ -101,8 +106,19 @@ namespace qmcplusplus {
 	    dotProducts(ii,jj)+=gs_inverse(i,ptcl)*psiM_actual(j,ptcl);
 	}
     }
-    
-
+    //dpsiM is currently ptcl x orbital which is bad!
+    void BuildDotProducts(ValueMatrix_t &gs_inverse,ValueVector_t &op1,ValueVector_t &op2,ValueMatrix_t &dpsiM_actual)
+    {
+      int NumPtcls=dpsiM_actual.extent(0);
+      for (int ii=0;ii<orbitals_to_replace.size();ii++)
+	for (int jj=0;jj<unoccupied_orbitals_to_use.size();jj++){
+	  int i=orbitals_to_replace[ii];
+	  int j=unoccupied_orbitals_to_use[jj];
+	  dotProducts(ii,jj)=0.0;
+	  for (int ptcl=0;ptcl<NumPtcls;ptcl++)
+	    dotProducts(ii,jj)+=(gs_inverse(i,ptcl)+op1(i)*op2(ptcl))*psiM_actual(j,ptcl);
+	}
+    }
 
 //     //gs_inverse needs to be orbital x ptcl
 //     //psiM_actual needs to be orbtial x ptcl
@@ -122,14 +138,14 @@ namespace qmcplusplus {
     //val should be sent with 1.0 likely upon entering this
     void CalcSingleExcitations(ValueVector_t &coefs,ValueType &val,int &coefIndex)
     {
-      cerr<<"VAL STARTS: "<<val<<endl;
+
       for (int i=0;i<orbitals_to_replace.size();i++)
 	for (int j=0;j<unoccupied_orbitals_to_use.size();j++){
-	  cerr<<"ADDING! "<<dotProducts(i,j)<<" "<<i<<" "<<j<<endl;
+
 	  val+=dotProducts(i,j);// *coefs(coefIndex);
 	  coefIndex++;
 	}
-      cerr<<"VAL ENDS: "<<val<<endl;
+
 
 
     }
@@ -140,12 +156,12 @@ namespace qmcplusplus {
       unoccupied_orbitals_to_use.resize(end_uo-start_uo+1);
       for (int i=start_uo;i<=end_uo;i++){
 	unoccupied_orbitals_to_use[i-start_uo]=i;
-	cerr<<"UNOCCUPIED "<<start_uo<<endl;
+
       }
       orbitals_to_replace.resize(end_rep-start_rep+1);
       for (int i=start_rep;i<=end_rep;i++){
 	orbitals_to_replace[i-start_rep]=i;
-	cerr<<"TO REPLACE"<<start_rep<<endl;
+
       }
       dotProducts.resize(orbitals_to_replace.size(),unoccupied_orbitals_to_use.size());
       int m=orbitals_to_replace.size();
@@ -153,7 +169,7 @@ namespace qmcplusplus {
       coefs.resize(m*n+m*(m-1)*n*(n-1)/4);
       //for now let's set al teh ocefs to 1;
       coefs=1.0;
-      cerr<<"The coeficient size is "<<m<<" "<<n<<" "<<coefs.size()<<endl;
+
     }
     
 

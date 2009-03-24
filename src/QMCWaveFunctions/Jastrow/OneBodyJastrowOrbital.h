@@ -380,6 +380,7 @@ namespace qmcplusplus
       void acceptMove(ParticleSet& P, int iat)
       {
         U[iat] = curVal;
+	cerr<<"IAT: "<<iat<<" "<<dU.size()<<endl;
         dU[iat]=curGrad;
         d2U[iat]=curLap;
       }
@@ -432,7 +433,8 @@ namespace qmcplusplus
       /** equivalent to evalaute with additional data management */
       RealType registerData(ParticleSet& P, PooledData<RealType>& buf)
       {
-
+	cerr<<"REGISTERING 1 BODY JASTROW "<<endl;
+	cerr<<d_table->size(VisitorIndex)<<endl;
         //U.resize(d_table->size(VisitorIndex));
         d2U.resize(d_table->size(VisitorIndex));
         dU.resize(d_table->size(VisitorIndex));

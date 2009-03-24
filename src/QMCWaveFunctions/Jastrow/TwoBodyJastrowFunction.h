@@ -310,6 +310,8 @@ namespace qmcplusplus {
     }
 
     inline ValueType registerData(ParticleSet& P, PooledData<RealType>& buf){
+      cerr<<"REGISTERING 2 BODY JASTROW "<<endl;
+	
       N=d_table->size(VisitorIndex);
       NN=N*N;
       U.resize(NN+1);
