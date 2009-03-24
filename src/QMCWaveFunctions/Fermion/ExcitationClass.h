@@ -16,7 +16,7 @@ namespace qmcplusplus {
      vector<int> unoccupied_orbitals_to_use;
     vector<int> orbitals_to_replace;
     ValueMatrix_t dotProducts; // orbitals_to_replace.size() x unoccupied_orbitals_to_use.size()
-    GradMatrix_t dotProducts_grad; // orbitals_to_replace.size() x unoccupied_orbitals_to_use.size()
+    //    GradMatrix_t dotProducts_grad; // orbitals_to_replace.size() x unoccupied_orbitals_to_use.size()
       TinyVector<int,2> ii;
       TinyVector<int,2> jj;
 
@@ -109,36 +109,36 @@ namespace qmcplusplus {
     }
 
 
-    void BuildDotProducts_grad_slow(GradMatrix_t &gs_inverse, GradMatrix_t &dpsiM_actual)
-    {
-      int NumPtcls=dpsiM_actual.extent(1);
-      for (int ii=0;ii<orbitals_to_replace.size();ii++)
-	for (int jj=0;jj<unoccupied_orbitals_to_use.size();jj++){
-	  int i=orbitals_to_replace[ii];
-	  int j=unoccupied_orbitals_to_use[jj];
-	  dotProducts_grad(ii,jj)=0.0;
-	  for (int ptcl=0;ptcl<NumPtcls;ptcl++)
-	    dotProducts(ii,jj)+=gs_inverse(i,ptcl)*dpsiM_actual(ptcl,j);
-	}
+//     void BuildDotProducts_grad_slow(GradMatrix_t &gs_inverse, GradMatrix_t &dpsiM_actual)
+//     {
+//       int NumPtcls=dpsiM_actual.extent(1);
+//       for (int ii=0;ii<orbitals_to_replace.size();ii++)
+// 	for (int jj=0;jj<unoccupied_orbitals_to_use.size();jj++){
+// 	  int i=orbitals_to_replace[ii];
+// 	  int j=unoccupied_orbitals_to_use[jj];
+// 	  dotProducts_grad(ii,jj)=0.0;
+// 	  for (int ptcl=0;ptcl<NumPtcls;ptcl++)
+// 	    dotProducts(ii,jj)+=gs_inverse(i,ptcl)*dpsiM_actual(ptcl,j);
+// 	}
       
       
-    }
+//     }
 
 
-    void BuildDotProducts_grad(ValueType_t &gs_inverse,GradMatrix_t &dpsiM_actual,ValueVector_t &op1, GradVector_t &op2,ValueType one_over_ratio)
-    {
-      int NumPtcls=dpsiM_actual.extent(1);
+//     void BuildDotProducts_grad(ValueType_t &gs_inverse,GradMatrix_t &dpsiM_actual,ValueVector_t &op1, GradVector_t &op2,ValueType one_over_ratio)
+//     {
+//       int NumPtcls=dpsiM_actual.extent(1);
       
-      for (int ii=0;ii<orbitals_to_replace.size();ii++)
-	for (int jj=0;jj<unoccupied_orbitals_to_use.size();jj++){
-	  int i=orbitals_to_replace[ii];
-	  int j=unoccupied_orbitals_to_use[jj];
-	  dotProducts(ii,jj)=0.0;
-	  for (int ptcl=0;ptcl<NumPtcls;ptcl++)
-	    dotProducts(ii,jj)+=(gs_inverse(i,ptcl)+op1(ptcl)*op2(i)*one_over_ratio)*psiM_actual(j,ptcl);
-	}
+//       for (int ii=0;ii<orbitals_to_replace.size();ii++)
+// 	for (int jj=0;jj<unoccupied_orbitals_to_use.size();jj++){
+// 	  int i=orbitals_to_replace[ii];
+// 	  int j=unoccupied_orbitals_to_use[jj];
+// 	  dotProducts(ii,jj)=0.0;
+// 	  for (int ptcl=0;ptcl<NumPtcls;ptcl++)
+// 	    dotProducts(ii,jj)+=(gs_inverse(i,ptcl)+op1(ptcl)*op2(i)*one_over_ratio)*psiM_actual(j,ptcl);
+// 	}
       
-    }
+//     }
 
 
 
@@ -201,7 +201,7 @@ namespace qmcplusplus {
 
       }
       dotProducts.resize(orbitals_to_replace.size(),unoccupied_orbitals_to_use.size());
-      dotProducts_grad.resize(orbitals_to_replace.size(),unoccupied_orbitals_to_use.size());
+      //      dotProducts_grad.resize(orbitals_to_replace.size(),unoccupied_orbitals_to_use.size());
       int m=orbitals_to_replace.size();
       int n=unoccupied_orbitals_to_use.size();
       coefs.resize(m*n+m*(m-1)*n*(n-1)/4);
