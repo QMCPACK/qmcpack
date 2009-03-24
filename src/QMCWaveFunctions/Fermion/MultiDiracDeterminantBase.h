@@ -22,9 +22,10 @@
 #include "QMCWaveFunctions/OrbitalBase.h"
 #include "QMCWaveFunctions/SPOSetBase.h"
 #include "QMCWaveFunctions/Fermion/ExcitationClass.h"
+#include "QMCWaveFunctions/Fermion/DiracDeterminantBase.h"
 namespace qmcplusplus {
 
-  class MultiDiracDeterminantBase: public OrbitalBase {
+  class MultiDiracDeterminantBase: public DiracDeterminantBase {
   public:
 
     typedef SPOSetBase::IndexVector_t IndexVector_t;
@@ -73,7 +74,10 @@ namespace qmcplusplus {
      *@param first index of first particle
      *@param nel number of particles in the determinant
      */
-    virtual void set(int first, int nel);
+    void set(int first, int nel);
+    void set_Multi(int first, int nel,int norb);
+
+
 
     ///optimizations  are disabled
     inline void checkInVariables(opt_variables_type& active)
@@ -184,61 +188,61 @@ namespace qmcplusplus {
 	     ParticleSet::ParticleGradient_t& G, 
 	     ParticleSet::ParticleLaplacian_t& L);
 
-    OrbitalBasePtr makeClone(ParticleSet& tqp) const;
+    //    OrbitalBasePtr makeClone(ParticleSet& tqp) const;
 
-    ///total number of particles
-    int NP;
-    ///number of single-particle orbitals which belong to this Dirac determinant
-    int NumOrbitals;
-    ///number of particles which belong to this Dirac determinant
-    int NumPtcls;
-    ///index of the first particle with respect to the particle set
-    int FirstIndex;
-    ///index of the last particle with respect to the particle set
-    int LastIndex;
-    ///index of the particle (or row) 
-    int WorkingIndex;      
-    ///a set of single-particle orbitals used to fill in the  values of the matrix 
-    SPOSetBasePtr Phi;
+//     ///total number of particles
+//     int NP;
+//     ///number of single-particle orbitals which belong to this Dirac determinant
+//     int NumOrbitals;
+//     ///number of particles which belong to this Dirac determinant
+//     int NumPtcls;
+//     ///index of the first particle with respect to the particle set
+//     int FirstIndex;
+//     ///index of the last particle with respect to the particle set
+//     int LastIndex;
+//     ///index of the particle (or row) 
+//     int WorkingIndex;      
+//     ///a set of single-particle orbitals used to fill in the  values of the matrix 
+//     SPOSetBasePtr Phi;
 
     /////Current determinant value
     //ValueType CurrentDet;
     /// psiM(j,i) \f$= \psi_j({\bf r}_i)\f$
-    ValueMatrix_t psiM, psiM_temp;
+    //    ValueMatrix_t psiM, psiM_temp;
     ValueMatrix_t psiM_actual;
     /// temporary container for testing
-    ValueMatrix_t psiMinv;
-
+    ValueMatrix_t psiMInv;
+    ValueVector_t psiV_old;
     /// dpsiM(i,j) \f$= \nabla_i \psi_j({\bf r}_i)\f$
-    GradMatrix_t  dpsiM, dpsiM_temp;
+    //    GradMatrix_t  dpsiM, dpsiM_temp;
 
     /// d2psiM(i,j) \f$= \nabla_i^2 \psi_j({\bf r}_i)\f$
-    ValueMatrix_t d2psiM, d2psiM_temp;
+    //    ValueMatrix_t d2psiM, d2psiM_temp;
 
     /// Used for force computations
-    GradMatrix_t grad_source_psiM, grad_lapl_source_psiM;
-    HessMatrix_t  grad_grad_source_psiM;
-    GradMatrix_t phi_alpha_Minv, grad_phi_Minv;
-    ValueMatrix_t lapl_phi_Minv;
-    HessMatrix_t grad_phi_alpha_Minv;
+    //    GradMatrix_t grad_source_psiM, grad_lapl_source_psiM;
+    //    HessMatrix_t  grad_grad_source_psiM;
+    //    GradMatrix_t phi_alpha_Minv, grad_phi_Minv;
+    //    ValueMatrix_t lapl_phi_Minv;
+    //    HessMatrix_t grad_phi_alpha_Minv;
 
     /// value of single-particle orbital for particle-by-particle update
-    ValueVector_t psiV;
-    GradVector_t dpsiV;
-    ValueVector_t d2psiV;
-    ValueVector_t workV1, workV2;
+    //    ValueVector_t psiV;
+    //    GradVector_t dpsiV;
+    //    ValueVector_t d2psiV;
+    //    ValueVector_t workV1, workV2;
 
-    Vector<ValueType> WorkSpace;
-    Vector<IndexType> Pivot;
+    //    Vector<ValueType> WorkSpace;
+    //    Vector<IndexType> Pivot;
 
-    ValueType curRatio,cumRatio;
-    ValueType *FirstAddressOfG;
-    ValueType *LastAddressOfG;
-    ValueType *FirstAddressOfdV;
-    ValueType *LastAddressOfdV;
+    //    ValueType curRatio,cumRatio;
+    //    ValueType *FirstAddressOfG;
+    //    ValueType *LastAddressOfG;
+    //    ValueType *FirstAddressOfdV;
+    //    ValueType *LastAddressOfdV;
     //    double ComputeExtraTerms(int ptcl_gradient, int elDim,int ionDim);
-    ParticleSet::ParticleGradient_t myG, myG_temp;
-    ParticleSet::ParticleLaplacian_t myL, myL_temp;
+    //    ParticleSet::ParticleGradient_t myG, myG_temp;
+    //    ParticleSet::ParticleLaplacian_t myL, myL_temp;
   };
 
 
