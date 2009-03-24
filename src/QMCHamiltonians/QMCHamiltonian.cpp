@@ -232,7 +232,7 @@ void QMCHamiltonian::auxHevaluate(ParticleSet& P, Walker_t& ThisWalker)
 }
 void QMCHamiltonian::rejectedMove(ParticleSet& P, Walker_t& ThisWalker )
 {
-  ThisWalker.rejectedMove();
+//   ThisWalker.rejectedMove();
   for(int i=0; i<auxH.size(); ++i)
   {
     auxH[i]->setHistories(ThisWalker);

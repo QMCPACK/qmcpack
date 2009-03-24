@@ -270,9 +270,9 @@ namespace qmcplusplus {
       }
 
        int addPropertyHistory(int leng);
-       void rejectedMove();
-       void resetPropertyHistory( );
-       void addPropertyHistoryPoint(int index, RealType data); 
+//        void rejectedMove();
+//        void resetPropertyHistory( );
+//        void addPropertyHistoryPoint(int index, RealType data); 
 
       void clearDistanceTables();
       void resizeSphere(int nc);

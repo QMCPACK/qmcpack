@@ -29,14 +29,20 @@ namespace qmcplusplus {
     FirstHamiltonian = h.startIndex();
     nObservables=0;
     nValues=0;
-    blockT=1;
-    //       OhmmsAttributeSet attrib;
-    //       attrib.add(blockT,"blockSize");
-    //       attrib.put(cur);
+    resum=100000;
+    int blockSeries(0);
+    int blockFreq(0);
+    
+    OhmmsAttributeSet attrib;
+    attrib.add(resum,"resum");
+    attrib.add(blockSeries,"max");
+    attrib.add(blockFreq,"frequency");
+    attrib.put(cur);
     //       app_log()<<"  Forward walking block size is "<< blockT<<"*Tau"<<endl;
     //       P.phLength=0;
     bool FIRST=true;
-
+    CountIndex = P.addPropertyHistory(1);
+    P.PropertyHistory[CountIndex][0]=0;
     xmlNodePtr tcur = cur->children;
     while(tcur != NULL) {
       string cname((const char*)tcur->name);
@@ -45,12 +51,12 @@ namespace qmcplusplus {
       {
         string tagName("none");
         int Hindex(-100);
-        int blockSeries(0);
-        int blockFreq(0);
+//         int blockSeries(0);
+//         int blockFreq(0);
         OhmmsAttributeSet Tattrib;
         Tattrib.add(tagName,"name");
-        Tattrib.add(blockSeries,"max");
-        Tattrib.add(blockFreq,"frequency");
+//         Tattrib.add(blockSeries,"max");
+//         Tattrib.add(blockFreq,"frequency");
         Tattrib.put(tcur);
 
         int numProps = P.PropertyList.Names.size();
@@ -96,9 +102,12 @@ namespace qmcplusplus {
 
         int maxWsize=blockSeries+2;
         int pindx = P.addPropertyHistory(maxWsize);
+        // summed values.
         P.addPropertyHistory(numT);
+        // number of times accumulated. For resum
+        
         Pindices.push_back(pindx);
-        app_log()<<"pindex "<<pindx<<endl;
+//         app_log()<<"pindex "<<pindx<<endl;
 
       }
       tcur = tcur->next;
@@ -107,12 +116,28 @@ namespace qmcplusplus {
     app_log()<<"Total number of values calculated:"<<nValues<<endl;
     Values.resize(nValues,0.0);
     EValues.resize(nValues,0.0);
+    FWValues.resize(nValues,0.0);
     return true;
   }
 
   QMCHamiltonianBase* TrialDMCCorrection::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
   {
-    return new TrialDMCCorrection(*this);
+    TrialDMCCorrection* TCclone = new TrialDMCCorrection();
+    TCclone->Values=Values;
+    TCclone->EValues=EValues;
+    TCclone->FWValues=FWValues;
+    TCclone->Hindices=Hindices;
+    TCclone->Pindices=Pindices;
+    TCclone->walkerLengths=walkerLengths; 
+    TCclone->Names=Names;
+    TCclone->resum=resum;
+    TCclone->CountIndex=CountIndex;
+    TCclone->nObservables=nObservables;
+    TCclone->nValues=nValues;
+    TCclone->FirstHamiltonian=FirstHamiltonian;
+    
+    return TCclone;
+//     return new TrialDMCCorrection(*this);
   }
 
   void TrialDMCCorrection::addObservables(PropertySetType& plist)
@@ -129,7 +154,7 @@ namespace qmcplusplus {
         std::stringstream sstr;
         sstr << "T_" << Names[i] << "_" << (j+1)*walkerLengths[i][0];
         int id= plist.add(sstr.str());
-        myIndex=std::min(myIndex,id);
+//         myIndex=std::min(myIndex,id);
         //app_log()<<"Observables named "<<sstr.str()<< " at " << id <<endl;
       }
 
@@ -139,7 +164,17 @@ namespace qmcplusplus {
         std::stringstream sstr;
         sstr << "ET_" << Names[i] << "_" << (j+1)*walkerLengths[i][0];
         int id=plist.add(sstr.str());
-        myIndex=std::min(myIndex,id);
+//         myIndex=std::min(myIndex,id);
+        //app_log()<<"Observables named "<<sstr.str()<< " at " << id <<endl;
+      }
+      
+     for(int i=0;i<nObservables;++i)
+      for(int j=0;j<walkerLengths[i][1];++j,++nc)
+      {
+        std::stringstream sstr;
+        sstr << "FW_" << Names[i] << "_" << (j+1)*walkerLengths[i][0];
+        int id=plist.add(sstr.str());
+//         myIndex=std::min(myIndex,id);
         //app_log()<<"Observables named "<<sstr.str()<< " at " << id <<endl;
       }
     app_log()<<"TrialDMCCorrection::Observables [" << myIndex << ", " << myIndex+nc << ")" << endl;

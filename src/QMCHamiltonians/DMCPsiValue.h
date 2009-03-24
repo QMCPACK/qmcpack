@@ -75,37 +75,24 @@ namespace qmcplusplus {
     
     inline Return_t 
     rejectedMove(ParticleSet& P) {
-//         vector<double>::iterator Vit=Values.begin();
-//         for(int i=0;i<nObservables;i++){
-// 	  for(int j=0;j<walkerLengths[i].size();j++,Vit++){
-//             (*Vit) = tWalker->PropertyHistory[Pindices[i]][walkerLengths[i][j]-1];
-//           }
-//         }
-// 	std::copy(Values.begin(),Values.end(),tWalker->getPropertyBase()+FirstHamiltonian+myIndex);
-      tWalker->rejectedMove();
+      evaluate(P);
+
       return 0.0;
     }
     
     inline Return_t 
     evaluate(ParticleSet& P) {
-      if ( (tWalker->PropertyHistory[psiindx])[0] ==0){
-	Ps0=std::exp( tWalker->Properties(LOGPSI));
+      if ( (tWalker->PropertyHistory[psiindx])[0] == 0){
+        Ps0=std::exp(P.Properties(LOGPSI));
         tWalker->addPropertyHistoryPoint(psiindx, Ps0 );
-	
       }
-      
-//       app_log()<<tWalker->Properties(LOCALENERGY)-E0<<"  "<<-1.0*Tau*tWalker->getPropertyHistorySum(Eindx,blockSeries)<<endl;
       Return_t tEsum = std::exp(-1.0*Tau*(tWalker->getPropertyHistorySum(Eindx,blockSeries) ) );
-//       app_log()<<tEsum<<"  "<<tWalker->Weight<<endl;
       tWalker->addPropertyHistoryPoint(Eindx,  tWalker->Properties(LOCALENERGY)-E0 );
-//       app_log()<<tEsum * ( tWalker->PropertyHistory[psiindx][0])<<endl;
-//       Value= tEsum * ( tWalker->PropertyHistory[psiindx][0]);
+
       Ps0=(tWalker->PropertyHistory[psiindx][0]);
       PW= tEsum *Ps0;
       EW= tEsum *( tWalker->Properties(LOCALENERGY));
       W= tEsum ;
-//       Value= tEsum * P.PropertyList[LOCALENERGY];
-//       tWalker->Weight = tEsum;
 
       return 0.0;
     }
@@ -118,22 +105,7 @@ namespace qmcplusplus {
     inline Return_t 
     registerData(ParticleSet& P, BufferType& buffer) 
     {
-      if ( (tWalker->PropertyHistory[psiindx])[0] ==0){
-        tWalker->addPropertyHistoryPoint(psiindx, std::exp( tWalker->Properties(LOGPSI)) );
-      }
-      
-//       app_log()<<tWalker->Properties(LOCALENERGY)-E0<<"  "<<-1.0*Tau*tWalker->getPropertyHistorySum(Eindx,blockSeries)<<endl;
-      Return_t tEsum = std::exp(-1.0*Tau*(tWalker->getPropertyHistorySum(Eindx,blockSeries)) );
-//       app_log()<<tEsum<<"  "<<tWalker->Weight<<endl;
-      tWalker->addPropertyHistoryPoint(Eindx,  tWalker->Properties(LOCALENERGY)-E0 );
-//       app_log()<<tEsum * ( tWalker->PropertyHistory[psiindx][0])<<endl;
-//       Value= tEsum * ( tWalker->PropertyHistory[psiindx][0]);
-      Ps0=( tWalker->PropertyHistory[psiindx][0]);
-      PW= tEsum *Ps0;
-      EW= tEsum *( tWalker->Properties(LOCALENERGY));
-      W= tEsum ;
-//       Value= tEsum * P.PropertyList[LOCALENERGY];
-//       tWalker->Weight = tEsum;
+      evaluate(P);
       buffer.add(0.0);
       return 0.0;
     }
@@ -141,22 +113,7 @@ namespace qmcplusplus {
     inline Return_t 
     updateBuffer(ParticleSet& P, BufferType& buffer) 
     {
-      if ( (tWalker->PropertyHistory[psiindx])[0] ==0){
-        tWalker->addPropertyHistoryPoint(psiindx, std::exp( tWalker->Properties(LOGPSI)) );
-      }
-      
-//       app_log()<<tWalker->Properties(LOCALENERGY)-E0<<"  "<<-1.0*Tau*tWalker->getPropertyHistorySum(Eindx,blockSeries)<<endl;
-      Return_t tEsum = std::exp(-1.0*Tau*(tWalker->getPropertyHistorySum(Eindx,blockSeries)) );
-//       app_log()<<tEsum<<"  "<<tWalker->Weight<<endl;
-      tWalker->addPropertyHistoryPoint(Eindx,  tWalker->Properties(LOCALENERGY)-E0 );
-//       app_log()<<tEsum * ( tWalker->PropertyHistory[psiindx][0])<<endl;
-//       Value= tEsum * ( tWalker->PropertyHistory[psiindx][0]);
-      Ps0=( tWalker->PropertyHistory[psiindx][0]);
-      PW= tEsum *Ps0;
-      EW= tEsum *( tWalker->Properties(LOCALENERGY));
-      W= tEsum ;
-//       Value= tEsum * P.PropertyList[LOCALENERGY];
-//       tWalker->Weight = tEsum;
+      evaluate(P);
       return 0.0;
     }
 
@@ -173,22 +130,7 @@ namespace qmcplusplus {
     inline Return_t 
     evaluatePbyP(ParticleSet& P, int active)
     {
-      if ( (tWalker->PropertyHistory[psiindx])[0] ==0){
-        tWalker->addPropertyHistoryPoint(psiindx, std::exp( tWalker->Properties(LOGPSI)) );
-      }
-      
-//       app_log()<<tWalker->Properties(LOCALENERGY)-E0<<"  "<<-1.0*Tau*tWalker->getPropertyHistorySum(Eindx,blockSeries)<<endl;
-      Return_t tEsum = std::exp(-1.0*Tau*(tWalker->getPropertyHistorySum(Eindx,blockSeries) ) );
-//       app_log()<<tEsum<<"  "<<tWalker->Weight<<endl;
-      tWalker->addPropertyHistoryPoint(Eindx,  tWalker->Properties(LOCALENERGY)-E0 );
-//       app_log()<<tEsum * ( tWalker->PropertyHistory[psiindx][0])<<endl;
-//       Value= tEsum * ( tWalker->PropertyHistory[psiindx][0]);
-      Ps0=( tWalker->PropertyHistory[psiindx][0]);
-      PW= tEsum *Ps0;
-      EW= tEsum *( tWalker->Properties(LOCALENERGY));
-      W= tEsum ;
-//       Value= tEsum * P.PropertyList[LOCALENERGY];
-//       tWalker->Weight = tEsum;
+      evaluate(P);
       return 0.0;
     }
  
@@ -206,26 +148,19 @@ namespace qmcplusplus {
        Tattrib.add(E0,"E0");
        Tattrib.put(cur);
        
-       xmlNodePtr tcur = cur->children;
-//       app_log()<<"PUTTING LOGPSI "<<((const char*)(tcur->name))<<endl;
-      
+       xmlNodePtr tcur = cur->children; 
       ///Making wavefunction for VMC overlap calculation
       WaveFunctionFactory* WFF = new WaveFunctionFactory(qp,pset,c);
       WFF->setReportLevel(0);
       WFF->setName("DMCPsiVal");
       WFF->build(cur,false);
-      
       trialPsi = (WFF->targetPsi)->makeClone(*qp);
-      
-      trialPsi->resizeTempP(*qp);
-      
+      trialPsi->resizeTempP(*qp);      
       delete WFF;
       
       ///Create a energy history vector to facilitate the DMC correction
       psiindx = qp->addPropertyHistory(1);
       Eindx = qp->addPropertyHistory(blockSeries);
-      
-      
       return true;
     }
 

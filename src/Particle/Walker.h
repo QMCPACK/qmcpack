@@ -143,25 +143,14 @@ namespace qmcplusplus {
       if (PHindex[index]==PropertyHistory[index].size()) PHindex[index]=0;
 //       PropertyHistory[index].pop_back();
     }
-    
-    inline void rejectedMove()
-    {
-      for(int dindex=0;dindex<PropertyHistory.size();dindex++){
-        PropertyHistory[dindex][PHindex[dindex]]=PropertyHistory[dindex][PHindex[dindex]-1];
-        PHindex[dindex]++;
-        if (PHindex[dindex]==PropertyHistory[dindex].size()) PHindex[dindex]=0;
-//       PropertyHistory[dindex].push_front(PropertyHistory[dindex].front());
-//       PropertyHistory[dindex].pop_back();
-      }
-    }
-    
+   
     inline T getPropertyHistorySum(int index, int endN)
     {
       T mean=0.0; 
       typename vector<T>::const_iterator phStart;
       phStart=PropertyHistory[index].begin()+PHindex[index];
       for(int i=0;i<endN;phStart++,i++){
-        if (phStart==PropertyHistory[index].end()) phStart = PropertyHistory[index].begin();
+        if (phStart>=PropertyHistory[index].end()) phStart -= PropertyHistory[index].size();
         mean+= (*phStart);
       }
       return mean ;
