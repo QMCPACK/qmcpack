@@ -162,6 +162,9 @@ namespace qmcplusplus {
     P.G += myG;
     P.L += myL;
 
+    //copy psiM to psiM_temp
+    psiM_temp=psiM;
+
     buf.put(psiM.first_address(),psiM.last_address());
     buf.put(FirstAddressOfdV,LastAddressOfdV);
     buf.put(d2psiM.first_address(),d2psiM.last_address());
