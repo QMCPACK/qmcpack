@@ -380,7 +380,6 @@ namespace qmcplusplus
       void acceptMove(ParticleSet& P, int iat)
       {
         U[iat] = curVal;
-	cerr<<"IAT: "<<iat<<" "<<dU.size()<<endl;
         dU[iat]=curGrad;
         d2U[iat]=curLap;
       }
