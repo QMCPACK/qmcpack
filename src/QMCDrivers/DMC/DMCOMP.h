@@ -57,6 +57,8 @@ namespace qmcplusplus {
     string NonLocalMove;
     ///input string to benchmark OMP performance
     string BenchMarkRun;
+    ///input string to use fast gradient
+    string UseFastGrad;
     ///input to control maximum age allowed for walkers.
     IndexType mover_MaxAge;
 

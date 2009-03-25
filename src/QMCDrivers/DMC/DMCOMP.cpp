@@ -45,6 +45,7 @@ namespace qmcplusplus {
     m_param.add(NonLocalMove,"nonlocalmove","string");
     m_param.add(NonLocalMove,"nonlocalmoves","string");
     m_param.add(mover_MaxAge,"MaxAge","double");
+    m_param.add(UseFastGrad,"fastgrad", "string");
   }
 
   void DMCOMP::resetUpdateEngines() {
@@ -88,15 +89,48 @@ namespace qmcplusplus {
         {
           if(NonLocalMove == "yes")
           {
-            app_log() << "  Non-local update is used." << endl;
-            DMCNonLocalUpdatePbyP* nlocMover= 
-              new DMCNonLocalUpdatePbyP(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]); 
-            nlocMover->put(qmcNode);
-            Movers[ip]=nlocMover;
+	    if (!ip) {
+	      app_log() << "  Non-local update is used." << endl;
+	    }
+	    if (UseFastGrad == "yes") {
+	      if (!ip)
+		app_log() << "  Using fast gradient version." << endl;
+	      DMCNonLocalUpdatePbyPFast * nlocMover= 
+		new DMCNonLocalUpdatePbyPFast
+		(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]); 
+	      nlocMover->put(qmcNode);
+	      Movers[ip] = nlocMover;
+	    }
+	    else {
+	      if (!ip)
+		app_log() << "  Using slow gradient version." << endl;
+	      DMCNonLocalUpdatePbyP *nlocMover = 
+	      new DMCNonLocalUpdatePbyP
+		(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]); 
+	      nlocMover->put(qmcNode);
+	      Movers[ip] = nlocMover;
+	    }	      
           } 
           else
           {
-            Movers[ip]= new DMCUpdatePbyPWithRejection(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]); 
+	    if (UseFastGrad == "yes") {
+	      if (!ip)
+		app_log() << "  Using fast gradient version." << endl;
+	      DMCUpdatePbyPWithRejectionFast *Mover= 
+		new DMCUpdatePbyPWithRejectionFast
+		(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]); 
+	      // Mover->put(qmcNode);
+	      Movers[ip] = Mover;
+	    }
+	    else {
+	      if (!ip)
+		app_log() << "  Using slow gradient version." << endl;
+	      DMCUpdatePbyPWithRejection *Mover = 
+		new DMCUpdatePbyPWithRejection
+		(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]); 
+	      // Mover->put(qmcNode);
+	      Movers[ip] = Mover;
+	    }	      
           }
           Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip]);
           Movers[ip]->initWalkersForPbyP(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
