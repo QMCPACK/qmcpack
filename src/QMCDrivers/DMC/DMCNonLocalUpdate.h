@@ -57,6 +57,28 @@ namespace qmcplusplus {
     DMCNonLocalUpdatePbyP(const DMCNonLocalUpdatePbyP& a): QMCUpdateBase(a){ }
     /// Copy operator (disabled).
     DMCNonLocalUpdatePbyP& operator=(const DMCNonLocalUpdatePbyP&) { return *this;}
+    vector<NewTimer*> myTimers;
+
+  };
+
+  class DMCNonLocalUpdatePbyPFast: public QMCUpdateBase {
+
+  public:
+
+    /// Constructor.
+    DMCNonLocalUpdatePbyPFast(MCWalkerConfiguration& w, TrialWaveFunction& psi, 
+        QMCHamiltonian& h, RandomGenerator_t& rg);
+    ///destructor
+    ~DMCNonLocalUpdatePbyPFast();
+
+    void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
+
+  private:
+    /// Copy Constructor (disabled)
+    DMCNonLocalUpdatePbyPFast(const DMCNonLocalUpdatePbyP& a): QMCUpdateBase(a){ }
+    /// Copy operator (disabled).
+    DMCNonLocalUpdatePbyPFast& operator=(const DMCNonLocalUpdatePbyP&) { return *this;}
+    vector<NewTimer*> myTimers;
 
   };
 
