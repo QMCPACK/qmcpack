@@ -426,9 +426,9 @@ namespace qmcplusplus {
       } 
       else 
       {//all moves are rejected: does not happen normally with reasonable wavefunctions
+        H.rejectedMove(W,thisWalker); 
         thisWalker.Age++;
         thisWalker.Properties(R2ACCEPTED)=0.0;
-        thisWalker.rejectedMove();
         ++nAllRejected;
         enew=eold;//copy back old energy
         gf_acc=1.0;
