@@ -171,7 +171,7 @@ namespace qmcplusplus {
       Psi.copyFromBuffer(W,w_buffer);
 
       //create a 3N-Dimensional Gaussian with variance=1
-      makeGaussRandom(deltaR);
+      makeGaussRandomWithEngine(deltaR, RandomGen);
       bool notcrossed(true);
       int nAcceptTemp(0);
       int nRejectTemp(0);
@@ -186,7 +186,7 @@ namespace qmcplusplus {
         PosType dr(m_sqrttau*deltaR[iat]+sc*real(W.G[iat]));
 
         //RealType rr=dot(dr,dr);
-        RealType rr=Tau*dot(deltaR[iat],deltaR[iat]);
+        RealType rr=m_tauovermass*dot(deltaR[iat],deltaR[iat]);
         rr_proposed+=rr;
 
         if(rr>m_r2max)//too big move
@@ -210,7 +210,7 @@ namespace qmcplusplus {
           RealType logGf = -0.5*dot(deltaR[iat],deltaR[iat]);
 
           //RealType scale=getDriftScale(Tau,G);
-          RealType scale=getDriftScale(Tau,G[iat]);
+          RealType scale=getDriftScale(m_tauovermass,G[iat]);
           dr = thisWalker.R[iat]-newpos-scale*real(G[iat]); 
 
           RealType logGb = -m_oneover2tau*dot(dr,dr);
@@ -449,6 +449,7 @@ namespace qmcplusplus {
         /////w_buffer.rewind();
         /////W.copyToBuffer(w_buffer);
         /////RealType logpsi = Psi.updateBuffer(W,w_buffer,false);
+
         RealType ratio=Psi.ratio(W,iat,dG,dL);
         W.acceptMove(iat);
         Psi.acceptMove(W,iat);
