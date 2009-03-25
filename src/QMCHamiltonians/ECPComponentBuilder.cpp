@@ -58,7 +58,7 @@ namespace qmcplusplus {
     xmlDocPtr m_doc = xmlReadMemory(cbuffer,length,NULL,NULL,0);
 
     if(fin)  delete fin;
-    if(cbuffer) delete cbuffer;
+    if(cbuffer) delete [] cbuffer;
 
     // build an XML tree from a the file;
     //xmlDocPtr m_doc = xmlParseFile(fname.c_str());
