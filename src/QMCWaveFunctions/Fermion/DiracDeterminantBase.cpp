@@ -722,7 +722,7 @@ namespace qmcplusplus {
         ParticleSet::ParticleGradient_t& G, 
         ParticleSet::ParticleLaplacian_t& L)
     {
-      cerr<<"I'm calling evaluate log"<<endl;
+      //      cerr<<"I'm calling evaluate log"<<endl;
       Phi->evaluate(P, FirstIndex, LastIndex, psiM,dpsiM, d2psiM);
 
       if(NumPtcls==1) 

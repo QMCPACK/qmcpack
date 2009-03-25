@@ -432,8 +432,8 @@ namespace qmcplusplus
       /** equivalent to evalaute with additional data management */
       RealType registerData(ParticleSet& P, PooledData<RealType>& buf)
       {
-	cerr<<"REGISTERING 1 BODY JASTROW "<<endl;
-	cerr<<d_table->size(VisitorIndex)<<endl;
+	// cerr<<"REGISTERING 1 BODY JASTROW "<<endl;
+	// cerr<<d_table->size(VisitorIndex)<<endl;
         //U.resize(d_table->size(VisitorIndex));
         d2U.resize(d_table->size(VisitorIndex));
         dU.resize(d_table->size(VisitorIndex));
