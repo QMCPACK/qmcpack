@@ -128,6 +128,8 @@ namespace qmcplusplus {
   protected:
     ///update particle-by-particle
     bool UpdatePbyP;
+    ///use T-moves
+    bool UseTMove;
     ///number of particles
     IndexType NumPtcl;
     ///timestep
@@ -154,10 +156,6 @@ namespace qmcplusplus {
     EstimatorManager* Estimators;
     ///parameters
     ParameterSet myParams;
-#if defined(ENABLE_COMPOSITE_ESTIMATOR)
-    ///composite estimator
-    CompositeEstimatorSet* compEstimator;
-#endif
     ///non local operator
     NonLocalTOperator nonLocalOps;
     ///temporary storage for drift

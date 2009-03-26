@@ -24,12 +24,11 @@
 namespace qmcplusplus { 
 
   /// Constructor.
-  QMCUpdateBase::QMCUpdateBase(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator_t& rg): 
-    W(w),Psi(psi),H(h), UpdatePbyP(true),
-    RandomGen(rg), MaxAge(0),  m_r2max(-1), branchEngine(0), Estimators(0)
-#if defined(ENABLE_COMPOSITE_ESTIMATOR)
-      , compEstimator(0)
-#endif
+  QMCUpdateBase::QMCUpdateBase(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator_t& rg)
+    : W(w),Psi(psi),H(h)
+    , UpdatePbyP(true), UseTMove(false)
+    , RandomGen(rg), MaxAge(0),  m_r2max(-1)
+    , branchEngine(0), Estimators(0)
   { 
     myParams.add(m_r2max,"maxDisplSq","double"); //maximum displacement
   }
@@ -37,17 +36,13 @@ namespace qmcplusplus {
   /// destructor
   QMCUpdateBase::~QMCUpdateBase() 
   { 
-#if defined(ENABLE_COMPOSITE_ESTIMATOR)
-    if(compEstimator) delete compEstimator;
-#endif
   }
 
   bool QMCUpdateBase::put(xmlNodePtr cur)
   {
-
     //nonlocal operator is very light
-    bool s= nonLocalOps.put(cur);
-    s=myParams.put(cur);
+    UseTMove = nonLocalOps.put(cur);
+    bool s=myParams.put(cur);
     if(branchEngine) branchEngine->put(cur);
     return s;
   }
