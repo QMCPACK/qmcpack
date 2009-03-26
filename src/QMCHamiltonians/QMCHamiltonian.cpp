@@ -133,7 +133,6 @@ int QMCHamiltonian::addObservables(ParticleSet& P)
   Observables.clear();
   //ParticleSet::mcObservables (large data, e.g. density) are accumulated while evaluations
   P.Collectables.clear();
-  cout << "Collectables should be empty " << P.Collectables.size() << endl;
   P.Collectables.rewind();
   for(int i=0; i<H.size(); ++i) H[i]->addObservables(Observables,P.Collectables);
   for(int i=0; i<auxH.size(); ++i) auxH[i]->addObservables(Observables,P.Collectables);
