@@ -272,7 +272,12 @@ namespace qmcplusplus {
 
       int ngIn=vnn.cols()-2;
 
-      if (Llocal == -1) Llocal = Lmax;
+      if (Llocal == -1 && Lmax > 0) {
+	app_error() << "The local channel is not specified in the pseudopotential file.\n"
+		    << "Please add \'l-local=\"n\"\' attribute the semilocal section of the fsatom XML file.\n";
+	abort();
+	// Llocal = Lmax;
+      }
       //find the index of local 
       int iLlocal=-1;
       for(int l=0; l<angList.size(); l++)
