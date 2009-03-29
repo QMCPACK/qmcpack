@@ -408,7 +408,7 @@ namespace qmcplusplus
     
     
     for (int i=0; i<SumValue.size(); i++) SumValue[i]=0.0; 
-    CSWeight=wgt_tot=1.0/wgt_tot;
+    CSWeight=wgt_tot=1.0/new_wgt_tot2;
     for (int ip=0; ip<NumThreads; ip++)
       {
         int nw=wClones[ip]->getActiveWalkers();
