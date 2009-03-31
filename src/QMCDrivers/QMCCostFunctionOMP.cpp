@@ -391,6 +391,10 @@ namespace qmcplusplus
     //collect the total weight for normalization and apply maximum weight
     myComm->allreduce(wgt_tot); 
     myComm->allreduce(wgt_tot2);
+    //app_log()<<"Before Purge"<<wgt_tot*wgt_tot/wgt_tot2<<endl;
+    
+    
+    
     Return_t wgtnorm = (1.0*NumSamples)/wgt_tot;
     wgt_tot=0.0;
     Return_t new_wgt_tot2=0.0;
@@ -405,10 +409,10 @@ namespace qmcplusplus
           new_wgt_tot2 += saved[REWEIGHT]*saved[REWEIGHT];
         }
     }
-    
+    //app_log()<<"After Purge"<<wgt_tot*wgt_tot/new_wgt_tot2<<endl;
     
     for (int i=0; i<SumValue.size(); i++) SumValue[i]=0.0; 
-    CSWeight=wgt_tot=1.0/new_wgt_tot2;
+    CSWeight=wgt_tot=1.0/wgt_tot;
     for (int ip=0; ip<NumThreads; ip++)
       {
         int nw=wClones[ip]->getActiveWalkers();
@@ -430,9 +434,9 @@ namespace qmcplusplus
       }
     //collect everything
     myComm->allreduce(SumValue);
-//     app_log()<<"wgt_bare:"<<wgt_bare<<" wgt_bare2:"<<wgt_bare2<<"  SumValue[SUM_WGT]:"<<SumValue[SUM_WGT]<<"  SumValue[SUM_WGTSQ]:"<<SumValue[SUM_WGTSQ]<<endl;
-//     return wgt_bare*wgt_bare/wgt_bare2;
-//     return SumValue[SUM_WGT]*SumValue[SUM_WGT]/wgt_bare2;
+    
+    //app_log()<<"After After Purge"<<SumValue[SUM_WGT]*SumValue[SUM_WGT]/SumValue[SUM_WGTSQ]<<endl;
+    
     return SumValue[SUM_WGT]*SumValue[SUM_WGT]/SumValue[SUM_WGTSQ];
   }
 
