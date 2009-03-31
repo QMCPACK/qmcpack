@@ -23,6 +23,17 @@
 #include "OhmmsApp/ProjectData.h"
 #include "QMCApp/QMCMain.h"
 
+#ifdef __linux__
+#include "sys/sysinfo.h"
+
+size_t freemem()
+{
+  struct sysinfo si;
+  sysinfo(&si);
+  return si.freeram + si.bufferram;
+}
+#endif
+
 
 /** @file qmcapp.cpp
  *@brief a main function for QMC simulation. 
@@ -34,9 +45,21 @@
  *For other simulations, one can derive a class from QMCApps, similarly to MolecuApps.
  */
 int main(int argc, char **argv) {
-
   ///done with the option
+
   OHMMS::Controller->initialize(argc,argv);
+  // Write out free memory on each node on Linux.
+
+#ifdef __linux__
+  for (int proc=0; proc<OHMMS::Controller->size(); proc++) {
+    if (OHMMS::Controller->rank() == proc) {
+      fprintf (stderr, "Rank = %4d  Free Memory = %5ld MB\n",
+	       proc, freemem()>>20);
+    }
+    OHMMS::Controller->barrier();
+  }
+  OHMMS::Controller->barrier();
+#endif
 
   //check the options first
   int clones=1;
