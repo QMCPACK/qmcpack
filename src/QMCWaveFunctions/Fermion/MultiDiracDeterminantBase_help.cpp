@@ -81,11 +81,11 @@
     NumOrbitals_total=morb;
     psiV.resize(NumOrbitals_total);
     psiV_old.resize(NumOrbitals_total);
-    dpsiM.resize(NumOrbitals_total,nel);
-    d2psiM.resize(NumOrbitals_total,nel);
+    dpsiM.resize(nel,NumOrbitals_total);
+    d2psiM.resize(nel,NumOrbitals_total);
     psiM_temp.resize(nel,NumOrbitals);
-    dpsiM_temp.resize(NumOrbitals_total,nel);
-    d2psiM_temp.resize(NumOrbitals_total,nel);
+    dpsiM_temp.resize(nel,NumOrbitals_total);
+    d2psiM_temp.resize(nel,NumOrbitals_total);
 
 
     psiM_actual.resize(NumOrbitals_total,nel); //WARNING: Orbitals are first!

@@ -118,20 +118,68 @@ namespace qmcplusplus {
   MultiDiracDeterminantBase::GradType 
     MultiDiracDeterminantBase::evalGrad(ParticleSet& P, int iat)
   {
-//     const ValueType* restrict yptr=psiM[iat-FirstIndex];
-//     const GradType* restrict dyptr=dpsiM[iat-FirstIndex];
-//     GradType rv;
-//     for(int j=0; j<NumOrbitals; ++j) rv += (*yptr++) *(*dyptr++);
-//     //    for (int i=0;i<NumOrbitals; i++)
-//     //      workV1[i]=dpsiM(iat,i)-psiM_actual(i,iat);
-//     MatrixOperators::product(psiM,workV1,workV2.data()); //check to see if this doesn't need a transpose on the psiM
-//     //    Excitations.BuildDotProducts(psiM,workV1,workV2,dpsiM_actual,1.0/rv);
+    cerr<<"GS VALUE PSI init IS "<<iat<<" "<<gs_value_psi<<endl;
+
+    Phi->evaluate(P, FirstIndex, LastIndex, psiM_actual,dpsiM, d2psiM);
+    //     const ValueType* restrict yptr=psiM[iat-FirstIndex];
+    //     const GradType* restrict dyptr=dpsiM[iat-FirstIndex];
+     GradType rv;
+     //     for(int j=0; j<NumOrbitals; ++j) rv += (*yptr++) *(*dyptr++);
+     for(int j=0; j<NumOrbitals; j++) 
+       rv += dpsiM(iat-FirstIndex,j)*psiM(iat-FirstIndex,j); //   (*yptr++) *(*dyptr++);
+
+     //     int dim=0;
+
+//      //attempt 1
+//      for (int i=0;i<NumOrbitals; i++)
+//        psiV[i]=dpsiM(iat,i)[dim];
+//      DetUpdate(psiM,psiV,workV1,workV2,iat-FirstIndex,rv[0]);
+//      for (int i=0;i<psiM.extent(0);i++){
+//        for (int j=0;j<psiM.extent(1);j++){
+// 	 cerr<<psiM(i,j)<<endl;
+//        }
+//      }
+//      assert(1==2);
+
+     ////attempt 2
+
+
+     GradVector_t workV2_grad(workV2.size());
+     for (int dim=0;dim<OHMMS_DIM;dim++){
+       for (int i=0;i<NumOrbitals; i++){
+	 workV1[i]=-(dpsiM(iat-FirstIndex,i)[dim]-psiM_actual(i,iat-FirstIndex));
+       }
+       //really I think we only need to take a piece of this product!
+       MatrixOperators::product(psiM,workV1,workV2.data()); //check to see if this doesn't need a transpose on the psiM
+       for (int i=0;i<NumOrbitals;i++)
+	 workV2_grad(i)[dim]=workV2(i);
+     }
+     
+
+     psiMInv=psiM;
+     for (int i=0;i<psiMInv.extent(0);i++)
+       for (int j=0;j<psiMInv.extent(1);j++){
+	 psiMInv(i,j)+=(1.0/rv[2])*workV2[i]*psiM(iat-FirstIndex,j);
+	 cerr<<psiMInv(i,j)<<endl;
+       }
+     
+
+  //  GradType one_over_ratio=1.0/rv;
+  Excitations.BuildDotProducts_grad(psiM,psiM_actual,dpsiM,workV2_grad,1.0/rv,iat-FirstIndex);
+  GradType val(1.0,1.0,1.0);
+  int coefIndex=0;
+  Excitations.CalcSingleExcitations_grad(coefs,val,coefIndex);
+  Excitations.CalcDoubleExcitations_grad(coefs,val,coefIndex);
+  cerr<<"GS VALUE PSI IS "<<gs_value_psi<<" "<<rv<<" "<<val<<endl;
+  //  assert(1==2);
+  return val*rv*gs_value_psi; //*gs_value_psi;
+     //     Excitations.BuildDotProducts(psiM,workV1,workV2,dpsiM_actual,1.0/rv);
 //     double coefIndex=0;
 //     ValueType newVal=1.0;
 //     Excitations.CalcSingleExcitations(coefs,newVal,coefIndex);
 //     cerr<<(rv*newVal)/psi_old;
 //     return rv;
-  }
+  
 
 //   MultiDiracDeterminantBase::GradType 
 //     MultiDiracDeterminantBase::evalGrad_slow(ParticleSet& P, int iat)
@@ -155,7 +203,7 @@ namespace qmcplusplus {
 //   }
 
 
-
+  }
     MultiDiracDeterminantBase::ValueType 
       MultiDiracDeterminantBase::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
   {
@@ -259,6 +307,7 @@ namespace qmcplusplus {
    */
   MultiDiracDeterminantBase::ValueType MultiDiracDeterminantBase::ratio(ParticleSet& P, int iat)
   {
+    old_gs_value_psi=gs_value_psi;
     UpdateMode=ORB_PBYP_ALL;
     WorkingIndex = iat-FirstIndex;
     Phi->evaluate(P, iat, psiV);
@@ -282,7 +331,7 @@ namespace qmcplusplus {
     ValueType gs_ratio=0.0;
     for (int orbital=0;orbital<NumOrbitals;orbital++)
       gs_ratio+=psiM_temp(WorkingIndex,orbital)*psiV(orbital);
-
+    gs_value_psi*=gs_ratio;
 
 
     //relying here on the fact that DetUpdate only uses the first (psiM_temp.cols()) rows of psiV!
@@ -315,6 +364,7 @@ namespace qmcplusplus {
     Excitations.CalcSingleExcitations(coefs,val,coefIndex);
     Excitations.CalcDoubleExcitations(coefs,val,coefIndex);
     curRatio=(gs_ratio*val)/oldVal;
+    gs_value_psi=gs_value_psi/curRatio;
     psi_new=val;
     psi_old=oldVal;
     return curRatio;
@@ -328,6 +378,7 @@ namespace qmcplusplus {
   */
   void MultiDiracDeterminantBase::acceptMove(ParticleSet& P, int iat) 
   {
+    cerr<<"MultiDiracDeterminantBase accepting "<<iat<<" "<<FirstIndex<<endl;
     psi_new=psi_old;
     PhaseValue += evaluatePhase(curRatio);
     LogValue +=std::log(std::abs(curRatio));
@@ -364,6 +415,7 @@ namespace qmcplusplus {
   /** move was rejected. copy the real container to the temporary to move on
   */
   void MultiDiracDeterminantBase::restore(int iat) {
+    gs_value_psi=old_gs_value_psi;
     psi_old=psi_new;
     if(UpdateMode == ORB_PBYP_ALL) {
       psiM_temp = psiM;
@@ -423,6 +475,10 @@ namespace qmcplusplus {
       }
       psiM_temp = psiM;
       double val1=std::exp(LogValue)*std::cos(abs(PhaseValue));
+      //      gs_value_psi=1.0;
+      //      gs_value_psi=val1;
+      cerr<<"Starting gs_value_psi as "<<gs_value_psi<<endl;
+      //      return LogValue;
       //Single Excitations!
       TinyVector<int,2> second_replaces_first=Excitations.begin();
       while (second_replaces_first[0]!=-1){
@@ -447,7 +503,6 @@ namespace qmcplusplus {
 	psiM=psiM_temp;
 	second_replaces_first=Excitations.next();
       }
-
 
 
       //double excitations
@@ -490,6 +545,10 @@ namespace qmcplusplus {
       }
       //double excitations done!
 
+      cerr<<"Pre-gs-value-psi"<<gs_value_psi<<endl;
+      gs_value_psi=val1/(std::exp(LogValue)*std::cos(abs(PhaseValue)));
+      cerr<<"Post-gs-value-psi"<<gs_value_psi<<endl;
+      return LogValue;
 
       return LogValue;
     }

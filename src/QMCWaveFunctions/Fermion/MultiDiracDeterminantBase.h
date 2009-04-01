@@ -124,8 +124,9 @@ namespace qmcplusplus {
      * @param iat the particle thas is being moved
      */
     ValueType ratio(ParticleSet& P, int iat);
-
-
+    ValueType gs_value_psi;
+    ValueType old_gs_value_psi;
+    
     /** return the ratio
      * @param P current configuration
      * @param iat particle whose position is moved
