@@ -154,7 +154,7 @@ namespace qmcplusplus {
         {
           app_log() << "  PbyP moves"<<endl;
           if(UseDrift == "yes")
-            Movers[ip]=new VMCUpdatePbyPWithDrift(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]); 
+            Movers[ip]=new VMCUpdatePbyPWithDriftFast(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]); 
           else
             Movers[ip]=new VMCUpdatePbyP(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]); 
           //Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip]);
