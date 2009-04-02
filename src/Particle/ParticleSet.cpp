@@ -20,6 +20,7 @@
 #include "Particle/DistanceTable.h"
 #include "LongRange/StructFact.h"
 #include "Utilities/IteratorUtility.h"
+//#define PACK_DISTANCETABLES
 
 namespace qmcplusplus {
 
@@ -360,6 +361,7 @@ namespace qmcplusplus {
   void 
   ParticleSet::registerData(Walker_t& awalker, PooledData<RealType>& buf) {
     R = awalker.R;
+#if defined(PACK_DISTANCETABLES)
     for(int i=0; i< DistTables.size(); i++) 
     {
       DistTables[i]->evaluate(*this);
@@ -370,10 +372,15 @@ namespace qmcplusplus {
       SK->UpdateAllPart();
       SK->registerData(buf);
     }
+#else
+    for(int i=0; i< DistTables.size(); i++) DistTables[i]->evaluate(*this);
+    if(SK) SK->UpdateAllPart();
+#endif
   }
 
   void 
   ParticleSet::registerData(PooledData<RealType>& buf) {
+#if defined(PACK_DISTANCETABLES)
     for(int i=0; i< DistTables.size(); i++) 
     {
       DistTables[i]->evaluate(*this);
@@ -384,11 +391,16 @@ namespace qmcplusplus {
       SK->UpdateAllPart();
       SK->registerData(buf);
     }
+#else
+    for(int i=0; i< DistTables.size(); i++) DistTables[i]->evaluate(*this);
+    if(SK) SK->UpdateAllPart();
+#endif
   }
   
   void 
   ParticleSet::updateBuffer(Walker_t& awalker, PooledData<RealType>& buf) {
     R = awalker.R;
+#if defined(PACK_DISTANCETABLES)
     for(int i=0; i< DistTables.size(); i++) 
     {
       DistTables[i]->evaluate(*this);
@@ -399,10 +411,15 @@ namespace qmcplusplus {
       SK->UpdateAllPart();
       SK->updateBuffer(buf);
     }
+#else
+    for(int i=0; i< DistTables.size(); i++) DistTables[i]->evaluate(*this);
+    if(SK) SK->UpdateAllPart();
+#endif
   }
     
   void 
   ParticleSet::updateBuffer(PooledData<RealType>& buf) {
+#if defined(PACK_DISTANCETABLES)
     for(int i=0; i< DistTables.size(); i++) 
     {
       DistTables[i]->evaluate(*this);
@@ -413,10 +430,15 @@ namespace qmcplusplus {
       SK->UpdateAllPart();
       SK->updateBuffer(buf);
     }
+#else
+    //for(int i=0; i< DistTables.size(); i++) DistTables[i]->evaluate(*this);
+    if(SK) SK->UpdateAllPart();
+#endif
   }
     
   void 
   ParticleSet::copyToBuffer(PooledData<RealType>& buf) {
+#if defined(PACK_DISTANCETABLES)
     for(int i=0; i< DistTables.size(); i++) DistTables[i]->copyToBuffer(buf);
     //Do not change SK: 2007-05-18
     //if(SK) SK->copyToBuffer(buf);
@@ -425,12 +447,20 @@ namespace qmcplusplus {
       if(!SK->DoUpdate) SK->UpdateAllPart();
       SK->copyToBuffer(buf);
     }
+#else
+    if(SK && !SK->DoUpdate) SK->UpdateAllPart();
+#endif
   }
   
   void 
   ParticleSet::copyFromBuffer(PooledData<RealType>& buf) {
+#if defined(PACK_DISTANCETABLES)
     for(int i=0; i< DistTables.size(); i++) DistTables[i]->copyFromBuffer(buf);
     if(SK) SK->copyFromBuffer(buf);
+#else
+    for(int i=0; i< DistTables.size(); i++) DistTables[i]->evaluate(*this);
+    if(SK) SK->UpdateAllPart();
+#endif
   }
 
   void ParticleSet::initPropertyList() 
