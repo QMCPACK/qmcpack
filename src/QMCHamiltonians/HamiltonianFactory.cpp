@@ -47,10 +47,11 @@
 #include "QMCHamiltonians/ForceCeperley.h"
 #include "QMCHamiltonians/PulayForce.h"
 #include "QMCHamiltonians/ZeroVarianceForce.h"
-#include "QMCHamiltonians/HFDHE2Potential_tail.h"
+//#include "QMCHamiltonians/HFDHE2Potential_tail.h"
 #include "QMCHamiltonians/HeEPotential_tail.h"
+#include "QMCHamiltonians/LennardJones_smoothed.h"
 #include "QMCHamiltonians/HFDHE2_Moroni1995.h"
-#include "QMCHamiltonians/HFDBHE_smoothed.h"
+//#include "QMCHamiltonians/HFDBHE_smoothed.h"
 #include "QMCHamiltonians/HeSAPT_smoothed.h"
 #include "QMCHamiltonians/ForwardWalking.h"
 #include "QMCHamiltonians/trialDMCcorrection.h"
@@ -167,24 +168,28 @@ namespace qmcplusplus {
           else 
             addConstCoulombPotential(cur,sourceInp);
         } 
+	else if (potType == "LJP_smoothed") {
+	  LennardJones_smoothed_phy* LJP = new LennardJones_smoothed_phy(*targetPtcl);
+	  targetH->addOperator(LJP,"LJP",true);
+	  LJP->addCorrection(*targetH);
+	}
 	else if (potType == "HeSAPT_smoothed") {
-	  HeSAPT_smoothed* SAPT = new HeSAPT_smoothed(*targetPtcl);
+	  HeSAPT_smoothed_phy* SAPT = new HeSAPT_smoothed_phy(*targetPtcl);
 	  targetH->addOperator(SAPT,"HeSAPT",true);
-	  targetH->addOperator(SAPT->makeDependants(*targetPtcl),SAPT->depName,false);
-	  app_log() << "  Adding " << SAPT->depName << endl;
+	  SAPT->addCorrection(*targetH);
 	}
 	else if (potType == "HFDHE2_Moroni1995") {
-	  HFDHE2_Moroni1995_physical* HFD = new HFDHE2_Moroni1995_physical(*targetPtcl);
+	  HFDHE2_Moroni1995_phy* HFD = new HFDHE2_Moroni1995_phy(*targetPtcl);
 	  targetH->addOperator(HFD,"HFD-HE2",true);
-	  targetH->addOperator(HFD->makeDependants(*targetPtcl),HFD->depName,false);
-	  app_log() << "  Adding " << HFD->depName << endl;
+	  HFD->addCorrection(*targetH);
 	}
+	/*
 	else if (potType == "HFDBHE_smoothed") {
-	  HFDBHE_smoothed* HFD = new HFDBHE_smoothed(*targetPtcl);
+	  HFDBHE_smoothed_phy* HFD = new HFDBHE_smoothed_phy(*targetPtcl);
 	  targetH->addOperator(HFD,"HFD-B(He)",true);
-	  targetH->addOperator(HFD->makeDependants(*targetPtcl),HFD->depName,false);
-	  app_log() << "  Adding " << HFD->depName << endl;
+	  HFD->addCorrection(*targetH);
 	}
+	*/
 	else if (potType == "MPC" || potType == "mpc")
 	  addMPCPotential(cur);
         else if(potType == "HFDHE2") 

@@ -22,6 +22,10 @@ SET(HAMSRCS
 
 IF(OHMMS_DIM MATCHES 3)
   SET(HAMSRCS ${HAMSRCS}
+      LennardJones_smoothed.cpp
+      HFDHE2_Moroni1995.cpp
+#      HFDBHE_smoothed.cpp
+      HeSAPT_smoothed.cpp
       LocalCorePolPotential.cpp
       LocalECPotential.cpp
       NonLocalECPComponent.cpp
