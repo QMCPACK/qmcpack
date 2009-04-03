@@ -43,10 +43,13 @@ namespace qmcplusplus {
   FirstQMC(true) 
   { 
 
-    app_log() << "\n=====================================================\n"
-      <<   "                   qmcpack 0.2                       \n"
-      << "\n  (c) Copyright 2003-  qmcpack developers            \n"
-      <<   "=====================================================\n";
+    app_log() 
+      << "\n=====================================================\n"
+      <<  "                    QMCPACK 0.2                       \n"
+      << "\n  (c) Copyright 2003-  QMCPACK developers            \n"
+      << "\n  Subversion branch " << QMCPLUSPLUS_BRANCH 
+      << "\n  Last modified     " << QMCPLUSPLUS_LAST_CHANGED_DATE
+      << "\n=====================================================\n";
 
     app_log().flush();
   }

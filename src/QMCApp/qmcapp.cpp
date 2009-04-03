@@ -116,7 +116,7 @@ int main(int argc, char **argv) {
       cerr << "No input file is given" << endl;
       cerr << "usage: qmcapp [--clones int] input-files " << endl;
     }
-    OHMMS::Controller->finalize();
+    APP_ABORT("Missing input file");
     return 1;
   }
 
