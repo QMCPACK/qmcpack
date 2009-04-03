@@ -170,18 +170,21 @@ namespace qmcplusplus {
 				  hid_t gid) const
   {
     QMCHamiltonianBase::registerObservables(h5list, gid);
-    vector<int> ndim(2);
-    ndim[0]=Nnuc;
-    ndim[1]=OHMMS_DIM;
-    observable_helper* h5o1 = new observable_helper("FNL");
-    h5o1->set_dimensions(ndim,FirstForceIndex);
-    h5o1->open(gid);
-    h5list.push_back(h5o1);
+    if (ComputeForces) 
+    {
+      vector<int> ndim(2);
+      ndim[0]=Nnuc;
+      ndim[1]=OHMMS_DIM;
+      observable_helper* h5o1 = new observable_helper("FNL");
+      h5o1->set_dimensions(ndim,FirstForceIndex);
+      h5o1->open(gid);
+      h5list.push_back(h5o1);
 
-    observable_helper* h5o2 = new observable_helper("FNL_Pulay");
-    h5o2->set_dimensions(ndim,FirstForceIndex+Nnuc*OHMMS_DIM);
-    h5o2->open(gid);
-    h5list.push_back(h5o2);
+      observable_helper* h5o2 = new observable_helper("FNL_Pulay");
+      h5o2->set_dimensions(ndim,FirstForceIndex+Nnuc*OHMMS_DIM);
+      h5o2->open(gid);
+      h5list.push_back(h5o2);
+    }
   }
 
   void 
