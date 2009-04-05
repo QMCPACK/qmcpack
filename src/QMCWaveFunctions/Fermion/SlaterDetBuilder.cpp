@@ -168,11 +168,11 @@ namespace qmcplusplus {
       if(dit == DetSet.end()) {
         app_log() << "  Creating a Dirac Determinant " << detname << " First Index = " 
           << firstIndex << endl;
-	cerr<<"My det method is "<<detMethod<<endl;
+	app_log() <<"My det method is "<<detMethod<<endl;
 	if (detMethod=="Iterative"){
 	  //	  string s_cutoff("0.0");
 	  //	  aAttrib.add(s_cutoff,"Cutoff");
-	  cerr<<"My cutoff is "<<s_cutoff<<endl;
+	  app_log()<<"My cutoff is "<<s_cutoff<<endl;
 
 	  double cutoff=std::atof(s_cutoff.c_str());
 	  adet= new DiracDeterminantIterative(psi,firstIndex);
@@ -190,7 +190,7 @@ namespace qmcplusplus {
 	  
 	}
 	else if (detMethod=="Multi"){
-	  cerr<<"BUILDING DIRAC DETERM "<<firstIndex<<endl;
+	  app_log()<<"BUILDING DIRAC DETERM "<<firstIndex<<endl;
 	  adet = new MultiDiracDeterminantBase(psi,firstIndex);
 	  int detSize=std::atof(s_detSize.c_str());
 	  ((MultiDiracDeterminantBase*)(adet)) -> set_Multi(firstIndex,detSize,psi->getOrbitalSetSize());
