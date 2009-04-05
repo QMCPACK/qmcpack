@@ -23,22 +23,12 @@
 #include "QMCDrivers/DriftOperators.h"
 //#define TEST_INNERBRANCH
 
-//define macros to print out runtime data
-#if defined(PRINT_DEBUG)
-#define DMC_TRACE_START(NOW) NOW
-#define DMC_TRACE_STOP(WID,PID,MVD,ELAPSED) \
-  OhmmsInfo::Debug->getStream() << setw(16) << WID \
-  << setw(5) << PID << setw(4) << MVD << setw(15) << ELAPSED << std::endl
-#else
-#define DMC_TRACE_START(NOW) 
-#define DMC_TRACE_STOP(WID,MID,PID,ELAPSED) 
-#endif
-
 namespace qmcplusplus { 
 
   /// Constructor.
-  DMCUpdatePbyPWithRejection::DMCUpdatePbyPWithRejection(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
-      RandomGenerator_t& rg): QMCUpdateBase(w,psi,h,rg)
+  DMCUpdatePbyPWithRejection::DMCUpdatePbyPWithRejection(MCWalkerConfiguration& w
+      , TrialWaveFunction& psi, QMCHamiltonian& h , RandomGenerator_t& rg)
+    : QMCUpdateBase(w,psi,h,rg)
     { 
       myTimers.push_back(new NewTimer("DMCUpdatePbyP::advance")); //timer for the walker loop
       myTimers.push_back(new NewTimer("DMCUpdatePbyP::movePbyP")); //timer for MC, ratio etc
@@ -49,7 +39,7 @@ namespace qmcplusplus {
       TimerManager.addTimer(myTimers[2]);
       TimerManager.addTimer(myTimers[3]);
     }
-  
+
   /// destructor
   DMCUpdatePbyPWithRejection::~DMCUpdatePbyPWithRejection() { }
 
@@ -62,114 +52,6 @@ namespace qmcplusplus {
   void DMCUpdatePbyPWithRejection::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end,
       bool measure) 
   {
-
-//#if defined(TEST_INNERBRANCH)
-//    for(;it != it_end;++it) 
-//    {
-//      //MCWalkerConfiguration::WalkerData_t& w_buffer = *(W.DataSet[iwalker]);
-//      Walker_t& thisWalker(**it);
-//      Walker_t::Buffer_t& w_buffer(thisWalker.DataSet);
-//
-//      W.R = thisWalker.R;
-//      w_buffer.rewind();
-//      W.copyFromBuffer(w_buffer);
-//      Psi.copyFromBuffer(W,w_buffer);
-//
-//      for(int step=0; step<5; ++step)
-//      {
-//        //create a 3N-Dimensional Gaussian with variance=1
-//        makeGaussRandomWithEngine(deltaR,RandomGen);
-//        int nAcceptTemp(0);
-//        int nRejectTemp(0);
-//        RealType eold(thisWalker.Properties(LOCALENERGY));
-//        RealType enew(eold);
-//        RealType rr_proposed=0.0;
-//        RealType rr_accepted=0.0;
-//        for(int iat=0; iat<NumPtcl; ++iat) 
-//        {
-//          //PosType dr(m_sqrttau*deltaR[iat]+thisWalker.Drift[iat]);
-//          RealType sc=getDriftScale(Tau,W.G[iat]);
-//          PosType dr(m_sqrttau*deltaR[iat]+sc*W.G[iat]);
-//
-//          //RealType rr=dot(dr,dr);
-//          RealType rr=Tau*dot(deltaR[iat],deltaR[iat]);
-//          rr_proposed+=rr;
-//
-//          if(rr>m_r2max)//reject a big move
-//          {
-//            ++nRejectTemp; continue;
-//          }
-//
-//          PosType newpos(W.makeMove(iat,dr));
-//          RealType ratio=Psi.ratio(W,iat,dG,dL);
-//
-//          ///node is crossed reject the move
-//          if(Psi.getPhase() > numeric_limits<RealType>::epsilon()) 
-//          {
-//            ++nRejectTemp;
-//            ++nNodeCrossing;
-//            W.rejectMove(iat); Psi.rejectMove(iat);
-//          } 
-//          else 
-//          {
-//            G = W.G+dG;
-//            RealType logGf = -0.5*dot(deltaR[iat],deltaR[iat]);
-//
-//            //Scale is set by the total quantum force
-//            //RealType scale=getDriftScale(Tau,G);
-//            //dr = thisWalker.R[iat]-newpos-scale*real(G[iat]); 
-//            RealType scale=getDriftScale(Tau,G[iat]);
-//            dr = thisWalker.R[iat]-newpos-scale*real(G[iat]); 
-//
-//            RealType logGb = -m_oneover2tau*dot(dr,dr);
-//            RealType prob = std::min(1.0,ratio*ratio*std::exp(logGb-logGf));
-//            if(RandomGen() < prob) 
-//            { 
-//              ++nAcceptTemp;
-//              W.acceptMove(iat);
-//              Psi.acceptMove(W,iat);
-//              W.G = G;
-//              W.L += dL;
-//
-//              //Checking pbyp drift
-//              //assignDrift(scale,G,thisWalker.Drift);
-//
-//              rr_accepted+=rr;
-//            } else {
-//              ++nRejectTemp; 
-//              W.rejectMove(iat); Psi.rejectMove(iat);
-//            }
-//          } 
-//        }
-//
-//        if(nAcceptTemp>0) 
-//        {//need to overwrite the walker properties
-//          thisWalker.R = W.R;
-//          w_buffer.rewind();
-//          W.copyToBuffer(w_buffer);
-//          RealType psi = Psi.evaluate(W,w_buffer);
-//          enew= H.evaluate(W);
-//          thisWalker.resetProperty(std::log(abs(psi)),psi,enew,rr_accepted,rr_proposed,1.0);
-//          H.saveProperty(thisWalker.getPropertyBase());
-//
-//          //update the drift: safe operator for QMC_COMPLEX=1
-//          //2008-08-26 THIS IS NOT DOING ANYTHING
-//          //PAOps<RealType,OHMMS_DIM>::copy(W.G,thisWalker.Drift);
-//        } else {
-//          thisWalker.Age++;
-//          thisWalker.Properties(R2ACCEPTED)=0.0;
-//          enew=eold;//copy back old energy
-//          ++nAllRejected;
-//        }
-//
-//        thisWalker.Weight *= branchEngine->branchWeight(eold,enew);
-//        eold=enew;
-//        nAccept += nAcceptTemp;
-//        nReject += nRejectTemp;
-//      }
-//    }
-//#else
-    Timer localTimer;
 
     myTimers[0]->start();
     for(;it != it_end;++it) 
@@ -199,8 +81,6 @@ namespace qmcplusplus {
       for(int iat=0; iat<NumPtcl; ++iat) 
       {
 
-        DMC_TRACE_START(localTimer.restart());
-
         //get the displacement
         //PosType dr(m_sqrttau*deltaR[iat]+thisWalker.Drift[iat]);
         RealType sc=getDriftScale(m_tauovermass,W.G[iat]);
@@ -212,7 +92,6 @@ namespace qmcplusplus {
 
         if(rr>m_r2max)
         {
-//           cout<<" PROPOSED move was too big!!"<<endl;
           ++nRejectTemp; continue;
         }
 
@@ -264,15 +143,14 @@ namespace qmcplusplus {
           }
         } 
 
-        DMC_TRACE_STOP(thisWalker.ID,iat,valid_move,localTimer.elapsed());
       }
       myTimers[1]->stop();
-
-      DMC_TRACE_START(localTimer.restart());
       
       RealType nodecorr_old=thisWalker.Properties(DRIFTSCALE);
       RealType nodecorr=nodecorr_old;
       bool advanced=true;
+
+      if(UseTMove) nonLocalOps.reset();
 
       if(nAcceptTemp>0) 
       {//need to overwrite the walker properties
@@ -289,7 +167,10 @@ namespace qmcplusplus {
         myTimers[2]->stop();
 
         myTimers[3]->start();
-        enew= H.evaluate(W);
+        if(UseTMove)
+          enew= H.evaluate(W,nonLocalOps.Txy);
+        else
+          enew= H.evaluate(W);
         myTimers[3]->stop();
 
         //thisWalker.resetProperty(std::log(abs(psi)),psi,enew,rr_accepted,rr_proposed,nodecorr);
@@ -308,11 +189,37 @@ namespace qmcplusplus {
         gf_acc=1.0;
       }
 
+      if(UseTMove)
+      {
+        //make a non-local move
+        int ibar=nonLocalOps.selectMove(RandomGen());
+        if(ibar) 
+        {
+          myTimers[2]->start();
+          int iat=nonLocalOps.id(ibar);
+          PosType newpos(W.makeMove(iat, nonLocalOps.delta(ibar)));
+          RealType ratio=Psi.ratio(W,iat,dG,dL);
+          W.acceptMove(iat);
+          Psi.acceptMove(W,iat);
+          W.G += dG;
+          W.L += dL;
+
+          PAOps<RealType,OHMMS_DIM>::copy(W.G,thisWalker.Drift);
+
+          thisWalker.R[iat]=W.R[iat];
+          w_buffer.rewind();
+          W.copyToBuffer(w_buffer);
+          //RealType psi = Psi.evaluate(W,w_buffer);
+          RealType logpsi = Psi.evaluateLog(W,w_buffer);
+          ++NonLocalMoveAccepted;
+          myTimers[2]->stop();
+        }
+      }
+
       //2008-06-26: select any
       //bare green function by setting nodecorr=nodecorr_old=1.0
       thisWalker.Weight *= branchEngine->branchWeight(enew,eold);
 
-      DMC_TRACE_STOP(thisWalker.ID,NumPtcl,advanced,localTimer.elapsed());
 
       //Filtering extreme energies
       //thisWalker.Weight *= branchEngine->branchWeight(eold,enew);
@@ -329,7 +236,6 @@ namespace qmcplusplus {
 
     }
     myTimers[0]->stop();
-//#endif
   }
 
   /// Constructor.
