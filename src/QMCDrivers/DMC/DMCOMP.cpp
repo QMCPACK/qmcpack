@@ -16,7 +16,7 @@
 // -*- C++ -*-
 #include "QMCDrivers/DMC/DMCOMP.h"
 #include "QMCDrivers/DMC/DMCUpdatePbyP.h"
-#include "QMCDrivers/DMC/DMCNonLocalUpdate.h"
+//#include "QMCDrivers/DMC/DMCNonLocalUpdate.h"
 #include "QMCDrivers/DMC/DMCUpdateAll.h"
 #include "QMCApp/HamiltonianPool.h"
 #include "Message/Communicate.h"
@@ -120,15 +120,10 @@ namespace qmcplusplus {
         }
         else
         {
-          if(NonLocalMove == "yes") 
-            Movers[ip]= new DMCNonLocalUpdate(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
+          if(KillNodeCrossing) 
+            Movers[ip] = new DMCUpdateAllWithKill(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
           else 
-          {
-            if(KillNodeCrossing) 
-              Movers[ip] = new DMCUpdateAllWithKill(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
-            else 
-              Movers[ip] = new DMCUpdateAllWithRejection(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
-          }
+            Movers[ip] = new DMCUpdateAllWithRejection(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
           Movers[ip]->put(qmcNode);
           Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip]);
           Movers[ip]->initWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);

@@ -75,6 +75,8 @@ namespace qmcplusplus {
       //evaluate wave functior
       RealType logpsi(Psi.evaluateLog(W));
 
+      if(UseTMove) nonLocalOps.reset();
+
       bool accepted=false; 
       RealType rr_accepted = 0.0;
       RealType nodecorr=0.0;
@@ -85,7 +87,11 @@ namespace qmcplusplus {
       } 
       else 
       {
-        enew=H.evaluate(W);
+        if(UseTMove)
+          enew=H.evaluate(W,nonLocalOps.Txy);
+        else
+          enew=H.evaluate(W);
+
         RealType logGf = -0.5*Dot(deltaR,deltaR);
         //converting gradients to drifts, D = tau*G (reuse G)
         //RealType scale=getDriftScale(Tau,W.G);
@@ -119,6 +125,24 @@ namespace qmcplusplus {
 	  H.saveProperty(thisWalker.getPropertyBase());
         }
       }
+
+      if(UseTMove)
+      {
+        int ibar=nonLocalOps.selectMove(RandomGen());
+
+        //make a non-local move
+        if(ibar) {
+          int iat=nonLocalOps.id(ibar);
+          W.R[iat] += nonLocalOps.delta(ibar);
+          W.update();
+          logpsi=Psi.evaluateLog(W);
+          setScaledDrift(Tau,W.G,thisWalker.Drift);
+          thisWalker.resetProperty(logpsi,Psi.getPhase(),eold);
+          thisWalker.R[iat] = W.R[iat];
+          ++NonLocalMoveAccepted;
+        } 
+      }
+
       thisWalker.Weight *= branchEngine->branchWeight(enew,eold);
       
       //branchEngine->accumulate(eold,1);

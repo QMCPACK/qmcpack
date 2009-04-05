@@ -88,7 +88,7 @@ namespace qmcplusplus {
         RealType prob= std::min(std::exp(logGb-logGf +2.0*(logpsi-thisWalker.Properties(LOGPSI))),1.0);
         if(RandomGen() > prob){
           thisWalker.Age++;
-        H.rejectedMove(W,thisWalker); 
+          H.rejectedMove(W,thisWalker); 
           ++nReject;
           enew=eold;
         } else {
