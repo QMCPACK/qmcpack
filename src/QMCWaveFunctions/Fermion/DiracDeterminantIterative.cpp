@@ -75,7 +75,7 @@ namespace qmcplusplus {
     int systemSize=LastIndex-FirstIndex;
     int nnz_index=0;
     Arp.push_back(0);
-    cerr<<"Particle list size is "<<particleLists.size()<<endl;
+    //    cerr<<"Particle list size is "<<particleLists.size()<<endl;
     for (int ptcl=0;ptcl<particleLists.size();ptcl++){
       for (list<pair<int,double> >::iterator orb=particleLists[ptcl].begin();orb!=particleLists[ptcl].end();orb++){
 	pair<int,double> myPair=*orb;
@@ -89,7 +89,7 @@ namespace qmcplusplus {
       //      }
       Arp.push_back(nnz_index);
     }
-    cerr<<"Ari size is "<<Ari.size()<<endl;
+    //    cerr<<"Ari size is "<<Ari.size()<<endl;
     
   }
 
@@ -103,7 +103,7 @@ namespace qmcplusplus {
     WorkingIndex = iat-FirstIndex;
     assert(FirstIndex==0);
     Phi->evaluate(P, iat, psiV);
-    cerr<<"Preparing stuff"<<endl;
+    //    cerr<<"Preparing stuff"<<endl;
     vector<int> Arp; vector<int> Ari; vector<double> Arx;
     SparseToCSR(Arp,Ari,Arx);
     vector<int> Arp2(Arp.size()); vector<int> Ari2(Ari.size()); vector<double> Arx2(Arx.size());
@@ -115,14 +115,14 @@ namespace qmcplusplus {
     double detRatio_ILU=0;
     for (int i=0;i<uPassed.size();i++)
       uPassed[i]=psiV[i];
-    cerr<<"Calling stuff"<<systemSize<<" "<<Arp.size()<<endl;
+    //    cerr<<"Calling stuff"<<systemSize<<" "<<Arp.size()<<endl;
     assert(systemSize+1==Arp.size());
     assert(Ari.size()<=nnzUpdatedPassed);
-    cerr<<"Entering"<<endl;
+    //    cerr<<"Entering"<<endl;
     //HACK TO GET TO COMPILE    calcDeterminantILUGMRES(&particleMoved, &systemSize, &nnzUpdatedPassed, uPassed.data(), Arp.data(), Ari.data(), Arx.data(), Arp2.data(), Ari2.data(), Arx2.data(), &detRatio_ILU);
     //    int *Arp_ptr; int *Ari_ptr; double *Arx_ptr;
     //    DenseToCSR(psiM_actual,Arp_ptr,Ari_ptr,Arx_ptr);
-    cerr<<"The size of my particle list is "<<particleLists[iat].size()<<" "<<cutoff<<endl;
+    //    cerr<<"The size of my particle list is "<<particleLists[iat].size()<<" "<<cutoff<<endl;
 
 
     oldPtcl.clear();
@@ -138,11 +138,11 @@ namespace qmcplusplus {
     
 #ifdef DIRAC_USE_BLAS
     curRatio = BLAS::dot(NumOrbitals,psiM[iat-FirstIndex],&psiV[0]);
-    cerr<<"RATIOS: "<<curRatio<<" "<<detRatio_ILU<<endl;
+    //    cerr<<"RATIOS: "<<curRatio<<" "<<detRatio_ILU<<endl;
     return curRatio;
 #else
     curRatio = DetRatio(psiM, psiV.begin(),iat-FirstIndex);
-    cerr<<"RATIOS: "<<curRatio<<" "<<detRatio_ILU<<endl;
+    //    cerr<<"RATIOS: "<<curRatio<<" "<<detRatio_ILU<<endl;
     return curRatio;
 #endif
   }
@@ -153,7 +153,7 @@ namespace qmcplusplus {
 								   ParticleSet::ParticleGradient_t& dG, 
 								   ParticleSet::ParticleLaplacian_t& dL) 
   {
-    cerr<<"doing large update"<<endl;
+    //    cerr<<"doing large update"<<endl;
     UpdateMode=ORB_PBYP_ALL;
     Phi->evaluate(P, iat, psiV, dpsiV, d2psiV);
     WorkingIndex = iat-FirstIndex;

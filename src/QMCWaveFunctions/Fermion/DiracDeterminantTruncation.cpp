@@ -190,7 +190,7 @@ namespace qmcplusplus {
       }
     }
     int sign;
-    cerr<<"Size "<<nearbyPtcls.size()<<endl;
+    //    cerr<<"Size "<<nearbyPtcls.size()<<endl;
     ValueType new_det=invert_matrix_log(psiM2_small_new,sign,true);
     ValueType old_det=invert_matrix_log(psiM2_small_old,sign,true);
     //    ValueType test_det=invert_matrix_log(psiM_actual,sign,true);
@@ -233,7 +233,7 @@ namespace qmcplusplus {
     return curRatio;
 #ifdef DIRAC_USE_BLAS
     curRatio = BLAS::dot(NumOrbitals,psiM[iat-FirstIndex],&psiV[0]);
-    cerr<<"RATIOS: "<<curRatio<<" "<<std::exp((new_det-old_det)/2)<<endl;
+    //    cerr<<"RATIOS: "<<curRatio<<" "<<std::exp((new_det-old_det)/2)<<endl;
     return curRatio;
 #else
     curRatio = DetRatio(psiM, psiV.begin(),iat-FirstIndex);
@@ -248,7 +248,7 @@ namespace qmcplusplus {
 								   ParticleSet::ParticleGradient_t& dG, 
 								   ParticleSet::ParticleLaplacian_t& dL) 
   {
-    cerr<<"doing large update"<<endl;
+    //    cerr<<"doing large update"<<endl;
     UpdateMode=ORB_PBYP_ALL;
     Phi->evaluate(P, iat, psiV, dpsiV, d2psiV);
     WorkingIndex = iat-FirstIndex;
@@ -405,7 +405,7 @@ namespace qmcplusplus {
 	ValueType test_det=invert_matrix_log(psiM_actual,sign,true);
 	invert_matrix_log(psiM_actual,sign,true);
     
-	cerr<<"init stuff "<<" "<<new_det<<" "<<old_det<<" "<<test_det<<endl;
+	//	cerr<<"init stuff "<<" "<<new_det<<" "<<old_det<<" "<<test_det<<endl;
 
 
         const ValueType* restrict yptr=psiM.data();
