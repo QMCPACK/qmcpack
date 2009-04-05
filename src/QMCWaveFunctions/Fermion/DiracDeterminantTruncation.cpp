@@ -357,7 +357,7 @@ namespace qmcplusplus {
   DiracDeterminantBase::RealType 
     DiracDeterminantTruncation::evaluateLog(ParticleSet& P, PooledData<RealType>& buf) 
     {
-      DiracDeterminantBase::evaluateLog(P,buf);
+      return DiracDeterminantBase::evaluateLog(P,buf);
     }
 
 
