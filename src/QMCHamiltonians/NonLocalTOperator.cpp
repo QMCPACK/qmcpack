@@ -7,7 +7,6 @@
 //   University of Illinois, Urbana-Champaign
 //   Urbana, IL 61801
 //   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
 // Supported by 
 //   National Center for Supercomputing Applications, UIUC
@@ -25,16 +24,24 @@ namespace qmcplusplus {
   NonLocalTOperator::NonLocalTOperator():Tau(0.01),Alpha(0.0),Gamma(0.0) {
   }
 
-  bool NonLocalTOperator::put(xmlNodePtr cur) {
+  /** process options related to TMoves
+   * @return true, if TMove is used.
+   */
+  bool NonLocalTOperator::put(xmlNodePtr cur) 
+  {
+    string use_tmove="no";
     ParameterSet m_param;
-    m_param.add(Tau,"timeStep","double"); m_param.add(Tau,"timestep","double"); m_param.add(Tau,"Tau","double"); 
+    m_param.add(Tau,"timeStep","double"); m_param.add(Tau,"timestep","double"); 
+    m_param.add(Tau,"Tau","double"); m_param.add(Tau,"tau","double");
     m_param.add(Alpha,"alpha","double");
     m_param.add(Gamma,"gamma","double");
+    m_param.add(use_tmove,"nonlocalmove","double");
+    m_param.add(use_tmove,"nonlocalmoves","double");
     bool success = m_param.put(cur);
     plusFactor=Tau*Gamma;
     minusFactor=-Tau*(1.0-Alpha*(1.0+Gamma));
-    app_log() << "  Non-Local Move alpha = " << Alpha << " gamma = " << Gamma << endl; 
-    return success;
+
+    return use_tmove=="yes";
   }
 
   void NonLocalTOperator::reset() { 
