@@ -52,7 +52,8 @@ namespace qmcplusplus {
       TrialWaveFunction& psi, QMCHamiltonian& ham)
   {
 
-    if(wClones.size()) {
+    if(wClones.size()) 
+    {
       app_log() << "  Cannot make clones again. Use existing " << NumThreads << " clones" << endl;
       return;
     }
@@ -64,8 +65,10 @@ namespace qmcplusplus {
     wClones[0]=&w;
     psiClones[0]=&psi;
     hClones[0]=&ham;
-    app_log() << "  CloneManager::makeClones makes " << NumThreads << " clones for W/Psi/H." <<endl;
 
+    if(NumThreads==1) return;
+
+    app_log() << "  CloneManager::makeClones makes " << NumThreads << " clones for W/Psi/H." <<endl;
 #if defined(ENABLE_CLONE_PSI_AND_H)
     app_log() << "  Cloning methods for both Psi and H are used" << endl;
     OhmmsInfo::Log->turnoff();
