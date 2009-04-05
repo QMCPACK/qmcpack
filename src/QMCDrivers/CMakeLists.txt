@@ -16,11 +16,10 @@ SET(QMCDRIVERS
   VMC/VMCUpdateAll.cpp
   VMC/VMCSingle.cpp
   VMC/VMCFactory.cpp
+  DMC/DMCOMP.cpp
   DMC/DMCUpdateAll.cpp
   DMC/DMCUpdatePbyP.cpp
   DMC/DMCUpdatePbyPFast.cpp
-  DMC/DMCNonLocalUpdate.cpp
-  DMC/DMC.cpp
   DMC/DMCFactory.cpp
   DMC/WalkerControlFactory.cpp
   DMC/WalkerReconfiguration.cpp
@@ -31,13 +30,11 @@ SET(QMCDRIVERS
   ../Estimators/MultipleEnergyEstimator.cpp
   ../Estimators/CollectablesEstimator.cpp
 )
-#  ../Estimators/PairCorrEstimator.cpp
 
 IF(ENABLE_OPENMP) 
   SET(QMCDRIVERS ${QMCDRIVERS} 
       VMC/VMCSingleOMP.cpp
       VMC/WFMCSingleOMP.cpp
-      DMC/DMCOMP.cpp
       QMCCostFunctionOMP.cpp
      )
 ENDIF(ENABLE_OPENMP) 
