@@ -330,7 +330,7 @@ namespace qmcplusplus {
       {
         Walker_t* awalker=new Walker_t(*(good_w[i]));
         awalker->ID=(++NumWalkersCreated)*NumContexts+MyContext;
-        awalker->ParentID=good_w[j]->ID;
+        awalker->ParentID=good_w[i]->ParentID;
         W.push_back(awalker);
       }
     }

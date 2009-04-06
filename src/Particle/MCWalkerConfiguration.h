@@ -267,6 +267,14 @@ namespace qmcplusplus {
         std::copy(get_first_address((*it)->R),get_last_address((*it)->R),target);
       }
     }
+    
+    inline void resetWalkerParents( )
+    { 
+      for(iterator it=WalkerList.begin(); it!= WalkerList.end(); ++it )
+      {
+         (*it)->ParentID = (*it)->ID;
+      }
+    }
 
   protected:
 

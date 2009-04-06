@@ -186,6 +186,10 @@ namespace qmcplusplus {
           {
             //branchEngine->branch(CurrentStep,W, branchClones);
             branchEngine->branch(CurrentStep,W);
+            if(storeConfigs && (CurrentStep%storeConfigs == 0)) { 
+              branchEngine->storeConfigsForForwardWalking(W);
+              W.resetWalkerParents();
+            }
           }
 
 #pragma omp barrier

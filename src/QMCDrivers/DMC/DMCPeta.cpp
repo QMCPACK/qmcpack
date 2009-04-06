@@ -168,7 +168,11 @@ namespace qmcplusplus {
         //calculate multiplicity based on the weights: see QMCUpdateBase::setMultiplicity
         Mover->setMultiplicity(W.begin(),W.end());
         //time to branch: see SimpleFixedNodeBranch::branch
-        branchEngine->branch(CurrentStep,W);
+        branchEngine->branch(CurrentStep,W);        
+        if(storeConfigs && (CurrentStep%storeConfigs == 0)) { 
+          branchEngine->storeConfigsForForwardWalking(W);
+          W.resetWalkerParents();
+        }
       }//steps
 
       ++block;

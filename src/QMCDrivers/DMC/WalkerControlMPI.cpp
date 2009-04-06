@@ -478,6 +478,7 @@ void WalkerControlMPI::swapWalkersMap(MCWalkerConfiguration& W) {
     }
   }
 
+
   /* not used yet
   struct lessNode {
     inline bool operator()(const pair<int,int>& a,

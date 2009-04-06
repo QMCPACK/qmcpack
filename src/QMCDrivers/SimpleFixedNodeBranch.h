@@ -306,6 +306,14 @@ namespace qmcplusplus {
     void start(const string& froot, bool append);
     ///finalize the simulation
     void finalize(MCWalkerConfiguration& w);
+    
+    void storeConfigsForForwardWalking(MCWalkerConfiguration& w);
+    void clearConfigsForForwardWalking( );
+    void debugFWconfig();
+    WalkerControlBase* getWalkerController()
+    {
+      return WalkerController;
+    }
 
     private:
     ///default constructor (disabled)

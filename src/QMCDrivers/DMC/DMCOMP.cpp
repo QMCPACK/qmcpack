@@ -202,8 +202,14 @@ namespace qmcplusplus {
         }//#pragma omp parallel
 
         branchEngine->branch(CurrentStep,W, branchClones);
+        if(storeConfigs && (CurrentStep%storeConfigs == 0)) {
+          branchEngine->storeConfigsForForwardWalking(W);
+          W.resetWalkerParents();
+        }
         if(variablePop) FairDivideLow(W.getActiveWalkers(),NumThreads,wPerNode);
       } 
+//       branchEngine->debugFWconfig();
+      
 
       Estimators->stopBlock(acceptRatio());
       block++;

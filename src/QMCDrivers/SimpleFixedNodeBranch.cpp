@@ -454,6 +454,29 @@ namespace qmcplusplus
       app_log() << "    Cummulative samples = " << EnergyHist.count() << endl;
     }
   }
+  
+  void SimpleFixedNodeBranch::storeConfigsForForwardWalking(MCWalkerConfiguration& w)
+  {
+    WalkerController->storeConfigsForForwardWalking(w);
+  }
+  
+  void SimpleFixedNodeBranch::clearConfigsForForwardWalking( )
+  {
+    WalkerController->clearConfigsForForwardWalking( );
+  }
+  
+  void SimpleFixedNodeBranch::debugFWconfig()
+  {
+    cout<<"FW size "<<WalkerController->sizeOfConfigsForForwardWalking()<<endl;
+    for(int i=0;i<WalkerController->ForwardWalkingHistory.size();i++) {
+      cout<<" Next Gen "<<i<<endl;
+      for(int j=0;j<WalkerController->ForwardWalkingHistory[i].size();j++)
+      {
+        cout<<j<<" "<<WalkerController->ForwardWalkingHistory[i][j].ID<<" "<<WalkerController->ForwardWalkingHistory[i][j].ParentID<<endl;
+      }
+    }
+  }
+
 }
 
 /***************************************************************************

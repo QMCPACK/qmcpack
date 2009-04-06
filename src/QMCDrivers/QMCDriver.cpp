@@ -39,7 +39,7 @@ namespace qmcplusplus {
   nBlocks(100), nSteps(10), 
   nAccept(0), nReject(0), nTargetWalkers(0),nTargetSamples(0),
   Tau(0.01), qmcNode(NULL),
-  QMCType("invalid"), wOut(0),
+  QMCType("invalid"), wOut(0), storeConfigs(0),
   W(w), Psi(psi), H(h), Estimators(0)
   { 
 
@@ -58,6 +58,7 @@ namespace qmcplusplus {
     m_param.add(MaxCPUSecs,"maxcpusecs","real");
     m_param.add(nTargetSamples,"samples","int");
     m_param.add(Period4CheckProperties,"checkProperties","int");
+    m_param.add( storeConfigs,"storeConfigs","int");
 
     ////add each QMCHamiltonianBase to W.PropertyList so that averages can be taken
     //H.add2WalkerProperty(W);
@@ -190,6 +191,10 @@ namespace qmcplusplus {
     {
       wOut->dump(W);
       branchEngine->write(wOut->FileName,false); //save energy_history
+      if (storeConfigs)
+      {
+        wOut->dump( *(branchEngine->getWalkerController()) );
+      }
     }
 
     //save positions for optimization: this is done within VMC

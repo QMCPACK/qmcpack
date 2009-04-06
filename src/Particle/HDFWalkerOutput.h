@@ -19,6 +19,7 @@
 
 #include "OhmmsData/HDFAttribIO.h"
 #include "Particle/MCWalkerConfiguration.h"
+#include "QMCDrivers/WalkerControlBase.h"
 #include <utility>
 
 namespace qmcplusplus {
@@ -40,20 +41,24 @@ namespace qmcplusplus {
     ///current number of backups
     int max_number_of_backups;
     ///id for HDF5 file 
-    hid_t h_file;
+    hid_t h_file,c_file;
     ///handler for parallel I/O
     hid_t h_plist;
     ///data transfer mode
     hid_t xfer_plist;
     ///id for HDF5 main group 
-    hid_t h_state;
+    hid_t h_state,c_state;
     ///id for debug HDF5 file 
     hid_t h_debug_file;
     ///communicator
     Communicate* myComm;
+
+    int currentConfigNumber;
   public:
     ///save file name
     string FileName;
+    ///saved Forward Walking file
+    string ConfigFileName;
 
     ///constructor
     HDFWalkerOutput(MCWalkerConfiguration& W, const string& fname, Communicate* c);
@@ -64,6 +69,7 @@ namespace qmcplusplus {
      * @param w walkers
      */
     bool dump(MCWalkerConfiguration& w);
+    bool dump(WalkerControlBase& wcb);
 
     /** append configurations
      * @param w walkers
@@ -107,7 +113,10 @@ namespace qmcplusplus {
     typedef vector<OHMMS_PRECISION> BufferType;
     vector<Communicate::request> myRequest;
     vector<BufferType*> RemoteData;
-
+    
+    //define some types for the FW collection
+    typedef vector<vector<WalkerControlBase::ForwardWalkingData> > FWBufferType;
+    vector<FWBufferType*> RemoteFWData;
   };
 
 }

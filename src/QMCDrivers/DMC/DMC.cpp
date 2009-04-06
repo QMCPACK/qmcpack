@@ -69,7 +69,11 @@ namespace qmcplusplus {
         Mover->advanceWalkers(W.begin(),W.end(), false);
 
         Mover->setMultiplicity(W.begin(),W.end());
-        branchEngine->branch(CurrentStep,W);
+        branchEngine->branch(CurrentStep,W); 
+        if(storeConfigs && (CurrentStep%storeConfigs == 0)) { 
+          branchEngine->storeConfigsForForwardWalking(W);
+          W.resetWalkerParents();
+        }
       } 
 
       block++;

@@ -187,6 +187,11 @@ namespace qmcplusplus {
      * The unit is a block.
      */
     int Period4CheckPoint;
+     /** period of dumping walker positions and IDs for Forward Walking
+     *
+     * The unit is in steps.
+     */
+    int storeConfigs;
     
     ///Period to recalculate the walker properties from scratch.
     int Period4CheckProperties;
