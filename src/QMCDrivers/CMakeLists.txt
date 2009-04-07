@@ -16,6 +16,7 @@ SET(QMCDRIVERS
   VMC/VMCUpdateAll.cpp
   VMC/VMCSingle.cpp
   VMC/VMCFactory.cpp
+  WFMC/WFMCUpdateAll.cpp
   DMC/DMCOMP.cpp
   DMC/DMCUpdateAll.cpp
   DMC/DMCUpdatePbyP.cpp
@@ -34,7 +35,7 @@ SET(QMCDRIVERS
 IF(ENABLE_OPENMP) 
   SET(QMCDRIVERS ${QMCDRIVERS} 
       VMC/VMCSingleOMP.cpp
-      VMC/WFMCSingleOMP.cpp
+      WFMC/WFMCSingleOMP.cpp
       QMCCostFunctionOMP.cpp
      )
 ENDIF(ENABLE_OPENMP) 

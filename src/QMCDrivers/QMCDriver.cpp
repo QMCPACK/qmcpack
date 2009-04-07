@@ -34,7 +34,7 @@ namespace qmcplusplus {
   QMCDriver::QMCDriver(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h): MPIObjectBase(0),
   branchEngine(0), ResetRandom(false), AppendRun(false),
   MyCounter(0), RollBackBlocks(0),
-  Period4CheckPoint(0), Period4WalkerDump(10),
+  Period4CheckPoint(0), Period4WalkerDump(10),Period4ConfigDump(50),
   Period4CheckProperties(100), CurrentStep(0), 
   nBlocks(100), nSteps(10), 
   nAccept(0), nReject(0), nTargetWalkers(0),nTargetSamples(0),
@@ -55,6 +55,7 @@ namespace qmcplusplus {
     m_param.add(Tau,"timestep","AU");
     m_param.add(RollBackBlocks,"rewind","int");
     m_param.add(Period4WalkerDump,"recordWalkers","int");
+    m_param.add(Period4ConfigDump,"recordConfigs","int");
     m_param.add(MaxCPUSecs,"maxcpusecs","real");
     m_param.add(nTargetSamples,"samples","int");
     m_param.add(Period4CheckProperties,"checkProperties","int");
@@ -302,6 +303,7 @@ namespace qmcplusplus {
       //initialize the parameter set
       m_param.put(cur);
       xmlNodePtr tcur=cur->children;
+      
       //determine how often to print walkers to hdf5 file
       while(tcur != NULL) {
 	string cname((const char*)(tcur->name));
@@ -316,7 +318,14 @@ namespace qmcplusplus {
           rAttrib.add(Period4CheckPoint,"stride");
           rAttrib.add(Period4CheckPoint,"period");
           rAttrib.put(tcur);
-        } else if(cname == "random") {
+        }
+        else if(cname == "dumpconfig") {
+          OhmmsAttributeSet rAttrib; 
+          rAttrib.add(Period4ConfigDump,"stride");
+          rAttrib.add(Period4ConfigDump,"period");
+          rAttrib.put(tcur);
+        }
+        else if(cname == "random") {
           ResetRandom = true;
         }
 	tcur=tcur->next;

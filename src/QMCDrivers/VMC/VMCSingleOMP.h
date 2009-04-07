@@ -10,49 +10,54 @@
 //   e-mail: jnkim@ncsa.uiuc.edu
 //   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 #ifndef QMCPLUSPLUS_VMCSINGLE_OMP_H
 #define QMCPLUSPLUS_VMCSINGLE_OMP_H
-#include "QMCDrivers/QMCDriver.h" 
-#include "QMCDrivers/CloneManager.h" 
-namespace qmcplusplus {
+#include "QMCDrivers/QMCDriver.h"
+#include "QMCDrivers/CloneManager.h"
+namespace qmcplusplus
+  {
 
   /** @ingroup QMCDrivers  ParticleByParticle
    * @brief Implements a VMC using particle-by-particle move. Threaded execution.
    */
-  class VMCSingleOMP: public QMCDriver, public CloneManager {
-  public:
-    /// Constructor.
-    VMCSingleOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
-        HamiltonianPool& hpool);
-    bool run();
-    bool put(xmlNodePtr cur);
-  private:
-    ///number of warmup steps
-    int myWarmupSteps;
-    ///period for walker dump
-    int myPeriod4WalkerDump;
-    ///option to enable/disable drift equation for VMC
-    string UseDrift;
-    ///options to use Pure DMC with truncated weights.
-    string reweight;
-    int weightLength,Eindex;
-    ///check the run-time environments
-    void resetRun();
-    ///copy constructor
-    VMCSingleOMP(const VMCSingleOMP& a): QMCDriver(a),CloneManager(a) { }
-    /// Copy operator (disabled).
-    VMCSingleOMP& operator=(const VMCSingleOMP&) { return *this;}
-  };
+  class VMCSingleOMP: public QMCDriver, public CloneManager
+    {
+    public:
+      /// Constructor.
+      VMCSingleOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
+                   HamiltonianPool& hpool);
+      bool run();
+      bool put(xmlNodePtr cur);
+    private:
+      ///number of warmup steps
+      int myWarmupSteps;
+      ///period for walker dump
+      int myPeriod4WalkerDump;
+      ///option to enable/disable drift equation for VMC
+      string UseDrift;
+      ///options to use Pure DMC with truncated weights.
+      string reweight;
+      int weightLength,Eindex;
+      ///check the run-time environments
+      void resetRun();
+      ///copy constructor
+      VMCSingleOMP(const VMCSingleOMP& a): QMCDriver(a),CloneManager(a) { }
+      /// Copy operator (disabled).
+      VMCSingleOMP& operator=(const VMCSingleOMP&)
+      {
+        return *this;
+      }
+    };
 }
 
 #endif
 /***************************************************************************
  * $RCSfile: VMCSingleOMP.h,v $   $Author: jnkim $
  * $Revision: 1.5 $   $Date: 2006/07/17 14:29:40 $
- * $Id: VMCSingleOMP.h,v 1.5 2006/07/17 14:29:40 jnkim Exp $ 
+ * $Id: VMCSingleOMP.h,v 1.5 2006/07/17 14:29:40 jnkim Exp $
  ***************************************************************************/

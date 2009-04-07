@@ -10,7 +10,7 @@
 //   e-mail: jnkim@ncsa.uiuc.edu
 //   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
 //
-// Supported by 
+// Supported by
 //   National Center for Supercomputing Applications, UIUC
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
@@ -19,97 +19,91 @@
 #define QMCPLUSPLUS_VMC_UPDATEALL_H
 #include "QMCDrivers/QMCUpdateBase.h"
 
-namespace qmcplusplus {
+namespace qmcplusplus
+  {
 
   /** @ingroup QMCDrivers  ParticleByParticle
-   *@brief Implements the VMC algorithm using particle-by-particle move. 
+   *@brief Implements the VMC algorithm using particle-by-particle move.
    */
-  class VMCUpdateAll: public QMCUpdateBase {
-  public:
-    /// Constructor.
-    VMCUpdateAll(MCWalkerConfiguration& w, TrialWaveFunction& psi, 
-        QMCHamiltonian& h, RandomGenerator_t& rg);
+  class VMCUpdateAll: public QMCUpdateBase
+    {
+    public:
+      /// Constructor.
+      VMCUpdateAll(MCWalkerConfiguration& w, TrialWaveFunction& psi,
+                   QMCHamiltonian& h, RandomGenerator_t& rg);
 
-    ~VMCUpdateAll();
+      ~VMCUpdateAll();
 
-    void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
- 
-  private:
-    ///sub steps
-    int nSubSteps;
-    /// Copy Constructor (disabled)
-    VMCUpdateAll(const VMCUpdateAll& a): QMCUpdateBase(a) { }
-    /// Copy operator (disabled).
-    VMCUpdateAll& operator=(const VMCUpdateAll&) { return *this;}
-  };
+      void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
+
+    private:
+      ///sub steps
+      int nSubSteps;
+      /// Copy Constructor (disabled)
+      VMCUpdateAll(const VMCUpdateAll& a): QMCUpdateBase(a) { }
+      /// Copy operator (disabled).
+      VMCUpdateAll& operator=(const VMCUpdateAll&)
+      {
+        return *this;
+      }
+    };
 
   /** @ingroup QMCDrivers  ParticleByParticle
-   *@brief Implements the VMC algorithm using particle-by-particle move with the drift equation. 
+   *@brief Implements the VMC algorithm using particle-by-particle move with the drift equation.
    */
-  class VMCUpdateAllWithDrift: public QMCUpdateBase {
-  public:
-    /// Constructor.
-    VMCUpdateAllWithDrift(MCWalkerConfiguration& w, TrialWaveFunction& psi, 
-        QMCHamiltonian& h, RandomGenerator_t& rg);
+  class VMCUpdateAllWithDrift: public QMCUpdateBase
+    {
+    public:
+      /// Constructor.
+      VMCUpdateAllWithDrift(MCWalkerConfiguration& w, TrialWaveFunction& psi,
+                            QMCHamiltonian& h, RandomGenerator_t& rg);
 
-    ~VMCUpdateAllWithDrift();
+      ~VMCUpdateAllWithDrift();
 
-    void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
- 
-  private:
-    /// Copy Constructor (disabled)
-    VMCUpdateAllWithDrift(const VMCUpdateAllWithDrift& a): QMCUpdateBase(a) { }
-    /// Copy operator (disabled).
-    VMCUpdateAllWithDrift& operator=(const VMCUpdateAllWithDrift&) { return *this;}
-  };
-  
-  class WFMCUpdateAllWithReweight: public QMCUpdateBase {
+      void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
 
-  public:
-    int Elength,Eindex ;
+    private:
+      /// Copy Constructor (disabled)
+      VMCUpdateAllWithDrift(const VMCUpdateAllWithDrift& a): QMCUpdateBase(a) { }
+      /// Copy operator (disabled).
+      VMCUpdateAllWithDrift& operator=(const VMCUpdateAllWithDrift&)
+      {
+        return *this;
+      }
+    };
 
-    /// Constructor.
-    WFMCUpdateAllWithReweight(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator_t& rg, int length, int index );
-    
-    ///destructor
-    ~WFMCUpdateAllWithReweight();
 
-    void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
-
-  private:
-    /// Copy Constructor (disabled)
-    WFMCUpdateAllWithReweight(const WFMCUpdateAllWithReweight& a): QMCUpdateBase(a){}
-    /// Copy operator (disabled).
-    WFMCUpdateAllWithReweight& operator=(const WFMCUpdateAllWithReweight&) { return *this;}
-  };
-  
   /** @ingroup QMCDrivers  ParticleByParticle
-   *@brief Implements the VMC algorithm using particle-by-particle move. 
+   *@brief Implements the VMC algorithm using particle-by-particle move.
    */
-  class VMCUpdateAllSamplePsi: public QMCUpdateBase {
-  public:
-    /// Constructor.
-    VMCUpdateAllSamplePsi(MCWalkerConfiguration& w, TrialWaveFunction& psi, 
-        QMCHamiltonian& h, RandomGenerator_t& rg);
+  class VMCUpdateAllSamplePsi: public QMCUpdateBase
+    {
+    public:
+      /// Constructor.
+      VMCUpdateAllSamplePsi(MCWalkerConfiguration& w, TrialWaveFunction& psi,
+                            QMCHamiltonian& h, RandomGenerator_t& rg);
 
-    ~VMCUpdateAllSamplePsi();
+      ~VMCUpdateAllSamplePsi();
 
-    void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
- 
-  private:
-    ///sub steps
-    int nSubSteps;
-    /// Copy Constructor (disabled)
-    VMCUpdateAllSamplePsi(const VMCUpdateAllSamplePsi& a): QMCUpdateBase(a) { }
-    /// Copy operator (disabled).
-    VMCUpdateAllSamplePsi& operator=(const VMCUpdateAllSamplePsi&) { return *this;}
-  };
-  
+      void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
+
+    private:
+      ///sub steps
+      int nSubSteps;
+      /// Copy Constructor (disabled)
+      VMCUpdateAllSamplePsi(const VMCUpdateAllSamplePsi& a): QMCUpdateBase(a) { }
+      /// Copy operator (disabled).
+      VMCUpdateAllSamplePsi& operator=(const VMCUpdateAllSamplePsi&)
+      {
+        return *this;
+      }
+    };
+
 }
 
 #endif
 /***************************************************************************
  * $RCSfile: VMCUpdateAll.h,v $   $Author: jnkim $
  * $Revision: 1.5 $   $Date: 2006/07/17 14:29:40 $
- * $Id: VMCUpdateAll.h,v 1.5 2006/07/17 14:29:40 jnkim Exp $ 
+ * $Id: VMCUpdateAll.h,v 1.5 2006/07/17 14:29:40 jnkim Exp $
  ***************************************************************************/

@@ -18,7 +18,7 @@
 #include "QMCDrivers/VMC/VMCSingle.h"
 #include "QMCDrivers/VMC/VMCSingleOMP.h"
 #if defined(QMC_BUILD_COMPLETE)
-#include "QMCDrivers/VMC/WFMCSingleOMP.h"
+#include "QMCDrivers/WFMC/WFMCSingleOMP.h"
 #if !defined(QMC_COMPLEX)
 #include "QMCDrivers/VMC/VMCMultipleWarp.h"
 #include "QMCDrivers/VMC/VMCPbyPMultiWarp.h"
